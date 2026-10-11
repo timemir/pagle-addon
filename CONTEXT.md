@@ -81,3 +81,23 @@ _Avoid_: zone level, zone progress
 **Species Mastery**:
 The Angler's star rating on one Species.
 _Avoid_: fish level, species rank
+
+**Trophy Room**:
+The Sub-collection of trophy "pound" fish families, recording the real weights the Angler has caught.
+_Avoid_: trophy collection, size records (when meaning real weights)
+
+**Legend**:
+A real, named catch that can't be farmed on an ordinary day, recognised with its own splash, sound and title. It is never an invented item or a combination of conditions.
+_Avoid_: rare, legendary, addon legend
+
+**Uncharted**:
+A Catch whose item Pagle's content data doesn't know yet. It is logged and credited retroactively once the data classifies it.
+_Avoid_: unknown item, unclassified loot
+
+**Ledger completion**:
+The Angler's bounded 100%: every Species caught, every Sub-collection item and every Zone Mastery at Master. Legends and stars sit outside it.
+_Avoid_: 100%, completionist score, total progress
+
+**Simulated Size**:
+Pagle's own size for a fish Catch, shown as flavour and kept as personal records. It never counts toward progression and is never presented as game data.
+_Avoid_: weight (which is the real number on trophy fish), size roll
