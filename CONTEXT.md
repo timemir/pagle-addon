@@ -7,7 +7,7 @@
 ### Product structure
 
 **Core**:
-The always-loaded base addon that every Module depends on. It observes and records Catches but shows the player nothing of its own beyond settings; everything visible belongs to a Module.
+The always-loaded base addon that every Module depends on. It observes and records Catches, and presents the Announcements Modules raise through it; beyond that and settings it shows the player nothing of its own, and every other view belongs to a Module.
 _Avoid_: framework, base module, engine
 
 **Module**:
@@ -149,7 +149,7 @@ A player setting where nothing pops up and nothing plays; every moment waits for
 _Avoid_: quiet mode, do not disturb
 
 **Session summary**:
-The card shown when a Session ends, listing everything earned in it, including moments that never popped up.
+The card shown when a Session in which something was earned ends, listing everything earned in it, including moments that never popped up. A Session that earned nothing ends quietly.
 _Avoid_: recap, report, session stats (which belong to Stats)
 
 ### QoL

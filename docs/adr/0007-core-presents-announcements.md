@@ -1,0 +1,18 @@
+# Core presents Announcements
+
+Core, not each Module, draws every Announcement: Modules raise moments (a rung on a fixed ladder, display text, icon, optional sound, optional Cast reference and expiry) through the `Pagle` API, and Core merges them, applies the Interruption budget, combat hold and Cozy mode, and shows the toast, banner, splash and Session summary. This ends Core being headless, which a reader of ADR 0001 might not expect. It is the only way to honour "one Announcement per Cast": a Cast that earns a new Species (Ledger) and completes a Hunt (Hunts) can only become one toast with both stamps if a single renderer sees both moments. It is also the only way for one budget, one combat hold and one Session summary to cover every Module, and Core already owns the inputs the policy needs (restriction state, the Session rule).
+
+ADR 0001 still holds. Modules raise moments to Core and never hear each other's; a moment is display data, not a fact another Module can reward from. Disabling one Module removes only its own moments and summary lines.
+
+## Considered Options
+
+- **Each Module announces on its own.** Rejected: separate budgets, toasts stacking on screen, no shared Session summary.
+- **Core runs the policy, each Module draws.** Rejected: a Cast with moments from two Modules can't become one toast, and the look drifts between Modules.
+- **A separate `Pagle_Announcements` Module.** Rejected: every other Module's moments would reach it through a Core relay, Module-to-Module traffic in all but name. Cozy mode already covers a player who wants quiet.
+
+## Consequences
+
+- Core ranks moments by a ladder it publishes (`nod`, `toast.low`, `toast`, `toast.high`, `banner`, `splash`), not by a list of every Module's moment kinds, so a Module adds kinds without a Core release.
+- Modules must raise a Cast's moments synchronously inside their `Catch`/`CastEnded` handlers; Core flushes on the next frame.
+- The Session summary's moments and Module summary lines are persisted by Core as ready-to-show data, outside the Catch log, so they survive logout and a Module disabled since.
+- Toast style and sound set are Core settings and free choices. They can't be Ledger unlocks, because a Ledger reward would then change how another Module's Announcements look.
