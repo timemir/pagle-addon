@@ -19,7 +19,7 @@ The Module for the player's angler identity: the fish journal, levels, mastery a
 _Avoid_: Angler's Ledger, journal module, progression module
 
 **Hunt**:
-A target catch that is only possible, or only counts, under detectable conditions such as zone, time of day or a calendar event.
+A target catch (one Species, or a class of Catch such as "rare or better") that is only possible, or only counts, under detectable conditions that open and close: a time of day, a season, a calendar event, or an aura the player starts. A fish tied only to a zone is not a Hunt; the Ledger covers it. A Hunt completes once, and may have further tiers after that.
 _Avoid_: quest, challenge, bounty
 
 **Hunts**:
@@ -139,3 +139,21 @@ _Avoid_: quiet mode, do not disturb
 **Session summary**:
 The card shown when a fishing session ends, listing everything earned in it, including moments that never popped up.
 _Avoid_: recap, report, session stats (which belong to Stats)
+
+### Hunts
+
+**Natural Hunt**:
+A Hunt whose conditions the game itself enforces, such as Nightfin Snapper only biting at night. The Catch alone completes it; its conditions only say when it is worth trying.
+_Avoid_: real hunt, game hunt
+
+**Imposed Hunt**:
+A Hunt whose conditions are Pagle's own rule, such as a Darkshore Grouper by moonlight. A Catch only counts if the Cast happened under those conditions.
+_Avoid_: custom hunt, challenge, addon hunt
+
+**Hunt set**:
+A themed group of Hunts. Completing every Hunt in it earns a title shown in Pagle's own views.
+_Avoid_: collection (which is the Ledger's), achievement, category
+
+**Retired Hunt**:
+A Hunt that no longer appears on the board because it was replaced or proved wrong. Completions already earned are kept.
+_Avoid_: removed hunt, deleted hunt, expired hunt
