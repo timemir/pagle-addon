@@ -1,0 +1,83 @@
+# Pagle
+
+**Pagle** (after Nat Pagle) is a fishing addon for World of Warcraft: Forever that aims to be the only fishing addon a player needs: progression and collection first, with optional quality-of-life helpers. It observes and rewards; it never plays for the player.
+
+## Language
+
+### Product structure
+
+**Core**:
+The always-loaded base addon that every Module depends on. It observes and records Catches but shows the player nothing of its own beyond settings; everything visible belongs to a Module.
+_Avoid_: framework, base module, engine
+
+**Module**:
+A separately installable addon in the package that a player can disable in the AddOns list, leaving no trace of it loaded.
+_Avoid_: plugin, sub-addon, feature
+
+**Ledger**:
+The Module for the player's angler identity: the fish journal, levels, mastery and personal records.
+_Avoid_: Angler's Ledger, journal module, progression module
+
+**Hunt**:
+A target catch that is only possible, or only counts, under detectable conditions such as zone, time of day or a calendar event.
+_Avoid_: quest, challenge, bounty
+
+**Hunts**:
+The Module that tracks Hunts and shows which are possible now, soon or later.
+_Avoid_: Hunt board, Hunt module
+
+**Tackle Board**:
+The Module offering opt-in rotating goals that bank when missed and never punish absence.
+_Avoid_: dailies, quests, challenges
+
+**QoL**:
+The Module of convenience helpers (cast key, gear, lures, clams) where each player keypress triggers at most one game action.
+_Avoid_: automation, helpers, utility module
+
+**Stats**:
+The Module for session tracking, catch rates and honest odds.
+_Avoid_: tracker, metrics
+
+### Fishing
+
+**Angler**:
+The player's fishing identity, shared across every character on one WoW game account. Two game licences under one Battle.net login are two Anglers.
+_Avoid_: character, profile, player (when meaning the progression owner)
+
+**Catch**:
+One item brought up by a fishing action, including junk and treasure. It counts once offered, whether or not it reaches the bags.
+_Avoid_: fish (when junk/treasure is included), loot, drop
+
+**Species**:
+The unit of the fish collection: one kind of fish. A trophy "pound" fish counts toward its family as a size record, not as a Species of its own.
+_Avoid_: entry, fish type, item (when meaning the collection unit)
+
+**Sub-collection**:
+A small, separately completable collection of non-fish Catches, such as junk or treasure containers.
+_Avoid_: category, side collection
+
+**Skill Milestone**:
+A fishing skill threshold reached by any of the Angler's characters. It is credited whenever the skill is read, even if it was reached before Pagle was installed.
+_Avoid_: skill level-up, rank-up
+
+### Progression
+
+**Angler Level**:
+The Angler's effort-based level. It rises from XP earned on every Catch and on discoveries, and always keeps moving.
+_Avoid_: fishing level, rank, skill (which is the game's own fishing skill)
+
+**Prestige**:
+Starting the Angler Level over from 1, after reaching its cap, in exchange for a permanent prestige rank.
+_Avoid_: reset, rebirth, paragon
+
+**Fresh Water**:
+Bonus XP on Catches made after a break from fishing, the Pagle counterpart to WoW's rested XP. It is a bonus, never a penalty.
+_Avoid_: rested XP, Rested Angler (that belongs to the Tackle Board), diminishing returns
+
+**Zone Mastery**:
+The Angler's rank in one zone, earned by the breadth of what they have caught there, not the volume.
+_Avoid_: zone level, zone progress
+
+**Species Mastery**:
+The Angler's star rating on one Species.
+_Avoid_: fish level, species rank
