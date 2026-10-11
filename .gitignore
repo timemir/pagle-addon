@@ -1,0 +1,33 @@
+# Local scratch / notes
+.scratch/
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editors / IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Lua tooling
+luacov.stats.out
+luacov.report.out
+*.rock
+lua_modules/
+.luarocks/
+
+# Packaging / release (BigWigs packager, CurseForge, etc.)
+.release/
+*.zip
+
+# WoW SavedVariables / logs accidentally copied in
+WTF/
+Logs/
+*.bak
+
+# Claude Code local settings
+.claude/settings.local.json
