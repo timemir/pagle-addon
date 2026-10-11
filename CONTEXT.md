@@ -76,6 +76,14 @@ _Avoid_: category, side collection
 A fishing skill threshold reached by any of the Angler's characters. It is credited whenever the skill is read, even if it was reached before Pagle was installed.
 _Avoid_: skill level-up, rank-up
 
+**Content data**:
+Pagle's shipped knowledge of the fishing world: which items are Species, trophies, junk or treasure, what bites where and when, and which facts are confirmed in-game. Everything the Modules show is derived from the Catch log read through it. It changes only with an addon release.
+_Avoid_: database, loot table, game data (which is Blizzard's)
+
+**Noise**:
+A Catch the content data knows but that counts toward nothing, such as a random world-drop green or potion. It is logged like any Catch and earns only Catch XP.
+_Avoid_: junk (which is a Sub-collection), Uncharted (which the data doesn't know yet)
+
 ### Progression
 
 **Angler Level**:
