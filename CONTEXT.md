@@ -35,7 +35,7 @@ The Module of convenience helpers (cast key, gear, lures, clams) where each play
 _Avoid_: automation, helpers, utility module
 
 **Stats**:
-The Module for session tracking, catch rates and honest odds.
+The Module for Session and lifetime numbers, Your odds and Dry spells. It shows numbers on request and announces nothing.
 _Avoid_: tracker, metrics
 
 ### Fishing
@@ -59,6 +59,10 @@ _Avoid_: history, database, event store
 **Skill Reading**:
 One character's fishing skill as Pagle saw it at a moment, recorded whenever it is read or changes.
 _Avoid_: skill snapshot, skill event
+
+**Session**:
+A run of the Angler's Casts with no break of 15 minutes or more, across characters and zones. It is cut from the Catch log after the fact, never stored.
+_Avoid_: Fishing stretch (QoL's live span), trip, outing
 
 **Species**:
 The unit of the fish collection: one kind of fish. A trophy "pound" fish counts toward its family as a size record, not as a Species of its own.
@@ -137,7 +141,7 @@ A player setting where nothing pops up and nothing plays; every moment waits for
 _Avoid_: quiet mode, do not disturb
 
 **Session summary**:
-The card shown when a fishing session ends, listing everything earned in it, including moments that never popped up.
+The card shown when a Session ends, listing everything earned in it, including moments that never popped up.
 _Avoid_: recap, report, session stats (which belong to Stats)
 
 ### QoL
@@ -148,7 +152,7 @@ _Avoid_: one key, cast key, interact key, action key
 
 **Fishing stretch**:
 The live span of fishing that QoL's temporary client settings last for. It starts with a Cast and ends when the pole comes off, the player mounts or enters combat, or a minute passes without a new Cast.
-_Avoid_: session (which Stats defines after the fact), fishing mode, awake
+_Avoid_: Session (which is cut from the Catch log after the fact), fishing mode, awake
 
 **Nudge**:
 A silent, practical message from QoL about the player's setup, such as running out of lures. It is never an Announcement, since nothing was earned, and it still shows in Cozy mode.
@@ -171,3 +175,13 @@ _Avoid_: collection (which is the Ledger's), achievement, category
 **Retired Hunt**:
 A Hunt that no longer appears on the board because it was replaced or proved wrong. Completions already earned are kept.
 _Avoid_: removed hunt, deleted hunt, expired hunt
+
+### Stats
+
+**Your odds**:
+The per-Cast chance of an item in a place, estimated only from the Angler's own Casts and always shown with how many Casts it rests on. It is never presented as game data.
+_Avoid_: drop rate, loot chance (which are the game's own numbers), catch rate
+
+**Dry spell**:
+The Casts an Angler has made, in the scope where an item can be caught, since they last caught it. It is shown with how unusual that wait is, never as a promise that the item is due.
+_Avoid_: pity, overdue, bad-luck streak
