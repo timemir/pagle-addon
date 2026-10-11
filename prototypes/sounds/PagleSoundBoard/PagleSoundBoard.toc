@@ -1,0 +1,10 @@
+## Interface: 120100, 16001
+## Title: Pagle Sound Board (throwaway)
+## Notes: PROTOTYPE for Pagle issue #23: audition candidate Announcement sounds. Type /psb.
+## Author: Pagle
+## Version: 1
+## AllowLoadGameType: camelot
+## SavedVariables: PagleSoundBoardDB
+
+Sets.lua
+Board.lua
