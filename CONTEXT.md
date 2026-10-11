@@ -111,7 +111,7 @@ The Sub-collection of trophy "pound" fish families, recording the real weights t
 _Avoid_: trophy collection, size records (when meaning real weights)
 
 **Legend**:
-A real, named catch that can't be farmed on an ordinary day, recognised with its own splash, sound and title. It is never an invented item or a combination of conditions.
+A real, named catch that can't be farmed on an ordinary day, recognised with a splash, the Legend sting every Legend shares, and its own title. It is never an invented item or a combination of conditions.
 _Avoid_: rare, legendary, addon legend
 
 **Uncharted**:
@@ -145,7 +145,7 @@ The player's limit on how often Pagle may interrupt within a stretch of fishing.
 _Avoid_: rate limit, throttle, cooldown
 
 **Cozy mode**:
-A player setting where nothing pops up and nothing plays; every moment waits for the Session summary. A Legend's splash is the one exception.
+A player setting where nothing pops up and nothing plays; every moment waits for the Session summary. A Legend's splash is the one exception, and it shows silently.
 _Avoid_: quiet mode, do not disturb
 
 **Session summary**:
