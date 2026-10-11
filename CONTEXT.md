@@ -113,3 +113,29 @@ _Avoid_: 100%, completionist score, total progress
 **Simulated Size**:
 Pagle's own size for a fish Catch, shown as flavour and kept as personal records. It never counts toward progression and is never presented as game data.
 _Avoid_: weight (which is the real number on trophy fish), size roll
+
+**Catch Milestone**:
+A lifetime Catch count the Angler reaches, such as the 1,000th Catch, recognised with a banner. It is recognition only and earns no XP.
+_Avoid_: Skill Milestone (which is about fishing skill), catch achievement
+
+### Feedback
+
+**Announcement**:
+Pagle telling the player, in the moment, about something they just earned. One Cast produces at most one Announcement; every moment it earned rides on it as a stamp. By weight it is a nod, a toast, a banner (level and rank news) or a splash (a Legend).
+_Avoid_: notification, alert, popup
+
+**Nod**:
+The quietest Announcement: one silent line, for minor moments or toasts stepped down by the Interruption budget.
+_Avoid_: mini toast, whisper
+
+**Interruption budget**:
+The player's limit on how often Pagle may interrupt within a stretch of fishing. When it is spent, low-priority toasts step down to Nods; everything else still gets through. The player can switch it off.
+_Avoid_: rate limit, throttle, cooldown
+
+**Cozy mode**:
+A player setting where nothing pops up and nothing plays; every moment waits for the Session summary. A Legend's splash is the one exception.
+_Avoid_: quiet mode, do not disturb
+
+**Session summary**:
+The card shown when a fishing session ends, listing everything earned in it, including moments that never popped up.
+_Avoid_: recap, report, session stats (which belong to Stats)
