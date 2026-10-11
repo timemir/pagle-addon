@@ -1,3 +1,7 @@
+---
+status: superseded by ADR-0004
+---
+
 # Ledger progression is derived from the Catch log, with a high-water mark
 
 Every number the Ledger shows (XP, Angler Level, Fresh Water, Zone and Species Mastery, Ledger completion, titles) is recomputed on load as a pure function of Core's Catch log plus the shipped content data. Nothing the Ledger awards is stored as a running total. The one exception is a small set of what the player has already been shown: titles, level-ups, ranks and Legends. With that set, a rebalance or a content-data fix never takes back something already celebrated, and never fires the same toast twice.

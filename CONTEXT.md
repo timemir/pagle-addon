@@ -44,9 +44,21 @@ _Avoid_: tracker, metrics
 The player's fishing identity, shared across every character on one WoW game account. Two game licences under one Battle.net login are two Anglers.
 _Avoid_: character, profile, player (when meaning the progression owner)
 
+**Cast**:
+One fishing attempt that ended, either with Catches or with the fish getting away. An attempt cut short before a bite is not a Cast.
+_Avoid_: attempt, throw, fishing action (when meaning the stored record)
+
 **Catch**:
-One item brought up by a fishing action, including junk and treasure. It counts once offered, whether or not it reaches the bags.
+One item brought up by a fishing action, including junk and treasure. It counts once offered, whether or not it reaches the bags. Every Catch belongs to one Cast.
 _Avoid_: fish (when junk/treasure is included), loot, drop
+
+**Catch log**:
+The Angler's permanent, append-only history of Casts, Skill Readings and Prestiges, kept by Core. Everything the Modules show is derived from it.
+_Avoid_: history, database, event store
+
+**Skill Reading**:
+One character's fishing skill as Pagle saw it at a moment, recorded whenever it is read or changes.
+_Avoid_: skill snapshot, skill event
 
 **Species**:
 The unit of the fish collection: one kind of fish. A trophy "pound" fish counts toward its family as a size record, not as a Species of its own.
