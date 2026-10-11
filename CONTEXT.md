@@ -152,6 +152,10 @@ _Avoid_: quiet mode, do not disturb
 The card shown when a Session in which something was earned ends, listing everything earned in it, including moments that never popped up. A Session that earned nothing ends quietly.
 _Avoid_: recap, report, session stats (which belong to Stats)
 
+**Write-up**:
+The single card shown when a Module first builds from history it never saw, such as a Module the player enables late, listing what that history earned. Everything in it counts as already celebrated, so none of it pops up on its own.
+_Avoid_: catch-up toast, backfill, welcome screen
+
 ### QoL
 
 **Fishing key**:

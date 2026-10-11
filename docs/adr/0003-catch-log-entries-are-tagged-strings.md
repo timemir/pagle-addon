@@ -14,3 +14,7 @@ Once written, an entry is never rewritten or migrated. A new shape gets a new ta
 
 - The SavedVariables file isn't self-explanatory to a companion app. The format is documented in the spec, and the codec's busted tests serve as reference examples.
 - Migrations exist only for settings and Module state (`PagleDB`, `Pagle<Module>DB`), never for `PagleLog`.
+
+## Note: compatibility starts at 1.0
+
+Pagle publishes nothing before 1.0 ([Cut the MVP slice and roadmap](https://github.com/timemir/wow-fish/issues/18)). Until then the entry format, the `PagleDB` migrations and every Module's state change freely, and dev logs are wiped whenever the format changes. At the 1.0 release the shape becomes `C1`/`S1`/`P1` and the first `schemaVersion`, and from then on the rule above holds.

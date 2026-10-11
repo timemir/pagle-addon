@@ -18,3 +18,7 @@ Natural Hunts complete on the Catch alone, so correcting content-data windows (e
 - Hunt definitions being data, not code, also lets a future backend push new Hunts without an addon update. That backend is out of scope for now.
 - Retired Hunts stay in the shipped data forever, with a `retired` date.
 - A set title is earned at the first moment every Hunt in that set that existed then (shipped, not yet retired) was complete. The replay can work this out from the dates alone, so a Hunt added to the set later never takes the title away.
+
+## Note: "shipped" means released at 1.0 or later
+
+Pagle publishes nothing before 1.0 ([Cut the MVP slice and roadmap](https://github.com/timemir/wow-fish/issues/18)), so Hunt definitions change freely until then and there are no Retired Hunts in the first release. Every v1 Hunt has `since` set to the 1.0 release date.
