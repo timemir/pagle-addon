@@ -140,6 +140,20 @@ _Avoid_: quiet mode, do not disturb
 The card shown when a fishing session ends, listing everything earned in it, including moments that never popped up.
 _Avoid_: recap, report, session stats (which belong to Stats)
 
+### QoL
+
+**Fishing key**:
+The player's own Pagle key binding that does the next sensible fishing action on each press, such as casting, reeling or applying a lure. It belongs to Pagle all the time, never borrowed from another binding.
+_Avoid_: one key, cast key, interact key, action key
+
+**Fishing stretch**:
+The live span of fishing that QoL's temporary client settings last for. It starts with a Cast and ends when the pole comes off, the player mounts or enters combat, or a minute passes without a new Cast.
+_Avoid_: session (which Stats defines after the fact), fishing mode, awake
+
+**Nudge**:
+A silent, practical message from QoL about the player's setup, such as running out of lures. It is never an Announcement, since nothing was earned, and it still shows in Cozy mode.
+_Avoid_: reminder, warning, Nod (which is an Announcement)
+
 ### Hunts
 
 **Natural Hunt**:
