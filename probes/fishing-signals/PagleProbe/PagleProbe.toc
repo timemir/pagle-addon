@@ -1,0 +1,20 @@
+## Interface: 16001, 120100
+## AllowLoadGameType: camelot
+## ExcludeLoadGameType: standard, classic
+## Title: PagleProbe
+## Notes: Throwaway READ-ONLY diagnostic for Pagle issue #7. Records which fishing signals the client exposes. Never casts, loots or acts.
+## Author: Pagle
+## Version: 1
+## Category: Professions
+## Group: PagleProbe
+## SavedVariables: PagleProbeDB, PagleProbeBulkDB
+## SavedVariablesPerCharacter: PagleProbeCharDB
+## AddonCompartmentFunc: PagleProbe_OnCompartmentClick
+## X-Probe-Issue: 7
+
+Core.lua
+GameTypeCamelot.lua [AllowLoadGameType camelot]
+GameTypeStandard.lua [AllowLoadGameType standard]
+Env.lua
+Fishing.lua
+Report.lua

@@ -1,0 +1,3 @@
+-- Loaded only if the inline TOC condition [AllowLoadGameType camelot] passes.
+local _, ns = ...
+ns.flags.camelotFile = true

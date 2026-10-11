@@ -1,0 +1,14 @@
+## Interface: 16001, 120100
+## AllowLoadGameType: camelot
+## ExcludeLoadGameType: standard, classic
+## Title: PagleProbe - Module
+## Notes: Test Module for PagleProbe. Disable it in the AddOns list to test Module packaging.
+## Author: Pagle
+## Version: 1
+## Category: Professions
+## Group: PagleProbe
+## Dependencies: PagleProbe
+## SavedVariables: PagleProbeModuleDB
+## X-Probe-Issue: 7
+
+Module.lua
