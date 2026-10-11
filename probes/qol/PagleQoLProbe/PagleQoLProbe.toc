@@ -1,0 +1,11 @@
+## Interface: 120100, 16001
+## Title: Pagle QoL Probe (throwaway)
+## Notes: Diagnostic for Pagle issue #15: which QoL mechanisms work on WoW: Forever. Type /qprobe.
+## Author: Pagle
+## Version: 1
+## AllowLoadGameType: camelot
+## SavedVariables: PagleQoLProbeDB
+
+Core.lua
+Tests.lua
+UI.lua
