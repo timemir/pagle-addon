@@ -1,6 +1,6 @@
 # Core: Pagle Coins and the Curio Shop
 
-> Status: Draft · Milestones: M2 (wallet: earned totals, balance, Coins stamps, the balance in the compartment menu), M4 (Curio Shop, Appearance page, the first goods) · Sources: [Design the Pagle currency and shop](https://github.com/timemir/wow-fish/issues/28#issuecomment-6125331898), [Prototype the Curio Shop](https://github.com/timemir/wow-fish/issues/30#issuecomment-6125718197), [Prototype the Tackle Board](https://github.com/timemir/wow-fish/issues/29#issuecomment-6126015781), [Prototype the Fish Journal](https://github.com/timemir/wow-fish/issues/12#issuecomment-6112909660), [Decide how the spec is assembled](https://github.com/timemir/wow-fish/issues/31#issuecomment-6128960652); ADR 0001, 0003, 0007, 0009. Prototype: `prototypes/curio-shop/` (variant B)
+> Status: Draft · Milestones: M2 (wallet: earned totals, balance, Coins stamps, the balance in the compartment menu), M4 (Curio Shop, Appearance page, the first goods) · Sources: [Design the Pagle currency and shop](https://github.com/timemir/wow-fish/issues/28#issuecomment-6125331898), [Prototype the Curio Shop](https://github.com/timemir/wow-fish/issues/30#issuecomment-6125718197), [Prototype the Tackle Board](https://github.com/timemir/wow-fish/issues/29#issuecomment-6126015781), [Prototype the Fish Journal](https://github.com/timemir/wow-fish/issues/12#issuecomment-6112909660), [Decide how the spec is assembled](https://github.com/timemir/wow-fish/issues/31#issuecomment-6128960652), [Decide the lore pipeline](https://github.com/timemir/wow-fish/issues/34#issuecomment-6129762441); ADR 0001, 0003, 0007, 0009. Prototype: `prototypes/curio-shop/` (variant B)
 
 Part of [Core](README.md). Core holds the Angler's **Pagle Coins** and runs the **Curio Shop** (ADR 0009).
 
@@ -41,11 +41,11 @@ Part of [Core](README.md). Core holds the Angler's **Pagle Coins** and runs the 
 
   | Slot | Goods |
   |---|---|
-  | Toast style (`core.toaststyle`) | Timber (default), Ripple (tier 1), Lantern Glow (tier 2) |
-  | Sound set (`core.soundset`) | Driftwood (default), Gilded (tier 2) |
-  | Bookplate crest (`core.crest`) | Plain (default), three crests (tiers 1, 2, 3) |
+  | Toast style (`core.toaststyle`) | `core.toaststyle.timber` (default), `core.toaststyle.ripple` (tier 1), `core.toaststyle.lanternglow` (tier 2) |
+  | Sound set (`core.soundset`) | `core.soundset.driftwood` (default), `core.soundset.gilded` (tier 2) |
+  | Bookplate crest (`core.crest`) | `core.crest.plain` (default), `core.crest.crest1` (tier 1), `core.crest.crest2` (tier 2), `core.crest.crest3` (tier 3) |
 
-  `Pending: Decide the lore pipeline` gives the final names of the styles and crests.
+  Every good's name and description is lore, read from `data/lore/core.toml` through `ns.L`; the working names (Timber, Ripple, Lantern Glow, Driftwood, Gilded, Plain) are its first drafts. IDs may still be renamed before 1.0.
   The crest is the Angler's emblem; the Ledger draws it on the Journal bookplate. Its slot is shown whatever Modules are enabled.
 - **SHOP-R26** Core caches every registered good in `PagleDB.global.goods`: name, slot, slot label and category, Module, icon, `default`, tier, description and, for earned goods, the `isEarned()` result as of the last registration or `RefreshGoods` (SHOP-R31). The cache is never pruned for a good that is owned.
 
@@ -154,10 +154,6 @@ The Appearance page holds one option per slot (equipped good; default: the slot'
 | Core goods' tiers | as SHOP-R25 | SHOP-R25 |
 | Pacing target | first purchase in week 1; whole 1.0 catalogue in 6–12 months | SHOP-R22 |
 | Income mix target (committed Angler, first 3 months) | Tackle Board ~55% / Ledger ~35% / Hunts ~10% | payout table |
-
-## Pending
-
-- `Pending: Decide the lore pipeline` gives the final names of Core's toast styles and crests (SHOP-R25).
 
 ## Edge cases
 

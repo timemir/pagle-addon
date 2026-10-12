@@ -88,6 +88,10 @@ _Avoid_: database, loot table, game data (which is Blizzard's)
 The text an Angler copies out of Pagle to share what they have seen in-game that the content data doesn't yet confirm, such as Uncharted Catches or a fish outside its stated window. It carries observations, never the Catch log, and nothing that names the Angler's characters.
 _Avoid_: report (alone), data dump, export (which is the backup string), Session summary
 
+**Lore**:
+Every name and line of flavour Pagle invents: a Species' blurb and riddle, a Sub-collection plaque, titles, Fly Box patterns, and the names of Curio Shop goods. It ships beside the content data but never changes what anything counts for. Mechanical interface text and the game's own names are not lore.
+_Avoid_: flavour text, copy, strings (which covers all interface text)
+
 **Noise**:
 A Catch the content data knows but that counts toward nothing, such as a random world-drop green or potion. It is logged like any Catch and earns only Catch XP.
 _Avoid_: junk (which is a Sub-collection), Uncharted (which the data doesn't know yet)
