@@ -1,12 +1,12 @@
 # Core: Pagle Coins and the Curio Shop
 
-> Status: Draft · Milestones: M2 (wallet: earned totals, balance, Coins stamps, the balance in the compartment menu), M4 (Curio Shop, Appearance page, the first goods) · Sources: [Design the Pagle currency and shop](https://github.com/timemir/wow-fish/issues/28#issuecomment-6125331898), [Prototype the Curio Shop](https://github.com/timemir/wow-fish/issues/30#issuecomment-6125718197), [Prototype the Tackle Board](https://github.com/timemir/wow-fish/issues/29#issuecomment-6126015781), [Prototype the Fish Journal](https://github.com/timemir/wow-fish/issues/12#issuecomment-6112909660), [Decide how the spec is assembled](https://github.com/timemir/wow-fish/issues/31#issuecomment-6128960652), [Decide the lore pipeline](https://github.com/timemir/wow-fish/issues/34#issuecomment-6129762441); ADR 0001, 0003, 0007, 0009. Prototype: `prototypes/curio-shop/` (variant B)
+> Status: Draft · Milestones: M2 (wallet: earned totals, balance, Coins stamps, the balance in the compartment menu), M4 (Curio Shop, Look and Feel page, the first goods) · Sources: [Design the Pagle currency and shop](https://github.com/timemir/wow-fish/issues/28#issuecomment-6125331898), [Prototype the Curio Shop](https://github.com/timemir/wow-fish/issues/30#issuecomment-6125718197), [Prototype the Tackle Board](https://github.com/timemir/wow-fish/issues/29#issuecomment-6126015781), [Prototype the Fish Journal](https://github.com/timemir/wow-fish/issues/12#issuecomment-6112909660), [Decide how the spec is assembled](https://github.com/timemir/wow-fish/issues/31#issuecomment-6128960652), [Decide the lore pipeline](https://github.com/timemir/wow-fish/issues/34#issuecomment-6129762441); ADR 0001, 0003, 0007, 0009. Prototype: `prototypes/curio-shop/` (variant B)
 
 Part of [Core](README.md). Core holds the Angler's **Pagle Coins** and runs the **Curio Shop** (ADR 0009).
 
 ## Purpose and boundary
 
-**Owns:** the wallet (earned totals by source, spent total, balance), the goods registry, ownership and equipped looks, purchase entries, the Curio Shop window, the Appearance settings page, and Core's own goods (toast styles, sound sets, bookplate crests).
+**Owns:** the wallet (earned totals by source, spent total, balance), the goods registry, ownership and equipped looks, purchase entries, the Curio Shop window, the Look and Feel settings page, and Core's own goods (toast styles, sound sets, bookplate crests).
 
 **Doesn't own:** what a Module pays Coins for or how much (each Module's spec), the looks a Module's goods apply to (each Module draws its own views), or Ledger level rewards (the Ledger decides when a binding is earned).
 
@@ -56,11 +56,11 @@ Part of [Core](README.md). Core holds the Angler's **Pagle Coins** and runs the 
 - **SHOP-R32** Each slot has one **equipped** good, stored as a Core setting (`PagleDB.profile.appearance[slot]`). `Pagle.SetEquipped(slot, goodID)` accepts only an owned good of that slot. `Pagle.GetEquipped(slot)` returns the stored good if it is owned and registered, and the slot's default otherwise. That fallback happens on reading only: the stored choice is never cleared, so it comes back when its Module does.
 - **SHOP-R33** `AppearanceChanged(slot, goodID)` fires whenever the result of `GetEquipped(slot)` changes, whatever the reason (a `SetEquipped`, a Module enabled or disabled, an earned good lost or regained). Each Module redraws its own views from `Pagle.GetEquipped`; Core redraws its frames and picks sounds from its own slots.
 - **SHOP-R34** While the wallet projection is updating, `IsOwned` answers from the owned set saved before the update started, so looks don't flicker to defaults.
-- **SHOP-R35** A disabled Module's goods for sale leave the shop. Its purchased and earned goods stay owned and are listed under "Put away: Module off", from the cache. Its defaults are neither listed nor counted. Its slots don't appear on the Appearance page.
+- **SHOP-R35** A disabled Module's goods for sale leave the shop. Its purchased and earned goods stay owned and are listed under "Put away: Module off", from the cache. Its defaults are neither listed nor counted. Its slots don't appear in Settings.
 
 ### Entry points
 
-- **SHOP-R40** The Curio Shop opens from the compartment menu entry "Curio Shop" (CORE-R50), from `/pagle shop` (a toggle), from `Pagle.OpenShop(goodID?)`, and from the Appearance page's "Open the Curio Shop" button. `OpenShop` selects that good; an unknown ID selects nothing; a good of a disabled Module selects it in "Put away" if owned, otherwise nothing. Esc closes it.
+- **SHOP-R40** The Curio Shop opens from the compartment menu entry "Curio Shop" (CORE-R50), from `/pagle shop` (a toggle), from `Pagle.OpenShop(goodID?)`, and from the Look and Feel page's "Open the Curio Shop" button. `OpenShop` selects that good; an unknown ID selects nothing; a good of a disabled Module selects it in "Put away" if owned, otherwise nothing. Esc closes it.
 - **SHOP-R41** While restricted, every entry point prints "Pagle: the Curio Shop opens after combat." instead. At `RestrictionChanged(true)`, an open shop and its Buy popup close; nothing is queued.
 
 ## Data
@@ -140,11 +140,11 @@ One native Collections-style window, "Curio Shop" (variant B of the prototype):
   - earned and not yet earned: its `earnedText`, "a Ledger reward, not for sale"
 - **Buy:** a StaticPopup "Buy {name}?" with the swatch, the price, "Pagle Coins left after: N. Looks are yours for good.", a **"Use it now"** checkbox (on by default) and Buy / Cancel. No Announcement follows.
 
-**Appearance page** (a Settings subcategory under Core's root, built when first opened so late registrations appear): one dropdown per registered slot of an enabled Module (and Core's), listing owned looks; under each, "N more in the Curio Shop", where N counts that slot's for-sale goods not owned; and one "Open the Curio Shop" button. It edits the same equipped setting as the shop's Use button.
+**Look and Feel page** (a Settings topic page under Core's root, CORE-R40, built when first opened so late registrations appear): one dropdown per registered slot of an enabled Module (and Core's), grouped by slot category, listing owned looks; under each, "N more in the Curio Shop", where N counts that slot's for-sale goods not owned; and one "Open the Curio Shop" button. It edits the same equipped setting as the shop's Use button.
 
 ## Settings
 
-The Appearance page holds one option per slot (equipped good; default: the slot's default good). Where toast style and sound set also appear is for `docs/spec/settings.md`.
+The Look and Feel page holds one option per slot (equipped good; default: the slot's default good). Slots in the "Announcements" and "Trackers" categories also appear beside what they change, on those topic pages (CORE-R42).
 
 ## Tunables
 

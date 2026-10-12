@@ -208,7 +208,7 @@ Look reference: `prototypes/catch-feedback/` (variant A). The text above wins wh
 | Toast style | owned styles | Timber |
 | Sound set | owned sets | Driftwood |
 
-Where toast style and sound set appear (Announcements section, Appearance page or both) is for `docs/spec/settings.md`.
+These sit on the Announcements page. Toast style and sound set also appear on Look and Feel; both edit the same equipped setting (CORE-R42, SHOP-R32).
 
 ## Tunables
 

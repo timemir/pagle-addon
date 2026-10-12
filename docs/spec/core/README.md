@@ -27,7 +27,7 @@ Terms are used as `CONTEXT.md` defines them. Numbers live in each file's Tunable
 
 **Core does not own:** any Module view (Journal, Hunts board, Stats window, Tackle Board), any content only one Module reads (the Hunt list, the Ledger's curve and titles, the Tackle Board's templates), or any reward rule.
 
-**Core alone shows:** its Settings root and Appearance page, the Curio Shop, the Field report box, Announcements, the Session summary and the Write-up. With no Module enabled, Core records silently.
+**Core alone shows:** its Settings root and topic pages, the Curio Shop, the Field report box, Announcements, the Session summary and the Write-up. With no Module enabled, Core records silently.
 
 ## Rules
 
@@ -66,7 +66,7 @@ Terms are used as `CONTEXT.md` defines them. Numbers live in each file's Tunable
 
 - **CORE-R30** Core alone tracks restriction state, from `ADDON_RESTRICTION_STATE_CHANGED`, `PLAYER_REGEN_DISABLED` and `PLAYER_REGEN_ENABLED`, and reads the starting state at `ADDON_LOADED` (`InCombatLockdown()` plus the restriction API's current state). `Pagle.IsRestricted()` is true while either is active. `RestrictionChanged(isRestricted)` fires on every change after load, not for the starting state.
 - **CORE-R31** Before publishing anything (events, snapshots, records), Core replaces every secret value (`issecretvalue(v)` true) with `nil`. How each field is then stored is in [catch-log.md](catch-log.md#entry-formats).
-- **CORE-R32** Nothing in the package registers Settings, creates secure frames or changes bindings while `Pagle.IsRestricted()` is true. Core queues such work and runs it, in order, at `RestrictionChanged(false)`. After a `/reload` in combat, Core's Settings root registers then, and each Module's `settings` callback runs right after it.
+- **CORE-R32** Nothing in the package registers Settings, creates secure frames or changes bindings while `Pagle.IsRestricted()` is true. Core queues such work and runs it, in order, at `RestrictionChanged(false)`. After a `/reload` in combat, Core's Settings root and topic pages register then, with every row Modules added.
 - **CORE-R33** While restricted, Core's surfaces behave like this:
 
   | Surface | Opening while restricted | Already open when restriction starts |
@@ -81,15 +81,27 @@ Terms are used as `CONTEXT.md` defines them. Numbers live in each file's Tunable
 
 ### Settings root
 
-- **CORE-R40** Core registers one Settings category, "Pagle", with Blizzard's Settings API. It holds Core's own options (listed in each topic file's Settings section), the Module status list, a "Recording your Catches. Enable a Module to see them." line when no Module is enabled, and a "Help chart the waters" button that opens the Field report. Core also registers an **Appearance** subcategory ([wallet-and-shop.md](wallet-and-shop.md)). The layout and order belong to `docs/spec/settings.md`.
+- **CORE-R40** Core registers one Settings category, "Pagle", with Blizzard's native Settings API; AceConfig and AceGUI are not used. The root is a hub. It holds:
+  - a "Recording your Catches. Enable a Module to see them." line when no Module is enabled
+  - the Module status list (CORE-R41), with each On Module's action button (CORE-R44)
+  - a "Help chart the waters" button that opens the Field report
+  - Core's saving option ([catch-log.md](catch-log.md#settings))
+
+  Under the root, Core registers four **topic pages**, in this order: **Fishing**, **Announcements**, **Trackers** and **Look and Feel**. Pages are grouped by what the player is doing, not by owner. The list is fixed: Modules add rows to it (CORE-R42) and never register pages of their own. The layout and order of rows belong to `docs/spec/settings.md`.
 - **CORE-R41** The status list shows the roster in CORE-R1 order, each with its TOC version and one state:
   - **On**: enabled and registered
   - **Needs a newer Pagle**: inert (CORE-R13)
   - **Failed to start**: enabled, loaded, but never registered (it errored)
   - **Off**: disabled in the AddOns list (this session's state, read with CORE-R16)
   - **Not installed**: `C_AddOns.GetAddOnInfo` reports it missing
-- **CORE-R42** A Module's `settings(rootCategory)` callback runs once, after Core's root exists; the Module registers its own subcategory under it.
-- **CORE-R43** `Pagle.OpenSettings(moduleName?)` opens the root, or the subcategory of the Module whose `def.name` is `moduleName`, with `Settings.OpenToCategory(category:GetID())`. An unknown or unregistered name opens the root.
+- **CORE-R42** A Module adds options with `M:AddSetting(topic, setting)`, where `topic` is `"fishing"`, `"announcements"` or `"trackers"`. It does this before `ModulesChanged` (CORE-R19); Core builds the pages then. A later call is reported through `geterrorhandler()` and dropped.
+  - On each page, Core's own rows come first. Each Module's rows follow, in `def.order`, under a header with its `def.title`. The header is left out when the Module's first row is a header of its own.
+  - A page with no rows isn't registered: Fishing while QoL is off, or Trackers with no tracker Module on.
+  - A setting's value lives in the Module's own DB, reached through the setting's `get` and `set`.
+  - Look and Feel takes no rows. Core builds it from the goods registry ([wallet-and-shop.md](wallet-and-shop.md#ui)).
+  - A slot's dropdown also appears beside the thing it changes. A slot in the "Announcements" category ends Core's rows on Announcements; a slot in the "Trackers" category ends its Module's rows on Trackers.
+- **CORE-R43** `Pagle.OpenSettings(topic?)` opens the root, or the topic page named `topic`: `"fishing"`, `"announcements"`, `"trackers"` or `"look"`. It uses `Settings.OpenToCategory(category:GetID())`. An unknown topic, or one whose page isn't registered, opens the root.
+- **CORE-R44** Each On Module's row in the status list has one button: `def.settingsAction` if set, otherwise "Open {label}" for its first view. For example, the Tackle Board shows "Start my board" until the board is started, and QoL, which has no view, opens Fishing.
 
 ### Compartment menu
 
@@ -112,7 +124,7 @@ Terms are used as `CONTEXT.md` defines them. Numbers live in each file's Tunable
 ### Tracker dock
 
 - **CORE-R70** Core owns one HUD anchor, the **tracker dock**, by default under the minimap cluster at its right edge. Module trackers stack in it. A Module docks its tracker with `M:RegisterTracker{ id, order, frame }`; the dock stacks visible frames top to bottom by the tracker's `order` (Hunts 10, Stats 20, Tackle Board 30; ties by Module name), with fixed spacing, and reflows when one hides, resizes or its Module is disabled.
-- **CORE-R71** The player moves the dock by Shift-dragging any docked tracker; the whole stack moves. The position is saved and can be reset from Core's Settings. It never moves while restricted. If it overlaps Blizzard's own tracker, the player moves it.
+- **CORE-R71** The player moves the dock by Shift-dragging any docked tracker; the whole stack moves. The position is saved and can be reset from the Trackers page (CORE-R40). It never moves while restricted. If it overlaps Blizzard's own tracker, the player moves it.
 - **CORE-R72** A Module decides when its own tracker is shown (each Module's setting); the dock only stacks. With no tracker visible, the dock shows nothing.
 - **CORE-R73** Each tracker is a native objective-tracker-style block. Its frame is drawn by its Module, which reads its equipped tracker-frame look from Core (`Pagle.GetEquipped`).
 
@@ -138,7 +150,7 @@ Grouped by topic; the rules live in the linked file.
 | `Pagle.RegisterCallback(owner, event, fn)`, `UnregisterCallback`, `UnregisterAllCallbacks` | | here |
 | `Pagle.RegisterEvent(owner, event, fn)`, `RegisterUnitEvent(owner, event, unit, fn)`, `UnregisterEvent(owner, event)` | | here |
 | `Pagle.IsRestricted()` | boolean | here |
-| `Pagle.OpenSettings(moduleName?)` | | here |
+| `Pagle.OpenSettings(topic?)` | | here |
 | `Pagle.IterateCatches(afterSeq)` | iterator over Core records | [catch-log.md](catch-log.md#contracts) |
 | `Pagle.GetFishingState()` | `"idle"`, `"channeling"`, `"looting"` | catch-log.md |
 | `Pagle.GetAngler()` | `Angler` | catch-log.md |
@@ -164,6 +176,7 @@ Grouped by topic; the rules live in the linked file.
 | `M:RaiseMoment(moment)`, `M:SetSummaryLine(key, text)`, `M:RaiseWriteUp(section)` | [announcements.md](announcements.md#contracts) |
 | `M:ReportCoinsEarned(total)`, `M:RegisterSlot(slot)`, `M:RegisterGood(good)`, `M:RefreshGoods()` | wallet-and-shop.md |
 | `M:RegisterTracker{ id, order, frame }` | here |
+| `M:AddSetting(topic, setting)` | here |
 
 ADR 0008 names the record call `Pagle.AppendRecord`; it lives on the handle so Core knows which Module wrote the record.
 
@@ -174,11 +187,35 @@ ADR 0008 names the record call `Pagle.AppendRecord`; it lives on the handle so C
 ---@field name string            -- roster name without "Pagle_": "Ledger", "Hunts", "Stats", "TackleBoard", "QoL"
 ---@field title string           -- display name: "Ledger", "Hunts", "Stats", "Tackle Board", "QoL"
 ---@field order integer          -- menu order: Ledger 10, Hunts 20, Stats 30, TackleBoard 40, QoL 50
----@field settings? fun(root: table)            -- adds the Module's Settings subcategory
+---@field settingsAction? { label: string|fun():string, onClick: fun() }   -- its button in the Settings status list (CORE-R44)
 ---@field views? { id: string, label: string|fun():string, open: fun() }[]   -- compartment menu views
 ---@field menu? { label: string|fun():string, onClick: fun() }[]             -- extra compartment entries
 ---@field slash? { name: string, fn: fun(args: string), help: string }[]     -- /pagle <name>
 ```
+
+### `M:AddSetting(topic, setting)`
+
+```lua
+---@class PagleSetting
+---@field kind "header"|"checkbox"|"slider"|"dropdown"|"button"|"keybinding"|"custom"
+---@field id? string               -- needed if another row names it as parent
+---@field label string
+---@field tooltip? string
+---@field get? fun(): any          -- value kinds: checkbox, slider, dropdown
+---@field set? fun(value: any)
+---@field default? any             -- what the page's Defaults button restores
+---@field min? number              -- slider
+---@field max? number
+---@field step? number
+---@field options? fun(): { value: any, label: string }[]   -- dropdown
+---@field onClick? fun()           -- button
+---@field binding? string          -- keybinding: the Bindings.xml name, also listed in Key Bindings › AddOns
+---@field parent? string           -- id of the row it hangs under (indented)
+---@field isEnabled? fun(): boolean  -- greyed out when false
+---@field init? fun(): table       -- custom: returns a Settings initializer (e.g. Stats' watched Dry spells)
+```
+
+Rows map onto the native Settings initializers; `AddSetting` raises a Lua error for an unknown `topic` or `kind`.
 
 ### Events Core fires (owned here)
 
@@ -191,7 +228,7 @@ Fishing, Session and wallet events are listed in their topic files.
 
 ## UI
 
-- **Settings root and Appearance:** native Settings panels; layout in `docs/spec/settings.md`.
+- **Settings root and topic pages:** native Settings panels; layout in `docs/spec/settings.md`. Look reference: `prototypes/settings-tree/` (variant B).
 - **Compartment menu:** the native Addon Compartment dropdown (CORE-R50).
 - **Tracker dock:** an invisible anchor; each docked tracker draws itself.
 
