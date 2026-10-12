@@ -20,3 +20,7 @@ ADR 0001 still holds. Modules raise moments to Core and never hear each other's;
 ## Note: styles and sound sets are sold
 
 [ADR 0009](0009-core-holds-the-pagle-coins-wallet.md) ([Design the Pagle currency and shop](https://github.com/timemir/wow-fish/issues/28)) reverses "free choices": the default toast style and the Driftwood sound set stay free, and the rest are sold for Pagle Coins in Core's Curio Shop. They are still never Ledger unlocks.
+
+## Note: where moments are raised
+
+In the Core spec ([Write the Core spec](https://github.com/timemir/wow-fish/issues/35)) a Module raises a Cast's moments mainly while its projection applies that Cast as a `"live"` entry; `Catch`/`CastEnded` handlers in the same frame work too. Core merges by the Cast's entry ID and, while any projection is still catching up, holds Cast moments until all are done, so one Cast still makes one Announcement.

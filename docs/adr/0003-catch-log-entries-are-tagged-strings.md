@@ -26,3 +26,7 @@ Pagle publishes nothing before 1.0 ([Cut the MVP slice and roadmap](https://gith
 ## Note: purchase entries
 
 [ADR 0009](0009-core-holds-the-pagle-coins-wallet.md) ([Design the Pagle currency and shop](https://github.com/timemir/wow-fish/issues/28)) adds a purchase entry kind, `U1|good|price|serverTime`, written when the Angler buys something in the Curio Shop. It is a player choice like a Prestige, and stores the price paid so a later price change never moves the balance. The 1.0 shape becomes `C1`/`S1`/`P1`/`B1`/`U1`.
+
+## Note: canonical layout
+
+The exact field layout of every entry kind lives in `docs/spec/core/catch-log.md` ([Write the Core spec](https://github.com/timemir/wow-fish/issues/35)). Every kind, `B1` and `U1` included, starts with the same header (character index, server time, tie-break), so every entry has an entry ID; the sketches in the notes above leave it out.

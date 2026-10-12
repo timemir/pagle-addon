@@ -17,3 +17,7 @@ ADR 0002 recomputed everything on each load, which would cost every player a gro
 - A displayed number can still shift after a balance patch or data fix, at the moment of the rebuild. Patch notes say so.
 - Anything random must still be reproducible from the log: a Simulated Size is computed from the Catch ID. Fresh Water is still computed from Cast timestamps.
 - While a rebuild runs, the Module shows that it's updating and queues new Casts behind it.
+
+## Note: a re-enabled Module catches up
+
+"A Module disabled and re-enabled rebuilds from scratch" means it *can* be rebuilt from the log, not that it is. Decided while writing the Core spec ([Write the Core spec](https://github.com/timemir/wow-fish/issues/35)): a re-enabled Module catches up from its stored `seq`, raises no pop-ups for that history, and shows one Write-up section for anything it earned meanwhile. It still rebuilds when its projection is missing or a version changes.
