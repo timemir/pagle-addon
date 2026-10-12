@@ -53,7 +53,7 @@ One item brought up by a fishing action, including junk and treasure. It counts 
 _Avoid_: fish (when junk/treasure is included), loot, drop
 
 **Catch log**:
-The Angler's permanent, append-only history of Casts, Skill Readings and Prestiges, kept by Core. Everything the Modules show is derived from it.
+The Angler's permanent, append-only history of Casts, Skill Readings and Prestiges, and of the game client builds they were recorded on, kept by Core. Everything the Modules show is derived from it.
 _Avoid_: history, database, event store
 
 **Skill Reading**:
@@ -79,6 +79,10 @@ _Avoid_: skill level-up, rank-up
 **Content data**:
 Pagle's shipped knowledge of the fishing world: which items are Species, trophies, junk or treasure, what bites where and when, and which facts are confirmed in-game. Everything the Modules show is derived from the Catch log read through it. It changes only with an addon release.
 _Avoid_: database, loot table, game data (which is Blizzard's)
+
+**Field report**:
+The text an Angler copies out of Pagle to share what they have seen in-game that the content data doesn't yet confirm, such as Uncharted Catches or a fish outside its stated window. It carries observations, never the Catch log, and nothing that names the Angler's characters.
+_Avoid_: report (alone), data dump, export (which is the backup string), Session summary
 
 **Noise**:
 A Catch the content data knows but that counts toward nothing, such as a random world-drop green or potion. It is logged like any Catch and earns only Catch XP.

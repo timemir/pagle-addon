@@ -17,4 +17,8 @@ Once written, an entry is never rewritten or migrated. A new shape gets a new ta
 
 ## Note: compatibility starts at 1.0
 
-Pagle publishes nothing before 1.0 ([Cut the MVP slice and roadmap](https://github.com/timemir/wow-fish/issues/18)). Until then the entry format, the `PagleDB` migrations and every Module's state change freely, and dev logs are wiped whenever the format changes. At the 1.0 release the shape becomes `C1`/`S1`/`P1` and the first `schemaVersion`, and from then on the rule above holds.
+Pagle publishes nothing before 1.0 ([Cut the MVP slice and roadmap](https://github.com/timemir/wow-fish/issues/18)). Until then the entry format, the `PagleDB` migrations and every Module's state change freely, and dev logs are wiped whenever the format changes. At the 1.0 release the shape becomes `C1`/`S1`/`P1`/`B1` and the first `schemaVersion`, and from then on the rule above holds.
+
+## Note: build entries
+
+[Design the /pagle report format and issue form](https://github.com/timemir/wow-fish/issues/26) adds a build entry kind, `B1|build|serverTime`, written on login whenever `GetBuildInfo()` differs from the last one logged. It lets every Cast be tied to the client build it was seen on, which Field reports and the content data's `confirmed` rule need. It is an observation like the others, so the rules above apply to it.
