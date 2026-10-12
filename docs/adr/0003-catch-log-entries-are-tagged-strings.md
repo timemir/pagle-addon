@@ -22,3 +22,7 @@ Pagle publishes nothing before 1.0 ([Cut the MVP slice and roadmap](https://gith
 ## Note: build entries
 
 [Design the /pagle report format and issue form](https://github.com/timemir/wow-fish/issues/26) adds a build entry kind, `B1|build|serverTime`, written on login whenever `GetBuildInfo()` differs from the last one logged. It lets every Cast be tied to the client build it was seen on, which Field reports and the content data's `confirmed` rule need. It is an observation like the others, so the rules above apply to it.
+
+## Note: purchase entries
+
+[ADR 0009](0009-core-holds-the-pagle-coins-wallet.md) ([Design the Pagle currency and shop](https://github.com/timemir/wow-fish/issues/28)) adds a purchase entry kind, `U1|good|price|serverTime`, written when the Angler buys something in the Curio Shop. It is a player choice like a Prestige, and stores the price paid so a later price change never moves the balance. The 1.0 shape becomes `C1`/`S1`/`P1`/`B1`/`U1`.

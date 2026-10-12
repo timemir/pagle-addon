@@ -16,3 +16,7 @@ ADR 0001 still holds. Modules raise moments to Core and never hear each other's;
 - Modules must raise a Cast's moments synchronously inside their `Catch`/`CastEnded` handlers; Core flushes on the next frame.
 - The Session summary's moments and Module summary lines are persisted by Core as ready-to-show data, outside the Catch log, so they survive logout and a Module disabled since.
 - Toast style and sound set are Core settings and free choices. They can't be Ledger unlocks, because a Ledger reward would then change how another Module's Announcements look.
+
+## Note: styles and sound sets are sold
+
+[ADR 0009](0009-core-holds-the-pagle-coins-wallet.md) ([Design the Pagle currency and shop](https://github.com/timemir/wow-fish/issues/28)) reverses "free choices": the default toast style and the Driftwood sound set stay free, and the rest are sold for Pagle Coins in Core's Curio Shop. They are still never Ledger unlocks.

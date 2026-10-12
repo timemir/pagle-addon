@@ -7,7 +7,7 @@
 ### Product structure
 
 **Core**:
-The always-loaded base addon that every Module depends on. It observes and records Catches, and presents the Announcements Modules raise through it; beyond that and settings it shows the player nothing of its own, and every other view belongs to a Module.
+The always-loaded base addon that every Module depends on. It observes and records Catches, presents the Announcements Modules raise through it, and holds the Angler's Pagle Coins and the Curio Shop; beyond those and settings it shows the player nothing of its own, and every other view belongs to a Module.
 _Avoid_: framework, base module, engine
 
 **Module**:
@@ -163,6 +163,16 @@ _Avoid_: recap, report, session stats (which belong to Stats)
 **Write-up**:
 The single card shown when a Module first builds from history it never saw, such as a Module the player enables late, listing what that history earned. Everything in it counts as already celebrated, so none of it pops up on its own.
 _Avoid_: catch-up toast, backfill, welcome screen
+
+### Pagle Coins
+
+**Pagle Coins**:
+Pagle's one currency, held by Core for the Angler. Modules pay it in for things achieved (a Notice, a new Species, a Hunt completed), never for raw volume, and it buys only looks in the Curio Shop. Income only ever adds, and nothing bought is ever taken back.
+_Avoid_: currency (alone), points, gold, Tender (Retail's Trading Post currency)
+
+**Curio Shop**:
+Core's shop where the Angler spends Pagle Coins on looks for Pagle's own views, such as toast styles, sound sets, Journal bindings and tracker frames. It never sells meanings (titles, flies, stars, Legends) and its stock never rotates.
+_Avoid_: store, Trading Post, Bait Shop, shop (alone)
 
 ### QoL
 

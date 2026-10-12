@@ -12,3 +12,7 @@ A Pagle Module never depends on another Module: no calls between Modules, no rea
 - Concepts that more than one Module needs move into Core, even when only one Module shows them. The condition vocabulary, matching and next-window forecasting live in Core; only the list of Hunts and the board live in Hunts.
 - A cross-Module reward (for example "a Hunt completion grants Ledger XP") cannot exist. Each Module rewards only from Core's data.
 - Only Core observes the game's fishing, conditions and restriction state. Modules may use WoW APIs for their own presentation and actions.
+
+## Note: Pagle Coins
+
+[ADR 0009](0009-core-holds-the-pagle-coins-wallet.md) ([Design the Pagle currency and shop](https://github.com/timemir/wow-fish/issues/28)) allows one cross-Module effect: a Module may pay Pagle Coins into Core's wallet, so disabling it slows what the player can buy in the Curio Shop. Income only ever adds, and the shop shows it by source, so nothing already earned is lost.
