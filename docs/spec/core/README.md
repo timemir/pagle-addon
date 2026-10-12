@@ -66,7 +66,7 @@ Terms are used as `CONTEXT.md` defines them. Numbers live in each file's Tunable
 
 - **CORE-R30** Core alone tracks restriction state, from `ADDON_RESTRICTION_STATE_CHANGED`, `PLAYER_REGEN_DISABLED` and `PLAYER_REGEN_ENABLED`, and reads the starting state at `ADDON_LOADED` (`InCombatLockdown()` plus the restriction API's current state). `Pagle.IsRestricted()` is true while either is active. `RestrictionChanged(isRestricted)` fires on every change after load, not for the starting state.
 - **CORE-R31** Before publishing anything (events, snapshots, records), Core replaces every secret value (`issecretvalue(v)` true) with `nil`. How each field is then stored is in [catch-log.md](catch-log.md#entry-formats).
-- **CORE-R32** Nothing in the package registers Settings, creates secure frames or changes bindings while `Pagle.IsRestricted()` is true. Core queues such work and runs it, in order, at `RestrictionChanged(false)`. After a `/reload` in combat, Core's Settings root and topic pages register then, with every row Modules added.
+- **CORE-R32** Nothing in the package registers Settings, creates secure frames or changes bindings while `Pagle.IsRestricted()` is true. Core queues such work and runs it, in order, at `RestrictionChanged(false)`. The one exception is clearing override bindings (disarming), which is allowed while `InCombatLockdown()` is still false, so QoL can make its key inert as combat starts (QOL-R31); setting a binding (arming) never is. After a `/reload` in combat, Core's Settings root and topic pages register then, with every row Modules added.
 - **CORE-R33** While restricted, Core's surfaces behave like this:
 
   | Surface | Opening while restricted | Already open when restriction starts |
