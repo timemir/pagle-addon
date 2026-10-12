@@ -161,6 +161,7 @@ Grouped by topic; the rules live in the linked file.
 | `Pagle.SESSION_RULES_VERSION` | integer | catch-log.md |
 | `Pagle.CONTENT_FINGERPRINT` | string | catch-log.md |
 | `Pagle.GetItem(itemID)`, `GetArea(areaID)`, `GetZoneOf(areaID)`, `GetZoneCatches(zoneAreaID)`, `GetWindowSpec(windowID)` | catalogue records | catch-log.md |
+| `Pagle.SIZE_BANDS`, `Pagle.SIZE_RULES_VERSION`, `Pagle.FormatLength(mm)` | band list, integer, string | catch-log.md |
 | `Pagle.GetBalance()` | `Balance` | [wallet-and-shop.md](wallet-and-shop.md#contracts) |
 | `Pagle.IsOwned(goodID)`, `GetEquipped(slotID)`, `SetEquipped(slotID, goodID)`, `OpenShop(goodID?)` | | wallet-and-shop.md |
 | `Pagle.OpenFieldReport()`, `GetFieldReportCount()` | | [field-report.md](field-report.md#contracts) |
