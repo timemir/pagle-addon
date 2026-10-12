@@ -8,5 +8,6 @@ Throwaway UI prototypes made while charting the spec. Each one is a single `inde
 - `stats-window/`: [Prototype the Stats window and live tracker](https://github.com/timemir/wow-fish/issues/27#issuecomment-6125434287)
 - `curio-shop/`: [Prototype the Curio Shop](https://github.com/timemir/wow-fish/issues/30#issuecomment-6125718197)
 - `tackle-board/`: [Prototype the Tackle Board](https://github.com/timemir/wow-fish/issues/29#issuecomment-6126015781)
+- `settings-tree/`: [Prototype the Settings tree](https://github.com/timemir/wow-fish/issues/32#issuecomment-6129969765)
 
 The sound prototype stays on the `prototype/sounds` branch. Its render script and `.ogg` files move into the addon source in M2.
