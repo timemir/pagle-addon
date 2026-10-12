@@ -127,15 +127,75 @@ Input isn't built yet, so the Fishing key is always armed (as under *Both*), and
 
 Content data pipeline v1, projection machinery and Sessions, Core Announcements (policy, toasts, banner, splash, sounds, Session summary, Write-up), the wallet, and Ledger slice 1 (Angler Level, XP, Fresh Water, Skill Milestones).
 
+**Ledger rules** (LED-R4 lists what each Ledger milestone stages):
+- LED-R1 without the view and `/pagle journal` (M3)
+- LED-R2, LED-R3, LED-R4 (its M2 stage)
+- LED-R5 without the Legend class (M4: a Legend item counts as its category until then) and the Uncharted list (M3); LED-R6, LED-R7
+- LED-R20 for Catch XP, new Species, Species in a zone, first Catch in a zone and Skill Milestones; LED-R21, LED-R22
+- LED-R23 for the number (its bar comes with the Journal in M3)
+- LED-R30 and LED-R31 for the first climb (the Prestige factor and carried XP come in M4), LED-R35 for the current level, LED-R36
+- LED-R40; LED-R42 for lifetime Catches as a count (the Catch Milestones come in M4)
+- LED-R88 for level-ups and new Species, LED-R89
+- LED-R90–R94, LED-R96, LED-R98; LED-R95 without the completion part (M3)
+- LED-R97 for `levelUp`, `newSpecies` (without size text, M4), `newInZone` and `skillMilestone`
+- LED-R190–R195, LED-R197, LED-R198; LED-R196 for Uncharted and item `0` Catches earning the base only
+
+**Ledger exit check:**
+1. With a log from M1 dogfooding, enable Pagle_Ledger and log in: one Write-up card shows "Your Ledger was written up from {N} Casts" with an Angler Level, a Species count and a Pagle Coins line, and nothing pops up. The compartment menu's Curio Shop entry shows that balance.
+2. Fish a new Species: one toast "New Species" with the "+10" Coins stamp. Fish a known Species in a zone new for it: a Nod "New here". An ordinary Catch raises nothing.
+3. Reach a new Angler Level: a banner, "+20" Coins. Log in an alt whose fishing skill is past an uncredited Skill Milestone: a "Skill Milestone" toast.
+4. Disable Pagle_Ledger, fish a new Species, re-enable: a "While the Ledger was off" Write-up section lists it; no toast. `/reload`: nothing shows again.
+5. The Session summary card carries "Ledger: Angler Level {L}".
+
 **Sounds:** M2 moves the sounds prototype's shipping assets from the `prototype/sounds` branch into the addon source: `prototypes/sounds/render.py` goes into the build tooling and renders both sets, and its output is committed under `addons/Pagle/media/sounds/` as ANN-R74 lays out. The branch's rejected CC0 pack doesn't move. After this, the branch has nothing left to keep ([Move the prototypes to main](https://github.com/timemir/wow-fish/issues/36#issuecomment-6129511014)).
 
 ## M3 Fish Journal
 
 Ledger slice 2: the Journal book (Species, Zone Mastery, Sub-collections, Trophy Room, Ledger completion) on in-client textures; `/pagle report` and Field report intake; `VOICE.md`, the Ledger's first lore batch, and its lore check on.
 
+**Ledger rules** (each Journal rule without the M4 elements LED-R4 lists):
+- LED-R1's view and `/pagle journal`; LED-R4 (its M3 stage)
+- LED-R5's Uncharted class; LED-R10–R12
+- LED-R20 for curio items, trophy weights and Zone Mastery ranks; LED-R23's bar
+- LED-R41, LED-R45–R48, LED-R50–R54, LED-R60–R62, LED-R64, LED-R70–R72
+- LED-R88 for curio items, trophy weights and Zone Mastery ranks
+- LED-R95's completion part
+- LED-R97 for `zoneMaster`, `trophyWeight`, `zoneRank`, `newCurio`, `elementStar`, `regularStar`, `familyStar` and `uncharted`
+- LED-R120–R128, LED-R130–R136, LED-R137 without its zonemaster line, LED-R138, LED-R140 without its size line, LED-R141–R145
+- LED-R146 for the bookplate without title, Prestige and the Catch Milestone part, and for "Hands on the Rod" and "Milestones"
+- LED-R148 for zones and Species, LED-R149 without the title
+- LED-R160 for the `species`, `legend`, `sub`, `family` and `line` keys (the M3 lore batch), LED-R161, LED-R162 (its M3 part)
+- LED-R196 in full
+
+**Ledger exit check:**
+1. `/pagle journal` opens the book on Home: tiles for every charted zone of the chosen continent, fished ones with a rank and %, unfished ones faded with their skill, and a fished zone without data reading "uncharted waters".
+2. A fished zone's spread shows its groups and ladder; an uncaught Species reads "— unknown —", and its entry shows a silhouette, a riddle and a plain hint that names no fish. Searching for that Species' name finds nothing; searching for a caught one opens its fish spread.
+3. Reach a new Zone Mastery rank: a "Zone rank" toast with "+{2 × rank}" Coins; the zone's tile and seal update while the book is open.
+4. Catch a new junk item: a "New curio" toast and its plinth in Curios. An Uncharted Catch (fished in one of the new Forever zones, or from a test log) adds a loose page and a Nod; "Help chart the waters" opens the Field report box.
+5. `data/checks.toml` lists `ledger` in `lore`, and `scripts/check.sh` passes.
+
 ## M4 Ledger complete
 
 Legends, titles, Simulated Size with the typical-length check on, Catch Milestones, then Prestige; the Curio Shop and Look and Feel; Core's goods and the Ledger's titles in lore, with Core's lore check on.
+
+**Ledger rules:**
+- LED-R4 (its M4 stage, which brings back every Journal element M3 left out)
+- LED-R5's Legend class; LED-R20 for Legends
+- LED-R30 and LED-R31 for Prestige climbs and carried XP; LED-R32–R34; LED-R35 with Prestige
+- LED-R42 for the Catch Milestones; LED-R63
+- LED-R75–R77, LED-R80–R85
+- LED-R88 for Prestige and Legends
+- LED-R97 for `legend`, `prestigeReady`, `prestige`, `catchMilestone`, `completeTitle` and `sizeRecord`, and the size text in `newSpecies`
+- LED-R110–R112
+- LED-R137's zonemaster line, LED-R140's size line, LED-R146 in full, LED-R147, LED-R148 for Legends, LED-R149's title
+- LED-R160 for the `title` and `binding` keys (the M4 lore batch), LED-R162 (its M4 part)
+
+**Ledger exit check:**
+1. A new Species toast shows "{band} · {length}" in the Angler's unit, with no Record stamp. A later, strictly longer Catch of it shows a "Size record" toast with the ruler; its entry in the Journal shows the new record.
+2. Reach Angler Level 10: the level-up banner names the title, and the Angler page offers it under "Signed As" and the Tanned Hide binding as "Use"; using it reskins the book, and Look and Feel shows the same pick.
+3. With a test log at level 60: "Prestige ready" shows; the Journal's Prestige button asks once, then a "Prestige I" banner with "+100" Coins; the climb restarts at level 1 with carried XP, and every level title and binding stays.
+4. A Legend Catch (or a test log with one) shows Core's splash with "+100" Coins; the Legends spread names it with "Open the plate", and the uncaught ones show only the shared line.
+5. A log passing 1,000 Catches shows the "1,000 Catches" banner.
 
 ## M5 Hunts
 

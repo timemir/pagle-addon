@@ -18,6 +18,10 @@ _Avoid_: plugin, sub-addon, feature
 The Module for the player's angler identity: the fish journal, levels, mastery and personal records.
 _Avoid_: Angler's Ledger, journal module, progression module
 
+**Fish Journal**:
+The Ledger's book, where the Angler reads their progress: the waters they have fished, each Species' page, the collections, Legends and their titles. Fish not yet caught stay nameless in it.
+_Avoid_: Ledger (which is the Module), codex, encyclopedia
+
 **Hunt**:
 A target catch (one Species, or a class of Catch such as "rare or better") that is only possible, or only counts, under detectable conditions that open and close: a time of day, a season, a calendar event, or an aura the player starts. A fish tied only to a zone is not a Hunt; the Ledger covers it. A Hunt completes once, and may have further tiers after that.
 _Avoid_: quest, challenge, bounty
