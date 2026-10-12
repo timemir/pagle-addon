@@ -85,7 +85,7 @@ Terms are used as `CONTEXT.md` defines them. Numbers live in each file's Tunable
   - a "Recording your Catches. Enable a Module to see them." line when no Module is enabled
   - the Module status list (CORE-R41), with each On Module's action button (CORE-R44)
   - a "Help chart the waters" button that opens the Field report
-  - Core's saving option ([catch-log.md](catch-log.md#settings))
+  - Core's options: the Saving section (the `/reload` reminder, LOG-R86) and the Units section (the length unit, LOG-R69); both are in [catch-log.md](catch-log.md#settings), and their rows in `docs/spec/settings.md` (SET-R10)
 
   Under the root, Core registers four **topic pages**, in this order: **Fishing**, **Announcements**, **Trackers** and **Look and Feel**. Pages are grouped by what the player is doing, not by owner. The list is fixed: Modules add rows to it (CORE-R42) and never register pages of their own. The layout and order of rows belong to `docs/spec/settings.md`.
 - **CORE-R41** The status list shows the roster in CORE-R1 order, each with its TOC version and one state:
@@ -237,7 +237,7 @@ Fishing, Session and wallet events are listed in their topic files.
 
 | Option | Values | Default |
 |---|---|---|
-| Reset tracker dock position | button | |
+| Tracker position (Trackers page, SET-R40) | button "Reset": puts the dock back at its default place (CORE-R71) | |
 
 The other Core options are in each topic file's Settings section.
 

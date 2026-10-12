@@ -1,6 +1,6 @@
 # Core: Announcements, the Session summary and the Write-up
 
-> Status: Done · Milestones: M2 · Sources: [Prototype Catch feedback: toasts, sounds and cozy mode](https://github.com/timemir/wow-fish/issues/13#issuecomment-6113132854), [Decide who owns Announcements: a Core service or each Module](https://github.com/timemir/wow-fish/issues/22#issuecomment-6113769547), [Prototype Pagle's sounds](https://github.com/timemir/wow-fish/issues/23#issuecomment-6113915981), [Design Stats: session stats, honest odds and dry spells](https://github.com/timemir/wow-fish/issues/21#issuecomment-6113657288), [Cut the MVP slice and roadmap](https://github.com/timemir/wow-fish/issues/18#issuecomment-6113973068), [Design the Pagle currency and shop](https://github.com/timemir/wow-fish/issues/28#issuecomment-6125331898), [Decide how the spec is assembled](https://github.com/timemir/wow-fish/issues/31#issuecomment-6128960652), [Design the Simulated Size bands](https://github.com/timemir/wow-fish/issues/33#issuecomment-6129722545); ADR 0001, 0004, 0007, 0009, 0010. Prototypes: `prototypes/catch-feedback/`, `prototype/sounds` branch (`prototypes/sounds/`)
+> Status: Done · Milestones: M2, M4 (the Gilded sound set and the other toast styles as Curio Shop goods, size rulers) · Sources: [Prototype Catch feedback: toasts, sounds and cozy mode](https://github.com/timemir/wow-fish/issues/13#issuecomment-6113132854), [Decide who owns Announcements: a Core service or each Module](https://github.com/timemir/wow-fish/issues/22#issuecomment-6113769547), [Prototype Pagle's sounds](https://github.com/timemir/wow-fish/issues/23#issuecomment-6113915981), [Design Stats: session stats, honest odds and dry spells](https://github.com/timemir/wow-fish/issues/21#issuecomment-6113657288), [Cut the MVP slice and roadmap](https://github.com/timemir/wow-fish/issues/18#issuecomment-6113973068), [Design the Pagle currency and shop](https://github.com/timemir/wow-fish/issues/28#issuecomment-6125331898), [Decide how the spec is assembled](https://github.com/timemir/wow-fish/issues/31#issuecomment-6128960652), [Design the Simulated Size bands](https://github.com/timemir/wow-fish/issues/33#issuecomment-6129722545); ADR 0001, 0004, 0007, 0009, 0010. Prototypes: `prototypes/catch-feedback/`, `prototype/sounds` branch (`prototypes/sounds/`)
 
 Part of [Core](README.md). Core presents every Announcement (ADR 0007): Modules raise **moments**, and Core merges, paces and draws them.
 
@@ -182,7 +182,7 @@ ANN-R51.
 | Tackle Board | Notice completed | `toast.low` |
 | Tackle Board | Expedition completed | `toast` |
 | Tackle Board | Campfire milestone, title, Fly Box complete | `banner` |
-| Tackle Board | Kindling burned, fire out | `nod` at the next login, or when a reset passes while logged in |
+| Tackle Board | Kindling burned, fire out | `nod`, no `cast`, whenever a live advance closes a board day: at login for days passed while away, or when a reset passes while logged in (TKB-R86) |
 | Stats, QoL | none | |
 
 The Module specs own their rows; this table is a cross-check.

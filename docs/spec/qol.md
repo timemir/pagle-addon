@@ -268,7 +268,7 @@ Nothing: QoL fires no events, raises no moments, writes no records, pays no Coin
 - **Next-action button** (QOL-R70–R74): one native action-button-style frame. No prototype; the look is the Retail action button.
 - **Nudges** (QOL-R75–R78): one line of text at the top centre.
 - **Conflict popup** (QOL-R81): a native `StaticPopup`.
-- **Fishing settings page:** QoL's rows on Core's Fishing page. Look reference: `prototypes/settings-tree/` (variant B, branch `prototype/settings-tree`); the row layout belongs to `docs/spec/settings.md`.
+- **Fishing settings page:** QoL's rows on Core's Fishing page. Look reference: `prototypes/settings-tree/` (variant B); the row layout belongs to `docs/spec/settings.md`.
 
 ## Settings
 

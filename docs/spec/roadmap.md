@@ -10,7 +10,7 @@ This file sets the order in which Pagle is built. It assigns spec rules to miles
 - **No backward compatibility before 1.0.** The log format, every `PagleDB` / `Pagle<Module>DB` shape, Module state and Hunt definitions change freely; a dev log whose format is outdated is replaced by a new one (LOG-R18). The freezes start at 1.0: LOG-R17, CORE-R15, DATA-R73, DATA-R95.
 - **One version for the whole package, and no git tags before 1.0.** The packager publishes only on a tag push, so nothing reaches CurseForge or Wago by accident.
 - **Milestones.** Each milestone below is one GitHub Milestone with the same name. Every build ticket belongs to exactly one. Milestones set the order of work, not dates: the riskiest and most shared Core pieces come first, and leaf work runs in parallel. **Track Q** runs in parallel from the end of M1.
-- **Rules per milestone.** A rule listed under a milestone is built in it. A rule listed "for" or "without" something is built only in that part; the rest of it is listed where it lands. M0, M1 and Track Q are listed in full. M2–M8 are one-line scope notes for now: each later spec PR adds its own rule list to the milestones it covers. Until then, the Milestones line in each spec file's header says what that file contributes to each milestone.
+- **Rules per milestone.** A rule listed under a milestone is built in it. A rule listed "for" or "without" something is built only in that part; the rest of it is listed where it lands. Every milestone and Track Q lists its rules file by file, and every rule ID in the spec is listed somewhere below. The Milestones line in each spec file's header summarises the same split; where the two differ, this file wins and the header is fixed.
 - **Rules that name later features.** A rule listed in full is built for what exists in its milestone; the parts that name a later feature (a Curio Shop row in CORE-R33, the next-action button in QOL-R93, a rebuild in LOG-R18) take effect when that feature lands, without being listed again. Edge-case rules (the "Edge cases" block of each file) are listed where their main feature lands and hold from then on.
 - **Exit checks.** A milestone is done when its tickets are closed and its exit check passes in the game. Exit checks run on the Forever beta until it launches (Nov 4, 2026), and on the live build after that.
 
@@ -52,7 +52,7 @@ This file sets the order in which Pagle is built. It assigns spec rules to miles
 
 **Core rules:**
 - CORE-R3, CORE-R5, CORE-R10–R14, CORE-R16–R23, CORE-R30–R33
-- CORE-R40 without the "Help chart the waters" button (M3). Core's saving option is the LOG-R86 reminder; the length unit (LOG-R69) comes in M4. Only the Fishing page has rows in M1, so it's the only topic page registered (CORE-R42).
+- CORE-R40 without the "Help chart the waters" button (M3). Core's options are the Saving section's LOG-R86 reminder; the Units section's length unit (LOG-R69) comes in M4. Only the Fishing page has rows in M1, so it's the only topic page registered (CORE-R42).
 - CORE-R41–R44
 - CORE-R50 with only the Module entries and "Settings" (the Curio Shop entry comes in M2, "Help chart the waters" in M3), and CORE-R52. Until QoL's Input entry and `/pagle qol` arrive (Track Q step 3), CORE-R52 and the Module part of CORE-R62 are exercised by tests only.
 - CORE-R60–R62. `shop` and `report` are reserved from M1; until their surfaces exist (M4, M3) each prints the help list, as an unknown subcommand does.
@@ -70,7 +70,7 @@ This file sets the order in which Pagle is built. It assigns spec rules to miles
 
 **Content data rules:**
 - DATA-R2–R6, DATA-R9, DATA-R13
-- DATA-R8 for the baseline, `data/forever/` and `data/db2/` layers (`data/observed/` comes in M3)
+- DATA-R8 for the baseline, `data/forever/` and `data/db2/` layers (`data/observed/` comes in M2 with `dev.toml`, and its imported reports in M3)
 - DATA-R10 for `aliases.toml`, `events.toml` and `lists.toml`
 - DATA-R11 and DATA-R12 for `build.toml` and `areas.csv` (`items.csv` comes with items in M2)
 - DATA-R25
@@ -134,6 +134,30 @@ Each step's rows take their place in SET-R20's order.
 
 Content data pipeline v1, projection machinery and Sessions, Core Announcements (policy, toasts, banner, splash, sounds, Session summary, Write-up), the wallet, and Ledger slice 1 (Angler Level, XP, Fresh Water, Skill Milestones).
 
+**Core rules:**
+- CORE-R50's Curio Shop entry (shown disabled, with the balance, until M4), CORE-R51
+- CORE-R80, CORE-R81
+- LOG-R1 step 3; LOG-R9 steps 3 and 4
+- LOG-R42 for `M:IterateCatches` (Module records join it in M7)
+- LOG-R55–R57 for the full catalogue: items, catch lists with `window` and `gate`, pools, windows and `GetWindowSpec` (`typicalLength` comes in M4)
+- LOG-R60–R64, LOG-R98 (Sessions, and the `session` tag on records)
+- LOG-R70–R77 (projections), LOG-R90–R92, LOG-R95
+- every rule in `announcements.md`: ANN-R1–R4, ANN-R10–R13, ANN-R20–R25, ANN-R30–R32, ANN-R35–R37, ANN-R40–R42, ANN-R45, ANN-R50–R56, ANN-R60–R63, ANN-R70–R75, ANN-R80, ANN-R90–R96. Only Driftwood and Timber are in use: Gilded and the other toast styles are Curio Shop goods (M4), and size rulers come with Simulated Size (M4).
+- SHOP-R1–R5 (earning), SHOP-R12 for the balance (nothing is spent before M4; the held line shows in the shop), `Pagle.GetBalance` and `BalanceChanged`, SHOP-R90–R96 for earning
+
+**Content data rules:**
+- DATA-R8 for `data/observed/`, with `dev.toml` (imported reports come in M3)
+- DATA-R10 for the rest of `data/forever/`: `items.toml`, `species.toml`, `families.toml`, `areas.toml`, `windows.toml`, `pools.toml`
+- DATA-R11 and DATA-R12 for `items.csv`
+- DATA-R15–R19, DATA-R21–R24 (DATA-R20's typical lengths come in M4)
+- DATA-R26–R31, DATA-R33–R37, DATA-R38's `event.301` window, DATA-R40
+- DATA-R43, DATA-R44
+- DATA-R45–R57; until Field report intake (M3), dev facts are the only observations
+- DATA-R60's `--min-build` and `--explain` modes; DATA-R63 and DATA-R64 in full except the Hunt checks (M5) and the lore checks (M3); DATA-R65, DATA-R66 (both switches off)
+- DATA-R70 over the full catalogue, DATA-R71, DATA-R77, DATA-R78 (DATA-R79 no longer applies)
+- DATA-R128–R130 (the DB2 watch)
+- DATA-R190–R197 (their Field report parts take effect in M3)
+
 **Ledger rules** (LED-R4 lists what each Ledger milestone stages):
 - LED-R1 without the view and `/pagle journal` (M3)
 - LED-R2, LED-R3, LED-R4 (its M2 stage)
@@ -162,6 +186,15 @@ Content data pipeline v1, projection machinery and Sessions, Core Announcements 
 
 Ledger slice 2: the Journal book (Species, Zone Mastery, Sub-collections, Trophy Room, Ledger completion) on in-client textures; `/pagle report` and Field report intake; `VOICE.md`, the Ledger's first lore batch, and its lore check on.
 
+**Core rules:**
+- CORE-R40's "Help chart the waters" button, CORE-R50's "Help chart the waters" entry, CORE-R61's `report`
+- LOG-R78 for the Field report projection
+- every rule in `field-report.md`: REP-R1–R5, REP-R10–R12, REP-R20–R23, REP-R25, REP-R26, REP-R30–R33, REP-R35–R37, REP-R40–R46, REP-R90–R96
+
+**Content data rules:**
+- DATA-R8 for `data/observed/reports/`; DATA-R115–R123 (Field report intake: the issue form, the parser, the triage Action, the importer, `pooltext.toml`)
+- DATA-R75 for `Lore.lua`; DATA-R100–R104 and DATA-R106–R112 for the `ledger` lore ID, with `VOICE.md` and the manifest, `ledger` switched on in `data/checks.toml` (DATA-R66)
+
 **Ledger rules** (each Journal rule without the M4 elements LED-R4 lists):
 - LED-R1's view and `/pagle journal`; LED-R4 (its M3 stage)
 - LED-R5's Uncharted class; LED-R10–R12
@@ -189,6 +222,18 @@ Ledger slice 2: the Journal book (Species, Zone Mastery, Sub-collections, Trophy
 
 Legends, titles, Simulated Size with the typical-length check on, Catch Milestones, then Prestige; the Curio Shop and Look and Feel; Core's goods and the Ledger's titles in lore, with Core's lore check on.
 
+**Core rules:**
+- CORE-R40's Units section, CORE-R50's Curio Shop entry enabled, CORE-R61's `shop`
+- LOG-R16 for `P1` and `U1`; LOG-R38, LOG-R39
+- LOG-R55's `typicalLength`; LOG-R65–R69 (Simulated Size and the length unit)
+- LOG-R78 for the wallet projection
+- ANN-R22's size ruler, ANN-R72's Gilded set and ANN-R80's other toast styles, as Core's goods (SHOP-R25)
+- SHOP-R10, SHOP-R11, SHOP-R12's held line, SHOP-R13, SHOP-R20–R26, SHOP-R30–R35, SHOP-R40, SHOP-R41, SHOP-R90–R96 in full
+
+**Content data rules:**
+- DATA-R20, with `typicalLength = true` in `data/checks.toml` (DATA-R66)
+- DATA-R107 for the `core` lore ID (switched on), and for the Ledger's `title` and `binding` IDs, which enter the manifest (DATA-R106, DATA-R111)
+
 **Ledger rules:**
 - LED-R4 (its M4 stage, which brings back every Journal element M3 left out)
 - LED-R5's Legend class; LED-R20 for Legends
@@ -215,7 +260,7 @@ Legends, titles, Simulated Size with the typical-length check on, Catch Mileston
 **Goal:** the Hunts Module, the Now/Soon board and its tracker, Core's tracker dock (built with its first tracker), `NextWindow`, the Hunt list and its lock tooling, and Hunts lore with its check on.
 
 **Core rules:**
-- CORE-R70–R73 (the tracker dock), with the Trackers page's "Reset tracker dock position" row. The Trackers page is registered from here on, since Hunts gives it rows (CORE-R42).
+- CORE-R70–R73 (the tracker dock), with the Trackers page's "Tracker position" row and its Reset button (SET-R40). The Trackers page is registered from here on, since Hunts gives it rows (CORE-R42).
 - LOG-R50 (`Pagle.NextWindow`)
 
 **Content data rules:**
@@ -245,15 +290,59 @@ Legends, titles, Simulated Size with the typical-length check on, Catch Mileston
 
 ## M6 Stats
 
-The Stats Module, window and live tracker, with Stats' lore check switched on in `data/checks.toml` when it registers its first good (DATA-R107). Settings: SET-R42, SET-R45 for Stats, and SET-R11's "Open Stats".
+**Goal:** the Stats Module: its projection, Your odds and Dry spells, the Stats book, the live tracker with watched Dry spells, and its tracker frames with their lore and lore check. Stats needs nothing new from Core: Sessions and the `session` tag (M2), `PagleItem.pool` and catch entries' `window` (M2) and the tracker dock (M5) are already there.
+
+**Content data rules:**
+- DATA-R107 for the `stats` lore ID, switched on in `data/checks.toml` with the M6 lore batch (DATA-R111), when Stats first registers its goods
+
+**Stats rules:** every rule in `stats.md`:
+- STA-R1–R4, STA-R10–R18, STA-R20–R27, STA-R30–R33
+- STA-R40–R47, STA-R50–R55, STA-R58, STA-R59, STA-R60–R64
+- STA-R70–R76, STA-R80–R86, STA-R88
+- STA-R90–R97
+- Settings: "Show the live tracker" and its Watched Dry spells row on Trackers; Core adds the frame dropdown. That is SET-R42, SET-R44, SET-R45 for Stats, and SET-R11's "Open Stats"
+
+**Exit check:**
+1. With a log from earlier milestones, enable Pagle_Stats and log in: no Write-up and nothing pops up. `/pagle stats` and the compartment entry toggle the book; the nameplate reads "{n} Casts · {m} Sessions · since {date}", and the home spread has a tile per fished zone.
+2. Open *Where I am*: rows are grouped Any time, Pools, In their window and Also caught here. An item with under 100 Casts in its scope reads "learning {n}/100"; a known one reads "about 1 in N" with its range and a scope line naming the Casts it rests on, on the right skill side.
+3. With the live tracker off, watch a Dry spell: the tracker turns on with one chat line and docks below the Hunts tracker. A 4th watch is refused with the UI error. Catch the watched item: its count reads "just now".
+4. Stop fishing for 15 minutes, then cast again: a new Session starts, and the Sessions page lists both. Nothing pops up at any point.
+5. Change a window or a catch list in content data and `/reload`: the book and tracker show their updating states, the numbers follow the new data, and nothing is announced.
+6. `scripts/check.sh` passes with `stats` in `data/checks.toml`'s `lore`, including the copy test that finds no "due" wording (STA-R58).
 
 ## M7 Tackle Board
 
-The Tackle Board Module, its board and tracker, with its Module records, its lore and its lore check. Settings: SET-R43, SET-R45 for the Tackle Board, and SET-R11's "Start my board" / "Open Tackle Board".
+**Goal:** the Tackle Board Module: its Module records, board days and refills, the eight goal kinds, rerolls, the Campfire and Kindling, the Fly Box and titles, the cork board, its tracker and frames, and its lore with its lore check.
+
+**Core rules:**
+- LOG-R16 for `A1`; LOG-R40, LOG-R41 (Module records; the Tackle Board is the first Module to write them)
+- LOG-R42's Module records in `M:IterateCatches`
+
+**Content data rules:**
+- DATA-R107 for the `tackleboard` lore ID, switched on in `data/checks.toml` with the M7 lore batch (DATA-R111)
+
+**Tackle Board rules:** every rule in `tackle-board.md`:
+- TKB-R1–R3, TKB-R5, TKB-R6, TKB-R10–R14, TKB-R20–R23
+- TKB-R30–R36, TKB-R40–R46, TKB-R55–R57
+- TKB-R60–R64, TKB-R70–R74, TKB-R80–R87
+- TKB-R100–R109, TKB-R120–R125, TKB-R130
+- TKB-R190–R198
+- Settings: "Show goals workable here" on Trackers; Core adds the frame dropdown. That is SET-R43, SET-R44, SET-R45 for the Tackle Board, and SET-R11's "Start my board" / "Open Tackle Board"
+
+**Exit check:**
+1. Enable Pagle_TackleBoard: nothing shows and nothing is written; the Settings root's button reads "Start my board", and the Trackers checkbox is greyed out.
+2. Press Start my board: 3 Notices and 1 Expedition are pinned, the tracker lists the goals workable here, and after `/reload` `PagleLog` holds one `start` and four `issue` records.
+3. Complete a Notice: a "Notice complete" toast with its Coins stamp; the slip goes on the spike, the Fly Box reads "1 of 30 tied", and the Campfire is lit.
+4. Take down a Notice that has progress: the confirm asks once, and its replacement is stamped RE-POSTED with no "take it down". `/reload`: the board looks the same.
+5. Let a board day pass without a goal done (or use a test log): at the next login a Nod says Kindling was used, the Campfire count is unchanged, and the Notice pins have refilled, up to 6.
+6. Disable Pagle_TackleBoard, complete an open goal's need, re-enable: a "While Tackle Board was off" Write-up section lists it, and nothing pops up.
+7. `scripts/check.sh` passes with `tackleboard` in `data/checks.toml`'s `lore`.
 
 ## M8 Release
 
 Launch re-verification on the live build, the 1.0 gates (lore, Settings UX, Simulated Size), the CurseForge and Wago projects, then the 1.0 tag.
+
+**Rules:** QOL-R100–R104 (QoL's launch re-verification), DATA-R57 for check 24, and DATA-R73, DATA-R87 and DATA-R95 at the tag (Before the tag). Every other check below names the rules it may change.
 
 ### Launch re-verification checklist
 

@@ -1,6 +1,6 @@
 # Core: Catch log, conditions, Sessions and projections
 
-> Status: Done · Milestones: M1 (recording, conditions snapshot, catalogue lookup), M2 (projections, Sessions, catalogue v1), M4 (Simulated Size), M5 (`NextWindow`) · Sources: [Define the Core data model](https://github.com/timemir/wow-fish/issues/10#issuecomment-6112707372), [Define the Core/Module contract](https://github.com/timemir/wow-fish/issues/9#issuecomment-6112445901), [Beta probe: which fishing signals can the Forever client see?](https://github.com/timemir/wow-fish/issues/7#issuecomment-6110508010), [How can Pagle identify items and places independent of client language?](https://github.com/timemir/wow-fish/issues/20), [Design Hunts and the Now/Soon board](https://github.com/timemir/wow-fish/issues/14#issuecomment-6113353568), [Design Stats: session stats, honest odds and dry spells](https://github.com/timemir/wow-fish/issues/21#issuecomment-6113657288), [Define the content data pipeline](https://github.com/timemir/wow-fish/issues/19#issuecomment-6113646946), [Design the /pagle report format and issue form](https://github.com/timemir/wow-fish/issues/26#issuecomment-6124884698), [Design the Tackle Board](https://github.com/timemir/wow-fish/issues/25#issuecomment-6124911363), [Design the Pagle currency and shop](https://github.com/timemir/wow-fish/issues/28#issuecomment-6125331898), [Cut the MVP slice and roadmap](https://github.com/timemir/wow-fish/issues/18#issuecomment-6113973068), [Decide how the spec is assembled](https://github.com/timemir/wow-fish/issues/31#issuecomment-6128960652), [Design the Simulated Size bands](https://github.com/timemir/wow-fish/issues/33#issuecomment-6129722545); ADR 0001, 0003, 0004, 0008, 0009, 0010
+> Status: Done · Milestones: M1 (recording, conditions snapshot, catalogue lookup), M2 (projections, Sessions, catalogue v1), M3 (the Field report projection), M4 (Simulated Size, the length unit, Prestige and purchase entries, the wallet projection), M5 (`NextWindow`), M7 (Module records) · Sources: [Define the Core data model](https://github.com/timemir/wow-fish/issues/10#issuecomment-6112707372), [Define the Core/Module contract](https://github.com/timemir/wow-fish/issues/9#issuecomment-6112445901), [Beta probe: which fishing signals can the Forever client see?](https://github.com/timemir/wow-fish/issues/7#issuecomment-6110508010), [How can Pagle identify items and places independent of client language?](https://github.com/timemir/wow-fish/issues/20), [Design Hunts and the Now/Soon board](https://github.com/timemir/wow-fish/issues/14#issuecomment-6113353568), [Design Stats: session stats, honest odds and dry spells](https://github.com/timemir/wow-fish/issues/21#issuecomment-6113657288), [Define the content data pipeline](https://github.com/timemir/wow-fish/issues/19#issuecomment-6113646946), [Design the /pagle report format and issue form](https://github.com/timemir/wow-fish/issues/26#issuecomment-6124884698), [Design the Tackle Board](https://github.com/timemir/wow-fish/issues/25#issuecomment-6124911363), [Design the Pagle currency and shop](https://github.com/timemir/wow-fish/issues/28#issuecomment-6125331898), [Cut the MVP slice and roadmap](https://github.com/timemir/wow-fish/issues/18#issuecomment-6113973068), [Decide how the spec is assembled](https://github.com/timemir/wow-fish/issues/31#issuecomment-6128960652), [Design the Simulated Size bands](https://github.com/timemir/wow-fish/issues/33#issuecomment-6129722545); ADR 0001, 0003, 0004, 0008, 0009, 0010
 
 Part of [Core](README.md). This file covers what Core observes, how it is stored, and how Modules read it back.
 
@@ -264,7 +264,9 @@ The ADR 0003 and ADR 0008 notes sketch `B1`, `U1` and `A1` without the shared he
 | `global.summary`, `global.pending`, `global.cards`, `global.writeUp` | Announcement data ([announcements.md](announcements.md#data)) |
 | `global.coins`, `global.goods` | the wallet ([wallet-and-shop.md](wallet-and-shop.md#data)) |
 | `global.projections.*` | Core's own projections (LOG-R78) |
-| `profile.*` | Core settings, across all topic files |
+| `profile.reloadReminder` | boolean, the `/reload` reminder (LOG-R86); default `false` |
+| `profile.lengthUnit` | `"cm"`, `"in"`, or `nil` for the region default (LOG-R69); default `nil`. The Defaults button sets it back to `nil` (SET-R13). |
+| `profile.*` (other keys) | Core settings in the other topic files: `profile.announcements`, `profile.appearance`, `profile.dock` |
 
 ### Module SavedVariables
 
@@ -398,8 +400,10 @@ None of its own. The only visible output is the optional unsaved-Casts chat line
 
 | Option | Values | Default |
 |---|---|---|
-| Remind me to `/reload` when Casts are unsaved | on/off | off |
-| Length unit | cm / in | in on region 1, else cm (LOG-R69) |
+| Remind me to `/reload` when Casts are unsaved (`profile.reloadReminder`) | on/off | off |
+| Length unit (`profile.lengthUnit`) | cm / in | in on region 1, else cm (LOG-R69) |
+
+Both sit on the Settings root, in its Saving and Units sections (CORE-R40, SET-R10).
 
 ## Tunables
 

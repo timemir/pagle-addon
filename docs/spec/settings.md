@@ -91,7 +91,7 @@ The rules below are authoritative; this sketch only summarises them.
   | 5 | Saving | Remind me to `/reload` when Casts are unsaved | checkbox | LOG-R86; default off. Tooltip: "A chat line every {step} Casts not yet saved. WoW saves only on /reload or logout, so a crash loses them.", with {step} filled from LOG-R86's tunable (50). From M1. |
   | 6 | Units | Length unit | dropdown | "Centimetres" / "Inches"; LOG-R69, whose default (inches or centimetres by `GetCurrentRegion()`) is Core's. Tooltip: "How Pagle shows the length of your Catches. Records are kept in millimetres, so switching changes only what you see." From M4. |
 
-  The length unit sits on the root because it is a Core option that three Modules display ([Write the Settings spec](https://github.com/timemir/wow-fish/issues/44#issuecomment-6129738678)); CORE-R40's "saving option" is the Saving section, and Units is a section of its own after it.
+  The length unit sits on the root because it is a Core option that three Modules display ([Write the Settings spec](https://github.com/timemir/wow-fish/issues/44#issuecomment-6129738678)). Saving and Units are the two sections of Core's options that CORE-R40 lists; their keys are `PagleDB.profile.reloadReminder` and `PagleDB.profile.lengthUnit` ([catch-log.md](core/catch-log.md#data)).
 - **SET-R11** The status list is a table of the roster in CORE-R1 order: its name, its TOC version and its state, as CORE-R41 gives them. Each On Module's row ends with one button (CORE-R44):
 
   | Module | Button | Source |
@@ -236,7 +236,7 @@ This file adds no data. Each row's value lives with its owner:
 
 | Rows | Stored in |
 |---|---|
-| Saving, Units | `PagleDB.profile` (Core settings, [catch-log.md](core/catch-log.md#data)) |
+| Saving, Units | `PagleDB.profile.reloadReminder`, `PagleDB.profile.lengthUnit` ([catch-log.md](core/catch-log.md#data)) |
 | Cozy mode, the budget | `PagleDB.profile.announcements` |
 | Every slot dropdown | `PagleDB.profile.appearance[slot]` (SHOP-R32) |
 | Tracker position | `PagleDB.profile.dock.point` (Core README Data) |

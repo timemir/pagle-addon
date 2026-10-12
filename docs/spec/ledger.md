@@ -33,9 +33,9 @@ The Ledger is the `Pagle_Ledger` Module: the Angler's identity as an angler. It 
 - **LED-R4** **Staging by milestone.** The fold, the moments and the Journal grow by milestone, and each milestone that changes the fold raises `LEDGER_RULES_VERSION`, so the projection rebuilds and what history newly earns arrives as summary-only moments (LED-R93):
   - **M2:** classification (LED-R5–R7) with no Legend class (a Legend item counts as its category until M4); XP rows Catch XP, new Species, Species in a zone, first Catch in a zone and Skill Milestones; Fresh Water; the climb without Prestige (no carried XP use, no `prestigeReady`); Skill Milestones; lifetime Catches as a count; Coins for level-ups and new Species; moments `levelUp`, `newSpecies`, `newInZone`, `skillMilestone`; the celebrated set, `done` and the summary line without completion.
   - **M3:** the world index, stars, Zone Mastery, the collections and the Uncharted list, completion, their XP, Coins and moments, and the Journal. The Journal leaves out every M4 element: Legends (contents line and spread), titles (the bookplate and brass plate show no title; "Lv {L} · Ledger {p}%"; the `zoneMaster` moment's text is just "{zone}"; no `completeTitle` moment), the zonemaster line of LED-R137, the Prestige emblems and button, "Signed As", "Bindings", the Catch Milestone part of LED-R146 (it reads "{lifetime} Catches"), and size text. It is drawn in the Field Leather look, whose tints the M3 Journal ticket picks, while no binding slot exists.
+  - **M4:** Legends, titles, Simulated Size records (and size text), Catch Milestones, Prestige (with `prestigeReady`), the bindings, and every element M3 left out.
 
   `LEDGER_RULES_VERSION` is 1 in M2, 2 in M3 and 3 in M4. In M2 the Settings root has no "Open Fish Journal" button, since the Ledger has no view yet (CORE-R44).
-  - **M4:** Legends, titles, Simulated Size records (and size text), Catch Milestones, Prestige (with `prestigeReady`), the bindings, and every element M3 left out.
 
 ### Classifying a Catch
 
