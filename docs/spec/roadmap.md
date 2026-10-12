@@ -1,6 +1,6 @@
 # Roadmap
 
-> Status: Done · Milestones: M0–M8, Track Q · Sources: [Cut the MVP slice and roadmap](https://github.com/timemir/wow-fish/issues/18#issuecomment-6113973068), [Decide how the spec is assembled](https://github.com/timemir/wow-fish/issues/31#issuecomment-6128960652) (its body holds the launch re-verification list), [Choose the toolchain and libraries](https://github.com/timemir/wow-fish/issues/8#issuecomment-6112249259), [Write the QoL spec](https://github.com/timemir/wow-fish/issues/37#issuecomment-6130705093), [Beta probe: which fishing signals can the Forever client see?](https://github.com/timemir/wow-fish/issues/7#issuecomment-6110508010), [Define the Core data model](https://github.com/timemir/wow-fish/issues/10#issuecomment-6112707372), [Define the QoL feature set](https://github.com/timemir/wow-fish/issues/16#issuecomment-6113508077), [Design the Tackle Board](https://github.com/timemir/wow-fish/issues/25#issuecomment-6124911363), [Write the Tackle Board spec](https://github.com/timemir/wow-fish/issues/43), [Write the Stats spec](https://github.com/timemir/wow-fish/issues/42), [Design the Simulated Size bands](https://github.com/timemir/wow-fish/issues/33#issuecomment-6129722545), [Move the prototypes to main](https://github.com/timemir/wow-fish/issues/36#issuecomment-6129511014); ADR 0003, 0005 (notes: compatibility starts at 1.0)
+> Status: Done · Milestones: M0–M8, Track Q · Sources: [Cut the MVP slice and roadmap](https://github.com/timemir/wow-fish/issues/18#issuecomment-6113973068), [Decide how the spec is assembled](https://github.com/timemir/wow-fish/issues/31#issuecomment-6128960652) (its body holds the launch re-verification list), [Choose the toolchain and libraries](https://github.com/timemir/wow-fish/issues/8#issuecomment-6112249259), [Write the QoL spec](https://github.com/timemir/wow-fish/issues/37#issuecomment-6130705093), [Beta probe: which fishing signals can the Forever client see?](https://github.com/timemir/wow-fish/issues/7#issuecomment-6110508010), [Define the Core data model](https://github.com/timemir/wow-fish/issues/10#issuecomment-6112707372), [Define the QoL feature set](https://github.com/timemir/wow-fish/issues/16#issuecomment-6113508077), [Design the Tackle Board](https://github.com/timemir/wow-fish/issues/25#issuecomment-6124911363), [Write the Tackle Board spec](https://github.com/timemir/wow-fish/issues/43), [Write the Stats spec](https://github.com/timemir/wow-fish/issues/42), [Design the Simulated Size bands](https://github.com/timemir/wow-fish/issues/33#issuecomment-6129722545), [Move the prototypes to main](https://github.com/timemir/wow-fish/issues/36#issuecomment-6129511014), [Write the Settings spec](https://github.com/timemir/wow-fish/issues/44); ADR 0003, 0005 (notes: compatibility starts at 1.0)
 
 This file sets the order in which Pagle is built. It assigns spec rules to milestones; the rules themselves live in the other spec files. Terms are used as `CONTEXT.md` defines them.
 
@@ -96,6 +96,11 @@ This file sets the order in which Pagle is built. It assigns spec rules to miles
 - QOL-R80–R84 (the conflict popup), QOL-R90–R98
 - Settings: the Casting header and the Fishing key row on the Fishing page
 
+**Settings rules:**
+- SET-R1–R5; SET-R10 without its Help chart the waters (M3) and Units (M4) sections; SET-R11 for QoL's button; SET-R12, SET-R13
+- SET-R20 for the Casting header and the Fishing key row; SET-R21
+- SET-R60–R62, SET-R70, SET-R75, SET-R90–R96
+
 Input isn't built yet, so the Fishing key is always armed (as under *Both*), and there is no double-click.
 
 **Exit check** (on the beta, or live once Forever launches):
@@ -121,6 +126,8 @@ Input isn't built yet, so the Fishing key is always armed (as under *Both*), and
 | 5. Next-action button | QOL-R70–R74 | Show the next-action button, ↳ Button position | The button shows Gear, Lure, Cast and Reel as each becomes the next action, and is desaturated in combat. Shift-drag moves it; Reset puts it back. |
 | 6. Clams | QOL-R20 step 5, QOL-R23 (its clam part), QOL-R24 "open a clam" row, QOL-R55–R57 | Open clams between Casts | With a clam in the bags and the bobber not out, a press opens one clam and the next-action button shows Clam; while channeling, a press reels. |
 
+Each step's rows take their place in SET-R20's order.
+
 **Exit check** (after step 6), on one character with a fishing set chosen, lures and exactly one clam in the bags, standing at water with no pole in hand, Input *Both*, using only the Fishing key: presses equip the set, apply the best lure and cast; a press reels; after the loot, a press opens a clam, the next casts. A double right-click casts. The music stays muted until the stretch ends; mounting ends it, restores every leased CVar and shows the swap-back Nudge, and Swap gear swaps back. Every rule of `qol.md` is now built except QOL-R100–R104 (M8).
 
 ## M2 Ledger core
@@ -139,6 +146,8 @@ Content data pipeline v1, projection machinery and Sessions, Core Announcements 
 - LED-R90–R94, LED-R96, LED-R98; LED-R95 without the completion part (M3)
 - LED-R97 for `levelUp`, `newSpecies` (without size text, M4), `newInZone` and `skillMilestone`
 - LED-R190–R195, LED-R197, LED-R198; LED-R196 for Uncharted and item `0` Catches earning the base only
+
+**Settings rules:** SET-R30 without the Toast style and Sound set rows (M4), SET-R31, SET-R33. The Ledger's status row has no button yet (SET-R11).
 
 **Ledger exit check:**
 1. With a log from M1 dogfooding, enable Pagle_Ledger and log in: one Write-up card shows "Your Ledger was written up from {N} Casts" with an Angler Level, a Species count and a Pagle Coins line, and nothing pops up. The compartment menu's Curio Shop entry shows that balance.
@@ -167,6 +176,8 @@ Ledger slice 2: the Journal book (Species, Zone Mastery, Sub-collections, Trophy
 - LED-R160 for the `species`, `legend`, `sub`, `family` and `line` keys (the M3 lore batch), LED-R161, LED-R162 (its M3 part)
 - LED-R196 in full
 
+**Settings rules:** SET-R10's Help chart the waters section; SET-R11's "Open Fish Journal".
+
 **Ledger exit check:**
 1. `/pagle journal` opens the book on Home: tiles for every charted zone of the chosen continent, fished ones with a rank and %, unfished ones faded with their skill, and a fished zone without data reading "uncharted waters".
 2. A fished zone's spread shows its groups and ladder; an uncaught Species reads "— unknown —", and its entry shows a silhouette, a riddle and a plain hint that names no fish. Searching for that Species' name finds nothing; searching for a caught one opens its fish spread.
@@ -189,6 +200,8 @@ Legends, titles, Simulated Size with the typical-length check on, Catch Mileston
 - LED-R110–R112
 - LED-R137's zonemaster line, LED-R140's size line, LED-R146 in full, LED-R147, LED-R148 for Legends, LED-R149's title
 - LED-R160 for the `title` and `binding` keys (the M4 lore batch), LED-R162 (its M4 part)
+
+**Settings rules:** SET-R10's Units section, SET-R30's Toast style and Sound set rows, SET-R50–R53.
 
 **Ledger exit check:**
 1. A new Species toast shows "{band} · {length}" in the Angler's unit, with no Record stamp. A later, strictly longer Catch of it shows a "Size record" toast with the ruler; its entry in the Journal shows the new record.
@@ -218,7 +231,7 @@ Legends, titles, Simulated Size with the typical-length check on, Catch Mileston
 - HNT-R85–R91, HNT-R110–R112, HNT-R120–R122, HNT-R130, HNT-R135–R138
 - HNT-R190–R198
 - the v1 Hunt list (`hunts.md` Data), with its item and area IDs checked against `data/db2/`
-- Settings: "Show the Hunts tracker" on Trackers, "Tell me when a pinned Hunt's window opens" on Announcements; Core adds the two slots' dropdowns
+- Settings: "Show the Hunts tracker" on Trackers, "Tell me when a pinned Hunt's window opens" on Announcements; Core adds the two slots' dropdowns. That is SET-R32, SET-R40, SET-R41, SET-R44, SET-R45 for Hunts, and SET-R11's "Open Hunts"
 
 **Exit check:**
 1. `scripts/generate-data.py --check` passes with the v1 Hunt list. Breaking a Hunt on purpose (a natural Hunt without a gated catch entry, or a 1-hour weekly window) makes it fail with the admission or rarity-cap error.
@@ -232,11 +245,11 @@ Legends, titles, Simulated Size with the typical-length check on, Catch Mileston
 
 ## M6 Stats
 
-The Stats Module, window and live tracker, with Stats' lore check switched on in `data/checks.toml` when it registers its first good (DATA-R107).
+The Stats Module, window and live tracker, with Stats' lore check switched on in `data/checks.toml` when it registers its first good (DATA-R107). Settings: SET-R42, SET-R45 for Stats, and SET-R11's "Open Stats".
 
 ## M7 Tackle Board
 
-The Tackle Board Module, its board and tracker, with its Module records, its lore and its lore check.
+The Tackle Board Module, its board and tracker, with its Module records, its lore and its lore check. Settings: SET-R43, SET-R45 for the Tackle Board, and SET-R11's "Start my board" / "Open Tackle Board".
 
 ## M8 Release
 
