@@ -19,3 +19,7 @@ The Tackle Board forced the question. Its Notices pay a currency, and a reroll i
 - Records are small and rare, a few a day, so they barely touch the log's size budget. They must never be used as a cache of derived state.
 - Prestige could have been a Module record. It stays `P1` for now, and because nothing ships before 1.0, folding it in later costs nothing.
 - Records are client-written, like everything in the log. A future backend that needs to trust rerolls, purchases or currency must validate them on the server. That belongs to the backend effort, which is out of scope for now.
+
+## Note: the call lives on the Module handle
+
+In the Core spec ([Write the Core spec](https://github.com/timemir/wow-fish/issues/35)) the call is `M:AppendRecord(kind, payload)` on the handle `Pagle.RegisterModule` returns, so Core knows which Module wrote the record, and the entry carries the same header as every other kind: `A1|<char>|<time>|<tie>|<module>|<kind>|<payload>`.

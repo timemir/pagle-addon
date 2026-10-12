@@ -20,3 +20,7 @@ The dev's vision was one currency that many things pay into and that buys addon 
 - A purchase stores its price, so a later price change never moves a balance. Purchases are never revoked. If a rebuild or rebalance pushes earned below spent, the balance shows 0 and new income fills the gap before it moves again; there is never a negative balance or a "debt".
 - A disabled Module's goods leave the shop, but goods already bought stay owned. If `PagleDB` is lost, a disabled Module's earned total is lost with it until the Module is enabled again and rebuilds.
 - Coins and purchases are client-written. A future backend that needs to trust them must validate them on the server.
+
+## Note: the Core spec
+
+The wallet and shop are specified in `docs/spec/core/wallet-and-shop.md` ([Write the Core spec](https://github.com/timemir/wow-fish/issues/35)). A purchase entry carries the shared entry header, `U1|<char>|<time>|<tie>|<good>|<price>` (layout in `docs/spec/core/catch-log.md`). "Income only ever adds" means disabling a Module never lowers what it paid; a rebalance or data fix can still recount a Module's total lower, which the balance-held-at-0 rule above already covers.

@@ -7,7 +7,7 @@
 ### Product structure
 
 **Core**:
-The always-loaded base addon that every Module depends on. It observes and records Catches, presents the Announcements Modules raise through it, and holds the Angler's Pagle Coins and the Curio Shop; beyond those and settings it shows the player nothing of its own, and every other view belongs to a Module.
+The always-loaded base addon that every Module depends on. It observes and records Catches, presents the Announcements Modules raise through it, holds the Angler's Pagle Coins and the Curio Shop, and gives out Field reports; beyond those and settings it shows the player nothing of its own, and every other view belongs to a Module.
 _Avoid_: framework, base module, engine
 
 **Module**:
@@ -53,7 +53,7 @@ One item brought up by a fishing action, including junk and treasure. It counts 
 _Avoid_: fish (when junk/treasure is included), loot, drop
 
 **Catch log**:
-The Angler's permanent, append-only history of Casts, Skill Readings, Prestiges and Module records, and of the game client builds they were recorded on, kept by Core. Everything the Modules show is derived from it.
+The Angler's permanent, append-only history of Casts, Skill Readings, Prestiges, Curio Shop purchases and Module records, and of the game client builds they were recorded on, kept by Core. Everything the Modules show is derived from it.
 _Avoid_: history, database, event store
 
 **Module record**:
@@ -61,7 +61,7 @@ An entry a Module has Core append to the Catch log for something only that Modul
 _Avoid_: Module event, Module data, choice
 
 **Skill Reading**:
-One character's fishing skill as Pagle saw it at a moment, recorded whenever it is read or changes.
+One character's fishing skill as Pagle saw it at a moment, recorded the first time Pagle sees the character and whenever its skill rank or cap changes.
 _Avoid_: skill snapshot, skill event
 
 **Session**:
@@ -167,7 +167,7 @@ _Avoid_: catch-up toast, backfill, welcome screen
 ### Pagle Coins
 
 **Pagle Coins**:
-Pagle's one currency, held by Core for the Angler. Modules pay it in for things achieved (a Notice, a new Species, a Hunt completed), never for raw volume, and it buys only looks in the Curio Shop. Income only ever adds, and nothing bought is ever taken back.
+Pagle's one currency, held by Core for the Angler. Modules pay it in for things achieved (a Notice, a new Species, a Hunt completed), never for raw volume, and it buys only looks in the Curio Shop. Disabling a Module never takes back what it paid (only a rebalance can recount it), the balance never goes below zero, and nothing bought is ever taken back.
 _Avoid_: currency (alone), points, gold, Tender (Retail's Trading Post currency)
 
 **Curio Shop**:
