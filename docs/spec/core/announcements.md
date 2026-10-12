@@ -77,7 +77,7 @@ Part of [Core](README.md). Core presents every Announcement (ADR 0007): Modules 
 ### Session summary
 
 - **ANN-R50** Core keeps the open Session's summary data in `PagleDB.global.summary`, ready to show: every moment raised in it (the stored fields under [Data](#data)) and each Module's summary lines.
-- **ANN-R51** A Module sets its line with `M:SetSummaryLine(key, text)` and keeps it current ("Tackle Board: 2 goals · Campfire 12 days"). Setting `nil` removes it. Lines aren't tied to a Session: they stay set across Sessions until the Module changes them, and each card copies the lines as they are when it is made. Lines alone never make a summary appear.
+- **ANN-R51** A Module sets its line with `M:SetSummaryLine(key, text)` and keeps it current ("Tackle Board: 2 goals · Campfire 12 days"). Setting `nil` removes it. Lines aren't tied to a Session: they stay set across Sessions until the Module changes them, and each card copies the lines as they are when it is made. A card made while a Module isn't registered (disabled, inert or failed to start, CORE-R41) leaves out that Module's lines, so a disabled Module's last line ("Campfire 12 days") doesn't sit on every later card; its lines stay stored and return when it registers again. Cards already made keep the lines they copied (ANN-R55). Lines alone never make a summary appear.
 - **ANN-R52** A moment raised while no Session is open (`Pagle.GetSession()` is `nil`, e.g. a login Nod) still pops up under the usual rules, and is kept in `global.pending`. At `SessionStarted`, pending moments move into `global.summary`, so they land on the next Session's card.
 - **ANN-R53** On `SessionEnded`, if at least one moment was raised in the Session (or a Cozy-mode Write-up section is waiting, ANN-R62), Core turns the data into a **card** and adds it to `PagleDB.global.cards`, then clears the moments in `global.summary` for the next Session (the lines stay, ANN-R51). Expiry is checked again for every moment as the card is built (ANN-R45). The card shows (ANN-R21):
   - Core's numbers from the Session: Casts, Catches, got away, time fished
@@ -231,7 +231,7 @@ These sit on the Announcements page. Toast style and sound set also appear on Lo
 
 ## Edge cases
 
-- **ANN-R90 Module disabled, then enabled again.** A disabled Module raises nothing; its moments and lines already stored stay and sort by their stored order (ANN-R53). Re-enabled, its catch-up raises no moments, and a Write-up section covers what that history earned (ANN-R60).
+- **ANN-R90 Module disabled, then enabled again.** A disabled Module raises nothing; its moments already stored stay and sort by their stored order (ANN-R53), and its lines stay stored but are left out of new cards (ANN-R51). Re-enabled, its catch-up raises no moments, and a Write-up section covers what that history earned (ANN-R60).
 - **ANN-R91 Projection rebuild.** Raises no pop-ups; newly earned moments go to the summary only (ANN-R63).
 - **ANN-R92 First build over existing history.** One Write-up card, no moments (ANN-R60–R62). A lost Module DB counts as a first build (LOG-R77).
 - **ANN-R93 In combat.** ANN-R35–R37.

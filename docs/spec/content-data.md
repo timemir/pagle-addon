@@ -32,7 +32,7 @@ Terms are used as `CONTEXT.md` defines them. "The catalogue" is what the generat
 
 - **DATA-R1** The whole repo is licensed **GPL-3.0-or-later** (ADR 0006): a `LICENSE` file at the root holds the GPLv3 text. A `NOTICE` file credits VMaNGOS (with the baseline snapshot of DATA-R9) and states that game IDs and names belong to Blizzard Entertainment.
 - **DATA-R2** A where/when fact (which item bites in which area, a window, a skill base, a removal) enters `data/` only from the VMaNGOS baseline or from an in-game observation on a Forever build (`data/observed/`). Identity facts (which items, areas and spells exist, item class and quality, area parents) come only from the Forever client's DB2 tables. Wowhead, foreverdb and other fan sites are **leads only**: reading them to learn where to look is fine, copying a fact from them is not.
-- **DATA-R3** Everything Pagle ships is IDs, numbers and Pagle's own text. No item, area, spell or pool name from the game ships, in any locale; names, icons and quality resolve at runtime (LOG-R56). The source layers may keep enUS names for review; the generator never emits them.
+- **DATA-R3** Everything Pagle ships is IDs, numbers and Pagle's own text. No item, area, spell or pool name from the game ships, in any locale; names and icons resolve at runtime (LOG-R56). Item quality ships as a number on the item record (DATA-R77), so Modules that count by quality rebuild the same way every time. The source layers may keep enUS names for review; the generator never emits them.
 - **DATA-R4** No drop rates ship. The baseline's chances stay in `data/baseline/` and are never emitted; Your odds come only from the Angler's own Casts.
 - **DATA-R5** Data ships only inside normal addon releases, in Core and the Modules; there is no separate data addon. A data fix is a patch release.
 - **DATA-R6** Every generated file starts with a comment naming the generator and the source layers, saying it must not be edited by hand, and that it is GPL-3.0-or-later and contains VMaNGOS-derived data.
@@ -167,7 +167,7 @@ Terms are used as `CONTEXT.md` defines them. "The catalogue" is what the generat
 
 ### The content fingerprint and releases
 
-- **DATA-R70** `CONTENT_FINGERPRINT` is the first 16 lowercase hex characters of the SHA-256 of the catalogue's **canonical JSON**: the catalogue table without its `fingerprint` field, as Python's `json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False)` writes it, encoded as UTF-8. Integer map keys become decimal strings. Fields that are lists (`catches`, pool catches, `fishingSpells`, `auras`, `tiers`, the lists inside a condition spec) are JSON arrays, even when empty; every other table is a JSON object, even when empty. A gate's shared window spec is written out in full wherever it is used. Every catalogue value counts, `confirmed` flags and typical lengths included; lore is not in the catalogue, so it never counts.
+- **DATA-R70** `CONTENT_FINGERPRINT` is the first 16 lowercase hex characters of the SHA-256 of the catalogue's **canonical JSON**: the catalogue table without its `fingerprint` field, as Python's `json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False)` writes it, encoded as UTF-8. Integer map keys become decimal strings. Fields that are lists (`catches`, pool catches, `fishingSpells`, `auras`, `tiers`, the lists inside a condition spec) are JSON arrays, even when empty; every other table is a JSON object, even when empty. A gate's shared window spec is written out in full wherever it is used. Every catalogue value counts, `confirmed` flags, typical lengths and item quality included; lore is not in the catalogue, so it never counts.
 - **DATA-R71** A changed fingerprint makes every projection rebuild (LOG-R72). That is how Uncharted Catches are credited retroactively once a release classifies them (LOG-R96), and why nobody has to remember a version bump.
 - **DATA-R72** The Hunt list has its own fingerprint, computed the same way over the Hunt list without its `fingerprint` and without lore (DATA-R94). Pagle_Hunts passes it as `extraFingerprint` (LOG-R70), so a Hunt list change rebuilds only Hunts.
 - **DATA-R73** Before 1.0 the data changes freely, and `released.lock` is empty (DATA-R95). From 1.0, every tagged release ships whatever `data/` holds at the tag, with the lock updated in the same commit.
@@ -184,7 +184,7 @@ Terms are used as `CONTEXT.md` defines them. "The catalogue" is what the generat
 
   Each addon's TOC lists its generated files; `Lore.lua` comes after the file that creates `ns.L`.
 - **DATA-R76** `Catalogue.lua` sets `ns.catalogue` to this table (shape under [Contracts](#contracts)): `fingerprint`; `items`; `areas`; `aliases`; `pools`; `windows`; `events`; `fishingSpells`; `auras`. Core's accessors (LOG-R55) read it; nothing else does.
-- **DATA-R77** Each item record has exactly the fields `Pagle.GetItem` returns: `category`, `legend`, `noise`, `removed` and `pool` always, where `pool` is true when the item is in any pool type's catches (DATA-R43); `species` and (when known, DATA-R20) `typicalLength` for Species items; `family` and `weight` for trophies. Booleans are written out, never left `nil`.
+- **DATA-R77** Each item record has exactly the fields `Pagle.GetItem` returns: `category`, `legend`, `noise`, `removed` and `pool` always, where `pool` is true when the item is in any pool type's catches (DATA-R43); `quality` when known (the DB2 quality, or `items.toml`'s under DATA-R24; 0 poor … 5 legendary); `species` and (when known, DATA-R20) `typicalLength` for Species items; `family` and `weight` for trophies. Booleans are written out, never left `nil`.
 - **DATA-R78** Each area record has `parent`, `continent`, `hasData`, `skillBaseConfirmed` and `catches` always, and `skillBase` when it has one. Each catch entry is `{ itemID, confirmed }`, plus `gate` and `gateConfirmed` when gated; `gate` refers to the shared spec table of its window (one Lua table per window, emitted once). `catches` is an empty table for an area without a list.
 - **DATA-R79** Before M2 (LOG-R57) the catalogue holds only `fingerprint`, `areas` (with `parent`, `continent`, `hasData = false`, `skillBaseConfirmed = false`, empty `catches`), `aliases`, `events`, `fishingSpells` and `auras`; `items`, `pools` and `windows` are empty tables.
 - **DATA-R80** The catalogue is read-only at runtime and is not copied into SavedVariables.
@@ -324,9 +324,9 @@ Nothing here is a SavedVariable: the shipped data is read-only Lua (DATA-R80).
 ns.catalogue = {
   fingerprint = "3f9a2c1e7b0d4a65",           -- DATA-R70
   items = {
-    [13759] = { category = "fish", species = 13759, typicalLength = 300,
+    [13759] = { category = "fish", species = 13759, typicalLength = 300, quality = 1,
                 legend = false, noise = false, removed = false, pool = false },
-    [13876] = { category = "trophy", family = 5, weight = 40,
+    [13876] = { category = "trophy", family = 5, weight = 40, quality = 1,
                 legend = false, noise = false, removed = false, pool = false },
   },
   areas = {
