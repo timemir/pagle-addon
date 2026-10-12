@@ -16,3 +16,7 @@ A Pagle Module never depends on another Module: no calls between Modules, no rea
 ## Note: Pagle Coins
 
 [ADR 0009](0009-core-holds-the-pagle-coins-wallet.md) ([Design the Pagle currency and shop](https://github.com/timemir/wow-fish/issues/28)) allows one cross-Module effect: a Module may pay Pagle Coins into Core's wallet, so disabling it slows what the player can buy in the Curio Shop. Income only ever adds, and the shop shows it by source, so nothing already earned is lost.
+
+## Note: a Module may read live game state for its own actions
+
+Decided while writing the QoL spec ([Write the QoL spec](https://github.com/timemir/wow-fish/issues/37)): a Module may read live game state it needs for its own actions (QoL watches the player's channel ending, its pole, bags and lure to re-point the Fishing key), but never to record, count or derive anything. Everything recorded or derived still comes from Core.
