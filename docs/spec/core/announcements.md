@@ -181,7 +181,7 @@ ANN-R51.
 | Tackle Board | Notice completed | `toast.low` |
 | Tackle Board | Expedition completed | `toast` |
 | Tackle Board | Campfire milestone, title, Fly Box complete | `banner` |
-| Tackle Board | Kindling burned, fire out | `nod` at the next login |
+| Tackle Board | Kindling burned, fire out | `nod` at the next login, or when a reset passes while logged in |
 | Stats, QoL | none | |
 
 The Module specs own their rows; this table is a cross-check.

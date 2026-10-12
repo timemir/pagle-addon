@@ -93,8 +93,8 @@ Generation runs live only, so it may use `math.random`; tests inject the random 
 
 ### Progress
 
-- **TKB-R40** A goal counts only Catches from **caught** Casts with a higher `seq` than the record that issued it. Every Catch is one item (one loot slot), whatever its quantity. Got-away Casts count toward nothing, except that they keep a Session going (TKB-R41).
-- **TKB-R41** **Session-bound** goals (the `wanderer` and `collector` Notices) count only within one Session. The Module cuts Sessions from the Casts it applies with Core's rule (LOG-R60: a gap of 900 s or more, hard-coded from LOG-R60's tunable since Core exposes no Session-cutting call, between consecutive Casts, caught or got away, starts a new one; the Session's ID is its first Cast's entry ID) and folds `Pagle.SESSION_RULES_VERSION` into its rules version (TKB-R81). When a Cast starts a new Session, every session-bound goal's progress resets to 0 before that Cast is counted.
+- **TKB-R40** A goal counts only Catches from **caught** Casts with a higher `seq` than the record that issued it. Every Catch is one item (one loot slot), whatever its quantity. Got-away Casts count toward nothing; which Session a Cast belongs to is Core's tag (TKB-R41).
+- **TKB-R41** **Session-bound** goals (the `wanderer` and `collector` Notices) count only Catches from Casts that share one Session. The Module never cuts Sessions itself (ADR 0001): it reads each Cast's `session` tag (LOG-R98). When a counted Cast's `session` differs from the Session a session-bound goal's progress belongs to, that goal's progress resets to 0 and belongs to the new Session before the Cast is counted. Because the stored progress is keyed by Core's Session IDs, `Pagle.SESSION_RULES_VERSION` is folded into the rules version (TKB-R81, LOG-R61).
 - **TKB-R42** How each kind counts a Catch (all of these need a caught Cast after the goal, TKB-R40; "the zone" is the Cast's `conditions.zone`, and `0` never matches):
 
   | Kind | A Catch counts when | Progress |
@@ -149,7 +149,7 @@ Generation runs live only, so it may use `math.random`; tests inject the random 
   | `reroll` | the player takes a goal down |
 
   A record kind the Module doesn't know, or a payload it can't parse or whose values are out of range (an unknown `type` or `kind`, a tier outside 0–3, a non-positive need), is skipped. A changed shape gets a new kind (`issue2`), never an edit (ADR 0008).
-- **TKB-R81** The Module keeps one projection (LOG-R70) over every entry `M:IterateCatches` yields: its own records, and every Cast from the first `seq` (for Session cutting, zone recency and the ever-caught set), whether or not the board was started then. Its `rulesVersion` is `TKB_RULES_VERSION × 1000 + Pagle.SESSION_RULES_VERSION` (Tunables). The Size band is frozen (LOG-R68) and the Module never reads a length, so `SIZE_RULES_VERSION` isn't folded. `TKB_RULES_VERSION` rises whenever a progress, Campfire, Fly Box or pattern-order rule changes; generation changes don't need it (TKB-R22).
+- **TKB-R81** The Module keeps one projection (LOG-R70) over every entry `M:IterateCatches` yields: its own records, and every Cast from the first `seq` (for zone recency and the ever-caught set), whether or not the board was started then. Its `rulesVersion` is `TKB_RULES_VERSION × 1000 + Pagle.SESSION_RULES_VERSION` (Tunables). The Size band is frozen (LOG-R68) and the Module never reads a length, so `SIZE_RULES_VERSION` isn't folded. `TKB_RULES_VERSION` rises whenever a progress, Campfire, Fly Box or pattern-order rule changes; generation changes don't need it (TKB-R22).
 - **TKB-R82** The projection's state at any moment is a pure function of the log entries applied, the catalogue, and the day it has been advanced to (TKB-R14). Advancing to today outside an apply (the live step) gives the same state a later rebuild reaches when it applies the next entry, because no completion happens without an entry.
 - **TKB-R83** The **celebrated set** (LOG-R77), in `PagleTackleBoardDB.global.celebrated`, holds the IDs of completed goals and titles already shown. A goal or title is added when its live moment is raised, and in `done` as TKB-R84 says. A live completion of a goal, or a live earning of a title, already in it raises no moment; the goal still pays and ties its fly, and a milestone still pays its Coins, which then show only in the Coins total, not as a stamp. The set only grows (a few IDs a day).
 - **TKB-R84** While applying entries in `"replay"` or `"rebuild"` mode, the Module tallies what they earned in a scratch field outside the stored state (cleared by `reset` and after `done`): goals completed by type, Coins, flies tied, titles earned, Kindling burned, and whether the fire went out. After a catch-up or rebuild, in `done`:
@@ -247,7 +247,6 @@ Examples: `A1|1|1791731747|0|TackleBoard|issue|n;haul;2;15;30;33` (30 Catches in
 ---@field fire { count: integer, kindling: integer, longest: integer, milestones: { [integer]: { day: integer, cast: string } }, log: { [integer]: "lit"|"burned"|"out"|"unlit" } }  -- log keeps the last 28 days
 ---@field zones { [integer]: integer }   -- zone areaID -> time of the Angler's last Cast there
 ---@field caught { [integer]: true }     -- every item ID ever caught (TKB-R46)
----@field session { id: string, lastTime: integer }?
 
 ---@class TackleGoal
 ---@field id string                   -- TKB-R23
@@ -349,7 +348,7 @@ Pagle.RegisterModule{
 | `Pagle.RegisterCallback` (for `ConditionsChanged`, `AppearanceChanged`), `Pagle.RegisterEvent` (for `GET_ITEM_INFO_RECEIVED`) | TKB-R36, TKB-R121, TKB-R124 |
 | `Pagle.GetZones`, `GetArea`, `GetZoneCatches`, `GetItem`, `GetAngler` | generation (TKB-R30–R33), progress (TKB-R42) |
 | `Pagle.SIZE_BANDS`, Catch `size` | TKB-R36, TKB-R42 |
-| `Pagle.SESSION_RULES_VERSION`, `Pagle.GetSession` | TKB-R41, TKB-R104 |
+| Cast `session` tag (LOG-R98), `Pagle.SESSION_RULES_VERSION`, `Pagle.GetSession` | TKB-R41, TKB-R81, TKB-R104 |
 | `Pagle.GetConditions`, event `ConditionsChanged` | TKB-R121 |
 | `M:RaiseMoment`, `M:SetSummaryLine`, `M:RaiseWriteUp` | TKB-R84–R87 |
 | `M:ReportCoinsEarned` | TKB-R63 |
