@@ -172,8 +172,9 @@ ANN-R51.
 |---|---|---|
 | Ledger | new Species, trophy weight, zone rank, Skill Milestone | `toast` |
 | Ledger | size record, new junk or treasure | `toast.low`; a record beating one that stood 50+ Catches of that Species is raised at `toast` |
-| Ledger | Species new to a zone, ★★★, Uncharted | `nod` |
-| Ledger | level-up, Zone Master, Prestige ready, Prestige, Catch Milestone | `banner` |
+| Ledger | Species new to a zone, ★★, ★★★, trophy family ★★ or ★★★, Uncharted | `nod` |
+| Ledger | level-up, Zone Master, Prestige ready, Catch Milestone, completion title | `banner` |
+| Ledger | Prestige (no `cast`: its own Announcement) | `banner` |
 | Ledger | Legend | `splash` |
 | Hunts | Hunt completed, further tier | `toast.high` |
 | Hunts | set title | `banner` |
