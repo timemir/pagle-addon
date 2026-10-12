@@ -168,7 +168,7 @@ The rules below are authoritative; this sketch only summarises them.
 
   | Header | Row | Kind | Values · default |
   |---|---|---|---|
-  | Stats | Show the live tracker | checkbox, id `tracker` | off (`PagleStatsDB.profile.tracker`) |
+  | Stats | Show the live tracker | checkbox, id `tracker` (ids are per Module, CORE-R42) | off (`PagleStatsDB.profile.tracker`) |
   | | ↳ Watched Dry spells | custom, parent `tracker`; never greyed out | the watches (STA-R60), "Stop watching" per row |
   | | Stats tracker frame | slot dropdown `stats.trackerframe`, added by Core (SET-R44) | `stats.trackerframe.none` |
 
@@ -177,7 +177,7 @@ The rules below are authoritative; this sketch only summarises them.
 
   | Header | Row | Kind | Values · default | Greyed out when |
   |---|---|---|---|---|
-  | Tackle Board | Show goals workable here | checkbox, id `tackleboard.tracker` | on (`PagleTackleBoardDB.profile.tracker`) | the board isn't started (TKB-R5) |
+  | Tackle Board | Show goals workable here | checkbox, id `tracker` (ids are per Module, CORE-R42) | on (`PagleTackleBoardDB.profile.tracker`) | the board isn't started (TKB-R5) |
   | | Tackle Board tracker frame | slot dropdown `tackleboard.trackerframe`, added by Core (SET-R44) | `tackleboard.trackerframe.none` | |
 
   Before the board is started, the section is these two rows as usual, with the checkbox greyed out; its tooltip (tackle-board.md) always points at the root's "Start my board". There is no separate note.

@@ -98,6 +98,7 @@ Terms are used as `CONTEXT.md` defines them. Numbers live in each file's Tunable
   - On each page, Core's own rows come first. Each Module's rows follow, in `def.order`, under a header with its `def.title`. The header is left out when the Module's first row is a header of its own.
   - A page with no rows isn't registered: Fishing while QoL is off, or Trackers with no tracker Module on.
   - A setting's value lives in the Module's own DB, reached through the setting's `get` and `set`.
+  - Setting ids are scoped per Module: an `id` is unique among one Module's rows on one topic page, and a `parent` names a row in the same Module's section of that page. Two Modules may use the same id (Stats and the Tackle Board both use `tracker`). `AddSetting` raises a Lua error for an id the Module already used on that page, or a `parent` that names none of its earlier rows there.
   - Look and Feel takes no rows. Core builds it from the goods registry ([wallet-and-shop.md](wallet-and-shop.md#ui)).
   - A slot's dropdown also appears beside the thing it changes. A slot in the "Announcements" category ends Core's rows on Announcements; a slot in the "Trackers" category ends its Module's rows on Trackers.
 - **CORE-R43** `Pagle.OpenSettings(topic?)` opens the root, or the topic page named `topic`: `"fishing"`, `"announcements"`, `"trackers"` or `"look"`. It uses `Settings.OpenToCategory(category:GetID())`. An unknown topic, or one whose page isn't registered, opens the root.
@@ -199,7 +200,7 @@ ADR 0008 names the record call `Pagle.AppendRecord`; it lives on the handle so C
 ```lua
 ---@class PagleSetting
 ---@field kind "header"|"checkbox"|"slider"|"dropdown"|"button"|"keybinding"|"custom"
----@field id? string               -- needed if another row names it as parent
+---@field id? string               -- needed if another row names it as parent; unique among this Module's rows on this page
 ---@field label string
 ---@field tooltip? string
 ---@field get? fun(): any          -- value kinds: checkbox, slider, dropdown
@@ -211,7 +212,7 @@ ADR 0008 names the record call `Pagle.AppendRecord`; it lives on the handle so C
 ---@field options? fun(): { value: any, label: string }[]   -- dropdown
 ---@field onClick? fun()           -- button
 ---@field binding? string          -- keybinding: the Bindings.xml name, also listed in Key Bindings › AddOns
----@field parent? string           -- id of the row it hangs under (indented)
+---@field parent? string           -- id of the row it hangs under (indented), a row of the same Module on the same page
 ---@field isEnabled? fun(): boolean  -- greyed out when false
 ---@field init? fun(): table       -- custom: returns a Settings initializer (e.g. Stats' watched Dry spells)
 ```

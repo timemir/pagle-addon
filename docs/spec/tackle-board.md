@@ -382,7 +382,7 @@ Nothing: no other Module can see the Tackle Board (ADR 0001).
 | Option | Where | Values | Default |
 |---|---|---|---|
 | Start my board / Open Tackle Board | Settings root, Module status list (CORE-R44) | button | |
-| Show goals workable here | Trackers page (`M:AddSetting("trackers", { kind = "checkbox", id = "tackleboard.tracker", … })`) | on/off | on |
+| Show goals workable here | Trackers page (`M:AddSetting("trackers", { kind = "checkbox", id = "tracker", … })`) | on/off | on |
 | Tackle Board tracker frame | Trackers page under the checkbox, and Look and Feel (Core builds both from the slot, CORE-R42) | owned frames | `tackleboard.trackerframe.none` |
 
 Before the board is started, the checkbox is greyed out (`isEnabled` returns false). Its tooltip is always "Lists the goals you can work on where you are. Before your board is started, use Start my board on the Pagle page." The settingsAction label is a function, so it reads "Open Tackle Board" once the board is started. The row-by-row layout belongs to `docs/spec/settings.md`.
