@@ -139,7 +139,36 @@ Legends, titles, Simulated Size with the typical-length check on, Catch Mileston
 
 ## M5 Hunts
 
-The Hunts Module, the Now/Soon board and its tracker, Core's tracker dock (CORE-R70–R73, built with its first tracker), `NextWindow`, the Hunt list and its lock tooling, Hunts lore and its check.
+**Goal:** the Hunts Module, the Now/Soon board and its tracker, Core's tracker dock (built with its first tracker), `NextWindow`, the Hunt list and its lock tooling, and Hunts lore with its check on.
+
+**Core rules:**
+- CORE-R70–R73 (the tracker dock), with the Trackers page's "Reset tracker dock position" row. The Trackers page is registered from here on, since Hunts gives it rows (CORE-R42).
+- LOG-R50 (`Pagle.NextWindow`)
+
+**Content data rules:**
+- DATA-R72, DATA-R75 for `HuntList.lua`
+- DATA-R85–R94 (the Hunt list format, classes, the generator's Hunt checks and the emitted shape)
+- DATA-R95 and DATA-R96 as tooling only: `--lock` exists and is tested, but `released.lock` stays empty until the 1.0 tag
+- DATA-R60's `--lock` mode, DATA-R63 for the Hunt checks
+- DATA-R105, and DATA-R107 for the `hunts` lore ID (switched on in `data/checks.toml`), with `data/lore/hunts.toml` and its `[hunts.huntgood]` manifest entry
+
+**Hunts rules:** every rule in `hunts.md`:
+- HNT-R1–R7, HNT-R10–R18, HNT-R20–R23, HNT-R25–R27, HNT-R30–R34
+- HNT-R40–R44, HNT-R50–R55, HNT-R60–R70, HNT-R75–R82
+- HNT-R85–R91, HNT-R110–R112, HNT-R120–R122, HNT-R130, HNT-R135–R138
+- HNT-R190–R198
+- the v1 Hunt list (`hunts.md` Data), with its item and area IDs checked against `data/db2/`
+- Settings: "Show the Hunts tracker" on Trackers, "Tell me when a pinned Hunt's window opens" on Announcements; Core adds the two slots' dropdowns
+
+**Exit check:**
+1. `scripts/generate-data.py --check` passes with the v1 Hunt list. Breaking a Hunt on purpose (a natural Hunt without a gated catch entry, or a 1-hour weekly window) makes it fail with the admission or rarity-cap error.
+2. With the full package enabled, `/pagle hunts` and the compartment entry toggle the board. It groups the 16 Hunts by realm time: Night Run is Now at night and not in the afternoon, Winter's Squid reads "back in September" in summer, and Rack Hour is On demand.
+3. Pin Night Run and Dawn Trout: the tracker docks under the minimap above any other tracker and lists both with live labels. Shift-drag moves the dock; Reset puts it back.
+4. Catch a Raw Nightfin Snapper (any time of day): Night Run completes with a "Hunt complete" toast whose Coins stamp includes its 30, its seal shows the date, and the tracker shows "1 / 10".
+5. Disable Pagle_Hunts, fish a qualifying Catch, then re-enable it: no toast pops up, and a Write-up section "While Hunts was off" lists it.
+6. Change the Hunt list (for example, a tier threshold) and `/reload`: Hunts rebuilds, earlier completions stay, and nothing pops up.
+7. With "Tell me when a pinned Hunt's window opens" on and a pinned Hunt about to open, a Nod appears when it opens; with Cozy mode on, it goes to the Session summary instead.
+8. Enter combat with the board open: it stays open, the clock reads "(paused in combat)", and it regroups after combat.
 
 ## M6 Stats
 
