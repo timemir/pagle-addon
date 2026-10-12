@@ -1,0 +1,1153 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Catch Feedback Prototype</title>
+<!--
+  PROTOTYPE: throwaway, never ships. Lives only on branch prototype/catch-feedback.
+  Question (wow-fish "Prototype Catch feedback: toasts, sounds and cozy mode"):
+    How is a Catch announced, and how much feedback is too much for a player fishing hundreds of Casts?
+  Plan: three structurally different presentations on one mock game screen, switchable via ?variant=A|B|C,
+        the floating bottom bar, or ←/→. All three are driven by ONE pure policy module (FeedbackPolicy,
+        first <script>) that decides what is shown, merged, queued, held for combat or saved for the
+        session summary. That module is the liftable part; the rest is a throwaway shell.
+        ?stage=new|mid|cap picks the sample Angler (day one / mid-game / level 59), as in the Fish Journal prototype.
+  A fake fishing simulator (Game, second <script>) produces Casts with Ledger moments. Its rates, names,
+  sizes and weights are placeholders. Sounds are WebAudio stand-ins for shipped .ogg files.
+  Open the file directly in a browser. No build, no persistence.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Marcellus&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root{--gold:#ffd100;--txt:#ece6d6;--dim:#8f8a80;--panel:#f6f4ef;--ink:#23211d;--ink2:#6b665c;--accent:#2f6f8f;--line:#dedad1;
+  --tbg1:#2e2318;--tbg2:#120d08;--tb:#8a6a42;--tglow:rgba(255,200,90,.0)}
+body.s-gild{--tbg1:#33280f;--tbg2:#0e0a03;--tb:#e0b84a;--tglow:rgba(255,209,0,.35)}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{display:flex;background:#0a1416;font-family:'Marcellus',Georgia,serif;color:var(--txt);font-size:13px;overflow:hidden}
+button{font:inherit;cursor:pointer}
+
+/* ---------- mock game screen ---------- */
+#scene{position:relative;flex:1;min-width:0;height:100vh;overflow:hidden;
+  background:linear-gradient(180deg,#5d7f8c 0%,#9db7b0 30%,#c9c19a 41%,#3c6a72 42%,#1f4650 60%,#0c2228 100%)}
+#scene::before{content:"";position:absolute;inset:42% 0 0 0;background:repeating-linear-gradient(180deg,transparent 0 14px,rgba(255,255,255,.05) 14px 16px);animation:waves 6s linear infinite}
+@keyframes waves{to{background-position:0 32px}}
+.hills{position:absolute;left:0;right:0;top:28%;height:14%;background:radial-gradient(ellipse at 20% 100%,#3e5a3a 0 40%,transparent 41%),radial-gradient(ellipse at 70% 100%,#4a6640 0 45%,transparent 46%),radial-gradient(ellipse at 95% 100%,#36502f 0 35%,transparent 36%)}
+#scene.combat::after{content:"";position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 120px 30px rgba(170,0,0,.55);animation:pulse 1.4s ease-in-out infinite}
+@keyframes pulse{50%{box-shadow:inset 0 0 90px 20px rgba(170,0,0,.35)}}
+
+#bobber{position:absolute;left:50%;top:60%;width:18px;height:18px;margin:-9px;border-radius:50%;background:linear-gradient(180deg,#d23a2a 0 50%,#f2efe6 50%);border:1px solid #000;animation:bob 2.4s ease-in-out infinite}
+#bobber::after{content:"";position:absolute;left:-14px;right:-14px;top:9px;height:8px;border-radius:50%;border:1px solid rgba(255,255,255,.35)}
+#bobber.splash{animation:splash .5s ease-out}
+@keyframes bob{50%{transform:translateY(3px)}}
+@keyframes splash{0%{transform:translateY(8px) scale(.8)}60%{transform:translateY(-6px)}}
+
+#pframe{position:absolute;left:16px;top:14px;display:flex;align-items:center;gap:8px}
+#pframe .por{width:58px;height:58px;border-radius:50%;background:radial-gradient(circle at 45% 40%,#7a5a44,#2a1a10);border:3px solid #caa451;box-shadow:0 0 0 2px #000}
+#pframe .bars{width:150px}
+#pframe .nm{color:var(--gold);font-size:13px;text-shadow:0 1px 1px #000}
+#pframe .hp,#pframe .mp{height:11px;border:1px solid #000;margin-top:2px}
+#pframe .hp{background:linear-gradient(#3fd13f,#167a16)}#pframe .mp{background:linear-gradient(#4a7ad8,#1b3d8a)}
+#pframe .sw{display:none;color:#ff4d3a;font-size:12px;margin-top:3px;text-shadow:0 1px 1px #000}
+.combat #pframe .sw{display:block}
+
+#minimap{position:absolute;right:20px;top:34px;width:140px;height:140px}
+#minimap .mm{position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 50% 50%,#3c6a72 0 30%,#5b7a4e 31% 70%,#3c5f3a 71%);border:4px solid #8a7a5f;box-shadow:0 0 0 2px #000}
+#minimap .zn{position:absolute;left:-30px;right:-30px;top:-2px;text-align:center;color:var(--gold);font-size:12px;text-shadow:0 1px 2px #000;transform:translateY(-100%)}
+#pbtn{position:absolute;left:-8px;bottom:-4px;width:34px;height:34px;border-radius:50%;padding:0;border:2px solid #caa451;background:radial-gradient(circle at 45% 40%,#2e4a58,#081014);box-shadow:0 0 0 1px #000}
+#pbtn svg{width:100%;height:100%}
+#pip{position:absolute;right:-6px;top:-6px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:#c0261b;border:1px solid #ffd27a;color:#fff;font:bold 11px/16px Arial;display:none}
+#pip.on{display:block;animation:pipIn .4s ease-out}
+@keyframes pipIn{0%{transform:scale(.3)}70%{transform:scale(1.25)}}
+
+#actionbar{position:absolute;left:50%;bottom:44px;transform:translateX(-50%);display:flex;gap:3px;padding:4px;background:rgba(0,0,0,.55);border:1px solid #5a4e3c;border-radius:4px}
+#actionbar i{width:38px;height:38px;border:1px solid #555;border-radius:3px;background:radial-gradient(circle at 40% 35%,#3b444c,#0e1114)}
+#actionbar i:first-child{background:radial-gradient(circle at 40% 35%,#6a8aa0,#1c2c38)}
+#anglerbar{position:absolute;left:50%;bottom:96px;transform:translateX(-50%);width:470px}
+.xp{position:relative;height:13px;background:#050403;border:1px solid #6b5d46;border-radius:2px;overflow:hidden}
+.xp i{position:absolute;top:0;bottom:0;left:0;transition:width .4s}
+.xp .f{background:linear-gradient(#c27ae6,#6a2a9e 55%,#3e1260)}
+.xp .r{background:linear-gradient(#59a8f0,#245f9e);opacity:.55}
+.xp .t{position:absolute;inset:0;text-align:center;font:10px/12px Arial,sans-serif;color:#fff;text-shadow:0 1px 1px #000,0 0 2px #000}
+.xp.busy .t::after{content:"  ·  Ledger updating…";color:#9fd0ff}
+
+/* ---------- shared bits ---------- */
+.ic{--sz:36px;--qc:#9d9d9d;display:inline-block;flex:none;width:var(--sz);height:var(--sz);border:1px solid var(--qc);border-radius:3px;background:radial-gradient(circle at 40% 35%,#3b444c,#0e1114);box-shadow:0 0 0 1px #000;vertical-align:middle;overflow:hidden}
+.ic svg{width:100%;height:100%;display:block}
+.stamps{display:flex;gap:4px;flex-wrap:wrap}
+.st{display:inline-block;font:bold 10px/14px Arial,sans-serif;letter-spacing:.04em;text-transform:uppercase;padding:1px 6px;border-radius:3px;color:#fff;background:#555;border:1px solid rgba(0,0,0,.6);box-shadow:0 1px 2px rgba(0,0,0,.6);white-space:nowrap}
+.st.k-new{background:#b3211a}.st.k-record{background:#d0761a}.st.k-trophy{background:#8a5a2a}.st.k-star{background:#b08a00}
+.st.k-rank{background:#1f7a73}.st.k-here{background:#2e7d32}.st.k-uncharted{background:#5b4a7a}.st.k-level{background:#6a2a9e}
+.st.k-master,.st.k-prestige{background:#a07800}.st.k-legend{background:#d06a00}.st.k-hunt{background:#1c6a94}.st.k-goal{background:#2a6a4a}
+.st.k-update{background:#555}.st.k-skill{background:#28529a}
+.src{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#bba98a}
+.det{color:#d6cfbf;font-size:12px}
+.more{color:#9fd0ff;font-size:11px;margin-top:2px}
+.psz{color:var(--dim);font-size:10px}
+
+/* record ruler: the "nice animation" the dev asked for */
+.ruler{margin-top:6px;width:100%}
+.ruler .gain{opacity:0;color:#ffcf6a;font:bold 11px Arial}.ruler.done .gain{opacity:1;transition:opacity .3s}
+.ruler.mini{width:150px;margin:0 0 0 4px;flex:none}.ruler.mini .trk{height:7px}.ruler.mini .old::after,.ruler.mini .psz,.ruler.mini .rec{display:none}.ruler.mini .num{margin-top:1px}.ruler.mini .num b{font-size:11px;min-width:0}
+.ruler .trk{position:relative;height:12px;border:1px solid #6b5d46;background:repeating-linear-gradient(90deg,#1a140e 0 9px,#3a2f22 9px 10px);border-radius:2px}
+.ruler .fill{position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(#ffcf6a,#c97a10);box-shadow:0 0 8px rgba(255,180,60,.7)}
+.ruler .old{position:absolute;top:-4px;bottom:-4px;width:2px;background:#cfc6b3;box-shadow:0 0 0 1px #000}
+.ruler .old::after{content:"old";position:absolute;top:-11px;left:-8px;font:9px Arial;color:#cfc6b3}
+.ruler.passed .old{background:#ff5a3a;animation:snap .35s ease-out}
+@keyframes snap{40%{transform:scaleY(1.8)}}
+.ruler .num{display:flex;align-items:baseline;gap:6px;margin-top:3px;font:11px Arial;color:#cfc6b3}
+.ruler .num b{font:bold 15px Arial;color:#fff;min-width:44px}
+.ruler .rec{opacity:0;font:bold 11px Arial;color:#fff;background:#d0761a;padding:0 6px;border-radius:3px;transform:scale(2.4) rotate(-12deg)}
+.ruler.done .rec{animation:slam .35s cubic-bezier(.3,1.6,.5,1) forwards}
+@keyframes slam{to{opacity:1;transform:scale(1) rotate(-4deg)}}
+
+/* ---------- Variant A: alert toasts ---------- */
+#layer-toast{position:absolute;left:50%;bottom:122px;transform:translateX(-50%);display:flex;flex-direction:column-reverse;align-items:center;gap:8px;pointer-events:none}
+.ta{position:relative;width:350px;display:flex;gap:10px;align-items:flex-start;padding:10px 12px 10px 10px;background:linear-gradient(180deg,var(--tbg1),var(--tbg2));border:2px solid var(--tb);border-radius:6px;box-shadow:0 0 0 1px #000,0 6px 18px rgba(0,0,0,.7),0 0 18px var(--tglow);animation:taIn .35s cubic-bezier(.2,1.4,.4,1) both;overflow:visible}
+body.s-gild .ta::before{content:"";position:absolute;inset:0;border-radius:4px;background:linear-gradient(105deg,transparent 30%,rgba(255,230,150,.22) 45%,transparent 60%);background-size:250% 100%;animation:shine 1.6s ease-out .2s both;pointer-events:none}
+@keyframes shine{from{background-position:120% 0}to{background-position:-60% 0}}
+.ta .ic{--sz:44px}
+.ta .body{flex:1;min-width:0}
+.ta .nm{font-size:15px;line-height:18px;text-shadow:0 1px 1px #000}
+.ta .stamps{position:absolute;right:-8px;top:-10px}
+.ta.nod .nm,.ta.nod .det{white-space:nowrap}
+.ta.nod{width:auto;max-width:600px;padding:5px 10px;align-items:center;border-width:1px;opacity:.92}
+.ta.nod .ic{--sz:22px}.ta.nod .nm{font-size:13px}.ta.nod .stamps{position:static}
+.ta.digest .ln{display:flex;gap:6px;align-items:center;font-size:12px;margin-top:3px}
+.ta.out{animation:taOut .3s ease-in both}
+@keyframes taIn{from{opacity:0;transform:translateY(24px) scale(.96)}}
+@keyframes taOut{to{opacity:0;transform:translateY(10px)}}
+
+#layer-banner{position:absolute;left:0;right:0;top:20%;display:flex;justify-content:center;pointer-events:none}
+.ba{text-align:center;padding:10px 90px;background:radial-gradient(ellipse at center,rgba(0,0,0,.65),transparent 70%);animation:baIn .6s ease-out both}
+.ba .k{font-size:13px;letter-spacing:.35em;color:#e8d9a8}
+.ba .t{font-size:40px;line-height:46px;color:var(--gold);text-shadow:0 2px 3px #000,0 0 18px rgba(255,190,40,.5)}
+.ba .t::before,.ba .t::after{content:"";display:inline-block;width:80px;height:2px;margin:0 16px;vertical-align:middle;background:linear-gradient(90deg,transparent,#e0b84a)}
+.ba .t::after{background:linear-gradient(270deg,transparent,#e0b84a)}
+.ba .s{color:#fff;font-size:15px;text-shadow:0 1px 2px #000}
+.ba .stamps{justify-content:center;margin-top:6px}
+.ba.out{animation:fadeOut .5s ease-in both}
+@keyframes baIn{from{opacity:0;transform:scale(1.25)}}
+@keyframes fadeOut{to{opacity:0}}
+
+/* ---------- Variant B: catch line ---------- */
+#line{position:absolute;left:50%;bottom:122px;transform:translateX(-50%);width:470px;padding:5px 10px;display:flex;gap:8px;align-items:center;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.12);border-radius:3px;transition:all .25s;opacity:.75}
+#line .ic{--sz:20px}
+#line .nm{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#line .xpg{margin-left:auto;font:11px Arial;color:#c9a0f0;white-space:nowrap}#line .xpg em{color:#7fc0ff;font-style:normal}
+#line .x{display:none;width:100%}
+#line.flick{animation:flick .4s}
+@keyframes flick{0%{background:rgba(80,60,20,.7)}}
+#line.nod{opacity:1;border-color:#8a7a5f}
+#line.hot{opacity:1;flex-wrap:wrap;padding:8px 12px;background:linear-gradient(180deg,var(--tbg1),var(--tbg2));border:2px solid var(--tb);box-shadow:0 0 16px rgba(255,190,60,.35),0 0 0 1px #000}
+#line.hot .ic{--sz:34px}#line.hot .nm{font-size:15px}
+#line.hot .x{display:block}
+.bb{text-align:center;animation:bbIn 1s ease-out both}
+.bb .t{font-size:44px;letter-spacing:.06em;background:linear-gradient(#fff3b0,#ffd100 45%,#b37400);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 2px 2px #000)}
+.bb .s{font-size:16px;color:#fff;text-shadow:0 1px 3px #000;font-family:'IM Fell English',serif;font-style:italic}
+.bb .stamps{justify-content:center;margin-top:6px}
+.bb.out{animation:fadeOut .8s ease-in both}
+@keyframes bbIn{from{opacity:0;letter-spacing:.4em}}
+
+/* ---------- Variant C: bobber callouts ---------- */
+#layer-float{position:absolute;inset:0;pointer-events:none}
+.fl{position:absolute;transform:translate(-50%,-100%);text-align:center;white-space:nowrap;text-shadow:0 1px 2px #000,0 0 3px #000;animation:rise var(--d,2000ms) ease-out forwards}
+@keyframes rise{0%{opacity:0;margin-top:0}10%{opacity:1}75%{opacity:1}100%{opacity:0;margin-top:-110px}}
+.fl.q{font:bold 12px Arial;color:#c9a0f0}.fl.q em{color:#7fc0ff;font-style:normal}
+.fl.n{font-size:14px}
+.fl.t{font-size:18px;animation-name:riseSlow}
+@keyframes riseSlow{0%{opacity:0;margin-top:0;transform:translate(-50%,-100%) scale(.6)}8%{opacity:1;transform:translate(-50%,-100%) scale(1.15)}14%{transform:translate(-50%,-100%) scale(1)}80%{opacity:1;margin-top:-60px}100%{opacity:0;margin-top:-80px}}
+.fl .big{display:block;font:bold 26px Arial;letter-spacing:.05em;animation:pop .4s cubic-bezier(.3,1.8,.5,1) both}
+.fl .big:nth-child(2){animation-delay:.15s}.fl .big:nth-child(3){animation-delay:.3s}.fl .big:nth-child(4){animation-delay:.45s}
+@keyframes pop{from{transform:scale(0)}}
+.fl .ruler{width:220px;margin:4px auto 0;text-shadow:none}
+.ring{position:absolute;width:20px;height:20px;margin:-10px;border-radius:50%;border:3px solid #ffd100;animation:ring 1.6s ease-out forwards}
+@keyframes ring{to{transform:scale(22);opacity:0;border-width:1px}}
+.fl.b .t2{font-size:46px;color:var(--gold);text-shadow:0 2px 3px #000,0 0 24px rgba(255,190,40,.8)}
+.fl.b .s{font-size:15px;color:#fff}
+
+/* ---------- shared: Legend splash and session summary ---------- */
+#layer-splash{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,rgba(40,20,0,.55),rgba(0,0,0,.88));cursor:pointer;z-index:20}
+#layer-splash.on{display:flex;animation:fadeIn .5s both}
+@keyframes fadeIn{from{opacity:0}}
+.rays{position:absolute;width:900px;height:900px;background:repeating-conic-gradient(rgba(255,170,40,.13) 0 6deg,transparent 6deg 18deg);border-radius:50%;mask:radial-gradient(circle,#000 10%,transparent 65%);-webkit-mask:radial-gradient(circle,#000 10%,transparent 65%);animation:spin 40s linear infinite}
+@keyframes spin{to{transform:rotate(1turn)}}
+.leg{position:relative;width:440px;padding:26px 30px 22px;text-align:center;background:linear-gradient(180deg,#f1e2bd,#d9c08a);color:#3a2610;border:3px solid #8a5a1a;border-radius:4px;box-shadow:0 0 0 2px #000,0 0 60px rgba(255,150,30,.6);font-family:'IM Fell English',serif;animation:legIn .9s cubic-bezier(.2,1.3,.4,1) both}
+@keyframes legIn{from{opacity:0;transform:scale(.6) rotate(-3deg)}}
+.leg .k{font-family:'Marcellus',serif;letter-spacing:.4em;color:#a0500a;font-size:13px}
+.leg .ic{--sz:84px;margin:12px auto;display:block;border-width:2px;box-shadow:0 0 0 2px #000,0 0 26px rgba(255,140,0,.9)}
+.leg h2{font-family:'Marcellus',serif;font-weight:normal;font-size:28px;margin:4px 0;color:#a04a00}
+.leg p{font-style:italic;font-size:16px;margin:8px 0}
+.leg .stamps{justify-content:center}
+.leg .hint{font-family:Arial;font-size:11px;color:#7a6040;margin-top:10px}
+
+#layer-summary{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.35);z-index:15}
+#layer-summary.on{display:flex}
+.sum{width:520px;max-height:84vh;display:flex;flex-direction:column;background:radial-gradient(ellipse at 50% 0%,#2b251e,#1b1814 70%);border:2px solid #8a7a5f;border-radius:6px;box-shadow:0 0 0 2px #000,0 0 0 5px #3a3024,0 0 0 6px #8a7a5f,0 0 0 8px #000,0 18px 50px rgba(0,0,0,.75);animation:taIn .4s both}
+.sum .hd{padding:6px;text-align:center;color:var(--gold);font-size:16px;background:linear-gradient(#2f281f,#14110d);border-bottom:1px solid #000}
+.sum .bd{padding:12px 16px;overflow:auto}
+.sum .sub{text-align:center;color:var(--dim);margin-bottom:10px}
+.sum .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px}
+.sum .grid div{background:rgba(0,0,0,.42);border:1px solid #3a3128;border-radius:3px;padding:6px;text-align:center}
+.sum .grid b{display:block;font-size:20px;color:#fff;font-weight:normal}
+.sum .grid span{font-size:11px;color:var(--dim)}
+.sum h4{margin:12px 0 4px;color:var(--gold);font-weight:normal;font-size:13px;border-bottom:1px solid #3a3128;padding-bottom:2px}
+.sum .row{display:flex;gap:8px;align-items:center;padding:3px 0}
+.sum .row .ic{--sz:24px}
+.sum .row .det{margin-left:auto;text-align:right;font-size:11px;color:var(--dim)}
+.sum .note{font-size:11px;color:#9fd0ff;margin-top:8px}
+.sum .ft{display:flex;gap:8px;justify-content:center;padding:10px;border-top:1px solid #000}
+.wbtn{background:linear-gradient(#a3170e,#560804);border:1px solid #c9a24c;border-radius:4px;color:var(--gold);padding:4px 14px;text-shadow:0 1px 0 #000}
+
+/* ---------- control panel (not part of the design) ---------- */
+#panel{width:380px;flex:none;height:100vh;overflow-y:auto;background:var(--panel);color:var(--ink);font:13px/1.45 system-ui,-apple-system,Segoe UI,sans-serif;border-left:1px solid #000}
+#panel header{padding:14px 16px 10px;border-bottom:1px solid var(--line)}
+#panel h1{font-size:16px;margin:0}#panel h1 small{font-weight:normal;color:var(--ink2);font-size:12px;margin-left:6px}
+#panel .q{margin:6px 0 0;color:var(--ink2);font-size:12px}
+#panel section{padding:10px 16px;border-bottom:1px solid var(--line)}
+#panel h2{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink2);margin:0 0 6px}
+#panel .btns{display:flex;flex-wrap:wrap;gap:5px}
+#panel .b{background:#fff;border:1px solid #c9c4b8;border-radius:5px;padding:4px 9px;color:var(--ink);font-size:12px}
+#panel .b:hover{border-color:var(--accent)}
+#panel .b.pri{background:var(--accent);border-color:var(--accent);color:#fff}
+#panel .b.on{background:#a8321f;border-color:#a8321f;color:#fff}
+#panel kbd{font-size:10px;opacity:.7;margin-left:4px}
+.seg{display:inline-flex;border:1px solid #c9c4b8;border-radius:5px;overflow:hidden}
+.seg button{border:0;background:#fff;padding:4px 9px;font-size:12px;color:var(--ink)}
+.seg button+button{border-left:1px solid #c9c4b8}
+.seg button.on{background:var(--accent);color:#fff}
+#panel label{display:flex;align-items:center;gap:6px;margin:4px 0}
+#panel input[type=number]{width:46px;font:inherit;padding:1px 3px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;font-size:12px}
+.kv dt{color:var(--ink2)}.kv dd{margin:0;font-variant-numeric:tabular-nums}
+.big{font-size:22px;font-weight:600}
+#tl{width:100%;height:56px;display:block;background:#fff;border:1px solid var(--line);border-radius:4px;margin-top:6px}
+.legend{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:11px;color:var(--ink2);margin-top:4px}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:3px;vertical-align:-1px}
+#log{font:11px/1.45 ui-monospace,Consolas,monospace;max-height:220px;overflow:auto;background:#fff;border:1px solid var(--line);border-radius:4px;padding:6px}
+#log div{padding:1px 0;border-bottom:1px dotted #eee}
+#log .new{background:#fff6d6}
+.rules{margin:0;padding-left:18px;font-size:12px;color:var(--ink)}
+.rules li{margin:3px 0}
+.rules b{font-weight:600}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+
+#switcher{position:absolute;left:50%;bottom:8px;transform:translateX(-50%);display:flex;align-items:center;gap:2px;background:#111;color:#fff;border-radius:999px;padding:3px;box-shadow:0 4px 14px rgba(0,0,0,.6);font:12px system-ui,sans-serif;z-index:30;border:1px solid #fff3}
+#switcher button{background:none;border:0;color:#fff;width:28px;height:24px;border-radius:999px}
+#switcher button:hover{background:#333}
+#switcher span{padding:0 10px;min-width:210px;text-align:center}
+
+@media (max-width:900px){body{flex-direction:column;overflow:auto}#scene{height:80vh;flex:none}#panel{width:100%;height:auto}}
+</style>
+</head>
+<body>
+<div id="scene">
+  <div class="hills"></div>
+  <div id="bobber"></div>
+  <div id="pframe"><div class="por"></div><div class="bars"><div class="nm">Thalindra</div><div class="hp"></div><div class="mp"></div><div class="sw">⚔ In combat</div></div></div>
+  <div id="minimap"><div class="zn" id="zoneName">Stranglethorn Vale</div><div class="mm"></div>
+    <button id="pbtn" title="Pagle (addon compartment). The number counts moments saved for your session summary."><svg viewBox="0 0 40 40"><path d="M7 20c6-8 17-10 24-3l5-5v16l-5-5c-7 7-18 5-24-3z" fill="#7fb3c8" stroke="#000" stroke-width="1.4"/><circle cx="26" cy="18" r="1.5"/></svg><b id="pip"></b></button></div>
+  <div id="layer-banner"></div>
+  <div id="layer-toast"></div>
+  <div id="layer-float"></div>
+  <div id="anglerbar"><div class="xp" id="axp"><i class="r"></i><i class="f"></i><div class="t"></div></div></div>
+  <div id="actionbar"><i title="Fishing"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  <div id="layer-summary"></div>
+  <div id="layer-splash"></div>
+  <div id="switcher"><button id="swPrev" title="Previous variant (←)">◀</button><span id="swLabel"></span><button id="swNext" title="Next variant (→)">▶</button></div>
+</div>
+
+<aside id="panel">
+  <header>
+    <h1>Catch feedback <small>prototype · throwaway</small></h1>
+    <p class="q">How is a Catch announced, and how much is too much over hundreds of Casts? Fish by hand or let Auto-fish run an hour at 60× and watch the timeline. The variants (bottom bar, ←/→) change only the <i>look</i>. One shared set of rules (bottom of this panel) decides <i>what</i> gets through.</p>
+  </header>
+
+  <section>
+    <h2>Angler</h2>
+    <div class="seg" id="stageSeg"><button data-v="new">Day one</button><button data-v="mid">Mid-game (Lv 23)</button><button data-v="cap">Level 59</button></div>
+  </section>
+
+  <section>
+    <h2>Fish</h2>
+    <div class="btns">
+      <button class="b pri" id="bCast">Cast <kbd>Space</kbd></button>
+      <button class="b" id="bAuto">▶ Auto-fish <kbd>F</kbd></button>
+      <span class="seg" id="speedSeg"><button data-v="1">1×</button><button data-v="10">10×</button><button data-v="60">60×</button></span>
+    </div>
+    <p class="q" style="margin-top:5px">Judge the look at 1×. At 60× popups flash past; use it to read the timeline and the interruptions per hour.</p>
+    <div class="btns" style="margin-top:5px">
+      <button class="b" id="bCombat">Enter combat <kbd>C</kbd></button>
+      <button class="b" id="bWalk">Walk away (5 min idle)</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Next Cast brings…</h2>
+    <div class="grid2">
+      <button class="b" data-force="newSpecies">New Species</button>
+      <button class="b" data-force="sizeRecord">Size record</button>
+      <button class="b" data-force="trophy">Trophy weight</button>
+      <button class="b" data-force="newItem">New junk / treasure</button>
+      <button class="b" data-force="newInZone">Species new to zone</button>
+      <button class="b" data-force="starUp">★★★ (50 caught)</button>
+      <button class="b" data-force="masteryRank">Zone Mastery rank</button>
+      <button class="b" data-force="uncharted">Uncharted catch</button>
+      <button class="b" data-force="levelUp">Level up</button>
+      <button class="b" data-force="milestone">Skill Milestone</button>
+      <button class="b" data-force="zoneMaster">Zone Master</button>
+      <button class="b" data-force="reach60">Reach level 60</button>
+      <button class="b" data-force="big" title="New to zone + Size record + ★★★ + Zone Mastery rank, all on one Cast">Everything at once</button>
+      <button class="b" data-force="legend">Legend</button>
+      <button class="b" data-force="getaway">Got away</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Not from a Cast</h2>
+    <div class="grid2">
+      <button class="b" id="bPrestige">Prestige (player button)</button>
+      <button class="b" id="bRetro" title="A content update classifies Uncharted catches already in the log">Content update credit</button>
+      <button class="b" id="bRebuild" title="Rules or data version changed: Ledger rebuilds its projection (ADR 0004)">Ledger rebuild</button>
+      <button class="b" id="bHunt">Hunts: window opens</button>
+      <button class="b" id="bGoal">Tackle Board: goal done</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Player settings</h2>
+    <label><input type="checkbox" id="optCozy"> <span><b>Cozy mode</b>: no popups or sounds; summary card only (Legends still splash)</span></label>
+    <label><input type="checkbox" id="optSound" checked> Sound <span style="color:var(--ink2)">(auto-muted above 10×)</span></label>
+    <label><input type="checkbox" id="optQuiet" checked> Show ordinary catches (the variant's quiet form)</label>
+    <label>Style <span class="seg" id="styleSeg"><button data-v="drift">Driftwood</button><button data-v="gild">Gilded (Lv 20 unlock)</button></span></label>
+    <label><input type="checkbox" id="optBudOn" checked> Interruption budget for low-priority toasts:</label>
+    <label style="padding-left:22px"><input type="number" id="optBudN" min="1" max="30" value="4"> per <input type="number" id="optBudW" min="1" max="60" value="5"> min</label>
+  </section>
+
+  <section>
+    <h2>Right now</h2>
+    <dl class="kv" id="now"></dl>
+  </section>
+
+  <section>
+    <h2>This session</h2>
+    <div style="display:flex;gap:16px;align-items:baseline"><div><span class="big" id="iph">0</span> <span style="color:var(--ink2)">interruptions / hour</span></div></div>
+    <dl class="kv" id="sess" style="margin-top:4px"></dl>
+    <svg id="tl" preserveAspectRatio="none"></svg>
+    <div class="legend"><span><i style="background:#c9c4b8"></i>quiet</span><span><i style="background:#5b9bd5"></i>nod</span><span><i style="background:#e0a020"></i>toast</span><span><i style="background:#8a3ad0"></i>banner</span><span><i style="background:#e05a00"></i>splash</span><span><i style="background:#fff;border:1px dashed #888"></i>to summary</span><span><i style="background:#c0261b"></i>held (combat)</span></div>
+  </section>
+
+  <section>
+    <h2>What Pagle decided</h2>
+    <div id="log"></div>
+  </section>
+
+  <section>
+    <h2>Rules being tested (one policy, all variants)</h2>
+    <ol class="rules">
+      <li><b>One Cast, one announcement.</b> Everything a Cast earns merges into one toast, with each moment shown as a stamp. Level and Zone Master news get a banner instead, and a Legend takes over the whole screen.</li>
+      <li><b>Ordinary catches never pop up.</b> Only the Angler bar moves, plus the variant's quiet form if enabled.</li>
+      <li><b>Nods</b> (★★★, Species new to zone, Uncharted) are silent and short. If something else is on screen, they go straight to the summary.</li>
+      <li><b>Toasts</b> (New Species, records, trophies, ranks, Skill Milestones, other Modules) show one at a time. At most 2 wait in line; extras become "+N more".</li>
+      <li><b>Interruption budget</b> (a player setting, on by default): every interruption counts, but only <b>low-priority</b> toasts (size records, new junk or treasure) step down to a nod when it's spent. A record shown as a nod still gets a compact ruler.</li>
+      <li><b>Banners and Legends always get through</b>, but they still count against the budget.</li>
+      <li><b>Combat</b> hides everything and holds new moments. 2 s after combat ends, one "While you were fighting" toast shows them.</li>
+      <li><b>Cozy mode</b>: nothing pops up and nothing plays. Moments wait on the compartment button's counter and the summary card.</li>
+      <li><b>Session summary</b> after 5 min without a Cast (placeholder until Stats defines a session).</li>
+      <li><b>Rebuilds never re-fire</b>: the Ledger's high-water set (ADR 0002/0004).</li>
+    </ol>
+  </section>
+</aside>
+
+<!-- ======================= THE LIFTABLE PART: pure feedback policy (no DOM) ======================= -->
+<script>
+const FeedbackPolicy = (() => {
+  const QUIET = 0, NOD = 1, TOAST = 2, BANNER = 3, SPLASH = 4;
+  const TIER_NAMES = ['quiet', 'nod', 'toast', 'banner', 'splash'];
+  // How each Ledger moment is announced. rank picks the headline when one Cast carries several.
+  const MOMENTS = {
+    uncharted:     { tier: NOD,    rank: 1,  stamp: 'Uncharted' },
+    starUp:        { tier: NOD,    rank: 2,  stamp: '★★★' },
+    newInZone:     { tier: NOD,    rank: 3,  stamp: 'New here' },
+    newItem:       { tier: TOAST,  rank: 4,  stamp: 'New!', budgeted: true },
+    sizeRecord:    { tier: TOAST,  rank: 5,  stamp: 'Record', budgeted: true },
+    trophyWeight:  { tier: TOAST,  rank: 6,  stamp: 'Trophy' },
+    masteryRank:   { tier: TOAST,  rank: 7,  stamp: 'Rank up' },
+    milestone:     { tier: TOAST,  rank: 8,  stamp: 'Skill' },
+    newSpecies:    { tier: TOAST,  rank: 9,  stamp: 'New!' },
+    levelUp:       { tier: BANNER, rank: 10, stamp: 'Level', layer: 'banner' },
+    prestige:      { tier: BANNER, rank: 11, stamp: 'Prestige', layer: 'banner' },
+    zoneMaster:    { tier: BANNER, rank: 12, stamp: 'Master', layer: 'banner' },
+    prestigeReady: { tier: BANNER, rank: 13, stamp: 'Prestige', layer: 'banner' },
+    legend:        { tier: SPLASH, rank: 14, stamp: 'Legend', layer: 'splash' },
+  };
+  const DURATION = { [NOD]: 3, [TOAST]: 6, [BANNER]: 5, [SPLASH]: Infinity }; // game seconds on screen; a Legend stays until clicked
+  const MAX_QUEUE = 2;
+  const COMBAT_GRACE = 2;
+  const IDLE_ENDS_SESSION = 300;
+
+  const rankOf = m => MOMENTS[m.kind]?.rank ?? 0;
+  const top = ms => ms.reduce((a, b) => (rankOf(b) > rankOf(a) ? b : a));
+  const inGrace = s => s.combatEndedAt != null && s.now < s.combatEndedAt + COMBAT_GRACE;
+
+  function newSession() {
+    return { startAt: null, casts: 0, catches: 0, getaways: 0, xp: 0, freshXp: 0, anglerFrom: null, anglerTo: null,
+      zone: null, moments: [], shown: { nod: 0, toast: 0, banner: 0, splash: 0 }, folded: 0, demoted: 0, held: 0, timeline: [] };
+  }
+
+  function initial(settings = {}) {
+    return { now: 0, settings: { cozy: false, budgetOn: true, budgetCount: 4, budgetWindow: 300, ...settings },
+      inCombat: false, combatEndedAt: null,
+      slots: { toast: null, banner: null, splash: null }, queue: { toast: [], banner: [] }, held: [],
+      interruptions: [], pip: 0, pendingSummary: null, lastCastAt: null, nextId: 1, session: newSession() };
+  }
+
+  function step(prev, ev) {
+    const s = structuredClone(prev);
+    const fx = [], log = [];
+    if (ev.at != null) s.now = ev.at;
+    switch (ev.type) {
+      case 'cast': onCast(s, ev.cast, fx, log); break;
+      case 'notify': {
+        s.session.moments.push(...[ev.ann.head, ...ev.ann.moments].map(m => ({ ...m, source: ev.ann.source })));
+        route(s, mkAnn(s, ev.ann), fx, log, '');
+        break;
+      }
+      case 'combat': onCombat(s, ev.on, fx, log); break;
+      case 'walkAway': endSession(s, fx, log); break;
+      case 'dismiss': hide(s, ev.layer, fx); break;
+      case 'settings': Object.assign(s.settings, ev.patch); break;
+      case 'tick': break;
+    }
+    housekeeping(s, fx, log);
+    return { state: s, fx, log };
+  }
+
+  function onCast(s, cast, fx, log) {
+    const ss = s.session;
+    if (ss.startAt == null) { ss.startAt = s.now; ss.anglerFrom = cast.anglerBefore; ss.zone = cast.zone; }
+    ss.casts++; ss.catches += cast.catches.length; if (!cast.catches.length) ss.getaways++;
+    ss.xp += cast.xp; ss.freshXp += cast.freshXp; ss.anglerTo = cast.anglerAfter;
+    ss.moments.push(...cast.moments.map(m => ({ ...m, source: 'Ledger' })));
+    s.lastCastAt = s.now;
+    const what = `Cast ${cast.n} · ${cast.catches.length ? cast.catches.map(c => c.name).join(' + ') : 'got away'}`;
+    const anns = announce(s, cast);
+    if (!anns.length) {
+      fx.push({ kind: 'quiet', cast });
+      ss.timeline.push({ at: s.now, t: 'quiet' });
+      log.push(`${what} → quiet (Angler bar only)`);
+      return;
+    }
+    for (const a of anns) route(s, a, fx, log, `${what}: `);
+  }
+
+  function announce(s, cast) {
+    const ms = cast.moments;
+    if (!ms.length) return [];
+    const legend = ms.find(m => m.kind === 'legend');
+    if (legend) return [mkAnn(s, { layer: 'splash', tier: SPLASH, head: legend, moments: [legend, ...ms.filter(m => m !== legend)] })];
+    const out = [];
+    const catchMs = ms.filter(m => !MOMENTS[m.kind].layer);
+    const bannerMs = ms.filter(m => MOMENTS[m.kind].layer === 'banner');
+    if (catchMs.length) out.push(mkAnn(s, { layer: 'toast', tier: Math.max(...catchMs.map(m => MOMENTS[m.kind].tier)), head: top(catchMs), moments: catchMs }));
+    if (bannerMs.length) out.push(mkAnn(s, { layer: 'banner', tier: BANNER, head: top(bannerMs), moments: bannerMs }));
+    return out;
+  }
+
+  function mkAnn(s, a) {
+    const moments = [a.head, ...a.moments.filter(m => m !== a.head)];
+    return { id: s.nextId++, source: 'Ledger', more: 0, ...a, moments,
+      stamps: [...new Set(moments.map(m => m.stamp ?? MOMENTS[m.kind]?.stamp).filter(Boolean))] };
+  }
+
+  function overBudget(s) {
+    const recent = s.interruptions.filter(t => t > s.now - s.settings.budgetWindow).length;
+    return recent + s.queue.toast.length >= s.settings.budgetCount;
+  }
+
+  function route(s, a, fx, log, prefix) {
+    const tl = t => s.session.timeline.push({ at: s.now, t });
+    const what = `${prefix}${a.source !== 'Ledger' ? a.source + ' · ' : ''}${a.head.label}${a.moments.length > 1 ? ` (+${a.moments.length - 1} stamp${a.moments.length > 2 ? 's' : ''})` : ''}`;
+    if (s.settings.cozy && a.tier < SPLASH) { fold(s, fx); tl('folded'); log.push(`${what} → saved for the summary (cozy mode)`); return; }
+    if (s.inCombat || inGrace(s)) { s.held.push(a); s.session.held++; tl('held'); log.push(`${what} → held until combat ends`); return; }
+    if (a.layer === 'splash') { show(s, a, fx); tl('splash'); log.push(`${what} → Legend splash`); return; }
+    if (a.layer === 'banner') {
+      if (!s.slots.banner) { show(s, a, fx); log.push(`${what} → banner`); }
+      else { s.queue.banner.push(a); log.push(`${what} → banner, after the current one`); }
+      tl('banner');
+      return;
+    }
+    // the budget only steps low-priority toasts down; a toast whose headline is New Species, a rank etc. always gets through
+    if (a.tier === TOAST && s.settings.budgetOn && MOMENTS[a.head.kind]?.budgeted && overBudget(s)) {
+      a.tier = NOD; a.demoted = true; s.session.demoted++;
+      log.push(`${what} → budget spent (${s.settings.budgetCount} per ${s.settings.budgetWindow / 60} min), so it's shown as a nod`);
+    }
+    const busy = s.slots.toast || s.queue.toast.length || s.slots.splash;
+    if (a.tier === NOD) {
+      if (!busy) { show(s, a, fx); tl('nod'); if (!a.demoted) log.push(`${what} → nod`); }
+      else { fold(s, fx); tl('folded'); log.push(`${what} → screen busy, saved for the summary`); }
+      return;
+    }
+    if (!busy) { show(s, a, fx); tl('toast'); log.push(`${what} → toast`); }
+    else if (s.queue.toast.length < MAX_QUEUE) { s.queue.toast.push(a); tl('toast'); log.push(`${what} → waits behind the current toast`); }
+    else { s.queue.toast[s.queue.toast.length - 1].more++; fold(s, fx); tl('folded'); log.push(`${what} → line full: "+1 more" on the last toast, details in the summary`); }
+  }
+
+  function show(s, a, fx) {
+    const layer = a.layer;
+    if (s.slots[layer]) hide(s, layer, fx);
+    a.shownAt = s.now; a.until = s.now + DURATION[a.tier];
+    s.slots[layer] = a;
+    fx.push({ kind: 'show', layer, ann: a });
+    if (a.tier >= TOAST) { fx.push({ kind: 'sound', tier: a.tier, legend: a.layer === 'splash' }); s.interruptions.push(s.now); }
+    s.session.shown[TIER_NAMES[a.tier]]++;
+  }
+
+  function hide(s, layer, fx) {
+    if (!s.slots[layer]) return;
+    fx.push({ kind: 'hide', layer, ann: s.slots[layer] });
+    s.slots[layer] = null;
+  }
+
+  function fold(s, fx) { s.session.folded++; s.pip++; fx.push({ kind: 'pip', n: s.pip }); }
+
+  function onCombat(s, on, fx, log) {
+    if (on === s.inCombat) return;
+    s.inCombat = on;
+    if (on) {
+      for (const layer of ['toast', 'banner', 'splash']) { if (s.slots[layer]) s.held.push(s.slots[layer]); hide(s, layer, fx); }
+      s.held.push(...s.queue.toast.splice(0), ...s.queue.banner.splice(0));
+      log.push(`Entered combat → screen cleared${s.held.length ? `, ${s.held.length} held` : ''}; new moments are held`);
+    } else {
+      s.combatEndedAt = s.now;
+      log.push(`Left combat${s.held.length ? ` → ${s.held.length} held moment(s) show in ${COMBAT_GRACE}s` : ''}`);
+    }
+  }
+
+  function flushHeld(s, fx, log) {
+    const held = s.held.splice(0);
+    const tl = t => s.session.timeline.push({ at: s.now, t });
+    const legends = held.filter(a => a.layer === 'splash');
+    const banners = held.filter(a => a.layer === 'banner');
+    const rest = held.filter(a => a.layer === 'toast');
+    const parts = [];
+    if (legends.length) { show(s, legends[0], fx); tl('splash'); parts.push('Legend splash'); }
+    if (banners.length) {
+      const ms = banners.flatMap(b => b.moments);
+      show(s, mkAnn(s, { layer: 'banner', tier: BANNER, head: top(ms), moments: ms }), fx); tl('banner'); parts.push('1 banner');
+    }
+    if (rest.length) {
+      const ms = rest.flatMap(a => a.moments);
+      const d = mkAnn(s, { layer: 'toast', tier: TOAST, exempt: true, digest: true, source: 'Pagle',
+        head: { kind: 'digest', label: 'While you were fighting', detail: `${ms.length} moment${ms.length > 1 ? 's' : ''} while you were in combat`, item: null }, moments: ms });
+      d.stamps = d.stamps.filter(x => x);
+      if (s.slots.splash) s.queue.toast.unshift(d); else show(s, d, fx);
+      tl('toast'); parts.push('1 digest toast');
+    }
+    log.push(`Combat over → ${held.length} held, released as ${parts.join(' + ')}`);
+  }
+
+  function endSession(s, fx, log) {
+    if (!s.session.casts) { s.lastCastAt = null; return; }
+    const card = { ...s.session, endAt: s.lastCastAt ?? s.now, cozy: s.settings.cozy };
+    s.session = newSession(); s.lastCastAt = null; s.pip = 0;
+    fx.push({ kind: 'pip', n: 0 });
+    if (s.inCombat || inGrace(s)) { s.pendingSummary = card; log.push('Session over → summary card waits for combat to end'); }
+    else { fx.push({ kind: 'summary', card }); log.push('Session over → summary card'); }
+  }
+
+  function housekeeping(s, fx, log) {
+    s.interruptions = s.interruptions.filter(t => t > s.now - Math.max(s.settings.budgetWindow, 3600));
+    for (const layer of ['toast', 'banner', 'splash']) { const a = s.slots[layer]; if (a && s.now >= a.until) hide(s, layer, fx); }
+    if (!s.inCombat && !s.slots.splash) {
+      if (!s.slots.toast && s.queue.toast.length) show(s, s.queue.toast.shift(), fx);
+      if (!s.slots.banner && s.queue.banner.length) show(s, s.queue.banner.shift(), fx);
+    }
+    if (!s.inCombat && s.held.length && !inGrace(s)) flushHeld(s, fx, log);
+    if (s.lastCastAt != null && s.now - s.lastCastAt >= IDLE_ENDS_SESSION) { log.push(`${IDLE_ENDS_SESSION / 60} min without a Cast`); endSession(s, fx, log); }
+    if (s.pendingSummary && !s.inCombat && !inGrace(s)) { fx.push({ kind: 'summary', card: s.pendingSummary }); s.pendingSummary = null; }
+  }
+
+  return { initial, step, MOMENTS, TIER_NAMES, DURATION, IDLE_ENDS_SESSION };
+})();
+</script>
+
+<!-- ======================= throwaway fishing simulator (placeholder data) ======================= -->
+<script>
+const Game = (() => {
+  const ZONE = 'Stranglethorn Vale';
+  const FISH = [
+    { name: 'Raw Spotted Yellowtail', cm: 38, hue: 48, w: 1 },
+    { name: 'Raw Glossy Mightfish', cm: 44, hue: 200, w: 1 },
+    { name: 'Raw Rockscale Cod', cm: 52, hue: 20, w: 1 },
+    { name: 'Raw Mithril Head Trout', cm: 40, hue: 180, w: 0.8 },
+    { name: 'Raw Redgill', cm: 30, hue: 0, w: 0.8 },
+    { name: 'Raw Bristle Whisker Catfish', cm: 46, hue: 90, w: 0.7 },
+    { name: 'Oily Blackmouth', cm: 34, hue: 260, w: 0.4 },
+    { name: 'Stonescale Eel', cm: 70, hue: 120, w: 0.25 },
+  ];
+  const JUNK = ['Waterlogged Boot', 'Tangled Fishing Line', 'Rusty Lure Tin', 'Soggy Love Letter', 'Broken Fishing Pole'].map(name => ({ name, q: 0, hue: 30, kind: 'junk' }));
+  const TREASURE = ['Battered Chest', 'Watertight Trunk', 'Bloated Rockscale Cod'].map(name => ({ name, q: 2, hue: 40, kind: 'treasure' }));
+  const TROPHY = { Catfish: [17, 26, 32, 52], Salmon: [15, 22, 29, 32], Lobster: [12, 22, 32] };
+  const LEGENDS = [
+    { name: "Keefer's Angelfish", lore: 'Taken from the Stranglethorn surf during the Extravaganza. Few have held one.', title: 'the Angelfish Whisperer' },
+    { name: 'Dezian Queenfish', lore: 'A queen of the Booty Bay waters, seen once a week if the tide allows.', title: 'Queen’s Angler' },
+    { name: "Brownell's Blue Striped Racer", lore: 'Fast as a cutter and twice as proud. Brownell swore it was a myth.', title: 'Racer Catcher' },
+  ];
+  const RANKS = ['none', 'Visitor', 'Regular', 'Local', 'Expert', 'Master'];
+  const TITLES = { 10: 'Dabbler', 20: 'Line-Caster', 30: 'Fisher', 40: 'Old Salt', 50: 'Ledgerkeeper', 60: "Pagle's Peer" };
+  const UNLOCKS = { 10: 'Deepwater journal theme', 20: 'Gilded toast style', 30: 'Gilded sound set', 40: 'Old Salt journal theme', 50: 'Lantern toast style', 60: 'Pagle’s Peer emblem' };
+  const need = L => 1000 + 80 * L;
+  const pick = a => a[Math.floor(Math.random() * a.length)];
+  const bell = () => (Math.random() + Math.random() + Math.random()) / 3;
+  const brief = it => it && { name: it.name, q: it.q, hue: it.hue, kind: it.kind };
+  const titleFor = L => { let t = 'Minnow'; for (const k in TITLES) if (L >= +k) t = TITLES[k]; return t; };
+
+  function create(stage) {
+    const g = { stage, n: 0, level: 1, xp: 0, prestige: 0, fresh: 0, prestigeReadyDone: false, seen: {}, zoneSeen: {}, counts: {}, records: {}, sub: {}, trophy: {}, rank: 0, zoneAny: false, milestone: 150 };
+    if (stage === 'mid') {
+      Object.assign(g, { level: 23, xp: 900, fresh: 120, rank: 2, zoneAny: true, milestone: 225 });
+      FISH.forEach((f, i) => {
+        if (f.name !== 'Stonescale Eel') g.seen[f.name] = 1;
+        if (!['Stonescale Eel', 'Oily Blackmouth'].includes(f.name)) g.zoneSeen[f.name] = 1;
+        g.counts[f.name] = [48, 31, 44, 22, 49, 19, 6, 0][i];
+        g.records[f.name] = f.cm * 1.17;
+      });
+      JUNK.slice(0, 4).forEach(j => (g.sub[j.name] = 1)); TREASURE.slice(0, 2).forEach(t => (g.sub[t.name] = 1));
+      g.trophy = { Catfish: 26, Salmon: 15 };
+    }
+    if (stage === 'cap') {
+      Object.assign(g, { level: 59, xp: need(59) - 2500, fresh: 300, rank: 4, zoneAny: true, milestone: 300 });
+      FISH.forEach(f => { g.seen[f.name] = g.zoneSeen[f.name] = 1; g.counts[f.name] = 50 + Math.floor(Math.random() * 300); g.records[f.name] = f.cm * 1.235; });
+      [...JUNK, ...TREASURE].forEach(j => (g.sub[j.name] = 1));
+      g.trophy = { Catfish: 52, Salmon: 29, Lobster: 32 };
+    }
+    return g;
+  }
+
+  const view = g => ({ level: g.level, xp: g.xp, need: need(g.level), prestige: g.prestige, fresh: g.fresh, title: titleFor(g.level), capped: g.level >= 60 });
+
+  function fishFor(g, forced) {
+    const seen = FISH.filter(f => g.seen[f.name]);
+    let f;
+    if (forced === 'newSpecies') {
+      const unseen = FISH.filter(x => !g.seen[x.name]);
+      f = unseen.length ? unseen[0] : pick(FISH);
+      delete g.seen[f.name]; delete g.zoneSeen[f.name]; delete g.records[f.name];
+    } else if (forced === 'newInZone' || forced === 'big') {
+      f = seen.length ? pick(seen) : FISH[0]; g.seen[f.name] = 1; delete g.zoneSeen[f.name];
+    } else if (forced === 'sizeRecord' || forced === 'starUp') {
+      f = seen.length ? pick(seen) : FISH[0]; g.seen[f.name] = 1;
+    } else {
+      let r = Math.random() * FISH.reduce((a, x) => a + x.w, 0);
+      f = FISH.find(x => (r -= x.w) < 0) || FISH[0];
+    }
+    if (forced === 'starUp' || forced === 'big') g.counts[f.name] = 49;
+    let size = f.cm * (0.75 + 0.5 * bell());
+    if ((forced === 'sizeRecord' || forced === 'big')) {
+      if (g.records[f.name] == null) g.records[f.name] = f.cm;
+      size = g.records[f.name] * (1.03 + Math.random() * 0.05);
+    }
+    return { name: f.name, q: 1, hue: f.hue, kind: 'fish', size: Math.round(size * 10) / 10 };
+  }
+
+  function cast(g, forced = null) {
+    g.n++;
+    if (forced === 'levelUp' && g.level < 60) g.xp = need(g.level) - 5;
+    if (forced === 'reach60') { g.level = 59; g.xp = need(59) - 5; }
+    const before = view(g);
+    const c = { n: g.n, zone: ZONE, catches: [], moments: [], xp: 0, freshXp: 0, anglerBefore: before };
+    const m = (kind, label, detail, item, bonus = 0, data) => { c.moments.push({ kind, label, detail, item: brief(item), data }); c.xp += bonus; };
+    const r = Math.random();
+    let item = null;
+    if (forced === 'getaway' || (!forced && r < 0.06)) item = null;
+    else if (forced === 'legend' || (!forced && r < 0.0601)) item = { ...pick(LEGENDS), q: 5, hue: 28, kind: 'legend' };
+    else if (forced === 'uncharted' || (!forced && r < 0.064)) item = { name: 'Unknown item 241337', q: 1, hue: 0, kind: 'uncharted' };
+    else if (forced === 'trophy' || (!forced && r < 0.071)) {
+      const fam = pick(Object.keys(TROPHY)); const ws = TROPHY[fam];
+      const w = forced === 'trophy' ? (ws.find(x => x > (g.trophy[fam] || 0)) ?? ws[ws.length - 1]) : pick(ws);
+      if (forced === 'trophy' && w <= (g.trophy[fam] || 0)) g.trophy[fam] = 0;
+      item = { name: `${w} Pound ${fam}`, q: 1, hue: 35, kind: 'trophy', fam, w };
+    } else if (forced === 'newItem' || (!forced && r < 0.105)) {
+      const pool = [...JUNK, ...TREASURE];
+      const unseen = pool.filter(x => !g.sub[x.name]);
+      item = forced === 'newItem' ? (unseen[0] || pool[0]) : (Math.random() < 0.75 ? pick(JUNK) : pick(TREASURE));
+      if (forced === 'newItem') delete g.sub[item.name];
+    } else item = fishFor(g, forced);
+
+    if (item) {
+      c.catches.push(item);
+      c.xp += 10;
+      if (g.fresh > 0) { g.fresh--; c.freshXp = 10; c.xp += 10; }
+      if (!g.zoneAny) { g.zoneAny = true; c.xp += 200; }
+      switch (item.kind) {
+        case 'legend': m('legend', item.name, item.lore, item, 2000, { title: item.title }); break;
+        case 'uncharted': m('uncharted', 'Uncharted', 'Unknown catch, logged. Credited once data knows it.', item); break;
+        case 'trophy':
+          if (item.w > (g.trophy[item.fam] || 0)) { g.trophy[item.fam] = item.w; m('trophyWeight', 'Trophy weight', `Heaviest ${item.fam} in your Trophy Room · +100 XP`, item, 100); }
+          break;
+        case 'junk': case 'treasure':
+          if (!g.sub[item.name]) { g.sub[item.name] = 1; m('newItem', item.kind === 'junk' ? 'Junk Museum' : 'Treasures', `New in the ${item.kind === 'junk' ? 'Junk Museum' : 'Treasures'} · +150 XP`, item, 150); }
+          break;
+        case 'fish': {
+          const first = !g.seen[item.name], firstHere = !g.zoneSeen[item.name];
+          if (first) m('newSpecies', 'New Species', 'First ever · +500 XP', item, 500);
+          else if (firstHere) m('newInZone', 'New to this zone', `First in ${ZONE} · +100 XP`, item, 100);
+          g.seen[item.name] = g.zoneSeen[item.name] = 1;
+          g.counts[item.name] = (g.counts[item.name] || 0) + 1;
+          if (g.counts[item.name] === 50) m('starUp', 'Species star', '★★★ Regular: 50 caught', item);
+          const rec = g.records[item.name];
+          if (rec == null) g.records[item.name] = item.size;
+          else if (item.size > rec) { g.records[item.name] = item.size; m('sizeRecord', 'Size record', `${item.size} cm, beating ${rec.toFixed(1)} cm`, item, 0, { old: rec, now: item.size }); }
+          break;
+        }
+      }
+      // Zone Mastery
+      const here = FISH.filter(f => g.zoneSeen[f.name]).length;
+      let natural = 1; if (here >= 4) natural = 2; if (here >= FISH.length) natural = 3;
+      let next = Math.max(g.rank, natural);
+      if ((forced === 'masteryRank' || forced === 'big') && g.rank < 4) next = g.rank + 1;
+      if (forced === 'zoneMaster') next = 5;
+      if (next > g.rank) {
+        g.rank = next;
+        if (next === 5) m('zoneMaster', 'Zone Master', `Master of ${ZONE} waters · title: Warden of Stranglethorn Waters · +1,250 XP`, item, 1250);
+        else m('masteryRank', 'Zone Mastery', `${ZONE}: ${RANKS[next]} · +${250 * next} XP`, item, 250 * next);
+      }
+    }
+    if (forced === 'milestone') { g.milestone = Math.min(300, g.milestone + 75); m('milestone', 'Skill Milestone', `Fishing ${g.milestone} reached · +1,000 XP`, item || { name: 'Fishing', q: 1, hue: 200, kind: 'fish' }, 1000); }
+
+    g.xp += c.xp;
+    while (g.level < 60 && g.xp >= need(g.level)) {
+      g.xp -= need(g.level); g.level++;
+      const t = TITLES[g.level];
+      m('levelUp', `Angler Level ${g.level}`, t ? `Title unlocked: ${t} · ${UNLOCKS[g.level]}` : `${need(g.level).toLocaleString()} XP to the next level`, null, 0, { level: g.level });
+    }
+    if (g.level >= 60 && !g.prestigeReadyDone) {
+      g.prestigeReadyDone = true;
+      m('prestigeReady', 'Prestige is ready', 'Level 60. Prestige from the Ledger whenever you like. Nothing is taken away.', null);
+    }
+    c.anglerAfter = view(g);
+    return c;
+  }
+
+  function prestige(g) {
+    g.prestige++; g.level = 1; g.prestigeReadyDone = false;
+    return { source: 'Ledger', layer: 'banner', tier: 3,
+      head: { kind: 'prestige', label: `Prestige ${g.prestige}`, detail: 'Emblem earned. Back to level 1; each level costs half the XP.', item: null }, moments: [] };
+  }
+  function retro(g) {
+    g.xp += 1150;
+    return { source: 'Ledger', layer: 'toast', tier: 2, head: { kind: 'retro', stamp: 'Update', label: 'Content update', detail: '7 Uncharted catches identified · +2 Species · +1,150 XP', item: { name: 'Content update', q: 1, hue: 200, kind: 'uncharted' } }, moments: [] };
+  }
+  const hunt = () => ({ source: 'Hunts', layer: 'toast', tier: 2, head: { kind: 'hunt', stamp: 'Hunt', label: 'Hunt open: Raw Nightfin Snapper', detail: 'Night has fallen · until 06:00 realm time', item: { name: 'Raw Nightfin Snapper', q: 1, hue: 235, kind: 'fish' } }, moments: [] });
+  const goal = () => ({ source: 'Tackle Board', layer: 'toast', tier: 2, head: { kind: 'goal', stamp: 'Goal', label: 'Goal complete: 20 catches in Stranglethorn', detail: 'Banked toward Rested Angler', item: { name: 'Goal', q: 2, hue: 140, kind: 'treasure' } }, moments: [] });
+
+  return { create, cast, view, prestige, retro, hunt, goal, ZONE };
+})();
+</script>
+
+<!-- ======================= throwaway shell: variants, sounds, panel ======================= -->
+<script>
+const $ = s => document.querySelector(s);
+const params = new URLSearchParams(location.search);
+const QC = ['#9d9d9d', '#ffffff', '#1eff00', '#0070dd', '#a335ee', '#ff8000'];
+const STAMP_CLASS = { 'New!': 'new', Record: 'record', Trophy: 'trophy', '★★★': 'star', 'Rank up': 'rank', 'New here': 'here', Uncharted: 'uncharted', Level: 'level', Master: 'master', Prestige: 'prestige', Legend: 'legend', Hunt: 'hunt', Goal: 'goal', Update: 'update', Skill: 'skill' };
+
+let stage = ['new', 'mid', 'cap'].includes(params.get('stage')) ? params.get('stage') : 'new';
+let variantKey = ['A', 'B', 'C'].includes(params.get('variant')) ? params.get('variant') : 'A';
+let speed = 1, auto = false, soundOn = true, showQuiet = true, style = 'drift';
+let game, pol, simNow = 0, nextCastAt = 0, lastLogCount = 0;
+const logLines = [];
+
+// ---------- helpers ----------
+function icon(item, sz) {
+  if (!item) return '';
+  const q = QC[item.q ?? 1], h = item.hue ?? 200;
+  let svg;
+  if (item.kind === 'treasure') svg = `<rect x="8" y="14" width="24" height="16" rx="2" fill="hsl(${h},55%,40%)" stroke="#000"/><rect x="8" y="14" width="24" height="5" fill="hsl(${h},60%,55%)" stroke="#000"/><rect x="18" y="18" width="4" height="5" fill="#ffd100"/>`;
+  else if (item.kind === 'junk') svg = `<path d="M12 8h10v14h8c3 0 4 3 4 6v4H12z" fill="#6b5a44" stroke="#000"/>`;
+  else if (item.kind === 'uncharted') svg = `<text x="20" y="28" font-size="22" text-anchor="middle" fill="#b9a6e0" font-family="Georgia">?</text>`;
+  else svg = `<path d="M5 20c6-9 18-11 26-3l5-5v16l-5-5c-8 8-20 6-26-3z" fill="hsl(${h},50%,${item.kind === 'legend' ? 55 : 50}%)" stroke="#000" stroke-width="1.3"/><circle cx="26" cy="18" r="1.6"/>`;
+  return `<span class="ic" style="--qc:${q};${sz ? `--sz:${sz}px` : ''}"><svg viewBox="0 0 40 40">${svg}</svg></span>`;
+}
+const stampsHTML = st => `<div class="stamps">${st.map(x => `<span class="st k-${STAMP_CLASS[x] || 'update'}">${x}</span>`).join('')}</div>`;
+const nameHTML = item => item ? `<span class="nm" style="color:${QC[item.q ?? 1]}">${item.name}</span>` : '';
+const realMs = a => Math.max(60, ((a.until - simNow) / speed) * 1000);
+const recordOf = a => a.moments.find(m => m.kind === 'sizeRecord');
+const fmtT = s => { s = Math.floor(s); return `${String(Math.floor(s / 3600)).padStart(2, '0')}:${String(Math.floor(s / 60) % 60).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`; };
+
+function bannerText(a) {
+  const h = a.head;
+  if (h.kind === 'levelUp') return { k: 'ANGLER', t: `Level ${h.data.level}`, s: h.detail };
+  if (h.kind === 'prestigeReady') return { k: 'LEVEL 60', t: 'Prestige ready', s: h.detail };
+  if (h.kind === 'zoneMaster') return { k: 'ZONE MASTERY', t: 'Master', s: h.detail };
+  if (h.kind === 'prestige') return { k: 'PRESTIGE', t: h.label, s: h.detail };
+  return { k: 'PAGLE', t: h.label, s: h.detail };
+}
+
+function rulerHTML(rec, mini) {
+  const max = rec.data.now * 1.1;
+  return `<div class="ruler${mini ? ' mini' : ''}" data-old="${rec.data.old}" data-now="${rec.data.now}"><div class="trk"><i class="fill"></i><i class="old" style="left:${(rec.data.old / max) * 100}%"></i></div>
+    <div class="num"><b>0.0</b> cm <span class="gain">+${(rec.data.now - rec.data.old).toFixed(1)}</span> <span class="psz">(Pagle size)</span> <em class="rec">New record</em></div></div>`;
+}
+function animateRulers(root, ms) {
+  root.querySelectorAll('.ruler').forEach(el => {
+    const old = +el.dataset.old, now = +el.dataset.now, max = now * 1.1, fill = el.querySelector('.fill'), num = el.querySelector('b');
+    const dur = Math.min(1500, ms * 0.45);
+    if (dur < 250) { fill.style.width = (now / max) * 100 + '%'; num.textContent = now.toFixed(1); el.classList.add('passed', 'done'); return; }
+    const t0 = performance.now();
+    const ease = t => 1 - Math.pow(1 - t, 3);
+    (function f(t) {
+      const p = Math.min(1, (t - t0) / dur), v = now * ease(p);
+      fill.style.width = (v / max) * 100 + '%'; num.textContent = v.toFixed(1);
+      if (v > old) el.classList.add('passed');
+      if (p < 1) requestAnimationFrame(f); else el.classList.add('done');
+    })(t0);
+  });
+}
+function bobberPos() {
+  const b = $('#bobber').getBoundingClientRect(), s = $('#scene').getBoundingClientRect();
+  return { x: b.left - s.left + b.width / 2, y: b.top - s.top };
+}
+
+// ---------- Variants: presentation only. They never decide what shows; the policy does. ----------
+const els = new Map();
+function removeEl(id, cls = 'out', after = 400) { const el = els.get(id); if (!el) return; els.delete(id); el.classList.add(cls); setTimeout(() => el.remove(), after); }
+
+const Variants = {
+  A: {
+    name: 'Alert toasts',
+    enter() {}, leave() {},
+    show(layer, a, ms) {
+      if (layer === 'toast') {
+        const el = document.createElement('div');
+        const item = a.head.item;
+        if (a.tier === 1) {
+          el.className = 'ta nod';
+          el.innerHTML = `${icon(item)}${nameHTML(item) || `<span class="nm">${a.head.label}</span>`}<span class="det">${a.head.label === item?.name ? '' : a.head.label}</span>${recordOf(a) ? rulerHTML(recordOf(a), true) : ''}${stampsHTML(a.stamps)}`;
+        } else if (a.digest) {
+          el.className = 'ta digest';
+          el.innerHTML = `<div class="body"><div class="src">Pagle</div><div class="nm" style="color:var(--gold)">${a.head.label}</div>
+            ${a.moments.slice(0, 5).map(m => `<div class="ln">${icon(m.item, 18)}<span>${m.label}</span><span class="det">${m.item && m.item.name !== m.label ? m.item.name : ''}</span></div>`).join('')}
+            ${recordOf(a) ? rulerHTML(recordOf(a)) : ''}${a.moments.length > 5 ? `<div class="more">+${a.moments.length - 5} more in your summary</div>` : ''}</div>${stampsHTML(a.stamps)}`;
+        } else {
+          el.className = 'ta';
+          const rec = recordOf(a);
+          el.innerHTML = `${icon(item)}<div class="body"><div class="src">${a.source === 'Ledger' ? 'Pagle' : 'Pagle ' + a.source} · ${a.head.label}</div>${nameHTML(item)}
+            <div class="det">${a.head.detail}</div>${rec ? rulerHTML(rec) : ''}${a.more ? `<div class="more">+${a.more} more in your summary</div>` : ''}</div>${stampsHTML(a.stamps)}`;
+        }
+        $('#layer-toast').append(el); els.set(a.id, el); animateRulers(el, ms);
+      } else if (layer === 'banner') {
+        const b = bannerText(a), el = document.createElement('div');
+        el.className = 'ba';
+        el.innerHTML = `<div class="k">${b.k}</div><div class="t">${b.t}</div><div class="s">${b.s}</div>${a.stamps.length > 1 ? stampsHTML(a.stamps.slice(1)) : ''}`;
+        $('#layer-banner').append(el); els.set(a.id, el);
+      }
+    },
+    hide(layer, a) { removeEl(a.id); },
+    quiet() {},
+  },
+
+  B: {
+    name: 'Catch line',
+    enter() {
+      const el = document.createElement('div'); el.id = 'line';
+      el.innerHTML = `<span class="nm" style="color:var(--dim)">Pagle · cast to start</span>`;
+      $('#scene').append(el);
+    },
+    leave() { $('#line')?.remove(); },
+    fill(item, label, extra, xpHTML) {
+      const el = $('#line');
+      el.innerHTML = `${icon(item)}${item ? nameHTML(item) : `<span class="nm">${label}</span>`}${extra}<span class="xpg">${xpHTML}</span>`;
+      el.classList.remove('flick'); void el.offsetWidth; el.classList.add('flick');
+      return el;
+    },
+    quiet(cast) {
+      const c = cast.catches[0];
+      this.fill(c, 'Got away', c?.size ? `<span class="psz">${c.size} cm</span>` : '', c ? `+${cast.xp - cast.freshXp} XP${cast.freshXp ? ` <em>+${cast.freshXp}</em>` : ''}` : '<span class="psz">no Catch</span>').classList.remove('nod', 'hot');
+    },
+    show(layer, a, ms) {
+      if (layer === 'banner') {
+        const b = bannerText(a), el = document.createElement('div');
+        el.className = 'bb';
+        el.innerHTML = `<div class="t">${b.t}</div><div class="s">${b.s}</div>${a.stamps.length > 1 ? stampsHTML(a.stamps.slice(1)) : ''}`;
+        $('#layer-banner').append(el); els.set(a.id, el);
+        return;
+      }
+      if (layer !== 'toast') return;
+      const rec = recordOf(a);
+      const el = this.fill(a.head.item, a.head.label, stampsHTML(a.stamps), a.source !== 'Ledger' ? a.source : '');
+      el.classList.remove('nod', 'hot');
+      if (a.tier === 1) { el.classList.add('nod'); if (rec) { el.insertAdjacentHTML('beforeend', rulerHTML(rec, true)); animateRulers(el, ms); } }
+      else {
+        el.classList.add('hot');
+        const x = document.createElement('div'); x.className = 'x';
+        x.innerHTML = `<div class="det">${a.digest ? a.moments.map(m => m.label + (m.item && m.item.name !== m.label ? ': ' + m.item.name : '')).join(' · ') : a.head.label + ' · ' + a.head.detail}</div>${rec ? rulerHTML(rec) : ''}${a.more ? `<div class="more">+${a.more} more in your summary</div>` : ''}`;
+        el.append(x); animateRulers(x, ms);
+      }
+      els.set(a.id, el);
+    },
+    hide(layer, a) {
+      if (layer === 'banner') return removeEl(a.id);
+      const el = els.get(a.id); els.delete(a.id);
+      if (el && el.isConnected) { el.classList.remove('hot', 'nod'); el.querySelector('.x')?.remove(); }
+    },
+  },
+
+  C: {
+    name: 'Bobber callouts',
+    enter() {}, leave() {},
+    float(cls, html, ms, dy = 0) {
+      const p = bobberPos(), el = document.createElement('div');
+      el.className = 'fl ' + cls; el.innerHTML = html;
+      el.style.left = p.x + 'px'; el.style.top = p.y - 14 - dy + 'px'; el.style.setProperty('--d', ms + 'ms');
+      $('#layer-float').append(el); setTimeout(() => el.remove(), ms + 50);
+      return el;
+    },
+    quiet(cast) {
+      const ms = Math.max(300, 2200 / Math.sqrt(speed));
+      if (!cast.catches.length) return this.float('q', '<span style="color:#aaa">got away</span>', ms);
+      this.float('q', `+${cast.xp - cast.freshXp} XP${cast.freshXp ? ` <em>+${cast.freshXp}</em>` : ''}`, ms);
+    },
+    show(layer, a, ms) {
+      if (layer === 'banner') {
+        const p = bobberPos(), ring = document.createElement('div');
+        ring.className = 'ring'; ring.style.left = p.x + 'px'; ring.style.top = p.y + 'px';
+        $('#layer-float').append(ring); setTimeout(() => ring.remove(), 1700);
+        const b = bannerText(a);
+        els.set(a.id, this.float('b', `<div class="t2">${b.t}</div><div class="s">${b.s}</div>`, ms, 120));
+        return;
+      }
+      if (layer !== 'toast') return;
+      const item = a.head.item, rec = recordOf(a);
+      const colors = { 'New!': '#ff4a3a', Record: '#ffa030', Trophy: '#e0a060', '★★★': '#ffd100', 'Rank up': '#40e0c0', 'New here': '#60e060', Uncharted: '#b9a6e0', Skill: '#7fb0ff', Hunt: '#60c0ff', Goal: '#60e0a0', Update: '#ccc' };
+      let el;
+      if (a.tier === 1) el = this.float('n', `${nameHTML(item)} <span style="color:${colors[a.stamps[0]] || '#fff'}">${a.stamps.join(' · ')}</span>${rec ? rulerHTML(rec, true) : ''}`, ms);
+      else el = this.float('t', `${a.stamps.map(s => `<span class="big" style="color:${colors[s] || '#fff'}">${s}</span>`).join('')}
+        ${item ? nameHTML(item) : `<span style="color:var(--gold)">${a.head.label}</span>`}<div class="det" style="font-size:12px">${a.digest ? a.moments.map(m => m.label).join(' · ') : (a.source !== 'Ledger' ? a.source + ' · ' : '') + a.head.detail}</div>
+        ${rec ? rulerHTML(rec) : ''}${a.more ? `<div class="more">+${a.more} more in your summary</div>` : ''}`, ms, 10);
+      els.set(a.id, el); animateRulers(el, ms);
+    },
+    hide(layer, a) { if (pol.inCombat) removeEl(a.id, 'x', 0); else els.delete(a.id); },
+  },
+};
+const V = () => Variants[variantKey];
+
+// ---------- shared: Legend splash, session summary ----------
+function showSplash(a) {
+  const h = a.head, el = $('#layer-splash');
+  el.innerHTML = `<div class="rays"></div><div class="leg"><div class="k">LEGEND</div>${icon(h.item)}<h2>${h.item.name}</h2><p>${h.detail}</p>
+    <div style="font-family:Marcellus,serif">+2,000 XP · Title: <i>${h.data.title}</i></div>${a.stamps.length > 1 ? stampsHTML(a.stamps.slice(1)) : ''}<div class="hint">Click anywhere to continue</div></div>`;
+  el.classList.add('on');
+}
+function hideSplash() { $('#layer-splash').classList.remove('on'); }
+$('#layer-splash').addEventListener('click', () => dispatch({ type: 'dismiss', layer: 'splash', at: simNow }));
+
+function showSummary(card) {
+  const mins = Math.max(1, Math.round((card.endAt - card.startAt) / 60));
+  const byKind = k => card.moments.filter(m => (Array.isArray(k) ? k.includes(m.kind) : m.kind === k));
+  const rows = ms => ms.map(m => `<div class="row">${icon(m.item, 24)}<span>${m.item && m.item.name !== m.label ? m.item.name : m.label}</span><span class="det">${m.kind === 'sizeRecord' ? `${m.data.now} cm <span class="psz">(Pagle size)</span>` : m.detail}</span></div>`).join('');
+  const sec = (title, ms) => (ms.length ? `<h4>${title}</h4>${rows(ms)}` : '');
+  const a0 = card.anglerFrom, a1 = card.anglerTo;
+  const elsewhere = card.moments.filter(m => m.source && !['Ledger', 'Pagle'].includes(m.source));
+  const uncharted = byKind('uncharted').length;
+  const html = `<div class="sum"><div class="hd">Fishing session · ${card.zone}</div><div class="bd">
+    <div class="sub">${mins} min · Thalindra</div>
+    <div class="grid"><div><b>${card.casts}</b><span>Casts</span></div><div><b>${card.catches}</b><span>Catches</span></div><div><b>${card.getaways}</b><span>Got away</span></div><div><b>${card.xp.toLocaleString()}</b><span>XP (${card.freshXp} Fresh Water)</span></div></div>
+    <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--dim)"><span>Angler Level ${a0.level}${a1.level !== a0.level ? ` → <span style="color:var(--gold)">${a1.level}</span>` : ''}</span><span>${a1.title}</span></div>
+    <div class="xp" style="margin-top:3px"><i class="f" style="width:${Math.min(100, (a1.xp / a1.need) * 100)}%"></i><div class="t">${a1.xp.toLocaleString()} / ${a1.need.toLocaleString()} XP</div></div>
+    ${sec('Legends', byKind('legend'))}
+    ${sec('Angler', [...(() => { const ls = byKind('levelUp'); return ls.length ? [{ ...ls[ls.length - 1], detail: ls.length > 1 ? `up ${ls.length} levels this session` : ls[0].detail }] : []; })(), ...byKind(['prestigeReady', 'prestige', 'milestone'])])}
+    ${sec('Firsts', byKind(['newSpecies', 'newItem', 'newInZone']))}
+    ${sec('Records', byKind(['sizeRecord', 'trophyWeight']))}
+    ${sec('Mastery', byKind(['masteryRank', 'zoneMaster', 'starUp']))}
+    ${sec('Content updates', byKind('retro'))}
+    ${uncharted ? `<h4>Uncharted</h4><div class="row">${icon({ kind: 'uncharted', q: 1 }, 24)}<span>${uncharted} unknown catch${uncharted > 1 ? 'es' : ''} logged</span><span class="det">credited when content data knows them</span></div>` : ''}
+    ${elsewhere.length ? `<h4>From other Modules <span class="psz">(open question: can the Ledger's card show these? ADR 0001)</span></h4>${rows(elsewhere.map(m => ({ ...m, label: m.source + ': ' + m.label })))}` : ''}
+    ${card.folded ? `<div class="note">${card.folded} moment${card.folded > 1 ? 's were' : ' was'} saved here instead of popping up${card.cozy ? ' (cozy mode)' : ''}.</div>` : ''}
+    ${!card.moments.length ? '<div class="note">A quiet session. Nothing new, which is fine.</div>' : ''}
+  </div><div class="ft"><button class="wbtn" onclick="alert('Would open the Ledger (Fish Journal prototype)')">Open Ledger</button><button class="wbtn" id="sumClose">Close</button></div></div>`;
+  const el = $('#layer-summary'); el.innerHTML = html; el.classList.add('on');
+  $('#sumClose').onclick = () => el.classList.remove('on');
+  playSound(2);
+}
+
+// ---------- sounds (WebAudio stand-ins for shipped .ogg sound sets) ----------
+let ac;
+function tone(f, t, dur, vol, bell) {
+  const o = ac.createOscillator(), g = ac.createGain();
+  o.type = bell ? 'sine' : 'triangle'; o.frequency.value = f;
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.008); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g).connect(ac.destination); o.start(t); o.stop(t + dur + 0.05);
+  if (bell) tone(f * 2.76, t, dur * 0.5, vol * 0.25, false);
+}
+function playSound(tier, legend) {
+  if (!soundOn || speed > 10 || pol?.settings.cozy && !legend) return;
+  try { ac ||= new AudioContext(); } catch { return; }
+  const t = ac.currentTime + 0.02, bell = style === 'gild', d = bell ? 1.2 : 0.35;
+  const seq = { 2: [523, 784], 3: [523, 659, 784, 1047] }[tier];
+  if (legend) { [392, 523, 659, 784].forEach(f => tone(f, t, 2.2, 0.06, true)); [784, 988, 1175, 1568, 1976].forEach((f, i) => tone(f, t + 0.5 + i * 0.09, 0.9, 0.05, true)); return; }
+  seq?.forEach((f, i) => tone(f * (bell ? 1.5 : 1), t + i * (tier === 3 ? 0.11 : 0.09), d, tier === 3 ? 0.13 : 0.1, bell));
+}
+
+// ---------- wiring ----------
+function applyFx(f) {
+  if (f.kind === 'show') {
+    if (f.layer === 'splash') showSplash(f.ann); else V().show(f.layer, f.ann, realMs(f.ann));
+  } else if (f.kind === 'hide') {
+    if (f.layer === 'splash') hideSplash(); else V().hide(f.layer, f.ann);
+  } else if (f.kind === 'quiet') { if (showQuiet) V().quiet(f.cast); }
+  else if (f.kind === 'sound') playSound(f.tier, f.legend);
+  else if (f.kind === 'pip') { const p = $('#pip'); p.textContent = f.n; p.classList.toggle('on', f.n > 0); }
+  else if (f.kind === 'summary') showSummary(f.card);
+}
+
+function dispatch(ev) {
+  const r = FeedbackPolicy.step(pol, ev);
+  pol = r.state;
+  for (const l of r.log) logLines.unshift(`[${fmtT(simNow)}] ${l}`);
+  logLines.length = Math.min(logLines.length, 200);
+  r.fx.forEach(applyFx);
+  if (r.log.length || r.fx.length || ev.type !== 'tick') renderPanel();
+}
+
+function doCast(forced) {
+  const c = Game.cast(game, forced);
+  nextCastAt = simNow + 16 + Math.random() * 12;
+  const b = $('#bobber'); b.classList.remove('splash'); void b.offsetWidth; b.classList.add('splash');
+  dispatch({ type: 'cast', at: simNow, cast: c });
+  renderAngler(c.anglerAfter);
+}
+function notify(ann) { dispatch({ type: 'notify', at: simNow, ann }); renderAngler(Game.view(game)); }
+
+function renderAngler(v) {
+  const x = $('#axp');
+  x.querySelector('.f').style.width = Math.min(100, (v.xp / v.need) * 100) + '%';
+  x.querySelector('.r').style.width = Math.min(100, ((v.xp + v.fresh * 10) / v.need) * 100) + '%';
+  x.querySelector('.t').textContent = `${v.prestige ? '✦'.repeat(Math.min(v.prestige, 3)) + ' ' : ''}Angler ${v.level} · ${v.title}  —  ${v.capped ? 'Prestige ready' : `${v.xp.toLocaleString()} / ${v.need.toLocaleString()} XP`}${v.fresh ? `  ·  Fresh Water ${v.fresh}` : ''}`;
+}
+
+function renderPanel() {
+  const s = pol, ss = s.session, set = s.settings;
+  const recent = s.interruptions.filter(t => t > s.now - set.budgetWindow).length;
+  const slot = a => (a ? `${a.head.item?.name ?? a.head.label} <span style="color:var(--ink2)">(${FeedbackPolicy.TIER_NAMES[a.tier]})</span>` : '—');
+  $('#now').innerHTML = `
+    <dt>Game time</dt><dd>${fmtT(simNow)} at ${speed}×${auto ? ' · auto-fishing' : ''}</dd>
+    <dt>Toast slot</dt><dd>${slot(s.slots.toast)}</dd>
+    <dt>Banner slot</dt><dd>${slot(s.slots.banner)}</dd>
+    <dt>Waiting</dt><dd>${s.queue.toast.length} toast${s.queue.toast.length === 1 ? '' : 's'}${s.queue.banner.length ? `, ${s.queue.banner.length} banner` : ''}</dd>
+    <dt>Combat</dt><dd>${s.inCombat ? `<b style="color:#a8321f">in combat</b> · ${s.held.length} held` : 'no'}</dd>
+    <dt>Budget</dt><dd>${recent} of ${set.budgetCount} used in the last ${set.budgetWindow / 60} min</dd>
+    <dt>For summary</dt><dd>${s.pip} saved (counter on the compartment button)</dd>
+    <dt>Next summary</dt><dd>${s.lastCastAt != null ? `in ${fmtT(Math.max(0, FeedbackPolicy.IDLE_ENDS_SESSION - (s.now - s.lastCastAt)))} of no casting` : 'after the next Cast + 5 min idle'}</dd>`;
+  const dur = ss.startAt != null ? Math.max(60, s.now - ss.startAt) : 0;
+  const inter = ss.shown.toast + ss.shown.banner + ss.shown.splash;
+  $('#iph').textContent = dur ? Math.round(inter / (dur / 3600)) : 0;
+  $('#sess').innerHTML = `
+    <dt>Length</dt><dd>${fmtT(dur)} · ${ss.casts} Casts · ${ss.catches} Catches</dd>
+    <dt>Shown</dt><dd>${ss.shown.toast} toasts · ${ss.shown.banner} banners · ${ss.shown.splash} splashes · ${ss.shown.nod} nods</dd>
+    <dt>Softened</dt><dd>${ss.demoted} toast→nod (budget) · ${ss.folded} to summary · ${ss.held} held</dd>`;
+  renderTimeline(ss, dur);
+  const log = $('#log'), fresh = logLines.length - lastLogCount;
+  log.innerHTML = logLines.slice(0, 60).map((l, i) => `<div class="${i < fresh ? 'new' : ''}">${l}</div>`).join('');
+  lastLogCount = logLines.length;
+}
+
+function renderTimeline(ss, dur) {
+  const svg = $('#tl'), W = 340, H = 56;
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  if (ss.startAt == null) { svg.innerHTML = `<text x="${W / 2}" y="32" text-anchor="middle" font-size="11" fill="#999">Cast to start a session</text>`; return; }
+  const span = Math.max(dur, 3600);
+  const style = { quiet: ['#c9c4b8', 6], nod: ['#5b9bd5', 16], toast: ['#e0a020', 30], banner: ['#8a3ad0', 42], splash: ['#e05a00', 54], folded: ['none', 16], held: ['#c0261b', 22] };
+  let out = `<line x1="0" y1="${H - 0.5}" x2="${W}" y2="${H - 0.5}" stroke="#ccc"/>`;
+  for (let m = 15; m < span / 60; m += 15) out += `<line x1="${(m * 60 / span) * W}" y1="0" x2="${(m * 60 / span) * W}" y2="${H}" stroke="#eee"/>`;
+  for (const e of ss.timeline) {
+    const [c, h] = style[e.t], x = ((e.at - ss.startAt) / span) * W;
+    out += e.t === 'folded' ? `<rect x="${x}" y="${H - h}" width="2" height="${h}" fill="#fff" stroke="#888" stroke-width=".6" stroke-dasharray="2 1"/>` : `<rect x="${x}" y="${H - h}" width="${e.t === 'quiet' ? 1 : 2.4}" height="${h}" fill="${c}"/>`;
+  }
+  out += `<text x="${W - 3}" y="10" text-anchor="end" font-size="9" fill="#999">${span > 3600 ? fmtT(span) : '1 h'}</text>`;
+  svg.innerHTML = out;
+}
+
+function setVariant(k) {
+  V().leave(); els.clear();
+  ['#layer-toast', '#layer-banner', '#layer-float'].forEach(s => ($(s).innerHTML = ''));
+  variantKey = k; V().enter();
+  $('#swLabel').textContent = `${k} · ${V().name}`;
+  const u = new URL(location); u.searchParams.set('variant', k); history.replaceState(null, '', u);
+  // re-show whatever the policy currently has on screen, in the new style
+  for (const layer of ['toast', 'banner']) if (pol?.slots[layer]) V().show(layer, pol.slots[layer], realMs(pol.slots[layer]));
+}
+function cycle(d) { const ks = Object.keys(Variants); setVariant(ks[(ks.indexOf(variantKey) + d + ks.length) % ks.length]); }
+
+function reset(st) {
+  stage = st; game = Game.create(stage);
+  const keep = pol?.settings;
+  pol = FeedbackPolicy.initial(keep);
+  simNow = 0; nextCastAt = 0; logLines.length = 0; lastLogCount = 0;
+  els.clear(); ['#layer-toast', '#layer-banner', '#layer-float'].forEach(s => ($(s).innerHTML = ''));
+  hideSplash(); $('#layer-summary').classList.remove('on'); $('#pip').classList.remove('on');
+  setVariant(variantKey);
+  renderAngler(Game.view(game));
+  segOn('#stageSeg', stage);
+  const u = new URL(location); u.searchParams.set('stage', stage); history.replaceState(null, '', u);
+  renderPanel();
+}
+function segOn(sel, v) { document.querySelectorAll(sel + ' button').forEach(b => b.classList.toggle('on', b.dataset.v === String(v))); }
+
+// controls
+document.querySelectorAll('#stageSeg button').forEach(b => (b.onclick = () => reset(b.dataset.v)));
+document.querySelectorAll('#speedSeg button').forEach(b => (b.onclick = () => { speed = +b.dataset.v; segOn('#speedSeg', speed); renderPanel(); }));
+document.querySelectorAll('#styleSeg button').forEach(b => (b.onclick = () => { style = b.dataset.v; document.body.classList.toggle('s-gild', style === 'gild'); segOn('#styleSeg', style); playSound(2); }));
+document.querySelectorAll('[data-force]').forEach(b => (b.onclick = () => doCast(b.dataset.force)));
+$('#bCast').onclick = () => doCast();
+const toggleAuto = () => { auto = !auto; $('#bAuto').textContent = auto ? '❚❚ Stop auto-fish' : '▶ Auto-fish'; $('#bAuto').classList.toggle('on', auto); if (auto) nextCastAt = simNow; renderPanel(); };
+$('#bAuto').onclick = toggleAuto;
+const toggleCombat = () => { const on = !pol.inCombat; dispatch({ type: 'combat', on, at: simNow }); $('#scene').classList.toggle('combat', on); $('#bCombat').textContent = on ? 'Leave combat' : 'Enter combat'; $('#bCombat').classList.toggle('on', on); };
+$('#bCombat').onclick = toggleCombat;
+$('#bWalk').onclick = () => { if (auto) toggleAuto(); simNow = (pol.lastCastAt ?? simNow) + FeedbackPolicy.IDLE_ENDS_SESSION; dispatch({ type: 'tick', at: simNow }); };
+$('#bPrestige').onclick = () => notify(Game.prestige(game));
+$('#bRetro').onclick = () => notify(Game.retro(game));
+$('#bHunt').onclick = () => notify(Game.hunt());
+$('#bGoal').onclick = () => notify(Game.goal());
+$('#bRebuild').onclick = () => {
+  $('#axp').classList.add('busy');
+  logLines.unshift(`[${fmtT(simNow)}] Ledger rebuilt its projection from the Catch log (ADR 0004) → 0 moments re-fired; everything was already in the high-water set`);
+  renderPanel(); setTimeout(() => $('#axp').classList.remove('busy'), 2500);
+};
+$('#optCozy').onchange = e => dispatch({ type: 'settings', patch: { cozy: e.target.checked }, at: simNow });
+$('#optSound').onchange = e => (soundOn = e.target.checked);
+$('#optQuiet').onchange = e => { showQuiet = e.target.checked; if (!showQuiet && variantKey === 'B') $('#line').innerHTML = '<span class="nm" style="color:var(--dim)">Pagle</span>'; };
+$('#optBudOn').onchange = e => dispatch({ type: 'settings', patch: { budgetOn: e.target.checked }, at: simNow });
+$('#optBudN').onchange = e => dispatch({ type: 'settings', patch: { budgetCount: Math.max(1, +e.target.value) }, at: simNow });
+$('#optBudW').onchange = e => dispatch({ type: 'settings', patch: { budgetWindow: Math.max(1, +e.target.value) * 60 }, at: simNow });
+$('#swPrev').onclick = () => cycle(-1);
+$('#swNext').onclick = () => cycle(1);
+document.addEventListener('keydown', e => {
+  if (e.target.matches('input,textarea,[contenteditable]')) return;
+  if (e.key === 'ArrowLeft') cycle(-1);
+  else if (e.key === 'ArrowRight') cycle(1);
+  else if (e.key === ' ') { e.preventDefault(); doCast(); }
+  else if (e.key === 'f' || e.key === 'F') toggleAuto();
+  else if (e.key === 'c' || e.key === 'C') toggleCombat();
+});
+
+// clock
+let lastReal = performance.now(), lastTick = 0;
+function frame(t) {
+  simNow += (Math.min(250, t - lastReal) / 1000) * speed; lastReal = t;
+  if (auto && simNow >= nextCastAt) {
+    doCast();
+    if (Math.random() < 1 / 150) notify(Game.hunt());
+    else if (Math.random() < 1 / 200) notify(Game.goal());
+  }
+  if (t - lastTick > 100) { lastTick = t; dispatch({ type: 'tick', at: simNow }); if (Math.floor(t / 1000) !== Math.floor((t - 100) / 1000)) renderPanel(); }
+  requestAnimationFrame(frame);
+}
+segOn('#speedSeg', speed); segOn('#styleSeg', style);
+reset(stage);
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

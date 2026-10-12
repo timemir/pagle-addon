@@ -1,0 +1,1191 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Hunts Board Prototype</title>
+<!--
+  PROTOTYPE: throwaway, never ships. Lives only on branch prototype/hunts-board.
+  Question (wow-fish "Prototype the Hunts board"):
+    What does the Hunts board look like and how does it behave: the Now / Soon / Later / On demand groups,
+    pins, the completed filter, chips, a Hunt's detail (stamp, tier trim, tiers, effort counter, countdown),
+    Hunt sets and titles, how the board opens, and whether a compact tracker exists?
+  Plan: five boards (E = B's timeline in D's notebook, in the Journal's book-meets-modern look, added after first review) on one mock game screen, switchable via ?variant=A|B|C|D|E,
+        the floating bottom bar, or ←/→. A, B and C use the native Retail look; D borrows the Fish Journal's
+        book language so "native or book?" can be judged side by side.
+        All four read ONE pure model (HuntsModel, first <script>): the 16 v1 Hunts from "Design Hunts and the
+        Now/Soon board" and the grouping rules. That module is the liftable part; the rest is a throwaway shell.
+        ?stage=new|mid|late picks the sample Angler. Skill numbers, zones and catch rates are placeholders.
+  VERDICT (#24): E wins. Tracker on, pinned only. "Show completed" hides a Hunt only once every tier is done; pinned Hunts always show.
+  Open the file directly in a browser. No build, no persistence.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Marcellus&family=IM+Fell+English:ital@0;1&family=Caveat:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{--gold:#ffd100;--txt:#ece6d6;--dim:#8f8a80;--panel:#f6f4ef;--ink:#23211d;--ink2:#6b665c;--accent:#2f6f8f;--line:#dedad1;
+  --tbg1:#2e2318;--tbg2:#120d08;--tb:#8a6a42;
+  --now:#4cc94c;--soon:#ffb733;--later:#9a9a9a;--demand:#6fb6ff}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{display:flex;background:#0a1416;font-family:'Marcellus',Georgia,serif;color:var(--txt);font-size:13px;overflow:hidden}
+button{font:inherit;cursor:pointer}
+
+/* ---------- mock game screen ---------- */
+#scene{position:relative;flex:1;min-width:0;height:100vh;overflow:hidden;
+  background:linear-gradient(180deg,#5d7f8c 0%,#9db7b0 30%,#c9c19a 41%,#3c6a72 42%,#1f4650 60%,#0c2228 100%)}
+#scene::before{content:"";position:absolute;inset:42% 0 0 0;background:repeating-linear-gradient(180deg,transparent 0 14px,rgba(255,255,255,.05) 14px 16px)}
+.hills{position:absolute;left:0;right:0;top:28%;height:14%;background:radial-gradient(ellipse at 20% 100%,#3e5a3a 0 40%,transparent 41%),radial-gradient(ellipse at 70% 100%,#4a6640 0 45%,transparent 46%),radial-gradient(ellipse at 95% 100%,#36502f 0 35%,transparent 36%)}
+#tint{position:absolute;inset:0;background:#06102a;pointer-events:none;transition:opacity 1s}
+#bobber{position:absolute;left:62%;top:64%;width:18px;height:18px;margin:-9px;border-radius:50%;background:linear-gradient(180deg,#d23a2a 0 50%,#f2efe6 50%);border:1px solid #000;animation:bob 2.4s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(3px)}}
+#pframe{position:absolute;left:16px;top:14px;display:flex;align-items:center;gap:8px}
+#pframe .por{width:58px;height:58px;border-radius:50%;background:radial-gradient(circle at 45% 40%,#7a5a44,#2a1a10);border:3px solid #caa451;box-shadow:0 0 0 2px #000}
+#pframe .bars{width:150px}
+#pframe .nm{color:var(--gold);font-size:13px;text-shadow:0 1px 1px #000}
+#pframe .hp,#pframe .mp{height:11px;border:1px solid #000;margin-top:2px}
+#pframe .hp{background:linear-gradient(#3fd13f,#167a16)}#pframe .mp{background:linear-gradient(#4a7ad8,#1b3d8a)}
+#minimap{position:absolute;right:20px;top:34px;width:140px;height:140px}
+#minimap .mm{position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 50% 50%,#3c6a72 0 30%,#5b7a4e 31% 70%,#3c5f3a 71%);border:4px solid #8a7a5f;box-shadow:0 0 0 2px #000}
+#minimap .zn{position:absolute;left:-40px;right:-40px;top:-2px;text-align:center;color:var(--gold);font-size:12px;text-shadow:0 1px 2px #000;transform:translateY(-100%)}
+#minimap .clk{position:absolute;left:50%;bottom:-20px;transform:translateX(-50%);background:rgba(0,0,0,.7);border:1px solid #8a7a5f;border-radius:3px;padding:0 6px;font:11px/16px Arial;color:#fff;white-space:nowrap}
+#pbtn{position:absolute;left:-8px;bottom:-4px;width:34px;height:34px;border-radius:50%;padding:0;border:2px solid #caa451;background:radial-gradient(circle at 45% 40%,#2e4a58,#081014);box-shadow:0 0 0 1px #000}
+#pbtn svg{width:100%;height:100%}
+#pip{position:absolute;right:-6px;top:-6px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:#c0261b;border:1px solid #ffd27a;color:#fff;font:bold 11px/16px Arial;display:none}
+#pip.on{display:block}
+#cmenu{position:absolute;right:150px;top:150px;width:190px;display:none;background:rgba(10,10,10,.94);border:1px solid #6b6b6b;border-radius:4px;box-shadow:0 0 0 1px #000,0 6px 16px rgba(0,0,0,.6);padding:6px 0;z-index:25;font-size:13px}
+#cmenu.on{display:block}
+#cmenu .h{color:var(--gold);padding:2px 12px 4px;font-size:13px}
+#cmenu button{display:block;width:100%;text-align:left;background:none;border:0;color:#fff;padding:3px 12px 3px 22px}
+#cmenu button:hover{background:#1f3a5c}
+#cmenu .sep{height:1px;background:#333;margin:4px 8px}
+#cmenu .o{color:#8f8a80}
+#actionbar{position:absolute;left:50%;bottom:44px;transform:translateX(-50%);display:flex;gap:3px;padding:4px;background:rgba(0,0,0,.55);border:1px solid #5a4e3c;border-radius:4px}
+#actionbar i{width:38px;height:38px;border:1px solid #555;border-radius:3px;background:radial-gradient(circle at 40% 35%,#3b444c,#0e1114)}
+#actionbar i:first-child{background:radial-gradient(circle at 40% 35%,#6a8aa0,#1c2c38)}
+#chat{position:absolute;left:16px;bottom:44px;width:360px;font:12px/1.35 Arial,sans-serif;text-shadow:0 1px 1px #000}
+#chatlog div{color:#ffd27a;margin-top:1px}
+#chatlog div.sys{color:#ffff6a}
+#chatin{width:100%;margin-top:4px;background:rgba(0,0,0,.6);border:1px solid #5a4e3c;color:#fff;padding:3px 6px;font:12px Arial}
+
+/* ---------- shared bits ---------- */
+.ic{--sz:36px;--qc:#ffffff;position:relative;display:inline-block;flex:none;width:var(--sz);height:var(--sz);border:1px solid var(--qc);border-radius:3px;background:#111;box-shadow:0 0 0 1px #000;vertical-align:middle}
+.ic svg{width:100%;height:100%;display:block;border-radius:2px}
+.ic.trim-1{box-shadow:0 0 0 1px #000,0 0 0 3px #a8652a,0 0 0 4px #000}
+.ic.trim-2{box-shadow:0 0 0 1px #000,0 0 0 3px #c9ccd3,0 0 0 4px #000,0 0 8px rgba(220,225,240,.5)}
+.ic.trim-3{box-shadow:0 0 0 1px #000,0 0 0 3px #f2c230,0 0 0 4px #000,0 0 12px rgba(255,200,40,.7)}
+.ic .pinmark{position:absolute;right:-5px;top:-6px;width:13px;height:13px}
+.chips{display:flex;flex-wrap:wrap;gap:3px;margin-top:3px}
+.chip{display:inline-flex;align-items:center;gap:3px;font:11px/15px Arial,sans-serif;padding:0 5px;border-radius:3px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);color:#cfc8b8;white-space:nowrap}
+.chip.zone::before{content:"";width:7px;height:9px;background:currentColor;clip-path:polygon(50% 100%,0 35%,15% 8%,50% 0,85% 8%,100% 35%);opacity:.8}
+.chip.zone.req{border-color:rgba(255,209,0,.35)}
+.chip .here{font-weight:bold;color:#7dff7d;margin-left:2px}
+.chip.skill{color:#ff9a7a;border-color:rgba(255,120,90,.35)}
+.chip.skill .lh{color:#9fd0ff}
+.chip.note{color:#e8d9a8;font-style:italic}
+.chip.unc{color:#c9a6ff;border-style:dashed;border-color:rgba(200,160,255,.5)}
+.chip.camp{color:#9fd0ff}
+.gl-now{color:var(--now)}.gl-soon{color:var(--soon)}.gl-later{color:var(--later)}.gl-demand{color:var(--demand)}
+.pin{background:none;border:0;padding:0;width:18px;height:18px;opacity:.35;flex:none}
+.pin.on{opacity:1}
+.pin:hover{opacity:.8}
+.pin svg{width:100%;height:100%}
+.bar{position:relative;height:9px;background:#050403;border:1px solid #4a4236;border-radius:2px;overflow:hidden}
+.bar i{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(#5fb8ff,#1e5f9e)}
+.bar.done i{background:linear-gradient(#ffe066,#c08a00)}
+.tierpips{display:inline-flex;gap:3px;vertical-align:middle}
+.tierpips i{width:9px;height:9px;transform:rotate(45deg);border:1px solid #000;background:#2a2620}
+.tierpips i.t1{background:#a8652a}.tierpips i.t2{background:#c9ccd3}.tierpips i.t3{background:#f2c230}
+
+/* detail block (A, C; D restyles it) */
+.dt{padding:12px 14px}
+.dt .dh{display:flex;gap:12px;align-items:flex-start}
+.dt .dh .ic{--sz:56px}
+.dt .dn{font-size:20px;color:#fff;line-height:22px}
+.dt .dtg{color:#cfc8b8;font-size:13px;margin-top:2px}
+.dt .dset{color:var(--dim);font-size:12px;margin-top:3px}
+.dt .dset i{color:#e8d9a8}
+.dt .dwin{margin:12px 0 6px;padding:7px 10px;border-radius:3px;background:rgba(0,0,0,.35);border-left:3px solid var(--later);font-size:13px}
+.dt .dwin.now{border-color:var(--now)}.dt .dwin.soon{border-color:var(--soon)}.dt .dwin.demand{border-color:var(--demand)}
+.dt .dwin b{font-weight:normal;color:#fff;font-size:15px}
+.dt .dwin .cd{font:bold 15px Arial;color:#fff}
+.dt .cond{font-size:12px;color:#cfc8b8;line-height:1.5}
+.dt .cond .kind{display:block;color:var(--dim);font-size:11px;margin-top:2px}
+.dt h5{margin:12px 0 5px;font-weight:normal;color:var(--gold);font-size:13px;border-bottom:1px solid #3a3128;padding-bottom:2px}
+.dt .tier{display:grid;grid-template-columns:16px 72px 1fr auto;gap:8px;align-items:center;margin:4px 0;font:12px Arial,sans-serif}
+.dt .tier .when{color:var(--dim);font-size:11px;text-align:right;white-space:nowrap}
+.dt .eff{font-size:12px;color:#cfc8b8;line-height:1.5}
+.dt .eff b{color:#fff;font:bold 13px Arial}
+.dt .eff .dim{color:var(--dim);font-size:11px}
+.dt .uncx{margin-top:8px;font-size:11px;color:#c9a6ff}
+.stampseal{float:right;margin:-4px 0 6px 10px;width:96px;height:96px;border-radius:50%;border:3px double #c0392b;color:#d9534a;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;transform:rotate(-12deg);font:bold 10px/1.25 Arial;letter-spacing:.06em;text-transform:uppercase;background:rgba(192,57,43,.08);box-shadow:inset 0 0 0 4px rgba(192,57,43,.2)}
+.stampseal b{font-size:13px;letter-spacing:.12em}
+.stampseal span{font-weight:normal;letter-spacing:0;text-transform:none;font-size:10px}
+
+/* ---------- native Retail window (A, B, C) ---------- */
+.win{position:absolute;left:36px;top:96px;background:#101010;border-radius:6px;box-shadow:0 0 0 1px #000,0 0 0 3px #4b4b4b,0 0 0 4px #9a9a9a,0 0 0 5px #000,0 14px 40px rgba(0,0,0,.75);display:flex;flex-direction:column;z-index:10}
+.win .tb{position:relative;height:26px;display:flex;align-items:center;justify-content:center;color:var(--gold);font-size:14px;background:linear-gradient(#2f2f2f,#141414);border-bottom:1px solid #000;border-radius:6px 6px 0 0;text-shadow:0 1px 1px #000}
+.win .por{position:absolute;left:-14px;top:-16px;width:58px;height:58px;border-radius:50%;background:radial-gradient(circle at 45% 40%,#2e4a58,#081014);border:3px solid #9a9a9a;box-shadow:0 0 0 2px #000;z-index:2}
+.win .por svg{width:100%;height:100%}
+.win .x{position:absolute;right:4px;top:3px;width:20px;height:20px;border:1px solid #000;border-radius:3px;background:linear-gradient(#b0241a,#5a0c06);color:#ffd9a0;font:bold 12px/16px Arial;padding:0}
+.win .tool{display:flex;align-items:center;gap:8px;padding:6px 10px 6px 52px;border-bottom:1px solid #000;background:#181818;font-size:12px;color:#cfc8b8}
+.win .inset{background:radial-gradient(ellipse at 50% 0%,#1b1b1b,#0b0b0b 70%);border:1px solid #2a2a2a;margin:6px;border-radius:3px;overflow:hidden}
+.setpills{display:flex;gap:3px;flex-wrap:wrap}
+.setpills button{background:#232323;border:1px solid #3a3a3a;color:#cfc8b8;border-radius:10px;padding:1px 8px;font-size:11px}
+.setpills button.on{background:#3a2f12;border-color:#a88a2a;color:var(--gold)}
+.chk{display:inline-flex;align-items:center;gap:4px;cursor:pointer;white-space:nowrap}
+.chk input{margin:0}
+.scr{overflow-y:auto;scrollbar-width:thin;scrollbar-color:#5a5a5a #111}
+.tabs{display:flex;gap:2px;padding:0 14px;margin-bottom:-3px}
+.tabs button{background:linear-gradient(#2a2a2a,#121212);border:1px solid #000;border-top:0;border-radius:0 0 5px 5px;color:#cfc8b8;padding:3px 14px 5px;font-size:12px}
+.tabs button.on{color:var(--gold);background:linear-gradient(#3a3a3a,#1b1b1b)}
+
+/* ---------- Variant A: Finder list + detail pane ---------- */
+.vA{width:800px;height:540px}
+.vA .body{flex:1;display:flex;min-height:0}
+.vA .list{width:380px;flex:none;margin-right:0}
+.vA .det{flex:1}
+.vA .grp{display:flex;align-items:center;gap:6px;padding:5px 8px;background:linear-gradient(90deg,#2a2618,#151515);border-top:1px solid #000;border-bottom:1px solid #000;cursor:pointer;font-size:13px}
+.vA .grp .sub{color:var(--dim);font-size:11px;margin-left:auto}
+.vA .grp .car{width:10px;color:#cfc8b8;font-size:10px}
+.vA .row{display:flex;gap:8px;padding:6px 8px;border-bottom:1px solid #1d1d1d;cursor:pointer;align-items:flex-start}
+.vA .row:hover{background:#1a2a3d}
+.vA .row.sel{background:#1f3550;box-shadow:inset 3px 0 0 var(--gold)}
+.vA .row.done .nm{color:#9a9a9a}
+.vA .row .mid{flex:1;min-width:0}
+.vA .row .nm{color:#fff;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vA .row .tg{color:var(--dim);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vA .row .rt{text-align:right;flex:none;width:86px}
+.vA .row .lbl{font:bold 12px Arial;white-space:nowrap}
+.vA .row .bar{margin-top:5px}
+.vA .row .cnt{font:10px Arial;color:var(--dim);margin-top:2px}
+.vA .empty{padding:10px 12px;color:var(--dim);font-size:12px;font-style:italic}
+.vA .foot{padding:4px 10px 6px;color:var(--dim);font-size:11px}
+
+/* ---------- Variant B: realm-clock timeline ---------- */
+.vB{width:880px;height:560px}
+.vB .clockhd{display:flex;align-items:center;gap:14px;padding:6px 12px 6px 52px;border-bottom:1px solid #000;background:#181818}
+.vB .clockhd .big{font:26px Marcellus;color:#fff}
+.vB .clockhd .sm{color:var(--dim);font-size:12px;line-height:1.3}
+.vB .clockhd .sp{flex:1}
+.vB .tl{position:relative;flex:1;min-height:0;display:flex;flex-direction:column}
+.vB .axis{display:grid;grid-template-columns:230px 1fr 120px;border-bottom:1px solid #2a2a2a;font:10px Arial;color:var(--dim)}
+.vB .axis .ticks{position:relative;height:18px}
+.vB .axis .ticks span{position:absolute;top:3px;transform:translateX(-50%)}
+.vB .rows{flex:1;min-height:0}
+.vB .gh{padding:3px 10px;font-size:12px;background:#171717;border-bottom:1px solid #000;border-top:1px solid #000}
+.vB .r{display:grid;grid-template-columns:230px 1fr 120px;align-items:center;height:30px;border-bottom:1px solid #1a1a1a;cursor:pointer}
+.vB .r:hover{background:#1a2a3d}.vB .r.sel{background:#1f3550}
+.vB .r .nmc{display:flex;align-items:center;gap:6px;padding-left:8px;min-width:0}
+.vB .r .nmc .ic{--sz:20px}
+.vB .r .nmc span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vB .r.done .nmc span{color:#9a9a9a}
+.vB .trk{position:relative;height:100%}
+.vB .trk .night{position:absolute;top:0;bottom:0;background:rgba(40,60,140,.12)}
+.vB .trk .bar2{position:absolute;top:8px;height:14px;border-radius:3px;background:linear-gradient(#5ccf5c,#237a23);border:1px solid #000;font:10px/12px Arial;color:#fff;padding-left:4px;overflow:hidden;white-space:nowrap}
+.vB .trk .bar2.unc{background:repeating-linear-gradient(135deg,#5ccf5c 0 5px,#3c9a3c 5px 10px)}
+.vB .trk .bar2.gated{background:repeating-linear-gradient(135deg,#555 0 5px,#3a3a3a 5px 10px)}
+.vB .trk .bar2.camp{background:linear-gradient(#6fb6ff,#245f9e)}
+.vB .trk .txt{position:absolute;top:8px;left:6px;font:11px Arial;color:var(--dim);white-space:nowrap}
+.vB .nowline{position:absolute;top:0;bottom:0;width:2px;background:#ff4d3a;box-shadow:0 0 6px #ff4d3a;pointer-events:none;z-index:2}
+.vB .soonband{position:absolute;top:0;bottom:0;background:rgba(255,183,51,.07);border-right:1px dashed rgba(255,183,51,.4);pointer-events:none}
+.vB .r .nx{font:bold 11px Arial;padding-right:10px;text-align:right;white-space:nowrap}
+.vB .drawer{border-top:1px solid #000;background:#141414;height:190px;flex:none;display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:0}
+.vB .drawer>div{padding:10px 12px;border-right:1px solid #222;overflow:auto}
+.vB .drawer .dh .ic{--sz:44px}
+.vB .sets{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px;padding:10px}
+.vB .setc{background:#171717;border:1px solid #2e2e2e;border-radius:4px;padding:8px 10px}
+.vB .setc.earned{border-color:#a88a2a;box-shadow:inset 0 0 20px rgba(255,200,40,.08)}
+.vB .setc h4{margin:0;font-weight:normal;color:#fff;font-size:15px}
+.vB .setc .ttl{color:#e8d9a8;font-style:italic;font-size:12px}
+.vB .setc .ln{display:flex;align-items:center;gap:6px;font-size:12px;margin-top:4px;cursor:pointer}
+.vB .setc .ln .ic{--sz:18px}
+.vB .setc .ok{color:var(--now)}.vB .setc .no{color:#555}
+
+/* ---------- Variant C: sets-first (Achievements frame) ---------- */
+.vC{width:860px;height:560px}
+.vC .body{flex:1;display:flex;min-height:0}
+.vC .tree{width:210px;flex:none}
+.vC .tree button{display:block;width:100%;text-align:left;background:linear-gradient(90deg,#252525,#151515);border:0;border-bottom:1px solid #000;color:#e8e2d2;padding:7px 10px;font-size:13px}
+.vC .tree button:hover{background:#1a2a3d}
+.vC .tree button.on{background:linear-gradient(90deg,#3a2f12,#1b1608);color:var(--gold)}
+.vC .tree button small{display:block;color:var(--dim);font-size:11px;font-style:italic}
+.vC .tree button .k{float:right;font:11px Arial;color:var(--dim);margin-top:2px}
+.vC .tree .sep{padding:8px 10px 3px;color:var(--dim);font-size:11px;letter-spacing:.08em;text-transform:uppercase}
+.vC .main{flex:1;min-width:0;display:flex;flex-direction:column;margin-left:0}
+.vC .shd{padding:10px 14px;border-bottom:1px solid #000;background:linear-gradient(#262014,#141414)}
+.vC .shd h3{margin:0;font-weight:normal;color:#fff;font-size:18px}
+.vC .shd .ttl{color:#e8d9a8;font-size:13px;margin-top:2px}
+.vC .shd .ttl i{color:var(--gold)}
+.vC .shd .bar{margin-top:6px;height:12px}
+.vC .shd .tnote{color:var(--dim);font-size:11px;margin-top:4px}
+.vC .ach{display:flex;gap:10px;margin:6px 8px;padding:8px 10px;border:1px solid #2e2e2e;border-radius:4px;background:linear-gradient(#1d1d1d,#151515);cursor:pointer}
+.vC .ach:hover{border-color:#5a6f8a}
+.vC .ach.done{background:linear-gradient(#2a2414,#17140b);border-color:#6a5520}
+.vC .ach.sel{border-color:var(--gold)}
+.vC .ach .ic{--sz:44px}
+.vC .ach .mid{flex:1;min-width:0}
+.vC .ach .nm{color:#fff;font-size:15px}
+.vC .ach .tg{color:#cfc8b8;font-size:12px}
+.vC .ach .rt{text-align:right;flex:none;width:130px}
+.vC .badge{display:inline-block;font:bold 10px/16px Arial;letter-spacing:.05em;text-transform:uppercase;padding:0 6px;border-radius:3px;color:#000}
+.vC .badge.now{background:var(--now)}.vC .badge.soon{background:var(--soon)}.vC .badge.later{background:#666;color:#fff}.vC .badge.demand{background:var(--demand)}
+.vC .ach .lbl{font:12px Arial;color:#cfc8b8;margin-top:3px;white-space:nowrap}
+.vC .ach .dd{margin-top:6px}
+.vC .ach .dd .dt{padding:4px 0 0}
+.vC .ach .dd .dt .dh{display:none}
+.vC .ach .done-date{font:11px Arial;color:#e8d9a8;margin-top:3px}
+.vC .gsub{margin:10px 10px 0;color:var(--dim);font-size:12px}
+
+/* ---------- Variant D: field notebook (book language) ---------- */
+.vD{position:absolute;left:40px;top:90px;width:820px;height:540px;z-index:10;padding:14px 16px;border-radius:10px;
+  background:radial-gradient(ellipse at 30% 20%,#7a4e2c,#4a2c16 70%);box-shadow:0 0 0 2px #1d1008,0 18px 44px rgba(0,0,0,.75),inset 0 0 30px rgba(0,0,0,.5)}
+.vD .x{position:absolute;right:-10px;top:-10px;width:26px;height:26px;border-radius:50%;border:2px solid #1d1008;background:#8a2a1a;color:#f1e2bd;font:bold 13px Arial;padding:0;z-index:3}
+.vD .spread{position:relative;display:flex;height:100%;border-radius:4px;overflow:hidden;box-shadow:0 0 0 1px #2a180a}
+.vD .page{position:relative;flex:1;padding:22px 26px 18px;color:#3a2610;font-family:'IM Fell English',serif;font-size:15px;
+  background:radial-gradient(ellipse at 50% 40%,#f3e6c4,#e6d2a4 80%,#d9c08a);overflow:hidden}
+.vD .page.l{box-shadow:inset -18px 0 22px -12px rgba(80,50,10,.45)}
+.vD .page.r{box-shadow:inset 18px 0 22px -12px rgba(80,50,10,.45)}
+.vD .page .scr{height:calc(100% - 34px);scrollbar-color:#b99a62 transparent;padding-right:4px}
+.vD h3{margin:0 0 4px;font-weight:normal;font-size:22px;color:#5a2e0a;border-bottom:1px solid rgba(90,46,10,.35)}
+.vD h4{margin:12px 0 2px;font-weight:normal;font-size:17px;color:#7a3a10;font-style:italic}
+.vD h4 small{font-size:12px;color:#8a6a42}
+.vD .ent{position:relative;display:flex;gap:8px;padding:5px 0 5px 22px;border-bottom:1px dotted rgba(90,46,10,.3);cursor:pointer}
+.vD .ent:hover{background:rgba(255,255,255,.25)}
+.vD .ent.sel{background:rgba(255,240,190,.6)}
+.vD .ent .box{position:absolute;left:2px;top:9px;width:13px;height:13px;border:1.5px solid #5a3a1a;border-radius:2px;transform:rotate(-3deg)}
+.vD .ent.done .box::after{content:"✓";position:absolute;left:0;top:-8px;font:bold 20px Caveat;color:#2a6a2a}
+.vD .ent .mid{flex:1;min-width:0}
+.vD .ent .nm{font-family:'Caveat',cursive;font-size:21px;line-height:20px;color:#2a1a08}
+.vD .ent.done .nm{text-decoration:line-through;text-decoration-color:rgba(60,30,10,.5)}
+.vD .ent .tg{font-style:italic;font-size:13px;color:#6a4a22}
+.vD .ent .mg{flex:none;font-family:'Caveat',cursive;font-size:18px;color:#a0261a;transform:rotate(-2deg);text-align:right;width:110px}
+.vD .ent .pinm{position:absolute;left:-6px;top:-4px;width:16px;height:16px}
+.vD .chip{background:rgba(90,46,10,.08);border-color:rgba(90,46,10,.3);color:#5a3a1a;font:italic 12px/15px 'IM Fell English',serif}
+.vD .chip .here{color:#2a6a2a}
+.vD .chip.skill{color:#9a2a1a;border-color:rgba(154,42,26,.4)}.vD .chip.skill .lh{color:#2a4a7a}
+.vD .chip.unc{color:#6a3a8a;border-color:rgba(106,58,138,.5)}
+.vD .chip.note{color:#6a4a22}.vD .chip.camp{color:#2a4a7a}
+.vD .ribbons{position:absolute;top:-14px;right:30px;display:flex;gap:6px;z-index:4}
+.vD .ribbons button{width:auto;min-width:30px;height:46px;padding:4px 6px 12px;border:0;color:#f6e9c8;font:12px Marcellus;writing-mode:vertical-rl;text-orientation:mixed;clip-path:polygon(0 0,100% 0,100% 100%,50% 82%,0 100%);box-shadow:0 2px 4px rgba(0,0,0,.4);opacity:.85}
+.vD .ribbons button.on{height:64px;opacity:1}
+.vD .settitle{font-family:'Caveat',cursive;font-size:20px;color:#7a3a10;margin:-2px 0 6px}
+.vD .back{font-family:'Caveat',cursive;font-size:18px;color:#7a3a10;background:none;border:0;padding:0;margin-bottom:4px}
+.vD .dt{padding:0}
+.vD .dt .dn{color:#2a1a08;font-family:'Caveat',cursive;font-size:30px;line-height:28px}
+.vD .dt .dtg,.vD .dt .cond,.vD .dt .eff{color:#4a3018}
+.vD .dt .dset{color:#7a5a32}.vD .dt .dset i{color:#7a3a10}
+.vD .dt .dwin{background:rgba(90,46,10,.08);color:#3a2610}
+.vD .dt .dwin b,.vD .dt .dwin .cd{color:#2a1a08}
+.vD .dt .cond .kind,.vD .dt .tier .when,.vD .dt .eff .dim{color:#7a5a32}
+.vD .dt h5{color:#7a3a10;border-color:rgba(90,46,10,.3);font-size:15px}
+.vD .dt .eff b{color:#2a1a08}
+.vD .dt .uncx{color:#6a3a8a}
+.vD .dt .tier{font-size:13px}
+.vD .bar{background:rgba(90,46,10,.12);border-color:rgba(90,46,10,.45)}
+.vD .bar i{background:linear-gradient(#7a5a32,#4a2e10)}
+.vD .bar.done i{background:linear-gradient(#c89a2a,#8a6a12)}
+.vD .ic{--qc:#5a3a1a;filter:sepia(.75) saturate(.9)}
+.vD .stampseal{border-color:#a0261a;color:#a0261a;background:rgba(160,38,26,.06)}
+.vD .foot{position:absolute;left:26px;right:26px;bottom:8px;font:italic 12px 'IM Fell English';color:#8a6a42;display:flex;justify-content:space-between}
+.vD label.chk{font-style:italic;font-size:13px}
+
+/* ---------- Variant E: B's timeline in D's notebook, in the Journal's book-meets-modern language ---------- */
+.vE{position:absolute;left:24px;top:84px;width:920px;height:600px;z-index:10;border-radius:12px;padding:0 18px 16px;background:radial-gradient(ellipse at 30% 20%,#6a3e20,#3a2010 70%);box-shadow:0 0 0 2px #120a04,inset 0 0 0 3px #8a5a2a,inset 0 0 0 5px #2a1608,0 22px 60px rgba(0,0,0,.8)}
+.vE .x{position:absolute;right:-10px;top:-10px;width:26px;height:26px;border-radius:50%;border:2px solid #1d1008;background:#8a2a1a;color:#f1e2bd;font:bold 13px Arial;padding:0;z-index:3}
+.vE .strip{height:36px;display:flex;align-items:center;gap:4px;padding:0 6px;color:#e8c96a;font-family:'Marcellus'}
+.vE .crumb{cursor:pointer;font-size:14px;text-shadow:0 1px 1px #000}.vE .crumb:hover{color:#fff4c8}
+.vE .crumb+.crumb::before{content:'\2767';margin:0 8px;color:#a8803a}
+.vE .rclock{font-size:13px;color:#e8c96a;text-shadow:0 1px 1px #000;margin-right:12px}
+.vE .rclock b{font:16px Marcellus;color:#fff4c8;font-weight:normal}
+.vE .strip .chk{font-size:12px;color:#e8c96a}
+.vE .pages{display:flex;height:calc(100% - 36px)}
+.vE .page{position:relative;padding:20px 24px 30px;color:#3a2614;font-family:'IM Fell English',Georgia,serif;font-size:14px;background:radial-gradient(ellipse at 50% 40%,#f3e5c3,#dfc89a 80%,#c9ab76);overflow-y:auto;scrollbar-width:thin;scrollbar-color:#8a5a2a transparent}
+.vE .page.l{flex:1.45;border-radius:4px 0 0 4px;box-shadow:inset -30px 0 30px -20px rgba(70,40,10,.65)}
+.vE .page.r{flex:1;border-radius:0 4px 4px 0;box-shadow:inset 30px 0 30px -20px rgba(70,40,10,.65)}
+.vE .kick{font-variant:small-caps;letter-spacing:2px;color:#8a5a2a;font-size:13px}
+.vE h2{font-size:26px;color:#3e220c;margin:0 0 4px;font-weight:normal}
+.vE .small{font-size:13px;color:#5a4028}
+.vE .hand{font-family:'Caveat',cursive;color:#23407a;font-size:20px;line-height:1.1}
+.vE .hand.red{color:#9a2a1a}
+.vE .note{font-size:12px;color:#8a6a40;font-style:italic}
+.vE .gh{font-variant:small-caps;letter-spacing:1px;color:#8a5a2a;border-bottom:1px solid #c4a874;margin:10px 0 2px;display:flex;justify-content:space-between;font-size:14px}
+.vE .gh small{font-variant:normal;letter-spacing:0;font-style:italic;color:#9a8060;font-size:12px}
+/* the inked timeline */
+.vE .tlrow{display:grid;grid-template-columns:172px 1fr 66px;align-items:center;gap:6px}
+.vE .axis{height:24px;margin-top:6px;border-bottom:2px solid #6a4a20}
+.vE .axis .trk{position:relative;height:100%}
+.vE .axis .trk span{position:absolute;bottom:4px;transform:translateX(-50%);font-size:12px;color:#8a6a40}
+.vE .axis .trk em{position:absolute;bottom:2px;transform:translateX(-50%);font:18px Caveat;color:#9a2a1a;font-style:normal;white-space:nowrap;background:rgba(243,229,195,.8);padding:0 3px}
+.vE .hr{height:30px;cursor:pointer;border-radius:2px}
+.vE .hr:hover{background:rgba(120,70,20,.08)}
+.vE .hr.on{outline:1px dashed #8a5a2a;background:rgba(120,70,20,.12)}
+.vE .hr .nmc{display:flex;align-items:center;gap:6px;min-width:0;padding-left:2px}
+.vE .hr .nmc span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vE .hr.done .nmc span{text-decoration:line-through;text-decoration-color:rgba(60,30,10,.45)}
+.vE .hr .ic{--sz:22px}
+.vE .ic{--qc:#5a3a1a;filter:sepia(.75) saturate(.9)}
+.vE .hr .pinm{width:12px;height:12px;flex:none;margin-left:-4px}
+.vE .hr .trk{position:relative;height:100%}
+.vE .trk .nw{position:absolute;top:0;bottom:0;background:rgba(35,64,122,.08)}
+.vE .trk .sw{position:absolute;top:0;bottom:0;background:rgba(154,42,26,.08)}
+.vE .trk .nl{position:absolute;top:-1px;bottom:-1px;width:2px;background:#9a2a1a;opacity:.85}
+.vE .trk .ib{position:absolute;top:9px;height:12px;border:1.5px solid #5a3a14;border-radius:6px;background:repeating-linear-gradient(45deg,#5a3a14 0 3px,#7a5224 3px 6px);font:11px/9px 'IM Fell English';color:#f3e5c3;padding-left:4px;overflow:hidden;white-space:nowrap}
+.vE .trk .ib.unc{background:repeating-linear-gradient(45deg,rgba(90,58,20,.45) 0 3px,transparent 3px 6px);border-style:dashed;color:#5a3a14}
+.vE .trk .ib.gated{background:none;border:1.5px dashed #a89070;color:#a89070}
+.vE .trk .ib.camp{background:#23407a;border-color:#162a50}
+.vE .trk .txt{position:absolute;top:7px;left:4px;font-size:12px;font-style:italic;color:#9a8060;white-space:nowrap}
+.vE .hr .mg{font:18px/1 Caveat;color:#9a2a1a;text-align:right;white-space:nowrap;transform:rotate(-2deg)}
+.vE .hr .mg.later{color:#7a6a50}.vE .hr .mg.demand{color:#23407a}.vE .hr .mg.need{color:#9a2a1a;font-size:16px}
+.vE .legendln{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:10px;font-size:11px;color:#8a6a40;font-style:italic}
+.vE .legendln i{display:inline-block;width:18px;height:8px;border-radius:4px;vertical-align:-1px;margin-right:4px;border:1.5px solid #5a3a14}
+/* entry and set pages */
+.vE .seal{position:absolute;right:22px;top:20px;width:72px;height:72px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#d0402a,#7a1810 70%);color:#f4dfa8;display:grid;place-items:center;text-align:center;font:11px/1.2 'Marcellus';transform:rotate(-8deg);box-shadow:0 2px 4px rgba(0,0,0,.4),inset 0 0 0 4px rgba(0,0,0,.15)}
+.vE .seal.r0{background:none;border:2px dashed #b8a080;color:#b8a080;box-shadow:none}
+.vE .pinE{position:absolute;right:104px;top:24px;width:22px;height:22px;opacity:.45;background:none;border:0;padding:0}
+.vE .pinE.on{opacity:1}.vE .pinE svg{width:100%;height:100%}
+.vE .entry{padding-right:110px}
+.vE .chip{background:rgba(255,250,235,.35);border:1px solid rgba(106,74,32,.45);color:#5a3a1a;font:italic 12px/16px 'IM Fell English',serif;border-radius:3px}
+.vE .chip .here{color:#2a6a2a}
+.vE .chip.skill{color:#9a2a1a;border-color:rgba(154,42,26,.45)}.vE .chip.skill .lh{color:#23407a}
+.vE .chip.unc{color:#6a3a8a;border-style:dashed;border-color:rgba(106,58,138,.55)}
+.vE .chip.note,.vE .chip.camp{color:#5a3a1a}
+.vE .ladder{margin:4px 0}
+.vE .ladder .tr{display:grid;grid-template-columns:18px 76px 1fr auto;gap:8px;align-items:center;margin:3px 0;font-size:13px}
+.vE .ladder .dia{width:11px;height:11px;transform:rotate(45deg);border:1.5px solid #6a4a20}
+.vE .ladder .dia.t1{background:#a8652a}.vE .ladder .dia.t2{background:#b9bcc3}.vE .ladder .dia.t3{background:#d9a820}
+.vE .ladder .when{font-size:12px;color:#8a6a40;font-style:italic;white-space:nowrap}
+.vE .inkbar{height:10px;border:1.5px solid #5a3a14;border-radius:5px;position:relative;overflow:hidden}
+.vE .inkbar i{position:absolute;left:0;top:0;bottom:0;background:repeating-linear-gradient(45deg,#5a3a14 0 3px,#7a5224 3px 6px)}
+.vE .check{list-style:none;padding:0;margin:6px 0}
+.vE .check li{display:flex;align-items:baseline;gap:6px;cursor:pointer;padding:3px 2px;font-size:15px}
+.vE .check li:hover{color:#7a2a14}
+.vE .check li::before{content:'\2610';color:#8a6a40}.vE .check li.y::before{content:'\2611';color:#3e220c}
+.vE .check li .lead{flex:1;border-bottom:1px dotted #8a6a40;transform:translateY(-4px)}
+.vE .check li .w{font:17px Caveat;color:#9a2a1a}
+.vE .back{font:18px Caveat;color:#7a3a10;background:none;border:0;padding:0;cursor:pointer;margin-bottom:6px}
+.vE .ribbons{position:absolute;right:-30px;top:50px;display:flex;flex-direction:column;gap:5px}
+.vE .rib{writing-mode:vertical-rl;color:#f4dfa8;padding:10px 5px;border:0;border-radius:0 4px 4px 0;font:12px Marcellus;box-shadow:2px 2px 4px rgba(0,0,0,.5);opacity:.85}
+.vE .rib.on{transform:translateX(6px);opacity:1}
+.vE .plate{position:absolute;left:-12px;bottom:-14px;background:linear-gradient(#e8c96a,#9a7420);color:#2a1a04;font:12px Marcellus;padding:4px 10px;border-radius:3px;border:1px solid #4a3008;box-shadow:0 3px 6px #000;z-index:3}
+
+/* ---------- compact tracker (shell, all variants) ---------- */
+#tracker{position:absolute;right:16px;top:212px;width:260px;font:12px/1.3 Arial,sans-serif;text-shadow:0 1px 1px #000,0 0 2px #000;z-index:5}
+#tracker .th{display:flex;align-items:center;gap:6px;color:var(--gold);font:14px Marcellus;border-bottom:1px solid rgba(255,209,0,.35);padding-bottom:2px;cursor:pointer}
+#tracker .th span{margin-left:auto;font:10px Arial;color:#cfc8b8}
+#tracker .tl{display:flex;gap:6px;padding:3px 0;cursor:pointer}
+#tracker .tl:hover .tn{color:#fff}
+#tracker .tn{color:#ffd27a;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#tracker .tw{font-weight:bold;white-space:nowrap}
+#tracker .ts{color:#cfc8b8;font-size:11px;padding-left:14px;margin-top:-2px}
+#tracker .tdot{width:8px;height:8px;border-radius:50%;margin-top:4px;flex:none}
+
+/* ---------- Announcements (Catch feedback variant A frames) ---------- */
+#layer-toast{position:absolute;left:50%;bottom:122px;transform:translateX(-50%);display:flex;flex-direction:column-reverse;align-items:center;gap:8px;pointer-events:none;z-index:30}
+.ta{position:relative;width:350px;display:flex;gap:10px;align-items:flex-start;padding:10px 12px 10px 10px;background:linear-gradient(180deg,var(--tbg1),var(--tbg2));border:2px solid var(--tb);border-radius:6px;box-shadow:0 0 0 1px #000,0 6px 18px rgba(0,0,0,.7);animation:taIn .35s cubic-bezier(.2,1.4,.4,1) both}
+.ta .ic{--sz:44px}
+.ta .body{flex:1;min-width:0}
+.ta .src{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#bba98a}
+.ta .nm{font-size:15px;line-height:18px;text-shadow:0 1px 1px #000}
+.ta .det{color:#d6cfbf;font-size:12px}
+.ta .st{position:absolute;right:-8px;top:-10px;font:bold 10px/14px Arial;letter-spacing:.04em;text-transform:uppercase;padding:1px 6px;border-radius:3px;color:#fff;background:#1c6a94;border:1px solid rgba(0,0,0,.6)}
+.ta .st.tier{background:#a07800}
+.ta.out{animation:taOut .3s ease-in both}
+@keyframes taIn{from{opacity:0;transform:translateY(24px) scale(.96)}}
+@keyframes taOut{to{opacity:0;transform:translateY(10px)}}
+#layer-banner{position:absolute;left:0;right:0;top:18%;display:flex;justify-content:center;pointer-events:none;z-index:30}
+.ba{text-align:center;padding:10px 90px;background:radial-gradient(ellipse at center,rgba(0,0,0,.65),transparent 70%);animation:baIn .6s ease-out both}
+.ba .k{font-size:13px;letter-spacing:.35em;color:#e8d9a8}
+.ba .t{font-size:38px;line-height:44px;color:var(--gold);text-shadow:0 2px 3px #000,0 0 18px rgba(255,190,40,.5)}
+.ba .s{color:#fff;font-size:15px;text-shadow:0 1px 2px #000}
+.ba.out{animation:fadeOut .5s ease-in both}
+@keyframes baIn{from{opacity:0;transform:scale(1.25)}}
+@keyframes fadeOut{to{opacity:0}}
+
+/* ---------- control panel (not part of the design) ---------- */
+#panel{width:390px;flex:none;height:100vh;overflow-y:auto;background:var(--panel);color:var(--ink);font:13px/1.45 system-ui,-apple-system,Segoe UI,sans-serif;border-left:1px solid #000}
+#panel header{padding:14px 16px 10px;border-bottom:1px solid var(--line)}
+#panel h1{font-size:16px;margin:0}#panel h1 small{font-weight:normal;color:var(--ink2);font-size:12px;margin-left:6px}
+#panel .q{margin:6px 0 0;color:var(--ink2);font-size:12px}
+#panel section{padding:10px 16px;border-bottom:1px solid var(--line)}
+#panel h2{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink2);margin:0 0 6px}
+#panel .btns{display:flex;flex-wrap:wrap;gap:5px}
+#panel .b{background:#fff;border:1px solid #c9c4b8;border-radius:5px;padding:4px 9px;color:var(--ink);font-size:12px}
+#panel .b:hover{border-color:var(--accent)}
+#panel .b.pri{background:var(--accent);border-color:var(--accent);color:#fff}
+.seg{display:inline-flex;border:1px solid #c9c4b8;border-radius:5px;overflow:hidden;flex-wrap:wrap}
+.seg button{border:0;background:#fff;padding:4px 9px;font-size:12px;color:var(--ink)}
+.seg button+button{border-left:1px solid #c9c4b8}
+.seg button.on{background:var(--accent);color:#fff}
+#panel label{display:flex;align-items:center;gap:6px;margin:4px 0}
+#panel select{font:inherit;font-size:12px;padding:2px}
+#panel .clock{font-size:20px;font-weight:600;font-variant-numeric:tabular-nums}
+#panel table{width:100%;border-collapse:collapse;font-size:11px}
+#panel td,#panel th{padding:2px 4px;border-bottom:1px solid #eee;text-align:left;white-space:nowrap}
+#panel th{color:var(--ink2);font-weight:600}
+#panel td.g{font-weight:600}
+#panel .vnote{background:#fff;border:1px solid var(--line);border-radius:5px;padding:8px 10px;font-size:12px}
+#panel .vnote b{font-weight:600}
+#panel ol,#panel ul{margin:4px 0;padding-left:18px;font-size:12px}
+#panel li{margin:3px 0}
+
+#switcher{position:absolute;left:50%;bottom:8px;transform:translateX(-50%);display:flex;align-items:center;gap:2px;background:#111;color:#fff;border-radius:999px;padding:3px;box-shadow:0 4px 14px rgba(0,0,0,.6);font:12px system-ui,sans-serif;z-index:40;border:1px solid #fff3}
+#switcher button{background:none;border:0;color:#fff;width:28px;height:24px;border-radius:999px}
+#switcher button:hover{background:#333}
+#switcher span{padding:0 10px;min-width:250px;text-align:center}
+</style>
+</head>
+<body>
+<div id="scene">
+  <div class="hills"></div>
+  <div id="tint"></div>
+  <div id="bobber"></div>
+  <div id="pframe"><div class="por"></div><div class="bars"><div class="nm">Thalindra</div><div class="hp"></div><div class="mp"></div></div></div>
+  <div id="minimap"><div class="zn" id="zoneName"></div><div class="mm"></div><div class="clk" id="mmclock"></div>
+    <button id="pbtn" title="Pagle (addon compartment)"><svg viewBox="0 0 40 40"><path d="M7 20c6-8 17-10 24-3l5-5v16l-5-5c-7 7-18 5-24-3z" fill="#7fb3c8" stroke="#000" stroke-width="1.4"/><circle cx="12" cy="18" r="1.5"/></svg><b id="pip"></b></button></div>
+  <div id="cmenu">
+    <div class="h">Pagle</div>
+    <button data-menu="journal" class="o">Fish Journal</button>
+    <button data-menu="hunts">Hunts</button>
+    <button data-menu="stats" class="o">Stats</button>
+    <button data-menu="tackle" class="o">Tackle Board</button>
+    <div class="sep"></div>
+    <button data-menu="settings" class="o">Settings…</button>
+  </div>
+  <div id="tracker"></div>
+  <div id="board"></div>
+  <div id="layer-banner"></div>
+  <div id="layer-toast"></div>
+  <div id="chat"><div id="chatlog"></div><input id="chatin" placeholder="Type /pagle hunts and press Enter"></div>
+  <div id="actionbar"><i title="Fishing"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  <div id="switcher"><button id="swPrev" title="Previous variant (←)">◀</button><span id="swLabel"></span><button id="swNext" title="Next variant (→)">▶</button></div>
+</div>
+
+<aside id="panel">
+  <header>
+    <h1>Hunts board <small>prototype · throwaway</small></h1>
+    <p class="q">What should the Hunts board look like, and how does it behave? Flip the four variants (bottom bar, ←/→), then move the realm clock and watch Hunts move between Now, Soon and Later. Every variant reads the same rules; only the presentation differs.</p>
+  </header>
+
+  <section>
+    <h2>This variant</h2>
+    <div class="vnote" id="vnote"></div>
+  </section>
+
+  <section>
+    <h2>Angler</h2>
+    <div class="seg" id="stageSeg"><button data-v="new">Week one (skill 95)</button><button data-v="mid">Mid-game (180)</button><button data-v="late">Late (300)</button></div>
+  </section>
+
+  <section>
+    <h2>Realm clock</h2>
+    <div class="clock" id="pclock"></div>
+    <div class="btns" style="margin-top:5px">
+      <span class="seg" id="speedSeg"><button data-v="0">Pause</button><button data-v="1">1×</button><button data-v="60">60×</button><button data-v="600">600×</button><button data-v="3600">3600×</button></span>
+    </div>
+    <div class="btns" style="margin-top:5px">
+      <button class="b" data-jump="60">+1 h</button>
+      <button class="b" data-jump="360">+6 h</button>
+      <button class="b" data-jump="1440">+1 day</button>
+      <button class="b" data-jumpto="dusk">Next 17:45</button>
+      <button class="b" data-jumpto="sunday">Sunday 13:30</button>
+      <button class="b" data-jumpto="march">1 March</button>
+      <button class="b" data-jumpto="reset">Reset</button>
+    </div>
+    <p class="q">Realm time only. "Soon" means the window opens within 3 realm hours.</p>
+  </section>
+
+  <section>
+    <h2>Where you are and what's up</h2>
+    <label>Zone <select id="zoneSel"></select></label>
+    <label><input type="checkbox" data-aura="rack"> Fishing Rack is up (aura)</label>
+    <label><input type="checkbox" data-aura="hut"> Fishing Hut is up (aura)</label>
+    <label>Calendar says Extravaganza is <span class="seg" id="calSeg"><button data-v="auto">auto (weekly rule)</button><button data-v="on">on</button><button data-v="off">off</button></span></label>
+  </section>
+
+  <section>
+    <h2>Fish</h2>
+    <div class="btns">
+      <button class="b pri" id="bCast">Cast here ×1</button>
+      <button class="b" id="bCast20">×20</button>
+    </div>
+    <p class="q">Counts effort for every Hunt whose conditions hold right here, with a small placeholder chance of a qualifying Catch.</p>
+    <div class="btns" style="margin-top:6px">
+      <select id="forceSel"></select>
+      <button class="b" id="bForce">Force a qualifying Catch</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Player settings</h2>
+    <label><input type="checkbox" id="optAnn"> Window Announcements for pinned Hunts <span style="color:var(--ink2)">(opt-in, off by default)</span></label>
+    <label><input type="checkbox" id="optCozy"> Cozy mode (everything waits for the Session summary)</label>
+    <label>“Show completed” hides Hunts with <span class="seg" id="doneSeg"><button data-v="first">first tier done (old rule)</button><button data-v="all">every tier done (chosen)</button></span></label>
+    <p class="q" style="margin:0 0 4px">Pinned Hunts always show, completed or not.</p>
+    <label>Compact tracker <span class="seg" id="trkSeg"><button data-v="off">Off</button><button data-v="pinned">Pinned only</button><button data-v="pinnow">Pinned + Now</button></span></label>
+  </section>
+
+  <section>
+    <h2>Model output (same for every variant)</h2>
+    <table id="mtable"></table>
+  </section>
+
+  <section>
+    <h2>What to decide</h2>
+    <ol>
+      <li><b>Which variant</b>, or which parts of which ("A's list with C's set headers").</li>
+      <li><b>Native Retail or the book?</b> A–C are native; D borrows the Journal's language.</li>
+      <li><b>Compact tracker:</b> none, pinned only, or pinned + Now? Default on or off?</li>
+      <li><b>Detail:</b> a side pane (A), a drawer (B), expanding in place (C) or a page (D)?</li>
+      <li><b>Sets:</b> a filter (A), a tab (B), the main navigation (C) or bookmarks (D)?</li>
+      <li><b>Hiding completed:</b> mid-game, every Hunt open now has its first tier done, so Now and Soon look empty. Hide on first tier (as decided) or only once every tier is done?</li>
+    </ol>
+  </section>
+</aside>
+
+<script>
+// ===================================================================================
+// HuntsModel: the liftable part. Pure: Hunt definitions + grouping rules. No DOM.
+// Times are realm minutes since the epoch (UTC fields stand in for realm time).
+// ===================================================================================
+const HuntsModel = (() => {
+  const H = 60, DAY = 1440, SOON = 180;
+  const SETS = [
+    { id: 'clock', name: 'Round the Clock', title: 'the Clockwatcher', color: '#2f5a8a' },
+    { id: 'year', name: 'Turn of the Year', title: 'of All Seasons', color: '#2f7a4a' },
+    { id: 'sunday', name: 'Sunday Showdown', title: 'the Tastyfish', note: 'Extravaganza, requires level 60', color: '#8a5a1a' },
+    { id: 'camp', name: 'Camp Hours', title: 'the Hut Keeper', color: '#6a3a7a' },
+    { id: 'wagers', name: "Pagle's Wagers", title: "Pagle's Apprentice", pagles: true, color: '#8a2a1a' },
+  ];
+  const STV = ['Stranglethorn Vale'];
+  const WARM = ['Feralas', 'Stranglethorn Vale', 'Desolace', 'Thousand Needles'];
+  // when: tod [start,end) minutes, season 'summer'|'winter', event {id, dow, start, len} (shipped weekly rule), aura
+  const HUNTS = [
+    { id: 'night-run', set: 'clock', name: 'Night Run', kind: 'N', target: 'Raw Nightfin Snapper', hue: 235, q: 1, when: { tod: [18 * H, 6 * H] }, skill: 125, zones: WARM, unc: 'The night window is a VMaNGOS estimate.', tiers: [1, 10, 40], rate: 1 / 8 },
+    { id: 'first-light', set: 'clock', name: 'First Light', kind: 'N', target: 'Raw Sunscale Salmon', hue: 15, q: 1, when: { tod: [6 * H, 18 * H] }, skill: 125, zones: WARM, unc: 'The day window is a VMaNGOS estimate.', tiers: [1, 10, 40], rate: 1 / 8 },
+    { id: 'live-wire', set: 'clock', name: 'Live Wire', kind: 'N', target: 'Lightning Eel', hue: 55, q: 1, when: { tod: [6 * H, 18 * H] }, skill: 250, zones: ['Azshara', 'Feralas'], unc: 'Day window and whether it is gated at all are unverified.', tiers: [1, 10], rate: 1 / 25 },
+    { id: 'armoured', set: 'clock', name: 'Armoured After Dark', kind: 'N', target: 'Plated Armorfish', hue: 200, q: 1, when: { tod: [18 * H, 6 * H] }, skill: 250, zones: ['Western Plaguelands', 'Eastern Plaguelands'], unc: 'Night window and whether it is gated at all are unverified.', tiers: [1, 5], rate: 1 / 30 },
+    { id: 'summer-bass', set: 'year', name: "Summer's Bass", kind: 'N', target: 'Raw Summer Bass', hue: 95, q: 1, when: { season: 'summer' }, skill: 200, zones: ['Feralas', 'Tanaris', 'Azshara'], tiers: [1, 10, 40], rate: 1 / 10 },
+    { id: 'winter-squid', set: 'year', name: "Winter's Squid", kind: 'N', target: 'Winter Squid', hue: 180, q: 1, when: { season: 'winter' }, skill: 200, zones: ['Feralas', 'Tanaris', 'Azshara'], tiers: [1, 10, 40], rate: 1 / 10 },
+    { id: 'tasty', set: 'sunday', name: 'Tastyfish Haul', kind: 'N', target: 'Speckled Tastyfish', hue: 30, q: 1, when: { event: { id: 301, dow: 0, start: 14 * H, len: 2 * H } }, skill: 150, zones: STV, unc: 'The Extravaganza is untested on Forever.', tiers: [1, 10, 40], rate: 1 / 4 },
+    { id: 'riggle-angel', set: 'sunday', name: "Riggle's Angelfish", kind: 'N', target: "Keefer's Angelfish", hue: 300, q: 2, when: { event: { id: 301, dow: 0, start: 14 * H, len: 2 * H } }, skill: 150, zones: STV, unc: 'The Extravaganza is untested on Forever.', tiers: [1], rate: 1 / 60 },
+    { id: 'riggle-queen', set: 'sunday', name: "Riggle's Queenfish", kind: 'N', target: 'Dezian Queenfish', hue: 340, q: 2, when: { event: { id: 301, dow: 0, start: 14 * H, len: 2 * H } }, skill: 150, zones: STV, unc: 'The Extravaganza is untested on Forever.', tiers: [1], rate: 1 / 60 },
+    { id: 'riggle-racer', set: 'sunday', name: "Riggle's Racer", kind: 'N', target: "Brownell's Blue Striped Racer", hue: 210, q: 2, when: { event: { id: 301, dow: 0, start: 14 * H, len: 2 * H } }, skill: 150, zones: STV, unc: 'The Extravaganza is untested on Forever.', tiers: [1], rate: 1 / 60 },
+    { id: 'rack', set: 'camp', name: 'Rack Hour', kind: 'I', target: 'Any uncommon-or-better Catch', cls: true, hue: 120, q: 2, when: { aura: 'rack' }, tiers: [1, 10, 25], rate: 1 / 15 },
+    { id: 'hut', set: 'camp', name: 'Hut Hour', kind: 'I', target: 'Any rare-or-better Catch', cls: true, hue: 220, q: 3, when: { aura: 'hut' }, tiers: [1, 5, 15], rate: 1 / 60 },
+    { id: 'grouper', set: 'wagers', name: 'Grouper by Moonlight', kind: 'I', target: 'Darkshore Grouper', hue: 160, q: 1, when: { tod: [22 * H, 4 * H] }, zones: ['Darkshore'], zoneReq: true, skill: 50, tiers: [1, 5, 20], rate: 1 / 6 },
+    { id: 'oddity', set: 'wagers', name: 'Oddity at Dusk', kind: 'I', target: 'Deviate Fish or Whimsyfin', hue: 270, q: 1, when: { tod: [18 * H, 21 * H] }, zones: ['The Barrens', 'Darkshore'], skill: 50, tiers: [1, 10, 25], rate: 1 / 12 },
+    { id: 'witching', set: 'wagers', name: 'Witching Hour', kind: 'I', target: 'Any fish', cls: true, hue: 0, q: 1, when: { tod: [0, 3 * H] }, zones: ['Duskwood'], zoneReq: true, skill: 100, tiers: [1, 10, 30], rate: 1 / 1.3 },
+    { id: 'dawn-trout', set: 'wagers', name: 'Dawn Trout', kind: 'I', target: 'Mithril Head Trout', hue: 45, q: 1, when: { tod: [5 * H, 8 * H] }, zones: ['Arathi Highlands', 'Alterac Mountains'], skill: 225, tiers: [1, 10, 25], rate: 1 / 8 },
+  ];
+  const AURA = { rack: 'Fishing Rack', hut: 'Fishing Hut' };
+  const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+  const D = (t) => new Date(t * 60000);
+  const mod = (t) => ((t % DAY) + DAY) % DAY;
+  const seasonOf = (t) => { const m = D(t).getUTCMonth(); return m >= 2 && m <= 7 ? 'summer' : 'winter'; };
+  const inTod = ([a, b], m) => (a < b ? m >= a && m < b : m >= a || m < b);
+  const ruleEvent = (e, t) => D(t).getUTCDay() === e.dow && mod(t) >= e.start && mod(t) < e.start + e.len;
+  const hasTime = (h) => !!(h.when.tod || h.when.season || h.when.event);
+
+  // timeOpen: are all the Hunt's time fields true at t? eventOn overrides the weekly rule (live calendar).
+  function timeOpen(h, t, eventOn) {
+    const w = h.when;
+    if (w.tod && !inTod(w.tod, mod(t))) return false;
+    if (w.season && seasonOf(t) !== w.season) return false;
+    if (w.event && !(eventOn === undefined ? ruleEvent(w.event, t) : eventOn)) return false;
+    return true;
+  }
+  const memo = new Map();
+  // NextWindow-style search over the shipped rules: first minute after t where timeOpen === want.
+  function nextChange(h, t, want) {
+    t = Math.floor(t);
+    const key = h.id + '|' + t + '|' + want;
+    if (memo.has(key)) return memo.get(key);
+    if (memo.size > 4000) memo.clear();
+    let x = Math.floor(t / H) * H + H;
+    const lim = t + 400 * DAY;
+    while (x < lim && timeOpen(h, x) !== want) x += H;
+    let y = x;
+    while (y - 1 > t && timeOpen(h, y - 1) === want) y--;
+    const r = x >= lim ? null : y;
+    memo.set(key, r);
+    return r;
+  }
+
+  const pad = (n) => String(n).padStart(2, '0');
+  const clock = (t) => { const d = D(t); return pad(d.getUTCHours()) + ':' + pad(d.getUTCMinutes()); };
+  const dur = (m) => { m = Math.max(0, Math.round(m)); if (m < 60) return m + 'm'; if (m < DAY) return Math.floor(m / 60) + 'h' + (m % 60 ? ' ' + (m % 60) + 'm' : ''); return Math.floor(m / DAY) + 'd ' + Math.floor((m % DAY) / 60) + 'h'; };
+  const sameDay = (a, b) => Math.floor(a / DAY) === Math.floor(b / DAY);
+  const when = (x, t) => (sameDay(x, t) ? clock(x) : DOW[D(x).getUTCDay()] + ' ' + clock(x));
+  const month = (t) => MONTHS[D(t).getUTCMonth()];
+  const dateStr = (t) => { const d = D(t); return d.getUTCDate() + ' ' + MONTHS[d.getUTCMonth()].slice(0, 3); };
+  const fullDate = (t) => { const d = D(t); return DOW[d.getUTCDay()] + ' ' + d.getUTCDate() + ' ' + MONTHS[d.getUTCMonth()].slice(0, 3) + ' ' + d.getUTCFullYear(); };
+
+  function condText(h) {
+    const w = h.when, parts = [];
+    if (w.tod) parts.push((w.tod[0] === 18 * H && w.tod[1] === 6 * H ? 'Night' : w.tod[0] === 6 * H && w.tod[1] === 18 * H ? 'Day' : 'Realm time') + ' ' + clock(w.tod[0]) + '–' + clock(w.tod[1]));
+    if (w.season) parts.push(w.season === 'summer' ? 'Summer (March–August)' : 'Winter (September–February)');
+    if (w.event) parts.push('Stranglethorn Fishing Extravaganza (calendar event ' + w.event.id + '), ' + DOW[w.event.dow] + 's ' + clock(w.event.start) + ' for ' + w.event.len / H + 'h');
+    if (w.aura) parts.push('While your ' + AURA[w.aura] + ' is up');
+    if (h.zoneReq) parts.push('In ' + h.zones.join(' or '));
+    return parts.join(' · ');
+  }
+
+  // classify: which board group, and the label/countdown and chips the board shows.
+  // ctx = { t, zone, best, auras:Set, calendar:'auto'|'on'|'off', prog:{id:{n}} , pins:Set }
+  function classify(h, ctx) {
+    const t = ctx.t, p = ctx.prog[h.id];
+    const r = { h, id: h.id, set: SETS.find((s) => s.id === h.set), pinned: ctx.pins.has(h.id), n: p.n, eff: p.eff, since: p.since, dates: p.dates };
+    r.tier = h.tiers.filter((x) => p.n >= x).length;
+    r.done = r.tier >= 1;
+    r.allTiers = r.tier === h.tiers.length;
+    r.nextTier = h.tiers[r.tier] || null;
+    r.here = !!(h.zones && h.zones.includes(ctx.zone));
+    if (h.skill && ctx.best < h.skill) r.short = { need: h.skill, best: ctx.best, lures: h.skill - ctx.best <= 100 };
+    const evOn = h.when.event && ctx.calendar !== 'auto' ? ctx.calendar === 'on' : undefined;
+
+    if (h.when.aura) {
+      r.active = ctx.auras.has(h.when.aura);
+      r.group = r.short ? 'later' : r.active ? 'now' : 'demand';
+      r.label = r.active ? 'camp is up' : 'set up a ' + AURA[h.when.aura].replace('Fishing ', '');
+      r.short_label = r.active ? 'up now' : 'on demand';
+    } else {
+      const ruleOn = timeOpen(h, t);
+      const open = timeOpen(h, t, evOn);
+      if (open) {
+        r.closesAt = ruleOn ? nextChange(h, t, false) : null;
+        r.group = 'now';
+        if (r.closesAt == null) r.label = 'while the event runs';
+        else if (r.closesAt - t > 7 * DAY) r.label = 'until ' + month(r.closesAt);
+        else r.label = 'until ' + when(r.closesAt, t);
+        r.short_label = r.closesAt == null ? 'now' : r.closesAt - t > 7 * DAY ? 'all ' + h.when.season : 'ends in ' + dur(r.closesAt - t);
+      } else {
+        r.opensAt = ruleOn ? nextChange(h, nextChange(h, t, false), true) : nextChange(h, t, true);
+        const d = r.opensAt - t;
+        r.group = d <= SOON ? 'soon' : 'later';
+        if (d <= SOON) r.label = 'in ' + dur(d);
+        else if (d > 7 * DAY) r.label = 'back in ' + month(r.opensAt);
+        else r.label = when(r.opensAt, t);
+        r.short_label = r.label;
+      }
+      if (r.short) r.group = 'later';
+    }
+    r.calLive = h.when.event ? (evOn !== undefined ? evOn : ruleEvent(h.when.event, t)) : undefined;
+    return r;
+  }
+
+  const GROUPS = [
+    { id: 'now', name: 'Now', sub: 'open right now' },
+    { id: 'soon', name: 'Soon', sub: 'opens within 3 hours' },
+    { id: 'later', name: 'Later', sub: 'opens after that, or needs more skill' },
+    { id: 'demand', name: 'On demand', sub: 'starts when you do' },
+  ];
+  // Within a group: pinned first, then the soonest to close (Now) or open (Soon/Later); skill-gated last.
+  function sortRows(rows) {
+    const k = (r) => [r.pinned ? 0 : 1, r.short ? 1 : 0, r.group === 'now' ? (r.closesAt ?? 9e15) : (r.opensAt ?? 9e15)];
+    return rows.slice().sort((a, b) => { const x = k(a), y = k(b); for (let i = 0; i < 3; i++) if (x[i] !== y[i]) return x[i] - y[i]; return 0; });
+  }
+  const setProgress = (setId, rows) => { const m = rows.filter((r) => r.h.set === setId); return { done: m.filter((r) => r.done).length, total: m.length }; };
+  // Effort: does this Cast count toward the Hunt? (conditions hold, and it bites here / it's the required zone)
+  function castCounts(h, ctx) {
+    if (h.when.aura && !ctx.auras.has(h.when.aura)) return false;
+    if (hasTime(h)) { const evOn = h.when.event && ctx.calendar !== 'auto' ? ctx.calendar === 'on' : undefined; if (!timeOpen(h, ctx.t, evOn)) return false; }
+    if (h.zones && !h.zones.includes(ctx.zone)) return false;
+    return true;
+  }
+  const isOpenAt = (h, t) => hasTime(h) && timeOpen(h, t);
+  return { SETS, HUNTS, GROUPS, AURA, classify, isOpenAt, sortRows, setProgress, castCounts, condText, clock, dur, when, dateStr, fullDate, month, seasonOf, SOON, DAY, H };
+})();
+</script>
+
+<script>
+// ===================================================================================
+// Throwaway shell: sample Angler, clock, variants, tracker, Announcements.
+// ===================================================================================
+const M = HuntsModel;
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const T0 = Date.UTC(2026, 10, 7, 17, 20) / 60000; // Sat 7 Nov 2026, 17:20 realm
+const ZONES = ['Feralas', 'Darkshore', 'Duskwood', 'Stranglethorn Vale', 'The Barrens', 'Arathi Highlands', 'Azshara', 'Tanaris', 'Western Plaguelands', 'Orgrimmar'];
+
+// [caught, Casts under conditions, Casts since last catch]
+const STAGES = {
+  new: { best: 95, pins: [], titles: [], prog: { 'night-run': [0, 9, 9], 'first-light': [0, 31, 31], 'grouper': [1, 22, 4], 'oddity': [0, 6, 6], 'witching': [0, 0, 0] } },
+  mid: { best: 180, pins: ['night-run', 'grouper'], titles: [], prog: { 'night-run': [7, 96, 11], 'first-light': [12, 140, 3], 'live-wire': [0, 0, 0], 'summer-bass': [0, 0, 0], 'winter-squid': [0, 0, 0], 'tasty': [0, 0, 0], 'rack': [4, 61, 9], 'hut': [0, 12, 12], 'grouper': [2, 41, 17], 'oddity': [1, 38, 22], 'witching': [0, 26, 26] } },
+  late: { best: 300, pins: ['riggle-angel', 'dawn-trout'], prog: { 'night-run': [44, 520, 6], 'first-light': [31, 410, 14], 'live-wire': [3, 140, 48], 'armoured': [1, 90, 61], 'summer-bass': [27, 300, 12], 'winter-squid': [6, 88, 4], 'tasty': [12, 130, 2], 'riggle-angel': [0, 312, 312], 'riggle-queen': [1, 312, 140], 'riggle-racer': [0, 312, 312], 'rack': [26, 380, 5], 'hut': [6, 210, 30], 'grouper': [20, 160, 1], 'oddity': [9, 120, 15], 'witching': [31, 75, 0], 'dawn-trout': [0, 48, 48] } },
+};
+
+const S = {
+  variant: 'A', stage: 'mid', t: T0, speed: 60, zone: 'Feralas', auras: new Set(), calendar: 'auto',
+  prog: {}, pins: new Set(), titles: {}, open: true, sel: null, showDone: false, setFilter: 'all', collapsed: {},
+  doneRule: 'all', eSet: 'all', eSetPage: false, bTab: 'board', cCat: 'nowsoon', dSet: 'all', ann: false, cozy: false, tracker: 'pinned', trackerOpen: true, pip: 0, lastGroups: {},
+};
+
+function loadStage(stage) {
+  const st = STAGES[stage];
+  S.stage = stage; S.prog = {}; S.titles = {}; S.pins = new Set(st.pins); S.pip = 0;
+  M.HUNTS.forEach((h, i) => {
+    const [n, eff, since] = st.prog[h.id] || [0, 0, 0];
+    const dates = h.tiers.map((x, k) => (n >= x ? { t: T0 - (40 - k * 11 - (i % 5)) * M.DAY - 300 + i * 37, zone: h.zones ? h.zones[0] : ZONES[(i + k) % 4] } : null));
+    S.prog[h.id] = { n, eff, since, dates };
+  });
+  M.SETS.forEach((s) => {
+    const mem = M.HUNTS.filter((h) => h.set === s.id);
+    if (mem.every((h) => S.prog[h.id].n >= h.tiers[0])) S.titles[s.id] = { t: Math.max(...mem.map((h) => S.prog[h.id].dates[0].t)) };
+  });
+  S.sel = null;
+}
+const ctx = () => ({ t: S.t, zone: S.zone, best: STAGES[S.stage].best, auras: S.auras, calendar: S.calendar, prog: S.prog, pins: S.pins });
+const compute = () => { const c = ctx(); return M.HUNTS.map((h) => M.classify(h, c)); };
+// Completed Hunts hide behind the filter; pinned ones never hide. S.doneRule: 'first' (decided) or 'all' tiers.
+const isDone = (r) => (S.doneRule === 'all' ? r.allTiers : r.done);
+const visible = (r) => S.showDone || r.pinned || !isDone(r);
+
+// ---------- small renderers ----------
+const Q = { 1: '#ffffff', 2: '#1eff00', 3: '#0070dd' };
+function iconSvg(h) {
+  if (h.cls) return `<svg viewBox="0 0 40 40"><rect width="40" height="40" fill="hsl(${h.hue},30%,16%)"/><path d="M9 16h22l-2 16H11z" fill="hsl(${h.hue},45%,45%)" stroke="#000"/><path d="M8 12h24v5H8z" fill="hsl(${h.hue},50%,58%)" stroke="#000"/><circle cx="20" cy="22" r="3" fill="#ffd100" stroke="#000"/></svg>`;
+  return `<svg viewBox="0 0 40 40"><rect width="40" height="40" fill="hsl(${h.hue},35%,16%)"/><path d="M5 20c6-8 17-10 24-3l6-5v16l-6-5c-7 7-18 5-24-3z" fill="hsl(${h.hue},55%,58%)" stroke="#000" stroke-width="1.2"/><path d="M15 14c3 3 3 9 0 12" fill="none" stroke="rgba(0,0,0,.35)"/><circle cx="10.5" cy="18.5" r="1.6"/></svg>`;
+}
+const pinSvg = (on) => `<svg viewBox="0 0 20 20"><path d="M7 2h6l-1 6 3 3H5l3-3z" fill="${on ? '#ffd100' : '#9a9a9a'}" stroke="#000"/><path d="M10 11v7" stroke="${on ? '#ffd100' : '#9a9a9a'}" stroke-width="2"/></svg>`;
+function icon(r, extra = '') {
+  return `<span class="ic ${r.tier ? 'trim-' + r.tier : ''} ${extra}" style="--qc:${Q[r.h.q]}">${iconSvg(r.h)}${r.pinned ? `<span class="pinmark">${pinSvg(true)}</span>` : ''}</span>`;
+}
+const pinBtn = (r) => `<button class="pin ${r.pinned ? 'on' : ''}" data-act="pin" data-id="${r.id}" title="${r.pinned ? 'Unpin' : 'Pin to the top of its group'}">${pinSvg(r.pinned)}</button>`;
+function chips(r, opts = {}) {
+  const h = r.h, out = [];
+  if (h.zones) {
+    const z = h.zones, first = r.here ? S.zone : z[0];
+    out.push(`<span class="chip zone ${h.zoneReq ? 'req' : ''}" title="${h.zoneReq ? 'Required: ' : 'Bites in: '}${esc(z.join(', '))}">${esc(first)}${z.length > 1 && !h.zoneReq ? ' +' + (z.length - 1) : ''}${r.here ? '<span class="here">you’re here</span>' : ''}</span>`);
+  }
+  if (h.when.aura) out.push(`<span class="chip camp">${M.AURA[h.when.aura]}${r.active ? ' · up' : ''}</span>`);
+  if (r.short) out.push(`<span class="chip skill">needs ${r.short.need}, best: ${r.short.best}${r.short.lures ? ' <span class="lh">· lures help</span>' : ''}</span>`);
+  if (r.set.note) out.push(`<span class="chip note">${esc(r.set.note)}</span>`);
+  if (h.unc) out.push(`<span class="chip unc" title="${esc(h.unc)}">unconfirmed</span>`);
+  return `<div class="chips">${out.join('')}</div>`;
+}
+const progTxt = (r) => (r.allTiers ? `${r.n} caught` : `${r.n} / ${r.nextTier}`);
+const progBar = (r) => { const lo = r.tier ? r.h.tiers[r.tier - 1] : 0, hi = r.nextTier || r.n || 1; const f = r.allTiers ? 1 : Math.min(1, Math.max(0, (r.n - lo) / Math.max(1, hi - lo))); return `<div class="bar ${r.allTiers ? 'done' : ''}"><i style="width:${Math.round(f * 100)}%"></i></div>`; };
+const pips = (r) => `<span class="tierpips">${r.h.tiers.map((_, i) => `<i class="${i < r.tier ? 't' + (i + 1) : ''}"></i>`).join('')}</span>`;
+
+function windowLine(r) {
+  const t = S.t;
+  if (r.short && !r.h.when.aura) return `<div class="dwin later"><b>Needs more skill.</b> This Hunt needs ${r.short.need}; your best character has ${r.short.best}.${r.short.lures ? ' A lure gets you there.' : ''}</div>`;
+  if (r.group === 'now' && r.h.when.aura) return `<div class="dwin now"><b>Open now</b> · your ${M.AURA[r.h.when.aura]} is up. Every qualifying Catch counts while it lasts.</div>`;
+  if (r.group === 'demand') return `<div class="dwin demand"><b>On demand.</b> Set up a ${M.AURA[r.h.when.aura]} and this Hunt opens while it stands.</div>`;
+  if (r.group === 'now') return r.closesAt == null ? `<div class="dwin now"><b>Open now</b> · the calendar says the event is running.</div>`
+    : r.closesAt - t > 7 * M.DAY ? `<div class="dwin now"><b>Open all ${r.h.when.season}</b> · until ${M.month(r.closesAt)}</div>`
+      : `<div class="dwin now"><b>Open now</b> · closes in <span class="cd">${M.dur(r.closesAt - t)}</span> (${M.when(r.closesAt, t)} realm)</div>`;
+  const d = r.opensAt - t;
+  return d > 7 * M.DAY ? `<div class="dwin later"><b>Back in ${M.month(r.opensAt)}</b> · ${M.fullDate(r.opensAt)}</div>`
+    : `<div class="dwin ${r.group}"><b>Opens in</b> <span class="cd">${M.dur(d)}</span> (${M.when(r.opensAt, t)} realm)${r.h.when.event && r.h.unc ? ' · from the weekly rule; the live calendar decides' : ''}</div>`;
+}
+function detailHtml(r) {
+  const h = r.h, sp = M.setProgress(h.set, compute());
+  const earned = S.titles[h.set];
+  const stamp = r.done ? `<div class="stampseal"><b>Hunted</b>${M.dateStr(r.dates[0].t)}<span>${esc(r.dates[0].zone)}</span></div>` : '';
+  const tiers = h.tiers.map((x, i) => {
+    const got = r.dates[i];
+    return `<div class="tier"><span class="tierpips"><i class="${got ? 't' + (i + 1) : ''}"></i></span><span>Tier ${i + 1} · ${x}</span>${got ? `<span style="color:#9a9a9a;font-size:11px">${['bronze', 'silver', 'gold'][i]} trim</span>` : progBar({ ...r, tier: i, nextTier: x, allTiers: false, n: Math.min(r.n, x), h: { ...h, tiers: h.tiers } })}<span class="when">${got ? M.dateStr(got.t) + ', ' + esc(got.zone) : r.n + ' / ' + x}</span></div>`;
+  }).join('');
+  return `<div class="dt">
+    <div class="dh">${icon(r)}<div style="flex:1;min-width:0"><div class="dn">${esc(h.name)}</div><div class="dtg">${esc(h.target)}</div>
+      <div class="dset">${esc(r.set.name)}${r.set.pagles ? ' (Pagle’s own)' : ''} · ${sp.done}/${sp.total} for the title <i>${esc(r.set.title)}</i>${earned ? ' · earned' : ''}</div></div>${pinBtn(r)}</div>
+    ${windowLine(r)}
+    ${stamp}
+    <div class="cond">${esc(M.condText(h))}${h.zones && !h.zoneReq ? `<br>Bites in ${esc(h.zones.join(', '))}` : ''}
+      <span class="kind">${h.kind === 'N' ? 'Natural Hunt: the Catch alone counts. The window only says when it’s worth trying.' : 'Imposed Hunt: Pagle’s own rule. A Catch only counts if the Cast happened under these conditions.'}</span></div>
+    ${chips(r)}
+    <h5>Tiers</h5>${tiers}
+    <h5>Effort</h5>
+    <div class="eff"><b>${r.eff}</b> Casts under these conditions${r.n ? `, <b>${r.since}</b> since your last one` : ''}.<br><span class="dim">Plain counts. Your odds live in Stats.</span></div>
+    ${h.unc ? `<div class="uncx">Unconfirmed: ${esc(h.unc)}</div>` : ''}
+  </div>`;
+}
+
+// ---------- Variant A: Finder list + detail pane ----------
+function winShell(cls, title, inner, tabs = '') {
+  return `<div class="win ${cls}"><div class="tb"><div class="por">${$('#pbtn svg').outerHTML}</div>${title}<button class="x" data-act="close">✕</button></div>${inner}${tabs}</div>`;
+}
+function toolbar(rows) {
+  const hidden = rows.filter((r) => !visible(r)).length;
+  return `<div class="tool"><div class="setpills"><button data-act="setf" data-v="all" class="${S.setFilter === 'all' ? 'on' : ''}">All sets</button>${M.SETS.map((s) => `<button data-act="setf" data-v="${s.id}" class="${S.setFilter === s.id ? 'on' : ''}">${esc(s.name)}</button>`).join('')}</div>
+    <span style="flex:1"></span><label class="chk"><input type="checkbox" data-act="done" ${S.showDone ? 'checked' : ''}> Show completed${hidden ? ` (${hidden})` : ''}</label></div>`;
+}
+function renderA(rows) {
+  const vis = rows.filter((r) => visible(r) && (S.setFilter === 'all' || r.h.set === S.setFilter));
+  if (!S.sel || !vis.find((r) => r.id === S.sel)) S.sel = (M.sortRows(vis.filter((r) => r.group === 'now'))[0] || vis[0] || {}).id || null;
+  const list = M.GROUPS.map((g) => {
+    const rs = M.sortRows(vis.filter((r) => r.group === g.id));
+    const col = S.collapsed[g.id];
+    return `<div class="grp" data-act="coll" data-g="${g.id}"><span class="car">${col ? '▶' : '▼'}</span><span class="gl-${g.id}">${g.name}</span> <span style="color:#cfc8b8">(${rs.length})</span><span class="sub">${g.sub}</span></div>` +
+      (col ? '' : rs.length ? rs.map((r) => `<div class="row ${r.id === S.sel ? 'sel' : ''} ${r.done ? 'done' : ''}" data-act="sel" data-id="${r.id}">${icon(r)}
+        <div class="mid"><div class="nm">${esc(r.h.name)}</div><div class="tg">${esc(r.h.target)}</div>${chips(r)}</div>
+        <div class="rt"><div class="lbl gl-${r.group}">${esc(r.label)}</div>${progBar(r)}<div class="cnt">${progTxt(r)}</div></div></div>`).join('') : `<div class="empty">Nothing ${g.id === 'now' ? 'open right now' : g.id === 'soon' ? 'in the next 3 hours' : 'here'}.</div>`);
+  }).join('');
+  const sel = rows.find((r) => r.id === S.sel);
+  return winShell('vA', 'Hunts', `${toolbar(rows)}<div class="body"><div class="inset list scr" data-scroll="a-list">${list}</div><div class="inset det scr" data-scroll="a-det">${sel ? detailHtml(sel) : '<div class="empty">Pick a Hunt.</div>'}</div></div>
+    <div class="foot">${Object.keys(S.titles).length ? 'Titles: ' + Object.keys(S.titles).map((k) => '<i style="color:#e8d9a8">' + esc(M.SETS.find((s) => s.id === k).title) + '</i>').join(', ') : 'No set titles yet.'} · Realm ${M.clock(S.t)}</div>`);
+}
+
+// ---------- Variant B: realm-clock timeline ----------
+function renderB(rows) {
+  const t = S.t, from = t - 2 * 60, span = 24 * 60, pct = (x) => ((x - from) / span) * 100;
+  const ticks = []; for (let x = Math.ceil(from / 180) * 180; x < from + span; x += 180) ticks.push(`<span style="left:${pct(x)}%">${M.clock(x)}</span>`);
+  const nightBands = []; for (let d = Math.floor(from / M.DAY) - 1; d <= Math.floor((from + span) / M.DAY); d++) { const a = d * M.DAY + 18 * 60, b = a + 12 * 60; const L = Math.max(pct(a), 0), R = Math.min(pct(b), 100); if (R > L) nightBands.push(`<i class="night" style="left:${L}%;width:${R - L}%"></i>`); }
+  const track = (r) => {
+    const h = r.h;
+    if (h.when.aura) return r.active ? `<i class="bar2 camp" style="left:${pct(t)}%;width:${(60 / span) * 100}%">${M.AURA[h.when.aura]} up</i>` : `<span class="txt">whenever you set up a ${M.AURA[h.when.aura].replace('Fishing ', '')}</span>`;
+    const segs = []; let st = null;
+    for (let x = Math.ceil(from / 10) * 10; x <= from + span; x += 10) {
+      const on = M.isOpenAt(h, x);
+      if (on && st == null) st = x; if ((!on || x + 10 > from + span) && st != null) { segs.push([st, on ? from + span : x]); st = null; }
+    }
+    if (!segs.length) return `<span class="txt">${r.opensAt ? 'next: ' + esc(r.label) : ''}</span>`;
+    return segs.map(([a, b]) => `<i class="bar2 ${r.short ? 'gated' : h.unc ? 'unc' : ''}" style="left:${pct(a)}%;width:${pct(b) - pct(a)}%">${b - a > 120 ? M.clock(a) + '–' + M.clock(b) : ''}</i>`).join('');
+  };
+  const vis = rows.filter((r) => visible(r));
+  if (!S.sel || !vis.find((r) => r.id === S.sel)) S.sel = (M.sortRows(vis.filter((r) => r.group === 'now'))[0] || vis[0] || {}).id || null;
+  const body = M.GROUPS.map((g) => {
+    const rs = M.sortRows(vis.filter((r) => r.group === g.id)); if (!rs.length) return '';
+    return `<div class="gh gl-${g.id}">${g.name} <span style="color:var(--dim)">· ${g.sub}</span></div>` + rs.map((r) => `<div class="r ${r.id === S.sel ? 'sel' : ''} ${r.done ? 'done' : ''}" data-act="sel" data-id="${r.id}">
+      <div class="nmc">${icon(r)}<span>${esc(r.h.name)}</span>${r.here ? '<span style="color:#7dff7d;font:10px Arial">here</span>' : ''}</div>
+      <div class="trk">${nightBands.join('')}${track(r)}</div>
+      <div class="nx gl-${r.group}">${r.short ? `<span style="color:#ff9a7a">needs ${r.short.need}</span>` : esc(r.label)}</div></div>`).join('');
+  }).join('');
+  const sel = rows.find((r) => r.id === S.sel);
+  let drawer = '';
+  if (sel) {
+    const full = document.createElement('div'); full.innerHTML = detailHtml(sel);
+    const dt = full.firstElementChild;
+    const head = `<div class="dt" style="padding:0">${dt.querySelector('.dh').outerHTML}${dt.querySelector('.dwin').outerHTML}${chips(sel)}</div>`;
+    const tiers = `<div class="dt" style="padding:0">${dt.querySelector('.stampseal')?.outerHTML || ''}<h5 style="margin-top:0">Tiers</h5>${$$('.tier', dt).map((e) => e.outerHTML).join('')}</div>`;
+    const eff = `<div class="dt" style="padding:0"><h5 style="margin-top:0">Effort</h5>${dt.querySelector('.eff').outerHTML}<h5>Conditions</h5>${dt.querySelector('.cond').outerHTML}</div>`;
+    drawer = `<div class="drawer"><div>${head}</div><div>${tiers}</div><div>${eff}</div></div>`;
+  }
+  const hd = `<div class="clockhd"><div class="big">${M.clock(t)}</div><div class="sm">realm time<br>${M.fullDate(t)} · ${M.seasonOf(t)}</div><span class="sp"></span><label class="chk" style="color:#cfc8b8;font-size:12px"><input type="checkbox" data-act="done" ${S.showDone ? 'checked' : ''}> Show completed</label></div>`;
+  const board = `${hd}<div class="tl"><div class="axis"><div style="padding:3px 10px">Hunt</div><div class="ticks">${ticks.join('')}</div><div style="padding:3px 10px;text-align:right">next</div></div>
+    <div style="position:relative;flex:1;min-height:0;display:flex;flex-direction:column"><div class="rows scr" data-scroll="b-rows" style="position:relative">${body}</div>
+    <div style="position:absolute;top:0;bottom:0;left:230px;right:120px;pointer-events:none"><i class="soonband" style="left:${pct(t)}%;width:${(M.SOON / span) * 100}%"></i><i class="nowline" style="left:${pct(t)}%"></i></div></div></div>${drawer}`;
+  const sets = `<div class="sets scr" data-scroll="b-sets" style="flex:1">${M.SETS.map((s) => { const sp = M.setProgress(s.id, rows); const e = S.titles[s.id];
+    return `<div class="setc ${e ? 'earned' : ''}"><h4>${esc(s.name)}</h4><div class="ttl">Title: ${esc(s.title)} · ${e ? 'earned ' + M.dateStr(e.t) : sp.done + '/' + sp.total}</div>${s.note ? `<div class="chips"><span class="chip note">${esc(s.note)}</span></div>` : ''}
+      ${rows.filter((r) => r.h.set === s.id).map((r) => `<div class="ln" data-act="selb" data-id="${r.id}">${icon(r)}<span class="${r.done ? 'ok' : 'no'}">${r.done ? '✔' : '○'}</span> ${esc(r.h.name)} <span style="margin-left:auto">${pips(r)}</span></div>`).join('')}</div>`; }).join('')}</div>`;
+  const tabs = `<div class="tabs"><button data-act="btab" data-v="board" class="${S.bTab === 'board' ? 'on' : ''}">Board</button><button data-act="btab" data-v="sets" class="${S.bTab === 'sets' ? 'on' : ''}">Sets &amp; titles</button></div>`;
+  return winShell('vB', 'Hunts', S.bTab === 'board' ? board : sets, tabs);
+}
+
+// ---------- Variant C: sets-first, Achievements frame ----------
+function renderC(rows) {
+  const ns = rows.filter((r) => (r.group === 'now' || r.group === 'soon') && visible(r));
+  const tree = `<div class="inset tree scr" data-scroll="c-tree">
+    <button data-act="ccat" data-v="nowsoon" class="${S.cCat === 'nowsoon' ? 'on' : ''}">Now &amp; Soon<span class="k">${ns.length}</span><small>worth fishing for</small></button>
+    <button data-act="ccat" data-v="all" class="${S.cCat === 'all' ? 'on' : ''}">All Hunts<span class="k">${rows.filter((r) => r.done).length}/${rows.length}</span></button>
+    <div class="sep">Hunt sets</div>
+    ${M.SETS.map((s) => { const sp = M.setProgress(s.id, rows); return `<button data-act="ccat" data-v="${s.id}" class="${S.cCat === s.id ? 'on' : ''}">${esc(s.name)}<span class="k">${sp.done}/${sp.total}</span><small>${S.titles[s.id] ? '✔ ' : ''}${esc(s.title)}</small></button>`; }).join('')}</div>`;
+  const ach = (r) => `<div class="ach ${r.done ? 'done' : ''} ${r.id === S.sel ? 'sel' : ''}" data-act="selc" data-id="${r.id}">${icon(r)}
+    <div class="mid"><div class="nm">${esc(r.h.name)}</div><div class="tg">${esc(r.h.target)} · ${esc(M.condText(r.h))}</div>${chips(r)}
+      ${r.id === S.sel ? `<div class="dd">${detailHtml(r)}</div>` : ''}</div>
+    <div class="rt"><span class="badge ${r.group}">${r.group === 'demand' ? 'On demand' : r.group}</span><div class="lbl">${r.short ? `<span style="color:#ff9a7a">needs ${r.short.need}</span>` : esc(r.label)}</div>
+      <div style="margin-top:6px">${pips(r)} <span style="font:11px Arial;color:var(--dim)">${progTxt(r)}</span></div>${r.done ? `<div class="done-date">Hunted ${M.dateStr(r.dates[0].t)}</div>` : ''}</div></div>`;
+  let head, list;
+  if (S.cCat === 'nowsoon' || S.cCat === 'all') {
+    const pool = S.cCat === 'nowsoon' ? ns : rows.filter(visible);
+    head = `<div class="shd"><h3>${S.cCat === 'nowsoon' ? 'Worth fishing for now' : 'All Hunts'}</h3><div class="ttl">${S.cCat === 'nowsoon' ? 'Open now, or opening within 3 realm hours' : 'Every Hunt, by when it next opens'}</div></div>`;
+    list = M.GROUPS.filter((g) => S.cCat === 'all' || g.id === 'now' || g.id === 'soon').map((g) => { const rs = M.sortRows(pool.filter((r) => r.group === g.id)); return rs.length ? `<div class="gsub gl-${g.id}">${g.name}</div>` + rs.map(ach).join('') : ''; }).join('') || '<div class="gsub">Nothing open now or in the next 3 hours. See the sets on the left.</div>';
+  } else {
+    const s = M.SETS.find((x) => x.id === S.cCat), sp = M.setProgress(s.id, rows), e = S.titles[s.id];
+    head = `<div class="shd"><h3>${esc(s.name)}${s.pagles ? ' <span style="font-size:12px;color:var(--dim)">Pagle’s own</span>' : ''}</h3><div class="ttl">Title: <i>${esc(s.title)}</i> · ${e ? 'earned ' + M.dateStr(e.t) : sp.done + ' of ' + sp.total + ' Hunts'}</div>
+      <div class="bar ${e ? 'done' : ''}"><i style="width:${(sp.done / sp.total) * 100}%"></i></div><div class="tnote">The title needs the first tier of every Hunt in the set.${s.note ? ' ' + esc(s.note) + '.' : ''}</div></div>`;
+    list = rows.filter((r) => r.h.set === s.id).map(ach).join(''); // sets always show completed: that's the collection
+  }
+  return winShell('vC', 'Hunts', `<div class="body">${tree}<div class="inset main"><div>${head}</div><div class="scr" data-scroll="c-main" style="flex:1;min-height:0">${list}</div></div></div>`,
+    `<div class="tool" style="padding:4px 10px;border-top:1px solid #000;border-bottom:0"><label class="chk"><input type="checkbox" data-act="done" ${S.showDone ? 'checked' : ''}> Show completed in Now &amp; Soon</label><span style="flex:1"></span>Realm ${M.clock(S.t)}</div>`);
+}
+
+// ---------- Variant D: field notebook (book language) ----------
+function renderD(rows) {
+  const inSet = (r) => S.dSet === 'all' || r.h.set === S.dSet;
+  const vis = rows.filter((r) => visible(r) && inSet(r));
+  const ent = (r) => `<div class="ent ${r.done ? 'done' : ''} ${r.id === S.sel ? 'sel' : ''}" data-act="seld" data-id="${r.id}">${r.pinned ? `<span class="pinm">${pinSvg(true)}</span>` : ''}<span class="box"></span>
+    <div class="mid"><div class="nm">${esc(r.h.name)}</div><div class="tg">${esc(r.h.target)} · ${progTxt(r)}</div>${chips(r)}</div><div class="mg">${r.short ? 'need ' + r.short.need : esc(r.label)}</div></div>`;
+  const grp = (id) => { const g = M.GROUPS.find((x) => x.id === id), rs = M.sortRows(vis.filter((r) => r.group === id)); return `<h4>${g.name} <small>· ${g.sub}</small></h4>` + (rs.length ? rs.map(ent).join('') : `<div class="tg" style="font-style:italic;color:#8a6a42;padding:4px 0 4px 22px">nothing</div>`); };
+  const set = M.SETS.find((s) => s.id === S.dSet);
+  const setHead = set ? `<div class="settitle">${esc(set.name)}: “${esc(set.title)}” ${S.titles[set.id] ? '— earned!' : `— ${M.setProgress(set.id, rows).done} of ${M.setProgress(set.id, rows).total}`}</div>` : '';
+  const sel = rows.find((r) => r.id === S.sel);
+  const left = `<div class="page l"><h3>Hunts <span style="font-size:14px;color:#8a6a42;font-style:italic">· ${M.fullDate(S.t)}, ${M.clock(S.t)}</span></h3>${setHead}<div class="scr" data-scroll="d-l">${grp('now')}${grp('soon')}</div>
+    <div class="foot"><label class="chk"><input type="checkbox" data-act="done" ${S.showDone ? 'checked' : ''}> show completed</label><span>${Object.keys(S.titles).length} titles</span></div></div>`;
+  const right = sel ? `<div class="page r"><button class="back" data-act="dback">← back to the list</button><div class="scr" data-scroll="d-det">${detailHtml(sel)}</div></div>`
+    : `<div class="page r"><h3>&nbsp;</h3><div class="scr" data-scroll="d-r">${grp('later')}${grp('demand')}</div></div>`;
+  const ribbons = `<div class="ribbons"><button data-act="dset" data-v="all" class="${S.dSet === 'all' ? 'on' : ''}" style="background:#5a4a3a">All</button>${M.SETS.map((s) => `<button data-act="dset" data-v="${s.id}" class="${S.dSet === s.id ? 'on' : ''}" style="background:${s.color}" title="${esc(s.name)}">${esc(s.name.split(' ').slice(-1)[0])}</button>`).join('')}</div>`;
+  return `<div class="vD">${ribbons}<button class="x" data-act="close">✕</button><div class="spread">${left}${right}</div></div>`;
+}
+
+// ---------- Variant E: B's timeline + D's notebook, in the Journal's book-meets-modern look ----------
+function renderE(rows) {
+  const t = S.t, from = t - 2 * 60, span = 24 * 60, pct = (x) => ((x - from) / span) * 100;
+  const set = M.SETS.find((s) => s.id === S.eSet);
+  const pool = rows.filter((r) => visible(r) && (!set || r.h.set === set.id));
+  if (!S.eSetPage && (!S.sel || !rows.find((r) => r.id === S.sel))) S.sel = (M.sortRows(pool.filter((r) => r.group === 'now'))[0] || M.sortRows(pool)[0] || {}).id || null;
+  const sel = rows.find((r) => r.id === S.sel);
+
+  // left page: the day ahead, inked
+  const ticks = []; for (let x = Math.ceil(from / 360) * 360; x < from + span; x += 360) if (Math.abs(x - t) > 50) ticks.push(`<span style="left:${pct(x)}%">${M.clock(x)}</span>`);
+  const washes = []; for (let d = Math.floor(from / M.DAY) - 1; d <= Math.floor((from + span) / M.DAY); d++) { const a = d * M.DAY + 18 * 60, b = a + 12 * 60, L = Math.max(pct(a), 0), R = Math.min(pct(b), 100); if (R > L) washes.push(`<i class="nw" style="left:${L}%;width:${R - L}%"></i>`); }
+  const under = washes.join('') + `<i class="sw" style="left:${pct(t)}%;width:${(M.SOON / span) * 100}%"></i>`;
+  const track = (r) => {
+    const h = r.h;
+    if (h.when.aura) return r.active ? `<i class="ib camp" style="left:${pct(t)}%;width:${(60 / span) * 100}%"></i>` : `<span class="txt">whenever you set up a ${M.AURA[h.when.aura].replace('Fishing ', '')}</span>`;
+    const segs = []; let st = null;
+    for (let x = Math.ceil(from / 10) * 10; x <= from + span; x += 10) {
+      const on = M.isOpenAt(h, x);
+      if (on && st == null) st = x;
+      if ((!on || x + 10 > from + span) && st != null) { segs.push([st, on ? from + span : x]); st = null; }
+    }
+    if (!segs.length) return `<span class="txt">${r.opensAt && r.opensAt - t > 7 * M.DAY ? 'out of season' : 'not in the next day'}</span>`;
+    return segs.map(([a, b]) => `<i class="ib ${r.short ? 'gated' : h.unc ? 'unc' : ''}" style="left:${pct(a)}%;width:${pct(b) - pct(a)}%">${b - a > 150 && !h.unc && !r.short ? M.clock(a) + '–' + M.clock(b) : ''}</i>`).join('');
+  };
+  const row = (r) => `<div class="tlrow hr ${r.id === S.sel && !S.eSetPage ? 'on' : ''} ${r.done ? 'done' : ''}" data-act="sele" data-id="${r.id}">
+    <div class="nmc">${icon(r)}<span>${esc(r.h.name)}</span></div>
+    <div class="trk">${under}${track(r)}<i class="nl" style="left:${pct(t)}%"></i></div>
+    <div class="mg ${r.short ? 'need' : r.group}">${r.short ? 'need ' + r.short.need : esc(r.label)}</div></div>`;
+  const groups = M.GROUPS.map((g) => { const rs = M.sortRows(pool.filter((r) => r.group === g.id)); return rs.length ? `<div class="gh"><span>${g.name}</span><small>${g.sub} · ${rs.length}</small></div>` + rs.map(row).join('') : ''; }).join('') || '<p class="note">Nothing here. Tick “show completed” to see finished Hunts.</p>';
+  const L = `<div class="kick">${set ? 'Hunt set · ' + esc(set.name) : 'The day ahead'}</div><h2>${set ? '“' + esc(set.title) + '”' : 'What’s biting, and when'}</h2>
+    <div class="tlrow axis"><div></div><div class="trk">${ticks.join('')}<em style="left:${pct(t)}%">now</em></div><div></div></div>
+    ${groups}
+    <div class="legendln"><span><i style="background:repeating-linear-gradient(45deg,#5a3a14 0 3px,#7a5224 3px 6px)"></i>open</span><span><i style="border-style:dashed;background:repeating-linear-gradient(45deg,rgba(90,58,20,.45) 0 3px,transparent 3px 6px)"></i>unconfirmed</span><span><i style="border:1.5px dashed #a89070"></i>needs more skill</span><span><i style="background:rgba(154,42,26,.18);border-color:transparent"></i>soon (3h)</span><span><i style="background:rgba(35,64,122,.18);border-color:transparent"></i>night</span></div>`;
+
+  // right page: a Hunt's entry, or the set page
+  let R;
+  if (S.eSetPage && set) {
+    const sp = M.setProgress(set.id, rows), e = S.titles[set.id];
+    R = `<div class="seal ${e ? '' : 'r0'}">${e ? 'Title<br>earned<br>' + M.dateStr(e.t) : sp.done + ' / ' + sp.total}</div>
+      <div class="entry"><div class="kick">Hunt set${set.pagles ? ' · Pagle’s own' : ''}</div><h2>${esc(set.name)}</h2><div class="hand">${e ? 'Earned: ' : 'Earns the title '}“${esc(set.title)}”</div></div>
+      <div class="inkbar" style="margin:12px 0 4px"><i style="width:${(sp.done / sp.total) * 100}%"></i></div><div class="note">The title needs the first tier of every Hunt in the set.${set.note ? ' ' + esc(set.note) + '.' : ''}</div>
+      <div class="gh"><span>The Hunts</span><small>all of them, finished or not</small></div>
+      <ul class="check">${rows.filter((r) => r.h.set === set.id).map((r) => `<li class="${r.done ? 'y' : ''}" data-act="sele" data-id="${r.id}"><span>${esc(r.h.name)}</span><span class="lead"></span><span class="w">${r.done ? 'hunted ' + M.dateStr(r.dates[0].t) : r.short ? 'need ' + r.short.need : esc(r.label)}</span></li>`).join('')}</ul>`;
+  } else if (sel) {
+    const h = sel.h, sp = M.setProgress(h.set, rows);
+    let winTxt;
+    if (sel.short && !h.when.aura) winTxt = `<div class="hand red">Needs ${sel.short.need}; my best is ${sel.short.best}.${sel.short.lures ? ' A lure gets me there.' : ''}</div>`;
+    else if (h.when.aura) winTxt = sel.active ? `<div class="hand">Camp is up. Every good Catch counts now.</div>` : `<div class="hand">Opens whenever I set up a ${M.AURA[h.when.aura]}.</div>`;
+    else if (sel.group === 'now') winTxt = sel.closesAt == null ? `<div class="hand">On now, says the calendar.</div>` : sel.closesAt - t > 7 * M.DAY ? `<div class="hand">In season until ${M.month(sel.closesAt)}.</div>` : `<div class="hand">Open now. Closes in ${M.dur(sel.closesAt - t)}, at ${M.when(sel.closesAt, t)}.</div>`;
+    else winTxt = sel.opensAt - t > 7 * M.DAY ? `<div class="hand">Back in ${M.month(sel.opensAt)}.</div>` : `<div class="hand ${sel.group === 'soon' ? 'red' : ''}">Opens in ${M.dur(sel.opensAt - t)}, at ${M.when(sel.opensAt, t)}.</div>`;
+    const ladder = h.tiers.map((x, i) => {
+      const got = sel.dates[i], lo = i ? h.tiers[i - 1] : 0, f = got ? 1 : Math.max(0, Math.min(1, (sel.n - lo) / (x - lo)));
+      return `<div class="tr"><i class="dia ${got ? 't' + (i + 1) : ''}"></i><span>Tier ${i + 1} · ${x}</span><div class="inkbar"><i style="width:${f * 100}%"></i></div><span class="when">${got ? M.dateStr(got.t) + ', ' + esc(got.zone) : Math.min(sel.n, x) + ' / ' + x}</span></div>`;
+    }).join('');
+    R = `${set ? `<button class="back" data-act="eback">☚ back to ${esc(set.name)}</button>` : ''}
+      <div class="seal ${sel.done ? '' : 'r0'}">${sel.done ? 'Hunted<br>' + M.dateStr(sel.dates[0].t) : 'not yet'}</div>
+      <button class="pinE ${sel.pinned ? 'on' : ''}" data-act="pin" data-id="${sel.id}" title="${sel.pinned ? 'Unpin' : 'Pin'}">${pinSvg(sel.pinned)}</button>
+      <div class="entry"><div class="kick">${esc(sel.set.name)} · ${h.kind === 'N' ? 'Natural' : 'Imposed'} Hunt</div><h2>${esc(h.name)}</h2><div class="small">${esc(h.target)}</div></div>
+      <div style="margin:10px 0 4px">${winTxt}</div>
+      <div class="small">${esc(M.condText(h))}${h.zones && !h.zoneReq ? '. Bites in ' + esc(h.zones.join(', ')) : ''}.</div>
+      ${chips(sel)}
+      <div class="note" style="margin-top:4px">${h.kind === 'N' ? 'The Catch alone counts; the window only says when it’s worth trying.' : 'Pagle’s own rule: only Casts under these conditions count.'}</div>
+      <div class="gh"><span>Tiers</span><small>${sel.tier ? ['bronze', 'silver', 'gold'][sel.tier - 1] + ' trim' : 'no trim yet'}</small></div><div class="ladder">${ladder}</div>
+      <div class="gh"><span>Effort</span><small>plain counts; odds live in Stats</small></div>
+      <div class="hand">${sel.eff} Casts under these conditions${sel.n ? `, ${sel.since} since my last one` : ''}.</div>
+      ${h.unc ? `<div class="note" style="color:#6a3a8a;margin-top:8px">Unconfirmed: ${esc(h.unc)}</div>` : ''}
+      <div class="note" style="margin-top:8px">Part of ${esc(sel.set.name)}: ${sp.done} of ${sp.total} toward “${esc(sel.set.title)}”.</div>`;
+  } else R = `<p class="note">Pick a Hunt on the left.</p>`;
+
+  const crumbs = [['Hunts', 'ecr', 'all']];
+  if (set) crumbs.push([set.name, 'ecr', set.id]);
+  if (sel && !S.eSetPage) crumbs.push([sel.h.name, 'sele', sel.id]);
+  const ribbons = `<div class="ribbons"><button class="rib ${!set ? 'on' : ''}" data-act="eset" data-v="all" style="background:linear-gradient(90deg,#4a3a2a,#6a5440)">Board</button>${M.SETS.map((s) => `<button class="rib ${S.eSet === s.id ? 'on' : ''}" data-act="eset" data-v="${s.id}" style="background:${s.color}" title="${esc(s.name)}">${esc(s.name.split(' ').slice(-1)[0])}</button>`).join('')}</div>`;
+  const titles = Object.keys(S.titles).length;
+  return `<div class="vE">${ribbons}<button class="x" data-act="close">✕</button>
+    <div class="strip">${crumbs.map(([l, a, v]) => `<span class="crumb" data-act="${a}" data-id="${v}" data-v="${v}">${esc(l)}</span>`).join('')}<span style="flex:1"></span>
+      <span class="rclock"><b>${M.clock(t)}</b> realm · ${M.fullDate(t)} · ${M.seasonOf(t)}</span><label class="chk"><input type="checkbox" data-act="done" ${S.showDone ? 'checked' : ''}> show completed</label></div>
+    <div class="pages"><div class="page l" data-scroll="e-l">${L}</div><div class="page r" data-scroll="e-r">${R}</div></div>
+    <div class="plate">${titles} ${titles === 1 ? 'title' : 'titles'} · ${rows.filter((r) => r.done).length} of ${rows.length} Hunts</div></div>`;
+}
+
+const VARIANTS = {
+  A: { name: 'Finder list + detail pane', render: renderA, note: '<b>Native Retail.</b> A Group-Finder-style list grouped Now / Soon / Later / On demand (collapsible), with chips and a progress bar on every row. The selected Hunt fills a detail pane on the right. Sets are a filter row along the top; titles sit in the footer and the detail. Claims: the board is a list you scan and a Hunt is something you read about.' },
+  B: { name: 'Realm-clock timeline', render: renderB, note: '<b>Native Retail.</b> Every Hunt is a row on a 24-hour realm-time strip: open windows are bars, the red line is now, the amber band is Soon (3h), blue tint is night. Season and weekly Hunts show their next opening on the right. Detail is a drawer below; sets and titles get their own tab. Claims: “when” is the whole question, so show time itself.' },
+  C: { name: 'Sets first (Achievements frame)', render: renderC, note: '<b>Native Retail.</b> Shaped like the Achievements frame: the left tree is “Now &amp; Soon”, “All Hunts”, then each Hunt set with its title and progress. Rows are achievement-style with a status badge; clicking expands the row in place. Inside a set, completed Hunts always show, because the set is a collection. Claims: the sets and titles are the long game, so they lead.' },
+  D: { name: 'Field notebook (book language)', render: renderD, note: '<b>Borrows the Journal’s book.</b> A small leather notebook: the left page lists Now and Soon in handwriting with times in red ink in the margin; the right page lists Later and On demand, or turns to a Hunt’s entry. Sets are ribbon bookmarks. Answers “native or book?” with a real comparison. It sits close to the Journal but can’t link to it (ADR 0001).' },
+  E: { name: 'B + D: inked timeline in the notebook', render: renderE, note: '<b>Added after review: B’s timeline in D’s notebook, in the Fish Journal’s book-meets-modern look</b> (Journal variant E). A leather binding with a gilt breadcrumb strip, the realm clock and a gold nameplate; inside, the parchment holds modern structure. The left page is B’s 24-hour strip drawn in ink, grouped Now / Soon / Later / On demand, with times in red in the margin. The right page is the selected Hunt’s entry (wax seal, tier ladder, effort in handwriting) or, from a ribbon, a set’s page with its title and checklist. The HUD tracker and the toasts stay native.' },
+};
+
+// ---------- tracker ----------
+function renderTracker(rows) {
+  const el = $('#tracker');
+  if (S.tracker === 'off') { el.innerHTML = ''; return; }
+  let list = rows.filter((r) => r.pinned);
+  if (S.tracker === 'pinnow') list = list.concat(M.sortRows(rows.filter((r) => !r.pinned && r.group === 'now' && !r.done)));
+  list = list.slice(0, 6);
+  const color = { now: 'var(--now)', soon: 'var(--soon)', later: '#777', demand: 'var(--demand)' };
+  el.innerHTML = `<div class="th" data-act="tcoll">${S.trackerOpen ? '▾' : '▸'} Hunts<span>${S.tracker === 'pinned' ? 'pinned' : 'pinned + now'}</span></div>` + (S.trackerOpen ? (list.length ? list.map((r) => `<div data-act="topen" data-id="${r.id}"><div class="tl"><i class="tdot" style="background:${color[r.group]}"></i><span class="tn">${r.pinned ? `<span style="display:inline-block;width:11px;height:11px;vertical-align:-1px">${pinSvg(true)}</span> ` : ''}${esc(r.h.name)}</span><span class="tw" style="color:${color[r.group]}">${r.short ? 'needs ' + r.short.need : esc(r.short_label || r.label)}</span></div><div class="ts">${esc(r.h.target)}${r.here ? ' · <span style="color:#7dff7d">you’re here</span>' : ''} · ${progTxt(r)}</div></div>`).join('') : `<div class="ts" style="padding:4px 0">${S.tracker === 'pinned' ? 'Pin a Hunt to keep it here.' : 'Nothing open right now.'}</div>`) : '');
+}
+
+// ---------- Announcements (raised by Hunts, presented by Core: ADR 0007) ----------
+function toast(stamp, title, det, h, tier) {
+  if (S.cozy) { S.pip++; renderPip(); chat(`(Cozy mode) Saved for the Session summary: ${title}`); return; }
+  const el = document.createElement('div'); el.className = 'ta';
+  el.innerHTML = `<span class="ic" style="--qc:${Q[h.q]}">${iconSvg(h)}</span><div class="body"><div class="src">Hunts</div><div class="nm" style="color:${tier ? '#ffd100' : '#fff'}">${esc(title)}</div><div class="det">${esc(det)}</div></div><span class="st ${tier ? 'tier' : ''}">${esc(stamp)}</span>`;
+  $('#layer-toast').appendChild(el);
+  setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 320); }, 5000);
+}
+function banner(k, t, s) {
+  if (S.cozy) { S.pip++; renderPip(); chat(`(Cozy mode) Saved for the Session summary: ${t}`); return; }
+  const el = document.createElement('div'); el.className = 'ba'; el.innerHTML = `<div class="k">${esc(k)}</div><div class="t">${esc(t)}</div><div class="s">${esc(s)}</div>`;
+  $('#layer-banner').innerHTML = ''; $('#layer-banner').appendChild(el);
+  setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 520); }, 4500);
+}
+const renderPip = () => { $('#pip').textContent = S.pip; $('#pip').classList.toggle('on', S.pip > 0); };
+function chat(msg, sys) { const d = document.createElement('div'); d.className = sys ? 'sys' : ''; d.textContent = msg; $('#chatlog').appendChild(d); while ($('#chatlog').children.length > 6) $('#chatlog').firstChild.remove(); }
+
+function registerCatch(h) {
+  const p = S.prog[h.id]; p.n++; p.since = 0; p.eff++;
+  const i = h.tiers.indexOf(p.n);
+  if (i >= 0) {
+    p.dates[i] = { t: S.t, zone: S.zone };
+    if (i === 0) toast('Hunt', 'Hunt complete: ' + h.name, `${h.target} · stamped ${M.dateStr(S.t)}, ${S.zone}`, h, 0);
+    else toast(['', 'Silver', 'Gold'][i] + ' trim', `${h.name}: tier ${i + 1}`, `${p.n} caught · ${['', 'silver', 'gold'][i]} trim`, h, 1);
+    const s = M.SETS.find((x) => x.id === h.set);
+    if (!S.titles[s.id] && M.HUNTS.filter((x) => x.set === s.id).every((x) => S.prog[x.id].n >= x.tiers[0])) {
+      S.titles[s.id] = { t: S.t };
+      setTimeout(() => banner('HUNT SET COMPLETE', 'Title: ' + s.title, s.name), 600);
+    }
+  } else chat(`${h.target} counted for ${h.name} (${p.n}${p.n < h.tiers[h.tiers.length - 1] ? ' / ' + (h.tiers.find((x) => x > p.n)) : ''}). No Announcement: progress between tiers stays quiet.`);
+}
+function cast(times) {
+  for (let k = 0; k < times; k++) {
+    const c = ctx();
+    M.HUNTS.forEach((h) => {
+      if (!M.castCounts(h, c)) return;
+      if (h.skill && c.best < h.skill) return;
+      const p = S.prog[h.id]; p.eff++; p.since++;
+      if (Math.random() < h.rate) registerCatch(h);
+    });
+  }
+  render();
+}
+
+// window-open Announcements: pinned Hunts only, opt-in
+function checkWindows(rows, silent) {
+  rows.forEach((r) => {
+    const was = S.lastGroups[r.id];
+    if (!silent && S.ann && r.pinned && was && was !== 'now' && r.group === 'now')
+      toast('Window', 'Hunt open: ' + r.h.name, `${r.h.target} · ${r.label}${r.here ? ' · you’re here' : ''}`, r.h, 0);
+    S.lastGroups[r.id] = r.group;
+  });
+}
+
+// ---------- render ----------
+function render(silent) {
+  const rows = compute();
+  checkWindows(rows, silent);
+  const scroll = {}; $$('[data-scroll]').forEach((e) => (scroll[e.dataset.scroll] = e.scrollTop));
+  $('#board').innerHTML = S.open ? VARIANTS[S.variant].render(rows) : '';
+  $$('[data-scroll]').forEach((e) => { if (scroll[e.dataset.scroll] != null) e.scrollTop = scroll[e.dataset.scroll]; });
+  renderTracker(rows);
+  const h = Math.floor(((S.t % M.DAY) + M.DAY) % M.DAY / 60);
+  $('#tint').style.opacity = h >= 21 || h < 4 ? 0.55 : h >= 18 || h < 6 ? 0.3 : 0;
+  $('#mmclock').textContent = M.clock(S.t);
+  $('#zoneName').textContent = S.zone;
+  $('#pclock').textContent = M.fullDate(S.t) + ' · ' + M.clock(S.t) + ' · ' + M.seasonOf(S.t);
+  $('#mtable').innerHTML = '<tr><th>Hunt</th><th>group</th><th>label</th><th>prog</th></tr>' + rows.map((r) => `<tr><td>${esc(r.h.name)}${r.pinned ? ' (pinned)' : ''}</td><td class="g gl-${r.group}" style="color:${{ now: '#1f8a1f', soon: '#b36b00', later: '#777', demand: '#2a6aa8' }[r.group]}">${r.group}</td><td>${esc(r.short ? 'needs ' + r.short.need : r.label)}</td><td>${r.n}/${r.h.tiers.join('·')}</td></tr>`).join('');
+}
+function syncPanel() {
+  $$('#stageSeg button').forEach((b) => b.classList.toggle('on', b.dataset.v === S.stage));
+  $$('#speedSeg button').forEach((b) => b.classList.toggle('on', +b.dataset.v === S.speed));
+  $$('#calSeg button').forEach((b) => b.classList.toggle('on', b.dataset.v === S.calendar));
+  $$('#trkSeg button').forEach((b) => b.classList.toggle('on', b.dataset.v === S.tracker));
+  $$('#doneSeg button').forEach((b) => b.classList.toggle('on', b.dataset.v === S.doneRule));
+  $$('[data-aura]').forEach((c) => (c.checked = S.auras.has(c.dataset.aura)));
+  $('#zoneSel').value = S.zone;
+  $('#swLabel').textContent = `${S.variant} (${VARIANTS[S.variant].name})`;
+  $('#vnote').innerHTML = VARIANTS[S.variant].note;
+}
+function setVariant(v) { S.variant = v; S.sel = null; const u = new URL(location); u.searchParams.set('variant', v); history.replaceState(null, '', u); syncPanel(); render(true); }
+
+// ---------- wiring ----------
+document.addEventListener('click', (e) => {
+  const a = e.target.closest('[data-act]'); if (!a) return;
+  const act = a.dataset.act, id = a.dataset.id;
+  if (act === 'pin') { e.stopPropagation(); S.pins.has(id) ? S.pins.delete(id) : S.pins.add(id); }
+  else if (act === 'sel' || act === 'seld') S.sel = id;
+  else if (act === 'selc') { if (e.target.closest('.dd')) return; S.sel = S.sel === id ? null : id; }
+  else if (act === 'selb') { S.sel = id; S.bTab = 'board'; }
+  else if (act === 'coll') S.collapsed[a.dataset.g] = !S.collapsed[a.dataset.g];
+  else if (act === 'setf') S.setFilter = a.dataset.v;
+  else if (act === 'done') S.showDone = a.checked;
+  else if (act === 'btab') S.bTab = a.dataset.v;
+  else if (act === 'ccat') { S.cCat = a.dataset.v; S.sel = null; }
+  else if (act === 'dset') { S.dSet = a.dataset.v; S.sel = null; }
+  else if (act === 'dback') S.sel = null;
+  else if (act === 'sele') { S.sel = id; S.eSetPage = false; }
+  else if (act === 'eset' || act === 'ecr') { S.eSet = a.dataset.v; S.eSetPage = a.dataset.v !== 'all'; if (!S.eSetPage) S.sel = null; }
+  else if (act === 'eback') S.eSetPage = true;
+  else if (act === 'close') S.open = false;
+  else if (act === 'tcoll') S.trackerOpen = !S.trackerOpen;
+  else if (act === 'topen') { S.open = true; S.sel = id; S.showDone = S.showDone || S.prog[id].n >= M.HUNTS.find((h) => h.id === id).tiers[0]; if (S.variant === 'C') S.cCat = M.HUNTS.find((h) => h.id === id).set; if (S.variant === 'D') S.dSet = 'all'; if (S.variant === 'B') S.bTab = 'board'; if (S.variant === 'E') { S.eSet = 'all'; S.eSetPage = false; } S.setFilter = 'all'; }
+  render(true);
+});
+$('#pbtn').onclick = (e) => { e.stopPropagation(); $('#cmenu').classList.toggle('on'); S.pip = 0; renderPip(); };
+document.addEventListener('click', (e) => { if (!e.target.closest('#cmenu')) $('#cmenu').classList.remove('on'); });
+$$('#cmenu [data-menu]').forEach((b) => (b.onclick = () => {
+  $('#cmenu').classList.remove('on');
+  if (b.dataset.menu === 'hunts') { S.open = !S.open; render(true); } else chat(`${b.textContent}: another Module's view, not part of this prototype.`, true);
+}));
+$('#chatin').addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter') return;
+  const v = e.target.value.trim(); e.target.value = '';
+  if (/^\/pagle\s+hunts?$/i.test(v)) { S.open = !S.open; render(true); }
+  else if (/^\/pagle\b/i.test(v)) chat('Pagle: /pagle hunts · /pagle journal · /pagle stats · /pagle settings', true);
+  else if (v) chat('[Thalindra]: ' + v);
+  e.target.blur();
+});
+$$('#stageSeg button').forEach((b) => (b.onclick = () => { loadStage(b.dataset.v); const u = new URL(location); u.searchParams.set('stage', b.dataset.v); history.replaceState(null, '', u); syncPanel(); render(true); }));
+$$('#speedSeg button').forEach((b) => (b.onclick = () => { S.speed = +b.dataset.v; syncPanel(); }));
+$$('#calSeg button').forEach((b) => (b.onclick = () => { S.calendar = b.dataset.v; syncPanel(); render(); }));
+$$('#trkSeg button').forEach((b) => (b.onclick = () => { S.tracker = b.dataset.v; syncPanel(); render(true); }));
+$$('#doneSeg button').forEach((b) => (b.onclick = () => { S.doneRule = b.dataset.v; syncPanel(); render(true); }));
+$$('[data-aura]').forEach((c) => (c.onchange = () => { c.checked ? S.auras.add(c.dataset.aura) : S.auras.delete(c.dataset.aura); render(); }));
+$('#zoneSel').innerHTML = ZONES.map((z) => `<option>${z}</option>`).join('');
+$('#zoneSel').onchange = (e) => { S.zone = e.target.value; render(true); };
+$('#forceSel').innerHTML = M.HUNTS.map((h) => `<option value="${h.id}">${esc(h.name)}</option>`).join('');
+$('#bForce').onclick = () => { registerCatch(M.HUNTS.find((h) => h.id === $('#forceSel').value)); render(true); };
+$('#bCast').onclick = () => cast(1);
+$('#bCast20').onclick = () => cast(20);
+$('#optAnn').onchange = (e) => (S.ann = e.target.checked);
+$('#optCozy').onchange = (e) => (S.cozy = e.target.checked);
+$$('[data-jump]').forEach((b) => (b.onclick = () => { S.t += +b.dataset.jump; render(true); }));
+$$('[data-jumpto]').forEach((b) => (b.onclick = () => {
+  const day = Math.floor(S.t / M.DAY) * M.DAY, v = b.dataset.jumpto;
+  if (v === 'reset') S.t = T0;
+  if (v === 'dusk') S.t = S.t % M.DAY < 17 * 60 + 45 ? day + 17 * 60 + 45 : day + M.DAY + 17 * 60 + 45;
+  if (v === 'sunday') { const old = S.t, d = new Date(S.t * 60000).getUTCDay(); S.t = day + ((7 - d) % 7) * M.DAY + 13 * 60 + 30; if (S.t <= old) S.t += 7 * M.DAY; }
+  if (v === 'march') { const d = new Date(S.t * 60000); S.t = Date.UTC(d.getUTCMonth() >= 2 ? d.getUTCFullYear() + 1 : d.getUTCFullYear(), 2, 1, 9, 0) / 60000; }
+  render(true);
+}));
+$('#swPrev').onclick = () => { const k = Object.keys(VARIANTS); setVariant(k[(k.indexOf(S.variant) + k.length - 1) % k.length]); };
+$('#swNext').onclick = () => { const k = Object.keys(VARIANTS); setVariant(k[(k.indexOf(S.variant) + 1) % k.length]); };
+document.addEventListener('keydown', (e) => {
+  if (e.target.closest('input,textarea,select,[contenteditable]')) return;
+  if (e.key === 'ArrowLeft') $('#swPrev').click();
+  if (e.key === 'ArrowRight') $('#swNext').click();
+});
+
+// clock: S.speed realm-seconds per real second
+let lastMin = Math.floor(S.t);
+setInterval(() => {
+  if (!S.speed) return;
+  S.t += (S.speed / 60) * 0.25;
+  if (Math.floor(S.t) !== lastMin) { lastMin = Math.floor(S.t); render(); }
+}, 250);
+
+const params = new URLSearchParams(location.search);
+S.variant = VARIANTS[params.get('variant')] ? params.get('variant') : 'E';
+loadStage(STAGES[params.get('stage')] ? params.get('stage') : 'mid');
+syncPanel();
+render(true);
+chat('Type /pagle hunts, or use the Pagle button on the minimap, to open or close the board.', true);
+</script>
+</body>
+</html>

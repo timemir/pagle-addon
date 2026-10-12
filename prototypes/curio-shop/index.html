@@ -1,0 +1,922 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Curio Shop Prototype</title>
+<!--
+  PROTOTYPE: throwaway, never ships. Lives only on branch prototype/curio-shop.
+  Question (wow-fish "Prototype the Curio Shop"):
+    What should the Curio Shop look like and how should it behave? The balance and income by source,
+    the goods and their states (for sale, can't afford yet, owned, equipped), goods from a disabled
+    Module, the buy step, where equipping happens, and the entry points (compartment menu, /pagle shop).
+  Plan: three structurally different shops on one mock game screen, all in the native Retail look,
+        switchable via ?variant=A|B|C, the floating bottom bar, or ←/→.
+        A = Merchant window: the vendor frame, a paged grid, right-click to buy, equip only in Settings.
+        B = Collections journal: list + big preview pane, Buy and Use in the shop and in Settings.
+        C = Dressing room: one row per look slot, try looks on the live HUD, one checkout for all.
+        All three read ONE model (Wallet, first <script>): earned by source, U1 purchases, balance held
+        at 0, owned/equipped, disabled Modules. Names, looks and the catalogue are placeholders; prices
+        follow the 150/400/900 tiers. Sounds are WebAudio stand-ins.
+        ?stage=new|mid|late|held picks the sample Angler.
+  Chosen in review: B, with its quiet held-at-0 line, no "Spent", level bindings listed, and the balance in the
+        compartment menu. It opens on B; A and C stay as the alternatives that were considered.
+  Open the file directly in a browser. No build, no persistence.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Marcellus&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root{--gold:#ffd100;--txt:#ece6d6;--dim:#8f8a80;--panel:#f6f4ef;--ink:#23211d;--ink2:#6b665c;--accent:#2f6f8f;--line:#dedad1;
+  --ok:#7dff7d;--bad:#ff4d3a;--c-ledger:#a36ad8;--c-hunts:#3d9ad6;--c-tackle:#d8913a}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{display:flex;background:#0a1416;font-family:'Marcellus',Georgia,serif;color:var(--txt);font-size:13px;overflow:hidden}
+button{font:inherit;cursor:pointer}
+
+/* ---------- mock game screen (shared with the Stats and Hunts board prototypes) ---------- */
+#scene{position:relative;flex:1;min-width:0;height:100vh;overflow:hidden;
+  background:linear-gradient(180deg,#5d7f8c 0%,#9db7b0 30%,#c9c19a 41%,#3c6a72 42%,#1f4650 60%,#0c2228 100%)}
+#scene::before{content:"";position:absolute;inset:42% 0 0 0;background:repeating-linear-gradient(180deg,transparent 0 14px,rgba(255,255,255,.05) 14px 16px)}
+.hills{position:absolute;left:0;right:0;top:28%;height:14%;background:radial-gradient(ellipse at 20% 100%,#3e5a3a 0 40%,transparent 41%),radial-gradient(ellipse at 70% 100%,#4a6640 0 45%,transparent 46%),radial-gradient(ellipse at 95% 100%,#36502f 0 35%,transparent 36%)}
+#bobber{position:absolute;left:62%;top:64%;width:18px;height:18px;margin:-9px;border-radius:50%;background:linear-gradient(180deg,#d23a2a 0 50%,#f2efe6 50%);border:1px solid #000;animation:bob 2.4s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(3px)}}
+#pframe{position:absolute;left:16px;top:14px;display:flex;align-items:center;gap:8px}
+#pframe .por{width:58px;height:58px;border-radius:50%;background:radial-gradient(circle at 45% 40%,#7a5a44,#2a1a10);border:3px solid #caa451;box-shadow:0 0 0 2px #000}
+#pframe .bars{width:150px}
+#pframe .nm{color:var(--gold);font-size:13px;text-shadow:0 1px 1px #000}
+#pframe .hp,#pframe .mp{height:11px;border:1px solid #000;margin-top:2px}
+#pframe .hp{background:linear-gradient(#3fd13f,#167a16)}#pframe .mp{background:linear-gradient(#4a7ad8,#1b3d8a)}
+#minimap{position:absolute;right:20px;top:34px;width:140px;height:140px}
+#minimap .mm{position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 50% 50%,#3c6a72 0 30%,#5b7a4e 31% 70%,#3c5f3a 71%);border:4px solid #8a7a5f;box-shadow:0 0 0 2px #000}
+#minimap .zn{position:absolute;left:-60px;right:-60px;top:-2px;text-align:center;color:var(--gold);font-size:12px;text-shadow:0 1px 2px #000;transform:translateY(-100%)}
+#pbtn{position:absolute;left:-8px;bottom:-4px;width:34px;height:34px;border-radius:50%;padding:0;border:2px solid #caa451;background:radial-gradient(circle at 45% 40%,#2e4a58,#081014);box-shadow:0 0 0 1px #000}
+#pbtn svg{width:100%;height:100%}
+#cmenu{position:absolute;right:150px;top:150px;width:210px;display:none;background:rgba(10,10,10,.94);border:1px solid #6b6b6b;border-radius:4px;box-shadow:0 0 0 1px #000,0 6px 16px rgba(0,0,0,.6);padding:6px 0;z-index:25;font-size:13px}
+#cmenu.on{display:block}
+#cmenu .h{color:var(--gold);padding:2px 12px 4px;font-size:13px}
+#cmenu button{display:flex;align-items:center;width:100%;text-align:left;background:none;border:0;color:#fff;padding:3px 12px 3px 22px}
+#cmenu button:hover{background:#1f3a5c}
+#cmenu button .bal{margin-left:auto;font:12px Arial;color:#ffd27a;display:flex;align-items:center;gap:3px}
+#cmenu .sep{height:1px;background:#333;margin:4px 8px}
+#cmenu .o{color:#8f8a80}
+#actionbar{position:absolute;left:50%;bottom:44px;transform:translateX(-50%);display:flex;gap:3px;padding:4px;background:rgba(0,0,0,.55);border:1px solid #5a4e3c;border-radius:4px}
+#actionbar i{width:38px;height:38px;border:1px solid #555;border-radius:3px;background:radial-gradient(circle at 40% 35%,#3b444c,#0e1114)}
+#actionbar i:first-child{background:radial-gradient(circle at 40% 35%,#6a8aa0,#1c2c38)}
+#chat{position:absolute;left:16px;bottom:44px;width:360px;font:12px/1.35 Arial,sans-serif;text-shadow:0 1px 1px #000;z-index:4}
+#chatlog div{color:#ffd27a;margin-top:1px}
+#chatlog div.sys{color:#ffff6a}
+#chatin{width:100%;margin-top:4px;background:rgba(0,0,0,.6);border:1px solid #5a4e3c;color:#fff;padding:3px 6px;font:12px Arial}
+#uierr{position:absolute;left:0;right:0;top:15%;text-align:center;color:#ff2020;font:15px Marcellus;text-shadow:0 1px 2px #000;pointer-events:none;z-index:31;transition:opacity .4s}
+
+/* ---------- shared bits ---------- */
+.coin{display:inline-block;width:12px;height:12px;border-radius:50%;vertical-align:-1px;flex:none;background:radial-gradient(circle at 40% 35%,#fff2a8,#e0a91a 55%,#8a5a00);box-shadow:0 0 0 1px #3a2600,inset 0 0 0 2px rgba(255,255,255,.25)}
+.coin.lg{width:18px;height:18px;vertical-align:-3px}
+.price{font:bold 12px Arial,sans-serif;color:#fff;display:inline-flex;align-items:center;gap:3px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.price.short{color:var(--bad)}
+.tag{display:inline-block;font:bold 10px/14px Arial;letter-spacing:.04em;text-transform:uppercase;padding:0 5px;border-radius:3px;white-space:nowrap}
+.tag.own{background:#1e5a24;color:#bfffbf}.tag.eq{background:#d0a020;color:#111}.tag.off{background:#444;color:#ccc}.tag.free{background:#2a4a6a;color:#cfe6ff}.tag.earn{background:#5a3a7a;color:#e8d6ff}
+.sm{font:11px Arial,sans-serif;color:#b8b0a0}
+.num{font:bold 13px Arial,sans-serif;color:#fff;font-variant-numeric:tabular-nums}
+.ic{--sz:36px;position:relative;display:inline-flex;align-items:center;justify-content:center;flex:none;width:var(--sz);height:var(--sz);border:1px solid #6b6b6b;border-radius:3px;background:#0e1114;box-shadow:0 0 0 1px #000;overflow:hidden;vertical-align:middle}
+.ic svg{width:100%;height:100%;display:block}
+.ic.dim{filter:grayscale(1) brightness(.6)}
+#tip{position:fixed;z-index:60;max-width:300px;padding:7px 9px;background:rgba(6,8,20,.95);border:1px solid #9a9a9a;border-radius:4px;box-shadow:0 0 0 1px #000;font:12px/1.4 Arial,sans-serif;color:#fff;pointer-events:none;display:none}
+#tip b{color:var(--gold);font-weight:normal;font-size:13px}
+#tip .g{color:#b8b0a0}#tip .r{color:var(--bad)}#tip .k{color:var(--ok)}
+
+/* ---------- native Retail frame (ButtonFrameTemplate-ish) ---------- */
+.wf{position:absolute;z-index:10;background:#111;border:2px solid #5b5b5b;border-radius:6px;box-shadow:0 0 0 1px #000,inset 0 0 0 1px #2c2c2c,0 10px 30px rgba(0,0,0,.7);display:flex;flex-direction:column}
+.wf .ttl{height:26px;flex:none;display:flex;align-items:center;justify-content:center;color:var(--gold);font-size:14px;background:linear-gradient(#3a3a3a,#1d1d1d);border-bottom:1px solid #000;border-radius:4px 4px 0 0;position:relative}
+.wf .por{position:absolute;left:-14px;top:-14px;width:56px;height:56px;border-radius:50%;border:3px solid #6e6e6e;box-shadow:0 0 0 1px #000;background:radial-gradient(circle at 45% 40%,#4a3a18,#100b02);z-index:2}
+.wf .por svg{width:100%;height:100%}
+.wf .x{position:absolute;right:4px;top:3px;width:20px;height:20px;border-radius:3px;border:1px solid #000;background:linear-gradient(#b02a1a,#5a0d06);color:#fff;font:bold 12px/16px Arial;padding:0}
+.inset{background:#0b0b0b url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='6'%3E%3Crect width='6' height='6' fill='%230d0d0d'/%3E%3Crect width='1' height='1' fill='%23161616'/%3E%3C/svg%3E");border:1px solid #2e2e2e;box-shadow:inset 0 0 12px #000;border-radius:3px;overflow:auto}
+.hdr{color:var(--gold);font-size:14px;margin:10px 12px 4px;border-bottom:1px solid #3a3326;padding-bottom:2px;display:flex;align-items:baseline;gap:8px}
+.hdr small{font:11px Arial;color:#9a9284;margin-left:auto}
+.btn{height:22px;padding:0 12px;border:1px solid #000;border-radius:3px;background:linear-gradient(#a8200f,#5e0d04);color:#ffd100;font:12px Marcellus;box-shadow:inset 0 1px 0 rgba(255,255,255,.2)}
+.btn:hover{filter:brightness(1.2)}
+.btn[disabled]{background:linear-gradient(#444,#222);color:#888;cursor:default;filter:none}
+.btn.sec{background:linear-gradient(#3a3a3a,#1a1a1a);color:#e6d9a8}
+.drop{background:linear-gradient(#2a2a2a,#151515);border:1px solid #555;border-radius:3px;color:#fff;font:12px Arial;padding:3px 6px}
+.tabs{display:flex;gap:2px;padding:0 10px;position:absolute;left:0;bottom:-27px}
+.tabs button{height:26px;padding:0 14px;background:linear-gradient(#262626,#141414);border:1px solid #4d4d4d;border-top:0;border-radius:0 0 6px 6px;color:#d8c46a;font-size:12px}
+.tabs button.on{background:linear-gradient(#3a3a3a,#1e1e1e);color:#fff;height:30px}
+.note{font:11px/1.4 Arial;color:#9a9284;margin:4px 12px 8px}
+.empty{padding:20px;text-align:center;color:#9a9284;font:13px Arial}
+table.nt{width:calc(100% - 20px);margin:4px 10px;border-collapse:collapse;font:12px Arial,sans-serif}
+table.nt th{color:#9a9284;font-weight:normal;font-size:11px;text-align:left;padding:3px 6px;border-bottom:1px solid #2e2e2e}
+table.nt td{padding:5px 6px;border-bottom:1px solid #1d1d1d;vertical-align:middle}
+table.nt td.r,table.nt th.r{text-align:right}
+.srcdot{display:inline-block;width:9px;height:9px;border-radius:2px;border:1px solid #000;margin-right:5px;vertical-align:0}
+
+/* StaticPopup */
+#popup{position:absolute;left:50%;top:22%;transform:translateX(-50%);width:340px;z-index:50;display:none;padding:16px 16px 12px;text-align:center;background:rgba(0,0,0,.9);border:2px solid #8a8a8a;border-radius:8px;box-shadow:0 0 0 1px #000,0 10px 30px #000;font:13px/1.45 Arial,sans-serif;color:#fff}
+#popup.on{display:block}
+#popup .pl{display:flex;gap:10px;align-items:center;justify-content:center;margin:10px 0;text-align:left}
+#popup .row{display:flex;gap:8px;justify-content:center;margin-top:10px}
+#popup label{display:flex;gap:6px;justify-content:center;align-items:center;color:#ffd27a;font-size:12px;margin-top:6px}
+
+/* ---------- toast styles (goods) ---------- */
+#layer-toast{position:absolute;left:50%;bottom:122px;transform:translateX(-50%);display:flex;flex-direction:column-reverse;align-items:center;gap:8px;pointer-events:none;z-index:20}
+.ta{position:relative;width:330px;display:flex;gap:10px;align-items:center;padding:9px 12px 9px 10px;border:2px solid;border-radius:6px;box-shadow:0 0 0 1px #000,0 6px 18px rgba(0,0,0,.7);animation:taIn .35s cubic-bezier(.2,1.4,.4,1) both;text-align:left}
+.ta .ic{--sz:40px;background:radial-gradient(circle at 40% 35%,#6a8aa0,#1c2c38)}
+.ta .src{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#bba98a}
+.ta .nm{font-size:15px;line-height:18px;text-shadow:0 1px 1px #000;color:#fff}
+.ta .det{color:#d6cfbf;font:12px Arial}
+.ta .stamps{position:absolute;right:-8px;top:-10px;display:flex;gap:4px}
+.ta .st{font:bold 10px/14px Arial;letter-spacing:.04em;text-transform:uppercase;padding:1px 6px;border-radius:3px;color:#fff;background:#b3211a;border:1px solid rgba(0,0,0,.6)}
+.ta .st.coins{background:#8a6a00;display:inline-flex;align-items:center;gap:3px}
+.ta.static{animation:none;width:280px;transform:scale(.9);transform-origin:left top}
+.ta.out{animation:taOut .3s ease-in both}
+@keyframes taIn{from{opacity:0;transform:translateY(24px) scale(.96)}}
+@keyframes taOut{to{opacity:0;transform:translateY(10px)}}
+.ts-classic{background:linear-gradient(180deg,#2e2318,#120d08);border-color:#8a6a42}
+.ts-ripple{background:radial-gradient(circle at 15% 50%,rgba(140,220,255,.25) 0 8%,transparent 9% 16%,rgba(140,220,255,.18) 17% 18%,transparent 19% 27%,rgba(140,220,255,.12) 28% 29%,transparent 30%),linear-gradient(180deg,#123544,#06141c);border-color:#5fb6d6}
+.ts-gilded{background:linear-gradient(180deg,#33280f,#0e0a03);border-color:#e0b84a;box-shadow:0 0 0 1px #000,0 6px 18px rgba(0,0,0,.7),0 0 18px rgba(255,209,0,.35)}
+.ts-gilded::before{content:"";position:absolute;inset:0;border-radius:4px;background:linear-gradient(105deg,transparent 30%,rgba(255,230,150,.22) 45%,transparent 60%);background-size:250% 100%;animation:shine 1.6s ease-out .2s both;pointer-events:none}
+@keyframes shine{from{background-position:120% 0}to{background-position:-60% 0}}
+.ts-lantern{background:radial-gradient(ellipse at 12% 50%,rgba(255,170,60,.45),transparent 55%),linear-gradient(180deg,#2a1608,#0c0602);border-color:#d8782a;box-shadow:0 0 0 1px #000,0 6px 18px rgba(0,0,0,.7),0 0 22px rgba(255,140,40,.35)}
+.ts-moonlit{background:radial-gradient(circle at 90% 20%,rgba(220,230,255,.35) 0 6%,transparent 7%),linear-gradient(180deg,#1a1f3a,#05060f);border-color:#9fb0e8;box-shadow:0 0 0 1px #000,0 6px 18px rgba(0,0,0,.7),0 0 16px rgba(160,180,255,.3)}
+
+/* ---------- tracker frames (goods) ---------- */
+#trackers{position:absolute;right:16px;top:212px;width:250px;display:flex;flex-direction:column;gap:10px;z-index:6}
+.trk{font:12px/1.3 Arial,sans-serif;text-shadow:0 1px 1px #000,0 0 2px #000;transition:all .25s}
+.trk .th{display:flex;align-items:center;gap:6px;color:var(--gold);font:14px Marcellus;border-bottom:1px solid rgba(255,209,0,.35);padding-bottom:2px}
+.trk .th span{margin-left:auto;font:11px Arial;color:#cfc8b8}
+.trk .l{display:flex;gap:6px;align-items:center;color:#fff;padding-top:3px}
+.trk .l b{margin-left:auto;font-weight:normal;color:#ffd27a}
+.trk .s{color:#cfc8b8;font-size:11px;padding-left:14px}
+.trk .dot{width:8px;height:8px;border-radius:50%;flex:none;border:1px solid #000;background:#7fbf6a}
+.trk.try{outline:2px dashed #ffd100;outline-offset:3px}
+.fr-native{}
+.fr-brass{padding:6px 9px;background:linear-gradient(#2a2218,#15100a);border:2px solid #b08a3a;border-radius:4px;box-shadow:0 0 0 1px #000,inset 0 0 0 1px #5a4518,inset 0 0 10px #000}
+.fr-brass .th{border-bottom-color:#b08a3a}
+.fr-rope{padding:7px 10px;background:rgba(20,14,8,.82);border:4px solid transparent;border-image:repeating-linear-gradient(45deg,#c9a46a 0 4px,#7a5a2e 4px 8px) 4;box-shadow:0 0 0 1px #000}
+.fr-cork{padding:7px 10px;background:radial-gradient(circle,#b98a52 1px,transparent 1.5px) 0 0/7px 7px,radial-gradient(circle,#8a5f30 1px,transparent 1.5px) 3px 4px/9px 9px,#a7773f;border:3px solid #5a3a1a;border-radius:3px;box-shadow:0 0 0 1px #000,0 4px 10px rgba(0,0,0,.6)}
+.fr-cork .th{color:#2a1a08;text-shadow:none;border-bottom-color:#5a3a1a}.fr-cork .th span{color:#3a2a14}
+.fr-cork .l{color:#1a1006;text-shadow:none}.fr-cork .l b{color:#6a1a0a}.fr-cork .s{color:#3a2814;text-shadow:none}
+.fr-plank{padding:7px 10px;background:repeating-linear-gradient(0deg,#6a5238 0 2px,#7d6244 2px 9px),#7d6244;border:2px solid #3a2a18;border-radius:6px 3px 7px 2px;box-shadow:0 0 0 1px #000,0 4px 10px rgba(0,0,0,.6)}
+.fr-slate{padding:7px 10px;background:linear-gradient(135deg,#2c3236,#1a1e21);border:3px solid #4a3a28;border-radius:2px;box-shadow:0 0 0 1px #000}
+.fr-slate .th{font-family:'IM Fell English',serif;color:#f2f2ea;border-bottom-color:#8a9096}.fr-slate .l b{color:#f2f2ea}
+.fr-chalk{padding:7px 10px;background:#0d0d0d;border:1px solid #e0b84a;border-radius:10px;box-shadow:0 0 0 1px #000,0 0 14px rgba(224,184,74,.35)}
+.fr-gilt{padding:7px 10px;background:linear-gradient(#1a1508,#0a0803);border:2px solid #e0b84a;border-radius:4px;box-shadow:0 0 0 1px #000,inset 0 0 0 3px #1a1508,inset 0 0 0 4px #8a6a1a,0 0 14px rgba(255,209,0,.25)}
+
+/* ---------- book swatches: bindings, notebook covers, bookplate ---------- */
+.book{position:relative;width:110px;height:140px;border-radius:3px 8px 8px 3px;box-shadow:0 0 0 1px #000,4px 6px 12px rgba(0,0,0,.6),inset 8px 0 0 rgba(0,0,0,.35);background:var(--b1)}
+.book::before{content:"";position:absolute;inset:10px 10px 10px 18px;border:2px solid var(--b2);border-radius:3px;opacity:.85}
+.book::after{content:"";position:absolute;left:50%;top:50%;width:34px;height:34px;margin:-17px 0 0 -10px;border-radius:50%;border:2px solid var(--b2);opacity:.7}
+.book.nb{border-radius:2px 4px 4px 2px}
+.book.nb::before{inset:auto 0 22px 0;height:16px;border:0;border-radius:0;background:var(--b2);opacity:.8}
+.book.nb::after{left:auto;right:-4px;top:-6px;width:10px;height:150px;margin:0;border:0;border-radius:2px;background:var(--b3,#a01818);opacity:1}
+.mini .book{width:22px;height:30px;box-shadow:0 0 0 1px #000,inset 3px 0 0 rgba(0,0,0,.35)}
+.mini .book::before{inset:3px 3px 3px 5px;border-width:1px}.mini .book::after{display:none}
+.mini .book.nb::before{inset:auto 0 5px 0;height:4px}
+.mini .book.nb::after{display:block;right:-1px;top:-1px;width:3px;height:32px;margin:0}
+.plate{width:150px;padding:12px;background:#efe3c4;border:1px solid #6a5232;box-shadow:inset 0 0 0 4px #efe3c4,inset 0 0 0 5px #8a6a42,0 4px 10px rgba(0,0,0,.6);text-align:center;color:#3a2a14;font-family:'IM Fell English',serif}
+.plate .ex{font-size:10px;letter-spacing:.2em;text-transform:uppercase}
+.plate .nmx{font-size:17px}
+.plate svg{width:70px;height:70px;display:block;margin:4px auto}
+
+/* ---------- Variant A: merchant window ---------- */
+#wA{left:calc(50% - 360px);top:70px;width:360px;height:470px}
+#wA .top{display:flex;gap:6px;align-items:center;padding:8px 10px 4px 46px;font:12px Arial}
+#wA .top label{display:flex;gap:4px;align-items:center;color:#cfc8b8;margin-left:auto}
+#wA .grid{flex:1;margin:4px 8px;display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:54px;gap:4px 6px;align-content:start;padding:6px}
+.mi{display:flex;gap:6px;align-items:center;padding:3px;border-radius:3px;cursor:pointer;position:relative;background:linear-gradient(90deg,rgba(255,255,255,.04),transparent)}
+.mi:hover{background:rgba(255,209,0,.08)}
+.mi.sel{box-shadow:inset 0 0 0 1px #ffd100}
+.mi .t{min-width:0;flex:1}
+.mi .n{font:12px/14px Arial;color:#fff;max-height:28px;overflow:hidden}
+.mi.short .n{color:#c9c1b2}
+.mi .ov{position:absolute;left:3px;top:3px;width:36px;height:36px;display:flex;align-items:flex-end;justify-content:center;pointer-events:none}
+.mi .ov .tag{font-size:8px;line-height:11px;padding:0 3px}
+#wA .pager{display:flex;align-items:center;justify-content:center;gap:10px;font:12px Arial;color:#cfc8b8;padding:2px}
+#wA .pager button{width:24px;height:24px;border-radius:50%;border:1px solid #000;background:linear-gradient(#5a4a2a,#2a2010);color:#ffd100;padding:0}
+#wA .pager button[disabled]{opacity:.3}
+#wA .foot{display:flex;align-items:center;gap:8px;padding:6px 12px 8px;border-top:1px solid #2a2a2a;font:11px Arial;color:#9a9284}
+#wA .money{margin-left:auto;display:flex;align-items:center;gap:4px;padding:2px 8px;background:#000;border:1px solid #3a3a3a;border-radius:3px}
+#wA .money .num{font-size:14px}
+#dressA{left:calc(50% + 8px);top:70px;width:300px;padding-bottom:10px}
+#dressA .stage{margin:8px;min-height:210px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;padding:10px}
+#dressA .ln{font:12px/1.4 Arial;color:#cfc8b8;margin:0 12px}
+
+/* ---------- Variant B: collections journal ---------- */
+#wB{left:calc(50% - 400px);top:56px;width:800px;height:520px}
+#wB .purse{display:flex;align-items:center;gap:14px;padding:8px 14px 6px 50px;border-bottom:1px solid #2a2a2a}
+#wB .purse .bal{display:flex;align-items:center;gap:6px;font:bold 22px Arial;color:#fff}
+#wB .purse .bal small{font:11px Arial;color:#9a9284;display:block;letter-spacing:.06em;text-transform:uppercase}
+#wB .sbar{flex:1;max-width:330px}
+#wB .sbar .bar{display:flex;height:10px;border:1px solid #000;border-radius:2px;overflow:hidden;background:#222}
+#wB .sbar .bar i{display:block;height:100%}
+#wB .sbar .leg{display:flex;gap:10px;margin-top:3px;font:11px Arial;color:#cfc8b8;flex-wrap:wrap}
+#wB .sbar .leg .off{color:#8a8a8a;text-decoration:line-through}
+#wB .body{flex:1;display:flex;min-height:0;gap:6px;padding:6px}
+#wB .list{width:300px;flex:none;display:flex;flex-direction:column;min-height:0}
+#wB .filt{display:flex;gap:4px;padding:4px 2px 6px;flex-wrap:wrap}
+#wB .filt input{flex:1;min-width:120px;background:#000;border:1px solid #555;border-radius:10px;color:#fff;padding:3px 10px;font:12px Arial}
+#wB .chips{display:flex;gap:3px;flex-wrap:wrap;padding:0 2px 6px}
+#wB .chips button{border:1px solid #4d4d4d;background:linear-gradient(#262626,#141414);color:#d8c46a;border-radius:10px;font:11px Arial;padding:2px 8px}
+#wB .chips button.on{color:#fff;border-color:#ffd100}
+#wB .rows{flex:1;min-height:0}
+#wB .gh{font:11px Arial;letter-spacing:.08em;text-transform:uppercase;color:#9a9284;padding:8px 8px 2px;display:flex}
+#wB .gh span{margin-left:auto;text-transform:none;letter-spacing:0}
+.br{display:flex;gap:8px;align-items:center;padding:4px 8px;cursor:pointer;border-left:3px solid transparent}
+.br:hover{background:rgba(255,209,0,.06)}
+.br.sel{background:rgba(255,209,0,.1);border-left-color:#ffd100}
+.br .n{flex:1;font:12px Arial;color:#fff}
+.br.short .n{color:#bdb5a6}
+.br.off{opacity:.55}
+.br .ic{--sz:28px}
+#wB .pane{flex:1;display:flex;flex-direction:column;min-width:0}
+#wB .stage{flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;background:radial-gradient(ellipse at 50% 40%,#22303a,#0a0d10 70%);border:1px solid #2e2e2e;border-radius:3px;position:relative}
+#wB .stage .pv{display:flex;gap:6px}
+#wB .info{padding:8px 4px 2px;display:flex;gap:10px;align-items:flex-start}
+#wB .info .t{flex:1}
+#wB .info .n{font-size:18px;color:#fff}
+#wB .info .d{font:12px/1.4 Arial;color:#cfc8b8;margin-top:2px}
+#wB .info .acts{display:flex;flex-direction:column;gap:5px;align-items:flex-end}
+
+/* ---------- Variant C: dressing room ---------- */
+#wC{left:calc(50% - 395px);top:56px;width:690px;height:540px}
+#wC .body{flex:1;display:flex;gap:6px;padding:6px;min-height:0}
+#wC .slots{flex:1;min-width:0}
+.sl{padding:7px 10px 8px;border-bottom:1px solid #1d1d1d}
+.sl .lab{display:flex;align-items:baseline;gap:8px;color:var(--gold);font-size:13px}
+.sl .lab small{font:11px Arial;color:#9a9284}
+.sl .lab .cur{margin-left:auto;font:11px Arial;color:#cfc8b8}
+.sw{display:flex;gap:6px;margin-top:5px;flex-wrap:wrap}
+.sw button{position:relative;width:62px;padding:3px 2px 2px;border:1px solid #333;border-radius:4px;background:#111;color:#ddd;font:10px/12px Arial;display:flex;flex-direction:column;align-items:center;gap:2px}
+.sw button:hover{border-color:#888}
+.sw button.eq{border-color:#ffd100;box-shadow:0 0 0 1px #ffd100}
+.sw button.try{border-color:#7fd0ff;box-shadow:0 0 0 1px #7fd0ff,0 0 10px rgba(127,208,255,.4)}
+.sw button .ic{--sz:34px}
+.sw button .p{display:flex;align-items:center;gap:2px;font:bold 10px Arial;color:#fff}
+.sw button .p.short{color:var(--bad)}
+.sw button .p.own{color:var(--ok);font-weight:normal}
+.sw button .p.earn{color:#c9a8f0;font-weight:normal}
+.sw button .nm{max-width:58px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.sw button.locked{opacity:.5}
+#wC .side{width:200px;flex:none;display:flex;flex-direction:column;gap:6px}
+#wC .purse{padding:10px}
+#wC .purse .bal{display:flex;align-items:center;gap:6px;font:bold 24px Arial;color:#fff}
+#wC .purse .k{font:11px Arial;letter-spacing:.06em;text-transform:uppercase;color:#9a9284}
+#wC .src{margin-top:8px;font:12px Arial}
+#wC .src .r{display:flex;align-items:center;gap:4px;margin-top:5px;color:#e6dfcf}
+#wC .src .r b{margin-left:auto;font-weight:normal}
+#wC .src .r.off{color:#8a8a8a}
+#wC .src .bar{height:4px;background:#222;border-radius:2px;margin:2px 0 0 14px;overflow:hidden}
+#wC .src .bar i{display:block;height:100%}
+#wC .prev{padding:8px;display:flex;flex-direction:column;align-items:center;gap:6px;flex:1}
+#wC .check{flex:none;display:flex;align-items:center;gap:10px;padding:8px 12px;border-top:1px solid #2a2a2a;background:linear-gradient(#161616,#0d0d0d);border-radius:0 0 4px 4px;font:12px Arial}
+#wC .check .what{flex:1;color:#cfe9ff;min-width:0}
+
+/* ---------- Settings mock ---------- */
+#wS{left:calc(50% - 300px);top:90px;width:600px;height:430px}
+#wS .body{flex:1;display:flex;min-height:0}
+#wS nav{width:170px;flex:none;padding:8px 0;border-right:1px solid #2a2a2a;font:12px Arial}
+#wS nav div{padding:3px 12px;color:#cfc8b8}
+#wS nav div.on{background:rgba(255,209,0,.1);color:#fff}
+#wS nav div.sub{padding-left:24px}
+#wS .page{flex:1;padding:6px 6px 10px;overflow:auto}
+#wS .row{display:flex;align-items:center;gap:10px;padding:6px 12px;font:12px Arial}
+#wS .row .l{width:190px;color:#e6dfcf}
+#wS .row select{min-width:200px}
+
+/* ---------- control panel (not part of the design) ---------- */
+#panel{width:400px;flex:none;height:100vh;overflow-y:auto;background:var(--panel);color:var(--ink);font:13px/1.45 system-ui,-apple-system,Segoe UI,sans-serif;border-left:1px solid #000}
+#panel header{padding:14px 16px 10px;border-bottom:1px solid var(--line)}
+#panel h1{font-size:16px;margin:0}#panel h1 small{font-weight:normal;color:var(--ink2);font-size:12px;margin-left:6px}
+#panel .q{margin:6px 0 0;color:var(--ink2);font-size:12px}
+#panel section{padding:10px 16px;border-bottom:1px solid var(--line)}
+#panel h2{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink2);margin:0 0 6px}
+#panel .btns{display:flex;flex-wrap:wrap;gap:5px}
+#panel .b{background:#fff;border:1px solid #c9c4b8;border-radius:5px;padding:4px 9px;color:var(--ink);font-size:12px}
+#panel .b:hover{border-color:var(--accent)}
+.seg{display:inline-flex;border:1px solid #c9c4b8;border-radius:5px;overflow:hidden;flex-wrap:wrap}
+.seg button{border:0;background:#fff;padding:4px 9px;font-size:12px;color:var(--ink)}
+.seg button+button{border-left:1px solid #c9c4b8}
+.seg button.on{background:var(--accent);color:#fff}
+#panel label{display:flex;align-items:center;gap:6px;margin:3px 0}
+#panel table{width:100%;border-collapse:collapse;font-size:11px}
+#panel td,#panel th{padding:2px 4px;border-bottom:1px solid #eee;text-align:left;white-space:nowrap}
+#panel td.r{text-align:right}
+#panel th{color:var(--ink2);font-weight:600}
+#panel .vnote{background:#fff;border:1px solid var(--line);border-radius:5px;padding:8px 10px;font-size:12px}
+#panel ol,#panel ul{margin:4px 0;padding-left:18px;font-size:12px}
+#panel li{margin:3px 0}
+
+#switcher{position:absolute;left:50%;bottom:8px;transform:translateX(-50%);display:flex;align-items:center;gap:2px;background:#111;color:#fff;border-radius:999px;padding:3px;box-shadow:0 4px 14px rgba(0,0,0,.6);font:12px system-ui,sans-serif;z-index:40;border:1px solid #fff3}
+#switcher button{background:none;border:0;color:#fff;width:28px;height:24px;border-radius:999px}
+#switcher button:hover{background:#333}
+#switcher span{padding:0 10px;min-width:260px;text-align:center}
+</style>
+</head>
+<body>
+<div id="scene">
+  <div class="hills"></div>
+  <div id="bobber"></div>
+  <div id="pframe"><div class="por"></div><div class="bars"><div class="nm">Thalindra</div><div class="hp"></div><div class="mp"></div></div></div>
+  <div id="minimap"><div class="zn">Lake Lordamere</div><div class="mm"></div>
+    <button id="pbtn" title="Pagle (addon compartment)"><svg viewBox="0 0 40 40"><path d="M7 20c6-8 17-10 24-3l5-5v16l-5-5c-7 7-18 5-24-3z" fill="#7fb3c8" stroke="#000" stroke-width="1.4"/><circle cx="12" cy="18" r="1.5"/></svg></button></div>
+  <div id="cmenu"></div>
+  <div id="trackers"></div>
+  <div id="win"></div>
+  <div id="layer-toast"></div>
+  <div id="popup"></div>
+  <div id="uierr"></div>
+  <div id="chat"><div id="chatlog"></div><input id="chatin" placeholder="Type /pagle shop and press Enter"></div>
+  <div id="actionbar"><i title="Fishing key"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  <div id="switcher"><button id="swPrev" title="Previous variant (←)">◀</button><span id="swLabel"></span><button id="swNext" title="Next variant (→)">▶</button></div>
+  <div id="tip"></div>
+</div>
+
+<aside id="panel">
+  <header>
+    <h1>Curio Shop <small>prototype · throwaway</small></h1>
+    <p class="q">What should the Curio Shop look like and how should it behave? Flip the three shops (bottom bar, ←/→). Open it from the compartment button on the minimap or with <code>/pagle shop</code>. Buy something, equip it, then switch a Module off and see where its goods go. Every variant reads the same wallet.</p>
+  </header>
+  <section><h2>This variant</h2><div class="vnote" id="vnote"></div></section>
+  <section>
+    <h2>Angler</h2>
+    <div class="seg" id="stageSeg"><button data-v="new">Week one</button><button data-v="mid">Month three</button><button data-v="late">Month ten</button><button data-v="held">Held at 0</button></div>
+    <p class="q" id="stageNote"></p>
+  </section>
+  <section>
+    <h2>Earn (a Module reports a new total)</h2>
+    <div class="btns">
+      <button class="b" data-earn="Tackle Board|15">Notice +15</button>
+      <button class="b" data-earn="Tackle Board|60">Expedition +60</button>
+      <button class="b" data-earn="Ledger|20">Angler Level +20</button>
+      <button class="b" data-earn="Ledger|10">New Species +10</button>
+      <button class="b" data-earn="Ledger|100">Legend +100</button>
+      <button class="b" data-earn="Hunts|30">Hunt completed +30</button>
+    </div>
+    <div class="btns" style="margin-top:6px"><button class="b" id="bRebuild">Ledger rebuild: its total drops by 500</button></div>
+    <p class="q">Coins ride as a stamp on the Announcement the moment already earns; the test toast below shows one.</p>
+  </section>
+  <section>
+    <h2>Modules enabled (AddOns list)</h2>
+    <div id="modChecks"></div>
+    <p class="q">A disabled Module loads nothing. Core keeps the last total it reported, so its income still counts, but it pays nothing new, and its goods leave the shop.</p>
+  </section>
+  <section>
+    <h2>Try the equipped looks</h2>
+    <div class="btns"><button class="b" id="bToast">Test toast (equipped style + sound)</button><button class="b" id="bSettings">Open Settings › Appearance</button></div>
+  </section>
+  <section><h2>Wallet</h2><table id="mtable"></table></section>
+  <section>
+    <h2>What to decide</h2>
+    <ol>
+      <li><b>Which shop</b>, or which parts of which ("C's try-on with B's list").</li>
+      <li><b>Where equipping happens:</b> Settings only (A), the shop and Settings (B), or the shop is the dressing room and Settings mirrors it (C)?</li>
+      <li><b>Buying:</b> one confirm per look (A, B) or one checkout for several (C)? Should buying offer "use it now"?</li>
+      <li><b>Income by source:</b> its own tab (A), a stacked bar in the header (B) or a purse column (C)? Show "Spent" at all?</li>
+      <li><b>Held at 0:</b> stay silent, or one quiet line? (Pick the "Held at 0" Angler.)</li>
+      <li><b>A disabled Module's owned goods:</b> greyed in the shop, a "put away" group, or only a footnote?</li>
+      <li><b>Level-earned bindings:</b> show them in the shop as "Angler Level 30" (not for sale), or keep the shop to goods for sale?</li>
+      <li><b>Compartment menu:</b> show the balance beside "Curio Shop"?</li>
+    </ol>
+  </section>
+</aside>
+
+<script>
+// ===================== Wallet: the liftable model (no DOM) =====================
+// Follows ADR 0009: earned per Module (last reported total, kept by Core), purchases as U1 log entries
+// storing the price, balance = max(0, earned - spent), never revoked, goods registered per Module.
+const Wallet = (() => {
+  const MODULES = ['Ledger', 'Hunts', 'Tackle Board', 'Stats'];
+  const PAYERS = ['Tackle Board', 'Ledger', 'Hunts']; // Stats and QoL pay nothing
+  const SLOTS = [
+    { k: 'toast', name: 'Toast style', group: 'Announcements', by: 'Core' },
+    { k: 'sound', name: 'Sound set', group: 'Announcements', by: 'Core' },
+    { k: 'crest', name: 'Bookplate crest', group: 'Bookplate', by: 'Core' },
+    { k: 'binding', name: 'Journal binding', group: 'Fish Journal', by: 'Ledger' },
+    { k: 'cover', name: 'Notebook cover', group: 'Hunts', by: 'Hunts' },
+    { k: 'fHunts', name: 'Hunts tracker frame', group: 'Trackers', by: 'Hunts' },
+    { k: 'fTackle', name: 'Tackle Board tracker frame', group: 'Trackers', by: 'Tackle Board' },
+    { k: 'fStats', name: 'Stats tracker frame', group: 'Trackers', by: 'Stats' },
+  ];
+  // price 0 = the free default; level = a Ledger level reward (never sold); otherwise a Curio Shop good
+  const GOODS = [
+    { id: 'toast.classic', slot: 'toast', name: 'Timber', price: 0, look: 'ts-classic', d: 'The default toast: dark wood, plain trim.' },
+    { id: 'toast.ripple', slot: 'toast', name: 'Ripple', price: 150, look: 'ts-ripple', d: 'Cool water, with rings spreading from the icon.' },
+    { id: 'toast.gilded', slot: 'toast', name: 'Gilded', price: 400, look: 'ts-gilded', d: 'Gold trim and a glint that runs across it.' },
+    { id: 'toast.lantern', slot: 'toast', name: 'Lantern Glow', price: 400, look: 'ts-lantern', d: 'A warm lantern light behind the catch.' },
+    { id: 'toast.moonlit', slot: 'toast', name: 'Moonlit', price: 900, look: 'ts-moonlit', d: 'Night blue, a small moon in the corner.' },
+    { id: 'sound.driftwood', slot: 'sound', name: 'Driftwood', price: 0, look: 'driftwood', d: 'The default: soft wooden knocks.' },
+    { id: 'sound.lakeside', slot: 'sound', name: 'Lakeside', price: 150, look: 'lakeside', d: 'Plucked notes, like a reed by the water. (Not made yet.)' },
+    { id: 'sound.gilded', slot: 'sound', name: 'Gilded', price: 400, look: 'gilded', d: 'Small bells.' },
+    { id: 'sound.deepwater', slot: 'sound', name: 'Deepwater', price: 900, look: 'deepwater', d: 'Low, round bubbles from far down. (Not made yet.)' },
+    { id: 'crest.none', slot: 'crest', name: 'Plain', price: 0, look: 'none', d: 'A bookplate with your name only.' },
+    { id: 'crest.trout', slot: 'crest', name: 'Leaping Trout', price: 150, look: 'trout', d: 'Your emblem on the Journal bookplate (and, one day, your Angler card).' },
+    { id: 'crest.rods', slot: 'crest', name: 'Crossed Rods', price: 150, look: 'rods', d: 'Your emblem on the Journal bookplate.' },
+    { id: 'crest.anchor', slot: 'crest', name: 'Anchor and Line', price: 400, look: 'anchor', d: 'Your emblem on the Journal bookplate.' },
+    { id: 'crest.light', slot: 'crest', name: 'Lighthouse', price: 400, look: 'light', d: 'Your emblem on the Journal bookplate.' },
+    { id: 'crest.kraken', slot: 'crest', name: 'Kraken', price: 900, look: 'kraken', d: 'Your emblem on the Journal bookplate.' },
+    { id: 'binding.start', slot: 'binding', name: 'Field Leather', price: 0, look: ['#5a3a20', '#c9a46a'], d: 'The Journal you start with.' },
+    { id: 'binding.l10', slot: 'binding', name: 'Tanned Hide', level: 10, look: ['#7a4a26', '#e0b870'], d: 'A Ledger reward at Angler Level 10.' },
+    { id: 'binding.l20', slot: 'binding', name: 'Tidewater Blue', level: 20, look: ['#1f3a5a', '#c9d6e0'], d: 'A Ledger reward at Angler Level 20.' },
+    { id: 'binding.l30', slot: 'binding', name: 'Reed Green', level: 30, look: ['#2e4a2a', '#d6c88a'], d: 'A Ledger reward at Angler Level 30.' },
+    { id: 'binding.l40', slot: 'binding', name: 'Oxblood', level: 40, look: ['#5a1414', '#e0b84a'], d: 'A Ledger reward at Angler Level 40.' },
+    { id: 'binding.l50', slot: 'binding', name: 'Storm Grey', level: 50, look: ['#3a3e44', '#d0d4da'], d: 'A Ledger reward at Angler Level 50.' },
+    { id: 'binding.l60', slot: 'binding', name: 'Nat\'s Own', level: 60, look: ['#2a1a0e', '#ffd100'], d: 'A Ledger reward at Angler Level 60.' },
+    { id: 'binding.birch', slot: 'binding', name: 'Birch Bark', price: 150, look: ['#d8d0bc', '#3a3026'], d: 'Pale bark with dark flecks.' },
+    { id: 'binding.buckram', slot: 'binding', name: 'Sea-green Buckram', price: 400, look: ['#2a6a62', '#e8e0c0'], d: 'Cloth binding, gilt rules.' },
+    { id: 'binding.shark', slot: 'binding', name: 'Sharkskin', price: 900, look: ['#59636a', '#f0f0f0'], d: 'Rough grey hide, silver tooling.' },
+    { id: 'cover.plain', slot: 'cover', name: 'Pocket Notebook', price: 0, look: ['#4a3a2a', '#c9a46a', '#a01818'], d: 'The Hunts notebook you start with.' },
+    { id: 'cover.oil', slot: 'cover', name: 'Oilcloth', price: 150, look: ['#1a2a1a', '#8aa07a', '#d0a020'], d: 'Black-green oilcloth, keeps the rain out.' },
+    { id: 'cover.canvas', slot: 'cover', name: 'Waxed Canvas', price: 400, look: ['#8a6a3a', '#3a2a14', '#2a4a8a'], d: 'Tan canvas with a leather strap.' },
+    { id: 'cover.chart', slot: 'cover', name: 'Tide Chart', price: 900, look: ['#c8bc96', '#2a4a6a', '#a01818'], d: 'Covered in an old sea chart.' },
+    { id: 'fHunts.native', slot: 'fHunts', name: 'No frame', price: 0, look: 'fr-native', d: 'The plain objective-tracker look.' },
+    { id: 'fHunts.brass', slot: 'fHunts', name: 'Brass', price: 150, look: 'fr-brass', d: 'A brass-edged plate behind your pinned Hunts.' },
+    { id: 'fHunts.gilt', slot: 'fHunts', name: 'Gilt Edge', price: 400, look: 'fr-gilt', d: 'A double gilt line.' },
+    { id: 'fTackle.native', slot: 'fTackle', name: 'No frame', price: 0, look: 'fr-native', d: 'The plain objective-tracker look.' },
+    { id: 'fTackle.cork', slot: 'fTackle', name: 'Corkboard', price: 150, look: 'fr-cork', d: 'Your Notices pinned to cork.' },
+    { id: 'fTackle.plank', slot: 'fTackle', name: 'Driftwood Plank', price: 400, look: 'fr-plank', d: 'A weathered plank.' },
+    { id: 'fStats.native', slot: 'fStats', name: 'No frame', price: 0, look: 'fr-native', d: 'The plain objective-tracker look.' },
+    { id: 'fStats.slate', slot: 'fStats', name: 'Slate', price: 150, look: 'fr-slate', d: 'Chalk numbers on a slate.' },
+    { id: 'fStats.chalk', slot: 'fStats', name: 'Lamp-lit', price: 400, look: 'fr-chalk', d: 'A thin gold line and a soft glow.' },
+  ];
+  const byId = Object.fromEntries(GOODS.map((g) => [g.id, g]));
+  const slotOf = (g) => SLOTS.find((s) => s.k === g.slot);
+
+  function create() {
+    return { level: 1, reported: { Ledger: 0, Hunts: 0, 'Tackle Board': 0 }, enabled: { Ledger: true, Hunts: true, 'Tackle Board': true, Stats: true },
+      log: [], eq: {} };
+  }
+  const earned = (w) => PAYERS.reduce((a, m) => a + w.reported[m], 0);
+  const spent = (w) => w.log.reduce((a, u) => a + u.price, 0);
+  const balance = (w) => Math.max(0, earned(w) - spent(w));
+  const held = (w) => earned(w) < spent(w);
+  const moduleOn = (w, by) => by === 'Core' || w.enabled[by];
+  const forSale = (g) => g.price > 0;
+  const owned = (w, g) => g.price === 0 || (g.level && w.level >= g.level) || w.log.some((u) => u.good === g.id);
+  const equipped = (w, g) => (w.eq[g.slot] || defaultOf(g.slot).id) === g.id;
+  const defaultOf = (slot) => GOODS.find((g) => g.slot === slot && g.price === 0);
+  // what the player sees for a good
+  function state(w, g) {
+    if (!moduleOn(w, slotOf(g).by)) return owned(w, g) ? 'off' : 'gone';
+    if (equipped(w, g)) return 'equipped';
+    if (owned(w, g)) return 'owned';
+    if (g.level) return 'level';
+    return balance(w) >= g.price ? 'afford' : 'short';
+  }
+  function buy(w, id, t) {
+    const g = byId[id];
+    if (!forSale(g) || owned(w, g)) return 'not for sale';
+    if (!moduleOn(w, slotOf(g).by)) return 'module off';
+    if (balance(w) < g.price) return 'short';
+    w.log.push({ tag: 'U1', good: id, price: g.price, t }); // never revoked; the price is stored
+    return 'ok';
+  }
+  function equip(w, id) { const g = byId[id]; if (owned(w, g) && moduleOn(w, slotOf(g).by)) w.eq[g.slot] = id; }
+  // a Module reports its lifetime total from its projection; Core keeps the last one
+  function report(w, mod, total) { if (w.enabled[mod]) w.reported[mod] = Math.max(0, total); }
+  return { MODULES, PAYERS, SLOTS, GOODS, byId, slotOf, create, earned, spent, balance, held, state, owned, equipped, moduleOn, forSale, buy, equip, report, defaultOf };
+})();
+</script>
+
+<script>
+// ===================== throwaway shell =====================
+const W = Wallet, $ = (s) => document.querySelector(s);
+const fmt = (n) => n.toLocaleString('en-US');
+const COIN = '<i class="coin"></i>';
+const SRC_COLOR = { Ledger: 'var(--c-ledger)', Hunts: 'var(--c-hunts)', 'Tackle Board': 'var(--c-tackle)' };
+const S = { variant: 'A', open: false, settings: false, w: null, sel: null, a: { cat: 'all', page: 0, showOwned: true, tab: 'shop' }, b: { q: '', cat: 'all', filter: 'all' }, c: { tryOn: {} }, popup: null, t: 0 };
+
+const STAGES = {
+  new: { note: 'Day 5, Angler Level 6. 230 Coins earned, nothing bought yet: first purchase is within reach.', level: 6,
+    rep: { Ledger: 160, Hunts: 0, 'Tackle Board': 70 }, buys: [] },
+  mid: { note: 'Month three, Angler Level 28, about 4 h a week with daily Notices. Earned ~55/35/10% by source; 11 looks bought.', level: 28,
+    rep: { Ledger: 1720, Hunts: 480, 'Tackle Board': 2650 }, buys: ['toast.gilded', 'crest.trout', 'binding.birch', 'fHunts.brass', 'sound.lakeside', 'fTackle.cork', 'cover.oil', 'toast.lantern', 'cover.canvas', 'binding.buckram', 'crest.anchor'],
+    eq: { toast: 'toast.gilded', crest: 'crest.trout', binding: 'binding.l20', cover: 'cover.canvas', fHunts: 'fHunts.brass', fTackle: 'fTackle.cork' } },
+  late: { note: 'Month ten, Angler Level 60. 8,050 of the 9,850-Coin catalogue owned; two 900s left, and 600 Coins in hand.', level: 60,
+    rep: { Ledger: 2900, Hunts: 900, 'Tackle Board': 4850 },
+    buys: W.GOODS.filter((g) => g.price > 0 && !['toast.moonlit', 'crest.kraken'].includes(g.id)).map((g) => g.id),
+    eq: { toast: 'toast.lantern', sound: 'sound.gilded', crest: 'crest.light', binding: 'binding.shark', cover: 'cover.chart', fHunts: 'fHunts.gilt', fTackle: 'fTackle.plank', fStats: 'fStats.slate' } },
+  held: { note: 'Month three, right after spending down to 0 on Moonlit. Then a content update re-sorted some catches and the Ledger rebuilt: it now reports 1,100 fewer Coins (620, was 1,720). Earned (3,750) is below spent (4,150), so the balance shows 0, never debt, and the next 400 Coins quietly fill the gap.', level: 28,
+    rep: { Ledger: 620, Hunts: 480, 'Tackle Board': 2650 }, buys: ['toast.gilded', 'crest.trout', 'binding.birch', 'fHunts.brass', 'sound.lakeside', 'fTackle.cork', 'cover.oil', 'toast.lantern', 'cover.canvas', 'binding.buckram', 'crest.anchor', 'crest.rods', 'toast.moonlit'],
+    eq: { toast: 'toast.moonlit', crest: 'crest.trout', binding: 'binding.l20', fHunts: 'fHunts.brass', fTackle: 'fTackle.cork' } },
+};
+function loadStage(k) {
+  const st = STAGES[k], w = W.create();
+  w.level = st.level;
+  // buys are replayed with enough coins, then the reported totals are set (so "held" can happen)
+  w.reported = { Ledger: 1e6, Hunts: 0, 'Tackle Board': 0 };
+  st.buys.forEach((id, i) => W.buy(w, id, i));
+  w.reported = { ...st.rep };
+  w.eq = { ...(st.eq || {}) };
+  S.w = w; S.stage = k; S.sel = null; S.c.tryOn = {};
+  document.querySelectorAll('#stageSeg button').forEach((b) => b.classList.toggle('on', b.dataset.v === k));
+  $('#stageNote').textContent = st.note;
+  render();
+}
+
+// ---------- look rendering ----------
+const CREST = {
+  none: '',
+  trout: '<path d="M14 46c10-22 30-28 42-16l8-10 2 20-14-2 4-4c-10-6-24 0-32 14z" fill="#3a2a14"/><circle cx="54" cy="30" r="2" fill="#efe3c4"/><path d="M10 56h60" stroke="#3a2a14" stroke-width="2" stroke-dasharray="4 4"/>',
+  rods: '<path d="M14 66L62 10M66 66L18 10" stroke="#3a2a14" stroke-width="4" stroke-linecap="round"/><circle cx="25" cy="53" r="5" fill="none" stroke="#3a2a14" stroke-width="3"/><circle cx="55" cy="53" r="5" fill="none" stroke="#3a2a14" stroke-width="3"/>',
+  anchor: '<circle cx="40" cy="16" r="6" fill="none" stroke="#3a2a14" stroke-width="4"/><path d="M40 22v44M26 32h28M14 50c4 14 18 18 26 16 8 2 22-2 26-16" fill="none" stroke="#3a2a14" stroke-width="4" stroke-linecap="round"/>',
+  light: '<path d="M32 70l4-44h8l4 44z" fill="#3a2a14"/><rect x="33" y="16" width="14" height="10" fill="#a01818"/><path d="M40 10l-6 6h12z" fill="#3a2a14"/><path d="M47 20l24-8v16zM33 20L9 12v16z" fill="#d8b040" opacity=".7"/>',
+  kraken: '<circle cx="40" cy="26" r="14" fill="#3a2a14"/><circle cx="35" cy="24" r="2.5" fill="#efe3c4"/><circle cx="45" cy="24" r="2.5" fill="#efe3c4"/><path d="M30 38c-6 14-16 12-18 22M36 40c-2 14-8 18-6 28M44 40c2 14 8 18 6 28M50 38c6 14 16 12 18 22" fill="none" stroke="#3a2a14" stroke-width="4" stroke-linecap="round"/>',
+};
+const SPEAKER = (c) => `<svg viewBox="0 0 40 40"><rect width="40" height="40" fill="${c}"/><path d="M9 16h6l8-6v20l-8-6H9z" fill="#fff"/><path d="M27 14c3 3 3 9 0 12M30 10c6 5 6 15 0 20" stroke="#fff" stroke-width="2" fill="none"/></svg>`;
+const SOUND_COLOR = { driftwood: '#6a4a2a', lakeside: '#2a6a62', gilded: '#9a7a1a', deepwater: '#1a2a5a' };
+function swatch(g) {
+  const s = g.slot, L = g.look;
+  if (s === 'toast') return `<span class="ic"><span class="${L}" style="position:relative;display:block;width:100%;height:100%;border:3px solid;border-radius:3px;overflow:hidden"></span></span>`;
+  if (s === 'sound') return `<span class="ic">${SPEAKER(SOUND_COLOR[L])}</span>`;
+  if (s === 'crest') return `<span class="ic" style="background:#efe3c4"><svg viewBox="0 0 80 80">${CREST[L] || '<text x="40" y="48" text-anchor="middle" font-size="16" fill="#8a6a42">Ex</text>'}</svg></span>`;
+  if (s === 'binding' || s === 'cover') return `<span class="ic mini" style="background:#1a1a1a">${bookHTML(g)}</span>`;
+  return `<span class="ic" style="background:#16202a"><span class="${L}" style="display:block;width:26px;height:22px;padding:0;box-sizing:border-box;${L === 'fr-native' ? 'border-bottom:2px solid rgba(255,209,0,.5)' : ''}"></span></span>`;
+}
+function bookHTML(g) {
+  const [a, b, c] = g.look;
+  return `<div class="book ${g.slot === 'cover' ? 'nb' : ''}" style="--b1:${a};--b2:${b};--b3:${c || b}"></div>`;
+}
+function plateHTML(crestId) {
+  const c = W.byId[crestId];
+  return `<div class="plate"><div class="ex">Ex Libris</div>${c.look !== 'none' ? `<svg viewBox="0 0 80 80">${CREST[c.look]}</svg>` : '<div style="height:12px"></div>'}<div class="nmx">Thalindra</div><div class="ex" style="font-size:9px">Angler · Level ${S.w.level}</div></div>`;
+}
+function toastHTML(style, cls = '', coins = 0) {
+  return `<div class="ta ${style} ${cls}"><span class="ic"><svg viewBox="0 0 40 40"><path d="M7 20c6-8 17-10 24-3l5-5v16l-5-5c-7 7-18 5-24-3z" fill="#e0c070" stroke="#000" stroke-width="1.4"/><circle cx="12" cy="18" r="1.5"/></svg></span>
+    <div><div class="src">New Species</div><div class="nm">Firefin Snapper</div><div class="det">Lake Lordamere · 2.4 kg</div></div>
+    <div class="stamps"><span class="st">New!</span>${coins ? `<span class="st coins">${COIN}+${coins}</span>` : ''}</div></div>`;
+}
+// big preview used by A's dressing room, B's stage and C's preview box
+function previewHTML(g) {
+  const s = g.slot;
+  if (s === 'toast') return toastHTML(g.look, 'static', 10) + `<div class="pv"><button class="btn sec" data-act="pvtoast" data-id="${g.id}">Show on screen</button></div>`;
+  if (s === 'sound') return `<span class="ic" style="--sz:72px">${SPEAKER(SOUND_COLOR[g.look])}</span><div class="pv"><button class="btn sec" data-act="snd" data-id="${g.id}" data-k="toast">▶ Toast</button><button class="btn sec" data-act="snd" data-id="${g.id}" data-k="banner">▶ Banner</button><button class="btn sec" data-act="snd" data-id="${g.id}" data-k="legend">▶ Legend</button></div><div class="sm">The Legend sting is the same in every set.</div>`;
+  if (s === 'crest') return plateHTML(g.id) + '<div class="sm">On the Fish Journal\'s bookplate.</div>';
+  if (s === 'binding' || s === 'cover') return bookHTML(g) + `<div class="sm">${s === 'cover' ? 'The Hunts notebook' : 'The Fish Journal'}, closed.</div>`;
+  return trackerHTML(s, g.look) + '<div class="sm">On your HUD, under the minimap.</div>';
+}
+function trackerHTML(slot, look, tryCls = '') {
+  if (slot === 'fHunts') return `<div class="trk ${look} ${tryCls}" style="width:240px"><div class="th">Hunts<span>2 pinned</span></div>
+    <div class="l"><i class="dot"></i>Dawn Snapper<b>ends in 38m</b></div><div class="s">Lake Lordamere · you're here</div>
+    <div class="l"><i class="dot" style="background:#e8b04a"></i>Moonlit Eel<b>in 3h</b></div><div class="s">Alterac Mountains</div></div>`;
+  if (slot === 'fTackle') return `<div class="trk ${look} ${tryCls}" style="width:240px"><div class="th">Tackle Board<span>2 of 4</span></div>
+    <div class="l">Haul: catch 40 fish<b>27/40</b></div><div class="l">Wanderer: fish 3 zones<b>1/3</b></div></div>`;
+  return `<div class="trk ${look} ${tryCls}" style="width:240px"><div class="th">Stats<span>Session 42m</span></div>
+    <div class="l">Casts 118 · Catches 104<b>148/h</b></div><div class="l">Firefin Snapper<b>dry 61</b></div></div>`;
+}
+function stateTag(st, g) {
+  if (st === 'afford' || st === 'short') return priceHTML(g, st === 'short');
+  return { equipped: '<span class="tag eq">In use</span>', owned: '<span class="tag own">Owned</span>', off: '<span class="tag off">Module off</span>',
+    level: `<span class="tag earn">Level ${g.level}</span>`, gone: '' }[st];
+}
+function priceHTML(g, short) { return `<span class="price ${short ? 'short' : ''}">${fmt(g.price)} ${COIN}</span>`; }
+function tipFor(g) {
+  const st = W.state(S.w, g), sl = W.slotOf(g), bal = W.balance(S.w);
+  let l = `<b>${g.name}</b><br><span class="g">${sl.name}${sl.by !== 'Core' ? ' · from ' + sl.by : ''}</span><br>${g.d}`;
+  if (st === 'short') l += `<br><span class="r">${fmt(g.price - bal)} more Pagle Coins needed</span>`;
+  if (st === 'level') l += '<br><span class="g">Not for sale: a Ledger reward.</span>';
+  if (st === 'off') l += `<br><span class="g">Yours to keep. Enable ${sl.by} to use it.</span>`;
+  return l;
+}
+
+// ---------- sounds (WebAudio stand-ins) ----------
+let AC;
+function ac() { return (AC = AC || new (window.AudioContext || window.webkitAudioContext)()); }
+function tone(f, t0, dur, type, gain, f2) {
+  const c = ac(), o = c.createOscillator(), g = c.createGain(), t = c.currentTime + t0;
+  o.type = type; o.frequency.setValueAtTime(f, t); if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + dur);
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(gain, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g).connect(c.destination); o.start(t); o.stop(t + dur + 0.05);
+}
+function knock(t0, f) {
+  const c = ac(), n = c.createBufferSource(), b = c.createBuffer(1, c.sampleRate * 0.08, c.sampleRate), d = b.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 4);
+  const bp = c.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = f; bp.Q.value = 6;
+  const g = c.createGain(); g.gain.value = 1.4; n.buffer = b; n.connect(bp).connect(g).connect(c.destination); n.start(c.currentTime + t0);
+  tone(f / 3, t0, 0.12, 'triangle', 0.15);
+}
+const SFX = {
+  driftwood: { toast: () => knock(0, 900), banner: () => { knock(0, 700); knock(0.14, 1000); knock(0.28, 1300); } },
+  lakeside: { toast: () => { tone(523, 0, 0.5, 'triangle', 0.12); tone(784, 0.09, 0.6, 'triangle', 0.1); }, banner: () => [523, 587, 659, 784, 880].forEach((f, i) => tone(f, i * 0.09, 0.6, 'triangle', 0.1)) },
+  gilded: { toast: () => { tone(1320, 0, 0.9, 'sine', 0.12); tone(1980, 0, 0.6, 'sine', 0.05); }, banner: () => [880, 1109, 1320, 1760].forEach((f, i) => { tone(f, i * 0.12, 1.1, 'sine', 0.1); tone(f * 1.5, i * 0.12, 0.7, 'sine', 0.03); }) },
+  deepwater: { toast: () => tone(220, 0, 0.35, 'sine', 0.25, 520), banner: () => [0, 0.15, 0.3].forEach((t, i) => tone(160 + i * 60, t, 0.35, 'sine', 0.22, 420 + i * 120)) },
+};
+function legendSting() { [392, 523, 659, 784, 1047].forEach((f, i) => { tone(f, i * 0.11, 1.4, 'triangle', 0.09); tone(f * 2, i * 0.11, 0.8, 'sine', 0.03); }); }
+function playSound(soundId, k) { const L = W.byId[soundId].look; if (k === 'legend') legendSting(); else SFX[L][k](); }
+
+// ---------- toasts on screen ----------
+function showToast(styleId, soundId, coins) {
+  const lay = $('#layer-toast'); lay.innerHTML = toastHTML(W.byId[styleId].look, '', coins);
+  if (soundId) playSound(soundId, 'toast');
+  clearTimeout(S.tt); S.tt = setTimeout(() => { const t = lay.firstChild; if (t) { t.classList.add('out'); setTimeout(() => (lay.innerHTML = ''), 300); } }, 4000);
+}
+const eqId = (slot) => S.w.eq[slot] || W.defaultOf(slot).id;
+const liveId = (slot) => (S.variant === 'C' && S.open && S.c.tryOn[slot]) || eqId(slot);
+
+// ---------- frame helper ----------
+const SHOP_SVG = '<svg viewBox="0 0 40 40"><circle cx="20" cy="21" r="10" fill="#e0a91a" stroke="#3a2600" stroke-width="1.5"/><circle cx="20" cy="21" r="6.5" fill="none" stroke="#fff2a8" stroke-width="1"/><path d="M15 21c2-3 6-4 9-1l2-2v6l-2-2c-3 3-7 2-9-1z" fill="#6a4600"/></svg>';
+function frame(id, title, inner, extra = '') {
+  return `<div class="wf" id="${id}"><div class="por">${SHOP_SVG}</div><div class="ttl">${title}<button class="x" data-act="close">✕</button></div>${inner}${extra}</div>`;
+}
+const visibleGoods = () => W.GOODS.filter((g) => W.moduleOn(S.w, W.slotOf(g).by));
+const heldLine = () => W.held(S.w) ? `<div class="note" style="color:#cfc8b8">Your balance is 0 while Pagle re-counts earlier Coins. New Coins fill that in first.</div>` : '';
+
+// ---------- Variant A: merchant window ----------
+const CATS = [['all', 'All looks'], ['Announcements', 'Announcements'], ['Bookplate', 'Bookplate'], ['Fish Journal', 'Fish Journal'], ['Hunts', 'Hunts'], ['Trackers', 'Trackers']];
+function variantA() {
+  const w = S.w, A = S.a;
+  if (A.tab === 'income') return frame('wA', 'Curio Shop', `<div class="inset" style="flex:1;margin:8px">${incomeTable()}</div>${footA()}`, tabsA());
+  let goods = W.GOODS.filter((g) => W.forSale(g) && (A.cat === 'all' || W.slotOf(g).group === A.cat));
+  goods = goods.filter((g) => { const st = W.state(w, g); if (st === 'gone') return false; if (!A.showOwned && (st === 'owned' || st === 'equipped' || st === 'off')) return false; return true; });
+  const per = 10, pages = Math.max(1, Math.ceil(goods.length / per)); A.page = Math.min(A.page, pages - 1);
+  const cells = goods.slice(A.page * per, A.page * per + per).map((g) => {
+    const st = W.state(w, g), own = ['owned', 'equipped', 'off'].includes(st);
+    return `<div class="mi ${st === 'short' ? 'short' : ''} ${S.sel === g.id ? 'sel' : ''}" data-ai="${g.id}" data-tip-id="${g.id}">
+      <span style="position:relative">${swatch(g).replace('class="ic', `class="ic ${st === 'off' ? 'dim' : ''}`)}</span>
+      ${own ? `<span class="ov">${stateTag(st, g)}</span>` : ''}
+      <div class="t"><div class="n">${g.name}</div>${own ? `<div class="sm">${st === 'off' ? W.slotOf(g).by + ' is off' : W.slotOf(g).name}</div>` : stateTag(st, g)}</div></div>`;
+  }).join('') || '<div class="empty" style="grid-column:1/3">Nothing here.</div>';
+  const inner = `<div class="top"><select class="drop" data-act="acat">${CATS.map(([k, n]) => `<option value="${k}" ${A.cat === k ? 'selected' : ''}>${n}</option>`).join('')}</select>
+      <label><input type="checkbox" data-act="aowned" ${A.showOwned ? 'checked' : ''}> Show owned</label></div>
+    <div class="grid inset">${cells}</div>
+    <div class="pager"><button data-act="apg" data-d="-1" ${A.page === 0 ? 'disabled' : ''}>◀</button>Page ${A.page + 1} of ${pages}<button data-act="apg" data-d="1" ${A.page >= pages - 1 ? 'disabled' : ''}>▶</button></div>
+    ${footA()}`;
+  let dress = '';
+  if (S.sel && W.byId[S.sel]) {
+    const g = W.byId[S.sel], st = W.state(w, g);
+    dress = `<div class="wf" id="dressA"><div class="ttl">Preview<button class="x" data-act="unsel">✕</button></div>
+      <div class="stage inset">${previewHTML(g)}</div>
+      <div class="ln"><b style="color:#fff;font-weight:normal;font-size:14px">${g.name}</b> · ${W.slotOf(g).name}<br>${g.d}<br>
+      ${st === 'afford' ? `Right-click it in the shop to buy for ${priceHTML(g)}.` : st === 'short' ? `<span style="color:var(--bad)">${fmt(g.price - W.balance(w))} more Coins needed.</span>` : st === 'off' ? `Yours. Enable ${W.slotOf(g).by} to use it.` : 'Yours. Choose it in <a href="#" data-act="settings" style="color:#7fc0ff">Settings › Pagle › Appearance</a>.'}</div></div>`;
+  }
+  return frame('wA', 'Curio Shop', inner, tabsA()) + dress;
+}
+function tabsA() { return `<div class="tabs"><button data-act="atab" data-t="shop" class="${S.a.tab === 'shop' ? 'on' : ''}">Curio Shop</button><button data-act="atab" data-t="income" class="${S.a.tab === 'income' ? 'on' : ''}">Income</button></div>`; }
+function footA() {
+  return `<div class="foot"><span>${S.a.tab === 'shop' ? 'Click to preview · right-click to buy' : ''}</span><span class="money" data-tip="${W.held(S.w) ? 'New Coins fill in earlier re-counts first.' : 'Your Pagle Coins'}"><span class="num">${fmt(W.balance(S.w))}</span>${COIN}</span></div>`;
+}
+function incomeTable() {
+  const w = S.w, tot = W.earned(w) || 1;
+  const rows = W.PAYERS.map((m) => `<tr><td><i class="srcdot" style="background:${SRC_COLOR[m]}"></i>${m}${w.enabled[m] ? '' : ' <span class="tag off">off</span>'}</td>
+    <td class="sm">${w.enabled[m] ? { 'Tackle Board': 'Notices, Expeditions, Campfire', Ledger: 'discoveries, ranks, levels, Legends', Hunts: 'Hunts, tiers, sets' }[m] : 'pays nothing while off; keeps what it paid'}</td>
+    <td class="r num">${fmt(w.reported[m])}</td><td class="r sm">${Math.round((100 * w.reported[m]) / tot)}%</td></tr>`).join('');
+  return `<div class="hdr">Where your Coins came from<small>all time</small></div>
+    <table class="nt"><tr><th>Module</th><th>For</th><th class="r">Coins</th><th class="r"></th></tr>${rows}
+    <tr><td colspan="2" class="sm">Stats and QoL pay no Coins.</td><td></td><td></td></tr>
+    <tr><td colspan="2">Earned</td><td class="r num">${fmt(W.earned(w))}</td><td></td></tr>
+    <tr><td colspan="2">Spent on ${w.log.length} look${w.log.length === 1 ? '' : 's'}</td><td class="r num">${fmt(W.spent(w))}</td><td></td></tr>
+    <tr><td colspan="2" style="color:var(--gold)">Balance</td><td class="r num" style="font-size:15px">${fmt(W.balance(w))} ${COIN}</td><td></td></tr></table>${heldLine()}`;
+}
+
+// ---------- Variant B: collections journal ----------
+function sourceBar() {
+  const w = S.w, tot = W.earned(w) || 1;
+  return `<div class="sbar"><div class="bar">${W.PAYERS.map((m) => `<i style="width:${(100 * w.reported[m]) / tot}%;background:${SRC_COLOR[m]};${w.enabled[m] ? '' : 'opacity:.35'}" data-tip="<b>${m}</b><br>${fmt(w.reported[m])} Coins all time${w.enabled[m] ? '' : '<br><span class=g>Off: pays nothing new, keeps what it paid.</span>'}"></i>`).join('')}</div>
+    <div class="leg">${W.PAYERS.map((m) => `<span class="${w.enabled[m] ? '' : 'off'}"><i class="srcdot" style="background:${SRC_COLOR[m]}"></i>${m} ${fmt(w.reported[m])}</span>`).join('')}</div></div>`;
+}
+function variantB() {
+  const w = S.w, B = S.b;
+  const q = B.q.toLowerCase();
+  const match = (g) => (B.cat === 'all' || W.slotOf(g).group === B.cat) && (!q || (g.name + ' ' + W.slotOf(g).name).toLowerCase().includes(q));
+  const pass = (st) => B.filter === 'all' || (B.filter === 'owned' ? ['owned', 'equipped'].includes(st) : B.filter === 'afford' ? st === 'afford' : !['owned', 'equipped', 'off'].includes(st));
+  let rows = '', offRows = '';
+  for (const sl of W.SLOTS) {
+    const goods = W.GOODS.filter((g) => g.slot === sl.k && match(g));
+    if (!W.moduleOn(w, sl.by)) {
+      const own = goods.filter((g) => W.forSale(g) && W.owned(w, g));
+      offRows += own.map((g) => rowB(g, 'off')).join('');
+      continue;
+    }
+    const rs = goods.filter((g) => pass(W.state(w, g))).map((g) => rowB(g, W.state(w, g))).join('');
+    if (rs) rows += `<div class="gh">${sl.name}<span>${goods.filter((g) => W.owned(w, g)).length}/${goods.length}</span></div>${rs}`;
+  }
+  if (offRows) rows += `<div class="gh">Put away: Module off</div>${offRows}`;
+  const sel = W.byId[S.sel] || W.byId[eqId('toast')], st = W.state(w, sel), sl = W.slotOf(sel);
+  let acts = '';
+  if (st === 'afford') acts = `<button class="btn" data-act="buy" data-id="${sel.id}">Buy for ${fmt(sel.price)} ${COIN}</button>`;
+  else if (st === 'short') acts = `<button class="btn" disabled>Buy for ${fmt(sel.price)} ${COIN}</button><span class="sm" style="color:var(--bad)">${fmt(sel.price - W.balance(w))} more needed</span>`;
+  else if (st === 'owned') acts = `<button class="btn" data-act="equip" data-id="${sel.id}">Use</button>`;
+  else if (st === 'equipped') acts = '<span class="tag eq">In use</span>';
+  else if (st === 'level') acts = `<span class="tag earn">Angler Level ${sel.level}</span><span class="sm">A Ledger reward, not for sale</span>`;
+  else if (st === 'off') acts = `<span class="tag off">${sl.by} is off</span><span class="sm">Yours to keep</span>`;
+  const inner = `<div class="purse"><div class="bal" data-tip="${W.held(w) ? 'New Coins fill in earlier re-counts first.' : 'Your Pagle Coins'}"><i class="coin lg"></i><div><small>Pagle Coins</small>${fmt(W.balance(w))}</div></div>${sourceBar()}<span class="sm" style="margin-left:auto">Stats and QoL pay none</span></div>
+    ${W.held(w) ? heldLine() : ''}
+    <div class="body"><div class="list"><div class="filt"><input id="bq" placeholder="Search looks" value="${B.q}"><select class="drop" data-act="bfilter">
+      ${[['all', 'All'], ['owned', 'Owned'], ['notowned', 'Not owned'], ['afford', 'Can afford']].map(([k, n]) => `<option value="${k}" ${B.filter === k ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
+      <div class="chips">${CATS.map(([k, n]) => `<button data-act="bcat" data-c="${k}" class="${B.cat === k ? 'on' : ''}">${k === 'all' ? 'All' : n}</button>`).join('')}</div>
+      <div class="rows inset">${rows || '<div class="empty">No looks match.</div>'}</div></div>
+    <div class="pane"><div class="stage">${previewHTML(sel)}</div>
+      <div class="info"><div class="t"><div class="n">${sel.name}</div><div class="d">${sl.name}${sl.by !== 'Core' ? ' · from ' + sl.by : ''}. ${sel.d}</div></div><div class="acts">${acts}</div></div></div></div>`;
+  return frame('wB', 'Curio Shop', inner);
+}
+function rowB(g, st) {
+  const right = st === 'afford' ? priceHTML(g) : st === 'short' ? priceHTML(g, true) : stateTag(st, g) || (g.price === 0 ? '<span class="tag free">Free</span>' : '');
+  return `<div class="br ${S.sel === g.id ? 'sel' : ''} ${st === 'short' ? 'short' : ''} ${st === 'off' ? 'off' : ''}" data-bi="${g.id}">${swatch(g)}<span class="n">${g.name}${g.price === 0 && st !== 'equipped' ? ' <span class="sm">default</span>' : ''}</span>${right}</div>`;
+}
+
+// ---------- Variant C: dressing room ----------
+function variantC() {
+  const w = S.w, T = S.c.tryOn;
+  const rows = W.SLOTS.filter((sl) => W.moduleOn(w, sl.by)).map((sl) => {
+    const goods = W.GOODS.filter((g) => g.slot === sl.k);
+    const cur = W.byId[eqId(sl.k)];
+    const btns = goods.map((g) => {
+      const st = W.state(w, g), tr = T[sl.k] === g.id;
+      const p = st === 'equipped' ? '<span class="p own">wearing</span>' : st === 'owned' ? '<span class="p own">owned</span>' : st === 'level' ? `<span class="p earn">Lv ${g.level}</span>` : `<span class="p ${st === 'short' ? 'short' : ''}">${fmt(g.price)}${COIN}</span>`;
+      return `<button class="${st === 'equipped' ? 'eq' : ''} ${tr ? 'try' : ''} ${st === 'level' ? 'locked' : ''}" data-ci="${g.id}" data-tip-id="${g.id}">${swatch(g)}<span class="nm">${g.name}</span>${p}</button>`;
+    }).join('');
+    return `<div class="sl"><div class="lab">${sl.name}${sl.by !== 'Core' ? ` <small>${sl.by}</small>` : ''}<span class="cur">wearing ${cur.name}${T[sl.k] ? ` · <span style="color:#7fd0ff">trying ${W.byId[T[sl.k]].name}</span>` : ''}</span></div><div class="sw">${btns}</div></div>`;
+  }).join('');
+  const offOwned = W.GOODS.filter((g) => W.forSale(g) && W.state(w, g) === 'off');
+  const offLine = offOwned.length ? `<div class="note">Also yours, put away while their Module is off: ${offOwned.map((g) => g.name + ' (' + W.slotOf(g).by + ')').join(', ')}.</div>` : '';
+  const tot = W.earned(w) || 1;
+  const purse = `<div class="purse inset"><div class="k">Pagle Coins</div><div class="bal"><i class="coin lg"></i>${fmt(W.balance(w))}</div>
+    <div class="src">${W.PAYERS.map((m) => `<div class="r ${w.enabled[m] ? '' : 'off'}"><i class="srcdot" style="background:${SRC_COLOR[m]}"></i>${m}${w.enabled[m] ? '' : ' (off)'}<b>${fmt(w.reported[m])}</b></div><div class="bar"><i style="width:${(100 * w.reported[m]) / tot}%;background:${SRC_COLOR[m]}"></i></div>`).join('')}
+    <div class="sm" style="margin-top:6px">Earned all time. Stats and QoL pay none.</div></div>${W.held(w) ? '<div class="sm" style="margin-top:6px;color:#cfc8b8">0 while earlier Coins are re-counted; new Coins fill that in first.</div>' : ''}</div>`;
+  const last = S.c.last && W.byId[S.c.last];
+  const prev = `<div class="prev inset">${last ? previewHTML(last) : '<div class="sm" style="text-align:center;margin-top:30px">Click a look to try it on. Toasts, sounds and tracker frames try on live, on your screen.</div>'}</div>`;
+  // checkout
+  const tries = Object.values(T).map((id) => W.byId[id]);
+  const toBuy = tries.filter((g) => !W.owned(w, g)), cost = toBuy.reduce((a, g) => a + g.price, 0), bal = W.balance(w);
+  let check = '<span class="what sm">Nothing to try on. Owned looks switch the moment you click them.</span>';
+  if (tries.length) check = `<span class="what">Trying on ${tries.map((g) => g.name).join(', ')}${toBuy.length ? ` · <b style="color:#fff">${fmt(cost)}</b> ${COIN}` : ''}</span>
+    <button class="btn sec" data-act="crevert">Take off</button>
+    ${cost > bal ? `<button class="btn" disabled>Buy and wear</button><span class="sm" style="color:var(--bad)">${fmt(cost - bal)} more</span>` : `<button class="btn" data-act="ccheck">${toBuy.length ? 'Buy and wear' : 'Wear'}</button>`}`;
+  const inner = `<div class="body"><div class="slots inset">${rows}${offLine}</div><div class="side">${purse}${prev}</div></div><div class="check">${check}</div>`;
+  return frame('wC', 'Curio Shop', inner);
+}
+
+// ---------- Settings mock ----------
+function settingsWin() {
+  const w = S.w;
+  const rows = W.SLOTS.filter((sl) => W.moduleOn(w, sl.by)).map((sl) => {
+    const opts = W.GOODS.filter((g) => g.slot === sl.k && W.owned(w, g)).map((g) => `<option value="${g.id}" ${eqId(sl.k) === g.id ? 'selected' : ''}>${g.name}</option>`).join('');
+    const more = W.GOODS.filter((g) => g.slot === sl.k && !W.owned(w, g) && W.forSale(g)).length;
+    return `<div class="row"><span class="l">${sl.name}</span><select class="drop" data-act="seq">${opts}</select><span class="sm">${more ? more + ' more in the Curio Shop' : 'all owned'}</span></div>`;
+  }).join('');
+  return `<div class="wf" id="wS"><div class="ttl">Options<button class="x" data-act="sclose">✕</button></div><div class="body">
+    <nav><div>Game</div><div>Interface</div><div>AddOns</div><div class="sub">Pagle</div><div class="sub on">  Appearance</div><div class="sub">  Announcements</div>${W.MODULES.filter((m) => w.enabled[m]).map((m) => `<div class="sub">  ${m}</div>`).join('')}</nav>
+    <div class="page inset"><div class="hdr">Appearance<small>Looks you own</small></div>${rows}
+      <div class="row"><button class="btn sec" data-act="open">Open the Curio Shop</button>${S.variant === 'A' ? '<span class="sm">Variant A: this is the only place to equip.</span>' : '<span class="sm">Mirrors what you pick in the shop.</span>'}</div></div></div></div>`;
+}
+
+// ---------- popup (StaticPopup) ----------
+function confirmBuy(ids) {
+  const goods = ids.map((id) => W.byId[id]), cost = goods.reduce((a, g) => a + g.price, 0);
+  const one = goods.length === 1 ? goods[0] : null;
+  S.popup = { ids, use: S.variant === 'B' };
+  const p = $('#popup');
+  p.innerHTML = `${one ? `Buy <span style="color:var(--gold)">${one.name}</span>?` : `Buy ${goods.length} looks and wear them?`}
+    <div class="pl">${goods.map((g) => swatch(g)).join('')}<span class="price" style="font-size:15px">${fmt(cost)} ${COIN}</span></div>
+    <div class="sm">Pagle Coins left after: ${fmt(W.balance(S.w) - cost)}. Looks are yours for good.</div>
+    ${S.variant === 'B' ? '<label><input type="checkbox" id="puse" checked> Use it now</label>' : ''}
+    <div class="row"><button class="btn" data-act="pyes">Buy</button><button class="btn sec" data-act="pno">Cancel</button></div>`;
+  p.classList.add('on');
+}
+function doBuy() {
+  const P = S.popup, use = S.variant === 'C' || ($('#puse') && $('#puse').checked);
+  for (const id of P.ids) { if (W.buy(S.w, id, ++S.t) === 'ok' && use) W.equip(S.w, id); }
+  if (S.variant === 'C') { for (const id of Object.values(S.c.tryOn)) W.equip(S.w, id); S.c.tryOn = {}; }
+  S.popup = null; $('#popup').classList.remove('on');
+  render(); // no Announcement on purchase
+}
+
+// ---------- render ----------
+const VARIANTS = { A: 'Merchant window', B: 'Collections journal', C: 'Dressing room' };
+const VNOTES = {
+  A: '<b>A: Merchant window.</b> The Retail vendor frame: a paged two-column grid, a category dropdown, a "Show owned" box and the money box in the corner. Click a look to preview it in a small side window; right-click to buy (one confirm). <b>No equipping in the shop</b>: owned looks say "Choose it in Settings", which is the one place to equip. Income is its own tab (by source, Spent, Balance). A disabled Module\'s owned looks stay in the grid, greyed with "Module off".',
+  B: '<b>B: Collections journal.</b> Like the Mounts or Appearance journal: a searchable list grouped by slot, with owned counts, and a big preview stage on the right (toasts, sound buttons, the bookplate, the closed book, the tracker). <b>Buy and Use both live here</b>, and Settings mirrors the picks. The confirm has "Use it now". Income by source is a stacked bar in the header. A disabled Module\'s looks drop out; the ones you own move to a "Put away" group. Level bindings show as "Angler Level 30", not for sale.',
+  C: '<b>C: Dressing room.</b> One row per look slot, every option as a swatch. Clicking an owned look wears it at once. Clicking one for sale <b>tries it on live</b>: your real trackers change, test toasts use it, sounds play. Several try-ons add up to one "Buy and wear" checkout. A purse column shows the balance and income by source. A disabled Module\'s slots disappear; owned looks are only listed in a footnote. Settings mirrors it.',
+};
+function render() {
+  const w = S.w;
+  $('#swLabel').textContent = `${S.variant} (${VARIANTS[S.variant]})`;
+  $('#vnote').innerHTML = VNOTES[S.variant];
+  $('#win').innerHTML = (S.open ? { A: variantA, B: variantB, C: variantC }[S.variant]() : '') + (S.settings ? settingsWin() : '');
+  // compartment menu
+  $('#cmenu').innerHTML = `<div class="h">Pagle</div>${w.enabled.Ledger ? '<button class="o">Fish Journal</button>' : ''}${w.enabled.Hunts ? '<button class="o">Hunts</button>' : ''}${w.enabled.Stats ? '<button class="o">Stats</button>' : ''}${w.enabled['Tackle Board'] ? '<button class="o">Tackle Board</button>' : ''}
+    <div class="sep"></div><button data-act="menushop">Curio Shop<span class="bal">${fmt(W.balance(w))} ${COIN}</span></button><button data-act="settings">Settings…</button>`;
+  // HUD trackers wear the equipped (or tried-on) frames
+  const tk = [];
+  if (w.enabled.Hunts) tk.push(trackerHTML('fHunts', W.byId[liveId('fHunts')].look, liveId('fHunts') !== eqId('fHunts') ? 'try' : ''));
+  if (w.enabled['Tackle Board']) tk.push(trackerHTML('fTackle', W.byId[liveId('fTackle')].look, liveId('fTackle') !== eqId('fTackle') ? 'try' : ''));
+  if (w.enabled.Stats) tk.push(trackerHTML('fStats', W.byId[liveId('fStats')].look, liveId('fStats') !== eqId('fStats') ? 'try' : ''));
+  $('#trackers').innerHTML = tk.join('');
+  // panel
+  $('#modChecks').innerHTML = W.MODULES.map((m) => `<label><input type="checkbox" data-mod="${m}" ${w.enabled[m] ? 'checked' : ''}> Pagle_${m.replace(' ', '')}</label>`).join('');
+  $('#mtable').innerHTML = `<tr><th>Source</th><th>Last reported</th><th></th></tr>${W.PAYERS.map((m) => `<tr><td>${m}</td><td class="r">${fmt(w.reported[m])}</td><td>${w.enabled[m] ? '' : 'off (kept)'}</td></tr>`).join('')}
+    <tr><td>Earned</td><td class="r">${fmt(W.earned(w))}</td><td></td></tr><tr><td>Spent (U1 × ${w.log.length})</td><td class="r">${fmt(W.spent(w))}</td><td></td></tr>
+    <tr><td><b>Balance</b></td><td class="r"><b>${fmt(W.balance(w))}</b></td><td>${W.held(w) ? 'held at 0' : ''}</td></tr>
+    <tr><td>Equipped</td><td colspan="2" style="white-space:normal">${W.SLOTS.map((s) => W.byId[eqId(s.k)].name).join(' · ')}</td></tr>`;
+}
+function setVariant(v) {
+  S.variant = v; S.sel = null; S.c.tryOn = {}; S.c.last = null;
+  const u = new URL(location); u.searchParams.set('variant', v); history.replaceState(null, '', u);
+  render();
+}
+function chat(t, sys) { const d = document.createElement('div'); d.textContent = t; if (sys) d.className = 'sys'; $('#chatlog').append(d); while ($('#chatlog').children.length > 6) $('#chatlog').firstChild.remove(); }
+function uiErr(t) { const e = $('#uierr'); e.textContent = t; e.style.opacity = 1; clearTimeout(S.et); S.et = setTimeout(() => (e.style.opacity = 0), 2000); }
+
+// ---------- events ----------
+document.addEventListener('click', (e) => {
+  const t = e.target.closest('[data-act],[data-ai],[data-bi],[data-ci],[data-earn],#pbtn');
+  if (!t) { if (!e.target.closest('#cmenu')) $('#cmenu').classList.remove('on'); return; }
+  if (t.id === 'pbtn') { $('#cmenu').classList.toggle('on'); return; }
+  const w = S.w, a = t.dataset.act;
+  if (t.dataset.earn) {
+    const [m, n] = t.dataset.earn.split('|');
+    if (!w.enabled[m]) return uiErr(`${m} is disabled: it loads nothing and pays nothing.`);
+    W.report(w, m, w.reported[m] + +n);
+    showToast(liveId('toast'), liveId('sound'), +n);
+    return render();
+  }
+  if (t.dataset.ai) { S.sel = t.dataset.ai; return render(); }
+  if (t.dataset.bi) { S.sel = t.dataset.bi; return render(); }
+  if (t.dataset.ci) {
+    const g = W.byId[t.dataset.ci], st = W.state(w, g);
+    S.c.last = g.id;
+    if (st === 'owned' || st === 'equipped') { W.equip(w, g.id); delete S.c.tryOn[g.slot]; }
+    else if (st === 'level') { /* preview only */ }
+    else if (S.c.tryOn[g.slot] === g.id) delete S.c.tryOn[g.slot];
+    else S.c.tryOn[g.slot] = g.id;
+    if (g.slot === 'toast' && st !== 'level') showToast(liveId('toast'), liveId('sound'));
+    if (g.slot === 'sound') playSound(g.id, 'toast');
+    return render();
+  }
+  if (a === 'close') { S.open = false; S.c.tryOn = {}; }
+  else if (a === 'open') { S.open = true; S.settings = false; }
+  else if (a === 'menushop') { S.open = !S.open; $('#cmenu').classList.remove('on'); }
+  else if (a === 'settings') { e.preventDefault(); S.settings = true; $('#cmenu').classList.remove('on'); }
+  else if (a === 'sclose') S.settings = false;
+  else if (a === 'unsel') S.sel = null;
+  else if (a === 'atab') S.a.tab = t.dataset.t;
+  else if (a === 'apg') S.a.page += +t.dataset.d;
+  else if (a === 'bcat') S.b.cat = t.dataset.c;
+  else if (a === 'buy') return confirmBuy([t.dataset.id]);
+  else if (a === 'equip') W.equip(w, t.dataset.id);
+  else if (a === 'pyes') return doBuy();
+  else if (a === 'pno') { S.popup = null; $('#popup').classList.remove('on'); return; }
+  else if (a === 'pvtoast') return showToast(t.dataset.id, liveId('sound'));
+  else if (a === 'snd') return playSound(t.dataset.id, t.dataset.k);
+  else if (a === 'crevert') S.c.tryOn = {};
+  else if (a === 'ccheck') {
+    const toBuy = Object.values(S.c.tryOn).filter((id) => !W.owned(w, W.byId[id]));
+    if (toBuy.length) return confirmBuy(toBuy);
+    for (const id of Object.values(S.c.tryOn)) W.equip(w, id); S.c.tryOn = {};
+  } else return;
+  render();
+});
+// A: right-click buys
+document.addEventListener('contextmenu', (e) => {
+  const t = e.target.closest('[data-ai]'); if (!t) return;
+  e.preventDefault();
+  const g = W.byId[t.dataset.ai], st = W.state(S.w, g);
+  if (st === 'afford') confirmBuy([g.id]);
+  else if (st === 'short') uiErr('You don\'t have enough Pagle Coins.');
+  else if (st === 'owned' || st === 'equipped') uiErr('You already own that. Choose it in Settings › Pagle › Appearance.');
+});
+document.addEventListener('change', (e) => {
+  const a = e.target.dataset.act;
+  if (e.target.dataset.mod) { S.w.enabled[e.target.dataset.mod] = e.target.checked; S.sel = null; chat(`(Pagle_${e.target.dataset.mod.replace(' ', '')} ${e.target.checked ? 'enabled' : 'disabled'}. /reload)`, true); return render(); }
+  if (a === 'acat') { S.a.cat = e.target.value; S.a.page = 0; }
+  else if (a === 'aowned') S.a.showOwned = e.target.checked;
+  else if (a === 'bfilter') S.b.filter = e.target.value;
+  else if (a === 'seq') W.equip(S.w, e.target.value);
+  else return;
+  render();
+});
+document.addEventListener('input', (e) => {
+  if (e.target.id === 'bq') { S.b.q = e.target.value; render(); const i = $('#bq'); i.focus(); i.setSelectionRange(i.value.length, i.value.length); }
+});
+document.addEventListener('mousemove', (e) => {
+  const t = e.target.closest('[data-tip],[data-tip-id]'), tip = $('#tip');
+  if (!t) { tip.style.display = 'none'; return; }
+  tip.innerHTML = t.dataset.tipId ? tipFor(W.byId[t.dataset.tipId]) : t.dataset.tip; tip.style.display = 'block';
+  const x = Math.min(e.clientX + 14, innerWidth - tip.offsetWidth - 8), y = Math.min(e.clientY + 14, innerHeight - tip.offsetHeight - 8);
+  tip.style.left = x + 'px'; tip.style.top = y + 'px';
+});
+$('#chatin').addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter') return;
+  const v = e.target.value.trim(); e.target.value = '';
+  if (/^\/pagle\s+shop$/i.test(v)) { S.open = !S.open; render(); } else if (v) chat('Unknown command. Try /pagle shop', true);
+});
+$('#stageSeg').onclick = (e) => e.target.dataset.v && loadStage(e.target.dataset.v);
+$('#bRebuild').onclick = () => { if (!S.w.enabled.Ledger) return uiErr('Ledger is disabled.'); W.report(S.w, 'Ledger', S.w.reported.Ledger - 500); chat('(Ledger rebuilt after a content update; it now reports 500 fewer Coins.)', true); render(); };
+$('#bToast').onclick = () => showToast(liveId('toast'), liveId('sound'), 10);
+$('#bSettings').onclick = () => { S.settings = true; render(); };
+$('#swPrev').onclick = () => { const k = Object.keys(VARIANTS); setVariant(k[(k.indexOf(S.variant) + k.length - 1) % k.length]); };
+$('#swNext').onclick = () => { const k = Object.keys(VARIANTS); setVariant(k[(k.indexOf(S.variant) + 1) % k.length]); };
+document.addEventListener('keydown', (e) => {
+  if (e.target.closest('input,textarea,select,[contenteditable]')) return;
+  if (e.key === 'ArrowLeft') $('#swPrev').click();
+  if (e.key === 'ArrowRight') $('#swNext').click();
+  if (e.key === 'Escape') { S.open = false; S.settings = false; S.c.tryOn = {}; render(); }
+});
+
+// ---------- boot ----------
+const params = new URLSearchParams(location.search);
+S.variant = VARIANTS[params.get('variant')] ? params.get('variant') : 'B'; // chosen in review (#30)
+S.open = true;
+loadStage(STAGES[params.get('stage')] ? params.get('stage') : 'mid');
+chat('Pagle: type /pagle shop or use the compartment menu to open the Curio Shop.', true);
+</script>
+</body>
+</html>

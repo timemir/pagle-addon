@@ -1,0 +1,1303 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tackle Board Prototype</title>
+<!--
+  PROTOTYPE: throwaway, never ships. Lives only on branch prototype/tackle-board.
+  Question (wow-fish "Prototype the Tackle Board"):
+    What should the Tackle Board look like and how should it behave on screen? The board (up to 6 open
+    Notices and 2 Expeditions, progress, payout, fly, one reroll each), "Start my board", a full board after
+    time away; the Campfire (flame, Kindling, longest, a fire gone out); the Fly Box (~30 patterns); tally
+    and titles; tracker lines for open Notices; the compartment-menu entry and /pagle board.
+  Plan: four boards on one mock game screen, switchable via ?variant=A|B|C|D, the floating bottom bar, or ←/→.
+        A = native list frame, like Retail's Traveler's Log: rows with bars, bottom tabs (Board, Campfire, Fly Box, Tally).
+        B = native card board, like the Great Vault: one screen, a slot for every Notice up to the cap, Campfire hero.
+        C = cork board (the argued exception): pinned parchment slips, a spike for done ones, fire and Fly Box on the ledge.
+        D = a fourth Pagle book in the Journal/Hunts/Stats language: ribbons, a list page and an entry page.
+        Three tracker modes via ?tracker=all|here|tracked (side panel), stacked under the Hunts and Stats blocks.
+        All four read ONE pure model (TackleModel, first <script>), following "Design the Tackle Board":
+        issuing and banking, rerolls, progress, completion, the Campfire and Kindling, the Fly Box and the tally,
+        plus the Module records (ADR 0008) it would append. That module is the liftable part.
+        Zones, skills, catch lists, fly names and title names are placeholders; catch weights exist only to simulate.
+        ?stage=fresh|week|away3|away14|vet picks the sample Angler.
+  VERDICT (#29): C wins, the cork board, as a fourth exception to the native look. Tracker K2 (workable here), on once
+           the board is started, framed by Curio Shop tracker frames. Fly Box: always a new pattern. Kindling refills to 2
+           when a fire goes out. Taking down a goal with progress asks first.
+  Open the file directly in a browser. No build, no persistence.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Marcellus&family=IM+Fell+English:ital@0;1&family=Caveat:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{--gold:#ffd100;--txt:#ece6d6;--dim:#8f8a80;--panel:#f6f4ef;--ink:#23211d;--ink2:#6b665c;--accent:#2f6f8f;--line:#dedad1;
+  --q0:#9d9d9d;--q1:#ffffff;--q2:#1eff00;--q3:#0070dd;--q4:#a335ee}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{display:flex;background:#0a1416;font-family:'Marcellus',Georgia,serif;color:var(--txt);font-size:13px;overflow:hidden}
+button{font:inherit;cursor:pointer}
+
+/* ---------- mock game screen (shared with the Hunts board and Stats prototypes) ---------- */
+#scene{position:relative;flex:1;min-width:0;height:100vh;overflow:hidden;
+  background:linear-gradient(180deg,#5d7f8c 0%,#9db7b0 30%,#c9c19a 41%,#3c6a72 42%,#1f4650 60%,#0c2228 100%)}
+#scene::before{content:"";position:absolute;inset:42% 0 0 0;background:repeating-linear-gradient(180deg,transparent 0 14px,rgba(255,255,255,.05) 14px 16px)}
+.hills{position:absolute;left:0;right:0;top:28%;height:14%;background:radial-gradient(ellipse at 20% 100%,#3e5a3a 0 40%,transparent 41%),radial-gradient(ellipse at 70% 100%,#4a6640 0 45%,transparent 46%),radial-gradient(ellipse at 95% 100%,#36502f 0 35%,transparent 36%)}
+#bobber{position:absolute;left:62%;top:64%;width:18px;height:18px;margin:-9px;border-radius:50%;background:linear-gradient(180deg,#d23a2a 0 50%,#f2efe6 50%);border:1px solid #000;animation:bob 2.4s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(3px)}}
+#pframe{position:absolute;left:16px;top:14px;display:flex;align-items:center;gap:8px}
+#pframe .por{width:58px;height:58px;border-radius:50%;background:radial-gradient(circle at 45% 40%,#7a5a44,#2a1a10);border:3px solid #caa451;box-shadow:0 0 0 2px #000}
+#pframe .bars{width:150px}
+#pframe .nm{color:var(--gold);font-size:13px;text-shadow:0 1px 1px #000}
+#pframe .hp,#pframe .mp{height:11px;border:1px solid #000;margin-top:2px}
+#pframe .hp{background:linear-gradient(#3fd13f,#167a16)}#pframe .mp{background:linear-gradient(#4a7ad8,#1b3d8a)}
+#minimap{position:absolute;right:20px;top:34px;width:140px;height:140px}
+#minimap .mm{position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 50% 50%,#3c6a72 0 30%,#5b7a4e 31% 70%,#3c5f3a 71%);border:4px solid #8a7a5f;box-shadow:0 0 0 2px #000}
+#minimap .zn{position:absolute;left:-60px;right:-60px;top:-2px;text-align:center;color:var(--gold);font-size:12px;text-shadow:0 1px 2px #000;transform:translateY(-100%)}
+#minimap .clk{position:absolute;left:50%;bottom:-20px;transform:translateX(-50%);background:rgba(0,0,0,.7);border:1px solid #8a7a5f;border-radius:3px;padding:0 6px;font:11px/16px Arial;color:#fff;white-space:nowrap}
+#pbtn{position:absolute;left:-8px;bottom:-4px;width:34px;height:34px;border-radius:50%;padding:0;border:2px solid #caa451;background:radial-gradient(circle at 45% 40%,#2e4a58,#081014);box-shadow:0 0 0 1px #000}
+#pbtn svg{width:100%;height:100%}
+#cmenu{position:absolute;right:150px;top:150px;width:190px;display:none;background:rgba(10,10,10,.94);border:1px solid #6b6b6b;border-radius:4px;box-shadow:0 0 0 1px #000,0 6px 16px rgba(0,0,0,.6);padding:6px 0;z-index:25;font-size:13px}
+#cmenu.on{display:block}
+#cmenu .h{color:var(--gold);padding:2px 12px 4px;font-size:13px}
+#cmenu button{display:block;width:100%;text-align:left;background:none;border:0;color:#fff;padding:3px 12px 3px 22px}
+#cmenu button:hover{background:#1f3a5c}
+#cmenu .sep{height:1px;background:#333;margin:4px 8px}
+#cmenu .o{color:#8f8a80}
+#actionbar{position:absolute;left:50%;bottom:44px;transform:translateX(-50%);display:flex;gap:3px;padding:4px;background:rgba(0,0,0,.55);border:1px solid #5a4e3c;border-radius:4px}
+#actionbar i{width:38px;height:38px;border:1px solid #555;border-radius:3px;background:radial-gradient(circle at 40% 35%,#3b444c,#0e1114)}
+#actionbar i:first-child{background:radial-gradient(circle at 40% 35%,#6a8aa0,#1c2c38)}
+#chat{position:absolute;left:16px;bottom:44px;width:380px;font:12px/1.35 Arial,sans-serif;text-shadow:0 1px 1px #000;z-index:4}
+#chatlog div{color:#ffd27a;margin-top:1px}
+#chatlog div.sys{color:#ffff6a}
+#chatin{width:100%;margin-top:4px;background:rgba(0,0,0,.6);border:1px solid #5a4e3c;color:#fff;padding:3px 6px;font:12px Arial}
+#tip{position:fixed;z-index:60;max-width:300px;padding:7px 9px;background:rgba(6,8,20,.95);border:1px solid #9a9a9a;border-radius:4px;box-shadow:0 0 0 1px #000;font:12px/1.4 Arial,sans-serif;color:#fff;pointer-events:none;display:none}
+#tip b{color:var(--gold);font-weight:normal;font-size:13px}
+#tip .g{color:#b8b0a0}
+
+/* ---------- shared bits ---------- */
+.kic{--sz:30px;position:relative;display:inline-flex;align-items:center;justify-content:center;flex:none;width:var(--sz);height:var(--sz);border:1px solid #caa451;border-radius:4px;background:radial-gradient(circle at 40% 35%,hsl(var(--h),35%,38%),#0b1418);box-shadow:0 0 0 1px #000;color:#f4e2a8;font:calc(var(--sz)*.55)/1 Georgia,serif;text-shadow:0 1px 1px #000}
+.kic.exp{border-color:#ff9a3a;box-shadow:0 0 0 1px #000,0 0 6px rgba(255,140,40,.6)}
+.coin{display:inline-flex;align-items:center;gap:3px;font:bold 13px Arial;color:#ffe08a;white-space:nowrap}
+.coin::before{content:'';width:12px;height:12px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#ffe9a0,#c8901a 70%);border:1px solid #6a4a08;box-shadow:inset 0 0 0 2px rgba(255,240,180,.35)}
+.here{color:#7dff7d}
+.fly{display:block}
+.flame path.f1,.flame path.f2,.flame path.f3{transform-box:fill-box;transform-origin:50% 100%}
+.flame path.f1{animation:flk 1.3s ease-in-out infinite alternate}
+.flame path.f2{animation:flk 0.9s ease-in-out infinite alternate-reverse}
+.flame path.f3{animation:flk 0.7s ease-in-out infinite alternate}
+@keyframes flk{to{transform:scaleY(.9) skewX(4deg)}}
+.flame .em{animation:ember 2.4s ease-in-out infinite alternate}
+@keyframes ember{to{opacity:.25}}
+.stick{display:inline-block;width:20px;height:9px;vertical-align:middle}
+.hl{animation:hl 1.6s ease-out 2}
+@keyframes hl{0%{box-shadow:0 0 0 2px #ffd100,0 0 14px #ffd100}100%{box-shadow:0 0 0 0 transparent}}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cal .dh{font:10px Arial;color:#9a9284;text-align:center}
+.cal .c{height:22px;border-radius:3px;display:flex;align-items:center;justify-content:center;font:10px Arial;color:#777;background:#151515;border:1px solid #262626}
+.cal .c.lit{background:radial-gradient(circle,#ffb43a 0 20%,#7a3010 70%);border-color:#a0501a;color:#fff}
+.cal .c.burned{background:#2a2316;border-color:#6a5530;color:#c9a46a}
+.cal .c.out{background:#1a1a1a;color:#a33}
+.cal .c.pre{opacity:.25}
+.cal .c.today{outline:1px solid #ffd100}
+
+/* ---------- native Retail frame (ButtonFrameTemplate-ish) ---------- */
+.wf{position:absolute;z-index:10;background:#111;border:2px solid #5b5b5b;border-radius:6px;box-shadow:0 0 0 1px #000,inset 0 0 0 1px #2c2c2c,0 10px 30px rgba(0,0,0,.7);display:flex;flex-direction:column}
+.wf .ttl{height:26px;flex:none;display:flex;align-items:center;justify-content:center;color:var(--gold);font-size:14px;background:linear-gradient(#3a3a3a,#1d1d1d);border-bottom:1px solid #000;border-radius:4px 4px 0 0;position:relative}
+.wf .por{position:absolute;left:-14px;top:-14px;width:56px;height:56px;border-radius:50%;border:3px solid #6e6e6e;box-shadow:0 0 0 1px #000;background:radial-gradient(circle at 45% 40%,#2e4a58,#081014);z-index:2;display:flex;align-items:center;justify-content:center}
+.wf .x{position:absolute;right:4px;top:3px;width:20px;height:20px;border-radius:3px;border:1px solid #000;background:linear-gradient(#b02a1a,#5a0d06);color:#fff;font:bold 12px/16px Arial;padding:0}
+.wf .inset{flex:1;min-height:0;margin:6px;background:#0b0b0b url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='6'%3E%3Crect width='6' height='6' fill='%230d0d0d'/%3E%3Crect width='1' height='1' fill='%23161616'/%3E%3C/svg%3E");border:1px solid #2e2e2e;box-shadow:inset 0 0 12px #000;border-radius:3px;overflow:auto}
+.wf .sub{font:11px Arial;color:#b8b0a0;padding:5px 12px 0 50px;flex:none;display:flex;align-items:center;gap:10px}
+.wf .sub b{color:#fff;font-weight:normal}
+.wf .sub .r{margin-left:auto}
+.tabs{display:flex;gap:2px;padding:0 10px;margin-bottom:-24px;position:relative;top:22px}
+.tabs button{height:26px;padding:0 14px;background:linear-gradient(#262626,#141414);border:1px solid #4d4d4d;border-top:0;border-radius:0 0 6px 6px;color:#d8c46a;font-size:12px}
+.tabs button.on{background:linear-gradient(#3a3a3a,#1e1e1e);color:#fff;height:30px}
+.hdr{color:var(--gold);font-size:14px;margin:10px 12px 4px;border-bottom:1px solid #3a3326;padding-bottom:2px;display:flex;align-items:baseline;gap:8px}
+.hdr small{font:11px Arial;color:#9a9284;margin-left:auto}
+.nbtn{background:linear-gradient(#b02a1a,#6a0d06);border:1px solid #000;border-radius:4px;box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 0 0 1px #6a5a3a;color:var(--gold);font-size:14px;padding:6px 22px}
+.nbtn:hover{filter:brightness(1.15)}
+.note{font:11px/1.4 Arial;color:#9a9284;margin:4px 12px 10px}
+.empty{padding:40px 50px;text-align:center;color:#cfc8b8;font:13px/1.5 Arial}
+.empty .fly{margin:0 auto}
+.empty h3{font:20px Marcellus;color:var(--gold);margin:10px 0 6px}
+.rr{width:24px;height:24px;flex:none;border-radius:50%;border:1px solid #000;background:radial-gradient(circle at 45% 40%,#4a5a6a,#141c24);color:#fff;font:bold 14px/20px Arial;padding:0;box-shadow:0 0 0 1px #6a6a6a}
+.rr:hover{box-shadow:0 0 0 1px #ffd100}
+.rr:disabled{opacity:.3;cursor:default;box-shadow:0 0 0 1px #444}
+.nbar{position:relative;height:13px;border:1px solid #000;background:#1c1c1c;border-radius:2px;box-shadow:0 0 0 1px #4a4030;overflow:hidden}
+.nbar i{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(#f3c63a,#b07a10)}
+.nbar span{position:absolute;inset:0;text-align:center;font:10px/13px Arial;color:#fff;text-shadow:0 1px 1px #000,0 0 2px #000}
+.trkbox{display:flex;align-items:center;gap:3px;font:11px Arial;color:#9a9284;white-space:nowrap}
+
+/* ---------- A: Traveler's Log list ---------- */
+#wA{left:3%;top:7%;width:740px;height:590px}
+.arow{display:flex;align-items:center;gap:10px;margin:4px 10px;padding:6px 8px;background:linear-gradient(90deg,#1c1c1c,#121212);border:1px solid #2e2e2e;border-radius:3px}
+.arow.exp{background:linear-gradient(90deg,#2a1c10,#141010);border-color:#5a3a1a}
+.arow .ab{flex:1;min-width:0}
+.arow .at{color:#fff;font-size:14px}
+.arow .aw{font:11px Arial;color:#b8b0a0;margin:1px 0 4px}
+.arow .ap{width:56px;text-align:right}
+.arow.done{opacity:.7;padding:3px 8px}.arow.done .at{font-size:12px;color:#9fd09f}
+.afire{display:flex;gap:20px;padding:14px}
+.afire .big{font:bold 34px Arial;color:#fff}
+.afire .lbl{font:12px Arial;color:#b8b0a0}
+.mls{font:12px Arial;margin-top:6px}
+.mls div{display:flex;gap:8px;align-items:center;padding:3px 0;border-bottom:1px solid #1d1d1d;color:#cfc8b8}
+.mls div.got{color:#fff}.mls div.got b{color:#7dff7d}
+.mls div b{width:16px;font-weight:normal;color:#555}
+.mls div span:last-child{margin-left:auto}
+.abox{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;padding:10px 14px}
+.slot{position:relative;height:70px;border:1px solid #333;border-radius:4px;background:radial-gradient(circle at 50% 40%,#1e2a2e,#0a0e10);display:flex;flex-direction:column;align-items:center;justify-content:center;font:10px Arial;color:#b8b0a0;text-align:center;padding:2px}
+.slot.rare{border-color:#c8901a;box-shadow:inset 0 0 8px rgba(255,180,40,.25)}
+.slot.miss{background:#0c0c0c;color:#555}
+.slot .n{line-height:1.1;margin-top:1px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.slot .x2{position:absolute;right:3px;top:2px;color:#fff;font:bold 10px Arial}
+.slot .rs{position:absolute;left:3px;top:1px;color:#ffb43a;font-size:11px}
+.tl{padding:6px 14px;font:12px Arial}
+.tl .row{display:flex;gap:10px;align-items:center;padding:6px 0;border-bottom:1px solid #1d1d1d;color:#cfc8b8}
+.tl .row .nbar{width:160px}
+.tl .row .t{flex:1}.tl .row .t i{color:#fff;font-style:normal}
+.tl .row.got .t{color:#ffd27a}
+
+/* ---------- B: card board ---------- */
+#wB{left:2%;top:5%;width:1010px;height:640px}
+#wB .body{flex:1;min-height:0;display:flex;gap:8px;margin:6px}
+#wB .hero{width:220px;flex:none;background:radial-gradient(ellipse at 50% 30%,#2a1a10,#0b0b0b 75%);border:1px solid #3a2a1a;border-radius:4px;padding:10px;text-align:center;display:flex;flex-direction:column;align-items:center}
+#wB .hero .big{font:bold 40px/1 Arial;color:#fff;text-shadow:0 0 10px rgba(255,150,40,.6)}
+#wB .hero .lbl{font:12px Arial;color:#cfc8b8}
+#wB .hero .sm{font:11px Arial;color:#9a9284;margin-top:4px}
+#wB .hero .tal{margin-top:auto;width:100%;border-top:1px solid #3a2a1a;padding-top:8px;font:12px Arial;color:#cfc8b8}
+#wB .hero .tal b{display:block;font:bold 22px Arial;color:#fff}
+#wB .main{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px;overflow:auto}
+#wB .rowh{color:var(--gold);font-size:13px;display:flex;align-items:baseline;gap:8px;margin:2px 4px -2px}
+#wB .rowh small{font:11px Arial;color:#9a9284;margin-left:auto}
+#wB .grid{display:grid;gap:8px}
+#wB .g2{grid-template-columns:repeat(2,1fr)}#wB .g3{grid-template-columns:repeat(3,1fr)}
+.card{position:relative;min-height:128px;border:1px solid #4a4030;border-radius:6px;background:linear-gradient(180deg,#1f1f1f,#121212);box-shadow:inset 0 1px 0 rgba(255,255,255,.06);padding:10px;display:flex;flex-direction:column}
+.card.exp{min-height:112px;border-color:#7a4a1a;background:linear-gradient(180deg,#2a1a0e,#141010)}
+.card .top{display:flex;align-items:center;gap:8px}
+.card .k{font:10px Arial;letter-spacing:.08em;text-transform:uppercase;color:#9a9284}
+.card .coin{margin-left:auto}
+.card .t{color:#fff;font-size:15px;line-height:1.2;margin:8px 0 6px}
+.card .num{font:bold 20px Arial;color:#fff;margin-top:auto}.card .num small{font:12px Arial;color:#9a9284}
+.card .foot{display:flex;align-items:center;gap:6px;font:11px Arial;color:#b8b0a0;margin-top:4px}
+.card .foot .rr{margin-left:auto}
+.card.slotE{border-style:dashed;border-color:#3a3a3a;background:rgba(0,0,0,.25);align-items:center;justify-content:center;color:#6a6a6a;font:12px Arial;text-align:center}
+.card.done{border-color:#2e5a2e;background:linear-gradient(180deg,#152015,#0e140e)}
+.card.done .t{color:#9fd09f}
+.card.done .ok{position:absolute;right:10px;bottom:8px;display:flex;align-items:center;gap:6px;font:11px Arial;color:#9fd09f}
+#wB .strip{display:flex;align-items:center;gap:8px;padding:6px 8px;border:1px solid #2e2e2e;border-radius:4px;background:#0e0e0e;cursor:pointer}
+#wB .strip:hover{border-color:#6a5a3a}
+#wB .strip .fl{display:flex;flex-wrap:wrap;gap:2px;flex:1}
+#wB .strip .lbl{font:12px Arial;color:#cfc8b8;white-space:nowrap}
+.ovl{position:absolute;inset:0;background:rgba(0,0,0,.55);z-index:30;display:flex;align-items:center;justify-content:center}
+
+/* ---------- C: cork board ---------- */
+.vC{position:absolute;left:2%;top:4%;width:1000px;height:660px;z-index:10;border-radius:6px;padding:34px 26px 92px;
+  background:linear-gradient(90deg,#4a2c14,#6a4020 8%,#5a3418 50%,#6a4020 92%,#4a2c14);box-shadow:0 0 0 2px #1a0e04,inset 0 0 0 4px #2a1608,0 22px 60px rgba(0,0,0,.8)}
+.vC .x{position:absolute;right:-10px;top:-10px;width:26px;height:26px;border-radius:50%;border:2px solid #1d1008;background:#8a2a1a;color:#f1e2bd;font:bold 13px Arial;padding:0;z-index:5}
+.vC .plaque{position:absolute;left:50%;top:5px;transform:translateX(-50%);background:linear-gradient(#e8c96a,#9a7420);color:#2a1a04;font:16px Marcellus;padding:3px 22px;border-radius:3px;border:1px solid #4a3008;box-shadow:0 2px 4px #000;letter-spacing:2px}
+.vC .cork{position:relative;height:100%;border-radius:3px;box-shadow:inset 0 0 0 3px #2a1608,inset 0 0 30px rgba(0,0,0,.6);
+  background:radial-gradient(circle at 20% 30%,rgba(0,0,0,.08) 0 1px,transparent 2px) 0 0/9px 9px,radial-gradient(circle at 70% 60%,rgba(255,255,255,.06) 0 1px,transparent 2px) 0 0/7px 7px,radial-gradient(circle at 40% 80%,rgba(60,30,10,.18) 0 1.5px,transparent 2.5px) 0 0/13px 11px,linear-gradient(#b98a52,#a87a44)}
+.slip{position:absolute;width:196px;min-height:118px;padding:16px 12px 10px;background:radial-gradient(ellipse at 50% 40%,#f6ead0,#e3cfa2 85%);color:#3a2614;font:14px/1.2 'IM Fell English',Georgia,serif;box-shadow:2px 4px 8px rgba(40,20,5,.55);transform:rotate(var(--rot));cursor:default;transition:transform .2s}
+.slip:hover{transform:rotate(0deg) scale(1.04);z-index:4}
+.slip::before{content:'';position:absolute;left:50%;top:5px;width:12px;height:12px;margin-left:-6px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#ffe9a0,#a87410 60%,#5a3a04);box-shadow:1px 2px 2px rgba(0,0,0,.5)}
+.slip .k{font-variant:small-caps;letter-spacing:1.5px;color:#8a5a2a;font-size:12px}
+.slip .t{font-size:15px;color:#2a1608;margin:2px 0 4px}
+.slip .h{font:20px/1 Caveat;color:#23407a}
+.slip .w{font-size:12px;color:#6a4a20;font-style:italic}
+.slip .w.here{color:#2a6a2a;font-style:normal;font:17px/1 Caveat}
+.slip .foot{display:flex;align-items:center;margin-top:6px;font:16px/1 Caveat;color:#7a3a10}
+.slip .foot .pay{color:#7a5a10}
+.slip .foot .td{margin-left:auto;cursor:pointer;color:#9a2a1a}.slip .foot .td:hover{text-decoration:underline}
+.slip .repost{position:absolute;right:6px;top:22px;font:bold 10px Arial;letter-spacing:1px;color:rgba(154,42,26,.75);border:1.5px solid rgba(154,42,26,.75);border-radius:3px;padding:1px 4px;transform:rotate(12deg)}
+.slip .tr{position:absolute;left:8px;top:4px;font:15px Caveat;color:#9a2a1a;cursor:pointer;opacity:.5}.slip .tr.on{opacity:1}
+.slip.exp{width:250px;min-height:150px;background:radial-gradient(ellipse at 50% 40%,#f3e2bd,#d8bf88 85%);border-top:6px solid #8a2a1a}
+.slip.exp .t{font-size:19px}
+.slip.exp .seal{position:absolute;right:-14px;top:-14px;width:40px;height:40px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#d0402a,#7a1a10 70%);box-shadow:0 2px 3px rgba(0,0,0,.5);color:#f4dfa8;font:bold 12px/40px Marcellus;text-align:center}
+.inkbar{height:9px;border:1.5px solid #5a3a14;border-radius:5px;position:relative;overflow:hidden;margin:4px 0}
+.inkbar i{position:absolute;left:0;top:0;bottom:0;background:repeating-linear-gradient(45deg,#5a3a14 0 3px,#7a5224 3px 6px)}
+.tack{position:absolute;width:150px;height:96px;border:1.5px dashed rgba(60,30,10,.35);border-radius:3px;display:flex;align-items:flex-end;justify-content:center;padding:8px;font:16px/1.1 Caveat;color:rgba(60,30,10,.6);text-align:center}
+.tack::before{content:'';position:absolute;left:50%;top:5px;width:10px;height:10px;margin-left:-5px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#ffe9a0,#a87410 60%,#5a3a04)}
+.spike{position:absolute;right:14px;top:26px;width:120px;text-align:center}
+.spike .nail{width:4px;height:26px;margin:0 auto;background:linear-gradient(90deg,#666,#ddd,#666)}
+.spike .stack{position:relative;height:90px}
+.spike .stack div{position:absolute;left:10px;width:100px;height:70px;background:#e8d8b0;box-shadow:1px 2px 4px rgba(0,0,0,.4);transform:rotate(var(--rot));font:12px/1.1 'IM Fell English';color:#3a2614;padding:16px 6px 4px;overflow:hidden}
+.spike .stack div::after{content:'';position:absolute;left:50%;top:4px;width:6px;height:6px;margin-left:-3px;border-radius:50%;background:#555}
+.spike .lbl{font:17px Caveat;color:#2a1608;margin-top:2px}
+.ledge{position:absolute;left:0;right:0;bottom:0;height:86px;border-radius:0 0 6px 6px;background:linear-gradient(#7a4a22,#4a2a12);box-shadow:inset 0 3px 0 #9a6a36}
+.ledge .fire{position:absolute;left:24px;bottom:6px;display:flex;align-items:flex-end;gap:10px;cursor:pointer}
+.ledge .fire .txt{font:20px/1 Caveat;color:#f4dfa8;text-shadow:0 1px 2px #000;padding-bottom:12px}
+.ledge .fire .txt small{display:block;font:15px Caveat;color:#d8c08a}
+.ledge .box{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);width:200px;height:62px;cursor:pointer;border-radius:4px;background:linear-gradient(#8a5a2a,#5a3414);box-shadow:0 0 0 2px #2a1608,0 4px 8px rgba(0,0,0,.6),inset 0 2px 0 #b07a40;display:flex;align-items:center;justify-content:center;color:#f4dfa8;font:15px Marcellus;text-shadow:0 1px 2px #000;flex-direction:column}
+.ledge .box small{font:16px Caveat;color:#e8d0a0}
+.ledge .box:hover{filter:brightness(1.12)}
+.ledge .brass{position:absolute;right:24px;bottom:18px;background:linear-gradient(#e8c96a,#9a7420);color:#2a1a04;font:12px Marcellus;padding:5px 12px;border-radius:3px;border:1px solid #4a3008;box-shadow:0 3px 6px #000;cursor:pointer;text-align:center}
+.ledge .brass i{display:block;font:italic 12px 'IM Fell English'}
+.ledge .shop{position:absolute;right:28px;bottom:2px;font:14px Caveat;color:#e8d0a0;cursor:pointer}
+.drawer{position:relative;width:760px;padding:18px;border-radius:6px;background:linear-gradient(#6a4020,#4a2a12);box-shadow:0 0 0 2px #1a0e04,0 20px 50px #000}
+.drawer h3{margin:0 0 10px;font:20px Marcellus;color:#f4dfa8;text-align:center}
+.drawer .x{position:absolute;right:-10px;top:-10px;width:26px;height:26px;border-radius:50%;border:2px solid #1d1008;background:#8a2a1a;color:#f1e2bd;font:bold 13px Arial;padding:0}
+.felt{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+.felt .cell{height:78px;border-radius:3px;background:radial-gradient(circle,#2e4a3a,#1a2a20);box-shadow:inset 0 2px 6px rgba(0,0,0,.7);border:2px solid #3a2410;display:flex;flex-direction:column;align-items:center;justify-content:center;font:14px/1 Caveat;color:#d8e8c8;text-align:center;padding:2px;position:relative}
+.felt .cell.miss{color:#6a7a6a}
+.felt .cell.rare{border-color:#c8901a}
+.felt .cell .x2{position:absolute;right:4px;top:3px;font:bold 10px Arial;color:#fff}
+.card2{position:relative;width:560px;padding:22px 26px;background:radial-gradient(ellipse at 50% 40%,#f6ead0,#e3cfa2 85%);color:#3a2614;font:14px 'IM Fell English',Georgia,serif;box-shadow:4px 8px 30px #000}
+.card2 h3{margin:0 0 6px;font:24px 'IM Fell English';color:#2a1608;font-weight:normal}
+.card2 .x{position:absolute;right:-10px;top:-10px;width:26px;height:26px;border-radius:50%;border:2px solid #1d1008;background:#8a2a1a;color:#f1e2bd;font:bold 13px Arial;padding:0}
+.card2 .cal .c{background:transparent;border:1px solid #c4a874;color:#8a6a40}
+.card2 .cal .c.lit{background:radial-gradient(circle,#e8701a 0 25%,transparent 60%);color:#3a2614;border-color:#a0501a}
+.card2 .cal .c.burned{background:rgba(120,80,30,.2);color:#6a4a20}
+.card2 .cal .c.out{color:#9a2a1a}
+.card2 .cal .dh{color:#8a6a40}
+.card2 .h{font:20px/1.1 Caveat;color:#23407a}
+.vC .startC{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%) rotate(-1.5deg);width:340px;padding:26px 24px 20px;background:radial-gradient(ellipse at 50% 40%,#f6ead0,#e3cfa2 85%);color:#3a2614;font:15px/1.35 'IM Fell English';box-shadow:3px 6px 14px rgba(40,20,5,.6);text-align:center}
+.vC .startC::before{content:'';position:absolute;left:50%;top:7px;width:12px;height:12px;margin-left:-6px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#ffe9a0,#a87410 60%,#5a3a04)}
+.woodbtn{margin-top:12px;background:linear-gradient(#8a5a2a,#5a3414);border:2px solid #2a1608;border-radius:4px;color:#f4dfa8;font:16px Marcellus;padding:6px 20px;box-shadow:0 3px 6px rgba(0,0,0,.5)}
+.woodbtn:hover{filter:brightness(1.15)}
+
+/* ---------- D: the fourth book ---------- */
+.vD{position:absolute;left:24px;top:56px;width:980px;height:640px;z-index:10;border-radius:12px;padding:0 18px 16px;background:radial-gradient(ellipse at 30% 20%,#6a3e20,#3a2010 70%);box-shadow:0 0 0 2px #120a04,inset 0 0 0 3px #8a5a2a,inset 0 0 0 5px #2a1608,0 22px 60px rgba(0,0,0,.8)}
+.vD .x{position:absolute;right:-10px;top:-10px;width:26px;height:26px;border-radius:50%;border:2px solid #1d1008;background:#8a2a1a;color:#f1e2bd;font:bold 13px Arial;padding:0;z-index:3}
+.vD .strip{height:38px;display:flex;align-items:center;gap:4px;padding:0 6px;color:#e8c96a;font-family:'Marcellus'}
+.vD .crumb{cursor:pointer;font-size:14px;text-shadow:0 1px 1px #000}.vD .crumb:hover{color:#fff4c8}
+.vD .crumb+.crumb::before{content:'\2767';margin:0 8px;color:#a8803a}
+.vD .strip .rt{margin-left:auto;font-size:13px;color:#d8b860}
+.vD .pages{display:flex;height:calc(100% - 38px)}
+.vD .page{position:relative;flex:1;min-width:0;padding:22px 28px 34px;color:#3a2614;font-family:'IM Fell English',Georgia,serif;font-size:14px;background:radial-gradient(ellipse at 50% 40%,#f3e5c3,#dfc89a 80%,#c9ab76);overflow-y:auto;scrollbar-width:thin;scrollbar-color:#8a5a2a transparent}
+.vD .page.l{border-radius:4px 0 0 4px;box-shadow:inset -30px 0 30px -20px rgba(70,40,10,.65)}
+.vD .page.r{border-radius:0 4px 4px 0;box-shadow:inset 30px 0 30px -20px rgba(70,40,10,.65)}
+.vD .kick{font-variant:small-caps;letter-spacing:2px;color:#8a5a2a;font-size:13px}
+.vD h2{font-size:26px;color:#3e220c;margin:0 0 4px;font-weight:normal;line-height:1.1}
+.vD .small{font-size:13px;color:#5a4028}
+.vD .hand{font-family:'Caveat',cursive;color:#23407a;font-size:20px;line-height:1.15}
+.vD .red{color:#9a2a1a}
+.vD .note{font-size:12px;color:#8a6a40;font-style:italic;font-family:'IM Fell English';margin:4px 0}
+.vD .gh{font-variant:small-caps;letter-spacing:1px;color:#8a5a2a;border-bottom:1px solid #c4a874;margin:12px 0 3px;display:flex;justify-content:space-between;font-size:14px}
+.vD .gh small{font-variant:normal;letter-spacing:0;font-style:italic;color:#9a8060;font-size:12px}
+.vD .toc div{display:flex;align-items:baseline;gap:4px;padding:2px 0}
+.vD .toc div::after{content:'';order:1;flex:1;border-bottom:1px dotted #8a6a40;transform:translateY(-3px)}.vD .toc div span:last-child{order:2;font-variant-numeric:tabular-nums}
+.vD .toc div.got{color:#2a1608}.vD .toc div.no{color:#9a8060}
+.vD .er{display:flex;align-items:center;gap:8px;padding:4px 4px;cursor:pointer;border-radius:2px}
+.vD .er:hover{background:rgba(120,70,20,.1)}.vD .er.on{outline:1px dashed #8a5a2a;background:rgba(120,70,20,.12)}
+.vD .er .nm{flex:1;min-width:0}
+.vD .er .nm .inkbar{height:6px;margin:3px 0 0;border-width:1px}
+.vD .er .mg{width:92px;text-align:right;font:18px/1 Caveat;color:#7a6a50;white-space:nowrap;transform:rotate(-2deg)}
+.vD .er.done{color:#8a7a60;text-decoration:line-through;cursor:default}
+.vD .er.done .mg{text-decoration:none;color:#2a6a2a}
+.vD .kic{border-color:#5a3a1a;filter:sepia(.75) saturate(.9);--sz:24px}
+.vD .big{font-size:34px;color:#3e220c;line-height:1.1;margin:4px 0 2px}
+.vD .back{font:18px Caveat;color:#7a3a10;cursor:pointer;margin-top:10px;display:inline-block}
+.vD .back.off{color:#9a8060;cursor:default}
+.vD .ribbons{position:absolute;right:-30px;top:50px;display:flex;flex-direction:column;gap:6px}
+.vD .rib{writing-mode:vertical-rl;background:linear-gradient(90deg,#6a1810,#9a2a1c);color:#f4dfa8;padding:12px 5px;border:0;border-radius:0 4px 4px 0;font:13px Marcellus;box-shadow:2px 2px 4px rgba(0,0,0,.5);cursor:pointer}
+.vD .rib.on{background:linear-gradient(90deg,#9a2a1c,#d0402a);transform:translateX(5px)}
+.vD .plate{position:absolute;left:-12px;bottom:-14px;background:linear-gradient(#e8c96a,#9a7420);color:#2a1a04;font:12px Marcellus;padding:4px 10px;border-radius:3px;border:1px solid #4a3008;box-shadow:0 3px 6px #000;z-index:3}
+.vD .flame{filter:sepia(.55) saturate(1.2)}
+.vD .plates{display:grid;grid-template-columns:repeat(3,1fr);gap:8px 10px;margin-top:8px}
+.vD .plates div{text-align:center;font-size:12px;line-height:1.1;color:#3a2614;position:relative}
+.vD .plates div.miss{color:#9a8060;font-style:italic}
+.vD .plates div .fly{margin:0 auto;filter:sepia(.5)}
+.vD .plates div.rare::before{content:'Expedition';position:absolute;right:0;top:-2px;font:13px Caveat;color:#9a2a1a;transform:rotate(8deg)}
+.vD .plates div .x2{position:absolute;left:4px;top:0;font:16px Caveat;color:#23407a}
+.vD .cal .c{background:transparent;border:1px solid #c4a874;color:#8a6a40}
+.vD .cal .c.lit{background:radial-gradient(circle,#c8601a 0 22%,transparent 60%);color:#3a2614;border-color:#a0501a}
+.vD .cal .c.burned{background:rgba(120,80,30,.18);color:#6a4a20}
+.vD .cal .c.out{color:#9a2a1a}.vD .cal .dh{color:#8a6a40}
+.vD .wax{display:inline-block;width:34px;height:34px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#d0402a,#7a1a10 70%);color:#f4dfa8;font:bold 11px/34px Marcellus;text-align:center;vertical-align:middle;margin-right:6px}
+.vD .wax.no{background:none;border:1.5px dashed #9a8060;color:#9a8060}
+.vD .seal-btn{display:block;margin:30px auto 8px;width:140px;height:140px;border-radius:50%;border:0;background:radial-gradient(circle at 40% 35%,#d0402a,#7a1a10 70%);box-shadow:0 4px 10px rgba(0,0,0,.5),inset 0 0 0 6px rgba(0,0,0,.15);color:#f4dfa8;font:18px/1.2 Marcellus}
+.vD .seal-btn:hover{filter:brightness(1.1)}
+
+/* ---------- toasts (Core presents them; ADR 0007) ---------- */
+#toasts{position:absolute;left:50%;bottom:122px;transform:translateX(-50%);display:flex;flex-direction:column-reverse;align-items:center;gap:8px;pointer-events:none;z-index:35}
+.ta{position:relative;width:350px;display:flex;gap:10px;align-items:center;padding:9px 12px 9px 10px;background:linear-gradient(180deg,#2a2418,#14110b);border:2px solid #8a7240;border-radius:6px;box-shadow:0 0 0 1px #000,0 6px 18px rgba(0,0,0,.7);animation:taIn .35s cubic-bezier(.2,1.4,.4,1) both;font-size:13px}
+.ta.exp{border-color:#d08a2a;box-shadow:0 0 0 1px #000,0 6px 18px rgba(0,0,0,.7),0 0 18px rgba(255,150,40,.4)}
+.ta .src{font:10px Arial;letter-spacing:.08em;text-transform:uppercase;color:#bba98a}
+.ta .nm{font-size:15px;color:#fff}
+.ta .det{font:12px Arial;color:#d6cfbf}
+.ta .stamps{position:absolute;right:-8px;top:-10px;display:flex;gap:4px}
+.st{display:inline-block;font:bold 10px/14px Arial,sans-serif;letter-spacing:.04em;text-transform:uppercase;padding:1px 6px;border-radius:3px;color:#fff;background:#2a6a4a;border:1px solid rgba(0,0,0,.6);box-shadow:0 1px 2px rgba(0,0,0,.6);white-space:nowrap}
+.st.coins{background:#a07800}.st.fly{background:#5b4a7a}
+.ta.nod{width:auto;max-width:640px;padding:5px 12px;border-width:1px;font:12px Arial;color:#e8d9a8;opacity:.95}
+@keyframes taIn{from{opacity:0;transform:translateY(24px) scale(.96)}}
+#banner{position:absolute;left:0;right:0;top:18%;display:flex;justify-content:center;pointer-events:none;z-index:36}
+.ba{text-align:center;padding:10px 90px;background:radial-gradient(ellipse at center,rgba(0,0,0,.65),transparent 70%);animation:taIn .6s ease-out both}
+.ba .k{font-size:13px;letter-spacing:.35em;color:#e8d9a8}
+.ba .t{font-size:40px;line-height:46px;color:var(--gold);text-shadow:0 2px 3px #000,0 0 18px rgba(255,190,40,.5)}
+.ba .s{color:#fff;font-size:15px;text-shadow:0 1px 2px #000}
+.ba .stamps{display:flex;justify-content:center;gap:4px;margin-top:6px}
+
+/* ---------- HUD trackers: native objective-tracker blocks, stacked under the minimap ---------- */
+#trk{position:absolute;right:16px;top:212px;width:260px;z-index:6;display:flex;flex-direction:column;gap:10px;font:12px/1.3 Arial,sans-serif;text-shadow:0 1px 1px #000,0 0 2px #000}
+.tb .th{display:flex;align-items:center;gap:6px;color:var(--gold);font:14px Marcellus;border-bottom:1px solid rgba(255,209,0,.35);padding-bottom:2px;cursor:pointer}
+.tb .th span{margin-left:auto;font:11px Arial;color:#cfc8b8;display:flex;align-items:center;gap:3px}
+.tb .th .tw{font:10px Arial;color:#cfc8b8;width:10px;margin:0}
+.tb .stub{opacity:.55}
+.tb .ln{padding:3px 0 0;cursor:pointer}
+.tb .ln .a{display:flex;gap:6px;align-items:baseline;color:#ffd27a}
+.tb .ln .a span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tb .ln .a b{color:#fff;font-weight:normal;white-space:nowrap}
+.tb .ln .s{color:#cfc8b8;font-size:11px;padding-left:12px}
+.tb .ln.exp .a{color:#ffb060}
+.tb .ln.fin .a,.tb .ln.fin .a b{color:#7dff7d}
+.tb .more{color:#9a9284;font-size:11px;padding-top:3px;cursor:pointer}
+.tb .ln .a .dot{width:8px;height:8px;border-radius:50%;flex:none;border:1px solid #000;align-self:center}
+
+/* tracker frames: Curio Shop goods registered by the Tackle Board (#30) */
+.tb.fr-cork{padding:7px 10px;text-shadow:none;background:radial-gradient(circle,#b98a52 1px,transparent 1.5px) 0 0/7px 7px,radial-gradient(circle,#8a5f30 1px,transparent 1.5px) 3px 4px/9px 9px,#a7773f;border:3px solid #5a3a1a;border-radius:3px;box-shadow:0 0 0 1px #000,0 4px 10px rgba(0,0,0,.6)}
+.tb.fr-cork .th{color:#2a1a08;border-bottom-color:#5a3a1a}.tb.fr-cork .th span,.tb.fr-cork .th .tw{color:#3a2a14}
+.tb.fr-cork .ln .a,.tb.fr-cork .ln.exp .a{color:#1a1006}.tb.fr-cork .ln .a b{color:#6a1a0a}.tb.fr-cork .ln .s,.tb.fr-cork .more{color:#3a2814}.tb.fr-cork .here{color:#1a5a1a}
+.tb.fr-plank{padding:7px 10px;background:repeating-linear-gradient(0deg,#6a5238 0 2px,#7d6244 2px 9px),#7d6244;border:2px solid #3a2a18;border-radius:6px 3px 7px 2px;box-shadow:0 0 0 1px #000,0 4px 10px rgba(0,0,0,.6)}
+.tb.fr-plank .th{border-bottom-color:#3a2a18}
+/* native confirm (StaticPopup) */
+.popup{position:absolute;left:50%;top:22%;transform:translateX(-50%);z-index:45;width:340px;padding:16px 18px 12px;background:rgba(8,8,8,.96);border:2px solid #8a8a8a;border-radius:8px;box-shadow:0 0 0 1px #000,0 10px 30px #000;text-align:center;font:13px/1.4 Arial;color:#fff}
+.popup .bt{display:flex;gap:10px;justify-content:center;margin-top:12px}
+.popup .bt button{background:linear-gradient(#b02a1a,#6a0d06);border:1px solid #000;border-radius:4px;color:var(--gold);font:13px Marcellus;padding:4px 16px}
+
+/* ---------- control panel (not part of the design) ---------- */
+#panel{width:410px;flex:none;height:100vh;overflow-y:auto;background:var(--panel);color:var(--ink);font:13px/1.45 system-ui,-apple-system,Segoe UI,sans-serif;border-left:1px solid #000}
+#panel header{padding:14px 16px 10px;border-bottom:1px solid var(--line)}
+#panel h1{font-size:16px;margin:0}#panel h1 small{font-weight:normal;color:var(--ink2);font-size:12px;margin-left:6px}
+#panel .q{margin:6px 0 0;color:var(--ink2);font-size:12px}
+#panel section{padding:10px 16px;border-bottom:1px solid var(--line)}
+#panel h2{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink2);margin:0 0 6px}
+#panel .btns{display:flex;flex-wrap:wrap;gap:5px}
+#panel .b{background:#fff;border:1px solid #c9c4b8;border-radius:5px;padding:4px 9px;color:var(--ink);font-size:12px}
+#panel .b:hover{border-color:var(--accent)}
+#panel .b.pri{background:var(--accent);border-color:var(--accent);color:#fff}
+.seg{display:inline-flex;border:1px solid #c9c4b8;border-radius:5px;overflow:hidden;flex-wrap:wrap}
+.seg button{border:0;background:#fff;padding:4px 9px;font-size:12px;color:var(--ink)}
+.seg button+button{border-left:1px solid #c9c4b8}
+.seg button.on{background:var(--accent);color:#fff}
+#panel label{display:flex;align-items:center;gap:6px;margin:4px 0}
+#panel select{font:inherit;font-size:12px;padding:2px}
+#panel table{width:100%;border-collapse:collapse;font-size:11px}
+#panel td,#panel th{padding:2px 4px;border-bottom:1px solid #eee;text-align:left;white-space:nowrap}
+#panel th{color:var(--ink2);font-weight:600}
+#panel .vnote{background:#fff;border:1px solid var(--line);border-radius:5px;padding:8px 10px;font-size:12px}
+#panel ol{margin:4px 0;padding-left:18px;font-size:12px}
+#panel li{margin:3px 0}
+#panel pre{font:10.5px/1.35 ui-monospace,Consolas,monospace;background:#fff;border:1px solid var(--line);border-radius:5px;padding:6px 8px;margin:4px 0;white-space:pre-wrap;word-break:break-all;max-height:150px;overflow:auto}
+
+#switcher{position:absolute;left:50%;bottom:8px;transform:translateX(-50%);display:flex;align-items:center;gap:2px;background:#111;color:#fff;border-radius:999px;padding:3px;box-shadow:0 4px 14px rgba(0,0,0,.6);font:12px system-ui,sans-serif;z-index:40;border:1px solid #fff3}
+#switcher button{background:none;border:0;color:#fff;width:28px;height:24px;border-radius:999px}
+#switcher button:hover{background:#333}
+#switcher span{padding:0 10px;min-width:280px;text-align:center}
+</style>
+</head>
+<body>
+<div id="scene">
+  <div class="hills"></div>
+  <div id="bobber"></div>
+  <div id="pframe"><div class="por"></div><div class="bars"><div class="nm">Thalindra</div><div class="hp"></div><div class="mp"></div></div></div>
+  <div id="minimap"><div class="zn" id="zoneName"></div><div class="mm"></div><div class="clk" id="mmclock"></div>
+    <button id="pbtn" title="Pagle (addon compartment)"><svg viewBox="0 0 40 40"><path d="M7 20c6-8 17-10 24-3l5-5v16l-5-5c-7 7-18 5-24-3z" fill="#7fb3c8" stroke="#000" stroke-width="1.4"/><circle cx="12" cy="18" r="1.5"/></svg></button></div>
+  <div id="cmenu">
+    <div class="h">Pagle</div>
+    <button class="o">Fish Journal</button>
+    <button class="o">Hunts</button>
+    <button class="o">Stats</button>
+    <button data-menu="board">Tackle Board</button>
+    <div class="sep"></div>
+    <button class="o">Curio Shop</button>
+    <button class="o">Settings…</button>
+  </div>
+  <div id="trk"></div>
+  <div id="win"></div>
+  <div id="toasts"></div>
+  <div id="banner"></div>
+  <div id="chat"><div id="chatlog"></div><input id="chatin" placeholder="Type /pagle board and press Enter"></div>
+  <div id="actionbar"><i title="Fishing"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  <div id="switcher"><button id="swPrev" title="Previous variant (←)">◀</button><span id="swLabel"></span><button id="swNext" title="Next variant (→)">▶</button></div>
+  <div id="tip"></div>
+</div>
+
+<aside id="panel">
+  <header>
+    <h1>Tackle Board <small>prototype · throwaway</small></h1>
+    <p class="q">What should the Tackle Board look like and how should it behave? Flip the four boards (bottom bar, ←/→) and the three tracker modes (below). Then play: start a board, fish until a Notice completes, reroll one, skip days, come back to a full board, let the fire go out. Every board reads the same model.</p>
+  </header>
+
+  <section>
+    <h2>This board variant</h2>
+    <div class="vnote" id="vnote"></div>
+  </section>
+
+  <section>
+    <h2>Tracker (third block in the HUD stack)</h2>
+    <label><input type="checkbox" id="optTrk"> Tackle Board tracker on</label>
+    <div class="seg" id="trkSeg"><button data-v="all">K1 All open</button><button data-v="here">K2 Workable here</button><button data-v="tracked">K3 Tracked only</button></div>
+    <div class="vnote" id="tnote" style="margin-top:6px"></div>
+    <label>Frame (a Curio Shop good) <select id="trkFrame"><option value="native">No frame (free default)</option><option value="fr-cork">Corkboard · 150</option><option value="fr-plank">Driftwood Plank · 400</option></select></label>
+    <label><input type="checkbox" id="optHunts"> Show the Hunts block above (stub)</label>
+    <label><input type="checkbox" id="optStats"> Show the Stats block above (stub)</label>
+  </section>
+
+  <section>
+    <h2>Angler</h2>
+    <div class="seg" id="stageSeg"><button data-v="fresh">Not started</button><button data-v="week">Week one</button><button data-v="away3">Back after 3 days</button><button data-v="away14">Back after 2 weeks</button><button data-v="vet">Veteran</button></div>
+    <p class="q" id="stageNote"></p>
+  </section>
+
+  <section>
+    <h2>Fish</h2>
+    <label>Zone <select id="zoneSel"></select></label>
+    <label><input type="checkbox" id="optLure"> Lure on</label>
+    <div class="btns">
+      <button class="b pri" id="bCast">Cast ×1</button><button class="b" id="bCast10">×10</button><button class="b" id="bCast50">×50</button>
+      <button class="b" id="bSess">End Session</button>
+    </div>
+    <div class="btns" style="margin-top:6px">
+      <span class="q" style="margin:0">Next Cast catches:</span>
+      <button class="b" data-force="junk">junk</button><button class="b" data-force="box">a container</button><button class="b" data-force="unc">uncommon</button><button class="b" data-force="keep">a new Sub-collection item</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Time</h2>
+    <p class="q" id="timeNote" style="margin-top:0"></p>
+    <div class="btns">
+      <button class="b" id="bNext">Next day (logged in at reset)</button>
+      <button class="b" id="bAway3">Away 3 days, log in</button>
+      <button class="b" id="bAway14">Away 2 weeks, log in</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Tunables (constants in the spec)</h2>
+    <label>Fly Box <select id="flyRule"><option value="new">Every completion ties a new pattern</option><option value="random">Every completion ties a random pattern (repeats count up)</option></select></label>
+    <p class="q" id="flyNote"></p>
+  </section>
+
+  <section>
+    <h2>Model output</h2>
+    <table id="mtable"></table>
+    <pre id="fstate"></pre>
+    <h2 style="margin-top:8px">Module records appended to Core's log (ADR 0008), newest last</h2>
+    <pre id="mrec"></pre>
+  </section>
+
+  <section>
+    <h2>What to decide</h2>
+    <ol>
+      <li><b>Which board</b>, or which parts of which ("B's slots with C's spike").</li>
+      <li><b>C or D would make the board a fourth exception</b> to the native look (after the Journal, Hunts and Stats). A and B stay native.</li>
+      <li><b>Done Notices:</b> drop to a "done today" list (A, D), keep their slot until the next refill (B), or go on the spike (C)?</li>
+      <li><b>Empty slots:</b> show the cap as empty slots with "arrives at reset" (B, C), or only list what's open (A, D)?</li>
+      <li><b>Tracker:</b> K1, K2 or K3? On by default (like Hunts) or off (like Stats)?</li>
+      <li><b>Reroll:</b> decided: a native confirm only when the goal has progress.</li>
+      <li><b>Fly Box pace:</b> with "a new pattern every time", the box is full after ~24 Notices and 6 Expeditions (about 6 weeks). Intended, or repeats / a bigger box?</li>
+      <li><b>Kindling after the fire goes out:</b> decided: refills to 2, the same safety net as a new board.</li>
+      <li><b>The flame:</b> size steps at 7/30/100/365, brightness grows between them. Enough, or too subtle?</li>
+    </ol>
+  </section>
+</aside>
+
+<script>
+// ============================================================================
+// TackleModel: the liftable part. Pure functions over a projection P (ADR 0004).
+// Follows "Design the Tackle Board" (#25) and "Design the Pagle currency and shop" (#28).
+// Placeholders: zones, skills, catch lists, item qualities, fly names, title names.
+// ============================================================================
+const TackleModel = (() => {
+  // Tunable constants (the spec marks these as starting values).
+  const C = { NOTICES_PER_DAY: 3, NOTICE_CAP: 6, EXP_PER_WEEK: 1, EXP_CAP: 2, PAY: [10, 15, 20], EXP_PAY: 60,
+    KINDLING_START: 2, KINDLING_MAX: 3, KINDLING_EVERY: 7, WEEKLY_RESET_DOW: 2 /* Tuesday */, RESET_HOUR: 3 };
+  const MILESTONES = [{ days: 7, coins: 25, title: 'Kindler' }, { days: 30, coins: 75, title: 'Firekeeper' },
+    { days: 100, coins: 200, title: 'Hearthwarden' }, { days: 365, coins: 500, title: 'Keeper of the Long Fire' }];
+  const TALLY_TITLES = [{ n: 25, title: 'the Dependable' }, { n: 100, title: 'the Tireless' }, { n: 500, title: 'Pillar of the Board' }];
+  const FLYBOX_TITLE = 'the Fly-Tier';
+  const BASE = Date.UTC(2026, 10, 4); // day 0 = Forever launch day (a Wednesday)
+
+  const ZONES = {
+    'Elwynn Forest': { cont: 'Eastern Kingdoms', skill: 1, fish: ['brill', 'mud'] },
+    'Westfall': { cont: 'Eastern Kingdoms', skill: 55, fish: ['mud', 'cat', 'mack', 'albacore'] },
+    'Redridge Mountains': { cont: 'Eastern Kingdoms', skill: 55, fish: ['mud', 'cat', 'trout'] },
+    'Duskwood': { cont: 'Eastern Kingdoms', skill: 130, fish: ['cat', 'trout', 'cod'] },
+    'Stranglethorn Vale': { cont: 'Eastern Kingdoms', skill: 130, fish: ['cod', 'yellowtail', 'trout', 'blackmouth', 'firefin'] },
+    'The Barrens': { cont: 'Kalimdor', skill: 55, fish: ['mud', 'cat', 'sagefish'] },
+    'Ashenvale': { cont: 'Kalimdor', skill: 130, fish: ['cat', 'trout', 'sagefish'] },
+    'Desolace': { cont: 'Kalimdor', skill: 130, fish: ['cod', 'yellowtail', 'blackmouth'] },
+    'Feralas': { cont: 'Kalimdor', skill: 205, fish: ['yellowtail', 'redgill', 'eel', 'blackmouth', 'firefin'] },
+    'Tanaris': { cont: 'Kalimdor', skill: 205, fish: ['yellowtail', 'eel', 'mightfish', 'blackmouth', 'firefin'] },
+  };
+  const F = (name, q = 1) => ({ name, q, kind: 'fish' });
+  const ITEMS = {
+    brill: F('Raw Brilliant Smallfish'), mud: F('Raw Longjaw Mud Snapper'), cat: F('Raw Bristle Whisker Catfish'),
+    mack: F('Raw Slitherskin Mackerel'), albacore: F('Raw Rainbow Fin Albacore'), trout: F('Raw Mithril Head Trout'),
+    cod: F('Raw Rockscale Cod'), yellowtail: F('Raw Spotted Yellowtail'), blackmouth: F('Oily Blackmouth'),
+    firefin: F('Firefin Snapper', 2), redgill: F('Raw Redgill'), eel: F('Stonescale Eel'), mightfish: F('Raw Glossy Mightfish', 2),
+    sagefish: F('Raw Sagefish'),
+    sickly: { name: 'Sickly Looking Fish', q: 0, kind: 'junk' }, boot: { name: 'Waterlogged Boot', q: 0, kind: 'junk' },
+    chest: { name: 'Battered Chest', q: 1, kind: 'box' }, crate: { name: 'Heavy Crate', q: 1, kind: 'box' }, trunk: { name: 'Iron Bound Trunk', q: 2, kind: 'box' },
+    ring: { name: 'Drowned Signet Ring', q: 3, kind: 'keep' }, glass: { name: 'Tarnished Spyglass', q: 3, kind: 'keep' },
+    pearl: { name: 'Black Pearl', q: 3, kind: 'keep' }, logbook: { name: "Captain's Logbook", q: 3, kind: 'keep' },
+    charm: { name: 'Murloc Fin Charm', q: 3, kind: 'keep' }, scale: { name: 'Shimmering Scale', q: 3, kind: 'keep' },
+  };
+  const FLY_NAMES = ['Murloc Nymph', 'Westfall Wheatwing', 'Goldshire Gnat', 'Duskwood Shadow', 'Redridge Ember', 'Barrens Dun',
+    'Mudsnout Woolly', 'Gnomish Whirligig', 'Tarnished Spoon', 'Ashenvale Olive', 'Kodo-hair Caddis', 'Elwynn Royal',
+    'Swamp Midge', 'Raptor Quill', 'Silverpine Spinner', 'Lakeshire Coachman', 'Bloodsail Streamer', 'Booty Bay Bucktail',
+    'Desolace Drifter', 'Grimtotem Hackle', 'Needles Ant', 'Feralas Fern', 'Tanaris Sandfly', 'Darkshore Dun',
+    "Nat's Golden Doctor", 'Kraken Ink Streamer', 'Phoenix Hackle', 'Moonwell Silverwing', 'Thunderhead Tiger', 'Deepwater Duchess'];
+  const FLIES = FLY_NAMES.map((name, i) => ({ name, rare: i >= 24, hue: (i * 47) % 360 }));
+  const KIND = { haul: { name: 'Haul', g: '≋', h: 200 }, variety: { name: 'Variety', g: '❖', h: 120 }, wanderer: { name: 'Wanderer', g: '➹', h: 40 },
+    quality: { name: 'Quality', g: '◆', h: 220 }, collector: { name: 'Collector', g: '⚱', h: 280 }, lure: { name: 'Lure', g: '⚲', h: 0 }, species: { name: 'Species', g: '✦', h: 170 } };
+
+  function mulberry32(a) { return () => { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+  const dow = (d) => new Date(BASE + d * 864e5).getUTCDay();
+  const isWeeklyReset = (d) => dow(d) === C.WEEKLY_RESET_DOW;
+
+  function fresh() {
+    return { started: null, day: 0, lastRefill: null, seq: 0, notices: [], tally: { n: 0, e: 0 }, coins: 0, flies: {}, flyLog: [],
+      fire: { count: 0, kindling: 0, longest: 0, lit: {}, hist: {}, milestones: {} }, titles: [], records: [] };
+  }
+  const open = (P) => P.notices.filter((n) => !n.done).sort((a, b) => (b.exp - a.exp) || (a.issued - b.issued) || (a.seq - b.seq));
+  const doneOn = (P, d) => P.notices.filter((n) => n.done === d);
+
+  // ---- issuing (refill banks missed days up to the cap; nothing expires) ----
+  function issue(P, day, exp, c, avoidKind) {
+    const seq = ++P.seq, id = 'N' + seq;
+    const rng = mulberry32(seq * 7919 + day * 104729 + (exp ? 17 : 0));
+    const pick = (arr) => arr[Math.floor(rng() * arr.length)];
+    const kinds = exp ? ['haul', 'variety', 'wanderer', 'quality', 'collector'] : ['haul', 'haul', 'variety', 'variety', 'wanderer', 'quality', 'collector', 'lure', 'species'];
+    const openKinds = P.notices.filter((n) => !n.done && n.exp === exp).map((n) => n.kind);
+    let pool = kinds.filter((k) => k !== avoidKind && !openKinds.includes(k));
+    if (!pool.length) pool = kinds.filter((k) => k !== avoidKind);
+    const kind = pick(pool);
+    // Zones with catches at or below the Angler's best skill, weighted towards recently fished ones.
+    const zones = Object.keys(ZONES).filter((z) => ZONES[z].skill <= c.skill);
+    const wz = zones.flatMap((z) => (c.recent.includes(z) ? Array(8).fill(z) : [z]));
+    let tier = Math.floor(rng() * 3);
+    const n = { id, seq, kind, exp, issued: day, prog: 0, set: [], sess: null, rerollable: true, reposted: false, done: null, fly: null,
+      zone: null, cont: null, item: null, need: 0, pay: 0 };
+    if (kind === 'haul') { n.zone = pick(wz); n.need = exp ? 150 : [20, 30, 40][tier]; }
+    else if (kind === 'variety') {
+      const zz = wz.filter((z) => ZONES[z].fish.length >= (exp ? 4 : 3));
+      n.zone = pick(zz.length ? zz : wz); const f = ZONES[n.zone].fish.length;
+      n.need = exp ? f : Math.min([3, 4, 5][tier], f); tier = Math.max(0, Math.min(2, n.need - 3));
+    } else if (kind === 'wanderer') { if (exp) { n.cont = pick(wz.map((z) => ZONES[z].cont)); n.need = 5; } else { n.need = 3; tier = 2; } }
+    else if (kind === 'quality') n.need = exp ? 3 : [3, 5, 8][tier];
+    else if (kind === 'collector') { n.need = exp ? 3 : 2; tier = 1; }
+    else if (kind === 'lure') n.need = [15, 20, 25][tier];
+    else if (kind === 'species') { n.item = pick(ZONES[pick(wz)].fish); n.need = [5, 10, 15][tier]; }
+    n.pay = exp ? C.EXP_PAY : C.PAY[tier];
+    P.records.push(`A1|TackleBoard|issue|${id};${kind};${n.zone || n.cont || n.item || '-'};${n.need};${n.pay};day${day}`);
+    return n;
+  }
+  function refill(P, day, c) {
+    if (P.started == null) return { notices: 0, exps: 0 };
+    const days = P.lastRefill == null ? 1 : day - P.lastRefill;
+    if (days <= 0) return { notices: 0, exps: 0 };
+    let weeks = P.lastRefill == null ? 1 : 0;
+    if (P.lastRefill != null) for (let d = P.lastRefill + 1; d <= day; d++) if (isWeeklyReset(d)) weeks++;
+    const o = open(P);
+    const addN = Math.min(C.NOTICES_PER_DAY * days, C.NOTICE_CAP - o.filter((n) => !n.exp).length);
+    const addE = Math.min(C.EXP_PER_WEEK * weeks, C.EXP_CAP - o.filter((n) => n.exp).length);
+    for (let i = 0; i < addE; i++) P.notices.push(issue(P, day, true, c));
+    for (let i = 0; i < addN; i++) P.notices.push(issue(P, day, false, c));
+    P.lastRefill = day;
+    return { notices: Math.max(0, addN), exps: Math.max(0, addE) };
+  }
+  function start(P, day, c) {
+    P.started = day; P.day = day; P.fire.kindling = C.KINDLING_START;
+    refill(P, day, c);
+  }
+  function reroll(P, id, c) {
+    const i = P.notices.findIndex((n) => n.id === id), old = P.notices[i];
+    if (!old || old.done || !old.rerollable) return null;
+    const n = issue(P, P.day, old.exp, c, old.kind);
+    n.rerollable = false; n.reposted = true;
+    P.notices.splice(i, 1, n);
+    P.records.push(`A1|TackleBoard|reroll|${old.id}>${n.id}`);
+    return n;
+  }
+
+  // ---- progress: only Catches after the Notice appeared count (we only ever see later Casts) ----
+  function workable(n, zone) {
+    if (n.zone) return n.zone === zone;
+    if (n.cont) return ZONES[zone].cont === n.cont;
+    if (n.kind === 'species') return ZONES[zone].fish.includes(n.item);
+    return true;
+  }
+  const sessionBound = (n) => !n.exp && (n.kind === 'wanderer' || n.kind === 'collector');
+  function onCast(P, cast, c) {
+    const moments = [];
+    if (P.started == null || !cast.caught) return moments;
+    const it = ITEMS[cast.item];
+    for (const n of open(P)) {
+      if (sessionBound(n) && n.sess !== cast.session) { n.sess = cast.session; n.set = []; n.prog = 0; }
+      const add = (k) => { if (!n.set.includes(k)) n.set.push(k); n.prog = n.set.length; };
+      switch (n.kind) {
+        case 'haul': if (cast.zone === n.zone) n.prog++; break;
+        case 'variety': if (cast.zone === n.zone && it.kind === 'fish') add(cast.item); break;
+        case 'wanderer': if (!n.exp || ZONES[cast.zone].cont === n.cont) add(cast.zone); break;
+        case 'quality': if (it.q >= (n.exp ? 3 : 2)) n.prog++; break;
+        case 'collector':
+          if (n.exp) { if (it.kind === 'keep' && !c.owned.has(cast.item)) add(cast.item); }
+          else if (it.kind === 'junk') add('junk'); else if (it.kind === 'box') add('container');
+          break;
+        case 'lure': if (cast.lure) n.prog++; break;
+        case 'species': if (cast.item === n.item) n.prog++; break;
+      }
+      if (n.prog >= n.need) moments.push(...complete(P, n, c));
+    }
+    return moments;
+  }
+
+  // ---- completion: Coins, a fly, the tally, the Campfire ----
+  function tieFly(P, n, c) {
+    const rng = mulberry32(n.seq * 31 + 7);
+    let pool = FLIES.map((f, i) => i).filter((i) => FLIES[i].rare === n.exp);
+    if (c.flyRule === 'new') {
+      let untied = pool.filter((i) => !P.flies[i]);
+      if (!untied.length && n.exp) untied = FLIES.map((f, i) => i).filter((i) => !P.flies[i]);
+      if (!untied.length) return null;
+      pool = untied;
+    }
+    const i = pool[Math.floor(rng() * pool.length)];
+    P.flies[i] = (P.flies[i] || 0) + 1;
+    P.flyLog.push({ fly: i, day: P.day, from: n.id });
+    return i;
+  }
+  function complete(P, n, c) {
+    const moments = [];
+    n.done = P.day; n.prog = n.need;
+    const before = P.tally.n + P.tally.e;
+    if (n.exp) P.tally.e++; else P.tally.n++;
+    P.coins += n.pay;
+    const fullBefore = Object.keys(P.flies).length === FLIES.length;
+    n.fly = tieFly(P, n, c);
+    moments.push({ rung: n.exp ? 'toast' : 'toast.low', kind: n.exp ? 'Expedition' : 'Notice', notice: n, coins: n.pay, fly: n.fly, newFly: n.fly != null && P.flies[n.fly] === 1 });
+    const t = TALLY_TITLES.find((x) => before < x.n && before + 1 >= x.n);
+    if (t) { P.titles.push(t.title); moments.push({ rung: 'banner', k: 'TACKLE BOARD', t: `${t.n} goals done`, s: `Title: ${t.title}` }); }
+    if (!fullBefore && Object.keys(P.flies).length === FLIES.length) { P.titles.push(FLYBOX_TITLE); moments.push({ rung: 'banner', k: 'FLY BOX', t: 'Every pattern tied', s: `Title: ${FLYBOX_TITLE}` }); }
+    moments.push(...light(P));
+    return moments;
+  }
+  function light(P) {
+    const f = P.fire, d = P.day;
+    if (f.lit[d]) return [];
+    f.lit[d] = true; f.hist[d] = 'lit'; f.count++; f.longest = Math.max(f.longest, f.count);
+    if (f.count % C.KINDLING_EVERY === 0) f.kindling = Math.min(C.KINDLING_MAX, f.kindling + 1);
+    const m = MILESTONES.find((x) => x.days === f.count);
+    if (m && !f.milestones[m.days]) {
+      f.milestones[m.days] = d; P.coins += m.coins; P.titles.push(m.title);
+      return [{ rung: 'banner', k: 'CAMPFIRE', t: `${m.days} days`, s: `Title: ${m.title}`, coins: m.coins }];
+    }
+    return [];
+  }
+
+  // ---- days: a missed day burns Kindling; with none left the fire goes out. The board refills
+  //      at reset while logged in, or at the next login; banked days fill it up to the cap. ----
+  function advance(P, toDay, loggedIn, c) {
+    const f = P.fire; let burned = 0, wentOut = false; const was = f.count;
+    while (P.day < toDay) {
+      const d = P.day;
+      if (P.started != null && !f.lit[d] && f.count > 0) {
+        if (f.kindling > 0) { f.kindling--; f.hist[d] = 'burned'; burned++; }
+        else { f.hist[d] = 'out'; f.count = 0; f.kindling = C.KINDLING_START; wentOut = true; } // a new fire starts with the same safety net (#29)
+      }
+      P.day++;
+      if (loggedIn) refill(P, P.day, c);
+    }
+    const r = loggedIn ? null : refill(P, P.day, c);
+    const moments = [];
+    if (wentOut) moments.push({ rung: 'nod', text: `Your Campfire went out while you were away${burned ? ', after ' + burned + ' Kindling' : ''}. Your longest, ${f.longest} days, is kept for good. Any goal lights a new one, with ${C.KINDLING_START} fresh Kindling.` });
+    else if (burned) moments.push({ rung: 'nod', text: `Your Campfire kept burning while you were away: ${burned} Kindling used, still ${was} days.` });
+    return { moments, refill: r };
+  }
+
+  // ---- display helpers (wording is display-time) ----
+  function text(n) {
+    switch (n.kind) {
+      case 'haul': return `${n.need} Catches in ${n.zone}`;
+      case 'variety': return n.exp ? `Every Species of ${n.zone}` : `${n.need} different Species in ${n.zone}`;
+      case 'wanderer': return n.exp ? `Catches in ${n.need} zones of ${n.cont}` : `Catches in ${n.need} zones in one Session`;
+      case 'quality': return n.exp ? `${n.need} rare-or-better Catches` : `${n.need} uncommon-or-better Catches`;
+      case 'collector': return n.exp ? `${n.need} new Sub-collection items` : 'A junk item and a container in one Session';
+      case 'lure': return `${n.need} Catches with a lure on`;
+      case 'species': return `${n.need} ${ITEMS[n.item].name}`;
+    }
+  }
+  function short(n) {
+    switch (n.kind) {
+      case 'haul': return `Catches in ${n.zone}`;
+      case 'variety': return `Species of ${n.zone}`;
+      case 'wanderer': return n.exp ? `Zones of ${n.cont}` : 'Zones in one Session';
+      case 'quality': return n.exp ? 'Rare-or-better Catches' : 'Uncommon-or-better';
+      case 'collector': return n.exp ? 'New Sub-collection items' : 'Junk + container, one Session';
+      case 'lure': return 'Catches with a lure on';
+      case 'species': return ITEMS[n.item].name;
+    }
+  }
+  const where = (n) => n.zone || n.cont || (n.kind === 'species' ? 'wherever it bites' : 'anywhere');
+  function flame(P) {
+    const f = P.fire;
+    if (P.started == null) return { state: 'none' };
+    if (f.count === 0) return { state: f.longest ? 'out' : 'unlit', longest: f.longest };
+    const tier = MILESTONES.filter((m) => f.count >= m.days).length;
+    const next = MILESTONES.find((m) => f.count < m.days), prev = tier ? MILESTONES[tier - 1].days : 0;
+    const span = (next ? next.days : prev * 2) - prev;
+    return { state: 'lit', tier, next, bright: 0.5 + 0.5 * Math.min(1, (f.count - prev) / span), todayLit: !!f.lit[P.day] };
+  }
+  return { C, MILESTONES, TALLY_TITLES, FLYBOX_TITLE, BASE, ZONES, ITEMS, FLIES, KIND, mulberry32, dow, isWeeklyReset,
+    fresh, open, doneOn, issue, refill, start, reroll, workable, sessionBound, onCast, complete, advance, text, short, where, flame };
+})();
+</script>
+
+<script>
+// ============================================================================
+// Prototype shell: simulation, four boards, trackers, toasts. Not liftable.
+// ============================================================================
+const M = TackleModel;
+const $ = (s) => document.querySelector(s);
+const fmt = (n) => Math.round(n).toLocaleString('en-US');
+const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'], MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const dayLabel = (d) => { const t = new Date(M.BASE + d * 864e5); return `${DOW[t.getUTCDay()]} ${t.getUTCDate()} ${MON[t.getUTCMonth()]}`; };
+
+const S = { variant: 'A', open: true, stage: 'week', P: null, hour: 14, zone: 'Stranglethorn Vale', lure: false, skill: 300, session: 1,
+  owned: new Set(), recent: ['Stranglethorn Vale'], flyRule: 'new', force: null,
+  trk: { on: true, mode: 'here', frame: 'native', hunts: true, stats: false, collapsed: false }, tracked: new Set(), flash: {}, hl: null,
+  a: { tab: 'board' }, b: { box: false }, c: { box: false, fire: false }, d: { page: 'board', sel: null } };
+const ctx = (owned) => ({ skill: S.skill, recent: S.recent, owned: owned || S.owned, flyRule: S.flyRule });
+
+// ---------- stages (fast-forwarded with the model itself) ----------
+function ffDay(P, k, exp) {
+  for (let i = 0; i < k; i++) { const n = M.open(P).find((x) => !x.exp); if (n) M.complete(P, n, ctx()); }
+  if (exp) { const e = M.open(P).find((x) => x.exp); if (e) M.complete(P, e, ctx()); }
+  M.advance(P, P.day + 1, true, ctx());
+}
+function ffRun(P, days, perDay) { for (let i = 0; i < days; i++) ffDay(P, perDay(i), M.isWeeklyReset(P.day + 1) || i % 7 === 3); }
+function fakeProgress(P, seed) {
+  const rng = M.mulberry32(seed);
+  for (const n of M.open(P)) {
+    if (rng() < 0.3) continue;
+    if (n.kind === 'variety') { n.set = M.ZONES[n.zone].fish.slice(0, Math.floor(rng() * (n.need - 1)) + 1); n.prog = n.set.length; }
+    else if (n.kind === 'wanderer') { n.set = n.exp ? Object.keys(M.ZONES).filter((z) => M.ZONES[z].cont === n.cont).slice(0, 2) : [S.zone]; if (!n.exp) n.sess = S.session; n.prog = n.set.length; }
+    else if (n.kind === 'collector') { if (n.exp) { n.set = ['ring']; S.owned.add('ring'); } else { n.set = ['junk']; n.sess = S.session; } n.prog = 1; }
+    else n.prog = Math.floor(n.need * rng() * 0.8);
+  }
+}
+const STAGES = {
+  fresh: { note: 'The Module is loaded but the board is empty and silent until "Start my board".', build(P) { P.day = 12; } },
+  week: { note: 'Started 6 days ago and lit every day: the Campfire is at 6, so any goal today reaches the 7-day milestone.', build(P) {
+    M.start(P, 0, ctx()); [2, 3, 1, 2, 2, 3].forEach((k, i) => ffDay(P, k, i === 4)); fakeProgress(P, 5); } },
+  away3: { note: 'A 20-day Campfire, then 3 days away. Kindling kept it burning, and the board banked the missed days up to the cap.', build(P) {
+    M.start(P, 0, ctx()); ffRun(P, 20, (i) => 2 + (i % 2)); fakeProgress(P, 9);
+    return M.advance(P, P.day + 3, false, ctx()).moments; } },
+  away14: { note: 'A 58-day Campfire, then two weeks away. The board is full (6 Notices, 2 Expeditions) and the fire went out.', build(P) {
+    M.start(P, 0, ctx()); ffRun(P, 58, (i) => 1 + (i % 3)); fakeProgress(P, 3);
+    return M.advance(P, P.day + 14, false, ctx()).moments; } },
+  vet: { note: 'Months in: an earlier fire of 58 days went out; the current one is at 99, so any goal today makes 100. The Fly Box is long full.', build(P) {
+    M.start(P, 0, ctx()); ffRun(P, 58, () => 3); M.advance(P, P.day + 5, false, ctx()); ffRun(P, 99, () => 3); fakeProgress(P, 11); } },
+};
+function loadStage(key) {
+  S.stage = key; S.P = M.fresh(); S.owned = new Set(); S.session = 1; S.tracked = new Set(); S.flash = {}; S.hl = null;
+  S.d = { page: 'board', sel: null }; S.a.tab = 'board';
+  const moments = STAGES[key].build(S.P) || [];
+  M.open(S.P).slice(0, 2).forEach((n) => S.tracked.add(n.id));
+  const u = new URL(location); u.searchParams.set('stage', key); history.replaceState(null, '', u);
+  $('#toasts').innerHTML = ''; $('#banner').innerHTML = '';
+  syncPanel(); render();
+  if (moments.length) setTimeout(() => present(moments), 400);
+}
+
+// ---------- casting ----------
+const JUNK = ['sickly', 'boot'], KEEPS = ['ring', 'glass', 'pearl', 'logbook', 'charm', 'scale'];
+function rollCast() {
+  const f = S.force; S.force = null;
+  const fish = M.ZONES[S.zone].fish;
+  if (f === 'junk') return { caught: true, item: JUNK[Math.floor(Math.random() * 2)] };
+  if (f === 'box') return { caught: true, item: Math.random() < 0.7 ? 'chest' : 'crate' };
+  if (f === 'unc') return { caught: true, item: fish.find((k) => M.ITEMS[k].q === 2) || 'trunk' };
+  if (f === 'keep') return { caught: true, item: KEEPS.find((k) => !S.owned.has(k)) || KEEPS[0] };
+  const r = Math.random();
+  if (r < 0.1) return { caught: false };
+  if (r < 0.15) return { caught: true, item: JUNK[Math.floor(Math.random() * 2)] };
+  if (r < 0.19) { const b = Math.random(); return { caught: true, item: b < 0.6 ? 'chest' : b < 0.85 ? 'crate' : 'trunk' }; }
+  if (r < 0.2) return { caught: true, item: KEEPS[Math.floor(Math.random() * KEEPS.length)] };
+  return { caught: true, item: fish[Math.floor(Math.random() * fish.length)] };
+}
+function cast(k) {
+  const all = [];
+  for (let i = 0; i < k; i++) {
+    const r = rollCast(), before = new Set(S.owned);
+    all.push(...M.onCast(S.P, { ...r, zone: S.zone, lure: S.lure, session: S.session }, ctx(before)));
+    if (r.caught && M.ITEMS[r.item].kind === 'keep') S.owned.add(r.item);
+    if (k === 1) chat(r.caught ? `You receive loot: [${M.ITEMS[r.item].name}].` : 'Your fish got away.');
+  }
+  if (!S.recent.includes(S.zone)) { S.recent.unshift(S.zone); S.recent.length = Math.min(S.recent.length, 3); }
+  for (const m of all) if (m.notice) S.flash[m.notice.id] = Date.now();
+  render(); present(all);
+  if (all.some((m) => m.notice)) setTimeout(render, 4200);
+}
+
+// ---------- presentation of moments (Core's toasts, banners and nods; ADR 0007) ----------
+function present(ms) {
+  ms.forEach((m, i) => setTimeout(() => {
+    if (m.rung === 'banner') {
+      $('#banner').innerHTML = `<div class="ba"><div class="k">${m.k}</div><div class="t">${m.t}</div><div class="s">${m.s}</div>${m.coins ? `<div class="stamps"><span class="st coins">+${m.coins} Coins</span></div>` : ''}</div>`;
+      clearTimeout(present.bt); present.bt = setTimeout(() => ($('#banner').innerHTML = ''), 4000);
+      return;
+    }
+    const el = document.createElement('div');
+    if (m.rung === 'nod') { el.className = 'ta nod'; el.textContent = m.text; }
+    else {
+      const n = m.notice;
+      el.className = 'ta' + (n.exp ? ' exp' : '');
+      el.innerHTML = `${m.fly != null ? `<div class="kic" style="--sz:44px;--h:${M.FLIES[m.fly].hue}">${flySVG(m.fly, true, 38)}</div>` : kindIcon(n, 44)}
+        <div><div class="src">Tackle Board</div><div class="nm">${n.exp ? 'Expedition complete' : 'Notice complete'}</div><div class="det">${M.text(n)}</div>
+        ${m.fly != null ? `<div class="det" style="color:#c8b8ff">${m.newFly ? 'Tied for your Fly Box' : 'Tied again'}: ${M.FLIES[m.fly].name}</div>` : ''}</div>
+        <div class="stamps"><span class="st">${m.kind}</span><span class="st coins">+${m.coins} Coins</span></div>`;
+    }
+    $('#toasts').appendChild(el);
+    while ($('#toasts').children.length > 4) $('#toasts').firstChild.remove();
+    setTimeout(() => el.remove(), m.rung === 'nod' ? 7000 : 4500);
+  }, i * 600));
+}
+
+// ---------- shared drawing ----------
+function kindIcon(n, sz) { const k = M.KIND[n.kind]; return `<span class="kic ${n.exp ? 'exp' : ''}" style="--sz:${sz}px;--h:${k.h}" title="${k.name}">${k.g}</span>`; }
+function flySVG(i, tied, size) {
+  const f = M.FLIES[i], h = f.hue;
+  const hook = 'M13 5 L13 25 C13 33 25 34 28 26 L26 23';
+  if (!tied) return `<svg class="fly" viewBox="0 0 40 40" width="${size}" height="${size}"><path d="${hook}" fill="none" stroke="#777" stroke-width="1.4" stroke-dasharray="2 2"/><path d="M13 8 C22 1 33 5 37 13 C28 14 19 13 13 11Z" fill="none" stroke="#777" stroke-width="1.2" stroke-dasharray="2 2"/></svg>`;
+  return `<svg class="fly" viewBox="0 0 40 40" width="${size}" height="${size}">
+    <path d="${hook}" fill="none" stroke="#d8d8d8" stroke-width="1.6"/>
+    <path d="M13 7 L13 19" stroke="hsl(${h},45%,32%)" stroke-width="4.5" stroke-linecap="round"/>
+    ${f.rare ? '<path d="M11 9 L15 11 M11 12 L15 14 M11 15 L15 17" stroke="#ffd36a" stroke-width="1"/>' : ''}
+    <path d="M13 8 C22 1 33 5 37 13 C28 14 19 13 13 11Z" fill="hsl(${h},60%,58%)" stroke="#000" stroke-width=".6"/>
+    <path d="M13 9 C20 5 28 7 31 11" fill="none" stroke="hsl(${h},70%,80%)" stroke-width=".8"/>
+    <path d="M13 19 L7 23 M13 19 L8 18 M13 19 L9 26" stroke="hsl(${(h + 40) % 360},55%,50%)" stroke-width="1.2"/></svg>`;
+}
+const LOGS = '<path d="M20 90 L80 81" stroke="#5a3a1c" stroke-width="7" stroke-linecap="round"/><path d="M20 81 L80 90" stroke="#6a4424" stroke-width="7" stroke-linecap="round"/>';
+function flameSVG(f, size) {
+  if (f.state === 'none') return '';
+  if (f.state !== 'lit') {
+    const embers = f.state === 'out' ? '<circle class="em" cx="44" cy="80" r="2" fill="#e8501a"/><circle class="em" cx="56" cy="82" r="1.5" fill="#ff8a2a" style="animation-delay:.8s"/><path d="M30 84 Q50 72 70 84" fill="#3a3a3a" opacity=".7"/>' : '';
+    return `<svg class="flame" viewBox="0 0 100 100" width="${size}" height="${size}">${LOGS}${embers}</svg>`;
+  }
+  const s = [0.5, 0.66, 0.8, 0.92, 1.04][f.tier], b = f.bright;
+  return `<svg class="flame" viewBox="0 0 100 100" width="${size}" height="${size}" style="filter:brightness(${(0.7 + 0.5 * b).toFixed(2)}) saturate(${(0.7 + 0.5 * b).toFixed(2)})">
+    <ellipse cx="50" cy="86" rx="${(16 + 26 * s).toFixed(1)}" ry="9" fill="rgba(255,150,40,${(0.15 + 0.3 * b).toFixed(2)})"/>${LOGS}
+    <g transform="translate(50 86) scale(${s}) translate(-50 -86)">
+      <path class="f1" d="M50 6 C62 30 82 44 73 70 C69 82 59 87 50 87 C41 87 31 82 27 70 C20 48 40 38 50 6Z" fill="#e8501a" opacity="${(0.6 + 0.4 * b).toFixed(2)}"/>
+      <path class="f2" d="M50 28 C58 45 69 54 63 72 C60 81 55 85 50 85 C45 85 40 81 37 72 C32 57 44 49 50 28Z" fill="#f7a428"/>
+      <path class="f3" d="M50 50 C54 61 59 66 57 76 C56 81 53 83 50 83 C47 83 44 81 43 76 C41 67 47 61 50 50Z" fill="#ffe27a"/></g></svg>`;
+}
+const STICK = (on) => `<svg class="stick" viewBox="0 0 20 9"><path d="M2 6 L18 3" stroke="${on ? '#a0703a' : 'none'}" stroke-width="3.5" stroke-linecap="round"/><path d="M2 6 L18 3" stroke="${on ? '#5a3a1c' : '#777'}" stroke-width="${on ? 1 : 1.2}" stroke-dasharray="${on ? '' : '2 2'}" fill="none"/></svg>`;
+const kindling = (P) => Array.from({ length: M.C.KINDLING_MAX }, (_, i) => STICK(i < P.fire.kindling)).join('');
+function progText(n) { return M.sessionBound(n) ? `${n.prog}/${n.need} this Session` : `${n.prog}/${n.need}`; }
+function whereText(n, here) {
+  const w = M.where(n), ok = M.workable(n, S.zone);
+  if (n.zone || n.cont) return ok ? `${w} · <span class="here">${here || "you're here"}</span>` : w;
+  if (n.kind === 'species') return ok ? `bites in ${S.zone} · <span class="here">${here || "you're here"}</span>` : 'bites elsewhere';
+  return w;
+}
+function rerollTip(n) { return n.reposted ? 'A rerolled goal can\'t be rerolled again.' : n.prog ? `Reroll: swap it for another goal. Its progress (${n.prog}) is lost.` : 'Reroll: swap it for another goal (once).'; }
+function nextDaily() { const h = (M.C.RESET_HOUR - S.hour + 24) % 24 || 24; return `${h}h`; }
+function nextWeekly() { for (let i = 1; i <= 7; i++) if (M.isWeeklyReset(S.P.day + i)) return i === 1 ? 'tomorrow' : DOW[M.dow(S.P.day + i)]; }
+function fireLine(P) {
+  const f = P.fire, fl = M.flame(P);
+  if (fl.state === 'unlit') return 'Not lit yet: complete any goal to light it.';
+  if (fl.state === 'out') return `Gone out. Longest: ${f.longest} days. Any goal lights a new one.`;
+  return `${f.count} day${f.count === 1 ? '' : 's'}${fl.todayLit ? ' · lit today' : ''}`;
+}
+function calendar(P, weeks = 4) {
+  const end = P.day, startD = end - weeks * 7 + 1;
+  const cells = [];
+  for (let d = startD; d <= end; d++) {
+    const h = P.fire.hist[d], pre = P.started == null || d < P.started;
+    const cls = pre ? 'pre' : h || 'none';
+    const t = { lit: 'lit', burned: 'Kindling burned', out: 'went out', none: 'not lit', pre: 'before the board' }[cls];
+    cells.push(`<div class="c ${cls} ${d === end ? 'today' : ''}" data-tip="${esc('<b>' + dayLabel(d) + '</b><br>' + t)}">${new Date(M.BASE + d * 864e5).getUTCDate()}</div>`);
+  }
+  const heads = Array.from({ length: 7 }, (_, i) => `<div class="dh">${DOW[M.dow(startD + i)]}</div>`).join('');
+  return `<div class="cal">${heads}${cells.join('')}</div>`;
+}
+function nextMilestone(P) { const f = P.fire; const m = M.MILESTONES.find((x) => f.count < x.days); return m ? `${m.days - f.count} more lit day${m.days - f.count === 1 ? '' : 's'} to ${m.days}` : 'every milestone reached'; }
+const flyCount = (P) => Object.keys(P.flies).length;
+function flyTip(i) {
+  const P = S.P, f = M.FLIES[i], log = P.flyLog.find((x) => x.fly === i);
+  return esc(`<b>${f.name}</b>${f.rare ? '<br><span class=g>Rare: tied by Expeditions</span>' : ''}<br>${log ? 'First tied ' + dayLabel(log.day) + (P.flies[i] > 1 ? ', ×' + P.flies[i] : '') : '<span class=g>Not tied yet</span>'}`);
+}
+function titlesAll(P) {
+  const done = P.tally.n + P.tally.e;
+  return [...M.TALLY_TITLES.map((t) => ({ title: t.title, rule: `${t.n} goals done`, got: done >= t.n, p: Math.min(1, done / t.n), cur: `${Math.min(done, t.n)}/${t.n}` })),
+    ...M.MILESTONES.map((m) => ({ title: m.title, rule: `${m.days}-day Campfire`, got: !!P.fire.milestones[m.days], p: Math.min(1, P.fire.longest / m.days), cur: `best ${Math.min(P.fire.longest, m.days)}/${m.days}`, coins: m.coins })),
+    { title: M.FLYBOX_TITLE, rule: 'Every Fly Box pattern', got: flyCount(P) === M.FLIES.length, p: flyCount(P) / M.FLIES.length, cur: `${flyCount(P)}/${M.FLIES.length}` }];
+}
+const activeTitle = (P) => P.titles[P.titles.length - 1];
+const hlc = (n) => (S.hl === n.id ? ' hl' : '');
+
+// ---------- Variant A: native list frame (Traveler's Log) ----------
+function renderA() {
+  const P = S.P;
+  const head = `<div class="ttl"><div class="por">${flySVG(0, true, 44)}</div>Tackle Board<button class="x" data-act="close">✕</button></div>`;
+  if (P.started == null) return `<div class="wf" id="wA">${head}<div class="inset">${emptyNative()}</div></div>`;
+  const fl = M.flame(P);
+  const sub = `<div class="sub">${flameSVG(fl, 26)}<span>Campfire <b>${fireLine(P)}</b></span>${kindling(P)}<span class="r">Notices at reset in <b>${nextDaily()}</b> · Expedition <b>${nextWeekly()}</b></span></div>`;
+  const body = { board: aBoard, fire: aFire, box: aBox, tally: aTally }[S.a.tab](P);
+  const tabs = `<div class="tabs">${[['board', 'Board'], ['fire', 'Campfire'], ['box', 'Fly Box'], ['tally', 'Tally']].map(([k, l]) => `<button class="${S.a.tab === k ? 'on' : ''}" data-atab="${k}">${l}</button>`).join('')}</div>`;
+  return `<div class="wf" id="wA">${head}${sub}<div class="inset">${body}</div>${tabs}</div>`;
+}
+function emptyNative() {
+  return `<div class="empty">${flySVG(0, true, 80)}<h3>The Tackle Board</h3>
+    Three small fishing goals each day and an Expedition each week, for wherever you like to fish.<br>
+    <b style="color:#fff">Nothing ever expires.</b> Missed days wait on the board for you, up to 6 Notices and 2 Expeditions.<br>
+    Each goal pays Pagle Coins and ties a fly for your Fly Box. Complete one a day to keep a Campfire burning.<br><br>
+    <button class="nbtn" data-act="start">Start my board</button>
+    <div class="note" style="margin-top:12px">Until you start it, the board stays empty and makes no sound.</div></div>`;
+}
+function trackBox(n) { return `<label class="trkbox" title="Show in the tracker"><input type="checkbox" data-track="${n.id}" ${S.tracked.has(n.id) ? 'checked' : ''}>Track</label>`; }
+function aRow(n) {
+  return `<div class="arow ${n.exp ? 'exp' : ''}${hlc(n)}">${kindIcon(n, 34)}
+    <div class="ab"><div class="at">${M.text(n)}</div><div class="aw">${M.KIND[n.kind].name} · ${whereText(n)} · posted ${dayLabel(n.issued)}${n.reposted ? ' · rerolled' : ''}</div>
+      <div class="nbar"><i style="width:${(100 * n.prog) / n.need}%"></i><span>${progText(n)}</span></div></div>
+    <div class="ap"><span class="coin">${n.pay}</span></div>${trackBox(n)}
+    <button class="rr" data-reroll="${n.id}" ${n.rerollable ? '' : 'disabled'} data-tip="${esc(rerollTip(n))}">↻</button></div>`;
+}
+function aBoard(P) {
+  const o = M.open(P), ex = o.filter((n) => n.exp), no = o.filter((n) => !n.exp), dn = M.doneOn(P, P.day);
+  return `<div class="hdr">Expeditions <small>${ex.length} of ${M.C.EXP_CAP} · one more each week</small></div>${ex.map(aRow).join('') || '<div class="note">None open. The next arrives at the weekly reset.</div>'}
+    <div class="hdr">Notices <small>${no.length} of ${M.C.NOTICE_CAP} · three more each day</small></div>${no.map(aRow).join('') || '<div class="note">All done. Three more arrive at the daily reset.</div>'}
+    ${dn.length ? `<div class="hdr">Done today <small>the Campfire is lit</small></div>${dn.map((n) => `<div class="arow done">${kindIcon(n, 22)}<div class="ab"><div class="at">✓ ${M.text(n)}</div></div><span class="coin">+${n.pay}</span>${n.fly != null ? `<span data-tip="${flyTip(n.fly)}">${flySVG(n.fly, true, 22)}</span>` : ''}</div>`).join('')}` : ''}
+    <div class="note">Goals complete on their own as you fish; only Catches after a goal was posted count. Coins go to your <a style="color:#d8c46a;cursor:pointer" data-act="shop">Curio Shop</a>.</div>`;
+}
+function milestones(P) {
+  return `<div class="mls">${M.MILESTONES.map((m) => { const got = P.fire.milestones[m.days] != null; return `<div class="${got ? 'got' : ''}"><b>${got ? '✓' : '○'}</b>${m.days} days<span style="color:#ffd27a">${m.title}</span><span class="coin">${m.coins}</span></div>`; }).join('')}</div>`;
+}
+function aFire(P) {
+  const fl = M.flame(P), f = P.fire;
+  return `<div class="afire"><div style="text-align:center;width:180px">${flameSVG(fl, 170)}<div class="big">${f.count}</div><div class="lbl">${fl.state === 'out' ? 'gone out' : fl.state === 'unlit' ? 'not lit yet' : 'days burning'}</div></div>
+    <div style="flex:1"><div class="hdr" style="margin:0 0 6px">Kindling <small>keeps it burning through a missed day</small></div><div>${kindling(P)} <span class="lbl">${f.kindling} of ${M.C.KINDLING_MAX} · +1 every ${M.C.KINDLING_EVERY} lit days · used automatically</span></div>
+    <div class="hdr" style="margin:12px 0 6px">Longest Campfire <small>kept for good</small></div><div class="lbl"><b style="color:#fff;font:bold 18px Arial">${f.longest}</b> days · ${nextMilestone(P)}</div>
+    <div class="hdr" style="margin:12px 0 6px">Last four weeks</div>${calendar(P)}
+    <div class="hdr" style="margin:12px 0 4px">Milestones</div>${milestones(P)}</div></div>
+    <div class="note">A day is lit when you complete any Notice or Expedition. A missed day burns one Kindling instead of putting the fire out.</div>`;
+}
+function aBox(P) {
+  return `<div class="hdr">Fly Box <small>${flyCount(P)} of ${M.FLIES.length} patterns tied · the six gilt ones come from Expeditions</small></div>
+    <div class="abox">${M.FLIES.map((f, i) => { const t = P.flies[i]; return `<div class="slot ${f.rare ? 'rare' : ''} ${t ? '' : 'miss'}" data-tip="${flyTip(i)}">${f.rare ? '<span class="rs">★</span>' : ''}${t > 1 ? `<span class="x2">×${t}</span>` : ''}${flySVG(i, !!t, 38)}<div class="n">${t ? f.name : '?'}</div></div>`; }).join('')}</div>
+    <div class="note">Every completed goal ties a fly. Complete the box for the title <i>${M.FLYBOX_TITLE}</i>.</div>`;
+}
+function aTally(P) {
+  return `<div class="hdr">Tally <small>lifetime</small></div><div class="tl">
+    <div class="row"><span class="t">Notices completed</span><i style="font:bold 16px Arial;color:#fff">${fmt(P.tally.n)}</i></div>
+    <div class="row"><span class="t">Expeditions completed</span><i style="font:bold 16px Arial;color:#fff">${fmt(P.tally.e)}</i></div>
+    <div class="row"><span class="t">Pagle Coins earned here</span><span class="coin">${fmt(P.coins)}</span></div></div>
+    <div class="hdr">Titles</div><div class="tl">${titlesAll(P).map((t) => `<div class="row ${t.got ? 'got' : ''}"><span class="t">${t.got ? '✓ ' : ''}<i>${t.title}</i> · ${t.rule}</span><div class="nbar"><i style="width:${100 * t.p}%"></i><span>${t.cur}</span></div></div>`).join('')}</div>`;
+}
+
+// ---------- Variant B: native card board (Great Vault) ----------
+function renderB() {
+  const P = S.P;
+  const head = `<div class="ttl"><div class="por">${flySVG(0, true, 44)}</div>Tackle Board<button class="x" data-act="close">✕</button></div>`;
+  if (P.started == null) return `<div class="wf" id="wB">${head}<div class="inset">${emptyNative()}</div></div>`;
+  const fl = M.flame(P), f = P.fire, o = M.open(P), today = M.doneOn(P, P.day);
+  const ex = [...o.filter((n) => n.exp), ...today.filter((n) => n.exp)], no = [...o.filter((n) => !n.exp), ...today.filter((n) => !n.exp)];
+  const slots = (list, cap, exp) => { const out = list.map((n) => bCard(n)); for (let i = list.length; i < cap; i++) out.push(`<div class="card slotE ${exp ? 'exp' : ''}">${exp ? `Next Expedition<br>at the weekly reset (${nextWeekly()})` : `A fresh Notice<br>at the daily reset (in ${nextDaily()})`}</div>`); return out.join(''); };
+  const hero = `<div class="hero"><div class="rowh" style="margin:0 0 4px;align-self:stretch">Campfire</div>${flameSVG(fl, 150)}
+    <div class="big">${f.count}</div><div class="lbl">${fl.state === 'out' ? 'gone out' : fl.state === 'unlit' ? 'not lit yet' : 'days' + (fl.todayLit ? ', lit today' : '')}</div>
+    <div style="margin-top:8px">${kindling(P)}</div><div class="sm">${f.kindling} Kindling · longest ${f.longest} days</div><div class="sm">${nextMilestone(P)}</div>
+    <div class="tal"><b>${fmt(P.tally.n + P.tally.e)}</b>goals done${activeTitle(P) ? ` · <span style="color:#ffd27a">${activeTitle(P)}</span>` : ''}<div class="sm"><a style="color:#d8c46a;cursor:pointer" data-act="btally">Titles and calendar ›</a></div></div></div>`;
+  const strip = `<div class="strip" data-act="bbox"><span class="lbl" style="color:var(--gold)">Fly Box</span><div class="fl">${M.FLIES.map((x, i) => `<span data-tip="${flyTip(i)}">${flySVG(i, !!P.flies[i], 22)}</span>`).join('')}</div><span class="lbl">${flyCount(P)}/${M.FLIES.length} ›</span></div>`;
+  const ov = S.b.box ? `<div class="ovl" data-act="bclose"><div class="wf" style="position:relative;width:640px">${'<div class="ttl">Fly Box<button class="x" data-act="bclose">✕</button></div>'}<div class="inset" style="max-height:520px">${aBox(P)}</div></div></div>`
+    : S.b.tally ? `<div class="ovl" data-act="bclose"><div class="wf" style="position:relative;width:640px"><div class="ttl">Campfire and titles<button class="x" data-act="bclose">✕</button></div><div class="inset" style="max-height:560px;padding:8px">${calendar(P)}${milestones(P)}${aTally(P)}</div></div></div>` : '';
+  return `<div class="wf" id="wB">${head}<div class="body">${hero}<div class="main">
+    <div class="rowh">Expeditions <small>weekly · ${o.filter((n) => n.exp).length} of ${M.C.EXP_CAP} open</small></div><div class="grid g2">${slots(ex, M.C.EXP_CAP, true)}</div>
+    <div class="rowh">Notices <small>three a day · ${o.filter((n) => !n.exp).length} of ${M.C.NOTICE_CAP} open · nothing expires</small></div><div class="grid g3">${slots(no, M.C.NOTICE_CAP, false)}</div>
+    ${strip}</div></div>${ov}</div>`;
+}
+function bCard(n) {
+  if (n.done != null) return `<div class="card done ${n.exp ? 'exp' : ''}"><div class="top">${kindIcon(n, 26)}<span class="k">${M.KIND[n.kind].name}</span><span class="coin">+${n.pay}</span></div><div class="t">✓ ${M.text(n)}</div>
+    <div class="ok">${n.fly != null ? `${flySVG(n.fly, true, 24)} ${M.FLIES[n.fly].name}` : ''} · done today, slot frees at reset</div></div>`;
+  return `<div class="card ${n.exp ? 'exp' : ''}${hlc(n)}"><div class="top">${kindIcon(n, 26)}<span class="k">${n.exp ? 'Expedition · ' : ''}${M.KIND[n.kind].name}</span><span class="coin">${n.pay}</span></div>
+    <div class="t">${M.text(n)}</div><div class="num">${n.prog}<small> / ${n.need}${M.sessionBound(n) ? ' this Session' : ''}</small></div>
+    <div class="nbar" style="height:7px"><i style="width:${(100 * n.prog) / n.need}%"></i></div>
+    <div class="foot"><span>${whereText(n)}</span>${trackBox(n)}<button class="rr" data-reroll="${n.id}" ${n.rerollable ? '' : 'disabled'} data-tip="${esc(rerollTip(n))}">↻</button></div></div>`;
+}
+
+// ---------- Variant C: cork board ----------
+const rot = (n) => ((n.seq * 37) % 7) - 3;
+function renderC() {
+  const P = S.P;
+  const shell = (inner, ledge) => `<div class="vC"><button class="x" data-act="close">✕</button><div class="plaque">TACKLE BOARD</div><div class="cork">${inner}</div>${ledge}</div>`;
+  if (P.started == null) return shell(`<div class="startC"><div style="font:22px 'IM Fell English'">Notices wanted</div>
+    Three small goals pinned here every day, an Expedition every week. <i>Nothing is ever taken down for being late</i>: missed days wait on the board.<br>Each pays Pagle Coins and ties a fly for the box below.
+    <br><button class="woodbtn" data-act="start">Start my board</button></div>`, '<div class="ledge"></div>');
+  const o = M.open(P), ex = o.filter((n) => n.exp), no = o.filter((n) => !n.exp), dn = M.doneOn(P, P.day);
+  const ePos = [[16, 12], [306, 8]], nPos = [[16, 198], [228, 192], [440, 200], [16, 368], [228, 372], [440, 366]];
+  let html = '';
+  ePos.forEach(([x, y], i) => { html += ex[i] ? cSlip(ex[i], x, y) : `<div class="tack" style="left:${x + 30}px;top:${y + 20}px;width:190px;height:120px">Next Expedition<br>at the weekly reset (${nextWeekly()})</div>`; });
+  nPos.forEach(([x, y], i) => { html += no[i] ? cSlip(no[i], x, y) : `<div class="tack" style="left:${x + 10}px;top:${y + 10}px">A fresh Notice<br>at reset (in ${nextDaily()})</div>`; });
+  html += `<div class="spike"><div class="nail"></div><div class="stack">${dn.map((n, i) => `<div style="--rot:${rot(n) * 2}deg;top:${i * 7}px" data-tip="${esc('<b>' + M.text(n) + '</b><br>+' + n.pay + ' Coins' + (n.fly != null ? '<br>Tied: ' + M.FLIES[n.fly].name : ''))}">${M.text(n)}</div>`).join('')}</div>
+    <div class="lbl">${dn.length ? `${dn.length} done today. The fire's lit.` : 'Done ones go on the spike.'}</div></div>`;
+  html += `<div style="position:absolute;right:14px;bottom:10px;width:130px;font:16px/1.15 Caveat;color:#3a2010;text-align:center">${no.length} of ${M.C.NOTICE_CAP} Notices, ${ex.length} of ${M.C.EXP_CAP} Expeditions up. Nothing expires.</div>`;
+  const fl = M.flame(P), f = P.fire;
+  const ledge = `<div class="ledge"><div class="fire" data-act="cfire">${flameSVG(fl, 84)}<div class="txt">${fl.state === 'lit' ? `${f.count} day${f.count === 1 ? '' : 's'}` : fl.state === 'out' ? 'Gone out' : 'Not lit yet'}<small>${kindling(P)} ${f.kindling} Kindling · longest ${f.longest}</small></div></div>
+    <div class="box" data-act="cbox">Fly Box<small>${flyCount(P)} of ${M.FLIES.length} tied</small></div>
+    <div class="brass" data-act="cfire">${fmt(P.tally.n)} Notices · ${fmt(P.tally.e)} Expeditions${activeTitle(P) ? `<i>${activeTitle(P)}</i>` : ''}</div>
+    <div class="shop" data-act="shop">Coins go to the Curio Shop ☛</div></div>`;
+  let ov = '';
+  if (S.c.box) ov = `<div class="ovl" data-act="cclose"><div class="drawer"><button class="x" data-act="cclose">✕</button><h3>The Fly Box · ${flyCount(P)} of ${M.FLIES.length}</h3><div class="felt">${M.FLIES.map((x, i) => { const t = P.flies[i]; return `<div class="cell ${x.rare ? 'rare' : ''} ${t ? '' : 'miss'}" data-tip="${flyTip(i)}">${t > 1 ? `<span class="x2">×${t}</span>` : ''}${flySVG(i, !!t, 40)}${t ? x.name : 'not tied yet'}</div>`; }).join('')}</div>
+    <div style="font:16px Caveat;color:#e8d0a0;text-align:center;margin-top:8px">Gilt-edged patterns are tied only by Expeditions. A full box earns <i>${M.FLYBOX_TITLE}</i>.</div></div></div>`;
+  if (S.c.fire) ov = `<div class="ovl" data-act="cclose"><div class="card2"><button class="x" data-act="cclose">✕</button><h3>The Campfire</h3>
+    <div class="h">${fireLine(P)}. ${nextMilestone(P)}.</div>
+    <div style="margin:8px 0 10px;font-size:13px">A day is lit by any goal done. A missed day burns a stick of Kindling (${f.kindling} left, +1 every ${M.C.KINDLING_EVERY} lit days, at most ${M.C.KINDLING_MAX}). Longest so far: ${f.longest} days.</div>
+    ${calendar(P)}<div style="margin-top:12px">${titlesAll(P).map((t) => `<div style="display:flex;gap:6px;font-size:13px;padding:2px 0;color:${t.got ? '#2a1608' : '#9a8060'}"><span>${t.got ? '✓' : '○'} <i>${t.title}</i></span><span style="flex:1;border-bottom:1px dotted #8a6a40;transform:translateY(-4px)"></span><span>${t.rule} · ${t.cur}</span></div>`).join('')}</div></div></div>`;
+  return shell(html, ledge) + ov;
+}
+function cSlip(n, x, y) {
+  const here = M.workable(n, S.zone) && (n.zone || n.cont || n.kind === 'species');
+  return `<div class="slip ${n.exp ? 'exp' : ''}${hlc(n)}" style="left:${x}px;top:${y}px;--rot:${rot(n)}deg">
+    <span class="tr ${S.tracked.has(n.id) ? 'on' : ''}" data-track-toggle="${n.id}" title="Show in the tracker">★</span>
+    <div class="k">${n.exp ? 'Expedition · ' : ''}${M.KIND[n.kind].name}</div><div class="t">${M.text(n)}</div>
+    <div class="h">${n.prog} of ${n.need}${M.sessionBound(n) ? ' this Session' : ''}</div><div class="inkbar"><i style="width:${(100 * n.prog) / n.need}%"></i></div>
+    <div class="w ${here ? 'here' : ''}">${here ? "I'm here" : M.where(n)}</div>
+    <div class="foot"><span class="pay">pays ${n.pay} Coins</span>${n.rerollable ? `<span class="td" data-reroll="${n.id}" data-tip="${esc(rerollTip(n))}">take it down</span>` : ''}</div>
+    ${n.reposted ? '<span class="repost">RE-POSTED</span>' : ''}${n.exp ? '<div class="seal">60</div>' : ''}</div>`;
+}
+
+// ---------- Variant D: the fourth book ----------
+const DPAGES = { board: 'Board', fire: 'Campfire', box: 'Fly Box', tally: 'Tally' };
+function renderD() {
+  const P = S.P, d = S.d;
+  let L, R;
+  if (P.started == null) {
+    L = `<div class="kick">The Tackle Board</div><h2>Goals for any day's fishing</h2>
+      <div class="hand" style="margin-top:10px">Three small goals a day, an Expedition each week, wherever I fish.</div>
+      <div class="hand" style="margin-top:8px">Nothing expires. Missed days wait for me, up to 6 Notices and 2 Expeditions.</div>
+      <div class="hand" style="margin-top:8px">Each one pays Pagle Coins and ties a fly for my box. One a day keeps a Campfire burning.</div>
+      <div class="note" style="margin-top:14px">Until I start it, this book stays blank and quiet.</div>`;
+    R = `<button class="seal-btn" data-act="start">Start<br>my board</button><div class="note" style="text-align:center">Break the seal to post the first three Notices.</div>`;
+  } else [L, R] = { board: dBoard, fire: dFire, box: dBox, tally: dTally }[d.page](P);
+  const crumbs = [['Tackle Board', { page: 'board' }]];
+  if (P.started != null && d.page !== 'board') crumbs.push([DPAGES[d.page], { page: d.page }]);
+  const selN = d.page === 'board' && P.notices.find((n) => n.id === d.sel);
+  if (selN) crumbs.push([M.KIND[selN.kind].name, { page: 'board', sel: selN.id }]);
+  const ribs = P.started != null ? Object.entries(DPAGES).map(([k, l]) => `<button class="rib ${d.page === k ? 'on' : ''}" data-dnav='${JSON.stringify({ page: k })}'>${l}</button>`).join('') : '';
+  const fl = M.flame(P);
+  return `<div class="vD"><button class="x" data-act="close">✕</button>
+    ${P.started != null ? `<div class="plate">${fmt(P.tally.n + P.tally.e)} goals done · Campfire ${fl.state === 'lit' ? P.fire.count + ' days' : 'out'}${activeTitle(P) ? ' · ' + activeTitle(P) : ''}</div>` : ''}
+    <div class="strip">${crumbs.map(([l, o]) => `<span class="crumb" data-dnav='${JSON.stringify(o)}'>${l}</span>`).join('')}${P.started != null ? `<span class="rt">Fresh Notices at reset, in ${nextDaily()}</span>` : ''}</div>
+    <div class="pages"><div class="page l">${L}</div><div class="page r">${R}</div></div><div class="ribbons">${ribs}</div></div>`;
+}
+function dRow(n, sel) {
+  return `<div class="er ${sel === n.id ? 'on' : ''}${hlc(n)}" data-dnav='${JSON.stringify({ page: 'board', sel: n.id })}'>${kindIcon(n, 24)}
+    <span class="nm">${M.text(n)}${S.tracked.has(n.id) ? ' <span class="red" title="tracked">★</span>' : ''}<div class="inkbar"><i style="width:${(100 * n.prog) / n.need}%"></i></div></span>
+    <span class="mg">${n.prog} of ${n.need}<br><span style="font-size:15px;color:#7a5a10">${n.pay} Coins</span></span></div>`;
+}
+function dBoard(P) {
+  const o = M.open(P), ex = o.filter((n) => n.exp), no = o.filter((n) => !n.exp), dn = M.doneOn(P, P.day);
+  const sel = S.d.sel && o.find((n) => n.id === S.d.sel) ? S.d.sel : (o[0] && o[0].id);
+  const L = `<div class="kick">On the board</div><h2>What's posted</h2>
+    <div class="gh"><span>Expeditions</span><small>${ex.length} of ${M.C.EXP_CAP}, one a week</small></div>${ex.map((n) => dRow(n, sel)).join('') || '<div class="note">None open; the next comes at the weekly reset.</div>'}
+    <div class="gh"><span>Notices</span><small>${no.length} of ${M.C.NOTICE_CAP}, three a day</small></div>${no.map((n) => dRow(n, sel)).join('') || '<div class="note">All done. Three more come at the daily reset.</div>'}
+    ${dn.length ? `<div class="gh"><span>Done today</span><small>the fire's lit</small></div>${dn.map((n) => `<div class="er done">${kindIcon(n, 24)}<span class="nm">${M.text(n)}</span><span class="mg">+${n.pay} ✓</span></div>`).join('')}` : ''}`;
+  const n = o.find((x) => x.id === sel);
+  const R = n ? dEntry(n) : `<div class="kick">Nothing open</div><h2>All caught up</h2><div class="hand">Fresh Notices come at the daily reset, in ${nextDaily()}.</div>`;
+  return [L, R];
+}
+function dEntry(n) {
+  const ok = M.workable(n, S.zone);
+  const wh = n.zone || n.cont ? `Anywhere in ${M.where(n)}.${ok ? " <span style='color:#2a6a2a'>I'm here.</span>" : ''}` : n.kind === 'species' ? `Wherever ${M.ITEMS[n.item].name} bites.${ok ? " <span style='color:#2a6a2a'>It bites here.</span>" : ''}` : 'Anywhere I fish.';
+  const sets = n.set.length && (n.kind === 'variety' || n.kind === 'wanderer' || n.kind === 'collector') ? `<div class="note">So far: ${n.set.map((k) => (M.ITEMS[k] ? M.ITEMS[k].name : k)).join(', ')}.</div>` : '';
+  return `<div class="kick">${n.exp ? 'Expedition · ' : 'Notice · '}${M.KIND[n.kind].name}</div><h2>${kindIcon(n, 30)} ${M.text(n)}</h2>
+    <div class="big">${n.prog} <span style="font-size:20px;color:#8a6a40">of ${n.need}</span></div><div class="inkbar" style="height:12px"><i style="width:${(100 * n.prog) / n.need}%"></i></div>${sets}
+    <div class="hand" style="margin-top:8px">Posted ${dayLabel(n.issued)}. Only my Catches since then count${M.sessionBound(n) ? ', all within one Session' : ''}.</div>
+    <div class="hand" style="margin-top:6px">${wh}</div>
+    <div class="gh"><span>Pays</span></div><div class="toc"><div><span>Pagle Coins</span><span>${n.pay}</span></div><div><span>A fly for my box</span><span>${n.exp ? 'a rare pattern' : 'a pattern'}</span></div><div><span>A day for the Campfire</span><span>${S.P.fire.lit[S.P.day] ? 'already lit' : 'lights today'}</span></div></div>
+    <div class="gh"><span>On the tracker</span></div><span class="back" data-track-toggle="${n.id}">${S.tracked.has(n.id) ? '★ tracking it (untrack)' : '☆ track it'}</span>
+    <div class="gh"><span>Not for me?</span></div>${n.rerollable ? `<span class="back" data-reroll="${n.id}">Swap it for another, once ☛</span>${n.prog ? `<div class="note">Its progress (${n.prog}) would be lost.</div>` : ''}` : '<span class="back off">Already swapped once; this one stays.</span>'}`;
+}
+function dFire(P) {
+  const fl = M.flame(P), f = P.fire;
+  const L = `<div class="kick">The Campfire</div><h2>${fl.state === 'lit' ? f.count + ' days burning' : fl.state === 'out' ? 'Gone out' : 'Not lit yet'}</h2>
+    <div style="text-align:center">${flameSVG(fl, 200)}</div>
+    <div class="hand">${fl.state === 'out' ? `It went out while I was away. My longest, ${f.longest} days, stays in the book. Any goal lights a new one.` : fl.state === 'unlit' ? 'Any goal done lights it.' : `${fl.todayLit ? 'Lit today.' : 'Not lit yet today.'} ${nextMilestone(P)}.`}</div>
+    <div class="gh"><span>Kindling</span><small>spent on its own</small></div><div>${kindling(P)} <span class="small">${f.kindling} of ${M.C.KINDLING_MAX}. A missed day burns one instead of the fire. +1 every ${M.C.KINDLING_EVERY} lit days.</span></div>`;
+  const R = `<div class="kick">The log</div><h2>Four weeks of fires</h2>${calendar(P)}
+    <div class="gh"><span>Longest</span></div><div class="big" style="font-size:28px">${f.longest} days</div>
+    <div class="gh"><span>Milestones</span></div><div class="toc">${M.MILESTONES.map((m) => `<div class="${f.milestones[m.days] != null ? 'got' : 'no'}"><span>${f.milestones[m.days] != null ? '✓' : '○'} ${m.days} days: <i>${m.title}</i></span><span>${m.coins} Coins</span></div>`).join('')}</div>`;
+  return [L, R];
+}
+function dBox(P) {
+  const plate = (i) => { const f = M.FLIES[i], t = P.flies[i]; return `<div class="${t ? '' : 'miss'} ${f.rare ? 'rare' : ''}" data-tip="${flyTip(i)}">${t > 1 ? `<span class="x2">×${t}</span>` : ''}${flySVG(i, !!t, 46)}${t ? f.name : 'not tied yet'}</div>`; };
+  return [`<div class="kick">The Fly Box</div><h2>${flyCount(P)} of ${M.FLIES.length} patterns</h2><div class="note">Every goal done ties one. Expeditions tie the rare ones.</div><div class="plates">${M.FLIES.slice(0, 15).map((f, i) => plate(i)).join('')}</div>`,
+    `<div class="plates" style="margin-top:46px">${M.FLIES.slice(15).map((f, i) => plate(i + 15)).join('')}</div><div class="hand" style="margin-top:10px">${flyCount(P) === M.FLIES.length ? `Every pattern tied: <i>${M.FLYBOX_TITLE}</i>.` : `A full box makes me <i>${M.FLYBOX_TITLE}</i>.`}</div>`];
+}
+function dTally(P) {
+  const L = `<div class="kick">The tally</div><h2>Goals done</h2><div class="toc" style="margin-top:8px"><div><span>Notices</span><span>${fmt(P.tally.n)}</span></div><div><span>Expeditions</span><span>${fmt(P.tally.e)}</span></div><div><span>Pagle Coins earned here</span><span>${fmt(P.coins)}</span></div><div><span>Longest Campfire</span><span>${P.fire.longest} days</span></div></div>
+    <span class="back" data-act="shop">Spend Coins in the Curio Shop ☛</span>`;
+  const R = `<div class="kick">Titles</div><h2>What I've earned</h2>${titlesAll(P).map((t) => `<div style="margin:8px 0;display:flex;align-items:center"><span class="wax ${t.got ? '' : 'no'}">${t.got ? '✓' : ''}</span><span><i style="font-size:16px">${t.title}</i><br><span class="small">${t.rule} · ${t.cur}</span></span></div>`).join('')}`;
+  return [L, R];
+}
+
+// ---------- HUD tracker ----------
+function renderTracker() {
+  const P = S.P, el = $('#trk'); let out = '';
+  if (S.trk.hunts) out += `<div class="tb"><div class="th">Hunts<span>2 pinned</span></div><div class="stub"><div class="ln"><div class="a"><span class="dot" style="background:#7fbf6a"></span><span>Firefin at Dusk</span><b>ends in 2h</b></div></div><div class="ln"><div class="a"><span class="dot" style="background:#e8b04a"></span><span>Sunday Bass</span><b>Sun 14:00</b></div></div></div></div>`;
+  if (S.trk.stats) out += `<div class="tb"><div class="th">Stats<span>Session · 21m</span></div><div class="stub"><div class="ln"><div class="a"><span>38 Casts · 31 Catches · 7 got away</span></div></div></div></div>`;
+  if (S.trk.on && P.started != null) {
+    const o = M.open(P), fl = M.flame(P), now = Date.now();
+    const fin = P.notices.filter((n) => S.flash[n.id] && now - S.flash[n.id] < 4000);
+    let list = S.trk.mode === 'tracked' ? o.filter((n) => S.tracked.has(n.id)) : S.trk.mode === 'here' ? o.filter((n) => M.workable(n, S.zone)) : o;
+    const rest = o.length - list.length;
+    const fireHTML = fl.state === 'lit' ? `${flameSVG(fl, 16)}${P.fire.count}` : '';
+    const line = (n, two) => `<div class="ln ${n.exp ? 'exp' : ''}" data-open="${n.id}"><div class="a"><span>${n.exp ? 'Expedition: ' : ''}${two ? M.text(n) : M.short(n)}</span><b>${n.prog}/${n.need}</b></div>${two ? `<div class="s">${M.sessionBound(n) ? 'this Session · ' : ''}${M.where(n)}${M.workable(n, S.zone) && (n.zone || n.cont || n.kind === 'species') ? ' · <span class="here">here</span>' : ''}</div>` : ''}</div>`;
+    const finHTML = fin.map((n) => `<div class="ln fin"><div class="a"><span>${M.short(n)}</span><b>Complete</b></div></div>`).join('');
+    const body = S.trk.collapsed ? '' : finHTML + list.map((n) => line(n, S.trk.mode !== 'all')).join('')
+      + (S.trk.mode !== 'all' && rest > 0 ? `<div class="more" data-act="open">+${rest} more on the board${S.trk.mode === 'here' ? ' (elsewhere)' : ''}</div>` : '')
+      + (S.trk.mode === 'tracked' && !list.length ? '<div class="more">Track a goal on the board to show it here.</div>' : '');
+    out += `<div class="tb ${S.trk.frame}"><div class="th" data-act="tcollapse"><span class="tw">${S.trk.collapsed ? '▸' : '▾'}</span>Tackle Board<span>${fireHTML} · ${o.length} open</span></div>${body}</div>`;
+  }
+  el.innerHTML = out;
+}
+
+// ---------- render ----------
+const VARIANTS = {
+  A: { name: "Native list (Traveler's Log)", render: renderA, note: "<b>Native Retail frame with bottom tabs</b> (Board, Campfire, Fly Box, Tally), modelled on Retail's Trading Post Traveler's Log. The board is a list: Expeditions, then Notices, each a row with its kind icon, where it can be worked, a native progress bar, the Coin payout, a Track box and a ↻ reroll button (greyed once used). Done goals drop into a \"Done today\" list. The Campfire is a one-line strip under the title and a tab of its own." },
+  B: { name: 'Native card board (Great Vault)', render: renderB, note: "<b>One native screen, no tabs</b>, like the Great Vault. The Campfire is the hero on the left (big flame, count, Kindling, longest, tally). Every slot up to the cap is drawn: 2 Expedition cards and 6 Notice cards, with <b>empty slots</b> saying when the next one arrives, so banking and the cap are visible. A done card stays in its slot until the next refill. The Fly Box is a strip of 30 flies along the bottom." },
+  C: { name: 'Cork board (an exception)', render: renderC, note: "<b>The argued exception: a cork board of pinned Notices</b> in the book language's materials (parchment, ink, handwriting, brass) but not a book. Expeditions are bigger posters with a wax seal; empty pins show the cap; reroll is \"take it down\" and the replacement is stamped RE-POSTED. Done slips go on <b>the spike</b>, which is also how you see the day is lit. The Campfire, the Fly Box (a wooden box that opens) and the brass tally plate sit on the ledge." },
+  D: { name: 'Fourth book', render: renderD, note: "<b>A fourth Pagle book</b> in the Journal/Hunts/Stats language: gilt breadcrumbs, ribbons (Board, Campfire, Fly Box, Tally) and a two-page spread. The left page lists what's posted with ink bars and the count and Coins in the margin; the right page is the chosen goal's entry, with where to work it, what it pays, track and \"swap it, once\". The Fly Box is a field-guide plate of patterns; the Campfire is a drawn fire with a four-week log." },
+};
+const TRACKERS = {
+  all: '<b>K1 All open:</b> every open goal, one short line each with its count (up to 8 lines). Simple, but long when the board is full.',
+  here: '<b>K2 Workable here:</b> only goals the current zone can move (zone and continent goals here, Species that bite here, and anywhere-goals), two lines each, then "+N more (elsewhere)". Changes as you travel.',
+  tracked: '<b>K3 Tracked only:</b> like quest tracking. Tick Track on the board (★ on the cork board); new goals aren\'t tracked until you do. Here the first two are tracked to start.',
+};
+function render() {
+  $('#win').innerHTML = (S.open ? VARIANTS[S.variant].render() : '') + confirmHTML();
+  renderTracker();
+  $('#zoneName').textContent = S.zone;
+  $('#mmclock').textContent = `${dayLabel(S.P.day)} · ${String(S.hour).padStart(2, '0')}:00 realm`;
+  $('#swLabel').textContent = `${S.variant} (${VARIANTS[S.variant].name})`;
+  $('#vnote').innerHTML = VARIANTS[S.variant].note;
+  $('#tnote').innerHTML = TRACKERS[S.trk.mode] + ' Clicking a line opens the board on that goal; the header collapses the block.';
+  renderModel();
+}
+function confirmHTML() {
+  const n = S.confirm && S.P.notices.find((x) => x.id === S.confirm && !x.done);
+  if (!n) return '';
+  return `<div class="popup">Take down this ${n.exp ? 'Expedition' : 'Notice'}?<br><span style="color:#ffd27a">${M.text(n)}</span><br>Its progress (${n.prog}/${n.need}) is lost, and the new one can't be taken down.<div class="bt"><button data-reroll="${n.id}">Take it down</button><button data-act="nconfirm">Keep it</button></div></div>`;
+}
+function renderModel() {
+  const P = S.P, o = M.open(P);
+  $('#mtable').innerHTML = '<tr><th>id</th><th>kind</th><th>goal</th><th>prog</th><th>pay</th><th>reroll</th></tr>' + (o.length ? o.map((n) => `<tr><td>${n.id}</td><td>${n.exp ? 'E·' : ''}${n.kind}</td><td style="white-space:normal">${M.text(n)}</td><td>${n.prog}/${n.need}</td><td>${n.pay}</td><td>${n.rerollable ? 'yes' : n.reposted ? 'replacement' : 'no'}</td></tr>`).join('') : '<tr><td colspan="6">(board empty)</td></tr>');
+  const f = P.fire;
+  $('#fstate').textContent = `started: ${P.started == null ? 'no' : dayLabel(P.started)}   today: ${dayLabel(P.day)} (day ${P.day})   Session ${S.session}\n`
+    + `Campfire ${f.count} · Kindling ${f.kindling} · longest ${f.longest} · lit today: ${!!f.lit[P.day]} · milestones ${Object.keys(f.milestones).join(',') || '-'}\n`
+    + `tally ${P.tally.n} Notices + ${P.tally.e} Expeditions · Coins earned ${P.coins} · flies ${flyCount(P)}/${M.FLIES.length}\ntitles: ${P.titles.join(', ') || '-'}`;
+  $('#mrec').textContent = P.records.slice(-8).join('\n') + `\n(${P.records.length} records in all)`;
+}
+function syncPanel() {
+  document.querySelectorAll('#stageSeg button').forEach((b) => b.classList.toggle('on', b.dataset.v === S.stage));
+  document.querySelectorAll('#trkSeg button').forEach((b) => b.classList.toggle('on', b.dataset.v === S.trk.mode));
+  $('#optTrk').checked = S.trk.on; $('#optHunts').checked = S.trk.hunts; $('#optStats').checked = S.trk.stats; $('#optLure').checked = S.lure;
+  $('#stageNote').textContent = STAGES[S.stage].note;
+  $('#zoneSel').innerHTML = Object.keys(M.ZONES).map((z) => `<option ${z === S.zone ? 'selected' : ''}>${z}</option>`).join('');
+  $('#flyRule').value = S.flyRule; $('#trkFrame').value = S.trk.frame;
+  $('#flyNote').textContent = S.flyRule === 'new' ? 'With 24 common and 6 rare patterns, the box is full after ~24 Notices and 6 Expeditions: about six weeks of daily play.' : 'Repeats make the last patterns slow to find (collector\'s luck); the ×N on a fly counts repeats.';
+  $('#timeNote').textContent = `Today is ${dayLabel(S.P.day)}. Daily reset at 03:00, weekly reset on Tuesdays. A day without a goal done burns Kindling at reset.`;
+}
+function chat(html, sys) { const d = document.createElement('div'); d.innerHTML = html; if (sys) d.className = 'sys'; $('#chatlog').appendChild(d); while ($('#chatlog').children.length > 6) $('#chatlog').firstChild.remove(); }
+function setVariant(v) { S.variant = v; const u = new URL(location); u.searchParams.set('variant', v); history.replaceState(null, '', u); render(); }
+function setTracker(v) { S.trk.mode = v; const u = new URL(location); u.searchParams.set('tracker', v); history.replaceState(null, '', u); syncPanel(); render(); }
+function openOn(id) {
+  S.open = true; S.hl = id;
+  S.a.tab = 'board'; S.b.box = S.b.tally = false; S.c.box = S.c.fire = false; S.d = { page: 'board', sel: id };
+  render(); setTimeout(() => { S.hl = null; }, 3300);
+}
+function passDays(k, loggedIn) {
+  const r = M.advance(S.P, S.P.day + k, loggedIn, ctx());
+  S.session++; S.flash = {};
+  syncPanel(); render(); present(r.moments);
+  chat(loggedIn ? `(The daily reset passes. ${dayLabel(S.P.day)}.)` : `(${k} days pass. You log in on ${dayLabel(S.P.day)}.)`, true);
+}
+
+// ---------- events ----------
+document.addEventListener('click', (e) => {
+  const t = e.target.closest('[data-act],[data-atab],[data-reroll],[data-dnav],[data-open],[data-menu],[data-track-toggle],[data-force],#pbtn');
+  if (!t) { if (!e.target.closest('#cmenu')) $('#cmenu').classList.remove('on'); return; }
+  if (t.id === 'pbtn') { $('#cmenu').classList.toggle('on'); return; }
+  if (t.dataset.menu === 'board') { S.open = !S.open; $('#cmenu').classList.remove('on'); return render(); }
+  if (t.dataset.force) { S.force = t.dataset.force; return cast(1); }
+  if (t.dataset.reroll) {
+    const pend = S.P.notices.find((n) => n.id === t.dataset.reroll);
+    if (pend && pend.prog > 0 && !t.closest('.popup')) { S.confirm = pend.id; return render(); }
+    S.confirm = null;
+    const old = S.P.notices.find((n) => n.id === t.dataset.reroll), n = M.reroll(S.P, t.dataset.reroll, ctx());
+    if (n) { if (S.tracked.delete(old.id)) S.tracked.add(n.id); if (S.d.sel === old.id) S.d.sel = n.id; S.hl = n.id; setTimeout(() => (S.hl = null), 3300); }
+    return render();
+  }
+  if (t.dataset.trackToggle) { const id = t.dataset.trackToggle; S.tracked.has(id) ? S.tracked.delete(id) : S.tracked.add(id); return render(); }
+  if (t.dataset.open) return openOn(t.dataset.open);
+  if (t.dataset.dnav) { const o = JSON.parse(t.dataset.dnav); S.d = { page: o.page, sel: o.sel || null }; return render(); }
+  if (t.dataset.atab) { S.a.tab = t.dataset.atab; return render(); }
+  const a = t.dataset.act;
+  if (a === 'close') S.open = false;
+  else if (a === 'open') S.open = true;
+  else if (a === 'start') { M.start(S.P, S.P.day, ctx()); M.open(S.P).slice(0, 2).forEach((n) => S.tracked.add(n.id)); chat('Pagle: your Tackle Board is up. Three Notices and an Expedition are posted.', true); }
+  else if (a === 'shop') chat('Pagle: (the Curio Shop is Core\'s and has its own prototype; the board only links to it)', true);
+  else if (a === 'nconfirm') S.confirm = null;
+  else if (a === 'tcollapse') S.trk.collapsed = !S.trk.collapsed;
+  else if (a === 'bbox') S.b.box = true;
+  else if (a === 'btally') S.b.tally = true;
+  else if (a === 'bclose') { if (e.target !== t && t.classList.contains('ovl')) return; S.b.box = S.b.tally = false; }
+  else if (a === 'cbox') S.c.box = true;
+  else if (a === 'cfire') S.c.fire = true;
+  else if (a === 'cclose') { if (e.target !== t && t.classList.contains('ovl')) return; S.c.box = S.c.fire = false; }
+  else return;
+  render();
+});
+document.addEventListener('change', (e) => {
+  if (e.target.dataset.track) { const id = e.target.dataset.track; e.target.checked ? S.tracked.add(id) : S.tracked.delete(id); render(); }
+});
+document.addEventListener('mousemove', (e) => {
+  const t = e.target.closest('[data-tip]'), tip = $('#tip');
+  if (!t) { tip.style.display = 'none'; return; }
+  tip.innerHTML = t.dataset.tip; tip.style.display = 'block';
+  tip.style.left = Math.min(e.clientX + 14, innerWidth - tip.offsetWidth - 8) + 'px'; tip.style.top = Math.min(e.clientY + 14, innerHeight - tip.offsetHeight - 8) + 'px';
+});
+$('#chatin').addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter') return;
+  const v = e.target.value.trim(); e.target.value = '';
+  if (/^\/pagle\s+board$/i.test(v)) { S.open = !S.open; render(); } else if (v) chat('Unknown command. Try /pagle board', true);
+});
+$('#stageSeg').onclick = (e) => e.target.dataset.v && loadStage(e.target.dataset.v);
+$('#trkSeg').onclick = (e) => e.target.dataset.v && setTracker(e.target.dataset.v);
+$('#optTrk').onchange = (e) => { S.trk.on = e.target.checked; render(); };
+$('#trkFrame').onchange = (e) => { S.trk.frame = e.target.value; render(); };
+$('#optHunts').onchange = (e) => { S.trk.hunts = e.target.checked; render(); };
+$('#optStats').onchange = (e) => { S.trk.stats = e.target.checked; render(); };
+$('#optLure').onchange = (e) => { S.lure = e.target.checked; };
+$('#zoneSel').onchange = (e) => { S.zone = e.target.value; render(); };
+$('#flyRule').onchange = (e) => { S.flyRule = e.target.value; syncPanel(); };
+$('#bCast').onclick = () => cast(1);
+$('#bCast10').onclick = () => cast(10);
+$('#bCast50').onclick = () => cast(50);
+$('#bSess').onclick = () => { S.session++; chat('(15 minutes without a Cast. The Session has ended.)', true); render(); };
+$('#bNext').onclick = () => passDays(1, true);
+$('#bAway3').onclick = () => passDays(3, false);
+$('#bAway14').onclick = () => passDays(14, false);
+$('#swPrev').onclick = () => { const k = Object.keys(VARIANTS); setVariant(k[(k.indexOf(S.variant) + k.length - 1) % k.length]); };
+$('#swNext').onclick = () => { const k = Object.keys(VARIANTS); setVariant(k[(k.indexOf(S.variant) + 1) % k.length]); };
+document.addEventListener('keydown', (e) => {
+  if (e.target.closest('input,textarea,select,[contenteditable]')) return;
+  if (e.key === 'ArrowLeft') $('#swPrev').click();
+  if (e.key === 'ArrowRight') $('#swNext').click();
+});
+
+// ---------- boot ----------
+const params = new URLSearchParams(location.search);
+S.variant = VARIANTS[params.get('variant')] ? params.get('variant') : 'C';
+S.trk.mode = TRACKERS[params.get('tracker')] ? params.get('tracker') : 'here';
+if (['fr-cork', 'fr-plank'].includes(params.get('frame'))) S.trk.frame = params.get('frame');
+chat('Pagle: type /pagle board or use the compartment menu to toggle the Tackle Board.', true);
+loadStage(STAGES[params.get('stage')] ? params.get('stage') : 'week');
+</script>
+</body>
+</html>

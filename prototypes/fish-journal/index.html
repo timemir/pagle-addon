@@ -1,0 +1,774 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fish Journal Prototype</title>
+<!--
+  PROTOTYPE: throwaway, never ships. Lives only on branch prototype/fish-journal.
+  Question (wow-fish "Prototype the Fish Journal"): what should the Fish Journal look and feel like in the native Retail UI style?
+  Plan: five journals on one page (E = B's layout in C's book, added after first review), switchable via ?variant=A|B|C|D|E and the floating bottom bar (or ←/→).
+        ?state=new|mid|cap swaps the sample Angler (day one / mid-game / level 60 with Prestige ready).
+  Sample data is approximate (Classic baseline + research notes). Rates, weights, dates and lore are placeholders.
+  Open the file directly in a browser. No build, no persistence.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Marcellus&family=IM+Fell+English:ital@0;1&family=Caveat:wght@500&display=swap" rel="stylesheet">
+<style>
+:root{--gold:#ffd100;--txt:#ece6d6;--dim:#8f8a80;--ok:#1eff00;
+  --fbg:#1b1814;--fbg2:#2b251e;--fb1:#8a7a5f;--fb2:#3a3024;--inset:rgba(0,0,0,.42)}
+body.t-drift{--fbg:#24190f;--fbg2:#3f2c1a;--fb1:#a8865a;--fb2:#4a3520}
+body.t-deep{--fbg:#0c1720;--fbg2:#173246;--fb1:#5f93ad;--fb2:#1d3a4a}
+body.t-gild{--fbg:#1a140c;--fbg2:#3a2c14;--fb1:#e0b84a;--fb2:#6b5220}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{background:#0e1a1f radial-gradient(ellipse at 30% 15%,rgba(140,180,150,.35),transparent 55%) fixed;background-image:radial-gradient(ellipse at 30% 15%,rgba(140,180,150,.3),transparent 55%),radial-gradient(ellipse at 80% 95%,rgba(30,70,100,.6),transparent 60%),linear-gradient(180deg,#2a4650 0%,#16292f 45%,#0a1416 100%);background-attachment:fixed;font-family:'Marcellus',Georgia,serif;color:var(--txt);font-size:13px}
+#app{min-height:100vh;display:flex;align-items:flex-start;justify-content:center;padding:70px 40px 120px;overflow-x:auto}
+h2,h3,h4{font-weight:normal;margin:0}
+.gold{color:var(--gold)}.dim{color:var(--dim)}.ok{color:var(--ok)}.wht{color:#fff}
+.n1{color:#fff}.n2{color:#1eff00}.n3{color:#0070dd}.n0{color:#8a8a8a}
+
+/* ---------- Retail frame ---------- */
+.wf{position:relative;flex:none;background:radial-gradient(ellipse at 50% 0%,var(--fbg2),var(--fbg) 70%);border:2px solid var(--fb1);border-radius:6px;box-shadow:0 0 0 2px #000,0 0 0 5px var(--fb2),0 0 0 6px var(--fb1),0 0 0 8px #000,0 18px 50px rgba(0,0,0,.75)}
+.wf>.ttl{height:28px;line-height:28px;text-align:center;color:var(--gold);font-size:15px;background:linear-gradient(#2f281f,#14110d);border-bottom:1px solid #000;border-radius:4px 4px 0 0;text-shadow:0 1px 1px #000}
+.x{position:absolute;right:5px;top:4px;width:20px;height:20px;border-radius:4px;background:radial-gradient(circle at 40% 35%,#d0392b,#5c0c07);border:1px solid #d8b35e;color:#ffe9b0;font:bold 11px/18px Arial;text-align:center;z-index:5}
+.wf>.pt{position:absolute;left:-16px;top:-20px;width:66px;height:66px;border-radius:50%;background:radial-gradient(circle at 45% 40%,#2e4a58,#081014);border:3px solid #caa451;box-shadow:0 0 0 2px #000,0 3px 8px #000;z-index:4;overflow:hidden}
+.wf>.pt svg{width:100%;height:100%}
+.inset{background:var(--inset);border:1px solid #3a3128;box-shadow:inset 0 0 14px rgba(0,0,0,.9);border-radius:3px}
+.btn{display:inline-block;background:linear-gradient(#a3170e,#560804);border:1px solid #c9a24c;border-radius:4px;color:var(--gold);font-size:12px;padding:4px 12px;cursor:pointer;text-shadow:0 1px 0 #000;box-shadow:inset 0 1px 0 rgba(255,255,255,.15);white-space:nowrap}
+.btn:hover{filter:brightness(1.25)}.btn.sm{padding:2px 8px;font-size:11px}
+.btn.glow{animation:glow 1.6s ease-in-out infinite}
+@keyframes glow{50%{box-shadow:0 0 14px 3px rgba(255,209,0,.6)}}
+.tabs{position:absolute;left:22px;bottom:-32px;display:flex;gap:3px}
+.tab{background:linear-gradient(#2a231b,#100d0a);border:2px solid var(--fb1);border-top:0;border-radius:0 0 9px 9px;padding:6px 14px 7px;color:var(--gold);font-size:13px;cursor:pointer;box-shadow:0 4px 6px rgba(0,0,0,.6)}
+.tab.on{background:linear-gradient(var(--fbg),#2c241b);color:#fff;padding-bottom:10px}
+.tab:hover{color:#fff}
+.search{background:#000;border:1px solid #5a4e3c;border-radius:10px;color:#fff;padding:4px 10px 4px 24px;font-family:inherit;font-size:12px;width:100%;outline:none;background-image:radial-gradient(circle at 11px 50%,transparent 3.5px,#8a7a5f 4px,#8a7a5f 5px,transparent 5.5px)}
+.search:focus{border-color:#c9a24c}
+.scroll{overflow-y:auto;scrollbar-width:thin;scrollbar-color:#6a5c46 #0b0907}
+.ic{--sz:36px;--qc:#555;display:inline-block;flex:none;width:var(--sz);height:var(--sz);border:1px solid var(--qc);border-radius:3px;background:radial-gradient(circle at 40% 35%,#3b444c,#0e1114);box-shadow:0 0 0 1px #000;vertical-align:middle;position:relative;overflow:hidden}
+.ic svg{width:100%;height:100%;display:block}
+.ic.sil{background:radial-gradient(circle at 40% 35%,#2a2c30,#0a0b0c)}
+.ic.q1{--qc:#9d9d9d}.ic.q2{--qc:#1eff00}.ic.q3{--qc:#0070dd}.ic.q0{--qc:#2e2e2e}
+.stars{white-space:nowrap}.stars b{font-weight:normal}.stars .on{color:#ffd100;text-shadow:0 0 4px rgba(255,200,0,.6)}.stars .off{color:#40382c}
+.xp{position:relative;height:15px;background:#050403;border:1px solid #6b5d46;border-radius:2px;overflow:hidden}
+.xp i{position:absolute;top:0;bottom:0;left:0}
+.xp .f{background:linear-gradient(#c27ae6,#6a2a9e 55%,#3e1260)}
+.xp .r{background:linear-gradient(#59a8f0,#245f9e);opacity:.6}
+.xp .nt{position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 calc(5% - 1px),rgba(0,0,0,.75) calc(5% - 1px) 5%)}
+.xp .t{position:absolute;inset:0;text-align:center;font:11px/14px Arial,sans-serif;color:#fff;text-shadow:0 1px 1px #000,0 0 2px #000}
+.fw{color:#7fc0ff;font-size:11px}
+.chip{display:inline-flex;align-items:center;gap:4px;border:1px solid #4a3f30;background:rgba(0,0,0,.4);border-radius:10px;padding:2px 8px;margin:0 4px 4px 0;font-size:11px;color:var(--dim)}
+.chip.y{color:#fff;border-color:#7a6a4c}.chip.y::before{content:'✓';color:var(--ok)}
+.chip.now{color:#7fff7f;border-color:#2f6b2f}.chip.later{color:#d8c48e}
+.lnk{cursor:pointer}.lnk:hover{text-decoration:underline}
+.sect{color:var(--gold);font-size:12px;margin:12px 0 5px;border-bottom:1px solid #3a3128;padding-bottom:2px}
+.req{list-style:none;margin:0;padding:0}.req li{padding:2px 0;color:var(--dim)}.req li.ok{color:#fff}.req li b{color:var(--gold);font-weight:normal;display:inline-block;width:40px}
+.lore{font-family:'IM Fell English',Georgia,serif;font-style:italic;color:#d9cba8;margin-top:12px;font-size:14px;line-height:1.35}
+.pg{font-size:10px;color:#9bc4d8;border:1px solid #2e5466;border-radius:3px;padding:0 3px;margin-left:5px;vertical-align:1px}
+.newtag{font-size:10px;color:#000;background:#ffd100;border-radius:3px;padding:1px 4px;margin-left:6px;vertical-align:middle;font-family:Arial}
+.ring{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;flex:none}
+.ring>span{width:36px;height:36px;border-radius:50%;background:#0d0b09;display:grid;place-items:center;font:12px Arial;color:#fff}
+.emb{display:inline-grid;place-items:center;width:28px;height:32px;background:linear-gradient(#f0cf68,#8a6418);clip-path:polygon(50% 0,100% 18%,100% 62%,50% 100%,0 62%,0 18%);color:#2a1a00;font:bold 11px Georgia;vertical-align:middle}
+.kv{display:flex;gap:28px;margin-top:10px}.kv label{display:block;color:var(--gold);font-size:11px}
+.newbar{margin:8px 0;padding:5px 8px;border:1px solid #9a7f30;background:rgba(255,209,0,.1);color:#ffe27a;border-radius:3px}
+.track{display:flex;margin:10px 0 4px}
+.track span{flex:1;text-align:center;font-size:11px;padding:4px 0;background:#0b0907;border:1px solid #3a3128;color:#5f574a;position:relative}
+.track span.on{background:linear-gradient(#6b5320,#3a2c10);color:#ffe9a8;border-color:#9a7f40}
+.track span.cur{box-shadow:0 0 8px rgba(255,209,0,.6) inset;color:#fff}
+.plaques{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.plq{width:74px;text-align:center;padding:6px 2px;border:1px solid #3a3128;border-radius:3px;background:#0b0907}
+.plq.g{border-color:#9a7f40;background:linear-gradient(#3a2c12,#16110a)}
+.plq .w{margin-top:3px;color:var(--dim)}.plq.g .w{color:#fff}.plq .top{font-size:10px;color:#ffb84a}
+.mus{display:flex;gap:8px;align-items:flex-start;padding:6px;border-bottom:1px solid #2a231b}
+.mus i{display:block;font-family:'IM Fell English',Georgia,serif;color:#cdbf9a;font-size:12px}
+.tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(66px,1fr));gap:8px}
+.tgrid div{text-align:center;font-size:10px;line-height:1.15}
+.lgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.lcard{border:1px solid #3a3128;border-radius:4px;padding:10px 8px;text-align:center;background:linear-gradient(#14110d,#0a0806)}
+.lcard.g{border-color:#c9a24c;background:radial-gradient(ellipse at 50% 20%,#4a3612,#120d06);cursor:pointer;box-shadow:0 0 12px rgba(255,190,60,.25)}
+.lcard .art{width:110px;height:80px;margin:0 auto}
+.lcard .art svg{width:100%;height:100%}
+.lcard .how{font-size:11px;color:var(--dim);margin-top:4px}
+.alv{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.bignum{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;font-size:26px;color:var(--gold);background:radial-gradient(#2a2216,#0a0806);border:2px solid #9a7f40}
+.chr{margin-bottom:6px}.sk{position:relative;height:12px;background:#000;border:1px solid #4a3f30;margin-top:2px}.sk i{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(#4a9a3a,#1f5a18)}.sk span{position:absolute;inset:0;font:10px/11px Arial;text-align:center;color:#fff}
+.ms{display:flex;gap:6px}.ms span{flex:1;text-align:center;border:1px solid #3a3128;padding:4px 0;color:#6b6152}.ms span.y{color:#fff;border-color:#9a7f40}.ms small{display:block;font-size:9px;color:var(--dim)}
+.tt{display:flex;align-items:center;gap:6px;padding:2px 0;cursor:pointer;color:var(--dim)}.tt.on{color:#fff}.tt .rad{width:11px;height:11px;border-radius:50%;border:1px solid #9a7f40}.tt.on .rad{background:radial-gradient(#ffd100 40%,#7a5a10 45%)}
+.cos{display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid #2a231b}.cos .lvl{width:26px;text-align:center;color:var(--gold)}.cos.lock{opacity:.55}
+.toast{position:fixed;top:120px;left:50%;transform:translateX(-50%);color:#ffd100;font-size:18px;text-shadow:0 0 4px #000,0 2px 2px #000;z-index:70;pointer-events:none;transition:opacity .4s;text-align:center;max-width:620px}
+
+/* ---------- A: Collections tab ---------- */
+.vA .aHead{display:flex;align-items:center;gap:14px;margin:6px 14px 0 60px;height:54px}
+.vA .lv{font-size:28px;color:var(--gold);min-width:36px;text-align:center;text-shadow:0 2px 2px #000}
+.vA .aXp{flex:1}.vA .aXp .tl{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px}
+.vA .aDone{display:flex;gap:8px;align-items:center}
+.vA .aBody{position:absolute;top:92px;left:12px;right:12px;bottom:12px;display:flex;gap:10px}
+.vA .left{width:290px;display:flex;flex-direction:column;gap:6px;padding:8px}
+.vA .list{flex:1}
+.vA .grp{color:var(--gold);font-size:12px;margin:8px 4px 2px}
+.row{display:flex;align-items:center;gap:8px;padding:3px 6px;border-radius:3px;cursor:pointer;border:1px solid transparent}
+.row:hover{background:rgba(255,255,255,.05)}.row.on{background:linear-gradient(90deg,rgba(255,209,0,.18),transparent);border-color:#6b5a30}
+.row .nm{flex:1;line-height:1.15}.row .nm small{display:block;color:var(--dim);font-size:10px}
+.vA .right{flex:1;padding:12px}
+.vA .filters{display:flex;gap:3px}.vA .filters span{flex:1;text-align:center;padding:2px 0;border:1px solid #4a3f30;border-radius:3px;font-size:11px;cursor:pointer;color:var(--dim)}.vA .filters span.on{color:var(--gold);border-color:#9a7f40;background:rgba(255,209,0,.08)}
+.scene{height:180px;border-radius:3px;position:relative;overflow:hidden;background:radial-gradient(ellipse at 50% 0%,rgba(140,200,220,.25),transparent 60%),linear-gradient(#17394a,#0a1c26 60%,#06121a);border:1px solid #2a3a40;box-shadow:inset 0 0 30px #000}
+.scene .big{position:absolute;left:50%;top:50%;width:280px;height:280px;transform:translate(-50%,-50%)}
+.scene .big svg{width:100%;height:100%;filter:drop-shadow(0 6px 6px rgba(0,0,0,.6))}
+.scene .sst{position:absolute;right:10px;top:8px;font-size:18px}
+.vA .zb,.zb{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-radius:3px;background:linear-gradient(100deg,hsl(var(--hue) 35% 28%),hsl(var(--hue) 40% 10%));border:1px solid #4a3f30}
+.zb .zn{font-size:22px;color:var(--gold);text-shadow:0 2px 2px #000}
+.ctiles{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.ct{display:flex;gap:8px;align-items:center;padding:4px;border:1px solid #2a231b;border-radius:3px;cursor:pointer;background:rgba(0,0,0,.25)}
+.ct:hover{border-color:#6b5a30}
+.cols3{display:flex;gap:10px;flex:1}.cols3>div{flex:1;padding:10px}
+
+/* ---------- B: Adventure Guide ---------- */
+.vB .nav{display:flex;align-items:center;gap:4px;margin:8px 12px 0 62px;height:30px}
+.vB .crumb{background:linear-gradient(#3a3226,#1c1712);border:1px solid #5d5140;padding:4px 16px 4px 10px;clip-path:polygon(0 0,calc(100% - 9px) 0,100% 50%,calc(100% - 9px) 100%,0 100%);color:var(--gold);cursor:pointer;font-size:12px}
+.vB .crumb:hover{color:#fff}
+.vB .bs{position:relative;width:230px}
+.vB .drop{position:absolute;top:26px;left:0;right:0;background:#0d0b09;border:1px solid #6b5a40;z-index:10;border-radius:3px;box-shadow:0 6px 14px #000}
+.vB .body{position:absolute;top:70px;left:12px;right:12px;bottom:12px;display:flex;gap:10px}
+.vB .main{flex:1;padding:12px}
+.vB .side{width:260px;padding:10px;display:flex;flex-direction:column;gap:8px}
+.vB .ctabs{display:flex;gap:4px;margin-bottom:10px}
+.vB .ctabs span{padding:5px 14px;border:1px solid #5d5140;border-radius:3px 3px 0 0;cursor:pointer;color:var(--dim);background:#14110d}
+.vB .ctabs span.on{color:var(--gold);background:linear-gradient(#3a3226,#1c1712);border-color:#9a7f40}
+.vB .tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.tile{height:104px;border:1px solid #6b5a40;border-radius:3px;position:relative;cursor:pointer;overflow:hidden;background:radial-gradient(ellipse at 70% 30%,hsla(var(--hue),50%,60%,.35),transparent 60%),repeating-radial-gradient(ellipse at 20% 120%,transparent 0 10px,rgba(255,255,255,.04) 10px 12px),linear-gradient(160deg,hsl(var(--hue) 35% 30%),hsl(var(--hue) 40% 10%));box-shadow:inset 0 0 22px #000}
+.tile:hover{border-color:#ffd100}
+.tile .nm{position:absolute;left:9px;bottom:24px;color:var(--gold);font-size:15px;text-shadow:0 1px 2px #000,0 0 6px #000}
+.tile .rk{position:absolute;left:9px;bottom:7px;font-size:11px;text-shadow:0 1px 2px #000}
+.tile .pc{position:absolute;right:8px;bottom:7px;font:11px Arial;color:#fff}
+.tile .bar{position:absolute;left:0;right:0;bottom:0;height:3px;background:#000}.tile .bar i{display:block;height:100%;background:var(--gold)}
+.tile.unv{filter:saturate(.15) brightness(.55)}
+.tile .badge{position:absolute;right:6px;top:6px;background:#ffd100;color:#000;font:10px Arial;border-radius:3px;padding:1px 5px}
+.vB .acard{display:flex;gap:10px;align-items:center}
+.sug{border:1px solid #4a3f30;background:rgba(0,0,0,.35);border-radius:3px;padding:6px 8px;display:flex;gap:8px;align-items:center;cursor:pointer;line-height:1.2}
+.sug:hover{border-color:#9a7f40}.sug small{display:block;color:var(--dim);font-size:11px}
+.vB .menu div{display:flex;justify-content:space-between;padding:6px 8px;border:1px solid #4a3f30;margin-bottom:4px;border-radius:3px;cursor:pointer;background:linear-gradient(#2a231b,#14110d);color:var(--gold)}
+.vB .menu div:hover{color:#fff;border-color:#9a7f40}
+.vB .banner{height:118px;border:1px solid #6b5a40;border-radius:3px;padding:12px 14px;position:relative;background:radial-gradient(ellipse at 75% 20%,hsla(var(--hue),50%,60%,.35),transparent 60%),linear-gradient(160deg,hsl(var(--hue) 35% 30%),hsl(var(--hue) 40% 8%));box-shadow:inset 0 0 30px #000}
+.vB .banner h2{font-size:28px;color:var(--gold);text-shadow:0 2px 3px #000}
+.vB .grph{color:var(--gold);margin:12px 0 4px;font-size:13px;display:flex;justify-content:space-between;border-bottom:1px solid #3a3128}
+.vB .srow{display:flex;align-items:center;gap:10px;padding:4px 6px;border-radius:3px;cursor:pointer}
+.vB .srow:hover{background:rgba(255,255,255,.05)}
+.vB .srow .nm{flex:1}.vB .srow small{display:block;font-size:11px}
+.vB .sp{display:flex;gap:14px}.vB .sp .scene{height:250px;width:330px;flex:none}
+
+/* ---------- C: the Ledger book ---------- */
+.vC{position:relative;width:1000px;height:640px;flex:none;background:radial-gradient(ellipse at 30% 20%,#6a3e20,#3a2010 70%);border-radius:12px;padding:16px 18px;box-shadow:0 0 0 2px #120a04,inset 0 0 0 3px #8a5a2a,inset 0 0 0 5px #2a1608,0 22px 60px rgba(0,0,0,.8)}
+.vC .pages{display:flex;height:100%}
+.vC .page{flex:1;position:relative;padding:28px 34px 46px;color:#3a2614;font-family:'IM Fell English',Georgia,serif;font-size:15px;overflow:hidden;background:radial-gradient(ellipse at 50% 40%,#f3e5c3,#dfc89a 80%,#c9ab76)}
+.vC .page.l{border-radius:4px 0 0 4px;box-shadow:inset -30px 0 30px -20px rgba(70,40,10,.65)}
+.vC .page.r{border-radius:0 4px 4px 0;box-shadow:inset 30px 0 30px -20px rgba(70,40,10,.65)}
+.vC h2{font-size:28px;color:#3e220c;margin:2px 0 6px;font-weight:normal}
+.vC .kick{font-variant:small-caps;letter-spacing:2px;color:#8a5a2a;font-size:13px}
+.vC .small{font-size:13px;color:#5a4028}
+.vC .hand{font-family:'Caveat',cursive;color:#23407a;font-size:20px;line-height:1.1}
+.vC .note{font-size:11px;color:#8a6a40;font-style:italic}
+.vC .idx{list-style:none;padding:0;margin:8px 0;columns:2;column-gap:24px;font-size:14px}
+.vC .idx li{display:flex;gap:6px;cursor:pointer;padding:1px 2px;break-inside:avoid;border-radius:2px}
+.vC .idx li span{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vC .idx li i{color:#9a6a10;font-style:normal;font-size:12px}
+.vC .idx li.unk span{color:#9a8060;font-style:italic}
+.vC .idx li.on{background:rgba(120,70,20,.15);outline:1px dashed #8a5a2a}
+.vC .idx.one{columns:1}
+.vC .inkart{height:150px;width:270px;margin:-6px auto 0;mix-blend-mode:multiply;filter:sepia(.6) saturate(.7) contrast(1.05)}
+.vC .inkart.sil{filter:sepia(1) brightness(.6) blur(.4px);opacity:.55}
+.vC .inkart svg{width:100%;height:100%}
+.vC .stamps{display:flex;gap:6px;justify-content:center;margin:2px 0 6px}
+.vC .stamp{font-size:11px;border:2px solid #b8a080;color:#b8a080;padding:1px 6px;border-radius:3px;transform:rotate(-3deg);text-transform:uppercase;letter-spacing:1px}
+.vC .stamp.on{border-color:#9a2a1a;color:#9a2a1a}
+.vC .riddle{font-size:19px;font-style:italic;text-align:center;margin:16px 10px;color:#4a2e14}
+.vC .ribbons{position:absolute;right:-30px;top:44px;display:flex;flex-direction:column;gap:6px}
+.vC .rib{writing-mode:vertical-rl;background:linear-gradient(90deg,#6a1810,#9a2a1c);color:#f4dfa8;padding:12px 5px;border-radius:0 4px 4px 0;cursor:pointer;font-family:'Marcellus';font-size:13px;box-shadow:2px 2px 4px rgba(0,0,0,.5)}
+.vC .rib.on{background:linear-gradient(90deg,#9a2a1c,#d0402a);transform:translateX(5px)}
+.vC .turn{position:absolute;bottom:10px;font-size:26px;cursor:pointer;color:#7a4a20;user-select:none}.vC .turn:hover{color:#3e220c}
+.vC .page.l .turn{left:16px}.vC .page.r .turn{right:16px}
+.vC .pno{position:absolute;bottom:16px;left:0;right:0;text-align:center;font-size:12px;color:#8a6a40}
+.vC .x{top:6px;right:8px}
+.vC .plate{position:absolute;left:-12px;bottom:-14px;background:linear-gradient(#e8c96a,#9a7420);color:#2a1a04;font-family:'Marcellus';font-size:12px;padding:4px 10px;border-radius:3px;border:1px solid #4a3008;box-shadow:0 3px 6px #000;z-index:3}
+.vC .seal{width:84px;height:84px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#d0402a,#7a1810 70%);color:#f4dfa8;display:grid;place-items:center;text-align:center;font-family:'Marcellus';font-size:13px;position:absolute;right:30px;top:30px;transform:rotate(-8deg);box-shadow:0 2px 4px rgba(0,0,0,.4),inset 0 0 0 4px rgba(0,0,0,.15)}
+.vC .seal.r0{background:none;border:2px dashed #b8a080;color:#b8a080}
+.vC .check{list-style:none;padding:0;margin:8px 0;font-size:14px}
+.vC .check li::before{content:'☐ ';color:#8a6a40}.vC .check li.y::before{content:'☑ ';color:#3e220c}
+.vC .marg{font-size:17px;color:#9a2a1a;margin-left:6px}
+.vC .ruler{position:relative;height:70px;margin:30px 6px 10px;border-bottom:3px solid #6a4a20;background:repeating-linear-gradient(90deg,transparent 0 9px,rgba(106,74,32,.5) 9px 10px) bottom/100% 12px no-repeat}
+.vC .tick{position:absolute;bottom:0;transform:translateX(-50%);text-align:center;color:#b8a080;font-size:13px}
+.vC .tick::after{content:'';display:block;width:2px;height:22px;background:#b8a080;margin:2px auto 0}
+.vC .tick.g{color:#3e220c}.vC .tick.g::after{background:#9a2a1a;height:34px}
+.vC .tick em{position:absolute;top:-22px;left:50%;transform:translateX(-50%);color:#9a2a1a;font-style:normal;font-family:Caveat;font-size:20px}
+.vC .bookplate{border:3px double #8a5a2a;padding:18px;text-align:center;margin-top:10px}
+.vC .inkbar{height:12px;border:1.5px solid #5a3a14;border-radius:6px;position:relative;margin:8px 0;overflow:hidden}
+.vC .inkbar i{position:absolute;left:0;top:0;bottom:0;background:repeating-linear-gradient(45deg,#5a3a14 0 3px,#7a5224 3px 6px)}
+.vC .inkbar b{position:absolute;top:0;bottom:0;background:rgba(35,64,122,.35)}
+.vC .lnk{color:#7a2a14}
+.vC .ttc{cursor:pointer;display:block}.vC .ttc.on{color:#9a2a1a}
+
+/* ---------- D: Achievement board ---------- */
+.vD .head{display:flex;align-items:center;gap:12px;margin:6px 14px 0 64px;height:46px}
+.vD .shield{width:48px;height:52px;display:grid;place-items:center;background:linear-gradient(#e8c96a,#7a5410);clip-path:polygon(50% 0,100% 15%,100% 60%,50% 100%,0 60%,0 15%);color:#2a1a04;font:bold 13px Georgia}
+.vD .body{position:absolute;top:84px;left:12px;right:12px;bottom:44px;display:flex;gap:8px}
+.vD .cats{width:210px;padding:6px}
+.vD .cat{background:linear-gradient(#3b2a20,#1d140f);border:1px solid #5a4430;padding:5px 8px;margin-bottom:3px;cursor:pointer;color:var(--gold);border-radius:2px;display:flex;justify-content:space-between;font-size:13px}
+.vD .cat small{color:var(--dim);font:11px Arial}
+.vD .cat.sub{margin-left:12px;font-size:12px;background:linear-gradient(#2a201a,#15100c)}
+.vD .cat.on{background:linear-gradient(#7a5a20,#3b2a10);color:#fff;border-color:#c9a24c}
+.vD .main{flex:1;padding:8px}
+.vD .ach{display:flex;gap:10px;align-items:center;padding:7px 9px;margin-bottom:4px;border:1px solid #3a3128;border-radius:4px;background:linear-gradient(90deg,#1c1813,#110e0b);cursor:pointer}
+.vD .ach:hover{border-color:#6b5a30}
+.vD .ach.done{background:linear-gradient(90deg,#4a3a1c,#22190c);border-color:#a08040}
+.vD .ach .tx{flex:1;min-width:0}.vD .ach .tx b{display:block;color:#bdb6a6;font-weight:normal;font-size:14px}.vD .ach.done .tx b{color:var(--gold)}
+.vD .ach .tx span{color:var(--dim);font-size:12px}
+.vD .ach .rt{text-align:right;min-width:70px}
+.vD .achx{margin:-2px 0 6px 20px;padding:10px 12px}
+.pbar{height:14px;background:#000;border:1px solid #5a4e3c;position:relative;border-radius:2px;margin-top:3px;overflow:hidden}
+.pbar i{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(#4fb04f,#1d5e1d)}
+.pbar span{position:absolute;inset:0;font:10px/13px Arial;text-align:center;color:#fff;text-shadow:0 1px 1px #000}
+.vD .sumg{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.mini{display:flex;gap:8px;align-items:center;padding:4px 0}
+.vD .ov{margin-bottom:6px}
+.vD .foot{position:absolute;left:12px;right:12px;bottom:12px;display:flex;align-items:center;gap:10px}
+.vD .crit{columns:2;font-size:12px}.vD .crit div{color:var(--dim)}.vD .crit div.y{color:#fff}
+
+/* ---------- E: B's layout in C's book ---------- */
+.vE{height:680px}
+.vE .strip{height:34px;display:flex;align-items:center;gap:4px;padding:0 10px 4px;color:#e8c96a;font-family:'Marcellus';position:relative}
+.vE .crumb{cursor:pointer;font-size:14px;text-shadow:0 1px 1px #000}.vE .crumb:hover{color:#fff4c8}
+.vE .crumb+.crumb::before{content:'❧';margin:0 8px;color:#a8803a}
+.vE .es{position:relative;width:250px}
+.vE .es input{width:100%;background:#efe0bb;border:1px solid #8a5a2a;border-radius:3px;font-family:'IM Fell English',Georgia,serif;font-size:14px;color:#3a2614;padding:3px 8px;outline:none}
+.vE .drop{position:absolute;top:30px;left:0;right:0;z-index:10;background:radial-gradient(#f3e5c3,#dcc495);border:1px solid #6a4a20;box-shadow:0 6px 14px rgba(0,0,0,.6);font-family:'IM Fell English',Georgia,serif;color:#3a2614;padding:4px}
+.vE .drop div{padding:3px 6px;cursor:pointer}.vE .drop div:hover{background:rgba(120,70,20,.15)}.vE .drop small{color:#8a6a40;font-style:italic;margin-left:6px}
+.vE .pages{height:calc(100% - 34px)}
+.vE .page{overflow-y:auto;scrollbar-width:thin;scrollbar-color:#8a5a2a transparent}
+.vE .conts{font-variant:small-caps;letter-spacing:1px;margin:2px 0 10px;color:#8a6a40}
+.vE .conts span{cursor:pointer;margin-right:12px}.vE .conts span.on{color:#3e220c;border-bottom:2px solid #9a2a1a}
+.vE .zts{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.vE .zt{height:92px;position:relative;cursor:pointer;border:1.5px solid #6a4a20;border-radius:3px;background:radial-gradient(ellipse at 72% 28%,hsla(var(--hue),45%,45%,.3),transparent 65%),repeating-radial-gradient(ellipse at 20% 140%,transparent 0 9px,rgba(90,60,20,.13) 9px 10px),rgba(255,250,235,.22);box-shadow:1px 2px 0 rgba(90,60,20,.25)}
+.vE .zt:hover{border-color:#9a2a1a;box-shadow:1px 2px 0 rgba(154,42,26,.35)}
+.vE .zt .nm{position:absolute;left:8px;top:6px;right:34px;font-size:15px;color:#3e220c;line-height:1.05}
+.vE .zt .rk{position:absolute;left:8px;bottom:17px;font-size:12px;color:#6a4a20;font-style:italic}
+.vE .zt .ib{position:absolute;left:8px;right:8px;bottom:7px;height:5px;border:1px solid #6a4a20;border-radius:3px;overflow:hidden}.vE .zt .ib i{display:block;height:100%;background:#5a3a14}
+.vE .zt.unv{opacity:.5;filter:grayscale(.7)}
+.vE .zt .ms{position:absolute;right:5px;top:5px;width:28px;height:28px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#d0402a,#7a1810 70%);color:#f4dfa8;font:9px 'Marcellus';display:grid;place-items:center;transform:rotate(-10deg)}
+.vE .zt .nw{position:absolute;right:7px;bottom:15px;font-family:Caveat;color:#9a2a1a;font-size:17px;transform:rotate(-5deg)}
+.vE .toc div{display:flex;align-items:baseline;gap:4px;cursor:pointer;padding:2px 0}.vE .toc div:hover{color:#7a2a14}
+.vE .toc div::after{content:'';order:1;flex:1;border-bottom:1px dotted #8a6a40}.vE .toc div span:last-child{order:2}
+.vE .memo{font-family:'Caveat',cursive;color:#23407a;font-size:19px;line-height:1.05;cursor:pointer;margin:5px 0;padding-left:20px;text-indent:-20px}.vE .memo:hover{color:#9a2a1a}
+.vE .ladder{margin:8px 0 2px;font-size:13px;color:#b8a080}.vE .ladder span{margin-right:6px}.vE .ladder .on{color:#3e220c}.vE .ladder .cur{border:1.5px solid #9a2a1a;border-radius:50%;padding:0 6px;color:#9a2a1a}
+.vE .gh{font-variant:small-caps;letter-spacing:1px;color:#8a5a2a;border-bottom:1px solid #c4a874;margin:12px 0 3px;display:flex;justify-content:space-between}
+.vE .er{display:flex;align-items:center;gap:8px;padding:2px 4px;cursor:pointer;border-radius:2px}.vE .er:hover{background:rgba(120,70,20,.1)}.vE .er.on{outline:1px dashed #8a5a2a;background:rgba(120,70,20,.12)}
+.vE .er .nm{flex:1}.vE .er .unk{color:#9a8060;font-style:italic}
+.vE .inkic{width:40px;height:26px;flex:none;mix-blend-mode:multiply;filter:sepia(.6) saturate(.7)}.vE .inkic.sil{filter:sepia(1) brightness(.6);opacity:.5}
+.vE .inkic svg{width:100%;height:100%}
+.vE .estars{color:#9a6a10;font-size:12px;letter-spacing:1px}.vE .estars .off{color:#d0bc94}
+.vE .seal{width:70px;height:70px;font-size:12px;top:24px;right:24px}
+.vE .back{position:absolute;bottom:10px;left:16px;font-size:13px;color:#7a4a20;cursor:pointer}.vE .back:hover{color:#3e220c}
+
+/* ---------- splash ---------- */
+.splash{position:fixed;inset:0;z-index:40;display:grid;place-items:center;background:radial-gradient(ellipse at center,rgba(70,46,6,.9),rgba(0,0,0,.96) 70%);animation:fade .5s;cursor:pointer}
+@keyframes fade{from{opacity:0}}
+.splash .in{text-align:center;max-width:640px;padding:20px}
+.splash .art{width:380px;height:260px;margin:0 auto;filter:drop-shadow(0 0 26px rgba(255,200,60,.6));animation:bob 3s ease-in-out infinite}
+.splash .art svg{width:100%;height:100%}
+@keyframes bob{50%{transform:translateY(-8px)}}
+.splash .kick{letter-spacing:8px;color:#ffb84a;font-size:15px}
+.splash h1{font-weight:normal;color:#ffd100;font-size:42px;margin:4px 0;text-shadow:0 0 18px rgba(255,180,0,.6),0 2px 2px #000}
+
+/* ---------- prototype chrome (not part of the design) ---------- */
+#note{position:fixed;top:8px;left:8px;z-index:50;max-width:380px;background:#fffbe6;color:#222;font:12px/1.35 system-ui,sans-serif;border:1px solid #e0c060;border-radius:6px;padding:6px 9px;box-shadow:0 2px 8px rgba(0,0,0,.4)}
+#bar{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:60;display:flex;align-items:center;gap:8px;background:#fff;color:#111;font:13px system-ui,sans-serif;border-radius:999px;padding:6px 8px;box-shadow:0 4px 18px rgba(0,0,0,.55);white-space:nowrap}
+#bar button{border:0;background:#111;color:#fff;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:12px}
+#bar .lab{min-width:300px;text-align:center;font-weight:600}
+#bar select{font:12px system-ui;border-radius:12px;padding:3px 6px}
+</style>
+</head>
+<body>
+<div id="note"><b>PROTOTYPE, throwaway</b>: Prototype the Fish Journal. <b>Question:</b> what should the Fish Journal look and feel like in the native Retail UI? Five variants. E combines B's layout with C's book. The data is sample only: rates, weights, dates and lore are made up. Use ←/→ to switch variants, or the dropdown to switch the Angler's progress.</div>
+<div id="app"></div>
+<div id="bar"></div>
+<script>
+// ===================================================================== data
+const COND={
+  day:{l:'Day',full:'Daytime, 6 AM to 6 PM realm time',now:false,when:'back at 6 AM'},
+  night:{l:'Night',full:'Night, 6 PM to 6 AM realm time',now:true,when:'biting now'},
+  summer:{l:'Summer',full:'Spring and summer, from 20 March',now:false,when:'back in March'},
+  winter:{l:'Winter',full:'Autumn and winter, from 23 September',now:true,when:'in season'},
+  pool:{l:'Pools',full:'Only from fishing pools',now:true,when:'pools only'},
+  event:{l:'Extravaganza',full:'Stranglethorn Fishing Extravaganza, Sundays 14:00',now:false,when:'Sunday 14:00'}};
+const CONT={ek:'Eastern Kingdoms',kal:'Kalimdor',new:'New in Forever'};
+const ZONES=[['elw','Elwynn Forest','ek',25,110],['lch','Loch Modan','ek',75,35],['wes','Westfall','ek',150,45],['red','Redridge Mountains','ek',150,15],['dus','Duskwood','ek',150,250],['wet','Wetlands','ek',150,95],['stv','Stranglethorn Vale','ek',225,130],['sos','Swamp of Sorrows','ek',225,170],['epl','Eastern Plaguelands','ek',425,70],
+  ['dur','Durotar','kal',25,15],['dks','Darkshore','kal',75,200],['bar','The Barrens','kal',150,38],['ash','Ashenvale','kal',225,150],['tan','Tanaris','kal',300,42],['fer','Feralas','kal',300,120],['azs','Azshara','kal',300,215],
+  ['riv','Riverglades','new',null,185],['gil','Gilneas','new',null,230]].map(([k,n,c,s,hue])=>({k,n,c,s,hue}));
+// n, colour, zones, conditions, t (0 caught by day one, 1 by mid-game, 2 by level 60, 3 not yet), base size, riddle, lore
+const SPECIES=[
+ ['Raw Brilliant Smallfish','#c9d6e3',['elw','dur','dks'],[],0,5,"The very first thing to tug a beginner's line, in the gentlest waters of all.","Small, bright and everywhere. Every angler's ledger starts here, and nobody admits how many they threw back."],
+ ['Raw Longjaw Mud Snapper','#8a7a52',['elw','wes','red','bar'],[],0,11,"Lazy rivers in the lands where heroes begin.","It bites anything, including, once, a gnome's boot."],
+ ['Raw Slitherskin Mackerel','#7fa7b8',['wes','dur','dks'],[],1,9,"Shallow coasts, where new adventurers wade.","Slippery enough to earn the name. Fries up better than it has any right to."],
+ ['Raw Rainbow Fin Albacore','#d88fb8',['wes','dks','wet'],[],1,18,"Open coast, a little further from shore than you're used to.","The colours fade within an hour of landing. Catch one and look quickly."],
+ ['Raw Loch Frenzy','#9bb06a',['lch'],[],1,10,"A great dammed lake in dwarf country.","Named by dwarves, who name everything after how it behaves when you try to hold it."],
+ ['Raw Bristle Whisker Catfish','#a0855b',['red','dus','wet','bar','ash'],[],1,20,"Murky rivers from Redridge to the Barrens.","Whiskers like a gnome engineer, temperament like a dwarf."],
+ ['Raw Rockscale Cod','#9a8f86',['wet','stv','wes'],[],1,16,"Cold, rocky coasts of the middle lands.","Stubborn on the line, sweet on the plate."],
+ ['Oily Blackmouth','#3b3b46',['wes','wet','dks'],['pool'],1,12,"A school that leaves a slick on coastal waters.","Alchemists want the oil. Cooks want nothing to do with it."],
+ ['Firefin Snapper','#e0562f',['wet','stv'],['pool'],1,14,"Swirling red schools along the Wetlands and the jungle coast.","Warm to the touch, even out of the water."],
+ ['Raw Sagefish','#8fb59a',['red','bar'],['pool'],1,9,"Small schools in river country, smelling faintly of herbs.","Smells like the hills it swims past."],
+ ['Raw Mithril Head Trout','#b8c2cc',['dus','stv','ash','sos'],[],1,17,"Clear, cold streams in darker forests.","The head really does shine. No, it isn't mithril. Stop asking the smith."],
+ ['Raw Spotted Yellowtail','#e3c14a',['stv','tan','fer'],[],1,22,"Warm southern seas, from the jungle to the desert coast.","Fast, bright, and very pleased with itself."],
+ ['Raw Glossy Mightfish','#4f7fae',['stv','tan','fer'],[],1,26,"Deep warm water off the southern coasts.","Heavy enough that some anglers fish it sitting down."],
+ ['Raw Redgill','#c2453c',['fer','sos','azs'],[],1,19,"Coastal shallows of Feralas and the swamp.","Gills like embers. Bites like it means it."],
+ ['Raw Sunscale Salmon','#f0a64a',['fer','stv','tan','azs'],['day'],1,24,"Southern waters while the sun is up.","Only rises in daylight. Nobody knows where it goes at night."],
+ ['Raw Nightfin Snapper','#3a4a8c',['fer','stv','tan','azs','epl'],['night'],2,21,"Southern waters after the sun goes down.","Hunts by starlight. Anglers who want it learn to like the dark."],
+ ['Raw Whitescale Salmon','#e6e6e0',['fer','epl','azs'],[],2,27,"Cold high waters, far into the late lands.","Pale as frost. Best eaten the day it's caught, which is rarely possible."],
+ ['Raw Summer Bass','#6f9e3c',['sos','tan'],['summer'],2,23,"Warm shores in the warm half of the year.","Turns up with the spring and leaves with the first cold wind."],
+ ['Raw Winter Squid','#9fb7d9',['sos','tan'],['winter'],2,20,"The same shores, once the year turns cold.","Arrives with the frost. More arms than an angler can reasonably untangle."],
+ ['Darkclaw Lobster','#5a2d2d',['fer','azs','epl'],[],2,15,"Deep rocky waters at the far edges of the world.","Pinches first, asks questions never."],
+ ['Large Raw Mightfish','#2f5f8f',['azs','fer'],[],2,38,"The deepest water off Azshara and Feralas.","The big cousin. You will need both hands and probably a friend."],
+ ['Raw Greater Sagefish','#6fa58a',['fer','sos'],['pool'],2,15,"Larger herb-scented schools in late rivers.","The sage grew up."],
+ ['Stonescale Eel','#6d6a5e',['azs','fer','tan'],['pool'],2,32,"A writhing swarm in the deep southern seas.","Armourers pay well for the scales. The eel disagrees with the arrangement."],
+ ['Lightning Eel','#e8e070',['stv','tan'],['day'],3,30,"Jungle and desert waters, while the sun is high.","Tingles. Don't lick it."],
+ ['Deviate Fish','#7a4ea0',['bar'],['pool'],1,8,"Strange schools near a cave of nightmares in the Barrens.","Eat at your own risk. Pagle accepts no liability for what you turn into."],
+ ['Darkshore Grouper','#6b7f5a',['dks'],[],2,19,"Only off the shore it's named for.","Proof that Darkshore's waters are stranger than they look."],
+ ['Sickly Looking Fish','#9aa34a',['dur','bar'],[],1,7,"Poor water near Orgrimmar's doorstep.","Looks bad, smells worse, cooks into something a raptor would eat."],
+ ['Speckled Tastyfish','#d9a066',['stv'],['event'],3,12,"Only while the jungle's great contest is on.","Tournament fish. Tastes like winning, or at least like trying."],
+ ['Whimsyfin','#ff8fd0',['red'],['pool'],2,10,"Bright schools east of a great lake in Redridge. Something new swims here.","New to these waters, and nobody's quite sure how it got here.",1],
+ ['Raw Plated Armorfish','#5f6f7a',['sos','stv'],['night'],3,29,"Swamp and jungle waters, after dark.","Once just a curiosity for collectors. Somebody finally found a recipe."]
+].map(([n,col,z,c,t,sz,riddle,lore,isNew])=>({n,col,z,c,t,sz,riddle,lore,isNew:!!isNew,q:1,g:'fish'}));
+const TROPHY=[
+ {k:'mud',n:'Mud Snapper',col:'#8a7a52',w:[9,12,15],z:['elw','wes','red','bar'],got:[[],[9,12],[9,12,15]]},
+ {k:'cat',n:'Catfish',col:'#a0855b',w:[18,22,26,29,32],z:['red','dus','wet','bar','ash'],got:[[],[18,22,26],[18,22,26,29,32]]},
+ {k:'sal',n:'Salmon',col:'#e6a8a0',w:[18,22,25,29,32,35],z:['fer','epl','azs'],got:[[],[],[18,22,25,29,32,35]]},
+ {k:'lob',n:'Lobster',col:'#8a3a2d',w:[12,15,19,22,25,29,32],z:['fer','azs','epl'],got:[[],[],[12,15,19,22,25,29]]},
+ {k:'yel',n:'Yellowtail',col:'#e3c14a',w:[40,47,53,59,68],z:['stv','tan','fer'],got:[[],[40],[40,47,53,59]]},
+ {k:'rgl',n:'Redgill',col:'#c2453c',w:[42,47,52,55,60,64],z:['fer','sos','azs'],got:[[],[42,47],[42,47,52,55,60,64]]},
+ {k:'mig',n:'Mightfish',col:'#4f7fae',w:[70,85,92,103],z:['stv','tan','fer','azs'],got:[[],[],[70,85,92]]}];
+const JUNK=[
+ {n:'Old Skull',g:'skull',t:1,plaque:'Donated by the Wetlands. Owner unknown, and preferably staying that way.'},
+ {n:"Old Teamster's Skull",g:'skull',t:1,plaque:"Belonged to someone who drove wagons. Still looks like it's waiting for one."},
+ {n:'Old Wagonwheel',g:'wheel',t:2,plaque:'Where the wagon went is still under investigation.'},
+ {n:'Acidic Slime',g:'slime',t:2,plaque:'Please do not touch the exhibit.'},
+ {n:'Rusted Engineering Parts',g:'gears',t:3,plaque:"A gnome would call this 'nearly working'."}].map(j=>({...j,q:0}));
+const TREAS=[['Waterlogged Crate','crate',1,1],['Heavy Crate','crate',1,1],['Sealed Crate','crate',1,2],['Iron Bound Trunk','trunk',1,1],['Mithril Bound Trunk','trunk',1,2],['Watertight Trunk','trunk',1,2],['Battered Chest','chest',1,1],['Tattered Chest','chest',1,2],['Solid Chest','chest',1,3],['Message in a Bottle','bottle',1,1],
+ ['Bloated Mackerel','bloated',1,1,'#7fa7b8'],['Bloated Albacore','bloated',1,1,'#d88fb8'],['Bloated Bristle Whisker Catfish','bloated',2,2,'#a0855b'],['Bloated Mithril Head Trout','bloated',2,2,'#b8c2cc'],['Bloated Redgill','bloated',2,3,'#c2453c']
+].map(([n,g,q,t,col])=>({n,g,q,t,col:col||'#888',bloated:g==='bloated'}));
+const LEG=[
+ {n:'Feralas Ahi',col:'#3f7fbf',t:1,how:"Nat Pagle's errand · Verdantine River, Feralas",title:'the Ahi-Hunter',when:'12 Jan · Feralas · Brinnet',nat:1},
+ {n:"Sar'theris Striker",col:'#8f5fbf',t:2,how:"Nat Pagle's errand · Sar'theris Strand, Desolace",title:'Striker-Taker',when:'2 Feb · Desolace · Brinnet',nat:1},
+ {n:'Savage Coast Blue Sailfin',col:'#3fa0d0',t:3,how:"Nat Pagle's errand · Savage Coast, Stranglethorn",title:'of the Savage Coast',nat:1},
+ {n:'Misty Reed Mahi Mahi',col:'#5fbf7f',t:3,how:"Nat Pagle's errand · Misty Reed Strand, Swamp of Sorrows",title:'Reed-Walker',nat:1},
+ {n:"Brownell's Blue Striped Racer",col:'#2f6fdf',t:2,how:'Extravaganza pools · Stranglethorn Vale',title:'Racer-Chaser',when:'21 Feb · Stranglethorn Vale · Okkra'},
+ {n:"Keefer's Angelfish",col:'#dfbf3f',t:3,how:'Extravaganza pools · Stranglethorn Vale',title:"Keefer's Rival"},
+ {n:'Dezian Queenfish',col:'#bf3f8f',t:3,how:'Extravaganza pools · Stranglethorn Vale',title:'Queen-Catcher'}].map(l=>({...l,q:3,g:'fish'}));
+const UNCH={new:[],
+ mid:[{n:'Naga Spinefin',where:'The Forbidding Sea, Riverglades',k:2,first:'10 Jan'},{n:'Half-Eaten Fish',where:'Hayward Fishery, Gilneas',k:1,first:'13 Jan'}],
+ cap:[{n:'Naga Spinefin',where:'The Forbidding Sea, Riverglades',k:31,first:'10 Jan'},{n:'Item 291004 (name still loading from the server)',where:'Fishing Hut camp, Feralas',k:3,first:'2 Mar'}]};
+const ANG={
+ new:{level:2,xp:340,need:1160,fresh:300,pr:0,ready:false,title:'Minnow',since:'14 Jan',chars:[['Pell','Human Priest 12',61]]},
+ mid:{level:23,xp:1610,need:2840,fresh:120,pr:0,ready:false,title:'Line-Caster',since:'4 Nov',chars:[['Brinnet','Gnome Mage 44',232],['Okkra','Orc Hunter 31',150],['Pell','Human Priest 12',61]]},
+ cap:{level:60,xp:6420,need:0,fresh:40,pr:2,ready:true,title:"Pagle's Peer",since:'4 Nov',chars:[['Brinnet','Gnome Mage 60',300],['Okkra','Orc Hunter 58',281],['Pell','Human Priest 34',186]]}};
+const CELEB={mid:{red:5}};
+const LADDER=[[1,'Minnow'],[10,'Dabbler'],[20,'Line-Caster'],[30,'Fisher'],[40,'Old Salt'],[50,'Ledgerkeeper'],[60,"Pagle's Peer"]];
+const COS=[[10,'Journal theme','Driftwood','t-drift'],[20,'Toast style','Ripple'],[30,'Sound set','Lakeside'],[40,'Journal theme','Deepwater','t-deep'],[50,'Toast style','Lantern Glow'],[60,'Journal theme','Gilded Ledger','t-gild']];
+const RECENT={
+ new:[['Raw Longjaw Mud Snapper','New Species','Elwynn Forest · today'],['Raw Brilliant Smallfish','First Species ever','Elwynn Forest · today'],['Elwynn Forest','Zone rank: Local','today']],
+ mid:[['Feralas Ahi','Legend!','Feralas · 12 Jan'],['Raw Sunscale Salmon','New Species','Feralas · 12 Jan'],['26 Pound Catfish','Trophy weight','Ashenvale · 9 Jan'],['Message in a Bottle','Treasure','Westfall · 6 Jan'],['Redridge Mountains','Zone Master','2 Jan']],
+ cap:[["Brownell's Blue Striped Racer",'Legend!','Stranglethorn Vale · 21 Feb'],['35 Pound Salmon','Trophy weight','Eastern Plaguelands · 18 Feb'],['Raw Winter Squid','New Species','Tanaris · 3 Feb'],['Feralas','Zone Master','30 Jan'],['Level 60','Prestige ready','28 Jan']]};
+const RANKS=['Not yet fished','Visitor','Regular','Local','Expert','Master'];
+const ROMAN=['','I','II','III','IV','V','VI','VII','VIII','IX','X'];
+
+// ===================================================================== helpers
+const $=s=>document.querySelector(s);
+const h=s=>{let x=2166136261;for(const c of String(s)){x^=c.charCodeAt(0);x=Math.imul(x,16777619)}return x>>>0};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const zn=k=>(ZONES.find(z=>z.k===k)||{}).n||k;
+const joinList=a=>a.length<2?a.join(''):a.slice(0,-1).join(', ')+' and '+a[a.length-1];
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function shade(hex,a){const n=parseInt(hex.slice(1),16);let r=n>>16,g=n>>8&255,b=n&255;const t=a<0?0:255,p=Math.abs(a);r=Math.round(r+(t-r)*p);g=Math.round(g+(t-g)*p);b=Math.round(b+(t-b)*p);return '#'+((1<<24)|(r<<16)|(g<<8)|b).toString(16).slice(1)}
+const svg=i=>`<svg viewBox="0 0 100 100">${i}</svg>`;
+function fishSVG(seed,col,sil,bloat){
+  const r=h(seed),cx=46,cy=50;let rx=26+r%10,ry=9+(r>>>4)%7;if(bloat){rx=25;ry=19}
+  const dk=sil?'#000':shade(col,-.42),lt=sil?'#000':shade(col,.35),fc=sil?'#000':col,tx=cx+rx-3,tl=(r>>>8)%3,dl=(r>>>11)%3,pat=(r>>>14)%3,id='f'+(r%1e6)+(sil?'s':'');
+  const tail=tl===0?`M${tx} ${cy}L${tx+18} ${cy-13}L${tx+13} ${cy}L${tx+18} ${cy+13}Z`:tl===1?`M${tx} ${cy}L${tx+17} ${cy-11}Q${tx+11} ${cy} ${tx+17} ${cy+11}Z`:`M${tx} ${cy}Q${tx+21} ${cy-17} ${tx+17} ${cy}Q${tx+21} ${cy+17} ${tx} ${cy}Z`;
+  const dor=`M${cx-rx*.45} ${cy-ry+3}Q${cx-rx*.05} ${cy-ry-9-dl*3} ${cx+rx*.5} ${cy-ry+4}Z`;
+  const ven=`M${cx-rx*.05} ${cy+ry-3}L${cx+rx*.25} ${cy+ry+6}L${cx+rx*.35} ${cy+ry-3}Z`;
+  const pec=`M${cx-rx*.5} ${cy+3}Q${cx-rx*.2} ${cy+10} ${cx-rx*.05} ${cy+3}Z`;
+  let deco='';
+  if(!sil){
+    if(pat===0)for(let i=0;i<3;i++)deco+=`<ellipse cx="${cx-rx*.15+i*rx*.3}" cy="${cy}" rx="2.4" ry="${ry*.7}" fill="${dk}" opacity=".35"/>`;
+    else if(pat===1)for(let i=0;i<5;i++)deco+=`<circle cx="${cx-rx*.3+i*rx*.18}" cy="${cy-ry*.35+(i%2)*ry*.5}" r="1.6" fill="${dk}" opacity=".5"/>`;
+    deco+=`<circle cx="${cx-rx+8}" cy="${cy-2}" r="2.8" fill="#f4f4f4"/><circle cx="${cx-rx+7.6}" cy="${cy-2}" r="1.5" fill="#111"/><path d="M${cx-rx+13} ${cy-ry*.6}Q${cx-rx+16} ${cy} ${cx-rx+13} ${cy+ry*.6}" stroke="${dk}" stroke-width="1.2" fill="none" opacity=".6"/>`}
+  return svg(`<defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${lt}"/><stop offset=".55" stop-color="${fc}"/><stop offset="1" stop-color="${dk}"/></linearGradient></defs><path d="${tail}" fill="${dk}"/><path d="${dor}" fill="${dk}"/><path d="${ven}" fill="${dk}"/><ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="url(#${id})"/>${deco}<path d="${pec}" fill="${dk}" opacity=".85"/>`)}
+function glyph(o,sil){const k=c=>sil?'#000':c;
+  switch(o.g){
+    case 'bloated':return fishSVG(o.n,o.col,sil,1);
+    case 'skull':return svg(`<ellipse cx="50" cy="44" rx="25" ry="23" fill="${k('#d9d0b8')}"/><rect x="37" y="58" width="26" height="16" rx="4" fill="${k('#d9d0b8')}"/>${sil?'':'<circle cx="41" cy="46" r="7" fill="#1a1a1a"/><circle cx="59" cy="46" r="7" fill="#1a1a1a"/><path d="M44 66v8M50 66v8M56 66v8" stroke="#555" stroke-width="2"/>'}`);
+    case 'wheel':return svg(`<circle cx="50" cy="50" r="30" fill="none" stroke="${k('#7a5530')}" stroke-width="7"/>${[0,45,90,135].map(a=>{const c=Math.cos(a*Math.PI/180)*30,s=Math.sin(a*Math.PI/180)*30;return `<line x1="${50-c}" y1="${50-s}" x2="${50+c}" y2="${50+s}" stroke="${k('#6a4520')}" stroke-width="4"/>`}).join('')}<circle cx="50" cy="50" r="7" fill="${k('#4a3018')}"/>`);
+    case 'slime':return svg(`<path d="M22 70Q18 48 34 40Q36 24 52 28Q70 22 74 42Q86 52 78 70Z" fill="${k('#7fd04a')}"/>${sil?'':'<circle cx="42" cy="44" r="5" fill="#c8ff9a" opacity=".7"/>'}`);
+    case 'gears':return svg(`<circle cx="40" cy="44" r="18" fill="none" stroke="${k('#8a5a3a')}" stroke-width="10" stroke-dasharray="6 4"/><circle cx="64" cy="64" r="12" fill="none" stroke="${k('#9a6a3a')}" stroke-width="8" stroke-dasharray="5 3"/>`);
+    case 'crate':return svg(`<rect x="22" y="28" width="56" height="46" fill="${k('#8a5a2c')}" stroke="${k('#3a220c')}" stroke-width="3"/>${sil?'':'<path d="M22 43h56M22 58h56M26 30l48 42" stroke="#5a3814" stroke-width="3"/>'}`);
+    case 'trunk':return svg(`<rect x="20" y="40" width="60" height="36" fill="${k('#5a4a3a')}"/><path d="M20 42Q50 18 80 42Z" fill="${k('#6a5a48')}"/>${sil?'':'<path d="M32 30v46M68 30v46" stroke="#a0a0aa" stroke-width="5"/><rect x="45" y="46" width="10" height="10" fill="#c0c0c8"/>'}`);
+    case 'chest':return svg(`<rect x="20" y="42" width="60" height="34" fill="${k('#7a4a20')}"/><path d="M20 44Q50 20 80 44Z" fill="${k('#8a5a2a')}"/>${sil?'':'<path d="M20 50h60" stroke="#d4a640" stroke-width="4"/><rect x="44" y="46" width="12" height="14" rx="2" fill="#e8c050"/>'}`);
+    case 'bottle':return svg(`<path d="M44 18h12v14Q70 40 70 56v18Q70 82 62 82H38Q30 82 30 74V56Q30 40 44 32Z" fill="${k('#5f9f6f')}" opacity="${sil?1:.85}"/>${sil?'':'<rect x="40" y="50" width="20" height="18" fill="#f0e2b0" transform="rotate(-8 50 59)"/><rect x="43" y="12" width="14" height="8" fill="#8a6a40"/>'}`);
+    case 'map':return svg(`<circle cx="50" cy="50" r="30" fill="${k('#c8b080')}" stroke="${k('#5a4020')}" stroke-width="4"/><path d="M50 24L56 50L50 76L44 50Z" fill="${k('#9a2a1a')}"/>`);
+    default:return fishSVG(o.n,o.col||'#888',sil)}}
+const ic=(o,sz=36,sil=false)=>`<span class="ic q${sil?0:(o.q??1)}${sil?' sil':''}" style="--sz:${sz}px">${glyph(o,sil)}</span>`;
+const stars=a=>`<span class="stars">${a.map(b=>`<b class="${b?'on':'off'}">★</b>`).join('')}</span>`;
+const ring=(p,col='#ffd100')=>`<div class="ring" style="background:conic-gradient(${col} ${p}%,#2a241c 0)"><span>${p}%</span></div>`;
+const emb=n=>`<span class="emb" title="Prestige ${ROMAN[n]}">${ROMAN[n]}</span>`;
+const pbar=(c,m,l)=>`<div class="pbar"><i style="width:${m?Math.min(100,c/m*100):0}%"></i><span>${l||`${c} / ${m}`}</span></div>`;
+const canNow=s=>s.ec.every(c=>COND[c].now);
+const minSkill=s=>Math.min(...s.z.map(k=>ZONES.find(z=>z.k===k).s));
+const factHint=s=>`${s.ec.length?s.ec.map(c=>COND[c].l).join(', '):'Any time'}${s.c.includes('pool')?' · pools':''} · ${s.z.slice(0,2).map(zn).join(', ')}${s.z.length>2?` +${s.z.length-2}`:''} · skill ~${minSkill(s)}`;
+const condChip=c=>`<span class="chip ${c==='pool'?'':COND[c].now?'now':'later'}">${COND[c].l}${c==='pool'?'':' · '+COND[c].when}</span>`;
+function itemFor(name){
+  const all=[...S.species,...S.legends,...S.junk,...S.treas];const f=all.find(x=>x.n===name);if(f)return ic(f,32);
+  const fam=TROPHY.find(t=>name.endsWith(t.n));if(fam)return ic({n:name,col:fam.col,q:1},32);
+  return ic({g:'map',n:name,q:1},32)}
+
+// ===================================================================== state
+const P={new:0,mid:1,cap:2};
+const params=new URLSearchParams(location.search);
+let variant=params.get('variant')||'A', preset=params.get('state')||'mid', THEME='', SPLASH=null, ACTIVE={};
+const NAV={A:{tab:'species',sel:null,q:'',f:'all',zone:'wes',fam:'mud'},B:{page:'home',cont:'ek',zone:null,sp:null,q:''},C:{ch:'fish',i:{fish:0,waters:2,trophies:0,curios:0,legends:0,angler:0},plain:false},D:{cat:'summary',open:null,q:''},E:{page:'home',cont:'ek',zone:null,sel:null,sp:null,q:'',plain:false,fam:0,leg:0}};
+let S;
+function build(p){
+  const pi=P[p],a=ANG[p],S={p,pi,a};
+  S.species=SPECIES.map(s=>{const r=h(s.n),caught=s.t<=pi;
+    let zc=[];if(caught)zc=pi===0?[s.z[0]]:s.z.filter((z,j)=>pi===2||j===0||z==='red'||h(s.n+z)%3!==0);
+    const count=!caught?0:pi===0?1+r%3:pi===1?(s.t===0?40+r%140:2+r%46):(s.t===2?50+r%120:80+r%300);
+    const ec=s.c.filter(c=>c!=='pool'),elemNeed=ec.length||Math.min(3,s.z.length);
+    const elemHave=!caught?0:ec.length?(pi===2||r%2===0?ec.length:0):Math.min(zc.length,elemNeed);
+    const d=new Date(2026,10,4+(r>>>3)%70);
+    const first=!caught?null:`${pi===0?'14 Jan':d.getDate()+' '+MON[d.getMonth()]} · ${zn(zc[0])} · ${a.chars[(r>>>5)%a.chars.length][0]}`;
+    return {...s,caught,zc,count,ec,elemNeed,elemHave,st:[caught,caught&&elemHave>=elemNeed,count>=50],size:caught?(s.sz*(1.05+(r%35)/100)).toFixed(1):null,first}});
+  S.trophy=TROPHY.map(f=>{const got=f.got[pi],mx=Math.max(...f.w);return {...f,got,st:[got.length>0,got.length>=Math.ceil(f.w.length/2),got.includes(mx)]}});
+  S.zones=ZONES.map(z=>{
+    if(z.c==='new')return {...z,data:false,rank:0,shown:0,pct:0,list:[],fams:[],newN:0};
+    const list=S.species.filter(s=>s.z.includes(z.k)),got=s=>s.zc.includes(z.k);
+    const ung=list.filter(s=>!s.ec.length),gat=list.filter(s=>s.ec.length),fams=S.trophy.filter(f=>f.z.includes(z.k));
+    const u=ung.filter(got).length,g=gat.filter(got).length,fg=fams.filter(f=>f.got.length).length;
+    let rank=0;if(list.some(got))rank=1;if(rank&&u>=Math.ceil(ung.length/2))rank=2;if(rank&&u===ung.length)rank=3;if(rank===3&&g===gat.length&&pi>0)rank=4;if(rank===4&&fg===fams.length)rank=5;
+    const cel=((CELEB[p]||{})[z.k])||0,shown=Math.max(rank,cel);
+    return {...z,data:true,list,ung,gat,fams,u,g,fg,rank,shown,newN:cel>rank?list.filter(s=>s.isNew&&!got(s)).length:0,pct:Math.round((u+g+fg)/(list.length+fams.length)*100)}});
+  S.junk=JUNK.map(j=>({...j,got:j.t<=pi}));S.treas=TREAS.map(t=>({...t,got:t.t<=pi}));
+  S.legends=LEG.map(l=>({...l,got:l.t<=pi}));S.unch=UNCH[p];
+  S.nSp=S.species.filter(s=>s.caught).length;
+  const zd=S.zones.filter(z=>z.data);S.nZones=zd.length;S.zMaster=zd.filter(z=>z.shown===5).length;
+  S.tGot=S.trophy.reduce((n,f)=>n+f.got.length,0);S.tTot=S.trophy.reduce((n,f)=>n+f.w.length,0);
+  S.jGot=S.junk.filter(j=>j.got).length;S.trGot=S.treas.filter(t=>t.got).length;S.lGot=S.legends.filter(l=>l.got).length;
+  S.total=S.species.length+S.tTot+S.junk.length+S.treas.length+zd.length;
+  S.got=S.nSp+S.tGot+S.jGot+S.trGot+S.zMaster;S.pct=Math.round(S.got/S.total*100);
+  const T=[];LADDER.forEach(([l,n])=>{if(a.level>=l||a.pr)T.push(n)});
+  zd.filter(z=>z.shown===5).forEach(z=>T.push(`Warden of ${z.n} Waters`));
+  S.legends.filter(l=>l.got).forEach(l=>T.push(l.title));if(a.pr)T.push('Returning Tide');
+  S.titles=T;S.title=T.includes(ACTIVE[p])?ACTIVE[p]:a.title;
+  S.recent=RECENT[p];
+  return S}
+function nextReq(z){
+  switch(z.shown){
+    case 0:return 'Catch anything here to become a Visitor';
+    case 1:return `Regular: ${Math.max(1,Math.ceil(z.ung.length/2)-z.u)} more any-time Species`;
+    case 2:return `Local: ${Math.max(1,z.ung.length-z.u)} more any-time Species`;
+    case 3:return `Expert: ${Math.max(1,z.gat.length-z.g)} more day, night or seasonal catches, plus one junk and one container`;
+    case 4:return `Master: a trophy from ${Math.max(1,z.fams.length-z.fg)} more famil${z.fams.length-z.fg===1?'y':'ies'}`;
+    default:return z.newN?`${z.newN} new to find: the data grew, and your Master rank stays`:'Master of these waters'}}
+function suggestions(S){const out=[];
+  const now=S.species.find(s=>!s.caught&&s.ec.length&&canNow(s));
+  if(now)out.push({icon:ic(now,32,true),h:`${now.n} is in its window`,sub:`${now.ec.map(c=>COND[c].l+', '+COND[c].when).join(' · ')} · try ${zn(now.z[0])}`,act:'sp',arg:now.n});
+  const nz=S.zones.filter(z=>z.data&&z.shown>0&&z.shown<5).sort((a,b)=>b.pct-a.pct)[0];
+  if(nz)out.push({icon:ic({g:'map',n:nz.n,q:1},32),h:`${nz.n}: ${RANKS[nz.shown]}`,sub:nextReq(nz),act:'zone',arg:nz.k});
+  const nn=S.zones.find(z=>z.newN);
+  if(nn)out.push({icon:ic({g:'map',n:nn.n,q:2},32),h:`${nn.n}: ${nn.newN} new to find`,sub:'A content update added a catch to this zone',act:'zone',arg:nn.k});
+  const ns=S.species.filter(s=>s.caught&&!s.st[2]).sort((a,b)=>b.count-a.count)[0];
+  if(ns)out.push({icon:ic(ns,32),h:`${ns.n}: ${50-ns.count} to ★★★`,sub:`${ns.count} / 50 caught`,act:'sp',arg:ns.n});
+  return out.slice(0,4)}
+
+// ===================================================================== shared widgets
+const freshText=S=>S.a.level>=60?`Fresh Water: ${S.a.fresh} Catches at double XP`:`Fresh Water: next ${S.a.fresh} Catches earn double XP`;
+function xpBar(S){const a=S.a;
+  if(a.level>=60)return `<div class="xp"><i class="f" style="width:100%"></i><div class="nt"></div><div class="t">Level 60 · ${a.xp.toLocaleString()} XP carried into your next Prestige</div></div>`;
+  const f=a.xp/a.need*100,r=Math.min(100-f,a.fresh*10/a.need*100);
+  return `<div class="xp" title="Fresh Water shown in blue, like rested XP"><i class="f" style="width:${f}%"></i><i class="r" style="left:${f}%;width:${r}%"></i><div class="nt"></div><div class="t">${a.xp.toLocaleString()} / ${a.need.toLocaleString()} XP</div></div>`}
+function masteryReq(s){return `<ul class="req">
+  <li class="${s.st[0]?'ok':''}"><b>★</b>Catch one</li>
+  <li class="${s.st[1]?'ok':''}"><b>★★</b>In its element: ${s.ec.length?'under '+s.ec.map(c=>COND[c].l.toLowerCase()).join(' and '):'in '+s.elemNeed+' zones'} (${s.elemHave}/${s.elemNeed})</li>
+  <li class="${s.st[2]?'ok':''}"><b>★★★</b>Regular: ${Math.min(s.count,50)}/50 caught</li></ul>`}
+function speciesFacts(s,zoneAct){return `<div class="kv"><div><label>Best size</label>${s.size?`${s.size} in<span class="pg" title="Pagle's own flavour number, never game data">Pagle size</span>`:'—'}</div><div><label>First caught</label>${s.first||'—'}</div></div>
+  <div class="sect">Where</div><div>${s.z.map(z=>`<span class="chip ${s.zc.includes(z)?'y':''} ${zoneAct?'lnk':''}" ${zoneAct?`data-act="${zoneAct}" data-arg="${z}"`:''}>${zn(z)}</span>`).join('')}</div>
+  ${s.c.length?`<div class="sect">When</div><div>${s.c.map(condChip).join('')}</div>`:''}
+  <div class="sect">Species Mastery</div>${masteryReq(s)}`}
+const rankTrack=z=>`<div class="track">${RANKS.slice(1).map((r,i)=>`<span class="${z.shown>i?'on':''} ${z.shown===i+1?'cur':''}">${r}</span>`).join('')}</div><div class="dim" style="font-size:12px">Next: ${nextReq(z)}</div>`;
+function trophyPage(f){const mx=Math.max(...f.w);return `<h2 class="gold" style="font-size:20px">${f.n} trophies ${stars(f.st)}</h2>
+  <div class="dim" style="font-size:12px">Real weights from the game's own trophy fish. These are not Pagle sizes.</div>
+  <div class="plaques">${f.w.map(w=>{const g=f.got.includes(w);return `<div class="plq ${g?'g':''}">${ic({n:f.n+w,col:f.col,q:1},40,!g)}<div class="w">${w} lb</div>${w===mx?'<div class="top">heaviest</div>':''}</div>`}).join('')}</div>
+  <div class="sect">Family stars</div><ul class="req"><li class="${f.st[0]?'ok':''}"><b>★</b>Any weight</li><li class="${f.st[1]?'ok':''}"><b>★★</b>Half the weights (${f.got.length}/${Math.ceil(f.w.length/2)})</li><li class="${f.st[2]?'ok':''}"><b>★★★</b>The heaviest, ${mx} lb</li></ul>
+  <div class="sect">Found in</div>${f.z.map(z=>`<span class="chip">${zn(z)}</span>`).join('')}`}
+const junkMuseum=S=>S.junk.map(j=>`<div class="mus">${ic(j,34,!j.got)}<div><div class="${j.got?'wht':'n0'}">${j.got?esc(j.n):'Empty plinth'}</div><i>${j.got?esc(j.plaque):'Something odd is still out there.'}</i></div></div>`).join('');
+const treasureGrid=(S,f)=>`<div class="tgrid">${S.treas.filter(f||(()=>true)).map(t=>`<div title="${esc(t.n)}">${ic(t,44,!t.got)}<div class="${t.got?'n'+t.q:'n0'}">${esc(t.n)}</div></div>`).join('')}</div>`;
+const unchartedList=S=>S.unch.length?S.unch.map(u=>`<div class="mus">${ic({g:'unknown',n:u.n,q:1},34)}<div><div class="wht">${esc(u.n)}</div><i>Unknown catch, logged. ${u.k}× · ${esc(u.where)} · first ${u.first}. It will be credited once Pagle's data classifies it.</i></div></div>`).join(''):'<div class="dim">Nothing uncharted. Every catch so far is in Pagle\'s data.</div>';
+const legendCard=l=>`<div class="lcard ${l.got?'g':''}" ${l.got?`data-act="splash" data-arg="${esc(l.n)}"`:''}><div class="art">${fishSVG(l.n,l.col,!l.got)}</div><div class="${l.got?'gold':'n0'}">${l.got?esc(l.n):'An unwritten legend'}</div><div class="how">${esc(l.how)}</div>${l.nat?'<div class="how" style="color:#a08a60">if Nat\'s quest exists at launch</div>':''}${l.got?'<div class="how gold">Click to view</div>':''}</div>`;
+function anglerLevel(S){const a=S.a;return `<div class="alv"><div class="bignum">${a.level}</div><div><div class="wht" style="font-size:16px">Angler Level ${a.level}</div><div class="gold">${esc(S.title)}</div><div class="dim" style="font-size:11px">Keeping the Ledger since ${a.since}</div></div></div>${xpBar(S)}<div class="fw" style="margin-top:4px">${freshText(S)} · fills 10 per hour away, up to 300</div>
+  <div class="sect">Prestige</div>${a.ready?`<div style="display:flex;align-items:center;gap:10px">${emb(a.pr)}<div style="flex:1;font-size:12px">Prestige ${ROMAN[a.pr]}. Start over at level 1 to earn emblem ${ROMAN[a.pr+1]}. Nothing you've unlocked is taken away.</div><span class="btn glow" data-act="prestige">Prestige</span></div>`:`<div class="dim" style="font-size:12px">Optional at level 60: start over for a Prestige emblem. ${60-a.level} levels to go.</div>`}`}
+function anglerChars(S){const a=S.a,top=Math.max(...a.chars.map(c=>c[2]));
+  return a.chars.map(([n,d,sk])=>`<div class="chr"><span class="wht">${n}</span> <span class="dim" style="font-size:11px">${d}</span><div class="sk"><i style="width:${sk/3}%"></i><span>Fishing ${sk} / 300</span></div></div>`).join('')+
+  `<div class="sect">Skill Milestones</div><div class="ms">${[75,150,225,300].map((t,i)=>`<span class="${top>=t?'y':''}">${top>=t?'✓':'○'} ${t}<small>${['Apprentice','Journeyman','Expert','Artisan'][i]}</small></span>`).join('')}</div>`}
+const anglerTitles=S=>S.titles.map(t=>`<div class="tt ${t===S.title?'on':''}" data-act="title" data-arg="${esc(t)}"><span class="rad"></span>${esc(t)}</div>`).join('');
+function anglerCos(S){const a=S.a;
+  return `<div class="cos"><span class="lvl">·</span><div style="flex:1"><div class="wht">Stormwind Stone</div><div class="dim" style="font-size:11px">Journal theme · default</div></div><span class="btn sm" data-act="theme" data-arg="">${THEME===''?'Using':'Use'}</span></div>`+
+  COS.map(([l,kind,name,th])=>{const u=a.level>=l||a.pr>0;return `<div class="cos ${u?'':'lock'}"><span class="lvl">${l}</span><div style="flex:1"><div class="${u?'wht':'n0'}">${name}</div><div class="dim" style="font-size:11px">${kind}${u?'':' · unlocks at level '+l}</div></div>${th&&u?`<span class="btn sm" data-act="theme" data-arg="${th}">${THEME===th?'Using':'Use'}</span>`:u?'<span class="ok" style="font-size:11px">unlocked</span>':''}</div>`}).join('')}
+const frame=(cls,w,ht,title,inner)=>`<div class="wf ${cls}" style="width:${w}px;height:${ht}px"><div class="pt">${fishSVG('Pagle portrait!','#d9a441',false)}</div><div class="ttl">${title}</div><div class="x">✕</div>${inner}</div>`;
+
+// ===================================================================== A: Collections tab (species-first)
+function vA(S){const N=NAV.A,a=S.a;
+  const tabs=[['species','Species'],['zones','Zones'],['trophy','Trophy Room'],['curios','Curios'],['legends',`Legends`],['angler','Angler']];
+  const body={species:aSpecies,zones:aZones,trophy:aTrophy,curios:aCurios,legends:aLegends,angler:aAngler}[N.tab](S);
+  return frame('vA',940,600,'Fish Journal',`
+  <div class="aHead"><div class="lv">${a.level}</div>
+    <div class="aXp"><div class="tl"><span><span class="wht">Angler Level ${a.level}</span> <span class="gold">· ${esc(S.title)}</span> ${a.pr?emb(a.pr):''}</span><span class="fw">${freshText(S)}</span></div>${xpBar(S)}</div>
+    <div class="aDone">${ring(S.pct)}<div><div class="gold">Ledger</div><div class="dim" style="font-size:11px">${S.got} / ${S.total}</div></div></div></div>
+  <div class="aBody">${body}</div>
+  <div class="tabs">${tabs.map(([k,l])=>`<div class="tab ${N.tab===k?'on':''}" data-act="aTab" data-arg="${k}">${l}</div>`).join('')}</div>`)}
+function aSpecies(S){const N=NAV.A,q=N.q.toLowerCase();
+  let L=S.species.filter(s=>!q||s.n.toLowerCase().includes(q)||s.z.some(z=>zn(z).toLowerCase().includes(q)));
+  if(N.f==='caught')L=L.filter(s=>s.caught);if(N.f==='missing')L=L.filter(s=>!s.caught);if(N.f==='now')L=L.filter(s=>!s.st[2]&&canNow(s));
+  const sel=S.species.find(s=>s.n===N.sel)||S.species[0];
+  return `<div class="left inset"><input class="search" id="aq" data-in="A.q" placeholder="Search species or zone" value="${esc(N.q)}">
+    <div class="filters">${[['all','All'],['caught','Caught'],['missing','Missing'],['now','Catchable now']].map(([k,l])=>`<span class="${N.f===k?'on':''}" data-act="aF" data-arg="${k}">${l}</span>`).join('')}</div>
+    <div class="dim" style="font-size:11px">${S.nSp} / ${S.species.length} Species caught</div>
+    <div class="list scroll">${L.map(s=>`<div class="row ${s===sel?'on':''}" data-act="aSel" data-arg="${esc(s.n)}">${ic(s,30,!s.caught)}<div class="nm ${s.caught?'n1':'n0'}">${esc(s.n)}<small>${s.caught?s.count+' caught':factHint(s)}</small></div>${stars(s.st)}</div>`).join('')||'<div class="dim">No matches.</div>'}</div></div>
+  <div class="right inset scroll">
+    <div class="scene"><div class="big">${fishSVG(sel.n,sel.col,!sel.caught)}</div><div class="sst">${stars(sel.st)}</div></div>
+    <h2 style="margin-top:8px;font-size:22px" class="${sel.caught?'n1':'n0'}">${esc(sel.n)}${sel.isNew?'<span class="newtag">New in Forever</span>':''}</h2>
+    <div class="dim">${sel.caught?`Caught ${sel.count} times`:'Not yet caught. Hint: '+factHint(sel)}</div>
+    ${speciesFacts(sel)}
+    ${sel.caught?`<div class="lore">“${esc(sel.lore)}”</div>`:''}</div>`}
+function aZones(S){const N=NAV.A,sel=S.zones.find(z=>z.k===N.zone)||S.zones[0];
+  const grp=(c)=>`<div class="grp">${CONT[c]}</div>`+S.zones.filter(z=>z.c===c).map(z=>`<div class="row ${z===sel?'on':''}" data-act="aZone" data-arg="${z.k}"><div class="nm ${z.shown?'wht':'n0'}">${z.n}<small>${z.data?RANKS[z.shown]:'Uncharted waters'}${z.newN?` · <span class="gold">${z.newN} new to find</span>`:''}</small></div><span class="dim">${z.data?z.pct+'%':''}</span></div>`).join('');
+  return `<div class="left inset"><div class="list scroll">${grp('ek')}${grp('kal')}${grp('new')}</div></div><div class="right inset scroll">${aZoneDetail(sel,S)}</div>`}
+function aZoneDetail(z,S){
+  if(!z.data)return `<div class="zb" style="--hue:${z.hue}"><div class="zn">${z.n}</div></div><p class="dim">Uncharted waters: Pagle has no data for this zone yet. Every catch here is still logged, and is credited once a content update classifies it.</p><div class="sect">Logged here</div>${unchartedList({unch:S.unch.filter(u=>u.where.includes(z.n))})}`;
+  return `<div class="zb" style="--hue:${z.hue}"><div><div class="zn">${z.n}</div><div class="dim">No junk from skill ~${z.s}</div></div>${ring(z.pct)}</div>
+  ${rankTrack(z)}${z.newN?`<div class="newbar">✦ ${z.newN} new to find. A content update added a catch here. Your Master rank stays.</div>`:''}
+  <div class="sect">This zone's list</div><div class="ctiles">${z.list.map(s=>{const g=s.zc.includes(z.k);return `<div class="ct" data-act="aGo" data-arg="${esc(s.n)}">${ic(s,34,!g)}<div><div class="${g?'wht':'n0'}">${esc(s.n)}${s.isNew?'<span class="newtag">new</span>':''}</div><div style="font-size:11px">${s.ec.length?s.ec.map(c=>`<span class="${COND[c].now?'ok':'gold'}">${COND[c].l} · ${COND[c].when}</span>`).join(' '):`<span class="dim">Any time${s.c.includes('pool')?' · pools':''}</span>`}</div></div></div>`}).join('')}</div>
+  ${z.fams.length?`<div class="sect">Trophy families here</div>${z.fams.map(f=>`<span class="chip ${f.got.length?'y':''}">${f.n} ${stars(f.st)}</span>`).join('')}`:''}`}
+function aTrophy(S){const N=NAV.A,sel=S.trophy.find(f=>f.k===N.fam)||S.trophy[0];
+  return `<div class="left inset"><div class="dim" style="font-size:11px">Trophy Room · ${S.tGot} / ${S.tTot} weights</div><div class="list scroll">${S.trophy.map(f=>`<div class="row ${f===sel?'on':''}" data-act="aFam" data-arg="${f.k}">${ic({n:f.n+'fam',col:f.col,q:1},30,!f.got.length)}<div class="nm ${f.got.length?'wht':'n0'}">${f.n}<small>${f.got.length} / ${f.w.length} weights</small></div>${stars(f.st)}</div>`).join('')}</div></div>
+  <div class="right inset scroll">${trophyPage(sel)}</div>`}
+const aCurios=S=>`<div class="cols3"><div class="inset scroll"><h3 class="gold">Junk Museum <span class="dim">${S.jGot}/${S.junk.length}</span></h3>${junkMuseum(S)}</div>
+  <div class="inset scroll"><h3 class="gold">Treasures <span class="dim">${S.trGot}/${S.treas.length}</span></h3><div class="sect">Crates, trunks and chests</div>${treasureGrid(S,t=>!t.bloated)}<div class="sect">Bloated fish</div>${treasureGrid(S,t=>t.bloated)}</div>
+  <div class="inset scroll"><h3 class="gold">Uncharted <span class="dim">${S.unch.length}</span></h3><div class="dim" style="font-size:11px;margin-bottom:6px">Catches that Pagle's data doesn't know yet</div>${unchartedList(S)}</div></div>`;
+const aLegends=S=>`<div class="inset scroll" style="flex:1;padding:14px"><div style="display:flex;justify-content:space-between;align-items:baseline"><h2 class="gold">Legends ${S.lGot} / ${S.legends.length}</h2><span class="dim">Real named catches. They sit outside the Ledger's 100%.</span></div><div class="lgrid" style="margin-top:10px">${S.legends.map(legendCard).join('')}</div></div>`;
+const aAngler=S=>`<div class="cols3"><div class="inset scroll">${anglerLevel(S)}<div class="sect">Characters</div>${anglerChars(S)}</div><div class="inset scroll"><h3 class="gold">Active title</h3><div class="dim" style="font-size:11px;margin-bottom:4px">Shown only in Pagle's own frames</div>${anglerTitles(S)}</div><div class="inset scroll"><h3 class="gold">Unlocks</h3><div class="dim" style="font-size:11px;margin-bottom:4px">One cosmetic every 10 levels</div>${anglerCos(S)}</div></div>`;
+
+// ===================================================================== B: Adventure Guide (zone-first)
+function vB(S){const N=NAV.B;const crumbs=[['⌂ Home','bHome','']];let main;
+  if(N.page==='zone'){const z=S.zones.find(z=>z.k===N.zone);crumbs.push([CONT[z.c],'bCont',z.c],[z.n,'bZone',z.k]);main=bZone(z,S)}
+  else if(N.page==='sp'){const s=S.species.find(s=>s.n===N.sp);crumbs.push(['Fish','bHome',''],[s.n,'bSp',s.n]);main=bSp(s,S)}
+  else if(N.page!=='home'){const P2={trophy:'Trophy Room',curios:'Curios',legends:'Legends',angler:'Angler'};crumbs.push([P2[N.page],'bPage',N.page]);main=bOther(N.page,S)}
+  else main=bHome(S);
+  return frame('vB',960,620,'Fish Journal',`<div class="nav">${crumbs.map(([l,a,g])=>`<span class="crumb" data-act="${a}" data-arg="${esc(g)}">${esc(l)}</span>`).join('')}<div style="flex:1"></div><div class="bs"><input class="search" id="bq" data-in="B.q" placeholder="Find a fish or a zone" value="${esc(N.q)}">${bResults(S)}</div></div><div class="body">${main}</div>`)}
+function bResults(S){const q=NAV.B.q.toLowerCase();if(!q)return '';
+  const sp=S.species.filter(s=>s.n.toLowerCase().includes(q)).slice(0,6),zs=S.zones.filter(z=>z.n.toLowerCase().includes(q)).slice(0,4);
+  return `<div class="drop">${zs.map(z=>`<div class="row" data-act="bZone" data-arg="${z.k}">${ic({g:'map',n:z.n,q:1},22)}<div class="nm">${z.n}<small>Zone · ${RANKS[z.shown]}</small></div></div>`).join('')}${sp.map(s=>`<div class="row" data-act="bSp" data-arg="${esc(s.n)}">${ic(s,22,!s.caught)}<div class="nm ${s.caught?'n1':'n0'}">${esc(s.n)}<small>Fish</small></div></div>`).join('')||''}${!sp.length&&!zs.length?'<div class="dim" style="padding:6px">No matches</div>':''}</div>`}
+const tile=z=>`<div class="tile ${z.shown?'':'unv'}" style="--hue:${z.hue}" data-act="bZone" data-arg="${z.k}">${z.newN?`<span class="badge">${z.newN} new</span>`:''}<div class="nm">${z.n}</div><div class="rk ${z.shown===5?'gold':'wht'}">${z.data?(z.shown?RANKS[z.shown]:'Not yet fished · skill ~'+z.s):'Uncharted waters'}</div>${z.data&&z.shown?`<div class="pc">${z.pct}%</div>`:''}<div class="bar"><i style="width:${z.pct}%"></i></div></div>`;
+function bHome(S){const N=NAV.B,a=S.a;
+  return `<div class="main inset scroll"><div class="ctabs">${['ek','kal','new'].map(c=>`<span class="${N.cont===c?'on':''}" data-act="bCont" data-arg="${c}">${CONT[c]}</span>`).join('')}</div><div class="tiles">${S.zones.filter(z=>z.c===N.cont).map(tile).join('')}</div></div>
+  <div class="side inset scroll">
+    <div class="acard"><div class="bignum">${a.level}</div><div style="flex:1"><div class="wht">Angler Level ${a.level} ${a.pr?emb(a.pr):''}</div><div class="gold" style="font-size:12px">${esc(S.title)}</div></div>${ring(S.pct)}</div>
+    ${xpBar(S)}<div class="fw">${freshText(S)}</div>
+    <div class="sect" style="margin-top:4px">Suggested</div>
+    ${suggestions(S).map(s=>`<div class="sug" data-act="${s.act==='zone'?'bZone':'bSp'}" data-arg="${esc(s.arg)}">${s.icon}<div>${esc(s.h)}<small>${esc(s.sub)}</small></div></div>`).join('')||'<div class="dim">Go fishing!</div>'}
+    <div class="sect">Collections</div>
+    <div class="menu"><div data-act="bPage" data-arg="trophy">Trophy Room <span class="dim">${S.tGot}/${S.tTot}</span></div><div data-act="bPage" data-arg="curios">Curios <span class="dim">${S.jGot+S.trGot}/${S.junk.length+S.treas.length}</span></div><div data-act="bPage" data-arg="legends">Legends <span class="dim">${S.lGot}/${S.legends.length}</span></div><div data-act="bPage" data-arg="angler">Angler and titles <span class="dim">›</span></div></div>
+  </div>`}
+function bZone(z,S){
+  if(!z.data)return `<div class="main inset scroll"><div class="banner" style="--hue:${z.hue}"><h2>${z.n}</h2><div class="wht">Uncharted waters</div></div><p class="dim">Pagle has no data for this zone yet. Every catch here is still logged and is credited once a content update classifies it.</p><div class="sect">Logged here</div>${unchartedList({unch:S.unch.filter(u=>u.where.includes(z.n))})}</div>`;
+  const group=(label,fn)=>{const L=z.list.filter(fn);if(!L.length)return '';return `<div class="grph"><span>${label}</span><span class="dim">${L.filter(s=>s.zc.includes(z.k)).length}/${L.length}</span></div>`+L.map(s=>{const g=s.zc.includes(z.k);return `<div class="srow" data-act="bSp" data-arg="${esc(s.n)}">${ic(s,32,!g)}<div class="nm ${g?'wht':'n0'}">${esc(s.n)}${s.isNew?'<span class="newtag">new</span>':''}<small>${s.ec.map(c=>`<span class="${COND[c].now?'ok':'gold'}">${COND[c].l} · ${COND[c].when}</span>`).join(' ')||(g?'<span class="dim">Caught here</span>':s.caught?'<span class="dim">Caught elsewhere, not here yet</span>':'<span class="dim">Not yet caught</span>')}</small></div>${stars(s.st)}</div>`}).join('')};
+  return `<div class="main inset scroll"><div class="banner" style="--hue:${z.hue}"><h2>${z.n}</h2><div class="wht">Zone Mastery: <span class="gold">${RANKS[z.shown]}</span> · ${z.pct}% of the zone's list</div>${rankTrack(z)}</div>
+    ${z.newN?`<div class="newbar">✦ ${z.newN} new to find. A content update added a catch here. Your Master rank stays.</div>`:''}
+    ${group('Any time',s=>!s.ec.length&&!s.c.includes('pool'))}${group('Pools',s=>s.c.includes('pool'))}${group('Day and night',s=>s.ec.some(c=>c==='day'||c==='night'))}${group('Seasonal',s=>s.ec.some(c=>c==='summer'||c==='winter'))}${group('Events',s=>s.ec.includes('event'))}</div>
+  <div class="side inset scroll"><div class="sect" style="margin-top:0">About these waters</div><div>No junk from skill <span class="wht">~${z.s}</span></div>${ring(z.pct)}
+    <div class="sect">Trophy families</div>${z.fams.map(f=>`<div class="srow" data-act="bPage" data-arg="trophy">${ic({n:f.n+'fam',col:f.col,q:1},26,!f.got.length)}<div class="nm">${f.n}</div>${stars(f.st)}</div>`).join('')||'<div class="dim">None here</div>'}
+    <div class="sect">Rank rewards</div><div class="dim" style="font-size:12px">Each rank earns XP. Master earns the title <span class="gold">Warden of ${z.n} Waters</span>.</div></div>`}
+function bSp(s,S){
+  return `<div class="main inset scroll"><div class="sp"><div><div class="scene"><div class="big">${fishSVG(s.n,s.col,!s.caught)}</div><div class="sst">${stars(s.st)}</div></div>${s.caught?`<div class="lore">“${esc(s.lore)}”</div>`:''}</div>
+  <div style="flex:1"><h2 style="font-size:24px" class="${s.caught?'n1':'n0'}">${esc(s.n)}${s.isNew?'<span class="newtag">New in Forever</span>':''}</h2><div class="dim">${s.caught?`Caught ${s.count} times`:'Not yet caught'}</div>${speciesFacts(s,'bZone')}</div></div></div>`}
+function bOther(p,S){
+  if(p==='trophy')return `<div class="main inset scroll"><h2 class="gold">Trophy Room <span class="dim">${S.tGot}/${S.tTot} weights</span></h2>${S.trophy.map(f=>`<div style="margin-top:12px">${trophyPage(f).split('<div class="sect">Family stars')[0]}</div>`).join('')}</div>`;
+  if(p==='curios')return `<div class="main inset scroll"><h2 class="gold">Junk Museum <span class="dim">${S.jGot}/${S.junk.length}</span></h2>${junkMuseum(S)}<h2 class="gold" style="margin-top:14px">Treasures <span class="dim">${S.trGot}/${S.treas.length}</span></h2>${treasureGrid(S)}</div><div class="side inset scroll"><h3 class="gold">Uncharted</h3>${unchartedList(S)}</div>`;
+  if(p==='legends')return `<div class="main inset scroll"><h2 class="gold">Legends ${S.lGot} / ${S.legends.length}</h2><div class="dim">Real named catches, outside the Ledger's 100%.</div><div class="lgrid" style="margin-top:10px">${S.legends.map(legendCard).join('')}</div></div>`;
+  return `<div class="main inset scroll">${anglerLevel(S)}<div class="sect">Characters</div>${anglerChars(S)}</div><div class="side inset scroll"><h3 class="gold">Active title</h3>${anglerTitles(S)}<div class="sect">Unlocks</div>${anglerCos(S)}</div>`}
+
+// ===================================================================== C: the Ledger book
+const CH=[['angler','Angler'],['fish','Fishes'],['waters','Waters'],['trophies','Trophies'],['curios','Curios'],['legends','Legends']];
+const cEntries=(S,ch)=>({angler:[0],fish:S.species,waters:S.zones,trophies:S.trophy,curios:[0],legends:S.legends}[ch]);
+function vC(S){const N=NAV.C,ch=N.ch,E=cEntries(S,ch),i=Math.min(N.i[ch]||0,E.length-1),sel=E[i],a=S.a;let L='',R='';
+  const idx=(items,fn,cls='')=>`<ol class="idx ${cls}">${items.map((x,j)=>`<li class="${j===i?'on':''} ${fn(x).unk?'unk':''}" data-act="cSel" data-arg="${j}"><span>${fn(x).t}</span><i>${fn(x).r||''}</i></li>`).join('')}</ol>`;
+  if(ch==='fish'){L=`<div class="kick">Chapter II</div><h2>Fishes of Azeroth</h2><div class="small">${S.nSp} of ${E.length} entered in this Ledger</div>`+idx(E,s=>({t:s.caught?esc(s.n.replace(/^Raw /,'')):'— unknown —',unk:!s.caught,r:s.caught?'★'.repeat(s.st.filter(Boolean).length):''}));R=cFish(sel,i)}
+  else if(ch==='waters'){L=`<div class="kick">Chapter III</div><h2>Waters Fished</h2><div class="small">${S.zMaster} of ${S.nZones} mastered</div>`+idx(E,z=>({t:z.n,unk:!z.shown,r:z.data?(z.shown?RANKS[z.shown]:''):'uncharted'}),'one');R=cZone(sel,S)}
+  else if(ch==='trophies'){L=`<div class="kick">Chapter IV</div><h2>The Trophy Room</h2><div class="small">${S.tGot} of ${S.tTot} weights landed. Real weights, from the game's own trophy fish.</div>`+idx(E,f=>({t:f.n,unk:!f.got.length,r:'★'.repeat(f.st.filter(Boolean).length)}),'one');R=cTrophy(sel)}
+  else if(ch==='legends'){L=`<div class="kick">Chapter VI</div><h2>Legends</h2><div class="small">${S.lGot} of ${E.length}. These sit outside the Ledger's hundred.</div>`+idx(E,l=>({t:l.got?esc(l.n):'an unwritten legend',unk:!l.got}),'one');R=cLegend(sel)}
+  else if(ch==='curios'){L=`<div class="kick">Chapter V</div>`+cCuriosL(S);R=cCuriosR(S)}
+  else {L=`<div class="kick">Chapter I</div>`+cBookplate(S);R=cAnglerR(S)}
+  const base=CH.findIndex(c=>c[0]===ch)*20+i*2+1;
+  return `<div class="vC"><div class="plate">Lv ${a.level} · ${esc(S.title)} · Ledger ${S.pct}%</div><div class="x">✕</div>
+    <div class="pages"><div class="page l">${L}<span class="turn" data-act="cTurn" data-arg="-1">☚</span><div class="pno">${base}</div></div><div class="page r">${R}<span class="turn" data-act="cTurn" data-arg="1">☛</span><div class="pno">${base+1}</div></div></div>
+    <div class="ribbons">${CH.map(([k,l])=>`<div class="rib ${ch===k?'on':''}" data-act="cCh" data-arg="${k}">${l}</div>`).join('')}</div></div>`}
+const cCuriosL=S=>`<h2>The Junk Museum</h2><div class="small">${S.jGot} of ${S.junk.length} exhibits</div>${S.junk.map(j=>`<p style="margin:10px 0">${ic(j,30,!j.got)} <b style="font-weight:normal">${j.got?esc(j.n):'<i>an empty plinth</i>'}</b><br><span class="small"><i>${j.got?esc(j.plaque):''}</i></span></p>`).join('')}`;
+const cCuriosR=S=>`<h2>Treasures</h2><div class="small">${S.trGot} of ${S.treas.length} opened</div><ul class="check">${S.treas.map(t=>`<li class="${t.got?'y':''}">${t.got?esc(t.n):'<i>something sealed, not yet found</i>'}</li>`).join('')}</ul><div class="kick" style="margin-top:6px">Loose pages: Uncharted</div>${S.unch.map(u=>`<div class="hand" style="font-size:17px">${esc(u.n)}: ${u.k}× at ${esc(u.where)}. Unknown to Pagle. Logged.</div>`).join('')||'<div class="small"><i>None. Every catch is in the Ledger.</i></div>'}`;
+function cBookplate(S){const a=S.a;return `<div class="bookplate"><div class="kick">Ex Libris</div><h2 style="font-size:24px">The Angler's Ledger</h2><div class="small">kept by the Angler of this game account<br>since ${a.since}</div>
+      <div style="font-size:54px;color:#3e220c;line-height:1;margin-top:10px">${a.level}</div><div class="small">Angler Level</div><div class="hand" style="font-size:26px;margin-top:4px">${esc(S.title)}</div>
+      ${cInkbar(S)}
+      <div style="margin-top:8px">${a.pr?Array.from({length:a.pr},(_,k)=>emb(k+1)).join(' '):'<span class="small"><i>No Prestige seals yet</i></span>'}</div>
+      ${a.ready?'<div style="margin-top:8px"><span class="btn glow" data-act="prestige">Begin a new Ledger (Prestige)</span></div>':''}</div>
+      <div class="small" style="margin-top:12px;text-align:center">${S.pct}% of the Ledger complete (${S.got} of ${S.total})</div>`}
+function cInkbar(S){const a=S.a;return `<div class="inkbar"><i style="width:${a.level>=60?100:a.xp/a.need*100}%"></i>${a.level<60?`<b style="left:${a.xp/a.need*100}%;width:${Math.min(100-a.xp/a.need*100,a.fresh*10/a.need*100)}%"></b>`:''}</div>
+      <div class="small">${a.level>=60?`${a.xp.toLocaleString()} XP set aside for the next Prestige`:`${a.xp.toLocaleString()} of ${a.need.toLocaleString()}. Fresh water for ${a.fresh} more catches (in blue).`}</div>`}
+function cAnglerR(S){const a=S.a;return `<h2>Hands on the Rod</h2>${a.chars.map(([n,d,sk])=>`<div class="hand">${n}, ${d}: skill ${sk}</div>`).join('')}
+      <div class="small" style="margin-top:6px">Milestones: ${[75,150,225,300].map(t=>(Math.max(...a.chars.map(c=>c[2]))>=t?'☑ ':'☐ ')+t).join('  ')}</div>
+      <h2 style="margin-top:14px;font-size:22px">Signed As</h2>${S.titles.map(t=>`<span class="ttc lnk ${t===S.title?'on':''}" data-act="title" data-arg="${esc(t)}">${t===S.title?'✒ ':'· '}${esc(t)}</span>`).join('')}
+      <h2 style="margin-top:14px;font-size:22px">Bindings</h2><div class="small">${[['','Stormwind Stone',0],...COS.filter(c=>c[3]).map(c=>[c[3],c[2],c[0]])].map(([th,n,l])=>{const u=a.level>=l||a.pr>0;return u?`<span class="lnk ${THEME===th?'gold':''}" data-act="theme" data-arg="${th}">${THEME===th?'✒ ':''}${n}</span>`:`<span style="color:#a89070">${n} (level ${l})</span>`}).join(' · ')}<br><i>Bindings recolour the Retail-style variants; the book keeps its leather here.</i></div>`}
+function cFish(s,i,plain=NAV.C.plain,plainAct='cPlain'){
+  if(!s.caught)return `<div class="kick">No. ${i+1}</div><h2>An unknown fish</h2><div class="inkart sil">${fishSVG(s.n,s.col,true)}</div><p class="riddle">“${esc(s.riddle)}”</p>${plain?`<p class="hand" style="text-align:center">${factHint(s)}</p>`:`<p class="small" style="text-align:center"><span class="lnk" data-act="${plainAct}">Read the plain hint ▸</span></p>`}`;
+  const [d,z,who]=s.first.split(' · ');
+  return `<div class="kick">No. ${i+1}${s.isNew?' · new in Forever':''}</div><h2>${esc(s.n)}</h2><div class="inkart">${fishSVG(s.n,s.col,false)}</div>
+    <div class="stamps">${s.st.map((b,k)=>`<span class="stamp ${b?'on':''}">${['Caught','In its element','Regular'][k]}</span>`).join('')}</div>
+    <p class="hand">First landed ${d} in ${z}, by ${who}. ${s.count} since.</p>
+    <p style="margin:6px 0">${esc(s.lore)}</p>
+    <p class="small" style="margin:6px 0">Found in ${joinList(s.z.map(zn))}${s.ec.length?'. Only by '+s.ec.map(c=>COND[c].full.toLowerCase()).join(' and '):''}${s.c.includes('pool')?'. Pools only':''}.</p>
+    <p class="small" style="margin:6px 0">Largest by my own measure: <b>${s.size} in</b> <span class="note">(Pagle's measure, not the game's)</span></p>`}
+function cZone(z,S){
+  if(!z.data)return `<div class="kick">${CONT[z.c]}</div><h2>${z.n}</h2><p class="riddle">Uncharted waters. No map of these yet.</p><p class="small">Every catch here is still written down, and is counted once Pagle's data catches up.</p>${S.unch.filter(u=>u.where.includes(z.n)).map(u=>`<div class="hand">${esc(u.n)}: ${u.k}×</div>`).join('')}`;
+  return `<div class="kick">${CONT[z.c]}</div><h2>${z.n}</h2><div class="seal r${z.shown}">${z.shown?RANKS[z.shown]:'unfished'}</div><div class="small" style="max-width:300px">No junk from skill ~${z.s}. ${z.pct}% of these waters known.</div>
+    <ul class="check">${z.list.map(s=>{const g=s.zc.includes(z.k);return `<li class="${g?'y':''}">${g?esc(s.n.replace(/^Raw /,'')):s.caught?esc(s.n.replace(/^Raw /,''))+' <span class="note">(caught elsewhere)</span>':'<i>something not yet seen</i>'}${s.ec.filter(c=>!COND[c].now||!g).map(c=>`<span class="hand marg">${COND[c].l.toLowerCase()}, ${COND[c].when}</span>`).join('')}</li>`}).join('')}${z.fams.map(f=>`<li class="${f.got.length?'y':''}">a ${f.n.toLowerCase()} trophy, any weight</li>`).join('')}</ul>
+    ${z.newN?`<div class="hand marg" style="font-size:22px">${z.newN} new to find here!</div>`:''}<div class="small">Next: ${nextReq(z)}</div>`}
+function cTrophy(f){const mn=f.w[0],mx=f.w[f.w.length-1];
+  return `<h2>The ${f.n} family</h2><div class="stamps">${f.st.map((b,k)=>`<span class="stamp ${b?'on':''}">${['Any weight','Half the weights','The heaviest'][k]}</span>`).join('')}</div>
+    <div class="ruler">${f.w.map(w=>{const g=f.got.includes(w);return `<div class="tick ${g?'g':''}" style="left:${6+(w-mn)/(mx-mn||1)*88}%">${g?'<em>✓</em>':''}${w}</div>`}).join('')}</div>
+    <div class="small" style="text-align:center">pounds, as the game weighs them</div>
+    <p class="hand" style="margin-top:16px">${f.got.length?`Landed ${f.got.length} of ${f.w.length}. Heaviest so far: ${Math.max(...f.got)} lb.`:'Not one of this family yet.'}</p>
+    <p class="small">Found in ${joinList(f.z.map(zn))}.</p>`}
+function cLegend(l){
+  return `<div class="kick">Legend</div><h2>${l.got?esc(l.n):'An unwritten legend'}</h2><div class="inkart ${l.got?'':'sil'}">${fishSVG(l.n,l.col,!l.got)}</div>
+    <p class="small" style="text-align:center">${esc(l.how)}${l.nat?'<br><i>(only if Nat Pagle\'s errand exists at launch)</i>':''}</p>
+    ${l.got?`<p class="hand" style="text-align:center">${l.when.split(' · ').join(', ')}</p><p style="text-align:center"><span class="btn" data-act="splash" data-arg="${esc(l.n)}">Open the plate</span></p><p class="small" style="text-align:center">Title: <i>${esc(l.title)}</i></p>`:'<p class="riddle">Some fish are only caught once in a long while. This page waits for one.</p>'}`}
+
+// ===================================================================== D: Achievement board (progress-first)
+function vD(S){const N=NAV.D,a=S.a;
+  const cats=[['summary','Summary',''],['species','Species',`${S.nSp}/${S.species.length}`],['zones','Zones',`${S.zMaster}/${S.nZones}`],['z-ek','Eastern Kingdoms','',1],['z-kal','Kalimdor','',1],['z-new','New in Forever','',1],['trophy','Trophy Room',`${S.tGot}/${S.tTot}`],['junk','Junk Museum',`${S.jGot}/${S.junk.length}`],['treas','Treasures',`${S.trGot}/${S.treas.length}`],['legends','Legends',`${S.lGot}/${S.legends.length}`],['unch','Uncharted',`${S.unch.length}`],['angler','Angler and titles','']];
+  return frame('vD',960,620,'Pagle Ledger',`<div class="head"><div class="shield">${S.pct}%</div><div><div class="gold" style="font-size:16px">Ledger completion · ${S.got} / ${S.total}</div><div class="dim" style="font-size:12px">Species, Sub-collections and Zone Masters. Stars and Legends sit on top.</div></div><div style="flex:1"></div><div style="width:220px"><input class="search" id="dq" data-in="D.q" placeholder="Filter" value="${esc(N.q)}"></div></div>
+  <div class="body"><div class="cats inset scroll">${cats.map(([k,l,c,sub])=>`<div class="cat ${sub?'sub':''} ${N.cat===k?'on':''}" data-act="dCat" data-arg="${k}"><span>${l}</span><small>${c}</small></div>`).join('')}</div><div class="main inset scroll">${dMain(S)}</div></div>
+  <div class="foot"><span class="gold">Level ${a.level}</span>${a.pr?emb(a.pr):''}<div style="flex:1">${xpBar(S)}</div><span class="fw">${freshText(S)}</span></div>`)}
+function dRow(o){const open=NAV.D.open===o.id;return `<div class="ach ${o.done?'done':''}" data-act="dOpen" data-arg="${esc(o.id)}">${o.icon}<div class="tx"><b>${o.title}</b><span>${o.desc}</span>${o.bar||''}</div><div class="rt">${o.right||''}</div></div>${open&&o.body?`<div class="achx inset">${o.body}</div>`:''}`}
+function dMain(S){const N=NAV.D,q=N.q.toLowerCase(),m=n=>!q||n.toLowerCase().includes(q);
+  if(N.cat==='summary'){
+    return `<div class="sumg"><div><div class="sect" style="margin-top:0">Recent discoveries</div>${S.recent.map(([n,w,d])=>`<div class="mini">${itemFor(n)}<div><div class="wht">${esc(n)}</div><div class="dim" style="font-size:12px">${w} · ${d}</div></div></div>`).join('')}
+      <div class="sect">Almost there</div>${suggestions(S).map(s=>`<div class="mini lnk" data-act="${s.act==='zone'?'dZone':'dSp'}" data-arg="${esc(s.arg)}">${s.icon}<div><div class="wht">${esc(s.h)}</div><div class="dim" style="font-size:12px">${esc(s.sub)}</div></div></div>`).join('')}</div>
+      <div><div class="sect" style="margin-top:0">Progress overview</div>${[['Species',S.nSp,S.species.length],['Zone Masters',S.zMaster,S.nZones],['Trophy Room',S.tGot,S.tTot],['Junk Museum',S.jGot,S.junk.length],['Treasures',S.trGot,S.treas.length]].map(([l,c,mx])=>`<div class="ov"><div>${l}</div>${pbar(c,mx)}</div>`).join('')}
+      <div class="sect">Outside the 100%</div><div class="ov"><div>Legends</div>${pbar(S.lGot,S.legends.length)}</div><div class="ov"><div>Species stars</div>${pbar(S.species.reduce((n,s)=>n+s.st.filter(Boolean).length,0),S.species.length*3)}</div></div></div>`}
+  if(N.cat==='species')return S.species.filter(s=>m(s.n)).map(s=>dRow({id:s.n,done:s.caught,icon:ic(s,40,!s.caught),title:esc(s.n)+(s.isNew?'<span class="newtag">new</span>':''),desc:s.caught?`Caught ${s.count} · first ${s.first}`:'Hint: '+factHint(s),bar:s.caught&&!s.st[2]?pbar(s.count,50,`${s.count} / 50 for ★★★`):'',right:stars(s.st),body:speciesFacts(s)+(s.caught?`<div class="lore">“${esc(s.lore)}”</div>`:'')})).join('');
+  if(N.cat==='zones'||N.cat.startsWith('z-')){const c=N.cat.slice(2);
+    return S.zones.filter(z=>(N.cat==='zones'||z.c===c)&&m(z.n)).map(z=>dRow({id:z.k,done:z.shown===5,icon:ic({g:'map',n:z.n,q:z.shown===5?2:1},40,!z.shown),title:z.n+(z.newN?`<span class="newtag">${z.newN} new</span>`:''),desc:z.data?`${RANKS[z.shown]} · next: ${nextReq(z)}`:'Uncharted waters: no data yet',bar:z.data?pbar(z.pct,100,z.pct+'%'):'',right:`<span class="${z.shown===5?'gold':'dim'}">${z.data?RANKS[z.shown]:''}</span>`,
+      body:z.data?`${rankTrack(z)}<div class="sect">Criteria</div><div class="crit">${z.list.map(s=>{const g=s.zc.includes(z.k);return `<div class="${g?'y':''}">${g?'✓':'○'} ${esc(s.n)}${s.ec.length?` <span class="${canNow(s)?'ok':'gold'}">(${s.ec.map(c=>COND[c].l+', '+COND[c].when).join('; ')})</span>`:''}</div>`}).join('')}${z.fams.map(f=>`<div class="${f.got.length?'y':''}">${f.got.length?'✓':'○'} ${f.n} trophy, any weight</div>`).join('')}</div>`:unchartedList({unch:S.unch.filter(u=>u.where.includes(z.n))})})).join('')}
+  if(N.cat==='trophy')return S.trophy.filter(f=>m(f.n)).map(f=>dRow({id:f.k,done:f.st[2],icon:ic({n:f.n+'fam',col:f.col,q:1},40,!f.got.length),title:f.n+' trophies',desc:`${f.got.length} of ${f.w.length} weights · heaviest ${Math.max(...f.w)} lb`,bar:pbar(f.got.length,f.w.length),right:stars(f.st),body:trophyPage(f)})).join('');
+  if(N.cat==='junk')return S.junk.filter(j=>m(j.n)).map(j=>dRow({id:j.n,done:j.got,icon:ic(j,40,!j.got),title:j.got?esc(j.n):'Empty plinth',desc:j.got?`<i>${esc(j.plaque)}</i>`:'Something odd is still out there.'})).join('');
+  if(N.cat==='treas')return S.treas.filter(t=>m(t.n)).map(t=>dRow({id:t.n,done:t.got,icon:ic(t,40,!t.got),title:`<span class="${t.got?'n'+t.q:''}">${esc(t.n)}</span>`,desc:t.got?'Opened':'Not yet found',right:t.bloated?'<span class="dim">Bloated</span>':''})).join('');
+  if(N.cat==='legends')return `<div class="dim" style="margin-bottom:6px">Legends are real named catches. They sit outside the 100%.</div>`+S.legends.filter(l=>m(l.n)).map(l=>dRow({id:l.n,done:l.got,icon:ic(l,48,!l.got),title:l.got?esc(l.n):'An unwritten legend',desc:esc(l.how)+(l.nat?' · if Nat\'s quest exists at launch':''),right:l.got?`<span class="btn sm" data-act="splash" data-arg="${esc(l.n)}">View</span>`:'',body:l.got?`<div>Caught ${l.when}. Title: <span class="gold">${esc(l.title)}</span></div>`:''})).join('');
+  if(N.cat==='unch')return `<div class="dim" style="margin-bottom:6px">Catches that Pagle's data doesn't know yet. They're credited automatically once a content update classifies them.</div>`+unchartedList(S);
+  return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px"><div>${anglerLevel(S)}<div class="sect">Characters</div>${anglerChars(S)}</div><div><div class="sect" style="margin-top:0">Active title</div>${anglerTitles(S)}<div class="sect">Unlocks</div>${anglerCos(S)}</div></div>`}
+
+// ===================================================================== E: B's organisation in C's book
+const inkic=(s,sil)=>`<span class="inkic ${sil?'sil':''}">${fishSVG(s.n,s.col,sil)}</span>`;
+const estars=a=>`<span class="estars">${a.map(b=>`<span class="${b?'':'off'}">★</span>`).join('')}</span>`;
+function vE(S){const N=NAV.E,a=S.a;const crumbs=[['Home','eHome','']];let L,R;
+  if(N.page==='zone'){const z=S.zones.find(z=>z.k===N.zone);crumbs.push([CONT[z.c],'eCont',z.c],[z.n,'eZone',z.k]);
+    const s=N.sel&&S.species.find(x=>x.n===N.sel);if(s)crumbs.push([s.caught?s.n:'an unknown fish','eZSel',s.n]);[L,R]=eZone(z,s,S)}
+  else if(N.page==='sp'){const s=S.species.find(x=>x.n===N.sp);crumbs.push(['Fishes','eHome',''],[s.caught?s.n:'an unknown fish','eSp',s.n]);[L,R]=eSp(s,S)}
+  else if(N.page!=='home'){const P2={trophy:'The Trophy Room',curios:'Curios',legends:'Legends',angler:'The Angler'};crumbs.push([P2[N.page],'ePage',N.page]);[L,R]=eOther(N.page,S)}
+  else [L,R]=eHome(S);
+  return `<div class="vC vE"><div class="plate">Lv ${a.level} · ${esc(S.title)} · Ledger ${S.pct}%</div><div class="x">✕</div>
+    <div class="strip">${crumbs.map(([l,ac,g])=>`<span class="crumb" data-act="${ac}" data-arg="${esc(g)}">${esc(l)}</span>`).join('')}<div style="flex:1"></div><div class="es"><input id="eq" data-in="E.q" placeholder="Find a fish or a water…" value="${esc(N.q)}">${eResults(S)}</div></div>
+    <div class="pages"><div class="page l">${L}${N.page!=='home'?'<span class="back" data-act="eBack">☚ back</span>':''}</div><div class="page r">${R}</div></div></div>`}
+function eResults(S){const q=NAV.E.q.toLowerCase();if(!q)return '';
+  const zs=S.zones.filter(z=>z.n.toLowerCase().includes(q)).slice(0,4),sp=S.species.filter(s=>s.caught&&s.n.toLowerCase().includes(q)).slice(0,6);
+  return `<div class="drop">${zs.map(z=>`<div data-act="eZone" data-arg="${z.k}">${z.n}<small>waters · ${RANKS[z.shown].toLowerCase()}</small></div>`).join('')}${sp.map(s=>`<div data-act="eSp" data-arg="${esc(s.n)}">${esc(s.n)}<small>fish</small></div>`).join('')}${!zs.length&&!sp.length?'<div><i>Nothing by that name in the Ledger yet.</i></div>':''}</div>`}
+const eTile=z=>`<div class="zt ${z.shown?'':'unv'}" style="--hue:${z.hue}" data-act="eZone" data-arg="${z.k}"><div class="nm">${z.n}</div>${z.shown===5?'<div class="ms">Master</div>':''}${z.newN?`<div class="nw">${z.newN} new!</div>`:''}<div class="rk">${z.data?(z.shown?(z.shown<5?RANKS[z.shown]+' · ':'')+z.pct+'%':'unfished · skill ~'+z.s):'uncharted waters'}</div><div class="ib"><i style="width:${z.pct}%"></i></div></div>`;
+function eHome(S){const N=NAV.E,a=S.a;
+  const L=`<div class="kick">The Waters</div><h2>Where I've Fished</h2><div class="conts">${['ek','kal','new'].map(c=>`<span class="${N.cont===c?'on':''}" data-act="eCont" data-arg="${c}">${CONT[c]}</span>`).join('')}</div><div class="zts">${S.zones.filter(z=>z.c===N.cont).map(eTile).join('')}</div>`;
+  const R=`<div style="display:flex;align-items:center;gap:14px"><div style="font-size:50px;color:#3e220c;line-height:1">${a.level}</div><div style="flex:1"><div class="small">Angler Level ${a.pr?emb(a.pr):''}</div><div class="hand" style="font-size:24px">${esc(S.title)}</div></div><div class="seal" style="position:static;transform:rotate(-6deg);width:64px;height:64px">${S.pct}%</div></div>
+    ${cInkbar(S)}
+    <div class="kick" style="margin-top:14px">Notes to self</div>${suggestions(S).map(s=>`<div class="memo" data-act="${s.act==='zone'?'eZone':'eSp'}" data-arg="${esc(s.arg)}">✎ ${esc(s.h)}. <span style="color:#6a5a40">${esc(s.sub)}</span></div>`).join('')||'<div class="memo">✎ Go fishing!</div>'}
+    <div class="kick" style="margin-top:14px">In this Ledger</div><div class="toc">
+      <div data-act="ePage" data-arg="trophy"><span>The Trophy Room</span><span>${S.tGot} / ${S.tTot}</span></div>
+      <div data-act="ePage" data-arg="curios"><span>Curios: junk, treasure, uncharted</span><span>${S.jGot+S.trGot} / ${S.junk.length+S.treas.length}</span></div>
+      <div data-act="ePage" data-arg="legends"><span>Legends</span><span>${S.lGot} / ${S.legends.length}</span></div>
+      <div data-act="ePage" data-arg="angler"><span>The Angler: hands, titles, bindings</span><span>›</span></div></div>`;
+  return [L,R]}
+function eZone(z,sel,S){
+  if(!z.data)return [`<div class="kick">${CONT[z.c]}</div><h2>${z.n}</h2><p class="riddle">Uncharted waters. No map of these yet.</p><p class="small">Every catch here is still written down, and counted once Pagle's data catches up.</p>`,`<div class="kick">Loose pages</div>${S.unch.filter(u=>u.where.includes(z.n)).map(u=>`<div class="hand">${esc(u.n)}: ${u.k}× at ${esc(u.where)}</div>`).join('')||'<p class="small"><i>Nothing caught here yet.</i></p>'}`];
+  const row=s=>{const g=s.zc.includes(z.k);return `<div class="er ${sel===s?'on':''}" data-act="eZSel" data-arg="${esc(s.n)}">${inkic(s,!g)}<span class="nm ${g?'':'unk'}">${g||s.caught?esc(s.n.replace(/^Raw /,'')):'— unknown —'}${!g&&s.caught?' <span class="note">(caught elsewhere)</span>':''}${s.isNew?' <span class="hand marg" style="font-size:15px">new!</span>':''}${s.ec.filter(c=>!g||!COND[c].now).map(c=>`<span class="hand marg" style="font-size:15px">${COND[c].l.toLowerCase()}, ${COND[c].when}</span>`).join('')}</span>${g?estars(s.st):''}</div>`};
+  const group=(label,fn)=>{const G=z.list.filter(fn);return G.length?`<div class="gh"><span>${label}</span><span>${G.filter(s=>s.zc.includes(z.k)).length} / ${G.length}</span></div>${G.map(row).join('')}`:''};
+  const L=`<div class="kick">${CONT[z.c]}</div><h2 style="max-width:300px">${z.n}</h2><div class="seal r${z.shown}">${z.shown?RANKS[z.shown]:'unfished'}</div>
+    <div class="ladder">${RANKS.slice(1).map((r,i)=>`<span class="${z.shown>i?'on':''} ${z.shown===i+1?'cur':''}">${r}</span>`).join('·  ')}</div><div class="small">Next: ${nextReq(z)}</div>
+    ${z.newN?`<div class="hand marg" style="font-size:21px;margin:4px 0 0">${z.newN} new to find here! My Master seal stays.</div>`:''}
+    ${group('Any time',s=>!s.ec.length&&!s.c.includes('pool'))}${group('Pools',s=>s.c.includes('pool'))}${group('Day and night',s=>s.ec.some(c=>c==='day'||c==='night'))}${group('Seasonal',s=>s.ec.some(c=>c==='summer'||c==='winter'))}${group('Events',s=>s.ec.includes('event'))}`;
+  const R=sel?cFish(sel,S.species.indexOf(sel),NAV.E.plain,'ePlain'):`<div class="kick">About these waters</div><h2>${z.n}</h2>
+    <p class="small">No junk from skill ~${z.s}. ${z.pct}% of these waters known: ${z.u+z.g} of ${z.list.length} fish, ${z.fg} of ${z.fams.length} trophy families.</p>
+    <div class="kick" style="margin-top:10px">Trophies landed here</div>${z.fams.map(f=>`<div class="toc"><div data-act="eFamGo" data-arg="${f.k}"><span>${f.n} ${estars(f.st)}</span><span>${f.got.length} / ${f.w.length}</span></div></div>`).join('')||'<p class="small"><i>No trophy families in these waters.</i></p>'}
+    <div class="kick" style="margin-top:10px">Reward for mastery</div><p class="small">Each new seal earns XP. The Master seal earns the title <i>Warden of ${z.n} Waters</i>.</p>
+    <p class="hand" style="margin-top:14px">Pick a fish on the left to read its page.</p>`;
+  return [L,R]}
+function eSp(s,S){
+  const L=cFish(s,S.species.indexOf(s),NAV.E.plain,'ePlain');
+  const R=`<div class="kick">Where to find it</div><h2>${s.caught?'Its waters':'Rumoured waters'}</h2><div class="zts" style="grid-template-columns:1fr 1fr">${s.z.map(k=>S.zones.find(z=>z.k===k)).map(z=>`<div class="zt" style="--hue:${z.hue}" data-act="eZoneSel" data-arg="${z.k}|${esc(s.n)}"><div class="nm">${z.n}</div>${s.zc.includes(z.k)?'<div class="nw">caught ✓</div>':''}<div class="rk">${RANKS[z.shown]} · skill ~${z.s}</div><div class="ib"><i style="width:${z.pct}%"></i></div></div>`).join('')}</div>
+    ${s.ec.length?`<div class="kick" style="margin-top:12px">When</div>${s.ec.map(c=>`<div class="hand">${COND[c].full}: <span class="marg">${COND[c].when}</span></div>`).join('')}`:''}
+    ${s.caught?`<div class="kick" style="margin-top:12px">Mastery</div><p class="small">${s.st[1]?'☑':'☐'} In its element (${s.elemHave}/${s.elemNeed}) · ${s.st[2]?'☑':'☐'} Regular (${Math.min(50,s.count)}/50)</p>`:''}`;
+  return [L,R]}
+function eOther(p,S){const N=NAV.E;
+  if(p==='trophy'){const f=S.trophy[N.fam]||S.trophy[0];return [`<h2>The Trophy Room</h2><div class="small">${S.tGot} of ${S.tTot} weights. Real weights, from the game's own trophy fish.</div><div class="toc" style="margin-top:10px">${S.trophy.map((x,j)=>`<div data-act="eFam" data-arg="${j}" style="${x===f?'color:#9a2a1a':''}"><span>${x.n} ${estars(x.st)}</span><span>${x.got.length} / ${x.w.length}</span></div>`).join('')}</div>`,cTrophy(f)]}
+  if(p==='curios')return [cCuriosL(S),cCuriosR(S)];
+  if(p==='legends'){const l=S.legends[N.leg]||S.legends[0];return [`<h2>Legends</h2><div class="small">${S.lGot} of ${S.legends.length}. These sit outside the Ledger's hundred.</div><div class="toc" style="margin-top:10px">${S.legends.map((x,j)=>`<div data-act="eLeg" data-arg="${j}" style="${x===l?'color:#9a2a1a':''}"><span>${x.got?esc(x.n):'<i>an unwritten legend</i>'}</span><span>${x.got?'✦':''}</span></div>`).join('')}</div>`,cLegend(l)]}
+  return [cBookplate(S),cAnglerR(S)]}
+
+// ===================================================================== splash, wiring, switcher
+function splashHTML(){const l=S.legends.find(x=>x.n===SPLASH);if(!l)return '';
+  return `<div class="splash" data-act="closeSplash"><div class="in"><div class="kick">LEGEND ${S.legends.indexOf(l)+1} OF ${S.legends.length}</div><div class="art">${fishSVG(l.n,l.col,false)}</div><h1>${esc(l.n)}</h1><div class="wht">${l.when.split(' · ').join(' · ')}</div><div class="gold" style="margin-top:10px">Title earned: <span class="wht">${esc(l.title)}</span> · +2,000 XP</div><div class="dim" style="margin-top:6px">♪ Each Legend has its own sound here</div><div class="dim" style="margin-top:16px;font-size:11px">Click anywhere to close</div></div></div>`}
+const V={A:{name:'Collections tab (species first)',fn:vA},B:{name:'Adventure Guide (zone first)',fn:vB},C:{name:'The Ledger book (read like a journal)',fn:vC},D:{name:'Achievement board (progress first)',fn:vD},E:{name:"B's layout in C's book",fn:vE}};
+function toast(m){const t=document.createElement('div');t.className='toast';t.textContent=m;document.body.appendChild(t);setTimeout(()=>t.style.opacity=0,2600);setTimeout(()=>t.remove(),3200)}
+const ACTS={
+  aTab:a=>{NAV.A.tab=a},aSel:a=>{NAV.A.sel=a},aF:a=>{NAV.A.f=a},aZone:a=>{NAV.A.zone=a},aFam:a=>{NAV.A.fam=a},aGo:a=>{NAV.A.tab='species';NAV.A.sel=a;NAV.A.f='all';NAV.A.q=''},
+  bHome:()=>{NAV.B.page='home';NAV.B.q=''},bCont:a=>{NAV.B.page='home';NAV.B.cont=a},bZone:a=>{NAV.B.page='zone';NAV.B.zone=a;NAV.B.q=''},bSp:a=>{NAV.B.page='sp';NAV.B.sp=a;NAV.B.q=''},bPage:a=>{NAV.B.page=a},
+  cCh:a=>{NAV.C.ch=a;NAV.C.plain=false},cSel:a=>{NAV.C.i[NAV.C.ch]=+a;NAV.C.plain=false},cPlain:()=>{NAV.C.plain=true},
+  cTurn:a=>{const N=NAV.C,E=cEntries(S,N.ch),i=(N.i[N.ch]||0)+(+a),ci=CH.findIndex(c=>c[0]===N.ch);N.plain=false;
+    if(i<0){if(ci>0){N.ch=CH[ci-1][0];N.i[N.ch]=cEntries(S,N.ch).length-1}}else if(i>=E.length){if(ci<CH.length-1){N.ch=CH[ci+1][0];N.i[N.ch]=0}}else N.i[N.ch]=i},
+  dCat:a=>{NAV.D.cat=a;NAV.D.open=null},dOpen:a=>{NAV.D.open=NAV.D.open===a?null:a},dSp:a=>{NAV.D.cat='species';NAV.D.open=a},dZone:a=>{NAV.D.cat='zones';NAV.D.open=a},
+  eHome:()=>{Object.assign(NAV.E,{page:'home',q:''})},eCont:a=>{Object.assign(NAV.E,{page:'home',cont:a})},
+  eZone:a=>{Object.assign(NAV.E,{page:'zone',zone:a,sel:null,q:'',plain:false})},eZSel:a=>{Object.assign(NAV.E,{sel:NAV.E.sel===a?null:a,plain:false})},
+  eZoneSel:a=>{const [k,n]=a.split('|');Object.assign(NAV.E,{page:'zone',zone:k,sel:n,plain:false})},
+  eSp:a=>{Object.assign(NAV.E,{page:'sp',sp:a,q:'',plain:false})},ePage:a=>{NAV.E.page=a},ePlain:()=>{NAV.E.plain=true},
+  eFam:a=>{NAV.E.fam=+a},eFamGo:a=>{NAV.E.page='trophy';NAV.E.fam=TROPHY.findIndex(t=>t.k===a)},eLeg:a=>{NAV.E.leg=+a},
+  eBack:()=>{const N=NAV.E;if(N.page==='zone'&&N.sel){N.sel=null;N.plain=false}else N.page='home'},
+  splash:a=>{SPLASH=a},closeSplash:()=>{SPLASH=null},
+  title:a=>{ACTIVE[preset]=a},theme:a=>{THEME=a;document.body.className=a},
+  prestige:()=>toast('Prestige would be logged as an event in the Catch log (ADR 0002). It does nothing in this prototype.'),
+  vPrev:()=>cycle(-1),vNext:()=>cycle(1)};
+function cycle(d){const k=Object.keys(V);variant=k[(k.indexOf(variant)+d+k.length)%k.length];sync()}
+function sync(){const p=new URLSearchParams(location.search);p.set('variant',variant);p.set('state',preset);history.replaceState(null,'','?'+p);render()}
+function render(){
+  if(!V[variant])variant='A';if(!(preset in P))preset='mid';
+  S=build(preset);
+  const ae=document.activeElement,id=ae&&ae.id,pos=ae&&ae.selectionStart;
+  $('#app').innerHTML=V[variant].fn(S)+(SPLASH?splashHTML():'');
+  if(id){const el=document.getElementById(id);if(el&&el.tagName==='INPUT'){el.focus();try{el.setSelectionRange(pos,pos)}catch(e){}}}
+  $('#bar').innerHTML=`<button data-act="vPrev" title="Previous variant (←)">◀</button><span class="lab">${variant} · ${V[variant].name}</span><button data-act="vNext" title="Next variant (→)">▶</button><select id="st">${[['new','New Angler (day one)'],['mid','Mid-game (level 23)'],['cap','Level 60, Prestige ready']].map(([k,l])=>`<option value="${k}" ${k===preset?'selected':''}>${l}</option>`).join('')}</select>`}
+document.addEventListener('click',e=>{const el=e.target.closest('[data-act]');if(!el)return;e.stopPropagation();ACTS[el.dataset.act](el.dataset.arg);render()});
+document.addEventListener('input',e=>{const k=e.target.dataset.in;if(!k)return;const [v,f]=k.split('.');NAV[v][f]=e.target.value;render()});
+document.addEventListener('change',e=>{if(e.target.id==='st'){preset=e.target.value;sync()}});
+document.addEventListener('keydown',e=>{const t=e.target;if(t.matches&&t.matches('input,textarea,select,[contenteditable]'))return;
+  if(e.key==='ArrowLeft')cycle(-1);else if(e.key==='ArrowRight')cycle(1);else if(e.key==='Escape'&&SPLASH){SPLASH=null;render()}});
+render();
+</script>
+</body>
+</html>

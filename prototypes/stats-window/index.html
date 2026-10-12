@@ -1,0 +1,1249 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Stats Window Prototype</title>
+<!--
+  PROTOTYPE: throwaway, never ships. Lives only on branch prototype/stats-window.
+  Question (wow-fish "Prototype the Stats window and live tracker"):
+    How should the Stats window and the optional live tracker look and behave? How the window lays out
+    Session numbers, lifetime numbers, Session history, Your odds per place and Dry spells; how the player
+    moves between the current place, other zones and items; the Your odds states; the dry-spell luck
+    readings; and the live tracker's size, position and empty state.
+  Plan: three Stats windows on one mock game screen, all in the native Retail look, switchable via
+        ?variant=A|B|C, the floating bottom bar, or ←/→. Three live trackers via ?tracker=1|2|3 (side panel).
+        A = tabbed frame (Session / Lifetime / History / Your odds), place picked from a dropdown.
+        B = place browser: a left nav of zones and subzones, each place a page of prose readings.
+        C = "here and now" first, item-first drill-down, everything else in one scroll.
+        All three read ONE pure model (StatsModel, first <script>): the Session cut, the projection
+        counters, Your odds, Dry spells and the luck wording, following "Design Stats". That module is
+        the liftable part. Zones, catch lists, no-junk skills and catch weights are placeholders, and the
+        weights exist only to simulate Casts; content data ships no rates.
+        ?stage=new|mid|late picks the sample Angler.
+        D (added after first review) = B's organisation in the book language of the Fish Journal and
+        the Hunts board: leather binding, gilt breadcrumbs, ribbons, parchment spreads, ink and handwriting.
+  VERDICT (#27): D wins, with the T1 HUD tracker. Bands: unlucky below 1 in 100, very unlucky below 1 in 10,000.
+           Watching a Dry spell turns the tracker on. The Classic baseline column is dropped.
+  Open the file directly in a browser. No build, no persistence.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Marcellus&family=IM+Fell+English:ital@0;1&family=Caveat:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{--gold:#ffd100;--txt:#ece6d6;--dim:#8f8a80;--panel:#f6f4ef;--ink:#23211d;--ink2:#6b665c;--accent:#2f6f8f;--line:#dedad1;
+  --q0:#9d9d9d;--q1:#ffffff;--q2:#1eff00;--q3:#0070dd;--q4:#a335ee;
+  --normal:#7fbf6a;--unlucky:#e8b04a;--very:#e0603c}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{display:flex;background:#0a1416;font-family:'Marcellus',Georgia,serif;color:var(--txt);font-size:13px;overflow:hidden}
+button{font:inherit;cursor:pointer}
+
+/* ---------- mock game screen (shared with the Hunts board prototype) ---------- */
+#scene{position:relative;flex:1;min-width:0;height:100vh;overflow:hidden;
+  background:linear-gradient(180deg,#5d7f8c 0%,#9db7b0 30%,#c9c19a 41%,#3c6a72 42%,#1f4650 60%,#0c2228 100%)}
+#scene::before{content:"";position:absolute;inset:42% 0 0 0;background:repeating-linear-gradient(180deg,transparent 0 14px,rgba(255,255,255,.05) 14px 16px)}
+.hills{position:absolute;left:0;right:0;top:28%;height:14%;background:radial-gradient(ellipse at 20% 100%,#3e5a3a 0 40%,transparent 41%),radial-gradient(ellipse at 70% 100%,#4a6640 0 45%,transparent 46%),radial-gradient(ellipse at 95% 100%,#36502f 0 35%,transparent 36%)}
+#tint{position:absolute;inset:0;background:#06102a;pointer-events:none;transition:opacity 1s}
+#bobber{position:absolute;left:62%;top:64%;width:18px;height:18px;margin:-9px;border-radius:50%;background:linear-gradient(180deg,#d23a2a 0 50%,#f2efe6 50%);border:1px solid #000;animation:bob 2.4s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(3px)}}
+#pframe{position:absolute;left:16px;top:14px;display:flex;align-items:center;gap:8px}
+#pframe .por{width:58px;height:58px;border-radius:50%;background:radial-gradient(circle at 45% 40%,#7a5a44,#2a1a10);border:3px solid #caa451;box-shadow:0 0 0 2px #000}
+#pframe .bars{width:150px}
+#pframe .nm{color:var(--gold);font-size:13px;text-shadow:0 1px 1px #000}
+#pframe .hp,#pframe .mp{height:11px;border:1px solid #000;margin-top:2px}
+#pframe .hp{background:linear-gradient(#3fd13f,#167a16)}#pframe .mp{background:linear-gradient(#4a7ad8,#1b3d8a)}
+#minimap{position:absolute;right:20px;top:34px;width:140px;height:140px}
+#minimap .mm{position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 50% 50%,#3c6a72 0 30%,#5b7a4e 31% 70%,#3c5f3a 71%);border:4px solid #8a7a5f;box-shadow:0 0 0 2px #000}
+#minimap .zn{position:absolute;left:-60px;right:-60px;top:-2px;text-align:center;color:var(--gold);font-size:12px;text-shadow:0 1px 2px #000;transform:translateY(-100%)}
+#minimap .clk{position:absolute;left:50%;bottom:-20px;transform:translateX(-50%);background:rgba(0,0,0,.7);border:1px solid #8a7a5f;border-radius:3px;padding:0 6px;font:11px/16px Arial;color:#fff;white-space:nowrap}
+#pbtn{position:absolute;left:-8px;bottom:-4px;width:34px;height:34px;border-radius:50%;padding:0;border:2px solid #caa451;background:radial-gradient(circle at 45% 40%,#2e4a58,#081014);box-shadow:0 0 0 1px #000}
+#pbtn svg{width:100%;height:100%}
+#cmenu{position:absolute;right:150px;top:150px;width:190px;display:none;background:rgba(10,10,10,.94);border:1px solid #6b6b6b;border-radius:4px;box-shadow:0 0 0 1px #000,0 6px 16px rgba(0,0,0,.6);padding:6px 0;z-index:25;font-size:13px}
+#cmenu.on{display:block}
+#cmenu .h{color:var(--gold);padding:2px 12px 4px;font-size:13px}
+#cmenu button{display:block;width:100%;text-align:left;background:none;border:0;color:#fff;padding:3px 12px 3px 22px}
+#cmenu button:hover{background:#1f3a5c}
+#cmenu .sep{height:1px;background:#333;margin:4px 8px}
+#cmenu .o{color:#8f8a80}
+#actionbar{position:absolute;left:50%;bottom:44px;transform:translateX(-50%);display:flex;gap:3px;padding:4px;background:rgba(0,0,0,.55);border:1px solid #5a4e3c;border-radius:4px}
+#actionbar i{width:38px;height:38px;border:1px solid #555;border-radius:3px;background:radial-gradient(circle at 40% 35%,#3b444c,#0e1114)}
+#actionbar i:first-child{background:radial-gradient(circle at 40% 35%,#6a8aa0,#1c2c38)}
+#chat{position:absolute;left:16px;bottom:44px;width:360px;font:12px/1.35 Arial,sans-serif;text-shadow:0 1px 1px #000;z-index:4}
+#chatlog div{color:#ffd27a;margin-top:1px}
+#chatlog div.sys{color:#ffff6a}
+#chatin{width:100%;margin-top:4px;background:rgba(0,0,0,.6);border:1px solid #5a4e3c;color:#fff;padding:3px 6px;font:12px Arial}
+#uierr{position:absolute;left:0;right:0;top:15%;text-align:center;color:#ff2020;font:15px Marcellus;text-shadow:0 1px 2px #000;pointer-events:none;z-index:31;transition:opacity .4s}
+
+/* ---------- shared bits ---------- */
+.ic{--sz:22px;position:relative;display:inline-flex;align-items:center;justify-content:center;flex:none;width:var(--sz);height:var(--sz);border:1px solid var(--qc,#fff);border-radius:3px;background:radial-gradient(circle at 40% 35%,var(--fc,#4a7a8a),#0b1418);box-shadow:0 0 0 1px #000;vertical-align:middle;font:bold 10px Arial;color:#fff8;text-shadow:0 1px 1px #000}
+.qn{color:var(--qc,#fff)}
+.q0{--qc:var(--q0)}.q1{--qc:var(--q1)}.q2{--qc:var(--q2)}.q3{--qc:var(--q3)}.q4{--qc:var(--q4)}
+.num{font:bold 13px Arial,sans-serif;color:#fff;font-variant-numeric:tabular-nums}
+.sm{font:11px Arial,sans-serif;color:#b8b0a0}
+.yo{color:#fff}
+.yo.learn{color:#9fd0ff;font-style:italic}
+.yo.unseen{color:#c8bfae}
+.band{display:inline-block;font:bold 10px/14px Arial;letter-spacing:.04em;text-transform:uppercase;padding:0 5px;border-radius:3px;color:#111}
+.band.normal{background:var(--normal)}.band.unlucky{background:var(--unlucky)}.band.very{background:var(--very);color:#fff}
+.band.none{background:#555;color:#ddd}
+.pin{background:none;border:0;padding:0;width:16px;height:16px;opacity:.3;flex:none;vertical-align:middle}
+.pin.on{opacity:1}.pin:hover{opacity:.8}
+.pin svg{width:100%;height:100%}
+.here{color:#7dff7d;font:bold 11px Arial}
+/* luck gauge: where this wait sits among anglers, NOT a bar that fills toward "due" */
+.gauge{position:relative;display:inline-block;width:110px;height:10px;border:1px solid #000;border-radius:2px;vertical-align:middle;
+  background:linear-gradient(90deg,var(--normal) 0 25%,var(--unlucky) 25% 75%,var(--very) 75% 100%);opacity:.85}
+.gauge i{position:absolute;top:-3px;width:3px;height:14px;margin-left:-1px;background:#fff;border:1px solid #000;border-radius:1px}
+.gauge.off{background:#2a2a2a}
+.curve{vertical-align:middle}
+#tip{position:fixed;z-index:60;max-width:300px;padding:7px 9px;background:rgba(6,8,20,.95);border:1px solid #9a9a9a;border-radius:4px;box-shadow:0 0 0 1px #000;font:12px/1.4 Arial,sans-serif;color:#fff;pointer-events:none;display:none}
+#tip b{color:var(--gold);font-weight:normal;font-size:13px}
+#tip .g{color:#b8b0a0}
+
+/* ---------- native Retail frame (ButtonFrameTemplate-ish) ---------- */
+.wf{position:absolute;z-index:10;background:#111;border:2px solid #5b5b5b;border-radius:6px;box-shadow:0 0 0 1px #000,inset 0 0 0 1px #2c2c2c,0 10px 30px rgba(0,0,0,.7);display:flex;flex-direction:column}
+.wf .ttl{height:26px;flex:none;display:flex;align-items:center;justify-content:center;color:var(--gold);font-size:14px;background:linear-gradient(#3a3a3a,#1d1d1d);border-bottom:1px solid #000;border-radius:4px 4px 0 0;position:relative}
+.wf .por{position:absolute;left:-14px;top:-14px;width:56px;height:56px;border-radius:50%;border:3px solid #6e6e6e;box-shadow:0 0 0 1px #000;background:radial-gradient(circle at 45% 40%,#2e4a58,#081014);z-index:2}
+.wf .por svg{width:100%;height:100%}
+.wf .x{position:absolute;right:4px;top:3px;width:20px;height:20px;border-radius:3px;border:1px solid #000;background:linear-gradient(#b02a1a,#5a0d06);color:#fff;font:bold 12px/16px Arial;padding:0}
+.wf .inset{flex:1;min-height:0;margin:6px;background:#0b0b0b url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='6'%3E%3Crect width='6' height='6' fill='%230d0d0d'/%3E%3Crect width='1' height='1' fill='%23161616'/%3E%3C/svg%3E");border:1px solid #2e2e2e;box-shadow:inset 0 0 12px #000;border-radius:3px;overflow:auto}
+.wf .sub{font:11px Arial;color:#b8b0a0;padding:4px 12px 0 46px;flex:none}
+.tabs{display:flex;gap:2px;padding:0 10px;margin-bottom:-24px;position:relative;top:22px}
+.tabs button{height:26px;padding:0 14px;background:linear-gradient(#262626,#141414);border:1px solid #4d4d4d;border-top:0;border-radius:0 0 6px 6px;color:#d8c46a;font-size:12px}
+.tabs button.on{background:linear-gradient(#3a3a3a,#1e1e1e);color:#fff;height:30px}
+.hdr{color:var(--gold);font-size:14px;margin:10px 12px 4px;border-bottom:1px solid #3a3326;padding-bottom:2px;display:flex;align-items:baseline;gap:8px}
+.hdr small{font:11px Arial;color:#9a9284;margin-left:auto}
+.kpis{display:flex;gap:6px;margin:6px 10px}
+.kpi{flex:1;background:linear-gradient(#1c1c1c,#121212);border:1px solid #2e2e2e;border-radius:3px;padding:5px 7px}
+.kpi .k{font:10px Arial;letter-spacing:.06em;text-transform:uppercase;color:#9a9284}
+.kpi .v{font:bold 17px Arial;color:#fff;font-variant-numeric:tabular-nums}
+.kpi .v small{font:11px Arial;color:#b8b0a0}
+table.nt{width:calc(100% - 20px);margin:4px 10px;border-collapse:collapse;font:12px Arial,sans-serif}
+table.nt th{color:#9a9284;font-weight:normal;font-size:11px;text-align:left;padding:3px 6px;border-bottom:1px solid #2e2e2e;white-space:nowrap}
+table.nt td{padding:4px 6px;border-bottom:1px solid #1d1d1d;vertical-align:middle}
+table.nt tr.click{cursor:pointer}
+table.nt tr.click:hover td{background:rgba(255,209,0,.06)}
+table.nt td.r,table.nt th.r{text-align:right}
+table.nt tr.cur td{background:rgba(125,255,125,.05)}
+.two{display:flex;gap:6px}.two>div{flex:1;min-width:0}
+.note{font:11px/1.4 Arial;color:#9a9284;margin:4px 12px 10px}
+.drop{background:linear-gradient(#2a2a2a,#151515);border:1px solid #555;border-radius:3px;color:#fff;font:12px Arial;padding:3px 6px}
+.empty{padding:30px;text-align:center;color:#9a9284;font:13px Arial}
+
+/* ---------- A: tabbed ---------- */
+#wA{left:5%;top:9%;width:700px;height:540px}
+
+/* ---------- B: place browser ---------- */
+#wB{left:4%;top:7%;width:800px;height:580px}
+#wB .body{flex:1;min-height:0;display:flex;gap:6px;margin:6px}
+#wB nav{width:230px;flex:none;overflow:auto;background:#0b0b0b;border:1px solid #2e2e2e;border-radius:3px;padding:4px 0}
+#wB nav button{display:flex;align-items:center;gap:6px;width:100%;text-align:left;background:none;border:0;color:#e8d9a8;padding:4px 10px;font-size:13px}
+#wB nav button.subz{padding-left:26px;font:12px Arial;color:#cfc8b8}
+#wB nav button span.c{margin-left:auto;font:11px Arial;color:#8f8a80}
+#wB nav button.on{background:linear-gradient(90deg,rgba(255,209,0,.18),transparent);color:#fff}
+#wB nav button:hover{background:rgba(255,255,255,.05)}
+#wB nav .sep{color:#8f8a80;font:10px Arial;letter-spacing:.1em;text-transform:uppercase;padding:8px 10px 2px}
+#wB .page{flex:1;min-width:0;overflow:auto;background:#0b0b0b;border:1px solid #2e2e2e;border-radius:3px}
+#wB .strip{display:flex;gap:14px;align-items:center;padding:5px 10px;margin:6px 6px 0;background:linear-gradient(#1f2a1f,#141a14);border:1px solid #2f3f2f;border-radius:3px;font:12px Arial;color:#cfc8b8;flex:none}
+#wB .strip b{color:#fff}
+#wB .strip .lv{color:#7dff7d;font-weight:bold}
+.crumb{font:11px Arial;color:#9a9284;margin:10px 14px 0}
+.crumb a{color:#d8c46a;cursor:pointer}
+.ptitle{font-size:20px;color:#fff;margin:2px 14px 0;display:flex;align-items:center;gap:8px}
+.pscope{font:12px Arial;color:#b8b0a0;margin:2px 14px 8px}
+.entry{display:flex;gap:10px;padding:8px 14px;border-top:1px solid #1d1d1d}
+.entry .ic{--sz:34px}
+.entry .en{flex:1;min-width:0}
+.entry .nm{font-size:14px}
+.entry .od{font:bold 14px Arial;color:#fff;margin-top:1px}
+.entry .ds{font:12px/1.45 Arial;color:#d6cfbf;margin-top:3px}
+.entry .ds .band{margin-right:5px}
+
+/* ---------- C: here and now ---------- */
+#wC{left:6%;top:6%;width:520px;height:620px}
+#wC .srch{display:flex;gap:6px;padding:6px 10px 0;flex:none}
+#wC .srch input{flex:1;background:#0b0b0b;border:1px solid #555;border-radius:3px;color:#fff;font:12px Arial;padding:4px 7px}
+#wC .res{position:absolute;left:10px;right:10px;top:62px;background:#141414;border:1px solid #555;z-index:3;max-height:240px;overflow:auto}
+#wC .res div{padding:4px 8px;font:12px Arial;cursor:pointer;display:flex;gap:6px;align-items:center}
+#wC .res div:hover{background:#1f3a5c}
+.sec{margin:8px 8px 0;border:1px solid #2e2e2e;border-radius:3px;background:#0f0f0f}
+.sec>.sh{display:flex;align-items:center;gap:8px;padding:5px 9px;color:var(--gold);font-size:14px;cursor:pointer;background:linear-gradient(#1d1d1d,#141414)}
+.sec>.sh small{margin-left:auto;font:11px Arial;color:#9a9284}
+.sec>.sh .tw{font:10px Arial;color:#9a9284;width:10px}
+.row{display:flex;align-items:center;gap:8px;padding:5px 9px;border-top:1px solid #1d1d1d;cursor:pointer;font:12px Arial}
+.row:hover{background:rgba(255,209,0,.05)}
+.row .nm{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .od{width:118px;text-align:right}
+.row .dc{width:150px;text-align:right;color:#b8b0a0}
+.back{background:none;border:0;color:#d8c46a;font:12px Arial;padding:6px 10px}
+.itop{display:flex;gap:10px;align-items:center;padding:4px 12px}
+.itop .ic{--sz:44px}
+.itop .n{font-size:20px}
+.itop .w{font:12px Arial;color:#b8b0a0}
+
+/* ---------- D: B's organisation in the Journal/Hunts book (book-meets-modern) ---------- */
+.vD{position:absolute;left:24px;top:64px;width:980px;height:640px;z-index:10;border-radius:12px;padding:0 18px 16px;background:radial-gradient(ellipse at 30% 20%,#6a3e20,#3a2010 70%);box-shadow:0 0 0 2px #120a04,inset 0 0 0 3px #8a5a2a,inset 0 0 0 5px #2a1608,0 22px 60px rgba(0,0,0,.8)}
+.vD .x{position:absolute;right:-10px;top:-10px;width:26px;height:26px;border-radius:50%;border:2px solid #1d1008;background:#8a2a1a;color:#f1e2bd;font:bold 13px Arial;padding:0;z-index:3}
+.vD .strip{height:38px;display:flex;align-items:center;gap:4px;padding:0 6px;color:#e8c96a;font-family:'Marcellus';position:relative}
+.vD .crumb{cursor:pointer;font-size:14px;text-shadow:0 1px 1px #000}.vD .crumb:hover{color:#fff4c8}
+.vD .crumb+.crumb::before{content:'\2767';margin:0 8px;color:#a8803a}
+.vD .es{position:relative;width:250px;margin-left:auto}
+.vD .es input{width:100%;background:#efe0bb;border:1px solid #8a5a2a;border-radius:3px;font-family:'IM Fell English',Georgia,serif;font-size:14px;color:#3a2614;padding:3px 8px;outline:none}
+.vD .drop{position:absolute;top:30px;left:0;right:0;z-index:10;background:radial-gradient(#f3e5c3,#dcc495);border:1px solid #6a4a20;box-shadow:0 6px 14px rgba(0,0,0,.6);font-family:'IM Fell English',Georgia,serif;color:#3a2614;padding:4px}
+.vD .drop div{padding:3px 6px;cursor:pointer}.vD .drop div:hover{background:rgba(120,70,20,.15)}.vD .drop small{color:#8a6a40;font-style:italic;margin-left:6px}
+.vD .pages{display:flex;height:calc(100% - 38px)}
+.vD .page{position:relative;flex:1;min-width:0;padding:22px 28px 34px;color:#3a2614;font-family:'IM Fell English',Georgia,serif;font-size:14px;background:radial-gradient(ellipse at 50% 40%,#f3e5c3,#dfc89a 80%,#c9ab76);overflow-y:auto;scrollbar-width:thin;scrollbar-color:#8a5a2a transparent}
+.vD .page.l{border-radius:4px 0 0 4px;box-shadow:inset -30px 0 30px -20px rgba(70,40,10,.65)}
+.vD .page.r{border-radius:0 4px 4px 0;box-shadow:inset 30px 0 30px -20px rgba(70,40,10,.65)}
+.vD .kick{font-variant:small-caps;letter-spacing:2px;color:#8a5a2a;font-size:13px}
+.vD h2{font-size:26px;color:#3e220c;margin:0 0 4px;font-weight:normal;line-height:1.1}
+.vD .small{font-size:13px;color:#5a4028}
+.vD .hand{font-family:'Caveat',cursive;color:#23407a;font-size:20px;line-height:1.15}
+.vD .red{color:#9a2a1a}
+.vD .note{font-size:12px;color:#8a6a40;font-style:italic}
+.vD .gh{font-variant:small-caps;letter-spacing:1px;color:#8a5a2a;border-bottom:1px solid #c4a874;margin:12px 0 3px;display:flex;justify-content:space-between;font-size:14px}
+.vD .gh small{font-variant:normal;letter-spacing:0;font-style:italic;color:#9a8060;font-size:12px}
+.vD .toc div{display:flex;align-items:baseline;gap:4px;padding:2px 0}
+.vD .toc div.go{cursor:pointer}.vD .toc div.go:hover{color:#7a2a14}
+.vD .toc div::after{content:'';order:1;flex:1;border-bottom:1px dotted #8a6a40;transform:translateY(-3px)}.vD .toc div span:last-child{order:2;font-variant-numeric:tabular-nums}
+.vD .ic{--qc:#5a3a1a;filter:sepia(.75) saturate(.9)}
+.vD .er{display:flex;align-items:center;gap:8px;padding:3px 4px;cursor:pointer;border-radius:2px}
+.vD .er:hover{background:rgba(120,70,20,.1)}.vD .er.on{outline:1px dashed #8a5a2a;background:rgba(120,70,20,.12)}
+.vD .er .nm{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vD .er .od{font-size:13px;color:#3e220c;white-space:nowrap}
+.vD .er .od.learn{color:#23407a;font:17px Caveat}
+.vD .er .od.unseen{color:#8a6a40;font-style:italic}
+.vD .er .mg{width:118px;text-align:right;font:17px/1 Caveat;color:#7a6a50;white-space:nowrap;transform:rotate(-2deg)}
+.vD .er .mg.unlucky,.vD .er .mg.very{color:#9a2a1a}
+.vD .er .pinm{width:12px;height:12px;flex:none}
+.vD .big{font-size:34px;color:#3e220c;line-height:1.1;margin:4px 0 2px}
+.vD .big.learn{font:34px Caveat;color:#23407a}
+.vD .inkbar{height:10px;border:1.5px solid #5a3a14;border-radius:5px;position:relative;overflow:hidden;margin:6px 0}
+.vD .inkbar i{position:absolute;left:0;top:0;bottom:0;background:repeating-linear-gradient(45deg,#5a3a14 0 3px,#7a5224 3px 6px)}
+.vD .pinE{position:absolute;right:24px;top:22px;display:flex;align-items:center;gap:4px;background:none;border:0;padding:0;font:17px Caveat;color:#8a6a40;opacity:.6}
+.vD .pinE.on{opacity:1;color:#9a2a1a}.vD .pinE svg{width:18px;height:18px}
+/* the luck ruler: where my wait sits among anglers (log scale), never a bar filling toward "due" */
+.vD .lr{position:relative;height:56px;margin:22px 4px 4px;border-bottom:2.5px solid #6a4a20}
+.vD .lr .w{position:absolute;bottom:0;height:16px}
+.vD .lr .tk{position:absolute;bottom:0;transform:translateX(-50%);font-size:11px;color:#8a6a40;text-align:center;white-space:nowrap}
+.vD .lr .tk::after{content:'';display:block;width:1.5px;height:8px;background:#8a6a40;margin:1px auto 0}
+.vD .lr .me{position:absolute;bottom:0;transform:translateX(-50%);text-align:center}
+.vD .lr .me::after{content:'';display:block;width:2.5px;height:30px;background:#9a2a1a;margin:0 auto}
+.vD .lr .me em{font:19px/1 Caveat;color:#9a2a1a;font-style:normal;white-space:nowrap}
+.vD .lbands{display:flex;font-size:11px;color:#8a6a40;font-style:italic;margin:0 4px}
+.vD .lbands span{text-align:center}
+.vD .zts{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin-top:8px}
+.vD .zt{height:84px;position:relative;cursor:pointer;border:1.5px solid #6a4a20;border-radius:3px;background:radial-gradient(ellipse at 72% 28%,hsla(var(--hue),45%,45%,.3),transparent 65%),repeating-radial-gradient(ellipse at 20% 140%,transparent 0 9px,rgba(90,60,20,.13) 9px 10px),rgba(255,250,235,.22);box-shadow:1px 2px 0 rgba(90,60,20,.25)}
+.vD .zt:hover{border-color:#9a2a1a}
+.vD .zt .nm{position:absolute;left:8px;top:6px;right:8px;font-size:15px;color:#3e220c;line-height:1.05}
+.vD .zt .rk{position:absolute;left:8px;bottom:7px;right:8px;font-size:12px;color:#6a4a20;font-style:italic}
+.vD .zt .nw{position:absolute;right:7px;top:22px;font-family:Caveat;color:#2a6a2a;font-size:18px;transform:rotate(-5deg)}
+.vD .zt .dz{position:absolute;right:7px;bottom:22px;font-family:Caveat;color:#9a2a1a;font-size:16px;transform:rotate(-3deg)}
+.vD .idx{list-style:none;padding:0;margin:6px 0;columns:2;column-gap:20px;font-size:13px}
+.vD .idx li{display:flex;gap:6px;cursor:pointer;padding:1px 2px;break-inside:avoid}
+.vD .idx li:hover{color:#7a2a14}
+.vD .idx li span{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vD .idx li i{font-style:normal;color:#8a6a40;font-variant-numeric:tabular-nums}
+.vD table.lg{width:100%;border-collapse:collapse;font-size:13px}
+.vD table.lg th{font-variant:small-caps;letter-spacing:1px;color:#8a5a2a;font-weight:normal;text-align:left;border-bottom:1.5px solid #6a4a20;padding:2px 4px}
+.vD table.lg td{padding:3px 4px;border-bottom:1px solid rgba(138,90,42,.3);white-space:nowrap}
+.vD table.lg td.r,.vD table.lg th.r{text-align:right;font-variant-numeric:tabular-nums}
+.vD table.lg tr.go{cursor:pointer}.vD table.lg tr.go:hover td{background:rgba(120,70,20,.08)}
+.vD table.lg tr.on td{background:rgba(120,70,20,.14)}
+.vD .pager{display:flex;justify-content:space-between;font:18px Caveat;color:#7a3a10;margin-top:6px}
+.vD .pager span{cursor:pointer}
+.vD .memo{font-family:'Caveat',cursive;color:#23407a;font-size:19px;line-height:1.1;cursor:pointer;margin:6px 0;padding-left:20px;text-indent:-20px}.vD .memo:hover{color:#9a2a1a}
+.vD .ribbons{position:absolute;right:-30px;top:50px;display:flex;flex-direction:column;gap:6px}
+.vD .rib{writing-mode:vertical-rl;background:linear-gradient(90deg,#6a1810,#9a2a1c);color:#f4dfa8;padding:12px 5px;border:0;border-radius:0 4px 4px 0;font:13px Marcellus;box-shadow:2px 2px 4px rgba(0,0,0,.5);cursor:pointer}
+.vD .rib.on{background:linear-gradient(90deg,#9a2a1c,#d0402a);transform:translateX(5px)}
+.vD .rib.here{background:linear-gradient(90deg,#1e3a1a,#2e5a28)}.vD .rib.here.on{background:linear-gradient(90deg,#2e5a28,#3e7a34)}
+.vD .plate{position:absolute;left:-12px;bottom:-14px;background:linear-gradient(#e8c96a,#9a7420);color:#2a1a04;font:12px Marcellus;padding:4px 10px;border-radius:3px;border:1px solid #4a3008;box-shadow:0 3px 6px #000;z-index:3}
+.vD .back{font:18px Caveat;color:#7a3a10;cursor:pointer;margin-top:10px;display:inline-block}
+.vD .lr{margin-bottom:20px}
+.vD .lr .tk{bottom:auto;top:calc(100% + 3px)}.vD .lr .tk::after{display:none}
+.vD .lr .tm{position:absolute;bottom:0;width:1.5px;height:8px;background:#8a6a40}
+.vD .qn.q0{color:#7a7060}.vD .qn.q1{color:#3a2614}.vD .qn.q2{color:#2a7a1a}.vD .qn.q3{color:#1a4a9a}.vD .qn.q4{color:#6a2a9a}
+
+/* ---------- live trackers ---------- */
+#trk{position:absolute;z-index:6}
+/* T1: HUD block under the minimap, objective-tracker style */
+#trk.t1{right:16px;top:212px;width:250px;font:12px/1.3 Arial,sans-serif;text-shadow:0 1px 1px #000,0 0 2px #000}
+.t1 .th{display:flex;align-items:center;gap:6px;color:var(--gold);font:14px Marcellus;border-bottom:1px solid rgba(255,209,0,.35);padding-bottom:2px;cursor:pointer}
+.t1 .th span{margin-left:auto;font:11px Arial;color:#cfc8b8}
+.t1 .l1{color:#fff;padding:3px 0 1px}
+.t1 .l2{color:#cfc8b8;font-size:11px}
+.t1 .pn{padding:4px 0 0;cursor:pointer}
+.t1 .pn .a{display:flex;gap:6px;align-items:center;color:#ffd27a}
+.t1 .pn .a b{margin-left:auto;color:#fff}
+.t1 .pn .s{color:#cfc8b8;font-size:11px;padding-left:12px}
+.t1 .dot{width:8px;height:8px;border-radius:50%;flex:none;border:1px solid #000}
+/* T2: small floating framed counter, movable */
+#trk.t2{left:calc(62% + 40px);top:calc(64% - 150px);width:200px;background:rgba(10,10,10,.82);border:1px solid #5b5b5b;border-radius:4px;box-shadow:0 0 0 1px #000;font:12px Arial,sans-serif;cursor:move;user-select:none}
+.t2 .th{display:flex;align-items:center;padding:2px 6px;color:var(--gold);font:12px Marcellus;background:linear-gradient(#2a2a2a,#161616);border-bottom:1px solid #000}
+.t2 .th span{margin-left:auto;font:11px Arial;color:#cfc8b8}
+.t2 .g{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;padding:4px 6px;text-align:center}
+.t2 .g b{display:block;font:bold 16px Arial;color:#fff;font-variant-numeric:tabular-nums}
+.t2 .g span{font-size:10px;color:#9a9284;text-transform:uppercase;letter-spacing:.05em}
+.t2 .ft{padding:0 6px 4px;color:#cfc8b8;font-size:11px;text-align:center}
+.t2 .pn{border-top:1px solid #2e2e2e;padding:4px 6px}
+.t2 .pn .a{display:flex;justify-content:space-between;gap:4px;color:#ffd27a}
+.t2 .pn .gauge{width:100%;height:6px;margin-top:3px}
+.t2 .pn .gauge i{top:-3px;height:10px}
+/* T3: one line above the action bar */
+#trk.t3{left:50%;bottom:92px;transform:translateX(-50%);display:flex;gap:10px;align-items:center;padding:3px 10px;background:rgba(0,0,0,.6);border:1px solid #5a4e3c;border-radius:12px;font:12px Arial,sans-serif;white-space:nowrap;text-shadow:0 1px 1px #000}
+.t3 b{color:#fff;font-variant-numeric:tabular-nums}
+.t3 .sep{width:1px;height:14px;background:#5a4e3c}
+.t3 .chip{display:inline-flex;align-items:center;gap:4px;color:#ffd27a;cursor:pointer}
+.t3 .chip .dot{width:8px;height:8px;border-radius:50%;border:1px solid #000}
+.dot.normal{background:var(--normal)}.dot.unlucky{background:var(--unlucky)}.dot.very{background:var(--very)}.dot.none{background:#777}
+
+/* ---------- control panel (not part of the design) ---------- */
+#panel{width:400px;flex:none;height:100vh;overflow-y:auto;background:var(--panel);color:var(--ink);font:13px/1.45 system-ui,-apple-system,Segoe UI,sans-serif;border-left:1px solid #000}
+#panel header{padding:14px 16px 10px;border-bottom:1px solid var(--line)}
+#panel h1{font-size:16px;margin:0}#panel h1 small{font-weight:normal;color:var(--ink2);font-size:12px;margin-left:6px}
+#panel .q{margin:6px 0 0;color:var(--ink2);font-size:12px}
+#panel section{padding:10px 16px;border-bottom:1px solid var(--line)}
+#panel h2{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink2);margin:0 0 6px}
+#panel .btns{display:flex;flex-wrap:wrap;gap:5px}
+#panel .b{background:#fff;border:1px solid #c9c4b8;border-radius:5px;padding:4px 9px;color:var(--ink);font-size:12px}
+#panel .b:hover{border-color:var(--accent)}
+#panel .b.pri{background:var(--accent);border-color:var(--accent);color:#fff}
+.seg{display:inline-flex;border:1px solid #c9c4b8;border-radius:5px;overflow:hidden;flex-wrap:wrap}
+.seg button{border:0;background:#fff;padding:4px 9px;font-size:12px;color:var(--ink)}
+.seg button+button{border-left:1px solid #c9c4b8}
+.seg button.on{background:var(--accent);color:#fff}
+#panel label{display:flex;align-items:center;gap:6px;margin:4px 0}
+#panel select,#panel input[type=number]{font:inherit;font-size:12px;padding:2px}
+#panel table{width:100%;border-collapse:collapse;font-size:11px}
+#panel td,#panel th{padding:2px 4px;border-bottom:1px solid #eee;text-align:left;white-space:nowrap}
+#panel th{color:var(--ink2);font-weight:600}
+#panel .vnote{background:#fff;border:1px solid var(--line);border-radius:5px;padding:8px 10px;font-size:12px}
+#panel ol,#panel ul{margin:4px 0;padding-left:18px;font-size:12px}
+#panel li{margin:3px 0}
+
+#switcher{position:absolute;left:50%;bottom:8px;transform:translateX(-50%);display:flex;align-items:center;gap:2px;background:#111;color:#fff;border-radius:999px;padding:3px;box-shadow:0 4px 14px rgba(0,0,0,.6);font:12px system-ui,sans-serif;z-index:40;border:1px solid #fff3}
+#switcher button{background:none;border:0;color:#fff;width:28px;height:24px;border-radius:999px}
+#switcher button:hover{background:#333}
+#switcher span{padding:0 10px;min-width:280px;text-align:center}
+</style>
+</head>
+<body>
+<div id="scene">
+  <div class="hills"></div>
+  <div id="tint"></div>
+  <div id="bobber"></div>
+  <div id="pframe"><div class="por"></div><div class="bars"><div class="nm" id="charName">Thalindra</div><div class="hp"></div><div class="mp"></div></div></div>
+  <div id="minimap"><div class="zn" id="zoneName"></div><div class="mm"></div><div class="clk" id="mmclock"></div>
+    <button id="pbtn" title="Pagle (addon compartment)"><svg viewBox="0 0 40 40"><path d="M7 20c6-8 17-10 24-3l5-5v16l-5-5c-7 7-18 5-24-3z" fill="#7fb3c8" stroke="#000" stroke-width="1.4"/><circle cx="12" cy="18" r="1.5"/></svg></button></div>
+  <div id="cmenu">
+    <div class="h">Pagle</div>
+    <button class="o">Fish Journal</button>
+    <button class="o">Hunts</button>
+    <button data-menu="stats">Stats</button>
+    <button class="o">Tackle Board</button>
+    <div class="sep"></div>
+    <button class="o">Settings…</button>
+  </div>
+  <div id="trk"></div>
+  <div id="win"></div>
+  <div id="uierr"></div>
+  <div id="chat"><div id="chatlog"></div><input id="chatin" placeholder="Type /pagle stats and press Enter"></div>
+  <div id="actionbar"><i title="Fishing"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  <div id="switcher"><button id="swPrev" title="Previous variant (←)">◀</button><span id="swLabel"></span><button id="swNext" title="Next variant (→)">▶</button></div>
+  <div id="tip"></div>
+</div>
+
+<aside id="panel">
+  <header>
+    <h1>Stats window <small>prototype · throwaway</small></h1>
+    <p class="q">How should the Stats window and the live tracker look and behave? Flip the three windows (bottom bar, ←/→) and the three trackers (below). Then fish: watch "Learning…" turn into a number at 100 Casts, and watch a Dry spell grow without ever reading as "due". Every variant reads the same model.</p>
+  </header>
+
+  <section>
+    <h2>This window variant</h2>
+    <div class="vnote" id="vnote"></div>
+  </section>
+
+  <section>
+    <h2>Live tracker</h2>
+    <label><input type="checkbox" id="optTrk"> Live tracker on <span style="color:var(--ink2)">(off by default)</span></label>
+    <div class="seg" id="trkSeg"><button data-v="1">T1 HUD block</button><button data-v="2">T2 floating counter</button><button data-v="3">T3 one line</button></div>
+    <div class="vnote" id="tnote" style="margin-top:6px"></div>
+  </section>
+
+  <section>
+    <h2>Angler</h2>
+    <div class="seg" id="stageSeg"><button data-v="new">Week one</button><button data-v="mid">Mid-game</button><button data-v="late">Late (30k Casts)</button></div>
+    <p class="q" id="stageNote"></p>
+  </section>
+
+  <section>
+    <h2>Where and when</h2>
+    <label>Place <select id="placeSel"></select></label>
+    <label>Skill <input type="number" id="skillIn" min="1" max="300" style="width:60px"> <span id="sideNote" style="color:var(--ink2);font-size:12px"></span></label>
+    <div class="btns"><span class="seg" id="todSeg"><button data-v="day">Day (14:00)</button><button data-v="night">Night (23:00)</button></span></div>
+    <p class="q">Changing the time or place more than 15 minutes ahead ends the Session (Core's rule).</p>
+  </section>
+
+  <section>
+    <h2>Fish</h2>
+    <div class="btns">
+      <button class="b pri" id="bCast">Cast ×1</button>
+      <button class="b" id="bCast10">×10</button>
+      <button class="b" id="bCast100">×100</button>
+      <button class="b" id="bWait">Wait 16 min (end Session)</button>
+    </div>
+    <div class="btns" style="margin-top:6px">
+      <select id="forceSel"></select><button class="b" id="bForce">Catch this on the next Cast</button>
+    </div>
+    <p class="q">Casts roll from placeholder weights (simulation only; content data ships no rates).</p>
+  </section>
+
+  <section>
+    <h2>Tunables (constants in the spec)</h2>
+    <label>Unlucky below <select id="bandU"><option value="0.1">1 in 10</option><option value="0.01" selected>1 in 100</option><option value="0.001">1 in 1,000</option></select> anglers</label>
+    <label>Very unlucky below <select id="bandV"><option value="0.001">1 in 1,000</option><option value="0.0001" selected>1 in 10,000</option><option value="0.00001">1 in 100,000</option></select> anglers</label>
+    <label><input type="checkbox" id="optBase"> Classic baseline column <span style="color:var(--ink2)">(content data ships no rates, so this never appears)</span></label>
+  </section>
+
+  <section>
+    <h2>Model output: the current place</h2>
+    <table id="mtable"></table>
+  </section>
+
+  <section>
+    <h2>What to decide</h2>
+    <ol>
+      <li><b>Which window</b>, or which parts of which ("B's place nav with C's item page").</li>
+      <li><b>D makes Stats a third book</b> beside the Journal and the Hunts board, so the "native Retail look" note gains another exception. The tracker stays native.</li>
+      <li><b>How to move around:</b> a place dropdown (A), a zone/subzone nav (B) or search plus item pages (C)?</li>
+      <li><b>Dry spell presentation:</b> a luck gauge (A), the full sentence (B), a wait curve (C) or the sentence plus an ink ruler (D)? A bar that <i>fills</i> was rejected up front: it reads as "due".</li>
+      <li><b>Live tracker:</b> T1, T2 or T3? What shows outside a Session (here: pins only, or hidden if nothing is pinned)?</li>
+      <li><b>Pinning while the tracker is off:</b> here pinning turns the tracker on. Keep that, or only pin?</li>
+      <li><b>The wording bands</b> and their cut-offs.</li>
+      <li><b>Drop the Classic baseline column</b> from the spec, since content data ships no rates?</li>
+    </ol>
+  </section>
+</aside>
+
+<script>
+// ============================================================================
+// StatsModel: the liftable part. Pure functions over Casts; no DOM.
+// Rules from "Design Stats: session stats, honest odds and dry spells" (#21).
+// ============================================================================
+const StatsModel = (() => {
+  const SESSION_GAP_MS = 15 * 60e3; // Core's Session rule (SESSION_RULES_VERSION 1)
+  const ODDS_MIN_CASTS = 100; // below this, "Learning… n/100 Casts"
+  const BANDS = { unlucky: 0.01, very: 0.0001 }; // P(an angler waits ≥ n Casts) cut-offs; display-time only
+
+  // --- placeholder content data (Core ships IDs, catch lists, windows, no-junk skill, pool flag; never rates) ---
+  const ITEMS = {
+    yellowtail: { name: 'Raw Spotted Yellowtail', q: 1, fc: '#c9a640' },
+    mightfish: { name: 'Raw Glossy Mightfish', q: 1, fc: '#5a8fb0' },
+    redgill: { name: 'Raw Redgill', q: 1, fc: '#b04a3a' },
+    nightfin: { name: 'Raw Nightfin Snapper', q: 1, fc: '#2a3a7a', win: 'night' },
+    sunscale: { name: 'Raw Sunscale Salmon', q: 1, fc: '#e09a3a', win: 'day' },
+    trout: { name: 'Raw Mithril Head Trout', q: 1, fc: '#8a9aa0' },
+    cod: { name: 'Raw Rockscale Cod', q: 1, fc: '#6a7a6a' },
+    albacore: { name: 'Raw Rainbow Fin Albacore', q: 1, fc: '#5ab0a0' },
+    mackerel: { name: 'Raw Slitherskin Mackerel', q: 1, fc: '#7a9a5a' },
+    smallfish: { name: 'Raw Brilliant Smallfish', q: 1, fc: '#9ac0d0' },
+    mudsnapper: { name: 'Raw Longjaw Mud Snapper', q: 1, fc: '#7a6040' },
+    clam: { name: 'Big-mouth Clam', q: 1, fc: '#a08a70' },
+    blackmouth: { name: 'Oily Blackmouth', q: 1, fc: '#333', pool: true },
+    firefin: { name: 'Firefin Snapper', q: 1, fc: '#d04020', pool: true },
+    eel: { name: 'Stonescale Eel', q: 1, fc: '#506050', pool: true },
+    sagefish: { name: 'Raw Sagefish', q: 1, fc: '#8ab070', pool: true },
+    wildvine: { name: 'Wildvine', q: 1, fc: '#3a8a3a' },
+    chest: { name: 'Battered Chest', q: 2, fc: '#7a5a30' },
+    pinchy: { name: 'Mr. Pinchy', q: 3, fc: '#c03030' },
+    boot: { name: 'Waterlogged Boot', q: 0, fc: '#4a3a2a' },
+  };
+  const ZONES = {
+    'Elwynn Forest': { noJunk: 75, subs: ['Crystal Lake', 'Stone Cairn Lake'], w: { mackerel: 40, smallfish: 30, mudsnapper: 18, sagefish: 4, boot: 6, chest: 0.4 } },
+    'Stranglethorn Vale': { noJunk: 205, subs: ['Booty Bay', 'The Savage Coast', 'Jaguero Isle'], w: { albacore: 30, cod: 22, trout: 18, yellowtail: 12, blackmouth: 6, firefin: 4, clam: 5, wildvine: 0.7, chest: 0.6, pinchy: 0.15 } },
+    Tanaris: { noJunk: 280, subs: ['Steamwheedle Port', 'Lost Rigger Cove'], w: { yellowtail: 30, mightfish: 22, nightfin: 14, sunscale: 14, clam: 7, firefin: 4, blackmouth: 4, eel: 1.2, chest: 0.5 } },
+    Feralas: { noJunk: 280, subs: ['The Forgotten Coast', 'Isle of Dread', 'Lower Wilds'], w: { yellowtail: 26, mightfish: 20, redgill: 14, nightfin: 2, sunscale: 2, clam: 6, blackmouth: 3, firefin: 3, eel: 1.2, wildvine: 0.6, chest: 0.5, pinchy: 0.06 },
+      subW: { 'Lower Wilds': { blackmouth: 0, firefin: 0, eel: 0, clam: 0, trout: 18 }, 'Isle of Dread': { eel: 3.5 } } },
+  };
+  const catchList = (zone, sub) => {
+    const z = ZONES[zone], w = { ...z.w, ...((z.subW || {})[sub] || {}) };
+    return Object.keys(w).filter((k) => w[k] > 0);
+  };
+  const weights = (zone, sub) => ({ ...ZONES[zone].w, ...((ZONES[zone].subW || {})[sub] || {}) });
+
+  // --- helpers ---
+  const tod = (t) => { const h = new Date(t).getUTCHours(); return h >= 18 || h < 6 ? 'night' : 'day'; };
+  const side = (skill, zone) => (skill >= ZONES[zone].noJunk ? 'hi' : 'lo');
+  const placeKeys = (c) => ['z:' + c.zone, 's:' + c.zone + '/' + c.sub];
+
+  // --- the projection (ADR 0004): only counters are stored ---
+  function empty() {
+    return { casts: {}, caught: {}, last: {}, items: {}, tot: { casts: 0, catches: 0, away: 0 }, byZone: {}, byChar: {}, margin: {}, sessions: [] };
+  }
+  const MARGINS = [[-999, -50, 'below by 50+'], [-49, -1, 'below by 1–49'], [0, 24, '0–24 over'], [25, 999, '25+ over']];
+  function fold(P, c) {
+    const sd = side(c.skill, c.zone), td = tod(c.t), it = c.item && ITEMS[c.item];
+    for (const pk of placeKeys(c)) {
+      const base = pk + '|' + sd, win = base + '|' + td;
+      P.casts[base] = (P.casts[base] || 0) + 1;
+      P.casts[win] = (P.casts[win] || 0) + 1;
+      if (it) {
+        const sk = it.win ? win : base, k = sk + '|' + c.item;
+        P.caught[k] = (P.caught[k] || 0) + 1;
+        P.last[k] = { at: P.casts[sk], t: c.t };
+      }
+    }
+    P.tot.casts++; it ? P.tot.catches++ : P.tot.away++;
+    const z = (P.byZone[c.zone] ||= { casts: 0, catches: 0, away: 0, subs: {} });
+    const s = (z.subs[c.sub] ||= { casts: 0, catches: 0, away: 0 });
+    const ch = (P.byChar[c.char] ||= { casts: 0, catches: 0, away: 0 });
+    for (const o of [z, s, ch]) { o.casts++; it ? o.catches++ : o.away++; }
+    if (it) { const r = (P.items[c.item] ||= { n: 0, first: c.t, last: c.t }); r.n++; r.last = c.t; }
+    const m = MARGINS.find(([a, b]) => c.skill - ZONES[c.zone].noJunk >= a && c.skill - ZONES[c.zone].noJunk <= b)[2];
+    const mm = (P.margin[m] ||= { casts: 0, away: 0 }); mm.casts++; if (!it) mm.away++;
+    // Sessions: Core cuts them; Stats keeps a compact record of each
+    let ss = P.sessions[P.sessions.length - 1];
+    if (!ss || c.t - ss.end >= SESSION_GAP_MS) {
+      ss = { start: c.t, end: c.t, casts: 0, catches: 0, away: 0, q: {}, zones: {}, chars: {}, skill: {} };
+      P.sessions.push(ss);
+    }
+    ss.end = c.t; ss.casts++; it ? ss.catches++ : ss.away++;
+    if (it) ss.q[it.q] = (ss.q[it.q] || 0) + 1;
+    ss.zones[c.zone] = (ss.zones[c.zone] || 0) + 1;
+    ss.chars[c.char] = (ss.chars[c.char] || 0) + 1;
+    const sk = (ss.skill[c.char] ||= { min: c.skill, max: c.skill });
+    sk.min = Math.min(sk.min, c.skill); sk.max = Math.max(sk.max, c.skill);
+  }
+  function build(log) { const P = empty(); for (const c of log) fold(P, c); return P; }
+
+  // --- display-time computation: never stored ---
+  function wilson(k, n, z = 1.96) {
+    const p = k / n, d = 1 + (z * z) / n, c = p + (z * z) / (2 * n), r = z * Math.sqrt((p * (1 - p)) / n + (z * z) / (4 * n * n));
+    return [(c - r) / d, (c + r) / d];
+  }
+  function band(Pw) { return Pw < BANDS.very ? 'very' : Pw < BANDS.unlucky ? 'unlucky' : 'normal'; }
+  // One reading for an item in a place: Your odds + its Dry spell, in the same scope.
+  function reading(P, item, zone, sub, skill) {
+    const it = ITEMS[item], sd = side(skill, zone), suf = it.win ? '|' + it.win : '';
+    const subKey = 's:' + zone + '/' + sub + '|' + sd + suf, zoneKey = 'z:' + zone + '|' + sd + suf;
+    const useSub = !!sub && (P.casts[subKey] || 0) >= ODDS_MIN_CASTS;
+    const sk = useSub ? subKey : zoneKey;
+    const n = P.casts[sk] || 0, k = P.caught[sk + '|' + item] || 0, last = P.last[sk + '|' + item];
+    let odds;
+    if (n < ODDS_MIN_CASTS) odds = { state: 'learning', n, k };
+    else if (k === 0) odds = { state: 'unseen', n, k, bound: 3 / n };
+    else { const [lo, hi] = wilson(k, n); odds = { state: 'known', n, k, p: k / n, lo, hi }; }
+    const since = last ? n - last.at : n;
+    const dry = { since, never: !last, lastT: last && last.t };
+    if (odds.state === 'known') { dry.P = Math.pow(1 - odds.p, since); dry.band = band(dry.P); }
+    const place = useSub ? sub : zone;
+    const scope = (it.win ? it.win + ' Casts' : 'Casts') + ' in ' + place + ', ' + (sd === 'hi' ? 'at or above' : 'below') + ' ' + ZONES[zone].noJunk + ' skill';
+    return { item, it, zone, sub, place, useSub, side: sd, odds, dry, scope };
+  }
+
+  // --- copy (never "due", "overdue", "soon" or pity) ---
+  function nice(x) {
+    if (x < 1.5) return '1';
+    if (x < 20) return String(Math.round(x));
+    const m = Math.pow(10, Math.floor(Math.log10(x)) - 1);
+    return (Math.round(x / m) * m).toLocaleString('en-US');
+  }
+  function oddsText(o) {
+    if (o.state === 'learning') return `Learning… ${o.n}/${ODDS_MIN_CASTS} Casts`;
+    if (o.state === 'unseen') return `not seen in ${o.n.toLocaleString('en-US')} Casts`;
+    return `about 1 in ${nice(1 / o.p)}`;
+  }
+  function oddsTip(r) {
+    const o = r.odds, from = `From ${o.n.toLocaleString('en-US')} of your Casts (${r.scope}).`;
+    if (o.state === 'learning') return `Your odds appear after ${ODDS_MIN_CASTS} Casts in this scope. ${from}`;
+    if (o.state === 'unseen') return `Rarer than about 1 in ${nice(1 / o.bound)}, if it can be caught here at all. ${from}`;
+    const a = nice(1 / o.hi), b = nice(1 / o.lo);
+    return `${a === b ? '95% range: within rounding of 1 in ' + a : '95% range: 1 in ' + a + ' to 1 in ' + b}. ${o.k.toLocaleString('en-US')} caught. ${from}`;
+  }
+  function dryText(r, short) {
+    const d = r.dry, nm = r.it.name.replace(/^Raw /, ''), n = d.since.toLocaleString('en-US') + (d.since === 1 ? ' Cast' : ' Casts');
+    if (r.odds.k === 0 && d.never) return short ? `${n}, none yet` : `${n} here and none yet.`;
+    if (d.since === 0) return short ? 'caught on your last Cast' : `You caught one on your last Cast here.`;
+    const head = short ? `${n} since the last` : `${n} since your last ${nm}.`;
+    if (!d.band) return short ? head : head + ' A luck reading appears once Your odds do.';
+    if (short) return head;
+    return head + ' ' + luckText(d);
+  }
+  function luckText(d) {
+    if (d.band === 'normal') {
+      if (d.P >= 0.5) return 'Nothing unusual.';
+      if (d.P >= 0.05) return `About ${Math.round(d.P * 100)} anglers in 100 wait this long. Nothing unusual.`;
+      return `Roughly 1 angler in ${nice(1 / d.P)} waits this long. A long wait, but well within normal luck.`;
+    }
+    if (d.band === 'unlucky') return `Roughly 1 angler in ${nice(1 / d.P)} waits this long. Unlucky, not broken.`;
+    return `${d.P < 1e-6 ? 'Fewer than 1 angler in a million' : 'Only about 1 angler in ' + nice(1 / d.P)} waits this long. Very unlucky, and every Cast is still its own roll.`;
+  }
+  const BAND_WORD = { normal: 'Normal', unlucky: 'Unlucky', very: 'Very unlucky' };
+
+  // --- Session summaries ---
+  function sessionNumbers(s) {
+    const mins = Math.max(1, (s.end - s.start) / 60e3);
+    const gained = Object.values(s.skill).reduce((a, x) => a + (x.max - x.min), 0);
+    return { ...s, mins, perHour: s.catches / (mins / 60), awayRate: s.away / s.casts, gained };
+  }
+  function bests(P) {
+    let longest = null, best = null;
+    for (const s of P.sessions.map(sessionNumbers)) {
+      if (!longest || s.mins > longest.mins) longest = s;
+      if (s.mins >= 20 && (!best || s.perHour > best.perHour)) best = s;
+    }
+    return { longest, best };
+  }
+
+  return { SESSION_GAP_MS, ODDS_MIN_CASTS, BANDS, ITEMS, ZONES, MARGINS, catchList, weights, tod, side, build, fold, reading, oddsText, oddsTip, dryText, luckText, BAND_WORD, sessionNumbers, bests, nice };
+})();
+</script>
+
+<script>
+// ============================================================================
+// Throwaway shell: sample Angler, clock, three windows, three trackers, panel.
+// ============================================================================
+const M = StatsModel;
+const $ = (s) => document.querySelector(s);
+const fmt = (n) => Math.round(n).toLocaleString('en-US');
+const pct = (x) => Math.round(x * 100) + '%';
+const dur = (mins) => (mins >= 60 ? Math.floor(mins / 60) + 'h ' + String(Math.round(mins % 60)).padStart(2, '0') + 'm' : Math.round(mins) + 'm');
+const hhmm = (t) => new Date(t).toISOString().slice(11, 16);
+const day = (t) => new Date(t).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC', ...(new Date(t).getUTCFullYear() !== new Date(S.now).getUTCFullYear() && { year: 'numeric' }) });
+const ago = (t) => { const m = (S.now - t) / 60e3; return m < 60 ? Math.round(m) + 'm ago' : m < 1440 ? Math.round(m / 60) + 'h ago' : Math.round(m / 1440) + 'd ago'; };
+const QWORD = ['Poor', 'Common', 'Uncommon', 'Rare', 'Epic'];
+
+function mulberry32(a) { return () => { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+let rnd = mulberry32(1);
+function roll(zone, sub, skill, t) {
+  if (rnd() < (skill < M.ZONES[zone].noJunk ? 0.2 : 0.05)) return null; // got away
+  const w = M.weights(zone, sub), tdd = M.tod(t);
+  const keys = Object.keys(w).filter((k) => w[k] > 0 && (!M.ITEMS[k].win || M.ITEMS[k].win === tdd));
+  let x = rnd() * keys.reduce((a, k) => a + w[k], 0);
+  for (const k of keys) { x -= w[k]; if (x <= 0) return k; }
+  return keys[0];
+}
+
+// ---------- sample Anglers ----------
+const LAUNCH = Date.UTC(2026, 10, 4, 18, 0);
+const STAGES = {
+  new: { note: 'Three days in: one character, a few hundred Casts. Most odds still say "Learning…".', char: 'Thalindra', place: ['Stranglethorn Vale', 'Booty Bay'], skill: 152,
+    plan: [['Thalindra', 'Elwynn Forest', 'Crystal Lake', 130, 1, 70], ['Thalindra', 'Elwynn Forest', 'Crystal Lake', 110, 70, 110], ['Thalindra', 'Stranglethorn Vale', 'Booty Bay', 90, 110, 140]], live: 37 },
+  mid: { note: 'A month in: about 4,000 Casts, skill 236. Feralas is new, so some places are still learning; skill is below the 280 no-junk line.', char: 'Thalindra', place: ['Feralas', 'The Forgotten Coast'], skill: 236, plan: 'mid', live: 24 },
+  late: { note: 'Months in: two characters, ~30,000 Casts, skill 300. A long Nightfin Snapper dry spell at night on the Forgotten Coast and a very long Stonescale Eel one.', char: 'Thalindra', place: ['Feralas', 'The Forgotten Coast'], skill: 300, plan: 'late', live: 51,
+    dry: [['nightfin', 212], ['eel', 1000], ['wildvine', 600]] },
+};
+function genStage(key) {
+  const st = STAGES[key];
+  rnd = mulberry32(key.length * 7919 + 3);
+  const log = [];
+  let t = LAUNCH;
+  const sess = (char, zone, sub, n, s0, s1, nightBias) => {
+    // start each Session a day or so later, at an evening or daytime hour
+    const d = new Date(t + 86400e3 * (0.6 + rnd() * 1.4));
+    d.setUTCHours(nightBias ? (rnd() < 0.5 ? 19 : 22) : 10 + Math.floor(rnd() * 10), Math.floor(rnd() * 60));
+    t = d.getTime();
+    for (let i = 0; i < n; i++) {
+      const skill = Math.round(s0 + ((s1 - s0) * i) / n);
+      log.push({ t, char, zone, sub, skill, item: roll(zone, sub, skill, t) });
+      t += 18e3 + rnd() * 12e3;
+    }
+  };
+  if (Array.isArray(st.plan)) st.plan.forEach((p) => sess(...p, rnd() < 0.5));
+  else if (st.plan === 'mid') {
+    for (let i = 0; i < 14; i++) sess('Thalindra', 'Stranglethorn Vale', ['Booty Bay', 'The Savage Coast', 'Jaguero Isle'][i % 3], 120 + Math.floor(rnd() * 120), 150 + i * 5, 155 + i * 5, rnd() < 0.5);
+    for (let i = 0; i < 10; i++) sess('Thalindra', 'Feralas', i < 7 ? 'The Forgotten Coast' : 'Lower Wilds', 60 + Math.floor(rnd() * 90), 222 + i, 224 + i, rnd() < 0.5);
+    sess('Brakkus', 'Elwynn Forest', 'Crystal Lake', 140, 1, 90, false);
+  } else {
+    for (let i = 0; i < 230; i++) {
+      const r = rnd(), char = rnd() < 0.8 ? 'Thalindra' : 'Brakkus';
+      const [zone, sub] = r < 0.55 ? ['Feralas', rnd() < 0.7 ? 'The Forgotten Coast' : rnd() < 0.5 ? 'Isle of Dread' : 'Lower Wilds'] : r < 0.8 ? ['Tanaris', rnd() < 0.6 ? 'Steamwheedle Port' : 'Lost Rigger Cove'] : ['Stranglethorn Vale', ['Booty Bay', 'The Savage Coast', 'Jaguero Isle'][Math.floor(rnd() * 3)]];
+      const sk = char === 'Brakkus' ? Math.min(300, 120 + i) : Math.min(300, 225 + i);
+      sess(char, zone, sub, 80 + Math.floor(rnd() * 100), sk, Math.min(300, sk + 1), rnd() < 0.6);
+    }
+  }
+  // the live Session in the current place, ending 1 minute ago
+  const [zone, sub] = st.place;
+  t = log[log.length - 1].t + 86400e3;
+  const d = new Date(t); d.setUTCHours(22, 10); t = d.getTime();
+  for (let i = 0; i < st.live; i++) { log.push({ t, char: st.char, zone, sub, skill: st.skill, item: roll(zone, sub, st.skill, t) }); t += 18e3 + rnd() * 12e3; }
+  // engineer the stage's dry spells: rewrite recent catches of X in X's scope to something else
+  for (const [item, n] of st.dry || []) {
+    const it = M.ITEMS[item]; let seen = 0;
+    for (let i = log.length - 1; i >= 0 && seen <= n; i--) {
+      const c = log[i];
+      if (c.zone !== zone || c.sub !== sub || M.side(c.skill, zone) !== M.side(st.skill, zone) || (it.win && M.tod(c.t) !== it.win)) continue;
+      seen++;
+      if (seen <= n) { if (c.item === item) c.item = 'yellowtail'; } else c.item = item; // the catch just before the spell
+    }
+  }
+  return { log, now: t + 60e3 };
+}
+
+// ---------- state ----------
+const S = { variant: 'A', tracker: '1', trackerOn: false, stage: 'late', log: [], P: null, now: 0, zone: '', sub: '', skill: 300, char: 'Thalindra',
+  open: true, baseline: false, pins: [], force: '',
+  a: { tab: 'odds', zone: null, sub: null }, b: { page: 'here', zone: null, sub: null }, c: { item: null, q: '', open: { here: true, session: true, life: false, hist: false } },
+  d: { page: 'place', zone: null, sub: null, sel: null, item: null, q: '', hp: 0, hs: null } };
+
+function loadStage(key) {
+  S.stage = key;
+  const st = STAGES[key], g = genStage(key);
+  S.log = g.log; S.now = g.now; S.P = M.build(S.log);
+  [S.zone, S.sub] = st.place; S.skill = st.skill; S.char = st.char; S.pins = [];
+  S.a = { tab: S.a.tab, zone: null, sub: null }; S.b = { page: 'here', zone: null, sub: null }; S.c.item = null;
+  S.d = { page: 'place', zone: null, sub: null, sel: key === 'late' ? 'nightfin' : null, item: null, q: '', hp: 0, hs: null };
+  if (key === 'late') S.pins = [{ item: 'nightfin', zone: 'Feralas', sub: 'The Forgotten Coast' }, { item: 'eel', zone: 'Feralas', sub: 'The Forgotten Coast' }];
+  syncPanel(); render();
+}
+function cast(n) {
+  for (let i = 0; i < n; i++) {
+    S.now += 18e3 + rnd() * 12e3;
+    let item = roll(S.zone, S.sub, S.skill, S.now);
+    if (S.force) { item = S.force; S.force = ''; $('#forceSel').value = ''; }
+    const c = { t: S.now, char: S.char, zone: S.zone, sub: S.sub, skill: S.skill, item };
+    S.log.push(c); M.fold(S.P, c);
+    if (n === 1) chat(item ? `You receive loot: <span class="qn q${M.ITEMS[item].q}">[${M.ITEMS[item].name}]</span>.` : 'Your fish got away.', !item);
+  }
+  render();
+}
+function curSession() { const s = S.P.sessions[S.P.sessions.length - 1]; return s && S.now - s.end < M.SESSION_GAP_MS ? s : null; }
+function lastSession() { return S.P.sessions[S.P.sessions.length - 1]; }
+const R = (item, zone, sub) => M.reading(S.P, item, zone, sub, S.skill);
+const hereReadings = (zone = S.zone, sub = S.sub) => M.catchList(zone, sub).map((k) => R(k, zone, sub)).sort(sortReadings);
+function sortReadings(a, b) {
+  const ra = a.odds.state === 'known' ? a.odds.p : a.odds.state === 'unseen' ? 0 : -1, rb = b.odds.state === 'known' ? b.odds.p : b.odds.state === 'unseen' ? 0 : -1;
+  return rb - ra || a.it.name.localeCompare(b.it.name);
+}
+
+// ---------- shared pieces ----------
+const ICON = (it, sz) => `<span class="ic q${it.q}" style="--fc:${it.fc};${sz ? '--sz:' + sz + 'px' : ''}">${it.name.replace(/^Raw /, '')[0]}</span>`;
+const NAME = (it) => `<span class="qn q${it.q}">${it.name}</span>`;
+const esc = (s) => s.replace(/"/g, '&quot;');
+function oddsHTML(r) {
+  const o = r.odds, cls = o.state === 'learning' ? 'learn' : o.state === 'unseen' ? 'unseen' : '';
+  let tail = '';
+  if (o.state === 'unseen') tail = `<span class="sm">: rarer than about 1 in ${M.nice(1 / o.bound)}</span>`;
+  return `<span class="yo ${cls}" data-tip="${esc('<b>Your odds</b><br>' + M.oddsTip(r) + (r.it.pool ? '<br><span class=g>Open water and pools combined.</span>' : ''))}">${M.oddsText(o)}</span>${tail}`;
+}
+function bandHTML(r) { return r.dry.band ? `<span class="band ${r.dry.band}">${M.BAND_WORD[r.dry.band]}</span>` : ''; }
+function gaugeHTML(r) {
+  if (!r.dry.band || r.dry.since === 0) return `<span class="gauge off" data-tip="${esc('A luck reading appears once Your odds do.')}"></span>`;
+  // position on a log scale: P=1 at the left, 1-in-10k at the right
+  const x = Math.min(100, (-Math.log10(r.dry.P) / 6) * 100);
+  const BU = -Math.log10(M.BANDS.unlucky) / 6 * 100, BV = -Math.log10(M.BANDS.very) / 6 * 100;
+  return `<span class="gauge" style="background:linear-gradient(90deg,var(--normal) 0 ${BU}%,var(--unlucky) ${BU}% ${BV}%,var(--very) ${BV}% 100%)" data-tip="${esc('<b>' + M.dryText(r) + '</b><br><span class=g>Counted in the same scope as Your odds: ' + r.scope + '.</span>')}"><i style="left:${x}%"></i></span>`;
+}
+function curveHTML(r) {
+  if (!r.dry.band) return '';
+  const p = r.odds.p, n = r.dry.since, xmax = Math.max(n * 1.4, 3 / p), W = 120, H = 26;
+  let d = '';
+  for (let i = 0; i <= 40; i++) { const x = (xmax * i) / 40, y = Math.pow(1 - p, x); d += (i ? 'L' : 'M') + ((W * i) / 40).toFixed(1) + ',' + (2 + (H - 4) * (1 - y)).toFixed(1); }
+  const cx = (W * n) / xmax, cy = 2 + (H - 4) * (1 - r.dry.P);
+  const col = { normal: 'var(--normal)', unlucky: 'var(--unlucky)', very: 'var(--very)' }[r.dry.band];
+  return `<svg class="curve" width="${W}" height="${H}" data-tip="${esc('<b>' + M.dryText(r) + '</b><br><span class=g>The curve is the share of anglers still waiting after each number of Casts. The dot is you.</span>')}"><path d="${d}" fill="none" stroke="#8f8a80" stroke-width="1.2"/><line x1="${cx}" y1="0" x2="${cx}" y2="${H}" stroke="${col}" stroke-dasharray="2 2"/><circle cx="${cx}" cy="${cy}" r="3.5" fill="${col}" stroke="#000"/></svg>`;
+}
+const PIN_SVG = '<svg viewBox="0 0 16 16"><path d="M8 1l2 4 4 .5-3 3 .8 4.5L8 11l-3.8 2 .8-4.5-3-3L6 5z" fill="#ffd100" stroke="#000"/></svg>';
+function pinHTML(r) {
+  const on = S.pins.some((p) => p.item === r.item && p.zone === r.zone && p.sub === r.sub);
+  return `<button class="pin ${on ? 'on' : ''}" data-pin="${r.item}|${r.zone}|${r.sub}" data-tip="${esc(on ? 'Unpin from the live tracker' : 'Pin this Dry spell to the live tracker (up to 3)')}">${PIN_SVG}</button>`;
+}
+function baseHTML(r) {
+  // never shipped: placeholder "Classic" rate just to see the column
+  const w = M.weights(r.zone, r.sub), tot = Object.values(w).reduce((a, b) => a + b, 0);
+  return `<span class="sm" data-tip="Classic baseline: may differ on Forever.">~1 in ${M.nice(tot / w[r.item] / 0.95)}</span>`;
+}
+const FISH_SVG = '<svg viewBox="0 0 40 40"><path d="M7 20c6-8 17-10 24-3l5-5v16l-5-5c-7 7-18 5-24-3z" fill="#7fb3c8" stroke="#000" stroke-width="1.4"/><circle cx="12" cy="18" r="1.5"/></svg>';
+function frame(id, title, sub, inner, after = '') {
+  return `<div class="wf" id="${id}"><div class="por">${FISH_SVG}</div><div class="ttl">${title}<button class="x" data-act="close">✕</button></div>${sub ? `<div class="sub">${sub}</div>` : ''}${inner}${after}</div>`;
+}
+
+// Session, Lifetime and History bodies (shared by A and B; C arranges its own)
+function sessionKPIs(s, live) {
+  const n = M.sessionNumbers(s);
+  return `<div class="kpis">
+    <div class="kpi"><div class="k">Casts</div><div class="v">${fmt(n.casts)}</div></div>
+    <div class="kpi"><div class="k">Catches</div><div class="v">${fmt(n.catches)}</div></div>
+    <div class="kpi"><div class="k">Got away</div><div class="v">${fmt(n.away)} <small>${pct(n.awayRate)}</small></div></div>
+    <div class="kpi"><div class="k">Per hour</div><div class="v">${fmt(n.perHour)}</div></div>
+    <div class="kpi"><div class="k">${live ? 'Fishing for' : 'Fished'}</div><div class="v">${dur(n.mins)}</div></div></div>`;
+}
+function sessionBody() {
+  const cur = curSession(), s = cur || lastSession();
+  if (!s) return '<div class="empty">No Sessions yet. Cast a line.</div>';
+  const n = M.sessionNumbers(s);
+  const q = [4, 3, 2, 1, 0].filter((k) => n.q[k]).map((k) => `<tr><td><span class="qn q${k}">${QWORD[k]}</span></td><td class="r num">${n.q[k]}</td></tr>`).join('');
+  return `<div class="hdr">${cur ? 'This Session' : 'Your last Session'}<small>${cur ? 'started ' + hhmm(s.start) + ' realm time' : 'ended ' + ago(s.end) + ' · a Session ends after 15 minutes without a Cast'}</small></div>
+    ${sessionKPIs(s, !!cur)}
+    <div class="two"><div><div class="hdr">By quality</div><table class="nt">${q}</table></div>
+      <div><div class="hdr">Where and who</div><table class="nt">
+        ${Object.entries(n.zones).map(([z, c]) => `<tr><td>${z}</td><td class="r num">${c}</td></tr>`).join('')}
+        ${Object.entries(n.chars).map(([c, k]) => `<tr><td>${c}</td><td class="r num">${k}</td></tr>`).join('')}
+        <tr><td>Skill gained</td><td class="r num">+${n.gained}</td></tr></table></div></div>`;
+}
+function lifetimeBody() {
+  const P = S.P, b = M.bests(P);
+  const zones = Object.entries(P.byZone).sort((a, c) => c[1].casts - a[1].casts).map(([z, o]) =>
+    `<tr class="${z === S.zone ? 'cur' : ''}"><td>${z}</td><td class="r num">${fmt(o.casts)}</td><td class="r num">${fmt(o.catches)}</td><td class="r">${pct(o.away / o.casts)}</td></tr>` +
+    Object.entries(o.subs).sort((a, c) => c[1].casts - a[1].casts).map(([s2, x]) => `<tr><td style="padding-left:20px;color:#cfc8b8">${s2}${z === S.zone && s2 === S.sub ? ' <span class="here">here</span>' : ''}</td><td class="r">${fmt(x.casts)}</td><td class="r">${fmt(x.catches)}</td><td class="r">${pct(x.away / x.casts)}</td></tr>`).join('')).join('');
+  const chars = Object.entries(P.byChar).map(([c, o]) => `<tr><td>${c}</td><td class="r num">${fmt(o.casts)}</td><td class="r num">${fmt(o.catches)}</td><td class="r">${pct(o.away / o.casts)}</td></tr>`).join('');
+  const marg = M.MARGINS.map((m) => m[2]).filter((k) => P.margin[k]).map((k) => `<tr><td>${k}</td><td class="r">${fmt(P.margin[k].casts)}</td><td class="r num">${pct(P.margin[k].away / P.margin[k].casts)}</td></tr>`).join('');
+  const items = Object.entries(P.items).sort((a, c) => c[1].n - a[1].n).map(([k, o]) => `<tr><td>${ICON(M.ITEMS[k], 18)} ${NAME(M.ITEMS[k])}</td><td class="r num">${fmt(o.n)}</td><td class="r sm">${day(o.first)}</td><td class="r sm">${day(o.last)}</td></tr>`).join('');
+  return `<div class="kpis">
+      <div class="kpi"><div class="k">Casts</div><div class="v">${fmt(P.tot.casts)}</div></div>
+      <div class="kpi"><div class="k">Catches</div><div class="v">${fmt(P.tot.catches)}</div></div>
+      <div class="kpi"><div class="k">Got away</div><div class="v">${fmt(P.tot.away)} <small>${pct(P.tot.away / P.tot.casts)}</small></div></div>
+      <div class="kpi"><div class="k">Sessions</div><div class="v">${fmt(P.sessions.length)}</div></div></div>
+    <div class="kpis">
+      <div class="kpi"><div class="k">Longest Session</div><div class="v">${dur(b.longest.mins)} <small>${day(b.longest.start)}</small></div></div>
+      <div class="kpi"><div class="k">Best Catches per hour</div><div class="v">${b.best ? fmt(b.best.perHour) : '—'} <small>${b.best ? day(b.best.start) : 'Sessions of 20m+'}</small></div></div></div>
+    <div class="hdr">Places</div><table class="nt"><tr><th></th><th class="r">Casts</th><th class="r">Catches</th><th class="r">Got away</th></tr>${zones}</table>
+    <div class="two"><div><div class="hdr">Characters</div><table class="nt"><tr><th></th><th class="r">Casts</th><th class="r">Catches</th><th class="r">Away</th></tr>${chars}</table></div>
+      <div><div class="hdr">Got away by skill margin</div><table class="nt"><tr><th>vs no-junk skill</th><th class="r">Casts</th><th class="r">Away</th></tr>${marg}</table></div></div>
+    <div class="hdr">Every item<small>count · first · last caught</small></div><table class="nt">${items}</table>`;
+}
+function historyBody() {
+  const rows = S.P.sessions.slice().reverse().slice(0, 200).map((s, i) => {
+    const n = M.sessionNumbers(s), live = i === 0 && curSession();
+    return `<tr class="${live ? 'cur' : ''}"><td>${day(s.start)} <span class="sm">${hhmm(s.start)}</span>${live ? ' <span class="here">now</span>' : ''}</td><td class="r">${dur(n.mins)}</td><td class="sm">${Object.keys(s.zones).join(', ')}</td><td class="sm">${Object.keys(s.chars).join(', ')}</td><td class="r num">${n.casts}</td><td class="r num">${n.catches}</td><td class="r">${pct(n.awayRate)}</td><td class="r">${fmt(n.perHour)}</td></tr>`;
+  }).join('');
+  return `<table class="nt"><tr><th>Started</th><th class="r">Length</th><th>Zones</th><th>Characters</th><th class="r">Casts</th><th class="r">Catches</th><th class="r">Away</th><th class="r">/h</th></tr>${rows}</table>
+    ${S.P.sessions.length > 200 ? `<div class="note">Showing the latest 200 of ${fmt(S.P.sessions.length)} Sessions.</div>` : ''}`;
+}
+function placeOptions(selZone, selSub) {
+  let o = '';
+  for (const z of Object.keys(M.ZONES)) {
+    if (!S.P.byZone[z] && z !== S.zone) continue;
+    o += `<option value="${z}|" ${selZone === z && !selSub ? 'selected' : ''}>${z}</option>`;
+    for (const s of M.ZONES[z].subs) o += `<option value="${z}|${s}" ${selZone === z && selSub === s ? 'selected' : ''}>   ${s}${z === S.zone && s === S.sub ? ' (you\'re here)' : ''}</option>`;
+  }
+  return o;
+}
+
+// ---------- Variant A: tabbed frame ----------
+function renderA() {
+  const t = S.a.tab, tabs = [['session', 'Session'], ['life', 'Lifetime'], ['hist', 'History'], ['odds', 'Your odds']];
+  let body;
+  if (t === 'session') body = sessionBody();
+  else if (t === 'life') body = lifetimeBody();
+  else if (t === 'hist') body = historyBody();
+  else {
+    const zone = S.a.zone || S.zone, sub = S.a.zone ? S.a.sub : S.sub;
+    const rs = sub ? hereReadings(zone, sub) : M.catchList(zone, M.ZONES[zone].subs[0]).map((k) => R(k, zone, '')).sort(sortReadings);
+    const isHere = zone === S.zone && (sub === S.sub || !sub);
+    const rows = rs.map((r) => `<tr><td>${ICON(r.it)} ${NAME(r.it)}${r.it.win ? ` <span class="sm">${r.it.win}</span>` : ''}</td><td>${oddsHTML(r)}</td>${S.baseline ? `<td>${baseHTML(r)}</td>` : ''}<td class="r num">${r.dry.since === 0 ? '0' : fmt(r.dry.since)}</td><td>${gaugeHTML(r)}</td><td>${bandHTML(r)}</td><td>${pinHTML(r)}</td></tr>`).join('');
+    const shown = rs[0] ? rs[0].place : zone;
+    body = `<div style="display:flex;gap:8px;align-items:center;margin:8px 10px 0"><select class="drop" data-act="aplace">${placeOptions(zone, sub)}</select>
+        ${isHere ? '<span class="here">you\'re here</span>' : `<button class="drop" data-act="ahere">Back to where I am</button>`}
+        <span class="sm" style="margin-left:auto">${M.side(S.skill, zone) === 'hi' ? 'At or above' : 'Below'} ${M.ZONES[zone].noJunk} skill (no-junk)</span></div>
+      <div class="hdr">Your odds<small>from your own Casts only, never game data</small></div>
+      <table class="nt"><tr><th>Item</th><th>Your odds</th>${S.baseline ? '<th>Classic</th>' : ''}<th class="r">Casts since last</th><th>Dry spell</th><th></th><th></th></tr>${rows}</table>
+      <div class="note">${sub && rs.some((r) => !r.useSub) ? `Rows still below 100 Casts in ${sub} use all of ${zone}. ` : ''}Night and day fish count only Casts in their window. Pool fish are open water and pools combined. Hover a number for its range; hover a gauge for the reading.</div>`;
+  }
+  const after = `<div class="tabs">${tabs.map(([k, l]) => `<button class="${k === t ? 'on' : ''}" data-atab="${k}">${l}</button>`).join('')}</div>`;
+  return frame('wA', 'Pagle Stats', '', `<div class="inset">${body}</div>`, after);
+}
+
+// ---------- Variant B: place browser ----------
+function renderB() {
+  const pg = S.b.page;
+  let nav = ['here', 'session', 'life', 'hist'].map((k) => `<button data-bpage="${k}" class="${pg === k ? 'on' : ''}">${{ here: '◎ Where I am', session: 'This Session', life: 'Lifetime', hist: 'Session history' }[k]}${k === 'session' && curSession() ? '<span class="c here">live</span>' : ''}</button>`).join('');
+  nav += '<div class="sep">Places</div>';
+  for (const z of Object.keys(M.ZONES)) {
+    const zc = S.P.byZone[z];
+    if (!zc && z !== S.zone) continue;
+    nav += `<button data-bplace="${z}|" class="${pg === 'place' && S.b.zone === z && !S.b.sub ? 'on' : ''}">${z}<span class="c">${zc ? fmt(zc.casts) : 0}</span></button>`;
+    for (const s of M.ZONES[z].subs) {
+      const sc = zc && zc.subs[s];
+      nav += `<button class="subz ${pg === 'place' && S.b.zone === z && S.b.sub === s ? 'on' : ''}" data-bplace="${z}|${s}">${s}${z === S.zone && s === S.sub ? ' <span class="here">here</span>' : ''}<span class="c">${sc ? fmt(sc.casts) : '·'}</span></button>`;
+    }
+  }
+  let page;
+  if (pg === 'session') page = sessionBody();
+  else if (pg === 'life') page = lifetimeBody();
+  else if (pg === 'hist') page = historyBody();
+  else {
+    const here = pg === 'here', zone = here ? S.zone : S.b.zone, sub = here ? S.sub : S.b.sub;
+    const rs = sub ? hereReadings(zone, sub) : M.catchList(zone, M.ZONES[zone].subs[0]).map((k) => R(k, zone, '')).sort(sortReadings);
+    const zc = S.P.byZone[zone], n = sub ? (zc && zc.subs[sub] ? zc.subs[sub].casts : 0) : zc ? zc.casts : 0;
+    page = `<div class="crumb"><a data-bplace="${zone}|">${zone}</a>${sub ? ' › ' + sub : ''}</div>
+      <div class="ptitle">${sub || zone}${zone === S.zone && (!sub || sub === S.sub) ? ' <span class="here">you\'re here</span>' : ''}</div>
+      <div class="pscope">${fmt(n)} of your Casts here · ${M.side(S.skill, zone) === 'hi' ? 'at or above' : 'below'} the ${M.ZONES[zone].noJunk} no-junk skill · Your odds come only from your own Casts</div>
+      ${rs.map((r) => `<div class="entry">${ICON(r.it, 34)}<div class="en"><div class="nm">${NAME(r.it)} ${pinHTML(r)}</div>
+        <div class="od">${oddsHTML(r)} <span class="sm">${r.odds.state === 'known' ? `from ${fmt(r.odds.n)} ${r.it.win ? r.it.win + ' ' : ''}Casts${r.useSub || !sub ? '' : ' across ' + zone}` : ''}${r.it.pool ? ' · open water and pools combined' : ''}</span></div>
+        <div class="ds">${bandHTML(r)}${M.dryText(r)}</div></div></div>`).join('')}`;
+  }
+  const cur = curSession();
+  const strip = cur ? (() => { const n = M.sessionNumbers(cur); return `<div class="strip"><span class="lv">● Session</span><span><b>${n.casts}</b> Casts</span><span><b>${n.catches}</b> Catches</span><span><b>${n.away}</b> got away</span><span><b>${fmt(n.perHour)}</b>/h</span><span>${dur(n.mins)}</span></div>`; })()
+    : `<div class="strip">No Session right now. The last one ended ${ago(lastSession().end)}.</div>`;
+  return frame('wB', 'Pagle Stats', '', `${strip}<div class="body"><nav>${nav}</nav><div class="page">${page}</div></div>`);
+}
+
+// ---------- Variant C: here and now, item-first ----------
+function renderC() {
+  const cur = curSession();
+  const srch = `<div class="srch"><input id="cq" placeholder="Find an item or a place…" value="${esc(S.c.q)}"></div>${S.c.q ? searchResults() : ''}`;
+  if (S.c.item) return frame('wC', 'Pagle Stats', '', srch + `<div class="inset">${itemPage(S.c.item)}</div>`);
+  const sec = (k, title, small, inner) => `<div class="sec"><div class="sh" data-csec="${k}"><span class="tw">${S.c.open[k] ? '▼' : '▶'}</span>${title}<small>${small}</small></div>${S.c.open[k] ? inner : ''}</div>`;
+  const rs = hereReadings();
+  const here = rs.map((r) => `<div class="row" data-citem="${r.item}">${ICON(r.it, 20)}<span class="nm">${NAME(r.it)}</span><span class="od">${oddsHTML(r)}</span><span class="dc">${r.dry.band ? curveHTML(r) : `<span class="sm">${M.dryText(r, true)}</span>`}</span>${pinHTML(r)}</div>`).join('');
+  const s = cur || lastSession(), n = M.sessionNumbers(s);
+  const sess = `<div class="kpis"><div class="kpi"><div class="k">Casts</div><div class="v">${n.casts}</div></div><div class="kpi"><div class="k">Catches</div><div class="v">${n.catches}</div></div><div class="kpi"><div class="k">Got away</div><div class="v">${n.away} <small>${pct(n.awayRate)}</small></div></div><div class="kpi"><div class="k">/hour</div><div class="v">${fmt(n.perHour)}</div></div></div>
+    <div class="note" style="margin-top:0">${dur(n.mins)} · ${Object.keys(n.zones).join(', ')} · ${Object.keys(n.chars).join(', ')} · skill +${n.gained} · ${[3, 2, 1, 0].filter((k) => n.q[k]).map((k) => `<span class="qn q${k}">${n.q[k]} ${QWORD[k].toLowerCase()}</span>`).join(', ')}</div>`;
+  const inner = sec('session', cur ? 'This Session' : 'Your last Session', cur ? 'since ' + hhmm(s.start) : 'ended ' + ago(s.end), sess)
+    + sec('here', `Here: ${S.sub}`, `${S.zone} · ${M.tod(S.now)} · ${M.side(S.skill, S.zone) === 'hi' ? 'at or above' : 'below'} ${M.ZONES[S.zone].noJunk}`, here + '<div class="note">Click an item for every place you\'ve fished it. The curve: how many anglers are still waiting after that many Casts; the dot is you.</div>')
+    + sec('life', 'Lifetime', `${fmt(S.P.tot.casts)} Casts`, lifetimeBody())
+    + sec('hist', 'Session history', `${fmt(S.P.sessions.length)} Sessions`, historyBody());
+  return frame('wC', 'Pagle Stats', '', srch + `<div class="inset">${inner}</div>`);
+}
+function searchResults() {
+  const q = S.c.q.toLowerCase();
+  const items = Object.entries(M.ITEMS).filter(([, it]) => it.name.toLowerCase().includes(q)).slice(0, 8).map(([k, it]) => `<div data-citem="${k}">${ICON(it, 16)} ${NAME(it)}</div>`).join('');
+  const places = Object.keys(M.ZONES).flatMap((z) => [[z, ''], ...M.ZONES[z].subs.map((s) => [z, s])]).filter(([z, s]) => (s || z).toLowerCase().includes(q)).slice(0, 6).map(([z, s]) => `<div data-cplace="${z}|${s}">◎ ${s ? s + ', ' + z : z}</div>`).join('');
+  return `<div class="res">${items}${places || ''}${!items && !places ? '<div>No matches</div>' : ''}</div>`;
+}
+function itemPage(item) {
+  const it = M.ITEMS[item], life = S.P.items[item];
+  const places = [];
+  for (const z of Object.keys(M.ZONES)) for (const s of M.ZONES[z].subs) if (M.catchList(z, s).includes(item) && S.P.byZone[z] && S.P.byZone[z].subs[s]) places.push(R(item, z, s));
+  places.sort(sortReadings);
+  const rows = places.map((r) => `<tr class="${r.zone === S.zone && r.sub === S.sub ? 'cur' : ''}"><td>${r.sub}<div class="sm">${r.zone}${r.useSub ? '' : ' (zone-wide until 100 Casts here)'}</div></td><td>${oddsHTML(r)}</td><td>${r.dry.band ? curveHTML(r) : `<span class="sm">${M.dryText(r, true)}</span>`}</td><td>${pinHTML(r)}</td></tr>`).join('');
+  const hereR = places.find((r) => r.zone === S.zone && r.sub === S.sub);
+  return `<button class="back" data-act="cback">☚ Back</button>
+    <div class="itop">${ICON(it, 44)}<div><div class="n">${NAME(it)}</div><div class="w">${it.win ? (it.win === 'night' ? 'Night only (18:00–06:00 realm time)' : 'Day only (06:00–18:00 realm time)') : 'Any time'}${it.pool ? ' · also in pools; no pool data, so counted together' : ''}</div></div></div>
+    <div class="kpis"><div class="kpi"><div class="k">Caught</div><div class="v">${life ? fmt(life.n) : 0}</div></div><div class="kpi"><div class="k">First</div><div class="v"><small>${life ? day(life.first) : '—'}</small></div></div><div class="kpi"><div class="k">Last</div><div class="v"><small>${life ? day(life.last) + ', ' + ago(life.last) : '—'}</small></div></div></div>
+    ${hereR ? `<div class="note" style="color:#d6cfbf;font-size:12px">${bandHTML(hereR)} ${M.dryText(hereR)}</div>` : ''}
+    <div class="hdr">Your odds by place</div><table class="nt"><tr><th>Place</th><th>Your odds</th><th>Dry spell</th><th></th></tr>${rows || '<tr><td colspan=4 class="sm">You haven\'t fished anywhere it can be caught.</td></tr>'}</table>`;
+}
+
+// ---------- Variant D: B's organisation in the Journal/Hunts book ----------
+const HUE = { 'Elwynn Forest': 110, 'Stranglethorn Vale': 150, Tanaris: 38, Feralas: 85 };
+const DPAGES = { here: 'Where I am', session: 'This Session', life: 'Lifetime', hist: 'Sessions' };
+const shortN = (it) => it.name.replace(/^Raw /, '');
+const dnav = (o) => `data-dnav="${esc(JSON.stringify(o))}"`;
+const isPinned = (r) => S.pins.some((p) => p.item === r.item && p.zone === r.zone && p.sub === r.sub);
+const zoneList = (zone) => [...new Set(M.ZONES[zone].subs.flatMap((s) => M.catchList(zone, s)))];
+const dReadings = (zone, sub) => (sub ? M.catchList(zone, sub) : zoneList(zone)).map((k) => R(k, zone, sub || '')).sort(sortReadings);
+function renderD() {
+  const d = S.d, crumbs = [['Stats', { page: 'home' }]];
+  let L, Rr;
+  if (d.page === 'place') {
+    const zone = d.zone || S.zone, sub = d.zone ? d.sub : S.sub;
+    crumbs.push([zone, { page: 'place', zone, sub: '' }]);
+    if (sub) crumbs.push([sub, { page: 'place', zone, sub }]);
+    if (d.sel) crumbs.push([shortN(M.ITEMS[d.sel]), { page: 'place', zone, sub, sel: d.sel }]);
+    [L, Rr] = dPlace(zone, sub, d.sel);
+  } else if (d.page === 'item') { crumbs.push([shortN(M.ITEMS[d.item]), { page: 'item', item: d.item }]); [L, Rr] = dItem(d.item); }
+  else if (d.page === 'home') [L, Rr] = dHome();
+  else { crumbs.push([DPAGES[d.page], { page: d.page }]); [L, Rr] = d.page === 'session' ? dSession() : d.page === 'life' ? dLife() : dHist(); }
+  const onRib = d.page === 'place' && !d.zone ? 'here' : d.page;
+  const ribs = Object.entries(DPAGES).map(([k, l]) => `<button class="rib ${k === 'here' ? 'here' : ''} ${onRib === k ? 'on' : ''}" ${dnav(k === 'here' ? { page: 'place' } : { page: k })}>${l}</button>`).join('');
+  const cur = curSession(), n = cur && M.sessionNumbers(cur);
+  const live = cur ? `<span class="crumb" style="margin-left:auto;font-size:13px" ${dnav({ page: 'session' })}>● Session: ${n.casts} Casts · ${n.catches} Catches · ${dur(n.mins)}</span>` : '';
+  return `<div class="vD"><button class="x" data-act="close">✕</button>
+    <div class="plate">${fmt(S.P.tot.casts)} Casts · ${fmt(S.P.sessions.length)} Sessions · since ${day(S.log[0].t)}</div>
+    <div class="strip">${crumbs.map(([l, o]) => `<span class="crumb" ${dnav(o)}>${l}</span>`).join('')}${live}
+      <div class="es" style="${live ? 'margin-left:14px' : ''}"><input id="dq" placeholder="Find a fish or a water…" value="${esc(d.q)}">${d.q ? dResults() : ''}</div></div>
+    <div class="pages"><div class="page l">${L}</div><div class="page r">${Rr}</div></div><div class="ribbons">${ribs}</div></div>`;
+}
+function dHome() {
+  const zs = Object.keys(M.ZONES).filter((z) => S.P.byZone[z] || z === S.zone);
+  const tile = (z) => {
+    const zc = S.P.byZone[z], w = S.pins.filter((p) => p.zone === z).length;
+    return `<div class="zt" style="--hue:${HUE[z]}" ${dnav({ page: 'place', zone: z, sub: '' })}><div class="nm">${z}</div>${z === S.zone ? '<div class="nw">I\'m here</div>' : ''}${w ? `<div class="dz">watching ${w}</div>` : ''}<div class="rk">${zc ? fmt(zc.casts) + ' Casts · ' + Object.keys(zc.subs).length + ' waters' : 'not fished yet'}</div></div>`;
+  };
+  const cur = curSession(), n = cur && M.sessionNumbers(cur);
+  const L = `<div class="kick">The waters</div><h2>Where I've fished</h2><div class="small">Your odds and Dry spells come only from my own Casts, never from game data.</div><div class="zts">${zs.map(tile).join('')}</div>`;
+  const Rr = `<div class="kick">Right now</div>
+    <div class="hand" style="margin-top:4px">Fishing ${S.sub}, ${S.zone}, by ${M.tod(S.now)}. Skill ${S.skill}, ${M.side(S.skill, S.zone) === 'hi' ? 'past' : 'below'} the no-junk line (${M.ZONES[S.zone].noJunk}).</div>
+    <div class="hand" style="margin-top:6px">${cur ? `This Session: ${n.casts} Casts, ${n.catches} Catches, ${n.away} got away, ${dur(n.mins)} so far.` : `No Session right now. The last one ended ${ago(lastSession().end)}.`}</div>
+    <div class="gh"><span>Dry spells I'm watching</span><small>also on the live tracker</small></div>
+    ${pinReadings().map((r) => `<div class="memo" ${dnav({ page: 'place', zone: r.zone, sub: r.sub, sel: r.item })}>✎ ${shortN(r.it)}, ${r.place}: ${fmt(r.dry.since)} since the last${r.dry.band && r.dry.band !== 'normal' ? ', <span class="red">' + M.BAND_WORD[r.dry.band].toLowerCase() + '</span>' : ''}.</div>`).join('') || '<div class="note">Nothing yet. Watch a Dry spell from any fish\'s page.</div>'}
+    <div class="gh"><span>In this book</span></div><div class="toc">
+      <div class="go" ${dnav({ page: 'place' })}><span>Where I am: ${S.sub}</span><span>›</span></div>
+      <div class="go" ${dnav({ page: 'session' })}><span>${cur ? 'This Session' : 'My last Session'}</span><span>›</span></div>
+      <div class="go" ${dnav({ page: 'life' })}><span>Lifetime</span><span>${fmt(S.P.tot.casts)}</span></div>
+      <div class="go" ${dnav({ page: 'hist' })}><span>Every Session</span><span>${fmt(S.P.sessions.length)}</span></div></div>`;
+  return [L, Rr];
+}
+function dRow(r, sel) {
+  const o = r.odds, cls = o.state === 'learning' ? 'learn' : o.state === 'unseen' ? 'unseen' : '';
+  const od = o.state === 'learning' ? `learning ${o.n}/100` : o.state === 'unseen' ? 'not seen yet' : `1 in ${M.nice(1 / o.p)}`;
+  const mg = r.dry.since === 0 ? 'just now' : o.k === 0 ? '' : `${fmt(r.dry.since)} since${r.dry.band && r.dry.band !== 'normal' ? ', ' + M.BAND_WORD[r.dry.band].toLowerCase() : ''}`;
+  return `<div class="er ${sel === r.item ? 'on' : ''}" ${dnav({ page: 'place', zone: S.d.zone, sub: S.d.sub, sel: r.item })}>${ICON(r.it, 22)}<span class="nm">${NAME(r.it)}${isPinned(r) ? ' <span class="red" title="watching">★</span>' : ''}</span><span class="od ${cls}">${od}</span><span class="mg ${r.dry.band || ''}">${mg}</span></div>`;
+}
+function dPlace(zone, sub, sel) {
+  const rs = dReadings(zone, sub), zc = S.P.byZone[zone], pc = sub ? zc && zc.subs[sub] : zc;
+  const here = zone === S.zone && (!sub || sub === S.sub);
+  const group = (label, small, fn) => { const G = rs.filter(fn); return G.length ? `<div class="gh"><span>${label}</span><small>${small}</small></div>${G.map((r) => dRow(r, sel)).join('')}` : ''; };
+  const subs = !sub ? `<div class="gh"><span>Its waters</span><small>my Casts</small></div><div class="toc">${M.ZONES[zone].subs.map((s) => `<div class="go" ${dnav({ page: 'place', zone, sub: s })}><span>${s}${zone === S.zone && s === S.sub ? ' <span class="hand" style="font-size:17px;color:#2a6a2a">I\'m here</span>' : ''}</span><span>${zc && zc.subs[s] ? fmt(zc.subs[s].casts) : '—'}</span></div>`).join('')}</div>` : '';
+  const L = `<div class="kick">${sub ? zone : 'Waters'}</div><h2>${sub || zone}${here ? ' <span class="hand" style="color:#2a6a2a">I\'m here</span>' : ''}</h2>
+    <div class="small">${pc ? fmt(pc.casts) : 0} of my Casts here. No junk from ${M.ZONES[zone].noJunk}; at ${S.skill} I'm ${M.side(S.skill, zone) === 'hi' ? 'past it' : 'below it'}, so only those Casts count.</div>
+    ${subs}
+    ${group('Any time', 'Your odds · dry spell', (r) => !r.it.win && !r.it.pool)}
+    ${group('Pools', 'open water and pools combined', (r) => r.it.pool)}
+    ${group('Day and night', 'only Casts in their window', (r) => r.it.win)}
+    ${sub && rs.some((r) => !r.useSub) ? `<div class="note" style="margin-top:8px">Fish with fewer than 100 Casts in ${sub} use all of ${zone} until then.</div>` : ''}`;
+  const sr = sel && rs.find((r) => r.item === sel);
+  const Rr = sr ? dEntry(sr) : `<div class="kick">About these waters</div><h2>${sub || zone}</h2>
+    <div class="toc" style="margin-top:8px"><div><span>Casts</span><span>${pc ? fmt(pc.casts) : 0}</span></div><div><span>Catches</span><span>${pc ? fmt(pc.catches) : 0}</span></div><div><span>Got away</span><span>${pc ? fmt(pc.away) + ' (' + pct(pc.away / pc.casts) + ')' : '—'}</span></div></div>
+    <p class="hand" style="margin-top:16px">Pick a fish on the left for its odds and its dry spell.</p>`;
+  return [L, Rr];
+}
+function ruler(d) {
+  const pos = (P) => Math.min(100, Math.max(0, (-Math.log10(P) / 6) * 100));
+  const x = pos(d.P), bu = pos(M.BANDS.unlucky), bv = pos(M.BANDS.very);
+  const ticks = [[1, 'all'], [10, '1 in 10'], [100, '1 in 100'], [1e3, '1 in 1k'], [1e4, '1 in 10k'], [1e5, '1 in 100k'], [1e6, '1 in 1M']];
+  return `<div class="lr"><div class="w" style="left:${bu}%;width:${bv - bu}%;background:rgba(154,42,26,.08)"></div><div class="w" style="left:${bv}%;width:${100 - bv}%;background:rgba(154,42,26,.18)"></div>
+      ${ticks.map(([v, l]) => `<span class="tm" style="left:${pos(1 / v)}%"></span><span class="tk" style="left:${pos(1 / v)}%">${l}</span>`).join('')}<span class="me" style="left:${x}%"><em>me</em></span></div>
+    <div class="lbands"><span style="width:${bu}%">normal</span><span style="width:${bv - bu}%">unlucky</span><span style="width:${100 - bv}%">very unlucky</span></div>
+    <div class="note">How many anglers wait at least this long. Every Cast is its own roll; nothing is owed.</div>`;
+}
+function dEntry(r) {
+  const o = r.odds, d = r.dry, life = S.P.items[r.item], pinned = isPinned(r);
+  let odds;
+  if (o.state === 'learning') odds = `<div class="big learn">Learning…</div><div class="inkbar"><i style="width:${o.n}%"></i></div><div class="small">${o.n} of the 100 ${r.it.win ? r.it.win + ' ' : ''}Casts I need here before Your odds show a number.</div>`;
+  else if (o.state === 'unseen') odds = `<div class="big">not seen yet</div><div class="small">In ${fmt(o.n)} Casts: rarer than about 1 in ${M.nice(1 / o.bound)}, if it bites here at all.</div>`;
+  else {
+    const a = M.nice(1 / o.hi), b = M.nice(1 / o.lo);
+    odds = `<div class="big">about 1 in ${M.nice(1 / o.p)}</div><div class="small">${a === b ? 'Within rounding either way' : 'Likely between 1 in ' + a + ' and 1 in ' + b} (95%). From ${fmt(o.n)} of my ${r.it.win ? r.it.win + ' ' : ''}Casts ${r.useSub || !r.sub ? 'here' : 'across ' + r.zone}, ${r.side === 'hi' ? 'at or above' : 'below'} ${M.ZONES[r.zone].noJunk} skill; ${fmt(o.k)} caught.</div>`;
+  }
+  let dry;
+  if (d.since === 0) dry = '<div class="hand">Caught one on my last Cast here.</div>';
+  else if (o.k === 0) dry = `<div class="hand">${fmt(d.since)} Casts here, none yet.</div>`;
+  else dry = `<div class="hand">${fmt(d.since)} Cast${d.since === 1 ? '' : 's'} since my last one, ${ago(d.lastT)}.</div>` + (d.band ? `<div class="small" style="margin-top:3px">${M.luckText(d)}</div>${ruler(d)}` : '<div class="note">A luck reading comes once Your odds have a number.</div>');
+  return `<button class="pinE ${pinned ? 'on' : ''}" data-pin="${r.item}|${r.zone}|${r.sub}">${PIN_SVG} ${pinned ? 'watching' : 'watch'}</button>
+    <div class="kick">Your odds · ${r.place}${r.it.win ? ', by ' + r.it.win : ''}</div><h2>${ICON(r.it, 28)} ${NAME(r.it)}</h2>${odds}
+    ${r.it.pool ? '<div class="note">Open water and pools combined: there is no pool data.</div>' : ''}
+    <div class="gh"><span>Dry spell</span><small>counted like the odds above</small></div>${dry}
+    <div class="gh"><span>In my records</span></div><div class="toc"><div><span>Caught in this count</span><span>${fmt(o.k)}</span></div><div><span>Caught anywhere</span><span>${life ? fmt(life.n) : 0}</span></div><div><span>First caught</span><span>${life ? day(life.first) : '—'}</span></div><div><span>Last caught</span><span>${life ? day(life.last) : '—'}</span></div></div>
+    <span class="back" ${dnav({ page: 'item', item: r.item })}>Every water it bites in ☛</span>`;
+}
+function dItem(item) {
+  const it = M.ITEMS[item], life = S.P.items[item];
+  const places = [];
+  for (const z of Object.keys(M.ZONES)) for (const s of M.ZONES[z].subs) if (M.catchList(z, s).includes(item) && S.P.byZone[z] && S.P.byZone[z].subs[s]) places.push(R(item, z, s));
+  places.sort(sortReadings);
+  const hereR = M.catchList(S.zone, S.sub).includes(item) && R(item, S.zone, S.sub);
+  const L = `<div class="kick">A fish</div><h2>${ICON(it, 28)} ${NAME(it)}</h2>
+    <div class="small">${it.win ? (it.win === 'night' ? 'Bites by night only, 18:00 to 06:00 realm time.' : 'Bites by day only, 06:00 to 18:00 realm time.') : 'Bites at any hour.'}${it.pool ? ' Also in pools; with no pool data, both are counted together.' : ''}</div>
+    <div class="toc" style="margin-top:8px"><div><span>Caught</span><span>${life ? fmt(life.n) : 0}</span></div><div><span>First caught</span><span>${life ? day(life.first) : '—'}</span></div><div><span>Last caught</span><span>${life ? day(life.last) + ', ' + ago(life.last) : '—'}</span></div></div>
+    ${hereR ? `<div class="gh"><span>Where I am</span><small>${S.sub}</small></div><div class="hand">${M.oddsText(hereR.odds)}; ${fmt(hereR.dry.since)} Casts since the last.</div><span class="back" ${dnav({ page: 'place', sel: item })}>Open its page here ☛</span>` : ''}`;
+  const Rr = `<div class="kick">Its waters</div><h2>Where I've fished for it</h2>
+    <div class="zts">${places.map((r) => `<div class="zt" style="--hue:${HUE[r.zone]}" ${dnav({ page: 'place', zone: r.zone, sub: r.sub, sel: item })}><div class="nm">${r.sub}</div>${r.zone === S.zone && r.sub === S.sub ? '<div class="nw">I\'m here</div>' : ''}${r.dry.band && r.dry.band !== 'normal' ? `<div class="dz">${fmt(r.dry.since)} since</div>` : ''}<div class="rk">${r.zone} · ${M.oddsText(r.odds)}</div></div>`).join('') || '<p class="note">I haven\'t fished anywhere it bites.</p>'}</div>`;
+  return [L, Rr];
+}
+function sessionEntry(s, kick, live) {
+  const n = M.sessionNumbers(s);
+  return `<div class="kick">${kick}</div><h2>${new Date(s.start).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' })}</h2>
+    <div class="hand">${hhmm(s.start)} to ${live ? 'now' : hhmm(s.end)}, ${dur(n.mins)} at the water.</div>
+    <div class="toc" style="margin-top:8px"><div><span>Casts</span><span>${fmt(n.casts)}</span></div><div><span>Catches</span><span>${fmt(n.catches)}</span></div><div><span>Got away</span><span>${n.away} (${pct(n.awayRate)})</span></div><div><span>Catches per hour</span><span>${fmt(n.perHour)}</span></div><div><span>Skill gained</span><span>+${n.gained}</span></div></div>
+    <div class="gh"><span>By quality</span></div><div class="toc">${[4, 3, 2, 1, 0].filter((k) => n.q[k]).map((k) => `<div><span class="qn q${k}">${QWORD[k]}</span><span>${n.q[k]}</span></div>`).join('')}</div>
+    <div class="gh"><span>Where and who</span></div><div class="toc">${Object.entries(n.zones).map(([z, c]) => `<div class="go" ${dnav({ page: 'place', zone: z, sub: '' })}><span>${z}</span><span>${c}</span></div>`).join('')}${Object.entries(n.chars).map(([c, k]) => `<div><span>${c}</span><span>${k}</span></div>`).join('')}</div>`;
+}
+function sessRow(s, i, on) {
+  const n = M.sessionNumbers(s);
+  return `<tr class="go ${on ? 'on' : ''}" ${dnav({ page: 'hist', hs: i, hp: Math.floor((S.P.sessions.length - 1 - i) / 16) })}><td>${day(s.start)} <span class="note">${hhmm(s.start)}</span></td><td>${Object.keys(s.zones).join(', ')}</td><td class="r">${dur(n.mins)}</td><td class="r">${n.casts}</td><td class="r">${n.catches}</td></tr>`;
+}
+const SESS_HEAD = '<tr><th>Started</th><th>Where</th><th class="r">Length</th><th class="r">Casts</th><th class="r">Catches</th></tr>';
+function dSession() {
+  const cur = curSession(), s = cur || lastSession(), all = S.P.sessions, last = all.length - 1;
+  const earlier = []; for (let i = last - (s === all[last] ? 1 : 0); i >= 0 && earlier.length < 10; i--) earlier.push(i);
+  return [sessionEntry(s, cur ? 'This Session' : 'My last Session', !!cur),
+    `<div class="kick">Before that</div><h2>Earlier Sessions</h2><table class="lg">${SESS_HEAD}${earlier.map((i) => sessRow(all[i], i)).join('')}</table><span class="back" ${dnav({ page: 'hist' })}>Every Session ☛</span>`];
+}
+function dLife() {
+  const P = S.P, b = M.bests(P), mins = P.sessions.reduce((a, s) => a + M.sessionNumbers(s).mins, 0);
+  const L = `<div class="kick">Lifetime</div><h2>Every Cast I've made</h2>
+    <div class="toc" style="margin-top:8px"><div><span>Casts</span><span>${fmt(P.tot.casts)}</span></div><div><span>Catches</span><span>${fmt(P.tot.catches)}</span></div><div><span>Got away</span><span>${fmt(P.tot.away)} (${pct(P.tot.away / P.tot.casts)})</span></div><div><span>Sessions</span><span>${fmt(P.sessions.length)}</span></div><div><span>Time at the water</span><span>${dur(mins)}</span></div></div>
+    <div class="gh"><span>Bests</span></div><div class="toc"><div><span>Longest Session, ${day(b.longest.start)}</span><span>${dur(b.longest.mins)}</span></div>${b.best ? `<div><span>Most Catches per hour, ${day(b.best.start)}</span><span>${fmt(b.best.perHour)}</span></div>` : ''}</div>
+    <div class="gh"><span>Got away, by skill</span><small>against each water's no-junk line</small></div><div class="toc">${M.MARGINS.map((m) => m[2]).filter((k) => P.margin[k]).map((k) => `<div><span>${k}</span><span>${pct(P.margin[k].away / P.margin[k].casts)} of ${fmt(P.margin[k].casts)}</span></div>`).join('')}</div>
+    <div class="gh"><span>Characters</span></div><div class="toc">${Object.entries(P.byChar).map(([c, o]) => `<div><span>${c}</span><span>${fmt(o.casts)} Casts</span></div>`).join('')}</div>`;
+  const Rr = `<div class="kick">The catch</div><h2>Every fish</h2><div class="note">How many I've caught. Hover for first and last; click for its waters.</div>
+    <ul class="idx">${Object.entries(P.items).sort((a, c) => c[1].n - a[1].n).map(([k, o]) => `<li ${dnav({ page: 'item', item: k })} data-tip="${esc('First ' + day(o.first) + ', last ' + day(o.last))}"><span>${NAME(M.ITEMS[k])}</span><i>${fmt(o.n)}</i></li>`).join('')}</ul>`;
+  return [L, Rr];
+}
+function dHist() {
+  const all = S.P.sessions, per = 16, pages = Math.ceil(all.length / per), hp = Math.min(S.d.hp || 0, pages - 1);
+  const hs = S.d.hs != null && S.d.hs < all.length ? S.d.hs : all.length - 1;
+  const idx = []; for (let i = all.length - 1 - hp * per; i >= 0 && idx.length < per; i--) idx.push(i);
+  const L = `<div class="kick">Sessions</div><h2>${fmt(all.length)} Sessions</h2><div class="note">A Session ends after 15 minutes without a Cast.</div>
+    <table class="lg" style="margin-top:6px">${SESS_HEAD}${idx.map((i) => sessRow(all[i], i, i === hs)).join('')}</table>
+    <div class="pager"><span ${hp > 0 ? dnav({ page: 'hist', hs, hp: hp - 1 }) : 'style="visibility:hidden"'}>☚ later</span><span class="note">page ${hp + 1} of ${pages}</span><span ${hp < pages - 1 ? dnav({ page: 'hist', hs, hp: hp + 1 }) : 'style="visibility:hidden"'}>earlier ☛</span></div>`;
+  const live = hs === all.length - 1 && curSession();
+  return [L, sessionEntry(all[hs], live ? 'This Session' : 'Session ' + (hs + 1), !!live)];
+}
+function dResults() {
+  const q = S.d.q.toLowerCase();
+  const items = Object.entries(M.ITEMS).filter(([, it]) => it.name.toLowerCase().includes(q)).slice(0, 6).map(([k, it]) => `<div ${dnav({ page: 'item', item: k })}>${it.name}<small>fish</small></div>`).join('');
+  const places = Object.keys(M.ZONES).flatMap((z) => [[z, ''], ...M.ZONES[z].subs.map((s) => [z, s])]).filter(([z, s]) => (s || z).toLowerCase().includes(q)).slice(0, 5).map(([z, s]) => `<div ${dnav({ page: 'place', zone: z, sub: s })}>${s || z}<small>${s ? z : 'waters'}</small></div>`).join('');
+  return `<div class="drop">${items}${places}${!items && !places ? '<div><i>Nothing by that name in my records.</i></div>' : ''}</div>`;
+}
+
+// ---------- live trackers ----------
+function pinReadings() { return S.pins.map((p) => R(p.item, p.zone, p.sub)); }
+function renderTracker() {
+  const el = $('#trk');
+  el.className = 't' + S.tracker;
+  if (!S.trackerOn) { el.innerHTML = ''; return; }
+  const cur = curSession(), pins = pinReadings();
+  if (!cur && !pins.length) { el.innerHTML = ''; return; }
+  const n = cur && M.sessionNumbers(cur);
+  const shortName = (r) => r.it.name.replace(/^Raw /, '');
+  if (S.tracker === '1') {
+    el.innerHTML = `<div class="th" data-act="open">Stats<span>${cur ? 'Session · ' + dur(n.mins) : 'no Session'}</span></div>
+      ${cur ? `<div class="l1">${n.casts} Casts · ${n.catches} Catches · ${n.away} got away</div><div class="l2">${fmt(n.perHour)} per hour · skill +${n.gained}</div>` : ''}
+      ${pins.map((r) => `<div class="pn" data-tip="${esc('<b>' + M.dryText(r) + '</b>')}"><div class="a"><span class="dot ${r.dry.band || 'none'}"></span>${shortName(r)}<b>${fmt(r.dry.since)}</b></div><div class="s">${r.place}${r.it.win ? ', ' + r.it.win : ''} · ${r.dry.band ? M.BAND_WORD[r.dry.band].toLowerCase() : M.oddsText(r.odds)}</div></div>`).join('')}`;
+  } else if (S.tracker === '2') {
+    el.innerHTML = `<div class="th">Stats<span>${cur ? dur(n.mins) : 'no Session'}</span></div>
+      ${cur ? `<div class="g"><div><b>${n.casts}</b><span>Casts</span></div><div><b>${n.catches}</b><span>Catches</span></div><div><b>${n.away}</b><span>Away</span></div></div><div class="ft">${fmt(n.perHour)} per hour · skill +${n.gained}</div>` : ''}
+      ${pins.map((r) => `<div class="pn"><div class="a"><span>${shortName(r)}</span><b style="color:#fff">${fmt(r.dry.since)}</b></div>${gaugeHTML(r)}</div>`).join('')}`;
+  } else {
+    el.innerHTML = (cur ? `<span>⏱ <b>${dur(n.mins)}</b></span><span>Casts <b>${n.casts}</b></span><span>Catches <b>${n.catches}</b></span><span>Away <b>${n.away}</b></span>` : '<span style="color:#9a9284">no Session</span>')
+      + (pins.length ? '<span class="sep"></span>' + pins.map((r) => `<span class="chip" data-tip="${esc('<b>' + M.dryText(r) + '</b><br><span class=g>' + r.scope + '</span>')}"><span class="dot ${r.dry.band || 'none'}"></span>${shortName(r)} <b>${fmt(r.dry.since)}</b></span>`).join('') : '');
+  }
+}
+
+// ---------- render ----------
+const VARIANTS = {
+  A: { name: 'Tabbed frame', render: renderA, note: '<b>A native frame with bottom tabs</b>, like the Character or Collections window: Session, Lifetime, History and Your odds. Your odds is a table for one place at a time, picked from a dropdown that starts on where you are. Dry spells are a number plus a <b>luck gauge</b>: where this wait sits among anglers, on a log scale (green normal, amber unlucky, red very unlucky). The full sentence is in the gauge\'s tooltip.' },
+  B: { name: 'Place browser', render: renderB, note: '<b>Encounter Journal-style browser.</b> A left nav lists Where I am, the Session pages, then every zone and subzone you\'ve fished with Cast counts. Each place is a page of entries in prose: the odds line plus the <b>full luck sentence</b> with its band word ("212 Casts since your last Nightfin Snapper. Roughly 1 angler in 200 waits this long. Unlucky, not broken."). A live Session strip sits on top of every page.' },
+  C: { name: 'Here and now, item-first', render: renderC, note: '<b>One scroll, starting from right now.</b> Collapsible sections: this Session, Here (the current place\'s items), Lifetime and history. Search finds any item or place. Clicking an item opens <b>its page</b>: count, first and last caught, and Your odds in every place you\'ve fished it. Dry spells are a small <b>wait curve</b> (share of anglers still waiting after n Casts, with you as the dot).' },
+};
+VARIANTS.D = { name: 'B in the Journal/Hunts book', render: renderD, note: `<b>Added after review: B's place browser bound as the third Pagle book</b>, in the Fish Journal and Hunts board language (leather, parchment, ink, handwriting). Gilt breadcrumbs (Stats ❧ zone ❧ subzone ❧ fish), search and the live Session sit on the leather; B's nav becomes <b>ribbons</b> (Where I am, This Session, Lifetime, Sessions) plus a home spread of zone tiles, like the Journal's. A place is a spread: the left page lists its fish grouped like the Journal (Any time, Pools, Day and night) with Your odds and the Dry spell count in the margin; the right page is the chosen fish's entry. Its Dry spell is B's full sentence plus an <b>ink ruler</b> of how many anglers wait this long, with my mark. "Watch" pins it. The HUD tracker stays native.` };
+const TRACKERS = {
+  1: '<b>T1 HUD block</b> under the minimap, objective-tracker style (the Hunts tracker\'s sibling; they would stack). Session line plus pinned Dry spells, each a band dot, the count and its place. Click the header to open Stats.',
+  2: '<b>T2 floating counter</b>: a small framed box, movable (drag it). Big Casts / Catches / Away digits, then each pin with its luck gauge. About 200px wide.',
+  3: '<b>T3 one line</b> above the action bar: time, Casts, Catches, Away, then pins as chips with a band dot. Smallest; the hover gives the sentence.',
+};
+function render() {
+  $('#win').innerHTML = S.open ? VARIANTS[S.variant].render() : '';
+  renderTracker();
+  $('#zoneName').textContent = S.sub + ', ' + S.zone;
+  $('#mmclock').textContent = hhmm(S.now) + ' realm';
+  $('#tint').style.opacity = M.tod(S.now) === 'night' ? 0.45 : 0;
+  $('#charName').textContent = S.char;
+  $('#swLabel').textContent = `${S.variant} (${VARIANTS[S.variant].name})`;
+  $('#vnote').innerHTML = VARIANTS[S.variant].note;
+  $('#tnote').innerHTML = TRACKERS[S.tracker] + ' Outside a Session it shows pins only, and hides when nothing is pinned.';
+  $('#sideNote').textContent = (M.side(S.skill, S.zone) === 'hi' ? 'at or above' : 'below') + ' no-junk ' + M.ZONES[S.zone].noJunk;
+  renderModelTable();
+  if (S.variant === 'C' && document.activeElement && document.activeElement.id !== 'cq') {} // keep focus logic simple
+}
+function renderModelTable() {
+  const rs = hereReadings();
+  $('#mtable').innerHTML = '<tr><th>Item</th><th>Scope</th><th>n</th><th>k</th><th>Your odds</th><th>since</th><th>P(wait)</th><th>band</th></tr>' + rs.map((r) =>
+    `<tr><td>${r.it.name.replace(/^Raw /, '')}</td><td>${r.useSub ? 'sub' : 'zone'}${r.it.win ? '·' + r.it.win : ''}·${r.side}</td><td>${r.odds.n}</td><td>${r.odds.k}</td><td>${M.oddsText(r.odds)}</td><td>${r.dry.since}</td><td>${r.dry.P != null ? r.dry.P.toPrecision(2) : '—'}</td><td>${r.dry.band || '—'}</td></tr>`).join('');
+}
+function syncPanel() {
+  document.querySelectorAll('#stageSeg button').forEach((b) => b.classList.toggle('on', b.dataset.v === S.stage));
+  document.querySelectorAll('#trkSeg button').forEach((b) => b.classList.toggle('on', b.dataset.v === S.tracker));
+  document.querySelectorAll('#todSeg button').forEach((b) => b.classList.toggle('on', b.dataset.v === M.tod(S.now)));
+  $('#optTrk').checked = S.trackerOn;
+  $('#stageNote').textContent = STAGES[S.stage].note;
+  $('#placeSel').innerHTML = Object.keys(M.ZONES).flatMap((z) => M.ZONES[z].subs.map((s) => `<option value="${z}|${s}" ${z === S.zone && s === S.sub ? 'selected' : ''}>${s}, ${z}</option>`)).join('');
+  $('#skillIn').value = S.skill;
+  $('#forceSel').innerHTML = '<option value="">(random)</option>' + M.catchList(S.zone, S.sub).map((k) => `<option value="${k}">${M.ITEMS[k].name}</option>`).join('');
+}
+function chat(html, sys) { const d = document.createElement('div'); d.innerHTML = html; if (sys) d.className = 'sys'; $('#chatlog').appendChild(d); while ($('#chatlog').children.length > 6) $('#chatlog').firstChild.remove(); }
+function uiErr(msg) { const e = $('#uierr'); e.textContent = msg; e.style.opacity = 1; clearTimeout(uiErr.t); uiErr.t = setTimeout(() => (e.style.opacity = 0), 2200); }
+function setVariant(v) { S.variant = v; const u = new URL(location); u.searchParams.set('variant', v); history.replaceState(null, '', u); render(); }
+function setTracker(v) { S.tracker = v; const u = new URL(location); u.searchParams.set('tracker', v); history.replaceState(null, '', u); syncPanel(); render(); }
+function jumpTo(hour) {
+  const d = new Date(S.now); d.setUTCHours(hour, 0, 0, 0);
+  if (d.getTime() <= S.now) d.setUTCDate(d.getUTCDate() + 1);
+  S.now = d.getTime(); syncPanel(); render();
+}
+
+// ---------- events ----------
+document.addEventListener('click', (e) => {
+  const t = e.target.closest('[data-dnav],[data-act],[data-atab],[data-bpage],[data-bplace],[data-csec],[data-citem],[data-cplace],[data-pin],[data-menu],#pbtn');
+  if (!t) { if (!e.target.closest('#cmenu')) $('#cmenu').classList.remove('on'); return; }
+  if (t.id === 'pbtn') { $('#cmenu').classList.toggle('on'); return; }
+  if (t.dataset.menu === 'stats') { S.open = !S.open; $('#cmenu').classList.remove('on'); return render(); }
+  if (t.dataset.pin) {
+    const [item, zone, sub] = t.dataset.pin.split('|'), i = S.pins.findIndex((p) => p.item === item && p.zone === zone && p.sub === sub);
+    if (i >= 0) S.pins.splice(i, 1);
+    else if (S.pins.length >= 3) return uiErr('You can pin up to 3 Dry spells. Unpin one first.');
+    else { S.pins.push({ item, zone, sub }); if (!S.trackerOn) { S.trackerOn = true; syncPanel(); chat('Pagle: live tracker turned on to show your pinned Dry spells.', true); } }
+    return render();
+  }
+  if (t.dataset.dnav) {
+    const o = JSON.parse(t.dataset.dnav);
+    S.d = { page: o.page, zone: o.zone || null, sub: o.sub || null, sel: o.sel || null, item: o.item || null, q: '', hp: o.hp != null ? o.hp : 0, hs: o.hs != null ? o.hs : null };
+    return render();
+  }
+  const a = t.dataset.act;
+  if (a === 'close') S.open = false;
+  else if (a === 'open') S.open = true;
+  else if (a === 'ahere') { S.a.zone = null; S.a.sub = null; }
+  else if (a === 'cback') S.c.item = null;
+  else if (t.dataset.atab) S.a.tab = t.dataset.atab;
+  else if (t.dataset.bpage) S.b.page = t.dataset.bpage;
+  else if (t.dataset.bplace) { const [z, s] = t.dataset.bplace.split('|'); S.b = { page: z === S.zone && s === S.sub ? 'here' : 'place', zone: z, sub: s }; }
+  else if (t.dataset.csec) S.c.open[t.dataset.csec] = !S.c.open[t.dataset.csec];
+  else if (t.dataset.citem) { S.c.item = t.dataset.citem; S.c.q = ''; }
+  else if (t.dataset.cplace) { const [z, s] = t.dataset.cplace.split('|'); S.c.q = ''; S.c.item = null; if (s) { S.zone = z; S.sub = s; } syncPanel(); }
+  else return;
+  render();
+});
+document.addEventListener('change', (e) => {
+  if (e.target.dataset.act === 'aplace') { const [z, s] = e.target.value.split('|'); S.a.zone = z; S.a.sub = s; render(); }
+});
+document.addEventListener('input', (e) => {
+  const id = e.target.id;
+  if (id === 'cq' || id === 'dq') { (id === 'cq' ? S.c : S.d).q = e.target.value; render(); const i = $('#' + id); if (i) { i.focus(); i.setSelectionRange(i.value.length, i.value.length); } }
+});
+// tooltip
+document.addEventListener('mousemove', (e) => {
+  const t = e.target.closest('[data-tip]'), tip = $('#tip');
+  if (!t) { tip.style.display = 'none'; return; }
+  tip.innerHTML = t.dataset.tip; tip.style.display = 'block';
+  const x = Math.min(e.clientX + 14, innerWidth - tip.offsetWidth - 8), y = Math.min(e.clientY + 14, innerHeight - tip.offsetHeight - 8);
+  tip.style.left = x + 'px'; tip.style.top = y + 'px';
+});
+// drag T2
+let drag = null;
+document.addEventListener('mousedown', (e) => { const t = e.target.closest('#trk.t2'); if (t) drag = { dx: e.clientX - t.offsetLeft, dy: e.clientY - t.offsetTop }; });
+document.addEventListener('mousemove', (e) => { if (!drag) return; const t = $('#trk'); t.style.left = e.clientX - drag.dx + 'px'; t.style.top = e.clientY - drag.dy + 'px'; });
+document.addEventListener('mouseup', () => (drag = null));
+// chat command
+$('#chatin').addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter') return;
+  const v = e.target.value.trim(); e.target.value = '';
+  if (/^\/pagle\s+stats$/i.test(v)) { S.open = !S.open; render(); } else if (v) chat('Unknown command. Try /pagle stats', true);
+});
+// panel
+$('#stageSeg').onclick = (e) => e.target.dataset.v && loadStage(e.target.dataset.v);
+$('#trkSeg').onclick = (e) => e.target.dataset.v && setTracker(e.target.dataset.v);
+$('#todSeg').onclick = (e) => e.target.dataset.v && jumpTo(e.target.dataset.v === 'day' ? 14 : 23);
+$('#optTrk').onchange = (e) => { S.trackerOn = e.target.checked; render(); };
+$('#optBase').onchange = (e) => { S.baseline = e.target.checked; render(); };
+$('#placeSel').onchange = (e) => { [S.zone, S.sub] = e.target.value.split('|'); syncPanel(); render(); };
+$('#skillIn').onchange = (e) => { S.skill = Math.max(1, Math.min(300, +e.target.value || 1)); render(); };
+$('#bandU').onchange = (e) => { M.BANDS.unlucky = +e.target.value; render(); };
+$('#bandV').onchange = (e) => { M.BANDS.very = +e.target.value; render(); };
+$('#bCast').onclick = () => cast(1);
+$('#bCast10').onclick = () => cast(10);
+$('#bCast100').onclick = () => cast(100);
+$('#bWait').onclick = () => { S.now += 16 * 60e3; syncPanel(); render(); chat('(16 minutes pass. The Session has ended.)', true); };
+$('#bForce').onclick = () => { S.force = $('#forceSel').value; if (S.force) cast(1); };
+$('#swPrev').onclick = () => { const k = Object.keys(VARIANTS); setVariant(k[(k.indexOf(S.variant) + k.length - 1) % k.length]); };
+$('#swNext').onclick = () => { const k = Object.keys(VARIANTS); setVariant(k[(k.indexOf(S.variant) + 1) % k.length]); };
+document.addEventListener('keydown', (e) => {
+  if (e.target.closest('input,textarea,select,[contenteditable]')) return;
+  if (e.key === 'ArrowLeft') $('#swPrev').click();
+  if (e.key === 'ArrowRight') $('#swNext').click();
+});
+
+// ---------- boot ----------
+const params = new URLSearchParams(location.search);
+S.variant = VARIANTS[params.get('variant')] ? params.get('variant') : 'D';
+S.tracker = TRACKERS[params.get('tracker')] ? params.get('tracker') : '1';
+S.trackerOn = true; // on in the prototype so it can be judged; the real default is off
+loadStage(STAGES[params.get('stage')] ? params.get('stage') : 'late');
+chat('Pagle: type /pagle stats or use the compartment menu to toggle the Stats window.', true);
+</script>
+</body>
+</html>
