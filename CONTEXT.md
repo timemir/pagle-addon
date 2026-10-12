@@ -27,7 +27,7 @@ The Module that tracks Hunts and shows which are possible now, soon or later.
 _Avoid_: Hunt board, Hunt module
 
 **Tackle Board**:
-The Module offering opt-in rotating goals that bank when missed and never punish absence.
+The Module offering opt-in rotating goals (Notices and Expeditions) that never expire, so missed days bank rather than vanish, and that never punish absence.
 _Avoid_: dailies, quests, challenges
 
 **QoL**:
@@ -53,8 +53,12 @@ One item brought up by a fishing action, including junk and treasure. It counts 
 _Avoid_: fish (when junk/treasure is included), loot, drop
 
 **Catch log**:
-The Angler's permanent, append-only history of Casts, Skill Readings and Prestiges, and of the game client builds they were recorded on, kept by Core. Everything the Modules show is derived from it.
+The Angler's permanent, append-only history of Casts, Skill Readings, Prestiges and Module records, and of the game client builds they were recorded on, kept by Core. Everything the Modules show is derived from it.
 _Avoid_: history, database, event store
+
+**Module record**:
+An entry a Module has Core append to the Catch log for something only that Module understands and the log couldn't otherwise rebuild, such as a Notice being issued or rerolled. Core stores it without reading it.
+_Avoid_: Module event, Module data, choice
 
 **Skill Reading**:
 One character's fishing skill as Pagle saw it at a moment, recorded whenever it is read or changes.
@@ -100,7 +104,7 @@ _Avoid_: reset, rebirth, paragon
 
 **Fresh Water**:
 Bonus XP on Catches made after a break from fishing, the Pagle counterpart to WoW's rested XP. It is a bonus, never a penalty.
-_Avoid_: rested XP, Rested Angler (that belongs to the Tackle Board), diminishing returns
+_Avoid_: rested XP, Rested Angler, diminishing returns
 
 **Zone Mastery**:
 The Angler's rank in one zone, earned by the breadth of what they have caught there, not the volume.
@@ -191,6 +195,28 @@ _Avoid_: collection (which is the Ledger's), achievement, category
 **Retired Hunt**:
 A Hunt that no longer appears on the board because it was replaced or proved wrong. Completions already earned are kept.
 _Avoid_: removed hunt, deleted hunt, expired hunt
+
+### Tackle Board
+
+**Notice**:
+One goal on the Tackle Board, such as "4 different Species in Feralas". It never expires, never needs a time window, counts only Catches made after it appeared, and can be rerolled once. Three arrive each day, up to a cap.
+_Avoid_: daily, quest, challenge, task
+
+**Expedition**:
+The Tackle Board's larger weekly Notice. It never expires and banks like any Notice.
+_Avoid_: weekly, weekly quest
+
+**Campfire**:
+The Angler's run of consecutive days with at least one Notice or Expedition completed. A missed day burns Kindling instead of putting it out; the longest Campfire is kept for good.
+_Avoid_: streak, flame, login streak
+
+**Kindling**:
+What keeps the Campfire burning through a missed day. It is earned by keeping the fire lit and spent automatically, never bought or chosen.
+_Avoid_: freeze, streak saver
+
+**Fly Box**:
+The Tackle Board's finite collection of fly patterns, one tied for each Notice or Expedition completed.
+_Avoid_: collection (which is the Ledger's), tackle box (a reported Forever feature)
 
 ### Stats
 
