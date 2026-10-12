@@ -69,7 +69,7 @@ A run of the Angler's Casts with no break of 15 minutes or more, across characte
 _Avoid_: Fishing stretch (QoL's live span), trip, outing
 
 **Species**:
-The unit of the fish collection: one kind of fish. A trophy "pound" fish counts toward its family as a size record, not as a Species of its own.
+The unit of the fish collection: one kind of fish. A trophy "pound" fish counts toward its family as a weight record, not as a Species of its own.
 _Avoid_: entry, fish type, item (when meaning the collection unit)
 
 **Sub-collection**:
@@ -131,8 +131,12 @@ The Angler's bounded 100%: every Species caught, every Sub-collection item and e
 _Avoid_: 100%, completionist score, total progress
 
 **Simulated Size**:
-Pagle's own size for a fish Catch, shown as flavour and kept as personal records. It never counts toward progression and is never presented as game data.
+Pagle's own length for a Species Catch, decided by the Catch alone and never by anything the player did, shown with its Size band and kept as personal records per Species. Hunts and Notices may ask for a Size band, but it never earns Angler Level XP, stars, Zone Mastery or Ledger completion, and it is never presented as game data.
 _Avoid_: weight (which is the real number on trophy fish), size roll
+
+**Size band**:
+The word that places a Simulated Size within its Species' range: Tiddler, Typical, Hefty, Whopper or Monster. It stands in for heft; Pagle never shows a simulated weight.
+_Avoid_: weight, bracket, size class, trophy (which is a real pound fish)
 
 **Catch Milestone**:
 A lifetime Catch count the Angler reaches, such as the 1,000th Catch, recognised with a banner. It is recognition only and earns no XP.
