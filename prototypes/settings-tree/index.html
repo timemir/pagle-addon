@@ -1,0 +1,633 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Settings Tree Prototype</title>
+<!--
+  PROTOTYPE: throwaway, never ships.
+  Question (wow-fish "Prototype the Settings tree"):
+    What does Pagle's Settings tree look like: which options live in which section, in what order;
+    do toast style and sound set stay in the Announcements section now that Appearance mirrors them;
+    and are AceConfig/AceGUI worth adding, or is the native Settings API enough?
+  Plan: three structurally different trees in Blizzard's Options window, switchable via ?variant=A|B|C,
+        the floating bottom bar, or ←/→.
+        A = Owner tree (native Settings API): Core's options on the "Pagle" root, one subcategory per
+            Module (each Module registers its own, CORE-R42), Appearance last.
+        B = Topic tree (native Settings API): subcategories by what the player is doing (Fishing,
+            Announcements, Trackers, Looks); Modules add rows into Core's topics. Needs an API change.
+        C = One panel, AceConfig tabs: A's content rendered by AceConfigDialog/AceGUI into one canvas.
+        ?looks=appearance|both: toast style, sound set, tracker frames, binding and cover appear only on
+        the Appearance page, or also beside the thing they change.
+        All three read ONE settings model (first <script>). Changing a value in one variant shows in the
+        others. Look names and the lure list are placeholders.
+  Chosen in review: B, with looks in both places, Core's fixed topic list (Modules add rows with
+        M:AddSetting and can't add pages), Cozy mode greying out the budget, a reset for QoL's next-action
+        button, and the look page named "Look and Feel". It opens on B; A and C stay as the alternatives
+        that were considered.
+  Open the file directly in a browser. No build, no persistence.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Marcellus&display=swap" rel="stylesheet">
+<style>
+:root{--gold:#ffd100;--lab:#f2cf5b;--txt:#ece6d6;--dim:#8f8a80;--panel:#f6f4ef;--ink:#23211d;--ink2:#6b665c;--accent:#2f6f8f;--line:#dedad1;--ok:#7dff7d;--bad:#ff4d3a}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{display:flex;background:#0a1416;font-family:'Marcellus',Georgia,serif;color:var(--txt);font-size:13px;overflow:hidden}
+button{font:inherit;cursor:pointer}
+
+/* ---------- mock game screen ---------- */
+#scene{position:relative;flex:1;min-width:0;height:100vh;overflow:hidden;
+  background:linear-gradient(180deg,#5d7f8c 0%,#9db7b0 30%,#c9c19a 41%,#3c6a72 42%,#1f4650 60%,#0c2228 100%)}
+#scene::after{content:"";position:absolute;inset:0;background:rgba(0,0,0,.45);pointer-events:none;z-index:1}
+#chat{position:absolute;left:16px;bottom:44px;width:420px;font:12px/1.35 Arial,sans-serif;text-shadow:0 1px 1px #000;z-index:4}
+#chatlog div{color:#ffd27a;margin-top:1px}
+#chatlog div.sys{color:#ffff6a}
+
+/* ---------- Blizzard Options window ---------- */
+#opts{position:absolute;left:50%;top:50%;transform:translate(-50%,-52%);width:min(940px,calc(100% - 40px));height:min(680px,calc(100vh - 90px));z-index:10;
+  background:#121212;border:2px solid #6a6a6a;border-radius:8px;box-shadow:0 0 0 1px #000,inset 0 0 0 1px #2c2c2c,0 14px 40px rgba(0,0,0,.8);display:flex;flex-direction:column}
+#opts.closed{display:none}
+#opts .ttl{height:28px;flex:none;display:flex;align-items:center;justify-content:center;color:var(--gold);font-size:15px;background:linear-gradient(#3c3c3c,#1d1d1d);border-bottom:1px solid #000;border-radius:6px 6px 0 0;position:relative}
+#opts .x{position:absolute;right:5px;top:4px;width:20px;height:20px;border-radius:3px;border:1px solid #000;background:linear-gradient(#b02a1a,#5a0d06);color:#fff;font:bold 12px/16px Arial;padding:0}
+#opts .body{flex:1;display:flex;min-height:0}
+#nav{width:230px;flex:none;display:flex;flex-direction:column;border-right:1px solid #2a2a2a;background:#0c0c0c}
+#nav .search{margin:10px;position:relative}
+#nav .search input{width:100%;background:#000;border:1px solid #555;border-radius:3px;color:#fff;padding:4px 8px 4px 24px;font:12px Arial}
+#nav .search::before{content:"⌕";position:absolute;left:8px;top:2px;color:#888;font:15px Arial}
+#nav .tabs{display:flex;gap:2px;padding:0 10px}
+#nav .tabs button{flex:1;height:26px;background:linear-gradient(#262626,#141414);border:1px solid #4d4d4d;border-bottom:0;border-radius:6px 6px 0 0;color:#d8c46a;font-size:12px}
+#nav .tabs button.on{background:linear-gradient(#3a3a3a,#1e1e1e);color:#fff}
+#cats{flex:1;overflow:auto;border-top:1px solid #4d4d4d;margin:0 10px 10px;padding:6px 0}
+#cats .c{display:flex;align-items:center;gap:6px;padding:4px 8px;color:var(--lab);font:13px Marcellus;cursor:pointer;border-radius:3px;user-select:none}
+#cats .c.sub{padding-left:28px;font-size:12.5px;color:#e8d79a}
+#cats .c.sub2{padding-left:44px;font-size:12px;color:#d9cb92}
+#cats .c:hover{background:#1f2a36}
+#cats .c.on{background:linear-gradient(90deg,#2b4a6e,#1a2a3c);color:#fff}
+#cats .c .tw{width:12px;color:#aaa;font:10px Arial}
+#cats .c.dim{color:#6f6a5e;cursor:default}
+#main{flex:1;display:flex;flex-direction:column;min-width:0}
+#main .ph{display:flex;align-items:center;padding:12px 18px 8px;border-bottom:1px solid #333}
+#main .ph h2{margin:0;font:normal 20px Marcellus;color:#fff}
+#main .ph .crumb{font:12px Arial;color:#9a9284;margin-left:10px}
+#main .ph .btn{margin-left:auto}
+#list{flex:1;overflow:auto;padding:4px 0 18px}
+.foot{flex:none;display:flex;justify-content:flex-end;gap:6px;padding:8px 12px;border-top:1px solid #2a2a2a}
+.btn{height:22px;padding:0 14px;border:1px solid #000;border-radius:3px;background:linear-gradient(#a8200f,#5e0d04);color:#ffd100;font:12px Marcellus;box-shadow:inset 0 1px 0 rgba(255,255,255,.2);white-space:nowrap}
+.btn:hover{filter:brightness(1.2)}
+.btn[disabled]{background:linear-gradient(#444,#222);color:#888;cursor:default;filter:none}
+
+/* native Settings rows */
+.sh{margin:16px 18px 4px 22px;font:16px Marcellus;color:#fff;display:flex;align-items:baseline;gap:8px}
+.sh small{font:11px Arial;color:#8d877b}
+.sr{display:flex;align-items:center;min-height:30px;padding:2px 18px 2px 38px;border-radius:3px;margin:0 8px}
+.sr:hover{background:rgba(255,255,255,.05)}
+.sr.child{padding-left:62px}
+.sr.child .lb::before{content:"";display:inline-block;width:8px;height:8px;border-left:1px solid #666;border-bottom:1px solid #666;margin:0 7px 3px -15px}
+.sr .lb{flex:0 0 46%;color:var(--lab);font:13px Marcellus;padding-right:10px}
+.sr .ct{flex:1;display:flex;align-items:center;gap:8px;min-width:0}
+.sr.dis .lb,.sr.dis .ct{opacity:.38;pointer-events:none}
+.own{font:10px/14px Arial;color:#9fb7cf;background:#1c2a38;border:1px solid #33475c;border-radius:3px;padding:0 5px;margin-left:6px;vertical-align:1px}
+.ck{width:22px;height:22px;flex:none;border:1px solid #6b6b6b;border-radius:3px;background:linear-gradient(#1b1b1b,#050505);box-shadow:inset 0 0 0 1px #000;position:relative;padding:0}
+.ck.on::after{content:"✔";position:absolute;inset:0;color:var(--gold);font:bold 17px/20px Arial;text-align:center;text-shadow:0 0 3px #000}
+input[type=range]{flex:1;max-width:230px;accent-color:#d8a520}
+.val{font:12px Arial;color:#fff;min-width:48px}
+select.dd{min-width:230px;max-width:100%;background:linear-gradient(#2a2a2a,#121212);border:1px solid #6b6b6b;border-radius:3px;color:#fff;font:12px Arial;padding:4px 6px}
+.kb{min-width:110px;height:24px;background:linear-gradient(#2a2a2a,#111);border:1px solid #6b6b6b;border-radius:3px;color:#fff;font:12px Arial}
+.kb.wait{border-color:var(--gold);color:var(--gold)}
+.kb.nb{color:#888}
+.sub{font:11px Arial;color:#9a9284}
+.sub a,.lnk{color:#6fb6ff;cursor:pointer;text-decoration:none}
+.sub a:hover,.lnk:hover{text-decoration:underline}
+.sp{margin:6px 18px 6px 38px;font:12.5px/1.5 Arial;color:#cfc8b8}
+.sp.note{color:#9a9284;font-size:11.5px}
+.sp b{color:#fff;font-weight:normal}
+table.st{margin:2px 18px 4px 38px;border-collapse:collapse;font:12.5px Arial;width:calc(100% - 76px)}
+table.st td{padding:4px 6px;border-bottom:1px solid #1e1e1e;color:#e6dfcf}
+table.st td.v{color:#8d877b;width:70px}
+table.st td.s{width:170px}
+table.st td.a{text-align:right}
+.s-On{color:var(--ok)}.s-Off{color:#9a9a9a}.s-Not{color:#666}.s-Needs{color:#ffa640}.s-Failed{color:var(--bad)}
+.wl{display:flex;flex-direction:column;gap:3px;width:100%}
+.wl .w{display:flex;align-items:center;gap:6px;font:12px Arial;color:#e6dfcf}
+.wl .w .xx{margin-left:auto;background:none;border:1px solid #444;border-radius:3px;color:#ccc;font:11px Arial;padding:1px 6px}
+.res .rg{margin:10px 18px 0 22px;font:12px Arial;color:#9a9284;text-transform:uppercase;letter-spacing:.06em}
+.vbanner{margin:10px 18px 0;padding:7px 10px;border:1px dashed #6a5a2a;border-radius:4px;font:11.5px/1.45 Arial;color:#d9c98a;background:rgba(80,60,10,.18)}
+
+/* AceGUI rendering (variant C) */
+.ace{padding:10px 16px}
+.ace .acehead{font:12px Arial;color:#9a9284;margin:0 0 8px}
+.ace .tabs{display:flex;flex-wrap:wrap;gap:1px;padding-left:6px}
+.ace .tabs button{height:24px;padding:0 10px;margin-bottom:-1px;background:linear-gradient(#2a2a2a,#0d0d0d);border:1px solid #555;border-bottom:0;border-radius:7px 7px 0 0;color:#ffd100;font:12px Arial}
+.ace .tabs button.on{background:#000;color:#fff;border-color:#777;position:relative;z-index:1}
+.ace .tbody{border:1px solid #777;border-radius:0 6px 6px 6px;background:rgba(0,0,0,.65);padding:10px 12px;min-height:300px}
+.ace .ig{border:1px solid #555;border-radius:5px;padding:16px 10px 8px;margin:14px 0 4px;position:relative;display:flex;flex-wrap:wrap;gap:6px 10px;background:rgba(255,255,255,.02)}
+.ace .ig>.igt{position:absolute;left:10px;top:-8px;padding:0 4px;background:#0a0a0a;font:12px Arial;color:#ffd100}
+.ace .w{width:220px;font:12px Arial;color:#fff;display:flex;flex-direction:column;justify-content:flex-end;min-height:44px}
+.ace .w.full{width:100%;min-height:0}
+.ace .w.dis{opacity:.4;pointer-events:none}
+.ace .alab{color:#ffd100;margin-bottom:3px}
+.ace .acb{display:flex;align-items:center;gap:4px;cursor:pointer;min-height:26px}
+.ace .acb i{width:24px;height:24px;flex:none;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Crect x='4' y='4' width='16' height='16' rx='2' fill='%23111' stroke='%23999'/%3E%3C/svg%3E")}
+.ace .acb.on i{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Crect x='4' y='4' width='16' height='16' rx='2' fill='%23111' stroke='%23999'/%3E%3Cpath d='M6 12l5 5 9-12' fill='none' stroke='%23ffd100' stroke-width='3'/%3E%3C/svg%3E")}
+.ace .asl{display:flex;flex-direction:column;align-items:center}
+.ace .asl .alab{align-self:center}
+.ace .asl input[type=range]{width:100%;max-width:none;accent-color:#888}
+.ace .asl .mm{display:flex;justify-content:space-between;width:100%;font-size:10px;color:#aaa;margin-top:-2px}
+.ace .asl .eb{width:60px;text-align:center;background:#000;border:1px solid #555;color:#fff;font:11px Arial;margin-top:-14px}
+.ace select{background:#151515 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20'%3E%3Ccircle cx='10' cy='10' r='8' fill='%23b8860b' stroke='%23000'/%3E%3Cpath d='M6 8h8l-4 5z' fill='%23fff'/%3E%3C/svg%3E") no-repeat right 2px center;appearance:none;border:1px solid #444;border-radius:2px;color:#fff;font:12px Arial;padding:4px 24px 4px 8px}
+.ace .abtn{height:22px;border:1px solid #000;border-radius:3px;background:linear-gradient(#a8200f,#5e0d04);color:#ffd100;font:12px Arial;align-self:flex-start;padding:0 12px}
+.ace .adesc{color:#ddd;line-height:1.45}
+.ace .adesc.mute{color:#9a9284}
+.ace table.st{margin:0;width:100%}
+
+#popup{position:absolute;left:50%;top:26%;transform:translateX(-50%);width:360px;z-index:50;display:none;padding:16px 16px 12px;text-align:center;background:rgba(0,0,0,.92);border:2px solid #8a8a8a;border-radius:8px;box-shadow:0 0 0 1px #000,0 10px 30px #000;font:13px/1.45 Arial,sans-serif;color:#fff}
+#popup.on{display:block}
+#popup .row{display:flex;gap:8px;justify-content:center;margin-top:12px}
+#tip{position:fixed;z-index:60;max-width:320px;padding:7px 9px;background:rgba(6,8,20,.96);border:1px solid #9a9a9a;border-radius:4px;box-shadow:0 0 0 1px #000;font:12px/1.4 Arial,sans-serif;color:#fff;pointer-events:none;display:none}
+#tip b{color:var(--gold);font-weight:normal;font-size:13px;display:block;margin-bottom:2px}
+#reopen{position:absolute;left:50%;top:40%;transform:translateX(-50%);z-index:5}
+
+/* ---------- control panel (not part of the design) ---------- */
+#panel{width:380px;flex:none;height:100vh;overflow-y:auto;background:var(--panel);color:var(--ink);font:13px/1.45 system-ui,-apple-system,Segoe UI,sans-serif;border-left:1px solid #000}
+#panel header{padding:14px 16px 10px;border-bottom:1px solid var(--line)}
+#panel h1{font-size:16px;margin:0}#panel h1 small{font-weight:normal;color:var(--ink2);font-size:12px;margin-left:6px}
+#panel .q{margin:6px 0 0;color:var(--ink2);font-size:12px}
+#panel section{padding:10px 16px;border-bottom:1px solid var(--line)}
+#panel h2{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink2);margin:0 0 6px}
+#panel .b{background:#fff;border:1px solid #c9c4b8;border-radius:5px;padding:4px 9px;color:var(--ink);font-size:12px}
+#panel .b:hover{border-color:var(--accent)}
+#panel .btns{display:flex;flex-wrap:wrap;gap:5px}
+#panel .vnote{background:#fff;border:1px solid var(--line);border-radius:5px;padding:8px 10px;font-size:12px}
+#panel .vnote ul{margin:4px 0;padding-left:18px}
+#panel table{width:100%;border-collapse:collapse;font-size:12px}
+#panel td{padding:2px 4px;border-bottom:1px solid #eee}
+#panel select{font-size:12px}
+#panel label{display:flex;align-items:center;gap:6px;margin:3px 0;font-size:12px}
+#panel pre{margin:0;font:11px/1.35 ui-monospace,Consolas,monospace;background:#fff;border:1px solid var(--line);border-radius:5px;padding:8px;max-height:340px;overflow:auto;white-space:pre-wrap}
+.seg{display:inline-flex;border:1px solid #c9c4b8;border-radius:5px;overflow:hidden}
+.seg button{border:0;background:#fff;padding:4px 9px;font-size:12px;color:var(--ink)}
+.seg button+button{border-left:1px solid #c9c4b8}
+.seg button.on{background:var(--accent);color:#fff}
+#panel ol{margin:4px 0;padding-left:18px;font-size:12px}
+#panel li{margin:3px 0}
+
+#switcher{position:absolute;left:50%;bottom:8px;transform:translateX(-50%);display:flex;align-items:center;gap:2px;background:#111;color:#fff;border-radius:999px;padding:3px;box-shadow:0 4px 14px rgba(0,0,0,.6);font:12px system-ui,sans-serif;z-index:40;border:1px solid #fff3}
+#switcher button{background:none;border:0;color:#fff;height:24px;border-radius:999px;padding:0 9px}
+#switcher button:hover{background:#333}
+#switcher span{padding:0 10px;min-width:270px;text-align:center}
+#switcher .sepv{width:1px;height:16px;background:#444;margin:0 4px}
+</style>
+</head>
+<body>
+<div id="scene">
+  <div id="opts"></div>
+  <button id="reopen" class="btn" style="display:none">/pagle (open Settings)</button>
+  <div id="popup"></div>
+  <div id="chat"><div id="chatlog"></div></div>
+  <div id="switcher"><button id="swPrev" title="Previous variant (←)">◀</button><span id="swLabel"></span><button id="swNext" title="Next variant (→)">▶</button><span class="sepv"></span><button id="swLooks" title="Where looks appear"></button></div>
+  <div id="tip"></div>
+</div>
+
+<aside id="panel">
+  <header>
+    <h1>Settings tree <small>prototype · throwaway</small></h1>
+    <p class="q">Which options go where, in what order; whether toast style and sound set also stay in Announcements; and native Settings API vs AceConfig. Flip the trees (bottom bar, ←/→), flip where looks appear (bottom bar, right), switch Modules off, try the search box. All three read the same settings.</p>
+  </header>
+  <section><h2>This variant</h2><div class="vnote" id="vnote"></div></section>
+  <section>
+    <h2>Modules (AddOns list state)</h2>
+    <table id="modtbl"></table>
+    <label><input type="checkbox" id="started"> Tackle Board started</label>
+  </section>
+  <section>
+    <h2>Open from</h2>
+    <div class="btns">
+      <button class="b" data-open="">/pagle</button>
+      <button class="b" data-open="Hunts">OpenSettings("Hunts")</button>
+      <button class="b" data-open="Stats">OpenSettings("Stats")</button>
+      <button class="b" data-open="QoL">OpenSettings("QoL")</button>
+    </div>
+  </section>
+  <section>
+    <h2>Saved settings (PagleDB.profile + Module DBs)</h2>
+    <pre id="state"></pre>
+  </section>
+  <section>
+    <h2>Decided in review</h2>
+    <ol>
+      <li>Tree <b>B</b>, on the native Settings API. AceConfig/AceGUI are not added.</li>
+      <li>Looks show in both places: beside what they change, and every slot on <b>Look and Feel</b>.</li>
+      <li>Core's topic list is fixed. Modules add rows with <code>M:AddSetting(topic, …)</code> and can't add pages.</li>
+      <li>Cozy mode greys out the Interruption budget.</li>
+      <li>QoL's next-action button gets a position reset.</li>
+    </ol>
+  </section>
+</aside>
+
+<script>
+/* ================= one settings model, read by every variant ================= */
+const MODS=[
+  {key:'Ledger',label:'Ledger',view:'Fish Journal'},
+  {key:'Hunts',label:'Hunts',view:'Hunts board'},
+  {key:'Stats',label:'Stats',view:'Stats'},
+  {key:'TackleBoard',label:'Tackle Board',view:'Tackle Board'},
+  {key:'QoL',label:'QoL',view:null},
+];
+const STATES=['On','Off','Not installed','Needs a newer Pagle','Failed to start'];
+const world={state:{Ledger:'On',Hunts:'On',Stats:'On',TackleBoard:'On',QoL:'On'},started:false,reportRows:3};
+const on=m=>world.state[m]==='On';
+
+const DEF={
+  cozy:false,budget:true,budgetCount:4,budgetWindow:5,reloadReminder:false,
+  toast:'timber',sound:'driftwood',crest:'plain',binding:'oak',cover:'canvas',huntsFrame:'none',statsFrame:'none',tackleFrame:'none',
+  huntsTracker:true,huntsAnnounce:false,
+  statsTracker:false,watched:['Stonescale Eel · Azshara','Deviate Fish · Wailing Caverns'],
+  tackleTracker:true,
+  input:'both',keyFish:'`',keySwap:'',fishingSet:'none',lures:'best',lureItem:'aquadynamic',clams:true,audioMix:true,bgSound:false,autoLoot:true,indicator:true,
+};
+let S=JSON.parse(JSON.stringify(DEF));
+const OWNER={cozy:'Core',budget:'Core',budgetCount:'Core',budgetWindow:'Core',reloadReminder:'Core',toast:'Core',sound:'Core',crest:'Core',binding:'Core',cover:'Core',huntsFrame:'Core',statsFrame:'Core',tackleFrame:'Core',
+  huntsTracker:'Hunts',huntsAnnounce:'Hunts',statsTracker:'Stats',watched:'Stats',tackleTracker:'TackleBoard',
+  input:'QoL',keyFish:'Bindings',keySwap:'Bindings',fishingSet:'QoL',lures:'QoL',lureItem:'QoL',clams:'QoL',audioMix:'QoL',bgSound:'QoL',autoLoot:'QoL',indicator:'QoL'};
+
+/* look slots: g = [id, name, state]  state: d default, o owned, s for sale, L"n" earned at Angler Level n */
+const SLOTS=[
+  {k:'toast',label:'Toast style',mod:'Core',cat:'Announcements',topic:'ann',g:[['timber','Timber','d'],['ripple','Ripple','o'],['lantern','Lantern Glow','s']]},
+  {k:'sound',label:'Sound set',mod:'Core',cat:'Announcements',topic:'ann',g:[['driftwood','Driftwood','d'],['gilded','Gilded','s']]},
+  {k:'crest',label:'Bookplate crest',mod:'Core',cat:'Bookplate',topic:'ledger',g:[['plain','Plain','d'],['anchor','Anchor','o'],['heron','Heron','s'],['leviathan','Leviathan','s']]},
+  {k:'binding',label:'Journal binding',mod:'Ledger',cat:'Fish Journal',topic:'ledger',g:[['oak','Oak Board','d'],['drift','Driftwood','L10'],['deep','Deepwater','L40x'],['salt','Saltstained','s'],['kelp','Kelp Green','s']]},
+  {k:'cover',label:'Notebook cover',mod:'Hunts',cat:'Hunts',topic:'hunts',g:[['canvas','Canvas','d'],['oilskin','Oilskin','s'],['field','Field Green','s']]},
+  {k:'huntsFrame',label:'Hunts tracker frame',mod:'Hunts',cat:'Trackers',topic:'trk',g:[['none','No frame','d'],['brass','Brass','s'],['rope','Rope','s']]},
+  {k:'statsFrame',label:'Stats tracker frame',mod:'Stats',cat:'Trackers',topic:'trk',g:[['none','No frame','d'],['brass','Brass','s'],['rope','Rope','s']]},
+  {k:'tackleFrame',label:'Tackle Board tracker frame',mod:'TackleBoard',cat:'Trackers',topic:'trk',g:[['none','No frame','d'],['cork','Corkboard','o'],['plank','Driftwood Plank','s']]},
+];
+const slot=k=>SLOTS.find(s=>s.k===k);
+const owned=s=>s.g.filter(g=>g[2]==='d'||g[2]==='o'||/^L\d+$/.test(g[2]));
+const moreInShop=s=>s.g.filter(g=>g[2]==='s').length;
+const slotLive=s=>s.mod==='Core'||on(s.mod);
+
+const SETS=[['none','None (gear stays as it is)'],['pagle','Pagle Fishing'],['herbs','Herbing'],['tank','Tank']];
+const LURES=[['bauble','Shiny Bauble (+25)'],['nightcrawlers','Nightcrawlers (+50)'],['bright','Bright Baubles (+75)'],['aquadynamic','Aquadynamic Fish Attractor (+100)']];
+
+/* ================= page definitions ================= */
+/* row: {t, k?, label, tip, child, dis(), ...}  t = h | p | note | cb | sl | dd | btn | kb | status | watch | look | link */
+const T={
+  cozy:{t:'cb',k:'cozy',label:'Cozy mode',tip:'Nothing pops up or plays. Every moment waits in the Session summary. A Legend\'s splash still shows, silently.'},
+  budget:{t:'cb',k:'budget',label:'Interruption budget',tip:'When toasts come close together, the small ones (size records, new junk or treasure) step down to a quiet Nod. Records always keep their ruler.',dis:()=>S.cozy,why:'Cozy mode holds everything, so the budget has nothing to do.'},
+  budgetCount:{t:'sl',k:'budgetCount',label:'Interruptions',min:1,max:10,unit:'',child:1,dis:()=>S.cozy||!S.budget},
+  budgetWindow:{t:'sl',k:'budgetWindow',label:'Per',min:1,max:15,unit:' min',child:1,dis:()=>S.cozy||!S.budget},
+  reload:{t:'cb',k:'reloadReminder',label:'Remind me to /reload when Casts are unsaved',tip:'A chat line every 50 Casts not yet saved. WoW only saves on /reload or logout, so a crash loses the Session.'},
+  dock:{t:'btn',label:'Tracker position',text:'Reset',tip:'Shift-drag any Pagle tracker to move them all. This puts them back under the minimap.',act:()=>chat('Pagle: trackers moved back under the minimap.')},
+  help:{t:'btn',label:'Help chart the waters',text:()=>'Open Field report'+(world.reportRows?' ('+world.reportRows+')':''),tip:'Copy what you\'ve caught that Pagle\'s data doesn\'t know yet, and paste it into the issue form.',act:()=>chat('Pagle: the Field report box opens.')},
+  huntsTracker:{t:'cb',k:'huntsTracker',label:'Show pinned Hunts',tip:'A small tracker under the minimap with the Hunts you\'ve pinned on the board.'},
+  huntsAnnounce:{t:'cb',k:'huntsAnnounce',label:'Announce when a pinned Hunt\'s window opens',tip:'A quiet Nod that fades when the window closes. Off: windows open silently.'},
+  statsTracker:{t:'cb',k:'statsTracker',label:'Show the live tracker',tip:'This Session\'s Casts and catches, plus the Dry spells you watch. Watching a Dry spell in the Stats book turns it on.'},
+  watch:{t:'watch',label:'Watched Dry spells',child:1},
+  tackleTracker:{t:'cb',k:'tackleTracker',label:'Show goals workable here',tip:'Lists the Notices and Expeditions the zone you\'re in can move.'},
+  start:{t:'btn',label:'Your board is empty until you start it',text:'Start my board',tip:'Notices begin today. Nothing is owed for earlier days.',act:()=>{world.started=true;chat('Pagle: your Tackle Board is up. Three Notices are pinned.');}},
+  input:{t:'dd',k:'input',label:'Cast with',opts:[['key','Fishing key'],['click','Double right-click'],['both','Both']],tip:'Also on the compartment menu ("Input: Both") and /pagle qol input.'},
+  keyFish:{t:'kb',k:'keyFish',label:'Fishing key',child:1,tip:'Each press does the next single thing: cast, reel, or a lure, gear or clam when needed.',dis:()=>S.input==='click'},
+  fishingSet:{t:'dd',k:'fishingSet',label:'Fishing set',opts:SETS,tip:'The Fishing key puts it on when no pole is in hand. Double-click skips this.'},
+  saveSet:{t:'btn',label:'',text:'Save what I\'m wearing as my fishing set',child:1,act:()=>{S.fishingSet='pagle';chat('Pagle: saved your gear as the set "Pagle Fishing".');}},
+  keySwap:{t:'kb',k:'keySwap',label:'Swap gear',child:1,tip:'Swaps between your fishing set and what you wore before (saved as "Pagle Previous").',dis:()=>S.fishingSet==='none'},
+  lures:{t:'dd',k:'lures',label:'Lures',opts:[['off','Off'],['best','Best I have'],['one','Only this one']],tip:'A press before a cast applies a lure when none is on.'},
+  lureItem:{t:'dd',k:'lureItem',label:'Lure',opts:LURES,child:1,dis:()=>S.lures!=='one'},
+  clams:{t:'cb',k:'clams',label:'Open clams between Casts',tip:'One clam per Fishing key press, never during a cast.'},
+  audioMix:{t:'cb',k:'audioMix',label:'Fishing audio mix',tip:'While you fish: effects at full, music, ambience and dialog muted, master untouched. Put back afterwards, even after a crash.'},
+  bgSound:{t:'cb',k:'bgSound',label:'Keep sound when the game is in the background',child:1,dis:()=>!S.audioMix},
+  autoLoot:{t:'cb',k:'autoLoot',label:'Auto-loot while fishing',tip:'Only while you fish. Skipped if you already have auto-loot on.'},
+  indicator:{t:'cb',k:'indicator',label:'Show the next-action button',tip:'Shows what your next Fishing key press will do. Shift-drag to move.'},
+  indReset:{t:'btn',label:'Button position',text:'Reset',child:1,dis:()=>!S.indicator,act:()=>chat('Pagle: next-action button moved back above the action bar.')},
+};
+const look=(k,child)=>({t:'look',k,child});
+const openBtn=(m)=>({t:'btn',label:MODS.find(x=>x.key===m).view,text:'Open',act:()=>{chat('Pagle: the '+MODS.find(x=>x.key===m).view+' opens; Settings closes.');}});
+const qolRows=()=>[
+  {t:'h',text:'Casting'},T.input,T.keyFish,
+  {t:'h',text:'Gear'},T.fishingSet,T.saveSet,T.keySwap,
+  {t:'h',text:'Lures and clams'},T.lures,T.lureItem,T.clams,
+  {t:'h',text:'While you fish'},T.audioMix,T.bgSound,T.autoLoot,T.indicator,T.indReset,
+];
+const appearanceRows=()=>{
+  const r=[{t:'p',html:'Looks you own. Pick one per slot here or with <b>Use</b> in the Curio Shop; both change the same thing.'}];
+  let cat=null;
+  for(const s of SLOTS){ if(!slotLive(s))continue; if(s.cat!==cat){cat=s.cat;r.push({t:'h',text:cat});} r.push(look(s.k)); }
+  r.push({t:'h',text:'Curio Shop'},{t:'btn',label:'Buy more looks with Pagle Coins',text:'Open the Curio Shop',act:()=>chat('Pagle: the Curio Shop opens.')});
+  return r;
+};
+const both=()=>looksMode==='both';
+const noneOn=()=>!MODS.some(m=>on(m.key));
+const anyTracker=()=>on('Hunts')||on('Stats')||on('TackleBoard');
+
+const VARIANTS={
+A:{name:'Owner tree (native Settings API)',
+  note:`<b>Core's options on the root, one subcategory per Module, Appearance last.</b><ul>
+   <li>Matches the contract as written: each Module registers its own subcategory (CORE-R42).</li>
+   <li>Every option has one home. A Module that's switched off takes its page with it.</li>
+   <li>Blizzard's search finds every option. Defaults resets one page.</li>
+   <li>Cost: a Module's tracker, Announcement and look options sit on three pages (its own, Announcements on the root, Appearance).</li></ul>`,
+  pages(){
+    const P=[];
+    const root=[];
+    if(noneOn())root.push({t:'p',html:'<b>Recording your Catches.</b> Enable a Module to see them.'});
+    root.push({t:'h',text:'Announcements'},T.cozy,T.budget,T.budgetCount,T.budgetWindow);
+    if(both())root.push(look('toast'),look('sound')); else root.push({t:'link',label:'Toast style and sound set',text:'Choose in Appearance',page:'appearance'});
+    if(anyTracker())root.push({t:'h',text:'Trackers'},T.dock);
+    root.push({t:'h',text:'Saving'},T.reload,{t:'h',text:'Modules'},{t:'status'},{t:'note',html:'Turn Modules on or off in the AddOns list. A Module that\'s off loads nothing.'},{t:'h',text:'Help chart the waters'},T.help);
+    P.push({id:'root',title:'Pagle',rows:root});
+    if(on('Ledger'))P.push({id:'Ledger',title:'Ledger',parent:'root',rows:[openBtn('Ledger'),{t:'note',html:'The Ledger has no settings of its own. Your title, binding and Prestige are chosen in the Fish Journal.'},...(both()?[{t:'h',text:'Looks'},look('binding'),look('crest')]:[])]});
+    if(on('Hunts'))P.push({id:'Hunts',title:'Hunts',parent:'root',rows:[openBtn('Hunts'),...(both()?[look('cover')]:[]),{t:'h',text:'Tracker'},T.huntsTracker,...(both()?[look('huntsFrame',1)]:[]),{t:'h',text:'Announcements'},T.huntsAnnounce]});
+    if(on('Stats'))P.push({id:'Stats',title:'Stats',parent:'root',rows:[openBtn('Stats'),{t:'h',text:'Tracker'},T.statsTracker,T.watch,...(both()?[look('statsFrame',1)]:[])]});
+    if(on('TackleBoard'))P.push({id:'TackleBoard',title:'Tackle Board',parent:'root',rows:world.started?[openBtn('TackleBoard'),{t:'note',html:'Board started 12 Oct 2026.'},{t:'h',text:'Tracker'},T.tackleTracker,...(both()?[look('tackleFrame',1)]:[])]:[{t:'p',html:'Three Notices a day and two weekly Expeditions, with a Campfire for the days you fish.'},T.start]});
+    if(on('QoL'))P.push({id:'QoL',title:'QoL',parent:'root',rows:qolRows()});
+    P.push({id:'appearance',title:'Appearance',parent:'root',rows:appearanceRows()});
+    return P;
+  }},
+B:{name:'Topic tree (native Settings API)',
+  note:`<b>Subcategories by what you're doing, not by who owns it.</b><ul>
+   <li>All trackers on one page, all Announcements on one page, each look beside its thing.</li>
+   <li>The root is a hub: each Module's status, its Open button and its first-run action.</li>
+   <li>Needs an API change: Modules add rows into Core's topic pages (e.g. <code>M:AddSetting("trackers", …)</code>) instead of their own subcategory, which amends CORE-R42.</li>
+   <li>Cost: you can't see a Module's settings in one place, and Core has to know every topic up front.</li></ul>`,
+  pages(){
+    const P=[];
+    const root=[];
+    if(noneOn())root.push({t:'p',html:'<b>Recording your Catches.</b> Enable a Module to see them.'});
+    root.push({t:'h',text:'Modules'},{t:'status',actions:1},{t:'note',html:'Turn Modules on or off in the AddOns list.'},{t:'h',text:'Help chart the waters'},T.help,{t:'h',text:'Saving'},T.reload);
+    P.push({id:'root',title:'Pagle',rows:root});
+    if(on('QoL'))P.push({id:'QoL',title:'Fishing',parent:'root',rows:qolRows()});
+    const ann=[T.cozy,T.budget,T.budgetCount,T.budgetWindow];
+    if(both())ann.push(look('toast'),look('sound'));
+    if(on('Hunts'))ann.push({t:'h',text:'From Modules'},{...T.huntsAnnounce,own:'Hunts'});
+    P.push({id:'ann',title:'Announcements',parent:'root',rows:ann});
+    if(anyTracker()){
+      const tr=[T.dock];
+      if(on('Hunts'))tr.push({t:'h',text:'Hunts'},T.huntsTracker,...(both()?[look('huntsFrame',1)]:[]));
+      if(on('Stats'))tr.push({t:'h',text:'Stats'},T.statsTracker,T.watch,...(both()?[look('statsFrame',1)]:[]));
+      if(on('TackleBoard'))tr.push({t:'h',text:'Tackle Board'},...(world.started?[T.tackleTracker,...(both()?[look('tackleFrame',1)]:[])]:[{t:'note',html:'Start your board first (on the Pagle page).'}]));
+      P.push({id:'trk',title:'Trackers',parent:'root',rows:tr});
+    }
+    P.push({id:'appearance',title:'Look and Feel',parent:'root',rows:appearanceRows()});
+    return P;
+  }},
+C:{name:'One panel, AceConfig tabs',
+  note:`<b>A's content, rendered by AceConfigDialog + AceGUI into one canvas with tabs.</b><ul>
+   <li>Options are one declarative table; AceConfigCmd could also build <code>/pagle</code> commands from it.</li>
+   <li>Adds AceConfig-3.0 (Registry, Cmd, Dialog) and AceGUI-3.0 with its widgets to the vendored Ace3 subset.</li>
+   <li>Not the native look: AceGUI widgets, flow layout, tabs inside the Options window.</li>
+   <li>It's a canvas, so Blizzard's search box can't find any Pagle option, and Defaults isn't wired unless we wire it.</li>
+   <li>Modules still register their own tab (one shared options table in Core).</li></ul>`,
+  pages(){ return [{id:'root',title:'Pagle',rows:[],ace:1}]; },
+  tabs(){ const A=VARIANTS.A.pages(); A[0]={...A[0],title:'General'}; return A; }},
+};
+const VKEYS=['A','B','C'];
+
+/* ================= UI state ================= */
+const qs=new URLSearchParams(location.search);
+let V=VKEYS.includes(qs.get('variant'))?qs.get('variant'):'B';
+let looksMode=qs.get('looks')==='appearance'?'appearance':'both';
+let tab='addons', cur='root', aceTab='root', expanded=true, query='', open=true, capture=null;
+
+function setURL(){const u=new URL(location);u.searchParams.set('variant',V);u.searchParams.set('looks',looksMode);history.replaceState(null,'',u);}
+function chat(t,sys){const d=document.createElement('div');d.textContent=t;if(sys)d.className='sys';const l=document.getElementById('chatlog');l.appendChild(d);while(l.children.length>8)l.firstChild.remove();}
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const val=v=>typeof v==='function'?v():v;
+
+/* ================= native renderer ================= */
+function rowNative(r,i){
+  const dis=r.dis&&r.dis();
+  const cls='sr'+(r.child?' child':'')+(dis?' dis':'');
+  const tipAttr=r.tip||(dis&&r.why)?` data-tip="${esc(r.label||'')}" data-tipb="${esc((dis&&r.why)||r.tip)}"`:'';
+  const own=r.own?`<span class="own">${esc(r.own)}</span>`:'';
+  const prop=r.proposal?`<span class="own" style="color:#e8c66a;border-color:#6a5a2a;background:#2a220c">proposal</span>`:'';
+  switch(r.t){
+    case 'h':return `<div class="sh">${esc(r.text)}</div>`;
+    case 'p':return `<div class="sp">${r.html}</div>`;
+    case 'note':return `<div class="sp note">${r.html}</div>`;
+    case 'cb':return `<div class="${cls}"${tipAttr}><div class="lb">${esc(r.label)}${own}</div><div class="ct"><button class="ck${S[r.k]?' on':''}" data-cb="${r.k}"></button></div></div>`;
+    case 'sl':return `<div class="${cls}"${tipAttr}><div class="lb">${esc(r.label)}</div><div class="ct"><input type="range" min="${r.min}" max="${r.max}" value="${S[r.k]}" data-sl="${r.k}" data-unit="${r.unit}"><span class="val">${S[r.k]}${r.unit}</span></div></div>`;
+    case 'dd':return `<div class="${cls}"${tipAttr}><div class="lb">${esc(r.label)}</div><div class="ct"><select class="dd" data-dd="${r.k}">${r.opts.map(o=>`<option value="${o[0]}"${S[r.k]===o[0]?' selected':''}>${esc(o[1])}</option>`).join('')}</select></div></div>`;
+    case 'btn':return `<div class="${cls}"${tipAttr}><div class="lb">${esc(r.label)}${prop}</div><div class="ct"><button class="btn" data-act="${i}">${esc(val(r.text))}</button></div></div>`;
+    case 'link':return `<div class="${cls}"><div class="lb">${esc(r.label)}</div><div class="ct"><a class="lnk" data-go="${r.page}">${esc(r.text)} ›</a></div></div>`;
+    case 'kb':return `<div class="${cls}"${tipAttr}><div class="lb">${esc(r.label)}</div><div class="ct"><button class="kb${capture===r.k?' wait':(S[r.k]?'':' nb')}" data-kb="${r.k}">${capture===r.k?'Press a key…':(S[r.k]?esc(S[r.k]):'Not Bound')}</button><span class="sub">also in Key Bindings › AddOns</span></div></div>`;
+    case 'look':{const s=slot(r.k);if(!slotLive(s))return '';const n=moreInShop(s);
+      return `<div class="${cls}"><div class="lb">${esc(s.label)}</div><div class="ct" style="flex-direction:column;align-items:flex-start;gap:2px"><select class="dd" data-dd="${s.k}">${owned(s).map(g=>`<option value="${g[0]}"${S[s.k]===g[0]?' selected':''}>${esc(g[1])}${/^L/.test(g[2])?' (Angler Level '+g[2].slice(1)+')':''}</option>`).join('')}</select>${n?`<span class="sub">${n} more in the <a data-shop="1">Curio Shop</a></span>`:''}</div></div>`;}
+    case 'status':return statusTable(r.actions);
+    case 'watch':return `<div class="${cls}${!S.statsTracker?' dis':''}"><div class="lb">${esc(r.label)} <span class="sub">${S.watched.length} of 3</span></div><div class="ct">${watchList()}</div></div>`;
+  }
+  return '';
+}
+function statusTable(actions){
+  return `<table class="st">${MODS.map(m=>{const st=world.state[m.key];let a='';
+    if(actions&&st==='On'){
+      if(m.key==='TackleBoard'&&!world.started)a=`<button class="btn" data-start="1">Start my board</button>`;
+      else if(m.view)a=`<button class="btn" data-openview="${m.key}">Open ${esc(m.view)}</button>`;
+      else a=`<a class="lnk" data-go="QoL">Fishing settings ›</a>`;
+    }
+    return `<tr><td>${m.label}</td><td class="v">1.0.0</td><td class="s s-${st.split(' ')[0]}">${st}</td>${actions?`<td class="a">${a}</td>`:''}</tr>`;}).join('')}</table>`;
+}
+function watchList(){
+  if(!S.watched.length)return `<span class="sub">None. Watch one from a fish in the Stats book.</span>`;
+  return `<div class="wl">${S.watched.map((w,j)=>`<div class="w">◉ ${esc(w)}<button class="xx" data-unwatch="${j}">Stop watching</button></div>`).join('')}</div>`;
+}
+
+/* ================= AceGUI renderer ================= */
+function rowAce(r,i){
+  const dis=r.dis&&r.dis();
+  const w=(inner,full)=>`<div class="w${full?' full':''}${dis?' dis':''}"${r.tip?` data-tip="${esc(r.label||'')}" data-tipb="${esc(r.tip)}"`:''}>${inner}</div>`;
+  switch(r.t){
+    case 'p':case 'note':return w(`<div class="adesc${r.t==='note'?' mute':''}">${r.html}</div>`,1);
+    case 'cb':return w(`<div class="acb${S[r.k]?' on':''}" data-cb="${r.k}"><i></i>${esc(r.label)}</div>`);
+    case 'sl':return w(`<div class="asl"><span class="alab">${esc(r.label)}</span><input type="range" min="${r.min}" max="${r.max}" value="${S[r.k]}" data-sl="${r.k}" data-unit="${r.unit}"><div class="mm"><span>${r.min}</span><span>${r.max}</span></div><input class="eb val" value="${S[r.k]}${r.unit}" readonly></div>`);
+    case 'dd':return w(`<span class="alab">${esc(r.label)}</span><select data-dd="${r.k}">${r.opts.map(o=>`<option value="${o[0]}"${S[r.k]===o[0]?' selected':''}>${esc(o[1])}</option>`).join('')}</select>`);
+    case 'btn':return w(`${r.label?`<span class="alab">${esc(r.label)}</span>`:''}<button class="abtn" data-act="${i}">${esc(val(r.text))}</button>`);
+    case 'link':return w(`<span class="alab">${esc(r.label)}</span><a class="lnk" data-acetab="${r.page}">${esc(r.text)} ›</a>`);
+    case 'kb':return w(`<span class="alab">${esc(r.label)}</span><button class="kb${capture===r.k?' wait':''}" data-kb="${r.k}">${capture===r.k?'Press a key…':(S[r.k]?esc(S[r.k]):'Not Bound')}</button>`);
+    case 'look':{const s=slot(r.k);if(!slotLive(s))return '';const n=moreInShop(s);
+      return w(`<span class="alab">${esc(s.label)}</span><select data-dd="${s.k}">${owned(s).map(g=>`<option value="${g[0]}"${S[s.k]===g[0]?' selected':''}>${esc(g[1])}</option>`).join('')}</select>${n?`<span class="adesc mute" style="font-size:11px">${n} more in the Curio Shop</span>`:''}`);}
+    case 'status':return w(statusTable(false),1);
+    case 'watch':return w(`<span class="alab">${esc(r.label)} (${S.watched.length}/3)</span>${watchList()}`,1);
+  }
+  return '';
+}
+function renderAce(rows){
+  let html='',open=false,i=0;
+  for(const r of rows){
+    if(r.t==='h'){ if(open)html+='</div>'; html+=`<div class="ig"><span class="igt">${esc(r.text)}</span>`; open=true; }
+    else html+=rowAce(r,i);
+    i++;
+  }
+  if(open)html+='</div>';
+  return html;
+}
+
+/* ================= window ================= */
+let actRows=[];
+function render(){
+  const v=VARIANTS[V];
+  const pages=v.pages();
+  if(!pages.find(p=>p.id===cur))cur='root';
+  const o=document.getElementById('opts');
+  o.className=open?'':'closed';
+  document.getElementById('reopen').style.display=open?'none':'';
+  // nav
+  let cats='';
+  if(tab==='game'){
+    cats=['Controls','Interface','Accessibility','Audio','Graphics','Keybindings'].map(c=>`<div class="c${cur==='g:'+c?' on':''}" data-cat="g:${c}"><span class="tw"></span>${c}</div>`).join('');
+  }else{
+    cats+=`<div class="c dim"><span class="tw"></span>Details!</div>`;
+    cats+=`<div class="c${cur==='root'?' on':''}" data-cat="root"><span class="tw" data-tw="1">${pages.length>1?(expanded?'▼':'▶'):''}</span>Pagle</div>`;
+    if(expanded)for(const p of pages.filter(p=>p.parent==='root'))cats+=`<div class="c sub${cur===p.id?' on':''}" data-cat="${p.id}">${esc(p.title)}</div>`;
+    cats+=`<div class="c dim"><span class="tw"></span>Plater</div>`;
+  }
+  // main
+  let title,crumb='',body;
+  actRows=[];
+  if(query){
+    title='Search Results';
+    body=searchResults(pages);
+  }else if(cur.startsWith('g:')){
+    title=cur.slice(2);
+    body=cur==='g:Keybindings'?`<div class="sh">AddOns <small>Pagle</small></div>`+[{t:'kb',k:'keyFish',label:'Fishing key'},{t:'kb',k:'keySwap',label:'Swap gear'}].map(rowNative).join(''):`<div class="sp note">Blizzard's own settings.</div>`;
+  }else{
+    const p=pages.find(p=>p.id===cur);
+    title=p.title; if(p.parent)crumb='Pagle ›';
+    actRows=p.ace?[]:p.rows;
+    if(p.ace)body=aceBody(v);
+    else body=p.rows.map(rowNative).join('');
+  }
+  o.innerHTML=`<div class="ttl">Options<button class="x" data-close="1">✕</button></div>
+   <div class="body"><div id="nav"><div class="search"><input id="q" placeholder="Search" value="${esc(query)}"></div>
+     <div class="tabs"><button data-tab="game" class="${tab==='game'?'on':''}">Game</button><button data-tab="addons" class="${tab==='addons'?'on':''}">AddOns</button></div>
+     <div id="cats">${cats}</div></div>
+   <div id="main"><div class="ph"><h2>${esc(title)}</h2><span class="crumb">${crumb}</span>${query?'':'<button class="btn" data-defaults="1">Defaults</button>'}</div><div id="list">${body}</div></div></div>
+   <div class="foot"><button class="btn" data-close="1">Close</button></div>`;
+  const q=document.getElementById('q');
+  if(document.activeElement===document.body&&query){}
+  renderPanel();
+}
+function aceBody(v){
+  const tabs=v.tabs();
+  if(!tabs.find(t=>t.id===aceTab))aceTab='root';
+  const t=tabs.find(t=>t.id===aceTab);
+  actRows=t.rows;
+  return `<div class="ace"><div class="acehead">Pagle 1.0.0 · Settings rendered by AceConfigDialog</div>
+   <div class="tabs">${tabs.map(x=>`<button data-acetab="${x.id}" class="${x.id===aceTab?'on':''}">${esc(x.title)}</button>`).join('')}</div>
+   <div class="tbody">${renderAce(t.rows)}</div></div>`;
+}
+function searchResults(pages){
+  const q=query.toLowerCase();
+  if(VARIANTS[V].pages()[0].ace)
+    return `<div class="sp">No results for Pagle.</div><div class="vbanner">AceConfigDialog draws its options into a canvas frame, so Blizzard's search index never sees them. Only Blizzard's own settings would show here.</div>`;
+  let html='<div class="res">',hit=0;
+  for(const p of pages){
+    const rows=p.rows.filter(r=>{const lab=r.t==='look'?slot(r.k).label:r.label;return lab&&['cb','sl','dd','btn','kb','look','link','watch'].includes(r.t)&&lab.toLowerCase().includes(q);});
+    if(!rows.length)continue;
+    html+=`<div class="rg">${p.parent?'Pagle › ':''}${esc(p.title)}</div>`;
+    for(const r of rows){actRows.push(r);html+=rowNative({...r,child:0},actRows.length-1);hit++;}
+  }
+  return hit?html+'</div>':'<div class="sp">No results.</div>';
+}
+
+/* ================= control panel ================= */
+function renderPanel(){
+  document.getElementById('vnote').innerHTML=VARIANTS[V].note+`<div style="margin-top:6px;color:#6b665c">Looks: <b>${looksMode==='both'?'also beside what they change':'Appearance page only'}</b>.</div>`;
+  document.getElementById('modtbl').innerHTML=MODS.map(m=>`<tr><td>${m.label}</td><td><select data-mod="${m.key}">${STATES.map(s=>`<option${world.state[m.key]===s?' selected':''}>${s}</option>`).join('')}</select></td></tr>`).join('');
+  document.getElementById('started').checked=world.started;
+  const db={PagleDB:{profile:{}}};
+  const mod={};
+  for(const k in S){const o=OWNER[k];
+    if(o==='Core'){ if(SLOTS.find(s=>s.k===k))(db.PagleDB.profile.appearance??={})[slot(k).mod==='Core'?'core.'+k:slot(k).mod.toLowerCase()+'.'+k]=S[k]; else db.PagleDB.profile[k]=S[k]; }
+    else if(o==='Bindings')(db.bindings??={})[k==='keyFish'?'PAGLE_FISHING_KEY':'PAGLE_SWAP_GEAR']=S[k]||null;
+    else (mod['Pagle'+o+'DB']??={profile:{}}).profile[k]=S[k];
+  }
+  if(mod.PagleTackleBoardDB)mod.PagleTackleBoardDB.profile.startedOn=world.started?'2026-10-12':null;
+  const changed=Object.keys(S).filter(k=>JSON.stringify(S[k])!==JSON.stringify(DEF[k]));
+  document.getElementById('state').textContent=JSON.stringify({...db,...mod},null,1).replace(/\n\s*/g,m=>m.length>3?'\n'+'  '.repeat(m.length-2):'\n')+'\n\nChanged from default: '+(changed.join(', ')||'nothing');
+  document.getElementById('swLabel').textContent=V+' ('+VARIANTS[V].name+')';
+  document.getElementById('swLooks').textContent='Looks: '+(looksMode==='both'?'both places':'Appearance only');
+}
+
+/* ================= events ================= */
+const opts=document.getElementById('opts');
+opts.addEventListener('click',e=>{
+  const t=e.target.closest('[data-cb],[data-act],[data-cat],[data-tab],[data-go],[data-acetab],[data-kb],[data-close],[data-defaults],[data-unwatch],[data-start],[data-openview],[data-shop],[data-tw]');
+  if(!t)return;
+  const d=t.dataset;
+  if(d.tw!==undefined){expanded=!expanded;e.stopPropagation();}
+  else if(d.cb){S[d.cb]=!S[d.cb]; if(d.cb==='statsTracker'&&!S.statsTracker&&S.watched.length)chat('Pagle: Stats tracker hidden. Your watched Dry spells stay watched.');}
+  else if(d.act!==undefined){const r=actRows[+d.act];r&&r.act&&r.act();}
+  else if(d.cat){cur=d.cat;query='';}
+  else if(d.tab){tab=d.tab;cur=tab==='game'?'g:Keybindings':'root';query='';}
+  else if(d.go){if(V==='C'){aceTab=d.go;}else{cur=d.go;query='';expanded=true;}}
+  else if(d.acetab){aceTab=d.acetab;}
+  else if(d.kb){capture=capture===d.kb?null:d.kb;}
+  else if(d.close){open=false;capture=null;}
+  else if(d.unwatch!==undefined){S.watched.splice(+d.unwatch,1);}
+  else if(d.start){world.started=true;chat('Pagle: your Tackle Board is up. Three Notices are pinned.');}
+  else if(d.openview){chat('Pagle: the '+MODS.find(m=>m.key===d.openview).view+' opens; Settings closes.');}
+  else if(d.shop){chat('Pagle: the Curio Shop opens.');}
+  else if(d.defaults){askDefaults();return;}
+  render();
+});
+opts.addEventListener('input',e=>{
+  const t=e.target;
+  if(t.dataset.sl){S[t.dataset.sl]=+t.value;const v=t.parentElement.querySelector('.val');v.textContent!==undefined&&(v.tagName==='INPUT'?v.value=t.value+t.dataset.unit:v.textContent=t.value+t.dataset.unit);renderPanel();}
+  if(t.id==='q'){query=t.value;const pos=t.selectionStart;render();const q=document.getElementById('q');q.focus();q.setSelectionRange(pos,pos);}
+});
+opts.addEventListener('change',e=>{const t=e.target;if(t.dataset.dd){S[t.dataset.dd]=t.value;render();}});
+opts.addEventListener('mousemove',e=>{
+  const t=e.target.closest('[data-tipb]');const tip=document.getElementById('tip');
+  if(!t){tip.style.display='none';return;}
+  tip.innerHTML=`<b>${t.dataset.tip}</b>${t.dataset.tipb}`;tip.style.display='block';
+  tip.style.left=Math.min(e.clientX+16,innerWidth-340)+'px';tip.style.top=(e.clientY+14)+'px';
+});
+opts.addEventListener('mouseleave',()=>document.getElementById('tip').style.display='none');
+
+function curRows(){
+  if(V==='C'){const t=VARIANTS.C.tabs().find(t=>t.id===aceTab);return t?t.rows:[];}
+  const p=VARIANTS[V].pages().find(p=>p.id===cur);return p?p.rows:[];
+}
+function askDefaults(){
+  const pop=document.getElementById('popup');
+  pop.innerHTML=`Reset these settings to their defaults?<div class="sub" style="margin-top:6px">Owned looks stay owned; only the picks and switches change.</div><div class="row"><button class="btn" id="pdThese">These Settings</button><button class="btn" id="pdNo">Cancel</button></div>`;
+  pop.classList.add('on');
+  document.getElementById('pdThese').onclick=()=>{for(const r of curRows())if(r.k&&r.k in DEF)S[r.k]=JSON.parse(JSON.stringify(DEF[r.k]));if(curRows().some(r=>r.t==='watch'))S.watched=[...DEF.watched];pop.classList.remove('on');render();};
+  document.getElementById('pdNo').onclick=()=>pop.classList.remove('on');
+}
+
+document.addEventListener('keydown',e=>{
+  if(capture){e.preventDefault();
+    if(e.key==='Escape')S[capture]='';else if(!['Shift','Control','Alt','Meta'].includes(e.key)){
+      const k=(e.shiftKey?'SHIFT-':'')+(e.ctrlKey?'CTRL-':'')+(e.altKey?'ALT-':'')+(e.key.length===1?e.key.toUpperCase():e.key.toUpperCase());
+      S[capture]=k;}
+    else return;
+    capture=null;render();return;}
+  const a=document.activeElement;
+  if(a&&(a.tagName==='INPUT'&&a.type!=='range'&&a.type!=='checkbox'||a.tagName==='TEXTAREA'||a.isContentEditable||a.tagName==='SELECT'))return;
+  if(e.key==='ArrowLeft')step(-1);else if(e.key==='ArrowRight')step(1);
+});
+function step(d){V=VKEYS[(VKEYS.indexOf(V)+d+VKEYS.length)%VKEYS.length];setURL();render();}
+document.getElementById('swPrev').onclick=()=>step(-1);
+document.getElementById('swNext').onclick=()=>step(1);
+document.getElementById('swLooks').onclick=()=>{looksMode=looksMode==='both'?'appearance':'both';setURL();render();};
+document.getElementById('reopen').onclick=()=>openSettings('');
+document.getElementById('panel').addEventListener('change',e=>{
+  const t=e.target;
+  if(t.dataset.mod){world.state[t.dataset.mod]=t.value;render();}
+  if(t.id==='started'){world.started=t.checked;render();}
+});
+document.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>openSettings(b.dataset.open));
+function openSettings(m){
+  open=true;tab='addons';query='';expanded=true;
+  if(V==='C'){cur='root';aceTab=m&&on(m)?m:'root';}
+  else if(!m||!on(m))cur='root';
+  else cur=V==='B'?({QoL:'QoL',Hunts:'trk',Stats:'trk',TackleBoard:'trk',Ledger:'appearance'}[m]):m;
+  chat(m?`Pagle.OpenSettings("${m}")`:'/pagle',true);
+  render();
+}
+setURL();render();
+chat('Pagle: Settings opened from /pagle.',true);
+</script>
+</body>
+</html>
