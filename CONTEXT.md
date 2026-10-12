@@ -221,7 +221,7 @@ The Angler's run of consecutive days with at least one Notice or Expedition comp
 _Avoid_: streak, flame, login streak
 
 **Kindling**:
-What keeps the Campfire burning through a missed day. It is earned by keeping the fire lit and spent automatically, never bought or chosen.
+What keeps the Campfire burning through a missed day. Every new fire starts with some, more is earned by keeping it lit, and it is spent automatically, never bought or chosen.
 _Avoid_: freeze, streak saver
 
 **Fly Box**:
