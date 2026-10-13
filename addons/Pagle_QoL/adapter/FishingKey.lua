@@ -14,7 +14,9 @@ local OWNER = "Pagle_QoL Fishing key"
 --- Seconds between re-evaluations while armed (qol.md › Tunables, QOL-R25).
 local TICK = 0.5
 
-local frame ---@type Frame The override owner (QOL-R11); its OnUpdate runs the tick and the wait for a key to be up.
+-- The override owner (QOL-R11); its OnUpdate runs the tick and the wait for a key to be up. Nil until createFrame
+-- makes it (QOL-R33); evaluate and ns.DisarmFishingKey do nothing until then.
+local frame ---@type Frame
 local loggedIn = false
 local lootOpen = false -- QOL-R28
 local channeling = false -- QOL-R22
@@ -24,6 +26,7 @@ local current = ns.Arming({}, nil) -- the overrides set now
 local waitingForKeyUp = false -- QOL-R26
 local updating = false -- whether frame's OnUpdate runs
 local sinceTick = 0 -- seconds since the last evaluation
+local disarming = false -- inside ns.DisarmFishingKey, whose own UPDATE_BINDINGS must not re-arm (QOL-R31)
 local evaluate
 
 --- QoL is armed while it is registered, isn't standing down (QOL-R82) and isn't restricted (QOL-R30).
@@ -118,7 +121,7 @@ end
 
 --- Picks the next action and re-points the overrides if they differ from what is set (QOL-R20, QOL-R25).
 function evaluate()
-	if not loggedIn then
+	if not loggedIn or disarming or not frame then
 		return
 	end
 	sinceTick = 0
@@ -143,6 +146,23 @@ function evaluate()
 	setOnUpdate(armed)
 end
 
+--- Clears the Fishing key's overrides now, held key or not, and arms nothing (QOL-R31). adapter/Combat.lua calls it
+--- as restriction starts, before lockdown; the end of restriction re-evaluates (QOL-R32).
+function ns.DisarmFishingKey()
+	-- Before PLAYER_LOGIN nothing is armed, and nothing is touched (QOL-R33).
+	if not frame or not loggedIn then
+		return
+	end
+	waitingForKeyUp = false
+	-- With nothing set there is nothing to clear, and standing down makes no binding call at all (QOL-R82).
+	if not current.target then
+		return
+	end
+	disarming = true
+	repoint(ns.Arming(keys, nil))
+	disarming = false
+end
+
 ---@param event string
 local function onEvent(event)
 	-- The conflict check comes right before the first arm, so QoL never arms and then stands down (QOL-R33).
@@ -151,7 +171,8 @@ local function onEvent(event)
 	end
 	if event == "PLAYER_LOGIN" or event == "UPDATE_BINDINGS" then
 		keys = { GetBindingKey("PAGLE_FISHING_KEY") }
-		loggedIn = true
+		-- The client fires UPDATE_BINDINGS before PLAYER_LOGIN too; QoL first arms at PLAYER_LOGIN (QOL-R33).
+		loggedIn = loggedIn or event == "PLAYER_LOGIN"
 	elseif event == "LOOT_READY" then
 		lootOpen = true
 	elseif event == "LOOT_CLOSED" then
@@ -179,10 +200,18 @@ local PLAYER_EVENTS = {
 	"UNIT_INVENTORY_CHANGED",
 }
 
+-- The override owner is made at OnInitialize, or, after a /reload in combat, at RestrictionChanged(false); until
+-- then QoL stays disarmed (QOL-R33).
+local function createFrame()
+	if not frame and not Pagle.IsRestricted() then
+		frame = CreateFrame("Frame")
+	end
+end
+
 --- Creates the override owner and listens for every re-evaluation trigger (QOL-R25). QoL's OnInitialize calls it
 --- once it has registered; the first arm waits for PLAYER_LOGIN.
 function ns.StartFishingKey()
-	frame = CreateFrame("Frame")
+	createFrame()
 	for _, event in ipairs(EVENTS) do
 		Pagle.RegisterEvent(OWNER, event, onEvent)
 	end
@@ -193,9 +222,14 @@ function ns.StartFishingKey()
 		channeling = true
 		evaluate()
 	end)
-	for _, event in ipairs({ "CastEnded", "FishingStateChanged", "RestrictionChanged" }) do
+	for _, event in ipairs({ "CastEnded", "FishingStateChanged" }) do
 		Pagle.RegisterCallback(OWNER, event, function()
 			evaluate()
 		end)
 	end
+	-- Leaving restriction re-evaluates and re-arms (QOL-R32); it starts in adapter/Combat.lua (QOL-R31).
+	Pagle.RegisterCallback(OWNER, "RestrictionChanged", function()
+		createFrame()
+		evaluate()
+	end)
 end

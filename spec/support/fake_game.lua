@@ -9,7 +9,8 @@
 --   loaded.client.update(0.5)                                       -- one frame, 0.5 s after the last
 --
 -- Each override call fires UPDATE_BINDINGS at once, through client.fireGameEvent, as the client fires it after a
--- binding change; under FakePagle, fake.load points that at fake.fireGameEvent.
+-- binding change; under FakePagle, fake.load points that at fake.fireGameEvent. Each one raises an error while the
+-- load's InCombatLockdown() is true (set loaded.env.InCombatLockdown), as the client blocks it in lockdown.
 
 ---@class FakeClient
 ---@field boundKeys table<string, string[]> The keys bound to each binding command, as `GetBindingKey` returns them.
@@ -35,8 +36,17 @@ return function(client, stubs)
 	client.items = { [6256] = { 2, 20 }, [25] = { 2, 7 } }
 	client.fireGameEvent = client.fire
 
+	-- Override calls are protected: in combat lockdown the client blocks them (ADDON_ACTION_BLOCKED). Here they
+	-- raise, so a spec fails on any override call made under the load's InCombatLockdown (QOL-R31, CORE-R32).
+	local function unlessLockedDown(call)
+		if stubs.InCombatLockdown() then
+			error(("FakeClient: %s blocked in combat lockdown"):format(call), 3)
+		end
+	end
+
 	local overrides = {} -- owner -> key -> action, priority overrides only
 	local function setOverride(owner, isPriority, key, action)
+		unlessLockedDown("SetOverrideBinding")
 		assert(isPriority == true, "FakeClient: only priority override bindings are faked")
 		overrides[owner] = overrides[owner] or {}
 		overrides[owner][key] = action
@@ -72,6 +82,7 @@ return function(client, stubs)
 		setOverride(owner, isPriority, key, "SPELL " .. spell)
 	end
 	stubs.ClearOverrideBindings = function(owner)
+		unlessLockedDown("ClearOverrideBindings")
 		overrides[owner] = nil
 		client.bindingCalls[#client.bindingCalls + 1] = "clear"
 		client.fireGameEvent("UPDATE_BINDINGS")
