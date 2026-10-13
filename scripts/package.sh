@@ -12,7 +12,7 @@
 # The check: the zip holds one top-level folder per addons/<Addon>/ folder (Pagle only, until the
 # Modules arrive), each holding exactly that folder's tracked files, plus the packager's
 # Pagle/CHANGELOG.md and the repo's LICENSE and NOTICE in Pagle/. Nothing else: no docs/, spec/,
-# scripts/, probes/, prototypes/ and no stray addons/ path.
+# scripts/, probes/, prototypes/, no stray addons/ path and no empty folder.
 #
 # Run it in WSL. Needs bash >= 4.3, git, curl, unzip, zip and jq (sudo apt-get install zip jq);
 # the packager builds the zip with zip and reads upload APIs with jq.
@@ -89,6 +89,16 @@ unzip -Z1 "$zipfile" | grep -v '/$' | LC_ALL=C sort >"$actual"
 
 if ! diff -u --label expected --label "$(basename "$zipfile")" "$expected" "$actual"; then
 	echo "FAIL: the zip's files differ from addons/ (see the diff above; fix .pkgmeta)." >&2
+	exit 1
+fi
+
+# Folder entries: each must be a folder an expected file sits in, so an empty one (say Pagle/addons/) fails too.
+awk -F/ '{ path = ""; for (i = 1; i < NF; i++) { path = path $i "/"; print path } }' "$expected" |
+	LC_ALL=C sort -u >"$work/folders.txt"
+stray=$(unzip -Z1 "$zipfile" | { grep '/$' || true; } | LC_ALL=C sort -u | LC_ALL=C comm -23 - "$work/folders.txt")
+if [[ -n $stray ]]; then
+	echo "FAIL: the zip has folders that hold none of addons/' files (fix .pkgmeta):" >&2
+	echo "$stray" >&2
 	exit 1
 fi
 
