@@ -2,8 +2,8 @@
 each area of the DB2 slice ships with in the catalogue's areas (DATA-R78).
 
 An area's catch list is built per area, never inherited (DATA-R26): the baseline's area loot without Noise, then
-areas.toml's edits, then observed pairs (step 3, ticket #95's), then removed, Noise and uncharted items leave. Keys
-and types are the Data section's in docs/spec/content-data.md.
+areas.toml's edits, then observed pairs (step 3, pagle_data.confirmed), then removed, Noise and uncharted items
+leave. Keys and types are the Data section's in docs/spec/content-data.md.
 """
 
 from collections.abc import Collection, Iterator, Mapping
@@ -11,9 +11,11 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from pagle_data.baseline import AREA_LOOT, BaselineLayer
+from pagle_data.confirmed import Confirmation, Required, UngatedPair, observed_pairs, zone_of
 from pagle_data.db2 import Area
 from pagle_data.errors import At, Problems
 from pagle_data.items import Record
+from pagle_data.observed import Observations
 from pagle_data.toml_reader import check_keys, describe, expect_int, expect_table, expect_why, read_toml
 from pagle_data.universe import AREAS_TOML
 from pagle_data.windows import window_of_event
@@ -21,9 +23,6 @@ from pagle_data.windows import window_of_event
 # DATA-R29: `gate = "none"` on an add removes the item's gate.
 NO_GATE = "none"
 OPS = ("add", "drop")
-# A bound on the walk up an area's parents, so a parent cycle in bad data can't hang the generator (Core's
-# zoneOf has the same).
-_MAX_DEPTH = 16
 
 
 @dataclass(frozen=True)
@@ -154,10 +153,16 @@ class Catch:
 
 @dataclass(frozen=True)
 class CatchLists:
-    """Every non-empty catch list by area, each sorted by item ID (DATA-R26), and the skill bases (DATA-R30)."""
+    """Every non-empty catch list by area, each sorted by item ID (DATA-R26), the skill bases (DATA-R30), and the
+    observed pairs that joined ungated though their item is gated elsewhere (a DATA-R47 warning)."""
 
     lists: dict[int, list[Catch]] = field(default_factory=dict)
     skill_bases: dict[int, int] = field(default_factory=dict)
+    ungated: list[UngatedPair] = field(default_factory=list)
+
+    def windows(self) -> dict[int, dict[int, str | None]]:
+        """Each list as {item: its gate's window ID, None when ungated}."""
+        return {area: {catch.item: catch.window for catch in catches} for area, catches in self.lists.items()}
 
     def fishing_areas(self) -> set[int]:
         """The areas with a catch list: DATA-R32's baseline fishing areas."""
@@ -189,11 +194,14 @@ def build_catch_lists(
     items: Mapping[int, Record],
     windows: Collection[str],
     areas: Mapping[int, Area],
+    observations: Observations,
+    required: Required,
     problems: Problems,
 ) -> CatchLists:
     """DATA-R26's catch lists and DATA-R30's skill bases, from the baseline, areas.toml, the item records that ship
-    (items, DATA-R77), the window IDs (DATA-R35) and the DB2 slice's areas. Each problem found goes into
-    problems."""
+    (items, DATA-R77), the window IDs (DATA-R35), the DB2 slice's areas, and the observations that count
+    (DATA-R46) in the slice's areas (DATA-R33) with their required reporters (DATA-R49). Each problem found goes
+    into problems."""
     lists: dict[int, dict[int, str | None]] = {}
     conflicts: dict[tuple[int, int], list[str]] = {}
     # Step 1: the baseline's area loot, Noise left out. DATA-R29: a gate when every row maps to one window.
@@ -243,7 +251,10 @@ def build_catch_lists(
             " with an areas.toml add (DATA-R29)",
         )
 
-    # Step 3, observed pairs (DATA-R47), is #95's.
+    # Step 3: observed pairs (DATA-R47), which win over a drop.
+    pairs = observed_pairs(lists, areas, observations, items, required)
+    for (area, item), window in pairs.joins.items():
+        lists.setdefault(area, {})[item] = window
 
     # Step 4: removed, Noise and uncharted items leave; an item outside the shipped records is uncharted.
     built: dict[int, list[Catch]] = {}
@@ -261,19 +272,7 @@ def build_catch_lists(
     for edit in layer.areas.values():
         if edit.skill_base is not None:
             skill_bases[edit.area] = edit.skill_base
-    return CatchLists(built, skill_bases)
-
-
-def _zone_of(areas: Mapping[int, Area], area_id: int) -> int | None:
-    """The zone an area belongs to, up its parents; None when the chain leaves the slice."""
-    for _ in range(_MAX_DEPTH):
-        area = areas.get(area_id)
-        if area is None:
-            return None
-        if area.parent == 0:
-            return area_id
-        area_id = area.parent
-    return None
+    return CatchLists(built, skill_bases, pairs.ungated)
 
 
 def area_records(
@@ -281,27 +280,30 @@ def area_records(
     catch_lists: CatchLists,
     alias_sources: Collection[int],
     windows: Mapping[str, Mapping[str, object]],
+    confirmation: Confirmation,
 ) -> dict[int, Record]:
-    """Every DB2 area's record (DATA-R25, DATA-R78). windows are the catalogue's, so a gate is its window's shared
-    spec (Contracts). Nothing is confirmed yet (DATA-R56, #95)."""
-    with_data = {_zone_of(areas, area) for area in catch_lists.lists if area not in alias_sources}
+    """Every DB2 area's record (DATA-R25, DATA-R78), its confirmed flags from confirmation (DATA-R48, DATA-R52,
+    DATA-R55). windows are the catalogue's, so a gate is its window's shared spec (Contracts)."""
+    with_data = {zone_of(areas, area) for area in catch_lists.lists if area not in alias_sources}
     records: dict[int, Record] = {}
     for area_id, area in areas.items():
         alias = area_id in alias_sources
         catches: list[Record] = []
         for catch in [] if alias else catch_lists.lists.get(area_id, []):
-            entry: Record = {"itemID": catch.item, "confirmed": False}
+            key = (area_id, catch.item)
+            entry: Record = {"itemID": catch.item, "confirmed": key in confirmation.entries}
             if catch.window is not None:
-                entry.update(window=catch.window, gate=windows[catch.window]["spec"], gateConfirmed=False)
+                gate_confirmed = key in confirmation.gates
+                entry.update(window=catch.window, gate=windows[catch.window]["spec"], gateConfirmed=gate_confirmed)
             catches.append(entry)
-        zone = _zone_of(areas, area_id)
+        zone = zone_of(areas, area_id)
         # DATA-R31: a zone has data when it or a subzone has a list, and a subzone takes its zone's value.
         has_data = not alias and (zone in with_data if zone is not None else bool(catches))
         record: Record = {
             "parent": area.parent,
             "continent": area.continent,
             "hasData": has_data,
-            "skillBaseConfirmed": False,
+            "skillBaseConfirmed": area_id in confirmation.skill_bases,
             "catches": catches,
         }
         if area_id in catch_lists.skill_bases:

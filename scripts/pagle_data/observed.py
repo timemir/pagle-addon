@@ -4,7 +4,8 @@ by M3's importer. Keys and types are the Data section's in docs/spec/content-dat
 
 observations() turns the layer into DATA-R45's observations: non-rejected I and K rows (DATA-R50) and dev facts,
 each with its reporter (DATA-R46) and its areas mapped through the alias table (DATA-R34). P rows are kept here but
-observe nothing. Nothing from this layer reaches the catalogue yet: observed pairs and confirmed are DATA-R47–R55's.
+observe nothing. Nothing from this layer ships but the catalogue facts it implies (DATA-R65): pagle_data.confirmed
+computes the observed pairs and confirmed flags (DATA-R47–R55).
 """
 
 import re
@@ -167,6 +168,15 @@ class Observations:
             tuple(row for row in self.catches if row.build >= minimum_build),
             tuple(row for row in self.skills if row.build >= minimum_build),
             tuple(fact for fact in self.facts if fact.build >= minimum_build),
+        )
+
+    def within(self, known: Collection[int]) -> "Observations":
+        """Only the observations whose area is in known (data/db2/areas.csv's IDs), or that name no area: an area
+        missing from the slice stays out of the catalogue (DATA-R33)."""
+        return Observations(
+            tuple(row for row in self.catches if row.area in known),
+            tuple(row for row in self.skills if row.area in known),
+            tuple(fact for fact in self.facts if fact.area is None or fact.area in known),
         )
 
     def reporters(self) -> set[str]:

@@ -8,7 +8,7 @@ import pytest
 from areas_fixture import write_areas
 from baseline_fixture import CSVS, write_baseline
 from item_fixture import write_item_layer
-from observed_fixture import write_observed
+from observed_fixture import NO_FACTS, write_observed
 from pagle_data.cli import main
 from pools_fixture import write_pools
 from windows_fixture import write_windows
@@ -209,6 +209,8 @@ def write_tree(
     area_loot: str = AREA_LOOT,
     aliases: str = ALIASES,
     items: str = ITEMS,
+    dev: str = NO_FACTS,
+    reports: dict[str, str] | None = None,
 ) -> Path:
     forever = root / "data" / "forever"
     forever.mkdir(parents=True, exist_ok=True)
@@ -223,7 +225,7 @@ def write_tree(
     write_baseline(
         root, {**CSVS, "area_loot.csv": area_loot, "reference_loot.csv": REFERENCE_LOOT, "skill.csv": SKILL}
     )
-    write_observed(root)  # dev.toml with no facts; test_observed.py covers the layer
+    write_observed(root, dev, reports)  # test_observed.py covers the layer, test_confirmed.py what it implies
     write_item_layer(root, items)
     db2 = root / "data" / "db2"
     db2.mkdir(parents=True, exist_ok=True)
