@@ -12,6 +12,8 @@
 locale\enUS.lua
 logic\Data.lua
 logic\Module.lua
+logic\FishingKey.lua
 logic\Settings.lua
 adapter\Bindings.lua
+adapter\FishingKey.lua
 adapter\QoL.lua
