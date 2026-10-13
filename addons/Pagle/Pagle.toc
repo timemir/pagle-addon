@@ -42,6 +42,7 @@ logic\Cards.lua
 logic\Announcements.lua
 logic\Menu.lua
 logic\ReloadReminder.lua
+logic\FieldReportText.lua
 adapter\Core.lua
 adapter\Callbacks.lua
 adapter\Events.lua
