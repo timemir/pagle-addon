@@ -321,6 +321,7 @@ end
 ---@field data table the PagleLog table, to store back as the SavedVariable
 ---@field global table PagleDB.global
 ---@field undecodable table<integer, true> the seqs counted in decodeErrors this login
+---@field package cutters table<integer, PagleSessionCutter> a cutter fed up to each seq a read started or ended at
 ---@field package tail PagleSessionCutter? fed every entry up to the log's end, once something needs it (Append)
 local CatchLog = {}
 CatchLog.__index = CatchLog
@@ -336,11 +337,16 @@ local function countUndecodable(catchLog, seq)
 end
 
 -- A Session cutter fed every record up to `afterSeq` that the tags after it depend on: from the first Cast of the
--- Session in progress at `afterSeq` (LOG-R98).
+-- Session in progress at `afterSeq` (LOG-R98). That look-back decodes the open Session, so the cutter at each seq is
+-- kept for the login: the log only grows, so the entries up to a seq never change. Each caller gets its own copy.
 ---@param catchLog PagleCatchLog
 ---@param afterSeq integer
 ---@return PagleSessionCutter
 local function cutterAt(catchLog, afterSeq)
+	local known = catchLog.cutters[afterSeq]
+	if known then
+		return known:Copy()
+	end
 	local cutter = ns.NewSessionCutter()
 	local first = ns.SessionStartSeq(catchLog:Reverse("cast", afterSeq) --[[@as fun(): PagleCast?]])
 	if first then
@@ -352,6 +358,7 @@ local function cutterAt(catchLog, afterSeq)
 			end
 		end
 	end
+	catchLog.cutters[afterSeq] = cutter:Copy()
 	return cutter
 end
 
@@ -375,6 +382,10 @@ function CatchLog:Iterate(afterSeq)
 				return record
 			end
 			countUndecodable(self, seq)
+		end
+		-- Read to its end: a later read from there needs no look-back.
+		if not self.cutters[last] then
+			self.cutters[last] = cutter:Copy()
 		end
 		return nil
 	end
@@ -483,5 +494,5 @@ function ns.OpenCatchLog(saved, global, now)
 		started = true
 	end
 	ensureLogId(data, now)
-	return setmetatable({ data = data, global = global, undecodable = {} }, CatchLog), started
+	return setmetatable({ data = data, global = global, undecodable = {}, cutters = {} }, CatchLog), started
 end

@@ -102,6 +102,27 @@ function Cutter:Add(record)
 	end
 end
 
+--- A cutter that goes on from where this one is, sharing nothing with it.
+---@return PagleSessionCutter
+function Cutter:Copy()
+	local copy = ns.NewSessionCutter()
+	local session = self.session
+	if session then
+		local cut = {}
+		for key, value in pairs(session) do
+			cut[key] = value
+		end
+		for _, list in ipairs({ "characters", "zones", "seenCharacters", "seenZones" }) do
+			cut[list] = {}
+			for key, value in pairs(session[list]) do
+				cut[list][key] = value
+			end
+		end
+		copy.session = cut
+	end
+	return copy
+end
+
 --- The latest Session fed so far, open or ended, or nil before the first Cast. It is the cutter's own table, which
 --- changes as Casts join it: copy it (ns.SessionPayload) before handing it out.
 ---@return PagleSessionCut?
