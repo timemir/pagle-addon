@@ -14,17 +14,40 @@ function ns.AddSettings(M)
 	local L = ns.L
 	-- QoL's first row is a header, so Core adds no "QoL" header (CORE-R42, SET-R20).
 	M:AddSetting("fishing", { kind = "header", label = L.SETTINGS_CASTING })
-	-- No parent and never greyed out until Cast with arrives in Track Q step 3 (SET-R20). The key is a binding,
-	-- not a value, so the page's Defaults button leaves it alone (SET-R21, SET-R60).
-	M:AddSetting("fishing", {
-		kind = "keybinding",
-		label = L.SETTINGS_FISHING_KEY,
-		tooltip = L.SETTINGS_FISHING_KEY_TOOLTIP,
-		binding = "PAGLE_FISHING_KEY",
-	})
 
 	-- The rows below read PagleQoLDB.profile, which QoL opens before the page is built.
 	local defaults = ns.DB_DEFAULTS.profile
+
+	-- Cast with is Input, which the compartment entry and /pagle qol set too (QOL-R12, QOL-R16, QOL-R17). A change
+	-- takes effect at once, or when restriction ends (QOL-R18).
+	M:AddSetting("fishing", {
+		kind = "dropdown",
+		id = "input",
+		label = L.SETTINGS_CAST_WITH,
+		tooltip = L.SETTINGS_CAST_WITH_TOOLTIP,
+		default = defaults.input,
+		get = ns.CurrentInput,
+		set = ns.SetInput,
+		options = function()
+			return {
+				{ value = "key", label = L.SETTINGS_CAST_WITH_KEY },
+				{ value = "click", label = L.SETTINGS_CAST_WITH_CLICK },
+				{ value = "both", label = L.SETTINGS_CAST_WITH_BOTH },
+			}
+		end,
+	})
+	-- Under Cast with, greyed out under Double right-click, where the key isn't armed (SET-R20, QOL-R12). The key is a
+	-- binding, not a value, so the page's Defaults button leaves it alone (SET-R21, SET-R60).
+	M:AddSetting("fishing", {
+		kind = "keybinding",
+		parent = "input",
+		label = L.SETTINGS_FISHING_KEY,
+		tooltip = L.SETTINGS_FISHING_KEY_TOOLTIP,
+		binding = "PAGLE_FISHING_KEY",
+		isEnabled = function()
+			return ns.InputArmsKey(ns.CurrentInput())
+		end,
+	})
 
 	-- Lures and clams: which lure the Fishing key applies (QOL-R50, QOL-R51). A change re-points the key at once
 	-- (QOL-R25).

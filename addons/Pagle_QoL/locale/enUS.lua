@@ -17,6 +17,11 @@ ns.L = {
 	BINDING_FISHING_KEY = "Pagle: Fishing key",
 	-- The Fishing page (qol.md › Settings, SET-R20).
 	SETTINGS_CASTING = "Casting",
+	SETTINGS_CAST_WITH = "Cast with",
+	SETTINGS_CAST_WITH_TOOLTIP = "Also on the compartment menu and /pagle qol input.",
+	SETTINGS_CAST_WITH_KEY = "Fishing key",
+	SETTINGS_CAST_WITH_CLICK = "Double right-click",
+	SETTINGS_CAST_WITH_BOTH = "Both",
 	SETTINGS_FISHING_KEY = "Fishing key",
 	SETTINGS_FISHING_KEY_TOOLTIP = "Each press does the next single thing: cast, reel, or a lure, gear or clam when needed.",
 	-- The Fishing page's Lures and clams section (qol.md › Settings, QOL-R50).
