@@ -1,0 +1,17 @@
+## Interface: 16001
+## AllowLoadGameType: camelot
+## Title: Pagle
+## Notes: Fishing progression and collection for World of Warcraft: Forever.
+## Group: Pagle
+## Category: Professions
+## Version: @project-version@
+
+libs\LibStub\LibStub.lua
+libs\CallbackHandler-1.0\CallbackHandler-1.0.lua
+libs\AceAddon-3.0\AceAddon-3.0.lua
+libs\AceEvent-3.0\AceEvent-3.0.lua
+libs\AceDB-3.0\AceDB-3.0.lua
+
+locale\enUS.lua
+logic\Forever.lua
+adapter\Core.lua
