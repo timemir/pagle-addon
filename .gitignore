@@ -14,7 +14,6 @@ desktop.ini
 *~
 
 # Lua tooling
-.tools/
 luacov.stats.out
 luacov.report.out
 *.rock
@@ -24,7 +23,7 @@ lua_modules/
 # Packaging / release (BigWigs packager, CurseForge, etc.)
 .release/
 *.zip
-# scripts/package.sh caches the pinned packager in .tools/packager/
+# The pinned tools (scripts/setup.sh) and the cached packager (scripts/package.sh)
 .tools/
 
 # WoW SavedVariables / logs accidentally copied in
