@@ -12,9 +12,9 @@ ns.MODULE_ROSTER = { "Ledger", "Hunts", "Stats", "TackleBoard", "QoL" }
 ---@field name string            -- roster name without "Pagle_": "Ledger", "Hunts", "Stats", "TackleBoard", "QoL"
 ---@field title string           -- display name: "Ledger", "Hunts", "Stats", "Tackle Board", "QoL"
 ---@field order integer          -- menu order: Ledger 10, Hunts 20, Stats 30, TackleBoard 40, QoL 50
----@field settingsAction? { label: string|fun():string, onClick: fun() }   -- its button in the Settings status list (CORE-R44)
----@field views? { id: string, label: string|fun():string, open: fun() }[]   -- compartment menu views
----@field menu? { label: string|fun():string, onClick: fun() }[]             -- extra compartment entries
+---@field settingsAction? { label: string|(fun():string), onClick: fun() }   -- its button in the Settings status list (CORE-R44)
+---@field views? { id: string, label: string|(fun():string), open: fun() }[]   -- compartment menu views
+---@field menu? { label: string|(fun():string), onClick: fun() }[]             -- extra compartment entries
 ---@field slash? { name: string, fn: fun(args: string), help: string }[]     -- /pagle <name>
 
 --- A roster entry's state, as the Settings status list shows it (CORE-R41).

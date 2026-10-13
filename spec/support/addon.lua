@@ -9,7 +9,10 @@
 --
 -- The addon runs against a fake client: frames that keep the events they register, so loaded.client.fire reaches
 -- them, and stubs for the WoW API the addon calls (clientStubs below). loadAddon fires ADDON_LOADED after the last
--- file, as the client does.
+-- file, as the client does. An addon's `## Dependencies` load first, into the same globals and client, so
+-- loadAddon("Pagle_QoL", FOREVER_GLOBALS) runs Core and then QoL; loaded.namespaces.Pagle is Core's ns. The client's
+-- Settings panel (loaded.client.settings) records the categories and rows an addon registers and can show a page, as
+-- the panel would draw it.
 --
 -- Each load gets its own globals table, so nothing an addon defines (LibStub, Pagle) leaks into the next load.
 -- Names not in it fall back to the Lua 5.1 globals busted runs with.
@@ -28,6 +31,8 @@ FOREVER_GLOBALS = { WOW_PROJECT_ID = PROJECT_IDS.CAMELOT, WOW_PROJECT_CAMELOT = 
 
 ---@class LoadedAddon
 ---@field ns table The addon's private table, shared by every file it loads.
+---@field namespaces table<string, table> The private table of each addon loaded, its dependencies too, by folder
+--- name: `namespaces.Pagle` is Core's when a Module was loaded.
 ---@field env table<string, any> The globals the files saw and set; `env.Pagle` is the Pagle global.
 ---@field printed string[] Each line the addon printed to chat, in order.
 ---@field client FakeClient The fake client the addon runs against.
@@ -39,8 +44,12 @@ FOREVER_GLOBALS = { WOW_PROJECT_ID = PROJECT_IDS.CAMELOT, WOW_PROJECT_CAMELOT = 
 ---@field frames table[] Every frame CreateFrame made, in order.
 ---@field fire fun(event: string, ...) Fires a WoW event at each frame registered for it, in creation order, calling
 --- its OnEvent script with (frame, event, ...). A unit event reaches a frame only for the units it registered.
----@field addons table<string, FakeAddOn> The other addons installed, by folder name ("Pagle_QoL"), as C_AddOns
---- reports them. One not listed is missing. Specs add to it.
+---@field addons table<string, FakeAddOn> The addons installed, by folder name ("Pagle_QoL"), as C_AddOns reports
+--- them. loadAddon lists each addon it loads, with its TOC fields as metadata. One not listed is missing. Specs add
+--- to it.
+---@field bindings string[] The key binding actions the client knows (Bindings.xml names), in binding index order,
+--- as C_KeyBindings.GetBindingIndex reads them. Specs add to it.
+---@field settings FakeSettings The Settings panel.
 
 --- An installed addon, as the fake client's C_AddOns reports it.
 ---@class FakeAddOn
@@ -51,9 +60,23 @@ FOREVER_GLOBALS = { WOW_PROJECT_ID = PROJECT_IDS.CAMELOT, WOW_PROJECT_CAMELOT = 
 --- The player's character GUID, as UnitGUID("player") returns it.
 PLAYER_GUID = "Player-1-00000001"
 
+--- Blizzard's Settings panel, as far as specs need it: what Core registered, and the pages it opened.
+---@class FakeSettings
+---@field categories table[] Every category registered with Settings.RegisterVerticalLayout*, in order. Each has
+--- `name`, `parent` (nil for a top-level one), `layout.initializers` and `GetID()`.
+---@field addOnCategories table[] The categories passed to Settings.RegisterAddOnCategory, in order.
+---@field opened table[] The category each Settings.OpenToCategory call opened (nil for an unknown ID), in order.
+---@field panel table SettingsPanel: shown by OpenToCategory, hidden by HideUIPanel.
+---@field category fun(name: string): table? The registered category with that name, if its top-level category is
+--- registered under AddOns, as the panel lists it.
+---@field show fun(category: table): { initializer: table, frame: table }[] Shows a page as the panel does: a fresh
+--- frame per row, through its initializer's InitFrame, so a row reads its value or label then.
+---@field textsOf fun(frame: table): string[] The text of every shown widget in a row's frame, depth first.
+---@field buttonsOf fun(frame: table): table[] The shown buttons in a row's frame, depth first.
+
 ---@return FakeClient
 local function newClient()
-	local client = { missingEvents = {}, frames = {}, addons = {} }
+	local client = { missingEvents = {}, frames = {}, addons = {}, bindings = {} }
 
 	function client.fire(event, ...)
 		local unit = ...
@@ -69,10 +92,79 @@ local function newClient()
 	return client
 end
 
+-- Widget methods that only lay out or colour: nothing for a spec to read back.
+local LAYOUT_METHODS = {
+	"SetPoint",
+	"ClearAllPoints",
+	"SetAllPoints",
+	"SetSize",
+	"SetWidth",
+	"SetHeight",
+	"SetJustifyH",
+	"SetJustifyV",
+	"SetWordWrap",
+	"SetTextColor",
+	"SetFontObject",
+	"SetEnabled",
+}
+
+-- A widget (frame, button or font string) that keeps what specs read back: its text, whether it's shown, its
+-- scripts and the widgets created on it.
+---@param kind string "Frame", "Button", "FontString", …
+---@param parent table?
+local function newWidget(kind, parent)
+	---@type table<string, any>
+	local widget = { kind = kind, shown = true, scripts = {}, children = {} }
+	function widget:SetText(text)
+		self.text = text
+	end
+	function widget:GetText()
+		return self.text
+	end
+	function widget:Show()
+		self.shown = true
+	end
+	function widget:Hide()
+		self.shown = false
+	end
+	function widget:SetShown(shown)
+		self.shown = not not shown
+	end
+	function widget:IsShown()
+		return self.shown
+	end
+	function widget:SetScript(script, fn)
+		self.scripts[script] = fn
+	end
+	function widget:GetScript(script)
+		return self.scripts[script]
+	end
+	-- As a mouse click does: OnClick with the button, not down.
+	function widget:Click()
+		local onClick = self.scripts.OnClick
+		if onClick then
+			onClick(self, "LeftButton", false)
+		end
+	end
+	function widget:CreateFontString()
+		return newWidget("FontString", self)
+	end
+	for _, method in ipairs(LAYOUT_METHODS) do
+		widget[method] = function() end
+	end
+	if parent then
+		parent.children[#parent.children + 1] = widget
+	end
+	return widget
+end
+
 -- A frame that records the events it registers and its scripts, so client.fire can reach it.
 ---@param client FakeClient
-local function newFrame(client)
-	local frame = { events = {}, scripts = {} }
+---@param kind string?
+---@param parent table?
+local function newFrame(client, kind, parent)
+	local frame = newWidget(kind or "Frame", parent)
+	frame.events = {}
 	local function known(event)
 		if client.missingEvents[event] then
 			error(('Frame:RegisterEvent(): Attempt to register unknown event "%s"'):format(event), 3)
@@ -96,11 +188,275 @@ local function newFrame(client)
 	function frame:UnregisterAllEvents()
 		self.events = {}
 	end
-	function frame:SetScript(script, fn)
-		self.scripts[script] = fn
-	end
 	client.frames[#client.frames + 1] = frame
 	return frame
+end
+
+-- A Settings list row initializer, as Blizzard_Settings_Shared's SettingsListElementInitializer behaves for what
+-- Core calls. Its default InitFrame reads the row's setting value, as a control does when shown.
+---@param template string
+---@param data table?
+local function newInitializer(template, data)
+	local initializer = { template = template, data = data or {}, searchTags = {}, modifyPredicates = {} }
+	function initializer:GetData()
+		return self.data
+	end
+	function initializer:GetName()
+		return self.data.setting and self.data.setting:GetName() or self.data.name
+	end
+	function initializer:GetTooltip()
+		return self.data.tooltip
+	end
+	function initializer:GetSetting()
+		return self.data.setting
+	end
+	function initializer:SetParentInitializer(parent, modifyPredicate)
+		assert(parent and parent ~= self, "SetParentInitializer needs another initializer")
+		self.parentInitializer = parent
+		if modifyPredicate then
+			self:AddModifyPredicate(modifyPredicate)
+		end
+	end
+	function initializer:GetParentInitializer()
+		return self.parentInitializer
+	end
+	function initializer:AddModifyPredicate(fn)
+		self.modifyPredicates[#self.modifyPredicates + 1] = fn
+	end
+	function initializer:EvaluateModifyPredicates()
+		for _, predicate in ipairs(self.modifyPredicates) do
+			if not predicate() then
+				return false
+			end
+		end
+		return true
+	end
+	function initializer:AddSearchTags(...)
+		for i = 1, select("#", ...) do
+			local tag = select(i, ...)
+			if type(tag) == "string" and tag ~= "" then
+				self.searchTags[#self.searchTags + 1] = tag:upper()
+			end
+		end
+	end
+	function initializer:InitFrame(frame)
+		frame.initializer = self
+		if self.data.setting then
+			frame.value = self.data.setting:GetValue()
+		end
+		frame.enabled = self:EvaluateModifyPredicates()
+	end
+	initializer.Resetter = function() end
+	initializer.GetExtent = function()
+		return nil
+	end
+	return initializer
+end
+
+-- The Settings API and panel (Blizzard_Settings_Shared at the forever 1.60.1 commit, see .luacheckrc), recording
+-- into client.settings.
+---@param client FakeClient
+---@param stubs table<string, any>
+local function settingsStubs(client, stubs)
+	local settings = { categories = {}, addOnCategories = {}, opened = {}, variables = {} }
+	client.settings = settings
+	settings.panel = newWidget("Frame")
+	settings.panel.shown = false
+
+	local function register(name, parent)
+		local category = { name = name, parent = parent, id = #settings.categories + 1 }
+		category.layout = {
+			initializers = {},
+			AddInitializer = function(self, initializer)
+				self.initializers[#self.initializers + 1] = initializer
+				return initializer
+			end,
+		}
+		function category:GetID()
+			return self.id
+		end
+		function category:GetName()
+			return self.name
+		end
+		settings.categories[#settings.categories + 1] = category
+		return category, category.layout
+	end
+
+	local function addControl(template, category, setting, options, tooltip)
+		local initializer = newInitializer(template, {
+			setting = setting,
+			name = setting:GetName(),
+			options = options or {},
+			tooltip = tooltip,
+		})
+		category.layout:AddInitializer(initializer)
+		return initializer
+	end
+
+	stubs.Settings = {
+		VarType = { Boolean = "boolean", String = "string", Number = "number" },
+		RegisterVerticalLayoutCategory = function(name)
+			return register(name, nil)
+		end,
+		RegisterVerticalLayoutSubcategory = function(parent, name)
+			return register(name, parent)
+		end,
+		RegisterAddOnCategory = function(category)
+			settings.addOnCategories[#settings.addOnCategories + 1] = category
+		end,
+		OpenToCategory = function(id)
+			settings.opened[#settings.opened + 1] = settings.categories[id] or false
+			settings.panel:Show()
+		end,
+		-- As the client's: a variable can be registered once.
+		RegisterProxySetting = function(category, variable, varType, name, default, get, set)
+			if settings.variables[variable] then
+				error(("Setting variable '%s' was previously registered."):format(variable))
+			end
+			local setting = {
+				category = category,
+				name = name,
+				variable = variable,
+				varType = varType,
+				default = default,
+				get = get,
+				set = set,
+			}
+			settings.variables[variable] = setting
+			function setting:GetName()
+				return self.name
+			end
+			function setting:GetVariable()
+				return self.variable
+			end
+			function setting:GetVariableType()
+				return self.varType
+			end
+			function setting:GetDefaultValue()
+				return self.default
+			end
+			function setting:GetValue()
+				return self.get()
+			end
+			function setting:SetValue(value)
+				self.set(value)
+			end
+			return setting
+		end,
+		CreateCheckbox = function(category, setting, tooltip)
+			assert(setting:GetVariableType() == "boolean")
+			return addControl("SettingsCheckboxControlTemplate", category, setting, nil, tooltip)
+		end,
+		CreateSliderOptions = function(minValue, maxValue, rate)
+			return { minValue = minValue, maxValue = maxValue, steps = (maxValue - minValue) / rate }
+		end,
+		CreateSlider = function(category, setting, options, tooltip)
+			assert(setting:GetVariableType() == "number" and options ~= nil)
+			return addControl("SettingsSliderControlTemplate", category, setting, options, tooltip)
+		end,
+		CreateDropdown = function(category, setting, options, tooltip)
+			assert(options ~= nil)
+			return addControl("SettingsDropdownControlTemplate", category, setting, options, tooltip)
+		end,
+		CreateControlTextContainer = function()
+			local container = { data = {} }
+			function container:Add(value, label, tooltip)
+				local option = { value = value, label = label, text = label, tooltip = tooltip }
+				self.data[#self.data + 1] = option
+				return option
+			end
+			function container:GetData()
+				return self.data
+			end
+			return container
+		end,
+		CreateElementInitializer = newInitializer,
+	}
+	stubs.CreateSettingsListSectionHeaderInitializer = function(name, tooltip)
+		return newInitializer("SettingsListSectionHeaderTemplate", { name = name, tooltip = tooltip })
+	end
+	stubs.CreateSettingsButtonInitializer = function(name, buttonText, buttonClick, tooltip, addSearchTags)
+		assert(addSearchTags ~= nil)
+		local initializer = newInitializer(
+			"SettingButtonControlTemplate",
+			{ name = name, buttonText = buttonText, buttonClick = buttonClick, tooltip = tooltip }
+		)
+		if addSearchTags then
+			initializer:AddSearchTags(name, buttonText)
+		end
+		return initializer
+	end
+	stubs.CreateKeybindingEntryInitializer = function(bindingIndex, search)
+		return newInitializer("KeyBindingFrameBindingTemplate", { bindingIndex = bindingIndex, search = search })
+	end
+	stubs.C_KeyBindings = {
+		GetBindingIndex = function(action)
+			for index, known in ipairs(client.bindings) do
+				if known == action then
+					return index
+				end
+			end
+			return nil
+		end,
+	}
+	stubs.SettingsPanel = settings.panel
+	stubs.HideUIPanel = function(frame)
+		frame:Hide()
+	end
+
+	function settings.category(name)
+		for _, category in ipairs(settings.categories) do
+			local top = category
+			while top.parent do
+				top = top.parent
+			end
+			local listed = false
+			for _, addOn in ipairs(settings.addOnCategories) do
+				listed = listed or addOn == top
+			end
+			if category.name == name and listed then
+				return category
+			end
+		end
+		return nil
+	end
+
+	function settings.show(category)
+		local rows = {}
+		for _, initializer in ipairs(category.layout.initializers) do
+			local frame = newWidget("Frame")
+			initializer:InitFrame(frame)
+			rows[#rows + 1] = { initializer = initializer, frame = frame }
+		end
+		return rows
+	end
+
+	local function walk(widget, visit)
+		for _, child in ipairs(widget.children) do
+			if child.shown then
+				visit(child)
+				walk(child, visit)
+			end
+		end
+	end
+	function settings.textsOf(frame)
+		local texts = {}
+		walk(frame, function(widget)
+			if widget.text ~= nil then
+				texts[#texts + 1] = widget.text
+			end
+		end)
+		return texts
+	end
+	function settings.buttonsOf(frame)
+		local buttons = {}
+		walk(frame, function(widget)
+			if widget.kind == "Button" then
+				buttons[#buttons + 1] = widget
+			end
+		end)
+		return buttons
+	end
 end
 
 -- The WoW API the addons call, answering as one fixed character on a US realm, out of combat, with no addon
@@ -110,8 +466,8 @@ end
 local function clientStubs(client)
 	local stubs
 	stubs = {
-		CreateFrame = function()
-			return newFrame(client)
+		CreateFrame = function(frameType, _, parent)
+			return newFrame(client, frameType, parent)
 		end,
 		IsLoggedIn = function()
 			return false
@@ -224,24 +580,30 @@ local function clientStubs(client)
 			return "US"
 		end,
 	}
+	settingsStubs(client, stubs)
 	return stubs
 end
 
---- The files a TOC lists, in order, as paths relative to the addon folder with forward slashes.
+--- A TOC: the files it lists, in order, as paths relative to the addon folder with forward slashes, and its
+--- `## Field: value` lines by field.
 ---@param tocPath string
----@return string[]
-local function tocFiles(tocPath)
+---@return string[] files
+---@return table<string, string> fields
+local function readToc(tocPath)
 	---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io
 	local toc = assert(io.open(tocPath, "r"))
-	local files = {}
+	local files, fields = {}, {}
 	for line in toc:lines() do
 		line = line:gsub("\r$", ""):match("^%s*(.-)%s*$")
-		if line ~= "" and line:sub(1, 1) ~= "#" then
+		local field, value = line:match("^##%s*([^:]-)%s*:%s*(.-)$")
+		if field then
+			fields[field] = value
+		elseif line ~= "" and line:sub(1, 1) ~= "#" then
 			files[#files + 1] = (line:gsub("\\", "/"))
 		end
 	end
 	toc:close()
-	return files
+	return files, fields
 end
 
 --- The files addons/<name>/<name>.toc lists, in order, relative to the addon folder with forward slashes
@@ -249,21 +611,24 @@ end
 ---@param name string
 ---@return string[]
 function addonFiles(name)
-	return tocFiles("addons/" .. name .. "/" .. name .. ".toc")
+	return (readToc("addons/" .. name .. "/" .. name .. ".toc"))
 end
 
 --- Loads addons/<name>/<name>.toc and every file it lists, in order, as the client does, then fires
---- ADDON_LOADED(name).
+--- ADDON_LOADED(name). Each addon its `## Dependencies` names is loaded first, the same way and into the same
+--- globals and fake client, as the client loads them: `loadAddon("Pagle_QoL")` runs Core, then QoL.
+--- Each addon loaded is listed in client.addons, enabled and loaded, with its TOC fields as its metadata.
 --- Raises an error naming the TOC and the file if a listed file is missing or fails while loading.
 ---@param name string The addon's folder under addons/, which is also its TOC's name.
 ---@param globals table<string, any>? Globals the client defines for this load, e.g. WOW_PROJECT_ID. They replace
 --- the fake client's stubs of the same name, e.g. InCombatLockdown for a load in combat.
----@param options { holdAddonLoaded: boolean? }? holdAddonLoaded: don't fire ADDON_LOADED; the spec fires it with
---- loaded.client.fire, e.g. after adding a listener that must be there before it.
+---@param options { holdAddonLoaded: boolean?, dependencyLibsOnly: boolean? }? holdAddonLoaded: don't fire
+--- ADDON_LOADED(name); the spec fires it with loaded.client.fire, e.g. after adding a listener that must be there
+--- before it. dependencyLibsOnly: load only the libs/ files of each dependency, for a stand-in that provides the
+--- rest (FakePagle's fake.load).
 ---@return LoadedAddon
 function loadAddon(name, globals, options)
-	local dir = "addons/" .. name .. "/"
-	local toc = dir .. name .. ".toc"
+	options = options or {}
 	local printed = {}
 
 	local client = newClient()
@@ -281,24 +646,49 @@ function loadAddon(name, globals, options)
 	env._G = env
 	setmetatable(env, { __index = _G })
 
-	local ns = {}
-	for _, file in ipairs(tocFiles(toc)) do
-		---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no loadfile
-		local chunk, loadErr = loadfile(dir .. file)
-		if not chunk then
-			error(("%s lists %s, which doesn't load: %s"):format(toc, file, loadErr), 2)
+	local namespaces = {}
+	-- Loads one addon after its dependencies; returns why it failed, or nil.
+	local function load(addon, isDependency)
+		local dir = "addons/" .. addon .. "/"
+		local toc = dir .. addon .. ".toc"
+		local files, fields = readToc(toc)
+		for dependency in (fields.Dependencies or ""):gmatch("[^%s,]+") do
+			if not namespaces[dependency] then
+				local err = load(dependency, true)
+				if err then
+					return err
+				end
+			end
 		end
-		setfenv(chunk, env)
-		local ok, runErr = pcall(chunk, name, ns)
-		if not ok then
-			error(("%s: %s failed while loading: %s"):format(toc, file, tostring(runErr)), 2)
+
+		client.addons[addon] = { enabled = true, loaded = true, metadata = fields }
+		local ns = {}
+		namespaces[addon] = ns
+		for _, file in ipairs(files) do
+			if not (isDependency and options.dependencyLibsOnly) or file:match("^libs/") then
+				---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no loadfile
+				local chunk, loadErr = loadfile(dir .. file)
+				if not chunk then
+					return ("%s lists %s, which doesn't load: %s"):format(toc, file, loadErr)
+				end
+				setfenv(chunk, env)
+				local ok, runErr = pcall(chunk, addon, ns)
+				if not ok then
+					return ("%s: %s failed while loading: %s"):format(toc, file, tostring(runErr))
+				end
+			end
 		end
+		if isDependency or not options.holdAddonLoaded then
+			client.fire("ADDON_LOADED", addon)
+		end
+		return nil
 	end
-	if not (options and options.holdAddonLoaded) then
-		client.fire("ADDON_LOADED", name)
+	local err = load(name, false)
+	if err then
+		error(err, 2)
 	end
 
-	return { ns = ns, env = env, printed = printed, client = client }
+	return { ns = namespaces[name], namespaces = namespaces, env = env, printed = printed, client = client }
 end
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile

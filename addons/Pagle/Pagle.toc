@@ -28,6 +28,7 @@ logic\Migrations.lua
 logic\Catalogue.lua
 logic\Areas.lua
 logic\Angler.lua
+logic\Settings.lua
 adapter\Core.lua
 adapter\Callbacks.lua
 adapter\Events.lua
@@ -37,4 +38,5 @@ adapter\Catalogue.lua
 adapter\Modules.lua
 adapter\CatchLog.lua
 adapter\Angler.lua
+adapter\Settings.lua
 adapter\Login.lua

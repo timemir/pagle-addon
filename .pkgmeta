@@ -19,6 +19,7 @@ ignore:
   - types
 
 # Keys are paths under the package-as folder. Each Module adds its own line in its first
-# milestone, e.g. `Pagle/addons/Pagle_QoL: Pagle_QoL`.
+# milestone, as Pagle_QoL did in M1.
 move-folders:
   Pagle/addons/Pagle: Pagle
+  Pagle/addons/Pagle_QoL: Pagle_QoL
