@@ -155,8 +155,14 @@ stds.wow_variables = {
 		-- SlashCmdList.PAGLEPROBE (probes/fishing-signals/PagleProbe/Report.lua). Gethe/wow-ui-source branch forever at
 		-- 943764493e6b16d63ded3ab304150d1f05e58b57 ("1.60.1 (70338)"),
 		-- Interface/AddOns/Blizzard_ChatFrameBase/Shared/SlashCommandsRegistry.lua: "_G.SlashCmdList = {};".
-		-- The compartment entry needs no table: Pagle.toc's AddonCompartmentFunc names a global, as the probe's did.
 		SlashCmdList = { fields = { PAGLE = { read_only = false } } },
+		-- A FrameXML frame the dump doesn't list (CORE-R50, CORE-R51): Core registers its compartment entry itself, so
+		-- it can change the label. Gethe/wow-ui-source branch forever at 943764493e6b16d63ded3ab304150d1f05e58b57
+		-- ("1.60.1 (70338)"), Interface/AddOns/Blizzard_Minimap/Mainline/AddonCompartment.xml: `<DropdownButton
+		-- name="AddonCompartmentFrame" parent="MinimapCluster" mixin="AddonCompartmentMixin">`, and
+		-- AddonCompartment.lua: `function AddonCompartmentMixin:RegisterAddon(addonData)` keeps the table, whose `text`
+		-- the menu generator reads each time the compartment opens (`local text = addonData.text;`).
+		AddonCompartmentFrame = { fields = { "RegisterAddon" } },
 		-- A FrameXML table the dump doesn't list (LOG-R80). probes/fishing-signals/results/
 		-- 2026-10-11-build70338-report.md, "Packaging, Settings and events": "Tooltip post-call hook (type Object) | ok
 		-- (TooltipDataType.Object = 4); fired 31 times", and its client table shows TooltipDataProcessor with
@@ -192,9 +198,8 @@ exclude_files = {
 files["addons/*/adapter/**"] = { std = "lua51+wow+wow_variables+pagle" }
 -- Only Core's adapter creates the Pagle global.
 files["addons/Pagle/adapter/**"] = { globals = { "Pagle" } }
--- /pagle's name, and the global Pagle.toc's AddonCompartmentFunc names (CORE-R50, CORE-R60).
+-- /pagle's name (CORE-R60).
 files["addons/Pagle/adapter/Slash.lua"] = { globals = { "SLASH_PAGLE1" } }
-files["addons/Pagle/adapter/Menu.lua"] = { globals = { "Pagle_OnAddonCompartmentClick" } }
 -- A Module's adapter/ reads Pagle through stds.pagle above. Its logic/ and locale/ files read it only in their CORE-R11
 -- guard, `if not Pagle then -- luacheck: read globals Pagle …`, whose inline option reaches that line alone: any other
 -- use of Pagle there fails lint (CORE-R7).

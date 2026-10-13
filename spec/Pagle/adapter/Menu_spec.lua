@@ -1,4 +1,4 @@
--- The Addon Compartment entry "Pagle" and its menu (CORE-R33, CORE-R50, CORE-R52; settings.md SET-R75).
+-- The Addon Compartment entry "Pagle" and its menu (CORE-R33, CORE-R50–R52; settings.md SET-R75).
 
 -- The Curio Shop entry with this balance, as CORE-R50 writes it: two spaces, the balance, a coin icon.
 local function curioShop(balance)
@@ -14,36 +14,53 @@ local function loadCore(globals)
 	return loaded
 end
 
--- Clicks Pagle in the Addon Compartment, as Blizzard_Minimap's AddonCompartment does: it calls the global the TOC's
--- AddonCompartmentFunc names, with the addon and mouse button, then closes its own menu. Returns the menu Core
--- opens on the next frame, or nil.
+-- Clicks Pagle in the Addon Compartment, which then closes its own menu, and returns the menu Core opens on the next
+-- frame, or nil.
 local function clickCompartment(loaded)
 	local opened = #loaded.client.menus
-	local func = assert(loaded.client.addons.Pagle.metadata).AddonCompartmentFunc
-	loaded.env[func]("Pagle", "LeftButton")
+	loaded.client.clickCompartment("Pagle")
 	loaded.client.runTimers()
 	return loaded.client.menus[opened + 1]
 end
 
 describe("The compartment entry", function()
-	it("is Pagle's, from the TOC's AddonCompartmentFunc and title (CORE-R50)", function()
+	it("is registered once at login, reading Pagle, with no TOC compartment field (CORE-R50, CORE-R51)", function()
 		local loaded = loadCore()
-		local metadata = assert(loaded.client.addons.Pagle.metadata)
+		assert.are.same({}, loaded.client.compartment)
 
-		assert.are.equal("Pagle", metadata.Title)
-		assert.is_function(loaded.env[metadata.AddonCompartmentFunc])
+		loaded.client.fire("PLAYER_LOGIN")
+
+		assert.are.equal(1, #loaded.client.compartment)
+		assert.are.equal("Pagle", loaded.client.compartment[1].text)
+		for field in pairs(assert(loaded.client.addons.Pagle.metadata)) do
+			assert.is_nil(field:match("^AddonCompartment"))
+		end
 	end)
 
 	it("opens its menu on the next frame, once the compartment's own menu has closed (CORE-R50)", function()
 		local loaded = loadCore()
 		loaded.client.fire("PLAYER_LOGIN")
-		local func = assert(loaded.client.addons.Pagle.metadata).AddonCompartmentFunc
 
-		loaded.env[func]("Pagle", "LeftButton")
+		loaded.client.clickCompartment("Pagle")
 		assert.are.equal(0, #loaded.client.menus)
 		loaded.client.runTimers()
 
 		assert.are.equal(1, #loaded.client.menus)
+	end)
+
+	it("counts the moments Cozy mode holds for a summary in its label (CORE-R51, ANN-R42)", function()
+		local loaded = loadCore()
+		local M = loaded.env.Pagle.RegisterModule({ name = "QoL", title = "QoL", order = 50 })
+		loaded.client.fire("PLAYER_LOGIN")
+		loaded.ns.db.profile.announcements.cozy = true
+
+		M:RaiseMoment({ rung = "nod", kind = "spec", title = "Lure on" })
+		M:RaiseMoment({ rung = "toast", kind = "spec", title = "Gear swapped" })
+
+		assert.are.equal("Pagle · 2 waiting", loaded.client.compartment[1].text)
+		loaded.client.clickCompartment("Pagle · 2 waiting")
+		loaded.client.runTimers()
+		assert.are.same({ curioShop(0), "Settings" }, loaded.client.menus[1].texts())
 	end)
 
 	it(
@@ -232,10 +249,12 @@ describe("The compartment menu while restricted", function()
 end)
 
 describe("The compartment entry off Forever", function()
-	it("does nothing when clicked, as Core never started (CORE-R4)", function()
+	it("isn't registered, as Core never started (CORE-R4)", function()
 		local loaded = loadCore({ WOW_PROJECT_ID = PROJECT_IDS.MAINLINE, WOW_PROJECT_CAMELOT = PROJECT_IDS.CAMELOT })
 
-		assert.is_nil(clickCompartment(loaded))
+		loaded.client.fire("PLAYER_LOGIN")
+
+		assert.are.same({}, loaded.client.compartment)
 		assert.are.same({ loaded.ns.L.NOT_FOREVER }, loaded.printed)
 	end)
 end)
