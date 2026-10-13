@@ -15,4 +15,5 @@ logic\Module.lua
 logic\FishingKey.lua
 adapter\Bindings.lua
 adapter\FishingKey.lua
+adapter\Combat.lua
 adapter\QoL.lua
