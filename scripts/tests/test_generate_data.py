@@ -59,11 +59,12 @@ def write_tree(root: Path, events: str = EVENTS, lists: str = LISTS) -> Path:
     (forever / "lists.toml").write_text(lists, encoding="utf-8")
     (forever / "aliases.toml").write_text("", encoding="utf-8")  # test_aliases.py covers aliases
     write_baseline(root)  # test_generate_baseline.py covers the baseline layer
-    # A DB2 layer with no areas (DATA-R11); test_db2_layer.py covers its areas.
+    # A DB2 layer with no areas or items (DATA-R11); test_db2_layer.py and test_db2_items.py cover them.
     db2 = root / "data" / "db2"
     db2.mkdir(parents=True, exist_ok=True)
     (db2 / "build.toml").write_text('build = 70338\nversion = "1.60.1"\nproducts = ["wow_classic_beta"]\n', encoding="utf-8")
     (db2 / "areas.csv").write_text("ID,ParentAreaID,ContinentID,AreaName_lang\n", encoding="utf-8")
+    (db2 / "items.csv").write_text("ID,ClassID,SubclassID,OverallQualityID,Display_lang\n", encoding="utf-8")
     return root
 
 

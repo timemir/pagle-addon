@@ -69,6 +69,7 @@ def write_tree(root: Path, *, areas: str | None = AREAS, build: str | None = BUI
     db2.mkdir(parents=True, exist_ok=True)
     if areas is not None:
         (db2 / "areas.csv").write_text(areas, encoding="utf-8")
+    (db2 / "items.csv").write_text("ID,ClassID,SubclassID,OverallQualityID,Display_lang\n", encoding="utf-8")
     if build is not None:
         (db2 / "build.toml").write_text(build, encoding="utf-8")
     return root
