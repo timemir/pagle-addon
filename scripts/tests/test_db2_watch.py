@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 from baseline_fixture import write_baseline
+from observed_fixture import write_observed
 from pagle_data.db2_watch import has_keyword, main
 
 BUILDS_URL = "https://wago.tools/api/builds"
@@ -68,6 +69,7 @@ class Canned:
 
 def tree(root: Path) -> Path:
     write_baseline(root)
+    write_observed(root)  # dev.toml with no facts; test_observed.py covers the layer
     db2 = root / "data" / "db2"
     db2.mkdir(parents=True, exist_ok=True)
     (db2 / "build.toml").write_text(BUILD_TOML, encoding="utf-8")
