@@ -725,7 +725,7 @@ describe("M:RefreshSetting", function()
 	it("makes the shown control re-read get, and the rows under it their greying (CORE-R42, SET-R61)", function()
 		local M, state, loaded = withRows()
 		loaded.client.fire("PLAYER_LOGIN")
-		local rows = loaded.client.settings.show(loaded.client.settings.category("Trackers"))
+		local rows = loaded.client.settings.show(assert(loaded.client.settings.category("Trackers")))
 		state.value, state.live = 2, false -- changed outside Settings
 
 		M:RefreshSetting("set")

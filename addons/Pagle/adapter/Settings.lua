@@ -250,15 +250,8 @@ end
 ---@param setting PagleSetting
 ---@return SettingsProxySetting
 local function valueSetting(page, variable, varType, setting)
-	local native = Settings.RegisterProxySetting(
-		page,
-		variable,
-		varType,
-		setting.label,
-		setting.default,
-		setting.get,
-		setting.set
-	)
+	local native =
+		Settings.RegisterProxySetting(page, variable, varType, setting.label, setting.default, setting.get, setting.set)
 	nativeOf[setting] = native
 	return native
 end
