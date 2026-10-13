@@ -69,18 +69,13 @@ function savedLog(entries, format, characters)
 	}
 end
 
---- Loads Core on Forever with an error handler that collects what reaches it instead of failing the spec.
+--- Loads Core on Forever, with the errors its default handler gets (loaded.client.errors), for a spec that asserts
+--- them.
 ---@return LoadedAddon loaded
 ---@return string[] errors Each error the handler got, as text, in order.
 function loadCollectingErrors()
-	local errors = {}
 	local loaded = loadAddon("Pagle", FOREVER_GLOBALS)
-	loaded.env.geterrorhandler = function()
-		return function(err)
-			errors[#errors + 1] = tostring(err)
-		end
-	end
-	return loaded, errors
+	return loaded, loaded.client.errors
 end
 
 --- What the enUS client's BreakUpLargeNumbers writes for a whole number, 0 or more: commas between groups of three

@@ -62,7 +62,8 @@
 --- The rows Core would put on a topic page, in order, its header rows included; nil before login or with no rows,
 --- when Core registers no page (CORE-R42).
 ---@field reported string[] Each error Core reported through geterrorhandler(), e.g. a late M:AddSetting, a
---- Module function that raised under securecallfunction, or a moment dropped in a replay or rebuild (ANN-R4).
+--- Module function that raised under securecallfunction, or a moment dropped in a replay or rebuild (ANN-R4). A
+--- spec that gets one must read this list (assert it), or it fails at its end (spec/support/errors.lua).
 ---@field print fun(line: string) What Core's print does: adds a chat line to `printed`.
 ---@field report fun(err: any) What Core's geterrorhandler() does: adds the error to `reported`.
 ---@field securecall fun(fn: function, ...: any): ... What Core's securecallfunction does: runs `fn`; on an error,
@@ -847,13 +848,12 @@ function newFakePagle()
 	local ns, env = loadCoreLogic()
 	-- Pagle.API_VERSION as adapter/Core.lua sets it; fake_pagle_spec.lua checks they agree.
 	local Pagle = { API_VERSION = 1 }
-	local fake = { Pagle = Pagle, ns = ns, printed = {}, reported = {}, readOnly = readOnly }
+	local fake = { Pagle = Pagle, ns = ns, printed = {}, readOnly = readOnly }
 	function fake.print(line)
 		fake.printed[#fake.printed + 1] = line
 	end
-	function fake.report(err)
-		fake.reported[#fake.reported + 1] = tostring(err)
-	end
+	-- fake.reported: a spec that gets a report must read it, or it fails at its end (spec/support/errors.lua).
+	fake.report = watchErrors(fake, "reported")
 	fake.securecall = newSecureCall(function()
 		return fake.report
 	end)

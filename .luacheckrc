@@ -215,6 +215,7 @@ local helperGlobals = {
 	"SERVER_TIME",
 	"addonFiles",
 	"newFakePagle",
+	"watchErrors",
 	-- spec/support/helpers.lua
 	"foreverWith",
 	"setCombat",
