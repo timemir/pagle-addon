@@ -1,9 +1,9 @@
 -- luacheck config for the lint stage of scripts/check.sh.
 --
--- Addon code gets Lua 5.1 plus the custom stds below. Pure-Lua paths drop back to plain Lua 5.1, so any WoW
--- global there fails lint (CORE-R7). WoW names live in custom stds, never in a top-level read_globals: a per-path
--- std replaces the std, but a top-level read_globals would reach every file. scripts/api-presence.lua fails if a
--- top-level read_globals or globals appears.
+-- Every file is plain Lua 5.1 unless a files[] entry below lets more in, so a WoW global fails lint wherever it
+-- isn't allowed on purpose (CORE-R7: logic/ and locale/ stay pure Lua). Only adapter/ code, which talks to the
+-- client, gets the WoW stds. WoW names live in custom stds, never in a top-level read_globals: that would reach
+-- every file, and scripts/api-presence.lua fails if a top-level read_globals or globals appears.
 
 -- The inventory of WoW APIs Pagle uses; M8 re-checks it. Add each name on purpose, when adapter code needs it,
 -- as a string ("CreateFrame") or with its fields (C_Weather = { fields = { "GetCurrentWeather" } }).
@@ -29,7 +29,7 @@ stds.pagle = {
 	read_globals = { "LibStub", "Pagle" },
 }
 
-std = "lua51+wow+wow_variables+pagle"
+std = "lua51"
 max_line_length = false -- StyLua owns line width, and it leaves long strings and comments as they are.
 exclude_files = {
 	"addons/*/libs/**", -- vendored, owned by scripts/update-ace3.sh
@@ -38,13 +38,11 @@ exclude_files = {
 	".release/**",
 }
 
--- CORE-R7: logic/ is pure Lua, everything passed in as arguments. locale/ holds only string tables.
-files["addons/*/logic/**"] = { std = "lua51" }
-files["addons/*/locale/**"] = { std = "lua51" }
+-- CORE-R7: adapter/ is the one place an addon talks to the client. logic/ (everything passed in as arguments),
+-- locale/ (string tables) and anything else keep the plain Lua 5.1 default.
+files["addons/*/adapter/**"] = { std = "lua51+wow+wow_variables+pagle" }
 -- Only Core's adapter creates the Pagle global.
 files["addons/Pagle/adapter/**"] = { globals = { "Pagle" } }
 -- Specs run under busted on plain Lua 5.1. busted's helper (.busted) defines loadAddon for them.
 files["spec/**"] = { std = "lua51+busted", read_globals = { "loadAddon" } }
 files["spec/support/addon.lua"] = { globals = { "loadAddon" } }
--- The gate's own scripts run on plain Lua 5.1.
-files["scripts/**"] = { std = "lua51" }

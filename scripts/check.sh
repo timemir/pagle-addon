@@ -38,7 +38,7 @@ done
 stage format
 "$bin/stylua" --check "${lua_dirs[@]}" || fail format
 
-# --- 2. lint (#47): luacheck, Lua 5.1, no WoW globals in logic/ or locale/ (CORE-R7), the WoW API inventory
+# --- 2. lint (#47): luacheck, Lua 5.1, no WoW globals outside adapter/ (CORE-R7), the WoW API inventory
 # in .luacheckrc; vendored libs excluded there.
 stage lint
 "$bin/luacheck" --quiet --no-color "${lua_dirs[@]}" || fail lint

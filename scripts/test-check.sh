@@ -94,6 +94,13 @@ inventory_add CreateFrame
 expect "a WoW global in adapter/ passes once inventoried" pass
 
 copy
+mkdir "$addon/ui"
+uses_create_frame "$addon/ui/Global.lua"
+inventory_add CreateFrame
+expect "a WoW global anywhere but adapter/ fails lint, even when inventoried" lint \
+	"accessing undefined variable 'CreateFrame'"
+
+copy
 for name in CreateFrame hooksecurefunc ChatFrame1 LE_EXPANSION_CLASSIC Enum.ItemQuality FISHING; do
 	inventory_add "$name"
 done
