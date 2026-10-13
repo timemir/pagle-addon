@@ -392,7 +392,11 @@ describe("the Session summary cards", function()
 				{
 					title = "Your last session",
 					numbers = { "2", "2", "0", "1 min" },
-					rows = { "Pagle Coins +1,200", "# Ledger", "Angler Level 12" },
+					rows = {
+						"Pagle Coins +1,200 |TInterface\\MoneyFrame\\UI-GoldIcon:0|t",
+						"# Ledger",
+						"Angler Level 12",
+					},
 				},
 			}, shown)
 			assert.are.same({}, loaded.env.PagleDB.global.cards)

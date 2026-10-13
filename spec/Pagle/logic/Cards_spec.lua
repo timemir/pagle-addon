@@ -377,7 +377,7 @@ describe("a card's rows", function()
 			}, format)
 
 			assert.are.same({
-				{ kind = "line", text = "Pagle Coins +<1200>" },
+				{ kind = "line", text = "Pagle Coins +<1200> |TInterface\\MoneyFrame\\UI-GoldIcon:0|t" },
 				{ kind = "line", text = "Angler Level 12" },
 				{ kind = "heading", text = "Ledger" },
 				{ kind = "moment", text = "New Species", detail = "Nightfin Snapper", icon = 13759 },

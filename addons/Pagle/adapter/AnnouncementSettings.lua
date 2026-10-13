@@ -98,7 +98,7 @@ ns.CoreSettingsRows.announcements = function(page)
 		page,
 		windowSetting,
 		sliderOptions(WINDOW_MIN, WINDOW_MAX, function(value)
-			return L.SETTINGS_MINUTES:format(value)
+			return L.MINUTES:format(value)
 		end)
 	)
 	window:SetParentInitializer(budget)

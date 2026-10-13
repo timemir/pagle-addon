@@ -180,7 +180,7 @@ local function drawRuler(ruler, at)
 	ruler.margin:SetShown(at.done)
 	ruler.label:SetText(not ruler.compact and at.label or "")
 	ruler.label:SetShown(at.done and not ruler.compact)
-	if at.done and not ruler.compact then
+	if at.stamped and not ruler.compact then
 		setStamp(ruler.record, L.ANNOUNCEMENT_NEW_RECORD)
 	else
 		ruler.record:Hide()
@@ -203,7 +203,7 @@ local function startRuler(view, ruler)
 		self.elapsed = self.elapsed + elapsed
 		local at = ns.RulerAt(self.ruler, self.elapsed)
 		drawRuler(self, at)
-		if at.done then
+		if at.stamped then
 			self:SetScript("OnUpdate", nil)
 		end
 	end)

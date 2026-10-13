@@ -296,7 +296,7 @@ end
 function ns.CardDuration(seconds)
 	local minutes = math.max(1, math.floor(seconds / 60 + 0.5))
 	if minutes < 60 then
-		return ns.L.CARD_MINUTES:format(minutes)
+		return ns.L.MINUTES:format(minutes)
 	end
 	return ns.L.CARD_HOURS:format(math.floor(minutes / 60), minutes % 60)
 end
