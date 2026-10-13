@@ -893,6 +893,82 @@ describe("FakePagle", function()
 		end)
 	end)
 
+	describe("window forecasts", function()
+		local MINUTE = 60
+		local DAY = { time = { { 360, 1260 } } } -- 06:00–21:00
+
+		-- A catalogue in the M1 shape (DATA-R79) whose event list holds the Extravaganza (301) on Sundays from 14:00
+		-- for 2 hours, confirmed.
+		local function fixture()
+			return {
+				fingerprint = "0123456789abcdef",
+				items = {},
+				areas = {},
+				aliases = {},
+				pools = {},
+				windows = {},
+				events = { [301] = { weekday = 1, start = 840, duration = 120, confirmed = true } },
+				fishingSpells = {},
+				auras = {},
+			}
+		end
+
+		-- fake.conditions moved on to the realm clock time `minute`, later the same realm day.
+		local function laterToday(fake, minute)
+			local snapshot = {}
+			for key, value in pairs(fake.conditions) do
+				snapshot[key] = value
+			end
+			snapshot.time = snapshot.time + (minute - snapshot.minute) * MINUTE
+			snapshot.minute = minute
+			return snapshot
+		end
+
+		it("forecasts at the realm clock of fake.conditions, following setConditions (LOG-R49, LOG-R50)", function()
+			local fake = newFakePagle()
+			local Pagle = fake.globals.Pagle
+
+			-- Realm 08:15: open until 21:00.
+			local window = Pagle.NextWindow(DAY, fake.conditions.time)
+			assert.is_true(window.openNow)
+			assert.are.equal(SERVER_TIME + 765 * MINUTE, window.closesAt)
+
+			-- Realm 22:00: back at 06:00 the next morning, until 21:00.
+			fake.setConditions(laterToday(fake, 1320))
+			window = Pagle.NextWindow(DAY, fake.conditions.time)
+			assert.is_nil(window.openNow)
+			assert.are.equal(SERVER_TIME + 1305 * MINUTE, window.opensAt)
+			assert.are.equal(SERVER_TIME + 2205 * MINUTE, window.closesAt)
+		end)
+
+		it(
+			"forecasts events from the fake's catalogue, open now when fake.conditions.events holds them (LOG-R50)",
+			function()
+				local fake = newFakePagle()
+				fake.setCatalogue(fixture())
+				local Pagle = fake.globals.Pagle
+
+				-- Sunday 08:15: the Extravaganza opens at 14:00, for 2 hours.
+				local window = Pagle.NextWindow({ events = { 301 } }, fake.conditions.time)
+				assert.are.equal(SERVER_TIME + 345 * MINUTE, window.opensAt)
+				assert.are.equal(SERVER_TIME + 465 * MINUTE, window.closesAt)
+				assert.is_true(window.confirmed)
+
+				local active = laterToday(fake, fake.conditions.minute)
+				active.events = { 301 }
+				fake.setConditions(active)
+				assert.is_true(Pagle.NextWindow({ events = { 301 } }, fake.conditions.time).openNow)
+			end
+		)
+
+		it("hands out a read-only Window (CORE-R18)", function()
+			local window = newFakePagle().globals.Pagle.NextWindow(DAY, SERVER_TIME)
+			assert.has_error(function()
+				window.openNow = false
+			end)
+		end)
+	end)
+
 	describe("fishing", function()
 		local FISHING_EVENTS = { "CastStarted", "Catch", "CastEnded", "FishingStateChanged" }
 
