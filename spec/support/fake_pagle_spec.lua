@@ -220,6 +220,21 @@ describe("FakePagle", function()
 			assert.is_nil(fake.settingsPage("trackers"))
 		end)
 
+		it("gives a button row its caption, nil without one, as Core draws them (CORE-R42, SET-R2)", function()
+			local fake, M = withQoL()
+			M:AddSetting("fishing", { kind = "header", label = "Casting" })
+			M:AddSetting(
+				"fishing",
+				{ kind = "button", label = "Position", caption = "Reset", onClick = function() end }
+			)
+			M:AddSetting("fishing", { kind = "button", label = "Save", onClick = function() end })
+			fake.login()
+
+			local page = assert(fake.settingsPage("fishing"))
+			assert.are.same({ "Position", "Reset" }, { page[2].label, page[2].caption })
+			assert.are.same({ "Save" }, { page[3].label, page[3].caption })
+		end)
+
 		it("raises an error at the caller for a row Core refuses (CORE-R42)", function()
 			local _, M = withQoL()
 			M:AddSetting("fishing", { kind = "header", id = "casting", label = "Casting" })
@@ -229,6 +244,7 @@ describe("FakePagle", function()
 				{ "fishing", { kind = "toggle", label = "Casting" } },
 				{ "fishing", { kind = "header", id = "casting", label = "Again" } },
 				{ "fishing", { kind = "header", parent = "gear", label = "Swap" } },
+				{ "fishing", { kind = "button", label = "Position", caption = true, onClick = function() end } },
 			}) do
 				local ok, err = pcall(function()
 					M:AddSetting(call[1], call[2])

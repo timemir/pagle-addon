@@ -95,7 +95,7 @@ Terms are used as `CONTEXT.md` defines them. Numbers live in each file's Tunable
   - **Off**: disabled in the AddOns list (this session's state, read with CORE-R16)
   - **Not installed**: `C_AddOns.GetAddOnInfo` reports it missing
 - **CORE-R42** A Module adds options with `M:AddSetting(topic, setting)`, where `topic` is `"fishing"`, `"announcements"` or `"trackers"`. It does this before `ModulesChanged` (CORE-R19); Core builds the pages then. A later call is reported through `geterrorhandler()` and dropped.
-  - A call with a mistake in it raises an error at the caller and adds nothing: an unknown topic or `kind`, a `setting` that isn't a table, a missing `label`, a field its kind requires missing or of the wrong type (`get` and `set` for checkbox, slider and dropdown; `min`, `max` and `step` for a slider; `options` for a dropdown; `onClick` for a button; `binding` for a keybinding; `init` for custom), an `id` the Module already used on that page, or a `parent` naming none of its earlier rows there.
+  - A call with a mistake in it raises an error at the caller and adds nothing: an unknown topic or `kind`, a `setting` that isn't a table, a missing `label`, a field its kind requires missing or of the wrong type (`get` and `set` for checkbox, slider and dropdown; `min`, `max` and `step` for a slider; `options` for a dropdown; `onClick` for a button; `binding` for a keybinding; `init` for custom), a button's `caption` that isn't a string, an `id` the Module already used on that page, or a `parent` naming none of its earlier rows there.
   - On each page, Core's own rows come first. Each Module's rows follow, in `def.order`, under a header with its `def.title`. The header is left out when the Module's first row is a header of its own.
   - A page with no rows isn't registered: Fishing while QoL is off, or Trackers with no tracker Module on.
   - A setting's value lives in the Module's own DB, reached through the setting's `get` and `set`.
@@ -212,6 +212,7 @@ ADR 0008 names the record call `Pagle.AppendRecord`; it lives on the handle so C
 ---@field step? number
 ---@field options? fun(): { value: any, label: string }[]   -- dropdown
 ---@field onClick? fun()           -- button
+---@field caption? string          -- button: the text on the button, with `label` beside it; without it, `label` is on the button and the row has no label (SET-R2)
 ---@field binding? string          -- keybinding: the Bindings.xml name, also listed in Key Bindings › AddOns
 ---@field parent? string           -- id of the row it hangs under (indented), a row of the same Module on the same page
 ---@field isEnabled? fun(): boolean  -- greyed out when false
