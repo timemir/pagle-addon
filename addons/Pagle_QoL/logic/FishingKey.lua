@@ -75,10 +75,14 @@ end
 ---@field kind "spell"|"command"|"click"
 ---@field value string
 ---@field item integer? the item ID the button uses, for a click
+---@field slot integer? the equipped slot the item's use applies to, for a lure: the main hand (QOL-R52)
+
+--- The main hand's inventory slot (FrameXML's INVSLOT_MAINHAND), where a lure goes (QOL-R52).
+local MAIN_HAND = 16
 
 --- The Fishing key column of QOL-R24: cast by the Fishing spell's name, reel with soft-interact's
---- INTERACTTARGET, a lure or a clam by clicking ns.ACTION_BUTTON set to use it (QOL-R52), and no target (no override)
---- for nothing, or for a cast while the spell's name is unknown.
+--- INTERACTTARGET, a lure or a clam by clicking ns.ACTION_BUTTON set to use it, a lure on the main hand (QOL-R52),
+--- and no target (no override) for nothing, or for a cast while the spell's name is unknown.
 ---@param action PagleQoLAction
 ---@param fishingName string? `C_Spell.GetSpellName(ns.FISHING_SPELL_ID)`
 ---@param lure integer? the lure's item ID, for the lure action
@@ -88,7 +92,7 @@ function ns.KeyTarget(action, fishingName, lure, clam)
 	if action == "reel" then
 		return { kind = "command", value = "INTERACTTARGET" }
 	elseif action == "lure" and lure then
-		return { kind = "click", value = ns.ACTION_BUTTON, item = lure }
+		return { kind = "click", value = ns.ACTION_BUTTON, item = lure, slot = MAIN_HAND }
 	elseif action == "clam" and clam then
 		return { kind = "click", value = ns.ACTION_BUTTON, item = clam }
 	elseif action == "gear" then

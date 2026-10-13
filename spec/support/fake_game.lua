@@ -19,6 +19,8 @@
 --   loaded.client.nextFrame(0.016)                                   -- the clock moves on, then one frame runs
 --   loaded.client.keysDown.SHIFT = true                              -- IsShiftKeyDown()
 --   loaded.client.loadItem(6529, "Shiny Bauble")                     -- an uncached item's data arrives
+--   loaded.client.pressKey("F")                                      -- F's click override clicks its button
+--   loaded.client.itemUses                                           -- { "use 6529 on 16" }: what the presses used
 --
 -- Each override call fires UPDATE_BINDINGS at once, through client.fireGameEvent, as the client fires it after a
 -- binding change; under FakePagle, fake.load points that at fake.fireGameEvent. Each one raises an error while the
@@ -43,7 +45,16 @@
 ---@field cvarCalls string[] Each `SetCVar` call, in order: "set <name> <value>".
 ---@field mounted boolean? Whether the player is mounted, as `IsMounted()` reads it.
 ---@field bags table<integer, integer> How many of each item ID are in the bags, as `C_Item.GetItemCount` reads it.
----@field unusable table<integer, true> Item IDs `C_Item.IsUsableItem` says can't be used; every other can.
+---@field unusable table<integer, true> Item IDs `C_Item.IsUsableItem` says can't be used; every other can. The
+--- clam table's items are, as on Forever (#147).
+---@field targetsItem table<integer, true> Item IDs whose use targets an item, the lure table's: their use alone leaves
+--- the cursor targeting (`SpellIsTargeting()`), until the secure button's `target-slot` names the slot (#147).
+---@field targeting integer? The item whose use is waiting for a target, as the glowing hand; nil when none is.
+---@field itemUses string[] Each item use PagleQoLActionButton's press made, in order: "use <itemID>", or
+--- "use <itemID> on <slot>" for one applied to an equipped slot.
+---@field pressKey fun(key: string) A press of `key` reaching its override: for a click override ("CLICK name:…"),
+--- the named button's click, with the secure item action of FrameXML's SecureActionButtonTemplate for a secure one.
+--- No other override is faked.
 ---@field mainHandEnchant integer? The enchant ID on the main hand (a lure), as `GetWeaponEnchantInfo()` reads it.
 ---@field itemSpells table<integer, { [1]: string, [2]: integer }> The spell each item's use casts, by item ID, as
 --- `C_Item.GetItemSpell` returns it: name, spell ID.
@@ -108,7 +119,12 @@ return function(client, stubs)
 	client.cvarCalls = {}
 	-- A Fishing Pole (6256, as probe B1 read it) and a Worn Shortsword (25).
 	client.items = { [6256] = { 2, 20 }, [25] = { 2, 7 } }
-	client.bags, client.unusable = {}, {}
+	-- On Forever `C_Item.IsUsableItem` is false for a clam in the bags: the dev's `/dump` read 5523 so (build 70338,
+	-- #147). The other two clams are taken to be the same.
+	client.bags, client.unusable = {}, { [5523] = true, [5524] = true, [7973] = true }
+	-- The lure table's items: using one alone starts targeting on Forever (build 70338, #147).
+	client.targetsItem = { [6529] = true, [6530] = true, [6811] = true, [6532] = true, [7307] = true, [6533] = true }
+	client.itemUses = {}
 	-- Shiny Bauble's use casts 8087 (probe B4); the other lures' spells are a spec's to add.
 	client.itemSpells = { [6529] = { "Shiny Bauble", 8087 } }
 	-- The lure table's and the clam table's items by their enUS names, all cached.
@@ -325,6 +341,55 @@ return function(client, stubs)
 
 	local function record(call)
 		client.equipmentSetCalls[#client.equipmentSetCalls + 1] = call
+	end
+
+	-- A secure button's click, as SECURE_ACTIONS.item and OnActionButtonClick run it (Gethe/wow-ui-source branch
+	-- forever at 943764493e6b16d63ded3ab304150d1f05e58b57, "1.60.1 (70338)":
+	-- Interface/AddOns/Blizzard_FrameXML/SecureTemplates.lua, lines 418–439 and 759–785): the button's item is used;
+	-- then, if that use is targeting an item, `target-slot` with no `target-bag` applies it to that equipped slot
+	-- (UseInventoryItem). Only `type = "item"` with `item = "item:<id>"`, used from the bags, is faked. An applied
+	-- lure's use casts its spell at once (UNIT_SPELLCAST_START, _SUCCEEDED, _STOP); its enchant is a spec's to put on,
+	-- as the game shows it a moment later.
+	local function secureClick(button)
+		if button:GetAttribute("type") ~= "item" then
+			return
+		end
+		local itemID = tonumber((button:GetAttribute("item") or ""):match("^item:(%d+)$"))
+		if not itemID or (client.bags[itemID] or 0) == 0 then
+			return
+		end
+		if not client.targetsItem[itemID] then
+			client.itemUses[#client.itemUses + 1] = "use " .. itemID
+			return
+		end
+		client.targeting = itemID
+		local slot = tonumber(button:GetAttribute("target-slot"))
+		if not slot or button:GetAttribute("target-bag") or not wornIn(slot) then
+			return
+		end
+		client.targeting = nil
+		client.itemUses[#client.itemUses + 1] = ("use %d on %d"):format(itemID, slot)
+		local spell = client.itemSpells[itemID] or {}
+		client.casting = spell[1]
+		client.fireGameEvent("UNIT_SPELLCAST_START", "player", "Cast-Item", spell[2])
+		client.casting = nil
+		client.fireGameEvent("UNIT_SPELLCAST_SUCCEEDED", "player", "Cast-Item", spell[2])
+		client.fireGameEvent("UNIT_SPELLCAST_STOP", "player", "Cast-Item", spell[2])
+	end
+
+	function client.pressKey(key)
+		local action = client.overrideAction(key)
+		local name = action and action:match("^CLICK ([^:]+):")
+		assert(name, ("FakeClient: only a click override is pressed, not %s"):format(tostring(action)))
+		local button = assert(stubs[name], "FakeClient: no button named " .. name)
+		if button.template == "SecureActionButtonTemplate" then
+			secureClick(button)
+		else
+			button:Click()
+		end
+	end
+	stubs.SpellIsTargeting = function()
+		return client.targeting ~= nil
 	end
 
 	function client.wearSet(setID)

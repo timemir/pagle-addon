@@ -76,6 +76,21 @@ describe("Clams on the Fishing key", function()
 
 			assert.are.equal(CLICK, client.overrideAction("F"))
 			assert.are.equal("item:5524", buttonItem(loaded))
+			-- The lure's target slot is gone: a clam opens from the bags (QOL-R24, QOL-R52).
+			assert.is_nil(loaded.env.PagleQoLActionButton:GetAttribute("target-slot"))
+		end)
+
+		it("opens the clam in one press, though IsUsableItem says it can't be used (QOL-R24, QOL-R55)", function()
+			local _, client, loaded = start(function(_, client)
+				client.bags[SMALL_BARNACLED] = 1
+			end)
+			-- As Forever reads a clam in the bags (#147).
+			assert.is_false(loaded.env.C_Item.IsUsableItem(SMALL_BARNACLED))
+
+			client.pressKey("F")
+
+			assert.are.same({ "use 5523" }, client.itemUses)
+			assert.is_nil(client.targeting)
 		end)
 
 		it("opens a clam with no pole in hand and no gear step ready (QOL-R23)", function()
@@ -89,15 +104,10 @@ describe("Clams on the Fishing key", function()
 			assert.are.equal("item:5523", buttonItem(loaded))
 		end)
 
-		it("casts with no clam available: none in the bags, or none usable (QOL-R55)", function()
-			local _, empty = start()
-			local _, unusable = start(function(_, client)
-				client.bags[THICK_SHELLED] = 1
-				client.unusable[THICK_SHELLED] = true
-			end)
+		it("casts with no clam in the bags (QOL-R55)", function()
+			local _, client = start()
 
-			assert.are.equal(CAST, empty.overrideAction("F"))
-			assert.are.equal(CAST, unusable.overrideAction("F"))
+			assert.are.equal(CAST, client.overrideAction("F"))
 		end)
 
 		it("never opens a container outside the clam table (QOL-R57, QOL-R96)", function()

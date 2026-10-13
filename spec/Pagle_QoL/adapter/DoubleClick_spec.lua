@@ -198,7 +198,7 @@ describe("The double-click", function()
 
 			assert.are.equal(LURE, button2(client))
 			local button = loaded.env.PagleQoLActionButton
-			assert.are.same({ type = "item", item = "item:6529" }, button.attributes)
+			assert.are.same({ type = "item", item = "item:6529", ["target-slot"] = 16 }, button.attributes)
 			assert.are.same({ "AnyDown" }, button.clicks)
 		end)
 
@@ -214,8 +214,12 @@ describe("The double-click", function()
 			assert.is_nil(client.overrideAction("F"))
 			assert.are.equal(LURE, button2(client))
 			local button = loaded.env.PagleQoLActionButton
-			assert.are.same({ type = "item", item = "item:6529" }, button.attributes)
+			assert.are.same({ type = "item", item = "item:6529", ["target-slot"] = 16 }, button.attributes)
 			assert.are.same({ "AnyUp" }, button.clicks)
+			-- The second click's press puts the lure on the main hand, with no targeting (QOL-R52, #147).
+			client.pressKey("BUTTON2")
+			assert.are.same({ "use 6529 on 16" }, client.itemUses)
+			assert.is_nil(client.targeting)
 		end)
 
 		it("reels with INTERACTTARGET on BUTTON2 at ActionButtonUseKeyDown 1 (QOL-R24, QOL-R105)", function()

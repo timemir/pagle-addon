@@ -30,7 +30,7 @@ describe("QoL's double-click logic", function()
 			{
 				"a pole with no lure on and a lure available",
 				{ armed = true, poleInHand = true, lure = 6529 },
-				{ kind = "click", value = "PagleQoLActionButton", item = 6529 },
+				{ kind = "click", value = "PagleQoLActionButton", item = 6529, slot = 16 },
 			},
 			{
 				"a lure on and a clam available",
@@ -79,7 +79,7 @@ describe("QoL's double-click logic", function()
 				ns.DoubleClickTarget({ armed = true, poleInHand = true }, "Fishing", "0")
 			)
 			assert.are.same(
-				{ kind = "click", value = "PagleQoLActionButton", item = 6529 },
+				{ kind = "click", value = "PagleQoLActionButton", item = 6529, slot = 16 },
 				ns.DoubleClickTarget({ armed = true, poleInHand = true, lure = 6529 }, "Fishing", "0")
 			)
 			assert.are.same(

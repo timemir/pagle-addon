@@ -225,14 +225,18 @@ describe("QoL's Fishing key logic", function()
 			assert.is_nil(ns.KeyTarget("cast", nil))
 		end)
 
-		it("applies a lure by clicking PagleQoLActionButton set to the lure's item (QOL-R24, QOL-R52)", function()
-			assert.are.same(
-				{ kind = "click", value = "PagleQoLActionButton", item = 6529 },
-				ns.KeyTarget("lure", "Fishing", 6529)
-			)
-		end)
+		it(
+			"applies a lure by clicking PagleQoLActionButton set to the lure's item, on the main hand (QOL-R24, QOL-R52)",
+			function()
+				-- Slot 16 (INVSLOT_MAINHAND): on Forever the lure's use alone starts targeting (#147).
+				assert.are.same(
+					{ kind = "click", value = "PagleQoLActionButton", item = 6529, slot = 16 },
+					ns.KeyTarget("lure", "Fishing", 6529)
+				)
+			end
+		)
 
-		it("opens a clam by clicking PagleQoLActionButton set to the clam's item (QOL-R24)", function()
+		it("opens a clam by clicking PagleQoLActionButton set to the clam's item, on no slot (QOL-R24)", function()
 			assert.are.same(
 				{ kind = "click", value = "PagleQoLActionButton", item = 5524 },
 				ns.KeyTarget("clam", "Fishing", nil, 5524)

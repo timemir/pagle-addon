@@ -9,11 +9,12 @@ local ns = select(2, ...)
 -- What it reads, it uses only to choose (QOL-R4). A clam waits for nothing: its loot window holds the key back
 -- (QOL-R28), and it is gone from the bags once looted.
 
--- A clam is available when it is in the bags and usable, as a lure is (QOL-R51, QOL-R55).
+-- A clam is available when it is in the bags (QOL-R55). Unlike a lure's (QOL-R51), C_Item.IsUsableItem isn't read:
+-- on Forever it is false for a clam in the bags (#147).
 ---@param itemID integer
 ---@return boolean
 local function isAvailable(itemID)
-	return C_Item.GetItemCount(itemID) > 0 and C_Item.IsUsableItem(itemID) == true
+	return C_Item.GetItemCount(itemID) > 0
 end
 
 --- The ladder's clam field (QOL-R20 step 5), read at each of the Fishing key's evaluations while armed. It has no

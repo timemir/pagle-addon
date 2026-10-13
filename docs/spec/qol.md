@@ -89,8 +89,8 @@ Terms are used as `CONTEXT.md` defines them. A **game action** is the character 
   | cast | `SetOverrideBindingSpell(owner, true, key, fishingName)` | the same on `BUTTON2` | key: probe B1, B2. Double-click: QOL-R105 (both values) |
   | reel | `SetOverrideBinding(owner, true, key, "INTERACTTARGET")` (soft-interact, QOL-R62) | `INTERACTTARGET` on `BUTTON2` at `ActionButtonUseKeyDown` 1; at 0, no target, and the game's right-click on the bobber reels | key: probe B1. `BUTTON2`: QOL-R105 |
   | equip the fishing set | `SetOverrideBindingClick(owner, true, key, "PagleQoLGearButton")` | never | B9 proved `UseEquipmentSet` from addon code on a keypress |
-  | apply a lure | `SetOverrideBindingClick(owner, true, key, "PagleQoLActionButton")`, the button set to `type = "item"`, `item = "item:<lureID>"` | the same on `BUTTON2` | probe B4 |
-  | open a clam | the same button, `item = "item:<clamID>"` | the same on `BUTTON2` | same mechanism as B4; re-verified in M8 (QOL-R100) |
+  | apply a lure | `SetOverrideBindingClick(owner, true, key, "PagleQoLActionButton")`, the button set to `type = "item"`, `item = "item:<lureID>"`, `target-slot = 16` (QOL-R52) | the same on `BUTTON2` | probe B4; `target-slot`: the exit check (#147) |
+  | open a clam | the same button, `item = "item:<clamID>"`, no `target-slot` | the same on `BUTTON2` | same mechanism as B4; re-verified in M8 (QOL-R100) |
   | nothing | no override (disarmed) | no override | |
 
   `PagleQoLActionButton` is one `SecureActionButtonTemplate` button. `PagleQoLGearButton` is a plain `Button` whose `OnClick` runs QOL-R44. Neither is ever shown.
@@ -139,7 +139,7 @@ Terms are used as `CONTEXT.md` defines them. A **game action** is the character 
 
 - **QOL-R50** **Lures** is *Off*, *Best I have* (default) or *Only this one*, with a chosen lure for *Only this one* (default Shiny Bauble).
 - **QOL-R51** A lure is **available** when it is in the bags (`C_Item.GetItemCount > 0`) and `C_Item.IsUsableItem` says it can be used, and it isn't being skipped after a failed use (QOL-R29). Under *Best I have*, the next lure is the available one with the highest bonus in the lure table (QOL-R54), ties to the lower item ID. Under *Only this one*, it is the chosen lure if available, else none.
-- **QOL-R52** The lure is applied by item use on the secure button (QOL-R24) and goes on the pole in hand; no `target-slot` and no macro is needed (probe B4).
+- **QOL-R52** The lure is applied by item use on the secure button (QOL-R24), with `target-slot` 16 (the main hand, `INVSLOT_MAINHAND`), so it goes on the pole in hand in one press; no macro is needed. After its item action, the secure button applies a use that is targeting an item to its `target-slot` (forever's `SecureTemplates.lua`, `OnActionButtonClick`). Any other item use on the button, a clam's, has no `target-slot`. Found in the Track Q exit check (Forever beta 1.60.1.70338, 2026-10-13, #147): with no `target-slot`, the use alone starts targeting, and the lure goes on only when the player clicks the pole on the character sheet.
 - **QOL-R53** **Out-of-lures Nudge:** when the pole's lure goes from on to off during a Fishing stretch, Lures isn't *Off*, and no lure is available, QoL shows "Your lure is gone and there are none left in your bags." (under *Best I have*) or "Your lure is gone and there's no {lure name} left in your bags." (under *Only this one*). At most once per Fishing stretch. There is no "running low" Nudge: the key re-applies lures by itself.
 - **QOL-R54** The **lure table** is QoL's own, in `addons/Pagle_QoL/data/lures.lua`: `{ itemID, enchantID, bonus }` per lure, from the Classic baseline:
 
@@ -156,7 +156,7 @@ Terms are used as `CONTEXT.md` defines them. A **game action** is the character 
 
 ### Clams
 
-- **QOL-R55** A clam is **available** when one of the clam table's items is in the bags and usable (as QOL-R51). The lowest item ID in the bags opens first.
+- **QOL-R55** A clam is **available** when one of the clam table's items is in the bags (`C_Item.GetItemCount > 0`). `C_Item.IsUsableItem` isn't read: on Forever it is `false` for a clam in the bags (beta 1.60.1.70338, 2026-10-13, #147). The lowest item ID in the bags opens first.
 - **QOL-R56** *Open clams between Casts* is on by default. A clam opens only between Casts (QOL-R20 puts *reel* above it) and one per press.
 - **QOL-R57** The **clam table** is QoL's own, in `addons/Pagle_QoL/data/clams.lua`: Small Barnacled Clam (5523), Thick-shelled Clam (5524), Big-mouth Clam (7973). It holds only containers that open with a plain item use; locked boxes and other treasure aren't clams. Forever additions are found in M8 (QOL-R100).
 

@@ -11,7 +11,7 @@ local ns = select(2, ...)
 --- The clam the Fishing key opens next (QOL-R55): while *Open clams between Casts* is on, the available clam with the
 --- lowest item ID; otherwise none. Only the clam table's items are ever picked (QOL-R57, QOL-R96).
 ---@param on boolean *Open clams between Casts* (QOL-R56)
----@param isAvailable fun(itemID: integer): boolean in the bags and usable (QOL-R55)
+---@param isAvailable fun(itemID: integer): boolean in the bags (QOL-R55)
 ---@return integer? itemID
 function ns.ChooseClam(on, isAvailable)
 	if not on then

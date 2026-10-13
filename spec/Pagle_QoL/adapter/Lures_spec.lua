@@ -51,7 +51,7 @@ end
 describe("Lures on the Fishing key", function()
 	describe("the next action", function()
 		it(
-			"with a pole, no lure on and Shiny Baubles in the bags, clicks PagleQoLActionButton set to item 6529 (QOL-R20, QOL-R24, QOL-R52)",
+			"with a pole, no lure on and Shiny Baubles in the bags, clicks PagleQoLActionButton set to item 6529 on slot 16 (QOL-R20, QOL-R24, QOL-R52)",
 			function()
 				local _, client, loaded = start()
 
@@ -61,9 +61,28 @@ describe("Lures on the Fishing key", function()
 				assert.are.equal("SecureActionButtonTemplate", button.template)
 				assert.are.equal("item", button:GetAttribute("type"))
 				assert.are.equal("item:6529", buttonItem(loaded))
-				-- No target slot and no macro: the lure goes on the pole in hand (QOL-R52, probe B4).
-				assert.is_nil(button:GetAttribute("target-slot"))
+				-- The main hand as the target slot, and no macro: the lure goes on the pole in hand (QOL-R52, #147).
+				assert.are.equal(16, button:GetAttribute("target-slot"))
 				assert.is_nil(button:GetAttribute("macrotext"))
+			end
+		)
+
+		it(
+			"puts the lure on the pole in one press, with no targeting, then waits for it (QOL-R24, QOL-R29, QOL-R52)",
+			function()
+				local fake, client = start()
+
+				client.pressKey("F")
+
+				-- The use was applied to the main hand: the cursor isn't left targeting (#147).
+				assert.is_nil(client.targeting)
+				assert.are.same({ "use 6529 on 16" }, client.itemUses)
+				-- Its UNIT_SPELLCAST_SUCCEEDED (8087) counts the pole as lured while the result wait runs.
+				assert.are.equal(CAST, client.overrideAction("F"))
+				client.mainHandEnchant = 263
+				fake.fireGameEvent("UNIT_INVENTORY_CHANGED", "player")
+				client.advance(2)
+				assert.are.equal(CAST, client.overrideAction("F"))
 			end
 		)
 
