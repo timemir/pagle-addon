@@ -1,0 +1,10 @@
+# The event list (DATA-R38): the fishing-relevant calendar event IDs. Each [event.<eventID>] has an optional
+# weekly rule, all three keys or none: weekday (1 = Sunday), start (realm minute of the day), duration (minutes).
+# The rule only forecasts the event; nothing confirms it until M2's dev facts (DATA-R122).
+# Edit this, then run scripts/generate-data.py and commit the regenerated files with it (DATA-R61).
+
+# Stranglethorn Fishing Extravaganza: Sundays 14:00 for two hours.
+[event.301]
+weekday = 1
+start = 840
+duration = 120

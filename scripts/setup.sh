@@ -14,7 +14,9 @@
 #   .tools/luals/     lua-language-server
 #   .tools/bir/       Ketho BlizzardInterfaceResources forever dump, Resources/ only
 #   .tools/wow-api/   Ketho vscode-wow-api, Annotations/Core only
+#   .tools/python/    uv, the CPython it installs (cpython/) and the venv holding pytest and mypy (venv/)
 #   .tools/bin/       one link per tool: lua luarocks luacheck busted luacov stylua lua-language-server
+#                     python pytest mypy
 set -euo pipefail
 
 root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
@@ -146,17 +148,59 @@ if stale wow-api "$key"; then
 	stamp wow-api "$key"
 fi
 
+# Python, pytest and mypy for the content generator (DATA-R60): one component, since the venv is built on that
+# CPython. uv runs with no user config and its caches in $tmp, and leaves ~/.local/bin alone (--no-bin). The venv
+# hardcodes its paths, hence the prefix in the key.
+# shellcheck disable=SC2086
+packages=$(echo $PYTHON_PACKAGES)
+key="uv $UV_VERSION $UV_SHA256 python $PYTHON_VERSION packages $packages prefix $tools"
+if stale python "$key"; then
+	fetch "https://github.com/astral-sh/uv/releases/download/$UV_VERSION/uv-x86_64-unknown-linux-musl.tar.gz" \
+		"$tmp/uv.tar.gz" "$UV_SHA256"
+	tar -xzf "$tmp/uv.tar.gz" -C "$tools/python" --strip-components=1
+	export UV_NO_CONFIG=1 UV_CACHE_DIR="$tmp/uv-cache" UV_PYTHON_CACHE_DIR="$tmp/uv-python-cache" \
+		UV_PYTHON_INSTALL_DIR="$tools/python/cpython"
+	uv="$tools/python/uv"
+	quiet "$uv" python install --no-bin "$PYTHON_VERSION"
+	quiet "$uv" venv --python "$PYTHON_VERSION" --managed-python --no-python-downloads "$tools/python/venv"
+	# Exact pins, no resolving and no source builds: each pair becomes name==version.
+	quiet "$uv" pip install --python "$tools/python/venv/bin/python" --no-deps --only-binary :all: \
+		$(awk 'NF { print $1 "==" $2 }' <<<"$PYTHON_PACKAGES")
+
+	# Names compared normalized (PEP 503: lowercase, runs of -_. as -).
+	normalize() { awk -F'==' 'NF { name = tolower($1); gsub(/[-_.]+/, "-", name); print name, $2 }' | sort; }
+	installed=$("$uv" pip freeze --quiet --python "$tools/python/venv/bin/python" | normalize)
+	pinned=$(awk 'NF { print $1 "==" $2 }' <<<"$PYTHON_PACKAGES" | normalize)
+	if [[ $installed != "$pinned" ]]; then
+		echo "setup: the installed Python packages differ from PYTHON_PACKAGES in scripts/tools.env:" >&2
+		diff <(echo "$pinned") <(echo "$installed") >&2 || true
+		exit 1
+	fi
+	stamp python "$key"
+fi
+
 for tool in lua luarocks luacheck busted luacov; do
 	ln -sfn "../lua/bin/$tool" "$tools/bin/$tool"
 done
 ln -sfn ../stylua/stylua "$tools/bin/stylua"
 ln -sfn ../luals/bin/lua-language-server "$tools/bin/lua-language-server"
+for tool in pytest mypy; do
+	ln -sfn "../python/venv/bin/$tool" "$tools/bin/$tool"
+done
+# Python finds its venv from the path it was started by, so python is a script, not a link (rm first: writing
+# through an earlier link would overwrite the venv's python).
+rm -f "$tools/bin/python"
+printf '#!/bin/sh\nexec "$(dirname "$0")/../python/venv/bin/python" "$@"\n' >"$tools/bin/python"
+chmod +x "$tools/bin/python"
 
 "$tools/bin/lua" -v 2>&1
 "$tools/bin/luacheck" --version | sed -n 1p
 "$tools/bin/busted" --version | sed 's/^/busted /'
 "$tools/bin/stylua" --version
 echo "lua-language-server $("$tools/bin/lua-language-server" --version)"
+"$tools/bin/python" --version
+"$tools/bin/pytest" --version
+"$tools/bin/mypy" --version
 
 # The pins this prefix now holds; check.sh refuses to run while they differ from scripts/tools.env.
 cp "$root/scripts/tools.env" "$tools/tools.env"
