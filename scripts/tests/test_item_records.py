@@ -8,7 +8,9 @@ import pytest
 
 from baseline_fixture import write_baseline
 from item_fixture import CHECKS, write_item_layer
+from observed_fixture import write_observed
 from pagle_data.cli import main
+from windows_fixture import write_windows
 
 CATALOGUE = "addons/Pagle/data/Catalogue.lua"
 HEADER = "ID,ClassID,SubclassID,OverallQualityID,Display_lang\n"
@@ -37,6 +39,8 @@ def write_tree(
     (db2 / "build.toml").write_text('build = 70338\nversion = "1.60.1"\nproducts = ["wow_classic_beta"]\n', encoding="utf-8")
     (db2 / "areas.csv").write_text("ID,ParentAreaID,ContinentID,AreaName_lang\n", encoding="utf-8")
     (db2 / "items.csv").write_text(db2_items, encoding="utf-8")
+    write_windows(root)  # test_windows.py covers windows
+    write_observed(root)  # dev.toml with no facts; test_observed.py covers the layer
     return write_item_layer(root, items, species, families, checks)
 
 

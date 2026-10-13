@@ -1,0 +1,75 @@
+# The DB2 watch (DATA-R128 to DATA-R130): every Monday at 06:00 UTC, and by hand from the Actions tab, looks on
+# wago.tools for a Forever build newer than the one data/db2/ describes and opens one issue listing what changed in
+# the DB2 tables Pagle watches. scripts/db2-watch.py finds the build and writes the issue (scripts/tests/
+# test_db2_watch.py tests it against recorded wago.tools answers); this file only lists the issues, runs it and calls
+# gh. It never edits data/ and never pushes (DATA-R130); the dev runs scripts/update-db2.py by hand.
+name: DB2 watch
+
+on:
+  schedule:
+    - cron: "0 6 * * 1" # the DB2 watch schedule (Tunables): Monday, 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write # list issues, create the two labels if missing, open the watch issue
+
+concurrency:
+  group: db2-watch # two runs at once could both open the same build's issue
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false # the watch never pushes
+
+      # PYTHON_VERSION in scripts/tools.env, the generator's Python; the watch needs nothing beyond its standard
+      # library. A `with:` can't read that file, so this step hands the pin over.
+      - name: Read the Python pin
+        id: pins
+        run: |
+          source scripts/tools.env
+          echo "python=$PYTHON_VERSION" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ steps.pins.outputs.python }}
+
+      # Every issue whose title could be the watch's, open or closed. db2-watch.py opens nothing when one has the
+      # exact title it would use (DATA-R128).
+      - name: List the watch's issues
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          gh issue list --repo "$GITHUB_REPOSITORY" --state all --limit 1000
+          --search 'in:title "DB2 changes"' --json number,title > "$RUNNER_TEMP/issues.json"
+
+      # Writes title.txt and body.md when there's an issue to open, and nothing otherwise; it fails the run when
+      # wago.tools or data/db2/ can't be read.
+      - name: Look for a newer Forever build
+        run: python scripts/db2-watch.py --out "$RUNNER_TEMP/db2-watch" --issues "$RUNNER_TEMP/issues.json"
+
+      - name: Open the issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          out="$RUNNER_TEMP/db2-watch"
+          if [[ ! -f "$out/body.md" ]]; then
+            echo "db2-watch: no issue to open"
+            exit 0
+          fi
+          labels=$(gh label list --repo "$GITHUB_REPOSITORY" --limit 1000 --json name --jq '.[].name')
+          if ! grep -qxF db2-diff <<<"$labels"; then
+            gh label create db2-diff --repo "$GITHUB_REPOSITORY" --color 1d76db \
+              --description "A DB2 watch issue: what changed in a new Forever build (DATA-R128)"
+          fi
+          if ! grep -qxF needs-triage <<<"$labels"; then
+            gh label create needs-triage --repo "$GITHUB_REPOSITORY" --color d4c5f9 \
+              --description "Needs the maintainer's triage"
+          fi
+          title=$(<"$out/title.txt")
+          gh issue create --repo "$GITHUB_REPOSITORY" --title "$title" --body-file "$out/body.md" \
+            --label db2-diff --label needs-triage
