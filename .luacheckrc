@@ -24,8 +24,10 @@ stds.wow = {
 				AddOnEnableState = { fields = { "None" } }, -- CORE-R16
 			},
 		},
-		-- Attaching a Module (CORE-R13, CORE-R16, CORE-R41).
-		C_AddOns = { fields = { "GetAddOnMetadata", "GetAddOnEnableState", "GetAddOnInfo", "IsAddOnLoaded" } },
+		-- Attaching a Module (CORE-R13, CORE-R16, CORE-R41); QoL's conflict check and its choices (QOL-R80, QOL-R83).
+		C_AddOns = {
+			fields = { "GetAddOnMetadata", "GetAddOnEnableState", "GetAddOnInfo", "IsAddOnLoaded", "DisableAddOn" },
+		},
 		"UnitGUID",
 		-- The Settings tree (CORE-R40–R44, settings.md); the Settings table itself is in stds.wow_variables.
 		"CreateSettingsListSectionHeaderInitializer",
@@ -52,6 +54,8 @@ stds.wow = {
 		"GetInventoryItemID",
 		C_Item = { fields = { "GetItemInfoInstant" } },
 		C_Spell = { fields = { "GetSpellName" } },
+		-- QoL's conflict popup (QOL-R81); StaticPopupDialogs itself is in stds.wow_variables.
+		"StaticPopup_Show",
 	},
 }
 
@@ -85,6 +89,11 @@ stds.wow_variables = {
 				"CreateElementInitializer",
 			},
 		},
+		-- A FrameXML table the dump doesn't list (QOL-R81). No probe has shown a popup yet; the M1 exit check (step 7)
+		-- does. Gethe/wow-ui-source branch forever at 943764493e6b16d63ded3ab304150d1f05e58b57 ("1.60.1 (70338)"),
+		-- Interface/AddOns/Blizzard_StaticPopup/StaticPopup.lua: `StaticPopupDialogs = {}; -- Definitions`. QoL adds
+		-- its one dialog to it.
+		StaticPopupDialogs = { fields = { PAGLE_QOL_CONFLICT = { read_only = false } } },
 	},
 }
 
