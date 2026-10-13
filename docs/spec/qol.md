@@ -72,7 +72,7 @@ Terms are used as `CONTEXT.md` defines them. A **game action** is the character 
 
 - **QOL-R20** On each evaluation QoL picks the **next action** by checking these in order; the first that holds wins, so a press is always one game action:
   1. QoL is disarmed (QOL-R30), a loot window is open (QOL-R28), or the player is casting a spell with a cast time (`UnitCastingInfo("player")` isn't `nil`, such as a lure going on) → **nothing**
-  2. The player is channeling Fishing (QOL-R22) → **reel**
+  2. The player is channeling Fishing (QOL-R22) → **reel**, unless the reel didn't take (QOL-R35), then **cast**
   3. The gear step is ready (QOL-R43) → **equip the fishing set** (Fishing key only; the double-click skips this step)
   4. Lures aren't *Off*, a pole is in hand, the pole has no lure on (`GetWeaponEnchantInfo()` returns `false` for the main hand), and a lure is available (QOL-R51) → **apply that lure**
   5. *Open clams between Casts* is on and a clam is available (QOL-R55) → **open one clam**
@@ -108,6 +108,12 @@ Terms are used as `CONTEXT.md` defines them. A **game action** is the character 
   - After a swap to the fishing set, the gear step isn't ready (QOL-R43), and Swap gear does nothing, until `EQUIPMENT_SWAP_FINISHED` or the result wait, whichever comes first.
   - After a lure's use finishes casting (`UNIT_SPELLCAST_SUCCEEDED` for the player), the pole counts as lured until `GetWeaponEnchantInfo()` shows the lure or the result wait passes.
   - If a lure's use fails (`UNIT_SPELLCAST_FAILED` for the player while that lure was the target), or the result wait passes with no lure on, that lure ID is skipped by QOL-R51 until the next login or `/reload`, or until fishing skill changes (`SKILL_LINES_CHANGED`). So a lure the game won't apply never blocks the key.
+- **QOL-R35** **The reel didn't take.** A bobber beyond the game's interact range can't be reeled: `INTERACTTARGET` does nothing and the channel runs on. So a reel that changes nothing turns the next press into a cast:
+  - A **reel press** is a Fishing key going down while its override is the reel (QOL-R24). The override reports no press to addon code, so QoL looks: every frame while armed, it checks each bound key with `IsKeyDown` on the key without its modifiers (as QOL-R26), and a key down on this frame and up on the one before is one press. Probe B1's key watcher saw every `INTERACTTARGET` press this way. A press shorter than a frame can go unseen; the next one is seen.
+  - When the reel wait has passed since a reel press and the player is still channeling Fishing with no loot window opened since, **the reel didn't take**: QoL re-evaluates at once (QOL-R25, R26), the next action is *cast* (QOL-R20 step 2), and the next press casts again. That cast ends the old Cast, which Core records as interrupted (LOG-R7).
+  - A waiting reel press is dropped, and the reel didn't take is cleared, when the channel stops (QOL-R22), a new channel starts (Core's `CastStarted`), a loot window opens (QOL-R28) or QoL is disarmed (QOL-R30: restriction, standing down). Another reel press while one waits changes nothing.
+  - Only the Fishing key's presses are watched. The double-click reads the same ladder (QOL-R13), so once the reel didn't take its window casts too, but its second click never counts as a reel press: at `ActionButtonUseKeyDown` 0 its reel is the game's own right-click (QOL-R105), which QoL can't tell from a camera click.
+  - QoL can't see why a reel failed, so this is a guess on purpose. It never looks for the bobber, and there is no separate recast key (see "Never").
 
 ### Arming, combat and restriction
 
@@ -315,6 +321,7 @@ The Fishing set dropdown reads and writes the current character's choice (`globa
 | Audio mix | SFX on at 1.0; music, ambience, dialog off | QOL-R62 |
 | Nudge display | 3 s, then a 0.5 s fade; 4 px below `UIErrorsFrame` | QOL-R75 |
 | Result wait (gear swap, lure) | 2 s | QOL-R29 |
+| Reel wait (the reel didn't take) | 0.5 s after a reel press | QOL-R35 |
 | Next-action button size | 36 px | QOL-R70 |
 | Next-action button default position | bottom centre, 230 px up | QOL-R73 |
 | Lure table | 6 Classic lures | QOL-R54 |

@@ -31,6 +31,7 @@ local waitingForKeyUp = false -- QOL-R26
 local updating = false -- whether frame's OnUpdate runs
 local sinceTick = 0 -- seconds since the last evaluation
 local disarming = false -- inside ns.DisarmFishingKey, whose own UPDATE_BINDINGS must not re-arm (QOL-R31)
+local reelWatch = ns.NewReelWatch() -- the Fishing key's reel presses, and whether the reel didn't take (QOL-R35)
 local evaluate
 
 --- QoL is armed once logged in, while it isn't standing down (QOL-R82) or restricted (QOL-R30). Only a registered
@@ -76,6 +77,7 @@ local function ladderState(armed, fishingName)
 		lured = lured,
 		lure = lure,
 		gearReady = ns.ReadGearStep(pole),
+		reelMissed = reelWatch:Missed(),
 	}
 end
 
@@ -147,11 +149,19 @@ function ns.ArmActionButton(target)
 	end
 end
 
+-- Whether the Fishing key's override is the reel now (QOL-R24), so a key going down is a reel press (QOL-R35).
+---@return boolean
+local function reelArmed()
+	return current.target ~= nil and current.target.value == ns.KeyTarget("reel").value
+end
+
 ---@param _ Frame
 ---@param elapsed number
 local function onUpdate(_, elapsed)
 	sinceTick = sinceTick + elapsed
-	if waitingForKeyUp or sinceTick >= TICK then
+	-- Each frame looks for a reel press; the frame its reel wait passes, the reel didn't take (QOL-R35).
+	local missed = reelWatch:Frame(reelArmed(), keyHeld(current, current), GetTime())
+	if missed or waitingForKeyUp or sinceTick >= TICK then
 		evaluate()
 	end
 end
@@ -173,6 +183,10 @@ function evaluate()
 	end
 	sinceTick = 0
 	local armed = isArmed()
+	-- Disarmed, a waiting reel press is dropped (QOL-R35).
+	if not armed then
+		reelWatch:Clear()
+	end
 	-- Every override change that falls due while restricted is skipped; the end of restriction re-evaluates (QOL-R32).
 	if Pagle.IsRestricted() then
 		waitingForKeyUp = false
@@ -233,10 +247,12 @@ local function onEvent(event)
 		loggedIn = loggedIn or event == "PLAYER_LOGIN"
 	elseif event == "LOOT_READY" then
 		lootOpen = true
+		reelWatch:Clear() -- QOL-R35
 	elseif event == "LOOT_CLOSED" then
 		lootOpen = false
 	elseif event == "UNIT_SPELLCAST_CHANNEL_STOP" then
 		channeling = false
+		reelWatch:Clear() -- QOL-R35
 	end
 	evaluate()
 end
@@ -289,6 +305,7 @@ function ns.StartFishingKey()
 	Pagle.RegisterEvent(OWNER, "CVAR_UPDATE", registerClicks)
 	Pagle.RegisterCallback(OWNER, "CastStarted", function()
 		channeling = true
+		reelWatch:Clear() -- a new channel: its reel is untried (QOL-R35)
 		evaluate()
 	end)
 	for _, event in ipairs({ "CastEnded", "FishingStateChanged" }) do
