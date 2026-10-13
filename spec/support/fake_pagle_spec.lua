@@ -329,6 +329,51 @@ describe("FakePagle", function()
 		end)
 	end)
 
+	describe("the Angler", function()
+		it("has the logged-in character current from login, before ModulesChanged (LOG-R1, LOG-R27)", function()
+			local fake = newFakePagle()
+			local current
+			fake.Pagle.RegisterCallback("Spec", "ModulesChanged", function()
+				current = fake.Pagle.GetAngler().current
+			end)
+			assert.is_nil(fake.Pagle.GetAngler().current)
+
+			fake.login()
+
+			local angler = fake.globals.Pagle.GetAngler()
+			assert.are.equal(1, current)
+			assert.are.equal(PLAYER_GUID, angler.characters[1].guid)
+			assert.are.equal(0, angler.bestBaseSkill)
+			assert.has_error(function()
+				angler.characters[1].name = "Bram"
+			end)
+		end)
+
+		it(
+			"reads skill as Core does: an S1, SkillChanged after it, then ConditionsChanged (LOG-R31, LOG-R32)",
+			function()
+				local fake = newFakePagle()
+				fake.login()
+				local fired = {}
+				fake.Pagle.RegisterCallback("Spec", "SkillChanged", function(_, reading)
+					fired[#fired + 1] = "SkillChanged " .. reading.rank .. ", entries " .. #fake.catchLog.data.entries
+				end)
+				fake.Pagle.RegisterCallback("Spec", "ConditionsChanged", function(_, changedKeys)
+					fired[#fired + 1] = "ConditionsChanged " .. changedKeys[1]
+				end)
+
+				fake.readSkill(86, 150, 0)
+				fake.readSkill(86, 150, 25)
+
+				assert.are.same(
+					{ "SkillChanged 86, entries 1", "ConditionsChanged skill", "ConditionsChanged skill" },
+					fired
+				)
+				assert.are.equal(86, fake.Pagle.GetAngler().bestBaseSkill)
+			end
+		)
+	end)
+
 	describe("the catalogue", function()
 		-- A catalogue in the M1 shape (DATA-R79): Darkshore (148) with The Long Wash (453).
 		local function fixture()

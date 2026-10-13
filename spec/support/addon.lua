@@ -554,6 +554,22 @@ local function clientStubs(client)
 		UnitNameUnmodified = function()
 			return "Angler"
 		end,
+		-- Forever answers with the first name and the surname (probes/fishing-signals/results/2026-10-11-build70338-report.md).
+		UnitName = function()
+			return "Angler", "Tester"
+		end,
+		-- The probe's build, and a character whose one profession is Fishing (skill line 356) at 75/150.
+		GetBuildInfo = function()
+			return "1.60.1", "70338", "Oct  9 2026", 16001, "", " "
+		end,
+		GetProfessions = function()
+			return nil, nil, nil, 8, nil
+		end,
+		GetProfessionInfo = function(index)
+			if index == 8 then
+				return "Fishing", 136245, 75, 150, 2, 34, 356, 0, -1, 0, "Fishing"
+			end
+		end,
 		GetRealmName = function()
 			return "Testrealm"
 		end,

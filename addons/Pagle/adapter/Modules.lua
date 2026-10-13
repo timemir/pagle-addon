@@ -8,11 +8,10 @@ end
 ---@class Pagle
 local Pagle = Pagle
 
--- Attaching a Module (CORE-R12–R19). Its own owner, so no other Core file's registration replaces these.
-local OWNER = "Pagle modules"
+-- Attaching a Module (CORE-R12–R19).
 
 --- `ModulesChanged` has no payload: it fires once at PLAYER_LOGIN, when every enabled Module has registered or
---- failed to (CORE-R19).
+--- failed to (CORE-R19). adapter/Login.lua fires it, after the character and the area index (LOG-R1).
 ---@alias PagleModulesChangedHandler fun(event: "ModulesChanged")
 
 --- Core's one registry. Core's other files reach registered Modules through it: `ns.Modules:Modules()` by order,
@@ -62,9 +61,3 @@ function ns.ModuleStates()
 	end
 	return states
 end
-
--- PLAYER_LOGIN comes after every addon's ADDON_LOADED, so every enabled Module has run its OnInitialize (CORE-R19).
-Pagle.RegisterEvent(OWNER, "PLAYER_LOGIN", function()
-	Pagle.UnregisterEvent(OWNER, "PLAYER_LOGIN")
-	ns.Fire("ModulesChanged")
-end)

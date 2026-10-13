@@ -4,7 +4,7 @@
 --
 --   local fake = newFakePagle()
 --   local loaded = fake.load("Pagle_QoL")                 -- the Module sees fake.globals.Pagle as its Pagle
---   fake.login()                                            -- Core's PLAYER_LOGIN: ModulesChanged
+--   fake.login()                                            -- Core's PLAYER_LOGIN: the character, ModulesChanged
 --   fake.fire("RestrictionChanged", true)                   -- any Core event; tables arrive read-only
 --   fake.setRestricted(true)
 --
@@ -36,7 +36,10 @@
 ---@field fireGameEvent fun(event: string, ...) Calls the handlers registered with Pagle.RegisterEvent or
 --- RegisterUnitEvent for a WoW event, as the client would fire it. A unit event reaches only its unit's handlers.
 ---@field setRestricted fun(isRestricted: boolean) Sets the restriction state; RestrictionChanged fires on a change.
----@field login fun() Does Core's PLAYER_LOGIN work: fires ModulesChanged. Raises an error if called twice.
+---@field login fun() Does Core's PLAYER_LOGIN work: adds the character (PLAYER_GUID) to the Angler, then fires
+--- ModulesChanged. Raises an error if called twice.
+---@field readSkill fun(rank: integer, max: integer, mod: integer) Reads fishing skill as Core does after login: an
+--- S1 when rank or max changed, then SkillChanged, then ConditionsChanged({"skill"}) on a rank or modifier change.
 ---@field readOnly fun(value: any): any The read-only proxy of a table (the same one each time); other values as is.
 ---@field moduleState fun(name: string): PagleModuleState A roster Module's state (CORE-R41).
 ---@field settingsPage fun(topic: string): { module: string, kind: string, label: string, indented: boolean, setting: PagleSetting }[]?
@@ -319,6 +322,40 @@ part(function(fake, Pagle, ns)
 		local iterate = fake.catchLog:Iterate(afterSeq)
 		return function()
 			return readOnly(iterate())
+		end
+	end
+end)
+
+-- The Angler (LOG-R25–R27) and Skill Readings (LOG-R31, LOG-R32), on Core's real logic over fake.catchLog. Login
+-- adds the fake client's character (PLAYER_GUID) before ModulesChanged, as Core's login order does (LOG-R1).
+part(function(fake, Pagle, ns)
+	local now = 1791731700 -- the fake client's GetServerTime()
+	local angler = ns.NewAngler(fake.catchLog)
+	function Pagle.GetAngler()
+		return readOnly(angler:Get())
+	end
+
+	local login = fake.login
+	function fake.login()
+		angler:SeeCharacter({
+			guid = PLAYER_GUID,
+			name = "Angler",
+			surname = "Tester",
+			classID = 1,
+			raceID = 1,
+			faction = "Alliance",
+			realmID = ns.RealmIDFromGUID(PLAYER_GUID),
+		}, now)
+		login()
+	end
+
+	function fake.readSkill(rank, max, mod)
+		local appended, changed = angler:ReadSkill({ rank = rank, max = max, mod = mod }, now)
+		if appended then
+			fake.fire("SkillChanged", appended)
+		end
+		if changed then
+			fake.fire("ConditionsChanged", { "skill" })
 		end
 	end
 end)
