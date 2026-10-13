@@ -81,6 +81,10 @@
 --- after its moments were raised, or after the last projection finishes (ANN-R10); one per moment without a Cast.
 ---@field summarized PagleRaisedMoment[] Each moment Core kept, as it was raised, shown or not (ANN-R25): a
 --- summaryOnly one is here and never in announcements. A moment Core dropped (ANN-R4) is in neither.
+---@field global { summary: { moments: PagleStoredMoment[], lines: table }, pending: PagleStoredMoment[], cards: PagleSummaryCard[] }
+--- PagleDB.global's Session summary keys (announcements.md › Data): the open Session's moments and every Module's
+--- M:SetSummaryLine lines, the moments raised with no Session open (ANN-R52), and the cards each SessionEnded made
+--- for a Session that raised a moment (ANN-R53). A spec may replace it before login, as a saved PagleDB.
 ---@field nextFrame fun() Runs the next frame: what Core queued for it so far, such as flushing moments into
 --- fake.announcements (ANN-R10, ANN-R12).
 ---@field slash fun(line: string) Types `/pagle <line>` (CORE-R60–R62); help lines go to `printed`.
@@ -406,6 +410,7 @@ part(function(fake, _, ns)
 		end,
 		summarize = function(moment)
 			fake.summarized[#fake.summarized + 1] = moment
+			fake.securecall(ns.SummarizeMoment, moment) -- the Session summary part's (below)
 		end,
 	})
 	ns.ModuleHandle.RaiseMoment = ns.RaiseMomentMethod(fake.registry, moments)
@@ -728,6 +733,34 @@ part(function(fake, Pagle, ns)
 		end
 		return readOnly(recorded)
 	end
+end)
+
+-- The Session summary (ANN-R50–R53), on Core's real logic over fake.global: each moment Core keeps goes to the open
+-- Session's summary (or global.pending with none open), M:SetSummaryLine sets lines, and SessionEnded makes a card
+-- in fake.global.cards for a Session that raised a moment.
+part(function(fake, Pagle, ns)
+	fake.global = { summary = { moments = {}, lines = {} }, pending = {}, cards = {} }
+	local summary = ns.NewSummary({
+		global = function()
+			return fake.global
+		end,
+		isOpen = function()
+			return Pagle.GetSession() ~= nil
+		end,
+		modules = function()
+			return fake.registry:Modules()
+		end,
+	})
+	function ns.SummarizeMoment(moment)
+		summary:Add(moment)
+	end
+	Pagle.RegisterCallback(summary, "SessionStarted", function()
+		summary:Started()
+	end)
+	Pagle.RegisterCallback(summary, "SessionEnded", function(_, session)
+		summary:Ended(session)
+	end)
+	ns.ModuleHandle.SetSummaryLine = ns.SetSummaryLineMethod(fake.registry, summary)
 end)
 
 --- A fresh FakePagle: no Module registered, not restricted, before PLAYER_LOGIN.

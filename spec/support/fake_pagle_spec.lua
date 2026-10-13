@@ -1279,4 +1279,92 @@ describe("FakePagle", function()
 			assert.are.same({ "1 rebuild", "SessionEnded " .. id(-900) .. " whileAway" }, seen)
 		end)
 	end)
+
+	describe("the Session summary", function()
+		-- A Module registered on `fake` whose projection raises `raise(record)`'s moment for each live Cast.
+		local function raising(fake, name, order, raise)
+			local M = fake.Pagle.RegisterModule({ name = name, title = name, order = order })
+			M:NewProjection({
+				db = {},
+				rulesVersion = 1,
+				reset = function()
+					return {}
+				end,
+				apply = function(_, record, mode)
+					if record.kind == "cast" and mode == "live" then
+						M:RaiseMoment(raise(record))
+					end
+				end,
+			})
+			return M
+		end
+
+		it(
+			"make a card when a Session with moments ends, with Core's numbers, the Coins sum, the lines and the"
+				.. " moments by Module order (ANN-R25, ANN-R51, ANN-R53)",
+			function()
+				local fake = newFakePagle()
+				raising(fake, "Hunts", 20, function(record)
+					return { rung = "toast.high", kind = "hunt", title = "Hunt completed", cast = record.id, coins = 15 }
+				end)
+				local ledger = raising(fake, "Ledger", 10, function(record)
+					return { rung = "toast", kind = "newSpecies", title = "New Species", cast = record.id }
+				end)
+				ledger:SetSummaryLine("level", "Angler Level 12")
+				fake.login()
+				fake.enterWorld()
+
+				fake.playCast("caught", { { itemID = 6358, quantity = 1 } })
+				-- In the order raised: Hunts' projection was added first, so it applied the Cast first.
+				assert.are.same({ "Hunt completed", "New Species" }, {
+					fake.global.summary.moments[1].title,
+					fake.global.summary.moments[2].title,
+				})
+				fake.wait(900)
+
+				local card = fake.global.cards[1]
+				assert.are.same({ casts = 1, catches = 1, gotAway = 0, seconds = 0 }, card.numbers)
+				assert.are.equal(15, card.coins)
+				assert.are.same({ { module = "Ledger", title = "Ledger", lines = { "Angler Level 12" } } }, card.lines)
+				assert.are.same({ "Ledger", "Hunts" }, { card.moments[1].module, card.moments[2].module })
+				assert.are.same({}, fake.global.summary.moments)
+			end
+		)
+
+		it("make no card for a Session without moments, lines or not (ANN-R53)", function()
+			local fake = newFakePagle()
+			local M = fake.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
+			M:SetSummaryLine("level", "Angler Level 12")
+			fake.login()
+			fake.enterWorld()
+			fake.playCast("gotAway")
+
+			fake.wait(900)
+
+			assert.are.same({}, fake.global.cards)
+		end)
+
+		it("keep a moment raised with no Session open for the next Session's card (ANN-R52)", function()
+			local fake = newFakePagle()
+			local M = fake.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
+			fake.login()
+			fake.enterWorld()
+			M:RaiseMoment({ rung = "nod", kind = "loginNod", title = "Welcome back" })
+			assert.are.equal("Welcome back", fake.global.pending[1].title)
+
+			fake.playCast("gotAway")
+			fake.wait(900)
+
+			assert.are.equal("Welcome back", fake.global.cards[1].moments[1].moments[1].title)
+		end)
+
+		it("raise an error for M:SetSummaryLine with a bad key, as Core does (ANN-R51)", function()
+			local fake = newFakePagle()
+			local M = fake.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
+
+			assert.has_error(function()
+				M:SetSummaryLine(nil, "text")
+			end)
+		end)
+	end)
 end)
