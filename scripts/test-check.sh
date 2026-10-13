@@ -150,8 +150,9 @@ printf 'Pagle.API_VERSION = "2"\n' >>"$addon/adapter/Core.lua"
 expect "a string assigned to Pagle.API_VERSION in Core fails types" types "assign-type-mismatch"
 
 copy
+line=$(($(wc -l <"$addon/adapter/Core.lua") + 1))
 printf -- '---@diagnostic disable\nPagle.API_VERSION = "2"\n' >>"$addon/adapter/Core.lua"
-expect "a bare ---@diagnostic disable fails types" types "adapter/Core.lua:22:---@diagnostic disable"
+expect "a bare ---@diagnostic disable fails types" types "adapter/Core.lua:$line:---@diagnostic disable"
 
 copy
 printf -- '---@diagnostic disable-next-line: assign-type-mismatch\nPagle.API_VERSION = "2"\n' >>"$addon/adapter/Core.lua"
