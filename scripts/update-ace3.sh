@@ -28,7 +28,8 @@ ref=""
 case "${1:-}" in
 	--check) mode=check ;;
 	-h | --help)
-		sed -n '2,9p' "$0"
+		# The header comment: every line after the shebang up to the first that isn't a comment.
+		awk 'NR > 1 { if (!/^#/) exit; sub(/^# ?/, ""); print }' "$0"
 		exit 0
 		;;
 	"") ;;
