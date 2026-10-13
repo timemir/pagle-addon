@@ -803,6 +803,9 @@ local addGameStubs = dofile("spec/support/fake_game.lua")
 -- Popups and addon switches, for QoL's conflict popup.
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local addPopupStubs = dofile("spec/support/fake_popup.lua")
+-- Tooltip data hooks, for the diagnostics buffer's hovers.
+---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
+local addTooltipStubs = dofile("spec/support/fake_tooltip.lua")
 
 --- A TOC: the files it lists, in order, as paths relative to the addon folder with forward slashes, and its
 --- `## Field: value` lines by field.
@@ -856,6 +859,7 @@ function loadAddon(name, globals, options)
 	local env = clientStubs(client)
 	addGameStubs(client, env)
 	addPopupStubs(client, env)
+	addTooltipStubs(client, env)
 	env.print = function(...)
 		local parts = {}
 		for i = 1, select("#", ...) do
