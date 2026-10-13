@@ -70,12 +70,24 @@ def propose(db2: Db2Layer, fishing: Collection[int], committed: Iterable[Alias])
     return proposals
 
 
-def _label(db2: Db2Layer, area_id: int) -> str:
-    """An area's enUS name, its parent's, and its continent, for the dev's review (never emitted, DATA-R3)."""
+def _name(db2: Db2Layer, area_id: int) -> str:
+    """An area's enUS name and its parent's, for the dev's review (never emitted, DATA-R3)."""
     area = db2.areas[area_id]
     parent = db2.areas.get(area.parent)
-    name = f"{area.name} ({parent.name})" if area.parent and parent is not None else area.name
-    return f"{name}, continent {area.continent}"
+    return f"{area.name} ({parent.name})" if area.parent and parent is not None else area.name
+
+
+def _label(db2: Db2Layer, area_id: int) -> str:
+    return f"{_name(db2, area_id)}, continent {db2.areas[area_id].continent}"
+
+
+def proposal_line(db2: Db2Layer, proposal: Proposal) -> str:
+    """A proposal on one line, for DATA-R64's warning. Source and target share their names, by DATA-R32."""
+    source, target = db2.areas[proposal.source], db2.areas[proposal.target]
+    return (
+        f"{proposal.source} -> {proposal.target}"
+        f" ({_name(db2, proposal.source)}, continent {source.continent} -> {target.continent})"
+    )
 
 
 def proposal_toml(db2: Db2Layer, proposal: Proposal) -> str:

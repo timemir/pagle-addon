@@ -162,3 +162,28 @@ def test_a_committed_alias_is_no_longer_proposed(tmp_path: Path, capsys: pytest.
     assert code == 0
     assert "from = 16521" not in output
     assert output.count("[[alias]]") == 2
+
+
+@pytest.mark.parametrize("mode", [[], ["--check"]])
+def test_every_run_warns_about_each_uncommitted_proposal_until_it_is_committed(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], mode: list[str]
+) -> None:
+    # DATA-R64: alias proposals not yet committed are warnings, printed, not failing, on every run. DATA-R32: once
+    # committed to aliases.toml, a proposal is no longer one.
+    write_tree(tmp_path)
+    run(tmp_path, capsys)
+    code, output = run(tmp_path, capsys, *mode)
+    assert code == 0
+    warning = "generate-data: warning: alias proposal not in data/forever/aliases.toml:"
+    assert f"{warning} 16510 -> 12 (Elwynn Forest, continent 2940 -> 0)" in output
+    assert f"{warning} 16521 -> 18 (Crystal Lake (Elwynn Forest), continent 2940 -> 0)" in output
+    assert f"{warning} 16531 -> 40 (Westfall, continent 2940 -> 0)" in output
+    assert output.count(warning) == 3
+    assert "generate-data: warning: 3 alias proposal(s) not committed; --propose-aliases prints them" in output
+
+    write_tree(tmp_path, alias(16521, 18))
+    run(tmp_path, capsys)
+    code, output = run(tmp_path, capsys, *mode)
+    assert code == 0
+    assert "16521 -> 18" not in output
+    assert output.count(warning) == 2
