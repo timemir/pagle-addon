@@ -55,6 +55,19 @@ FACT_IDS: dict[str, tuple[str, ...]] = {
 }
 _FACT_ID_KEYS = ("item", "area", "window", "event")
 
+# FNV-1a 32-bit (REP-R36): the offset basis and the prime.
+_FNV_BASIS = 0x811C9DC5
+_FNV_PRIME = 0x01000193
+
+
+def reporter_key(log_id: str) -> str:
+    """The reporter key of a log (REP-R36): FNV-1a 32-bit of PagleLog.logId's bytes, 8 lowercase hex characters,
+    zero-padded. The key dev.toml's keys list for the dev's own logs (DATA-R122)."""
+    hashed = _FNV_BASIS
+    for byte in log_id.encode("utf-8"):
+        hashed = ((hashed ^ byte) * _FNV_PRIME) & 0xFFFFFFFF
+    return f"{hashed:08x}"
+
 
 @dataclass(frozen=True)
 class CatchRow:
