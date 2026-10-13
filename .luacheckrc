@@ -90,6 +90,8 @@ stds.wow = {
 		"ERR_FISH_ESCAPED",
 		-- The diagnostics buffer (LOG-R81); TooltipDataProcessor, for its hovers (LOG-R80), is in stds.wow_variables.
 		"GetLocale",
+		-- The projections' time budget per frame (LOG-R71, LOG-R72); their frames go through C_Timer.After.
+		"debugprofilestop",
 	},
 }
 

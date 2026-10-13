@@ -26,6 +26,7 @@ logic\Conditions.lua
 logic\LiveConditions.lua
 logic\Modules.lua
 logic\CatchLog.lua
+logic\Projections.lua
 logic\Migrations.lua
 logic\Catalogue.lua
 logic\Areas.lua
@@ -45,6 +46,7 @@ adapter\Catalogue.lua
 adapter\LiveConditions.lua
 adapter\Modules.lua
 adapter\CatchLog.lua
+adapter\Projections.lua
 adapter\Angler.lua
 adapter\Fishing.lua
 adapter\Diagnostics.lua

@@ -44,9 +44,10 @@ Pagle.RegisterEvent(OWNER, "PLAYER_LOGIN", function()
 end)
 
 -- Steps 3 and 4, at the first PLAYER_ENTERING_WORLD after a login or reload only, never on a later loading screen.
--- Step 3, starting the projections, comes in M2 (LOG-R71, LOG-R72).
+-- The entries step 4 appends come after loginSeq, so projections get them live (LOG-R1).
 Pagle.RegisterEvent(OWNER, "PLAYER_ENTERING_WORLD", function()
 	Pagle.UnregisterEvent(OWNER, "PLAYER_ENTERING_WORLD")
+	ns.StartProjections() -- LOG-R71, LOG-R72
 	ns.LogBuild() -- LOG-R36
 	ns.ReadSkill() -- LOG-R31
 end)
