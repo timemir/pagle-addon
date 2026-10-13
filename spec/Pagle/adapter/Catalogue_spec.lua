@@ -125,6 +125,31 @@ describe("the generated catalogue on Pagle", function()
 		end
 	end)
 
+	it("puts every area of the generated slice under its zone, unless its parents leave the slice (LOG-R55)", function()
+		for areaID in pairs(data.areas) do
+			local zone = Pagle.GetZoneOf(areaID)
+			if zone then
+				assert.are.equal(0, data.areas[zone].parent)
+			else
+				-- e.g. 17845, whose parent 16597 isn't in areas.csv
+				local top = areaID
+				while data.areas[top] and data.areas[top].parent ~= 0 do
+					top = data.areas[top].parent
+				end
+				assert(data.areas[top] == nil, ("area %d belongs to no zone"):format(areaID))
+			end
+		end
+		-- The probe's Catch at The Long Wash, Darkshore (probes/fishing-signals/results/2026-10-11-build70338-report.md).
+		assert.are.equal(148, Pagle.GetZoneOf(453))
+	end)
+
+	it("resolves the probe's Catch at The Long Wash, Darkshore, on Kalimdor (LOG-R22)", function()
+		local live = loadAddon("Pagle", client("Darkshore", "The Long Wash", 1))
+		live.client.fire("PLAYER_LOGIN")
+
+		assert.are.same({ 148, 453 }, { live.ns.ReadAreas() })
+	end)
+
 	it("knows the Fishing spell and the Extravaganza's weekly rule (LOG-R56, DATA-R38, DATA-R39)", function()
 		assert.is_true(loaded.ns.Catalogue.IsFishingSpell(7620))
 		assert.are.equal(1, loaded.ns.Catalogue.GetEventRule(301).weekday)
