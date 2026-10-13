@@ -5,6 +5,7 @@
 --   local fake = newFakePagle()
 --   local loaded = fake.load("Pagle_QoL")                 -- the Module sees fake.globals.Pagle as its Pagle
 --   fake.login()                                            -- Core's PLAYER_LOGIN: the character, ModulesChanged
+--   fake.enterWorld()                                       -- login step 3: every projection catches up or rebuilds
 --   fake.fire("RestrictionChanged", true)                   -- any Core event; tables arrive read-only
 --   fake.setRestricted(true)
 --   fake.playCast("caught", { { itemID = 6358, quantity = 1 } }) -- CastStarted … Catch, CastEnded (LOG-R9)
@@ -38,7 +39,15 @@
 --- RegisterUnitEvent for a WoW event, as the client would fire it. A unit event reaches only its unit's handlers.
 ---@field setRestricted fun(isRestricted: boolean) Sets the restriction state; RestrictionChanged fires on a change.
 ---@field login fun() Does Core's PLAYER_LOGIN work: adds the character (PLAYER_GUID) to the Angler, then fires
---- ModulesChanged. Raises an error if called twice.
+--- ModulesChanged. Raises an error if called twice. The log's length then is loginSeq (LOG-R1): what the spec
+--- appended to fake.catchLog before it is history, and anything after it reaches projections live.
+---@field enterWorld fun() Login step 3 at the first PLAYER_ENTERING_WORLD (LOG-R1): starts every projection's
+--- catch-up or rebuild (LOG-R71, LOG-R72) and runs it to the end at once, then its done and the live entries queued
+--- behind it. Raises an error before login or a second time.
+---@field projections PagleProjections Core's real projection machinery, with its seams: IsUpdating, Mode,
+--- WhenIdle and Live.
+---@field live fun(record: PagleRecord) Hands an entry the spec appended to fake.catchLog to the projections, as Core
+--- does with every entry it appends (LOG-R73); playCast and readSkill do it themselves.
 ---@field readSkill fun(rank: integer, max: integer, mod: integer) Reads fishing skill as Core does after login: an
 --- S1 when rank or max changed, then SkillChanged; then fake.conditions takes the rank and modifier, firing
 --- ConditionsChanged({"skill"}) if either changed. Does nothing before login.
@@ -397,6 +406,59 @@ part(function(fake, Pagle, ns)
 	end
 end)
 
+-- Projections (LOG-R70–R77), on Core's real machinery over fake.catchLog: M:NewProjection and M:IterateCatches on
+-- the handle. login notes loginSeq (the log's length then); enterWorld is login step 3, running every catch-up and
+-- rebuild at once; each entry the fake appends afterwards (playCast, readSkill) is handed over live, before its events.
+-- Records reach apply read-only (CORE-R18). Module code that raises goes to fake.reported.
+part(function(fake, Pagle, ns)
+	local function iterate(afterSeq)
+		local records = fake.catchLog:Iterate(afterSeq)
+		return function()
+			return readOnly(records())
+		end
+	end
+	fake.projections = ns.NewProjections({
+		length = function()
+			return #fake.catchLog.data.entries
+		end,
+		logId = function()
+			return fake.catchLog.data.logId
+		end,
+		fingerprint = function()
+			return Pagle.CONTENT_FINGERPRINT
+		end,
+		clock = function()
+			return 0
+		end,
+		nextFrame = function(step)
+			step()
+		end,
+		call = fake.securecall,
+		syncLimit = math.huge, -- every catch-up and rebuild runs at once
+	})
+	ns.AddProjectionMethods(fake.registry, fake.projections, iterate)
+
+	local loginSeq
+	local login = fake.login
+	function fake.login()
+		loginSeq = #fake.catchLog.data.entries
+		login()
+	end
+
+	local enteredWorld = false
+	function fake.enterWorld()
+		assert(loginSeq, "FakePagle: PLAYER_ENTERING_WORLD comes after fake.login()")
+		assert(not enteredWorld, "FakePagle: login step 3 runs at the first PLAYER_ENTERING_WORLD only")
+		enteredWorld = true
+		fake.projections:Start(loginSeq)
+	end
+
+	-- Hands an entry the fake just appended to the projections (LOG-R73).
+	function fake.live(record)
+		fake.projections:Live(readOnly(record))
+	end
+end)
+
 -- The Angler (LOG-R25–R27) and Skill Readings (LOG-R31, LOG-R32), on Core's real logic over fake.catchLog. Login
 -- adds the fake client's character (PLAYER_GUID) before ModulesChanged, as Core's login order does (LOG-R1).
 part(function(fake, Pagle, ns)
@@ -426,6 +488,7 @@ part(function(fake, Pagle, ns)
 		end
 		local appended = angler:ReadSkill({ rank = rank, max = max, mod = mod }, now)
 		if appended then
+			fake.live(appended)
 			fake.fire("SkillChanged", appended)
 		end
 		-- The live conditions follow the reading, through the same tracker as setConditions (LOG-R32, LOG-R47).
@@ -515,6 +578,7 @@ part(function(fake, Pagle, ns)
 				conditions = conditions,
 				items = items,
 			})
+			fake.live(recorded)
 			return recorded
 		end,
 		fire = fake.fire,

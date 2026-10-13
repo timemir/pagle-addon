@@ -905,4 +905,139 @@ describe("FakePagle", function()
 			assert.are.equal("idle", fake.globals.Pagle.GetFishingState())
 		end)
 	end)
+
+	describe("projections", function()
+		-- The Ledger registered on `fake`, its projection over `db` noting each apply ("<seq> <kind> <mode>"), each
+		-- done ("done") and the Cast and skill events, in order, in `seen`.
+		local function ledger(fake, db)
+			local seen = {}
+			local M = fake.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
+			local projection = M:NewProjection({
+				db = db,
+				rulesVersion = 1,
+				reset = function()
+					return {}
+				end,
+				apply = function(state, record, mode)
+					seen[#seen + 1] = record.seq .. " " .. record.kind .. " " .. mode
+					seen.writable = pcall(function()
+						record.seq = 0
+					end)
+					state.last = record.seq
+				end,
+				done = function(_, info)
+					seen[#seen + 1] = "done"
+					seen.info = info
+				end,
+			})
+			for _, event in ipairs({ "Catch", "CastEnded", "SkillChanged" }) do
+				fake.Pagle.RegisterCallback("Spec " .. event, event, function()
+					seen[#seen + 1] = event
+				end)
+			end
+			return M, projection, seen
+		end
+
+		-- fake.catchLog with the player's character and `casts` Casts in it, as history before login.
+		local function withHistory(fake, casts)
+			fake.catchLog.data.characters[1] = { guid = PLAYER_GUID }
+			for i = 1, casts do
+				fake.catchLog:Append({
+					kind = "cast",
+					char = 1,
+					time = 1791731000 + i,
+					outcome = "caught",
+					conditions = { minute = 494, zone = 148, subzone = 453, events = {}, auras = {} },
+					items = { { itemID = 6358, quantity = 1 } },
+				})
+			end
+		end
+
+		it(
+			"rebuild a fresh projection at enterWorld, at once, over the log as it was at login (LOG-R1, LOG-R72,"
+				.. " LOG-R76)",
+			function()
+				local fake = newFakePagle()
+				withHistory(fake, 600)
+				local db = {}
+				local _, projection, seen = ledger(fake, db)
+
+				fake.login()
+				fake.enterWorld()
+
+				assert.are.equal(601, #seen)
+				assert.are.same({ "600 cast rebuild", "done" }, { seen[600], seen[601] })
+				assert.are.same({ firstBuild = true, rebuilt = true, replayed = 0 }, seen.info)
+				assert.are.same({ 600, fake.catchLog.data.logId, 1 }, { db.lastSeq, db.logId, db.rulesVersion })
+				assert.are.equal(fake.Pagle.CONTENT_FINGERPRINT, db.fingerprint)
+				assert.is_false(projection:IsUpdating())
+				assert.is_false(seen.writable)
+			end
+		)
+
+		it("catch a stored projection up in replay mode (LOG-R71)", function()
+			local fake = newFakePagle()
+			withHistory(fake, 3)
+			fake.login() -- the logId
+			local db = {
+				projection = {},
+				lastSeq = 1,
+				logId = fake.catchLog.data.logId,
+				fingerprint = fake.Pagle.CONTENT_FINGERPRINT,
+				rulesVersion = 1,
+			}
+			local _, _, seen = ledger(fake, db)
+
+			fake.enterWorld()
+
+			assert.are.same({ "2 cast replay", "3 cast replay", "done" }, { unpack(seen) })
+			assert.are.same({ firstBuild = false, rebuilt = false, replayed = 2 }, seen.info)
+		end)
+
+		it("hand a Cast to the projection live, before Catch and CastEnded fire (LOG-R9, LOG-R73)", function()
+			local fake = newFakePagle()
+			local _, projection, seen = ledger(fake, {})
+			fake.login()
+			fake.enterWorld()
+
+			fake.playCast("caught", { { itemID = 6358, quantity = 1 } })
+
+			assert.are.same({ "done", "1 cast live", "Catch", "CastEnded" }, { unpack(seen) })
+			assert.are.equal(1, projection:GetState().last)
+		end)
+
+		it(
+			"hand a Skill Reading over live before SkillChanged, and queue it before enterWorld (LOG-R1, LOG-R74)",
+			function()
+				local fake = newFakePagle()
+				local _, _, seen = ledger(fake, {})
+				fake.login()
+
+				fake.readSkill(86, 150, 0)
+				fake.enterWorld()
+				fake.readSkill(87, 150, 0)
+
+				assert.are.same(
+					{ "SkillChanged", "done", "1 skill live", "2 skill live", "SkillChanged" },
+					{ unpack(seen) }
+				)
+			end
+		)
+
+		it("serve the machinery's seams on fake.projections (LOG-R74, LOG-R75)", function()
+			local fake = newFakePagle()
+			local idle = false
+			fake.projections:WhenIdle(function()
+				idle = true
+			end)
+			fake.login()
+			assert.is_true(fake.projections:IsUpdating())
+
+			fake.enterWorld()
+
+			assert.is_true(idle)
+			assert.is_nil(fake.projections:Mode())
+			assert.has_error(fake.enterWorld)
+		end)
+	end)
 end)

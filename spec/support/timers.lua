@@ -95,7 +95,8 @@ function timers.newClock()
 	return clock
 end
 
---- C_Timer (NewTicker and After) and GetTime on a fresh clock, with the client's advance, runTimers and time on it.
+--- C_Timer (NewTicker and After), GetTime and debugprofilestop on a fresh clock, with the client's advance, runTimers
+--- and time on it.
 ---@param client FakeClient
 ---@param stubs table<string, any> The fake client's stubs, which this adds to.
 function timers.addStubs(client, stubs)
@@ -111,6 +112,10 @@ function timers.addStubs(client, stubs)
 	}
 	stubs.GetTime = function()
 		return clock.time()
+	end
+	-- Milliseconds on the same clock: a frame's work takes no time unless the spec advances it.
+	stubs.debugprofilestop = function()
+		return clock.time() * 1000
 	end
 end
 
