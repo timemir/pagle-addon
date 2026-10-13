@@ -16,6 +16,7 @@ from pagle_data.files import write_atomic
 from pagle_data.forever import ALIASES
 from pagle_data.generate import Layers, outputs, read_layers
 from pagle_data.observed import OBSERVED
+from pagle_data.pools import POOLS_TOML
 
 PROG = "generate-data"
 
@@ -59,12 +60,15 @@ def _print_proposals(layers: Layers) -> None:
 
 def _warn(layers: Layers) -> None:
     """DATA-R64's warnings, printed and not failing: so far, the baseline loot rows with a condition that isn't a
-    single event (DATA-R9), observed areas missing from the slice (DATA-R33) and the alias proposals not yet
-    committed."""
+    single event (DATA-R9), baseline pool templates in no pool type (DATA-R43), observed areas missing from the slice
+    (DATA-R33) and the alias proposals not yet committed."""
     for row in layers.conditional_rows():
         loot = f"item {row.item}" if row.item is not None else f"ref {row.ref}"
         message = f"area {row.area} {loot} has the condition {row.condition}, not a single event"
         print(f"{PROG}: warning: {AREA_LOOT}: {message}; it is treated as ungated", file=sys.stderr)
+    for pool in layers.ungrouped_pools():
+        message = f"pool template {pool.entry} ({pool.name}) in pools.csv is in no pool type in {POOLS_TOML}"
+        print(f"{PROG}: warning: {message}; add it to one (DATA-R43)", file=sys.stderr)
     for area, seen in layers.missing_areas().items():
         where = ", ".join(str(at) for at in seen)
         message = f"area {area} seen in {OBSERVED} is not in {AREAS}; update the DB2 slice ({where})"

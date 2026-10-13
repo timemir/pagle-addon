@@ -1,0 +1,61 @@
+# Pool types (DATA-R43): each groups the GameObject entries (pools.csv's entry) of one kind of fishing pool.
+# Its catches are the baseline's pool loot for those entries, then add and drop, with Noise, removed and
+# uncharted items left out. Only poolType -> catches ships, for display (DATA-R44). A pool type ID never changes
+# once shipped.
+
+[pool.schoolOfFish]
+entries = [180184]
+why = "VMaNGOS: every type-25 gameobject_template named 'School of Fish' at patch 1.12 (data/baseline/pools.csv, #57)"
+
+[pool.schoolOfTastyfish]
+entries = [180248]
+why = "VMaNGOS: every type-25 gameobject_template named 'School of Tastyfish' at patch 1.12 (data/baseline/pools.csv, #57)"
+
+[pool.muddyChurningWaters]
+entries = [180369]
+why = "VMaNGOS: every type-25 gameobject_template named 'Muddy Churning Waters' at patch 1.12 (data/baseline/pools.csv, #57)"
+
+[pool.oilyBlackmouthSchool]
+entries = [180582, 180664, 180682, 180750, 180900]
+why = "VMaNGOS: every type-25 gameobject_template named 'Oily Blackmouth School' at patch 1.12 (data/baseline/pools.csv, #57)"
+
+[pool.floatingDebris]
+entries = [180655]
+why = "VMaNGOS: every type-25 gameobject_template named 'Floating Debris' at patch 1.12 (data/baseline/pools.csv, #57)"
+
+[pool.sagefishSchool]
+entries = [180656, 180663]
+why = "VMaNGOS: every type-25 gameobject_template named 'Sagefish School' at patch 1.12 (data/baseline/pools.csv, #57)"
+
+[pool.firefinSnapperSchool]
+entries = [180657, 180683, 180752, 180902]
+why = "VMaNGOS: every type-25 gameobject_template named 'Firefin Snapper School' at patch 1.12 (data/baseline/pools.csv, #57)"
+
+[pool.schoolOfDeviateFish]
+entries = [180658]
+why = "VMaNGOS: every type-25 gameobject_template named 'School of Deviate Fish' at patch 1.12 (data/baseline/pools.csv, #57)"
+
+[pool.oilSpill]
+entries = [180661]
+why = "VMaNGOS: every type-25 gameobject_template named 'Oil Spill' at patch 1.12 (data/baseline/pools.csv, #57)"
+
+[pool.floatingWreckage]
+entries = [180662, 180685, 180751, 180901]
+why = "VMaNGOS: every type-25 gameobject_template named 'Floating Wreckage' at patch 1.12 (data/baseline/pools.csv, #57)"
+
+[pool.greaterSagefishSchool]
+entries = [180684]
+why = "VMaNGOS: every type-25 gameobject_template named 'Greater Sagefish School' at patch 1.12 (data/baseline/pools.csv, #57)"
+
+[pool.stonescaleEelSwarm]
+entries = [180712]
+why = "VMaNGOS: every type-25 gameobject_template named 'Stonescale Eel Swarm' at patch 1.12 (data/baseline/pools.csv, #57)"
+
+[pool.patchOfElementalWater]
+entries = [180753]
+why = "VMaNGOS: every type-25 gameobject_template named 'Patch of Elemental Water' at patch 1.12 (data/baseline/pools.csv, #57)"
+
+[pool.schoolOfWhimsyfin]
+entries = [572928]
+add = [251524]
+why = "New in Forever, so not in the baseline: GameObject 572928, School of Whimsyfin, gives Whimsyfin 251524 (docs/research/forever-content-data.md, DATA-R43)"

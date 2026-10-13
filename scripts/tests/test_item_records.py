@@ -10,6 +10,7 @@ from baseline_fixture import write_baseline
 from item_fixture import CHECKS, write_item_layer
 from observed_fixture import write_observed
 from pagle_data.cli import main
+from pools_fixture import write_pools
 from windows_fixture import write_windows
 
 CATALOGUE = "addons/Pagle/data/Catalogue.lua"
@@ -41,6 +42,7 @@ def write_tree(
     (db2 / "items.csv").write_text(db2_items, encoding="utf-8")
     write_windows(root)  # test_windows.py covers windows
     write_observed(root)  # dev.toml with no facts; test_observed.py covers the layer
+    write_pools(root)  # test_pools.py covers pool types
     return write_item_layer(root, items, species, families, checks)
 
 
@@ -75,9 +77,11 @@ FISH = '[item.6303]\ncategory = "fish"\n\n[item.13759]\ncategory = "fish"\n\n[it
 
 
 def fish(item: int, quality: int | None = 1) -> str:
-    """The record of a Species item that is its own Species (DATA-R19), with nothing else set."""
+    """The record of a Species item that is its own Species (DATA-R19), with nothing else set. 19807 is pool:
+    pools_fixture's pool type catches it (DATA-R43, DATA-R77)."""
     known = f"quality = {quality}, " if quality is not None else ""
-    return f"{{ category = \"fish\", legend = false, noise = false, pool = false, {known}removed = false, species = {item} }}"
+    pool = "true" if item == 19807 else "false"
+    return f"{{ category = \"fish\", legend = false, noise = false, pool = {pool}, {known}removed = false, species = {item} }}"
 
 
 NOISE_6358 = "{ category = \"other\", legend = false, noise = true, pool = false, removed = false }"
@@ -86,7 +90,7 @@ NOISE_6358 = "{ category = \"other\", legend = false, noise = true, pool = false
 def test_every_item_of_the_universe_ships_with_exactly_get_item_s_fields(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    # DATA-R77: category, legend, noise, removed and pool always (pool false until pool types arrive, #93); quality
+    # DATA-R77: category, legend, noise, removed and pool always (pool true only for 19807, in a pool type); quality
     # when known (here from items.csv); species for a Species item. DATA-R16: 6358 is reachable only through
     # reference loot, so it is Noise and ships as other.
     assert records(write_tree(tmp_path, FISH), capsys) == {
@@ -215,7 +219,7 @@ def test_a_species_item_folds_into_a_representative_species_item(
     found = records(write_tree(tmp_path, items), capsys)
     assert found[6303] == fish(6303).replace('"fish"', '"questFish"')
     assert found[13759] == fish(13759).replace("species = 13759", "species = 6303")
-    assert found[19807] == "{ category = \"junk\", legend = false, noise = false, pool = false, quality = 1, removed = false }"
+    assert found[19807] == "{ category = \"junk\", legend = false, noise = false, pool = true, quality = 1, removed = false }"
 
 
 @pytest.mark.parametrize(

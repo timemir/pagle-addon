@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from pagle_data.aliases import Proposal, check_aliases, fishing_areas, propose
-from pagle_data.baseline import BASELINE, AreaLoot, BaselineLayer, conditional_rows, read_baseline
+from pagle_data.baseline import BASELINE, AreaLoot, BaselineLayer, Pool, conditional_rows, read_baseline
 from pagle_data.catalogue import Catalogue, Event, fingerprint
 from pagle_data.checks import read_checks
 from pagle_data.db2 import DB2, Db2Layer, read_db2
@@ -14,6 +14,7 @@ from pagle_data.forever import ForeverLayer, read_forever
 from pagle_data.items import ITEMS_TOML, Record, item_records, read_item_layer
 from pagle_data.lua import to_lua
 from pagle_data.observed import OBSERVED, ObservedLayer, Observations, observations, read_observed
+from pagle_data.pools import POOLS_TOML, PoolType, build_pools, pool_items, read_pools_toml, ungrouped, with_pool_flags
 from pagle_data.universe import item_universe
 from pagle_data.windows import Spec, build_windows, catalogue_windows, local_lua, read_windows_toml
 
@@ -39,10 +40,15 @@ def _areas(db2: Db2Layer) -> dict[int, Mapping[str, object]]:
 
 
 def build_catalogue(
-    forever: ForeverLayer, db2: Db2Layer, windows: Mapping[str, Spec], items: Mapping[int, Record]
+    forever: ForeverLayer,
+    db2: Db2Layer,
+    windows: Mapping[str, Spec],
+    items: Mapping[int, Record],
+    pools: Mapping[str, list[int]],
 ) -> Catalogue:
     """The catalogue in its pre-M2 shape (DATA-R79) with M2's windows (DATA-R35): aliases.toml's aliases, and
-    nothing confirms an event's weekly rule yet. items are the item records that ship (DATA-R77)."""
+    nothing confirms an event's weekly rule yet. items are the item records that ship (DATA-R77), pools each pool
+    type's catches (DATA-R43)."""
     events: dict[int, Event] = {}
     for event_id, rule in forever.events.items():
         if rule is None:
@@ -59,7 +65,7 @@ def build_catalogue(
         "items": dict(items),
         "areas": _areas(db2),
         "aliases": {alias.source: alias.target for alias in forever.aliases},
-        "pools": {},
+        "pools": {pool_type: list(catches) for pool_type, catches in pools.items()},
         "windows": catalogue_windows(windows),
         "events": events,
         "fishingSpells": sorted(forever.fishing_spells),
@@ -97,7 +103,9 @@ class Layers:
     db2: Db2Layer
     windows: dict[str, Spec]  # every window by ID (DATA-R35)
     observed: ObservedLayer
-    items: dict[int, Record]  # the item records that ship (DATA-R77)
+    items: dict[int, Record]  # the item records that ship (DATA-R77), pool flags set
+    pool_types: dict[str, PoolType]  # pools.toml's pool types by ID (DATA-R43)
+    pools: dict[str, list[int]]  # each pool type's catches (DATA-R43)
 
     def fishing_areas(self) -> set[int]:
         return fishing_areas(self.baseline)
@@ -120,6 +128,10 @@ class Layers:
         (DATA-R33)."""
         return self.observations().missing_areas(self.db2.areas)
 
+    def ungrouped_pools(self) -> list[Pool]:
+        """The baseline's pool templates in no pool type, warned about so none is silently dropped (DATA-R43)."""
+        return ungrouped(self.pool_types, self.baseline)
+
 
 def read_layers(root: Path) -> Layers:
     """Every source layer under root/data/. Raises DataError listing every problem found (DATA-R63)."""
@@ -135,22 +147,29 @@ def read_layers(root: Path) -> Layers:
     observed = read_observed(root, problems)
     item_layer = read_item_layer(root, problems)
     checks = read_checks(root, problems)
+    pool_types = read_pools_toml(root, problems)
     items: dict[int, Record] = {}
+    pools: dict[str, list[int]] = {}
     if baseline_read:  # without the whole baseline, every target would look like it has no catch list
         check_aliases(forever.aliases, fishing_areas(baseline), problems)
         # ...and every seeded window would look missing (DATA-R35, DATA-R36)
         windows = build_windows(baseline.events, window_overrides, forever.events, problems)
-        # DATA-R15: items.toml's IDs come from its strict reader, so a bad one is reported once.
-        universe = item_universe(root, baseline, problems, observed, {ITEMS_TOML: item_layer.items.keys()})
+        # DATA-R15: items.toml's and pools.toml's IDs come from their strict readers, so a bad one is reported once.
+        parsed = {ITEMS_TOML: item_layer.items.keys(), POOLS_TOML: pool_items(pool_types)}
+        universe = item_universe(root, baseline, problems, observed, parsed)
         items = item_records(universe, baseline, item_layer, db2, checks, problems)
+        # DATA-R43: the catches leave out what doesn't ship; DATA-R77: pool is true for an item in any of them.
+        pools = build_pools(pool_types, baseline, items)
+        items = with_pool_flags(items, pools)
     if problems:
         raise DataError(problems.found)
-    return Layers(baseline, forever, db2, windows, observed, items)
+    return Layers(baseline, forever, db2, windows, observed, items, pool_types, pools)
 
 
 def outputs(layers: Layers) -> dict[str, str]:
     """Every generated file's path (relative to the repo root) and content."""
-    return {CATALOGUE_LUA: catalogue_lua(build_catalogue(layers.forever, layers.db2, layers.windows, layers.items))}
+    catalogue = build_catalogue(layers.forever, layers.db2, layers.windows, layers.items, layers.pools)
+    return {CATALOGUE_LUA: catalogue_lua(catalogue)}
 
 
 def generate(root: Path) -> dict[str, str]:

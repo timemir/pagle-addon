@@ -60,7 +60,7 @@ def test_items_csv_gives_the_records_their_quality_and_no_item_name_ships(
         "[6303] = { category = \"fish\", legend = false, noise = false, pool = false, quality = 1, removed = false,"
         " species = 6303 },",
         "[6358] = { category = \"other\", legend = false, noise = true, pool = false, quality = 1, removed = false },",
-        "[19807] = { category = \"fish\", legend = false, noise = false, pool = false, quality = 2, removed = false,"
+        "[19807] = { category = \"fish\", legend = false, noise = false, pool = true, quality = 2, removed = false,"
         " species = 19807 },",
     ]:
         assert line in generated
