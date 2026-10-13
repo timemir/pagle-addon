@@ -213,6 +213,10 @@ sed -i '2s/^1,/2,/' "$scratch/tree/data/baseline/skill.csv"
 expect "a hand-edited baseline CSV fails generator" generator \
 	"data/baseline/skill.csv: its SHA-256 differs from data/baseline/source.toml"
 
+copy
+printf '\n[[alias]]\nfrom = 16562\nto = 267\n' >>"$scratch/tree/data/forever/aliases.toml"
+expect "an alias without a why fails generator" generator "data/forever/aliases.toml: alias[10]: missing key 'why'"
+
 if ((failures)); then
 	echo "test-check: $failures failed" >&2
 	exit 1

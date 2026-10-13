@@ -63,6 +63,7 @@ def write_tree(root: Path, *, areas: str | None = AREAS, build: str | None = BUI
     forever.mkdir(parents=True, exist_ok=True)
     (forever / "events.toml").write_text(EVENTS, encoding="utf-8")
     (forever / "lists.toml").write_text(LISTS, encoding="utf-8")
+    (forever / "aliases.toml").write_text("", encoding="utf-8")  # test_aliases.py covers aliases
     write_baseline(root)  # test_generate_baseline.py covers the baseline layer
     db2 = root / "data" / "db2"
     db2.mkdir(parents=True, exist_ok=True)
