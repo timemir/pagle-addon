@@ -1,7 +1,7 @@
 -- The fake client's game side for QoL: key bindings and override bindings, keys held down, the player's casts and
--- channel, the main hand and its lure, the bags, CVars, the mount, and the frame loop. spec/support/addon.lua adds
--- these stubs to every load, so they answer as a character standing idle and unmounted with no key bound, nothing
--- held, nothing in hand and nothing in the bags.
+-- channel, the main hand and its lure, the bags, CVars, the mount, equipment sets, and the frame loop.
+-- spec/support/addon.lua adds these stubs to every load, so they answer as a character standing idle and unmounted
+-- with no key bound, nothing held, nothing in hand, nothing in the bags and no equipment set.
 --
 --   loaded.client.boundKeys.PAGLE_FISHING_KEY = { "F", "SHIFT-F" }  -- GetBindingKey's keys
 --   loaded.client.overrideAction("F")                               -- "SPELL Fishing", as GetBindingAction reads it
@@ -12,6 +12,8 @@
 --   loaded.client.mounted = true                                    -- IsMounted()
 --   loaded.client.bags[6529] = 5                                    -- C_Item.GetItemCount(6529)
 --   loaded.client.mainHandEnchant = 263                             -- GetWeaponEnchantInfo(): a lure on
+--   loaded.client.equipmentSets[3] = { name = "Fishing", items = { [16] = 6256 } } -- a C_EquipmentSet set
+--   loaded.client.wearSet(3)                                        -- the set's items go on, as a swap ends
 --
 -- Each override call fires UPDATE_BINDINGS at once, through client.fireGameEvent, as the client fires it after a
 -- binding change; under FakePagle, fake.load points that at fake.fireGameEvent. Each one raises an error while the
@@ -40,6 +42,25 @@
 --- `C_Item.GetItemSpell` returns it: name, spell ID.
 ---@field itemNames table<integer, string> Each item's name, by item ID, as `C_Item.GetItemNameByID` returns it once
 --- the item is cached; an item not listed isn't cached.
+---@field itemIcons table<integer, integer> Each item's icon file ID, by item ID, as `GetInventoryItemTexture` reads
+--- it for a worn item.
+---@field worn table<integer, integer> The item ID worn in each slot but the main hand, by slot; the main hand (16)
+--- is `mainHand`.
+---@field equipmentSets table<integer, FakeEquipmentSet> The character's equipment sets by set ID, as C_EquipmentSet
+--- reads them. Specs add sets; CreateEquipmentSet adds one at the lowest free ID, from 0.
+---@field equipmentSetCalls string[] Each C_EquipmentSet call that changes something, in order: "clear ignored",
+--- "create <name> <icon>", "save <setID>" or "use <setID>".
+---@field wearSet fun(setID: integer) Puts the set's items on (slot 16 into `mainHand`, the rest into `worn`), as
+--- the end of a swap does. It fires no event.
+---@field bindingTexts table<string, string> Short key texts `GetBindingText(key, true)` returns, by key; a key not
+--- listed reads as itself with SHIFT-, CTRL- and ALT- shortened to s-, c- and a-.
+
+--- One equipment set: its name, icon, items by slot, and how many of them are missing (in the bank, say).
+---@class FakeEquipmentSet
+---@field name string
+---@field icon integer?
+---@field items table<integer, integer> item IDs by slot
+---@field lost integer? `GetEquipmentSetInfo`'s numLost. Default 0.
 
 -- The spells named Fishing: the generated catalogue's fishing-spell list (LOG-R2, data/forever/lists.toml), since
 -- every rank of Fishing has this name (probe B2).
@@ -204,5 +225,147 @@ return function(client, stubs)
 	stubs.C_Spell = stubs.C_Spell or {}
 	stubs.C_Spell.GetSpellName = function(spellID)
 		return FISHING_SPELLS[spellID] and "Fishing" or nil
+	end
+
+	-- Equipment sets (C_EquipmentSet), the icons a new set takes, and short key texts. The character has no set.
+	-- The Fishing Pole's and the Worn Shortsword's icons; the Fishing spell's is 136245.
+	client.itemIcons = { [6256] = 132932, [25] = 135274 }
+	client.worn, client.equipmentSets, client.equipmentSetCalls, client.bindingTexts = {}, {}, {}, {}
+
+	-- The item worn in a slot.
+	local function wornIn(slot)
+		if slot == 16 then
+			return client.mainHand
+		end
+		return client.worn[slot]
+	end
+
+	-- The gear worn now, by slot, as a new or saved set holds it.
+	local function wornNow()
+		local items = {}
+		for slot, itemID in pairs(client.worn) do
+			items[slot] = itemID
+		end
+		items[16] = client.mainHand
+		return items
+	end
+
+	local function record(call)
+		client.equipmentSetCalls[#client.equipmentSetCalls + 1] = call
+	end
+
+	function client.wearSet(setID)
+		for slot, itemID in pairs(client.equipmentSets[setID].items) do
+			if slot == 16 then
+				client.mainHand = itemID
+			else
+				client.worn[slot] = itemID
+			end
+		end
+	end
+
+	-- FrameXML's limit: Gethe/wow-ui-source branch forever, Blizzard_FrameXMLBase/Constants.lua.
+	stubs.MAX_EQUIPMENT_SETS_PER_PLAYER = 10
+	stubs.C_EquipmentSet = {
+		GetEquipmentSetID = function(name)
+			for setID, set in pairs(client.equipmentSets) do
+				if set.name == name then
+					return setID
+				end
+			end
+			return nil
+		end,
+		GetEquipmentSetIDs = function()
+			local ids = {}
+			for setID in pairs(client.equipmentSets) do
+				ids[#ids + 1] = setID
+			end
+			table.sort(ids)
+			return ids
+		end,
+		GetNumEquipmentSets = function()
+			local count = 0
+			for _ in pairs(client.equipmentSets) do
+				count = count + 1
+			end
+			return count
+		end,
+		-- name, iconFileID, setID, isEquipped, numItems, numEquipped, numInInventory, numLost, numIgnored
+		GetEquipmentSetInfo = function(setID)
+			local set = client.equipmentSets[setID]
+			if not set then
+				return nil
+			end
+			local numItems, numEquipped = 0, 0
+			for slot, itemID in pairs(set.items) do
+				numItems = numItems + 1
+				if wornIn(slot) == itemID then
+					numEquipped = numEquipped + 1
+				end
+			end
+			local lost = set.lost or 0
+			return set.name,
+				set.icon,
+				setID,
+				numEquipped == numItems,
+				numItems,
+				numEquipped,
+				numItems - numEquipped - lost,
+				lost,
+				0
+		end,
+		GetItemIDs = function(setID)
+			local items = {}
+			for slot, itemID in pairs(client.equipmentSets[setID].items) do
+				items[slot] = itemID
+			end
+			return items
+		end,
+		ClearIgnoredSlotsForSave = function()
+			record("clear ignored")
+		end,
+		-- As probe B9 saw: no return value, and EQUIPMENT_SETS_CHANGED during the call. The client refuses a name in
+		-- use or a set past the limit; here that raises, so a spec fails on it.
+		CreateEquipmentSet = function(name, icon)
+			assert(not stubs.C_EquipmentSet.GetEquipmentSetID(name), "FakeClient: a set named " .. name .. " exists")
+			assert(
+				stubs.C_EquipmentSet.GetNumEquipmentSets() < stubs.MAX_EQUIPMENT_SETS_PER_PLAYER,
+				"FakeClient: no free set slot"
+			)
+			local setID = 0
+			while client.equipmentSets[setID] do
+				setID = setID + 1
+			end
+			client.equipmentSets[setID] = { name = name, icon = icon, items = wornNow() }
+			record(("create %s %s"):format(name, tostring(icon)))
+			client.fireGameEvent("EQUIPMENT_SETS_CHANGED")
+		end,
+		SaveEquipmentSet = function(setID, icon)
+			local set = assert(client.equipmentSets[setID], "FakeClient: no set " .. tostring(setID))
+			set.items, set.icon = wornNow(), icon or set.icon
+			record("save " .. setID)
+			client.fireGameEvent("EQUIPMENT_SETS_CHANGED")
+		end,
+		-- The swap itself ends later: a spec calls client.wearSet and fires EQUIPMENT_SWAP_FINISHED.
+		UseEquipmentSet = function(setID)
+			record("use " .. setID)
+			return client.equipmentSets[setID] ~= nil
+		end,
+	}
+	stubs.GetInventoryItemTexture = function(unit, slot)
+		local itemID = unit == "player" and wornIn(slot)
+		return itemID and client.itemIcons[itemID] or nil
+	end
+	stubs.C_Spell.GetSpellTexture = function(spellID)
+		if FISHING_SPELLS[spellID] then
+			return 136245, 136245
+		end
+	end
+	-- The key's text in Key Bindings, or with `abbreviate` its short form, as action bars show it.
+	stubs.GetBindingText = function(key, abbreviate)
+		if not abbreviate then
+			return key
+		end
+		return client.bindingTexts[key] or (key:gsub("SHIFT%-", "s-"):gsub("CTRL%-", "c-"):gsub("ALT%-", "a-"))
 	end
 end
