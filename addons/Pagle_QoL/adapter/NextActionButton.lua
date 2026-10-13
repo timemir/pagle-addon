@@ -20,8 +20,8 @@ local icon ---@type Texture
 local hotKey ---@type FontString
 local label ---@type FontString
 local lastIcon ---@type integer? the icon shown last, which *nothing* keeps (QOL-R71)
--- What the button shows now: the action, and the lure or the fishing set it names (QOL-R74).
-local current = { action = "nothing" } ---@type { action: PagleQoLAction, lure: integer?, setID: integer? }
+-- What the button shows now: the action, and the lure, the clam or the fishing set it names (QOL-R74).
+local current = { action = "nothing" } ---@type { action: PagleQoLAction, lure: integer?, clam: integer?, setID: integer? }
 local moving = false -- a Shift-drag is moving it (QOL-R73)
 local hovering = false -- the mouse is over it, so its tooltip follows the next action (QOL-R74)
 local waitingFor ---@type integer? the item whose data the tooltip waits for (QOL-R74)
@@ -47,19 +47,31 @@ local function stopMoving()
 	place()
 end
 
--- The name the tooltip needs for the action shown: the fishing set's, or the lure's from C_Item; nil for none, or
--- while the lure's data hasn't loaded.
----@return string?
-local function tooltipName()
-	if current.action == "gear" and current.setID then
-		return (C_EquipmentSet.GetEquipmentSetInfo(current.setID))
-	elseif current.action == "lure" and current.lure then
-		return C_Item.GetItemNameByID(current.lure)
+-- The item the action shown uses: the lure for a lure, the clam for a clam; nil for any other action.
+---@return integer?
+local function currentItem()
+	if current.action == "lure" then
+		return current.lure
+	elseif current.action == "clam" then
+		return current.clam
 	end
 	return nil
 end
 
--- Shows the tooltip naming the next action (QOL-R74). A lure whose name isn't cached is waited for with
+-- The name the tooltip needs for the action shown: the fishing set's, or the lure's or the clam's from C_Item; nil for
+-- none, or while the item's data hasn't loaded.
+---@return string?
+local function tooltipName()
+	local item = currentItem()
+	if current.action == "gear" and current.setID then
+		return (C_EquipmentSet.GetEquipmentSetInfo(current.setID))
+	elseif item then
+		return C_Item.GetItemNameByID(item)
+	end
+	return nil
+end
+
+-- Shows the tooltip naming the next action (QOL-R74). A lure or clam whose name isn't cached is waited for with
 -- Item:ContinueOnItemLoad; the tooltip shows once it loads, if the mouse is still over the button.
 local function showTooltip()
 	---@cast button Frame
@@ -74,12 +86,12 @@ local function showTooltip()
 	if GameTooltip:IsOwned(button) then
 		GameTooltip:Hide()
 	end
-	local lure = current.lure
-	if current.action == "lure" and lure and waitingFor ~= lure then
-		waitingFor = lure
-		Item:CreateFromItemID(lure):ContinueOnItemLoad(function()
+	local item = currentItem()
+	if item and waitingFor ~= item then
+		waitingFor = item
+		Item:CreateFromItemID(item):ContinueOnItemLoad(function()
 			waitingFor = nil
-			if hovering and current.action == "lure" and current.lure == lure then
+			if hovering and currentItem() == item then
 				showTooltip()
 			end
 		end)
@@ -194,6 +206,8 @@ function ns.ShowNextAction(state, keys)
 		icons.set = select(2, C_EquipmentSet.GetEquipmentSetInfo(setID))
 	elseif action == "lure" and state.lure then
 		icons.item = C_Item.GetItemIconByID(state.lure)
+	elseif action == "clam" and state.clam then
+		icons.item = C_Item.GetItemIconByID(state.clam)
 	end
 	local look = ns.ButtonLook(action, icons, lastIcon)
 	lastIcon = look.icon
@@ -206,7 +220,7 @@ function ns.ShowNextAction(state, keys)
 	hotKey:SetShown(hotkey ~= nil)
 	button:Show()
 
-	current = { action = action, lure = state.lure, setID = setID }
+	current = { action = action, lure = state.lure, clam = state.clam, setID = setID }
 	if hovering then
 		showTooltip()
 	end
