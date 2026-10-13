@@ -4,6 +4,12 @@
     .tools/bin/python scripts/generate-data.py --check    write nothing; fail if a generated file is out of date
     .tools/bin/python scripts/generate-data.py --propose-aliases
                                                           write nothing; print the uncommitted alias candidates
+    .tools/bin/python scripts/generate-data.py --min-build <n>
+                                                          write nothing; print the facts that would lose
+                                                          confirmation if only builds >= n counted
+    .tools/bin/python scripts/generate-data.py --explain <itemID|areaID>
+                                                          write nothing; print every layer's value for it and
+                                                          which won
 
 Runs on the pinned Python in .tools/ (scripts/setup.sh); scripts/check.sh runs --check as its generator stage.
 """
