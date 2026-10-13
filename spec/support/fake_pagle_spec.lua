@@ -185,6 +185,92 @@ describe("FakePagle", function()
 		assert.are.same({ { "LOOT_OPENED", false }, { "UNIT_SPELLCAST_CHANNEL_STOP", "player" } }, got)
 	end)
 
+	describe("M:AddSetting", function()
+		-- A fake with QoL registered; returns the fake and QoL's handle.
+		local function withQoL()
+			local fake = newFakePagle()
+			return fake, fake.Pagle.RegisterModule({ name = "QoL", title = "QoL", order = 50 })
+		end
+
+		it("builds the page Core would at ModulesChanged, with Core's header rule (CORE-R42, SET-R3)", function()
+			local fake, M = withQoL()
+			local stats = fake.Pagle.RegisterModule({ name = "Stats", title = "Stats", order = 30 })
+			M:AddSetting("fishing", { kind = "header", label = "Casting" })
+			M:AddSetting(
+				"fishing",
+				{ kind = "keybinding", id = "key", label = "Fishing key", binding = "PAGLE_FISHING_KEY" }
+			)
+			M:AddSetting("fishing", { kind = "button", parent = "key", label = "Reset", onClick = function() end })
+			stats:AddSetting("fishing", { kind = "button", label = "Stats'", onClick = function() end })
+			assert.is_nil(fake.settingsPage("fishing"))
+
+			fake.login()
+
+			local page = {}
+			for i, row in ipairs(assert(fake.settingsPage("fishing"))) do
+				page[i] = { row.module, row.kind, row.label, row.indented }
+			end
+			assert.are.same({
+				{ "Stats", "header", "Stats", false },
+				{ "Stats", "button", "Stats'", false },
+				{ "QoL", "header", "Casting", false },
+				{ "QoL", "keybinding", "Fishing key", false },
+				{ "QoL", "button", "Reset", true },
+			}, page)
+			assert.is_nil(fake.settingsPage("trackers"))
+		end)
+
+		it("raises an error at the caller for a row Core refuses (CORE-R42)", function()
+			local _, M = withQoL()
+			M:AddSetting("fishing", { kind = "header", id = "casting", label = "Casting" })
+
+			for _, call in ipairs({
+				{ "look", { kind = "header", label = "Casting" } },
+				{ "fishing", { kind = "toggle", label = "Casting" } },
+				{ "fishing", { kind = "header", id = "casting", label = "Again" } },
+				{ "fishing", { kind = "header", parent = "gear", label = "Swap" } },
+			}) do
+				local ok, err = pcall(function()
+					M:AddSetting(call[1], call[2])
+				end)
+				assert.is_false(ok)
+				assert.matches("fake_pagle_spec%.lua:%d+: QoL's AddSetting", tostring(err))
+			end
+		end)
+
+		it("reports a call after ModulesChanged and drops it (CORE-R42)", function()
+			local fake, M = withQoL()
+			fake.login()
+
+			M:AddSetting("fishing", { kind = "header", label = "Casting" })
+
+			assert.are.equal(1, #fake.reported)
+			assert.matches("after ModulesChanged", fake.reported[1])
+			assert.is_nil(fake.settingsPage("fishing"))
+		end)
+	end)
+
+	describe("OpenSettings", function()
+		it(
+			"opens the root, or a registered topic page; while restricted prints Core's line (CORE-R33, CORE-R43)",
+			function()
+				local fake = newFakePagle()
+				local M = fake.Pagle.RegisterModule({ name = "QoL", title = "QoL", order = 50 })
+				M:AddSetting("fishing", { kind = "header", label = "Casting" })
+				fake.login()
+
+				fake.Pagle.OpenSettings("fishing")
+				fake.Pagle.OpenSettings("trackers")
+				fake.Pagle.OpenSettings()
+				fake.setRestricted(true)
+				fake.Pagle.OpenSettings("fishing")
+
+				assert.are.same({ "fishing", "root", "root" }, fake.openedSettings)
+				assert.are.same({ "Pagle: settings open after combat." }, fake.printed)
+			end
+		)
+	end)
+
 	it("matches conditions with Core's real logic (LOG-R48)", function()
 		local Pagle = newFakePagle().Pagle
 
