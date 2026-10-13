@@ -1,12 +1,14 @@
 -- The fake client's game side for QoL: key bindings and override bindings, keys held down, the player's casts and
--- channel, the main hand, and the frame loop. spec/support/addon.lua adds these stubs to every load, so they
--- answer as a character standing idle with no key bound, nothing held and nothing in hand.
+-- channel, the main hand, CVars, the mount, and the frame loop. spec/support/addon.lua adds these stubs to every
+-- load, so they answer as a character standing idle and unmounted with no key bound, nothing held and nothing in hand.
 --
 --   loaded.client.boundKeys.PAGLE_FISHING_KEY = { "F", "SHIFT-F" }  -- GetBindingKey's keys
 --   loaded.client.overrideAction("F")                               -- "SPELL Fishing", as GetBindingAction reads it
 --   loaded.client.keysDown.F = true                                 -- IsKeyDown("F")
 --   loaded.client.channel = "Fishing"                               -- UnitChannelInfo("player")
 --   loaded.client.update(0.5)                                       -- one frame, 0.5 s after the last
+--   loaded.client.cvars.SoftTargetInteract = "1"                    -- GetCVar's value; SetCVar changes it
+--   loaded.client.mounted = true                                    -- IsMounted()
 --
 -- Each override call fires UPDATE_BINDINGS at once, through client.fireGameEvent, as the client fires it after a
 -- binding change; under FakePagle, fake.load points that at fake.fireGameEvent. Each one raises an error while the
@@ -24,6 +26,10 @@
 ---@field fireGameEvent fun(event: string, ...) Fires a WoW event the game raises on its own. `client.fire` unless a
 --- spec or FakePagle replaces it.
 ---@field update fun(elapsed: number) Runs one frame: each frame's OnUpdate script, given `elapsed` seconds.
+---@field cvars table<string, string> Each CVar's value as `GetCVar` reads it. `SetCVar` stores `tostring(value)`; a
+--- CVar not listed is one the client doesn't know (`GetCVar` returns nil).
+---@field cvarCalls string[] Each `SetCVar` call, in order: "set <name> <value>".
+---@field mounted boolean? Whether the player is mounted, as `IsMounted()` reads it.
 
 -- Every rank of Fishing has this name (probe B2).
 local FISHING_SPELLS = { [7620] = true, [7731] = true, [7732] = true, [18248] = true }
@@ -32,6 +38,10 @@ local FISHING_SPELLS = { [7620] = true, [7731] = true, [7732] = true, [18248] = 
 ---@param stubs table<string, any> The fake client's stubs, which this adds to.
 return function(client, stubs)
 	client.boundKeys, client.keysDown, client.bindingCalls = {}, {}, {}
+	-- The soft-interact CVars as probe B11 read them on the dev's client (build 70338), all at or above what QoL
+	-- leases (QOL-R62), so a stretch leases nothing until a spec sets the player's own values.
+	client.cvars = { SoftTargetInteract = "3", SoftTargetInteractRange = "60", SoftTargetInteractRangeIsHard = "0" }
+	client.cvarCalls = {}
 	-- A Fishing Pole (6256, as probe B1 read it) and a Worn Shortsword (25).
 	client.items = { [6256] = { 2, 20 }, [25] = { 2, 7 } }
 	client.fireGameEvent = client.fire
@@ -112,6 +122,16 @@ return function(client, stubs)
 		if item then
 			return itemID, "", "", "", 0, item[1], item[2]
 		end
+	end
+	stubs.GetCVar = function(name)
+		return client.cvars[name]
+	end
+	stubs.SetCVar = function(name, value)
+		client.cvarCalls[#client.cvarCalls + 1] = ("set %s %s"):format(name, tostring(value))
+		client.cvars[name] = tostring(value)
+	end
+	stubs.IsMounted = function()
+		return client.mounted == true
 	end
 	stubs.C_Spell = stubs.C_Spell or {}
 	stubs.C_Spell.GetSpellName = function(spellID)
