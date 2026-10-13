@@ -6,3 +6,8 @@
 -- Ketho/BlizzardInterfaceResources README.md on branch forever at BIR_COMMIT: "WOW_PROJECT_ID => WOW_PROJECT_CAMELOT (18)".
 ---@type integer
 WOW_PROJECT_CAMELOT = 18
+
+-- The text the client shows when a hooked fish escapes (LOG-R6). Ketho/BlizzardInterfaceResources branch forever at
+-- BIR_COMMIT, Resources/GlobalStrings/enUS.lua: ERR_FISH_ESCAPED = "Your fish got away!".
+---@type string
+ERR_FISH_ESCAPED = "Your fish got away!"

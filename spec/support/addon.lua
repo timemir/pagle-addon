@@ -56,6 +56,15 @@ FOREVER_GLOBALS = { WOW_PROJECT_ID = PROJECT_IDS.CAMELOT, WOW_PROJECT_CAMELOT = 
 --- passes, in time order.
 ---@field newTicker fun(period: number, callback: fun(ticker: table)): table What C_Timer.NewTicker(period, callback)
 --- does: a ticker, with Cancel and IsCancelled, that runs callback every period seconds of advance.
+---@field time fun(): number The client's clock, in seconds since the load, as GetTime() returns it; advance moves it.
+---@field loot FakeLoot The loot window, as the loot API reads it.
+
+--- The loot window the loot API reads: whether it's fishing loot (`IsFishingLoot()`) and its slots, in order.
+--- Specs set both before firing LOOT_READY.
+---@class FakeLoot
+---@field fishing any What IsFishingLoot() returns. Default false.
+---@field slots { link: any, quantity: any, currencyID: integer?, isCoin: boolean? }[] Each slot as GetLootSlotLink
+--- and GetLootSlotInfo (3rd, 4th and 10th returns) read it. Default none.
 
 --- An installed addon, as the fake client's C_AddOns reports it.
 ---@class FakeAddOn
@@ -82,7 +91,14 @@ PLAYER_GUID = "Player-1-00000001"
 
 ---@return FakeClient
 local function newClient()
-	local client = { missingEvents = {}, frames = {}, addons = {}, bindings = {}, tickers = {} }
+	local client = {
+		missingEvents = {},
+		frames = {},
+		addons = {},
+		bindings = {},
+		tickers = {},
+		loot = { fishing = false, slots = {} },
+	}
 	local now = 0
 
 	function client.advance(seconds)
@@ -106,6 +122,10 @@ local function newClient()
 			nextTicker.callback(nextTicker)
 		end
 		now = target
+	end
+
+	function client.time()
+		return now
 	end
 
 	-- C_Timer.NewTicker(seconds, callback) without iterations: runs until cancelled.
@@ -599,7 +619,37 @@ local function clientStubs(client)
 			NewTicker = function(seconds, callback)
 				return client.newTicker(seconds, callback)
 			end,
+			-- One run, once seconds of advance have passed.
+			After = function(seconds, callback)
+				client.newTicker(seconds, function(ticker)
+					ticker:Cancel()
+					callback()
+				end)
+			end,
 		},
+		GetTime = function()
+			return client.time()
+		end,
+		-- The loot window (LOG-R3), from client.loot.
+		IsFishingLoot = function()
+			return client.loot.fishing
+		end,
+		GetNumLootItems = function()
+			return #client.loot.slots
+		end,
+		GetLootSlotLink = function(slot)
+			local entry = client.loot.slots[slot]
+			return entry and entry.link
+		end,
+		-- icon, name, quantity, currencyID, quality, locked, isQuestItem, questID, isActive, isCoin
+		GetLootSlotInfo = function(slot)
+			local entry = client.loot.slots[slot]
+			if entry then
+				return 136245, "", entry.quantity, entry.currencyID, 1, false, false, nil, false, entry.isCoin == true
+			end
+		end,
+		-- GlobalStrings/enUS.lua at BIR_COMMIT (scripts/tools.env).
+		ERR_FISH_ESCAPED = "Your fish got away!",
 		-- Reads client.addons. Folder names as the client takes them; an addon not listed is missing.
 		C_AddOns = {
 			GetAddOnInfo = function(name)

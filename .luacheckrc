@@ -66,7 +66,14 @@ stds.wow = {
 		C_DateAndTime = { fields = { "GetCurrentCalendarTime" } },
 		C_Calendar = { fields = { "OpenCalendar", "GetMonthInfo", "GetNumDayEvents", "GetDayEvent" } },
 		C_UnitAuras = { fields = { "GetPlayerAuraBySpellID" } },
-		C_Timer = { fields = { "NewTicker" } },
+		C_Timer = { fields = { "NewTicker", "After" } },
+		-- Observing fishing (LOG-R2–R8): the channel, the loot window, the escaped message and the grace time.
+		"GetTime",
+		"IsFishingLoot",
+		"GetNumLootItems",
+		"GetLootSlotInfo",
+		"GetLootSlotLink",
+		"ERR_FISH_ESCAPED",
 	},
 }
 

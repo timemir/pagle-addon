@@ -12,6 +12,10 @@ local Pagle = Pagle
 ---| "RestrictionChanged" # PagleRestrictionChangedHandler
 ---| "SkillChanged" # PagleSkillChangedHandler
 ---| "ConditionsChanged" # PagleConditionsChangedHandler
+---| "CastStarted" # PagleCastStartedHandler
+---| "Catch" # PagleCatchHandler
+---| "CastEnded" # PagleCastEndedHandler
+---| "FishingStateChanged" # PagleFishingStateChangedHandler
 ---| string
 
 ---@class Pagle

@@ -41,5 +41,6 @@ adapter\LiveConditions.lua
 adapter\Modules.lua
 adapter\CatchLog.lua
 adapter\Angler.lua
+adapter\Fishing.lua
 adapter\Settings.lua
 adapter\Login.lua
