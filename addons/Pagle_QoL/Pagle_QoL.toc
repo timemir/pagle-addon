@@ -33,5 +33,6 @@ adapter\Combat.lua
 adapter\Stretch.lua
 adapter\Nudge.lua
 adapter\Lures.lua
+adapter\Clams.lua
 adapter\Gear.lua
 adapter\QoL.lua

@@ -32,6 +32,16 @@ describe("QoL's double-click logic", function()
 				{ armed = true, poleInHand = true, lure = 6529 },
 				{ kind = "click", value = "PagleQoLActionButton", item = 6529 },
 			},
+			{
+				"a lure on and a clam available",
+				{ armed = true, poleInHand = true, lured = true, clam = 5524 },
+				{ kind = "click", value = "PagleQoLActionButton", item = 5524 },
+			},
+			{
+				"a clam available with the gear step ready, which it skips",
+				{ armed = true, poleInHand = true, gearReady = true, lured = true, clam = 5524 },
+				{ kind = "click", value = "PagleQoLActionButton", item = 5524 },
+			},
 			{ "a loot window open", { armed = true, poleInHand = true, lootOpen = true }, nil },
 			{ "disarmed", { poleInHand = true }, nil },
 		}
@@ -63,7 +73,7 @@ describe("QoL's double-click logic", function()
 			end
 		)
 
-		it("casts and applies a lure at ActionButtonUseKeyDown 0 as at 1 (QOL-R24, QOL-R105)", function()
+		it("casts, applies a lure and opens a clam at ActionButtonUseKeyDown 0 as at 1 (QOL-R24, QOL-R105)", function()
 			assert.are.same(
 				{ kind = "spell", value = "Fishing" },
 				ns.DoubleClickTarget({ armed = true, poleInHand = true }, "Fishing", "0")
@@ -71,6 +81,10 @@ describe("QoL's double-click logic", function()
 			assert.are.same(
 				{ kind = "click", value = "PagleQoLActionButton", item = 6529 },
 				ns.DoubleClickTarget({ armed = true, poleInHand = true, lure = 6529 }, "Fishing", "0")
+			)
+			assert.are.same(
+				{ kind = "click", value = "PagleQoLActionButton", item = 5524 },
+				ns.DoubleClickTarget({ armed = true, poleInHand = true, lured = true, clam = 5524 }, "Fishing", "0")
 			)
 		end)
 

@@ -75,6 +75,7 @@ local function ladderState(armed, fishingName)
 		poleInHand = pole,
 		lured = lured,
 		lure = lure,
+		clam = ns.ReadClams(),
 		gearReady = ns.ReadGearStep(pole),
 	}
 end
@@ -183,7 +184,7 @@ function evaluate()
 	local state = ladderState(armed, fishingName)
 	-- Under Input *Double-click* the Fishing key has no key to arm (QOL-R12).
 	local keyKeys = ns.InputArmsKey(ns.CurrentInput()) and keys or {}
-	local want = ns.Arming(keyKeys, ns.KeyTarget(ns.NextAction(state), fishingName, state.lure))
+	local want = ns.Arming(keyKeys, ns.KeyTarget(ns.NextAction(state), fishingName, state.lure, state.clam))
 	if ns.SameArming(current, want) then
 		waitingForKeyUp = false
 	elseif keyHeld(current, want) then

@@ -46,10 +46,11 @@ function ns.ReadLures(poleInHand)
 	return lure, lured
 end
 
---- The Fishing key arms a target (QOL-R11): the lure it now applies, or nil for a cast or a reel (QOL-R29).
+--- The Fishing key arms a target (QOL-R11): the item PagleQoLActionButton now uses, or nil for a cast or a reel. Only
+--- a lure is awaited (QOL-R29); a clam has no item spell, and would make any spell of the player's count as its use.
 ---@param itemID integer?
 function ns.LureTargeted(itemID)
-	targeted = itemID
+	targeted = ns.IsLure(itemID) and itemID or nil
 end
 
 -- Whether a spell the player cast is the use of the lure the key pointed at: its item's spell, as C_Item.GetItemSpell
