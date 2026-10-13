@@ -16,6 +16,13 @@ local OWNER = "Pagle_QoL Fishing stretch"
 local stretch = ns.NewStretch()
 local frame ---@type Frame? its OnUpdate counts the idle end while it counts (QOL-R61)
 
+--- The running Fishing stretch's number this session, or nil while none runs (QOL-R61): the out-of-lures Nudge
+--- shows once per stretch (QOL-R53).
+---@return integer?
+function ns.RunningStretch()
+	return stretch:Number()
+end
+
 -- The client's CVars, looked up at each call.
 ---@type PagleQoLCVars
 local cvars = {

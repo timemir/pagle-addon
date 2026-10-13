@@ -69,6 +69,20 @@ describe("QoL's Fishing stretch logic", function()
 			stretch:CastStarted(true)
 			assert.is_false(stretch:Elapse(60))
 		end)
+
+		it("numbers each stretch it starts, so a Nudge can show once per stretch (QOL-R53, QOL-R61)", function()
+			local stretch = ns.NewStretch()
+			assert.is_nil(stretch:Number())
+
+			stretch:CastStarted(true)
+			stretch:CastStarted(true)
+			assert.are.equal(1, stretch:Number())
+			stretch:End()
+			assert.is_nil(stretch:Number())
+
+			stretch:CastStarted(true)
+			assert.are.equal(2, stretch:Number())
+		end)
 	end)
 
 	describe("ns.SameCVarValue", function()

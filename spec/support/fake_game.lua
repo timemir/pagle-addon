@@ -1,6 +1,7 @@
 -- The fake client's game side for QoL: key bindings and override bindings, keys held down, the player's casts and
--- channel, the main hand, CVars, the mount, and the frame loop. spec/support/addon.lua adds these stubs to every
--- load, so they answer as a character standing idle and unmounted with no key bound, nothing held and nothing in hand.
+-- channel, the main hand and its lure, the bags, CVars, the mount, and the frame loop. spec/support/addon.lua adds
+-- these stubs to every load, so they answer as a character standing idle and unmounted with no key bound, nothing
+-- held, nothing in hand and nothing in the bags.
 --
 --   loaded.client.boundKeys.PAGLE_FISHING_KEY = { "F", "SHIFT-F" }  -- GetBindingKey's keys
 --   loaded.client.overrideAction("F")                               -- "SPELL Fishing", as GetBindingAction reads it
@@ -9,6 +10,8 @@
 --   loaded.client.update(0.5)                                       -- one frame, 0.5 s after the last
 --   loaded.client.cvars.SoftTargetInteract = "1"                    -- GetCVar's value; SetCVar changes it
 --   loaded.client.mounted = true                                    -- IsMounted()
+--   loaded.client.bags[6529] = 5                                    -- C_Item.GetItemCount(6529)
+--   loaded.client.mainHandEnchant = 263                             -- GetWeaponEnchantInfo(): a lure on
 --
 -- Each override call fires UPDATE_BINDINGS at once, through client.fireGameEvent, as the client fires it after a
 -- binding change; under FakePagle, fake.load points that at fake.fireGameEvent. Each one raises an error while the
@@ -30,6 +33,13 @@
 --- CVar not listed is one the client doesn't know (`GetCVar` returns nil).
 ---@field cvarCalls string[] Each `SetCVar` call, in order: "set <name> <value>".
 ---@field mounted boolean? Whether the player is mounted, as `IsMounted()` reads it.
+---@field bags table<integer, integer> How many of each item ID are in the bags, as `C_Item.GetItemCount` reads it.
+---@field unusable table<integer, true> Item IDs `C_Item.IsUsableItem` says can't be used; every other can.
+---@field mainHandEnchant integer? The enchant ID on the main hand (a lure), as `GetWeaponEnchantInfo()` reads it.
+---@field itemSpells table<integer, { [1]: string, [2]: integer }> The spell each item's use casts, by item ID, as
+--- `C_Item.GetItemSpell` returns it: name, spell ID.
+---@field itemNames table<integer, string> Each item's name, by item ID, as `C_Item.GetItemNameByID` returns it once
+--- the item is cached; an item not listed isn't cached.
 
 -- The spells named Fishing: the generated catalogue's fishing-spell list (LOG-R2, data/forever/lists.toml), since
 -- every rank of Fishing has this name (probe B2).
@@ -49,11 +59,29 @@ end
 return function(client, stubs)
 	client.boundKeys, client.keysDown, client.bindingCalls = {}, {}, {}
 	-- The soft-interact CVars as probe B11 read them on the dev's client (build 70338), all at or above what QoL
-	-- leases (QOL-R62), so a stretch leases nothing until a spec sets the player's own values.
-	client.cvars = { SoftTargetInteract = "3", SoftTargetInteractRange = "60", SoftTargetInteractRangeIsHard = "0" }
+	-- leases (QOL-R62), so a stretch leases nothing until a spec sets the player's own values. ActionButtonUseKeyDown
+	-- too: probe B11 read it as 1.
+	client.cvars = {
+		SoftTargetInteract = "3",
+		SoftTargetInteractRange = "60",
+		SoftTargetInteractRangeIsHard = "0",
+		ActionButtonUseKeyDown = "1",
+	}
 	client.cvarCalls = {}
 	-- A Fishing Pole (6256, as probe B1 read it) and a Worn Shortsword (25).
 	client.items = { [6256] = { 2, 20 }, [25] = { 2, 7 } }
+	client.bags, client.unusable = {}, {}
+	-- Shiny Bauble's use casts 8087 (probe B4); the other lures' spells are a spec's to add.
+	client.itemSpells = { [6529] = { "Shiny Bauble", 8087 } }
+	-- The lure table's items by their enUS names, all cached.
+	client.itemNames = {
+		[6529] = "Shiny Bauble",
+		[6530] = "Nightcrawlers",
+		[6811] = "Aquadynamic Fish Lens",
+		[6532] = "Bright Baubles",
+		[7307] = "Flesh Eating Worm",
+		[6533] = "Aquadynamic Fish Attractor",
+	}
 	client.fireGameEvent = client.fire
 
 	-- Override calls are protected: in combat lockdown the client blocks them (ADDON_ACTION_BLOCKED). Here they
@@ -101,6 +129,10 @@ return function(client, stubs)
 	stubs.SetOverrideBindingSpell = function(owner, isPriority, key, spell)
 		setOverride(owner, isPriority, key, "SPELL " .. spell)
 	end
+	-- As GetBindingAction reads a click binding (probe B4): "CLICK PagleQoLProbeActionButton:LeftButton".
+	stubs.SetOverrideBindingClick = function(owner, isPriority, key, buttonName, mouseButton)
+		setOverride(owner, isPriority, key, ("CLICK %s:%s"):format(buttonName, mouseButton or "LeftButton"))
+	end
 	stubs.ClearOverrideBindings = function(owner)
 		unlessLockedDown("ClearOverrideBindings")
 		overrides[owner] = nil
@@ -132,6 +164,32 @@ return function(client, stubs)
 		if item then
 			return itemID, "", "", "", 0, item[1], item[2]
 		end
+	end
+	stubs.C_Item.GetItemCount = function(itemID)
+		return client.bags[itemID] or 0
+	end
+	-- usable, noMana
+	stubs.C_Item.IsUsableItem = function(itemID)
+		return not client.unusable[itemID], false
+	end
+	stubs.C_Item.GetItemSpell = function(itemID)
+		local spell = client.itemSpells[itemID]
+		if spell then
+			return spell[1], spell[2]
+		end
+	end
+	stubs.C_Item.GetItemNameByID = function(itemID)
+		return client.itemNames[itemID]
+	end
+	stubs.C_Item.RequestLoadItemDataByID = function() end
+	-- hasMainHandEnchant, mainHandExpiration, mainHandCharges, mainHandEnchantID, then the off hand's and the ranged
+	-- slot's, as probe B4 read them: true, 600000, 0, 263, false, nil, … with Shiny Bauble's lure on.
+	stubs.GetWeaponEnchantInfo = function()
+		local lure = client.mainHandEnchant
+		if lure then
+			return true, 600000, 0, lure, false, nil, nil, nil, false, nil, nil, nil
+		end
+		return false, nil, nil, nil, false, nil, nil, nil, false, nil, nil, nil
 	end
 	stubs.GetCVar = function(name)
 		return client.cvars[name]

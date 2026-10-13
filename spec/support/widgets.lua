@@ -9,13 +9,12 @@
 ---@class FakeClient
 ---@field missingEvents table<string, true> Events this client doesn't know: registering one raises an error, as the
 --- client does. Specs add to it.
----@field frames table[] Every frame CreateFrame made, in order.
+---@field frames table[] Every frame CreateFrame made, in order. A named one is also the load's global of that name.
 
 local widgets = {}
 
 -- Widget methods that only lay out or colour: nothing for a spec to read back.
 local LAYOUT_METHODS = {
-	"SetPoint",
 	"ClearAllPoints",
 	"SetAllPoints",
 	"SetSize",
@@ -24,19 +23,50 @@ local LAYOUT_METHODS = {
 	"SetJustifyH",
 	"SetJustifyV",
 	"SetWordWrap",
-	"SetTextColor",
 	"SetFontObject",
 	"SetEnabled",
 }
 
 --- A widget (frame, button or font string) that keeps what specs read back: its text, whether it's shown, its
---- scripts and the widgets created on it.
+--- scripts and the widgets created on it, its parent, anchors (`points`, each SetPoint's arguments), alpha, text
+--- colour (`textColor`, { r, g, b }), a font string's font object (`fontObject`, CreateFontString's template), and
+--- a button's attributes (`attributes`) and click registration (`clicks`, RegisterForClicks's arguments).
 ---@param kind string "Frame", "Button", "FontString", …
 ---@param parent table?
 ---@return table
 function widgets.newWidget(kind, parent)
 	---@type table<string, any>
-	local widget = { kind = kind, shown = true, scripts = {}, children = {} }
+	local widget = {
+		kind = kind,
+		parent = parent,
+		shown = true,
+		alpha = 1,
+		scripts = {},
+		children = {},
+		points = {},
+		attributes = {},
+	}
+	function widget:SetPoint(...)
+		self.points[#self.points + 1] = { ... }
+	end
+	function widget:SetAlpha(alpha)
+		self.alpha = alpha
+	end
+	function widget:GetAlpha()
+		return self.alpha
+	end
+	function widget:SetTextColor(r, g, b)
+		self.textColor = { r, g, b }
+	end
+	function widget:SetAttribute(name, value)
+		self.attributes[name] = value
+	end
+	function widget:GetAttribute(name)
+		return self.attributes[name]
+	end
+	function widget:RegisterForClicks(...)
+		self.clicks = { ... }
+	end
 	function widget:SetText(text)
 		self.text = text
 	end
@@ -68,8 +98,10 @@ function widgets.newWidget(kind, parent)
 			onClick(self, "LeftButton", false)
 		end
 	end
-	function widget:CreateFontString()
-		return widgets.newWidget("FontString", self)
+	function widget:CreateFontString(_, _, template)
+		local fontString = widgets.newWidget("FontString", self)
+		fontString.fontObject = template
+		return fontString
 	end
 	for _, method in ipairs(LAYOUT_METHODS) do
 		widget[method] = function() end

@@ -19,6 +19,30 @@ describe("QoL's Fishing key logic", function()
 			{ "casting a spell with a cast time", { armed = true, casting = true, poleInHand = true }, "nothing" },
 			-- Step 2: channeling Fishing (QOL-R22).
 			{ "channeling Fishing", { armed = true, channelingFishing = true, poleInHand = true }, "reel" },
+			-- Step 4: a pole in hand with no lure on, and a lure available under the Lures setting (QOL-R20, QOL-R51).
+			{ "a pole with no lure on and a lure available", { armed = true, poleInHand = true, lure = 6529 }, "lure" },
+			{
+				"a pole with a lure on (or counting as lured, QOL-R29)",
+				{ armed = true, poleInHand = true, lured = true, lure = 6529 },
+				"cast",
+			},
+			{ "a pole with no lure on and none available", { armed = true, poleInHand = true }, "cast" },
+			{ "no pole in hand with a lure available", { armed = true, lure = 6529 }, "cast" },
+			{
+				"channeling Fishing with no lure on: never mid-channel",
+				{ armed = true, channelingFishing = true, poleInHand = true, lure = 6529 },
+				"reel",
+			},
+			{
+				"a loot window open with no lure on",
+				{ armed = true, lootOpen = true, poleInHand = true, lure = 6529 },
+				"nothing",
+			},
+			{
+				"casting a lure's use",
+				{ armed = true, casting = true, poleInHand = true, lure = 6529 },
+				"nothing",
+			},
 			-- Step 6, with or without a pole (QOL-R23).
 			{ "idle with a pole in hand", { armed = true, poleInHand = true }, "cast" },
 			{ "idle with no pole in hand", { armed = true }, "cast" },
@@ -49,6 +73,13 @@ describe("QoL's Fishing key logic", function()
 		it("has no cast target while the Fishing spell's name is unknown (QOL-R24)", function()
 			assert.is_nil(ns.KeyTarget("cast", nil))
 		end)
+
+		it("applies a lure by clicking PagleQoLActionButton set to the lure's item (QOL-R24, QOL-R52)", function()
+			assert.are.same(
+				{ kind = "click", value = "PagleQoLActionButton", item = 6529 },
+				ns.KeyTarget("lure", "Fishing", 6529)
+			)
+		end)
 	end)
 
 	describe("ns.Arming", function()
@@ -64,6 +95,13 @@ describe("QoL's Fishing key logic", function()
 			assert.is_false(ns.SameArming(now, ns.Arming({ "G", "SHIFT-F" }, CAST)))
 		end)
 
+		it("re-points for another lure, though the click is the same (QOL-R24, QOL-R25)", function()
+			local bauble = ns.Arming({ "F" }, ns.KeyTarget("lure", "Fishing", 6529))
+
+			assert.is_true(ns.SameArming(bauble, ns.Arming({ "F" }, ns.KeyTarget("lure", "Fishing", 6529))))
+			assert.is_false(ns.SameArming(bauble, ns.Arming({ "F" }, ns.KeyTarget("lure", "Fishing", 6532))))
+		end)
+
 		it("binds no key when there's no target, so a rebinding while disarmed changes nothing (QOL-R11)", function()
 			assert.are.same({}, ns.Arming({ "F" }, nil).keys)
 			assert.is_true(ns.SameArming(ns.Arming({ "F" }, nil), ns.Arming({ "G" }, nil)))
@@ -73,6 +111,14 @@ describe("QoL's Fishing key logic", function()
 		it("has nothing to arm with no key bound, whatever the target (QOL-R11)", function()
 			assert.is_true(ns.SameArming(ns.Arming({}, CAST), ns.Arming({}, nil)))
 			assert.is_nil(ns.Arming({}, REEL).target)
+		end)
+	end)
+
+	describe("ns.ClickRegistration", function()
+		it("fires on key-down while ActionButtonUseKeyDown is 1, else on key-up (QOL-R27)", function()
+			assert.are.equal("AnyDown", ns.ClickRegistration("1"))
+			assert.are.equal("AnyUp", ns.ClickRegistration("0"))
+			assert.are.equal("AnyUp", ns.ClickRegistration(nil)) -- a client that doesn't know the CVar
 		end)
 	end)
 

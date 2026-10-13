@@ -17,6 +17,8 @@ local TICK = 0.5
 -- The override owner (QOL-R11); its OnUpdate runs the tick and the wait for a key to be up. Nil until createFrame
 -- makes it (QOL-R33); evaluate and ns.DisarmFishingKey do nothing until then.
 local frame ---@type Frame
+-- PagleQoLActionButton, the secure button a lure's override clicks (QOL-R24); made with frame (QOL-R33).
+local button ---@type Button
 local loggedIn = false
 local lootOpen = false -- QOL-R28
 local channeling = false -- QOL-R22
@@ -61,13 +63,25 @@ local function ladderState(armed, fishingName)
 		readChannel = false
 		channeling = fishingName ~= nil and UnitChannelInfo("player") == fishingName
 	end
+	local pole = poleInHand()
+	local lure, lured = ns.ReadLures(pole)
 	return {
 		armed = true,
 		lootOpen = lootOpen,
 		casting = UnitCastingInfo("player") ~= nil,
 		channelingFishing = channeling,
-		-- poleInHand stays unread until a step uses it (Track Q's gear step); M1's ladder casts either way (QOL-R23).
+		poleInHand = pole,
+		lured = lured,
+		lure = lure,
 	}
+end
+
+-- Registers PagleQoLActionButton's clicks so a press fires it once (QOL-R27). Under lockdown the secure button
+-- can't change; the arm after it reads the CVar again (QOL-R32).
+local function registerClicks()
+	if button and not InCombatLockdown() then
+		button:RegisterForClicks(ns.ClickRegistration(GetCVar("ActionButtonUseKeyDown")))
+	end
 end
 
 -- Whether any key of either arming is held down (QOL-R26).
@@ -95,9 +109,19 @@ local function repoint(want)
 	if not target then
 		return
 	end
+	-- Arming re-reads the click registration (QOL-R27), and tells the lures what the key applies (QOL-R29).
+	registerClicks()
+	ns.LureTargeted(target.item)
+	if target.kind == "click" then
+		-- An item use on the pole in hand: no target slot and no macro (QOL-R52, probe B4).
+		button:SetAttribute("type", "item")
+		button:SetAttribute("item", "item:" .. target.item)
+	end
 	for _, key in ipairs(want.keys) do
 		if target.kind == "spell" then
 			SetOverrideBindingSpell(frame, true, key, target.value)
+		elseif target.kind == "click" then
+			SetOverrideBindingClick(frame, true, key, target.value, "LeftButton")
 		else
 			SetOverrideBinding(frame, true, key, target.value)
 		end
@@ -137,8 +161,8 @@ function evaluate()
 		return
 	end
 	local fishingName = C_Spell.GetSpellName(ns.FISHING_SPELL_ID)
-	local action = ns.NextAction(ladderState(armed, fishingName))
-	local want = ns.Arming(keys, ns.KeyTarget(action, fishingName))
+	local state = ladderState(armed, fishingName)
+	local want = ns.Arming(keys, ns.KeyTarget(ns.NextAction(state), fishingName, state.lure))
 	if ns.SameArming(current, want) then
 		waitingForKeyUp = false
 	elseif keyHeld(current, want) then
@@ -149,6 +173,9 @@ function evaluate()
 	end
 	setOnUpdate(armed)
 end
+
+--- Re-evaluates the next action now (QOL-R25): for a QoL setting change, and a lure's result (QOL-R29).
+ns.EvaluateFishingKey = evaluate
 
 --- Clears the Fishing key's overrides now, held key or not, and arms nothing (QOL-R31). adapter/Combat.lua calls it
 --- as restriction starts, before lockdown; the end of restriction re-evaluates (QOL-R32).
@@ -204,11 +231,14 @@ local PLAYER_EVENTS = {
 	"UNIT_INVENTORY_CHANGED",
 }
 
--- The override owner is made at OnInitialize, or, after a /reload in combat, at RestrictionChanged(false); until
--- then QoL stays disarmed (QOL-R33).
+-- The override owner and PagleQoLActionButton are made at OnInitialize, or, after a /reload in combat, at
+-- RestrictionChanged(false); until then QoL stays disarmed (QOL-R33). The button has no parent, size or anchor,
+-- so it is never shown (QOL-R24); a click binding still clicks it.
 local function createFrame()
 	if not frame and not Pagle.IsRestricted() then
 		frame = CreateFrame("Frame")
+		button = CreateFrame("Button", ns.ACTION_BUTTON, nil, "SecureActionButtonTemplate") --[[@as Button]]
+		registerClicks()
 	end
 end
 
@@ -222,6 +252,9 @@ function ns.StartFishingKey()
 	for _, event in ipairs(PLAYER_EVENTS) do
 		Pagle.RegisterUnitEvent(OWNER, event, "player", onEvent)
 	end
+	-- ActionButtonUseKeyDown may have changed (QOL-R27). Every CVAR_UPDATE re-reads it: the payload's first value is
+	-- the CVar's name on Retail but has been an event name instead, and the read is cheap either way.
+	Pagle.RegisterEvent(OWNER, "CVAR_UPDATE", registerClicks)
 	Pagle.RegisterCallback(OWNER, "CastStarted", function()
 		channeling = true
 		evaluate()

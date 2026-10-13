@@ -10,15 +10,21 @@
 ## SavedVariables: PagleQoLDB
 
 locale\enUS.lua
+data\lures.lua
 logic\Data.lua
 logic\Module.lua
 logic\FishingKey.lua
 logic\Settings.lua
 logic\Conflict.lua
 logic\Stretch.lua
+logic\Lures.lua
+logic\Nudge.lua
 adapter\Bindings.lua
+adapter\Items.lua
 adapter\FishingKey.lua
 adapter\Conflict.lua
 adapter\Combat.lua
 adapter\Stretch.lua
+adapter\Nudge.lua
+adapter\Lures.lua
 adapter\QoL.lua
