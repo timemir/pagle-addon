@@ -19,6 +19,7 @@ logic\Conflict.lua
 logic\Stretch.lua
 logic\Lures.lua
 logic\Nudge.lua
+logic\Input.lua
 adapter\Bindings.lua
 adapter\Items.lua
 adapter\FishingKey.lua

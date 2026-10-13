@@ -21,11 +21,17 @@ describe("Pagle_QoL with Core", function()
 		assert.are.equal("on", statesOf(core).QoL)
 	end)
 
-	it("registers no menu, slash or views entries in M1 (QOL-R2)", function()
+	it("registers Input's menu entry and the qol subcommand, and no views (QOL-R2, QOL-R16, QOL-R17)", function()
 		local def = loadAddon("Pagle_QoL", FOREVER_GLOBALS).namespaces.Pagle.Modules:Modules()[1].def
 
-		assert.is_nil(def.menu)
-		assert.is_nil(def.slash)
+		assert.are.equal(1, #def.menu)
+		assert.is_function(def.menu[1].label)
+		assert.is_function(def.menu[1].onClick)
+		assert.are.equal(1, #def.slash)
+		assert.are.same(
+			{ "qol", "input key|click|both: choose how you cast" },
+			{ def.slash[1].name, def.slash[1].help }
+		)
 		assert.is_nil(def.views)
 	end)
 

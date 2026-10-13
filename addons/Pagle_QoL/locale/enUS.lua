@@ -36,6 +36,16 @@ ns.L = {
 	SETTINGS_BACKGROUND_SOUND = "Keep sound when the game is in the background",
 	SETTINGS_AUTO_LOOT = "Auto-loot while fishing",
 	SETTINGS_AUTO_LOOT_TOOLTIP = "Only while you fish. Skipped if you already have auto-loot on.",
+	-- Input on the compartment menu (QOL-R16) and through /pagle qol (QOL-R2, QOL-R17).
+	MENU_INPUT = "Input: %s",
+	INPUT_KEY = "Fishing key",
+	INPUT_CLICK = "Double-click",
+	INPUT_BOTH = "Both",
+	SLASH_HELP = "input key|click|both: choose how you cast",
+	SLASH_USAGE = "Pagle: /pagle qol input key|click|both",
+	INPUT_SET_KEY = "Pagle: cast with the Fishing key.",
+	INPUT_SET_CLICK = "Pagle: cast with a double right-click.",
+	INPUT_SET_BOTH = "Pagle: cast with the Fishing key or a double right-click.",
 	-- The conflict popup and what its choices print (QOL-R81, QOL-R83).
 	CONFLICT_TEXT = "Two addons want your fishing key.",
 	CONFLICT_USE_PAGLE = "Use Pagle",
