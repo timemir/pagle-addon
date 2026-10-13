@@ -122,30 +122,38 @@ describe("QoL's gear logic", function()
 	end)
 
 	describe("ns.SwapGearAction", function()
+		-- Pagle Previous as the game reads it: its main hand holds no fishing pole.
+		local PREVIOUS = { hasPole = false }
+
 		it("swaps back with the set fully worn and Pagle Previous there (QOL-R46, QOL-R45)", function()
-			assert.are.equal("back", ns.SwapGearAction(true, set({ isEquipped = true }), true, false))
+			assert.are.equal("back", ns.SwapGearAction(true, set({ isEquipped = true }), PREVIOUS, false))
 		end)
 
 		it("does nothing with the set fully worn and no Pagle Previous (QOL-R46)", function()
-			assert.are.equal("nothing", ns.SwapGearAction(true, set({ isEquipped = true }), false, false))
+			assert.are.equal("nothing", ns.SwapGearAction(true, set({ isEquipped = true }), nil, false))
+		end)
+
+		it("does nothing with the set fully worn and a pole in Pagle Previous's main hand: it counts as absent (QOL-R46)", function()
+			assert.are.equal("nothing", ns.SwapGearAction(true, set({ isEquipped = true }), { hasPole = true }, false))
 		end)
 
 		it("swaps to the set while it is partly worn or not at all, with nothing missing (QOL-R46, QOL-R44)", function()
-			assert.are.equal("equip", ns.SwapGearAction(true, set(), true, false))
-			assert.are.equal("equip", ns.SwapGearAction(true, set(), false, false))
+			assert.are.equal("equip", ns.SwapGearAction(true, set(), PREVIOUS, false))
+			assert.are.equal("equip", ns.SwapGearAction(true, set(), nil, false))
+			assert.are.equal("equip", ns.SwapGearAction(true, set(), { hasPole = true }, false))
 			-- With no pole in it too: Swap gear isn't the gear step (QOL-R43).
-			assert.are.equal("equip", ns.SwapGearAction(true, set({ hasPole = false }), true, false))
+			assert.are.equal("equip", ns.SwapGearAction(true, set({ hasPole = false }), PREVIOUS, false))
 		end)
 
 		it("does nothing with an item of the set missing (QOL-R46)", function()
-			assert.are.equal("nothing", ns.SwapGearAction(true, set({ numLost = 2 }), true, false))
+			assert.are.equal("nothing", ns.SwapGearAction(true, set({ numLost = 2 }), PREVIOUS, false))
 		end)
 
 		it("does nothing while disarmed, with no set chosen, or while a swap settles (QOL-R46, QOL-R29)", function()
-			assert.are.equal("nothing", ns.SwapGearAction(false, set(), true, false))
-			assert.are.equal("nothing", ns.SwapGearAction(true, nil, true, false))
-			assert.are.equal("nothing", ns.SwapGearAction(true, set(), true, true))
-			assert.are.equal("nothing", ns.SwapGearAction(true, set({ isEquipped = true }), true, true))
+			assert.are.equal("nothing", ns.SwapGearAction(false, set(), PREVIOUS, false))
+			assert.are.equal("nothing", ns.SwapGearAction(true, nil, PREVIOUS, false))
+			assert.are.equal("nothing", ns.SwapGearAction(true, set(), PREVIOUS, true))
+			assert.are.equal("nothing", ns.SwapGearAction(true, set({ isEquipped = true }), PREVIOUS, true))
 		end)
 	end)
 

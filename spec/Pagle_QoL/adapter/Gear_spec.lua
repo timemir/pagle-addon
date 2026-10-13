@@ -288,6 +288,17 @@ describe("Swap gear", function()
 		assert.are.same({}, client.equipmentSetCalls)
 	end)
 
+	it("does nothing with the set fully worn and a pole in Pagle Previous's main hand (QOL-R46)", function()
+		local _, client, loaded = start(function(_, client)
+			client.equipmentSets[PREVIOUS] = { name = "Pagle Previous", items = { [16] = FISHING_POLE, [1] = HAT } }
+			client.wearSet(FISHING)
+		end)
+
+		pressSwapGear(loaded)
+
+		assert.are.same({}, client.equipmentSetCalls)
+	end)
+
 	it("swaps to the set while it is partly worn, saving Pagle Previous first (QOL-R46, QOL-R44)", function()
 		local _, client, loaded = start(function(_, client)
 			withPrevious(client)
@@ -452,12 +463,17 @@ describe("The swap-back Nudge", function()
 		local noPrevious, noPreviousClient = fishingInTheSet(function(_, client)
 			client.equipmentSets[PREVIOUS] = nil
 		end)
+		local polePrevious, polePreviousClient = fishingInTheSet(function(_, client)
+			client.equipmentSets[PREVIOUS].items[16] = FISHING_POLE -- it counts as absent
+		end)
 
 		mount(partly, partlyClient)
 		mount(noPrevious, noPreviousClient)
+		mount(polePrevious, polePreviousClient)
 
 		assert.is_nil(nudge(partlyClient))
 		assert.is_nil(nudge(noPreviousClient))
+		assert.is_nil(nudge(polePreviousClient))
 	end)
 
 	it("doesn't show when no stretch was running (QOL-R77)", function()
