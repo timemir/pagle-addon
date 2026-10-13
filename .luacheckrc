@@ -9,7 +9,9 @@
 -- as a string ("CreateFrame") or with its fields (C_Weather = { fields = { "GetCurrentWeather" } }).
 -- The API presence stage fails unless every name here is in the pinned forever dump (BIR_COMMIT, scripts/tools.env).
 stds.wow = {
-	read_globals = {},
+	read_globals = {
+		"GetServerTime", -- the Catch log's time and logId (LOG-R11, LOG-R15)
+	},
 }
 
 -- WoW globals the client defines as plain Lua variables. The forever dump lists functions, frames, enums and

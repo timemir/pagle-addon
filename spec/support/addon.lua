@@ -66,6 +66,9 @@ local function clientStubs()
 		UnitRace = function()
 			return "Human", "Human", 1
 		end,
+		GetServerTime = function()
+			return 1791731700 -- 2026-10-11 15:15:00 UTC
+		end,
 		UnitNameUnmodified = function()
 			return "Angler"
 		end,

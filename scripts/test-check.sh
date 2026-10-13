@@ -115,11 +115,14 @@ expect "a WoW global anywhere but adapter/ fails lint, even when inventoried" li
 	"accessing undefined variable 'CreateFrame'"
 
 copy
+# The api stage counts what the tree inventories already, plus the 8 names added here.
+inventoried=$("$root/.tools/bin/lua" "$root/scripts/api-presence.lua" "$scratch/tree/.luacheckrc" \
+	"$root/.tools/bir/Resources" | grep -oE '[0-9]+ inventoried names')
 for name in CreateFrame hooksecurefunc ChatFrame1 LE_EXPANSION_CLASSIC Enum.ItemQuality FISHING; do
 	inventory_add "$name"
 done
 echo 'stds.wow.read_globals.C_Weather = { fields = { "GetCurrentWeather" } }' >>"$scratch/tree/.luacheckrc"
-expect "real names from each part of the dump pass api" pass "api: 8 inventoried names"
+expect "real names from each part of the dump pass api" pass "api: $((${inventoried%% *} + 8)) inventoried names"
 
 copy
 echo 'table.insert(stds.wow_variables.read_globals, "CreateFrame")' >>"$scratch/tree/.luacheckrc"

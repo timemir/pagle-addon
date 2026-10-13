@@ -18,3 +18,8 @@ local Pagle = {
 _G.Pagle = Pagle
 
 ns.Core = LibStub("AceAddon-3.0"):NewAddon(addonName)
+
+-- AceAddon calls this at ADDON_LOADED, once the client has loaded Core's SavedVariables (LOG-R1 step 1).
+function ns.Core.OnInitialize()
+	ns.LoadCatchLog()
+end
