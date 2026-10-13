@@ -1,0 +1,57 @@
+# Runs the check gate, scripts/check.sh, on every push and pull request: the same script, setup and pins as
+# local WSL. Tool versions come only from scripts/tools.env; this file names none. Every stage check.sh grows
+# runs here without touching this file.
+name: Check
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      # The apt prerequisites scripts/setup.sh lists. ubuntu-latest ships them, so this usually installs nothing.
+      - name: Install setup prerequisites
+        run: |
+          missing=()
+          for pkg in build-essential unzip curl ca-certificates; do
+            dpkg -s "$pkg" >/dev/null 2>&1 || missing+=("$pkg")
+          done
+          if ((${#missing[@]})); then
+            sudo apt-get update
+            sudo apt-get install -y --no-install-recommends "${missing[@]}"
+          fi
+
+      # .tools/ is where setup.sh installs (the repo root's .tools). A changed tools.env restores the last
+      # .tools/ built by the same setup.sh, and setup.sh's stamps reinstall just the components whose pins
+      # changed; a changed setup.sh starts from nothing.
+      - uses: actions/cache/restore@v6
+        id: tools
+        with:
+          path: .tools
+          key: tools-${{ runner.os }}-${{ hashFiles('scripts/setup.sh') }}-${{ hashFiles('scripts/tools.env') }}
+          restore-keys: tools-${{ runner.os }}-${{ hashFiles('scripts/setup.sh') }}-
+
+      - name: Set up the pinned tools
+        run: bash scripts/setup.sh
+
+      # Saved right after setup, so a failing check still leaves the tools cached.
+      - uses: actions/cache/save@v6
+        if: steps.tools.outputs.cache-hit != 'true'
+        with:
+          path: .tools
+          key: ${{ steps.tools.outputs.cache-primary-key }}
+
+      - name: Run the check gate
+        run: bash scripts/check.sh
+
+      # The gate's own regression test: each planted mistake must fail at the stage meant to catch it.
+      - name: Test the check gate
+        run: bash scripts/test-check.sh
