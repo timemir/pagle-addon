@@ -67,7 +67,8 @@ local SKILL_MILESTONE_XP = 1000
 -- Fresh Water's Catch XP multiplier (LED-R22, Tunables).
 local FRESH_WATER_MULTIPLIER = 2
 -- Coins (LED-R88), M2's rows.
-local LEVEL_UP_COINS = 20
+--- Coins for each level-up (LED-R88); a levelUp moment pays them for the levels it raises (LED-R97).
+ns.LEVEL_UP_COINS = 20
 local NEW_SPECIES_COINS = 10
 -- Skill Milestones, ascending (LED-R40, Tunables).
 local SKILL_MILESTONES = { 75, 150, 225, 300 }
@@ -237,7 +238,7 @@ function ns.NewLedgerFold(lookups)
 			for level = before + 1, after do
 				levels[#levels + 1] = level
 			end
-			local coins = LEVEL_UP_COINS * #levels
+			local coins = ns.LEVEL_UP_COINS * #levels
 			state.coins = state.coins + coins
 			earned[#earned + 1] =
 				{ kind = "levelUp", cast = kind == "cast" and record.id or nil, coins = coins, levels = levels }

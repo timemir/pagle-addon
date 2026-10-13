@@ -26,6 +26,31 @@ function ns.Ledger.OnInitialize()
 	local sizeRulesVersion = Pagle.SIZE_RULES_VERSION --[[@as integer?]]
 	--- The Ledger's projection (LED-R2): Core catches it up or rebuilds it after login and hands it each new entry
 	--- live (LOG-R71–R74). While `:IsUpdating()`, the Ledger shows nothing (LOG-R74).
-	ns.projection =
-		ns.Module:NewProjection(ns.ProjectionDef(ns.db.global, { GetItem = Pagle.GetItem }, sizeRulesVersion))
+	ns.projection = ns.Module:NewProjection(
+		ns.ProjectionDef(ns.db.global, { GetItem = Pagle.GetItem }, ns.Outlets(ns.Module), sizeRulesVersion)
+	)
+end
+
+--- Where the Ledger's live moments, Coins and summary line go, and the client's names they read (LED-R89, LED-R95,
+--- LED-R97).
+---@param module PagleModuleHandle
+---@return LedgerOutlets
+function ns.Outlets(module)
+	return {
+		RaiseMoment = function(moment)
+			module:RaiseMoment(moment)
+		end,
+		ReportCoinsEarned = function(total)
+			module:ReportCoinsEarned(total)
+		end,
+		SetSummaryLine = function(text)
+			module:SetSummaryLine("ledger", text)
+		end,
+		ItemName = function(itemID)
+			return C_Item.GetItemNameByID(itemID)
+		end,
+		ZoneName = function(zone)
+			return (C_Map.GetAreaInfo(zone))
+		end,
+	}
 end
