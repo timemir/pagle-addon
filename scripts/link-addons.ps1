@@ -5,7 +5,8 @@ so edits go live after /reload.
 
 .DESCRIPTION
 Safe to run again: a junction that already points at this checkout is left alone, and one
-that points somewhere else (another checkout or worktree) is re-pointed. A real folder or
+that points somewhere else (another checkout or worktree, or a folder since deleted) is
+re-pointed. A real folder or
 file with an addon's name is never touched; the script stops and names it.
 
 .PARAMETER AddOnsPath
@@ -36,8 +37,10 @@ foreach ($addon in Get-ChildItem -LiteralPath $source -Directory) {
 	$link = Join-Path $AddOnsPath $addon.Name
 	$target = Get-FullPath $addon.FullName
 
-	if (Test-Path -LiteralPath $link) {
-		$item = Get-Item -LiteralPath $link -Force
+	# Get-Item rather than Test-Path: Test-Path can report a junction whose target is gone as missing, and then
+	# mklink would fail on the name it still holds.
+	$item = Get-Item -LiteralPath $link -Force -ErrorAction SilentlyContinue
+	if ($item) {
 		if ($item.LinkType -ne 'Junction') {
 			throw "$link exists and is not a junction. Move it out of the way, then run this again."
 		}
