@@ -44,17 +44,23 @@ describe("QoL's gear logic", function()
 	end)
 
 	describe("ns.FishingSetOptions", function()
-		it("offers None, then the character's sets in the game's order, except Pagle Previous (SET-R20, QOL-R40)", function()
-			assert.are.same({
-				{ value = ns.NO_FISHING_SET, label = "None (gear stays as it is)" },
-				{ value = 0, label = "Raid" },
-				{ value = 3, label = "Pagle Fishing" },
-			}, ns.FishingSetOptions({
-				{ setID = 0, name = "Raid" },
-				{ setID = 5, name = "Pagle Previous" },
-				{ setID = 3, name = "Pagle Fishing" },
-			}))
-		end)
+		it(
+			"offers None, then the character's sets in the game's order, except Pagle Previous (SET-R20, QOL-R40)",
+			function()
+				assert.are.same(
+					{
+						{ value = ns.NO_FISHING_SET, label = "None (gear stays as it is)" },
+						{ value = 0, label = "Raid" },
+						{ value = 3, label = "Pagle Fishing" },
+					},
+					ns.FishingSetOptions({
+						{ setID = 0, name = "Raid" },
+						{ setID = 5, name = "Pagle Previous" },
+						{ setID = 3, name = "Pagle Fishing" },
+					})
+				)
+			end
+		)
 
 		it("keeps None apart from every set ID, 0 included (QOL-R40, probe B9)", function()
 			assert.is_number(ns.NO_FISHING_SET)
@@ -85,14 +91,20 @@ describe("QoL's gear logic", function()
 		end)
 
 		it("names Pagle Fishing when only it needs a slot (QOL-R41, QOL-R42)", function()
-			assert.are.equal("Pagle: needs a free equipment set slot for Pagle Fishing.", ns.SlotsMessage(0, true, false))
+			assert.are.equal(
+				"Pagle: needs a free equipment set slot for Pagle Fishing.",
+				ns.SlotsMessage(0, true, false)
+			)
 		end)
 	end)
 
 	describe("ns.GearStepReady", function()
-		it("holds with a set chosen whose main hand is a pole, nothing missing and no pole in hand (QOL-R43)", function()
-			assert.is_true(ns.GearStepReady(set(), false, false))
-		end)
+		it(
+			"holds with a set chosen whose main hand is a pole, nothing missing and no pole in hand (QOL-R43)",
+			function()
+				assert.is_true(ns.GearStepReady(set(), false, false))
+			end
+		)
 
 		-- Each row: why the step isn't ready, then the arguments.
 		local NOT_READY = {

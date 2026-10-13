@@ -1,5 +1,6 @@
 -- QoL's rows on Core's Fishing page: the Casting header and the Fishing key (M1), the Lures and clams rows (Track Q
--- step 1) and the While you fish rows (Track Q step 4) (qol.md › Settings, SET-R20, SET-R21, CORE-R42).
+-- step 1), the Gear rows (Track Q step 2) and the While you fish rows (Track Q step 4) (qol.md › Settings, SET-R20,
+-- SET-R21, CORE-R42).
 
 -- QoL's row on a FakePagle Fishing page by its label.
 ---@param fake FakePagle
@@ -29,6 +30,10 @@ describe("QoL's Fishing page with FakePagle", function()
 		assert.are.same({
 			{ "QoL", "header", "Casting", false },
 			{ "QoL", "keybinding", "Fishing key", false },
+			{ "QoL", "header", "Gear", false },
+			{ "QoL", "dropdown", "Fishing set", false },
+			{ "QoL", "button", "Save what I'm wearing as my fishing set", true },
+			{ "QoL", "keybinding", "Swap gear", true },
 			{ "QoL", "header", "Lures and clams", false },
 			{ "QoL", "dropdown", "Lures", false },
 			{ "QoL", "dropdown", "Lure", true },
@@ -37,6 +42,62 @@ describe("QoL's Fishing page with FakePagle", function()
 			{ "QoL", "checkbox", "Keep sound when the game is in the background", true },
 			{ "QoL", "checkbox", "Auto-loot while fishing", false },
 		}, rows)
+	end)
+
+	it("gives the Gear rows qol.md's tooltips, and the fishing set no default (SET-R20, SET-R21)", function()
+		local fake = newFakePagle()
+		fake.load("Pagle_QoL")
+		fake.login()
+
+		local set = rowOf(fake, "Fishing set")
+		local save = rowOf(fake, "Save what I'm wearing as my fishing set")
+		local swap = rowOf(fake, "Swap gear")
+
+		-- qol.md › Settings › Tooltips, word for word; it gives the button none.
+		assert.are.equal("The Fishing key puts it on when no pole is in hand. Double-click skips this.", set.tooltip)
+		assert.is_nil(save.tooltip)
+		assert.are.equal(
+			"Swaps between your fishing set and what you wore before (saved as Pagle Previous).",
+			swap.tooltip
+		)
+		assert.are.equal("PAGLE_SWAP_GEAR", swap.binding)
+		-- None is chosen at first, and Defaults has no value to put back.
+		assert.is_nil(set.default)
+		assert.are.equal(-1, set.get())
+		assert.are.equal("fishingSet", save.parent)
+		assert.are.equal("fishingSet", swap.parent)
+	end)
+
+	it("greys Swap gear out while no fishing set is chosen (SET-R20)", function()
+		local fake = newFakePagle()
+		local loaded = fake.load("Pagle_QoL")
+		local client = loaded.client
+		client.equipmentSets[3] = { name = "Fishing", items = { [16] = 6256 } }
+		client.equipmentSets[5] = { name = "Pagle Previous", items = {} }
+		fake.login()
+		fake.fireGameEvent("PLAYER_LOGIN")
+		local swap = rowOf(fake, "Swap gear")
+
+		assert.is_false(swap.isEnabled())
+		rowOf(fake, "Fishing set").set(3)
+		assert.is_true(swap.isEnabled())
+		rowOf(fake, "Fishing set").set(-1)
+		assert.is_false(swap.isEnabled())
+	end)
+
+	it("greys the Fishing set and its button out while restricted (QOL-R41)", function()
+		local fake = newFakePagle()
+		fake.load("Pagle_QoL")
+		fake.login()
+		local set = rowOf(fake, "Fishing set")
+		local save = rowOf(fake, "Save what I'm wearing as my fishing set")
+
+		fake.setRestricted(true)
+		assert.is_false(set.isEnabled())
+		assert.is_false(save.isEnabled())
+		fake.setRestricted(false)
+		assert.is_true(set.isEnabled())
+		assert.is_true(save.isEnabled())
 	end)
 
 	it("offers Off, Best I have and Only this one for Lures (SET-R20, QOL-R50)", function()
@@ -227,7 +288,7 @@ describe("QoL's Fishing page with Core", function()
 	-- Loads Core and QoL with the client knowing QoL's Bindings.xml, then logs in; returns the Fishing page.
 	local function fishingPage()
 		local loaded = loadAddon("Pagle_QoL", FOREVER_GLOBALS)
-		loaded.client.bindings = { "MOVEFORWARD", "PAGLE_FISHING_KEY" }
+		loaded.client.bindings = { "MOVEFORWARD", "PAGLE_FISHING_KEY", "PAGLE_SWAP_GEAR" }
 		loaded.client.fire("PLAYER_LOGIN")
 		return loaded, assert(loaded.client.settings.category("Fishing"))
 	end
@@ -257,14 +318,62 @@ describe("QoL's Fishing page with Core", function()
 		error("no row " .. label)
 	end
 
-	-- Presses the Fishing page's Defaults button: every setting registered on it goes back to its default (SET-R60).
+	-- Presses the Fishing page's Defaults button: every setting registered on it goes back to its default (SET-R60),
+	-- skipping one with no default, as Blizzard's SettingMixin:SetValueToDefault does (Gethe/wow-ui-source branch
+	-- forever, Blizzard_Settings_Shared/Blizzard_Setting.lua).
 	local function pressDefaults(loaded, fishing)
 		for _, setting in pairs(loaded.client.settings.variables) do
-			if setting.category == fishing then
+			if setting.category == fishing and setting:GetDefaultValue() ~= nil then
 				setting:SetValue(setting:GetDefaultValue())
 			end
 		end
 	end
+
+	it("registers Gear as a header, a native dropdown, a button and Swap gear's binding row (SET-R20)", function()
+		local loaded, fishing = fishingPage()
+
+		local header = initializerOf(fishing, "Gear")
+		local set = initializerOf(fishing, "Fishing set")
+		assert.are.equal("SettingsListSectionHeaderTemplate", header.template)
+		assert.are.equal("SettingsDropdownControlTemplate", set.template)
+		assert.are.equal(
+			"The Fishing key puts it on when no pole is in hand. Double-click skips this.",
+			set:GetTooltip()
+		)
+		-- The rows after the dropdown hang under it: the button, then Swap gear's binding row.
+		local initializers = fishing.layout.initializers
+		local at
+		for i, initializer in ipairs(initializers) do
+			if initializer == set then
+				at = i
+			end
+		end
+		local save, swap = initializers[at + 1], initializers[at + 2]
+		assert.are.equal("SettingButtonControlTemplate", save.template)
+		assert.are.equal(set, save:GetParentInitializer())
+		assert.are.equal("KeyBindingFrameBindingTemplate", swap.template)
+		assert.are.equal(3, swap:GetData().bindingIndex)
+		assert.are.same({ "SWAP GEAR" }, swap.searchTags)
+		assert.are.equal(set, swap:GetParentInitializer())
+		-- Greyed out while no set is chosen.
+		assert.is_false(swap:EvaluateModifyPredicates())
+		loaded.client.equipmentSets[0] = { name = "Fishing", items = { [16] = 6256 } }
+		set:GetSetting():SetValue(0)
+		assert.is_true(swap:EvaluateModifyPredicates())
+	end)
+
+	it("leaves the fishing set alone with Defaults (SET-R21, SET-R60)", function()
+		local loaded, fishing = fishingPage()
+		loaded.client.equipmentSets[0] = { name = "Fishing", items = { [16] = 6256 } }
+		local set = initializerOf(fishing, "Fishing set"):GetSetting()
+		set:SetValue(0)
+
+		pressDefaults(loaded, fishing)
+
+		assert.is_nil(set:GetDefaultValue())
+		assert.are.equal(0, set:GetValue())
+		assert.are.same({ setID = 0, name = "Fishing" }, loaded.env.PagleQoLDB.global.gear[PLAYER_GUID])
+	end)
 
 	it("registers Lures and clams as a header and two native dropdowns, greying as SET-R20 says", function()
 		local _, fishing = fishingPage()

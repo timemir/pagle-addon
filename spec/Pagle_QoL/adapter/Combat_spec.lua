@@ -199,13 +199,15 @@ describe("The Fishing key in combat", function()
 			fake.fire("CastStarted")
 			assert.are.equal(libFrames, #client.frames)
 			assert.is_nil(loaded.env.PagleQoLActionButton)
+			assert.is_nil(loaded.env.PagleQoLGearButton)
 			assert.are.same({}, client.bindingCalls)
 
 			setLockdown(loaded, false)
 			fake.setRestricted(false)
-			-- The override owner, then PagleQoLActionButton (QOL-R24).
-			assert.are.equal(libFrames + 2, #client.frames)
+			-- The override owner, then PagleQoLActionButton and PagleQoLGearButton (QOL-R24).
+			assert.are.equal(libFrames + 3, #client.frames)
 			assert.are.equal(loaded.env.PagleQoLActionButton, client.frames[libFrames + 2])
+			assert.are.equal(loaded.env.PagleQoLGearButton, client.frames[libFrames + 3])
 			assert.are.equal(CAST, client.overrideAction("F"))
 			assert.is_function(client.frames[libFrames + 1].scripts.OnUpdate) -- the tick (QOL-R25)
 		end)

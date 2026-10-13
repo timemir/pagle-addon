@@ -50,7 +50,11 @@ describe("QoL's Fishing key logic", function()
 				{ armed = true, channelingFishing = true, gearReady = true },
 				"reel",
 			},
-			{ "the gear step ready with a loot window open", { armed = true, lootOpen = true, gearReady = true }, "nothing" },
+			{
+				"the gear step ready with a loot window open",
+				{ armed = true, lootOpen = true, gearReady = true },
+				"nothing",
+			},
 			{
 				"the gear step ready, for the double-click, which skips it",
 				{ armed = true, gearReady = true, skipGear = true },
@@ -97,7 +101,10 @@ describe("QoL's Fishing key logic", function()
 		it("equips the fishing set by clicking PagleQoLGearButton, with no item (QOL-R24)", function()
 			assert.are.same({ kind = "click", value = "PagleQoLGearButton" }, ns.KeyTarget("gear", "Fishing"))
 			assert.is_false(
-				ns.SameArming(ns.Arming({ "F" }, ns.KeyTarget("gear", "Fishing")), ns.Arming({ "F" }, ns.KeyTarget("lure", "Fishing", 6529)))
+				ns.SameArming(
+					ns.Arming({ "F" }, ns.KeyTarget("gear", "Fishing")),
+					ns.Arming({ "F" }, ns.KeyTarget("lure", "Fishing", 6529))
+				)
 			)
 		end)
 	end)

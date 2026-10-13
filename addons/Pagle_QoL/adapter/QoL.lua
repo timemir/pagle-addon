@@ -30,5 +30,6 @@ function ns.QoL.OnInitialize()
 
 	ns.StartFishingKey()
 	ns.StartLures()
+	ns.StartGear()
 	ns.StartCombat()
 end
