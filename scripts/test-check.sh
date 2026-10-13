@@ -152,7 +152,7 @@ expect "a file dropped from Pagle.toc that Core needs fails tests" tests "attemp
 
 copy
 toc_drop 'libs\AceDB-3.0\AceDB-3.0.lua'
-expect "a vendored lib dropped from Pagle.toc fails tests" tests "embeds AceDB-3.0"
+expect "a vendored lib dropped from Pagle.toc fails tests" tests 'Cannot find a library instance of "AceDB-3.0"'
 
 copy
 toc_drop 'adapter\Bindings.lua' "$scratch/tree/addons/Pagle_QoL/Pagle_QoL.toc"
@@ -207,6 +207,11 @@ expect "a data/ change committed without its regenerated file fails generator" g
 copy
 printf 'x1,0,0,Planted\n' >>"$scratch/tree/data/db2/areas.csv"
 expect "an areas.csv row with a non-integer ID fails generator" generator "ID: expected a positive integer, got 'x1'"
+
+copy
+sed -i '2s/^1,/2,/' "$scratch/tree/data/baseline/skill.csv"
+expect "a hand-edited baseline CSV fails generator" generator \
+	"data/baseline/skill.csv: its SHA-256 differs from data/baseline/source.toml"
 
 if ((failures)); then
 	echo "test-check: $failures failed" >&2

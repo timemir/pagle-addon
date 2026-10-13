@@ -5,6 +5,7 @@
 ## Group: Pagle
 ## Category: Professions
 ## Version: @project-version@
+## SavedVariables: PagleLog, PagleDB
 
 libs\LibStub\LibStub.lua
 libs\CallbackHandler-1.0\CallbackHandler-1.0.lua
@@ -22,9 +23,15 @@ logic\Restriction.lua
 logic\WorkQueue.lua
 logic\Conditions.lua
 logic\Modules.lua
+logic\CatchLog.lua
+logic\Migrations.lua
+logic\Catalogue.lua
+logic\Areas.lua
 adapter\Core.lua
 adapter\Callbacks.lua
 adapter\Events.lua
 adapter\Restriction.lua
 adapter\Conditions.lua
+adapter\Catalogue.lua
 adapter\Modules.lua
+adapter\CatchLog.lua

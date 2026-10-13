@@ -10,7 +10,8 @@ VMaNGOS
 Pagle's content data (where and when fish are caught) is derived from the
 VMaNGOS world database, https://github.com/vmangos/core, licensed under the
 GNU General Public License version 2 or later. Thanks to the VMaNGOS
-contributors.
+contributors. The snapshot used is VMaNGOS's db_latest release of
+2026-09-28 (tag db_latest@4641790).
 
 Blizzard Entertainment
 World of Warcraft, and the game IDs and names Pagle refers to (items, areas,

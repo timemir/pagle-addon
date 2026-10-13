@@ -42,6 +42,9 @@
 ---@field load fun(name: string, options: table?): LoadedAddon Loads a Module with `loadAddon` against this fake:
 --- `globals`, and of Pagle.toc only the vendored libs/ the Module reaches through LibStub (CORE-R6). Options as
 --- loadAddon's.
+---@field catchLog PagleCatchLog The Catch log Pagle.IterateCatches reads, on Core's real codec; empty at first.
+---@field setCatalogue fun(data: table) Serves the catalogue calls over `data` (shaped as ns.catalogue, DATA-R76)
+--- instead of the generated catalogue.
 
 -- Core's logic/ for one fake: Pagle.toc's libs (for the bus), generated data/, locale/ and logic/ files, in TOC
 -- order, sharing one ns, as the client would load them. None uses WoW globals (CORE-R7), so plain Lua runs them.
@@ -246,6 +249,38 @@ end)
 -- Condition specs (LOG-R48): pure, so the real one.
 part(function(_, Pagle, ns)
 	Pagle.MatchesConditions = ns.MatchesConditions
+end)
+
+-- The Catch log (LOG-R10–R16, LOG-R42) on Core's real codec, over an empty in-memory PagleLog. A spec adds
+-- characters to fake.catchLog.data.characters and entries with fake.catchLog:Append(record).
+part(function(fake, Pagle, ns)
+	fake.catchLog = ns.OpenCatchLog(nil, { decodeErrors = 0 }, 1791731700)
+	function Pagle.IterateCatches(afterSeq)
+		local iterate = fake.catchLog:Iterate(afterSeq)
+		return function()
+			return readOnly(iterate())
+		end
+	end
+end)
+
+-- The catalogue (LOG-R55), on Core's real accessors over the generated catalogue or a spec's own. Each record
+-- they hand out is read-only (CORE-R18, DATA-R80).
+part(function(fake, Pagle, ns)
+	local catalogue
+	function fake.setCatalogue(data)
+		catalogue = ns.NewCatalogue(data)
+		Pagle.CONTENT_FINGERPRINT = catalogue.CONTENT_FINGERPRINT
+	end
+	for _, name in ipairs({ "GetItem", "GetZones", "GetArea", "GetZoneOf", "GetZoneCatches" }) do
+		Pagle[name] = function(...)
+			return readOnly(catalogue[name](...))
+		end
+	end
+	function Pagle.GetWindowSpec(windowID)
+		local spec, confirmed = catalogue.GetWindowSpec(windowID)
+		return readOnly(spec), confirmed
+	end
+	fake.setCatalogue(ns.catalogue)
 end)
 
 --- A fresh FakePagle: no Module registered, not restricted, before PLAYER_LOGIN.

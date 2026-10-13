@@ -210,4 +210,83 @@ describe("FakePagle", function()
 			Pagle.MatchesConditions({ pools = { 1 } }, { zone = 40 })
 		end)
 	end)
+
+	it("iterates its Catch log with Core's real codec, handing out read-only records (LOG-R42, CORE-R18)", function()
+		local fake = newFakePagle()
+		fake.catchLog.data.characters[1] = { guid = PLAYER_GUID }
+		fake.catchLog:Append({ kind = "skill", char = 1, time = 1791731680, rank = 86, max = 150, mod = 0 })
+		fake.catchLog:Append({ kind = "build", char = 1, time = 1791731681, build = 70338, version = "1.60.1" })
+
+		local records = {}
+		for record in fake.Pagle.IterateCatches(1) do
+			records[#records + 1] = record
+		end
+
+		assert.are.equal(1, #records)
+		assert.are.equal("build", records[1].kind)
+		assert.are.equal(PLAYER_GUID .. "-1791731681-0", records[1].id)
+		assert.has_error(function()
+			records[1].build = 1
+		end)
+	end)
+
+	describe("the catalogue", function()
+		-- A catalogue in the M1 shape (DATA-R79): Darkshore (148) with The Long Wash (453).
+		local function fixture()
+			local function area(parent)
+				return { parent = parent, continent = 1, hasData = false, skillBaseConfirmed = false, catches = {} }
+			end
+			return {
+				fingerprint = "0123456789abcdef",
+				items = {},
+				areas = { [148] = area(0), [453] = area(148) },
+				aliases = {},
+				pools = {},
+				windows = {},
+				events = {},
+				fishingSpells = {},
+				auras = {},
+			}
+		end
+
+		it("serves the generated catalogue, as Core does (LOG-R55)", function()
+			local Pagle = loadAddon("Pagle", FOREVER_GLOBALS).env.Pagle
+
+			assert.are.equal(Pagle.CONTENT_FINGERPRINT, newFakePagle().Pagle.CONTENT_FINGERPRINT)
+			assert.are.same(Pagle.GetZones(), newFakePagle().Pagle.GetZones())
+		end)
+
+		it("serves a spec's own catalogue on Core's accessors (LOG-R55)", function()
+			local fake = newFakePagle()
+			fake.setCatalogue(fixture())
+			local Pagle = fake.globals.Pagle
+
+			assert.are.equal(148, Pagle.GetZoneOf(453))
+			assert.are.equal(1, Pagle.GetArea(453).continent)
+			assert.are.equal("0123456789abcdef", Pagle.CONTENT_FINGERPRINT)
+		end)
+
+		it("hands out records that raise an error on any write (CORE-R18, DATA-R80)", function()
+			local fake = newFakePagle()
+			fake.setCatalogue(fixture())
+			local Pagle = fake.globals.Pagle
+			local area, zones, catches = Pagle.GetArea(453), Pagle.GetZones(), Pagle.GetZoneCatches(148)
+
+			assert.has_error(function()
+				area.parent = 0
+			end)
+			assert.has_error(function()
+				area.catches[1] = { itemID = 6358, confirmed = true }
+			end)
+			assert.has_error(function()
+				zones[2] = 453
+			end)
+			assert.has_error(function()
+				catches[1] = { itemID = 6358, confirmed = true, areaID = 148 }
+			end)
+			assert.has_error(function()
+				Pagle.CONTENT_FINGERPRINT = "changed"
+			end)
+		end)
+	end)
 end)

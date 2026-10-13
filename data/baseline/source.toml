@@ -1,0 +1,14 @@
+# The VMaNGOS snapshot data/baseline/ was extracted from, by scripts/extract-baseline.py (DATA-R9), and the
+# SHA-256 of each CSV. Never edited: the generator fails if a CSV's hash differs from this file (DATA-R63).
+tag = "db_latest@4641790"
+date = 2026-09-28
+url = "https://github.com/vmangos/core/releases/download/db_latest/db-sqlite-4641790.zip"
+dumpSha256 = "bb2f1dd69171043a52657574f54948fd30941530fdc6eec12bce62c655428501"
+
+[sha256]
+"area_loot.csv" = "ecc6ca4aaf53a8e021f72a96cabf102f389071948c9c1bd08e9a4748cb55c5ce"
+"events.csv" = "1e59a737398c1023ba77d302d45276dc52479c2a9259ec3303720daf451bc6ee"
+"pool_loot.csv" = "179cd9129d09c28c533e70d78234294f549bfc0191ce5a7d4c7ad1be456f7cec"
+"pools.csv" = "349682cb852345ab724cefe5fbec8a5da52435ddd366e669168f9520885e0b19"
+"reference_loot.csv" = "b1bf305f8ed03801435a3eba4dad149e7681723a5225e810f4116db54e843473"
+"skill.csv" = "b2704008842b57906fb632a6676c5d1007838c3e54736d543ad997f89d72f07c"
