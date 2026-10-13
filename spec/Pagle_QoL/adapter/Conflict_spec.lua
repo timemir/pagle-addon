@@ -72,7 +72,6 @@ describe("The conflict popup's choices", function()
 			loaded.printed
 		)
 		assert.are.equal(0, client.reloads)
-		assert.is_nil(client.popup)
 	end)
 
 	it("Use {other} turns off Pagle QoL alone, for all characters (QOL-R83)", function()
@@ -105,6 +104,70 @@ describe("The conflict popup's choices", function()
 		local _, nextLogin = start({ Angleur = ANGLEUR })
 
 		assert.are.same({ [1] = "Use Pagle", [3] = "Use Angleur" }, nextLogin.popup.buttons)
+	end)
+end)
+
+describe("The Reload now popup", function()
+	-- Each choice, by the popup button that makes it (QOL-R81).
+	local CHOICES = { ["Use Pagle"] = 1, ["Use {other}"] = 3 }
+
+	for choice, button in pairs(CHOICES) do
+		it(("follows %s, in place of the conflict popup (QOL-R83)"):format(choice), function()
+			local _, client = start({ Angleur = ANGLEUR })
+
+			client.clickPopup(button)
+
+			assert.are.equal("Reload the interface now to finish?", client.popup.text)
+			assert.are.same({ [1] = "Reload now", [2] = "Later" }, client.popup.buttons)
+			assert.are.equal(0, client.reloads)
+		end)
+
+		it(("reloads on a click on Reload now after %s (QOL-R6, QOL-R83)"):format(choice), function()
+			local _, client = start({ Angleur = ANGLEUR })
+			client.clickPopup(button)
+
+			client.clickPopup(1)
+
+			assert.are.equal(1, client.reloads)
+			assert.is_nil(client.popup)
+		end)
+
+		it(("doesn't reload on Later or Esc after %s (QOL-R6, QOL-R83)"):format(choice), function()
+			local _, client = start({ Angleur = ANGLEUR })
+			client.clickPopup(button)
+			client.clickPopup(2)
+			local _, again = start({ Angleur = ANGLEUR })
+			again.clickPopup(button)
+			again.pressEscape()
+
+			assert.is_nil(client.popup)
+			assert.is_nil(again.popup)
+			assert.are.equal(0, client.reloads + again.reloads)
+		end)
+	end
+
+	it("never reloads on its own: not at load, on events, restriction or time (QOL-R6)", function()
+		local fake, client = start({ Angleur = ANGLEUR })
+		client.clickPopup(1)
+
+		fake.fireGameEvent("UPDATE_BINDINGS")
+		fake.fire("CastStarted")
+		fake.fire("CastEnded")
+		fake.setRestricted(true)
+		fake.setRestricted(false)
+		client.update(60)
+
+		assert.are.equal(0, client.reloads)
+	end)
+
+	it("isn't offered when no other fishing-key addon is loaded, nor on Esc (QOL-R83, QOL-R84)", function()
+		local _, client = start({})
+		local _, escaped = start({ Angleur = ANGLEUR })
+		escaped.pressEscape()
+
+		assert.is_nil(client.popup)
+		assert.is_nil(escaped.popup)
+		assert.are.equal(0, client.reloads + escaped.reloads)
 	end)
 end)
 
