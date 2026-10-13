@@ -264,7 +264,7 @@ describe("The double-click", function()
 		end)
 
 		it(
-			"closes an open window at the next evaluation after CVAR_UPDATE takes ActionButtonUseKeyDown from 1 to 0 (QOL-R27, QOL-R105)",
+			"closes an open window at once when CVAR_UPDATE takes ActionButtonUseKeyDown from 1 to 0 (QOL-R27, QOL-R105)",
 			function()
 				local fake, client = start()
 				client.click("RightButton")
@@ -273,7 +273,6 @@ describe("The double-click", function()
 
 				client.cvars.ActionButtonUseKeyDown = "0"
 				fake.fireGameEvent("CVAR_UPDATE", "ActionButtonUseKeyDown", "0")
-				fake.fireGameEvent("BAG_UPDATE_DELAYED")
 
 				assert.is_false(button2(client))
 				-- Closed, not waiting: the CVar going back to 1 doesn't bring it back.

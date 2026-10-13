@@ -302,8 +302,12 @@ function ns.StartFishingKey()
 		Pagle.RegisterUnitEvent(OWNER, event, "player", onEvent)
 	end
 	-- ActionButtonUseKeyDown may have changed (QOL-R27). Every CVAR_UPDATE re-reads it: the payload's first value is
-	-- the CVar's name on Retail but has been an event name instead, and the read is cheap either way.
-	Pagle.RegisterEvent(OWNER, "CVAR_UPDATE", registerClicks)
+	-- the CVar's name on Retail but has been an event name instead, and the read is cheap either way. It re-evaluates
+	-- too, so an open double-click window drops its reel target at once (QOL-R105).
+	Pagle.RegisterEvent(OWNER, "CVAR_UPDATE", function()
+		registerClicks()
+		evaluate()
+	end)
 	Pagle.RegisterCallback(OWNER, "CastStarted", function()
 		channeling = true
 		reelWatch:Clear() -- a new channel: its reel is untried (QOL-R35)
