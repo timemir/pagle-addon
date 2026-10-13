@@ -1,0 +1,968 @@
+# Item records (DATA-R16-R24): each item of the universe's category, Species fold, trophy family, Legend and Noise
+# flags, removals, and class and quality for an item items.csv lacks. Keys: docs/spec/content-data.md, Data.
+#
+# An item DB2 files under a Noise class (0 Consumable, 2 Weapon, 4 Armor, 9 Recipe) or reaches only through
+# reference loot is Noise by rule and needs no entry (DATA-R16). Every other item needs a category (DATA-R17).
+# Drafted in #90 from the DB2 class, subclass and enUS name; the comment above each entry is its enUS DB2 name, kept
+# for review only (DATA-R3).
+
+# Malachite
+[item.774]
+noise = true
+why = "generic trade goods in the baseline's fishing loot (gems, herbs, parts, elementals), not a fishing collectible (#90)"
+
+# Large Blue Sack
+[item.804]
+noise = true
+why = "a generic bag in the baseline's fishing loot, not a fishing collectible (#90)"
+
+# Large Red Sack
+[item.857]
+noise = true
+why = "a generic bag in the baseline's fishing loot, not a fishing collectible (#90)"
+
+# Spotted Sunfish
+[item.1467]
+category = "questFish"
+
+# Jade
+[item.1529]
+noise = true
+why = "generic trade goods in the baseline's fishing loot (gems, herbs, parts, elementals), not a fishing collectible (#90)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Chief Brigadier Gauntlets
+[item.1988]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 3. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Priest's Mace
+[item.2075]
+class = 2
+why = "Item.db2 1.60.1.70338: ClassID 2, SubclassID 4. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Hillborne Axe
+[item.2080]
+class = 2
+why = "Item.db2 1.60.1.70338: ClassID 2, SubclassID 0. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# Peacebloom
+[item.2447]
+noise = true
+why = "generic trade goods in the baseline's fishing loot (gems, herbs, parts, elementals), not a fishing collectible (#90)"
+
+# Red Leather Bag
+[item.2657]
+noise = true
+why = "a generic bag in the baseline's fishing loot, not a fishing collectible (#90)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Journeyman's Vest
+[item.2957]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 1. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Spellbinder Pants
+[item.2970]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 1. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Veteran Leggings
+[item.2978]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 3. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Inscribed Leather Boots
+[item.2987]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 2. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Inscribed Leather Gloves
+[item.2988]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 2. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Burnished Tunic
+[item.2989]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 3. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Whipwood Recurve Bow
+[item.3037]
+class = 2
+why = "Item.db2 1.60.1.70338: ClassID 2, SubclassID 2. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Forest Leather Chestpiece
+[item.3055]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 2. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Bright Boots
+[item.3065]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 1. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Edged Bastard Sword
+[item.3196]
+class = 2
+why = "Item.db2 1.60.1.70338: ClassID 2, SubclassID 8. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Conk Hammer
+[item.3208]
+class = 2
+why = "Item.db2 1.60.1.70338: ClassID 2, SubclassID 5. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Brutal War Axe
+[item.3210]
+class = 2
+why = "Item.db2 1.60.1.70338: ClassID 2, SubclassID 1. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Decapitating Sword
+[item.3740]
+class = 2
+why = "Item.db2 1.60.1.70338: ClassID 2, SubclassID 7. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# Stranglekelp
+[item.3820]
+noise = true
+why = "generic trade goods in the baseline's fishing loot (gems, herbs, parts, elementals), not a fishing collectible (#90)"
+
+# Coal
+[item.3857]
+noise = true
+why = "generic trade goods in the baseline's fishing loot (gems, herbs, parts, elementals), not a fishing collectible (#90)"
+
+# Citrine
+[item.3864]
+noise = true
+why = "generic trade goods in the baseline's fishing loot (gems, herbs, parts, elementals), not a fishing collectible (#90)"
+
+# Copper Tube
+[item.4361]
+noise = true
+why = "generic trade goods in the baseline's fishing loot (gems, herbs, parts, elementals), not a fishing collectible (#90)"
+
+# Coarse Blasting Powder
+[item.4364]
+noise = true
+why = "generic trade goods in the baseline's fishing loot (gems, herbs, parts, elementals), not a fishing collectible (#90)"
+
+# Heavy Blasting Powder
+[item.4377]
+noise = true
+why = "generic trade goods in the baseline's fishing loot (gems, herbs, parts, elementals), not a fishing collectible (#90)"
+
+# Bronze Framework
+[item.4382]
+noise = true
+why = "generic trade goods in the baseline's fishing loot (gems, herbs, parts, elementals), not a fishing collectible (#90)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Scalping Tomahawk
+[item.4561]
+class = 2
+why = "Item.db2 1.60.1.70338: ClassID 2, SubclassID 0. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Severing Axe
+[item.4562]
+class = 2
+why = "Item.db2 1.60.1.70338: ClassID 2, SubclassID 1. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Spiked Club
+[item.4564]
+class = 2
+why = "Item.db2 1.60.1.70338: ClassID 2, SubclassID 5. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# Raw Spotted Yellowtail
+[item.4603]
+category = "fish"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Bright Mantle
+[item.4661]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 1. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Welken Ring
+[item.5011]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 0. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Umbral Wand
+[item.5216]
+class = 2
+why = "Item.db2 1.60.1.70338: ClassID 2, SubclassID 19. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# Green Leather Bag
+[item.5573]
+noise = true
+why = "a generic bag in the baseline's fishing loot, not a fishing collectible (#90)"
+
+# White Leather Bag
+[item.5574]
+noise = true
+why = "a generic bag in the baseline's fishing loot, not a fishing collectible (#90)"
+
+# Raw Longjaw Mud Snapper
+[item.6289]
+category = "fish"
+
+# Raw Brilliant Smallfish
+[item.6291]
+category = "fish"
+
+# 10 Pound Mud Snapper
+[item.6292]
+category = "trophy"
+family = 1
+
+# 12 Pound Mud Snapper
+[item.6294]
+category = "trophy"
+family = 1
+
+# 15 Pound Mud Snapper
+[item.6295]
+category = "trophy"
+family = 1
+
+# Old Skull
+[item.6297]
+category = "junk"
+
+# Sickly Looking Fish
+[item.6299]
+category = "fish"
+noise = false
+why = "a fish caught by fishing (baseline area loot), though DB2 files it as a Consumable (ClassID 0, SubclassID 5) (#90)"
+
+# Old Teamster's Skull
+[item.6301]
+category = "junk"
+
+# Raw Slitherskin Mackerel
+[item.6303]
+category = "fish"
+
+# Message in a Bottle
+[item.6307]
+category = "treasure"
+
+# Raw Bristle Whisker Catfish
+[item.6308]
+category = "fish"
+
+# 17 Pound Catfish
+[item.6309]
+category = "trophy"
+family = 2
+
+# 19 Pound Catfish
+[item.6310]
+category = "trophy"
+family = 2
+
+# 22 Pound Catfish
+[item.6311]
+category = "trophy"
+family = 2
+
+# Raw Loch Frenzy
+[item.6317]
+category = "fish"
+
+# Dented Crate
+[item.6351]
+category = "container"
+
+# Waterlogged Crate
+[item.6352]
+category = "container"
+
+# Small Chest
+[item.6353]
+category = "container"
+
+# Small Locked Chest
+[item.6354]
+category = "container"
+
+# Sturdy Locked Chest
+[item.6355]
+category = "container"
+
+# Battered Chest
+[item.6356]
+category = "container"
+
+# Sealed Crate
+[item.6357]
+category = "container"
+
+# Oily Blackmouth
+[item.6358]
+category = "fish"
+
+# Firefin Snapper
+[item.6359]
+category = "fish"
+
+# Raw Rainbow Fin Albacore
+[item.6361]
+category = "fish"
+
+# Raw Rockscale Cod
+[item.6362]
+category = "fish"
+
+# 26 Pound Catfish
+[item.6363]
+category = "trophy"
+family = 2
+
+# no DB2 name; VMaNGOS (a lead only) calls it Darkwood Fishing Pole
+[item.6366]
+class = 2
+why = "Item.db2 1.60.1.70338: ClassID 2, SubclassID 20. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Seer's Cape
+[item.6378]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 1. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Silver-thread Boots
+[item.6394]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 1. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Silver-thread Amice
+[item.6395]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 1. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# Old Wagonwheel
+[item.6455]
+category = "junk"
+
+# Acidic Slime
+[item.6456]
+category = "junk"
+
+# Rusted Engineering Parts
+[item.6457]
+category = "junk"
+
+# Oil Covered Fish
+[item.6458]
+category = "fish"
+noise = false
+why = "a fish caught by fishing (baseline area loot), though DB2 files it as a Consumable (ClassID 0, SubclassID 8) (#90)"
+
+# Deviate Scale
+[item.6470]
+noise = true
+why = "generic trade goods in the baseline's fishing loot (gems, herbs, parts, elementals), not a fishing collectible (#90)"
+
+# Deviate Fish
+[item.6522]
+category = "fish"
+noise = false
+why = "a fish caught by fishing (baseline area loot), though DB2 files it as a Consumable (ClassID 0, SubclassID 5) (#90)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Willow Gloves
+[item.6541]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 1. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Willow Bracers
+[item.6543]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 1. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Soldier's Armor
+[item.6545]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 3. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Bard's Tunic
+[item.6552]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 2. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Defender Boots
+[item.6573]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 3. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Scouting Belt
+[item.6581]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 2. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Scouting Boots
+[item.6582]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 2. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Sage's Bracers
+[item.6613]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 1. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# Bloated Brilliant Smallfish
+[item.6643]
+category = "container"
+
+# Bloated Mud Snapper
+[item.6645]
+category = "container"
+
+# Bloated Bristle Whisker Catfish
+[item.6647]
+category = "container"
+
+# Gaffer Jack
+[item.6717]
+category = "questFish"
+
+# Electropeller
+[item.6718]
+category = "questFish"
+
+# Spotted Yellowtail
+[item.6887]
+category = "fish"
+species = 4603
+noise = false
+why = "a fish caught by fishing (baseline area loot), though DB2 files it as a Consumable (ClassID 0, SubclassID 5) (#90)"
+
+# Elemental Water
+[item.7070]
+noise = true
+why = "generic trade goods in the baseline's fishing loot (gems, herbs, parts, elementals), not a fishing collectible (#90)"
+
+# Essence of Fire
+[item.7078]
+noise = true
+why = "generic trade goods in the baseline's fishing loot (gems, herbs, parts, elementals), not a fishing collectible (#90)"
+
+# Globe of Water
+[item.7079]
+noise = true
+why = "generic trade goods in the baseline's fishing loot (gems, herbs, parts, elementals), not a fishing collectible (#90)"
+
+# Essence of Water
+[item.7080]
+noise = true
+why = "generic trade goods in the baseline's fishing loot (gems, herbs, parts, elementals), not a fishing collectible (#90)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Silver-thread Armor
+[item.7110]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 1. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Nightsky Armor
+[item.7111]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 1. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Elder's Boots
+[item.7354]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 1. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Elder's Cloak
+[item.7356]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 1. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Infiltrator Boots
+[item.7409]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 2. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Twilight Cuffs
+[item.7437]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 1. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Knight's Pauldrons
+[item.7459]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 3. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Ranger Wristguards
+[item.7484]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 2. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Champion's Helmet
+[item.7540]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 3. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Champion's Girdle
+[item.7546]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 3. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# Star Ruby
+[item.7910]
+noise = true
+why = "generic trade goods in the baseline's fishing loot (gems, herbs, parts, elementals), not a fishing collectible (#90)"
+
+# Big-mouth Clam
+[item.7973]
+category = "container"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Hibernal Sash
+[item.8114]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 1. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Heraldic Gloves
+[item.8121]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 2. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Chromite Barbute
+[item.8142]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 4. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Training Sword
+[item.8178]
+class = 2
+why = "Item.db2 1.60.1.70338: ClassID 2, SubclassID 8. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Precision Bow
+[item.8183]
+class = 2
+why = "Item.db2 1.60.1.70338: ClassID 2, SubclassID 2. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Goblin Nutcracker
+[item.8194]
+class = 2
+why = "Item.db2 1.60.1.70338: ClassID 2, SubclassID 4. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Alabaster Breastplate
+[item.8312]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 4. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it The 1 Ring
+[item.8350]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 0. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# Raw Mithril Head Trout
+[item.8365]
+category = "fish"
+
+# Bloated Mithril Head Trout
+[item.8366]
+category = "container"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Field Plate Boots
+[item.9289]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 4. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Simple Robe
+[item.9748]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 1. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Cadet Leggings
+[item.9763]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 3. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Bandit Cinch
+[item.9775]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 2. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Bandit Gloves
+[item.9780]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 2. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Ivycloth Tunic
+[item.9791]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 1. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Ivycloth Bracelets
+[item.9793]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 1. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Fortified Shield
+[item.9816]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 6. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Scaled Leather Gloves
+[item.9832]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 2. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Conjurer's Vest
+[item.9844]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 1. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Conjurer's Mantle
+[item.9850]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 1. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Renegade Gauntlets
+[item.9868]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 3. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Huntsman's Bands
+[item.9886]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 2. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Brigade Defender
+[item.9918]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 6. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Brigade Breastplate
+[item.9928]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 3. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Abjurer's Cloak
+[item.9938]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 1. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Warmonger's Cloak
+[item.9959]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 1. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Embossed Plate Leggings
+[item.9970]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 4. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Gothic Plate Girdle
+[item.10088]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 4. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Councillor's Cuffs
+[item.10096]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 1. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Mercurial Bracers
+[item.10156]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 3. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Banded Boots
+[item.10409]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 3. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Quartz Ring
+[item.11965]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 0. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Lodestone Hoop
+[item.11999]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 0. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Meadow Ring
+[item.12006]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 0. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Forest Hoop
+[item.12011]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 0. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Marsh Ring
+[item.12012]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 0. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Tellurium Necklace
+[item.12023]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 0. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Demon Band
+[item.12054]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 0. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# Darkshore Grouper
+[item.12238]
+category = "fish"
+noise = false
+why = "a fish caught by fishing (baseline area loot), though DB2 files it as a Consumable (ClassID 0, SubclassID 5) (#90)"
+
+# Stonescale Eel
+[item.13422]
+category = "fish"
+
+# Raw Glossy Mightfish
+[item.13754]
+category = "fish"
+
+# Raw Winter Squid
+[item.13755]
+category = "fish"
+noise = false
+why = "a fish caught by fishing (baseline area loot), though DB2 files it as a Consumable (ClassID 0, SubclassID 5) (#90)"
+
+# Raw Summer Bass
+[item.13756]
+category = "fish"
+
+# Lightning Eel
+[item.13757]
+category = "fish"
+
+# Raw Redgill
+[item.13758]
+category = "fish"
+
+# Raw Nightfin Snapper
+[item.13759]
+category = "fish"
+
+# Raw Sunscale Salmon
+[item.13760]
+category = "fish"
+
+# Heavy Crate
+[item.13874]
+category = "container"
+
+# Ironbound Locked Chest
+[item.13875]
+category = "container"
+
+# 40 Pound Yellowtail
+[item.13876]
+category = "trophy"
+family = 3
+
+# 47 Pound Yellowtail
+[item.13877]
+category = "trophy"
+family = 3
+
+# 53 Pound Yellowtail
+[item.13878]
+category = "trophy"
+family = 3
+
+# Bloated Redgill
+[item.13881]
+category = "container"
+
+# 42 Pound Redgill
+[item.13882]
+category = "trophy"
+family = 4
+
+# 45 Pound Redgill
+[item.13883]
+category = "trophy"
+family = 4
+
+# 49 Pound Redgill
+[item.13884]
+category = "trophy"
+family = 4
+
+# 34 Pound Redgill
+[item.13885]
+category = "trophy"
+family = 4
+
+# 37 Pound Redgill
+[item.13886]
+category = "trophy"
+family = 4
+
+# Darkclaw Lobster
+[item.13888]
+category = "fish"
+
+# Raw Whitescale Salmon
+[item.13889]
+category = "fish"
+
+# Raw Plated Armorfish
+[item.13890]
+category = "questFish"
+
+# Large Raw Mightfish
+[item.13893]
+category = "fish"
+noise = false
+why = "a fish caught by fishing (baseline area loot), though DB2 files it as a Consumable (ClassID 0, SubclassID 5) (#90)"
+
+# 15 Pound Salmon
+[item.13901]
+category = "trophy"
+family = 5
+
+# 18 Pound Salmon
+[item.13902]
+category = "trophy"
+family = 5
+
+# 22 Pound Salmon
+[item.13903]
+category = "trophy"
+family = 5
+
+# 7 Pound Lobster
+[item.13907]
+category = "trophy"
+family = 6
+
+# 70 Pound Mightfish
+[item.13914]
+category = "trophy"
+family = 7
+
+# Reinforced Locked Chest
+[item.13918]
+category = "container"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Buccaneer's Gloves
+[item.14168]
+class = 4
+why = "Item.db2 1.60.1.70338: ClassID 4, SubclassID 1. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Savage Axe
+[item.15233]
+class = 2
+why = "Item.db2 1.60.1.70338: ClassID 2, SubclassID 0. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Deadly Kris
+[item.15243]
+class = 2
+why = "Item.db2 1.60.1.70338: ClassID 2, SubclassID 15. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Vorpal Dagger
+[item.15245]
+class = 2
+why = "Item.db2 1.60.1.70338: ClassID 2, SubclassID 15. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Tusker Sword
+[item.15252]
+class = 2
+why = "Item.db2 1.60.1.70338: ClassID 2, SubclassID 8. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Sequoia Branch
+[item.15261]
+class = 2
+why = "Item.db2 1.60.1.70338: ClassID 2, SubclassID 5. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Royal Mallet
+[item.15263]
+class = 2
+why = "Item.db2 1.60.1.70338: ClassID 2, SubclassID 5. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Gigantic War Axe
+[item.15270]
+class = 2
+why = "Item.db2 1.60.1.70338: ClassID 2, SubclassID 1. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# Feralas Ahi
+[item.16967]
+category = "questFish"
+
+# Sar'theris Striker
+[item.16968]
+category = "questFish"
+
+# Savage Coast Blue Sailfin
+[item.16969]
+category = "questFish"
+
+# Misty Reed Mahi Mahi
+[item.16970]
+category = "questFish"
+
+# Brownell's Blue Striped Racer
+[item.19803]
+category = "fish"
+legend = true
+
+# Keefer's Angelfish
+[item.19805]
+category = "fish"
+legend = true
+
+# Dezian Queenfish
+[item.19806]
+category = "fish"
+legend = true
+
+# Speckled Tastyfish
+[item.19807]
+category = "fish"
+
+# no DB2 name; VMaNGOS (a lead only) calls it Rockhide Strongfish
+[item.19808]
+class = 2
+why = "Item.db2 1.60.1.70338: ClassID 2, SubclassID 4. ItemSparse has no row, so items.csv lacks it, and no DB2 table gives its quality (DATA-R24)"
+
+# Zulian Mudskunk
+[item.19975]
+category = "questFish"
+
+# Tightly Sealed Trunk
+[item.20708]
+category = "container"
+
+# Raw Sagefish
+[item.21071]
+category = "fish"
+
+# Watertight Trunk
+[item.21113]
+category = "container"
+
+# Iron Bound Trunk
+[item.21150]
+category = "container"
+
+# Raw Greater Sagefish
+[item.21153]
+category = "fish"
+
+# Bloated Oily Blackmouth
+[item.21162]
+category = "container"
+
+# Bloated Rockscale Cod
+[item.21164]
+category = "container"
+
+# Mithril Bound Trunk
+[item.21228]
+category = "container"
+
+# Bloated Glossy Mightfish
+[item.21243]
+category = "container"
+
+# Whimsyfin
+[item.251524]
+category = "fish"

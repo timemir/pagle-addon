@@ -29,6 +29,7 @@ Pagle.RegisterEvent(OWNER, "ADDON_LOADED", function(_, loadedName)
 	ns.OpenSavedVariables() -- checks PagleLog's format (LOG-R18)
 	ns.loginSeq = #ns.catchLog.data.entries
 	ns.Migrate(ns.db, ns.PAGLEDB_MIGRATIONS)
+	ns.OpenWallet() -- SHOP-R3
 	ns.BuildCatalogue()
 	ns.angler = ns.NewAngler(ns.catchLog)
 end)

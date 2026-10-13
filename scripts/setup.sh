@@ -14,7 +14,7 @@
 #   .tools/luals/     lua-language-server
 #   .tools/bir/       Ketho BlizzardInterfaceResources forever dump, Resources/ only
 #   .tools/wow-api/   Ketho vscode-wow-api, Annotations/Core only
-#   .tools/python/    uv, the CPython it installs (cpython/) and the venv holding pytest and mypy (venv/)
+#   .tools/python/    uv, the CPython it installs (cpython/) and the venv holding PYTHON_PACKAGES (venv/)
 #   .tools/bin/       one link per tool: lua luarocks luacheck busted luacov stylua lua-language-server
 #                     python pytest mypy
 set -euo pipefail
@@ -148,8 +148,8 @@ if stale wow-api "$key"; then
 	stamp wow-api "$key"
 fi
 
-# Python, pytest and mypy for the content generator (DATA-R60): one component, since the venv is built on that
-# CPython. uv runs with no user config and its caches in $tmp, and leaves ~/.local/bin alone (--no-bin). The venv
+# Python, pytest and mypy for the content generator (DATA-R60), and numpy and soundfile for render-sounds.py
+# (ANN-R74): one component, since the venv is built on that CPython. uv runs with no user config and its caches in $tmp, and leaves ~/.local/bin alone (--no-bin). The venv
 # hardcodes its paths, hence the prefix in the key.
 # shellcheck disable=SC2086
 packages=$(echo $PYTHON_PACKAGES)
@@ -201,6 +201,7 @@ echo "lua-language-server $("$tools/bin/lua-language-server" --version)"
 "$tools/bin/python" --version
 "$tools/bin/pytest" --version
 "$tools/bin/mypy" --version
+"$tools/bin/python" -c 'import numpy, soundfile; print("numpy", numpy.__version__, "soundfile", soundfile.__version__)'
 
 # The pins this prefix now holds; check.sh refuses to run while they differ from scripts/tools.env.
 cp "$root/scripts/tools.env" "$tools/tools.env"

@@ -278,6 +278,11 @@ copy
 printf '\n[[alias]]\nfrom = 16562\nto = 267\n' >>"$scratch/tree/data/forever/aliases.toml"
 expect "an alias without a why fails generator" generator "data/forever/aliases.toml: alias[10]: missing key 'why'"
 
+copy
+# Drops Raw Nightfin Snapper's category, the line after its table header.
+sed -i '/^\[item\.13759\]$/{n;d;}' "$scratch/tree/data/forever/items.toml"
+expect "an item with no category fails generator" generator "data/forever/items.toml: item.13759: no category"
+
 wait
 report
 if ((reported != cases)); then

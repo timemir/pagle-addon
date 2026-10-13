@@ -273,7 +273,7 @@ describe("FakePagle", function()
 
 	describe("the compartment menu", function()
 		it(
-			"lists each Module's views then menu entries by def.order, then Settings, reading labels each time (CORE-R50, CORE-R52)",
+			"lists each Module's views then menu entries by def.order, then the Curio Shop and Settings, reading labels each time (CORE-R50, CORE-R52)",
 			function()
 				local fake = newFakePagle()
 				local reads = 0
@@ -305,7 +305,10 @@ describe("FakePagle", function()
 				end
 				fake.menu()
 
-				assert.are.same({ "Hunts", "Input: Both", "Settings" }, labels)
+				assert.are.same(
+					{ "Hunts", "Input: Both", "Curio Shop  0 |TInterface\\MoneyFrame\\UI-GoldIcon:0|t", "Settings" },
+					labels
+				)
 				assert.are.equal(2, reads)
 			end
 		)
@@ -335,7 +338,10 @@ describe("FakePagle", function()
 					labels[i] = entry.label
 				end
 
-				assert.are.same({ "Input: Both", "Settings" }, labels)
+				assert.are.same(
+					{ "Input: Both", "Curio Shop  0 |TInterface\\MoneyFrame\\UI-GoldIcon:0|t", "Settings" },
+					labels
+				)
 				assert.are.equal(1, #fake.reported)
 				assert.matches("no input yet", fake.reported[1], 1, true)
 			end
@@ -352,6 +358,90 @@ describe("FakePagle", function()
 
 			assert.are.same({ "root" }, fake.openedSettings)
 			assert.are.same({ "Pagle: settings open after combat." }, fake.printed)
+		end)
+
+		it(
+			"shows the Curio Shop entry disabled, with the balance as BreakUpLargeNumbers writes it (CORE-R50)",
+			function()
+				local fake = newFakePagle()
+				local ledger = fake.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
+				fake.login()
+				ledger:ReportCoinsEarned(1950)
+
+				local menu = fake.menu()
+
+				assert.are.equal("Curio Shop  1,950 |TInterface\\MoneyFrame\\UI-GoldIcon:0|t", menu[1].label)
+				assert.is_true(menu[1].disabled)
+			end
+		)
+	end)
+
+	describe("the wallet", function()
+		it(
+			"adds Modules' reports in Pagle.GetBalance, by def.name, stored in fake.coins (SHOP-R3, SHOP-R12)",
+			function()
+				local fake = newFakePagle()
+				local ledger = fake.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
+				local hunts = fake.Pagle.RegisterModule({ name = "Hunts", title = "Hunts", order = 20 })
+
+				ledger:ReportCoinsEarned(120)
+				hunts:ReportCoinsEarned(30)
+				ledger:ReportCoinsEarned(100)
+
+				local balance = fake.Pagle.GetBalance()
+				assert.are.same({ 100, false, 30, 100 }, {
+					balance.earned.Ledger,
+					balance.held,
+					balance.earned.Hunts,
+					fake.coins.earned.Ledger,
+				})
+				assert.are.equal(130, balance.balance)
+			end
+		)
+
+		it("records every report, an unchanged one too, and fires BalanceChanged only on a change (SHOP-R2)", function()
+			local fake = newFakePagle()
+			local ledger = fake.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
+			local balances = {}
+			fake.Pagle.RegisterCallback("spec", "BalanceChanged", function(_, balance)
+				balances[#balances + 1] = balance.balance
+			end)
+
+			ledger:ReportCoinsEarned(40)
+			ledger:ReportCoinsEarned(40)
+
+			assert.are.same({ { module = "Ledger", total = 40 }, { module = "Ledger", total = 40 } }, fake.coinReports)
+			assert.are.same({ 40 }, balances)
+		end)
+
+		it("raises an error for a negative, fractional or string total, recording nothing (SHOP-R2)", function()
+			local fake = newFakePagle()
+			local ledger = fake.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
+
+			for _, total in ipairs({ -1, 0.5, "10" }) do
+				assert.has_error(function()
+					ledger:ReportCoinsEarned(total)
+				end)
+			end
+
+			assert.are.same({}, fake.coinReports)
+		end)
+
+		it("counts a stored total with no report, and holds at 0 below spent (SHOP-R3, SHOP-R12)", function()
+			local fake = newFakePagle()
+			fake.coins.earned.Hunts = 300
+
+			assert.are.equal(300, fake.Pagle.GetBalance().balance)
+			fake.setSpent(500)
+			assert.are.same({ 0, true }, { fake.Pagle.GetBalance().balance, fake.Pagle.GetBalance().held })
+		end)
+
+		it("hands out a read-only Balance (CORE-R18)", function()
+			local fake = newFakePagle()
+
+			assert.has_error(function()
+				fake.Pagle.GetBalance().balance = 5
+			end)
 		end)
 	end)
 

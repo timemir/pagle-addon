@@ -27,13 +27,18 @@ local SETTINGS = ns.SettingsMenuEntry(function()
 	Pagle.OpenSettings()
 end)
 
--- Fills the context menu, reading each label now (CORE-R52). It opens while restricted too (CORE-R33).
+-- Fills the context menu, reading each label and the balance now (CORE-R52). It opens while restricted too
+-- (CORE-R33).
 ---@param root table the menu's root description
 local function generate(_, root)
-	for _, entry in ipairs(ns.CompartmentMenu(ns.Modules:Modules(), SETTINGS, securecallfunction)) do
-		root:CreateButton(entry.label, function()
+	local shop = ns.CurioShopMenuEntry(Pagle.GetBalance(), BreakUpLargeNumbers)
+	for _, entry in ipairs(ns.CompartmentMenu(ns.Modules:Modules(), shop, SETTINGS, securecallfunction)) do
+		local button = root:CreateButton(entry.label, function()
 			securecallfunction(entry.onClick)
 		end)
+		if entry.disabled then
+			button:SetEnabled(false)
+		end
 	end
 end
 

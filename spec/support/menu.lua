@@ -5,16 +5,19 @@
 --   loaded.env.SlashCmdList.PAGLE("settings")   -- /pagle settings, as the client calls a slash handler
 --   loaded.client.menus[1].texts()              -- the buttons of the first context menu opened
 --   loaded.client.menus[1].click("Settings")    -- clicks one
+--   loaded.client.menus[1].enabled("Settings")  -- false once the addon called SetEnabled(false) on it
 
 ---@class FakeClient
 ---@field menus table[] Every context menu MenuUtil.CreateContextMenu opened, in order. Each has `buttons`
---- ({ text, callback }), `texts()` and `click(text)`.
+--- ({ text, callback, enabled }), `texts()`, `enabled(text)` and `click(text)`.
 
 ---@param client FakeClient
 ---@param stubs table<string, any> The fake client's stubs, which this adds to.
 return function(client, stubs)
 	stubs.SlashCmdList = {}
 	client.menus = {}
+	-- FrameXML's number formatting, for the Curio Shop entry's balance.
+	stubs.BreakUpLargeNumbers = breakUpLargeNumbers
 
 	-- As MenuUtil.CreateContextMenu: the generator fills a root description now, and the menu opens at the cursor.
 	stubs.MenuUtil = {
@@ -22,7 +25,11 @@ return function(client, stubs)
 			local menu = { owner = owner, buttons = {} }
 			local root = {}
 			function root.CreateButton(_, text, callback, data)
-				local button = { text = text, callback = callback, data = data }
+				local button = { text = text, callback = callback, data = data, enabled = true }
+				-- As an element description's SetEnabled: a disabled button is greyed and ignores clicks.
+				function button.SetEnabled(_, enabled)
+					button.enabled = enabled
+				end
 				menu.buttons[#menu.buttons + 1] = button
 				return button
 			end
@@ -35,10 +42,22 @@ return function(client, stubs)
 				end
 				return texts
 			end
-			-- Clicks the button with this text, as a mouse click does.
+			-- Whether the button with this text is enabled (not greyed).
+			function menu.enabled(text)
+				for _, button in ipairs(menu.buttons) do
+					if button.text == text then
+						return button.enabled
+					end
+				end
+				error("no menu button " .. tostring(text))
+			end
+			-- Clicks the button with this text, as a mouse click does: a disabled one does nothing.
 			function menu.click(text)
 				for _, button in ipairs(menu.buttons) do
 					if button.text == text then
+						if not button.enabled then
+							return nil
+						end
 						return button.callback(button.data, { buttonName = "LeftButton" }, menu)
 					end
 				end

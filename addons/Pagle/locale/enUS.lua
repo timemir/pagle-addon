@@ -31,6 +31,14 @@ ns.L = {
 	SETTINGS_SAVING = "Saving",
 	SETTINGS_RELOAD_REMINDER = "Remind me to /reload when Casts are unsaved",
 	SETTINGS_RELOAD_REMINDER_TOOLTIP = "A chat line every %d Casts not yet saved. WoW saves only on /reload or logout, so a crash loses them.",
+	-- The Announcements page's Core rows (SET-R30): labels and tooltips, and Per's value in minutes.
+	SETTINGS_COZY = "Cozy mode",
+	SETTINGS_COZY_TOOLTIP = "Nothing pops up or plays. Every moment waits in the Session summary. A Legend's splash still shows, silently.",
+	SETTINGS_BUDGET = "Interruption budget",
+	SETTINGS_BUDGET_TOOLTIP = "When toasts come close together, the smaller ones step down to a quiet Nod. Records always keep their ruler. Greyed out in Cozy mode, which holds everything anyway.",
+	SETTINGS_BUDGET_COUNT = "Interruptions",
+	SETTINGS_BUDGET_WINDOW = "Per",
+	SETTINGS_MINUTES = "%d min",
 	-- LOG-R86: the unsaved-Casts reminder, with the number of Casts recorded since load.
 	RELOAD_REMINDER = "Pagle: %d Casts not yet saved. /reload to keep them safe.",
 	-- CORE-R33: Settings opened while restricted.
@@ -55,6 +63,8 @@ ns.L = {
 
 	-- The compartment menu's last entry (CORE-R50).
 	MENU_SETTINGS = "Settings",
+	-- Its Curio Shop entry (CORE-R50): the balance as BreakUpLargeNumbers writes it, then a coin icon.
+	MENU_CURIO_SHOP = "Curio Shop  %s |TInterface\\MoneyFrame\\UI-GoldIcon:0|t",
 
 	-- /pagle help (CORE-R60, CORE-R61): the header, then a line per command (its name, its help). Core lists the
 	-- reserved commands that work; shop and report join with their surfaces (M4, M3).

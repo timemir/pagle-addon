@@ -16,6 +16,7 @@ local Pagle = Pagle
 ---| "Catch" # PagleCatchHandler
 ---| "CastEnded" # PagleCastEndedHandler
 ---| "FishingStateChanged" # PagleFishingStateChangedHandler
+---| "BalanceChanged" # PagleBalanceChangedHandler
 ---| string
 
 ---@class Pagle

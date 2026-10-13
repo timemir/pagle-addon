@@ -5,8 +5,13 @@ from pathlib import Path
 
 import pytest
 
+from areas_fixture import write_areas
 from baseline_fixture import CSVS, write_baseline
+from item_fixture import write_item_layer
+from observed_fixture import write_observed
 from pagle_data.cli import main
+from pools_fixture import write_pools
+from windows_fixture import write_windows
 
 CATALOGUE = "addons/Pagle/data/Catalogue.lua"
 
@@ -26,7 +31,7 @@ ID,ParentAreaID,ContinentID,AreaName_lang
 16531,0,2940,Westfall
 """
 
-# In M1 an area's catch list is its rows in area_loot.csv (roadmap M1). 12, 18, 19 and 40 have one.
+# 6291 is a fish, so 12, 18, 19 and 40 each have a catch list (DATA-R26); test_catch_lists.py covers the lists.
 AREA_LOOT = """\
 area,item,chance,ref,event,condition
 12,6291,55.5,,,
@@ -42,11 +47,18 @@ def write_tree(root: Path, aliases: str = "") -> Path:
     (forever / "events.toml").write_text("", encoding="utf-8")
     (forever / "lists.toml").write_text("auras = []\nfishingSpells = [7620]\n", encoding="utf-8")
     (forever / "aliases.toml").write_text(aliases, encoding="utf-8")
+    write_windows(root)  # test_windows.py covers windows
+    write_areas(root)  # test_catch_lists.py covers areas.toml
     db2 = root / "data" / "db2"
     db2.mkdir(parents=True, exist_ok=True)
     (db2 / "build.toml").write_text('build = 70338\nversion = "1.60.1"\nproducts = ["wow_classic_beta"]\n', encoding="utf-8")
     (db2 / "areas.csv").write_text(AREAS, encoding="utf-8")
+    (db2 / "items.csv").write_text("ID,ClassID,SubclassID,OverallQualityID,Display_lang\n", encoding="utf-8")
     write_baseline(root, {**CSVS, "area_loot.csv": AREA_LOOT})
+    write_observed(root)  # dev.toml with no facts; test_observed.py covers the layer
+    # 6291 is this tree's area loot; test_item_records.py covers the item layer.
+    write_item_layer(root, '[item.6291]\ncategory = "fish"\n\n[item.19807]\ncategory = "fish"\n')
+    write_pools(root)  # test_pools.py covers pool types
     return root
 
 
