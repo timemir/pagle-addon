@@ -251,13 +251,18 @@ def _outside_weekly(row: CatchRow, rule: WeeklyRule) -> bool:
 class Confirmation:
     """Every confirmed flag the catalogue ships (DATA-R48–R56): the confirmed entries and the entries whose
     gateConfirmed is true, as (area, item); the areas whose skill base is confirmed; the confirmed windows; the
-    events whose weekly rule is confirmed. Empty: nothing confirmed (DATA-R56)."""
+    events whose weekly rule is confirmed. Empty: nothing confirmed (DATA-R56). And what is contradicted, for the
+    importer to print (DATA-R119): the gates as (item, window) (DATA-R52), the areas whose skill base is (DATA-R55)
+    and the events whose weekly rule is (DATA-R54)."""
 
     entries: frozenset[tuple[int, int]] = frozenset()
     gates: frozenset[tuple[int, int]] = frozenset()
     skill_bases: frozenset[int] = frozenset()
     windows: frozenset[str] = frozenset()
     weekly: frozenset[int] = frozenset()
+    contradicted_gates: frozenset[tuple[int, str]] = frozenset()
+    contradicted_skill_bases: frozenset[int] = frozenset()
+    contradicted_weekly: frozenset[int] = frozenset()
 
 
 def confirm(
@@ -318,14 +323,19 @@ def confirm(
     }
     gates = {(area, item) for item, window in confirmed_gates for area in gated[(item, window)]}
 
-    # DATA-R54: a weekly rule is confirmed by a dev fact, unless a row with its event lies wholly outside its span.
-    weekly: set[int] = set()
-    for event_id in {fact.event for fact in facts["weekly"]}:
-        rule = events.get(event_id) if event_id is not None else None
-        if rule is None or event_id is None:
-            continue
-        if not any(event_id in row.events and _outside_weekly(row, rule) for row in observations.catches):
-            weekly.add(event_id)
+    # DATA-R54: a weekly rule is contradicted by a row with its event lying wholly outside its span, and otherwise
+    # confirmed by a dev fact.
+    contradicted_weekly = {
+        event_id
+        for event_id, rule in events.items()
+        if rule is not None
+        and any(event_id in row.events and _outside_weekly(row, rule) for row in observations.catches)
+    }
+    weekly = {
+        fact.event
+        for fact in facts["weekly"]
+        if fact.event is not None and events.get(fact.event) is not None and fact.event not in contradicted_weekly
+    }
 
     # DATA-R53: a window by a dev fact, or by a confirmed gate on it with none contradicted; an event window by its
     # weekly rule.
@@ -347,10 +357,11 @@ def confirm(
         if skill.land is not None:
             lands.setdefault(skill.area, []).append(skill.land)
     skill_facts = {fact.area for fact in facts["skillBase"]}
+    contradicted_bases = {
+        area for area, base in skill_bases.items() if any(land < base for land in lands.get(area, []))
+    }
     confirmed_bases = {
-        area
-        for area, base in skill_bases.items()
-        if all(land >= base for land in lands.get(area, [])) and (area in lands or area in skill_facts)
+        area for area in skill_bases if area not in contradicted_bases and (area in lands or area in skill_facts)
     }
     return Confirmation(
         frozenset(entries),
@@ -358,6 +369,9 @@ def confirm(
         frozenset(confirmed_bases),
         frozenset(confirmed_windows),
         frozenset(weekly),
+        frozenset(contradicted),
+        frozenset(contradicted_bases),
+        frozenset(contradicted_weekly),
     )
 
 

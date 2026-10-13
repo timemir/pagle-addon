@@ -18,6 +18,7 @@ files = [
     "scripts/update-db2.py",
     "scripts/db2-watch.py",
     "scripts/render-sounds.py",
+    "scripts/import-field-report.py",
 ]
 python_version = "3.12"
 strict = true

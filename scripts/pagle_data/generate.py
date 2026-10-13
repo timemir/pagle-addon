@@ -141,10 +141,13 @@ class Layers:
         return ungrouped(self.pool_types, self.baseline)
 
 
-def read_layers(root: Path, minimum_build: int = MINIMUM_CONFIRMING_BUILD) -> Layers:
+def read_layers(
+    root: Path, minimum_build: int = MINIMUM_CONFIRMING_BUILD, observed: ObservedLayer | None = None
+) -> Layers:
     """Every source layer under root/data/, with only observations on builds at or above minimum_build counting for
-    confirming (DATA-R46; --min-build asks what a higher one would lose, DATA-R57). Raises DataError listing every
-    problem found (DATA-R63)."""
+    confirming (DATA-R46; --min-build asks what a higher one would lose, DATA-R57). observed, when given, stands in
+    for data/observed/ as read: the importer and the triage Action judge an upserted layer in memory (DATA-R119).
+    Raises DataError listing every problem found (DATA-R63)."""
     problems = Problems()
     # DATA-R9: a hand-edited baseline CSV fails, and nothing is built from a baseline that didn't read cleanly.
     baseline = read_baseline(root, problems)
@@ -153,7 +156,7 @@ def read_layers(root: Path, minimum_build: int = MINIMUM_CONFIRMING_BUILD) -> La
     db2 = read_db2(root, problems)
     window_overrides = read_windows_toml(root, problems)
     windows: dict[str, Spec] = {}
-    observed = read_observed(root, problems)
+    observed = read_observed(root, problems) if observed is None else observed
     item_layer = read_item_layer(root, problems)
     area_layer = read_areas_toml(root, problems)
     checks = read_checks(root, problems)
