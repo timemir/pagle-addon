@@ -48,7 +48,8 @@ FOREVER_GLOBALS = { WOW_PROJECT_ID = PROJECT_IDS.CAMELOT, WOW_PROJECT_CAMELOT = 
 --- them. loadAddon lists each addon it loads, with its TOC fields as metadata. One not listed is missing. Specs add
 --- to it.
 ---@field bindings string[] The key binding actions the client knows (Bindings.xml names), in binding index order,
---- as C_KeyBindings.GetBindingIndex reads them. Specs add to it.
+--- as C_KeyBindings.GetBindingIndex reads them. loadAddon adds each loaded addon's Bindings.xml names. Specs add
+--- to it.
 ---@field settings FakeSettings The Settings panel.
 
 --- An installed addon, as the fake client's C_AddOns reports it.
@@ -607,7 +608,8 @@ end
 --- Loads addons/<name>/<name>.toc and every file it lists, in order, as the client does, then fires
 --- ADDON_LOADED(name). Each addon its `## Dependencies` names is loaded first, the same way and into the same
 --- globals and fake client, as the client loads them: `loadAddon("Pagle_QoL")` runs Core, then QoL.
---- Each addon loaded is listed in client.addons, enabled and loaded, with its TOC fields as its metadata.
+--- Each addon loaded is listed in client.addons, enabled and loaded, with its TOC fields as its metadata, and the
+--- bindings its Bindings.xml names are added to client.bindings.
 --- Raises an error naming the TOC and the file if a listed file is missing or fails while loading.
 ---@param name string The addon's folder under addons/, which is also its TOC's name.
 ---@param globals table<string, any>? Globals the client defines for this load, e.g. WOW_PROJECT_ID. They replace
@@ -653,6 +655,15 @@ function loadAddon(name, globals, options)
 		end
 
 		client.addons[addon] = { enabled = true, loaded = true, metadata = fields }
+		-- The client reads an addon's Bindings.xml by name, not from its TOC.
+		---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io
+		local bindingsXml = io.open(dir .. "Bindings.xml", "r")
+		if bindingsXml then
+			for binding in bindingsXml:read("*a"):gsub("<!%-%-.-%-%->", ""):gmatch('<Binding%s[^>]*name="([^"]+)"') do
+				client.bindings[#client.bindings + 1] = binding
+			end
+			bindingsXml:close()
+		end
 		local ns = {}
 		namespaces[addon] = ns
 		for _, file in ipairs(files) do

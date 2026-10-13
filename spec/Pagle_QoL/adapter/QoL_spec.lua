@@ -31,7 +31,6 @@ describe("Pagle_QoL with Core", function()
 
 	it("has a settingsAction, Fishing settings ›, that opens Core's Fishing page (QOL-R2)", function()
 		local loaded = loadAddon("Pagle_QoL", FOREVER_GLOBALS)
-		loaded.client.bindings = { "PAGLE_FISHING_KEY" }
 		loaded.client.fire("PLAYER_LOGIN")
 
 		local action = loaded.namespaces.Pagle.Modules:Modules()[1].def.settingsAction
