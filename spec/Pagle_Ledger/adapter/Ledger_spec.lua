@@ -39,27 +39,29 @@ describe("Pagle_Ledger with Core", function()
 		assert.are.equal("on", statesOf(core).Ledger)
 	end)
 
-	it("registers no view, slash command, menu entry or settingsAction in M2 (LED-R1, LED-R4)", function()
+	it("registers the Fish Journal view and /pagle journal, and no menu entry or settingsAction (LED-R1)", function()
 		local def = loadAddon("Pagle_Ledger", FOREVER_GLOBALS).namespaces.Pagle.Modules:Modules()[1].def
 
-		assert.is_nil(def.views)
-		assert.is_nil(def.slash)
+		assert.are.equal(1, #def.views)
+		assert.are.same({ "journal", "Fish Journal" }, { def.views[1].id, def.views[1].label })
+		assert.are.equal(1, #def.slash)
+		assert.are.same({ "journal", "Open or close the Fish Journal" }, { def.slash[1].name, def.slash[1].help })
 		assert.is_nil(def.menu)
 		assert.is_nil(def.settingsAction)
 	end)
 
-	it("shows On in the status list, with no button (SET-R11, CORE-R44, roadmap M2)", function()
+	it('shows On in the status list, with an "Open Fish Journal" button (SET-R11, CORE-R44, LED-R1)', function()
 		local loaded = loadAddon("Pagle_Ledger", FOREVER_GLOBALS)
 		loaded.client.fire("PLAYER_LOGIN")
 
 		local texts, buttons = statusList(loaded)
 
-		assert.are.same({ "Ledger", "@project-version@", "On" }, { unpack(texts, 1, 3) })
-		assert.are.equal("Hunts", texts[4])
-		assert.are.same({}, buttons)
+		assert.are.same({ "Ledger", "@project-version@", "On", "Open Fish Journal" }, { unpack(texts, 1, 4) })
+		assert.are.equal(1, #buttons)
+		assert.are.equal("Open Fish Journal", buttons[1]:GetText())
 	end)
 
-	it("adds nothing to the compartment menu or /pagle help (LED-R1, CORE-R50, CORE-R60)", function()
+	it('adds "Fish Journal" to the compartment menu and journal to /pagle help (LED-R1, CORE-R50, CORE-R60)', function()
 		local loaded = loadAddon("Pagle_Ledger", FOREVER_GLOBALS)
 		local plain = loadAddon("Pagle", FOREVER_GLOBALS)
 		loaded.client.fire("PLAYER_LOGIN")
@@ -67,12 +69,65 @@ describe("Pagle_Ledger with Core", function()
 
 		loaded.env.SlashCmdList.PAGLE("help")
 
-		assert.are.same(compartmentMenu(plain).texts(), compartmentMenu(loaded).texts())
+		local texts = compartmentMenu(plain).texts()
+		table.insert(texts, 1, "Fish Journal")
+		assert.are.same(texts, compartmentMenu(loaded).texts())
 		assert.are.same({
 			"Pagle commands:",
 			"/pagle settings: open Pagle's settings (also /pagle on its own)",
 			"/pagle help: list these commands",
+			"/pagle journal: Open or close the Fish Journal",
 		}, loaded.printed)
+	end)
+
+	it(
+		"toggles the Fish Journal from /pagle journal, any text after it ignored (LED-R1, LED-R120, CORE-R62)",
+		function()
+			local loaded = loadAddon("Pagle_Ledger", FOREVER_GLOBALS)
+			loaded.client.fire("PLAYER_LOGIN")
+
+			loaded.env.SlashCmdList.PAGLE("journal")
+			assert.is_true(loaded.ns.journal:IsShown())
+			loaded.env.SlashCmdList.PAGLE("Journal anything at all")
+			assert.is_false(loaded.ns.journal:IsShown())
+			loaded.env.SlashCmdList.PAGLE("journal anything")
+			assert.is_true(loaded.ns.journal:IsShown())
+		end
+	)
+
+	it('toggles the Fish Journal from the compartment\'s "Fish Journal" (LED-R120, CORE-R50)', function()
+		local loaded = loadAddon("Pagle_Ledger", FOREVER_GLOBALS)
+		loaded.client.fire("PLAYER_LOGIN")
+
+		compartmentMenu(loaded).click("Fish Journal")
+		assert.is_true(loaded.ns.journal:IsShown())
+		compartmentMenu(loaded).click("Fish Journal")
+		assert.is_false(loaded.ns.journal:IsShown())
+	end)
+
+	it('toggles the Fish Journal from "Open Fish Journal", closing Settings first (LED-R120, SET-R12)', function()
+		local loaded = loadAddon("Pagle_Ledger", FOREVER_GLOBALS)
+		loaded.client.fire("PLAYER_LOGIN")
+		local panel = loaded.client.settings.panel
+		local journal = loaded.ns.journal
+		local toggle = journal.Toggle
+		local panelShownAtToggle
+		journal.Toggle = function(...)
+			panelShownAtToggle = panel:IsShown()
+			return toggle(...)
+		end
+		loaded.env.Pagle.OpenSettings()
+		assert.is_true(panel:IsShown())
+
+		local _, buttons = statusList(loaded)
+		buttons[1]:Click()
+
+		assert.is_false(panelShownAtToggle)
+		assert.is_true(journal:IsShown())
+		loaded.env.Pagle.OpenSettings()
+		_, buttons = statusList(loaded)
+		buttons[1]:Click()
+		assert.is_false(journal:IsShown())
 	end)
 
 	it("adds no settings rows: the Ledger has no settings page (LED-R1, CORE-R42)", function()
@@ -133,28 +188,33 @@ describe("Pagle_Ledger with FakePagle", function()
 		assert.has_no_error(fake.login)
 	end)
 
-	it("adds nothing to the fake's compartment menu, /pagle help or settings pages (LED-R1)", function()
-		local plain = newFakePagle()
-		plain.login()
-		local fake = newFakePagle()
-		fake.load("Pagle_Ledger")
-		fake.login()
+	it(
+		"adds the Fish Journal to the fake's compartment menu and /pagle help, and no settings pages (LED-R1)",
+		function()
+			local plain = newFakePagle()
+			plain.login()
+			local fake = newFakePagle()
+			fake.load("Pagle_Ledger")
+			fake.login()
 
-		fake.slash("help")
+			fake.slash("help")
 
-		local function labels(menu)
-			local out = {}
-			for i, entry in ipairs(menu) do
-				out[i] = entry.label
+			local function labels(menu)
+				local out = {}
+				for i, entry in ipairs(menu) do
+					out[i] = entry.label
+				end
+				return out
 			end
-			return out
+			local expected = labels(plain.menu())
+			table.insert(expected, 1, "Fish Journal")
+			assert.are.same(expected, labels(fake.menu()))
+			assert.are.same({ "/pagle journal: Open or close the Fish Journal" }, { unpack(fake.printed, 4) })
+			for _, topic in ipairs({ "fishing", "announcements", "trackers", "looks" }) do
+				assert.is_nil(fake.settingsPage(topic))
+			end
 		end
-		assert.are.same(labels(plain.menu()), labels(fake.menu()))
-		assert.are.equal(3, #fake.printed)
-		for _, topic in ipairs({ "fishing", "announcements", "trackers", "looks" }) do
-			assert.is_nil(fake.settingsPage(topic))
-		end
-	end)
+	)
 
 	it("stops while inert, with no SavedVariables touched (CORE-R13)", function()
 		local fake = newFakePagle()
