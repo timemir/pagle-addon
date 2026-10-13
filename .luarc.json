@@ -19,6 +19,6 @@
 		"${3rd}/busted/library",
 		"${3rd}/luassert/library"
 	],
-	"workspace.ignoreDir": [".tools", ".release", "addons/Pagle/libs", "scripts", "probes", "prototypes"],
+	"workspace.ignoreDir": [".tools", ".release", "addons/Pagle/libs", "scripts", "spec/scripts/fixtures", "probes", "prototypes"],
 	"workspace.checkThirdParty": false
 }

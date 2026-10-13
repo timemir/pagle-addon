@@ -1,0 +1,4 @@
+SET cameraDistanceMaxZoomFactor "2.6"
+SET SoftTargetInteractArc "2"
+SET autoLootDefault "1"
+SET SoftTargetInteract "3"

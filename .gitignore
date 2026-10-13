@@ -28,6 +28,8 @@ lua_modules/
 
 # WoW SavedVariables / logs accidentally copied in
 WTF/
+# ...except the fixtures scripts/read-wtf.lua's specs read, made to look like them
+!spec/scripts/fixtures/WTF/
 Logs/
 *.bak
 
