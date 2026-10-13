@@ -1,26 +1,101 @@
--- QoL's rows on Core's Fishing page in M1: the Casting header and the Fishing key (qol.md › Settings, SET-R20,
--- SET-R21, CORE-R42).
+-- QoL's rows on Core's Fishing page: the Casting header and the Fishing key (M1), and the While you fish rows (Track Q
+-- step 4) (qol.md › Settings, SET-R20, SET-R21, CORE-R42).
+
+-- QoL's row on a FakePagle Fishing page by its label.
+---@param fake FakePagle
+---@param label string
+---@return PagleSetting
+local function rowOf(fake, label)
+	for _, row in ipairs(assert(fake.settingsPage("fishing"))) do
+		if row.label == label then
+			return row.setting
+		end
+	end
+	error("no row " .. label)
+end
 
 describe("QoL's Fishing page with FakePagle", function()
-	it(
-		"holds exactly the Casting header and the Fishing key, in that order, with QoL On (SET-R20, CORE-R42)",
-		function()
-			local fake = newFakePagle()
-			fake.load("Pagle_QoL")
+	it("holds exactly its rows so far, in SET-R20's order, with QoL On (SET-R20, CORE-R42)", function()
+		local fake = newFakePagle()
+		fake.load("Pagle_QoL")
 
-			fake.login()
+		fake.login()
 
-			local page = assert(fake.settingsPage("fishing"))
-			local rows = {}
-			for i, row in ipairs(page) do
-				rows[i] = { row.module, row.kind, row.label, row.indented }
-			end
-			assert.are.same({
-				{ "QoL", "header", "Casting", false },
-				{ "QoL", "keybinding", "Fishing key", false },
-			}, rows)
+		local page = assert(fake.settingsPage("fishing"))
+		local rows = {}
+		for i, row in ipairs(page) do
+			rows[i] = { row.module, row.kind, row.label, row.indented }
 		end
-	)
+		assert.are.same({
+			{ "QoL", "header", "Casting", false },
+			{ "QoL", "keybinding", "Fishing key", false },
+			{ "QoL", "header", "While you fish", false },
+			{ "QoL", "checkbox", "Fishing audio mix", false },
+			{ "QoL", "checkbox", "Keep sound when the game is in the background", true },
+			{ "QoL", "checkbox", "Auto-loot while fishing", false },
+		}, rows)
+	end)
+
+	it("gives the While you fish checkboxes qol.md's tooltips and defaults (SET-R20, qol.md › Data)", function()
+		local fake = newFakePagle()
+		fake.load("Pagle_QoL")
+		fake.login()
+
+		local audio = rowOf(fake, "Fishing audio mix")
+		local background = rowOf(fake, "Keep sound when the game is in the background")
+		local autoLoot = rowOf(fake, "Auto-loot while fishing")
+
+		-- qol.md › Settings › Tooltips, word for word; it gives the background option none.
+		assert.are.equal(
+			"While you fish: effects at full; music, ambience and dialog muted; master untouched. Put back afterwards.",
+			audio.tooltip
+		)
+		assert.is_nil(background.tooltip)
+		assert.are.equal("Only while you fish. Skipped if you already have auto-loot on.", autoLoot.tooltip)
+		assert.is_true(audio.default)
+		assert.is_false(background.default)
+		assert.is_true(autoLoot.default)
+		-- A new PagleQoLDB starts at the defaults.
+		assert.is_true(audio.get())
+		assert.is_false(background.get())
+		assert.is_true(autoLoot.get())
+	end)
+
+	it("stores the three in profile.audio and profile.autoLoot (qol.md › Data)", function()
+		local fake = newFakePagle()
+		local loaded = fake.load("Pagle_QoL")
+		fake.login()
+
+		rowOf(fake, "Fishing audio mix").set(false)
+		rowOf(fake, "Keep sound when the game is in the background").set(true)
+		rowOf(fake, "Auto-loot while fishing").set(false)
+
+		local profile = loaded.env.PagleQoLDB.profiles.Default
+		assert.are.same({ on = false, background = true }, profile.audio)
+		assert.is_false(profile.autoLoot)
+		assert.is_false(rowOf(fake, "Fishing audio mix").get())
+		assert.is_true(rowOf(fake, "Keep sound when the game is in the background").get())
+		assert.is_false(rowOf(fake, "Auto-loot while fishing").get())
+	end)
+
+	it("greys the background option out while the audio mix is off, keeping its value (SET-R20, SET-R31)", function()
+		local fake = newFakePagle()
+		fake.load("Pagle_QoL")
+		fake.login()
+		local audio = rowOf(fake, "Fishing audio mix")
+		local background = rowOf(fake, "Keep sound when the game is in the background")
+		background.set(true)
+
+		assert.is_true(background.isEnabled())
+		audio.set(false)
+		assert.is_false(background.isEnabled())
+		assert.is_true(background.get())
+		audio.set(true)
+		assert.is_true(background.isEnabled())
+
+		assert.is_nil(audio.isEnabled)
+		assert.is_nil(rowOf(fake, "Auto-loot while fishing").isEnabled)
+	end)
 
 	it("registers no Fishing page while QoL is inert (SET-R20, CORE-R13, CORE-R42)", function()
 		local fake = newFakePagle()
@@ -64,7 +139,6 @@ describe("QoL's Fishing page with Core", function()
 
 		local header, key = unpack(fishing.layout.initializers)
 		assert.are.equal(loaded.client.settings.category("Pagle"), fishing.parent)
-		assert.are.equal(2, #fishing.layout.initializers)
 		assert.are.equal("SettingsListSectionHeaderTemplate", header.template)
 		assert.are.equal("Casting", header:GetName())
 		assert.are.equal("KeyBindingFrameBindingTemplate", key.template)
@@ -74,15 +148,64 @@ describe("QoL's Fishing page with Core", function()
 		assert.is_true(key:EvaluateModifyPredicates())
 	end)
 
-	it("gives the Defaults button nothing to restore, so the binding is left alone (SET-R21, SET-R60)", function()
-		local loaded, fishing = fishingPage()
-
-		-- Defaults restores the page's registered settings; the key row carries none, only its binding index.
+	-- The Fishing page's native row by its label.
+	local function initializerOf(fishing, label)
 		for _, initializer in ipairs(fishing.layout.initializers) do
-			assert.is_nil(initializer:GetSetting())
+			local setting = initializer:GetSetting()
+			if setting and setting:GetName() == label or initializer:GetName() == label then
+				return initializer
+			end
 		end
+		error("no row " .. label)
+	end
+
+	-- Presses the Fishing page's Defaults button: every setting registered on it goes back to its default (SET-R60).
+	local function pressDefaults(loaded, fishing)
 		for _, setting in pairs(loaded.client.settings.variables) do
-			assert.are_not.equal(fishing, setting.category)
+			if setting.category == fishing then
+				setting:SetValue(setting:GetDefaultValue())
+			end
+		end
+	end
+
+	it("registers While you fish as a header and three native checkboxes, greying as SET-R20 says", function()
+		local _, fishing = fishingPage()
+
+		local header = initializerOf(fishing, "While you fish")
+		local audio = initializerOf(fishing, "Fishing audio mix")
+		local background = initializerOf(fishing, "Keep sound when the game is in the background")
+		local autoLoot = initializerOf(fishing, "Auto-loot while fishing")
+		assert.are.equal("SettingsListSectionHeaderTemplate", header.template)
+		for _, row in ipairs({ audio, background, autoLoot }) do
+			assert.are.equal("SettingsCheckboxControlTemplate", row.template)
+		end
+		assert.are.equal(audio, background:GetParentInitializer())
+		assert.is_nil(autoLoot:GetParentInitializer())
+
+		assert.is_true(background:EvaluateModifyPredicates())
+		audio:GetSetting():SetValue(false)
+		assert.is_false(background:EvaluateModifyPredicates())
+	end)
+
+	it("restores the three checkboxes with Defaults and leaves the binding alone (SET-R21, SET-R60)", function()
+		local loaded, fishing = fishingPage()
+		local audio = initializerOf(fishing, "Fishing audio mix"):GetSetting()
+		local background = initializerOf(fishing, "Keep sound when the game is in the background"):GetSetting()
+		local autoLoot = initializerOf(fishing, "Auto-loot while fishing"):GetSetting()
+		audio:SetValue(false)
+		background:SetValue(true)
+		autoLoot:SetValue(false)
+
+		pressDefaults(loaded, fishing)
+
+		assert.is_true(audio:GetValue())
+		assert.is_false(background:GetValue())
+		assert.is_true(autoLoot:GetValue())
+		-- The key row carries no setting, only its binding index, so Defaults has nothing of it to restore.
+		for _, initializer in ipairs(fishing.layout.initializers) do
+			if initializer.template == "KeyBindingFrameBindingTemplate" then
+				assert.is_nil(initializer:GetSetting())
+			end
 		end
 	end)
 
