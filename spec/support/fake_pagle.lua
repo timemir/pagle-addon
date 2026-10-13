@@ -104,6 +104,10 @@
 ---@field catchLog PagleCatchLog The Catch log Pagle.IterateCatches reads, on Core's real codec; empty at first.
 ---@field setCatalogue fun(data: table) Serves the catalogue calls over `data` (shaped as ns.catalogue, DATA-R76)
 --- instead of the generated catalogue.
+---@field diagnostics PagleDiagnostic[] PagleDB.global.diagnostics (LOG-R81): empty, and playCast adds nothing; a spec
+--- adds entries for the P rows Pagle.GetFieldReportCount counts (REP-R22).
+---@field fieldReportDB table PagleDB.global.projections.fieldReport (REP-R25); a spec may fill it before enterWorld,
+--- as a saved one.
 ---@field conditions ConditionsSnapshot The live conditions Pagle.GetConditions serves (without `restricted`, which
 --- follows setRestricted). Read it; change it with setConditions.
 ---@field setConditions fun(snapshot: ConditionsSnapshot) Replaces the live conditions and fires ConditionsChanged
@@ -590,6 +594,35 @@ part(function(fake, Pagle, ns)
 	fake.setCatalogue(ns.catalogue)
 end)
 
+-- The Field report's count (REP-R25, REP-R26, LOG-R78), on Core's real projection, bound on fake.projections ahead
+-- of every Module's, over fake.catchLog, the catalogue served now and fake.diagnostics (empty; a spec fills it with
+-- LOG-R81 entries). Live entries reach it as read-only proxies, which Core's logic walks with newFakePagle's
+-- proxy-aware pairs and ipairs.
+part(function(fake, Pagle, ns)
+	fake.diagnostics = {}
+	fake.fieldReportDB = {}
+	local catalogue = setmetatable({}, {
+		__index = function(_, name)
+			return ns.Catalogue[name]
+		end,
+	})
+	local _, count = ns.AddFieldReport({
+		projections = fake.projections,
+		db = fake.fieldReportDB,
+		catalogue = catalogue,
+		iterate = function(afterSeq)
+			return fake.catchLog:Iterate(afterSeq)
+		end,
+		buffer = function()
+			return fake.diagnostics
+		end,
+		casts = function()
+			return fake.catchLog:Reverse("cast")
+		end,
+	})
+	Pagle.GetFieldReportCount = count
+end)
+
 -- The live conditions (LOG-R45, LOG-R47). Pagle.GetConditions hands out fake.conditions, read-only, with the
 -- restriction flag; fake.setConditions replaces it and fires ConditionsChanged with the keys Core's real tracker
 -- finds changed.
@@ -845,6 +878,9 @@ end)
 ---@return FakePagle
 function newFakePagle()
 	local ns, env = loadCoreLogic()
+	-- Core's own projections get live entries as the read-only proxies every projection gets here; on plain tables
+	-- these behave as the stock ones.
+	env.pairs, env.ipairs, env.next = proxyPairs, proxyIpairs, proxyNext
 	-- Pagle.API_VERSION as adapter/Core.lua sets it; fake_pagle_spec.lua checks they agree.
 	local Pagle = { API_VERSION = 1 }
 	local fake = { Pagle = Pagle, ns = ns, printed = {}, reported = {}, readOnly = readOnly }
