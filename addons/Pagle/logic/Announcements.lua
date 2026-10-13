@@ -9,6 +9,8 @@ local ns = select(2, ...)
 ns.ANNOUNCEMENT_SECONDS = { toast = 6, banner = 4, splash = 8, nod = 3 }
 --- Toasts that wait for the slot at most (ANN-R20; Tunables).
 ns.TOASTS_WAITING = 2
+--- Seconds after a restriction ends before Core shows what it held (ANN-R36; Tunables: Delay after combat).
+ns.AFTER_COMBAT_SECONDS = 2
 -- The longest budget window the player can set, in seconds (settings.md › Tunables: 1–15 min): interruptions older
 -- than it never count again, so the lanes forget them.
 local LONGEST_WINDOW = 15 * 60
@@ -51,6 +53,8 @@ ns.LEGEND_STING = SOUNDS .. "legend.ogg"
 ---@field now fun(): number                     -- seconds, on the clock `after` runs on (GetTime())
 ---@field after fun(seconds: number, fn: fun()) -- runs fn once, `seconds` from now (C_Timer.After)
 ---@field budget fun(): { on: boolean, count: integer, window: integer } -- the player's setting (ANN-R32)
+---@field cozy fun(): boolean                   -- Cozy mode is on (ANN-R40)
+---@field serverTime fun(): number              -- server time, which a moment's expiresAt is in (ANN-R45)
 ---@field soundSet fun(): PagleSoundSet         -- the equipped sound set (ANN-R70)
 ---@field show fun(display: PagleDisplay)       -- puts it on screen
 ---@field hide fun(display: PagleDisplay)       -- takes it off screen
@@ -67,6 +71,10 @@ ns.LEGEND_STING = SOUNDS .. "legend.ogg"
 ---@field package overflow integer              -- toasts not shown since the last toast appeared
 ---@field package interruptions number[]        -- when each recent interruption appeared (ANN-R30), oldest first
 ---@field package toastSounds integer           -- toast sounds played, for the next variant (ANN-R72)
+---@field package holding boolean               -- restricted, or within the wait after (ANN-R35, ANN-R36)
+---@field package heldToasts PagleAnnouncement[] -- toasts held, in order
+---@field package heldBig PagleAnnouncement[]   -- banners and splashes held: splashes first, then in order raised
+---@field package releases integer              -- Hold and Release calls so far: a wait that sees a newer one ends
 local Lanes = {}
 Lanes.__index = Lanes
 
@@ -80,6 +88,10 @@ function ns.NewLanes(options)
 		overflow = 0,
 		interruptions = {},
 		toastSounds = 0,
+		holding = false,
+		heldToasts = {},
+		heldBig = {},
+		releases = 0,
 	}, Lanes)
 end
 
@@ -93,36 +105,188 @@ local LANE = {
 	splash = "big",
 }
 
+-- Puts a banner or splash in a big lane's list: after the splashes already there if it's a splash, otherwise last.
+---@param big PagleAnnouncement[]
+---@param announcement PagleAnnouncement
+local function wait(big, announcement)
+	local at = #big + 1
+	if announcement.rung == "splash" then
+		at = 1
+		while big[at] and big[at].rung == "splash" do
+			at = at + 1
+		end
+	end
+	table.insert(big, at, announcement)
+end
+
+-- `announcement` without its expired moments (ANN-R45): itself if none expired, else the Announcement what is left
+-- makes, its next-ranked moment the headline, or nil if every moment expired. An expired moment already reached the
+-- Session summary when it was raised.
+---@package
+---@param announcement PagleAnnouncement
+---@return PagleAnnouncement?
+function Lanes:unexpired(announcement)
+	local now = self.options.serverTime()
+	local kept = {}
+	for _, moment in ipairs(announcement.moments) do
+		if not (moment.expiresAt and now >= moment.expiresAt) then
+			kept[#kept + 1] = moment
+		end
+	end
+	if #kept == #announcement.moments then
+		return announcement
+	end
+	return ns.MakeAnnouncement(kept)
+end
+
+-- `announcement` as it may show now, or nil if nothing of it may: its expired moments dropped (ANN-R45), and nothing
+-- but a splash in Cozy mode (ANN-R40, ANN-R41).
+---@package
+---@param announcement PagleAnnouncement
+---@return PagleAnnouncement?
+function Lanes:showable(announcement)
+	local kept = self:unexpired(announcement)
+	if kept and self.options.cozy() and kept.rung ~= "splash" then
+		return nil
+	end
+	return kept
+end
+
 --- Takes an Announcement from the collector (ANN-R20): it shows now if its lane lets it, waits, or isn't shown.
---- Whatever isn't shown already reached the Session summary when its moments were raised (ANN-R25).
+--- Whatever isn't shown already reached the Session summary when its moments were raised (ANN-R25). A moment that
+--- expired before it got here never shows (ANN-R45), nor anything but a splash in Cozy mode (ANN-R40). While the
+--- lanes are held a toast, banner or splash is held with them, and a Nod never shows (ANN-R35, ANN-R36).
 ---@param announcement PagleAnnouncement
 function Lanes:Push(announcement)
-	local lane = LANE[announcement.rung]
-	if lane == "nod" then
-		self:showNod(announcement)
+	local kept = self:showable(announcement)
+	if not kept then
+		return
+	end
+	local lane = LANE[kept.rung]
+	if self.holding then
+		if lane == "big" then
+			wait(self.heldBig, kept)
+		elseif lane == "toast" then
+			self.heldToasts[#self.heldToasts + 1] = kept
+		end
+	elseif lane == "nod" then
+		self:showNod(kept)
 	elseif lane == "big" then
-		self:wait(announcement)
+		wait(self.big, kept)
+		self:next()
 	elseif self.slot and #self.toasts >= ns.TOASTS_WAITING then
 		self.overflow = self.overflow + 1
 	else
-		self.toasts[#self.toasts + 1] = announcement
+		self.toasts[#self.toasts + 1] = kept
 		self:next()
 	end
 end
 
--- Puts a banner or splash in the big lane: after the splashes already waiting if it's a splash, otherwise last.
----@package
----@param announcement PagleAnnouncement
-function Lanes:wait(announcement)
-	local at = #self.big + 1
-	if announcement.rung == "splash" then
-		at = 1
-		while self.big[at] and self.big[at].rung == "splash" do
-			at = at + 1
+--- Whether the lanes are holding (ANN-R35, ANN-R36): restricted, or in the wait after. Cards wait too (ANN-R55).
+---@return boolean
+function Lanes:IsHeld()
+	return self.holding
+end
+
+--- A restriction started (ANN-R35): the toast, banner or splash on screen goes off it and is held, with what waits
+--- for the slot, and every Announcement pushed from now; the Nod on screen goes and never shows again (ANN-R36).
+--- Inside the wait after a restriction, the wait starts over at the next Release.
+function Lanes:Hold()
+	self.releases = self.releases + 1
+	if self.holding then
+		return
+	end
+	self.holding = true
+	local slot, nod = self.slot, self.nod
+	self.slot, self.nod = nil, nil
+	if slot then
+		self.options.hide(slot)
+		if LANE[slot.announcement.rung] == "big" then
+			wait(self.heldBig, slot.announcement)
+		else
+			self.heldToasts[#self.heldToasts + 1] = slot.announcement
 		end
 	end
-	table.insert(self.big, at, announcement)
+	if nod then
+		self.options.hide(nod)
+	end
+	for _, announcement in ipairs(self.big) do
+		wait(self.heldBig, announcement)
+	end
+	for _, announcement in ipairs(self.toasts) do
+		self.heldToasts[#self.heldToasts + 1] = announcement
+	end
+	self.big, self.toasts = {}, {}
+end
+
+--- The restriction ended (ANN-R36): AFTER_COMBAT_SECONDS later, unless a restriction started meanwhile, the lanes
+--- show what they held, its expired moments dropped (ANN-R45): each splash and banner as itself, splashes first, then
+--- one "While you were fighting" toast listing every held toast headline, then the cards (ANN-R21).
+function Lanes:Release()
+	self.releases = self.releases + 1
+	local release = self.releases
+	self.options.after(ns.AFTER_COMBAT_SECONDS, function()
+		if self.releases == release and self.holding then
+			self:showHeld()
+		end
+	end)
+end
+
+-- Ends the hold, putting what it held in the lanes (ANN-R36).
+---@package
+function Lanes:showHeld()
+	self.holding = false
+	self.big, self.heldBig = self.heldBig, {}
+	local toasts = self.heldToasts
+	self.heldToasts = {}
+	local fighting = self:whileFighting(toasts)
+	if fighting then
+		table.insert(self.toasts, 1, fighting)
+	end
 	self:next()
+	if self.options.empty and self:IsEmpty() then
+		self.options.empty()
+	end
+end
+
+-- The "While you were fighting" toast for the toasts held (ANN-R36), or nil when none is left once expired moments
+-- are dropped (ANN-R45). It lists each one's headline, carries their Coins (ANN-R23), and is a plain `toast`, so it
+-- plays the toast sound once, counts as one interruption and never steps down (ANN-R31).
+---@package
+---@param toasts PagleAnnouncement[]
+---@return PagleAnnouncement?
+function Lanes:whileFighting(toasts)
+	local headlines, coins = {}, 0
+	for _, held in ipairs(toasts) do
+		local kept = self:unexpired(held)
+		-- A toast whose toast moments expired is headlined by a Nod now, and held Nods don't show (ANN-R36).
+		if kept and LANE[kept.rung] == "toast" then
+			headlines[#headlines + 1] = kept.headline
+			coins = coins + kept.coins
+		end
+	end
+	if #headlines == 0 then
+		return nil
+	end
+	---@type PagleRaisedMoment
+	local headline = {
+		rung = "toast",
+		kind = "whileFighting",
+		title = ns.L.ANNOUNCEMENT_WHILE_FIGHTING,
+		module = "Pagle",
+		moduleTitle = "Pagle",
+		moduleOrder = 0,
+		raised = 0,
+	}
+	return {
+		headline = headline,
+		rung = "toast",
+		stamps = {},
+		more = 0,
+		coins = coins,
+		moments = {},
+		fighting = headlines,
+	}
 end
 
 --- Takes a splash off screen when it is clicked (ANN-R20). Does nothing for one no longer on screen.
@@ -131,24 +295,27 @@ function Lanes:Dismiss(display)
 	self:done(display)
 end
 
--- Shows whatever is next for the free slot, if it is free.
+-- Shows whatever is next for the free slot, if it is free and the lanes aren't held: the next banner or splash, else
+-- the next toast. Each is checked as it is about to show (ANN-R40, ANN-R45): one with nothing left to show is skipped,
+-- and one whose headline is now a Nod follows the Nod lane's rules, as a stepped-down toast.low does (ANN-R31).
 ---@package
 function Lanes:next()
-	if self.slot then
-		return
-	end
-	local big = table.remove(self.big, 1)
-	if big then
-		self:showSlot(big, big.rung)
-		return
-	end
-	local toast = table.remove(self.toasts, 1)
-	while toast and toast.rung == "toast.low" and self:spent() do
-		self:showNod(toast)
-		toast = table.remove(self.toasts, 1)
-	end
-	if toast then
-		self:showSlot(toast, "toast")
+	while not self.slot and not self.holding do
+		local waiting = table.remove(self.big, 1) or table.remove(self.toasts, 1)
+		if not waiting then
+			return
+		end
+		local kept = self:showable(waiting)
+		if kept then
+			local lane = LANE[kept.rung]
+			if lane == "big" then
+				self:showSlot(kept, kept.rung --[[@as "banner"|"splash"]])
+			elseif lane == "nod" or (kept.rung == "toast.low" and self:spent()) then
+				self:showNod(kept)
+			else
+				self:showSlot(kept, "toast")
+			end
+		end
 	end
 end
 
@@ -178,13 +345,14 @@ function Lanes:showSlot(announcement, form)
 end
 
 -- The sound an Announcement shown as `form` plays as it appears (ANN-R70–R72): the equipped set's toast variant
--- next in turn, its banner sound, or the Legend sting. None for a Nod, or for a headline with sound = false.
+-- next in turn, its banner sound, or the Legend sting. None for a Nod, for a headline with sound = false, or in Cozy
+-- mode, where a splash shows silently (ANN-R41).
 ---@package
 ---@param announcement PagleAnnouncement
 ---@param form PagleAnnouncementForm
 ---@return string?
 function Lanes:sound(announcement, form)
-	if announcement.headline.sound == false then
+	if announcement.headline.sound == false or self.options.cozy() then
 		return nil
 	end
 	local set = self.options.soundSet()
@@ -250,8 +418,11 @@ function Lanes:showNod(announcement)
 	self.nod = display
 	self.options.show(display)
 	self.options.after(ns.ANNOUNCEMENT_SECONDS.nod, function()
-		self.nod = nil
-		self.options.hide(display)
+		-- A hold may have taken it off screen already (ANN-R35).
+		if self.nod == display then
+			self.nod = nil
+			self.options.hide(display)
+		end
 	end)
 end
 

@@ -84,8 +84,10 @@ end
 ---@field whenIdle fun(fn: fun())               -- runs fn once no projection is updating (ns.projections:WhenIdle)
 ---@field nextFrame fun(step: fun())            -- runs step on the next frame
 ---@field lanesEmpty fun(): boolean             -- the toast and big lanes are empty (ns.lanes:IsEmpty())
+---@field held fun(): boolean                   -- the lanes are held through combat (ns.lanes:IsHeld(), ANN-R35)
 ---@field cozy fun(): boolean                   -- Cozy mode is on (ANN-R62)
 ---@field show fun(card: PagleCard)             -- puts the card on screen, until the player closes it
+---@field hide fun(card: PagleCard)             -- takes it off screen without closing it (ANN-R35)
 
 --- The cards: which shows when (ANN-R21, ANN-R54, ANN-R61), and the Write-up sections Modules raise (ANN-R60).
 ---@class PagleCards
@@ -124,11 +126,12 @@ function Cards:Start()
 	end)
 end
 
---- Shows the next card if one may show now (ANN-R21): login has settled, none is showing and the toast and big lanes
---- are empty. The Write-up comes first, unless Cozy mode is on (ANN-R61, ANN-R62); then the stored cards, oldest
---- first (ANN-R54). Cards aren't interruptions and play no sound (ANN-R30): they never go through the lanes.
+--- Shows the next card if one may show now (ANN-R21): login has settled, none is showing, the lanes aren't held
+--- through combat (ANN-R55) and the toast and big lanes are empty. The Write-up comes first, unless Cozy mode is on
+--- (ANN-R61, ANN-R62); then the stored cards, oldest first (ANN-R54). Cards aren't interruptions and play no sound
+--- (ANN-R30): they never go through the lanes.
 function Cards:Next()
-	if not self.ready or self.showing or not self.options.lanesEmpty() then
+	if not self.ready or self.showing or self.options.held() or not self.options.lanesEmpty() then
 		return
 	end
 	local data = self:data()
@@ -140,6 +143,16 @@ function Cards:Next()
 	if card then
 		self.showing = card
 		self.options.show(card)
+	end
+end
+
+--- A restriction started (ANN-R35): the card on screen goes off it unclosed, so it stays in global.cards (or its
+--- sections in global.writeUp) and shows again once the lanes have shown what they held (ANN-R36).
+function Cards:Hold()
+	local card = self.showing
+	if card then
+		self.showing = nil
+		self.options.hide(card)
 	end
 end
 
@@ -224,7 +237,8 @@ end
 
 --- A card's rows below Core's numbers (ANN-R53): "Pagle Coins +N" above 0, each Module's summary lines, each
 --- Module's moments under its stored title, then the Write-up sections, each under its own heading (ANN-R60: Core
---- adds nothing of its own to a section).
+--- adds nothing of its own to a section). A moment that had expired when the card was made shows its pastText
+--- instead, or its title if it has none (ANN-R45).
 ---@param card PagleCard
 ---@param formatNumber fun(n: integer): string the Coins sum as shown ("1,200", BreakUpLargeNumbers)
 ---@return PagleCardRow[]
@@ -241,7 +255,11 @@ function ns.CardRows(card, formatNumber)
 	for _, group in ipairs(card.moments or {}) do
 		rows[#rows + 1] = { kind = "heading", text = group.title }
 		for _, moment in ipairs(group.moments) do
-			rows[#rows + 1] = { kind = "moment", text = moment.title, detail = moment.text, icon = moment.icon }
+			if moment.expired and moment.pastText then
+				rows[#rows + 1] = { kind = "moment", text = moment.pastText, icon = moment.icon }
+			else
+				rows[#rows + 1] = { kind = "moment", text = moment.title, detail = moment.text, icon = moment.icon }
+			end
 		end
 	end
 	for _, section in ipairs(card.writeUp or {}) do

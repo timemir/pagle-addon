@@ -25,6 +25,7 @@ end
 ---@field coins? integer
 ---@field expiresAt? integer
 ---@field pastText? string
+---@field expired? boolean -- on a card: it had expired when the card was made, so it shows its pastText (ANN-R45)
 
 --- One Module's moments on a card: its stored title and order, its moments highest rung first (ANN-R53).
 ---@class PagleCardMoments
@@ -117,18 +118,36 @@ end
 ---@field global fun(): table              -- PagleDB.global, which keeps summary, pending and cards
 ---@field isOpen fun(): boolean            -- a Session is open (Pagle.GetSession() isn't nil, LOG-R64)
 ---@field modules fun(): PagleModule[]     -- the registered Modules, by order
----@field cozy fun(): boolean              -- Cozy mode is on (ANN-R62)
+---@field cozy fun(): boolean              -- Cozy mode is on (ANN-R42, ANN-R62)
+---@field serverTime fun(): number         -- server time, which a moment's expiresAt is in (ANN-R45)
+---@field waitingChanged fun(waiting: integer) -- the waiting count changed (ANN-R42): the compartment entry's label
 
---- The Session summary over PagleDB.global (ANN-R50–R53).
+--- The Session summary over PagleDB.global (ANN-R50–R53), and the count of moments Cozy mode sent it (ANN-R42).
 ---@class PagleSummary
 ---@field package options PagleSummaryOptions
+---@field package waiting integer -- moments kept while Cozy mode was on since a Session summary last showed
 local Summary = {}
 Summary.__index = Summary
 
 ---@param options PagleSummaryOptions
 ---@return PagleSummary
 function ns.NewSummary(options)
-	return setmetatable({ options = options }, Summary)
+	return setmetatable({ options = options, waiting = 0 }, Summary)
+end
+
+--- The moments kept while Cozy mode was on, waiting for a Session summary to show (ANN-R42, CORE-R51). It lives in
+--- memory only, like the rest of Cozy mode's display state.
+---@return integer
+function Summary:Waiting()
+	return self.waiting
+end
+
+--- A Session summary card showed (ANN-R42): nothing waits any more. Turning Cozy mode off doesn't reset the count.
+function Summary:SummaryShown()
+	if self.waiting > 0 then
+		self.waiting = 0
+		self.options.waitingChanged(0)
+	end
 end
 
 -- PagleDB.global with the summary's keys in place.
@@ -145,12 +164,17 @@ function Summary:data()
 end
 
 --- Keeps a moment Core accepted, popped up or not (ANN-R25): in the open Session's summary (ANN-R50), or, with no
---- Session open, in `global.pending` for the next one (ANN-R52).
+--- Session open, in `global.pending` for the next one (ANN-R52). In Cozy mode it adds one to the waiting count
+--- (ANN-R42).
 ---@param moment PagleRaisedMoment
 function Summary:Add(moment)
 	local data = self:data()
 	local moments = self.options.isOpen() and data.summary.moments or data.pending
 	moments[#moments + 1] = ns.StoredMoment(moment)
+	if self.options.cozy() then
+		self.waiting = self.waiting + 1
+		self.options.waitingChanged(self.waiting)
+	end
 end
 
 --- At SessionStarted (ANN-R52): the moments raised while no Session was open move into its summary, ahead of its
@@ -228,13 +252,20 @@ end
 --- At SessionEnded (ANN-R53): with at least one moment raised in the Session, or in Cozy mode a Write-up waiting
 --- (ANN-R62), adds a card to `global.cards`, dropping the oldest beyond CARDS_KEPT (ANN-R54), and returns it. In Cozy
 --- mode the waiting Write-up sections move onto it. Either way the moments are cleared for the next Session, and the
---- lines stay (ANN-R51). Lines alone make no card.
+--- lines stay (ANN-R51). Lines alone make no card. Expiry is checked again as the card is made: a moment past its
+--- expiresAt is marked expired, so the card shows its pastText (ANN-R45).
 ---@param session PagleSession
 ---@return PagleSummaryCard?
 function Summary:Ended(session)
 	local data = self:data()
 	local moments = data.summary.moments
 	data.summary.moments = {}
+	local now = self.options.serverTime()
+	for _, moment in ipairs(moments) do
+		if moment.expiresAt and now >= moment.expiresAt then
+			moment.expired = true
+		end
+	end
 	local writeUp
 	if self.options.cozy() and data.writeUp and #data.writeUp > 0 then
 		writeUp, data.writeUp = ns.WriteUpInOrder(data.writeUp), {}
