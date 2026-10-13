@@ -15,13 +15,6 @@ local OWNER = "Pagle_QoL lures"
 local lures = ns.NewLureState()
 local targeted ---@type integer? the lure the Fishing key last pointed at, until it points at a cast or reel (QOL-R29)
 
---- An item's name, from C_Item at runtime (QOL-R54); its ID stands in until the item is cached.
----@param itemID integer
----@return string
-function ns.ItemName(itemID)
-	return C_Item.GetItemNameByID(itemID) or ns.L.ITEM_NOT_LOADED:format(itemID)
-end
-
 -- A lure is available when it is in the bags, usable and not skipped (QOL-R51).
 ---@param itemID integer
 ---@return boolean
@@ -46,7 +39,9 @@ function ns.ReadLures(poleInHand)
 	end
 	local lure = ns.ChooseLure(settings.mode, settings.item, isAvailable)
 	if lures:OutOfLures(enchanted, ns.RunningStretch(), settings.mode, lure) then
-		ns.ShowNudge(ns.OutOfLuresText(settings.mode, ns.ItemName(settings.item)))
+		-- The lure's name from C_Item (adapter/Items.lua); its ID stands in until the client has loaded it (QOL-R54).
+		local name = ns.ItemName(settings.item) or ns.L.SETTINGS_LURE_UNNAMED:format(settings.item)
+		ns.ShowNudge(ns.OutOfLuresText(settings.mode, name))
 	end
 	return lure, lured
 end
@@ -72,11 +67,6 @@ end
 --- Waits for each lure use's result and skips a lure that failed (QOL-R29). QoL's OnInitialize calls it once it
 --- has registered.
 function ns.StartLures()
-	-- Names for the Lure dropdown and the Nudge (QOL-R54): the client loads them in the background.
-	for _, lure in ipairs(ns.LURES) do
-		C_Item.RequestLoadItemDataByID(lure.itemID)
-	end
-
 	-- The use finished casting: the pole counts as lured until the lure shows or the result wait passes, and that
 	-- wait's end is re-evaluated even with no event to hear.
 	Pagle.RegisterUnitEvent(OWNER, "UNIT_SPELLCAST_SUCCEEDED", "player", function(_, _, _, spellID)

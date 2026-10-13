@@ -23,9 +23,60 @@ function ns.AddSettings(M)
 		binding = "PAGLE_FISHING_KEY",
 	})
 
-	-- While you fish: what a Fishing stretch leases besides soft-interact (QOL-R62), each change taking effect at once,
-	-- mid-stretch too (QOL-R65). The rows read PagleQoLDB.profile, which QoL opens before the page is built.
+	-- The rows below read PagleQoLDB.profile, which QoL opens before the page is built.
 	local defaults = ns.DB_DEFAULTS.profile
+
+	-- Lures and clams: which lure the Fishing key applies (QOL-R50, QOL-R51).
+	M:AddSetting("fishing", { kind = "header", label = L.SETTINGS_LURES_AND_CLAMS })
+	M:AddSetting("fishing", {
+		kind = "dropdown",
+		id = "lures",
+		label = L.SETTINGS_LURES,
+		tooltip = L.SETTINGS_LURES_TOOLTIP,
+		default = defaults.lures.mode,
+		get = function()
+			return ns.db.profile.lures.mode
+		end,
+		set = function(value)
+			ns.db.profile.lures.mode = value
+		end,
+		options = function()
+			return {
+				{ value = "off", label = L.SETTINGS_LURES_OFF },
+				{ value = "best", label = L.SETTINGS_LURES_BEST },
+				{ value = "one", label = L.SETTINGS_LURES_ONE },
+			}
+		end,
+	})
+	-- qol.md gives this row no tooltip. Live only for Only this one, keeping its value while greyed out (SET-R31).
+	M:AddSetting("fishing", {
+		kind = "dropdown",
+		parent = "lures",
+		label = L.SETTINGS_LURE,
+		default = defaults.lures.item,
+		get = function()
+			return ns.db.profile.lures.item
+		end,
+		set = function(value)
+			ns.db.profile.lures.item = value
+		end,
+		options = function()
+			local options = {}
+			for i, lure in ipairs(ns.LURES) do
+				options[i] = {
+					value = lure.itemID,
+					label = ns.ItemName(lure.itemID) or L.SETTINGS_LURE_UNNAMED:format(lure.itemID),
+				}
+			end
+			return options
+		end,
+		isEnabled = function()
+			return ns.db.profile.lures.mode == "one"
+		end,
+	})
+
+	-- While you fish: what a Fishing stretch leases besides soft-interact (QOL-R62), each change taking effect at once,
+	-- mid-stretch too (QOL-R65).
 	M:AddSetting("fishing", { kind = "header", label = L.SETTINGS_WHILE_YOU_FISH })
 	M:AddSetting("fishing", {
 		kind = "checkbox",
