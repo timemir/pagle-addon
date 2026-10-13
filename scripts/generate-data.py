@@ -2,6 +2,8 @@
 
     .tools/bin/python scripts/generate-data.py            rewrite every generated file
     .tools/bin/python scripts/generate-data.py --check    write nothing; fail if a generated file is out of date
+    .tools/bin/python scripts/generate-data.py --propose-aliases
+                                                          write nothing; print the uncommitted alias candidates
 
 Runs on the pinned Python in .tools/ (scripts/setup.sh); scripts/check.sh runs --check as its generator stage.
 """
