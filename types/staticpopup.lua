@@ -1,6 +1,6 @@
 ---@meta _
--- Blizzard's StaticPopup, as far as QoL's conflict popup uses it (QOL-R81), which Ketho's vscode-wow-api annotations
--- (WOW_API_COMMIT, scripts/tools.env) lack. Declarations for the types stage only: never loaded by the game, and
+-- Blizzard's StaticPopup, as far as QoL's conflict and Reload now popups use it (QOL-R81, QOL-R83), which Ketho's
+-- vscode-wow-api annotations (WOW_API_COMMIT, scripts/tools.env) lack. Declarations for the types stage only: never loaded by the game, and
 -- excluded from luacheck. Source: Gethe/wow-ui-source branch forever at 943764493e6b16d63ded3ab304150d1f05e58b57
 -- ("1.60.1 (70338)"), Interface/AddOns/Blizzard_StaticPopup/StaticPopup.lua and
 -- Interface/AddOns/Blizzard_StaticPopup_Game/GameDialog.lua.
@@ -31,3 +31,8 @@ StaticPopupDialogs = {}
 ---@param data any?
 ---@return table?
 function StaticPopup_Show(which, text_arg1, text_arg2, data) end
+
+--- Reloads the user interface. The Reload now popup's button calls it (QOL-R6, QOL-R83); it is unprotected on build
+--- 1.60.1.70338 (QOL-R102). Ketho's annotations lack it; the pinned forever dump (BIR_COMMIT) lists it in
+--- Resources/FrameXML.lua.
+function ReloadUI() end

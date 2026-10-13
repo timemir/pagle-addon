@@ -19,17 +19,39 @@ function ns.IsStandingDown()
 	return standingDown
 end
 
+--- After either choice, offers the reload that finishes it (QOL-R83). Only a click on "Reload now" reloads (QOL-R6):
+--- "Later" and Esc just close it, and the chat line still says /reload. Shown from the choice's callback, it takes
+--- a second dialog frame, and StaticPopup_OnClick then hides only the conflict popup's. PAGLE_QOL_RELOAD is the
+--- other StaticPopupDialogs field .luacheckrc lets QoL set, and this OnAccept is the one ReloadUI() the boundary
+--- spec allows.
+local function offerReload()
+	StaticPopupDialogs.PAGLE_QOL_RELOAD = {
+		text = ns.L.CONFLICT_RELOAD_TEXT,
+		button1 = ns.L.CONFLICT_RELOAD_NOW,
+		button2 = ns.L.CONFLICT_RELOAD_LATER,
+		OnAccept = function()
+			ReloadUI()
+		end,
+		timeout = 0,
+		whileDead = true,
+		hideOnEscape = true,
+	}
+	StaticPopup_Show("PAGLE_QOL_RELOAD")
+end
+
 ---@param found PagleQoLConflict[]
 local function usePagle(found)
 	for _, conflict in ipairs(found) do
 		C_AddOns.DisableAddOn(conflict.name)
 	end
 	print(ns.TurnedOffMessage(found))
+	offerReload()
 end
 
 local function useOther()
 	C_AddOns.DisableAddOn("Pagle_QoL")
 	print(ns.L.CONFLICT_TURNED_OFF_QOL)
+	offerReload()
 end
 
 --- The conflict check (QOL-R80). The Fishing key's PLAYER_LOGIN handler calls it right before the first arm
@@ -46,7 +68,8 @@ function ns.CheckConflicts()
 	standingDown = true
 	-- "Use {other}" is the alt button: StaticPopup_OnClick runs OnAlt only for a click on button 3, and Esc runs
 	-- OnEscape or OnCancel, which this dialog doesn't have, so Esc chooses nothing (QOL-R81, QOL-R84). Neither
-	-- choice reloads the UI (QOL-R83). PAGLE_QOL_CONFLICT is the one StaticPopupDialogs field .luacheckrc lets QoL set.
+	-- choice reloads the UI; each offers the Reload now popup (QOL-R83). PAGLE_QOL_CONFLICT is one of the two
+	-- StaticPopupDialogs fields .luacheckrc lets QoL set.
 	StaticPopupDialogs.PAGLE_QOL_CONFLICT = {
 		text = ns.L.CONFLICT_TEXT,
 		button1 = ns.L.CONFLICT_USE_PAGLE,

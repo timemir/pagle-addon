@@ -50,15 +50,15 @@ def test_a_tree_breaking_one_rule_in_every_m2_layer_fails_once_listing_them_all(
 # DATA-R64's four warnings, from one tree: a baseline row whose condition isn't a single event (DATA-R9), a row in an
 # area missing from the slice (DATA-R33), an observed pair without a consistent gate (DATA-R47: 13760 is gated by
 # day in 33 and ungated in 368, so its pair at Crystal Lake, 18, joins ungated) and, with aliases.toml empty, the map
-# 2940 copies proposed as aliases (DATA-R32).
+# 2940 copies proposed as aliases (DATA-R32): 16510 -> 12 and 16521 -> 18, counted in one line.
 WARNINGS = [
     "generate-data: warning: data/baseline/area_loot.csv: area 33 item 6291 has the condition"
     " and(event(48), not(event(45))), not a single event; it is treated as ungated",
     "generate-data: warning: area 99999 seen in data/observed/ is not in data/db2/areas.csv; update the DB2 slice",
     "generate-data: warning: the observed pair item 13760 in area 18 joins ungated, but the item is gated elsewhere"
     " (area 33 by day)",
-    "generate-data: warning: alias proposal not in data/forever/aliases.toml: 16510 -> 12",
-    "generate-data: warning: alias proposal not in data/forever/aliases.toml: 16521 -> 18",
+    "generate-data: warning: 2 uncommitted alias proposals; run scripts/generate-data.py --propose-aliases to list"
+    " them",
 ]
 
 
