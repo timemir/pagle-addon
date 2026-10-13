@@ -22,6 +22,14 @@ function ns.Ledger.OnInitialize()
 	ns.db = LibStub("AceDB-3.0"):New("PagleLedgerDB", ns.DB_DEFAULTS, true)
 	ns.MigrateDB(ns.db.global)
 
+	--- The world index (LED-R10): built here, where the catalogue is ready (CORE-R10), held in memory, never stored.
+	ns.world = ns.NewWorld({
+		GetItem = Pagle.GetItem,
+		GetZones = Pagle.GetZones,
+		GetArea = Pagle.GetArea,
+		GetZoneCatches = Pagle.GetZoneCatches,
+	})
+
 	---@diagnostic disable-next-line: undefined-field -- Core defines it in M4, with Simulated Size (LOG-R68); nil till then
 	local sizeRulesVersion = Pagle.SIZE_RULES_VERSION --[[@as integer?]]
 	--- The Ledger's projection (LED-R2): Core catches it up or rebuilds it after login and hands it each new entry
