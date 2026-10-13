@@ -3,12 +3,12 @@
 Map keys come out in ascending order: numbers numerically, then strings by byte. Lists keep their order. A table
 whose values are all scalars or empty tables goes on one line; any other table puts each entry on its own line,
 indented by tabs.
-Only booleans, integers, strings, lists and mappings with integer or string keys are written; anything else (a
-float, None) is a generator bug and raises TypeError.
+Only booleans, integers, strings, lists, mappings with integer or string keys and Shared references are written;
+anything else (a float, None) is a generator bug and raises TypeError.
 """
 
 import re
-from collections.abc import Mapping
+from collections.abc import Iterator, Mapping
 
 _IDENTIFIER = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
 _KEYWORDS = frozenset(
@@ -32,7 +32,33 @@ def _string(value: str) -> str:
     return "".join(out)
 
 
+class Shared(Mapping[str, object]):
+    """A table written once, as the field `key` of a Lua local, and referred to wherever else it appears: the Lua
+    writer writes the reference (`W.night`, `W["event.301"]`), and anything else that reads it as a mapping (the
+    canonical JSON, DATA-R70) sees the table in full. The Contracts section's W, the window specs, is one."""
+
+    def __init__(self, local: str, key: str, table: Mapping[str, object]) -> None:
+        self.local = local
+        self.key = key
+        self.table = table
+
+    def reference(self) -> str:
+        key = _key(self.key)
+        return f"{self.local}{key}" if key.startswith("[") else f"{self.local}.{key}"
+
+    def __getitem__(self, key: str) -> object:
+        return self.table[key]
+
+    def __iter__(self) -> Iterator[str]:
+        return iter(self.table)
+
+    def __len__(self) -> int:
+        return len(self.table)
+
+
 def _scalar(value: object) -> str | None:
+    if isinstance(value, Shared):
+        return value.reference()
     if isinstance(value, bool):
         return "true" if value else "false"
     if isinstance(value, int):

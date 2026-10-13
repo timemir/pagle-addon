@@ -16,8 +16,15 @@ files = [
     "scripts/generate-data.py",
     "scripts/extract-baseline.py",
     "scripts/update-db2.py",
+    "scripts/db2-watch.py",
+    "scripts/render-sounds.py",
 ]
 python_version = "3.12"
 strict = true
 cache_dir = ".tools/cache/mypy"
 warn_unreachable = true
+
+# soundfile is one annotated module, which can't carry a py.typed marker; mypy reads its annotations as they are.
+[[tool.mypy.overrides]]
+module = "soundfile"
+follow_untyped_imports = true
