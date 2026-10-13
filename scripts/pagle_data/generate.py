@@ -32,8 +32,8 @@ def _areas(db2: Db2Layer) -> dict[int, Mapping[str, object]]:
 
 
 def build_catalogue(forever: ForeverLayer, db2: Db2Layer) -> Catalogue:
-    """The catalogue in its pre-M2 shape (DATA-R79): aliases stay empty until the alias layer fills them, and
-    nothing confirms an event's weekly rule yet."""
+    """The catalogue in its pre-M2 shape (DATA-R79): aliases.toml's aliases, and nothing confirms an event's weekly
+    rule yet."""
     events: dict[int, Event] = {}
     for event_id, rule in forever.events.items():
         if rule is None:
@@ -49,7 +49,7 @@ def build_catalogue(forever: ForeverLayer, db2: Db2Layer) -> Catalogue:
         "fingerprint": "",
         "items": {},
         "areas": _areas(db2),
-        "aliases": {},
+        "aliases": {alias.source: alias.target for alias in forever.aliases},
         "pools": {},
         "windows": {},
         "events": events,

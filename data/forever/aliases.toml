@@ -1,0 +1,5 @@
+# The alias table (DATA-R32): each [[alias]] maps an area on another map to the baseline fishing area it stands
+# for, so Core records the baseline area (LOG-R22). from and to are area IDs; why, the evidence, is required
+# (DATA-R10). The comments carry the enUS names for review; they never ship (DATA-R3).
+# scripts/generate-data.py --propose-aliases prints the candidates not committed here, in this shape. Edit this,
+# then run scripts/generate-data.py and commit the regenerated files with it (DATA-R61).

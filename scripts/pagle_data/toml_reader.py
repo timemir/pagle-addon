@@ -124,6 +124,21 @@ def expect_ids(value: object, at: At, problems: Problems) -> list[int] | None:
     return ids if ok else None
 
 
+def expect_why(table: Mapping[str, object], at: At, problems: Problems) -> str | None:
+    """An entry's required why (DATA-R10): the evidence, an issue number, or the VMaNGOS error it fixes. A missing
+    one is check_keys' problem; an empty one is a problem here."""
+    if "why" not in table:
+        return None
+    why = table["why"]
+    if not isinstance(why, str):
+        problems.add(at / "why", f"expected a string, got {describe(why)}")
+        return None
+    if not why.strip():
+        problems.add(at / "why", "empty: say why (the evidence, an issue number, or the VMaNGOS error it fixes)")
+        return None
+    return why
+
+
 def parse_id(key: str, at: At, problems: Problems) -> int | None:
     """A table key that names an ID, such as the 301 of [event.301], as an integer."""
     if key.isascii() and key.isdecimal() and not key.startswith("0"):
