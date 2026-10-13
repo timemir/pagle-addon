@@ -55,10 +55,11 @@ uses_screenshot() {
 	printf 'Screenshot()\n' >"$1"
 }
 
-# Drops a file from Pagle.toc.
+# Drops a file from Pagle.toc, or from the TOC given second.
 toc_drop() {
-	grep -vxF "$1" "$toc" >"$toc.new"
-	mv "$toc.new" "$toc"
+	local from=${2:-$toc}
+	grep -vxF "$1" "$from" >"$from.new"
+	mv "$from.new" "$from"
 }
 
 # Moves a file in Pagle.toc to just after another (TOC paths keep their backslashes, so no awk -v).
@@ -152,6 +153,10 @@ expect "a file dropped from Pagle.toc that Core needs fails tests" tests "attemp
 copy
 toc_drop 'libs\AceDB-3.0\AceDB-3.0.lua'
 expect "a vendored lib dropped from Pagle.toc fails tests" tests 'Cannot find a library instance of "AceDB-3.0"'
+
+copy
+toc_drop 'adapter\Bindings.lua' "$scratch/tree/addons/Pagle_QoL/Pagle_QoL.toc"
+expect "a file dropped from Pagle_QoL.toc fails tests" tests "lists every Lua file in the addon folder"
 
 copy
 toc_move_after 'logic\Forever.lua' 'adapter\Core.lua'

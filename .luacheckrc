@@ -27,6 +27,13 @@ stds.wow = {
 		-- Attaching a Module (CORE-R13, CORE-R16, CORE-R41).
 		C_AddOns = { fields = { "GetAddOnMetadata", "GetAddOnEnableState", "GetAddOnInfo", "IsAddOnLoaded" } },
 		"UnitGUID",
+		-- The Settings tree (CORE-R40–R44, settings.md); the Settings table itself is in stds.wow_variables.
+		"CreateSettingsListSectionHeaderInitializer",
+		"CreateSettingsButtonInitializer",
+		"CreateKeybindingEntryInitializer",
+		C_KeyBindings = { fields = { "GetBindingIndex" } },
+		"SettingsPanel",
+		"HideUIPanel",
 		-- The Catch log (LOG-R11, LOG-R15).
 		"GetServerTime",
 		-- The runtime area index and zone resolution (LOG-R22, LOG-R23).
@@ -58,6 +65,27 @@ stds.wow_variables = {
 		-- probes/fishing-signals/results/2026-10-11-build70338-report.md, "7. Fishing state: skill, spells, lure,
 		-- buffs": GetWeaponEnchantInfo() returns true, 251777, 0, 263, … with a lure on, on build 70338.
 		"GetWeaponEnchantInfo",
+		-- A FrameXML table the dump doesn't list (CORE-R40). probes/fishing-signals/results/
+		-- 2026-10-11-build70338-report.md, "Packaging, Settings and events": RegisterVerticalLayoutCategory,
+		-- RegisterVerticalLayoutSubcategory and RegisterAddOnCategory work on build 70338. Every field: Gethe/wow-ui-source
+		-- branch forever at 943764493e6b16d63ded3ab304150d1f05e58b57 ("1.60.1 (70338)"),
+		-- Interface/AddOns/Blizzard_Settings_Shared/Blizzard_Settings.lua.
+		Settings = {
+			fields = {
+				"VarType",
+				"RegisterVerticalLayoutCategory",
+				"RegisterVerticalLayoutSubcategory",
+				"RegisterAddOnCategory",
+				"OpenToCategory",
+				"RegisterProxySetting",
+				"CreateCheckbox",
+				"CreateSlider",
+				"CreateSliderOptions",
+				"CreateDropdown",
+				"CreateControlTextContainer",
+				"CreateElementInitializer",
+			},
+		},
 	},
 }
 
@@ -80,6 +108,10 @@ exclude_files = {
 files["addons/*/adapter/**"] = { std = "lua51+wow+wow_variables+pagle" }
 -- Only Core's adapter creates the Pagle global.
 files["addons/Pagle/adapter/**"] = { globals = { "Pagle" } }
+-- Every Module file reads Pagle, for its CORE-R11 guard, so logic/ and locale/ may too; nothing else from Core.
+files["addons/Pagle_*/**"] = { read_globals = { "Pagle" } }
+-- QoL's adapter names its Bindings.xml entries for Key Bindings › AddOns (QOL-R1).
+files["addons/Pagle_QoL/adapter/**"] = { globals = { "BINDING_HEADER_PAGLE", "BINDING_NAME_PAGLE_FISHING_KEY" } }
 -- Specs run under busted on plain Lua 5.1. busted's helper (.busted) defines loadAddon and the Forever fixtures.
 local helperGlobals = { "loadAddon", "PROJECT_IDS", "FOREVER_GLOBALS", "PLAYER_GUID", "addonFiles", "newFakePagle" }
 files["spec/**"] = { std = "lua51+busted", read_globals = helperGlobals }

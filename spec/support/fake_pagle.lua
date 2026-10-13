@@ -3,7 +3,7 @@
 -- newFakePagle for every spec.
 --
 --   local fake = newFakePagle()
---   local loaded = loadAddon("Pagle_QoL", fake.globals)   -- the Module sees fake.globals.Pagle as its Pagle
+--   local loaded = fake.load("Pagle_QoL")                 -- the Module sees fake.globals.Pagle as its Pagle
 --   fake.login()                                            -- Core's PLAYER_LOGIN: ModulesChanged
 --   fake.fire("RestrictionChanged", true)                   -- any Core event; tables arrive read-only
 --   fake.setRestricted(true)
@@ -39,6 +39,14 @@
 ---@field login fun() Does Core's PLAYER_LOGIN work: fires ModulesChanged. Raises an error if called twice.
 ---@field readOnly fun(value: any): any The read-only proxy of a table (the same one each time); other values as is.
 ---@field moduleState fun(name: string): PagleModuleState A roster Module's state (CORE-R41).
+---@field settingsPage fun(topic: string): { module: string, kind: string, label: string, indented: boolean, setting: PagleSetting }[]?
+--- The rows Core would put on a topic page, in order, its header rows included; nil before login or with no rows,
+--- when Core registers no page (CORE-R42).
+---@field reported string[] Each error Core reported through geterrorhandler(), e.g. a late M:AddSetting.
+---@field openedSettings string[] What each Pagle.OpenSettings opened: "root" or the topic (CORE-R43).
+---@field load fun(name: string, options: table?): LoadedAddon Loads a Module with `loadAddon` against this fake:
+--- `globals`, and of Pagle.toc only the vendored libs/ the Module reaches through LibStub (CORE-R6). Options as
+--- loadAddon's.
 ---@field catchLog PagleCatchLog The Catch log Pagle.IterateCatches reads, on Core's real codec; empty at first.
 ---@field setCatalogue fun(data: table) Serves the catalogue calls over `data` (shaped as ns.catalogue, DATA-R76)
 --- instead of the generated catalogue.
@@ -53,6 +61,8 @@
 ---@return table env
 local function loadCoreLogic()
 	local env = setmetatable({}, { __index = _G })
+	-- LibStub keeps itself in _G.LibStub: this one stays in env, or every later load would share its libraries.
+	env._G = env
 	-- CallbackHandler calls each listener through this. Here a listener's error fails the spec instead.
 	env.securecallfunction = function(fn, ...)
 		return fn(...)
@@ -245,6 +255,61 @@ part(function(fake, Pagle, ns)
 	end
 end)
 
+-- Settings (CORE-R33, CORE-R42, CORE-R43), on Core's real rows logic. Pages count as registered from login.
+part(function(fake, Pagle, ns)
+	local rows = ns.NewSettingsRows()
+	local loggedIn = false
+	fake.reported = {}
+	fake.openedSettings = {}
+
+	function ns.ModuleHandle:AddSetting(topic, setting)
+		local module = fake.registry:ModuleOf(self)
+		if not module then
+			error("AddSetting is a Module handle method: call M:AddSetting(topic, setting)", 2)
+		end
+		local problem, late = rows:Add(module.def.name, topic, setting)
+		if late then
+			fake.reported[#fake.reported + 1] = problem
+		elseif problem then
+			error(problem, 2)
+		end
+	end
+
+	Pagle.RegisterCallback(fake, "ModulesChanged", function()
+		rows:Close()
+		loggedIn = true
+	end)
+
+	function fake.settingsPage(topic)
+		local entries = loggedIn and rows:Page(topic, fake.registry:Modules()) or {}
+		if #entries == 0 then
+			return nil
+		end
+		local page = {}
+		for i, entry in ipairs(entries) do
+			local setting = entry.setting
+			page[i] = {
+				module = entry.module.def.name,
+				kind = setting.kind,
+				label = setting.label,
+				indented = entry.parent ~= nil,
+				setting = setting,
+			}
+		end
+		return page
+	end
+
+	function Pagle.OpenSettings(topic)
+		if Pagle.IsRestricted() then
+			fake.printed[#fake.printed + 1] = ns.L.SETTINGS_AFTER_COMBAT
+		elseif loggedIn then
+			fake.openedSettings[#fake.openedSettings + 1] = (type(topic) == "string" and fake.settingsPage(topic))
+					and topic
+				or "root"
+		end
+	end
+end)
+
 -- Condition specs (LOG-R48): pure, so the real one.
 part(function(_, Pagle, ns)
 	Pagle.MatchesConditions = ns.MatchesConditions
@@ -353,5 +418,12 @@ function newFakePagle()
 		next = proxyNext,
 		unpack = proxyUnpack,
 	}
+	function fake.load(name, options)
+		local loadOptions = { dependencyLibsOnly = true }
+		for key, value in pairs(options or {}) do
+			loadOptions[key] = value
+		end
+		return loadAddon(name, fake.globals, loadOptions)
+	end
 	return fake
 end

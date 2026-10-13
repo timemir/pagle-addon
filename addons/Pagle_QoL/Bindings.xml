@@ -1,0 +1,5 @@
+<Bindings>
+	<!-- The Fishing key (QOL-R1, QOL-R10). Its own body does nothing: QoL arms it with override bindings (QOL-R11). -->
+	<Binding name="PAGLE_FISHING_KEY" header="PAGLE" category="ADDONS">
+	</Binding>
+</Bindings>
