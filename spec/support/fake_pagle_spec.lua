@@ -1040,4 +1040,95 @@ describe("FakePagle", function()
 			assert.has_error(fake.enterWorld)
 		end)
 	end)
+
+	describe("Sessions", function()
+		-- Each Session event and each apply, in order, as "<event> <session id> [whileAway]" and "<seq> <mode>".
+		local function listen(fake)
+			local seen = {}
+			for _, event in ipairs({ "SessionStarted", "SessionEnded", "Catch" }) do
+				fake.Pagle.RegisterCallback("Spec " .. event, event, function(_, payload)
+					local id = event == "Catch" and payload.cast.session or payload.id
+					seen[#seen + 1] = event .. " " .. id .. (payload.whileAway and " whileAway" or "")
+				end)
+			end
+			local M = fake.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
+			M:NewProjection({
+				db = {},
+				rulesVersion = 1,
+				reset = function()
+					return {}
+				end,
+				apply = function(_, record, mode)
+					seen[#seen + 1] = record.seq .. " " .. mode
+				end,
+			})
+			return seen
+		end
+
+		-- The player's entry ID at the fake's server time SERVER_TIME + `offset` (LOG-R13).
+		local function id(offset)
+			return ("%s-%d-0"):format(PLAYER_GUID, SERVER_TIME + offset)
+		end
+
+		it("serve Pagle.SESSION_RULES_VERSION as Core does (LOG-R61)", function()
+			assert.are.equal(
+				loadAddon("Pagle", FOREVER_GLOBALS).env.Pagle.SESSION_RULES_VERSION,
+				newFakePagle().Pagle.SESSION_RULES_VERSION
+			)
+		end)
+
+		it(
+			"start with a played Cast, after its append and before its live apply, tagging it (LOG-R9, LOG-R62,"
+				.. " LOG-R98)",
+			function()
+				local fake = newFakePagle()
+				local seen = listen(fake)
+				fake.login()
+				fake.enterWorld()
+
+				local cast = fake.playCast("caught", { { itemID = 6358, quantity = 1 } })
+
+				assert.are.same({ "SessionStarted " .. id(0), "1 live", "Catch " .. id(0) }, seen)
+				assert.are.equal(id(0), cast.session)
+				assert.are.same({ id(0), 1 }, { fake.Pagle.GetSession().id, fake.Pagle.GetSession().casts })
+			end
+		)
+
+		it("end when fake.wait(900) passes with no Cast, then GetSession is nil (LOG-R62, LOG-R64)", function()
+			local fake = newFakePagle()
+			local seen = listen(fake)
+			fake.login()
+			fake.enterWorld()
+			fake.playCast("caught", { { itemID = 6358, quantity = 1 } })
+
+			fake.wait(899)
+			assert.is_not_nil(fake.Pagle.GetSession())
+			fake.wait(1)
+
+			assert.are.equal("SessionEnded " .. id(0), seen[#seen])
+			assert.is_nil(fake.Pagle.GetSession())
+			fake.playCast("gotAway")
+			assert.are.equal("SessionStarted " .. id(900), seen[#seen - 1])
+		end)
+
+		it("end a Session that ended before login with whileAway, once no projection is updating (LOG-R63)", function()
+			local fake = newFakePagle()
+			fake.catchLog.data.characters[1] = { guid = PLAYER_GUID }
+			fake.catchLog:Append({
+				kind = "cast",
+				char = 1,
+				time = SERVER_TIME - 900,
+				outcome = "caught",
+				conditions = { minute = 494, zone = 148, subzone = 453, events = {}, auras = {} },
+				items = { { itemID = 6358, quantity = 1 } },
+			})
+			local seen = listen(fake)
+
+			fake.login()
+			assert.are.same({}, seen)
+			fake.enterWorld()
+
+			assert.are.same({ "1 rebuild", "SessionEnded " .. id(-900) .. " whileAway" }, seen)
+		end)
+	end)
 end)
