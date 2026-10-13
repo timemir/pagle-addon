@@ -104,3 +104,30 @@ def test_aliases_toml_s_keys_and_types_are_checked(tmp_path: Path, capsys: pytes
         "data/forever/aliases.toml: alias[2].from: area 16510 is aliased twice",
     ]:
         assert problem in output
+
+
+@pytest.mark.parametrize("mode", [[], ["--check"]])
+@pytest.mark.parametrize(
+    ("entries", "problem"),
+    [
+        # 16510 is a copy of Elwynn Forest with no catch list of its own: no area stands for it.
+        (alias(16522, 16510), "alias[0].to: area 16510 has no baseline catch list"),
+        # 19 has its own area_loot.csv rows, so it can't stand for 18.
+        (alias(19, 18), "alias[0].from: area 19 has a catch list of its own"),
+        # 16521 is an alias source, so it can't be a target.
+        (alias(16521, 18) + alias(16530, 16521), "alias[1].to: area 16521 is itself an alias source"),
+        (alias(16521, 16521), "alias[0]: from and to are both 16521"),
+    ],
+    ids=["target-without-catch-list", "source-with-catch-list", "target-is-a-source", "source-is-target"],
+)
+def test_a_bad_alias_fails_and_writes_nothing(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], entries: str, problem: str, mode: list[str]
+) -> None:
+    # DATA-R32: "The generator fails if an alias's target has no baseline catch list, its source has a catch list of
+    # its own, a target is itself an alias source, or source equals target." DATA-R63: writing nothing. In M1 a
+    # catch list is the area's area_loot.csv rows (roadmap M1).
+    write_tree(tmp_path, entries)
+    code, output = run(tmp_path, capsys, *mode)
+    assert code == 1
+    assert f"data/forever/aliases.toml: {problem}" in output
+    assert not (tmp_path / CATALOGUE).exists()
