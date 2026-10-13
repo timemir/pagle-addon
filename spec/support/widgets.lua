@@ -32,6 +32,9 @@ local LAYOUT_METHODS = {
 	"EnableMouse",
 	"SetTexCoord",
 	"SetVertexColor",
+	"SetScrollChild",
+	"SetVerticalScroll",
+	"EnableMouseWheel",
 }
 
 --- A widget (frame, button or font string) that keeps what specs read back: its text, whether it's shown, its

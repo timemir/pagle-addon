@@ -39,6 +39,7 @@ logic\Slash.lua
 logic\Wallet.lua
 logic\Moments.lua
 logic\Summary.lua
+logic\Cards.lua
 logic\Announcements.lua
 logic\Menu.lua
 logic\ReloadReminder.lua
@@ -63,6 +64,7 @@ adapter\Wallet.lua
 adapter\Moments.lua
 adapter\Summary.lua
 adapter\Announcements.lua
+adapter\Cards.lua
 adapter\Menu.lua
 adapter\ReloadReminder.lua
 adapter\Login.lua

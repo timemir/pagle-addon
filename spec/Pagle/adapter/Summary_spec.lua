@@ -1,6 +1,6 @@
 -- The Session summary as Core runs it, through the real TOC (announcements.md › Session summary): moments Modules
 -- raise reach PagleDB.global.summary, and SessionEnded (#80) turns a Session that earned one into a card in
--- PagleDB.global.cards, for the card frame (#87) to show.
+-- PagleDB.global.cards, which spec/Pagle/adapter/Cards_spec.lua shows.
 
 local OILY_BLACKMOUTH = "|cffffffff|Hitem:6358::::::::15:::::::::|h[Oily Blackmouth]|h|r"
 local FISHING = 7731
@@ -205,7 +205,7 @@ describe("the Session summary on the client", function()
 
 	it(
 		"makes the card of a Session that ended while away, from the moments saved before a crash, marked whileAway"
-			.. ' for #87\'s "Your last session" (ANN-R54, ANN-R94)',
+			.. ' and titled "Your last session" (ANN-R54, ANN-R94)',
 		function()
 			-- The last login crashed mid-Session: its Casts and one moment were saved, its end never came.
 			local saved = {
@@ -234,6 +234,7 @@ describe("the Session summary on the client", function()
 			local cards = loaded.env.PagleDB.global.cards
 			assert.are.equal(1, #cards)
 			assert.is_true(cards[1].whileAway)
+			assert.are.equal("Your last session", cards[1].title)
 			assert.are.same({ casts = 2, catches = 2, gotAway = 0, seconds = 10 }, cards[1].numbers)
 			assert.are.same({ { { "Ledger", { "New Species" } } } }, cardMoments(cards))
 			assert.are.equal("Welcome back", loaded.env.PagleDB.global.pending[1].title)

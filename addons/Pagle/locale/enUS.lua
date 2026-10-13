@@ -46,6 +46,20 @@ ns.L = {
 	ANNOUNCEMENT_COINS = "+%s Coins",
 	ANNOUNCEMENT_NEW_RECORD = "New record",
 	ANNOUNCEMENT_SPLASH_HINT = "Click anywhere to continue",
+	-- The cards (announcements.md › UI): a Session summary's title, "Your last session" for one that ended while away
+	-- (ANN-R54), and the Write-up's (ANN-R61); Core's numbers (ANN-R53), time fished in minutes or hours and minutes;
+	-- the Coins line with its sum (ANN-R53); the close button (closing also takes Esc).
+	CARD_SESSION = "Fishing session",
+	CARD_LAST_SESSION = "Your last session",
+	CARD_WRITE_UP = "Write-up",
+	CARD_CASTS = "Casts",
+	CARD_CATCHES = "Catches",
+	CARD_GOT_AWAY = "Got away",
+	CARD_TIME = "Time fished",
+	CARD_MINUTES = "%d min",
+	CARD_HOURS = "%d h %02d min",
+	CARD_COINS = "Pagle Coins +%s",
+	CARD_CLOSE = "Close",
 	-- LOG-R86: the unsaved-Casts reminder, with the number of Casts recorded since load.
 	RELOAD_REMINDER = "Pagle: %d Casts not yet saved. /reload to keep them safe.",
 	-- CORE-R33: Settings opened while restricted.

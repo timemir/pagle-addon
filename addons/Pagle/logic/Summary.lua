@@ -3,7 +3,7 @@ local ns = select(2, ...)
 
 -- The Session summary's data (announcements.md › Session summary, › Data): pure logic over PagleDB.global (CORE-R7).
 -- Every moment Core keeps lands in the open Session's summary, and a Session that earned one becomes a card when it
--- ends. Drawing the cards is the card frame's (#87); the data lives in PagleDB only, never in the Catch log (ANN-R56).
+-- ends. logic/Cards.lua shows the cards; the data lives in PagleDB only, never in the Catch log (ANN-R56).
 
 local RUNG_HEIGHT = {}
 for height, rung in ipairs(ns.MOMENT_RUNGS) do
@@ -39,14 +39,16 @@ end
 ---@field title string
 ---@field lines string[]               -- by key
 
---- A Session summary card (ANN-R53, announcements.md › Data), waiting in `global.cards` to be shown. The card frame
---- (#87) titles it, "Your last session" for a `whileAway` one (ANN-R54).
----@class PagleSummaryCard
+--- A Session summary card (ANN-R53, announcements.md › Data), waiting in `global.cards` until the player closes it
+--- (ANN-R54). logic/Cards.lua shows it.
+---@class PagleSummaryCard: PagleCard
+---@field title string                 -- "Your last session" for a `whileAway` one, else "Fishing session" (ANN-R54)
 ---@field numbers { casts: integer, catches: integer, gotAway: integer, seconds: integer } -- Core's, from the Session
 ---@field coins integer                -- the moments' coins summed; "Pagle Coins +N" shows only above 0
 ---@field lines PagleCardLines[]       -- the registered Modules' lines, by Module order
 ---@field moments PagleCardMoments[]   -- by stored Module order
 ---@field whileAway? boolean           -- from the SessionEnded fired at login for a Session ended while away
+---@field writeUp? PagleWriteUpStored[] -- Write-up sections that waited in Cozy mode, by Module order (ANN-R62)
 
 local STORED = {
 	"module",
@@ -115,6 +117,7 @@ end
 ---@field global fun(): table              -- PagleDB.global, which keeps summary, pending and cards
 ---@field isOpen fun(): boolean            -- a Session is open (Pagle.GetSession() isn't nil, LOG-R64)
 ---@field modules fun(): PagleModule[]     -- the registered Modules, by order
+---@field cozy fun(): boolean              -- Cozy mode is on (ANN-R62)
 
 --- The Session summary over PagleDB.global (ANN-R50–R53).
 ---@class PagleSummary
@@ -130,7 +133,7 @@ end
 
 -- PagleDB.global with the summary's keys in place.
 ---@package
----@return { summary: { moments: PagleStoredMoment[], lines: table }, pending: PagleStoredMoment[], cards: PagleSummaryCard[] }
+---@return { summary: { moments: PagleStoredMoment[], lines: table }, pending: PagleStoredMoment[], cards: PagleSummaryCard[], writeUp: PagleWriteUpStored[]? }
 function Summary:data()
 	local global = self.options.global()
 	global.summary = global.summary or {}
@@ -222,16 +225,21 @@ function ns.SetSummaryLineMethod(registry, summary)
 	end
 end
 
---- At SessionEnded (ANN-R53): with at least one moment raised in the Session, adds a card to `global.cards` and
---- returns it. Either way the moments are cleared for the next Session, and the lines stay (ANN-R51). Lines alone
---- make no card.
+--- At SessionEnded (ANN-R53): with at least one moment raised in the Session, or in Cozy mode a Write-up waiting
+--- (ANN-R62), adds a card to `global.cards`, dropping the oldest beyond CARDS_KEPT (ANN-R54), and returns it. In Cozy
+--- mode the waiting Write-up sections move onto it. Either way the moments are cleared for the next Session, and the
+--- lines stay (ANN-R51). Lines alone make no card.
 ---@param session PagleSession
 ---@return PagleSummaryCard?
 function Summary:Ended(session)
 	local data = self:data()
 	local moments = data.summary.moments
 	data.summary.moments = {}
-	if #moments == 0 then
+	local writeUp
+	if self.options.cozy() and data.writeUp and #data.writeUp > 0 then
+		writeUp, data.writeUp = ns.WriteUpInOrder(data.writeUp), {}
+	end
+	if #moments == 0 and not writeUp then
 		return nil
 	end
 	local coins = 0
@@ -240,6 +248,7 @@ function Summary:Ended(session)
 	end
 	---@type PagleSummaryCard
 	local card = {
+		title = session.whileAway and ns.L.CARD_LAST_SESSION or ns.L.CARD_SESSION,
 		numbers = {
 			casts = session.casts,
 			catches = session.catches,
@@ -250,7 +259,11 @@ function Summary:Ended(session)
 		lines = cardLines(data.summary.lines, self.options.modules()),
 		moments = byModule(moments),
 		whileAway = session.whileAway,
+		writeUp = writeUp,
 	}
 	data.cards[#data.cards + 1] = card
+	while #data.cards > ns.CARDS_KEPT do
+		table.remove(data.cards, 1)
+	end
 	return card
 end

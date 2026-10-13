@@ -1367,4 +1367,110 @@ describe("FakePagle", function()
 			end)
 		end)
 	end)
+
+	describe("the cards", function()
+		-- `casts` caught Casts in fake.catchLog, of a Session still open at login.
+		local function withHistory(fake, casts)
+			fake.catchLog.data.characters[1] = { guid = PLAYER_GUID }
+			for i = 1, casts do
+				fake.catchLog:Append({
+					kind = "cast",
+					char = 1,
+					time = 1791731000 + i,
+					outcome = "caught",
+					conditions = { minute = 494, zone = 148, subzone = 453, events = {}, auras = {} },
+					items = { { itemID = 6358, quantity = 1 } },
+				})
+			end
+		end
+
+		-- A Module registered on `fake` whose projection raises a Write-up section from its done on a first build.
+		local function writingUp(fake, name, order)
+			local M = fake.Pagle.RegisterModule({ name = name, title = name, order = order })
+			M:NewProjection({
+				db = {},
+				rulesVersion = 1,
+				reset = function()
+					return {}
+				end,
+				apply = function() end,
+				done = function(_, info)
+					if info.firstBuild then
+						M:RaiseWriteUp({ heading = name .. " written up", lines = { "3 Species" } })
+					end
+				end,
+			})
+			return M
+		end
+
+		it(
+			"record each Write-up section raised, and show one Write-up card by Module order on the frame after the"
+				.. " held Announcements' (ANN-R21, ANN-R60, ANN-R61)",
+			function()
+				local fake = newFakePagle()
+				withHistory(fake, 2)
+				writingUp(fake, "Hunts", 20)
+				writingUp(fake, "Ledger", 10)
+				fake.login()
+				fake.enterWorld()
+
+				assert.are.same({ "Hunts", "Ledger" }, { fake.writeUps[1].module, fake.writeUps[2].module })
+				assert.are.same(
+					{ "Hunts written up", { "3 Species" } },
+					{ fake.writeUps[1].heading, fake.writeUps[1].lines }
+				)
+				fake.nextFrame()
+				assert.are.same({}, fake.cardsShown)
+				fake.nextFrame()
+
+				assert.are.equal(1, #fake.cardsShown)
+				local card = fake.cardsShown[1]
+				assert.are.same({ "Write-up", "Ledger written up", "Hunts written up" }, {
+					card.title,
+					card.writeUp[1].heading,
+					card.writeUp[2].heading,
+				})
+				fake.closeCard()
+				assert.are.same({}, fake.global.writeUp)
+			end
+		)
+
+		it("raise an error for M:RaiseWriteUp outside a projection's done, as Core does (ANN-R60)", function()
+			local fake = newFakePagle()
+			local M = fake.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
+			fake.login()
+			fake.enterWorld()
+
+			assert.has_error(function()
+				M:RaiseWriteUp({ heading = "Written up", lines = {} })
+			end)
+			assert.are.same({}, fake.writeUps)
+		end)
+
+		it(
+			"in Cozy mode show no Write-up card, and put its section on the next Session's card, which shows although"
+				.. " that Session raised nothing (ANN-R54, ANN-R62)",
+			function()
+				local fake = newFakePagle()
+				withHistory(fake, 2)
+				writingUp(fake, "Ledger", 10)
+				fake.profile.announcements.cozy = true
+				fake.login()
+				fake.enterWorld()
+				fake.nextFrame()
+				fake.nextFrame()
+				assert.are.same({}, fake.cardsShown)
+
+				fake.playCast("gotAway")
+				fake.wait(900)
+
+				assert.are.same({ "Fishing session", "Ledger written up" }, {
+					fake.cardsShown[1].title,
+					fake.cardsShown[1].writeUp[1].heading,
+				})
+				fake.closeCard()
+				assert.are.same({}, fake.global.cards)
+			end
+		)
+	end)
 end)
