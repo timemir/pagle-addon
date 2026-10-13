@@ -52,6 +52,7 @@ adapter\Projections.lua
 adapter\Angler.lua
 adapter\Fishing.lua
 adapter\Diagnostics.lua
+adapter\Sessions.lua
 adapter\Settings.lua
 adapter\AnnouncementSettings.lua
 adapter\Slash.lua

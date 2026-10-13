@@ -17,6 +17,8 @@ local Pagle = Pagle
 ---| "CastEnded" # PagleCastEndedHandler
 ---| "FishingStateChanged" # PagleFishingStateChangedHandler
 ---| "BalanceChanged" # PagleBalanceChangedHandler
+---| "SessionStarted" # PagleSessionStartedHandler
+---| "SessionEnded" # PagleSessionEndedHandler
 ---| string
 
 ---@class Pagle
