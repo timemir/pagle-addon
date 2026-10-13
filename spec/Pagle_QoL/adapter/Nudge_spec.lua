@@ -95,10 +95,47 @@ describe("A Nudge", function()
 				sounds[#sounds + 1] = { name, ... }
 			end
 		end
+		-- A spy on every Pagle call and every method of QoL's Module handle (ADR 0007: Core alone presents
+		-- Announcements). The handle's methods live on its metatable, so each spy shadows one on the handle itself.
+		local coreCalls = {}
+		---@param target table
+		---@param label string
+		---@param functions table<string, any>
+		local function spyOn(target, label, functions)
+			for name, fn in pairs(functions) do
+				if type(fn) == "function" then
+					target[name] = function(...)
+						coreCalls[#coreCalls + 1] = label .. name
+						return fn(...)
+					end
+				end
+			end
+		end
+		local module = assert(loaded.ns.Module)
+		local methods = {}
+		for name, fn in pairs(getmetatable(module).__index) do
+			methods[name] = fn
+		end
+		for name, fn in pairs(module) do
+			methods[name] = fn
+		end
+		spyOn(fake.Pagle, "Pagle.", fake.Pagle)
+		spyOn(module, "M:", methods)
+		-- The spies see what QoL calls: Pagle through its read-only global, and the handle's methods.
+		loaded.env.Pagle.IsRestricted()
+		assert.is_function(rawget(module, "AddSetting"))
+		assert.are.same({ "Pagle.IsRestricted" }, coreCalls)
+		coreCalls = {}
 
 		loaded.ns.ShowNudge("A Nudge")
-		loaded.client.update(4)
+		-- Only the Nudge's own frame runs: client.update would also run the Fishing key's tick, which reads Core.
+		local frame = theNudge(loaded.client)
+		while frame.scripts.OnUpdate do
+			frame.scripts.OnUpdate(frame, 0.25)
+		end
 
+		assert.is_false(frame.shown)
+		assert.are.same({}, coreCalls)
 		assert.are.same({}, sounds)
 		assert.are.same({}, fake.printed)
 		assert.are.same({}, loaded.printed)
