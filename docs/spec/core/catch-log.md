@@ -215,7 +215,7 @@ Core runs every Module's stored projection the same way (ADR 0004).
 ### Crashes
 
 - **LOG-R85** SavedVariables are written only on logout or `/reload`, so a client crash loses the Casts since the last write. Core does nothing to work around it.
-- **LOG-R86** An opt-in setting (off by default) shows one chat line each time 50 more Casts are unsaved since the last load: "Pagle: 50 Casts not yet saved. `/reload` to keep them safe." A line due while restricted is shown when the restriction ends.
+- **LOG-R86** An opt-in setting (off by default) shows one chat line each time 50 more Casts are unsaved since the last load: "Pagle: 50 Casts not yet saved. `/reload` to keep them safe." A line due while restricted is shown when the restriction ends. The line stays plain text, with no clickable "Reload now" (decided in #113): a chat link would need new infrastructure, a hyperlink handler and a SET or ANN rule for it, so the player types `/reload`.
 
 ## Data
 

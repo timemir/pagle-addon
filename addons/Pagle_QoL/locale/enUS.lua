@@ -26,4 +26,8 @@ ns.L = {
 	CONFLICT_USE_OTHERS = "Use the others",
 	CONFLICT_TURNED_OFF = "Pagle: turned off %s. Type /reload to finish.",
 	CONFLICT_TURNED_OFF_QOL = "Pagle: turned off Pagle QoL. Type /reload to finish. Pagle keeps recording your Catches.",
+	-- The Reload now popup after a choice (QOL-R83).
+	CONFLICT_RELOAD_TEXT = "Reload the interface now to finish?",
+	CONFLICT_RELOAD_NOW = "Reload now",
+	CONFLICT_RELOAD_LATER = "Later",
 }
