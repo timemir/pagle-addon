@@ -18,6 +18,7 @@ local PAGLEDB_DEFAULTS = {
 	},
 	profile = {
 		reloadReminder = false, -- LOG-R86
+		announcements = { cozy = false, budget = { on = true, count = 4, window = 300 } }, -- announcements.md › Data
 	},
 }
 
