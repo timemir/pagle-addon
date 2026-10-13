@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from baseline_fixture import CSVS, write_baseline
+from item_fixture import write_item_layer
 from pagle_data.cli import main
 
 CATALOGUE = "addons/Pagle/data/Catalogue.lua"
@@ -48,6 +49,8 @@ def write_tree(root: Path, aliases: str = "") -> Path:
     (db2 / "areas.csv").write_text(AREAS, encoding="utf-8")
     (db2 / "items.csv").write_text("ID,ClassID,SubclassID,OverallQualityID,Display_lang\n", encoding="utf-8")
     write_baseline(root, {**CSVS, "area_loot.csv": AREA_LOOT})
+    # 6291 is this tree's area loot; test_item_records.py covers the item layer.
+    write_item_layer(root, '[item.6291]\ncategory = "fish"\n\n[item.19807]\ncategory = "fish"\n')
     return root
 
 

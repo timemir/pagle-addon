@@ -7,10 +7,13 @@ from pathlib import Path
 from pagle_data.aliases import Proposal, check_aliases, fishing_areas, propose
 from pagle_data.baseline import BASELINE, BaselineLayer, read_baseline
 from pagle_data.catalogue import Catalogue, Event, fingerprint
+from pagle_data.checks import read_checks
 from pagle_data.db2 import DB2, Db2Layer, read_db2
 from pagle_data.forever import ForeverLayer, read_forever
+from pagle_data.items import ITEMS_TOML, Record, item_records, read_item_layer
 from pagle_data.lua import to_lua
 from pagle_data.toml_reader import DataError, Problems
+from pagle_data.universe import item_universe
 
 CATALOGUE_LUA = "addons/Pagle/data/Catalogue.lua"
 
@@ -33,9 +36,9 @@ def _areas(db2: Db2Layer) -> dict[int, Mapping[str, object]]:
     }
 
 
-def build_catalogue(forever: ForeverLayer, db2: Db2Layer) -> Catalogue:
+def build_catalogue(forever: ForeverLayer, db2: Db2Layer, items: Mapping[int, Record]) -> Catalogue:
     """The catalogue in its pre-M2 shape (DATA-R79): aliases.toml's aliases, and nothing confirms an event's weekly
-    rule yet."""
+    rule yet. items are the item records (DATA-R77)."""
     events: dict[int, Event] = {}
     for event_id, rule in forever.events.items():
         if rule is None:
@@ -49,7 +52,7 @@ def build_catalogue(forever: ForeverLayer, db2: Db2Layer) -> Catalogue:
             }
     catalogue: Catalogue = {
         "fingerprint": "",
-        "items": {},
+        "items": dict(items),
         "areas": _areas(db2),
         "aliases": {alias.source: alias.target for alias in forever.aliases},
         "pools": {},
@@ -84,6 +87,7 @@ class Layers:
     baseline: BaselineLayer
     forever: ForeverLayer
     db2: Db2Layer
+    items: dict[int, Record]  # the item records that ship (DATA-R77)
 
     def fishing_areas(self) -> set[int]:
         return fishing_areas(self.baseline)
@@ -102,16 +106,22 @@ def read_layers(root: Path) -> Layers:
     baseline_read = not problems
     forever = read_forever(root, problems)
     db2 = read_db2(root, problems)
+    item_layer = read_item_layer(root, problems)
+    checks = read_checks(root, problems)
+    items: dict[int, Record] = {}
     if baseline_read:  # without the whole baseline, every target would look like it has no catch list
         check_aliases(forever.aliases, fishing_areas(baseline), problems)
+        # DATA-R15: items.toml's IDs come from its strict reader, so a bad one is reported once.
+        universe = item_universe(root, baseline, problems, {ITEMS_TOML: item_layer.items.keys()})
+        items = item_records(universe, baseline, item_layer, db2, checks, problems)
     if problems:
         raise DataError(problems.found)
-    return Layers(baseline, forever, db2)
+    return Layers(baseline, forever, db2, items)
 
 
 def outputs(layers: Layers) -> dict[str, str]:
     """Every generated file's path (relative to the repo root) and content."""
-    return {CATALOGUE_LUA: catalogue_lua(build_catalogue(layers.forever, layers.db2))}
+    return {CATALOGUE_LUA: catalogue_lua(build_catalogue(layers.forever, layers.db2, layers.items))}
 
 
 def generate(root: Path) -> dict[str, str]:

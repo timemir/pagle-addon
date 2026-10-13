@@ -8,7 +8,7 @@ checks the rest. Fixed Hunt classes (DATA-R90) and data/observed/ (dev facts, no
 through item_universe, when their layers arrive.
 """
 
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Collection, Mapping
 from pathlib import Path
 
 from pagle_data.baseline import BaselineLayer
@@ -79,11 +79,17 @@ def _baseline_items(baseline: BaselineLayer) -> set[int]:
     return found
 
 
-def forever_items(root: Path, problems: Problems) -> set[int]:
+def forever_items(root: Path, problems: Problems, parsed: Mapping[str, Collection[int]] | None = None) -> set[int]:
     """The item IDs named in root/data/forever/'s files that name items, reading only those that exist. An item ID
-    that can't be read is a problem: until it's fixed the universe isn't known."""
+    that can't be read is a problem: until it's fixed the universe isn't known. parsed holds, by file, the item IDs
+    of files the caller has already read with their strict reader; those aren't read again, so a bad ID in one is
+    reported once."""
+    parsed = parsed or {}
     found: set[int] = set()
     for file, read in _FOREVER.items():
+        if file in parsed:
+            found.update(parsed[file])
+            continue
         if not (root / file).is_file():
             continue
         document = read_toml(root, file, problems)
@@ -92,8 +98,10 @@ def forever_items(root: Path, problems: Problems) -> set[int]:
     return found
 
 
-def item_universe(root: Path, baseline: BaselineLayer, problems: Problems) -> frozenset[int]:
+def item_universe(
+    root: Path, baseline: BaselineLayer, problems: Problems, parsed: Mapping[str, Collection[int]] | None = None
+) -> frozenset[int]:
     """The item universe (DATA-R15) of the data/ tree at root, given its baseline layer, which must have been read
-    without problems. Each problem found goes into problems; the caller must not use the universe while there are
-    any."""
-    return frozenset(_baseline_items(baseline) | forever_items(root, problems))
+    without problems. parsed is as forever_items takes it. Each problem found goes into problems; the caller must
+    not use the universe while there are any."""
+    return frozenset(_baseline_items(baseline) | forever_items(root, problems, parsed))

@@ -47,15 +47,23 @@ def test_every_items_csv_row_is_read_into_the_db2_layer(tmp_path: Path) -> None:
     }
 
 
-def test_the_catalogue_s_items_stay_empty_and_no_item_name_ships(
+def test_items_csv_gives_the_records_their_quality_and_no_item_name_ships(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    # #89: item records come with the categories (#90), so the catalogue is unchanged by items.csv. DATA-R3: names
-    # never reach a generated file.
+    # DATA-R77: an item record carries its DB2 quality when known; DATA-R16: 6358's ClassID 12 isn't a Noise class,
+    # but it is reachable only through reference loot, so it stays Noise. DATA-R3: names never reach a generated file.
     code, output = run(write_items(tmp_path, ITEMS), capsys)
     assert code == 0, output
     generated = (tmp_path / CATALOGUE).read_text(encoding="utf-8")
-    assert generated == EXPECTED
+    assert generated != EXPECTED
+    for line in [
+        "[6303] = { category = \"fish\", legend = false, noise = false, pool = false, quality = 1, removed = false,"
+        " species = 6303 },",
+        "[6358] = { category = \"other\", legend = false, noise = true, pool = false, quality = 1, removed = false },",
+        "[19807] = { category = \"fish\", legend = false, noise = false, pool = false, quality = 2, removed = false,"
+        " species = 19807 },",
+    ]:
+        assert line in generated
     for name in ["Quillfin", "Brackenfish", "Zephyrine"]:
         assert name not in generated
 
