@@ -9,6 +9,9 @@ local ns = select(2, ...)
 ns.ANNOUNCEMENT_SECONDS = { toast = 6, banner = 4, splash = 8, nod = 3 }
 --- Toasts that wait for the slot at most (ANN-R20; Tunables).
 ns.TOASTS_WAITING = 2
+-- The longest budget window the player can set, in seconds (settings.md › Tunables: 1–15 min): interruptions older
+-- than it never count again, so the lanes forget them.
+local LONGEST_WINDOW = 15 * 60
 
 local SOUNDS = "Interface\\AddOns\\Pagle\\media\\sounds\\"
 
@@ -158,7 +161,11 @@ function Lanes:showSlot(announcement, form)
 		display.overflow, self.overflow = self.overflow, 0
 	end
 	self.slot = display
-	self.interruptions[#self.interruptions + 1] = self.options.now()
+	local now = self.options.now()
+	while self.interruptions[1] and self.interruptions[1] <= now - LONGEST_WINDOW do
+		table.remove(self.interruptions, 1)
+	end
+	self.interruptions[#self.interruptions + 1] = now
 	display.sound = self:sound(announcement, form)
 	self.options.show(display)
 	if display.sound then
