@@ -10,20 +10,29 @@ local NAMES = {
 	[18] = "Crystal Lake",
 	[20] = "Twin Peaks",
 	[21] = "Twin Peaks",
+	[36] = "Alterac Mountains",
 	[148] = "Darkshore",
+	[279] = "Dalaran",
 	[453] = "The Long Wash",
 	[454] = "Lighthouse",
 	[455] = "Lighthouse",
 	[16200] = "Riverglades",
 	[16521] = "Glimmer Bay",
+	[17824] = "The Eventide",
+	[17845] = "Dreambound Pinnacle",
 	[30001] = "Duskwood Glade",
 	[30002] = "Duskwood Glade",
+	[30010] = "Mirror Pool",
+	[30011] = "Mirror Hollow",
 }
 
 -- The AreaTable slice (DATA-R25, DATA-R79): Dun Morogh (1) and a Twin Peaks (20) on continent 0; Darkshore (148,
 -- with The Long Wash 453 and a Lighthouse 454), The Barrens (17, with another Lighthouse 455) and another Twin Peaks
 -- (21) on continent 1; Glimmer Bay (16521), on another map, stands for Crystal Lake (18). Riverglades (16200) and
--- Duskwood Glade (30001, 30002) are named by the client but aren't in the slice.
+-- Duskwood Glade (30001, 30002) are named by the client but aren't in the slice. The Eventide (17824) is nested: its
+-- parent is Dalaran (279), whose parent is Alterac Mountains (36) on continent 0. Dreambound Pinnacle (17845) has a
+-- parent (16597) missing from the slice, as in areas.csv; Mirror Pool (30010) and Mirror Hollow (30011) are each
+-- other's parent.
 local function slice()
 	local function area(parent, continent)
 		return { parent = parent, continent = continent, hasData = false, skillBaseConfirmed = false, catches = {} }
@@ -38,11 +47,17 @@ local function slice()
 			[18] = area(12, 0),
 			[20] = area(0, 0),
 			[21] = area(0, 1),
+			[36] = area(0, 0),
 			[148] = area(0, 1),
+			[279] = area(36, 0),
 			[453] = area(148, 1),
 			[454] = area(148, 1),
 			[455] = area(17, 1),
 			[16521] = area(0, 0),
+			[17824] = area(279, 0),
+			[17845] = area(16597, 1),
+			[30010] = area(30011, 1),
+			[30011] = area(30010, 1),
 		},
 		aliases = { [16521] = 18 },
 		pools = {},
@@ -138,6 +153,25 @@ describe("ns.ResolveAreas", function()
 		assert.are.same(
 			{ 17, 0, { zone = "The Barrens", subzone = "The Long Wash" } },
 			{ resolve("The Barrens", "The Long Wash", KALIMDOR) }
+		)
+	end)
+
+	it("resolves a subzone whose parent chain reaches the zone (LOG-R22)", function()
+		assert.are.same({ 36, 17824 }, { resolve("Alterac Mountains", "The Eventide", EASTERN_KINGDOMS) })
+		assert.are.same({ 36, 279 }, { resolve("Alterac Mountains", "Dalaran", EASTERN_KINGDOMS) })
+	end)
+
+	it("gives 0 for a subzone whose parent is missing from the slice (LOG-R22)", function()
+		assert.are.same(
+			{ 148, 0, { zone = "Darkshore", subzone = "Dreambound Pinnacle" } },
+			{ resolve("Darkshore", "Dreambound Pinnacle", KALIMDOR) }
+		)
+	end)
+
+	it("gives 0 for a subzone in a parent cycle, and the walk ends (LOG-R22)", function()
+		assert.are.same(
+			{ 148, 0, { zone = "Darkshore", subzone = "Mirror Pool" } },
+			{ resolve("Darkshore", "Mirror Pool", KALIMDOR) }
 		)
 	end)
 

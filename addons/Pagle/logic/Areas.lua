@@ -36,7 +36,7 @@ end
 -- name's only ID; otherwise 0.
 ---@param ids integer[]?
 ---@param catalogue PagleCatalogue
----@param fits fun(area: PagleArea): boolean
+---@param fits fun(area: PagleArea, areaID: integer): boolean
 ---@return integer
 local function pick(ids, catalogue, fits)
 	if not ids then
@@ -47,7 +47,7 @@ local function pick(ids, catalogue, fits)
 		local area = catalogue.GetArea(areaID)
 		if area then
 			inSlice = true
-			if fits(area) then
+			if fits(area, areaID) then
 				found, fitting = areaID, fitting + 1
 			end
 		end
@@ -82,8 +82,9 @@ function ns.ResolveAreas(index, catalogue, zoneText, subzoneText, continent)
 
 	local subzone, subzoneUnresolved = 0, false
 	if subzoneText and subzoneText ~= "" and subzoneText ~= zoneText then
-		subzone = pick(index[subzoneText], catalogue, function(area)
-			return zone ~= 0 and area.parent == zone
+		-- GetZoneOf walks up the parents to the zone; a missing parent or a cycle gives nil, so the ID doesn't fit.
+		subzone = pick(index[subzoneText], catalogue, function(_, areaID)
+			return zone ~= 0 and catalogue.GetZoneOf(areaID) == zone
 		end)
 		subzoneUnresolved = subzone == 0
 	end

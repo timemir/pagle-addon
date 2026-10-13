@@ -68,7 +68,7 @@ Part of [Core](README.md). This file covers what Core observes, how it is stored
 - **LOG-R21** Weather and pools are not recorded. Pools have no runtime ID; weather waits for launch re-verification. Either may be added later as a new field (LOG-R17).
 - **LOG-R22** The zone areaID comes from `GetRealZoneText()` and the subzone areaID from `GetSubZoneText()`, through the runtime area index (LOG-R23), which gives every areaID with that name in the client's language:
   - **Zone:** of those IDs, the ones in the catalogue's AreaTable slice with no parent zone and the current instance's continent. If exactly one remains, it's used. If none is in the slice and the name has exactly one ID, that ID is used. Otherwise `0`.
-  - **Subzone:** an empty subzone text, or one equal to the zone text, gives `0`. Otherwise, of the name's IDs, the ones in the slice whose parent is the resolved zone; then as for zones.
+  - **Subzone:** an empty subzone text, or one equal to the zone text, gives `0`. Otherwise, of the name's IDs, the ones in the slice whose parent chain, walked up until it reaches a zone, reaches the resolved zone; then as for zones. A parent missing from the slice or a cycle in the chain ends the walk, and that ID doesn't count.
   - The resolved ID is then mapped through the catalogue's alias table (an area on another map that stands for a baseline fishing area, e.g. 16521 → 18).
   - An unresolved name gives `0`, and the text goes to the diagnostics buffer (LOG-R81).
 - **LOG-R23** The **runtime area index** maps the names `C_Map.GetAreaInfo(id)` returns for ids 1 to 40,000 to their IDs, built once per login (about 15 ms on the beta). It is the only source of area names; the catalogue ships none.
