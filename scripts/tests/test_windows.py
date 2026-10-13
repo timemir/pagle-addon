@@ -173,6 +173,14 @@ def test_a_bad_windows_toml_entry_fails(tmp_path: Path, entry: str, problem: str
     assert problems(write_tree(tmp_path, WINDOWS + entry)) == [problem]
 
 
+def test_an_unknown_top_level_key_in_windows_toml_fails(tmp_path: Path) -> None:
+    # DATA-R63: an unknown key in any TOML file under data/ fails; windows.toml holds only [window.<id>] tables
+    # (#96's audit found its top level untested).
+    assert problems(write_tree(tmp_path, 'colour = "red"\n' + WINDOWS)) == [
+        "data/forever/windows.toml: unknown key 'colour'"
+    ]
+
+
 def daily(start: str, length: int) -> BaselineEvent:
     return BaselineEvent(48, start, 1440, length, "a daily event")
 

@@ -10,7 +10,7 @@ from collections.abc import Collection, Iterator, Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from pagle_data.baseline import AREA_LOOT, BaselineLayer
+from pagle_data.baseline import AREA_LOOT, AreaLoot, BaselineLayer
 from pagle_data.confirmed import Confirmation, Required, UngatedPair, observed_pairs, zone_of
 from pagle_data.db2 import Area
 from pagle_data.errors import At, Problems
@@ -153,12 +153,14 @@ class Catch:
 
 @dataclass(frozen=True)
 class CatchLists:
-    """Every non-empty catch list by area, each sorted by item ID (DATA-R26), the skill bases (DATA-R30), and the
-    observed pairs that joined ungated though their item is gated elsewhere (a DATA-R47 warning)."""
+    """Every non-empty catch list by area, each sorted by item ID (DATA-R26), the skill bases (DATA-R30), the
+    observed pairs that joined ungated though their item is gated elsewhere (a DATA-R47 warning), and what each
+    layer did to each (area, item) in DATA-R26's steps, in order (for --explain, DATA-R60)."""
 
     lists: dict[int, list[Catch]] = field(default_factory=dict)
     skill_bases: dict[int, int] = field(default_factory=dict)
     ungated: list[UngatedPair] = field(default_factory=list)
+    history: dict[int, dict[int, list[str]]] = field(default_factory=dict)
 
     def windows(self) -> dict[int, dict[int, str | None]]:
         """Each list as {item: its gate's window ID, None when ungated}."""
@@ -169,18 +171,38 @@ class CatchLists:
         return set(self.lists)
 
 
-def _baseline_rows(baseline: BaselineLayer) -> dict[int, dict[int, list[int | None]]]:
-    """Each area's items and the event of each area-loot row that gives it, a reference row giving every item of
-    its table (DATA-R26 step 1)."""
+def _baseline_rows(baseline: BaselineLayer) -> dict[int, dict[int, list[AreaLoot]]]:
+    """Each area's items and each area-loot row that gives it, a reference row giving every item of its table
+    (DATA-R26 step 1)."""
     tables: dict[int, list[int]] = {}
     for reference in baseline.reference_loot:
         tables.setdefault(reference.ref, []).append(reference.item)
-    rows: dict[int, dict[int, list[int | None]]] = {}
+    rows: dict[int, dict[int, list[AreaLoot]]] = {}
     for row in baseline.area_loot:
         items = [row.item] if row.item is not None else tables.get(row.ref, []) if row.ref is not None else []
         for item in items:
-            rows.setdefault(row.area, {}).setdefault(item, []).append(row.event)
+            rows.setdefault(row.area, {}).setdefault(item, []).append(row)
     return rows
+
+
+def _listed_by(rows: list[AreaLoot]) -> str:
+    """How area_loot.csv lists an item in an area, for --explain: directly, through reference tables, or both."""
+    refs = ", ".join(str(ref) for ref in sorted({row.ref for row in rows if row.item is None and row.ref is not None}))
+    if not refs:
+        return f"{AREA_LOOT} lists it"
+    if any(row.item is not None for row in rows):
+        return f"{AREA_LOOT} lists it, also through reference table {refs}"
+    return f"{AREA_LOOT} lists it through reference table {refs}"
+
+
+def _leaves(record: Record | None) -> str | None:
+    """Why an item leaves every list in DATA-R26 step 4, or None when it stays: an item outside the shipped records
+    is uncharted (DATA-R18)."""
+    if record is None:
+        return "uncharted"
+    if record.get("removed") is True:
+        return "removed"
+    return "Noise" if record.get("noise") is True else None
 
 
 def _noise(items: Mapping[int, Record], item: int) -> bool:
@@ -204,11 +226,18 @@ def build_catch_lists(
     into problems."""
     lists: dict[int, dict[int, str | None]] = {}
     conflicts: dict[tuple[int, int], list[str]] = {}
+    history: dict[int, dict[int, list[str]]] = {}
+
+    def did(area: int, item: int, step: str) -> None:
+        history.setdefault(area, {}).setdefault(item, []).append(step)
+
     # Step 1: the baseline's area loot, Noise left out. DATA-R29: a gate when every row maps to one window.
     for area, by_item in _baseline_rows(baseline).items():
-        for item, events in by_item.items():
+        for item, rows in by_item.items():
             if _noise(items, item):
+                did(area, item, f"{_listed_by(rows)}; Noise, left out")
                 continue
+            events = [row.event for row in rows]
             gate: str | None = None
             if all(event is not None for event in events):
                 found = set()
@@ -222,13 +251,18 @@ def build_catch_lists(
                     conflicts[(area, item)] = sorted(found)
                 gate = found.pop() if len(found) == 1 else None
             lists.setdefault(area, {})[item] = gate
+            gated = f", gated by {gate}" if gate is not None else ""
+            if (area, item) in conflicts:
+                gated = f", its rows map to different windows ({', '.join(conflicts[(area, item)])})"
+            did(area, item, _listed_by(rows) + gated)
 
     # Step 2: areas.toml's edits.
     for edit in layer.areas.values():
         if edit.area not in areas:
             problems.add(edit.at / "id", f"area {edit.area} isn't in data/db2/areas.csv")
         if edit.clear_baseline:
-            lists.pop(edit.area, None)
+            for item in lists.pop(edit.area, {}):
+                did(edit.area, item, f"{edit.at}: clearBaseline empties the baseline list")
             conflicts = {key: found for key, found in conflicts.items() if key[0] != edit.area}
     for catch in layer.catches:
         if catch.area not in areas:
@@ -236,6 +270,8 @@ def build_catch_lists(
         if catch.gate is not None and catch.gate != NO_GATE and catch.gate not in windows:
             problems.add(catch.at / "gate", f"'{catch.gate}' isn't a window ID (DATA-R35)")
         listed = lists.setdefault(catch.area, {})
+        edited = " removes it" if catch.op == "drop" else "" if catch.gate is None else f", gate {catch.gate}"
+        did(catch.area, catch.item, f"{catch.at}: {catch.op}{edited}")
         if catch.op == "drop":
             listed.pop(catch.item, None)
             conflicts.pop((catch.area, catch.item), None)
@@ -255,15 +291,18 @@ def build_catch_lists(
     pairs = observed_pairs(lists, areas, observations, items, required)
     for (area, item), window in pairs.joins.items():
         lists.setdefault(area, {})[item] = window
+        did(area, item, "observed pair (DATA-R47), " + (f"gated by {window}" if window is not None else "ungated"))
 
     # Step 4: removed, Noise and uncharted items leave; an item outside the shipped records is uncharted.
     built: dict[int, list[Catch]] = {}
     for area, listed in sorted(lists.items()):
-        kept = [
-            Catch(item, window)
-            for item, window in sorted(listed.items())
-            if (record := items.get(item)) is not None and record.get("removed") is not True and not _noise(items, item)
-        ]
+        kept: list[Catch] = []
+        for item, window in sorted(listed.items()):
+            left = _leaves(items.get(item))
+            if left is None:
+                kept.append(Catch(item, window))
+            else:
+                did(area, item, f"{left}, left out")
         if kept:
             built[area] = kept
 
@@ -272,7 +311,7 @@ def build_catch_lists(
     for edit in layer.areas.values():
         if edit.skill_base is not None:
             skill_bases[edit.area] = edit.skill_base
-    return CatchLists(built, skill_bases, pairs.ungated)
+    return CatchLists(built, skill_bases, pairs.ungated, history)
 
 
 def area_records(

@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from pagle_data.aliases import Proposal, check_aliases, propose
-from pagle_data.areas import CatchLists, area_records, build_catch_lists, read_areas_toml
+from pagle_data.areas import AreaLayer, CatchLists, area_records, build_catch_lists, read_areas_toml
 from pagle_data.baseline import BASELINE, AreaLoot, BaselineLayer, Pool, conditional_rows, read_baseline
 from pagle_data.catalogue import Catalogue, Event, fingerprint
 from pagle_data.checks import read_checks
@@ -13,9 +13,16 @@ from pagle_data.confirmed import Confirmation, UngatedPair, check_removed, confi
 from pagle_data.db2 import DB2, Db2Layer, read_db2
 from pagle_data.errors import At, DataError, Problems
 from pagle_data.forever import ForeverLayer, read_forever
-from pagle_data.items import ITEMS_TOML, Record, item_records, read_item_layer
+from pagle_data.items import ITEMS_TOML, ItemLayer, Record, item_records, read_item_layer
 from pagle_data.lua import to_lua
-from pagle_data.observed import OBSERVED, ObservedLayer, Observations, observations, read_observed
+from pagle_data.observed import (
+    MINIMUM_CONFIRMING_BUILD,
+    OBSERVED,
+    ObservedLayer,
+    Observations,
+    observations,
+    read_observed,
+)
 from pagle_data.pools import POOLS_TOML, PoolType, build_pools, pool_items, read_pools_toml, ungrouped, with_pool_flags
 from pagle_data.universe import AREAS_TOML, item_universe
 from pagle_data.windows import Spec, build_windows, catalogue_windows, local_lua, read_windows_toml
@@ -101,6 +108,8 @@ class Layers:
     pool_types: dict[str, PoolType]  # pools.toml's pool types by ID (DATA-R43)
     pools: dict[str, list[int]]  # each pool type's catches (DATA-R43)
     confirmation: Confirmation  # every confirmed flag (DATA-R48–R56)
+    item_layer: ItemLayer  # items.toml, species.toml and families.toml as read (DATA-R10)
+    area_layer: AreaLayer  # areas.toml as read (DATA-R10)
 
     def fishing_areas(self) -> set[int]:
         """The areas with a catch list (DATA-R32)."""
@@ -132,8 +141,10 @@ class Layers:
         return ungrouped(self.pool_types, self.baseline)
 
 
-def read_layers(root: Path) -> Layers:
-    """Every source layer under root/data/. Raises DataError listing every problem found (DATA-R63)."""
+def read_layers(root: Path, minimum_build: int = MINIMUM_CONFIRMING_BUILD) -> Layers:
+    """Every source layer under root/data/, with only observations on builds at or above minimum_build counting for
+    confirming (DATA-R46; --min-build asks what a higher one would lose, DATA-R57). Raises DataError listing every
+    problem found (DATA-R63)."""
     problems = Problems()
     # DATA-R9: a hand-edited baseline CSV fails, and nothing is built from a baseline that didn't read cleanly.
     baseline = read_baseline(root, problems)
@@ -169,7 +180,7 @@ def read_layers(root: Path) -> Layers:
         # areas missing from the slice stay out of the catalogue; DATA-R34: areas through the alias table.
         seen = observations(observed, {alias.source: alias.target for alias in forever.aliases})
         check_removed(seen, item_layer.items, problems)  # DATA-R23
-        counting = seen.confirming().within(db2.areas)
+        counting = seen.confirming(minimum_build).within(db2.areas)
         required = required_reporters(baseline, items)  # DATA-R49
         catch_lists = build_catch_lists(
             baseline, area_layer, items, windows.keys(), db2.areas, counting, required, problems
@@ -188,12 +199,25 @@ def read_layers(root: Path) -> Layers:
         )
     if problems:
         raise DataError(problems.found)
-    return Layers(baseline, forever, db2, windows, observed, items, catch_lists, pool_types, pools, confirmation)
+    return Layers(
+        baseline,
+        forever,
+        db2,
+        windows,
+        observed,
+        items,
+        catch_lists,
+        pool_types,
+        pools,
+        confirmation,
+        item_layer,
+        area_layer,
+    )
 
 
-def outputs(layers: Layers) -> dict[str, str]:
-    """Every generated file's path (relative to the repo root) and content."""
-    catalogue = build_catalogue(
+def catalogue_of(layers: Layers) -> Catalogue:
+    """The catalogue the layers give (DATA-R76)."""
+    return build_catalogue(
         layers.forever,
         layers.db2,
         layers.windows,
@@ -202,7 +226,11 @@ def outputs(layers: Layers) -> dict[str, str]:
         layers.pools,
         layers.confirmation,
     )
-    return {CATALOGUE_LUA: catalogue_lua(catalogue)}
+
+
+def outputs(layers: Layers) -> dict[str, str]:
+    """Every generated file's path (relative to the repo root) and content."""
+    return {CATALOGUE_LUA: catalogue_lua(catalogue_of(layers))}
 
 
 def generate(root: Path) -> dict[str, str]:
