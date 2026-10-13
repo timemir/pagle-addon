@@ -257,10 +257,24 @@ local function show(card)
 	frame.scroll:SetHeight(math.max(1, listHeight))
 	frame:SetHeight(40 + (numbers and 54 or 0) + listHeight + 56)
 	frame:Show()
+	-- A Session summary showing ends the compartment's waiting count (ANN-R42).
+	if numbers then
+		ns.summary:SummaryShown()
+	end
+end
+
+-- logic/Cards.lua's hide, for the combat hold (ANN-R35): off screen without closing it, so it shows again after.
+---@param card PagleCard
+local function hide(card)
+	local frame = ns.cardFrame
+	if frame and frame.card == card then
+		frame.card = nil
+		frame:Hide()
+	end
 end
 
 --- Core's cards (ANN-R21, ANN-R54, ANN-R61): they wait for the projections' idle hook from load, then show whenever
---- the toast and big lanes are empty.
+--- the toast and big lanes are empty and not held through combat (ANN-R55).
 ---@type PagleCards
 ns.cards = ns.NewCards({
 	global = function()
@@ -278,10 +292,14 @@ ns.cards = ns.NewCards({
 	lanesEmpty = function()
 		return ns.lanes:IsEmpty()
 	end,
+	held = function()
+		return ns.lanes:IsHeld()
+	end,
 	cozy = function()
 		return ns.db.profile.announcements.cozy
 	end,
 	show = show,
+	hide = hide,
 })
 ns.cards:Start()
 

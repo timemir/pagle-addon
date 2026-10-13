@@ -37,9 +37,11 @@ local function raised(module, fields)
 end
 
 -- A summary over `world`: `world.global` is PagleDB.global, `world.open` whether a Session is open,
--- `world.modules` the registered Modules, by order, and `world.cozy` the player's Cozy mode.
+-- `world.modules` the registered Modules, by order, `world.cozy` the player's Cozy mode and `world.serverTime` the
+-- server time. `world.waiting` is each waiting count the summary reported, in order.
 local function newWorld()
-	local world = { global = {}, open = true, modules = { LEDGER, HUNTS }, cozy = false }
+	local world =
+		{ global = {}, open = true, modules = { LEDGER, HUNTS }, cozy = false, serverTime = SERVER_TIME, waiting = {} }
 	world.summary = ns.NewSummary({
 		global = function()
 			return world.global
@@ -52,6 +54,12 @@ local function newWorld()
 		end,
 		cozy = function()
 			return world.cozy
+		end,
+		serverTime = function()
+			return world.serverTime
+		end,
+		waitingChanged = function(count)
+			world.waiting[#world.waiting + 1] = count
 		end,
 	})
 	return world
@@ -384,4 +392,65 @@ describe("the Session summary", function()
 			assert.are.same({ section }, world.global.writeUp)
 		end
 	)
+end)
+
+describe("expiry on a card", function()
+	it("marks each moment expired by the time the card is made, which shows its pastText (ANN-R45, ANN-R53)", function()
+		local world = newWorld()
+		world.summary:Add(raised(HUNTS, {
+			rung = "nod",
+			kind = "windowOpened",
+			title = "Nightfin window open",
+			expiresAt = SERVER_TIME + 60,
+			pastText = "Nightfin window opened 21:00–06:00",
+		}))
+		world.summary:Add(raised(HUNTS, {
+			rung = "nod",
+			kind = "windowOpened",
+			title = "Sagefish window open",
+			expiresAt = SERVER_TIME + 61,
+		}))
+		world.summary:Add(raised(HUNTS, { rung = "toast.high", kind = "huntCompleted", title = "Hunt completed" }))
+		world.serverTime = SERVER_TIME + 60
+
+		local card = world.summary:Ended(SESSION)
+
+		local expired = {}
+		for i, moment in ipairs(card.moments[1].moments) do
+			expired[i] = { moment.title, moment.expired == true }
+		end
+		assert.are.same({
+			{ "Hunt completed", false },
+			{ "Nightfin window open", true },
+			{ "Sagefish window open", false },
+		}, expired)
+	end)
+end)
+
+describe("the waiting count", function()
+	it("counts each moment kept while Cozy mode is on, and only those (ANN-R42, CORE-R51)", function()
+		local world = newWorld()
+		world.summary:Add(raised(LEDGER, { rung = "toast", kind = "newSpecies", title = "New Species" }))
+		world.cozy = true
+		world.summary:Add(raised(LEDGER, { rung = "toast", kind = "newSpecies", title = "New Species" }))
+		world.open = false
+		world.summary:Add(raised(LEDGER, { rung = "banner", kind = "levelUp", title = "Level 12" }))
+
+		assert.are.equal(2, world.summary:Waiting())
+		assert.are.same({ 1, 2 }, world.waiting)
+	end)
+
+	it("resets when a Session summary shows, and not when Cozy mode is turned off (ANN-R42)", function()
+		local world = newWorld()
+		world.cozy = true
+		world.summary:Add(raised(LEDGER, { rung = "toast", kind = "newSpecies", title = "New Species" }))
+		world.cozy = false
+		assert.are.equal(1, world.summary:Waiting())
+
+		world.summary:SummaryShown()
+		world.summary:SummaryShown()
+
+		assert.are.equal(0, world.summary:Waiting())
+		assert.are.same({ 1, 0 }, world.waiting)
+	end)
 end)

@@ -12,6 +12,11 @@ end
 -- playing the sounds with PlaySoundFile on the SFX channel (ANN-R73). The look follows prototypes/catch-feedback/
 -- (variant A).
 local L = ns.L
+---@class Pagle
+local Pagle = Pagle
+
+-- Its own owner on Core's bus, so no other Core file's registration replaces its RestrictionChanged listener.
+local OWNER = "Pagle announcements"
 
 -- Timber, the free default toast style (ANN-R80): dark planks with a worn brass edge, gold headings, and stamps
 -- coloured like the prototype's. Only Timber exists in M2; the other styles come as Curio Shop goods (M4).
@@ -396,12 +401,22 @@ local function draw(frame, display)
 	frame.text:SetText(headline.text or "")
 	local stamps = fillStamps(frame, announcement)
 	local form = display.form
+	-- "While you were fighting" lists each held toast's headline, a line each (ANN-R36).
+	local lines = 0
+	if announcement.fighting then
+		local list = {}
+		for i, held in ipairs(announcement.fighting) do
+			list[i] = held.text and L.ANNOUNCEMENT_FIGHTING_LINE:format(held.title, held.text) or held.title
+		end
+		frame.text:SetText(table.concat(list, "\n"))
+		lines = #list - 1
+	end
 	if form == "toast" then
 		rowRight(stamps, "TOPLEFT", frame, "TOPRIGHT", 8 - rowWidth(stamps), 10)
 		local more = frame.more --[[@as FontString]]
 		more:SetText(L.ANNOUNCEMENT_MORE:format(display.overflow))
 		more:SetShown(display.overflow > 0)
-		frame:SetHeight(64 + (headline.ruler and 40 or 0) + (display.overflow > 0 and 14 or 0))
+		frame:SetHeight(64 + lines * 14 + (headline.ruler and 40 or 0) + (display.overflow > 0 and 14 or 0))
 	elseif form == "nod" then
 		rowRight(stamps, "LEFT", headline.ruler and frame.ruler or frame.text, "RIGHT", 8, 0)
 	else
@@ -449,6 +464,12 @@ ns.lanes = ns.NewLanes({
 	budget = function()
 		return ns.db.profile.announcements.budget
 	end,
+	cozy = function()
+		return ns.db.profile.announcements.cozy
+	end,
+	serverTime = function()
+		return GetServerTime()
+	end,
 	-- Driftwood, the only set in M2 (ANN-R72); the Sound set slot comes with the Curio Shop (M4).
 	soundSet = function()
 		return ns.SOUND_SETS.driftwood
@@ -463,3 +484,18 @@ ns.lanes = ns.NewLanes({
 		ns.cards:Next()
 	end,
 })
+
+-- The combat hold (ANN-R35, ANN-R36): a restriction holds the lanes and takes the card on screen off it; its end
+-- starts the wait after which they show what they held, then the cards. A load while restricted (a /reload in
+-- combat) starts held: RestrictionChanged never fires for the starting state (CORE-R30).
+if Pagle.IsRestricted() then
+	ns.lanes:Hold()
+end
+Pagle.RegisterCallback(OWNER, "RestrictionChanged", function(_, isRestricted)
+	if isRestricted then
+		ns.lanes:Hold()
+		ns.cards:Hold()
+	else
+		ns.lanes:Release()
+	end
+end)

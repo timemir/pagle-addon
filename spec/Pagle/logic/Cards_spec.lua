@@ -8,7 +8,8 @@ local HUNTS = { def = { name = "Hunts", title = "Hunts", order = 20 } }
 
 -- Cards over `world`: `world.global` is PagleDB.global; `world.updating` whether a projection is updating, and
 -- `world.idle()` its end, running the WhenIdle hooks; `world.frame()` runs the next frame; `world.mode` the apply in
--- progress; `world.lanesEmpty` and `world.cozy` the lanes' state and Cozy mode. `world.shown` is every card shown.
+-- progress; `world.lanesEmpty`, `world.held` and `world.cozy` the lanes' state, their combat hold and Cozy mode.
+-- `world.shown` is every card shown and `world.hidden` every card the hold took off screen.
 local function newWorld()
 	local world = {
 		global = { cards = {}, writeUp = {} },
@@ -16,8 +17,10 @@ local function newWorld()
 		hooks = {},
 		frames = {},
 		lanesEmpty = true,
+		held = false,
 		cozy = false,
 		shown = {},
+		hidden = {},
 	}
 	function world.idle()
 		world.updating = false
@@ -52,11 +55,17 @@ local function newWorld()
 		lanesEmpty = function()
 			return world.lanesEmpty
 		end,
+		held = function()
+			return world.held
+		end,
 		cozy = function()
 			return world.cozy
 		end,
 		show = function(card)
 			world.shown[#world.shown + 1] = card
+		end,
+		hide = function(card)
+			world.hidden[#world.hidden + 1] = card
 		end,
 	})
 	world.cards:Start()
@@ -189,6 +198,38 @@ describe("when cards show", function()
 		assert.are.same({ "Fishing session" }, titles(world))
 		assert.are.same({ section }, world.global.writeUp)
 	end)
+
+	it("holds cards through combat: none shows while the lanes are held (ANN-R35, ANN-R55)", function()
+		local world = newWorld()
+		world.global.cards = { card("Fishing session") }
+		world.held = true
+		settle(world)
+		assert.are.same({}, world.shown)
+
+		world.held = false
+		world.cards:Next()
+
+		assert.are.same({ "Fishing session" }, titles(world))
+	end)
+
+	it(
+		"takes the card on screen off it when combat starts, keeping it to show again after (ANN-R35, ANN-R36)",
+		function()
+			local world = newWorld()
+			world.global.cards = { card("First"), card("Second") }
+			settle(world)
+
+			world.held = true
+			world.cards:Hold()
+			assert.are.same({ "First" }, titles({ shown = world.hidden }))
+			world.cards:Close(world.shown[1])
+			assert.are.equal(2, #world.global.cards)
+			world.held = false
+			world.cards:Next()
+
+			assert.are.same({ "First", "First" }, titles(world))
+		end
+	)
 
 	it("ignores closing a card that isn't the one showing", function()
 		local world = newWorld()
@@ -339,6 +380,37 @@ describe("a card's rows", function()
 		}, format)
 
 		assert.are.same({ { kind = "heading", text = "Hunts" }, { kind = "moment", text = "Hunt completed" } }, rows)
+	end)
+
+	it("show an expired moment's pastText, or its title if it has none (ANN-R45)", function()
+		local rows = ns.CardRows({
+			coins = 0,
+			lines = {},
+			moments = {
+				{
+					module = "Hunts",
+					title = "Hunts",
+					order = 20,
+					moments = {
+						{
+							title = "Nightfin window open",
+							text = "21:00–06:00",
+							pastText = "Nightfin window opened 21:00–06:00",
+							expired = true,
+						},
+						{ title = "Sagefish window open", text = "Until 12:00", expired = true },
+						{ title = "Hunt completed", pastText = "Unused" },
+					},
+				},
+			},
+		}, format)
+
+		assert.are.same({
+			{ kind = "heading", text = "Hunts" },
+			{ kind = "moment", text = "Nightfin window opened 21:00–06:00" },
+			{ kind = "moment", text = "Sagefish window open", detail = "Until 12:00" },
+			{ kind = "moment", text = "Hunt completed" },
+		}, rows)
 	end)
 end)
 

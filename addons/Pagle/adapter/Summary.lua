@@ -31,6 +31,13 @@ ns.summary = ns.NewSummary({
 	cozy = function()
 		return ns.db.profile.announcements.cozy
 	end,
+	serverTime = function()
+		return GetServerTime()
+	end,
+	-- The compartment entry's label shows the count (CORE-R51): adapter/Menu.lua's, looked up when called.
+	waitingChanged = function()
+		ns.UpdateCompartmentText()
+	end,
 })
 
 -- ANN-R52: moments raised with no Session open join the one that starts.

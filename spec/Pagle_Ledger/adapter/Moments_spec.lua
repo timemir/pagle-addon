@@ -41,10 +41,9 @@ local function loot(...)
 	return items
 end
 
--- A FakePagle with `history` (Cast records) in its log and `saved` as PagleLedgerDB's global section, the Ledger
--- loaded on it, logged in and in the world: every live Cast after this is fished in Darkshore (148), fake.conditions'
--- zone. The log's logId is LOG_ID. The fake client has no strlenutf8, which AceDB reads to check saved profile keys,
--- so only `global` is saved.
+-- A FakePagle with `history` (Cast records) in its log and `saved` as PagleLedgerDB, the Ledger loaded on it,
+-- logged in and in the world: every live Cast after this is fished in Darkshore (148), fake.conditions' zone. The
+-- log's logId is LOG_ID.
 ---@param history table[]?
 ---@param saved table?
 ---@param extra table? more client globals for the Ledger's load
@@ -58,7 +57,7 @@ local function session(history, saved, extra)
 		fake.catchLog:Append(record)
 	end
 	if saved then
-		fake.globals.PagleLedgerDB = { global = saved }
+		fake.globals.PagleLedgerDB = saved
 	end
 	fake.globals.C_Item = {
 		GetItemNameByID = function(itemID)
@@ -249,7 +248,7 @@ describe("the Ledger's live moments", function()
 				levels = { [0] = 2 },
 				logId = LOG_ID,
 			}
-			local fake = session(nil, { celebrated = celebrated })
+			local fake = session(nil, { global = { celebrated = celebrated } })
 
 			fake.readSkill(80, 150, 0)
 			fake.playCast("caught", loot(MACKEREL))
@@ -263,7 +262,8 @@ describe("the Ledger's live moments", function()
 	it(
 		"use the celebrated level when above the computed one, raising no level at or below it (LED-R36, LED-R92)",
 		function()
-			local fake, loaded = session(nil, { celebrated = { coins = 0, levels = { [0] = 9 }, logId = LOG_ID } })
+			local fake, loaded =
+				session(nil, { global = { celebrated = { coins = 0, levels = { [0] = 9 }, logId = LOG_ID } } })
 
 			fake.playCast("caught", loot(unpack(FOUR)))
 
@@ -282,7 +282,8 @@ describe("the Ledger's live moments", function()
 	)
 
 	it("pay a levelUp only the levels above the celebrated one (LED-R97)", function()
-		local fake, loaded = session(nil, { celebrated = { coins = 0, levels = { [0] = 2 }, logId = LOG_ID } })
+		local fake, loaded =
+			session(nil, { global = { celebrated = { coins = 0, levels = { [0] = 2 }, logId = LOG_ID } } })
 
 		fake.playCast("caught", loot(unpack(FOUR)))
 
@@ -314,7 +315,7 @@ describe("the Ledger's live moments", function()
 	it("celebrate again what a crash lost with its Casts (LED-R194)", function()
 		local history = { cast(T0, ELWYNN, { SMALLFISH }) }
 		local fake, loaded = session(history)
-		local lastSaved = copy(loaded.env.PagleLedgerDB.global)
+		local lastSaved = copy(loaded.env.PagleLedgerDB)
 		fake.playCast("caught", loot(MACKEREL))
 		local celebrated = momentsOf(shown(fake)[1])
 		assert.are.same({

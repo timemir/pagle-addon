@@ -36,8 +36,7 @@ local HISTORY = {
 }
 
 -- A FakePagle over `log` (a PagleLog table, shared between sessions as the saved one is) with `history` appended
--- before login, and `saved` as PagleLedgerDB's global section: the Ledger loaded, logged in and in the world. The fake
--- client has no strlenutf8, which AceDB reads to check saved profile keys, so only `global` is saved.
+-- before login, and `saved` as PagleLedgerDB: the Ledger loaded, logged in and in the world.
 ---@param options { log: table?, history: table[]?, saved: table?, prepare: fun(fake: FakePagle)? }
 ---@return FakePagle fake
 ---@return LoadedAddon loaded
@@ -51,7 +50,7 @@ local function session(options)
 		fake.catchLog:Append(record)
 	end
 	if options.saved then
-		fake.globals.PagleLedgerDB = { global = options.saved }
+		fake.globals.PagleLedgerDB = options.saved
 	end
 	fake.globals.C_Item = {
 		GetItemNameByID = function(itemID)
@@ -123,9 +122,9 @@ describe("the Ledger's done", function()
 		"empties the celebrated set of another logId and handles the done as a first build (LED-R90, LED-R197)",
 		function()
 			local _, lastLoaded = session({ history = { cast(T0, WESTFALL, { OILY }) } })
-			local saved = lastLoaded.env.PagleLedgerDB.global
-			saved.celebrated.levels[0] = 9
-			local oldLogId = saved.celebrated.logId
+			local saved = lastLoaded.env.PagleLedgerDB
+			saved.global.celebrated.levels[0] = 9
+			local oldLogId = saved.global.celebrated.logId
 
 			-- A new log (LOG-R18): its own logId, so Core rebuilds a projection that isn't new (no info.firstBuild).
 			local fake, loaded = session({ history = HISTORY, saved = saved })
@@ -152,7 +151,7 @@ describe("the Ledger's done", function()
 		return session({
 			log = last.catchLog.data,
 			history = between,
-			saved = lastLoaded.env.PagleLedgerDB.global,
+			saved = lastLoaded.env.PagleLedgerDB,
 			prepare = prepare,
 		})
 	end
@@ -258,7 +257,7 @@ describe("the Ledger's done", function()
 	it("empties the set for a new, empty log, raising nothing: its achievements celebrate afresh (LED-R197)", function()
 		local _, lastLoaded = session({ history = HISTORY })
 
-		local fake, loaded = session({ saved = lastLoaded.env.PagleLedgerDB.global })
+		local fake, loaded = session({ saved = lastLoaded.env.PagleLedgerDB })
 		fake.playCast("caught", { { itemID = MACKEREL, quantity = 1 } })
 
 		assert.are.same({}, fake.writeUps)

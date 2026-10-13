@@ -99,8 +99,7 @@ local function nextSession(last, lastLoaded, between)
 	for i = 1, between do
 		fake.catchLog:Append(cast(T0 + 600 + i, WESTFALL, { SMALLFISH }))
 	end
-	-- Its global section; the fake client has no strlenutf8, which AceDB reads to check saved profile keys.
-	fake.globals.PagleLedgerDB = { global = lastLoaded.env.PagleLedgerDB.global }
+	fake.globals.PagleLedgerDB = lastLoaded.env.PagleLedgerDB
 	return fake
 end
 
@@ -236,7 +235,7 @@ describe("the Ledger's projection", function()
 			for i = 1, 6 do -- more entries than the other log's lastSeq (5), so only the logId tells them apart
 				fake.catchLog:Append(cast(T0 + 5000 + i, WESTFALL, { OILY }))
 			end
-			fake.globals.PagleLedgerDB = { global = otherLoaded.env.PagleLedgerDB.global }
+			fake.globals.PagleLedgerDB = otherLoaded.env.PagleLedgerDB
 			local loaded, applied = loadLedger(fake)
 
 			fake.login()
