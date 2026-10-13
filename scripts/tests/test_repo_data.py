@@ -1,8 +1,11 @@
-"""The repo's own data/forever/ holds the seeded lists the spec names."""
+"""The repo's own data/: data/forever/ holds the seeded lists the spec names, and data/db2/ the committed slice."""
 
+import re
 from pathlib import Path
 
+from pagle_data.db2 import Db2Layer, read_db2
 from pagle_data.forever import WeeklyRule, read_forever
+from pagle_data.generate import CATALOGUE_LUA, generate
 from pagle_data.toml_reader import Problems
 
 REPO = Path(__file__).resolve().parents[2]
@@ -23,3 +26,46 @@ def test_the_aura_and_fishing_spell_lists_hold_their_seeds() -> None:
     assert problems.found == []
     assert sorted(layer.auras) == [1265220, 1280341, 1280342, 1299323]
     assert sorted(layer.fishing_spells) == [7620, 7731, 7732, 18248, 1240948, 1240959, 1240970, 1240983]
+
+
+def _slice() -> Db2Layer:
+    problems = Problems()
+    layer = read_db2(REPO, problems)
+    assert problems.found == []
+    return layer
+
+
+def test_the_db2_slice_is_from_wago_tools_for_a_named_forever_build() -> None:
+    # DATA-R11, DATA-R12: build.toml names the one Forever build the slice describes, and the products searched,
+    # seeded with wow_classic_beta (DATA-R128). #56: the beta's 1.60.1.70338.
+    layer = _slice()
+    assert (layer.version, layer.build) == ("1.60.1", 70338)
+    assert layer.products == ["wow_classic_beta"]
+    # Forever's own zones are in the slice (DATA-R31 names them): Riverglades and Shen'dralas, for example.
+    assert layer.areas[16591].name == "Riverglades"
+    assert layer.areas[16651].name == "Shen'dralas"
+
+
+def test_the_committed_catalogue_holds_one_area_per_areas_csv_row() -> None:
+    # DATA-R25: the catalogue's areas are every row of areas.csv; DATA-R61: the committed file is what data/ gives.
+    layer = _slice()
+    outputs = generate(REPO)
+    committed = (REPO / CATALOGUE_LUA).read_text(encoding="utf-8")
+    assert committed == outputs[CATALOGUE_LUA]
+    area = (
+        r"^\t\t\[(\d+)\] = \{ catches = \{\}, continent = \d+, hasData = false, parent = \d+,"
+        r" skillBaseConfirmed = false \},$"
+    )
+    rows = re.findall(area, committed, flags=re.MULTILINE)
+    assert [int(area_id) for area_id in rows] == sorted(layer.areas)
+
+
+def test_no_name_from_areas_csv_appears_in_any_generated_file() -> None:
+    # DATA-R3: no area name from the game ships; the source layer keeps the enUS names, the generator never emits
+    # them. Every generated file, as generated and as committed.
+    names = {area.name for area in _slice().areas.values() if area.name}
+    assert len(names) > 1000
+    for path, text in generate(REPO).items():
+        for content in (text, (REPO / path).read_text(encoding="utf-8")):
+            leaked = sorted(name for name in names if name in content)
+            assert leaked == [], f"{path} holds area names {leaked}"
