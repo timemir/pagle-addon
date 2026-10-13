@@ -9,8 +9,9 @@
 # so commit first. (The packager also can't read a git worktree, whose .git is a file.)
 # Before the first tag, @project-version@ becomes the short commit hash.
 #
-# The check: the zip holds one top-level folder per addons/<Addon>/ folder (Pagle only, until the
-# Modules arrive), each holding exactly that folder's tracked files, plus the packager's
+# The check: the zip's top-level folders are exactly the addons/<Addon>/ folders (Pagle and Pagle_QoL
+# from M1; each later Module adds its own with its .pkgmeta move-folders line), each holding exactly
+# that folder's tracked files (Pagle_QoL's Bindings.xml among them), plus the packager's
 # Pagle/CHANGELOG.md and the repo's LICENSE and NOTICE in Pagle/. Nothing else: no docs/, spec/,
 # scripts/, probes/, prototypes/, no stray addons/ path and no empty folder.
 #
@@ -89,6 +90,15 @@ actual="$work/actual.txt"
 } | LC_ALL=C sort >"$expected"
 unzip -Z1 "$zipfile" | grep -v '/$' | LC_ALL=C sort >"$actual"
 
+# One top-level folder per addon: a Module without its move-folders line lands under Pagle/addons/ instead.
+want_tops=$(git -C "$src" ls-files -- 'addons/*' | cut -d/ -f2 | LC_ALL=C sort -u | paste -sd' ' -)
+got_tops=$(unzip -Z1 "$zipfile" | cut -d/ -f1 | LC_ALL=C sort -u | paste -sd' ' -)
+if [[ $got_tops != "$want_tops" ]]; then
+	echo "FAIL: the zip's top-level folders are '$got_tops', expected '$want_tops', one per addons/ folder" \
+		"(give each its .pkgmeta move-folders line)." >&2
+	exit 1
+fi
+
 if ! diff -u --label expected --label "$(basename "$zipfile")" "$expected" "$actual"; then
 	echo "FAIL: the zip's files differ from addons/ (see the diff above; fix .pkgmeta)." >&2
 	exit 1
@@ -109,4 +119,4 @@ if unzip -p "$zipfile" '*.toc' | grep -q '@project-version@'; then
 	exit 1
 fi
 
-echo "OK: $(basename "$zipfile") holds only $(cut -d/ -f1 "$actual" | sort -u | paste -sd' ' -)/, as built from addons/."
+echo "OK: $(basename "$zipfile") holds only ${got_tops// //, }/, as built from addons/."
