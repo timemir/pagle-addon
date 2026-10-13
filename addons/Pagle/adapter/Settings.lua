@@ -288,6 +288,9 @@ local function nativeRow(page, layout, setting, variable)
 		if not index then
 			error(("Pagle: no key binding %s for the setting %s"):format(setting.binding, setting.label))
 		end
+		-- The native row takes only the binding index and a search flag, and shows the binding's own name
+		-- (GetBindingName) with no tooltip: Blizzard_Keybindings.lua at the forever 1.60.1 commit (types/settings.lua).
+		-- So `setting.label` serves as a search tag only, and `setting.tooltip` isn't shown (SET-R20).
 		initializer = CreateKeybindingEntryInitializer(index, true)
 		initializer:AddSearchTags(setting.label)
 	else
