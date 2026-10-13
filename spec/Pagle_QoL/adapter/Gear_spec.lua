@@ -661,7 +661,7 @@ describe("Choosing the fishing set", function()
 	end)
 
 	describe("Save what I'm wearing as my fishing set", function()
-		it("creates Pagle Fishing from the gear worn, with no ignored slots, and chooses it (QOL-R41, QOL-R42)", function()
+		it("creates Pagle Fishing from the gear worn, with no ignored slots, and chooses it (QOL-R41)", function()
 			local fake, client, loaded = choosing(function(_, client)
 				client.mainHand = FISHING_POLE
 				client.worn[1] = HAT

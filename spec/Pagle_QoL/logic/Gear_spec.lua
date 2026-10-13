@@ -140,8 +140,9 @@ describe("QoL's gear logic", function()
 			assert.are.equal("nothing", ns.SwapGearAction(true, set({ isEquipped = true }), nil, false))
 		end)
 
-		it("does nothing with the set fully worn and a pole in Pagle Previous's main hand: it counts as absent (QOL-R46)", function()
-			assert.are.equal("nothing", ns.SwapGearAction(true, set({ isEquipped = true }), { hasPole = true }, false))
+		it("counts a Pagle Previous with a pole in its main hand as absent (QOL-R46)", function()
+			local polePrevious = { hasPole = true }
+			assert.are.equal("nothing", ns.SwapGearAction(true, set({ isEquipped = true }), polePrevious, false))
 		end)
 
 		it("swaps to the set while it is partly worn or not at all, with nothing missing (QOL-R46, QOL-R44)", function()
