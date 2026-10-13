@@ -17,11 +17,13 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      # The apt prerequisites scripts/setup.sh lists. ubuntu-latest ships them, so this usually installs nothing.
+      # The apt prerequisites of scripts/setup.sh, SETUP_APT_PACKAGES in scripts/tools.env. ubuntu-latest ships
+      # them, so this usually installs nothing.
       - name: Install setup prerequisites
         run: |
+          source scripts/tools.env
           missing=()
-          for pkg in build-essential unzip curl ca-certificates; do
+          for pkg in $SETUP_APT_PACKAGES; do
             dpkg -s "$pkg" >/dev/null 2>&1 || missing+=("$pkg")
           done
           if ((${#missing[@]})); then

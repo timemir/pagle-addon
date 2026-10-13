@@ -5,11 +5,8 @@
 #
 #   scripts/setup.sh
 #
-# Runs in WSL Ubuntu (or any x86_64 Linux) as a normal user. Its only prerequisites are these apt packages:
-#
-#   sudo apt-get install -y build-essential unzip curl ca-certificates
-#
-# (The Check workflow, .github/workflows/check.yml, installs the same list; keep the two in step.)
+# Runs in WSL Ubuntu (or any x86_64 Linux) as a normal user. Its only prerequisites are the apt packages
+# SETUP_APT_PACKAGES in scripts/tools.env, which the Check workflow (.github/workflows/check.yml) installs too.
 #
 # Layout:
 #   .tools/lua/       Lua 5.1, LuaRocks and the rocks (luacheck, busted, luacov)
@@ -30,7 +27,7 @@ for cmd in gcc make unzip curl tar sha256sum; do
 	command -v "$cmd" >/dev/null || missing+=("$cmd")
 done
 if ((${#missing[@]})); then
-	echo "setup: missing ${missing[*]}; run: sudo apt-get install -y build-essential unzip curl ca-certificates" >&2
+	echo "setup: missing ${missing[*]}; run: sudo apt-get install -y $SETUP_APT_PACKAGES" >&2
 	exit 1
 fi
 
