@@ -223,34 +223,68 @@ describe("The Fishing key in combat", function()
 	end)
 
 	describe("gear", function()
-		-- The client calls that change what the player wears. M1 has no gear code; Track Q's swap (QOL-R44) may
-		-- call one only on a press (QOL-R47), never because combat started or ended.
-		local GEAR_CALLS = {
+		local FISHING_POLE, SWORD = 6256, 25
+		local FISHING, PREVIOUS = 3, 5
+		local GEAR = "CLICK PagleQoLGearButton:LeftButton"
+		-- The client calls outside C_EquipmentSet that change what the player wears. C_EquipmentSet's are in the fake
+		-- client's equipmentSetCalls (spec/support/fake_game.lua).
+		local EQUIP_CALLS = {
 			"EquipItemByName",
 			"PickupInventoryItem",
 			"EquipCursorItem",
 			"AutoEquipCursorItem",
 			"UseInventoryItem",
-			"C_EquipmentSet.UseEquipmentSet",
 		}
 
-		it("is never swapped by combat, with the pole in hand or not (QOL-R34, QOL-R93)", function()
-			for _, mainHand in ipairs({ 6256, 25, false }) do
-				local fake, client, loaded = start()
-				client.mainHand = mainHand or nil
-				local called = {}
-				for _, name in ipairs(GEAR_CALLS) do
-					local namespace, field = name:match("^(.-)%.(.+)$")
-					local spy = function()
-						called[#called + 1] = name
-					end
-					if namespace then
-						loaded.env[namespace] = loaded.env[namespace] or {}
-						loaded.env[namespace][field] = spy
-					else
-						loaded.env[name] = spy
-					end
+		-- QoL with a swap to hand at every main hand: the set "Fishing" (a pole) chosen as the fishing set, and
+		-- Pagle Previous (a sword). With no pole in hand the gear step is ready and Swap gear would swap to the fishing
+		-- set; with the pole in hand the set is fully worn and Swap gear would swap back.
+		---@param mainHand integer?
+		---@return FakePagle fake
+		---@return FakeClient client
+		---@return LoadedAddon loaded
+		---@return string[] equipCalls the EQUIP_CALLS made, from now on
+		local function startWithSet(mainHand)
+			local fake = newFakePagle()
+			local loaded = fake.load("Pagle_QoL")
+			local client = loaded.client
+			client.boundKeys.PAGLE_FISHING_KEY = { "F" }
+			client.mainHand = mainHand
+			client.equipmentSets[FISHING] = { name = "Fishing", items = { [16] = FISHING_POLE } }
+			client.equipmentSets[PREVIOUS] = { name = "Pagle Previous", items = { [16] = SWORD } }
+			loaded.ns.db.global.gear[PLAYER_GUID] = { setID = FISHING, name = "Fishing" }
+			fake.login()
+			fake.fireGameEvent("PLAYER_LOGIN")
+			local equipCalls = {}
+			for _, name in ipairs(EQUIP_CALLS) do
+				loaded.env[name] = function()
+					equipCalls[#equipCalls + 1] = name
 				end
+			end
+			return fake, client, loaded, equipCalls
+		end
+
+		-- What the Fishing key arms with this main hand and nothing else going on.
+		---@param mainHand integer?
+		---@return string
+		local function armedWith(mainHand)
+			return mainHand == FISHING_POLE and CAST or GEAR
+		end
+
+		-- What Swap gear calls with this main hand, out of restriction (QOL-R44, QOL-R45).
+		---@param mainHand integer?
+		---@return string[]
+		local function swapGearCalls(mainHand)
+			if mainHand == FISHING_POLE then
+				return { "use " .. PREVIOUS }
+			end
+			return { "clear ignored", "save " .. PREVIOUS, "use " .. FISHING }
+		end
+
+		it("is never swapped by combat, with the pole in hand or not (QOL-R34, QOL-R47, QOL-R93)", function()
+			for _, mainHand in ipairs({ FISHING_POLE, SWORD, false }) do
+				local fake, client, loaded, equipCalls = startWithSet(mainHand or nil)
+				assert.are.equal(armedWith(mainHand or nil), client.overrideAction("F"))
 
 				fake.fire("CastStarted")
 				fake.fireGameEvent("PLAYER_REGEN_DISABLED")
@@ -264,10 +298,45 @@ describe("The Fishing key in combat", function()
 				fake.setRestricted(false)
 				client.update(1)
 
-				assert.are.same({}, called)
-				assert.are.equal(CAST, client.overrideAction("F"))
+				assert.are.same({}, equipCalls)
+				assert.are.same({}, client.equipmentSetCalls)
+				assert.are.equal(armedWith(mainHand or nil), client.overrideAction("F"))
 			end
 		end)
+
+		it(
+			"isn't swapped by a press while restricted, even one an override kept through lockdown sends (QOL-R34, QOL-R47)",
+			function()
+				for _, mainHand in ipairs({ FISHING_POLE, SWORD, false }) do
+					for _, window in ipairs({ "combat", "addon restriction" }) do
+						local fake, client, loaded, equipCalls = startWithSet(mainHand or nil)
+						if window == "combat" then
+							-- Lockdown came first, so the overrides stay until restriction ends (QOL-R31).
+							setLockdown(loaded, true)
+							fake.fireGameEvent("PLAYER_REGEN_DISABLED")
+							fake.setRestricted(true)
+							assert.are.equal(armedWith(mainHand or nil), client.overrideAction("F"))
+						else
+							fake.setRestricted(true)
+						end
+
+						-- The gear step's press as a kept override sends it, then Swap gear's Bindings.xml body.
+						loaded.env.PagleQoLGearButton:Click()
+						loaded.env.PagleQoL_SwapGear()
+						client.update(1)
+
+						assert.are.same({}, equipCalls)
+						assert.are.same({}, client.equipmentSetCalls)
+
+						-- Out of restriction, the same press swaps: the set-up above had a swap to hand.
+						setLockdown(loaded, false)
+						fake.setRestricted(false)
+						loaded.env.PagleQoL_SwapGear()
+						assert.are.same(swapGearCalls(mainHand or nil), client.equipmentSetCalls)
+					end
+				end
+			end
+		)
 	end)
 end)
 
