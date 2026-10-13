@@ -5,7 +5,7 @@ describe("QoL's Fishing key logic", function()
 	local ns = loadAddon("Pagle_QoL", FOREVER_GLOBALS).ns
 
 	describe("ns.NextAction", function()
-		-- Each row: the state, then the next action. Unlisted fields are false. Clams (step 5) come in Track Q step 6.
+		-- Each row: the state, then the next action. Unlisted fields are false.
 		local LADDER = {
 			-- Step 1: disarmed, a loot window open, or casting a spell with a cast time (QOL-R20, QOL-R28, QOL-R30).
 			{ "disarmed, idle", {}, "nothing" },
@@ -60,6 +60,36 @@ describe("QoL's Fishing key logic", function()
 				{ armed = true, gearReady = true, skipGear = true },
 				"cast",
 			},
+			-- Step 5: a clam available under Open clams between Casts (QOL-R55, QOL-R56), after the lure and before
+			-- the cast, never mid-channel, and with or without a pole (QOL-R23).
+			{ "a clam available, a lure on", { armed = true, poleInHand = true, lured = true, clam = 5524 }, "clam" },
+			{ "a clam available with no pole in hand", { armed = true, clam = 5524 }, "clam" },
+			{
+				"a clam and a lure available, no lure on: the lure goes on first",
+				{ armed = true, poleInHand = true, lure = 6529, clam = 5524 },
+				"lure",
+			},
+			{
+				"a clam available while channeling Fishing: never mid-channel",
+				{ armed = true, poleInHand = true, channelingFishing = true, clam = 5524 },
+				"reel",
+			},
+			{
+				"a clam available with a loot window open",
+				{ armed = true, poleInHand = true, lootOpen = true, clam = 5524 },
+				"nothing",
+			},
+			{ "a clam available while disarmed", { poleInHand = true, clam = 5524 }, "nothing" },
+			{
+				"a clam available with the gear step ready",
+				{ armed = true, gearReady = true, clam = 5524 },
+				"gear",
+			},
+			{
+				"a clam available with the gear step ready, for the double-click",
+				{ armed = true, gearReady = true, skipGear = true, clam = 5524 },
+				"clam",
+			},
 			-- Step 6, with or without a pole (QOL-R23).
 			{ "idle with a pole in hand", { armed = true, poleInHand = true }, "cast" },
 			{ "idle with no pole in hand", { armed = true }, "cast" },
@@ -96,6 +126,27 @@ describe("QoL's Fishing key logic", function()
 				{ kind = "click", value = "PagleQoLActionButton", item = 6529 },
 				ns.KeyTarget("lure", "Fishing", 6529)
 			)
+		end)
+
+		it("opens a clam by clicking PagleQoLActionButton set to the clam's item (QOL-R24)", function()
+			assert.are.same(
+				{ kind = "click", value = "PagleQoLActionButton", item = 5524 },
+				ns.KeyTarget("clam", "Fishing", nil, 5524)
+			)
+			-- The clam's item, not the lure's, though both are known.
+			assert.are.same(
+				{ kind = "click", value = "PagleQoLActionButton", item = 5524 },
+				ns.KeyTarget("clam", "Fishing", 6529, 5524)
+			)
+			assert.is_nil(ns.KeyTarget("clam", "Fishing"))
+		end)
+
+		it("re-points from a lure to a clam, and between clams (QOL-R24, QOL-R25)", function()
+			local thickShelled = ns.Arming({ "F" }, ns.KeyTarget("clam", "Fishing", nil, 5524))
+			local bigMouth = ns.Arming({ "F" }, ns.KeyTarget("clam", "Fishing", nil, 7973))
+
+			assert.is_false(ns.SameArming(thickShelled, ns.Arming({ "F" }, ns.KeyTarget("lure", "Fishing", 6529))))
+			assert.is_false(ns.SameArming(thickShelled, bigMouth))
 		end)
 
 		it("equips the fishing set by clicking PagleQoLGearButton, with no item (QOL-R24)", function()

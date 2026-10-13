@@ -11,6 +11,7 @@
 
 locale\enUS.lua
 data\lures.lua
+data\clams.lua
 logic\Data.lua
 logic\Module.lua
 logic\FishingKey.lua
@@ -18,6 +19,7 @@ logic\Settings.lua
 logic\Conflict.lua
 logic\Stretch.lua
 logic\Lures.lua
+logic\Clams.lua
 logic\Nudge.lua
 logic\Gear.lua
 logic\Input.lua

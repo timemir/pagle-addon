@@ -19,9 +19,9 @@ ns.ACTION_BUTTON = "PagleQoLActionButton"
 --- swap (QOL-R44), never shown.
 ns.GEAR_BUTTON = "PagleQoLGearButton"
 
----@alias PagleQoLAction "nothing"|"reel"|"gear"|"lure"|"cast"
+---@alias PagleQoLAction "nothing"|"reel"|"gear"|"lure"|"clam"|"cast"
 
---- What the ladder reads (QOL-R20). It has steps 1–4 and 6; clams (step 5) come in Track Q step 6.
+--- What the ladder reads (QOL-R20), all six steps.
 ---@class PagleQoLLadderState
 ---@field armed boolean? QoL is armed (QOL-R30)
 ---@field lootOpen boolean? a loot window is open (QOL-R28)
@@ -30,6 +30,7 @@ ns.GEAR_BUTTON = "PagleQoLGearButton"
 ---@field poleInHand boolean? a fishing pole is in hand (QOL-R21); the cast needs none (QOL-R23)
 ---@field lured boolean? the pole has a lure on, or counts as lured while a lure's result is awaited (QOL-R29)
 ---@field lure integer? the lure QOL-R51 picks; nil while Lures is *Off* or none is available
+---@field clam integer? the clam QOL-R55 picks; nil while *Open clams between Casts* is off or none is available
 ---@field gearReady boolean? the gear step is ready (QOL-R43)
 ---@field skipGear boolean? the evaluation skips the gear step, as the double-click's does (QOL-R13, QOL-R15)
 
@@ -51,6 +52,10 @@ function ns.NextAction(state)
 	if state.poleInHand and not state.lured and state.lure then
 		return "lure"
 	end
+	-- Between Casts, one clam per press, with or without a pole (QOL-R23, QOL-R56). QOL-R100 may remove this step.
+	if state.clam then
+		return "clam"
+	end
 	return "cast"
 end
 
@@ -70,17 +75,20 @@ end
 ---@field item integer? the item ID the button uses, for a click
 
 --- The Fishing key column of QOL-R24: cast by the Fishing spell's name, reel with soft-interact's
---- INTERACTTARGET, a lure by clicking ns.ACTION_BUTTON set to use it (QOL-R52), and no target (no override) for
---- nothing, or for a cast while the spell's name is unknown.
+--- INTERACTTARGET, a lure or a clam by clicking ns.ACTION_BUTTON set to use it (QOL-R52), and no target (no override)
+--- for nothing, or for a cast while the spell's name is unknown.
 ---@param action PagleQoLAction
 ---@param fishingName string? `C_Spell.GetSpellName(ns.FISHING_SPELL_ID)`
 ---@param lure integer? the lure's item ID, for the lure action
+---@param clam integer? the clam's item ID, for the clam action
 ---@return PagleQoLKeyTarget?
-function ns.KeyTarget(action, fishingName, lure)
+function ns.KeyTarget(action, fishingName, lure, clam)
 	if action == "reel" then
 		return { kind = "command", value = "INTERACTTARGET" }
 	elseif action == "lure" and lure then
 		return { kind = "click", value = ns.ACTION_BUTTON, item = lure }
+	elseif action == "clam" and clam then
+		return { kind = "click", value = ns.ACTION_BUTTON, item = clam }
 	elseif action == "gear" then
 		return { kind = "click", value = ns.GEAR_BUTTON }
 	elseif action == "cast" and fishingName then
