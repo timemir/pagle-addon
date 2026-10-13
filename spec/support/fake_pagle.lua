@@ -41,7 +41,7 @@
 ---@field moduleState fun(name: string): PagleModuleState A roster Module's state (CORE-R41).
 ---@field load fun(name: string, options: table?): LoadedAddon Loads a Module with `loadAddon` against this fake:
 --- `globals`, and of Pagle.toc only the vendored libs/ the Module reaches through LibStub (CORE-R6). Options as
---- loadAddon's.
+--- loadAddon's. WoW events its client raises on its own (`client.fireGameEvent`) go to `fake.fireGameEvent`.
 ---@field catchLog PagleCatchLog The Catch log Pagle.IterateCatches reads, on Core's real codec; empty at first.
 ---@field setCatalogue fun(data: table) Serves the catalogue calls over `data` (shaped as ns.catalogue, DATA-R76)
 --- instead of the generated catalogue.
@@ -318,7 +318,10 @@ function newFakePagle()
 		for key, value in pairs(options or {}) do
 			loadOptions[key] = value
 		end
-		return loadAddon(name, fake.globals, loadOptions)
+		local loaded = loadAddon(name, fake.globals, loadOptions)
+		-- WoW events the game raises on its own (UPDATE_BINDINGS) reach the Module through Pagle.RegisterEvent.
+		loaded.client.fireGameEvent = fake.fireGameEvent
+		return loaded
 	end
 	return fake
 end

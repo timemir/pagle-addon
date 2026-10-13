@@ -215,6 +215,10 @@ local function clientStubs(client)
 	return stubs
 end
 
+-- The game side QoL reads and binds: bindings, held keys, casts, the main hand, the frame loop.
+---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
+local addGameStubs = dofile("spec/support/fake_game.lua")
+
 --- A TOC: the files it lists, in order, as paths relative to the addon folder with forward slashes, and its
 --- `## Field: value` lines by field.
 ---@param tocPath string
@@ -264,6 +268,7 @@ function loadAddon(name, globals, options)
 
 	local client = newClient()
 	local env = clientStubs(client)
+	addGameStubs(client, env)
 	env.print = function(...)
 		local parts = {}
 		for i = 1, select("#", ...) do

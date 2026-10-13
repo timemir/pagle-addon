@@ -196,6 +196,19 @@ describe("FakePagle", function()
 		assert.are.equal("on", fake.moduleState("QoL"))
 	end)
 
+	it("passes the WoW events a Module's client raises on its own to its Pagle handlers (CORE-R23)", function()
+		local fake = newFakePagle()
+		local loaded = fake.load("Pagle_QoL")
+		local got = 0
+		fake.Pagle.RegisterEvent("Spec", "UPDATE_BINDINGS", function()
+			got = got + 1
+		end)
+
+		loaded.env.ClearOverrideBindings({})
+
+		assert.are.equal(1, got)
+	end)
+
 	it("keeps Core's libraries to itself, so no later load shares them through the real globals", function()
 		newFakePagle()
 
