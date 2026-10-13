@@ -10,10 +10,11 @@ end
 -- ADR 0007) on the client: logic/Moments.lua over the projection machinery's seams, with frames through
 -- C_Timer.After and dropped moments reported through geterrorhandler() (ANN-R4).
 
---- Hands a finished Announcement to the display (ANN-R20). The display queue (#84) fills this in; until then an
---- Announcement goes nowhere.
+--- Hands a finished Announcement to the display: the lanes adapter/Announcements.lua makes (ANN-R20).
 ---@param announcement PagleAnnouncement
-function ns.ShowAnnouncement(announcement) end -- luacheck: no unused args
+function ns.ShowAnnouncement(announcement)
+	ns.lanes:Push(announcement)
+end
 
 --- Hands every moment Core keeps to the Session summary when it is raised, shown or not (ANN-R25): Core's one
 --- summary, ns.summary in adapter/Summary.lua.

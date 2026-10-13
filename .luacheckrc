@@ -94,6 +94,10 @@ stds.wow = {
 		"GetLocale",
 		-- The projections' time budget per frame (LOG-R71, LOG-R72); their frames go through C_Timer.After.
 		"debugprofilestop",
+		-- The Announcement frames, hung from UIParent, and their sounds on the SFX channel (ANN-R73, ANN-R80); their
+		-- lanes run on GetTime and C_Timer.After, and an item icon comes from C_Item.GetItemInfoInstant (above).
+		"UIParent",
+		"PlaySoundFile",
 	},
 }
 
