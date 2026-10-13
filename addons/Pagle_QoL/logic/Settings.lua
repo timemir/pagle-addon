@@ -49,6 +49,54 @@ function ns.AddSettings(M)
 		end,
 	})
 
+	-- Gear: this character's fishing set (QOL-R40–R42) and Swap gear (QOL-R46). The set and the button change nothing
+	-- while restricted (QOL-R41).
+	M:AddSetting("fishing", { kind = "header", label = L.SETTINGS_GEAR })
+	-- No default, so the page's Defaults button leaves the fishing set alone (SET-R21): Blizzard's
+	-- SettingMixin:SetValueToDefault skips a setting whose default is nil (Gethe/wow-ui-source branch forever,
+	-- Blizzard_Settings_Shared/Blizzard_Setting.lua).
+	M:AddSetting("fishing", {
+		kind = "dropdown",
+		id = "fishingSet",
+		label = L.SETTINGS_FISHING_SET,
+		tooltip = L.SETTINGS_FISHING_SET_TOOLTIP,
+		get = function()
+			return ns.FishingSetChoice()
+		end,
+		set = function(value)
+			ns.ChooseFishingSet(value)
+		end,
+		options = function()
+			return ns.ReadFishingSetOptions()
+		end,
+		isEnabled = function()
+			return ns.CanEditGear()
+		end,
+	})
+	-- A button with that caption and no label; qol.md gives it no tooltip.
+	M:AddSetting("fishing", {
+		kind = "button",
+		parent = "fishingSet",
+		label = L.SETTINGS_SAVE_FISHING_SET,
+		onClick = function()
+			ns.SaveFishingSet()
+		end,
+		isEnabled = function()
+			return ns.CanEditGear()
+		end,
+	})
+	-- A binding, so Defaults leaves it alone (SET-R21). Greyed out while no set is chosen.
+	M:AddSetting("fishing", {
+		kind = "keybinding",
+		parent = "fishingSet",
+		label = L.SETTINGS_SWAP_GEAR,
+		tooltip = L.SETTINGS_SWAP_GEAR_TOOLTIP,
+		binding = "PAGLE_SWAP_GEAR",
+		isEnabled = function()
+			return ns.FishingSetChoice() ~= ns.NO_FISHING_SET
+		end,
+	})
+
 	-- Lures and clams: which lure the Fishing key applies (QOL-R50, QOL-R51). A change re-points the key at once
 	-- (QOL-R25).
 	M:AddSetting("fishing", { kind = "header", label = L.SETTINGS_LURES_AND_CLAMS })

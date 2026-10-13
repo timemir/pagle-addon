@@ -70,7 +70,24 @@ stds.wow = {
 				"RequestLoadItemDataByID",
 			},
 		},
-		C_Spell = { fields = { "GetSpellName" } },
+		C_Spell = { fields = { "GetSpellName", "GetSpellTexture" } }, -- GetSpellTexture: the icon of QOL-R41
+		-- Its gear (QOL-R40–R46, QOL-R77): the character's equipment sets, the swap, the main hand's icon a new set takes,
+		-- and Swap gear's key in the swap-back Nudge; MAX_EQUIPMENT_SETS_PER_PLAYER is in stds.wow_variables.
+		C_EquipmentSet = {
+			fields = {
+				"GetEquipmentSetID",
+				"GetEquipmentSetIDs",
+				"GetEquipmentSetInfo",
+				"GetItemIDs",
+				"GetNumEquipmentSets",
+				"ClearIgnoredSlotsForSave",
+				"CreateEquipmentSet",
+				"SaveEquipmentSet",
+				"UseEquipmentSet",
+			},
+		},
+		"GetInventoryItemTexture",
+		"GetBindingText",
 		-- QoL's double-click (QOL-R13): the frames under the mouse at a right mouse-up, and the game world's frame. It
 		-- hears GLOBAL_MOUSE_DOWN and GLOBAL_MOUSE_UP (payload: the button), which Ketho/vscode-wow-api at
 		-- WOW_API_COMMIT lists in Annotations/Core/Data/Event.lua. GetMouseFocus, QOL-R13's fallback, isn't used: the
@@ -160,6 +177,11 @@ stds.wow_variables = {
 		-- Annotations/Core/Type/GlobalColors.lua: "YELLOW_FONT_COLOR = CreateColor(1.000, 1.000, 0.000, 1.000)". Only
 		-- GetRGB is called on it.
 		YELLOW_FONT_COLOR = { fields = { "GetRGB" } },
+		-- A FrameXML constant the dump doesn't list (QOL-R42: the free equipment set slots). Gethe/wow-ui-source branch
+		-- forever at 943764493e6b16d63ded3ab304150d1f05e58b57 ("1.60.1 (70338)"),
+		-- Interface/AddOns/Blizzard_FrameXMLBase/Constants.lua: "MAX_EQUIPMENT_SETS_PER_PLAYER = 10;". The game's own
+		-- equipment manager counts free slots with it (Blizzard_UIPanels_Game/Camelot/PaperDollFrame.lua).
+		"MAX_EQUIPMENT_SETS_PER_PLAYER",
 		-- A FrameXML table the dump doesn't list (CORE-R60). probes/fishing-signals/results/
 		-- 2026-10-11-build70338-report.md is the /pprobe report from build 70338, and /pprobe is registered with
 		-- SlashCmdList.PAGLEPROBE (probes/fishing-signals/PagleProbe/Report.lua). Gethe/wow-ui-source branch forever at
@@ -203,8 +225,16 @@ files["addons/Pagle/adapter/Menu.lua"] = { globals = { "Pagle_OnAddonCompartment
 -- A Module's adapter/ reads Pagle through stds.pagle above. Its logic/ and locale/ files read it only in their CORE-R11
 -- guard, `if not Pagle then -- luacheck: read globals Pagle …`, whose inline option reaches that line alone: any other
 -- use of Pagle there fails lint (CORE-R7).
--- QoL's adapter names its Bindings.xml entries for Key Bindings › AddOns (QOL-R1).
-files["addons/Pagle_QoL/adapter/**"] = { globals = { "BINDING_HEADER_PAGLE", "BINDING_NAME_PAGLE_FISHING_KEY" } }
+-- QoL's adapter names its Bindings.xml entries for Key Bindings › AddOns (QOL-R1), and defines Swap gear's body,
+-- which Bindings.xml calls (QOL-R46).
+files["addons/Pagle_QoL/adapter/**"] = {
+	globals = {
+		"BINDING_HEADER_PAGLE",
+		"BINDING_NAME_PAGLE_FISHING_KEY",
+		"BINDING_NAME_PAGLE_SWAP_GEAR",
+		"PagleQoL_SwapGear",
+	},
+}
 -- Specs run under busted on plain Lua 5.1. busted's helper (.busted) defines loadAddon and the Forever fixtures.
 local helperGlobals = {
 	"loadAddon",

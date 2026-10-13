@@ -199,15 +199,26 @@ describe("The Fishing key in combat", function()
 			fake.fire("CastStarted")
 			assert.are.equal(libFrames, #client.frames)
 			assert.is_nil(loaded.env.PagleQoLActionButton)
+			assert.is_nil(loaded.env.PagleQoLGearButton)
 			assert.are.same({}, client.bindingCalls)
 
 			setLockdown(loaded, false)
 			fake.setRestricted(false)
-			-- The override owner, then PagleQoLActionButton (QOL-R24), then the double-click's BUTTON2 owner (QOL-R13).
-			assert.are.equal(libFrames + 3, #client.frames)
+			-- The override owner, then PagleQoLActionButton and PagleQoLGearButton (QOL-R24), then the double-click's
+			-- BUTTON2 owner (QOL-R13).
+			assert.are.equal(libFrames + 4, #client.frames)
 			assert.are.equal(loaded.env.PagleQoLActionButton, client.frames[libFrames + 2])
+			assert.are.equal(loaded.env.PagleQoLGearButton, client.frames[libFrames + 3])
 			assert.are.equal(CAST, client.overrideAction("F"))
 			assert.is_function(client.frames[libFrames + 1].scripts.OnUpdate) -- the tick (QOL-R25)
+			-- The BUTTON2 owner: unnamed, and running OnUpdate only while a double-click window is open.
+			local clickOwner = client.frames[libFrames + 4]
+			assert.are.same({ "Frame", nil }, { clickOwner.kind, clickOwner.name })
+			assert.is_nil(clickOwner.scripts.OnUpdate)
+			client.mainHand = 6256 -- a Fishing Pole
+			client.click("RightButton")
+			assert.are.equal(CAST, client.overrideAction("BUTTON2"))
+			assert.is_function(clickOwner.scripts.OnUpdate)
 		end)
 	end)
 

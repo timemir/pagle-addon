@@ -92,11 +92,23 @@ function ns.EndStretch()
 	setOnUpdate()
 end
 
+-- The stretch ends on its own: the pole came off or the player mounted (QOL-R61). Then the swap-back Nudge may show;
+-- restriction and logout end it through ns.EndStretch alone, with none (QOL-R77).
+local function endOnItsOwn()
+	local running = stretch:IsRunning()
+	ns.EndStretch()
+	if running then
+		ns.NudgeSwapBack()
+	end
+end
+
 ---@param _ Frame
 ---@param elapsed number
 function onUpdate(_, elapsed)
 	if stretch:Elapse(elapsed) then
 		restore()
+		-- The idle end is the stretch ending on its own too (QOL-R77).
+		ns.NudgeSwapBack()
 	end
 	setOnUpdate()
 end
@@ -122,13 +134,13 @@ function ns.StartStretch()
 	-- The pole comes off (QOL-R21 stops holding).
 	Pagle.RegisterEvent(OWNER, "PLAYER_EQUIPMENT_CHANGED", function()
 		if not ns.PoleInHand() then
-			ns.EndStretch()
+			endOnItsOwn()
 		end
 	end)
 	-- The player mounts.
 	Pagle.RegisterEvent(OWNER, "PLAYER_MOUNT_DISPLAY_CHANGED", function()
 		if IsMounted() then
-			ns.EndStretch()
+			endOnItsOwn()
 		end
 	end)
 	-- Logout or /reload. A restore that must wait stays in the lease, saved for the leftover restore (QOL-R64).

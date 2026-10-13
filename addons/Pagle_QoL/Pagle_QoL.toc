@@ -19,6 +19,7 @@ logic\Conflict.lua
 logic\Stretch.lua
 logic\Lures.lua
 logic\Nudge.lua
+logic\Gear.lua
 logic\Input.lua
 logic\DoubleClick.lua
 adapter\Bindings.lua
@@ -30,4 +31,5 @@ adapter\Combat.lua
 adapter\Stretch.lua
 adapter\Nudge.lua
 adapter\Lures.lua
+adapter\Gear.lua
 adapter\QoL.lua
