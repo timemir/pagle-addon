@@ -51,6 +51,14 @@ stage api
 # (WOW_API_COMMIT in scripts/tools.env) and the types/ stubs; .luarc.json holds the setup. scripts/ is left out
 # there: it runs on stock Lua 5.1, not in the WoW client the annotations describe.
 stage types
+# The one suppression allowed is inline, names its codes and gives a reason:
+#   ---@diagnostic disable-next-line: <code>[, <code>] -- <reason>
+# A file-wide disable, or one without a reason, fails. Vendored libs/ are not ours to change.
+if grep -rnE --include='*.lua' --exclude-dir=libs -e '---[[:space:]]*@diagnostic' "${lua_dirs[@]}" |
+	grep -vE -e '^[^:]+:[0-9]+:[[:space:]]*---@diagnostic disable-next-line: [a-z-]+(, ?[a-z-]+)* -- [^[:space:]]' >&2; then
+	echo "types: each suppression must be ---@diagnostic disable-next-line: <code> -- <reason>" >&2
+	fail types
+fi
 # LuaLS's log and its generated meta files for the Lua builtins go outside the repo: .luarc.json ignores .tools/,
 # and meta files under an ignored dir leave even `integer` undefined.
 luals=$(mktemp -d)

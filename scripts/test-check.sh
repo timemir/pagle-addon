@@ -101,6 +101,10 @@ copy
 printf 'Pagle.API_VERSION = "2"\n' >>"$addon/adapter/Core.lua"
 expect "a string assigned to Pagle.API_VERSION in Core fails types" types "assign-type-mismatch"
 
+copy
+printf -- '---@diagnostic disable\nPagle.API_VERSION = "2"\n' >>"$addon/adapter/Core.lua"
+expect "a bare ---@diagnostic disable fails types" types "adapter/Core.lua:22:---@diagnostic disable"
+
 if ((failures)); then
 	echo "test-check: $failures failed" >&2
 	exit 1
