@@ -173,9 +173,11 @@ stds.wow_variables = {
 		-- its one dialog to it.
 		StaticPopupDialogs = { fields = { PAGLE_QOL_CONFLICT = { read_only = false } } },
 		-- A FrameXML colour the dump doesn't list (QOL-R75: a Nudge's colour). No probe has drawn a Nudge yet; Track Q's
-		-- exit check (step 1) does. Ketho/vscode-wow-api at WOW_API_COMMIT (scripts/tools.env),
-		-- Annotations/Core/Type/GlobalColors.lua: "YELLOW_FONT_COLOR = CreateColor(1.000, 1.000, 0.000, 1.000)". Only
-		-- GetRGB is called on it.
+		-- exit check (step 1) does. Gethe/wow-ui-source branch forever at 943764493e6b16d63ded3ab304150d1f05e58b57
+		-- ("1.60.1 (70338)"), Interface/AddOns/Blizzard_SharedXMLBase/Color.lua makes each of the client's UI colours a
+		-- global, so no file there spells out its value: "envTbl[dbColor.baseTag] = color;" over
+		-- `C_UIColor.GetColors()`. Blizzard_Communities/CommunitiesChatFrame.lua reads it as
+		-- `YELLOW_FONT_COLOR:GetRGB()`. Only GetRGB is called on it.
 		YELLOW_FONT_COLOR = { fields = { "GetRGB" } },
 		-- A FrameXML constant the dump doesn't list (QOL-R42: the free equipment set slots). Gethe/wow-ui-source branch
 		-- forever at 943764493e6b16d63ded3ab304150d1f05e58b57 ("1.60.1 (70338)"),
