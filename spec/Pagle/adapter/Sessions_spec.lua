@@ -244,8 +244,7 @@ describe("Sessions on the client", function()
 			login(first)
 			assert.are.equal(ADA .. "-" .. (SERVER_TIME - 2000) .. "-0", first.env.PagleDB.global.lastEndedSession)
 
-			-- (Only the account-wide part goes on: the fake client can't validate AceDB's profile keys.)
-			local second, seen = core(first.env.PagleLog, { global = first.env.PagleDB.global })
+			local second, seen = core(first.env.PagleLog, first.env.PagleDB)
 			login(second)
 			second.client.runTimers()
 

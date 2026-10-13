@@ -186,8 +186,7 @@ describe("The unsaved-Casts reminder", function()
 		catch(first, 40)
 
 		-- The next load reads the SavedVariables the reload wrote.
-		-- AceDB checks the stored profile key's length with the client's strlenutf8; the key is ASCII.
-		local globals = { PagleLog = first.env.PagleLog, PagleDB = first.env.PagleDB, strlenutf8 = string.len }
+		local globals = { PagleLog = first.env.PagleLog, PagleDB = first.env.PagleDB }
 		local second = loadAddon("Pagle", foreverWith(globals))
 		second.client.fire("PLAYER_LOGIN")
 		catch(second, 49)

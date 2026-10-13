@@ -148,8 +148,7 @@ describe("The balance across logins", function()
 			first.client.fire("PLAYER_LOGIN")
 
 			-- The next login, with Hunts disabled: only the Ledger registers, and it hasn't reported yet.
-			-- (Only the account-wide part goes on: the fake client can't validate AceDB's profile keys.)
-			local second = loadCore({ global = first.env.PagleDB.global })
+			local second = loadCore(first.env.PagleDB)
 			second.client.addons.Pagle_Hunts = nil
 			register(second, "Ledger")
 			second.client.fire("PLAYER_LOGIN")
