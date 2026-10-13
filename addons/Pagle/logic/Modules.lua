@@ -82,21 +82,21 @@ function ns.IsModuleAPICompatible(value, apiVersion)
 end
 
 -- Why a def can't register, or nil if it can (CORE-R14).
----@param registry PagleModuleRegistry
+---@private
 ---@param def any
 ---@return string?
-local function problem(registry, def)
+function Registry:Problem(def)
 	if type(def) ~= "table" then
 		return "Pagle.RegisterModule takes a def table, got " .. type(def)
 	end
 	local name = def.name
-	if type(name) ~= "string" or not registry.known[name] then
+	if type(name) ~= "string" or not self.known[name] then
 		return ("Pagle.RegisterModule: %s is not a Pagle Module; the roster is %s"):format(
 			tostring(name),
 			table.concat(ns.MODULE_ROSTER, ", ")
 		)
 	end
-	if registry.modules[name] or registry.inert[name] then
+	if self.modules[name] or self.inert[name] then
 		return ("Pagle.RegisterModule: %s is already registered"):format(name)
 	end
 	if type(def.title) ~= "string" or def.title == "" then
@@ -115,7 +115,7 @@ end
 ---@return PagleModuleHandle? handle
 ---@return string? problem
 function Registry:Register(def, readAPI)
-	local why = problem(self, def)
+	local why = self:Problem(def)
 	if why then
 		return nil, why
 	end

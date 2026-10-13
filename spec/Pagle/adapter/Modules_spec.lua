@@ -21,12 +21,13 @@ local function qolDef(overrides)
 	return def
 end
 
--- RegisterModule's error, called from this file, or nil if it didn't raise.
+-- RegisterModule's error, called from this file, or "" if it didn't raise.
+---@return string
 local function registerError(Pagle, def)
 	local ok, err = pcall(function()
 		Pagle.RegisterModule(def)
 	end)
-	return not ok and err or nil
+	return ok and "" or tostring(err)
 end
 
 describe("Pagle.RegisterModule", function()
@@ -196,7 +197,7 @@ describe("ModulesChanged", function()
 end)
 
 describe("Core and a disabled Module", function()
-	it("never enables or loads a Module: no Core file calls the client's enable or load API (CORE-R16, CORE-R17)", function()
+	it("never enables or loads one: no Core file names that client API (CORE-R16, CORE-R17)", function()
 		-- A disabled Module registers nothing because the client never loads it; Core must not load it either.
 		local forbidden = { "EnableAddOn", "EnableAllAddOns", "LoadAddOn", "ResetAddOns", "SaveAddOns" }
 		for _, file in ipairs(addonFiles("Pagle")) do
@@ -204,7 +205,7 @@ describe("Core and a disabled Module", function()
 				---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io
 				local source = assert(io.open("addons/Pagle/" .. file, "r")):read("*a")
 				for _, name in ipairs(forbidden) do
-					assert.is_nil(source:find(name, 1, true), file .. " calls " .. name)
+					assert(not source:find(name, 1, true), file .. " names " .. name)
 				end
 			end
 		end

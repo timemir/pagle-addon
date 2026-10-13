@@ -31,14 +31,13 @@ FOREVER_GLOBALS = { WOW_PROJECT_ID = PROJECT_IDS.CAMELOT, WOW_PROJECT_CAMELOT = 
 ---@field printed string[] Each line the addon printed to chat, in order.
 ---@field client FakeClient The fake client the addon runs against.
 
---- The client's event system, as far as specs need it.
+--- The client's event system and addon list, as far as specs need them.
 ---@class FakeClient
 ---@field missingEvents table<string, true> Events this client doesn't know: registering one raises an error, as the
 --- client does. Specs add to it.
 ---@field frames table[] Every frame CreateFrame made, in order.
 ---@field fire fun(event: string, ...) Fires a WoW event at each frame registered for it, in creation order, calling
 --- its OnEvent script with (frame, event, ...). A unit event reaches a frame only for the units it registered.
-
 ---@field addons table<string, FakeAddOn> The other addons installed, by folder name ("Pagle_QoL"), as C_AddOns
 --- reports them. One not listed is missing. Specs add to it.
 
