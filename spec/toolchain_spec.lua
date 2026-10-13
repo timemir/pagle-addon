@@ -1,0 +1,6 @@
+describe("the tests stage", function()
+	it("runs on real Lua 5.1, the WoW client's language, not LuaJIT (roadmap M0 › Toolchain)", function()
+		assert.are.equal("Lua 5.1", _VERSION)
+		assert.is_nil(rawget(_G, "jit"))
+	end)
+end)

@@ -1,0 +1,8 @@
+-- luacov config for the tests stage of scripts/check.sh: coverage of addon code, reported but never gating.
+-- include and exclude are Lua patterns matched against file paths.
+return {
+	statsfile = ".tools/cache/luacov.stats.out",
+	reportfile = ".tools/cache/luacov.report.out",
+	include = { "^addons/" },
+	exclude = { "^addons/[^/]+/libs/" },
+}

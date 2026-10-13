@@ -49,7 +49,15 @@ stage api
 
 # --- 4. types (#48): lua-language-server --check, zero warnings. Not built yet.
 
-# --- 5. tests (#49): busted on Lua 5.1, luacov report (doesn't gate). Not built yet.
+# --- 5. tests (#49): busted on Lua 5.1, every spec/**/*_spec.lua. spec/support/addon.lua loads each addon from its
+# real .toc, in order, so TOC and load-order mistakes fail specs. luacov then reports coverage of addons/ (.luacov);
+# the report never gates.
+stage tests
+mkdir -p .tools/cache
+rm -f .tools/cache/luacov.*.out # luacov adds to an existing stats file
+"$bin/busted" --coverage || fail tests
+{ "$bin/luacov" && echo "coverage (reported, never gates):" && sed -n '/^File /,$p' .tools/cache/luacov.report.out; } ||
+	echo "check: no coverage report (coverage never gates)"
 
 # --- 6. generator (M1, DATA-R61): the content generator's check and tests. Not built yet.
 
