@@ -33,6 +33,7 @@ logic\Areas.lua
 logic\Angler.lua
 logic\Fishing.lua
 logic\Diagnostics.lua
+logic\FieldReport.lua
 logic\Settings.lua
 logic\Slash.lua
 logic\Wallet.lua
@@ -55,6 +56,7 @@ adapter\Projections.lua
 adapter\Angler.lua
 adapter\Fishing.lua
 adapter\Diagnostics.lua
+adapter\FieldReport.lua
 adapter\Sessions.lua
 adapter\Settings.lua
 adapter\AnnouncementSettings.lua
