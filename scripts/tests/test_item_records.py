@@ -415,8 +415,14 @@ def test_the_typical_length_check_runs_only_when_switched_on(
         # DATA-R63: an unknown key in any TOML file under data/ (#96's audit found checks.toml's untested).
         ("typicalLength = false\nlore = []\nhunts = true\n", "data/checks.toml: unknown key 'hunts'"),
         ('typicalLength = false\nlore = ["fishing"]\n', "data/checks.toml: lore[0]: expected a lore ID"),
-        # No lore check is built before M3 (DATA-R107): switching one on fails instead of passing unchecked.
-        ('typicalLength = false\nlore = ["ledger"]\n', "data/checks.toml: lore[0]: the ledger lore check isn't built"),
+        # Only the Ledger's lore check is built in M3 (DATA-R107): switching another on fails instead of passing
+        # unchecked.
+        ('typicalLength = false\nlore = ["stats"]\n', "data/checks.toml: lore[0]: the stats lore check isn't built"),
+        ('typicalLength = false\nlore = ["hunts"]\n', "data/checks.toml: lore[0]: the hunts lore check isn't built"),
+        (
+            'typicalLength = false\nlore = ["tackleboard"]\n',
+            "data/checks.toml: lore[0]: the tackleboard lore check isn't built",
+        ),
         (None, "data/checks.toml: missing"),
     ],
 )
