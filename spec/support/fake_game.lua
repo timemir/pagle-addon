@@ -12,6 +12,9 @@
 --   loaded.client.mounted = true                                    -- IsMounted()
 --   loaded.client.bags[6529] = 5                                    -- C_Item.GetItemCount(6529)
 --   loaded.client.mainHandEnchant = 263                             -- GetWeaponEnchantInfo(): a lure on
+--   loaded.client.click("RightButton", 0.1)                         -- a mouse click, held 0.1 s
+--   loaded.client.mouseFoci = { someButton }                        -- GetMouseFoci(): the mouse is over a UI frame
+--   loaded.client.nextFrame(0.016)                                   -- the clock moves on, then one frame runs
 --
 -- Each override call fires UPDATE_BINDINGS at once, through client.fireGameEvent, as the client fires it after a
 -- binding change; under FakePagle, fake.load points that at fake.fireGameEvent. Each one raises an error while the
@@ -40,6 +43,13 @@
 --- `C_Item.GetItemSpell` returns it: name, spell ID.
 ---@field itemNames table<integer, string> Each item's name, by item ID, as `C_Item.GetItemNameByID` returns it once
 --- the item is cached; an item not listed isn't cached.
+---@field mouseFoci table[] The frames under the mouse, topmost first, as `GetMouseFoci()` returns them. Default
+--- `{ WorldFrame }`: the mouse is over the game world.
+---@field click fun(button: string, hold: number?) A mouse click: `GLOBAL_MOUSE_DOWN(button)`, the clock moving on
+--- `hold` seconds (default 0.1), then `GLOBAL_MOUSE_UP(button)`, each through `client.fireGameEvent`, as the
+--- client fires them for any click, on a frame or on the world.
+---@field nextFrame fun(seconds: number?) The next frame: the clock moves on `seconds` (default 1/60), running the
+--- timers due, then each frame's OnUpdate runs with that elapsed time, as GetTime() holds one value per frame.
 
 -- The spells named Fishing: the generated catalogue's fishing-spell list (LOG-R2, data/forever/lists.toml), since
 -- every rank of Fishing has this name (probe B2).
@@ -118,6 +128,22 @@ return function(client, stubs)
 				onUpdate(frame, elapsed)
 			end
 		end
+	end
+
+	-- The mouse, for QoL's double-click (QOL-R13). GLOBAL_MOUSE_DOWN and _UP carry the button's name ("RightButton").
+	client.mouseFoci = { stubs.WorldFrame }
+	function client.click(button, hold)
+		client.fireGameEvent("GLOBAL_MOUSE_DOWN", button)
+		client.advance(hold or 0.1)
+		client.fireGameEvent("GLOBAL_MOUSE_UP", button)
+	end
+	function client.nextFrame(seconds)
+		seconds = seconds or (1 / 60)
+		client.advance(seconds)
+		client.update(seconds)
+	end
+	stubs.GetMouseFoci = function()
+		return { unpack(client.mouseFoci) }
 	end
 
 	stubs.GetBindingKey = function(command)
