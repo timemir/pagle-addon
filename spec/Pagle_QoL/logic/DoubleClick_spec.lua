@@ -18,23 +18,38 @@ describe("QoL's double-click logic", function()
 		end)
 	end)
 
-	describe("ns.ClickTarget", function()
-		it("is the Fishing key's target for a cast, a reel and a lure (QOL-R24)", function()
-			for _, row in ipairs({ { "cast" }, { "reel" }, { "lure", 6529 } }) do
-				assert.are.same(ns.KeyTarget(row[1], "Fishing", row[2]), ns.ClickTarget(row[1], "Fishing", row[2]))
-			end
-			assert.are.same({ kind = "spell", value = "Fishing" }, ns.ClickTarget("cast", "Fishing"))
-			assert.are.same({ kind = "command", value = "INTERACTTARGET" }, ns.ClickTarget("reel", "Fishing"))
-			assert.are.same(
+	describe("ns.DoubleClickTarget", function()
+		-- Each row: the ladder's state, then the BUTTON2 target (QOL-R24's double-click column).
+		local TARGETS = {
+			{ "idle with a pole in hand", { armed = true, poleInHand = true }, { kind = "spell", value = "Fishing" } },
+			{
+				"channeling Fishing",
+				{ armed = true, poleInHand = true, channelingFishing = true },
+				{ kind = "command", value = "INTERACTTARGET" },
+			},
+			{
+				"a pole with no lure on and a lure available",
+				{ armed = true, poleInHand = true, lure = 6529 },
 				{ kind = "click", value = "PagleQoLActionButton", item = 6529 },
-				ns.ClickTarget("lure", "Fishing", 6529)
-			)
-		end)
+			},
+			{ "a loot window open", { armed = true, poleInHand = true, lootOpen = true }, nil },
+			{ "disarmed", { poleInHand = true }, nil },
+		}
+		for _, row in ipairs(TARGETS) do
+			it(("is the Fishing key's target when %s (QOL-R24)"):format(row[1]), function()
+				assert.are.same(row[3], ns.DoubleClickTarget(row[2], "Fishing"))
+			end)
+		end
 
-		it("is nothing for nothing, and never equips the fishing set (QOL-R15, QOL-R24)", function()
-			assert.is_nil(ns.ClickTarget("nothing", "Fishing"))
-			-- The gear step's action (Track Q step 2) has no BUTTON2 target, whatever the Fishing key's is.
-			assert.is_nil(ns.ClickTarget("gear", "Fishing"))
+		it("skips the gear step, never equipping the fishing set (QOL-R13, QOL-R15, QOL-R20)", function()
+			local state = { armed = true, gearReady = true, lure = 6529 }
+			assert.are.equal("gear", ns.NextAction(state))
+
+			-- With no pole in hand the ladder goes on to the cast, which QOL-R14 then keeps from going live.
+			assert.are.same({ kind = "spell", value = "Fishing" }, ns.DoubleClickTarget(state, "Fishing"))
+			assert.is_false(ns.DoubleClickLive("both", state, ns.DoubleClickTarget(state, "Fishing")))
+			-- The state the Fishing key reads is left as it was.
+			assert.is_nil(state.skipGear)
 		end)
 	end)
 

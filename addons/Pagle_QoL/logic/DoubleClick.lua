@@ -29,28 +29,26 @@ function ns.OnGameWorld(foci, worldFrame)
 	return true
 end
 
--- The double-click column of QOL-R24: the same target as the Fishing key's. Equipping the fishing set has none
--- (QOL-R15), and clams join with Track Q step 6.
-local CLICK_ACTIONS = { cast = true, reel = true, lure = true }
-
---- The double-click column of QOL-R24: the Fishing key's target for a cast, a reel or a lure; no target (no
---- override) for anything else, so it never equips the fishing set (QOL-R15).
----@param action PagleQoLAction
+--- The BUTTON2 target (QOL-R24's double-click column): the next action evaluated without the gear step (QOL-R13,
+--- QOL-R20 step 3), so it never equips the fishing set (QOL-R15), and that action's target as the Fishing key has it.
+--- QOL-R105's in-game check may change a column entry here. `state` itself is left as it is.
+---@param state PagleQoLLadderState the Fishing key's evaluation
 ---@param fishingName string? `C_Spell.GetSpellName(ns.FISHING_SPELL_ID)`
----@param lure integer? the lure's item ID, for the lure action
 ---@return PagleQoLKeyTarget?
-function ns.ClickTarget(action, fishingName, lure)
-	if CLICK_ACTIONS[action] then
-		return ns.KeyTarget(action, fishingName, lure)
+function ns.DoubleClickTarget(state, fishingName)
+	local withoutGear = {}
+	for key, value in pairs(state) do
+		withoutGear[key] = value
 	end
-	return nil
+	withoutGear.skipGear = true
+	return ns.KeyTarget(ns.NextAction(withoutGear), fishingName, state.lure)
 end
 
 --- Whether the double-click is live (QOL-R14): Input allows it, QoL is armed, a fishing pole is in hand, and the next
 --- action has a double-click target. With no pole in hand it does nothing (QOL-R15).
 ---@param input PagleQoLInput
 ---@param state PagleQoLLadderState
----@param target PagleQoLKeyTarget? `ns.ClickTarget` of the next action
+---@param target PagleQoLKeyTarget? `ns.DoubleClickTarget` of the evaluation
 ---@return boolean
 function ns.DoubleClickLive(input, state, target)
 	return ns.InputArmsClick(input) and state.armed == true and state.poleInHand == true and target ~= nil

@@ -87,8 +87,8 @@ function ns.PointDoubleClick(state, fishingName)
 	if not frame then
 		return
 	end
-	-- Without the gear step: its action has no BUTTON2 target (QOL-R15).
-	local target = ns.ClickTarget(ns.NextAction(state), fishingName, state.lure)
+	-- Evaluated without the gear step (QOL-R15).
+	local target = ns.DoubleClickTarget(state, fishingName)
 	if window:IsOpen() and not ns.DoubleClickLive(ns.CurrentInput(), state, target) then
 		window:Close()
 	end
