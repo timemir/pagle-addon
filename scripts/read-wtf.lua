@@ -3,7 +3,7 @@
 --   - the latest !BugGrabber session's Lua errors, with their stacks;
 --   - the Catch log, decoded with Core's own codec (addons/Pagle/logic/CatchLog.lua): the logId, the entries by
 --     tag, the C1 Casts by outcome, per character and per zone areaID, those in zone areaID 0, their time span, the
---     B1 and S1 entries and PagleDB.global.decodeErrors;
+--     B1 and S1 entries and PagleDB.global.decodeErrors (0 when AceDB left that default out of the file);
 --   - named CVars from Config.wtf and the account's and the character's config-cache.wtf;
 --   - named addons' enable state from the character's AddOns.txt.
 --
@@ -281,7 +281,7 @@ local function printLog(log, facts, since)
 end
 
 -- The exit check's steps 3 and 4 (#75) over the Casts counted, as { ok, line } pairs.
-local function exitChecks(facts, global, expected)
+local function exitChecks(facts, decodeErrors, expected)
 	local checks = {}
 	local function check(ok, line)
 		checks[#checks + 1] = { ok = ok, line = line }
@@ -303,7 +303,7 @@ local function exitChecks(facts, global, expected)
 	check(zeroZone == 0, zeroZone == 0 and "no Cast in zone areaID 0" or count(zeroZone, "Cast") .. " in zone areaID 0")
 	check(facts.builds > 0, facts.builds > 0 and "a B1 entry" or "no B1 entry")
 	check(facts.skills > 0, facts.skills > 0 and "an S1 entry" or "no S1 entry")
-	check(global.decodeErrors == 0, "PagleDB.global.decodeErrors is " .. tostring(global.decodeErrors))
+	check(decodeErrors.count == 0, "PagleDB.global.decodeErrors is " .. decodeErrors.text)
 	local undecodable = count(facts.undecodable, "entry", "entries") .. " Core's codec can't decode"
 	check(facts.undecodable == 0, facts.undecodable == 0 and "every entry decodes" or undecodable)
 	check(gotAway > 0, gotAway > 0 and count(gotAway, "Cast") .. " got away (g)" or "no Cast got away (g)")
@@ -333,10 +333,12 @@ local function printCatchLog(account, expectCasts, since)
 			count(#log.entries, "entry", "entries")
 		)
 	)
-	print(
-		type(db) == "table" and "PagleDB.global.decodeErrors: " .. tostring(global.decodeErrors)
-			or "PagleDB: not in Pagle.lua"
-	)
+	-- AceDB leaves out of the file every value equal to its default, so a PagleDB without decodeErrors means 0.
+	local decodeErrors = { count = global.decodeErrors, text = tostring(global.decodeErrors) }
+	if type(db) == "table" and global.decodeErrors == nil then
+		decodeErrors = { count = 0, text = "0 (not saved: AceDB leaves out a default)" }
+	end
+	print(type(db) == "table" and "PagleDB.global.decodeErrors: " .. decodeErrors.text or "PagleDB: not in Pagle.lua")
 	local ns = loadCodec()
 	if log.format ~= ns.LOG_FORMAT then
 		-- Opening it would set it aside for a new log (LOG-R18), so it isn't decoded at all.
@@ -346,7 +348,7 @@ local function printCatchLog(account, expectCasts, since)
 	end
 	local facts = readLog(ns, log, since)
 	printLog(log, facts, since)
-	return expectCasts and exitChecks(facts, global, expectCasts) or {}
+	return expectCasts and exitChecks(facts, decodeErrors, expectCasts) or {}
 end
 
 -- Prints the exit check's checks under one heading; true when every one passed.
