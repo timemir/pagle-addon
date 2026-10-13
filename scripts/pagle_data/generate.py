@@ -11,6 +11,7 @@ from pagle_data.db2 import DB2, Db2Layer, read_db2
 from pagle_data.forever import ForeverLayer, read_forever
 from pagle_data.lua import to_lua
 from pagle_data.toml_reader import DataError, Problems
+from pagle_data.windows import Spec, build_windows, read_windows_toml
 
 CATALOGUE_LUA = "addons/Pagle/data/Catalogue.lua"
 
@@ -84,6 +85,7 @@ class Layers:
     baseline: BaselineLayer
     forever: ForeverLayer
     db2: Db2Layer
+    windows: dict[str, Spec]  # every window by ID (DATA-R35)
 
     def fishing_areas(self) -> set[int]:
         return fishing_areas(self.baseline)
@@ -102,11 +104,15 @@ def read_layers(root: Path) -> Layers:
     baseline_read = not problems
     forever = read_forever(root, problems)
     db2 = read_db2(root, problems)
+    window_overrides = read_windows_toml(root, problems)
+    windows: dict[str, Spec] = {}
     if baseline_read:  # without the whole baseline, every target would look like it has no catch list
         check_aliases(forever.aliases, fishing_areas(baseline), problems)
+        # ...and every seeded window would look missing (DATA-R35, DATA-R36)
+        windows = build_windows(baseline.events, window_overrides, forever.events, problems)
     if problems:
         raise DataError(problems.found)
-    return Layers(baseline, forever, db2)
+    return Layers(baseline, forever, db2, windows)
 
 
 def outputs(layers: Layers) -> dict[str, str]:

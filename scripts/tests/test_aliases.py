@@ -7,6 +7,7 @@ import pytest
 
 from baseline_fixture import CSVS, write_baseline
 from pagle_data.cli import main
+from windows_fixture import write_windows
 
 CATALOGUE = "addons/Pagle/data/Catalogue.lua"
 
@@ -42,6 +43,7 @@ def write_tree(root: Path, aliases: str = "") -> Path:
     (forever / "events.toml").write_text("", encoding="utf-8")
     (forever / "lists.toml").write_text("auras = []\nfishingSpells = [7620]\n", encoding="utf-8")
     (forever / "aliases.toml").write_text(aliases, encoding="utf-8")
+    write_windows(root)  # test_windows.py covers windows
     db2 = root / "data" / "db2"
     db2.mkdir(parents=True, exist_ok=True)
     (db2 / "build.toml").write_text('build = 70338\nversion = "1.60.1"\nproducts = ["wow_classic_beta"]\n', encoding="utf-8")

@@ -7,6 +7,14 @@ from pagle_data.extract_baseline import Snapshot, source_toml
 
 SNAPSHOT = Snapshot("db_latest@1234567", date(2026, 9, 28), "https://example.invalid/db.zip", "ab" * 32)
 
+EVENTS_CSV_HEADER = "event,start,occurrence,length,description\n"
+SEED_EVENTS = {
+    45: "45,2020-03-20 10:00,525600,262800,Fishing: summer period (for Raw Summer Bass)\n",
+    46: "46,2020-09-23 09:00,525600,262800,Fishing: winter period (for Winter Squid)\n",
+    47: "47,2017-01-01 06:00,1440,1080,Fishing: Sunscale Cycle\n",
+    48: "48,2017-01-01 18:00,1440,1080,Fishing: Nightfin Cycle\n",
+}
+
 # One row of each kind, with chances no other value in the tests uses (DATA-R4: they never leave data/baseline/).
 CSVS = {
     "area_loot.csv": (
@@ -19,10 +27,8 @@ CSVS = {
     "pools.csv": "entry,name,event\n180248,School of Tastyfish,15\n",
     "pool_loot.csv": "entry,item,chance,ref\n180248,19807,0.0271,\n",
     "skill.csv": "area,skillBase\n1,-70\n33,130\n",
-    "events.csv": (
-        "event,start,occurrence,length,description\n"
-        "48,2017-01-01 18:00,1440,1080,Fishing: Nightfin Cycle\n"
-    ),
+    # The four events that seed windows (DATA-R36), as the dump has them, and one Extravaganza event.
+    "events.csv": EVENTS_CSV_HEADER + "".join(SEED_EVENTS.values()) + "15,2017-01-08 14:00,10080,120,Tournament\n",
 }
 
 

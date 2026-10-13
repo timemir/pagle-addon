@@ -6,6 +6,7 @@ import pytest
 
 from baseline_fixture import write_baseline
 from pagle_data.cli import main
+from windows_fixture import write_windows
 
 CATALOGUE = "addons/Pagle/data/Catalogue.lua"
 
@@ -58,6 +59,7 @@ def write_tree(root: Path, events: str = EVENTS, lists: str = LISTS) -> Path:
     (forever / "events.toml").write_text(events, encoding="utf-8")
     (forever / "lists.toml").write_text(lists, encoding="utf-8")
     (forever / "aliases.toml").write_text("", encoding="utf-8")  # test_aliases.py covers aliases
+    write_windows(root)  # test_windows.py covers windows
     write_baseline(root)  # test_generate_baseline.py covers the baseline layer
     # A DB2 layer with no areas (DATA-R11); test_db2_layer.py covers its areas.
     db2 = root / "data" / "db2"

@@ -7,6 +7,7 @@ import pytest
 from baseline_fixture import CSVS, SNAPSHOT, write_baseline
 from pagle_data.cli import main
 from pagle_data.extract_baseline import source_toml
+from windows_fixture import write_windows
 
 CATALOGUE = "addons/Pagle/data/Catalogue.lua"
 EVENTS = "[event.301]\nweekday = 1\nstart = 840\nduration = 120\n"
@@ -21,6 +22,7 @@ def write_tree(root: Path) -> Path:
     (forever / "events.toml").write_text(EVENTS, encoding="utf-8")
     (forever / "lists.toml").write_text(LISTS, encoding="utf-8")
     (forever / "aliases.toml").write_text("", encoding="utf-8")  # test_aliases.py covers aliases
+    write_windows(root)  # test_windows.py covers windows
     db2 = root / "data" / "db2"
     db2.mkdir(parents=True)
     (db2 / "build.toml").write_text(BUILD, encoding="utf-8")
