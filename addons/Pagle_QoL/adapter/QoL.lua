@@ -27,4 +27,5 @@ function ns.QoL.OnInitialize()
 	ns.MigrateDB(ns.db.global)
 
 	ns.StartFishingKey()
+	ns.StartCombat()
 end

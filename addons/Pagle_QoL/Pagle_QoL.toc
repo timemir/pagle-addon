@@ -18,4 +18,5 @@ logic\Conflict.lua
 adapter\Bindings.lua
 adapter\FishingKey.lua
 adapter\Conflict.lua
+adapter\Combat.lua
 adapter\QoL.lua
