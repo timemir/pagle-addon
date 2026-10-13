@@ -458,4 +458,8 @@ ns.lanes = ns.NewLanes({
 	play = function(path)
 		PlaySoundFile(path, "SFX")
 	end,
+	-- The slot freed with nothing waiting: a card may show (ANN-R21). adapter/Cards.lua's, looked up when called.
+	empty = function()
+		ns.cards:Next()
+	end,
 })

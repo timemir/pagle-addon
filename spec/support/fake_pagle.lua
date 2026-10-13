@@ -81,12 +81,22 @@
 --- after its moments were raised, or after the last projection finishes (ANN-R10); one per moment without a Cast.
 ---@field summarized PagleRaisedMoment[] Each moment Core kept, as it was raised, shown or not (ANN-R25): a
 --- summaryOnly one is here and never in announcements. A moment Core dropped (ANN-R4) is in neither.
----@field global { summary: { moments: PagleStoredMoment[], lines: table }, pending: PagleStoredMoment[], cards: PagleSummaryCard[] }
+---@field global { summary: { moments: PagleStoredMoment[], lines: table }, pending: PagleStoredMoment[], cards: PagleSummaryCard[], writeUp: PagleWriteUpStored[] }
 --- PagleDB.global's Session summary keys (announcements.md › Data): the open Session's moments and every Module's
---- M:SetSummaryLine lines, the moments raised with no Session open (ANN-R52), and the cards each SessionEnded made
---- for a Session that raised a moment (ANN-R53). A spec may replace it before login, as a saved PagleDB.
+--- M:SetSummaryLine lines, the moments raised with no Session open (ANN-R52), the cards each SessionEnded made
+--- for a Session that raised a moment (ANN-R53), at most 3 (ANN-R54), and the Write-up sections waiting (ANN-R61).
+--- A spec may replace it before login, as a saved PagleDB.
+---@field profile { announcements: { cozy: boolean } } PagleDB.profile's Cozy mode (ANN-R62), off; a spec may set it.
+---@field writeUps PagleWriteUpStored[] Each Write-up section Core kept from a Module's M:RaiseWriteUp, in order, as
+--- stored: module, order, title, heading, lines (ANN-R60). Closing the Write-up card doesn't empty it.
+---@field cardsShown PagleCard[] Each card Core would show, in order (ANN-R21): the Write-up (title "Write-up" and
+--- writeUp, its sections by Module order) before the stored Session cards, oldest first, one at a time. None shows
+--- before the second fake.nextFrame after the projections are idle (enterWorld).
+---@field closeCard fun() The player closes the card on screen (the last in cardsShown): it leaves global.cards, or
+--- the Write-up's sections leave global.writeUp, and the next card shows (ANN-R54, ANN-R61).
 ---@field nextFrame fun() Runs the next frame: what Core queued for it so far, such as flushing moments into
 --- fake.announcements (ANN-R10, ANN-R12).
+---@field queueFrame fun(step: fun()) Queues a step for the next fake.nextFrame; the parts' own frame scheduler.
 ---@field slash fun(line: string) Types `/pagle <line>` (CORE-R60–R62); help lines go to `printed`.
 ---@field load fun(name: string, options: table?): LoadedAddon Loads a Module with `loadAddon` against this fake:
 --- `globals`, and of Pagle.toc only the vendored libs/ the Module reaches through LibStub (CORE-R6). Options as
@@ -422,6 +432,11 @@ part(function(fake, _, ns)
 			step()
 		end
 	end
+
+	-- Queues a step of a later part for the next fake.nextFrame.
+	function fake.queueFrame(step)
+		frame[#frame + 1] = step
+	end
 end)
 
 -- The compartment menu and /pagle (CORE-R50, CORE-R52, CORE-R60–R62), on Core's real logic. Modules' subcommands
@@ -735,11 +750,50 @@ part(function(fake, Pagle, ns)
 	end
 end)
 
--- The Session summary (ANN-R50–R53), on Core's real logic over fake.global: each moment Core keeps goes to the open
--- Session's summary (or global.pending with none open), M:SetSummaryLine sets lines, and SessionEnded makes a card
--- in fake.global.cards for a Session that raised a moment.
+-- The Session summary and the cards (ANN-R21, ANN-R50–R54, ANN-R60–R62), on Core's real logic over fake.global: each
+-- moment Core keeps goes to the open Session's summary (or global.pending with none open), M:SetSummaryLine sets
+-- lines, and SessionEnded makes a card in fake.global.cards for a Session that raised a moment. M:RaiseWriteUp keeps
+-- a section in fake.global.writeUp and fake.writeUps. Cards show in fake.cardsShown, as Core's would, from the second
+-- fake.nextFrame after enterWorld; the fake has no lanes, so they never wait for them.
 part(function(fake, Pagle, ns)
-	fake.global = { summary = { moments = {}, lines = {} }, pending = {}, cards = {} }
+	fake.global = { summary = { moments = {}, lines = {} }, pending = {}, cards = {}, writeUp = {} }
+	fake.profile = { announcements = { cozy = false } }
+	fake.writeUps = {}
+	fake.cardsShown = {}
+	local cards = ns.NewCards({
+		global = function()
+			return fake.global
+		end,
+		mode = function()
+			return fake.projections:Mode()
+		end,
+		whenIdle = function(fn)
+			fake.projections:WhenIdle(fn)
+		end,
+		nextFrame = fake.queueFrame,
+		lanesEmpty = function()
+			return true
+		end,
+		cozy = function()
+			return fake.profile.announcements.cozy
+		end,
+		show = function(card)
+			fake.cardsShown[#fake.cardsShown + 1] = card
+		end,
+	})
+	cards:Start()
+	-- Each section Core keeps is also noted in fake.writeUps, which closing the Write-up doesn't empty.
+	local raise = cards.Raise
+	function cards.Raise(self, module, section)
+		raise(self, module, section)
+		local writeUp = fake.global.writeUp
+		fake.writeUps[#fake.writeUps + 1] = writeUp[#writeUp]
+	end
+	ns.ModuleHandle.RaiseWriteUp = ns.RaiseWriteUpMethod(fake.registry, cards)
+	function fake.closeCard()
+		cards:Close(fake.cardsShown[#fake.cardsShown])
+	end
+
 	local summary = ns.NewSummary({
 		global = function()
 			return fake.global
@@ -750,6 +804,9 @@ part(function(fake, Pagle, ns)
 		modules = function()
 			return fake.registry:Modules()
 		end,
+		cozy = function()
+			return fake.profile.announcements.cozy
+		end,
 	})
 	function ns.SummarizeMoment(moment)
 		summary:Add(moment)
@@ -758,7 +815,9 @@ part(function(fake, Pagle, ns)
 		summary:Started()
 	end)
 	Pagle.RegisterCallback(summary, "SessionEnded", function(_, session)
-		summary:Ended(session)
+		if summary:Ended(session) then
+			cards:Next()
+		end
 	end)
 	ns.ModuleHandle.SetSummaryLine = ns.SetSummaryLineMethod(fake.registry, summary)
 end)
