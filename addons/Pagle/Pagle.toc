@@ -27,6 +27,7 @@ logic\CatchLog.lua
 logic\Migrations.lua
 logic\Catalogue.lua
 logic\Areas.lua
+logic\Angler.lua
 adapter\Core.lua
 adapter\Callbacks.lua
 adapter\Events.lua

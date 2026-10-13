@@ -322,6 +322,16 @@ end
 local CatchLog = {}
 CatchLog.__index = CatchLog
 
+-- Counts an entry the codec can't read in PagleDB.global.decodeErrors, once per entry for this login (LOG-R16).
+---@param catchLog PagleCatchLog
+---@param seq integer
+local function countUndecodable(catchLog, seq)
+	if not catchLog.undecodable[seq] then
+		catchLog.undecodable[seq] = true
+		catchLog.global.decodeErrors = (catchLog.global.decodeErrors or 0) + 1
+	end
+end
+
 --- Walks the entries with `seq > afterSeq`, up to the log's length now, in order, decoding each as it goes
 --- (LOG-R42). An entry the codec can't read is skipped and counted in `PagleDB.global.decodeErrors`, once per
 --- entry for this login however many readers meet it (LOG-R16).
@@ -338,9 +348,31 @@ function CatchLog:Iterate(afterSeq)
 			if record then
 				return record
 			end
-			if not self.undecodable[seq] then
-				self.undecodable[seq] = true
-				self.global.decodeErrors = (self.global.decodeErrors or 0) + 1
+			countUndecodable(self, seq)
+		end
+		return nil
+	end
+end
+
+--- Walks the entries of one record kind from the newest back to the oldest, decoding only those: how Core finds
+--- the last build entry (LOG-R36) and each character's last Skill Reading (LOG-R31) without decoding every Cast.
+--- An entry of that kind the codec can't read is skipped and counted as `Iterate` does (LOG-R16).
+---@param kind "cast"|"skill"|"build"
+---@return fun(): PagleRecord?
+function CatchLog:Reverse(kind)
+	local entries, characters = self.data.entries, self.data.characters
+	local seq = #entries + 1
+	return function()
+		while seq > 1 do
+			seq = seq - 1
+			local entry = entries[seq]
+			local codec = type(entry) == "string" and kinds[string.match(entry, "^[^|]*")]
+			if codec and codec.kind == kind then
+				local record = decode(entry, seq, characters)
+				if record then
+					return record
+				end
+				countUndecodable(self, seq)
 			end
 		end
 		return nil
@@ -370,6 +402,13 @@ function CatchLog:Append(record)
 	ensureLogId(self.data, record.time)
 	entries[seq] = entry
 	return appended
+end
+
+--- Creates the log's logId if it has none yet and has a first character (LOG-R15). Core calls it once the
+--- logged-in character is in the table, so the logId exists before the first append.
+---@param now integer server time
+function CatchLog:EnsureLogId(now)
+	ensureLogId(self.data, now)
 end
 
 --- Opens the Catch log stored in `saved`, the PagleLog SavedVariable (LOG-R10). A fresh install (`saved` nil)
