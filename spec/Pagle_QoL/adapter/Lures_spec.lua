@@ -67,21 +67,24 @@ describe("Lures on the Fishing key", function()
 			end
 		)
 
-		it("puts the lure on the pole in one press, with no targeting, then waits for it (QOL-R24, QOL-R29, QOL-R52)", function()
-			local fake, client = start()
+		it(
+			"puts the lure on the pole in one press, with no targeting, then waits for it (QOL-R24, QOL-R29, QOL-R52)",
+			function()
+				local fake, client = start()
 
-			client.pressKey("F")
+				client.pressKey("F")
 
-			-- The use was applied to the main hand: the cursor isn't left targeting (#147).
-			assert.is_nil(client.targeting)
-			assert.are.same({ "use 6529 on 16" }, client.itemUses)
-			-- Its UNIT_SPELLCAST_SUCCEEDED (8087) counts the pole as lured while the result wait runs.
-			assert.are.equal(CAST, client.overrideAction("F"))
-			client.mainHandEnchant = 263
-			fake.fireGameEvent("UNIT_INVENTORY_CHANGED", "player")
-			client.advance(2)
-			assert.are.equal(CAST, client.overrideAction("F"))
-		end)
+				-- The use was applied to the main hand: the cursor isn't left targeting (#147).
+				assert.is_nil(client.targeting)
+				assert.are.same({ "use 6529 on 16" }, client.itemUses)
+				-- Its UNIT_SPELLCAST_SUCCEEDED (8087) counts the pole as lured while the result wait runs.
+				assert.are.equal(CAST, client.overrideAction("F"))
+				client.mainHandEnchant = 263
+				fake.fireGameEvent("UNIT_INVENTORY_CHANGED", "player")
+				client.advance(2)
+				assert.are.equal(CAST, client.overrideAction("F"))
+			end
+		)
 
 		it("reels with the bobber out, and casts once a lure is on (QOL-R20)", function()
 			local fake, client = start()
