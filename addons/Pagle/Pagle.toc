@@ -22,6 +22,7 @@ logic\ReportOnce.lua
 logic\Restriction.lua
 logic\WorkQueue.lua
 logic\Conditions.lua
+logic\NextWindow.lua
 logic\LiveConditions.lua
 logic\Modules.lua
 logic\Sessions.lua
@@ -49,6 +50,7 @@ adapter\Restriction.lua
 adapter\Conditions.lua
 adapter\Catalogue.lua
 adapter\LiveConditions.lua
+adapter\NextWindow.lua
 adapter\Modules.lua
 adapter\CatchLog.lua
 adapter\Projections.lua
