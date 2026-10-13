@@ -22,6 +22,7 @@ logic\ReportOnce.lua
 logic\Restriction.lua
 logic\WorkQueue.lua
 logic\Conditions.lua
+logic\LiveConditions.lua
 logic\Modules.lua
 logic\CatchLog.lua
 logic\Migrations.lua
