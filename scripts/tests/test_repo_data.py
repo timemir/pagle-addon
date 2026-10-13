@@ -1,6 +1,7 @@
 """The repo's own data/: data/forever/ holds the seeded lists the spec names, and data/db2/ the committed slice."""
 
 import re
+import tomllib
 from pathlib import Path
 
 from pagle_data.db2 import Db2Layer, read_db2
@@ -69,3 +70,16 @@ def test_no_name_from_areas_csv_appears_in_any_generated_file() -> None:
         for content in (text, (REPO / path).read_text(encoding="utf-8")):
             leaked = sorted(name for name in names if name in content)
             assert leaked == [], f"{path} holds area names {leaked}"
+
+
+def test_the_committed_catalogue_s_aliases_are_aliases_toml_s() -> None:
+    # DATA-R76: Catalogue.lua's aliases (areaID → baseline areaID) are the alias table; DATA-R32's example,
+    # 16521 → 18, is in it. Read straight from the two committed files.
+    with (REPO / "data" / "forever" / "aliases.toml").open("rb") as handle:
+        table = {entry["from"]: entry["to"] for entry in tomllib.load(handle)["alias"]}
+    committed = (REPO / CATALOGUE_LUA).read_text(encoding="utf-8")
+    line = re.search(r"^\taliases = \{(.*)\},$", committed, flags=re.MULTILINE)
+    assert line is not None
+    emitted = {int(source): int(target) for source, target in re.findall(r"\[(\d+)\] = (\d+)", line.group(1))}
+    assert emitted == table
+    assert emitted[16521] == 18

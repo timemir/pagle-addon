@@ -1,9 +1,11 @@
 """From the source layers to the generated files' contents (DATA-R75), without writing anything."""
 
 from collections.abc import Mapping
+from dataclasses import dataclass
 from pathlib import Path
 
-from pagle_data.baseline import BASELINE, read_baseline
+from pagle_data.aliases import Proposal, check_aliases, fishing_areas, propose
+from pagle_data.baseline import BASELINE, BaselineLayer, read_baseline
 from pagle_data.catalogue import Catalogue, Event, fingerprint
 from pagle_data.db2 import DB2, Db2Layer, read_db2
 from pagle_data.forever import ForeverLayer, read_forever
@@ -32,8 +34,8 @@ def _areas(db2: Db2Layer) -> dict[int, Mapping[str, object]]:
 
 
 def build_catalogue(forever: ForeverLayer, db2: Db2Layer) -> Catalogue:
-    """The catalogue in its pre-M2 shape (DATA-R79): aliases stay empty until the alias layer fills them, and
-    nothing confirms an event's weekly rule yet."""
+    """The catalogue in its pre-M2 shape (DATA-R79): aliases.toml's aliases, and nothing confirms an event's weekly
+    rule yet."""
     events: dict[int, Event] = {}
     for event_id, rule in forever.events.items():
         if rule is None:
@@ -49,7 +51,7 @@ def build_catalogue(forever: ForeverLayer, db2: Db2Layer) -> Catalogue:
         "fingerprint": "",
         "items": {},
         "areas": _areas(db2),
-        "aliases": {},
+        "aliases": {alias.source: alias.target for alias in forever.aliases},
         "pools": {},
         "windows": {},
         "events": events,
@@ -75,15 +77,44 @@ def catalogue_lua(catalogue: Catalogue) -> str:
     return f"{header()}\n---@class PagleNS\nlocal ns = select(2, ...)\n\nns.catalogue = {to_lua(catalogue)}\n"
 
 
+@dataclass(frozen=True)
+class Layers:
+    """The source layers, read and checked (DATA-R63)."""
+
+    baseline: BaselineLayer
+    forever: ForeverLayer
+    db2: Db2Layer
+
+    def fishing_areas(self) -> set[int]:
+        return fishing_areas(self.baseline)
+
+    def proposals(self) -> list[Proposal]:
+        """The alias candidates not yet committed to aliases.toml (DATA-R32, DATA-R64)."""
+        return propose(self.db2, self.fishing_areas(), self.forever.aliases)
+
+
+def read_layers(root: Path) -> Layers:
+    """Every source layer under root/data/. Raises DataError listing every problem found (DATA-R63)."""
+    problems = Problems()
+    # DATA-R9: the baseline is read so that a hand-edited CSV fails. DATA-R79: M1's catalogue holds nothing from it;
+    # the alias checks and proposals (DATA-R32) are its only reader.
+    baseline = read_baseline(root, problems)
+    baseline_read = not problems
+    forever = read_forever(root, problems)
+    db2 = read_db2(root, problems)
+    if baseline_read:  # without the whole baseline, every target would look like it has no catch list
+        check_aliases(forever.aliases, fishing_areas(baseline), problems)
+    if problems:
+        raise DataError(problems.found)
+    return Layers(baseline, forever, db2)
+
+
+def outputs(layers: Layers) -> dict[str, str]:
+    """Every generated file's path (relative to the repo root) and content."""
+    return {CATALOGUE_LUA: catalogue_lua(build_catalogue(layers.forever, layers.db2))}
+
+
 def generate(root: Path) -> dict[str, str]:
     """Every generated file's path (relative to root) and content, from root/data/.
     Raises DataError listing every problem found (DATA-R63)."""
-    problems = Problems()
-    # DATA-R9: the baseline is read so that a hand-edited CSV fails. DATA-R79: M1's catalogue holds nothing from it
-    # yet; the alias proposals (DATA-R32) are its first reader.
-    read_baseline(root, problems)
-    forever = read_forever(root, problems)
-    db2 = read_db2(root, problems)
-    if problems:
-        raise DataError(problems.found)
-    return {CATALOGUE_LUA: catalogue_lua(build_catalogue(forever, db2))}
+    return outputs(read_layers(root))
