@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 
+from areas_fixture import write_areas
 from baseline_fixture import write_baseline
 from item_fixture import CHECKS, write_item_layer
 from observed_fixture import write_observed
@@ -40,6 +41,7 @@ def write_tree(
     (db2 / "areas.csv").write_text("ID,ParentAreaID,ContinentID,AreaName_lang\n", encoding="utf-8")
     (db2 / "items.csv").write_text(db2_items, encoding="utf-8")
     write_windows(root)  # test_windows.py covers windows
+    write_areas(root)  # test_catch_lists.py covers areas.toml
     write_observed(root)  # dev.toml with no facts; test_observed.py covers the layer
     return write_item_layer(root, items, species, families, checks)
 

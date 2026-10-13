@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 
+from areas_fixture import write_areas
 from baseline_fixture import CSVS, EVENTS_CSV_HEADER, SEED_EVENTS, write_baseline
 from item_fixture import write_item_layer
 from observed_fixture import write_observed
@@ -24,6 +25,7 @@ def write_tree(root: Path, windows: str = WINDOWS, events_csv: str | None = None
     (forever / "lists.toml").write_text("auras = []\nfishingSpells = [7620]\n", encoding="utf-8")
     (forever / "aliases.toml").write_text("", encoding="utf-8")
     write_windows(root, windows)
+    write_areas(root)  # test_catch_lists.py covers areas.toml
     db2 = root / "data" / "db2"
     db2.mkdir(parents=True, exist_ok=True)
     (db2 / "build.toml").write_text('build = 70338\nversion = "1.60.1"\nproducts = ["wow_classic_beta"]\n', encoding="utf-8")
