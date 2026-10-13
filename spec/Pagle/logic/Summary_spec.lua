@@ -188,23 +188,20 @@ describe("the Session summary", function()
 		assert.are.equal("Welcome back", world.global.pending[1].title)
 	end)
 
-	it(
-		"marks a card from a whileAway end whileAway, and only that one (ANN-R54)",
-		function()
-			local world = newWorld()
-			world.summary:Add(raised(LEDGER, { rung = "toast", kind = "newSpecies", title = "New Species" }))
-			world.summary:Add(raised(LEDGER, { rung = "toast", kind = "newSpecies", title = "New Species" }))
-			local away = {}
-			for key, value in pairs(SESSION) do
-				away[key] = value
-			end
-			away.whileAway = true
-
-			assert.is_true(world.summary:Ended(away).whileAway)
-			world.summary:Add(raised(LEDGER, { rung = "toast", kind = "newSpecies", title = "New Species" }))
-			assert.is_nil(world.summary:Ended(SESSION).whileAway)
+	it("marks a card from a whileAway end whileAway, and only that one (ANN-R54)", function()
+		local world = newWorld()
+		world.summary:Add(raised(LEDGER, { rung = "toast", kind = "newSpecies", title = "New Species" }))
+		world.summary:Add(raised(LEDGER, { rung = "toast", kind = "newSpecies", title = "New Species" }))
+		local away = {}
+		for key, value in pairs(SESSION) do
+			away[key] = value
 		end
-	)
+		away.whileAway = true
+
+		assert.is_true(world.summary:Ended(away).whileAway)
+		world.summary:Add(raised(LEDGER, { rung = "toast", kind = "newSpecies", title = "New Species" }))
+		assert.is_nil(world.summary:Ended(SESSION).whileAway)
+	end)
 
 	describe("summary lines", function()
 		-- The card's lines as { module, { texts } } pairs.
