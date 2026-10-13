@@ -193,4 +193,23 @@ describe("FakePagle", function()
 			Pagle.MatchesConditions({ pools = { 1 } }, { zone = 40 })
 		end)
 	end)
+
+	it("iterates its Catch log with Core's real codec, handing out read-only records (LOG-R42, CORE-R18)", function()
+		local fake = newFakePagle()
+		fake.catchLog.data.characters[1] = { guid = PLAYER_GUID }
+		fake.catchLog:Append({ kind = "skill", char = 1, time = 1791731680, rank = 86, max = 150, mod = 0 })
+		fake.catchLog:Append({ kind = "build", char = 1, time = 1791731681, build = 70338, version = "1.60.1" })
+
+		local records = {}
+		for record in fake.Pagle.IterateCatches(1) do
+			records[#records + 1] = record
+		end
+
+		assert.are.equal(1, #records)
+		assert.are.equal("build", records[1].kind)
+		assert.are.equal(PLAYER_GUID .. "-1791731681-0", records[1].id)
+		assert.has_error(function()
+			records[1].build = 1
+		end)
+	end)
 end)

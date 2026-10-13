@@ -39,6 +39,7 @@
 ---@field login fun() Does Core's PLAYER_LOGIN work: fires ModulesChanged. Raises an error if called twice.
 ---@field readOnly fun(value: any): any The read-only proxy of a table (the same one each time); other values as is.
 ---@field moduleState fun(name: string): PagleModuleState A roster Module's state (CORE-R41).
+---@field catchLog PagleCatchLog The Catch log Pagle.IterateCatches reads, on Core's real codec; empty at first.
 
 -- Core's logic/ for one fake: Pagle.toc's libs (for the bus), generated data/, locale/ and logic/ files, in TOC
 -- order, sharing one ns, as the client would load them. None uses WoW globals (CORE-R7), so plain Lua runs them.
@@ -241,6 +242,18 @@ end)
 -- Condition specs (LOG-R48): pure, so the real one.
 part(function(_, Pagle, ns)
 	Pagle.MatchesConditions = ns.MatchesConditions
+end)
+
+-- The Catch log (LOG-R10–R16, LOG-R42) on Core's real codec, over an empty in-memory PagleLog. A spec adds
+-- characters to fake.catchLog.data.characters and entries with fake.catchLog:Append(record).
+part(function(fake, Pagle, ns)
+	fake.catchLog = ns.OpenCatchLog(nil, { decodeErrors = 0 }, 1791731700)
+	function Pagle.IterateCatches(afterSeq)
+		local iterate = fake.catchLog:Iterate(afterSeq)
+		return function()
+			return readOnly(iterate())
+		end
+	end
 end)
 
 --- A fresh FakePagle: no Module registered, not restricted, before PLAYER_LOGIN.
