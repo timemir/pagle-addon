@@ -22,4 +22,56 @@ function ns.AddSettings(M)
 		tooltip = L.SETTINGS_FISHING_KEY_TOOLTIP,
 		binding = "PAGLE_FISHING_KEY",
 	})
+
+	-- While you fish: what a Fishing stretch leases besides soft-interact (QOL-R62), each change taking effect at once,
+	-- mid-stretch too (QOL-R65). The rows read PagleQoLDB.profile, which QoL opens before the page is built.
+	local defaults = ns.DB_DEFAULTS.profile
+	M:AddSetting("fishing", { kind = "header", label = L.SETTINGS_WHILE_YOU_FISH })
+	M:AddSetting("fishing", {
+		kind = "checkbox",
+		id = "audio",
+		label = L.SETTINGS_AUDIO_MIX,
+		tooltip = L.SETTINGS_AUDIO_MIX_TOOLTIP,
+		default = defaults.audio.on,
+		get = function()
+			return ns.db.profile.audio.on
+		end,
+		set = function(value)
+			ns.ChangeLeaseSetting(function(profile)
+				profile.audio.on = value
+			end)
+		end,
+	})
+	-- qol.md gives this row no tooltip. Greyed out while the audio mix is off, keeping its value (SET-R31).
+	M:AddSetting("fishing", {
+		kind = "checkbox",
+		parent = "audio",
+		label = L.SETTINGS_BACKGROUND_SOUND,
+		default = defaults.audio.background,
+		get = function()
+			return ns.db.profile.audio.background
+		end,
+		set = function(value)
+			ns.ChangeLeaseSetting(function(profile)
+				profile.audio.background = value
+			end)
+		end,
+		isEnabled = function()
+			return ns.db.profile.audio.on
+		end,
+	})
+	M:AddSetting("fishing", {
+		kind = "checkbox",
+		label = L.SETTINGS_AUTO_LOOT,
+		tooltip = L.SETTINGS_AUTO_LOOT_TOOLTIP,
+		default = defaults.autoLoot,
+		get = function()
+			return ns.db.profile.autoLoot
+		end,
+		set = function(value)
+			ns.ChangeLeaseSetting(function(profile)
+				profile.autoLoot = value
+			end)
+		end,
+	})
 end

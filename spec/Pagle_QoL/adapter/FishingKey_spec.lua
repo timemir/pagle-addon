@@ -276,6 +276,9 @@ describe("The Fishing key", function()
 	describe("boundary", function()
 		it("records nothing and changes only bindings, over a whole Cast (QOL-R4, QOL-R5)", function()
 			local fake, client, loaded = start({ "F" })
+			-- AceDB fills in the profile's defaults on its first read, which the stretch's lease makes (QOL-R62).
+			-- That records nothing, so it happens before the copy.
+			local _ = loaded.ns.db.profile
 			local saved = loaded.env.PagleQoLDB
 			local function copy(value)
 				if type(value) ~= "table" then

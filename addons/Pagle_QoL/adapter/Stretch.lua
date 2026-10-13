@@ -5,10 +5,10 @@ end
 ---@class PagleQoLNS
 local ns = select(2, ...)
 
--- The Fishing stretch (QOL-R61) and the CVars leased for it (QOL-R62–R64, QOL-R66): QoL hears when a stretch
--- starts and ends (logic/Stretch.lua decides), leases the soft-interact row for it, and restores the lease when it
--- ends, at load and when lockdown ends. It changes only CVars (QOL-R5); what it reads, it uses only to decide
--- (QOL-R4).
+-- The Fishing stretch (QOL-R61) and the CVars leased for it (QOL-R62–R66): QoL hears when a stretch starts and ends
+-- (logic/Stretch.lua decides), leases soft-interact and each While you fish feature that is on for it, follows those
+-- settings mid-stretch, and restores the lease when it ends, at load and when lockdown ends. It changes only CVars
+-- (QOL-R5); what it reads, it uses only to decide (QOL-R4).
 
 -- The owner of the stretch's Core event callbacks and WoW event registrations.
 local OWNER = "Pagle_QoL Fishing stretch"
@@ -36,12 +36,30 @@ local function lease()
 	return global.lease
 end
 
--- Restores every leased CVar now, or, under lockdown, leaves the lease to wait for RestrictionChanged(false)
--- (QOL-R63, QOL-R66).
-local function restore()
+-- Restores every leased CVar now, or with `only` just the ones it names, or, under lockdown, leaves the lease to
+-- wait for RestrictionChanged(false) (QOL-R63, QOL-R65, QOL-R66).
+---@param only table<string, true>?
+local function restore(only)
 	if not InCombatLockdown() then
-		ns.RestoreLease(lease(), cvars)
+		ns.RestoreLease(lease(), cvars, only)
 	end
+end
+
+--- Changes a While you fish setting with `change(profile)` (QOL-R62). During a stretch, the CVars of a feature it
+--- turned off are restored at once and those of one it turned on are leased at once; the rest of the lease stays
+--- as it is (QOL-R65). Outside one, the next stretch follows the new setting.
+---@param change fun(profile: PagleQoLLeaseSettings) changes `PagleQoLDB.profile` in place
+function ns.ChangeLeaseSetting(change)
+	---@type PagleQoLLeaseSettings QoL's OnInitialize opened PagleQoLDB before its page has any row to change
+	local profile = ns.db.profile
+	local before = ns.LeaseRows(profile)
+	change(profile)
+	if not stretch:IsRunning() then
+		return
+	end
+	local rows, names = ns.LeaseChange(before, ns.LeaseRows(profile))
+	restore(names)
+	ns.Lease(lease(), rows, cvars)
 end
 
 local onUpdate
@@ -81,10 +99,11 @@ end
 function ns.StartStretch()
 	restore()
 
-	-- A stretch starts only while armed, so never while restricted or standing down (QOL-R30, QOL-R82).
+	-- A stretch starts only while armed, so never while restricted or standing down (QOL-R30, QOL-R82). It leases
+	-- soft-interact and each While you fish feature that is on (QOL-R62).
 	Pagle.RegisterCallback(OWNER, "CastStarted", function()
 		if stretch:CastStarted(ns.IsArmed()) then
-			ns.Lease(lease(), ns.SOFT_INTERACT_LEASE, cvars)
+			ns.Lease(lease(), ns.LeaseRows(ns.db.profile), cvars)
 		end
 		setOnUpdate()
 	end)

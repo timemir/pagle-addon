@@ -23,7 +23,7 @@ function ns.QoL.OnInitialize()
 	ns.AddSettings(ns.Module)
 
 	-- Account-wide, one shared profile (QOL-R1), with the defaults in qol.md › Data.
-	ns.db = LibStub("AceDB-3.0"):New("PagleQoLDB", { global = { lease = {} } }, true)
+	ns.db = LibStub("AceDB-3.0"):New("PagleQoLDB", ns.DB_DEFAULTS, true)
 	ns.MigrateDB(ns.db.global)
 	-- The leftover restore comes before anything else (QOL-R64).
 	ns.StartStretch()
