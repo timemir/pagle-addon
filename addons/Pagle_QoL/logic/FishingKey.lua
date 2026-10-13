@@ -32,6 +32,7 @@ ns.GEAR_BUTTON = "PagleQoLGearButton"
 ---@field lure integer? the lure QOL-R51 picks; nil while Lures is *Off* or none is available
 ---@field gearReady boolean? the gear step is ready (QOL-R43)
 ---@field skipGear boolean? the evaluation skips the gear step, as the double-click's does (QOL-R13, QOL-R15)
+---@field reelMissed boolean? the reel didn't take, so the channel's next press casts again (QOL-R35)
 
 --- The next action: the first step of the ladder that holds (QOL-R20), so a press is one game action.
 ---@param state PagleQoLLadderState
@@ -41,7 +42,8 @@ function ns.NextAction(state)
 		return "nothing"
 	end
 	if state.channelingFishing then
-		return "reel"
+		-- Unless the reel didn't take: then the press casts again, ending the old Cast (QOL-R35).
+		return state.reelMissed and "cast" or "reel"
 	end
 	-- The fishing set goes on before a lure, which needs the pole in hand; the double-click never equips it.
 	if state.gearReady and not state.skipGear then
@@ -156,4 +158,51 @@ function ns.KeyWithoutModifiers(key)
 		key = stripped or key
 	until not stripped
 	return key
+end
+
+--- How long after a reel press the reel counts as not taken, in seconds (qol.md › Tunables, the reel wait, QOL-R35).
+ns.REEL_WAIT = 0.5
+
+--- The watch on the Fishing key's reel presses (QOL-R35), on `GetTime()` values: a key seen going down while the
+--- reel is armed is a reel press, and the reel wait passing after it means the reel didn't take. The adapter clears
+--- it when the channel stops or starts, a loot window opens or QoL is disarmed.
+---@class PagleQoLReelWatch
+---@field down boolean whether a bound key was down on the last frame
+---@field pressedAt number? when the waiting reel press came
+---@field missed boolean the reel didn't take
+local ReelWatch = {}
+ReelWatch.__index = ReelWatch
+
+--- A watch with no press waiting and no key down.
+---@return PagleQoLReelWatch
+function ns.NewReelWatch()
+	return setmetatable({ down = false, missed = false }, ReelWatch)
+end
+
+--- One frame's look at the Fishing key. Returns true on the frame the reel wait passes after a reel press, once.
+---@param reelArmed boolean the Fishing key's override is the reel now
+---@param down boolean a bound key is down (`IsKeyDown` on the key without its modifiers)
+---@param now number
+---@return boolean
+function ReelWatch:Frame(reelArmed, down, now)
+	if reelArmed and down and not self.down and not self.pressedAt and not self.missed then
+		self.pressedAt = now
+	end
+	self.down = down
+	if self.pressedAt and now - self.pressedAt >= ns.REEL_WAIT then
+		self.pressedAt, self.missed = nil, true
+		return true
+	end
+	return false
+end
+
+--- Whether the reel didn't take.
+---@return boolean
+function ReelWatch:Missed()
+	return self.missed
+end
+
+--- Drops a waiting reel press and the miss.
+function ReelWatch:Clear()
+	self.pressedAt, self.missed = nil, false
 end
