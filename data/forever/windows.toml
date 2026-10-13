@@ -1,0 +1,15 @@
+# The named windows (DATA-R35, DATA-R36): each [window.<id>] is a condition spec (LOG-R48) using only time
+# (`[[from, to], …]` realm minutes, to exclusive), season (`[{ from = [month, day], to = [month, day] }, …]`, both
+# days inclusive) and events (`[eventID, …]`), and a required why (DATA-R10).
+# The baseline seeds day, night, summer and winter from VMaNGOS's events 47, 48, 45 and 46; an entry here overrides
+# its seed whole. spring and autumn have no seed, so they are defined only here. The IDs are day, night, spring,
+# summer, autumn and winter; the generator makes event.<eventID> from events.toml, never from here.
+# Edit this, then run scripts/generate-data.py and commit the regenerated files with it (DATA-R61).
+
+[window.spring]
+season = [{ from = [3, 20], to = [6, 20] }]
+why = "Tunables (content-data.md): spring window, 20 Mar - 20 Jun"
+
+[window.autumn]
+season = [{ from = [9, 23], to = [12, 20] }]
+why = "Tunables (content-data.md): autumn window, 23 Sep - 20 Dec"

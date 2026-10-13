@@ -1,0 +1,24 @@
+# Trophy families (DATA-R21): each [family.<n>] declares a family ID that items.toml's trophies may name. IDs are
+# never reused. A family's label is lore (family.<id>.name, DATA-R103), never written here; the comments list each
+# family's trophy items, numbered in #90 by their lowest item ID.
+
+# items 6292, 6294, 6295
+[family.1]
+
+# items 6309, 6310, 6311, 6363
+[family.2]
+
+# items 13876, 13877, 13878
+[family.3]
+
+# items 13882, 13883, 13884, 13885, 13886
+[family.4]
+
+# items 13901, 13902, 13903
+[family.5]
+
+# item 13907
+[family.6]
+
+# item 13914
+[family.7]

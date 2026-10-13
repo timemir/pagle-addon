@@ -1,0 +1,2 @@
+# Typical lengths (DATA-R20): [species.<speciesID>] typicalLength, in whole millimetres, for each Species. They come
+# with Simulated Size in M4, when data/checks.toml turns the typicalLength check on (DATA-R66).

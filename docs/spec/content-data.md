@@ -267,8 +267,8 @@ Terms are used as `CONTEXT.md` defines them. "The catalogue" is what the generat
 
 ### The DB2 watch
 
-- **DATA-R128** The **DB2 watch** (`.github/workflows/db2-watch.yml`) runs weekly and on manual dispatch. It reads the wago.tools builds API (`https://wago.tools/api/builds`) for the products in `data/db2/build.toml` (seeded with `wow_classic_beta`, where Forever's beta builds sit; the dev updates the list by hand when the live product appears) and, when a build newer than the recorded one exists, downloads that build's tables, diffs them against `data/db2/`, and opens one issue titled "Forever build <version>: DB2 changes" with labels `db2-diff` and `needs-triage`, unless an issue with that title exists.
-- **DATA-R129** The diff lists: new items in the item universe or whose enUS name matches a watch keyword (Tunables); renamed items and class or quality changes in the universe; new areas, renamed areas, and areas whose parent or continent moved; new spells and calendar events whose enUS name matches a watch keyword. For spells and events, which `data/db2/` doesn't keep, the watch downloads `SpellName` and `HolidayNames` for both the recorded build and the new one. A keyword matches a whole word, ignoring case ("Pool" doesn't match "Whirlpool").
+- **DATA-R128** The **DB2 watch** (`.github/workflows/db2-watch.yml`) runs weekly and on manual dispatch. It reads the wago.tools builds API (`https://wago.tools/api/builds`) for the products in `data/db2/build.toml` (seeded with `wow_classic_beta`, where Forever's beta builds sit; the dev updates the list by hand when the live product appears) and, when a build on the recorded build's version line (the major and minor of `build.toml`'s `version`, 1.60 today; a product may also list other games' builds, such as MoP Classic's 5.5.0 under `wow_classic_beta`) has a higher build number than the recorded one, downloads the newest such build's tables, diffs them against `data/db2/`, and opens one issue titled "Forever build <version>: DB2 changes" with labels `db2-diff` and `needs-triage`, unless an issue with that title exists.
+- **DATA-R129** The diff lists: new items in the item universe or whose enUS name matches a watch keyword (Tunables); renamed items and class or quality changes in the universe; new areas, renamed areas, and areas whose parent or continent moved; new spells and calendar events whose enUS name matches a watch keyword. For what `data/db2/` doesn't keep (spells, events, and which items outside the universe are new), the watch downloads `SpellName`, `HolidayNames` and `ItemSparse` for both the recorded build and the new one. A keyword matches a whole word, ignoring case ("Pool" doesn't match "Whirlpool").
 - **DATA-R130** The watch never edits `data/`. The dev refreshes the slice with `scripts/update-db2.py` (DATA-R12) and makes any follow-up edits by hand.
 
 ## Data
@@ -366,6 +366,7 @@ The parser accepts exactly the `PAGLE-REPORT 1` format (REP-R30–R33). Core and
 | `scripts/generate-data.py [--check \| --propose-aliases \| --min-build <n> \| --explain <id> \| --lock]` | DATA-R60–R66, DATA-R57, DATA-R95 |
 | `scripts/import-field-report.py <issue> …` | DATA-R119–R121 |
 | `scripts/update-db2.py <build>` | DATA-R12 |
+| `scripts/db2-watch.py --out <dir> [--issues <file>]` | DATA-R128–R130 |
 | `scripts/extract-baseline.py <dump>` | DATA-R9 (run once) |
 
 ## UI
