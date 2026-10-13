@@ -11,6 +11,7 @@ from pagle_data.db2 import DB2, Db2Layer, read_db2
 from pagle_data.forever import ForeverLayer, read_forever
 from pagle_data.lua import to_lua
 from pagle_data.toml_reader import DataError, Problems
+from pagle_data.windows import Spec, build_windows, catalogue_windows, local_lua, read_windows_toml
 
 CATALOGUE_LUA = "addons/Pagle/data/Catalogue.lua"
 
@@ -33,9 +34,9 @@ def _areas(db2: Db2Layer) -> dict[int, Mapping[str, object]]:
     }
 
 
-def build_catalogue(forever: ForeverLayer, db2: Db2Layer) -> Catalogue:
-    """The catalogue in its pre-M2 shape (DATA-R79): aliases.toml's aliases, and nothing confirms an event's weekly
-    rule yet."""
+def build_catalogue(forever: ForeverLayer, db2: Db2Layer, windows: Mapping[str, Spec]) -> Catalogue:
+    """The catalogue in its pre-M2 shape (DATA-R79) with M2's windows (DATA-R35): aliases.toml's aliases, and
+    nothing confirms an event's weekly rule yet."""
     events: dict[int, Event] = {}
     for event_id, rule in forever.events.items():
         if rule is None:
@@ -53,7 +54,7 @@ def build_catalogue(forever: ForeverLayer, db2: Db2Layer) -> Catalogue:
         "areas": _areas(db2),
         "aliases": {alias.source: alias.target for alias in forever.aliases},
         "pools": {},
-        "windows": {},
+        "windows": catalogue_windows(windows),
         "events": events,
         "fishingSpells": sorted(forever.fishing_spells),
         "auras": sorted(forever.auras),
@@ -73,8 +74,12 @@ def header() -> str:
 
 
 def catalogue_lua(catalogue: Catalogue) -> str:
-    """Catalogue.lua (DATA-R76): sets ns.catalogue. Core's TOC lists it before Core's own files."""
-    return f"{header()}\n---@class PagleNS\nlocal ns = select(2, ...)\n\nns.catalogue = {to_lua(catalogue)}\n"
+    """Catalogue.lua (DATA-R76): sets ns.catalogue, after the local W of window specs it points at (Contracts).
+    Core's TOC lists it before Core's own files."""
+    return (
+        f"{header()}\n---@class PagleNS\nlocal ns = select(2, ...)\n\n"
+        f"{local_lua(catalogue['windows'])}\nns.catalogue = {to_lua(catalogue)}\n"
+    )
 
 
 @dataclass(frozen=True)
@@ -84,6 +89,7 @@ class Layers:
     baseline: BaselineLayer
     forever: ForeverLayer
     db2: Db2Layer
+    windows: dict[str, Spec]  # every window by ID (DATA-R35)
 
     def fishing_areas(self) -> set[int]:
         return fishing_areas(self.baseline)
@@ -102,16 +108,20 @@ def read_layers(root: Path) -> Layers:
     baseline_read = not problems
     forever = read_forever(root, problems)
     db2 = read_db2(root, problems)
+    window_overrides = read_windows_toml(root, problems)
+    windows: dict[str, Spec] = {}
     if baseline_read:  # without the whole baseline, every target would look like it has no catch list
         check_aliases(forever.aliases, fishing_areas(baseline), problems)
+        # ...and every seeded window would look missing (DATA-R35, DATA-R36)
+        windows = build_windows(baseline.events, window_overrides, forever.events, problems)
     if problems:
         raise DataError(problems.found)
-    return Layers(baseline, forever, db2)
+    return Layers(baseline, forever, db2, windows)
 
 
 def outputs(layers: Layers) -> dict[str, str]:
     """Every generated file's path (relative to the repo root) and content."""
-    return {CATALOGUE_LUA: catalogue_lua(build_catalogue(layers.forever, layers.db2))}
+    return {CATALOGUE_LUA: catalogue_lua(build_catalogue(layers.forever, layers.db2, layers.windows))}
 
 
 def generate(root: Path) -> dict[str, str]:
