@@ -11,15 +11,21 @@ local ns = select(2, ...)
 --- The Fishing spell whose name the cast override uses: every rank shares it (QOL-R24).
 ns.FISHING_SPELL_ID = 7620
 
----@alias PagleQoLAction "nothing"|"reel"|"cast"
+--- The secure button the Fishing key clicks to use an item (QOL-R24): one `SecureActionButtonTemplate` button,
+--- never shown.
+ns.ACTION_BUTTON = "PagleQoLActionButton"
 
---- What the ladder reads (QOL-R20). M1 has steps 1, 2 and 6; Track Q adds gear, lures and clams.
+---@alias PagleQoLAction "nothing"|"reel"|"lure"|"cast"
+
+--- What the ladder reads (QOL-R20). It has steps 1, 2, 4 and 6; Track Q adds gear and clams.
 ---@class PagleQoLLadderState
 ---@field armed boolean? QoL is armed (QOL-R30)
 ---@field lootOpen boolean? a loot window is open (QOL-R28)
 ---@field casting boolean? the player is casting a spell with a cast time (`UnitCastingInfo`)
 ---@field channelingFishing boolean? the player is channeling Fishing (QOL-R22)
----@field poleInHand boolean? a fishing pole is in hand (QOL-R21); M1's ladder casts either way (QOL-R23)
+---@field poleInHand boolean? a fishing pole is in hand (QOL-R21); the cast needs none (QOL-R23)
+---@field lured boolean? the pole has a lure on, or counts as lured while a lure's result is awaited (QOL-R29)
+---@field lure integer? the lure QOL-R51 picks; nil while Lures is *Off* or none is available
 
 --- The next action: the first step of the ladder that holds (QOL-R20), so a press is one game action.
 ---@param state PagleQoLLadderState
@@ -30,6 +36,10 @@ function ns.NextAction(state)
 	end
 	if state.channelingFishing then
 		return "reel"
+	end
+	-- After the reel and before the cast, so a lure never goes on mid-channel.
+	if state.poleInHand and not state.lured and state.lure then
+		return "lure"
 	end
 	return "cast"
 end
@@ -42,19 +52,25 @@ function ns.IsFishingPole(classID, subclassID)
 	return classID == 2 and subclassID == 20
 end
 
---- What an override points a key at: a spell by name, or a binding command.
+--- What an override points a key at: a spell by name, a binding command, or a click on a button by name, set to
+--- use `item`.
 ---@class PagleQoLKeyTarget
----@field kind "spell"|"command"
+---@field kind "spell"|"command"|"click"
 ---@field value string
+---@field item integer? the item ID the button uses, for a click
 
 --- The Fishing key column of QOL-R24: cast by the Fishing spell's name, reel with soft-interact's
---- INTERACTTARGET, and no target (no override) for nothing, or for a cast while the spell's name is unknown.
+--- INTERACTTARGET, a lure by clicking ns.ACTION_BUTTON set to use it (QOL-R52), and no target (no override) for
+--- nothing, or for a cast while the spell's name is unknown.
 ---@param action PagleQoLAction
 ---@param fishingName string? `C_Spell.GetSpellName(ns.FISHING_SPELL_ID)`
+---@param lure integer? the lure's item ID, for the lure action
 ---@return PagleQoLKeyTarget?
-function ns.KeyTarget(action, fishingName)
+function ns.KeyTarget(action, fishingName, lure)
 	if action == "reel" then
 		return { kind = "command", value = "INTERACTTARGET" }
+	elseif action == "lure" and lure then
+		return { kind = "click", value = ns.ACTION_BUTTON, item = lure }
 	elseif action == "cast" and fishingName then
 		return { kind = "spell", value = fishingName }
 	end
@@ -94,7 +110,7 @@ function ns.SameArming(a, b)
 	if a.target == nil or b.target == nil then
 		return a.target == b.target
 	end
-	return a.target.kind == b.target.kind and a.target.value == b.target.value
+	return a.target.kind == b.target.kind and a.target.value == b.target.value and a.target.item == b.target.item
 end
 
 local MODIFIERS = { "ALT", "CTRL", "SHIFT", "META" }
