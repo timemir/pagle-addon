@@ -83,6 +83,14 @@ function ns.GearStepReady(set, poleInHand, settling)
 	return set ~= nil and not poleInHand and set.hasPole and set.numLost == 0 and not settling
 end
 
+--- Whether the gear worn now may be saved into *Pagle Previous* (QOL-R42, QOL-R44): never with a fishing pole in hand,
+--- so *Pagle Previous* never holds the fishing outfit, and Swap gear's swap back always takes the pole off.
+---@param poleInHand boolean
+---@return boolean
+function ns.MaySavePrevious(poleInHand)
+	return not poleInHand
+end
+
 ---@alias PagleQoLSwapGear "equip"|"back"|"nothing"
 
 --- *Pagle Previous* as the game reads it now (QOL-R46).

@@ -121,6 +121,13 @@ describe("QoL's gear logic", function()
 		end
 	end)
 
+	describe("ns.MaySavePrevious", function()
+		it("holds only with no fishing pole in hand (QOL-R42, QOL-R44)", function()
+			assert.is_true(ns.MaySavePrevious(false))
+			assert.is_false(ns.MaySavePrevious(true))
+		end)
+	end)
+
 	describe("ns.SwapGearAction", function()
 		-- Pagle Previous as the game reads it: its main hand holds no fishing pole.
 		local PREVIOUS = { hasPole = false }

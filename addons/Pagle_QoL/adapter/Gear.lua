@@ -117,11 +117,13 @@ local function swapped()
 end
 
 -- A swap to the fishing set (QOL-R44): the gear worn now goes into *Pagle Previous* first, created with the main
--- hand's icon if it's missing and a slot is free; then the one game action. With no *Pagle Previous* to save into,
--- the swap still happens, and there is nothing to swap back to.
+-- hand's icon if it's missing and a slot is free, unless a fishing pole is in hand; then the one game action. With no
+-- *Pagle Previous* to save into, the swap still happens, and there is nothing to swap back to.
 ---@param setID integer
 local function swapToFishingSet(setID)
-	saveWorn(ns.PREVIOUS_SET_NAME, GetInventoryItemTexture("player", 16))
+	if ns.MaySavePrevious(ns.PoleInHand()) then
+		saveWorn(ns.PREVIOUS_SET_NAME, GetInventoryItemTexture("player", 16))
+	end
 	C_EquipmentSet.UseEquipmentSet(setID)
 	swapped()
 end

@@ -302,12 +302,35 @@ describe("Swap gear", function()
 	it("swaps to the set while it is partly worn, saving Pagle Previous first (QOL-R46, QOL-R44)", function()
 		local _, client, loaded = start(function(_, client)
 			withPrevious(client)
-			client.mainHand = FISHING_POLE -- the pole, but not the hat
+			client.worn[1] = HAT -- the hat, but not the pole
 		end)
 
 		pressSwapGear(loaded)
 
 		assert.are.same({ "clear ignored", "save " .. PREVIOUS, "use " .. FISHING }, client.equipmentSetCalls)
+		assert.are.same({ [16] = SWORD, [1] = HAT }, client.equipmentSets[PREVIOUS].items)
+	end)
+
+	it("only uses the set with a pole in hand: Pagle Previous keeps the gear it holds (QOL-R46, QOL-R44)", function()
+		local _, client, loaded = start(function(_, client)
+			withPrevious(client)
+			client.mainHand = FISHING_POLE -- the pole, but not the hat: a swap that ended half done
+		end)
+
+		pressSwapGear(loaded)
+
+		assert.are.same({ "use " .. FISHING }, client.equipmentSetCalls)
+		assert.are.same({ [16] = SWORD }, client.equipmentSets[PREVIOUS].items)
+	end)
+
+	it("creates no Pagle Previous with a pole in hand (QOL-R46, QOL-R44)", function()
+		local _, client, loaded = start(function(_, client)
+			client.mainHand = FISHING_POLE
+		end)
+
+		pressSwapGear(loaded)
+
+		assert.are.same({ "use " .. FISHING }, client.equipmentSetCalls)
 	end)
 
 	it("does nothing with an item of the set missing (QOL-R46)", function()
