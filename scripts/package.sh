@@ -99,7 +99,7 @@ awk -F/ '{ path = ""; for (i = 1; i < NF; i++) { path = path $i "/"; print path 
 	LC_ALL=C sort -u >"$work/folders.txt"
 stray=$(unzip -Z1 "$zipfile" | { grep '/$' || true; } | LC_ALL=C sort -u | LC_ALL=C comm -23 - "$work/folders.txt")
 if [[ -n $stray ]]; then
-	echo "FAIL: the zip has folders that hold none of addons/' files (fix .pkgmeta):" >&2
+	echo "FAIL: the zip has folders that no file from addons/ is in (fix .pkgmeta):" >&2
 	echo "$stray" >&2
 	exit 1
 fi
