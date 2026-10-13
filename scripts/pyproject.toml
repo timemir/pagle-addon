@@ -1,0 +1,17 @@
+# Config for the content generator's checks, stage 6 of scripts/check.sh (DATA-R60, DATA-R61). The tools are
+# the pinned ones in .tools/ (PYTHON_PACKAGES in scripts/tools.env); this is not a package to install.
+
+[tool.pytest.ini_options]
+# The suite imports pagle_data from scripts/. No .pytest_cache in the tree.
+pythonpath = ["."]
+testpaths = ["tests"]
+addopts = ["-p", "no:cacheprovider", "--strict-markers"]
+xfail_strict = true
+
+[tool.mypy]
+# Run from the repo root: mypy --config-file scripts/pyproject.toml
+files = ["scripts/pagle_data", "scripts/tests", "scripts/generate-data.py"]
+python_version = "3.12"
+strict = true
+cache_dir = ".tools/cache/mypy"
+warn_unreachable = true

@@ -1,0 +1,132 @@
+"""Strict TOML reading for data/ (DATA-R63): an unknown key or a wrong type is a problem, and every problem found is
+collected, so one run lists them all before the generator fails without writing anything.
+"""
+
+import tomllib
+from collections.abc import Collection, Mapping
+from dataclasses import dataclass, field
+from pathlib import Path
+
+
+@dataclass(frozen=True)
+class At:
+    """Where a value sits: a file relative to the repo root and a dotted key path inside it."""
+
+    file: str
+    path: str = ""
+
+    def __truediv__(self, key: str) -> "At":
+        return At(self.file, f"{self.path}.{key}" if self.path else key)
+
+    def __str__(self) -> str:
+        return f"{self.file}: {self.path}" if self.path else self.file
+
+
+@dataclass
+class Problems:
+    """The problems found so far, in the order found."""
+
+    found: list[str] = field(default_factory=list)
+
+    def add(self, at: At, message: str) -> None:
+        self.found.append(f"{at}: {message}")
+
+    def __bool__(self) -> bool:
+        return bool(self.found)
+
+
+class DataError(Exception):
+    """data/ has problems (DATA-R63); the generator writes nothing."""
+
+    def __init__(self, problems: list[str]) -> None:
+        super().__init__(f"{len(problems)} problem(s) in data/")
+        self.problems = problems
+
+
+def describe(value: object) -> str:
+    """A TOML value's type, for a message."""
+    if isinstance(value, bool):
+        return "a boolean"
+    if isinstance(value, int):
+        return "an integer"
+    if isinstance(value, float):
+        return "a float"
+    if isinstance(value, str):
+        return "a string"
+    if isinstance(value, list):
+        return "an array"
+    if isinstance(value, dict):
+        return "a table"
+    return "a date or time"
+
+
+def read_toml(root: Path, file: str, problems: Problems) -> dict[str, object] | None:
+    """The top-level table of root/file, or None (with a problem) when it's missing or isn't valid TOML."""
+    at = At(file)
+    try:
+        with (root / file).open("rb") as handle:
+            return tomllib.load(handle)
+    except FileNotFoundError:
+        problems.add(at, "missing")
+    except tomllib.TOMLDecodeError as error:
+        problems.add(at, f"not valid TOML: {error}")
+    return None
+
+
+def check_keys(
+    table: Mapping[str, object], at: At, problems: Problems, *, required: Collection[str], optional: Collection[str]
+) -> None:
+    """Adds a problem for each key of table that isn't allowed and each required key it lacks."""
+    for key in table:
+        if key not in required and key not in optional:
+            problems.add(at, f"unknown key '{key}'")
+    for key in required:
+        if key not in table:
+            problems.add(at, f"missing key '{key}'")
+
+
+def expect_table(value: object, at: At, problems: Problems) -> Mapping[str, object] | None:
+    if isinstance(value, dict):
+        return value
+    problems.add(at, f"expected a table, got {describe(value)}")
+    return None
+
+
+def expect_int(value: object, at: At, problems: Problems, *, minimum: int, maximum: int | None = None) -> int | None:
+    """value as an integer in [minimum, maximum], or None with a problem."""
+    if isinstance(value, bool) or not isinstance(value, int):
+        problems.add(at, f"expected an integer, got {describe(value)}")
+        return None
+    if value < minimum or (maximum is not None and value > maximum):
+        bounds = f"from {minimum} to {maximum}" if maximum is not None else f"at least {minimum}"
+        problems.add(at, f"expected an integer {bounds}, got {value}")
+        return None
+    return value
+
+
+def expect_ids(value: object, at: At, problems: Problems) -> list[int] | None:
+    """value as an array of distinct positive integer IDs, or None with a problem for each bad element."""
+    if not isinstance(value, list):
+        problems.add(at, f"expected an array of IDs, got {describe(value)}")
+        return None
+    ids: list[int] = []
+    ok = True
+    for index, item in enumerate(value):
+        item_at = At(at.file, f"{at.path}[{index}]")
+        number = expect_int(item, item_at, problems, minimum=1)
+        if number is None:
+            ok = False
+        elif number in ids:
+            problems.add(item_at, f"{number} is listed twice")
+            ok = False
+        else:
+            ids.append(number)
+    return ids if ok else None
+
+
+def parse_id(key: str, at: At, problems: Problems) -> int | None:
+    """A table key that names an ID, such as the 301 of [event.301], as an integer."""
+    if key.isascii() and key.isdecimal() and not key.startswith("0"):
+        return int(key)
+    problems.add(at, f"expected a positive integer ID as the key, got '{key}'")
+    return None
