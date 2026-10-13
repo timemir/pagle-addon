@@ -21,6 +21,7 @@ logic\ReportOnce.lua
 logic\Restriction.lua
 logic\WorkQueue.lua
 logic\Conditions.lua
+logic\Catalogue.lua
 adapter\Core.lua
 adapter\Callbacks.lua
 adapter\Events.lua
