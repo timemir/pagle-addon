@@ -118,28 +118,38 @@ describe("cutting Sessions", function()
 		end
 	end)
 
-	it("looks back to the Session's first Cast once per seq in a login, tagging the same each time (LOG-R98, #79)", function()
-		-- Each projection reads the log from its own seq at login, and again from its target when it finishes: the
-		-- look-back decodes the open Session, so its cost grows with the Session. It is kept for the login.
-		local catchLog = ns.OpenCatchLog(log({ cast(0), cast(300, 2), cast(600) }), {})
-		local lookBack = spy.on(ns, "SessionStartSeq")
-		finally(function()
-			lookBack:revert()
-		end)
+	it(
+		"looks back to the Session's first Cast once per seq in a login, tagging the same each time (LOG-R98, #79)",
+		function()
+			-- Each projection reads the log from its own seq at login, and again from its target when it finishes: the
+			-- look-back decodes the open Session, so its cost grows with the Session. It is kept for the login.
+			local catchLog = ns.OpenCatchLog(log({ cast(0), cast(300, 2), cast(600) }), {})
+			local lookBack = spy.on(ns, "SessionStartSeq")
+			finally(function()
+				lookBack:revert()
+			end)
 
-		local first = tags(catchLog, 2)
-		local again = tags(catchLog, 2)
+			local first = tags(catchLog, 2)
+			local again = tags(catchLog, 2)
 
-		assert.spy(lookBack).was.called(1)
-		assert.are.same({ [3] = idAt(0) }, first)
-		assert.are.same(first, again)
-	end)
+			assert.spy(lookBack).was.called(1)
+			assert.are.same({ [3] = idAt(0) }, first)
+			assert.are.same(first, again)
+		end
+	)
 
 	it("keeps each read's Session its own when a look-back is reused (LOG-R62, LOG-R98)", function()
 		local catchLog = ns.OpenCatchLog(log({ cast(0), cast(300, 2), cast(600) }), {})
 		tags(catchLog, 3)
 		local conditions = { minute = 494, zone = 1519, subzone = 0, events = {}, auras = {} }
-		catchLog:Append({ kind = "cast", char = 1, time = T + 700, outcome = "caught", conditions = conditions, items = {} })
+		catchLog:Append({
+			kind = "cast",
+			char = 1,
+			time = T + 700,
+			outcome = "caught",
+			conditions = conditions,
+			items = {},
+		})
 
 		tags(catchLog, 3)
 		tags(catchLog, 3)

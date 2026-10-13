@@ -354,7 +354,10 @@ describe("a catch-up or rebuild of many entries", function()
 				assert.is_true(world.now - started <= ns.PROJECTION_BUDGET)
 			until not ran
 
-			assert.are.same({ "501 rebuild", "done", "502 live", "503 live", "504 live" }, { unpack(seen.applied, 501) })
+			assert.are.same(
+				{ "501 rebuild", "done", "502 live", "503 live", "504 live" },
+				{ unpack(seen.applied, 501) }
+			)
 			assert.is_false(world.projections:IsUpdating())
 		end
 	)
