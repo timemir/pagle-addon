@@ -9,6 +9,14 @@ local ns = select(2, ...)
 ---@field label string
 ---@field onClick fun()
 
+--- The menu's last entry, "Settings" (CORE-R50): it calls `openSettings`, which while restricted prints CORE-R33's
+--- line instead (SET-R75).
+---@param openSettings fun()
+---@return PagleMenuEntry
+function ns.SettingsMenuEntry(openSettings)
+	return { label = ns.L.MENU_SETTINGS, onClick = openSettings }
+end
+
 --- The compartment menu's entries, read now, as each opening reads them (CORE-R50, CORE-R52): for each registered
 --- Module by `def.order`, its views, then its `menu` entries; then `last` ("Settings"). The Curio Shop entry joins in
 --- M2, "Help chart the waters" in M3. An entry whose label can't be read is left out.

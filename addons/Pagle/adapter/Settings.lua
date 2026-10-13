@@ -28,25 +28,10 @@ local pages = {}
 ---@class PagleModuleHandle
 local ModuleHandle = ns.ModuleHandle
 
---- Adds a row to a topic page: `"fishing"`, `"announcements"` or `"trackers"` (CORE-R42). Call it before
---- `ModulesChanged`, in OnInitialize; Core builds the pages then, each Module's rows in `def.order` under a header
---- with its title, left out when the first row is a header. Raises an error for an unknown topic or kind, an id
---- this Module already used on the page, or a `parent` naming none of its earlier rows there. A call after
---- `ModulesChanged` goes to `geterrorhandler()` and is dropped.
----@param topic "fishing"|"announcements"|"trackers"
----@param setting PagleSetting
-function ModuleHandle:AddSetting(topic, setting)
-	local module = ns.Modules:ModuleOf(self)
-	if not module then
-		error("AddSetting is a Module handle method: call M:AddSetting(topic, setting)", 2)
-	end
-	local problem, late = rows:Add(module.def.name, topic, setting)
-	if late then
-		geterrorhandler()(problem)
-	elseif problem then
-		error(problem, 2)
-	end
-end
+--- Adds a row to a topic page (CORE-R42): see ns.AddSettingMethod. A late call goes to `geterrorhandler()`.
+ModuleHandle.AddSetting = ns.AddSettingMethod(ns.Modules, rows, function(problem)
+	geterrorhandler()(problem)
+end)
 
 -- Core's own widgets on a pooled list frame, by frame. Weak, as the panel owns the frames.
 ---@type table<Frame, { text: FontString, status: { name: FontString, version: FontString, state: FontString, button: Button }[] }>

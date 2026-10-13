@@ -47,7 +47,12 @@
 ---@field settingsPage fun(topic: string): { module: string, kind: string, label: string, indented: boolean, setting: PagleSetting }[]?
 --- The rows Core would put on a topic page, in order, its header rows included; nil before login or with no rows,
 --- when Core registers no page (CORE-R42).
----@field reported string[] Each error Core reported through geterrorhandler(), e.g. a late M:AddSetting.
+---@field reported string[] Each error Core reported through geterrorhandler(), e.g. a late M:AddSetting or a
+--- Module function that raised under securecallfunction.
+---@field print fun(line: string) What Core's print does: adds a chat line to `printed`.
+---@field report fun(err: any) What Core's geterrorhandler() does: adds the error to `reported`.
+---@field securecall fun(fn: function, ...: any): ... What Core's securecallfunction does: runs `fn`; on an error,
+--- reports it and returns nothing.
 ---@field openedSettings string[] What each Pagle.OpenSettings opened: "root" or the topic (CORE-R43).
 ---@field menu fun(): PagleMenuEntry[] The compartment menu as it would open now, labels read (CORE-R50, CORE-R52);
 --- each entry's onClick is what clicking it does. Its last entry is Settings.
@@ -72,6 +77,9 @@
 ---@field closeLoot fun() LOOT_CLOSED.
 ---@field escape fun() The game reports the fish escaped (LOG-R6).
 ---@field wait fun(seconds: number) Moves the fake's clock on, running each grace timer that comes due.
+
+---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
+local newSecureCall = dofile("spec/support/securecall.lua")
 
 -- Core's logic/ for one fake: Pagle.toc's libs (for the bus), generated data/, locale/ and logic/ files, in TOC
 -- order, sharing one ns, as the client would load them. None uses WoW globals (CORE-R7), so plain Lua runs them.
@@ -244,16 +252,7 @@ part(function(fake, Pagle, ns)
 		local info = fake.addons[addon]
 		return info and info.metadata and info.metadata["X-Pagle-API"]
 	end
-	function Pagle.RegisterModule(def)
-		local handle, problem = fake.registry:Register(def, readAPI)
-		if problem then
-			error(problem, 2)
-		end
-		if not handle then
-			fake.printed[#fake.printed + 1] = ns.L.MODULE_NEEDS_NEWER_PAGLE:format(def.title)
-		end
-		return handle
-	end
+	Pagle.RegisterModule = ns.ModuleRegistrar(fake.registry, readAPI, fake.print)
 
 	function fake.moduleState(name)
 		local info = fake.addons[ns.ModuleAddOn(name)]
@@ -277,21 +276,9 @@ end)
 part(function(fake, Pagle, ns)
 	local rows = ns.NewSettingsRows()
 	local loggedIn = false
-	fake.reported = {}
 	fake.openedSettings = {}
 
-	function ns.ModuleHandle:AddSetting(topic, setting)
-		local module = fake.registry:ModuleOf(self)
-		if not module then
-			error("AddSetting is a Module handle method: call M:AddSetting(topic, setting)", 2)
-		end
-		local problem, late = rows:Add(module.def.name, topic, setting)
-		if late then
-			fake.reported[#fake.reported + 1] = problem
-		elseif problem then
-			error(problem, 2)
-		end
-	end
+	ns.ModuleHandle.AddSetting = ns.AddSettingMethod(fake.registry, rows, fake.report)
 
 	Pagle.RegisterCallback(fake, "ModulesChanged", function()
 		rows:Close()
@@ -319,7 +306,7 @@ part(function(fake, Pagle, ns)
 
 	function Pagle.OpenSettings(topic)
 		if Pagle.IsRestricted() then
-			fake.printed[#fake.printed + 1] = ns.L.SETTINGS_AFTER_COMBAT
+			fake.print(ns.L.SETTINGS_AFTER_COMBAT)
 		elseif loggedIn then
 			fake.openedSettings[#fake.openedSettings + 1] = (type(topic) == "string" and fake.settingsPage(topic))
 					and topic
@@ -329,40 +316,24 @@ part(function(fake, Pagle, ns)
 end)
 
 -- The compartment menu and /pagle (CORE-R50, CORE-R52, CORE-R60–R62), on Core's real logic. Modules' subcommands
--- are added at login, by def.order; one Core skips is in fake.reported.
+-- are added at login, by def.order; one Core skips is in fake.reported. Labels and subcommands run through
+-- fake.securecall, as Core's run through securecallfunction.
 part(function(fake, Pagle, ns)
 	local commands = ns.NewSlashCommands()
 	Pagle.RegisterCallback(commands, "ModulesChanged", function()
-		for _, module in ipairs(fake.registry:Modules()) do
-			for _, problem in ipairs(commands:Add(module.def)) do
-				fake.reported[#fake.reported + 1] = problem
-			end
-		end
+		commands:AddModules(fake.registry:Modules(), fake.report)
 	end)
 
-	local settings = {
-		label = ns.L.MENU_SETTINGS,
-		onClick = function()
-			Pagle.OpenSettings()
-		end,
-	}
+	local function openSettings()
+		Pagle.OpenSettings()
+	end
+	local settings = ns.SettingsMenuEntry(openSettings)
 	function fake.menu()
-		return ns.CompartmentMenu(fake.registry:Modules(), settings, function(fn)
-			return fn()
-		end)
+		return ns.CompartmentMenu(fake.registry:Modules(), settings, fake.securecall)
 	end
 
 	function fake.slash(line)
-		local action, command, args = commands:Resolve(line)
-		if action == "settings" then
-			Pagle.OpenSettings()
-		elseif command then
-			command.fn(args)
-		else
-			for _, helpLine in ipairs(commands:HelpLines()) do
-				fake.printed[#fake.printed + 1] = helpLine
-			end
-		end
+		commands:Run(line, openSettings, fake.securecall, fake.print)
 	end
 end)
 
@@ -427,14 +398,14 @@ end)
 -- The catalogue (LOG-R55), on Core's real accessors over the generated catalogue or a spec's own. Each record
 -- they hand out is read-only (CORE-R18, DATA-R80).
 part(function(fake, Pagle, ns)
-	local catalogue
+	-- As Core's login step 1, the catalogue goes in ns.Catalogue, which the Cast state machine reads too (LOG-R2).
 	function fake.setCatalogue(data)
-		catalogue = ns.NewCatalogue(data)
-		Pagle.CONTENT_FINGERPRINT = catalogue.CONTENT_FINGERPRINT
+		ns.Catalogue = ns.NewCatalogue(data)
+		Pagle.CONTENT_FINGERPRINT = ns.Catalogue.CONTENT_FINGERPRINT
 	end
 	for _, name in ipairs({ "GetItem", "GetZones", "GetArea", "GetZoneOf", "GetZoneCatches", "GetWindowSpec" }) do
 		Pagle[name] = function(...)
-			return readOnly(catalogue[name](...))
+			return readOnly(ns.Catalogue[name](...))
 		end
 	end
 	fake.setCatalogue(ns.catalogue)
@@ -489,13 +460,10 @@ part(function(fake, Pagle, ns)
 	local FISHING = 7731 -- Fishing (Classic Journeyman), on the generated fishing-spell list
 	local clock = 0
 	local timers = {} -- { due, fn }, in the order they were set
-	local spells = ns.NewCatalogue(ns.catalogue)
 	local recorded -- the Cast record last appended
 
 	local fishing = ns.NewFishing({
-		isFishingSpell = function(spellID)
-			return spellID ~= nil and spells.IsFishingSpell(spellID)
-		end,
+		isFishingSpell = ns.IsFishingChannel,
 		record = function(outcome, items)
 			local char = Pagle.GetAngler().current
 			if not char then
@@ -594,7 +562,16 @@ function newFakePagle()
 	local ns, env = loadCoreLogic()
 	-- Pagle.API_VERSION as adapter/Core.lua sets it; fake_pagle_spec.lua checks they agree.
 	local Pagle = { API_VERSION = 1 }
-	local fake = { Pagle = Pagle, ns = ns, printed = {}, readOnly = readOnly }
+	local fake = { Pagle = Pagle, ns = ns, printed = {}, reported = {}, readOnly = readOnly }
+	function fake.print(line)
+		fake.printed[#fake.printed + 1] = line
+	end
+	function fake.report(err)
+		fake.reported[#fake.reported + 1] = tostring(err)
+	end
+	fake.securecall = newSecureCall(function()
+		return fake.report
+	end)
 
 	-- The event bus (CORE-R20–R22): Core's own CallbackHandler registry, which every part fires on.
 	local bus = env.LibStub("CallbackHandler-1.0")

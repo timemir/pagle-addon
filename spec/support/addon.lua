@@ -163,6 +163,9 @@ local function newClient()
 	return client
 end
 
+---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
+local newSecureCall = dofile("spec/support/securecall.lua")
+
 -- Widget methods that only lay out or colour: nothing for a spec to read back.
 local LAYOUT_METHODS = {
 	"SetPoint",
@@ -620,14 +623,9 @@ local function clientStubs(client)
 			end
 		end,
 		-- As the client's: an error goes to whatever geterrorhandler() returns at the time, and the caller carries on.
-		securecallfunction = function(fn, ...)
-			local results = { pcall(fn, ...) }
-			if not results[1] then
-				stubs.geterrorhandler()(results[2])
-				return
-			end
-			return unpack(results, 2, table.maxn(results))
-		end,
+		securecallfunction = newSecureCall(function()
+			return stubs.geterrorhandler()
+		end),
 		issecretvalue = function()
 			return false
 		end,

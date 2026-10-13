@@ -163,6 +163,31 @@ function Rows:Page(topic, modules)
 	return entries
 end
 
+--- `M:AddSetting` over `registry` and `rows`, so Core's adapter and FakePagle install one method (CORE-R42). It adds
+--- a row to a topic page: `"fishing"`, `"announcements"` or `"trackers"`. Call it before `ModulesChanged`, in
+--- OnInitialize; Core builds the pages then, each Module's rows in `def.order` under a header with its title, left
+--- out when the first row is a header. It raises an error for an unknown topic or kind, an id this Module already
+--- used on the page, or a `parent` naming none of its earlier rows there. A call after `ModulesChanged` goes to
+--- `report` and is dropped.
+---@param registry PagleModuleRegistry
+---@param rows PagleSettingsRows
+---@param report fun(problem: string) reports an error and carries on (geterrorhandler())
+---@return fun(self: PagleModuleHandle, topic: "fishing"|"announcements"|"trackers", setting: PagleSetting)
+function ns.AddSettingMethod(registry, rows, report)
+	return function(self, topic, setting)
+		local module = registry:ModuleOf(self)
+		if not module then
+			error("AddSetting is a Module handle method: call M:AddSetting(topic, setting)", 2)
+		end
+		local why, late = rows:Add(module.def.name, topic, setting)
+		if why and late then
+			report(why)
+		elseif why then
+			error(why, 2)
+		end
+	end
+end
+
 --- An On Module's status-list button (CORE-R44, SET-R12), its label read now.
 ---@class PagleStatusButton
 ---@field label string

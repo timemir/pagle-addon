@@ -202,3 +202,12 @@ function ns.NewCatalogue(data)
 
 	return catalogue
 end
+
+--- Whether a channel's spell is Fishing (LOG-R2): on the fishing-spell list of `ns.Catalogue`, the catalogue Core
+--- built at login step 1 (LOG-R1). False for a nil (secret) spell and before the catalogue is built. Core's adapter
+--- and FakePagle both hand it to ns.NewFishing.
+---@param spellID integer?
+---@return boolean
+function ns.IsFishingChannel(spellID)
+	return spellID ~= nil and ns.Catalogue ~= nil and ns.Catalogue.IsFishingSpell(spellID)
+end

@@ -51,9 +51,7 @@ local function recordCast(outcome, items, startedAt)
 end
 
 local fishing = ns.NewFishing({
-	isFishingSpell = function(spellID)
-		return spellID ~= nil and ns.Catalogue ~= nil and ns.Catalogue.IsFishingSpell(spellID)
-	end,
+	isFishingSpell = ns.IsFishingChannel,
 	record = recordCast,
 	fire = ns.Fire,
 })

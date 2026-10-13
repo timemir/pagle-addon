@@ -21,16 +21,11 @@ if not Pagle then
 end
 ---@class Pagle
 local Pagle = Pagle
-local L = ns.L
 
 -- The last entry. While restricted Pagle.OpenSettings prints CORE-R33's line instead (SET-R75).
----@type PagleMenuEntry
-local SETTINGS = {
-	label = L.MENU_SETTINGS,
-	onClick = function()
-		Pagle.OpenSettings()
-	end,
-}
+local SETTINGS = ns.SettingsMenuEntry(function()
+	Pagle.OpenSettings()
+end)
 
 -- Fills the context menu, reading each label now (CORE-R52). It opens while restricted too (CORE-R33).
 ---@param root table the menu's root description
