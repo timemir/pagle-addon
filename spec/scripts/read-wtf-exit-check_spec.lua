@@ -253,6 +253,30 @@ describe("scripts/read-wtf.lua's Catch log and exit check", function()
 		end)
 	end)
 
+	describe("when PagleDB.global has no decodeErrors", function()
+		-- AceDB leaves out of the file every value equal to its default, so decodeErrors 0 isn't saved (LOG-R16).
+		local folder = savedVariables({
+			PagleLog = catchLog(STRETCH),
+			PagleDB = { global = { schemaVersion = 1 }, profileKeys = { ["Ada - Brook"] = "Default" } },
+		})
+		local NOT_SAVED = "0 (not saved: AceDB leaves out a default)"
+
+		it("prints decodeErrors as 0", function()
+			local out = run(folder)
+			assert.are.equal("PagleDB.global.decodeErrors: " .. NOT_SAVED, line(out, "PagleDB.global.decodeErrors: "))
+		end)
+
+		it("accepts it as 0 in the exit check, and exits 0 (#75 step 4)", function()
+			local out, _, code = run(folder, "--expect-casts", "5")
+			assert.are.equal(
+				"  ok    PagleDB.global.decodeErrors is " .. NOT_SAVED,
+				line(out, "  ok    PagleDB.global.decodeErrors")
+			)
+			assert.is_not_nil(line(out, "== Exit check (#75 steps 3 and 4): passed"))
+			assert.are.equal(0, code)
+		end)
+	end)
+
 	describe("on a log that fails every check", function()
 		-- No B1 or S1, a repeated Cast, a zone that didn't resolve (LOG-R93), no got-away Cast, an entry Core's
 		-- codec can't read and decodeErrors counted in the game (LOG-R16).

@@ -194,6 +194,21 @@ describe("a caught Cast", function()
 end)
 
 describe("a got-away Cast", function()
+	-- Forever's own sequence, from the in-game probe on #112: UI_INFO_MESSAGE 418 during the channel, then the stop.
+	it("is recorded at the escaped UI info message during the channel, with no items (LOG-R6)", function()
+		local loaded = fishingCore()
+		local fired = recordEvents(loaded)
+		channel(loaded)
+
+		loaded.client.fire("UI_INFO_MESSAGE", 418, loaded.env.ERR_FISH_ESCAPED)
+		stop(loaded)
+		loaded.client.advance(5)
+
+		assert.are.same({ "C1|1|" .. T .. "|0|g|" .. SNAPSHOT .. "|" }, casts(loaded))
+		assert.are.same({ "CastStarted", "FishingStateChanged", "CastEnded", "FishingStateChanged" }, names(fired))
+		assert.are.equal("gotAway", fired[3][2])
+	end)
+
 	it("is recorded at the escaped UI error during the channel, with no items (LOG-R6)", function()
 		local loaded = fishingCore()
 		local fired = recordEvents(loaded)
@@ -220,10 +235,11 @@ describe("a got-away Cast", function()
 		assert.are.same({ "C1|1|" .. T .. "|0|g|" .. SNAPSHOT .. "|" }, casts(loaded))
 	end)
 
-	it("ignores any other UI error or system message (LOG-R6)", function()
+	it("ignores any other UI info, UI error or system message (LOG-R6)", function()
 		local loaded = fishingCore()
 		channel(loaded)
 
+		loaded.client.fire("UI_INFO_MESSAGE", 418, "You are not in a party.")
 		loaded.client.fire("UI_ERROR_MESSAGE", 398, "No fish are hooked.")
 		loaded.client.fire("CHAT_MSG_SYSTEM", "You feel rested.")
 

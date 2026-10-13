@@ -74,7 +74,7 @@ local function readLoot()
 	return items
 end
 
--- The game's "fish got away" text (LOG-R6), as a UI error or a system message.
+-- The game's "fish got away" text (LOG-R6): a UI info message on Forever, a UI error or a system message as fallbacks.
 ---@param message any
 local function escaped(message)
 	if not issecretvalue(message) and message == ERR_FISH_ESCAPED then
@@ -100,6 +100,10 @@ end)
 
 Pagle.RegisterEvent(OWNER, "LOOT_CLOSED", function()
 	fishing:LootClosed(GetTime())
+end)
+
+Pagle.RegisterEvent(OWNER, "UI_INFO_MESSAGE", function(_, _, message)
+	escaped(message)
 end)
 
 Pagle.RegisterEvent(OWNER, "UI_ERROR_MESSAGE", function(_, _, message)
