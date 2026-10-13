@@ -63,6 +63,8 @@ ns.L = {
 
 	-- The compartment menu's last entry (CORE-R50).
 	MENU_SETTINGS = "Settings",
+	-- Its Curio Shop entry (CORE-R50): the balance as BreakUpLargeNumbers writes it, then a coin icon.
+	MENU_CURIO_SHOP = "Curio Shop  %s |TInterface\\MoneyFrame\\UI-GoldIcon:0|t",
 
 	-- /pagle help (CORE-R60, CORE-R61): the header, then a line per command (its name, its help). Core lists the
 	-- reserved commands that work; shop and report join with their surfaces (M4, M3).

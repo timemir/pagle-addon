@@ -40,6 +40,8 @@ stds.wow = {
 		-- The compartment menu (CORE-R50): a context menu, opened a frame after the compartment's click (C_Timer.After,
 		-- in the one C_Timer entry below).
 		MenuUtil = { fields = { "CreateContextMenu" } },
+		-- The Curio Shop entry's balance (CORE-R50).
+		"BreakUpLargeNumbers",
 		-- The Catch log (LOG-R11, LOG-R15).
 		"GetServerTime",
 		-- The runtime area index and zone resolution (LOG-R22, LOG-R23).
@@ -198,6 +200,7 @@ local helperGlobals = {
 	"openedNames",
 	"savedLog",
 	"loadCollectingErrors",
+	"breakUpLargeNumbers",
 }
 files["spec/**"] = { std = "lua51+busted", read_globals = helperGlobals }
 files["spec/support/*.lua"] = { globals = helperGlobals }

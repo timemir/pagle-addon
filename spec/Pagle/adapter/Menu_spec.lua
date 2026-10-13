@@ -1,5 +1,10 @@
 -- The Addon Compartment entry "Pagle" and its menu (CORE-R33, CORE-R50, CORE-R52; settings.md SET-R75).
 
+-- The Curio Shop entry with this balance, as CORE-R50 writes it: two spaces, the balance, a coin icon.
+local function curioShop(balance)
+	return "Curio Shop  " .. balance .. " |TInterface\\MoneyFrame\\UI-GoldIcon:0|t"
+end
+
 -- Loads Core with QoL and Hunts installed on the fake client, so either can register.
 local function loadCore(globals)
 	local loaded = loadAddon("Pagle", globals or FOREVER_GLOBALS)
@@ -41,16 +46,19 @@ describe("The compartment entry", function()
 		assert.are.equal(1, #loaded.client.menus)
 	end)
 
-	it("holds only Settings with no Module registered, and Settings opens the root (CORE-R50, SET-R75)", function()
-		local loaded = loadCore()
-		loaded.client.fire("PLAYER_LOGIN")
+	it(
+		"holds the Curio Shop and Settings with no Module registered; Settings opens the root (CORE-R50, SET-R75)",
+		function()
+			local loaded = loadCore()
+			loaded.client.fire("PLAYER_LOGIN")
 
-		local menu = clickCompartment(loaded)
-		assert.are.same({ "Settings" }, menu.texts())
-		menu.click("Settings")
+			local menu = clickCompartment(loaded)
+			assert.are.same({ curioShop(0), "Settings" }, menu.texts())
+			menu.click("Settings")
 
-		assert.are.same({ "Pagle" }, openedNames(loaded))
-	end)
+			assert.are.same({ "Pagle" }, openedNames(loaded))
+		end
+	)
 end)
 
 describe("The compartment menu with Modules", function()
@@ -92,14 +100,20 @@ describe("The compartment menu with Modules", function()
 		return clicked, reads
 	end
 
-	it("lists each Module's views then its menu entries, by def.order, then Settings (CORE-R50)", function()
-		local loaded = loadCore()
-		registerBoth(loaded)
+	it(
+		"lists each Module's views then its menu entries, by def.order, then the Curio Shop and Settings (CORE-R50)",
+		function()
+			local loaded = loadCore()
+			registerBoth(loaded)
 
-		local menu = clickCompartment(loaded)
+			local menu = clickCompartment(loaded)
 
-		assert.are.same({ "Hunts", "Hunt map", "Pin a Hunt", "Input: Both 1", "Settings" }, menu.texts())
-	end)
+			assert.are.same(
+				{ "Hunts", "Hunt map", "Pin a Hunt", "Input: Both 1", curioShop(0), "Settings" },
+				menu.texts()
+			)
+		end
+	)
 
 	it("calls a function label each time the menu opens (CORE-R52)", function()
 		local loaded = loadCore()
@@ -148,9 +162,57 @@ describe("The compartment menu with Modules", function()
 		})
 		loaded.client.fire("PLAYER_LOGIN")
 
-		assert.are.same({ "Settings" }, clickCompartment(loaded).texts())
+		assert.are.same({ curioShop(0), "Settings" }, clickCompartment(loaded).texts())
 		assert.are.equal(1, #reported)
 		assert.matches("no input yet", reported[1], 1, true)
+	end)
+end)
+
+describe("The compartment menu's Curio Shop entry", function()
+	-- Core with the Ledger and the Tackle Board registered and logged in; returns their handles.
+	local function withPayers(loaded)
+		for _, name in ipairs({ "Ledger", "TackleBoard" }) do
+			loaded.client.addons["Pagle_" .. name] = { metadata = { ["X-Pagle-API"] = "1" } }
+		end
+		local Pagle = loaded.env.Pagle
+		local ledger = Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
+		local board = Pagle.RegisterModule({ name = "TackleBoard", title = "Tackle Board", order = 40 })
+		loaded.client.fire("PLAYER_LOGIN")
+		return ledger, board
+	end
+
+	it("shows the balance with BreakUpLargeNumbers, read each time the menu opens (CORE-R50, CORE-R52)", function()
+		local loaded = loadCore()
+		local ledger, board = withPayers(loaded)
+		ledger:ReportCoinsEarned(1200)
+		board:ReportCoinsEarned(150)
+		assert.are.same({ curioShop("1,350"), "Settings" }, clickCompartment(loaded).texts())
+
+		board:ReportCoinsEarned(750)
+
+		assert.are.same({ curioShop("1,950"), "Settings" }, clickCompartment(loaded).texts())
+	end)
+
+	it("is disabled until the Curio Shop exists, so clicking it does nothing (CORE-R50)", function()
+		local loaded = loadCore()
+		withPayers(loaded)
+
+		local menu = clickCompartment(loaded)
+		menu.click(curioShop(0))
+
+		assert.is_false(menu.enabled(curioShop(0)))
+		assert.is_true(menu.enabled("Settings"))
+		assert.are.same({}, openedNames(loaded))
+		assert.are.same({}, loaded.printed)
+	end)
+
+	it("reads 0 while the balance is held (CORE-R50, SHOP-R12)", function()
+		local loaded = loadCore()
+		local ledger = withPayers(loaded)
+		ledger:ReportCoinsEarned(400)
+		loaded.ns.wallet:SetSpent(900)
+
+		assert.are.same({ curioShop(0), "Settings" }, clickCompartment(loaded).texts())
 	end)
 end)
 
@@ -161,7 +223,7 @@ describe("The compartment menu while restricted", function()
 		setCombat(loaded, true)
 
 		local menu = clickCompartment(loaded)
-		assert.are.same({ "Settings" }, menu.texts())
+		assert.are.same({ curioShop(0), "Settings" }, menu.texts())
 		menu.click("Settings")
 
 		assert.are.same({}, openedNames(loaded))

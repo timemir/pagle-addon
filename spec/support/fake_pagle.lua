@@ -55,7 +55,13 @@
 --- reports it and returns nothing.
 ---@field openedSettings string[] What each Pagle.OpenSettings opened: "root" or the topic (CORE-R43).
 ---@field menu fun(): PagleMenuEntry[] The compartment menu as it would open now, labels read (CORE-R50, CORE-R52);
---- each entry's onClick is what clicking it does. Its last entry is Settings.
+--- each entry's onClick is what clicking it does. Its last two entries are the Curio Shop (disabled) and Settings.
+---@field coins { earned: table<string, integer> } PagleDB.global.coins: each Module's last reported total, by
+--- def.name (SHOP-R3). Empty at first; a spec may store totals in it before the Module reports.
+---@field coinReports { module: string, total: integer }[] Each M:ReportCoinsEarned Core accepted, in order, an
+--- unchanged total too (SHOP-R2).
+---@field setSpent fun(spent: integer) Sets the Coins spent, as the Curio Shop will (M4): BalanceChanged fires if the
+--- balance or held changes (SHOP-R12).
 ---@field slash fun(line: string) Types `/pagle <line>` (CORE-R60–R62); help lines go to `printed`.
 ---@field load fun(name: string, options: table?): LoadedAddon Loads a Module with `loadAddon` against this fake:
 --- `globals`, and of Pagle.toc only the vendored libs/ the Module reaches through LibStub (CORE-R6). Options as
@@ -328,6 +334,29 @@ part(function(fake, Pagle, ns)
 	end
 end)
 
+-- The wallet (SHOP-R2–R4, SHOP-R12), on Core's real logic over fake.coins: M:ReportCoinsEarned, Pagle.GetBalance
+-- (read-only) and BalanceChanged. Each report Core accepts is also in fake.coinReports.
+part(function(fake, Pagle, ns)
+	fake.coins = { earned = {} }
+	fake.coinReports = {}
+	local wallet = ns.NewWallet(fake.fire)
+	wallet:Open(fake.coins.earned)
+	local report = wallet.Report
+	function wallet.Report(self, name, total)
+		fake.coinReports[#fake.coinReports + 1] = { module = name, total = total }
+		report(self, name, total)
+	end
+	ns.ModuleHandle.ReportCoinsEarned = ns.ReportCoinsEarnedMethod(fake.registry, wallet)
+
+	function Pagle.GetBalance()
+		return readOnly(wallet:Get())
+	end
+
+	function fake.setSpent(spent)
+		wallet:SetSpent(spent)
+	end
+end)
+
 -- The compartment menu and /pagle (CORE-R50, CORE-R52, CORE-R60–R62), on Core's real logic. Modules' subcommands
 -- are added at login, by def.order; one Core skips is in fake.reported. Labels and subcommands run through
 -- fake.securecall, as Core's run through securecallfunction.
@@ -342,7 +371,8 @@ part(function(fake, Pagle, ns)
 	end
 	local settings = ns.SettingsMenuEntry(openSettings)
 	function fake.menu()
-		return ns.CompartmentMenu(fake.registry:Modules(), settings, fake.securecall)
+		local shop = ns.CurioShopMenuEntry(Pagle.GetBalance(), breakUpLargeNumbers)
+		return ns.CompartmentMenu(fake.registry:Modules(), shop, settings, fake.securecall)
 	end
 
 	function fake.slash(line)
