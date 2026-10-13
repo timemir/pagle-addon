@@ -321,6 +321,146 @@ describe("The Fishing key", function()
 	end)
 end)
 
+describe("The Fishing key when the reel didn't take", function()
+	-- A press of F: the key goes down on one frame and comes up on the next (QOL-R35).
+	---@param client FakeClient
+	local function press(client)
+		client.keysDown.F = true
+		client.nextFrame()
+		client.keysDown.F = nil
+		client.nextFrame()
+	end
+
+	it("casts on the next press once the reel wait passes after a reel press, still channeling (QOL-R35)", function()
+		local fake, client = start({ "F" })
+		fake.fire("CastStarted")
+
+		press(client)
+		assert.are.equal(REEL, client.overrideAction("F"))
+
+		client.nextFrame(0.5)
+		assert.are.equal(CAST, client.overrideAction("F"))
+	end)
+
+	it("sees a press of a key bound with modifiers by the key without them (QOL-R35)", function()
+		local fake, client = start({ "SHIFT-F" })
+		fake.fire("CastStarted")
+
+		press(client)
+		client.nextFrame(0.5)
+
+		assert.are.equal(CAST, client.overrideAction("SHIFT-F"))
+	end)
+
+	it("keeps reeling with no press, however long the channel runs (QOL-R35)", function()
+		local fake, client = start({ "F" })
+		fake.fire("CastStarted")
+
+		for _ = 1, 40 do
+			client.nextFrame(0.5)
+		end
+
+		assert.are.equal(REEL, client.overrideAction("F"))
+	end)
+
+	it("doesn't take the press that cast for a reel press (QOL-R26, QOL-R35)", function()
+		local fake, client = start({ "F" })
+
+		-- F casts; the channel starts while it is down, so the reel waits for it to come up.
+		client.keysDown.F = true
+		client.nextFrame()
+		fake.fire("CastStarted")
+		client.nextFrame()
+		client.keysDown.F = nil
+		client.nextFrame()
+		assert.are.equal(REEL, client.overrideAction("F"))
+
+		client.nextFrame(0.5)
+		assert.are.equal(REEL, client.overrideAction("F"))
+	end)
+
+	it("reels the next Cast after the channel stops within the reel wait (QOL-R22, QOL-R35)", function()
+		local fake, client = start({ "F" })
+		fake.fire("CastStarted")
+
+		press(client)
+		fake.fireGameEvent("UNIT_SPELLCAST_CHANNEL_STOP", "player", "Cast-1", 7620)
+		fake.fire("CastStarted")
+		client.nextFrame(0.5)
+
+		assert.are.equal(REEL, client.overrideAction("F"))
+	end)
+
+	it("drops a waiting reel press when a loot window opens (QOL-R28, QOL-R35)", function()
+		local fake, client = start({ "F" })
+		fake.fire("CastStarted")
+
+		press(client)
+		fake.fireGameEvent("LOOT_READY", true)
+		client.nextFrame(0.5)
+		fake.fireGameEvent("LOOT_CLOSED")
+
+		assert.are.equal(REEL, client.overrideAction("F"))
+	end)
+
+	it("reels again once the recast's channel starts (QOL-R35, LOG-R7)", function()
+		local fake, client = start({ "F" })
+		fake.fire("CastStarted")
+		press(client)
+		client.nextFrame(0.5)
+		assert.are.equal(CAST, client.overrideAction("F"))
+
+		-- The recast: the old channel stops, Core ends that Cast interrupted, and the new channel starts.
+		press(client)
+		fake.fireGameEvent("UNIT_SPELLCAST_CHANNEL_STOP", "player", "Cast-1", 7620)
+		fake.fire("CastEnded", "interrupted")
+		fake.fire("CastStarted")
+		assert.are.equal(REEL, client.overrideAction("F"))
+
+		client.nextFrame(0.5)
+		assert.are.equal(REEL, client.overrideAction("F"))
+	end)
+
+	it("drops a waiting reel press when QoL is disarmed by restriction (QOL-R30, QOL-R35)", function()
+		local fake, client = start({ "F" })
+		fake.fire("CastStarted")
+
+		press(client)
+		fake.setRestricted(true)
+		fake.setRestricted(false)
+		client.nextFrame(0.5)
+
+		assert.are.equal(REEL, client.overrideAction("F"))
+	end)
+
+	it("re-points a key still held when the reel wait passes on the first frame it is up (QOL-R26, QOL-R35)", function()
+		local fake, client = start({ "F" })
+		fake.fire("CastStarted")
+
+		client.keysDown.F = true
+		client.nextFrame()
+		client.nextFrame(0.5)
+		assert.are.equal(REEL, client.overrideAction("F"))
+
+		client.keysDown.F = nil
+		client.nextFrame()
+		assert.are.equal(CAST, client.overrideAction("F"))
+	end)
+
+	it("casts from an open double-click window too once the reel didn't take (QOL-R13, QOL-R35)", function()
+		local fake, client = start({ "F" }, function(_, client)
+			client.mainHand = FISHING_POLE
+		end)
+		fake.fire("CastStarted")
+		press(client)
+		client.nextFrame(0.5)
+
+		client.click("RightButton")
+
+		assert.are.equal(CAST, client.overrideAction("BUTTON2"))
+	end)
+end)
+
 describe("The Fishing key with Core", function()
 	it("arms at PLAYER_LOGIN and hears WoW events through Pagle.RegisterEvent (QOL-R11, CORE-R23)", function()
 		local loaded = loadAddon("Pagle_QoL", FOREVER_GLOBALS)
