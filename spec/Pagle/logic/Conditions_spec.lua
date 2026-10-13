@@ -316,7 +316,7 @@ describe("the realm date of a Cast", function()
 			assert.are.equal(720, ns.RealmUtcOffset(1791982800, 60)) -- 13:00 UTC, 01:00 next day realm
 		end)
 
-		it("reads a 10-hour difference west as +14, the end of the range a minute of day can't tell apart (LOG-R49)", function()
+		it("reads -10 hours as +14: a minute of day can't tell them apart (LOG-R49)", function()
 			assert.are.equal(840, ns.RealmUtcOffset(1791954000, 1140)) -- 05:00 UTC, 19:00: -10 or +14
 		end)
 

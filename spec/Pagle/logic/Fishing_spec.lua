@@ -201,7 +201,7 @@ describe("a Cast that ends caught", function()
 		assert.are.equal("channeling", fishing:GetState())
 	end)
 
-	it("counts a window whose IsFishingLoot is secret as fishing only while a Cast is in progress (LOG-R3, LOG-R93)", function()
+	it("counts a window whose IsFishingLoot is secret as fishing only during a Cast (LOG-R3, LOG-R93)", function()
 		local idle, idleSteps = watch()
 		idle:LootReady(nil, loot({ itemID = 2589, quantity = 1 }), 3)
 		assert.are.same({}, idleSteps)
