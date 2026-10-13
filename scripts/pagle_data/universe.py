@@ -4,14 +4,15 @@ these items (DATA-R11), and every one either ships in the catalogue or is delibe
 So far its sources are the baseline's area, reference and pool loot, and the data/forever/ files that name items:
 items.toml's [item.<itemID>] tables, areas.toml's [[catch]] items and pools.toml's add and drop lists (the Data
 section's keys). Each forever file is read only when it exists, and only for its item IDs: the file's own reader
-checks the rest. Fixed Hunt classes (DATA-R90) and data/observed/ (dev facts, non-rejected I rows) join here too,
-through item_universe, when their layers arrive.
+checks the rest. data/observed/'s dev facts and non-rejected I rows join in item_universe; fixed Hunt classes
+(DATA-R90) join there too when their layer arrives.
 """
 
 from collections.abc import Callable, Mapping
 from pathlib import Path
 
 from pagle_data.baseline import BaselineLayer
+from pagle_data.observed import ObservedLayer, observations, read_observed
 from pagle_data.toml_reader import At, Problems, describe, expect_ids, expect_int, expect_table, parse_id, read_toml
 
 ITEMS_TOML = "data/forever/items.toml"
@@ -92,8 +93,14 @@ def forever_items(root: Path, problems: Problems) -> set[int]:
     return found
 
 
-def item_universe(root: Path, baseline: BaselineLayer, problems: Problems) -> frozenset[int]:
+def item_universe(
+    root: Path, baseline: BaselineLayer, problems: Problems, observed: ObservedLayer | None = None
+) -> frozenset[int]:
     """The item universe (DATA-R15) of the data/ tree at root, given its baseline layer, which must have been read
-    without problems. Each problem found goes into problems; the caller must not use the universe while there are
-    any."""
-    return frozenset(_baseline_items(baseline) | forever_items(root, problems))
+    without problems, and its data/observed/ layer if already read (else it is read here). Each problem found goes
+    into problems; the caller must not use the universe while there are any."""
+    if observed is None:
+        observed = read_observed(root, problems)
+    # Observed items come from every build (DATA-R46) and through no alias (DATA-R34 maps areas, not items).
+    seen = observations(observed, {}).items()
+    return frozenset(_baseline_items(baseline) | forever_items(root, problems) | seen)

@@ -10,12 +10,13 @@ from pagle_data.catalogue import Catalogue, Event, fingerprint
 from pagle_data.db2 import DB2, Db2Layer, read_db2
 from pagle_data.forever import ForeverLayer, read_forever
 from pagle_data.lua import to_lua
-from pagle_data.toml_reader import DataError, Problems
+from pagle_data.observed import OBSERVED, ObservedLayer, Observations, observations, read_observed
+from pagle_data.toml_reader import At, DataError, Problems
 
 CATALOGUE_LUA = "addons/Pagle/data/Catalogue.lua"
 
-# The layers the generator reads, in DATA-R8's order (a later one wins). data/observed/ comes in M2.
-LAYERS = (f"{BASELINE}/", "data/forever/", DB2)
+# The layers the generator reads, in DATA-R8's order (a later one wins).
+LAYERS = (f"{BASELINE}/", "data/forever/", DB2, OBSERVED)
 
 
 def _areas(db2: Db2Layer) -> dict[int, Mapping[str, object]]:
@@ -84,6 +85,7 @@ class Layers:
     baseline: BaselineLayer
     forever: ForeverLayer
     db2: Db2Layer
+    observed: ObservedLayer
 
     def fishing_areas(self) -> set[int]:
         return fishing_areas(self.baseline)
@@ -91,6 +93,16 @@ class Layers:
     def proposals(self) -> list[Proposal]:
         """The alias candidates not yet committed to aliases.toml (DATA-R32, DATA-R64)."""
         return propose(self.db2, self.fishing_areas(), self.forever.aliases)
+
+    def observations(self) -> Observations:
+        """data/observed/'s observations, their areas through the alias table (DATA-R34). Nothing in the catalogue
+        comes from them yet: observed pairs and confirmed are DATA-R47–R55's."""
+        return observations(self.observed, {alias.source: alias.target for alias in self.forever.aliases})
+
+    def missing_areas(self) -> dict[int, list[At]]:
+        """Observed areas missing from data/db2/areas.csv, kept in the sources and left out of the catalogue
+        (DATA-R33)."""
+        return self.observations().missing_areas(self.db2.areas)
 
 
 def read_layers(root: Path) -> Layers:
@@ -102,11 +114,12 @@ def read_layers(root: Path) -> Layers:
     baseline_read = not problems
     forever = read_forever(root, problems)
     db2 = read_db2(root, problems)
+    observed = read_observed(root, problems)
     if baseline_read:  # without the whole baseline, every target would look like it has no catch list
         check_aliases(forever.aliases, fishing_areas(baseline), problems)
     if problems:
         raise DataError(problems.found)
-    return Layers(baseline, forever, db2)
+    return Layers(baseline, forever, db2, observed)
 
 
 def outputs(layers: Layers) -> dict[str, str]:

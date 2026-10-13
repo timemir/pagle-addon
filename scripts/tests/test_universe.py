@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from baseline_fixture import write_baseline
+from observed_fixture import write_observed
 from pagle_data.baseline import read_baseline
 from pagle_data.toml_reader import Problems
 from pagle_data.universe import item_universe
@@ -18,6 +19,7 @@ BASELINE_ITEMS = {6303, 6358, 13759, 19807}
 
 def universe(root: Path, forever: dict[str, str] | None = None) -> tuple[set[int], list[str]]:
     write_baseline(root)
+    write_observed(root)  # no facts and no reports: test_observed.py covers observed items
     directory = root / "data" / "forever"
     directory.mkdir(parents=True, exist_ok=True)
     for name, text in (forever or {}).items():

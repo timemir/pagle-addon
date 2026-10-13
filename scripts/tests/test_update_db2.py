@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 
 from baseline_fixture import write_baseline
+from observed_fixture import i_row, report, write_observed
 from pagle_data.db2_update import main
 
 AREA_URL = "https://wago.tools/db2/AreaTable/csv?build=1.60.1.70338"
@@ -98,6 +99,7 @@ class Canned:
 
 def tree(root: Path) -> Path:
     write_baseline(root)
+    write_observed(root)  # dev.toml with no facts; test_observed.py covers the layer
     return root
 
 
@@ -140,6 +142,17 @@ def test_an_item_named_in_data_forever_gets_its_row(tmp_path: Path, capsys: pyte
     code, output = run(tmp_path, capsys, Canned(canned()), "1.60.1.70338")
     assert code == 0, output
     assert read(tmp_path, "items.csv") == ITEMS + "99999,2,7,1,Copper Shortsword\n"
+
+
+def test_an_item_seen_in_data_observed_gets_its_row(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    # DATA-R11, DATA-R15: a non-rejected I row in data/observed/ brings its item into the universe, so 99999 gets its
+    # items.csv row; a rejected row brings nothing (DATA-R50), so 13759 stays the one item DB2 lacks.
+    rows = report(i_row(99999, 40), i_row(88888, 40, extra='rejected = "a client bug"\n'))
+    write_observed(tree(tmp_path), reports={"bbbbbbbb": rows})
+    code, output = run(tmp_path, capsys, Canned(canned()), "1.60.1.70338")
+    assert code == 0, output
+    assert read(tmp_path, "items.csv") == ITEMS + "99999,2,7,1,Copper Shortsword\n"
+    assert "1 item(s) of the universe not in DB2 (DATA-R24): 13759" in output
 
 
 def test_rewrites_the_slice_keeping_the_products_the_dev_listed(
