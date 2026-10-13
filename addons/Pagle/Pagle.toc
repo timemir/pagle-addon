@@ -28,3 +28,4 @@ adapter\Callbacks.lua
 adapter\Events.lua
 adapter\Restriction.lua
 adapter\Conditions.lua
+adapter\Catalogue.lua

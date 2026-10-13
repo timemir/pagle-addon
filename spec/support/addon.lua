@@ -135,6 +135,12 @@ local function clientStubs(client)
 			AddOnRestrictionType = { Combat = 0, Encounter = 1, ChallengeMode = 2, PvPMatch = 3, Map = 4, Chat = 5 },
 			AddOnRestrictionState = { Inactive = 0, Activating = 1, Active = 2 },
 		},
+		-- No area has a name, so the area index Core builds at PLAYER_LOGIN is empty.
+		C_Map = {
+			GetAreaInfo = function()
+				return nil
+			end,
+		},
 		GetLocale = function()
 			return "enUS"
 		end,

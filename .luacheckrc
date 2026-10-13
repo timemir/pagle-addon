@@ -18,6 +18,11 @@ stds.wow = {
 		"InCombatLockdown",
 		C_RestrictedActions = { fields = { "GetAddOnRestrictionState" } },
 		Enum = { fields = { "AddOnRestrictionType", AddOnRestrictionState = { fields = { "Inactive" } } } },
+		-- The runtime area index and zone resolution (LOG-R22, LOG-R23).
+		C_Map = { fields = { "GetAreaInfo" } },
+		"GetRealZoneText",
+		"GetSubZoneText",
+		"GetInstanceInfo",
 	},
 }
 
