@@ -49,4 +49,5 @@ adapter\Fishing.lua
 adapter\Settings.lua
 adapter\Slash.lua
 adapter\Menu.lua
+adapter\ReloadReminder.lua
 adapter\Login.lua
