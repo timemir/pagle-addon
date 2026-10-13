@@ -23,21 +23,24 @@ Values that exist only while the client runs, like `C_Spell.GetSpellName(7620)` 
 
 ## The reader
 
-Run it in WSL from the repo root, with the Lua 5.1 from `scripts/setup.sh`:
+Run it in WSL, with the Lua 5.1 from `scripts/setup.sh`. `scripts/read-wtf.sh` runs it on that Lua from any directory:
 
 ```sh
-.tools/bin/lua scripts/read-wtf.lua "/mnt/g/World of Warcraft/_classic_beta_/WTF/Account/<ACCT>" \
-    --character 70/<Name-Surname> [--cvar <name>]... [--addon <name>]...
+scripts/read-wtf.sh "/mnt/g/World of Warcraft/_classic_beta_/WTF/Account/<ACCT>" \
+    --character 70/<Name-Surname> [--cvar <name>]... [--addon <name>]... [--expect-casts N] [--since T]
 ```
 
-It prints four sections:
+It prints four sections, and a fifth with `--expect-casts`:
 
 - **Lua errors:** the latest !BugGrabber session's errors, each with its count and stack, or `0 errors`.
-- **Catch log:** `PagleLog`'s format, logId, character and entry counts, entries by tag, unreadable entries, repeated entry IDs, the `C1` count and time span, outcomes and zone areaIDs, the `B1` builds, the last `S1`, and `PagleDB.global.decodeErrors`.
+- **Catch log:** `PagleLog` decoded with Core's own codec (`addons/Pagle/logic/CatchLog.lua`), so it reads entries exactly as Pagle does: the format, logId, character and entry counts, `PagleDB.global.decodeErrors`, the entries by tag, the entries the codec can't decode, repeated entry IDs, the `C1` Casts and their time span, by outcome, per character and per zone areaID, the Casts in zone areaID 0 by seq, and the `B1` and `S1` entries. A log in another format than the codec's is reported, not decoded.
 - **CVars:** each named CVar from every file that sets it. `--cvar` defaults to `SoftTargetInteract`.
 - **Addons:** each named addon's state. `--addon` defaults to `Pagle` and `Pagle_QoL`.
+- **Exit check (#75 steps 3 and 4)**, with `--expect-casts N`, the dev's Cast count: one `ok` or `FAIL` line each for N `C1` Casts, no repeated entry ID among them, none in zone areaID 0, a `B1` and an `S1` entry, `decodeErrors` 0, every entry decoding, and at least one got-away Cast (`g`). It comes last, so the verdict is the last line.
 
-Naming a `--cvar` or `--addon` replaces its defaults. Without `--character`, the character's CVars and addons are skipped. The script loads SavedVariables files as data in an empty environment and never runs them with globals.
+`--since T` counts only the Casts at server time T (Unix seconds) or later, so earlier sessions don't change the count; `B1` and `S1` are still looked for in the whole log, since Core writes them only when the build or the skill changes. Naming a `--cvar` or `--addon` replaces its defaults. Without `--character`, the character's CVars and addons are skipped. The script loads SavedVariables files as data in an empty environment and never runs them with globals.
+
+Exit codes: 2 on a usage error, 1 when an `--expect-casts` check fails (a missing `Pagle.lua` fails it too), otherwise 0, whatever the files hold.
 
 ## Protocol
 
@@ -74,8 +77,8 @@ The dev does everything in the game: casting, combat, killing the client, clicki
 | every step | the `/reload` or logout | the latest BugGrabber session: no Lua error |
 | 1 Fishing spell | the spell ID from `/etrace`; `/dump C_Spell.GetSpellName(7620)` | – |
 | 2 30-minute stretch | all of it, and the count | – |
-| 3 Read `PagleLog` | `/reload`, then log out | all of it: the `C1` count equals the dev's count, no repeated entry IDs, no zone areaID `0`, a `B1` and an `S1`, `decodeErrors` 0 |
-| 4 Got away | – | a `g` among the `C1` outcomes |
+| 3 Read `PagleLog` | `/reload`, then log out | all of it, with `--expect-casts <the dev's count>`: the `C1` count equals the dev's count, no repeated entry IDs, no zone areaID `0`, a `B1` and an `S1`, `decodeErrors` 0 |
+| 4 Got away | – | a `g` among the `C1` outcomes (the same `--expect-casts` run) |
 | 5 Combat | enters combat; the key does nothing, then casts again; `/reload` after the stretch | `SoftTargetInteract` after the `/reload` equals the player's value, read before the stretch. The file can't show the value during combat. |
 | 6 Crash | kills the client with `taskkill /F` (not **End task**, which closes cleanly), logs in, `/reload` | the leased CVars after the kill and after the `/reload`; the dev posts the result on #72 |
 | 7 Conflict popup | sees the popup, clicks "Use Pagle", reloads, the key works | Angleur `disabled` after the `/reload` |

@@ -1,8 +1,8 @@
--- scripts/read-catch-log.lua, the M1 exit check's reader for steps 3 and 4 (#75): it reads PagleLog and PagleDB from
--- a SavedVariables folder with Core's own codec, prints a summary and, with --expect-casts, checks the steps.
--- Its fixtures are SavedVariables folders written here the way the client writes Pagle.lua (CRLF line ends, the
--- client's layout), with entries encoded by Core's codec (CatchLog:Append), so they follow catch-log.md › Entry
--- formats exactly as Core does.
+-- scripts/read-wtf.lua's Catch log section and its --expect-casts check of the M1 exit check's steps 3 and 4 (#75):
+-- PagleLog and PagleDB read with Core's own codec. Its fixtures are account folders written here, their
+-- SavedVariables/Pagle.lua the way the client writes it (CRLF line ends, the client's layout), with entries encoded
+-- by Core's codec (CatchLog:Append), so they follow catch-log.md › Entry formats exactly as Core does.
+-- spec/scripts/read-wtf_spec.lua covers the other sections on fixed fixture folders.
 
 local ns = loadAddon("Pagle", FOREVER_GLOBALS).ns
 
@@ -35,16 +35,17 @@ local function serialize(value, lines, prefix, suffix)
 	end
 end
 
--- A new folder whose path has a space and a `#`, as WTF/Account/<ACCOUNT>#1/SavedVariables/ has.
-local function newFolder()
+-- A new account folder with a SavedVariables folder in it. Its path has a space and a `#`, as
+-- World of Warcraft/_classic_beta_/WTF/Account/<ACCOUNT>#1/ has.
+local function newAccount()
 	---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no os
 	local base = os.tmpname()
 	---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no os
 	os.remove(base)
-	local folder = base .. " Account#1"
+	local account = base .. " Account#1"
 	---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no os
-	assert(os.execute(("mkdir -p '%s'"):format(folder)) == 0)
-	return folder
+	assert(os.execute(("mkdir -p '%s/SavedVariables'"):format(account)) == 0)
+	return account
 end
 
 local function writeFile(path, text)
@@ -54,7 +55,7 @@ local function writeFile(path, text)
 	file:close()
 end
 
---- A SavedVariables folder holding Pagle.lua with these globals, as the client writes it.
+--- An account folder whose SavedVariables/Pagle.lua holds these globals, as the client writes it.
 local function savedVariables(globals)
 	local lines, names = {}, {}
 	for name in pairs(globals) do
@@ -64,9 +65,9 @@ local function savedVariables(globals)
 	for _, name in ipairs(names) do
 		serialize(globals[name], lines, name .. " = ", "")
 	end
-	local folder = newFolder()
-	writeFile(folder .. "/Pagle.lua", table.concat(lines, "\r\n") .. "\r\n")
-	return folder
+	local account = newAccount()
+	writeFile(account .. "/SavedVariables/Pagle.lua", table.concat(lines, "\r\n") .. "\r\n")
+	return account
 end
 
 local function conditions(zone)
@@ -122,15 +123,15 @@ local STRETCH = {
 	{ "cast", 2, 1800, "caught", 1519 },
 }
 
---- Runs the script as `lua scripts/read-catch-log.lua <args>` would, and returns its output lines, what it wrote
---- to stderr, and its exit code.
+--- Runs the script as `lua scripts/read-wtf.lua <args>` would, and returns its output lines, what it wrote to
+--- stderr, and its exit code.
 ---@return string[] out, string err, integer code
 local function run(...)
 	local out, err, code = {}, {}, nil
 	---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no loadfile
-	local chunk = assert(loadfile("scripts/read-catch-log.lua"))
+	local chunk = assert(loadfile("scripts/read-wtf.lua"))
 	local env = setmetatable({
-		arg = { [0] = "scripts/read-catch-log.lua", ... },
+		arg = { [0] = "scripts/read-wtf.lua", ... },
 		print = function(line)
 			out[#out + 1] = line
 		end,
@@ -181,7 +182,7 @@ local function block(out, heading)
 	return lines
 end
 
-describe("scripts/read-catch-log.lua", function()
+describe("scripts/read-wtf.lua's Catch log and exit check", function()
 	describe("after a 30-minute stretch", function()
 		local log = catchLog(STRETCH)
 		local folder = savedVariables({
@@ -197,8 +198,8 @@ describe("scripts/read-catch-log.lua", function()
 			assert.are.equal("", err)
 			assert.are.equal(0, code)
 			assert.are.equal(
-				("PagleLog: format 1, logId %s, 2 characters, 7 entries"):format(log.logId),
-				line(out, "PagleLog: ")
+				("== Catch log (PagleLog): format 1, logId %s, 2 characters, 7 entries"):format(log.logId),
+				line(out, "== Catch log")
 			)
 			assert.are.equal("entries by tag: B1 1, C1 5, S1 1", line(out, "entries by tag: "))
 		end)
@@ -266,7 +267,7 @@ describe("scripts/read-catch-log.lua", function()
 		it("prints the Casts in zone areaID 0 by seq", function()
 			local out = run(folder)
 			assert.are.equal("zone areaID 0: 2 Casts, seq 2, 3", line(out, "zone areaID 0: "))
-			assert.are.equal("entries the codec can't decode: 1", line(out, "entries the codec can't decode: "))
+			assert.are.equal("entries Core's codec can't decode: 1", line(out, "entries Core's codec can't decode: "))
 		end)
 
 		it("fails each check that doesn't hold, and exits 1 (#75 steps 3 and 4)", function()
@@ -278,7 +279,7 @@ describe("scripts/read-catch-log.lua", function()
 				"  FAIL  no B1 entry",
 				"  FAIL  no S1 entry",
 				"  FAIL  PagleDB.global.decodeErrors is 2",
-				"  FAIL  1 entry the codec can't decode",
+				"  FAIL  1 entry Core's codec can't decode",
 				"  FAIL  no Cast got away (g)",
 			}, block(out, "== Exit check (#75 steps 3 and 4): FAILED (8 of 8 checks)"))
 			assert.are.equal(1, code)
@@ -323,64 +324,65 @@ describe("scripts/read-catch-log.lua", function()
 		})
 		local out, err, code = run(folder, "--expect-casts", "1")
 		assert.are.equal("", err)
-		assert.are.equal("PagleLog: format 0, logId 0123456789abcdef, 1 character, 1 entry", line(out, "PagleLog: "))
-		assert.are.equal("format 0 isn't the codec's format 1: Core starts a new log at login", line(out, "format "))
-		assert.are.equal("  FAIL  PagleLog is format 0, the codec reads format 1", line(out, "  FAIL  "))
+		assert.are.equal(
+			"== Catch log (PagleLog): format 0, logId 0123456789abcdef, 1 character, 1 entry",
+			line(out, "== Catch log")
+		)
+		assert.are.equal(
+			"PagleLog is format 0, the codec reads format 1: Core starts a new log at login",
+			line(out, "PagleLog is ")
+		)
+		assert.are.same(
+			{ "  FAIL  PagleLog is format 0, the codec reads format 1" },
+			block(out, "== Exit check (#75 steps 3 and 4): FAILED (1 of 1 checks)")
+		)
 		assert.are.equal(1, code)
 	end)
 
-	describe("on a folder it can't read", function()
-		it("exits 2 when there's no Pagle.lua, as before M1 is installed", function()
-			local out, err, code = run(newFolder())
-			assert.matches("^read%-catch%-log: can't read .*/Pagle%.lua: missing\n$", err)
-			assert.are.same({}, out)
-			assert.are.equal(2, code)
+	describe("fails the exit check when there's no Catch log to check, and exits 1", function()
+		it("on an account with no Pagle.lua, as before M1 is installed", function()
+			local out, _, code = run(newAccount(), "--expect-casts", "5")
+			assert.are.same(
+				{ "  FAIL  no Pagle.lua to read" },
+				block(out, "== Exit check (#75 steps 3 and 4): FAILED (1 of 1 checks)")
+			)
+			assert.are.equal(1, code)
 		end)
 
-		it("refuses to run Pagle.lua as code: it gets no globals, so a call fails (LOG-R10)", function()
-			local folder = newFolder()
-			writeFile(folder .. "/Pagle.lua", "os.exit(0)\r\nPagleLog = { entries = {}, characters = {} }\r\n")
-			local _, err, code = run(folder)
-			assert.matches("can't read .*Pagle%.lua: Pagle%.lua:1: attempt to index global 'os'", err)
-			assert.are.equal(2, code)
-		end)
-
-		it("refuses a precompiled chunk", function()
-			local folder = newFolder()
-			writeFile(folder .. "/Pagle.lua", string.dump(function() end))
-			local _, err, code = run(folder)
-			assert.matches("a precompiled chunk, not data", err)
-			assert.are.equal(2, code)
-		end)
-
-		it("exits 2 when Pagle.lua holds no PagleLog", function()
-			local _, err, code = run(savedVariables({ PagleDB = { global = { decodeErrors = 0 } } }))
-			assert.matches("holds no PagleLog", err)
-			assert.are.equal(2, code)
+		it("on a Pagle.lua with no PagleLog", function()
+			local out, _, code =
+				run(savedVariables({ PagleDB = { global = { decodeErrors = 0 } } }), "--expect-casts", "5")
+			assert.are.equal(
+				"== Catch log: Pagle.lua holds no PagleLog with characters and entries",
+				line(out, "== Catch log")
+			)
+			assert.are.same(
+				{ "  FAIL  no PagleLog in Pagle.lua" },
+				block(out, "== Exit check (#75 steps 3 and 4): FAILED (1 of 1 checks)")
+			)
+			assert.are.equal(1, code)
 		end)
 	end)
 
-	it("exits 2 with the usage on a bad argument", function()
+	it("exits 2 with the usage when --expect-casts or --since isn't a whole number", function()
 		for _, args in ipairs({
-			{},
-			{ "a", "b" },
 			{ "a", "--expect-casts" },
 			{ "a", "--expect-casts", "x" },
-			{ "a", "-v" },
+			{ "a", "--since", "-1" },
 		}) do
 			local out, err, code = run(unpack(args))
-			assert.matches("\nusage: lua scripts/read%-catch%-log%.lua ", err)
+			assert.matches("^read%-wtf: %-%-%a+%-?%a* needs a whole number\nusage: lua scripts/read%-wtf%.lua ", err)
 			assert.are.same({}, out)
 			assert.are.equal(2, code)
 		end
 	end)
 
-	it("runs from scripts/read-catch-log.sh on a path with spaces and a #, and passes its exit code on", function()
+	it("runs from scripts/read-wtf.sh on a path with spaces and a #, and passes its exit code on", function()
 		local folder = savedVariables({
 			PagleLog = catchLog(STRETCH),
 			PagleDB = { global = { decodeErrors = 0 } },
 		})
-		local command = ("bash scripts/read-catch-log.sh '%s' --expect-casts 5; echo \"exit $?\""):format(folder)
+		local command = ("bash scripts/read-wtf.sh '%s' --expect-casts 5; echo \"exit $?\""):format(folder)
 		---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io
 		local shell = assert(io.popen(command))
 		local out = shell:read("*a")
