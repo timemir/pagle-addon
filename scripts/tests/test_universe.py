@@ -8,7 +8,7 @@ import pytest
 from baseline_fixture import write_baseline
 from observed_fixture import write_observed
 from pagle_data.baseline import read_baseline
-from pagle_data.toml_reader import Problems
+from pagle_data.errors import Problems
 from pagle_data.universe import item_universe
 
 # The fixture baseline's loot items, by hand from baseline_fixture.CSVS: 13759 and 6303 in area loot, 6358 in

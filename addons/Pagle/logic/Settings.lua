@@ -113,7 +113,7 @@ end
 ---@return boolean? late
 function Rows:Add(name, topic, setting)
 	if self.closed then
-		return ("Pagle: %s's AddSetting came after ModulesChanged, so the row is dropped"):format(name), true
+		return ns.L.SETTING_TOO_LATE:format(name), true
 	end
 	self.sections[name] = self.sections[name] or {}
 	local section = self.sections[name][topic]
@@ -163,31 +163,51 @@ function Rows:Page(topic, modules)
 	return entries
 end
 
+--- `M:AddSetting` over `registry` and `rows`, so Core's adapter and FakePagle install one method (CORE-R42). It adds
+--- a row to a topic page: `"fishing"`, `"announcements"` or `"trackers"`. Call it before `ModulesChanged`, in
+--- OnInitialize; Core builds the pages then, each Module's rows in `def.order` under a header with its title, left
+--- out when the first row is a header. It raises an error for an unknown topic or kind, an id this Module already
+--- used on the page, or a `parent` naming none of its earlier rows there. A call after `ModulesChanged` goes to
+--- `report` and is dropped.
+---@param registry PagleModuleRegistry
+---@param rows PagleSettingsRows
+---@param report fun(problem: string) reports an error and carries on (geterrorhandler())
+---@return fun(self: PagleModuleHandle, topic: "fishing"|"announcements"|"trackers", setting: PagleSetting)
+function ns.AddSettingMethod(registry, rows, report)
+	return function(self, topic, setting)
+		local module = registry:ModuleOf(self)
+		if not module then
+			error("AddSetting is a Module handle method: call M:AddSetting(topic, setting)", 2)
+		end
+		local why, late = rows:Add(module.def.name, topic, setting)
+		if why and late then
+			report(why)
+		elseif why then
+			error(why, 2)
+		end
+	end
+end
+
 --- An On Module's status-list button (CORE-R44, SET-R12), its label read now.
 ---@class PagleStatusButton
 ---@field label string
 ---@field onClick fun()
 ---@field closesPanel boolean   a Module with a view closes the panel first, since the view would open behind it
 
----@param label string|fun():string
----@return string
-local function read(label)
-	if type(label) == "function" then
-		return label()
-	end
-	return label
-end
-
---- An On Module's button: its `def.settingsAction`, otherwise "Open {label}" for its first view; nil with neither.
+--- An On Module's button: its `def.settingsAction`, otherwise "Open {label}" for its first view; nil with neither,
+--- or when its label can't be read (`ns.ReadLabel`), so a failing label costs the button and not the Module's line.
 ---@param def PagleModuleDef
+---@param call fun(fn: function): any calls a function label; returns nil when it fails (securecallfunction)
 ---@return PagleStatusButton?
-function ns.StatusButton(def)
+function ns.StatusButton(def, call)
 	local view = def.views and def.views[1]
 	local action = def.settingsAction
 	if action then
-		return { label = read(action.label), onClick = action.onClick, closesPanel = view ~= nil }
+		local label = ns.ReadLabel(action.label, call)
+		return label and { label = label, onClick = action.onClick, closesPanel = view ~= nil }
 	elseif view then
-		return { label = ns.L.OPEN_VIEW:format(read(view.label)), onClick = view.open, closesPanel = true }
+		local label = ns.ReadLabel(view.label, call)
+		return label and { label = ns.L.OPEN_VIEW:format(label), onClick = view.open, closesPanel = true }
 	end
 	return nil
 end

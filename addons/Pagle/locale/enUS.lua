@@ -14,6 +14,9 @@ ns.L = {
 	-- An inert Module (CORE-R13): its def.title.
 	MODULE_NEEDS_NEWER_PAGLE = "Pagle: Pagle %s needs a newer Pagle.",
 
+	-- CORE-R42: a Module's AddSetting after ModulesChanged, reported and dropped; the Module's def.name.
+	SETTING_TOO_LATE = "Pagle: %s's AddSetting came after ModulesChanged, so the row is dropped",
+
 	-- Settings (CORE-R40–R44, settings.md SET-R10, SET-R11). The category, then its topic pages by topic.
 	SETTINGS_CATEGORY = "Pagle",
 	SETTINGS_PAGES = {
@@ -57,6 +60,12 @@ ns.L = {
 	-- reserved commands that work; shop and report join with their surfaces (M4, M3).
 	SLASH_HELP_HEADER = "Pagle commands:",
 	SLASH_HELP_LINE = "/pagle %s: %s",
+	-- CORE-R62: a Module's /pagle entry skipped, reported. Each takes the Module's def.name and the entry's name, then
+	-- the reserved name, or the def.name of the Module that already uses it.
+	SLASH_SKIPPED_NO_NAME = "Pagle: %s's /pagle entry %s has no one-word name; it is skipped",
+	SLASH_SKIPPED_NO_FN = "Pagle: %s's /pagle %s has no fn; it is skipped",
+	SLASH_SKIPPED_RESERVED = "Pagle: %s's /pagle %s is skipped: Pagle reserves %s",
+	SLASH_SKIPPED_TAKEN = "Pagle: %s's /pagle %s is skipped: %s already uses it",
 	SLASH_CORE_HELP = {
 		{ name = "settings", help = "open Pagle's settings (also /pagle on its own)" },
 		{ name = "help", help = "list these commands" },

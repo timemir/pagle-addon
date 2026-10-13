@@ -5,9 +5,9 @@ import tomllib
 from pathlib import Path
 
 from pagle_data.db2 import Db2Layer, read_db2
+from pagle_data.errors import Problems
 from pagle_data.forever import WeeklyRule, read_forever
 from pagle_data.generate import CATALOGUE_LUA, generate
-from pagle_data.toml_reader import Problems
 
 REPO = Path(__file__).resolve().parents[2]
 

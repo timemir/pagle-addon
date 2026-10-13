@@ -11,9 +11,9 @@ from item_fixture import write_item_layer
 from observed_fixture import i_row, report, write_observed
 from pagle_data.baseline import read_baseline
 from pagle_data.cli import main
+from pagle_data.errors import Problems
 from pagle_data.generate import read_layers
 from pagle_data.observed import Observations, observations, read_observed
-from pagle_data.toml_reader import Problems
 from pagle_data.universe import item_universe
 from windows_fixture import write_windows
 

@@ -8,8 +8,8 @@ from baseline_fixture import CSVS, EVENTS_CSV_HEADER, SEED_EVENTS, write_baselin
 from item_fixture import write_item_layer
 from observed_fixture import write_observed
 from pagle_data.baseline import BaselineEvent
+from pagle_data.errors import DataError
 from pagle_data.generate import read_layers
-from pagle_data.toml_reader import DataError
 from pagle_data.windows import seed_spec, window_of_event
 from windows_fixture import WINDOWS, write_windows
 

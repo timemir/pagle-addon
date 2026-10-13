@@ -60,6 +60,22 @@ function ns.ModuleAddOn(name)
 	return "Pagle_" .. name
 end
 
+--- A label from a Module's def (its views, `menu` entries and `settingsAction`) as Core shows it: a function label
+--- is called now, through `call`, so each showing reads it afresh (CORE-R44, CORE-R52). Nil when it fails or isn't
+--- text, so the one entry or button is left out and nothing else breaks.
+---@param label any
+---@param call fun(fn: function): any calls a function label; returns nil when it fails (securecallfunction)
+---@return string?
+function ns.ReadLabel(label, call)
+	if type(label) == "function" then
+		label = call(label)
+	end
+	if type(label) == "string" then
+		return label
+	end
+	return nil
+end
+
 --- An empty registry for Core's `Pagle.API_VERSION`.
 ---@param apiVersion integer
 ---@return PagleModuleRegistry
@@ -169,4 +185,24 @@ function Registry:State(name, addon)
 	end
 	-- Disabled, or enabled in the AddOns list after this session loaded without it: either way it isn't running.
 	return "off"
+end
+
+--- `Pagle.RegisterModule` over `registry` (CORE-R12–R14), so Core's adapter and FakePagle publish one function:
+--- the def's handle; nil, with MODULE_NEEDS_NEWER_PAGLE's line, for an incompatible `X-Pagle-API`; an error at the
+--- Module's call, registering nothing, for a def CORE-R14 refuses.
+---@param registry PagleModuleRegistry
+---@param readAPI fun(addon: string): string? reads an addon's `X-Pagle-API`
+---@param print fun(line: string) prints a chat line
+---@return fun(def: PagleModuleDef): PagleModuleHandle?
+function ns.ModuleRegistrar(registry, readAPI, print)
+	return function(def)
+		local handle, problem = registry:Register(def, readAPI)
+		if problem then
+			error(problem, 2)
+		end
+		if not handle then
+			print(ns.L.MODULE_NEEDS_NEWER_PAGLE:format(def.title))
+		end
+		return handle
+	end
 end

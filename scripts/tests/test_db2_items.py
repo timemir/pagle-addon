@@ -6,7 +6,7 @@ import pytest
 
 from pagle_data.cli import main
 from pagle_data.db2 import Item, read_db2
-from pagle_data.toml_reader import Problems
+from pagle_data.errors import Problems
 from test_db2_layer import CATALOGUE, EXPECTED, write_tree
 
 # DATA-R11: ID, ClassID, SubclassID, Quality and the enUS name, under wago.tools' column names, sorted by ID. Names

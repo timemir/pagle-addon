@@ -20,15 +20,6 @@ local function clickCompartment(loaded)
 	return loaded.client.menus[opened + 1]
 end
 
--- The names of the categories Settings.OpenToCategory opened, in order.
-local function openedNames(loaded)
-	local names = {}
-	for i, category in ipairs(loaded.client.settings.opened) do
-		names[i] = category and category.name
-	end
-	return names
-end
-
 describe("The compartment entry", function()
 	it("is Pagle's, from the TOC's AddonCompartmentFunc and title (CORE-R50)", function()
 		local loaded = loadCore()
@@ -162,14 +153,6 @@ describe("The compartment menu with Modules", function()
 		assert.matches("no input yet", reported[1], 1, true)
 	end)
 end)
-
--- A combat flip on the fake client: PLAYER_REGEN_DISABLED or _ENABLED, with InCombatLockdown agreeing.
-local function setCombat(loaded, inCombat)
-	loaded.env.InCombatLockdown = function()
-		return inCombat
-	end
-	loaded.client.fire(inCombat and "PLAYER_REGEN_DISABLED" or "PLAYER_REGEN_ENABLED")
-end
 
 describe("The compartment menu while restricted", function()
 	it("still opens, and Settings prints CORE-R33's line instead of opening (CORE-R33, SET-R75)", function()

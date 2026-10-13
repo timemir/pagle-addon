@@ -22,6 +22,7 @@ stds.wow = {
 				"AddOnRestrictionType",
 				AddOnRestrictionState = { fields = { "Inactive" } },
 				AddOnEnableState = { fields = { "None" } }, -- CORE-R16
+				TooltipDataType = { fields = { "Object" } }, -- LOG-R80
 			},
 		},
 		-- Attaching a Module (CORE-R13, CORE-R16, CORE-R41); QoL's conflict check and its choices (QOL-R80, QOL-R83).
@@ -87,6 +88,8 @@ stds.wow = {
 		"GetLootSlotInfo",
 		"GetLootSlotLink",
 		"ERR_FISH_ESCAPED",
+		-- The diagnostics buffer (LOG-R81); TooltipDataProcessor, for its hovers (LOG-R80), is in stds.wow_variables.
+		"GetLocale",
 	},
 }
 
@@ -136,6 +139,13 @@ stds.wow_variables = {
 		-- Interface/AddOns/Blizzard_ChatFrameBase/Shared/SlashCommandsRegistry.lua: "_G.SlashCmdList = {};".
 		-- The compartment entry needs no table: Pagle.toc's AddonCompartmentFunc names a global, as the probe's did.
 		SlashCmdList = { fields = { PAGLE = { read_only = false } } },
+		-- A FrameXML table the dump doesn't list (LOG-R80). probes/fishing-signals/results/
+		-- 2026-10-11-build70338-report.md, "Packaging, Settings and events": "Tooltip post-call hook (type Object) | ok
+		-- (TooltipDataType.Object = 4); fired 31 times", and its client table shows TooltipDataProcessor with
+		-- AddTooltipPostCall on build 70338. Gethe/wow-ui-source branch forever at
+		-- 943764493e6b16d63ded3ab304150d1f05e58b57 ("1.60.1 (70338)"),
+		-- Interface/AddOns/Blizzard_SharedXMLGame/Tooltip/TooltipDataHandler.lua: "TooltipDataProcessor = {".
+		TooltipDataProcessor = { fields = { "AddTooltipPostCall" } },
 	},
 }
 
@@ -162,11 +172,26 @@ files["addons/Pagle/adapter/**"] = { globals = { "Pagle" } }
 -- /pagle's name, and the global Pagle.toc's AddonCompartmentFunc names (CORE-R50, CORE-R60).
 files["addons/Pagle/adapter/Slash.lua"] = { globals = { "SLASH_PAGLE1" } }
 files["addons/Pagle/adapter/Menu.lua"] = { globals = { "Pagle_OnAddonCompartmentClick" } }
--- Every Module file reads Pagle, for its CORE-R11 guard, so logic/ and locale/ may too; nothing else from Core.
-files["addons/Pagle_*/**"] = { read_globals = { "Pagle" } }
+-- A Module's adapter/ reads Pagle through stds.pagle above. Its logic/ and locale/ files read it only in their CORE-R11
+-- guard, `if not Pagle then -- luacheck: read globals Pagle …`, whose inline option reaches that line alone: any other
+-- use of Pagle there fails lint (CORE-R7).
 -- QoL's adapter names its Bindings.xml entries for Key Bindings › AddOns (QOL-R1).
 files["addons/Pagle_QoL/adapter/**"] = { globals = { "BINDING_HEADER_PAGLE", "BINDING_NAME_PAGLE_FISHING_KEY" } }
 -- Specs run under busted on plain Lua 5.1. busted's helper (.busted) defines loadAddon and the Forever fixtures.
-local helperGlobals = { "loadAddon", "PROJECT_IDS", "FOREVER_GLOBALS", "PLAYER_GUID", "addonFiles", "newFakePagle" }
+local helperGlobals = {
+	"loadAddon",
+	"PROJECT_IDS",
+	"FOREVER_GLOBALS",
+	"PLAYER_GUID",
+	"SERVER_TIME",
+	"addonFiles",
+	"newFakePagle",
+	-- spec/support/helpers.lua
+	"foreverWith",
+	"setCombat",
+	"openedNames",
+	"savedLog",
+	"loadCollectingErrors",
+}
 files["spec/**"] = { std = "lua51+busted", read_globals = helperGlobals }
 files["spec/support/*.lua"] = { globals = helperGlobals }
