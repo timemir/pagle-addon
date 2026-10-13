@@ -53,8 +53,10 @@ fetch() {
 	fi
 }
 
-# stale <component> <key>: true when the component must be (re)installed. Its stamp records the key it was
-# installed with and is written only once the install has finished, so an interrupted run starts it over.
+# stale <component> <key>: true when the component must be (re)installed, after emptying its folder. Its stamp
+# records the key it was installed with and is written only once the install has finished, so an interrupted run
+# starts it over. Callers run it as an `if` condition, where set -e is off, so a failed reset exits explicitly:
+# returning false would read as "up to date".
 stale() {
 	local stamp="$tools/.stamp-$1"
 	if [[ -f $stamp && $(<"$stamp") == "$2" ]]; then
@@ -62,9 +64,10 @@ stale() {
 		return 1
 	fi
 	echo "setup: installing $1"
-	rm -f "$stamp"
-	rm -rf "${tools:?}/$1"
-	mkdir -p "$tools/$1"
+	if ! { rm -f "$stamp" && rm -rf "${tools:?}/$1" && mkdir -p "$tools/$1"; }; then
+		echo "setup: can't empty .tools/$1 to reinstall it" >&2
+		exit 1
+	fi
 }
 
 stamp() {
@@ -72,6 +75,8 @@ stamp() {
 }
 
 # Lua 5.1, LuaRocks and the rocks: one component, since rocks are built against that Lua and LuaRocks.
+# Unquoted on purpose: word splitting folds the multi-line list onto one line, so the key stays one line.
+# shellcheck disable=SC2086
 rocks=$(echo $LUA_ROCKS)
 key="lua $LUA_VERSION $LUA_SHA256 luarocks $LUAROCKS_VERSION $LUAROCKS_SHA256 rocks $rocks prefix $tools"
 if stale lua "$key"; then
