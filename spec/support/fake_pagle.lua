@@ -119,6 +119,9 @@
 ---@field escape fun() The game reports the fish escaped (LOG-R6).
 ---@field wait fun(seconds: number) Moves the fake's clock on, running each grace timer that comes due, and ending
 --- the Session 900 s after its last Cast (LOG-R62).
+---@field serverTime fun(): integer The fake's server time: SERVER_TIME plus its clock, in whole seconds.
+---@field compartmentText fun(): string The compartment entry's label as it reads now (CORE-R51): "Pagle", or with
+--- moments kept while Cozy mode was on and no Session summary card shown since, "Pagle · 2 waiting" (ANN-R42).
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local newSecureCall = dofile("spec/support/securecall.lua")
@@ -700,6 +703,7 @@ part(function(fake, Pagle, ns)
 	local function serverTime()
 		return SERVER_TIME + math.floor(clock.time())
 	end
+	fake.serverTime = serverTime
 	Pagle.SESSION_RULES_VERSION = ns.SESSION_RULES_VERSION
 	local tracker = ns.NewSessionTracker({ catchLog = fake.catchLog, global = {}, fire = fake.fire })
 	local waits = 0
@@ -754,12 +758,15 @@ end)
 -- moment Core keeps goes to the open Session's summary (or global.pending with none open), M:SetSummaryLine sets
 -- lines, and SessionEnded makes a card in fake.global.cards for a Session that raised a moment. M:RaiseWriteUp keeps
 -- a section in fake.global.writeUp and fake.writeUps. Cards show in fake.cardsShown, as Core's would, from the second
--- fake.nextFrame after enterWorld; the fake has no lanes, so they never wait for them.
+-- fake.nextFrame after enterWorld; the fake has no lanes, so they never wait for them, nor for the combat hold. Each
+-- moment kept in Cozy mode counts on the compartment's label until a Session summary card shows (ANN-R42), and a card
+-- shows each moment expired by the time it was made with its pastText (ANN-R45).
 part(function(fake, Pagle, ns)
 	fake.global = { summary = { moments = {}, lines = {} }, pending = {}, cards = {}, writeUp = {} }
 	fake.profile = { announcements = { cozy = false } }
 	fake.writeUps = {}
 	fake.cardsShown = {}
+	local summary
 	local cards = ns.NewCards({
 		global = function()
 			return fake.global
@@ -774,12 +781,19 @@ part(function(fake, Pagle, ns)
 		lanesEmpty = function()
 			return true
 		end,
+		held = function()
+			return false
+		end,
 		cozy = function()
 			return fake.profile.announcements.cozy
 		end,
 		show = function(card)
 			fake.cardsShown[#fake.cardsShown + 1] = card
+			if card.numbers then
+				summary:SummaryShown()
+			end
 		end,
+		hide = function() end,
 	})
 	cards:Start()
 	-- Each section Core keeps is also noted in fake.writeUps, which closing the Write-up doesn't empty.
@@ -794,7 +808,7 @@ part(function(fake, Pagle, ns)
 		cards:Close(fake.cardsShown[#fake.cardsShown])
 	end
 
-	local summary = ns.NewSummary({
+	summary = ns.NewSummary({
 		global = function()
 			return fake.global
 		end,
@@ -807,7 +821,12 @@ part(function(fake, Pagle, ns)
 		cozy = function()
 			return fake.profile.announcements.cozy
 		end,
+		serverTime = fake.serverTime,
+		waitingChanged = function() end,
 	})
+	function fake.compartmentText()
+		return ns.CompartmentText(summary:Waiting())
+	end
 	function ns.SummarizeMoment(moment)
 		summary:Add(moment)
 	end

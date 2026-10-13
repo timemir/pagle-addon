@@ -4,6 +4,17 @@ local ns = select(2, ...)
 -- The compartment menu as data (CORE-R50, CORE-R52). Pure logic, everything passed in (CORE-R7); adapter/Menu.lua
 -- opens it as a native context menu.
 
+--- The compartment entry's label (CORE-R51): "Pagle", or with moments Cozy mode holds for a summary,
+--- "Pagle · 3 waiting" (ANN-R42).
+---@param waiting integer
+---@return string
+function ns.CompartmentText(waiting)
+	if waiting > 0 then
+		return ns.L.COMPARTMENT_WAITING:format(waiting)
+	end
+	return ns.L.COMPARTMENT
+end
+
 --- One button on the compartment menu.
 ---@class PagleMenuEntry
 ---@field label string

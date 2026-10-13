@@ -6,7 +6,6 @@
 ## Category: Professions
 ## Version: @project-version@
 ## SavedVariables: PagleLog, PagleDB
-## AddonCompartmentFunc: Pagle_OnAddonCompartmentClick
 
 libs\LibStub\LibStub.lua
 libs\CallbackHandler-1.0\CallbackHandler-1.0.lua

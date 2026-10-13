@@ -22,7 +22,7 @@ end
 -- Clicks Pagle in the Addon Compartment and returns the menu Core opens on the next frame (CORE-R50).
 local function compartmentMenu(loaded)
 	local opened = #loaded.client.menus
-	loaded.env[assert(loaded.client.addons.Pagle.metadata).AddonCompartmentFunc]("Pagle", "LeftButton")
+	loaded.client.clickCompartment("Pagle")
 	loaded.client.runTimers()
 	return loaded.client.menus[opened + 1]
 end
