@@ -5,8 +5,8 @@ end
 ---@class PagleQoLNS
 local ns = select(2, ...)
 
--- The Fishing stretch (QOL-R61) and the lease of its CVars (QOL-R62, QOL-R63): pure logic, everything passed in
--- (CORE-R7). adapter/Stretch.lua hears the events and reads and sets the CVars.
+-- The Fishing stretch (QOL-R61) and the lease of its CVars (QOL-R62, QOL-R63, QOL-R65): pure logic, everything
+-- passed in (CORE-R7). adapter/Stretch.lua hears the events and reads and sets the CVars.
 
 --- Seconds after the last CastEnded, with no fishing channel since, that a stretch ends (qol.md › Tunables).
 ns.STRETCH_IDLE_END = 60
@@ -103,6 +103,86 @@ ns.SOFT_INTERACT_LEASE = {
 	{ name = "SoftTargetInteractRangeIsHard", value = "0" },
 }
 
+--- The Fishing audio mix row: effects on at full; music, ambience and dialog off. Master volume and
+--- Sound_EnableAllSound are never leased (QOL-R62, qol.md › Tunables).
+---@type PagleQoLLeaseRow[]
+ns.AUDIO_MIX_LEASE = {
+	{ name = "Sound_EnableSFX", value = "1" },
+	{ name = "Sound_SFXVolume", value = "1.0" },
+	{ name = "Sound_EnableMusic", value = "0" },
+	{ name = "Sound_EnableAmbience", value = "0" },
+	{ name = "Sound_EnableDialog", value = "0" },
+}
+
+--- The background row, leased only while the audio mix is on too (QOL-R62).
+---@type PagleQoLLeaseRow[]
+ns.BACKGROUND_SOUND_LEASE = {
+	{ name = "Sound_EnableSoundWhenGameIsInBG", value = "1" },
+}
+
+--- The auto-loot row (QOL-R62).
+---@type PagleQoLLeaseRow[]
+ns.AUTO_LOOT_LEASE = {
+	{ name = "autoLootDefault", value = "1" },
+}
+
+--- The While you fish settings a stretch's lease follows: `PagleQoLDB.profile`'s `audio` and `autoLoot` (qol.md ›
+--- Data).
+---@class PagleQoLLeaseSettings
+---@field audio { on: boolean, background: boolean }
+---@field autoLoot boolean
+
+--- The rows a stretch leases under `settings` (QOL-R62): soft-interact always, then each feature that is on, the
+--- background row only while the audio mix is on too.
+---@param settings PagleQoLLeaseSettings
+---@return PagleQoLLeaseRow[]
+function ns.LeaseRows(settings)
+	local rows = {}
+	local function add(feature)
+		for _, row in ipairs(feature) do
+			rows[#rows + 1] = row
+		end
+	end
+	add(ns.SOFT_INTERACT_LEASE)
+	if settings.audio.on then
+		add(ns.AUDIO_MIX_LEASE)
+		if settings.audio.background then
+			add(ns.BACKGROUND_SOUND_LEASE)
+		end
+	end
+	if settings.autoLoot then
+		add(ns.AUTO_LOOT_LEASE)
+	end
+	return rows
+end
+
+--- What a settings change does to a running stretch (QOL-R65): `before` and `after` are its rows under the old and
+--- new settings (ns.LeaseRows). The rows it turned on are leased now; the CVars it turned off are restored now.
+---@param before PagleQoLLeaseRow[]
+---@param after PagleQoLLeaseRow[]
+---@return PagleQoLLeaseRow[] lease the rows to lease now, in order
+---@return table<string, true> restore the names of the CVars to restore now
+function ns.LeaseChange(before, after)
+	local was, is = {}, {}
+	for _, row in ipairs(before) do
+		was[row.name] = true
+	end
+	local lease = {}
+	for _, row in ipairs(after) do
+		is[row.name] = true
+		if not was[row.name] then
+			lease[#lease + 1] = row
+		end
+	end
+	local restore = {}
+	for name in pairs(was) do
+		if not is[name] then
+			restore[name] = true
+		end
+	end
+	return lease, restore
+end
+
 --- Whether two CVar values are the same: compared as numbers when both parse as numbers, else as strings
 --- (QOL-R62, QOL-R63).
 ---@param a string
@@ -167,20 +247,26 @@ function ns.Lease(lease, rows, cvars)
 	end
 end
 
---- Restores every entry in `lease` (QOL-R63, QOL-R64): a CVar that still reads `set` goes back to `orig`; one the
---- player changed since stays theirs. Each entry is then removed, unless its restore didn't take (the CVar doesn't
---- read `orig` back), which stays for the leftover restore at the next load.
+--- Restores every entry in `lease`, or with `only` just the entries it names (QOL-R63, QOL-R64, QOL-R65): a CVar
+--- that still reads `set` goes back to `orig`; one the player changed since stays theirs. Each entry is then removed,
+--- unless its restore didn't take (the CVar doesn't read `orig` back), which stays for the leftover restore at the
+--- next load. Entries `only` doesn't name stay as they are.
 ---@param lease PagleQoLLeaseEntry[] `PagleQoLDB.global.lease`, changed in place
 ---@param cvars PagleQoLCVars
-function ns.RestoreLease(lease, cvars)
+---@param only table<string, true>? the names of the CVars to restore; every entry when nil
+function ns.RestoreLease(lease, cvars, only)
 	local kept = {}
 	for _, entry in ipairs(lease) do
-		local current = cvars.get(entry.name)
-		if current ~= nil and entry.set ~= nil and ns.SameCVarValue(current, entry.set) then
-			cvars.set(entry.name, entry.orig)
-			local after = cvars.get(entry.name)
-			if after == nil or not ns.SameCVarValue(after, entry.orig) then
-				kept[#kept + 1] = entry
+		if only and not only[entry.name] then
+			kept[#kept + 1] = entry
+		else
+			local current = cvars.get(entry.name)
+			if current ~= nil and entry.set ~= nil and ns.SameCVarValue(current, entry.set) then
+				cvars.set(entry.name, entry.orig)
+				local after = cvars.get(entry.name)
+				if after == nil or not ns.SameCVarValue(after, entry.orig) then
+					kept[#kept + 1] = entry
+				end
 			end
 		end
 	end
