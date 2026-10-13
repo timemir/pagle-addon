@@ -1,0 +1,538 @@
+-- The Ledger's fold (LED-R3): one record at a time into the Ledger's state, and the achievements each earns. Hand-made
+-- records over a fixture catalogue; ledger.md › Classifying a Catch, XP and Fresh Water, Angler Level, Skill and Catch
+-- Milestones, Pagle Coins, Data › Projection, Tunables.
+
+-- The fixture catalogue: what GetItem returns for each item ID (LOG-R55). Unlisted IDs are Uncharted.
+local MACKEREL, SMALLFISH, LEGEND, NOISE = 6303, 6291, 19803, 6358
+local TROPHY, JUNK, CHEST, TREASURE, OTHER, UNCHARTED = 13901, 6309, 6307, 6308, 4592, 99999
+local ITEMS = {
+	[MACKEREL] = { category = "fish", species = MACKEREL, legend = false, noise = false, removed = false, pool = false },
+	[SMALLFISH] = {
+		category = "questFish",
+		species = SMALLFISH,
+		legend = false,
+		noise = false,
+		removed = false,
+		pool = true,
+	},
+	[LEGEND] = { category = "fish", species = LEGEND, legend = true, noise = false, removed = false, pool = false },
+	[NOISE] = { category = "fish", species = NOISE, legend = false, noise = true, removed = false, pool = false },
+	[TROPHY] = {
+		category = "trophy",
+		family = 1,
+		weight = 19,
+		legend = false,
+		noise = false,
+		removed = false,
+		pool = false,
+	},
+	[JUNK] = { category = "junk", legend = false, noise = false, removed = false, pool = false },
+	[CHEST] = { category = "container", legend = false, noise = false, removed = false, pool = false },
+	[TREASURE] = { category = "treasure", legend = false, noise = false, removed = false, pool = false },
+	[OTHER] = { category = "other", legend = false, noise = false, removed = false, pool = false },
+}
+
+local ELWYNN, WESTFALL = 12, 40
+local T0 = 1791731000
+local HOUR = 3600
+
+---@param itemID integer
+---@return PagleItem?
+local function getItem(itemID)
+	assert(itemID ~= 0, "item 0 is never looked up (LED-R5)")
+	return ITEMS[itemID]
+end
+
+-- Builds records the way the Catch log hands them out (LOG-R42), with seq and entry IDs in order.
+local function newLog()
+	local seq = 0
+	local log = {}
+
+	---@return integer, string
+	local function header(time)
+		seq = seq + 1
+		return seq, "Player-4618-0A1B2C3D-" .. time .. "-" .. seq
+	end
+
+	--- A caught Cast at `time` in `zone`, one Catch per item ID (quantity 1), in item order.
+	---@param time integer
+	---@param zone integer
+	---@param itemIDs integer[]
+	---@param char integer?
+	---@return PagleCast
+	function log.cast(time, zone, itemIDs, char)
+		local s, id = header(time)
+		local items = {}
+		for n, itemID in ipairs(itemIDs) do
+			items[n] = { n = n, itemID = itemID, quantity = 1, catchId = id .. ":" .. n }
+		end
+		return {
+			seq = s,
+			id = id,
+			kind = "cast",
+			char = char or 1,
+			time = time,
+			outcome = "caught",
+			session = "s",
+			conditions = { time = time, zone = zone, subzone = 0, minute = 0, events = {}, auras = {} },
+			items = items,
+		}
+	end
+
+	--- A got-away Cast (LOG-R7).
+	function log.gotAway(time, zone)
+		local record = log.cast(time, zone, {})
+		record.outcome = "gotAway"
+		return record
+	end
+
+	--- A Skill Reading (LOG-R31).
+	---@param time integer
+	---@param rank integer
+	---@param char integer?
+	---@return PagleSkillReading
+	function log.skill(time, rank, char)
+		local s, id = header(time)
+		return { seq = s, id = id, kind = "skill", char = char or 1, time = time, rank = rank, max = 300, mod = 0 }
+	end
+
+	--- Any other kind of entry (LED-R2 ignores it).
+	function log.other(time, kind)
+		local s, id = header(time)
+		return { seq = s, id = id, kind = kind, char = 1, time = time }
+	end
+
+	return log
+end
+
+describe("The Ledger's fold", function()
+	local ns = loadAddon("Pagle_Ledger", FOREVER_GLOBALS).ns
+
+	local fold, log
+	before_each(function()
+		fold = ns.NewLedgerFold({ GetItem = getItem })
+		log = newLog()
+	end)
+
+	-- A fresh state with every record applied in "live" mode; returns it and every achievement, in order.
+	local function applyAll(records, mode, state)
+		state = state or fold.reset()
+		local earned = {}
+		for _, record in ipairs(records) do
+			fold.apply(state, record, mode or "live", earned)
+		end
+		return state, earned
+	end
+
+	-- The kinds of a list of achievements, in order.
+	---@param earned LedgerAchievement[]
+	---@return string[]
+	local function kinds(earned)
+		local list = {}
+		for i, achievement in ipairs(earned) do
+			list[i] = achievement.kind
+		end
+		return list
+	end
+
+	describe("classifying a Catch (LED-R5)", function()
+		it("counts a Legend item as its category's Catch until M4: here a Species (LED-R4, LED-R5)", function()
+			local state, earned = applyAll({ log.cast(T0, 0, { LEGEND }) })
+
+			assert.are.equal(1, state.species[LEGEND].n)
+			assert.are.equal("newSpecies", earned[1].kind)
+			assert.are.equal(LEGEND, earned[1].species)
+		end)
+
+		it("gives Noise, other, Uncharted and item 0 the base only (LED-R5, LED-R196)", function()
+			local state, earned = applyAll({ log.cast(T0, ELWYNN, { NOISE, OTHER, UNCHARTED, 0 }) })
+
+			assert.are.equal(4, state.catches)
+			assert.are.same({}, state.species)
+			assert.are.same({}, earned)
+			-- Catch XP for each, doubled under Fresh Water, and the first Catch in the zone (LED-R20, LED-R22).
+			assert.are.equal(4 * 20 + 200, state.xp)
+			assert.is_truthy(state.zones[ELWYNN])
+		end)
+
+		it("gives trophy and curio items the base only in M2: their collections come in M3 (LED-R4)", function()
+			local state, earned = applyAll({ log.cast(T0, 0, { TROPHY, JUNK, CHEST }) })
+
+			assert.are.equal(3, state.catches)
+			assert.are.equal(3 * 20, state.xp)
+			assert.are.same({}, state.species)
+			assert.are.same({}, earned)
+		end)
+
+		it("classifies first match wins: item 0, Uncharted, Noise, Species, trophy, curio, other (LED-R5)", function()
+			assert.are.equal("zero", ns.ClassifyCatch(0, nil))
+			assert.are.equal("uncharted", ns.ClassifyCatch(UNCHARTED, nil))
+			assert.are.equal("noise", ns.ClassifyCatch(NOISE, ITEMS[NOISE]))
+			assert.are.equal("species", ns.ClassifyCatch(MACKEREL, ITEMS[MACKEREL]))
+			assert.are.equal("species", ns.ClassifyCatch(SMALLFISH, ITEMS[SMALLFISH]))
+			assert.are.equal("species", ns.ClassifyCatch(LEGEND, ITEMS[LEGEND]))
+			assert.are.equal("trophy", ns.ClassifyCatch(TROPHY, ITEMS[TROPHY]))
+			assert.are.equal("curio", ns.ClassifyCatch(JUNK, ITEMS[JUNK]))
+			assert.are.equal("curio", ns.ClassifyCatch(CHEST, ITEMS[CHEST]))
+			assert.are.equal("curio", ns.ClassifyCatch(TREASURE, ITEMS[TREASURE]))
+			assert.are.equal("other", ns.ClassifyCatch(OTHER, ITEMS[OTHER]))
+		end)
+	end)
+
+	describe("zones (LED-R6)", function()
+		it("makes a zone fished at any Catch there, earning 200 XP once (LED-R6, LED-R20, LED-R21)", function()
+			local state = applyAll({ log.cast(T0, ELWYNN, { JUNK }), log.cast(T0 + 60, ELWYNN, { OTHER }) })
+
+			assert.are.same({ [ELWYNN] = { species = {} } }, state.zones)
+			assert.are.equal(20 + 200 + 20, state.xp)
+		end)
+
+		it("gives zone 0 no zone credit, and takes nothing else away (LED-R6)", function()
+			local state, earned = applyAll({ log.cast(T0, 0, { MACKEREL }) })
+
+			assert.are.same({}, state.zones)
+			assert.are.same({}, state.species[MACKEREL].zones)
+			assert.are.equal(20 + 500, state.xp)
+			assert.are.same({ "newSpecies" }, { earned[1].kind })
+			assert.are.equal(1, #earned)
+		end)
+	end)
+
+	describe("XP (LED-R20, LED-R21)", function()
+		it("gives a new Species in a new zone 10 + 500 + 100 + 200, only the 10 doubled (LED-R20)", function()
+			local state = applyAll({ log.cast(T0, ELWYNN, { MACKEREL }) })
+
+			assert.are.equal(20 + 500 + 100 + 200, state.xp)
+		end)
+
+		it("gives a second Catch of it there its Catch XP alone: 20 or 10 (LED-R20, LED-R22)", function()
+			local state = applyAll({ log.cast(T0, ELWYNN, { MACKEREL }) })
+			local xp = state.xp
+			applyAll({ log.cast(T0 + 60, ELWYNN, { MACKEREL }) }, "live", state)
+			assert.are.equal(xp + 20, state.xp)
+
+			state.fresh = 0
+			xp = state.xp
+			applyAll({ log.cast(T0 + 60, ELWYNN, { MACKEREL }) }, "live", state)
+			assert.are.equal(xp + 10, state.xp)
+		end)
+
+		it("gives a known Species in a new zone 100 + 200 and a newInZone with its Cast (LED-R20, LED-R97)", function()
+			local state = applyAll({ log.cast(T0, ELWYNN, { MACKEREL }) })
+			local xp = state.xp
+			local westfall = log.cast(T0 + 60, WESTFALL, { MACKEREL })
+			local _, earned = applyAll({ westfall }, "live", state)
+
+			assert.are.equal(xp + 20 + 100 + 200, state.xp)
+			assert.are.same({
+				kind = "newInZone",
+				cast = westfall.id,
+				coins = 0,
+				species = MACKEREL,
+				itemID = MACKEREL,
+				zone = WESTFALL,
+			}, earned[1])
+			assert.are.same({ "newInZone", "levelUp" }, { earned[1].kind, earned[2].kind }) -- 1,140 XP: level 2
+		end)
+
+		it("raises newSpecies with 10 Coins, and no newInZone, at a first Catch ever (LED-R97, LED-R88)", function()
+			local cast = log.cast(T0, ELWYNN, { MACKEREL })
+			local state, earned = applyAll({ cast })
+
+			assert.are.same({
+				{
+					kind = "newSpecies",
+					cast = cast.id,
+					coins = 10,
+					species = MACKEREL,
+					itemID = MACKEREL,
+					zone = ELWYNN,
+				},
+			}, earned)
+			assert.are.equal(10, state.coins)
+		end)
+
+		it("counts firsts across characters: another's first Catch of a Species is no first (LED-R21)", function()
+			local state = applyAll({ log.cast(T0, ELWYNN, { MACKEREL }, 1) })
+			local xp = state.xp
+			local _, earned = applyAll({ log.cast(T0 + 60, ELWYNN, { MACKEREL }, 2) }, "live", state)
+
+			assert.are.equal(xp + 20, state.xp)
+			assert.are.same({}, earned)
+			assert.are.equal(2, state.species[MACKEREL].n)
+		end)
+
+		it("credits a Cast's Catches in item order: two new Species, one zone first (LED-R3, LED-R20)", function()
+			local cast = log.cast(T0, ELWYNN, { SMALLFISH, MACKEREL, SMALLFISH })
+			local state, earned = applyAll({ cast })
+
+			assert.are.equal(3 * 20 + 2 * 500 + 2 * 100 + 200, state.xp)
+			assert.are.same(
+				{ "newSpecies", "newSpecies", "levelUp" },
+				{ earned[1].kind, earned[2].kind, earned[3].kind }
+			)
+			assert.are.same({ SMALLFISH, MACKEREL }, { earned[1].species, earned[2].species })
+			assert.are.equal(2, state.species[SMALLFISH].n)
+			assert.are.same({ [SMALLFISH] = true, [MACKEREL] = true }, state.zones[ELWYNN].species)
+		end)
+	end)
+
+	describe("Fresh Water (LED-R22, LED-R23)", function()
+		it("starts at the cap, 300, and a 3-item Cast spends 3 (LED-R22, Tunables)", function()
+			local state = fold.reset()
+			assert.are.equal(300, state.fresh)
+
+			applyAll({ log.cast(T0, ELWYNN, { OTHER, OTHER, OTHER }) }, "live", state)
+			assert.are.equal(297, state.fresh)
+		end)
+
+		it("refills 10 an hour between Catches, back at the cap after a 30-hour gap (LED-R22)", function()
+			local state = fold.reset()
+			state.fresh = 0
+			applyAll({ log.cast(T0, ELWYNN, { OTHER }) }, "live", state)
+			assert.are.equal(0, state.fresh)
+
+			applyAll({ log.cast(T0 + HOUR, ELWYNN, { OTHER }) }, "live", state)
+			assert.are.equal(9, state.fresh)
+
+			applyAll({ log.cast(T0 + 31 * HOUR, ELWYNN, { OTHER }) }, "live", state)
+			assert.are.equal(299, state.fresh)
+		end)
+
+		it("doubles no Catch while F is below 1, as at 0.5 (LED-R22)", function()
+			local state = applyAll({ log.cast(T0, ELWYNN, { OTHER }) })
+			state.fresh = 0.5
+			local xp = state.xp
+			applyAll({ log.cast(T0, ELWYNN, { OTHER, OTHER }) }, "live", state)
+
+			assert.are.equal(xp + 10 + 10, state.xp)
+			assert.are.equal(0.5, state.fresh)
+		end)
+
+		it("shows floor(min(cap, F + rate × elapsed / 3,600)) now, the cap with no Catch yet (LED-R23)", function()
+			local state = fold.reset()
+			assert.are.equal(300, ns.FreshWaterShown(state, T0))
+
+			state.fresh = 0
+			applyAll({ log.cast(T0, ELWYNN, { OTHER }) }, "live", state)
+			assert.are.equal(0, ns.FreshWaterShown(state, T0 + 359))
+			assert.are.equal(1, ns.FreshWaterShown(state, T0 + 360))
+			assert.are.equal(25, ns.FreshWaterShown(state, T0 + 2.5 * HOUR))
+			assert.are.equal(300, ns.FreshWaterShown(state, T0 + 100 * HOUR))
+			-- A server time before the last Catch adds nothing.
+			assert.are.equal(0, ns.FreshWaterShown(state, T0 - HOUR))
+		end)
+	end)
+
+	describe("the climb (LED-R30, LED-R31, LED-R35)", function()
+		-- What reaching level 60 costs: the steps from 1 to 59, at 1,000 + 80 × L each (LED-R30).
+		local TO_60 = 59 * 1000 + 80 * (59 * 60 / 2)
+
+		it("is level 1 at 1,079 XP and 2 at 1,080: the step from level 1 costs 1,000 + 80 (LED-R30)", function()
+			assert.are.same({ 1, 0, 1080 }, { ns.ClimbOf(0) })
+			assert.are.same({ 1, 1079, 1080 }, { ns.ClimbOf(1079) })
+			assert.are.same({ 2, 0, 1160 }, { ns.ClimbOf(1080) })
+			assert.are.same({ 3, 5, 1240 }, { ns.ClimbOf(1080 + 1160 + 5) })
+		end)
+
+		it("stops at 60 and keeps the carried XP past it, unused until Prestige (LED-R30, LED-R31)", function()
+			assert.are.equal(200600, TO_60)
+			assert.are.same({ 59, 1000 + 80 * 59 - 1, 1000 + 80 * 59 }, { ns.ClimbOf(TO_60 - 1) })
+			-- At 60 there is no next step; the second value is the carried XP.
+			assert.are.same({ 60, 0 }, { ns.ClimbOf(TO_60) })
+			assert.are.same({ 60, 12345 }, { ns.ClimbOf(TO_60 + 12345) })
+		end)
+
+		it("reads the level and the peak level, the level at prestige rank 0, from the state (LED-R35)", function()
+			local state = fold.reset()
+			assert.are.same({ 1, 1 }, { ns.Level(state), ns.PeakLevel(state) })
+
+			state.xp = 1080 + 1160
+			assert.are.same({ 3, 3 }, { ns.Level(state), ns.PeakLevel(state) })
+		end)
+
+		it("raises one levelUp per entry, with every level it raised and 20 Coins each (LED-R97, LED-R88)", function()
+			local state = fold.reset()
+			state.xp = 1080 - 1
+			local cast = log.cast(T0, ELWYNN, { MACKEREL }) -- 820 XP: level 1 → 2, not yet 3 (2,240)
+			local _, earned = applyAll({ cast }, "live", state)
+
+			assert.are.equal(2, ns.Level(state))
+			assert.are.same({ kind = "levelUp", cast = cast.id, coins = 20, levels = { 2 } }, earned[2])
+			assert.are.equal(2, #earned)
+			assert.are.equal(10 + 20, state.coins)
+		end)
+
+		it("raises one levelUp for two levels, after the entry's other achievements (LED-R97)", function()
+			local state = fold.reset()
+			state.xp = 1080 + 1160 - 1 -- 1 XP short of level 3
+			-- A first Skill Reading at 160: 75 and 150, 2,000 XP, past 3 and the 1,240 step to 4 (LED-R40).
+			local _, earned = applyAll({ log.skill(T0, 160) }, "live", state)
+
+			assert.are.equal(4, ns.Level(state))
+			assert.are.same({ kind = "levelUp", coins = 40, levels = { 3, 4 } }, earned[3])
+			assert.are.equal(3, #earned)
+			assert.are.equal(40, state.coins)
+		end)
+
+		it("stops raising levels at 60 while the carried XP grows (LED-R30)", function()
+			local state = fold.reset()
+			state.xp = TO_60 - 1
+			local _, earned = applyAll({ log.skill(T0, 300) }, "live", state)
+
+			assert.are.equal(60, ns.Level(state))
+			assert.are.same({ kind = "levelUp", coins = 20, levels = { 60 } }, earned[5])
+			assert.are.equal(TO_60 - 1 + 4000, state.xp)
+			assert.are.same({ 60, 3999 }, { ns.ClimbOf(state.xp) })
+		end)
+	end)
+
+	describe("Skill Milestones (LED-R40)", function()
+		it("credits 75 and 150 at a first 160, then 225 and 300 at a later 300, 1,000 XP each (LED-R40)", function()
+			local state, earned = applyAll({ log.skill(T0, 160) })
+
+			assert.are.same({
+				{ kind = "skillMilestone", coins = 0, threshold = 75 },
+				{ kind = "skillMilestone", coins = 0, threshold = 150 },
+			}, { earned[1], earned[2] })
+			assert.are.same({ [75] = T0, [150] = T0 }, state.skill)
+			assert.are.equal(2000, state.xp)
+
+			local _, later = applyAll({ log.skill(T0 + HOUR, 300) }, "live", state)
+			assert.are.same({
+				{ kind = "skillMilestone", coins = 0, threshold = 225 },
+				{ kind = "skillMilestone", coins = 0, threshold = 300 },
+			}, { later[1], later[2] })
+			assert.are.same({ [75] = T0, [150] = T0, [225] = T0 + HOUR, [300] = T0 + HOUR }, state.skill)
+			assert.are.equal(4000, state.xp)
+		end)
+
+		it("credits each once per Angler: a second character never re-credits them (LED-R40, LED-R21)", function()
+			local state = applyAll({ log.skill(T0, 160, 1) })
+			local xp = state.xp
+			local _, earned = applyAll({ log.skill(T0 + 60, 200, 2), log.skill(T0 + 120, 160, 1) }, "live", state)
+
+			assert.are.same({}, earned)
+			assert.are.equal(xp, state.xp)
+		end)
+
+		it("credits nothing below 75, and a reading touches nothing else (LED-R40)", function()
+			local state, earned = applyAll({ log.skill(T0, 74) })
+
+			assert.are.same(fold.reset(), state)
+			assert.are.same({}, earned)
+		end)
+	end)
+
+	describe("purity (LED-R3)", function()
+		-- A log touching every rule above, over two characters and three zones.
+		local function history()
+			local l = newLog()
+			return {
+				l.cast(T0, ELWYNN, { MACKEREL, NOISE }),
+				l.skill(T0 + 30, 160),
+				l.gotAway(T0 + 60, ELWYNN),
+				l.cast(T0 + 90, 0, { SMALLFISH, 0, UNCHARTED }),
+				l.other(T0 + 100, "build"),
+				l.cast(T0 + 5 * HOUR, WESTFALL, { MACKEREL, SMALLFISH, TROPHY }, 2),
+				l.skill(T0 + 6 * HOUR, 300, 2),
+				l.cast(T0 + 40 * HOUR, WESTFALL, { LEGEND, JUNK, OTHER }),
+			}
+		end
+
+		it("gives the same state and achievements in live, replay and rebuild mode (LED-R3, LOG-R75)", function()
+			local liveState, live = applyAll(history(), "live")
+			local replayState, replay = applyAll(history(), "replay")
+			local rebuildState, rebuild = applyAll(history(), "rebuild")
+
+			assert.are.same(liveState, replayState)
+			assert.are.same(liveState, rebuildState)
+			assert.are.same(live, replay)
+			assert.are.same(live, rebuild)
+			assert.is_true(#live > 0)
+		end)
+
+		it("returns what each apply earned, appended to the caller's list or to a new one (LED-R98)", function()
+			local records = history()
+			local state = fold.reset()
+			local list = { "earlier" }
+
+			assert.are.equal(list, fold.apply(state, records[1], "rebuild", list))
+			assert.are.same({ "earlier", "newSpecies" }, { list[1], list[2].kind })
+			assert.are.equal(2, #list)
+			local skill = fold.apply(state, records[2], "rebuild")
+			assert.are.same({ "skillMilestone", "skillMilestone", "levelUp" }, kinds(skill))
+		end)
+
+		it("never writes to a record, and keeps none of its tables in the state (CORE-R18)", function()
+			local records = history()
+			local state = applyAll(records)
+
+			assert.are.same(history(), records)
+			local seen = {}
+			for _, record in ipairs(records) do
+				seen[record] = true
+				seen[record.conditions or seen] = true
+				for _, item in ipairs(record.items or {}) do
+					seen[item] = true
+				end
+			end
+			local function check(value)
+				if type(value) == "table" then
+					assert.is_nil(seen[value])
+					for _, inner in pairs(value) do
+						check(inner)
+					end
+				end
+			end
+			check(state)
+		end)
+
+		it("starts each reset from a fresh, empty state (LED-R3, LOG-R72)", function()
+			local a, b = fold.reset(), fold.reset()
+
+			assert.are_not.equal(a, b)
+			assert.are.same({
+				casts = 0,
+				catches = 0,
+				xp = 0,
+				prestige = 0,
+				fresh = 300,
+				coins = 0,
+				skill = {},
+				species = {},
+				zones = {},
+			}, a)
+		end)
+
+		it("is LEDGER_RULES_VERSION 1 in M2 (LED-R4, Tunables)", function()
+			assert.are.equal(1, ns.LEDGER_RULES_VERSION)
+		end)
+	end)
+
+	describe("Casts (LED-R7, LED-R2)", function()
+		it("counts a got-away Cast toward the Casts total only, leaving Fresh Water alone (LED-R7)", function()
+			local state = applyAll({ log.cast(T0, ELWYNN, { MACKEREL }) })
+			local before = state.fresh
+			local _, earned = applyAll({ log.gotAway(T0 + 10 * HOUR, WESTFALL) }, "live", state)
+
+			assert.are.equal(2, state.casts)
+			assert.are.equal(1, state.catches)
+			assert.are.equal(before, state.fresh)
+			assert.are.equal(T0, state.lastCatch)
+			assert.is_nil(state.zones[WESTFALL])
+			assert.are.same({}, earned)
+		end)
+
+		it("ignores Prestige, build, purchase and Module records in M2 (LED-R2, LED-R4)", function()
+			local records = {}
+			for i, kind in ipairs({ "prestige", "build", "purchase", "module" }) do
+				records[i] = log.other(T0 + i, kind)
+			end
+			local state, earned = applyAll(records)
+
+			assert.are.same(fold.reset(), state)
+			assert.are.same({}, earned)
+		end)
+	end)
+end)
