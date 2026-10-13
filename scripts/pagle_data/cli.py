@@ -10,6 +10,7 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from pagle_data.aliases import proposal_line, proposal_toml
+from pagle_data.baseline import AREA_LOOT
 from pagle_data.forever import ALIASES
 from pagle_data.generate import Layers, outputs, read_layers
 from pagle_data.toml_reader import DataError
@@ -63,7 +64,12 @@ def _print_proposals(layers: Layers) -> None:
 
 
 def _warn(layers: Layers) -> None:
-    """DATA-R64's warnings, printed and not failing: so far, the alias proposals not yet committed."""
+    """DATA-R64's warnings, printed and not failing: so far, the baseline loot rows with a condition that isn't a
+    single event (DATA-R9), and the alias proposals not yet committed."""
+    for row in layers.conditional_rows():
+        loot = f"item {row.item}" if row.item is not None else f"ref {row.ref}"
+        message = f"area {row.area} {loot} has the condition {row.condition}, not a single event"
+        print(f"{PROG}: warning: {AREA_LOOT}: {message}; it is treated as ungated", file=sys.stderr)
     proposals = layers.proposals()
     for proposal in proposals:
         line = proposal_line(layers.db2, proposal)

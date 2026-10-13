@@ -18,6 +18,7 @@ from pagle_data.toml_reader import At, Problems, check_keys, describe, read_toml
 
 BASELINE = "data/baseline"
 SOURCE = f"{BASELINE}/source.toml"
+AREA_LOOT = f"{BASELINE}/area_loot.csv"
 
 # Each CSV and its columns, in DATA-R9's order.
 COLUMNS: dict[str, tuple[str, ...]] = {
@@ -83,6 +84,12 @@ class BaselineLayer:
     pool_loot: list[PoolLoot] = field(default_factory=list)
     skill: dict[int, int] = field(default_factory=dict)  # area → skill base
     events: list[BaselineEvent] = field(default_factory=list)
+
+
+def conditional_rows(layer: BaselineLayer) -> list[AreaLoot]:
+    """The area_loot.csv rows with a condition that isn't a single event (DATA-R9). Their `event` is empty, so
+    nothing gates them: they are treated as ungated, and the generator prints each one as a warning (DATA-R64)."""
+    return [row for row in layer.area_loot if row.condition != ""]
 
 
 class _Row:
