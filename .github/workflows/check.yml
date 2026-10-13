@@ -1,6 +1,6 @@
-# Runs the check gate, scripts/check.sh, on every push and pull request: the same script, setup and pins as
-# local WSL. Tool versions come only from scripts/tools.env; this file names none. Every stage check.sh grows
-# runs here without touching this file.
+# Runs the check gate, scripts/check.sh, and the release zip check, scripts/package.sh, on every push and pull
+# request: the same scripts, setup and pins as local WSL. Tool versions come only from scripts/tools.env; this
+# file names none. Every stage check.sh grows runs here without touching this file.
 name: Check
 
 on:
@@ -16,6 +16,8 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # scripts/package.sh clones this checkout; the packager reads history for the changelog
 
       # The apt prerequisites of scripts/setup.sh, SETUP_APT_PACKAGES in scripts/tools.env. ubuntu-latest ships
       # them, so this usually installs nothing.
@@ -53,6 +55,20 @@ jobs:
 
       - name: Run the check gate
         run: bash scripts/check.sh
+
+      # Builds the release zip as the release workflow would, uploads off, and fails if anything but addon code
+      # gets in (fix .pkgmeta). package.sh needs zip and jq on top of setup's prerequisites; ubuntu-latest ships both.
+      - name: Package and check the release zip
+        run: |
+          missing=()
+          for pkg in zip jq; do
+            command -v "$pkg" >/dev/null || missing+=("$pkg")
+          done
+          if ((${#missing[@]})); then
+            sudo apt-get update
+            sudo apt-get install -y --no-install-recommends "${missing[@]}"
+          fi
+          bash scripts/package.sh
 
       # The gate's own regression test: each planted mistake must fail at the stage meant to catch it.
       - name: Test the check gate

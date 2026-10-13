@@ -68,7 +68,9 @@ git -C "$src" checkout --quiet --detach "$(git -C "$root" rev-parse HEAD)"
 
 rm -rf "$releasedir"
 mkdir -p "$releasedir"
-bash "$packager" -d -t "$src" -r "$releasedir"
+# Without GITHUB_ACTIONS, so it runs in the Check workflow as it does locally: under Actions the packager skips a
+# branch push whose commit carries a tag, which would leave no zip to check.
+env -u GITHUB_ACTIONS bash "$packager" -d -t "$src" -r "$releasedir"
 
 # --- check the zip -----------------------------------------------------------
 
