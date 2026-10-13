@@ -690,6 +690,83 @@ describe("A Module's button row", function()
 	end)
 end)
 
+describe("M:RefreshSetting", function()
+	-- QoL's Trackers rows: a dropdown "set" reading `state.value`, a button under it live while `state.live`, and a
+	-- button with the id "reset". Returns the handle, the state and the loaded Core, before PLAYER_LOGIN.
+	local function withRows(extra)
+		local loaded = loadWithQoL(extra)
+		local M = registerQoL(loaded)
+		local state = { value = 1, live = true }
+		M:AddSetting("trackers", {
+			kind = "dropdown",
+			id = "set",
+			label = "Set",
+			get = function()
+				return state.value
+			end,
+			set = function() end,
+			options = function()
+				return { { value = 1, label = "One" }, { value = 2, label = "Two" } }
+			end,
+		})
+		M:AddSetting("trackers", {
+			kind = "button",
+			parent = "set",
+			label = "Save",
+			onClick = function() end,
+			isEnabled = function()
+				return state.live
+			end,
+		})
+		M:AddSetting("trackers", { kind = "button", id = "reset", label = "Reset", onClick = function() end })
+		return M, state, loaded
+	end
+
+	it("makes the shown control re-read get, and the rows under it their greying (CORE-R42, SET-R61)", function()
+		local M, state, loaded = withRows()
+		loaded.client.fire("PLAYER_LOGIN")
+		local rows = loaded.client.settings.show(loaded.client.settings.category("Trackers"))
+		state.value, state.live = 2, false -- changed outside Settings
+
+		M:RefreshSetting("set")
+
+		assert.are.equal(2, rows[2].frame.value)
+		assert.is_false(rows[3].frame.enabled)
+	end)
+
+	it("does nothing before the page is registered (CORE-R42, CORE-R32)", function()
+		local M, _, loaded = withRows({
+			InCombatLockdown = function()
+				return true
+			end,
+		})
+		M:RefreshSetting("set")
+		loaded.client.fire("PLAYER_LOGIN")
+
+		M:RefreshSetting("set")
+
+		assert.is_nil(loaded.client.settings.category("Trackers"))
+	end)
+
+	it("raises an error at the caller for an id none of the Module's value rows has (CORE-R42)", function()
+		local M, _, loaded = withRows()
+		loaded.client.fire("PLAYER_LOGIN")
+
+		assert.matches(
+			"Settings_spec%.lua:%d+: QoL's RefreshSetting: no checkbox, slider or dropdown with id gear",
+			errorOf(function()
+				M:RefreshSetting("gear")
+			end)
+		)
+		assert.matches(
+			"Settings_spec%.lua:%d+: QoL's RefreshSetting: no checkbox, slider or dropdown with id reset",
+			errorOf(function()
+				M:RefreshSetting("reset")
+			end)
+		)
+	end)
+end)
+
 describe("Settings registration while restricted", function()
 	it("waits for RestrictionChanged(false), then registers with every Module's rows (CORE-R32, SET-R93)", function()
 		local loaded = loadWithQoL({

@@ -34,6 +34,7 @@
 ---@field GetVariable fun(self: SettingsProxySetting): string
 ---@field GetValue fun(self: SettingsProxySetting): any
 ---@field SetValue fun(self: SettingsProxySetting, value: any)
+---@field NotifyUpdate fun(self: SettingsProxySetting)   -- reads the value again and fires its value-changed callback
 
 ---@class SettingsSliderOptions
 
