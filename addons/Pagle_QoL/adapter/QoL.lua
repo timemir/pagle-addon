@@ -29,6 +29,7 @@ function ns.QoL.OnInitialize()
 	ns.StartStretch()
 
 	ns.StartFishingKey()
+	ns.StartDoubleClick()
 	ns.StartLures()
 	ns.StartCombat()
 end

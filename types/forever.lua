@@ -17,3 +17,8 @@ ERR_FISH_ESCAPED = "Your fish got away!"
 -- Resources/Frames.lua.
 ---@type MessageFrame
 UIErrorsFrame = {}
+
+-- The game world's frame, the one under the mouse when no UI is (QOL-R13). Not Forever-only, but the annotations lack
+-- it; the forever dump lists it: Ketho/BlizzardInterfaceResources branch forever at BIR_COMMIT, Resources/Frames.lua.
+---@type Frame
+WorldFrame = {}

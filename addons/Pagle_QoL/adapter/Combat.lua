@@ -18,6 +18,9 @@ local OWNER = "Pagle_QoL combat"
 -- wait (QOL-R31, QOL-R66).
 local function restrictionStarts()
 	if not InCombatLockdown() then
+		-- Both owners (QOL-R31). BUTTON2's first: its clear's UPDATE_BINDINGS re-evaluates while the key is still armed,
+		-- so it changes nothing, and the key's disarm comes after.
+		ns.DisarmDoubleClick()
 		ns.DisarmFishingKey()
 	end
 	ns.EndStretch()

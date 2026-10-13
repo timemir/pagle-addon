@@ -132,8 +132,9 @@ describe("Input", function()
 			local fake, client, loaded = start()
 			fake.fireGameEvent("PLAYER_REGEN_DISABLED")
 			fake.setRestricted(true)
+			local inLockdown = true
 			loaded.env.InCombatLockdown = function()
-				return true
+				return inLockdown
 			end
 
 			-- Every override call raises under the fake's lockdown, so none may be made here.
@@ -141,9 +142,7 @@ describe("Input", function()
 			inputEntry(fake).onClick() -- Double-click
 			assert.are.equal("click", loaded.ns.db.profile.input)
 
-			loaded.env.InCombatLockdown = function()
-				return false
-			end
+			inLockdown = false
 			fake.setRestricted(false)
 			assert.is_nil(client.overrideAction("F"))
 		end)
