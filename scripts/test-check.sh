@@ -105,6 +105,16 @@ copy
 printf -- '---@diagnostic disable\nPagle.API_VERSION = "2"\n' >>"$addon/adapter/Core.lua"
 expect "a bare ---@diagnostic disable fails types" types "adapter/Core.lua:22:---@diagnostic disable"
 
+copy
+printf -- '---@diagnostic disable-next-line: assign-type-mismatch\nPagle.API_VERSION = "2"\n' >>"$addon/adapter/Core.lua"
+expect "a suppression without a reason fails types" types "each suppression must be"
+
+copy
+printf 'do\n\t---@diagnostic disable-next-line: assign-type-mismatch, cast-local-type -- testing the gate\n' \
+	>>"$addon/adapter/Core.lua"
+printf '\tPagle.API_VERSION = "2"\nend\n' >>"$addon/adapter/Core.lua"
+expect "an inline suppression with codes and a reason passes" pass
+
 if ((failures)); then
 	echo "test-check: $failures failed" >&2
 	exit 1
