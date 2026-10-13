@@ -16,4 +16,5 @@ logic\FishingKey.lua
 logic\Stretch.lua
 adapter\Bindings.lua
 adapter\FishingKey.lua
+adapter\Stretch.lua
 adapter\QoL.lua

@@ -52,6 +52,10 @@ stds.wow = {
 		"GetInventoryItemID",
 		C_Item = { fields = { "GetItemInfoInstant" } },
 		C_Spell = { fields = { "GetSpellName" } },
+		-- QoL's Fishing stretch and its CVar lease (QOL-R61–R64).
+		"GetCVar",
+		"SetCVar",
+		"IsMounted",
 	},
 }
 

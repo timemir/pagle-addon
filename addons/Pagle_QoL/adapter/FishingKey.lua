@@ -42,6 +42,9 @@ local function poleInHand()
 	return ns.IsFishingPole(classID, subclassID)
 end
 
+-- The Fishing stretch (adapter/Stretch.lua) starts only while armed and ends when the pole comes off (QOL-R61).
+ns.IsArmed, ns.PoleInHand = isArmed, poleInHand
+
 -- The ladder's view of the game now (QOL-R20). Nothing is read while disarmed.
 ---@param armed boolean
 ---@param fishingName string?

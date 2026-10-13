@@ -173,7 +173,13 @@ describe("QoL's Fishing stretch logic", function()
 		end)
 
 		it("leases SoftTargetInteractRange only while the player's value is below 15 (QOL-R62)", function()
-			for _, row in ipairs({ { "60", false }, { "15", false }, { "15.5", false }, { "14.9", true }, { "0", true } }) do
+			for _, row in ipairs({
+				{ "60", false },
+				{ "15", false },
+				{ "15.5", false },
+				{ "14.9", true },
+				{ "0", true },
+			}) do
 				local values = playerValues()
 				values.SoftTargetInteractRange = row[1]
 				local lease, cvars = {}, newCVars(values)
@@ -193,15 +199,18 @@ describe("QoL's Fishing stretch logic", function()
 			assert.are.same({ { name = "SoftTargetInteract", orig = "1", set = "3" } }, lease)
 		end)
 
-		it("keeps a waiting entry whose CVar still holds the leased value, so orig stays the player's (QOL-R63)", function()
-			local values = playerValues()
-			values.SoftTargetInteract = "3"
-			local lease = { { name = "SoftTargetInteract", orig = "1", set = "3" } }
+		it(
+			"keeps a waiting entry whose CVar still holds the leased value, so orig stays the player's (QOL-R63)",
+			function()
+				local values = playerValues()
+				values.SoftTargetInteract = "3"
+				local lease = { { name = "SoftTargetInteract", orig = "1", set = "3" } }
 
-			ns.Lease(lease, { ns.SOFT_INTERACT_LEASE[1] }, newCVars(values))
+				ns.Lease(lease, { ns.SOFT_INTERACT_LEASE[1] }, newCVars(values))
 
-			assert.are.same({ { name = "SoftTargetInteract", orig = "1", set = "3" } }, lease)
-		end)
+				assert.are.same({ { name = "SoftTargetInteract", orig = "1", set = "3" } }, lease)
+			end
+		)
 
 		it("replaces a waiting entry the player has overruled since, leasing from their new value (QOL-R63)", function()
 			local values = playerValues()
