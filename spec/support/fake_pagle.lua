@@ -4,7 +4,7 @@
 --
 --   local fake = newFakePagle()
 --   local loaded = fake.load("Pagle_QoL")                 -- the Module sees fake.globals.Pagle as its Pagle
---   fake.login()                                            -- Core's PLAYER_LOGIN: ModulesChanged
+--   fake.login()                                            -- Core's PLAYER_LOGIN: the character, ModulesChanged
 --   fake.fire("RestrictionChanged", true)                   -- any Core event; tables arrive read-only
 --   fake.setRestricted(true)
 --
@@ -36,7 +36,10 @@
 ---@field fireGameEvent fun(event: string, ...) Calls the handlers registered with Pagle.RegisterEvent or
 --- RegisterUnitEvent for a WoW event, as the client would fire it. A unit event reaches only its unit's handlers.
 ---@field setRestricted fun(isRestricted: boolean) Sets the restriction state; RestrictionChanged fires on a change.
----@field login fun() Does Core's PLAYER_LOGIN work: fires ModulesChanged. Raises an error if called twice.
+---@field login fun() Does Core's PLAYER_LOGIN work: adds the character (PLAYER_GUID) to the Angler, then fires
+--- ModulesChanged. Raises an error if called twice.
+---@field readSkill fun(rank: integer, max: integer, mod: integer) Reads fishing skill as Core does after login: an
+--- S1 when rank or max changed, then SkillChanged, then ConditionsChanged({"skill"}) on a rank or modifier change.
 ---@field readOnly fun(value: any): any The read-only proxy of a table (the same one each time); other values as is.
 ---@field moduleState fun(name: string): PagleModuleState A roster Module's state (CORE-R41).
 ---@field settingsPage fun(topic: string): { module: string, kind: string, label: string, indented: boolean, setting: PagleSetting }[]?
@@ -50,6 +53,10 @@
 ---@field catchLog PagleCatchLog The Catch log Pagle.IterateCatches reads, on Core's real codec; empty at first.
 ---@field setCatalogue fun(data: table) Serves the catalogue calls over `data` (shaped as ns.catalogue, DATA-R76)
 --- instead of the generated catalogue.
+---@field conditions ConditionsSnapshot The live conditions Pagle.GetConditions serves (without `restricted`, which
+--- follows setRestricted). Read it; change it with setConditions.
+---@field setConditions fun(snapshot: ConditionsSnapshot) Replaces the live conditions and fires ConditionsChanged
+--- with the keys that changed, if any (LOG-R47).
 
 -- Core's logic/ for one fake: Pagle.toc's libs (for the bus), generated data/, locale/ and logic/ files, in TOC
 -- order, sharing one ns, as the client would load them. None uses WoW globals (CORE-R7), so plain Lua runs them.
@@ -323,6 +330,40 @@ part(function(fake, Pagle, ns)
 	end
 end)
 
+-- The Angler (LOG-R25–R27) and Skill Readings (LOG-R31, LOG-R32), on Core's real logic over fake.catchLog. Login
+-- adds the fake client's character (PLAYER_GUID) before ModulesChanged, as Core's login order does (LOG-R1).
+part(function(fake, Pagle, ns)
+	local now = 1791731700 -- the fake client's GetServerTime()
+	local angler = ns.NewAngler(fake.catchLog)
+	function Pagle.GetAngler()
+		return readOnly(angler:Get())
+	end
+
+	local login = fake.login
+	function fake.login()
+		angler:SeeCharacter({
+			guid = PLAYER_GUID,
+			name = "Angler",
+			surname = "Tester",
+			classID = 1,
+			raceID = 1,
+			faction = "Alliance",
+			realmID = ns.RealmIDFromGUID(PLAYER_GUID),
+		}, now)
+		login()
+	end
+
+	function fake.readSkill(rank, max, mod)
+		local appended, changed = angler:ReadSkill({ rank = rank, max = max, mod = mod }, now)
+		if appended then
+			fake.fire("SkillChanged", appended)
+		end
+		if changed then
+			fake.fire("ConditionsChanged", { "skill" })
+		end
+	end
+end)
+
 -- The catalogue (LOG-R55), on Core's real accessors over the generated catalogue or a spec's own. Each record
 -- they hand out is read-only (CORE-R18, DATA-R80).
 part(function(fake, Pagle, ns)
@@ -341,6 +382,47 @@ part(function(fake, Pagle, ns)
 		return readOnly(spec), confirmed
 	end
 	fake.setCatalogue(ns.catalogue)
+end)
+
+-- The live conditions (LOG-R45, LOG-R47). Pagle.GetConditions hands out fake.conditions, read-only, with the
+-- restriction flag; fake.setConditions replaces it and fires ConditionsChanged with the keys Core's real tracker
+-- finds changed.
+part(function(fake, Pagle, ns)
+	-- Fishing The Long Wash (148/453) at realm 08:15 on Sunday 11 October 2026, Fishing 86+25 with lure 263 on, no
+	-- listed event or aura (probe report 70338).
+	fake.conditions = {
+		time = 1791731700,
+		minute = 495,
+		date = { year = 2026, month = 10, day = 11, weekday = 1 },
+		uiMap = 1439,
+		instance = 1,
+		zone = 148,
+		subzone = 453,
+		skillRank = 86,
+		skillMod = 25,
+		lure = 263,
+		events = {},
+		auras = {},
+	}
+	local tracker = ns.NewConditionsTracker()
+	tracker:Update(fake.conditions)
+
+	function Pagle.GetConditions()
+		local conditions = {}
+		for key, value in pairs(fake.conditions) do
+			conditions[key] = value
+		end
+		conditions.restricted = Pagle.IsRestricted()
+		return readOnly(conditions)
+	end
+
+	function fake.setConditions(snapshot)
+		fake.conditions = snapshot
+		local changed = tracker:Update(snapshot)
+		if #changed > 0 then
+			fake.fire("ConditionsChanged", changed)
+		end
+	end
 end)
 
 --- A fresh FakePagle: no Module registered, not restricted, before PLAYER_LOGIN.

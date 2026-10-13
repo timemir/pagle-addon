@@ -1,4 +1,3 @@
-local addonName = ...
 ---@class PagleNS
 local ns = select(2, ...)
 
@@ -10,8 +9,7 @@ end
 local Pagle = Pagle
 
 -- The catalogue's accessors, built at ADDON_LOADED (LOG-R1 step 1), and the runtime area index, built at
--- PLAYER_LOGIN (LOG-R1 step 2). Their own owners, so no other Core file's registration replaces these.
-local CATALOGUE_OWNER, AREA_INDEX_OWNER = "Pagle catalogue", "Pagle area index"
+-- PLAYER_LOGIN (LOG-R1 step 2). adapter/Login.lua calls each in its place.
 
 -- Tunables: the runtime area index range (LOG-R23).
 local LAST_AREA_ID = 40000
@@ -46,12 +44,8 @@ function ns.ReadAreas()
 	)
 end
 
-Pagle.RegisterEvent(CATALOGUE_OWNER, "ADDON_LOADED", function(_, loadedName)
-	if loadedName ~= addonName then
-		return
-	end
-	Pagle.UnregisterEvent(CATALOGUE_OWNER, "ADDON_LOADED")
-
+--- Login step 1 (LOG-R1): builds the catalogue's accessors over the generated data and publishes them on Pagle.
+function ns.BuildCatalogue()
 	-- Read-only from here on, and never copied into SavedVariables (DATA-R80).
 	local catalogue = ns.NewCatalogue(ns.catalogue)
 	ns.Catalogue = catalogue
@@ -70,11 +64,11 @@ Pagle.RegisterEvent(CATALOGUE_OWNER, "ADDON_LOADED", function(_, loadedName)
 	Pagle.GetZoneCatches = catalogue.GetZoneCatches
 	--- A named window's condition spec and its confirmed (LOG-R55).
 	Pagle.GetWindowSpec = catalogue.GetWindowSpec
-end)
+end
 
-Pagle.RegisterEvent(AREA_INDEX_OWNER, "PLAYER_LOGIN", function()
-	Pagle.UnregisterEvent(AREA_INDEX_OWNER, "PLAYER_LOGIN")
+--- Login step 2 (LOG-R1): builds the runtime area index (LOG-R23), once per login.
+function ns.BuildAreaIndex()
 	areaIndex = ns.NewAreaIndex(function(areaID)
 		return unlessSecret(C_Map.GetAreaInfo(areaID))
 	end, LAST_AREA_ID)
-end)
+end

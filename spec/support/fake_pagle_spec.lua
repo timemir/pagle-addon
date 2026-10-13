@@ -329,6 +329,51 @@ describe("FakePagle", function()
 		end)
 	end)
 
+	describe("the Angler", function()
+		it("has the logged-in character current from login, before ModulesChanged (LOG-R1, LOG-R27)", function()
+			local fake = newFakePagle()
+			local current
+			fake.Pagle.RegisterCallback("Spec", "ModulesChanged", function()
+				current = fake.Pagle.GetAngler().current
+			end)
+			assert.is_nil(fake.Pagle.GetAngler().current)
+
+			fake.login()
+
+			local angler = fake.globals.Pagle.GetAngler()
+			assert.are.equal(1, current)
+			assert.are.equal(PLAYER_GUID, angler.characters[1].guid)
+			assert.are.equal(0, angler.bestBaseSkill)
+			assert.has_error(function()
+				angler.characters[1].name = "Bram"
+			end)
+		end)
+
+		it(
+			"reads skill as Core does: an S1, SkillChanged after it, then ConditionsChanged (LOG-R31, LOG-R32)",
+			function()
+				local fake = newFakePagle()
+				fake.login()
+				local fired = {}
+				fake.Pagle.RegisterCallback("Spec", "SkillChanged", function(_, reading)
+					fired[#fired + 1] = "SkillChanged " .. reading.rank .. ", entries " .. #fake.catchLog.data.entries
+				end)
+				fake.Pagle.RegisterCallback("Spec", "ConditionsChanged", function(_, changedKeys)
+					fired[#fired + 1] = "ConditionsChanged " .. changedKeys[1]
+				end)
+
+				fake.readSkill(86, 150, 0)
+				fake.readSkill(86, 150, 25)
+
+				assert.are.same(
+					{ "SkillChanged 86, entries 1", "ConditionsChanged skill", "ConditionsChanged skill" },
+					fired
+				)
+				assert.are.equal(86, fake.Pagle.GetAngler().bestBaseSkill)
+			end
+		)
+	end)
+
 	describe("the catalogue", function()
 		-- A catalogue in the M1 shape (DATA-R79): Darkshore (148) with The Long Wash (453).
 		local function fixture()
@@ -386,6 +431,47 @@ describe("FakePagle", function()
 			assert.has_error(function()
 				Pagle.CONTENT_FINGERPRINT = "changed"
 			end)
+		end)
+	end)
+
+	describe("the live conditions", function()
+		-- fake.conditions with `fields` changed.
+		local function changed(fake, fields)
+			local snapshot = {}
+			for key, value in pairs(fake.conditions) do
+				snapshot[key] = value
+			end
+			for key, value in pairs(fields) do
+				snapshot[key] = value
+			end
+			return snapshot
+		end
+
+		it("hands out fake.conditions, read-only, with the restriction flag (LOG-R45, CORE-R18)", function()
+			local fake = newFakePagle()
+			local conditions = fake.globals.Pagle.GetConditions()
+
+			assert.are.equal(fake.conditions.zone, conditions.zone)
+			assert.is_false(conditions.restricted)
+			assert.has_error(function()
+				conditions.zone = 0
+			end)
+			fake.setRestricted(true)
+			assert.is_true(fake.globals.Pagle.GetConditions().restricted)
+		end)
+
+		it("fires ConditionsChanged with exactly the keys a new snapshot changed (LOG-R47)", function()
+			local fake = newFakePagle()
+			local fired = {}
+			fake.Pagle.RegisterCallback("Spec", "ConditionsChanged", function(_, changedKeys)
+				fired[#fired + 1] = { fake.globals.unpack(changedKeys) }
+			end)
+
+			fake.setConditions(changed(fake, { lure = 264, subzone = 0, minute = 600 }))
+			fake.setConditions(changed(fake, { minute = 601 }))
+
+			assert.are.same({ { "area", "lure" } }, fired)
+			assert.are.equal(264, fake.globals.Pagle.GetConditions().lure)
 		end)
 	end)
 end)

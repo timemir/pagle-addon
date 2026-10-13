@@ -10,6 +10,8 @@ local Pagle = Pagle
 --- An event Core fires on its bus. Each topic adds its own; payloads are on the handler aliases.
 ---@alias PagleEvent
 ---| "RestrictionChanged" # PagleRestrictionChangedHandler
+---| "SkillChanged" # PagleSkillChangedHandler
+---| "ConditionsChanged" # PagleConditionsChangedHandler
 ---| string
 
 ---@class Pagle
