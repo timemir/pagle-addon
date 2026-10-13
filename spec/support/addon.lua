@@ -704,7 +704,8 @@ local function clientStubs(client)
 			end,
 		},
 		-- The conditions service's reads (LOG-R20, LOG-R45–R47): realm 08:15 on Sunday 11 October 2026 (a US Pacific
-		-- realm, GetServerTime's 15:15 UTC), no zone text, no lure, no calendar event, no aura; Fishing is below.
+		-- realm, GetServerTime's 15:15 UTC), no zone text, no calendar event, no aura; Fishing is below. The lure
+		-- (GetWeaponEnchantInfo, none by default) is with QoL's game side, spec/support/fake_game.lua.
 		GetRealZoneText = function()
 			return ""
 		end,
@@ -716,9 +717,6 @@ local function clientStubs(client)
 		end,
 		GetGameTime = function()
 			return 8, 15
-		end,
-		GetWeaponEnchantInfo = function()
-			return false, nil, nil, nil, false, nil, nil, nil, false, nil, nil, nil
 		end,
 		C_DateAndTime = {
 			GetCurrentCalendarTime = function()
