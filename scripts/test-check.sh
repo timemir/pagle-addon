@@ -43,6 +43,20 @@ inventory_add() {
 }
 
 addon="$scratch/tree/addons/Pagle"
+toc="$addon/Pagle.toc"
+
+# Drops a file from Pagle.toc.
+toc_drop() {
+	grep -vxF "$1" "$toc" >"$toc.new"
+	mv "$toc.new" "$toc"
+}
+
+# Moves a file in Pagle.toc to just after another (TOC paths keep their backslashes, so no awk -v).
+toc_move_after() {
+	FILE=$1 AFTER=$2 awk '$0 != ENVIRON["FILE"] { print } $0 == ENVIRON["AFTER"] { print ENVIRON["FILE"] }' \
+		"$toc" >"$toc.new"
+	mv "$toc.new" "$toc"
+}
 
 copy
 expect "the tree as it is passes" pass
@@ -96,6 +110,35 @@ expect "a made-up function of a real namespace fails api" api "C_Weather.MadeUp 
 copy
 printf 'read_globals = { "CreateFrame" }\n' >>"$scratch/tree/.luacheckrc"
 expect "a top-level read_globals (reaching logic/) fails api" api "top-level read_globals"
+
+copy
+toc_drop 'logic\Forever.lua'
+expect "a file dropped from Pagle.toc that Core needs fails tests" tests "attempt to call field 'IsForever'"
+
+copy
+toc_drop 'libs\AceDB-3.0\AceDB-3.0.lua'
+expect "a vendored lib dropped from Pagle.toc fails tests" tests "embeds AceDB-3.0"
+
+copy
+toc_move_after 'logic\Forever.lua' 'adapter\Core.lua'
+expect "a file listed after the file that needs it fails tests" tests "adapter/Core.lua failed while loading"
+
+copy
+toc_move_after 'libs\LibStub\LibStub.lua' 'libs\CallbackHandler-1.0\CallbackHandler-1.0.lua'
+expect "a vendored lib listed after the lib that needs it fails tests" tests \
+	"CallbackHandler-1.0.lua failed while loading"
+
+copy
+expect "the tests stage reports coverage of addon code" pass "addons/Pagle/logic/Forever.lua"
+
+copy
+printf 'local ns = select(2, ...)\n\nfunction ns.Untested()\n\treturn 1\nend\n' >"$addon/logic/Untested.lua"
+echo 'logic\Untested.lua' >>"$toc"
+expect "code no spec runs passes; coverage doesn't gate" pass "addons/Pagle/logic/Untested.lua"
+
+copy
+rm "$scratch/tree/.luacov"
+expect "a coverage report that can't be made doesn't gate" pass "no coverage report"
 
 if ((failures)); then
 	echo "test-check: $failures failed" >&2
