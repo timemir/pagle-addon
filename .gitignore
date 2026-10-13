@@ -14,6 +14,7 @@ desktop.ini
 *~
 
 # Lua tooling
+.tools/
 luacov.stats.out
 luacov.report.out
 *.rock
