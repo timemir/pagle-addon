@@ -50,6 +50,12 @@ FOREVER_GLOBALS = { WOW_PROJECT_ID = PROJECT_IDS.CAMELOT, WOW_PROJECT_CAMELOT = 
 ---@field bindings string[] The key binding actions the client knows (Bindings.xml names), in binding index order,
 --- as C_KeyBindings.GetBindingIndex reads them. Specs add to it.
 ---@field settings FakeSettings The Settings panel.
+---@field tickers { period: number, due: number, callback: fun(ticker: table), cancelled: boolean }[] Every
+--- C_Timer.NewTicker, in creation order.
+---@field advance fun(seconds: number) Moves the client's clock on, running each ticker every time its period
+--- passes, in time order.
+---@field newTicker fun(period: number, callback: fun(ticker: table)): table What C_Timer.NewTicker(period, callback)
+--- does: a ticker, with Cancel and IsCancelled, that runs callback every period seconds of advance.
 
 --- An installed addon, as the fake client's C_AddOns reports it.
 ---@class FakeAddOn
@@ -76,7 +82,44 @@ PLAYER_GUID = "Player-1-00000001"
 
 ---@return FakeClient
 local function newClient()
-	local client = { missingEvents = {}, frames = {}, addons = {}, bindings = {} }
+	local client = { missingEvents = {}, frames = {}, addons = {}, bindings = {}, tickers = {} }
+	local now = 0
+
+	function client.advance(seconds)
+		local target = now + seconds
+		while true do
+			local nextTicker
+			for _, ticker in ipairs(client.tickers) do
+				if
+					not ticker.cancelled
+					and ticker.due <= target
+					and (not nextTicker or ticker.due < nextTicker.due)
+				then
+					nextTicker = ticker
+				end
+			end
+			if not nextTicker then
+				break
+			end
+			now = nextTicker.due
+			nextTicker.due = now + nextTicker.period
+			nextTicker.callback(nextTicker)
+		end
+		now = target
+	end
+
+	-- C_Timer.NewTicker(seconds, callback) without iterations: runs until cancelled.
+	function client.newTicker(period, callback)
+		local ticker = { period = period, due = now + period, callback = callback, cancelled = false }
+		function ticker:Cancel()
+			self.cancelled = true
+		end
+		function ticker:IsCancelled()
+			return self.cancelled
+		end
+		client.tickers[#client.tickers + 1] = ticker
+		return ticker
+	end
 
 	function client.fire(event, ...)
 		local unit = ...
@@ -508,6 +551,53 @@ local function clientStubs(client)
 		C_Map = {
 			GetAreaInfo = function()
 				return nil
+			end,
+			GetBestMapForUnit = function()
+				return nil
+			end,
+		},
+		-- The conditions service's reads (LOG-R20, LOG-R45–R47): realm 08:15 on Sunday 11 October 2026 (a US Pacific
+		-- realm, GetServerTime's 15:15 UTC), no zone text, no lure, no calendar event, no aura; Fishing is below.
+		GetRealZoneText = function()
+			return ""
+		end,
+		GetSubZoneText = function()
+			return ""
+		end,
+		GetInstanceInfo = function()
+			return "Kalimdor", "none", 0, "", 0, 0, false, 1, 0, nil, false
+		end,
+		GetGameTime = function()
+			return 8, 15
+		end,
+		GetWeaponEnchantInfo = function()
+			return false, nil, nil, nil, false, nil, nil, nil, false, nil, nil, nil
+		end,
+		C_DateAndTime = {
+			GetCurrentCalendarTime = function()
+				return { year = 2026, month = 10, monthDay = 11, weekday = 1, hour = 8, minute = 15 }
+			end,
+		},
+		C_Calendar = {
+			OpenCalendar = function() end,
+			GetMonthInfo = function()
+				return { year = 2026, month = 10, numDays = 31, firstWeekday = 5 }
+			end,
+			GetNumDayEvents = function()
+				return 0
+			end,
+			GetDayEvent = function()
+				return nil
+			end,
+		},
+		C_UnitAuras = {
+			GetPlayerAuraBySpellID = function()
+				return nil
+			end,
+		},
+		C_Timer = {
+			NewTicker = function(seconds, callback)
+				return client.newTicker(seconds, callback)
 			end,
 		},
 		-- Reads client.addons. Folder names as the client takes them; an addon not listed is missing.

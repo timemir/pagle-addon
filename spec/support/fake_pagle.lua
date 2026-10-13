@@ -53,6 +53,10 @@
 ---@field catchLog PagleCatchLog The Catch log Pagle.IterateCatches reads, on Core's real codec; empty at first.
 ---@field setCatalogue fun(data: table) Serves the catalogue calls over `data` (shaped as ns.catalogue, DATA-R76)
 --- instead of the generated catalogue.
+---@field conditions ConditionsSnapshot The live conditions Pagle.GetConditions serves (without `restricted`, which
+--- follows setRestricted). Read it; change it with setConditions.
+---@field setConditions fun(snapshot: ConditionsSnapshot) Replaces the live conditions and fires ConditionsChanged
+--- with the keys that changed, if any (LOG-R47).
 
 -- Core's logic/ for one fake: Pagle.toc's libs (for the bus), generated data/, locale/ and logic/ files, in TOC
 -- order, sharing one ns, as the client would load them. None uses WoW globals (CORE-R7), so plain Lua runs them.
@@ -378,6 +382,47 @@ part(function(fake, Pagle, ns)
 		return readOnly(spec), confirmed
 	end
 	fake.setCatalogue(ns.catalogue)
+end)
+
+-- The live conditions (LOG-R45, LOG-R47). Pagle.GetConditions hands out fake.conditions, read-only, with the
+-- restriction flag; fake.setConditions replaces it and fires ConditionsChanged with the keys Core's real tracker
+-- finds changed.
+part(function(fake, Pagle, ns)
+	-- Fishing The Long Wash (148/453) at realm 08:15 on Sunday 11 October 2026, Fishing 86+25 with lure 263 on, no
+	-- listed event or aura (probe report 70338).
+	fake.conditions = {
+		time = 1791731700,
+		minute = 495,
+		date = { year = 2026, month = 10, day = 11, weekday = 1 },
+		uiMap = 1439,
+		instance = 1,
+		zone = 148,
+		subzone = 453,
+		skillRank = 86,
+		skillMod = 25,
+		lure = 263,
+		events = {},
+		auras = {},
+	}
+	local tracker = ns.NewConditionsTracker()
+	tracker:Update(fake.conditions)
+
+	function Pagle.GetConditions()
+		local conditions = {}
+		for key, value in pairs(fake.conditions) do
+			conditions[key] = value
+		end
+		conditions.restricted = Pagle.IsRestricted()
+		return readOnly(conditions)
+	end
+
+	function fake.setConditions(snapshot)
+		fake.conditions = snapshot
+		local changed = tracker:Update(snapshot)
+		if #changed > 0 then
+			fake.fire("ConditionsChanged", changed)
+		end
+	end
 end)
 
 --- A fresh FakePagle: no Module registered, not restricted, before PLAYER_LOGIN.

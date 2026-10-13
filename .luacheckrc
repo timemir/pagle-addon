@@ -37,7 +37,7 @@ stds.wow = {
 		-- The Catch log (LOG-R11, LOG-R15).
 		"GetServerTime",
 		-- The runtime area index and zone resolution (LOG-R22, LOG-R23).
-		C_Map = { fields = { "GetAreaInfo" } },
+		C_Map = { fields = { "GetAreaInfo", "GetBestMapForUnit" } },
 		"GetRealZoneText",
 		"GetSubZoneText",
 		"GetInstanceInfo",
@@ -61,6 +61,12 @@ stds.wow = {
 		"GetProfessions",
 		"GetProfessionInfo",
 		"GetBuildInfo",
+		-- The conditions snapshot and service (LOG-R20, LOG-R45–R47); it reads skill as above (LOG-R30).
+		"GetGameTime",
+		C_DateAndTime = { fields = { "GetCurrentCalendarTime" } },
+		C_Calendar = { fields = { "OpenCalendar", "GetMonthInfo", "GetNumDayEvents", "GetDayEvent" } },
+		C_UnitAuras = { fields = { "GetPlayerAuraBySpellID" } },
+		C_Timer = { fields = { "NewTicker" } },
 	},
 }
 
@@ -73,6 +79,10 @@ stds.wow_variables = {
 		-- "WOW_PROJECT_ID => WOW_PROJECT_CAMELOT (18)".
 		"WOW_PROJECT_ID",
 		"WOW_PROJECT_CAMELOT",
+		-- A client function the dump doesn't list (it has only C_Item.GetWeaponEnchantInfo); the lure of LOG-R20.
+		-- probes/fishing-signals/results/2026-10-11-build70338-report.md, "7. Fishing state: skill, spells, lure,
+		-- buffs": GetWeaponEnchantInfo() returns true, 251777, 0, 263, … with a lure on, on build 70338.
+		"GetWeaponEnchantInfo",
 		-- A FrameXML table the dump doesn't list (CORE-R40). probes/fishing-signals/results/
 		-- 2026-10-11-build70338-report.md, "Packaging, Settings and events": RegisterVerticalLayoutCategory,
 		-- RegisterVerticalLayoutSubcategory and RegisterAddOnCategory work on build 70338. Every field: Gethe/wow-ui-source
