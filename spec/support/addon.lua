@@ -5,6 +5,11 @@
 --
 --   local loaded = loadAddon("Pagle", FOREVER_GLOBALS)
 --   loaded.env.Pagle, loaded.ns.IsForever, loaded.printed
+--   loaded.client.fire("PLAYER_REGEN_DISABLED")
+--
+-- The addon runs against a fake client: frames that keep the events they register, so loaded.client.fire reaches
+-- them, and stubs for the WoW API the addon calls (clientStubs below). loadAddon fires ADDON_LOADED after the last
+-- file, as the client does.
 --
 -- Each load gets its own globals table, so nothing an addon defines (LibStub, Pagle) leaks into the next load.
 -- Names not in it fall back to the Lua 5.1 globals busted runs with.
@@ -24,24 +29,78 @@ FOREVER_GLOBALS = { WOW_PROJECT_ID = PROJECT_IDS.CAMELOT, WOW_PROJECT_CAMELOT = 
 ---@field ns table The addon's private table, shared by every file it loads.
 ---@field env table<string, any> The globals the files saw and set; `env.Pagle` is the Pagle global.
 ---@field printed string[] Each line the addon printed to chat, in order.
+---@field client FakeClient The fake client the addon runs against.
 
-local function noop() end
+--- The client's event system, as far as specs need it.
+---@class FakeClient
+---@field missingEvents table<string, true> Events this client doesn't know: registering one raises an error, as the
+--- client does. Specs add to it.
+---@field frames table[] Every frame CreateFrame made, in order.
+---@field fire fun(event: string, ...) Fires a WoW event at each frame registered for it, in creation order, calling
+--- its OnEvent script with (frame, event, ...). A unit event reaches a frame only for the units it registered.
 
--- A frame that accepts the calls the vendored libs make at load and does nothing with them.
-local function newFrame()
-	return {
-		RegisterEvent = noop,
-		UnregisterEvent = noop,
-		UnregisterAllEvents = noop,
-		SetScript = noop,
-	}
+---@return FakeClient
+local function newClient()
+	local client = { missingEvents = {}, frames = {} }
+
+	function client.fire(event, ...)
+		local unit = ...
+		for _, frame in ipairs({ unpack(client.frames) }) do
+			local registered = frame.events[event]
+			local onEvent = frame.scripts.OnEvent
+			if registered and onEvent and (registered == true or registered[unit]) then
+				onEvent(frame, event, ...)
+			end
+		end
+	end
+
+	return client
 end
 
--- The WoW API the vendored libs call while loading, answering as one fixed character on a US realm.
+-- A frame that records the events it registers and its scripts, so client.fire can reach it.
+---@param client FakeClient
+local function newFrame(client)
+	local frame = { events = {}, scripts = {} }
+	local function known(event)
+		if client.missingEvents[event] then
+			error(('Frame:RegisterEvent(): Attempt to register unknown event "%s"'):format(event), 3)
+		end
+	end
+	function frame:RegisterEvent(event)
+		known(event)
+		self.events[event] = true
+	end
+	function frame:RegisterUnitEvent(event, ...)
+		known(event)
+		local units = {}
+		for i = 1, select("#", ...) do
+			units[(select(i, ...))] = true
+		end
+		self.events[event] = units
+	end
+	function frame:UnregisterEvent(event)
+		self.events[event] = nil
+	end
+	function frame:UnregisterAllEvents()
+		self.events = {}
+	end
+	function frame:SetScript(script, fn)
+		self.scripts[script] = fn
+	end
+	client.frames[#client.frames + 1] = frame
+	return frame
+end
+
+-- The WoW API the addons call, answering as one fixed character on a US realm, out of combat, with no addon
+-- restriction active and no secret values.
+---@param client FakeClient
 ---@return table<string, any>
-local function clientStubs()
-	return {
-		CreateFrame = newFrame,
+local function clientStubs(client)
+	local stubs
+	stubs = {
+		CreateFrame = function()
+			return newFrame(client)
+		end,
 		IsLoggedIn = function()
 			return false
 		end,
@@ -51,9 +110,31 @@ local function clientStubs()
 				error(err, 0)
 			end
 		end,
+		-- As the client's: an error goes to whatever geterrorhandler() returns at the time, and the caller carries on.
 		securecallfunction = function(fn, ...)
-			return fn(...)
+			local results = { pcall(fn, ...) }
+			if not results[1] then
+				stubs.geterrorhandler()(results[2])
+				return
+			end
+			return unpack(results, 2, table.maxn(results))
 		end,
+		issecretvalue = function()
+			return false
+		end,
+		InCombatLockdown = function()
+			return false
+		end,
+		C_RestrictedActions = {
+			GetAddOnRestrictionState = function()
+				return 0 -- Enum.AddOnRestrictionState.Inactive
+			end,
+		},
+		-- The forever dump's LuaEnum.lua at BIR_COMMIT (scripts/tools.env).
+		Enum = {
+			AddOnRestrictionType = { Combat = 0, Encounter = 1, ChallengeMode = 2, PvPMatch = 3, Map = 4, Chat = 5 },
+			AddOnRestrictionState = { Inactive = 0, Activating = 1, Active = 2 },
+		},
 		GetLocale = function()
 			return "enUS"
 		end,
@@ -79,6 +160,7 @@ local function clientStubs()
 			return "US"
 		end,
 	}
+	return stubs
 end
 
 --- The files a TOC lists, in order, as paths relative to the addon folder with forward slashes.
@@ -98,17 +180,20 @@ local function tocFiles(tocPath)
 	return files
 end
 
---- Loads addons/<name>/<name>.toc and every file it lists, in order, as the client does.
+--- Loads addons/<name>/<name>.toc and every file it lists, in order, as the client does, then fires
+--- ADDON_LOADED(name).
 --- Raises an error naming the TOC and the file if a listed file is missing or fails while loading.
 ---@param name string The addon's folder under addons/, which is also its TOC's name.
----@param globals table<string, any>? Globals the client defines for this load, e.g. WOW_PROJECT_ID.
+---@param globals table<string, any>? Globals the client defines for this load, e.g. WOW_PROJECT_ID. They replace
+--- the fake client's stubs of the same name, e.g. InCombatLockdown for a load in combat.
 ---@return LoadedAddon
 function loadAddon(name, globals)
 	local dir = "addons/" .. name .. "/"
 	local toc = dir .. name .. ".toc"
 	local printed = {}
 
-	local env = clientStubs()
+	local client = newClient()
+	local env = clientStubs(client)
 	env.print = function(...)
 		local parts = {}
 		for i = 1, select("#", ...) do
@@ -135,6 +220,7 @@ function loadAddon(name, globals)
 			error(("%s: %s failed while loading: %s"):format(toc, file, tostring(runErr)), 2)
 		end
 	end
+	client.fire("ADDON_LOADED", name)
 
-	return { ns = ns, env = env, printed = printed }
+	return { ns = ns, env = env, printed = printed, client = client }
 end

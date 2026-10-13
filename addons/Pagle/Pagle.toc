@@ -14,4 +14,8 @@ libs\AceDB-3.0\AceDB-3.0.lua
 
 locale\enUS.lua
 logic\Forever.lua
+logic\Secrets.lua
+logic\ReportOnce.lua
 adapter\Core.lua
+adapter\Callbacks.lua
+adapter\Events.lua

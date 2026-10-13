@@ -50,6 +50,11 @@ uses_create_frame() {
 	printf 'local frame = CreateFrame("Frame")\nreturn frame\n' >"$1"
 }
 
+# Writes a Lua file that calls the WoW global Screenshot, which Pagle never inventories.
+uses_screenshot() {
+	printf 'Screenshot()\n' >"$1"
+}
+
 # Drops a file from Pagle.toc.
 toc_drop() {
 	grep -vxF "$1" "$toc" >"$toc.new"
@@ -99,12 +104,12 @@ inventory_add CreateFrame
 expect "a WoW global in locale/ fails lint, even when inventoried" lint "accessing undefined variable 'CreateFrame'"
 
 copy
-uses_create_frame "$addon/adapter/Global.lua"
-expect "a WoW global in adapter/ fails lint until inventoried" lint "accessing undefined variable 'CreateFrame'"
+uses_screenshot "$addon/adapter/Global.lua"
+expect "a WoW global in adapter/ fails lint until inventoried" lint "accessing undefined variable 'Screenshot'"
 
 copy
-uses_create_frame "$addon/adapter/Global.lua"
-inventory_add CreateFrame
+uses_screenshot "$addon/adapter/Global.lua"
+inventory_add Screenshot
 expect "a WoW global in adapter/ passes once inventoried" pass
 
 copy
@@ -115,11 +120,14 @@ expect "a WoW global anywhere but adapter/ fails lint, even when inventoried" li
 	"accessing undefined variable 'CreateFrame'"
 
 copy
+# The api stage counts what the tree inventories already, plus the 8 names added here.
+inventoried=$("$root/.tools/bin/lua" "$root/scripts/api-presence.lua" "$scratch/tree/.luacheckrc" \
+	"$root/.tools/bir/Resources" | grep -oE '[0-9]+ inventoried names')
 for name in CreateFrame hooksecurefunc ChatFrame1 LE_EXPANSION_CLASSIC Enum.ItemQuality FISHING; do
 	inventory_add "$name"
 done
 echo 'stds.wow.read_globals.C_Weather = { fields = { "GetCurrentWeather" } }' >>"$scratch/tree/.luacheckrc"
-expect "real names from each part of the dump pass api" pass "api: 8 inventoried names"
+expect "real names from each part of the dump pass api" pass "api: $((${inventoried%% *} + 8)) inventoried names"
 
 copy
 echo 'table.insert(stds.wow_variables.read_globals, "CreateFrame")' >>"$scratch/tree/.luacheckrc"
