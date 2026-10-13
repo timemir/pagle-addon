@@ -12,5 +12,6 @@
 locale\enUS.lua
 logic\Data.lua
 logic\Module.lua
+logic\Settings.lua
 adapter\Bindings.lua
 adapter\QoL.lua

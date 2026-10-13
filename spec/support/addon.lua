@@ -65,6 +65,8 @@ PLAYER_GUID = "Player-1-00000001"
 ---@field categories table[] Every category registered with Settings.RegisterVerticalLayout*, in order. Each has
 --- `name`, `parent` (nil for a top-level one), `layout.initializers` and `GetID()`.
 ---@field addOnCategories table[] The categories passed to Settings.RegisterAddOnCategory, in order.
+---@field variables table<string, table> Each Settings.RegisterProxySetting setting by its variable name, with its
+--- `category`: what a page's Defaults button restores (SET-R60).
 ---@field opened table[] The category each Settings.OpenToCategory call opened (nil for an unknown ID), in order.
 ---@field panel table SettingsPanel: shown by OpenToCategory, hidden by HideUIPanel.
 ---@field category fun(name: string): table? The registered category with that name, if its top-level category is
