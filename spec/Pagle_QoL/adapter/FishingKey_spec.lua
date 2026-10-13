@@ -475,4 +475,59 @@ describe("The Fishing key with Core", function()
 		client.fire("LOOT_CLOSED")
 		assert.are.equal(CAST, client.overrideAction("F"))
 	end)
+
+	describe("at logout", function()
+		-- QoL on the real Core, logged in with a pole in hand and F bound, a Fishing stretch running that leased
+		-- soft-interact from the player's own values (QOL-R61, QOL-R62).
+		local function fishing()
+			local loaded = loadAddon("Pagle_QoL", FOREVER_GLOBALS)
+			local client = loaded.client
+			client.boundKeys.PAGLE_FISHING_KEY = { "F" }
+			client.mainHand = FISHING_POLE
+			client.cvars = {
+				SoftTargetInteract = "1",
+				SoftTargetInteractRange = "10",
+				SoftTargetInteractRangeIsHard = "1",
+				ActionButtonUseKeyDown = "1",
+			}
+			client.fire("PLAYER_LOGIN")
+			loaded.namespaces.Pagle.Fire("CastStarted")
+			assert.are.equal("3", client.cvars.SoftTargetInteract)
+			return loaded, client
+		end
+
+		it(
+			"evaluates nothing once PLAYER_LOGOUT begins, so the restore's CVAR_UPDATE after AceDB stripped the "
+				.. "profile's defaults fails no handler (QOL-R30, QOL-R61, QOL-R63)",
+			function()
+				local _, client = fishing()
+
+				-- AceDB's frame hears PLAYER_LOGOUT first and strips PagleQoLDB's defaults; then the stretch ends and
+				-- each restore's SetCVar fires CVAR_UPDATE.
+				assert.has_no_error(function()
+					client.fire("PLAYER_LOGOUT")
+				end)
+				assert.are.same({ "1", "10", "1" }, {
+					client.cvars.SoftTargetInteract,
+					client.cvars.SoftTargetInteractRange,
+					client.cvars.SoftTargetInteractRangeIsHard,
+				})
+			end
+		)
+
+		it("stays disarmed after PLAYER_LOGOUT: no event re-points or starts a stretch (QOL-R30, QOL-R61)", function()
+			local loaded, client = fishing()
+			client.fire("PLAYER_LOGOUT")
+			client.bindingCalls, client.cvarCalls = {}, {}
+
+			assert.has_no_error(function()
+				client.fire("BAG_UPDATE_DELAYED")
+				client.fire("LOOT_READY", true)
+				loaded.namespaces.Pagle.Fire("CastStarted")
+				client.update(0.5)
+			end)
+			assert.are.same({}, client.bindingCalls)
+			assert.are.same({}, client.cvarCalls)
+		end)
+	end)
 end)

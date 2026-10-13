@@ -241,6 +241,13 @@ function ns.DisarmFishingKey()
 	disarming = false
 end
 
+--- Logout or /reload has begun (PLAYER_LOGOUT): QoL is disarmed from now on and evaluates nothing, so nothing reads
+--- a setting AceDB may already have stripped to nil (QOL-R30). It makes no binding call: the overrides set go with the
+--- session, and in lockdown the call would be blocked. The Fishing stretch calls it before it restores (QOL-R61).
+function ns.LogOut()
+	loggedIn = false
+end
+
 ---@param event string
 local function onEvent(event)
 	-- The conflict check comes right before the first arm, so QoL never arms and then stands down (QOL-R33).

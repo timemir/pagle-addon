@@ -37,8 +37,9 @@
 ---@field fireGameEvent fun(event: string, ...) Fires a WoW event the game raises on its own. `client.fire` unless a
 --- spec or FakePagle replaces it.
 ---@field update fun(elapsed: number) Runs one frame: each frame's OnUpdate script, given `elapsed` seconds.
----@field cvars table<string, string> Each CVar's value as `GetCVar` reads it. `SetCVar` stores `tostring(value)`; a
---- CVar not listed is one the client doesn't know (`GetCVar` returns nil).
+---@field cvars table<string, string> Each CVar's value as `GetCVar` reads it. `SetCVar` stores `tostring(value)`
+--- and fires `CVAR_UPDATE(name, value)` through `fireGameEvent` before it returns; a CVar not listed is one the
+--- client doesn't know (`GetCVar` returns nil).
 ---@field cvarCalls string[] Each `SetCVar` call, in order: "set <name> <value>".
 ---@field mounted boolean? Whether the player is mounted, as `IsMounted()` reads it.
 ---@field bags table<integer, integer> How many of each item ID are in the bags, as `C_Item.GetItemCount` reads it.
@@ -285,9 +286,11 @@ return function(client, stubs)
 	stubs.GetCVar = function(name)
 		return client.cvars[name]
 	end
+	-- Each call fires CVAR_UPDATE(name, value) at once, through client.fireGameEvent, before SetCVar returns.
 	stubs.SetCVar = function(name, value)
 		client.cvarCalls[#client.cvarCalls + 1] = ("set %s %s"):format(name, tostring(value))
 		client.cvars[name] = tostring(value)
+		client.fireGameEvent("CVAR_UPDATE", name, tostring(value))
 	end
 	stubs.IsMounted = function()
 		return client.mounted == true
