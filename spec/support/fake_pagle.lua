@@ -39,6 +39,8 @@
 ---@field login fun() Does Core's PLAYER_LOGIN work: fires ModulesChanged. Raises an error if called twice.
 ---@field readOnly fun(value: any): any The read-only proxy of a table (the same one each time); other values as is.
 ---@field moduleState fun(name: string): PagleModuleState A roster Module's state (CORE-R41).
+---@field setCatalogue fun(data: table) Serves the catalogue calls over `data` (shaped as ns.catalogue, DATA-R76)
+--- instead of the generated catalogue.
 
 -- Core's logic/ for one fake: Pagle.toc's libs (for the bus), generated data/, locale/ and logic/ files, in TOC
 -- order, sharing one ns, as the client would load them. None uses WoW globals (CORE-R7), so plain Lua runs them.
@@ -241,6 +243,26 @@ end)
 -- Condition specs (LOG-R48): pure, so the real one.
 part(function(_, Pagle, ns)
 	Pagle.MatchesConditions = ns.MatchesConditions
+end)
+
+-- The catalogue (LOG-R55), on Core's real accessors over the generated catalogue or a spec's own. Each record
+-- they hand out is read-only (CORE-R18, DATA-R80).
+part(function(fake, Pagle, ns)
+	local catalogue
+	function fake.setCatalogue(data)
+		catalogue = ns.NewCatalogue(data)
+		Pagle.CONTENT_FINGERPRINT = catalogue.CONTENT_FINGERPRINT
+	end
+	for _, name in ipairs({ "GetItem", "GetZones", "GetArea", "GetZoneOf", "GetZoneCatches" }) do
+		Pagle[name] = function(...)
+			return readOnly(catalogue[name](...))
+		end
+	end
+	function Pagle.GetWindowSpec(windowID)
+		local spec, confirmed = catalogue.GetWindowSpec(windowID)
+		return readOnly(spec), confirmed
+	end
+	fake.setCatalogue(ns.catalogue)
 end)
 
 --- A fresh FakePagle: no Module registered, not restricted, before PLAYER_LOGIN.
