@@ -16,6 +16,7 @@ files = [
     "scripts/generate-data.py",
     "scripts/extract-baseline.py",
     "scripts/update-db2.py",
+    "scripts/db2-watch.py",
 ]
 python_version = "3.12"
 strict = true
