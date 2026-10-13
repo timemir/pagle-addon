@@ -148,6 +148,20 @@ function ns.AddSettings(M)
 			return ns.db.profile.lures.mode == "one"
 		end,
 	})
+	-- Open clams between Casts (QOL-R56). A change re-points the key at once (QOL-R25). QOL-R100 may remove it.
+	M:AddSetting("fishing", {
+		kind = "checkbox",
+		label = L.SETTINGS_CLAMS,
+		tooltip = L.SETTINGS_CLAMS_TOOLTIP,
+		default = defaults.clams,
+		get = function()
+			return ns.db.profile.clams
+		end,
+		set = function(value)
+			ns.db.profile.clams = value
+			ns.EvaluateFishingKey()
+		end,
+	})
 
 	-- While you fish: what a Fishing stretch leases besides soft-interact (QOL-R62), each change taking effect at once,
 	-- mid-stretch too (QOL-R65).

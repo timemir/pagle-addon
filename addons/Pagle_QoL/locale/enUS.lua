@@ -34,6 +34,9 @@ ns.L = {
 	SETTINGS_LURE = "Lure",
 	-- A lure whose name the client hasn't loaded yet, by item ID (QOL-R54).
 	SETTINGS_LURE_UNNAMED = "Item %d",
+	-- Open clams between Casts (qol.md › Settings, QOL-R56).
+	SETTINGS_CLAMS = "Open clams between Casts",
+	SETTINGS_CLAMS_TOOLTIP = "One clam per press, never during a cast.",
 	-- The Fishing page's While you fish section (qol.md › Settings, QOL-R62).
 	SETTINGS_WHILE_YOU_FISH = "While you fish",
 	SETTINGS_AUDIO_MIX = "Fishing audio mix",

@@ -158,6 +158,24 @@ describe("Clams on the Fishing key", function()
 			assert.is_true(loaded.ns.db.profile.clams)
 		end)
 
+		it("re-points at once when it changes on the Fishing page (QOL-R25, QOL-R56)", function()
+			local fake, client, loaded = start(function(_, client)
+				client.bags[THICK_SHELLED] = 1
+			end)
+			local row
+			for _, entry in ipairs(assert(fake.settingsPage("fishing"))) do
+				if entry.label == "Open clams between Casts" then
+					row = entry.setting
+				end
+			end
+
+			row.set(false)
+			assert.are.equal(CAST, client.overrideAction("F"))
+			row.set(true)
+			assert.are.equal(CLICK, client.overrideAction("F"))
+			assert.are.equal("item:5524", buttonItem(loaded))
+		end)
+
 		it("casts while it is off, with a clam in the bags (QOL-R20, QOL-R56)", function()
 			local fake, client, loaded = start(function(_, client)
 				client.bags[THICK_SHELLED] = 1
