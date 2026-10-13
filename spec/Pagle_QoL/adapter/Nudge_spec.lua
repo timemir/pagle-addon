@@ -28,6 +28,15 @@ local function nudgeOf(client)
 	return nil
 end
 
+-- The Nudge's frame and its line, which must be there.
+---@param client FakeClient
+---@return table frame
+---@return table line
+local function theNudge(client)
+	local frame, line = nudgeOf(client)
+	return assert(frame), assert(line)
+end
+
 describe("A Nudge", function()
 	it("is one line in QoL's own frame, 4 px below UIErrorsFrame at the top centre (QOL-R75)", function()
 		local _, loaded = start()
@@ -35,8 +44,7 @@ describe("A Nudge", function()
 
 		loaded.ns.ShowNudge("Your lure is gone and there are none left in your bags.")
 
-		local frame, line = nudgeOf(loaded.client)
-		assert.is_table(frame)
+		local frame, line = theNudge(loaded.client)
 		assert.are.equal(loaded.env.UIParent, frame.parent)
 		assert.are.same({ { "TOP", loaded.env.UIErrorsFrame, "BOTTOM", 0, -4 } }, frame.points)
 		assert.are.equal("Your lure is gone and there are none left in your bags.", line.text)
@@ -49,7 +57,7 @@ describe("A Nudge", function()
 		local _, loaded = start()
 		local client = loaded.client
 		loaded.ns.ShowNudge("A Nudge")
-		local frame = assert(nudgeOf(client))
+		local frame = theNudge(client)
 
 		client.update(2)
 		client.update(1)
@@ -68,9 +76,9 @@ describe("A Nudge", function()
 		client.update(3.25)
 
 		loaded.ns.ShowNudge("The second")
-		local frame, line = nudgeOf(client)
-		assert.are.equal("The second", assert(line).text)
-		assert.are.equal(1, assert(frame).alpha)
+		local frame, line = theNudge(client)
+		assert.are.equal("The second", line.text)
+		assert.are.equal(1, frame.alpha)
 		client.update(3)
 		assert.are.equal(1, frame.alpha)
 
@@ -105,8 +113,8 @@ describe("A Nudge", function()
 
 		loaded.ns.ShowNudge("A Nudge")
 
-		local frame, line = nudgeOf(loaded.client)
-		assert.is_true(assert(frame).shown)
-		assert.are.equal("A Nudge", assert(line).text)
+		local frame, line = theNudge(loaded.client)
+		assert.is_true(frame.shown)
+		assert.are.equal("A Nudge", line.text)
 	end)
 end)

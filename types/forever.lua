@@ -11,3 +11,9 @@ WOW_PROJECT_CAMELOT = 18
 -- BIR_COMMIT, Resources/GlobalStrings/enUS.lua: ERR_FISH_ESCAPED = "Your fish got away!".
 ---@type string
 ERR_FISH_ESCAPED = "Your fish got away!"
+
+-- The frame that shows the game's error text, which a Nudge sits below (QOL-R75). Not Forever-only, but the
+-- annotations lack it; the forever dump lists it: Ketho/BlizzardInterfaceResources branch forever at BIR_COMMIT,
+-- Resources/Frames.lua.
+---@type MessageFrame
+UIErrorsFrame = {}
