@@ -46,22 +46,38 @@ function ns.ReadLures(poleInHand)
 	return lure, lured
 end
 
---- The Fishing key arms a target (QOL-R11): the lure it now applies, or nil for a cast or a reel (QOL-R29).
+-- A lure's spell, as C_Item.GetItemSpell reads it (8087 for Shiny Bauble, probe B4), or nil while the client hasn't
+-- loaded the item; it is asked for then.
+---@param itemID integer
+---@return integer?
+local function lureSpell(itemID)
+	local _, spellID = C_Item.GetItemSpell(itemID)
+	if not spellID then
+		C_Item.RequestLoadItemDataByID(itemID)
+	end
+	return spellID
+end
+
+--- The Fishing key arms a target (QOL-R11): the lure it now applies, or nil for a cast or a reel (QOL-R29). The lure's
+--- spell is asked for now, so it is known by the time the use's result comes.
 ---@param itemID integer?
 function ns.LureTargeted(itemID)
 	targeted = itemID
+	if itemID then
+		lureSpell(itemID)
+	end
 end
 
--- Whether a spell the player cast is the use of the lure the key pointed at: its item's spell, as C_Item.GetItemSpell
--- reads it (8087 for Shiny Bauble, probe B4). While that isn't known, any spell of the player's counts.
+-- Whether a spell the player cast is the use of the lure the key pointed at: its item's spell (QOL-R29). While that
+-- isn't known, no spell counts, so another spell never marks the pole lured or skips the lure.
 ---@param spellID integer?
 ---@return boolean
 local function isTargetedUse(spellID)
 	if not targeted then
 		return false
 	end
-	local _, lureSpell = C_Item.GetItemSpell(targeted)
-	return lureSpell == nil or lureSpell == spellID
+	local spell = lureSpell(targeted)
+	return spell ~= nil and spell == spellID
 end
 
 --- Waits for each lure use's result and skips a lure that failed (QOL-R29). QoL's OnInitialize calls it once it
