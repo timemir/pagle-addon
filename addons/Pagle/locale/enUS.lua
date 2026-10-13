@@ -24,6 +24,12 @@ ns.L = {
 	SETTINGS_NO_MODULE = "Recording your Catches. Enable a Module to see them.",
 	SETTINGS_MODULES = "Modules",
 	SETTINGS_MODULES_NOTE = "Turn Modules on or off in the AddOns list.",
+	-- The root's Saving section (SET-R10 row 5): its header, the reminder's label, and its tooltip with LOG-R86's step.
+	SETTINGS_SAVING = "Saving",
+	SETTINGS_RELOAD_REMINDER = "Remind me to /reload when Casts are unsaved",
+	SETTINGS_RELOAD_REMINDER_TOOLTIP = "A chat line every %d Casts not yet saved. WoW saves only on /reload or logout, so a crash loses them.",
+	-- LOG-R86: the unsaved-Casts reminder, with the number of Casts recorded since load.
+	RELOAD_REMINDER = "Pagle: %d Casts not yet saved. /reload to keep them safe.",
 	-- CORE-R33: Settings opened while restricted.
 	SETTINGS_AFTER_COMBAT = "Pagle: settings open after combat.",
 	-- The status list (CORE-R41): each roster Module's name, by def.name, and each state.
