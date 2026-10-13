@@ -5,6 +5,19 @@ local ns = select(2, ...)
 -- Everything it hands out is the catalogue's own tables, or tables built once here, shared and never copied per
 -- call (CORE-R18). Nothing here writes to the catalogue, and none of it goes into SavedVariables (DATA-R80).
 
+--- An item record, as `Pagle.GetItem` returns it (LOG-R55, DATA-R77).
+---@class PagleItem
+---@field category "fish"|"questFish"|"trophy"|"container"|"treasure"|"junk"|"other"
+---@field species? integer       -- Species ID (fish and quest fish); equal for the items of one Species
+---@field family? integer        -- trophy family ID
+---@field weight? number         -- a trophy's real weight, in pounds
+---@field typicalLength? integer -- fish and quest fish: the Species' typical length in mm (LOG-R67)
+---@field quality? integer       -- DB2 item quality, 0 poor ... 5 legendary; nil when unknown (LOG-R55)
+---@field legend boolean         -- a Legend (CONTEXT.md)
+---@field noise boolean          -- Noise (CONTEXT.md)
+---@field removed boolean        -- proven gone from Forever; left out of every list
+---@field pool boolean           -- in any pool type's catches (LOG-R56)
+
 --- One element of `PagleArea.catches` (keyed, not positional).
 ---@class PagleCatchEntry
 ---@field itemID integer
@@ -109,9 +122,10 @@ function ns.NewCatalogue(data)
 		CONTENT_FINGERPRINT = data.fingerprint,
 	}
 
-	--- The item record, or nil for an Uncharted item (LOG-R55). Before M2 no item is charted (LOG-R57).
+	--- The item record, or nil for an Uncharted item (LOG-R55): one outside the item universe, or kept out on
+	--- purpose (DATA-R15, DATA-R18).
 	---@param itemID integer
-	---@return table?
+	---@return PagleItem?
 	function catalogue.GetItem(itemID)
 		return data.items[itemID]
 	end

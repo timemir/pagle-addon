@@ -7,15 +7,20 @@ from pathlib import Path
 from pagle_data.aliases import Proposal, check_aliases, fishing_areas, propose
 from pagle_data.baseline import BASELINE, AreaLoot, BaselineLayer, conditional_rows, read_baseline
 from pagle_data.catalogue import Catalogue, Event, fingerprint
+from pagle_data.checks import read_checks
 from pagle_data.db2 import DB2, Db2Layer, read_db2
-from pagle_data.errors import DataError, Problems
+from pagle_data.errors import At, DataError, Problems
 from pagle_data.forever import ForeverLayer, read_forever
+from pagle_data.items import ITEMS_TOML, Record, item_records, read_item_layer
 from pagle_data.lua import to_lua
+from pagle_data.observed import OBSERVED, ObservedLayer, Observations, observations, read_observed
+from pagle_data.universe import item_universe
+from pagle_data.windows import Spec, build_windows, catalogue_windows, local_lua, read_windows_toml
 
 CATALOGUE_LUA = "addons/Pagle/data/Catalogue.lua"
 
-# The layers the generator reads, in DATA-R8's order (a later one wins). data/observed/ comes in M2.
-LAYERS = (f"{BASELINE}/", "data/forever/", DB2)
+# The layers the generator reads, in DATA-R8's order (a later one wins).
+LAYERS = (f"{BASELINE}/", "data/forever/", DB2, OBSERVED)
 
 
 def _areas(db2: Db2Layer) -> dict[int, Mapping[str, object]]:
@@ -33,9 +38,11 @@ def _areas(db2: Db2Layer) -> dict[int, Mapping[str, object]]:
     }
 
 
-def build_catalogue(forever: ForeverLayer, db2: Db2Layer) -> Catalogue:
-    """The catalogue in its pre-M2 shape (DATA-R79): aliases.toml's aliases, and nothing confirms an event's weekly
-    rule yet."""
+def build_catalogue(
+    forever: ForeverLayer, db2: Db2Layer, windows: Mapping[str, Spec], items: Mapping[int, Record]
+) -> Catalogue:
+    """The catalogue in its pre-M2 shape (DATA-R79) with M2's windows (DATA-R35): aliases.toml's aliases, and
+    nothing confirms an event's weekly rule yet. items are the item records that ship (DATA-R77)."""
     events: dict[int, Event] = {}
     for event_id, rule in forever.events.items():
         if rule is None:
@@ -49,11 +56,11 @@ def build_catalogue(forever: ForeverLayer, db2: Db2Layer) -> Catalogue:
             }
     catalogue: Catalogue = {
         "fingerprint": "",
-        "items": {},
+        "items": dict(items),
         "areas": _areas(db2),
         "aliases": {alias.source: alias.target for alias in forever.aliases},
         "pools": {},
-        "windows": {},
+        "windows": catalogue_windows(windows),
         "events": events,
         "fishingSpells": sorted(forever.fishing_spells),
         "auras": sorted(forever.auras),
@@ -73,8 +80,12 @@ def header() -> str:
 
 
 def catalogue_lua(catalogue: Catalogue) -> str:
-    """Catalogue.lua (DATA-R76): sets ns.catalogue. Core's TOC lists it before Core's own files."""
-    return f"{header()}\n---@class PagleNS\nlocal ns = select(2, ...)\n\nns.catalogue = {to_lua(catalogue)}\n"
+    """Catalogue.lua (DATA-R76): sets ns.catalogue, after the local W of window specs it points at (Contracts).
+    Core's TOC lists it before Core's own files."""
+    return (
+        f"{header()}\n---@class PagleNS\nlocal ns = select(2, ...)\n\n"
+        f"{local_lua(catalogue['windows'])}\nns.catalogue = {to_lua(catalogue)}\n"
+    )
 
 
 @dataclass(frozen=True)
@@ -84,6 +95,9 @@ class Layers:
     baseline: BaselineLayer
     forever: ForeverLayer
     db2: Db2Layer
+    windows: dict[str, Spec]  # every window by ID (DATA-R35)
+    observed: ObservedLayer
+    items: dict[int, Record]  # the item records that ship (DATA-R77)
 
     def fishing_areas(self) -> set[int]:
         return fishing_areas(self.baseline)
@@ -96,6 +110,16 @@ class Layers:
         """The alias candidates not yet committed to aliases.toml (DATA-R32, DATA-R64)."""
         return propose(self.db2, self.fishing_areas(), self.forever.aliases)
 
+    def observations(self) -> Observations:
+        """data/observed/'s observations, their areas through the alias table (DATA-R34). Nothing in the catalogue
+        comes from them yet: observed pairs and confirmed are DATA-R47–R55's."""
+        return observations(self.observed, {alias.source: alias.target for alias in self.forever.aliases})
+
+    def missing_areas(self) -> dict[int, list[At]]:
+        """Observed areas missing from data/db2/areas.csv, kept in the sources and left out of the catalogue
+        (DATA-R33)."""
+        return self.observations().missing_areas(self.db2.areas)
+
 
 def read_layers(root: Path) -> Layers:
     """Every source layer under root/data/. Raises DataError listing every problem found (DATA-R63)."""
@@ -106,16 +130,27 @@ def read_layers(root: Path) -> Layers:
     baseline_read = not problems
     forever = read_forever(root, problems)
     db2 = read_db2(root, problems)
+    window_overrides = read_windows_toml(root, problems)
+    windows: dict[str, Spec] = {}
+    observed = read_observed(root, problems)
+    item_layer = read_item_layer(root, problems)
+    checks = read_checks(root, problems)
+    items: dict[int, Record] = {}
     if baseline_read:  # without the whole baseline, every target would look like it has no catch list
         check_aliases(forever.aliases, fishing_areas(baseline), problems)
+        # ...and every seeded window would look missing (DATA-R35, DATA-R36)
+        windows = build_windows(baseline.events, window_overrides, forever.events, problems)
+        # DATA-R15: items.toml's IDs come from its strict reader, so a bad one is reported once.
+        universe = item_universe(root, baseline, problems, observed, {ITEMS_TOML: item_layer.items.keys()})
+        items = item_records(universe, baseline, item_layer, db2, checks, problems)
     if problems:
         raise DataError(problems.found)
-    return Layers(baseline, forever, db2)
+    return Layers(baseline, forever, db2, windows, observed, items)
 
 
 def outputs(layers: Layers) -> dict[str, str]:
     """Every generated file's path (relative to the repo root) and content."""
-    return {CATALOGUE_LUA: catalogue_lua(build_catalogue(layers.forever, layers.db2))}
+    return {CATALOGUE_LUA: catalogue_lua(build_catalogue(layers.forever, layers.db2, layers.windows, layers.items))}
 
 
 def generate(root: Path) -> dict[str, str]:
