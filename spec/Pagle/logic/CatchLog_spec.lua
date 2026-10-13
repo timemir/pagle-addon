@@ -311,6 +311,84 @@ describe("iterating the log", function()
 	end)
 end)
 
+describe("opening PagleLog", function()
+	local NOW = 1791731700
+
+	it("starts an empty log on a fresh install, without a chat line (LOG-R10, LOG-R18)", function()
+		local catchLog, started = ns.OpenCatchLog(nil, {}, NOW)
+
+		assert.are.same({ format = 1, characters = {}, entries = {} }, catchLog.data)
+		assert.is_false(started)
+	end)
+
+	it("keeps a log in the codec's format as it is (LOG-R14, LOG-R18)", function()
+		local saved = savedLog({ "S1|1|1791731680|0|86|150|0" })
+		local before = savedLog({ "S1|1|1791731680|0|86|150|0" })
+
+		local catchLog, started = ns.OpenCatchLog(saved, {}, NOW)
+
+		assert.are.equal(saved, catchLog.data)
+		assert.are.same(before, catchLog.data)
+		assert.is_false(started)
+	end)
+
+	for _, format in ipairs({ 0, 2, "nil" }) do
+		it(("starts a new log from one in format %s, keeping the characters (LOG-R18)"):format(format), function()
+			local saved = savedLog({ "C1|1|1791731747|0|c|494|1439|1|148|453|86|25|263|||6358x1" })
+			saved.format = tonumber(format)
+			saved.stale = true
+			local characters = saved.characters
+
+			local catchLog, started = ns.OpenCatchLog(saved, {}, NOW)
+
+			assert.is_true(started)
+			assert.are.equal(characters, catchLog.data.characters)
+			assert.are.same({}, catchLog.data.entries)
+			assert.are.equal(1, catchLog.data.format)
+			assert.is_nil(catchLog.data.stale)
+			assert.are.matches("^[0-9a-f]+$", catchLog.data.logId)
+			assert.are.equal(16, #catchLog.data.logId)
+			assert.are_not.equal("3f9a2c1e7b0d4a65", catchLog.data.logId)
+		end)
+	end
+end)
+
+describe("the logId", function()
+	local function firstSkill(catchLog)
+		catchLog:Append({ kind = "skill", char = 1, time = 1791731680, rank = 1, max = 75, mod = 0 })
+	end
+
+	it("is 16 lowercase hex characters, created with the log's first character (LOG-R15)", function()
+		local catchLog = ns.OpenCatchLog(nil, {}, 1791731600)
+		assert.is_nil(catchLog.data.logId)
+		catchLog.data.characters[1] = { guid = ADA }
+
+		firstSkill(catchLog)
+
+		assert.are.matches("^[0-9a-f]+$", catchLog.data.logId)
+		assert.are.equal(16, #catchLog.data.logId)
+	end)
+
+	it("is created once and never changes (LOG-R15)", function()
+		local catchLog = ns.OpenCatchLog(savedLog(), {}, 1791731600)
+		firstSkill(catchLog)
+		firstSkill(catchLog)
+		assert.are.equal("3f9a2c1e7b0d4a65", catchLog.data.logId)
+		assert.are.equal("3f9a2c1e7b0d4a65", ns.OpenCatchLog(catchLog.data, {}, 1791731900).data.logId)
+	end)
+
+	it("differs between two logs started by the same character at the same second (LOG-R15, LOG-R97)", function()
+		local logIds = {}
+		for i = 1, 2 do
+			local catchLog = ns.OpenCatchLog(nil, {}, 1791731600)
+			catchLog.data.characters[1] = { guid = ADA }
+			firstSkill(catchLog)
+			logIds[i] = catchLog.data.logId
+		end
+		assert.are_not.equal(logIds[1], logIds[2])
+	end)
+end)
+
 describe("the tie counter", function()
 	local function skill(char, time)
 		return { kind = "skill", char = char, time = time, rank = 86, max = 150, mod = 0 }

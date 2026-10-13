@@ -253,7 +253,7 @@ local function decode(entry, seq, characters)
 	end
 	local record = {
 		seq = seq,
-		id = ("%s-%s-%s"):format(character.guid, f[3], f[4]),
+		id = character.guid .. "-" .. integerField(time) .. "-" .. integerField(tie),
 		kind = codec.kind,
 		char = char,
 		time = time,
@@ -288,6 +288,30 @@ local function nextTie(entries, char, time)
 		end
 	end
 	return tie
+end
+
+-- 32 bits of a string, as 8 hex digits: djb2, kept exact below 2^53.
+---@param text string
+---@return string
+local function hash32(text)
+	local h = 5381
+	for i = 1, #text do
+		h = (h * 33 + string.byte(text, i)) % 4294967296
+	end
+	return ("%04x%04x"):format(math.floor(h / 65536), h % 65536)
+end
+
+-- Creates the log's logId if it has none yet and has a first character (LOG-R15): 16 lowercase hex digits, half
+-- from that character's GUID and the server time, half from math.random, so two logs a character starts in the
+-- same second still differ (LOG-R97).
+---@param data table PagleLog
+---@param time integer server time
+local function ensureLogId(data, time)
+	local first = data.characters[1]
+	if data.logId == nil and type(first) == "table" and type(first.guid) == "string" then
+		data.logId = hash32(first.guid .. "-" .. integerField(time))
+			.. ("%04x%04x"):format(math.random(0, 65535), math.random(0, 65535))
+	end
 end
 
 --- The Catch log over one PagleLog table, for one login.
@@ -343,14 +367,33 @@ function CatchLog:Append(record)
 	if not appended then
 		error(("the Catch log can't write this %s record"):format(tostring(record.kind)), 2)
 	end
+	ensureLogId(self.data, record.time)
 	entries[seq] = entry
 	return appended
 end
 
---- Opens the Catch log stored in `saved` (the PagleLog SavedVariable, nil on a fresh install).
+--- Opens the Catch log stored in `saved`, the PagleLog SavedVariable (LOG-R10). A fresh install (`saved` nil)
+--- starts an empty log. A log in another format than the codec's starts a new one, keeping its characters
+--- (LOG-R18); `started` says so, for the chat line. The logId is created once the log has a first character
+--- (LOG-R15).
 ---@param saved table?
 ---@param global table PagleDB.global, where undecodable entries are counted (LOG-R16)
----@return PagleCatchLog
-function ns.OpenCatchLog(saved, global)
-	return setmetatable({ data = saved, global = global, undecodable = {} }, CatchLog)
+---@param now integer server time
+---@return PagleCatchLog catchLog
+---@return boolean started true when a log in another format was set aside for a new one
+function ns.OpenCatchLog(saved, global, now)
+	local started = false
+	local data = saved
+	if type(data) ~= "table" then
+		data = { format = ns.LOG_FORMAT, characters = {}, entries = {} }
+	elseif data.format ~= ns.LOG_FORMAT then
+		local characters = data.characters or {}
+		for key in pairs(data) do
+			data[key] = nil
+		end
+		data.format, data.characters, data.entries = ns.LOG_FORMAT, characters, {}
+		started = true
+	end
+	ensureLogId(data, now)
+	return setmetatable({ data = data, global = global, undecodable = {} }, CatchLog), started
 end
