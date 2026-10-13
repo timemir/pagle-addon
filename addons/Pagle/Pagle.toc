@@ -34,6 +34,7 @@ logic\Fishing.lua
 logic\Diagnostics.lua
 logic\Settings.lua
 logic\Slash.lua
+logic\Wallet.lua
 logic\Menu.lua
 logic\ReloadReminder.lua
 adapter\Core.lua
@@ -50,6 +51,7 @@ adapter\Fishing.lua
 adapter\Diagnostics.lua
 adapter\Settings.lua
 adapter\Slash.lua
+adapter\Wallet.lua
 adapter\Menu.lua
 adapter\ReloadReminder.lua
 adapter\Login.lua

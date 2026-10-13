@@ -5,6 +5,7 @@
 --   setCombat(loaded, true)
 --   openedNames(loaded)                       -- { "Pagle", "Fishing" }
 --   local loaded, errors = loadCollectingErrors()
+--   breakUpLargeNumbers(1950)                -- "1,950"
 
 --- FOREVER_GLOBALS plus `extra`, as loadAddon's globals.
 ---@param extra table<string, any>?
@@ -80,4 +81,13 @@ function loadCollectingErrors()
 		end
 	end
 	return loaded, errors
+end
+
+--- What the enUS client's BreakUpLargeNumbers writes for a whole number, 0 or more: commas between groups of three
+--- digits.
+---@param value integer
+---@return string
+function breakUpLargeNumbers(value)
+	local grouped = tostring(value):reverse():gsub("(%d%d%d)", "%1,"):reverse()
+	return (grouped:gsub("^,", ""))
 end

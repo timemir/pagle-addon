@@ -15,6 +15,7 @@ end
 local PAGLEDB_DEFAULTS = {
 	global = {
 		decodeErrors = 0, -- LOG-R16
+		coins = { earned = {} }, -- SHOP-R3
 	},
 	profile = {
 		reloadReminder = false, -- LOG-R86
