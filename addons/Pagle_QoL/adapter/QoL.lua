@@ -27,4 +27,5 @@ function ns.QoL.OnInitialize()
 	ns.StartStretch()
 
 	ns.StartFishingKey()
+	ns.StartCombat()
 end
