@@ -25,12 +25,7 @@ local PAGLEDB_KEYS = {
 -- Loads Core on Forever with these SavedVariables, as the client does at login.
 ---@param saved { PagleLog: table?, PagleDB: table? }
 local function login(saved)
-	---@type table<string, any>
-	local globals = { PagleLog = saved.PagleLog, PagleDB = saved.PagleDB }
-	for key, value in pairs(FOREVER_GLOBALS) do
-		globals[key] = value
-	end
-	return loadAddon("Pagle", globals)
+	return loadAddon("Pagle", foreverWith({ PagleLog = saved.PagleLog, PagleDB = saved.PagleDB }))
 end
 
 local function catches(Pagle, afterSeq)

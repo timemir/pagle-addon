@@ -27,13 +27,10 @@ local function fishingCore(zone, subzone, extra)
 			return subzone
 		end,
 	}
-	for key, value in pairs(FOREVER_GLOBALS) do
-		globals[key] = value
-	end
 	for key, value in pairs(extra or {}) do
 		globals[key] = value
 	end
-	local loaded = loadAddon("Pagle", globals)
+	local loaded = loadAddon("Pagle", foreverWith(globals))
 	loaded.client.fire("PLAYER_LOGIN")
 	return loaded
 end
