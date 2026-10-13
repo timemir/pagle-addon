@@ -41,3 +41,26 @@ describe("ns.StripSecrets", function()
 		assert.are.same({ item = 6358, outcome = "c" }, record)
 	end)
 end)
+
+describe("ns.UnlessSecret", function()
+	local ns = loadAddon("Pagle", FOREVER_GLOBALS).ns
+	-- Stands in for a value the client marks secret.
+	local secret = {}
+	local function isSecret(value)
+		return value == secret
+	end
+
+	it("gives a value the client read back as it is, and nil for a secret one (CORE-R31)", function()
+		assert.are.equal(7731, ns.UnlessSecret(isSecret, 7731))
+		assert.are.equal("Darkshore", ns.UnlessSecret(isSecret, "Darkshore"))
+		assert.is_nil(ns.UnlessSecret(isSecret, secret))
+		assert.is_nil(ns.UnlessSecret(isSecret, nil))
+	end)
+
+	it("leaves a table alone, unlike StripSecrets: it reads one value (CORE-R31)", function()
+		local info = { name = secret }
+
+		assert.are.equal(info, ns.UnlessSecret(isSecret, info))
+		assert.are.equal(secret, info.name)
+	end)
+end)

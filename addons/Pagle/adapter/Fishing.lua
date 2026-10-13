@@ -24,17 +24,6 @@ local OWNER = "Pagle fishing"
 --- Payload of `FishingStateChanged`: the new state (LOG-R9).
 ---@alias PagleFishingStateChangedHandler fun(event: "FishingStateChanged", state: PagleFishingState)
 
--- A value the client gave, or nil if it's secret (CORE-R31).
----@generic T
----@param value T
----@return T?
-local function unlessSecret(value)
-	if issecretvalue(value) then
-		return nil
-	end
-	return value
-end
-
 -- Records a Cast that ended caught or got away (LOG-R9 steps 1 and 2): takes the Cast snapshot (LOG-R20), adds the
 -- items, and appends the C1 entry for the current character at the snapshot's server time. Returns the record every
 -- reader will see, or nil before PLAYER_LOGIN, when no character is current.
@@ -71,7 +60,7 @@ local fishing = ns.NewFishing({
 ---@return PagleLootItem[]
 local function readLoot()
 	local items = {}
-	local count = unlessSecret(GetNumLootItems()) or 0
+	local count = ns.UnlessSecret(issecretvalue, GetNumLootItems()) or 0
 	for slot = 1, count do
 		local _, _, quantity, currencyID, _, _, _, _, _, isCoin = GetLootSlotInfo(slot)
 		local item = ns.LootItem(issecretvalue, GetLootSlotLink(slot), quantity, currencyID, isCoin)
@@ -91,11 +80,11 @@ local function escaped(message)
 end
 
 Pagle.RegisterUnitEvent(OWNER, "UNIT_SPELLCAST_CHANNEL_START", "player", function(_, _, _, spellID)
-	fishing:ChannelStarted(unlessSecret(spellID), GetTime())
+	fishing:ChannelStarted(ns.UnlessSecret(issecretvalue, spellID), GetTime())
 end)
 
 Pagle.RegisterUnitEvent(OWNER, "UNIT_SPELLCAST_CHANNEL_STOP", "player", function(_, _, _, spellID)
-	local graceEnded = fishing:ChannelStopped(unlessSecret(spellID), GetTime())
+	local graceEnded = fishing:ChannelStopped(ns.UnlessSecret(issecretvalue, spellID), GetTime())
 	if graceEnded then
 		C_Timer.After(ns.FISHING_GRACE, graceEnded)
 	end
@@ -103,7 +92,7 @@ end)
 
 -- LOOT_OPENED is never used: it fires only with auto-loot off (LOG-R4).
 Pagle.RegisterEvent(OWNER, "LOOT_READY", function()
-	fishing:LootReady(unlessSecret(IsFishingLoot()), readLoot, GetTime())
+	fishing:LootReady(ns.UnlessSecret(issecretvalue, IsFishingLoot()), readLoot, GetTime())
 end)
 
 Pagle.RegisterEvent(OWNER, "LOOT_CLOSED", function()
