@@ -19,6 +19,16 @@ ns.L = {
 	SETTINGS_CASTING = "Casting",
 	SETTINGS_FISHING_KEY = "Fishing key",
 	SETTINGS_FISHING_KEY_TOOLTIP = "Each press does the next single thing: cast, reel, or a lure, gear or clam when needed.",
+	-- The Fishing page's Lures and clams section (qol.md › Settings, QOL-R50).
+	SETTINGS_LURES_AND_CLAMS = "Lures and clams",
+	SETTINGS_LURES = "Lures",
+	SETTINGS_LURES_TOOLTIP = "A press before a cast applies a lure when none is on.",
+	SETTINGS_LURES_OFF = "Off",
+	SETTINGS_LURES_BEST = "Best I have",
+	SETTINGS_LURES_ONE = "Only this one",
+	SETTINGS_LURE = "Lure",
+	-- A lure whose name the client hasn't loaded yet, by item ID (QOL-R54).
+	SETTINGS_LURE_UNNAMED = "Item %d",
 	-- The Fishing page's While you fish section (qol.md › Settings, QOL-R62).
 	SETTINGS_WHILE_YOU_FISH = "While you fish",
 	SETTINGS_AUDIO_MIX = "Fishing audio mix",

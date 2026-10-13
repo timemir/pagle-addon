@@ -55,7 +55,8 @@ stds.wow = {
 		"UnitChannelInfo",
 		"UnitCastingInfo",
 		"GetInventoryItemID",
-		C_Item = { fields = { "GetItemInfoInstant" } },
+		-- GetItemNameByID and RequestLoadItemDataByID: the lure table's names, for the Lure dropdown (QOL-R54).
+		C_Item = { fields = { "GetItemInfoInstant", "GetItemNameByID", "RequestLoadItemDataByID" } },
 		C_Spell = { fields = { "GetSpellName" } },
 		-- QoL's Fishing stretch and its CVar lease (QOL-R61–R64).
 		"GetCVar",

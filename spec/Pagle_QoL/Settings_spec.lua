@@ -1,5 +1,5 @@
--- QoL's rows on Core's Fishing page: the Casting header and the Fishing key (M1), and the While you fish rows (Track Q
--- step 4) (qol.md › Settings, SET-R20, SET-R21, CORE-R42).
+-- QoL's rows on Core's Fishing page: the Casting header and the Fishing key (M1), the Lures and clams rows (Track Q
+-- step 1) and the While you fish rows (Track Q step 4) (qol.md › Settings, SET-R20, SET-R21, CORE-R42).
 
 -- QoL's row on a FakePagle Fishing page by its label.
 ---@param fake FakePagle
@@ -29,11 +29,109 @@ describe("QoL's Fishing page with FakePagle", function()
 		assert.are.same({
 			{ "QoL", "header", "Casting", false },
 			{ "QoL", "keybinding", "Fishing key", false },
+			{ "QoL", "header", "Lures and clams", false },
+			{ "QoL", "dropdown", "Lures", false },
+			{ "QoL", "dropdown", "Lure", true },
 			{ "QoL", "header", "While you fish", false },
 			{ "QoL", "checkbox", "Fishing audio mix", false },
 			{ "QoL", "checkbox", "Keep sound when the game is in the background", true },
 			{ "QoL", "checkbox", "Auto-loot while fishing", false },
 		}, rows)
+	end)
+
+	it("offers Off, Best I have and Only this one for Lures (SET-R20, QOL-R50)", function()
+		local fake = newFakePagle()
+		fake.load("Pagle_QoL")
+		fake.login()
+
+		assert.are.same({
+			{ value = "off", label = "Off" },
+			{ value = "best", label = "Best I have" },
+			{ value = "one", label = "Only this one" },
+		}, rowOf(fake, "Lures").options())
+	end)
+
+	it("offers the lure table's six items for Lure, by their names from C_Item (SET-R20, QOL-R54)", function()
+		local fake = newFakePagle()
+		local loaded = fake.load("Pagle_QoL")
+		fake.login()
+
+		-- The fake client has every lure's enUS name cached.
+		assert.are.same({
+			{ value = 6529, label = "Shiny Bauble" },
+			{ value = 6530, label = "Nightcrawlers" },
+			{ value = 6811, label = "Aquadynamic Fish Lens" },
+			{ value = 6532, label = "Bright Baubles" },
+			{ value = 7307, label = "Flesh Eating Worm" },
+			{ value = 6533, label = "Aquadynamic Fish Attractor" },
+		}, rowOf(fake, "Lure").options())
+
+		-- A name the client hasn't loaded yet shows as its item ID and is asked for, then read again the next time the
+		-- list opens.
+		local requested = {}
+		loaded.env.C_Item.RequestLoadItemDataByID = function(itemID)
+			requested[#requested + 1] = itemID
+		end
+		loaded.client.itemNames[6811] = nil
+		assert.are.same({ value = 6811, label = "Item 6811" }, rowOf(fake, "Lure").options()[3])
+		assert.are.same({ 6811 }, requested)
+		loaded.client.itemNames[6811] = "Aquadynamic Fish Lens"
+		assert.are.same({ value = 6811, label = "Aquadynamic Fish Lens" }, rowOf(fake, "Lure").options()[3])
+	end)
+
+	it("gives Lures qol.md's tooltip, and the defaults Best I have and Shiny Bauble (SET-R20, QOL-R50)", function()
+		local fake = newFakePagle()
+		fake.load("Pagle_QoL")
+		fake.login()
+
+		local lures = rowOf(fake, "Lures")
+		local lure = rowOf(fake, "Lure")
+
+		-- qol.md › Settings › Tooltips, word for word; it gives Lure none.
+		assert.are.equal("A press before a cast applies a lure when none is on.", lures.tooltip)
+		assert.is_nil(lure.tooltip)
+		assert.are.equal("best", lures.default)
+		assert.are.equal(6529, lure.default)
+		-- A new PagleQoLDB starts at the defaults.
+		assert.are.equal("best", lures.get())
+		assert.are.equal(6529, lure.get())
+	end)
+
+	it("stores both in profile.lures, as QoL's lure logic reads them (qol.md › Data, QOL-R50, QOL-R51)", function()
+		local fake = newFakePagle()
+		local loaded = fake.load("Pagle_QoL")
+		fake.login()
+
+		rowOf(fake, "Lures").set("one")
+		rowOf(fake, "Lure").set(6532)
+
+		local stored = loaded.env.PagleQoLDB.profiles.Default.lures
+		assert.are.same({ mode = "one", item = 6532 }, stored)
+		assert.are.equal("one", rowOf(fake, "Lures").get())
+		assert.are.equal(6532, rowOf(fake, "Lure").get())
+		-- With every lure available, Only this one picks Bright Baubles, where Best I have would pick the Attractor.
+		local function always()
+			return true
+		end
+		assert.are.equal(6532, loaded.ns.ChooseLure(stored.mode, stored.item, always))
+	end)
+
+	it("greys Lure out unless Lures is Only this one, keeping its value (SET-R20, SET-R31, QOL-R50)", function()
+		local fake = newFakePagle()
+		fake.load("Pagle_QoL")
+		fake.login()
+		local lures = rowOf(fake, "Lures")
+		local lure = rowOf(fake, "Lure")
+		lure.set(6533)
+
+		assert.is_false(lure.isEnabled())
+		lures.set("one")
+		assert.is_true(lure.isEnabled())
+		lures.set("off")
+		assert.is_false(lure.isEnabled())
+		assert.are.equal(6533, lure.get())
+
+		assert.is_nil(lures.isEnabled)
 	end)
 
 	it("gives the While you fish checkboxes qol.md's tooltips and defaults (SET-R20, qol.md › Data)", function()
@@ -167,6 +265,48 @@ describe("QoL's Fishing page with Core", function()
 			end
 		end
 	end
+
+	it("registers Lures and clams as a header and two native dropdowns, greying as SET-R20 says", function()
+		local _, fishing = fishingPage()
+
+		local header = initializerOf(fishing, "Lures and clams")
+		local lures = initializerOf(fishing, "Lures")
+		local lure = initializerOf(fishing, "Lure")
+		assert.are.equal("SettingsListSectionHeaderTemplate", header.template)
+		assert.are.equal("SettingsDropdownControlTemplate", lures.template)
+		assert.are.equal("SettingsDropdownControlTemplate", lure.template)
+		assert.are.equal("A press before a cast applies a lure when none is on.", lures:GetTooltip())
+		assert.is_nil(lures:GetParentInitializer())
+		assert.are.equal(lures, lure:GetParentInitializer())
+		-- The native list's labels, read as it opens: Lure's come from C_Item (QOL-R54).
+		local labels = {}
+		for i, option in ipairs(lures:GetData().options()) do
+			labels[i] = option.label
+		end
+		assert.are.same({ "Off", "Best I have", "Only this one" }, labels)
+		assert.are.equal("Bright Baubles", lure:GetData().options()[4].label)
+
+		-- Live only for Only this one (QOL-R50).
+		assert.is_false(lure:EvaluateModifyPredicates())
+		lures:GetSetting():SetValue("one")
+		assert.is_true(lure:EvaluateModifyPredicates())
+		lures:GetSetting():SetValue("off")
+		assert.is_false(lure:EvaluateModifyPredicates())
+	end)
+
+	it("restores Lures and Lure with Defaults (SET-R21, SET-R60, QOL-R50)", function()
+		local loaded, fishing = fishingPage()
+		local lures = initializerOf(fishing, "Lures"):GetSetting()
+		local lure = initializerOf(fishing, "Lure"):GetSetting()
+		lures:SetValue("one")
+		lure:SetValue(6533)
+
+		pressDefaults(loaded, fishing)
+
+		assert.are.equal("best", lures:GetValue())
+		assert.are.equal(6529, lure:GetValue())
+		assert.are.same({ mode = "best", item = 6529 }, loaded.env.PagleQoLDB.profiles.Default.lures)
+	end)
 
 	it("registers While you fish as a header and three native checkboxes, greying as SET-R20 says", function()
 		local _, fishing = fishingPage()
