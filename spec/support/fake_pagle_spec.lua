@@ -310,6 +310,37 @@ describe("FakePagle", function()
 			end
 		)
 
+		it(
+			"leaves out an entry whose label raises and reports it, as Core's securecallfunction does (CORE-R52)",
+			function()
+				local fake = newFakePagle()
+				fake.Pagle.RegisterModule({
+					name = "QoL",
+					title = "QoL",
+					order = 50,
+					menu = {
+						{
+							label = function()
+								error("no input yet")
+							end,
+							onClick = function() end,
+						},
+						{ label = "Input: Both", onClick = function() end },
+					},
+				})
+				fake.login()
+
+				local labels = {}
+				for i, entry in ipairs(fake.menu()) do
+					labels[i] = entry.label
+				end
+
+				assert.are.same({ "Input: Both", "Settings" }, labels)
+				assert.are.equal(1, #fake.reported)
+				assert.matches("no input yet", fake.reported[1], 1, true)
+			end
+		)
+
 		it("opens the root from Settings, or prints Core's line while restricted (CORE-R33, SET-R75)", function()
 			local fake = newFakePagle()
 			fake.login()
@@ -360,6 +391,31 @@ describe("FakePagle", function()
 				}, fake.printed)
 			end
 		)
+
+		it("reports a subcommand that raises, and carries on, as Core's securecallfunction does (CORE-R62)", function()
+			local fake = newFakePagle()
+			fake.Pagle.RegisterModule({
+				name = "QoL",
+				title = "QoL",
+				order = 50,
+				slash = {
+					{
+						name = "qol",
+						fn = function()
+							error("cycle failed")
+						end,
+						help = "cycle Input",
+					},
+				},
+			})
+			fake.login()
+
+			fake.slash("qol")
+			fake.slash("qol")
+
+			assert.are.equal(2, #fake.reported)
+			assert.matches("cycle failed", fake.reported[2], 1, true)
+		end)
 
 		it("reports a subcommand that collides with a reserved one, and keeps the rest (CORE-R62)", function()
 			local fake = newFakePagle()
@@ -519,6 +575,19 @@ describe("FakePagle", function()
 			assert.are.equal(148, Pagle.GetZoneOf(453))
 			assert.are.equal(1, Pagle.GetArea(453).continent)
 			assert.are.equal("0123456789abcdef", Pagle.CONTENT_FINGERPRINT)
+		end)
+
+		it("serves a spec's own fishing-spell list to the Cast state machine (LOG-R2, LOG-R55)", function()
+			local fake = newFakePagle()
+			local data = fixture()
+			data.fishingSpells = { 689 }
+			fake.setCatalogue(data)
+			fake.login()
+
+			fake.channel(7731)
+			assert.are.equal("idle", fake.globals.Pagle.GetFishingState())
+			fake.channel(689)
+			assert.are.equal("channeling", fake.globals.Pagle.GetFishingState())
 		end)
 
 		it("hands out records that raise an error on any write (CORE-R18, DATA-R80)", function()

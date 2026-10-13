@@ -4,39 +4,6 @@
 
 local ADA = "Player-4618-0A1B2C3D"
 
--- FOREVER_GLOBALS plus `extra`.
-local function foreverWith(extra)
-	local globals = {}
-	for key, value in pairs(FOREVER_GLOBALS) do
-		globals[key] = value
-	end
-	for key, value in pairs(extra or {}) do
-		globals[key] = value
-	end
-	return globals
-end
-
--- A PagleLog as SavedVariables hand it back, holding Ada and these entries.
-local function savedLog(entries, format)
-	return {
-		format = format or 1,
-		logId = "3f9a2c1e7b0d4a65",
-		characters = {
-			{
-				guid = ADA,
-				name = "Ada",
-				classID = 1,
-				raceID = 1,
-				faction = "Alliance",
-				realmID = 4618,
-				firstSeen = 1791700000,
-				lastSeen = 1791700000,
-			},
-		},
-		entries = entries or {},
-	}
-end
-
 -- A client whose fishing skill is `skill.rank`/`skill.max`+`skill.mod`, changeable between events, on build
 -- `build.number` (version `build.version`).
 local function fishingClient(extra)

@@ -1,7 +1,7 @@
 ## Interface: 16001
 ## AllowLoadGameType: camelot
 ## Title: Pagle QoL
-## Notes: Pagle's Fishing key: one key to cast and reel.
+## Notes: Pagle's Fishing key: each press does the next sensible fishing action, such as casting or reeling.
 ## Group: Pagle
 ## Category: Professions
 ## Version: @project-version@

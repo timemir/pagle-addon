@@ -194,6 +194,11 @@ describe("ns.ResolveAreas", function()
 		)
 	end)
 
+	it("gives zone 0 for an empty zone text, which isn't unresolved, as for nil (LOG-R22, LOG-R81)", function()
+		assert.are.same({ 0, 0 }, { resolve("", "", KALIMDOR) })
+		assert.are.same({ 0, 0 }, { resolve("", nil, KALIMDOR) })
+	end)
+
 	it("gives 0 with no text to hand back for a secret text, passed in as nil (LOG-R22, CORE-R31)", function()
 		assert.are.same({ 0, 0 }, { resolve(nil, nil, KALIMDOR) })
 		assert.are.same({ 148, 0 }, { resolve("Darkshore", nil, KALIMDOR) })

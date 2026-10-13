@@ -9,19 +9,12 @@ local ns = select(2, ...)
 ---@field label string
 ---@field onClick fun()
 
--- A label as the menu shows it: a function label is called now (CORE-R52), through `call`. Nil when it fails or
--- isn't text.
----@param label any
----@param call fun(fn: function): any
----@return string?
-local function read(label, call)
-	if type(label) == "function" then
-		label = call(label)
-	end
-	if type(label) == "string" then
-		return label
-	end
-	return nil
+--- The menu's last entry, "Settings" (CORE-R50): it calls `openSettings`, which while restricted prints CORE-R33's
+--- line instead (SET-R75).
+---@param openSettings fun()
+---@return PagleMenuEntry
+function ns.SettingsMenuEntry(openSettings)
+	return { label = ns.L.MENU_SETTINGS, onClick = openSettings }
 end
 
 --- The compartment menu's entries, read now, as each opening reads them (CORE-R50, CORE-R52): for each registered
@@ -34,7 +27,7 @@ end
 function ns.CompartmentMenu(modules, last, call)
 	local entries = {}
 	local function add(label, onClick)
-		local text = read(label, call)
+		local text = ns.ReadLabel(label, call)
 		if text and type(onClick) == "function" then
 			entries[#entries + 1] = { label = text, onClick = onClick }
 		end

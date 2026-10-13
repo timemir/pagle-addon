@@ -281,15 +281,15 @@ describe("The Fishing key in combat, with Core", function()
 	end)
 
 	it("after a /reload in combat, first arms when combat ends (QOL-R33)", function()
-		local globals = {}
-		for name, value in pairs(FOREVER_GLOBALS) do
-			globals[name] = value
-		end
 		-- In lockdown from the start, so Core reads the load as restricted at its ADDON_LOADED.
-		globals.InCombatLockdown = function()
-			return true
-		end
-		local loaded = loadAddon("Pagle_QoL", globals)
+		local loaded = loadAddon(
+			"Pagle_QoL",
+			foreverWith({
+				InCombatLockdown = function()
+					return true
+				end,
+			})
+		)
 		local client = loaded.client
 		client.boundKeys.PAGLE_FISHING_KEY = { "F" }
 

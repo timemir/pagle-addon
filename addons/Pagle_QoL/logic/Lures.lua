@@ -1,4 +1,4 @@
-if not Pagle then
+if not Pagle then -- luacheck: read globals Pagle (CORE-R11: the one read of Core outside adapter/)
 	return
 end
 

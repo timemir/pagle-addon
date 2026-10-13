@@ -14,15 +14,6 @@ local function pagle(loaded, msg)
 	loaded.env.SlashCmdList.PAGLE(msg)
 end
 
--- The names of the categories Settings.OpenToCategory opened, in order.
-local function openedNames(loaded)
-	local names = {}
-	for i, category in ipairs(loaded.client.settings.opened) do
-		names[i] = category and category.name
-	end
-	return names
-end
-
 describe("/pagle", function()
 	it("is the command Core registers (CORE-R60)", function()
 		local loaded = loadCore()
@@ -148,9 +139,12 @@ describe("A Module's /pagle subcommand", function()
 			assert.are.same({ "Hunts board", "QoL qol" }, ran)
 			assert.are.same({ "Pagle" }, openedNames(loaded))
 			assert.are.equal(3, #reported)
-			assert.matches("Hunts's /pagle report is skipped: Pagle reserves report", reported[1], 1, true)
-			assert.matches("QoL's /pagle Settings is skipped: Pagle reserves settings", reported[2], 1, true)
-			assert.matches("QoL's /pagle BOARD is skipped: Hunts already uses it", reported[3], 1, true)
+			local L = loaded.ns.L
+			assert.are.same({
+				L.SLASH_SKIPPED_RESERVED:format("Hunts", "report", "report"),
+				L.SLASH_SKIPPED_RESERVED:format("QoL", "Settings", "settings"),
+				L.SLASH_SKIPPED_TAKEN:format("QoL", "BOARD", "Hunts"),
+			}, reported)
 		end
 	)
 
@@ -179,6 +173,10 @@ describe("A Module's /pagle subcommand", function()
 
 		assert.are.equal(1, ran)
 		assert.are.same({
+			loaded.ns.L.SLASH_SKIPPED_NO_NAME:format("QoL", "two words"),
+			loaded.ns.L.SLASH_SKIPPED_NO_FN:format("QoL", "input"),
+		}, reported)
+		assert.are.same({
 			"Pagle: QoL's /pagle entry two words has no one-word name; it is skipped",
 			"Pagle: QoL's /pagle input has no fn; it is skipped",
 		}, reported)
@@ -193,14 +191,6 @@ describe("A Module's /pagle subcommand", function()
 		assert.are.same({ HELP[1], HELP[2], HELP[3] }, loaded.printed)
 	end)
 end)
-
--- A combat flip on the fake client: PLAYER_REGEN_DISABLED or _ENABLED, with InCombatLockdown agreeing.
-local function setCombat(loaded, inCombat)
-	loaded.env.InCombatLockdown = function()
-		return inCombat
-	end
-	loaded.client.fire(inCombat and "PLAYER_REGEN_DISABLED" or "PLAYER_REGEN_ENABLED")
-end
 
 describe("/pagle while restricted", function()
 	it("prints CORE-R33's line for /pagle and /pagle settings, and opens nothing (CORE-R33, SET-R75)", function()

@@ -41,8 +41,18 @@
 ---@field itemNames table<integer, string> Each item's name, by item ID, as `C_Item.GetItemNameByID` returns it once
 --- the item is cached; an item not listed isn't cached.
 
--- Every rank of Fishing has this name (probe B2).
-local FISHING_SPELLS = { [7620] = true, [7731] = true, [7732] = true, [18248] = true }
+-- The spells named Fishing: the generated catalogue's fishing-spell list (LOG-R2, data/forever/lists.toml), since
+-- every rank of Fishing has this name (probe B2).
+local FISHING_SPELLS = {}
+do
+	---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no loadfile
+	local chunk = assert(loadfile("addons/Pagle/data/Catalogue.lua"))
+	local ns = {}
+	chunk("Pagle", ns)
+	for _, spellID in ipairs(ns.catalogue.fishingSpells) do
+		FISHING_SPELLS[spellID] = true
+	end
+end
 
 ---@param client FakeClient
 ---@param stubs table<string, any> The fake client's stubs, which this adds to.

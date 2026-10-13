@@ -149,10 +149,7 @@ local function clientOf(world)
 			end,
 		},
 	}
-	for key, value in pairs(FOREVER_GLOBALS) do
-		globals[key] = value
-	end
-	return globals
+	return foreverWith(globals)
 end
 
 -- Loads Core over the fixture catalogue against `world`, fires ADDON_LOADED and, unless `beforeLogin`,

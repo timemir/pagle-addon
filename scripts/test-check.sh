@@ -3,38 +3,89 @@
 # scripts/check.sh fails at the stage that should catch it (and that the untouched tree passes).
 #
 #   scripts/test-check.sh
+#   TEST_CHECK_JOBS=1 scripts/test-check.sh    # one case at a time
 #
-# Needs the tools from scripts/setup.sh. Never touches the working tree.
+# Needs the tools from scripts/setup.sh. Never touches the working tree, .tools/cache/ included.
+#
+# A case is `copy`, its planted mistake under "$scratch/tree", then `expect`. Each case gets its own copy in
+# native tmp and runs the whole gate in the background, TEST_CHECK_JOBS at a time (default: the CPU count, at
+# most 8). Verdicts print in the order the cases are written.
 set -euo pipefail
 
 root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 scratch=$(mktemp -d)
-trap 'rm -rf "$scratch"' EXIT
+# On an early exit, the running cases finish before their copies go.
+trap 'wait; rm -rf "$scratch"' EXIT
 failures=0
+cases=0
+reported=0
 
-# Fresh copy of the tree, sharing the installed tools.
+max_jobs=${TEST_CHECK_JOBS:-$(nproc)}
+[[ -n ${TEST_CHECK_JOBS:-} ]] || ((max_jobs <= 8)) || max_jobs=8
+((max_jobs >= 1)) || max_jobs=1
+echo "test-check: $max_jobs cases at a time"
+
+# The tree is copied once, from a working tree that may sit across WSL's slow /mnt bridge, into native tmp;
+# every case copies this base. Its .tools/ links each installed tool, but cache/ is the case's own: check.sh
+# writes luacov's stats and report and mypy's cache there, and cases run at once. mypy's cache starts as a copy
+# of the working tree's, so no case checks cold.
+base="$scratch/base"
+mkdir "$base" "$scratch/cases" "$scratch/results"
+tar -C "$root" --exclude=./.git --exclude=./.tools --exclude=./.release -cf - . | tar -C "$base" -xf -
+mkdir -p "$base/.tools/cache"
+for tool in "$root/.tools"/*; do
+	[[ ${tool##*/} == cache ]] || ln -s "$tool" "$base/.tools/"
+done
+if [[ -d $root/.tools/cache/mypy ]]; then
+	cp -a "$root/.tools/cache/mypy" "$base/.tools/cache/"
+fi
+
+# Fresh copy of the tree for the next case. "$scratch/tree" points at it until the next copy.
 copy() {
-	rm -rf "$scratch/tree"
-	mkdir "$scratch/tree"
-	tar -C "$root" --exclude=./.git --exclude=./.tools --exclude=./.release -cf - . | tar -C "$scratch/tree" -xf -
-	ln -s "$root/.tools" "$scratch/tree/.tools"
+	cases=$((cases + 1))
+	case_tree="$scratch/cases/$cases"
+	cp -a "$base" "$case_tree"
+	ln -sfn "$case_tree" "$scratch/tree"
 }
 
 # expect <case> <stage|pass> [text]: runs the gate on the copy and checks where it stopped, and that its
-# output names the reason when text is given.
+# output names the reason when text is given. The case starts in the background once a job slot is free.
 expect() {
-	local output status=0 ok=no
-	output=$(bash "$scratch/tree/scripts/check.sh" 2>&1) || status=$?
+	while (($(jobs -pr | wc -l) >= max_jobs)); do
+		wait -n || true
+		report
+	done
+	run_case "$case_tree" "$scratch/results/$cases" "$@" &
+}
+
+# run_case <tree> <verdict file> <case> <stage|pass> [text]: the gate on one copy, as expect describes.
+run_case() {
+	local tree=$1 verdict=$2 output status=0 ok=no
+	shift 2
+	output=$(bash "$tree/scripts/check.sh" 2>&1) || status=$?
 	if [[ $2 == pass && $status -eq 0 ]] || [[ $2 != pass && $status -ne 0 && $output == *"FAILED at $2"* ]]; then
 		[[ $output == *"${3:-}"* ]] && ok=yes
 	fi
 	if [[ $ok == yes ]]; then
-		echo "ok   $1"
+		echo "ok   $1" >"$verdict.part"
 	else
-		echo "FAIL $1: expected $2${3:+ naming \"$3\"}, got exit $status"
-		sed 's/^/     | /' <<<"$output"
-		failures=$((failures + 1))
+		{
+			echo "FAIL $1: expected $2${3:+ naming \"$3\"}, got exit $status"
+			sed 's/^/     | /' <<<"$output"
+		} >"$verdict.part"
 	fi
+	mv "$verdict.part" "$verdict"
+	rm -rf "$tree"
+}
+
+# Prints the finished cases' verdicts in case order, up to the first case still running.
+report() {
+	local verdict
+	while verdict="$scratch/results/$((reported + 1))" && [[ -f $verdict ]]; do
+		cat "$verdict"
+		[[ $(head -c 4 "$verdict") != FAIL ]] || failures=$((failures + 1))
+		reported=$((reported + 1))
+	done
 }
 
 # Adds a name to the WoW API inventory (stds.wow in .luacheckrc).
@@ -103,6 +154,16 @@ copy
 uses_create_frame "$addon/locale/Global.lua"
 inventory_add CreateFrame
 expect "a WoW global in locale/ fails lint, even when inventoried" lint "accessing undefined variable 'CreateFrame'"
+
+copy
+printf 'local item = Pagle.GetItem(6358)\nreturn item\n' >>"$scratch/tree/addons/Pagle_QoL/logic/Data.lua"
+expect "a Module's logic/ calling Pagle beyond its CORE-R11 guard fails lint" lint \
+	"accessing undefined variable 'Pagle'"
+
+copy
+printf 'local version = Pagle.API_VERSION\nreturn version\n' >>"$scratch/tree/addons/Pagle_QoL/locale/enUS.lua"
+expect "a Module's locale/ reading Pagle beyond its CORE-R11 guard fails lint" lint \
+	"accessing undefined variable 'Pagle'"
 
 copy
 uses_screenshot "$addon/adapter/Global.lua"
@@ -217,6 +278,12 @@ copy
 printf '\n[[alias]]\nfrom = 16562\nto = 267\n' >>"$scratch/tree/data/forever/aliases.toml"
 expect "an alias without a why fails generator" generator "data/forever/aliases.toml: alias[10]: missing key 'why'"
 
+wait
+report
+if ((reported != cases)); then
+	echo "test-check: only $reported of $cases cases gave a verdict" >&2
+	exit 1
+fi
 if ((failures)); then
 	echo "test-check: $failures failed" >&2
 	exit 1

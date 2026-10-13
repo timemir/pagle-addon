@@ -30,6 +30,11 @@ local ns = select(2, ...)
 ---@field lure? true|integer[]              -- any lure, or one of these enchant IDs
 ---@field skill? { min: integer }           -- effective skill (rank + modifier) at least min
 
+--- A named window's condition spec, as `Pagle.GetWindowSpec` returns it (LOG-R55): the spec carries the window's
+--- `confirmed`, which matching ignores.
+---@class PagleWindowSpec: PagleConditionSpec
+---@field confirmed boolean
+
 -- Whether a list holds a value. A nil or 0 value (secret or unresolved) is in no list (LOG-R48).
 ---@param list integer[]
 ---@param value integer?
@@ -270,6 +275,14 @@ local checkers = {
 		end
 		return nil
 	end,
+
+	-- Not a condition: a window spec carries its `confirmed` (LOG-R55), and nothing matches on it.
+	confirmed = function(confirmed)
+		if type(confirmed) ~= "boolean" then
+			return "confirmed must be a boolean"
+		end
+		return nil
+	end,
 }
 
 -- What's wrong with a condition spec, or nil if nothing (LOG-R48).
@@ -305,7 +318,8 @@ function ns.MatchesConditions(spec, snapshot)
 		error("invalid condition spec: " .. problem, 2)
 	end
 	for field, values in pairs(spec) do
-		if not matchers[field](values, snapshot) then
+		local matcher = matchers[field]
+		if matcher and not matcher(values, snapshot) then
 			return false
 		end
 	end
@@ -315,20 +329,24 @@ end
 local MINUTES_PER_DAY = 1440
 local SECONDS_PER_DAY = 86400
 local OFFSET_STEP = 15 -- minutes the realm's UTC offset is rounded to (Tunables, LOG-R49)
-local MAX_OFFSET = 720 -- ±12 hours, in minutes
+-- A realm minute fixes the offset only to within a day, so it is taken in one 24-hour range: real offsets run from
+-- -12 to +14 hours, and the range keeps every one east of UTC (+13 NZDT, +14 Kiribati), reading -10 to -12, where no
+-- realm runs, as +14 to +12 (LOG-R49).
+local MIN_OFFSET = -600 -- -10 hours, in minutes, excluded
+local MAX_OFFSET = 840 -- +14 hours, in minutes, included
 
 --- The realm's UTC offset in minutes, from a server time and the realm minute of day read with it (LOG-R49): the
---- realm minute less the UTC minute, rounded to 15 minutes and kept within ±12 hours. A difference that falls
---- outside them is a day out, as when the realm and UTC days differ, and wraps; exactly 12 hours reads as +12.
+--- realm minute less the UTC minute, rounded to 15 minutes. A difference outside (-10, +14] hours is a day out, as
+--- when the realm and UTC days differ, and wraps by a day into that range.
 ---@param serverTime integer `GetServerTime()`, UTC epoch seconds
 ---@param realmMinute integer realm minute of day, 0–1439
----@return integer offset minutes east of UTC, -705 to 720
+---@return integer offset minutes east of UTC, -585 to 840
 function ns.RealmUtcOffset(serverTime, realmMinute)
 	local utcMinute = math.floor(serverTime / 60) % MINUTES_PER_DAY
 	local offset = math.floor((realmMinute - utcMinute) / OFFSET_STEP + 0.5) * OFFSET_STEP
 	if offset > MAX_OFFSET then
 		offset = offset - MINUTES_PER_DAY
-	elseif offset <= -MAX_OFFSET then
+	elseif offset <= MIN_OFFSET then
 		offset = offset + MINUTES_PER_DAY
 	end
 	return offset
