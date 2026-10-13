@@ -27,6 +27,7 @@ def write_tree(root: Path) -> Path:
     db2.mkdir(parents=True)
     (db2 / "build.toml").write_text(BUILD, encoding="utf-8")
     (db2 / "areas.csv").write_text(AREAS, encoding="utf-8")
+    (db2 / "items.csv").write_text("ID,ClassID,SubclassID,OverallQualityID,Display_lang\n", encoding="utf-8")
     write_baseline(root)
     return root
 

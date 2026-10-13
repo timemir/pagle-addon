@@ -1,0 +1,169 @@
+ID,ClassID,SubclassID,OverallQualityID,Display_lang
+118,0,1,1,Minor Healing Potion
+766,2,4,1,Flanged Mace
+767,2,10,1,Long Bo Staff
+774,7,11,2,Malachite
+804,1,0,1,Large Blue Sack
+857,1,0,1,Large Red Sack
+858,0,1,1,Lesser Healing Potion
+929,0,1,1,Healing Potion
+1467,12,0,1,Spotted Sunfish
+1529,7,11,2,Jade
+1710,0,1,1,Greater Healing Potion
+2406,9,1,2,Pattern: Fine Leather Boots
+2408,9,1,2,Pattern: Fine Leather Gloves
+2409,9,1,2,Pattern: Dark Leather Tunic
+2447,7,9,1,Peacebloom
+2455,0,1,1,Minor Mana Potion
+2553,9,6,2,Recipe: Elixir of Minor Agility
+2598,9,2,2,Pattern: Red Linen Robe
+2657,1,0,1,Red Leather Bag
+2960,4,1,1,Journeyman's Gloves
+2975,4,2,1,Hunting Boots
+3200,4,2,1,Burnt Leather Bracers
+3385,0,1,1,Lesser Mana Potion
+3609,9,4,2,Plans: Copper Chain Vest
+3820,7,9,1,Stranglekelp
+3827,0,1,1,Mana Potion
+3831,9,6,1,Recipe: Troll's Blood Elixir
+3857,7,7,1,Coal
+3864,7,11,2,Citrine
+3868,9,4,2,Plans: Frost Tiger Blade
+3870,9,4,2,Plans: Green Iron Shoulders
+3872,9,4,2,Plans: Golden Scale Leggings
+3928,0,1,1,Superior Healing Potion
+4293,9,1,2,Pattern: Hillman's Leather Vest
+4346,9,2,2,Pattern: Heavy Woolen Cloak
+4352,9,2,2,Pattern: Boots of the Enchanter
+4361,7,1,1,Copper Tube
+4364,7,1,1,Coarse Blasting Powder
+4377,7,1,1,Heavy Blasting Powder
+4382,7,1,1,Bronze Framework
+4408,9,3,2,Schematic: Mechanical Squirrel
+4414,9,3,2,Schematic: Portable Bronze Mortar
+4560,2,7,1,Fine Scimitar
+4565,2,15,1,Simple Dagger
+4603,7,8,1,Raw Spotted Yellowtail
+4658,4,1,1,Warrior's Cloak
+4665,4,1,1,Burnt Cloak
+5573,1,0,1,Green Leather Bag
+5574,1,0,1,White Leather Bag
+6149,0,1,1,Greater Mana Potion
+6271,9,2,2,Pattern: Red Linen Vest
+6289,7,8,1,Raw Longjaw Mud Snapper
+6291,7,8,1,Raw Brilliant Smallfish
+6292,15,0,1,10 Pound Mud Snapper
+6294,15,0,1,12 Pound Mud Snapper
+6295,15,0,1,15 Pound Mud Snapper
+6297,15,0,0,Old Skull
+6299,0,5,1,Sickly Looking Fish
+6301,15,0,0,Old Teamster's Skull
+6303,7,8,1,Raw Slitherskin Mackerel
+6307,15,0,1,Message in a Bottle
+6308,7,8,1,Raw Bristle Whisker Catfish
+6309,15,0,1,17 Pound Catfish
+6310,15,0,1,19 Pound Catfish
+6311,15,0,1,22 Pound Catfish
+6317,7,8,1,Raw Loch Frenzy
+6342,9,8,2,Formula: Enchant Chest - Minor Intellect
+6351,15,4,1,Dented Crate
+6352,15,4,1,Waterlogged Crate
+6353,15,0,1,Small Chest
+6354,15,0,1,Small Locked Chest
+6355,15,0,1,Sturdy Locked Chest
+6356,15,0,1,Battered Chest
+6357,15,4,1,Sealed Crate
+6358,7,11,1,Oily Blackmouth
+6359,7,11,1,Firefin Snapper
+6360,2,4,2,Steelscale Crushfish
+6361,7,8,1,Raw Rainbow Fin Albacore
+6362,7,8,1,Raw Rockscale Cod
+6363,15,0,1,26 Pound Catfish
+6455,15,0,0,Old Wagonwheel
+6456,15,0,0,Acidic Slime
+6457,15,0,0,Rusted Engineering Parts
+6458,0,8,1,Oil Covered Fish
+6466,4,1,2,Deviate Scale Cloak
+6470,7,6,1,Deviate Scale
+6515,4,1,1,Disciple's Gloves
+6519,4,2,1,Pioneer Bracers
+6520,4,1,1,Pioneer Cloak
+6522,0,5,1,Deviate Fish
+6549,4,1,1,Soldier's Cloak
+6643,15,4,2,Bloated Brilliant Smallfish
+6645,15,4,2,Bloated Mud Snapper
+6647,15,4,2,Bloated Bristle Whisker Catfish
+6651,2,4,1,Broken Wine Bottle
+6717,12,0,1,Gaffer Jack
+6718,12,0,1,Electropeller
+6887,0,5,1,Spotted Yellowtail
+7070,7,10,1,Elemental Water
+7078,7,10,2,Essence of Fire
+7079,7,10,1,Globe of Water
+7080,7,10,2,Essence of Water
+7086,9,2,2,Pattern: Earthen Silk Belt
+7364,9,1,2,Pattern: Heavy Earthen Gloves
+7910,7,11,2,Star Ruby
+7973,7,11,1,Big-mouth Clam
+7976,9,4,3,Plans: Mithril Shield Spike
+8177,2,8,1,Practice Sword
+8179,2,2,1,Cadet's Bow
+8181,2,3,1,Hunting Rifle
+8365,7,8,1,Raw Mithril Head Trout
+8366,15,4,2,Bloated Mithril Head Trout
+9746,4,1,1,Simple Gloves
+10606,9,3,2,Schematic: Parachute Cloak
+12238,0,5,1,Darkshore Grouper
+13422,7,11,1,Stonescale Eel
+13443,0,1,1,Superior Mana Potion
+13446,0,1,1,Major Healing Potion
+13754,7,8,1,Raw Glossy Mightfish
+13755,0,5,1,Raw Winter Squid
+13756,7,8,1,Raw Summer Bass
+13757,7,11,1,Lightning Eel
+13758,7,8,1,Raw Redgill
+13759,7,8,1,Raw Nightfin Snapper
+13760,7,8,1,Raw Sunscale Salmon
+13874,15,4,1,Heavy Crate
+13875,15,0,1,Ironbound Locked Chest
+13876,15,0,1,40 Pound Yellowtail
+13877,15,0,1,47 Pound Yellowtail
+13878,15,0,1,53 Pound Yellowtail
+13881,15,4,2,Bloated Redgill
+13882,15,0,1,42 Pound Redgill
+13883,15,0,1,45 Pound Redgill
+13884,15,0,1,49 Pound Redgill
+13885,15,0,1,34 Pound Redgill
+13886,15,0,1,37 Pound Redgill
+13888,7,8,1,Darkclaw Lobster
+13889,7,8,1,Raw Whitescale Salmon
+13890,12,0,1,Raw Plated Armorfish
+13893,0,5,1,Large Raw Mightfish
+13901,15,0,1,15 Pound Salmon
+13902,15,0,1,18 Pound Salmon
+13903,15,0,1,22 Pound Salmon
+13907,15,0,1,7 Pound Lobster
+13914,15,0,1,70 Pound Mightfish
+13918,15,0,1,Reinforced Locked Chest
+15925,4,0,2,Journeyman's Stave
+16967,15,0,1,Feralas Ahi
+16968,12,0,1,Sar'theris Striker
+16969,12,0,1,Savage Coast Blue Sailfin
+16970,12,0,1,Misty Reed Mahi Mahi
+19803,15,0,2,Brownell's Blue Striped Racer
+19805,15,0,2,Keefer's Angelfish
+19806,15,0,2,Dezian Queenfish
+19807,15,4,1,Speckled Tastyfish
+19975,12,0,1,Zulian Mudskunk
+20708,15,0,1,Tightly Sealed Trunk
+20709,0,5,1,Rumsey Rum Light
+21071,7,8,1,Raw Sagefish
+21113,15,0,1,Watertight Trunk
+21114,0,5,1,Rumsey Rum Dark
+21150,15,0,1,Iron Bound Trunk
+21151,0,5,1,Rumsey Rum Black Label
+21153,7,8,1,Raw Greater Sagefish
+21162,15,4,2,Bloated Oily Blackmouth
+21164,15,4,2,Bloated Rockscale Cod
+21228,15,0,1,Mithril Bound Trunk
+21243,15,4,2,Bloated Glossy Mightfish

@@ -48,6 +48,7 @@ def write_tree(root: Path, aliases: str = "") -> Path:
     db2.mkdir(parents=True, exist_ok=True)
     (db2 / "build.toml").write_text('build = 70338\nversion = "1.60.1"\nproducts = ["wow_classic_beta"]\n', encoding="utf-8")
     (db2 / "areas.csv").write_text(AREAS, encoding="utf-8")
+    (db2 / "items.csv").write_text("ID,ClassID,SubclassID,OverallQualityID,Display_lang\n", encoding="utf-8")
     write_baseline(root, {**CSVS, "area_loot.csv": AREA_LOOT})
     return root
 
