@@ -14,7 +14,8 @@
 -- Each load gets its own globals table, so nothing an addon defines (LibStub, Pagle) leaks into the next load.
 -- Names not in it fall back to the Lua 5.1 globals busted runs with.
 --
--- It also defines the Forever fixtures, PROJECT_IDS and FOREVER_GLOBALS, so every spec agrees on them.
+-- It also defines the Forever fixtures, PROJECT_IDS and FOREVER_GLOBALS, so every spec agrees on them, and loads
+-- spec/support/fake_pagle.lua, which defines newFakePagle (FakePagle, CORE-R18) for Module specs.
 --
 -- Globals rather than a module: the types stage checks spec/ against the WoW client's Lua, which has no require.
 
@@ -31,17 +32,28 @@ FOREVER_GLOBALS = { WOW_PROJECT_ID = PROJECT_IDS.CAMELOT, WOW_PROJECT_CAMELOT = 
 ---@field printed string[] Each line the addon printed to chat, in order.
 ---@field client FakeClient The fake client the addon runs against.
 
---- The client's event system, as far as specs need it.
+--- The client's event system and addon list, as far as specs need them.
 ---@class FakeClient
 ---@field missingEvents table<string, true> Events this client doesn't know: registering one raises an error, as the
 --- client does. Specs add to it.
 ---@field frames table[] Every frame CreateFrame made, in order.
 ---@field fire fun(event: string, ...) Fires a WoW event at each frame registered for it, in creation order, calling
 --- its OnEvent script with (frame, event, ...). A unit event reaches a frame only for the units it registered.
+---@field addons table<string, FakeAddOn> The other addons installed, by folder name ("Pagle_QoL"), as C_AddOns
+--- reports them. One not listed is missing. Specs add to it.
+
+--- An installed addon, as the fake client's C_AddOns reports it.
+---@class FakeAddOn
+---@field enabled boolean? Enabled for the player's character in the AddOns list. Default true.
+---@field loaded boolean? Loaded this session. Default: whether it's enabled.
+---@field metadata table<string, string>? Its TOC fields, e.g. ["X-Pagle-API"] = "1".
+
+--- The player's character GUID, as UnitGUID("player") returns it.
+PLAYER_GUID = "Player-1-00000001"
 
 ---@return FakeClient
 local function newClient()
-	local client = { missingEvents = {}, frames = {} }
+	local client = { missingEvents = {}, frames = {}, addons = {} }
 
 	function client.fire(event, ...)
 		local unit = ...
@@ -134,6 +146,7 @@ local function clientStubs(client)
 		Enum = {
 			AddOnRestrictionType = { Combat = 0, Encounter = 1, ChallengeMode = 2, PvPMatch = 3, Map = 4, Chat = 5 },
 			AddOnRestrictionState = { Inactive = 0, Activating = 1, Active = 2 },
+			AddOnEnableState = { None = 0, Some = 1, All = 2 },
 		},
 		-- No area has a name, so the area index Core builds at PLAYER_LOGIN is empty.
 		C_Map = {
@@ -141,6 +154,32 @@ local function clientStubs(client)
 				return nil
 			end,
 		},
+		-- Reads client.addons. Folder names as the client takes them; an addon not listed is missing.
+		C_AddOns = {
+			GetAddOnInfo = function(name)
+				if client.addons[name] then
+					return name, name, "", true, nil
+				end
+				return name, nil, nil, false, "MISSING"
+			end,
+			-- Enum.AddOnEnableState: None 0, All 2. Enabled only for the player's own character.
+			GetAddOnEnableState = function(name, character)
+				local addon = client.addons[name]
+				return (addon and addon.enabled ~= false and character == PLAYER_GUID) and 2 or 0
+			end,
+			IsAddOnLoaded = function(name)
+				local addon = client.addons[name]
+				local loaded = addon ~= nil and (addon.loaded or (addon.loaded == nil and addon.enabled ~= false))
+				return loaded, loaded
+			end,
+			GetAddOnMetadata = function(name, field)
+				local addon = client.addons[name]
+				return addon and addon.metadata and addon.metadata[field]
+			end,
+		},
+		UnitGUID = function(unit)
+			return unit == "player" and PLAYER_GUID or nil
+		end,
 		GetLocale = function()
 			return "enUS"
 		end,
@@ -184,6 +223,14 @@ local function tocFiles(tocPath)
 	end
 	toc:close()
 	return files
+end
+
+--- The files addons/<name>/<name>.toc lists, in order, relative to the addon folder with forward slashes
+--- ("logic/Modules.lua").
+---@param name string
+---@return string[]
+function addonFiles(name)
+	return tocFiles("addons/" .. name .. "/" .. name .. ".toc")
 end
 
 --- Loads addons/<name>/<name>.toc and every file it lists, in order, as the client does, then fires
@@ -234,3 +281,6 @@ function loadAddon(name, globals, options)
 
 	return { ns = ns, env = env, printed = printed, client = client }
 end
+
+---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
+dofile("spec/support/fake_pagle.lua")

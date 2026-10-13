@@ -21,6 +21,7 @@ logic\ReportOnce.lua
 logic\Restriction.lua
 logic\WorkQueue.lua
 logic\Conditions.lua
+logic\Modules.lua
 logic\Catalogue.lua
 logic\Areas.lua
 adapter\Core.lua
@@ -29,3 +30,4 @@ adapter\Events.lua
 adapter\Restriction.lua
 adapter\Conditions.lua
 adapter\Catalogue.lua
+adapter\Modules.lua
