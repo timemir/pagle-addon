@@ -148,6 +148,24 @@ describe("The next-action button", function()
 			assert.are.equal("Lure", assert(shown(loaded)).label)
 		end)
 
+		it("shows Cast once a reel press didn't take, as the key casts then (QOL-R71, QOL-R35)", function()
+			local fake, client, loaded = start(function(_, client)
+				client.mainHandEnchant = 263
+			end)
+			fake.fire("CastStarted")
+			assert.are.equal("Reel", assert(shown(loaded)).label)
+
+			-- A press of F, then the reel wait passing with the channel still on.
+			client.keysDown.F = true
+			client.nextFrame()
+			client.keysDown.F = nil
+			client.nextFrame()
+			client.nextFrame(0.5)
+
+			assert.are.equal("SPELL Fishing", client.overrideAction("F"))
+			assert.are.same({ icon = FISHING_ICON, desaturated = false, label = "Cast", hotkey = "F" }, shown(loaded))
+		end)
+
 		it("shows the fishing set's icon with Gear while the gear step is ready (QOL-R71)", function()
 			local _, _, loaded = start(withGearStep)
 
