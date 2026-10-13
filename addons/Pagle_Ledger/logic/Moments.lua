@@ -96,7 +96,8 @@ end
 local celebrate = {}
 
 function celebrate.newSpecies(celebrated, _, earned, outlets)
-	local species, zone = earned.species --[[@as integer]], earned.zone --[[@as integer]]
+	local species = earned.species --[[@as integer]]
+	local zone = earned.zone --[[@as integer]]
 	-- The first Catch ever of a Species is also its first in the zone: it covers the pair (LED-R97).
 	if zone ~= 0 then
 		celebrated.speciesZones[speciesZone(species, zone)] = true
