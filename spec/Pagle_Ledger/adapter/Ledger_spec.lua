@@ -61,11 +61,13 @@ describe("Pagle_Ledger with Core", function()
 
 	it("adds nothing to the compartment menu or /pagle help (LED-R1, CORE-R50, CORE-R60)", function()
 		local loaded = loadAddon("Pagle_Ledger", FOREVER_GLOBALS)
+		local plain = loadAddon("Pagle", FOREVER_GLOBALS)
 		loaded.client.fire("PLAYER_LOGIN")
+		plain.client.fire("PLAYER_LOGIN")
 
 		loaded.env.SlashCmdList.PAGLE("help")
 
-		assert.are.same({ "Settings" }, compartmentMenu(loaded).texts())
+		assert.are.same(compartmentMenu(plain).texts(), compartmentMenu(loaded).texts())
 		assert.are.same({
 			"Pagle commands:",
 			"/pagle settings: open Pagle's settings (also /pagle on its own)",
@@ -132,13 +134,22 @@ describe("Pagle_Ledger with FakePagle", function()
 	end)
 
 	it("adds nothing to the fake's compartment menu, /pagle help or settings pages (LED-R1)", function()
+		local plain = newFakePagle()
+		plain.login()
 		local fake = newFakePagle()
 		fake.load("Pagle_Ledger")
 		fake.login()
 
 		fake.slash("help")
 
-		assert.are.equal(1, #fake.menu())
+		local function labels(menu)
+			local out = {}
+			for i, entry in ipairs(menu) do
+				out[i] = entry.label
+			end
+			return out
+		end
+		assert.are.same(labels(plain.menu()), labels(fake.menu()))
 		assert.are.equal(3, #fake.printed)
 		for _, topic in ipairs({ "fishing", "announcements", "trackers", "looks" }) do
 			assert.is_nil(fake.settingsPage(topic))
