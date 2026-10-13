@@ -125,12 +125,20 @@ function ns.SameArming(a, b)
 	return a.target.kind == b.target.kind and a.target.value == b.target.value and a.target.item == b.target.item
 end
 
+--- Whether action buttons fire on key-down: the `ActionButtonUseKeyDown` CVar is 1. A client that doesn't know the
+--- CVar fires on key-up (QOL-R27).
+---@param useKeyDown string? `GetCVar("ActionButtonUseKeyDown")`
+---@return boolean
+function ns.UsesKeyDown(useKeyDown)
+	return tonumber(useKeyDown) == 1
+end
+
 --- What ns.ACTION_BUTTON registers for, so a press fires it once (QOL-R27): clicks on key-down while the
 --- `ActionButtonUseKeyDown` CVar is 1, else on key-up.
 ---@param useKeyDown string? `GetCVar("ActionButtonUseKeyDown")`
 ---@return "AnyDown"|"AnyUp"
 function ns.ClickRegistration(useKeyDown)
-	return tonumber(useKeyDown) == 1 and "AnyDown" or "AnyUp"
+	return ns.UsesKeyDown(useKeyDown) and "AnyDown" or "AnyUp"
 end
 
 local MODIFIERS = { "ALT", "CTRL", "SHIFT", "META" }
