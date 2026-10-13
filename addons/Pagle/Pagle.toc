@@ -31,6 +31,7 @@ logic\Catalogue.lua
 logic\Areas.lua
 logic\Angler.lua
 logic\Fishing.lua
+logic\Diagnostics.lua
 logic\Settings.lua
 logic\Slash.lua
 logic\Menu.lua
@@ -46,6 +47,7 @@ adapter\Modules.lua
 adapter\CatchLog.lua
 adapter\Angler.lua
 adapter\Fishing.lua
+adapter\Diagnostics.lua
 adapter\Settings.lua
 adapter\Slash.lua
 adapter\Menu.lua

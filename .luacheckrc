@@ -22,6 +22,7 @@ stds.wow = {
 				"AddOnRestrictionType",
 				AddOnRestrictionState = { fields = { "Inactive" } },
 				AddOnEnableState = { fields = { "None" } }, -- CORE-R16
+				TooltipDataType = { fields = { "Object" } }, -- LOG-R80
 			},
 		},
 		-- Attaching a Module (CORE-R13, CORE-R16, CORE-R41); QoL's conflict check and its choices (QOL-R80, QOL-R83).
@@ -87,6 +88,8 @@ stds.wow = {
 		"GetLootSlotInfo",
 		"GetLootSlotLink",
 		"ERR_FISH_ESCAPED",
+		-- The diagnostics buffer (LOG-R81); TooltipDataProcessor, for its hovers (LOG-R80), is in stds.wow_variables.
+		"GetLocale",
 	},
 }
 
@@ -136,6 +139,13 @@ stds.wow_variables = {
 		-- Interface/AddOns/Blizzard_ChatFrameBase/Shared/SlashCommandsRegistry.lua: "_G.SlashCmdList = {};".
 		-- The compartment entry needs no table: Pagle.toc's AddonCompartmentFunc names a global, as the probe's did.
 		SlashCmdList = { fields = { PAGLE = { read_only = false } } },
+		-- A FrameXML table the dump doesn't list (LOG-R80). probes/fishing-signals/results/
+		-- 2026-10-11-build70338-report.md, "Packaging, Settings and events": "Tooltip post-call hook (type Object) | ok
+		-- (TooltipDataType.Object = 4); fired 31 times", and its client table shows TooltipDataProcessor with
+		-- AddTooltipPostCall on build 70338. Gethe/wow-ui-source branch forever at
+		-- 943764493e6b16d63ded3ab304150d1f05e58b57 ("1.60.1 (70338)"),
+		-- Interface/AddOns/Blizzard_SharedXMLGame/Tooltip/TooltipDataHandler.lua: "TooltipDataProcessor = {".
+		TooltipDataProcessor = { fields = { "AddTooltipPostCall" } },
 	},
 }
 
@@ -149,6 +159,7 @@ max_line_length = false -- StyLua owns line width, and it leaves long strings an
 exclude_files = {
 	"addons/*/libs/**", -- vendored, owned by scripts/update-ace3.sh
 	"types/**", -- LuaLS ---@meta stubs: declarations for the types stage, never loaded
+	"spec/scripts/fixtures/**", -- WTF files as the WoW client writes them: data the specs read, never our code
 	".tools/**",
 	".release/**",
 }

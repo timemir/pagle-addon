@@ -25,17 +25,18 @@ local OWNER = "Pagle fishing"
 ---@alias PagleFishingStateChangedHandler fun(event: "FishingStateChanged", state: PagleFishingState)
 
 -- Records a Cast that ended caught or got away (LOG-R9 steps 1 and 2): takes the Cast snapshot (LOG-R20), adds the
--- items, and appends the C1 entry for the current character at the snapshot's server time. Returns the record every
--- reader will see, or nil before PLAYER_LOGIN, when no character is current.
+-- items, and appends the C1 entry for the current character at the snapshot's server time, then its diagnostics
+-- entry (LOG-R81). Returns the record every reader will see, or nil before PLAYER_LOGIN, when no character is current.
 ---@param outcome "caught"|"gotAway"
 ---@param items PagleLootItem[]
+---@param startedAt number? GetTime() when the Cast's channel started
 ---@return PagleCast?
-local function recordCast(outcome, items)
+local function recordCast(outcome, items, startedAt)
 	local char = ns.angler and ns.angler.current
 	if not char then
 		return nil
 	end
-	local snapshot = ns.TakeSnapshot()
+	local snapshot, unresolved = ns.TakeSnapshot()
 	local cast = ns.catchLog:Append({
 		kind = "cast",
 		char = char,
@@ -45,6 +46,7 @@ local function recordCast(outcome, items)
 		items = items,
 	})
 	---@cast cast PagleCast
+	ns.AddCastDiagnostic(cast, unresolved, startedAt)
 	return cast
 end
 
