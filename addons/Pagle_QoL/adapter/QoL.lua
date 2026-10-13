@@ -13,7 +13,6 @@ ns.QoL = LibStub("AceAddon-3.0"):NewAddon(addonName)
 function ns.QoL.OnInitialize()
 	--- QoL's Module handle: the calls that act for QoL (CORE-R12). Nil while QoL is inert.
 	ns.Module = Pagle.RegisterModule(ns.ModuleDef(function(topic)
-		---@diagnostic disable-next-line: undefined-field -- Pagle.OpenSettings arrives with the Settings root (#66)
 		Pagle.OpenSettings(topic)
 	end))
 	-- An inert Module must stop (CORE-R13).
