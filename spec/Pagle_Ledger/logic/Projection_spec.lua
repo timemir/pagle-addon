@@ -24,6 +24,9 @@ describe("the Ledger's projection def", function()
 			SetSummaryLine = note("SetSummaryLine"),
 			ItemName = function() end,
 			ZoneName = function() end,
+			RaiseWriteUp = note("RaiseWriteUp"),
+			LogId = function() end,
+			FormatNumber = tostring,
 		}
 	end
 	local outlets = noting({})
@@ -118,16 +121,115 @@ describe("the Ledger's projection def", function()
 		end
 	)
 
-	it("celebrates nothing in its done yet: ticket #102 builds it (LED-R93)", function()
-		local calls = {}
-		local global = {}
-		local def = ns.ProjectionDef(global, lookups, noting(calls))
+	-- Outlets for done: moments as "<kind> <title> / <text> <coins> <summaryOnly>", Write-up sections as their heading
+	-- then lines, both in `raised`, on the log "log".
+	---@param raised (string|string[])[]
+	---@return LedgerOutlets
+	local function collecting(raised)
+		local collected = noting({})
+		collected.RaiseMoment = function(moment)
+			raised[#raised + 1] = ("%s %s / %s %s %s"):format(
+				moment.kind,
+				moment.title,
+				tostring(moment.text),
+				tostring(moment.coins),
+				tostring(moment.summaryOnly)
+			)
+		end
+		collected.RaiseWriteUp = function(section)
+			raised[#raised + 1] = { section.heading, unpack(section.lines) }
+		end
+		collected.LogId = function()
+			return "log"
+		end
+		collected.FormatNumber = breakUpLargeNumbers
+		return collected
+	end
+
+	-- A got-away Cast, entry `seq`.
+	local function gotAway(seq)
+		return {
+			kind = "cast",
+			seq = seq,
+			id = "x-" .. seq,
+			char = 1,
+			time = seq,
+			outcome = "gotAway",
+			conditions = { minute = 0, zone = 0, subzone = 0, events = {}, auras = {} },
+			items = {},
+		}
+	end
+
+	it("merges a rebuild's new levels into one summary-only levelUp for the highest (LED-R93, LED-R97)", function()
+		local raised = {}
+		local global = { celebrated = { logId = "log" } }
+		local def = ns.ProjectionDef(global, lookups, collecting(raised))
+		local state = def.reset()
+		-- 1,000 XP each: level 2 (1,080) at the second, level 3 (2,240) at the third.
+		def.apply(state, reading(1, 80), "rebuild")
+		def.apply(state, reading(2, 160), "rebuild")
+		def.apply(state, reading(3, 230), "rebuild")
+
+		def.done(state, { firstBuild = false, rebuilt = true, replayed = 0 })
+
+		assert.are.same({
+			"skillMilestone Skill Milestone / Fishing 75 nil true",
+			"skillMilestone Skill Milestone / Fishing 150 nil true",
+			"skillMilestone Skill Milestone / Fishing 225 nil true",
+			"levelUp Angler Level 3 / +2 levels 40 true",
+		}, raised)
+		assert.are.same({ [0] = 3 }, global.celebrated.levels)
+	end)
+
+	it("clears the scratch list after done: the next done raises nothing again (LED-R98)", function()
+		local raised = {}
+		local def = ns.ProjectionDef({ celebrated = { logId = "log" } }, lookups, collecting(raised))
 		local state = def.reset()
 		def.apply(state, reading(1, 80), "rebuild")
+		def.done(state, { firstBuild = false, rebuilt = true, replayed = 0 })
+
+		def.done(state, { firstBuild = false, rebuilt = true, replayed = 0 })
+
+		assert.are.equal(1, #raised)
+	end)
+
+	it("heads a first build with the Casts applied, as BreakUpLargeNumbers writes them (LED-R93)", function()
+		local raised = {}
+		local def = ns.ProjectionDef({}, lookups, collecting(raised))
+		local state = def.reset()
+		for seq = 1, 1234 do
+			def.apply(state, gotAway(seq), "rebuild")
+		end
 
 		def.done(state, { firstBuild = true, rebuilt = true, replayed = 0 })
 
-		assert.are.same({}, calls)
-		assert.is_nil(global.celebrated)
+		assert.are.same({ { "Your Ledger was written up from 1,234 Casts", "Angler Level 1" } }, raised)
 	end)
+
+	it("writes up a catch-up's Skill Milestones, in the singular for one (LED-R94)", function()
+		local raised = {}
+		local def = ns.ProjectionDef({ celebrated = { logId = "log" } }, lookups, collecting(raised))
+		local state = def.reset()
+		def.apply(state, reading(1, 80), "replay")
+
+		def.done(state, { firstBuild = false, rebuilt = false, replayed = 1 })
+
+		assert.are.same({ { "While the Ledger was off", "1 Skill Milestone" } }, raised)
+	end)
+
+	it(
+		"writes up no catch-up that earned nothing new: a celebrated Skill Milestone, a got-away Cast (LED-R93)",
+		function()
+			local raised = {}
+			local global = { celebrated = { logId = "log", skill = { [75] = true } } }
+			local def = ns.ProjectionDef(global, lookups, collecting(raised))
+			local state = def.reset()
+			def.apply(state, reading(1, 80), "replay")
+			def.apply(state, gotAway(2), "replay")
+
+			def.done(state, { firstBuild = false, rebuilt = false, replayed = 2 })
+
+			assert.are.same({}, raised)
+		end
+	)
 end)

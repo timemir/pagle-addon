@@ -31,8 +31,8 @@ function ns.Ledger.OnInitialize()
 	)
 end
 
---- Where the Ledger's live moments, Coins and summary line go, and the client's names they read (LED-R89, LED-R95,
---- LED-R97).
+--- Where the Ledger's moments, Write-up sections, Coins and summary line go, and what they read: the client's names
+--- and numbers, and the Angler's logId (LED-R89, LED-R90, LED-R93–R95, LED-R97).
 ---@param module PagleModuleHandle
 ---@return LedgerOutlets
 function ns.Outlets(module)
@@ -51,6 +51,15 @@ function ns.Outlets(module)
 		end,
 		ZoneName = function(zone)
 			return (C_Map.GetAreaInfo(zone))
+		end,
+		RaiseWriteUp = function(section)
+			module:RaiseWriteUp(section)
+		end,
+		LogId = function()
+			return Pagle.GetAngler().logId
+		end,
+		FormatNumber = function(n)
+			return BreakUpLargeNumbers(n)
 		end,
 	}
 end

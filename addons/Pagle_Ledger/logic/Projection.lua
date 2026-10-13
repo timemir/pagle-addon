@@ -22,7 +22,7 @@ end
 ---
 --- A `"live"` entry's achievements are celebrated as it is applied (LED-R91): their moments raised, Coins reported
 --- and the summary line set through `outlets`. A `"replay"` or `"rebuild"` entry's go to the scratch list (LED-R98),
---- which `reset` and `done` clear; `done` reads it in ticket #102.
+--- which `reset` and `done` clear; `done` reads it (LED-R93, logic/Done.lua).
 ---@param global table PagleLedgerDB's global section
 ---@param lookups LedgerLookups Core's lookups
 ---@param outlets LedgerOutlets
@@ -81,8 +81,11 @@ function ns.ProjectionDef(global, lookups, outlets, sizeRulesVersion)
 				fold.apply(state, record, mode, scratch)
 			end
 		end,
-		done = function()
+		-- LED-R93: the first build's, rebuild's or catch-up's celebration, then Coins and the summary line.
+		done = function(state, info)
+			local celebrated = ns.CelebrateDone(global, state, scratch, info, outlets)
 			scratch = {}
+			setSummaryLine(state, celebrated)
 		end,
 	}
 end
