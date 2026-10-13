@@ -16,6 +16,11 @@ def test_lists_keep_their_order_and_nested_tables_go_one_entry_per_line() -> Non
     assert to_lua({"pools": {"school": [3, 1]}, "x": []}) == expected
 
 
+def test_a_table_of_scalars_and_empty_tables_goes_on_one_line() -> None:
+    # DATA-R62's determinism, and DATA-R79's area shape: an area with empty catches stays one line per area.
+    assert to_lua({1: {"catches": [], "parent": 0}}) == "{\n\t[1] = { catches = {}, parent = 0 },\n}"
+
+
 def test_strings_are_escaped_and_keys_that_are_not_names_are_bracketed() -> None:
     # Lua 5.1 syntax: keywords and non-identifiers can't be bare keys.
     expected = '{ ["end"] = "a\\"b\\\\c\\nd\\009e", ["two words"] = "é" }'

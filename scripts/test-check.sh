@@ -199,6 +199,10 @@ printf 'auras = [1]\nfishingSpells = [7620]\n' >"$scratch/tree/data/forever/list
 expect "a data/ change committed without its regenerated file fails generator" generator \
 	"addons/Pagle/data/Catalogue.lua is out of date with data/"
 
+copy
+printf 'x1,0,0,Planted\n' >>"$scratch/tree/data/db2/areas.csv"
+expect "an areas.csv row with a non-integer ID fails generator" generator "ID: expected a positive integer, got 'x1'"
+
 if ((failures)); then
 	echo "test-check: $failures failed" >&2
 	exit 1

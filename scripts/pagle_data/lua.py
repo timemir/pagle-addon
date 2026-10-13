@@ -1,7 +1,8 @@
 """Writes Python values as Lua 5.1 table constructors, deterministically (DATA-R62).
 
 Map keys come out in ascending order: numbers numerically, then strings by byte. Lists keep their order. A table
-whose values are all scalars goes on one line; any other table puts each entry on its own line, indented by tabs.
+whose values are all scalars or empty tables goes on one line; any other table puts each entry on its own line,
+indented by tabs.
 Only booleans, integers, strings, lists and mappings with integer or string keys are written; anything else (a
 float, None) is a generator bug and raises TypeError.
 """
@@ -41,6 +42,10 @@ def _scalar(value: object) -> str | None:
     return None
 
 
+def _empty(value: object) -> bool:
+    return isinstance(value, list | Mapping) and not value
+
+
 def _key(key: object) -> str:
     if isinstance(key, bool) or not isinstance(key, int | str):
         raise TypeError(f"a Lua map key must be an integer or a string, not {key!r}")
@@ -75,7 +80,7 @@ def to_lua(value: object, indent: int = 0) -> str:
     entries = _entries(value)
     if not entries:
         return "{}"
-    if all(_scalar(item) is not None for _, item in entries):
+    if all(_scalar(item) is not None or _empty(item) for _, item in entries):
         parts = [f"{key} = {to_lua(item)}" if key else to_lua(item) for key, item in entries]
         return "{ " + ", ".join(parts) + " }"
     inner = "\t" * (indent + 1)

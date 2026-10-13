@@ -10,7 +10,7 @@ xfail_strict = true
 
 [tool.mypy]
 # Run from the repo root: mypy --config-file scripts/pyproject.toml
-files = ["scripts/pagle_data", "scripts/tests", "scripts/generate-data.py"]
+files = ["scripts/pagle_data", "scripts/tests", "scripts/generate-data.py", "scripts/update-db2.py"]
 python_version = "3.12"
 strict = true
 cache_dir = ".tools/cache/mypy"
