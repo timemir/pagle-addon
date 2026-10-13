@@ -45,6 +45,11 @@ inventory_add() {
 addon="$scratch/tree/addons/Pagle"
 toc="$addon/Pagle.toc"
 
+# Writes a Lua file that calls the WoW global CreateFrame.
+uses_create_frame() {
+	printf 'local frame = CreateFrame("Frame")\nreturn frame\n' >"$1"
+}
+
 # Drops a file from Pagle.toc.
 toc_drop() {
 	grep -vxF "$1" "$toc" >"$toc.new"
@@ -70,21 +75,21 @@ printf 'local t = {a=1}\nreturn t\n' >"$addon/logic/Badly.lua"
 expect "a badly formatted file fails format" format "Diff in addons/Pagle/logic/Badly.lua"
 
 copy
-printf 'local frame = CreateFrame("Frame")\nreturn frame\n' >"$addon/logic/Global.lua"
+uses_create_frame "$addon/logic/Global.lua"
 inventory_add CreateFrame
 expect "a WoW global in logic/ fails lint, even when inventoried" lint "accessing undefined variable 'CreateFrame'"
 
 copy
-printf 'local frame = CreateFrame("Frame")\nreturn frame\n' >"$addon/locale/Global.lua"
+uses_create_frame "$addon/locale/Global.lua"
 inventory_add CreateFrame
 expect "a WoW global in locale/ fails lint, even when inventoried" lint "accessing undefined variable 'CreateFrame'"
 
 copy
-printf 'local frame = CreateFrame("Frame")\nreturn frame\n' >"$addon/adapter/Global.lua"
+uses_create_frame "$addon/adapter/Global.lua"
 expect "a WoW global in adapter/ fails lint until inventoried" lint "accessing undefined variable 'CreateFrame'"
 
 copy
-printf 'local frame = CreateFrame("Frame")\nreturn frame\n' >"$addon/adapter/Global.lua"
+uses_create_frame "$addon/adapter/Global.lua"
 inventory_add CreateFrame
 expect "a WoW global in adapter/ passes once inventoried" pass
 
