@@ -11,7 +11,7 @@ local function loadCore()
 	local loaded = loadAddon("Pagle", foreverWith({ PagleLog = savedLog() }))
 	loaded.client.addons.Pagle_Ledger = { metadata = { ["X-Pagle-API"] = "1" } }
 	local summarized = {}
-	function loaded.ns.SummarizeMoment(moment)
+	function loaded.ns.summary.Add(_, moment)
 		summarized[#summarized + 1] = moment
 	end
 	local M = loaded.env.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })

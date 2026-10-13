@@ -1,6 +1,6 @@
 -- M:RaiseMoment as Core runs it, through the real TOC (announcements.md › Moments and the ladder, › One Announcement
 -- per Cast; ADR 0007): Modules' projections raise moments on a live Cast, and Core hands one Announcement per Cast
--- to the display (ns.ShowAnnouncement, #84's) on a later frame, and each moment to the summary (#86's).
+-- to the display (ns.lanes, #84's) on a later frame, and each moment to the summary (ns.summary, #86's).
 
 local OILY_BLACKMOUTH = "|cffffffff|Hitem:6358::::::::15:::::::::|h[Oily Blackmouth]|h|r"
 local FISHING = 7731
@@ -23,10 +23,10 @@ local function loadCore(entries)
 		loaded.client.addons["Pagle_" .. name] = { metadata = { ["X-Pagle-API"] = "1" } }
 	end
 	local seen = { shown = {}, summarized = {}, reported = {} }
-	function loaded.ns.ShowAnnouncement(announcement)
+	function loaded.ns.lanes.Push(_, announcement)
 		seen.shown[#seen.shown + 1] = announcement
 	end
-	function loaded.ns.SummarizeMoment(moment)
+	function loaded.ns.summary.Add(_, moment)
 		seen.summarized[#seen.summarized + 1] = moment
 	end
 	loaded.env.geterrorhandler = function()

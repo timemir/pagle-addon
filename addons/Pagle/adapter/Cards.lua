@@ -257,10 +257,6 @@ local function show(card)
 	frame.scroll:SetHeight(math.max(1, listHeight))
 	frame:SetHeight(40 + (numbers and 54 or 0) + listHeight + 56)
 	frame:Show()
-	-- A Session summary showing ends the compartment's waiting count (ANN-R42).
-	if numbers then
-		ns.summary:SummaryShown()
-	end
 end
 
 -- logic/Cards.lua's hide, for the combat hold (ANN-R35): off screen without closing it, so it shows again after.
@@ -273,39 +269,16 @@ local function hide(card)
 	end
 end
 
---- Core's cards (ANN-R21, ANN-R54, ANN-R61): they wait for the projections' idle hook from load, then show whenever
---- the toast and big lanes are empty and not held through combat (ANN-R55).
----@type PagleCards
-ns.cards = ns.NewCards({
-	global = function()
-		return ns.db.global
-	end,
-	mode = function()
-		return ns.projections:Mode()
-	end,
-	whenIdle = function(fn)
-		ns.projections:WhenIdle(fn)
-	end,
-	nextFrame = function(step)
-		C_Timer.After(0, step)
-	end,
+--- Core's cards, as ns.cards, with M:RaiseWriteUp on every Module handle (logic/Wiring.lua; ANN-R21, ANN-R54,
+--- ANN-R61): they wait for the projections' idle hook from load, then show in the card frame whenever the toast and
+--- big lanes are empty and not held through combat (ANN-R55).
+ns.WireCards(ns.host, {
+	show = show,
+	hide = hide,
 	lanesEmpty = function()
 		return ns.lanes:IsEmpty()
 	end,
 	held = function()
 		return ns.lanes:IsHeld()
 	end,
-	cozy = function()
-		return ns.db.profile.announcements.cozy
-	end,
-	show = show,
-	hide = hide,
 })
-ns.cards:Start()
-
----@class PagleModuleHandle
-local ModuleHandle = ns.ModuleHandle
-
---- Raises a Write-up section from a projection's done (ANN-R60): see ns.RaiseWriteUpMethod. Raises an error outside
---- a done, or for a section without a heading or with lines that aren't strings.
-ModuleHandle.RaiseWriteUp = ns.RaiseWriteUpMethod(ns.Modules, ns.cards)
