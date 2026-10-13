@@ -33,22 +33,6 @@ local ns = select(2, ...)
 ---@field duration integer       -- minutes
 ---@field confirmed boolean
 
---- Core's accessors over one catalogue. The public ones are published on Pagle as they are (LOG-R55); the rest are
---- Core-internal (LOG-R56).
----@class PagleCatalogue
----@field CONTENT_FINGERPRINT string
----@field GetItem fun(itemID: integer): table?
----@field GetZones fun(): integer[]
----@field GetArea fun(areaID: integer): PagleArea?
----@field GetZoneOf fun(areaID: integer): integer?
----@field GetZoneCatches fun(zoneAreaID: integer): PagleZoneCatchEntry[]?
----@field GetWindowSpec fun(windowID: string): table?, boolean?
----@field IsFishingSpell fun(spellID: integer): boolean
----@field GetFishingAuras fun(): integer[]
----@field GetEventIDs fun(): integer[]
----@field GetEventRule fun(eventID: integer): PagleWeeklyRule?
----@field Unalias fun(areaID: integer): integer
-
 -- The keys of a table, ascending.
 ---@param map table<integer, any>
 ---@return integer[]
@@ -117,39 +101,54 @@ function ns.NewCatalogue(data)
 	end
 	local eventIDs = sortedKeys(data.events)
 
-	---@type PagleCatalogue
+	--- Core's accessors over one catalogue. The public ones are published on Pagle as they are (LOG-R55); the rest
+	--- are Core-internal (LOG-R56).
+	---@class PagleCatalogue
+	---@field CONTENT_FINGERPRINT string The generator's hash of the catalogue, lowercase hex (DATA-R70).
 	local catalogue = {
 		CONTENT_FINGERPRINT = data.fingerprint,
 	}
 
 	--- The item record, or nil for an Uncharted item (LOG-R55). Before M2 no item is charted (LOG-R57).
+	---@param itemID integer
+	---@return table?
 	function catalogue.GetItem(itemID)
 		return data.items[itemID]
 	end
 
 	--- Every zone areaID (`parent = 0`) in the AreaTable slice, ascending (LOG-R55).
+	---@return integer[]
 	function catalogue.GetZones()
 		return zones
 	end
 
 	--- The area's record, or nil for an area outside the slice (LOG-R55).
+	---@param areaID integer
+	---@return PagleArea?
 	function catalogue.GetArea(areaID)
 		return areas[areaID]
 	end
 
 	--- The zone areaID a subzone belongs to, itself for a zone, nil outside the slice (LOG-R55).
+	---@param areaID integer
+	---@return integer?
 	function catalogue.GetZoneOf(areaID)
 		return zoneOf(areaID)
 	end
 
 	--- Every catch entry of a zone and its subzones, each with the `areaID` it came from; nil for an areaID that
 	--- isn't a zone (LOG-R55).
+	---@param zoneAreaID integer
+	---@return PagleZoneCatchEntry[]?
 	function catalogue.GetZoneCatches(zoneAreaID)
 		return zoneCatches[zoneAreaID]
 	end
 
 	--- A named window's condition spec and its `confirmed`, or nil for a window the catalogue lacks (LOG-R55).
 	--- Before M2 there are none (DATA-R79).
+	---@param windowID string
+	---@return table? spec
+	---@return boolean? confirmed
 	function catalogue.GetWindowSpec(windowID)
 		local window = data.windows[windowID]
 		if window then
@@ -159,21 +158,27 @@ function ns.NewCatalogue(data)
 	end
 
 	--- Whether a spell is on the fishing-spell list (LOG-R2).
+	---@param spellID integer
+	---@return boolean
 	function catalogue.IsFishingSpell(spellID)
 		return fishingSpells[spellID] == true
 	end
 
 	--- The fishing-aura list (LOG-R20), ascending.
+	---@return integer[]
 	function catalogue.GetFishingAuras()
 		return data.auras
 	end
 
 	--- The event list's calendar event IDs (LOG-R46), ascending.
+	---@return integer[]
 	function catalogue.GetEventIDs()
 		return eventIDs
 	end
 
 	--- An event's weekly rule, or nil when it has none or isn't listed (LOG-R56).
+	---@param eventID integer
+	---@return PagleWeeklyRule?
 	function catalogue.GetEventRule(eventID)
 		local rule = data.events[eventID]
 		if rule and next(rule) ~= nil then
@@ -183,6 +188,8 @@ function ns.NewCatalogue(data)
 	end
 
 	--- The baseline area an alias source stands for, or the area itself (LOG-R22).
+	---@param areaID integer
+	---@return integer
 	function catalogue.Unalias(areaID)
 		return aliases[areaID] or areaID
 	end
