@@ -1,0 +1,117 @@
+---@class PagleNS
+local ns = select(2, ...)
+
+-- /pagle as data (CORE-R60–R62): which subcommand a line names, the Modules' subcommands and the help list. Pure
+-- logic, everything passed in (CORE-R7); adapter/Slash.lua registers the command and acts on what this resolves.
+
+--- Core's own subcommands, reserved for it (CORE-R61).
+ns.SLASH_RESERVED = { "help", "settings", "shop", "report" }
+
+--- Splits what follows `/pagle` into its subcommand, lowercased, and the rest of the line, trimmed (CORE-R62).
+---@param line string
+---@return string name "" when the line is blank
+---@return string args
+function ns.ParseSlash(line)
+	local name, args = line:match("^%s*(%S*)%s*(.-)%s*$")
+	return name:lower(), args
+end
+
+--- A Module's subcommand (CORE-R62).
+---@class PagleSlashCommand
+---@field name string   as the Module wrote it
+---@field fn fun(args: string)
+---@field help string
+
+--- The Modules' subcommands, by lowercased name, and in the order they were added.
+---@class PagleSlashCommands
+---@field private reserved table<string, true>
+---@field private owners table<string, string>   the def.name that added each name, by lowercased name
+---@field private byName table<string, PagleSlashCommand>
+---@field private list PagleSlashCommand[]
+local Commands = {}
+Commands.__index = Commands
+
+---@return PagleSlashCommands
+function ns.NewSlashCommands()
+	local reserved = {}
+	for _, name in ipairs(ns.SLASH_RESERVED) do
+		reserved[name] = true
+	end
+	return setmetatable({ reserved = reserved, owners = {}, byName = {}, list = {} }, Commands)
+end
+
+-- Why a Module's slash entry can't be added, or nil if it can (CORE-R62).
+---@private
+---@param module string def.name
+---@param entry any
+---@return string?
+function Commands:Problem(module, entry)
+	local name = type(entry) == "table" and entry.name
+	if type(name) ~= "string" or not name:match("^%S+$") then
+		return ("Pagle: %s's /pagle entry %s has no one-word name; it is skipped"):format(module, tostring(name))
+	elseif type(entry.fn) ~= "function" then
+		return ("Pagle: %s's /pagle %s has no fn; it is skipped"):format(module, name)
+	end
+	local key = name:lower()
+	if self.reserved[key] then
+		return ("Pagle: %s's /pagle %s is skipped: Pagle reserves %s"):format(module, name, key)
+	elseif self.owners[key] then
+		return ("Pagle: %s's /pagle %s is skipped: %s already uses it"):format(module, name, self.owners[key])
+	end
+	return nil
+end
+
+--- Adds a Module's `def.slash` entries (CORE-R62). An entry whose name collides with a reserved one or one added
+--- before, case-insensitively, is skipped; the rest are added. Returns why, for each entry skipped.
+---@param def PagleModuleDef
+---@return string[] problems
+function Commands:Add(def)
+	local problems = {}
+	for _, entry in ipairs(def.slash or {}) do
+		local problem = self:Problem(def.name, entry)
+		if problem then
+			problems[#problems + 1] = problem
+		else
+			local key = entry.name:lower()
+			local help = type(entry.help) == "string" and entry.help or ""
+			local command = { name = entry.name, fn = entry.fn, help = help }
+			self.owners[key] = def.name
+			self.byName[key] = command
+			self.list[#self.list + 1] = command
+		end
+	end
+	return problems
+end
+
+--- What `/pagle <line>` does (CORE-R60–R62): `"settings"` with no argument or `settings`; `"module"` with the
+--- Module subcommand it names and the rest of the line, trimmed; otherwise `"help"`. That covers `help`, an unknown
+--- name, and `shop` and `report` until their surfaces exist (M4, M3).
+---@param line string what follows /pagle
+---@return "settings"|"module"|"help" action
+---@return PagleSlashCommand? command
+---@return string? args
+function Commands:Resolve(line)
+	local name, args = ns.ParseSlash(line)
+	if name == "" or name == "settings" then
+		return "settings"
+	end
+	local command = self.byName[name]
+	if command then
+		return "module", command, args
+	end
+	return "help"
+end
+
+--- The help list (CORE-R60): its header, Core's commands, then each Module subcommand in the order added.
+---@return string[]
+function Commands:HelpLines()
+	local L = ns.L
+	local lines = { L.SLASH_HELP_HEADER }
+	for _, core in ipairs(L.SLASH_CORE_HELP) do
+		lines[#lines + 1] = L.SLASH_HELP_LINE:format(core.name, core.help)
+	end
+	for _, command in ipairs(self.list) do
+		lines[#lines + 1] = L.SLASH_HELP_LINE:format(command.name, command.help)
+	end
+	return lines
+end

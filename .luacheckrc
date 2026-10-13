@@ -36,6 +36,9 @@ stds.wow = {
 		C_KeyBindings = { fields = { "GetBindingIndex" } },
 		"SettingsPanel",
 		"HideUIPanel",
+		-- The compartment menu (CORE-R50): a context menu, opened a frame after the compartment's click.
+		MenuUtil = { fields = { "CreateContextMenu" } },
+		C_Timer = { fields = { "After" } },
 		-- The Catch log (LOG-R11, LOG-R15).
 		"GetServerTime",
 		-- The runtime area index and zone resolution (LOG-R22, LOG-R23).
@@ -117,6 +120,13 @@ stds.wow_variables = {
 		-- Interface/AddOns/Blizzard_StaticPopup/StaticPopup.lua: `StaticPopupDialogs = {}; -- Definitions`. QoL adds
 		-- its one dialog to it.
 		StaticPopupDialogs = { fields = { PAGLE_QOL_CONFLICT = { read_only = false } } },
+		-- A FrameXML table the dump doesn't list (CORE-R60). probes/fishing-signals/results/
+		-- 2026-10-11-build70338-report.md is the /pprobe report from build 70338, and /pprobe is registered with
+		-- SlashCmdList.PAGLEPROBE (probes/fishing-signals/PagleProbe/Report.lua). Gethe/wow-ui-source branch forever at
+		-- 943764493e6b16d63ded3ab304150d1f05e58b57 ("1.60.1 (70338)"),
+		-- Interface/AddOns/Blizzard_ChatFrameBase/Shared/SlashCommandsRegistry.lua: "_G.SlashCmdList = {};".
+		-- The compartment entry needs no table: Pagle.toc's AddonCompartmentFunc names a global, as the probe's did.
+		SlashCmdList = { fields = { PAGLE = { read_only = false } } },
 	},
 }
 
@@ -139,6 +149,9 @@ exclude_files = {
 files["addons/*/adapter/**"] = { std = "lua51+wow+wow_variables+pagle" }
 -- Only Core's adapter creates the Pagle global.
 files["addons/Pagle/adapter/**"] = { globals = { "Pagle" } }
+-- /pagle's name, and the global Pagle.toc's AddonCompartmentFunc names (CORE-R50, CORE-R60).
+files["addons/Pagle/adapter/Slash.lua"] = { globals = { "SLASH_PAGLE1" } }
+files["addons/Pagle/adapter/Menu.lua"] = { globals = { "Pagle_OnAddonCompartmentClick" } }
 -- Every Module file reads Pagle, for its CORE-R11 guard, so logic/ and locale/ may too; nothing else from Core.
 files["addons/Pagle_*/**"] = { read_globals = { "Pagle" } }
 -- QoL's adapter names its Bindings.xml entries for Key Bindings › AddOns (QOL-R1).

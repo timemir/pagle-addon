@@ -57,6 +57,10 @@ FOREVER_GLOBALS = { WOW_PROJECT_ID = PROJECT_IDS.CAMELOT, WOW_PROJECT_CAMELOT = 
 --- passes, in time order.
 ---@field newTicker fun(period: number, callback: fun(ticker: table)): table What C_Timer.NewTicker(period, callback)
 --- does: a ticker, with Cancel and IsCancelled, that runs callback every period seconds of advance.
+---@field menus table[] Every context menu MenuUtil.CreateContextMenu opened, in order. Each has `buttons`
+--- ({ text, callback }), `texts()` and `click(text)`.
+---@field timers { seconds: number, callback: fun() }[] The C_Timer.After callbacks not yet run, in order.
+---@field runTimers fun() Runs every queued timer, as the next frames would.
 
 --- An installed addon, as the fake client's C_AddOns reports it.
 ---@class FakeAddOn
@@ -505,6 +509,63 @@ local function settingsStubs(client, stubs)
 	end
 end
 
+-- Slash commands, context menus and next-frame timers (Blizzard_ChatFrameBase and Blizzard_Menu at the forever
+-- 1.60.1 commit, see .luacheckrc), recording into client.menus and client.timers.
+---@param client FakeClient
+---@param stubs table<string, any>
+local function menuStubs(client, stubs)
+	stubs.SlashCmdList = {}
+	client.menus = {}
+	client.timers = {}
+
+	-- As MenuUtil.CreateContextMenu: the generator fills a root description now, and the menu opens at the cursor.
+	stubs.MenuUtil = {
+		CreateContextMenu = function(owner, generator, ...)
+			local menu = { owner = owner, buttons = {} }
+			local root = {}
+			function root.CreateButton(_, text, callback, data)
+				local button = { text = text, callback = callback, data = data }
+				menu.buttons[#menu.buttons + 1] = button
+				return button
+			end
+			generator(owner, root, ...)
+			-- The texts of its buttons, in order.
+			function menu.texts()
+				local texts = {}
+				for i, button in ipairs(menu.buttons) do
+					texts[i] = button.text
+				end
+				return texts
+			end
+			-- Clicks the button with this text, as a mouse click does.
+			function menu.click(text)
+				for _, button in ipairs(menu.buttons) do
+					if button.text == text then
+						return button.callback(button.data, { buttonName = "LeftButton" }, menu)
+					end
+				end
+				error("no menu button " .. tostring(text))
+			end
+			client.menus[#client.menus + 1] = menu
+			return menu
+		end,
+	}
+
+	stubs.C_Timer = {
+		After = function(seconds, callback)
+			client.timers[#client.timers + 1] = { seconds = seconds, callback = callback }
+		end,
+	}
+	-- Runs every timer queued so far, as the next frames would, in order.
+	function client.runTimers()
+		local due = client.timers
+		client.timers = {}
+		for _, timer in ipairs(due) do
+			timer.callback()
+		end
+	end
+end
+
 -- The WoW API the addons call, answering as one fixed character on a US realm, out of combat, with no addon
 -- restriction active and no secret values.
 ---@param client FakeClient
@@ -674,6 +735,7 @@ local function clientStubs(client)
 		end,
 	}
 	settingsStubs(client, stubs)
+	menuStubs(client, stubs)
 	return stubs
 end
 
