@@ -298,10 +298,17 @@ describe("the realm date of a Cast", function()
 			assert.are.equal(345, ns.RealmUtcOffset(1792002600, 15)) -- 18:30 UTC, 00:15 next day at +05:45
 		end)
 
-		it("is kept within ±12 hours when the realm and UTC days differ (LOG-R49)", function()
+		it("is taken in the 24 hours after -10, up to +14, when the realm and UTC days differ (LOG-R49)", function()
 			assert.are.equal(660, ns.RealmUtcOffset(1792015200, 540)) -- 22:00 UTC, 09:00 next day realm: +11, not -13
-			assert.are.equal(-600, ns.RealmUtcOffset(1791954000, 1140)) -- 05:00 UTC, 19:00 day before realm: -10, not +14
 			assert.are.equal(-420, ns.RealmUtcOffset(1792033200, 1200)) -- 03:00 UTC, 20:00 day before realm: -7
+			assert.are.equal(-585, ns.RealmUtcOffset(1792015200, 735)) -- 22:00 UTC, 12:15 realm: -9:45, not +14:15
+		end)
+
+		it("keeps +13 (NZDT) and +14 (Kiribati) east of UTC, whichever day the realm is on (LOG-R49)", function()
+			assert.are.equal(780, ns.RealmUtcOffset(1791936000, 780)) -- 00:00 UTC, 13:00 realm
+			assert.are.equal(780, ns.RealmUtcOffset(1791979200, 60)) -- 12:00 UTC, 01:00 next day realm
+			assert.are.equal(840, ns.RealmUtcOffset(1791936000, 840)) -- 00:00 UTC, 14:00 realm
+			assert.are.equal(840, ns.RealmUtcOffset(1791975600, 60)) -- 11:00 UTC, 01:00 next day realm
 		end)
 
 		it("reads a 12-hour difference as +12, east of UTC, whichever day it falls on (LOG-R49)", function()
@@ -309,11 +316,15 @@ describe("the realm date of a Cast", function()
 			assert.are.equal(720, ns.RealmUtcOffset(1791982800, 60)) -- 13:00 UTC, 01:00 next day realm
 		end)
 
-		it("wraps an offset that rounds past ±12 hours to the other side (LOG-R49)", function()
-			-- 00:00 UTC with the realm clock at 12:08: +12:08 rounds to +12:15, which is -11:45.
-			assert.are.equal(-705, ns.RealmUtcOffset(1791936000, 728))
-			-- 23:00 UTC with the realm clock at 10:52: -12:08 rounds to -12:15, which is +11:45.
-			assert.are.equal(705, ns.RealmUtcOffset(1792018800, 652))
+		it("reads a 10-hour difference west as +14, the end of the range a minute of day can't tell apart (LOG-R49)", function()
+			assert.are.equal(840, ns.RealmUtcOffset(1791954000, 1140)) -- 05:00 UTC, 19:00: -10 or +14
+		end)
+
+		it("wraps an offset that rounds past the range to the other side (LOG-R49)", function()
+			-- 00:00 UTC with the realm clock at 14:08: +14:08 rounds to +14:15, which is -9:45.
+			assert.are.equal(-585, ns.RealmUtcOffset(1791936000, 848))
+			-- 23:00 UTC with the realm clock at 13:07: -9:53 rounds to -10:00, which is +14:00.
+			assert.are.equal(840, ns.RealmUtcOffset(1792018800, 787))
 		end)
 	end)
 
@@ -335,6 +346,11 @@ describe("the realm date of a Cast", function()
 		it("is the UTC date east and west of UTC when both are on the same day (LOG-R49)", function()
 			assert.are.same({ year = 2026, month = 10, day = 14, weekday = 4 }, ns.RealmDate(1791972000, 720))
 			assert.are.same({ year = 2026, month = 10, day = 14, weekday = 4 }, ns.RealmDate(1792000800, 780))
+		end)
+
+		it("is the day after the UTC date at +13 once the realm's day has started (LOG-R49)", function()
+			-- 2026-10-14 12:00 UTC is Thursday 15 Oct 01:00 at UTC+13.
+			assert.are.same({ year = 2026, month = 10, day = 15, weekday = 5 }, ns.RealmDate(1791979200, 60))
 		end)
 
 		it("crosses the year in each direction (LOG-R49)", function()

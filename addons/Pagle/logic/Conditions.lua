@@ -329,20 +329,24 @@ end
 local MINUTES_PER_DAY = 1440
 local SECONDS_PER_DAY = 86400
 local OFFSET_STEP = 15 -- minutes the realm's UTC offset is rounded to (Tunables, LOG-R49)
-local MAX_OFFSET = 720 -- ±12 hours, in minutes
+-- A realm minute fixes the offset only to within a day, so it is taken in one 24-hour range: real offsets run from
+-- -12 to +14 hours, and the range keeps every one east of UTC (+13 NZDT, +14 Kiribati), reading -10 to -12, where no
+-- realm runs, as +14 to +12 (LOG-R49).
+local MIN_OFFSET = -600 -- -10 hours, in minutes, excluded
+local MAX_OFFSET = 840 -- +14 hours, in minutes, included
 
 --- The realm's UTC offset in minutes, from a server time and the realm minute of day read with it (LOG-R49): the
---- realm minute less the UTC minute, rounded to 15 minutes and kept within ±12 hours. A difference that falls
---- outside them is a day out, as when the realm and UTC days differ, and wraps; exactly 12 hours reads as +12.
+--- realm minute less the UTC minute, rounded to 15 minutes. A difference outside (-10, +14] hours is a day out, as
+--- when the realm and UTC days differ, and wraps by a day into that range.
 ---@param serverTime integer `GetServerTime()`, UTC epoch seconds
 ---@param realmMinute integer realm minute of day, 0–1439
----@return integer offset minutes east of UTC, -705 to 720
+---@return integer offset minutes east of UTC, -585 to 840
 function ns.RealmUtcOffset(serverTime, realmMinute)
 	local utcMinute = math.floor(serverTime / 60) % MINUTES_PER_DAY
 	local offset = math.floor((realmMinute - utcMinute) / OFFSET_STEP + 0.5) * OFFSET_STEP
 	if offset > MAX_OFFSET then
 		offset = offset - MINUTES_PER_DAY
-	elseif offset <= -MAX_OFFSET then
+	elseif offset <= MIN_OFFSET then
 		offset = offset + MINUTES_PER_DAY
 	end
 	return offset
