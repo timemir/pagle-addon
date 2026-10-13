@@ -18,7 +18,7 @@ ID,ParentAreaID,ContinentID,AreaName_lang
 18,12,0,Crystal Lake
 19,16510,2940,Crystal Lake
 40,0,0,Westfall
-300,12,0,Crystal Lake
+300,0,0,Westfall
 16510,0,2940,Elwynn Forest
 16521,16510,2940,Crystal Lake
 16522,16510,2940,Stone Cairn Lake
@@ -131,3 +131,34 @@ def test_a_bad_alias_fails_and_writes_nothing(
     assert code == 1
     assert f"data/forever/aliases.toml: {problem}" in output
     assert not (tmp_path / CATALOGUE).exists()
+
+
+def test_propose_aliases_prints_each_candidate_ready_to_commit_and_writes_nothing(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    # DATA-R32: a candidate is an area with no catch list whose enUS name and parent's enUS name equal a baseline
+    # fishing area's, on a different ContinentID. In AREAS those are 16510 (→ 12), 16521 (→ 18) and 16531 (→ 40, two
+    # zones, so neither has a parent). Not 19 (its own catch list), 300 (on 40's continent), 16522 (no fishing area
+    # has its name) or 16530 (a Crystal Lake, but in Westfall). The output is aliases.toml's shape, with an empty
+    # why the dev must fill before the generator accepts it (DATA-R10).
+    write_tree(tmp_path)
+    code, output = run(tmp_path, capsys, "--propose-aliases")
+    assert code == 0
+    blocks = [
+        "[[alias]]\nfrom = 16510  # Elwynn Forest, continent 2940\nto = 12  # Elwynn Forest, continent 0\nwhy = \"\"\n",
+        "[[alias]]\nfrom = 16521  # Crystal Lake (Elwynn Forest), continent 2940\n"
+        "to = 18  # Crystal Lake (Elwynn Forest), continent 0\nwhy = \"\"\n",
+        "[[alias]]\nfrom = 16531  # Westfall, continent 2940\nto = 40  # Westfall, continent 0\nwhy = \"\"\n",
+    ]
+    assert "\n".join(blocks) in output
+    assert output.count("[[alias]]") == 3
+    assert not (tmp_path / CATALOGUE).exists()
+
+
+def test_a_committed_alias_is_no_longer_proposed(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    # DATA-R32: "A proposal takes effect only when committed to aliases.toml"; once it is, it is not a candidate.
+    write_tree(tmp_path, alias(16521, 18))
+    code, output = run(tmp_path, capsys, "--propose-aliases")
+    assert code == 0
+    assert "from = 16521" not in output
+    assert output.count("[[alias]]") == 2

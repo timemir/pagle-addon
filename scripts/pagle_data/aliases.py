@@ -68,3 +68,21 @@ def propose(db2: Db2Layer, fishing: Collection[int], committed: Iterable[Alias])
             if db2.areas[target].continent != area.continent:
                 proposals.append(Proposal(source, target))
     return proposals
+
+
+def _label(db2: Db2Layer, area_id: int) -> str:
+    """An area's enUS name, its parent's, and its continent, for the dev's review (never emitted, DATA-R3)."""
+    area = db2.areas[area_id]
+    parent = db2.areas.get(area.parent)
+    name = f"{area.name} ({parent.name})" if area.parent and parent is not None else area.name
+    return f"{name}, continent {area.continent}"
+
+
+def proposal_toml(db2: Db2Layer, proposal: Proposal) -> str:
+    """A proposal as an aliases.toml entry, its why left empty for the dev to fill (DATA-R10)."""
+    return (
+        "[[alias]]\n"
+        f"from = {proposal.source}  # {_label(db2, proposal.source)}\n"
+        f"to = {proposal.target}  # {_label(db2, proposal.target)}\n"
+        'why = ""\n'
+    )
