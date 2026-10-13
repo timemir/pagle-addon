@@ -48,7 +48,8 @@ FOREVER_GLOBALS = { WOW_PROJECT_ID = PROJECT_IDS.CAMELOT, WOW_PROJECT_CAMELOT = 
 --- them. loadAddon lists each addon it loads, with its TOC fields as metadata. One not listed is missing. Specs add
 --- to it.
 ---@field bindings string[] The key binding actions the client knows (Bindings.xml names), in binding index order,
---- as C_KeyBindings.GetBindingIndex reads them. Specs add to it.
+--- as C_KeyBindings.GetBindingIndex reads them. loadAddon adds each loaded addon's Bindings.xml names. Specs add
+--- to it.
 ---@field settings FakeSettings The Settings panel.
 ---@field tickers { period: number, due: number, callback: fun(ticker: table), cancelled: boolean }[] Every
 --- C_Timer.NewTicker, in creation order.
@@ -56,6 +57,11 @@ FOREVER_GLOBALS = { WOW_PROJECT_ID = PROJECT_IDS.CAMELOT, WOW_PROJECT_CAMELOT = 
 --- passes, in time order.
 ---@field newTicker fun(period: number, callback: fun(ticker: table)): table What C_Timer.NewTicker(period, callback)
 --- does: a ticker, with Cancel and IsCancelled, that runs callback every period seconds of advance.
+---@field menus table[] Every context menu MenuUtil.CreateContextMenu opened, in order. Each has `buttons`
+--- ({ text, callback }), `texts()` and `click(text)`.
+---@field timers { seconds: number, callback: fun(), ticker: table }[] The C_Timer.After callbacks not yet run, in
+--- order. Each also runs once advance has moved the clock `seconds` on.
+---@field runTimers fun() Runs every queued timer, as the next frames would.
 ---@field time fun(): number The client's clock, in seconds since the load, as GetTime() returns it; advance moves it.
 ---@field loot FakeLoot The loot window, as the loot API reads it.
 
@@ -80,6 +86,8 @@ PLAYER_GUID = "Player-1-00000001"
 ---@field categories table[] Every category registered with Settings.RegisterVerticalLayout*, in order. Each has
 --- `name`, `parent` (nil for a top-level one), `layout.initializers` and `GetID()`.
 ---@field addOnCategories table[] The categories passed to Settings.RegisterAddOnCategory, in order.
+---@field variables table<string, table> Each Settings.RegisterProxySetting setting by its variable name, with its
+--- `category`: what a page's Defaults button restores (SET-R60).
 ---@field opened table[] The category each Settings.OpenToCategory call opened (nil for an unknown ID), in order.
 ---@field panel table SettingsPanel: shown by OpenToCategory, hidden by HideUIPanel.
 ---@field category fun(name: string): table? The registered category with that name, if its top-level category is
@@ -522,6 +530,76 @@ local function settingsStubs(client, stubs)
 	end
 end
 
+-- Slash commands, context menus and next-frame timers (Blizzard_ChatFrameBase and Blizzard_Menu at the forever
+-- 1.60.1 commit, see .luacheckrc), recording into client.menus and client.timers.
+---@param client FakeClient
+---@param stubs table<string, any>
+local function menuStubs(client, stubs)
+	stubs.SlashCmdList = {}
+	client.menus = {}
+	client.timers = {}
+
+	-- As MenuUtil.CreateContextMenu: the generator fills a root description now, and the menu opens at the cursor.
+	stubs.MenuUtil = {
+		CreateContextMenu = function(owner, generator, ...)
+			local menu = { owner = owner, buttons = {} }
+			local root = {}
+			function root.CreateButton(_, text, callback, data)
+				local button = { text = text, callback = callback, data = data }
+				menu.buttons[#menu.buttons + 1] = button
+				return button
+			end
+			generator(owner, root, ...)
+			-- The texts of its buttons, in order.
+			function menu.texts()
+				local texts = {}
+				for i, button in ipairs(menu.buttons) do
+					texts[i] = button.text
+				end
+				return texts
+			end
+			-- Clicks the button with this text, as a mouse click does.
+			function menu.click(text)
+				for _, button in ipairs(menu.buttons) do
+					if button.text == text then
+						return button.callback(button.data, { buttonName = "LeftButton" }, menu)
+					end
+				end
+				error("no menu button " .. tostring(text))
+			end
+			client.menus[#client.menus + 1] = menu
+			return menu
+		end,
+	}
+
+	-- Beside C_Timer.NewTicker, which clientStubs already stubs for the conditions' polls. Each timer runs once: at
+	-- client.runTimers, or when client.advance has moved the clock `seconds` on (the fishing grace time), whichever
+	-- comes first.
+	stubs.C_Timer.After = function(seconds, callback)
+		local timer = { seconds = seconds, callback = callback }
+		timer.ticker = client.newTicker(seconds, function(ticker)
+			ticker:Cancel()
+			for i, queued in ipairs(client.timers) do
+				if queued == timer then
+					table.remove(client.timers, i)
+					break
+				end
+			end
+			callback()
+		end)
+		client.timers[#client.timers + 1] = timer
+	end
+	-- Runs every timer queued so far, as the next frames would, in order.
+	function client.runTimers()
+		local due = client.timers
+		client.timers = {}
+		for _, timer in ipairs(due) do
+			timer.ticker:Cancel()
+			timer.callback()
+		end
+	end
+end
+
 -- The WoW API the addons call, answering as one fixed character on a US realm, out of combat, with no addon
 -- restriction active and no secret values.
 ---@param client FakeClient
@@ -619,13 +697,7 @@ local function clientStubs(client)
 			NewTicker = function(seconds, callback)
 				return client.newTicker(seconds, callback)
 			end,
-			-- One run, once seconds of advance have passed.
-			After = function(seconds, callback)
-				client.newTicker(seconds, function(ticker)
-					ticker:Cancel()
-					callback()
-				end)
-			end,
+			-- C_Timer.After is with the menu stubs, which queue it for client.runTimers too.
 		},
 		GetTime = function()
 			return client.time()
@@ -721,6 +793,7 @@ local function clientStubs(client)
 		end,
 	}
 	settingsStubs(client, stubs)
+	menuStubs(client, stubs)
 	return stubs
 end
 
@@ -761,7 +834,8 @@ end
 --- Loads addons/<name>/<name>.toc and every file it lists, in order, as the client does, then fires
 --- ADDON_LOADED(name). Each addon its `## Dependencies` names is loaded first, the same way and into the same
 --- globals and fake client, as the client loads them: `loadAddon("Pagle_QoL")` runs Core, then QoL.
---- Each addon loaded is listed in client.addons, enabled and loaded, with its TOC fields as its metadata.
+--- Each addon loaded is listed in client.addons, enabled and loaded, with its TOC fields as its metadata, and the
+--- bindings its Bindings.xml names are added to client.bindings.
 --- Raises an error naming the TOC and the file if a listed file is missing or fails while loading.
 ---@param name string The addon's folder under addons/, which is also its TOC's name.
 ---@param globals table<string, any>? Globals the client defines for this load, e.g. WOW_PROJECT_ID. They replace
@@ -807,6 +881,15 @@ function loadAddon(name, globals, options)
 		end
 
 		client.addons[addon] = { enabled = true, loaded = true, metadata = fields }
+		-- The client reads an addon's Bindings.xml by name, not from its TOC.
+		---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io
+		local bindingsXml = io.open(dir .. "Bindings.xml", "r")
+		if bindingsXml then
+			for binding in bindingsXml:read("*a"):gsub("<!%-%-.-%-%->", ""):gmatch('<Binding%s[^>]*name="([^"]+)"') do
+				client.bindings[#client.bindings + 1] = binding
+			end
+			bindingsXml:close()
+		end
 		local ns = {}
 		namespaces[addon] = ns
 		for _, file in ipairs(files) do

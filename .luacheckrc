@@ -34,6 +34,9 @@ stds.wow = {
 		C_KeyBindings = { fields = { "GetBindingIndex" } },
 		"SettingsPanel",
 		"HideUIPanel",
+		-- The compartment menu (CORE-R50): a context menu, opened a frame after the compartment's click (C_Timer.After,
+		-- in the one C_Timer entry below).
+		MenuUtil = { fields = { "CreateContextMenu" } },
 		-- The Catch log (LOG-R11, LOG-R15).
 		"GetServerTime",
 		-- The runtime area index and zone resolution (LOG-R22, LOG-R23).
@@ -66,6 +69,8 @@ stds.wow = {
 		C_DateAndTime = { fields = { "GetCurrentCalendarTime" } },
 		C_Calendar = { fields = { "OpenCalendar", "GetMonthInfo", "GetNumDayEvents", "GetDayEvent" } },
 		C_UnitAuras = { fields = { "GetPlayerAuraBySpellID" } },
+		-- NewTicker for the conditions' polls; After for the compartment menu (CORE-R50) and the fishing grace time
+		-- (LOG-R7).
 		C_Timer = { fields = { "NewTicker", "After" } },
 		-- Observing fishing (LOG-R2–R8): the channel, the loot window, the escaped message and the grace time.
 		"GetTime",
@@ -111,6 +116,13 @@ stds.wow_variables = {
 				"CreateElementInitializer",
 			},
 		},
+		-- A FrameXML table the dump doesn't list (CORE-R60). probes/fishing-signals/results/
+		-- 2026-10-11-build70338-report.md is the /pprobe report from build 70338, and /pprobe is registered with
+		-- SlashCmdList.PAGLEPROBE (probes/fishing-signals/PagleProbe/Report.lua). Gethe/wow-ui-source branch forever at
+		-- 943764493e6b16d63ded3ab304150d1f05e58b57 ("1.60.1 (70338)"),
+		-- Interface/AddOns/Blizzard_ChatFrameBase/Shared/SlashCommandsRegistry.lua: "_G.SlashCmdList = {};".
+		-- The compartment entry needs no table: Pagle.toc's AddonCompartmentFunc names a global, as the probe's did.
+		SlashCmdList = { fields = { PAGLE = { read_only = false } } },
 	},
 }
 
@@ -133,6 +145,9 @@ exclude_files = {
 files["addons/*/adapter/**"] = { std = "lua51+wow+wow_variables+pagle" }
 -- Only Core's adapter creates the Pagle global.
 files["addons/Pagle/adapter/**"] = { globals = { "Pagle" } }
+-- /pagle's name, and the global Pagle.toc's AddonCompartmentFunc names (CORE-R50, CORE-R60).
+files["addons/Pagle/adapter/Slash.lua"] = { globals = { "SLASH_PAGLE1" } }
+files["addons/Pagle/adapter/Menu.lua"] = { globals = { "Pagle_OnAddonCompartmentClick" } }
 -- Every Module file reads Pagle, for its CORE-R11 guard, so logic/ and locale/ may too; nothing else from Core.
 files["addons/Pagle_*/**"] = { read_globals = { "Pagle" } }
 -- QoL's adapter names its Bindings.xml entries for Key Bindings › AddOns (QOL-R1).

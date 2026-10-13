@@ -271,6 +271,115 @@ describe("FakePagle", function()
 		)
 	end)
 
+	describe("the compartment menu", function()
+		it(
+			"lists each Module's views then menu entries by def.order, then Settings, reading labels each time (CORE-R50, CORE-R52)",
+			function()
+				local fake = newFakePagle()
+				local reads = 0
+				fake.Pagle.RegisterModule({
+					name = "QoL",
+					title = "QoL",
+					order = 50,
+					menu = {
+						{
+							label = function()
+								reads = reads + 1
+								return "Input: Both"
+							end,
+							onClick = function() end,
+						},
+					},
+				})
+				fake.Pagle.RegisterModule({
+					name = "Hunts",
+					title = "Hunts",
+					order = 20,
+					views = { { id = "board", label = "Hunts", open = function() end } },
+				})
+				fake.login()
+
+				local labels = {}
+				for i, entry in ipairs(fake.menu()) do
+					labels[i] = entry.label
+				end
+				fake.menu()
+
+				assert.are.same({ "Hunts", "Input: Both", "Settings" }, labels)
+				assert.are.equal(2, reads)
+			end
+		)
+
+		it("opens the root from Settings, or prints Core's line while restricted (CORE-R33, SET-R75)", function()
+			local fake = newFakePagle()
+			fake.login()
+
+			local menu = fake.menu()
+			menu[#menu].onClick()
+			fake.setRestricted(true)
+			menu[#menu].onClick()
+
+			assert.are.same({ "root" }, fake.openedSettings)
+			assert.are.same({ "Pagle: settings open after combat." }, fake.printed)
+		end)
+	end)
+
+	describe("/pagle", function()
+		it(
+			"runs a Module's subcommand case-insensitively with the rest of the line, trimmed, from login (CORE-R62)",
+			function()
+				local fake = newFakePagle()
+				local got = {}
+				fake.Pagle.RegisterModule({
+					name = "QoL",
+					title = "QoL",
+					order = 50,
+					slash = {
+						{
+							name = "qol",
+							fn = function(args)
+								got[#got + 1] = args
+							end,
+							help = "cycle Input",
+						},
+					},
+				})
+				fake.login()
+
+				fake.slash(" QOL  input ")
+				fake.slash("")
+				fake.slash("help")
+
+				assert.are.same({ "input" }, got)
+				assert.are.same({ "root" }, fake.openedSettings)
+				assert.are.same({
+					"Pagle commands:",
+					"/pagle settings: open Pagle's settings (also /pagle on its own)",
+					"/pagle help: list these commands",
+					"/pagle qol: cycle Input",
+				}, fake.printed)
+			end
+		)
+
+		it("reports a subcommand that collides with a reserved one, and keeps the rest (CORE-R62)", function()
+			local fake = newFakePagle()
+			fake.Pagle.RegisterModule({
+				name = "QoL",
+				title = "QoL",
+				order = 50,
+				slash = {
+					{ name = "Report", fn = function() end, help = "x" },
+					{ name = "qol", fn = function() end, help = "cycle Input" },
+				},
+			})
+			fake.login()
+			fake.slash("help")
+
+			assert.are.same({ "Pagle: QoL's /pagle Report is skipped: Pagle reserves report" }, fake.reported)
+			assert.are.equal("/pagle qol: cycle Input", fake.printed[4])
+		end)
+	end)
+
 	it("loads a Module with Core's libs but not Core, so it registers with the fake (CORE-R6, CORE-R18)", function()
 		local fake = newFakePagle()
 

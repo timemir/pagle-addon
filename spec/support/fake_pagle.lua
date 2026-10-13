@@ -49,6 +49,9 @@
 --- when Core registers no page (CORE-R42).
 ---@field reported string[] Each error Core reported through geterrorhandler(), e.g. a late M:AddSetting.
 ---@field openedSettings string[] What each Pagle.OpenSettings opened: "root" or the topic (CORE-R43).
+---@field menu fun(): PagleMenuEntry[] The compartment menu as it would open now, labels read (CORE-R50, CORE-R52);
+--- each entry's onClick is what clicking it does. Its last entry is Settings.
+---@field slash fun(line: string) Types `/pagle <line>` (CORE-R60–R62); help lines go to `printed`.
 ---@field load fun(name: string, options: table?): LoadedAddon Loads a Module with `loadAddon` against this fake:
 --- `globals`, and of Pagle.toc only the vendored libs/ the Module reaches through LibStub (CORE-R6). Options as
 --- loadAddon's. WoW events its client raises on its own (`client.fireGameEvent`) go to `fake.fireGameEvent`.
@@ -321,6 +324,44 @@ part(function(fake, Pagle, ns)
 			fake.openedSettings[#fake.openedSettings + 1] = (type(topic) == "string" and fake.settingsPage(topic))
 					and topic
 				or "root"
+		end
+	end
+end)
+
+-- The compartment menu and /pagle (CORE-R50, CORE-R52, CORE-R60–R62), on Core's real logic. Modules' subcommands
+-- are added at login, by def.order; one Core skips is in fake.reported.
+part(function(fake, Pagle, ns)
+	local commands = ns.NewSlashCommands()
+	Pagle.RegisterCallback(commands, "ModulesChanged", function()
+		for _, module in ipairs(fake.registry:Modules()) do
+			for _, problem in ipairs(commands:Add(module.def)) do
+				fake.reported[#fake.reported + 1] = problem
+			end
+		end
+	end)
+
+	local settings = {
+		label = ns.L.MENU_SETTINGS,
+		onClick = function()
+			Pagle.OpenSettings()
+		end,
+	}
+	function fake.menu()
+		return ns.CompartmentMenu(fake.registry:Modules(), settings, function(fn)
+			return fn()
+		end)
+	end
+
+	function fake.slash(line)
+		local action, command, args = commands:Resolve(line)
+		if action == "settings" then
+			Pagle.OpenSettings()
+		elseif command then
+			command.fn(args)
+		else
+			for _, helpLine in ipairs(commands:HelpLines()) do
+				fake.printed[#fake.printed + 1] = helpLine
+			end
 		end
 	end
 end)

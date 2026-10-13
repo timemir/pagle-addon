@@ -19,6 +19,8 @@ function ns.QoL.OnInitialize()
 	if not ns.Module then
 		return
 	end
+	-- QoL's rows on the Fishing page, before ModulesChanged (CORE-R42, SET-R20).
+	ns.AddSettings(ns.Module)
 
 	-- Account-wide, one shared profile (QOL-R1).
 	ns.db = LibStub("AceDB-3.0"):New("PagleQoLDB", nil, true)
