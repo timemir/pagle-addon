@@ -70,6 +70,7 @@ class ItemEntry:
     legend: bool = False
     noise: bool | None = None
     removed: bool = False
+    removed_from: int | None = None
     class_id: int | None = None
     quality: int | None = None
 
@@ -130,7 +131,7 @@ def _read_entry(entry: object, at: At, problems: Problems) -> ItemEntry | None:
         problems.add(at, f"missing key 'why': {' and '.join(needs_why)} {verb} the evidence (DATA-R10)")
     expect_why(table, at, problems)
 
-    # removedFrom is only checked here; #95 checks it against observations of the item (DATA-R23).
+    # confirmed.check_removed checks removedFrom against observations of the item (DATA-R23).
     category, noise = found.get("category"), found.get("noise")
     return ItemEntry(
         at,
@@ -141,6 +142,7 @@ def _read_entry(entry: object, at: At, problems: Problems) -> ItemEntry | None:
         legend=found.get("legend") is True,
         noise=noise if isinstance(noise, bool) else None,
         removed=found.get("removed") is True,
+        removed_from=_int(found.get("removedFrom")),
         class_id=_int(found.get("class_id")),
         quality=_int(found.get("quality")),
     )

@@ -5,7 +5,7 @@ and alone defines spring and autumn (DATA-R36). Each event on the event list wit
 event.<eventID>, whose spec is its event alone (DATA-R37).
 """
 
-from collections.abc import Mapping
+from collections.abc import Collection, Mapping
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -28,7 +28,7 @@ FIELDS = ("time", "season", "events")
 
 # Which window each VMaNGOS event maps to (DATA-R36): the four seeds, and the Extravaganza's events (14, 15, 40),
 # which all map to event.301. An area-loot row's or pool's event gates by this window (DATA-R29); ticket #92 reads
-# it for gates and #95 for the baseline's own gates (DATA-R47).
+# it for gates and pagle_data.confirmed for the gates the baseline gives an item (DATA-R49's new window).
 BASELINE_EVENT_WINDOWS: Mapping[int, str] = {
     14: "event.301",
     15: "event.301",
@@ -52,11 +52,12 @@ NON_LEAP_YEAR = 2001
 Spec = dict[str, object]
 
 
-def catalogue_windows(windows: Mapping[str, Spec]) -> dict[str, Mapping[str, object]]:
-    """The catalogue's windows (Contracts): { spec = W.<id>, confirmed = false } per window. Each spec is the W
-    entry Shared by every gate on that window (#92); nothing confirms a window yet (DATA-R56, #95)."""
+def catalogue_windows(windows: Mapping[str, Spec], confirmed: Collection[str] = ()) -> dict[str, Mapping[str, object]]:
+    """The catalogue's windows (Contracts): { spec = W.<id>, confirmed = <bool> } per window, confirmed for the IDs
+    in confirmed (DATA-R53). Each spec is the W entry Shared by every gate on that window (#92)."""
     return {
-        window_id: {"spec": Shared(LOCAL, window_id, spec), "confirmed": False} for window_id, spec in windows.items()
+        window_id: {"spec": Shared(LOCAL, window_id, spec), "confirmed": window_id in confirmed}
+        for window_id, spec in windows.items()
     }
 
 

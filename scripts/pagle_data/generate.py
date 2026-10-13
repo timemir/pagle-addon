@@ -9,6 +9,7 @@ from pagle_data.areas import CatchLists, area_records, build_catch_lists, read_a
 from pagle_data.baseline import BASELINE, AreaLoot, BaselineLayer, Pool, conditional_rows, read_baseline
 from pagle_data.catalogue import Catalogue, Event, fingerprint
 from pagle_data.checks import read_checks
+from pagle_data.confirmed import Confirmation, UngatedPair, check_removed, confirm, required_reporters
 from pagle_data.db2 import DB2, Db2Layer, read_db2
 from pagle_data.errors import At, DataError, Problems
 from pagle_data.forever import ForeverLayer, read_forever
@@ -32,11 +33,12 @@ def build_catalogue(
     items: Mapping[int, Record],
     catch_lists: CatchLists,
     pools: Mapping[str, list[int]],
+    confirmation: Confirmation,
 ) -> Catalogue:
     """The catalogue (DATA-R76): aliases.toml's aliases, the windows (DATA-R35), the item records that ship
     (DATA-R77), every DB2 area's record with its catch list (DATA-R25, DATA-R78) and each pool type's catches
-    (DATA-R43). Only identity facts come from DB2 (DATA-R13), and no enUS name ships (DATA-R3). Nothing confirms an
-    event's weekly rule yet."""
+    (DATA-R43), with every confirmed flag from confirmation (DATA-R48–R56). Only identity facts come from DB2
+    (DATA-R13), and no enUS name ships (DATA-R3)."""
     events: dict[int, Event] = {}
     for event_id, rule in forever.events.items():
         if rule is None:
@@ -46,15 +48,15 @@ def build_catalogue(
                 "weekday": rule.weekday,
                 "start": rule.start,
                 "duration": rule.duration,
-                "confirmed": False,
+                "confirmed": event_id in confirmation.weekly,
             }
     aliases = {alias.source: alias.target for alias in forever.aliases}
     # Each gate is its window's shared spec, so Catalogue.lua writes it as W.<id> (Contracts).
-    shared_windows = catalogue_windows(windows)
+    shared_windows = catalogue_windows(windows, confirmation.windows)
     catalogue: Catalogue = {
         "fingerprint": "",
         "items": dict(items),
-        "areas": dict(area_records(db2.areas, catch_lists, aliases.keys(), shared_windows)),
+        "areas": dict(area_records(db2.areas, catch_lists, aliases.keys(), shared_windows, confirmation)),
         "aliases": aliases,
         "pools": {pool_type: list(catches) for pool_type, catches in pools.items()},
         "windows": shared_windows,
@@ -98,6 +100,7 @@ class Layers:
     catch_lists: CatchLists  # every area's catch list and the skill bases (DATA-R26, DATA-R30)
     pool_types: dict[str, PoolType]  # pools.toml's pool types by ID (DATA-R43)
     pools: dict[str, list[int]]  # each pool type's catches (DATA-R43)
+    confirmation: Confirmation  # every confirmed flag (DATA-R48–R56)
 
     def fishing_areas(self) -> set[int]:
         """The areas with a catch list (DATA-R32)."""
@@ -112,9 +115,12 @@ class Layers:
         return propose(self.db2, self.fishing_areas(), self.forever.aliases)
 
     def observations(self) -> Observations:
-        """data/observed/'s observations, their areas through the alias table (DATA-R34). Nothing in the catalogue
-        comes from them yet: observed pairs and confirmed are DATA-R47–R55's."""
+        """data/observed/'s observations on every build, their areas through the alias table (DATA-R34)."""
         return observations(self.observed, {alias.source: alias.target for alias in self.forever.aliases})
+
+    def ungated_pairs(self) -> list[UngatedPair]:
+        """The observed pairs that joined ungated though their item is gated elsewhere (DATA-R47, DATA-R64)."""
+        return self.catch_lists.ungated
 
     def missing_areas(self) -> dict[int, list[At]]:
         """Observed areas missing from data/db2/areas.csv, kept in the sources and left out of the catalogue
@@ -144,6 +150,7 @@ def read_layers(root: Path) -> Layers:
     items: dict[int, Record] = {}
     catch_lists = CatchLists()
     pools: dict[str, list[int]] = {}
+    confirmation = Confirmation()
     if baseline_read:  # without the whole baseline, every seeded window would look missing (DATA-R35, DATA-R36)
         windows = build_windows(baseline.events, window_overrides, forever.events, problems)
         # DATA-R15: items.toml's, areas.toml's and pools.toml's IDs come from their strict readers, so a bad one is
@@ -158,18 +165,42 @@ def read_layers(root: Path) -> Layers:
         # DATA-R43: the catches leave out what doesn't ship; DATA-R77: pool is true for an item in any of them.
         pools = build_pools(pool_types, baseline, items)
         items = with_pool_flags(items, pools)
-        catch_lists = build_catch_lists(baseline, area_layer, items, windows.keys(), db2.areas, problems)
+        # DATA-R46: only observations on builds at or above the minimum confirming build count; DATA-R33: those in
+        # areas missing from the slice stay out of the catalogue; DATA-R34: areas through the alias table.
+        seen = observations(observed, {alias.source: alias.target for alias in forever.aliases})
+        check_removed(seen, item_layer.items, problems)  # DATA-R23
+        counting = seen.confirming().within(db2.areas)
+        required = required_reporters(baseline, items)  # DATA-R49
+        catch_lists = build_catch_lists(
+            baseline, area_layer, items, windows.keys(), db2.areas, counting, required, problems
+        )
         # DATA-R32: an alias's target and source are judged by these catch lists.
         check_aliases(forever.aliases, catch_lists.fishing_areas(), problems)
+        confirmation = confirm(
+            catch_lists.windows(),
+            catch_lists.skill_bases,
+            db2.areas,
+            counting,
+            required,
+            windows,
+            forever.events,
+            problems,
+        )
     if problems:
         raise DataError(problems.found)
-    return Layers(baseline, forever, db2, windows, observed, items, catch_lists, pool_types, pools)
+    return Layers(baseline, forever, db2, windows, observed, items, catch_lists, pool_types, pools, confirmation)
 
 
 def outputs(layers: Layers) -> dict[str, str]:
     """Every generated file's path (relative to the repo root) and content."""
     catalogue = build_catalogue(
-        layers.forever, layers.db2, layers.windows, layers.items, layers.catch_lists, layers.pools
+        layers.forever,
+        layers.db2,
+        layers.windows,
+        layers.items,
+        layers.catch_lists,
+        layers.pools,
+        layers.confirmation,
     )
     return {CATALOGUE_LUA: catalogue_lua(catalogue)}
 
