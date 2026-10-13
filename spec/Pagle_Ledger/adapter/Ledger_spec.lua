@@ -22,7 +22,7 @@ end
 -- Clicks Pagle in the Addon Compartment and returns the menu Core opens on the next frame (CORE-R50).
 local function compartmentMenu(loaded)
 	local opened = #loaded.client.menus
-	loaded.env[assert(loaded.client.addons.Pagle.metadata).AddonCompartmentFunc]("Pagle", "LeftButton")
+	loaded.client.clickCompartment("Pagle")
 	loaded.client.runTimers()
 	return loaded.client.menus[opened + 1]
 end
@@ -110,7 +110,7 @@ describe("Pagle_Ledger with Core", function()
 	it("keeps what an earlier session saved (ledger.md › Data)", function()
 		local saved = {
 			global = { schemaVersion = 1, celebrated = { coins = 30, species = { [6358] = true } } },
-			profileKeys = {},
+			profileKeys = { ["Angler - Testrealm"] = "Default" },
 			profiles = { Default = { activeTitle = "angler" } },
 		}
 		local db = loadAddon("Pagle_Ledger", foreverWith({ PagleLedgerDB = saved })).ns.db

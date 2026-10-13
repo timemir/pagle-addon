@@ -9,15 +9,30 @@ local SOUNDS = "Interface\\AddOns\\Pagle\\media\\sounds\\"
 
 -- Lanes over a fake clock. `world.on` is what is on screen now, by form ("toast", "nod", "banner", "splash");
 -- `world.log` every show and hide as "show <form> <title>" / "hide <form> <title>"; `world.played` each sound path.
--- `world.budget` is the player's Interruption budget setting.
+-- `world.budget` is the player's Interruption budget setting, `world.cozy` Cozy mode and `world.serverTime` the
+-- server time expiry reads.
 local function newWorld()
 	local clock = newClock()
-	local world = { on = {}, log = {}, played = {}, shown = {}, budget = { on = true, count = 4, window = 300 } }
+	local world = {
+		on = {},
+		log = {},
+		played = {},
+		shown = {},
+		budget = { on = true, count = 4, window = 300 },
+		cozy = false,
+		serverTime = SERVER_TIME,
+	}
 	world.lanes = ns.NewLanes({
 		now = clock.time,
 		after = clock.after,
 		budget = function()
 			return world.budget
+		end,
+		cozy = function()
+			return world.cozy
+		end,
+		serverTime = function()
+			return world.serverTime
 		end,
 		soundSet = function()
 			return ns.SOUND_SETS.driftwood
@@ -283,6 +298,268 @@ describe("the Interruption budget", function()
 		world.lanes:Push(announcement("toast.low", "Size record"))
 
 		assert.are.same({ "Size record", "toast" }, { slot(world), world.on.toast.form })
+	end)
+end)
+
+describe("the combat hold", function()
+	-- The text of the "While you were fighting" toast on screen: its held headlines, in order.
+	local function fighting(world)
+		local held = {}
+		for i, headline in ipairs(world.on.toast.announcement.fighting) do
+			held[i] = headline.title
+		end
+		return held
+	end
+
+	it("hides the toast on screen and holds it, with the Nod showing too (ANN-R35)", function()
+		local world = newWorld()
+		world.lanes:Push(announcement("nod", "New here"))
+		world.lanes:Push(announcement("toast", "New Species"))
+
+		world.lanes:Hold()
+
+		assert.is_nil(slot(world))
+		assert.is_nil(world.on.nod)
+		assert.is_true(world.lanes:IsHeld())
+	end)
+
+	it("holds every new Announcement and plays nothing while restricted (ANN-R35)", function()
+		local world = newWorld()
+		world.lanes:Hold()
+
+		world.lanes:Push(announcement("toast", "New Species"))
+		world.lanes:Push(announcement("banner", "Level 12"))
+		world.lanes:Push(announcement("splash", "Legend"))
+		world.lanes:Push(announcement("nod", "New here"))
+		world.advance(60)
+
+		assert.are.same({}, world.shown)
+		assert.are.same({}, world.played)
+	end)
+
+	it(
+		"2 s after combat shows held splashes then banners as themselves, then one While you were fighting toast with"
+			.. " every held toast headline (ANN-R36)",
+		function()
+			local world = newWorld()
+			world.lanes:Push(announcement("toast", "New Species"))
+			world.lanes:Push(announcement("toast.low", "Size record"))
+			world.lanes:Hold()
+			world.lanes:Push(announcement("toast.high", "Hunt completed"))
+			world.lanes:Push(announcement("banner", "Level 12"))
+			world.lanes:Push(announcement("splash", "Legend"))
+
+			world.lanes:Release()
+			world.advance(1.9)
+			assert.are.same({ "New Species" }, titles(world.shown))
+			world.advance(0.1)
+			assert.are.equal("Legend", slot(world))
+			world.lanes:Dismiss(world.on.splash)
+			assert.are.equal("Level 12", slot(world))
+			world.advance(4)
+
+			assert.are.equal("While you were fighting", slot(world))
+			assert.are.same({ "New Species", "Size record", "Hunt completed" }, fighting(world))
+			world.advance(6)
+			assert.is_nil(slot(world))
+		end
+	)
+
+	it("plays the toast sound once for the While you were fighting toast, which never steps down (ANN-R36)", function()
+		local world = newWorld()
+		world.budget = { on = true, count = 1, window = 300 }
+		world.lanes:Push(announcement("toast.low", "Size record"))
+		world.lanes:Hold()
+		world.lanes:Push(announcement("toast.low", "New junk"))
+		world.played = {}
+
+		world.lanes:Release()
+		world.advance(2)
+
+		assert.are.same({ "toast", "While you were fighting" }, { world.on.toast.form, slot(world) })
+		assert.are.same({ SOUNDS .. "driftwood\\toast_2.ogg" }, world.played)
+	end)
+
+	it(
+		"restarts the 2 s wait when a restriction starts inside it, holding what arrives meanwhile (ANN-R35, ANN-R36)",
+		function()
+			local world = newWorld()
+			world.lanes:Hold()
+			world.lanes:Push(announcement("banner", "Level 12"))
+			world.lanes:Release()
+			world.advance(1.5)
+			world.lanes:Push(announcement("toast", "New Species"))
+			assert.is_true(world.lanes:IsHeld())
+
+			world.lanes:Hold()
+			world.lanes:Release()
+			world.advance(1.9)
+			assert.are.same({}, world.shown)
+			world.advance(0.1)
+
+			assert.are.equal("Level 12", slot(world))
+			assert.is_false(world.lanes:IsHeld())
+			world.advance(4)
+			assert.are.same({ "New Species" }, fighting(world))
+		end
+	)
+
+	it("never shows a held Nod again (ANN-R36)", function()
+		local world = newWorld()
+		world.lanes:Push(announcement("nod", "New here"))
+		world.lanes:Hold()
+		world.lanes:Push(announcement("nod", "Uncharted"))
+
+		world.lanes:Release()
+		world.advance(60)
+
+		assert.are.same({ "New here" }, titles(world.shown))
+	end)
+
+	it(
+		"tells the cards the lanes are empty once what it held has shown, or at once with nothing held (ANN-R36)",
+		function()
+			local world = newWorld()
+			world.lanes:Hold()
+			world.lanes:Release()
+			world.advance(2)
+			assert.are.equal(1, world.emptied)
+
+			world.lanes:Hold()
+			world.lanes:Push(announcement("toast", "New Species"))
+			world.lanes:Release()
+			world.advance(2)
+			assert.are.equal(1, world.emptied)
+			world.advance(6)
+			assert.are.equal(2, world.emptied)
+		end
+	)
+
+	it("counts held Announcements toward the budget only when they show (ANN-R37)", function()
+		local world = newWorld()
+		world.budget = { on = true, count = 2, window = 300 }
+		world.lanes:Hold()
+		for i = 1, 3 do
+			world.lanes:Push(announcement("toast.low", "Held " .. i))
+		end
+		world.lanes:Push(announcement("nod", "New here"))
+		world.lanes:Release()
+		world.advance(8)
+
+		world.lanes:Push(announcement("toast.low", "Size record"))
+		assert.are.same({ "Size record", "toast" }, { slot(world), world.on.toast.form })
+		world.advance(6)
+		world.lanes:Push(announcement("toast.low", "New junk"))
+
+		assert.are.equal("nod", world.on.nod.form)
+	end)
+end)
+
+describe("Cozy mode in the lanes", function()
+	it("shows no toast, banner or Nod and plays nothing (ANN-R40)", function()
+		local world = newWorld()
+		world.cozy = true
+
+		world.lanes:Push(announcement("toast", "New Species"))
+		world.lanes:Push(announcement("banner", "Level 12"))
+		world.lanes:Push(announcement("nod", "New here"))
+		world.advance(60)
+
+		assert.are.same({}, world.shown)
+		assert.are.same({}, world.played)
+		assert.are.equal(0, world.emptied)
+	end)
+
+	it("still shows a splash, silently (ANN-R41)", function()
+		local world = newWorld()
+		world.cozy = true
+
+		world.lanes:Push(announcement("splash", "Legend"))
+
+		assert.are.equal("Legend", slot(world))
+		assert.is_nil(world.on.splash.sound)
+		assert.are.same({}, world.played)
+	end)
+
+	it("drops what waits once turned on, and replays nothing once turned off (ANN-R40, ANN-R42)", function()
+		local world = newWorld()
+		world.lanes:Push(announcement("toast", "Toast 1"))
+		world.lanes:Push(announcement("toast", "Toast 2"))
+		world.cozy = true
+		world.lanes:Push(announcement("toast", "Toast 3"))
+		world.advance(6)
+		world.cozy = false
+		world.advance(60)
+
+		assert.are.same({ "Toast 1" }, titles(world.shown))
+		world.lanes:Push(announcement("toast", "Toast 4"))
+		assert.are.same({ "Toast 4", 0 }, { slot(world), world.on.toast.overflow })
+	end)
+end)
+
+describe("expiry in the lanes", function()
+	-- A Cast's Announcement: `headline` with `stamps` riding on it, as logic/Moments.lua makes one.
+	local function cast(moments)
+		for i, moment in ipairs(moments) do
+			moment.kind, moment.module, moment.moduleOrder, moment.raised = "spec", "Hunts", 20, i
+		end
+		return ns.MakeAnnouncement(moments)
+	end
+
+	it("drops an expired headline as it is about to show, and the next-ranked moment headlines (ANN-R45)", function()
+		local world = newWorld()
+		world.lanes:Push(announcement("toast", "Toast"))
+		world.lanes:Push(cast({
+			{ rung = "toast.high", title = "Window open", expiresAt = SERVER_TIME + 10 },
+			{ rung = "toast", title = "New Species", stamp = "New!" },
+			{ rung = "nod", title = "Uncharted" },
+		}))
+		world.serverTime = SERVER_TIME + 10
+
+		world.advance(6)
+
+		assert.are.equal("New Species", slot(world))
+		assert.are.same({ "Uncharted" }, world.on.toast.announcement.stamps)
+	end)
+
+	it("drops an expired stamp, and shows nothing when every moment expired (ANN-R45)", function()
+		local world = newWorld()
+		world.lanes:Push(announcement("toast", "Toast"))
+		world.lanes:Push(cast({
+			{ rung = "toast", title = "New Species" },
+			{ rung = "nod", title = "Window open", expiresAt = SERVER_TIME + 10 },
+		}))
+		world.lanes:Push(cast({ { rung = "banner", title = "Window open", expiresAt = SERVER_TIME + 10 } }))
+		world.serverTime = SERVER_TIME + 10
+
+		world.advance(60)
+
+		assert.are.same({ "Toast", "New Species" }, titles(world.shown))
+		assert.are.same({}, world.shown[2].announcement.stamps)
+	end)
+
+	it("never shows a moment already expired when raised (ANN-R45)", function()
+		local world = newWorld()
+
+		world.lanes:Push(cast({ { rung = "nod", title = "Window open", expiresAt = SERVER_TIME } }))
+		world.lanes:Push(cast({ { rung = "toast", title = "Window open", expiresAt = SERVER_TIME - 60 } }))
+
+		assert.are.same({}, world.shown)
+	end)
+
+	it("drops held moments that expired during combat (ANN-R36, ANN-R45)", function()
+		local world = newWorld()
+		world.lanes:Hold()
+		world.lanes:Push(cast({ { rung = "toast", title = "Window open", expiresAt = SERVER_TIME + 10 } }))
+		world.lanes:Push(announcement("toast", "New Species"))
+		world.lanes:Push(cast({ { rung = "banner", title = "Hunt window", expiresAt = SERVER_TIME + 10 } }))
+		world.serverTime = SERVER_TIME + 10
+
+		world.lanes:Release()
+		world.advance(2)
+
+		assert.are.same({ "While you were fighting" }, titles(world.shown))
+		assert.are.same({ "New Species" }, { world.on.toast.announcement.fighting[1].title })
 	end)
 end)
 

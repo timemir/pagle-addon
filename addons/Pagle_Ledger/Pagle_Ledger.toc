@@ -15,5 +15,6 @@ logic\Module.lua
 logic\Progress.lua
 logic\Fold.lua
 logic\Moments.lua
+logic\Done.lua
 logic\Projection.lua
 adapter\Ledger.lua

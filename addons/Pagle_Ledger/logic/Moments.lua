@@ -9,7 +9,7 @@ local ns = select(2, ...)
 -- moments unless already celebrated, and the celebrated set grows with them. Pure logic, everything passed in (CORE-R7).
 
 --- The celebrated set (LED-R90), M2's keys. It only grows, except `coins`, which follows the total. `logId` is set,
---- and the set emptied for a new one, in the projection's `done` (ticket #102).
+--- and the set emptied for a new one, in the projection's `done` (logic/Done.lua).
 ---@class LedgerCelebrated
 ---@field levels { [integer]: integer }      -- the highest level celebrated, by prestige rank
 ---@field species { [integer]: true }        -- Species IDs
@@ -26,6 +26,9 @@ local ns = select(2, ...)
 ---@field SetSummaryLine fun(text: string)              -- M:SetSummaryLine("ledger", text)
 ---@field ItemName fun(itemID: integer): string?        -- C_Item.GetItemNameByID
 ---@field ZoneName fun(zone: integer): string?          -- C_Map.GetAreaInfo
+---@field RaiseWriteUp fun(section: PagleWriteUpSection) -- M:RaiseWriteUp
+---@field LogId fun(): string?                          -- Pagle.GetAngler().logId
+---@field FormatNumber fun(n: integer): string          -- BreakUpLargeNumbers
 
 -- In-client textures for the moments that have no item (LED-R97): the level's ledger book and Fishing's own icon.
 local LEVEL_ICON = "Interface\\Icons\\INV_Misc_Book_09"
@@ -190,6 +193,17 @@ function celebrate.levelUp(celebrated, state, earned)
 	}
 end
 
+--- One achievement's moment (LED-R97) when it isn't celebrated yet, adding it to the set; nil when it already is
+--- (LED-R91). A projection's done raises them too, from the scratch list (LED-R93).
+---@param celebrated LedgerCelebrated
+---@param state LedgerState
+---@param achievement LedgerAchievement
+---@param outlets LedgerOutlets
+---@return PagleMoment?
+function ns.CelebrateAchievement(celebrated, state, achievement, outlets)
+	return celebrate[achievement.kind](celebrated, state, achievement, outlets)
+end
+
 --- Celebrates one `"live"` entry (LED-R91, LED-R96, LED-R97): the moment of each achievement it earned that isn't
 --- celebrated yet, in the order earned, each added to the set. The zone a Cast fished joins the set too.
 ---@param celebrated LedgerCelebrated
@@ -207,7 +221,7 @@ function ns.Celebrate(celebrated, state, record, earned, outlets)
 	end
 	local moments = {}
 	for _, achievement in ipairs(earned) do
-		local moment = celebrate[achievement.kind](celebrated, state, achievement, outlets)
+		local moment = ns.CelebrateAchievement(celebrated, state, achievement, outlets)
 		if moment then
 			moments[#moments + 1] = moment
 		end

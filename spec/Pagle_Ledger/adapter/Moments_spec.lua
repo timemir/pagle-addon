@@ -4,6 +4,8 @@
 local MACKEREL, SMALLFISH, BLACKMOUTH, TROUT = 6303, 6291, 6289, 6308
 local ELWYNN, WESTFALL = 12, 40
 local T0 = 1791731000
+-- The fake log's logId, which a saved celebrated set names to belong to it (LED-R90).
+local LOG_ID = "0123456789abcdef"
 
 -- The names the fake client's C_Item and C_Map know.
 local ITEM_NAMES = { [MACKEREL] = "Raw Spotted Yellowtail", [SMALLFISH] = "Raw Brilliant Smallfish" }
@@ -39,9 +41,9 @@ local function loot(...)
 	return items
 end
 
--- A FakePagle with `history` (Cast records) in its log and `saved` as PagleLedgerDB's global section, the Ledger
--- loaded on it, logged in and in the world: every live Cast after this is fished in Darkshore (148), fake.conditions'
--- zone. The fake client has no strlenutf8, which AceDB reads to check saved profile keys, so only `global` is saved.
+-- A FakePagle with `history` (Cast records) in its log and `saved` as PagleLedgerDB, the Ledger loaded on it,
+-- logged in and in the world: every live Cast after this is fished in Darkshore (148), fake.conditions' zone. The
+-- log's logId is LOG_ID.
 ---@param history table[]?
 ---@param saved table?
 ---@param extra table? more client globals for the Ledger's load
@@ -49,12 +51,13 @@ end
 ---@return LoadedAddon loaded
 local function session(history, saved, extra)
 	local fake = newFakePagle()
+	fake.catchLog.data.logId = LOG_ID
 	fake.catchLog.data.characters[1] = { guid = PLAYER_GUID }
 	for _, record in ipairs(history or {}) do
 		fake.catchLog:Append(record)
 	end
 	if saved then
-		fake.globals.PagleLedgerDB = { global = saved }
+		fake.globals.PagleLedgerDB = saved
 	end
 	fake.globals.C_Item = {
 		GetItemNameByID = function(itemID)
@@ -66,6 +69,7 @@ local function session(history, saved, extra)
 			return ZONE_NAMES[areaID]
 		end,
 	}
+	fake.globals.BreakUpLargeNumbers = breakUpLargeNumbers
 	for key, value in pairs(extra or {}) do
 		fake.globals[key] = value
 	end
@@ -163,7 +167,8 @@ describe("the Ledger's live moments", function()
 		fake.playCast("gotAway")
 
 		assert.are.same({}, shown(fake, seen))
-		assert.are.same({ { module = "Ledger", total = 10 } }, fake.coinReports)
+		-- The first is the projection's done's, at login (LED-R89).
+		assert.are.same({ { module = "Ledger", total = 0 }, { module = "Ledger", total = 10 } }, fake.coinReports)
 	end)
 
 	it("report the Coins total after each live entry that changes it (LED-R89, SHOP-R2)", function()
@@ -174,7 +179,10 @@ describe("the Ledger's live moments", function()
 		fake.playCast("caught", loot(SMALLFISH))
 
 		-- The second Species also takes the climb to level 2 (820 + 20 + 620 XP): 10, then 10 + 10 + 20.
-		assert.are.same({ { module = "Ledger", total = 10 }, { module = "Ledger", total = 40 } }, fake.coinReports)
+		assert.are.same(
+			{ { module = "Ledger", total = 0 }, { module = "Ledger", total = 10 }, { module = "Ledger", total = 40 } },
+			fake.coinReports
+		)
 		assert.are.equal(40, loaded.env.PagleLedgerDB.global.celebrated.coins)
 	end)
 
@@ -201,7 +209,7 @@ describe("the Ledger's live moments", function()
 			)
 			assert.are.equal("string", type(headline.icon))
 			assert.are.equal(80, announcement.coins)
-			assert.are.same({ { module = "Ledger", total = 80 } }, fake.coinReports)
+			assert.are.same({ { module = "Ledger", total = 0 }, { module = "Ledger", total = 80 } }, fake.coinReports)
 		end
 	)
 
@@ -233,23 +241,29 @@ describe("the Ledger's live moments", function()
 		function()
 			-- The celebrated set holds what the log no longer earns before login: Skill Milestone 75, the Species and
 			-- level 2, which the two reach again (1,000 + 820 XP).
-			local celebrated =
-				{ coins = 30, skill = { [75] = true }, species = { [MACKEREL] = true }, levels = { [0] = 2 } }
-			local fake = session(nil, { celebrated = celebrated })
+			local celebrated = {
+				coins = 30,
+				skill = { [75] = true },
+				species = { [MACKEREL] = true },
+				levels = { [0] = 2 },
+				logId = LOG_ID,
+			}
+			local fake = session(nil, { global = { celebrated = celebrated } })
 
 			fake.readSkill(80, 150, 0)
 			fake.playCast("caught", loot(MACKEREL))
 
 			assert.are.same({}, shown(fake))
 			-- The Cast's level's 20 and new Species' 10 Coins still count, in the total only (LED-R97).
-			assert.are.same({ { module = "Ledger", total = 30 } }, fake.coinReports)
+			assert.are.same({ { module = "Ledger", total = 0 }, { module = "Ledger", total = 30 } }, fake.coinReports)
 		end
 	)
 
 	it(
 		"use the celebrated level when above the computed one, raising no level at or below it (LED-R36, LED-R92)",
 		function()
-			local fake, loaded = session(nil, { celebrated = { coins = 0, levels = { [0] = 9 } } })
+			local fake, loaded =
+				session(nil, { global = { celebrated = { coins = 0, levels = { [0] = 9 }, logId = LOG_ID } } })
 
 			fake.playCast("caught", loot(unpack(FOUR)))
 
@@ -263,12 +277,13 @@ describe("the Ledger's live moments", function()
 			assert.are.equal(3, loaded.ns.Level(state))
 			assert.are.equal(9, loaded.ns.ShownLevel(state, loaded.env.PagleLedgerDB.global.celebrated))
 			-- Their 40 Coins count, in the total only (LED-R36).
-			assert.are.same({ { module = "Ledger", total = 80 } }, fake.coinReports)
+			assert.are.same({ { module = "Ledger", total = 0 }, { module = "Ledger", total = 80 } }, fake.coinReports)
 		end
 	)
 
 	it("pay a levelUp only the levels above the celebrated one (LED-R97)", function()
-		local fake, loaded = session(nil, { celebrated = { coins = 0, levels = { [0] = 2 } } })
+		local fake, loaded =
+			session(nil, { global = { celebrated = { coins = 0, levels = { [0] = 2 }, logId = LOG_ID } } })
 
 		fake.playCast("caught", loot(unpack(FOUR)))
 
@@ -300,7 +315,7 @@ describe("the Ledger's live moments", function()
 	it("celebrate again what a crash lost with its Casts (LED-R194)", function()
 		local history = { cast(T0, ELWYNN, { SMALLFISH }) }
 		local fake, loaded = session(history)
-		local lastSaved = copy(loaded.env.PagleLedgerDB.global)
+		local lastSaved = copy(loaded.env.PagleLedgerDB)
 		fake.playCast("caught", loot(MACKEREL))
 		local celebrated = momentsOf(shown(fake)[1])
 		assert.are.same({

@@ -1366,6 +1366,57 @@ describe("FakePagle", function()
 				M:SetSummaryLine(nil, "text")
 			end)
 		end)
+
+		it(
+			"count the moments kept in Cozy mode on the compartment's label until the Session's card shows"
+				.. " (CORE-R51, ANN-R42)",
+			function()
+				local fake = newFakePagle()
+				raising(fake, "Ledger", 10, function(record)
+					return { rung = "toast", kind = "newSpecies", title = "New Species", cast = record.id }
+				end)
+				fake.profile.announcements.cozy = true
+				fake.login()
+				fake.enterWorld()
+				fake.nextFrame()
+				fake.nextFrame()
+				assert.are.equal("Pagle", fake.compartmentText())
+
+				fake.playCast("caught", { { itemID = 6358, quantity = 1 } })
+				fake.playCast("caught", { { itemID = 6358, quantity = 1 } })
+				assert.are.equal("Pagle · 2 waiting", fake.compartmentText())
+				fake.wait(900)
+
+				assert.are.equal("Fishing session", fake.cardsShown[1].title)
+				assert.are.equal("Pagle", fake.compartmentText())
+			end
+		)
+
+		it("mark a moment expired by the Session's end, so its card shows its pastText (ANN-R45)", function()
+			local fake = newFakePagle()
+			raising(fake, "Hunts", 20, function(record)
+				return {
+					rung = "nod",
+					kind = "window",
+					title = "Window open",
+					cast = record.id,
+					expiresAt = SERVER_TIME + 600,
+					pastText = "Window opened 21:00–06:00",
+				}
+			end)
+			fake.login()
+			fake.enterWorld()
+
+			fake.playCast("caught", { { itemID = 6358, quantity = 1 } })
+			fake.wait(900)
+
+			local moment = fake.global.cards[1].moments[1].moments[1]
+			assert.is_true(moment.expired)
+			assert.are.same(
+				{ { kind = "heading", text = "Hunts" }, { kind = "moment", text = "Window opened 21:00–06:00" } },
+				fake.ns.CardRows(fake.global.cards[1], tostring)
+			)
+		end)
 	end)
 
 	describe("the cards", function()

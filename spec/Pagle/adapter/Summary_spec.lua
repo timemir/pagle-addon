@@ -172,7 +172,7 @@ describe("the Session summary on the client", function()
 			first.client.advance(900)
 
 			-- This login, Hunts is disabled, so it never registers.
-			local second = core({ BUILD }, { global = first.env.PagleDB.global })
+			local second = core({ BUILD }, first.env.PagleDB)
 			local again = second.env.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
 			login(second)
 			catchOne(second)
@@ -180,7 +180,7 @@ describe("the Session summary on the client", function()
 			second.client.advance(900)
 
 			-- The next login, Hunts is back.
-			local third = core({ BUILD }, { global = second.env.PagleDB.global })
+			local third = core({ BUILD }, second.env.PagleDB)
 			local ledger3 = third.env.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
 			third.env.Pagle.RegisterModule({ name = "Hunts", title = "Hunts", order = 20 })
 			login(third)

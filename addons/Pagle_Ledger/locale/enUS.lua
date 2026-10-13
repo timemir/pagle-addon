@@ -31,4 +31,16 @@ ns.L = {
 	NEW_IN_ZONE_STAMP = "New here",
 	SKILL_MILESTONE_TITLE = "Skill Milestone",
 	SKILL_MILESTONE_TEXT = "Fishing %d",
+
+	-- Write-up sections (LED-R93) and their lines (LED-R94). Numbers in %s are BreakUpLargeNumbers'.
+	WRITE_UP_FIRST_BUILD_ONE = "Your Ledger was written up from %s Cast",
+	WRITE_UP_FIRST_BUILD_OTHER = "Your Ledger was written up from %s Casts",
+	WRITE_UP_WHILE_OFF = "While the Ledger was off",
+	WRITE_UP_LEVEL = "Angler Level %d",
+	WRITE_UP_LEVEL_ROSE = "Angler Level %d → %d",
+	WRITE_UP_SPECIES_ONE = "%d Species",
+	WRITE_UP_SPECIES_OTHER = "%d Species",
+	WRITE_UP_SKILL_ONE = "%d Skill Milestone",
+	WRITE_UP_SKILL_OTHER = "%d Skill Milestones",
+	WRITE_UP_COINS = "Pagle Coins +%s",
 }

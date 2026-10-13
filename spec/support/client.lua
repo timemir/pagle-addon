@@ -96,6 +96,12 @@ local function clientStubs(client)
 		issecretvalue = function()
 			return false
 		end,
+		-- The client's string extension: a UTF-8 string's length in code points, counting every byte that doesn't
+		-- continue a sequence (10xxxxxx). AceDB reads it to check a saved profile key.
+		strlenutf8 = function(s)
+			local _, codePoints = string.gsub(s, "[^\128-\191]", "")
+			return codePoints
+		end,
 		InCombatLockdown = function()
 			return false
 		end,

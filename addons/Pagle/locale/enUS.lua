@@ -46,6 +46,9 @@ ns.L = {
 	ANNOUNCEMENT_COINS = "+%s Coins",
 	ANNOUNCEMENT_NEW_RECORD = "New record",
 	ANNOUNCEMENT_SPLASH_HINT = "Click anywhere to continue",
+	-- The toast listing the toast headlines held through combat (ANN-R36), and each line: a headline's title and text.
+	ANNOUNCEMENT_WHILE_FIGHTING = "While you were fighting",
+	ANNOUNCEMENT_FIGHTING_LINE = "%s: %s",
 	-- The cards (announcements.md › UI): a Session summary's title, "Your last session" for one that ended while away
 	-- (ANN-R54), and the Write-up's (ANN-R61); Core's numbers (ANN-R53), time fished in minutes or hours and minutes;
 	-- the Coins line with its sum (ANN-R53); the close button (closing also takes Esc).
@@ -86,6 +89,9 @@ ns.L = {
 	MENU_SETTINGS = "Settings",
 	-- Its Curio Shop entry (CORE-R50): the balance as BreakUpLargeNumbers writes it, then a coin icon.
 	MENU_CURIO_SHOP = "Curio Shop  %s |TInterface\\MoneyFrame\\UI-GoldIcon:0|t",
+	-- The compartment entry's label (CORE-R51): Pagle, with the moments Cozy mode holds for a summary (ANN-R42).
+	COMPARTMENT = "Pagle",
+	COMPARTMENT_WAITING = "Pagle · %d waiting",
 
 	-- /pagle help (CORE-R60, CORE-R61): the header, then a line per command (its name, its help). Core lists the
 	-- reserved commands that work; shop and report join with their surfaces (M4, M3).
