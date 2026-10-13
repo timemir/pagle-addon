@@ -39,6 +39,11 @@
 ---@field login fun() Does Core's PLAYER_LOGIN work: fires ModulesChanged. Raises an error if called twice.
 ---@field readOnly fun(value: any): any The read-only proxy of a table (the same one each time); other values as is.
 ---@field moduleState fun(name: string): PagleModuleState A roster Module's state (CORE-R41).
+---@field settingsPage fun(topic: string): { module: string, kind: string, label: string, indented: boolean, setting: PagleSetting }[]?
+--- The rows Core would put on a topic page, in order, its header rows included; nil before login or with no rows,
+--- when Core registers no page (CORE-R42).
+---@field reported string[] Each error Core reported through geterrorhandler(), e.g. a late M:AddSetting.
+---@field openedSettings string[] What each Pagle.OpenSettings opened: "root" or the topic (CORE-R43).
 ---@field load fun(name: string, options: table?): LoadedAddon Loads a Module with `loadAddon` against this fake:
 --- `globals`, and of Pagle.toc only the vendored libs/ the Module reaches through LibStub (CORE-R6). Options as
 --- loadAddon's. WoW events its client raises on its own (`client.fireGameEvent`) go to `fake.fireGameEvent`.
@@ -243,6 +248,61 @@ part(function(fake, Pagle, ns)
 		assert(not loggedIn, "FakePagle: PLAYER_LOGIN happens once a session")
 		loggedIn = true
 		fake.fire("ModulesChanged")
+	end
+end)
+
+-- Settings (CORE-R33, CORE-R42, CORE-R43), on Core's real rows logic. Pages count as registered from login.
+part(function(fake, Pagle, ns)
+	local rows = ns.NewSettingsRows()
+	local loggedIn = false
+	fake.reported = {}
+	fake.openedSettings = {}
+
+	function ns.ModuleHandle:AddSetting(topic, setting)
+		local module = fake.registry:ModuleOf(self)
+		if not module then
+			error("AddSetting is a Module handle method: call M:AddSetting(topic, setting)", 2)
+		end
+		local problem, late = rows:Add(module.def.name, topic, setting)
+		if late then
+			fake.reported[#fake.reported + 1] = problem
+		elseif problem then
+			error(problem, 2)
+		end
+	end
+
+	Pagle.RegisterCallback(fake, "ModulesChanged", function()
+		rows:Close()
+		loggedIn = true
+	end)
+
+	function fake.settingsPage(topic)
+		local entries = loggedIn and rows:Page(topic, fake.registry:Modules()) or {}
+		if #entries == 0 then
+			return nil
+		end
+		local page = {}
+		for i, entry in ipairs(entries) do
+			local setting = entry.setting
+			page[i] = {
+				module = entry.module.def.name,
+				kind = setting.kind,
+				label = setting.label,
+				indented = entry.parent ~= nil,
+				setting = setting,
+			}
+		end
+		return page
+	end
+
+	function Pagle.OpenSettings(topic)
+		if Pagle.IsRestricted() then
+			fake.printed[#fake.printed + 1] = ns.L.SETTINGS_AFTER_COMBAT
+		elseif loggedIn then
+			fake.openedSettings[#fake.openedSettings + 1] = (type(topic) == "string" and fake.settingsPage(topic))
+					and topic
+				or "root"
+		end
 	end
 end)
 
