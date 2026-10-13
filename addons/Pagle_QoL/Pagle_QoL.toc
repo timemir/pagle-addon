@@ -18,9 +18,11 @@ logic\Settings.lua
 logic\Conflict.lua
 logic\Stretch.lua
 logic\Lures.lua
+logic\Nudge.lua
 adapter\Bindings.lua
 adapter\FishingKey.lua
 adapter\Conflict.lua
 adapter\Combat.lua
 adapter\Stretch.lua
+adapter\Nudge.lua
 adapter\QoL.lua

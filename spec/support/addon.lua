@@ -41,7 +41,7 @@ FOREVER_GLOBALS = { WOW_PROJECT_ID = PROJECT_IDS.CAMELOT, WOW_PROJECT_CAMELOT = 
 ---@class FakeClient
 ---@field missingEvents table<string, true> Events this client doesn't know: registering one raises an error, as the
 --- client does. Specs add to it.
----@field frames table[] Every frame CreateFrame made, in order.
+---@field frames table[] Every frame CreateFrame made, in order. A named one is also the load's global of that name.
 ---@field fire fun(event: string, ...) Fires a WoW event at each frame registered for it, in creation order, calling
 --- its OnEvent script with (frame, event, ...). A unit event reaches a frame only for the units it registered.
 ---@field addons table<string, FakeAddOn> The addons installed, by folder name ("Pagle_QoL"), as C_AddOns reports
@@ -165,7 +165,6 @@ end
 
 -- Widget methods that only lay out or colour: nothing for a spec to read back.
 local LAYOUT_METHODS = {
-	"SetPoint",
 	"ClearAllPoints",
 	"SetAllPoints",
 	"SetSize",
@@ -174,18 +173,49 @@ local LAYOUT_METHODS = {
 	"SetJustifyH",
 	"SetJustifyV",
 	"SetWordWrap",
-	"SetTextColor",
 	"SetFontObject",
 	"SetEnabled",
 }
 
 -- A widget (frame, button or font string) that keeps what specs read back: its text, whether it's shown, its
--- scripts and the widgets created on it.
+-- scripts and the widgets created on it, its parent, anchors (`points`, each SetPoint's arguments), alpha, text
+-- colour (`textColor`, { r, g, b }), a font string's font object (`fontObject`, CreateFontString's template), and
+-- a button's attributes (`attributes`) and click registration (`clicks`, RegisterForClicks's arguments).
 ---@param kind string "Frame", "Button", "FontString", …
 ---@param parent table?
 local function newWidget(kind, parent)
 	---@type table<string, any>
-	local widget = { kind = kind, shown = true, scripts = {}, children = {} }
+	local widget = {
+		kind = kind,
+		parent = parent,
+		shown = true,
+		alpha = 1,
+		scripts = {},
+		children = {},
+		points = {},
+		attributes = {},
+	}
+	function widget:SetPoint(...)
+		self.points[#self.points + 1] = { ... }
+	end
+	function widget:SetAlpha(alpha)
+		self.alpha = alpha
+	end
+	function widget:GetAlpha()
+		return self.alpha
+	end
+	function widget:SetTextColor(r, g, b)
+		self.textColor = { r, g, b }
+	end
+	function widget:SetAttribute(name, value)
+		self.attributes[name] = value
+	end
+	function widget:GetAttribute(name)
+		return self.attributes[name]
+	end
+	function widget:RegisterForClicks(...)
+		self.clicks = { ... }
+	end
 	function widget:SetText(text)
 		self.text = text
 	end
@@ -217,8 +247,10 @@ local function newWidget(kind, parent)
 			onClick(self, "LeftButton", false)
 		end
 	end
-	function widget:CreateFontString()
-		return newWidget("FontString", self)
+	function widget:CreateFontString(_, _, template)
+		local fontString = newWidget("FontString", self)
+		fontString.fontObject = template
+		return fontString
 	end
 	for _, method in ipairs(LAYOUT_METHODS) do
 		widget[method] = function() end
@@ -607,9 +639,26 @@ end
 local function clientStubs(client)
 	local stubs
 	stubs = {
-		CreateFrame = function(frameType, _, parent)
-			return newFrame(client, frameType, parent)
+		-- As the client's, a named frame is also the global of that name, and keeps its template.
+		CreateFrame = function(frameType, name, parent, template)
+			local frame = newFrame(client, frameType, parent)
+			frame.name, frame.template = name, template
+			if name then
+				stubs[name] = frame
+			end
+			return frame
 		end,
+		-- The screen's root frame and the game's error text under it (both in the forever dump's Frames.lua), and the
+		-- yellow FrameXML's GlobalColors defines (CreateColor(1, 1, 0, 1)).
+		UIParent = newWidget("Frame"),
+		YELLOW_FONT_COLOR = {
+			r = 1,
+			g = 1,
+			b = 0,
+			GetRGB = function(color)
+				return color.r, color.g, color.b
+			end,
+		},
 		IsLoggedIn = function()
 			return false
 		end,
@@ -792,6 +841,7 @@ local function clientStubs(client)
 			return "US"
 		end,
 	}
+	stubs.UIErrorsFrame = newWidget("MessageFrame", stubs.UIParent)
 	settingsStubs(client, stubs)
 	menuStubs(client, stubs)
 	return stubs

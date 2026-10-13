@@ -63,6 +63,10 @@ stds.wow = {
 		"IsMounted",
 		-- QoL's conflict popup (QOL-R81); StaticPopupDialogs itself is in stds.wow_variables.
 		"StaticPopup_Show",
+		-- QoL's Nudges: a frame on the screen, below the game's error text (QOL-R75); its colour is in
+		-- stds.wow_variables.
+		"UIParent",
+		"UIErrorsFrame",
 		-- The character table, Skill Readings and build entries (LOG-R26, LOG-R30, LOG-R36).
 		"UnitName",
 		"UnitClass",
@@ -129,6 +133,11 @@ stds.wow_variables = {
 		-- Interface/AddOns/Blizzard_StaticPopup/StaticPopup.lua: `StaticPopupDialogs = {}; -- Definitions`. QoL adds
 		-- its one dialog to it.
 		StaticPopupDialogs = { fields = { PAGLE_QOL_CONFLICT = { read_only = false } } },
+		-- A FrameXML colour the dump doesn't list (QOL-R75: a Nudge's colour). No probe has drawn a Nudge yet; Track Q's
+		-- exit check (step 1) does. Ketho/vscode-wow-api at WOW_API_COMMIT (scripts/tools.env),
+		-- Annotations/Core/Type/GlobalColors.lua: "YELLOW_FONT_COLOR = CreateColor(1.000, 1.000, 0.000, 1.000)". Only
+		-- GetRGB is called on it.
+		YELLOW_FONT_COLOR = { fields = { "GetRGB" } },
 		-- A FrameXML table the dump doesn't list (CORE-R60). probes/fishing-signals/results/
 		-- 2026-10-11-build70338-report.md is the /pprobe report from build 70338, and /pprobe is registered with
 		-- SlashCmdList.PAGLEPROBE (probes/fishing-signals/PagleProbe/Report.lua). Gethe/wow-ui-source branch forever at
