@@ -57,6 +57,10 @@ stds.wow = {
 		"GetInventoryItemID",
 		C_Item = { fields = { "GetItemInfoInstant" } },
 		C_Spell = { fields = { "GetSpellName" } },
+		-- QoL's Fishing stretch and its CVar lease (QOL-R61–R64).
+		"GetCVar",
+		"SetCVar",
+		"IsMounted",
 		-- QoL's conflict popup (QOL-R81); StaticPopupDialogs itself is in stds.wow_variables.
 		"StaticPopup_Show",
 		-- The character table, Skill Readings and build entries (LOG-R26, LOG-R30, LOG-R36).
@@ -145,6 +149,7 @@ max_line_length = false -- StyLua owns line width, and it leaves long strings an
 exclude_files = {
 	"addons/*/libs/**", -- vendored, owned by scripts/update-ace3.sh
 	"types/**", -- LuaLS ---@meta stubs: declarations for the types stage, never loaded
+	"spec/scripts/fixtures/**", -- WTF files as the WoW client writes them: data the specs read, never our code
 	".tools/**",
 	".release/**",
 }
