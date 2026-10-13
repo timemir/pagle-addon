@@ -8,7 +8,7 @@
 --   fake.fire("RestrictionChanged", true)                   -- any Core event; tables arrive read-only
 --   fake.setRestricted(true)
 --
--- It is built on Core's real logic/: each FakePagle loads Pagle.toc's locale/ and logic/ files (and the
+-- It is built on Core's real logic/: each FakePagle loads Pagle.toc's data/, locale/ and logic/ files (and the
 -- CallbackHandler bus) afresh, so what it validates, computes and refuses is what Core does. Only the adapter part
 -- is faked.
 --
@@ -26,7 +26,7 @@
 ---@field Pagle table The Pagle API Core publishes. Specs may stub on it; Modules see it read-only via `globals`.
 ---@field globals table<string, any> Globals for `loadAddon` when it loads a Module: `Pagle` (read-only) and the
 --- proxy-aware `pairs`, `ipairs`, `next` and `unpack`.
----@field ns table Core's logic/ (and its string table, `ns.L`), loaded for this fake alone.
+---@field ns table Core's logic/ (with `ns.L` and `ns.catalogue`), loaded for this fake alone.
 ---@field registry PagleModuleRegistry Core's real Module registry; `registry:ModuleOf(handle)` finds a Module.
 ---@field addons table<string, FakeAddOn> The roster Modules' addons by folder name, as the client reports them.
 --- By default each is installed, enabled, loaded and declares `X-Pagle-API` = API_VERSION. Set one to nil to
@@ -40,8 +40,8 @@
 ---@field readOnly fun(value: any): any The read-only proxy of a table (the same one each time); other values as is.
 ---@field moduleState fun(name: string): PagleModuleState A roster Module's state (CORE-R41).
 
--- Core's logic/ for one fake: Pagle.toc's libs (for the bus), locale/ and logic/ files, in TOC order, sharing one
--- ns, as the client would load them. logic/ uses no WoW globals (CORE-R7), so plain Lua runs it.
+-- Core's logic/ for one fake: Pagle.toc's libs (for the bus), generated data/, locale/ and logic/ files, in TOC
+-- order, sharing one ns, as the client would load them. None uses WoW globals (CORE-R7), so plain Lua runs them.
 ---@return table ns
 ---@return table env
 local function loadCoreLogic()
@@ -54,6 +54,7 @@ local function loadCoreLogic()
 	for _, file in ipairs(addonFiles("Pagle")) do
 		local wanted = file:match("^logic/")
 			or file:match("^locale/")
+			or file:match("^data/")
 			or file:match("^libs/LibStub/")
 			or file:match("^libs/CallbackHandler")
 		if wanted then
