@@ -4,7 +4,7 @@
 
 local SOUNDS = "Interface\\AddOns\\Pagle\\media\\sounds\\"
 local DRIFTWOOD = SOUNDS .. "driftwood\\"
-local CAST = PLAYER_GUID .. "-1791731700-0"
+local CAST = ("%s-%d-0"):format(PLAYER_GUID, SERVER_TIME)
 -- The Pagle Coin icon the Coins stamp shows after its "+N" (ANN-R23).
 local COIN = "|TInterface\\MoneyFrame\\UI-GoldIcon:0|t"
 

@@ -40,7 +40,7 @@ describe("Pagle_Ledger with Core", function()
 	end)
 
 	it("registers no view, slash command, menu entry or settingsAction in M2 (LED-R1, LED-R4)", function()
-		local def = loadAddon("Pagle_Ledger", FOREVER_GLOBALS).namespaces.Pagle.Modules:Modules()[1].def
+		local def = loadAddon("Pagle_Ledger", FOREVER_GLOBALS).ns.ModuleDef()
 
 		assert.is_nil(def.views)
 		assert.is_nil(def.slash)
