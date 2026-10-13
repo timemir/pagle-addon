@@ -160,6 +160,11 @@ stds.wow_variables = {
 		-- 943764493e6b16d63ded3ab304150d1f05e58b57 ("1.60.1 (70338)"),
 		-- Interface/AddOns/Blizzard_SharedXMLGame/Tooltip/TooltipDataHandler.lua: "TooltipDataProcessor = {".
 		TooltipDataProcessor = { fields = { "AddTooltipPostCall" } },
+		-- A FrameXML table the dump doesn't list (announcements.md › UI: a card closes with Esc). Gethe/wow-ui-source
+		-- branch forever at 943764493e6b16d63ded3ab304150d1f05e58b57 ("1.60.1 (70338)"),
+		-- Interface/AddOns/Blizzard_UIParentPanelManager/Shared/UIParentPanelManager.lua: "UISpecialFrames = {", and
+		-- CloseSpecialWindows hides each frame named in it that is shown. Core adds its card frame's name.
+		"UISpecialFrames",
 	},
 }
 

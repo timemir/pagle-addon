@@ -28,6 +28,9 @@ ns.summary = ns.NewSummary({
 	modules = function()
 		return ns.Modules:Modules()
 	end,
+	cozy = function()
+		return ns.db.profile.announcements.cozy
+	end,
 })
 
 -- ANN-R52: moments raised with no Session open join the one that starts.
@@ -35,9 +38,12 @@ Pagle.RegisterCallback(OWNER, "SessionStarted", function()
 	ns.summary:Started()
 end)
 
--- ANN-R53: a Session that raised a moment becomes a card; its moments are cleared either way.
+-- ANN-R53: a Session that raised a moment becomes a card, which shows when it can (ANN-R21); its moments are cleared
+-- either way.
 Pagle.RegisterCallback(OWNER, "SessionEnded", function(_, session)
-	ns.summary:Ended(session)
+	if ns.summary:Ended(session) then
+		ns.cards:Next()
+	end
 end)
 
 ---@class PagleModuleHandle

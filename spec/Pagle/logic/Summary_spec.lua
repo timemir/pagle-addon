@@ -1,5 +1,5 @@
 -- The Session summary's data (announcements.md › Session summary, › Data): logic/Summary.lua over a PagleDB.global
--- table, whether a Session is open and the registered Modules. Drawing the cards is #87's.
+-- table, whether a Session is open, the registered Modules and Cozy mode. logic/Cards.lua shows the cards.
 
 local ns = loadAddon("Pagle", FOREVER_GLOBALS).ns
 
@@ -36,10 +36,10 @@ local function raised(module, fields)
 	return moment
 end
 
--- A summary over `world`: `world.global` is PagleDB.global, `world.open` whether a Session is open, and
--- `world.modules` the registered Modules, by order.
+-- A summary over `world`: `world.global` is PagleDB.global, `world.open` whether a Session is open,
+-- `world.modules` the registered Modules, by order, and `world.cozy` the player's Cozy mode.
 local function newWorld()
-	local world = { global = {}, open = true, modules = { LEDGER, HUNTS } }
+	local world = { global = {}, open = true, modules = { LEDGER, HUNTS }, cozy = false }
 	world.summary = ns.NewSummary({
 		global = function()
 			return world.global
@@ -49,6 +49,9 @@ local function newWorld()
 		end,
 		modules = function()
 			return world.modules
+		end,
+		cozy = function()
+			return world.cozy
 		end,
 	})
 	return world
@@ -186,7 +189,7 @@ describe("the Session summary", function()
 	end)
 
 	it(
-		'titles nothing itself: a card from a whileAway end is marked whileAway, for #87\'s "Your last session" (ANN-R54)',
+		"marks a card from a whileAway end whileAway, and only that one (ANN-R54)",
 		function()
 			local world = newWorld()
 			world.summary:Add(raised(LEDGER, { rung = "toast", kind = "newSpecies", title = "New Species" }))
@@ -307,4 +310,81 @@ describe("the Session summary", function()
 
 		assert.are.same({ true, "New Species" }, { card.whileAway, card.moments[1].moments[1].title })
 	end)
+	it(
+		'titles a card "Your last session" when its Session ended while away, else "Fishing session" (ANN-R54)',
+		function()
+			local world = newWorld()
+			world.summary:Add(raised(LEDGER, { rung = "toast", kind = "newSpecies", title = "New Species" }))
+			local live = world.summary:Ended(SESSION)
+			local away = {}
+			for key, value in pairs(SESSION) do
+				away[key] = value
+			end
+			away.whileAway = true
+			world.summary:Add(raised(LEDGER, { rung = "toast", kind = "newSpecies", title = "New Species" }))
+
+			local last = world.summary:Ended(away)
+
+			assert.are.same({ "Fishing session", "Your last session" }, { live.title, last.title })
+		end
+	)
+
+	it("keeps at most 3 cards: a 4th drops the oldest (ANN-R54)", function()
+		local world = newWorld()
+		for i = 1, 4 do
+			world.summary:Add(raised(LEDGER, { rung = "toast", kind = "newSpecies", title = "Species " .. i }))
+			world.summary:Ended(SESSION)
+		end
+
+		local kept = {}
+		for i, card in ipairs(world.global.cards) do
+			kept[i] = card.moments[1].moments[1].title
+		end
+		assert.are.same({ "Species 2", "Species 3", "Species 4" }, kept)
+	end)
+
+	it(
+		"in Cozy mode, puts the waiting Write-up sections on the next card, by Module order, and makes that card"
+			.. " although its Session raised no moment (ANN-R53, ANN-R62)",
+		function()
+			local world = newWorld()
+			world.cozy = true
+			world.global.writeUp = {
+				{
+					module = "Hunts",
+					order = 20,
+					title = "Hunts",
+					heading = "While Hunts was off",
+					lines = { "2 Hunts" },
+				},
+				{ module = "Ledger", order = 10, title = "Ledger", heading = "Your Ledger was written up", lines = {} },
+			}
+
+			local card = world.summary:Ended(SESSION)
+
+			assert.are.same({ "Your Ledger was written up", "While Hunts was off" }, {
+				card.writeUp[1].heading,
+				card.writeUp[2].heading,
+			})
+			assert.are.same({}, card.moments)
+			assert.are.same({ card }, world.global.cards)
+			assert.are.same({}, world.global.writeUp)
+		end
+	)
+
+	it(
+		"out of Cozy mode, leaves the Write-up waiting: a quiet Session still makes no card (ANN-R53, ANN-R61)",
+		function()
+			local world = newWorld()
+			local section = { module = "Ledger", order = 10, title = "Ledger", heading = "Written up", lines = {} }
+			world.global.writeUp = { section }
+
+			assert.is_nil(world.summary:Ended(SESSION))
+			world.summary:Add(raised(LEDGER, { rung = "toast", kind = "newSpecies", title = "New Species" }))
+			local card = world.summary:Ended(SESSION)
+
+			assert.is_nil(card.writeUp)
+			assert.are.same({ section }, world.global.writeUp)
+		end
+	)
 end)

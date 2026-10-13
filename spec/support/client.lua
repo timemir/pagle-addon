@@ -66,11 +66,15 @@ end
 local function clientStubs(client)
 	local stubs
 	stubs = {
-		CreateFrame = function(frameType, _, parent)
-			return widgets.newFrame(client, frameType, parent)
+		CreateFrame = function(frameType, name, parent)
+			local frame = widgets.newFrame(client, frameType, parent)
+			frame.name = name
+			return frame
 		end,
 		-- The frame every addon frame hangs from; a plain widget, so it gets no events.
 		UIParent = widgets.newWidget("Frame"),
+		-- The frame names Esc hides (CloseSpecialWindows), as FrameXML starts it.
+		UISpecialFrames = { "ItemRefTooltip", "ColorPickerFrame" },
 		-- Records the call in client.sounds and reports it played, as willPlay, soundHandle.
 		PlaySoundFile = function(path, channel)
 			client.sounds[#client.sounds + 1] = ("%s %s"):format(path, tostring(channel))
