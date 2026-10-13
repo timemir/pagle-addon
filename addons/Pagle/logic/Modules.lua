@@ -60,6 +60,22 @@ function ns.ModuleAddOn(name)
 	return "Pagle_" .. name
 end
 
+--- A label from a Module's def (its views, `menu` entries and `settingsAction`) as Core shows it: a function label
+--- is called now, through `call`, so each showing reads it afresh (CORE-R44, CORE-R52). Nil when it fails or isn't
+--- text, so the one entry or button is left out and nothing else breaks.
+---@param label any
+---@param call fun(fn: function): any calls a function label; returns nil when it fails (securecallfunction)
+---@return string?
+function ns.ReadLabel(label, call)
+	if type(label) == "function" then
+		label = call(label)
+	end
+	if type(label) == "string" then
+		return label
+	end
+	return nil
+end
+
 --- An empty registry for Core's `Pagle.API_VERSION`.
 ---@param apiVersion integer
 ---@return PagleModuleRegistry

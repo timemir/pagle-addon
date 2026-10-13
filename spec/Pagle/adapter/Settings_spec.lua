@@ -422,6 +422,32 @@ describe("The status list with a Module On", function()
 		assert.are.equal("Shown 2", statusButtons(loaded)[1]:GetText())
 	end)
 
+	it("leaves out a button whose label fails, reporting it; the line stays (CORE-R44, SET-R12)", function()
+		local loaded = loadWithQoL()
+		local reported = {}
+		loaded.env.geterrorhandler = function()
+			return function(err)
+				reported[#reported + 1] = err
+			end
+		end
+		registerQoL(loaded, {
+			settingsAction = {
+				label = function()
+					error("no label yet")
+				end,
+				onClick = function() end,
+			},
+		})
+		loaded.client.fire("PLAYER_LOGIN")
+
+		local list = loaded.client.settings.textsOf(showStatusList(loaded))
+
+		assert.are.same({}, statusButtons(loaded))
+		assert.are.same({ "QoL", "1.2.3", "On" }, { unpack(list, #list - 2) })
+		assert.are.equal(2, #reported) -- the label is read each time the root is shown
+		assert.matches("no label yet", reported[1], 1, true)
+	end)
+
 	it("labels a Module's button Open {label} for its first view, without settingsAction (CORE-R44)", function()
 		local loaded = loadWith({ Hunts = {} })
 		loaded.env.Pagle.RegisterModule({

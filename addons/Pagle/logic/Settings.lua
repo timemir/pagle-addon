@@ -169,25 +169,20 @@ end
 ---@field onClick fun()
 ---@field closesPanel boolean   a Module with a view closes the panel first, since the view would open behind it
 
----@param label string|fun():string
----@return string
-local function read(label)
-	if type(label) == "function" then
-		return label()
-	end
-	return label
-end
-
---- An On Module's button: its `def.settingsAction`, otherwise "Open {label}" for its first view; nil with neither.
+--- An On Module's button: its `def.settingsAction`, otherwise "Open {label}" for its first view; nil with neither,
+--- or when its label can't be read (`ns.ReadLabel`), so a failing label costs the button and not the Module's line.
 ---@param def PagleModuleDef
+---@param call fun(fn: function): any calls a function label; returns nil when it fails (securecallfunction)
 ---@return PagleStatusButton?
-function ns.StatusButton(def)
+function ns.StatusButton(def, call)
 	local view = def.views and def.views[1]
 	local action = def.settingsAction
 	if action then
-		return { label = read(action.label), onClick = action.onClick, closesPanel = view ~= nil }
+		local label = ns.ReadLabel(action.label, call)
+		return label and { label = label, onClick = action.onClick, closesPanel = view ~= nil }
 	elseif view then
-		return { label = ns.L.OPEN_VIEW:format(read(view.label)), onClick = view.open, closesPanel = true }
+		local label = ns.ReadLabel(view.label, call)
+		return label and { label = ns.L.OPEN_VIEW:format(label), onClick = view.open, closesPanel = true }
 	end
 	return nil
 end

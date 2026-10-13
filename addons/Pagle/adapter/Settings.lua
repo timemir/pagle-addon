@@ -157,7 +157,7 @@ local function statusLines()
 			name = L.MODULE_NAMES[entry.name],
 			version = C_AddOns.GetAddOnMetadata(ns.ModuleAddOn(entry.name), "Version") or "",
 			state = L.MODULE_STATES[entry.state],
-			button = module and ns.StatusButton(module.def),
+			button = module and ns.StatusButton(module.def, securecallfunction),
 		}
 	end
 	return lines
