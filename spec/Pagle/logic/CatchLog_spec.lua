@@ -39,6 +39,7 @@ describe("the Catch log codec", function()
 				char = 1,
 				time = 1791731747,
 				outcome = "caught",
+				session = id, -- it opens its Session (LOG-R98)
 				conditions = {
 					time = 1791731747,
 					minute = 494, -- realm 08:14

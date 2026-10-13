@@ -32,6 +32,7 @@ Pagle.RegisterEvent(OWNER, "ADDON_LOADED", function(_, loadedName)
 	ns.OpenWallet() -- SHOP-R3
 	ns.BuildCatalogue()
 	ns.angler = ns.NewAngler(ns.catchLog)
+	ns.OpenSessions() -- LOG-R63
 end)
 
 -- Step 2. PLAYER_LOGIN comes after every addon's ADDON_LOADED, so every enabled Module has run its OnInitialize

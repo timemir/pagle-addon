@@ -25,6 +25,7 @@ logic\WorkQueue.lua
 logic\Conditions.lua
 logic\LiveConditions.lua
 logic\Modules.lua
+logic\Sessions.lua
 logic\CatchLog.lua
 logic\Projections.lua
 logic\Migrations.lua
@@ -36,6 +37,7 @@ logic\Diagnostics.lua
 logic\Settings.lua
 logic\Slash.lua
 logic\Wallet.lua
+logic\Moments.lua
 logic\Menu.lua
 logic\ReloadReminder.lua
 adapter\Core.lua
@@ -51,10 +53,12 @@ adapter\Projections.lua
 adapter\Angler.lua
 adapter\Fishing.lua
 adapter\Diagnostics.lua
+adapter\Sessions.lua
 adapter\Settings.lua
 adapter\AnnouncementSettings.lua
 adapter\Slash.lua
 adapter\Wallet.lua
+adapter\Moments.lua
 adapter\Menu.lua
 adapter\ReloadReminder.lua
 adapter\Login.lua

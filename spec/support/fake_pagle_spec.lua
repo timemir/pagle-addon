@@ -445,6 +445,154 @@ describe("FakePagle", function()
 		end)
 	end)
 
+	describe("moments", function()
+		-- A Module registered on `fake` whose projection raises `raise(record, mode)`'s moment, if any, for each Cast it
+		-- applies, and `done(info)`'s from its done.
+		local function raising(fake, name, order, raise, done)
+			local M = fake.Pagle.RegisterModule({ name = name, title = name, order = order })
+			M:NewProjection({
+				db = {},
+				rulesVersion = 1,
+				reset = function()
+					return {}
+				end,
+				apply = function(_, record, mode)
+					local moment = record.kind == "cast" and raise(record, mode)
+					if moment then
+						M:RaiseMoment(moment)
+					end
+				end,
+				done = done and function(_, info)
+					M:RaiseMoment(done(info))
+				end,
+			})
+			return M
+		end
+
+		-- fake.catchLog with the player's character and `casts` Casts in it, as history before login.
+		local function withHistory(fake, casts)
+			fake.catchLog.data.characters[1] = { guid = PLAYER_GUID }
+			for i = 1, casts do
+				fake.catchLog:Append({
+					kind = "cast",
+					char = 1,
+					time = 1791731000 + i,
+					outcome = "caught",
+					conditions = { minute = 494, zone = 148, subzone = 453, events = {}, auras = {} },
+					items = { { itemID = 6358, quantity = 1 } },
+				})
+			end
+		end
+
+		it(
+			"make two Modules' moments for a played Cast one Announcement on the next frame, coins apart (ANN-R10,"
+				.. " ANN-R11, ANN-R23)",
+			function()
+				local fake = newFakePagle()
+				raising(fake, "Hunts", 20, function(record)
+					return { rung = "toast.high", kind = "hunt", title = "Hunt completed", cast = record.id, coins = 15 }
+				end)
+				raising(fake, "Ledger", 10, function(record)
+					return {
+						rung = "toast",
+						kind = "newSpecies",
+						title = "New Species",
+						stamp = "New!",
+						cast = record.id,
+					}
+				end)
+				fake.login()
+				fake.enterWorld()
+
+				fake.playCast("caught", { { itemID = 6358, quantity = 1 } })
+				assert.are.same({}, fake.announcements)
+				fake.nextFrame()
+
+				assert.are.equal(1, #fake.announcements)
+				local shown = fake.announcements[1]
+				assert.are.same({ "Hunt completed", "toast.high", { "New!" }, 15 }, {
+					shown.headline.title,
+					shown.rung,
+					shown.stamps,
+					shown.coins,
+				})
+			end
+		)
+
+		it("refuses a moment as Core does: an unknown rung, or no kind or title (ANN-R1)", function()
+			local fake = newFakePagle()
+			local M = fake.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
+
+			for _, moment in ipairs({
+				{ rung = "fanfare", kind = "k", title = "t" },
+				{ rung = "toast", title = "t" },
+				{ rung = "toast", kind = "k" },
+			}) do
+				assert.has_error(function()
+					M:RaiseMoment(moment)
+				end)
+			end
+			assert.are.same({}, fake.summarized)
+		end)
+
+		it(
+			"drop a rebuild's moments, reported once, and keep a summaryOnly one from done, never shown (ANN-R4,"
+				.. " ANN-R63)",
+			function()
+				local fake = newFakePagle()
+				withHistory(fake, 2)
+				raising(fake, "Ledger", 10, function(record, mode)
+					return { rung = "toast", kind = mode, title = "Cast " .. record.seq, cast = record.id }
+				end, function()
+					return { rung = "toast", kind = "reclassified", title = "Reclassified", summaryOnly = true }
+				end)
+
+				fake.login()
+				fake.enterWorld()
+				fake.nextFrame()
+
+				assert.are.same({}, fake.announcements)
+				assert.are.equal(1, #fake.reported)
+				assert.are.same({ "Reclassified" }, { fake.summarized[1].title })
+				assert.are.equal(1, #fake.summarized)
+			end
+		)
+
+		it(
+			"hold a Cast played before enterWorld until the frame after every projection caught up (ANN-R10,"
+				.. " LOG-R74)",
+			function()
+				local fake = newFakePagle()
+				raising(fake, "Ledger", 10, function(record)
+					return { rung = "toast", kind = "newSpecies", title = "New Species", cast = record.id }
+				end)
+				fake.login()
+
+				fake.playCast("caught", { { itemID = 6358, quantity = 1 } })
+				fake.nextFrame()
+				assert.are.same({}, fake.announcements)
+				fake.enterWorld()
+				assert.are.same({}, fake.announcements)
+				fake.nextFrame()
+
+				assert.are.same({ "New Species" }, { fake.announcements[1].headline.title })
+			end
+		)
+
+		it("flush a moment without a Cast on the next frame, as its own Announcement (ANN-R12)", function()
+			local fake = newFakePagle()
+			local M = fake.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
+
+			M:RaiseMoment({ rung = "nod", kind = "login", title = "Welcome back" })
+			fake.nextFrame()
+
+			assert.are.same(
+				{ "Welcome back", "nod" },
+				{ fake.announcements[1].headline.title, fake.announcements[1].rung }
+			)
+		end)
+	end)
+
 	describe("/pagle", function()
 		it(
 			"runs a Module's subcommand case-insensitively with the rest of the line, trimmed, from login (CORE-R62)",
@@ -1038,6 +1186,97 @@ describe("FakePagle", function()
 			assert.is_true(idle)
 			assert.is_nil(fake.projections:Mode())
 			assert.has_error(fake.enterWorld)
+		end)
+	end)
+
+	describe("Sessions", function()
+		-- Each Session event and each apply, in order, as "<event> <session id> [whileAway]" and "<seq> <mode>".
+		local function listen(fake)
+			local seen = {}
+			for _, event in ipairs({ "SessionStarted", "SessionEnded", "Catch" }) do
+				fake.Pagle.RegisterCallback("Spec " .. event, event, function(_, payload)
+					local id = event == "Catch" and payload.cast.session or payload.id
+					seen[#seen + 1] = event .. " " .. id .. (payload.whileAway and " whileAway" or "")
+				end)
+			end
+			local M = fake.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
+			M:NewProjection({
+				db = {},
+				rulesVersion = 1,
+				reset = function()
+					return {}
+				end,
+				apply = function(_, record, mode)
+					seen[#seen + 1] = record.seq .. " " .. mode
+				end,
+			})
+			return seen
+		end
+
+		-- The player's entry ID at the fake's server time SERVER_TIME + `offset` (LOG-R13).
+		local function id(offset)
+			return ("%s-%d-0"):format(PLAYER_GUID, SERVER_TIME + offset)
+		end
+
+		it("serve Pagle.SESSION_RULES_VERSION as Core does (LOG-R61)", function()
+			assert.are.equal(
+				loadAddon("Pagle", FOREVER_GLOBALS).env.Pagle.SESSION_RULES_VERSION,
+				newFakePagle().Pagle.SESSION_RULES_VERSION
+			)
+		end)
+
+		it(
+			"start with a played Cast, after its append and before its live apply, tagging it (LOG-R9, LOG-R62,"
+				.. " LOG-R98)",
+			function()
+				local fake = newFakePagle()
+				local seen = listen(fake)
+				fake.login()
+				fake.enterWorld()
+
+				local cast = assert(fake.playCast("caught", { { itemID = 6358, quantity = 1 } }))
+
+				assert.are.same({ "SessionStarted " .. id(0), "1 live", "Catch " .. id(0) }, seen)
+				assert.are.equal(id(0), cast.session)
+				assert.are.same({ id(0), 1 }, { fake.Pagle.GetSession().id, fake.Pagle.GetSession().casts })
+			end
+		)
+
+		it("end when fake.wait(900) passes with no Cast, then GetSession is nil (LOG-R62, LOG-R64)", function()
+			local fake = newFakePagle()
+			local seen = listen(fake)
+			fake.login()
+			fake.enterWorld()
+			fake.playCast("caught", { { itemID = 6358, quantity = 1 } })
+
+			fake.wait(899)
+			assert.is_not_nil(fake.Pagle.GetSession())
+			fake.wait(1)
+
+			assert.are.equal("SessionEnded " .. id(0), seen[#seen])
+			assert.is_nil(fake.Pagle.GetSession())
+			fake.playCast("gotAway")
+			assert.are.equal("SessionStarted " .. id(900), seen[#seen - 1])
+		end)
+
+		it("end a Session that ended before login with whileAway, once no projection is updating (LOG-R63)", function()
+			local fake = newFakePagle()
+			fake.catchLog.data.characters[1] = { guid = PLAYER_GUID }
+			fake.catchLog:Append({
+				kind = "cast",
+				char = 1,
+				time = SERVER_TIME - 900,
+				outcome = "caught",
+				conditions = { minute = 494, zone = 148, subzone = 453, events = {}, auras = {} },
+				items = { { itemID = 6358, quantity = 1 } },
+			})
+			local seen = listen(fake)
+
+			fake.login()
+			assert.are.same({}, seen)
+			fake.enterWorld()
+
+			assert.are.same({ "1 rebuild", "SessionEnded " .. id(-900) .. " whileAway" }, seen)
 		end)
 	end)
 end)
