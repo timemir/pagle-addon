@@ -34,6 +34,13 @@ stds.wow = {
 		C_KeyBindings = { fields = { "GetBindingIndex" } },
 		"SettingsPanel",
 		"HideUIPanel",
+		-- The Catch log (LOG-R11, LOG-R15).
+		"GetServerTime",
+		-- The runtime area index and zone resolution (LOG-R22, LOG-R23).
+		C_Map = { fields = { "GetAreaInfo" } },
+		"GetRealZoneText",
+		"GetSubZoneText",
+		"GetInstanceInfo",
 	},
 }
 

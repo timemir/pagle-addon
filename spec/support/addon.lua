@@ -499,6 +499,12 @@ local function clientStubs(client)
 			AddOnRestrictionState = { Inactive = 0, Activating = 1, Active = 2 },
 			AddOnEnableState = { None = 0, Some = 1, All = 2 },
 		},
+		-- No area has a name, so the area index Core builds at PLAYER_LOGIN is empty.
+		C_Map = {
+			GetAreaInfo = function()
+				return nil
+			end,
+		},
 		-- Reads client.addons. Folder names as the client takes them; an addon not listed is missing.
 		C_AddOns = {
 			GetAddOnInfo = function(name)
@@ -536,6 +542,9 @@ local function clientStubs(client)
 		end,
 		UnitRace = function()
 			return "Human", "Human", 1
+		end,
+		GetServerTime = function()
+			return 1791731700 -- 2026-10-11 15:15:00 UTC
 		end,
 		UnitNameUnmodified = function()
 			return "Angler"
