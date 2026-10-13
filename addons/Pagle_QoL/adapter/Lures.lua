@@ -58,13 +58,14 @@ local function lureSpell(itemID)
 	return spellID
 end
 
---- The Fishing key arms a target (QOL-R11): the lure it now applies, or nil for a cast or a reel (QOL-R29). The lure's
---- spell is asked for now, so it is known by the time the use's result comes.
+--- The Fishing key arms a target (QOL-R11): the item PagleQoLActionButton now uses, or nil for a cast or a reel. Only
+--- a lure is awaited (QOL-R29); a clam has no item spell, and would make any spell of the player's count as its use.
+--- The lure's spell is asked for now, so it is known by the time the use's result comes.
 ---@param itemID integer?
 function ns.LureTargeted(itemID)
-	targeted = itemID
-	if itemID then
-		lureSpell(itemID)
+	targeted = ns.IsLure(itemID) and itemID or nil
+	if targeted then
+		lureSpell(targeted)
 	end
 end
 

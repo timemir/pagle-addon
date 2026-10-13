@@ -4,7 +4,7 @@
 describe("QoL's next-action button logic", function()
 	local ns = loadAddon("Pagle_QoL", FOREVER_GLOBALS).ns
 
-	local FISHING_ICON, SET_ICON, LURE_ICON, LAST_ICON = 136245, 132932, 134335, 133001
+	local FISHING_ICON, SET_ICON, LURE_ICON, LAST_ICON, CLAM_ICON = 136245, 132932, 134335, 133001, 134432
 
 	describe("ns.ButtonShown", function()
 		-- What the button reads: the setting on, QoL not standing down, and no stretch, pole or gear step.
@@ -46,6 +46,13 @@ describe("QoL's next-action button logic", function()
 		it("shows the fishing set's icon labelled Gear, and a lure's item icon labelled Lure (QOL-R71)", function()
 			assert.are.same({ icon = SET_ICON, label = "Gear", desaturated = false }, ns.ButtonLook("gear", icons))
 			assert.are.same({ icon = LURE_ICON, label = "Lure", desaturated = false }, ns.ButtonLook("lure", icons))
+		end)
+
+		it("shows a clam's item icon labelled Clam (QOL-R71)", function()
+			local clamIcons = { fishing = FISHING_ICON, item = CLAM_ICON }
+
+			assert.are.same({ icon = CLAM_ICON, label = "Clam", desaturated = false }, ns.ButtonLook("clam", clamIcons))
+			assert.are.equal(FISHING_ICON, ns.ButtonLook("clam", { fishing = FISHING_ICON }).icon)
 		end)
 
 		it("keeps the last icon for nothing, desaturated and with no label (QOL-R71)", function()
@@ -92,9 +99,14 @@ describe("QoL's next-action button logic", function()
 			assert.are.equal("Apply Shiny Bauble", ns.ButtonTooltip("lure", "Shiny Bauble"))
 		end)
 
+		it("names the clam: Open {clam name} (QOL-R74)", function()
+			assert.are.equal("Open Thick-shelled Clam", ns.ButtonTooltip("clam", "Thick-shelled Clam"))
+		end)
+
 		it("is nil while the set's or the item's name isn't known yet, so the tooltip waits (QOL-R74)", function()
 			assert.is_nil(ns.ButtonTooltip("gear", nil))
 			assert.is_nil(ns.ButtonTooltip("lure", nil))
+			assert.is_nil(ns.ButtonTooltip("clam", nil))
 		end)
 	end)
 

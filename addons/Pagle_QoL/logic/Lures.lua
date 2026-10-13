@@ -31,6 +31,19 @@ function ns.ChooseLure(mode, chosen, isAvailable)
 	return best and best.itemID
 end
 
+--- Whether an item is in the lure table (QOL-R54): only a lure's use is awaited or skipped (QOL-R29), never a
+--- clam's, though both go through PagleQoLActionButton (QOL-R24).
+---@param itemID integer?
+---@return boolean
+function ns.IsLure(itemID)
+	for _, lure in ipairs(ns.LURES) do
+		if lure.itemID == itemID then
+			return true
+		end
+	end
+	return false
+end
+
 --- Seconds QoL waits for a lure's result before it counts the use as failed (qol.md › Tunables, QOL-R29).
 ns.RESULT_WAIT = 2
 

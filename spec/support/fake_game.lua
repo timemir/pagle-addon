@@ -48,6 +48,7 @@
 --- `C_Item.GetItemSpell` returns it: name, spell ID.
 ---@field itemNames table<integer, string> Each item's name, by item ID, as `C_Item.GetItemNameByID` returns it once
 --- the item is cached; an item not listed isn't cached.
+---@field itemDataRequests integer[] Each `C_Item.RequestLoadItemDataByID` call's item ID, in order.
 ---@field itemIcons table<integer, integer> Each item's icon file ID, by item ID, as `GetInventoryItemTexture` reads
 --- it for a worn item and `C_Item.GetItemIconByID` for any.
 ---@field loadItem fun(itemID: integer, name: string) An item's data arrives: its name is cached as `name`, and each
@@ -109,7 +110,7 @@ return function(client, stubs)
 	client.bags, client.unusable = {}, {}
 	-- Shiny Bauble's use casts 8087 (probe B4); the other lures' spells are a spec's to add.
 	client.itemSpells = { [6529] = { "Shiny Bauble", 8087 } }
-	-- The lure table's items by their enUS names, all cached.
+	-- The lure table's and the clam table's items by their enUS names, all cached.
 	client.itemNames = {
 		[6529] = "Shiny Bauble",
 		[6530] = "Nightcrawlers",
@@ -117,7 +118,11 @@ return function(client, stubs)
 		[6532] = "Bright Baubles",
 		[7307] = "Flesh Eating Worm",
 		[6533] = "Aquadynamic Fish Attractor",
+		[5523] = "Small Barnacled Clam",
+		[5524] = "Thick-shelled Clam",
+		[7973] = "Big-mouth Clam",
 	}
+	client.itemDataRequests = {}
 	client.fireGameEvent = client.fire
 
 	-- Override calls are protected: in combat lockdown the client blocks them (ADDON_ACTION_BLOCKED). Here they
@@ -236,7 +241,9 @@ return function(client, stubs)
 	stubs.C_Item.GetItemNameByID = function(itemID)
 		return client.itemNames[itemID]
 	end
-	stubs.C_Item.RequestLoadItemDataByID = function() end
+	stubs.C_Item.RequestLoadItemDataByID = function(itemID)
+		client.itemDataRequests[#client.itemDataRequests + 1] = itemID
+	end
 	-- An item's icon by item ID, from client.itemIcons, whether or not its name is cached.
 	stubs.C_Item.GetItemIconByID = function(itemID)
 		return client.itemIcons[itemID]

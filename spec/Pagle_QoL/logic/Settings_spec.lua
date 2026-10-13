@@ -1,6 +1,7 @@
 -- QoL's rows on Core's Fishing page: the Casting header and the Fishing key (M1), the Lures and clams rows (Track Q
--- step 1), the Gear rows (Track Q step 2), Cast with (Track Q step 3), the While you fish rows (Track Q step 4) and
--- the next-action button's (Track Q step 5) (qol.md › Settings, SET-R20, SET-R21, CORE-R42).
+-- step 1), the Gear rows (Track Q step 2), Cast with (Track Q step 3), the While you fish rows (Track Q step 4), the
+-- next-action button's (Track Q step 5) and Open clams between Casts (Track Q step 6) (qol.md › Settings, SET-R20,
+-- SET-R21, CORE-R42).
 
 -- QoL's row on a FakePagle Fishing page by its label.
 ---@param fake FakePagle
@@ -38,6 +39,7 @@ describe("QoL's Fishing page with FakePagle", function()
 			{ "QoL", "header", "Lures and clams", false },
 			{ "QoL", "dropdown", "Lures", false },
 			{ "QoL", "dropdown", "Lure", true },
+			{ "QoL", "checkbox", "Open clams between Casts", false },
 			{ "QoL", "header", "While you fish", false },
 			{ "QoL", "checkbox", "Fishing audio mix", false },
 			{ "QoL", "checkbox", "Keep sound when the game is in the background", true },
@@ -70,7 +72,10 @@ describe("QoL's Fishing page with FakePagle", function()
 		fake.load("Pagle_QoL")
 		fake.login()
 		local show = rowOf(fake, "Show the next-action button")
-		local position = assert(fake.settingsPage("fishing"))[16]
+		local position
+		for _, row in ipairs(assert(fake.settingsPage("fishing"))) do
+			position = row.label == "Button position" and row or position
+		end
 
 		assert.are.same({ "Button position", "Reset" }, { position.label, position.caption })
 		assert.are.equal("indicator", position.setting.parent)
@@ -245,6 +250,23 @@ describe("QoL's Fishing page with FakePagle", function()
 		assert.are.equal(6533, lure.get())
 
 		assert.is_nil(lures.isEnabled)
+	end)
+
+	it("gives Open clams between Casts its tooltip and default on, in profile.clams (SET-R20, QOL-R56)", function()
+		local fake = newFakePagle()
+		local loaded = fake.load("Pagle_QoL")
+		fake.login()
+		local clams = rowOf(fake, "Open clams between Casts")
+
+		-- qol.md › Settings › Tooltips, word for word.
+		assert.are.equal("One clam per press, never during a cast.", clams.tooltip)
+		assert.is_true(clams.default)
+		assert.is_true(clams.get())
+		assert.is_nil(clams.isEnabled)
+
+		clams.set(false)
+		assert.is_false(loaded.env.PagleQoLDB.profiles.Default.clams)
+		assert.is_false(clams.get())
 	end)
 
 	it("gives the While you fish checkboxes qol.md's tooltips and defaults (SET-R20, qol.md › Data)", function()
@@ -547,6 +569,23 @@ describe("QoL's Fishing page with Core", function()
 		assert.are.equal("best", lures:GetValue())
 		assert.are.equal(6529, lure:GetValue())
 		assert.are.same({ mode = "best", item = 6529 }, loaded.env.PagleQoLDB.profiles.Default.lures)
+	end)
+
+	it("registers Open clams between Casts as a native checkbox under Lures and clams, restored by Defaults", function()
+		local loaded, fishing = fishingPage()
+		local initializer = initializerOf(fishing, "Open clams between Casts")
+		local clams = initializer:GetSetting()
+		assert.are.equal("SettingsCheckboxControlTemplate", initializer.template)
+		assert.is_nil(initializer:GetParentInitializer())
+		assert.are.equal("One clam per press, never during a cast.", initializer:GetTooltip())
+		clams:SetValue(false)
+		assert.is_false(loaded.env.PagleQoLDB.profiles.Default.clams)
+
+		pressDefaults(loaded, fishing)
+
+		-- SET-R21: Defaults restores it (QOL-R56).
+		assert.is_true(clams:GetValue())
+		assert.is_true(loaded.env.PagleQoLDB.profiles.Default.clams)
 	end)
 
 	it("registers While you fish as a header and three native checkboxes, greying as SET-R20 says", function()
