@@ -148,7 +148,7 @@ end
 local function loadCodec()
 	local ns = {}
 	local env = setmetatable({}, { __index = _G })
-	for _, file in ipairs({ "Conditions.lua", "CatchLog.lua" }) do
+	for _, file in ipairs({ "Conditions.lua", "Sessions.lua", "CatchLog.lua" }) do
 		local chunk = assert(loadfile(ROOT .. "/addons/Pagle/logic/" .. file))
 		setfenv(chunk, env)
 		chunk("Pagle", ns)

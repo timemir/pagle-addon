@@ -103,7 +103,8 @@
 ---@field loot fun(items: PagleLootItem[]?, isFishing: boolean?) LOOT_READY with these items; fishing loot by default.
 ---@field closeLoot fun() LOOT_CLOSED.
 ---@field escape fun() The game reports the fish escaped (LOG-R6).
----@field wait fun(seconds: number) Moves the fake's clock on, running each grace timer that comes due.
+---@field wait fun(seconds: number) Moves the fake's clock on, running each grace timer that comes due, and ending
+--- the Session 900 s after its last Cast (LOG-R62).
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local newSecureCall = dofile("spec/support/securecall.lua")
@@ -612,6 +613,7 @@ part(function(fake, Pagle, ns)
 	local FISHING = 7731 -- Fishing (Classic Journeyman), on the generated fishing-spell list
 	local clock = newClock()
 	local recorded -- the Cast record last appended
+	local sessionCast -- LOG-R9 step 3, for the Cast just appended (below)
 
 	local fishing = ns.NewFishing({
 		isFishingSpell = ns.IsFishingChannel,
@@ -630,6 +632,7 @@ part(function(fake, Pagle, ns)
 				conditions = conditions,
 				items = items,
 			})
+			sessionCast()
 			fake.live(recorded)
 			return recorded
 		end,
@@ -669,6 +672,45 @@ part(function(fake, Pagle, ns)
 	end
 
 	fake.wait = clock.advance
+
+	-- Sessions (LOG-R60–R64), on Core's real tracker over fake.catchLog, at the fake's server time. The session tag
+	-- is the Catch log's own. Login notes the latest Session (one ended before it gets its SessionEnded, whileAway,
+	-- once no projection is updating); each Cast fires the Session events after its append (LOG-R9 step 3); the
+	-- Session ends when fake.wait has passed 900 s after its last Cast.
+	local function serverTime()
+		return SERVER_TIME + math.floor(clock.time())
+	end
+	Pagle.SESSION_RULES_VERSION = ns.SESSION_RULES_VERSION
+	local tracker = ns.NewSessionTracker({ catchLog = fake.catchLog, global = {}, fire = fake.fire })
+	local waits = 0
+	local function waitFor(seconds)
+		waits = waits + 1
+		local wait = waits
+		if seconds then
+			clock.after(seconds, function()
+				if wait == waits then
+					waitFor(tracker:Tick(serverTime()))
+				end
+			end)
+		end
+	end
+
+	local login = fake.login
+	function fake.login()
+		waitFor(tracker:Start(serverTime()))
+		fake.projections:WhenIdle(function()
+			tracker:Idle()
+		end)
+		login()
+	end
+
+	function sessionCast()
+		waitFor(tracker:Cast())
+	end
+
+	function Pagle.GetSession()
+		return readOnly(tracker:Get(serverTime()))
+	end
 
 	function fake.playCast(outcome, items)
 		recorded = nil
