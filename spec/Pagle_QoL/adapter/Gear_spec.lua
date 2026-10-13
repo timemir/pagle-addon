@@ -745,6 +745,39 @@ describe("Choosing the fishing set", function()
 		assert.are.equal(-1, set.get())
 		assert.are.same({}, client.equipmentSetCalls)
 	end)
+
+	describe("refreshes the Fishing set row, so the dropdown and the rows under it re-read the choice", function()
+		local REFRESHED = { { module = "QoL", id = "fishingSet" } }
+
+		it("after a choice rejected for slots (QOL-R42, CORE-R42)", function()
+			local fake = choosing(function(_, client)
+				fillSets(client, 10)
+			end)
+
+			rowOf(fake, "Fishing set").set(FISHING)
+
+			assert.are.same(REFRESHED, fake.refreshed)
+		end)
+
+		it("after a choice rejected while restricted (QOL-R41, QOL-R42, CORE-R42)", function()
+			local fake = choosing()
+			fake.setRestricted(true)
+
+			rowOf(fake, "Fishing set").set(FISHING)
+
+			assert.are.same(REFRESHED, fake.refreshed)
+		end)
+
+		it("after Save what I'm wearing chooses Pagle Fishing (QOL-R41, CORE-R42)", function()
+			local fake = choosing(function(_, client)
+				withPrevious(client)
+			end)
+
+			rowOf(fake, "Save what I'm wearing as my fishing set").onClick()
+
+			assert.are.same(REFRESHED, fake.refreshed)
+		end)
+	end)
 end)
 
 describe("Gear, with Core", function()

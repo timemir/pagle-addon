@@ -216,6 +216,7 @@ local function choose(setID)
 	local message = ns.SlotsMessage(freeSlots(), false, needPrevious)
 	if message then
 		print(message)
+		ns.Module:RefreshSetting("fishingSet") -- the dropdown shows the choice kept (QOL-R42, CORE-R42)
 		return
 	end
 	if needPrevious and ns.MaySavePrevious(ns.PoleInHand()) then
@@ -229,6 +230,7 @@ end
 ---@param setID integer
 function ns.ChooseFishingSet(setID)
 	if not ns.CanEditGear() then
+		ns.Module:RefreshSetting("fishingSet") -- the dropdown shows the choice kept (QOL-R42, CORE-R42)
 		return
 	elseif setID == ns.NO_FISHING_SET then
 		choices()[UnitGUID("player")] = nil
@@ -260,6 +262,7 @@ function ns.SaveFishingSet()
 	local setID = C_EquipmentSet.GetEquipmentSetID(ns.FISHING_SET_NAME)
 	if setID then
 		choose(setID)
+		ns.Module:RefreshSetting("fishingSet") -- the dropdown shows Pagle Fishing (QOL-R41, CORE-R42)
 	end
 end
 
