@@ -1,7 +1,7 @@
 -- QoL's rows on Core's Fishing page: the Casting header and the Fishing key (M1), the Lures and clams rows (Track Q
 -- step 1), the Gear rows (Track Q step 2), Cast with (Track Q step 3), the While you fish rows (Track Q step 4), the
 -- next-action button's (Track Q step 5) and Open clams between Casts (Track Q step 6) (qol.md › Settings, SET-R20,
--- SET-R21, CORE-R42).
+-- SET-R21, CORE-R42). Then the rows' logic alone, reading and changing only the store it's given (CORE-R7).
 
 -- QoL's row on a FakePagle Fishing page by its label.
 ---@param fake FakePagle
@@ -679,5 +679,175 @@ describe("QoL's Fishing page with Core", function()
 
 		assert.is_table(loaded.client.settings.category("Pagle"))
 		assert.is_nil(loaded.client.settings.category("Fishing"))
+	end)
+end)
+
+describe("ns.AddSettings with a fake store", function()
+	-- QoL's logic with PagleQoLDB never opened: a row that read ns.db would fail (CORE-R7).
+	local ns = loadAddon("Pagle_QoL", FOREVER_GLOBALS, { holdAddonLoaded = true }).ns
+
+	-- QoL's rows, added to a fake handle, by their labels; the fake store's profile; each store call, in order; and
+	-- a switch for whether the Gear rows can change anything.
+	---@return table<string, table> rows
+	---@return table profile
+	---@return table[] calls
+	---@return fun(canEdit: boolean) setCanEdit
+	local function addRows()
+		local rows, calls = {}, {}
+		local profile = {
+			input = "both",
+			lures = { mode = "best", item = 6529 },
+			clams = true,
+			audio = { on = true, background = false },
+			autoLoot = true,
+			indicator = { shown = true },
+		}
+		local choice, canEdit = ns.NO_FISHING_SET, true
+		-- A store call that only records its name.
+		local function record(name)
+			return function()
+				calls[#calls + 1] = { name }
+			end
+		end
+		---@type PagleQoLStore
+		local store = {
+			profile = function()
+				return profile
+			end,
+			input = function()
+				return profile.input
+			end,
+			setInput = function(input)
+				calls[#calls + 1] = { "setInput", input }
+				profile.input = input
+			end,
+			evaluate = record("evaluate"),
+			changeLease = function(change)
+				calls[#calls + 1] = { "changeLease" }
+				change(profile)
+			end,
+			-- Every item's name has loaded but the Aquadynamic Fish Lens's.
+			itemName = function(itemID)
+				return itemID ~= 6811 and ("Name " .. itemID) or nil
+			end,
+			fishingSetChoice = function()
+				return choice
+			end,
+			chooseFishingSet = function(setID)
+				calls[#calls + 1] = { "chooseFishingSet", setID }
+				choice = setID
+			end,
+			fishingSetOptions = function()
+				return { { value = ns.NO_FISHING_SET, label = "None" } }
+			end,
+			canEditGear = function()
+				return canEdit
+			end,
+			saveFishingSet = record("saveFishingSet"),
+			resetButton = record("resetButton"),
+		}
+		local M = {}
+		function M.AddSetting(_, topic, row)
+			assert.are.equal("fishing", topic)
+			if row.label then
+				rows[row.label] = row
+			end
+		end
+		ns.AddSettings(M, store)
+		return rows, profile, calls, function(value)
+			canEdit = value
+		end
+	end
+
+	it("leaves PagleQoLDB unopened (CORE-R7)", function()
+		addRows()
+
+		assert.is_nil(ns.db)
+	end)
+
+	it(
+		"reads and sets Cast with through the store's Input, and greys the key row from it (QOL-R12, QOL-R18)",
+		function()
+			local rows, profile, calls = addRows()
+
+			assert.are.equal("both", rows["Cast with"].get())
+			rows["Cast with"].set("click")
+			assert.are.same({ { "setInput", "click" } }, calls)
+			assert.are.equal("click", rows["Cast with"].get())
+			assert.is_false(rows["Fishing key"].isEnabled())
+			profile.input = "key"
+			assert.is_true(rows["Fishing key"].isEnabled())
+		end
+	)
+
+	it("hands the Gear rows to the store's gear calls (QOL-R40, QOL-R41, QOL-R46)", function()
+		local rows, _, calls, setCanEdit = addRows()
+		local set, save, swap = rows["Fishing set"], rows["Save what I'm wearing as my fishing set"], rows["Swap gear"]
+
+		assert.are.equal(ns.NO_FISHING_SET, set.get())
+		assert.are.same({ { value = ns.NO_FISHING_SET, label = "None" } }, set.options())
+		assert.is_false(swap.isEnabled())
+		set.set(3)
+		assert.are.equal(3, set.get())
+		assert.is_true(swap.isEnabled())
+		save.onClick()
+		assert.are.same({ { "chooseFishingSet", 3 }, { "saveFishingSet" } }, calls)
+		assert.is_true(set.isEnabled())
+		assert.is_true(save.isEnabled())
+		setCanEdit(false)
+		assert.is_false(set.isEnabled())
+		assert.is_false(save.isEnabled())
+	end)
+
+	it("stores Lures, Lure, clams and the button in the profile and re-evaluates after each (QOL-R25)", function()
+		local rows, profile, calls = addRows()
+
+		rows["Lures"].set("one")
+		rows["Lure"].set(6532)
+		rows["Open clams between Casts"].set(false)
+		rows["Show the next-action button"].set(false)
+
+		assert.are.same({ mode = "one", item = 6532 }, profile.lures)
+		assert.is_false(profile.clams)
+		assert.is_false(profile.indicator.shown)
+		assert.are.same({ { "evaluate" }, { "evaluate" }, { "evaluate" }, { "evaluate" } }, calls)
+		assert.are.same({ "one", 6532, false, false }, {
+			rows["Lures"].get(),
+			rows["Lure"].get(),
+			rows["Open clams between Casts"].get(),
+			rows["Show the next-action button"].get(),
+		})
+		assert.is_true(rows["Lure"].isEnabled())
+		assert.is_false(rows["Button position"].isEnabled())
+	end)
+
+	it("names each lure with the store's item names, or its item ID while one loads (QOL-R54)", function()
+		local rows = addRows()
+
+		local options = rows["Lure"].options()
+
+		assert.are.same({ value = 6529, label = "Name 6529" }, options[1])
+		assert.are.same({ value = 6811, label = "Item 6811" }, options[3])
+	end)
+
+	it("changes the While you fish rows through the store's lease change (QOL-R62, QOL-R65)", function()
+		local rows, profile, calls = addRows()
+
+		rows["Fishing audio mix"].set(false)
+		rows["Keep sound when the game is in the background"].set(true)
+		rows["Auto-loot while fishing"].set(false)
+
+		assert.are.same({ on = false, background = true }, profile.audio)
+		assert.is_false(profile.autoLoot)
+		assert.are.same({ { "changeLease" }, { "changeLease" }, { "changeLease" } }, calls)
+		assert.is_false(rows["Keep sound when the game is in the background"].isEnabled())
+	end)
+
+	it("resets the button's place through the store (QOL-R73)", function()
+		local rows, _, calls = addRows()
+
+		rows["Button position"].onClick()
+
+		assert.are.same({ { "resetButton" } }, calls)
 	end)
 end)

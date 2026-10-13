@@ -5,17 +5,35 @@ end
 ---@class PagleQoLNS
 local ns = select(2, ...)
 
--- QoL's rows on Core's Fishing page (qol.md › Settings, SET-R20): pure logic, the handle passed in (CORE-R7). Each
--- Track Q step adds its section's rows here, in the order qol.md lists them.
+-- QoL's rows on Core's Fishing page (qol.md › Settings, SET-R20): pure logic, the handle and the store passed in
+-- (CORE-R7). Each Track Q step adds its section's rows here, in the order qol.md lists them.
+
+--- What QoL's logic reads and changes a setting through: PagleQoLDB's profile and the adapter calls a change makes
+--- (CORE-R7). adapter/QoL.lua builds it. QoL's OnInitialize opens PagleQoLDB after the rows are added but before
+--- anything reads one: the page, the menu and `/pagle qol` all run later.
+---@class PagleQoLStore
+---@field profile fun(): table `PagleQoLDB.profile` (qol.md › Data), read and changed in place
+---@field input fun(): PagleQoLInput Input now (QOL-R12)
+---@field setInput fun(input: PagleQoLInput) sets Input and re-evaluates at once (QOL-R18, QOL-R25)
+---@field evaluate fun() re-evaluates the next action now, after a setting change (QOL-R25)
+---@field changeLease fun(change: fun(profile: PagleQoLLeaseSettings)) changes a While you fish setting (QOL-R65)
+---@field itemName fun(itemID: integer): string? an item's name, or nil while its data loads (QOL-R54)
+---@field fishingSetChoice fun(): integer the chosen set's ID, or ns.NO_FISHING_SET (QOL-R40)
+---@field chooseFishingSet fun(setID: integer) chooses a set, or None (QOL-R40, QOL-R41)
+---@field fishingSetOptions fun(): { value: integer, label: string }[] None and the character's sets (QOL-R40)
+---@field canEditGear fun(): boolean whether the Gear rows can change anything (QOL-R41)
+---@field saveFishingSet fun() saves what's worn as the fishing set (QOL-R41, QOL-R42)
+---@field resetButton fun() puts the next-action button back in its default place (QOL-R73)
 
 --- Adds QoL's rows to Core's topic pages. Call it from OnInitialize, before ModulesChanged (CORE-R42).
 ---@param M PagleModuleHandle QoL's handle
-function ns.AddSettings(M)
+---@param store PagleQoLStore what the rows read and change
+function ns.AddSettings(M, store)
 	local L = ns.L
 	-- QoL's first row is a header, so Core adds no "QoL" header (CORE-R42, SET-R20).
 	M:AddSetting("fishing", { kind = "header", label = L.SETTINGS_CASTING })
 
-	-- The rows below read PagleQoLDB.profile, which QoL opens before the page is built.
+	-- The rows below read PagleQoLDB.profile through the store, and QoL opens it before the page is built.
 	local defaults = ns.DB_DEFAULTS.profile
 
 	-- Cast with is Input, which the compartment entry and /pagle qol set too (QOL-R12, QOL-R16, QOL-R17). A change
@@ -26,8 +44,8 @@ function ns.AddSettings(M)
 		label = L.SETTINGS_CAST_WITH,
 		tooltip = L.SETTINGS_CAST_WITH_TOOLTIP,
 		default = defaults.input,
-		get = ns.CurrentInput,
-		set = ns.SetInput,
+		get = store.input,
+		set = store.setInput,
 		options = function()
 			return {
 				{ value = "key", label = L.SETTINGS_CAST_WITH_KEY },
@@ -45,7 +63,7 @@ function ns.AddSettings(M)
 		tooltip = L.SETTINGS_FISHING_KEY_TOOLTIP,
 		binding = "PAGLE_FISHING_KEY",
 		isEnabled = function()
-			return ns.InputArmsKey(ns.CurrentInput())
+			return ns.InputArmsKey(store.input())
 		end,
 	})
 
@@ -61,16 +79,16 @@ function ns.AddSettings(M)
 		label = L.SETTINGS_FISHING_SET,
 		tooltip = L.SETTINGS_FISHING_SET_TOOLTIP,
 		get = function()
-			return ns.FishingSetChoice()
+			return store.fishingSetChoice()
 		end,
 		set = function(value)
-			ns.ChooseFishingSet(value)
+			store.chooseFishingSet(value)
 		end,
 		options = function()
-			return ns.ReadFishingSetOptions()
+			return store.fishingSetOptions()
 		end,
 		isEnabled = function()
-			return ns.CanEditGear()
+			return store.canEditGear()
 		end,
 	})
 	-- A button with that caption and no label; qol.md gives it no tooltip.
@@ -79,10 +97,10 @@ function ns.AddSettings(M)
 		parent = "fishingSet",
 		label = L.SETTINGS_SAVE_FISHING_SET,
 		onClick = function()
-			ns.SaveFishingSet()
+			store.saveFishingSet()
 		end,
 		isEnabled = function()
-			return ns.CanEditGear()
+			return store.canEditGear()
 		end,
 	})
 	-- A binding, so Defaults leaves it alone (SET-R21). Greyed out while no set is chosen.
@@ -93,7 +111,7 @@ function ns.AddSettings(M)
 		tooltip = L.SETTINGS_SWAP_GEAR_TOOLTIP,
 		binding = "PAGLE_SWAP_GEAR",
 		isEnabled = function()
-			return ns.FishingSetChoice() ~= ns.NO_FISHING_SET
+			return store.fishingSetChoice() ~= ns.NO_FISHING_SET
 		end,
 	})
 
@@ -107,11 +125,11 @@ function ns.AddSettings(M)
 		tooltip = L.SETTINGS_LURES_TOOLTIP,
 		default = defaults.lures.mode,
 		get = function()
-			return ns.db.profile.lures.mode
+			return store.profile().lures.mode
 		end,
 		set = function(value)
-			ns.db.profile.lures.mode = value
-			ns.EvaluateFishingKey()
+			store.profile().lures.mode = value
+			store.evaluate()
 		end,
 		options = function()
 			return {
@@ -128,24 +146,24 @@ function ns.AddSettings(M)
 		label = L.SETTINGS_LURE,
 		default = defaults.lures.item,
 		get = function()
-			return ns.db.profile.lures.item
+			return store.profile().lures.item
 		end,
 		set = function(value)
-			ns.db.profile.lures.item = value
-			ns.EvaluateFishingKey()
+			store.profile().lures.item = value
+			store.evaluate()
 		end,
 		options = function()
 			local options = {}
 			for i, lure in ipairs(ns.LURES) do
 				options[i] = {
 					value = lure.itemID,
-					label = ns.ItemName(lure.itemID) or L.SETTINGS_LURE_UNNAMED:format(lure.itemID),
+					label = store.itemName(lure.itemID) or L.SETTINGS_LURE_UNNAMED:format(lure.itemID),
 				}
 			end
 			return options
 		end,
 		isEnabled = function()
-			return ns.db.profile.lures.mode == "one"
+			return store.profile().lures.mode == "one"
 		end,
 	})
 	-- Open clams between Casts (QOL-R56). A change re-points the key at once (QOL-R25). QOL-R100 may remove it.
@@ -155,11 +173,11 @@ function ns.AddSettings(M)
 		tooltip = L.SETTINGS_CLAMS_TOOLTIP,
 		default = defaults.clams,
 		get = function()
-			return ns.db.profile.clams
+			return store.profile().clams
 		end,
 		set = function(value)
-			ns.db.profile.clams = value
-			ns.EvaluateFishingKey()
+			store.profile().clams = value
+			store.evaluate()
 		end,
 	})
 
@@ -173,10 +191,10 @@ function ns.AddSettings(M)
 		tooltip = L.SETTINGS_AUDIO_MIX_TOOLTIP,
 		default = defaults.audio.on,
 		get = function()
-			return ns.db.profile.audio.on
+			return store.profile().audio.on
 		end,
 		set = function(value)
-			ns.ChangeLeaseSetting(function(profile)
+			store.changeLease(function(profile)
 				profile.audio.on = value
 			end)
 		end,
@@ -188,15 +206,15 @@ function ns.AddSettings(M)
 		label = L.SETTINGS_BACKGROUND_SOUND,
 		default = defaults.audio.background,
 		get = function()
-			return ns.db.profile.audio.background
+			return store.profile().audio.background
 		end,
 		set = function(value)
-			ns.ChangeLeaseSetting(function(profile)
+			store.changeLease(function(profile)
 				profile.audio.background = value
 			end)
 		end,
 		isEnabled = function()
-			return ns.db.profile.audio.on
+			return store.profile().audio.on
 		end,
 	})
 	M:AddSetting("fishing", {
@@ -205,10 +223,10 @@ function ns.AddSettings(M)
 		tooltip = L.SETTINGS_AUTO_LOOT_TOOLTIP,
 		default = defaults.autoLoot,
 		get = function()
-			return ns.db.profile.autoLoot
+			return store.profile().autoLoot
 		end,
 		set = function(value)
-			ns.ChangeLeaseSetting(function(profile)
+			store.changeLease(function(profile)
 				profile.autoLoot = value
 			end)
 		end,
@@ -222,11 +240,11 @@ function ns.AddSettings(M)
 		tooltip = L.SETTINGS_SHOW_BUTTON_TOOLTIP,
 		default = defaults.indicator.shown,
 		get = function()
-			return ns.db.profile.indicator.shown
+			return store.profile().indicator.shown
 		end,
 		set = function(value)
-			ns.db.profile.indicator.shown = value
-			ns.EvaluateFishingKey()
+			store.profile().indicator.shown = value
+			store.evaluate()
 		end,
 	})
 	-- A row labelled Button position with a Reset button; qol.md gives it no tooltip. It is no value, so the page's
@@ -237,10 +255,10 @@ function ns.AddSettings(M)
 		label = L.SETTINGS_BUTTON_POSITION,
 		caption = L.SETTINGS_BUTTON_RESET,
 		onClick = function()
-			ns.ResetNextActionButton()
+			store.resetButton()
 		end,
 		isEnabled = function()
-			return ns.db.profile.indicator.shown
+			return store.profile().indicator.shown
 		end,
 	})
 end
