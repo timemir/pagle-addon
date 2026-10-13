@@ -12,4 +12,6 @@
 locale\enUS.lua
 logic\Data.lua
 logic\Module.lua
+logic\Progress.lua
+logic\Fold.lua
 adapter\Ledger.lua
