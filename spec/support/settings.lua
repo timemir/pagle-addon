@@ -24,6 +24,9 @@
 --- registered under AddOns, as the panel lists it.
 ---@field show fun(category: table): { initializer: table, frame: table }[] Shows a page as the panel does: a fresh
 --- frame per row, through its initializer's InitFrame, so a row reads its value or label then.
+---@field shown { initializer: table, frame: table }[] The rows of the page shown last. A setting's NotifyUpdate
+--- updates them as the panel's controls update (`valueChanged`).
+---@field valueChanged fun(setting: table, value: any) A setting's value changed: the shown rows that listen re-read.
 ---@field textsOf fun(frame: table): string[] The text of every shown widget in a row's frame, depth first.
 ---@field buttonsOf fun(frame: table): table[] The shown buttons in a row's frame, depth first.
 
@@ -96,7 +99,7 @@ end
 ---@param client FakeClient
 ---@param stubs table<string, any> The fake client's stubs, which this adds to.
 return function(client, stubs)
-	local settings = { categories = {}, addOnCategories = {}, opened = {}, variables = {} }
+	local settings = { categories = {}, addOnCategories = {}, opened = {}, variables = {}, shown = {} }
 	client.settings = settings
 	settings.panel = newWidget("Frame")
 	settings.panel.shown = false
@@ -178,6 +181,10 @@ return function(client, stubs)
 			end
 			function setting:SetValue(value)
 				self.set(value)
+			end
+			-- As SettingMixin:NotifyUpdate: reads the value again and tells the shown rows it changed.
+			function setting:NotifyUpdate()
+				settings.valueChanged(self, self:GetValue())
 			end
 			return setting
 		end,
@@ -278,7 +285,30 @@ return function(client, stubs)
 			initializer:InitFrame(frame)
 			rows[#rows + 1] = { initializer = initializer, frame = frame }
 		end
+		settings.shown = rows
 		return rows
+	end
+
+	-- A setting's value changed (SettingMixin:TriggerValueChanged): each shown row listening hears it, as
+	-- Blizzard_SettingControls.lua at the forever 1.60.1 commit wires them. The row of that setting re-reads its value
+	-- and greying (SettingsControlMixin:OnSettingValueChanged, then the control's EvaluateState); a row under it
+	-- re-reads its greying (SettingsListElementMixin:OnParentSettingValueChanged). A keybinding row isn't a
+	-- SettingsListElementMixin (Blizzard_Keybindings.lua), so it hears neither.
+	function settings.valueChanged(setting, value)
+		for _, row in ipairs(settings.shown) do
+			local initializer = row.initializer
+			local parent = initializer:GetParentInitializer()
+			if initializer:GetSetting() == setting then
+				row.frame.value = value
+				row.frame.enabled = initializer:EvaluateModifyPredicates()
+			elseif
+				parent
+				and parent:GetSetting() == setting
+				and initializer.template ~= "KeyBindingFrameBindingTemplate"
+			then
+				row.frame.enabled = initializer:EvaluateModifyPredicates()
+			end
+		end
 	end
 
 	local function walk(widget, visit)
