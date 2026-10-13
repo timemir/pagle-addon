@@ -119,6 +119,20 @@ describe("QoL's Fishing key logic", function()
 			)
 		end)
 
+		it("casts, never opens a clam, while channeling once the reel didn't take (QOL-R35, QOL-R56)", function()
+			assert.are.equal(
+				"cast",
+				ns.NextAction({
+					armed = true,
+					channelingFishing = true,
+					poleInHand = true,
+					lured = true,
+					clam = 5524,
+					reelMissed = true,
+				})
+			)
+		end)
+
 		it("still does nothing at step 1 when the reel didn't take (QOL-R20, QOL-R35)", function()
 			assert.are.equal("nothing", ns.NextAction({ channelingFishing = true, reelMissed = true }))
 			assert.are.equal(
