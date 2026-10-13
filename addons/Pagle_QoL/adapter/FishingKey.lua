@@ -158,6 +158,10 @@ function ns.DisarmFishingKey()
 		return
 	end
 	waitingForKeyUp = false
+	-- With nothing set there is nothing to clear, and standing down makes no binding call at all (QOL-R82).
+	if not current.target then
+		return
+	end
 	disarming = true
 	repoint(ns.Arming(keys, nil))
 	disarming = false
