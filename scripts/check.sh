@@ -47,7 +47,29 @@ stage lint
 stage api
 "$bin/lua" scripts/api-presence.lua .luacheckrc .tools/bir/Resources || fail api
 
-# --- 4. types (#48): lua-language-server --check, zero warnings. Not built yet.
+# --- 4. types (#48): lua-language-server --check, zero warnings, against Ketho's vscode-wow-api annotations
+# (WOW_API_COMMIT in scripts/tools.env) and the types/ stubs; .luarc.json holds the setup. scripts/ is left out
+# there: it runs on stock Lua 5.1, not in the WoW client the annotations describe.
+stage types
+# The one suppression allowed is inline, names its codes and gives a reason:
+#   ---@diagnostic disable-next-line: <code>[, <code>] -- <reason>
+# A file-wide disable, or one without a reason, fails. Vendored libs/ are not ours to change.
+if grep -rnE --include='*.lua' --exclude-dir=libs -e '---[[:space:]]*@diagnostic' "${lua_dirs[@]}" |
+	grep -vE -e '^[^:]+:[0-9]+:[[:space:]]*---@diagnostic disable-next-line: [a-z-]+(, ?[a-z-]+)* -- [^[:space:]]' >&2; then
+	echo "types: each suppression must be ---@diagnostic disable-next-line: <code> -- <reason>" >&2
+	fail types
+fi
+# LuaLS's log and its generated meta files for the Lua builtins go outside the repo: .luarc.json ignores .tools/,
+# and meta files under an ignored dir leave even `integer` undefined.
+luals=$(mktemp -d)
+if ! luals_out=$("$bin/lua-language-server" --check=. --checklevel=Warning --configpath=.luarc.json \
+	--logpath="$luals" --metapath="$luals/meta" --check_format=pretty 2>&1); then
+	rm -rf "$luals"
+	echo "$luals_out"
+	fail types
+fi
+rm -rf "$luals"
+echo "types: no warnings"
 
 # --- 5. tests (#49): busted on Lua 5.1, every spec/**/*_spec.lua. spec/support/addon.lua loads each addon from its
 # real .toc, in order, so TOC and load-order mistakes fail specs. luacov then reports coverage of addons/ (.luacov);

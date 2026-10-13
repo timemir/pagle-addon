@@ -140,6 +140,25 @@ copy
 rm "$scratch/tree/.luacov"
 expect "a coverage report that can't be made doesn't gate" pass "no coverage report"
 
+copy
+printf 'Pagle.API_VERSION = "2"\n' >>"$addon/adapter/Core.lua"
+expect "a string assigned to Pagle.API_VERSION in Core fails types" types "assign-type-mismatch"
+
+copy
+printf -- '---@diagnostic disable\nPagle.API_VERSION = "2"\n' >>"$addon/adapter/Core.lua"
+expect "a bare ---@diagnostic disable fails types" types "adapter/Core.lua:22:---@diagnostic disable"
+
+copy
+printf -- '---@diagnostic disable-next-line: assign-type-mismatch\nPagle.API_VERSION = "2"\n' >>"$addon/adapter/Core.lua"
+expect "a suppression without a reason fails types" types "each suppression must be"
+
+copy
+printf 'do\n\t---@diagnostic disable-next-line: assign-type-mismatch, cast-local-type -- testing the gate\n' \
+	>>"$addon/adapter/Core.lua"
+printf '\tPagle.API_VERSION = "2"\nend\n' >>"$addon/adapter/Core.lua"
+# types lets it through; the stage after it, tests, still catches the string (CORE-R15).
+expect "an inline suppression with codes and a reason passes types" tests "API version 1 before 1.0 (CORE-R15)"
+
 if ((failures)); then
 	echo "test-check: $failures failed" >&2
 	exit 1

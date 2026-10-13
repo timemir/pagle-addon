@@ -9,6 +9,8 @@
 #
 #   sudo apt-get install -y build-essential unzip curl ca-certificates
 #
+# (The Check workflow, .github/workflows/check.yml, installs the same list; keep the two in step.)
+#
 # Layout:
 #   .tools/lua/       Lua 5.1, LuaRocks and the rocks (luacheck, busted, luacov)
 #   .tools/stylua/    StyLua
