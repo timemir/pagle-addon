@@ -18,31 +18,10 @@ local Pagle = Pagle
 -- Its own owner on Core's bus, so no other Core file's registration replaces its RestrictionChanged listener.
 local OWNER = "Pagle announcements"
 
--- Timber, the free default toast style (ANN-R80): dark planks with a worn brass edge, gold headings, and stamps
--- coloured like the prototype's. Only Timber exists in M2; the other styles come as Curio Shop goods (M4).
-local TIMBER = {
-	wood = { 0.16, 0.11, 0.07, 0.94 },
-	edge = { 0.54, 0.42, 0.25, 1 },
-	band = { 0, 0, 0, 0.6 },
-	gold = { 1, 0.82, 0 },
-	more = { 0.62, 0.82, 1 },
-	stamp = { 0.70, 0.13, 0.10, 1 },
-	stampsMore = { 0.33, 0.33, 0.33, 1 },
-	coins = { 0.63, 0.47, 0, 1 },
-	record = { 0.82, 0.46, 0.10, 1 },
-	track = { 0.10, 0.08, 0.05, 1 },
-	fill = { 1, 0.75, 0.30, 1 },
-	mark = { 0.81, 0.78, 0.70, 1 },
-	passed = { 1, 0.35, 0.23, 1 },
-	shade = { 0, 0, 0, 0.8 },
-	parchment = { 0.93, 0.87, 0.72, 1 },
-	parchmentEdge = { 0.54, 0.35, 0.10, 1 },
-	ink = { 0.23, 0.15, 0.06 },
-	legend = { 0.63, 0.29, 0 },
-}
+-- Timber (ANN-R80), shared with the card frame: adapter/Timber.lua.
+local TIMBER = ns.TIMBER
+local solid, framed, text, textureOf = ns.SolidTexture, ns.Framed, ns.Text, ns.TextureOf
 
--- Trade_Fishing, for a moment with no icon.
-local DEFAULT_ICON = 136245
 -- Stamp slots on a frame: the 4 stamps shown and the "+N" for the rest (ANN-R11).
 local STAMP_SLOTS = ns.MOMENT_STAMPS + 1
 
@@ -74,67 +53,6 @@ local STAMP_SLOTS = ns.MOMENT_STAMPS + 1
 --- The frame each form is drawn in, made the first time one shows (ANN-R80).
 ---@type table<PagleAnnouncementForm, PagleAnnouncementFrame>
 ns.announcementFrames = {}
-
--- A moment's icon as a texture (announcements.md › Contracts): an item ID's icon, else the number as a file ID, or a
--- texture path. Item IDs and icon file IDs don't overlap in practice: the client's item table answers only items.
----@param icon integer|string|nil
----@return integer|string
-local function textureOf(icon)
-	if type(icon) == "number" then
-		local _, _, _, _, fileID = C_Item.GetItemInfoInstant(icon)
-		return fileID or icon
-	end
-	return icon or DEFAULT_ICON
-end
-
--- A solid texture on `frame`, filling it unless placed afterwards.
----@param frame Frame
----@param color number[]
----@param layer DrawLayer?
----@return Texture
-local function solid(frame, color, layer)
-	local texture = frame:CreateTexture(nil, layer or "BACKGROUND")
-	texture:SetColorTexture(color[1], color[2], color[3], color[4])
-	texture:SetAllPoints()
-	return texture
-end
-
--- A frame's background and a `size`-pixel edge around it.
----@param frame Frame
----@param background number[]
----@param edge number[]
----@param size number
-local function framed(frame, background, edge, size)
-	solid(frame, background)
-	for _, side in ipairs({
-		{ "TOPLEFT", "TOPRIGHT", "SetHeight" },
-		{ "BOTTOMLEFT", "BOTTOMRIGHT", "SetHeight" },
-		{ "TOPLEFT", "BOTTOMLEFT", "SetWidth" },
-		{ "TOPRIGHT", "BOTTOMRIGHT", "SetWidth" },
-	}) do
-		local line = frame:CreateTexture(nil, "BORDER")
-		line:SetColorTexture(edge[1], edge[2], edge[3], edge[4])
-		line:SetPoint(side[1])
-		line:SetPoint(side[2])
-		if side[3] == "SetHeight" then
-			line:SetHeight(size)
-		else
-			line:SetWidth(size)
-		end
-	end
-end
-
----@param frame Frame
----@param template string
----@param color number[]?
----@return FontString
-local function text(frame, template, color)
-	local fontString = frame:CreateFontString(nil, "OVERLAY", template)
-	if color then
-		fontString:SetTextColor(color[1], color[2], color[3])
-	end
-	return fontString
-end
 
 -- A stamp: a short label on a coloured tab (ANN-R11).
 ---@param parent Frame

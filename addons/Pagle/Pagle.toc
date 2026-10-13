@@ -64,6 +64,7 @@ adapter\Slash.lua
 adapter\Wallet.lua
 adapter\Moments.lua
 adapter\Summary.lua
+adapter\Timber.lua
 adapter\Announcements.lua
 adapter\Cards.lua
 adapter\Menu.lua

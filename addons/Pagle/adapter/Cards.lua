@@ -14,15 +14,9 @@ local L = ns.L
 
 -- The card frame's global name: UISpecialFrames takes names, and Esc hides the frames it lists.
 local FRAME_NAME = "PagleCard"
--- Timber's card colours (ANN-R80): the toast's planks and brass, gold headings, a darker well for the numbers.
-local TIMBER = {
-	wood = { 0.11, 0.09, 0.07, 0.96 },
-	edge = { 0.54, 0.48, 0.37, 1 },
-	band = { 0.18, 0.15, 0.12, 1 },
-	well = { 0, 0, 0, 0.42 },
-	gold = { 1, 0.82, 0 },
-	dim = { 0.66, 0.62, 0.55 },
-}
+-- Timber (ANN-R80), the toast's style: adapter/Timber.lua.
+local TIMBER = ns.TIMBER
+local solid, framed, text, textureOf = ns.SolidTexture, ns.Framed, ns.Text, ns.TextureOf
 local WIDTH = 520
 -- The numbers grid (ANN-R53): Casts, Catches, got away, time fished.
 local NUMBERS = { "casts", "catches", "gotAway", "seconds" }
@@ -30,8 +24,6 @@ local NUMBER_LABELS = { L.CARD_CASTS, L.CARD_CATCHES, L.CARD_GOT_AWAY, L.CARD_TI
 local ROW_HEIGHT = 22
 -- Rows shown before the list scrolls with the mouse wheel.
 local ROWS_SHOWN = 14
--- Trade_Fishing, for a moment with no icon.
-local DEFAULT_ICON = 136245
 
 ---@class PagleCardRowView: Frame
 ---@field kind "heading"|"line"|"moment"
@@ -56,41 +48,6 @@ local DEFAULT_ICON = 136245
 --- The card frame, made the first time a card shows.
 ---@type PagleCardFrame?
 ns.cardFrame = nil
-
--- A solid texture on `frame`, filling it.
----@param frame Frame
----@param color number[]
----@param layer DrawLayer?
----@return Texture
-local function solid(frame, color, layer)
-	local texture = frame:CreateTexture(nil, layer or "BACKGROUND")
-	texture:SetColorTexture(color[1], color[2], color[3], color[4])
-	texture:SetAllPoints()
-	return texture
-end
-
----@param frame Frame
----@param template string
----@param color number[]?
----@return FontString
-local function text(frame, template, color)
-	local fontString = frame:CreateFontString(nil, "OVERLAY", template)
-	if color then
-		fontString:SetTextColor(color[1], color[2], color[3])
-	end
-	return fontString
-end
-
--- A moment's icon as a texture (announcements.md › Contracts), as the Announcement frames show it.
----@param icon integer|string|nil
----@return integer|string
-local function textureOf(icon)
-	if type(icon) == "number" then
-		local _, _, _, _, fileID = C_Item.GetItemInfoInstant(icon)
-		return fileID or icon
-	end
-	return icon or DEFAULT_ICON
-end
 
 -- The player closed the card on screen, with the button or Esc: logic/Cards.lua removes it and shows the next.
 ---@param frame PagleCardFrame
@@ -159,19 +116,12 @@ local function build()
 	frame:SetWidth(WIDTH)
 	frame:SetFrameStrata("MEDIUM")
 	frame:EnableMouse(true)
-	solid(frame, TIMBER.wood)
-	for _, side in ipairs({ { "TOPLEFT", "TOPRIGHT" }, { "BOTTOMLEFT", "BOTTOMRIGHT" } }) do
-		local line = frame:CreateTexture(nil, "BORDER")
-		line:SetColorTexture(TIMBER.edge[1], TIMBER.edge[2], TIMBER.edge[3], TIMBER.edge[4])
-		line:SetPoint(side[1])
-		line:SetPoint(side[2])
-		line:SetHeight(2)
-	end
+	framed(frame, TIMBER.wood, TIMBER.edge, 2, { "top", "bottom" })
 	local band = CreateFrame("Frame", nil, frame)
 	band:SetPoint("TOPLEFT", 2, -2)
 	band:SetPoint("TOPRIGHT", -2, -2)
 	band:SetHeight(28)
-	solid(band, TIMBER.band, "ARTWORK")
+	solid(band, TIMBER.titleBand, "ARTWORK")
 	frame.title = text(band, "GameFontNormalLarge", TIMBER.gold)
 	frame.title:SetPoint("CENTER")
 
