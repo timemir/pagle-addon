@@ -34,9 +34,9 @@ stds.wow = {
 		C_KeyBindings = { fields = { "GetBindingIndex" } },
 		"SettingsPanel",
 		"HideUIPanel",
-		-- The compartment menu (CORE-R50): a context menu, opened a frame after the compartment's click.
+		-- The compartment menu (CORE-R50): a context menu, opened a frame after the compartment's click (C_Timer.After,
+		-- in the one C_Timer entry below).
 		MenuUtil = { fields = { "CreateContextMenu" } },
-		C_Timer = { fields = { "After" } },
 		-- The Catch log (LOG-R11, LOG-R15).
 		"GetServerTime",
 		-- The runtime area index and zone resolution (LOG-R22, LOG-R23).
@@ -69,7 +69,8 @@ stds.wow = {
 		C_DateAndTime = { fields = { "GetCurrentCalendarTime" } },
 		C_Calendar = { fields = { "OpenCalendar", "GetMonthInfo", "GetNumDayEvents", "GetDayEvent" } },
 		C_UnitAuras = { fields = { "GetPlayerAuraBySpellID" } },
-		C_Timer = { fields = { "NewTicker" } },
+		-- NewTicker for the conditions' polls; After for the compartment menu (CORE-R50).
+		C_Timer = { fields = { "NewTicker", "After" } },
 	},
 }
 

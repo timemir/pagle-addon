@@ -551,11 +551,10 @@ local function menuStubs(client, stubs)
 		end,
 	}
 
-	stubs.C_Timer = {
-		After = function(seconds, callback)
-			client.timers[#client.timers + 1] = { seconds = seconds, callback = callback }
-		end,
-	}
+	-- Beside C_Timer.NewTicker, which clientStubs already stubs for the conditions' polls.
+	stubs.C_Timer.After = function(seconds, callback)
+		client.timers[#client.timers + 1] = { seconds = seconds, callback = callback }
+	end
 	-- Runs every timer queued so far, as the next frames would, in order.
 	function client.runTimers()
 		local due = client.timers
