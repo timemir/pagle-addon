@@ -24,6 +24,8 @@ lua_modules/
 # Packaging / release (BigWigs packager, CurseForge, etc.)
 .release/
 *.zip
+# scripts/package.sh caches the pinned packager in .tools/packager/
+.tools/
 
 # WoW SavedVariables / logs accidentally copied in
 WTF/

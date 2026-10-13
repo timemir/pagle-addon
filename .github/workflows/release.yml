@@ -1,0 +1,27 @@
+# Packages Pagle with the BigWigsMods packager when a tag is pushed, and only then.
+# No tags exist before 1.0. Uploads go to CurseForge and Wago, never WoWInterface; until M8 adds
+# the project IDs (X-Curse-Project-ID, X-Wago-ID) and the CF_API_TOKEN / WAGO_API_TOKEN secrets,
+# a run builds the zip and uploads nothing. Build the same zip locally with scripts/package.sh.
+name: Release
+
+on:
+  push:
+    tags:
+      - "*"
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # the packager needs the history and tags for the version and changelog
+
+      # v2.6.1. Keep in step with the pin in scripts/package.sh.
+      - uses: BigWigsMods/packager@e50a250f8705041e40f2fa1ddcb280a686d65aa0
+        with:
+          args: -w 0 # never upload to WoWInterface, whatever a TOC says
+          pandoc: false # only WoWInterface uploads need it
