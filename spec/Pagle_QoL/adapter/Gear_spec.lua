@@ -386,6 +386,24 @@ describe("Swap gear", function()
 		pressSwapGear(loaded)
 		assert.are.same({ "use " .. PREVIOUS }, client.equipmentSetCalls)
 	end)
+
+	it("holds the gear step and Swap gear after a swap back too, until it finishes (QOL-R29, QOL-R45)", function()
+		local fake, client, loaded = start(function(_, client)
+			withPrevious(client)
+			client.wearSet(FISHING)
+		end)
+		pressSwapGear(loaded)
+		client.equipmentSetCalls = {}
+
+		client.mainHand = SWORD -- the pole comes off first: a half-swapped outfit
+		fake.fireGameEvent("PLAYER_EQUIPMENT_CHANGED", 16, true)
+		pressSwapGear(loaded)
+		assert.are.equal(CAST, client.overrideAction("F"))
+		assert.are.same({}, client.equipmentSetCalls)
+
+		swapEnds(fake, client, PREVIOUS)
+		assert.are.equal(GEAR, client.overrideAction("F"))
+	end)
 end)
 
 describe("No swap without a press", function()
