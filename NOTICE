@@ -19,6 +19,7 @@ only, never Blizzard's text. Pagle is not affiliated with or endorsed by
 Blizzard Entertainment.
 
 Ace3
-addons/Pagle/libs/ holds LibStub, CallbackHandler-1.0, AceAddon-3.0,
-AceEvent-3.0 and AceDB-3.0 from Ace3, https://github.com/WoWUIDev/Ace3,
-under their own licence in addons/Pagle/libs/LICENSE.txt.
+The Pagle addon's libs folder (Pagle/libs in the release, addons/Pagle/libs
+in the source) holds LibStub, CallbackHandler-1.0, AceAddon-3.0, AceEvent-3.0
+and AceDB-3.0 from Ace3, https://github.com/WoWUIDev/Ace3, under their own
+licence in LICENSE.txt in that libs folder.
