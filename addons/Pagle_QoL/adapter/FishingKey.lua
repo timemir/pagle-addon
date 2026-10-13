@@ -19,6 +19,8 @@ local TICK = 0.5
 local frame ---@type Frame
 -- PagleQoLActionButton, the secure button a lure's override clicks (QOL-R24); made with frame (QOL-R33).
 local button ---@type Button
+-- PagleQoLGearButton, the plain button the gear step's override clicks (QOL-R24); made with frame (QOL-R33).
+local gearButton ---@type Button
 local loggedIn = false
 local lootOpen = false -- QOL-R28
 local channeling = false -- QOL-R22
@@ -73,6 +75,7 @@ local function ladderState(armed, fishingName)
 		poleInHand = pole,
 		lured = lured,
 		lure = lure,
+		gearReady = ns.ReadGearStep(pole),
 	}
 end
 
@@ -81,6 +84,8 @@ end
 local function registerClicks()
 	if button and not InCombatLockdown() then
 		button:RegisterForClicks(ns.ClickRegistration(GetCVar("ActionButtonUseKeyDown")))
+		-- PagleQoLGearButton follows the same rule (QOL-R27).
+		gearButton:RegisterForClicks(ns.ClickRegistration(GetCVar("ActionButtonUseKeyDown")))
 	end
 end
 
@@ -112,7 +117,8 @@ local function repoint(want)
 	-- Arming re-reads the click registration (QOL-R27), and tells the lures what the key applies (QOL-R29).
 	registerClicks()
 	ns.LureTargeted(target.item)
-	if target.kind == "click" then
+	-- The gear step's click has no item: PagleQoLGearButton runs the swap itself (QOL-R44).
+	if target.kind == "click" and target.item then
 		-- An item use on the pole in hand: no target slot and no macro (QOL-R52, probe B4).
 		button:SetAttribute("type", "item")
 		button:SetAttribute("item", "item:" .. target.item)
@@ -238,6 +244,11 @@ local function createFrame()
 	if not frame and not Pagle.IsRestricted() then
 		frame = CreateFrame("Frame")
 		button = CreateFrame("Button", ns.ACTION_BUTTON, nil, "SecureActionButtonTemplate") --[[@as Button]]
+		-- PagleQoLGearButton: a plain Button, never shown either, whose click is the gear step's swap (QOL-R24).
+		gearButton = CreateFrame("Button", ns.GEAR_BUTTON) --[[@as Button]]
+		gearButton:SetScript("OnClick", function()
+			ns.PressGearButton()
+		end)
 		registerClicks()
 	end
 end

@@ -49,12 +49,16 @@ describe("Pagle_QoL with Core", function()
 		assert.are.equal(1, rawget(loaded.env.PagleQoLDB.global, "schemaVersion"))
 	end)
 
-	it("names the Fishing key and its header for Key Bindings › AddOns (QOL-R1, QOL-R10)", function()
-		local env = loadAddon("Pagle_QoL", FOREVER_GLOBALS).env
+	it(
+		"names the Fishing key, Swap gear and their header for Key Bindings › AddOns (QOL-R1, QOL-R10, QOL-R46)",
+		function()
+			local env = loadAddon("Pagle_QoL", FOREVER_GLOBALS).env
 
-		assert.are.equal("Pagle", env.BINDING_HEADER_PAGLE)
-		assert.are.equal("Pagle: Fishing key", env.BINDING_NAME_PAGLE_FISHING_KEY)
-	end)
+			assert.are.equal("Pagle", env.BINDING_HEADER_PAGLE)
+			assert.are.equal("Pagle: Fishing key", env.BINDING_NAME_PAGLE_FISHING_KEY)
+			assert.are.equal("Pagle: Swap gear", env.BINDING_NAME_PAGLE_SWAP_GEAR)
+		end
+	)
 end)
 
 describe("Pagle_QoL with FakePagle", function()

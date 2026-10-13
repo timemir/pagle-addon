@@ -13,7 +13,8 @@ ns.SCHEMA_VERSION = 1
 
 --- PagleQoLDB's AceDB defaults (qol.md › Data). Each ticket adds the keys it uses.
 ns.DB_DEFAULTS = {
-	global = { lease = {} },
+	-- gear: each character's fishing set, by character GUID (QOL-R40).
+	global = { lease = {}, gear = {} },
 	profile = {
 		-- Lures and clams: Lures, and the lure chosen for Only this one (QOL-R50).
 		lures = { mode = "best", item = 6529 },

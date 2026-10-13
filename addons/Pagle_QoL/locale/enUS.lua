@@ -46,4 +46,18 @@ ns.L = {
 	-- The out-of-lures Nudge (QOL-R53): under Best I have, and under Only this one with the lure's name.
 	NUDGE_OUT_OF_LURES = "Your lure is gone and there are none left in your bags.",
 	NUDGE_OUT_OF_LURE = "Your lure is gone and there's no %s left in your bags.",
+	-- Gear: Swap gear in Key Bindings › AddOns (QOL-R1, QOL-R46), the Fishing page's Gear section (qol.md › Settings,
+	-- QOL-R40, QOL-R41), the free-slot lines with the set names filled in (QOL-R42), and the swap-back Nudge (QOL-R77).
+	BINDING_SWAP_GEAR = "Pagle: Swap gear",
+	SETTINGS_GEAR = "Gear",
+	SETTINGS_FISHING_SET = "Fishing set",
+	SETTINGS_FISHING_SET_TOOLTIP = "The Fishing key puts it on when no pole is in hand. Double-click skips this.",
+	SETTINGS_FISHING_SET_NONE = "None (gear stays as it is)",
+	SETTINGS_SAVE_FISHING_SET = "Save what I'm wearing as my fishing set",
+	SETTINGS_SWAP_GEAR = "Swap gear",
+	SETTINGS_SWAP_GEAR_TOOLTIP = "Swaps between your fishing set and what you wore before (saved as Pagle Previous).",
+	GEAR_NEEDS_SLOT = "Pagle: needs a free equipment set slot for %s.",
+	GEAR_NEEDS_TWO_SLOTS = "Pagle: needs two free equipment set slots for %s and %s.",
+	NUDGE_SWAP_BACK = "Still holding your pole. Press %s to swap back.",
+	NUDGE_SWAP_BACK_UNBOUND = "Still holding your pole. Bind Pagle: Swap gear to swap back in one press.",
 }

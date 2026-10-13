@@ -17,3 +17,9 @@ ERR_FISH_ESCAPED = "Your fish got away!"
 -- Resources/Frames.lua.
 ---@type MessageFrame
 UIErrorsFrame = {}
+
+-- The most equipment sets a character can have (QOL-R42). Not Forever-only, but the annotations lack it.
+-- Gethe/wow-ui-source branch forever at 943764493e6b16d63ded3ab304150d1f05e58b57 ("1.60.1 (70338)"),
+-- Interface/AddOns/Blizzard_FrameXMLBase/Constants.lua: "MAX_EQUIPMENT_SETS_PER_PLAYER = 10;".
+---@type integer
+MAX_EQUIPMENT_SETS_PER_PLAYER = 10

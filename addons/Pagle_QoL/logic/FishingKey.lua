@@ -15,9 +15,13 @@ ns.FISHING_SPELL_ID = 7620
 --- never shown.
 ns.ACTION_BUTTON = "PagleQoLActionButton"
 
----@alias PagleQoLAction "nothing"|"reel"|"lure"|"cast"
+--- The button the Fishing key clicks to put the fishing set on (QOL-R24): a plain `Button` whose OnClick runs the
+--- swap (QOL-R44), never shown.
+ns.GEAR_BUTTON = "PagleQoLGearButton"
 
---- What the ladder reads (QOL-R20). It has steps 1, 2, 4 and 6; Track Q adds gear and clams.
+---@alias PagleQoLAction "nothing"|"reel"|"gear"|"lure"|"cast"
+
+--- What the ladder reads (QOL-R20). It has steps 1–4 and 6; clams (step 5) come in Track Q step 6.
 ---@class PagleQoLLadderState
 ---@field armed boolean? QoL is armed (QOL-R30)
 ---@field lootOpen boolean? a loot window is open (QOL-R28)
@@ -26,6 +30,8 @@ ns.ACTION_BUTTON = "PagleQoLActionButton"
 ---@field poleInHand boolean? a fishing pole is in hand (QOL-R21); the cast needs none (QOL-R23)
 ---@field lured boolean? the pole has a lure on, or counts as lured while a lure's result is awaited (QOL-R29)
 ---@field lure integer? the lure QOL-R51 picks; nil while Lures is *Off* or none is available
+---@field gearReady boolean? the gear step is ready (QOL-R43)
+---@field skipGear boolean? the evaluation skips the gear step, as the double-click's does (QOL-R13, QOL-R15)
 
 --- The next action: the first step of the ladder that holds (QOL-R20), so a press is one game action.
 ---@param state PagleQoLLadderState
@@ -36,6 +42,10 @@ function ns.NextAction(state)
 	end
 	if state.channelingFishing then
 		return "reel"
+	end
+	-- The fishing set goes on before a lure, which needs the pole in hand; the double-click never equips it.
+	if state.gearReady and not state.skipGear then
+		return "gear"
 	end
 	-- After the reel and before the cast, so a lure never goes on mid-channel.
 	if state.poleInHand and not state.lured and state.lure then
@@ -71,6 +81,8 @@ function ns.KeyTarget(action, fishingName, lure)
 		return { kind = "command", value = "INTERACTTARGET" }
 	elseif action == "lure" and lure then
 		return { kind = "click", value = ns.ACTION_BUTTON, item = lure }
+	elseif action == "gear" then
+		return { kind = "click", value = ns.GEAR_BUTTON }
 	elseif action == "cast" and fishingName then
 		return { kind = "spell", value = fishingName }
 	end
