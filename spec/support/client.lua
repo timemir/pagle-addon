@@ -14,6 +14,7 @@
 --- them. loadAddon lists each addon it loads, with its TOC fields as metadata. One not listed is missing. Specs add
 --- to it.
 ---@field loot FakeLoot The loot window, as the loot API reads it.
+---@field sounds string[] Each PlaySoundFile call, in order, as "<path> <channel>".
 
 --- The loot window the loot API reads: whether it's fishing loot (`IsFishingLoot()`) and its slots, in order.
 --- Specs set both before firing LOOT_READY.
@@ -41,6 +42,7 @@ local function newClient()
 		addons = {},
 		bindings = {},
 		loot = { fishing = false, slots = {} },
+		sounds = {},
 	}
 
 	function client.fire(event, ...)
@@ -66,6 +68,13 @@ local function clientStubs(client)
 	stubs = {
 		CreateFrame = function(frameType, _, parent)
 			return widgets.newFrame(client, frameType, parent)
+		end,
+		-- The frame every addon frame hangs from; a plain widget, so it gets no events.
+		UIParent = widgets.newWidget("Frame"),
+		-- Records the call in client.sounds and reports it played, as willPlay, soundHandle.
+		PlaySoundFile = function(path, channel)
+			client.sounds[#client.sounds + 1] = ("%s %s"):format(path, tostring(channel))
+			return true, #client.sounds
 		end,
 		IsLoggedIn = function()
 			return false

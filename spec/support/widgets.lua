@@ -27,6 +27,11 @@ local LAYOUT_METHODS = {
 	"SetTextColor",
 	"SetFontObject",
 	"SetEnabled",
+	"SetAlpha",
+	"SetFrameStrata",
+	"EnableMouse",
+	"SetTexCoord",
+	"SetVertexColor",
 }
 
 --- A widget (frame, button or font string) that keeps what specs read back: its text, whether it's shown, its
@@ -42,6 +47,10 @@ function widgets.newWidget(kind, parent)
 	end
 	function widget:GetText()
 		return self.text
+	end
+	-- 6 pixels a character: enough for layout code to size around a text.
+	function widget:GetStringWidth()
+		return #(self.text or "") * 6
 	end
 	function widget:Show()
 		self.shown = true
@@ -70,6 +79,17 @@ function widgets.newWidget(kind, parent)
 	end
 	function widget:CreateFontString()
 		return widgets.newWidget("FontString", self)
+	end
+	-- A texture that keeps what it shows: `texture` (SetTexture's file ID or path) or `color` ({ r, g, b, a }).
+	function widget:CreateTexture()
+		local texture = widgets.newWidget("Texture", self)
+		texture.SetTexture = function(region, file)
+			region.texture = file
+		end
+		texture.SetColorTexture = function(region, r, g, b, a)
+			region.color = { r, g, b, a }
+		end
+		return texture
 	end
 	for _, method in ipairs(LAYOUT_METHODS) do
 		widget[method] = function() end

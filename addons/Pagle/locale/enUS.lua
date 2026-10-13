@@ -39,6 +39,13 @@ ns.L = {
 	SETTINGS_BUDGET_COUNT = "Interruptions",
 	SETTINGS_BUDGET_WINDOW = "Per",
 	SETTINGS_MINUTES = "%d min",
+	-- The Announcement frames (announcements.md › UI): the toast lane's overflow (ANN-R20), stamps beyond the 4 shown
+	-- (ANN-R11), the Coins stamp with its sum (ANN-R23), the record ruler's stamp (ANN-R22) and the splash's hint.
+	ANNOUNCEMENT_MORE = "+%d more",
+	ANNOUNCEMENT_STAMPS_MORE = "+%d",
+	ANNOUNCEMENT_COINS = "+%s Coins",
+	ANNOUNCEMENT_NEW_RECORD = "New record",
+	ANNOUNCEMENT_SPLASH_HINT = "Click anywhere to continue",
 	-- LOG-R86: the unsaved-Casts reminder, with the number of Casts recorded since load.
 	RELOAD_REMINDER = "Pagle: %d Casts not yet saved. /reload to keep them safe.",
 	-- CORE-R33: Settings opened while restricted.

@@ -60,6 +60,7 @@ adapter\AnnouncementSettings.lua
 adapter\Slash.lua
 adapter\Wallet.lua
 adapter\Moments.lua
+adapter\Announcements.lua
 adapter\Menu.lua
 adapter\ReloadReminder.lua
 adapter\Login.lua
