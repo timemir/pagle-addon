@@ -445,6 +445,154 @@ describe("FakePagle", function()
 		end)
 	end)
 
+	describe("moments", function()
+		-- A Module registered on `fake` whose projection raises `raise(record, mode)`'s moment, if any, for each Cast it
+		-- applies, and `done(info)`'s from its done.
+		local function raising(fake, name, order, raise, done)
+			local M = fake.Pagle.RegisterModule({ name = name, title = name, order = order })
+			M:NewProjection({
+				db = {},
+				rulesVersion = 1,
+				reset = function()
+					return {}
+				end,
+				apply = function(_, record, mode)
+					local moment = record.kind == "cast" and raise(record, mode)
+					if moment then
+						M:RaiseMoment(moment)
+					end
+				end,
+				done = done and function(_, info)
+					M:RaiseMoment(done(info))
+				end,
+			})
+			return M
+		end
+
+		-- fake.catchLog with the player's character and `casts` Casts in it, as history before login.
+		local function withHistory(fake, casts)
+			fake.catchLog.data.characters[1] = { guid = PLAYER_GUID }
+			for i = 1, casts do
+				fake.catchLog:Append({
+					kind = "cast",
+					char = 1,
+					time = 1791731000 + i,
+					outcome = "caught",
+					conditions = { minute = 494, zone = 148, subzone = 453, events = {}, auras = {} },
+					items = { { itemID = 6358, quantity = 1 } },
+				})
+			end
+		end
+
+		it(
+			"make two Modules' moments for a played Cast one Announcement on the next frame, coins apart (ANN-R10,"
+				.. " ANN-R11, ANN-R23)",
+			function()
+				local fake = newFakePagle()
+				raising(fake, "Hunts", 20, function(record)
+					return { rung = "toast.high", kind = "hunt", title = "Hunt completed", cast = record.id, coins = 15 }
+				end)
+				raising(fake, "Ledger", 10, function(record)
+					return {
+						rung = "toast",
+						kind = "newSpecies",
+						title = "New Species",
+						stamp = "New!",
+						cast = record.id,
+					}
+				end)
+				fake.login()
+				fake.enterWorld()
+
+				fake.playCast("caught", { { itemID = 6358, quantity = 1 } })
+				assert.are.same({}, fake.announcements)
+				fake.nextFrame()
+
+				assert.are.equal(1, #fake.announcements)
+				local shown = fake.announcements[1]
+				assert.are.same({ "Hunt completed", "toast.high", { "New!" }, 15 }, {
+					shown.headline.title,
+					shown.rung,
+					shown.stamps,
+					shown.coins,
+				})
+			end
+		)
+
+		it("refuses a moment as Core does: an unknown rung, or no kind or title (ANN-R1)", function()
+			local fake = newFakePagle()
+			local M = fake.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
+
+			for _, moment in ipairs({
+				{ rung = "fanfare", kind = "k", title = "t" },
+				{ rung = "toast", title = "t" },
+				{ rung = "toast", kind = "k" },
+			}) do
+				assert.has_error(function()
+					M:RaiseMoment(moment)
+				end)
+			end
+			assert.are.same({}, fake.summarized)
+		end)
+
+		it(
+			"drop a rebuild's moments, reported once, and keep a summaryOnly one from done, never shown (ANN-R4,"
+				.. " ANN-R63)",
+			function()
+				local fake = newFakePagle()
+				withHistory(fake, 2)
+				raising(fake, "Ledger", 10, function(record, mode)
+					return { rung = "toast", kind = mode, title = "Cast " .. record.seq, cast = record.id }
+				end, function()
+					return { rung = "toast", kind = "reclassified", title = "Reclassified", summaryOnly = true }
+				end)
+
+				fake.login()
+				fake.enterWorld()
+				fake.nextFrame()
+
+				assert.are.same({}, fake.announcements)
+				assert.are.equal(1, #fake.reported)
+				assert.are.same({ "Reclassified" }, { fake.summarized[1].title })
+				assert.are.equal(1, #fake.summarized)
+			end
+		)
+
+		it(
+			"hold a Cast played before enterWorld until the frame after every projection caught up (ANN-R10,"
+				.. " LOG-R74)",
+			function()
+				local fake = newFakePagle()
+				raising(fake, "Ledger", 10, function(record)
+					return { rung = "toast", kind = "newSpecies", title = "New Species", cast = record.id }
+				end)
+				fake.login()
+
+				fake.playCast("caught", { { itemID = 6358, quantity = 1 } })
+				fake.nextFrame()
+				assert.are.same({}, fake.announcements)
+				fake.enterWorld()
+				assert.are.same({}, fake.announcements)
+				fake.nextFrame()
+
+				assert.are.same({ "New Species" }, { fake.announcements[1].headline.title })
+			end
+		)
+
+		it("flush a moment without a Cast on the next frame, as its own Announcement (ANN-R12)", function()
+			local fake = newFakePagle()
+			local M = fake.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
+
+			M:RaiseMoment({ rung = "nod", kind = "login", title = "Welcome back" })
+			fake.nextFrame()
+
+			assert.are.same(
+				{ "Welcome back", "nod" },
+				{ fake.announcements[1].headline.title, fake.announcements[1].rung }
+			)
+		end)
+	end)
+
 	describe("/pagle", function()
 		it(
 			"runs a Module's subcommand case-insensitively with the rest of the line, trimmed, from login (CORE-R62)",

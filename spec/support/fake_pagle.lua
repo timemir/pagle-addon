@@ -9,6 +9,11 @@
 --   fake.fire("RestrictionChanged", true)                   -- any Core event; tables arrive read-only
 --   fake.setRestricted(true)
 --   fake.playCast("caught", { { itemID = 6358, quantity = 1 } }) -- CastStarted … Catch, CastEnded (LOG-R9)
+--   fake.nextFrame()                                        -- the frame after: the Cast's moments are one Announcement
+--   fake.announcements[1].headline.title                    -- what Core would show (also .stamps, .more, .coins)
+--
+-- A Module raises moments only for what is worth one: an ordinary Catch raises nothing and never pops up (ANN-R13),
+-- so a Module spec playing an ordinary Cast expects fake.announcements to stay empty.
 --
 -- It is built on Core's real logic/: each FakePagle loads Pagle.toc's data/, locale/ and logic/ files (and the
 -- CallbackHandler bus) afresh, so what it validates, computes and refuses is what Core does. Only the adapter part
@@ -56,8 +61,8 @@
 ---@field settingsPage fun(topic: string): { module: string, kind: string, label: string, indented: boolean, setting: PagleSetting }[]?
 --- The rows Core would put on a topic page, in order, its header rows included; nil before login or with no rows,
 --- when Core registers no page (CORE-R42).
----@field reported string[] Each error Core reported through geterrorhandler(), e.g. a late M:AddSetting or a
---- Module function that raised under securecallfunction.
+---@field reported string[] Each error Core reported through geterrorhandler(), e.g. a late M:AddSetting, a
+--- Module function that raised under securecallfunction, or a moment dropped in a replay or rebuild (ANN-R4).
 ---@field print fun(line: string) What Core's print does: adds a chat line to `printed`.
 ---@field report fun(err: any) What Core's geterrorhandler() does: adds the error to `reported`.
 ---@field securecall fun(fn: function, ...: any): ... What Core's securecallfunction does: runs `fn`; on an error,
@@ -71,6 +76,13 @@
 --- unchanged total too (SHOP-R2).
 ---@field setSpent fun(spent: integer) Sets the Coins spent, as the Curio Shop will (M4): BalanceChanged fires if the
 --- balance or held changes (SHOP-R12).
+---@field announcements PagleAnnouncement[] Each Announcement Core would hand the display, in order (ANN-R11): its
+--- headline, rung, stamps (at most 4), more ("+N"), coins and every moment, ranked. One per Cast, made on the frame
+--- after its moments were raised, or after the last projection finishes (ANN-R10); one per moment without a Cast.
+---@field summarized PagleRaisedMoment[] Each moment Core kept, as it was raised, shown or not (ANN-R25): a
+--- summaryOnly one is here and never in announcements. A moment Core dropped (ANN-R4) is in neither.
+---@field nextFrame fun() Runs the next frame: what Core queued for it so far, such as flushing moments into
+--- fake.announcements (ANN-R10, ANN-R12).
 ---@field slash fun(line: string) Types `/pagle <line>` (CORE-R60–R62); help lines go to `printed`.
 ---@field load fun(name: string, options: table?): LoadedAddon Loads a Module with `loadAddon` against this fake:
 --- `globals`, and of Pagle.toc only the vendored libs/ the Module reaches through LibStub (CORE-R6). Options as
@@ -363,6 +375,46 @@ part(function(fake, Pagle, ns)
 
 	function fake.setSpent(spent)
 		wallet:SetSpent(spent)
+	end
+end)
+
+-- Moments (ANN-R1–R4, ANN-R10–R12), on Core's real logic over fake.projections' seams: M:RaiseMoment validates and
+-- drops as Core does, and each Announcement Core would show lands in fake.announcements when fake.nextFrame runs the
+-- frame after. Every moment Core keeps is in fake.summarized as soon as it is raised. A dropped moment's report is in
+-- fake.reported.
+part(function(fake, _, ns)
+	fake.announcements = {}
+	fake.summarized = {}
+	local frame = {}
+	local moments = ns.NewMoments({
+		mode = function()
+			return fake.projections:Mode()
+		end,
+		isUpdating = function()
+			return fake.projections:IsUpdating()
+		end,
+		whenIdle = function(fn)
+			fake.projections:WhenIdle(fn)
+		end,
+		nextFrame = function(step)
+			frame[#frame + 1] = step
+		end,
+		report = fake.report,
+		show = function(announcement)
+			fake.announcements[#fake.announcements + 1] = announcement
+		end,
+		summarize = function(moment)
+			fake.summarized[#fake.summarized + 1] = moment
+		end,
+	})
+	ns.ModuleHandle.RaiseMoment = ns.RaiseMomentMethod(fake.registry, moments)
+
+	function fake.nextFrame()
+		local steps = frame
+		frame = {}
+		for _, step in ipairs(steps) do
+			step()
+		end
 	end
 end)
 
