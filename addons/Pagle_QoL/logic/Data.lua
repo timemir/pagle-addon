@@ -16,6 +16,8 @@ ns.DB_DEFAULTS = {
 	-- gear: each character's fishing set, by character GUID (QOL-R40).
 	global = { lease = {}, gear = {} },
 	profile = {
+		-- Casting: how the player casts, with the Fishing key, a double right-click or both (QOL-R12).
+		input = "both",
 		-- Lures and clams: Lures, and the lure chosen for Only this one (QOL-R50).
 		lures = { mode = "best", item = 6529 },
 		-- While you fish: what a Fishing stretch leases besides soft-interact (QOL-R62).

@@ -134,6 +134,19 @@ local function repoint(want)
 	end
 end
 
+--- Readies PagleQoLActionButton for a target the double-click's BUTTON2 arms (adapter/DoubleClick.lua), as repoint does
+--- for the Fishing key: the click registration (QOL-R27), the lure it now applies (QOL-R29), and for a click, the item
+--- to use (QOL-R52). The double-click never arms the gear step (QOL-R15), so a click target always has an item.
+---@param target PagleQoLKeyTarget
+function ns.ArmActionButton(target)
+	registerClicks()
+	ns.LureTargeted(target.item)
+	if target.kind == "click" then
+		button:SetAttribute("type", "item")
+		button:SetAttribute("item", "item:" .. target.item)
+	end
+end
+
 ---@param _ Frame
 ---@param elapsed number
 local function onUpdate(_, elapsed)
@@ -168,7 +181,9 @@ function evaluate()
 	end
 	local fishingName = C_Spell.GetSpellName(ns.FISHING_SPELL_ID)
 	local state = ladderState(armed, fishingName)
-	local want = ns.Arming(keys, ns.KeyTarget(ns.NextAction(state), fishingName, state.lure))
+	-- Under Input *Double-click* the Fishing key has no key to arm (QOL-R12).
+	local keyKeys = ns.InputArmsKey(ns.CurrentInput()) and keys or {}
+	local want = ns.Arming(keyKeys, ns.KeyTarget(ns.NextAction(state), fishingName, state.lure))
 	if ns.SameArming(current, want) then
 		waitingForKeyUp = false
 	elseif keyHeld(current, want) then
@@ -177,6 +192,8 @@ function evaluate()
 		waitingForKeyUp = false
 		repoint(want)
 	end
+	-- An open double-click window re-points from the same evaluation (QOL-R13, QOL-R25).
+	ns.PointDoubleClick(state, fishingName)
 	setOnUpdate(armed)
 end
 

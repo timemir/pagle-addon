@@ -88,6 +88,12 @@ stds.wow = {
 		},
 		"GetInventoryItemTexture",
 		"GetBindingText",
+		-- QoL's double-click (QOL-R13): the frames under the mouse at a right mouse-up, and the game world's frame. It
+		-- hears GLOBAL_MOUSE_DOWN and GLOBAL_MOUSE_UP (payload: the button), which Ketho/vscode-wow-api at
+		-- WOW_API_COMMIT lists in Annotations/Core/Data/Event.lua. GetMouseFocus, QOL-R13's fallback, isn't used: the
+		-- forever dump has GetMouseFoci and not GetMouseFocus, so the fallback's case never arises on Forever.
+		"GetMouseFoci",
+		"WorldFrame",
 		-- QoL's Fishing stretch and its CVar lease (QOL-R61–R64).
 		"GetCVar",
 		"SetCVar",

@@ -23,3 +23,8 @@ UIErrorsFrame = {}
 -- Interface/AddOns/Blizzard_FrameXMLBase/Constants.lua: "MAX_EQUIPMENT_SETS_PER_PLAYER = 10;".
 ---@type integer
 MAX_EQUIPMENT_SETS_PER_PLAYER = 10
+
+-- The game world's frame, the one under the mouse when no UI is (QOL-R13). Not Forever-only, but the annotations lack
+-- it; the forever dump lists it: Ketho/BlizzardInterfaceResources branch forever at BIR_COMMIT, Resources/Frames.lua.
+---@type Frame
+WorldFrame = {}

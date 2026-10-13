@@ -17,6 +17,11 @@ ns.L = {
 	BINDING_FISHING_KEY = "Pagle: Fishing key",
 	-- The Fishing page (qol.md › Settings, SET-R20).
 	SETTINGS_CASTING = "Casting",
+	SETTINGS_CAST_WITH = "Cast with",
+	SETTINGS_CAST_WITH_TOOLTIP = "Also on the compartment menu and /pagle qol input.",
+	SETTINGS_CAST_WITH_KEY = "Fishing key",
+	SETTINGS_CAST_WITH_CLICK = "Double right-click",
+	SETTINGS_CAST_WITH_BOTH = "Both",
 	SETTINGS_FISHING_KEY = "Fishing key",
 	SETTINGS_FISHING_KEY_TOOLTIP = "Each press does the next single thing: cast, reel, or a lure, gear or clam when needed.",
 	-- The Fishing page's Lures and clams section (qol.md › Settings, QOL-R50).
@@ -36,6 +41,16 @@ ns.L = {
 	SETTINGS_BACKGROUND_SOUND = "Keep sound when the game is in the background",
 	SETTINGS_AUTO_LOOT = "Auto-loot while fishing",
 	SETTINGS_AUTO_LOOT_TOOLTIP = "Only while you fish. Skipped if you already have auto-loot on.",
+	-- Input on the compartment menu (QOL-R16) and through /pagle qol (QOL-R2, QOL-R17).
+	MENU_INPUT = "Input: %s",
+	INPUT_KEY = "Fishing key",
+	INPUT_CLICK = "Double-click",
+	INPUT_BOTH = "Both",
+	SLASH_HELP = "input key|click|both: choose how you cast",
+	SLASH_USAGE = "Pagle: /pagle qol input key|click|both",
+	INPUT_SET_KEY = "Pagle: cast with the Fishing key.",
+	INPUT_SET_CLICK = "Pagle: cast with a double right-click.",
+	INPUT_SET_BOTH = "Pagle: cast with the Fishing key or a double right-click.",
 	-- The conflict popup and what its choices print (QOL-R81, QOL-R83).
 	CONFLICT_TEXT = "Two addons want your fishing key.",
 	CONFLICT_USE_PAGLE = "Use Pagle",

@@ -1,6 +1,6 @@
 -- QoL's rows on Core's Fishing page: the Casting header and the Fishing key (M1), the Lures and clams rows (Track Q
--- step 1), the Gear rows (Track Q step 2) and the While you fish rows (Track Q step 4) (qol.md › Settings, SET-R20,
--- SET-R21, CORE-R42).
+-- step 1), the Gear rows (Track Q step 2), Cast with (Track Q step 3) and the While you fish rows (Track Q step 4)
+-- (qol.md › Settings, SET-R20, SET-R21, CORE-R42).
 
 -- QoL's row on a FakePagle Fishing page by its label.
 ---@param fake FakePagle
@@ -29,7 +29,8 @@ describe("QoL's Fishing page with FakePagle", function()
 		end
 		assert.are.same({
 			{ "QoL", "header", "Casting", false },
-			{ "QoL", "keybinding", "Fishing key", false },
+			{ "QoL", "dropdown", "Cast with", false },
+			{ "QoL", "keybinding", "Fishing key", true },
 			{ "QoL", "header", "Gear", false },
 			{ "QoL", "dropdown", "Fishing set", false },
 			{ "QoL", "button", "Save what I'm wearing as my fishing set", true },
@@ -266,12 +267,13 @@ describe("QoL's Fishing page with FakePagle", function()
 		assert.is_nil(fake.settingsPage("fishing"))
 	end)
 
-	it("binds the key row to PAGLE_FISHING_KEY with qol.md's tooltip, no parent and no greying (SET-R20)", function()
+	it("binds the key row to PAGLE_FISHING_KEY with qol.md's tooltip, under Cast with (SET-R20)", function()
 		local fake = newFakePagle()
 		fake.load("Pagle_QoL")
 		fake.login()
 
-		local key = assert(fake.settingsPage("fishing"))[2].setting
+		local castWith = rowOf(fake, "Cast with")
+		local key = rowOf(fake, "Fishing key")
 
 		assert.are.equal("PAGLE_FISHING_KEY", key.binding)
 		-- qol.md › Settings › Tooltips, word for word.
@@ -279,8 +281,57 @@ describe("QoL's Fishing page with FakePagle", function()
 			"Each press does the next single thing: cast, reel, or a lure, gear or clam when needed.",
 			key.tooltip
 		)
-		assert.is_nil(key.parent)
-		assert.is_nil(key.isEnabled)
+		assert.are.equal("input", castWith.id)
+		assert.are.equal("input", key.parent)
+	end)
+
+	it("offers Fishing key, Double right-click and Both for Cast with, with its tooltip (SET-R20, QOL-R12)", function()
+		local fake = newFakePagle()
+		fake.load("Pagle_QoL")
+		fake.login()
+
+		local castWith = rowOf(fake, "Cast with")
+
+		assert.are.same({
+			{ value = "key", label = "Fishing key" },
+			{ value = "click", label = "Double right-click" },
+			{ value = "both", label = "Both" },
+		}, castWith.options())
+		-- qol.md › Settings › Tooltips, word for word.
+		assert.are.equal("Also on the compartment menu and /pagle qol input.", castWith.tooltip)
+		assert.are.equal("both", castWith.default)
+		assert.are.equal("both", castWith.get())
+		assert.is_nil(castWith.isEnabled)
+	end)
+
+	it("stores Cast with in profile.input, as the menu and /pagle qol do (qol.md › Data, QOL-R18)", function()
+		local fake = newFakePagle()
+		local loaded = fake.load("Pagle_QoL")
+		fake.login()
+		local castWith = rowOf(fake, "Cast with")
+
+		castWith.set("click")
+		assert.are.equal("click", loaded.env.PagleQoLDB.profiles.Default.input)
+		assert.are.equal("Input: Double-click", fake.menu()[1].label)
+
+		fake.slash("qol input key")
+		assert.are.equal("key", castWith.get())
+	end)
+
+	it("greys the key row out under Double right-click only (SET-R20, QOL-R12)", function()
+		local fake = newFakePagle()
+		fake.load("Pagle_QoL")
+		fake.login()
+		local castWith = rowOf(fake, "Cast with")
+		local key = rowOf(fake, "Fishing key")
+
+		local enabled = {}
+		for _, input in ipairs({ "key", "click", "both" }) do
+			castWith.set(input)
+			enabled[input] = key.isEnabled()
+		end
+
+		assert.are.same({ key = true, click = false, both = true }, enabled)
 	end)
 end)
 
@@ -293,19 +344,31 @@ describe("QoL's Fishing page with Core", function()
 		return loaded, assert(loaded.client.settings.category("Fishing"))
 	end
 
-	it("registers under Pagle as a native header and the Fishing key's binding row (SET-R5, SET-R20)", function()
-		local loaded, fishing = fishingPage()
+	it(
+		"registers under Pagle as a native header, Cast with and the Fishing key's binding row under it (SET-R5, SET-R20)",
+		function()
+			local loaded, fishing = fishingPage()
 
-		local header, key = unpack(fishing.layout.initializers)
-		assert.are.equal(loaded.client.settings.category("Pagle"), fishing.parent)
-		assert.are.equal("SettingsListSectionHeaderTemplate", header.template)
-		assert.are.equal("Casting", header:GetName())
-		assert.are.equal("KeyBindingFrameBindingTemplate", key.template)
-		assert.are.equal(2, key:GetData().bindingIndex)
-		assert.are.same({ "FISHING KEY" }, key.searchTags)
-		assert.is_nil(key:GetParentInitializer())
-		assert.is_true(key:EvaluateModifyPredicates())
-	end)
+			local header, castWith, key = unpack(fishing.layout.initializers)
+			assert.are.equal(loaded.client.settings.category("Pagle"), fishing.parent)
+			assert.are.equal("SettingsListSectionHeaderTemplate", header.template)
+			assert.are.equal("Casting", header:GetName())
+			assert.are.equal("SettingsDropdownControlTemplate", castWith.template)
+			assert.are.equal("Cast with", castWith:GetSetting():GetName())
+			assert.are.equal("Also on the compartment menu and /pagle qol input.", castWith:GetTooltip())
+			assert.are.equal("KeyBindingFrameBindingTemplate", key.template)
+			assert.are.equal(2, key:GetData().bindingIndex)
+			assert.are.same({ "FISHING KEY" }, key.searchTags)
+			assert.are.equal(castWith, key:GetParentInitializer())
+
+			-- Greyed out under Double right-click only (SET-R20).
+			assert.is_true(key:EvaluateModifyPredicates())
+			castWith:GetSetting():SetValue("click")
+			assert.is_false(key:EvaluateModifyPredicates())
+			castWith:GetSetting():SetValue("key")
+			assert.is_true(key:EvaluateModifyPredicates())
+		end
+	)
 
 	-- The Fishing page's native row by its label.
 	local function initializerOf(fishing, label)
@@ -328,6 +391,24 @@ describe("QoL's Fishing page with Core", function()
 			end
 		end
 	end
+
+	it(
+		"restores Cast with to Both with Defaults and leaves the Fishing key's binding alone (SET-R21, SET-R60)",
+		function()
+			local loaded, fishing = fishingPage()
+			local castWith = initializerOf(fishing, "Cast with"):GetSetting()
+			castWith:SetValue("click")
+
+			pressDefaults(loaded, fishing)
+
+			assert.are.equal("both", castWith:GetValue())
+			assert.are.equal("both", loaded.env.PagleQoLDB.profiles.Default.input)
+			-- The key row under it carries no setting, only its binding index, so Defaults has nothing of it to restore.
+			local key = fishing.layout.initializers[3]
+			assert.are.equal("KeyBindingFrameBindingTemplate", key.template)
+			assert.is_nil(key:GetSetting())
+		end
+	)
 
 	it("registers Gear as a header, a native dropdown, a button and Swap gear's binding row (SET-R20)", function()
 		local loaded, fishing = fishingPage()

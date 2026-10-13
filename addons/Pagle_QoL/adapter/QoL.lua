@@ -14,7 +14,7 @@ function ns.QoL.OnInitialize()
 	--- QoL's Module handle: the calls that act for QoL (CORE-R12). Nil while QoL is inert.
 	ns.Module = Pagle.RegisterModule(ns.ModuleDef(function(topic)
 		Pagle.OpenSettings(topic)
-	end))
+	end, print))
 	-- An inert Module must stop (CORE-R13).
 	if not ns.Module then
 		return
@@ -29,6 +29,7 @@ function ns.QoL.OnInitialize()
 	ns.StartStretch()
 
 	ns.StartFishingKey()
+	ns.StartDoubleClick()
 	ns.StartLures()
 	ns.StartGear()
 	ns.StartCombat()

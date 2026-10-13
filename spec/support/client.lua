@@ -76,6 +76,8 @@ local function clientStubs(client)
 		-- The screen's root frame and the game's error text under it (both in the forever dump's Frames.lua), and the
 		-- yellow FrameXML's GlobalColors defines (CreateColor(1, 1, 0, 1)).
 		UIParent = widgets.newWidget("Frame"),
+		-- The game world's frame, which the mouse is over when it's over no UI (Frames.lua in the forever dump).
+		WorldFrame = widgets.newWidget("Frame"),
 		YELLOW_FONT_COLOR = {
 			r = 1,
 			g = 1,
