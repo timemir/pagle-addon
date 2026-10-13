@@ -77,6 +77,14 @@ expect "a packager pin in release.yml that differs from tools.env stops the gate
 	"PACKAGER_COMMIT in scripts/tools.env"
 
 copy
+printf -- '-- edited by hand\n' >>"$addon/libs/AceDB-3.0/AceDB-3.0.lua"
+expect "a hand-edited vendored lib fails libs" libs "addons/Pagle/libs/AceDB-3.0/AceDB-3.0.lua: FAILED"
+
+copy
+printf 'return 1\n' >"$addon/libs/Stray.lua"
+expect "a file in libs/ that update-ace3.sh didn't vendor fails libs" libs "addons/Pagle/libs/Stray.lua"
+
+copy
 printf 'local t = {a=1}\nreturn t\n' >"$addon/logic/Badly.lua"
 expect "a badly formatted file fails format" format "Diff in addons/Pagle/logic/Badly.lua"
 

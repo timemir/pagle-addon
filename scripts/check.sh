@@ -44,6 +44,17 @@ done
 
 # Each stage below is one self-contained block: a banner, its commands, `|| fail <stage>`.
 
+# --- libs (#46), ahead of the numbered stages: the vendored libraries are exactly the files scripts/update-ace3.sh
+# vendored, byte for byte, as its manifest scripts/ace3.sha256 records them. Offline: the manifest is in the repo,
+# and update-ace3.sh --check compares both with upstream.
+stage libs
+if ! sha256sum --check --quiet --strict scripts/ace3.sha256 >&2 ||
+	! diff --label scripts/ace3.sha256 --label addons/ <(sed 's/^[0-9a-f]*  //' scripts/ace3.sha256) \
+		<(find addons/*/libs -type f | LC_ALL=C sort) >&2; then
+	echo "libs: addons/*/libs/ differs from scripts/ace3.sha256; only scripts/update-ace3.sh changes it" >&2
+	fail libs
+fi
+
 # --- 1. format (#47): StyLua defaults, Lua 5.1 syntax (.stylua.toml); vendored libs skipped (.styluaignore).
 stage format
 "$bin/stylua" --check "${lua_dirs[@]}" || fail format

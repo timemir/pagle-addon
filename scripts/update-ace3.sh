@@ -4,9 +4,13 @@
 #
 #   scripts/update-ace3.sh             re-vendor the commit recorded in scripts/ace3.commit
 #   scripts/update-ace3.sh <ref>       vendor <ref> (a commit, branch or tag of WoWUIDev/Ace3) and record its commit
-#   scripts/update-ace3.sh --check     exit 1 unless addons/Pagle/libs/ matches the recorded commit byte for byte
+#   scripts/update-ace3.sh --check     exit 1 unless addons/Pagle/libs/ and scripts/ace3.sha256 match the
+#                                      recorded commit byte for byte
 #
-# Needs bash, curl, tar and diff (WSL or Git Bash).
+# Vendoring also writes scripts/ace3.sha256, the sha256 of every file in addons/Pagle/libs/. The check gate
+# (scripts/check.sh) holds libs/ to it offline, so a hand edit fails the gate.
+#
+# Needs bash, curl, tar, diff and sha256sum (WSL or Git Bash).
 set -euo pipefail
 
 upstream="WoWUIDev/Ace3"
@@ -21,7 +25,15 @@ files=(
 
 root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 record="$root/scripts/ace3.commit"
+manifest="$root/scripts/ace3.sha256"
 dest="$root/addons/Pagle/libs"
+
+# sums <libs dir>: sha256sum lines for every file in it, sorted, each named by its path in the repo
+# (addons/Pagle/libs/...), so check.sh can run sha256sum --check on them from the repo root.
+sums() {
+	(cd "$1" && find . -type f | LC_ALL=C sort | sed 's#^\./##' | xargs -d '\n' sha256sum) |
+		sed 's#  #  addons/Pagle/libs/#'
+}
 
 mode=update
 ref=""
@@ -60,10 +72,12 @@ for f in "${files[@]}"; do
 done
 
 if [[ $mode == check ]]; then
-	if diff -r -q "$tmp/libs" "$dest"; then
-		echo "update-ace3: addons/Pagle/libs matches $upstream@$commit"
+	if diff -r -q "$tmp/libs" "$dest" &&
+		diff -u --label scripts/ace3.sha256 --label "$upstream@$commit" "$manifest" <(sums "$tmp/libs"); then
+		echo "update-ace3: addons/Pagle/libs and scripts/ace3.sha256 match $upstream@$commit"
 	else
-		echo "update-ace3: addons/Pagle/libs differs from $upstream@$commit; run scripts/update-ace3.sh" >&2
+		echo "update-ace3: addons/Pagle/libs or scripts/ace3.sha256 differs from $upstream@$commit;" \
+			"run scripts/update-ace3.sh" >&2
 		exit 1
 	fi
 	exit 0
@@ -73,4 +87,5 @@ rm -rf "$dest"
 mkdir -p "$(dirname "$dest")"
 cp -r "$tmp/libs" "$dest"
 printf '%s\n' "$commit" >"$record"
-echo "update-ace3: vendored $upstream@$commit into addons/Pagle/libs"
+sums "$dest" >"$manifest"
+echo "update-ace3: vendored $upstream@$commit into addons/Pagle/libs and wrote scripts/ace3.sha256"
