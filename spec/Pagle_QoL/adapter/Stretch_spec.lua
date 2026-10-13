@@ -293,6 +293,24 @@ describe("The Fishing stretch", function()
 			assert.are.same({}, leaseOf(loaded))
 		end)
 
+		it("still runs while QoL stands down, which starts no stretch and leases nothing (QOL-R82, QOL-R64)", function()
+			local fake, loaded = loadWithLease(leftover(), { SoftTargetInteract = "3", SoftTargetInteractRange = "15" })
+			local client = loaded.client
+			client.addons.Angleur = { metadata = { Title = "Angleur" } }
+			client.mainHand = FISHING_POLE
+
+			client.fire("ADDON_LOADED", "Pagle_QoL")
+			fake.login()
+			fake.fireGameEvent("PLAYER_LOGIN")
+			assert.is_true(loaded.ns.IsStandingDown())
+			assert.are.same({ SoftTargetInteract = "1", SoftTargetInteractRange = "10" }, client.cvars)
+
+			client.cvarCalls = {}
+			fake.fire("CastStarted")
+			assert.are.same({}, client.cvarCalls)
+			assert.are.same({}, leaseOf(loaded))
+		end)
+
 		it("leaves the lease alone while QoL is inert: it runs no code (QOL-R90, CORE-R13)", function()
 			local fake, loaded = loadWithLease(leftover(), { SoftTargetInteract = "3", SoftTargetInteractRange = "15" })
 			fake.addons.Pagle_QoL.metadata["X-Pagle-API"] = "2"

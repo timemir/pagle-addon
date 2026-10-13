@@ -14,7 +14,7 @@ local ns = select(2, ...)
 local OWNER = "Pagle_QoL Fishing stretch"
 
 local stretch = ns.NewStretch()
-local frame ---@type Frame its OnUpdate counts the idle end while it counts (QOL-R61)
+local frame ---@type Frame? its OnUpdate counts the idle end while it counts (QOL-R61)
 
 -- The client's CVars, looked up at each call.
 ---@type PagleQoLCVars
@@ -46,13 +46,21 @@ end
 
 local onUpdate
 
--- The idle count runs only while it counts (QOL-R61).
+-- The idle count runs only while it counts (QOL-R61). Its frame is made the first time it counts, which is always
+-- while armed, so never in combat (QOL-R33).
 local function setOnUpdate()
-	frame:SetScript("OnUpdate", stretch:IsCounting() and onUpdate or nil)
+	local counting = stretch:IsCounting()
+	if counting and not frame then
+		frame = CreateFrame("Frame")
+	end
+	if frame then
+		frame:SetScript("OnUpdate", counting and onUpdate or nil)
+	end
 end
 
--- Ends the stretch, if one runs, and restores its lease (QOL-R61, QOL-R63).
-local function endStretch()
+--- Ends the stretch, if one runs, and restores its lease now or, under lockdown, once it ends (QOL-R61, QOL-R63,
+--- QOL-R66). adapter/Combat.lua calls it as restriction starts, in or out of lockdown (QOL-R31).
+function ns.EndStretch()
 	if stretch:End() then
 		restore()
 	end
@@ -71,9 +79,9 @@ end
 --- Restores any lease left over from the last session (QOL-R64), then follows the Fishing stretch. QoL's
 --- OnInitialize calls it at ADDON_LOADED, before anything else, once it has registered and opened PagleQoLDB.
 function ns.StartStretch()
-	frame = CreateFrame("Frame")
 	restore()
 
+	-- A stretch starts only while armed, so never while restricted or standing down (QOL-R30, QOL-R82).
 	Pagle.RegisterCallback(OWNER, "CastStarted", function()
 		if stretch:CastStarted(ns.IsArmed()) then
 			ns.Lease(lease(), ns.SOFT_INTERACT_LEASE, cvars)
@@ -88,25 +96,21 @@ function ns.StartStretch()
 	-- The pole comes off (QOL-R21 stops holding).
 	Pagle.RegisterEvent(OWNER, "PLAYER_EQUIPMENT_CHANGED", function()
 		if not ns.PoleInHand() then
-			endStretch()
+			ns.EndStretch()
 		end
 	end)
 	-- The player mounts.
 	Pagle.RegisterEvent(OWNER, "PLAYER_MOUNT_DISPLAY_CHANGED", function()
 		if IsMounted() then
-			endStretch()
+			ns.EndStretch()
 		end
 	end)
-	-- Restriction starts: PLAYER_REGEN_DISABLED runs before lockdown, so the restores can run then (QOL-R31).
-	Pagle.RegisterEvent(OWNER, "PLAYER_REGEN_DISABLED", endStretch)
 	-- Logout or /reload. A restore that must wait stays in the lease, saved for the leftover restore (QOL-R64).
-	Pagle.RegisterEvent(OWNER, "PLAYER_LOGOUT", endStretch)
-
+	Pagle.RegisterEvent(OWNER, "PLAYER_LOGOUT", ns.EndStretch)
+	-- Restriction starting ends the stretch from adapter/Combat.lua (QOL-R31). Its end runs the restores that fell
+	-- due under lockdown (QOL-R66); no stretch can have started since.
 	Pagle.RegisterCallback(OWNER, "RestrictionChanged", function(_, isRestricted)
-		if isRestricted then
-			endStretch()
-		elseif not stretch:IsRunning() then
-			-- The restores that fell due under lockdown run now (QOL-R66).
+		if not isRestricted and not stretch:IsRunning() then
 			restore()
 		end
 	end)
