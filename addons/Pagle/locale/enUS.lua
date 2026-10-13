@@ -9,4 +9,6 @@ ns.L = {
 	-- Error reports (CORE-R23): owner, event, the error.
 	EVENT_REGISTER_FAILED = "Pagle: %s couldn't register the event %s: %s",
 	EVENT_HANDLER_FAILED = "Pagle: %s's handler for the event %s failed: %s",
+	-- An inert Module (CORE-R13): its def.title.
+	MODULE_NEEDS_NEWER_PAGLE = "Pagle: Pagle %s needs a newer Pagle.",
 }
