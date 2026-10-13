@@ -23,7 +23,11 @@
 ---@field category fun(name: string): table? The registered category with that name, if its top-level category is
 --- registered under AddOns, as the panel lists it.
 ---@field show fun(category: table): { initializer: table, frame: table }[] Shows a page as the panel does: a fresh
---- frame per row, through its initializer's InitFrame, so a row reads its value or label then.
+--- frame per row, through its initializer's InitFrame, so a row reads its value or label then. A value row's frame
+--- has `value`, a slider's `valueLabel` (its Right label formatter's text, nil with none), and every frame `enabled`.
+--- Until the next show, a setting's SetValue updates these frames as the panel's controls do (valueChanged).
+---@field shown { initializer: table, frame: table }[]? The rows show returned last.
+---@field valueChanged fun(setting: table) What the panel does when a setting's value changes.
 ---@field textsOf fun(frame: table): string[] The text of every shown widget in a row's frame, depth first.
 ---@field buttonsOf fun(frame: table): table[] The shown buttons in a row's frame, depth first.
 
@@ -69,6 +73,11 @@ local function newInitializer(template, data)
 		end
 		return true
 	end
+	-- A setting variable whose change re-evaluates the shown row's state (SettingsListElementMixin:Init).
+	function initializer:AddEvaluateStateCVar(variable)
+		self.evaluateStateVariables = self.evaluateStateVariables or {}
+		self.evaluateStateVariables[#self.evaluateStateVariables + 1] = variable
+	end
 	function initializer:AddSearchTags(...)
 		for i = 1, select("#", ...) do
 			local tag = select(i, ...)
@@ -77,10 +86,18 @@ local function newInitializer(template, data)
 			end
 		end
 	end
+	-- A slider shows its value through its options' Right label formatter, as MinimalSliderWithSteppersMixin's
+	-- FormatValue does; with none, it shows no value label.
+	function initializer:FormatValue(frame)
+		local formatters = self.data.options and self.data.options.formatters
+		local formatter = formatters and formatters[2] -- MinimalSliderWithSteppersMixin.Label.Right
+		frame.valueLabel = formatter and formatter(frame.value) or nil
+	end
 	function initializer:InitFrame(frame)
 		frame.initializer = self
 		if self.data.setting then
 			frame.value = self.data.setting:GetValue()
+			self:FormatValue(frame)
 		end
 		frame.enabled = self:EvaluateModifyPredicates()
 	end
@@ -176,8 +193,10 @@ return function(client, stubs)
 			function setting:GetValue()
 				return self.get()
 			end
+			-- As SettingMixin:ApplyValue: sets it, then tells the shown rows (TriggerValueChanged).
 			function setting:SetValue(value)
 				self.set(value)
+				settings.valueChanged(self)
 			end
 			return setting
 		end,
@@ -186,7 +205,14 @@ return function(client, stubs)
 			return addControl("SettingsCheckboxControlTemplate", category, setting, nil, tooltip)
 		end,
 		CreateSliderOptions = function(minValue, maxValue, rate)
-			return { minValue = minValue, maxValue = maxValue, steps = (maxValue - minValue) / rate }
+			local options = { minValue = minValue, maxValue = maxValue, steps = (maxValue - minValue) / rate }
+			-- SettingsSliderOptionsMixin:SetLabelFormatter, for a function formatter.
+			function options:SetLabelFormatter(labelType, formatter)
+				assert(type(formatter) == "function")
+				self.formatters = self.formatters or {}
+				self.formatters[labelType] = formatter
+			end
+			return options
 		end,
 		CreateSlider = function(category, setting, options, tooltip)
 			assert(setting:GetVariableType() == "number" and options ~= nil)
@@ -237,6 +263,8 @@ return function(client, stubs)
 			return nil
 		end,
 	}
+	-- EnumUtil.MakeEnum("Left", "Right", "Top", "Min", "Max") in MinimalSlider.lua.
+	stubs.MinimalSliderWithSteppersMixin = { Label = { Left = 1, Right = 2, Top = 3, Min = 4, Max = 5 } }
 	stubs.SettingsPanel = settings.panel
 	stubs.HideUIPanel = function(frame)
 		frame:Hide()
@@ -266,7 +294,30 @@ return function(client, stubs)
 			initializer:InitFrame(frame)
 			rows[#rows + 1] = { initializer = initializer, frame = frame }
 		end
+		settings.shown = rows
 		return rows
+	end
+
+	-- What a value change does to the rows shown last (Blizzard_SettingControls.lua): a control shows its own
+	-- setting's new value; a row re-evaluates its state when its parent's setting changes
+	-- (OnParentSettingValueChanged) or a variable it added with AddEvaluateStateCVar does.
+	function settings.valueChanged(setting)
+		local variable = setting:GetVariable()
+		for _, shown in ipairs(settings.shown or {}) do
+			local initializer, frame = shown.initializer, shown.frame
+			if initializer:GetSetting() == setting then
+				frame.value = setting:GetValue()
+				initializer:FormatValue(frame)
+			end
+			local parent = initializer:GetParentInitializer()
+			local watched = parent and parent:GetSetting() == setting
+			for _, name in ipairs(initializer.evaluateStateVariables or {}) do
+				watched = watched or name == variable
+			end
+			if watched then
+				frame.enabled = initializer:EvaluateModifyPredicates()
+			end
+		end
 	end
 
 	local function walk(widget, visit)

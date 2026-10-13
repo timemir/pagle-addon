@@ -49,6 +49,7 @@ adapter\Angler.lua
 adapter\Fishing.lua
 adapter\Diagnostics.lua
 adapter\Settings.lua
+adapter\AnnouncementSettings.lua
 adapter\Slash.lua
 adapter\Menu.lua
 adapter\ReloadReminder.lua

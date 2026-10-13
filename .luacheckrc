@@ -127,6 +127,12 @@ stds.wow_variables = {
 				"CreateElementInitializer",
 			},
 		},
+		-- A FrameXML table the dump doesn't list (SET-R30: Per's "{n} min" label). Gethe/wow-ui-source branch forever at
+		-- 943764493e6b16d63ded3ab304150d1f05e58b57 ("1.60.1 (70338)"),
+		-- Interface/AddOns/Blizzard_SharedXML/Shared/Slider/MinimalSlider.lua: `MinimalSliderWithSteppersMixin.Label =
+		-- EnumUtil.MakeEnum("Left", "Right", "Top", "Min", "Max");`, the label types SettingsSliderOptionsMixin's
+		-- SetLabelFormatter takes (Blizzard_Settings_Shared/Blizzard_Settings.lua).
+		MinimalSliderWithSteppersMixin = { fields = { Label = { fields = { "Right" } } } },
 		-- A FrameXML table the dump doesn't list (QOL-R81). No probe has shown a popup yet; the M1 exit check (step 7)
 		-- does. Gethe/wow-ui-source branch forever at 943764493e6b16d63ded3ab304150d1f05e58b57 ("1.60.1 (70338)"),
 		-- Interface/AddOns/Blizzard_StaticPopup/StaticPopup.lua: `StaticPopupDialogs = {}; -- Definitions`. QoL adds
