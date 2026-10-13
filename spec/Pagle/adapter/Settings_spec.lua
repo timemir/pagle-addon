@@ -216,6 +216,37 @@ describe("M:AddSetting", function()
 		assert.is_nil(loaded.client.settings.category("Fishing"))
 	end)
 
+	it("raises an error at the caller for a missing label or a field its kind requires (CORE-R42)", function()
+		local loaded = loadWithQoL()
+		local M = registerQoL(loaded)
+
+		assert.matches(
+			"Settings_spec%.lua:%d+: .*a setting needs a label",
+			errorOf(function()
+				M:AddSetting("fishing", { kind = "header" })
+			end)
+		)
+		assert.matches(
+			"Settings_spec%.lua:%d+: .*a slider setting needs step, a number",
+			errorOf(function()
+				M:AddSetting("fishing", {
+					kind = "slider",
+					label = "Volume",
+					get = function() end,
+					set = function() end,
+					min = 0,
+					max = 1,
+				})
+			end)
+		)
+		assert.matches(
+			"Settings_spec%.lua:%d+: .*a keybinding setting needs binding, a string",
+			errorOf(function()
+				M:AddSetting("fishing", { kind = "keybinding", label = "Fishing key" })
+			end)
+		)
+	end)
+
 	it("raises an error at the caller for an id the Module already used on that page (CORE-R42)", function()
 		local loaded = loadWithQoL()
 		local M = registerQoL(loaded)
