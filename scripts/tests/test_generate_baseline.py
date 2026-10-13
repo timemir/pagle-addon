@@ -20,6 +20,7 @@ def write_tree(root: Path) -> Path:
     forever.mkdir(parents=True)
     (forever / "events.toml").write_text(EVENTS, encoding="utf-8")
     (forever / "lists.toml").write_text(LISTS, encoding="utf-8")
+    (forever / "aliases.toml").write_text("", encoding="utf-8")  # test_aliases.py covers aliases
     db2 = root / "data" / "db2"
     db2.mkdir(parents=True)
     (db2 / "build.toml").write_text(BUILD, encoding="utf-8")
