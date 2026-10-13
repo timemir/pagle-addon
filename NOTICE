@@ -1,0 +1,24 @@
+Pagle
+Copyright (C) 2026 the Pagle contributors
+
+Pagle is free software: you can redistribute it and/or modify it under the
+terms of the GNU General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version. See LICENSE.
+
+VMaNGOS
+Pagle's content data (where and when fish are caught) is derived from the
+VMaNGOS world database, https://github.com/vmangos/core, licensed under the
+GNU General Public License version 2 or later. Thanks to the VMaNGOS
+contributors.
+
+Blizzard Entertainment
+World of Warcraft, and the game IDs and names Pagle refers to (items, areas,
+spells and the like), belong to Blizzard Entertainment, Inc. Pagle ships IDs
+only, never Blizzard's text. Pagle is not affiliated with or endorsed by
+Blizzard Entertainment.
+
+Ace3
+addons/Pagle/libs/ holds LibStub, CallbackHandler-1.0, AceAddon-3.0,
+AceEvent-3.0 and AceDB-3.0 from Ace3, https://github.com/WoWUIDev/Ace3,
+under their own licence in addons/Pagle/libs/LICENSE.txt.
