@@ -194,7 +194,7 @@ def read_item_layer(root: Path, problems: Problems) -> ItemLayer:
     return layer
 
 
-def _reference_only(baseline: BaselineLayer) -> set[int]:
+def reference_only(baseline: BaselineLayer) -> set[int]:
     """The items the baseline reaches only through reference loot tables (DATA-R16)."""
     direct = {row.item for row in baseline.area_loot if row.item is not None}
     direct.update(row.item for row in baseline.pool_loot if row.item is not None)
@@ -217,7 +217,7 @@ def item_records(
 ) -> dict[int, Record]:
     """The record of every item of the universe that ships (DATA-R65, DATA-R77), by item ID: Noise items as other
     (DATA-R16), nothing uncharted (DATA-R18). Each item that breaks DATA-R16-R21 is a problem."""
-    reference_only = _reference_only(baseline)
+    by_reference = reference_only(baseline)
     records: dict[int, Record] = {}
     for item in sorted(universe):
         entry = layer.items.get(item) or ItemEntry(At(ITEMS_TOML, f"item.{item}"))
@@ -228,7 +228,7 @@ def item_records(
 
         noise = entry.noise
         if noise is None:
-            noise = item in reference_only or class_id in NOISE_CLASSES
+            noise = item in by_reference or class_id in NOISE_CLASSES
         record: Record = {"legend": entry.legend, "noise": noise, "removed": entry.removed, "pool": False}
         if quality is not None:
             record["quality"] = quality
