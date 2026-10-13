@@ -101,6 +101,13 @@ rm -f .tools/cache/luacov.*.out # luacov adds to an existing stats file
 { "$bin/luacov" && echo "coverage (reported, never gates):" && sed -n '/^File /,$p' .tools/cache/luacov.report.out; } ||
 	echo "check: no coverage report (coverage never gates)"
 
-# --- 6. generator (M1, DATA-R61): the content generator's check and tests. Not built yet.
+# --- 6. generator (#55, DATA-R61): every generated file is what data/ gives (generate-data.py --check), the
+# generator's pytest suite passes, and mypy --strict passes over the typed package (DATA-R60). scripts/pyproject.toml
+# holds the pytest and mypy setup. No bytecode or caches in the tree: mypy's cache goes in .tools/cache/.
+stage generator
+export PYTHONDONTWRITEBYTECODE=1
+"$bin/python" scripts/generate-data.py --check || fail generator
+"$bin/pytest" --quiet scripts/tests || fail generator
+"$bin/mypy" --config-file scripts/pyproject.toml || fail generator
 
 echo "check: passed"

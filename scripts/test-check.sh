@@ -194,6 +194,11 @@ printf '\tPagle.API_VERSION = "2"\nend\n' >>"$addon/adapter/Core.lua"
 # types lets it through; the stage after it, tests, still catches the string (CORE-R15).
 expect "an inline suppression with codes and a reason passes types" tests "API version 1 before 1.0 (CORE-R15)"
 
+copy
+printf 'auras = [1]\nfishingSpells = [7620]\n' >"$scratch/tree/data/forever/lists.toml"
+expect "a data/ change committed without its regenerated file fails generator" generator \
+	"addons/Pagle/data/Catalogue.lua is out of date with data/"
+
 if ((failures)); then
 	echo "test-check: $failures failed" >&2
 	exit 1

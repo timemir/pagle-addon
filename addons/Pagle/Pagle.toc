@@ -12,6 +12,8 @@ libs\AceAddon-3.0\AceAddon-3.0.lua
 libs\AceEvent-3.0\AceEvent-3.0.lua
 libs\AceDB-3.0\AceDB-3.0.lua
 
+data\Catalogue.lua
+
 locale\enUS.lua
 logic\Forever.lua
 logic\Secrets.lua
