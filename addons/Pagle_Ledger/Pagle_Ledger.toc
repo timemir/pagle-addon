@@ -10,6 +10,7 @@
 ## SavedVariables: PagleLedgerDB
 
 locale\enUS.lua
+data\Lore.lua
 logic\Data.lua
 logic\Module.lua
 logic\Progress.lua
