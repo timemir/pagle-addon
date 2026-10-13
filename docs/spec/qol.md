@@ -156,7 +156,7 @@ Terms are used as `CONTEXT.md` defines them. A **game action** is the character 
 
 ### Clams
 
-- **QOL-R55** A clam is **available** when one of the clam table's items is in the bags and usable (as QOL-R51). The lowest item ID in the bags opens first.
+- **QOL-R55** A clam is **available** when one of the clam table's items is in the bags (`C_Item.GetItemCount > 0`). `C_Item.IsUsableItem` isn't read: on Forever it is `false` for a clam in the bags (beta 1.60.1.70338, 2026-10-13, #147). The lowest item ID in the bags opens first.
 - **QOL-R56** *Open clams between Casts* is on by default. A clam opens only between Casts (QOL-R20 puts *reel* above it) and one per press.
 - **QOL-R57** The **clam table** is QoL's own, in `addons/Pagle_QoL/data/clams.lua`: Small Barnacled Clam (5523), Thick-shelled Clam (5524), Big-mouth Clam (7973). It holds only containers that open with a plain item use; locked boxes and other treasure aren't clams. Forever additions are found in M8 (QOL-R100).
 

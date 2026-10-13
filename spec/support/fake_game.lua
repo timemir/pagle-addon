@@ -44,7 +44,8 @@
 ---@field cvarCalls string[] Each `SetCVar` call, in order: "set <name> <value>".
 ---@field mounted boolean? Whether the player is mounted, as `IsMounted()` reads it.
 ---@field bags table<integer, integer> How many of each item ID are in the bags, as `C_Item.GetItemCount` reads it.
----@field unusable table<integer, true> Item IDs `C_Item.IsUsableItem` says can't be used; every other can.
+---@field unusable table<integer, true> Item IDs `C_Item.IsUsableItem` says can't be used; every other can. The
+--- clam table's items are, as on Forever (#147).
 ---@field targetsItem table<integer, true> Item IDs whose use targets an item, the lure table's: their use alone leaves
 --- the cursor targeting (`SpellIsTargeting()`), until the secure button's `target-slot` names the slot (#147).
 ---@field targeting integer? The item whose use is waiting for a target, as the glowing hand; nil when none is.
@@ -117,7 +118,9 @@ return function(client, stubs)
 	client.cvarCalls = {}
 	-- A Fishing Pole (6256, as probe B1 read it) and a Worn Shortsword (25).
 	client.items = { [6256] = { 2, 20 }, [25] = { 2, 7 } }
-	client.bags, client.unusable = {}, {}
+	-- On Forever `C_Item.IsUsableItem` is false for a clam in the bags: the dev's `/dump` read 5523 so (build 70338,
+	-- #147). The other two clams are taken to be the same.
+	client.bags, client.unusable = {}, { [5523] = true, [5524] = true, [7973] = true }
 	-- The lure table's items: using one alone starts targeting on Forever (build 70338, #147).
 	client.targetsItem = { [6529] = true, [6530] = true, [6811] = true, [6532] = true, [7307] = true, [6533] = true }
 	client.itemUses = {}
