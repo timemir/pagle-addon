@@ -14,6 +14,9 @@ ns.L = {
 	-- An inert Module (CORE-R13): its def.title.
 	MODULE_NEEDS_NEWER_PAGLE = "Pagle: Pagle %s needs a newer Pagle.",
 
+	-- CORE-R42: a Module's AddSetting after ModulesChanged, reported and dropped; the Module's def.name.
+	SETTING_TOO_LATE = "Pagle: %s's AddSetting came after ModulesChanged, so the row is dropped",
+
 	-- Settings (CORE-R40–R44, settings.md SET-R10, SET-R11). The category, then its topic pages by topic.
 	SETTINGS_CATEGORY = "Pagle",
 	SETTINGS_PAGES = {

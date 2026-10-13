@@ -113,7 +113,7 @@ end
 ---@return boolean? late
 function Rows:Add(name, topic, setting)
 	if self.closed then
-		return ("Pagle: %s's AddSetting came after ModulesChanged, so the row is dropped"):format(name), true
+		return ns.L.SETTING_TOO_LATE:format(name), true
 	end
 	self.sections[name] = self.sections[name] or {}
 	local section = self.sections[name][topic]
