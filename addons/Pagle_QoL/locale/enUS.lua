@@ -15,6 +15,10 @@ ns.L = {
 	-- Key Bindings › AddOns (QOL-R1, QOL-R10).
 	BINDING_HEADER = "Pagle",
 	BINDING_FISHING_KEY = "Pagle: Fishing key",
+	-- The Fishing page (qol.md › Settings, SET-R20).
+	SETTINGS_CASTING = "Casting",
+	SETTINGS_FISHING_KEY = "Fishing key",
+	SETTINGS_FISHING_KEY_TOOLTIP = "Each press does the next single thing: cast, reel, or a lure, gear or clam when needed.",
 	-- The conflict popup and what its choices print (QOL-R81, QOL-R83).
 	CONFLICT_TEXT = "Two addons want your fishing key.",
 	CONFLICT_USE_PAGLE = "Use Pagle",
@@ -22,8 +26,4 @@ ns.L = {
 	CONFLICT_USE_OTHERS = "Use the others",
 	CONFLICT_TURNED_OFF = "Pagle: turned off %s. Type /reload to finish.",
 	CONFLICT_TURNED_OFF_QOL = "Pagle: turned off Pagle QoL. Type /reload to finish. Pagle keeps recording your Catches.",
-	-- The Fishing page (qol.md › Settings, SET-R20).
-	SETTINGS_CASTING = "Casting",
-	SETTINGS_FISHING_KEY = "Fishing key",
-	SETTINGS_FISHING_KEY_TOOLTIP = "Each press does the next single thing: cast, reel, or a lure, gear or clam when needed.",
 }
