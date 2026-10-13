@@ -9,6 +9,7 @@ from item_fixture import write_item_layer
 from observed_fixture import write_observed
 from pagle_data.cli import main
 from pagle_data.extract_baseline import source_toml
+from pools_fixture import write_pools
 from windows_fixture import write_windows
 
 CATALOGUE = "addons/Pagle/data/Catalogue.lua"
@@ -32,6 +33,7 @@ def write_tree(root: Path) -> Path:
     (db2 / "items.csv").write_text("ID,ClassID,SubclassID,OverallQualityID,Display_lang\n", encoding="utf-8")
     write_baseline(root)
     write_item_layer(root)  # test_item_records.py covers the item layer
+    write_pools(root)  # test_pools.py covers pool types
     write_observed(root)  # dev.toml with no facts; test_observed.py covers the layer
     return root
 
@@ -47,7 +49,7 @@ def test_the_baseline_is_a_source_layer_and_no_chance_reaches_a_generated_file(
 ) -> None:
     # DATA-R6: the header names the source layers, the baseline first (DATA-R8). DATA-R4: the baseline's chances
     # are never emitted. DATA-R16: the baseline's loot decides Noise (6358 is reachable only through reference loot);
-    # pools come with #93.
+    # DATA-R43: the pool type over 180248 catches its pool loot, 19807.
     code, _ = run(write_tree(tmp_path), capsys)
     assert code == 0
     text = (tmp_path / CATALOGUE).read_text(encoding="utf-8")
@@ -55,7 +57,7 @@ def test_the_baseline_is_a_source_layer_and_no_chance_reaches_a_generated_file(
     for chance in ("31.415", "27.18", "61.8", "14.14", "0.0271"):
         assert chance not in text
     assert "\t\t[6358] = { category = \"other\", legend = false, noise = true, pool = false, removed = false },\n" in text
-    assert "\tpools = {},\n" in text
+    assert "\tpools = {\n\t\textravaganza = { 19807 },\n\t},\n" in text
 
 
 @pytest.mark.parametrize("name", sorted(CSVS))

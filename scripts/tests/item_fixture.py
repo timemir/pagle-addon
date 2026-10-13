@@ -17,10 +17,11 @@ category = "fish"
 """
 
 # The records ITEMS gives with an empty items.csv (no quality known), written by hand from DATA-R16, DATA-R19 and
-# DATA-R77: as the canonical JSON writes them (DATA-R70), for a fingerprint worked out by hand, and in Catalogue.lua.
+# DATA-R77 (19807 is pool: pools_fixture's School of Tastyfish catches it, DATA-R43): as the canonical JSON writes
+# them (DATA-R70), for a fingerprint worked out by hand, and in Catalogue.lua.
 ITEMS_JSON = (
     '"items":{"13759":{"category":"fish","legend":false,"noise":false,"pool":false,"removed":false,"species":13759},'
-    '"19807":{"category":"fish","legend":false,"noise":false,"pool":false,"removed":false,"species":19807},'
+    '"19807":{"category":"fish","legend":false,"noise":false,"pool":true,"removed":false,"species":19807},'
     '"6303":{"category":"fish","legend":false,"noise":false,"pool":false,"removed":false,"species":6303},'
     '"6358":{"category":"other","legend":false,"noise":true,"pool":false,"removed":false}}'
 )
@@ -29,7 +30,7 @@ ITEMS_LUA = """\
 \t\t[6303] = { category = "fish", legend = false, noise = false, pool = false, removed = false, species = 6303 },
 \t\t[6358] = { category = "other", legend = false, noise = true, pool = false, removed = false },
 \t\t[13759] = { category = "fish", legend = false, noise = false, pool = false, removed = false, species = 13759 },
-\t\t[19807] = { category = "fish", legend = false, noise = false, pool = false, removed = false, species = 19807 },
+\t\t[19807] = { category = "fish", legend = false, noise = false, pool = true, removed = false, species = 19807 },
 \t},
 """
 

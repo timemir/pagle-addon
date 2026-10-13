@@ -14,6 +14,7 @@ from pagle_data.db2 import AREAS
 from pagle_data.forever import ALIASES
 from pagle_data.generate import Layers, outputs, read_layers
 from pagle_data.observed import OBSERVED
+from pagle_data.pools import POOLS_TOML
 from pagle_data.toml_reader import DataError
 
 PROG = "generate-data"
@@ -65,8 +66,11 @@ def _print_proposals(layers: Layers) -> None:
 
 
 def _warn(layers: Layers) -> None:
-    """DATA-R64's warnings, printed and not failing: so far, observed areas missing from the slice (DATA-R33) and
-    the alias proposals not yet committed."""
+    """DATA-R64's warnings, printed and not failing: so far, observed areas missing from the slice (DATA-R33), the
+    alias proposals not yet committed, and baseline pool templates in no pool type (DATA-R43)."""
+    for pool in layers.ungrouped_pools():
+        message = f"pool template {pool.entry} ({pool.name}) in pools.csv is in no pool type in {POOLS_TOML}"
+        print(f"{PROG}: warning: {message}; add it to one (DATA-R43)", file=sys.stderr)
     for area, seen in layers.missing_areas().items():
         where = ", ".join(str(at) for at in seen)
         message = f"area {area} seen in {OBSERVED} is not in {AREAS}; update the DB2 slice ({where})"

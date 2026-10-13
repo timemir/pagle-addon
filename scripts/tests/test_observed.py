@@ -15,6 +15,7 @@ from pagle_data.generate import read_layers
 from pagle_data.observed import Observations, observations, read_observed
 from pagle_data.toml_reader import Problems
 from pagle_data.universe import item_universe
+from pools_fixture import write_pools
 from windows_fixture import write_windows
 
 DEV_KEY = "aaaaaaaa"
@@ -149,6 +150,7 @@ def write_tree(root: Path, dev: str = "keys = []\n", reports: dict[str, str] | N
     (db2 / "items.csv").write_text("ID,ClassID,SubclassID,OverallQualityID,Display_lang\n", encoding="utf-8")
     write_observed(root, dev, reports)
     write_item_layer(root)  # test_item_records.py covers the item layer
+    write_pools(root)  # test_pools.py covers pool types
     return root
 
 

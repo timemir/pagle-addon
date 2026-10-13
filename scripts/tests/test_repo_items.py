@@ -29,9 +29,8 @@ def _loot_items() -> set[int]:
 
 def test_the_universe_is_the_baseline_s_258_loot_items_and_whimsyfin() -> None:
     # DATA-R15; the #57 hand-off counts 252 area-loot items, 258 with pools. items.toml adds Whimsyfin (251524, a
-    # Forever pool fish the baseline lacks, #90); areas.toml and pools.toml don't exist yet.
-    for name in ("areas.toml", "pools.toml"):
-        assert not (REPO / "data" / "forever" / name).exists(), f"{name} exists: this test's count is stale"
+    # Forever pool fish the baseline lacks, #90), which pools.toml also adds (#93); areas.toml doesn't exist yet.
+    assert not (REPO / "data" / "forever" / "areas.toml").exists(), "areas.toml exists: this test's count is stale"
     universe = _universe()
     assert len(universe) == 259
     assert universe == _loot_items() | {251524}

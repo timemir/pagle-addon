@@ -9,6 +9,7 @@ from baseline_fixture import CSVS, write_baseline
 from item_fixture import write_item_layer
 from observed_fixture import write_observed
 from pagle_data.cli import main
+from pools_fixture import write_pools
 from windows_fixture import write_windows
 
 CATALOGUE = "addons/Pagle/data/Catalogue.lua"
@@ -55,6 +56,7 @@ def write_tree(root: Path, aliases: str = "") -> Path:
     write_observed(root)  # dev.toml with no facts; test_observed.py covers the layer
     # 6291 is this tree's area loot; test_item_records.py covers the item layer.
     write_item_layer(root, '[item.6291]\ncategory = "fish"\n\n[item.19807]\ncategory = "fish"\n')
+    write_pools(root)  # test_pools.py covers pool types
     return root
 
 

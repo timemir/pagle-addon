@@ -11,6 +11,7 @@ from pagle_data.baseline import BaselineEvent
 from pagle_data.generate import read_layers
 from pagle_data.toml_reader import DataError
 from pagle_data.windows import seed_spec, window_of_event
+from pools_fixture import write_pools
 from windows_fixture import WINDOWS, write_windows
 
 # The Extravaganza with its weekly rule, and an event without one (DATA-R38).
@@ -32,6 +33,7 @@ def write_tree(root: Path, windows: str = WINDOWS, events_csv: str | None = None
     write_baseline(root, CSVS if events_csv is None else {**CSVS, "events.csv": events_csv})
     write_observed(root)  # dev.toml with no facts; test_observed.py covers the layer
     write_item_layer(root)  # test_item_records.py covers the item layer
+    write_pools(root)  # test_pools.py covers pool types
     return root
 
 
