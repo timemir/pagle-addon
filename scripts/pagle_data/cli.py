@@ -61,7 +61,7 @@ def _print_proposals(layers: Layers) -> None:
 def _warn(layers: Layers) -> None:
     """DATA-R64's warnings, printed and not failing: so far, the baseline loot rows with a condition that isn't a
     single event (DATA-R9), baseline pool templates in no pool type (DATA-R43), observed areas missing from the slice
-    (DATA-R33) and the alias proposals not yet committed."""
+    (DATA-R33), observed pairs without a consistent gate (DATA-R47) and the alias proposals not yet committed."""
     for row in layers.conditional_rows():
         loot = f"item {row.item}" if row.item is not None else f"ref {row.ref}"
         message = f"area {row.area} {loot} has the condition {row.condition}, not a single event"
@@ -72,6 +72,13 @@ def _warn(layers: Layers) -> None:
     for area, seen in layers.missing_areas().items():
         where = ", ".join(str(at) for at in seen)
         message = f"area {area} seen in {OBSERVED} is not in {AREAS}; update the DB2 slice ({where})"
+        print(f"{PROG}: warning: {message}", file=sys.stderr)
+    for pair in layers.ungated_pairs():
+        gated = ", ".join(f"area {area} by {window}" for area, window in pair.gated)
+        message = (
+            f"the observed pair item {pair.item} in area {pair.area} joins ungated, but the item is gated elsewhere"
+            f" ({gated}); set its gate with an areas.toml add if it has one (DATA-R47)"
+        )
         print(f"{PROG}: warning: {message}", file=sys.stderr)
     proposals = layers.proposals()
     for proposal in proposals:

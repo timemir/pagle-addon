@@ -17,3 +17,11 @@ def test_the_committed_dev_toml_reads_clean_with_no_facts_and_no_report_is_commi
     assert layer.facts == ()
     assert layer.reports == {}
     assert not (REPO / "data" / "observed" / "reports").exists()
+
+
+def test_the_committed_catalogue_confirms_nothing_while_no_observation_is_committed() -> None:
+    # DATA-R56: before any observation every confirmed, gateConfirmed and skillBaseConfirmed is false (#95: the
+    # committed flags stay false while dev.toml has no facts).
+    text = (REPO / "addons" / "Pagle" / "data" / "Catalogue.lua").read_text(encoding="utf-8")
+    assert "onfirmed = true" not in text
+    assert "onfirmed = false" in text
