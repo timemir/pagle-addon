@@ -69,7 +69,10 @@ describe("the character table", function()
 
 		assert.are.equal(2, index)
 		local character = catchLog.data.characters[2]
-		assert.are.same({ "Adda", "Rook", "Horde", 2 }, { character.name, character.surname, character.faction, character.raceID })
+		assert.are.same(
+			{ "Adda", "Rook", "Horde", 2 },
+			{ character.name, character.surname, character.faction, character.raceID }
+		)
 		assert.are.same({ T - 100, T }, { character.firstSeen, character.lastSeen })
 		assert.is_nil(character.hardcore)
 		assert.are.equal(2, #catchLog.data.characters)
@@ -231,24 +234,27 @@ describe("Skill Readings", function()
 end)
 
 describe("the Angler", function()
-	it("is the log's logId and characters, the current one, each one's last reading and the best rank (LOG-R27)", function()
-		local angler, catchLog = anglerOver({ ada(), bram() }, {
-			"S1|1|1791731000|0|80|150|0",
-			"S1|2|1791731100|0|120|150|0",
-			"S1|1|1791731200|0|130|150|25",
-		})
-		angler:SeeCharacter(bram(), T)
-		angler:ReadSkill({ rank = 125, max = 150, mod = 0 }, T)
+	it(
+		"is the log's logId and characters, the current one, each one's last reading and the best rank (LOG-R27)",
+		function()
+			local angler, catchLog = anglerOver({ ada(), bram() }, {
+				"S1|1|1791731000|0|80|150|0",
+				"S1|2|1791731100|0|120|150|0",
+				"S1|1|1791731200|0|130|150|25",
+			})
+			angler:SeeCharacter(bram(), T)
+			angler:ReadSkill({ rank = 125, max = 150, mod = 0 }, T)
 
-		local result = angler:Get()
+			local result = angler:Get()
 
-		assert.are.equal("3f9a2c1e7b0d4a65", result.logId)
-		assert.are.equal(catchLog.data.characters, result.characters)
-		assert.are.equal(2, result.current)
-		assert.are.same({ 3, 4 }, { result.skill[1].seq, result.skill[2].seq })
-		assert.are.same({ 130, 125 }, { result.skill[1].rank, result.skill[2].rank })
-		assert.are.equal(130, result.bestBaseSkill)
-	end)
+			assert.are.equal("3f9a2c1e7b0d4a65", result.logId)
+			assert.are.equal(catchLog.data.characters, result.characters)
+			assert.are.equal(2, result.current)
+			assert.are.same({ 3, 4 }, { result.skill[1].seq, result.skill[2].seq })
+			assert.are.same({ 130, 125 }, { result.skill[1].rank, result.skill[2].rank })
+			assert.are.equal(130, result.bestBaseSkill)
+		end
+	)
 
 	it("has no current character before login and a bestBaseSkill of 0 without readings (LOG-R27)", function()
 		local result = anglerOver():Get()

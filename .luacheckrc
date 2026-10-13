@@ -34,6 +34,15 @@ stds.wow = {
 		"GetRealZoneText",
 		"GetSubZoneText",
 		"GetInstanceInfo",
+		-- The character table, Skill Readings and build entries (LOG-R26, LOG-R30, LOG-R36).
+		"UnitName",
+		"UnitClass",
+		"UnitRace",
+		"UnitFactionGroup",
+		C_GameRules = { fields = { "IsHardcoreActive" } },
+		"GetProfessions",
+		"GetProfessionInfo",
+		"GetBuildInfo",
 	},
 }
 

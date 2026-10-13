@@ -148,7 +148,7 @@ function AnglerState:LogBuild(build, version, now)
 	end
 	local cache = global.lastBuild
 	if type(cache) ~= "table" or cache.logId ~= data.logId then
-		local last = self.catchLog:Reverse("build")()
+		local last = self.catchLog:Reverse("build")() --[[@as PagleBuild?]]
 		cache = { logId = data.logId, build = last and last.build }
 		global.lastBuild = cache
 	end

@@ -36,3 +36,5 @@ adapter\Conditions.lua
 adapter\Catalogue.lua
 adapter\Modules.lua
 adapter\CatchLog.lua
+adapter\Angler.lua
+adapter\Login.lua
