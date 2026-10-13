@@ -34,6 +34,7 @@ logic\Fishing.lua
 logic\Settings.lua
 logic\Slash.lua
 logic\Menu.lua
+logic\ReloadReminder.lua
 adapter\Core.lua
 adapter\Callbacks.lua
 adapter\Events.lua
