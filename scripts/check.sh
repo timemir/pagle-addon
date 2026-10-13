@@ -39,6 +39,16 @@ stage format
 # --- 2. lint (#47): luacheck, Lua 5.1, no WoW globals in logic/ or locale/ (CORE-R7), the WoW API inventory
 # in .luacheckrc; vendored libs excluded there.
 stage lint
-"$bin/luacheck" --quiet "${lua_dirs[@]}" || fail lint
+"$bin/luacheck" --quiet --no-color "${lua_dirs[@]}" || fail lint
+
+# --- 3. api (#47): every inventoried WoW API is in the pinned forever dump (BIR_COMMIT in scripts/tools.env).
+stage api
+"$bin/lua" scripts/api-presence.lua .luacheckrc .tools/bir/Resources || fail api
+
+# --- 4. types (#48): lua-language-server --check, zero warnings. Not built yet.
+
+# --- 5. tests (#49): busted on Lua 5.1, luacov report (doesn't gate). Not built yet.
+
+# --- 6. generator (M1, DATA-R61): the content generator's check and tests. Not built yet.
 
 echo "check: passed"
