@@ -14,7 +14,8 @@
 -- Each load gets its own globals table, so nothing an addon defines (LibStub, Pagle) leaks into the next load.
 -- Names not in it fall back to the Lua 5.1 globals busted runs with.
 --
--- It also defines the Forever fixtures, PROJECT_IDS and FOREVER_GLOBALS, so every spec agrees on them.
+-- It also defines the Forever fixtures, PROJECT_IDS and FOREVER_GLOBALS, so every spec agrees on them, and loads
+-- spec/support/fake_pagle.lua, which defines newFakePagle (FakePagle, CORE-R18) for Module specs.
 --
 -- Globals rather than a module: the types stage checks spec/ against the WoW client's Lua, which has no require.
 
@@ -274,3 +275,6 @@ function loadAddon(name, globals, options)
 
 	return { ns = ns, env = env, printed = printed, client = client }
 end
+
+---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
+dofile("spec/support/fake_pagle.lua")
