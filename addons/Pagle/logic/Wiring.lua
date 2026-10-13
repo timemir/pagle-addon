@@ -161,6 +161,9 @@ function ns.WireSummary(host, waitingChanged)
 		end,
 		serverTime = host.serverTime,
 		waitingChanged = waitingChanged,
+		takeWriteUp = function()
+			return ns.cards:TakeWriteUp()
+		end,
 	})
 	-- Its own owner on the bus, so no other registration replaces these.
 	local owner = "Pagle summary"

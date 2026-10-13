@@ -199,6 +199,26 @@ describe("when cards show", function()
 		assert.are.same({ section }, world.global.writeUp)
 	end)
 
+	it(
+		"hands a Cozy-mode Session card the waiting sections by Module order, keeping those on screen until their"
+			.. " card is closed (ANN-R61, ANN-R62)",
+		function()
+			local world = newWorld()
+			local shown = { module = "Ledger", order = 10, title = "Ledger", heading = "On screen", lines = {} }
+			world.global.writeUp = { shown }
+			settle(world)
+			local hunts = { module = "Hunts", order = 20, title = "Hunts", heading = "While off", lines = {} }
+			local ledger = { module = "Ledger", order = 10, title = "Ledger", heading = "Later", lines = {} }
+			table.insert(world.global.writeUp, hunts)
+			table.insert(world.global.writeUp, ledger)
+
+			assert.are.same({ ledger, hunts }, world.cards:TakeWriteUp())
+			assert.are.same({ shown }, world.global.writeUp)
+			world.cards:Close(world.shown[1])
+			assert.are.same({}, world.global.writeUp)
+		end
+	)
+
 	it("holds cards through combat: none shows while the lanes are held (ANN-R35, ANN-R55)", function()
 		local world = newWorld()
 		world.global.cards = { card("Fishing session") }

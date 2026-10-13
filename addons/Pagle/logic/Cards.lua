@@ -169,6 +169,25 @@ local function removeAll(list, items)
 	end
 end
 
+--- In Cozy mode, at SessionEnded (ANN-R62): the Write-up sections waiting, by Module order, taken out of
+--- global.writeUp to join the Session's card. The sections on screen stay, kept until the player closes their card
+--- (ANN-R61), so none shows twice.
+---@return PagleWriteUpStored[]
+function Cards:TakeWriteUp()
+	local data = self:data()
+	local onScreen = {}
+	for _, section in ipairs(self.showing and self.showing.writeUp or {}) do
+		onScreen[section] = true
+	end
+	local taken, kept = {}, {}
+	for _, section in ipairs(data.writeUp) do
+		local list = onScreen[section] and kept or taken
+		list[#list + 1] = section
+	end
+	data.writeUp = kept
+	return ns.WriteUpInOrder(taken)
+end
+
 --- The player closed `card` (ANN-R54, ANN-R61): a summary card leaves global.cards, the Write-up's sections leave
 --- global.writeUp, and the next card shows. Nothing for a card that isn't the one showing.
 ---@param card PagleCard

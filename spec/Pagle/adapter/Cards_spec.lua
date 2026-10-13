@@ -225,6 +225,30 @@ describe("the Write-up card", function()
 		end
 	)
 
+	it(
+		"keeps the sections on screen out of a Session card made after Cozy mode goes on, so they show once"
+			.. " (ANN-R61, ANN-R62)",
+		function()
+			local loaded = core(history(2))
+			local ledger = moduleWritingUp(loaded, "Ledger", 10)
+			enterWorld(loaded)
+			frames(loaded)
+			assert.are.equal("Write-up", shownTitle(loaded))
+
+			loaded.ns.db.profile.announcements.cozy = true
+			catchOne(loaded)
+			ledger:RaiseMoment({ rung = "toast", kind = "newSpecies", title = "New Species" })
+			loaded.client.advance(900)
+			assert.are.equal("Write-up", shownTitle(loaded))
+			close(loaded)
+
+			assert.are.same({ "# Ledger", "New Species" }, shownCard(loaded).rows)
+			assert.are.same({}, loaded.env.PagleDB.global.writeUp)
+			close(loaded)
+			assert.is_nil(shownCard(loaded))
+		end
+	)
+
 	it("stays on screen while UIParent hides, which isn't the player closing it (announcements.md › UI)", function()
 		local loaded = core(history(2))
 		moduleWritingUp(loaded, "Ledger", 10)

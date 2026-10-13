@@ -121,6 +121,7 @@ end
 ---@field cozy fun(): boolean              -- Cozy mode is on (ANN-R42, ANN-R62)
 ---@field serverTime fun(): number         -- server time, which a moment's expiresAt is in (ANN-R45)
 ---@field waitingChanged fun(waiting: integer) -- the waiting count changed (ANN-R42): the compartment entry's label
+---@field takeWriteUp fun(): PagleWriteUpStored[] -- takes the Write-up sections waiting off screen (ns.cards:TakeWriteUp)
 
 --- The Session summary over PagleDB.global (ANN-R50–R53), and the count of moments Cozy mode sent it (ANN-R42).
 ---@class PagleSummary
@@ -251,7 +252,7 @@ end
 
 --- At SessionEnded (ANN-R53): with at least one moment raised in the Session, or in Cozy mode a Write-up waiting
 --- (ANN-R62), adds a card to `global.cards`, dropping the oldest beyond CARDS_KEPT (ANN-R54), and returns it. In Cozy
---- mode the waiting Write-up sections move onto it. Either way the moments are cleared for the next Session, and the
+--- mode the waiting Write-up sections move onto it, except those on screen (ANN-R61). Either way the moments are cleared for the next Session, and the
 --- lines stay (ANN-R51). Lines alone make no card. Expiry is checked again as the card is made: a moment past its
 --- expiresAt is marked expired, so the card shows its pastText (ANN-R45).
 ---@param session PagleSession
@@ -267,8 +268,9 @@ function Summary:Ended(session)
 		end
 	end
 	local writeUp
-	if self.options.cozy() and data.writeUp and #data.writeUp > 0 then
-		writeUp, data.writeUp = ns.WriteUpInOrder(data.writeUp), {}
+	if self.options.cozy() then
+		local taken = self.options.takeWriteUp()
+		writeUp = #taken > 0 and taken or nil
 	end
 	if #moments == 0 and not writeUp then
 		return nil
