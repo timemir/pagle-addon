@@ -149,6 +149,7 @@ max_line_length = false -- StyLua owns line width, and it leaves long strings an
 exclude_files = {
 	"addons/*/libs/**", -- vendored, owned by scripts/update-ace3.sh
 	"types/**", -- LuaLS ---@meta stubs: declarations for the types stage, never loaded
+	"spec/scripts/fixtures/**", -- WTF files as the WoW client writes them: data the specs read, never our code
 	".tools/**",
 	".release/**",
 }
