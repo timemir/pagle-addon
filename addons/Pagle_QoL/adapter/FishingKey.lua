@@ -29,10 +29,10 @@ local sinceTick = 0 -- seconds since the last evaluation
 local disarming = false -- inside ns.DisarmFishingKey, whose own UPDATE_BINDINGS must not re-arm (QOL-R31)
 local evaluate
 
---- QoL is armed while it is registered and not restricted (QOL-R30); the conflict ticket adds standing down.
+--- QoL is armed while it is registered, isn't standing down (QOL-R82) and isn't restricted (QOL-R30).
 ---@return boolean
 local function isArmed()
-	return ns.Module ~= nil and loggedIn and not Pagle.IsRestricted()
+	return ns.Module ~= nil and loggedIn and not ns.IsStandingDown() and not Pagle.IsRestricted()
 end
 
 ---@return boolean
@@ -164,6 +164,10 @@ end
 
 ---@param event string
 local function onEvent(event)
+	-- The conflict check comes right before the first arm, so QoL never arms and then stands down (QOL-R33).
+	if event == "PLAYER_LOGIN" then
+		ns.CheckConflicts()
+	end
 	if event == "PLAYER_LOGIN" or event == "UPDATE_BINDINGS" then
 		keys = { GetBindingKey("PAGLE_FISHING_KEY") }
 		-- The client fires UPDATE_BINDINGS before PLAYER_LOGIN too; QoL first arms at PLAYER_LOGIN (QOL-R33).

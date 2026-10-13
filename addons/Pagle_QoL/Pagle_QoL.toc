@@ -14,8 +14,10 @@ logic\Data.lua
 logic\Module.lua
 logic\FishingKey.lua
 logic\Stretch.lua
+logic\Conflict.lua
 adapter\Bindings.lua
 adapter\FishingKey.lua
 adapter\Stretch.lua
 adapter\Combat.lua
+adapter\Conflict.lua
 adapter\QoL.lua
