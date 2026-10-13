@@ -1,0 +1,21 @@
+# BigWigsMods packager config. The zip holds one folder per addon under addons/ (CORE-R1).
+# Check a change with scripts/package.sh.
+package-as: Pagle
+enable-nolib-creation: no
+
+# The packager copies the whole repo (minus dotfiles) into Pagle/, so every top-level path that
+# isn't addon code is listed here. LICENSE and NOTICE stay: they ship inside Pagle/.
+ignore:
+  - CONTEXT.md
+  - README.md
+  - docs
+  - probes
+  - prototypes
+  - scripts
+  - spec
+  - types
+
+# Keys are paths under the package-as folder. Each Module adds its own line in its first
+# milestone, e.g. `Pagle/addons/Pagle_QoL: Pagle_QoL`.
+move-folders:
+  Pagle/addons/Pagle: Pagle
