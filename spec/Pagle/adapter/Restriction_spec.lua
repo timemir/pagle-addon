@@ -4,18 +4,6 @@
 local COMBAT, ENCOUNTER = 0, 1
 local INACTIVE, ACTIVATING, ACTIVE = 0, 1, 2
 
--- FOREVER_GLOBALS plus `extra`.
-local function foreverWith(extra)
-	local globals = {}
-	for key, value in pairs(FOREVER_GLOBALS) do
-		globals[key] = value
-	end
-	for key, value in pairs(extra) do
-		globals[key] = value
-	end
-	return globals
-end
-
 -- Loads Core and records every RestrictionChanged it fires after load, as a list of isRestricted values.
 local function loadWatching(extra)
 	local loaded = loadAddon("Pagle", foreverWith(extra or {}))

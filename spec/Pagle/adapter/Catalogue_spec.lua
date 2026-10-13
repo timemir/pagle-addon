@@ -25,18 +25,6 @@ local function fixture()
 	}
 end
 
--- FOREVER_GLOBALS plus `extra`.
-local function foreverWith(extra)
-	local globals = {}
-	for key, value in pairs(FOREVER_GLOBALS) do
-		globals[key] = value
-	end
-	for key, value in pairs(extra) do
-		globals[key] = value
-	end
-	return globals
-end
-
 -- A client standing in `zone`/`subzone` on `continent`, whose C_Map.GetAreaInfo answers from NAMES and counts each
 -- ID it's asked for in `asked`.
 local function client(zone, subzone, continent)

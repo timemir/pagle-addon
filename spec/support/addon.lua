@@ -17,8 +17,9 @@
 -- Each load gets its own globals table, so nothing an addon defines (LibStub, Pagle) leaks into the next load.
 -- Names not in it fall back to the Lua 5.1 globals busted runs with.
 --
--- It also defines the Forever fixtures, PROJECT_IDS and FOREVER_GLOBALS, so every spec agrees on them, and loads
--- spec/support/fake_pagle.lua, which defines newFakePagle (FakePagle, CORE-R18) for Module specs.
+-- It also defines the fixtures PROJECT_IDS, FOREVER_GLOBALS, PLAYER_GUID and SERVER_TIME, so every spec agrees on
+-- them, and loads spec/support/fake_pagle.lua, which defines newFakePagle (FakePagle, CORE-R18) for Module specs,
+-- and spec/support/helpers.lua, the helpers many specs share.
 --
 -- The fake client is split by concern, one file each under spec/support/: client.lua (events, addons, loot and the
 -- base WoW API), widgets.lua, timers.lua, settings.lua (the Settings panel), menu.lua (slash commands and context
@@ -43,6 +44,10 @@ FOREVER_GLOBALS = { WOW_PROJECT_ID = PROJECT_IDS.CAMELOT, WOW_PROJECT_CAMELOT = 
 
 --- The player's character GUID, as UnitGUID("player") returns it.
 PLAYER_GUID = "Player-1-00000001"
+
+--- The fake client's server time, as GetServerTime() returns it, and FakePagle's at its clock's 0: 2026-10-11
+--- 15:15:00 UTC, which is realm 08:15 on a US Pacific realm.
+SERVER_TIME = 1791731700
 
 -- A fresh fake client and its base WoW API stubs.
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
@@ -163,3 +168,6 @@ end
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 dofile("spec/support/fake_pagle.lua")
+-- foreverWith, setCombat, openedNames, savedLog and loadCollectingErrors, for every spec.
+---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
+dofile("spec/support/helpers.lua")

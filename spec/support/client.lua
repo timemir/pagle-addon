@@ -204,7 +204,7 @@ local function clientStubs(client)
 			return "Human", "Human", 1
 		end,
 		GetServerTime = function()
-			return 1791731700 -- 2026-10-11 15:15:00 UTC
+			return SERVER_TIME
 		end,
 		UnitNameUnmodified = function()
 			return "Angler"

@@ -80,6 +80,19 @@
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local newSecureCall = dofile("spec/support/securecall.lua")
+---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
+local newClock = dofile("spec/support/timers.lua").newClock
+
+-- A copy of a conditions snapshot, to change without changing the one it came from.
+---@param conditions table
+---@return table
+local function copyConditions(conditions)
+	local copy = {}
+	for key, value in pairs(conditions) do
+		copy[key] = value
+	end
+	return copy
+end
 
 -- Core's logic/ for one fake: Pagle.toc's libs (for the bus), generated data/, locale/ and logic/ files, in TOC
 -- order, sharing one ns, as the client would load them. None uses WoW globals (CORE-R7), so plain Lua runs them.
@@ -345,7 +358,7 @@ end)
 -- The Catch log (LOG-R10–R16, LOG-R42) on Core's real codec, over an empty in-memory PagleLog. A spec adds
 -- characters to fake.catchLog.data.characters and entries with fake.catchLog:Append(record).
 part(function(fake, Pagle, ns)
-	fake.catchLog = ns.OpenCatchLog(nil, { decodeErrors = 0 }, 1791731700)
+	fake.catchLog = ns.OpenCatchLog(nil, { decodeErrors = 0 }, SERVER_TIME)
 	function Pagle.IterateCatches(afterSeq)
 		local iterate = fake.catchLog:Iterate(afterSeq)
 		return function()
@@ -357,7 +370,7 @@ end)
 -- The Angler (LOG-R25–R27) and Skill Readings (LOG-R31, LOG-R32), on Core's real logic over fake.catchLog. Login
 -- adds the fake client's character (PLAYER_GUID) before ModulesChanged, as Core's login order does (LOG-R1).
 part(function(fake, Pagle, ns)
-	local now = 1791731700 -- the fake client's GetServerTime()
+	local now = SERVER_TIME -- the fake client's GetServerTime()
 	local angler = ns.NewAngler(fake.catchLog)
 	function Pagle.GetAngler()
 		return readOnly(angler:Get())
@@ -386,10 +399,7 @@ part(function(fake, Pagle, ns)
 			fake.fire("SkillChanged", appended)
 		end
 		-- The live conditions follow the reading, through the same tracker as setConditions (LOG-R32, LOG-R47).
-		local conditions = {}
-		for key, value in pairs(fake.conditions) do
-			conditions[key] = value
-		end
+		local conditions = copyConditions(fake.conditions)
 		conditions.skillRank, conditions.skillMod = rank, mod
 		fake.setConditions(conditions)
 	end
@@ -418,7 +428,7 @@ part(function(fake, Pagle, ns)
 	-- Fishing The Long Wash (148/453) at realm 08:15 on Sunday 11 October 2026, Fishing 86+25 with lure 263 on, no
 	-- listed event or aura (probe report 70338).
 	fake.conditions = {
-		time = 1791731700,
+		time = SERVER_TIME,
 		minute = 495,
 		date = { year = 2026, month = 10, day = 11, weekday = 1 },
 		uiMap = 1439,
@@ -435,10 +445,7 @@ part(function(fake, Pagle, ns)
 	tracker:Update(fake.conditions)
 
 	function Pagle.GetConditions()
-		local conditions = {}
-		for key, value in pairs(fake.conditions) do
-			conditions[key] = value
-		end
+		local conditions = copyConditions(fake.conditions)
 		conditions.restricted = Pagle.IsRestricted()
 		return readOnly(conditions)
 	end
@@ -454,12 +461,11 @@ end)
 
 -- Fishing (LOG-R2–R9, LOG-R43), on Core's real Cast state machine: a spec plays a Cast's signals (or a whole Cast
 -- with playCast) and the Module gets Core's events, each Cast recorded to fake.catchLog first, with fake.conditions
--- as its snapshot, at the fake's server time. The fake's clock starts at 0 (server time 1791731700) and moves only
--- with fake.wait, which runs the grace timers that come due.
+-- as its snapshot, at the fake's server time. The fake's clock starts at 0 (server time SERVER_TIME) and moves only
+-- with fake.wait, which runs the grace timers that come due, on the fake client's timer fake (spec/support/timers.lua).
 part(function(fake, Pagle, ns)
 	local FISHING = 7731 -- Fishing (Classic Journeyman), on the generated fishing-spell list
-	local clock = 0
-	local timers = {} -- { due, fn }, in the order they were set
+	local clock = newClock()
 	local recorded -- the Cast record last appended
 
 	local fishing = ns.NewFishing({
@@ -469,11 +475,8 @@ part(function(fake, Pagle, ns)
 			if not char then
 				return nil
 			end
-			local conditions = {}
-			for key, value in pairs(fake.conditions) do
-				conditions[key] = value
-			end
-			conditions.time, conditions.date = 1791731700 + math.floor(clock), nil
+			local conditions = copyConditions(fake.conditions)
+			conditions.time, conditions.date = SERVER_TIME + math.floor(clock.time()), nil
 			recorded = fake.catchLog:Append({
 				kind = "cast",
 				char = char,
@@ -492,13 +495,13 @@ part(function(fake, Pagle, ns)
 	end
 
 	function fake.channel(spellID)
-		fishing:ChannelStarted(spellID or FISHING, clock)
+		fishing:ChannelStarted(spellID or FISHING, clock.time())
 	end
 
 	function fake.stopChannel(spellID)
-		local graceEnded = fishing:ChannelStopped(spellID or FISHING, clock)
+		local graceEnded = fishing:ChannelStopped(spellID or FISHING, clock.time())
 		if graceEnded then
-			timers[#timers + 1] = { due = clock + ns.FISHING_GRACE, fn = graceEnded }
+			clock.after(ns.FISHING_GRACE, graceEnded)
 		end
 	end
 
@@ -508,35 +511,18 @@ part(function(fake, Pagle, ns)
 		end
 		fishing:LootReady(isFishing, function()
 			return items or {}
-		end, clock)
+		end, clock.time())
 	end
 
 	function fake.closeLoot()
-		fishing:LootClosed(clock)
+		fishing:LootClosed(clock.time())
 	end
 
 	function fake.escape()
-		fishing:Escaped(clock)
+		fishing:Escaped(clock.time())
 	end
 
-	function fake.wait(seconds)
-		local target = clock + seconds
-		while true do
-			local nextTimer, index
-			for i, timer in ipairs(timers) do
-				if timer.due <= target and (not nextTimer or timer.due < nextTimer.due) then
-					nextTimer, index = timer, i
-				end
-			end
-			if not nextTimer then
-				break
-			end
-			table.remove(timers, index)
-			clock = nextTimer.due
-			nextTimer.fn()
-		end
-		clock = target
-	end
+	fake.wait = clock.advance
 
 	function fake.playCast(outcome, items)
 		recorded = nil

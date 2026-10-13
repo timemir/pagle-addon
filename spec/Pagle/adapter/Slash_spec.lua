@@ -14,15 +14,6 @@ local function pagle(loaded, msg)
 	loaded.env.SlashCmdList.PAGLE(msg)
 end
 
--- The names of the categories Settings.OpenToCategory opened, in order.
-local function openedNames(loaded)
-	local names = {}
-	for i, category in ipairs(loaded.client.settings.opened) do
-		names[i] = category and category.name
-	end
-	return names
-end
-
 describe("/pagle", function()
 	it("is the command Core registers (CORE-R60)", function()
 		local loaded = loadCore()
@@ -200,14 +191,6 @@ describe("A Module's /pagle subcommand", function()
 		assert.are.same({ HELP[1], HELP[2], HELP[3] }, loaded.printed)
 	end)
 end)
-
--- A combat flip on the fake client: PLAYER_REGEN_DISABLED or _ENABLED, with InCombatLockdown agreeing.
-local function setCombat(loaded, inCombat)
-	loaded.env.InCombatLockdown = function()
-		return inCombat
-	end
-	loaded.client.fire(inCombat and "PLAYER_REGEN_DISABLED" or "PLAYER_REGEN_ENABLED")
-end
 
 describe("/pagle while restricted", function()
 	it("prints CORE-R33's line for /pagle and /pagle settings, and opens nothing (CORE-R33, SET-R75)", function()

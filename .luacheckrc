@@ -178,6 +178,20 @@ files["addons/Pagle/adapter/Menu.lua"] = { globals = { "Pagle_OnAddonCompartment
 -- QoL's adapter names its Bindings.xml entries for Key Bindings › AddOns (QOL-R1).
 files["addons/Pagle_QoL/adapter/**"] = { globals = { "BINDING_HEADER_PAGLE", "BINDING_NAME_PAGLE_FISHING_KEY" } }
 -- Specs run under busted on plain Lua 5.1. busted's helper (.busted) defines loadAddon and the Forever fixtures.
-local helperGlobals = { "loadAddon", "PROJECT_IDS", "FOREVER_GLOBALS", "PLAYER_GUID", "addonFiles", "newFakePagle" }
+local helperGlobals = {
+	"loadAddon",
+	"PROJECT_IDS",
+	"FOREVER_GLOBALS",
+	"PLAYER_GUID",
+	"SERVER_TIME",
+	"addonFiles",
+	"newFakePagle",
+	-- spec/support/helpers.lua
+	"foreverWith",
+	"setCombat",
+	"openedNames",
+	"savedLog",
+	"loadCollectingErrors",
+}
 files["spec/**"] = { std = "lua51+busted", read_globals = helperGlobals }
 files["spec/support/*.lua"] = { globals = helperGlobals }

@@ -2,18 +2,6 @@
 -- Pagle.OpenSettings (CORE-R32, CORE-R33, CORE-R40–R44; settings.md SET-R1–R5, SET-R10–R12, SET-R60–R62,
 -- SET-R70, SET-R90–R96).
 
--- FOREVER_GLOBALS plus `extra`.
-local function foreverWith(extra)
-	local globals = {}
-	for key, value in pairs(FOREVER_GLOBALS) do
-		globals[key] = value
-	end
-	for key, value in pairs(extra or {}) do
-		globals[key] = value
-	end
-	return globals
-end
-
 -- Loads Core with the given roster Modules installed on the fake client, by roster name: { QoL = {} } puts
 -- Pagle_QoL in client.addons, enabled and loaded unless it says otherwise, with X-Pagle-API 1 and version 1.2.3.
 local function loadWith(modules, extra)
@@ -303,23 +291,6 @@ describe("M:AddSetting", function()
 		assert.are.same({ "Casting", "FISHING KEY" }, rowNames(loaded.client.settings.category("Fishing")))
 	end)
 end)
-
--- The names of the categories Settings.OpenToCategory opened, in order.
-local function openedNames(loaded)
-	local names = {}
-	for i, category in ipairs(loaded.client.settings.opened) do
-		names[i] = category and category.name
-	end
-	return names
-end
-
--- A combat flip on the fake client: PLAYER_REGEN_DISABLED or _ENABLED, with InCombatLockdown agreeing.
-local function setCombat(loaded, inCombat)
-	loaded.env.InCombatLockdown = function()
-		return inCombat
-	end
-	loaded.client.fire(inCombat and "PLAYER_REGEN_DISABLED" or "PLAYER_REGEN_ENABLED")
-end
 
 describe("Pagle.OpenSettings", function()
 	it("opens the root, and a topic page once it is registered (CORE-R43, SET-R75)", function()

@@ -1,7 +1,7 @@
 -- Cast recording driven through the client's events (LOG-R2–R9, LOG-R43, LOG-R93, LOG-R96): scripted fishing
 -- sequences against the fake client, read back from PagleLog.entries and Core's bus.
 
-local T = 1791731700 -- the fake client's GetServerTime(), 15:15 UTC: realm 08:15
+local T = SERVER_TIME -- the fake client's GetServerTime(), 15:15 UTC: realm 08:15
 local FISHING = 7731 -- Fishing (Classic Journeyman), on the catalogue's fishing-spell list
 local DRAIN_LIFE = 689
 

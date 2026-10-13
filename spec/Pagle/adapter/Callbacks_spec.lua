@@ -1,17 +1,5 @@
 -- Core's event bus: Pagle.RegisterCallback and friends, fired by Core through ns.Fire.
 
---- Loads Core with an error handler that collects what reaches it instead of failing the spec.
-local function loadCollectingErrors()
-	local errors = {}
-	local loaded = loadAddon("Pagle", FOREVER_GLOBALS)
-	loaded.env.geterrorhandler = function()
-		return function(err)
-			errors[#errors + 1] = tostring(err)
-		end
-	end
-	return loaded, errors
-end
-
 describe("Core's event bus", function()
 	it("calls each listener with the event name, then the payload (CORE-R20)", function()
 		local loaded = loadAddon("Pagle", FOREVER_GLOBALS)

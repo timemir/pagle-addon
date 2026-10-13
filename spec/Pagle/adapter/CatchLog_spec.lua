@@ -33,15 +33,6 @@ local function login(saved)
 	return loadAddon("Pagle", globals)
 end
 
-local function savedLog(entries, format)
-	return {
-		format = format or 1,
-		logId = "3f9a2c1e7b0d4a65",
-		characters = { { guid = ADA, name = "Ada", classID = 1, raceID = 1, faction = "Alliance", realmID = 4618 } },
-		entries = entries,
-	}
-end
-
 local function catches(Pagle, afterSeq)
 	local all = {}
 	for record in Pagle.IterateCatches(afterSeq) do
