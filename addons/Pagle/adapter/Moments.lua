@@ -15,10 +15,12 @@ end
 ---@param announcement PagleAnnouncement
 function ns.ShowAnnouncement(announcement) end -- luacheck: no unused args
 
---- Hands every moment Core keeps to the Session summary when it is raised, shown or not (ANN-R25). The Session
---- summary (#86) fills this in; until then it does nothing.
+--- Hands every moment Core keeps to the Session summary when it is raised, shown or not (ANN-R25): Core's one
+--- summary, ns.summary in adapter/Summary.lua.
 ---@param moment PagleRaisedMoment
-function ns.SummarizeMoment(moment) end -- luacheck: no unused args
+function ns.SummarizeMoment(moment)
+	ns.summary:Add(moment)
+end
 
 --- Core's one collector: the moments raised and not yet flushed.
 ns.moments = ns.NewMoments({
