@@ -41,11 +41,11 @@ Terms are used as `CONTEXT.md` defines them. A **game action** is the character 
     name = "QoL", title = "QoL", order = 50,
     settingsAction = { label = "Fishing settings ›", onClick = function() Pagle.OpenSettings("fishing") end },
     menu = { { label = function() return "Input: " .. inputLabel() end, onClick = cycleInput } },   -- QOL-R16
-    slash = { { name = "qol", fn = qolSlash, help = "qol input key|click|both: choose how you cast" } }, -- QOL-R17
+    slash = { { name = "qol", fn = qolSlash, help = "input key|click|both: choose how you cast" } }, -- QOL-R17
   }
   ```
 
-  It has no views. It adds its settings with `M:AddSetting("fishing", …)` before `ModulesChanged` (CORE-R42; rows under [Settings](#settings)).
+  The help text doesn't repeat "qol": `/pagle help` already prints it as `/pagle qol: …` (CORE-R60). It has no views. It adds its settings with `M:AddSetting("fishing", …)` before `ModulesChanged` (CORE-R42; rows under [Settings](#settings)).
 - **QOL-R3** QoL keeps no projection, appends no Module records, raises no moments, sets no summary line, pays no Coins, registers no goods, slots or tracker. It never reads the Catch log.
 - **QOL-R4** Core alone observes Casts and Catches (ADR 0001). QoL reads the live game state it needs to choose and arm its next action (the main-hand item, bag counts, the pole's lure enchant, mount state, open loot windows, the end of the player's channel, equipment sets, key bindings) and uses it for nothing else: it records, counts and publishes none of it.
 - **QOL-R5** Everything QoL does on its own (on an event, a timer or a setting change) changes only bindings, CVars, equipment-set definitions and frames, never game state. Every game action QoL makes possible is the target of one press (QOL-R24).
@@ -96,7 +96,7 @@ Terms are used as `CONTEXT.md` defines them. A **game action** is the character 
   `PagleQoLActionButton` is one `SecureActionButtonTemplate` button. `PagleQoLGearButton` is a plain `Button` whose `OnClick` runs QOL-R44. Neither is ever shown.
 - **QOL-R25** QoL re-evaluates the next action:
   - on Core's `CastStarted`, `CastEnded`, `FishingStateChanged`, `RestrictionChanged`
-  - on `UNIT_SPELLCAST_CHANNEL_STOP`, `UNIT_SPELLCAST_START` and `UNIT_SPELLCAST_STOP` (player), `LOOT_READY`, `LOOT_CLOSED`, `BAG_UPDATE_DELAYED`, `PLAYER_EQUIPMENT_CHANGED`, `UNIT_INVENTORY_CHANGED` (player), `PLAYER_MOUNT_DISPLAY_CHANGED`, `EQUIPMENT_SETS_CHANGED`, `UPDATE_BINDINGS`
+  - on `UNIT_SPELLCAST_CHANNEL_STOP`, `UNIT_SPELLCAST_START` and `UNIT_SPELLCAST_STOP` (player), `LOOT_READY`, `LOOT_CLOSED`, `BAG_UPDATE_DELAYED`, `PLAYER_EQUIPMENT_CHANGED`, `UNIT_INVENTORY_CHANGED` (player), `PLAYER_MOUNT_DISPLAY_CHANGED`, `EQUIPMENT_SETS_CHANGED`, `UPDATE_BINDINGS`, and `CVAR_UPDATE` for `ActionButtonUseKeyDown` (so an open double-click window drops its reel at once at 0, QOL-R105)
   - on any QoL setting change
   - every 0.5 s while armed, which catches a lure expiring between events
 

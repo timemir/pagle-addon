@@ -82,7 +82,7 @@ describe("QoL's lure logic", function()
 	end)
 
 	describe("the result wait", function()
-		it("lasts 2 s (qol.md › Tunables)", function()
+		it("lasts 2 s (QOL-R29, qol.md › Tunables)", function()
 			assert.are.equal(2, ns.RESULT_WAIT)
 		end)
 
