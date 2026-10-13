@@ -50,6 +50,11 @@ uses_create_frame() {
 	printf 'local frame = CreateFrame("Frame")\nreturn frame\n' >"$1"
 }
 
+# Writes a Lua file that calls the WoW global Screenshot, which Pagle never inventories.
+uses_screenshot() {
+	printf 'Screenshot()\n' >"$1"
+}
+
 # Drops a file from Pagle.toc.
 toc_drop() {
 	grep -vxF "$1" "$toc" >"$toc.new"
@@ -99,12 +104,12 @@ inventory_add CreateFrame
 expect "a WoW global in locale/ fails lint, even when inventoried" lint "accessing undefined variable 'CreateFrame'"
 
 copy
-uses_create_frame "$addon/adapter/Global.lua"
-expect "a WoW global in adapter/ fails lint until inventoried" lint "accessing undefined variable 'CreateFrame'"
+uses_screenshot "$addon/adapter/Global.lua"
+expect "a WoW global in adapter/ fails lint until inventoried" lint "accessing undefined variable 'Screenshot'"
 
 copy
-uses_create_frame "$addon/adapter/Global.lua"
-inventory_add CreateFrame
+uses_screenshot "$addon/adapter/Global.lua"
+inventory_add Screenshot
 expect "a WoW global in adapter/ passes once inventoried" pass
 
 copy
@@ -146,7 +151,7 @@ expect "a file dropped from Pagle.toc that Core needs fails tests" tests "attemp
 
 copy
 toc_drop 'libs\AceDB-3.0\AceDB-3.0.lua'
-expect "a vendored lib dropped from Pagle.toc fails tests" tests "embeds AceDB-3.0"
+expect "a vendored lib dropped from Pagle.toc fails tests" tests 'Cannot find a library instance of "AceDB-3.0"'
 
 copy
 toc_move_after 'logic\Forever.lua' 'adapter\Core.lua'
@@ -188,6 +193,11 @@ printf 'do\n\t---@diagnostic disable-next-line: assign-type-mismatch, cast-local
 printf '\tPagle.API_VERSION = "2"\nend\n' >>"$addon/adapter/Core.lua"
 # types lets it through; the stage after it, tests, still catches the string (CORE-R15).
 expect "an inline suppression with codes and a reason passes types" tests "API version 1 before 1.0 (CORE-R15)"
+
+copy
+printf 'auras = [1]\nfishingSpells = [7620]\n' >"$scratch/tree/data/forever/lists.toml"
+expect "a data/ change committed without its regenerated file fails generator" generator \
+	"addons/Pagle/data/Catalogue.lua is out of date with data/"
 
 if ((failures)); then
 	echo "test-check: $failures failed" >&2

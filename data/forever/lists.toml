@@ -1,0 +1,10 @@
+# The fishing-aura and fishing-spell lists (DATA-R39), shipped ascending in the catalogue whatever the order here.
+# Edit this, then run scripts/generate-data.py and commit the regenerated files with it (DATA-R61).
+
+# Spell IDs of the fishing auras (LOG-R20), seeded with what the beta probe saw: 1280341 Rack, 1280342 Hut,
+# 1265220 hat lure, 1299323 Master Angler!
+auras = [1265220, 1280341, 1280342, 1299323]
+
+# Spell IDs whose channel is a fishing Cast (LOG-R2): the Classic ranks, then Forever's. M1 dogfooding confirms
+# which ID the channel reports and corrects this list (roadmap M1 exit check, step 1).
+fishingSpells = [7620, 7731, 7732, 18248, 1240948, 1240959, 1240970, 1240983]

@@ -20,6 +20,9 @@ luacov.report.out
 lua_modules/
 .luarocks/
 
+# Python bytecode (the content generator, scripts/pagle_data/)
+__pycache__/
+
 # Packaging / release (BigWigs packager, CurseForge, etc.)
 .release/
 *.zip

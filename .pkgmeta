@@ -9,6 +9,8 @@ ignore:
   - AGENTS.md
   - CONTEXT.md
   - README.md
+  # data/ is the generator's sources; what ships is generated into addons/*/data/ (DATA-R5).
+  - data
   - docs
   - probes
   - prototypes

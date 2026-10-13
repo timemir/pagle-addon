@@ -30,13 +30,7 @@ local function login(saved)
 	for key, value in pairs(FOREVER_GLOBALS) do
 		globals[key] = value
 	end
-	local loaded = loadAddon("Pagle", globals)
-	-- AceAddon calls Core's OnInitialize at ADDON_LOADED. Where the fake client hasn't fired ADDON_LOADED (it does
-	-- once #53 lands), the call is made here instead.
-	if not loaded.ns.catchLog then
-		loaded.ns.Core.OnInitialize()
-	end
-	return loaded
+	return loadAddon("Pagle", globals)
 end
 
 local function savedLog(entries, format)

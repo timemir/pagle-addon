@@ -10,7 +10,16 @@
 -- The API presence stage fails unless every name here is in the pinned forever dump (BIR_COMMIT, scripts/tools.env).
 stds.wow = {
 	read_globals = {
-		"GetServerTime", -- the Catch log's time and logId (LOG-R11, LOG-R15)
+		-- Core's event bus and WoW event registration (CORE-R20–R23), restriction state (CORE-R30–R32).
+		"CreateFrame",
+		"geterrorhandler",
+		"securecallfunction",
+		"issecretvalue",
+		"InCombatLockdown",
+		C_RestrictedActions = { fields = { "GetAddOnRestrictionState" } },
+		Enum = { fields = { "AddOnRestrictionType", AddOnRestrictionState = { fields = { "Inactive" } } } },
+		-- The Catch log (LOG-R11, LOG-R15).
+		"GetServerTime",
 	},
 }
 
