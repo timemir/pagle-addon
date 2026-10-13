@@ -46,6 +46,7 @@ adapter\Modules.lua
 adapter\CatchLog.lua
 adapter\Angler.lua
 adapter\Fishing.lua
+adapter\Diagnostics.lua
 adapter\Settings.lua
 adapter\Slash.lua
 adapter\Menu.lua
