@@ -32,10 +32,9 @@ function ns.WriteUpInOrder(sections)
 		entries[position] = { section = section, position = position }
 	end
 	table.sort(entries, function(a, b)
-		if a.section.order ~= b.section.order then
-			return a.section.order < b.section.order
-		elseif a.section.module ~= b.section.module then
-			return a.section.module < b.section.module
+		local sectionA, sectionB = a.section, b.section
+		if sectionA.module ~= sectionB.module then
+			return ns.ModuleSortsBefore(sectionA.order, sectionA.module, sectionB.order, sectionB.module)
 		end
 		return a.position < b.position
 	end)
@@ -67,11 +66,19 @@ function ns.WriteUpProblem(section)
 	return nil
 end
 
+--- Core's numbers on a Session summary card, from the Session (ANN-R53): its Casts, Catches, Casts got away and
+--- seconds fished (endTime − startTime).
+---@class PagleSessionNumbers
+---@field casts integer
+---@field catches integer
+---@field gotAway integer
+---@field seconds integer
+
 --- A card as it shows (announcements.md › UI): a stored Session summary card (PagleSummaryCard), or the Write-up,
 --- which has only a title and its sections.
 ---@class PagleCard
 ---@field title string
----@field numbers? { casts: integer, catches: integer, gotAway: integer, seconds: integer }
+---@field numbers? PagleSessionNumbers
 ---@field coins? integer
 ---@field lines? PagleCardLines[]
 ---@field moments? PagleCardMoments[]
@@ -103,14 +110,11 @@ function ns.NewCards(options)
 	return setmetatable({ options = options, ready = false }, Cards)
 end
 
--- PagleDB.global with the cards' keys in place.
+-- PagleDB.global, whose cards keys ns.PAGLEDB_DEFAULTS puts in place.
 ---@package
 ---@return { cards: PagleSummaryCard[], writeUp: PagleWriteUpStored[] }
 function Cards:data()
-	local global = self.options.global()
-	global.cards = global.cards or {}
-	global.writeUp = global.writeUp or {}
-	return global
+	return self.options.global()
 end
 
 --- At load: no card shows before no projection is updating (ANN-R61, LOG-R74). The held Cast Announcements flush on
@@ -232,10 +236,7 @@ end
 ---@return fun(self: PagleModuleHandle, section: PagleWriteUpSection)
 function ns.RaiseWriteUpMethod(registry, cards)
 	return function(self, section)
-		local module = registry:ModuleOf(self)
-		if not module then
-			error("RaiseWriteUp is a Module handle method: call M:RaiseWriteUp(section)", 2)
-		end
+		local module = registry:ModuleCalling(self, "RaiseWriteUp", "section")
 		if cards.options.mode() ~= "done" then
 			error("RaiseWriteUp: a Write-up section is raised only from a projection's done (ANN-R60)", 2)
 		end

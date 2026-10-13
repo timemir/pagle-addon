@@ -5,11 +5,6 @@ local ns = select(2, ...)
 -- Every moment Core keeps lands in the open Session's summary, and a Session that earned one becomes a card when it
 -- ends. logic/Cards.lua shows the cards; the data lives in PagleDB only, never in the Catch log (ANN-R56).
 
-local RUNG_HEIGHT = {}
-for height, rung in ipairs(ns.MOMENT_RUNGS) do
-	RUNG_HEIGHT[rung] = height
-end
-
 --- A moment as the summary stores it (announcements.md › Data): who raised it, by its stored title and order so a
 --- since-disabled Module still sorts, and what the card shows.
 ---@class PagleStoredMoment
@@ -44,7 +39,7 @@ end
 --- (ANN-R54). logic/Cards.lua shows it.
 ---@class PagleSummaryCard: PagleCard
 ---@field title string                 -- "Your last session" for a `whileAway` one, else "Fishing session" (ANN-R54)
----@field numbers { casts: integer, catches: integer, gotAway: integer, seconds: integer } -- Core's, from the Session
+---@field numbers PagleSessionNumbers -- Core's, from the Session
 ---@field coins integer                -- the moments' coins summed; "Pagle Coins +N" shows only above 0
 ---@field lines PagleCardLines[]       -- the registered Modules' lines, by Module order
 ---@field moments PagleCardMoments[]   -- by stored Module order
@@ -93,14 +88,11 @@ local function byModule(moments)
 		group.moments[#group.moments + 1] = { moment = moment, position = position }
 	end
 	table.sort(groups, function(a, b)
-		if a.order ~= b.order then
-			return a.order < b.order
-		end
-		return a.module < b.module
+		return ns.ModuleSortsBefore(a.order, a.module, b.order, b.module)
 	end)
 	for _, group in ipairs(groups) do
 		table.sort(group.moments, function(a, b)
-			local heightA, heightB = RUNG_HEIGHT[a.moment.rung], RUNG_HEIGHT[b.moment.rung]
+			local heightA, heightB = ns.RUNG_HEIGHT[a.moment.rung], ns.RUNG_HEIGHT[b.moment.rung]
 			if heightA ~= heightB then
 				return heightA > heightB
 			end
@@ -151,17 +143,11 @@ function Summary:SummaryShown()
 	end
 end
 
--- PagleDB.global with the summary's keys in place.
+-- PagleDB.global, whose summary keys ns.PAGLEDB_DEFAULTS puts in place.
 ---@package
----@return { summary: { moments: PagleStoredMoment[], lines: table }, pending: PagleStoredMoment[], cards: PagleSummaryCard[], writeUp: PagleWriteUpStored[]? }
+---@return { summary: { moments: PagleStoredMoment[], lines: table }, pending: PagleStoredMoment[], cards: PagleSummaryCard[] }
 function Summary:data()
-	local global = self.options.global()
-	global.summary = global.summary or {}
-	global.summary.moments = global.summary.moments or {}
-	global.summary.lines = global.summary.lines or {}
-	global.pending = global.pending or {}
-	global.cards = global.cards or {}
-	return global
+	return self.options.global()
 end
 
 --- Keeps a moment Core accepted, popped up or not (ANN-R25): in the open Session's summary (ANN-R50), or, with no
@@ -236,10 +222,7 @@ end
 ---@return fun(self: PagleModuleHandle, key: string, text: string?)
 function ns.SetSummaryLineMethod(registry, summary)
 	return function(self, key, text)
-		local module = registry:ModuleOf(self)
-		if not module then
-			error("SetSummaryLine is a Module handle method: call M:SetSummaryLine(key, text)", 2)
-		end
+		local module = registry:ModuleCalling(self, "SetSummaryLine", "key, text")
 		if type(key) ~= "string" or key == "" then
 			error("SetSummaryLine: the key must be a non-empty string, got " .. type(key), 2)
 		end

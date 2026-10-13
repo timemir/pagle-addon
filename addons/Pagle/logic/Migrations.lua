@@ -11,6 +11,12 @@ ns.PAGLEDB_DEFAULTS = {
 	global = {
 		decodeErrors = 0, -- LOG-R16
 		coins = { earned = {} }, -- SHOP-R3
+		-- announcements.md › Data: the open Session's summary, moments raised with no Session open, the stored
+		-- Session summary cards and the Write-up sections waiting (ANN-R50–R54, ANN-R61).
+		summary = { moments = {}, lines = {} },
+		pending = {},
+		cards = {},
+		writeUp = {},
 	},
 	profile = {
 		reloadReminder = false, -- LOG-R86

@@ -42,7 +42,7 @@ end
 -- sections waiting off screen, which the cards hand over when asked (logic/Cards.lua's TakeWriteUp).
 local function newWorld()
 	local world = {
-		global = {},
+		global = { summary = { moments = {}, lines = {} }, pending = {}, cards = {}, writeUp = {} },
 		open = true,
 		modules = { LEDGER, HUNTS },
 		cozy = false,
