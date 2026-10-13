@@ -9,7 +9,7 @@ computes the observed pairs and confirmed flags (DATA-R47–R55).
 """
 
 import re
-from collections.abc import Collection, Mapping
+from collections.abc import Collection, Iterable, Mapping
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 
@@ -364,14 +364,26 @@ def _header(value: object, at: At, problems: Problems) -> Header | None:
     return Header(addon, data, locale)
 
 
-def _row_key_check(keys: list[tuple[At, object]], problems: Problems) -> None:
-    """DATA-R121: a reporter's file keeps one row per row key."""
-    first: dict[object, At] = {}
-    for at, key in keys:
+def row_key(row: CatchRow | SkillRow | PoolTextRow) -> tuple[object, ...]:
+    """A row's key (DATA-R121), led by its kind: I by (item, area, build, auras, events, t, m), K by (area, build), P
+    by (area, locale, text). The one definition of a duplicate row, shared by this reader and the Field report
+    parser (DATA-R116), so the generator, the importer and the triage Action agree on it."""
+    if isinstance(row, CatchRow):
+        return ("I", row.item, row.area, row.build, row.auras, row.events, row.t, row.m)
+    if isinstance(row, SkillRow):
+        return ("K", row.area, row.build)
+    return ("P", row.area, row.locale, row.text)
+
+
+def duplicate_rows(rows: Iterable[CatchRow | SkillRow | PoolTextRow], problems: Problems) -> None:
+    """DATA-R121: one row per row key. Each row whose key an earlier row has is a problem at the later row."""
+    first: dict[tuple[object, ...], At] = {}
+    for row in rows:
+        key = row_key(row)
         if key in first:
-            problems.add(at, f"the same row key as {first[key].path} (DATA-R121)")
+            problems.add(row.at, f"the same row key as {first[key].path} (DATA-R121)")
         else:
-            first[key] = at
+            first[key] = row.at
 
 
 def _read_report(root: Path, file: str, key: str, problems: Problems) -> Report | None:
@@ -401,9 +413,7 @@ def _report(
     i_rows = tuple(row for row in catches if row is not None)
     k_rows = tuple(row for row in skills if row is not None)
     p_rows = tuple(row for row in pool_texts if row is not None)
-    _row_key_check([(r.at, (r.item, r.area, r.build, r.auras, r.events, r.t, r.m)) for r in i_rows], problems)
-    _row_key_check([(r.at, (r.area, r.build)) for r in k_rows], problems)
-    _row_key_check([(r.at, (r.area, r.locale, r.text)) for r in p_rows], problems)
+    duplicate_rows((*i_rows, *k_rows, *p_rows), problems)
     return Report(key, tuple(issues), header, i_rows, k_rows, p_rows)
 
 

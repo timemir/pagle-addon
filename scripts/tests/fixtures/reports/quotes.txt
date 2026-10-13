@@ -1,0 +1,5 @@
+PAGLE-REPORT 1
+addon 0.9.0 data 3f9a2c1e locale enUS reporter f38e76b0 part 1/1
+P 1519 enUS "School of \"Oily\" Blackmouth # not a comment" casts=2 6358x2 # Stormwind City
+P 1519 enUS "back\\slash\nsecond line" casts=1 # Stormwind City
+END
