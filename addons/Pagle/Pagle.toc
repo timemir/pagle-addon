@@ -29,6 +29,7 @@ logic\Migrations.lua
 logic\Catalogue.lua
 logic\Areas.lua
 logic\Angler.lua
+logic\Fishing.lua
 logic\Settings.lua
 adapter\Core.lua
 adapter\Callbacks.lua
