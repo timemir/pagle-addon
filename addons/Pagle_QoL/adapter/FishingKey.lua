@@ -107,6 +107,19 @@ local function keyHeld(a, b)
 	return false
 end
 
+-- Sets PagleQoLActionButton to use a click target's item (QOL-R24). A lure goes on the main hand: on Forever its use
+-- alone starts targeting, so the button names the slot. After the secure button's action, a use that can target an
+-- item goes to `target-slot` (`UseInventoryItem`, or `C_Container.UseContainerItem` with a `target-bag`), else to
+-- `target-item` (Gethe/wow-ui-source branch forever at 943764493e6b16d63ded3ab304150d1f05e58b57, "1.60.1 (70338)":
+-- Interface/AddOns/Blizzard_FrameXML/SecureTemplates.lua, OnActionButtonClick, lines 759–785). Any other item, a
+-- clam, has no slot (QOL-R52, #147).
+---@param target PagleQoLKeyTarget a click target with an item
+local function setButtonItem(target)
+	button:SetAttribute("type", "item")
+	button:SetAttribute("item", "item:" .. target.item)
+	button:SetAttribute("target-slot", target.slot)
+end
+
 -- Clears the old overrides, then sets the new ones (QOL-R11, QOL-R98). `current` changes first: each call fires
 -- UPDATE_BINDINGS, and the re-evaluation that runs must find nothing to do (QOL-R25).
 ---@param want PagleQoLArming
@@ -122,9 +135,7 @@ local function repoint(want)
 	ns.LureTargeted(target.item)
 	-- The gear step's click has no item: PagleQoLGearButton runs the swap itself (QOL-R44).
 	if target.kind == "click" and target.item then
-		-- An item use on the pole in hand: no target slot and no macro (QOL-R52, probe B4).
-		button:SetAttribute("type", "item")
-		button:SetAttribute("item", "item:" .. target.item)
+		setButtonItem(target)
 	end
 	for _, key in ipairs(want.keys) do
 		if target.kind == "spell" then
@@ -150,8 +161,7 @@ function ns.ArmActionButton(target)
 	registerClicks()
 	ns.LureTargeted(target.item)
 	if target.kind == "click" then
-		button:SetAttribute("type", "item")
-		button:SetAttribute("item", "item:" .. target.item)
+		setButtonItem(target)
 	end
 end
 

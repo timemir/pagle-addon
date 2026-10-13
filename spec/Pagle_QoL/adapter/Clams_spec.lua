@@ -76,6 +76,8 @@ describe("Clams on the Fishing key", function()
 
 			assert.are.equal(CLICK, client.overrideAction("F"))
 			assert.are.equal("item:5524", buttonItem(loaded))
+			-- The lure's target slot is gone: a clam opens from the bags (QOL-R24, QOL-R52).
+			assert.is_nil(loaded.env.PagleQoLActionButton:GetAttribute("target-slot"))
 		end)
 
 		it("opens a clam with no pole in hand and no gear step ready (QOL-R23)", function()
