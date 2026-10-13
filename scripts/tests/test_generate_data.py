@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 
+from areas_fixture import write_areas
 from baseline_fixture import write_baseline
 from item_fixture import ITEMS_LUA, write_item_layer
 from observed_fixture import write_observed
@@ -73,6 +74,7 @@ def write_tree(root: Path, events: str = EVENTS, lists: str = LISTS) -> Path:
     (forever / "lists.toml").write_text(lists, encoding="utf-8")
     (forever / "aliases.toml").write_text("", encoding="utf-8")  # test_aliases.py covers aliases
     write_windows(root)  # test_windows.py covers windows
+    write_areas(root)  # test_catch_lists.py covers areas.toml
     write_baseline(root)  # test_generate_baseline.py covers the baseline layer
     write_observed(root)  # dev.toml with no facts; test_observed.py covers the layer
     write_item_layer(root)  # test_item_records.py covers the item layer

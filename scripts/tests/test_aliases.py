@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+from areas_fixture import write_areas
 from baseline_fixture import CSVS, write_baseline
 from item_fixture import write_item_layer
 from observed_fixture import write_observed
@@ -30,7 +31,7 @@ ID,ParentAreaID,ContinentID,AreaName_lang
 16531,0,2940,Westfall
 """
 
-# In M1 an area's catch list is its rows in area_loot.csv (roadmap M1). 12, 18, 19 and 40 have one.
+# 6291 is a fish, so 12, 18, 19 and 40 each have a catch list (DATA-R26); test_catch_lists.py covers the lists.
 AREA_LOOT = """\
 area,item,chance,ref,event,condition
 12,6291,55.5,,,
@@ -47,6 +48,7 @@ def write_tree(root: Path, aliases: str = "") -> Path:
     (forever / "lists.toml").write_text("auras = []\nfishingSpells = [7620]\n", encoding="utf-8")
     (forever / "aliases.toml").write_text(aliases, encoding="utf-8")
     write_windows(root)  # test_windows.py covers windows
+    write_areas(root)  # test_catch_lists.py covers areas.toml
     db2 = root / "data" / "db2"
     db2.mkdir(parents=True, exist_ok=True)
     (db2 / "build.toml").write_text('build = 70338\nversion = "1.60.1"\nproducts = ["wow_classic_beta"]\n', encoding="utf-8")

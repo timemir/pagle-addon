@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 
+from areas_fixture import write_areas
 from baseline_fixture import write_baseline
 from item_fixture import write_item_layer
 from observed_fixture import i_row, report, write_observed
@@ -141,6 +142,7 @@ def write_tree(root: Path, dev: str = "keys = []\n", reports: dict[str, str] | N
     (forever / "lists.toml").write_text("auras = [1280342]\nfishingSpells = [7620]\n", encoding="utf-8")
     (forever / "aliases.toml").write_text(ALIASES, encoding="utf-8")
     write_windows(root)  # test_windows.py covers windows
+    write_areas(root)  # test_catch_lists.py covers areas.toml
     write_baseline(root)
     db2 = root / "data" / "db2"
     db2.mkdir(parents=True, exist_ok=True)

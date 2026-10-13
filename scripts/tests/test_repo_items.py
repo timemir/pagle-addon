@@ -6,7 +6,7 @@ from pathlib import Path
 from pagle_data.baseline import read_baseline
 from pagle_data.db2 import ITEMS, Item, read_db2
 from pagle_data.errors import Problems
-from pagle_data.universe import item_universe
+from pagle_data.universe import forever_items, item_universe
 
 REPO = Path(__file__).resolve().parents[2]
 
@@ -29,8 +29,13 @@ def _loot_items() -> set[int]:
 
 def test_the_universe_is_the_baseline_s_258_loot_items_and_whimsyfin() -> None:
     # DATA-R15; the #57 hand-off counts 252 area-loot items, 258 with pools. items.toml adds Whimsyfin (251524, a
-    # Forever pool fish the baseline lacks, #90), which pools.toml also adds (#93); areas.toml doesn't exist yet.
-    assert not (REPO / "data" / "forever" / "areas.toml").exists(), "areas.toml exists: this test's count is stale"
+    # Forever pool fish the baseline lacks, #90), which pools.toml also adds (#93); areas.toml's adds (#92) are the
+    # Extravaganza fish, already in it. So the forever files, all three of which exist, add Whimsyfin alone.
+    forever = REPO / "data" / "forever"
+    assert all((forever / name).is_file() for name in ("items.toml", "areas.toml", "pools.toml"))
+    problems = Problems()
+    assert forever_items(REPO, problems) - _loot_items() == {251524}
+    assert problems.found == []
     universe = _universe()
     assert len(universe) == 259
     assert universe == _loot_items() | {251524}

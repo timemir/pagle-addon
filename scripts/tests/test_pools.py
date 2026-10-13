@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 
+from areas_fixture import write_areas
 from baseline_fixture import CSVS, write_baseline
 from item_fixture import write_item_layer
 from observed_fixture import write_observed
@@ -103,6 +104,7 @@ def write_tree(root: Path, pools: str = POOLS, items: str = ITEMS, csvs: dict[st
     (db2 / "build.toml").write_text('build = 70338\nversion = "1.60.1"\nproducts = ["wow_classic_beta"]\n', encoding="utf-8")
     (db2 / "areas.csv").write_text("ID,ParentAreaID,ContinentID,AreaName_lang\n", encoding="utf-8")
     (db2 / "items.csv").write_text("ID,ClassID,SubclassID,OverallQualityID,Display_lang\n", encoding="utf-8")
+    write_areas(root)  # test_catch_lists.py covers areas.toml
     write_windows(root)  # test_windows.py covers windows
     write_observed(root)  # dev.toml with no facts; test_observed.py covers the layer
     write_item_layer(root, items)  # test_item_records.py covers the item layer

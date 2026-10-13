@@ -1,0 +1,76 @@
+# The area edits (DATA-R26 step 2, DATA-R30). Each [[area]] has id and why, and clearBaseline = true (empty the
+# baseline's list for the area) and/or skillBase (the area's skill base; a subzone has one only when it is set
+# here). Each [[catch]] has area, item, op ("add" or "drop") and why; an add may set gate (a window ID, DATA-R35,
+# or "none" to remove the baseline's gate), a drop takes none. why, the evidence, is required (DATA-R10).
+# The comments carry the enUS names for review; they never ship (DATA-R3).
+# Edit this, then run scripts/generate-data.py and commit the regenerated files with it (DATA-R61).
+
+# --- The VMaNGOS errors known today (DATA-R27).
+
+[[area]]
+id = 53  # Thieves Camp (Elwynn Forest)
+clearBaseline = true
+why = "VMaNGOS error: Thieves Camp carries another zone's loot table (DATA-R27)"
+
+[[area]]
+id = 368  # Echo Isles (Durotar)
+clearBaseline = true
+why = "VMaNGOS error: Echo Isles carries another zone's loot table (DATA-R27)"
+
+# --- Subzone skill bases. skill.csv (VMaNGOS skill_fishing_base_level) lists these five subzones with their own
+# base; DATA-R30 takes a subzone's skill base only from here, so each is carried over as VMaNGOS has it.
+
+[[area]]
+id = 297  # Jaguero Isle (Stranglethorn Vale)
+skillBase = 205
+why = "data/baseline/skill.csv lists Jaguero Isle at 205 (VMaNGOS skill_fishing_base_level); DATA-R30"
+
+[[area]]
+id = 1112  # Jademir Lake (Feralas)
+skillBase = 330
+why = "data/baseline/skill.csv lists Jademir Lake at 330 (VMaNGOS skill_fishing_base_level); DATA-R30"
+
+[[area]]
+id = 1222  # Hetaera's Clutch (Azshara)
+skillBase = 330
+why = "data/baseline/skill.csv lists Hetaera's Clutch at 330 (VMaNGOS skill_fishing_base_level); DATA-R30"
+
+[[area]]
+id = 1227  # Bay of Storms (Azshara)
+skillBase = 330
+why = "data/baseline/skill.csv lists Bay of Storms at 330 (VMaNGOS skill_fishing_base_level); DATA-R30"
+
+[[area]]
+id = 3140  # Scalebeard's Cave (Azshara)
+skillBase = 330
+why = "data/baseline/skill.csv lists Scalebeard's Cave at 330 (VMaNGOS skill_fishing_base_level); DATA-R30"
+
+# --- The Stranglethorn Fishing Extravaganza's fish, pool-only in the baseline (DATA-R28).
+
+[[catch]]
+area = 33  # Stranglethorn Vale
+item = 19803  # Brownell's Blue Striped Racer
+op = "add"
+gate = "event.301"
+why = "Extravaganza rare, caught only during the tournament (DATA-R22, DATA-R28)"
+
+[[catch]]
+area = 33  # Stranglethorn Vale
+item = 19805  # Keefer's Angelfish
+op = "add"
+gate = "event.301"
+why = "Extravaganza rare, caught only during the tournament (DATA-R22, DATA-R28)"
+
+[[catch]]
+area = 33  # Stranglethorn Vale
+item = 19806  # Dezian Queenfish
+op = "add"
+gate = "event.301"
+why = "Extravaganza rare, caught only during the tournament (DATA-R22, DATA-R28)"
+
+[[catch]]
+area = 33  # Stranglethorn Vale
+item = 19807  # Speckled Tastyfish
+op = "add"
+gate = "event.301"
+why = "Extravaganza fish, from the tournament's School of Tastyfish pools (DATA-R28)"

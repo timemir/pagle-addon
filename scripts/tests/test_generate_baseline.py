@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 
+from areas_fixture import write_areas
 from baseline_fixture import CSVS, SNAPSHOT, write_baseline
 from item_fixture import write_item_layer
 from observed_fixture import write_observed
@@ -26,6 +27,7 @@ def write_tree(root: Path) -> Path:
     (forever / "lists.toml").write_text(LISTS, encoding="utf-8")
     (forever / "aliases.toml").write_text("", encoding="utf-8")  # test_aliases.py covers aliases
     write_windows(root)  # test_windows.py covers windows
+    write_areas(root)  # test_catch_lists.py covers areas.toml
     db2 = root / "data" / "db2"
     db2.mkdir(parents=True)
     (db2 / "build.toml").write_text(BUILD, encoding="utf-8")
