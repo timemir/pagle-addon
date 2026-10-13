@@ -25,6 +25,10 @@ ns.DB_DEFAULTS = {
 		-- While you fish: what a Fishing stretch leases besides soft-interact (QOL-R62).
 		audio = { on = true, background = false },
 		autoLoot = true,
+		-- The next-action button: Show the next-action button, and its place once Shift-drag moved it, as
+		-- { point, relativeTo = "UIParent", relativePoint, x, y } by name; nil (no default) is the default place
+		-- (QOL-R72, QOL-R73).
+		indicator = { shown = true },
 	},
 }
 

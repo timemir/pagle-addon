@@ -213,4 +213,34 @@ function ns.AddSettings(M)
 			end)
 		end,
 	})
+	-- The next-action button (QOL-R70–R74) isn't a lease: a change re-evaluates, which shows or hides it at once
+	-- (QOL-R25).
+	M:AddSetting("fishing", {
+		kind = "checkbox",
+		id = "indicator",
+		label = L.SETTINGS_SHOW_BUTTON,
+		tooltip = L.SETTINGS_SHOW_BUTTON_TOOLTIP,
+		default = defaults.indicator.shown,
+		get = function()
+			return ns.db.profile.indicator.shown
+		end,
+		set = function(value)
+			ns.db.profile.indicator.shown = value
+			ns.EvaluateFishingKey()
+		end,
+	})
+	-- A row labelled Button position with a Reset button; qol.md gives it no tooltip. It is no value, so the page's
+	-- Defaults button leaves the place alone (SET-R21). Greyed out while the button is off.
+	M:AddSetting("fishing", {
+		kind = "button",
+		parent = "indicator",
+		label = L.SETTINGS_BUTTON_POSITION,
+		caption = L.SETTINGS_BUTTON_RESET,
+		onClick = function()
+			ns.ResetNextActionButton()
+		end,
+		isEnabled = function()
+			return ns.db.profile.indicator.shown
+		end,
+	})
 end

@@ -17,6 +17,8 @@
 --   loaded.client.click("RightButton", 0.1)                         -- a mouse click, held 0.1 s
 --   loaded.client.mouseFoci = { someButton }                        -- GetMouseFoci(): the mouse is over a UI frame
 --   loaded.client.nextFrame(0.016)                                   -- the clock moves on, then one frame runs
+--   loaded.client.keysDown.SHIFT = true                              -- IsShiftKeyDown()
+--   loaded.client.loadItem(6529, "Shiny Bauble")                     -- an uncached item's data arrives
 --
 -- Each override call fires UPDATE_BINDINGS at once, through client.fireGameEvent, as the client fires it after a
 -- binding change; under FakePagle, fake.load points that at fake.fireGameEvent. Each one raises an error while the
@@ -24,7 +26,8 @@
 
 ---@class FakeClient
 ---@field boundKeys table<string, string[]> The keys bound to each binding command, as `GetBindingKey` returns them.
----@field keysDown table<string, true> The keys held down, by name without modifiers, as `IsKeyDown` takes them.
+---@field keysDown table<string, true> The keys held down, by name without modifiers, as `IsKeyDown` takes them;
+--- `SHIFT` is what `IsShiftKeyDown()` reads.
 ---@field channel string? The spell the player is channeling, by name; `UnitChannelInfo("player")` returns it.
 ---@field casting string? The spell the player is casting with a cast time; `UnitCastingInfo("player")` returns it.
 ---@field mainHand integer? The item ID in the main hand (slot 16).
@@ -47,7 +50,9 @@
 --- the item is cached; an item not listed isn't cached.
 ---@field itemDataRequests integer[] Each `C_Item.RequestLoadItemDataByID` call's item ID, in order.
 ---@field itemIcons table<integer, integer> Each item's icon file ID, by item ID, as `GetInventoryItemTexture` reads
---- it for a worn item.
+--- it for a worn item and `C_Item.GetItemIconByID` for any.
+---@field loadItem fun(itemID: integer, name: string) An item's data arrives: its name is cached as `name`, and each
+--- `Item:CreateFromItemID(itemID):ContinueOnItemLoad` callback waiting for it runs.
 ---@field worn table<integer, integer> The item ID worn in each slot but the main hand, by slot; the main hand (16)
 --- is `mainHand`.
 ---@field equipmentSets table<integer, FakeEquipmentSet> The character's equipment sets by set ID, as C_EquipmentSet
@@ -194,6 +199,9 @@ return function(client, stubs)
 	stubs.IsKeyDown = function(key)
 		return client.keysDown[key] == true
 	end
+	stubs.IsShiftKeyDown = function()
+		return client.keysDown.SHIFT == true
+	end
 	stubs.UnitChannelInfo = function(unit)
 		if unit == "player" then
 			return client.channel
@@ -235,6 +243,35 @@ return function(client, stubs)
 	end
 	stubs.C_Item.RequestLoadItemDataByID = function(itemID)
 		client.itemDataRequests[#client.itemDataRequests + 1] = itemID
+	end
+	-- An item's icon by item ID, from client.itemIcons, whether or not its name is cached.
+	stubs.C_Item.GetItemIconByID = function(itemID)
+		return client.itemIcons[itemID]
+	end
+	-- FrameXML's Item (Blizzard_ObjectAPI/Mainline/Item.lua), as far as waiting for an item's data: ContinueOnItemLoad
+	-- runs its callback at once if the item's name is cached, else when client.loadItem loads it.
+	local waitingForItem = {} -- by item ID: callbacks
+	stubs.Item = {
+		CreateFromItemID = function(_, itemID)
+			return {
+				ContinueOnItemLoad = function(_, callback)
+					if client.itemNames[itemID] then
+						callback()
+					else
+						waitingForItem[itemID] = waitingForItem[itemID] or {}
+						table.insert(waitingForItem[itemID], callback)
+					end
+				end,
+			}
+		end,
+	}
+	function client.loadItem(itemID, name)
+		client.itemNames[itemID] = name
+		local callbacks = waitingForItem[itemID] or {}
+		waitingForItem[itemID] = nil
+		for _, callback in ipairs(callbacks) do
+			callback()
+		end
 	end
 	-- hasMainHandEnchant, mainHandExpiration, mainHandCharges, mainHandEnchantID, then the off hand's and the ranged
 	-- slot's, as probe B4 read them: true, 600000, 0, 263, false, nil, … with Shiny Bauble's lure on.

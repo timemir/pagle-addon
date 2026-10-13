@@ -281,8 +281,14 @@ local function nativeRow(page, layout, setting, variable)
 	if kind == "header" then
 		initializer = CreateSettingsListSectionHeaderInitializer(setting.label, setting.tooltip)
 	elseif kind == "button" then
-		-- PagleSetting has one string for a button: its caption, with no label beside it (SET-R2).
-		initializer = CreateSettingsButtonInitializer("", setting.label, setting.onClick, setting.tooltip, true)
+		-- A button row's label sits beside the button and its caption is on it. Without a caption, the label is the
+		-- caption and the row has no label (SET-R2).
+		if setting.caption then
+			initializer =
+				CreateSettingsButtonInitializer(setting.label, setting.caption, setting.onClick, setting.tooltip, true)
+		else
+			initializer = CreateSettingsButtonInitializer("", setting.label, setting.onClick, setting.tooltip, true)
+		end
 	elseif kind == "keybinding" then
 		local index = C_KeyBindings.GetBindingIndex(setting.binding)
 		if not index then

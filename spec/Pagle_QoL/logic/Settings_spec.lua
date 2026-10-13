@@ -1,6 +1,7 @@
 -- QoL's rows on Core's Fishing page: the Casting header and the Fishing key (M1), the Lures and clams rows (Track Q
--- step 1), the Gear rows (Track Q step 2), Cast with (Track Q step 3), the While you fish rows (Track Q step 4) and
--- Open clams between Casts (Track Q step 6) (qol.md › Settings, SET-R20, SET-R21, CORE-R42).
+-- step 1), the Gear rows (Track Q step 2), Cast with (Track Q step 3), the While you fish rows (Track Q step 4), the
+-- next-action button's (Track Q step 5) and Open clams between Casts (Track Q step 6) (qol.md › Settings, SET-R20,
+-- SET-R21, CORE-R42).
 
 -- QoL's row on a FakePagle Fishing page by its label.
 ---@param fake FakePagle
@@ -43,7 +44,61 @@ describe("QoL's Fishing page with FakePagle", function()
 			{ "QoL", "checkbox", "Fishing audio mix", false },
 			{ "QoL", "checkbox", "Keep sound when the game is in the background", true },
 			{ "QoL", "checkbox", "Auto-loot while fishing", false },
+			{ "QoL", "checkbox", "Show the next-action button", false },
+			{ "QoL", "button", "Button position", true },
 		}, rows)
+	end)
+
+	it("gives Show the next-action button qol.md's tooltip, on by default (SET-R20, qol.md › Data)", function()
+		local fake = newFakePagle()
+		local loaded = fake.load("Pagle_QoL")
+		fake.login()
+
+		local show = rowOf(fake, "Show the next-action button")
+
+		-- qol.md › Settings › Tooltips, word for word.
+		assert.are.equal("Shows what your next press will do. Shift-drag to move.", show.tooltip)
+		assert.are.equal("indicator", show.id)
+		assert.is_true(show.default)
+		assert.is_true(show.get())
+		show.set(false)
+		assert.is_false(loaded.env.PagleQoLDB.profiles.Default.indicator.shown)
+		assert.is_false(show.get())
+		assert.is_nil(show.isEnabled)
+	end)
+
+	it("makes Button position a Reset button under it, greyed while the button is off (SET-R20, SET-R2)", function()
+		local fake = newFakePagle()
+		fake.load("Pagle_QoL")
+		fake.login()
+		local show = rowOf(fake, "Show the next-action button")
+		local position
+		for _, row in ipairs(assert(fake.settingsPage("fishing"))) do
+			position = row.label == "Button position" and row or position
+		end
+
+		assert.are.same({ "Button position", "Reset" }, { position.label, position.caption })
+		assert.are.equal("indicator", position.setting.parent)
+		-- qol.md gives it no tooltip.
+		assert.is_nil(position.setting.tooltip)
+		assert.is_true(position.setting.isEnabled())
+		show.set(false)
+		assert.is_false(position.setting.isEnabled())
+		show.set(true)
+		assert.is_true(position.setting.isEnabled())
+	end)
+
+	it("puts the button's place back to the default with Reset, and leaves it shown (QOL-R73)", function()
+		local fake = newFakePagle()
+		local loaded = fake.load("Pagle_QoL")
+		fake.login()
+		local indicator = loaded.ns.db.profile.indicator
+		indicator.point = { point = "CENTER", relativeTo = "UIParent", relativePoint = "CENTER", x = 10, y = 20 }
+
+		rowOf(fake, "Button position").onClick()
+
+		assert.is_nil(indicator.point)
+		assert.is_true(indicator.shown)
 	end)
 
 	it("gives the Gear rows qol.md's tooltips, and the fishing set no default (SET-R20, SET-R21)", function()
@@ -572,6 +627,47 @@ describe("QoL's Fishing page with Core", function()
 				assert.is_nil(initializer:GetSetting())
 			end
 		end
+	end)
+
+	it(
+		"registers Show the next-action button as a native checkbox, and Button position under it as a row labelled Button position with a Reset button (SET-R20, SET-R2)",
+		function()
+			local loaded, fishing = fishingPage()
+
+			local show = initializerOf(fishing, "Show the next-action button")
+			local position = initializerOf(fishing, "Button position")
+			assert.are.equal("SettingsCheckboxControlTemplate", show.template)
+			assert.are.equal("Shows what your next press will do. Shift-drag to move.", show:GetTooltip())
+			assert.is_nil(show:GetParentInitializer())
+			assert.are.equal("SettingButtonControlTemplate", position.template)
+			assert.are.equal(show, position:GetParentInitializer())
+			-- As the panel draws it: the label on the left, the caption on the button.
+			local frame = loaded.client.settings.show(fishing)[#fishing.layout.initializers].frame
+			assert.are.same({ "Button position", "Reset" }, loaded.client.settings.textsOf(frame))
+			-- The last two rows of the page, after Auto-loot while fishing.
+			local initializers = fishing.layout.initializers
+			assert.are.same({ show, position }, { initializers[#initializers - 1], initializers[#initializers] })
+
+			-- Greyed out while the button is off.
+			assert.is_true(position:EvaluateModifyPredicates())
+			show:GetSetting():SetValue(false)
+			assert.is_false(position:EvaluateModifyPredicates())
+		end
+	)
+
+	it("restores Show the next-action button with Defaults and leaves the button's place alone (SET-R21)", function()
+		local loaded, fishing = fishingPage()
+		local show = initializerOf(fishing, "Show the next-action button"):GetSetting()
+		local indicator = loaded.env.PagleQoLDB.profiles.Default.indicator
+		local moved = { point = "CENTER", relativeTo = "UIParent", relativePoint = "CENTER", x = 10, y = 20 }
+		indicator.point = moved
+		show:SetValue(false)
+
+		pressDefaults(loaded, fishing)
+
+		assert.is_true(show:GetValue())
+		assert.is_true(indicator.shown)
+		assert.are.equal(moved, indicator.point)
 	end)
 
 	it("isn't registered with QoL Off (SET-R20, SET-R4, CORE-R42)", function()
