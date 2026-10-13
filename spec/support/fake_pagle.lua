@@ -3,7 +3,7 @@
 -- newFakePagle for every spec.
 --
 --   local fake = newFakePagle()
---   local loaded = loadAddon("Pagle_QoL", fake.globals)   -- the Module sees fake.globals.Pagle as its Pagle
+--   local loaded = fake.load("Pagle_QoL")                 -- the Module sees fake.globals.Pagle as its Pagle
 --   fake.login()                                            -- Core's PLAYER_LOGIN: ModulesChanged
 --   fake.fire("RestrictionChanged", true)                   -- any Core event; tables arrive read-only
 --   fake.setRestricted(true)
@@ -44,6 +44,9 @@
 --- when Core registers no page (CORE-R42).
 ---@field reported string[] Each error Core reported through geterrorhandler(), e.g. a late M:AddSetting.
 ---@field openedSettings string[] What each Pagle.OpenSettings opened: "root" or the topic (CORE-R43).
+---@field load fun(name: string, options: table?): LoadedAddon Loads a Module with `loadAddon` against this fake:
+--- `globals`, and of Pagle.toc only the vendored libs/ the Module reaches through LibStub (CORE-R6). Options as
+--- loadAddon's.
 ---@field catchLog PagleCatchLog The Catch log Pagle.IterateCatches reads, on Core's real codec; empty at first.
 ---@field setCatalogue fun(data: table) Serves the catalogue calls over `data` (shaped as ns.catalogue, DATA-R76)
 --- instead of the generated catalogue.
@@ -54,6 +57,8 @@
 ---@return table env
 local function loadCoreLogic()
 	local env = setmetatable({}, { __index = _G })
+	-- LibStub keeps itself in _G.LibStub: this one stays in env, or every later load would share its libraries.
+	env._G = env
 	-- CallbackHandler calls each listener through this. Here a listener's error fails the spec instead.
 	env.securecallfunction = function(fn, ...)
 		return fn(...)
@@ -368,5 +373,12 @@ function newFakePagle()
 		next = proxyNext,
 		unpack = proxyUnpack,
 	}
+	function fake.load(name, options)
+		local loadOptions = { dependencyLibsOnly = true }
+		for key, value in pairs(options or {}) do
+			loadOptions[key] = value
+		end
+		return loadAddon(name, fake.globals, loadOptions)
+	end
 	return fake
 end

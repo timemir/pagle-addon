@@ -9,8 +9,10 @@
 --
 -- The addon runs against a fake client: frames that keep the events they register, so loaded.client.fire reaches
 -- them, and stubs for the WoW API the addon calls (clientStubs below). loadAddon fires ADDON_LOADED after the last
--- file, as the client does. Its Settings panel (loaded.client.settings) records the categories and rows an addon
--- registers and can show a page, as the panel would draw it.
+-- file, as the client does. An addon's `## Dependencies` load first, into the same globals and client, so
+-- loadAddon("Pagle_QoL", FOREVER_GLOBALS) runs Core and then QoL; loaded.namespaces.Pagle is Core's ns. The client's
+-- Settings panel (loaded.client.settings) records the categories and rows an addon registers and can show a page, as
+-- the panel would draw it.
 --
 -- Each load gets its own globals table, so nothing an addon defines (LibStub, Pagle) leaks into the next load.
 -- Names not in it fall back to the Lua 5.1 globals busted runs with.
@@ -29,6 +31,8 @@ FOREVER_GLOBALS = { WOW_PROJECT_ID = PROJECT_IDS.CAMELOT, WOW_PROJECT_CAMELOT = 
 
 ---@class LoadedAddon
 ---@field ns table The addon's private table, shared by every file it loads.
+---@field namespaces table<string, table> The private table of each addon loaded, its dependencies too, by folder
+--- name: `namespaces.Pagle` is Core's when a Module was loaded.
 ---@field env table<string, any> The globals the files saw and set; `env.Pagle` is the Pagle global.
 ---@field printed string[] Each line the addon printed to chat, in order.
 ---@field client FakeClient The fake client the addon runs against.
@@ -40,8 +44,9 @@ FOREVER_GLOBALS = { WOW_PROJECT_ID = PROJECT_IDS.CAMELOT, WOW_PROJECT_CAMELOT = 
 ---@field frames table[] Every frame CreateFrame made, in order.
 ---@field fire fun(event: string, ...) Fires a WoW event at each frame registered for it, in creation order, calling
 --- its OnEvent script with (frame, event, ...). A unit event reaches a frame only for the units it registered.
----@field addons table<string, FakeAddOn> The other addons installed, by folder name ("Pagle_QoL"), as C_AddOns
---- reports them. One not listed is missing. Specs add to it.
+---@field addons table<string, FakeAddOn> The addons installed, by folder name ("Pagle_QoL"), as C_AddOns reports
+--- them. loadAddon lists each addon it loads, with its TOC fields as metadata. One not listed is missing. Specs add
+--- to it.
 ---@field bindings string[] The key binding actions the client knows (Bindings.xml names), in binding index order,
 --- as C_KeyBindings.GetBindingIndex reads them. Specs add to it.
 ---@field settings FakeSettings The Settings panel.
@@ -563,21 +568,26 @@ local function clientStubs(client)
 	return stubs
 end
 
---- The files a TOC lists, in order, as paths relative to the addon folder with forward slashes.
+--- A TOC: the files it lists, in order, as paths relative to the addon folder with forward slashes, and its
+--- `## Field: value` lines by field.
 ---@param tocPath string
----@return string[]
-local function tocFiles(tocPath)
+---@return string[] files
+---@return table<string, string> fields
+local function readToc(tocPath)
 	---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io
 	local toc = assert(io.open(tocPath, "r"))
-	local files = {}
+	local files, fields = {}, {}
 	for line in toc:lines() do
 		line = line:gsub("\r$", ""):match("^%s*(.-)%s*$")
-		if line ~= "" and line:sub(1, 1) ~= "#" then
+		local field, value = line:match("^##%s*([^:]-)%s*:%s*(.-)$")
+		if field then
+			fields[field] = value
+		elseif line ~= "" and line:sub(1, 1) ~= "#" then
 			files[#files + 1] = (line:gsub("\\", "/"))
 		end
 	end
 	toc:close()
-	return files
+	return files, fields
 end
 
 --- The files addons/<name>/<name>.toc lists, in order, relative to the addon folder with forward slashes
@@ -585,21 +595,24 @@ end
 ---@param name string
 ---@return string[]
 function addonFiles(name)
-	return tocFiles("addons/" .. name .. "/" .. name .. ".toc")
+	return (readToc("addons/" .. name .. "/" .. name .. ".toc"))
 end
 
 --- Loads addons/<name>/<name>.toc and every file it lists, in order, as the client does, then fires
---- ADDON_LOADED(name).
+--- ADDON_LOADED(name). Each addon its `## Dependencies` names is loaded first, the same way and into the same
+--- globals and fake client, as the client loads them: `loadAddon("Pagle_QoL")` runs Core, then QoL.
+--- Each addon loaded is listed in client.addons, enabled and loaded, with its TOC fields as its metadata.
 --- Raises an error naming the TOC and the file if a listed file is missing or fails while loading.
 ---@param name string The addon's folder under addons/, which is also its TOC's name.
 ---@param globals table<string, any>? Globals the client defines for this load, e.g. WOW_PROJECT_ID. They replace
 --- the fake client's stubs of the same name, e.g. InCombatLockdown for a load in combat.
----@param options { holdAddonLoaded: boolean? }? holdAddonLoaded: don't fire ADDON_LOADED; the spec fires it with
---- loaded.client.fire, e.g. after adding a listener that must be there before it.
+---@param options { holdAddonLoaded: boolean?, dependencyLibsOnly: boolean? }? holdAddonLoaded: don't fire
+--- ADDON_LOADED(name); the spec fires it with loaded.client.fire, e.g. after adding a listener that must be there
+--- before it. dependencyLibsOnly: load only the libs/ files of each dependency, for a stand-in that provides the
+--- rest (FakePagle's fake.load).
 ---@return LoadedAddon
 function loadAddon(name, globals, options)
-	local dir = "addons/" .. name .. "/"
-	local toc = dir .. name .. ".toc"
+	options = options or {}
 	local printed = {}
 
 	local client = newClient()
@@ -617,24 +630,49 @@ function loadAddon(name, globals, options)
 	env._G = env
 	setmetatable(env, { __index = _G })
 
-	local ns = {}
-	for _, file in ipairs(tocFiles(toc)) do
-		---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no loadfile
-		local chunk, loadErr = loadfile(dir .. file)
-		if not chunk then
-			error(("%s lists %s, which doesn't load: %s"):format(toc, file, loadErr), 2)
+	local namespaces = {}
+	-- Loads one addon after its dependencies; returns why it failed, or nil.
+	local function load(addon, isDependency)
+		local dir = "addons/" .. addon .. "/"
+		local toc = dir .. addon .. ".toc"
+		local files, fields = readToc(toc)
+		for dependency in (fields.Dependencies or ""):gmatch("[^%s,]+") do
+			if not namespaces[dependency] then
+				local err = load(dependency, true)
+				if err then
+					return err
+				end
+			end
 		end
-		setfenv(chunk, env)
-		local ok, runErr = pcall(chunk, name, ns)
-		if not ok then
-			error(("%s: %s failed while loading: %s"):format(toc, file, tostring(runErr)), 2)
+
+		client.addons[addon] = { enabled = true, loaded = true, metadata = fields }
+		local ns = {}
+		namespaces[addon] = ns
+		for _, file in ipairs(files) do
+			if not (isDependency and options.dependencyLibsOnly) or file:match("^libs/") then
+				---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no loadfile
+				local chunk, loadErr = loadfile(dir .. file)
+				if not chunk then
+					return ("%s lists %s, which doesn't load: %s"):format(toc, file, loadErr)
+				end
+				setfenv(chunk, env)
+				local ok, runErr = pcall(chunk, addon, ns)
+				if not ok then
+					return ("%s: %s failed while loading: %s"):format(toc, file, tostring(runErr))
+				end
+			end
 		end
+		if isDependency or not options.holdAddonLoaded then
+			client.fire("ADDON_LOADED", addon)
+		end
+		return nil
 	end
-	if not (options and options.holdAddonLoaded) then
-		client.fire("ADDON_LOADED", name)
+	local err = load(name, false)
+	if err then
+		error(err, 2)
 	end
 
-	return { ns = ns, env = env, printed = printed, client = client }
+	return { ns = namespaces[name], namespaces = namespaces, env = env, printed = printed, client = client }
 end
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile

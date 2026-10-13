@@ -96,6 +96,10 @@ exclude_files = {
 files["addons/*/adapter/**"] = { std = "lua51+wow+wow_variables+pagle" }
 -- Only Core's adapter creates the Pagle global.
 files["addons/Pagle/adapter/**"] = { globals = { "Pagle" } }
+-- Every Module file reads Pagle, for its CORE-R11 guard, so logic/ and locale/ may too; nothing else from Core.
+files["addons/Pagle_*/**"] = { read_globals = { "Pagle" } }
+-- QoL's adapter names its Bindings.xml entries for Key Bindings › AddOns (QOL-R1).
+files["addons/Pagle_QoL/adapter/**"] = { globals = { "BINDING_HEADER_PAGLE", "BINDING_NAME_PAGLE_FISHING_KEY" } }
 -- Specs run under busted on plain Lua 5.1. busted's helper (.busted) defines loadAddon and the Forever fixtures.
 local helperGlobals = { "loadAddon", "PROJECT_IDS", "FOREVER_GLOBALS", "PLAYER_GUID", "addonFiles", "newFakePagle" }
 files["spec/**"] = { std = "lua51+busted", read_globals = helperGlobals }
