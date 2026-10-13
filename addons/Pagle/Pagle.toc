@@ -18,7 +18,9 @@ logic\Secrets.lua
 logic\ReportOnce.lua
 logic\Restriction.lua
 logic\WorkQueue.lua
+logic\Conditions.lua
 adapter\Core.lua
 adapter\Callbacks.lua
 adapter\Events.lua
 adapter\Restriction.lua
+adapter\Conditions.lua
