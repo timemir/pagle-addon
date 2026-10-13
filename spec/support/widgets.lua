@@ -31,10 +31,13 @@ local LAYOUT_METHODS = {
 	"SetFrameStrata",
 	"EnableMouse",
 	"SetTexCoord",
-	"SetVertexColor",
 	"SetScrollChild",
-	"SetVerticalScroll",
 	"EnableMouseWheel",
+	"SetRotation",
+	"SetAutoFocus",
+	"ClearFocus",
+	"SetTextInsets",
+	"SetMaxLetters",
 }
 
 --- A widget (frame, button or font string) that keeps what specs read back: its text, whether it's shown, its
@@ -54,6 +57,34 @@ function widgets.newWidget(kind, parent)
 	-- 6 pixels a character: enough for layout code to size around a text.
 	function widget:GetStringWidth()
 		return #(self.text or "") * 6
+	end
+	-- One 14-pixel line, as a text that doesn't wrap.
+	function widget.GetStringHeight()
+		return 14
+	end
+	-- Whether SetMovable(true) let the player drag it.
+	function widget:SetMovable(movable)
+		self.movable = movable
+	end
+	function widget:IsMovable()
+		return self.movable == true
+	end
+	-- A texture's tint, as { r, g, b }, and whether it is drawn in greys.
+	function widget:SetVertexColor(r, g, b)
+		self.vertexColor = { r, g, b }
+	end
+	function widget:SetDesaturated(desaturated)
+		self.desaturated = desaturated
+	end
+	-- A scroll frame's offset; nothing overflows here, so its range is 0.
+	function widget:SetVerticalScroll(offset)
+		self.verticalScroll = offset
+	end
+	function widget:GetVerticalScroll()
+		return self.verticalScroll or 0
+	end
+	function widget.GetVerticalScrollRange()
+		return 0
 	end
 	function widget:Show()
 		self.shown = true

@@ -19,4 +19,8 @@ logic\World.lua
 logic\Moments.lua
 logic\Done.lua
 logic\Projection.lua
+logic\InkBar.lua
+logic\Journal.lua
+adapter\JournalWidgets.lua
+adapter\Journal.lua
 adapter\Ledger.lua

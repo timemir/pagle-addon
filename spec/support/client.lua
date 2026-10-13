@@ -73,6 +73,18 @@ local function clientStubs(client)
 		end,
 		-- The frame every addon frame hangs from; a plain widget, so it gets no events.
 		UIParent = widgets.newWidget("Frame"),
+		-- A font object, keeping its name and what SetFont gave it (`font`: file, size, flags).
+		CreateFont = function(name)
+			local font = { name = name }
+			function font:SetFont(file, size, flags)
+				self.font = { file, size, flags }
+				return true
+			end
+			font.SetTextColor = function() end
+			font.SetShadowOffset = function() end
+			font.SetShadowColor = function() end
+			return font
+		end,
 		-- The frame names Esc hides (CloseSpecialWindows), as FrameXML starts it.
 		UISpecialFrames = { "ItemRefTooltip", "ColorPickerFrame" },
 		-- Records the call in client.sounds and reports it played, as willPlay, soundHandle.

@@ -12,7 +12,7 @@ ns.Ledger = LibStub("AceAddon-3.0"):NewAddon(addonName)
 --- AceAddon calls it once, at the Ledger's ADDON_LOADED, after Core's (CORE-R10).
 function ns.Ledger.OnInitialize()
 	--- The Ledger's Module handle: the calls that act for the Ledger (CORE-R12). Nil while the Ledger is inert.
-	ns.Module = Pagle.RegisterModule(ns.ModuleDef())
+	ns.Module = Pagle.RegisterModule(ns.ModuleDef(ns.ToggleJournal))
 	-- An inert Module must stop (CORE-R13).
 	if not ns.Module then
 		return
@@ -33,9 +33,12 @@ function ns.Ledger.OnInitialize()
 	---@diagnostic disable-next-line: undefined-field -- Core defines it in M4, with Simulated Size (LOG-R68); nil till then
 	local sizeRulesVersion = Pagle.SIZE_RULES_VERSION --[[@as integer?]]
 	--- The Ledger's projection (LED-R2): Core catches it up or rebuilds it after login and hands it each new entry
-	--- live (LOG-R71–R74). While `:IsUpdating()`, the Ledger shows nothing (LOG-R74).
+	--- live (LOG-R71–R74). While `:IsUpdating()`, the Ledger shows nothing (LOG-R74). The Fish Journal redraws after
+	--- its live entries and its done (LED-R122, LED-R123).
 	ns.projection = ns.Module:NewProjection(
-		ns.ProjectionDef(ns.db.global, { GetItem = Pagle.GetItem }, ns.Outlets(ns.Module), sizeRulesVersion)
+		ns.WithJournalRedraws(
+			ns.ProjectionDef(ns.db.global, { GetItem = Pagle.GetItem }, ns.Outlets(ns.Module), sizeRulesVersion)
+		)
 	)
 end
 

@@ -43,4 +43,21 @@ ns.L = {
 	WRITE_UP_SKILL_ONE = "%d Skill Milestone",
 	WRITE_UP_SKILL_OTHER = "%d Skill Milestones",
 	WRITE_UP_COINS = "Pagle Coins +%s",
+
+	-- The Fish Journal's view and command (LED-R1), and its pages while the projection updates (LED-R122).
+	JOURNAL = "Fish Journal",
+	JOURNAL_SLASH_HELP = "Open or close the Fish Journal",
+	JOURNAL_UPDATING = "The Ledger is being written up from your Catch log.",
+	-- Navigation (LED-R125): the first crumb, the separator between crumbs and the back link.
+	JOURNAL_HOME = "Home",
+	JOURNAL_CRUMB_SEPARATOR = "❧",
+	JOURNAL_BACK = "☚ back",
+	-- Home's left page's title (LED-R130), all the placeholder Home draws until the Home ticket.
+	HOME_TITLE = "Where I've Fished",
+
+	-- The ink XP bar (LED-R145). Numbers in %s are BreakUpLargeNumbers'.
+	XP_BAR_TEXT = "%s of %s.",
+	XP_BAR_FRESH_ONE = " Fresh Water for %d more Catch.",
+	XP_BAR_FRESH_OTHER = " Fresh Water for %d more Catches.",
+	XP_BAR_SET_ASIDE = "%s XP set aside for the next Prestige",
 }
