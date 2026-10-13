@@ -83,21 +83,33 @@ function ns.GearStepReady(set, poleInHand, settling)
 	return set ~= nil and not poleInHand and set.hasPole and set.numLost == 0 and not settling
 end
 
+--- Whether the gear worn now may be saved into *Pagle Previous* (QOL-R42, QOL-R44): never with a fishing pole in hand,
+--- so *Pagle Previous* never holds the fishing outfit, and Swap gear's swap back always takes the pole off.
+---@param poleInHand boolean
+---@return boolean
+function ns.MaySavePrevious(poleInHand)
+	return not poleInHand
+end
+
 ---@alias PagleQoLSwapGear "equip"|"back"|"nothing"
 
+--- *Pagle Previous* as the game reads it now (QOL-R46).
+---@class PagleQoLPreviousSet
+---@field hasPole boolean its main-hand item (`C_EquipmentSet.GetItemIDs(setID)[16]`) is a fishing pole (QOL-R21)
+
 --- Swap gear's body (QOL-R46): nothing while disarmed, with no set chosen, or while a swap settles (QOL-R29). With
---- the set fully worn, a swap back if *Pagle Previous* exists; otherwise a swap to the set if none of its items is
---- missing.
+--- the set fully worn, a swap back if *Pagle Previous* is there, its main hand no fishing pole (one with a pole counts
+--- as absent); otherwise a swap to the set if none of its items is missing.
 ---@param armed boolean QoL is armed (QOL-R30)
 ---@param set PagleQoLFishingSet? the chosen fishing set; nil while none is
----@param previousExists boolean *Pagle Previous* exists
+---@param previous PagleQoLPreviousSet? *Pagle Previous*; nil while it doesn't exist
 ---@param settling boolean
 ---@return PagleQoLSwapGear
-function ns.SwapGearAction(armed, set, previousExists, settling)
+function ns.SwapGearAction(armed, set, previous, settling)
 	if not armed or not set or settling then
 		return "nothing"
 	elseif set.isEquipped then
-		return previousExists and "back" or "nothing"
+		return (previous and not previous.hasPole) and "back" or "nothing"
 	end
 	return set.numLost == 0 and "equip" or "nothing"
 end
