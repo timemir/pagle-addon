@@ -34,5 +34,6 @@ adapter\Events.lua
 adapter\Restriction.lua
 adapter\Conditions.lua
 adapter\Catalogue.lua
+adapter\LiveConditions.lua
 adapter\Modules.lua
 adapter\CatchLog.lua

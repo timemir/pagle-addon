@@ -272,4 +272,45 @@ describe("FakePagle", function()
 			end)
 		end)
 	end)
+
+	describe("the live conditions", function()
+		-- fake.conditions with `fields` changed.
+		local function changed(fake, fields)
+			local snapshot = {}
+			for key, value in pairs(fake.conditions) do
+				snapshot[key] = value
+			end
+			for key, value in pairs(fields) do
+				snapshot[key] = value
+			end
+			return snapshot
+		end
+
+		it("hands out fake.conditions, read-only, with the restriction flag (LOG-R45, CORE-R18)", function()
+			local fake = newFakePagle()
+			local conditions = fake.globals.Pagle.GetConditions()
+
+			assert.are.equal(fake.conditions.zone, conditions.zone)
+			assert.is_false(conditions.restricted)
+			assert.has_error(function()
+				conditions.zone = 0
+			end)
+			fake.setRestricted(true)
+			assert.is_true(fake.globals.Pagle.GetConditions().restricted)
+		end)
+
+		it("fires ConditionsChanged with exactly the keys a new snapshot changed (LOG-R47)", function()
+			local fake = newFakePagle()
+			local fired = {}
+			fake.Pagle.RegisterCallback("Spec", "ConditionsChanged", function(_, changedKeys)
+				fired[#fired + 1] = { fake.globals.unpack(changedKeys) }
+			end)
+
+			fake.setConditions(changed(fake, { lure = 264, subzone = 0, minute = 600 }))
+			fake.setConditions(changed(fake, { minute = 601 }))
+
+			assert.are.same({ { "area", "lure" } }, fired)
+			assert.are.equal(264, fake.globals.Pagle.GetConditions().lure)
+		end)
+	end)
 end)
