@@ -8,8 +8,8 @@ local CAST, REEL = "SPELL Fishing", "INTERACTTARGET"
 local LURE = "CLICK PagleQoLActionButton:LeftButton"
 
 -- QoL loaded against FakePagle and logged in, with F bound to the Fishing key and a fishing pole in hand.
--- `before(fake, client)` runs after the load and before PLAYER_LOGIN.
----@param before fun(fake: FakePagle, client: FakeClient)?
+-- `before(fake, client, loaded)` runs after the load and before PLAYER_LOGIN.
+---@param before fun(fake: FakePagle, client: FakeClient, loaded: LoadedAddon)?
 ---@return FakePagle fake
 ---@return FakeClient client
 ---@return LoadedAddon loaded
@@ -20,7 +20,7 @@ local function start(before)
 	client.boundKeys.PAGLE_FISHING_KEY = { "F" }
 	client.mainHand = FISHING_POLE
 	if before then
-		before(fake, client)
+		before(fake, client, loaded)
 	end
 	fake.login()
 	fake.fireGameEvent("PLAYER_LOGIN")
@@ -264,6 +264,28 @@ describe("The double-click", function()
 				assert.are.equal(CAST, client.overrideAction("F"))
 			end
 		end)
+
+		it(
+			"does nothing with a fishing set ready and no pole in hand, while the key equips it (QOL-R15, QOL-R20, QOL-R43)",
+			function()
+				-- The set "Fishing", holding a pole, chosen as this character's fishing set (QOL-R40), with a sword in hand.
+				local fake, client = start(function(_, client, loaded)
+					client.mainHand = SWORD
+					client.equipmentSets[3] = { name = "Fishing", items = { [16] = FISHING_POLE } }
+					loaded.ns.db.global.gear[PLAYER_GUID] = { setID = 3, name = "Fishing" }
+				end)
+				assert.are.equal("CLICK PagleQoLGearButton:LeftButton", client.overrideAction("F"))
+				local done = pressesDo(fake, client)
+
+				rightClick(client)
+				rightClick(client)
+
+				assert.are.same({ false, false }, done)
+				assert.is_false(button2(client))
+				assert.are.same({}, client.equipmentSetCalls)
+				assert.are.equal("CLICK PagleQoLGearButton:LeftButton", client.overrideAction("F"))
+			end
+		)
 
 		it("closes when the pole comes off while the window is open (QOL-R14, QOL-R15)", function()
 			local fake, client = start()
