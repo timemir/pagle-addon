@@ -60,12 +60,23 @@ describe("Pagle_Ledger.toc", function()
 		assert.are.same(filesIn({ "lua" }), listed)
 	end)
 
-	it("splits its code into logic/ and adapter/, with its strings in locale/ (CORE-R7, CORE-R8)", function()
+	it("splits its code into logic/ and adapter/, its strings in locale/, its generated lore in data/", function()
+		-- CORE-R7, CORE-R8; DATA-R75: the generator writes data/Lore.lua.
 		local folders = {}
 		for _, file in ipairs(filesIn({ "lua" })) do
 			folders[file:match("^([^/]+)/")] = true
 		end
 
-		assert.are.same({ adapter = true, locale = true, logic = true }, folders)
+		assert.are.same({ adapter = true, data = true, locale = true, logic = true }, folders)
+	end)
+
+	it("lists its generated Lore.lua right after locale/enUS.lua, the file that creates ns.L (DATA-R75)", function()
+		local listed = addonFiles("Pagle_Ledger")
+		local at = {}
+		for index, file in ipairs(listed) do
+			at[file] = index
+		end
+
+		assert.are.equal(at["locale/enUS.lua"] + 1, at["data/Lore.lua"])
 	end)
 end)

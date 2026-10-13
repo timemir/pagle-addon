@@ -1,0 +1,5 @@
+# The Ledger's lore (DATA-R100), emitted into addons/Pagle_Ledger/data/Lore.lua as ns.L entries (DATA-R104).
+# One table per <kind>.<id> holding its fields (DATA-R101): [species.<speciesID>] blurb and riddle, [legend.<itemID>]
+# blurb and title, [sub.<itemID>] plaque and [family.<familyID>] name (DATA-R103), and the kinds manifest.toml lists
+# under [ledger.*] (DATA-R106). Lore is never part of the catalogue and changes no count (DATA-R109).
+# The first batch, written from VOICE.md, comes with the Ledger's lore check (DATA-R111, #131).

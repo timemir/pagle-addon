@@ -1,0 +1,10 @@
+# The Module-defined lore kinds (DATA-R106): per lore ID, each kind with its required fields and the IDs that need
+# them, e.g.
+#
+#   [ledger.line]
+#   fields = ["text"]
+#   ids = ["uncaughtlegend", { id = "<an ID>", placeholders = ["zone"] }]
+#
+# An ID entry may allow {zone}, the one placeholder (DATA-R108). Each kind belongs to one addon (DATA-R102); the
+# catalogue-keyed kinds (species, legend, sub, family, DATA-R103) and Hunts' hunt and set (DATA-R105) are never listed.
+# The Ledger's line IDs come with its first batch (#131), its title and binding IDs in M4 (LED-R162).
