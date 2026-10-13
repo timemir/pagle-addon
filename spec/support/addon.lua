@@ -571,6 +571,9 @@ end
 -- The game side QoL reads and binds: bindings, held keys, casts, the main hand, the frame loop.
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local addGameStubs = dofile("spec/support/fake_game.lua")
+-- Popups and addon switches, for QoL's conflict popup.
+---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
+local addPopupStubs = dofile("spec/support/fake_popup.lua")
 
 --- A TOC: the files it lists, in order, as paths relative to the addon folder with forward slashes, and its
 --- `## Field: value` lines by field.
@@ -622,6 +625,7 @@ function loadAddon(name, globals, options)
 	local client = newClient()
 	local env = clientStubs(client)
 	addGameStubs(client, env)
+	addPopupStubs(client, env)
 	env.print = function(...)
 		local parts = {}
 		for i = 1, select("#", ...) do
