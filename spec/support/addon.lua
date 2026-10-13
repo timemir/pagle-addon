@@ -3,13 +3,22 @@
 -- included, in TOC order, each called with (addonName, ns) and one ns shared by all of them. A file missing from the
 -- TOC, or listed after a file that needs it, fails the specs that load the addon.
 --
---   local loaded = loadAddon("Pagle", { WOW_PROJECT_ID = 18, WOW_PROJECT_CAMELOT = 18 })
+--   local loaded = loadAddon("Pagle", FOREVER_GLOBALS)
 --   loaded.env.Pagle, loaded.ns.IsForever, loaded.printed
 --
 -- Each load gets its own globals table, so nothing an addon defines (LibStub, Pagle) leaks into the next load.
 -- Names not in it fall back to the Lua 5.1 globals busted runs with.
 --
--- A global rather than a module: the types stage checks spec/ against the WoW client's Lua, which has no require.
+-- It also defines the Forever fixtures, PROJECT_IDS and FOREVER_GLOBALS, so every spec agrees on them.
+--
+-- Globals rather than a module: the types stage checks spec/ against the WoW client's Lua, which has no require.
+
+--- Project IDs as the clients set WOW_PROJECT_ID. Forever's is WOW_PROJECT_CAMELOT, 18 (BIR forever README at
+--- BIR_COMMIT, scripts/tools.env).
+PROJECT_IDS = { CAMELOT = 18, MAINLINE = 1 }
+
+--- The globals a Forever client defines, for loadAddon. loadAddon copies them, so specs share this one table.
+FOREVER_GLOBALS = { WOW_PROJECT_ID = PROJECT_IDS.CAMELOT, WOW_PROJECT_CAMELOT = PROJECT_IDS.CAMELOT }
 
 ---@class LoadedAddon
 ---@field ns table The addon's private table, shared by every file it loads.

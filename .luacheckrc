@@ -43,6 +43,7 @@ exclude_files = {
 files["addons/*/adapter/**"] = { std = "lua51+wow+wow_variables+pagle" }
 -- Only Core's adapter creates the Pagle global.
 files["addons/Pagle/adapter/**"] = { globals = { "Pagle" } }
--- Specs run under busted on plain Lua 5.1. busted's helper (.busted) defines loadAddon for them.
-files["spec/**"] = { std = "lua51+busted", read_globals = { "loadAddon" } }
-files["spec/support/addon.lua"] = { globals = { "loadAddon" } }
+-- Specs run under busted on plain Lua 5.1. busted's helper (.busted) defines loadAddon and the Forever fixtures.
+local helperGlobals = { "loadAddon", "PROJECT_IDS", "FOREVER_GLOBALS" }
+files["spec/**"] = { std = "lua51+busted", read_globals = helperGlobals }
+files["spec/support/addon.lua"] = { globals = helperGlobals }

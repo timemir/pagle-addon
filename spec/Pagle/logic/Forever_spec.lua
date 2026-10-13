@@ -1,9 +1,7 @@
--- Project IDs as the clients define them: Forever's is WOW_PROJECT_CAMELOT (BIR forever README, scripts/tools.env).
-local CAMELOT = 18
-local MAINLINE = 1
+local CAMELOT, MAINLINE = PROJECT_IDS.CAMELOT, PROJECT_IDS.MAINLINE
 
 describe("ns.IsForever", function()
-	local ns = loadAddon("Pagle", { WOW_PROJECT_ID = CAMELOT, WOW_PROJECT_CAMELOT = CAMELOT }).ns
+	local ns = loadAddon("Pagle", FOREVER_GLOBALS).ns
 
 	it("is true on Forever, where the project ID is the Camelot one (CORE-R4)", function()
 		assert.is_true(ns.IsForever(CAMELOT, CAMELOT))
