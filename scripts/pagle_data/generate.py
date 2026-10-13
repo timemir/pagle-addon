@@ -1,22 +1,39 @@
 """From the source layers to the generated files' contents (DATA-R75), without writing anything."""
 
+from collections.abc import Mapping
 from pathlib import Path
 
 from pagle_data.catalogue import Catalogue, Event, fingerprint
+from pagle_data.db2 import DB2, Db2Layer, read_db2
 from pagle_data.forever import ForeverLayer, read_forever
 from pagle_data.lua import to_lua
 from pagle_data.toml_reader import DataError, Problems
 
 CATALOGUE_LUA = "addons/Pagle/data/Catalogue.lua"
 
-# The layers the generator reads, in DATA-R8's order (a later one wins). The baseline and DB2 layers come with
-# their own tickets, and data/observed/ in M2.
-LAYERS = ("data/forever/",)
+# The layers the generator reads, in DATA-R8's order (a later one wins). The baseline layer comes with its own
+# ticket, and data/observed/ in M2.
+LAYERS = ("data/forever/", DB2)
 
 
-def build_catalogue(forever: ForeverLayer) -> Catalogue:
-    """The catalogue in its pre-M2 shape (DATA-R79): areas and aliases stay empty until the DB2 and alias layers
-    fill them, and nothing confirms an event's weekly rule yet."""
+def _areas(db2: Db2Layer) -> dict[int, Mapping[str, object]]:
+    """Every DB2 area (DATA-R25) in its pre-M2 shape (DATA-R79). Only the identity facts come from DB2 (DATA-R13);
+    no layer gives a where/when fact yet, so none is known. The enUS name never ships (DATA-R3)."""
+    return {
+        area_id: {
+            "parent": area.parent,
+            "continent": area.continent,
+            "hasData": False,
+            "skillBaseConfirmed": False,
+            "catches": [],
+        }
+        for area_id, area in db2.areas.items()
+    }
+
+
+def build_catalogue(forever: ForeverLayer, db2: Db2Layer) -> Catalogue:
+    """The catalogue in its pre-M2 shape (DATA-R79): aliases stay empty until the alias layer fills them, and
+    nothing confirms an event's weekly rule yet."""
     events: dict[int, Event] = {}
     for event_id, rule in forever.events.items():
         if rule is None:
@@ -31,7 +48,7 @@ def build_catalogue(forever: ForeverLayer) -> Catalogue:
     catalogue: Catalogue = {
         "fingerprint": "",
         "items": {},
-        "areas": {},
+        "areas": _areas(db2),
         "aliases": {},
         "pools": {},
         "windows": {},
@@ -63,6 +80,7 @@ def generate(root: Path) -> dict[str, str]:
     Raises DataError listing every problem found (DATA-R63)."""
     problems = Problems()
     forever = read_forever(root, problems)
+    db2 = read_db2(root, problems)
     if problems:
         raise DataError(problems.found)
-    return {CATALOGUE_LUA: catalogue_lua(build_catalogue(forever))}
+    return {CATALOGUE_LUA: catalogue_lua(build_catalogue(forever, db2))}

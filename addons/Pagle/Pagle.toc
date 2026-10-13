@@ -22,6 +22,7 @@ logic\ReportOnce.lua
 logic\Restriction.lua
 logic\WorkQueue.lua
 logic\Conditions.lua
+logic\Modules.lua
 logic\CatchLog.lua
 logic\Migrations.lua
 adapter\Core.lua
@@ -29,4 +30,5 @@ adapter\Callbacks.lua
 adapter\Events.lua
 adapter\Restriction.lua
 adapter\Conditions.lua
+adapter\Modules.lua
 adapter\CatchLog.lua

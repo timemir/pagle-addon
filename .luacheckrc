@@ -17,7 +17,16 @@ stds.wow = {
 		"issecretvalue",
 		"InCombatLockdown",
 		C_RestrictedActions = { fields = { "GetAddOnRestrictionState" } },
-		Enum = { fields = { "AddOnRestrictionType", AddOnRestrictionState = { fields = { "Inactive" } } } },
+		Enum = {
+			fields = {
+				"AddOnRestrictionType",
+				AddOnRestrictionState = { fields = { "Inactive" } },
+				AddOnEnableState = { fields = { "None" } }, -- CORE-R16
+			},
+		},
+		-- Attaching a Module (CORE-R13, CORE-R16, CORE-R41).
+		C_AddOns = { fields = { "GetAddOnMetadata", "GetAddOnEnableState", "GetAddOnInfo", "IsAddOnLoaded" } },
+		"UnitGUID",
 		-- The Catch log (LOG-R11, LOG-R15).
 		"GetServerTime",
 	},
@@ -55,6 +64,6 @@ files["addons/*/adapter/**"] = { std = "lua51+wow+wow_variables+pagle" }
 -- Only Core's adapter creates the Pagle global.
 files["addons/Pagle/adapter/**"] = { globals = { "Pagle" } }
 -- Specs run under busted on plain Lua 5.1. busted's helper (.busted) defines loadAddon and the Forever fixtures.
-local helperGlobals = { "loadAddon", "PROJECT_IDS", "FOREVER_GLOBALS" }
+local helperGlobals = { "loadAddon", "PROJECT_IDS", "FOREVER_GLOBALS", "PLAYER_GUID", "addonFiles", "newFakePagle" }
 files["spec/**"] = { std = "lua51+busted", read_globals = helperGlobals }
-files["spec/support/addon.lua"] = { globals = helperGlobals }
+files["spec/support/*.lua"] = { globals = helperGlobals }
