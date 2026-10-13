@@ -311,3 +311,57 @@ function ns.MatchesConditions(spec, snapshot)
 	end
 	return true
 end
+
+local MINUTES_PER_DAY = 1440
+local SECONDS_PER_DAY = 86400
+local OFFSET_STEP = 15 -- minutes the realm's UTC offset is rounded to (Tunables, LOG-R49)
+local MAX_OFFSET = 720 -- ±12 hours, in minutes
+
+--- The realm's UTC offset in minutes, from a server time and the realm minute of day read with it (LOG-R49): the
+--- realm minute less the UTC minute, rounded to 15 minutes and kept within ±12 hours. A difference that falls
+--- outside them is a day out, as when the realm and UTC days differ, and wraps; exactly 12 hours reads as +12.
+---@param serverTime integer `GetServerTime()`, UTC epoch seconds
+---@param realmMinute integer realm minute of day, 0–1439
+---@return integer offset minutes east of UTC, -705 to 720
+function ns.RealmUtcOffset(serverTime, realmMinute)
+	local utcMinute = math.floor(serverTime / 60) % MINUTES_PER_DAY
+	local offset = math.floor((realmMinute - utcMinute) / OFFSET_STEP + 0.5) * OFFSET_STEP
+	if offset > MAX_OFFSET then
+		offset = offset - MINUTES_PER_DAY
+	elseif offset <= -MAX_OFFSET then
+		offset = offset + MINUTES_PER_DAY
+	end
+	return offset
+end
+
+-- The proleptic Gregorian date of a count of days since 1970-01-01 (Howard Hinnant's days_from_civil, inverted).
+---@param days integer
+---@return integer year, integer month, integer day
+local function civilFromDays(days)
+	local z = days + 719468
+	local era = math.floor(z / 146097)
+	local dayOfEra = z - era * 146097
+	local yearOfEra = math.floor(
+		(dayOfEra - math.floor(dayOfEra / 1460) + math.floor(dayOfEra / 36524) - math.floor(dayOfEra / 146096)) / 365
+	)
+	local dayOfYear = dayOfEra - (365 * yearOfEra + math.floor(yearOfEra / 4) - math.floor(yearOfEra / 100))
+	local monthFromMarch = math.floor((5 * dayOfYear + 2) / 153)
+	local day = dayOfYear - math.floor((153 * monthFromMarch + 2) / 5) + 1
+	local month = monthFromMarch < 10 and monthFromMarch + 3 or monthFromMarch - 9
+	local year = yearOfEra + era * 400 + (month <= 2 and 1 or 0)
+	return year, month, day
+end
+
+--- A Cast's realm date, from its server time and realm minute (LOG-R49): the day its realm minute falls on at the
+--- realm's UTC offset (`ns.RealmUtcOffset`). The Catch log codec fills a decoded Cast's `conditions.date` with it.
+---@param serverTime integer `GetServerTime()`, UTC epoch seconds
+---@param realmMinute integer realm minute of day, 0–1439
+---@return { year: integer, month: integer, day: integer, weekday: integer } date weekday 1 is Sunday, as the client's calendar time has it
+function ns.RealmDate(serverTime, realmMinute)
+	local realmTime = serverTime + ns.RealmUtcOffset(serverTime, realmMinute) * 60
+	-- The realm's midnight is realmMinute before realmTime, give or take the realm clock's drift; taking the nearest
+	-- day start keeps the date on the realm minute's day even when the clock is a few minutes off midnight.
+	local days = math.floor((realmTime - realmMinute * 60 + SECONDS_PER_DAY / 2) / SECONDS_PER_DAY)
+	local year, month, day = civilFromDays(days)
+	return { year = year, month = month, day = day, weekday = (days + 4) % 7 + 1 } -- 1970-01-01 was a Thursday, 5
+end
