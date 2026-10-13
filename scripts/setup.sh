@@ -153,4 +153,7 @@ ln -sfn ../luals/bin/lua-language-server "$tools/bin/lua-language-server"
 "$tools/bin/busted" --version | sed 's/^/busted /'
 "$tools/bin/stylua" --version
 echo "lua-language-server $("$tools/bin/lua-language-server" --version)"
+
+# The pins this prefix now holds; check.sh refuses to run while they differ from scripts/tools.env.
+cp "$root/scripts/tools.env" "$tools/tools.env"
 echo "setup: ready; run scripts/check.sh"

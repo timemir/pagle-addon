@@ -9,10 +9,6 @@ set -euo pipefail
 root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 cd "$root"
 bin="$root/.tools/bin"
-if [[ ! -x $bin/lua || ! -x $bin/stylua || ! -x $bin/luacheck ]]; then
-	echo "check: the tools aren't installed; run scripts/setup.sh" >&2
-	exit 1
-fi
 
 stage() {
 	echo "==> $1"
@@ -22,6 +18,12 @@ fail() {
 	echo "check: FAILED at $1" >&2
 	exit 1
 }
+
+# setup.sh keeps a copy of the pins it installed; any difference means .tools/ is missing or out of date.
+if ! cmp -s scripts/tools.env .tools/tools.env; then
+	echo "check: .tools/ doesn't match scripts/tools.env; run scripts/setup.sh" >&2
+	fail setup
+fi
 
 # The Lua the gate covers: every addon (minus vendored libs/, which the tool configs exclude), the specs,
 # the scripts and the type stubs. probes/ and prototypes/ are throwaway experiments, never shipped or checked.

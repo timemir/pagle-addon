@@ -48,6 +48,10 @@ copy
 expect "the tree as it is passes" pass
 
 copy
+echo "STYLUA_VERSION=0.0.0" >>"$scratch/tree/scripts/tools.env"
+expect "a pin changed since the last setup stops the gate" setup "run scripts/setup.sh"
+
+copy
 printf 'local t = {a=1}\nreturn t\n' >"$addon/logic/Badly.lua"
 expect "a badly formatted file fails format" format "Diff in addons/Pagle/logic/Badly.lua"
 
