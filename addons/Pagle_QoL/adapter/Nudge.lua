@@ -8,7 +8,7 @@ local ns = select(2, ...)
 -- Nudges (QOL-R75–R78): one line of text QoL draws in its own frame, below the game's error text. A Nudge is
 -- silent and isn't an Announcement: it goes through no Core call, so Cozy mode, the Interruption budget and the
 -- Session summary never see it, and it shows in combat too (QOL-R76). QoL has two (QOL-R78): the out-of-lures
--- Nudge (adapter/Lures.lua) and the swap-back Nudge (Track Q step 2).
+-- Nudge (adapter/Lures.lua) and the swap-back Nudge (adapter/Gear.lua).
 
 local frame ---@type Frame? made at the first Nudge; a plain frame, so combat never stops it (QOL-R76)
 local line ---@type FontString

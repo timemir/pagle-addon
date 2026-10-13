@@ -38,6 +38,18 @@ local function chosenSetID()
 	return ns.ChosenSetID(choices()[UnitGUID("player")], setName)
 end
 
+-- Whether the set's main-hand item is a fishing pole (QOL-R21).
+---@param setID integer
+---@return boolean
+local function holdsPole(setID)
+	local mainHand = C_EquipmentSet.GetItemIDs(setID)[16]
+	local classID, subclassID
+	if mainHand then
+		classID, subclassID = select(6, C_Item.GetItemInfoInstant(mainHand))
+	end
+	return ns.IsFishingPole(classID, subclassID)
+end
+
 -- The chosen fishing set as the game reads it now, or nil while none is chosen.
 ---@return PagleQoLFishingSet?
 local function readFishingSet()
@@ -46,15 +58,10 @@ local function readFishingSet()
 		return nil
 	end
 	local name, _, _, isEquipped, _, _, _, numLost = C_EquipmentSet.GetEquipmentSetInfo(setID)
-	local mainHand = C_EquipmentSet.GetItemIDs(setID)[16]
-	local classID, subclassID
-	if mainHand then
-		classID, subclassID = select(6, C_Item.GetItemInfoInstant(mainHand))
-	end
 	return {
 		setID = setID,
 		name = name,
-		hasPole = ns.IsFishingPole(classID, subclassID),
+		hasPole = holdsPole(setID),
 		numLost = numLost or 0,
 		isEquipped = isEquipped == true,
 	}
@@ -63,6 +70,17 @@ end
 ---@return integer?
 local function previousSetID()
 	return C_EquipmentSet.GetEquipmentSetID(ns.PREVIOUS_SET_NAME)
+end
+
+-- *Pagle Previous* as the game reads it now, and its set ID; nil while it doesn't exist (QOL-R46).
+---@return PagleQoLPreviousSet?
+---@return integer?
+local function readPrevious()
+	local setID = previousSetID()
+	if not setID then
+		return nil
+	end
+	return { hasPole = holdsPole(setID) }, setID
 end
 
 -- The character's free equipment set slots (QOL-R42), as the game's own equipment manager counts them.
@@ -99,11 +117,13 @@ local function swapped()
 end
 
 -- A swap to the fishing set (QOL-R44): the gear worn now goes into *Pagle Previous* first, created with the main
--- hand's icon if it's missing and a slot is free; then the one game action. With no *Pagle Previous* to save into,
--- the swap still happens, and there is nothing to swap back to.
+-- hand's icon if it's missing and a slot is free, unless a fishing pole is in hand; then the one game action. With no
+-- *Pagle Previous* to save into, the swap still happens, and there is nothing to swap back to.
 ---@param setID integer
 local function swapToFishingSet(setID)
-	saveWorn(ns.PREVIOUS_SET_NAME, GetInventoryItemTexture("player", 16))
+	if ns.MaySavePrevious(ns.PoleInHand()) then
+		saveWorn(ns.PREVIOUS_SET_NAME, GetInventoryItemTexture("player", 16))
+	end
 	C_EquipmentSet.UseEquipmentSet(setID)
 	swapped()
 end
@@ -128,17 +148,18 @@ function ns.PressGearButton()
 end
 
 --- Swap gear (QOL-R46), the body of the binding PAGLE_SWAP_GEAR in Bindings.xml: a swap back to *Pagle Previous*
---- with the fishing set fully worn, else a swap to it, or nothing.
+--- with the fishing set fully worn (unless its main hand is a pole, so it counts as absent), else a swap to the set,
+--- or nothing.
 function PagleQoL_SwapGear()
 	if not ns.IsArmed() then
 		return
 	end
 	local set = readFishingSet()
-	local previous = previousSetID()
-	local action = ns.SwapGearAction(true, set, previous ~= nil, gear:Settling(GetTime()))
+	local previous, previousID = readPrevious()
+	local action = ns.SwapGearAction(true, set, previous, gear:Settling(GetTime()))
 	if action == "back" then
-		---@cast previous integer
-		C_EquipmentSet.UseEquipmentSet(previous)
+		---@cast previousID integer
+		C_EquipmentSet.UseEquipmentSet(previousID)
 		swapped()
 	elseif action == "equip" then
 		---@cast set PagleQoLFishingSet
@@ -149,7 +170,7 @@ end
 --- The swap-back Nudge (QOL-R77): the Fishing stretch ended on its own (not by restriction or logout), so it shows
 --- if Swap gear would swap back, naming Swap gear's first key in its short form.
 function ns.NudgeSwapBack()
-	if ns.SwapGearAction(true, readFishingSet(), previousSetID() ~= nil, false) ~= "back" then
+	if ns.SwapGearAction(true, readFishingSet(), (readPrevious()), false) ~= "back" then
 		return
 	end
 	local key = GetBindingKey("PAGLE_SWAP_GEAR")
@@ -182,8 +203,9 @@ function ns.ReadFishingSetOptions()
 end
 
 -- Chooses the set `setID` for this character, creating *Pagle Previous* from the gear worn now if it doesn't exist,
--- so its slot is taken up front (QOL-R40, QOL-R42). With no slot free for it, nothing is created or chosen, and the
--- chat says why. A change re-points the Fishing key at once (QOL-R25).
+-- so its slot is taken up front (QOL-R40, QOL-R42). With a fishing pole in hand it creates none: the slot check is
+-- then all that reserves the slot, and the first swap to the set creates it (QOL-R44). With no slot free for it,
+-- nothing is created or chosen, and the chat says why. A change re-points the Fishing key at once (QOL-R25).
 ---@param setID integer
 local function choose(setID)
 	local name = setName(setID)
@@ -196,7 +218,7 @@ local function choose(setID)
 		print(message)
 		return
 	end
-	if needPrevious then
+	if needPrevious and ns.MaySavePrevious(ns.PoleInHand()) then
 		saveWorn(ns.PREVIOUS_SET_NAME, GetInventoryItemTexture("player", 16))
 	end
 	choices()[UnitGUID("player")] = { setID = setID, name = name }
