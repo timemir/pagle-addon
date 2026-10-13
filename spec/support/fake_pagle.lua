@@ -39,7 +39,8 @@
 ---@field login fun() Does Core's PLAYER_LOGIN work: adds the character (PLAYER_GUID) to the Angler, then fires
 --- ModulesChanged. Raises an error if called twice.
 ---@field readSkill fun(rank: integer, max: integer, mod: integer) Reads fishing skill as Core does after login: an
---- S1 when rank or max changed, then SkillChanged, then ConditionsChanged({"skill"}) on a rank or modifier change.
+--- S1 when rank or max changed, then SkillChanged; then fake.conditions takes the rank and modifier, firing
+--- ConditionsChanged({"skill"}) if either changed. Does nothing before login.
 ---@field readOnly fun(value: any): any The read-only proxy of a table (the same one each time); other values as is.
 ---@field moduleState fun(name: string): PagleModuleState A roster Module's state (CORE-R41).
 ---@field settingsPage fun(topic: string): { module: string, kind: string, label: string, indented: boolean, setting: PagleSetting }[]?
@@ -354,13 +355,20 @@ part(function(fake, Pagle, ns)
 	end
 
 	function fake.readSkill(rank, max, mod)
-		local appended, changed = angler:ReadSkill({ rank = rank, max = max, mod = mod }, now)
+		if not angler.current then
+			return
+		end
+		local appended = angler:ReadSkill({ rank = rank, max = max, mod = mod }, now)
 		if appended then
 			fake.fire("SkillChanged", appended)
 		end
-		if changed then
-			fake.fire("ConditionsChanged", { "skill" })
+		-- The live conditions follow the reading, through the same tracker as setConditions (LOG-R32, LOG-R47).
+		local conditions = {}
+		for key, value in pairs(fake.conditions) do
+			conditions[key] = value
 		end
+		conditions.skillRank, conditions.skillMod = rank, mod
+		fake.setConditions(conditions)
 	end
 end)
 

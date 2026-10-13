@@ -39,6 +39,7 @@ Pagle.RegisterEvent(OWNER, "PLAYER_LOGIN", function()
 	Pagle.UnregisterEvent(OWNER, "PLAYER_LOGIN")
 	ns.SeeCharacter() -- LOG-R25
 	ns.BuildAreaIndex() -- LOG-R23
+	ns.StartConditions() -- LOG-R47: its baseline has real areas, and a Module meets a running service
 	ns.Fire("ModulesChanged") -- CORE-R19
 end)
 

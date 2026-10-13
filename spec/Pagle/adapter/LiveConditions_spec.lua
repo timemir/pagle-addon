@@ -240,9 +240,21 @@ describe("Pagle.GetConditions", function()
 		assert.is_nil(conditions.skillMod)
 	end)
 
+	it("finds Fishing by its skill line, whichever GetProfessions return holds it (LOG-R30)", function()
+		local world = newWorld()
+		local loaded = load(world)
+		loaded.env.GetProfessions = function()
+			return 8, nil, 5, nil, 6
+		end
+		local conditions = loaded.env.Pagle.GetConditions()
+		assert.are.same({ 86, 25 }, { conditions.skillRank, conditions.skillMod })
+	end)
+
 	describe("with secret values", function()
 		it("reads each secret value as nil (LOG-R45, CORE-R31)", function()
+			-- Secret only after login, which keys the character by a real server time (LOG-R25).
 			local world = newWorld()
+			local Pagle = load(world).env.Pagle
 			world.serverTime = SECRET
 			world.gameTime = SECRET
 			world.uiMap = SECRET
@@ -251,7 +263,7 @@ describe("Pagle.GetConditions", function()
 			world.skill.rank = SECRET
 			world.skill.mod = SECRET
 			world.auras = SECRET
-			local conditions = load(world).env.Pagle.GetConditions()
+			local conditions = Pagle.GetConditions()
 			for _, field in ipairs({ "time", "minute", "uiMap", "instance", "lure", "skillRank", "skillMod", "auras" }) do
 				assert(conditions[field] == nil, field .. " should be nil")
 			end

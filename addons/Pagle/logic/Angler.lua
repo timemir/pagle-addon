@@ -42,7 +42,6 @@ end
 ---@field catchLog PagleCatchLog
 ---@field current integer?
 ---@field skill { [integer]: PagleSkillReading }? each character's last Skill Reading, once looked up
----@field lastRead { rank: integer, mod: integer }? the current character's last reading this login
 local AnglerState = {}
 AnglerState.__index = AnglerState
 
@@ -71,9 +70,7 @@ function AnglerState:SeeCharacter(seen, now)
 	end
 	character.selfFound = nil
 	character.lastSeen = now
-	if self.current ~= index then
-		self.current, self.lastRead = index, nil
-	end
+	self.current = index
 	self.catchLog:EnsureLogId(now)
 	return index
 end
@@ -101,24 +98,19 @@ end
 
 --- Takes a fishing skill reading for the current character (LOG-R30): `{ rank, max, mod }`, or nil when it has no
 --- Fishing. Appends a Skill Reading when the rank or max rank differs from the character's last one, or it has
---- none; a change in modifier alone appends nothing (LOG-R31). Returns the appended record, for `SkillChanged`, and
---- whether rank or modifier changed since the last reading Core knows of, for `ConditionsChanged({"skill"})`
+--- none; a change in modifier alone appends nothing (LOG-R31). Returns the appended record, for `SkillChanged`
 --- (LOG-R32). Reads nothing while no character is current.
 ---@param reading { rank: integer, max: integer, mod: integer }?
 ---@param now integer server time
 ---@return PagleSkillReading? appended
----@return boolean changed
 function AnglerState:ReadSkill(reading, now)
 	local char = self.current
 	if not char or not reading then
-		return nil, false
+		return nil
 	end
 	local last = latestSkills(self)[char]
-	local before = self.lastRead or last
-	local changed = not before or before.rank ~= reading.rank or before.mod ~= reading.mod
-	self.lastRead = { rank = reading.rank, mod = reading.mod }
 	if last and last.rank == reading.rank and last.max == reading.max then
-		return nil, changed
+		return nil
 	end
 	local appended = self.catchLog:Append({
 		kind = "skill",
@@ -130,7 +122,7 @@ function AnglerState:ReadSkill(reading, now)
 	})
 	---@cast appended PagleSkillReading
 	self.skill[char] = appended
-	return appended, changed
+	return appended
 end
 
 --- Appends a build entry for the current character when `build` differs from the last build entry in the log

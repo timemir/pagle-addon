@@ -43,24 +43,43 @@ local function readCharacter()
 	}
 end
 
--- The character's fishing skill (LOG-R30): the profession on skill line 356 among GetProfessions(), or nil when it
--- has none or the client keeps any of it secret (CORE-R31).
----@param ... integer? GetProfessions()'s indices, nil where the character has no such profession
----@return { rank: integer, max: integer, mod: integer }?
+-- A value the client gave, or nil if it's secret (CORE-R31).
+---@generic T
+---@param value T
+---@return T?
+local function unlessSecret(value)
+	if issecretvalue(value) then
+		return nil
+	end
+	return value
+end
+
+-- The fishing skill of the profession on skill line 356 among `...`, GetProfessions()'s indices.
+---@param ... integer? nil where the character has no such profession
+---@return integer? rank
+---@return integer? max
+---@return integer? mod
 local function readFishing(...)
 	for i = 1, select("#", ...) do
 		local index = select(i, ...)
-		if index then
+		if index ~= nil and not issecretvalue(index) then
 			local _, _, rank, max, _, _, skillLine, mod = GetProfessionInfo(index)
-			if skillLine == FISHING_SKILL_LINE then
-				if issecretvalue(rank) or issecretvalue(max) or issecretvalue(mod) then
-					return nil
-				end
-				return { rank = rank, max = max, mod = mod }
+			if not issecretvalue(skillLine) and skillLine == FISHING_SKILL_LINE then
+				return unlessSecret(rank), unlessSecret(max), unlessSecret(mod)
 			end
 		end
 	end
-	return nil
+	return nil, nil, nil
+end
+
+--- Fishing's rank, max rank and modifier (LOG-R30): `GetProfessions()`, then `GetProfessionInfo` on the index whose
+--- skill line is 356 (on build 70338 that's the 4th return). Each is nil while secret (CORE-R31), all three without
+--- the profession. The one skill reader: Skill Readings (LOG-R31) and the conditions' skill key (LOG-R20) use it.
+---@return integer? rank
+---@return integer? max
+---@return integer? mod
+function ns.ReadFishingSkill()
+	return readFishing(GetProfessions())
 end
 
 --- Login step 2 (LOG-R1): adds or updates the logged-in character (LOG-R25) and makes it the current one.
@@ -78,19 +97,20 @@ function ns.LogBuild()
 end
 
 --- Reads fishing skill (LOG-R31): at login (LOG-R1 step 4), on SKILL_LINES_CHANGED and on CHAT_MSG_SKILL. A Skill
---- Reading appended fires `SkillChanged(reading)`; any change in rank or modifier then fires
---- `ConditionsChanged({"skill"})` (LOG-R32). Reads nothing before the character is known at PLAYER_LOGIN.
+--- Reading appended fires `SkillChanged(reading)` (LOG-R31, LOG-R32); a reading with any part secret appends
+--- nothing. Then the conditions service re-reads its skill key, firing `ConditionsChanged({"skill"})` once if rank
+--- or modifier changed since its last reading (LOG-R32, LOG-R47), so the event and Pagle.GetConditions agree.
+--- Neither happens before PLAYER_LOGIN, when the character is known and the service started.
 function ns.ReadSkill()
-	if not (ns.angler and ns.angler.current) then
-		return
+	if ns.angler and ns.angler.current then
+		local rank, max, mod = ns.ReadFishingSkill()
+		local reading = (rank and max and mod) and { rank = rank, max = max, mod = mod } or nil
+		local appended = ns.angler:ReadSkill(reading, GetServerTime())
+		if appended then
+			ns.Fire("SkillChanged", appended)
+		end
 	end
-	local appended, changed = ns.angler:ReadSkill(readFishing(GetProfessions()), GetServerTime())
-	if appended then
-		ns.Fire("SkillChanged", appended)
-	end
-	if changed then
-		ns.Fire("ConditionsChanged", { "skill" })
-	end
+	ns.RefreshConditions("skill")
 end
 
 Pagle.RegisterEvent(OWNER, "SKILL_LINES_CHANGED", ns.ReadSkill)
