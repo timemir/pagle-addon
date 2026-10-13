@@ -319,7 +319,7 @@ The Fishing set dropdown reads and writes the current character's choice (`globa
 | Next-action button default position | bottom centre, 230 px up | QOL-R73 |
 | Lure table | 6 Classic lures | QOL-R54 |
 | Clam table | 5523, 5524, 7973 | QOL-R57 |
-| Conflict list (folder names) | `Angleur`, `FishingBuddy`, and the folder names of the two Forever ports (Fishing Buddy Forever Fix, Fishing Buddy (Forever) (Crusade)), read from their published zips by the conflict-popup build ticket | QOL-R80 |
+| Conflict list (folder names) | `Angleur` and `FishingBuddy`. Both Forever ports (Fishing Buddy Forever Fix 1.0.2, Fishing Buddy (Forever) (Crusade) 1.0.7) install into `FishingBuddy` too, as their published zips show; each name's source is in `logic/Conflict.lua` | QOL-R80 |
 | Default chosen lure | Shiny Bauble (6529) | QOL-R50 |
 | Fishing spell used for its name and icon | 7620 | QOL-R24, R71 |
 
