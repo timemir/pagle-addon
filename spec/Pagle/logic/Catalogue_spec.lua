@@ -91,6 +91,17 @@ describe("ns.NewCatalogue", function()
 		end
 	end)
 
+	it("gives a window's condition spec carrying its confirmed, leaving the shared spec as it is (LOG-R55)", function()
+		local data = fixture()
+		local night = { time = { { 1260, 360 } } } -- the generator's W.night, which gates use too
+		data.windows = { night = { spec = night, confirmed = false } }
+		local catalogue = ns.NewCatalogue(data)
+
+		assert.are.same({ time = { { 1260, 360 } }, confirmed = false }, catalogue.GetWindowSpec("night"))
+		assert.are.same({ time = { { 1260, 360 } } }, night)
+		assert.is_nil(catalogue.GetWindowSpec("day"))
+	end)
+
 	it("carries the generator's fingerprint (LOG-R55, DATA-R70)", function()
 		assert.are.equal("0123456789abcdef", ns.NewCatalogue(fixture()).CONTENT_FINGERPRINT)
 	end)

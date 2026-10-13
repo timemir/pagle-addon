@@ -30,6 +30,11 @@ local ns = select(2, ...)
 ---@field lure? true|integer[]              -- any lure, or one of these enchant IDs
 ---@field skill? { min: integer }           -- effective skill (rank + modifier) at least min
 
+--- A named window's condition spec, as `Pagle.GetWindowSpec` returns it (LOG-R55): the spec carries the window's
+--- `confirmed`, which matching ignores.
+---@class PagleWindowSpec: PagleConditionSpec
+---@field confirmed boolean
+
 -- Whether a list holds a value. A nil or 0 value (secret or unresolved) is in no list (LOG-R48).
 ---@param list integer[]
 ---@param value integer?
@@ -270,6 +275,14 @@ local checkers = {
 		end
 		return nil
 	end,
+
+	-- Not a condition: a window spec carries its `confirmed` (LOG-R55), and nothing matches on it.
+	confirmed = function(confirmed)
+		if type(confirmed) ~= "boolean" then
+			return "confirmed must be a boolean"
+		end
+		return nil
+	end,
 }
 
 -- What's wrong with a condition spec, or nil if nothing (LOG-R48).
@@ -305,7 +318,8 @@ function ns.MatchesConditions(spec, snapshot)
 		error("invalid condition spec: " .. problem, 2)
 	end
 	for field, values in pairs(spec) do
-		if not matchers[field](values, snapshot) then
+		local matcher = matchers[field]
+		if matcher and not matcher(values, snapshot) then
 			return false
 		end
 	end

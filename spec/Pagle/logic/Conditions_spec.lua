@@ -38,6 +38,11 @@ describe("Pagle.MatchesConditions", function()
 		assert.is_true(Pagle.MatchesConditions({}, snapshot()))
 	end)
 
+	it("takes a window spec as GetWindowSpec returns it: its confirmed doesn't constrain (LOG-R48, LOG-R55)", function()
+		assert.is_true(Pagle.MatchesConditions({ areas = { 148 }, confirmed = false }, snapshot()))
+		assert.is_false(Pagle.MatchesConditions({ areas = { 12 }, confirmed = true }, snapshot()))
+	end)
+
 	describe("areas", function()
 		it("matches when the zone or the subzone is one of them (LOG-R48)", function()
 			assert.is_true(Pagle.MatchesConditions({ areas = { 148 } }, snapshot()))

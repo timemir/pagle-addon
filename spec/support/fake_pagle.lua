@@ -432,14 +432,10 @@ part(function(fake, Pagle, ns)
 		catalogue = ns.NewCatalogue(data)
 		Pagle.CONTENT_FINGERPRINT = catalogue.CONTENT_FINGERPRINT
 	end
-	for _, name in ipairs({ "GetItem", "GetZones", "GetArea", "GetZoneOf", "GetZoneCatches" }) do
+	for _, name in ipairs({ "GetItem", "GetZones", "GetArea", "GetZoneOf", "GetZoneCatches", "GetWindowSpec" }) do
 		Pagle[name] = function(...)
 			return readOnly(catalogue[name](...))
 		end
-	end
-	function Pagle.GetWindowSpec(windowID)
-		local spec, confirmed = catalogue.GetWindowSpec(windowID)
-		return readOnly(spec), confirmed
 	end
 	fake.setCatalogue(ns.catalogue)
 end)
