@@ -1,0 +1,3 @@
+Angleur: disabled
+Pagle: enabled
+Pagle_QoL: disabled
