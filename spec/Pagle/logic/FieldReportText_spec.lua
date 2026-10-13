@@ -300,7 +300,7 @@ describe("ns.FieldReportParts", function()
 		local parts = ns.FieldReportParts(rows, header, { item = function() end, area = function() end })
 
 		assert.are.equal(12, #parts)
-		for n, part in ipairs(parts) do
+		for _, part in ipairs(parts) do
 			assert.is_true(#part <= 60000)
 		end
 		assert.are.equal(60000 - 22, #parts[1])
