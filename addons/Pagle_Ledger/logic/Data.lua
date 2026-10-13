@@ -11,9 +11,9 @@ local ns = select(2, ...)
 --- The schema PagleLedgerDB is at once the Ledger has loaded.
 ns.SCHEMA_VERSION = 1
 
---- PagleLedgerDB's AceDB defaults (ledger.md › Data). `global.projection` has none: Core owns it (LOG-R70).
---- `profile.activeTitle` defaults to nil, automatic (LED-R77). The celebrated set starts empty, with `coins = 0`
---- (LED-R90).
+--- PagleLedgerDB's AceDB defaults (ledger.md › Data). `global.projection` has none: ns.ProjectionDef makes it, and
+--- Core owns it (LOG-R70). `profile.activeTitle` defaults to nil, automatic (LED-R77). The celebrated set starts
+--- empty, with `coins = 0` (LED-R90).
 ns.DB_DEFAULTS = {
 	global = {
 		celebrated = { coins = 0 },

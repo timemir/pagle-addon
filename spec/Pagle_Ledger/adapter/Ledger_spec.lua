@@ -99,10 +99,10 @@ describe("Pagle_Ledger with Core", function()
 		assert.are.equal(1, rawget(loaded.env.PagleLedgerDB.global, "schemaVersion"))
 	end)
 
-	it("starts with the keys ledger.md › Data gives: no projection, an empty celebrated set, no title", function()
+	it("starts with ledger.md › Data's keys: an empty projection, an empty celebrated set, no title", function()
 		local db = loadAddon("Pagle_Ledger", FOREVER_GLOBALS).ns.db
 
-		assert.is_nil(db.global.projection) -- Core owns it (LOG-R70)
+		assert.are.same({}, db.global.projection) -- Core's, empty until login step 3 (LOG-R70, LOG-R72)
 		assert.are.same({ coins = 0 }, db.global.celebrated) -- LED-R90
 		assert.is_nil(db.profile.activeTitle) -- automatic (LED-R77)
 	end)

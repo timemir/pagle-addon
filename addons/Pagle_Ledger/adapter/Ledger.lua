@@ -21,4 +21,11 @@ function ns.Ledger.OnInitialize()
 	-- Account-wide, one shared profile, with the defaults in ledger.md › Data.
 	ns.db = LibStub("AceDB-3.0"):New("PagleLedgerDB", ns.DB_DEFAULTS, true)
 	ns.MigrateDB(ns.db.global)
+
+	---@diagnostic disable-next-line: undefined-field -- Core defines it in M4, with Simulated Size (LOG-R68); nil till then
+	local sizeRulesVersion = Pagle.SIZE_RULES_VERSION --[[@as integer?]]
+	--- The Ledger's projection (LED-R2): Core catches it up or rebuilds it after login and hands it each new entry
+	--- live (LOG-R71–R74). While `:IsUpdating()`, the Ledger shows nothing (LOG-R74).
+	ns.projection =
+		ns.Module:NewProjection(ns.ProjectionDef(ns.db.global, { GetItem = Pagle.GetItem }, sizeRulesVersion))
 end

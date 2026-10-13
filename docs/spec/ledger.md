@@ -337,7 +337,7 @@ The Journal is a two-page book (UI). These rules say what it shows; [UI](#ui) sa
 
 ## Data
 
-### Projection (`PagleLedgerDB.global.projection`, LOG-R70)
+### Projection state (`PagleLedgerDB.global.projection.projection`, LOG-R70)
 
 ```lua
 ---@class LedgerState
@@ -345,7 +345,6 @@ The Journal is a two-page book (UI). These rules say what it shows; [UI](#ui) sa
 ---@field catches integer               -- lifetime Catches (LED-R42)
 ---@field xp integer                    -- the climb's XP (LED-R31)
 ---@field prestige integer              -- prestige rank
----@field peakLevel integer             -- LED-R35
 ---@field fresh number                  -- Fresh Water F after the last Catch (LED-R22)
 ---@field lastCatch? integer            -- time of the last Catch
 ---@field firstDate? { year: integer, month: integer, day: integer }  -- realm date of the first Catch of any class (bookplate)
@@ -395,13 +394,13 @@ The Journal is a two-page book (UI). These rules say what it shows; [UI](#ui) sa
 ---@field rank integer                  -- computed rank, 0 if not charted (LED-R50)
 ```
 
-Stars, levels, completion and titles are computed from this state and the world index when needed; they aren't stored.
+Stars, levels (the peak level too, LED-R35), completion and titles are computed from this state and the world index when needed; they aren't stored.
 
 ### `PagleLedgerDB` (AceDB, account-wide, one shared profile)
 
 | Key | Contents | Default |
 |---|---|---|
-| `global.projection` | the projection table (owned by Core, LOG-R70) | |
+| `global.projection` | the projection table Core manages (LOG-R70): `projection`, `lastSeq`, `logId`, `fingerprint`, `rulesVersion` | |
 | `global.celebrated` | `{ levels = { [prestigeRank] = level }, prestige, species = { [id] = true }, stars = { [speciesID] = { [1|2|3] = true } }, familyStars = { [familyID] = { [1|2|3] = true } }, speciesZones = { ["<speciesID>:<zone>"] = true }, zones = { [zone] = shownRank }, items = { [itemID] = true }, uncharted = { [itemID] = true }, skill = { [threshold] = true }, milestones = { [n] = true }, titles = { [titleKey] = true }, coins, logId }` (LED-R90) | empty, `coins = 0` |
 | `profile.activeTitle` | a title key, or `nil` for automatic (LED-R77) | `nil` |
 
