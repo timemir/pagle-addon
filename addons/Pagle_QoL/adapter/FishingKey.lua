@@ -177,6 +177,8 @@ function evaluate()
 	if Pagle.IsRestricted() then
 		waitingForKeyUp = false
 		setOnUpdate(false)
+		-- Restricted, the next-action button shows *nothing* (QOL-R72).
+		ns.ShowNextAction(ladderState(false), keys)
 		return
 	end
 	local fishingName = C_Spell.GetSpellName(ns.FISHING_SPELL_ID)
@@ -194,6 +196,8 @@ function evaluate()
 	end
 	-- An open double-click window re-points from the same evaluation (QOL-R13, QOL-R25).
 	ns.PointDoubleClick(state, fishingName)
+	-- The next-action button shows the same evaluation (QOL-R70).
+	ns.ShowNextAction(state, keys)
 	setOnUpdate(armed)
 end
 

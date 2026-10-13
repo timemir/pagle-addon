@@ -22,6 +22,7 @@ logic\Nudge.lua
 logic\Gear.lua
 logic\Input.lua
 logic\DoubleClick.lua
+logic\NextActionButton.lua
 adapter\Bindings.lua
 adapter\Items.lua
 adapter\FishingKey.lua
@@ -32,4 +33,5 @@ adapter\Stretch.lua
 adapter\Nudge.lua
 adapter\Lures.lua
 adapter\Gear.lua
+adapter\NextActionButton.lua
 adapter\QoL.lua
