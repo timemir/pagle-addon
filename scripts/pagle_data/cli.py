@@ -10,7 +10,7 @@ import sys
 from collections.abc import Sequence
 from pathlib import Path
 
-from pagle_data.aliases import proposal_line, proposal_toml
+from pagle_data.aliases import proposal_toml
 from pagle_data.baseline import AREA_LOOT
 from pagle_data.db2 import AREAS
 from pagle_data.errors import DataError
@@ -110,7 +110,8 @@ def _failed(error: DataError) -> int:
 def _warn(layers: Layers) -> None:
     """DATA-R64's warnings, printed and not failing: so far, the baseline loot rows with a condition that isn't a
     single event (DATA-R9), baseline pool templates in no pool type (DATA-R43), observed areas missing from the slice
-    (DATA-R33), observed pairs without a consistent gate (DATA-R47) and the alias proposals not yet committed."""
+    (DATA-R33), observed pairs without a consistent gate (DATA-R47) and how many alias proposals aren't committed yet
+    (one line; --propose-aliases lists them)."""
     for row in layers.conditional_rows():
         loot = f"item {row.item}" if row.item is not None else f"ref {row.ref}"
         message = f"area {row.area} {loot} has the condition {row.condition}, not a single event"
@@ -130,12 +131,9 @@ def _warn(layers: Layers) -> None:
         )
         print(f"{PROG}: warning: {message}", file=sys.stderr)
     proposals = layers.proposals()
-    for proposal in proposals:
-        line = proposal_line(layers.db2, proposal)
-        print(f"{PROG}: warning: alias proposal not in {ALIASES}: {line}", file=sys.stderr)
     if proposals:
-        message = f"{len(proposals)} alias proposal(s) not committed; --propose-aliases prints them as entries"
-        print(f"{PROG}: warning: {message}", file=sys.stderr)
+        listing = "run scripts/generate-data.py --propose-aliases to list them"
+        print(f"{PROG}: warning: {len(proposals)} uncommitted alias proposals; {listing}", file=sys.stderr)
 
 
 def main(argv: Sequence[str], root: Path) -> int:

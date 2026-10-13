@@ -110,7 +110,7 @@ Their mechanisms are inferred from upstream.
   - Free-text multi-command macros in slots (A6 caveat).
 - **Fallback if B1 fails** (no soft-interact on the bobber): reeling stays a *player* action, either by mouseover plus the key, or by the game's right-click on the bobber. A camera sweep is not an acceptable fallback. Given Forever's Classic fishing, the honest UX may be "key casts; you click the bobber". Measure this in the beta before promising one-key reel.
 - **Beta-client hazards to design around:**
-  - Don't ship a "Reload UI" button: `ReloadUI()` is protected on the beta. \[K1\]
+  - Don't ship a "Reload UI" button: `ReloadUI()` is protected on the beta. \[K1\] (Superseded: `ReloadUI()` is unprotected on build 1.60.1.70338, QOL-R102.)
   - Wrap every `RegisterEvent` in `pcall`, because unknown events throw. \[K1\]
   - Don't trust `SavedVariables` until B14 passes. \[K1\]
 

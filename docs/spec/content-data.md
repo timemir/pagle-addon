@@ -161,7 +161,7 @@ Terms are used as `CONTEXT.md` defines them. "The catalogue" is what the generat
   - an unknown key or a wrong type in any TOML file under `data/`
   - any Hunt check (DATA-R92, DATA-R96)
   - any lore check of a Module whose check is on (DATA-R107)
-- **DATA-R64** Warnings (printed, not failing): baseline rows with a condition that isn't a single event (DATA-R9), observed areas missing from the slice (DATA-R33), observed pairs without a consistent gate (DATA-R47), and alias proposals not yet committed.
+- **DATA-R64** Warnings (printed, not failing): baseline rows with a condition that isn't a single event (DATA-R9), observed areas missing from the slice (DATA-R33), observed pairs without a consistent gate (DATA-R47), and alias proposals not yet committed. Those proposals are one summary line with their count, "<n> uncommitted alias proposals; run scripts/generate-data.py --propose-aliases to list them", and nothing when there are none; `--propose-aliases` lists each in full (DATA-R32).
 - **DATA-R65** The generator emits only items that ship (DATA-R15, DATA-R18), only gates by window, and nothing from `data/observed/` but the catalogue facts it implies.
 - **DATA-R66** `data/checks.toml` switches milestone-gated checks on: `typicalLength = true` from M4 (with Simulated Size), and `lore = [<lore ID>, …]`, listing the addons whose lore check is on (DATA-R100, DATA-R107). Before a switch is on, its check is skipped and the data is still emitted.
 
