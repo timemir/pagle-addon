@@ -31,6 +31,7 @@ Pagle.RegisterEvent(OWNER, "ADDON_LOADED", function(_, loadedName)
 	ns.Migrate(ns.db, ns.PAGLEDB_MIGRATIONS)
 	ns.OpenWallet() -- SHOP-R3
 	ns.BuildCatalogue()
+	ns.StartFieldReport() -- LOG-R78: Core's projection, ahead of every Module's
 	ns.angler = ns.NewAngler(ns.catchLog)
 	ns.OpenSessions() -- LOG-R63
 end)

@@ -852,6 +852,51 @@ describe("FakePagle", function()
 		end)
 	end)
 
+	describe("the Field report count", function()
+		-- Darkshore (148) with The Long Wash (453), neither with a skill base, and no items: every item is Uncharted.
+		local function fixture()
+			local function area(parent)
+				return { parent = parent, continent = 1, hasData = false, skillBaseConfirmed = false, catches = {} }
+			end
+			return {
+				fingerprint = "0123456789abcdef",
+				items = {},
+				areas = { [148] = area(0), [453] = area(148) },
+				aliases = {},
+				pools = {},
+				windows = {},
+				events = {},
+				fishingSpells = { 7731 },
+				auras = {},
+			}
+		end
+
+		it(
+			"counts a live Uncharted Catch's I row, and the P rows of fake.diagnostics (REP-R10, REP-R22, REP-R26)",
+			function()
+				local fake = newFakePagle()
+				fake.setCatalogue(fixture())
+				fake.login()
+				fake.enterWorld()
+				assert.are.equal(0, fake.Pagle.GetFieldReportCount())
+
+				local cast = assert(fake.playCast("caught", { { itemID = 9999, quantity = 1 } }))
+				fake.playCast("caught", { { itemID = 9999, quantity = 1 } })
+				assert.are.equal(1, fake.Pagle.GetFieldReportCount(), "two Catches on one key make one row")
+
+				fake.diagnostics[1] = { id = cast.id, zone = 148, subzone = 453, locale = "enUS", texts = { "A", "B" } }
+				assert.are.equal(3, fake.Pagle.GetFieldReportCount())
+			end
+		)
+
+		it("gives the last stored count while the projection updates (REP-R26)", function()
+			local fake = newFakePagle()
+			fake.fieldReportDB.projection = { build = 0, count = 5, I = {}, K = {} }
+
+			assert.are.equal(5, fake.Pagle.GetFieldReportCount())
+		end)
+	end)
+
 	describe("the live conditions", function()
 		-- fake.conditions with `fields` changed.
 		local function changed(fake, fields)

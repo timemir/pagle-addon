@@ -110,6 +110,7 @@ describe("a Module's projection at login", function()
 		loaded.client.fire("PLAYER_ENTERING_WORLD", true, false)
 		assert.are.same({ "SkillChanged" }, seen.applied)
 		assert.is_true(projection:IsUpdating())
+		loaded.client.runTimers() -- Core's Field report projection rebuilds first (LOG-R78)
 		loaded.client.runTimers() -- the entries
 		loaded.client.runTimers() -- done, in a frame of its own (#79)
 
@@ -139,6 +140,7 @@ describe("a Cast recorded", function()
 		loaded.client.fire("PLAYER_ENTERING_WORLD", true, false)
 
 		catchOne(loaded)
+		loaded.client.runTimers() -- Core's Field report projection rebuilds first (LOG-R78)
 		loaded.client.runTimers() -- the entries
 		loaded.client.runTimers() -- done, in a frame of its own (#79), then the live entries
 
