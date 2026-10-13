@@ -75,4 +75,19 @@ ns.L = {
 	GEAR_NEEDS_TWO_SLOTS = "Pagle: needs two free equipment set slots for %s and %s.",
 	NUDGE_SWAP_BACK = "Still holding your pole. Press %s to swap back.",
 	NUDGE_SWAP_BACK_UNBOUND = "Still holding your pole. Bind Pagle: Swap gear to swap back in one press.",
+	-- The next-action button: its one-word labels (QOL-R71), its tooltips (QOL-R74), and its rows in the Fishing
+	-- page's While you fish section (qol.md › Settings, QOL-R73).
+	BUTTON_CAST = "Cast",
+	BUTTON_REEL = "Reel",
+	BUTTON_GEAR = "Gear",
+	BUTTON_LURE = "Lure",
+	BUTTON_TOOLTIP_CAST = "Cast",
+	BUTTON_TOOLTIP_REEL = "Reel in",
+	BUTTON_TOOLTIP_GEAR = "Put on %s",
+	BUTTON_TOOLTIP_LURE = "Apply %s",
+	BUTTON_TOOLTIP_NOTHING = "Nothing to do",
+	SETTINGS_SHOW_BUTTON = "Show the next-action button",
+	SETTINGS_SHOW_BUTTON_TOOLTIP = "Shows what your next press will do. Shift-drag to move.",
+	SETTINGS_BUTTON_POSITION = "Button position",
+	SETTINGS_BUTTON_RESET = "Reset",
 }

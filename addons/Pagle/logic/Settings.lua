@@ -21,6 +21,7 @@ ns.SETTINGS_TOPICS = { "fishing", "announcements", "trackers" }
 ---@field step? number
 ---@field options? fun(): { value: any, label: string }[]   -- dropdown
 ---@field onClick? fun()           -- button
+---@field caption? string          -- button: the text on the button, with `label` beside it; without it, `label` is on the button and the row has no label (SET-R2)
 ---@field binding? string          -- keybinding: the Bindings.xml name, also listed in Key Bindings › AddOns
 ---@field parent? string           -- id of the row it hangs under (indented), a row of the same Module on the same page
 ---@field isEnabled? fun(): boolean  -- greyed out when false
@@ -35,6 +36,11 @@ local KINDS = {
 	button = { onClick = "function" },
 	keybinding = { binding = "string" },
 	custom = { init = "function" },
+}
+
+-- What each kind may have besides, as field = Lua type: checked only when it is there (CORE-R42's PagleSetting).
+local OPTIONAL = {
+	button = { caption = "string" },
 }
 
 --- A row on a topic page, in page order: a Module's row, or the header Core puts before a Module's rows.
@@ -92,6 +98,11 @@ local function problem(section, topic, setting)
 	for field, luaType in pairs(needs) do
 		if type(setting[field]) ~= luaType then
 			return ("a %s setting needs %s, a %s"):format(setting.kind, field, luaType)
+		end
+	end
+	for field, luaType in pairs(OPTIONAL[setting.kind] or {}) do
+		if setting[field] ~= nil and type(setting[field]) ~= luaType then
+			return ("a %s setting's %s is a %s"):format(setting.kind, field, luaType)
 		end
 	end
 	if setting.id ~= nil and section and section.ids[setting.id] then

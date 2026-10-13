@@ -68,6 +68,7 @@ stds.wow = {
 				"GetItemSpell",
 				"GetItemNameByID",
 				"RequestLoadItemDataByID",
+				"GetItemIconByID", -- the next-action button's lure icon (QOL-R71)
 			},
 		},
 		C_Spell = { fields = { "GetSpellName", "GetSpellTexture" } }, -- GetSpellTexture: the icon of QOL-R41
@@ -104,6 +105,10 @@ stds.wow = {
 		-- stds.wow_variables.
 		"UIParent",
 		"UIErrorsFrame",
+		-- QoL's next-action button (QOL-R70–R74): Shift-drag moves it, and its tooltip is the game's own; Item, which
+		-- waits for a lure's name, is in stds.wow_variables.
+		"IsShiftKeyDown",
+		"GameTooltip",
 		-- The character table, Skill Readings and build entries (LOG-R26, LOG-R30, LOG-R36).
 		"UnitName",
 		"UnitClass",
@@ -196,6 +201,12 @@ stds.wow_variables = {
 		-- 943764493e6b16d63ded3ab304150d1f05e58b57 ("1.60.1 (70338)"),
 		-- Interface/AddOns/Blizzard_SharedXMLGame/Tooltip/TooltipDataHandler.lua: "TooltipDataProcessor = {".
 		TooltipDataProcessor = { fields = { "AddTooltipPostCall" } },
+		-- A FrameXML table the dump doesn't list (QOL-R74: the next-action button's tooltip waits for an item's name with
+		-- Item:ContinueOnItemLoad). No probe has hovered the button yet; Track Q's exit check (step 5) does.
+		-- Gethe/wow-ui-source branch forever at 943764493e6b16d63ded3ab304150d1f05e58b57 ("1.60.1 (70338)"),
+		-- Interface/AddOns/Blizzard_ObjectAPI/Mainline/Item.lua: "Item = {};", `function Item:CreateFromItemID(itemID)`
+		-- and `function ItemMixin:ContinueOnItemLoad(callbackFunction)`.
+		Item = { fields = { "CreateFromItemID" } },
 	},
 }
 

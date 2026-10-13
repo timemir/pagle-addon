@@ -15,9 +15,7 @@ local widgets = {}
 
 -- Widget methods that only lay out or colour: nothing for a spec to read back.
 local LAYOUT_METHODS = {
-	"ClearAllPoints",
 	"SetAllPoints",
-	"SetSize",
 	"SetWidth",
 	"SetHeight",
 	"SetJustifyH",
@@ -25,13 +23,19 @@ local LAYOUT_METHODS = {
 	"SetWordWrap",
 	"SetFontObject",
 	"SetEnabled",
+	"SetTexCoord",
+	"SetClampedToScreen",
+	"SetFrameStrata",
+	"SetUserPlaced",
 }
 
---- A widget (frame, button or font string) that keeps what specs read back: its text, whether it's shown, its
---- scripts and the widgets created on it, its parent, anchors (`points`, each SetPoint's arguments), alpha, text
---- colour (`textColor`, { r, g, b }), a font string's font object (`fontObject`, CreateFontString's template), and
---- a button's attributes (`attributes`) and click registration (`clicks`, RegisterForClicks's arguments).
----@param kind string "Frame", "Button", "FontString", …
+--- A widget (frame, button, font string or texture) that keeps what specs read back: its text, whether it's shown,
+--- its scripts and the widgets created on it, its parent, anchors (`points`, each SetPoint's arguments, emptied by
+--- ClearAllPoints), size (`width`, `height`, as SetSize set them), alpha, text colour (`textColor`, { r, g, b }), a font string's font object (`fontObject`,
+--- CreateFontString's template), a texture's file (`texture`) and whether it's desaturated (`desaturated`), a
+--- button's attributes (`attributes`) and click registration (`clicks`, RegisterForClicks's arguments), and a frame's
+--- mouse and moving state: `mouseEnabled`, `movable`, `dragButtons` (RegisterForDrag's arguments) and `moving`.
+---@param kind string "Frame", "Button", "FontString", "Texture", …
 ---@param parent table?
 ---@return table
 function widgets.newWidget(kind, parent)
@@ -48,6 +52,69 @@ function widgets.newWidget(kind, parent)
 	}
 	function widget:SetPoint(...)
 		self.points[#self.points + 1] = { ... }
+	end
+	function widget:SetSize(width, height)
+		self.width, self.height = width, height
+	end
+	function widget:ClearAllPoints()
+		self.points = {}
+	end
+	-- point, relativeTo, relativePoint, x, y of the anchor at `index` (default 1).
+	function widget:GetPoint(index)
+		return unpack(self.points[index or 1] or {})
+	end
+	function widget:SetTexture(texture)
+		self.texture = texture
+	end
+	function widget:GetTexture()
+		return self.texture
+	end
+	function widget:SetDesaturated(desaturated)
+		self.desaturated = not not desaturated
+	end
+	function widget:IsDesaturated()
+		return self.desaturated == true
+	end
+	function widget:EnableMouse(enabled)
+		self.mouseEnabled = not not enabled
+	end
+	function widget:SetMovable(movable)
+		self.movable = not not movable
+	end
+	function widget:RegisterForDrag(...)
+		self.dragButtons = { ... }
+	end
+	-- As the client's: only a movable frame moves.
+	function widget:StartMoving()
+		assert(self.movable, "FakeClient: StartMoving on a frame that isn't movable")
+		self.moving = true
+	end
+	function widget:StopMovingOrSizing()
+		if self.moving and self.movedTo then
+			self.points = { self.movedTo }
+		end
+		self.moving, self.movedTo = false, nil
+	end
+	-- As a left-button drag with the mouse does: OnDragStart if the frame registered for it, then, if that started
+	-- moving it, the frame ends up anchored as `to` ({ point, relativeTo, relativePoint, x, y }, as GetPoint reads it
+	-- after StopMovingOrSizing), then OnDragStop.
+	function widget:Drag(to)
+		local registered = false
+		for _, button in ipairs(self.dragButtons or {}) do
+			registered = registered or button == "LeftButton" or button == "AnyUp" or button == "AnyDown"
+		end
+		if not registered then
+			return
+		end
+		if self.scripts.OnDragStart then
+			self.scripts.OnDragStart(self, "LeftButton")
+		end
+		if self.moving then
+			self.movedTo = to
+		end
+		if self.scripts.OnDragStop then
+			self.scripts.OnDragStop(self)
+		end
 	end
 	function widget:SetAlpha(alpha)
 		self.alpha = alpha
@@ -102,6 +169,11 @@ function widgets.newWidget(kind, parent)
 		local fontString = widgets.newWidget("FontString", self)
 		fontString.fontObject = template
 		return fontString
+	end
+	function widget:CreateTexture(_, layer)
+		local texture = widgets.newWidget("Texture", self)
+		texture.layer = layer
+		return texture
 	end
 	for _, method in ipairs(LAYOUT_METHODS) do
 		widget[method] = function() end

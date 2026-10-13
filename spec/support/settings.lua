@@ -222,6 +222,18 @@ return function(client, stubs)
 		if addSearchTags then
 			initializer:AddSearchTags(name, buttonText)
 		end
+		-- As SettingButtonControlMixin:Init draws the row: its label (`name`, "" for none) in Text, through
+		-- SettingsListElementMixin:Init, and `buttonText` on a button that runs `buttonClick` (Blizzard_Settings_Shared/
+		-- Blizzard_SettingControls.lua at the forever 1.60.1 commit).
+		local initFrame = initializer.InitFrame
+		function initializer:InitFrame(frame)
+			initFrame(self, frame)
+			frame.Text = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+			frame.Text:SetText(self.data.name)
+			frame.Button = newWidget("Button", frame)
+			frame.Button:SetText(self.data.buttonText)
+			frame.Button:SetScript("OnClick", self.data.buttonClick)
+		end
 		return initializer
 	end
 	stubs.CreateKeybindingEntryInitializer = function(bindingIndex, search)

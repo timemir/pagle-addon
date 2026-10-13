@@ -44,9 +44,9 @@
 --- ConditionsChanged({"skill"}) if either changed. Does nothing before login.
 ---@field readOnly fun(value: any): any The read-only proxy of a table (the same one each time); other values as is.
 ---@field moduleState fun(name: string): PagleModuleState A roster Module's state (CORE-R41).
----@field settingsPage fun(topic: string): { module: string, kind: string, label: string, indented: boolean, setting: PagleSetting }[]?
+---@field settingsPage fun(topic: string): { module: string, kind: string, label: string, caption: string?, indented: boolean, setting: PagleSetting }[]?
 --- The rows Core would put on a topic page, in order, its header rows included; nil before login or with no rows,
---- when Core registers no page (CORE-R42).
+--- when Core registers no page (CORE-R42). A button row's caption is nil when its label is on the button (SET-R2).
 ---@field reported string[] Each error Core reported through geterrorhandler(), e.g. a late M:AddSetting or a
 --- Module function that raised under securecallfunction.
 ---@field print fun(line: string) What Core's print does: adds a chat line to `printed`.
@@ -310,6 +310,7 @@ part(function(fake, Pagle, ns)
 				module = entry.module.def.name,
 				kind = setting.kind,
 				label = setting.label,
+				caption = setting.caption,
 				indented = entry.parent ~= nil,
 				setting = setting,
 			}

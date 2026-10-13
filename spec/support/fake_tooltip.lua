@@ -14,9 +14,33 @@
 --- it does: data.type is Object (4) and data.lines[1].leftText is `text`.
 ---@field showTooltip fun(type: integer, data: table) Runs the post-calls for a tooltip of `type` filled with `data`.
 
+-- GameTooltip, the game's own tooltip frame, as far as an addon fills it for its own frame: SetOwner, SetText, Show,
+-- Hide and IsOwned. It keeps what specs read back: `owner` (nil once hidden), `anchor` and `text`.
+--
+--   loaded.env.GameTooltip.text        -- the line it shows, while `shown`
+
+---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
+local newWidget = dofile("spec/support/widgets.lua").newWidget
+
 ---@param client FakeClient
 ---@param stubs table<string, any> The fake client's stubs, which this adds to.
 return function(client, stubs)
+	local gameTooltip = newWidget("GameTooltip", stubs.UIParent)
+	gameTooltip.shown = false
+	function gameTooltip:SetOwner(owner, anchor)
+		self.owner, self.anchor, self.text = owner, anchor, nil
+	end
+	function gameTooltip:SetText(text)
+		self.text = text
+	end
+	function gameTooltip:Hide()
+		self.shown, self.owner = false, nil
+	end
+	function gameTooltip:IsOwned(frame)
+		return self.owner == frame
+	end
+	stubs.GameTooltip = gameTooltip
+
 	-- The forever dump's LuaEnum.lua at BIR_COMMIT (scripts/tools.env), as far as specs use it.
 	stubs.Enum.TooltipDataType = { Item = 0, Spell = 1, Unit = 2, Corpse = 3, Object = 4 }
 
