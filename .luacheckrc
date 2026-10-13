@@ -58,7 +58,8 @@ stds.wow = {
 		"UnitChannelInfo",
 		"UnitCastingInfo",
 		"GetInventoryItemID",
-		C_Item = { fields = { "GetItemInfoInstant" } },
+		-- GetItemNameByID: the Ledger's item names (LED-R97).
+		C_Item = { fields = { "GetItemInfoInstant", "GetItemNameByID" } },
 		C_Spell = { fields = { "GetSpellName" } },
 		-- QoL's Fishing stretch and its CVar lease (QOL-R61–R64).
 		"GetCVar",
