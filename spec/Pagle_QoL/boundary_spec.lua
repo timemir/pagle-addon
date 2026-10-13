@@ -25,8 +25,9 @@ local FORBIDDEN = {
 	-- QOL-R95: no rule depends on the daily or weekly reset.
 	{ "%f[%w_]GetQuestResetTime%f[^%w_]", "QOL-R95: no QoL rule depends on the reset" },
 	{ "%f[%w_]GetSecondsUntil%a*Reset%f[^%w_]", "QOL-R95: no QoL rule depends on the reset" },
-	-- QOL-R6: never ReloadUI(), no secure snippets.
-	{ "%f[%w_]ReloadUI%f[^%w_]", "QOL-R6: QoL never calls ReloadUI()" },
+	-- QOL-R6: ReloadUI() only from a click on Reload now (RELOAD_NOW below takes that one call out), no secure
+	-- snippets.
+	{ "%f[%w_]ReloadUI%f[^%w_]", "QOL-R6: ReloadUI() only from a click on Reload now" },
 	{ "SecureHandler", "QOL-R6: QoL uses no secure snippets" },
 	{ "WrapScript", "QOL-R6: QoL uses no secure snippets" },
 	{ "[\"']_on%a", "QOL-R6: QoL uses no secure snippets (a _on… snippet attribute)" },
@@ -51,12 +52,23 @@ local function withoutComments(text)
 	return text
 end
 
+-- QOL-R6, QOL-R83: the one ReloadUI() QoL may call, the OnAccept of the Reload now popup in adapter/Conflict.lua,
+-- whose first button says "Reload now". It runs only when that button is clicked (StaticPopup_OnClick), never on
+-- load, an event or a timer. The pattern captures the code around the call, so that call alone can be taken out.
+local RELOAD_NOW_FILE = DIR .. "adapter/Conflict.lua"
+local RELOAD_NOW = "(StaticPopupDialogs%.PAGLE_QOL_RELOAD%s*=%s*{[^{}]-button1%s*=%s*ns%.L%.CONFLICT_RELOAD_NOW%s*,"
+	.. "[^{}]-OnAccept%s*=%s*function%s*%(%)%s*)ReloadUI%(%)(%s*end)"
+
 -- Each forbidden thing the code says, as "<why>: <match>".
 ---@param text string
+---@param path string? the file it's from; only RELOAD_NOW_FILE may hold the Reload now call
 ---@return string[]
-local function offences(text)
+local function offences(text, path)
 	local found = {}
 	local code = withoutComments(text)
+	if path == RELOAD_NOW_FILE then
+		code = code:gsub(RELOAD_NOW, "%1%2", 1)
+	end
 	for _, rule in ipairs(FORBIDDEN) do
 		local match = code:match(rule[1])
 		if match then
@@ -99,13 +111,22 @@ describe("QoL's boundary", function()
 
 	for _, path in ipairs(shippedFiles()) do
 		it(path .. " does nothing QOL-R3 and QOL-R6 forbid (QOL-R91, QOL-R92, QOL-R95, QOL-R96)", function()
-			assert.are.same({}, offences(read(path)))
+			assert.are.same({}, offences(read(path), path))
 		end)
 	end
 
+	it("calls ReloadUI() from the Reload now button alone (QOL-R6, QOL-R83)", function()
+		local code = withoutComments(read(RELOAD_NOW_FILE))
+		local _, allowed = code:gsub(RELOAD_NOW, "")
+		local _, calls = code:gsub("%f[%w_]ReloadUI%f[^%w_]", "")
+
+		assert.are.equal(1, allowed)
+		assert.are.equal(1, calls)
+	end)
+
 	describe("catches", function()
 		local planted = {
-			{ "ReloadUI()", "QOL-R6: QoL never calls ReloadUI()" },
+			{ "ReloadUI()", "QOL-R6: ReloadUI() only from a click on Reload now" },
 			{ 'SecureHandlerWrapScript(button, "OnClick", header, "")', "QOL-R6: QoL uses no secure snippets" },
 			{ 'header:WrapScript(button, "OnClick", "")', "QOL-R6: QoL uses no secure snippets" },
 			{ 'button:SetAttribute("_onclick", "")', "QOL-R6: QoL uses no secure snippets" },
@@ -133,6 +154,49 @@ describe("QoL's boundary", function()
 
 				assert.is_true(#found > 0)
 				assert.are.equal(case[2], found[1]:sub(1, #case[2]))
+			end)
+		end
+
+		-- QOL-R6: the one ReloadUI() QoL may make, from a click on the Reload now popup's button (QOL-R83).
+		local PLANTED_RELOAD = table.concat({
+			"StaticPopupDialogs.PAGLE_QOL_RELOAD = {",
+			"	text = ns.L.CONFLICT_RELOAD_TEXT,",
+			"	button1 = ns.L.CONFLICT_RELOAD_NOW,",
+			"	OnAccept = function()",
+			"		ReloadUI()",
+			"	end,",
+			"}",
+		}, "\n")
+
+		it("but not ReloadUI() from a click on Reload now, in adapter/Conflict.lua", function()
+			assert.are.same({}, offences(PLANTED_RELOAD, DIR .. "adapter/Conflict.lua"))
+		end)
+
+		local reloads = {
+			{ "the Reload now handler in another file", PLANTED_RELOAD, DIR .. "adapter/QoL.lua" },
+			{ "a second ReloadUI()", PLANTED_RELOAD .. "\nReloadUI()", DIR .. "adapter/Conflict.lua" },
+			{
+				"ReloadUI() on another dialog's button",
+				(PLANTED_RELOAD:gsub("PAGLE_QOL_RELOAD", "PAGLE_QOL_CONFLICT")),
+				DIR .. "adapter/Conflict.lua",
+			},
+			{
+				"ReloadUI() on a button that doesn't say Reload now",
+				(PLANTED_RELOAD:gsub("CONFLICT_RELOAD_NOW", "CONFLICT_USE_PAGLE")),
+				DIR .. "adapter/Conflict.lua",
+			},
+			{
+				"ReloadUI() when the popup shows",
+				(PLANTED_RELOAD:gsub("OnAccept", "OnShow")),
+				DIR .. "adapter/Conflict.lua",
+			},
+		}
+		for _, case in ipairs(reloads) do
+			it(case[1], function()
+				assert.are.same(
+					{ "QOL-R6: ReloadUI() only from a click on Reload now: ReloadUI" },
+					offences(case[2], case[3])
+				)
 			end)
 		end
 

@@ -87,7 +87,7 @@ The backend deduplicates by a GUID the addon stamps at write time. That is the p
 - **Early beta builds did not load SavedVariables.** On 1.60.1.69893 they were *"written but never loaded"*, so every addon started from defaults [B][14].
 - Persistence was **confirmed on build 1.60.1.70291** for both account-wide and per-character variables, including a cold start after a full quit. On-disk evidence suggests it started working around build 69977, with medium confidence [B][15].
 - On Forever, both tables are `nil` at file scope and become tables at `ADDON_LOADED`, the same as Retail [B][15].
-- **`ReloadUI()` is protected on the Forever beta** (baseline research, `forever-addon-kit`). So the Raider.IO pattern of a "Save" button that calls `ReloadUI()` may not be available. The player would have to type `/reload` or log out.
+- **`ReloadUI()` is protected on the Forever beta** (baseline research, `forever-addon-kit`). So the Raider.IO pattern of a "Save" button that calls `ReloadUI()` may not be available. The player would have to type `/reload` or log out. (Superseded: `ReloadUI()` is unprotected on build 1.60.1.70338, QOL-R102.)
 - **The install folder name is unconfirmed.** Beta reports use `_classic_beta_` [B][16]. The TOC suffix is `_Camelot` or `_Forever` (Patch 1.60.1 added the "Camelot game type", with Forever as an alias) [P][1]. A future companion app must find the folder rather than hard-code `_retail_` or a guessed name.
 
 ---

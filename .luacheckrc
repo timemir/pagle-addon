@@ -62,8 +62,10 @@ stds.wow = {
 		"GetCVar",
 		"SetCVar",
 		"IsMounted",
-		-- QoL's conflict popup (QOL-R81); StaticPopupDialogs itself is in stds.wow_variables.
+		-- QoL's conflict popup (QOL-R81); StaticPopupDialogs itself is in stds.wow_variables. Its Reload now button
+		-- (QOL-R83): ReloadUI is unprotected on build 70338 (QOL-R102), and the QoL boundary spec allows that one call.
 		"StaticPopup_Show",
+		"ReloadUI",
 		-- The character table, Skill Readings and build entries (LOG-R26, LOG-R30, LOG-R36).
 		"UnitName",
 		"UnitClass",
@@ -130,8 +132,10 @@ stds.wow_variables = {
 		-- A FrameXML table the dump doesn't list (QOL-R81). No probe has shown a popup yet; the M1 exit check (step 7)
 		-- does. Gethe/wow-ui-source branch forever at 943764493e6b16d63ded3ab304150d1f05e58b57 ("1.60.1 (70338)"),
 		-- Interface/AddOns/Blizzard_StaticPopup/StaticPopup.lua: `StaticPopupDialogs = {}; -- Definitions`. QoL adds
-		-- its one dialog to it.
-		StaticPopupDialogs = { fields = { PAGLE_QOL_CONFLICT = { read_only = false } } },
+		-- its two dialogs to it: the conflict popup and its Reload now popup (QOL-R81, QOL-R83).
+		StaticPopupDialogs = {
+			fields = { PAGLE_QOL_CONFLICT = { read_only = false }, PAGLE_QOL_RELOAD = { read_only = false } },
+		},
 		-- A FrameXML table the dump doesn't list (CORE-R60). probes/fishing-signals/results/
 		-- 2026-10-11-build70338-report.md is the /pprobe report from build 70338, and /pprobe is registered with
 		-- SlashCmdList.PAGLEPROBE (probes/fishing-signals/PagleProbe/Report.lua). Gethe/wow-ui-source branch forever at
