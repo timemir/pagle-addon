@@ -31,16 +31,15 @@ describe("Pagle_QoL with Core", function()
 
 	it("has a settingsAction, Fishing settings ›, that opens Core's Fishing page (QOL-R2)", function()
 		local loaded = loadAddon("Pagle_QoL", FOREVER_GLOBALS)
-		local opened = {}
-		loaded.env.Pagle.OpenSettings = function(...)
-			opened[#opened + 1] = { ... }
-		end
+		loaded.client.fire("PLAYER_LOGIN")
 
 		local action = loaded.namespaces.Pagle.Modules:Modules()[1].def.settingsAction
 		action.onClick()
 
 		assert.are.equal("Fishing settings ›", action.label)
-		assert.are.same({ { "fishing" } }, opened)
+		local opened = loaded.client.settings.opened
+		assert.are.equal(1, #opened)
+		assert.are.equal(loaded.client.settings.category("Fishing"), opened[1])
 	end)
 
 	it("keeps PagleQoLDB account-wide in one shared profile, at schema 1 (QOL-R1, qol.md › Data)", function()

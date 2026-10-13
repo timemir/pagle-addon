@@ -15,4 +15,8 @@ ns.L = {
 	-- Key Bindings › AddOns (QOL-R1, QOL-R10).
 	BINDING_HEADER = "Pagle",
 	BINDING_FISHING_KEY = "Pagle: Fishing key",
+	-- The Fishing page (qol.md › Settings, SET-R20).
+	SETTINGS_CASTING = "Casting",
+	SETTINGS_FISHING_KEY = "Fishing key",
+	SETTINGS_FISHING_KEY_TOOLTIP = "Each press does the next single thing: cast, reel, or a lure, gear or clam when needed.",
 }
