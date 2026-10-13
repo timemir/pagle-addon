@@ -1,0 +1,16 @@
+## Interface: 16001
+## AllowLoadGameType: camelot
+## Title: Pagle QoL
+## Notes: Pagle's Fishing key: one key to cast and reel.
+## Group: Pagle
+## Category: Professions
+## Version: @project-version@
+## Dependencies: Pagle
+## X-Pagle-API: 1
+## SavedVariables: PagleQoLDB
+
+locale\enUS.lua
+logic\Data.lua
+logic\Module.lua
+adapter\Bindings.lua
+adapter\QoL.lua
