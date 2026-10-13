@@ -661,6 +661,17 @@ part(function(fake, Pagle, ns)
 	end
 end)
 
+-- Window forecasts (LOG-R50), on Core's real logic over the fake's catalogue: the realm's UTC offset comes from
+-- fake.conditions' time and minute, and the events open now from fake.conditions.events, so setConditions moves the
+-- clock and the calendar. Each Window is read-only.
+part(function(fake, Pagle, ns)
+	function Pagle.NextWindow(spec, fromTime)
+		local now = fake.conditions
+		local offset = ns.RealmUtcOffset(now.time, now.minute)
+		return readOnly(ns.NextWindow(spec, fromTime, offset, now.events, ns.Catalogue.GetEventRule))
+	end
+end)
+
 -- Fishing (LOG-R2–R9, LOG-R43), on Core's real Cast state machine: a spec plays a Cast's signals (or a whole Cast
 -- with playCast) and the Module gets Core's events, each Cast recorded to fake.catchLog first, with fake.conditions
 -- as its snapshot, at the fake's server time. The fake's clock starts at 0 (server time SERVER_TIME) and moves only

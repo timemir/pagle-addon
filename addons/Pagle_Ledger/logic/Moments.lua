@@ -194,14 +194,16 @@ function celebrate.levelUp(celebrated, state, earned)
 end
 
 --- One achievement's moment (LED-R97) when it isn't celebrated yet, adding it to the set; nil when it already is
---- (LED-R91). A projection's done raises them too, from the scratch list (LED-R93).
+--- (LED-R91). A projection's done raises them too, from the scratch list (LED-R93). M3's kinds (`newCurio`,
+--- `trophyWeight`, `uncharted`) raise nothing until ticket #137 gives them their moments.
 ---@param celebrated LedgerCelebrated
 ---@param state LedgerState
 ---@param achievement LedgerAchievement
 ---@param outlets LedgerOutlets
 ---@return PagleMoment?
 function ns.CelebrateAchievement(celebrated, state, achievement, outlets)
-	return celebrate[achievement.kind](celebrated, state, achievement, outlets)
+	local moment = celebrate[achievement.kind]
+	return moment and moment(celebrated, state, achievement, outlets)
 end
 
 --- Celebrates one `"live"` entry (LED-R91, LED-R96, LED-R97): the moment of each achievement it earned that isn't
