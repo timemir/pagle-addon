@@ -152,9 +152,8 @@ end
 --- Clears the Fishing key's overrides now, held key or not, and arms nothing (QOL-R31). adapter/Combat.lua calls it
 --- as restriction starts, before lockdown; the end of restriction re-evaluates (QOL-R32).
 function ns.DisarmFishingKey()
-	-- Before PLAYER_LOGIN nothing is armed, and nothing is touched (QOL-R33). Standing down, nothing ever was, and
-	-- QoL binds nothing (QOL-R82).
-	if not frame or not loggedIn or ns.IsStandingDown() then
+	-- Before PLAYER_LOGIN nothing is armed, and nothing is touched (QOL-R33).
+	if not frame or not loggedIn then
 		return
 	end
 	waitingForKeyUp = false
