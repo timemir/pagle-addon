@@ -14,11 +14,13 @@ local OWNER = "Pagle_QoL combat"
 
 -- Restriction starts: PLAYER_REGEN_DISABLED runs before lockdown, and an addon restriction may come first as
 -- RestrictionChanged(true). Each disarms if lockdown hasn't started; once it has, the overrides stay until
--- restriction ends (QOL-R31). Neither ever arms.
+-- restriction ends (QOL-R31). Neither ever arms. The Fishing stretch ends either way; under lockdown its restores
+-- wait (QOL-R31, QOL-R66).
 local function restrictionStarts()
 	if not InCombatLockdown() then
 		ns.DisarmFishingKey()
 	end
+	ns.EndStretch()
 end
 
 --- Listens for restriction starting. QoL's OnInitialize calls it once it has registered.
