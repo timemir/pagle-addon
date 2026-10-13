@@ -86,8 +86,8 @@ Terms are used as `CONTEXT.md` defines them. A **game action** is the character 
 
   | Next action | Fishing key override | Double-click override (`BUTTON2`) | Evidence |
   |---|---|---|---|
-  | cast | `SetOverrideBindingSpell(owner, true, key, fishingName)` | the same on `BUTTON2` | key: probe B1, B2. Double-click: B3 proved a `BUTTON2` override clicking a secure spell button; a direct spell override on `BUTTON2` is checked in Track Q (QOL-R105) |
-  | reel | `SetOverrideBinding(owner, true, key, "INTERACTTARGET")` (soft-interact, QOL-R62) | the same on `BUTTON2` | key: probe B1. `BUTTON2`: checked in Track Q (QOL-R105) |
+  | cast | `SetOverrideBindingSpell(owner, true, key, fishingName)` | the same on `BUTTON2` | key: probe B1, B2. Double-click: QOL-R105 (both values) |
+  | reel | `SetOverrideBinding(owner, true, key, "INTERACTTARGET")` (soft-interact, QOL-R62) | `INTERACTTARGET` on `BUTTON2` at `ActionButtonUseKeyDown` 1; at 0, no target, and the game's right-click on the bobber reels | key: probe B1. `BUTTON2`: QOL-R105 |
   | equip the fishing set | `SetOverrideBindingClick(owner, true, key, "PagleQoLGearButton")` | never | B9 proved `UseEquipmentSet` from addon code on a keypress |
   | apply a lure | `SetOverrideBindingClick(owner, true, key, "PagleQoLActionButton")`, the button set to `type = "item"`, `item = "item:<lureID>"` | the same on `BUTTON2` | probe B4 |
   | open a clam | the same button, `item = "item:<clamID>"` | the same on `BUTTON2` | same mechanism as B4; re-verified in M8 (QOL-R100) |
@@ -215,7 +215,7 @@ Checked on the live build in M8 (each failure retires or changes only the rule i
 - **QOL-R102** `C_AddOns.DisableAddOn` from addon code, and whether `ReloadUI()` is still protected (QOL-R83). If `ReloadUI()` is no longer protected, a "Reload now" popup button may be added by a new ticket.
 - **QOL-R103** The equipment-set limit, with *Pagle Previous* taking a slot (QOL-R42).
 - **QOL-R104** The conflict list's folder names, including the two Forever Fishing Buddy ports (QOL-R80).
-- **QOL-R105** Checked earlier, while building the double-click (Track Q), with `ActionButtonUseKeyDown` at both 1 and 0: a direct `SetOverrideBindingSpell` on `BUTTON2` casts, and `INTERACTTARGET` on `BUTTON2` reels. If either fails, the double-click's target for that action becomes a click on a secure button (`type = "spell"`, as probe B3 proved) or, for the reel, the double-click doesn't reel and the game's own right-click on the bobber does.
+- **QOL-R105** Checked earlier, while building the double-click (Track Q), with `ActionButtonUseKeyDown` at both 1 and 0: a direct `SetOverrideBindingSpell` on `BUTTON2` casts, and `INTERACTTARGET` on `BUTTON2` reels. If either fails, the double-click's target for that action becomes a click on a secure button (`type = "spell"`, as probe B3 proved) or, for the reel, the double-click doesn't reel and the game's own right-click on the bobber does. Result (Forever beta 1.60.1.70338, 2026-10-13; at water, pole in hand, `SoftTargetInteract` 3, right-clicking the world): at 1, the spell override casts and `INTERACTTARGET` reels; at 0, the spell override casts and `INTERACTTARGET` doesn't reel. So the cast stays a spell override at both values, and at 0 the double-click has no reel target (QOL-R24).
 
 ## Data
 

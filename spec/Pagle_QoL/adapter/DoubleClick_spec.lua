@@ -218,6 +218,73 @@ describe("The double-click", function()
 			assert.are.same({ "AnyUp" }, button.clicks)
 		end)
 
+		it("reels with INTERACTTARGET on BUTTON2 at ActionButtonUseKeyDown 1 (QOL-R24, QOL-R105)", function()
+			local fake, client = start()
+			fake.fire("CastStarted")
+			local done = pressesDo(fake, client)
+
+			rightClick(client)
+			rightClick(client)
+
+			assert.are.same({ false, REEL }, done)
+			assert.is_false(button2(client))
+		end)
+
+		it(
+			"holds no window for the reel at ActionButtonUseKeyDown 0, so the game's right-click on the bobber reels (QOL-R24, QOL-R105)",
+			function()
+				local fake, client = start(function(_, client)
+					client.cvars.ActionButtonUseKeyDown = "0"
+				end)
+				fake.fire("CastStarted")
+				local done = pressesDo(fake, client)
+				client.bindingCalls = {}
+
+				rightClick(client)
+				rightClick(client)
+
+				-- No window held: BUTTON2 is never pointed, so the second press is the game's own right-click.
+				assert.are.same({ false, false }, done)
+				assert.are.same({}, client.bindingCalls)
+				-- The Fishing key's own reel is unaffected.
+				assert.are.equal(REEL, client.overrideAction("F"))
+			end
+		)
+
+		it("casts from BUTTON2 at ActionButtonUseKeyDown 0 as at 1 (QOL-R24, QOL-R105)", function()
+			local fake, client = start(function(_, client)
+				client.cvars.ActionButtonUseKeyDown = "0"
+			end)
+			local done = pressesDo(fake, client)
+
+			rightClick(client)
+			rightClick(client)
+
+			assert.are.same({ false, CAST }, done)
+		end)
+
+		it(
+			"closes an open window at the next evaluation after CVAR_UPDATE takes ActionButtonUseKeyDown from 1 to 0 (QOL-R27, QOL-R105)",
+			function()
+				local fake, client = start()
+				client.click("RightButton")
+				fake.fire("CastStarted")
+				assert.are.equal(REEL, button2(client))
+
+				client.cvars.ActionButtonUseKeyDown = "0"
+				fake.fireGameEvent("CVAR_UPDATE", "ActionButtonUseKeyDown", "0")
+				fake.fireGameEvent("BAG_UPDATE_DELAYED")
+
+				assert.is_false(button2(client))
+				-- Closed, not waiting: the CVar going back to 1 doesn't bring it back.
+				client.cvars.ActionButtonUseKeyDown = "1"
+				fake.fireGameEvent("CVAR_UPDATE", "ActionButtonUseKeyDown", "1")
+				fake.fireGameEvent("BAG_UPDATE_DELAYED")
+				assert.is_false(button2(client))
+				assert.are.equal(REEL, client.overrideAction("F"))
+			end
+		)
+
 		it("doesn't re-point BUTTON2 when nothing changed, so its own UPDATE_BINDINGS never loops (QOL-R25)", function()
 			local fake, client = start()
 			client.click("RightButton")

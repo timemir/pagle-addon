@@ -31,17 +31,23 @@ end
 
 --- The BUTTON2 target (QOL-R24's double-click column): the next action evaluated without the gear step (QOL-R13,
 --- QOL-R20 step 3), so it never equips the fishing set (QOL-R15), and that action's target as the Fishing key has it.
---- QOL-R105's in-game check may change a column entry here. `state` itself is left as it is.
+--- The reel's `INTERACTTARGET` reels from BUTTON2 only at `ActionButtonUseKeyDown` 1; at 0 there is no reel target,
+--- and the game's own right-click on the bobber reels (QOL-R105). `state` itself is left as it is.
 ---@param state PagleQoLLadderState the Fishing key's evaluation
 ---@param fishingName string? `C_Spell.GetSpellName(ns.FISHING_SPELL_ID)`
+---@param useKeyDown string? `GetCVar("ActionButtonUseKeyDown")`
 ---@return PagleQoLKeyTarget?
-function ns.DoubleClickTarget(state, fishingName)
+function ns.DoubleClickTarget(state, fishingName, useKeyDown)
 	local withoutGear = {}
 	for key, value in pairs(state) do
 		withoutGear[key] = value
 	end
 	withoutGear.skipGear = true
-	return ns.KeyTarget(ns.NextAction(withoutGear), fishingName, state.lure)
+	local action = ns.NextAction(withoutGear)
+	if action == "reel" and not ns.UsesKeyDown(useKeyDown) then
+		return nil
+	end
+	return ns.KeyTarget(action, fishingName, state.lure)
 end
 
 --- Whether the double-click is live (QOL-R14): Input allows it, QoL is armed, a fishing pole is in hand, and the next

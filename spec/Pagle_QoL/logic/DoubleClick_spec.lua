@@ -36,10 +36,43 @@ describe("QoL's double-click logic", function()
 			{ "disarmed", { poleInHand = true }, nil },
 		}
 		for _, row in ipairs(TARGETS) do
-			it(("is the Fishing key's target when %s (QOL-R24)"):format(row[1]), function()
-				assert.are.same(row[3], ns.DoubleClickTarget(row[2], "Fishing"))
+			it(("is the Fishing key's target when %s, at ActionButtonUseKeyDown 1 (QOL-R24)"):format(row[1]), function()
+				assert.are.same(row[3], ns.DoubleClickTarget(row[2], "Fishing", "1"))
 			end)
 		end
+
+		it("reels with INTERACTTARGET at ActionButtonUseKeyDown 1 (QOL-R24, QOL-R105)", function()
+			local channeling = { armed = true, poleInHand = true, channelingFishing = true }
+
+			assert.are.same(
+				{ kind = "command", value = "INTERACTTARGET" },
+				ns.DoubleClickTarget(channeling, "Fishing", "1")
+			)
+		end)
+
+		it(
+			"has no reel target at ActionButtonUseKeyDown 0, where the game's right-click on the bobber reels (QOL-R24, QOL-R105)",
+			function()
+				local channeling = { armed = true, poleInHand = true, channelingFishing = true }
+
+				assert.is_nil(ns.DoubleClickTarget(channeling, "Fishing", "0"))
+				-- A client that doesn't know the CVar fires on key-up, as at 0 (QOL-R27).
+				assert.is_nil(ns.DoubleClickTarget(channeling, "Fishing", nil))
+				-- The Fishing key's own reel is unaffected.
+				assert.are.equal("reel", ns.NextAction(channeling))
+			end
+		)
+
+		it("casts and applies a lure at ActionButtonUseKeyDown 0 as at 1 (QOL-R24, QOL-R105)", function()
+			assert.are.same(
+				{ kind = "spell", value = "Fishing" },
+				ns.DoubleClickTarget({ armed = true, poleInHand = true }, "Fishing", "0")
+			)
+			assert.are.same(
+				{ kind = "click", value = "PagleQoLActionButton", item = 6529 },
+				ns.DoubleClickTarget({ armed = true, poleInHand = true, lure = 6529 }, "Fishing", "0")
+			)
+		end)
 
 		it("skips the gear step, never equipping the fishing set (QOL-R13, QOL-R15, QOL-R20)", function()
 			local state = { armed = true, gearReady = true, lure = 6529 }
