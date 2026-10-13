@@ -203,8 +203,9 @@ function ns.ReadFishingSetOptions()
 end
 
 -- Chooses the set `setID` for this character, creating *Pagle Previous* from the gear worn now if it doesn't exist,
--- so its slot is taken up front (QOL-R40, QOL-R42). With no slot free for it, nothing is created or chosen, and the
--- chat says why. A change re-points the Fishing key at once (QOL-R25).
+-- so its slot is taken up front (QOL-R40, QOL-R42). With a fishing pole in hand it creates none: the slot check is
+-- then all that reserves the slot, and the first swap to the set creates it (QOL-R44). With no slot free for it,
+-- nothing is created or chosen, and the chat says why. A change re-points the Fishing key at once (QOL-R25).
 ---@param setID integer
 local function choose(setID)
 	local name = setName(setID)
@@ -217,7 +218,7 @@ local function choose(setID)
 		print(message)
 		return
 	end
-	if needPrevious then
+	if needPrevious and ns.MaySavePrevious(ns.PoleInHand()) then
 		saveWorn(ns.PREVIOUS_SET_NAME, GetInventoryItemTexture("player", 16))
 	end
 	choices()[UnitGUID("player")] = { setID = setID, name = name }

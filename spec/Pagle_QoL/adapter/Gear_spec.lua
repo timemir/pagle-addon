@@ -586,6 +586,40 @@ describe("Choosing the fishing set", function()
 		assert.are.same({}, client.equipmentSetCalls)
 	end)
 
+	it("with a pole in hand creates no Pagle Previous; the first swap to the set does (QOL-R42, QOL-R44)", function()
+		local fake, client, loaded = choosing(function(_, client)
+			client.mainHand = FISHING_POLE
+		end)
+
+		rowOf(fake, "Fishing set").set(FISHING)
+
+		assert.are.same({ setID = FISHING, name = "Fishing" }, loaded.env.PagleQoLDB.global.gear[PLAYER_GUID])
+		assert.are.same({}, client.equipmentSetCalls)
+
+		client.mainHand = SWORD
+		fake.fireGameEvent("PLAYER_EQUIPMENT_CHANGED", 16, true)
+		loaded.env.PagleQoLGearButton:Click()
+		assert.are.same(
+			{ "clear ignored", "create Pagle Previous " .. SWORD_ICON, "use " .. FISHING },
+			client.equipmentSetCalls
+		)
+		assert.are.same({ [16] = SWORD }, client.equipmentSets[1].items) -- the lowest free ID: Raid holds 0
+	end)
+
+	it("with a pole in hand still needs the slot for Pagle Previous (QOL-R42)", function()
+		local fake, client, loaded = choosing(function(_, client)
+			client.mainHand = FISHING_POLE
+			fillSets(client, 10)
+		end)
+		local row = rowOf(fake, "Fishing set")
+
+		row.set(FISHING)
+
+		assert.are.same({}, client.equipmentSetCalls)
+		assert.are.equal(-1, row.get())
+		assert.are.same({ "Pagle: needs a free equipment set slot for Pagle Previous." }, loaded.printed)
+	end)
+
 	it("with no free slot for Pagle Previous creates nothing, keeps the choice and says so (QOL-R42)", function()
 		local fake, client, loaded = choosing(function(_, client)
 			fillSets(client, 10)
@@ -609,7 +643,7 @@ describe("Choosing the fishing set", function()
 	end)
 
 	describe("Save what I'm wearing as my fishing set", function()
-		it("creates Pagle Fishing from the gear worn, with no ignored slots, and chooses it (QOL-R41)", function()
+		it("creates Pagle Fishing from the gear worn, with no ignored slots, and chooses it (QOL-R41, QOL-R42)", function()
 			local fake, client, loaded = choosing(function(_, client)
 				client.mainHand = FISHING_POLE
 				client.worn[1] = HAT
@@ -617,15 +651,24 @@ describe("Choosing the fishing set", function()
 
 			rowOf(fake, "Save what I'm wearing as my fishing set").onClick()
 
-			assert.are.same({
-				"clear ignored",
-				"create Pagle Fishing " .. POLE_ICON,
-				"clear ignored",
-				"create Pagle Previous " .. POLE_ICON,
-			}, client.equipmentSetCalls)
+			-- No Pagle Previous with the pole in hand: it would hold the fishing outfit (QOL-R42).
+			assert.are.same({ "clear ignored", "create Pagle Fishing " .. POLE_ICON }, client.equipmentSetCalls)
 			local fishing = client.equipmentSets[1] -- the lowest free ID: Raid holds 0
 			assert.are.same({ [16] = FISHING_POLE, [1] = HAT }, fishing.items)
 			assert.are.same({ setID = 1, name = "Pagle Fishing" }, loaded.env.PagleQoLDB.global.gear[PLAYER_GUID])
+		end)
+
+		it("creates Pagle Previous too without a pole in hand (QOL-R41, QOL-R42)", function()
+			local fake, client = choosing()
+
+			rowOf(fake, "Save what I'm wearing as my fishing set").onClick()
+
+			assert.are.same({
+				"clear ignored",
+				"create Pagle Fishing " .. FISHING_ICON,
+				"clear ignored",
+				"create Pagle Previous " .. SWORD_ICON,
+			}, client.equipmentSetCalls)
 		end)
 
 		it("takes the Fishing spell's icon without a pole in hand (QOL-R41)", function()
@@ -652,6 +695,7 @@ describe("Choosing the fishing set", function()
 
 		it("with one free slot when two are needed creates nothing and keeps the choice (QOL-R42)", function()
 			local fake, client, loaded = start(function(_, client)
+				client.mainHand = FISHING_POLE -- Pagle Previous's slot is counted all the same
 				fillSets(client, 9)
 			end)
 
