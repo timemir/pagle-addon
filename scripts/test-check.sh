@@ -71,6 +71,12 @@ echo "STYLUA_VERSION=0.0.0" >>"$scratch/tree/scripts/tools.env"
 expect "a pin changed since the last setup stops the gate" setup "run scripts/setup.sh"
 
 copy
+sed -i 's#BigWigsMods/packager@[0-9a-f]*#BigWigsMods/packager@0123456789abcdef0123456789abcdef01234567#' \
+	"$scratch/tree/.github/workflows/release.yml"
+expect "a packager pin in release.yml that differs from tools.env stops the gate" setup \
+	"PACKAGER_COMMIT in scripts/tools.env"
+
+copy
 printf 'local t = {a=1}\nreturn t\n' >"$addon/logic/Badly.lua"
 expect "a badly formatted file fails format" format "Diff in addons/Pagle/logic/Badly.lua"
 

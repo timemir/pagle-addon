@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Builds the release zip locally with the BigWigsMods packager, uploads off, then checks its contents.
-# The release workflow (.github/workflows/release.yml) runs the same packager commit on a tag push.
+# The release workflow (.github/workflows/release.yml) runs the same packager commit on a tag push:
+# PACKAGER_COMMIT in scripts/tools.env, which scripts/check.sh holds the workflow to.
 #
 #   scripts/package.sh             build .release/Pagle-<version>-forever.zip from HEAD and check it
 #
@@ -17,10 +18,6 @@
 # the packager builds the zip with zip and reads upload APIs with jq.
 set -euo pipefail
 
-# BigWigsMods/packager v2.6.1. Keep in step with the pin in .github/workflows/release.yml.
-packager_commit="e50a250f8705041e40f2fa1ddcb280a686d65aa0"
-packager_sha256="59b15a8d851b09e6d0fdec702aec91331b9b49d84dbe778da6c621b48f268703"
-
 case "${1:-}" in
 	-h | --help)
 		sed -n '2,17p' "$0"
@@ -34,8 +31,10 @@ case "${1:-}" in
 esac
 
 root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+# shellcheck source=tools.env
+source "$root/scripts/tools.env"
 releasedir="$root/.release"
-packager="$root/.tools/packager/release-$packager_commit.sh"
+packager="$root/.tools/packager/release-$PACKAGER_COMMIT.sh"
 
 for tool in git curl unzip zip jq; do
 	if ! command -v "$tool" >/dev/null; then
@@ -47,10 +46,10 @@ done
 if [[ ! -f $packager ]]; then
 	mkdir -p "$(dirname "$packager")"
 	curl -fsSL -o "$packager.part" \
-		"https://raw.githubusercontent.com/BigWigsMods/packager/$packager_commit/release.sh"
-	if ! echo "$packager_sha256  $packager.part" | sha256sum -c --quiet -; then
+		"https://raw.githubusercontent.com/BigWigsMods/packager/$PACKAGER_COMMIT/release.sh"
+	if ! echo "$PACKAGER_RELEASE_SH_SHA256  $packager.part" | sha256sum -c --quiet -; then
 		rm -f "$packager.part"
-		echo "The downloaded packager doesn't match the pinned sha256." >&2
+		echo "The downloaded packager $PACKAGER_VERSION doesn't match PACKAGER_RELEASE_SH_SHA256 in scripts/tools.env." >&2
 		exit 1
 	fi
 	mv "$packager.part" "$packager"

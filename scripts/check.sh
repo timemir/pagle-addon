@@ -25,6 +25,16 @@ if ! cmp -s scripts/tools.env .tools/tools.env; then
 	fail setup
 fi
 
+# The release workflow's `uses:` line can't read tools.env, so its packager commit must equal PACKAGER_COMMIT.
+# shellcheck source=tools.env
+source scripts/tools.env
+release_pins=$(grep -oE 'BigWigsMods/packager@[^[:space:]]*' .github/workflows/release.yml | sort -u)
+if [[ $release_pins != "BigWigsMods/packager@$PACKAGER_COMMIT" ]]; then
+	echo "check: .github/workflows/release.yml uses ${release_pins:-no BigWigsMods/packager}," \
+		"but PACKAGER_COMMIT in scripts/tools.env is $PACKAGER_COMMIT; make them the same" >&2
+	fail setup
+fi
+
 # The Lua the gate covers: every addon (minus vendored libs/, which the tool configs exclude), the specs,
 # the scripts and the type stubs. probes/ and prototypes/ are throwaway experiments, never shipped or checked.
 lua_dirs=()

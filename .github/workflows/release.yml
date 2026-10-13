@@ -20,7 +20,7 @@ jobs:
         with:
           fetch-depth: 0 # the packager needs the history and tags for the version and changelog
 
-      # v2.6.1. Keep in step with the pin in scripts/package.sh.
+      # PACKAGER_COMMIT in scripts/tools.env, which also names its version; scripts/check.sh fails while they differ.
       - uses: BigWigsMods/packager@e50a250f8705041e40f2fa1ddcb280a686d65aa0
         with:
           args: -w 0 # never upload to WoWInterface, whatever a TOC says
