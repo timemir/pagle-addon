@@ -8,14 +8,13 @@ if not ns.IsForever(WOW_PROJECT_ID, WOW_PROJECT_CAMELOT) then
 	return
 end
 
--- Built as a local, then published: the types stage checks writes to a class only through a typed local.
-
 --- Core's public API: the one object Modules reach Core through (ADR 0001).
 ---@class Pagle
 ---@field API_VERSION integer Rises by one with each addition from 1.0 on; stays 1 before 1.0 (CORE-R15).
 local Pagle = {
 	API_VERSION = 1,
 }
+-- Built as a local, then published: the types stage checks writes to a class only through a typed local.
 _G.Pagle = Pagle
 
 ns.Core = LibStub("AceAddon-3.0"):NewAddon(addonName)
