@@ -318,9 +318,9 @@ Each Module keeps one AceDB SavedVariable, `Pagle<Module>DB`, account-wide with 
 ---@field restricted? boolean    -- live snapshots only
 
 ---@class Angler
----@field logId string
+---@field logId string?          -- nil only on a fresh install before the first PLAYER_LOGIN
 ---@field characters { guid: string, name: string, surname?: string, classID: integer, raceID: integer, faction: string, realmID: integer, hardcore?: boolean, selfFound?: boolean, firstSeen: integer, lastSeen: integer }[]
----@field current integer        -- index of the logged-in character
+---@field current integer?       -- index of the logged-in character; nil before PLAYER_LOGIN
 ---@field skill { [integer]: PagleSkillReading }   -- latest Skill Reading per character index
 ---@field bestBaseSkill integer  -- highest skill rank among all characters (0 if none)
 

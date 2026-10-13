@@ -21,9 +21,9 @@ local ns = select(2, ...)
 --- The player's fishing identity across every character in this PagleLog (LOG-R27). Shared and immutable
 --- (CORE-R18).
 ---@class Angler
----@field logId string           -- nil only on a fresh install before the first PLAYER_LOGIN
+---@field logId string?          -- nil only on a fresh install before the first PLAYER_LOGIN
 ---@field characters PagleCharacter[]
----@field current integer        -- index of the logged-in character; nil before PLAYER_LOGIN
+---@field current integer?       -- index of the logged-in character; nil before PLAYER_LOGIN
 ---@field skill { [integer]: PagleSkillReading }   -- latest Skill Reading per character index
 ---@field bestBaseSkill integer  -- highest skill rank among all characters (0 if none)
 
