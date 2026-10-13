@@ -14,7 +14,7 @@ local Pagle = Pagle
 -- firing any event for it but the Session events (LOG-R73).
 
 --- Core's one machinery. Core's other files use its seams: `:IsUpdating()` (any projection catching up or
---- rebuilding, or login not reached yet), `:Mode()` (the apply in progress: "live", "replay", "rebuild", "done" or
+--- rebuilding, or applying the entries appended meanwhile, or login not reached yet), `:Mode()` (the apply in progress: "live", "replay", "rebuild", "done" or
 --- nil), `:WhenIdle(fn)` (runs fn once none is updating) and `:Live(record)` (hands an appended entry over).
 ns.projections = ns.NewProjections({
 	length = function()

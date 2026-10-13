@@ -52,7 +52,8 @@ ns.PROJECTION_BUDGET = 4
 local Projection = {}
 Projection.__index = Projection
 
---- A catch-up or rebuild in progress.
+--- A catch-up or rebuild in progress. It runs in steps: each entry up to the target, then the finish (the stored
+--- values and done), then each entry appended since the target, applied as live.
 ---@class PagleProjectionRun
 ---@field mode "replay"|"rebuild"
 ---@field target integer               -- the last seq it applies; later entries are live
@@ -60,6 +61,9 @@ Projection.__index = Projection
 ---@field next fun(): PagleRecord?     -- the next record after the last one applied
 ---@field replayed integer
 ---@field casts integer                -- Casts applied in "rebuild" mode
+---@field phase "apply"|"finish"|"live" -- the step it is on
+---@field live (fun(): PagleRecord?)?  -- after the finish: the entries appended since the target, once read
+---@field liveTo integer               -- the log's length when `live` was made
 
 --- The machinery: every projection, in the order they were added.
 ---@class PagleProjections
@@ -215,6 +219,8 @@ function Projections:begin(projection, target, force)
 		next = projection.iterate(from),
 		replayed = 0,
 		casts = 0,
+		phase = "apply",
+		liveTo = 0,
 	}
 	if rebuild then
 		projection.state = self.options.call(def.reset) or {}
@@ -223,13 +229,13 @@ function Projections:begin(projection, target, force)
 		self.chunked[#self.chunked + 1] = projection
 		self:schedule()
 	else
-		while self:advance(projection) do
+		local run = projection.run
+		while projection.run == run and self:advance(projection) do
 		end
 	end
 end
 
--- Applies the next pending entry of a projection's run; when there is none, finishes it. Returns whether it applied
--- one.
+-- Takes the next step of a projection's run (PagleProjectionRun). Returns false once the run is over.
 ---@package
 ---@param projection PagleProjection
 ---@return boolean
@@ -238,17 +244,40 @@ function Projections:advance(projection)
 	if not run then
 		return false
 	end
-	local record = run.next()
-	if record == nil or record.seq > run.target then
+	if run.phase == "apply" then
+		local record = run.next()
+		if record == nil or record.seq > run.target then
+			run.phase = "finish"
+		else
+			applyOne(projection, record, run.mode, run)
+		end
+	elseif run.phase == "finish" then
 		self:finish(projection, run)
-		return false
+	else
+		-- Every entry after the target is live, never replayed (LOG-R1). Live passes this projection over until the
+		-- run is over, so entries appended meanwhile are read back here too. Reading from a seq looks back to its
+		-- Session's first Cast (LOG-R98), so the first read is a step of its own.
+		local live = run.live
+		if not live then
+			run.live, run.liveTo = projection.iterate(projection.def.db.lastSeq), self.options.length()
+			return true
+		end
+		local record = live()
+		if record == nil and self.options.length() > run.liveTo then
+			run.live, run.liveTo = projection.iterate(run.liveTo), self.options.length()
+			return true
+		end
+		if record == nil then
+			projection.run = nil
+			return false
+		end
+		applyOne(projection, record, "live")
 	end
-	applyOne(projection, record, run.mode, run)
 	return true
 end
 
--- Ends a catch-up or rebuild (LOG-R72, LOG-R74, LOG-R76): writes the stored values (a rebuild's only now), calls
--- done, then applies the entries appended since its target as live, in order.
+-- Ends a catch-up or rebuild (LOG-R72, LOG-R74, LOG-R76): writes the stored values (a rebuild's only now) and calls
+-- done. The entries appended since its target follow as live, in order, in the run's next steps.
 ---@package
 ---@param projection PagleProjection
 ---@param run PagleProjectionRun
@@ -262,8 +291,8 @@ function Projections:finish(projection, run)
 	db.logId = self.options.logId()
 	db.fingerprint = fingerprintOf(self, def)
 	db.rulesVersion = def.rulesVersion
-	projection.run = nil
 	projection.updating = false
+	run.phase = "live"
 	if def.done then
 		local info = {
 			firstBuild = run.fresh and run.casts > 0,
@@ -273,12 +302,6 @@ function Projections:finish(projection, run)
 		during(self, "done", function()
 			self.options.call(def.done, projection.state, info)
 		end)
-	end
-	-- Every entry after the target is live, never replayed (LOG-R1).
-	for record in projection.iterate(db.lastSeq) do
-		if not projection.updating then
-			applyOne(projection, record, "live")
-		end
 	end
 end
 
@@ -294,16 +317,28 @@ function Projections:schedule()
 	end
 end
 
--- One frame's chunk: works through the chunked projections in order until the budget is spent (LOG-R71, LOG-R72).
--- At least one entry is applied each frame.
+-- One frame's chunk: works through the chunked projections in order within the budget (LOG-R71, LOG-R72). The clock
+-- is read after each step, and the chunk stops once the budget left can't fit another step as costly as this
+-- frame's costliest, so a frame doesn't run past the budget on its last step. A finish runs a Module's done, whose
+-- cost nothing predicts, so it starts a frame of its own. At least one step runs each frame.
 ---@package
 function Projections:step()
 	local clock, budget = self.options.clock, self.options.budget or ns.PROJECTION_BUDGET
-	local started = clock()
-	while #self.chunked > 0 and clock() - started < budget do
+	local started, costliest, stepped = clock(), 0, false
+	while #self.chunked > 0 do
 		local projection = self.chunked[1]
+		if stepped and projection.run and projection.run.phase == "finish" then
+			break
+		end
+		stepped = true
+		local before = clock()
 		if not self:advance(projection) then
 			table.remove(self.chunked, 1)
+		end
+		local now = clock()
+		costliest = math.max(costliest, now - before)
+		if now - started + costliest > budget then
+			break
 		end
 	end
 	if #self.chunked > 0 then
@@ -341,7 +376,8 @@ function Projections:Start(loginSeq)
 end
 
 --- Hands a just-appended entry to every projection (LOG-R73, LOG-R74): one that is up to date applies it as
---- `"live"` now and sets `lastSeq`; one that is updating reads it back from the log as `"live"` when it finishes.
+--- `"live"` now and sets `lastSeq`; one that is updating, or still applying the entries appended during its update,
+--- reads it back from the log as `"live"` when it gets there.
 --- Called from inside an apply or a done, it is handed over when that returns (LOG-R40).
 ---@param record PagleRecord
 function Projections:Live(record)
@@ -350,21 +386,22 @@ function Projections:Live(record)
 		return
 	end
 	for _, projection in ipairs(self.list) do
-		if not projection.updating and record.seq > projection.def.db.lastSeq then
+		if not projection.run and not projection.updating and record.seq > projection.def.db.lastSeq then
 			applyOne(projection, record, "live")
 		end
 	end
 	self:settle()
 end
 
---- Whether any projection is updating (LOG-R74), counting the time before `Start`, when none has caught up yet.
+--- Whether any projection is updating (LOG-R74), counting the time before `Start`, when none has caught up yet,
+--- and the time a finished one takes to apply the entries appended during its update.
 ---@return boolean
 function Projections:IsUpdating()
 	if not self.loginSeq then
 		return true
 	end
 	for _, projection in ipairs(self.list) do
-		if projection.updating then
+		if projection.updating or projection.run then
 			return true
 		end
 	end

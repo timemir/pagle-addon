@@ -298,10 +298,66 @@ describe("a catch-up or rebuild of many entries", function()
 		end
 
 		assert.are.equal(501, #seen.applied)
-		assert.are.equal(126, #perFrame) -- 4 entries per 4 ms frame, the last frame finding the end
+		assert.are.equal(127, #perFrame) -- 4 entries per 4 ms frame, then done in a frame of its own (#79)
 		assert.is_false(projection:IsUpdating())
 		assert.are.equal(501, projection:GetState().count)
 	end)
+
+	it("never runs a frame past the budget when entries cost unevenly (LOG-R71, #79)", function()
+		-- Entries cost 2, 1, 3, 2, 1, 3 ... ms: checked only before each apply, a frame of 2 + 1 would go on to the
+		-- 3 and spend 6 ms. The chunk stops once the budget left can't fit another entry as costly as this frame's
+		-- costliest.
+		local world = machinery(casts(501))
+		local def, seen = recorder({})
+		local apply, costs = def.apply, { 2, 1, 3 }
+		def.apply = function(state, record, mode)
+			world.now = world.now + costs[(record.seq - 1) % #costs + 1]
+			apply(state, record, mode)
+		end
+		bind(world, def)
+
+		world.projections:Start(501)
+		repeat
+			local started = world.now
+			local ran = world.frame()
+			assert.is_true(world.now - started <= ns.PROJECTION_BUDGET)
+		until not ran
+
+		assert.are.equal(501, #seen.applied)
+		assert.are.equal(1, #seen.done)
+	end)
+
+	it(
+		"runs done in a frame of its own, then the entries appended meanwhile, each frame within the budget"
+			.. " (LOG-R71, LOG-R74, LOG-R76, #79)",
+		function()
+			-- Applies cost 1 ms and done 3 ms. Run in the frame that finds the end, done and the three live entries
+			-- would take 1 + 3 + 3 ms.
+			local world = machinery(casts(501))
+			local def, seen = recorder({})
+			local done = def.done
+			def.done = function(state, info)
+				world.now = world.now + 3
+				done(state, info)
+				seen.applied[#seen.applied + 1] = "done"
+			end
+			bind(world, costly(world, def))
+
+			world.projections:Start(501)
+			world.frame()
+			world.append(1)
+			world.append(2)
+			world.append(3)
+			repeat
+				local started = world.now
+				local ran = world.frame()
+				assert.is_true(world.now - started <= ns.PROJECTION_BUDGET)
+			until not ran
+
+			assert.are.same({ "501 rebuild", "done", "502 live", "503 live", "504 live" }, { unpack(seen.applied, 501) })
+			assert.is_false(world.projections:IsUpdating())
+		end
+	)
 
 	it("applies 500 pending entries at once, done before Start returns (LOG-R71)", function()
 		local world = machinery(casts(500))

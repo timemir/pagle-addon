@@ -110,7 +110,8 @@ describe("a Module's projection at login", function()
 		loaded.client.fire("PLAYER_ENTERING_WORLD", true, false)
 		assert.are.same({ "SkillChanged" }, seen.applied)
 		assert.is_true(projection:IsUpdating())
-		loaded.client.runTimers()
+		loaded.client.runTimers() -- the entries
+		loaded.client.runTimers() -- done, in a frame of its own (#79)
 
 		assert.is_false(projection:IsUpdating())
 		assert.are.equal(1, #seen.done)
@@ -138,7 +139,8 @@ describe("a Cast recorded", function()
 		loaded.client.fire("PLAYER_ENTERING_WORLD", true, false)
 
 		catchOne(loaded)
-		loaded.client.runTimers()
+		loaded.client.runTimers() -- the entries
+		loaded.client.runTimers() -- done, in a frame of its own (#79), then the live entries
 
 		local tail = { unpack(seen.applied, #seen.applied - 3) }
 		assert.are.same({ "502 build rebuild", "done", "503 skill live", "504 cast live" }, tail)

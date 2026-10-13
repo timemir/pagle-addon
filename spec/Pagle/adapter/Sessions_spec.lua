@@ -213,7 +213,8 @@ describe("Sessions on the client", function()
 				login(loaded)
 				assert.is_true(seen.projection:IsUpdating())
 				assert.are.same({}, seen.payloads)
-				loaded.client.runTimers()
+				loaded.client.runTimers() -- the entries
+				loaded.client.runTimers() -- done, in a frame of its own (#79), then the live entries
 
 				local order = seen.order
 				local last = { order[#order - 2], order[#order - 1], order[#order] }
