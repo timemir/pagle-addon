@@ -211,12 +211,13 @@ describe("the Ledger's projection", function()
 		assert.are.equal("a new release", loaded.env.PagleLedgerDB.global.projection.fingerprint)
 	end)
 
-	it("rebuilds from seq 0 at a login with a raised LEDGER_RULES_VERSION (LED-R2, LED-R4, LED-R191)", function()
-		local last, lastLoaded = firstSession()
-		local fake = nextSession(last, lastLoaded, 0)
-		local loaded, applied = loadLedger(fake, function(loading)
-			loading.ns.LEDGER_RULES_VERSION = 2 -- M3's
+	it("rebuilds an M2 projection, rules version 100, at M3's 200 at the first M3 login (LED-R4, LED-R191)", function()
+		local last, lastLoaded = firstSession(function(loading)
+			loading.ns.LEDGER_RULES_VERSION = 1 -- M2's
 		end)
+		assert.are.equal(100, lastLoaded.env.PagleLedgerDB.global.projection.rulesVersion)
+		local fake = nextSession(last, lastLoaded, 0)
+		local loaded, applied = loadLedger(fake)
 
 		fake.login()
 		fake.enterWorld()
@@ -264,14 +265,14 @@ describe("the Ledger's projection", function()
 		assert.are.same(before, loaded.ns.projection:GetState())
 	end)
 
-	it("stores rulesVersion 100 with no Pagle.SIZE_RULES_VERSION, as in M2 (LED-R2, LED-R4, LOG-R68)", function()
+	it("stores rulesVersion 200 with no Pagle.SIZE_RULES_VERSION, as in M3 (LED-R2, LED-R4, LOG-R68)", function()
 		local _, loaded = firstSession()
 
 		assert.is_nil(newFakePagle().Pagle.SIZE_RULES_VERSION)
-		assert.are.equal(100, loaded.env.PagleLedgerDB.global.projection.rulesVersion)
+		assert.are.equal(200, loaded.env.PagleLedgerDB.global.projection.rulesVersion)
 	end)
 
-	it("stores 101 and rebuilds once Pagle.SIZE_RULES_VERSION is 1 (LED-R2, LED-R191, LOG-R68)", function()
+	it("stores 201 and rebuilds once Pagle.SIZE_RULES_VERSION is 1 (LED-R2, LED-R191, LOG-R68)", function()
 		local last, lastLoaded = firstSession()
 		local fake = nextSession(last, lastLoaded, 0)
 		fake.Pagle.SIZE_RULES_VERSION = 1
@@ -281,6 +282,6 @@ describe("the Ledger's projection", function()
 		fake.enterWorld()
 
 		assert.are.same(rebuiltTo(fake, 5), applied)
-		assert.are.equal(101, loaded.env.PagleLedgerDB.global.projection.rulesVersion)
+		assert.are.equal(201, loaded.env.PagleLedgerDB.global.projection.rulesVersion)
 	end)
 end)
