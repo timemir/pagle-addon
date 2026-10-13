@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 
 from baseline_fixture import CSVS, EVENTS_CSV_HEADER, SEED_EVENTS, write_baseline
+from observed_fixture import write_observed
 from pagle_data.baseline import BaselineEvent
 from pagle_data.generate import read_layers
 from pagle_data.toml_reader import DataError
@@ -28,6 +29,7 @@ def write_tree(root: Path, windows: str = WINDOWS, events_csv: str | None = None
     (db2 / "areas.csv").write_text("ID,ParentAreaID,ContinentID,AreaName_lang\n", encoding="utf-8")
     (db2 / "items.csv").write_text("ID,ClassID,SubclassID,OverallQualityID,Display_lang\n", encoding="utf-8")
     write_baseline(root, CSVS if events_csv is None else {**CSVS, "events.csv": events_csv})
+    write_observed(root)  # dev.toml with no facts; test_observed.py covers the layer
     return root
 
 

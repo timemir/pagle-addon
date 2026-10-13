@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from baseline_fixture import CSVS, write_baseline
+from observed_fixture import write_observed
 from pagle_data.cli import main
 from windows_fixture import write_windows
 
@@ -50,6 +51,7 @@ def write_tree(root: Path, aliases: str = "") -> Path:
     (db2 / "areas.csv").write_text(AREAS, encoding="utf-8")
     (db2 / "items.csv").write_text("ID,ClassID,SubclassID,OverallQualityID,Display_lang\n", encoding="utf-8")
     write_baseline(root, {**CSVS, "area_loot.csv": AREA_LOOT})
+    write_observed(root)  # dev.toml with no facts; test_observed.py covers the layer
     return root
 
 

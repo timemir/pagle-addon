@@ -10,13 +10,14 @@ from pagle_data.catalogue import Catalogue, Event, fingerprint
 from pagle_data.db2 import DB2, Db2Layer, read_db2
 from pagle_data.forever import ForeverLayer, read_forever
 from pagle_data.lua import to_lua
-from pagle_data.toml_reader import DataError, Problems
+from pagle_data.observed import OBSERVED, ObservedLayer, Observations, observations, read_observed
+from pagle_data.toml_reader import At, DataError, Problems
 from pagle_data.windows import Spec, build_windows, catalogue_windows, local_lua, read_windows_toml
 
 CATALOGUE_LUA = "addons/Pagle/data/Catalogue.lua"
 
-# The layers the generator reads, in DATA-R8's order (a later one wins). data/observed/ comes in M2.
-LAYERS = (f"{BASELINE}/", "data/forever/", DB2)
+# The layers the generator reads, in DATA-R8's order (a later one wins).
+LAYERS = (f"{BASELINE}/", "data/forever/", DB2, OBSERVED)
 
 
 def _areas(db2: Db2Layer) -> dict[int, Mapping[str, object]]:
@@ -90,6 +91,7 @@ class Layers:
     forever: ForeverLayer
     db2: Db2Layer
     windows: dict[str, Spec]  # every window by ID (DATA-R35)
+    observed: ObservedLayer
 
     def fishing_areas(self) -> set[int]:
         return fishing_areas(self.baseline)
@@ -97,6 +99,16 @@ class Layers:
     def proposals(self) -> list[Proposal]:
         """The alias candidates not yet committed to aliases.toml (DATA-R32, DATA-R64)."""
         return propose(self.db2, self.fishing_areas(), self.forever.aliases)
+
+    def observations(self) -> Observations:
+        """data/observed/'s observations, their areas through the alias table (DATA-R34). Nothing in the catalogue
+        comes from them yet: observed pairs and confirmed are DATA-R47–R55's."""
+        return observations(self.observed, {alias.source: alias.target for alias in self.forever.aliases})
+
+    def missing_areas(self) -> dict[int, list[At]]:
+        """Observed areas missing from data/db2/areas.csv, kept in the sources and left out of the catalogue
+        (DATA-R33)."""
+        return self.observations().missing_areas(self.db2.areas)
 
 
 def read_layers(root: Path) -> Layers:
@@ -110,13 +122,14 @@ def read_layers(root: Path) -> Layers:
     db2 = read_db2(root, problems)
     window_overrides = read_windows_toml(root, problems)
     windows: dict[str, Spec] = {}
+    observed = read_observed(root, problems)
     if baseline_read:  # without the whole baseline, every target would look like it has no catch list
         check_aliases(forever.aliases, fishing_areas(baseline), problems)
         # ...and every seeded window would look missing (DATA-R35, DATA-R36)
         windows = build_windows(baseline.events, window_overrides, forever.events, problems)
     if problems:
         raise DataError(problems.found)
-    return Layers(baseline, forever, db2, windows)
+    return Layers(baseline, forever, db2, windows, observed)
 
 
 def outputs(layers: Layers) -> dict[str, str]:
