@@ -13,9 +13,8 @@
 # Pagle/CHANGELOG.md and the repo's LICENSE and NOTICE in Pagle/. Nothing else: no docs/, spec/,
 # scripts/, probes/, prototypes/ and no stray addons/ path.
 #
-# Needs bash >= 4.3, git, curl, zip and unzip (run it in WSL). Never needs jq: that is upload-only.
-# No zip and no sudo? On Ubuntu, `apt-get download zip && dpkg-deb -x zip_*.deb DIR` and put
-# DIR/usr/bin on PATH.
+# Run it in WSL. Needs bash >= 4.3, git, curl, unzip, zip and jq (sudo apt-get install zip jq);
+# the packager builds the zip with zip and reads upload APIs with jq.
 set -euo pipefail
 
 # BigWigsMods/packager v2.6.1. Keep in step with the pin in .github/workflows/release.yml.
@@ -24,7 +23,7 @@ packager_sha256="59b15a8d851b09e6d0fdec702aec91331b9b49d84dbe778da6c621b48f26870
 
 case "${1:-}" in
 	-h | --help)
-		sed -n '2,18p' "$0"
+		sed -n '2,17p' "$0"
 		exit 0
 		;;
 	"") ;;
@@ -38,7 +37,7 @@ root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 releasedir="$root/.release"
 packager="$root/.tools/packager/release-$packager_commit.sh"
 
-for tool in git curl zip unzip; do
+for tool in git curl unzip zip jq; do
 	if ! command -v "$tool" >/dev/null; then
 		echo "Missing '$tool'. Install it (sudo apt-get install $tool) and run again." >&2
 		exit 1
