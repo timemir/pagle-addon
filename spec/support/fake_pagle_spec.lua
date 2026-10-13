@@ -185,6 +185,23 @@ describe("FakePagle", function()
 		assert.are.same({ { "LOOT_OPENED", false }, { "UNIT_SPELLCAST_CHANNEL_STOP", "player" } }, got)
 	end)
 
+	it("loads a Module with Core's libs but not Core, so it registers with the fake (CORE-R6, CORE-R18)", function()
+		local fake = newFakePagle()
+
+		local loaded = fake.load("Pagle_QoL")
+
+		assert.are.equal(fake.globals.Pagle, loaded.env.Pagle)
+		assert.is_table(loaded.env.LibStub:GetLibrary("AceDB-3.0", true))
+		assert.is_nil(loaded.namespaces.Pagle.Modules)
+		assert.are.equal("on", fake.moduleState("QoL"))
+	end)
+
+	it("keeps Core's libraries to itself, so no later load shares them through the real globals", function()
+		newFakePagle()
+
+		assert.is_nil(rawget(_G, "LibStub"))
+	end)
+
 	it("matches conditions with Core's real logic (LOG-R48)", function()
 		local Pagle = newFakePagle().Pagle
 
