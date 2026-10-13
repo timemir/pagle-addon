@@ -29,10 +29,11 @@ local sinceTick = 0 -- seconds since the last evaluation
 local disarming = false -- inside ns.DisarmFishingKey, whose own UPDATE_BINDINGS must not re-arm (QOL-R31)
 local evaluate
 
---- QoL is armed while it is registered, isn't standing down (QOL-R82) and isn't restricted (QOL-R30).
+--- QoL is armed once logged in, while it isn't standing down (QOL-R82) or restricted (QOL-R30). Only a registered
+--- QoL starts the Fishing key (ns.StartFishingKey), so loggedIn is never true for an inert one.
 ---@return boolean
 local function isArmed()
-	return ns.Module ~= nil and loggedIn and not ns.IsStandingDown() and not Pagle.IsRestricted()
+	return loggedIn and not ns.IsStandingDown() and not Pagle.IsRestricted()
 end
 
 ---@return boolean
@@ -65,7 +66,7 @@ local function ladderState(armed, fishingName)
 		lootOpen = lootOpen,
 		casting = UnitCastingInfo("player") ~= nil,
 		channelingFishing = channeling,
-		poleInHand = poleInHand(),
+		-- poleInHand stays unread until a step uses it (Track Q's gear step); M1's ladder casts either way (QOL-R23).
 	}
 end
 

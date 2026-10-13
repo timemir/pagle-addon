@@ -11,8 +11,8 @@ from dataclasses import dataclass
 
 from pagle_data.baseline import BaselineLayer
 from pagle_data.db2 import Db2Layer
+from pagle_data.errors import Problems
 from pagle_data.forever import Alias
-from pagle_data.toml_reader import Problems
 
 
 def fishing_areas(baseline: BaselineLayer) -> set[int]:

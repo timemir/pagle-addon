@@ -25,12 +25,12 @@ Part of [Core](README.md). This file covers what Core observes, how it is stored
 ### Observing fishing
 
 - **LOG-R2** A **fishing channel** is `UNIT_SPELLCAST_CHANNEL_START` for `"player"` with a spell ID in the catalogue's fishing-spell list. It sets the fishing state to `"channeling"` and fires `CastStarted`.
-- **LOG-R3** A Cast ends **caught** at `LOOT_READY` when `IsFishingLoot()` is true. Core reads every loot slot with `GetLootSlotInfo` / `GetLootSlotLink`, skips money and currency slots, and keeps each remaining item's ID and quantity in slot order. The fishing state becomes `"looting"` until `LOOT_CLOSED`, then `"idle"`.
+- **LOG-R3** A Cast ends **caught** at `LOOT_READY` when `IsFishingLoot()` is true. When `IsFishingLoot()` is secret, the window counts as fishing only while a Cast is in progress. Core reads every loot slot with `GetLootSlotInfo` / `GetLootSlotLink`, skips money and currency slots, and keeps each remaining item's ID and quantity in slot order. The fishing state becomes `"looting"` until `LOOT_CLOSED`, then `"idle"`.
 - **LOG-R4** Further `LOOT_READY` fires before `LOOT_CLOSED` belong to the same loot window and are ignored. `LOOT_OPENED` is never used, because it fires only with auto-loot off.
 - **LOG-R5** A fishing `LOOT_READY` with no channel seen (the player reloaded mid-cast) still ends a caught Cast.
 - **LOG-R6** A Cast ends **got away** when the game reports the fish escaped (`UI_ERROR_MESSAGE` with the `ERR_FISH_ESCAPED` text, or the same text as a system message) during the channel or within the grace time after it stops, with no fishing loot window. This detection is verified on the live build during M1 dogfooding; if Forever reports it differently, this rule is updated, not worked around.
-- **LOG-R7** When a channel stops (`UNIT_SPELLCAST_CHANNEL_STOP`), Core waits up to the grace time for a fishing `LOOT_READY` or the escaped message. If neither comes, or a new fishing channel starts first, the Cast was **interrupted** (moved, recast, cancelled, combat): `CastEnded("interrupted")` fires (before the new channel's `CastStarted`, on a recast), nothing is written, and the state returns to `"idle"` unless a new channel is running. A Cast ends exactly once; later signals for it are ignored.
-- **LOG-R8** **A Catch counts once offered** in a fishing loot window, whether or not it reaches the bags. Every offered item is a Catch, Uncharted items (unknown to the catalogue) included. An item whose ID is secret is recorded as item `0`; item `0` never matches the catalogue and is never credited later.
+- **LOG-R7** When a channel stops (`UNIT_SPELLCAST_CHANNEL_STOP`), Core waits up to the grace time for a fishing `LOOT_READY` or the escaped message. If neither comes, or a new fishing channel starts first, the Cast was **interrupted** (moved, recast, cancelled, combat): `CastEnded("interrupted")` fires (before the new channel's `CastStarted`, on a recast), nothing is written, and the state returns to `"idle"` unless a new channel is running. A Cast ends exactly once; later signals for it are ignored. A fishing `LOOT_READY` that comes after the grace time has ended a Cast interrupted (a lag spike) is not lost: it is recorded as a new caught Cast with no channel seen (LOG-R5), and the interrupted Cast is never ended again.
+- **LOG-R8** **A Catch counts once offered** in a fishing loot window, whether or not it reaches the bags. Every offered item is a Catch, Uncharted items (unknown to the catalogue) included. An item whose ID is secret is recorded as item `0`; item `0` never matches the catalogue and is never credited later. A quantity that is secret or missing is recorded as `1`, the least a slot offers.
 - **LOG-R9** When a Cast ends caught or got away, Core, in this order:
   1. takes the Cast snapshot (LOG-R20)
   2. appends the Cast entry (LOG-R11)
@@ -70,7 +70,7 @@ Part of [Core](README.md). This file covers what Core observes, how it is stored
   - **Zone:** of those IDs, the ones in the catalogue's AreaTable slice with no parent zone and the current instance's continent. If exactly one remains, it's used. If none is in the slice and the name has exactly one ID, that ID is used. Otherwise `0`.
   - **Subzone:** an empty subzone text, or one equal to the zone text, gives `0`. Otherwise, of the name's IDs, the ones in the slice whose parent chain, walked up until it reaches a zone, reaches the resolved zone; then as for zones. A parent missing from the slice or a cycle in the chain ends the walk, and that ID doesn't count.
   - The resolved ID is then mapped through the catalogue's alias table (an area on another map that stands for a baseline fishing area, e.g. 16521 → 18).
-  - An unresolved name gives `0`, and the text goes to the diagnostics buffer (LOG-R81).
+  - An unresolved name gives `0`, and the text goes to the diagnostics buffer (LOG-R81). An empty text (`""`) gives `0` and is not unresolved, the same as a secret one (`nil`): it has no text to report.
 - **LOG-R23** The **runtime area index** maps the names `C_Map.GetAreaInfo(id)` returns for ids 1 to 40,000 to their IDs, built once per login (about 15 ms on the beta). It is the only source of area names; the catalogue ships none.
 
 ### Characters and the Angler
@@ -124,8 +124,8 @@ Part of [Core](README.md). This file covers what Core observes, how it is stored
   | `lure` | `true` (any lure) or a list of enchant IDs | a matching lure is on |
   | `skill` | `{ min = n }` | effective skill (rank + modifier) ≥ n |
 
-  A field that is absent doesn't constrain. An empty list, or a range with `from == to`, is invalid: the generator rejects it in content data, and `MatchesConditions` raises an error. A snapshot field that is `nil` or `0` (secret or unresolved) never matches a field that tests it. There is no pool and no weather field.
-- **LOG-R49** `Pagle.MatchesConditions(spec, snapshot)` is pure Core `logic/` and accepts a live snapshot or a Cast's. For a Cast, the realm date is derived from its server time and realm minute: the realm's UTC offset is the difference between the realm minute and the UTC minute of the server time, rounded to 15 minutes and kept within ±12 hours.
+  A field that is absent doesn't constrain. A `confirmed` field (a boolean, which a window spec from `GetWindowSpec` carries, LOG-R55) is not a condition and never constrains, so a window spec can be matched as it is. An empty list, or a range with `from == to`, is invalid: the generator rejects it in content data, and `MatchesConditions` raises an error. A snapshot field that is `nil` or `0` (secret or unresolved) never matches a field that tests it. There is no pool and no weather field.
+- **LOG-R49** `Pagle.MatchesConditions(spec, snapshot)` is pure Core `logic/` and accepts a live snapshot or a Cast's. For a Cast, the realm date is derived from its server time and realm minute: the realm's UTC offset is the difference between the realm minute and the UTC minute of the server time, rounded to 15 minutes. Real offsets run from −12 to +14 hours (NZDT is +13, Kiribati +14), but a minute of day fixes the offset only to within a day, so the offset is taken in the 24 hours after −10 h, up to and including +14 h: a difference outside that range wraps by a day into it. Every offset east of UTC is then read right; −10 to −12 h, where no realm runs, read as +14 to +12 h.
 - **LOG-R50** `Pagle.NextWindow(spec, fromTime)` forecasts the spec's time-based fields (`time`, `season`, `events`), intersected, and returns a `Window`:
   - if the spec has `time`, `season` or `events`: `{ openNow = true, closesAt }` if they all hold at `fromTime`, otherwise `{ opensAt, closesAt }` for the next opening within 400 days, or `nil` if there is none (or an event in it has no weekly rule)
   - otherwise, if it has `auras`: `{ onDemand = true }`
@@ -141,7 +141,7 @@ Part of [Core](README.md). This file covers what Core observes, how it is stored
   - `Pagle.GetArea(areaID)` → `{ parent, continent, skillBase?, skillBaseConfirmed, hasData, catches = { { itemID, confirmed, window?, gate?, gateConfirmed? } } }`, or `nil` for an unknown area. `parent` is `0` for a zone. `gate` is a condition spec (LOG-R48). Every gated entry is gated by exactly one window, and carries that window's ID as `window` (`"night"`, `"summer"`, `"event.301"`; the IDs `GetWindowSpec` takes); `window`, `gate` and `gateConfirmed` are present together or not at all. A Module labels or groups a gate by its `window` ID and never matches or compares condition specs to work out which window it is.
   - `Pagle.GetZoneOf(areaID)` → the zone areaID a subzone belongs to (itself for a zone).
   - `Pagle.GetZoneCatches(zoneAreaID)` → every catch entry of the zone and its subzones, each with an added `areaID` field saying which area it came from. An item listed in several of them appears once per area.
-  - `Pagle.GetWindowSpec(windowID)` → a condition spec with `confirmed`, for the named windows `day`, `night`, `spring`, `summer`, `autumn`, `winter` and each event with a weekly rule.
+  - `Pagle.GetWindowSpec(windowID)` → one condition spec table that carries the window's `confirmed` as a field (`{ time = …, confirmed = false }`), for the named windows `day`, `night`, `spring`, `summer`, `autumn`, `winter` and each event with a weekly rule; `nil` for any other ID.
   - `Pagle.CONTENT_FINGERPRINT` → the generator's hash of everything in the catalogue, as lowercase hex.
 - **LOG-R56** The catalogue also holds:
   - the AreaTable slice (`{ id, parent, continent }` per area, no names) and the alias table (`areaID → baseline areaID`, LOG-R22)
@@ -318,9 +318,9 @@ Each Module keeps one AceDB SavedVariable, `Pagle<Module>DB`, account-wide with 
 ---@field restricted? boolean    -- live snapshots only
 
 ---@class Angler
----@field logId string
+---@field logId string?          -- nil only on a fresh install before the first PLAYER_LOGIN
 ---@field characters { guid: string, name: string, surname?: string, classID: integer, raceID: integer, faction: string, realmID: integer, hardcore?: boolean, selfFound?: boolean, firstSeen: integer, lastSeen: integer }[]
----@field current integer        -- index of the logged-in character
+---@field current integer?       -- index of the logged-in character; nil before PLAYER_LOGIN
 ---@field skill { [integer]: PagleSkillReading }   -- latest Skill Reading per character index
 ---@field bestBaseSkill integer  -- highest skill rank among all characters (0 if none)
 

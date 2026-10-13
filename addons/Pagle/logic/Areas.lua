@@ -62,7 +62,8 @@ local function pick(ids, catalogue, fits)
 end
 
 --- Resolves `GetRealZoneText()` and `GetSubZoneText()` to areaIDs (LOG-R22). Each is 0 when unresolved, and the
---- subzone is 0 for an empty text or one equal to the zone's. A secret text, passed in as nil, gives 0 too.
+--- subzone is 0 for one equal to the zone's. An empty text, or a secret one passed in as nil, gives 0 too, and isn't
+--- unresolved.
 ---@param index PagleAreaIndex
 ---@param catalogue PagleCatalogue
 ---@param zoneText string?
@@ -73,11 +74,12 @@ end
 ---@return PagleUnresolvedAreas? unresolved Both texts, when a non-empty one (other than a subzone equal to the zone)
 --- didn't resolve; nil otherwise.
 function ns.ResolveAreas(index, catalogue, zoneText, subzoneText, continent)
-	local zone = 0
-	if zoneText then
+	local zone, zoneUnresolved = 0, false
+	if zoneText and zoneText ~= "" then
 		zone = pick(index[zoneText], catalogue, function(area)
 			return area.parent == 0 and continent ~= nil and area.continent == continent
 		end)
+		zoneUnresolved = zone == 0
 	end
 
 	local subzone, subzoneUnresolved = 0, false
@@ -90,7 +92,7 @@ function ns.ResolveAreas(index, catalogue, zoneText, subzoneText, continent)
 	end
 
 	local unresolved
-	if (zoneText and zone == 0) or subzoneUnresolved then
+	if zoneUnresolved or subzoneUnresolved then
 		unresolved = { zone = zoneText, subzone = subzoneText }
 	end
 	return catalogue.Unalias(zone), catalogue.Unalias(subzone), unresolved

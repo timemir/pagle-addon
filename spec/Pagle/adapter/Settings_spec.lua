@@ -2,18 +2,6 @@
 -- Pagle.OpenSettings (CORE-R32, CORE-R33, CORE-R40–R44; settings.md SET-R1–R5, SET-R10–R12, SET-R60–R62,
 -- SET-R70, SET-R90–R96).
 
--- FOREVER_GLOBALS plus `extra`.
-local function foreverWith(extra)
-	local globals = {}
-	for key, value in pairs(FOREVER_GLOBALS) do
-		globals[key] = value
-	end
-	for key, value in pairs(extra or {}) do
-		globals[key] = value
-	end
-	return globals
-end
-
 -- Loads Core with the given roster Modules installed on the fake client, by roster name: { QoL = {} } puts
 -- Pagle_QoL in client.addons, enabled and loaded unless it says otherwise, with X-Pagle-API 1 and version 1.2.3.
 local function loadWith(modules, extra)
@@ -216,6 +204,37 @@ describe("M:AddSetting", function()
 		assert.is_nil(loaded.client.settings.category("Fishing"))
 	end)
 
+	it("raises an error at the caller for a missing label or a field its kind requires (CORE-R42)", function()
+		local loaded = loadWithQoL()
+		local M = registerQoL(loaded)
+
+		assert.matches(
+			"Settings_spec%.lua:%d+: .*a setting needs a label",
+			errorOf(function()
+				M:AddSetting("fishing", { kind = "header" })
+			end)
+		)
+		assert.matches(
+			"Settings_spec%.lua:%d+: .*a slider setting needs step, a number",
+			errorOf(function()
+				M:AddSetting("fishing", {
+					kind = "slider",
+					label = "Volume",
+					get = function() end,
+					set = function() end,
+					min = 0,
+					max = 1,
+				})
+			end)
+		)
+		assert.matches(
+			"Settings_spec%.lua:%d+: .*a keybinding setting needs binding, a string",
+			errorOf(function()
+				M:AddSetting("fishing", { kind = "keybinding", label = "Fishing key" })
+			end)
+		)
+	end)
+
 	it("raises an error at the caller for an id the Module already used on that page (CORE-R42)", function()
 		local loaded = loadWithQoL()
 		local M = registerQoL(loaded)
@@ -249,7 +268,7 @@ describe("M:AddSetting", function()
 		end
 	)
 
-	it("reports a call after ModulesChanged through geterrorhandler() and drops it (CORE-R42)", function()
+	it("reports a late call through geterrorhandler(), in ns.L's words, and drops it (CORE-R42, CORE-R8)", function()
 		local loaded = loadWithQoL()
 		local M = registerQoL(loaded)
 		addFishingRows(M)
@@ -266,27 +285,12 @@ describe("M:AddSetting", function()
 		M:AddSetting("look", { kind = "toggle" })
 
 		assert.are.equal(2, #reported)
-		assert.matches("QoL's AddSetting came after ModulesChanged", reported[1])
+		local late = loaded.ns.L.SETTING_TOO_LATE:format("QoL")
+		assert.are.same({ late, late }, reported)
+		assert.are.equal("Pagle: QoL's AddSetting came after ModulesChanged, so the row is dropped", late)
 		assert.are.same({ "Casting", "FISHING KEY" }, rowNames(loaded.client.settings.category("Fishing")))
 	end)
 end)
-
--- The names of the categories Settings.OpenToCategory opened, in order.
-local function openedNames(loaded)
-	local names = {}
-	for i, category in ipairs(loaded.client.settings.opened) do
-		names[i] = category and category.name
-	end
-	return names
-end
-
--- A combat flip on the fake client: PLAYER_REGEN_DISABLED or _ENABLED, with InCombatLockdown agreeing.
-local function setCombat(loaded, inCombat)
-	loaded.env.InCombatLockdown = function()
-		return inCombat
-	end
-	loaded.client.fire(inCombat and "PLAYER_REGEN_DISABLED" or "PLAYER_REGEN_ENABLED")
-end
 
 describe("Pagle.OpenSettings", function()
 	it("opens the root, and a topic page once it is registered (CORE-R43, SET-R75)", function()
@@ -387,6 +391,32 @@ describe("The status list with a Module On", function()
 
 		assert.are.equal("Shown 1", statusButtons(loaded)[1]:GetText())
 		assert.are.equal("Shown 2", statusButtons(loaded)[1]:GetText())
+	end)
+
+	it("leaves out a button whose label fails, reporting it; the line stays (CORE-R44, SET-R12)", function()
+		local loaded = loadWithQoL()
+		local reported = {}
+		loaded.env.geterrorhandler = function()
+			return function(err)
+				reported[#reported + 1] = err
+			end
+		end
+		registerQoL(loaded, {
+			settingsAction = {
+				label = function()
+					error("no label yet")
+				end,
+				onClick = function() end,
+			},
+		})
+		loaded.client.fire("PLAYER_LOGIN")
+
+		local list = loaded.client.settings.textsOf(showStatusList(loaded))
+
+		assert.are.same({}, statusButtons(loaded))
+		assert.are.same({ "QoL", "1.2.3", "On" }, { unpack(list, #list - 2) })
+		assert.are.equal(2, #reported) -- the label is read each time the root is shown
+		assert.matches("no label yet", reported[1], 1, true)
 	end)
 
 	it("labels a Module's button Open {label} for its first view, without settingsAction (CORE-R44)", function()

@@ -36,3 +36,16 @@ function ns.StripSecrets(isSecret, ...)
 	end
 	return unpack(values, 1, n)
 end
+
+--- One value the client gave, or nil if it's secret (CORE-R31): a secret is never a name, an ID or a table key.
+--- Unlike `ns.StripSecrets`, a table is handed back as it is.
+---@generic T
+---@param isSecret fun(value: any): boolean `issecretvalue`
+---@param value T
+---@return T?
+function ns.UnlessSecret(isSecret, value)
+	if isSecret(value) then
+		return nil
+	end
+	return value
+end

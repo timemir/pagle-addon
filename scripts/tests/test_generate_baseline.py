@@ -110,3 +110,21 @@ def test_a_csv_whose_columns_are_not_data_r9s_fails(tmp_path: Path, capsys: pyte
     assert code == 1
     assert "data/baseline/skill.csv: line 1: expected the columns area,skillBase" in output
     assert "data/baseline/pools.csv: line 2: entry: expected an integer, got 'x'" in output
+
+
+@pytest.mark.parametrize("mode", [[], ["--check"]])
+def test_a_loot_row_with_a_condition_is_ungated_and_printed_as_a_warning(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], mode: list[str]
+) -> None:
+    # DATA-R9: a condition that isn't a single event leaves `event` empty and "the generator treats such a row as
+    # ungated and prints it as a warning"; DATA-R64: printed, not failing. The fixture's area 40 row has one; the
+    # area 33 rows (an event, and a plain reference) don't.
+    run(write_tree(tmp_path), capsys)
+    code, output = run(tmp_path, capsys, *mode)
+    assert code == 0
+    warning = (
+        "generate-data: warning: data/baseline/area_loot.csv: area 40 item 6303 has the condition"
+        " and(event(45), not(event(47))), not a single event; it is treated as ungated"
+    )
+    assert warning in output
+    assert output.count("treated as ungated") == 1

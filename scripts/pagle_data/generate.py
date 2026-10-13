@@ -5,12 +5,12 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from pagle_data.aliases import Proposal, check_aliases, fishing_areas, propose
-from pagle_data.baseline import BASELINE, BaselineLayer, read_baseline
+from pagle_data.baseline import BASELINE, AreaLoot, BaselineLayer, conditional_rows, read_baseline
 from pagle_data.catalogue import Catalogue, Event, fingerprint
 from pagle_data.db2 import DB2, Db2Layer, read_db2
+from pagle_data.errors import DataError, Problems
 from pagle_data.forever import ForeverLayer, read_forever
 from pagle_data.lua import to_lua
-from pagle_data.toml_reader import DataError, Problems
 
 CATALOGUE_LUA = "addons/Pagle/data/Catalogue.lua"
 
@@ -87,6 +87,10 @@ class Layers:
 
     def fishing_areas(self) -> set[int]:
         return fishing_areas(self.baseline)
+
+    def conditional_rows(self) -> list[AreaLoot]:
+        """The baseline loot rows treated as ungated because their condition isn't a single event (DATA-R9)."""
+        return conditional_rows(self.baseline)
 
     def proposals(self) -> list[Proposal]:
         """The alias candidates not yet committed to aliases.toml (DATA-R32, DATA-R64)."""
