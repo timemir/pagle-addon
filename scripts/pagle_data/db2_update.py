@@ -5,9 +5,6 @@ by hand.
 """
 
 import argparse
-import csv
-import io
-import os
 import re
 import sys
 import urllib.request
@@ -28,7 +25,8 @@ from pagle_data.db2 import (
     parse_table,
     read_build,
 )
-from pagle_data.toml_reader import Problems
+from pagle_data.errors import Problems
+from pagle_data.files import csv_text, write_atomic
 from pagle_data.universe import item_universe
 
 PROG = "update-db2"
@@ -57,24 +55,16 @@ def download(url: str) -> bytes:
 
 def areas_csv(areas: dict[int, Area]) -> str:
     """areas.csv (DATA-R11): the header, then one row per area sorted by ID."""
-    out = io.StringIO()
-    writer = csv.writer(out, lineterminator="\n")
-    writer.writerow(AREA_COLUMNS)
-    for area_id in sorted(areas):
-        area = areas[area_id]
-        writer.writerow([area_id, area.parent, area.continent, area.name])
-    return out.getvalue()
+    rows = [(area_id, area.parent, area.continent, area.name) for area_id, area in sorted(areas.items())]
+    return csv_text(AREA_COLUMNS, rows)
 
 
 def items_csv(items: dict[int, Item]) -> str:
     """items.csv (DATA-R11): the header, then one row per item sorted by ID."""
-    out = io.StringIO()
-    writer = csv.writer(out, lineterminator="\n")
-    writer.writerow(ITEM_COLUMNS)
-    for item_id in sorted(items):
-        item = items[item_id]
-        writer.writerow([item_id, item.class_id, item.subclass, item.quality, item.name])
-    return out.getvalue()
+    rows = [
+        (item_id, item.class_id, item.subclass, item.quality, item.name) for item_id, item in sorted(items.items())
+    ]
+    return csv_text(ITEM_COLUMNS, rows)
 
 
 def join_items(sparse: str, item: str, build: str, universe: frozenset[int], problems: Problems) -> dict[int, Item]:
@@ -104,14 +94,6 @@ def build_toml(build: int, version: str, products: list[str]) -> str:
         f'version = "{version}"\n'
         f"products = [{listed}]\n"
     )
-
-
-def _replace(path: Path, content: str) -> None:
-    # Through a temporary file, so an interrupted run never leaves half a file.
-    path.parent.mkdir(parents=True, exist_ok=True)
-    partial = path.with_name(path.name + ".partial")
-    partial.write_bytes(content.encode("utf-8"))
-    os.replace(partial, path)
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -182,9 +164,9 @@ def main(argv: Sequence[str], root: Path, fetch: Fetch = download) -> int:
     if problems:
         return _fail(problems.found)
 
-    _replace(root / AREAS, areas_csv(areas))
-    _replace(root / ITEMS, items_csv(items))
-    _replace(root / BUILD, build_toml(build, version, products))
+    write_atomic(root / AREAS, areas_csv(areas).encode("utf-8"))
+    write_atomic(root / ITEMS, items_csv(items).encode("utf-8"))
+    write_atomic(root / BUILD, build_toml(build, version, products).encode("utf-8"))
     print(f"{PROG}: wrote {AREAS} ({len(areas)} areas), {ITEMS} ({len(items)} items) and {BUILD} for {args.build}")
     missing = sorted(universe - items.keys())
     if missing:

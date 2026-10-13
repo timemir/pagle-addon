@@ -17,4 +17,5 @@ local Pagle = {
 -- Built as a local, then published: the types stage checks writes to a class only through a typed local.
 _G.Pagle = Pagle
 
+-- Nothing reads ns.Core yet; it exists because #46 makes Core an AceAddon, registered with AceAddon-3.0 by name.
 ns.Core = LibStub("AceAddon-3.0"):NewAddon(addonName)

@@ -5,7 +5,7 @@ from pathlib import Path
 
 from pagle_data.baseline import read_baseline
 from pagle_data.db2 import ITEMS, Item, read_db2
-from pagle_data.toml_reader import Problems
+from pagle_data.errors import Problems
 from pagle_data.universe import item_universe
 
 REPO = Path(__file__).resolve().parents[2]

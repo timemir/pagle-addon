@@ -8,17 +8,12 @@ local ns = loaded.ns
 local ADA = "Player-4618-0A1B2C3D"
 local BRAM = "Player-4618-0F0E0D0C"
 
--- A PagleLog as the client loads it from SavedVariables (catch-log.md › Data), holding these entries.
-local function savedLog(entries)
-	return {
-		format = 1,
-		logId = "3f9a2c1e7b0d4a65",
-		characters = {
-			{ guid = ADA, name = "Ada", classID = 1, raceID = 1, faction = "Alliance", realmID = 4618 },
-			{ guid = BRAM, name = "Bram", classID = 1, raceID = 3, faction = "Alliance", realmID = 4618 },
-		},
-		entries = entries or {},
-	}
+-- A PagleLog as the client loads it from SavedVariables (savedLog), holding Ada, Bram and these entries.
+local function adaAndBramLog(entries)
+	return savedLog(entries, 1, {
+		{ guid = ADA, name = "Ada", classID = 1, raceID = 1, faction = "Alliance", realmID = 4618 },
+		{ guid = BRAM, name = "Bram", classID = 1, raceID = 3, faction = "Alliance", realmID = 4618 },
+	})
 end
 
 -- Every record the log yields after `afterSeq`, in order.
@@ -32,7 +27,8 @@ end
 
 describe("the Catch log codec", function()
 	it("decodes catch-log.md's example Cast to the documented values (LOG-R11, LOG-R13, LOG-R16)", function()
-		local catchLog = ns.OpenCatchLog(savedLog({ "C1|1|1791731747|0|c|494|1439|1|148|453|86|25|263|||6358x1" }), {})
+		local catchLog =
+			ns.OpenCatchLog(adaAndBramLog({ "C1|1|1791731747|0|c|494|1439|1|148|453|86|25|263|||6358x1" }), {})
 
 		local id = ADA .. "-1791731747-0"
 		assert.are.same({
@@ -141,7 +137,7 @@ describe("the Catch log codec", function()
 
 	for _, case in ipairs(roundTrips) do
 		it("round-trips " .. case.what .. " (" .. case.rule .. ")", function()
-			local catchLog = ns.OpenCatchLog(savedLog(), {})
+			local catchLog = ns.OpenCatchLog(adaAndBramLog(), {})
 
 			local appended = catchLog:Append(case.record)
 
@@ -171,7 +167,7 @@ describe("the Catch log codec", function()
 	end
 
 	it("round-trips a Skill Reading (LOG-R11, LOG-R16, Entry formats)", function()
-		local catchLog = ns.OpenCatchLog(savedLog(), {})
+		local catchLog = ns.OpenCatchLog(adaAndBramLog(), {})
 
 		catchLog:Append({ kind = "skill", char = 1, time = 1791731680, rank = 86, max = 150, mod = 0 })
 
@@ -191,7 +187,7 @@ describe("the Catch log codec", function()
 	end)
 
 	it("round-trips a build entry (LOG-R11, LOG-R16, Entry formats)", function()
-		local catchLog = ns.OpenCatchLog(savedLog(), {})
+		local catchLog = ns.OpenCatchLog(adaAndBramLog(), {})
 
 		catchLog:Append({ kind = "build", char = 2, time = 1791731681, build = 70338, version = "1.60.1" })
 
@@ -210,7 +206,7 @@ describe("the Catch log codec", function()
 	end)
 
 	it("raises an error in the caller and appends nothing for a record it can't write (LOG-R16)", function()
-		local catchLog = ns.OpenCatchLog(savedLog(), {})
+		local catchLog = ns.OpenCatchLog(adaAndBramLog(), {})
 		local unwritable = {
 			{ kind = "prestige", char = 1, time = 1791731680, rank = 1 }, -- not a kind M1 writes
 			{ kind = "skill", char = 3, time = 1791731680, rank = 86, max = 150, mod = 0 }, -- no character 3
@@ -248,7 +244,7 @@ describe("an entry the codec can't decode", function()
 	for _, bad in ipairs(undecodable) do
 		it(("is skipped by every reader and counted once per login: %s (LOG-R16)"):format(tostring(bad)), function()
 			local global = { decodeErrors = 0 }
-			local saved = savedLog({ "S1|1|1791731680|0|86|150|0", bad, "S1|1|1791731690|0|87|150|0" })
+			local saved = adaAndBramLog({ "S1|1|1791731680|0|86|150|0", bad, "S1|1|1791731690|0|87|150|0" })
 			local catchLog = ns.OpenCatchLog(saved, global)
 
 			for _ = 1, 3 do
@@ -267,7 +263,7 @@ describe("an entry the codec can't decode", function()
 
 	it("starts the count at 0 in a PagleDB that has none (LOG-R16)", function()
 		local global = {}
-		records(ns.OpenCatchLog(savedLog({ "X9|1|1791731700|0" }), global), 0)
+		records(ns.OpenCatchLog(adaAndBramLog({ "X9|1|1791731700|0" }), global), 0)
 		assert.are.equal(1, global.decodeErrors)
 	end)
 end)
@@ -278,7 +274,7 @@ describe("iterating the log", function()
 	end
 
 	it("yields the entries with seq > afterSeq, in order (LOG-R14, LOG-R42)", function()
-		local catchLog = ns.OpenCatchLog(savedLog({ skillAt(1), skillAt(2), skillAt(3), skillAt(4) }), {})
+		local catchLog = ns.OpenCatchLog(adaAndBramLog({ skillAt(1), skillAt(2), skillAt(3), skillAt(4) }), {})
 
 		local seqs = {}
 		for _, record in ipairs(records(catchLog, 2)) do
@@ -290,7 +286,7 @@ describe("iterating the log", function()
 	end)
 
 	it("stops at the log's length when called, never at entries appended meanwhile (LOG-R42)", function()
-		local catchLog = ns.OpenCatchLog(savedLog({ skillAt(1), skillAt(2) }), {})
+		local catchLog = ns.OpenCatchLog(adaAndBramLog({ skillAt(1), skillAt(2) }), {})
 
 		local seqs = {}
 		for record in catchLog:Iterate(0) do
@@ -302,7 +298,7 @@ describe("iterating the log", function()
 	end)
 
 	it("gives each appended entry the next seq; the log only grows (LOG-R14)", function()
-		local catchLog = ns.OpenCatchLog(savedLog({ skillAt(1) }), {})
+		local catchLog = ns.OpenCatchLog(adaAndBramLog({ skillAt(1) }), {})
 
 		local appended = catchLog:Append({ kind = "skill", char = 1, time = 2, rank = 87, max = 150, mod = 0 })
 
@@ -322,8 +318,8 @@ describe("opening PagleLog", function()
 	end)
 
 	it("keeps a log in the codec's format as it is (LOG-R14, LOG-R18)", function()
-		local saved = savedLog({ "S1|1|1791731680|0|86|150|0" })
-		local before = savedLog({ "S1|1|1791731680|0|86|150|0" })
+		local saved = adaAndBramLog({ "S1|1|1791731680|0|86|150|0" })
+		local before = adaAndBramLog({ "S1|1|1791731680|0|86|150|0" })
 
 		local catchLog, started = ns.OpenCatchLog(saved, {}, NOW)
 
@@ -334,7 +330,7 @@ describe("opening PagleLog", function()
 
 	for _, format in ipairs({ 0, 2, "nil" }) do
 		it(("starts a new log from one in format %s, keeping the characters (LOG-R18)"):format(format), function()
-			local saved = savedLog({ "C1|1|1791731747|0|c|494|1439|1|148|453|86|25|263|||6358x1" })
+			local saved = adaAndBramLog({ "C1|1|1791731747|0|c|494|1439|1|148|453|86|25|263|||6358x1" })
 			saved.format = tonumber(format)
 			saved.stale = true
 			local characters = saved.characters
@@ -370,7 +366,7 @@ describe("the logId", function()
 	end)
 
 	it("is created once and never changes (LOG-R15)", function()
-		local catchLog = ns.OpenCatchLog(savedLog(), {}, 1791731600)
+		local catchLog = ns.OpenCatchLog(adaAndBramLog(), {}, 1791731600)
 		firstSkill(catchLog)
 		firstSkill(catchLog)
 		assert.are.equal("3f9a2c1e7b0d4a65", catchLog.data.logId)
@@ -395,7 +391,7 @@ describe("the tie counter", function()
 	end
 
 	it("is 0, then one more than the highest, for entries with the same character and time (LOG-R12)", function()
-		local catchLog = ns.OpenCatchLog(savedLog(), {})
+		local catchLog = ns.OpenCatchLog(adaAndBramLog(), {})
 
 		local first = catchLog:Append(skill(1, 1791731680))
 		local second = catchLog:Append(skill(1, 1791731680))
@@ -414,7 +410,7 @@ describe("the tie counter", function()
 	end)
 
 	it("is 0 for a different character at the same second, and for the next second (LOG-R12)", function()
-		local catchLog = ns.OpenCatchLog(savedLog(), {})
+		local catchLog = ns.OpenCatchLog(adaAndBramLog(), {})
 
 		catchLog:Append(skill(1, 1791731680))
 		local otherCharacter = catchLog:Append(skill(2, 1791731680))
@@ -425,7 +421,8 @@ describe("the tie counter", function()
 	end)
 
 	it("counts entries already in the log from an earlier load (LOG-R12)", function()
-		local catchLog = ns.OpenCatchLog(savedLog({ "S1|1|1791731680|0|86|150|0", "S1|2|1791731680|0|86|150|0" }), {})
+		local catchLog =
+			ns.OpenCatchLog(adaAndBramLog({ "S1|1|1791731680|0|86|150|0", "S1|2|1791731680|0|86|150|0" }), {})
 
 		assert.are.equal(ADA .. "-1791731680-1", catchLog:Append(skill(1, 1791731680)).id)
 	end)

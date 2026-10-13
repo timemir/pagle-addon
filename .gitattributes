@@ -1,6 +1,9 @@
 # LF everywhere, whatever core.autocrlf says.
 * text=auto eol=lf
 
+# Pagle's rendered sounds (ANN-R74).
+*.ogg binary
+
 # Vendored Ace3 libraries: stored and checked out exactly as upstream ships them,
 # so scripts/update-ace3.sh --check can compare them byte for byte.
 addons/Pagle/libs/** -text

@@ -15,7 +15,8 @@ from pathlib import Path
 from pagle_data.baseline import read_baseline
 from pagle_data.db2 import Area, Db2Layer, Item, Row, parse_areas, parse_table, read_db2
 from pagle_data.db2_update import Fetch, download, table_url
-from pagle_data.toml_reader import Problems
+from pagle_data.errors import Problems
+from pagle_data.files import write_atomic
 from pagle_data.universe import item_universe
 
 PROG = "db2-watch"
@@ -382,9 +383,8 @@ def main(argv: Sequence[str], root: Path, fetch: Fetch = download) -> int:
     if problems:
         return _fail(problems.found)
 
-    out.mkdir(parents=True, exist_ok=True)
-    (out / TITLE_FILE).write_bytes(f"{title}\n".encode("utf-8"))
-    (out / BODY_FILE).write_bytes(issue_body(build, recorded, sections).encode("utf-8"))
+    write_atomic(out / TITLE_FILE, f"{title}\n".encode("utf-8"))
+    write_atomic(out / BODY_FILE, issue_body(build, recorded, sections).encode("utf-8"))
     print(f'{PROG}: wrote the issue "{title}" to {out}; its whole body:\n')
     print(issue_body(build, recorded, sections, limit=sys.maxsize))
     return 0

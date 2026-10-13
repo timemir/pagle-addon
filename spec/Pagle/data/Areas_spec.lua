@@ -28,8 +28,8 @@ describe("the generated catalogue's areas on Pagle", function()
 
 	it("list the Extravaganza fish in Stranglethorn Vale, gated by event.301 (DATA-R28, DATA-R78)", function()
 		local area = Pagle.GetArea(33)
-		local spec = Pagle.GetWindowSpec("event.301")
-		assert.is_table(spec)
+		local spec = data.windows["event.301"].spec
+		assert.are.same({ events = { 301 } }, spec)
 		for _, itemID in ipairs(EXTRAVAGANZA) do
 			local entry = entryFor(area.catches, itemID) or {}
 			assert.are.same({ itemID = itemID, confirmed = false, window = "event.301", gateConfirmed = false }, {
@@ -38,7 +38,7 @@ describe("the generated catalogue's areas on Pagle", function()
 				window = entry.window,
 				gateConfirmed = entry.gateConfirmed,
 			})
-			-- The gate is the window's own spec table, not a copy (Contracts).
+			-- The gate is windows["event.301"]'s own spec table, W["event.301"], not a copy (Contracts).
 			assert(rawequal(spec, entry.gate), ("item %d's gate"):format(itemID))
 		end
 		assert.are.equal(130, area.skillBase)
@@ -73,7 +73,12 @@ describe("the generated catalogue's areas on Pagle", function()
 				assert(fields == 0 or fields == 3, ("item %d: window, gate and gateConfirmed"):format(entry.itemID))
 				if entry.window then
 					gated = gated + 1
-					assert.is_true(rawequal(Pagle.GetWindowSpec(entry.window), entry.gate))
+					-- The window's shared spec table, whose condition GetWindowSpec hands out with its confirmed.
+					assert(rawequal(data.windows[entry.window].spec, entry.gate), entry.window)
+					local named = Pagle.GetWindowSpec(entry.window) or {}
+					for field, values in pairs(entry.gate) do
+						assert(named[field] == values, ("%s.%s"):format(entry.window, field))
+					end
 				end
 			end
 		end

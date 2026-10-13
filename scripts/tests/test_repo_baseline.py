@@ -4,8 +4,8 @@ import tomllib
 from pathlib import Path
 
 from pagle_data.baseline import SOURCE, read_baseline
+from pagle_data.errors import Problems
 from pagle_data.generate import generate
-from pagle_data.toml_reader import Problems
 
 REPO = Path(__file__).resolve().parents[2]
 

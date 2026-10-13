@@ -43,17 +43,6 @@ local function readCharacter()
 	}
 end
 
--- A value the client gave, or nil if it's secret (CORE-R31).
----@generic T
----@param value T
----@return T?
-local function unlessSecret(value)
-	if issecretvalue(value) then
-		return nil
-	end
-	return value
-end
-
 -- The fishing skill of the profession on skill line 356 among `...`, GetProfessions()'s indices.
 ---@param ... integer? nil where the character has no such profession
 ---@return integer? rank
@@ -65,7 +54,9 @@ local function readFishing(...)
 		if index ~= nil and not issecretvalue(index) then
 			local _, _, rank, max, _, _, skillLine, mod = GetProfessionInfo(index)
 			if not issecretvalue(skillLine) and skillLine == FISHING_SKILL_LINE then
-				return unlessSecret(rank), unlessSecret(max), unlessSecret(mod)
+				return ns.UnlessSecret(issecretvalue, rank),
+					ns.UnlessSecret(issecretvalue, max),
+					ns.UnlessSecret(issecretvalue, mod)
 			end
 		end
 	end

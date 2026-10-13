@@ -5,9 +5,7 @@ the baseline patch are kept (Tunables: 1.12, VMaNGOS's highest patch index).
 """
 
 import argparse
-import csv
 import hashlib
-import io
 import json
 import sqlite3
 import sys
@@ -19,12 +17,10 @@ from datetime import date, datetime
 from pathlib import Path
 
 from pagle_data.baseline import BASELINE, COLUMNS
+from pagle_data.files import Cell, csv_text
 
 PROG = "extract-baseline"
 BASELINE_PATCH = 10  # Tunables: "Baseline patch", 1.12, VMaNGOS's patch index 10
-
-Cell = int | float | str | None
-
 
 class ExtractError(Exception):
     """The dump holds something the baseline's CSVs can't say faithfully; nothing is written."""
@@ -51,11 +47,7 @@ def _cell(value: Cell) -> str:
 
 
 def _csv(name: str, rows: Iterable[Sequence[Cell]]) -> str:
-    out = io.StringIO()
-    writer = csv.writer(out, lineterminator="\n")
-    writer.writerow(COLUMNS[name])
-    writer.writerows([_cell(value) for value in row] for row in rows)
-    return out.getvalue()
+    return csv_text(COLUMNS[name], ([_cell(value) for value in row] for row in rows))
 
 
 class _Conditions:

@@ -10,23 +10,14 @@ from collections.abc import Collection, Iterator, Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from pagle_data.baseline import BASELINE, BaselineLayer
+from pagle_data.baseline import AREA_LOOT, BaselineLayer
 from pagle_data.db2 import Area
+from pagle_data.errors import At, Problems
 from pagle_data.items import Record
-from pagle_data.toml_reader import (
-    At,
-    Problems,
-    check_keys,
-    describe,
-    expect_int,
-    expect_table,
-    expect_why,
-    read_toml,
-)
+from pagle_data.toml_reader import check_keys, describe, expect_int, expect_table, expect_why, read_toml
 from pagle_data.universe import AREAS_TOML
 from pagle_data.windows import window_of_event
 
-AREA_LOOT = f"{BASELINE}/area_loot.csv"
 # DATA-R29: `gate = "none"` on an add removes the item's gate.
 NO_GATE = "none"
 OPS = ("add", "drop")
@@ -185,20 +176,6 @@ def _baseline_rows(baseline: BaselineLayer) -> dict[int, dict[int, list[int | No
         for item in items:
             rows.setdefault(row.area, {}).setdefault(item, []).append(row.event)
     return rows
-
-
-def condition_warnings(baseline: BaselineLayer) -> list[str]:
-    """DATA-R64's warning for each area-loot row whose condition isn't a single event: it has no event, so it is
-    ungated, and the dev decides its gate in areas.toml (DATA-R9)."""
-    warnings: list[str] = []
-    for row in baseline.area_loot:
-        if row.condition:
-            what = f"item {row.item}" if row.item is not None else f"reference table {row.ref}"
-            warnings.append(
-                f"{AREA_LOOT}: {what} in area {row.area} has the condition '{row.condition}', not a single event,"
-                f" so it is ungated; set its gate in {AREAS_TOML} (DATA-R9)"
-            )
-    return warnings
 
 
 def _noise(items: Mapping[int, Record], item: int) -> bool:

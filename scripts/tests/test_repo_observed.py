@@ -2,8 +2,8 @@
 
 from pathlib import Path
 
+from pagle_data.errors import Problems
 from pagle_data.observed import read_observed
-from pagle_data.toml_reader import Problems
 
 REPO = Path(__file__).resolve().parents[2]
 

@@ -158,17 +158,23 @@ function ns.NewCatalogue(data)
 		return zoneCatches[zoneAreaID]
 	end
 
-	--- A named window's condition spec and its `confirmed`, or nil for a window the catalogue lacks (LOG-R55).
+	-- Each window's condition spec with its `confirmed` (LOG-R55), made once. A copy, since the generator's spec is
+	-- shared with the gates that use it.
+	local windowSpecs = {}
+	for windowID, window in pairs(data.windows) do
+		local spec = { confirmed = window.confirmed }
+		for field, values in pairs(window.spec) do
+			spec[field] = values
+		end
+		windowSpecs[windowID] = spec
+	end
+
+	--- A named window's condition spec, carrying its `confirmed`, or nil for a window the catalogue lacks (LOG-R55).
 	--- Before M2 there are none (DATA-R79).
 	---@param windowID string
-	---@return table? spec
-	---@return boolean? confirmed
+	---@return PagleWindowSpec?
 	function catalogue.GetWindowSpec(windowID)
-		local window = data.windows[windowID]
-		if window then
-			return window.spec, window.confirmed
-		end
-		return nil
+		return windowSpecs[windowID]
 	end
 
 	--- Whether a spell is on the fishing-spell list (LOG-R2).
@@ -209,4 +215,13 @@ function ns.NewCatalogue(data)
 	end
 
 	return catalogue
+end
+
+--- Whether a channel's spell is Fishing (LOG-R2): on the fishing-spell list of `ns.Catalogue`, the catalogue Core
+--- built at login step 1 (LOG-R1). False for a nil (secret) spell and before the catalogue is built. Core's adapter
+--- and FakePagle both hand it to ns.NewFishing.
+---@param spellID integer?
+---@return boolean
+function ns.IsFishingChannel(spellID)
+	return spellID ~= nil and ns.Catalogue ~= nil and ns.Catalogue.IsFishingSpell(spellID)
 end

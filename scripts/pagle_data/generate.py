@@ -6,15 +6,15 @@ from pathlib import Path
 
 from pagle_data.aliases import Proposal, check_aliases, propose
 from pagle_data.areas import CatchLists, area_records, build_catch_lists, read_areas_toml
-from pagle_data.baseline import BASELINE, BaselineLayer, read_baseline
+from pagle_data.baseline import BASELINE, AreaLoot, BaselineLayer, conditional_rows, read_baseline
 from pagle_data.catalogue import Catalogue, Event, fingerprint
 from pagle_data.checks import read_checks
 from pagle_data.db2 import DB2, Db2Layer, read_db2
+from pagle_data.errors import At, DataError, Problems
 from pagle_data.forever import ForeverLayer, read_forever
 from pagle_data.items import ITEMS_TOML, Record, item_records, read_item_layer
 from pagle_data.lua import to_lua
 from pagle_data.observed import OBSERVED, ObservedLayer, Observations, observations, read_observed
-from pagle_data.toml_reader import At, DataError, Problems
 from pagle_data.universe import AREAS_TOML, item_universe
 from pagle_data.windows import Spec, build_windows, catalogue_windows, local_lua, read_windows_toml
 
@@ -97,6 +97,10 @@ class Layers:
     def fishing_areas(self) -> set[int]:
         """The areas with a catch list (DATA-R32)."""
         return self.catch_lists.fishing_areas()
+
+    def conditional_rows(self) -> list[AreaLoot]:
+        """The baseline loot rows treated as ungated because their condition isn't a single event (DATA-R9)."""
+        return conditional_rows(self.baseline)
 
     def proposals(self) -> list[Proposal]:
         """The alias candidates not yet committed to aliases.toml (DATA-R32, DATA-R64)."""

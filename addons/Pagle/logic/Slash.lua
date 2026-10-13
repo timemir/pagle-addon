@@ -46,17 +46,18 @@ end
 ---@param entry any
 ---@return string?
 function Commands:Problem(module, entry)
+	local L = ns.L
 	local name = type(entry) == "table" and entry.name
 	if type(name) ~= "string" or not name:match("^%S+$") then
-		return ("Pagle: %s's /pagle entry %s has no one-word name; it is skipped"):format(module, tostring(name))
+		return L.SLASH_SKIPPED_NO_NAME:format(module, tostring(name))
 	elseif type(entry.fn) ~= "function" then
-		return ("Pagle: %s's /pagle %s has no fn; it is skipped"):format(module, name)
+		return L.SLASH_SKIPPED_NO_FN:format(module, name)
 	end
 	local key = name:lower()
 	if self.reserved[key] then
-		return ("Pagle: %s's /pagle %s is skipped: Pagle reserves %s"):format(module, name, key)
+		return L.SLASH_SKIPPED_RESERVED:format(module, name, key)
 	elseif self.owners[key] then
-		return ("Pagle: %s's /pagle %s is skipped: %s already uses it"):format(module, name, self.owners[key])
+		return L.SLASH_SKIPPED_TAKEN:format(module, name, self.owners[key])
 	end
 	return nil
 end
@@ -114,4 +115,35 @@ function Commands:HelpLines()
 		lines[#lines + 1] = L.SLASH_HELP_LINE:format(command.name, command.help)
 	end
 	return lines
+end
+
+--- Adds every registered Module's subcommands at `ModulesChanged`, by def.order, so of two that collide the one
+--- with the lower order keeps the name; each entry skipped goes to `report` (CORE-R62).
+---@param modules PagleModule[] by def.order, as `registry:Modules()` lists them
+---@param report fun(problem: string) reports an error and carries on (geterrorhandler())
+function Commands:AddModules(modules, report)
+	for _, module in ipairs(modules) do
+		for _, problem in ipairs(self:Add(module.def)) do
+			report(problem)
+		end
+	end
+end
+
+--- Runs `/pagle <line>` (CORE-R60–R62): opens Settings, runs a Module's subcommand through `call`, or prints the
+--- help list.
+---@param line string what follows /pagle
+---@param openSettings fun() opens the Settings root (Pagle.OpenSettings, which prints CORE-R33's line instead while restricted)
+---@param call fun(fn: function, ...: any) calls a Module's function; an error is reported, not raised (securecallfunction)
+---@param print fun(line: string) prints a chat line
+function Commands:Run(line, openSettings, call, print)
+	local action, command, args = self:Resolve(line)
+	if action == "settings" then
+		openSettings()
+	elseif command then
+		call(command.fn, args)
+	else
+		for _, helpLine in ipairs(self:HelpLines()) do
+			print(helpLine)
+		end
+	end
 end

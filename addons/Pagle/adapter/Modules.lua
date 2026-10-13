@@ -28,18 +28,7 @@ end
 --- to reach the calls that act for it. Returns nil, with one chat line, if its `X-Pagle-API` is missing, not a
 --- number or newer than `Pagle.API_VERSION`: the Module is inert and must stop (CORE-R13). Raises an error, and
 --- registers nothing, for a name not in the roster, a second registration, or a missing title or order (CORE-R14).
----@param def PagleModuleDef
----@return PagleModuleHandle?
-function Pagle.RegisterModule(def)
-	local handle, problem = ns.Modules:Register(def, readAPI)
-	if problem then
-		error(problem, 2)
-	end
-	if not handle then
-		print(ns.L.MODULE_NEEDS_NEWER_PAGLE:format(def.title))
-	end
-	return handle
-end
+Pagle.RegisterModule = ns.ModuleRegistrar(ns.Modules, readAPI, print)
 
 --- Each roster Module's state, in roster order (CORE-R41). Read when shown: enable state is read from the client
 --- each time, never changed (CORE-R16).

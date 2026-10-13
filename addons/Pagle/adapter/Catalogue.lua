@@ -17,29 +17,18 @@ local LAST_AREA_ID = 40000
 ---@type PagleAreaIndex
 local areaIndex = {}
 
--- A value the client gave, or nil if it's secret (CORE-R31): a secret is never a name or a table key.
----@generic T
----@param value T
----@return T?
-local function unlessSecret(value)
-	if issecretvalue(value) then
-		return nil
-	end
-	return value
-end
-
 --- The current zone and subzone areaIDs (LOG-R22), and their texts when either didn't resolve (LOG-R81). Before
 --- PLAYER_LOGIN the index is empty, so every name is unresolved.
 ---@return integer zone
 ---@return integer subzone
 ---@return PagleUnresolvedAreas? unresolved
 function ns.ReadAreas()
-	local continent = unlessSecret((select(8, GetInstanceInfo())))
+	local continent = ns.UnlessSecret(issecretvalue, (select(8, GetInstanceInfo())))
 	return ns.ResolveAreas(
 		areaIndex,
 		ns.Catalogue,
-		unlessSecret(GetRealZoneText()),
-		unlessSecret(GetSubZoneText()),
+		ns.UnlessSecret(issecretvalue, GetRealZoneText()),
+		ns.UnlessSecret(issecretvalue, GetSubZoneText()),
 		continent
 	)
 end
@@ -69,6 +58,6 @@ end
 --- Login step 2 (LOG-R1): builds the runtime area index (LOG-R23), once per login.
 function ns.BuildAreaIndex()
 	areaIndex = ns.NewAreaIndex(function(areaID)
-		return unlessSecret(C_Map.GetAreaInfo(areaID))
+		return ns.UnlessSecret(issecretvalue, C_Map.GetAreaInfo(areaID))
 	end, LAST_AREA_ID)
 end

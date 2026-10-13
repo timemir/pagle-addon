@@ -1,17 +1,5 @@
 -- WoW event registration through Core: Pagle.RegisterEvent, RegisterUnitEvent and UnregisterEvent (CORE-R23).
 
---- Loads Core with an error handler that collects what reaches it instead of failing the spec.
-local function loadCollectingErrors()
-	local errors = {}
-	local loaded = loadAddon("Pagle", FOREVER_GLOBALS)
-	loaded.env.geterrorhandler = function()
-		return function(err)
-			errors[#errors + 1] = tostring(err)
-		end
-	end
-	return loaded, errors
-end
-
 describe("Pagle.RegisterEvent", function()
 	it("calls the handler with the event name, then the event's arguments (CORE-R23)", function()
 		local loaded = loadAddon("Pagle", FOREVER_GLOBALS)

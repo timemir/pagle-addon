@@ -11,7 +11,8 @@ import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from pagle_data.toml_reader import At, Problems, check_keys, describe, expect_int, read_toml
+from pagle_data.errors import At, Problems
+from pagle_data.toml_reader import check_keys, describe, expect_int, read_toml
 
 DB2 = "data/db2/"
 BUILD = "data/db2/build.toml"

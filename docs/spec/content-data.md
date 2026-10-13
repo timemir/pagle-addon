@@ -345,7 +345,7 @@ ns.catalogue = {
 }
 ```
 
-`W` is a local table of window specs, emitted once before `ns.catalogue`. Core's accessors and their returns are LOG-R55 and LOG-R56; `GetWindowSpec(id)` returns `windows[id].spec` with its `confirmed`.
+`W` is a local table of window specs, emitted once before `ns.catalogue`. Core's accessors and their returns are LOG-R55 and LOG-R56; `GetWindowSpec(id)` returns a copy of `windows[id].spec` that carries `confirmed` as a field (the spec itself is shared with the gates, so it stays as it is).
 
 ### The Hunt list (`ns.huntList`, Pagle_Hunts only)
 

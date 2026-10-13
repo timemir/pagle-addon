@@ -9,8 +9,8 @@ from collections.abc import Collection, Iterable
 from dataclasses import dataclass
 
 from pagle_data.db2 import Db2Layer
+from pagle_data.errors import Problems
 from pagle_data.forever import Alias
-from pagle_data.toml_reader import Problems
 
 
 def check_aliases(aliases: Iterable[Alias], fishing: Collection[int], problems: Problems) -> None:

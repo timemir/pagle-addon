@@ -440,9 +440,8 @@ def test_a_row_with_a_condition_text_is_ungated_with_a_warning(
     code, output = run(write_tree(tmp_path, area_loot=loot), capsys)
     assert code == 0
     assert (
-        "generate-data: warning: data/baseline/area_loot.csv: item 13759 in area 33 has the condition"
-        " 'and(event(48), not(event(45)))', not a single event, so it is ungated; set its gate in"
-        " data/forever/areas.toml (DATA-R9)"
+        "generate-data: warning: data/baseline/area_loot.csv: area 33 item 13759 has the condition"
+        " and(event(48), not(event(45))), not a single event; it is treated as ungated"
     ) in output
     assert "{ confirmed = false, itemID = 13759 }" in area_record((tmp_path / CATALOGUE).read_text("utf-8"), 33)
 
