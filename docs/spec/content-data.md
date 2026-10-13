@@ -49,7 +49,7 @@ Terms are used as `CONTEXT.md` defines them. "The catalogue" is what the generat
   | 4 | `data/observed/` | what was seen in-game: imported Field reports and the dev's own facts | only by `scripts/import-field-report.py`, plus the dev's hand edits to `dev.toml` and `rejected` marks (DATA-R50) |
 
   The other two are not content layers: `data/hunts/` (the Hunt definitions, DATA-R85) and `data/lore/` (lore, DATA-R100). `data/checks.toml` switches milestone-gated checks on (DATA-R66).
-- **DATA-R9** `data/baseline/` is extracted once, in M1, from the VMaNGOS `db_latest` snapshot of 2026-09-28 by `scripts/extract-baseline.py <dump>`, kept for audit. Where VMaNGOS rows carry a patch range, only rows valid for the baseline patch (Tunables) are extracted. It holds these CSV files (header row, one row per line) and `source.toml` with the snapshot tag (`tag`), its date (`date`) and the SHA-256 of each CSV (`[sha256]`, keyed by file name; keys under [Data](#other-files)):
+- **DATA-R9** `data/baseline/` is extracted once, in M1, from the VMaNGOS `db_latest` snapshot of 2026-09-28 by `scripts/extract-baseline.py <dump>`, kept for audit. Where VMaNGOS rows carry a patch range, only rows valid for the baseline patch (Tunables) are extracted. It holds these CSV files (header row, one row per line) and `source.toml` with the snapshot tag (`tag`), its date (`date`), the dump it was extracted from (its release asset URL `url` and that file's SHA-256 `dumpSha256`, which the extractor checks before reading it) and the SHA-256 of each CSV (`[sha256]`, keyed by file name; keys under [Data](#other-files)). The dump itself is not committed; the dev's audit archive keeps it:
 
   | File | Columns | From |
   |---|---|---|
@@ -150,7 +150,7 @@ Terms are used as `CONTEXT.md` defines them. "The catalogue" is what the generat
 - **DATA-R61** `scripts/check.sh` runs `scripts/generate-data.py --check` and the generator's pytest suite. A stale generated file fails the gate, so generated files are always committed together with the `data/` change that produced them.
 - **DATA-R62** Output is deterministic: the same `data/` always gives byte-identical files. Map keys are written in ascending order (numbers numerically, strings by byte), lists in the order this file states, integers without decimals.
 - **DATA-R63** The generator fails, writing nothing and listing every problem found, on:
-  - a baseline hash mismatch (DATA-R9)
+  - a baseline hash mismatch (DATA-R9), a missing CSV or one `source.toml` doesn't list, or a `source.toml` key other than `tag`, `date`, `url`, `dumpSha256` and `[sha256]`
   - a non-Noise item with no category (DATA-R17), or a bad `species`, `family` or `weight` (DATA-R19, DATA-R21)
   - a missing typical length while that check is on (DATA-R20)
   - an entry without a required `why` (DATA-R10)
@@ -310,7 +310,7 @@ An imposed Hunt's `conditions` is an inline table with any of the LOG-R48 fields
 
 | File | Contents |
 |---|---|
-| `data/baseline/source.toml` | `tag` (the VMaNGOS snapshot tag), `date` (`YYYY-MM-DD`), `[sha256]` with one `"<file>.csv" = "<lowercase hex>"` per CSV (DATA-R9) |
+| `data/baseline/source.toml` | `tag` (the VMaNGOS snapshot tag, e.g. `"db_latest@4641790"`), `date` (`YYYY-MM-DD`), `url` (the dump's release asset URL), `dumpSha256` (the dump's SHA-256, lowercase hex), `[sha256]` with one `"<file>.csv" = "<lowercase hex>"` per CSV (DATA-R9) |
 | `data/db2/build.toml` | `build` (integer), `version` (e.g. `"1.60.1"`), `products` (list of wago.tools product names, e.g. `["wow_classic_beta"]`) (DATA-R11, DATA-R128) |
 | `data/checks.toml` | `typicalLength` (boolean), `lore` (list of lore IDs: `core`, `ledger`, `hunts`, `stats`, `tackleboard`) (DATA-R66) |
 | `data/hunts/released.lock` | DATA-R95 |

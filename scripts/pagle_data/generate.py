@@ -3,6 +3,7 @@
 from collections.abc import Mapping
 from pathlib import Path
 
+from pagle_data.baseline import BASELINE, read_baseline
 from pagle_data.catalogue import Catalogue, Event, fingerprint
 from pagle_data.db2 import DB2, Db2Layer, read_db2
 from pagle_data.forever import ForeverLayer, read_forever
@@ -11,9 +12,8 @@ from pagle_data.toml_reader import DataError, Problems
 
 CATALOGUE_LUA = "addons/Pagle/data/Catalogue.lua"
 
-# The layers the generator reads, in DATA-R8's order (a later one wins). The baseline layer comes with its own
-# ticket, and data/observed/ in M2.
-LAYERS = ("data/forever/", DB2)
+# The layers the generator reads, in DATA-R8's order (a later one wins). data/observed/ comes in M2.
+LAYERS = (f"{BASELINE}/", "data/forever/", DB2)
 
 
 def _areas(db2: Db2Layer) -> dict[int, Mapping[str, object]]:
@@ -79,6 +79,9 @@ def generate(root: Path) -> dict[str, str]:
     """Every generated file's path (relative to root) and content, from root/data/.
     Raises DataError listing every problem found (DATA-R63)."""
     problems = Problems()
+    # DATA-R9: the baseline is read so that a hand-edited CSV fails. DATA-R79: M1's catalogue holds nothing from it
+    # yet; the alias proposals (DATA-R32) are its first reader.
+    read_baseline(root, problems)
     forever = read_forever(root, problems)
     db2 = read_db2(root, problems)
     if problems:

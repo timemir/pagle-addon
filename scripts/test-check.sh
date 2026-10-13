@@ -203,6 +203,11 @@ copy
 printf 'x1,0,0,Planted\n' >>"$scratch/tree/data/db2/areas.csv"
 expect "an areas.csv row with a non-integer ID fails generator" generator "ID: expected a positive integer, got 'x1'"
 
+copy
+sed -i '2s/^1,/2,/' "$scratch/tree/data/baseline/skill.csv"
+expect "a hand-edited baseline CSV fails generator" generator \
+	"data/baseline/skill.csv: its SHA-256 differs from data/baseline/source.toml"
+
 if ((failures)); then
 	echo "test-check: $failures failed" >&2
 	exit 1
