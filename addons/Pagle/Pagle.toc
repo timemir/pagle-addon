@@ -16,6 +16,9 @@ locale\enUS.lua
 logic\Forever.lua
 logic\Secrets.lua
 logic\ReportOnce.lua
+logic\Restriction.lua
+logic\WorkQueue.lua
 adapter\Core.lua
 adapter\Callbacks.lua
 adapter\Events.lua
+adapter\Restriction.lua

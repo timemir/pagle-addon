@@ -186,8 +186,10 @@ end
 ---@param name string The addon's folder under addons/, which is also its TOC's name.
 ---@param globals table<string, any>? Globals the client defines for this load, e.g. WOW_PROJECT_ID. They replace
 --- the fake client's stubs of the same name, e.g. InCombatLockdown for a load in combat.
+---@param options { holdAddonLoaded: boolean? }? holdAddonLoaded: don't fire ADDON_LOADED; the spec fires it with
+--- loaded.client.fire, e.g. after adding a listener that must be there before it.
 ---@return LoadedAddon
-function loadAddon(name, globals)
+function loadAddon(name, globals, options)
 	local dir = "addons/" .. name .. "/"
 	local toc = dir .. name .. ".toc"
 	local printed = {}
@@ -220,7 +222,9 @@ function loadAddon(name, globals)
 			error(("%s: %s failed while loading: %s"):format(toc, file, tostring(runErr)), 2)
 		end
 	end
-	client.fire("ADDON_LOADED", name)
+	if not (options and options.holdAddonLoaded) then
+		client.fire("ADDON_LOADED", name)
+	end
 
 	return { ns = ns, env = env, printed = printed, client = client }
 end

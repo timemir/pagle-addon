@@ -13,7 +13,11 @@ stds.wow = {
 		-- Core's event bus and WoW event registration (CORE-R20–R23), restriction state (CORE-R30–R32).
 		"CreateFrame",
 		"geterrorhandler",
+		"securecallfunction",
 		"issecretvalue",
+		"InCombatLockdown",
+		C_RestrictedActions = { fields = { "GetAddOnRestrictionState" } },
+		Enum = { fields = { "AddOnRestrictionType", AddOnRestrictionState = { fields = { "Inactive" } } } },
 	},
 }
 
