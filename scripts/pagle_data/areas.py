@@ -11,7 +11,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from pagle_data.baseline import AREA_LOOT, AreaLoot, BaselineLayer
-from pagle_data.confirmed import Confirmation, Required, UngatedPair, observed_pairs, zone_of
+from pagle_data.confirmed import Confirmation, Evidence, Required, UngatedPair, observed_pairs, zone_of
 from pagle_data.db2 import Area
 from pagle_data.errors import At, Problems
 from pagle_data.items import Record
@@ -154,13 +154,15 @@ class Catch:
 @dataclass(frozen=True)
 class CatchLists:
     """Every non-empty catch list by area, each sorted by item ID (DATA-R26), the skill bases (DATA-R30), the
-    observed pairs that joined ungated though their item is gated elsewhere (a DATA-R47 warning), and what each
-    layer did to each (area, item) in DATA-R26's steps, in order (for --explain, DATA-R60)."""
+    observed pairs that joined ungated though their item is gated elsewhere (a DATA-R47 warning), what each layer
+    did to each (area, item) in DATA-R26's steps, in order (for --explain, DATA-R60), and what a row evidences
+    (DATA-R47: the lists after steps 1 and 2, and the pairs step 3 joined)."""
 
     lists: dict[int, list[Catch]] = field(default_factory=dict)
     skill_bases: dict[int, int] = field(default_factory=dict)
     ungated: list[UngatedPair] = field(default_factory=list)
     history: dict[int, dict[int, list[str]]] = field(default_factory=dict)
+    evidence: Evidence = field(default_factory=Evidence)
 
     def windows(self) -> dict[int, dict[int, str | None]]:
         """Each list as {item: its gate's window ID, None when ungated}."""
@@ -289,6 +291,7 @@ def build_catch_lists(
 
     # Step 3: observed pairs (DATA-R47), which win over a drop.
     pairs = observed_pairs(lists, areas, observations, items, required)
+    evidence = Evidence({area: dict(listed) for area, listed in lists.items()}, frozenset(pairs.joins))
     for (area, item), window in pairs.joins.items():
         lists.setdefault(area, {})[item] = window
         did(area, item, "observed pair (DATA-R47), " + (f"gated by {window}" if window is not None else "ungated"))
@@ -311,7 +314,7 @@ def build_catch_lists(
     for edit in layer.areas.values():
         if edit.skill_base is not None:
             skill_bases[edit.area] = edit.skill_base
-    return CatchLists(built, skill_bases, pairs.ungated, history)
+    return CatchLists(built, skill_bases, pairs.ungated, history, evidence)
 
 
 def area_records(

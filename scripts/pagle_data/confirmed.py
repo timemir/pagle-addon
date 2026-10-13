@@ -61,6 +61,23 @@ def evidenced_area(lists: Lists, areas: Mapping[int, Area], area: int, item: int
 
 
 @dataclass(frozen=True)
+class Evidence:
+    """What a row evidences (DATA-R47): the lists after DATA-R26 steps 1 and 2, and the observed pairs that joined
+    in step 3. A row evidences the entry evidenced_area picks in those lists; a row that picks none evidences its
+    own observed pair once that pair joined, at its own area only, so a subzone row never evidences a pair its zone
+    joined."""
+
+    lists: Lists = field(default_factory=dict)
+    joins: Collection[tuple[int, int]] = frozenset()
+
+    def area(self, areas: Mapping[int, Area], area: int, item: int) -> int | None:
+        found = evidenced_area(self.lists, areas, area, item)
+        if found is None and (area, item) in self.joins:
+            return area
+        return found
+
+
+@dataclass(frozen=True)
 class Required:
     """The required reporters for each fact (DATA-R49): BIG for any pair or gate of a Legend, any pair of a new
     Species (a Species item absent from the baseline's loot), and a new window (a gate the baseline never gives that
@@ -245,6 +262,7 @@ class Confirmation:
 
 def confirm(
     lists: Lists,
+    evidence: Evidence,
     skill_bases: Mapping[int, int],
     areas: Mapping[int, Area],
     observations: Observations,
@@ -254,15 +272,21 @@ def confirm(
     problems: Problems,
 ) -> Confirmation:
     """The confirmed flags (DATA-R48, DATA-R52–R55) for the built catch lists (DATA-R26) and skill bases
-    (DATA-R30), from the observations that count (DATA-R46) in areas of the slice (DATA-R33). A dev fact that names
-    nothing it could confirm goes into problems."""
+    (DATA-R30), from the observations that count (DATA-R46) in areas of the slice (DATA-R33), each row evidencing
+    what evidence says (DATA-R47). A dev fact that names nothing it could confirm goes into problems."""
     facts = {kind: [fact for fact in observations.facts if fact.kind == kind] for kind in FACT_IDS}
     _check_facts(lists, skill_bases, windows, events, facts, problems)
+
+    def evidenced(area: int, item: int) -> int | None:
+        """The area of the built entry a row of item in area evidences; None when it evidences none, or an entry
+        DATA-R26 step 4 took out."""
+        found = evidence.area(areas, area, item)
+        return found if found is not None and item in lists.get(found, {}) else None
 
     # DATA-R48: an entry is confirmed by pair evidence from the required reporters.
     pair_reporters: dict[tuple[int, int], set[str]] = {}
     for sighting in sightings(observations):
-        area = evidenced_area(lists, areas, sighting.area, sighting.item)
+        area = evidenced(sighting.area, sighting.item)
         if area is not None:
             pair_reporters.setdefault((area, sighting.item), set()).add(sighting.reporter)
     entries = {key for key, who in pair_reporters.items() if len(who) >= required.pair(key[1])}
@@ -276,7 +300,7 @@ def confirm(
     inside: dict[tuple[int, str], set[str]] = {}
     contradicted: set[tuple[int, str]] = set()
     for row in observations.catches:
-        area = evidenced_area(lists, areas, row.area, row.item)
+        area = evidenced(row.area, row.item)
         window = lists[area][row.item] if area is not None else None
         if window is None:
             continue

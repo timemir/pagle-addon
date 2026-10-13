@@ -103,6 +103,24 @@ def test_a_subzone_row_evidences_its_zone_s_entry_when_the_subzone_s_list_lacks_
     assert "itemID = 13759" not in area_record(text, 297)
 
 
+def test_a_subzone_row_does_not_evidence_an_observed_pair_its_zone_joined(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    # DATA-R47: evidence is judged against the lists after DATA-R26 steps 1 and 2. The Legend 19803 (a big fact,
+    # DATA-R49) is listed only in 33, gated by event.301; ALICE's row and a dev pair fact make it an observed pair
+    # that joins Durotar (14) with that gate. BOB's row at Echo Isles (368, Durotar's subzone) is outside
+    # event.301, but neither 368's nor 14's step-2 list has 19803, so it evidences no entry: it's an observed pair
+    # at 368 from one reporter, which joins nothing and judges no gate (DATA-R52). The dev's gate fact confirms
+    # the gate, and nothing contradicts it.
+    dev = DEV + fact("pair", "item = 19803\narea = 14\n") + fact("gate", 'item = 19803\nwindow = "event.301"\n')
+    reports = {ALICE: report(i_row(19803, 14, extra="event = [301]\n")), BOB: report(i_row(19803, 368))}
+    text, _ = generate(tmp_path, capsys, reports, dev=dev)
+    joined = '{ confirmed = true, gate = W["event.301"], gateConfirmed = true, itemID = 19803, window = "event.301" }'
+    assert joined in area_record(text, 14)
+    assert "gateConfirmed = true" in entry_of(text, 33, 19803)
+    assert "itemID = 19803" not in area_record(text, 368)
+
+
 def test_an_observed_pair_takes_a_gate_only_when_every_other_area_listing_the_item_has_the_same_one(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:

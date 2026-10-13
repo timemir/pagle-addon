@@ -189,6 +189,7 @@ def read_layers(root: Path, minimum_build: int = MINIMUM_CONFIRMING_BUILD) -> La
         check_aliases(forever.aliases, catch_lists.fishing_areas(), problems)
         confirmation = confirm(
             catch_lists.windows(),
+            catch_lists.evidence,
             catch_lists.skill_bases,
             db2.areas,
             counting,
