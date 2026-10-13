@@ -83,13 +83,12 @@ fi
 # LuaLS's log and its generated meta files for the Lua builtins go outside the repo: .luarc.json ignores .tools/,
 # and meta files under an ignored dir leave even `integer` undefined.
 luals=$(mktemp -d)
+trap 'rm -rf "$luals"' EXIT
 if ! luals_out=$("$bin/lua-language-server" --check=. --checklevel=Warning --configpath=.luarc.json \
 	--logpath="$luals" --metapath="$luals/meta" --check_format=pretty 2>&1); then
-	rm -rf "$luals"
 	echo "$luals_out"
 	fail types
 fi
-rm -rf "$luals"
 echo "types: no warnings"
 
 # --- 5. tests (#49): busted on Lua 5.1, every spec/**/*_spec.lua. spec/support/addon.lua loads each addon from its
