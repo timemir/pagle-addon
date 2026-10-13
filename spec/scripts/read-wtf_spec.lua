@@ -1,6 +1,8 @@
 -- scripts/read-wtf.lua against fixture WTF folders under spec/scripts/fixtures/WTF/, written the way the client
 -- writes them (CRLF line ends, the client's SavedVariables layout). M1#1 holds a Catch log and a !BugGrabber file
--- with several sessions, M0#1 a client where Pagle saves nothing yet, Code#1 files that must not run as code.
+-- with several sessions, M0#1 a client where Pagle saves nothing yet, Code#1 files that must not run as code. M2#1
+-- and M2-Stale#1 hold a Pagle_Ledger.lua as well, for the Ledger, Wallet and Cards sections the M2 exit check reads
+-- (#103, #104).
 
 local ACCOUNTS = "spec/scripts/fixtures/WTF/Account/"
 
@@ -136,6 +138,111 @@ describe("scripts/read-wtf.lua", function()
 		end)
 	end)
 
+	-- M2#1 holds the three files the M2 exit check reads (#104): Pagle.lua, Pagle_Ledger.lua and the character's
+	-- AddOns.txt, with a Ledger built over the whole Catch log, Coins reported, and a Write-up and cards waiting.
+	describe("on an account after the M2 exit check's steps", function()
+		local out, err, code = run(ACCOUNTS .. "M2#1", "--character", "70/Ada-Brook")
+
+		it("exits 0 and writes nothing to stderr", function()
+			assert.are.equal(0, code)
+			assert.are.equal("", err)
+		end)
+
+		it("prints the Ledger's projection, state and celebrated set, with the level from its own logic", function()
+			-- LOG-R70's stored values; LED-R30's level: 2,310 XP = 1,080 (1→2) + 1,160 (2→3) + 70 into level 3,
+			-- whose step costs 1,000 + 80 × 3 = 1,240. ledger.md › Data for the state and the celebrated set.
+			assert.are.same({
+				"== Ledger (PagleLedgerDB)",
+				"projection: lastSeq 8, logId 5d2e8a0c4b1f7e93, fingerprint a1b2c3d4, rulesVersion 100",
+				"logId: matches PagleLog's",
+				"lastSeq: equals PagleLog's length (8 entries)",
+				"state: 5 Casts, 4 Catches, 2310 XP (Angler Level 3, 70 into it, next step 1240), 30 Coins, 2 Species",
+				"celebrated: highest level 3, 30 Coins",
+				"celebrated Species: 2 (6303, 6358)",
+				"celebrated Species × zone pairs: 2 (6303:1519, 6358:148)",
+				"celebrated zones: 2 (148 rank 0, 1519 rank 0)",
+				"celebrated Skill Milestones: 1 (75)",
+			}, section(out, "== Ledger"))
+		end)
+
+		it("prints each Module's reported total and the balance (SHOP-R3, SHOP-R12)", function()
+			-- Nothing spends before the Curio Shop (M4), so the balance is 30 + 12.
+			assert.are.same({
+				"== Wallet (PagleDB.global.coins.earned): balance 42",
+				"Hunts: 12",
+				"Ledger: 30",
+			}, section(out, "== Wallet"))
+		end)
+
+		it("prints the waiting Write-up, the cards, and the open summary and pending moments", function()
+			-- announcements.md › Data. A card from a whileAway SessionEnded is titled "Your last session" (ANN-R54).
+			assert.are.same({
+				"== Cards (PagleDB.global)",
+				"writeUp: 1 section",
+				"  Ledger: Your Ledger was written up from 5 Casts",
+				"    Angler Level 3",
+				"    2 Species",
+				"    Pagle Coins +30",
+				"cards: 2",
+				"  1. Session summary: 4 Casts, 3 Catches, 1 got away, 1800 s, 10 Coins",
+				"    line: Ledger: Angler Level 3",
+				"    Ledger moments: New Species, New here",
+				"  2. Your last session: 1 Cast, 1 Catch, 0 got away, 0 s, 0 Coins",
+				"    Ledger moments: Skill Milestone",
+				"summary: 1 moment",
+				"  line: Ledger: Angler Level 3",
+				"pending: 1 moment",
+			}, section(out, "== Cards"))
+		end)
+	end)
+
+	-- M2-Stale#1: PagleLog was started anew (LOG-R18) after the Ledger last stored its projection, and AceDB left the
+	-- defaults out of both files (no celebrated set, no Coins, no cards).
+	describe("on an account whose Ledger was built over another log", function()
+		local out, _, code = run(ACCOUNTS .. "M2-Stale#1")
+
+		it("flags the logId and the length that differ from PagleLog's (LOG-R72)", function()
+			assert.are.equal(0, code)
+			assert.are.same({
+				"== Ledger (PagleLedgerDB)",
+				"projection: lastSeq 8, logId 5d2e8a0c4b1f7e93, fingerprint a1b2c3d4, rulesVersion 100",
+				"logId: DIFFERS from PagleLog's 7c0b19e4d3a2f658, so Core rebuilds it at login (LOG-R72)",
+				"lastSeq: differs from PagleLog's length (1 entry)",
+				"state: 0 Casts, 0 Catches, 0 XP (Angler Level 1, 0 into it, next step 1080), 0 Coins, 0 Species",
+				"celebrated: highest level none, 0 Coins",
+				"celebrated Species: none",
+				"celebrated Species × zone pairs: none",
+				"celebrated zones: none",
+				"celebrated Skill Milestones: none",
+			}, section(out, "== Ledger"))
+		end)
+
+		it("reads a PagleDB with no coins as no Module having reported (AceDB leaves out the empty default)", function()
+			assert.are.same(
+				{ "== Wallet (PagleDB.global.coins.earned): balance 0, no Module has reported Coins" },
+				section(out, "== Wallet")
+			)
+		end)
+
+		it("reads a PagleDB with no Write-up, cards, summary or pending as having none", function()
+			assert.are.same({
+				"== Cards (PagleDB.global)",
+				"writeUp: none",
+				"cards: none",
+				"summary: 0 moments",
+				"pending: 0 moments",
+			}, section(out, "== Cards"))
+		end)
+	end)
+
+	it("says in one line that Pagle_Ledger.lua is missing", function()
+		local out = run(ACCOUNTS .. "M1#1")
+		assert.are.same(
+			{ "== Ledger: can't read " .. ACCOUNTS .. "M1#1/SavedVariables/Pagle_Ledger.lua: missing" },
+			section(out, "== Ledger")
+		)
+	end)
+
 	describe("with only an account folder", function()
 		local out, _, code = run(ACCOUNTS .. "M0#1/")
 
@@ -166,12 +273,14 @@ describe("scripts/read-wtf.lua", function()
 		end)
 	end)
 
-	it("reads Pagle and Pagle_QoL's enable state by default", function()
-		local out = run(ACCOUNTS .. "M1#1", "--character", "70/Ada-Brook/")
-		assert.are.same(
-			{ "== Addons (70/Ada-Brook/AddOns.txt)", "Pagle: enabled", "Pagle_QoL: disabled" },
-			section(out, "== Addons")
-		)
+	it("reads Pagle, Pagle_Ledger and Pagle_QoL's enable state by default", function()
+		local out = run(ACCOUNTS .. "M2#1", "--character", "70/Ada-Brook/")
+		assert.are.same({
+			"== Addons (70/Ada-Brook/AddOns.txt)",
+			"Pagle: enabled",
+			"Pagle_Ledger: enabled",
+			"Pagle_QoL: disabled",
+		}, section(out, "== Addons"))
 	end)
 
 	describe("on SavedVariables files that hold code", function()
