@@ -197,16 +197,33 @@ local function statusList()
 	end, L.SETTINGS_MODULES)
 end
 
--- The root's rows (SET-R10): the paragraph while no Module is On, the status list under "Modules", the note.
+-- The root's rows (SET-R10): the paragraph while no Module is On, the status list under "Modules", the note, then
+-- Saving's reminder checkbox, whose default the root's Defaults button restores (SET-R13).
+---@param category SettingsCategory
 ---@param layout SettingsLayout
 ---@param anyModuleOn boolean
-local function buildRoot(layout, anyModuleOn)
+local function buildRoot(category, layout, anyModuleOn)
 	if not anyModuleOn then
 		layout:AddInitializer(textRow(L.SETTINGS_NO_MODULE))
 	end
 	layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L.SETTINGS_MODULES))
 	layout:AddInitializer(statusList())
 	layout:AddInitializer(textRow(L.SETTINGS_MODULES_NOTE))
+	layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L.SETTINGS_SAVING))
+	local reminder = Settings.RegisterProxySetting(
+		category,
+		"Pagle_Core_reloadReminder",
+		Settings.VarType.Boolean,
+		L.SETTINGS_RELOAD_REMINDER,
+		false,
+		function()
+			return ns.db.profile.reloadReminder
+		end,
+		function(value)
+			ns.db.profile.reloadReminder = value
+		end
+	)
+	Settings.CreateCheckbox(category, reminder, L.SETTINGS_RELOAD_REMINDER_TOOLTIP:format(ns.RELOAD_REMINDER_STEP))
 end
 
 -- A dropdown's options as the native control takes them, read each time it opens.
@@ -326,7 +343,7 @@ end
 local function register()
 	local modules = ns.Modules:Modules()
 	local category, layout = Settings.RegisterVerticalLayoutCategory(L.SETTINGS_CATEGORY)
-	buildRoot(layout, #modules > 0)
+	buildRoot(category, layout, #modules > 0)
 	for _, topic in ipairs(ns.SETTINGS_TOPICS) do
 		local entries = rows:Page(topic, modules)
 		if #entries > 0 then

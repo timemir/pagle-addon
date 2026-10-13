@@ -16,6 +16,9 @@ local PAGLEDB_DEFAULTS = {
 	global = {
 		decodeErrors = 0, -- LOG-R16
 	},
+	profile = {
+		reloadReminder = false, -- LOG-R86
+	},
 }
 
 --- Login step 1 (LOG-R1), once the client has loaded the SavedVariables: opens PagleDB and PagleLog, checking
