@@ -4,16 +4,16 @@ candidates not yet committed (DATA-R32). Each other mode arrives with the rule i
 """
 
 import argparse
-import os
 import sys
 from collections.abc import Sequence
 from pathlib import Path
 
 from pagle_data.aliases import proposal_line, proposal_toml
 from pagle_data.baseline import AREA_LOOT
+from pagle_data.errors import DataError
+from pagle_data.files import write_atomic
 from pagle_data.forever import ALIASES
 from pagle_data.generate import Layers, outputs, read_layers
-from pagle_data.toml_reader import DataError
 
 PROG = "generate-data"
 
@@ -42,14 +42,6 @@ def _current(path: Path) -> bytes | None:
         return path.read_bytes()
     except FileNotFoundError:
         return None
-
-
-def _write(path: Path, content: bytes) -> None:
-    # Through a temporary file, so an interrupted run never leaves half a file.
-    path.parent.mkdir(parents=True, exist_ok=True)
-    partial = path.with_name(path.name + ".partial")
-    partial.write_bytes(content)
-    os.replace(partial, path)
 
 
 def _print_proposals(layers: Layers) -> None:
@@ -108,7 +100,7 @@ def main(argv: Sequence[str], root: Path) -> int:
         return 0
 
     for path in stale:
-        _write(root / path, contents[path])
+        write_atomic(root / path, contents[path])
         print(f"{PROG}: wrote {path}")
     print(f"{PROG}: {len(contents)} generated file(s) up to date")
     return 0

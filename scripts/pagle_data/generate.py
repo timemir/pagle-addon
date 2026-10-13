@@ -8,9 +8,9 @@ from pagle_data.aliases import Proposal, check_aliases, fishing_areas, propose
 from pagle_data.baseline import BASELINE, AreaLoot, BaselineLayer, conditional_rows, read_baseline
 from pagle_data.catalogue import Catalogue, Event, fingerprint
 from pagle_data.db2 import DB2, Db2Layer, read_db2
+from pagle_data.errors import DataError, Problems
 from pagle_data.forever import ForeverLayer, read_forever
 from pagle_data.lua import to_lua
-from pagle_data.toml_reader import DataError, Problems
 
 CATALOGUE_LUA = "addons/Pagle/data/Catalogue.lua"
 
