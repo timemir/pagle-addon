@@ -15,7 +15,7 @@ local function start(keys, before)
 	local fake = newFakePagle()
 	local loaded = fake.load("Pagle_QoL")
 	local client = loaded.client
-	client.bindings.PAGLE_FISHING_KEY = keys
+	client.boundKeys.PAGLE_FISHING_KEY = keys
 	if before then
 		before(fake, client)
 	end
@@ -186,7 +186,7 @@ describe("The Fishing key", function()
 				local fake, client = start({ "F" })
 				client.bindingCalls = {}
 
-				client.bindings.PAGLE_FISHING_KEY = { "G" }
+				client.boundKeys.PAGLE_FISHING_KEY = { "G" }
 				fake.fireGameEvent("UPDATE_BINDINGS")
 
 				assert.are.same({ "clear", "set G " .. CAST }, client.bindingCalls)
@@ -199,7 +199,7 @@ describe("The Fishing key", function()
 
 			client.bindingCalls = {}
 
-			client.bindings.PAGLE_FISHING_KEY = { "G" }
+			client.boundKeys.PAGLE_FISHING_KEY = { "G" }
 			fake.fireGameEvent("BAG_UPDATE_DELAYED")
 			client.update(0.5)
 
@@ -210,7 +210,7 @@ describe("The Fishing key", function()
 		it("disarms when the last key is unbound (QOL-R11, QOL-R98)", function()
 			local fake, client = start({ "F" })
 
-			client.bindings.PAGLE_FISHING_KEY = {}
+			client.boundKeys.PAGLE_FISHING_KEY = {}
 			fake.fireGameEvent("UPDATE_BINDINGS")
 
 			assert.is_nil(client.overrideAction("F"))
@@ -245,7 +245,7 @@ describe("The Fishing key", function()
 		it("runs no tick before PLAYER_LOGIN, and ticks once armed (QOL-R25)", function()
 			local fake = newFakePagle()
 			local client = fake.load("Pagle_QoL").client
-			client.bindings.PAGLE_FISHING_KEY = { "F" }
+			client.boundKeys.PAGLE_FISHING_KEY = { "F" }
 			assert.is_false(ticking(client))
 
 			fake.login()
@@ -322,7 +322,7 @@ describe("The Fishing key with Core", function()
 	it("arms at PLAYER_LOGIN and hears WoW events through Pagle.RegisterEvent (QOL-R11, CORE-R23)", function()
 		local loaded = loadAddon("Pagle_QoL", FOREVER_GLOBALS)
 		local client = loaded.client
-		client.bindings.PAGLE_FISHING_KEY = { "F" }
+		client.boundKeys.PAGLE_FISHING_KEY = { "F" }
 
 		client.fire("PLAYER_LOGIN")
 		assert.are.equal(CAST, client.overrideAction("F"))

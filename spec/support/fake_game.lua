@@ -2,7 +2,7 @@
 -- channel, the main hand, and the frame loop. spec/support/addon.lua adds these stubs to every load, so they
 -- answer as a character standing idle with no key bound, nothing held and nothing in hand.
 --
---   loaded.client.bindings.PAGLE_FISHING_KEY = { "F", "SHIFT-F" }  -- GetBindingKey's keys
+--   loaded.client.boundKeys.PAGLE_FISHING_KEY = { "F", "SHIFT-F" }  -- GetBindingKey's keys
 --   loaded.client.overrideAction("F")                               -- "SPELL Fishing", as GetBindingAction reads it
 --   loaded.client.keysDown.F = true                                 -- IsKeyDown("F")
 --   loaded.client.channel = "Fishing"                               -- UnitChannelInfo("player")
@@ -12,7 +12,7 @@
 -- binding change; under FakePagle, fake.load points that at fake.fireGameEvent.
 
 ---@class FakeClient
----@field bindings table<string, string[]> The keys bound to each binding command, as `GetBindingKey` returns them.
+---@field boundKeys table<string, string[]> The keys bound to each binding command, as `GetBindingKey` returns them.
 ---@field keysDown table<string, true> The keys held down, by name without modifiers, as `IsKeyDown` takes them.
 ---@field channel string? The spell the player is channeling, by name; `UnitChannelInfo("player")` returns it.
 ---@field casting string? The spell the player is casting with a cast time; `UnitCastingInfo("player")` returns it.
@@ -30,7 +30,7 @@ local FISHING_SPELLS = { [7620] = true, [7731] = true, [7732] = true, [18248] = 
 ---@param client FakeClient
 ---@param stubs table<string, any> The fake client's stubs, which this adds to.
 return function(client, stubs)
-	client.bindings, client.keysDown, client.bindingCalls = {}, {}, {}
+	client.boundKeys, client.keysDown, client.bindingCalls = {}, {}, {}
 	-- A Fishing Pole (6256, as probe B1 read it) and a Worn Shortsword (25).
 	client.items = { [6256] = { 2, 20 }, [25] = { 2, 7 } }
 	client.fireGameEvent = client.fire
@@ -63,7 +63,7 @@ return function(client, stubs)
 	end
 
 	stubs.GetBindingKey = function(command)
-		return unpack(client.bindings[command] or {})
+		return unpack(client.boundKeys[command] or {})
 	end
 	stubs.SetOverrideBinding = function(owner, isPriority, key, command)
 		setOverride(owner, isPriority, key, command)
