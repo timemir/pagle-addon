@@ -105,6 +105,16 @@ inventory_add CreateFrame
 expect "a WoW global in locale/ fails lint, even when inventoried" lint "accessing undefined variable 'CreateFrame'"
 
 copy
+printf 'local item = Pagle.GetItem(6358)\nreturn item\n' >>"$scratch/tree/addons/Pagle_QoL/logic/Data.lua"
+expect "a Module's logic/ calling Pagle beyond its CORE-R11 guard fails lint" lint \
+	"accessing undefined variable 'Pagle'"
+
+copy
+printf 'local version = Pagle.API_VERSION\nreturn version\n' >>"$scratch/tree/addons/Pagle_QoL/locale/enUS.lua"
+expect "a Module's locale/ reading Pagle beyond its CORE-R11 guard fails lint" lint \
+	"accessing undefined variable 'Pagle'"
+
+copy
 uses_screenshot "$addon/adapter/Global.lua"
 expect "a WoW global in adapter/ fails lint until inventoried" lint "accessing undefined variable 'Screenshot'"
 
