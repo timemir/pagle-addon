@@ -12,9 +12,12 @@ from pathlib import Path
 from pagle_data.baseline import BASELINE, BaselineEvent
 from pagle_data.conditions import check_spec
 from pagle_data.forever import WeeklyRule
+from pagle_data.lua import Shared, to_lua
 from pagle_data.toml_reader import At, Problems, check_keys, expect_table, expect_why, read_toml
 
 WINDOWS_TOML = "data/forever/windows.toml"
+# The Lua local that holds the window specs in Catalogue.lua (Contracts).
+LOCAL = "W"
 EVENTS_CSV = f"{BASELINE}/events.csv"
 
 # The window IDs windows.toml may define (DATA-R35), in DATA-R35's order.
@@ -46,6 +49,25 @@ NON_LEAP_YEAR = 2001
 
 # A condition spec as the Lua writer takes it (pagle_data.conditions).
 Spec = dict[str, object]
+
+
+def catalogue_windows(windows: Mapping[str, Spec]) -> dict[str, Mapping[str, object]]:
+    """The catalogue's windows (Contracts): { spec = W.<id>, confirmed = false } per window. Each spec is the W
+    entry Shared by every gate on that window (#92); nothing confirms a window yet (DATA-R56, #95)."""
+    return {
+        window_id: {"spec": Shared(LOCAL, window_id, spec), "confirmed": False} for window_id, spec in windows.items()
+    }
+
+
+def local_lua(windows: Mapping[str, Mapping[str, object]]) -> str:
+    """`local W = { … }`: the specs the catalogue's windows point at, emitted once before ns.catalogue (Contracts)."""
+    specs: dict[str, Mapping[str, object]] = {}
+    for entry in windows.values():
+        spec = entry["spec"]
+        if not isinstance(spec, Shared):
+            raise TypeError(f"a catalogue window's spec must be a W entry, not {spec!r}")
+        specs[spec.key] = spec.table
+    return f"local {LOCAL} = {to_lua(specs)}\n"
 
 
 def window_of_event(event_id: int) -> str | None:

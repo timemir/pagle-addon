@@ -115,13 +115,11 @@ describe("the generated catalogue on Pagle", function()
 		assert.are.equal(count, #zones)
 	end)
 
-	it("charts no item, no catch and no window before M2 (LOG-R57, DATA-R79)", function()
+	-- The generated windows are spec/Pagle/data/Windows_spec.lua's: DATA-R79 no longer applies to them (#91).
+	it("charts no item and no catch before M2 (LOG-R57, DATA-R79)", function()
 		assert.is_nil(Pagle.GetItem(6358))
 		for _, areaID in ipairs(Pagle.GetZones()) do
 			assert.are.same({}, Pagle.GetZoneCatches(areaID))
-		end
-		for _, window in ipairs({ "day", "night", "spring", "summer", "autumn", "winter", "event.301" }) do
-			assert.is_nil(Pagle.GetWindowSpec(window))
 		end
 	end)
 

@@ -11,7 +11,7 @@ from pagle_data.db2 import DB2, Db2Layer, read_db2
 from pagle_data.forever import ForeverLayer, read_forever
 from pagle_data.lua import to_lua
 from pagle_data.toml_reader import DataError, Problems
-from pagle_data.windows import Spec, build_windows, read_windows_toml
+from pagle_data.windows import Spec, build_windows, catalogue_windows, local_lua, read_windows_toml
 
 CATALOGUE_LUA = "addons/Pagle/data/Catalogue.lua"
 
@@ -34,9 +34,9 @@ def _areas(db2: Db2Layer) -> dict[int, Mapping[str, object]]:
     }
 
 
-def build_catalogue(forever: ForeverLayer, db2: Db2Layer) -> Catalogue:
-    """The catalogue in its pre-M2 shape (DATA-R79): aliases.toml's aliases, and nothing confirms an event's weekly
-    rule yet."""
+def build_catalogue(forever: ForeverLayer, db2: Db2Layer, windows: Mapping[str, Spec]) -> Catalogue:
+    """The catalogue in its pre-M2 shape (DATA-R79) with M2's windows (DATA-R35): aliases.toml's aliases, and
+    nothing confirms an event's weekly rule yet."""
     events: dict[int, Event] = {}
     for event_id, rule in forever.events.items():
         if rule is None:
@@ -54,7 +54,7 @@ def build_catalogue(forever: ForeverLayer, db2: Db2Layer) -> Catalogue:
         "areas": _areas(db2),
         "aliases": {alias.source: alias.target for alias in forever.aliases},
         "pools": {},
-        "windows": {},
+        "windows": catalogue_windows(windows),
         "events": events,
         "fishingSpells": sorted(forever.fishing_spells),
         "auras": sorted(forever.auras),
@@ -74,8 +74,12 @@ def header() -> str:
 
 
 def catalogue_lua(catalogue: Catalogue) -> str:
-    """Catalogue.lua (DATA-R76): sets ns.catalogue. Core's TOC lists it before Core's own files."""
-    return f"{header()}\n---@class PagleNS\nlocal ns = select(2, ...)\n\nns.catalogue = {to_lua(catalogue)}\n"
+    """Catalogue.lua (DATA-R76): sets ns.catalogue, after the local W of window specs it points at (Contracts).
+    Core's TOC lists it before Core's own files."""
+    return (
+        f"{header()}\n---@class PagleNS\nlocal ns = select(2, ...)\n\n"
+        f"{local_lua(catalogue['windows'])}\nns.catalogue = {to_lua(catalogue)}\n"
+    )
 
 
 @dataclass(frozen=True)
@@ -117,7 +121,7 @@ def read_layers(root: Path) -> Layers:
 
 def outputs(layers: Layers) -> dict[str, str]:
     """Every generated file's path (relative to the repo root) and content."""
-    return {CATALOGUE_LUA: catalogue_lua(build_catalogue(layers.forever, layers.db2))}
+    return {CATALOGUE_LUA: catalogue_lua(build_catalogue(layers.forever, layers.db2, layers.windows))}
 
 
 def generate(root: Path) -> dict[str, str]:
