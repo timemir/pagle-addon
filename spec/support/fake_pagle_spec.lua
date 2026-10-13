@@ -364,12 +364,14 @@ describe("FakePagle", function()
 
 				fake.readSkill(86, 150, 0)
 				fake.readSkill(86, 150, 25)
+				fake.readSkill(86, 150, 25)
 
 				assert.are.same(
 					{ "SkillChanged 86, entries 1", "ConditionsChanged skill", "ConditionsChanged skill" },
 					fired
 				)
 				assert.are.equal(86, fake.Pagle.GetAngler().bestBaseSkill)
+				assert.are.equal(25, fake.Pagle.GetConditions().skillMod)
 			end
 		)
 	end)

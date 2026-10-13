@@ -15,9 +15,6 @@ local OWNER = "Pagle conditions"
 -- Tunables: the lure and calendar polls (LOG-R47).
 local LURE_POLL, CALENDAR_POLL = 5, 60
 
--- The Fishing skill line (LOG-R30).
-local FISHING_SKILL_LINE = 356
-
 --- Payload of `ConditionsChanged`: the keys whose conditions changed, in a fixed order (LOG-R47).
 ---@alias PagleConditionsChangedHandler fun(event: "ConditionsChanged", changedKeys: PagleConditionKey[])
 
@@ -37,34 +34,6 @@ local function holdsSecret(value, depth)
 		end
 	end
 	return false
-end
-
--- A value the client gave, or nil if it's secret (CORE-R31).
----@generic T
----@param value T
----@return T?
-local function unlessSecret(value)
-	if issecretvalue(value) then
-		return nil
-	end
-	return value
-end
-
---- Fishing's rank, max rank and modifier (LOG-R30): `GetProfessions()`, then `GetProfessionInfo` on its 4th
---- return, skill line 356. Each is nil while secret, all three without the profession.
----@return integer? rank
----@return integer? max
----@return integer? mod
-function ns.ReadFishingSkill()
-	local fishing = select(4, GetProfessions())
-	if fishing == nil or issecretvalue(fishing) then
-		return nil, nil, nil
-	end
-	local _, _, rank, max, _, _, line, mod = GetProfessionInfo(fishing)
-	if issecretvalue(line) or line ~= FISHING_SKILL_LINE then
-		return nil, nil, nil
-	end
-	return unlessSecret(rank), unlessSecret(max), unlessSecret(mod)
 end
 
 -- The realm's calendar time now, or nil while any of it is secret.
@@ -215,7 +184,8 @@ local tracker = ns.NewConditionsTracker()
 local started = false
 
 --- Re-reads the given keys and fires `ConditionsChanged` with those that changed since their last reading, if any
---- did (LOG-R47). Nothing happens before `ns.StartConditions`. The skill reader (LOG-R32) calls it with "skill".
+--- did (LOG-R47). Nothing happens before `ns.StartConditions`. ns.ReadSkill (adapter/Angler.lua) calls it with
+--- "skill" (LOG-R32).
 ---@param ... PagleConditionKey
 function ns.RefreshConditions(...)
 	if not started then
@@ -228,7 +198,8 @@ function ns.RefreshConditions(...)
 	end
 end
 
---- Starts the conditions service, once, at PLAYER_LOGIN after the area index is built (LOG-R1 step 2): asks the
+--- Starts the conditions service, once. adapter/Login.lua calls it at PLAYER_LOGIN (LOG-R1 step 2), after the area
+--- index so the baseline has real areas, and before ModulesChanged so a Module meets a running service. It asks the
 --- server for calendar data, takes every key's baseline, then follows the zone-change events, the player's
 --- UNIT_AURA, CALENDAR_UPDATE_EVENT_LIST and the lure and calendar polls (LOG-R47).
 function ns.StartConditions()
@@ -252,10 +223,3 @@ function ns.StartConditions()
 	C_Timer.NewTicker(LURE_POLL, refresher("lure"))
 	C_Timer.NewTicker(CALENDAR_POLL, refresher("events"))
 end
-
--- After the area index (adapter/Catalogue.lua, earlier in the TOC) and before ModulesChanged (adapter/Modules.lua),
--- so the baseline has real areas and a Module that reads the conditions at ModulesChanged meets a running service.
-Pagle.RegisterEvent(OWNER, "PLAYER_LOGIN", function()
-	Pagle.UnregisterEvent(OWNER, "PLAYER_LOGIN")
-	ns.StartConditions()
-end)

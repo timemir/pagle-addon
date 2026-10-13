@@ -163,14 +163,13 @@ describe("Skill Readings", function()
 		local angler, catchLog = anglerOver()
 		angler:SeeCharacter(ada(), T)
 
-		local reading, changed = angler:ReadSkill({ rank = 86, max = 150, mod = 25 }, T)
+		local reading = angler:ReadSkill({ rank = 86, max = 150, mod = 25 }, T)
 
 		assert.are.same({ "S1|1|1791731700|0|86|150|25" }, catchLog.data.entries)
 		assert.are.same(
 			{ seq = 1, id = ADA .. "-1791731700-0", kind = "skill", char = 1, time = T, rank = 86, max = 150, mod = 25 },
 			reading
 		)
-		assert.is_true(changed)
 	end)
 
 	it("append an S1 when the rank or the max rank changes (LOG-R31)", function()
@@ -188,18 +187,12 @@ describe("Skill Readings", function()
 		}, catchLog.data.entries)
 	end)
 
-	it("append nothing for a change in modifier alone, but report it as a change (LOG-R31, LOG-R32)", function()
+	it("append nothing for a change in modifier alone (LOG-R31)", function()
 		local angler, catchLog = anglerOver()
 		angler:SeeCharacter(ada(), T)
 		angler:ReadSkill({ rank = 86, max = 150, mod = 0 }, T)
 
-		local reading, changed = angler:ReadSkill({ rank = 86, max = 150, mod = 25 }, T + 1)
-		assert.is_nil(reading)
-		assert.is_true(changed)
-
-		reading, changed = angler:ReadSkill({ rank = 86, max = 150, mod = 25 }, T + 2)
-		assert.is_nil(reading)
-		assert.is_false(changed)
+		assert.is_nil(angler:ReadSkill({ rank = 86, max = 150, mod = 25 }, T + 1))
 		assert.are.equal(1, #catchLog.data.entries)
 	end)
 
@@ -212,9 +205,7 @@ describe("Skill Readings", function()
 		})
 		angler:SeeCharacter(ada(), T)
 
-		local reading, changed = angler:ReadSkill({ rank = 86, max = 150, mod = 0 }, T)
-		assert.is_nil(reading)
-		assert.is_false(changed)
+		assert.is_nil(angler:ReadSkill({ rank = 86, max = 150, mod = 0 }, T))
 		angler:SeeCharacter(bram(), T + 1)
 		assert.is_table((angler:ReadSkill({ rank = 86, max = 150, mod = 0 }, T + 1)))
 		assert.are.equal(5, #catchLog.data.entries)
@@ -225,10 +216,7 @@ describe("Skill Readings", function()
 
 		assert.is_nil((angler:ReadSkill({ rank = 86, max = 150, mod = 0 }, T)))
 		angler:SeeCharacter(ada(), T)
-		local reading, changed = angler:ReadSkill(nil, T)
-
-		assert.is_nil(reading)
-		assert.is_false(changed)
+		assert.is_nil(angler:ReadSkill(nil, T))
 		assert.are.same({}, catchLog.data.entries)
 	end)
 end)

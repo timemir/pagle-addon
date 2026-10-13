@@ -101,31 +101,40 @@ describe("Core's login order", function()
 		assert.are.equal(0, loaded.ns.loginSeq)
 	end)
 
-	it("at PLAYER_LOGIN adds the character, builds the area index, then fires ModulesChanged (LOG-R1)", function()
-		local steps = {}
-		local loaded
-		loaded = loadAddon(
-			"Pagle",
-			foreverWith({
-				C_Map = {
-					GetAreaInfo = function(id)
-						if id == 1 then
-							steps[#steps + 1] = "area index, characters: " .. #loaded.env.PagleLog.characters
-						end
-					end,
-				},
-			})
-		)
-		loaded.env.Pagle.RegisterCallback("Spec", "ModulesChanged", function()
-			steps[#steps + 1] = "ModulesChanged, current: " .. tostring(loaded.env.Pagle.GetAngler().current)
-		end)
-		assert.are.same({}, loaded.env.PagleLog.characters)
+	it(
+		"at PLAYER_LOGIN adds the character, builds the area index, starts the conditions, then fires ModulesChanged"
+			.. " (LOG-R1, LOG-R47)",
+		function()
+			local steps = {}
+			local loaded
+			loaded = loadAddon(
+				"Pagle",
+				foreverWith({
+					C_Map = {
+						GetAreaInfo = function(id)
+							if id == 1 then
+								steps[#steps + 1] = "area index, characters: " .. #loaded.env.PagleLog.characters
+							end
+						end,
+					},
+				})
+			)
+			local startConditions = loaded.ns.StartConditions
+			loaded.ns.StartConditions = function()
+				steps[#steps + 1] = "conditions"
+				startConditions()
+			end
+			loaded.env.Pagle.RegisterCallback("Spec", "ModulesChanged", function()
+				steps[#steps + 1] = "ModulesChanged, current: " .. tostring(loaded.env.Pagle.GetAngler().current)
+			end)
+			assert.are.same({}, loaded.env.PagleLog.characters)
 
-		loaded.client.fire("PLAYER_LOGIN")
-		loaded.client.fire("PLAYER_LOGIN")
+			loaded.client.fire("PLAYER_LOGIN")
+			loaded.client.fire("PLAYER_LOGIN")
 
-		assert.are.same({ "area index, characters: 1", "ModulesChanged, current: 1" }, steps)
-	end)
+			assert.are.same({ "area index, characters: 1", "conditions", "ModulesChanged, current: 1" }, steps)
+		end
+	)
 
 	it("at the first PLAYER_ENTERING_WORLD only appends a build entry, then a Skill Reading (LOG-R1)", function()
 		local globals, skill, build = fishingClient()
@@ -280,6 +289,43 @@ describe("Skill Readings from the client", function()
 		assert.are.equal(2, #loaded.env.PagleLog.entries)
 		assert.are.equal(1, #fired)
 		assert.are.same({ "skill" }, fired[1][2])
+	end)
+
+	it(
+		"fire ConditionsChanged once for one skill-up that both skill events report, agreeing with GetConditions"
+			.. " (LOG-R32, LOG-R47)",
+		function()
+			local loaded, skill = loggedIn()
+			local fired = recordEvents(loaded, { "SkillChanged", "ConditionsChanged" })
+
+			skill.rank = 87
+			loaded.client.fire("SKILL_LINES_CHANGED")
+			loaded.client.fire("CHAT_MSG_SKILL")
+
+			assert.are.equal(3, #loaded.env.PagleLog.entries)
+			assert.are.same({ "SkillChanged", "ConditionsChanged" }, { fired[1][1], fired[2][1] })
+			assert.are.equal(2, #fired)
+			assert.are.same({ "skill" }, fired[2][2])
+			local conditions = loaded.env.Pagle.GetConditions()
+			assert.are.same({ 87, 0 }, { conditions.skillRank, conditions.skillMod })
+		end
+	)
+
+	it("fire no ConditionsChanged for the login reading: it's in the baseline (LOG-R1, LOG-R47)", function()
+		local globals = fishingClient({
+			PagleLog = savedLog({ "S1|1|1791731000|0|80|150|25" }),
+			UnitGUID = function()
+				return ADA
+			end,
+		})
+		local loaded = loadAddon("Pagle", globals)
+		local fired = recordEvents(loaded, { "SkillChanged", "ConditionsChanged" })
+
+		loaded.client.fire("PLAYER_LOGIN")
+		loaded.client.fire("PLAYER_ENTERING_WORLD", true, false)
+
+		assert.are.equal(1, #fired)
+		assert.are.equal("SkillChanged", fired[1][1])
 	end)
 
 	it("are not taken again at login for a character whose last reading matches (LOG-R31)", function()
