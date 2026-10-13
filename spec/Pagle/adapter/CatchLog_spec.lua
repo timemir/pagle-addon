@@ -52,6 +52,18 @@ describe("Core's SavedVariables at load", function()
 		assert.are.equal(1, loaded.ns.db.global.schemaVersion)
 	end)
 
+	it("load a PagleDB saved by an earlier login, profile keys and all, into the Default profile (CORE-R5)", function()
+		local saved = loadAddon("Pagle", FOREVER_GLOBALS).env.PagleDB
+		saved.global.decodeErrors = 2
+
+		local loaded = login({ PagleDB = saved })
+
+		assert.are.same({ ["Angler - Testrealm"] = "Default" }, saved.profileKeys)
+		assert.is_table(loaded.ns.db)
+		assert.are.equal("Default", loaded.ns.db:GetCurrentProfile())
+		assert.are.equal(2, loaded.ns.db.global.decodeErrors)
+	end)
+
 	it("hold no PagleDB key outside catch-log.md › Data (CORE-R5)", function()
 		local loaded = login({ PagleLog = savedLog({ "X9|1|1791731690|0" }) })
 		catches(loaded.env.Pagle, 0)
