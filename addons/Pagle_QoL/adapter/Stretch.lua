@@ -143,8 +143,13 @@ function ns.StartStretch()
 			endOnItsOwn()
 		end
 	end)
-	-- Logout or /reload. A restore that must wait stays in the lease, saved for the leftover restore (QOL-R64).
-	Pagle.RegisterEvent(OWNER, "PLAYER_LOGOUT", ns.EndStretch)
+	-- Logout or /reload. QoL logs out first: each restore's SetCVar fires CVAR_UPDATE, which then evaluates nothing, as
+	-- AceDB may have stripped the profile's defaults already (QOL-R30, QOL-R63). A restore that must wait stays in the
+	-- lease, saved for the leftover restore (QOL-R64).
+	Pagle.RegisterEvent(OWNER, "PLAYER_LOGOUT", function()
+		ns.LogOut()
+		ns.EndStretch()
+	end)
 	-- Restriction starting ends the stretch from adapter/Combat.lua (QOL-R31). Its end runs the restores that fell
 	-- due under lockdown (QOL-R66); no stretch can have started since.
 	Pagle.RegisterCallback(OWNER, "RestrictionChanged", function(_, isRestricted)
