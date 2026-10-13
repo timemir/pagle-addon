@@ -196,3 +196,156 @@ describe("the latest Session", function()
 		assert.is_nil(ns.OpenCatchLog(log({ skill(0) }), {}):Session())
 	end)
 end)
+
+describe("the Session events", function()
+	-- A tracker over a log holding `entries`, its events noted in `fired` ("<event> <id> [whileAway]") and their
+	-- payloads in `payloads`, with PagleDB.global `global`.
+	local function tracked(entries, global)
+		local catchLog = ns.OpenCatchLog(log(entries), {})
+		local seen = { fired = {}, payloads = {}, global = global or {}, catchLog = catchLog }
+		seen.tracker = ns.NewSessionTracker({
+			catchLog = catchLog,
+			global = seen.global,
+			fire = function(event, session)
+				seen.fired[#seen.fired + 1] = event .. " " .. session.id .. (session.whileAway and " whileAway" or "")
+				seen.payloads[#seen.payloads + 1] = session
+			end,
+		})
+		return seen
+	end
+
+	-- Appends a caught Cast of one item by Ada at T + `at`, then tells the tracker, as Core does (LOG-R9). Returns
+	-- what the tracker's Cast returns.
+	local function castAt(seen, at)
+		seen.catchLog:Append({
+			kind = "cast",
+			char = 1,
+			time = T + at,
+			outcome = "caught",
+			conditions = { minute = 494, zone = 148, subzone = 453, events = {}, auras = {} },
+			items = { { itemID = 6358, quantity = 1 } },
+		})
+		return seen.tracker:Cast()
+	end
+
+	it("fires SessionStarted for a Cast that opens a Session, already counting it (LOG-R62)", function()
+		local seen = tracked({})
+		seen.tracker:Start(T)
+
+		local wait = castAt(seen, 0)
+		castAt(seen, 100)
+
+		assert.are.same({ "SessionStarted " .. idAt(0) }, seen.fired)
+		assert.are.same({ 1, 1 }, { seen.payloads[1].casts, seen.payloads[1].catches })
+		assert.are.equal(ns.SESSION_GAP, wait)
+	end)
+
+	it("fires SessionEnded once 900 s pass with no Cast, and sets lastEndedSession (LOG-R62, LOG-R63)", function()
+		local seen = tracked({})
+		seen.tracker:Start(T)
+		castAt(seen, 0)
+
+		assert.are.equal(1, seen.tracker:Tick(T + 899))
+		assert.are.same({ "SessionStarted " .. idAt(0) }, seen.fired)
+		assert.is_nil(seen.tracker:Tick(T + 900))
+		seen.tracker:Tick(T + 2000)
+
+		assert.are.same({ "SessionStarted " .. idAt(0), "SessionEnded " .. idAt(0) }, seen.fired)
+		assert.is_nil(seen.payloads[2].whileAway)
+		assert.are.equal(idAt(0), seen.global.lastEndedSession)
+	end)
+
+	it(
+		"fires a SessionEnded still due before the next Session's SessionStarted, when no Tick came (LOG-R9, LOG-R62)",
+		function()
+			local seen = tracked({})
+			seen.tracker:Start(T)
+			castAt(seen, 0)
+
+			castAt(seen, 900)
+
+			assert.are.same({
+				"SessionStarted " .. idAt(0),
+				"SessionEnded " .. idAt(0),
+				"SessionStarted " .. idAt(900),
+			}, seen.fired)
+			assert.are.same({ 1, 1 }, { seen.payloads[2].casts, seen.payloads[3].casts })
+		end
+	)
+
+	it("serves the Session open now, as a fresh copy, and nil 900 s after its last Cast (LOG-R64)", function()
+		local seen = tracked({})
+		assert.is_nil(seen.tracker:Get(T))
+		seen.tracker:Start(T)
+		castAt(seen, 0)
+		castAt(seen, 10)
+
+		local session = seen.tracker:Get(T + 909)
+		session.casts = 99
+
+		assert.are.same({ idAt(0), 2 }, { session.id, seen.tracker:Get(T + 909).casts })
+		assert.is_nil(seen.tracker:Get(T + 910))
+	end)
+
+	describe("at login", function()
+		it(
+			"fires SessionEnded with whileAway for a Session ended while away, once, when Idle comes (LOG-R63)",
+			function()
+				local seen = tracked({ cast(0), cast(100) })
+
+				assert.is_nil(seen.tracker:Start(T + 1000))
+				assert.are.same({}, seen.fired)
+				seen.tracker:Idle()
+				seen.tracker:Idle()
+				seen.tracker:Tick(T + 5000)
+
+				assert.are.same({ "SessionEnded " .. idAt(0) .. " whileAway" }, seen.fired)
+				assert.are.same({ 2, true }, { seen.payloads[1].casts, seen.payloads[1].whileAway })
+				assert.are.equal(idAt(0), seen.global.lastEndedSession)
+			end
+		)
+
+		it("fires it before the SessionStarted of a Cast recorded before Idle, then not again (LOG-R63)", function()
+			local seen = tracked({ cast(0) })
+			seen.tracker:Start(T + 1000)
+
+			castAt(seen, 1000)
+			seen.tracker:Idle()
+
+			assert.are.same({
+				"SessionEnded " .. idAt(0) .. " whileAway",
+				"SessionStarted " .. idAt(1000),
+			}, seen.fired)
+		end)
+
+		it("fires nothing for a Session SessionEnded already fired for (LOG-R63)", function()
+			local seen = tracked({ cast(0) }, { lastEndedSession = idAt(0) })
+			seen.tracker:Start(T + 1000)
+
+			seen.tracker:Idle()
+			castAt(seen, 1000)
+
+			assert.are.same({ "SessionStarted " .. idAt(1000) }, seen.fired)
+		end)
+
+		it("fires nothing for a log without a Cast (LOG-R63)", function()
+			local seen = tracked({ skill(0) })
+			assert.is_nil(seen.tracker:Start(T + 1000))
+
+			seen.tracker:Idle()
+
+			assert.are.same({}, seen.fired)
+		end)
+
+		it("keeps a Session still open after a reload, ending it live when its 900 s pass (LOG-R60, LOG-R62)", function()
+			local seen = tracked({ cast(0) })
+
+			assert.are.equal(600, seen.tracker:Start(T + 300))
+			seen.tracker:Idle()
+			assert.are.equal(idAt(0), seen.tracker:Get(T + 300).id)
+			seen.tracker:Tick(T + 900)
+
+			assert.are.same({ "SessionEnded " .. idAt(0) }, seen.fired)
+		end)
+	end)
+end)

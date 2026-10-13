@@ -128,6 +128,117 @@ function ns.SessionStartSeq(reverseCasts)
 	return first.seq
 end
 
+--- What the Session tracker is fed.
+---@class PagleSessionTrackerOptions
+---@field catchLog PagleCatchLog                       -- its latest Session is the one the events are about
+---@field global table                                 -- PagleDB.global, which keeps lastEndedSession (LOG-R63)
+---@field fire fun(event: "SessionStarted"|"SessionEnded", session: PagleSession)
+
+--- The live Session events (LOG-R62, LOG-R63) and the Session open now (LOG-R64), over the Catch log's latest
+--- Session. Core feeds it the server time; when to call Tick is the adapter's timer.
+---@class PagleSessionTracker
+---@field package options PagleSessionTrackerOptions
+---@field package session PagleSession? -- the latest Session the tracker has seen
+---@field package ended boolean         -- SessionEnded has fired for it, or had before login
+---@field package away boolean          -- it ended while logged out and its SessionEnded is still to fire
+local Tracker = {}
+Tracker.__index = Tracker
+
+---@param options PagleSessionTrackerOptions
+---@return PagleSessionTracker
+function ns.NewSessionTracker(options)
+	return setmetatable({ options = options, ended = true, away = false }, Tracker)
+end
+
+-- Seconds until `session`'s gap has passed at `now`; 0 or less once it has.
+---@param session PagleSession
+---@param now integer
+---@return integer
+local function remaining(session, now)
+	return ns.SESSION_GAP - (now - session.endTime)
+end
+
+-- Fires SessionEnded for the tracker's Session and notes it in lastEndedSession (LOG-R63).
+---@param tracker PagleSessionTracker
+local function fireEnded(tracker)
+	local session = tracker.session --[[@as PagleSession]]
+	local whileAway = tracker.away or nil
+	tracker.ended, tracker.away = true, false
+	tracker.options.global.lastEndedSession = session.id
+	tracker.options.fire("SessionEnded", ns.SessionPayload(session, whileAway))
+end
+
+--- At login (LOG-R63): notes the log's latest Session. One that ended 900 s or more before `now` and isn't
+--- `lastEndedSession` gets its SessionEnded, with `whileAway`, at Idle or at the next Cast, whichever comes first.
+--- Returns the seconds until a Session still open ends (call Tick then), else nil.
+---@param now integer server time
+---@return integer?
+function Tracker:Start(now)
+	local session = self.options.catchLog:Session()
+	self.session = session
+	if not session then
+		return nil
+	end
+	local wait = remaining(session, now)
+	if wait > 0 then
+		self.ended, self.away = false, false
+		return wait
+	end
+	self.away = session.id ~= self.options.global.lastEndedSession
+	self.ended = not self.away
+	return nil
+end
+
+--- LOG-R9 step 3, right after a Cast's entry is appended: fires any SessionEnded still due for the previous
+--- Session, then SessionStarted if this Cast opened a new one, counting it (LOG-R62, LOG-R63). Returns the seconds
+--- until this Session ends (call Tick then).
+---@return integer
+function Tracker:Cast()
+	local session = self.options.catchLog:Session() --[[@as PagleSession]]
+	if session.id ~= (self.session and self.session.id) then
+		if self.session and not self.ended then
+			fireEnded(self)
+		end
+		self.session, self.ended, self.away = session, false, false
+		self.options.fire("SessionStarted", ns.SessionPayload(session))
+	end
+	return ns.SESSION_GAP
+end
+
+--- Fires SessionEnded for the Session open while logged in once 900 s have passed since its last Cast (LOG-R62).
+--- Returns the seconds still to wait if they haven't, else nil.
+---@param now integer server time
+---@return integer?
+function Tracker:Tick(now)
+	if not self.session or self.ended or self.away then
+		return nil
+	end
+	local wait = remaining(self.session, now)
+	if wait > 0 then
+		return wait
+	end
+	fireEnded(self)
+	return nil
+end
+
+--- Once no projection is updating (LOG-R63): fires the SessionEnded due since login, if no Cast has fired it yet.
+function Tracker:Idle()
+	if self.away then
+		fireEnded(self)
+	end
+end
+
+--- The Session open at `now`, its last Cast under 900 s before, as a fresh copy; else nil (LOG-R64).
+---@param now integer server time
+---@return PagleSession?
+function Tracker:Get(now)
+	local session = self.options.catchLog:Session()
+	if session and remaining(session, now) > 0 then
+		return ns.SessionPayload(session)
+	end
+	return nil
+end
+
 --- A fresh copy of `session` to hand out (catch-log.md › Events), with `whileAway` if given.
 ---@param session PagleSession
 ---@param whileAway true?
