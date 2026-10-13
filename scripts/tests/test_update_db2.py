@@ -223,7 +223,7 @@ def test_an_unknown_universe_fails_before_downloading(tmp_path: Path, capsys: py
             {"item": b"ID,ClassID,SubclassID\n6303,0,5\n6303,0,6\n"},
             "Item 1.60.1.70338: line 3: ID 6303 is listed twice",
         ),
-        ({"item": b"\xff\xfeID\n"}, f"can't read {ITEM_URL}"),
+        ({"item": b"\xff\xfeID\n"}, f"{ITEM_URL}: not UTF-8"),
     ],
 )
 def test_a_bad_response_fails_listing_the_problems_and_writes_nothing(
@@ -251,5 +251,6 @@ def test_a_failed_download_fails_and_writes_nothing(
     del responses[url]
     code, output = run(tree(tmp_path), capsys, Canned(responses), "1.60.1.70338")
     assert code == 1
-    assert f"can't download {url}" in output
+    # DATA-R63: every problem is reported where it sits, here the URL.
+    assert f"update-db2: {url}: can't download" in output
     assert not (tmp_path / "data" / "db2").exists()

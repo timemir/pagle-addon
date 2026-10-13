@@ -6,7 +6,8 @@ from dataclasses import dataclass, field
 
 @dataclass(frozen=True)
 class At:
-    """Where a value sits: a file relative to the repo root and a dotted key path inside it."""
+    """Where a value sits: a file relative to the repo root (or a URL or a command-line argument a script was given)
+    and a dotted key path inside it."""
 
     file: str
     path: str = ""

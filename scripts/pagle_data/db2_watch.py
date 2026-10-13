@@ -12,14 +12,13 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
-from pagle_data.baseline import read_baseline
 from pagle_data.db2 import Area, Db2Layer, Item, Row, parse_areas, parse_table, read_db2
-from pagle_data.db2_update import Fetch, download, table_url
-from pagle_data.errors import Problems
+from pagle_data.db2_update import Fetch, download, download_tables, fail, repo_universe
+from pagle_data.errors import At, Problems
 from pagle_data.files import write_atomic
-from pagle_data.universe import item_universe
 
 PROG = "db2-watch"
+OPENED_NOTHING = "opened nothing"
 
 BUILDS_URL = "https://wago.tools/api/builds"
 
@@ -72,22 +71,23 @@ def has_keyword(name: str) -> bool:
     return _KEYWORD.search(name) is not None
 
 
-def listed_builds(answer: bytes, products: Sequence[str], problems: list[str]) -> list[Build]:
+def listed_builds(answer: bytes, products: Sequence[str], problems: Problems) -> list[Build]:
     """The builds the API lists under products. A product the answer lacks, or an answer that isn't the API's
     shape, is a problem; an entry whose version isn't a build name is skipped."""
+    at = At(BUILDS_URL)
     try:
         document = json.loads(answer.decode("utf-8-sig"))
     except (UnicodeDecodeError, json.JSONDecodeError) as error:
-        problems.append(f"can't read {BUILDS_URL}: {error}")
+        problems.add(at, f"not JSON: {error}")
         return []
     if not isinstance(document, dict):
-        problems.append(f"can't read {BUILDS_URL}: expected an object of products")
+        problems.add(at, "expected an object of products")
         return []
     builds: list[Build] = []
     for product in products:
         entries = document.get(product)
         if not isinstance(entries, list):
-            problems.append(f"{BUILDS_URL} lists no product '{product}' (data/db2/build.toml's products)")
+            problems.add(at, f"lists no product '{product}' (data/db2/build.toml's products)")
             continue
         for entry in entries:
             version = entry.get("version") if isinstance(entry, dict) else None
@@ -264,33 +264,6 @@ def _sections(
     ]
 
 
-def _tables(build: str, recorded: str, fetch: Fetch, failed: list[str]) -> dict[tuple[str, str], str]:
-    """The tables the watch needs as text, keyed by (table, build); each one that can't be had is a line in
-    failed."""
-    tables: dict[tuple[str, str], str] = {}
-    wanted = [(table, build) for table in NEW_TABLES] + [(table, recorded) for table in RECORDED_TABLES]
-    for table, at in wanted:
-        url = table_url(table, at)
-        try:
-            body = fetch(url)
-        except OSError as error:
-            failed.append(f"can't download {url}: {error}")
-            continue
-        try:
-            tables[table, at] = body.decode("utf-8-sig")
-        except UnicodeDecodeError as error:
-            failed.append(f"can't read {url}: not UTF-8: {error}")
-    return tables
-
-
-def _universe(root: Path, problems: Problems) -> frozenset[int]:
-    """The item universe of the repo at root (DATA-R15); empty, with problems, when its sources can't be read."""
-    baseline = read_baseline(root, problems)
-    if problems:
-        return frozenset()
-    return item_universe(root, baseline, problems)
-
-
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="scripts/db2-watch.py",
@@ -305,53 +278,47 @@ def _parser() -> argparse.ArgumentParser:
     return parser
 
 
-def read_issues(path: Path, problems: list[str]) -> dict[str, int]:
+def read_issues(path: Path, problems: Problems) -> dict[str, int]:
     """The issues listed in path, by title: a JSON array of objects with "number" and "title"."""
     try:
         listed = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
-        problems.append(f"can't read {path}: {error}")
+        problems.add(At(str(path)), f"can't read: {error}")
         return {}
     if not isinstance(listed, list) or not all(
         isinstance(issue, dict) and isinstance(issue.get("title"), str) and isinstance(issue.get("number"), int)
         for issue in listed
     ):
-        problems.append(f"{path}: expected a JSON array of issues with a number and a title")
+        problems.add(At(str(path)), "expected a JSON array of issues with a number and a title")
         return {}
     return {issue["title"]: issue["number"] for issue in listed}
-
-
-def _fail(problems: list[str]) -> int:
-    for problem in problems:
-        print(f"{PROG}: {problem}", file=sys.stderr)
-    print(f"{PROG}: {len(problems)} problem(s); opened nothing", file=sys.stderr)
-    return 1
 
 
 def main(argv: Sequence[str], root: Path, fetch: Fetch = download) -> int:
     """Runs the command line on the repo at root, downloading with fetch; returns the exit code."""
     args = _parser().parse_args(argv)
     out: Path = args.out
-    if out.resolve().is_relative_to((root / "data").resolve()):
-        return _fail(["--out must be outside data/ (DATA-R130)"])
     problems = Problems()
+    if out.resolve().is_relative_to((root / "data").resolve()):
+        problems.add(At("--out"), "must be outside data/ (DATA-R130)")
+        return fail(PROG, problems, OPENED_NOTHING)
     current = read_db2(root, problems)
     if problems:
-        return _fail(problems.found)
+        return fail(PROG, problems, OPENED_NOTHING)
     recorded = parse_build(f"{current.version}.{current.build}", "data/db2/build.toml")
     assert recorded is not None  # read_build checked the version string and the build number
 
-    failed: list[str] = []
-    issues = read_issues(args.issues, failed) if args.issues is not None else {}
-    if failed:
-        return _fail(failed)
+    issues = read_issues(args.issues, problems) if args.issues is not None else {}
+    if problems:
+        return fail(PROG, problems, OPENED_NOTHING)
     try:
         answer = fetch(BUILDS_URL)
     except OSError as error:
-        return _fail([f"can't download {BUILDS_URL}: {error}"])
-    builds = listed_builds(answer, current.products, failed)
-    if failed:
-        return _fail(failed)
+        problems.add(At(BUILDS_URL), f"can't download: {error}")
+        return fail(PROG, problems, OPENED_NOTHING)
+    builds = listed_builds(answer, current.products, problems)
+    if problems:
+        return fail(PROG, problems, OPENED_NOTHING)
     passed_over = sorted(
         {build.name: build.number for build in builds if build.line != recorded.line and build.number > recorded.number}
         .items(),
@@ -373,15 +340,16 @@ def main(argv: Sequence[str], root: Path, fetch: Fetch = download) -> int:
         print(f'{PROG}: issue #{issues[title]} "{title}" exists; nothing to open')
         return 0
 
-    universe = _universe(root, problems)
+    universe = repo_universe(root, problems)
     if problems:
-        return _fail(problems.found)
-    tables = _tables(build.name, recorded.name, fetch, failed)
-    if failed:
-        return _fail(failed)
+        return fail(PROG, problems, OPENED_NOTHING)
+    wanted = [(table, build.name) for table in NEW_TABLES] + [(table, recorded.name) for table in RECORDED_TABLES]
+    tables = download_tables(wanted, fetch, problems)
+    if problems:
+        return fail(PROG, problems, OPENED_NOTHING)
     sections = _sections(tables, build.name, recorded.name, current, universe, problems)
     if problems:
-        return _fail(problems.found)
+        return fail(PROG, problems, OPENED_NOTHING)
 
     write_atomic(out / TITLE_FILE, f"{title}\n".encode("utf-8"))
     write_atomic(out / BODY_FILE, issue_body(build, recorded, sections).encode("utf-8"))

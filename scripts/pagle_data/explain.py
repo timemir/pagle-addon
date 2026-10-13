@@ -15,7 +15,7 @@ from pagle_data.baseline import BASELINE, BaselineLayer
 from pagle_data.db2 import AREAS, ITEMS, Db2Layer
 from pagle_data.forever import ALIASES
 from pagle_data.generate import Layers, catalogue_of
-from pagle_data.items import NOISE_CLASSES, UNCHARTED, WEIGHT_PATTERN, ItemEntry, reference_only
+from pagle_data.items import NOISE_CLASSES, UNCHARTED, WEIGHT_PATTERN, ItemEntry, identity, reference_only
 from pagle_data.lua import to_lua
 from pagle_data.universe import AREAS_TOML, ITEMS_TOML, POOLS_TOML
 
@@ -88,20 +88,19 @@ def _entry_fields(entry: ItemEntry) -> str:
     return ", ".join(fields) if fields else "no key"
 
 
-def _identity(name: str, db2_value: int | None, toml_value: int | None) -> str:
-    """class or quality: DB2 wins as soon as it has the item; items.toml gives it until then (DATA-R24)."""
+def _identity(name: str, db2_value: int | None, toml_value: int | None, layer: str | None, value: int | None) -> str:
+    """class or quality: each layer's value, then the layer and value the generator took (items.identity)."""
     given = ((db2_value, ITEMS), (toml_value, ITEMS_TOML))
-    parts = [f"{value} from {layer}" for value, layer in given if value is not None]
-    if not parts:
+    parts = [f"{given_value} from {given_layer}" for given_value, given_layer in given if given_value is not None]
+    if value is None:
         return f"  {name}: unknown (in neither {ITEMS} nor {ITEMS_TOML})"
-    winner, value = (ITEMS, db2_value) if db2_value is not None else (ITEMS_TOML, toml_value)
-    return f"  {name}: {_wins(parts, winner, value)}"
+    return f"  {name}: {_wins(parts, layer, value)}"
 
 
 def _item(layers: Layers, item: int) -> list[str]:
     entry = layers.item_layer.items.get(item)
     known = layers.db2.items.get(item)
-    class_id = known.class_id if known is not None else entry.class_id if entry is not None else None
+    took = identity(layers.db2, entry, item)
     lines = [f"item {item}", f"  {BASELINE}/: {_baseline_loot(layers.baseline, item)}"]
     lines.append(f"  {entry.at}: {_entry_fields(entry)}" if entry is not None else f"  {ITEMS_TOML}: no entry")
     if known is not None:
@@ -112,16 +111,17 @@ def _item(layers: Layers, item: int) -> list[str]:
     else:
         lines.append(f"  {ITEMS}: no row")
     lines.append(f"  data/observed/: {_observed(layers, item)}")
-    lines.append(_identity("class", known.class_id if known else None, entry.class_id if entry else None))
-    lines.append(_identity("quality", known.quality if known else None, entry.quality if entry else None))
+    db2_class, toml_class = (known.class_id if known else None), (entry.class_id if entry else None)
+    lines.append(_identity("class", db2_class, toml_class, took.layer, took.class_id))
+    db2_quality, toml_quality = (known.quality if known else None), (entry.quality if entry else None)
+    lines.append(_identity("quality", db2_quality, toml_quality, took.layer, took.quality))
 
     # DATA-R16: Noise by rule (reference loot only, or a Noise class), unless items.toml says otherwise.
     rule: list[str] = []
     if item in reference_only(layers.baseline):
         rule.append(f"true by rule (only reference loot reaches it) from {BASELINE}/")
-    if class_id in NOISE_CLASSES:
-        source = ITEMS if known is not None else ITEMS_TOML
-        rule.append(f"true by rule (DB2 class {class_id} is a Noise class) from {source}")
+    if took.class_id in NOISE_CLASSES:
+        rule.append(f"true by rule (DB2 class {took.class_id} is a Noise class) from {took.layer}")
     noise = bool(rule)
     if not rule:
         rule.append("false by rule (DATA-R16)")

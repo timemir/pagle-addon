@@ -302,7 +302,7 @@ def test_the_watch_refuses_to_write_under_data(tmp_path: Path, capsys: pytest.Ca
     before = snapshot(root)
     code, output = run(root, root / "data" / "watch", capsys, Canned(newer()))
     assert code == 1
-    assert "--out must be outside data/ (DATA-R130)" in output
+    assert "db2-watch: --out: must be outside data/ (DATA-R130)" in output
     assert snapshot(root) == before
 
 
@@ -335,7 +335,8 @@ def test_a_failed_download_fails_the_run_and_writes_nothing(
     del responses[table("SpellName", OLD)]
     code, output = run(root, out, capsys, Canned(responses))
     assert code == 1
-    assert f"can't download {table('SpellName', OLD)}" in output
+    # DATA-R63: every problem is reported where it sits, here the URL.
+    assert f"db2-watch: {table('SpellName', OLD)}: can't download" in output
     assert not out.exists() or not any(out.iterdir())
 
 
@@ -354,4 +355,4 @@ def test_a_product_wago_does_not_list_fails_the_run(tmp_path: Path, capsys: pyte
     root, out = tree(tmp_path / "repo"), tmp_path / "out"
     code, output = run(root, out, capsys, Canned({BUILDS_URL: builds_json(NEW, product="wow_forever")}))
     assert code == 1
-    assert "lists no product 'wow_classic_beta'" in output
+    assert f"{BUILDS_URL}: lists no product 'wow_classic_beta'" in output

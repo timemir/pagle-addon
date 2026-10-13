@@ -12,7 +12,7 @@ from pathlib import Path
 
 from pagle_data.baseline import BaselineLayer
 from pagle_data.checks import Checks
-from pagle_data.db2 import Db2Layer
+from pagle_data.db2 import ITEMS, Db2Layer
 from pagle_data.errors import At, Problems
 from pagle_data.toml_reader import (
     check_keys,
@@ -201,6 +201,27 @@ def reference_only(baseline: BaselineLayer) -> set[int]:
     return {row.item for row in baseline.reference_loot} - direct
 
 
+@dataclass(frozen=True)
+class Identity:
+    """An item's class and quality, each None when unknown, and the layer they came from (DATA-R13, DATA-R24):
+    data/db2/items.csv as soon as DB2 has the item, items.toml until then, None when neither gives either."""
+
+    class_id: int | None = None
+    quality: int | None = None
+    layer: str | None = None
+
+
+def identity(db2: Db2Layer, entry: ItemEntry | None, item: int) -> Identity:
+    """The item's class and quality as the catalogue takes them: DB2 wins as soon as it has the item; items.toml
+    gives them until then (DATA-R24)."""
+    known = db2.items.get(item)
+    if known is not None:
+        return Identity(known.class_id, known.quality, ITEMS)
+    if entry is not None and (entry.class_id is not None or entry.quality is not None):
+        return Identity(entry.class_id, entry.quality, ITEMS_TOML)
+    return Identity()
+
+
 def _name(db2: Db2Layer, item: int) -> str:
     """The item's enUS DB2 name, for a problem message (it never ships, DATA-R3)."""
     known = db2.items.get(item)
@@ -222,9 +243,8 @@ def item_records(
     for item in sorted(universe):
         entry = layer.items.get(item) or ItemEntry(At(ITEMS_TOML, f"item.{item}"))
         known = db2.items.get(item)
-        # DATA-R24: items.toml gives class and quality only for an item items.csv lacks; DB2 wins once it has it.
-        class_id = known.class_id if known is not None else entry.class_id
-        quality = known.quality if known is not None else entry.quality
+        found = identity(db2, entry, item)  # DATA-R24
+        class_id, quality = found.class_id, found.quality
 
         noise = entry.noise
         if noise is None:
