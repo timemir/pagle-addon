@@ -106,3 +106,60 @@ describe("QoL's Input logic", function()
 		end
 	end)
 end)
+
+describe("ns.ModuleDef with a fake store", function()
+	-- QoL's logic with PagleQoLDB never opened: a menu or slash call that read ns.db would fail (CORE-R7).
+	local ns = loadAddon("Pagle_QoL", FOREVER_GLOBALS, { holdAddonLoaded = true }).ns
+
+	-- QoL's def over a store holding only Input; returns it, each Input set, each page opened and each line printed.
+	---@return PagleModuleDef def
+	---@return string[] set
+	---@return string[] opened
+	---@return string[] printed
+	local function define()
+		local input, set, opened, printed = "both", {}, {}, {}
+		---@type PagleQoLStore
+		---@diagnostic disable-next-line: missing-fields -- the menu and /pagle qol read and set only Input
+		local store = {
+			input = function()
+				return input
+			end,
+			setInput = function(value)
+				set[#set + 1] = value
+				input = value
+			end,
+		}
+		local def = ns.ModuleDef(function(topic)
+			opened[#opened + 1] = topic
+		end, function(text)
+			printed[#printed + 1] = text
+		end, store)
+		return def, set, opened, printed
+	end
+
+	it("labels and cycles the compartment entry from the store's Input (QOL-R16)", function()
+		local def, set = define()
+		local entry = def.menu[1]
+
+		assert.are.equal("Input: Both", entry.label())
+		entry.onClick()
+		assert.are.equal("Input: Fishing key", entry.label())
+		entry.onClick()
+
+		assert.are.same({ "key", "click" }, set)
+		assert.are.equal("Input: Double-click", entry.label())
+		assert.is_nil(ns.db)
+	end)
+
+	it("sets Input through the store with /pagle qol input, and opens the Fishing page with none (QOL-R17)", function()
+		local def, set, opened, printed = define()
+		local qol = def.slash[1]
+
+		qol.fn("input key")
+		qol.fn("")
+
+		assert.are.same({ "key" }, set)
+		assert.are.same({ "fishing" }, opened)
+		assert.are.same({ "Pagle: cast with the Fishing key." }, printed)
+	end)
+end)

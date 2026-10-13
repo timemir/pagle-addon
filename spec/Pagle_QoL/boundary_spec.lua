@@ -1,5 +1,6 @@
 -- What QoL never does (QOL-R3, QOL-R6) and the edge cases where it has nothing to do (QOL-R91, QOL-R92, QOL-R95,
--- QOL-R96), checked over every file QoL ships: each name below fails the spec wherever QoL's code says it.
+-- QOL-R96), checked over every file QoL ships: each name below fails the spec wherever QoL's code says it. And what
+-- its logic/ never does (CORE-R7), checked over every file there.
 
 local DIR = "addons/Pagle_QoL/"
 
@@ -41,6 +42,12 @@ local FORBIDDEN = {
 	{ "&#[xX]0*[aAdD];", "QOL-R6: no line break, so no macro text with a second command" },
 }
 
+-- Each thing logic/ never does besides (CORE-R7), as above. luacheck's per-path std keeps WoW globals out of logic/,
+-- but PagleQoLDB is reached through the addon's own table, which no std can see.
+local FORBIDDEN_IN_LOGIC = {
+	{ "%f[%w_]ns%.db%f[^%w_]", "CORE-R7: logic/ is passed what it reads of PagleQoLDB, never ns.db" },
+}
+
 -- Code with its comments removed: Lua's --[[ ]] and -- comments, XML's <!-- -->.
 ---@param text string
 ---@return string
@@ -53,11 +60,12 @@ end
 
 -- Each forbidden thing the code says, as "<why>: <match>".
 ---@param text string
+---@param rules { [1]: string, [2]: string }[]? FORBIDDEN by default
 ---@return string[]
-local function offences(text)
+local function offences(text, rules)
 	local found = {}
 	local code = withoutComments(text)
-	for _, rule in ipairs(FORBIDDEN) do
+	for _, rule in ipairs(rules or FORBIDDEN) do
 		local match = code:match(rule[1])
 		if match then
 			found[#found + 1] = rule[2] .. ": " .. match
@@ -101,6 +109,11 @@ describe("QoL's boundary", function()
 		it(path .. " does nothing QOL-R3 and QOL-R6 forbid (QOL-R91, QOL-R92, QOL-R95, QOL-R96)", function()
 			assert.are.same({}, offences(read(path)))
 		end)
+		if path:find("/logic/", 1, true) then
+			it(path .. " never reads ns.db (CORE-R7)", function()
+				assert.are.same({}, offences(read(path), FORBIDDEN_IN_LOGIC))
+			end)
+		end
 	end
 
 	describe("catches", function()
@@ -135,6 +148,13 @@ describe("QoL's boundary", function()
 				assert.are.equal(case[2], found[1]:sub(1, #case[2]))
 			end)
 		end
+
+		it("ns.db in logic/, but not ns.dbx or a comment's ns.db (CORE-R7)", function()
+			local found = offences("return ns.db.profile.input", FORBIDDEN_IN_LOGIC)
+
+			assert.are.same({ "CORE-R7: logic/ is passed what it reads of PagleQoLDB, never ns.db: ns.db" }, found)
+			assert.are.same({}, offences("local x = ns.dbx -- ns.db", FORBIDDEN_IN_LOGIC))
+		end)
 
 		it("but not what only a comment says, nor QoL's own PagleQoLDB", function()
 			assert.are.same({}, offences("-- never ReloadUI()\n--[[ SecureHandlerWrapScript ]]\nlocal db = PagleQoLDB"))

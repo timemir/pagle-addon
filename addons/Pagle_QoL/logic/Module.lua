@@ -11,8 +11,9 @@ local ns = select(2, ...)
 --- (QOL-R17).
 ---@param openSettings fun(topic: string) opens a Settings topic page, as `Pagle.OpenSettings` does
 ---@param print fun(text: string) prints a line to chat, for `/pagle qol`
+---@param store PagleQoLStore where the compartment entry and `/pagle qol` read and set Input
 ---@return PagleModuleDef
-function ns.ModuleDef(openSettings, print)
+function ns.ModuleDef(openSettings, print, store)
 	return {
 		name = "QoL",
 		title = ns.L.TITLE,
@@ -27,10 +28,10 @@ function ns.ModuleDef(openSettings, print)
 		menu = {
 			{
 				label = function()
-					return ns.InputMenuLabel(ns.CurrentInput())
+					return ns.InputMenuLabel(store.input())
 				end,
 				onClick = function()
-					ns.SetInput(ns.NextInput(ns.CurrentInput()))
+					store.setInput(ns.NextInput(store.input()))
 				end,
 			},
 		},
@@ -39,7 +40,7 @@ function ns.ModuleDef(openSettings, print)
 			{
 				name = "qol",
 				fn = function(line)
-					ns.QoLSlash(line, { setInput = ns.SetInput, openSettings = openSettings, print = print })
+					ns.QoLSlash(line, { setInput = store.setInput, openSettings = openSettings, print = print })
 				end,
 				help = ns.L.SLASH_HELP,
 			},

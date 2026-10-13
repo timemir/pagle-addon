@@ -6,7 +6,8 @@ end
 local ns = select(2, ...)
 
 -- Input (QOL-R12) and its two quick places, the compartment entry (QOL-R16) and `/pagle qol` (QOL-R17): pure logic,
--- everything passed in (CORE-R7). The Settings row is in logic/Settings.lua.
+-- everything passed in (CORE-R7). The Settings row is in logic/Settings.lua; Input itself, as PagleQoLDB stores it,
+-- is read and set in adapter/Input.lua.
 
 ---@alias PagleQoLInput "key"|"click"|"both"
 
@@ -41,21 +42,6 @@ function ns.InputMenuLabel(input)
 	local L = ns.L
 	local names = { key = L.INPUT_KEY, click = L.INPUT_CLICK, both = L.INPUT_BOTH }
 	return L.MENU_INPUT:format(names[input] or L.INPUT_BOTH)
-end
-
---- Input now, as stored in `PagleQoLDB.profile.input` (qol.md › Data). QoL's OnInitialize opens PagleQoLDB before
---- anything reads it: the menu, `/pagle qol`, the Settings row and the Fishing key all run later.
----@return PagleQoLInput
-function ns.CurrentInput()
-	return ns.db.profile.input
-end
-
---- Sets Input from any of its three places and re-evaluates at once (QOL-R18, QOL-R25). While restricted that
---- re-evaluation does nothing, and the one at the end of restriction applies it (QOL-R32).
----@param input PagleQoLInput
-function ns.SetInput(input)
-	ns.db.profile.input = input
-	ns.EvaluateFishingKey()
 end
 
 --- What `/pagle qol` acts through.

@@ -27,6 +27,7 @@ logic\DoubleClick.lua
 logic\NextActionButton.lua
 adapter\Bindings.lua
 adapter\Items.lua
+adapter\Input.lua
 adapter\FishingKey.lua
 adapter\DoubleClick.lua
 adapter\Conflict.lua
