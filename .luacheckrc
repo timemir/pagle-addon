@@ -43,7 +43,8 @@ files["addons/*/logic/**"] = { std = "lua51" }
 files["addons/*/locale/**"] = { std = "lua51" }
 -- Only Core's adapter creates the Pagle global.
 files["addons/Pagle/adapter/**"] = { globals = { "Pagle" } }
--- Specs run under busted on plain Lua 5.1.
-files["spec/**"] = { std = "lua51+busted" }
+-- Specs run under busted on plain Lua 5.1. busted's helper (.busted) defines loadAddon for them.
+files["spec/**"] = { std = "lua51+busted", read_globals = { "loadAddon" } }
+files["spec/support/addon.lua"] = { globals = { "loadAddon" } }
 -- The gate's own scripts run on plain Lua 5.1.
 files["scripts/**"] = { std = "lua51" }

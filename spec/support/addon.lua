@@ -1,16 +1,15 @@
--- Loads an addon the way the WoW client does, so specs exercise the real load order (roadmap M0 › Toolchain):
--- every file its addons/<Addon>/<Addon>.toc lists, vendored libs included, in TOC order, each called with
--- (addonName, ns) and one ns shared by all of them. A file missing from the TOC or listed after a file that needs
--- it fails the specs that load the addon.
+-- busted's helper (.busted). It defines loadAddon, which loads an addon the way the WoW client does, so specs
+-- exercise the real load order (roadmap M0 › Toolchain): every file addons/<Addon>/<Addon>.toc lists, vendored libs
+-- included, in TOC order, each called with (addonName, ns) and one ns shared by all of them. A file missing from the
+-- TOC, or listed after a file that needs it, fails the specs that load the addon.
 --
---   local addon = require("spec.support.addon")
---   local loaded = addon.load("Pagle", { WOW_PROJECT_ID = 18, WOW_PROJECT_CAMELOT = 18 })
+--   local loaded = loadAddon("Pagle", { WOW_PROJECT_ID = 18, WOW_PROJECT_CAMELOT = 18 })
 --   loaded.env.Pagle, loaded.ns.IsForever, loaded.printed
 --
 -- Each load gets its own globals table, so nothing an addon defines (LibStub, Pagle) leaks into the next load.
 -- Names not in it fall back to the Lua 5.1 globals busted runs with.
-
-local M = {}
+--
+-- A global rather than a module: the types stage checks spec/ against the WoW client's Lua, which has no require.
 
 ---@class LoadedAddon
 ---@field ns table The addon's private table, shared by every file it loads.
@@ -77,6 +76,7 @@ end
 ---@param tocPath string
 ---@return string[]
 local function tocFiles(tocPath)
+	---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io
 	local toc = assert(io.open(tocPath, "r"))
 	local files = {}
 	for line in toc:lines() do
@@ -94,7 +94,7 @@ end
 ---@param name string The addon's folder under addons/, which is also its TOC's name.
 ---@param globals table<string, any>? Globals the client defines for this load, e.g. WOW_PROJECT_ID.
 ---@return LoadedAddon
-function M.load(name, globals)
+function loadAddon(name, globals)
 	local dir = "addons/" .. name .. "/"
 	local toc = dir .. name .. ".toc"
 	local printed = {}
@@ -115,6 +115,7 @@ function M.load(name, globals)
 
 	local ns = {}
 	for _, file in ipairs(tocFiles(toc)) do
+		---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no loadfile
 		local chunk, loadErr = loadfile(dir .. file)
 		if not chunk then
 			error(("%s lists %s, which doesn't load: %s"):format(toc, file, loadErr), 2)
@@ -128,5 +129,3 @@ function M.load(name, globals)
 
 	return { ns = ns, env = env, printed = printed }
 end
-
-return M

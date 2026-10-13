@@ -1,0 +1,7 @@
+-- busted config for the tests stage of scripts/check.sh; run busted from the repo root.
+-- Specs are spec/**/*_spec.lua (busted's defaults). The helper defines loadAddon for them.
+return {
+	default = {
+		helper = "spec/support/addon.lua",
+	},
+}
