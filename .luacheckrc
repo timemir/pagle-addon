@@ -34,6 +34,17 @@ stds.wow = {
 		"GetRealZoneText",
 		"GetSubZoneText",
 		"GetInstanceInfo",
+		-- QoL's Fishing key: its overrides and what it reads to choose them (QOL-R11, QOL-R20–R26).
+		"GetBindingKey",
+		"SetOverrideBinding",
+		"SetOverrideBindingSpell",
+		"ClearOverrideBindings",
+		"IsKeyDown",
+		"UnitChannelInfo",
+		"UnitCastingInfo",
+		"GetInventoryItemID",
+		C_Item = { fields = { "GetItemInfoInstant" } },
+		C_Spell = { fields = { "GetSpellName" } },
 	},
 }
 

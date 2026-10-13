@@ -24,4 +24,6 @@ function ns.QoL.OnInitialize()
 	-- Account-wide, one shared profile (QOL-R1).
 	ns.db = LibStub("AceDB-3.0"):New("PagleQoLDB", nil, true)
 	ns.MigrateDB(ns.db.global)
+
+	ns.StartFishingKey()
 end

@@ -11,7 +11,11 @@ describe("QoL's Fishing key logic", function()
 			{ "disarmed, idle", {}, "nothing" },
 			{ "disarmed while channeling Fishing", { channelingFishing = true }, "nothing" },
 			{ "a loot window open", { armed = true, lootOpen = true }, "nothing" },
-			{ "a loot window open while channeling", { armed = true, lootOpen = true, channelingFishing = true }, "nothing" },
+			{
+				"a loot window open while channeling",
+				{ armed = true, lootOpen = true, channelingFishing = true },
+				"nothing",
+			},
 			{ "casting a spell with a cast time", { armed = true, casting = true, poleInHand = true }, "nothing" },
 			-- Step 2: channeling Fishing (QOL-R22).
 			{ "channeling Fishing", { armed = true, channelingFishing = true, poleInHand = true }, "reel" },
@@ -64,6 +68,11 @@ describe("QoL's Fishing key logic", function()
 			assert.are.same({}, ns.Arming({ "F" }, nil).keys)
 			assert.is_true(ns.SameArming(ns.Arming({ "F" }, nil), ns.Arming({ "G" }, nil)))
 			assert.is_false(ns.SameArming(ns.Arming({}, CAST), ns.Arming({ "F" }, CAST)))
+		end)
+
+		it("has nothing to arm with no key bound, whatever the target (QOL-R11)", function()
+			assert.is_true(ns.SameArming(ns.Arming({}, CAST), ns.Arming({}, nil)))
+			assert.is_nil(ns.Arming({}, REEL).target)
 		end)
 	end)
 

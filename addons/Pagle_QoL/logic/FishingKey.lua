@@ -66,12 +66,16 @@ end
 ---@field keys string[]
 ---@field target PagleQoLKeyTarget?
 
---- The overrides for `keys` (as `GetBindingKey` returns them, QOL-R11) and `target`.
+--- The overrides for `keys` (as `GetBindingKey` returns them, QOL-R11) and `target`. With no key or no target,
+--- there is nothing to arm.
 ---@param keys string[]
 ---@param target PagleQoLKeyTarget?
 ---@return PagleQoLArming
 function ns.Arming(keys, target)
-	return { keys = target and keys or {}, target = target }
+	if #keys == 0 or not target then
+		return { keys = {}, target = nil }
+	end
+	return { keys = keys, target = target }
 end
 
 --- Whether two armings set the same overrides, so going from one to the other needs no re-point (QOL-R25).
