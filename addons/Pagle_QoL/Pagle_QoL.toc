@@ -15,6 +15,7 @@ logic\Module.lua
 logic\FishingKey.lua
 logic\Stretch.lua
 logic\Conflict.lua
+logic\Settings.lua
 adapter\Bindings.lua
 adapter\FishingKey.lua
 adapter\Stretch.lua

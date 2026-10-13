@@ -22,4 +22,8 @@ ns.L = {
 	CONFLICT_USE_OTHERS = "Use the others",
 	CONFLICT_TURNED_OFF = "Pagle: turned off %s. Type /reload to finish.",
 	CONFLICT_TURNED_OFF_QOL = "Pagle: turned off Pagle QoL. Type /reload to finish. Pagle keeps recording your Catches.",
+	-- The Fishing page (qol.md › Settings, SET-R20).
+	SETTINGS_CASTING = "Casting",
+	SETTINGS_FISHING_KEY = "Fishing key",
+	SETTINGS_FISHING_KEY_TOOLTIP = "Each press does the next single thing: cast, reel, or a lure, gear or clam when needed.",
 }
