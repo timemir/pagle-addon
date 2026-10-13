@@ -5,7 +5,7 @@
 local ns = select(2, ...)
 
 ns.catalogue = {
-	aliases = {},
+	aliases = { [16508] = 46, [16509] = 1519, [16510] = 12, [16511] = 1617, [16517] = 92, [16518] = 89, [16521] = 18, [16522] = 86, [16523] = 9, [16524] = 87 },
 	areas = {
 		[1] = { catches = {}, continent = 0, hasData = false, parent = 0, skillBaseConfirmed = false },
 		[2] = { catches = {}, continent = 0, hasData = false, parent = 40, skillBaseConfirmed = false },
@@ -1385,7 +1385,7 @@ ns.catalogue = {
 	events = {
 		[301] = { confirmed = false, duration = 120, start = 840, weekday = 1 },
 	},
-	fingerprint = "de27c1a59002c8b1",
+	fingerprint = "59b512ec9f020fff",
 	fishingSpells = { 7620, 7731, 7732, 18248, 1240948, 1240959, 1240970, 1240983 },
 	items = {},
 	pools = {},

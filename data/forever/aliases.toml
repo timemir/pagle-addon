@@ -3,3 +3,53 @@
 # (DATA-R10). The comments carry the enUS names for review; they never ship (DATA-R3).
 # scripts/generate-data.py --propose-aliases prints the candidates not committed here, in this shape. Edit this,
 # then run scripts/generate-data.py and commit the regenerated files with it (DATA-R61).
+
+[[alias]]
+from = 16508  # Burning Steppes, continent 2940
+to = 46  # Burning Steppes, continent 0
+why = "Forever's map 2940 copy: same name and parent name (docs/research/localized-identity.md)"
+
+[[alias]]
+from = 16509  # Stormwind City, continent 2940
+to = 1519  # Stormwind City, continent 0
+why = "Forever's map 2940 copy: same name and parent name (docs/research/localized-identity.md)"
+
+[[alias]]
+from = 16510  # Elwynn Forest, continent 2940
+to = 12  # Elwynn Forest, continent 0
+why = "Forever's map 2940 copy: same name and parent name (docs/research/localized-identity.md)"
+
+[[alias]]
+from = 16511  # Valley of Heroes (Stormwind City), continent 2940
+to = 1617  # Valley of Heroes (Stormwind City), continent 0
+why = "Forever's map 2940 copy: same name and parent name (docs/research/localized-identity.md)"
+
+[[alias]]
+from = 16517  # Mirror Lake (Elwynn Forest), continent 2940
+to = 92  # Mirror Lake (Elwynn Forest), continent 0
+why = "Forever's map 2940 copy: same name and parent name (docs/research/localized-identity.md)"
+
+[[alias]]
+from = 16518  # Mirror Lake Orchard (Elwynn Forest), continent 2940
+to = 89  # Mirror Lake Orchard (Elwynn Forest), continent 0
+why = "Forever's map 2940 copy: same name and parent name (docs/research/localized-identity.md)"
+
+[[alias]]
+from = 16521  # Crystal Lake (Elwynn Forest), continent 2940
+to = 18  # Crystal Lake (Elwynn Forest), continent 0
+why = "Forever's map 2940 copy: same name and parent name (docs/research/localized-identity.md)"
+
+[[alias]]
+from = 16522  # Stone Cairn Lake (Elwynn Forest), continent 2940
+to = 86  # Stone Cairn Lake (Elwynn Forest), continent 0
+why = "Forever's map 2940 copy: same name and parent name (docs/research/localized-identity.md)"
+
+[[alias]]
+from = 16523  # Northshire Valley (Elwynn Forest), continent 2940
+to = 9  # Northshire Valley (Elwynn Forest), continent 0
+why = "Forever's map 2940 copy: same name and parent name (docs/research/localized-identity.md)"
+
+[[alias]]
+from = 16524  # Goldshire (Elwynn Forest), continent 2940
+to = 87  # Goldshire (Elwynn Forest), continent 0
+why = "Forever's map 2940 copy: same name and parent name (docs/research/localized-identity.md)"
