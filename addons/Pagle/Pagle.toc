@@ -38,6 +38,7 @@ logic\Settings.lua
 logic\Slash.lua
 logic\Wallet.lua
 logic\Moments.lua
+logic\Announcements.lua
 logic\Menu.lua
 logic\ReloadReminder.lua
 adapter\Core.lua
