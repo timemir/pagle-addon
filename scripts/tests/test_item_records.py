@@ -387,6 +387,12 @@ def test_typical_lengths_ship_on_every_item_of_the_species_and_need_a_species_id
         capsys,
         "species.toml: species.6303.typicalLength: expected an integer at least 1, got 0",
     )
+    # DATA-R63: an unknown key in any TOML file under data/ fails (#96's audit found species.toml's untested).
+    fails(
+        write_tree(tmp_path, items, species="[species.6303]\ntypicalLength = 300\nnote = 1\n"),
+        capsys,
+        "species.toml: species.6303: unknown key 'note'",
+    )
 
 
 def test_the_typical_length_check_runs_only_when_switched_on(
@@ -406,6 +412,8 @@ def test_the_typical_length_check_runs_only_when_switched_on(
     [
         ("typicalLength = false\n", "data/checks.toml: missing key 'lore'"),
         ("typicalLength = 0\nlore = []\n", "data/checks.toml: typicalLength: expected a boolean, got an integer"),
+        # DATA-R63: an unknown key in any TOML file under data/ (#96's audit found checks.toml's untested).
+        ("typicalLength = false\nlore = []\nhunts = true\n", "data/checks.toml: unknown key 'hunts'"),
         ('typicalLength = false\nlore = ["fishing"]\n', "data/checks.toml: lore[0]: expected a lore ID"),
         # No lore check is built before M3 (DATA-R107): switching one on fails instead of passing unchecked.
         ('typicalLength = false\nlore = ["ledger"]\n', "data/checks.toml: lore[0]: the ledger lore check isn't built"),
