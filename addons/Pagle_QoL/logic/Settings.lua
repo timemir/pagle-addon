@@ -26,7 +26,8 @@ function ns.AddSettings(M)
 	-- The rows below read PagleQoLDB.profile, which QoL opens before the page is built.
 	local defaults = ns.DB_DEFAULTS.profile
 
-	-- Lures and clams: which lure the Fishing key applies (QOL-R50, QOL-R51).
+	-- Lures and clams: which lure the Fishing key applies (QOL-R50, QOL-R51). A change re-points the key at once
+	-- (QOL-R25).
 	M:AddSetting("fishing", { kind = "header", label = L.SETTINGS_LURES_AND_CLAMS })
 	M:AddSetting("fishing", {
 		kind = "dropdown",
@@ -39,6 +40,7 @@ function ns.AddSettings(M)
 		end,
 		set = function(value)
 			ns.db.profile.lures.mode = value
+			ns.EvaluateFishingKey()
 		end,
 		options = function()
 			return {
@@ -59,6 +61,7 @@ function ns.AddSettings(M)
 		end,
 		set = function(value)
 			ns.db.profile.lures.item = value
+			ns.EvaluateFishingKey()
 		end,
 		options = function()
 			local options = {}

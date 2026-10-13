@@ -158,6 +158,24 @@ describe("Lures on the Fishing key", function()
 			assert.are.equal(CAST, client.overrideAction("F"))
 		end)
 
+		it("re-points at once when Lures or Lure changes on the Fishing page (QOL-R25, QOL-R50)", function()
+			local fake, client, loaded = start(function(_, client)
+				client.bags[BRIGHT_BAUBLES] = 2
+			end)
+			local rows = {}
+			for _, row in ipairs(assert(fake.settingsPage("fishing"))) do
+				rows[row.label] = row.setting
+			end
+			assert.are.equal("item:6532", buttonItem(loaded))
+
+			rows.Lures.set("one")
+			assert.are.equal("item:6529", buttonItem(loaded))
+			rows.Lure.set(BRIGHT_BAUBLES)
+			assert.are.equal("item:6532", buttonItem(loaded))
+			rows.Lures.set("off")
+			assert.are.equal(CAST, client.overrideAction("F"))
+		end)
+
 		it("casts under Off, with lures in the bags (QOL-R20, QOL-R50)", function()
 			local fake, client, loaded = start()
 
