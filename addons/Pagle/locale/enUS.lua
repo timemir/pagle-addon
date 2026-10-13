@@ -43,4 +43,16 @@ ns.L = {
 	},
 	-- A status button for a Module's first view (CORE-R44): its label.
 	OPEN_VIEW = "Open %s",
+
+	-- The compartment menu's last entry (CORE-R50).
+	MENU_SETTINGS = "Settings",
+
+	-- /pagle help (CORE-R60, CORE-R61): the header, then a line per command (its name, its help). Core lists the
+	-- reserved commands that work; shop and report join with their surfaces (M4, M3).
+	SLASH_HELP_HEADER = "Pagle commands:",
+	SLASH_HELP_LINE = "/pagle %s: %s",
+	SLASH_CORE_HELP = {
+		{ name = "settings", help = "open Pagle's settings (also /pagle on its own)" },
+		{ name = "help", help = "list these commands" },
+	},
 }
