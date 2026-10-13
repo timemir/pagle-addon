@@ -55,6 +55,7 @@ ns.LEGEND_STING = SOUNDS .. "legend.ogg"
 ---@field show fun(display: PagleDisplay)       -- puts it on screen
 ---@field hide fun(display: PagleDisplay)       -- takes it off screen
 ---@field play fun(path: string)                -- plays a sound file on the SFX channel (ANN-R73)
+---@field empty? fun()                         -- the slot just freed with nothing waiting: cards may show (ANN-R21)
 
 --- The three lanes (ANN-R20): the toast and big lanes share one on-screen slot; the Nod lane has its own line.
 ---@class PagleLanes
@@ -206,6 +207,16 @@ function Lanes:done(display)
 	self.slot = nil
 	self.options.hide(display)
 	self:next()
+	if self.options.empty and self:IsEmpty() then
+		self.options.empty()
+	end
+end
+
+--- Whether the toast and big lanes are empty (ANN-R21): nothing in the shared slot and nothing waiting for it. The
+--- Nod lane doesn't count. Cards show only then.
+---@return boolean
+function Lanes:IsEmpty()
+	return self.slot == nil and #self.toasts == 0 and #self.big == 0
 end
 
 -- Whether the Interruption budget is spent (ANN-R31, ANN-R32): it's on, and its count of interruptions already

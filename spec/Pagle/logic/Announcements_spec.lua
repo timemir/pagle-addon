@@ -36,8 +36,12 @@ local function newWorld()
 		play = function(path)
 			world.played[#world.played + 1] = path
 		end,
+		empty = function()
+			world.emptied = world.emptied + 1
+		end,
 	})
 	world.advance = clock.advance
+	world.emptied = 0
 	return world
 end
 
@@ -160,6 +164,44 @@ describe("the display queue", function()
 		world.lanes:Push(announcement("nod", "★★★"))
 
 		assert.are.same({ "New here", "New Species", "★★★" }, titles(world.shown))
+	end)
+end)
+
+describe("the lanes' empty state, for the cards", function()
+	it(
+		"is empty only while the slot is free and no toast, banner or splash waits; a Nod doesn't count (ANN-R21)",
+		function()
+			local world = newWorld()
+			assert.is_true(world.lanes:IsEmpty())
+			world.lanes:Push(announcement("nod", "Uncharted"))
+			assert.is_true(world.lanes:IsEmpty())
+
+			world.lanes:Push(announcement("toast", "New Species"))
+			world.lanes:Push(announcement("banner", "Level 12"))
+			assert.is_false(world.lanes:IsEmpty())
+			world.advance(6)
+			assert.is_false(world.lanes:IsEmpty())
+			world.advance(4)
+			assert.is_true(world.lanes:IsEmpty())
+		end
+	)
+
+	it("tells the cards each time the slot frees with nothing waiting, never for a Nod (ANN-R21)", function()
+		local world = newWorld()
+		world.lanes:Push(announcement("toast", "Toast 1"))
+		world.lanes:Push(announcement("toast", "Toast 2"))
+
+		world.advance(6)
+		assert.are.equal(0, world.emptied)
+		world.advance(6)
+		assert.are.equal(1, world.emptied)
+
+		world.lanes:Push(announcement("splash", "Legend"))
+		world.lanes:Dismiss(world.on.splash)
+		assert.are.equal(2, world.emptied)
+		world.lanes:Push(announcement("nod", "Uncharted"))
+		world.advance(3)
+		assert.are.equal(2, world.emptied)
 	end)
 end)
 
