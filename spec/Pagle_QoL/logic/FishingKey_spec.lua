@@ -5,7 +5,7 @@ describe("QoL's Fishing key logic", function()
 	local ns = loadAddon("Pagle_QoL", FOREVER_GLOBALS).ns
 
 	describe("ns.NextAction", function()
-		-- Each row: the state, then the next action. Unlisted fields are false. M1 has steps 1, 2 and 6 only.
+		-- Each row: the state, then the next action. Unlisted fields are false. Clams (step 5) come in Track Q step 6.
 		local LADDER = {
 			-- Step 1: disarmed, a loot window open, or casting a spell with a cast time (QOL-R20, QOL-R28, QOL-R30).
 			{ "disarmed, idle", {}, "nothing" },
@@ -43,6 +43,19 @@ describe("QoL's Fishing key logic", function()
 				{ armed = true, casting = true, poleInHand = true, lure = 6529 },
 				"nothing",
 			},
+			-- Step 3: the gear step is ready (QOL-R43), on the Fishing key only (QOL-R15).
+			{ "the gear step ready", { armed = true, gearReady = true, lure = 6529 }, "gear" },
+			{
+				"the gear step ready while channeling Fishing",
+				{ armed = true, channelingFishing = true, gearReady = true },
+				"reel",
+			},
+			{ "the gear step ready with a loot window open", { armed = true, lootOpen = true, gearReady = true }, "nothing" },
+			{
+				"the gear step ready, for the double-click, which skips it",
+				{ armed = true, gearReady = true, skipGear = true },
+				"cast",
+			},
 			-- Step 6, with or without a pole (QOL-R23).
 			{ "idle with a pole in hand", { armed = true, poleInHand = true }, "cast" },
 			{ "idle with no pole in hand", { armed = true }, "cast" },
@@ -78,6 +91,13 @@ describe("QoL's Fishing key logic", function()
 			assert.are.same(
 				{ kind = "click", value = "PagleQoLActionButton", item = 6529 },
 				ns.KeyTarget("lure", "Fishing", 6529)
+			)
+		end)
+
+		it("equips the fishing set by clicking PagleQoLGearButton, with no item (QOL-R24)", function()
+			assert.are.same({ kind = "click", value = "PagleQoLGearButton" }, ns.KeyTarget("gear", "Fishing"))
+			assert.is_false(
+				ns.SameArming(ns.Arming({ "F" }, ns.KeyTarget("gear", "Fishing")), ns.Arming({ "F" }, ns.KeyTarget("lure", "Fishing", 6529)))
 			)
 		end)
 	end)
