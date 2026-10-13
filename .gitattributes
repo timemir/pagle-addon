@@ -4,3 +4,6 @@
 # Vendored Ace3 libraries: stored and checked out exactly as upstream ships them,
 # so scripts/update-ace3.sh --check can compare them byte for byte.
 addons/Pagle/libs/** -text
+
+# WTF fixtures: stored and checked out exactly as the WoW client writes them, CRLF line ends included.
+spec/scripts/fixtures/** -text
