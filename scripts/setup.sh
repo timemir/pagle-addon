@@ -9,7 +9,7 @@
 # SETUP_APT_PACKAGES in scripts/tools.env, which the Check workflow (.github/workflows/check.yml) installs too.
 #
 # Layout:
-#   .tools/lua/       Lua 5.1, LuaRocks and the rocks (luacheck, busted, luacov)
+#   .tools/lua/       Lua 5.1, LuaRocks and the rocks (luacheck, busted, luacov and its C hook cluacov)
 #   .tools/stylua/    StyLua
 #   .tools/luals/     lua-language-server
 #   .tools/bir/       Ketho BlizzardInterfaceResources forever dump, Resources/ only
