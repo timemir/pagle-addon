@@ -99,6 +99,96 @@ describe("QoL's Fishing key logic", function()
 				assert.are.equal(row[3], ns.NextAction(row[2]))
 			end)
 		end
+
+		-- Step 2's "unless the reel didn't take" (QOL-R35).
+		it("casts while channeling Fishing once the reel didn't take (QOL-R20, QOL-R35)", function()
+			assert.are.equal(
+				"cast",
+				ns.NextAction({ armed = true, channelingFishing = true, poleInHand = true, reelMissed = true })
+			)
+			-- The cast takes the existing target: no lure goes on mid-channel.
+			assert.are.equal(
+				"cast",
+				ns.NextAction({
+					armed = true,
+					channelingFishing = true,
+					poleInHand = true,
+					lure = 6529,
+					reelMissed = true,
+				})
+			)
+		end)
+
+		it("still does nothing at step 1 when the reel didn't take (QOL-R20, QOL-R35)", function()
+			assert.are.equal("nothing", ns.NextAction({ channelingFishing = true, reelMissed = true }))
+			assert.are.equal(
+				"nothing",
+				ns.NextAction({ armed = true, lootOpen = true, channelingFishing = true, reelMissed = true })
+			)
+		end)
+	end)
+
+	describe("ns.NewReelWatch", function()
+		local WAIT = 0.5 -- qol.md › Tunables, the reel wait
+
+		it("takes a key going down while the reel is armed as a reel press (QOL-R35)", function()
+			local watch = ns.NewReelWatch()
+			assert.is_false(watch:Frame(true, false, 10))
+			assert.is_false(watch:Frame(true, true, 10.25))
+			assert.is_false(watch:Frame(true, false, 10.5))
+			assert.is_false(watch:Missed())
+
+			assert.is_true(watch:Frame(true, false, 10.25 + WAIT))
+			assert.is_true(watch:Missed())
+			-- It says so once.
+			assert.is_false(watch:Frame(true, false, 11))
+			assert.is_true(watch:Missed())
+		end)
+
+		it("holds no press before the reel wait has passed (QOL-R35)", function()
+			local watch = ns.NewReelWatch()
+			watch:Frame(true, false, 10)
+			watch:Frame(true, true, 10.25)
+
+			assert.is_false(watch:Frame(true, true, 10.5))
+			assert.is_false(watch:Missed())
+		end)
+
+		it("counts no press while the reel isn't armed, or for a key already down (QOL-R35)", function()
+			local watch = ns.NewReelWatch()
+			watch:Frame(false, false, 10)
+			watch:Frame(false, true, 10.1)
+			-- Held from before the reel was armed: not a press.
+			watch:Frame(true, true, 10.2)
+
+			assert.is_false(watch:Frame(true, true, 11))
+			assert.is_false(watch:Missed())
+		end)
+
+		it("keeps the first press's time when another comes while it waits (QOL-R35)", function()
+			local watch = ns.NewReelWatch()
+			watch:Frame(true, false, 10)
+			watch:Frame(true, true, 10.25)
+			watch:Frame(true, false, 10.5)
+			watch:Frame(true, true, 10.625)
+
+			assert.is_true(watch:Frame(true, true, 10.25 + WAIT))
+		end)
+
+		it("drops a waiting press and the miss on Clear (QOL-R35)", function()
+			local watch = ns.NewReelWatch()
+			watch:Frame(true, false, 10)
+			watch:Frame(true, true, 10.1)
+			watch:Clear()
+			assert.is_false(watch:Frame(true, false, 11))
+			assert.is_false(watch:Missed())
+
+			watch:Frame(true, true, 11.1)
+			watch:Frame(true, false, 12)
+			assert.is_true(watch:Missed())
+			watch:Clear()
+			assert.is_false(watch:Missed())
+		end)
 	end)
 
 	describe("ns.IsFishingPole", function()
