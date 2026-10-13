@@ -7,6 +7,7 @@
 --   fake.login()                                            -- Core's PLAYER_LOGIN: the character, ModulesChanged
 --   fake.fire("RestrictionChanged", true)                   -- any Core event; tables arrive read-only
 --   fake.setRestricted(true)
+--   fake.playCast("caught", { { itemID = 6358, quantity = 1 } }) -- CastStarted … Catch, CastEnded (LOG-R9)
 --
 -- It is built on Core's real logic/: each FakePagle loads Pagle.toc's data/, locale/ and logic/ files (and the
 -- CallbackHandler bus) afresh, so what it validates, computes and refuses is what Core does. Only the adapter part
@@ -58,6 +59,16 @@
 --- follows setRestricted). Read it; change it with setConditions.
 ---@field setConditions fun(snapshot: ConditionsSnapshot) Replaces the live conditions and fires ConditionsChanged
 --- with the keys that changed, if any (LOG-R47).
+---@field playCast fun(outcome: "caught"|"gotAway"|"interrupted", items: PagleLootItem[]?): PagleCast? Plays a whole
+--- Cast's signals: a fishing channel, then its loot (`items`, as `{ itemID, quantity }`), LOOT_CLOSED and the
+--- channel stopping; or the escaped message; or the channel stopping and the grace time passing. Returns the Cast
+--- recorded (read-only), nil when interrupted or before login.
+---@field channel fun(spellID: integer?) The player's channel starts (LOG-R2); Fishing (7731) by default.
+---@field stopChannel fun(spellID: integer?) The player's channel stops; its grace time starts (LOG-R7).
+---@field loot fun(items: PagleLootItem[]?, isFishing: boolean?) LOOT_READY with these items; fishing loot by default.
+---@field closeLoot fun() LOOT_CLOSED.
+---@field escape fun() The game reports the fish escaped (LOG-R6).
+---@field wait fun(seconds: number) Moves the fake's clock on, running each grace timer that comes due.
 
 -- Core's logic/ for one fake: Pagle.toc's libs (for the bus), generated data/, locale/ and logic/ files, in TOC
 -- order, sharing one ns, as the client would load them. None uses WoW globals (CORE-R7), so plain Lua runs them.
@@ -430,6 +441,113 @@ part(function(fake, Pagle, ns)
 		if #changed > 0 then
 			fake.fire("ConditionsChanged", changed)
 		end
+	end
+end)
+
+-- Fishing (LOG-R2–R9, LOG-R43), on Core's real Cast state machine: a spec plays a Cast's signals (or a whole Cast
+-- with playCast) and the Module gets Core's events, each Cast recorded to fake.catchLog first, with fake.conditions
+-- as its snapshot, at the fake's server time. The fake's clock starts at 0 (server time 1791731700) and moves only
+-- with fake.wait, which runs the grace timers that come due.
+part(function(fake, Pagle, ns)
+	local FISHING = 7731 -- Fishing (Classic Journeyman), on the generated fishing-spell list
+	local clock = 0
+	local timers = {} -- { due, fn }, in the order they were set
+	local spells = ns.NewCatalogue(ns.catalogue)
+	local recorded -- the Cast record last appended
+
+	local fishing = ns.NewFishing({
+		isFishingSpell = function(spellID)
+			return spellID ~= nil and spells.IsFishingSpell(spellID)
+		end,
+		record = function(outcome, items)
+			local char = Pagle.GetAngler().current
+			if not char then
+				return nil
+			end
+			local conditions = {}
+			for key, value in pairs(fake.conditions) do
+				conditions[key] = value
+			end
+			conditions.time, conditions.date = 1791731700 + math.floor(clock), nil
+			recorded = fake.catchLog:Append({
+				kind = "cast",
+				char = char,
+				time = conditions.time,
+				outcome = outcome,
+				conditions = conditions,
+				items = items,
+			})
+			return recorded
+		end,
+		fire = fake.fire,
+	})
+
+	function Pagle.GetFishingState()
+		return fishing:GetState()
+	end
+
+	function fake.channel(spellID)
+		fishing:ChannelStarted(spellID or FISHING, clock)
+	end
+
+	function fake.stopChannel(spellID)
+		local graceEnded = fishing:ChannelStopped(spellID or FISHING, clock)
+		if graceEnded then
+			timers[#timers + 1] = { due = clock + ns.FISHING_GRACE, fn = graceEnded }
+		end
+	end
+
+	function fake.loot(items, isFishing)
+		if isFishing == nil then
+			isFishing = true
+		end
+		fishing:LootReady(isFishing, function()
+			return items or {}
+		end, clock)
+	end
+
+	function fake.closeLoot()
+		fishing:LootClosed(clock)
+	end
+
+	function fake.escape()
+		fishing:Escaped(clock)
+	end
+
+	function fake.wait(seconds)
+		local target = clock + seconds
+		while true do
+			local nextTimer, index
+			for i, timer in ipairs(timers) do
+				if timer.due <= target and (not nextTimer or timer.due < nextTimer.due) then
+					nextTimer, index = timer, i
+				end
+			end
+			if not nextTimer then
+				break
+			end
+			table.remove(timers, index)
+			clock = nextTimer.due
+			nextTimer.fn()
+		end
+		clock = target
+	end
+
+	function fake.playCast(outcome, items)
+		recorded = nil
+		fake.channel()
+		if outcome == "caught" then
+			fake.loot(items)
+			fake.stopChannel()
+			fake.closeLoot()
+		elseif outcome == "gotAway" then
+			fake.escape()
+			fake.stopChannel()
+		else
+			fake.stopChannel()
+			fake.wait(ns.FISHING_GRACE)
+		end
+		return readOnly(recorded)
 	end
 end)
 

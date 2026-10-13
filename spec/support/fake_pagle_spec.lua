@@ -476,4 +476,165 @@ describe("FakePagle", function()
 			assert.are.equal(264, fake.globals.Pagle.GetConditions().lure)
 		end)
 	end)
+
+	describe("fishing", function()
+		local FISHING_EVENTS = { "CastStarted", "Catch", "CastEnded", "FishingStateChanged" }
+
+		-- Every fishing event a Module would get, in order, as { event, ... }.
+		local function listen(fake)
+			local fired = {}
+			for _, event in ipairs(FISHING_EVENTS) do
+				fake.Pagle.RegisterCallback("Spec " .. event, event, function(...)
+					fired[#fired + 1] = { ... }
+				end)
+			end
+			return fired
+		end
+
+		local function names(fired)
+			local out = {}
+			for i, step in ipairs(fired) do
+				out[i] = step[1]
+			end
+			return out
+		end
+
+		it("plays a caught Cast to a Module, recorded first and in LOG-R9's order (LOG-R3, LOG-R9)", function()
+			local fake = newFakePagle()
+			fake.login()
+			local fired = listen(fake)
+
+			local cast = fake.playCast("caught", { { itemID = 6358, quantity = 1 }, { itemID = 6303, quantity = 2 } })
+
+			assert.are.same({
+				"CastStarted",
+				"FishingStateChanged",
+				"Catch",
+				"Catch",
+				"CastEnded",
+				"FishingStateChanged",
+				"FishingStateChanged",
+			}, names(fired))
+			assert.are.same({ "channeling", "looting", "idle" }, { fired[2][2], fired[6][2], fired[7][2] })
+			assert.are.same(
+				{ "C1|1|1791731700|0|c|495|1439|1|148|453|86|25|263|||6358x1,6303x2" },
+				fake.catchLog.data.entries
+			)
+			assert.are.equal(PLAYER_GUID .. "-1791731700-0:2", fired[4][2].catchId)
+			assert.are.equal(2, fired[4][2].quantity)
+			assert.are.equal(cast, fired[5][3])
+		end)
+
+		it("hands out the record IterateCatches yields, read-only (LOG-R43, CORE-R18)", function()
+			local fake = newFakePagle()
+			fake.login()
+			local fired = listen(fake)
+
+			fake.playCast("caught", { { itemID = 6358, quantity = 1 } })
+
+			local record = fake.globals.Pagle.IterateCatches(0)()
+			local catch = fired[3][2]
+			-- Proxies hide their fields from busted's deep compare, so the fields are compared one by one.
+			for _, cast in ipairs({ catch.cast, fired[4][3] }) do
+				assert.are.same(
+					{ record.seq, record.id, record.outcome, record.conditions.zone, record.items[1].catchId },
+					{ cast.seq, cast.id, cast.outcome, cast.conditions.zone, cast.items[1].catchId }
+				)
+			end
+			assert.are.equal(fired[4][3], catch.cast)
+			assert.are.equal(record.items[1].catchId, catch.catchId)
+			assert.has_error(function()
+				catch.itemID = 0
+			end)
+			assert.has_error(function()
+				catch.cast.outcome = "gotAway"
+			end)
+		end)
+
+		it(
+			"plays a got-away Cast with no items, and an interrupted one that writes nothing (LOG-R6, LOG-R7)",
+			function()
+				local fake = newFakePagle()
+				fake.login()
+				local fired = listen(fake)
+
+				fake.playCast("gotAway")
+				fake.playCast("interrupted")
+
+				assert.are.same({ "C1|1|1791731700|0|g|495|1439|1|148|453|86|25|263|||" }, fake.catchLog.data.entries)
+				assert.are.same({
+					"CastStarted",
+					"FishingStateChanged",
+					"CastEnded",
+					"FishingStateChanged",
+					"CastStarted",
+					"FishingStateChanged",
+					"CastEnded",
+					"FishingStateChanged",
+				}, names(fired))
+				assert.are.same({ "gotAway", "interrupted" }, { fired[3][2], fired[7][2] })
+				assert.is_nil(fired[7][3])
+			end
+		)
+
+		it("plays single signals on Core's real state machine: a recast within the grace time (LOG-R7)", function()
+			local fake = newFakePagle()
+			fake.login()
+			local fired = listen(fake)
+
+			fake.channel()
+			fake.stopChannel()
+			fake.wait(1)
+			fake.channel()
+			fake.wait(5)
+
+			assert.are.same({ "CastStarted", "FishingStateChanged", "CastEnded", "CastStarted" }, names(fired))
+			assert.are.equal("channeling", fake.globals.Pagle.GetFishingState())
+		end)
+
+		it("ends a stopped channel's Cast interrupted once the grace time has passed (LOG-R7)", function()
+			local fake = newFakePagle()
+			fake.login()
+			local fired = listen(fake)
+			fake.channel()
+			fake.stopChannel()
+
+			fake.wait(1.5)
+			assert.are.equal(2, #fired)
+			fake.wait(0.5)
+
+			assert.are.same({ "CastEnded", "interrupted" }, fired[3])
+			assert.are.equal("idle", fake.globals.Pagle.GetFishingState())
+		end)
+
+		it("records each Cast with fake.conditions at the fake's server time, which wait moves (LOG-R20)", function()
+			local fake = newFakePagle()
+			fake.login()
+			fake.setConditions({
+				time = 1791731700,
+				minute = 600,
+				date = { year = 2026, month = 10, day = 11, weekday = 1 },
+				zone = 148,
+				subzone = 0,
+				events = {},
+				auras = {},
+			})
+
+			fake.wait(30)
+			fake.playCast("caught", { { itemID = 6358, quantity = 1 } })
+
+			assert.are.same({ "C1|1|1791731730|0|c|600|||148|0||||||6358x1" }, fake.catchLog.data.entries)
+		end)
+
+		it("ignores a channel whose spell isn't on the fishing-spell list (LOG-R2)", function()
+			local fake = newFakePagle()
+			fake.login()
+			local fired = listen(fake)
+
+			fake.channel(689)
+
+			assert.are.same({}, fired)
+			assert.are.equal("idle", fake.globals.Pagle.GetFishingState())
+		end)
+	end)
 end)
