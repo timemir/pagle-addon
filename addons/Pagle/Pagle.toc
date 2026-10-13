@@ -16,4 +16,6 @@ data\Catalogue.lua
 
 locale\enUS.lua
 logic\Forever.lua
+logic\Conditions.lua
 adapter\Core.lua
+adapter\Conditions.lua
