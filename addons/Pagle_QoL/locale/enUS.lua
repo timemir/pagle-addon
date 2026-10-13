@@ -26,4 +26,7 @@ ns.L = {
 	CONFLICT_USE_OTHERS = "Use the others",
 	CONFLICT_TURNED_OFF = "Pagle: turned off %s. Type /reload to finish.",
 	CONFLICT_TURNED_OFF_QOL = "Pagle: turned off Pagle QoL. Type /reload to finish. Pagle keeps recording your Catches.",
+	-- The out-of-lures Nudge (QOL-R53): under Best I have, and under Only this one with the lure's name.
+	NUDGE_OUT_OF_LURES = "Your lure is gone and there are none left in your bags.",
+	NUDGE_OUT_OF_LURE = "Your lure is gone and there's no %s left in your bags.",
 }
