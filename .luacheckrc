@@ -58,6 +58,10 @@ stds.wow = {
 		"GetInventoryItemID",
 		C_Item = { fields = { "GetItemInfoInstant" } },
 		C_Spell = { fields = { "GetSpellName" } },
+		-- QoL's Fishing stretch and its CVar lease (QOL-R61–R64).
+		"GetCVar",
+		"SetCVar",
+		"IsMounted",
 		-- QoL's conflict popup (QOL-R81); StaticPopupDialogs itself is in stds.wow_variables.
 		"StaticPopup_Show",
 		-- The character table, Skill Readings and build entries (LOG-R26, LOG-R30, LOG-R36).
