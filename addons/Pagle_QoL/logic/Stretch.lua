@@ -15,18 +15,26 @@ ns.STRETCH_IDLE_END = 60
 ---@class PagleQoLStretch
 ---@field running boolean
 ---@field idle number? seconds since the last CastEnded, while no channel has started since; nil otherwise
+---@field started integer how many stretches have started
 local Stretch = {}
 Stretch.__index = Stretch
 
 --- A stretch that isn't running.
 ---@return PagleQoLStretch
 function ns.NewStretch()
-	return setmetatable({ running = false }, Stretch)
+	return setmetatable({ running = false, started = 0 }, Stretch)
 end
 
 ---@return boolean
 function Stretch:IsRunning()
 	return self.running
+end
+
+--- The running stretch's number, counting from 1, or nil while none runs: what tells one stretch from the next, so
+--- the out-of-lures Nudge shows once per stretch (QOL-R53).
+---@return integer?
+function Stretch:Number()
+	return self.running and self.started or nil
 end
 
 --- Whether the idle end counts down: a stretch runs and no channel started since its last CastEnded.
@@ -45,6 +53,7 @@ function Stretch:CastStarted(armed)
 		return false
 	end
 	self.running = true
+	self.started = self.started + 1
 	return true
 end
 
