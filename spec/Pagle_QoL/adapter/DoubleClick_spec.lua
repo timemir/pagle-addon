@@ -264,7 +264,7 @@ describe("The double-click", function()
 		end)
 
 		it(
-			"closes an open window at the next evaluation after CVAR_UPDATE takes ActionButtonUseKeyDown from 1 to 0 (QOL-R27, QOL-R105)",
+			"closes an open window at once when CVAR_UPDATE takes ActionButtonUseKeyDown from 1 to 0 (QOL-R27, QOL-R105)",
 			function()
 				local fake, client = start()
 				client.click("RightButton")
@@ -273,7 +273,6 @@ describe("The double-click", function()
 
 				client.cvars.ActionButtonUseKeyDown = "0"
 				fake.fireGameEvent("CVAR_UPDATE", "ActionButtonUseKeyDown", "0")
-				fake.fireGameEvent("BAG_UPDATE_DELAYED")
 
 				assert.is_false(button2(client))
 				-- Closed, not waiting: the CVar going back to 1 doesn't bring it back.
@@ -282,6 +281,60 @@ describe("The double-click", function()
 				fake.fireGameEvent("BAG_UPDATE_DELAYED")
 				assert.is_false(button2(client))
 				assert.are.equal(REEL, client.overrideAction("F"))
+			end
+		)
+
+		it(
+			"leaves PagleQoLActionButton's lure alone while the Fishing key waits for key-up, so F applies the lure it was armed with (QOL-R26, QOL-R29)",
+			function()
+				local fake, client, loaded = start(function(_, client)
+					client.bags[6529] = 5
+					client.cvars.ActionButtonUseKeyDown = "0"
+				end)
+				local button = loaded.env.PagleQoLActionButton
+				client.click("RightButton")
+				assert.are.equal(LURE, button2(client))
+
+				-- F is held, armed with Shiny Bauble; Bright Baubles come into the bags and BUTTON2 re-points to them.
+				client.keysDown.F = true
+				client.bags[6532] = 1
+				fake.fireGameEvent("BAG_UPDATE_DELAYED")
+
+				assert.are.equal("item:6529", button:GetAttribute("item"))
+				-- On the first frame F is up, its re-point readies the button for Bright Baubles.
+				client.keysDown.F = nil
+				client.nextFrame()
+				assert.are.equal("item:6532", button:GetAttribute("item"))
+				assert.are.equal(LURE, client.overrideAction("F"))
+				assert.are.equal(LURE, button2(client))
+			end
+		)
+
+		it(
+			"keeps the lure the Fishing key was armed with while it waits for key-up, so that lure's failed use still skips it (QOL-R26, QOL-R29)",
+			function()
+				local fake, client, loaded = start(function(_, client)
+					client.bags[6529] = 5
+					client.cvars.ActionButtonUseKeyDown = "0"
+				end)
+				local lures = loaded.ns.db.profile.lures
+				client.click("RightButton")
+
+				-- F is held, armed with Shiny Bauble; Lures goes Off and BUTTON2 re-points to the cast.
+				client.keysDown.F = true
+				lures.mode = "off"
+				fake.fireGameEvent("BAG_UPDATE_DELAYED")
+				assert.are.equal(CAST, button2(client))
+				assert.are.equal(LURE, client.overrideAction("F"))
+
+				-- F comes up and its click uses Shiny Bauble, which fails at once.
+				client.keysDown.F = nil
+				fake.fireGameEvent("UNIT_SPELLCAST_FAILED", "player", "Cast-2", 8087)
+
+				-- The failure counted: with Lures back on, the skipped lure leaves the key casting.
+				lures.mode = "best"
+				fake.fireGameEvent("BAG_UPDATE_DELAYED")
+				assert.are.equal(CAST, client.overrideAction("F"))
 			end
 		)
 
