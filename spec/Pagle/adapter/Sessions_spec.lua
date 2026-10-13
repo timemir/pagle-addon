@@ -53,7 +53,7 @@ local function core(entries, saved)
 		end,
 	})
 	for _, event in ipairs({ "SessionStarted", "SessionEnded", "Catch", "CastEnded", "SkillChanged" }) do
-		Pagle.RegisterCallback("Spec " .. event, event, function(_, payload, cast)
+		Pagle.RegisterCallback("Spec " .. event, event, function(_, payload, castEnded)
 			local note = event
 			if event == "SessionStarted" or event == "SessionEnded" then
 				note = note .. " " .. payload.id .. (payload.whileAway and " whileAway" or "")
@@ -61,7 +61,7 @@ local function core(entries, saved)
 				-- Every event fires only after the entry is in PagleLog.entries (LOG-R9).
 				note = note .. " #" .. #loaded.env.PagleLog.entries
 			elseif event == "CastEnded" then
-				seen.cast = cast
+				seen.cast = castEnded
 			end
 			seen.order[#seen.order + 1] = note
 		end)
@@ -192,16 +192,23 @@ describe("Sessions on the client", function()
 	)
 
 	describe("at login", function()
+		-- A Session of 501 Casts that ended 4499 s before login, then the build entry: 502 entries, so a projection
+		-- rebuilds on later frames (LOG-R71).
+		local function awayHistory()
+			local entries = {}
+			for i = 1, 501 do
+				entries[i] = cast(SERVER_TIME - 5000 + i)
+			end
+			entries[502] = BUILD
+			return entries
+		end
+		local AWAY_ID = ("%s-%d-0"):format(ADA, SERVER_TIME - 4999)
+
 		it(
 			"fires SessionEnded with whileAway for a Session that ended while away, after the last projection"
 				.. " finishes (LOG-R63)",
 			function()
-				local entries = {}
-				for i = 1, 501 do
-					entries[i] = cast(SERVER_TIME - 5000 + i)
-				end
-				entries[502] = BUILD
-				local loaded, seen = core(entries)
+				local loaded, seen = core(awayHistory())
 
 				login(loaded)
 				assert.is_true(seen.projection:IsUpdating())
@@ -209,28 +216,20 @@ describe("Sessions on the client", function()
 				loaded.client.runTimers()
 
 				local order = seen.order
-				assert.are.same({ "done", "apply 503 live", "SessionEnded " .. ADA .. "-" .. (SERVER_TIME - 4999) .. "-0 whileAway #503" }, {
-					order[#order - 2],
-					order[#order - 1],
-					order[#order],
-				})
+				local last = { order[#order - 2], order[#order - 1], order[#order] }
+				assert.are.same({ "done", "apply 503 live", "SessionEnded " .. AWAY_ID .. " whileAway #503" }, last)
 				assert.are.equal(501, seen.payloads[1].casts)
 			end
 		)
 
 		it("fires it before the first new Cast's SessionStarted when that comes first (LOG-R63)", function()
-			local entries = {}
-			for i = 1, 501 do
-				entries[i] = cast(SERVER_TIME - 5000 + i)
-			end
-			entries[502] = BUILD
-			local loaded, seen = core(entries)
+			local loaded, seen = core(awayHistory())
 			login(loaded)
 
 			catchOne(loaded)
 			loaded.client.runTimers()
 
-			local ended = "SessionEnded " .. ADA .. "-" .. (SERVER_TIME - 4999) .. "-0 whileAway #504"
+			local ended = "SessionEnded " .. AWAY_ID .. " whileAway #504"
 			local events = {}
 			for _, note in ipairs(seen.order) do
 				if note:match("^Session") then

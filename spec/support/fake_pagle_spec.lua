@@ -1086,7 +1086,7 @@ describe("FakePagle", function()
 				fake.login()
 				fake.enterWorld()
 
-				local cast = fake.playCast("caught", { { itemID = 6358, quantity = 1 } })
+				local cast = assert(fake.playCast("caught", { { itemID = 6358, quantity = 1 } }))
 
 				assert.are.same({ "SessionStarted " .. id(0), "1 live", "Catch " .. id(0) }, seen)
 				assert.are.equal(id(0), cast.session)

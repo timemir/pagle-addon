@@ -129,7 +129,14 @@ describe("cutting Sessions", function()
 			append({ kind = "cast", char = 1, time = T + 600, outcome = "caught", conditions = conditions, items = {} }),
 			append({ kind = "skill", char = 1, time = T + 1400, rank = 81, max = 150, mod = 0 }),
 			append({ kind = "skill", char = 1, time = T + 1500, rank = 82, max = 150, mod = 0 }),
-			append({ kind = "cast", char = 1, time = T + 1500, outcome = "gotAway", conditions = conditions, items = {} }),
+			append({
+				kind = "cast",
+				char = 1,
+				time = T + 1500,
+				outcome = "gotAway",
+				conditions = conditions,
+				items = {},
+			}),
 		}
 
 		-- tie 1: the Skill Reading took tie 0 in that second (LOG-R12)
@@ -337,15 +344,18 @@ describe("the Session events", function()
 			assert.are.same({}, seen.fired)
 		end)
 
-		it("keeps a Session still open after a reload, ending it live when its 900 s pass (LOG-R60, LOG-R62)", function()
-			local seen = tracked({ cast(0) })
+		it(
+			"keeps a Session still open after a reload, ending it live when its 900 s pass (LOG-R60, LOG-R62)",
+			function()
+				local seen = tracked({ cast(0) })
 
-			assert.are.equal(600, seen.tracker:Start(T + 300))
-			seen.tracker:Idle()
-			assert.are.equal(idAt(0), seen.tracker:Get(T + 300).id)
-			seen.tracker:Tick(T + 900)
+				assert.are.equal(600, seen.tracker:Start(T + 300))
+				seen.tracker:Idle()
+				assert.are.equal(idAt(0), seen.tracker:Get(T + 300).id)
+				seen.tracker:Tick(T + 900)
 
-			assert.are.same({ "SessionEnded " .. idAt(0) }, seen.fired)
-		end)
+				assert.are.same({ "SessionEnded " .. idAt(0) }, seen.fired)
+			end
+		)
 	end)
 end)
