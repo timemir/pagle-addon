@@ -201,7 +201,7 @@ describe("a Cast that ends caught", function()
 		assert.are.equal("channeling", fishing:GetState())
 	end)
 
-	it("counts a window whose IsFishingLoot is secret as fishing only while a Cast is in progress (LOG-R93)", function()
+	it("counts a window whose IsFishingLoot is secret as fishing only while a Cast is in progress (LOG-R3, LOG-R93)", function()
 		local idle, idleSteps = watch()
 		idle:LootReady(nil, loot({ itemID = 2589, quantity = 1 }), 3)
 		assert.are.same({}, idleSteps)
@@ -300,6 +300,31 @@ describe("a Cast that's interrupted", function()
 		fishing:Escaped(14.5)
 
 		assert.are.equal(count, #steps)
+	end)
+
+	it("records fishing loot that comes after the grace time as a new no-channel Cast (LOG-R7, LOG-R5)", function()
+		local fishing, steps = watch()
+		fishing:ChannelStarted(FISHING, 10)
+		local graceEnded = fishing:ChannelStopped(FISHING, 12)
+
+		fishing:LootReady(true, loot({ itemID = 6358, quantity = 1 }), 14.5)
+		assert(graceEnded)()
+
+		assert.are.same({
+			"CastStarted",
+			"FishingStateChanged",
+			"CastEnded",
+			"FishingStateChanged",
+			"record",
+			"Catch",
+			"CastEnded",
+			"FishingStateChanged",
+		}, names(steps))
+		assert.are.equal("interrupted", steps[3][2])
+		assert.are.same({ "FishingStateChanged", "idle" }, steps[4])
+		assert.are.same({ "record", "caught", { { itemID = 6358, quantity = 1 } }, nil, "idle" }, steps[5])
+		assert.are.equal("caught", steps[7][2])
+		assert.are.equal("looting", fishing:GetState())
 	end)
 
 	it("ends before a signal that comes after the grace time but before its timer ran (LOG-R7)", function()
