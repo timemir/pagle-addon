@@ -189,6 +189,7 @@ Ledger slice 2: the Journal book (Species, Zone Mastery, Sub-collections, Trophy
 **Core rules:**
 - CORE-R40's "Help chart the waters" button, CORE-R50's "Help chart the waters" entry, CORE-R61's `report`
 - LOG-R78 for the Field report projection
+- LOG-R50 (`Pagle.NextWindow`), for LED-R127's window states
 - every rule in `field-report.md`: REP-R1–R5, REP-R10–R12, REP-R20–R23, REP-R25, REP-R26, REP-R30–R33, REP-R35–R37, REP-R40–R46, REP-R90–R96
 
 **Content data rules:**
@@ -257,11 +258,10 @@ Legends, titles, Simulated Size with the typical-length check on, Catch Mileston
 
 ## M5 Hunts
 
-**Goal:** the Hunts Module, the Now/Soon board and its tracker, Core's tracker dock (built with its first tracker), `NextWindow`, the Hunt list and its lock tooling, and Hunts lore with its check on.
+**Goal:** the Hunts Module, the Now/Soon board and its tracker, Core's tracker dock (built with its first tracker), the Hunt list and its lock tooling, and Hunts lore with its check on.
 
 **Core rules:**
 - CORE-R70–R73 (the tracker dock), with the Trackers page's "Tracker position" row and its Reset button (SET-R40). The Trackers page is registered from here on, since Hunts gives it rows (CORE-R42).
-- LOG-R50 (`Pagle.NextWindow`)
 
 **Content data rules:**
 - DATA-R72, DATA-R75 for `HuntList.lua`

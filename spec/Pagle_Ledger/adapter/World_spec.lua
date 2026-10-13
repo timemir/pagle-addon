@@ -1,0 +1,101 @@
+-- The Ledger's world index built from Core's catalogue at OnInitialize (LED-R10, CORE-R10), on FakePagle: a spec's
+-- own catalogue through fake.setCatalogue, and the generated one.
+
+local MACKEREL, NIGHTFISH, LEGEND, TROPHY = 6303, 13759, 19803, 13901
+local ELWYNN, GOLDSHIRE, DUSKWOOD = 12, 87, 10
+
+-- A catalogue in the shape of ns.catalogue (DATA-R76): Elwynn and Goldshire with a list, Duskwood without data.
+local function fixture()
+	local night = { time = { { 1260, 360 } } }
+	local function item(category, fields)
+		local record = { category = category, legend = false, noise = false, removed = false, pool = false }
+		for key, value in pairs(fields) do
+			record[key] = value
+		end
+		return record
+	end
+	local function area(parent, fields)
+		local record = { parent = parent, continent = 0, hasData = true, skillBaseConfirmed = false, catches = {} }
+		for key, value in pairs(fields) do
+			record[key] = value
+		end
+		return record
+	end
+	return {
+		fingerprint = "0123456789abcdef",
+		items = {
+			[MACKEREL] = item("fish", { species = MACKEREL }),
+			[NIGHTFISH] = item("fish", { species = NIGHTFISH }),
+			[LEGEND] = item("fish", { species = LEGEND, legend = true }),
+			[TROPHY] = item("trophy", { family = 1, weight = 19 }),
+		},
+		areas = {
+			[ELWYNN] = area(0, { skillBase = 25, catches = { { itemID = MACKEREL, confirmed = false } } }),
+			[GOLDSHIRE] = area(ELWYNN, {
+				catches = {
+					{ itemID = NIGHTFISH, confirmed = false, window = "night", gate = night, gateConfirmed = false },
+					{ itemID = LEGEND, confirmed = false },
+					{ itemID = TROPHY, confirmed = false },
+				},
+			}),
+			[DUSKWOOD] = area(0, { hasData = false }),
+		},
+		aliases = {},
+		pools = {},
+		windows = { night = { spec = night, confirmed = false } },
+		events = {},
+		fishingSpells = {},
+		auras = {},
+	}
+end
+
+-- The keys of a set, ascending.
+local function keys(set)
+	local list = {}
+	for key in pairs(set or {}) do
+		list[#list + 1] = key
+	end
+	table.sort(list)
+	return list
+end
+
+describe("the Ledger's world index (LED-R10)", function()
+	it("is built at OnInitialize from Core's catalogue (LED-R10, CORE-R10)", function()
+		local fake = newFakePagle()
+		fake.setCatalogue(fixture())
+
+		local world = fake.load("Pagle_Ledger").ns.world
+
+		assert.are.same({ ELWYNN }, world.charted)
+		assert.are.same({ MACKEREL, NIGHTFISH }, keys(world.species))
+		assert.are.same({ "night" }, keys(world.species[NIGHTFISH].elements))
+		assert.are.same({ LEGEND }, keys(world.legends))
+		assert.are.same({ weights = { TROPHY }, heaviest = TROPHY }, world.families[1])
+		assert.are.same({ [ELWYNN] = 25 }, world.skillBase)
+	end)
+
+	it("is never stored: PagleLedgerDB gets no world (LED-R10)", function()
+		local fake = newFakePagle()
+		fake.setCatalogue(fixture())
+		local loaded = fake.load("Pagle_Ledger")
+
+		for _, section in pairs(loaded.env.PagleLedgerDB) do
+			if type(section) == "table" then
+				assert.is_nil(section.world)
+			end
+		end
+	end)
+
+	it("charts Stranglethorn over the generated catalogue, Tastyfish gated there (LED-R10, DATA-R28)", function()
+		local world = newFakePagle().load("Pagle_Ledger").ns.world
+		local stranglethorn = world.zones[33]
+
+		assert.is_not_nil(stranglethorn)
+		assert.are.equal(130, world.skillBase[33])
+		-- Speckled Tastyfish, a Species, is listed there under the Extravaganza only; the rare Legends sit outside.
+		assert.is_true(stranglethorn.species[19807].gated)
+		assert.are.same({ "event.301" }, keys(stranglethorn.species[19807].windows))
+		assert.is_nil(stranglethorn.species[19803])
+		assert.is_true(world.legends[19803])
+	end)
+end)

@@ -34,10 +34,10 @@ describe("the Ledger's projection def", function()
 	it(
 		"has rulesVersion LEDGER_RULES_VERSION × 100 + SIZE_RULES_VERSION, a missing one counting as 0 (LED-R2)",
 		function()
-			assert.are.equal(100, ns.RulesVersion(nil))
-			assert.are.equal(101, ns.RulesVersion(1))
-			assert.are.equal(100, ns.ProjectionDef({}, lookups, outlets, nil).rulesVersion)
-			assert.are.equal(101, ns.ProjectionDef({}, lookups, outlets, 1).rulesVersion)
+			assert.are.equal(200, ns.RulesVersion(nil))
+			assert.are.equal(201, ns.RulesVersion(1))
+			assert.are.equal(200, ns.ProjectionDef({}, lookups, outlets, nil).rulesVersion)
+			assert.are.equal(201, ns.ProjectionDef({}, lookups, outlets, 1).rulesVersion)
 		end
 	)
 
@@ -159,6 +159,28 @@ describe("the Ledger's projection def", function()
 			items = {},
 		}
 	end
+
+	-- A caught Cast of `itemID` in zone 0, entry `seq`.
+	local function caught(seq, itemID)
+		local record = gotAway(seq)
+		record.outcome = "caught"
+		record.items = { { n = 1, itemID = itemID, quantity = 1, catchId = record.id .. ":1" } }
+		return record
+	end
+
+	it("takes M3's achievements live and in a rebuild's done, with no moment until ticket #137 (LED-R4)", function()
+		local calls = {}
+		local def = ns.ProjectionDef({}, lookups, noting(calls)) -- the set's logId and the log's are both nil
+		local state = def.reset()
+
+		-- Every item is Uncharted to these lookups: each first Catch earns an `uncharted` achievement (LED-R64).
+		def.apply(state, caught(1, 99901), "rebuild")
+		def.done(state, { firstBuild = false, rebuilt = true, replayed = 0 })
+		def.apply(state, caught(2, 99902), "live")
+
+		assert.are.same({ 1, 1 }, { state.uncharted[99901].n, state.uncharted[99902].n })
+		assert.are.same({ "ReportCoinsEarned 0", "SetSummaryLine Ledger: Angler Level 1" }, calls)
+	end)
 
 	it("merges a rebuild's new levels into one summary-only levelUp for the highest (LED-R93, LED-R97)", function()
 		local raised = {}
