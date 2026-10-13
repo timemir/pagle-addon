@@ -46,17 +46,18 @@ end
 ---@param entry any
 ---@return string?
 function Commands:Problem(module, entry)
+	local L = ns.L
 	local name = type(entry) == "table" and entry.name
 	if type(name) ~= "string" or not name:match("^%S+$") then
-		return ("Pagle: %s's /pagle entry %s has no one-word name; it is skipped"):format(module, tostring(name))
+		return L.SLASH_SKIPPED_NO_NAME:format(module, tostring(name))
 	elseif type(entry.fn) ~= "function" then
-		return ("Pagle: %s's /pagle %s has no fn; it is skipped"):format(module, name)
+		return L.SLASH_SKIPPED_NO_FN:format(module, name)
 	end
 	local key = name:lower()
 	if self.reserved[key] then
-		return ("Pagle: %s's /pagle %s is skipped: Pagle reserves %s"):format(module, name, key)
+		return L.SLASH_SKIPPED_RESERVED:format(module, name, key)
 	elseif self.owners[key] then
-		return ("Pagle: %s's /pagle %s is skipped: %s already uses it"):format(module, name, self.owners[key])
+		return L.SLASH_SKIPPED_TAKEN:format(module, name, self.owners[key])
 	end
 	return nil
 end
