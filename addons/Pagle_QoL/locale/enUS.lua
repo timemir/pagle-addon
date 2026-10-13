@@ -36,4 +36,6 @@ ns.L = {
 	-- The out-of-lures Nudge (QOL-R53): under Best I have, and under Only this one with the lure's name.
 	NUDGE_OUT_OF_LURES = "Your lure is gone and there are none left in your bags.",
 	NUDGE_OUT_OF_LURE = "Your lure is gone and there's no %s left in your bags.",
+	-- An item's name until the client has loaded it (QOL-R54).
+	ITEM_NOT_LOADED = "Item %d",
 }

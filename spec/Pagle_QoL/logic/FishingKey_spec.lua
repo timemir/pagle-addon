@@ -114,6 +114,14 @@ describe("QoL's Fishing key logic", function()
 		end)
 	end)
 
+	describe("ns.ClickRegistration", function()
+		it("fires on key-down while ActionButtonUseKeyDown is 1, else on key-up (QOL-R27)", function()
+			assert.are.equal("AnyDown", ns.ClickRegistration("1"))
+			assert.are.equal("AnyUp", ns.ClickRegistration("0"))
+			assert.are.equal("AnyUp", ns.ClickRegistration(nil)) -- a client that doesn't know the CVar
+		end)
+	end)
+
 	describe("ns.KeyWithoutModifiers", function()
 		it("is the key's last part, which IsKeyDown takes (QOL-R26)", function()
 			assert.are.equal("F", ns.KeyWithoutModifiers("F"))

@@ -55,7 +55,19 @@ stds.wow = {
 		"UnitChannelInfo",
 		"UnitCastingInfo",
 		"GetInventoryItemID",
-		C_Item = { fields = { "GetItemInfoInstant" } },
+		-- Its lures (QOL-R24, QOL-R27, QOL-R29, QOL-R51, QOL-R54): the click on PagleQoLActionButton, what's in the bags and
+		-- usable, the spell a lure's use casts, and the lures' names; GetWeaponEnchantInfo is in stds.wow_variables.
+		"SetOverrideBindingClick",
+		C_Item = {
+			fields = {
+				"GetItemInfoInstant",
+				"GetItemCount",
+				"IsUsableItem",
+				"GetItemSpell",
+				"GetItemNameByID",
+				"RequestLoadItemDataByID",
+			},
+		},
 		C_Spell = { fields = { "GetSpellName" } },
 		-- QoL's Fishing stretch and its CVar lease (QOL-R61–R64).
 		"GetCVar",

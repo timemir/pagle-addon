@@ -25,4 +25,5 @@ adapter\Conflict.lua
 adapter\Combat.lua
 adapter\Stretch.lua
 adapter\Nudge.lua
+adapter\Lures.lua
 adapter\QoL.lua
