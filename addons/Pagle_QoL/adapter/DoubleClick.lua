@@ -87,8 +87,8 @@ function ns.PointDoubleClick(state, fishingName)
 	if not frame then
 		return
 	end
-	-- Evaluated without the gear step (QOL-R15). The CVar is read at each evaluation, so after CVAR_UPDATE an open
-	-- window re-points on the next one (QOL-R105).
+	-- Evaluated without the gear step (QOL-R15). The CVar is read at each evaluation, and CVAR_UPDATE runs one, so an
+	-- open window re-points at once (QOL-R105).
 	local target = ns.DoubleClickTarget(state, fishingName, GetCVar("ActionButtonUseKeyDown"))
 	if window:IsOpen() and not ns.DoubleClickLive(ns.CurrentInput(), state, target) then
 		window:Close()

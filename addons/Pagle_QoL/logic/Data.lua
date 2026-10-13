@@ -20,6 +20,8 @@ ns.DB_DEFAULTS = {
 		input = "both",
 		-- Lures and clams: Lures, and the lure chosen for Only this one (QOL-R50).
 		lures = { mode = "best", item = 6529 },
+		-- Open clams between Casts (QOL-R56).
+		clams = true,
 		-- While you fish: what a Fishing stretch leases besides soft-interact (QOL-R62).
 		audio = { on = true, background = false },
 		autoLoot = true,

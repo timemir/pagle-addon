@@ -58,7 +58,8 @@ stds.wow = {
 		"GetInventoryItemID",
 		-- Its lures (QOL-R24, QOL-R27, QOL-R29, QOL-R51, QOL-R54): the click on PagleQoLActionButton, what's in the bags and
 		-- usable, the spell a lure's use casts, and the lures' names for the Lure dropdown and the out-of-lures Nudge;
-		-- GetWeaponEnchantInfo is in stds.wow_variables.
+		-- GetWeaponEnchantInfo is in stds.wow_variables. Its clams (QOL-R55, QOL-R57) use the same click, bag and
+		-- name calls.
 		"SetOverrideBindingClick",
 		C_Item = {
 			fields = {

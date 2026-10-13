@@ -76,6 +76,7 @@ local function ladderState(armed, fishingName)
 		poleInHand = pole,
 		lured = lured,
 		lure = lure,
+		clam = ns.ReadClams(),
 		gearReady = ns.ReadGearStep(pole),
 		reelMissed = reelWatch:Missed(),
 	}
@@ -139,8 +140,13 @@ end
 --- Readies PagleQoLActionButton for a target the double-click's BUTTON2 arms (adapter/DoubleClick.lua), as repoint does
 --- for the Fishing key: the click registration (QOL-R27), the lure it now applies (QOL-R29), and for a click, the item
 --- to use (QOL-R52). The double-click never arms the gear step (QOL-R15), so a click target always has an item.
+--- While the Fishing key waits for key-up it does nothing: the held key's press is still the old target's, and the
+--- key's re-point readies the button on the first frame it is up (QOL-R26, QOL-R29).
 ---@param target PagleQoLKeyTarget
 function ns.ArmActionButton(target)
+	if waitingForKeyUp then
+		return
+	end
 	registerClicks()
 	ns.LureTargeted(target.item)
 	if target.kind == "click" then
@@ -199,7 +205,7 @@ function evaluate()
 	local state = ladderState(armed, fishingName)
 	-- Under Input *Double-click* the Fishing key has no key to arm (QOL-R12).
 	local keyKeys = ns.InputArmsKey(ns.CurrentInput()) and keys or {}
-	local want = ns.Arming(keyKeys, ns.KeyTarget(ns.NextAction(state), fishingName, state.lure))
+	local want = ns.Arming(keyKeys, ns.KeyTarget(ns.NextAction(state), fishingName, state.lure, state.clam))
 	if ns.SameArming(current, want) then
 		waitingForKeyUp = false
 	elseif keyHeld(current, want) then
@@ -301,8 +307,12 @@ function ns.StartFishingKey()
 		Pagle.RegisterUnitEvent(OWNER, event, "player", onEvent)
 	end
 	-- ActionButtonUseKeyDown may have changed (QOL-R27). Every CVAR_UPDATE re-reads it: the payload's first value is
-	-- the CVar's name on Retail but has been an event name instead, and the read is cheap either way.
-	Pagle.RegisterEvent(OWNER, "CVAR_UPDATE", registerClicks)
+	-- the CVar's name on Retail but has been an event name instead, and the read is cheap either way. It re-evaluates
+	-- too, so an open double-click window drops its reel target at once (QOL-R105).
+	Pagle.RegisterEvent(OWNER, "CVAR_UPDATE", function()
+		registerClicks()
+		evaluate()
+	end)
 	Pagle.RegisterCallback(OWNER, "CastStarted", function()
 		channeling = true
 		reelWatch:Clear() -- a new channel: its reel is untried (QOL-R35)

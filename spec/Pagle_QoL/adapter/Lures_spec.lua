@@ -255,6 +255,33 @@ describe("Lures on the Fishing key", function()
 			assert.are.equal(CLICK, client.overrideAction("F"))
 		end)
 
+		it(
+			"matches no spell while the targeted lure's spell isn't loaded yet, and asks the client for the lure (QOL-R29)",
+			function()
+				local requested = {}
+				local fake, client = start(function(_, client, loaded)
+					client.itemSpells[SHINY_BAUBLE] = nil
+					loaded.env.C_Item.RequestLoadItemDataByID = function(itemID)
+						requested[#requested + 1] = itemID
+					end
+				end)
+				assert.are.equal(CLICK, client.overrideAction("F"))
+
+				-- Right after login, the player casts other spells: neither marks the pole lured nor skips the lure.
+				fake.fireGameEvent("UNIT_SPELLCAST_SUCCEEDED", "player", "Cast-2", 2383) -- Find Herbs
+				client.advance(2)
+				assert.are.equal(CLICK, client.overrideAction("F"))
+				fake.fireGameEvent("UNIT_SPELLCAST_FAILED", "player", "Cast-3", 8690) -- Hearthstone
+				assert.are.equal(CLICK, client.overrideAction("F"))
+				assert.are.equal(SHINY_BAUBLE, requested[1])
+
+				-- Once the client has the lure, its own failed use skips it.
+				client.itemSpells[SHINY_BAUBLE] = { "Shiny Bauble", SHINY_BAUBLE_SPELL }
+				fake.fireGameEvent("UNIT_SPELLCAST_FAILED", "player", "Cast-4", SHINY_BAUBLE_SPELL)
+				assert.are.equal(CAST, client.overrideAction("F"))
+			end
+		)
+
 		it("tries skipped lures again after SKILL_LINES_CHANGED (QOL-R29)", function()
 			local fake, client, loaded = start()
 			fake.fireGameEvent("UNIT_SPELLCAST_FAILED", "player", "Cast-2", SHINY_BAUBLE_SPELL)

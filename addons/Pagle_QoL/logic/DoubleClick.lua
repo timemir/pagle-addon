@@ -47,7 +47,7 @@ function ns.DoubleClickTarget(state, fishingName, useKeyDown)
 	if action == "reel" and not ns.UsesKeyDown(useKeyDown) then
 		return nil
 	end
-	return ns.KeyTarget(action, fishingName, state.lure)
+	return ns.KeyTarget(action, fishingName, state.lure, state.clam)
 end
 
 --- Whether the double-click is live (QOL-R14): Input allows it, QoL is armed, a fishing pole is in hand, and the next

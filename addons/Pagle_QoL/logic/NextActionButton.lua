@@ -34,7 +34,7 @@ end
 ---@class PagleQoLButtonIcons
 ---@field fishing integer? the Fishing spell's icon (`C_Spell.GetSpellTexture(7620)`)
 ---@field set integer? the fishing set's icon, for equip
----@field item integer? the lure's item icon, for a lure
+---@field item integer? the lure's or the clam's item icon, for a lure or a clam
 
 --- What the button shows (QOL-R71).
 ---@class PagleQoLButtonLook
@@ -43,7 +43,7 @@ end
 ---@field desaturated boolean
 
 --- The button's icon and label for the next action (QOL-R71): the Fishing icon with "Cast" or "Reel", the fishing
---- set's icon with "Gear", the lure's item icon with "Lure". For *nothing*, the last icon shown (the Fishing icon if
+--- set's icon with "Gear", the lure's item icon with "Lure", the clam's with "Clam". For *nothing*, the last icon shown (the Fishing icon if
 --- none was yet), desaturated, with no label. A set or item icon the game hasn't given falls back to the Fishing icon.
 ---@param action PagleQoLAction
 ---@param icons PagleQoLButtonIcons
@@ -59,6 +59,8 @@ function ns.ButtonLook(action, icons, last)
 		return { icon = icons.set or icons.fishing, label = L.BUTTON_GEAR, desaturated = false }
 	elseif action == "lure" then
 		return { icon = icons.item or icons.fishing, label = L.BUTTON_LURE, desaturated = false }
+	elseif action == "clam" then
+		return { icon = icons.item or icons.fishing, label = L.BUTTON_CLAM, desaturated = false }
 	end
 	return { icon = last or icons.fishing, desaturated = true }
 end
@@ -76,10 +78,10 @@ function ns.ButtonHotkey(input, keys, textOf)
 	return textOf(keys[1])
 end
 
---- The button's tooltip (QOL-R74): "Cast", "Reel in", "Put on {set name}", "Apply {lure name}" or "Nothing to do".
---- Nil while the name it needs isn't known, so the tooltip waits for the item to load.
+--- The button's tooltip (QOL-R74): "Cast", "Reel in", "Put on {set name}", "Apply {lure name}", "Open {clam name}"
+--- or "Nothing to do". Nil while the name it needs isn't known, so the tooltip waits for the item to load.
 ---@param action PagleQoLAction
----@param name string? the fishing set's name for equip, the lure's for a lure
+---@param name string? the fishing set's name for equip, the lure's for a lure, the clam's for a clam
 ---@return string?
 function ns.ButtonTooltip(action, name)
 	local L = ns.L
@@ -91,6 +93,8 @@ function ns.ButtonTooltip(action, name)
 		return name and L.BUTTON_TOOLTIP_GEAR:format(name)
 	elseif action == "lure" then
 		return name and L.BUTTON_TOOLTIP_LURE:format(name)
+	elseif action == "clam" then
+		return name and L.BUTTON_TOOLTIP_CLAM:format(name)
 	end
 	return L.BUTTON_TOOLTIP_NOTHING
 end

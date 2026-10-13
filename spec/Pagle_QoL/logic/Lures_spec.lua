@@ -29,6 +29,15 @@ describe("QoL's lure logic", function()
 		end)
 	end)
 
+	describe("ns.IsLure", function()
+		it("holds for the lure table's items only, not a clam (QOL-R29, QOL-R54)", function()
+			assert.is_true(ns.IsLure(6529))
+			assert.is_true(ns.IsLure(6533))
+			assert.is_false(ns.IsLure(5524)) -- a Thick-shelled Clam
+			assert.is_false(ns.IsLure(nil))
+		end)
+	end)
+
 	describe("ns.ChooseLure", function()
 		local SHINY_BAUBLE, NIGHTCRAWLERS, FISH_LENS, BRIGHT_BAUBLES, FLESH_EATING_WORM, FISH_ATTRACTOR =
 			6529, 6530, 6811, 6532, 7307, 6533

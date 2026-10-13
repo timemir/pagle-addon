@@ -2,9 +2,9 @@
 -- driven through FakePagle and the fake client's game side (spec/support/fake_game.lua), widgets and GameTooltip.
 
 local FISHING_POLE, SWORD = 6256, 25
-local SHINY_BAUBLE = 6529
+local SHINY_BAUBLE, THICK_SHELLED = 6529, 5524
 local FISHING = 3
-local FISHING_ICON, SET_ICON, BAUBLE_ICON = 136245, 132940, 134335
+local FISHING_ICON, SET_ICON, BAUBLE_ICON, CLAM_ICON = 136245, 132940, 134335, 134432
 
 -- QoL loaded against FakePagle and logged in: F bound to the Fishing key, a fishing pole in hand with no lure on, and
 -- Shiny Baubles in the bags. `before(fake, client, loaded)` runs after the load and before PLAYER_LOGIN.
@@ -362,6 +362,53 @@ describe("The next-action button", function()
 
 			assert.are.same(DEFAULT, anchor(loaded))
 			assert.is_nil(loaded.env.PagleQoLDB.profiles.Default.indicator.point)
+		end)
+	end)
+
+	describe("a clam", function()
+		-- A lure on, and a Thick-shelled Clam in the bags with its icon: the next press opens it (QOL-R20 step 5).
+		---@param client FakeClient
+		local function withClam(_, client)
+			client.mainHandEnchant = 263
+			client.bags[THICK_SHELLED] = 1
+			client.itemIcons[THICK_SHELLED] = CLAM_ICON
+		end
+
+		it("shows the clam's item icon with Clam, and the key's short text (QOL-R70, QOL-R71)", function()
+			local _, client, loaded = start(withClam)
+
+			assert.are.equal("CLICK PagleQoLActionButton:LeftButton", client.overrideAction("F"))
+			assert.are.same({ icon = CLAM_ICON, desaturated = false, label = "Clam", hotkey = "F" }, shown(loaded))
+		end)
+
+		it("names the clam in its tooltip, from C_Item (QOL-R74)", function()
+			local _, _, loaded = start(withClam)
+
+			assert.are.equal("Open Thick-shelled Clam", hover(loaded))
+		end)
+
+		it("waits for a clam's name that isn't cached, then names it (QOL-R74)", function()
+			local _, client, loaded = start(function(fake, client)
+				withClam(fake, client)
+				client.itemNames[THICK_SHELLED] = nil
+			end)
+
+			assert.is_nil(hover(loaded))
+			client.loadItem(THICK_SHELLED, "Thick-shelled Clam")
+			assert.is_true(loaded.env.GameTooltip.shown)
+			assert.are.equal("Open Thick-shelled Clam", loaded.env.GameTooltip.text)
+		end)
+
+		it("shows Reel with the bobber out, as a press reels then, and Clam again after (QOL-R20, QOL-R71)", function()
+			local fake, client, loaded = start(withClam)
+
+			fake.fire("CastStarted")
+			assert.are.equal("INTERACTTARGET", client.overrideAction("F"))
+			assert.are.same({ icon = FISHING_ICON, desaturated = false, label = "Reel", hotkey = "F" }, shown(loaded))
+			assert.are.equal("Reel in", hover(loaded))
+
+			fake.fireGameEvent("UNIT_SPELLCAST_CHANNEL_STOP", "player", "Cast-1", 7620)
+			assert.are.equal("Clam", assert(shown(loaded)).label)
 		end)
 	end)
 

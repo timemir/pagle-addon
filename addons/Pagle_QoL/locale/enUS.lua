@@ -34,6 +34,9 @@ ns.L = {
 	SETTINGS_LURE = "Lure",
 	-- A lure whose name the client hasn't loaded yet, by item ID (QOL-R54).
 	SETTINGS_LURE_UNNAMED = "Item %d",
+	-- Open clams between Casts (qol.md › Settings, QOL-R56).
+	SETTINGS_CLAMS = "Open clams between Casts",
+	SETTINGS_CLAMS_TOOLTIP = "One clam per press, never during a cast.",
 	-- The Fishing page's While you fish section (qol.md › Settings, QOL-R62).
 	SETTINGS_WHILE_YOU_FISH = "While you fish",
 	SETTINGS_AUDIO_MIX = "Fishing audio mix",
@@ -81,10 +84,12 @@ ns.L = {
 	BUTTON_REEL = "Reel",
 	BUTTON_GEAR = "Gear",
 	BUTTON_LURE = "Lure",
+	BUTTON_CLAM = "Clam",
 	BUTTON_TOOLTIP_CAST = "Cast",
 	BUTTON_TOOLTIP_REEL = "Reel in",
 	BUTTON_TOOLTIP_GEAR = "Put on %s",
 	BUTTON_TOOLTIP_LURE = "Apply %s",
+	BUTTON_TOOLTIP_CLAM = "Open %s",
 	BUTTON_TOOLTIP_NOTHING = "Nothing to do",
 	SETTINGS_SHOW_BUTTON = "Show the next-action button",
 	SETTINGS_SHOW_BUTTON_TOOLTIP = "Shows what your next press will do. Shift-drag to move.",
