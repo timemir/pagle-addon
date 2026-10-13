@@ -1,0 +1,2 @@
+# Vendored libraries keep their upstream formatting (scripts/update-ace3.sh owns them).
+addons/*/libs/

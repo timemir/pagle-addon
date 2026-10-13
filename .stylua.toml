@@ -1,0 +1,2 @@
+# StyLua defaults (tabs, 120 columns) with Lua 5.1 syntax, the language of the WoW client.
+syntax = "Lua51"
