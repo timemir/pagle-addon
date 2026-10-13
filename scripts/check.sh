@@ -47,7 +47,21 @@ stage lint
 stage api
 "$bin/lua" scripts/api-presence.lua .luacheckrc .tools/bir/Resources || fail api
 
-# --- 4. types (#48): lua-language-server --check, zero warnings. Not built yet.
+# --- 4. types (#48): lua-language-server --check, zero warnings, against Ketho's vscode-wow-api annotations
+# (WOW_API_COMMIT in scripts/tools.env) and the types/ stubs; .luarc.json holds the setup. scripts/ is left out
+# there: it runs on stock Lua 5.1, not in the WoW client the annotations describe.
+stage types
+# LuaLS's log and its generated meta files for the Lua builtins go outside the repo: .luarc.json ignores .tools/,
+# and meta files under an ignored dir leave even `integer` undefined.
+luals=$(mktemp -d)
+if ! luals_out=$("$bin/lua-language-server" --check=. --checklevel=Warning --configpath=.luarc.json \
+	--logpath="$luals" --metapath="$luals/meta" --check_format=pretty 2>&1); then
+	rm -rf "$luals"
+	echo "$luals_out"
+	fail types
+fi
+rm -rf "$luals"
+echo "types: no warnings"
 
 # --- 5. tests (#49): busted on Lua 5.1, luacov report (doesn't gate). Not built yet.
 

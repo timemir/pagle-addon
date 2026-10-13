@@ -97,6 +97,10 @@ copy
 printf 'read_globals = { "CreateFrame" }\n' >>"$scratch/tree/.luacheckrc"
 expect "a top-level read_globals (reaching logic/) fails api" api "top-level read_globals"
 
+copy
+printf 'Pagle.API_VERSION = "2"\n' >>"$addon/adapter/Core.lua"
+expect "a string assigned to Pagle.API_VERSION in Core fails types" types "assign-type-mismatch"
+
 if ((failures)); then
 	echo "test-check: $failures failed" >&2
 	exit 1
