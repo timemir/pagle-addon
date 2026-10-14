@@ -10,7 +10,8 @@ local NAMES = {
 	[STRAY] = "Raw Brilliant Smallfish",
 	[GONE] = "Sickly Looking Fish",
 }
-local ZONES = { [DUSKWOOD] = "Duskwood", [ELWYNN] = "Elwynn Forest", [WESTFALL] = "Westfall", [DARKSHORE] = "Darkshore" }
+local ZONES =
+	{ [DUSKWOOD] = "Duskwood", [ELWYNN] = "Elwynn Forest", [WESTFALL] = "Westfall", [DARKSHORE] = "Darkshore" }
 local T0 = 1791000000
 local MINUTE = 60
 -- Realm minutes of day: 08:14, and 21:40, inside the fixture's night (20:00 to 06:00).
@@ -29,7 +30,14 @@ local function fixture()
 		return record
 	end
 	local function area(skillBase, catches)
-		return { parent = 0, continent = 0, hasData = true, skillBase = skillBase, skillBaseConfirmed = false, catches = catches }
+		return {
+			parent = 0,
+			continent = 0,
+			hasData = true,
+			skillBase = skillBase,
+			skillBaseConfirmed = false,
+			catches = catches,
+		}
 	end
 	local function entry(itemID, window)
 		return { itemID = itemID, confirmed = false, window = window, gate = window and night, gateConfirmed = false }
@@ -209,7 +217,8 @@ describe("an uncaught Species' entry (LED-R141)", function()
 
 		journal.frame.left.drawn.link[1]:Click()
 
-		local hint = { kind = "text", hand = true, text = "night · pools · Elwynn Forest · Westfall +1 · skill ~25" }
+		local hint =
+			{ kind = "text", hand = true, text = "night · pools · Elwynn Forest · Westfall +1 · skill ~25" }
 		assert.are.same(hint, journal.pages.left[4])
 		journal:Draw()
 		assert.are.same(hint, journal.pages.left[4])
@@ -252,59 +261,68 @@ describe("the fish spread (LED-R142)", function()
 		assert.are.same({ "Home", "Raw Slitherskin Mackerel" }, { crumbs[1].label, crumbs[2].label })
 	end)
 
-	it('shows its listed zones as tiles by skill base, with "caught ✓", and its checklist (LED-R142, LED-R131)', function()
-		local _, loaded = loggedIn()
+	it(
+		'shows its listed zones as tiles by skill base, with "caught ✓", and its checklist (LED-R142, LED-R131)',
+		function()
+			local _, loaded = loggedIn()
 
-		local right = openFish(loaded, MACKEREL).right
+			local right = openFish(loaded, MACKEREL).right
 
-		assert.are.same({
-			{ kind = "kicker", text = "Where to find it" },
-			{ kind = "title", text = "Its waters" },
-			{
-				kind = "tiles",
-				tiles = {
-					{
-						name = "Elwynn Forest",
-						line = "Local · 50%",
-						line2 = "caught ✓",
-						bar = 0.5,
-						place = zonePlace(ELWYNN, MACKEREL),
-					},
-					{
-						name = "Westfall",
-						line = "Local · 50%",
-						line2 = "caught ✓",
-						bar = 0.5,
-						place = zonePlace(WESTFALL, MACKEREL),
-					},
-					{
-						name = "Duskwood",
-						line = "unfished · skill ~150",
-						faded = true,
-						place = zonePlace(DUSKWOOD, MACKEREL),
+			assert.are.same({
+				{ kind = "kicker", text = "Where to find it" },
+				{ kind = "title", text = "Its waters" },
+				{
+					kind = "tiles",
+					tiles = {
+						{
+							name = "Elwynn Forest",
+							line = "Local · 50%",
+							line2 = "caught ✓",
+							bar = 0.5,
+							place = zonePlace(ELWYNN, MACKEREL),
+						},
+						{
+							name = "Westfall",
+							line = "Local · 50%",
+							line2 = "caught ✓",
+							bar = 0.5,
+							place = zonePlace(WESTFALL, MACKEREL),
+						},
+						{
+							name = "Duskwood",
+							line = "unfished · skill ~150",
+							faded = true,
+							place = zonePlace(DUSKWOOD, MACKEREL),
+						},
 					},
 				},
-			},
-			{ kind = "text", text = "☐ In its element (2/3)" },
-			{ kind = "text", text = "☐ Regular (2/50)" },
-		}, right)
-	end)
+				{ kind = "text", text = "☐ In its element (2/3)" },
+				{ kind = "text", text = "☐ Regular (2/50)" },
+			}, right)
+		end
+	)
 
-	it("counts windows for ★★ by windows, and shows each element window's line under \"When\" (LED-R142, LED-R45)", function()
-		local _, loaded = loggedIn()
+	it(
+		'counts windows for ★★ by windows, and shows each element window\'s line under "When" (LED-R142, LED-R45)',
+		function()
+			local _, loaded = loggedIn()
 
-		local right = openFish(loaded, NIGHTFISH).right
+			local right = openFish(loaded, NIGHTFISH).right
 
-		assert.are.same({ kind = "kicker", text = "When" }, right[4])
-		assert.are.same({ kind = "text", text = "☑ In its element (1/1)" }, right[6])
-		assert.are.same({ kind = "text", text = "☐ Regular (1/50)" }, right[7])
-	end)
+			assert.are.same({ kind = "kicker", text = "When" }, right[4])
+			assert.are.same({ kind = "text", text = "☑ In its element (1/1)" }, right[6])
+			assert.are.same({ kind = "text", text = "☐ Regular (1/50)" }, right[7])
+		end
+	)
 
 	it("reads a night-only fish's window state live each time it is drawn (LED-R142, LED-R127, LOG-R50)", function()
 		local fake, loaded = loggedIn()
 
 		-- The fake's realm 08:15: night opens at 20:00, 11 h 45 min away.
-		assert.are.same({ kind = "text", hand = true, text = "night, back in 12 h" }, openFish(loaded, NIGHTFISH).right[5])
+		assert.are.same(
+			{ kind = "text", hand = true, text = "night, back in 12 h" },
+			openFish(loaded, NIGHTFISH).right[5]
+		)
 
 		-- Realm 21:15, in the night.
 		moveClocks(fake, loaded, 13 * 60)
@@ -357,14 +375,17 @@ describe("the Journal's search box (LED-R148)", function()
 		return lines
 	end
 
-	it("finds a zone and caught Species from two letters, zones first, never an uncaught one (LED-R148, LED-R124)", function()
-		local _, loaded = loggedIn()
-		loaded.ns.journal:Toggle()
+	it(
+		"finds a zone and caught Species from two letters, zones first, never an uncaught one (LED-R148, LED-R124)",
+		function()
+			local _, loaded = loggedIn()
+			loaded.ns.journal:Toggle()
 
-		typeInto(loaded, "sH")
+			typeInto(loaded, "sH")
 
-		assert.are.same({ "Darkshore", "Raw Brilliant Smallfish", "Sickly Looking Fish" }, dropdown(loaded))
-	end)
+			assert.are.same({ "Darkshore", "Raw Brilliant Smallfish", "Sickly Looking Fish" }, dropdown(loaded))
+		end
+	)
 
 	it("opens the fish spread picked, and closes the dropdown (LED-R148, LED-R125)", function()
 		local _, loaded = loggedIn()
@@ -375,7 +396,10 @@ describe("the Journal's search box (LED-R148)", function()
 		journal.frame.searchDrop.rows[2]:Click()
 
 		assert.are.same({ id = "fish", args = { species = STRAY } }, journal.router:Place())
-		assert.are.same({ "Home", "Raw Brilliant Smallfish" }, { journal.pages.crumbs[1].label, journal.pages.crumbs[2].label })
+		assert.are.same(
+			{ "Home", "Raw Brilliant Smallfish" },
+			{ journal.pages.crumbs[1].label, journal.pages.crumbs[2].label }
+		)
 		assert.are.same({}, dropdown(loaded))
 		assert.are.equal("", journal.frame.search:GetText())
 	end)
@@ -389,5 +413,69 @@ describe("the Journal's search box (LED-R148)", function()
 
 		typeInto(loaded, "")
 		assert.are.same({}, dropdown(loaded))
+	end)
+end)
+
+-- Every spread registered stays under this spec: a spread that lands later is swept with the others.
+describe("never named until caught (LED-R124)", function()
+	-- The args every spread is drawn with: the uncaught Species chosen, its plain hint shut and open, in a zone that
+	-- lists it, on the first continent tab. A spread ignores the args it doesn't take.
+	local ARGS = {
+		{ species = SECRET, zone = DUSKWOOD, tab = 0 },
+		{ species = SECRET, zone = ELWYNN, tab = 0, hint = true },
+	}
+
+	-- Every text the open book shows, depth first: crumbs, both pages, the back link and the search box's dropdown.
+	local function drawnTexts(widget, texts)
+		texts = texts or {}
+		for _, child in ipairs(widget.children) do
+			if child.shown then
+				if type(child.text) == "string" and child.text ~= "" then
+					texts[#texts + 1] = child.text
+				end
+				drawnTexts(child, texts)
+			end
+		end
+		return texts
+	end
+
+	-- The first text the book shows with `name` in it, as "{spread}: {text}", on any registered spread drawn with each
+	-- of ARGS and Species `species` chosen; nil if none.
+	local function anywhere(loaded, name, species)
+		local journal = loaded.ns.journal
+		local spreads = {}
+		for id in pairs(loaded.ns.journalSpreads) do
+			spreads[#spreads + 1] = id
+		end
+		table.sort(spreads)
+		assert.is_true(#spreads >= 2)
+		for _, id in ipairs(spreads) do
+			for _, args in ipairs(ARGS) do
+				local copy = {}
+				for key, value in pairs(args) do
+					copy[key] = value
+				end
+				copy.species = species
+				journal:Open(id, copy)
+				for _, text in ipairs(drawnTexts(journal.frame)) do
+					if text:lower():find(name:lower(), 1, true) then
+						return id .. ": " .. text
+					end
+				end
+			end
+		end
+		return nil
+	end
+
+	it("names an uncaught Species nowhere on any registered spread (LED-R124)", function()
+		local _, loaded = loggedIn()
+
+		assert.is_nil(anywhere(loaded, NAMES[SECRET], SECRET))
+	end)
+
+	it("would find a caught Species' name, so the sweep reads what is drawn (LED-R124)", function()
+		local _, loaded = loggedIn()
+
+		assert.is_not_nil(anywhere(loaded, NAMES[MACKEREL], MACKEREL))
 	end)
 end)

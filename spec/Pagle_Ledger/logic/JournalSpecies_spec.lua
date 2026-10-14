@@ -5,7 +5,8 @@ describe("the plain hint", function()
 
 	local FISH = 13759
 	local ELWYNN, WESTFALL, DUSKWOOD, MOONGLADE = 12, 40, 10, 493
-	local NAMES = { [ELWYNN] = "Elwynn Forest", [WESTFALL] = "Westfall", [DUSKWOOD] = "Duskwood", [MOONGLADE] = "Moonglade" }
+	local NAMES =
+		{ [ELWYNN] = "Elwynn Forest", [WESTFALL] = "Westfall", [DUSKWOOD] = "Duskwood", [MOONGLADE] = "Moonglade" }
 
 	-- The Journal's words, as far as the hint reads them: zone names and window labels.
 	local text = {
@@ -28,7 +29,8 @@ describe("the plain hint", function()
 		local listed = {}
 		for _, zone in ipairs(zones) do
 			listed[#listed + 1] = zone
-			index.zones[zone] = { species = { [FISH] = { gated = true, windows = {}, pool = pools and pools[zone] or false } } }
+			index.zones[zone] =
+				{ species = { [FISH] = { gated = true, windows = {}, pool = pools and pools[zone] or false } } }
 		end
 		table.sort(listed)
 		local windows
@@ -42,23 +44,33 @@ describe("the plain hint", function()
 		return index
 	end
 
-	it("reads windows, pools, the first two zones by skill base, the rest and their lowest skill (DATA-R112, LED-R141)", function()
-		local hint = ns.PlainHint(world({ DUSKWOOD, ELWYNN, WESTFALL }, { "night" }, { [DUSKWOOD] = true }), FISH, text)
+	it(
+		"reads windows, pools, the first two zones by skill base, the rest and their lowest skill (DATA-R112, LED-R141)",
+		function()
+			local hint =
+				ns.PlainHint(world({ DUSKWOOD, ELWYNN, WESTFALL }, { "night" }, { [DUSKWOOD] = true }), FISH, text)
 
-		assert.are.equal("night · pools · Elwynn Forest · Westfall +1 · skill ~25", hint)
-	end)
+			assert.are.equal("night · pools · Elwynn Forest · Westfall +1 · skill ~25", hint)
+		end
+	)
 
-	it('is the window part alone with no listed zones (LED-R141)', function()
+	it("is the window part alone with no listed zones (LED-R141)", function()
 		assert.are.equal("night", ns.PlainHint(world({}, { "night" }), FISH, text))
 	end)
 
-	it('reads "Any time" without element windows, joins several, and sorts zones without a skill base last (LED-R141)', function()
-		assert.are.equal("Any time · Duskwood · Moonglade · skill ~150", ns.PlainHint(world({ MOONGLADE, DUSKWOOD }), FISH, text))
-		assert.are.equal(
-			"day, summer · Moonglade",
-			ns.PlainHint(world({ MOONGLADE }, { "summer", "day" }), FISH, text)
-		)
-	end)
+	it(
+		'reads "Any time" without element windows, joins several, and sorts zones without a skill base last (LED-R141)',
+		function()
+			assert.are.equal(
+				"Any time · Duskwood · Moonglade · skill ~150",
+				ns.PlainHint(world({ MOONGLADE, DUSKWOOD }), FISH, text)
+			)
+			assert.are.equal(
+				"day, summer · Moonglade",
+				ns.PlainHint(world({ MOONGLADE }, { "summer", "day" }), FISH, text)
+			)
+		end
+	)
 
 	it("leaves the skill out when neither of the two zones has a skill base (LED-R141)", function()
 		assert.are.equal("Any time · Moonglade", ns.PlainHint(world({ MOONGLADE }), FISH, text))
@@ -83,22 +95,16 @@ describe("the Journal's search", function()
 		end
 	end
 	state.species[9] = { n = 1, zones = {} }
+	-- The Journal's words, as far as search reads them: zone and item names, "…" while unknown.
+	local names = {}
+	function names.Zone(_, zone)
+		return zoneNames[zone] or "…"
+	end
+	function names.Item(_, id)
+		return itemNames[id] or "…"
+	end
 	---@type LedgerJournalContext
-	local context = {
-		updating = false,
-		state = state,
-		world = world,
-		now = 0,
-		formatNumber = tostring,
-		text = {
-			Zone = function(_, zone)
-				return zoneNames[zone] or "…"
-			end,
-			Item = function(_, id)
-				return itemNames[id] or "…"
-			end,
-		},
-	}
+	local context = { updating = false, state = state, world = world, now = 0, formatNumber = tostring, text = names }
 
 	local function labels(results)
 		local list = {}

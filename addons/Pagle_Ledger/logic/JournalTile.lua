@@ -28,7 +28,8 @@ end
 ---@return LedgerZoneTile
 function ns.JournalZoneTile(zone, context)
 	local L = ns.L
-	local world, state = context.world --[[@as LedgerWorld]], context.state --[[@as LedgerState]]
+	local world = context.world --[[@as LedgerWorld]]
+	local state = context.state --[[@as LedgerState]]
 	---@type LedgerZoneTile
 	local tile = { name = context.text:Zone(zone), place = ns.JournalZonePlace(zone) }
 	if not world.zones[zone] then

@@ -12,19 +12,6 @@ local ns = select(2, ...)
 -- Tunables: plain hint zones (LED-R141).
 local HINT_ZONES = 2
 
--- The keys of a set, sorted.
----@generic K
----@param set table<K, any>
----@return K[]
-local function sortedKeys(set)
-	local keys = {}
-	for key in pairs(set or {}) do
-		keys[#keys + 1] = key
-	end
-	table.sort(keys)
-	return keys
-end
-
 --- Zones in tile order (LED-R131): by skill base, zones without one last, then by areaID. Sorts `zones` in place.
 ---@param zones integer[]
 ---@param skillBase { [integer]: integer }
@@ -47,7 +34,12 @@ end
 ---@param listing LedgerWorldSpecies?
 ---@return string[]
 local function elementWindows(listing)
-	return sortedKeys(listing and listing.elements)
+	local windows = {}
+	for window in pairs(listing and listing.elements or {}) do
+		windows[#windows + 1] = window
+	end
+	table.sort(windows)
+	return windows
 end
 
 --- The plain hint (DATA-R112, LED-R141), generated from the world index, not lore: the Species' element window labels
@@ -161,7 +153,8 @@ end
 ---@return LedgerBlock[]
 function ns.JournalSpeciesEntry(id, context, hint)
 	local L, text = ns.L, context.text
-	local state, world = context.state --[[@as LedgerState]], context.world --[[@as LedgerWorld]]
+	local state = context.state --[[@as LedgerState]]
+	local world = context.world --[[@as LedgerWorld]]
 	local species = state.species[id]
 	if not species then
 		---@type LedgerBlock[]
@@ -268,7 +261,9 @@ function ns.JournalSearch(query, context)
 		return nil
 	end
 	query = query:lower()
-	local text, world, state = context.text, context.world --[[@as LedgerWorld]], context.state --[[@as LedgerState]]
+	local text = context.text
+	local world = context.world --[[@as LedgerWorld]]
+	local state = context.state --[[@as LedgerState]]
 	local zones, fish = {}, {}
 	for _, zone in ipairs(world.charted) do
 		zones[zone] = text:Zone(zone)
@@ -321,7 +316,8 @@ end
 ---@return LedgerBlock[]
 local function waters(id, context)
 	local L, text = ns.L, context.text
-	local state, world = context.state --[[@as LedgerState]], context.world --[[@as LedgerWorld]]
+	local state = context.state --[[@as LedgerState]]
+	local world = context.world --[[@as LedgerWorld]]
 	local listing, species = world.species[id], state.species[id]
 	---@type LedgerBlock[]
 	local blocks = { { kind = "kicker", text = L.FISH_KICKER }, { kind = "title", text = L.FISH_TITLE } }
