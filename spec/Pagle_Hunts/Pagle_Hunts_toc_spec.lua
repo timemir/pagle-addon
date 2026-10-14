@@ -69,17 +69,19 @@ describe("Pagle_Hunts.toc", function()
 
 	it("splits its code into logic/ and adapter/, its strings in locale/ and only generated files in data/", function()
 		-- CORE-R7, CORE-R8; DATA-R75: the generator writes data/HuntList.lua (and, from the lore batch, data/Lore.lua).
-		local folders = {}
+		local generated = { ["data/HuntList.lua"] = true, ["data/Lore.lua"] = true }
+		local folders, handWrittenData = {}, {}
 		for _, file in ipairs(filesIn({ "lua" })) do
 			local folder = file:match("^([^/]+)/")
 			folders[folder] = true
-			if folder == "data" then
-				assert.is_truthy(({ ["data/HuntList.lua"] = true, ["data/Lore.lua"] = true })[file], file)
+			if folder == "data" and not generated[file] then
+				handWrittenData[#handWrittenData + 1] = file
 			end
 		end
 		folders.data = nil
 
 		assert.are.same({ adapter = true, locale = true, logic = true }, folders)
+		assert.are.same({}, handWrittenData)
 	end)
 
 	it(
@@ -99,11 +101,13 @@ describe("Pagle_Hunts.toc", function()
 			end
 
 			assert.is_true(huntList > at["locale/enUS.lua"])
+			local codeBefore = {}
 			for file, index in pairs(at) do
-				if file:match("^logic/") or file:match("^adapter/") then
-					assert.is_true(huntList < index, file)
+				if (file:match("^logic/") or file:match("^adapter/")) and index < huntList then
+					codeBefore[#codeBefore + 1] = file
 				end
 			end
+			assert.are.same({}, codeBefore)
 		end
 	)
 end)

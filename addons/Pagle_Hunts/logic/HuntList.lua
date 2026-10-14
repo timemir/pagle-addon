@@ -56,11 +56,14 @@ function ns.IsRetired(hunt, now)
 	return hunt.retired ~= nil and hunt.retired <= now
 end
 
+---@class PagleHuntsNS
+---@field huntList HuntListData? -- set by data\HuntList.lua (DATA-R93); nil until the TOC lists it
+
 ---@class HuntList
----@field private data HuntListData
----@field private L table
----@field private byId table<string, HuntDef>
----@field private setsById table<string, { id: string }>
+---@field data HuntListData        -- read through the methods below, never directly
+---@field L table
+---@field byId table<string, HuntDef>
+---@field setsById table<string, { id: string }>
 local HuntList = {}
 HuntList.__index = HuntList
 

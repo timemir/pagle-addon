@@ -1,8 +1,8 @@
 -- Loading Pagle_Hunts for its specs: over FakePagle (its catalogue, clock and Module registry) with the fixture Hunt
 -- list in place of the shipped one, and the fixture lore unless a spec asks for none (hunts.md › Data: "Tests inject
--- their own Hunt list and `since` dates"). Specs load this file with dofile:
+-- their own Hunt list and `since` dates"). Specs load this file with dofile (and the undefined-global suppression
+-- every dofile in spec/ carries), then call it:
 --
---   ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 --   local hunts = dofile("spec/Pagle_Hunts/support.lua")
 --   local loaded, fake = hunts.load()
 
