@@ -1,5 +1,5 @@
-"""The repo's own lore: data/lore/ledger.toml, the Ledger's first batch (DATA-R111), with its lore check on
-(DATA-R66, LED-R162)."""
+"""The repo's own lore (DATA-R111): data/lore/ledger.toml, the Ledger's first batch and its M4 titles and bindings,
+and data/lore/core.toml, Core's goods, each with its lore check on (DATA-R66, LED-R162)."""
 
 import csv
 import re
@@ -19,6 +19,33 @@ from pagle_data.lore import catalogue_ids, check_lore
 REPO = Path(__file__).resolve().parents[2]
 LEDGER_TOML = REPO / "data" / "lore" / "ledger.toml"
 
+# SHOP-R25: Core's nine goods at M4, by slot.
+CORE_GOODS = [
+    "core.toaststyle.timber",
+    "core.toaststyle.ripple",
+    "core.toaststyle.lanternglow",
+    "core.soundset.driftwood",
+    "core.soundset.gilded",
+    "core.crest.plain",
+    "core.crest.crest1",
+    "core.crest.crest2",
+    "core.crest.crest3",
+]
+# LED-R75: the title IDs, in its table's order; LED-R110: the bindings without their ledger.binding. prefix.
+LEVEL_TITLES = ["level1", "level10", "level20", "level30", "level40", "level50", "level60"]
+TITLES = [
+    *LEVEL_TITLES,
+    "prestige1",
+    "prestige5",
+    "prestige10",
+    "zonemaster",
+    "complete.ledger",
+    "complete.junk",
+    "complete.treasure",
+    "complete.trophy",
+]
+BINDINGS = ["field", "level10", "level20", "level30", "level40", "level50", "level60", "birch", "buckram", "sharkskin"]
+
 
 @cache
 def _layers() -> Layers:
@@ -37,10 +64,48 @@ def _zone_names() -> list[str]:
         return sorted({row["AreaName_lang"] for row in csv.DictReader(handle) if row["ParentAreaID"] == "0"})
 
 
-def test_the_ledger_s_lore_check_is_on() -> None:
-    # DATA-R66, LED-R162: the Ledger's lore check turns on in M3 with its first batch (DATA-R111).
+def test_the_ledger_s_and_core_s_lore_checks_are_on() -> None:
+    # DATA-R66, LED-R162: the Ledger's lore check turns on in M3 with its first batch (DATA-R111); DATA-R107: Core's
+    # in M4, with its goods.
     with (REPO / "data" / "checks.toml").open("rb") as handle:
-        assert tomllib.load(handle)["lore"] == ["ledger"]
+        assert tomllib.load(handle)["lore"] == ["ledger", "core"]
+
+
+def _without(lore_id: str, key: str) -> list[str]:
+    """What check_lore finds over the repo's lore, with both checks on, once key is deleted from lore_id's file."""
+    layers = _layers()
+    files = dict(layers.lore.files)
+    files[lore_id] = {name: text for name, text in files[lore_id].items() if name != key}
+    ids = catalogue_ids(layers.items, layers.item_layer.families)
+    problems = Problems()
+    check_lore(replace(layers.lore, files=files), ["ledger", "core"], ids, problems)
+    return problems.found
+
+
+def test_the_manifest_lists_core_s_nine_goods() -> None:
+    # DATA-R106, SHOP-R25: [core.good] with fields name and description and the nine good IDs, none with a placeholder.
+    manifest = _layers().lore.manifest["core"]
+    assert sorted(manifest) == ["good"]
+    assert manifest["good"].fields == ("name", "description")
+    assert list(manifest["good"].ids) == CORE_GOODS
+    assert all(not allowed for allowed in manifest["good"].ids.values())
+
+
+def test_core_s_lore_has_a_name_and_a_description_for_every_good() -> None:
+    # DATA-R107 passes (read_layers raises on any problem), and SHOP-R25: every good's name and description is lore.
+    core = _layers().lore.files["core"]
+    for good in CORE_GOODS:
+        assert core[f"good.{good}.name"].value.strip()
+        assert core[f"good.{good}.description"].value.strip()
+
+
+@pytest.mark.parametrize("good", CORE_GOODS)
+def test_deleting_any_one_good_s_name_fails_the_lore_check_naming_its_key(good: str) -> None:
+    # DATA-R107's missing, for the core lore ID: the manifest lists every good (DATA-R106).
+    key = f"good.{good}.name"
+    assert _without("core", key) == [
+        f"data/lore/core.toml: {key}: missing: manifest.toml lists it (DATA-R106, DATA-R107)"
+    ]
 
 
 def test_the_ledger_s_lore_passes_its_check() -> None:

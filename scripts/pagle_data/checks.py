@@ -11,9 +11,9 @@ CHECKS = "data/checks.toml"
 
 # The lore IDs (DATA-R100), one per addon with lore.
 LORE_IDS = ("core", "ledger", "hunts", "stats", "tackleboard")
-# The lore checks built so far (DATA-R107): the Ledger's from M3; Core's comes in M4, Hunts' in M5, Stats' in M6 and
-# the Tackle Board's in M7.
-BUILT_LORE_CHECKS = ("ledger",)
+# The lore checks built so far (DATA-R107): the Ledger's from M3 and Core's from M4; Hunts' comes in M5, Stats' in M6
+# and the Tackle Board's in M7.
+BUILT_LORE_CHECKS = ("ledger", "core")
 
 
 @dataclass(frozen=True)

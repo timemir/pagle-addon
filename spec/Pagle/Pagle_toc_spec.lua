@@ -13,4 +13,14 @@ describe("Pagle.toc", function()
 		assert.are.equal("PagleLog, PagleDB", fields.SavedVariables)
 		assert.is_nil(fields.SavedVariablesPerCharacter)
 	end)
+
+	it("lists its generated Lore.lua right after locale/enUS.lua, the file that creates ns.L (DATA-R75)", function()
+		local at = {}
+		for index, file in ipairs(addonFiles("Pagle")) do
+			at[file] = index
+		end
+
+		assert.is_number(at["data/Lore.lua"])
+		assert.are.equal(at["locale/enUS.lua"] + 1, at["data/Lore.lua"])
+	end)
 end)

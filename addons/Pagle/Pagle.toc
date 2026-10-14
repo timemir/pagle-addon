@@ -16,6 +16,7 @@ libs\AceDB-3.0\AceDB-3.0.lua
 data\Catalogue.lua
 
 locale\enUS.lua
+data\Lore.lua
 logic\Forever.lua
 logic\Secrets.lua
 logic\ReportOnce.lua
