@@ -95,3 +95,56 @@ describe("the Ledger's committed lore (DATA-R111, its M3 batch)", function()
 		end
 	end)
 end)
+
+describe("the Ledger's committed lore (DATA-R111, its M4 batch)", function()
+	-- LED-R75's title IDs and LED-R110's bindings, without their ledger.binding. prefix (LED-R160).
+	local TITLES = {
+		"level1",
+		"level10",
+		"level20",
+		"level30",
+		"level40",
+		"level50",
+		"level60",
+		"prestige1",
+		"prestige5",
+		"prestige10",
+		"zonemaster",
+		"complete.ledger",
+		"complete.junk",
+		"complete.treasure",
+		"complete.trophy",
+	}
+	local BINDINGS =
+		{ "field", "level10", "level20", "level30", "level40", "level50", "level60", "birch", "buckram", "sharkskin" }
+	local L
+
+	setup(function()
+		L = loadAddon("Pagle_Ledger", FOREVER_GLOBALS).ns.L
+	end)
+
+	---@param key string
+	local function hasText(key)
+		local text = L[key]
+		assert(type(text) == "string" and text:find("%S"), key .. " has no text")
+	end
+
+	it("has a text for each of the 15 titles, none of them Master Angler (LED-R75, LED-R160)", function()
+		for _, title in ipairs(TITLES) do
+			local key = ("title.%s.text"):format(title)
+			hasText(key)
+			assert(not L[key]:lower():find("master angler", 1, true), key .. " is Master Angler")
+		end
+	end)
+
+	it("keeps {zone} in the zonemaster title, filled at runtime (LED-R161, DATA-R108)", function()
+		assert.is_truthy(L["title.zonemaster.text"]:find("{zone}", 1, true))
+	end)
+
+	it("has a name and a description for each of the 10 bindings (LED-R110, LED-R160)", function()
+		for _, binding in ipairs(BINDINGS) do
+			hasText(("binding.%s.name"):format(binding))
+			hasText(("binding.%s.description"):format(binding))
+		end
+	end)
+end)

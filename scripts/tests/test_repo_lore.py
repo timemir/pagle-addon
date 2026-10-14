@@ -121,10 +121,9 @@ def test_the_ledger_s_lore_passes_its_check() -> None:
 
 
 def test_the_manifest_lists_the_ledger_s_four_shared_lines() -> None:
-    # LED-R160, LED-R162 (its M3 part): [ledger.line] with fields ["text"] and the four line IDs; title and binding
-    # enter in M4.
+    # LED-R160, LED-R162 (its M3 part): [ledger.line] with fields ["text"] and the four line IDs.
     manifest = _layers().lore.manifest["ledger"]
-    assert sorted(manifest) == ["line"]
+    assert sorted(manifest) == ["binding", "line", "title"]
     assert manifest["line"].fields == ("text",)
     assert sorted(manifest["line"].ids) == ["uncaughtjunk", "uncaughtlegend", "uncaughttreasure", "unchartedwaters"]
     assert all(not allowed for allowed in manifest["line"].ids.values())  # no placeholder (DATA-R108)
@@ -170,3 +169,85 @@ def test_no_riddle_holds_a_digit_or_a_zone_s_name(species: int) -> None:
     assert not re.search(r"\d", riddle), riddle
     named = [name for name in _zone_names() if re.search(rf"(?<!\w){re.escape(name)}(?!\w)", riddle, re.IGNORECASE)]
     assert named == [], riddle
+
+
+def test_the_generator_fails_on_a_deleted_good_name_and_names_the_key(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    # DATA-R107 for the core lore ID, through the generator itself (DATA-R63): nothing is written.
+    shutil.copytree(REPO / "data", tmp_path / "data")
+    core = tmp_path / "data" / "lore" / "core.toml"
+    text = core.read_text(encoding="utf-8")
+    name = 'name = "Ripple"\n'
+    assert name in text
+    core.write_text(text.replace(name, ""), encoding="utf-8")
+    code = main([], tmp_path)
+    out, err = capsys.readouterr()
+    assert code == 1
+    assert "data/lore/core.toml: good.core.toaststyle.ripple.name: missing" in out + err
+    assert not (tmp_path / "addons").exists()
+
+
+def test_the_manifest_lists_the_ledger_s_titles_and_bindings() -> None:
+    # LED-R160, LED-R162 (its M4 part): [ledger.title] with a text for each of LED-R75's title IDs, only zonemaster
+    # allowing {zone} (DATA-R108), and [ledger.binding] with a name and a description for each of LED-R110's goods.
+    manifest = _layers().lore.manifest["ledger"]
+    assert manifest["title"].fields == ("text",)
+    assert list(manifest["title"].ids) == TITLES
+    assert {id_: allowed for id_, allowed in manifest["title"].ids.items() if allowed} == {"zonemaster": {"zone"}}
+    assert manifest["binding"].fields == ("name", "description")
+    assert list(manifest["binding"].ids) == BINDINGS
+    assert all(not allowed for allowed in manifest["binding"].ids.values())
+
+
+def _ledger_text(key: str) -> str:
+    return _layers().lore.files["ledger"][key].value
+
+
+def test_the_ledger_s_lore_has_every_title_and_binding() -> None:
+    # DATA-R107 passes (read_layers raises on any problem); LED-R160: a text for each of the 15 titles, a name and a
+    # description for each of the 10 bindings.
+    for title in TITLES:
+        assert _ledger_text(f"title.{title}.text").strip()
+    for binding in BINDINGS:
+        assert _ledger_text(f"binding.{binding}.name").strip()
+        assert _ledger_text(f"binding.{binding}.description").strip()
+
+
+@pytest.mark.parametrize("title", TITLES)
+def test_deleting_any_one_title_s_text_fails_the_lore_check_naming_its_key(title: str) -> None:
+    # DATA-R107's missing: the manifest lists every title ID (DATA-R106, LED-R162).
+    key = f"title.{title}.text"
+    assert _without("ledger", key) == [
+        f"data/lore/ledger.toml: {key}: missing: manifest.toml lists it (DATA-R106, DATA-R107)"
+    ]
+
+
+def test_zone_in_a_title_other_than_zonemaster_is_a_placeholder_problem() -> None:
+    # DATA-R107's placeholder, DATA-R108: only zonemaster's manifest entry allows {zone}.
+    layers = _layers()
+    ledger = layers.lore.files["ledger"]
+    level10 = ledger["title.level10.text"]
+    files = layers.lore.files | {"ledger": ledger | {level10.key: replace(level10, value="Warden of {zone}")}}
+    ids = catalogue_ids(layers.items, layers.item_layer.families)
+    problems = Problems()
+    check_lore(replace(layers.lore, files=files), ["ledger", "core"], ids, problems)
+    assert problems.found == [
+        "data/lore/ledger.toml: title.level10.text: placeholder: { or } outside an allowed placeholder"
+        " (manifest.toml allows none here) (DATA-R107, DATA-R108)"
+    ]
+
+
+def test_the_zonemaster_title_keeps_its_zone_placeholder() -> None:
+    # DATA-R108, LED-R161: {zone} is filled with the zone's name at runtime.
+    assert "{zone}" in _ledger_text("title.zonemaster.text")
+
+
+@pytest.mark.parametrize("title", TITLES)
+def test_no_title_is_master_angler_and_no_level_title_is_angler(title: str) -> None:
+    # LED-R75: a title is never "Master Angler" (Forever's own Extravaganza title), and "Angler" is never a ladder
+    # rung.
+    text = _ledger_text(f"title.{title}.text")
+    assert "master angler" not in text.lower()
+    if title in LEVEL_TITLES:
+        assert not re.search(r"\bangler\b", text, re.IGNORECASE), text
