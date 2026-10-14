@@ -56,8 +56,8 @@ function ns.TimelineNow()
 end
 
 --- The timeline the left page of `place` draws (logic/Timeline.lua): the Board's, or a set's when the place has one
---- and isn't the Board (HNT-R66), at the grouping's time so it freezes with it (HNT-R43), with the saved "show
---- completed" filter (HNT-R82; while updating it hides nothing, HNT-R69).
+--- and isn't the Board (HNT-R66), at ns.TimelineNow() (frozen while the grouping is paused, HNT-R43), with the saved
+--- "show completed" filter (HNT-R82; while updating it hides nothing, HNT-R69).
 ---@param place BoardPlace
 ---@return HuntsTimeline
 function ns.BoardTimeline(place)
