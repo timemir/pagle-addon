@@ -399,9 +399,9 @@ describe("the Ledger's M4 live moments", function()
 			}, { size.rung, size.order, size.title, size.text, size.stamp, size.icon, size.cast, size.ruler })
 			assert.is_nil(size.coins)
 			-- Records are never in the celebrated set (LED-R84): the item beating it isn't noted anywhere in it.
-			for key, set in pairs(loaded.ns.db.global.celebrated) do
+			for _, set in pairs(loaded.ns.db.global.celebrated) do
 				if type(set) == "table" then
-					assert.is_nil(set[HUGE_PIKE], key)
+					assert.is_nil(set[HUGE_PIKE])
 				end
 			end
 		end

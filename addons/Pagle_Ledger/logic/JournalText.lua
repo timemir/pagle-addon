@@ -148,6 +148,14 @@ function ns.NewJournalText(client)
 	return setmetatable({ client = client, requested = {} }, Text)
 end
 
+--- The Journal's words for lore alone (`:Lore`, LED-R161), as the moments name titles (LED-R97): zone names from
+--- `areaName`, nothing else read.
+---@param areaName fun(areaID: integer): string? C_Map.GetAreaInfo
+---@return LedgerJournalText
+function ns.NewLoreText(areaName)
+	return setmetatable({ client = { AreaName = areaName }, requested = {} }, Text)
+end
+
 -- The realm's UTC offset now (LED-R126); UTC's while the realm clock is secret.
 ---@param client LedgerTextClient
 ---@param now integer

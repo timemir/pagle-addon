@@ -534,7 +534,7 @@ end
 ---@param outlets LedgerOutlets
 ---@return LedgerJournalText
 local function titleText(outlets)
-	return ns.NewJournalText({ AreaName = outlets.ZoneName } --[[@as LedgerTextClient]])
+	return ns.NewLoreText(outlets.ZoneName)
 end
 
 --- The names of title keys (LED-R75), in the order given, leaving out each key with no text (LED-R161).
@@ -566,8 +566,8 @@ local function carries(moment, achievement, kind, n)
 			end
 		end
 	elseif kind == "prestige" and moment.kind == "prestige" then
-		return achievement.rank --[[@as integer]]
-			>= n
+		local rank = achievement.rank --[[@as integer]]
+		return rank >= n
 	elseif kind == "zonemaster" and moment.kind == "zoneMaster" then
 		return achievement.zone == n
 	elseif kind == "legend" and moment.kind == "legend" then
