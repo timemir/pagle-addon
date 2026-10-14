@@ -1,0 +1,16 @@
+## Interface: 16001
+## AllowLoadGameType: camelot
+## Title: Pagle Stats
+## Notes: Pagle's Stats: your Sessions and lifetime numbers, Your odds and Dry spells, from your own Casts.
+## Group: Pagle
+## Category: Professions
+## Version: @project-version@
+## Dependencies: Pagle
+## X-Pagle-API: 1
+## SavedVariables: PagleStatsDB
+
+locale\enUS.lua
+logic\Data.lua
+logic\Module.lua
+logic\Seams.lua
+adapter\Stats.lua
