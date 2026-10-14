@@ -11,8 +11,8 @@ from pathlib import Path
 import pytest
 
 from pagle_data.errors import Problems
-from pagle_data.importer import FetchError, main, upsert
-from pagle_data.observed import Header, Report
+from pagle_data.importer import FetchError, imported, main, upsert
+from pagle_data.observed import Header, ObservedLayer, Report
 from pagle_data.report import join, observed_toml, parse_part
 from test_catch_lists import CATALOGUE, write_tree
 
@@ -111,6 +111,18 @@ build = 70338
 casts = 9
 away = 1
 """
+
+
+def test_reports_of_one_reporter_upsert_oldest_issue_first_whatever_order_they_are_given_in() -> None:
+    # DATA-R121: a new row replaces the stored row with its key, and the file records the latest header. Reports
+    # are upserted in ascending issue-number order, so the newer report (#50) wins over the older one (#40) even
+    # when #50 is named first.
+    older = parsed(part("I 6291 12 70338 2\nI 6303 297 70338 1\n"), (40,))
+    newer = parsed(part("I 6291 12 70338 5\n", data="0badf00d"), (50,))
+    stored = imported(ObservedLayer(), [newer, older]).reports[ALICE]
+    assert stored.issues == (40, 50)
+    assert stored.header is not None and stored.header.data == "0badf00d"
+    assert [(row.item, row.count) for row in stored.catches] == [(6291, 5), (6303, 1)]
 
 
 def test_an_upsert_into_no_stored_file_is_the_report_sorted() -> None:

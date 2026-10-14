@@ -98,9 +98,11 @@ def upsert(stored: Report | None, report: Report) -> Report:
 
 
 def imported(layer: ObservedLayer, reports: Iterable[Report]) -> ObservedLayer:
-    """The observed layer with each report upserted into its reporter's file, in order (DATA-R121)."""
+    """The observed layer with each report upserted into its reporter's file (DATA-R121), in ascending order of
+    their lowest issue number whatever order they come in, so a reporter's newer report replaces the older one's
+    rows and header."""
     files = dict(layer.reports)
-    for report in reports:
+    for report in sorted(reports, key=lambda report: min(report.issues, default=0)):
         files[report.key] = upsert(files.get(report.key), report)
     return replace(layer, reports=files)
 
