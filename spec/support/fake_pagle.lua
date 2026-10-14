@@ -56,6 +56,11 @@
 --- WhenIdle and Live.
 ---@field live fun(record: PagleRecord) Hands an entry the spec appended to fake.catchLog to the projections, as Core
 --- does with every entry it appends (LOG-R73); playCast and readSkill do it themselves.
+---@field prestige fun(): PaglePrestige What M:RecordPrestige() does, without a Module handle (LOG-R38): appends a P1
+--- for the logged-in character, one rank above the Prestiges in fake.catchLog, applies it live, then fires Prestige.
+--- Returns the record, read-only. Raises an error before login. A purchase is Core's own: fake.ns.RecordPurchase
+--- (LOG-R39). A spec puts either in a history with fake.catchLog:Append, or in a saved log with helpers.lua's
+--- prestigeEntry and purchaseEntry.
 ---@field readSkill fun(rank: integer, max: integer, mod: integer) Reads fishing skill as Core does after login: an
 --- S1 when rank or max changed, then SkillChanged; then fake.conditions takes the rank and modifier, firing
 --- ConditionsChanged({"skill"}) if either changed. Does nothing before login.
@@ -493,6 +498,11 @@ end)
 part(function(fake, _, ns, host)
 	ns.WireProjections(host)
 	fake.projections = ns.projections
+	-- Every entry handed over live reaches apply read-only, whichever part or wiring appended it (CORE-R18).
+	local live = fake.projections.Live
+	function fake.projections.Live(self, record)
+		live(self, readOnly(record))
+	end
 
 	local loginSeq
 	local login = fake.login
@@ -511,7 +521,7 @@ part(function(fake, _, ns, host)
 
 	-- Hands an entry the fake just appended to the projections (LOG-R73).
 	function fake.live(record)
-		fake.projections:Live(readOnly(record))
+		fake.projections:Live(record)
 	end
 end)
 
@@ -551,6 +561,22 @@ part(function(fake, Pagle, ns)
 		local conditions = copyConditions(fake.conditions)
 		conditions.skillRank, conditions.skillMod = rank, mod
 		fake.setConditions(conditions)
+	end
+end)
+
+-- Prestige and purchase entries (LOG-R38, LOG-R39), on Core's wiring over fake.catchLog, for the logged-in character
+-- at the fake's server time: M:RecordPrestige appends a real P1, applies it live and fires Prestige, as
+-- fake.prestige() does without a handle. A purchase has no Pagle or Module call; fake.ns.RecordPurchase is Core's own.
+part(function(fake, _, ns, host)
+	ns.WireLogEntries(host)
+	-- The record it returns is read-only, as every record a Module gets here (CORE-R18).
+	local ModuleHandle = ns.ModuleHandle
+	local recordPrestige = ModuleHandle.RecordPrestige
+	function ModuleHandle:RecordPrestige()
+		return readOnly(recordPrestige(self))
+	end
+	function fake.prestige()
+		return readOnly(ns.RecordPrestige())
 	end
 end)
 
@@ -846,6 +872,9 @@ function newFakePagle()
 		end,
 		catchLog = function()
 			return fake.catchLog
+		end,
+		character = function()
+			return Pagle.GetAngler().current
 		end,
 		fire = fake.fire,
 		listen = function(owner, event, fn)

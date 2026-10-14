@@ -744,6 +744,96 @@ describe("FakePagle", function()
 		end)
 	end)
 
+	describe("Prestige and purchase entries", function()
+		-- The Ledger registered on `fake`, its projection noting each apply ("<seq> <kind> <mode>") and each Prestige
+		-- event ("Prestige <rank>, writable <bool>") in `seen`, in order.
+		local function ledger(fake)
+			local seen = {}
+			local M = fake.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
+			M:NewProjection({
+				db = {},
+				rulesVersion = 1,
+				reset = function()
+					return {}
+				end,
+				apply = function(_, record, mode)
+					seen[#seen + 1] = record.seq .. " " .. record.kind .. " " .. mode
+				end,
+			})
+			fake.Pagle.RegisterCallback("Spec", "Prestige", function(_, record)
+				local writable = pcall(function()
+					record.rank = 9
+				end)
+				seen[#seen + 1] = ("Prestige %d, writable %s"):format(record.rank, tostring(writable))
+			end)
+			return M, seen
+		end
+
+		it(
+			"append a real P1 for M:RecordPrestige, rank 1 then 2, live before a read-only Prestige (LOG-R38, LOG-R73,"
+				.. " CORE-R18)",
+			function()
+				local fake = newFakePagle()
+				local M, seen = ledger(fake)
+				fake.login()
+				fake.enterWorld()
+
+				local first = M:RecordPrestige()
+				fake.prestige()
+
+				assert.are.same({ "P1|1|1791731700|0|1", "P1|1|1791731700|1|2" }, fake.catchLog.data.entries)
+				assert.are.same(
+					{ "1 prestige live", "Prestige 1, writable false", "2 prestige live", "Prestige 2, writable false" },
+					seen
+				)
+				assert.are.equal(1, first.rank)
+				assert.has_error(function()
+					first.rank = 3
+				end)
+			end
+		)
+
+		it("count the Prestiges in a history, as Core does (LOG-R38)", function()
+			local fake = newFakePagle()
+			fake.catchLog.data.characters[1] = { guid = PLAYER_GUID }
+			fake.catchLog:Append({ kind = "prestige", char = 1, time = 1791731000, rank = 1 })
+			fake.catchLog:Append({
+				kind = "purchase",
+				char = 1,
+				time = 1791731001,
+				good = "core.crest.otter",
+				price = 300,
+			})
+			fake.login()
+			fake.enterWorld()
+
+			assert.are.equal(2, fake.prestige().rank)
+		end)
+
+		it("raise an error for M:RecordPrestige before login, appending nothing (LOG-R38)", function()
+			local fake = newFakePagle()
+			local M = ledger(fake)
+
+			assert.has_error(function()
+				M:RecordPrestige()
+			end)
+			assert.are.same({}, fake.catchLog.data.entries)
+		end)
+
+		it("append a purchase only through Core's own ns.RecordPurchase, applied live (LOG-R39)", function()
+			local fake = newFakePagle()
+			local _, seen = ledger(fake)
+			fake.login()
+			fake.enterWorld()
+
+			fake.ns.RecordPurchase("core.toaststyle.ripple", 150)
+
+			assert.are.same({ "U1|1|1791731700|0|core.toaststyle.ripple|150" }, fake.catchLog.data.entries)
+			assert.are.same({ "1 purchase live" }, seen)
+			assert.is_nil(fake.Pagle.RecordPurchase)
+		end)
+	end)
+
 	describe("the Angler", function()
 		it("has the logged-in character current from login, before ModulesChanged (LOG-R1, LOG-R27)", function()
 			local fake = newFakePagle()
