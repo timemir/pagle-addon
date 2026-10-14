@@ -56,6 +56,11 @@
 --- WhenIdle and Live.
 ---@field live fun(record: PagleRecord) Hands an entry the spec appended to fake.catchLog to the projections, as Core
 --- does with every entry it appends (LOG-R73); playCast and readSkill do it themselves.
+---@field prestige fun(): PaglePrestige What M:RecordPrestige() does, without a Module handle (LOG-R38): appends a P1
+--- for the logged-in character, one rank above the Prestiges in fake.catchLog, applies it live, then fires Prestige.
+--- Returns the record, read-only. Raises an error before login. A purchase is Core's own: fake.ns.RecordPurchase
+--- (LOG-R39). A spec puts either in a history with fake.catchLog:Append, or in a saved log with helpers.lua's
+--- prestigeEntry and purchaseEntry.
 ---@field readSkill fun(rank: integer, max: integer, mod: integer) Reads fishing skill as Core does after login: an
 --- S1 when rank or max changed, then SkillChanged; then fake.conditions takes the rank and modifier, firing
 --- ConditionsChanged({"skill"}) if either changed. Does nothing before login.
@@ -73,7 +78,8 @@
 --- reports it and returns nothing.
 ---@field openedSettings string[] What each Pagle.OpenSettings opened: "root" or the topic (CORE-R43).
 ---@field menu fun(): PagleMenuEntry[] The compartment menu as it would open now, labels read (CORE-R50, CORE-R52);
---- each entry's onClick is what clicking it does. Its last two entries are the Curio Shop (disabled) and Settings.
+--- each entry's onClick is what clicking it does. Its last three entries are the Curio Shop (disabled), "Help chart
+--- the waters" (with " (N)" while Pagle.GetFieldReportCount() is above 0; it calls Pagle.OpenFieldReport) and Settings.
 ---@field coinReports { module: string, total: integer }[] Each M:ReportCoinsEarned Core accepted, in order, an
 --- unchanged total too (SHOP-R2).
 ---@field setSpent fun(spent: integer) Sets the Coins spent, as the Curio Shop will (M4): BalanceChanged fires if the
@@ -112,6 +118,11 @@
 --- adds entries for the P rows Pagle.GetFieldReportCount counts (REP-R22).
 ---@field fieldReportDB table PagleDB.global.projections.fieldReport (REP-R25); a spec may fill it before enterWorld,
 --- as a saved one.
+---@field setFieldReportCount fun(n: integer?) Makes Pagle.GetFieldReportCount return `n`, whatever the rows; nil goes
+--- back to the count Core's projection gives (REP-R26).
+---@field fieldReportsOpened PagleFieldReportView[] Each box Pagle.OpenFieldReport opened, in order: its message
+--- (REP-R41, REP-R42), or its parts and the issue form's URL (REP-R40). While restricted it opens none and prints
+--- REP-R44's line in `printed`.
 ---@field conditions ConditionsSnapshot The live conditions Pagle.GetConditions serves (without `restricted`, which
 --- follows setRestricted). Read it; change it with setConditions.
 ---@field setConditions fun(snapshot: ConditionsSnapshot) Replaces the live conditions and fires ConditionsChanged
@@ -452,17 +463,23 @@ part(function(fake, Pagle, ns)
 		commands:AddModules(fake.registry:Modules(), fake.report)
 	end)
 
-	local function openSettings()
-		Pagle.OpenSettings()
-	end
-	local settings = ns.SettingsMenuEntry(openSettings)
+	local core = {
+		settings = function()
+			Pagle.OpenSettings()
+		end,
+		report = function()
+			Pagle.OpenFieldReport()
+		end,
+	}
+	local settings = ns.SettingsMenuEntry(core.settings)
 	function fake.menu()
 		local shop = ns.CurioShopMenuEntry(Pagle.GetBalance(), breakUpLargeNumbers)
-		return ns.CompartmentMenu(fake.registry:Modules(), shop, settings, fake.securecall)
+		local report = ns.FieldReportMenuEntry(Pagle.GetFieldReportCount(), core.report)
+		return ns.CompartmentMenu(fake.registry:Modules(), shop, report, settings, fake.securecall)
 	end
 
 	function fake.slash(line)
-		commands:Run(line, openSettings, fake.securecall, fake.print)
+		commands:Run(line, core, fake.securecall, fake.print)
 	end
 end)
 
@@ -497,6 +514,11 @@ end)
 part(function(fake, _, ns, host)
 	ns.WireProjections(host)
 	fake.projections = ns.projections
+	-- Every entry handed over live reaches apply read-only, whichever part or wiring appended it (CORE-R18).
+	local live = fake.projections.Live
+	function fake.projections.Live(self, record)
+		live(self, readOnly(record))
+	end
 
 	local loginSeq
 	local login = fake.login
@@ -515,7 +537,7 @@ part(function(fake, _, ns, host)
 
 	-- Hands an entry the fake just appended to the projections (LOG-R73).
 	function fake.live(record)
-		fake.projections:Live(readOnly(record))
+		fake.projections:Live(record)
 	end
 end)
 
@@ -558,6 +580,22 @@ part(function(fake, Pagle, ns)
 	end
 end)
 
+-- Prestige and purchase entries (LOG-R38, LOG-R39), on Core's wiring over fake.catchLog, for the logged-in character
+-- at the fake's server time: M:RecordPrestige appends a real P1, applies it live and fires Prestige, as
+-- fake.prestige() does without a handle. A purchase has no Pagle or Module call; fake.ns.RecordPurchase is Core's own.
+part(function(fake, _, ns, host)
+	ns.WireLogEntries(host)
+	-- The record it returns is read-only, as every record a Module gets here (CORE-R18).
+	local ModuleHandle = ns.ModuleHandle
+	local recordPrestige = ModuleHandle.RecordPrestige
+	function ModuleHandle:RecordPrestige()
+		return readOnly(recordPrestige(self))
+	end
+	function fake.prestige()
+		return readOnly(ns.RecordPrestige())
+	end
+end)
+
 -- The catalogue (LOG-R55), on Core's real accessors over the generated catalogue or a spec's own. Each record
 -- they hand out is read-only (CORE-R18, DATA-R80).
 part(function(fake, Pagle, ns)
@@ -586,7 +624,7 @@ part(function(fake, Pagle, ns)
 			return ns.Catalogue[name]
 		end,
 	})
-	local _, count = ns.AddFieldReport({
+	local rows, count = ns.AddFieldReport({
 		projections = fake.projections,
 		db = fake.fieldReportDB,
 		catalogue = catalogue,
@@ -600,7 +638,42 @@ part(function(fake, Pagle, ns)
 			return fake.catchLog:Reverse("cast")
 		end,
 	})
-	Pagle.GetFieldReportCount = count
+	local setCount
+	function Pagle.GetFieldReportCount()
+		if setCount then
+			return setCount
+		end
+		return count()
+	end
+	function fake.setFieldReportCount(n)
+		setCount = n
+	end
+
+	-- The box (REP-R40–R44), on Core's real Pagle.OpenFieldReport: each opening's view, its text built now from the
+	-- rows above as Core's adapter builds it (the header's addon version reads "test", and no name is cached), lands
+	-- in fake.fieldReportsOpened; while restricted it prints REP-R44's line instead.
+	fake.fieldReportsOpened = {}
+	local noName = function()
+		return nil
+	end
+	Pagle.OpenFieldReport = ns.OpenFieldReportFunction({
+		isRestricted = function()
+			return Pagle.IsRestricted()
+		end,
+		print = fake.print,
+		rows = rows,
+		text = function(reportRows)
+			return ns.FieldReportParts(reportRows, {
+				addon = "test",
+				fingerprint = Pagle.CONTENT_FINGERPRINT,
+				locale = "enUS",
+				logId = fake.catchLog.data.logId or "",
+			}, { item = noName, area = noName })
+		end,
+		show = function(view)
+			fake.fieldReportsOpened[#fake.fieldReportsOpened + 1] = view
+		end,
+	})
 end)
 
 -- The live conditions (LOG-R45, LOG-R47). Pagle.GetConditions hands out fake.conditions, read-only, with the
@@ -641,14 +714,14 @@ part(function(fake, Pagle, ns)
 	end
 end)
 
--- Window forecasts (LOG-R50), on Core's real logic over the fake's catalogue: the realm's UTC offset comes from
--- fake.conditions' time and minute, and the events open now from fake.conditions.events, so setConditions moves the
--- clock and the calendar. Each Window is read-only.
+-- Window forecasts (LOG-R50), on Core's own Pagle.NextWindow body (ns.ForecastWindow) over the fake's catalogue: the
+-- realm's UTC offset comes from fake.conditions' time and minute (a nil minute is a secret clock), and the events
+-- open now from fake.conditions.events, so setConditions moves the clock and the calendar. Each Window is read-only.
+-- A spec Pagle.GetWindowSpec handed out goes in as its record, as Core takes its own (`#` sees nothing in a proxy).
 part(function(fake, Pagle, ns)
 	function Pagle.NextWindow(spec, fromTime)
-		local now = fake.conditions
-		local offset = ns.RealmUtcOffset(now.time, now.minute)
-		return readOnly(ns.NextWindow(spec, fromTime, offset, now.events, ns.Catalogue.GetEventRule))
+		spec = originalOf[spec] or spec
+		return readOnly(ns.ForecastWindow(spec, fromTime, fake.conditions, ns.Catalogue.GetEventRule))
 	end
 end)
 
@@ -850,6 +923,9 @@ function newFakePagle()
 		end,
 		catchLog = function()
 			return fake.catchLog
+		end,
+		character = function()
+			return Pagle.GetAngler().current
 		end,
 		fire = fake.fire,
 		listen = function(owner, event, fn)

@@ -206,10 +206,47 @@ describe("the Catch log codec", function()
 		}, records(catchLog, 0))
 	end)
 
+	it("round-trips a Prestige (LOG-R11, LOG-R16, LOG-R38, Entry formats)", function()
+		local catchLog = ns.OpenCatchLog(adaAndBramLog(), {})
+
+		catchLog:Append({ kind = "prestige", char = 1, time = 1791731682, rank = 2 })
+
+		assert.are.same({ "P1|1|1791731682|0|2" }, catchLog.data.entries)
+		assert.are.same({
+			{ seq = 1, id = ADA .. "-1791731682-0", kind = "prestige", char = 1, time = 1791731682, rank = 2 },
+		}, records(catchLog, 0))
+	end)
+
+	it("round-trips a purchase (LOG-R11, LOG-R16, LOG-R39, SHOP-R10, Entry formats)", function()
+		local catchLog = ns.OpenCatchLog(adaAndBramLog(), {})
+
+		catchLog:Append({ kind = "purchase", char = 2, time = 1791731683, good = "core.toaststyle.ripple", price = 150 })
+
+		assert.are.same({ "U1|2|1791731683|0|core.toaststyle.ripple|150" }, catchLog.data.entries)
+		assert.are.same({
+			{
+				seq = 1,
+				id = BRAM .. "-1791731683-0",
+				kind = "purchase",
+				char = 2,
+				time = 1791731683,
+				good = "core.toaststyle.ripple",
+				price = 150,
+			},
+		}, records(catchLog, 0))
+	end)
+
 	it("raises an error in the caller and appends nothing for a record it can't write (LOG-R16)", function()
 		local catchLog = ns.OpenCatchLog(adaAndBramLog(), {})
 		local unwritable = {
-			{ kind = "prestige", char = 1, time = 1791731680, rank = 1 }, -- not a kind M1 writes
+			{ kind = "module", char = 1, time = 1791731680 }, -- not a kind M4 writes (M7, LOG-R40)
+			{ kind = "prestige", char = 1, time = 1791731680, rank = 0 }, -- ranks start at 1
+			{ kind = "prestige", char = 1, time = 1791731680, rank = 1.5 },
+			{ kind = "purchase", char = 1, time = 1791731680, good = "core.toast style", price = 150 },
+			{ kind = "purchase", char = 1, time = 1791731680, good = "core.crest|x", price = 150 },
+			{ kind = "purchase", char = 1, time = 1791731680, good = "", price = 150 },
+			{ kind = "purchase", char = 1, time = 1791731680, good = "core.crest.otter", price = -5 },
+			{ kind = "purchase", char = 1, time = 1791731680, good = "core.crest.otter", price = "150" },
 			{ kind = "skill", char = 3, time = 1791731680, rank = 86, max = 150, mod = 0 }, -- no character 3
 			{ kind = "skill", char = 1, time = 1791731680.5, rank = 86, max = 150, mod = 0 },
 			{ kind = "build", char = 1, time = 1791731680, build = 70338, version = "1.60|1" },
@@ -234,8 +271,18 @@ end)
 
 describe("an entry the codec can't decode", function()
 	local undecodable = {
-		"P1|1|1791731700|0|1", -- a tag M1 doesn't read
+		"A1|1|1791731700|0|Ledger|note|x", -- a tag M4 doesn't read (M7, LOG-R40)
 		"C1|1|1791731700|0|c|494|1439|1|148|453|86|25|263|||6358x1|extra", -- one field too many
+		"P1|1|1791731700|0|", -- no rank
+		"P1|1|1791731700|0|0", -- ranks start at 1
+		"P1|1|1791731700|0|one",
+		"P1|1|1791731700|0|1|2",
+		"U1|1|1791731700|0|core.toast style|150", -- a good ID outside [%w_.]+
+		"U1|1|1791731700|0||150",
+		"U1|1|1791731700|0|core.crest.otter|lots", -- a price that isn't a number
+		"U1|1|1791731700|0|core.crest.otter|-5",
+		"U1|1|1791731700|0|core.crest.otter|1.5",
+		"U1|1|1791731700|0|core.crest.otter",
 		"S1|9|1791731700|0|86|150|0", -- no character 9
 		"S1|1|1791731700|0|86|max|0",
 		"C1|1|1791731700|0|c|494|1439|1|148|453|86|25|263|||6358",
@@ -284,6 +331,26 @@ describe("iterating the log", function()
 		assert.are.same({ 3, 4 }, seqs)
 		assert.are.equal(4, #records(catchLog, nil))
 		assert.are.same({}, records(catchLog, 4))
+	end)
+
+	it("yields Prestiges and purchases in seq order beside Casts, Skill Readings and builds (LOG-R42)", function()
+		local catchLog = ns.OpenCatchLog(
+			adaAndBramLog({
+				"B1|1|1791731680|0|70338|1.60.1",
+				"C1|1|1791731747|0|c|494|1439|1|148|453|86|25|263|||6358x1",
+				"P1|1|1791731750|0|1",
+				"S1|1|1791731751|0|87|150|0",
+				"U1|2|1791731752|0|core.crest.otter|300",
+				"C1|1|1791731760|0|g|494|1439|1|148|453|87|25|263|||",
+			}),
+			{}
+		)
+
+		local seen = {}
+		for _, record in ipairs(records(catchLog, 0)) do
+			seen[#seen + 1] = record.seq .. " " .. record.kind
+		end
+		assert.are.same({ "1 build", "2 cast", "3 prestige", "4 skill", "5 purchase", "6 cast" }, seen)
 	end)
 
 	it("stops at the log's length when called, never at entries appended meanwhile (LOG-R42)", function()

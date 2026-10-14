@@ -1,7 +1,8 @@
 ---@class PagleNS
 local ns = select(2, ...)
 
--- Core's SavedVariables, PagleLog and PagleDB (CORE-R5), and Pagle.IterateCatches (LOG-R42).
+-- Core's SavedVariables, PagleLog and PagleDB (CORE-R5), Pagle.IterateCatches (LOG-R42), and the Prestige and
+-- purchase entries (LOG-R38, LOG-R39).
 
 -- Off Forever, Core never creates the Pagle global (CORE-R4), so there is nothing to load.
 ---@class Pagle
@@ -26,10 +27,18 @@ function ns.OpenSavedVariables()
 end
 
 --- Walks the Catch log's entries with `seq > afterSeq` (0 if nil), up to its length now, in order, and yields each
---- as a typed record, decoded as the walk reaches it (LOG-R42). It yields Casts, Skill Readings and builds. An entry
+--- as a typed record, decoded as the walk reaches it (LOG-R42). It yields Casts, Skill Readings, Prestiges, builds and purchases. An entry
 --- that can't be decoded is skipped (LOG-R16).
 ---@param afterSeq integer?
 ---@return fun(): PagleRecord?
 function Pagle.IterateCatches(afterSeq)
 	return ns.catchLog:Iterate(afterSeq)
 end
+
+--- Payload of `Prestige`: the Prestige just appended (LOG-R38).
+---@alias PaglePrestigeHandler fun(event: "Prestige", record: PaglePrestige)
+
+--- `M:RecordPrestige()` on every Module handle, `ns.RecordPrestige()` and `ns.RecordPurchase(goodID, price)`, the
+--- Curio Shop's buy flow's only way to append a purchase (LOG-R38, LOG-R39): logic/Wiring.lua's, over
+--- adapter/Host.lua's host.
+ns.WireLogEntries(ns.host)

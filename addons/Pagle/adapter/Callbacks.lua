@@ -11,6 +11,7 @@ local Pagle = Pagle
 ---@alias PagleEvent
 ---| "RestrictionChanged" # PagleRestrictionChangedHandler
 ---| "SkillChanged" # PagleSkillChangedHandler
+---| "Prestige" # PaglePrestigeHandler
 ---| "ConditionsChanged" # PagleConditionsChangedHandler
 ---| "CastStarted" # PagleCastStartedHandler
 ---| "Catch" # PagleCatchHandler

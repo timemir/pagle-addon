@@ -123,7 +123,8 @@ function Settings.CreateElementInitializer(frameTemplate, data) end
 function CreateSettingsListSectionHeaderInitializer(name, tooltip) end
 
 ---@param name string
----@param buttonText string
+---@param buttonText string|fun(): string a function is called each time the row is shown
+--- (Blizzard_SettingControls.lua, SettingsButtonControlMixin:EvaluateName)
 ---@param buttonClick fun()
 ---@param tooltip string?
 ---@param addSearchTags boolean

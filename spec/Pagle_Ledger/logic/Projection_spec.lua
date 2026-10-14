@@ -7,6 +7,15 @@ describe("the Ledger's projection def", function()
 		GetItem = function()
 			return nil
 		end,
+		-- A world index charting no zone (LED-R10).
+		world = ns.NewWorld({
+			GetItem = function() end,
+			GetZones = function()
+				return {}
+			end,
+			GetArea = function() end,
+			GetZoneCatches = function() end,
+		}),
 	}
 
 	-- Outlets that note each call as "<call> <argument>" in `calls`.

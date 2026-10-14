@@ -98,9 +98,11 @@ def upsert(stored: Report | None, report: Report) -> Report:
 
 
 def imported(layer: ObservedLayer, reports: Iterable[Report]) -> ObservedLayer:
-    """The observed layer with each report upserted into its reporter's file, in order (DATA-R121)."""
+    """The observed layer with each report upserted into its reporter's file (DATA-R121), in ascending order of
+    their lowest issue number whatever order they come in, so a reporter's newer report replaces the older one's
+    rows and header."""
     files = dict(layer.reports)
-    for report in reports:
+    for report in sorted(reports, key=lambda report: min(report.issues, default=0)):
         files[report.key] = upsert(files.get(report.key), report)
     return replace(layer, reports=files)
 
@@ -274,8 +276,9 @@ def main(argv: Sequence[str], root: Path, fetch: Fetch = gh_issue_body) -> int:
             file=sys.stderr,
         )
 
-    closes = ", ".join(f"#{number}" for number in sorted(numbers))
-    print(f"{PROG}: for the PR's message (DATA-R120): Closes {closes}")
+    # One keyword per issue: GitHub links only the number right after "Closes".
+    closes = ", ".join(f"Closes #{number}" for number in sorted(numbers))
+    print(f"{PROG}: for the PR's message (DATA-R120): {closes}")
     print(
         f"{PROG}: commit the observed file, any data/forever/ and lore edits and the regenerated files together, in"
         " one PR (DATA-R120)"

@@ -10,6 +10,8 @@
 ---@field missingEvents table<string, true> Events this client doesn't know: registering one raises an error, as the
 --- client does. Specs add to it.
 ---@field frames table[] Every frame CreateFrame made, in order.
+---@field focus table? The edit box with the keyboard focus, if any: the one SetFocus was called on last, until its
+--- ClearFocus or another one's SetFocus.
 
 local widgets = {}
 
@@ -26,7 +28,6 @@ local LAYOUT_METHODS = {
 	"SetWordWrap",
 	"SetTextColor",
 	"SetFontObject",
-	"SetEnabled",
 	"SetAlpha",
 	"SetFrameStrata",
 	"EnableMouse",
@@ -38,6 +39,8 @@ local LAYOUT_METHODS = {
 	"ClearFocus",
 	"SetTextInsets",
 	"SetMaxLetters",
+	"SetMultiLine",
+	"SetCursorPosition",
 }
 
 --- A widget (frame, button or font string) that keeps what specs read back: its text, whether it's shown, its
@@ -104,10 +107,17 @@ function widgets.newWidget(kind, parent)
 	function widget:GetScript(script)
 		return self.scripts[script]
 	end
-	-- As a mouse click does: OnClick with the button, not down.
+	-- Whether it takes clicks: SetEnabled(false) greys a button, and a click on it does nothing.
+	function widget:SetEnabled(enabled)
+		self.enabled = not not enabled
+	end
+	function widget:IsEnabled()
+		return self.enabled ~= false
+	end
+	-- As a mouse click does: OnClick with the button, not down. A disabled button ignores it.
 	function widget:Click()
 		local onClick = self.scripts.OnClick
-		if onClick then
+		if onClick and self.enabled ~= false then
 			onClick(self, "LeftButton", false)
 		end
 	end
@@ -165,8 +175,54 @@ function widgets.newFrame(client, kind, parent)
 	function frame:UnregisterAllEvents()
 		self.events = {}
 	end
+	if frame.kind == "EditBox" then
+		widgets.editBox(client, frame)
+	end
 	client.frames[#client.frames + 1] = frame
 	return frame
+end
+
+--- Makes `box` an edit box, as the client's EditBox behaves for what Pagle calls: SetText runs OnTextChanged with
+--- userInput false and drops the selection; HighlightText keeps the selection in `highlight` ({ start, stop }, the
+--- client's defaults 0 and -1 for all of it); SetFocus and ClearFocus move `client.focus`, SetFocus running
+--- OnEditFocusGained. A spec plays the player with `box:Type(text)`: what the box holds after typing replaces its text
+--- and selection, and OnTextChanged runs with userInput true.
+---@param client FakeClient
+---@param box table
+function widgets.editBox(client, box)
+	local function run(script, ...)
+		local fn = box.scripts[script]
+		if fn then
+			fn(box, ...)
+		end
+	end
+	function box:SetText(text)
+		self.text = text
+		self.highlight = nil
+		run("OnTextChanged", false)
+	end
+	function box:HighlightText(start, stop)
+		self.highlight = { start or 0, stop or -1 }
+	end
+	function box:SetFocus()
+		if client.focus ~= self then
+			client.focus = self
+			run("OnEditFocusGained")
+		end
+	end
+	function box:ClearFocus()
+		if client.focus == self then
+			client.focus = nil
+		end
+	end
+	function box:HasFocus()
+		return client.focus == self
+	end
+	function box:Type(text)
+		self.text = text
+		self.highlight = nil
+		run("OnTextChanged", true)
+	end
 end
 
 return widgets

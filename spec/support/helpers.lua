@@ -10,6 +10,9 @@
 --   local loaded = loadCore(history(2))       -- Core over Ada's 2 old Casts, its server time on the client's clock
 --   enterWorld(loaded, 3)                     -- PLAYER_LOGIN, the first PLAYER_ENTERING_WORLD, then 3 frames
 --   catchOne(loaded)                          -- a caught Cast of one Oily Blackmouth (catchAndFlush: then a frame)
+--   local entries = history(2)                -- then add Ada's Prestige and purchase entries to that history:
+--   entries[#entries + 1] = prestigeEntry(SERVER_TIME - 3000, 1)
+--   entries[#entries + 1] = purchaseEntry(SERVER_TIME - 2000, "core.toaststyle.ripple", 150)
 
 --- FOREVER_GLOBALS plus `extra`, as loadAddon's globals.
 ---@param extra table<string, any>?
@@ -103,6 +106,23 @@ BUILD_ENTRY = ("B1|1|%d|0|70338|1.60.1"):format(SERVER_TIME - 5000)
 ---@return string
 function castEntry(time)
 	return ("C1|1|%d|0|c|494|1439|1|148|453|86|25|263|||6358x1"):format(time)
+end
+
+--- Ada's Prestige to `rank` at server time `time`, as a PagleLog entry (LOG-R38).
+---@param time integer
+---@param rank integer
+---@return string
+function prestigeEntry(time, rank)
+	return ("P1|1|%d|0|%d"):format(time, rank)
+end
+
+--- Ada's purchase of `good` for `price` Coins at server time `time`, as a PagleLog entry (LOG-R39).
+---@param time integer
+---@param good string
+---@param price integer
+---@return string
+function purchaseEntry(time, good, price)
+	return ("U1|1|%d|0|%s|%d"):format(time, good, price)
 end
 
 --- `n` of Ada's Casts, at `first` + 1, + 2, … (default SERVER_TIME - 90000, long ended), then BUILD_ENTRY.

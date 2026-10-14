@@ -44,8 +44,9 @@ stds.wow = {
 		"BreakUpLargeNumbers",
 		-- The Catch log (LOG-R11, LOG-R15).
 		"GetServerTime",
-		-- The runtime area index and zone resolution (LOG-R22, LOG-R23).
-		C_Map = { fields = { "GetAreaInfo", "GetBestMapForUnit" } },
+		-- The runtime area index and zone resolution (LOG-R22, LOG-R23); GetMapInfo: the Journal's continent tabs
+		-- (LED-R126).
+		C_Map = { fields = { "GetAreaInfo", "GetBestMapForUnit", "GetMapInfo" } },
 		"GetRealZoneText",
 		"GetSubZoneText",
 		"GetInstanceInfo",
@@ -58,8 +59,9 @@ stds.wow = {
 		"UnitChannelInfo",
 		"UnitCastingInfo",
 		"GetInventoryItemID",
-		-- GetItemNameByID: the Ledger's item names (LED-R97). GetItemInfo: the Field report's item names (REP-R30).
-		C_Item = { fields = { "GetItemInfoInstant", "GetItemNameByID", "GetItemInfo" } },
+		-- GetItemNameByID: the Ledger's item names (LED-R97, LED-R126), and RequestLoadItemDataByID for the Journal's
+		-- uncached ones (LED-R126). GetItemInfo: the Field report's item names (REP-R30).
+		C_Item = { fields = { "GetItemInfoInstant", "GetItemNameByID", "RequestLoadItemDataByID", "GetItemInfo" } },
 		C_Spell = { fields = { "GetSpellName" } },
 		-- QoL's Fishing stretch and its CVar lease (QOL-R61–R64).
 		"GetCVar",
@@ -78,7 +80,8 @@ stds.wow = {
 		"GetProfessions",
 		"GetProfessionInfo",
 		"GetBuildInfo",
-		-- The conditions snapshot and service (LOG-R20, LOG-R45–R47); it reads skill as above (LOG-R30).
+		-- The conditions snapshot and service (LOG-R20, LOG-R45–R47); it reads skill as above (LOG-R30). GetGameTime
+		-- also gives the Journal its realm offset (LED-R126).
 		"GetGameTime",
 		C_DateAndTime = { fields = { "GetCurrentCalendarTime" } },
 		C_Calendar = { fields = { "OpenCalendar", "GetMonthInfo", "GetNumDayEvents", "GetDayEvent" } },
@@ -235,6 +238,8 @@ local helperGlobals = {
 	"FISHING",
 	"BUILD_ENTRY",
 	"castEntry",
+	"prestigeEntry",
+	"purchaseEntry",
 	"history",
 	"loadCore",
 	"enterWorld",

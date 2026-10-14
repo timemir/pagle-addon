@@ -35,11 +35,11 @@ local ns = select(2, ...)
 ---@class PagleWindowSpec: PagleConditionSpec
 ---@field confirmed boolean
 
--- Whether a list holds a value. A nil or 0 value (secret or unresolved) is in no list (LOG-R48).
+--- Whether a list holds a value. A nil or 0 value (secret or unresolved) is in no list (LOG-R48).
 ---@param list integer[]
 ---@param value integer?
 ---@return boolean
-local function listHas(list, value)
+function ns.ListHas(list, value)
 	if value == nil or value == 0 then
 		return false
 	end
@@ -50,6 +50,7 @@ local function listHas(list, value)
 	end
 	return false
 end
+local listHas = ns.ListHas
 
 -- Whether any of a spec's IDs is in a snapshot's list of active ones. A nil list (secret) meets nothing (LOG-R48).
 ---@param ids integer[]

@@ -46,6 +46,7 @@ logic\Announcements.lua
 logic\Menu.lua
 logic\ReloadReminder.lua
 logic\FieldReportText.lua
+logic\FieldReportBox.lua
 logic\Wiring.lua
 adapter\Core.lua
 adapter\Callbacks.lua
@@ -77,4 +78,5 @@ adapter\Cards.lua
 adapter\Menu.lua
 adapter\ReloadReminder.lua
 adapter\FieldReportText.lua
+adapter\FieldReportBox.lua
 adapter\Login.lua

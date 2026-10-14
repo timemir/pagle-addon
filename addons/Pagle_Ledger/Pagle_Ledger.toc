@@ -17,11 +17,15 @@ logic\Progress.lua
 logic\Fold.lua
 logic\World.lua
 logic\Stars.lua
+logic\ZoneMastery.lua
 logic\Moments.lua
 logic\Done.lua
 logic\Projection.lua
 logic\InkBar.lua
+logic\JournalText.lua
 logic\Journal.lua
+logic\JournalAngler.lua
 adapter\JournalWidgets.lua
+adapter\JournalText.lua
 adapter\Journal.lua
 adapter\Ledger.lua

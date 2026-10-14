@@ -305,10 +305,13 @@ describe("FakePagle", function()
 				end
 				fake.menu()
 
-				assert.are.same(
-					{ "Hunts", "Input: Both", "Curio Shop  0 |TInterface\\MoneyFrame\\UI-GoldIcon:0|t", "Settings" },
-					labels
-				)
+				assert.are.same({
+					"Hunts",
+					"Input: Both",
+					"Curio Shop  0 |TInterface\\MoneyFrame\\UI-GoldIcon:0|t",
+					"Help chart the waters",
+					"Settings",
+				}, labels)
 				assert.are.equal(2, reads)
 			end
 		)
@@ -338,10 +341,12 @@ describe("FakePagle", function()
 					labels[i] = entry.label
 				end
 
-				assert.are.same(
-					{ "Input: Both", "Curio Shop  0 |TInterface\\MoneyFrame\\UI-GoldIcon:0|t", "Settings" },
-					labels
-				)
+				assert.are.same({
+					"Input: Both",
+					"Curio Shop  0 |TInterface\\MoneyFrame\\UI-GoldIcon:0|t",
+					"Help chart the waters",
+					"Settings",
+				}, labels)
 				assert.are.equal(1, #fake.reported)
 				assert.matches("no input yet", fake.reported[1], 1, true)
 			end
@@ -624,6 +629,7 @@ describe("FakePagle", function()
 				assert.are.same({
 					"Pagle commands:",
 					"/pagle settings: open Pagle's settings (also /pagle on its own)",
+					"/pagle report: open the Field report, to help chart the waters",
 					"/pagle help: list these commands",
 					"/pagle qol: cycle Input",
 				}, fake.printed)
@@ -670,7 +676,7 @@ describe("FakePagle", function()
 			fake.slash("help")
 
 			assert.are.same({ "Pagle: QoL's /pagle Report is skipped: Pagle reserves report" }, fake.reported)
-			assert.are.equal("/pagle qol: cycle Input", fake.printed[4])
+			assert.are.equal("/pagle qol: cycle Input", fake.printed[5])
 		end)
 	end)
 
@@ -741,6 +747,96 @@ describe("FakePagle", function()
 		assert.are.equal(PLAYER_GUID .. "-1791731681-0", records[1].id)
 		assert.has_error(function()
 			records[1].build = 1
+		end)
+	end)
+
+	describe("Prestige and purchase entries", function()
+		-- The Ledger registered on `fake`, its projection noting each apply ("<seq> <kind> <mode>") and each Prestige
+		-- event ("Prestige <rank>, writable <bool>") in `seen`, in order.
+		local function ledger(fake)
+			local seen = {}
+			local M = fake.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
+			M:NewProjection({
+				db = {},
+				rulesVersion = 1,
+				reset = function()
+					return {}
+				end,
+				apply = function(_, record, mode)
+					seen[#seen + 1] = record.seq .. " " .. record.kind .. " " .. mode
+				end,
+			})
+			fake.Pagle.RegisterCallback("Spec", "Prestige", function(_, record)
+				local writable = pcall(function()
+					record.rank = 9
+				end)
+				seen[#seen + 1] = ("Prestige %d, writable %s"):format(record.rank, tostring(writable))
+			end)
+			return M, seen
+		end
+
+		it(
+			"append a real P1 for M:RecordPrestige, rank 1 then 2, live before a read-only Prestige (LOG-R38, LOG-R73,"
+				.. " CORE-R18)",
+			function()
+				local fake = newFakePagle()
+				local M, seen = ledger(fake)
+				fake.login()
+				fake.enterWorld()
+
+				local first = M:RecordPrestige()
+				fake.prestige()
+
+				assert.are.same({ "P1|1|1791731700|0|1", "P1|1|1791731700|1|2" }, fake.catchLog.data.entries)
+				assert.are.same(
+					{ "1 prestige live", "Prestige 1, writable false", "2 prestige live", "Prestige 2, writable false" },
+					seen
+				)
+				assert.are.equal(1, first.rank)
+				assert.has_error(function()
+					first.rank = 3
+				end)
+			end
+		)
+
+		it("count the Prestiges in a history, as Core does (LOG-R38)", function()
+			local fake = newFakePagle()
+			fake.catchLog.data.characters[1] = { guid = PLAYER_GUID }
+			fake.catchLog:Append({ kind = "prestige", char = 1, time = 1791731000, rank = 1 })
+			fake.catchLog:Append({
+				kind = "purchase",
+				char = 1,
+				time = 1791731001,
+				good = "core.crest.otter",
+				price = 300,
+			})
+			fake.login()
+			fake.enterWorld()
+
+			assert.are.equal(2, fake.prestige().rank)
+		end)
+
+		it("raise an error for M:RecordPrestige before login, appending nothing (LOG-R38)", function()
+			local fake = newFakePagle()
+			local M = ledger(fake)
+
+			assert.has_error(function()
+				M:RecordPrestige()
+			end)
+			assert.are.same({}, fake.catchLog.data.entries)
+		end)
+
+		it("append a purchase only through Core's own ns.RecordPurchase, applied live (LOG-R39)", function()
+			local fake = newFakePagle()
+			local _, seen = ledger(fake)
+			fake.login()
+			fake.enterWorld()
+
+			fake.ns.RecordPurchase("core.toaststyle.ripple", 150)
+
+			assert.are.same({ "U1|1|1791731700|0|core.toaststyle.ripple|150" }, fake.catchLog.data.entries)
+			assert.are.same({ "1 purchase live" }, seen)
+			assert.is_nil(fake.Pagle.RecordPurchase)
 		end)
 	end)
 
@@ -909,7 +1005,7 @@ describe("FakePagle", function()
 		)
 	end)
 
-	describe("the Field report count", function()
+	describe("the Field report", function()
 		-- Darkshore (148) with The Long Wash (453), neither with a skill base, and no items: every item is Uncharted.
 		local function fixture()
 			local function area(parent)
@@ -951,6 +1047,102 @@ describe("FakePagle", function()
 			fake.fieldReportDB.projection = { build = 0, count = 5, I = {}, K = {} }
 
 			assert.are.equal(5, fake.Pagle.GetFieldReportCount())
+		end)
+
+		it("returns the count a spec sets, until it sets nil (REP-R26)", function()
+			local fake = newFakePagle()
+			fake.login()
+			fake.enterWorld()
+
+			fake.setFieldReportCount(3)
+			assert.are.equal(3, fake.Pagle.GetFieldReportCount())
+			fake.setFieldReportCount(nil)
+			assert.are.equal(0, fake.Pagle.GetFieldReportCount())
+		end)
+
+		it("shows on the compartment menu's entry, read as the menu opens (CORE-R50)", function()
+			local fake = newFakePagle()
+			fake.login()
+
+			fake.setFieldReportCount(3)
+			local menu = fake.menu()
+			assert.are.equal("Help chart the waters (3)", menu[#menu - 1].label)
+			fake.setFieldReportCount(0)
+			menu = fake.menu()
+			assert.are.equal("Help chart the waters", menu[#menu - 1].label)
+		end)
+
+		describe("the Field report box", function()
+			it(
+				"records each Pagle.OpenFieldReport a Module makes, with the report's parts and the URL (REP-R40, REP-R43)",
+				function()
+					local fake = newFakePagle()
+					fake.setCatalogue(fixture())
+					local loaded = fake.load("Pagle_QoL")
+					fake.login()
+					fake.enterWorld()
+					fake.playCast("caught", { { itemID = 9999, quantity = 1 } })
+
+					-- A Module reaches it through the read-only Pagle its globals hold.
+					loaded.env.Pagle.OpenFieldReport()
+
+					assert.are.equal(1, #fake.fieldReportsOpened)
+					local view = fake.fieldReportsOpened[1]
+					assert.is_nil(view.message)
+					assert.are.equal(1, #view.parts)
+					assert.truthy(view.parts[1]:find("^PAGLE%-REPORT 1\naddon test "))
+					assert.truthy(view.parts[1]:find("\nI 9999 453 ", 1, true))
+					assert.are.equal(
+						"https://github.com/timemir/wow-fish/issues/new?template=field-report.yml",
+						view.url
+					)
+					assert.are.same({}, fake.printed)
+				end
+			)
+
+			it(
+				"records REP-R41's line with no row, and REP-R42's while the projection updates (REP-R41, REP-R42)",
+				function()
+					local fake = newFakePagle()
+					fake.login()
+					fake.Pagle.OpenFieldReport()
+					fake.enterWorld()
+					fake.Pagle.OpenFieldReport()
+
+					assert.are.same({
+						{ message = "Updating… try again in a moment.", parts = {} },
+						{ message = "Nothing to report. Thanks for checking!", parts = {} },
+					}, fake.fieldReportsOpened)
+				end
+			)
+
+			it("opens from /pagle report and the compartment entry (CORE-R61, REP-R43)", function()
+				local fake = newFakePagle()
+				fake.login()
+				fake.enterWorld()
+
+				fake.slash("report")
+				local menu = fake.menu()
+				menu[#menu - 1].onClick()
+
+				assert.are.equal(2, #fake.fieldReportsOpened)
+			end)
+
+			it("prints REP-R44's line while restricted and records nothing (REP-R44, CORE-R33)", function()
+				local fake = newFakePagle()
+				fake.login()
+				fake.enterWorld()
+				fake.setRestricted(true)
+
+				fake.Pagle.OpenFieldReport()
+				fake.slash("report")
+
+				assert.are.same({}, fake.fieldReportsOpened)
+				assert.are.same({
+					"Pagle: the Field report opens after combat.",
+					"Pagle: the Field report opens after combat.",
+				}, fake.printed)
+			end)
 		end)
 	end)
 
@@ -1062,6 +1254,27 @@ describe("FakePagle", function()
 				assert.is_true(Pagle.NextWindow({ events = { 301 } }, fake.conditions.time).openNow)
 			end
 		)
+
+		it(
+			"forecasts only specs without time-based fields while the realm clock is secret (LOG-R49, LOG-R50)",
+			function()
+				local fake = newFakePagle()
+				local Pagle = fake.globals.Pagle
+				local secret = laterToday(fake, fake.conditions.minute)
+				secret.minute = nil
+				fake.setConditions(secret)
+				assert.is_nil(Pagle.NextWindow(DAY, fake.conditions.time))
+				assert.is_true(Pagle.NextWindow({ auras = { 1265220 } }, fake.conditions.time).onDemand)
+				assert.is_true(Pagle.NextWindow({}, fake.conditions.time).always)
+			end
+		)
+
+		it("forecasts a window spec Pagle.GetWindowSpec handed out, as Core does (LOG-R50, LOG-R55)", function()
+			local Pagle = newFakePagle().globals.Pagle
+
+			-- The generated day runs from 06:00 to midnight: open at realm 08:15.
+			assert.is_true(Pagle.NextWindow(Pagle.GetWindowSpec("day"), SERVER_TIME).openNow)
+		end)
 
 		it("hands out a read-only Window (CORE-R18)", function()
 			local window = newFakePagle().globals.Pagle.NextWindow(DAY, SERVER_TIME)

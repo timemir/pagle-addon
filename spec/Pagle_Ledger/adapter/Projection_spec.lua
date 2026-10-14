@@ -35,7 +35,7 @@ local function withHistory(fake)
 	fake.catchLog:Append(cast(T0 + 120, WESTFALL, { MACKEREL, OILY }))
 end
 
--- Ticket #99's fold, with the fake's GetItem, over every record in fake.catchLog: the state the projection must hold.
+-- Ticket #99's fold, with the fake's GetItem and the Ledger's world index, over every record in fake.catchLog: the state the projection must hold.
 ---@param fake FakePagle
 ---@param ns PagleLedgerNS
 local function foldOfLog(fake, ns)
