@@ -73,8 +73,32 @@ ns.L = {
 	JOURNAL_HOME = "Home",
 	JOURNAL_CRUMB_SEPARATOR = "❧",
 	JOURNAL_BACK = "☚ back",
-	-- Home's left page's title (LED-R130), all the placeholder Home draws until the Home ticket.
+	-- Zone Mastery's ranks, Visitor to Master (LED-R50), by rank.
+	ZONE_RANKS = { "Visitor", "Regular", "Local", "Expert", "Master" },
+
+	-- Home (LED-R130–R133, LED-R149). Its left page: kicker, title and the tiles' lines.
+	HOME_KICKER = "The Waters",
 	HOME_TITLE = "Where I've Fished",
+	HOME_TILE_RANK = "%s · %d%%",
+	HOME_TILE_NEW = "%d new!",
+	HOME_TILE_UNFISHED = "unfished",
+	HOME_TILE_UNFISHED_SKILL = "unfished · skill ~%d",
+	HOME_TILE_UNCHARTED = "uncharted waters",
+	-- Notes to self (LED-R133): the next rank ("{zone}: {rank}. {next requirement}"), new to find, the next star.
+	HOME_NOTES = "Notes to self",
+	HOME_NOTE_RANK = "%s: %s. %s",
+	HOME_NOTE_NEW = "%s: %d new to find",
+	HOME_NOTE_STAR = "%s: %d to ★★★",
+	HOME_NOTE_NONE = "Go fishing!",
+	-- Its bookplate summary and contents (LED-R132), and the brass plate (LED-R149, without the title in M3).
+	HOME_LEVEL = "Angler Level",
+	HOME_PERCENT = "%d%%",
+	HOME_CONTENTS = "In this Ledger",
+	HOME_TROPHY_ROOM = "The Trophy Room",
+	HOME_CURIOS = "Curios: junk, treasure, uncharted",
+	HOME_ANGLER = "The Angler: hands, titles, bindings",
+	HOME_COUNT = "%d / %d",
+	BRASS_PLATE = "Lv %d · Ledger %d%%",
 
 	-- Dates (LED-R126): "3 Mar", and "3 Mar 2025" outside the current realm year.
 	DATE_SHORT = "%d %s",
