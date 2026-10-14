@@ -4,7 +4,7 @@
 -- at the end and never change an entry already here.
 --
 -- Server times (DATA-R87: a date means 00:00 UTC that day): 1767225600 is 2026-01-01, 1780272000 is 2026-06-01 and
--- 1793750400 is 2026-11-04. FakePagle's clock starts at SERVER_TIME, 2026-10-11 15:15 UTC.
+-- 1793750400 is 2026-11-04 (1775001600 is 2026-04-01). FakePagle's clock starts at SERVER_TIME, 2026-10-11 15:15 UTC.
 
 if not Pagle then -- luacheck: read globals Pagle (CORE-R11: the one read of Core outside adapter/)
 	return
@@ -17,6 +17,9 @@ ns.huntList = {
 	sets = {
 		{ id = "fixture_dusk" },
 		{ id = "fixture_wagers" },
+		-- Set titles (HNT-R20): a set of two Hunts, and a set with a Retired Hunt and one added later (#186).
+		{ id = "fixture_pair" },
+		{ id = "fixture_tide" },
 	},
 	hunts = {
 		-- A natural Hunt: a Species and its window (DATA-R86).
@@ -79,6 +82,55 @@ ns.huntList = {
 			since = 1793750400,
 			species = 12238,
 			conditions = { time = { { 1320, 240 } } },
+			tiers = { 1, 5 },
+		},
+		-- fixture_pair, a set of exactly two Hunts (HNT-R20).
+		{
+			id = "fixture_eel",
+			set = "fixture_pair",
+			kind = "natural",
+			since = 1767225600,
+			species = 13757,
+			window = "day",
+			tiers = { 1, 10 },
+		},
+		{
+			id = "fixture_bass",
+			set = "fixture_pair",
+			kind = "natural",
+			since = 1767225600,
+			species = 13756,
+			window = "summer",
+			tiers = { 1, 10, 40 },
+		},
+		-- fixture_tide: one Hunt from 2026-01-01, one retired on 2026-06-01, and one added on 2026-04-01, after
+		-- the others' early tier-1 times in the set-title specs (HNT-R20, HNT-R197).
+		{
+			id = "fixture_squid",
+			set = "fixture_tide",
+			kind = "natural",
+			since = 1767225600,
+			species = 13755,
+			window = "winter",
+			tiers = { 1, 10 },
+		},
+		{
+			id = "fixture_tide_retired",
+			set = "fixture_tide",
+			kind = "natural",
+			since = 1767225600,
+			retired = 1780272000,
+			species = 13760,
+			window = "day",
+			tiers = { 1 },
+		},
+		{
+			id = "fixture_tide_late",
+			set = "fixture_tide",
+			kind = "natural",
+			since = 1775001600,
+			species = 13759,
+			window = "night",
 			tiers = { 1, 5 },
 		},
 	},

@@ -17,4 +17,5 @@ logic\HuntList.lua
 logic\Seams.lua
 logic\Qualify.lua
 logic\Waters.lua
+logic\Titles.lua
 adapter\Hunts.lua
