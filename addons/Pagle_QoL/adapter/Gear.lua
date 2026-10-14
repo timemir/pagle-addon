@@ -216,7 +216,6 @@ local function choose(setID)
 	local message = ns.SlotsMessage(freeSlots(), false, needPrevious)
 	if message then
 		print(message)
-		ns.Module:RefreshSetting("fishingSet") -- the dropdown shows the choice kept (QOL-R42, CORE-R42)
 		return
 	end
 	if needPrevious and ns.MaySavePrevious(ns.PoleInHand()) then
@@ -226,11 +225,12 @@ local function choose(setID)
 	ns.EvaluateFishingKey()
 end
 
---- The Fishing set dropdown's change: a set, or None (QOL-R40). Nothing changes while restricted (QOL-R41).
+--- The Fishing set dropdown's change: a set, or None (QOL-R40). Nothing changes while restricted (QOL-R41). A choice
+--- refused here leaves the choice kept, which the dropdown re-reads and shows once its own change returns (QOL-R42,
+--- SET-R62): Blizzard's setting tells its control after `set`, so QoL calls nothing of Settings itself (SET-R6).
 ---@param setID integer
 function ns.ChooseFishingSet(setID)
 	if not ns.CanEditGear() then
-		ns.Module:RefreshSetting("fishingSet") -- the dropdown shows the choice kept (QOL-R42, CORE-R42)
 		return
 	elseif setID == ns.NO_FISHING_SET then
 		choices()[UnitGUID("player")] = nil
@@ -242,7 +242,8 @@ end
 
 --- "Save what I'm wearing as my fishing set" (QOL-R41): the gear worn now goes into *Pagle Fishing*, created with
 --- the pole's icon (or the Fishing spell's) if it doesn't exist, and that set is chosen (QOL-R42). It checks the free
---- slots for both sets it may create first, so it creates all or nothing.
+--- slots for both sets it may create first, so it creates all or nothing. The Fishing set dropdown shows Pagle Fishing
+--- the next time the panel draws it (SET-R62): nothing of QoL's may make a shown control re-read (SET-R6).
 function ns.SaveFishingSet()
 	if not ns.CanEditGear() then
 		return
@@ -262,7 +263,6 @@ function ns.SaveFishingSet()
 	local setID = C_EquipmentSet.GetEquipmentSetID(ns.FISHING_SET_NAME)
 	if setID then
 		choose(setID)
-		ns.Module:RefreshSetting("fishingSet") -- the dropdown shows Pagle Fishing (QOL-R41, CORE-R42)
 	end
 end
 

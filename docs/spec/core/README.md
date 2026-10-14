@@ -99,7 +99,7 @@ Terms are used as `CONTEXT.md` defines them. Numbers live in each file's Tunable
   - On each page, Core's own rows come first. Each Module's rows follow, in `def.order`, under a header with its `def.title`. The header is left out when the Module's first row is a header of its own.
   - A page with no rows isn't registered: Fishing while QoL is off, or Trackers with no tracker Module on.
   - A setting's value lives in the Module's own DB, reached through the setting's `get` and `set`.
-  - A Module whose value changed outside the row (a choice it rejected or made itself) calls `M:RefreshSetting(id)`, naming one of its checkbox, slider or dropdown rows by `id`. The shown control re-reads `get`, and the rows under it re-read `isEnabled`. Before the page is registered it does nothing, as the page reads `get` when it is shown. An `id` none of the Module's value rows has, on any page, raises an error at the caller.
+  - A row reads `get` and `isEnabled` when the panel draws it and after a change through the row itself, which is when Blizzard's setting tells its control (SET-R61, SET-R62). A value that changed elsewhere (a choice the Module made itself) shows the next time the row is drawn. There is no call to make a shown row re-read: it would run Blizzard's Settings code from Pagle's, which taints the Settings list (SET-R6, [#246](https://github.com/timemir/wow-fish/issues/246)).
   - Setting ids are scoped per Module: an `id` is unique among one Module's rows on one topic page, and a `parent` names a row in the same Module's section of that page. Two Modules may use the same id (Stats and the Tackle Board both use `tracker`). `AddSetting` raises a Lua error for an id the Module already used on that page, or a `parent` that names none of its earlier rows there.
   - Look and Feel takes no rows. Core builds it from the goods registry ([wallet-and-shop.md](wallet-and-shop.md#ui)).
   - A slot's dropdown also appears beside the thing it changes. A slot in the "Announcements" category ends Core's rows on Announcements; a slot in the "Trackers" category ends its Module's rows on Trackers.
@@ -181,7 +181,6 @@ Grouped by topic; the rules live in the linked file.
 | `M:ReportCoinsEarned(total)`, `M:RegisterSlot(slot)`, `M:RegisterGood(good)`, `M:RefreshGoods()` | wallet-and-shop.md |
 | `M:RegisterTracker{ id, order, frame }` | here |
 | `M:AddSetting(topic, setting)` | here |
-| `M:RefreshSetting(id)` | here (CORE-R42) |
 
 ADR 0008 names the record call `Pagle.AppendRecord`; it lives on the handle so Core knows which Module wrote the record.
 
