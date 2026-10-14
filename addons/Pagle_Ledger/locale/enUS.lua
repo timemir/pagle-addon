@@ -17,6 +17,8 @@ ns.L = {
 
 	-- Names the client doesn't have (LED-R97, LED-R126).
 	ITEM_FALLBACK = "Item %d",
+	-- A Catch's size text (LED-R81): the Size band's name and the length in the Angler's unit, "Hefty · 13.5 in".
+	SIZE_TEXT = "%s · %s",
 	NAME_UNKNOWN = "…",
 	-- The tab of every continent but the Eastern Kingdoms and Kalimdor (LED-R126, LED-R130).
 	OTHER_WATERS = "Other waters",
