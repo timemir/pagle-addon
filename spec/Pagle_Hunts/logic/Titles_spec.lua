@@ -85,16 +85,22 @@ describe("Set titles", function()
 			assert.is_nil(state.sets.fixture_pair)
 		end)
 
-		it("are from a Catch only when the Cast just applied earned them; done's check marks one it finds late", function()
-			-- Never met when apply checks after every Cast; were it met, the title keeps its tier's time and date
-			-- but rides on no Cast, so it's raised as a retirement's is: summary-only, from done (HNT-R87).
-			local state = newState()
-			reach(state, "fixture_eel", { { FEB_1, day(2026, 2, 1) } })
-			reach(state, "fixture_bass", { { MAR_1, day(2026, 3, 1) } })
+		it(
+			"are from a Catch only when the Cast just applied earned them; done's check marks one it finds late",
+			function()
+				-- Never met when apply checks after every Cast; were it met, the title keeps its tier's time and date
+				-- but rides on no Cast, so it's raised as a retirement's is: summary-only, from done (HNT-R87).
+				local state = newState()
+				reach(state, "fixture_eel", { { FEB_1, day(2026, 2, 1) } })
+				reach(state, "fixture_bass", { { MAR_1, day(2026, 3, 1) } })
 
-			assert.are.same({ "fixture_pair" }, ns.CheckTitles(state, JUL_1))
-			assert.are.same({ earnedAt = MAR_1, date = day(2026, 3, 1), fromRetirement = true }, state.sets.fixture_pair)
-		end)
+				assert.are.same({ "fixture_pair" }, ns.CheckTitles(state, JUL_1))
+				assert.are.same(
+					{ earnedAt = MAR_1, date = day(2026, 3, 1), fromRetirement = true },
+					state.sets.fixture_pair
+				)
+			end
+		)
 
 		it("count a Retired Hunt done before it retired", function()
 			local state = newState()
@@ -102,7 +108,10 @@ describe("Set titles", function()
 			reach(state, "fixture_tide_retired", { { MAR_1, day(2026, 3, 1) } })
 
 			assert.are.same({ "fixture_tide" }, ns.CheckTitles(state, MAR_1, MAR_1))
-			assert.are.same({ earnedAt = MAR_1, date = day(2026, 3, 1), fromRetirement = false }, state.sets.fixture_tide)
+			assert.are.same(
+				{ earnedAt = MAR_1, date = day(2026, 3, 1), fromRetirement = false },
+				state.sets.fixture_tide
+			)
 		end)
 
 		it("are given in the list's set order when one check earns several", function()
@@ -139,7 +148,10 @@ describe("Set titles", function()
 			local state = tideAllButRetired()
 
 			assert.are.same({ "fixture_tide" }, ns.CheckTitles(state, JUN_1))
-			assert.are.same({ earnedAt = JUN_1, date = day(2026, 6, 1), fromRetirement = true }, state.sets.fixture_tide)
+			assert.are.same(
+				{ earnedAt = JUN_1, date = day(2026, 6, 1), fromRetirement = true },
+				state.sets.fixture_tide
+			)
 		end)
 
 		it("aren't found by a check before the retired date", function()
@@ -153,7 +165,10 @@ describe("Set titles", function()
 			local state = tideAllButRetired()
 
 			assert.are.same({ "fixture_tide" }, ns.CheckTitles(state, JUL_1, JUL_1))
-			assert.are.same({ earnedAt = JUN_1, date = day(2026, 6, 1), fromRetirement = true }, state.sets.fixture_tide)
+			assert.are.same(
+				{ earnedAt = JUN_1, date = day(2026, 6, 1), fromRetirement = true },
+				state.sets.fixture_tide
+			)
 		end)
 
 		it("need at least one Hunt of the set to exist: a set whose every Hunt retired undone earns nothing", function()
@@ -184,7 +199,10 @@ describe("Set titles", function()
 			assert.are.same({}, ns.CheckTitles(state, JUL_1, JUL_1))
 			assert.are.same({}, ns.CheckTitles(state, JUL_1))
 			assert.are.equal(earned, state.sets.fixture_tide)
-			assert.are.same({ earnedAt = MAR_1, date = day(2026, 3, 1), fromRetirement = false }, state.sets.fixture_tide)
+			assert.are.same(
+				{ earnedAt = MAR_1, date = day(2026, 3, 1), fromRetirement = false },
+				state.sets.fixture_tide
+			)
 		end)
 
 		it("delay a title not yet earned until they're done too", function()
