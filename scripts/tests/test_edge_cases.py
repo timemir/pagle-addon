@@ -6,9 +6,10 @@ from pathlib import Path
 
 import pytest
 
+from cli_fixture import run
 from observed_fixture import i_row, report
 from pools_fixture import POOLS
-from test_catch_lists import CATALOGUE, ITEMS, area_record, run, write_tree
+from test_catch_lists import CATALOGUE, ITEMS, area_record, write_tree
 from test_confirmed import ALICE
 
 # 30002 is in no layer but a report: an item the client saw that Pagle doesn't know.

@@ -109,12 +109,13 @@ def _parser() -> argparse.ArgumentParser:
     return parser
 
 
-def fail(prog: str, problems: Problems, undone: str) -> int:
+def fail(prog: str, problems: Iterable[str], undone: str) -> int:
     """Prints every problem (DATA-R63), then their count and what the run didn't do ("wrote nothing"); returns the
-    exit code, 1."""
-    for problem in problems.found:
+    exit code, 1. problems is a Problems or a DataError's list."""
+    found = list(problems)
+    for problem in found:
         print(f"{prog}: {problem}", file=sys.stderr)
-    print(f"{prog}: {len(problems.found)} problem(s); {undone}", file=sys.stderr)
+    print(f"{prog}: {len(found)} problem(s); {undone}", file=sys.stderr)
     return 1
 
 

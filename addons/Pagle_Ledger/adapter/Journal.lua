@@ -35,7 +35,8 @@ local SPINE_STRIPS, SPINE_STRIP_WIDTH = 6, 5
 ---@field close Button
 ---@field crumbs Frame                 -- the breadcrumbs' strip (LED-R125)
 ---@field crumbButtons LedgerJournalCrumbView[]
----@field search EditBox               -- the search box's place; ticket #142 makes it search (LED-R148)
+---@field search EditBox               -- the search box (LED-R148)
+---@field searchDrop LedgerJournalSearchDrop -- its results (adapter/JournalSearch.lua)
 ---@field back Button                  -- "☚ back", under the left page (LED-R125)
 ---@field left LedgerJournalPage
 ---@field right LedgerJournalPage
@@ -68,7 +69,16 @@ local function readContext()
 		now = GetServerTime(),
 		formatNumber = BreakUpLargeNumbers,
 		text = ns.journalText,
+		world = ns.world,
+		getItem = Pagle.GetItem,
+		angler = Pagle.GetAngler(),
 	}
+end
+
+--- What the spreads, and the search box, read now (LED-R122, LED-R123, LED-R148).
+---@return LedgerJournalContext
+function Journal.Context()
+	return readContext()
 end
 
 -- A thin rule in `color` along one edge of `frame`, `inset` in from it.
@@ -202,6 +212,7 @@ local function build(journal)
 	frame.search:SetScript("OnEscapePressed", function(self)
 		self:ClearFocus()
 	end)
+	frame.searchDrop = ns.AttachJournalSearch(journal, frame.search)
 
 	local back = textButton(frame, fonts.text, LOOK.red)
 	back:SetPoint("BOTTOMLEFT", MARGIN + 16, MARGIN + 8)
