@@ -21,8 +21,8 @@
 ---@field casting string? The spell the player is casting with a cast time; `UnitCastingInfo("player")` returns it.
 ---@field mainHand integer? The item ID in the main hand (slot 16).
 ---@field items table<integer, integer[]> `{ classID, subclassID }` per item ID, for `C_Item.GetItemInfoInstant`.
----@field itemNames table<integer, string> Each item's name, for `C_Item.GetItemNameByID`. Default none: no item
---- cached.
+---@field itemNames table<integer, string> Each item's name, for `C_Item.GetItemNameByID` and `C_Item.GetItemInfo`.
+--- Default none: no item cached.
 ---@field bindingCalls string[] Each override call, in order: "set <key> <action>" or "clear".
 ---@field overrideAction fun(key: string): string? The priority override on `key`, as `GetBindingAction` reads it.
 ---@field fireGameEvent fun(event: string, ...) Fires a WoW event the game raises on its own. `client.fire` unless a
@@ -138,6 +138,11 @@ return function(client, stubs)
 	end
 	-- The item's name once the client has it cached; nil for one it doesn't know (the Ledger falls back, LED-R97).
 	stubs.C_Item.GetItemNameByID = function(itemID)
+		return client.itemNames[itemID]
+	end
+	-- The item's name first, as GetItemInfo returns it once the client has the item cached (the Field report's
+	-- comments, REP-R30); nothing for one it doesn't know.
+	stubs.C_Item.GetItemInfo = function(itemID)
 		return client.itemNames[itemID]
 	end
 	stubs.GetCVar = function(name)
