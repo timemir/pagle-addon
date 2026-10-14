@@ -433,7 +433,7 @@ describe("scripts/read-wtf.lua", function()
 			}, { unpack(ledger, 1, 14) })
 		end)
 
-		it("prints the climb, Catch Milestones, Legends, records and titles, and --item's records (LED-R30–R85)", function()
+		it("prints the climb, milestones, Legends, records, --item's records and titles (LED-R30–R85)", function()
 			-- LED-R30, LED-R35: level 4 at rank 1 (above), peak level 60 once ranked. LED-R42: the 1,000 milestone.
 			-- LED-R63, LED-R80: the Legend's first Catch and its record on its items entry; 6303's record, and 6291 has
 			-- none. LOG-R67: band 3 is Hefty, band 4 Whopper. LED-R75, LED-R76: computed (peak 60's seven level
@@ -459,7 +459,7 @@ describe("scripts/read-wtf.lua", function()
 			}, section(out, "== Ledger M4"))
 		end)
 
-		it("prints the wallet projection, and a balance held at 0 while earned is below spent (SHOP-R11, SHOP-R12)", function()
+		it("prints the wallet projection and a balance held while earned < spent (SHOP-R11, SHOP-R12)", function()
 			-- 500 earned − (150 + 400) spent is −50: the balance shows 0, held (SHOP-R12). Each good counted once, the
 			-- wallet rules version 1 is Core's (wallet-and-shop.md › Data), and the projection is current (LOG-R72).
 			assert.are.same({
@@ -474,7 +474,7 @@ describe("scripts/read-wtf.lua", function()
 			}, section(out, "== Wallet"))
 		end)
 
-		it("prints each slot's equipped look, the goods cache and the length unit (SHOP-R26, SHOP-R32, LOG-R69)", function()
+		it("prints each slot's look, the goods cache and the length unit (SHOP-R26, SHOP-R32, LOG-R69)", function()
 			-- SHOP-R32: a slot with no stored pick shows its default; the slots are the cached goods' and the stored
 			-- picks'. SHOP-R26: 8 goods cached, two of them earned goods, one cached as earned. LOG-R69: "in" stored.
 			assert.are.same({
