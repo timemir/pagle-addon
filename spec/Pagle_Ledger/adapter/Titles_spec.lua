@@ -38,6 +38,32 @@ describe("the active title", function()
 		assert.are.equal("zonemaster:148", ns.db.profile.activeTitle)
 	end)
 
+	it("names every LED-R75 title from the committed lore batch (LED-R75, LED-R160, DATA-R111)", function()
+		local _, loaded = ledger()
+		local ns = loaded.ns
+		local keys = {
+			"title:level1",
+			"title:level10",
+			"title:level20",
+			"title:level30",
+			"title:level40",
+			"title:level50",
+			"title:level60",
+			"title:prestige1",
+			"title:prestige5",
+			"title:prestige10",
+			"title:complete.ledger",
+			"title:complete.junk",
+			"title:complete.treasure",
+			"title:complete.trophy",
+		}
+
+		for _, key in ipairs(keys) do
+			assert(ns.TitleName(key, ns.journalText), key .. " has no name")
+		end
+		assert.matches("^Warden of .+ Waters$", ns.TitleName("zonemaster:148", ns.journalText))
+	end)
+
 	it("takes a celebrated key as earned (LED-R76, LED-R77)", function()
 		local _, loaded = ledger()
 		local ns = loaded.ns
