@@ -40,7 +40,7 @@ local function fallbackWeekStart(api, now)
 	return realmMidnight(api, now) - (today - resetWeekday) % 7 * ns.DAY_SECONDS
 end
 
---- The seconds until the next reset from `call` (C_DateAndTime.GetSecondsUntilDailyReset or …WeeklyReset), or nil
+--- The seconds until the next reset from the C_DateAndTime call `name`, or nil
 --- when it is missing or answers nil or a value ≤ 0, so its boundary falls back (TKB-R11).
 ---@param api TackleResetAPI
 ---@param name "GetSecondsUntilDailyReset"|"GetSecondsUntilWeeklyReset"
