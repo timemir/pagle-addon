@@ -41,6 +41,9 @@ local EMPTY_Y = math.floor(CORK_HEIGHT * (0.5 - 0.44) + 0.5)
 ---@class TacklePinsFrame: Frame
 ---@field slots { expeditions: Frame[], notices: Frame[] }   -- one frame per pin, in board order (TKB-R101)
 
+---@class TackleUpdatingFrame: Frame
+---@field label FontString
+
 ---@class TackleBoardFrame: Frame
 ---@field close Button
 ---@field plaque TacklePlaqueView
@@ -49,7 +52,7 @@ local EMPTY_Y = math.floor(CORK_HEIGHT * (0.5 - 0.44) + 0.5)
 ---@field empty TackleSlipView                     -- the empty board's slip (TKB-R107)
 ---@field slipText FontString
 ---@field start TackleButtonView                   -- Start my board (TKB-R5)
----@field updating Frame                           -- "Updating…" over the cork (TKB-R108)
+---@field updating TackleUpdatingFrame             -- "Updating…" over the cork (TKB-R108)
 ---@field parts table<TackleBoardPart, Frame>      -- each part's frame, in its place
 
 --- The Tackle Board: its parts' renderers, and its frame once made.
@@ -70,9 +73,10 @@ function Board:RegisterPart(part, renderer)
 	self.parts:Register(part, renderer)
 end
 
---- Whether the projection is updating (TKB-R108): the pins disable every "take it down" while it is.
+--- Whether the projection is updating (TKB-R108): the pins disable every "take it down" while it is. Call it as
+--- `ns.board:IsUpdating()`.
 ---@return boolean
-function Board:IsUpdating()
+function Board.IsUpdating()
 	return ns.IsUpdating()
 end
 
@@ -127,7 +131,7 @@ end
 -- so the slips under it still show their tooltips.
 ---@param frame TackleBoardFrame
 local function buildUpdating(frame)
-	local cover = CreateFrame("Frame", nil, frame.cork)
+	local cover = CreateFrame("Frame", nil, frame.cork) --[[@as TackleUpdatingFrame]]
 	cover:SetAllPoints()
 	cover:SetFrameLevel(frame.cork:GetFrameLevel() + 20)
 	ns.BoardSolid(cover, ns.BOARD_LOOK.shade, "BACKGROUND", 0.3)
