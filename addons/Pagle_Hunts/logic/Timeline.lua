@@ -189,7 +189,7 @@ local function campEnds(spec, auraExpiry)
 end
 
 -- A row's bars and its note (HNT-R63): an aura-up Hunt's blue bar from the now line to the aura's expiry (or the
--- ruler's end); none for an On demand Hunt or one without a board spec; otherwise its spans, styled hatched, dashed
+-- ruler's end), unless it is short of skill; none for an On demand Hunt or one without a board spec; otherwise its spans, styled hatched, dashed
 -- when unconfirmed, pencil when short of skill (which wins), with an event the calendar shows open drawn from the now
 -- line when no span covers it; "out of season" for a season Hunt with no span.
 ---@param row HuntRow
@@ -202,7 +202,7 @@ local function barsOf(row, spec, ruler, input)
 	if not spec then
 		return {}, nil
 	end
-	if row.auraUp then
+	if row.auraUp and not row.short then
 		local ends = campEnds(spec, input.auraExpiry)
 		local to = ends and math.min(1, math.max(ruler.now, x(ruler, ends))) or 1
 		return { { from = ruler.now, to = to, style = "camp" } }, nil
