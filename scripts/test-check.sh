@@ -302,9 +302,10 @@ sed -i '1i colour = "red"' "$scratch/tree/data/observed/dev.toml"
 expect "an unknown key in dev.toml fails generator" generator "data/observed/dev.toml: unknown key 'colour'"
 
 copy
-# Switches the Ledger's lore check on (DATA-R66) and gives Raw Nightfin Snapper an 81-character riddle (DATA-R107).
-sed -i 's/^lore = \[\]$/lore = ["ledger"]/' "$scratch/tree/data/checks.toml"
-printf '\n[species.13759]\nriddle = "%s"\n' "$(head -c 81 /dev/zero | tr '\0' x)" >>"$scratch/tree/data/lore/ledger.toml"
+# With the Ledger's lore check on since #131 (DATA-R66), replaces Raw Nightfin Snapper's riddle, inside its table,
+# with an 81-character one (DATA-R107).
+sed -i "/^\[species\.13759\]/,/^\$/ s/^riddle = .*/riddle = \"$(head -c 81 /dev/zero | tr '\0' x)\"/" \
+	"$scratch/tree/data/lore/ledger.toml"
 expect "with the ledger lore check on, a riddle over 80 code points fails generator" generator \
 	"data/lore/ledger.toml: species.13759.riddle: length: 81 code points, over riddle's limit of 80"
 

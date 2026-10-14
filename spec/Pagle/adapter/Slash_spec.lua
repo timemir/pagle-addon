@@ -33,6 +33,28 @@ describe("/pagle", function()
 		assert.are.same({ "Pagle", "Pagle", "Pagle" }, openedNames(loaded))
 		assert.are.same({}, loaded.printed)
 	end)
+
+	it("opens the Field report box with /pagle report (CORE-R61, REP-R40)", function()
+		local loaded = loadCore()
+		enterWorld(loaded, 2)
+
+		pagle(loaded, " Report ")
+
+		assert.is_true(assert(loaded.ns.fieldReportBox):IsShown())
+		assert.are.same({}, openedNames(loaded))
+		assert.are.same({}, loaded.printed)
+	end)
+
+	it("prints REP-R44's line for /pagle report while restricted, opening nothing (REP-R44, CORE-R33)", function()
+		local loaded = loadCore()
+		enterWorld(loaded, 2)
+		setCombat(loaded, true)
+
+		pagle(loaded, "report")
+
+		assert.is_nil(loaded.ns.fieldReportBox)
+		assert.are.same({ "Pagle: the Field report opens after combat." }, loaded.printed)
+	end)
 end)
 
 -- Registers QoL (order 50), then Hunts (order 20), each with the slash entries given, and logs in.
@@ -47,6 +69,7 @@ end
 local HELP = {
 	"Pagle commands:",
 	"/pagle settings: open Pagle's settings (also /pagle on its own)",
+	"/pagle report: open the Field report, to help chart the waters",
 	"/pagle help: list these commands",
 	"/pagle hunts: open the Hunts board",
 	"/pagle qol: cycle Input",
@@ -71,8 +94,8 @@ describe("/pagle help", function()
 		assert.are.same({}, openedNames(loaded))
 	end)
 
-	for _, line in ipairs({ "shop", "report", "fly away", "HELP" }) do
-		it(("prints the help list for /pagle %s (CORE-R61, CORE-R62, roadmap M1)"):format(line), function()
+	for _, line in ipairs({ "shop", "fly away", "HELP" }) do
+		it(("prints the help list for /pagle %s (CORE-R61, CORE-R62, roadmap M1, M3)"):format(line), function()
 			local loaded = loadCore()
 			both(loaded)
 
@@ -188,7 +211,7 @@ describe("A Module's /pagle subcommand", function()
 
 		pagle(loaded, "qol")
 
-		assert.are.same({ HELP[1], HELP[2], HELP[3] }, loaded.printed)
+		assert.are.same({ HELP[1], HELP[2], HELP[3], HELP[4] }, loaded.printed)
 	end)
 end)
 

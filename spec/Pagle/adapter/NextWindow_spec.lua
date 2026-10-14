@@ -82,15 +82,39 @@ describe("Pagle.NextWindow", function()
 		assert.are.same({ openNow = true, confirmed = true }, Pagle.NextWindow({ events = { 324 } }, SERVER_TIME))
 	end)
 
-	it("forecasts nothing while the realm clock is secret: the offset can't be read (LOG-R49, CORE-R31)", function()
-		local Pagle = load({
-			issecretvalue = function(value)
-				return value == SECRET
-			end,
-			GetGameTime = function()
-				return SECRET, SECRET
-			end,
-		})
-		assert.is_nil(Pagle.NextWindow({ time = { { 1260, 360 } } }, SERVER_TIME))
+	describe("while the realm clock is secret (LOG-R49, CORE-R31)", function()
+		local function secretClock()
+			return load({
+				issecretvalue = function(value)
+					return value == SECRET
+				end,
+				GetGameTime = function()
+					return SECRET, SECRET
+				end,
+			})
+		end
+
+		it("forecasts nothing for a time-based spec: the offset can't be read (LOG-R50)", function()
+			local Pagle = secretClock()
+			assert.is_nil(Pagle.NextWindow({ time = { { 1260, 360 } } }, SERVER_TIME))
+			assert.is_nil(Pagle.NextWindow({ events = { 301 } }, SERVER_TIME))
+			assert.is_nil(Pagle.NextWindow({ season = { { from = { 6, 21 }, to = { 9, 22 } } } }, SERVER_TIME))
+		end)
+
+		it("still answers a spec without time-based fields, which needs no clock (LOG-R50)", function()
+			local Pagle = secretClock()
+			assert.are.same(
+				{ onDemand = true, confirmed = true },
+				Pagle.NextWindow({ auras = { 1265220 } }, SERVER_TIME)
+			)
+			assert.are.same({ always = true, confirmed = true }, Pagle.NextWindow({ areas = { 148 } }, SERVER_TIME))
+		end)
+
+		it("still raises an error for an invalid spec (LOG-R48)", function()
+			local Pagle = secretClock()
+			assert.error_matches(function()
+				Pagle.NextWindow({ time = { { 360, 360 } } }, SERVER_TIME)
+			end, "invalid condition spec: time[1] has from == to", 1, true)
+		end)
 	end)
 end)

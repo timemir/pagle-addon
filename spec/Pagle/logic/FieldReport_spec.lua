@@ -70,7 +70,8 @@ end
 local seq = 0
 
 -- A Cast record as the codec decodes it: caught by default, in Darkshore (148, subzone 0) at realm 08:15 on
--- 11 October 2026 with Fishing 86+25, no event or aura. `fields` overrides any of these, and `items` lists
+-- 11 October 2026 with Fishing 86+25, no event or aura. `fields` overrides any of these (`secretClock` leaves out
+-- the realm minute and date, as for a Cast recorded while the realm clock was secret), and `items` lists
 -- `{ itemID, quantity }`.
 local function cast(items, fields)
 	seq = seq + 1
@@ -84,8 +85,8 @@ local function cast(items, fields)
 		outcome = fields.outcome or (items and "caught" or "gotAway"),
 		conditions = {
 			time = 1791731000 + seq,
-			minute = fields.minute or 495,
-			date = { year = 2026, month = fields.month or 10, day = 11, weekday = 1 },
+			minute = not fields.secretClock and (fields.minute or 495) or nil,
+			date = not fields.secretClock and { year = 2026, month = fields.month or 10, day = 11, weekday = 1 } or nil,
 			zone = fields.zone or 148,
 			subzone = fields.subzone or 0,
 			skillRank = fields.skillRank == nil and 86 or fields.skillRank or nil,
@@ -254,6 +255,23 @@ describe("ns.NewFieldReport's I rows", function()
 		end
 		table.sort(keys)
 		assert.are.same({ "600/10x2", "600/11x1", "615/10x1" }, keys)
+	end)
+
+	it("make a timed row without t and m for a Cast with no realm minute, never a made-up time (REP-R20)", function()
+		local report, state = project({
+			cast({ { 9999, 1 } }, { secretClock = true }),
+			cast({ { 9999, 1 } }, { secretClock = true }),
+			cast({ { 9999, 1 } }, { minute = 0 }),
+		})
+
+		local rows = report.Rows(state)
+		table.sort(rows, function(a, b)
+			return (a.t or -1) < (b.t or -1)
+		end)
+		assert.are.same({
+			{ kind = "I", area = 148, item = 9999, build = 0, count = 2, auras = {}, events = {} },
+			{ kind = "I", area = 148, item = 9999, build = 0, count = 1, auras = {}, events = {}, t = 0, m = 10 },
+		}, rows)
 	end)
 
 	it("look an item up in its subzone's list, else its zone's, never another subzone's (REP-R10)", function()
