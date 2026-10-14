@@ -86,14 +86,14 @@ describe("Labels in realm time", function()
 	end
 
 	-- The margin label, the tracker label and the window line of a case, as one list.
-	local sources = {
+	local auraNames = {
 		AuraName = function(spellID)
 			return ({ [1280341] = "Fishing Rack" })[spellID]
 		end,
 	}
 	local function labels(c)
 		local margin, tracker = ns.HuntLabels(c)
-		return { margin, tracker, ns.HuntWindowLine(c, sources) }
+		return { margin, tracker, ns.HuntWindowLine(c, auraNames) }
 	end
 
 	describe("the margin and tracker labels (HNT-R51) and the window line (HNT-R52), row by row", function()
@@ -110,11 +110,11 @@ describe("Labels in realm time", function()
 		it("short of skill beyond the lure reach of 100: no lure sentence (HNT-R33, Tunables)", function()
 			local c = case({ group = "later", window = { opensAt = NOW + 37 * MINUTE }, need = 225, best = 124 })
 
-			assert.are.equal("Opens in 37m, at 08:52. Needs 225; my best is 124.", ns.HuntWindowLine(c, sources))
+			assert.are.equal("Opens in 37m, at 08:52. Needs 225; my best is 124.", ns.HuntWindowLine(c, auraNames))
 			c.best = 125
 			assert.are.equal(
 				"Opens in 37m, at 08:52. Needs 225; my best is 125. A lure gets me there.",
-				ns.HuntWindowLine(c, sources)
+				ns.HuntWindowLine(c, auraNames)
 			)
 		end)
 
@@ -136,13 +136,15 @@ describe("Labels in realm time", function()
 		end)
 
 		it("Now with aura up: up now / up now / Up now.", function()
-			local c = case({ group = "now", auraUp = true, window = { onDemand = true }, spec = { auras = { 1280341 } } })
+			local c =
+				case({ group = "now", auraUp = true, window = { onDemand = true }, spec = { auras = { 1280341 } } })
 
 			assert.are.same({ "up now", "up now", "Up now." }, labels(c))
 		end)
 
 		it("On demand: on demand, and the line names the spec's first aura", function()
-			local c = case({ group = "onDemand", window = { onDemand = true }, spec = { auras = { 1280341, 1280342 } } })
+			local c =
+				case({ group = "onDemand", window = { onDemand = true }, spec = { auras = { 1280341, 1280342 } } })
 
 			assert.are.same({ "on demand", "on demand", "Whenever I set up Fishing Rack." }, labels(c))
 		end)
@@ -150,7 +152,7 @@ describe("Labels in realm time", function()
 		it("On demand with an aura whose name the client hasn't given: …", function()
 			local c = case({ group = "onDemand", window = { onDemand = true }, spec = { auras = { 1280342 } } })
 
-			assert.are.equal("Whenever I set up ….", ns.HuntWindowLine(c, sources))
+			assert.are.equal("Whenever I set up ….", ns.HuntWindowLine(c, auraNames))
 		end)
 
 		it("Now, always: any time / any time / Open any time.", function()
@@ -174,7 +176,8 @@ describe("Labels in realm time", function()
 		end)
 
 		it("Now, closing within 7 days on another realm day: until Sat 16:00 / ends in 6d 7h", function()
-			local c = case({ group = "now", window = { openNow = true, closesAt = NOW + 6 * DAY + 7 * HOUR + 45 * MINUTE } })
+			local c =
+				case({ group = "now", window = { openNow = true, closesAt = NOW + 6 * DAY + 7 * HOUR + 45 * MINUTE } })
 
 			assert.are.same(
 				{ "until Sat 16:00", "ends in 6d 7h", "Open now. Closes in 6d 7h, at Sat 16:00." },
@@ -206,7 +209,7 @@ describe("Labels in realm time", function()
 			local late = snapshotAt(NOW, 23 * 60, 2026, 10, 11, 1)
 			local c = { group = "soon", window = { opensAt = NOW + 2 * HOUR }, now = NOW, snapshot = late }
 
-			assert.are.equal("Opens in 2h, at Mon 01:00.", ns.HuntWindowLine(c, sources))
+			assert.are.equal("Opens in 2h, at Mon 01:00.", ns.HuntWindowLine(c, auraNames))
 		end)
 
 		it("Later, opening within 7 days on the same realm day: 21:00 / Opens at 21:00.", function()
@@ -228,10 +231,7 @@ describe("Labels in realm time", function()
 		end)
 
 		it("Later with a nil result, or no board spec: no date known / No date known.", function()
-			assert.are.same(
-				{ "no date known", "no date known", "No date known." },
-				labels(case({ group = "later" }))
-			)
+			assert.are.same({ "no date known", "no date known", "No date known." }, labels(case({ group = "later" })))
 		end)
 	end)
 
@@ -256,8 +256,8 @@ describe("Labels in realm time", function()
 			end,
 			NextWindow = fake.Pagle.NextWindow,
 		}
-		local function line(spec, windowID, sources)
-			return loaded.ns.HuntConditionsLine(spec, windowID, NOW, SUNDAY, sources or names)
+		local function line(spec, windowID, stubbed)
+			return loaded.ns.HuntConditionsLine(spec, windowID, NOW, SUNDAY, stubbed or names)
 		end
 
 		it("reads Grouper by Moonlight's: Realm time 22:00–04:00 · In Darkshore", function()
@@ -273,7 +273,10 @@ describe("Labels in realm time", function()
 			assert.are.equal("Night 22:00–04:00", line(spec, "night"))
 			assert.are.equal("Day 06:00–00:00", line({ time = { { 360, 0 } } }, "day"))
 			assert.are.equal("Realm time 22:00–04:00", line(spec, nil))
-			assert.are.equal("Realm time 05:00–08:00, 18:00–21:00", line({ time = { { 300, 480 }, { 1080, 1260 } } }))
+			assert.are.equal(
+				"Realm time 05:00–08:00, 18:00–21:00",
+				line({ time = { { 300, 480 }, { 1080, 1260 } } })
+			)
 		end)
 
 		it("names a season window's season, and gives an imposed season its bare ranges", function()
@@ -297,7 +300,7 @@ describe("Labels in realm time", function()
 		it("forecasts an event open now from its closesAt: the opening after this one gives the schedule", function()
 			local closesAt = NOW + HOUR
 			local asked = {}
-			local sources = setmetatable({
+			local stubbed = setmetatable({
 				NextWindow = function(spec, fromTime)
 					asked[#asked + 1] = { spec.events[1], fromTime }
 					if fromTime == NOW then
@@ -309,31 +312,34 @@ describe("Labels in realm time", function()
 
 			assert.are.equal(
 				"Stranglethorn Fishing Extravaganza, Sundays 07:15 for 2h",
-				line({ events = { 301 } }, "event.301", sources)
+				line({ events = { 301 } }, "event.301", stubbed)
 			)
 			assert.are.same({ { 301, NOW }, { 301, closesAt } }, asked)
 		end)
 
 		it("shows only the name with no forecast", function()
-			local sources = setmetatable({
+			local stubbed = setmetatable({
 				NextWindow = function()
 					return nil
 				end,
 			}, { __index = names })
 
-			assert.are.equal("Stranglethorn Fishing Extravaganza", line({ events = { 301 } }, nil, sources))
+			assert.are.equal("Stranglethorn Fishing Extravaganza", line({ events = { 301 } }, nil, stubbed))
 		end)
 
 		it("reads an event the calendar doesn't list as a calendar event, and one not looked up yet as …", function()
-			local sources = setmetatable({
+			local stubbed = setmetatable({
 				NextWindow = function()
 					return nil
 				end,
 			}, { __index = names })
 
-			assert.are.equal("a calendar event", line({ events = { 999 } }, nil, sources))
-			assert.are.equal("…", line({ events = { 998 } }, nil, sources))
-			assert.are.equal("Stranglethorn Fishing Extravaganza or a calendar event", line({ events = { 301, 999 } }, nil, sources))
+			assert.are.equal("a calendar event", line({ events = { 999 } }, nil, stubbed))
+			assert.are.equal("…", line({ events = { 998 } }, nil, stubbed))
+			assert.are.equal(
+				"Stranglethorn Fishing Extravaganza or a calendar event",
+				line({ events = { 301, 999 } }, nil, stubbed)
+			)
 		end)
 
 		it("joins areas and auras with or, and says the lure and the skill in plain words", function()
@@ -344,26 +350,115 @@ describe("Labels in realm time", function()
 			assert.are.equal("Skill 150 or more (lures count)", line({ skill = { min = 150 } }))
 		end)
 
-		it("lists the fields in its order whatever the spec's: time, season, events, areas, auras, lure, skill", function()
-			local spec = {
-				skill = { min = 150 },
-				lure = true,
-				auras = { 1280341 },
-				areas = { 10 },
-				season = { { from = { 3, 20 }, to = { 9, 19 } } },
-				time = { { 0, 180 } },
-				confirmed = false,
-			}
+		it(
+			"lists the fields in its order whatever the spec's: time, season, events, areas, auras, lure, skill",
+			function()
+				local spec = {
+					skill = { min = 150 },
+					lure = true,
+					auras = { 1280341 },
+					areas = { 10 },
+					season = { { from = { 3, 20 }, to = { 9, 19 } } },
+					time = { { 0, 180 } },
+					confirmed = false,
+				}
 
-			assert.are.equal(
-				"Realm time 00:00–03:00 · 20 Mar – 19 Sep · In Duskwood · While Fishing Rack is up · With a lure on"
-					.. " · Skill 150 or more (lures count)",
-				line(spec)
-			)
-		end)
+				assert.are.equal(
+					"Realm time 00:00–03:00 · 20 Mar – 19 Sep · In Duskwood · While Fishing Rack is up · With a lure on"
+						.. " · Skill 150 or more (lures count)",
+					line(spec)
+				)
+			end
+		)
 
 		it("is nil for a Hunt without a board spec (HNT-R7)", function()
 			assert.is_nil(line(nil))
+		end)
+	end)
+
+	describe("target lines (HNT-R54) and icons (HNT-R55)", function()
+		local list = ns.hunts
+		local GREEN, BLUE = { r = 0.12, g = 1, b = 0 }, { r = 0, g = 0.44, b = 0.87 }
+		local itemNames = {}
+		local names = {
+			ItemName = function(itemID)
+				return itemNames[itemID]
+			end,
+			ItemIcon = function(itemID)
+				return 100000 + itemID
+			end,
+			BandName = function(band)
+				return ({ "Tiddler", "Typical", "Hefty", "Whopper", "Monster" })[band]
+			end,
+			QualityColor = function(quality)
+				return ({ [2] = GREEN, [3] = BLUE })[quality]
+			end,
+		}
+		before_each(function()
+			itemNames = {}
+		end)
+
+		it("reads a species target's item name, and … until it has loaded", function()
+			local snapper = list:Hunt("fixture_snapper")
+
+			assert.are.equal("…", ns.HuntTargetLine(snapper, list, names))
+			itemNames[13759] = "Raw Nightfin Snapper"
+			assert.are.equal("Raw Nightfin Snapper", ns.HuntTargetLine(snapper, list, names))
+		end)
+
+		it("joins a fixed class's member names with or, in ascending item ID order", function()
+			local oddity = list:Hunt("fixture_oddity")
+			itemNames[251524] = "Whimsyfin"
+
+			assert.are.equal("… or Whimsyfin", ns.HuntTargetLine(oddity, list, names))
+			itemNames[6522] = "Deviate Fish"
+			assert.are.equal("Deviate Fish or Whimsyfin", ns.HuntTargetLine(oddity, list, names))
+		end)
+
+		it("words the generated classes: uncommon-or-better, rare-or-better, any fish", function()
+			local function target(class)
+				return ns.HuntTargetLine({ class = class }, list, names)
+			end
+
+			assert.are.equal("Any uncommon-or-better Catch", target("quality.uncommon"))
+			assert.are.equal("Any rare-or-better Catch", target("quality.rare"))
+			assert.are.equal("Any fish", target("species.any"))
+		end)
+
+		it("adds a minBand's band name: , Hefty or better", function()
+			itemNames[6358] = "Oily Blackmouth"
+
+			assert.are.equal(
+				"Oily Blackmouth, Hefty or better",
+				ns.HuntTargetLine(list:Hunt("fixture_hefty_blackmouth"), list, names)
+			)
+			assert.are.equal(
+				"Any fish, Whopper or better",
+				ns.HuntTargetLine({ class = "species.any", minBand = 4 }, list, names)
+			)
+		end)
+
+		it("gives a species target its item's icon and a fixed class its first member's, untinted", function()
+			assert.are.same({ 113759 }, { ns.HuntIcon(list:Hunt("fixture_snapper"), list, names) })
+			assert.are.same({ 106522 }, { ns.HuntIcon(list:Hunt("fixture_oddity"), list, names) })
+		end)
+
+		it(
+			"gives a generated class Trade_Fishing, tinted uncommon or rare by ITEM_QUALITY_COLORS, any fish untinted",
+			function()
+				local function icon(class)
+					return { ns.HuntIcon({ class = class }, list, names) }
+				end
+
+				assert.are.same({ "Interface\\Icons\\Trade_Fishing", GREEN }, icon("quality.uncommon"))
+				assert.are.same({ "Interface\\Icons\\Trade_Fishing", BLUE }, icon("quality.rare"))
+				assert.are.same({ "Interface\\Icons\\Trade_Fishing" }, icon("species.any"))
+			end
+		)
+
+		it("gives a moment the qualifying Catch's item ID, or Trade_Fishing untinted with none (HNT-R86)", function()
+			assert.are.equal(13759, ns.HuntMomentIcon(13759))
+			assert.are.equal("Interface\\Icons\\Trade_Fishing", ns.HuntMomentIcon(nil))
 		end)
 	end)
 end)

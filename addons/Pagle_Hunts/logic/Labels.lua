@@ -186,10 +186,10 @@ local LURE_REACH = 100
 --- The names the labels read, each nil while the client hasn't given it: adapter/Names.lua builds them (ns.names).
 ---@class HuntNameSources
 ---@field ItemName fun(itemID: integer): string?            -- loaded with Item:CreateFromItemID (HNT-R54)
----@field ItemIcon fun(itemID: integer): (integer|string)?  -- C_Item.GetItemIconByID (HNT-R55)
+---@field ItemIcon fun(itemID: integer): integer|string|nil -- C_Item.GetItemIconByID (HNT-R55)
 ---@field AreaName fun(areaID: integer): string?            -- C_Map.GetAreaInfo (HNT-R53)
 ---@field AuraName fun(spellID: integer): string?           -- C_Spell.GetSpellName (HNT-R52, HNT-R53)
----@field EventName fun(eventID: integer): (string|false)?  -- the calendar's; false when not found, nil before (HNT-R53)
+---@field EventName fun(eventID: integer): string|false|nil -- the calendar's; false when not found, nil before (HNT-R53)
 ---@field BandName fun(band: integer): string?              -- Pagle.SIZE_BANDS[band].name (HNT-R54)
 ---@field QualityColor fun(quality: integer): table?        -- ITEM_QUALITY_COLORS[quality] (HNT-R55)
 ---@field NextWindow fun(spec: table, fromTime: integer): Window? -- Pagle.NextWindow (HNT-R53)
@@ -456,4 +456,101 @@ function ns.HuntConditionsLine(spec, windowID, now, snapshot, sources)
 		parts[#parts + 1] = L.CONDITION_SKILL:format(spec.skill.min)
 	end
 	return table.concat(parts, L.JOIN_FIELDS)
+end
+
+-- The generated classes' target lines and icon tints (HNT-R54, HNT-R55; DATA-R91): the qualities of
+-- ITEM_QUALITY_COLORS, none for any fish.
+local GENERATED = {
+	["quality.uncommon"] = { text = "TARGET_UNCOMMON", quality = 2 },
+	["quality.rare"] = { text = "TARGET_RARE", quality = 3 },
+	["species.any"] = { text = "TARGET_ANY" },
+}
+local TRADE_FISHING = "Interface\\Icons\\Trade_Fishing"
+
+-- A fixed class's members in ascending item ID order: the list holds them as a set (DATA-R93), and the target line
+-- and the icon need one order ("first member", HNT-R55).
+---@param hunt HuntDef
+---@param list HuntList
+---@return integer[]
+local function membersOf(hunt, list)
+	local members = {}
+	for itemID in pairs(list:Class(hunt.class) or {}) do
+		members[#members + 1] = itemID
+	end
+	table.sort(members)
+	return members
+end
+
+--- A Hunt's target line (HNT-R54): a `species` target's item name; a fixed class's member names joined with " or ";
+--- a generated class's words. A name not loaded yet reads "…". A `minBand` adds ", {band name} or better".
+---@param hunt HuntDef
+---@param list HuntList for a fixed class's members
+---@param sources HuntNameSources
+---@return string
+function ns.HuntTargetLine(hunt, list, sources)
+	local L = ns.L
+	local function itemName(itemID)
+		return sources.ItemName(itemID) or L.NAME_UNKNOWN
+	end
+	local line
+	if hunt.species then
+		line = itemName(hunt.species)
+	elseif GENERATED[hunt.class] then
+		line = L[GENERATED[hunt.class].text]
+	else
+		line = joined(membersOf(hunt, list), itemName, L.JOIN_OR)
+	end
+	if hunt.minBand then
+		line = L.TARGET_MIN_BAND:format(line, sources.BandName(hunt.minBand) or L.NAME_UNKNOWN)
+	end
+	return line
+end
+
+--- A Hunt's icon and its tint (HNT-R55): a `species` target's item icon; a fixed class's first member's; a generated
+--- class's Trade_Fishing, tinted with ITEM_QUALITY_COLORS[2] for `quality.uncommon` and [3] for `quality.rare`.
+--- The board's sepia tint on item icons is the board's (ticket #191).
+---@param hunt HuntDef
+---@param list HuntList for a fixed class's members
+---@param sources HuntNameSources
+---@return integer|string? icon
+---@return table? tint a color with r, g and b; nil for none
+function ns.HuntIcon(hunt, list, sources)
+	if hunt.species then
+		return sources.ItemIcon(hunt.species)
+	end
+	local generated = GENERATED[hunt.class]
+	if generated then
+		if generated.quality then
+			return TRADE_FISHING, sources.QualityColor(generated.quality)
+		end
+		return TRADE_FISHING
+	end
+	local first = membersOf(hunt, list)[1]
+	if first then
+		return sources.ItemIcon(first)
+	end
+	return TRADE_FISHING
+end
+
+--- The calendar event IDs Hunts' specs name, as a set (HNT-R53's lookup): an imposed Hunt's `conditions.events`
+--- and a natural Hunt's window spec's.
+---@param hunts HuntDef[]
+---@param windowSpec fun(windowID: string): table? Pagle.GetWindowSpec
+---@return table<integer, true>
+function ns.HuntEventIDs(hunts, windowSpec)
+	local ids = {}
+	for _, hunt in ipairs(hunts) do
+		local spec = hunt.conditions or (hunt.window and windowSpec(hunt.window))
+		for _, eventID in ipairs(spec and spec.events or {}) do
+			ids[eventID] = true
+		end
+	end
+	return ids
+end
+
+--- A Hunt moment's icon (HNT-R55, HNT-R86): the qualifying Catch's item ID, or Trade_Fishing untinted with none.
+---@param itemID integer?
+---@return integer|string
+function ns.HuntMomentIcon(itemID)
+	return itemID or TRADE_FISHING
 end

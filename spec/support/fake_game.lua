@@ -25,6 +25,11 @@
 --- Default none: no item cached.
 ---@field itemRequests integer[] Each `C_Item.RequestLoadItemDataByID` call's item ID, in order. The client loads
 --- nothing on its own: a spec sets `itemNames` and fires GET_ITEM_INFO_RECEIVED itself.
+---@field itemIcons table<integer, integer|string> Each item's icon, for `C_Item.GetItemIconByID`. Default none.
+---@field itemLoads table<integer, function[]> The `Item:CreateFromItemID(id):ContinueOnItemLoad` callbacks waiting
+--- for each item not in `itemNames`, in order.
+---@field loadItem fun(itemID: integer, name: string) The client loads an item: it goes into `itemNames`, and each
+--- callback waiting for it runs, in order.
 ---@field bindingCalls string[] Each override call, in order: "set <key> <action>" or "clear".
 ---@field overrideAction fun(key: string): string? The priority override on `key`, as `GetBindingAction` reads it.
 ---@field fireGameEvent fun(event: string, ...) Fires a WoW event the game raises on its own. `client.fire` unless a
@@ -60,6 +65,7 @@ return function(client, stubs)
 	client.items = { [6256] = { 2, 20 }, [25] = { 2, 7 } }
 	client.itemNames = {}
 	client.itemRequests = {}
+	client.itemIcons, client.itemLoads = {}, {}
 	client.fireGameEvent = client.fire
 
 	-- Override calls are protected: in combat lockdown the client blocks them (ADDON_ACTION_BLOCKED). Here they
@@ -151,6 +157,43 @@ return function(client, stubs)
 	stubs.C_Item.GetItemInfo = function(itemID)
 		return client.itemNames[itemID]
 	end
+	-- The item's icon from client.itemIcons, cached or not, as the client answers from its item data (HNT-R55).
+	stubs.C_Item.GetItemIconByID = function(itemID)
+		return client.itemIcons[itemID]
+	end
+	-- ItemMixin's loader (Blizzard_ObjectAPI's Item.lua): ContinueOnItemLoad runs the callback at once for an item in
+	-- client.itemNames, else when client.loadItem loads it (HNT-R54).
+	stubs.Item = {
+		CreateFromItemID = function(_, itemID)
+			return {
+				ContinueOnItemLoad = function(_, callback)
+					if client.itemNames[itemID] then
+						callback()
+						return
+					end
+					client.itemLoads[itemID] = client.itemLoads[itemID] or {}
+					table.insert(client.itemLoads[itemID], callback)
+				end,
+			}
+		end,
+	}
+	function client.loadItem(itemID, name)
+		client.itemNames[itemID] = name
+		local waiting = client.itemLoads[itemID] or {}
+		client.itemLoads[itemID] = nil
+		for _, callback in ipairs(waiting) do
+			callback()
+		end
+	end
+	-- Blizzard_Colors' quality colors, by Enum.ItemQuality, as the client's defaults (HNT-R55).
+	stubs.ITEM_QUALITY_COLORS = {
+		[0] = { r = 0.62, g = 0.62, b = 0.62 },
+		[1] = { r = 1, g = 1, b = 1 },
+		[2] = { r = 0.12, g = 1, b = 0 },
+		[3] = { r = 0, g = 0.44, b = 0.87 },
+		[4] = { r = 0.64, g = 0.21, b = 0.93 },
+		[5] = { r = 1, g = 0.5, b = 0 },
+	}
 	stubs.GetCVar = function(name)
 		return client.cvars[name]
 	end
