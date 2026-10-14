@@ -89,7 +89,8 @@ function ns.CountCatches(progress, hunt, cast, lookups)
 		local k = #progress.reached + 1
 		local threshold = hunt.tiers[k]
 		if threshold and progress.count >= threshold then
-			local date = conditions.date
+			-- A Cast with no realm minute (a secret clock, LOG-R49) has no realm date: its UTC day stands in.
+			local date = conditions.date or ns.UtcDate(cast.time)
 			progress.reached[k] = {
 				time = cast.time,
 				catchId = catch.catchId,
