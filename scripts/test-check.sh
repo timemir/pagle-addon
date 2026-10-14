@@ -341,6 +341,40 @@ sed -i '/^\[species\.13759\]$/{N;d;}' "$scratch/tree/data/forever/species.toml"
 expect "with the typicalLength check on, a Species with no typical length fails generator" generator \
 	"data/forever/species.toml: Species 13759 has no typicalLength, and the check is on (DATA-R20, DATA-R66)"
 
+# Appends a set and a Hunt on Raw Nightfin Snapper (Species 13759) to hunts.toml, with the kind and the window or
+# conditions given (DATA-R85, DATA-R86).
+plant_hunt() {
+	cat >>"$scratch/tree/data/hunts/hunts.toml" <<EOF
+
+[[set]]
+id = "planted"
+name = "Planted"
+title = "the Planter"
+
+[[hunt]]
+id = "planted"
+set = "planted"
+since = 2026-11-04
+tiers = [1]
+name = "Planted"
+species = 13759
+$1
+EOF
+}
+
+copy
+# The M5 exit check's step 1: Raw Nightfin Snapper is gated by night, never by day (DATA-R92).
+plant_hunt $'kind = "natural"\nwindow = "day"'
+expect "a natural Hunt whose window gates none of its Species' catch entries fails generator" generator \
+	"hunt.planted: admission: no catch entry of Species 13759's items, in any area, has the gate 'day'"
+
+copy
+# The M5 exit check's step 1: open one hour a year, a two-day season with half an hour a day (a one-day season can't
+# be written, LOG-R48). A one-hour weekly window passes the cap as DATA-R92 words it (graph.md open question 8).
+plant_hunt $'kind = "imposed"\nconditions = { season = [{ from = [6, 1], to = [6, 2] }], time = [[720, 750]] }'
+expect "an imposed Hunt open one hour a year fails generator" generator \
+	"hunt.planted: rarity cap: open at 8 of 70080 steps"
+
 wait
 report
 if ((reported != cases)); then
