@@ -154,7 +154,7 @@ describe("scripts/read-wtf.lua", function()
 		it("prints the Ledger's projection, state and celebrated set, with the level from its own logic", function()
 			-- LOG-R70's stored values; LED-R30's level: 2,310 XP = 1,080 (1→2) + 1,160 (2→3) + 70 into level 3,
 			-- whose step costs 1,000 + 80 × 3 = 1,240. ledger.md › Data for the state and the celebrated set. An M2
-			-- state has no items, Uncharted list or zone ranks, and M2's rules version, 100, isn't M3's 200 (LED-R4).
+			-- state has no items, Uncharted list or zone ranks, and M2's rules version, 100, isn't M4's 300 (LED-R4).
 			-- Completion over the fixture catalogue's world (LED-R70, LED-R71): Species 6303 and 6358 caught, of 6291,
 			-- 6299, 6303 and 13759 listed and 6358 caught; nothing else; 2 of 11 is 18%. 148 and 1519 aren't charted.
 			assert.are.same({
@@ -162,7 +162,7 @@ describe("scripts/read-wtf.lua", function()
 				"projection: lastSeq 8, logId 5d2e8a0c4b1f7e93, fingerprint a1b2c3d4, rulesVersion 100",
 				"logId: matches PagleLog's",
 				"lastSeq: equals PagleLog's length (8 entries)",
-				"rulesVersion: 100 DIFFERS from the Ledger's 200, so Core rebuilds it at login (LED-R2, LOG-R72)",
+				"rulesVersion: 100 DIFFERS from the Ledger's 300, so Core rebuilds it at login (LED-R2, LOG-R72)",
 				"world: "
 					.. CATALOGUE
 					.. ", fingerprint 0123456789abcdef (NOT the projection's: the lines computed below use it), 2 charted zones",
@@ -230,7 +230,7 @@ describe("scripts/read-wtf.lua", function()
 				"projection: lastSeq 8, logId 5d2e8a0c4b1f7e93, fingerprint a1b2c3d4, rulesVersion 100",
 				"logId: DIFFERS from PagleLog's 7c0b19e4d3a2f658, so Core rebuilds it at login (LOG-R72)",
 				"lastSeq: differs from PagleLog's length (1 entry)",
-				"rulesVersion: 100 DIFFERS from the Ledger's 200, so Core rebuilds it at login (LED-R2, LOG-R72)",
+				"rulesVersion: 100 DIFFERS from the Ledger's 300, so Core rebuilds it at login (LED-R2, LOG-R72)",
 				"world: "
 					.. CATALOGUE
 					.. ", fingerprint 0123456789abcdef (NOT the projection's: the lines computed below use it), 2 charted zones",
@@ -283,7 +283,7 @@ describe("scripts/read-wtf.lua", function()
 		end)
 
 		it("prints M3's state and celebrated set, with ranks and completion from the Ledger's logic", function()
-			-- ledger.md › Data for the state and the celebrated set; LED-R4: M3's rules version is 200. LED-R30: 4,560 XP
+			-- ledger.md › Data for the state and the celebrated set; LED-R4: M3's rules version, 200, isn't M4's 300. LED-R30: 4,560 XP
 			-- = 1,080 + 1,160 + 1,240 to level 4, 1,080 into it, whose step costs 1,000 + 80 × 4 = 1,320. LED-R5: 6309
 			-- is junk, a curio; 13901 a trophy; 999001 is in no catalogue. LED-R50, LED-R54: Duskwood (10) has no data,
 			-- so it isn't charted and shows rank 0; Elwynn (12) is computed Local (3) but celebrated Expert (4), and the
@@ -295,7 +295,7 @@ describe("scripts/read-wtf.lua", function()
 				"projection: lastSeq 11, logId 3f9a2c1e7b0d4a65, fingerprint 0123456789abcdef, rulesVersion 200",
 				"logId: matches PagleLog's",
 				"lastSeq: equals PagleLog's length (11 entries)",
-				"rulesVersion: the Ledger's, 200 (LED-R2)",
+				"rulesVersion: 200 DIFFERS from the Ledger's 300, so Core rebuilds it at login (LED-R2, LOG-R72)",
 				"world: " .. CATALOGUE .. ", fingerprint 0123456789abcdef (the projection's), 2 charted zones",
 				"state: 9 Casts, 8 Catches, 4560 XP (Angler Level 4, 1080 into it, next step 1320), 44 Coins, 2 Species",
 				"state curio items: 1 (6309 ×2)",
