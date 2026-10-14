@@ -4,7 +4,8 @@
 -- and M2-Stale#1 hold a Pagle_Ledger.lua as well, for the Ledger, Wallet and Cards sections the M2 exit check reads
 -- (#103, #104). M3#1 holds an M3 Ledger and a Field report projection, for what the M3 exit check reads (#145,
 -- #146). M4#1 holds what the M4 exit check reads (#173, #174). M5#1 and M5-Stale#1 hold a Pagle_Hunts.lua, for what
--- the M5 exit check reads (#199, #200). The Ledger runs read their world from spec/scripts/fixtures/Catalogue.lua
+-- the M5 exit check reads (#199, #200). M6#1, M6-Stale#1 and M6-New#1 hold a Pagle_Stats.lua, for what the M6 exit
+-- check reads (#219, #221). The Ledger and Stats runs read their catalogue from spec/scripts/fixtures/Catalogue.lua
 -- (--catalogue) and the Hunts runs their Hunt list from spec/scripts/fixtures/HuntList.lua (--huntlist), so the lines
 -- the Modules' logic computes are counted by hand, and don't move with the generated data.
 
@@ -58,6 +59,16 @@ local function section(out, heading)
 		end
 	end
 	return lines
+end
+
+--- The first of `lines` that starts with `prefix`, or nil.
+local function lineStarting(lines, prefix)
+	for _, line in ipairs(lines or {}) do
+		if line:sub(1, #prefix) == prefix then
+			return line
+		end
+	end
+	return nil
 end
 
 describe("scripts/read-wtf.lua", function()
@@ -720,6 +731,7 @@ describe("scripts/read-wtf.lua", function()
 				"Pagle_Ledger: enabled",
 				"Pagle_QoL: disabled",
 				"Pagle_Hunts: enabled",
+				"Pagle_Stats: not listed (its TOC's default state applies)",
 			}, lines)
 		end)
 	end)
@@ -765,6 +777,260 @@ describe("scripts/read-wtf.lua", function()
 					.. " x 0, y -10 (CORE-R70)",
 			}, section(out, "== Tracker dock"))
 		end)
+	end)
+
+	-- M6#1 holds what the M6 exit check reads (#219, #221). Its PagleLog: Ada Brook (skill 150+25) and Bram Reed
+	-- (120+0) on a realm at UTC−7, six Sessions (LOG-R60: 900 s apart or more): 120 Casts by Ada in Elwynn (12) from
+	-- realm 22:00, 30 s apart (Nightfin 13759 on the first three, a got-away on every 10th from the 5th, Smallfish 6303
+	-- otherwise); Bram's two in Westfall (40); then Ada's one each at realm 01:20 (12), 03:00 (12) and 04:40 (40); and
+	-- the last, three Casts from realm 08:00 with a Skill Reading (151) between them. Its PagleStatsDB.global.projection
+	-- is that log folded by Stats' own fold (STA-R21–R31) over spec/scripts/fixtures/Catalogue.lua: Elwynn's no-junk
+	-- line is 25 + 95 = 120 and Westfall's 55 + 95 = 150 (STA-R12), and Nightfin keeps the `night` window (21:00–06:00)
+	-- in Elwynn (STA-R14). Its profile has the tracker on, three watches and a moved book; PagleDB caches Stats' three
+	-- tracker frames with Logbook picked. Read at --now 1792000000, 2026-10-14 17:46:40 UTC.
+	describe("on an account after the M6 exit check's steps", function()
+		local NOW = "1792000000"
+		local out, err, code = run(
+			ACCOUNTS .. "M6#1",
+			"--catalogue",
+			CATALOGUE,
+			"--now",
+			NOW,
+			"--stats-item",
+			"13759",
+			"--area",
+			"12",
+			"--skill",
+			"175"
+		)
+
+		it("exits 0 and writes nothing to stderr", function()
+			assert.are.equal(0, code)
+			assert.are.equal("", err)
+		end)
+
+		it("prints the projection, the totals, the margins, the characters and the last Sessions", function()
+			-- LOG-R70's stored values; STA-R20: 100 × STATS_RULES_VERSION 1 + Core's SESSION_RULES_VERSION 1 = 101, and
+			-- the stored fingerprint is the catalogue's content fingerprint (no extra). STA-R22: 120 + 1 + 1 + 1 + 3 of
+			-- Ada's Casts and Bram's 2; 12 + 1 + 1 of Ada's and 1 of Bram's got away; Elwynn and Westfall are zones.
+			-- STA-R23: 12:hi (124), 12:hi:night (122: the realm 08:00 Casts are by day), 40:hi and 40:lo (2 each).
+			-- STA-R24: Nightfin and Smallfish in Elwynn, Bram's 6291 on lo, 6299 and 13902 on hi in Westfall. STA-R26:
+			-- Ada is 55 and 25–26 above her lines (hi25), Bram 30 below Westfall's (lo1). STA-R27: last ranks 151, 120.
+			-- STA-R30: the last five Sessions, each starting at its first Cast's ID; realm times are server time less 7 h
+			-- (LOG-R49); Session 6 gained 1 skill (STA-R27, STA-R31). LOG-R98: every Cast carries its Session's ID.
+			assert.are.same({
+				"== Stats (PagleStatsDB)",
+				"projection: lastSeq 132, logId 7a3e5c1b9d0f2468, fingerprint 0123456789abcdef, rulesVersion 101",
+				"logId: matches PagleLog's",
+				"lastSeq: equals PagleLog's length (132 entries)",
+				"rulesVersion: Stats', 101 (STA-R20)",
+				"fingerprint: the catalogue's, " .. CATALOGUE .. " (LOG-R70)",
+				"totals: 128 Casts, 113 Catches, 15 got away",
+				"places: 2 (2 zones, 0 subzones), 4 scopes, 5 hits",
+				"margins: lo50 0 Casts, lo1 2 Casts (1 got away), hi0 0 Casts, hi25 126 Casts (14 got away)",
+				"characters: 2",
+				"  1 Ada Brook (Player-4618-0A1B2C3D): 126 Casts, 112 Catches, 14 got away, last rank 151",
+				"  2 Bram Reed (Player-4618-0F0E0D0C): 2 Casts, 1 Catch, 1 got away, last rank 120",
+				"Sessions: 6 stored, the log's Casts carry 6 Session IDs; the last 5, oldest first:",
+				"  2. Player-4618-0F0E0D0C-1791960000-0: realm 2026-10-13 23:40 to 2026-10-13 23:40,"
+					.. " server 2026-10-14 06:40:00 UTC to 2026-10-14 06:40:30 UTC",
+				"     2 Casts, 1 Catch, 1 got away, zones 40 ×2, skill +0; the log tags 2 Casts with it (matches)",
+				"  3. Player-4618-0A1B2C3D-1791966000-0: realm 2026-10-14 01:20 to 2026-10-14 01:20,"
+					.. " server 2026-10-14 08:20:00 UTC to 2026-10-14 08:20:00 UTC",
+				"     1 Cast, 1 Catch, 0 got away, zones 12 ×1, skill +0; the log tags 1 Cast with it (matches)",
+				"  4. Player-4618-0A1B2C3D-1791972000-0: realm 2026-10-14 03:00 to 2026-10-14 03:00,"
+					.. " server 2026-10-14 10:00:00 UTC to 2026-10-14 10:00:00 UTC",
+				"     1 Cast, 0 Catches, 1 got away, zones 12 ×1, skill +0; the log tags 1 Cast with it (matches)",
+				"  5. Player-4618-0A1B2C3D-1791978000-0: realm 2026-10-14 04:40 to 2026-10-14 04:40,"
+					.. " server 2026-10-14 11:40:00 UTC to 2026-10-14 11:40:00 UTC",
+				"     1 Cast, 1 Catch, 0 got away, zones 40 ×1, skill +0; the log tags 1 Cast with it (matches)",
+				"  6. Player-4618-0A1B2C3D-1791990000-0: realm 2026-10-14 08:00 to 2026-10-14 08:10,"
+					.. " server 2026-10-14 15:00:00 UTC to 2026-10-14 15:10:00 UTC",
+				"     3 Casts, 2 Catches, 1 got away, zones 12 ×2, 40 ×1, skill +1; the log tags 3 Casts with it (matches)",
+				"tracker: true",
+				"watched: 3, oldest first, read at --skill 175",
+				-- STA-R64: each watch read as any reading. Nightfin: 3 of 122 by night, last caught at 3, so 119 since,
+				-- P = (1 − 3/122)^119 ≈ 0.052 (STA-R51, STA-R52: normal). Smallfish: 107 of 124, 1 since, P ≈ 0.14.
+				-- Bram's 6291 was caught below Westfall's line: 2 Casts at or above it, none caught (STA-R43, STA-R50).
+				"  1. item 13759 in area 12: 1 in 41, Dry spell 119, normal (12:hi:night)",
+				"  2. item 6303 in area 12: 1 in 1, Dry spell 1, normal (12:hi)",
+				"  3. item 6291 in area 40: learning 2/100, Dry spell 2, no luck reading (40:hi)",
+				"window: TOPLEFT of UIParent's TOPLEFT, x 312, y -140 (moved by the player, STA-R71)",
+			}, section(out, "== Stats (PagleStatsDB)"))
+		end)
+
+		it("prints --stats-item's reading in --area at --skill with Stats' own logic (STA-R41–R54)", function()
+			-- STA-R41: 175 is at or above Elwynn's line, 120. STA-R42: Nightfin's night window. STA-R43: 122 ≥ 100, k 3,
+			-- so known, 122 / 3 = 40.7 → 41 (STA-R44). STA-R45: Wilson's bounds for 3 of 122 are 0.0084 and 0.0698, 1 in
+			-- 120 and 1 in 14. STA-R46: the fixture's entries, gate and line are all unconfirmed. STA-R50: 122 − 3 = 119
+			-- since; STA-R51–R53: P ≈ 0.0517, about 5 in 100. The last Nightfin was at 05:01 UTC, 12.76 h before --now,
+			-- "13h ago" rounded half up (STA-R44, STA-R59).
+			assert.are.same({
+				"== Stats item 13759 in area 12 (--stats-item, --area)",
+				"side: hi, --skill 175 against the line 120 (STA-R41)",
+				"scope: 12:hi:night, 122 Casts, 3 caught (STA-R42)",
+				"state: known (STA-R43)",
+				"Your odds: about 1 in 41 (short: 1 in 41)",
+				"range: Likely between 1 in 14 and 1 in 120 (95%).",
+				"sentence: From 122 of my Casts here by night, at or above 120 skill; 3 caught.",
+				"note: Pagle hasn't confirmed it bites here yet.",
+				"note: The window isn't confirmed yet.",
+				"note: The no-junk line isn't confirmed yet.",
+				"Dry spell: 119 Casts since the last, at 3, last caught 2026-10-14 05:01:00 UTC; P 0.0517, band normal"
+					.. " (STA-R50–R52)",
+				"Dry spell text: 119 Casts since my last one, 13h ago. About 5 anglers in 100 wait this long."
+					.. " Nothing unusual.",
+				"short: 1 in 41 · 119 since",
+			}, section(out, "== Stats item"))
+		end)
+
+		it("reads the other side with --skill, and the side with the most Casts without it (STA-R41)", function()
+			-- STA-R41: 100 is below Elwynn's line; Ada never fished there below it, so the scope is empty: learning
+			-- (STA-R43) and never caught, a bare count (STA-R50). Without --skill, 12:hi's 124 Casts beat lo's and na's 0.
+			local below = run(ACCOUNTS .. "M6#1", "--catalogue", CATALOGUE, "--now", NOW, "--stats-item", "13759", "--area", "12", "--skill", "100")
+			assert.are.same({
+				"== Stats item 13759 in area 12 (--stats-item, --area)",
+				"side: lo, --skill 100 against the line 120 (STA-R41)",
+				"scope: 12:lo:night, 0 Casts, 0 caught (STA-R42)",
+				"state: learning (STA-R43)",
+				"Your odds: Learning… (short: learning 0/100)",
+				"range: none until known (STA-R45)",
+				"sentence: 0 of the 100 Casts I need here by night, below 120 skill before Your odds show a number.",
+				"note: Pagle hasn't confirmed it bites here yet.",
+				"note: The window isn't confirmed yet.",
+				"note: The no-junk line isn't confirmed yet.",
+				"Dry spell: 0 Casts, never caught in this scope (STA-R50)",
+				"Dry spell text: 0 Casts here, none yet.",
+				"short: learning 0/100",
+			}, section(below, "== Stats item"))
+			local unknown = run(ACCOUNTS .. "M6#1", "--catalogue", CATALOGUE, "--now", NOW, "--stats-item", "13759", "--area", "12")
+			assert.are.equal(
+				"side: hi, the most Casts here (hi 124, lo 0, na 0), no --skill (STA-R41)",
+				section(unknown, "== Stats item")[2]
+			)
+			assert.are.equal(
+				"watched: 3, oldest first, read on the side with the most Casts in each place (no --skill, STA-R41)",
+				lineStarting(section(unknown, "== Stats (PagleStatsDB)"), "watched:")
+			)
+		end)
+
+		it("reads the repo's catalogue by default, and flags a fingerprint that isn't it (LOG-R70, LOG-R72)", function()
+			local file = assert(io.open("addons/Pagle/data/Catalogue.lua", "rb"))
+			local fingerprint = file:read("*a"):match('fingerprint = "(%x+)"')
+			file:close()
+			local lines = section(run(ACCOUNTS .. "M6#1", "--now", NOW), "== Stats (PagleStatsDB)")
+			assert.are.equal(
+				"fingerprint: DIFFERS from the catalogue's "
+					.. fingerprint
+					.. ", the repo's addons/Pagle/data/Catalogue.lua, so Core rebuilds it at login (LOG-R70, LOG-R72)",
+				lines[6]
+			)
+		end)
+
+		it("reads side na in a place with no no-junk line (STA-R12, STA-R41)", function()
+			-- Duskwood (10) has no skillBase in the fixture catalogue, so no line, and Nightfin no window there (STA-R14).
+			local lines = section(
+				run(ACCOUNTS .. "M6#1", "--catalogue", CATALOGUE, "--stats-item", "13759", "--area", "10"),
+				"== Stats item"
+			)
+			assert.are.same({
+				"side: na, no no-junk line (STA-R41)",
+				"scope: 10:na, 0 Casts, 0 caught (STA-R42)",
+			}, { lines[2], lines[3] })
+		end)
+
+		it("prints the stored lines alone when the catalogue can't be loaded", function()
+			-- Without the catalogue there are no lines or windows (STA-R12, STA-R14), so no reading is computed.
+			local missing = "spec/scripts/fixtures/no-such-Catalogue.lua"
+			local out2 = run(ACCOUNTS .. "M6#1", "--catalogue", missing, "--stats-item", "13759", "--area", "12")
+			local lines = section(out2, "== Stats (PagleStatsDB)")
+			local prefix = "fingerprint: can't be checked: " .. missing .. " can't load: "
+			assert.are.equal(prefix, lines[6]:sub(1, #prefix))
+			assert.are.equal("totals: 128 Casts, 113 Catches, 15 got away", lines[7])
+			assert.are.equal(
+				"  1. item 13759 in area 12 (no reading without a projection and the catalogue)",
+				lineStarting(lines, "  1. item")
+			)
+			assert.are.same({
+				"== Stats item 13759 in area 12 (--stats-item, --area): can't be read without the catalogue"
+					.. " (see fingerprint: above)",
+			}, section(out2, "== Stats item"))
+		end)
+
+		it("prints the Stats tracker frame's pick, and Pagle_Stats' enable state by default", function()
+			-- SHOP-R32: the slot's stored pick; STA-R88: Stats' one slot.
+			assert.are.same(
+				{ "stats.trackerframe: stats.trackerframe.logbook" },
+				{ section(out, "== Looks")[2] }
+			)
+			local lines = section(run(ACCOUNTS .. "M6#1", "--character", "70/Ada-Brook"), "== Addons")
+			assert.are.same({
+				"== Addons (70/Ada-Brook/AddOns.txt)",
+				"Pagle: enabled",
+				"Pagle_Ledger: enabled",
+				"Pagle_QoL: disabled",
+				"Pagle_Hunts: enabled",
+				"Pagle_Stats: enabled",
+			}, lines)
+		end)
+	end)
+
+	-- M6-Stale#1: a Stats projection built under another rules version and catalogue, one Cast behind its log, and
+	-- AceDB left the profile's defaults out of the file (stats.md › Data).
+	it("flags a stale projection and a Session behind the log, and reads the left-out defaults (STA-R20)", function()
+		local out, _, code = run(ACCOUNTS .. "M6-Stale#1", "--catalogue", CATALOGUE, "--stats-item", "13759", "--area", "12")
+		assert.are.equal(0, code)
+		assert.are.same({
+			"== Stats (PagleStatsDB)",
+			"projection: lastSeq 4, logId 4b1d7e9a2c6f3058, fingerprint fedcba9876543210, rulesVersion 100",
+			"logId: matches PagleLog's",
+			"lastSeq: differs from PagleLog's length (5 entries)",
+			"rulesVersion: 100 DIFFERS from Stats' 101 (100 × 1 + Core's SESSION_RULES_VERSION 1), so Core rebuilds it"
+				.. " at login (STA-R20, LOG-R72)",
+			"fingerprint: DIFFERS from the catalogue's 0123456789abcdef, "
+				.. CATALOGUE
+				.. ", so Core rebuilds it at login (LOG-R70, LOG-R72)",
+			"totals: 2 Casts, 2 Catches, 0 got away",
+			"places: 1 (1 zone, 0 subzones), 2 scopes, 2 hits",
+			"margins: lo50 0 Casts, lo1 0 Casts, hi0 0 Casts, hi25 2 Casts",
+			"characters: 1",
+			"  1 Ada Brook (Player-4618-0A1B2C3D): 2 Casts, 2 Catches, 0 got away, last rank 150",
+			"Sessions: 1 stored, the log's Casts carry 1 Session ID; the last 1, oldest first:",
+			"  1. Player-4618-0A1B2C3D-1791954000-0: realm 2026-10-13 22:00 to 2026-10-13 22:00,"
+				.. " server 2026-10-14 05:00:00 UTC to 2026-10-14 05:00:30 UTC",
+			"     2 Casts, 2 Catches, 0 got away, zones 12 ×2, skill +0; the log tags 3 Casts with it (DIFFERS)",
+			"tracker: false (not saved: the default)",
+			"watched: none (not saved: the default)",
+			"window: not saved, so centred (the default, STA-R71)",
+		}, section(out, "== Stats (PagleStatsDB)"))
+		-- STA-R41: 2 Casts on hi; STA-R43: learning; the first Nightfin was the first Cast, so 1 since.
+		assert.are.equal(
+			"Dry spell: 1 Cast since the last, at 1, last caught 2026-10-14 05:00:00 UTC (STA-R50)",
+			lineStarting(section(out, "== Stats item"), "Dry spell:")
+		)
+	end)
+
+	it("says no Stats projection is stored before the first build, and none is read (LOG-R72)", function()
+		local out = run(ACCOUNTS .. "M6-New#1", "--stats-item", "13759", "--area", "12")
+		assert.are.same({
+			"== Stats (PagleStatsDB)",
+			"projection: none stored (no build has finished, LOG-R72)",
+			"tracker: false (not saved: the default)",
+			"watched: none (not saved: the default)",
+			"window: not saved, so centred (the default, STA-R71)",
+		}, section(out, "== Stats (PagleStatsDB)"))
+		assert.are.same(
+			{ "== Stats item 13759 in area 12 (--stats-item, --area): no projection stored to read" },
+			section(out, "== Stats item")
+		)
+	end)
+
+	it("says in one line that Pagle_Stats.lua is missing", function()
+		local out = run(ACCOUNTS .. "M5#1", "--catalogue", CATALOGUE, "--huntlist", HUNTLIST)
+		assert.are.same(
+			{ "== Stats: can't read " .. ACCOUNTS .. "M5#1/SavedVariables/Pagle_Stats.lua: missing" },
+			section(out, "== Stats")
+		)
 	end)
 
 	it("says in one line that Pagle_Hunts.lua is missing, and reads no dock point as the default", function()
@@ -850,7 +1116,7 @@ describe("scripts/read-wtf.lua", function()
 		end)
 	end)
 
-	it("reads Pagle, Pagle_Ledger, Pagle_QoL and Pagle_Hunts' enable state by default", function()
+	it("reads Pagle, Pagle_Ledger, Pagle_QoL, Pagle_Hunts and Pagle_Stats' enable state by default", function()
 		local out = run(ACCOUNTS .. "M2#1", "--character", "70/Ada-Brook/")
 		assert.are.same({
 			"== Addons (70/Ada-Brook/AddOns.txt)",
@@ -858,6 +1124,7 @@ describe("scripts/read-wtf.lua", function()
 			"Pagle_Ledger: enabled",
 			"Pagle_QoL: disabled",
 			"Pagle_Hunts: not listed (its TOC's default state applies)",
+			"Pagle_Stats: not listed (its TOC's default state applies)",
 		}, section(out, "== Addons"))
 	end)
 
@@ -891,6 +1158,9 @@ describe("scripts/read-wtf.lua", function()
 			["an --item that isn't an ID"] = { ACCOUNTS .. "M1#1", "--item", "6303a" },
 			["a --now that isn't a server time"] = { ACCOUNTS .. "M1#1", "--now", "today" },
 			["a --hunt with no ID"] = { ACCOUNTS .. "M1#1", "--hunt" },
+			["a --stats-item with no --area"] = { ACCOUNTS .. "M6#1", "--stats-item", "13759" },
+			["an --area with no --stats-item"] = { ACCOUNTS .. "M6#1", "--area", "12" },
+			["a --skill that isn't a number"] = { ACCOUNTS .. "M6#1", "--skill", "high" },
 		}) do
 			it("exits 2, prints nothing and writes the usage to stderr, given " .. case, function()
 				local out, err, code = run(unpack(args))

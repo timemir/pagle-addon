@@ -1,0 +1,5 @@
+Pagle: enabled
+Pagle_Hunts: enabled
+Pagle_Ledger: enabled
+Pagle_QoL: disabled
+Pagle_Stats: enabled
