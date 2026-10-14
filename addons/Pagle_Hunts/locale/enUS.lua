@@ -16,6 +16,13 @@ ns.L = {
 	BOARD = "Hunts",
 	BOARD_SLASH_HELP = "Open or close the Hunts board",
 
+	-- Window moments (HNT-R88) and their row on the Announcements page (SET-R32): logic/WindowMoments.lua.
+	WINDOW_MOMENTS_SETTING = "Tell me when a pinned Hunt's window opens",
+	WINDOW_MOMENTS_TOOLTIP = "A quiet Nod when a pinned Hunt's window opens. It fades when the window closes.",
+	WINDOW_OPEN = "%s is open",
+	WINDOW_OPENED = "%s window opened %s",
+	WINDOW_OPENED_UNTIL = "%s window opened %s–%s",
+
 	-- Labels in realm time (HNT-R50–R55): logic/Labels.lua. A name not loaded yet reads "…".
 	NAME_UNKNOWN = "…",
 	-- Durations, rounded down to the minute (HNT-R50): "37m", "2h", "2h 10m", "1d", "1d 4h".
