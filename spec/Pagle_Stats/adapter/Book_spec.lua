@@ -199,6 +199,7 @@ describe("the Stats book's pages (STA-R70, STA-R74)", function()
 		"draws each side of the page shown with its renderer, on its own frame, and leaves a side with none blank",
 		function()
 			local loaded, _, book = ready()
+			book.router = loaded.ns.NewBookRouter() -- without the page tickets' renderers
 			local draws = {}
 			book:RegisterPage("home", "left", writer("waters", draws))
 			book:RegisterPage("home", "right", writer("right now", draws))

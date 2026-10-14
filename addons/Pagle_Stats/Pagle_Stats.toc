@@ -21,7 +21,9 @@ logic\Text.lua
 logic\Odds.lua
 logic\DrySpell.lua
 logic\Book.lua
+logic\Lifetime.lua
 adapter\Text.lua
 adapter\BookWidgets.lua
 adapter\Book.lua
+adapter\Lifetime.lua
 adapter\Stats.lua
