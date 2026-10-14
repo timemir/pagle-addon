@@ -281,3 +281,27 @@ function ns.WireFieldReport(host)
 	})
 	ns.fieldReport = { rows = rows, count = count }
 end
+
+--- What only the client knows for the Field report's text: the header's addon version and locale, and the names a
+--- row's comment shows (REP-R30). Core's adapter passes the client's lookups; FakePagle passes fixed ones.
+---@class PagleFieldReportClient
+---@field addon fun(): string    -- this addon's TOC version, or "unknown"
+---@field locale fun(): string   -- GetLocale()
+---@field names PagleReportNames -- a secret is never a name (CORE-R31)
+
+--- The Field report's text for its rows (ns.FieldReportRows(), any order), as its parts in order (REP-R30–R33),
+--- built when called, never stored: the header from `client`, the catalogue's fingerprint (host.fingerprint) and the
+--- Catch log's logId, which is written only as its reporter key (REP-R35, REP-R36).
+---@param host PagleHost
+---@param client PagleFieldReportClient
+---@return fun(rows: PagleReportRow[]): string[]
+function ns.FieldReportTextFunction(host, client)
+	return function(rows)
+		return ns.FieldReportParts(rows, {
+			addon = client.addon(),
+			fingerprint = assert(host.fingerprint(), "the catalogue is built first"),
+			locale = client.locale(),
+			logId = host.catchLog().data.logId or "",
+		}, client.names)
+	end
+end
