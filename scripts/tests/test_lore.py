@@ -156,6 +156,20 @@ def test_ledger_toml_is_emitted_sorted_into_the_ledger_s_lore_lua(
     assert emitted(write_lore_tree(tmp_path), capsys) == LEDGER_LUA
 
 
+# LEDGER with 6303's riddle whitespace-only, which counts as no text (DATA-R107's "an empty one").
+SHORT_CASTS = 'riddle = "Salt water, short casts."\n'
+BLANK_RIDDLE = LEDGER.replace(SHORT_CASTS, 'riddle = " \\t "\n')
+
+
+def test_whitespace_only_text_is_left_out_of_lore_lua(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    # DATA-R104 emits each key's text, and LED-R161 leaves a key with no text out, so its line shows nothing.
+    # DATA-R66: with the check off the blank key is only left out, not failed.
+    assert SHORT_CASTS in LEDGER
+    assert emitted(write_lore_tree(tmp_path, BLANK_RIDDLE), capsys) == LEDGER_LUA.replace(
+        'L["species.6303.riddle"] = "Salt water, short casts."\n', ""
+    )
+
+
 REPO = Path(__file__).resolve().parents[2]
 SPEC_FIXTURE = "spec/Pagle_Ledger/fixtures/Lore.lua"
 
@@ -164,8 +178,9 @@ def test_the_busted_fixture_lore_lua_is_what_the_generator_emits(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
     # DATA-R104: spec/Pagle_Ledger/data/Lore_spec.lua loads Pagle_Ledger with this Lore.lua and reads ns.L, so the
-    # fixture must be the generator's own output for LEDGER.
-    assert emitted(write_lore_tree(tmp_path), capsys) == (REPO / SPEC_FIXTURE).read_text(encoding="utf-8")
+    # fixture must be the generator's own output for BLANK_RIDDLE: LEDGER with one whitespace-only riddle (LED-R161).
+    fixture = (REPO / SPEC_FIXTURE).read_text(encoding="utf-8")
+    assert emitted(write_lore_tree(tmp_path, BLANK_RIDDLE), capsys) == fixture
 
 
 def test_an_empty_ledger_toml_emits_a_lore_lua_with_no_keys(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
