@@ -53,10 +53,12 @@ function ns.Tally.Add(tally, goalType)
 	return TALLY_TITLES[tally.notices + tally.expeditions]
 end
 
--- The FNV-1a hash (LOG-R66 step 1), the Module's own (ADR 0001: no Core internals), on the client's `bit` library.
+-- The FNV-1a hash (LOG-R66 step 1), the Module's own (ADR 0001: no Core internals), on the client's `bit` library
+-- (LuaBitOp, in .luacheckrc's WoW API inventory). The inline option below reaches that one line: the only client name
+-- this logic/ file reads, as Core's logic/Size.lua reads it for LOG-R66.
 
 local TWO_32 = 4294967296
-local bxor, byte = bit.bxor, string.byte
+local bxor, byte = bit.bxor, string.byte -- luacheck: read globals bit
 
 --- FNV-1a 32-bit over a string's bytes (LOG-R66 step 1): `h = 2166136261`; for each byte `c`, `h = bxor(h, c) % 2^32`,
 --- then `h * 16777619 mod 2^32`, split so no product passes 2^53. Every `bit` result is taken mod 2^32, as LuaBitOp's

@@ -111,8 +111,7 @@ stds.wow = {
 		"GetLocale",
 		-- The projections' time budget per frame (LOG-R71, LOG-R72); their frames go through C_Timer.After.
 		"debugprofilestop",
-		-- LuaBitOp, which the client ships: the Simulated Size hash (LOG-R66), in Core's logic/Size.lua, and the Tackle
-		-- Board's fly hash (TKB-R62), in its logic/Rewards.lua (files[] below).
+		-- LuaBitOp, which the client ships: the Simulated Size hash (LOG-R66), in Core's logic/Size.lua (files[] below).
 		bit = { fields = { "bxor", "rshift" } },
 		-- The default length unit (LOG-R69): read only through adapter/Host.lua's region, which allows for it missing.
 		-- On the launch re-verification list (roadmap.md › Launch re-verification checklist, item 19).
@@ -249,8 +248,6 @@ files["addons/*/adapter/**"] = { std = "lua51+wow+wow_variables+pagle" }
 -- LOG-R66 puts the Simulated Size hash in Core's logic/, on the client's `bit` library: the one client name a logic/
 -- file reads, as stds.wow inventories it.
 files["addons/Pagle/logic/Size.lua"] = { read_globals = { bit = stds.wow.read_globals.bit } }
--- TKB-R62 ties a fly by the same FNV-1a, in the Tackle Board's own logic/ (ADR 0001: no Core internals).
-files["addons/Pagle_TackleBoard/logic/Rewards.lua"] = { read_globals = { bit = stds.wow.read_globals.bit } }
 -- Only Core's adapter creates the Pagle global.
 files["addons/Pagle/adapter/**"] = { globals = { "Pagle" } }
 -- /pagle's name (CORE-R60).
