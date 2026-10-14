@@ -13,6 +13,7 @@ from pagle_data.baseline import BaselineEvent, read_baseline
 from pagle_data.errors import DataError, Problems
 from pagle_data.generate import read_layers
 from pagle_data.windows import WINDOWS_TOML, seed_spec, window_of_event
+from hunts_fixture import write_hunts
 from pools_fixture import write_pools
 from windows_fixture import WINDOWS, write_windows
 
@@ -37,6 +38,7 @@ def write_tree(root: Path, windows: str = WINDOWS, events_csv: str | None = None
     write_observed(root)  # dev.toml with no facts; test_observed.py covers the layer
     write_item_layer(root)  # test_item_records.py covers the item layer
     write_pools(root)  # test_pools.py covers pool types
+    write_hunts(root)  # test_hunts.py covers the Hunt list
     return root
 
 
