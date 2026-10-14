@@ -171,23 +171,26 @@ describe("Pagle_Stats with Core", function()
 		assert.is_true(loaded.ns.book:IsShown())
 	end)
 
-	it("adds no settings pages of its own: its rows go on Core's Trackers page (STA-R4, CORE-R42, SET-R42)", function()
-		local loaded = loadAddon("Pagle_Stats", FOREVER_GLOBALS)
-		local plain = loadAddon("Pagle", FOREVER_GLOBALS)
-		loaded.client.fire("PLAYER_LOGIN")
-		plain.client.fire("PLAYER_LOGIN")
+	it(
+		"adds no settings pages of its own, only Core's Trackers page for its section (STA-R4, CORE-R42, SET-R44)",
+		function()
+			local loaded = loadAddon("Pagle_Stats", FOREVER_GLOBALS)
+			local plain = loadAddon("Pagle", FOREVER_GLOBALS)
+			loaded.client.fire("PLAYER_LOGIN")
+			plain.client.fire("PLAYER_LOGIN")
 
-		local function categories(client)
-			local names = {}
-			for i, category in ipairs(client.settings.categories) do
-				names[i] = category.name
+			local function categories(client)
+				local names = {}
+				for i, category in ipairs(client.settings.categories) do
+					names[i] = category.name
+				end
+				return names
 			end
-			return names
+			assert.are.same({ "Pagle", "Announcements", "Look and Feel" }, categories(plain.client))
+			-- Core's own pages, with its Trackers page for Stats' section: Core's frame dropdown at least (STA-R88).
+			assert.are.same({ "Pagle", "Announcements", "Trackers", "Look and Feel" }, categories(loaded.client))
 		end
-		local expected = categories(plain.client)
-		table.insert(expected, #expected, "Trackers") -- before Look and Feel, the last page (CORE-R40)
-		assert.are.same(expected, categories(loaded.client))
-	end)
+	)
 
 	it(
 		"sets no global but PagleStatsDB and its row's mixin: its AceAddon is reached through LibStub (STA-R1)",

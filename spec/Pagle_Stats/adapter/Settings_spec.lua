@@ -143,7 +143,7 @@ local function stopButtons(loaded, row)
 end
 
 describe("Stats' section on the Trackers page, in the panel", function()
-	it("follows Core's row: a Stats header, the checkbox off, the indented row (SET-R40, SET-R42, SET-R3)", function()
+	it("follows Core's row: a Stats header, the checkbox off, the indented row, the frame (SET-R40, SET-R42, SET-R44)", function()
 		local loaded = session()
 		local rows = showTrackers(loaded)
 
@@ -151,7 +151,11 @@ describe("Stats' section on the Trackers page, in the panel", function()
 		for i, row in ipairs(rows) do
 			names[i] = (row.initializer:GetParentInitializer() and "  " or "") .. row.initializer:GetName()
 		end
-		assert.are.same({ "Tracker position", "Stats", "Show the live tracker", "  Watched Dry spells" }, names)
+		-- Core ends the section with Stats' frame dropdown, unindented (SET-R44).
+		assert.are.same(
+			{ "Tracker position", "Stats", "Show the live tracker", "  Watched Dry spells", "Stats tracker frame" },
+			names
+		)
 		assert.is_false(rowNamed(rows, "Show the live tracker").frame.value)
 	end)
 

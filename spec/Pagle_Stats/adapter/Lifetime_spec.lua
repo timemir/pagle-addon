@@ -288,7 +288,8 @@ describe("the Lifetime spread (stats.md › UI › Lifetime)", function()
 				assert.are.equal(pieces[4].x, pieces[5].x)
 				assert.is_true(pieces[6].x > pieces[4].x)
 				assert.are.equal(pieces[4].y, pieces[6].y)
-				assert.are.same({ UNCHARTED }, loaded.client.itemRequests)
+				-- search (#215) also asks, as the book opens, for the unnamed fish on the rows of the zones I've fished
+				assert.are.equal(UNCHARTED, loaded.client.itemRequests[1])
 			end
 		)
 

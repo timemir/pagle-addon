@@ -222,6 +222,38 @@ ns.L = {
 	HOME_WHERE_UNKNOWN = "Where I am: unknown",
 	HOME_EVERY_SESSION = "Every Session",
 
+	-- The item page (stats.md › UI › Item page). The left page: its kicker, when it bites (the window's name from
+	-- WINDOW_NAMES; its realm-time ranges, "18:00–06:00", joined by ", "), the pool line, my records of it ("{date},
+	-- {time ago}", "—" for none), and *Where I am* (its short odds, then its Dry spell; ITEM_OPEN_HERE before a ☛).
+	ITEM_KICKER = "A fish",
+	ITEM_BITES_ANY = "Bites at any hour.",
+	ITEM_BITES_ONLY = "Bites only %s.",
+	ITEM_BITES_ONLY_TIMED = "Bites only %s (%s realm time).",
+	ITEM_RANGE = "%s–%s",
+	ITEM_RANGES_JOIN = ", ",
+	ITEM_POOL = "Also in pools; with no pool data, both are counted together.",
+	ITEM_CAUGHT = "Caught",
+	ITEM_FIRST_CAUGHT = "First caught",
+	ITEM_LAST_CAUGHT = "Last caught",
+	ITEM_LAST_VALUE = "%s, %s",
+	ITEM_NEVER = "—",
+	ITEM_HERE_SINCE = "%s; %s since the last.",
+	ITEM_HERE_CAUGHT_LAST = "%s; caught on my last Cast.",
+	ITEM_HERE_NONE_YET = "%s; none yet.",
+	ITEM_OPEN_HERE = "Open its page here",
+	-- The right page: its kicker and title, a subzone tile's line ("Darkshore · 1 in 40"), and the line with no tiles.
+	ITEM_WATERS_KICKER = "Its waters",
+	ITEM_WATERS_TITLE = "Where I've fished for it",
+	ITEM_TILE_LINE = "%s · %s",
+	ITEM_NO_WATERS = "I haven't fished anywhere it bites.",
+
+	-- Search on the leather (STA-R76): the box's hint, each result's small label (a subzone's is its zone's name), and
+	-- the line with no results.
+	SEARCH_HINT = "Find a fish or a water…",
+	SEARCH_FISH = "fish",
+	SEARCH_ZONE = "zone",
+	SEARCH_NONE = "Nothing by that name in my records.",
+
 	-- The Lifetime spread (stats.md › UI › Lifetime; its kicker is BOOK_LIFETIME). The left page's title and totals, the
 	-- got-away count with its rate ("2 (22%)").
 	LIFETIME_TITLE = "Every Cast I've made",
@@ -268,4 +300,15 @@ ns.L = {
 	SETTINGS_WATCHED_LINE = "%s, %s",
 	SETTINGS_WATCHED_NONE = "Watch a Dry spell from any fish's page in the Stats book.",
 	SETTINGS_STOP_WATCHING = "Stop watching",
+
+	-- Stats' Curio Shop slot (STA-R88). Its goods' names and descriptions are lore (`statsgood.<goodID>.*`).
+	SLOT_TRACKER_FRAME = "Stats tracker frame",
+
+	-- The live tracker's words (STA-R82), as the shop's sample (STA-R88) and the tracker (#218) write them: the header's
+	-- right text ("Session · 21m"), the Session's lines ("38 Casts · 31 Catches · 7 got away", "62 per hour · skill
+	-- +3"), and what joins a watch's sub-line ("Feralas · by night · unlucky").
+	TRACKER_SESSION = "Session · %s",
+	TRACKER_COUNTS = "%s · %s · %s got away",
+	TRACKER_PER_HOUR = "%s per hour · skill +%s",
+	TRACKER_JOIN = " · ",
 }
