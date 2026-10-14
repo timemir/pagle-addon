@@ -1248,6 +1248,85 @@ describe("FakePagle", function()
 		end)
 	end)
 
+	describe("the wallet projection", function()
+		-- A fake whose history holds purchases of two Hunts covers at 150 and 400, and the first one again, with 600
+		-- Coins earned, logged in.
+		local function withPurchases()
+			local fake = newFakePagle()
+			fake.global.coins.earned.Ledger = 600
+			fake.catchLog.data.characters[1] = { guid = PLAYER_GUID }
+			for i, purchase in ipairs({
+				{ "hunts.cover.velvet", 150 },
+				{ "hunts.cover.silk", 400 },
+				{ "hunts.cover.velvet", 150 },
+			}) do
+				fake.catchLog:Append({
+					kind = "purchase",
+					char = 1,
+					time = 1791731000 + i,
+					good = purchase[1],
+					price = purchase[2],
+				})
+			end
+			fake.login()
+			return fake
+		end
+
+		it(
+			"gives the spent total, the purchased set and the balance from the U1 entries in a history (SHOP-R11,"
+				.. " SHOP-R12, LOG-R78)",
+			function()
+				local fake = withPurchases()
+
+				fake.enterWorld()
+
+				assert.are.same(
+					{ spent = 550, purchased = { ["hunts.cover.velvet"] = true, ["hunts.cover.silk"] = true } },
+					fake.global.projections.wallet.projection
+				)
+				assert.are.equal(50, fake.Pagle.GetBalance().balance)
+				assert.are.same(
+					{ true, true },
+					{ fake.Pagle.IsOwned("hunts.cover.velvet"), fake.Pagle.IsOwned("hunts.cover.silk") }
+				)
+			end
+		)
+
+		it("takes a live ns.RecordPurchase, firing BalanceChanged once (SHOP-R10, SHOP-R11)", function()
+			local fake = withPurchases()
+			fake.enterWorld()
+			local balances = {}
+			fake.Pagle.RegisterCallback("spec", "BalanceChanged", function(_, balance)
+				balances[#balances + 1] = balance.balance
+			end)
+
+			fake.ns.RecordPurchase("hunts.cover.gilt", 30)
+
+			assert.are.same({ 20 }, balances)
+			assert.is_true(fake.Pagle.IsOwned("hunts.cover.gilt"))
+		end)
+
+		it(
+			"leaves fake.setSpent and fake.setPurchased in place until the projection hands over its own (SHOP-R11)",
+			function()
+				local fake = withPurchases()
+
+				fake.setSpent(100)
+				fake.setPurchased({ ["hunts.cover.gilt"] = true })
+				assert.are.same(
+					{ 500, true },
+					{ fake.Pagle.GetBalance().balance, fake.Pagle.IsOwned("hunts.cover.gilt") }
+				)
+
+				fake.enterWorld()
+				assert.are.same(
+					{ 50, false },
+					{ fake.Pagle.GetBalance().balance, fake.Pagle.IsOwned("hunts.cover.gilt") }
+				)
+			end
+		)
+	end)
+
 	describe("the live conditions", function()
 		-- fake.conditions with `fields` changed.
 		local function changed(fake, fields)
