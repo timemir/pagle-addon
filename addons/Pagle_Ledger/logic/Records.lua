@@ -33,6 +33,14 @@ function ns.SizeText(size, bands, formatLength)
 	return ns.L.SIZE_TEXT:format(bands[size.band].name, formatLength(size.length))
 end
 
+--- A copy of a Catch's Simulated Size (LOG-R65), for an achievement's size text (LED-R81): records are shared
+--- (CORE-R18). Nil without one.
+---@param size PagleSize?
+---@return PagleSize?
+function ns.CopySize(size)
+	return size and { length = size.length, band = size.band } or nil
+end
+
 --- Notes one Catch against its Species' or Legend item's record (LED-R80), after the fold has counted it: `class` is
 --- its class (LED-R5) and `species` its Species ID when a Species. Only a Species or Legend Catch with a size counts
 --- (LOG-R65): the first sets the record silently (LED-R81); a strictly longer one beats it and earns a `sizeRecord`,
@@ -73,6 +81,7 @@ function ns.CreditSizeRecord(state, class, species, record, catch, earned)
 			old = old.length,
 			new = size.length,
 			flair = entry.since >= RARE_RECORD_SINCE,
+			size = ns.CopySize(size),
 		}
 	end
 	entry.record = {

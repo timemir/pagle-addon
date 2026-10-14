@@ -72,7 +72,7 @@ local ns = select(2, ...)
 --- Coins (LED-R88; 0 when it pays none). Tickets #101 and #102 turn M2's kinds into moments and Write-up lines, ticket
 --- #137 M3's; the fold never reads the celebrated set (LED-R3).
 ---@class LedgerAchievement
----@field kind "levelUp"|"newSpecies"|"newInZone"|"skillMilestone"|"newCurio"|"trophyWeight"|"uncharted"|"elementStar"|"regularStar"|"familyStar"|"zoneRank"|"prestigeReady"|"prestige"|"legend"|"catchMilestone"|"sizeRecord"
+---@field kind "levelUp"|"newSpecies"|"newInZone"|"skillMilestone"|"newCurio"|"trophyWeight"|"uncharted"|"elementStar"|"regularStar"|"familyStar"|"zoneRank"|"prestigeReady"|"prestige"|"legend"|"catchMilestone"|"sizeRecord"|"completeTitle"
 ---@field cast? string
 ---@field coins integer
 ---@field levels? integer[]                   -- levelUp: the levels it raised, ascending
@@ -87,7 +87,9 @@ local ns = select(2, ...)
 ---@field old? number                         -- trophyWeight with a ruler (LED-R61): the family's heaviest before
 ---@field new? number                         -- trophyWeight with a ruler: the new item's weight
 ---@field flair? boolean                      -- sizeRecord (LED-R82): the rare-record flair; old and new are its mm
----@field rank? integer                       -- prestigeReady: the climb's prestige rank; prestige: the new rank
+---@field rank? integer                       -- prestigeReady: the climb's prestige rank; prestige: the new rank;
+--- levelUp in the scratch list: its climb's rank (logic/Projection.lua)
+---@field size? PagleSize                     -- newSpecies, legend, sizeRecord: the Catch's Simulated Size (LED-R81)
 
 --- The lookups the fold reads: Core's `Pagle.GetItem` (LOG-R55) and `Pagle.MatchesConditions` (LOG-R49), and the
 --- world index, which changes only with the catalogue, whose new fingerprint rebuilds the projection (LED-R10).
@@ -327,7 +329,7 @@ function ns.NewLedgerFold(lookups)
 			elseif item and (class == "trophy" or class == "curio") then
 				creditItem(state, record, itemID, item, earned)
 			elseif class == "legend" then
-				ns.CreditLegend(state, record, itemID, earned)
+				ns.CreditLegend(state, record, itemID, earned, catch.size)
 			elseif id then
 				local species = state.species[id]
 				local new = not species
@@ -344,6 +346,7 @@ function ns.NewLedgerFold(lookups)
 						species = id,
 						itemID = itemID,
 						zone = zone,
+						size = ns.CopySize(catch.size),
 					}
 				end
 				species.n = species.n + 1

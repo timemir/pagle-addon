@@ -18,8 +18,8 @@ function ns.RulesVersion(sizeRulesVersion)
 end
 
 --- The Ledger's projection def (LED-R2, LOG-R70), bound to `global.projection`, which it makes if missing: Core
---- owns it from here on. `apply` is the fold's, the same in every mode (LED-R3); it ignores every kind but Casts and
---- Skill Readings (Prestiges come in M4). No `extraFingerprint`, and no Sessions read.
+--- owns it from here on. `apply` is the fold's, the same in every mode (LED-R3); it ignores every kind but Casts,
+--- Skill Readings and Prestiges. No `extraFingerprint`, and no Sessions read.
 ---
 --- A `"live"` entry's achievements are celebrated as it is applied (LED-R91): their moments raised, Coins reported
 --- and the summary line set through `outlets`. A `"replay"` or `"rebuild"` entry's go to the scratch list (LED-R98),
@@ -58,7 +58,7 @@ function ns.ProjectionDef(global, lookups, outlets, sizeRulesVersion)
 		local coins, peak = state.coins, ns.PeakLevel(state)
 		local earned = fold.apply(state, record, "live")
 		local celebrated = ns.CelebratedSet(global)
-		for _, moment in ipairs(ns.Celebrate(celebrated, state, record, earned, outlets)) do
+		for _, moment in ipairs(ns.Celebrate(celebrated, state, record, earned, outlets, lookups)) do
 			outlets.RaiseMoment(moment)
 		end
 		celebrated.coins = state.coins
@@ -87,7 +87,14 @@ function ns.ProjectionDef(global, lookups, outlets, sizeRulesVersion)
 			if mode == "live" then
 				applyLive(state, record)
 			else
+				local from = #scratch
 				fold.apply(state, record, mode, scratch)
+				-- Each level-up keeps its climb, so done merges them per climb (LED-R36, LED-R93).
+				for i = from + 1, #scratch do
+					if scratch[i].kind == "levelUp" then
+						scratch[i].rank = state.prestige
+					end
+				end
 			end
 		end,
 		-- LED-R93: the first build's, rebuild's or catch-up's celebration, then Coins, the goods and the summary line.

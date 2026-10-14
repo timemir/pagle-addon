@@ -620,7 +620,7 @@ describe("the Journal's zone spread", function()
 
 	describe("with nothing selected", function()
 		it(
-			"shows \"About these waters\": the skill, the zone's completion, its families' stars and weights, and the reward without the Master title (LED-R137, LED-R4)",
+			"shows \"About these waters\": the skill, the zone's completion, its families' stars and weights, and the reward with the Master title naming the zone (LED-R137, LED-R161)",
 			function()
 				local _, loaded = zoneSpread(DARKSHORE)
 				local right = loaded.ns.journal.pages.right
@@ -633,12 +633,24 @@ describe("the Journal's zone spread", function()
 					"Trophies landed here",
 					"Catfish",
 					"Redgill",
-					"Reward for mastery: each new seal earns XP.",
+					"Reward for mastery: each new seal earns XP. The Master seal earns the title Warden of Darkshore Waters.",
 					"Pick a fish on the left to read its page.",
 				}, texts(right))
-				for _, block in ipairs(right) do
-					assert.is_nil(block.text:find("title", 1, true))
-				end
+			end
+		)
+
+		it(
+			'ends the reward after "earns XP." while the zonemaster title has no lore text (LED-R137, LED-R161)',
+			function()
+				local _, loaded = zoneSpread(DARKSHORE)
+				loaded.ns.L["title.zonemaster.text"] = nil
+				loaded.ns.journal:Draw()
+
+				local right = loaded.ns.journal.pages.right
+				assert.are.same(
+					{ "Reward for mastery: each new seal earns XP.", "Pick a fish on the left to read its page." },
+					{ right[#right - 1].text, right[#right].text }
+				)
 			end
 		)
 

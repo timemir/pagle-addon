@@ -25,9 +25,9 @@ local root
 ---@type table<string, SettingsCategory> the registered topic pages, by topic
 local pages = {}
 
---- Core's own rows on a topic page, by topic, filled by the file that owns them (adapter/AnnouncementSettings.lua).
---- Each builds its rows on the page, before the Modules' rows (SET-R3); a topic Core has rows on is always
---- registered (SET-R1).
+--- Core's own rows on a topic page, by topic, filled by the file that owns them (adapter/AnnouncementSettings.lua,
+--- adapter/Dock.lua). Each builds its rows on the page, before the Modules' rows (SET-R3); whether they register the
+--- page alone is ns.IsPageRegistered's (SET-R1).
 ---@type table<string, fun(page: SettingsCategory, layout: SettingsLayout)>
 ns.CoreSettingsRows = {}
 
@@ -122,7 +122,7 @@ local function customRow(extent, draw, searchLabel)
 	return initializer
 end
 
--- A paragraph or note (SET-R5, SET-R10).
+--- A paragraph or note (SET-R5, SET-R10, SET-R50): a row Core draws itself, with no search label.
 ---@param text string
 ---@return SettingsInitializer
 local function textRow(text)
@@ -132,6 +132,7 @@ local function textRow(text)
 		own.text:Show()
 	end)
 end
+ns.SettingsTextRow = textRow
 
 --- Each roster Module's line in the status list, read now (CORE-R41, CORE-R44, SET-R11): its name, its TOC
 --- version, its state and, while On, its button.
@@ -390,7 +391,7 @@ local function register()
 	for _, topic in ipairs(ns.SETTINGS_TOPICS) do
 		local entries = rows:Page(topic, modules)
 		local coreRows = ns.CoreSettingsRows[topic]
-		if coreRows or #entries > 0 then
+		if ns.IsPageRegistered(topic, coreRows ~= nil, #entries) then
 			local page, pageLayout = Settings.RegisterVerticalLayoutSubcategory(category, L.SETTINGS_PAGES[topic])
 			if coreRows then
 				coreRows(page, pageLayout)
@@ -399,6 +400,11 @@ local function register()
 			pages[topic] = page
 		end
 	end
+	-- Look and Feel, the last topic page, always registered from M4: Core builds it from the goods registry and takes
+	-- no rows for it (SET-R1, SET-R50, CORE-R42).
+	local look, lookLayout = Settings.RegisterVerticalLayoutSubcategory(category, L.SETTINGS_PAGES.look)
+	ns.BuildLookAndFeel(look, lookLayout)
+	pages.look = look
 	Settings.RegisterAddOnCategory(category)
 	root = category
 end

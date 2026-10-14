@@ -1,6 +1,6 @@
 ---@meta _
--- Blizzard's StaticPopup, as far as QoL's conflict and Reload now popups (QOL-R81, QOL-R83) and the Ledger's Prestige
--- confirm (LED-R33) use it, which Ketho's
+-- Blizzard's StaticPopup, as far as QoL's conflict and Reload now popups (QOL-R81, QOL-R83), the Ledger's Prestige
+-- confirm (LED-R33) and the Curio Shop's Buy popup (wallet-and-shop.md › UI: Buy) use it, which Ketho's
 -- vscode-wow-api annotations (WOW_API_COMMIT, scripts/tools.env) lack. Declarations for the types stage only: never loaded by the game, and
 -- excluded from luacheck. Source: Gethe/wow-ui-source branch forever at 943764493e6b16d63ded3ab304150d1f05e58b57
 -- ("1.60.1 (70338)"), Interface/AddOns/Blizzard_StaticPopup/StaticPopup.lua and
@@ -25,13 +25,17 @@
 ---@type table<string, StaticPopupDialogInfo>
 StaticPopupDialogs = {}
 
---- Shows the dialog `which`; returns the dialog frame, or nil if none was free.
+--- Shows the dialog `which`, its text formatted with `text_arg1` and `text_arg2`; returns the dialog frame, or nil if
+--- none was free. `insertedFrame` is parented to the dialog under its text (GameDialogMixin:SetupInsertedFrame) and
+--- hidden and unparented when the dialog hides (StaticPopup_ReleaseInsertedFrame): the Curio Shop's Buy popup puts its
+--- swatch, price and "Use it now" there.
 ---@param which string
 ---@param text_arg1 any?
 ---@param text_arg2 any?
 ---@param data any?
+---@param insertedFrame Frame?
 ---@return table?
-function StaticPopup_Show(which, text_arg1, text_arg2, data) end
+function StaticPopup_Show(which, text_arg1, text_arg2, data, insertedFrame) end
 
 --- Hides every shown dialog `which` (only the one holding `data`, when given); its OnHide runs, no button's callback.
 --- The pinned forever dump (BIR_COMMIT) lists it in Resources/FrameXML.lua.

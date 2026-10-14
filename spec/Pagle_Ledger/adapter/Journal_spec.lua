@@ -269,7 +269,7 @@ describe("the Fish Journal's navigation", function()
 		local _, loaded = loggedIn()
 		local journal = loaded.ns.journal
 
-		assert.is_false(journal:Open("legends"))
+		assert.is_false(journal:Open("unregistered"))
 
 		assert.is_false(journal:IsShown())
 	end)

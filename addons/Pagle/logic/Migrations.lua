@@ -27,6 +27,8 @@ ns.PAGLEDB_DEFAULTS = {
 		lengthUnit = nil, -- LOG-R69: "cm", "in", or nil (no default key) for the region default
 		appearance = {}, -- SHOP-R32: each slot's pick, by slot ID
 		announcements = { cozy = false, budget = { on = true, count = 4, window = 300 } }, -- announcements.md › Data
+		-- core/README.md › Data: `dock.point`, the tracker dock's saved place, nil (no key) until the player moves it.
+		dock = { point = nil }, -- CORE-R70, CORE-R71
 	},
 }
 

@@ -290,14 +290,20 @@ function makers.link(parent)
 	return widget
 end
 
--- A dotted-leader line: the label left, the value right, dots between (LED-R132's contents list).
+---@class LedgerLeaderWidget: LedgerJournalWidget
+---@field value FontString
+
+-- A dotted-leader line: the label left, the value right, dots between (LED-R132's contents list), opening its place;
+-- or with an `action`, calling it, its value in a link's red (the Angler page's bindings, LED-R146).
 function makers.leader(parent)
-	local widget = newWidget(parent)
+	local widget = newWidget(parent) --[[@as LedgerLeaderWidget]]
 	local label = ns.JournalText(widget, ns.JournalFonts().text, LOOK.ink)
 	label:SetPoint("TOPLEFT")
+	widget.label = label
 	local value = ns.JournalText(widget, ns.JournalFonts().text, LOOK.ink)
 	value:SetPoint("TOPRIGHT")
 	value:SetJustifyH("RIGHT")
+	widget.value = value
 	local dots = {}
 	for i = 1, LEADER_DOTS do
 		local dot = widget:CreateTexture(nil, "ARTWORK")
@@ -305,15 +311,19 @@ function makers.leader(parent)
 		dot:SetSize(1, 1)
 		dots[i] = dot
 	end
-	local place, openPlace
+	local place, action, openPlace
 	widget:SetScript("OnClick", function()
-		if place then
+		if action then
+			action()
+		elseif place then
 			openPlace(place)
 		end
 	end)
 	function widget.Fill(_, block, width, open)
-		place, openPlace = block.place, open
+		place, action, openPlace = block.place, block.action, open
 		label:SetText(block.text)
+		local ink = action and LOOK.red or LOOK.ink
+		value:SetTextColor(ink[1], ink[2], ink[3])
 		value:SetText(block.value or "")
 		local height = label:GetStringHeight()
 		local from, to = label:GetStringWidth() + 4, width - value:GetStringWidth() - 4
@@ -346,14 +356,18 @@ function makers.seal(parent)
 	return widget
 end
 
--- The bookplate summary's row (LED-R132): the level in large numerals, its caption beside them, and a wax seal at
--- the right with Ledger completion.
+-- The bookplate summary's row (LED-R132), as variant E's: the level in large numerals; beside them its caption with
+-- the Prestige emblem and stars after it (makers.emblem), and the active title in handwriting under the caption; a
+-- wax seal at the right with Ledger completion.
 function makers.bookplate(parent)
 	local widget = newWidget(parent)
 	local numerals = ns.JournalText(widget, ns.JournalFonts().numeral, LOOK.title)
 	numerals:SetPoint("LEFT")
 	local caption = ns.JournalText(widget, ns.JournalFonts().small, LOOK.ink)
-	caption:SetPoint("LEFT", numerals, "RIGHT", 12, 0)
+	local emblem = makers.emblem(widget)
+	emblem:SetPoint("LEFT", caption, "RIGHT", 8, 0)
+	local signature = ns.JournalText(widget, ns.JournalFonts().hand, LOOK.blue)
+	signature:SetPoint("TOPLEFT", caption, "BOTTOMLEFT", 0, -4)
 	local wax = disc(widget, SEAL_SIZE)
 	wax:SetPoint("RIGHT")
 	wax:SetRotation(math.rad(-6))
@@ -361,9 +375,18 @@ function makers.bookplate(parent)
 	seal:SetPoint("CENTER", wax)
 	seal:SetJustifyH("CENTER")
 	widget.label = numerals
-	function widget.Fill(_, block)
+	function widget.Fill(_, block, width, open)
 		numerals:SetText(block.text)
 		caption:SetText(block.value or "")
+		signature:SetText(block.signature or "")
+		signature:SetShown(block.signature ~= nil)
+		-- With a title under it, the caption rides above the numerals' middle so the two stay centred beside them.
+		caption:ClearAllPoints()
+		caption:SetPoint(block.signature and "BOTTOMLEFT" or "LEFT", numerals, "RIGHT", 12, block.signature and 2 or 0)
+		local room = math.max(1, width - numerals:GetStringWidth() - caption:GetStringWidth() - SEAL_SIZE - 32)
+		emblem:SetWidth(room)
+		emblem:SetHeight(emblem:Fill({ kind = "emblem", mark = block.mark }, room, open))
+		emblem:SetShown(block.mark ~= nil and block.mark.emblem ~= nil)
 		seal:SetText(block.seal or "")
 		wax:SetShown(block.seal ~= nil)
 		return SEAL_SIZE
@@ -681,6 +704,43 @@ function makers.emblem(parent)
 		stars:Fill({ kind = "stamps", stamps = list }, width, open)
 		stars:SetShown(mark.stars > 0)
 		return EMBLEM_HEIGHT
+	end
+	return widget
+end
+
+-- A button's height, and the room each side of its words.
+local BUTTON_HEIGHT, BUTTON_PAD = 24, 12
+
+---@class LedgerButtonWidget: LedgerJournalWidget
+---@field face Button -- the button itself, sized to its words; the widget spans the page
+
+-- A button (the Angler page's Prestige, LED-R146): its words in gilt on a red face with a gilt edge, as variant E's
+-- `.btn`, sized to them; clicking the face calls the block's `action`.
+function makers.button(parent)
+	local widget = newWidget(parent) --[[@as LedgerButtonWidget]]
+	local face = CreateFrame("Button", nil, widget)
+	face:SetPoint("TOPLEFT")
+	face:SetHeight(BUTTON_HEIGHT)
+	ns.JournalSolid(face, LOOK.gilt, "BACKGROUND")
+	local red = ns.JournalSolid(face, LOOK.seal, "BORDER")
+	red:SetPoint("TOPLEFT", 1, -1)
+	red:SetPoint("BOTTOMRIGHT", -1, 1)
+	local text = ns.JournalText(face, ns.JournalFonts().small, LOOK.gilt)
+	text:SetPoint("CENTER")
+	text:SetJustifyH("CENTER")
+	widget.label = text
+	widget.face = face
+	local action
+	face:SetScript("OnClick", function()
+		if action then
+			action()
+		end
+	end)
+	function widget.Fill(_, block)
+		action = block.action
+		text:SetText(block.text)
+		face:SetWidth(text:GetStringWidth() + 2 * BUTTON_PAD)
+		return BUTTON_HEIGHT
 	end
 	return widget
 end

@@ -11,13 +11,17 @@ local Pagle = Pagle
 -- The Curio Shop window (wallet-and-shop.md › UI, variant B of prototypes/curio-shop/): the purse along the top, the
 -- list on the left, the stage on the right. What it shows is logic/Shop.lua's model, read afresh at each redraw; this
 -- file only draws it. It opens only through ns.shop (logic/Wiring.lua's ns.WireShop): Pagle.OpenShop, /pagle shop
--- and the compartment entry, never on its own. Buying is ticket #158's: Buy shows here, disabled.
+-- and the compartment entry, never on its own. Buy asks with a StaticPopup, whose Buy calls ns.shop.Buy.
 --
 -- Templates are FrameXML's at Gethe/wow-ui-source branch forever, 943764493e6b16d63ded3ab304150d1f05e58b57
 -- ("1.60.1 (70338)"), Interface/AddOns/Blizzard_SharedXML/: ButtonFrameTemplate (Mainline/SharedUIPanelTemplates.xml,
 -- the Collections window's frame: portrait, title, close button and an Inset), SearchBoxTemplate
--- (Shared/InputBox/InputBoxTemplates.xml), UIPanelScrollFrameTemplate (SecureScrollTemplates.xml) and
--- UIPanelButtonTemplate, as Core's cards use it. The fonts are Blizzard_Fonts_Shared/Shared/FontStyles.xml's.
+-- (Shared/InputBox/InputBoxTemplates.xml), UIPanelScrollFrameTemplate (SecureScrollTemplates.xml),
+-- UICheckButtonTemplate (Shared/Button/CheckButtonTemplates.xml, its label `Text`) and UIPanelButtonTemplate, as
+-- Core's cards use it. The fonts are Blizzard_Fonts_Shared/Shared/FontStyles.xml's. The Buy popup is
+-- Blizzard_StaticPopup/StaticPopup.lua's StaticPopup_Show(which, text_arg1, text_arg2, data, insertedFrame): its text
+-- formatted with the good's name, and our frame inserted under it (Blizzard_StaticPopup_Game/GameDialog.lua,
+-- SetupInsertedFrame), hidden and unparented again when it hides (StaticPopup_ReleaseInsertedFrame).
 local L = ns.L
 
 -- The frame's global name: UISpecialFrames takes names, and Esc hides the frames it lists.
@@ -49,6 +53,10 @@ local OFF_ALPHA, GREYED_ALPHA = 0.35, 0.55
 local WHITE, RED, GOLD = { 1, 1, 1 }, { 1, 0.25, 0.25 }, { 1, 0.82, 0 }
 -- What separates tags on the stage.
 local TAG_SEPARATOR = " · "
+-- The Buy popup's StaticPopupDialogs key, the one field .luacheckrc lets Core set; and the size of the frame it
+-- inserts under its text.
+local BUY_DIALOG = "PAGLE_CURIO_BUY"
+local CONFIRM_WIDTH, CONFIRM_HEIGHT = 300, 92
 
 ---@class PagleShopSegmentFrame: Frame
 ---@field bar Texture      the segment's colour on the bar
@@ -63,6 +71,7 @@ local TAG_SEPARATOR = " · "
 ---@field balance FontString
 ---@field bar Frame
 ---@field payNone FontString "Stats and QoL pay none"
+---@field held FontString    SHOP-R12's held line, shown while the balance is held at 0
 ---@field segments PagleShopSegmentFrame[] pooled: the shown ones are the purse's
 
 ---@class PagleShopLine: Button
@@ -88,6 +97,16 @@ local TAG_SEPARATOR = " · "
 ---@field needed FontString
 ---@field buy Button
 ---@field use Button
+
+---@class PagleShopCheckButton: CheckButton
+---@field Text FontString UICheckButtonTemplate's label
+
+--- The frame the Buy popup inserts under "Buy {name}?" (wallet-and-shop.md › UI: Buy).
+---@class PagleShopConfirmFrame: Frame
+---@field swatch Texture
+---@field price FontString
+---@field leftAfter FontString "Pagle Coins left after: N. Looks are yours for good."
+---@field useNow PagleShopCheckButton "Use it now", ticked at each asking
 
 ---@class PagleShopSearchBox: EditBox
 ---@field Instructions FontString SearchBoxTemplate's hint, shown while the box is empty
@@ -117,9 +136,15 @@ local query = { filter = "all" }
 ---@type string?
 local selected
 
--- Closes the window, giving back the keyboard: a hidden edit box would keep it.
+-- Hides the Buy popup if it is up, buying nothing: it closes with the shop (SHOP-R41).
+local function hideBuy()
+	StaticPopup_Hide(BUY_DIALOG)
+end
+
+-- Closes the window and its Buy popup, giving back the keyboard: a hidden edit box would keep it.
 ---@param frame PagleShopFrame
 local function close(frame)
+	hideBuy()
 	frame.search:ClearFocus()
 	frame:Hide()
 end
@@ -170,8 +195,8 @@ end
 
 local redraw
 
--- The purse (wallet-and-shop.md › UI): the coin, "Pagle Coins" over the balance, the bar with its legend, and who
--- pays none, in the band between the title bar and the Inset.
+-- The purse (wallet-and-shop.md › UI): the coin, "Pagle Coins" over the balance, the bar with its legend, who pays
+-- none, and SHOP-R12's held line under them, in the band between the title bar and the Inset.
 ---@param frame PagleShopFrame
 ---@return PagleShopPurseFrame
 local function buildPurse(frame)
@@ -192,6 +217,11 @@ local function buildPurse(frame)
 	track:SetColorTexture(0.1, 0.1, 0.1, 0.9)
 	purse.payNone = text(frame, "GameFontDisableSmall")
 	purse.payNone:SetPoint("TOPRIGHT", -18, -40)
+	purse.held = text(frame, "GameFontDisableSmall")
+	purse.held:SetPoint("TOPLEFT", 102, -74)
+	purse.held:SetWidth(WIDTH - 120)
+	purse.held:SetJustifyH("LEFT")
+	purse.held:SetText(L.SHOP_HELD)
 	purse.segments = {}
 	return purse --[[@as PagleShopPurseFrame]]
 end
@@ -233,6 +263,7 @@ local function drawPurse(frame, purse)
 	frame.purse.label:SetText(purse.label)
 	frame.purse.balance:SetText(purse.balance)
 	frame.purse.payNone:SetText(purse.payNone)
+	frame.purse.held:SetShown(purse.held) -- SHOP-R12: the balance reads 0 meanwhile
 	local x, previous = 0, nil
 	for i, data in ipairs(purse.segments) do
 		local segment = segmentAt(frame, i)
@@ -454,6 +485,65 @@ local function drawList(frame, groups)
 	frame.empty:SetShown(i == 0)
 end
 
+-- The frame the Buy popup inserts under its text (wallet-and-shop.md › UI: Buy): the good's swatch and price, the
+-- Coins left after, and "Use it now". One, made at the first Buy, filled at each.
+---@type PagleShopConfirmFrame?
+local confirm
+
+---@return PagleShopConfirmFrame
+local function buildConfirm()
+	local made = CreateFrame("Frame", nil, UIParent) --[[@as PagleShopConfirmFrame]]
+	made:SetSize(CONFIRM_WIDTH, CONFIRM_HEIGHT)
+	made.swatch = made:CreateTexture(nil, "ARTWORK")
+	made.swatch:SetSize(36, 36)
+	made.swatch:SetPoint("TOPLEFT", 16, -4)
+	made.price = text(made, "GameFontHighlight")
+	made.price:SetPoint("LEFT", made.swatch, "RIGHT", 10, 0)
+	made.leftAfter = text(made, "GameFontHighlightSmall")
+	made.leftAfter:SetPoint("TOPLEFT", made.swatch, "BOTTOMLEFT", 0, -8)
+	made.leftAfter:SetWidth(CONFIRM_WIDTH - 32)
+	made.leftAfter:SetJustifyH("LEFT")
+	made.leftAfter:SetWordWrap(true)
+	made.useNow = CreateFrame("CheckButton", nil, made, "UICheckButtonTemplate") --[[@as PagleShopCheckButton]]
+	made.useNow:SetSize(24, 24)
+	made.useNow:SetPoint("TOPLEFT", made.leftAfter, "BOTTOMLEFT", -4, -4)
+	made.useNow.Text:SetText(L.SHOP_USE_NOW)
+	made:Hide()
+	return made
+end
+
+-- Buy on the stage (wallet-and-shop.md › UI: Buy): asks "Buy {name}?" with the swatch, the price, the Coins left
+-- after and "Use it now" ticked, when Buy is enabled for `goodID` now (SHOP-R13). Its Buy calls ns.shop.Buy, which
+-- checks SHOP-R13 again and does nothing if it no longer holds; Cancel and Esc buy nothing.
+---@param goodID string?
+local function askToBuy(goodID)
+	local purchase = ns.ShopModel(BreakUpLargeNumbers):Purchase(goodID)
+	if not purchase then
+		return
+	end
+	local shown = confirm or buildConfirm()
+	confirm = shown
+	shown.swatch:SetTexture(purchase.icon or NO_ICON)
+	shown.price:SetText(purchase.priceText)
+	shown.leftAfter:SetText(purchase.leftAfter)
+	shown.useNow:SetChecked(true)
+	StaticPopupDialogs.PAGLE_CURIO_BUY = {
+		text = L.SHOP_BUY_CONFIRM,
+		button1 = L.SHOP_BUY_ACCEPT,
+		button2 = L.SHOP_BUY_CANCEL,
+		OnAccept = function(_, data)
+			if ns.shop.Buy(data, shown.useNow:GetChecked() == true) then
+				-- BalanceChanged redrew before the good was owned: "Owned" or "In use" shows at once.
+				redraw(false)
+			end
+		end,
+		timeout = 0,
+		whileDead = true,
+		hideOnEscape = true,
+	}
+	StaticPopup_Show(BUY_DIALOG, purchase.name, nil, purchase.id, shown)
+end
+
 -- The stage (wallet-and-shop.md › UI): the preview area, then the good's name, slot and owner, description and
 -- notes on the left, and its tags or price and Buy or Use on the right.
 ---@param frame PagleShopFrame
@@ -496,6 +586,9 @@ local function buildStage(frame)
 	stage.price:SetPoint("TOPRIGHT", stage.area, "BOTTOMRIGHT", -4, -12)
 	stage.buy = button(inset, "", 160)
 	stage.buy:SetPoint("TOPRIGHT", stage.price, "BOTTOMRIGHT", 0, -6)
+	stage.buy:SetScript("OnClick", function()
+		askToBuy(selected)
+	end)
 	stage.needed = text(inset, "GameFontRedSmall")
 	stage.needed:SetPoint("TOPRIGHT", stage.buy, "BOTTOMRIGHT", 0, -4)
 	stage.use = button(inset, L.SHOP_USE, 120)
@@ -586,8 +679,7 @@ local function drawStage(frame, data, fresh)
 	end
 	if data.buy then
 		stage.buy:SetText(data.buy)
-		-- Buying is ticket #158's; until then Buy shows, disabled.
-		stage.buy:SetEnabled(false)
+		stage.buy:SetEnabled(data.canBuy == true) -- SHOP-R13
 		stage.buy:Show()
 	end
 	if data.needed then
@@ -629,8 +721,9 @@ local function build()
 	frame.empty:SetText(L.SHOP_NO_MATCH)
 	frame.stage = buildStage(frame)
 
-	-- Esc with the search box unfocused hides it through UISpecialFrames (CloseSpecialWindows).
+	-- Esc with the search box unfocused hides it through UISpecialFrames (CloseSpecialWindows); its Buy popup goes too.
 	frame:SetScript("OnHide", function()
+		hideBuy()
 		frame.search:ClearFocus()
 		hideTooltip()
 	end)
@@ -639,13 +732,24 @@ local function build()
 	return frame
 end
 
+-- A redraw waits for the projections to finish updating (ns.projections:WhenIdle), once.
+local waitingForIdle = false
+
 -- Redraws the open window from the model now: the purse, the filters and chips, the list and the stage. A selection
--- the shop no longer shows is dropped. `fresh` draws the selected good's preview again.
+-- the shop no longer shows is dropped. `fresh` draws the selected good's preview again. While a projection updates,
+-- Buy is disabled (SHOP-R13), and the window redraws again once the update finishes.
 ---@param fresh boolean
 function redraw(fresh)
 	local frame = ns.shopFrame
 	if not frame or not frame:IsShown() then
 		return
+	end
+	if not waitingForIdle and ns.projections:IsUpdating() then
+		waitingForIdle = true
+		ns.projections:WhenIdle(function()
+			waitingForIdle = false
+			redraw(false)
+		end)
 	end
 	local model = ns.ShopModel(BreakUpLargeNumbers)
 	drawPurse(frame, model:Purse())
@@ -708,12 +812,11 @@ function Pagle.OpenShop(goodID)
 	ns.shop.Open(goodID)
 end
 
--- The window follows the balance and the looks while it is open (wallet-and-shop.md › UI, SHOP-R33). Its own owner
--- on the bus.
+-- The window follows the balance, the looks and the Modules On while it is open, so Buy re-evaluates (wallet-and-shop.md
+-- › UI, SHOP-R13, SHOP-R33). Its own owner on the bus.
 local OWNER = "Pagle shop window"
-Pagle.RegisterCallback(OWNER, "BalanceChanged", function()
-	redraw(false)
-end)
-Pagle.RegisterCallback(OWNER, "AppearanceChanged", function()
-	redraw(false)
-end)
+for _, event in ipairs({ "BalanceChanged", "AppearanceChanged", "ModulesChanged" }) do
+	Pagle.RegisterCallback(OWNER, event, function()
+		redraw(false)
+	end)
+end
