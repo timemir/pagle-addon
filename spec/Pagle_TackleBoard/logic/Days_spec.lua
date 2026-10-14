@@ -15,6 +15,29 @@ local DAILY = 1791730800 -- Sun 11 Oct 15:00 UTC: today's daily reset
 local WEEKLY = 1791298800 -- Tue 6 Oct 15:00 UTC: this week's weekly reset
 local MIDNIGHT = 1791702000 -- Sun 11 Oct 07:00 UTC: realm midnight today
 
+-- Each way a reset call can fail (TKB-R11): missing (false in support.resetAPI), nil, 0 or negative.
+local FAILURES = {
+	{ "missing", false },
+	{
+		"nil",
+		function()
+			return nil
+		end,
+	},
+	{
+		"0",
+		function()
+			return 0
+		end,
+	},
+	{
+		"negative",
+		function()
+			return -5
+		end,
+	},
+}
+
 describe("board days and weeks", function()
 	local ns = board.load().ns
 
@@ -32,21 +55,8 @@ describe("board days and weeks", function()
 			assert.are.same({ DAILY, WEEKLY }, { ns.LiveBoundaries(api(NOW)) })
 		end)
 
-		-- Each way a reset call can fail (TKB-R11): missing (false in support.resetAPI), nil, 0 or negative.
-		local failures = {
-			missing = false,
-			["nil"] = function()
-				return nil
-			end,
-			["0"] = function()
-				return 0
-			end,
-			negative = function()
-				return -5
-			end,
-		}
-
-		for name, failed in pairs(failures) do
+		for _, failure in ipairs(FAILURES) do
+			local name, failed = failure[1], failure[2]
 			it("falls the day back to realm midnight when the daily call is " .. name .. ", not the week (TKB-R11)", function()
 				assert.are.same({ MIDNIGHT, WEEKLY }, { ns.LiveBoundaries(api(NOW, { daily = failed })) })
 			end)
@@ -254,6 +264,25 @@ describe("board days and weeks", function()
 				assert.are.equal(3, ns.Today(day3, shifted(thu1530)))
 				assert.are.equal(4, ns.DayOf(day3, DAILY + 4 * DAY + 3600))
 			end)
+		end)
+	end)
+
+	describe("ns.SecondsToNextReset", function()
+		it("is the daily call's answer plus the 2 s reset timer delay (TKB-R13, Tunables)", function()
+			-- 15:15 UTC to the next reset at 15:00 UTC: 23 h 45 min.
+			assert.are.equal(85500 + 2, ns.SecondsToNextReset(api(NOW)))
+		end)
+
+		for _, failure in ipairs(FAILURES) do
+			local name, failed = failure[1], failure[2]
+			it("is the time to the next realm midnight plus 2 s when the daily call is " .. name .. " (TKB-R11, TKB-R13)", function()
+				-- 08:15 realm to midnight: 15 h 45 min.
+				assert.are.equal(56700 + 2, ns.SecondsToNextReset(api(NOW, { daily = failed })))
+			end)
+		end
+
+		it("counts to the next realm midnight, not the current one, a second after midnight (TKB-R11, TKB-R13)", function()
+			assert.are.equal(DAY - 1 + 2, ns.SecondsToNextReset(api(MIDNIGHT + 1, { daily = false })))
 		end)
 	end)
 end)

@@ -145,3 +145,19 @@ function ns.Today(boundary, api)
 	end
 	return ns.NumberBoundary(boundary, ns.LiveBoundaries(api)).day
 end
+
+--- The reset timer's delay past the reset, in seconds (TKB-R13, tackle-board.md › Tunables).
+ns.RESET_TIMER_DELAY = 2
+
+--- The seconds to arm the reset timer for (TKB-R13 step 4): to the next daily reset, from the daily call or else the
+--- next realm midnight (TKB-R11), plus ns.RESET_TIMER_DELAY.
+---@param api TackleResetAPI
+---@return integer
+function ns.SecondsToNextReset(api)
+	local daily = secondsUntil(api, "GetSecondsUntilDailyReset")
+	if not daily then
+		local now = api.GetServerTime()
+		daily = realmMidnight(api, now) + ns.DAY_SECONDS - now
+	end
+	return daily + ns.RESET_TIMER_DELAY
+end
