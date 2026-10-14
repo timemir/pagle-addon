@@ -1,11 +1,11 @@
 ---@class PagleNS
 local ns = select(2, ...)
 
--- Core's wiring (CORE-R18): how its projection machinery, Sessions, moments, Session summary, cards and wallet are
--- built and connected to each other, to PagleDB and to the Module handle. Pure logic over a host (CORE-R7): Core's
--- adapter builds its host over the WoW client (adapter/Host.lua), and FakePagle builds one over its fakes, so both
--- run this one wiring and the double can't drift from Core. What differs between them is only the host and the
--- display each factory is handed.
+-- Core's wiring (CORE-R18): how its projection machinery, Sessions, moments, Session summary, cards, wallet and Field
+-- report are built and connected to each other, to PagleDB and to the Module handle. Pure logic over a host
+-- (CORE-R7): Core's adapter builds its host over the WoW client (adapter/Host.lua), and FakePagle builds one over its
+-- fakes, so both run this one wiring and the double can't drift from Core. What differs between them is only the host
+-- and the display each factory is handed.
 
 --- What the wiring needs from where Core runs. Every function is called when needed, never stored.
 ---@class PagleHost
@@ -31,6 +31,7 @@ local ns = select(2, ...)
 ---@field summary PagleSummary Core's one Session summary (ns.WireSummary).
 ---@field cards PagleCards Core's cards (ns.WireCards).
 ---@field wallet PagleWallet Core's one wallet (ns.WireWallet).
+---@field fieldReport PagleFieldReportReaders? Core's Field report, from login step 1 on (ns.WireFieldReport).
 
 --- Core's projection machinery (LOG-R70–R78) as ns.projections, and `M:NewProjection` and `M:IterateCatches` on every
 --- Module handle. Until Module records (M7), a Module's records are the ones Pagle.IterateCatches yields.
@@ -245,4 +246,38 @@ function ns.WireWallet(host)
 	function ns.OpenWallet()
 		ns.wallet:Open(host.db().global.coins.earned)
 	end
+end
+
+--- The Field report's two readers (field-report.md › The projection).
+---@class PagleFieldReportReaders
+---@field rows fun(): PagleReportRow[]? -- every I, K and P row, unsorted; nil while the projection updates (REP-R42)
+---@field count fun(): integer          -- the I and K rows stored, plus the P rows built now (REP-R26)
+
+--- Login step 1 (LOG-R1), once PagleDB is open and the catalogue built: Core's Field report as ns.fieldReport. Its
+--- projection is bound in PagleDB.global.projections.fieldReport on Core's machinery, ahead of every Module's, so
+--- login step 3 catches it up or rebuilds it with the rest (REP-R25, LOG-R71, LOG-R72, LOG-R78). It reads the log's
+--- records as every projection does (host.iterate), the catalogue in ns.Catalogue at each call, and the P rows from
+--- PagleDB.global.diagnostics when asked for (REP-R22). It reads only Core's log, catalogue and buffer, so enabled
+--- Modules change nothing (REP-R90), and it raises no moment and no Write-up (REP-R45, REP-R92).
+---@param host PagleHost
+function ns.WireFieldReport(host)
+	---@type PagleCatalogue
+	local catalogue = setmetatable({}, {
+		__index = function(_, name)
+			return ns.Catalogue[name]
+		end,
+	})
+	local rows, count = ns.AddFieldReport({
+		projections = ns.projections,
+		db = host.db().global.projections.fieldReport,
+		catalogue = catalogue,
+		iterate = host.iterate,
+		buffer = function()
+			return host.db().global.diagnostics
+		end,
+		casts = function()
+			return host.catchLog():Reverse("cast")
+		end,
+	})
+	ns.fieldReport = { rows = rows, count = count }
 end

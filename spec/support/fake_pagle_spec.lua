@@ -890,7 +890,8 @@ describe("FakePagle", function()
 		end
 
 		it(
-			"counts a live Uncharted Catch's I row, and the P rows of fake.diagnostics (REP-R10, REP-R22, REP-R26)",
+			"counts a live Uncharted Catch's I row, and the P rows of fake.global.diagnostics (REP-R10, REP-R22,"
+				.. " REP-R26)",
 			function()
 				local fake = newFakePagle()
 				fake.setCatalogue(fixture())
@@ -902,14 +903,39 @@ describe("FakePagle", function()
 				fake.playCast("caught", { { itemID = 9999, quantity = 1 } })
 				assert.are.equal(1, fake.Pagle.GetFieldReportCount(), "two Catches on one key make one row")
 
-				fake.diagnostics[1] = { id = cast.id, zone = 148, subzone = 453, locale = "enUS", texts = { "A", "B" } }
+				fake.global.diagnostics[1] =
+					{ id = cast.id, zone = 148, subzone = 453, locale = "enUS", texts = { "A", "B" } }
 				assert.are.equal(3, fake.Pagle.GetFieldReportCount())
+			end
+		)
+
+		it(
+			"catches up on the Casts already in the log at enterWorld, read-only as any projection (REP-R25, LOG-R71)",
+			function()
+				local fake = newFakePagle()
+				fake.setCatalogue(fixture())
+				fake.catchLog.data.characters[1] = { guid = PLAYER_GUID }
+				for i = 1, 2 do
+					fake.catchLog:Append({
+						kind = "cast",
+						char = 1,
+						time = SERVER_TIME - 1000 + i,
+						outcome = "caught",
+						conditions = { minute = 494, zone = 148, subzone = 453, events = {}, auras = {} },
+						items = { { itemID = 9998 + i, quantity = 1 } },
+					})
+				end
+				fake.login()
+				fake.enterWorld()
+
+				assert.are.equal(2, fake.Pagle.GetFieldReportCount(), "one I row per item")
+				assert.is_table(fake.global.projections.fieldReport.projection) -- stored in fake.global
 			end
 		)
 
 		it("gives the last stored count while the projection updates (REP-R26)", function()
 			local fake = newFakePagle()
-			fake.fieldReportDB.projection = { build = 0, count = 5, I = {}, K = {} }
+			fake.global.projections.fieldReport.projection = { build = 0, count = 5, I = {}, K = {} }
 
 			assert.are.equal(5, fake.Pagle.GetFieldReportCount())
 		end)
