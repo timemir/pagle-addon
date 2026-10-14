@@ -10,6 +10,7 @@
 ## SavedVariables: PagleHuntsDB
 
 locale\enUS.lua
+data\Lore.lua
 data\HuntList.lua
 logic\Data.lua
 logic\Module.lua
