@@ -12,9 +12,9 @@ local THOUSAND_NEEDLES = 400
 local KALIMDOR, EASTERN_KINGDOMS = 1, 0
 
 -- Items of the fixture.
-local SMALLFISH, MACKEREL, MUD_SNAPPER, CATFISH, BLACKMOUTH = 6291, 6303, 6289, 6308, 6358
+local SMALLFISH, MACKEREL, CATFISH, BLACKMOUTH = 6291, 6303, 6308, 6358
 local MIGHTFISH, LARGE_MIGHTFISH, GROUPER, BASS, EEL = 13754, 13893, 12238, 13756, 13757
-local LEGEND, QUEST_FISH, REMOVED_FISH, MANA_POTION = 92001, 92002, 92003, 2455
+local LEGEND, QUEST_FISH, MANA_POTION = 92001, 92002, 2455
 local JUNK_A, JUNK_B, NOISY_JUNK = 92011, 92012, 92013
 local CONTAINER_A, CONTAINER_B, REMOVED_CONTAINER = 92021, 92022, 92023
 local TREASURE_A, TREASURE_B, TROPHY_A = 92031, 92032, 92041
@@ -130,7 +130,7 @@ describe("Goal progress", function()
 	local run = runner(ns, Pagle)
 
 	describe("haul", function()
-		it("counts +1 per Catch in the zone, whatever its quantity, Noise and Uncharted included (TKB-R40, TKB-R42, TKB-R43)", function()
+		it("counts +1 per Catch in the zone, any quantity, Uncharted too (TKB-R40, TKB-R42, TKB-R43)", function()
 			local haul = goal({ kind = "haul", need = 20, target = DUROTAR })
 
 			local progress, counted = run(haul, {
@@ -142,7 +142,7 @@ describe("Goal progress", function()
 			assert.are.same({ true, true, true, true }, counted)
 		end)
 
-		it("ignores Catches in another zone, in zone 0, of got-away Casts and from before the goal (TKB-R40, TKB-R42)", function()
+		it("ignores other zones, zone 0, got-away Casts and Casts before the goal (TKB-R40, TKB-R42)", function()
 			local haul = goal({ kind = "haul", need = 20, target = DUROTAR })
 
 			local progress = run(haul, {
@@ -158,7 +158,7 @@ describe("Goal progress", function()
 	end)
 
 	describe("variety", function()
-		it("as a Notice counts distinct Species in the zone, gated, quest fish and Legends included (TKB-R42)", function()
+		it("as a Notice counts distinct Species in the zone, quest fish and Legends too (TKB-R42)", function()
 			local variety = goal({ kind = "variety", need = 5, target = DUROTAR })
 
 			local progress, counted = run(variety, {
@@ -170,7 +170,7 @@ describe("Goal progress", function()
 			assert.are.same({ true, false, true, true, true, true }, counted)
 		end)
 
-		it("as a Notice counts no Noise, item without a Species, Uncharted item or item 0 (TKB-R42, TKB-R43)", function()
+		it("as a Notice counts no Noise, Species-less, Uncharted or item 0 Catch (TKB-R42, TKB-R43)", function()
 			local variety = goal({ kind = "variety", need = 5, target = DUROTAR })
 
 			local progress = run(variety, {
@@ -181,7 +181,7 @@ describe("Goal progress", function()
 			assert.are.equal(0, progress)
 		end)
 
-		it("as an Expedition counts distinct stored Species caught in the zone, any item of the Species (TKB-R42)", function()
+		it("as an Expedition counts distinct stored Species caught in the zone (TKB-R42)", function()
 			-- Darkshore's five eligible Species, by representative item (Mightfish's is 13754, from Auberdine).
 			local variety = goal({
 				type = "e",
@@ -203,7 +203,7 @@ describe("Goal progress", function()
 	end)
 
 	describe("wanderer", function()
-		it("as a Notice counts distinct zones but 0 in the Session, any Catch, Noise and Uncharted too (TKB-R42, TKB-R43)", function()
+		it("as a Notice counts distinct non-0 zones in the Session, Uncharted too (TKB-R42, TKB-R43)", function()
 			local wanderer = goal({ kind = "wanderer", tier = 3, need = 3 })
 
 			local progress, counted = run(wanderer, {
@@ -290,11 +290,14 @@ describe("Goal progress", function()
 	end)
 
 	describe("size", function()
-		it("counts +1 per Catch whose Size band is the target or better: a Monster counts for Hefty (TKB-R42)", function()
+		it("counts +1 per Catch of the target Size band or better: a Monster for Hefty (TKB-R42)", function()
 			local size = goal({ kind = "size", need = 10, target = HEFTY })
 
 			local progress, counted = run(size, {
-				cast(DUROTAR, { { SMALLFISH, HEFTY }, { SMALLFISH, 2 }, { MACKEREL, MONSTER }, { SMALLFISH, WHOPPER } }),
+				cast(
+					DUROTAR,
+					{ { SMALLFISH, HEFTY }, { SMALLFISH, 2 }, { MACKEREL, MONSTER }, { SMALLFISH, WHOPPER } }
+				),
 				cast(0, { TROPHY_A, { LEGEND, HEFTY }, { UNCHARTED, MONSTER }, { 0, MONSTER } }),
 			})
 
@@ -342,7 +345,7 @@ describe("Goal progress", function()
 	end)
 
 	describe("collector", function()
-		it("as a Notice counts a junk item and a container, not Noise or other categories (TKB-R42, TKB-R43)", function()
+		it("as a Notice counts a junk item and a container, not Noise (TKB-R42, TKB-R43)", function()
 			local collector = goal({ kind = "collector", tier = 2, need = 2 })
 
 			local progress, counted = run(collector, {
@@ -366,7 +369,7 @@ describe("Goal progress", function()
 			assert.are.same({ container = true }, collector.seen)
 		end)
 
-		it("as an Expedition counts distinct Sub-collection items never caught before this Catch (TKB-R42, TKB-R46)", function()
+		it("as an Expedition counts Sub-collection items never caught before (TKB-R42, TKB-R46)", function()
 			local collector = goal({ type = "e", kind = "collector", tier = 0, need = 3 })
 
 			local progress, counted = run(collector, {
@@ -393,7 +396,8 @@ describe("Goal progress", function()
 			run(haul, { cast(DUROTAR, { SMALLFISH }) })
 			assert.is_false(ns.IsComplete(haul, Pagle))
 
-			local progress, counted = run(haul, { cast(DUROTAR, { SMALLFISH, MACKEREL }), cast(DUROTAR, { SMALLFISH }) })
+			local progress, counted =
+				run(haul, { cast(DUROTAR, { SMALLFISH, MACKEREL }), cast(DUROTAR, { SMALLFISH }) })
 
 			assert.are.equal(2, progress)
 			assert.are.same({ true, false, false }, counted)
@@ -428,7 +432,10 @@ describe("Goal progress", function()
 
 		it("keeps a complete session-bound goal's progress through a new Session (TKB-R41, TKB-R45)", function()
 			local wanderer = goal({ kind = "wanderer", tier = 3, need = 3 })
-			run(wanderer, { cast(DUROTAR, { SMALLFISH }), cast(BARRENS, { SMALLFISH }), cast(ASHENVALE, { SMALLFISH }) })
+			run(
+				wanderer,
+				{ cast(DUROTAR, { SMALLFISH }), cast(BARRENS, { SMALLFISH }), cast(ASHENVALE, { SMALLFISH }) }
+			)
 
 			local progress = run(wanderer, { cast(DARKSHORE, { SMALLFISH }, { session = "S2" }) })
 
@@ -442,6 +449,54 @@ describe("Goal progress", function()
 			assert.are.equal(3, ns.GoalNeed(goal({ kind = "variety", need = 3, target = DUROTAR }), Pagle))
 			assert.are.equal(1, ns.GoalNeed(goal({ type = "e", kind = "size", need = 1, target = WHOPPER }), Pagle))
 		end)
+	end)
+end)
+
+describe("Displayed progress", function()
+	local loaded, fake = board.load()
+	local ns, Pagle = loaded.ns, loaded.env.Pagle
+	local run = runner(ns, Pagle)
+	fake.login()
+	fake.enterWorld()
+
+	-- A Wanderer Notice at 2 of 3 and a Haul Notice at 2 of 20, both counted from a Cast of `session`.
+	local function counted(session)
+		local wanderer = goal({ kind = "wanderer", tier = 3, need = 3 })
+		local haul = goal({ kind = "haul", need = 20, target = DUROTAR })
+		run(wanderer, {
+			cast(DUROTAR, { SMALLFISH }, { session = session }),
+			cast(BARRENS, { SMALLFISH }, { session = session }),
+		})
+		run(haul, { cast(DUROTAR, { SMALLFISH, SMALLFISH }) })
+		return wanderer, haul
+	end
+
+	it("is a session-bound goal's progress while its Session is Pagle.GetSession()'s (TKB-R104)", function()
+		local record = fake.playCast("caught", { { itemID = SMALLFISH, quantity = 1 } })
+		local wanderer = counted(record.session)
+
+		assert.are.equal(record.session, Pagle.GetSession().id)
+		assert.are.equal(2, ns.DisplayedProgress(wanderer, Pagle.GetSession()))
+	end)
+
+	it("is 0 for a session-bound goal with no current Session, or another one (TKB-R104)", function()
+		local first = fake.playCast("caught", { { itemID = SMALLFISH, quantity = 1 } })
+		local wanderer = counted(first.session)
+		fake.wait(900)
+		local none = Pagle.GetSession()
+		fake.playCast("caught", { { itemID = SMALLFISH, quantity = 1 } })
+		local another = Pagle.GetSession()
+
+		assert.is_nil(none)
+		assert.are_not.equal(first.session, another.id)
+		assert.are.same({ 0, 0 }, { ns.DisplayedProgress(wanderer, none), ns.DisplayedProgress(wanderer, another) })
+	end)
+
+	it("is the progress of any other goal, whatever the Session (TKB-R104)", function()
+		local _, haul = counted("S1")
+		fake.wait(900)
+
+		assert.are.equal(2, ns.DisplayedProgress(haul, Pagle.GetSession()))
 	end)
 end)
 
@@ -491,7 +546,7 @@ describe("Goal progress over a changed catalogue", function()
 			assert.are.equal(0, progress)
 		end)
 
-		it("a Species goal whose representative item lost its species, or is Uncharted, is stranded (TKB-R44)", function()
+		it("a Species goal whose item lost its species, or is Uncharted, is stranded (TKB-R44)", function()
 			assert.is_true(ns.IsStranded(goal({ kind = "species", need = 5, target = MACKEREL }), Pagle))
 			assert.is_true(ns.IsStranded(goal({ kind = "species", need = 5, target = UNCHARTED }), Pagle))
 			assert.is_false(ns.IsStranded(goal({ kind = "species", need = 5, target = SMALLFISH }), Pagle))

@@ -57,7 +57,7 @@ end
 
 -- How each kind counts one Catch that passed TKB-R40 (TKB-R42). `item` is the Catch's catalogue record, nil for an
 -- Uncharted item or item 0, which only the kinds that don't need the catalogue count (TKB-R43). True when it counted.
----@type { [string]: fun(goal: TackleGoal, cast: table, slot: table, item: table?, ctx: TackleProgressContext): boolean }
+---@type table<string, fun(goal: TackleGoal, cast: table, slot: table, item: table?, ctx: TackleProgressContext): boolean>
 local COUNT = {}
 
 function COUNT.haul(goal, cast)
@@ -208,10 +208,10 @@ function ns.IsComplete(goal, pagle)
 	return goal.progress >= ns.GoalNeed(goal, pagle) and not stranded(goal, pagle, true)
 end
 
---- Starts a caught Cast for a goal (TKB-R41): a session-bound goal whose progress belongs to another Session than the
---- Cast's (Core's `session` tag, LOG-R98) resets its progress and `seen` and belongs to the Cast's Session. Call it once
---- per caught Cast, before the Cast's Catches; it ignores a got-away Cast, one from before the goal (TKB-R40) and a
---- goal already complete (TKB-R45).
+--- Starts a caught Cast for a goal (TKB-R41): a session-bound goal whose progress belongs to another Session than
+--- the Cast's (Core's `session` tag, LOG-R98) resets its progress and `seen` and belongs to the Cast's Session. Call
+--- it once per caught Cast, before the Cast's Catches; it ignores a got-away Cast, one from before the goal (TKB-R40)
+--- and a goal already complete (TKB-R45).
 ---@param goal TackleGoal
 ---@param cast table the Cast record (LOG-R42)
 function ns.EnterCast(goal, cast)
@@ -242,4 +242,17 @@ function ns.CountCatch(goal, cast, slot, ctx)
 	end
 	local item = slot.itemID ~= 0 and ctx.pagle.GetItem(slot.itemID) or nil
 	return COUNT[goal.kind](goal, cast, slot, item, ctx)
+end
+
+--- The progress the board shows for a goal (TKB-R104): its progress, except that a session-bound goal (TKB-R41)
+--- shows 0 when there is no current Session or the current one isn't the Session its progress belongs to. The pins
+--- (#239), the tracker (#241) and the reroll's confirm (#234) read it.
+---@param goal TackleGoal
+---@param session { id: string }? the current Session: `Pagle.GetSession()`, nil when none is open (LOG-R64)
+---@return integer
+function ns.DisplayedProgress(goal, session)
+	if ns.IsSessionBound(goal) and (session == nil or session.id ~= goal.session) then
+		return 0
+	end
+	return goal.progress
 end
