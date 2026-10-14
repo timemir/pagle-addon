@@ -22,7 +22,8 @@ local ns = select(2, ...)
 --   ns.OnRedraw(fn)           Subscribes a view (the board, the tracker, the summary line) to redraws: fn(reason) is
 --                             called at every ns.Redraw, in subscription order. Subscribe once, when the view is made.
 --   ns.Redraw(reason)         Asks every subscribed view to redraw (HNT-R42's last paragraph). Callers and their
---                             reasons: "groups" after each regroup (#189), "projection" after each live apply that
+--                             reasons: "groups" after each regroup, pause, pin and filter change (#189; see
+--                             adapter/Groups.lua), "projection" after each live apply that
 --                             changes the state and after each done (#188), "names" when item names load (#190).
 --                             A view that is hidden may ignore it.
 

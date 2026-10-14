@@ -18,4 +18,6 @@ logic\Seams.lua
 logic\Qualify.lua
 logic\Waters.lua
 logic\Titles.lua
+logic\Groups.lua
 adapter\Hunts.lua
+adapter\Groups.lua

@@ -35,4 +35,6 @@ function ns.Hunts.OnInitialize()
 		GetArea = Pagle.GetArea,
 		GetWindowSpec = Pagle.GetWindowSpec,
 	})
+	-- Grouping (HNT-R40–R44): pins of Hunts gone are dropped now; the first grouping waits for the world.
+	ns.StartGroups()
 end
