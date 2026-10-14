@@ -242,6 +242,29 @@ describe("Pagle_Stats with FakePagle", function()
 		assert.are.same({ "/pagle stats: Open or close the Stats book." }, { unpack(fake.printed, 6) })
 	end)
 
+	it(
+		"reads places, lines and windows from Core's catalogue, afresh after a content update (STA-R12–R17, LOG-R72)",
+		function()
+			local loaded, fake = stats.load()
+			local places = loaded.ns.places
+
+			assert.are.same({ 170, true }, { places:NoJunkLine(442) })
+			assert.are.equal("night", (places:ItemWindow(148, 13759)))
+			assert.are.equal("hi", places:Side(148, 170))
+			assert.are.same(
+				{ { item = 6359, added = false }, { item = 6291, added = false } },
+				places:Rows({ places = {} }, 442)
+			)
+
+			local updated = stats.catalogue()
+			updated.fingerprint = "0000000000000003"
+			updated.areas[148].skillBase = 200
+			fake.setCatalogue(updated)
+
+			assert.are.equal("lo", places:Side(148, 170))
+		end
+	)
+
 	it("stops after RegisterModule returns nil, with no SavedVariables touched (CORE-R13)", function()
 		local fake = newFakePagle()
 		fake.addons.Pagle_Stats.metadata["X-Pagle-API"] = "2"

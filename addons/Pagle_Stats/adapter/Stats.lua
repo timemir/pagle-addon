@@ -24,4 +24,8 @@ function ns.Stats.OnInitialize()
 	-- Account-wide, one shared profile, with the defaults in stats.md › Data.
 	ns.db = LibStub("AceDB-3.0"):New("PagleStatsDB", ns.DB_DEFAULTS, true)
 	ns.MigrateDB(ns.db.global)
+
+	--- The places rules over Core's catalogue (STA-R10–R17): built here, where the catalogue is ready (CORE-R10).
+	--- `Pagle` itself is the lookups, read at each call, so a new fingerprint drops the tables (LOG-R72).
+	ns.places = ns.NewPlaceTables(Pagle)
 end
