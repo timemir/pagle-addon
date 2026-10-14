@@ -432,10 +432,11 @@ ns.RULER_SECONDS = 1.5
 ns.RULER_STAMP_DELAY = 0.4
 
 --- A record ruler at one moment of its animation (ANN-R22): where the old record's mark and the fill sit along the
---- track (0 to 1), the number counted up so far, the margin, which shows once it has landed, and the "New record"
---- stamp a beat after.
+--- track (0 to 1), the old record's number by its mark, the number counted up so far, the margin, which shows once it
+--- has landed, and the "New record" stamp a beat after.
 ---@class PagleRulerFrame
 ---@field mark number     -- the old record's mark
+---@field old string      -- the old record, with its unit ("10.0 lb")
 ---@field fill number     -- how far the fill has come
 ---@field value string    -- the number so far, with its unit ("11.4 lb")
 ---@field passed boolean  -- the fill is past the old mark
@@ -444,33 +445,42 @@ ns.RULER_STAMP_DELAY = 0.4
 ---@field margin string   -- "+x" with the unit ("+1.6 lb")
 ---@field label string    -- whose number it is ("weight")
 
--- A ruler's number with its unit, to one decimal. A unit other than "length" shows as given; "length" in the Angler's
--- unit through Pagle.FormatLength comes with Simulated Size (M4).
+-- A ruler's number with its unit, to one decimal: millimetres in the Angler's length unit for "length" (LOG-R69),
+-- any other unit as given.
 ---@param value number
 ---@param unit string
+---@param lengthUnit PagleLengthUnit?
 ---@return string
-local function withUnit(value, unit)
+local function withUnit(value, unit, lengthUnit)
+	if unit == "length" then
+		return ns.FormatLength(value, lengthUnit --[[@as PagleLengthUnit]])
+	end
 	return ("%.1f %s"):format(value, unit)
 end
 
 --- The ruler `elapsed` seconds after it appeared (ANN-R22): the number eases up from 0 to the new record over
 --- RULER_SECONDS, on a track a tenth longer than it, past the old record's mark; then the margin lands, and the
---- stamp RULER_STAMP_DELAY later.
+--- stamp RULER_STAMP_DELAY later. A Simulated Size (`unit` "length", in millimetres) reads in `lengthUnit`, and a
+--- margin that rounds to zero there as "+<0.1 cm".
 ---@param ruler { old: number, new: number, unit: string, label: string }
 ---@param elapsed number
+---@param lengthUnit PagleLengthUnit? the Angler's length unit (LOG-R69), which a "length" ruler needs
 ---@return PagleRulerFrame
-function ns.RulerAt(ruler, elapsed)
+function ns.RulerAt(ruler, elapsed, lengthUnit)
 	local length = ruler.new * 1.1
 	local progress = math.min(1, elapsed / ns.RULER_SECONDS)
 	local value = ruler.new * (1 - (1 - progress) ^ 3)
+	local unit, margin = ruler.unit, ruler.new - ruler.old
 	return {
 		mark = ruler.old / length,
+		old = withUnit(ruler.old, unit, lengthUnit),
 		fill = value / length,
-		value = withUnit(value, ruler.unit),
+		value = withUnit(value, unit, lengthUnit),
 		passed = value > ruler.old,
 		done = progress >= 1,
 		stamped = elapsed >= ns.RULER_SECONDS + ns.RULER_STAMP_DELAY,
-		margin = "+" .. withUnit(ruler.new - ruler.old, ruler.unit),
+		margin = unit == "length" and ns.FormatLengthMargin(margin, lengthUnit --[[@as PagleLengthUnit]])
+			or "+" .. withUnit(margin, unit),
 		label = ruler.label,
 	}
 end

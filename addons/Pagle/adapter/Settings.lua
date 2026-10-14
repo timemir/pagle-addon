@@ -205,8 +205,37 @@ local function fieldReportRow()
 	return initializer
 end
 
+-- The Units section (CORE-R40, SET-R10 row 6): the length unit's dropdown, showing the unit in use (LOG-R69). Its
+-- default, which the root's Defaults button restores (SET-R13), is the region's unit, and picking the region's unit
+-- stores none: so Defaults leaves PagleDB.profile.lengthUnit nil, following the region.
+---@param category SettingsCategory
+---@param layout SettingsLayout
+local function unitsSection(category, layout)
+	layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L.SETTINGS_UNITS))
+	local regionUnit = ns.LengthUnitOf(nil, ns.host.region())
+	local lengthUnit = Settings.RegisterProxySetting(
+		category,
+		"Pagle_Core_lengthUnit",
+		Settings.VarType.String,
+		L.SETTINGS_LENGTH_UNIT,
+		regionUnit,
+		ns.LengthUnit,
+		function(value)
+			ns.db.profile.lengthUnit = value ~= regionUnit and value or nil
+		end
+	)
+	Settings.CreateDropdown(category, lengthUnit, function()
+		local container = Settings.CreateControlTextContainer()
+		for _, unit in ipairs(ns.LENGTH_UNITS) do
+			container:Add(unit, L.SETTINGS_LENGTH_UNITS[unit])
+		end
+		return container:GetData()
+	end, L.SETTINGS_LENGTH_UNIT_TOOLTIP)
+end
+
 -- The root's rows (SET-R10): the paragraph while no Module is On, the status list under "Modules", the note, the
--- Field report section, then Saving's reminder checkbox, whose default the root's Defaults button restores (SET-R13).
+-- Field report section, then Saving's reminder checkbox and the Units section, whose defaults the root's Defaults
+-- button restores (SET-R13).
 ---@param category SettingsCategory
 ---@param layout SettingsLayout
 ---@param anyModuleOn boolean
@@ -234,6 +263,7 @@ local function buildRoot(category, layout, anyModuleOn)
 		end
 	)
 	Settings.CreateCheckbox(category, reminder, L.SETTINGS_RELOAD_REMINDER_TOOLTIP:format(ns.RELOAD_REMINDER_STEP))
+	unitsSection(category, layout)
 end
 
 -- A dropdown's options as the native control takes them, read each time it opens.
