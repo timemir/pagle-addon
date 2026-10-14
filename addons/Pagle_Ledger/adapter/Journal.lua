@@ -78,6 +78,7 @@ local function readContext()
 		getItem = Pagle.GetItem,
 		getArea = Pagle.GetArea,
 		angler = Pagle.GetAngler(),
+		openFieldReport = Pagle.OpenFieldReport,
 	}
 end
 

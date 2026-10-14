@@ -10,11 +10,6 @@ local ns = select(2, ...)
 -- the contents; the brass plate sits on the cover. Pure logic over the Journal's context (CORE-R7); its M3 stage
 -- leaves out titles, Prestige and Legends (LED-R4).
 
--- The collection spreads Home's contents open (ticket #143), by ID. The zone spread (ns.JournalZonePlace), the fish
--- spread (ns.JournalFishPlace) and the Angler (ns.JOURNAL_ANGLER) have their IDs from their own files. A link to a
--- spread not registered yet does nothing (LED-R125).
-local TROPHY_SPREAD, CURIOS_SPREAD = "trophy", "curios"
-
 --- The tab of every continent but the Eastern Kingdoms (0) and Kalimdor (1): Home's args `{ tab = ns.OTHER_TAB }`.
 ns.OTHER_TAB = "other"
 
@@ -241,13 +236,13 @@ local function rightPage(context)
 		kind = "leader",
 		text = L.HOME_TROPHY_ROOM,
 		value = countText(completion.trophy),
-		place = { id = TROPHY_SPREAD },
+		place = { id = ns.JOURNAL_TROPHY_ROOM },
 	}
 	right[#right + 1] = {
 		kind = "leader",
 		text = L.HOME_CURIOS,
 		value = countText(completion.junk, completion.treasure),
-		place = { id = CURIOS_SPREAD },
+		place = { id = ns.JOURNAL_CURIOS },
 	}
 	right[#right + 1] = { kind = "leader", text = L.HOME_ANGLER, place = { id = ns.JOURNAL_ANGLER } }
 	return right
