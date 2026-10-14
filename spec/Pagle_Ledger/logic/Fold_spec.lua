@@ -152,11 +152,32 @@ local function newLog()
 end
 
 describe("The Ledger's fold", function()
-	local ns = loadAddon("Pagle_Ledger", FOREVER_GLOBALS).ns
+	local loaded = loadAddon("Pagle_Ledger", FOREVER_GLOBALS)
+	local ns = loaded.ns
+
+	-- The world index (LED-R10) over the fixture: Mackerel and Smallfish ungated in three zones, so a spec here
+	-- reaches ★★ only with three zones (LED-R45; logic/Stars_spec.lua covers the stars).
+	local world = ns.NewWorld({
+		GetItem = getItem,
+		GetZones = function()
+			return { ELWYNN, WESTFALL, 10 }
+		end,
+		GetArea = function()
+			return { parent = 0, continent = 0, hasData = true, skillBaseConfirmed = true, catches = {} }
+		end,
+		GetZoneCatches = function()
+			return { { itemID = MACKEREL, confirmed = true }, { itemID = SMALLFISH, confirmed = true } }
+		end,
+	})
+
+	-- The fold's lookups over `get` (the fixture's GetItem by default), Core's MatchesConditions and the world.
+	local function lookups(get)
+		return { GetItem = get or getItem, MatchesConditions = loaded.env.Pagle.MatchesConditions, world = world }
+	end
 
 	local fold, log
 	before_each(function()
-		fold = ns.NewLedgerFold({ GetItem = getItem })
+		fold = ns.NewLedgerFold(lookups())
 		log = newLog()
 	end)
 
@@ -261,14 +282,12 @@ describe("The Ledger's fold", function()
 			assert.are.same({ "uncharted" }, kinds(before))
 
 			-- The next release knows the item: a junk item (LOG-R96). The rebuild runs over the new catalogue.
-			local released = ns.NewLedgerFold({
-				GetItem = function(itemID)
-					if itemID == UNCHARTED then
-						return { category = "junk", legend = false, noise = false, removed = false, pool = false }
-					end
-					return getItem(itemID)
-				end,
-			})
+			local released = ns.NewLedgerFold(lookups(function(itemID)
+				if itemID == UNCHARTED then
+					return { category = "junk", legend = false, noise = false, removed = false, pool = false }
+				end
+				return getItem(itemID)
+			end))
 			local state, scratch = released.reset(), {}
 			for _, record in ipairs(records) do
 				released.apply(state, record, "rebuild", scratch)
@@ -407,6 +426,7 @@ describe("The Ledger's fold", function()
 					zone = WESTFALL,
 					date = { year = 2026, month = 10, day = 2 },
 					zones = { [WESTFALL] = true, [ELWYNN] = true },
+					windowsMet = {}, -- Mackerel has no element windows (LED-R45)
 				}, state.species[MACKEREL])
 			end
 		)
