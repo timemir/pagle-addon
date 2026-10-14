@@ -255,21 +255,24 @@ end, function(block)
 	return TEXT_COLORS[block.color] or (block.hand and LOOK.blue) or LOOK.ink
 end)
 
--- A link: red ink, or in handwriting blue ink (Notes to self, LED-R133), wrapping across the width, opening its place.
+-- A link: red ink, or in handwriting blue ink (Notes to self, LED-R133), wrapping across the width, opening its place
+-- or calling its call (the Field report, LED-R135).
 function makers.link(parent)
 	local widget = newWidget(parent)
 	local text = ns.JournalText(widget, ns.JournalFonts().text, LOOK.red)
 	text:SetPoint("TOPLEFT")
 	text:SetWordWrap(true)
 	widget.label = text
-	local place, openPlace
+	local place, call, openPlace
 	widget:SetScript("OnClick", function()
-		if place then
+		if call then
+			call()
+		elseif place then
 			openPlace(place)
 		end
 	end)
 	function widget.Fill(_, block, width, open)
-		place, openPlace = block.place, open
+		place, call, openPlace = block.place, block.call, open
 		local ink = block.hand and LOOK.blue or LOOK.red
 		text:SetFontObject(block.hand and ns.JournalFonts().hand or ns.JournalFonts().text)
 		text:SetTextColor(ink[1], ink[2], ink[3])
@@ -626,6 +629,181 @@ function makers.xpBar(parent)
 		text:SetWidth(width)
 		text:SetText(data.text .. (data.freshText and (colorCode(LOOK.blue) .. data.freshText .. "|r") or ""))
 		return BAR_HEIGHT + 4 + text:GetStringHeight()
+	end
+	return widget
+end
+
+-- A box of four ink edges around `frame`, each 1.5 px as the prototype's circled rung, coloured `color`.
+---@param frame Frame
+---@return Texture[]
+local function inkBox(frame)
+	local edges = {}
+	for _, points in ipairs({
+		{ "TOPLEFT", "TOPRIGHT", "height" },
+		{ "BOTTOMLEFT", "BOTTOMRIGHT", "height" },
+		{ "TOPLEFT", "BOTTOMLEFT", "width" },
+		{ "TOPRIGHT", "BOTTOMRIGHT", "width" },
+	}) do
+		local edge = frame:CreateTexture(nil, "BORDER")
+		edge:SetPoint(points[1])
+		edge:SetPoint(points[2])
+		if points[3] == "height" then
+			edge:SetHeight(1.5)
+		else
+			edge:SetWidth(1.5)
+		end
+		edge:SetColorTexture(LOOK.red[1], LOOK.red[2], LOOK.red[3], 1)
+		edges[#edges + 1] = edge
+	end
+	return edges
+end
+
+-- The rank ladder's rung height, and the gap around its separators.
+local RUNG_HEIGHT = 18
+local RUNG_PAD = 6
+
+-- Zone Mastery's ladder (LED-R135): the ranks side by side, those reached inked, the shown one circled in red.
+function makers.ladder(parent)
+	local widget = newWidget(parent)
+	---@type { frame: Frame, text: FontString, ring: Texture[], separator: FontString? }[]
+	local rungs = {}
+	local function rungAt(i)
+		if not rungs[i] then
+			local frame = CreateFrame("Frame", nil, widget)
+			local text = ns.JournalText(frame, ns.JournalFonts().text, LOOK.stampOff)
+			text:SetPoint("CENTER")
+			local separator
+			if i > 1 then
+				separator = ns.JournalText(widget, ns.JournalFonts().text, LOOK.stampOff)
+				separator:SetText(ns.L.ZONE_LADDER_SEPARATOR)
+			end
+			rungs[i] = { frame = frame, text = text, ring = inkBox(frame), separator = separator }
+		end
+		return rungs[i]
+	end
+	function widget.Fill(_, block)
+		local x = 0
+		for i, data in ipairs(block.rungs or {}) do
+			local rung = rungAt(i)
+			if rung.separator then
+				rung.separator:ClearAllPoints()
+				rung.separator:SetPoint("LEFT", widget, "TOPLEFT", x, -RUNG_HEIGHT / 2)
+				rung.separator:Show()
+				x = x + rung.separator:GetStringWidth()
+			end
+			local color = data.circled and LOOK.red or data.inked and LOOK.title or LOOK.stampOff
+			rung.text:SetText(data.text)
+			rung.text:SetTextColor(color[1], color[2], color[3])
+			for _, edge in ipairs(rung.ring) do
+				edge:SetShown(data.circled)
+			end
+			local width = rung.text:GetStringWidth() + 2 * RUNG_PAD
+			rung.frame:SetSize(width, RUNG_HEIGHT)
+			rung.frame:ClearAllPoints()
+			rung.frame:SetPoint("TOPLEFT", x, 0)
+			rung.frame:Show()
+			x = x + width
+		end
+		for i = #(block.rungs or {}) + 1, #rungs do
+			rungs[i].frame:Hide()
+			if rungs[i].separator then
+				rungs[i].separator:Hide()
+			end
+		end
+		return RUNG_HEIGHT
+	end
+	return widget
+end
+
+-- A list row's icon size, its stars' room and the gap after the icon (LED-R136).
+local ROW_ICON_SIZE = 22
+local ROW_GAP = 6
+
+-- Three stars in a row, each inked (in the stamps' red) or blank (LED-R48).
+---@param stars LedgerStars
+---@return string
+local function starText(stars)
+	local parts = {}
+	for star = 1, 3 do
+		parts[star] = colorCode(stars[star] and LOOK.red or LOOK.stampOff) .. ns.L.STAR .. "|r"
+	end
+	return table.concat(parts)
+end
+
+---@class LedgerJournalRowView: LedgerJournalWidget
+---@field icon Texture
+---@field name FontString
+---@field margin FontString
+---@field stars FontString
+---@field value FontString
+---@field highlight Texture
+
+-- A list row (LED-R136, LED-R137): a small icon in sepia or as a silhouette, the text, its margin notes in
+-- handwriting under it, the stars and a value at the right, a faint wash when selected; it opens its place.
+function makers.row(parent)
+	local widget = newWidget(parent) --[[@as LedgerJournalRowView]]
+	widget.highlight = ns.JournalSolid(widget, LOOK.kicker, "BACKGROUND", 0.15)
+	widget.icon = widget:CreateTexture(nil, "ARTWORK")
+	widget.icon:SetSize(ROW_ICON_SIZE, ROW_ICON_SIZE)
+	widget.icon:SetPoint("TOPLEFT")
+	widget.value = ns.JournalText(widget, ns.JournalFonts().text, LOOK.ink)
+	widget.value:SetPoint("TOPRIGHT")
+	widget.value:SetJustifyH("RIGHT")
+	widget.stars = ns.JournalText(widget, ns.JournalFonts().text, LOOK.red)
+	widget.stars:SetJustifyH("RIGHT")
+	widget.name = ns.JournalText(widget, ns.JournalFonts().text, LOOK.ink)
+	widget.name:SetWordWrap(true)
+	widget.label = widget.name
+	widget.margin = ns.JournalText(widget, ns.JournalFonts().hand, LOOK.blue)
+	widget.margin:SetWordWrap(true)
+	local place, openPlace
+	widget:SetScript("OnClick", function()
+		if place then
+			openPlace(place)
+		end
+	end)
+	function widget.Fill(_, block, width, open)
+		place, openPlace = block.place, open
+		widget.highlight:SetShown(block.selected == true)
+		local icon = block.icon
+		widget.icon:SetShown(icon ~= nil)
+		if type(icon) == "number" then
+			local _, _, _, _, fileID = C_Item.GetItemInfoInstant(icon)
+			icon = fileID or icon
+		end
+		widget.icon:SetTexture(icon)
+		widget.icon:SetDesaturated(true)
+		if block.look == "silhouette" then
+			widget.icon:SetVertexColor(0, 0, 0)
+		else
+			widget.icon:SetVertexColor(LOOK.sepia[1], LOOK.sepia[2], LOOK.sepia[3])
+		end
+		local left = block.icon and ROW_ICON_SIZE + ROW_GAP or 0
+		widget.value:SetText(block.value or "")
+		widget.value:SetShown(block.value ~= nil)
+		local right = block.value and widget.value:GetStringWidth() + ROW_GAP or 0
+		widget.stars:ClearAllPoints()
+		widget.stars:SetPoint("TOPRIGHT", -right, 0)
+		widget.stars:SetText(block.stars and starText(block.stars) or "")
+		widget.stars:SetShown(block.stars ~= nil)
+		right = right + (block.stars and widget.stars:GetStringWidth() + ROW_GAP or 0)
+		local ink = TEXT_COLORS[block.color] or LOOK.ink
+		widget.name:SetTextColor(ink[1], ink[2], ink[3])
+		widget.name:ClearAllPoints()
+		widget.name:SetPoint("TOPLEFT", left, 0)
+		widget.name:SetWidth(width - left - right)
+		widget.name:SetText(block.text)
+		local height = widget.name:GetStringHeight()
+		local margin = block.margin
+		widget.margin:SetShown(margin ~= nil)
+		if margin then
+			widget.margin:ClearAllPoints()
+			widget.margin:SetPoint("TOPLEFT", left, -height)
+			widget.margin:SetWidth(width - left)
+			widget.margin:SetText(table.concat(margin, ns.L.ZONE_MARGIN_SEPARATOR))
+			height = height + widget.margin:GetStringHeight()
+		end
+		return math.max(height, block.icon and ROW_ICON_SIZE or 0)
 	end
 	return widget
 end
