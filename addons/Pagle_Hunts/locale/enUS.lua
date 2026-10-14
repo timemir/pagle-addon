@@ -190,4 +190,19 @@ ns.L = {
 	UNCONFIRMED_GATING = "Not yet seen biting only in this window.",
 	-- HNT-R67's right page on the Board when no row is visible.
 	ENTRY_ALL_DONE = 'Every Hunt here is done. Tick "show completed" to see them again.',
+
+	-- Sets on the board (HNT-R61, HNT-R66, HNT-R69): logic/Sets.lua. The nameplate's titles reuse SUMMARY_TITLES_*.
+	RIBBON_BOARD = "Board",
+	CRUMB_HUNTS = "Hunts",
+	UPDATING = "Updating from your Catch log…",
+	NAMEPLATE = "%s · %s", -- "2 titles · 5 Hunts done"
+	NAMEPLATE_DONE_ONE = "%s Hunt done",
+	NAMEPLATE_DONE_OTHER = "%s Hunts done",
+	NAMEPLATE_TITLE = "%s, earned %s", -- the tooltip: "Clockwatcher, earned 12 Oct 2026"
+	SET_PAGE_EARNS = "Earns the title %s",
+	SET_PAGE_EARNED = "Earned: %s",
+	SET_SEAL = "Title earned %s", -- the seal, with the full date
+	SET_PROGRESS = "%d / %d", -- done current Hunts / current Hunts
+	SET_RULE = "The first tier of every Hunt earns the title.",
+	SET_RETIRED = "Retired",
 }
