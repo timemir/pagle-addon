@@ -17,6 +17,7 @@ logic\Progress.lua
 logic\Prestige.lua
 logic\Bindings.lua
 logic\Fold.lua
+logic\Records.lua
 logic\World.lua
 logic\Stars.lua
 logic\ZoneMastery.lua

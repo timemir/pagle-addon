@@ -16,13 +16,13 @@ local L = ns.L
 ---@type table<Frame, table<string, Frame>>
 local panels = setmetatable({}, { __mode = "k" })
 
--- The panel for `slotID` on `stage`, built by `build` the first time, shown, with Core's other panels on that stage
--- hidden: a stage shows one good at a time.
+--- The panel for `slotID` on `stage`, built by `build` the first time, shown, with Core's other panels on that stage
+--- hidden: a stage shows one good at a time. The toast styles' preview draws on one too (adapter/ToastStyles.lua).
 ---@param stage Frame
 ---@param slotID string
 ---@param build fun(panel: Frame)
 ---@return Frame
-local function panelOn(stage, slotID, build)
+function ns.CorePreviewPanel(stage, slotID, build)
 	local own = panels[stage]
 	if not own then
 		own = {}
@@ -119,13 +119,13 @@ end
 ---@type table<string, PagleCorePreview>
 ns.CORE_PREVIEWS = {
 	["core.soundset"] = function(stage, good)
-		local panel = panelOn(stage, "core.soundset", buildSoundSet) --[[@as PagleSoundSetPanel]]
+		local panel = ns.CorePreviewPanel(stage, "core.soundset", buildSoundSet) --[[@as PagleSoundSetPanel]]
 		panel.swatch:SetTexture(good.icon)
 		panel.set = ns.SoundSetOf(good.id)
 		panel.turn = 0
 	end,
 	["core.crest"] = function(stage, good)
-		local panel = panelOn(stage, "core.crest", buildCrest) --[[@as PagleCrestPanel]]
+		local panel = ns.CorePreviewPanel(stage, "core.crest", buildCrest) --[[@as PagleCrestPanel]]
 		panel.crest:SetTexture(good.icon)
 		panel.name:SetText((UnitName("player")))
 	end,

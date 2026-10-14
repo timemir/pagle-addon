@@ -8,17 +8,17 @@ local AFTER_COMBAT = "Pagle: the Curio Shop opens after combat."
 -- each good named by its ID until its lore lands.
 local CORE_UNBOUGHT = {
 	"Toast style 1/3",
-	"core.toaststyle.timber | In use",
-	"core.toaststyle.ripple | 150" .. COIN,
-	"core.toaststyle.lanternglow | 400" .. COIN,
+	"Timber | In use",
+	"Ripple | 150" .. COIN,
+	"Lantern Glow | 400" .. COIN,
 	"Sound set 1/2",
-	"core.soundset.driftwood | In use",
-	"core.soundset.gilded | 400" .. COIN,
+	"Driftwood | In use",
+	"Gilded | 400" .. COIN,
 	"Bookplate crest 1/4",
-	"core.crest.plain | In use",
-	"core.crest.crest1 | 150" .. COIN,
-	"core.crest.crest2 | 400" .. COIN,
-	"core.crest.crest3 | 900" .. COIN,
+	"Plain | In use",
+	"Rod and Line | 150" .. COIN,
+	"Pearl | 400" .. COIN,
+	"Water Spirit | 900" .. COIN,
 }
 
 -- Core with the Ledger and Hunts registered, Core's own goods, Hunts' covers and the Ledger's bindings, logged in and
@@ -344,7 +344,7 @@ describe("The Curio Shop's purse", function()
 
 		local frame = shop(loaded)
 		assert.are.equal("200", frame.purse.balance:GetText())
-		assert.are.equal("core.toaststyle.ripple | 150" .. COIN, listed(loaded)[3])
+		assert.are.equal("Ripple | 150" .. COIN, listed(loaded)[3])
 		for _, region in ipairs(loaded.client.frames) do
 			assert.falsy(tostring(region.text):find("Spent", 1, true))
 			for _, child in ipairs(region.children) do
@@ -386,7 +386,7 @@ describe("The Curio Shop's list", function()
 
 		shop(loaded).search:Type("RIP")
 
-		assert.are.same({ "Toast style 1/3", "core.toaststyle.ripple | 150" .. COIN }, listed(loaded))
+		assert.are.same({ "Toast style 1/3", "Ripple | 150" .. COIN }, listed(loaded))
 		shop(loaded).search:Type("nothing like it")
 		assert.are.same({}, listed(loaded))
 		assert.is_true(shop(loaded).empty:IsShown())
@@ -406,13 +406,13 @@ describe("The Curio Shop's list", function()
 		filters.canAfford:Click()
 		assert.are.same({
 			"Toast style 1/3",
-			"core.toaststyle.ripple | 150" .. COIN,
-			"core.toaststyle.lanternglow | 400" .. COIN,
+			"Ripple | 150" .. COIN,
+			"Lantern Glow | 400" .. COIN,
 			"Sound set 1/2",
-			"core.soundset.gilded | 400" .. COIN,
+			"Gilded | 400" .. COIN,
 			"Bookplate crest 1/4",
-			"core.crest.crest1 | 150" .. COIN,
-			"core.crest.crest2 | 400" .. COIN,
+			"Rod and Line | 150" .. COIN,
+			"Pearl | 400" .. COIN,
 			"Notebook cover 1/2",
 			"Velvet | 400" .. COIN,
 		}, listed(loaded))
@@ -421,11 +421,11 @@ describe("The Curio Shop's list", function()
 		filters.owned:Click()
 		assert.are.same({
 			"Toast style 1/3",
-			"core.toaststyle.timber | In use",
+			"Timber | In use",
 			"Sound set 1/2",
-			"core.soundset.driftwood | In use",
+			"Driftwood | In use",
 			"Bookplate crest 1/4",
-			"core.crest.plain | In use",
+			"Plain | In use",
 			"Journal binding 1/2",
 			"Oak | In use",
 			"Notebook cover 1/2",
@@ -525,7 +525,7 @@ describe("The Curio Shop's stage", function()
 			assert.are.equal("In use", stage.tags:GetText())
 			assert.is_false(stage.use:IsShown())
 			assert.are.same(
-				{ "Toast style 2/3", "core.toaststyle.timber | default", "core.toaststyle.ripple | In use" },
+				{ "Toast style 2/3", "Timber | default", "Ripple | In use" },
 				{ listed(loaded)[1], listed(loaded)[2], listed(loaded)[3] }
 			)
 		end
