@@ -22,8 +22,10 @@ logic\Odds.lua
 logic\DrySpell.lua
 logic\Groups.lua
 logic\Book.lua
+logic\Home.lua
 adapter\Text.lua
 adapter\BookWidgets.lua
 adapter\Book.lua
 adapter\Place.lua
+adapter\Home.lua
 adapter\Stats.lua
