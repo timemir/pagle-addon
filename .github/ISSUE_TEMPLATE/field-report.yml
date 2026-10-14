@@ -6,7 +6,7 @@
 name: Field report
 description: >-
   Paste a Field report from Pagle (/pagle report) to help chart the waters. A report in several parts is filed as one
-  issue per part.
+  issue per part. A report posted anywhere else reaches Pagle only when the dev pastes it into an issue.
 title: Field report
 labels: ["field-report", "needs-triage"]
 body:

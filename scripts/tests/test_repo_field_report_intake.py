@@ -33,8 +33,9 @@ def test_the_form_has_data_r115_s_title_labels_and_description() -> None:
     assert "https://github.com/timemir/wow-fish/issues/new?template=field-report.yml" in text
     assert re.search(r"^title: Field report$", text, re.MULTILINE)
     assert re.search(r'^labels: \["field-report", "needs-triage"\]$', text, re.MULTILINE)
-    assert "one issue per part" in " ".join(text.split("\nbody:\n", 1)[0].split())
-    assert "reaches Pagle only when the dev pastes it into an issue" in " ".join(text.split())
+    description = " ".join(text.split("\nbody:\n", 1)[0].split())
+    assert "one issue per part" in description
+    assert "A report posted anywhere else reaches Pagle only when the dev pastes it into an issue." in description
 
 
 def test_the_form_has_the_report_notes_and_public_fields() -> None:
@@ -56,7 +57,8 @@ def test_the_form_has_the_report_notes_and_public_fields() -> None:
 
 
 def test_the_recorded_issue_bodies_have_the_forms_fields() -> None:
-    # The fixture bodies stand for the form's rendering: a "### <label>" heading per field, the report fenced.
+    # DATA-R115: the fixture bodies stand for the form's rendering: a "### <label>" heading per field, the report
+    # fenced.
     # rep-r30.md is in GitHub's exact shape for this form (test_report.py); a body recorded from a real issue is
     # still to come.
     labels = ["### Report", "### Anything you noticed?", "### Public"]

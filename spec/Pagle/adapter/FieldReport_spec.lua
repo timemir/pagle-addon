@@ -7,15 +7,6 @@ local GUID = "Player-4618-0A1B2C3D" -- savedLog's Ada
 local UNCHARTED = 9999 -- in no catalogue
 local FIRST = SERVER_TIME - 4000 -- the history's Casts are at FIRST + 1, + 2, …
 
--- BUILD_ENTRY, then `n` of Ada's Casts in Darkshore (148, subzone 0) at realm 08:14, each catching an Uncharted item.
-local function unchartedHistory(n)
-	local entries = { BUILD_ENTRY }
-	for i = 1, n do
-		entries[#entries + 1] = castEntry(FIRST + i, UNCHARTED, 0)
-	end
-	return entries
-end
-
 -- Core over a saved log holding `entries` and PagleDB `saved`, logged in and in the world.
 local function core(entries, saved)
 	return enterWorld(loadCore(entries, saved))
@@ -57,7 +48,7 @@ describe("the Field report projection", function()
 		"is Core's own, bound to PagleDB.global.projections.fieldReport with rules version 2 and the content"
 			.. " fingerprint alone (REP-R25, LOG-R70, LOG-R78)",
 		function()
-			local loaded = core(unchartedHistory(2))
+			local loaded = core(unchartedHistory(2, FIRST, UNCHARTED))
 			local Pagle = loaded.env.Pagle
 
 			local db = loaded.env.PagleDB.global.projections.fieldReport
@@ -69,7 +60,7 @@ describe("the Field report projection", function()
 	)
 
 	it("yields the I row of two Uncharted Catches on one build, with the count (REP-R11, REP-R20, REP-R26)", function()
-		local loaded = core(unchartedHistory(2))
+		local loaded = core(unchartedHistory(2, FIRST, UNCHARTED))
 
 		local rows = assert(loaded.ns.FieldReportRows())
 
@@ -90,7 +81,7 @@ describe("the Field report projection", function()
 	end)
 
 	it("takes a Cast recorded later live, and the count follows (LOG-R73, REP-R26)", function()
-		local loaded = core(unchartedHistory(1))
+		local loaded = core(unchartedHistory(1, FIRST, UNCHARTED))
 		local before = loaded.env.Pagle.GetFieldReportCount()
 
 		liveCast(loaded, 9998)
@@ -125,7 +116,7 @@ describe("the Field report projection", function()
 					},
 				},
 			}
-			local loaded = core(unchartedHistory(600), saved)
+			local loaded = core(unchartedHistory(600, FIRST, UNCHARTED), saved)
 			local Pagle = loaded.env.Pagle
 
 			assert.is_nil(loaded.ns.FieldReportRows()) -- no rows while the projection rebuilds (REP-R42)
@@ -144,7 +135,7 @@ end)
 
 describe("the Field report projection, beside a Module's", function()
 	it("runs ahead of it, so the Module's live apply already sees the Catch counted (LOG-R78)", function()
-		local loaded = loadCore(unchartedHistory(1))
+		local loaded = loadCore(unchartedHistory(1, FIRST, UNCHARTED))
 		local Pagle = loaded.env.Pagle
 		local M = Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
 		local seen = {}
@@ -184,7 +175,7 @@ describe("Pagle.GetFieldReportCount", function()
 				},
 			},
 		}
-		local loaded = core(unchartedHistory(1), saved)
+		local loaded = core(unchartedHistory(1, FIRST, UNCHARTED), saved)
 
 		local rows = loaded.ns.FieldReportRows()
 		local p = {}
