@@ -20,6 +20,8 @@ function ns.Stats.OnInitialize()
 	if not ns.Module then
 		return
 	end
+	-- Stats' tracker frame slot and its goods, right after registering (STA-R88).
+	ns.RegisterGoods(ns.Module)
 
 	-- Account-wide, one shared profile, with the defaults in stats.md › Data.
 	ns.db = LibStub("AceDB-3.0"):New("PagleStatsDB", ns.DB_DEFAULTS, true)
