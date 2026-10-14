@@ -367,4 +367,61 @@ describe("Goal progress", function()
 			assert.are.equal(3, progress)
 		end)
 	end)
+
+	describe("completion", function()
+		it("comes at the Catch that brings progress to the need; later Catches don't count (TKB-R45)", function()
+			local haul = goal({ kind = "haul", need = 2, target = DUROTAR })
+			run(haul, { cast(DUROTAR, { SMALLFISH }) })
+			assert.is_false(ns.IsComplete(haul, Pagle))
+
+			local progress, counted = run(haul, { cast(DUROTAR, { SMALLFISH, MACKEREL }), cast(DUROTAR, { SMALLFISH }) })
+
+			assert.are.equal(2, progress)
+			assert.are.same({ true, false, false }, counted)
+			assert.is_true(ns.IsComplete(haul, Pagle))
+		end)
+
+		it("can come for two goals on the same Catch, each counting it in board order (TKB-R45)", function()
+			local haul = goal({ kind = "haul", need = 1, target = DUROTAR })
+			local lure = goal({ kind = "lure", need = 1 })
+			local ctx = {
+				pagle = Pagle,
+				caughtBefore = function()
+					return false
+				end,
+			}
+			local record = cast(DUROTAR, { SMALLFISH, MACKEREL }, { lure = 263 })
+			local completed = {}
+
+			for _, slot in ipairs(record.items) do
+				for _, subject in ipairs({ haul, lure }) do
+					if not ns.IsComplete(subject, Pagle) then
+						ns.EnterCast(subject, record)
+						if ns.CountCatch(subject, record, slot, ctx) and ns.IsComplete(subject, Pagle) then
+							completed[#completed + 1] = subject.kind .. "@" .. slot.n
+						end
+					end
+				end
+			end
+
+			assert.are.same({ "haul@1", "lure@1" }, completed)
+		end)
+
+		it("keeps a complete session-bound goal's progress through a new Session (TKB-R41, TKB-R45)", function()
+			local wanderer = goal({ kind = "wanderer", tier = 3, need = 3 })
+			run(wanderer, { cast(DUROTAR, { SMALLFISH }), cast(BARRENS, { SMALLFISH }), cast(ASHENVALE, { SMALLFISH }) })
+
+			local progress = run(wanderer, { cast(DARKSHORE, { SMALLFISH }, { session = "S2" }) })
+
+			assert.are.equal(3, progress)
+			assert.are.equal("S1", wanderer.session)
+			assert.is_true(ns.IsComplete(wanderer, Pagle))
+		end)
+
+		it("needs the record's need, for every goal but a Variety Expedition (TKB-R34, TKB-R44)", function()
+			assert.are.equal(30, ns.GoalNeed(goal({ kind = "haul", need = 30, target = DUROTAR }), Pagle))
+			assert.are.equal(3, ns.GoalNeed(goal({ kind = "variety", need = 3, target = DUROTAR }), Pagle))
+			assert.are.equal(1, ns.GoalNeed(goal({ type = "e", kind = "size", need = 1, target = WHOPPER }), Pagle))
+		end)
+	end)
 end)

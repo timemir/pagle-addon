@@ -144,6 +144,28 @@ local function after(goal, cast)
 	return cast.outcome == "caught" and cast.seq > goal.seq
 end
 
+--- The progress a goal needs (TKB-R34, TKB-R44): its record's need, except that a Variety Expedition needs only the
+--- stored Species the catalogue still has (a stored representative item now `removed`, or without a `species`, drops
+--- out of its need, as it drops out of its progress).
+---@param goal TackleGoal
+---@param pagle table Core's catalogue calls (LOG-R55)
+---@return integer
+function ns.GoalNeed(goal, pagle)
+	if goal.type == "e" and goal.kind == "variety" then
+		local _, count = storedSpecies(goal, pagle)
+		return count
+	end
+	return goal.need
+end
+
+--- Whether a goal is complete (TKB-R45): its progress has reached its need, and it isn't stranded (TKB-R44).
+---@param goal TackleGoal
+---@param pagle table Core's catalogue calls (LOG-R55)
+---@return boolean
+function ns.IsComplete(goal, pagle)
+	return goal.progress >= ns.GoalNeed(goal, pagle)
+end
+
 --- Starts a caught Cast for a goal (TKB-R41): a session-bound goal whose progress belongs to another Session than the
 --- Cast's (Core's `session` tag, LOG-R98) resets its progress and `seen` and belongs to the Cast's Session. Call it once
 --- per caught Cast, before the Cast's Catches; it ignores a got-away Cast, one from before the goal (TKB-R40) and a
@@ -172,6 +194,9 @@ function ns.CountCatch(goal, cast, slot, ctx)
 	end
 	if ns.IsSessionBound(goal) and goal.session ~= cast.session then
 		return false -- not entered (EnterCast): its progress belongs to another Session (TKB-R41)
+	end
+	if ns.IsComplete(goal, ctx.pagle) then
+		return false -- TKB-R45
 	end
 	local item = slot.itemID ~= 0 and ctx.pagle.GetItem(slot.itemID) or nil
 	return COUNT[goal.kind](goal, cast, slot, item, ctx)
