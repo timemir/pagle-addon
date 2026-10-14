@@ -20,7 +20,9 @@ logic\Waters.lua
 logic\Titles.lua
 logic\Groups.lua
 logic\Board.lua
+logic\Goods.lua
 adapter\BoardWidgets.lua
 adapter\Board.lua
+adapter\Goods.lua
 adapter\Hunts.lua
 adapter\Groups.lua

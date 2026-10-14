@@ -19,6 +19,8 @@ function ns.Hunts.OnInitialize()
 	if not ns.Module then
 		return
 	end
+	-- Hunts' slots and goods, right after RegisterModule (HNT-R122).
+	ns.RegisterGoods(ns.Module)
 
 	-- Account-wide, one shared profile, with the defaults in hunts.md › Data.
 	ns.db = LibStub("AceDB-3.0"):New("PagleHuntsDB", ns.DB_DEFAULTS, true)

@@ -15,4 +15,10 @@ ns.L = {
 	TITLE = "Hunts",
 	BOARD = "Hunts",
 	BOARD_SLASH_HELP = "Open or close the Hunts board",
+
+	-- Hunts' slots (HNT-R120) and the sample tracker a tracker frame's preview draws (HNT-R121).
+	SLOT_NOTEBOOK_COVER = "Notebook cover",
+	SLOT_TRACKER_FRAME = "Hunts tracker frame",
+	PREVIEW_TRACKER_LINE_1 = "Night Run · in 37m",
+	PREVIEW_TRACKER_LINE_2 = "Rack Hour · on demand",
 }
