@@ -109,6 +109,26 @@ ns.L = {
 	TARGET_ANY = "Any fish",
 	TARGET_MIN_BAND = "%s, %s or better",
 
+	-- The board's timeline (HNT-R61–R63, HNT-R66, HNT-R67): logic/Timeline.lua and adapter/Timeline.lua.
+	TIMELINE_TITLE = "What's biting, and when",
+	GROUP_HEADINGS = {
+		now = "Now: open right now",
+		soon = "Soon: opens within 3 hours",
+		later = "Later: opens after that, or needs more skill",
+		onDemand = "On demand: starts when you do",
+	},
+	TIMELINE_LEGEND = "Hatched: open · Dashed: window unconfirmed · Pencil: needs more skill · Blue: your camp is up",
+	RULER_NOW = "now",
+	OUT_OF_SEASON = "out of season",
+	-- A set's page, its left side (HNT-R66): "{set name}: earns {title}", or "{set name}: {title}" once earned.
+	SET_HEADING_EARNS = "%s: earns %s",
+	SET_HEADING_EARNED = "%s: %s",
+	NO_HUNTS = "No Hunts yet.",
+	-- The leather's realm clock ("14:05 · Tue 14 Oct · Autumn") and checkbox (HNT-R61, HNT-R43, HNT-R82).
+	WEEKDAY_DATE = "%s %s",
+	CLOCK_PAUSED = "%s (paused in combat)",
+	SHOW_COMPLETED = "show completed",
+
 	-- Hunts' moments, Write-up and summary line (HNT-R86, HNT-R89, HNT-R111). Counts come in singular and plural
 	-- pairs, *_ONE and *_OTHER.
 	HUNT_COMPLETE = "Hunt complete",

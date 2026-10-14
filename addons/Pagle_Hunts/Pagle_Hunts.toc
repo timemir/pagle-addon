@@ -23,6 +23,7 @@ logic\Projection.lua
 logic\Moments.lua
 logic\Groups.lua
 logic\Labels.lua
+logic\Timeline.lua
 logic\WindowMoments.lua
 logic\Board.lua
 logic\Goods.lua
@@ -33,5 +34,6 @@ adapter\Goods.lua
 adapter\Hunts.lua
 adapter\Groups.lua
 adapter\Names.lua
+adapter\Timeline.lua
 adapter\WindowMoments.lua
 adapter\Entry.lua
