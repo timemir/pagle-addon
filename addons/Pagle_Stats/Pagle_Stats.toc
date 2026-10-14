@@ -27,6 +27,7 @@ logic\Home.lua
 logic\Lifetime.lua
 adapter\Text.lua
 adapter\BookWidgets.lua
+adapter\TrackerBlock.lua
 adapter\Book.lua
 adapter\Place.lua
 adapter\Home.lua
