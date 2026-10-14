@@ -609,7 +609,7 @@ describe("Goal progress over a changed catalogue", function()
 			)
 		end)
 
-		it("a goal of a kind without a catalogue target is never stranded (TKB-R44)", function()
+		it("a goal whose target still resolves, or that has none, isn't stranded (TKB-R44)", function()
 			local goals = {
 				goal({ kind = "wanderer", tier = 3, need = 3 }),
 				goal({ kind = "quality", need = 3, target = 2 }),
@@ -620,9 +620,14 @@ describe("Goal progress over a changed catalogue", function()
 				goal({ kind = "haul", need = 20, target = WESTFALL }),
 			}
 
+			local stranded = {}
 			for _, subject in ipairs(goals) do
-				assert.is_false(ns.IsStranded(subject, Pagle), subject.kind)
+				if ns.IsStranded(subject, Pagle) then
+					stranded[#stranded + 1] = subject.type .. " " .. subject.kind
+				end
 			end
+
+			assert.are.same({}, stranded)
 		end)
 	end)
 
