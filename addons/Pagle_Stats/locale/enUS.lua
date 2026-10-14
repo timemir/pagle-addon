@@ -65,4 +65,65 @@ ns.L = {
 	CHARACTER_NAME = "%s %s",
 	CHARACTER_FALLBACK = "Character %d",
 	QUALITY_FALLBACK = "Quality %d",
+
+	-- Your odds (logic/Odds.lua, STA-R43, STA-R45–R47). Every odds view carries the heading (STA-R46).
+	ODDS_HEADING = "Your odds",
+	ODDS_LEARNING_SHORT = "learning %d/%d",
+	ODDS_LEARNING = "Learning…",
+	ODDS_UNSEEN = "not seen yet",
+	ODDS_KNOWN_SHORT = "1 in %s",
+	ODDS_KNOWN = "about 1 in %s",
+	-- What a reading rests on (STA-R46): where, then " {window}", then ", {side}".
+	ODDS_HERE = "here",
+	ODDS_ACROSS = "across %s",
+	ODDS_WITH_WINDOW = "%s %s",
+	ODDS_WITH_SIDE = "%s, %s",
+	ODDS_SIDE_HI = "at or above %d skill",
+	ODDS_SIDE_LO = "below %d skill",
+	ODDS_LEARNING_SENTENCE = "%s of the %d Casts I need %s before Your odds show a number.",
+	ODDS_SCOPE_LINE = "From %s of my Casts %s; %s caught.",
+	ODDS_UNSEEN_SENTENCE = "In %s Casts %s: rarer than about 1 in %s, if it bites here at all.",
+	ODDS_RANGE = "Likely between 1 in %s and 1 in %s (95%%).",
+	ODDS_RANGE_ROUNDING = "Within rounding of 1 in %s (95%%).",
+	-- The extra sentences after a reading's own, each when it applies (STA-R46).
+	ODDS_NOTE_ENTRY = "Pagle hasn't confirmed it bites here yet.",
+	ODDS_NOTE_WINDOW = "The window isn't confirmed yet.",
+	ODDS_NOTE_LINE = "The no-junk line isn't confirmed yet.",
+	ODDS_NOTE_POOL = "Open water and pools combined: there is no pool data.",
+	-- Window names by ID (STA-R47): `event` for any `event.<eventID>`, `other` for any other ID.
+	WINDOW_NAMES = {
+		day = "by day",
+		night = "by night",
+		spring = "in spring",
+		summer = "in summer",
+		autumn = "in autumn",
+		winter = "in winter",
+		event = "during its event",
+		other = "in its window",
+	},
+	-- Dry spells (STA-R50, STA-R53, STA-R54), as logic/DrySpell.lua writes them. The first sentence: never caught in
+	-- the scope ("412 Casts here, none yet."), on an item's entry, in the tracker's hover, or a Dry spell of 0.
+	DRY_NONE_YET = "%s %s, none yet.",
+	DRY_SINCE_ENTRY = "%s since my last one, %s.",
+	DRY_SINCE_TRACKER = "%s since my last %s.",
+	DRY_CAUGHT_LAST = "Caught one on my last Cast %s.",
+	DRY_LEARNING = "A luck reading comes once Your odds have a number.",
+	-- The luck wording after it, by band and the steps inside normal ("About 38 anglers in 100 wait this long.").
+	LUCK_NOTHING_UNUSUAL = "Nothing unusual.",
+	LUCK_ABOUT = "About %s this long. Nothing unusual.",
+	LUCK_LONG_WAIT = "Roughly 1 angler in %s waits this long. A long wait, but well within normal luck.",
+	LUCK_UNLUCKY = "Roughly 1 angler in %s waits this long. Unlucky, not broken.",
+	LUCK_VERY_UNLUCKY = "Only about 1 angler in %s waits this long. %s",
+	LUCK_UNDER_A_MILLION = "Fewer than 1 angler in a million waits this long. %s",
+	LUCK_VERY_UNLUCKY_ROLL = "Very unlucky, and every Cast is still its own roll.",
+	-- Each band in a word, as the tracker's line and the short forms' ", unlucky" name it (STA-R52, STA-R82).
+	BANDS = { normal = "normal", unlucky = "unlucky", veryUnlucky = "very unlucky" },
+	-- The short forms: a row's margin and a tile ("212 since", ", unlucky", "just now"), a home spread watch line's
+	-- end ("212 since the last, unlucky.", "caught on my last Cast.", "412 Casts, none yet.").
+	DRY_SHORT_SINCE = "%s since",
+	DRY_SHORT_BAND = ", %s",
+	DRY_JUST_NOW = "just now",
+	DRY_WATCH_SINCE = "%s since the last%s.",
+	DRY_WATCH_CAUGHT_LAST = "caught on my last Cast.",
+	DRY_WATCH_NONE_YET = "%s, none yet.",
 }

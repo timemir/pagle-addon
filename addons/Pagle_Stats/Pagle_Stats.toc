@@ -18,6 +18,8 @@ logic\Rows.lua
 logic\Fold.lua
 logic\Sessions.lua
 logic\Text.lua
+logic\Odds.lua
+logic\DrySpell.lua
 logic\Book.lua
 adapter\Text.lua
 adapter\BookWidgets.lua
