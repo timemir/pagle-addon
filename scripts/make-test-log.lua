@@ -451,7 +451,7 @@ end
 
 -- The Ledger's level now (LED-R30) and the XP left to the next one, nil at the cap.
 local function climb(game, state)
-	local level, into, cost = game.ledger.ClimbOf(state.xp)
+	local level, into, cost = game.ledger.ClimbOf(state.xp, state.prestige)
 	return level, cost and cost - into
 end
 
@@ -481,7 +481,7 @@ end
 local function costTo(game, level)
 	local total = 0
 	for l = 1, level - 1 do
-		total = total + game.ledger.StepCost(l)
+		total = total + game.ledger.StepCost(l, 0)
 	end
 	return total
 end
