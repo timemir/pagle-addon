@@ -220,6 +220,38 @@ describe("FakePagle", function()
 			assert.is_nil(fake.settingsPage("trackers"))
 		end)
 
+		it("ends a Module's Trackers section with its Trackers slot, as Core does (SET-R44, CORE-R42)", function()
+			local fake = newFakePagle()
+			local hunts = fake.Pagle.RegisterModule({ name = "Hunts", title = "Hunts", order = 20 })
+			local stats = fake.Pagle.RegisterModule({ name = "Stats", title = "Stats", order = 30 })
+			local function checkbox(label)
+				return { kind = "checkbox", label = label, get = function() end, set = function() end }
+			end
+			hunts:AddSetting("trackers", checkbox("Show the Hunts tracker"))
+			hunts:RegisterSlot({ id = "hunts.trackerframe", label = "Hunts tracker frame", category = "Trackers" })
+			hunts:RegisterGood({
+				id = "hunts.trackerframe.none",
+				slot = "hunts.trackerframe",
+				name = "None",
+				default = true,
+			})
+			stats:AddSetting("trackers", checkbox("Show the live tracker"))
+
+			fake.login()
+
+			local page = {}
+			for i, row in ipairs(assert(fake.settingsPage("trackers"))) do
+				page[i] = { row.module, row.kind, row.label, row.indented, row.slot }
+			end
+			assert.are.same({
+				{ "Hunts", "header", "Hunts", false },
+				{ "Hunts", "checkbox", "Show the Hunts tracker", false },
+				{ "Hunts", "slot", "Hunts tracker frame", false, "hunts.trackerframe" },
+				{ "Stats", "header", "Stats", false },
+				{ "Stats", "checkbox", "Show the live tracker", false },
+			}, page)
+		end)
+
 		it("raises an error at the caller for a row Core refuses (CORE-R42)", function()
 			local _, M = withQoL()
 			M:AddSetting("fishing", { kind = "header", id = "casting", label = "Casting" })
