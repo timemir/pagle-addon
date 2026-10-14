@@ -135,6 +135,92 @@ describe("Where a Hunt bites", function()
 		end)
 	end)
 
+	describe("board spec (HNT-R6, HNT-R7)", function()
+		local loaded, fake = load()
+		local ns = loaded.ns
+
+		it("is a natural Hunt's window spec, as GetWindowSpec gives it, its confirmed included", function()
+			local spec = ns.where.fixture_snapper.boardSpec
+			assert.are.same({ 1200, 360 }, { spec.time[1][1], spec.time[1][2] })
+			assert.is_true(spec.confirmed)
+			assert.is_false(ns.where.fixture_sunscale.boardSpec.confirmed)
+		end)
+
+		it("is an imposed Hunt's own conditions", function()
+			assert.are.equal(ns.hunts:Hunt("fixture_oddity").conditions, ns.where.fixture_oddity.boardSpec)
+			assert.are.equal(ns.hunts:Hunt("fixture_rack").conditions, ns.where.fixture_rack.boardSpec)
+		end)
+
+		it("is none for a natural Hunt whose window has no spec, which is never unconfirmed", function()
+			local where, extra = whereOf(loaded, fake, { { kind = "natural", species = C.NIGHTFIN, window = "event.999" } })
+			local shipped = ns.where
+			ns.where = where
+			assert.is_nil(where.extra_1.boardSpec)
+			assert.is_nil(where.extra_1.unconfirmedWindow)
+			assert.is_nil(ns.Unconfirmed(extra[1], { opensAt = 0, confirmed = false }))
+			ns.where = shipped
+		end)
+	end)
+
+	describe("unconfirmed (HNT-R34)", function()
+		local loaded, fake = load()
+		local ns, Pagle = loaded.ns, fake.globals.Pagle
+		local now = Pagle.GetConditions().time
+
+		-- The Hunt's NextWindow result now, as the grouping reads it (HNT-R40).
+		local function forecast(huntID)
+			return Pagle.NextWindow(ns.where[huntID].boardSpec, now)
+		end
+
+		it("is not a natural Hunt with a confirmed window and a gateConfirmed entry among its waters", function()
+			assert.is_nil(ns.where.fixture_snapper.unconfirmedWindow)
+			assert.is_nil(ns.Unconfirmed(ns.hunts:Hunt("fixture_snapper"), forecast("fixture_snapper")))
+		end)
+
+		it("is a natural Hunt whose window is unconfirmed: the window is an estimate", function()
+			assert.are.equal("window", ns.where.fixture_sunscale.unconfirmedWindow)
+			assert.are.equal("window", ns.Unconfirmed(ns.hunts:Hunt("fixture_sunscale"), forecast("fixture_sunscale")))
+		end)
+
+		it("is a natural Hunt none of whose waters' entries has gateConfirmed: not yet seen biting only then", function()
+			local where, extra = whereOf(loaded, fake, {
+				-- Ashenvale's Forever Nightfin, its one night water, has gateConfirmed false.
+				{ kind = "natural", species = C.NIGHTFIN, window = "night" },
+				-- Smallfish is gated nowhere, so this one has no waters, and none gateConfirmed.
+				{ kind = "natural", species = C.SMALLFISH, window = "night" },
+			})
+			assert.is_nil(where.extra_1.unconfirmedWindow) -- Auberdine's entry is gateConfirmed
+			assert.are.equal("gating", where.extra_2.unconfirmedWindow)
+			local shipped = ns.where
+			ns.where = where
+			assert.are.equal("gating", ns.Unconfirmed(extra[2], Pagle.NextWindow(where.extra_2.boardSpec, now)))
+			ns.where = shipped
+		end)
+
+		it("is any Hunt whose NextWindow result has confirmed = false, an estimate whatever its gating", function()
+			local where, extra = whereOf(loaded, fake, {
+				{ species = C.BLACKMOUTH, conditions = { events = { 301 } } }, -- an unconfirmed weekly rule
+				{ kind = "natural", species = C.SMALLFISH, window = "event.301" },
+			})
+			local shipped = ns.where
+			ns.where = where
+			local window = Pagle.NextWindow(where.extra_1.boardSpec, now)
+			assert.is_false(window.confirmed)
+			assert.is_nil(where.extra_1.unconfirmedWindow)
+			assert.are.equal("window", ns.Unconfirmed(extra[1], window))
+			assert.are.equal("window", ns.Unconfirmed(extra[2], Pagle.NextWindow(where.extra_2.boardSpec, now)))
+			-- With no result (a secret realm clock), only what was worked out at load.
+			assert.is_nil(ns.Unconfirmed(extra[1], nil))
+			ns.where = shipped
+			assert.are.equal("window", ns.Unconfirmed(ns.hunts:Hunt("fixture_sunscale"), nil))
+		end)
+
+		it("is never an imposed Hunt with a confirmed forecast", function()
+			assert.is_nil(ns.where.fixture_oddity.unconfirmedWindow)
+			assert.is_nil(ns.Unconfirmed(ns.hunts:Hunt("fixture_oddity"), forecast("fixture_oddity")))
+		end)
+	end)
+
 	describe("short of skill (HNT-R33)", function()
 		it("flips as the Angler's bestBaseSkill crosses the need, a lure getting there within 100", function()
 			local loaded, fake = load()

@@ -15,9 +15,12 @@ local ns = select(2, ...)
 ---@field GetZoneCatches fun(zoneAreaID: integer): PagleZoneCatchEntry[]?
 ---@field GetZoneOf fun(areaID: integer): integer?
 ---@field GetArea fun(areaID: integer): PagleArea?
+---@field GetWindowSpec fun(windowID: string): PagleWindowSpec?
 
 --- Where one Hunt bites, worked out at load.
 ---@class HuntWhere
+---@field boardSpec table?      -- the condition spec that drives the board (HNT-R6); nil per HNT-R7
+---@field unconfirmedWindow "window"|"gating"|nil   -- a natural Hunt's own reason to be unconfirmed (HNT-R34)
 ---@field waters integer[]      -- areaIDs, ascending (HNT-R30); empty when it has none
 ---@field isWater table<integer, true>   -- the same areaIDs as a set, for ns.InWaters
 ---@field places integer[]      -- its waters, or its `areas` as listed (HNT-R31)
@@ -113,6 +116,18 @@ local function skillNeedOf(places, skill, lookups)
 	return need
 end
 
+-- A Hunt's board spec (HNT-R6): a natural Hunt's window spec, carrying its `confirmed`, or nil when the window has
+-- none (HNT-R7); an imposed Hunt's own conditions.
+---@param hunt HuntDef
+---@param getWindowSpec fun(windowID: string): PagleWindowSpec?
+---@return table?
+local function boardSpecOf(hunt, getWindowSpec)
+	if hunt.kind == "natural" then
+		return getWindowSpec(hunt.window)
+	end
+	return hunt.conditions
+end
+
 --- Where every Hunt of `list` bites, by Hunt ID, Retired Hunts and Hunts not yet out included (HNT-R30).
 ---@param list HuntList
 ---@param lookups HuntsWaterLookups
@@ -128,27 +143,57 @@ function ns.NewWhere(list, lookups)
 
 	local where = {}
 	for _, hunt in ipairs(list:Hunts()) do
-		local waters = {}
+		local waters, gateConfirmed = {}, false
 		local test = watersTest(hunt, list, lookups.GetItem)
 		if test then
 			for _, entry in ipairs(entries) do
 				if test(entry) then
 					waters[entry.areaID] = true
+					gateConfirmed = gateConfirmed or entry.gateConfirmed == true
 				end
 			end
 		end
 		local conditions = hunt.conditions or {}
 		local waterList = sorted(waters)
 		local places = conditions.areas and { unpack(conditions.areas) } or waterList
+		local boardSpec = boardSpecOf(hunt, lookups.GetWindowSpec)
+		local unconfirmed
+		if hunt.kind == "natural" and boardSpec then
+			if boardSpec.confirmed == false then
+				unconfirmed = "window"
+			elseif not gateConfirmed then
+				unconfirmed = "gating"
+			end
+		end
 		where[hunt.id] = {
+			boardSpec = boardSpec,
 			waters = waterList,
 			isWater = waters,
 			places = places,
 			zones = zonesOf(places, lookups.GetZoneOf),
 			skillNeed = skillNeedOf(places, conditions.skill, lookups),
+			unconfirmedWindow = unconfirmed,
 		}
 	end
 	return where
+end
+
+--- Why the Hunt is unconfirmed (HNT-R34), or nil when it isn't: "window" when its window or a weekly rule its
+--- forecast read is unconfirmed (the window is an estimate), "gating" when only its gating is (a natural Hunt none of
+--- whose waters' entries has gateConfirmed). `window` is the Hunt's NextWindow result now, nil when there is none.
+--- A Hunt without a board spec is never unconfirmed (HNT-R7). Reads `ns.where`.
+---@param hunt HuntDef
+---@param window Window?
+---@return "window"|"gating"|nil
+function ns.Unconfirmed(hunt, window)
+	local where = ns.where[hunt.id]
+	if not where.boardSpec then
+		return nil
+	end
+	if window and window.confirmed == false then
+		return "window"
+	end
+	return where.unconfirmedWindow
 end
 
 --- Tunables (hunts.md): how far a lure's skill bonus reaches, for "A lure gets me there." (HNT-R33, HNT-R52).
