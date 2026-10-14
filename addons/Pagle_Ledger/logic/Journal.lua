@@ -37,7 +37,7 @@ local ns = select(2, ...)
 --- One thing drawn on a page, top to bottom, as data; adapter/JournalWidgets.lua draws each kind:
 --- - `kicker`, `title`, `text` (`text`, in the serif face; `hand` for the handwriting face, `color` "faded", "red" or
 ---   "blue" over the ink)
---- - `link` (`text`, opening `place`, or calling `call` instead when set, e.g. Pagle.OpenFieldReport)
+--- - `link` (`text`, opening `place`, or calling `action` instead when it has one)
 --- - `leader` (a dotted-leader line: `text` left, `value` right, opening `place` if set)
 --- - `seal` (a wax seal reading `text`)
 --- - `stamps` (`stamps`: ink stamps, each `{ text, inked }`)
@@ -46,16 +46,17 @@ local ns = select(2, ...)
 --- - `xpBar` (`bar`: the ink XP bar, ns.InkXpBar)
 --- - `tabs` (`tabs`: tabs side by side, each `{ text, on, place }`, the chosen one `on`, LED-R130)
 --- - `bookplate` (the level `text` in large numerals over its caption `value`, and a wax seal reading `seal`, LED-R132)
---- - `ladder` (`rungs` side by side, each `{ text, inked, circled }`: Zone Mastery's ranks, LED-R135)
---- - `row` (a list row: a small `icon` drawn `look`, `text` in `color`, its `margin` notes in handwriting, its
----   `stars`, a `value` at the right, `selected` marked, opening `place`; LED-R136, LED-R137)
+--- - `board` (`ticks`: the Trophy Room's measuring board, LED-R143) and `plinth` (`icon` and `look`, `text` the name,
+---   `value` the plaque, LED-R144), drawn by adapter/JournalCollections.lua
+--- - `ladder` (`rungs` side by side, each `{ text, inked, circled }`: Zone Mastery's ranks, LED-R135) and `row` (a list
+---   row: a small `icon` drawn `look`, `text` in `color`, its `margin` notes in handwriting, its `stars`, a `value` at
+---   the right, `selected` marked, opening `place`; LED-R136, LED-R137), drawn by adapter/JournalZone.lua
 ---@class LedgerBlock
----@field kind "kicker"|"title"|"text"|"link"|"leader"|"seal"|"stamps"|"tiles"|"icon"|"xpBar"|"tabs"|"bookplate"|"ladder"|"row"
+---@field kind "kicker"|"title"|"text"|"link"|"leader"|"seal"|"stamps"|"tiles"|"icon"|"xpBar"|"tabs"|"bookplate"|"board"|"plinth"|"ladder"|"row"
 ---@field text? string
 ---@field hand? boolean
 ---@field color? "faded"|"red"|"blue"
 ---@field place? LedgerJournalPlace
----@field call? fun()
 ---@field value? string
 ---@field stamps? { text: string, inked: boolean }[]
 ---@field tiles? LedgerZoneTile[]
@@ -65,10 +66,19 @@ local ns = select(2, ...)
 ---@field bar? LedgerInkXpBar
 ---@field tabs? { text: string, on: boolean, place: LedgerJournalPlace }[]
 ---@field seal? string
+---@field action? fun()
+---@field ticks? LedgerBoardTick[]
 ---@field rungs? { text: string, inked: boolean, circled: boolean }[]
 ---@field margin? string[]
 ---@field stars? LedgerStars
 ---@field selected? boolean
+
+--- One weight's tick on a measuring board (LED-R143): its pounds, where it sits from the lightest weight (0) to the
+--- heaviest (1), and whether it is landed.
+---@class LedgerBoardTick
+---@field text string
+---@field at number
+---@field inked boolean
 
 --- A zone tile (LED-R131): the zone's name, up to two lines under it, a thin ink bar, a wax seal and a red note.
 ---@class LedgerZoneTile

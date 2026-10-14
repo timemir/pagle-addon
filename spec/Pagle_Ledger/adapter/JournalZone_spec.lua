@@ -387,7 +387,7 @@ describe("the Journal's zone spread", function()
 
 				-- Blackmouth: pools, ★★ of three.
 				assert.are.same(
-					{ "Oily Blackmouth", "pools", "|cff9a2a1a★|r|cff9a2a1a★|r|cffb8a080★|r" },
+					{ "Oily Blackmouth", "pools", "★★☆" },
 					{ rows[2].name.text, rows[2].margin.text, rows[2].stars.text }
 				)
 				assert.are.same({ "night, back in 12 h · pools", false }, { rows[3].margin.text, rows[3].stars.shown })
@@ -660,6 +660,18 @@ describe("the Journal's zone spread", function()
 				assert.are.same({ "0 / 1", {} }, { redgill.value, redgill.stars })
 			end
 		)
+
+		it("opens a family's line in the Trophy Room on that family (LED-R137, LED-R143)", function()
+			local _, loaded = zoneSpread(DARKSHORE)
+			local journal = loaded.ns.journal
+
+			-- The right page's rows are its families: Catfish, then Redgill.
+			journal.frame.right.drawn.row[2]:Click()
+
+			assert.are.same({ id = "trophy", args = { family = 4 } }, journal.router:Place())
+			assert.are.same({ "Home", "The Trophy Room" }, crumbLabels(loaded))
+			assert.are.equal("Redgill", journal.pages.right[1].text)
+		end)
 
 		it('leaves out "Skill ~" for a zone without a skill base (LED-R137)', function()
 			local function noSkill()

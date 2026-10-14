@@ -389,6 +389,8 @@ describe("the Journal's Home, right page", function()
 				}
 			end
 
+			-- The Trophy Room (#143) registers itself; take it away to see a link to a spread not yet registered.
+			loaded.ns.journalSpreads.trophy = nil
 			journal.frame.right.drawn.leader[1]:Click()
 			assert.are.same({ id = "home" }, journal.router:Place())
 

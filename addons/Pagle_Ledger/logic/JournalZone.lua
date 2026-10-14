@@ -15,10 +15,6 @@ local ns = select(2, ...)
 -- hint = true? }`: the zone, the Species selected (LED-R136, LED-R142) and whether its entry's plain hint is open
 -- (LED-R141); it ignores any other.
 
--- The Trophy Room's spread, which takes a family to open on (LED-R137, LED-R143); a link to it does nothing until it
--- is registered (LED-R125).
-local TROPHY_ROOM = "trophy"
-
 -- The groups of a charted zone's catches, in their order (LED-R135).
 local SPECIES_GROUPS = { "anyTime", "pools", "dayNight", "seasonal", "events" }
 
@@ -150,7 +146,7 @@ end
 ---@param context LedgerZoneContext
 ---@return LedgerBlock
 local function helpChart(context)
-	return { kind = "link", text = ns.L.ZONE_HELP_CHART, call = context.openFieldReport }
+	return { kind = "link", text = ns.L.ZONE_HELP_CHART, action = context.openFieldReport }
 end
 
 -- The seal, the rank ladder, the next requirement and new to find (LED-R135, LED-R52, LED-R134).
@@ -328,7 +324,7 @@ local function about(context, zone)
 				text = familyName(context, family),
 				stars = ns.ShownFamilyStars(world, state, context.celebrated, family, context.getItem),
 				value = weightsOf(context, family),
-				place = { id = TROPHY_ROOM, args = { family = family } },
+				place = { id = ns.JOURNAL_TROPHY_ROOM, args = { family = family } },
 			}
 		end
 	end

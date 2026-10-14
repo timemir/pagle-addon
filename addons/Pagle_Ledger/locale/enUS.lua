@@ -277,4 +277,30 @@ ns.L = {
 	ZONE_LOOSE_ITEM = "%s: %d×",
 	ZONE_ALSO_CAUGHT_TITLE = "Also caught here",
 	ZONE_NOTHING_YET = "Nothing caught here yet.",
+
+	-- Stars as the Journal prints them (LED-R48): a shown star, a blank one.
+	STAR_ON = "★",
+	STAR_OFF = "☆",
+	-- The Trophy Room (LED-R143, LED-R62). Numbers in %s are BreakUpLargeNumbers'.
+	TROPHY_TITLE = "The Trophy Room",
+	TROPHY_WEIGHTS = "%s of %s weights. Real weights, from the game's own trophy fish.",
+	TROPHY_INDEX_LINE = "%s %s",
+	TROPHY_INDEX_COUNT = "%s / %s",
+	TROPHY_STAMPS = { "Any weight", "Half the weights", "The heaviest" },
+	TROPHY_POUNDS = "pounds, as the game weighs them",
+	TROPHY_LANDED = "Landed %s of %s. Heaviest so far: %s lb.",
+	TROPHY_NONE_LANDED = "Not one of this family yet.",
+	TROPHY_TICK_MARK = "✓",
+	-- Curios (LED-R144): the Junk Museum, Treasures and the loose pages. "{item}: {n}× at {zones}, first {date}. …"
+	CURIOS_CRUMB = "Curios",
+	CURIOS_JUNK_TITLE = "The Junk Museum",
+	CURIOS_EXHIBITS = "%s of %s exhibits",
+	CURIOS_EMPTY_PLINTH = "An empty plinth",
+	CURIOS_TREASURES_TITLE = "Treasures",
+	CURIOS_OPENED = "%s of %s opened",
+	CURIOS_LOOSE_PAGES = "Loose pages: Uncharted",
+	CURIOS_LOOSE_PAGE = "%s: %s× at %s, first %s. Unknown to Pagle. Logged.",
+	CURIOS_UNKNOWN_WATERS = "unknown waters",
+	CURIOS_NONE_UNCHARTED = "None. Every catch is in the Ledger.",
+	CURIOS_HELP_CHART = "Help chart the waters",
 }
