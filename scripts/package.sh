@@ -10,8 +10,9 @@
 # Before the first tag, @project-version@ becomes the short commit hash.
 #
 # The check: the zip's top-level folders are exactly the addons/<Addon>/ folders (Pagle and Pagle_QoL
-# from M1, Pagle_Ledger from M2; each later Module adds its own with its .pkgmeta move-folders line),
-# each holding exactly that folder's tracked files (Pagle_QoL's Bindings.xml among them), plus the packager's
+# from M1, Pagle_Ledger from M2, Pagle_Hunts from M5; each later Module adds its own with its .pkgmeta
+# move-folders line), each holding exactly that folder's tracked files (Pagle_QoL's Bindings.xml among them),
+# plus the packager's
 # Pagle/CHANGELOG.md and the repo's LICENSE and NOTICE in Pagle/. Nothing else: no docs/, spec/,
 # scripts/, probes/, prototypes/, no stray addons/ path and no empty folder.
 #
