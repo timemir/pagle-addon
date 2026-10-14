@@ -367,6 +367,9 @@ describe("the Fish Journal's widgets", function()
 
 		loaded.ns.journal:Open("home")
 
-		assert.are.same({ "Where I've Fished" }, textsOf(loaded.ns.journal.frame.left))
+		local texts = textsOf(loaded.ns.journal.frame.left)
+		assert.are.same({ "The Waters", "Where I've Fished" }, { texts[1], texts[2] })
+		assert.is_false(has(texts, "Local"))
+		assert.is_false(has(texts, "Expert"))
 	end)
 end)

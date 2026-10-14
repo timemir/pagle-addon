@@ -18,6 +18,9 @@ ns.PAGLEDB_DEFAULTS = {
 		pending = {},
 		cards = {},
 		writeUp = {},
+		-- catch-log.md › Data: Core's own projections (LOG-R78), and the diagnostics buffer (LOG-R81).
+		projections = { fieldReport = {} }, -- REP-R25
+		diagnostics = {},
 	},
 	profile = {
 		reloadReminder = false, -- LOG-R86

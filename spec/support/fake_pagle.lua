@@ -17,7 +17,7 @@
 --
 -- It is built on Core's real logic/: each FakePagle loads Pagle.toc's data/, locale/ and logic/ files (and the
 -- CallbackHandler bus) afresh, so what it validates, computes and refuses is what Core does. Core's projections,
--- Sessions, moments, Session summary, cards and wallet are built and connected by logic/Wiring.lua, which Core's
+-- Sessions, moments, Session summary, cards, wallet, goods and wallet projection are built and connected by logic/Wiring.lua, which Core's
 -- adapter runs too: the fake hands it a host over its fakes where Core's adapter hands it the client (adapter/Host.lua).
 -- Only the client is faked.
 --
@@ -82,14 +82,18 @@
 --- the waters" (with " (N)" while Pagle.GetFieldReportCount() is above 0; it calls Pagle.OpenFieldReport) and Settings.
 ---@field coinReports { module: string, total: integer }[] Each M:ReportCoinsEarned Core accepted, in order, an
 --- unchanged total too (SHOP-R2).
----@field setSpent fun(spent: integer) Sets the Coins spent, as the Curio Shop will (M4): BalanceChanged fires if the
---- balance or held changes (SHOP-R12).
+---@field setSpent fun(spent: integer) Sets the Coins spent, for a spec that doesn't care about the log: BalanceChanged
+--- fires if the balance or held changes (SHOP-R12). The wallet projection sets the log's own at enterWorld's done and
+--- on each live purchase (fake.global.projections.wallet, SHOP-R11), replacing it; set it after enterWorld to keep it.
 ---@field goods table<string, table> PagleDB.global.goods, the goods cache (SHOP-R26), the same table as
 --- fake.global.goods: every good registered, by ID, with name, slot, slotLabel, category, module, icon, default, tier,
 --- description and, for an earned good, `earned` (isEarned()'s result at registration or the last M:RefreshGoods).
 --- A spec may fill it before login, as a saved PagleDB, for goods of a Module that isn't loaded (SHOP-R90).
----@field setPurchased fun(purchased: table<string, true>) Hands Core the purchased goods, `{ [goodID] = true }`, as
---- the wallet projection does (SHOP-R11); empty until then. AppearanceChanged fires if a look changes (SHOP-R33).
+---@field setPurchased fun(purchased: table<string, true>) Hands Core the purchased goods, `{ [goodID] = true }`, for a
+--- spec that doesn't care about the log; AppearanceChanged fires if a look changes (SHOP-R33). The wallet projection
+--- hands over the log's own set at enterWorld's done and on each live purchase (SHOP-R11), replacing it; a spec that
+--- wants its set kept hands it over after enterWorld. A U1 in fake.catchLog's history (helpers.lua's purchaseEntry, or
+--- fake.catchLog:Append) gives the spent total, the purchased set and the balance the way Core's log does.
 ---@field shopsOpened { goodID: string? }[] Each Pagle.OpenShop(goodID?) call, in order, with the good it asked for
 --- (SHOP-R40). The fake has no Curio Shop: it only records.
 ---@field announcements PagleAnnouncement[] Each Announcement Core would hand the display, in order (ANN-R11): its
@@ -102,7 +106,10 @@
 --- `lastEndedSession` (LOG-R63); and the Session summary keys (announcements.md › Data): `summary` (the open
 --- Session's moments and every Module's M:SetSummaryLine lines), `pending` (moments raised with no Session open,
 --- ANN-R52), `cards` (each SessionEnded's card for a Session that raised a moment, ANN-R53, at most 3, ANN-R54) and
---- `writeUp` (the Write-up sections waiting, ANN-R61). A spec may seed its keys before login, as a saved PagleDB.
+--- `writeUp` (the Write-up sections waiting, ANN-R61). The Field report's (catch-log.md › Data): `diagnostics`
+--- (LOG-R81; empty, and playCast adds nothing, so a spec adds the entries for the P rows, REP-R22) and
+--- `projections.fieldReport` (REP-R25; bound at construction, so a spec fills that table, never replaces it). A spec
+--- may seed its keys before login, as a saved PagleDB.
 ---@field profile table PagleDB.profile, from Core's defaults: `announcements.cozy` is Cozy mode (ANN-R62), off; a
 --- spec may set it. `appearance` holds each slot's pick, `{ [slot] = goodID }` (SHOP-R32), which Pagle.SetEquipped
 --- writes and a spec may seed.
@@ -123,10 +130,6 @@
 ---@field catchLog PagleCatchLog The Catch log Pagle.IterateCatches reads, on Core's real codec; empty at first.
 ---@field setCatalogue fun(data: table) Serves the catalogue calls over `data` (shaped as ns.catalogue, DATA-R76)
 --- instead of the generated catalogue.
----@field diagnostics PagleDiagnostic[] PagleDB.global.diagnostics (LOG-R81): empty, and playCast adds nothing; a spec
---- adds entries for the P rows Pagle.GetFieldReportCount counts (REP-R22).
----@field fieldReportDB table PagleDB.global.projections.fieldReport (REP-R25); a spec may fill it before enterWorld,
---- as a saved one.
 ---@field setFieldReportCount fun(n: integer?) Makes Pagle.GetFieldReportCount return `n`, whatever the rows; nil goes
 --- back to the count Core's projection gives (REP-R26).
 ---@field fieldReportsOpened PagleFieldReportView[] Each box Pagle.OpenFieldReport opened, in order: its message
@@ -441,10 +444,10 @@ end)
 
 -- Goods (SHOP-R20–R26, SHOP-R30–R33, SHOP-R90), on Core's wiring over fake.global.goods (fake.goods) and
 -- fake.profile.appearance: M:RegisterSlot, M:RegisterGood and M:RefreshGoods on the handle, Pagle.IsOwned,
--- GetEquipped, SetEquipped and GetGood (read-only), and AppearanceChanged from login on. The purchased set is
--- empty until fake.setPurchased hands one over, as the wallet projection will (SHOP-R11). Pagle.OpenShop only
--- records what it was asked for in fake.shopsOpened. Core's own slots and goods (SHOP-R25) are registered from the
--- start, as login step 1 registers them before any Module, without previews: no shop draws here.
+-- GetEquipped, SetEquipped and GetGood (read-only), and AppearanceChanged from login on. The purchased set comes
+-- from the wallet projection part below (SHOP-R11), or from fake.setPurchased. Pagle.OpenShop only records what it
+-- was asked for in fake.shopsOpened. Core's own slots and goods (SHOP-R25) are registered from the start, as login
+-- step 1 registers them before any Module, without previews: no shop draws here.
 part(function(fake, Pagle, ns, host)
 	ns.WireGoods(host)
 	ns.RegisterCoreGoods()
@@ -658,38 +661,20 @@ part(function(fake, Pagle, ns)
 	fake.setCatalogue(ns.catalogue)
 end)
 
--- The Field report's count (REP-R25, REP-R26, LOG-R78), on Core's real projection, bound on fake.projections ahead
--- of every Module's, over fake.catchLog, the catalogue served now and fake.diagnostics (empty; a spec fills it with
--- LOG-R81 entries). Live entries reach it as read-only proxies, which Core's logic walks with newFakePagle's
--- proxy-aware pairs and ipairs.
-part(function(fake, Pagle, ns)
-	fake.diagnostics = {}
-	fake.fieldReportDB = {}
-	local catalogue = setmetatable({}, {
-		__index = function(_, name)
-			return ns.Catalogue[name]
-		end,
-	})
-	local rows, count = ns.AddFieldReport({
-		projections = fake.projections,
-		db = fake.fieldReportDB,
-		catalogue = catalogue,
-		iterate = function(afterSeq)
-			return fake.catchLog:Iterate(afterSeq)
-		end,
-		buffer = function()
-			return fake.diagnostics
-		end,
-		casts = function()
-			return fake.catchLog:Reverse("cast")
-		end,
-	})
+-- The Field report's count (REP-R25, REP-R26, LOG-R78), on Core's wiring over the fake's host, bound on
+-- fake.projections ahead of every Module's: fake.catchLog, the catalogue served now, and fake.global's
+-- projections.fieldReport and diagnostics (empty; a spec fills the buffer with LOG-R81 entries). Its records reach it
+-- read-only, as every projection's do here, and Core's logic walks them with newFakePagle's proxy-aware pairs and
+-- ipairs.
+part(function(fake, Pagle, ns, host)
+	ns.WireFieldReport(host)
+	local fieldReport = assert(ns.fieldReport)
 	local setCount
 	function Pagle.GetFieldReportCount()
 		if setCount then
 			return setCount
 		end
-		return count()
+		return fieldReport.count()
 	end
 	function fake.setFieldReportCount(n)
 		setCount = n
@@ -707,7 +692,7 @@ part(function(fake, Pagle, ns)
 			return Pagle.IsRestricted()
 		end,
 		print = fake.print,
-		rows = rows,
+		rows = fieldReport.rows,
 		text = function(reportRows)
 			return ns.FieldReportParts(reportRows, {
 				addon = "test",
@@ -720,6 +705,15 @@ part(function(fake, Pagle, ns)
 			fake.fieldReportsOpened[#fake.fieldReportsOpened + 1] = view
 		end,
 	})
+end)
+
+-- The wallet projection (SHOP-R11, SHOP-R34, LOG-R78), on Core's wiring over fake.catchLog, bound in
+-- fake.global.projections.wallet after the Field report's and ahead of every Module's: enterWorld's done hands the
+-- wallet the Coins spent and the goods registry the purchased set from the U1 entries in the history, and each live
+-- purchase (fake.ns.RecordPurchase) hands them over as it counts. PagleDB is open from the start, as for the wallet.
+part(function(_, _, ns, host)
+	ns.WireWalletProjection(host)
+	ns.StartWalletProjection()
 end)
 
 -- The live conditions (LOG-R45, LOG-R47). Pagle.GetConditions hands out fake.conditions, read-only, with the
@@ -927,8 +921,9 @@ end)
 ---@return FakePagle
 function newFakePagle()
 	local ns, env = loadCoreLogic()
-	-- Core's own projections get live entries as the read-only proxies every projection gets here; on plain tables
-	-- these behave as the stock ones.
+	-- Core's own projection (the Field report's) gets its records as the read-only proxies every projection gets here,
+	-- through host.iterate and fake.live, and walks them with Core's logic: these see through a proxy, and on plain
+	-- tables behave as the stock ones.
 	env.pairs, env.ipairs, env.next = proxyPairs, proxyIpairs, proxyNext
 	-- Pagle.API_VERSION as adapter/Core.lua sets it; fake_pagle_spec.lua checks they agree.
 	local Pagle = { API_VERSION = 1 }

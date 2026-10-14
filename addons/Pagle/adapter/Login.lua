@@ -32,7 +32,8 @@ Pagle.RegisterEvent(OWNER, "ADDON_LOADED", function(_, loadedName)
 	ns.OpenWallet() -- SHOP-R3
 	ns.RegisterCoreGoods(ns.CORE_PREVIEWS) -- SHOP-R25: before any Module registers its own
 	ns.BuildCatalogue()
-	ns.StartFieldReport() -- LOG-R78: Core's projection, ahead of every Module's
+	ns.WireFieldReport(ns.host) -- LOG-R78: Core's projection, ahead of every Module's
+	ns.StartWalletProjection() -- SHOP-R11, SHOP-R34: the stored spent and purchased set, before the catch-up
 	ns.angler = ns.NewAngler(ns.catchLog)
 	ns.sessions:Open() -- LOG-R63
 end)
