@@ -20,30 +20,18 @@ local NIGHT = { time = { { 1260, 360 } } }
 local SUMMER = { season = { { from = { 3, 20 }, to = { 9, 18 } } } }
 local WINTER = { season = { { from = { 9, 23 }, to = { 3, 24 } } } }
 
-local function fish(species)
-	return { category = "fish", species = species, legend = false, noise = false, removed = false, pool = false }
-end
-
 local function trophy(family, weight)
-	return {
-		category = "trophy",
-		family = family,
-		weight = weight,
-		legend = false,
-		noise = false,
-		removed = false,
-		pool = false,
-	}
+	return itemRecord("trophy", { family = family, weight = weight })
 end
 
 local ITEMS = {
-	[NIGHTFISH] = fish(NIGHTFISH),
-	[SEASONFISH] = fish(SEASONFISH),
-	[WIDEFISH] = fish(WIDEFISH),
-	[LONEFISH] = fish(LONEFISH),
-	[STRAY] = fish(STRAY),
-	[LEGEND] = { category = "fish", species = LEGEND, legend = true, noise = false, removed = false, pool = false },
-	[MIXED] = fish(MIXED),
+	[NIGHTFISH] = fishRecord(NIGHTFISH),
+	[SEASONFISH] = fishRecord(SEASONFISH),
+	[WIDEFISH] = fishRecord(WIDEFISH),
+	[LONEFISH] = fishRecord(LONEFISH),
+	[STRAY] = fishRecord(STRAY),
+	[LEGEND] = fishRecord(LEGEND, { legend = true }),
+	[MIXED] = fishRecord(MIXED),
 	[W40] = trophy(FAMILY, 40),
 	[W60] = trophy(FAMILY, 60),
 	[W50] = trophy(FAMILY, 50),
@@ -52,34 +40,29 @@ local ITEMS = {
 	[LOOSE] = trophy(LOOSE_FAMILY, 12),
 }
 
--- A catch entry (LOG-R55): ungated, or gated by `window` with its spec.
-local function entry(itemID, window, gate)
-	return { itemID = itemID, confirmed = true, window = window, gate = gate, gateConfirmed = window and true or nil }
-end
-
 -- Six charted zones. NIGHTFISH is gated by night wherever it is listed; SEASONFISH by summer in Elwynn and winter in
 -- Westfall; WIDEFISH is ungated in five zones, LONEFISH in one; MIXED is gated in Elwynn but not in Westfall; STRAY is
 -- on no list. The family's four listed weights spread over three zones.
 local CATCHES = {
 	[ELWYNN] = {
-		entry(NIGHTFISH, "night", NIGHT),
-		entry(SEASONFISH, "summer", SUMMER),
-		entry(WIDEFISH),
-		entry(MIXED, "night", NIGHT),
-		entry(W40),
-		entry(W60),
+		catchEntry(NIGHTFISH, "night", NIGHT),
+		catchEntry(SEASONFISH, "summer", SUMMER),
+		catchEntry(WIDEFISH),
+		catchEntry(MIXED, "night", NIGHT),
+		catchEntry(W40),
+		catchEntry(W60),
 	},
 	[WESTFALL] = {
-		entry(NIGHTFISH, "night", NIGHT),
-		entry(SEASONFISH, "winter", WINTER),
-		entry(WIDEFISH),
-		entry(MIXED),
-		entry(W50),
+		catchEntry(NIGHTFISH, "night", NIGHT),
+		catchEntry(SEASONFISH, "winter", WINTER),
+		catchEntry(WIDEFISH),
+		catchEntry(MIXED),
+		catchEntry(W50),
 	},
-	[DUSKWOOD] = { entry(WIDEFISH), entry(LONEFISH), entry(W45) },
-	[REDRIDGE] = { entry(WIDEFISH) },
-	[STRANGLETHORN] = { entry(WIDEFISH) },
-	[DARKSHORE] = { entry(W40) },
+	[DUSKWOOD] = { catchEntry(WIDEFISH), catchEntry(LONEFISH), catchEntry(W45) },
+	[REDRIDGE] = { catchEntry(WIDEFISH) },
+	[STRANGLETHORN] = { catchEntry(WIDEFISH) },
+	[DARKSHORE] = { catchEntry(W40) },
 }
 
 local function getItem(itemID)
@@ -125,31 +108,15 @@ describe("Stars", function()
 	---@return PagleCast
 	local function cast(zone, itemIDs, minute, date)
 		seq = seq + 1
-		local id = "Player-4618-0A1B2C3D-" .. (T0 + seq) .. "-" .. seq
-		local items = {}
-		for n, itemID in ipairs(itemIDs) do
-			items[n] = { n = n, itemID = itemID, quantity = 1, catchId = id .. ":" .. n }
-		end
 		date = date or OCTOBER
-		return {
+		return castRecord({
 			seq = seq,
-			id = id,
-			kind = "cast",
-			char = 1,
 			time = T0 + seq * 60,
-			outcome = "caught",
-			session = "s",
-			conditions = {
-				time = T0 + seq * 60,
-				zone = zone,
-				subzone = 0,
-				minute = minute or NOON,
-				date = { year = 2026, month = date[1], day = date[2], weekday = 1 },
-				events = {},
-				auras = {},
-			},
-			items = items,
-		}
+			zone = zone,
+			minute = minute or NOON,
+			date = { year = 2026, month = date[1], day = date[2], weekday = 1 },
+			items = itemIDs,
+		})
 	end
 
 	-- Applies each record live to `state` (a fresh one by default); returns the state and the star achievements.

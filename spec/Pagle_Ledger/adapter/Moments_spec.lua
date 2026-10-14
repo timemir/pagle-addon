@@ -24,18 +24,7 @@ local ZONE_NAMES = {
 ---@param zone integer
 ---@param itemIDs integer[]
 local function cast(time, zone, itemIDs)
-	local items = {}
-	for i, itemID in ipairs(itemIDs) do
-		items[i] = { itemID = itemID, quantity = 1 }
-	end
-	return {
-		kind = "cast",
-		char = 1,
-		time = time,
-		outcome = "caught",
-		conditions = { minute = 494, zone = zone, subzone = 0, events = {}, auras = {} },
-		items = items,
-	}
+	return castRecord({ time = time, zone = zone, items = itemIDs })
 end
 
 -- Loot of one item each, for fake.playCast.
@@ -78,7 +67,6 @@ local function session(history, saved, extra)
 			return ZONE_NAMES[areaID]
 		end,
 	}
-	fake.globals.BreakUpLargeNumbers = breakUpLargeNumbers
 	for key, value in pairs(extra or {}) do
 		fake.globals[key] = value
 	end

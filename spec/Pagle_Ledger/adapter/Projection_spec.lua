@@ -10,18 +10,7 @@ local T0 = SERVER_TIME - 700
 ---@param zone integer
 ---@param itemIDs integer[]? nil for a got-away Cast
 local function cast(time, zone, itemIDs)
-	local items = {}
-	for i, itemID in ipairs(itemIDs or {}) do
-		items[i] = { itemID = itemID, quantity = 1 }
-	end
-	return {
-		kind = "cast",
-		char = 1,
-		time = time,
-		outcome = itemIDs and "caught" or "gotAway",
-		conditions = { minute = 494, zone = zone, subzone = 0, events = {}, auras = {} },
-		items = items,
-	}
+	return castRecord({ time = time, zone = zone, items = itemIDs, outcome = itemIDs and "caught" or "gotAway" })
 end
 
 -- History before login: Catches in two zones, a got-away Cast and a Skill Reading that credits two Skill

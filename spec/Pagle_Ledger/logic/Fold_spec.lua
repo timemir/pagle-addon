@@ -8,57 +8,18 @@ local TROPHY, JUNK, CHEST, TREASURE, OTHER, UNCHARTED = 13901, 6309, 6307, 6308,
 -- One trophy family's three weights, in pounds (LED-R61).
 local TROPHY40, TROPHY60, TROPHY50 = 13876, 13877, 13878
 local ITEMS = {
-	[MACKEREL] = { category = "fish", species = MACKEREL, legend = false, noise = false, removed = false, pool = false },
-	[SMALLFISH] = {
-		category = "questFish",
-		species = SMALLFISH,
-		legend = false,
-		noise = false,
-		removed = false,
-		pool = true,
-	},
-	[LEGEND] = { category = "fish", species = LEGEND, legend = true, noise = false, removed = false, pool = false },
-	[NOISE] = { category = "fish", species = NOISE, legend = false, noise = true, removed = false, pool = false },
-	[TROPHY] = {
-		category = "trophy",
-		family = 1,
-		weight = 19,
-		legend = false,
-		noise = false,
-		removed = false,
-		pool = false,
-	},
-	[TROPHY40] = {
-		category = "trophy",
-		family = 2,
-		weight = 40,
-		legend = false,
-		noise = false,
-		removed = false,
-		pool = false,
-	},
-	[TROPHY60] = {
-		category = "trophy",
-		family = 2,
-		weight = 60,
-		legend = false,
-		noise = false,
-		removed = false,
-		pool = false,
-	},
-	[TROPHY50] = {
-		category = "trophy",
-		family = 2,
-		weight = 50,
-		legend = false,
-		noise = false,
-		removed = false,
-		pool = false,
-	},
-	[JUNK] = { category = "junk", legend = false, noise = false, removed = false, pool = false },
-	[CHEST] = { category = "container", legend = false, noise = false, removed = false, pool = false },
-	[TREASURE] = { category = "treasure", legend = false, noise = false, removed = false, pool = false },
-	[OTHER] = { category = "other", legend = false, noise = false, removed = false, pool = false },
+	[MACKEREL] = fishRecord(MACKEREL),
+	[SMALLFISH] = fishRecord(SMALLFISH, { category = "questFish", pool = true }),
+	[LEGEND] = fishRecord(LEGEND, { legend = true }),
+	[NOISE] = fishRecord(NOISE, { noise = true }),
+	[TROPHY] = itemRecord("trophy", { family = 1, weight = 19 }),
+	[TROPHY40] = itemRecord("trophy", { family = 2, weight = 40 }),
+	[TROPHY60] = itemRecord("trophy", { family = 2, weight = 60 }),
+	[TROPHY50] = itemRecord("trophy", { family = 2, weight = 50 }),
+	[JUNK] = itemRecord("junk"),
+	[CHEST] = itemRecord("container"),
+	[TREASURE] = itemRecord("treasure"),
+	[OTHER] = itemRecord("other"),
 }
 
 local ELWYNN, WESTFALL = 12, 40
@@ -99,30 +60,16 @@ local function newLog()
 	---@param char integer?
 	---@return PagleCast
 	function log.cast(time, zone, itemIDs, char)
-		local s, id = header(time)
-		local items = {}
-		for n, itemID in ipairs(itemIDs) do
-			items[n] = { n = n, itemID = itemID, quantity = 1, catchId = id .. ":" .. n }
-		end
-		return {
+		local s = header(time)
+		return castRecord({
 			seq = s,
-			id = id,
-			kind = "cast",
-			char = char or 1,
 			time = time,
-			outcome = "caught",
-			session = "s",
-			conditions = {
-				time = time,
-				zone = zone,
-				subzone = 0,
-				minute = 0,
-				date = dateOf(time),
-				events = {},
-				auras = {},
-			},
-			items = items,
-		}
+			zone = zone,
+			items = itemIDs,
+			char = char,
+			minute = 0,
+			date = dateOf(time),
+		})
 	end
 
 	--- A got-away Cast (LOG-R7).
@@ -285,7 +232,7 @@ describe("The Ledger's fold", function()
 			-- The next release knows the item: a junk item (LOG-R96). The rebuild runs over the new catalogue.
 			local released = ns.NewLedgerFold(lookups(function(itemID)
 				if itemID == UNCHARTED then
-					return { category = "junk", legend = false, noise = false, removed = false, pool = false }
+					return itemRecord("junk")
 				end
 				return getItem(itemID)
 			end))

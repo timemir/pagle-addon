@@ -13,45 +13,26 @@ local GATED, STRAY = 13761, 6290
 
 local LAKE, COVE, FAR, MARSH, BLANK = 12, 40, 44, 10, 14
 
--- A fish item of Species `species` (DATA-R19).
-local function fish(species)
-	return { category = "fish", species = species, legend = false, noise = false, removed = false, pool = false }
-end
-
--- A non-fish item of `category`.
-local function thing(category, fields)
-	local item = { category = category, legend = false, noise = false, removed = false, pool = false }
-	for key, value in pairs(fields or {}) do
-		item[key] = value
-	end
-	return item
-end
-
 local ITEMS = {
-	[ANY_1] = fish(ANY_1),
-	[ANY_2] = fish(ANY_2),
-	[ANY_2B] = fish(ANY_2),
-	[ANY_3] = fish(ANY_3),
-	[NIGHT] = fish(NIGHT),
-	[EVENT] = fish(EVENT),
-	[GATED] = fish(GATED),
-	[STRAY] = fish(STRAY),
-	[JUNK] = thing("junk"),
-	[CHEST] = thing("container"),
-	[TREASURE] = thing("treasure"),
-	[OTHER] = thing("other"),
-	[TROPHY_1] = thing("trophy", { family = 1, weight = 19 }),
-	[TROPHY_1B] = thing("trophy", { family = 1, weight = 22 }),
-	[TROPHY_2] = thing("trophy", { family = 2, weight = 8 }),
+	[ANY_1] = fishRecord(ANY_1),
+	[ANY_2] = fishRecord(ANY_2),
+	[ANY_2B] = fishRecord(ANY_2),
+	[ANY_3] = fishRecord(ANY_3),
+	[NIGHT] = fishRecord(NIGHT),
+	[EVENT] = fishRecord(EVENT),
+	[GATED] = fishRecord(GATED),
+	[STRAY] = fishRecord(STRAY),
+	[JUNK] = itemRecord("junk"),
+	[CHEST] = itemRecord("container"),
+	[TREASURE] = itemRecord("treasure"),
+	[OTHER] = itemRecord("other"),
+	[TROPHY_1] = itemRecord("trophy", { family = 1, weight = 19 }),
+	[TROPHY_1B] = itemRecord("trophy", { family = 1, weight = 22 }),
+	[TROPHY_2] = itemRecord("trophy", { family = 2, weight = 8 }),
 }
 
 local NIGHT_SPEC = { time = { { 1260, 360 } } }
 local EVENT_SPEC = { events = { 301 } }
-
--- A catch entry (LOG-R55): ungated, or gated by `window` with its spec.
-local function entry(itemID, window, gate)
-	return { itemID = itemID, confirmed = true, window = window, gate = gate, gateConfirmed = window and true or nil }
-end
 
 -- The fixture's zones, each a zone with no subzones: `hasData` and its catches (LOG-R55). Marsh has a list but no
 -- data, so it isn't charted (LED-R10); Blank has data but nothing the Ledger lists.
@@ -61,22 +42,22 @@ local function areas()
 			hasData = true,
 			skillBase = 25,
 			catches = {
-				entry(ANY_1),
-				entry(ANY_2),
-				entry(ANY_2B),
-				entry(ANY_3),
-				entry(NIGHT, "night", NIGHT_SPEC),
-				entry(EVENT, "event.301", EVENT_SPEC),
-				entry(JUNK),
-				entry(CHEST),
-				entry(TROPHY_1),
-				entry(TROPHY_2),
+				catchEntry(ANY_1),
+				catchEntry(ANY_2),
+				catchEntry(ANY_2B),
+				catchEntry(ANY_3),
+				catchEntry(NIGHT, "night", NIGHT_SPEC),
+				catchEntry(EVENT, "event.301", EVENT_SPEC),
+				catchEntry(JUNK),
+				catchEntry(CHEST),
+				catchEntry(TROPHY_1),
+				catchEntry(TROPHY_2),
 			},
 		},
-		[COVE] = { hasData = true, catches = { entry(GATED, "night", NIGHT_SPEC), entry(TROPHY_1B) } },
-		[FAR] = { hasData = true, catches = { entry(STRAY) } },
-		[MARSH] = { hasData = false, catches = { entry(ANY_1) } },
-		[BLANK] = { hasData = true, catches = { entry(OTHER) } },
+		[COVE] = { hasData = true, catches = { catchEntry(GATED, "night", NIGHT_SPEC), catchEntry(TROPHY_1B) } },
+		[FAR] = { hasData = true, catches = { catchEntry(STRAY) } },
+		[MARSH] = { hasData = false, catches = { catchEntry(ANY_1) } },
+		[BLANK] = { hasData = true, catches = { catchEntry(OTHER) } },
 	}
 end
 
@@ -125,23 +106,7 @@ local function newLog()
 	---@return PagleCast
 	return function(zone, itemIDs)
 		seq = seq + 1
-		local id = "Player-4618-0A1B2C3D-" .. seq
-		local items = {}
-		for n, itemID in ipairs(itemIDs) do
-			items[n] = { n = n, itemID = itemID, quantity = 1, catchId = id .. ":" .. n }
-		end
-		local time = T0 + 60 * seq
-		return {
-			seq = seq,
-			id = id,
-			kind = "cast",
-			char = 1,
-			time = time,
-			outcome = "caught",
-			session = "s",
-			conditions = { time = time, zone = zone, subzone = 0, minute = 0, events = {}, auras = {} },
-			items = items,
-		}
+		return castRecord({ seq = seq, time = T0 + 60 * seq, zone = zone, minute = 0, items = itemIDs })
 	end
 end
 

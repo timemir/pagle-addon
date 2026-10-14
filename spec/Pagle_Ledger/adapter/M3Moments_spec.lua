@@ -28,20 +28,6 @@ local ITEM_NAMES = {
 	[HEAVY] = "60 Pound Snapper",
 }
 
--- A fish item of its own Species (DATA-R19).
-local function fish(id)
-	return { category = "fish", species = id, legend = false, noise = false, removed = false, pool = false }
-end
-
--- A non-fish item of `category`.
-local function thing(category, fields)
-	local item = { category = category, legend = false, noise = false, removed = false, pool = false }
-	for key, value in pairs(fields or {}) do
-		item[key] = value
-	end
-	return item
-end
-
 local NIGHT_SPEC = { time = { { 1260, 360 } } }
 
 -- A catch entry (LOG-R55): ungated, or gated by the night window.
@@ -72,28 +58,21 @@ local function catalogue(extra, fingerprint)
 	for _, more in ipairs(extra or {}) do
 		catches[#catches + 1] = more
 	end
-	return {
-		fingerprint = fingerprint or "0123456789abcdef",
+	return catalogueWith({
+		fingerprint = fingerprint,
 		items = {
-			[ANY_1] = fish(ANY_1),
-			[ANY_2] = fish(ANY_2),
-			[ANY_3] = fish(ANY_3),
-			[NIGHTFISH] = fish(NIGHTFISH),
-			[JUNK] = thing("junk"),
-			[CHEST] = thing("container"),
-			[LIGHT] = thing("trophy", { family = FAMILY, weight = 40 }),
-			[HEAVY] = thing("trophy", { family = FAMILY, weight = 60 }),
+			[ANY_1] = fishRecord(ANY_1),
+			[ANY_2] = fishRecord(ANY_2),
+			[ANY_3] = fishRecord(ANY_3),
+			[NIGHTFISH] = fishRecord(NIGHTFISH),
+			[JUNK] = itemRecord("junk"),
+			[CHEST] = itemRecord("container"),
+			[LIGHT] = itemRecord("trophy", { family = FAMILY, weight = 40 }),
+			[HEAVY] = itemRecord("trophy", { family = FAMILY, weight = 60 }),
 		},
-		areas = {
-			[COVE] = { parent = 0, continent = 0, hasData = true, skillBaseConfirmed = false, catches = catches },
-		},
-		aliases = {},
-		pools = {},
+		areas = { [COVE] = areaRecord(0, { catches = catches }) },
 		windows = { night = { spec = NIGHT_SPEC, confirmed = false } },
-		events = {},
-		fishingSpells = {},
-		auras = {},
-	}
+	})
 end
 
 -- A caught Cast record in Cove (zone 0 with `zone` = 0) for fake.catchLog:Append, by the player's character.
@@ -102,24 +81,7 @@ end
 ---@param options { zone: integer?, minute: integer? }?
 local function cast(time, itemIDs, options)
 	options = options or {}
-	local items = {}
-	for i, itemID in ipairs(itemIDs) do
-		items[i] = { itemID = itemID, quantity = 1 }
-	end
-	return {
-		kind = "cast",
-		char = 1,
-		time = time,
-		outcome = "caught",
-		conditions = {
-			minute = options.minute or DAY,
-			zone = options.zone or COVE,
-			subzone = 0,
-			events = {},
-			auras = {},
-		},
-		items = items,
-	}
+	return castRecord({ time = time, zone = options.zone or COVE, minute = options.minute or DAY, items = itemIDs })
 end
 
 -- Loot of one item each, for fake.playCast.
@@ -166,7 +128,6 @@ local function session(options)
 			return areaID == COVE and "Cove" or nil
 		end,
 	}
-	fake.globals.BreakUpLargeNumbers = breakUpLargeNumbers
 	local loaded = fake.load("Pagle_Ledger")
 	for key, text in pairs(options.lore or {}) do
 		loaded.ns.L[key] = text
