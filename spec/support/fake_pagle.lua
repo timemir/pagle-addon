@@ -455,7 +455,8 @@ end)
 -- GetEquipped, SetEquipped and GetGood (read-only), and AppearanceChanged from login on. The purchased set comes
 -- from the wallet projection part below (SHOP-R11), or from fake.setPurchased. Pagle.OpenShop runs Core's entry
 -- points (SHOP-R40, SHOP-R41) over a shop that only records: each opening lands in fake.shopsOpened, and
--- fake.shopOpen says whether it is open. Core's own slots and goods (SHOP-R25) are registered from the start, as
+-- fake.shopOpen says whether it is open; fake.ns.shop.Buy(goodID, useNow) buys as the Buy popup's confirm does
+-- (SHOP-R13, LOG-R39). Core's own slots and goods (SHOP-R25) are registered from the start, as
 -- login step 1 registers them before any Module, without previews: no shop draws here.
 part(function(fake, Pagle, ns, host)
 	ns.WireGoods(host)

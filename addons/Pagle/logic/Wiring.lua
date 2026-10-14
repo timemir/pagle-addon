@@ -415,14 +415,17 @@ end
 --- keeping the selection it has (nil)
 ---@field hide fun()                  -- closes it
 
---- The Curio Shop's entry points (SHOP-R40, SHOP-R41), which Pagle.OpenShop, /pagle shop and the compartment entry call.
+--- The Curio Shop's entry points (SHOP-R40, SHOP-R41), which Pagle.OpenShop, /pagle shop and the compartment entry call,
+--- and its one way to spend Coins, which the Buy popup's confirm calls (SHOP-R13, LOG-R39).
 ---@class PagleShop
 ---@field Open fun(goodID: string?) -- Pagle.OpenShop
 ---@field Toggle fun()              -- /pagle shop
+---@field Buy fun(goodID: string, useNow: boolean): boolean -- the Buy popup's Buy: true if it bought
 
---- The Curio Shop's entry points as ns.shop (SHOP-R40, SHOP-R41), and ns.ShopModel, the shop's data now: Core's goods,
---- their cache, the Modules On and the balance (logic/Shop.lua). Opening while restricted prints "Pagle: the Curio
---- Shop opens after combat." and opens nothing; at RestrictionChanged(true) an open shop closes, and nothing is queued.
+--- The Curio Shop's entry points as ns.shop (SHOP-R40, SHOP-R41), its buying (ns.shop.Buy), and ns.ShopModel, the
+--- shop's data now: Core's goods, their cache, the Modules On, the balance and whether a projection is updating
+--- (logic/Shop.lua). Opening while restricted prints "Pagle: the Curio Shop opens after combat." and opens nothing; at
+--- RestrictionChanged(true) an open shop closes, its Buy popup with it, and nothing is queued.
 ---@param host PagleHost
 ---@param seams PagleShopSeams
 function ns.WireShop(host, seams)
@@ -436,8 +439,28 @@ function ns.WireShop(host, seams)
 			cache = db and db.global.goods or {},
 			modules = host.registry:Modules(),
 			balance = ns.wallet:Get(),
+			updating = ns.projections:IsUpdating(),
 			format = format,
 		})
+	end
+
+	--- Buys `goodID` if Buy is enabled for it now (SHOP-R13), checked again at the confirm: appends one purchase entry
+	--- with its ID and its price now, the purchase entry's only caller (LOG-R39, SHOP-R10), which the wallet projection
+	--- applies live, so the balance drops and the good is owned at once; then, with `useNow`, equips it (SHOP-R32). One
+	--- good, one confirmation; no Announcement and no summary line follow (ANN-R23). Returns whether it bought.
+	---@param goodID string
+	---@param useNow boolean
+	---@return boolean
+	local function buy(goodID, useNow)
+		local purchase = ns.ShopModel():Purchase(goodID)
+		if not purchase then
+			return false
+		end
+		ns.RecordPurchase(purchase.id, purchase.price)
+		if useNow then
+			ns.goods:SetEquipped(purchase.slot, purchase.id)
+		end
+		return true
 	end
 
 	---@param goodID string?
@@ -459,7 +482,7 @@ function ns.WireShop(host, seams)
 			open()
 		end
 	end
-	ns.shop = { Open = open, Toggle = toggle }
+	ns.shop = { Open = open, Toggle = toggle, Buy = buy }
 	-- CORE-R33's row, SHOP-R41: an open shop closes as restriction starts. Its own owner on the bus.
 	host.listen("Pagle shop", "RestrictionChanged", function(_, isRestricted)
 		if isRestricted and seams.isShown() then
