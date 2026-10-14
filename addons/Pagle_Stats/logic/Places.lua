@@ -207,7 +207,8 @@ function ns.NewPlaceTables(lookups)
 	end
 
 	---@class StatsPlaceTables
-	local tables = {}
+	---@field lookups StatsLookups the lookups these tables read, for rules that need Core's catalogue as it is (Your odds)
+	local tables = { lookups = lookups }
 
 	--- ns.NoJunkLine (STA-R12), kept per place.
 	---@param area integer

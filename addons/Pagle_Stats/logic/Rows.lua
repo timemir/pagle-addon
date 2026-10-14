@@ -27,11 +27,12 @@ local function listable(itemID, lookups)
 end
 
 --- The catalogue's list for a place (STA-R17): a subzone's own `catches` if non-empty, else its zone's own; a zone's
---- every entry in `GetZoneCatches`. None for an area outside the catalogue.
+--- every entry in `GetZoneCatches`. None for an area outside the catalogue. Your odds reads it for the entries behind
+--- a row (STA-R46).
 ---@param area integer
 ---@param lookups StatsLookups
 ---@return PagleCatchEntry[]
-local function listOf(area, lookups)
+function ns.PlaceList(area, lookups)
 	local record = lookups.GetArea(area)
 	if record and record.parent ~= 0 then
 		if next(record.catches) ~= nil then
@@ -54,7 +55,7 @@ end
 ---@return StatsRow[]
 function ns.Rows(state, area, lookups)
 	local rows, listed = {}, {}
-	for _, entry in ipairs(listOf(area, lookups)) do
+	for _, entry in ipairs(ns.PlaceList(area, lookups)) do
 		local itemID = entry.itemID
 		if not listed[itemID] and listable(itemID, lookups) then
 			listed[itemID] = true

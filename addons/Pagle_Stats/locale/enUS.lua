@@ -47,4 +47,40 @@ ns.L = {
 	CHARACTER_NAME = "%s %s",
 	CHARACTER_FALLBACK = "Character %d",
 	QUALITY_FALLBACK = "Quality %d",
+
+	-- Your odds (logic/Odds.lua, STA-R43, STA-R45–R47). Every odds view carries the heading (STA-R46).
+	ODDS_HEADING = "Your odds",
+	ODDS_LEARNING_SHORT = "learning %d/%d",
+	ODDS_LEARNING = "Learning…",
+	ODDS_UNSEEN = "not seen yet",
+	ODDS_KNOWN_SHORT = "1 in %s",
+	ODDS_KNOWN = "about 1 in %s",
+	-- What a reading rests on (STA-R46): where, then " {window}", then ", {side}".
+	ODDS_HERE = "here",
+	ODDS_ACROSS = "across %s",
+	ODDS_WITH_WINDOW = "%s %s",
+	ODDS_WITH_SIDE = "%s, %s",
+	ODDS_SIDE_HI = "at or above %d skill",
+	ODDS_SIDE_LO = "below %d skill",
+	ODDS_LEARNING_SENTENCE = "%s of the %d Casts I need %s before Your odds show a number.",
+	ODDS_SCOPE_LINE = "From %s of my Casts %s; %s caught.",
+	ODDS_UNSEEN_SENTENCE = "In %s Casts %s: rarer than about 1 in %s, if it bites here at all.",
+	ODDS_RANGE = "Likely between 1 in %s and 1 in %s (95%%).",
+	ODDS_RANGE_ROUNDING = "Within rounding of 1 in %s (95%%).",
+	-- The extra sentences after a reading's own, each when it applies (STA-R46).
+	ODDS_NOTE_ENTRY = "Pagle hasn't confirmed it bites here yet.",
+	ODDS_NOTE_WINDOW = "The window isn't confirmed yet.",
+	ODDS_NOTE_LINE = "The no-junk line isn't confirmed yet.",
+	ODDS_NOTE_POOL = "Open water and pools combined: there is no pool data.",
+	-- Window names by ID (STA-R47): `event` for any `event.<eventID>`, `other` for any other ID.
+	WINDOW_NAMES = {
+		day = "by day",
+		night = "by night",
+		spring = "in spring",
+		summer = "in summer",
+		autumn = "in autumn",
+		winter = "in winter",
+		event = "during its event",
+		other = "in its window",
+	},
 }
