@@ -38,22 +38,8 @@ local MAP_NAMES = { [1415] = "Eastern Kingdoms", [1414] = "Kalimdor" }
 ---@param without integer[]?
 local function fixture(without)
 	local night = { time = { { 1260, 360 } } }
-	local function item(category, fields)
-		local record = { category = category, legend = false, noise = false, removed = false, pool = false }
-		for key, value in pairs(fields or {}) do
-			record[key] = value
-		end
-		return record
-	end
 	local function area(continent, skillBase, catches)
-		return {
-			parent = 0,
-			continent = continent,
-			skillBase = skillBase,
-			hasData = true,
-			skillBaseConfirmed = false,
-			catches = catches,
-		}
+		return areaRecord(0, { continent = continent, skillBase = skillBase, catches = catches })
 	end
 	local function on(itemID)
 		return { itemID = itemID, confirmed = false }
@@ -75,43 +61,26 @@ local function fixture(without)
 	for _, zone in ipairs(without or {}) do
 		areas[zone] = nil
 	end
-	return {
-		fingerprint = "0123456789abcdef",
+	return catalogueWith({
 		items = {
-			[MACKEREL] = item("fish", { species = MACKEREL }),
-			[BLACKMOUTH] = item("fish", { species = BLACKMOUTH }),
-			[NIGHTFISH] = item("fish", { species = NIGHTFISH }),
-			[SNAPPER] = item("fish", { species = SNAPPER }),
-			[TROPHY] = item("trophy", { family = 1, weight = 19 }),
-			[SKULL] = item("junk"),
-			[CHEST] = item("container"),
+			[MACKEREL] = fishRecord(MACKEREL),
+			[BLACKMOUTH] = fishRecord(BLACKMOUTH),
+			[NIGHTFISH] = fishRecord(NIGHTFISH),
+			[SNAPPER] = fishRecord(SNAPPER),
+			[TROPHY] = itemRecord("trophy", { family = 1, weight = 19 }),
+			[SKULL] = itemRecord("junk"),
+			[CHEST] = itemRecord("container"),
 		},
 		areas = areas,
-		aliases = {},
-		pools = {},
 		windows = { night = { spec = night, confirmed = false } },
-		events = {},
-		fishingSpells = {},
-		auras = {},
-	}
+	})
 end
 
 -- A caught Cast record for fake.catchLog:Append, by the player's character (char 1), one of each item.
 ---@param zone integer
 ---@param ... integer item IDs
 local function cast(zone, ...)
-	local items = {}
-	for i, itemID in ipairs({ ... }) do
-		items[i] = { itemID = itemID, quantity = 1 }
-	end
-	return {
-		kind = "cast",
-		char = 1,
-		time = T0,
-		outcome = "caught",
-		conditions = { minute = 494, zone = zone, subzone = 0, events = {}, auras = {} },
-		items = items,
-	}
+	return castRecord({ time = T0, zone = zone, items = { ... } })
 end
 
 -- A Ledger on FakePagle over the fixture catalogue with `history` in its log, logged in and in the world, its
@@ -122,27 +91,14 @@ end
 ---@return FakePagle fake
 ---@return LoadedAddon loaded
 local function openHome(history, before, catalogue)
-	local fake = newFakePagle()
-	fake.setCatalogue(catalogue or fixture())
-	fake.catchLog.data.characters[1] = { guid = PLAYER_GUID }
-	for _, record in ipairs(history or {}) do
-		fake.catchLog:Append(record)
-	end
-	local loaded = fake.load("Pagle_Ledger")
-	for id, name in pairs(ITEM_NAMES) do
-		loaded.client.itemNames[id] = name
-	end
-	for id, name in pairs(ZONE_NAMES) do
-		loaded.client.areaNames[id] = name
-	end
-	loaded.client.mapNames = MAP_NAMES
-	fake.login()
-	fake.enterWorld()
-	if before then
-		before(loaded, fake)
-	end
-	loaded.ns.journal:Toggle()
-	return fake, loaded
+	return openJournal({
+		catalogue = catalogue or fixture(),
+		log = history,
+		itemNames = ITEM_NAMES,
+		areaNames = ZONE_NAMES,
+		mapNames = MAP_NAMES,
+		before = before,
+	})
 end
 
 -- The open book's page data.
@@ -313,20 +269,6 @@ local function level12(loaded)
 	loaded.ns.db.global.celebrated.levels[0] = 12
 end
 
--- Every text drawn on the open book, depth first.
-local function textsOf(widget, texts)
-	texts = texts or {}
-	for _, child in ipairs(widget.children) do
-		if child.shown then
-			if child.text ~= nil and child.text ~= "" then
-				texts[#texts + 1] = child.text
-			end
-			textsOf(child, texts)
-		end
-	end
-	return texts
-end
-
 describe("the Journal's Home, right page", function()
 	it("reads the bookplate summary, the ink XP bar, Notes to self and In this Ledger (LED-R132)", function()
 		-- Of 14 parts (4 Species, a junk, a chest, a trophy, 7 charted zones), the Mackerel and Elwynn are done: 14%.
@@ -442,7 +384,7 @@ describe("the Journal's Home, right page", function()
 	it("draws none of M4's elements: no title, no Prestige, no Legends line (LED-R4, LED-R132)", function()
 		local _, loaded = openHome({ cast(ELWYNN, MACKEREL) }, level12)
 
-		local texts = textsOf(loaded.ns.journal.frame.right)
+		local texts = shownTexts(loaded.ns.journal.frame.right)
 		for _, text in ipairs(texts) do
 			assert.is_nil(text:find("Legend", 1, true))
 			assert.is_nil(text:find("Prestige", 1, true))
@@ -460,7 +402,7 @@ describe("the Journal's Home and what isn't caught", function()
 		local _, loaded = openHome({ cast(WESTFALL, MACKEREL) })
 		loaded.ns.journal:Draw()
 
-		for _, text in ipairs(textsOf(loaded.ns.journal.frame)) do
+		for _, text in ipairs(shownTexts(loaded.ns.journal.frame)) do
 			for id, name in pairs(ITEM_NAMES) do
 				if id ~= MACKEREL then
 					assert.is_nil(text:find(name, 1, true))

@@ -229,3 +229,175 @@ function readFile(path)
 	file:close()
 	return text
 end
+
+-- `fields` over `record`, key by key; returns `record`.
+---@param record table
+---@param fields table?
+---@return table
+local function over(record, fields)
+	for key, value in pairs(fields or {}) do
+		record[key] = value
+	end
+	return record
+end
+
+--- A catalogue item record (DATA-R76's items, LOG-R55): `category` with `legend`, `noise`, `removed` and `pool` all
+--- false, then `fields` over it.
+---@param category string
+---@param fields table?
+---@return table
+function itemRecord(category, fields)
+	return over({ category = category, legend = false, noise = false, removed = false, pool = false }, fields)
+end
+
+--- A fish item record of Species `species` (DATA-R19), then `fields` over it.
+---@param species integer
+---@param fields table?
+---@return table
+function fishRecord(species, fields)
+	return over(itemRecord("fish", { species = species }), fields)
+end
+
+--- An area record (DATA-R76's areas): under `parent` (0 for a zone), on continent 0, with data, its skill base
+--- unconfirmed and no catches, then `fields` over it.
+---@param parent integer
+---@param fields table?
+---@return table
+function areaRecord(parent, fields)
+	return over({ parent = parent, continent = 0, hasData = true, skillBaseConfirmed = false, catches = {} }, fields)
+end
+
+--- One entry of a zone's catches (LOG-R55, GetZoneCatches), confirmed: ungated, or gated by window `window` with its
+--- spec `gate` (DATA-R78), the gate confirmed too.
+---@param itemID integer
+---@param window string?
+---@param gate table?
+---@return table
+function catchEntry(itemID, window, gate)
+	return { itemID = itemID, confirmed = true, window = window, gate = gate, gateConfirmed = window and true or nil }
+end
+
+--- A catalogue in the shape of ns.catalogue (DATA-R76), for fake.setCatalogue: every part empty and a fixed
+--- fingerprint, then `parts` (items, areas, windows, …) over it.
+---@param parts table?
+---@return table
+function catalogueWith(parts)
+	return over({
+		fingerprint = "0123456789abcdef",
+		items = {},
+		areas = {},
+		aliases = {},
+		pools = {},
+		windows = {},
+		events = {},
+		fishingSpells = {},
+		auras = {},
+	}, parts)
+end
+
+--- A caught Cast record as the Catch log hands one out (PagleCast, LOG-R42), from named fields, each optional:
+--- `time` (SERVER_TIME - 700), `char` (1), `zone` (148), `subzone` (0), `minute` (494, realm 08:14), `date` (none),
+--- `items` (item IDs, one of each; none by default), `outcome` ("caught"; "gotAway" with no items) and `seq`. With
+--- `seq`, it carries what a stored record does too: its `seq`, an `id` from the time and seq, each Catch's `n` and
+--- `catchId`, a session and the conditions' `time`.
+---@param fields { time: integer?, char: integer?, zone: integer?, subzone: integer?, minute: integer?, date: table?, items: integer[]?, outcome: string?, seq: integer? }?
+---@return table
+function castRecord(fields)
+	fields = fields or {}
+	local time = fields.time or SERVER_TIME - 700
+	local record = {
+		kind = "cast",
+		char = fields.char or 1,
+		time = time,
+		outcome = fields.outcome or "caught",
+		conditions = {
+			minute = fields.minute or 494,
+			zone = fields.zone or 148,
+			subzone = fields.subzone or 0,
+			date = fields.date,
+			events = {},
+			auras = {},
+		},
+		items = {},
+	}
+	local seq = fields.seq
+	if seq then
+		record.seq, record.session = seq, "s"
+		record.id = ("%s-%d-%d"):format(PLAYER_GUID, time, seq)
+		record.conditions.time = time
+	end
+	for n, itemID in ipairs(fields.items or {}) do
+		record.items[n] = { itemID = itemID, quantity = 1 }
+		if seq then
+			record.items[n].n, record.items[n].catchId = n, ("%s:%d"):format(record.id, n)
+		end
+	end
+	return record
+end
+
+--- The texts a drawn widget shows, depth first through its shown children, leaving out empty ones: what a player
+--- reads on a page of the Fish Journal.
+---@param widget table
+---@param texts string[]?
+---@return string[]
+function shownTexts(widget, texts)
+	texts = texts or {}
+	for _, child in ipairs(widget.children) do
+		if child.shown then
+			if type(child.text) == "string" and child.text ~= "" then
+				texts[#texts + 1] = child.text
+			end
+			shownTexts(child, texts)
+		end
+	end
+	return texts
+end
+
+--- The texts of a Journal page's blocks, in order; a block without text (the XP bar, an icon) as its kind in
+--- brackets.
+---@param blocks LedgerBlock[]
+---@return string[]
+function blockTexts(blocks)
+	local list = {}
+	for i, block in ipairs(blocks) do
+		list[i] = block.text or ("[" .. block.kind .. "]")
+	end
+	return list
+end
+
+--- The Ledger on FakePagle over a spec's catalogue and log, logged in and in the world, with the Fish Journal open.
+--- `options`, each optional: `catalogue` (fake.setCatalogue's; the generated one by default), `characters` (the
+--- log's; the player's alone by default), `log` (records appended in order), `itemNames`, `areaNames` and `mapNames`
+--- (what the fake client's C_Item and C_Map know), `before` (run with loaded and fake before the book opens), and
+--- `id` and `args`: the spread it opens on, which must be registered; Home, at its first opening, by default; with
+--- `id` false the book stays closed.
+---@param options { catalogue: table?, characters: table[]?, log: table[]?, itemNames: table?, areaNames: table?, mapNames: table?, before: fun(loaded: LoadedAddon, fake: FakePagle)?, id: string|false|nil, args: table? }?
+---@return FakePagle fake
+---@return LoadedAddon loaded
+function openJournal(options)
+	options = options or {}
+	local fake = newFakePagle()
+	if options.catalogue then
+		fake.setCatalogue(options.catalogue)
+	end
+	fake.catchLog.data.characters = options.characters or { { guid = PLAYER_GUID } }
+	for _, record in ipairs(options.log or {}) do
+		fake.catchLog:Append(record)
+	end
+	local loaded = fake.load("Pagle_Ledger")
+	over(loaded.client.itemNames, options.itemNames)
+	over(loaded.client.areaNames, options.areaNames)
+	over(loaded.client.mapNames, options.mapNames)
+	fake.login()
+	fake.enterWorld()
+	if options.before then
+		options.before(loaded, fake)
+	end
+	local id = options.id
+	if id then
+		assert(loaded.ns.journal:Open(id, options.args), "no spread is registered as " .. id)
+	elseif id == nil then
+		loaded.ns.journal:Toggle()
+	end
+	return fake, loaded
+end

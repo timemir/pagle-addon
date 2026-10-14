@@ -16,23 +16,6 @@ local function loggedIn(updating)
 	return fake, loaded
 end
 
--- The texts of every shown widget under `widget`, depth first, as the player would read them.
----@param widget table
----@param texts string[]?
----@return string[]
-local function textsOf(widget, texts)
-	texts = texts or {}
-	for _, child in ipairs(widget.children) do
-		if child.shown then
-			if child.text ~= nil and child.text ~= "" then
-				texts[#texts + 1] = child.text
-			end
-			textsOf(child, texts)
-		end
-	end
-	return texts
-end
-
 -- Whether `list` has `text`.
 ---@param list string[]
 ---@param text string
@@ -110,14 +93,14 @@ describe("the Fish Journal's frame (LED-R120, LED-R121)", function()
 
 		journal:Toggle()
 		assert.are.same({ "Home" }, crumbLabels(loaded))
-		assert.is_true(has(textsOf(journal.frame), "Where I've Fished"))
+		assert.is_true(has(shownTexts(journal.frame), "Where I've Fished"))
 
 		journal:Open("deep", { fish = MACKEREL })
 		loaded.client.pressEscape()
 		journal:Toggle()
 
 		assert.are.same({ "Home", "Waters", "Zone", "Fish 6303" }, crumbLabels(loaded))
-		assert.is_true(has(textsOf(journal.frame), "chosen 6303"))
+		assert.is_true(has(shownTexts(journal.frame), "chosen 6303"))
 	end)
 
 	it("shows Home again after a /reload, at its first opening (LED-R120)", function()
@@ -155,7 +138,7 @@ describe("the Fish Journal while the projection updates (LED-R122)", function()
 		assert.is_true(journal.pages.updating)
 		assert.are.same({ { kind = "text", text = line } }, journal.pages.left)
 		assert.are.same({ { kind = "text", text = line } }, journal.pages.right)
-		assert.are.same({ line, line }, textsOf(journal.frame))
+		assert.are.same({ line, line }, shownTexts(journal.frame))
 		assert.is_false(journal.frame.crumbs:IsShown())
 		assert.is_false(journal.frame.search:IsShown())
 		assert.is_false(journal.frame.back:IsShown())
@@ -171,7 +154,7 @@ describe("the Fish Journal while the projection updates (LED-R122)", function()
 		assert.is_false(journal.pages.updating)
 		assert.is_true(journal.frame.crumbs:IsShown())
 		assert.is_true(journal.frame.search:IsShown())
-		assert.is_true(has(textsOf(journal.frame), "Where I've Fished"))
+		assert.is_true(has(shownTexts(journal.frame), "Where I've Fished"))
 	end)
 
 	it(
@@ -258,14 +241,14 @@ describe("the Fish Journal's navigation (LED-R125)", function()
 		})
 		journal:Open("deep", { fish = MACKEREL })
 
-		local texts = textsOf(journal.frame.crumbs)
+		local texts = shownTexts(journal.frame.crumbs)
 		assert.are.same({ "Home", "❧", "Waters", "❧", "Zone", "❧", "Fish 6303" }, texts)
 		assert.is_true(journal.frame.back:IsShown())
 
 		journal.frame.back:Click()
 
 		assert.are.same({ "Home", "Waters", "Zone" }, crumbLabels(loaded))
-		assert.is_true(has(textsOf(journal.frame), "The zone"))
+		assert.is_true(has(shownTexts(journal.frame), "The zone"))
 	end)
 
 	it("opens a crumb's level when it is clicked, and Home has no back link (LED-R125)", function()
@@ -303,7 +286,7 @@ describe("the Fish Journal's widgets (ledger.md › UI)", function()
 			end,
 		})
 		loaded.ns.journal:Open("widgets")
-		return loaded, textsOf(loaded.ns.journal.frame.left)
+		return loaded, shownTexts(loaded.ns.journal.frame.left)
 	end
 
 	it("draws the ink XP bar's words, Fresh Water's in blue (LED-R145)", function()
@@ -399,7 +382,7 @@ describe("the Fish Journal's widgets (ledger.md › UI)", function()
 
 		loaded.ns.journal:Open("home")
 
-		local texts = textsOf(loaded.ns.journal.frame.left)
+		local texts = shownTexts(loaded.ns.journal.frame.left)
 		assert.are.same({ "The Waters", "Where I've Fished" }, { texts[1], texts[2] })
 		assert.is_false(has(texts, "Local"))
 		assert.is_false(has(texts, "Expert"))

@@ -11,31 +11,16 @@ local T0 = SERVER_TIME - 700 -- Sunday 11 October 2026, 15:03 UTC; realm minute 
 -- 1 treasure, 1 trophy weight and 1 charted zone (LED-R70, LED-R71).
 local function catalogue()
 	local night = { time = { { 1260, 360 } } }
-	local function item(category, fields)
-		local record = { category = category, legend = false, noise = false, removed = false, pool = false }
-		for key, value in pairs(fields) do
-			record[key] = value
-		end
-		return record
-	end
-	local function area(fields)
-		local record = { parent = 0, continent = 0, hasData = true, skillBaseConfirmed = false, catches = {} }
-		for key, value in pairs(fields) do
-			record[key] = value
-		end
-		return record
-	end
-	return {
-		fingerprint = "0123456789abcdef",
+	return catalogueWith({
 		items = {
-			[MACKEREL] = item("fish", { species = MACKEREL }),
-			[NIGHTFISH] = item("fish", { species = NIGHTFISH }),
-			[BOOT] = item("junk", {}),
-			[CHEST] = item("container", {}),
-			[TROPHY] = item("trophy", { family = 1, weight = 19 }),
+			[MACKEREL] = fishRecord(MACKEREL),
+			[NIGHTFISH] = fishRecord(NIGHTFISH),
+			[BOOT] = itemRecord("junk"),
+			[CHEST] = itemRecord("container"),
+			[TROPHY] = itemRecord("trophy", { family = 1, weight = 19 }),
 		},
 		areas = {
-			[ELWYNN] = area({
+			[ELWYNN] = areaRecord(0, {
 				skillBase = 25,
 				catches = {
 					{ itemID = MACKEREL, confirmed = false },
@@ -45,27 +30,15 @@ local function catalogue()
 					{ itemID = TROPHY, confirmed = false },
 				},
 			}),
-			[DUSKWOOD] = area({ hasData = false }),
+			[DUSKWOOD] = areaRecord(0, { hasData = false }),
 		},
-		aliases = {},
-		pools = {},
 		windows = { night = { spec = night, confirmed = false } },
-		events = {},
-		fishingSpells = {},
-		auras = {},
-	}
+	})
 end
 
 -- A caught Cast of `itemID` by character `char` in Elwynn at `time`.
 local function cast(char, time, itemID)
-	return {
-		kind = "cast",
-		char = char,
-		time = time,
-		outcome = "caught",
-		conditions = { minute = 494, zone = ELWYNN, subzone = 0, events = {}, auras = {} },
-		items = { { itemID = itemID, quantity = 1 } },
-	}
+	return castRecord({ char = char, time = time, zone = ELWYNN, items = { itemID } })
 end
 
 -- The fixture log's three characters: Angler (the fake client's, index 1), Bea and Cora. Cora has no Skill Reading.
@@ -96,29 +69,7 @@ local FIXTURE = {
 ---@return FakePagle fake
 ---@return LoadedAddon loaded
 local function anglerPage(log)
-	local fake = newFakePagle()
-	fake.setCatalogue(catalogue())
-	fake.catchLog.data.characters = characters()
-	for _, record in ipairs(log or FIXTURE) do
-		fake.catchLog:Append(record)
-	end
-	fake.globals.BreakUpLargeNumbers = breakUpLargeNumbers
-	local loaded = fake.load("Pagle_Ledger")
-	fake.login()
-	fake.enterWorld()
-	assert.is_true(loaded.ns.journal:Open("angler"))
-	return fake, loaded
-end
-
--- The texts of a page's blocks, in order (a block without text, such as the XP bar, as its kind in brackets).
----@param blocks LedgerBlock[]
----@return string[]
-local function texts(blocks)
-	local list = {}
-	for i, block in ipairs(blocks) do
-		list[i] = block.text or ("[" .. block.kind .. "]")
-	end
-	return list
+	return openJournal({ catalogue = catalogue(), characters = characters(), log = log or FIXTURE, id = "angler" })
 end
 
 describe("the Journal's Angler page", function()
@@ -154,14 +105,14 @@ describe("the Journal's Angler page", function()
 				"Trophy Room weights 0 of 1",
 				"Zones mastered 0 of 1",
 				"3 Catches",
-			}, texts(loaded.ns.journal.pages.left))
+			}, blockTexts(loaded.ns.journal.pages.left))
 			assert.are.equal("1,030 of 1,320.", loaded.ns.journal.pages.left[5].bar.text)
 		end
 	)
 
 	it("leaves out the kept since line before the first Catch (LED-R146)", function()
 		local _, loaded = anglerPage({ FIXTURE[1], FIXTURE[2] })
-		local left = texts(loaded.ns.journal.pages.left)
+		local left = blockTexts(loaded.ns.journal.pages.left)
 
 		assert.are.same({ "Ex Libris", "The Angler's Ledger", "Angler Level 2" }, { left[1], left[2], left[3] })
 		assert.are.equal("0 Catches", left[#left])
