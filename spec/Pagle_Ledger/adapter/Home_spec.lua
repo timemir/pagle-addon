@@ -395,13 +395,33 @@ describe("the Journal's Home, right page", function()
 			loaded.ns.RegisterJournalSpread("trophy", spread("trophy"))
 			journal.frame.right.drawn.leader[1]:Click()
 			assert.are.same({ id = "trophy" }, journal.router:Place())
-
-			journal:Open("home")
-			loaded.ns.RegisterJournalSpread("fish", spread("fish"))
-			journal.frame.right.drawn.link[1]:Click()
-			assert.are.same({ id = "fish", args = { species = MACKEREL } }, journal.router:Place())
 		end
 	)
+
+	it("opens the fish spread from the next-star note, Home ❧ {fish} (LED-R133, LED-R125, LED-R142)", function()
+		local _, loaded = openHome({ cast(ELWYNN, MACKEREL) })
+		local journal = loaded.ns.journal
+
+		journal.frame.right.drawn.link[1]:Click()
+
+		assert.are.same({ id = "fish", args = { species = MACKEREL } }, journal.router:Place())
+		local labels = {}
+		for i, crumb in ipairs(journal.pages.crumbs) do
+			labels[i] = crumb.label
+		end
+		assert.are.same({ "Home", "Raw Slitherskin Mackerel" }, labels)
+	end)
+
+	it("is where the fish spread's back link returns from a note (LED-R125)", function()
+		local _, loaded = openHome({ cast(ELWYNN, MACKEREL) })
+		local journal = loaded.ns.journal
+		journal.frame.right.drawn.link[1]:Click()
+
+		journal.frame.back:Click()
+
+		assert.are.same({ id = "home" }, journal.router:Place())
+		assert.are.equal("Where I've Fished", pages(loaded).left[2].text)
+	end)
 
 	it("opens the Angler page from its contents line, Home ❧ The Angler (LED-R132, LED-R125, LED-R146)", function()
 		local _, loaded = openHome({ cast(ELWYNN, MACKEREL) })

@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from pagle_data.cli import main
+from cli_fixture import run
 from pagle_data.db2 import Item, read_db2
 from pagle_data.errors import Problems
 from test_db2_layer import CATALOGUE, EXPECTED, write_tree
@@ -27,12 +27,6 @@ def write_items(root: Path, items: str | None) -> Path:
     else:
         path.write_text(items, encoding="utf-8")
     return root
-
-
-def run(root: Path, capsys: pytest.CaptureFixture[str], *args: str) -> tuple[int, str]:
-    code = main(list(args), root)
-    out, err = capsys.readouterr()
-    return code, out + err
 
 
 def test_every_items_csv_row_is_read_into_the_db2_layer(tmp_path: Path) -> None:

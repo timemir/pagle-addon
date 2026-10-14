@@ -182,8 +182,8 @@ local BAR_HEIGHT = 12
 local SEAL_SIZE = 64
 local TILE_SEAL_SIZE = 26
 
--- An icon's size on a page.
-local ICON_SIZE = 40
+-- An icon's size on a page, and a large one's (a Species' entry, LED-R140).
+local ICON_SIZE, LARGE_ICON_SIZE = 40, 80
 
 -- Zone tiles: three across, with a gap.
 local TILE_COLUMNS = 3
@@ -582,6 +582,8 @@ function makers.icon(parent)
 			local _, _, _, _, fileID = C_Item.GetItemInfoInstant(icon)
 			icon = fileID or icon
 		end
+		local size = block.large and LARGE_ICON_SIZE or ICON_SIZE
+		texture:SetSize(size, size)
 		texture:SetTexture(icon)
 		texture:SetDesaturated(true)
 		if block.look == "silhouette" then
@@ -591,7 +593,7 @@ function makers.icon(parent)
 			texture:SetVertexColor(LOOK.sepia[1], LOOK.sepia[2], LOOK.sepia[3])
 			texture:SetAlpha(1)
 		end
-		return ICON_SIZE
+		return size
 	end
 	return widget
 end

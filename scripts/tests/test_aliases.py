@@ -7,9 +7,9 @@ import pytest
 
 from areas_fixture import write_areas
 from baseline_fixture import CSVS, write_baseline
+from cli_fixture import run
 from item_fixture import write_item_layer
 from observed_fixture import write_observed
-from pagle_data.cli import main
 from pools_fixture import write_pools
 from windows_fixture import write_windows
 
@@ -65,12 +65,6 @@ def write_tree(root: Path, aliases: str = "") -> Path:
 def alias(source: int, target: int, why: str | None = "the map 2940 copy") -> str:
     entry = f"[[alias]]\nfrom = {source}\nto = {target}\n"
     return entry + (f'why = "{why}"\n' if why is not None else "")
-
-
-def run(root: Path, capsys: pytest.CaptureFixture[str], *args: str) -> tuple[int, str]:
-    code = main(list(args), root)
-    out, err = capsys.readouterr()
-    return code, out + err
 
 
 def test_the_catalogue_s_aliases_are_aliases_toml_s(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:

@@ -41,7 +41,7 @@ local ns = select(2, ...)
 --- - `seal` (a wax seal reading `text`)
 --- - `stamps` (`stamps`: ink stamps, each `{ text, inked }`)
 --- - `tiles` (`tiles`: zone tiles, LedgerZoneTile)
---- - `icon` (`icon`, an item ID or texture, drawn `look` "sepia" or "silhouette")
+--- - `icon` (`icon`, an item ID or texture, drawn `look` "sepia" or "silhouette", `large` on an entry, LED-R140)
 --- - `xpBar` (`bar`: the ink XP bar, ns.InkXpBar)
 --- - `tabs` (`tabs`: tabs side by side, each `{ text, on, place }`, the chosen one `on`, LED-R130)
 --- - `bookplate` (the level `text` in large numerals over its caption `value`, and a wax seal reading `seal`, LED-R132)
@@ -56,6 +56,7 @@ local ns = select(2, ...)
 ---@field tiles? LedgerZoneTile[]
 ---@field icon? integer|string
 ---@field look? "sepia"|"silhouette"
+---@field large? boolean
 ---@field bar? LedgerInkXpBar
 ---@field tabs? { text: string, on: boolean, place: LedgerJournalPlace }[]
 ---@field seal? string

@@ -10,10 +10,9 @@ local ns = select(2, ...)
 -- the contents; the brass plate sits on the cover. Pure logic over the Journal's context (CORE-R7); its M3 stage
 -- leaves out titles, Prestige and Legends (LED-R4).
 
--- The spreads Home links to, by ID, with the args each takes: a zone's spread `{ zone = areaID }` (ticket #141),
--- a fish spread `{ species = speciesID }` (#142), the Trophy Room and Curios (#143), and the Angler (#144,
--- ns.JOURNAL_ANGLER). A link to a spread not registered yet does nothing (LED-R125).
-local ZONE_SPREAD, FISH_SPREAD = "zone", "fish"
+-- The collection spreads Home's contents open (ticket #143), by ID. The zone spread (ns.JournalZonePlace), the fish
+-- spread (ns.JournalFishPlace) and the Angler (ns.JOURNAL_ANGLER) have their IDs from their own files. A link to a
+-- spread not registered yet does nothing (LED-R125).
 local TROPHY_SPREAD, CURIOS_SPREAD = "trophy", "curios"
 
 --- The tab of every continent but the Eastern Kingdoms (0) and Kalimdor (1): Home's args `{ tab = ns.OTHER_TAB }`.
@@ -49,23 +48,8 @@ function ns.HomeTabOf(getArea, zone)
 	return ns.OTHER_TAB
 end
 
--- A zone in tile order (LED-R131): by skill base, zones without one last, then by areaID.
----@param world LedgerWorld
----@return fun(a: integer, b: integer): boolean
-local function tileOrder(world)
-	return function(a, b)
-		local skillA, skillB = world.skillBase[a], world.skillBase[b]
-		if skillA ~= skillB then
-			if skillA == nil or skillB == nil then
-				return skillB == nil
-			end
-			return skillA < skillB
-		end
-		return a < b
-	end
-end
-
---- The zones with a tile (LED-R131), in tile order: every charted zone and every fished zone that isn't charted.
+--- The zones with a tile (LED-R131), in tile order (skill base, zones without one last, then areaID): every charted
+--- zone and every fished zone that isn't charted.
 ---@param context LedgerHomeContext
 ---@return integer[]
 function ns.HomeZones(context)
@@ -81,41 +65,7 @@ function ns.HomeZones(context)
 	for zone in pairs(set) do
 		zones[#zones + 1] = zone
 	end
-	table.sort(zones, tileOrder(world))
-	return zones
-end
-
--- A zone's tile (LED-R131): fished and charted, its shown rank and completion, an ink bar, a seal at Master and a red
--- note with new to find; charted and never fished, faded with its skill base; not charted, "uncharted waters".
--- Clicking it opens the zone's spread.
----@param context LedgerHomeContext
----@param zone integer
----@return LedgerZoneTile
-local function tileOf(context, zone)
-	local L = ns.L
-	local world, state, celebrated = context.world, context.state, context.celebrated
-	---@type LedgerZoneTile
-	local tile = { name = context.text:Zone(zone), place = { id = ZONE_SPREAD, args = { zone = zone } } }
-	if not world.zones[zone] then
-		tile.line = L.HOME_TILE_UNCHARTED
-	elseif not state.zones[zone] then
-		local skillBase = world.skillBase[zone]
-		tile.line = skillBase and L.HOME_TILE_UNFISHED_SKILL:format(skillBase) or L.HOME_TILE_UNFISHED
-		tile.faded = true
-	else
-		local rank = ns.ShownZoneRank(world, state, celebrated, zone)
-		local completion = ns.ZoneCompletion(world, state, zone) --[[@as integer]]
-		tile.line = L.HOME_TILE_RANK:format(L.ZONE_RANKS[rank], completion)
-		tile.bar = completion / 100
-		if rank == ns.ZONE_MASTER then
-			tile.seal = L.ZONE_RANKS[ns.ZONE_MASTER]
-		end
-		local newToFind = ns.NewToFind(world, state, celebrated, zone)
-		if newToFind > 0 then
-			tile.note = L.HOME_TILE_NEW:format(newToFind)
-		end
-	end
-	return tile
+	return ns.SortZonesBySkill(zones, world.skillBase)
 end
 
 -- The left page (LED-R130): kicker, title, the tabs that have a tile, and the chosen tab's tiles. `chosen` is the
@@ -130,7 +80,7 @@ local function leftPage(context, chosen)
 	for _, zone in ipairs(ns.HomeZones(context)) do
 		local tab = ns.HomeTabOf(context.getArea, zone)
 		byTab[tab] = byTab[tab] or {}
-		table.insert(byTab[tab], tileOf(context, zone))
+		table.insert(byTab[tab], ns.JournalZoneTile(zone, context))
 	end
 	local shown = {}
 	for _, tab in ipairs(TAB_ORDER) do
@@ -188,7 +138,7 @@ local function nextRankNote(context, zones)
 		ns.L.ZONE_RANKS[bestRank],
 		ns.NextRequirement(world, state, celebrated, best)
 	)
-	return { kind = "link", text = line, hand = true, place = { id = ZONE_SPREAD, args = { zone = best } } }
+	return { kind = "link", text = line, hand = true, place = ns.JournalZonePlace(best) }
 end
 
 -- Note 2, new to find (LED-R133): the first zone in tile order with new to find.
@@ -200,7 +150,7 @@ local function newToFindNote(context, zones)
 		local count = ns.NewToFind(context.world, context.state, context.celebrated, zone)
 		if count > 0 then
 			local line = ns.L.HOME_NOTE_NEW:format(context.text:Zone(zone), count)
-			return { kind = "link", text = line, hand = true, place = { id = ZONE_SPREAD, args = { zone = zone } } }
+			return { kind = "link", text = line, hand = true, place = ns.JournalZonePlace(zone) }
 		end
 	end
 	return nil
@@ -226,7 +176,7 @@ local function nextStarNote(context)
 		return nil
 	end
 	local line = ns.L.HOME_NOTE_STAR:format(context.text:Item(best), ns.REGULAR_CATCHES - bestN)
-	return { kind = "link", text = line, hand = true, place = { id = FISH_SPREAD, args = { species = best } } }
+	return { kind = "link", text = line, hand = true, place = ns.JournalFishPlace(best) }
 end
 
 --- Notes to self (LED-R133): at most three progress nudges, in order, each only if it applies and each opening the
