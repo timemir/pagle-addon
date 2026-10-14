@@ -28,6 +28,35 @@ PagleLog = {
 PagleDB = {
 ["global"] = {
 ["schemaVersion"] = 1,
+["diagnostics"] = {
+{
+["id"] = "Player-4618-0A1B2C3D-1791731747-0",
+["zone"] = 12,
+["subzone"] = 0,
+["locale"] = "enUS",
+["texts"] = {
+"Floating Wreckage",
+},
+},
+{
+["id"] = "Player-4618-0A1B2C3D-1791732700-0",
+["zone"] = 40,
+["subzone"] = 0,
+["locale"] = "enUS",
+["texts"] = {
+"Oily Blackmouth School",
+},
+},
+{
+["id"] = "Player-4618-0A1B2C3D-1791732760-0",
+["zone"] = 40,
+["subzone"] = 0,
+["locale"] = "enUS",
+["texts"] = {
+"Oily Blackmouth School",
+},
+},
+},
 ["coins"] = {
 ["earned"] = {
 ["Ledger"] = 44,

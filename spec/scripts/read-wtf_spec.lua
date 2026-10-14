@@ -357,13 +357,15 @@ describe("scripts/read-wtf.lua", function()
 		end)
 
 		it("prints the Field report projection, its count and reporter key (REP-R25, REP-R26, REP-R36)", function()
-			-- REP-R36's test vector: logId 3f9a2c1e7b0d4a65 gives f38e76b0.
+			-- REP-R36's test vector: logId 3f9a2c1e7b0d4a65 gives f38e76b0. REP-R22, REP-R26: the buffer holds three
+			-- Casts, so 2 P rows: Floating Wreckage in Elwynn (12), and Oily Blackmouth School in Westfall (40), whose
+			-- two Casts (one got away) make one row. The menu's count is the 3 stored rows plus those 2.
 			assert.are.same({
 				"== Field report (PagleDB.global.projections.fieldReport): reporter key f38e76b0",
 				"projection: lastSeq 11, logId 3f9a2c1e7b0d4a65, fingerprint 0123456789abcdef, rulesVersion 1",
 				"logId: matches PagleLog's",
 				"lastSeq: equals PagleLog's length (11 entries)",
-				"count: 3 I and K rows stored",
+				"count: 3 I and K rows stored + 2 P rows from the buffer = 5 (the menu's \"(5)\", REP-R26)",
 			}, section(out, "== Field report"))
 		end)
 	end)
