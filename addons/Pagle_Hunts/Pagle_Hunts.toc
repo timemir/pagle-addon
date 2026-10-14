@@ -17,4 +17,6 @@ logic\HuntList.lua
 logic\Seams.lua
 logic\Qualify.lua
 logic\Waters.lua
+logic\Groups.lua
 adapter\Hunts.lua
+adapter\Groups.lua

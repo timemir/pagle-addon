@@ -169,7 +169,8 @@ describe("Pagle_Hunts with Core", function()
 		assert.are.same({ shown = false, collapsed = true }, db.profile.tracker)
 		assert.is_true(db.profile.windowMoments)
 		assert.is_true(db.profile.showCompleted)
-		assert.are.same({ dawn_trout = true }, db.profile.pins)
+		-- dawn_trout isn't a current Hunt at SERVER_TIME, so its pin is dropped at load (HNT-R81, adapter/Groups_spec).
+		assert.are.same({}, db.profile.pins)
 	end)
 end)
 
