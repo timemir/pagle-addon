@@ -12,5 +12,6 @@
 locale\enUS.lua
 logic\Data.lua
 logic\Module.lua
+logic\Rewards.lua
 logic\Seams.lua
 adapter\TackleBoard.lua
