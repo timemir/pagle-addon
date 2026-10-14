@@ -32,8 +32,7 @@ local WANDERER_EXPEDITION_ZONES = 5 -- candidate zones a Wanderer Expedition's c
 local COLLECTOR_EXPEDITION_ITEMS = 6 -- never-caught Sub-collection items in candidate zones, at least (TKB-R32)
 
 local NOTICE_TIERS = 3 -- a Notice's tier is drawn from 1 to this, unless its kind fixes it (TKB-R34)
-local NOTICE_PAY = { 10, 15, 20 } -- by tier (TKB-R34)
-local EXPEDITION_TIER, EXPEDITION_PAY = 0, 60 -- TKB-R34
+local EXPEDITION_TIER = 0 -- TKB-R34; the pay by tier and the Expedition pay are ns.NOTICE_PAY and ns.EXPEDITION_PAY
 
 -- A Notice's need by tier (TKB-R34). The kinds that fix their tier list only that tier.
 local NOTICE_NEEDS = {
@@ -415,7 +414,7 @@ function ns.GenerateGoal(ctx, goalType, dropKind)
 			type = goalType,
 			kind = kind,
 			tier = EXPEDITION_TIER,
-			pay = EXPEDITION_PAY,
+			pay = ns.EXPEDITION_PAY,
 			need = need,
 			target = target,
 			items = items,
@@ -433,5 +432,5 @@ function ns.GenerateGoal(ctx, goalType, dropKind)
 			end
 		end
 	end
-	return { type = goalType, kind = kind, tier = tier, pay = NOTICE_PAY[tier], need = need, target = target }
+	return { type = goalType, kind = kind, tier = tier, pay = ns.NOTICE_PAY[tier], need = need, target = target }
 end
