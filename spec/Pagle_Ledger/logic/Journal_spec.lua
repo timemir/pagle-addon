@@ -106,6 +106,23 @@ describe("the Fish Journal's router", function()
 		assert.are.same({ id = "waters" }, pages.back)
 	end)
 
+	it("gives every spread but Home a back link, to Home when it adds no crumb of its own (LED-R125)", function()
+		local spreads = { home = home }
+		spreads.bare = {
+			crumbs = function()
+				return {}
+			end,
+			draw = function()
+				return { left = {}, right = {} }
+			end,
+		}
+		local router = ns.NewJournalRouter(spreads)
+
+		router:Open("bare")
+
+		assert.are.same({ id = "home" }, router:Pages(context).back)
+	end)
+
 	it("does nothing when asked to open a spread nobody registered (LED-R125)", function()
 		local router = newRouter()
 		router:Open("deep", { zone = 12, fish = 6303 })

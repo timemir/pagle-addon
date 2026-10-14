@@ -158,7 +158,8 @@ function Router:Place()
 end
 
 --- What the book shows now (LED-R122, LED-R125): while updating, LED-R122's line on both pages and no crumbs;
---- else the open spread's pages, its crumbs after Home's, and the crumb above the last as the back link's place.
+--- else the open spread's pages, its crumbs after Home's, and the crumb above the last as the back link's place (Home's
+--- for a spread other than Home that adds no crumb; none on Home).
 ---@param context LedgerJournalContext
 ---@return LedgerJournalPages
 function Router:Pages(context)
@@ -176,10 +177,15 @@ function Router:Pages(context)
 		crumbs[#crumbs + 1] = crumb
 	end
 	local pages = spread.draw(args, context)
+	-- Every spread but Home goes back one crumb up; one that adds no crumb of its own goes back to Home.
+	local back = crumbs[#crumbs - 1] and crumbs[#crumbs - 1].place
+	if not back and self.place.id ~= ns.JOURNAL_HOME then
+		back = crumbs[1].place
+	end
 	return {
 		updating = false,
 		crumbs = crumbs,
-		back = crumbs[#crumbs - 1] and crumbs[#crumbs - 1].place,
+		back = back,
 		left = pages.left,
 		right = pages.right,
 	}
