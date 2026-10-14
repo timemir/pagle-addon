@@ -186,6 +186,25 @@ local spansOf = {
 
 local TIME_FIELDS = { "time", "season", "events" }
 
+-- Whether a spec has any time-based field, so its forecast needs the realm clock (LOG-R50).
+---@param spec PagleConditionSpec
+---@return boolean
+local function isTimeBased(spec)
+	return spec.time ~= nil or spec.season ~= nil or spec.events ~= nil
+end
+
+-- Raises "invalid condition spec: …" for an invalid spec in the caller of the function calling it, as
+-- MatchesConditions does (LOG-R48): matching against an empty snapshot checks the spec and matches nothing.
+---@param spec PagleConditionSpec
+local function check(spec)
+	---@type table
+	local nothing = {}
+	local valid, problem = pcall(ns.MatchesConditions, spec, nothing)
+	if not valid then
+		error(problem, 3)
+	end
+end
+
 --- When a condition spec's time-based fields (`time`, `season`, `events`), intersected, next hold (LOG-R50):
 --- `{ openNow = true, closesAt? }` when they all hold at `fromTime`, else `{ opensAt, closesAt? }` for the next
 --- opening within 400 days, or nil with none. `closesAt` is left out when the opening doesn't stop within the
@@ -205,15 +224,9 @@ local TIME_FIELDS = { "time", "season", "events" }
 ---@param getEventRule fun(eventID: integer): PagleWeeklyRule? an event's weekly rule (LOG-R56)
 ---@return Window?
 function ns.NextWindow(spec, fromTime, offset, activeEvents, getEventRule)
-	-- Matching against an empty snapshot checks the spec and matches nothing (LOG-R48).
-	---@type table
-	local nothing = {}
-	local valid, problem = pcall(ns.MatchesConditions, spec, nothing)
-	if not valid then
-		error(problem, 2)
-	end
+	check(spec)
 	local confirmed = spec.confirmed ~= false
-	if spec.time == nil and spec.season == nil and spec.events == nil then
+	if not isTimeBased(spec) then
 		if spec.auras ~= nil then
 			return { onDemand = true, confirmed = confirmed }
 		end
@@ -265,4 +278,25 @@ function ns.NextWindow(spec, fromTime, offset, activeEvents, getEventRule)
 		window.closesAt = first[2] - shift
 	end
 	return window
+end
+
+--- `Pagle.NextWindow`'s body (LOG-R50), which Core's adapter and FakePagle both call: the forecast from `fromTime` at
+--- the realm's UTC offset, read from a conditions snapshot's server time and realm minute (LOG-R49), with the
+--- snapshot's events as the ones the live calendar shows active (LOG-R46). While the realm clock is secret (no
+--- realm minute, CORE-R31) a spec with `time`, `season` or `events` gives nil, as the offset can't be read; one
+--- without them needs no clock and still gets `{ onDemand = true }` or `{ always = true }`. A new table each call.
+---@param spec PagleConditionSpec|PagleWindowSpec
+---@param fromTime integer server time to forecast from
+---@param now ConditionsSnapshot the conditions now: `time`, `minute` and `events` are read
+---@param getEventRule fun(eventID: integer): PagleWeeklyRule? an event's weekly rule (LOG-R56)
+---@return Window?
+function ns.ForecastWindow(spec, fromTime, now, getEventRule)
+	if now.time == nil or now.minute == nil then
+		if isTimeBased(spec) then
+			check(spec)
+			return nil
+		end
+		return ns.NextWindow(spec, fromTime, 0, now.events, getEventRule) -- no time-based field reads the offset
+	end
+	return ns.NextWindow(spec, fromTime, ns.RealmUtcOffset(now.time, now.minute), now.events, getEventRule)
 end

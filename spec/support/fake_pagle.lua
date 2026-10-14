@@ -634,14 +634,12 @@ part(function(fake, Pagle, ns)
 	end
 end)
 
--- Window forecasts (LOG-R50), on Core's real logic over the fake's catalogue: the realm's UTC offset comes from
--- fake.conditions' time and minute, and the events open now from fake.conditions.events, so setConditions moves the
--- clock and the calendar. Each Window is read-only.
+-- Window forecasts (LOG-R50), on Core's own Pagle.NextWindow body (ns.ForecastWindow) over the fake's catalogue: the
+-- realm's UTC offset comes from fake.conditions' time and minute (a nil minute is a secret clock), and the events
+-- open now from fake.conditions.events, so setConditions moves the clock and the calendar. Each Window is read-only.
 part(function(fake, Pagle, ns)
 	function Pagle.NextWindow(spec, fromTime)
-		local now = fake.conditions
-		local offset = ns.RealmUtcOffset(now.time, now.minute)
-		return readOnly(ns.NextWindow(spec, fromTime, offset, now.events, ns.Catalogue.GetEventRule))
+		return readOnly(ns.ForecastWindow(spec, fromTime, fake.conditions, ns.Catalogue.GetEventRule))
 	end
 end)
 
