@@ -171,11 +171,29 @@ def report_of(*rows: str) -> str:
         (report_of("I 6359 1519 70338 14", "I 6359 1519 70338 2 # again"), "#7: line 4: the same row key as line 3"),
         (report_of("K 1519 70338 casts=4 away=0", "K 1519 70338 casts=9 away=1"), "#7: line 4: the same row key"),
         (report_of('P 1519 enUS "Oily" casts=5', 'P 1519 enUS "Oily" casts=1'), "#7: line 4: the same row key"),
+        # Text after END (REP-R33: each part in its own issue), and END with more on its line.
+        (report_of() + "\nI 6359 1519 70338 14", "#7: line 4: text after END (line 3)"),
+        (report_of().replace("END", "END I"), "#7: line 3: expected END alone"),
+        # A field beyond the row's own (REP-R20–R22).
+        (report_of("I 6362 33 70338 2 7"), "#7: line 3: unexpected field '7'"),
+        # A value out of its bounds: IDs and counts from 1, build and away from 0, m a month.
+        (report_of("I 0 33 70338 2"), "#7: line 3: item: expected an integer at least 1, got 0"),
+        (report_of("K 1519 -1 casts=40 away=6"), "#7: line 3: build: expected an integer at least 0, got -1"),
+        (report_of("I 6362 33 70338 2 t=14:30 m=13"), "#7: line 3: m=: expected an integer from 1 to 12, got 13"),
+        # t and m go together, and t is a 15-minute bucket's start (REP-R20).
+        (report_of("I 6362 33 70338 2 t=14:30"), "#7: line 3: t= and m= go together"),
+        (report_of("I 6362 33 70338 2 t=14:20 m=5"), "#7: line 3: t=: expected the start of a 15-minute bucket"),
+        # A P row's text is quoted and its locale a client locale (REP-R22), each item listed once.
+        (report_of("P 1519 enUS Oily casts=5"), "#7: line 3: text: expected a quoted text"),
+        (report_of('P 1519 german "Oily" casts=5'), "#7: line 3: locale: expected a client locale"),
+        (report_of('P 1519 enUS "Oily" casts=5 6358x1 6358x2'), "#7: line 3: item 6358 is listed twice"),
     ],
 )
 def test_each_failure_fails_the_part_naming_its_line(text: str, expected: str) -> None:
-    # DATA-R116: a part fails on a first line other than PAGLE-REPORT 1, a malformed header, a row with missing or
-    # non-integer fields, a bad quote escape and two rows with the same key; the problem names the line.
+    # DATA-R116: a part fails on a first line other than PAGLE-REPORT 1, a malformed header, text after END, a row
+    # with missing, extra or non-integer fields, a known key given twice, a value out of its bounds, t without m (or
+    # m without t), a t off a 15-minute bucket, a P row's unquoted or empty text, bad locale or item listed twice, a
+    # bad quote escape and two rows with the same key; the problem names the line.
     found = problems_of(text)
     assert any(problem.startswith(expected) for problem in found), found
 

@@ -3,9 +3,11 @@ define it and Core writes it. The importer, the triage Action and the generator 
 
 A part is line 1 "PAGLE-REPORT 1", the header line, I, K and P rows (REP-R20–R22) and END. " # " outside double
 quotes starts a comment (REP-R31); inside quotes, a backslash escapes ", \\ and n (REP-R32). Unknown key=value keys
-and unknown row letters are ignored (REP-R31). A part fails, each problem naming its line, on a first line other than
-PAGLE-REPORT 1, a malformed header, a missing END (a truncated paste), a row with missing or non-integer fields, a bad
-quote escape and two rows with the same key (DATA-R121's, shared with pagle_data.observed).
+and unknown row letters are ignored (REP-R31). A part fails, each problem naming its line, on DATA-R116's list: a
+first line other than PAGLE-REPORT 1, a malformed header, a missing END (a truncated paste) or text after it, a row
+with missing, extra or non-integer fields, a known key given twice, a value out of its bounds, t and m not together,
+a t off its bucket, a P row's unquoted or empty text, bad locale or repeated item, a bad quote escape and two rows
+with the same key (DATA-R121's, shared with pagle_data.observed).
 
 Rows come out as pagle_data.observed's rows, so what the importer writes (observed_toml) is what the observed layer
 reads. The parts of one report share its identity (DATA-R117: the header without part) and are joined in order; a
