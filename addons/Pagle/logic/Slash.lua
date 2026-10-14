@@ -163,8 +163,10 @@ end
 function Commands:Run(line, core, call, print)
 	local action, command, args = self:Resolve(line, core)
 	if action == "core" then
+		---@cast command string
 		core[command]()
 	elseif action == "module" then
+		---@cast command PagleSlashCommand
 		call(command.fn, args)
 	else
 		for _, helpLine in ipairs(self:HelpLines()) do

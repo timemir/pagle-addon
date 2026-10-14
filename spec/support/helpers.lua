@@ -142,7 +142,7 @@ end
 function unchartedHistory(n, first, item)
 	local entries = { BUILD_ENTRY }
 	for i = 1, n do
-		entries[#entries + 1] = castEntry(first + i, item or 10000 - i, 0)
+		entries[#entries + 1] = castEntry(first + i, item or (10000 - i), 0)
 	end
 	return entries
 end
