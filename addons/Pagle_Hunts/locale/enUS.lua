@@ -129,6 +129,18 @@ ns.L = {
 	CLOCK_PAUSED = "%s (paused in combat)",
 	SHOW_COMPLETED = "show completed",
 
+	-- The Hunts tracker (HNT-R75–R78) and its setting on the Trackers page (SET-R41).
+	TRACKER_EMPTY = "Pin a Hunt to keep it here.",
+	TRACKER_MORE = "+%d more",
+	TRACKER_FIRST = "%s · %s", -- "Night Run · in 37m": the name and the tracker label
+	TRACKER_JOIN = " · ", -- between the second line's target, "you're here" and the progress
+	TRACKER_HERE = "you're here",
+	TRACKER_PROGRESS = "%d / %d",
+	TRACKER_ALL_TIERS = "all tiers",
+	TRACKER_UPDATING = "updating…",
+	SETTING_SHOW_TRACKER = "Show the Hunts tracker",
+	SETTING_SHOW_TRACKER_TOOLTIP = "A small tracker under the minimap with the Hunts you've pinned on the board.",
+
 	-- Hunts' moments, Write-up and summary line (HNT-R86, HNT-R89, HNT-R111). Counts come in singular and plural
 	-- pairs, *_ONE and *_OTHER.
 	HUNT_COMPLETE = "Hunt complete",
