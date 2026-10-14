@@ -18,4 +18,9 @@ ns.L = {
 	-- Its button in the Settings status list (TKB-R1, SET-R11): before and after the board is started.
 	START_MY_BOARD = "Start my board",
 	OPEN_BOARD = "Open Tackle Board",
+	-- The board (TKB-R100, TKB-R107, TKB-R108): the empty board's pinned slip, and what shows over the cork while the
+	-- projection is updating. The plaque reads TITLE and the Start button START_MY_BOARD.
+	EMPTY_SLIP = "Three Notices go up each day and an Expedition each week. Fish as you like: they fill in as you go. "
+		.. "Nothing is ever taken down for being late.",
+	UPDATING = "Updating…",
 }
