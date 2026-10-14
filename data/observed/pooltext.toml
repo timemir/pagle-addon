@@ -1,0 +1,14 @@
+# The dev's map of hovered texts to pool types (DATA-R118). Core sends every text a player hovered while fishing
+# (REP-R22's P rows), bobber text and known pool names too; the Field report triage comment (DATA-R117) lists only
+# the texts not in this file, under "New pool texts", each as a ready [[text]] entry with pool left empty.
+#
+# To fill it: copy an entry from a triage comment to the end of this file and set pool to the pool type ID in
+# data/forever/pools.toml the text names (e.g. "schoolOfFish"), to "bobber" for the bobber's own text, or to
+# "other" for anything else (a chair, a crate). Each (locale, text) is listed once. Then run
+# scripts/generate-data.py: an unknown pool type fails it (DATA-R63). This file isn't an observation and changes no
+# catalogue fact; nothing in it ships (DATA-R44).
+#
+# [[text]]
+# locale = "deDE"
+# text = "Schwarm öliger Schwarzmaulfische"
+# pool = "oilyBlackmouthSchool"
