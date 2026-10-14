@@ -182,12 +182,12 @@ describe("Pagle_Stats with Core", function()
 	end)
 
 	it(
-		"keeps no celebrated set and leaves the projection table to Core (stats.md › Data, LOG-R70, LOG-R77)",
+		"keeps no celebrated set and makes an empty projection table for Core (stats.md › Data, LOG-R70, LOG-R77)",
 		function()
 			local db = loadAddon("Pagle_Stats", FOREVER_GLOBALS).ns.db
 
 			assert.is_nil(db.global.celebrated)
-			assert.is_nil(db.global.projection)
+			assert.are.same({}, db.global.projection) -- before login: Core writes its keys at the first build
 		end
 	)
 
