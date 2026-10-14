@@ -58,12 +58,14 @@ def expect_table(value: object, at: At, problems: Problems) -> Mapping[str, obje
     return None
 
 
-def expect_int(value: object, at: At, problems: Problems, *, minimum: int, maximum: int | None = None) -> int | None:
-    """value as an integer in [minimum, maximum], or None with a problem."""
+def expect_int(
+    value: object, at: At, problems: Problems, *, minimum: int | None, maximum: int | None = None
+) -> int | None:
+    """value as an integer in [minimum, maximum], or None with a problem. A minimum of None bounds nothing."""
     if isinstance(value, bool) or not isinstance(value, int):
         problems.add(at, f"expected an integer, got {describe(value)}")
         return None
-    if value < minimum or (maximum is not None and value > maximum):
+    if minimum is not None and (value < minimum or (maximum is not None and value > maximum)):
         bounds = f"from {minimum} to {maximum}" if maximum is not None else f"at least {minimum}"
         problems.add(at, f"expected an integer {bounds}, got {value}")
         return None

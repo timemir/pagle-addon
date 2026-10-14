@@ -83,7 +83,7 @@ Part of [Core](README.md). A **Field report** is the text an Angler copies out o
   - A comment is ` # ` followed by names in the player's locale, for humans only: `I` rows get the item name (left out if `C_Item.GetItemInfo` hasn't cached it), then the area name; `K` and `P` rows get the area name.
   - `END` closes every part, so a truncated paste is detectable.
 - **REP-R31** Parsers treat ` # ` outside double quotes as the start of a comment and ignore the rest of the line. They ignore unknown `key=value` keys, so adding a key needs no version bump; a changed meaning of anything existing bumps `PAGLE-REPORT`.
-- **REP-R32** Inside quotes, `\` escapes `"`, `\` and `n` (a newline).
+- **REP-R32** Inside quotes, `\` escapes `"`, `\` and `n` (a newline). A carriage return in a text, alone or before a newline, is written as `\n` too, so a pasted row never splits.
 - **REP-R33** A report over 60,000 bytes (header and `END` included) is split into numbered parts (`part 1/2`), each with its own two header lines and `END`, each at most 60,000 bytes, never truncated. Rows fill each part in sort order before the next part starts.
 
 ### Privacy

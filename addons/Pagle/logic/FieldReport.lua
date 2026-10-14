@@ -12,6 +12,26 @@ ns.FIELD_REPORT_RULES_VERSION = 2
 --- The width of a row's realm-time bucket, in minutes (field-report.md › Tunables, REP-R20).
 ns.FIELD_REPORT_TIME_BUCKET = 15
 
+--- One row of the Field report as it is handed out, unsorted (REP-R20–R22): ns.FieldReportRows() gives them, and
+--- ns.FieldReportParts writes them.
+---@class PagleReportRow
+---@field kind "I"|"K"|"P"
+---@field area integer        -- the report area (REP-R3)
+---@field build integer?      -- I, K: the build (REP-R4)
+---@field item integer?       -- I
+---@field count integer?      -- I: Catches
+---@field auras integer[]?    -- I: active listed auras, ascending, maybe empty
+---@field events integer[]?   -- I: active listed events, ascending, maybe empty
+---@field t integer?          -- I: the start of the 15-minute realm-time bucket, in realm minutes of the day
+---@field m integer?          -- I: the realm month, 1–12
+---@field casts integer?      -- K, P
+---@field away integer?       -- K
+---@field land integer?       -- K
+---@field lost integer?       -- K
+---@field locale string?      -- P
+---@field text string?        -- P: the hovered text
+---@field items { item: integer, count: integer }[]? -- P: ascending by item
+
 --- An `I` row as stored (REP-R20): Catches of one item in one report area on one build, with the same listed auras
 --- and events and, for gated entries and Uncharted items, the same time bucket and realm month. The rows handed out
 --- add `kind = "I"`.
@@ -278,7 +298,7 @@ function ns.NewFieldReport(catalogue)
 
 	--- The I and K rows a state holds now, as fresh plain tables, unsorted (REP-R20, REP-R21).
 	---@param state PagleFieldReportState
-	---@return table[]
+	---@return PagleReportRow[]
 	function report.Rows(state)
 		local rows = {}
 		for _, stored in pairs(state.I) do
@@ -343,7 +363,7 @@ end
 --- Binds the Field report projection on Core's machinery (REP-R25, LOG-R78), with the Field report rules version and
 --- no extraFingerprint, and returns its two readers.
 ---@param options PagleFieldReportOptions
----@return fun(): table[]? rows every I, K and P row, unsorted; nil while the projection is updating (REP-R20–R22)
+---@return fun(): PagleReportRow[]? rows every I, K and P row, unsorted; nil while the projection updates (REP-R20–R22)
 ---@return fun(): integer count the I and K rows stored, plus the P rows built now (REP-R26)
 function ns.AddFieldReport(options)
 	local report = ns.NewFieldReport(options.catalogue)
@@ -397,7 +417,7 @@ end
 --- stops once it has them all or has passed the oldest.
 ---@param buffer PagleDiagnostic[] PagleDB.global.diagnostics; it may hold anything (LOG-R82)
 ---@param casts fun(): PagleCast? the log's Casts, newest first (CatchLog:Reverse("cast"))
----@return table[] rows `{ kind = "P", area, locale, text, casts, items = { { item, count }, … } }`, unsorted
+---@return PagleReportRow[] rows `{ kind = "P", area, locale, text, casts, items = { { item, count }, … } }`, unsorted
 function ns.FieldReportPRows(buffer, casts)
 	local wanted, missing, oldest = {}, 0, math.huge
 	for _, entry in ipairs(buffer) do

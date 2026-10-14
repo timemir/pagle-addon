@@ -103,13 +103,21 @@ describe("the Ledger's done", function()
 			assert.are.same({
 				levels = { [0] = 2 },
 				species = { [MACKEREL] = true, [SMALLFISH] = true },
+				-- Each Species' ★; neither is in its element yet (LED-R45, LED-R90).
+				stars = { [MACKEREL] = { [1] = true }, [SMALLFISH] = { [1] = true } },
+				familyStars = {},
 				speciesZones = { ["6303:3"] = true, ["6291:3"] = true, ["6303:4"] = true },
 				zones = { [BADLANDS] = 0, [BLASTED_LANDS] = 0 },
+				items = {},
+				uncharted = {},
 				skill = {},
 				coins = 40,
 				logId = fake.catchLog.data.logId,
 			}, celebrated)
-			assert.are.same({ ledger = "Ledger: Angler Level 2" }, fake.global.summary.lines.Ledger.lines)
+			assert.are.same(
+				{ ledger = "Ledger: Angler Level 2 · 1% complete" },
+				fake.global.summary.lines.Ledger.lines
+			)
 		end
 	)
 
@@ -183,7 +191,10 @@ describe("the Ledger's done", function()
 			assert.is_true(celebrated.speciesZones["6291:4"])
 			assert.are.same({ [0] = 3 }, celebrated.levels)
 			assert.are.equal(70, celebrated.coins)
-			assert.are.same({ ledger = "Ledger: Angler Level 3" }, fake.global.summary.lines.Ledger.lines)
+			assert.are.same(
+				{ ledger = "Ledger: Angler Level 3 · 2% complete" },
+				fake.global.summary.lines.Ledger.lines
+			)
 		end
 	)
 
@@ -208,7 +219,8 @@ describe("the Ledger's done", function()
 		function()
 			local last, lastLoaded = session({ history = HISTORY })
 			local record = assert(last.playCast("caught", { { itemID = CHARTED_LATER, quantity = 1 } }))
-			assert.are.same({}, last.summarized) -- 20 XP: still level 2
+			-- 20 XP: still level 2. Uncharted, it raises only its Nod (LED-R97).
+			assert.are.same({ "uncharted" }, { last.summarized[1].kind, last.summarized[2] })
 
 			-- The release charts it as a Species: 500 + 100 XP more, past level 3 (2,240), and 10 + 20 Coins.
 			local fake, loaded = nextSession(last, lastLoaded, {}, function(next)
@@ -233,8 +245,10 @@ describe("the Ledger's done", function()
 					tostring(moment.summaryOnly)
 				)
 			end
+			-- On no list, one zone puts it in its element: ★★ with its first Catch (LED-R45, LED-R97).
 			assert.are.same({
 				"newSpecies New Species / Item 99001 10 true true",
+				"elementStar In its element / Item 99001 nil true true",
 				"levelUp Angler Level 3 / nil 20 true true",
 			}, raised)
 			fake.nextFrame()

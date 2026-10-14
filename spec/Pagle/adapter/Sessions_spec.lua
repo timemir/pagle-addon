@@ -189,6 +189,7 @@ describe("Sessions on the client", function()
 				assert.is_true(seen.projection:IsUpdating())
 				assert.are.same({}, seen.payloads)
 				loaded.client.runTimers() -- Core's Field report projection rebuilds first (LOG-R78)
+				loaded.client.runTimers() -- then Core's wallet projection (LOG-R78)
 				loaded.client.runTimers() -- the entries
 				loaded.client.runTimers() -- done, in a frame of its own (#79), then the live entries
 

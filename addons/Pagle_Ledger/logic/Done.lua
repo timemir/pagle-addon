@@ -20,16 +20,34 @@ local function count(set)
 	return n
 end
 
--- Adds every achievement in the state to the celebrated set (LED-R93's first build), and the zones it fished.
+-- The stars set in `stars` ({ [1|2|3] = true }), ascending.
+---@param stars LedgerStars
+---@return integer[]
+local function starList(stars)
+	local list = {}
+	for star = 1, 3 do
+		if stars[star] then
+			list[#list + 1] = star
+		end
+	end
+	return list
+end
+
+-- Adds every achievement in the state to the celebrated set (LED-R93's first build): the level, Species and their
+-- stars, Species × zone pairs, Skill Milestones, the zones fished at their computed rank, curio and trophy items, their
+-- families' stars and the Uncharted items.
 ---@param celebrated LedgerCelebrated
 ---@param state LedgerState
-local function celebrateAll(celebrated, state)
+---@param lookups LedgerLookups
+local function celebrateAll(celebrated, state, lookups)
+	local world, getItem = lookups.world, lookups.GetItem
 	local level = ns.Level(state)
 	if level > (celebrated.levels[state.prestige] or 0) then
 		celebrated.levels[state.prestige] = level
 	end
 	for id, species in pairs(state.species) do
 		celebrated.species[id] = true
+		ns.CelebrateStars(celebrated.stars, id, starList(ns.SpeciesStars(world, state, id)))
 		for zone in pairs(species.zones) do
 			celebrated.speciesZones[id .. ":" .. zone] = true
 		end
@@ -37,14 +55,60 @@ local function celebrateAll(celebrated, state)
 	for threshold in pairs(state.skill) do
 		celebrated.skill[threshold] = true
 	end
-	for zone in pairs(state.zones) do
-		if celebrated.zones[zone] == nil then
-			celebrated.zones[zone] = 0
+	for zone, zoneState in pairs(state.zones) do
+		celebrated.zones[zone] = math.max(celebrated.zones[zone] or 0, zoneState.rank)
+	end
+	for itemID in pairs(state.items) do
+		celebrated.items[itemID] = true
+		local item = getItem(itemID)
+		if item and item.category == "trophy" and item.family then
+			local stars = ns.FamilyStars(world, state, item.family, getItem)
+			ns.CelebrateStars(celebrated.familyStars, item.family, starList(stars))
 		end
+	end
+	for itemID in pairs(state.uncharted) do
+		celebrated.uncharted[itemID] = true
 	end
 end
 
--- The Coins line (LED-R94): the Coins earned since the celebrated total, only when above 0.
+--- What a Write-up section counts (LED-R94); each line only when its count is above 0.
+---@class LedgerWriteUpCounts
+---@field species integer        -- Species
+---@field zones integer          -- zones ranked: with a shown rank
+---@field mastered integer       -- of those, at Master
+---@field trophy integer         -- trophy weights
+---@field curio integer          -- curio items
+---@field skill integer          -- Skill Milestones
+
+-- Write-up lines after the level's, in LED-R94's order: Species, zones ranked and mastered, trophy weights, curios
+-- and Skill Milestones. Stars and Uncharted items have none.
+---@param lines string[] holding the level's line, when there is one
+---@param counts LedgerWriteUpCounts
+local function addLines(lines, counts)
+	local L = ns.L
+	if counts.species > 0 then
+		lines[#lines + 1] = ns.CountText(counts.species, L.WRITE_UP_SPECIES_ONE, L.WRITE_UP_SPECIES_OTHER)
+	end
+	if counts.zones > 0 then
+		local zones = ns.CountText(counts.zones, L.WRITE_UP_ZONES_ONE, L.WRITE_UP_ZONES_OTHER)
+		if counts.mastered > 0 then
+			local mastered = ns.CountText(counts.mastered, L.WRITE_UP_MASTERED_ONE, L.WRITE_UP_MASTERED_OTHER)
+			zones = L.WRITE_UP_ZONES_MASTERED:format(zones, mastered)
+		end
+		lines[#lines + 1] = zones
+	end
+	if counts.trophy > 0 then
+		lines[#lines + 1] = ns.CountText(counts.trophy, L.WRITE_UP_TROPHY_ONE, L.WRITE_UP_TROPHY_OTHER)
+	end
+	if counts.curio > 0 then
+		lines[#lines + 1] = ns.CountText(counts.curio, L.WRITE_UP_CURIO_ONE, L.WRITE_UP_CURIO_OTHER)
+	end
+	if counts.skill > 0 then
+		lines[#lines + 1] = ns.CountText(counts.skill, L.WRITE_UP_SKILL_ONE, L.WRITE_UP_SKILL_OTHER)
+	end
+end
+
+-- The Coins line (LED-R94), last: the Coins earned since the celebrated total, only when above 0.
 ---@param lines string[]
 ---@param coins integer
 ---@param outlets LedgerOutlets
@@ -54,27 +118,48 @@ local function addCoinsLine(lines, coins, outlets)
 	end
 end
 
+-- What a first build's section counts (LED-R94): everything in the state, zones by their shown rank.
+---@param celebrated LedgerCelebrated
+---@param state LedgerState
+---@param lookups LedgerLookups
+---@return LedgerWriteUpCounts
+local function stateCounts(celebrated, state, lookups)
+	local world = lookups.world
+	local counts =
+		{ species = count(state.species), zones = 0, mastered = 0, trophy = 0, curio = 0, skill = count(state.skill) }
+	for _, zone in ipairs(world.charted) do
+		local rank = ns.ShownZoneRank(world, state, celebrated, zone)
+		if rank > 0 then
+			counts.zones = counts.zones + 1
+		end
+		if rank == ns.ZONE_MASTER then
+			counts.mastered = counts.mastered + 1
+		end
+	end
+	for itemID in pairs(state.items) do
+		local class = ns.ClassifyCatch(itemID, lookups.GetItem(itemID))
+		if class == "trophy" or class == "curio" then
+			counts[class] = counts[class] + 1
+		end
+	end
+	return counts
+end
+
 -- A first build (LED-R93, LED-R94, LED-R192): everything in the state celebrated, with no moment, and one section
 -- listing it, headed by the Casts applied. A state with no Cast raises nothing (LOG-R76).
 ---@param celebrated LedgerCelebrated
 ---@param state LedgerState
 ---@param coinsBefore integer the celebrated Coins before this done
 ---@param outlets LedgerOutlets
-local function firstBuild(celebrated, state, coinsBefore, outlets)
-	celebrateAll(celebrated, state)
+---@param lookups LedgerLookups
+local function firstBuild(celebrated, state, coinsBefore, outlets, lookups)
+	celebrateAll(celebrated, state, lookups)
 	if state.casts == 0 then
 		return
 	end
 	local L = ns.L
 	local lines = { L.WRITE_UP_LEVEL:format(ns.ShownLevel(state, celebrated)) }
-	local species = count(state.species)
-	if species > 0 then
-		lines[#lines + 1] = ns.CountText(species, L.WRITE_UP_SPECIES_ONE, L.WRITE_UP_SPECIES_OTHER)
-	end
-	local skill = count(state.skill)
-	if skill > 0 then
-		lines[#lines + 1] = ns.CountText(skill, L.WRITE_UP_SKILL_ONE, L.WRITE_UP_SKILL_OTHER)
-	end
+	addLines(lines, stateCounts(celebrated, state, lookups))
 	addCoinsLine(lines, state.coins - coinsBefore, outlets)
 	local heading = state.casts == 1 and L.WRITE_UP_FIRST_BUILD_ONE or L.WRITE_UP_FIRST_BUILD_OTHER
 	outlets.RaiseWriteUp({ heading = heading:format(outlets.FormatNumber(state.casts)), lines = lines })
@@ -107,25 +192,55 @@ local function mergeLevelUps(scratch)
 	return merged
 end
 
--- The moments of the scratch list's achievements not yet celebrated, each added to the set (LED-R91, LED-R93).
+-- The moments of the scratch list's achievements not yet celebrated, each added to the set (LED-R91, LED-R93), and
+-- the achievement each was raised for.
 ---@param celebrated LedgerCelebrated
 ---@param state LedgerState
 ---@param scratch LedgerAchievement[]
 ---@param outlets LedgerOutlets
----@return PagleMoment[]
+---@return PagleMoment[] moments
+---@return LedgerAchievement[] achievements
 local function celebrateScratch(celebrated, state, scratch, outlets)
-	local moments = {}
+	local moments, achievements = {}, {}
 	for _, achievement in ipairs(mergeLevelUps(scratch)) do
 		local moment = ns.CelebrateAchievement(celebrated, state, achievement, outlets)
 		if moment then
 			moments[#moments + 1] = moment
+			achievements[#achievements + 1] = achievement
 		end
 	end
-	return moments
+	return moments, achievements
+end
+
+-- What a catch-up's section counts (LED-R94): only the moments it newly celebrated, a zone counted once however many
+-- of its ranks rose, as ranked, and as mastered when one of them was its Zone Master.
+---@param moments PagleMoment[]
+---@param achievements LedgerAchievement[] the achievement of each moment
+---@return LedgerWriteUpCounts counts
+---@return boolean levelUp a level-up among them
+local function newCounts(moments, achievements)
+	local counts = { species = 0, zones = 0, mastered = 0, trophy = 0, curio = 0, skill = 0 }
+	local kinds = { newSpecies = "species", trophyWeight = "trophy", newCurio = "curio", skillMilestone = "skill" }
+	local ranked, mastered, levelUp = {}, {}, false
+	for i, moment in ipairs(moments) do
+		local kind = moment.kind
+		if kinds[kind] then
+			counts[kinds[kind]] = counts[kinds[kind]] + 1
+		elseif kind == "zoneRank" or kind == "zoneMaster" then
+			local zone = achievements[i].zone --[[@as integer]]
+			ranked[zone] = true
+			mastered[zone] = mastered[zone] or kind == "zoneMaster" or nil
+		elseif kind == "levelUp" then
+			levelUp = true
+		end
+	end
+	counts.zones, counts.mastered = count(ranked), count(mastered)
+	return counts, levelUp
 end
 
 -- A catch-up (LED-R93, LED-R94, LED-R190): what the replayed entries newly earned, celebrated with no moment and
--- counted in one "While the Ledger was off" section. A Species new in a zone has no line: alone, it raises none.
+-- counted in one "While the Ledger was off" section. Achievements with no line (a Species new in a zone, stars,
+-- Uncharted items) alone raise none.
 ---@param celebrated LedgerCelebrated
 ---@param state LedgerState
 ---@param scratch LedgerAchievement[]
@@ -140,25 +255,17 @@ local function catchUp(celebrated, state, scratch, coinsBefore, outlets)
 			break
 		end
 	end
-	local moments = celebrateScratch(celebrated, state, scratch, outlets)
+	local moments, achievements = celebrateScratch(celebrated, state, scratch, outlets)
 	if #moments == 0 then
 		return
 	end
-	local kinds = { levelUp = 0, newSpecies = 0, newInZone = 0, skillMilestone = 0 }
-	for _, moment in ipairs(moments) do
-		kinds[moment.kind] = kinds[moment.kind] + 1
-	end
+	local counts, levelUp = newCounts(moments, achievements)
 	local L = ns.L
 	local lines = {}
-	if kinds.levelUp > 0 then
-		lines[#lines + 1] = L.WRITE_UP_LEVEL_ROSE:format(before, ns.ShownLevel(state, celebrated))
+	if levelUp then
+		lines[1] = L.WRITE_UP_LEVEL_ROSE:format(before, ns.ShownLevel(state, celebrated))
 	end
-	if kinds.newSpecies > 0 then
-		lines[#lines + 1] = ns.CountText(kinds.newSpecies, L.WRITE_UP_SPECIES_ONE, L.WRITE_UP_SPECIES_OTHER)
-	end
-	if kinds.skillMilestone > 0 then
-		lines[#lines + 1] = ns.CountText(kinds.skillMilestone, L.WRITE_UP_SKILL_ONE, L.WRITE_UP_SKILL_OTHER)
-	end
+	addLines(lines, counts)
 	addCoinsLine(lines, state.coins - coinsBefore, outlets)
 	if #lines > 0 then
 		outlets.RaiseWriteUp({ heading = L.WRITE_UP_WHILE_OFF, lines = lines })
@@ -172,8 +279,9 @@ end
 ---@param scratch LedgerAchievement[] what the replayed or rebuilt entries earned (LED-R98)
 ---@param info PagleProjectionInfo
 ---@param outlets LedgerOutlets
+---@param lookups LedgerLookups the fold's: the world index and Core's GetItem, for the first build's stars and lines
 ---@return LedgerCelebrated
-function ns.CelebrateDone(global, state, scratch, info, outlets)
+function ns.CelebrateDone(global, state, scratch, info, outlets, lookups)
 	local celebrated = ns.CelebratedSet(global)
 	local first = info.firstBuild
 	-- A set of another log is emptied, and this done is a first build (LED-R90, LED-R197).
@@ -185,10 +293,10 @@ function ns.CelebrateDone(global, state, scratch, info, outlets)
 	end
 	local coinsBefore = celebrated.coins
 	if first then
-		firstBuild(celebrated, state, coinsBefore, outlets)
+		firstBuild(celebrated, state, coinsBefore, outlets, lookups)
 	elseif info.rebuilt then
 		-- Raised as live, but summary-only: no pop-up (LED-R191, ANN-R63).
-		for _, moment in ipairs(celebrateScratch(celebrated, state, scratch, outlets)) do
+		for _, moment in ipairs((celebrateScratch(celebrated, state, scratch, outlets))) do
 			moment.summaryOnly = true
 			outlets.RaiseMoment(moment)
 		end
