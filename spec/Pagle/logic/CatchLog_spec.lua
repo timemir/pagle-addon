@@ -428,3 +428,103 @@ describe("the tie counter", function()
 		assert.are.equal(ADA .. "-1791731680-1", catchLog:Append(skill(1, 1791731680)).id)
 	end)
 end)
+
+describe("the Simulated Size on decoded Casts", function()
+	-- The character of LOG-R66's test vectors, and a fixture catalogue: a fish and a Legend whose Species are 300 mm
+	-- long, a quest fish, a trophy, a junk item, a Noise fish and a fish whose Species has no typical length yet.
+	local VEE = { guid = "Player-4395-0A1B2C3D", name = "Vee", classID = 1, raceID = 1, realmID = 4395 }
+	local ITEMS = {
+		[6358] = { category = "fish", species = 6358, typicalLength = 300, legend = false, noise = false },
+		[19808] = { category = "fish", species = 19808, typicalLength = 300, legend = true, noise = false },
+		[6717] = { category = "questFish", species = 6717, typicalLength = 300, legend = false, noise = false },
+		[6309] = { category = "trophy", family = 1, weight = 17, legend = false, noise = false },
+		[6303] = { category = "junk", legend = false, noise = false },
+		[6291] = { category = "fish", species = 6291, typicalLength = 300, legend = false, noise = true },
+		[8365] = { category = "fish", species = 8365, legend = false, noise = false },
+	}
+
+	-- A log of Vee's entries, opened over `items` (ITEMS by default) as its catalogue.
+	local function veeLog(entries, items)
+		return ns.OpenCatchLog(savedLog(entries, 1, { VEE }), {}, nil, function(itemID)
+			return (items or ITEMS)[itemID]
+		end)
+	end
+
+	-- A Cast of Vee's at 1791731747 (LOG-R66's first two vectors) or 1791731762 with tie 1 (its third), of these items.
+	local function castOf(items, third)
+		return ("C1|1|%s|c|494|1439|1|148|453|86|25|263|||%s"):format(third and "1791731762|1" or "1791731747|0", items)
+	end
+
+	-- Each item's size, by its position in the Cast; false for none.
+	local function sizes(cast)
+		local all = {}
+		for _, item in ipairs(cast.items) do
+			all[item.n] = item.size or false
+		end
+		return all
+	end
+
+	it("gives a fish and a Legend LOG-R66's sizes, one per Catch whatever its quantity (LOG-R65, LOG-R66)", function()
+		local catchLog = veeLog({ castOf("6358x3,19808x1") })
+
+		assert.are.same({ { length = 314, band = 2 }, { length = 453, band = 4 } }, sizes(records(catchLog, 0)[1]))
+	end)
+
+	it("gives a quest fish a size, and none to a trophy, junk, Noise, an Uncharted item or item 0 (LOG-R65)", function()
+		local catchLog = veeLog({ castOf("6717x1,6309x1,6303x2,6291x1,7777x1,0x1", true) })
+
+		assert.are.same(
+			{ { length = 249, band = 2 }, false, false, false, false, false },
+			sizes(records(catchLog, 0)[1])
+		)
+	end)
+
+	it("gives none to a Species without a typical length, until the catalogue has one (LOG-R65, LOG-R67)", function()
+		assert.are.same({ false }, sizes(records(veeLog({ castOf("8365x1") }), 0)[1]))
+
+		local released = setmetatable({
+			[8365] = { category = "fish", species = 8365, typicalLength = 300, legend = false, noise = false },
+		}, { __index = ITEMS })
+		assert.are.same({ { length = 314, band = 2 } }, sizes(records(veeLog({ castOf("8365x1") }, released), 0)[1]))
+	end)
+
+	it(
+		"gives an Uncharted Catch, once a release classifies it, the size it would have had (LOG-R96, LOG-R65)",
+		function()
+			local items = {}
+			local catchLog = veeLog({ castOf("7777x1") }, items)
+			assert.are.same({ false }, sizes(records(catchLog, 0)[1]))
+
+			items[7777] = { category = "fish", species = 7777, typicalLength = 300, legend = false, noise = false }
+
+			assert.are.same({ { length = 314, band = 2 } }, sizes(records(catchLog, 0)[1]))
+		end
+	)
+
+	it(
+		"puts the same sizes on an appended Cast and on that Cast read back either way (LOG-R42, LOG-R43, LOG-R65)",
+		function()
+			local catchLog = veeLog({})
+
+			local appended = catchLog:Append({
+				kind = "cast",
+				char = 1,
+				time = 1791731747,
+				outcome = "caught",
+				conditions = { minute = 494, zone = 148, subzone = 453, events = {}, auras = {} },
+				items = { { itemID = 6358, quantity = 1 }, { itemID = 19808, quantity = 1 } },
+			})
+
+			local expected = { { length = 314, band = 2 }, { length = 453, band = 4 } }
+			assert.are.same(expected, sizes(appended))
+			assert.are.same(expected, sizes(records(catchLog, 0)[1]))
+			assert.are.same(expected, sizes(catchLog:Reverse("cast")()))
+		end
+	)
+
+	it("gives no sizes when opened without a catalogue (LOG-R65)", function()
+		local catchLog = ns.OpenCatchLog(savedLog({ castOf("6358x1") }, 1, { VEE }), {})
+
+		assert.are.same({ false }, sizes(records(catchLog, 0)[1]))
+	end)
+end)
