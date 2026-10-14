@@ -37,7 +37,7 @@ local MAP_NAMES = { [1415] = "Eastern Kingdoms", [1414] = "Kalimdor" }
 -- - the Isle (continent 2, skill 300) lists the Cod
 ---@param without integer[]?
 local function fixture(without)
-	local night = { time = { { 1260, 360 } } }
+	local night = NIGHT_WINDOW
 	local function area(continent, skillBase, catches)
 		return areaRecord(0, { continent = continent, skillBase = skillBase, catches = catches })
 	end
@@ -108,28 +108,15 @@ local function pages(loaded)
 	return loaded.ns.journal.pages
 end
 
--- The first block of `kind` on a page.
----@param page LedgerBlock[]
----@param kind string
----@return LedgerBlock?
-local function blockOf(page, kind)
-	for _, block in ipairs(page) do
-		if block.kind == kind then
-			return block
-		end
-	end
-	return nil
-end
-
 -- The tiles the left page shows.
 local function tiles(loaded)
-	return (blockOf(pages(loaded).left, "tiles") or {}).tiles
+	return (blockOfKind(pages(loaded).left, "tiles") or {}).tiles
 end
 
 -- The tabs' labels, and the one chosen.
 local function tabs(loaded)
 	local labels, chosen = {}, nil
-	for i, tab in ipairs((blockOf(pages(loaded).left, "tabs") or { tabs = {} }).tabs) do
+	for i, tab in ipairs((blockOfKind(pages(loaded).left, "tabs") or { tabs = {} }).tabs) do
 		labels[i] = tab.text
 		if tab.on then
 			chosen = tab.text

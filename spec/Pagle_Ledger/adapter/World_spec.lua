@@ -6,7 +6,7 @@ local ELWYNN, GOLDSHIRE, DUSKWOOD = 12, 87, 10
 
 -- A catalogue in the shape of ns.catalogue (DATA-R76): Elwynn and Goldshire with a list, Duskwood without data.
 local function fixture()
-	local night = { time = { { 1260, 360 } } }
+	local night = NIGHT_WINDOW
 	return catalogueWith({
 		items = {
 			[MACKEREL] = fishRecord(MACKEREL),

@@ -7,13 +7,7 @@ local MACKEREL = 6303 -- Raw Slitherskin Mackerel, a Species in the generated ca
 -- A Ledger on a fake that has logged in, with the projection built (login step 3) unless `updating`.
 ---@param updating boolean?
 local function loggedIn(updating)
-	local fake = newFakePagle()
-	local loaded = fake.load("Pagle_Ledger")
-	fake.login()
-	if not updating then
-		fake.enterWorld()
-	end
-	return fake, loaded
+	return openJournal({ building = updating, id = false })
 end
 
 -- Whether `list` has `text`.

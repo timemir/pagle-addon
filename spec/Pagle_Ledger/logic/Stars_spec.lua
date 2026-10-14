@@ -16,7 +16,7 @@ local FAMILY, LOOSE_FAMILY = 2, 3
 local ELWYNN, WESTFALL, DUSKWOOD, REDRIDGE, STRANGLETHORN, DARKSHORE = 12, 40, 10, 44, 33, 148
 
 -- Window specs (DATA-R78): night 21:00–06:00, summer and winter by realm date.
-local NIGHT = { time = { { 1260, 360 } } }
+local NIGHT = NIGHT_WINDOW
 local SUMMER = { season = { { from = { 3, 20 }, to = { 9, 18 } } } }
 local WINTER = { season = { { from = { 9, 23 }, to = { 3, 24 } } } }
 
@@ -65,10 +65,7 @@ local CATCHES = {
 	[DARKSHORE] = { catchEntry(W40) },
 }
 
-local function getItem(itemID)
-	assert(itemID ~= 0, "item 0 is never looked up (LED-R5)")
-	return ITEMS[itemID]
-end
+local getItem = itemLookup(ITEMS)
 
 local T0 = SERVER_TIME - 700
 local MIDNIGHT, NOON = 0, 720
@@ -121,11 +118,8 @@ describe("Stars", function()
 
 	-- Applies each record live to `state` (a fresh one by default); returns the state and the star achievements.
 	local function applyAll(records, state)
-		state = state or fold.reset()
-		local earned = {}
-		for _, record in ipairs(records) do
-			fold.apply(state, record, "live", earned)
-		end
+		local earned
+		state, earned = applyLive(fold, records, state)
 		local stars = {}
 		for _, achievement in ipairs(earned) do
 			local kind = achievement.kind

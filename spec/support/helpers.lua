@@ -302,6 +302,38 @@ function catchEntry(itemID, window, gate)
 	return { itemID = itemID, confirmed = true, window = window, gate = gate, gateConfirmed = window and true or nil }
 end
 
+--- A night window's spec for fixtures (DATA-R78): 21:00 to 06:00 realm time, one range wrapping midnight. Not the
+--- generated `night` (data/forever/windows.toml); a spec that needs that reads it from the catalogue.
+NIGHT_WINDOW = { time = { { 1260, 360 } } }
+
+--- Core's GetItem over a spec's `items` (item ID -> record), as the Ledger's fold and world read it: it asserts that
+--- item 0, nothing caught, is never looked up (LED-R5).
+---@param items table<integer, table>
+---@return fun(itemID: integer): table?
+function itemLookup(items)
+	return function(itemID)
+		assert(itemID ~= 0, "item 0 is never looked up (LED-R5)")
+		return items[itemID]
+	end
+end
+
+--- Applies each of `records` through the Ledger's `fold` to `state` (a fresh fold.reset() if nil) in `mode` ("live"
+--- by default), in order; returns the state and every achievement earned, in order.
+---@param fold LedgerFold
+---@param records table[]
+---@param state LedgerState?
+---@param mode string?
+---@return LedgerState state
+---@return LedgerAchievement[] earned
+function applyLive(fold, records, state, mode)
+	state = state or fold.reset()
+	local earned = {}
+	for _, record in ipairs(records) do
+		fold.apply(state, record, mode or "live", earned)
+	end
+	return state, earned
+end
+
 --- A catalogue in the shape of ns.catalogue (DATA-R76), for fake.setCatalogue: every part empty and a fixed
 --- fingerprint, then `parts` (items, areas, windows, …) over it.
 ---@param parts table?
@@ -390,14 +422,41 @@ function blockTexts(blocks)
 	return list
 end
 
+--- The first of a Journal page's blocks of `kind`; nil if none.
+---@param blocks LedgerBlock[]
+---@param kind string
+---@return LedgerBlock?
+function blockOfKind(blocks, kind)
+	for _, block in ipairs(blocks) do
+		if block.kind == kind then
+			return block
+		end
+	end
+	return nil
+end
+
+--- The first of a Journal page's blocks whose text is `text`; an error if none does.
+---@param blocks LedgerBlock[]
+---@param text string
+---@return LedgerBlock
+function blockWithText(blocks, text)
+	for _, block in ipairs(blocks) do
+		if block.text == text then
+			return block
+		end
+	end
+	error("no block reads " .. text)
+end
+
 --- The Ledger on FakePagle over a spec's catalogue and log, logged in and in the world, with the Fish Journal open.
 --- `options`, each optional: `catalogue` (fake.setCatalogue's; the generated one by default), `characters` (the
 --- log's; the player's alone by default), `log` (records appended in order), `itemNames`, `areaNames` and `mapNames`
 --- (what the fake client's C_Item and C_Map know), `before` (run with loaded and fake before the book opens), and
 --- where it opens: `place`, one of the Ledger's own places as `{ constructor, args... }` (ns.JournalPlace, e.g.
 --- `{ "zone", 148 }`), or `id` and `args` for a spec's own spread, which must be registered; Home, at its first
---- opening, by default; with `id` false the book stays closed.
----@param options { catalogue: table?, characters: table[]?, log: table[]?, itemNames: table?, areaNames: table?, mapNames: table?, before: fun(loaded: LoadedAddon, fake: FakePagle)?, place: table?, id: string|false|nil, args: table? }?
+--- opening, by default; with `id` false the book stays closed. With `building`, it stops after login, before entering
+--- the world, so the projection is still being built (LOG-R74, LED-R122).
+---@param options { catalogue: table?, characters: table[]?, log: table[]?, itemNames: table?, areaNames: table?, mapNames: table?, before: fun(loaded: LoadedAddon, fake: FakePagle)?, building: boolean?, place: table?, id: string|false|nil, args: table? }?
 ---@return FakePagle fake
 ---@return LoadedAddon loaded
 function openJournal(options)
@@ -415,7 +474,9 @@ function openJournal(options)
 	over(loaded.client.areaNames, options.areaNames)
 	over(loaded.client.mapNames, options.mapNames)
 	fake.login()
-	fake.enterWorld()
+	if not options.building then
+		fake.enterWorld()
+	end
 	if options.before then
 		options.before(loaded, fake)
 	end

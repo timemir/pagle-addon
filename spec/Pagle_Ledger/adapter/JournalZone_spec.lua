@@ -118,19 +118,6 @@ local function zoneSpread(zone, log)
 	})
 end
 
--- The first block on `blocks` whose text is `text`.
----@param blocks LedgerBlock[]
----@param text string
----@return LedgerBlock
-local function blockOf(blocks, text)
-	for _, block in ipairs(blocks) do
-		if block.text == text then
-			return block
-		end
-	end
-	error("no block reads " .. text)
-end
-
 -- The crumbs' labels.
 local function crumbLabels(loaded)
 	local labels = {}
@@ -200,7 +187,7 @@ describe("the Journal's zone spread", function()
 			'reads "(caught elsewhere)" for a Species caught only in another zone, in sepia and without stars (LED-R136)',
 			function()
 				local _, loaded = zoneSpread(DARKSHORE)
-				local nightfin = blockOf(loaded.ns.journal.pages.left, "Raw Nightfin Snapper (caught elsewhere)")
+				local nightfin = blockWithText(loaded.ns.journal.pages.left, "Raw Nightfin Snapper (caught elsewhere)")
 
 				assert.are.equal("sepia", nightfin.look)
 				assert.is_nil(nightfin.stars)
@@ -209,7 +196,7 @@ describe("the Journal's zone spread", function()
 
 		it("shows a Species caught here with its shown stars and no margin when ungated (LED-R136, LED-R48)", function()
 			local _, loaded = zoneSpread(DARKSHORE)
-			local mackerel = blockOf(loaded.ns.journal.pages.left, "Raw Slitherskin Mackerel")
+			local mackerel = blockWithText(loaded.ns.journal.pages.left, "Raw Slitherskin Mackerel")
 
 			-- Listed in Darkshore alone, so caught in one zone is ★★ (LED-R45).
 			assert.are.same({ [1] = true, [2] = true }, mackerel.stars)
@@ -228,7 +215,7 @@ describe("the Journal's zone spread", function()
 				assert.are.same({ "night, back in 12 h" }, left[13].margin)
 				assert.are.same({ "summer, back in March" }, left[15].margin)
 				assert.are.same({ "Extravaganza" }, left[17].margin)
-				assert.are.same({ "pools" }, blockOf(left, "Oily Blackmouth").margin)
+				assert.are.same({ "pools" }, blockWithText(left, "Oily Blackmouth").margin)
 			end
 		)
 
@@ -237,7 +224,7 @@ describe("the Journal's zone spread", function()
 			function()
 				local fake, loaded = zoneSpread(DARKSHORE)
 				local function nightfin()
-					return blockOf(loaded.ns.journal.pages.left, "Raw Nightfin Snapper (caught elsewhere)").margin[1]
+					return blockWithText(loaded.ns.journal.pages.left, "Raw Nightfin Snapper (caught elsewhere)").margin[1]
 				end
 				assert.are.equal("night, back in 12 h", nightfin())
 
@@ -389,7 +376,7 @@ describe("the Journal's zone spread", function()
 
 		it("draws its Species caught as rows without a margin, with their stars (LED-R138, LED-R136)", function()
 			local _, loaded = zoneSpread(STORMWIND)
-			local mackerel = blockOf(loaded.ns.journal.pages.right, "Raw Slitherskin Mackerel")
+			local mackerel = blockWithText(loaded.ns.journal.pages.right, "Raw Slitherskin Mackerel")
 
 			assert.are.same({ "row", "sepia" }, { mackerel.kind, mackerel.look })
 			assert.is_nil(mackerel.margin)
@@ -497,7 +484,7 @@ describe("the Journal's zone spread", function()
 
 				local pages = loaded.ns.journal.pages
 				assert.are.equal("An unknown fish", pages.crumbs[4].label)
-				local link = blockOf(pages.right, "Read the plain hint ▸")
+				local link = blockWithText(pages.right, "Read the plain hint ▸")
 				assert.are.same(
 					{ id = "zone", args = { zone = DARKSHORE, species = FIREFIN, hint = true } },
 					link.place
@@ -555,7 +542,7 @@ describe("the Journal's zone spread", function()
 			tile:Click()
 
 			assert.are.same({ "Home", "Kalimdor", "Darkshore", "Oily Blackmouth" }, crumbLabels(loaded))
-			assert.is_true(blockOf(journal.pages.left, "Oily Blackmouth").selected)
+			assert.is_true(blockWithText(journal.pages.left, "Oily Blackmouth").selected)
 			assert.are.equal("Oily Blackmouth", journal.pages.right[2].text)
 		end)
 	end)
@@ -589,7 +576,7 @@ describe("the Journal's zone spread", function()
 			function()
 				local _, loaded = zoneSpread(DARKSHORE)
 				local right = loaded.ns.journal.pages.right
-				local catfish, redgill = blockOf(right, "Catfish"), blockOf(right, "Redgill")
+				local catfish, redgill = blockWithText(right, "Catfish"), blockWithText(right, "Redgill")
 
 				-- The Catfish's weights are the 17 lb (landed here) and Elwynn's 22 lb: ★ and ★★ (ceil(2 / 2) = 1
 				-- landed), not ★★★, as its heaviest isn't landed.

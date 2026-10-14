@@ -104,8 +104,8 @@ local function openFish(loaded, id, hint)
 	return loaded.ns.journal.pages
 end
 
--- The texts of a page's text blocks, in order.
-local function textsOf(blocks)
+-- The texts of a page's `text` blocks alone, in order (blockTexts has every block's).
+local function textBlockTexts(blocks)
 	local texts = {}
 	for _, block in ipairs(blocks) do
 		if block.kind == "text" then
@@ -115,34 +115,24 @@ local function textsOf(blocks)
 	return texts
 end
 
--- A page's first block of `kind`.
-local function first(blocks, kind)
-	for _, block in ipairs(blocks) do
-		if block.kind == kind then
-			return block
-		end
-	end
-	return nil
-end
-
 describe("a caught Species' entry (LED-R140)", function()
 	it("shows its sepia icon, name, stamps, first Catch, blurb and listed zones (LED-R140)", function()
 		local _, loaded = loggedIn()
 
 		local left = openFish(loaded, MACKEREL).left
 
-		assert.are.same({ kind = "icon", icon = MACKEREL, look = "sepia", large = true }, first(left, "icon"))
-		assert.are.equal("Raw Slitherskin Mackerel", first(left, "title").text)
+		assert.are.same({ kind = "icon", icon = MACKEREL, look = "sepia", large = true }, blockOfKind(left, "icon"))
+		assert.are.equal("Raw Slitherskin Mackerel", blockOfKind(left, "title").text)
 		assert.are.same({
 			{ text = "Caught", inked = true },
 			{ text = "In its element", inked = false },
 			{ text = "Regular", inked = false },
-		}, first(left, "stamps").stamps)
+		}, blockOfKind(left, "stamps").stamps)
 		assert.are.same({
 			"First landed 3 Oct in Westfall, by Angler. 2 caught.",
 			"Slippery enough to earn the name.",
 			"Found in Duskwood, Elwynn Forest and Westfall.",
-		}, textsOf(left))
+		}, textBlockTexts(left))
 	end)
 
 	it('adds " Only by night." for a night-only fish, and leaves a missing blurb out (LED-R140, LED-R161)', function()
@@ -151,13 +141,13 @@ describe("a caught Species' entry (LED-R140)", function()
 		assert.are.same({
 			"First landed 2 Oct in Elwynn Forest, by Angler. 1 caught.",
 			"Found in Duskwood. Only by night.",
-		}, textsOf(openFish(loaded, NIGHTFISH).left))
+		}, textBlockTexts(openFish(loaded, NIGHTFISH).left))
 	end)
 
 	it("drops the zone part for a first Catch in zone 0 (LED-R140, LED-R6)", function()
 		local _, loaded = loggedIn()
 
-		assert.are.equal("First landed 3 Oct, by Angler. 1 caught.", textsOf(openFish(loaded, STRAY).left)[1])
+		assert.are.equal("First landed 3 Oct, by Angler. 1 caught.", textBlockTexts(openFish(loaded, STRAY).left)[1])
 	end)
 
 	it("shows the removed line, and no listed zones, for a removed one (LED-R140, LED-R12)", function()
@@ -166,7 +156,7 @@ describe("a caught Species' entry (LED-R140)", function()
 		assert.are.same({
 			"First landed 3 Oct in Elwynn Forest, by Angler. 1 caught.",
 			"No longer found in Forever's waters.",
-		}, textsOf(openFish(loaded, GONE).left))
+		}, textBlockTexts(openFish(loaded, GONE).left))
 	end)
 end)
 

@@ -9,7 +9,7 @@ local DAY_MINUTE, NIGHT_MINUTE = 494, 1300
 
 -- A catalogue in the shape of ns.catalogue (DATA-R76): NIGHTFISH listed in Goldshire under the night window only.
 local function fixture()
-	local night = { time = { { 1260, 360 } } }
+	local night = NIGHT_WINDOW
 	local function area(parent, catches)
 		return areaRecord(parent, { catches = catches })
 	end

@@ -10,7 +10,7 @@ local T0 = SERVER_TIME - 700 -- Sunday 11 October 2026, 15:03 UTC; realm minute 
 -- piece of junk, a chest and a trophy; Duskwood without data. So Ledger completion's world is 2 Species, 1 junk,
 -- 1 treasure, 1 trophy weight and 1 charted zone (LED-R70, LED-R71).
 local function catalogue()
-	local night = { time = { { 1260, 360 } } }
+	local night = NIGHT_WINDOW
 	return catalogueWith({
 		items = {
 			[MACKEREL] = fishRecord(MACKEREL),
