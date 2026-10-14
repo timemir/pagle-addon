@@ -13,4 +13,5 @@ locale\enUS.lua
 logic\Data.lua
 logic\Module.lua
 logic\Seams.lua
+logic\Sessions.lua
 adapter\Stats.lua
