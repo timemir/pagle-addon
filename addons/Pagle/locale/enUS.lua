@@ -32,6 +32,7 @@ ns.L = {
 		fishing = "Fishing",
 		announcements = "Announcements",
 		trackers = "Trackers",
+		look = "Look and Feel",
 	},
 	SETTINGS_NO_MODULE = "Recording your Catches. Enable a Module to see them.",
 	SETTINGS_MODULES = "Modules",
@@ -52,6 +53,13 @@ ns.L = {
 	SETTINGS_BUDGET_TOOLTIP = "When toasts come close together, the smaller ones step down to a quiet Nod. Records always keep their ruler. Greyed out in Cozy mode, which holds everything anyway.",
 	SETTINGS_BUDGET_COUNT = "Interruptions",
 	SETTINGS_BUDGET_WINDOW = "Per",
+	-- Look and Feel (SET-R50, SET-R51): the paragraph, a slot dropdown's note with N, and the Curio Shop section's
+	-- header, row label and button caption. Its category headers are SHOP_CATEGORIES.
+	SETTINGS_LOOK_PARAGRAPH = "Looks you own. Pick one here or with Use in the Curio Shop; both change the same thing.",
+	SETTINGS_SLOT_MORE = "%d more in the Curio Shop",
+	SETTINGS_SHOP = "Curio Shop",
+	SETTINGS_SHOP_ROW = "Buy more looks with Pagle Coins",
+	SETTINGS_SHOP_BUTTON = "Open the Curio Shop",
 	-- A number of minutes: the budget's window (SET-R10) and a card's time fished (ANN-R53).
 	MINUTES = "%d min",
 	-- The Announcement frames (announcements.md › UI): the toast lane's overflow (ANN-R20), stamps beyond the 4 shown
