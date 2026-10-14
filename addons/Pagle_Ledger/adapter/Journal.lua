@@ -87,6 +87,15 @@ local function readContext()
 		getArea = Pagle.GetArea,
 		angler = Pagle.GetAngler(),
 		openFieldReport = Pagle.OpenFieldReport,
+		-- The Angler page's M4 parts (LED-R146): the crest, Prestige, the title pick and the bindings.
+		crest = ns.CrestIcon(),
+		canPrestige = ns.CanPrestige(),
+		askPrestige = ns.AskPrestige,
+		pickTitle = ns.PickActiveTitle,
+		isOwned = Pagle.IsOwned,
+		getEquipped = Pagle.GetEquipped,
+		setEquipped = Pagle.SetEquipped,
+		openShop = Pagle.OpenShop,
 	}
 end
 

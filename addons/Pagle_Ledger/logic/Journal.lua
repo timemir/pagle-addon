@@ -34,12 +34,22 @@ local ns = select(2, ...)
 ---@field getArea? fun(areaID: integer): PagleArea? -- Pagle.GetArea; nil while updating
 ---@field angler? Angler                 -- Pagle.GetAngler(), read at each draw (LED-R41); nil while updating
 ---@field openFieldReport? fun()         -- Pagle.OpenFieldReport (REP-R43); nil while updating
+---@field crest? integer|string          -- the equipped crest's icon (LED-R112, ns.CrestIcon); nil while updating
+---@field canPrestige? boolean           -- whether LED-R33 allows Prestige now (ns.CanPrestige)
+---@field askPrestige? fun()             -- asks before Prestiging (ns.AskPrestige, LED-R33)
+---@field pickTitle? fun(key: string?)   -- sets the active title and redraws (ns.PickActiveTitle, LED-R77)
+---@field isOwned? fun(goodID: string): boolean  -- Pagle.IsOwned (SHOP-R30)
+---@field getEquipped? fun(slot: string): string? -- Pagle.GetEquipped (SHOP-R32)
+---@field setEquipped? fun(slot: string, goodID: string): boolean -- Pagle.SetEquipped (SHOP-R32)
+---@field openShop? fun(goodID: string?)  -- Pagle.OpenShop (SHOP-R40)
 
 --- One thing drawn on a page, top to bottom, as data; adapter/JournalWidgets.lua draws each kind:
 --- - `kicker`, `title`, `text` (`text`, in the serif face; `hand` for the handwriting face, `color` "faded", "red" or
 ---   "blue" over the ink)
 --- - `link` (`text`, opening `place`, or calling `action` instead when it has one)
---- - `leader` (a dotted-leader line: `text` left, `value` right, opening `place` if set)
+--- - `leader` (a dotted-leader line: `text` left, `value` right, opening `place` if set, or calling `action` instead,
+---   its value then in a link's red)
+--- - `button` (`text` on a button, calling `action`: the Angler page's Prestige, LED-R146)
 --- - `seal` (a wax seal reading `text`)
 --- - `stamps` (`stamps`: ink stamps, each `{ text, inked }`)
 --- - `tiles` (`tiles`: zone tiles, LedgerZoneTile)
@@ -54,7 +64,7 @@ local ns = select(2, ...)
 ---   row: a small `icon` drawn `look`, `text` in `color`, its `margin` notes in handwriting, its `stars`, a `value` at
 ---   the right, `selected` marked, opening `place`; LED-R136, LED-R137), drawn by adapter/JournalZone.lua
 ---@class LedgerBlock
----@field kind "kicker"|"title"|"text"|"link"|"leader"|"seal"|"stamps"|"tiles"|"icon"|"xpBar"|"tabs"|"bookplate"|"board"|"plinth"|"ladder"|"row"|"emblem"
+---@field kind "kicker"|"title"|"text"|"link"|"leader"|"seal"|"stamps"|"tiles"|"icon"|"xpBar"|"tabs"|"bookplate"|"board"|"plinth"|"ladder"|"row"|"emblem"|"button"
 ---@field text? string
 ---@field hand? boolean
 ---@field color? "faded"|"red"|"blue"

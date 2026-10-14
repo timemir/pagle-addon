@@ -238,6 +238,20 @@ ns.L = {
 	ANGLER_MILESTONE_DONE = "☑ %d",
 	ANGLER_MILESTONE_OPEN = "☐ %d",
 	ANGLER_MILESTONE_SEPARATOR = "   ",
+	-- The Angler page's M4 parts (LED-R146): the next Catch Milestone after the Catches (LED-R42), the bookplate's
+	-- Prestige line and button (LED-R33, LED-R34), "Signed As" (LED-R77: the active pick marked) and "Bindings" with
+	-- each binding's state (LED-R110; "Angler Level {L}" is BINDING_EARNED).
+	ANGLER_NEXT_MILESTONE = " · next milestone %s",
+	ANGLER_NO_PRESTIGE = "No Prestige seals yet",
+	ANGLER_PRESTIGE = "Begin a new Ledger (Prestige)",
+	ANGLER_SIGNED_AS = "Signed As",
+	ANGLER_AUTOMATIC = "Automatic",
+	ANGLER_SIGNED_ON = "» %s",
+	ANGLER_SIGNED_OFF = "· %s",
+	ANGLER_BINDINGS = "Bindings",
+	ANGLER_BINDING_IN_USE = "In use",
+	ANGLER_BINDING_USE = "Use",
+	ANGLER_BINDING_SHOP = "In the Curio Shop",
 
 	-- The zone spread (LED-R135–R138), M3's part (LED-R4): its seal and ladder read ZONE_RANKS; "unfished" on the
 	-- seal with no rank.
