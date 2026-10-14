@@ -27,7 +27,7 @@ local SEARCH_WIDTH = 220
 -- The spine's shadow: strips of fading shade at each page's inner edge.
 local SPINE_STRIPS, SPINE_STRIP_WIDTH = 6, 5
 
----@class LedgerJournalCrumbView: Button
+---@class LedgerJournalCrumbView: LedgerJournalClickable
 ---@field label FontString
 ---@field separator FontString?
 
@@ -37,7 +37,7 @@ local SPINE_STRIPS, SPINE_STRIP_WIDTH = 6, 5
 ---@field crumbButtons LedgerJournalCrumbView[]
 ---@field search EditBox               -- the search box (LED-R148)
 ---@field searchDrop LedgerJournalSearchDrop -- its results (adapter/JournalSearch.lua)
----@field back Button                  -- "☚ back", under the left page (LED-R125)
+---@field back LedgerJournalCrumbView  -- "☚ back", under the left page (LED-R125)
 ---@field left LedgerJournalPage
 ---@field right LedgerJournalPage
 ---@field plate LedgerJournalPlate     -- the brass plate on the cover (LED-R149)
@@ -164,13 +164,18 @@ local function pageBody(paper, bottom)
 	return page
 end
 
--- A link on the book: text in `font` and `color` on a button sized to it.
+-- A link on the book: text in `font` and `color` on a button sized to it, opening its place in `journal`.
+---@param journal LedgerJournal
 ---@param parent Frame
 ---@param font Font
 ---@param color number[]
 ---@return LedgerJournalCrumbView
-local function textButton(parent, font, color)
+local function textButton(journal, parent, font, color)
 	local button = CreateFrame("Button", nil, parent) --[[@as LedgerJournalCrumbView]]
+	ns.JournalClickable(button)
+	function button.open(place)
+		journal:OpenPlace(place)
+	end
 	button.label = ns.JournalText(button, font, color)
 	button.label:SetPoint("LEFT")
 	return button
@@ -221,15 +226,9 @@ local function build(journal)
 	end)
 	frame.searchDrop = ns.AttachJournalSearch(journal, frame.search)
 
-	local back = textButton(frame, fonts.text, LOOK.red)
+	local back = textButton(journal, frame, fonts.text, LOOK.red)
 	back:SetPoint("BOTTOMLEFT", MARGIN + 16, MARGIN + 8)
 	setButtonText(back, L.JOURNAL_BACK)
-	back:SetScript("OnClick", function()
-		local place = journal.pages and journal.pages.back
-		if place then
-			journal:Open(place.id, place.args)
-		end
-	end)
 	frame.back = back
 
 	-- The brass plate on the cover's lower corner, hanging over its edge as variant E's does (LED-R149), below the
@@ -256,10 +255,11 @@ local function build(journal)
 end
 
 -- Crumb `i` of the strip, made on first use: its gilt label and, after the first, the ❧ before it.
----@param frame LedgerJournalFrame
+---@param journal LedgerJournal
 ---@param i integer
 ---@return LedgerJournalCrumbView
-local function crumbAt(frame, i)
+local function crumbAt(journal, i)
+	local frame = journal.frame --[[@as LedgerJournalFrame]]
 	local crumb = frame.crumbButtons[i]
 	if not crumb then
 		local separator
@@ -267,7 +267,7 @@ local function crumbAt(frame, i)
 			separator = ns.JournalText(frame.crumbs, ns.JournalFonts().crumb, LOOK.giltRule)
 			separator:SetText(L.JOURNAL_CRUMB_SEPARATOR)
 		end
-		crumb = textButton(frame.crumbs, ns.JournalFonts().crumb, LOOK.gilt)
+		crumb = textButton(journal, frame.crumbs, ns.JournalFonts().crumb, LOOK.gilt)
 		crumb.separator = separator
 		frame.crumbButtons[i] = crumb
 	end
@@ -281,7 +281,7 @@ local function drawCrumbs(journal, crumbs)
 	local frame = journal.frame --[[@as LedgerJournalFrame]]
 	local x = 0
 	for i, data in ipairs(crumbs) do
-		local crumb = crumbAt(frame, i)
+		local crumb = crumbAt(journal, i)
 		local separator = crumb.separator
 		if separator then
 			separator:ClearAllPoints()
@@ -292,9 +292,7 @@ local function drawCrumbs(journal, crumbs)
 		local width = setButtonText(crumb, data.label)
 		crumb:ClearAllPoints()
 		crumb:SetPoint("LEFT", x, 0)
-		crumb:SetScript("OnClick", function()
-			journal:Open(data.place.id, data.place.args)
-		end)
+		crumb.place = data.place
 		crumb:Show()
 		x = x + width
 	end
@@ -343,6 +341,13 @@ function Journal:Open(id, args)
 	return true
 end
 
+--- Opens `place`: its spread with its args (LED-R125). Every link, crumb, tile and search result opens through it.
+---@param place LedgerJournalPlace
+---@return boolean opened
+function Journal:OpenPlace(place)
+	return self:Open(place.id, place.args)
+end
+
 --- Draws both pages, the crumbs, the search box and the back link from the router now, if the book is open
 --- (LED-R122, LED-R125).
 function Journal:Draw()
@@ -363,10 +368,11 @@ function Journal:Draw()
 	self.drawnPlace = place
 	frame.crumbs:SetShown(not pages.updating)
 	frame.search:SetShown(not pages.updating)
+	frame.back.place = pages.back
 	frame.back:SetShown(pages.back ~= nil)
 	drawCrumbs(self, pages.crumbs or {})
 	local function open(target)
-		self:Open(target.id, target.args)
+		self:OpenPlace(target)
 	end
 	ns.DrawJournalPage(frame.left, pages.left, open, moved)
 	ns.DrawJournalPage(frame.right, pages.right, open, moved)

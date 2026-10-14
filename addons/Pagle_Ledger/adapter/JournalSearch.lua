@@ -13,9 +13,8 @@ local LOOK = ns.JOURNAL_LOOK
 local ROW_HEIGHT = 20
 local ROW_INSET = 8
 
----@class LedgerSearchRowView: Button
+---@class LedgerSearchRowView: LedgerJournalClickable
 ---@field label FontString
----@field place LedgerJournalPlace?
 
 ---@class LedgerJournalSearchDrop: Frame
 ---@field rows LedgerSearchRowView[]
@@ -33,11 +32,13 @@ function ns.AttachJournalSearch(journal, box)
 	drop.rows = {}
 	drop:Hide()
 
-	-- Empties the box, which hides the dropdown.
-	local function close()
+	-- Picking a result empties the box, which hides the dropdown, and opens the result's place.
+	---@param place LedgerJournalPlace
+	local function pick(place)
 		box:SetText("")
 		box:ClearFocus()
 		drop:Hide()
+		journal:OpenPlace(place)
 	end
 
 	-- Row `i`, made on first use: a result's name opening its spread, or the no-match line, opening nothing.
@@ -52,13 +53,8 @@ function ns.AttachJournalSearch(journal, box)
 			row:SetPoint("TOPRIGHT", 0, -(i - 1) * ROW_HEIGHT)
 			row.label = ns.JournalText(row, ns.JournalFonts().text, LOOK.ink)
 			row.label:SetPoint("LEFT", ROW_INSET, 0)
-			row:SetScript("OnClick", function(self)
-				local place = self.place
-				if place then
-					close()
-					journal:Open(place.id, place.args)
-				end
-			end)
+			ns.JournalClickable(row)
+			row.open = pick
 			drop.rows[i] = row
 		end
 		return row

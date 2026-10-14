@@ -132,14 +132,9 @@ ns.RegisterJournalWidget("row", function(parent)
 	widget.label = widget.name
 	widget.margin = ns.JournalText(widget, fonts.hand, LOOK.blue)
 	widget.margin:SetWordWrap(true)
-	local place, openPlace
-	widget:SetScript("OnClick", function()
-		if place then
-			openPlace(place)
-		end
-	end)
+	ns.JournalClickable(widget)
 	function widget.Fill(_, block, width, open)
-		place, openPlace = block.place, open
+		widget.place, widget.open = block.place, open
 		widget.highlight:SetShown(block.selected == true)
 		local icon = block.icon
 		widget.icon:SetShown(icon ~= nil)

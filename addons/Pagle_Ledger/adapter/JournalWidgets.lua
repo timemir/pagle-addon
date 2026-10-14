@@ -150,9 +150,30 @@ function ns.JournalItemIcon(texture, icon, look)
 	texture:SetAlpha(1)
 end
 
+--- A button that opens a place in the Journal (LED-R125): whoever fills it sets `place` and `open`, the Journal's
+--- opener, or `action` to call instead (a link to the Field report, REP-R43).
+---@class LedgerJournalClickable: Button
+---@field place LedgerJournalPlace?
+---@field open fun(place: LedgerJournalPlace)?
+---@field action fun()?
+
+--- Makes `button` take clicks as a LedgerJournalClickable: it calls its `action`, or opens its `place`, or with
+--- neither does nothing.
+---@param button LedgerJournalClickable
+function ns.JournalClickable(button)
+	---@param self LedgerJournalClickable
+	button:SetScript("OnClick", function(self)
+		if self.action then
+			self.action()
+		elseif self.place and self.open then
+			self.open(self.place)
+		end
+	end)
+end
+
 --- A widget drawing one kind of block: `Fill` draws the block across `width` and returns the height it takes;
---- `open` opens a place in the Journal.
----@class LedgerJournalWidget: Button
+--- `open` opens a place in the Journal. The kinds that open a place take clicks (ns.JournalClickable).
+---@class LedgerJournalWidget: LedgerJournalClickable
 ---@field Fill fun(self: LedgerJournalWidget, block: LedgerBlock, width: number, open: fun(place: LedgerJournalPlace)): number
 ---@field label FontString?
 ---@field texture Texture?
@@ -289,16 +310,9 @@ function makers.link(parent)
 	text:SetPoint("TOPLEFT")
 	text:SetWordWrap(true)
 	widget.label = text
-	local place, action, openPlace
-	widget:SetScript("OnClick", function()
-		if action then
-			action()
-		elseif place then
-			openPlace(place)
-		end
-	end)
+	ns.JournalClickable(widget)
 	function widget.Fill(_, block, width, open)
-		place, action, openPlace = block.place, block.action, open
+		widget.place, widget.action, widget.open = block.place, block.action, open
 		local ink = block.hand and LOOK.blue or LOOK.red
 		text:SetFontObject(block.hand and ns.JournalFonts().hand or ns.JournalFonts().text)
 		text:SetTextColor(ink[1], ink[2], ink[3])
@@ -324,14 +338,9 @@ function makers.leader(parent)
 		dot:SetSize(1, 1)
 		dots[i] = dot
 	end
-	local place, openPlace
-	widget:SetScript("OnClick", function()
-		if place then
-			openPlace(place)
-		end
-	end)
+	ns.JournalClickable(widget)
 	function widget.Fill(_, block, width, open)
-		place, openPlace = block.place, open
+		widget.place, widget.open = block.place, open
 		label:SetText(block.text)
 		value:SetText(block.value or "")
 		local height = label:GetStringHeight()
@@ -444,7 +453,7 @@ function makers.stamps(parent)
 end
 
 -- One zone tile (LED-R131): name, two lines, a thin ink bar, a seal and a red note, opening its place.
----@class LedgerZoneTileView: Button
+---@class LedgerZoneTileView: LedgerJournalClickable
 ---@field name FontString
 ---@field line FontString
 ---@field line2 FontString
@@ -453,13 +462,12 @@ end
 ---@field seal Frame
 ---@field sealText FontString
 ---@field note FontString
----@field place LedgerJournalPlace?
 
 ---@param parent Frame
----@param open fun(): fun(place: LedgerJournalPlace)
 ---@return LedgerZoneTileView
-local function newTile(parent, open)
+local function newTile(parent)
 	local tile = CreateFrame("Button", nil, parent) --[[@as LedgerZoneTileView]]
+	ns.JournalClickable(tile)
 	ns.JournalSolid(tile, LOOK.paper, "BACKGROUND", 0.6)
 	local border = tile:CreateTexture(nil, "BORDER")
 	border:SetColorTexture(LOOK.kicker[1], LOOK.kicker[2], LOOK.kicker[3], 0.35)
@@ -488,11 +496,6 @@ local function newTile(parent, open)
 	tile.sealText:SetPoint("CENTER")
 	tile.note = ns.JournalText(tile, ns.JournalFonts().hand, LOOK.red)
 	tile.note:SetPoint("BOTTOMRIGHT", -6, 12)
-	tile:SetScript("OnClick", function(self)
-		if self.place then
-			open()(self.place)
-		end
-	end)
 	return tile
 end
 
@@ -509,16 +512,11 @@ function makers.tiles(parent)
 	local widget = newWidget(parent)
 	---@type LedgerZoneTileView[]
 	local tiles = {}
-	local opener
-	local function open()
-		return opener
-	end
-	function widget.Fill(_, block, width, openPlace)
-		opener = openPlace
+	function widget.Fill(_, block, width, open)
 		local tileWidth = (width - (TILE_COLUMNS - 1) * TILE_GAP) / TILE_COLUMNS
 		local list = block.tiles or {}
 		for i, data in ipairs(list) do
-			local tile = tiles[i] or newTile(widget, open)
+			local tile = tiles[i] or newTile(widget)
 			tiles[i] = tile
 			local column, row = (i - 1) % TILE_COLUMNS, math.floor((i - 1) / TILE_COLUMNS)
 			tile:SetSize(tileWidth, TILE_HEIGHT)
@@ -533,7 +531,7 @@ function makers.tiles(parent)
 			tile.sealText:SetText(data.seal or "")
 			setOptional(tile.note, data.note)
 			tile:SetAlpha(data.faded and 0.5 or 1)
-			tile.place = data.place
+			tile.place, tile.open = data.place, open
 			tile:Show()
 		end
 		for i = #list + 1, #tiles do
@@ -547,18 +545,15 @@ end
 
 -- Tabs side by side (LED-R130's continent tabs): the chosen one in the title's ink, underlined in red; each opens
 -- its place.
----@class LedgerTabView: Button
+---@class LedgerTabView: LedgerJournalClickable
 ---@field label FontString
 ---@field underline Texture
----@field place LedgerJournalPlace?
 
 function makers.tabs(parent)
 	local widget = newWidget(parent)
 	---@type LedgerTabView[]
 	local tabs = {}
-	local opener
 	function widget.Fill(_, block, _, open)
-		opener = open
 		local x = 0
 		for i, data in ipairs(block.tabs or {}) do
 			local tab = tabs[i]
@@ -571,18 +566,14 @@ function makers.tabs(parent)
 				tab.underline:SetPoint("BOTTOMLEFT")
 				tab.underline:SetPoint("BOTTOMRIGHT")
 				tab.underline:SetHeight(2)
-				tab:SetScript("OnClick", function(self)
-					if self.place then
-						opener(self.place)
-					end
-				end)
+				ns.JournalClickable(tab)
 				tabs[i] = tab
 			end
 			local ink = data.on and LOOK.title or LOOK.kicker
 			tab.label:SetText(data.text)
 			tab.label:SetTextColor(ink[1], ink[2], ink[3])
 			tab.underline:SetShown(data.on)
-			tab.place = data.place
+			tab.place, tab.open = data.place, open
 			local width = tab.label:GetStringWidth() + 2
 			tab:SetSize(width, TAB_HEIGHT)
 			tab:ClearAllPoints()
