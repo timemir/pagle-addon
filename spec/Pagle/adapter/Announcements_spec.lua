@@ -272,7 +272,7 @@ describe("Announcement sounds on the client", function()
 			local Pagle = loaded.env.Pagle
 			raise(loaded, M, moment("toast", "Toast 1"))
 			loaded.client.advance(6)
-			loaded.ns.goods:SetPurchased({ ["core.soundset.gilded"] = true }) -- the wallet projection's seam (SHOP-R11)
+			loaded.ns.RecordPurchase("core.soundset.gilded", 400) -- the Curio Shop's buy (SHOP-R10, SHOP-R11)
 			assert.is_true(Pagle.SetEquipped("core.soundset", "core.soundset.gilded"))
 
 			for _, step in ipairs({ { "toast", 6 }, { "toast", 6 }, { "banner", 4 }, { "splash", 8 } }) do
