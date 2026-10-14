@@ -319,10 +319,12 @@ describe("the Hunts tracker", function()
 			assert.are.same({ mode = "board", hunt = second.huntID }, board.router:Place())
 			assert.is_not_nil(second.huntID)
 
+			board:Hide()
 			run.ns.tracker.more:Click()
 
+			-- On the Board, with no Hunt asked for: the timeline selects HNT-R67's own (#193).
 			assert.is_true(board:IsShown())
-			assert.are.same({ mode = "board" }, board.router:Place())
+			assert.are.equal("board", board.router:Place().mode)
 		end)
 
 		it("collapse and expand the block from its header, saved, and still collapsed after a reload", function()
