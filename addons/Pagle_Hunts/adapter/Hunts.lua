@@ -35,6 +35,23 @@ function ns.Hunts.OnInitialize()
 		GetArea = Pagle.GetArea,
 		GetWindowSpec = Pagle.GetWindowSpec,
 	})
+
+	--- Hunts' projection (HNT-R136): Core catches it up or rebuilds it after login and hands it each new entry live
+	--- (LOG-R71–R74). The views read it through ns.State() and ns.IsUpdating() (logic/Seams.lua).
+	local lookups = {
+		GetItem = Pagle.GetItem,
+		MatchesConditions = Pagle.MatchesConditions,
+		Class = function(id)
+			return ns.hunts:Class(id)
+		end,
+	}
+	ns.projection = ns.Module:NewProjection(ns.ProjectionDef(ns.db.global, lookups, {
+		ReportCoinsEarned = function(total)
+			ns.Module:ReportCoinsEarned(total)
+		end,
+		ServerTime = GetServerTime,
+	}))
+
 	-- Grouping (HNT-R40–R44): pins of Hunts gone are dropped now; the first grouping waits for the world.
 	ns.StartGroups()
 end

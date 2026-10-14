@@ -18,6 +18,10 @@ logic\Seams.lua
 logic\Qualify.lua
 logic\Waters.lua
 logic\Titles.lua
+logic\Projection.lua
 logic\Groups.lua
+logic\Board.lua
+adapter\BoardWidgets.lua
+adapter\Board.lua
 adapter\Hunts.lua
 adapter\Groups.lua

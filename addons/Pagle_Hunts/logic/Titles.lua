@@ -34,6 +34,13 @@ local function civilFromDays(days)
 	return { year = yearOfEra + era * 400 + (month <= 2 and 1 or 0), month = month, day = day }
 end
 
+--- The UTC day of server time `t` (DATA-R87): a retired date's, or the date of a Cast with no realm minute.
+---@param t integer
+---@return { year: integer, month: integer, day: integer }
+function ns.UtcDate(t)
+	return civilFromDays(math.floor(t / SECONDS_PER_DAY))
+end
+
 -- A Hunt's tier 1 in `state`, or nil while it isn't done (HNT-R17). Later tiers never count (HNT-R21).
 ---@param state HuntsState
 ---@param hunt HuntDef
@@ -114,7 +121,7 @@ function ns.CheckTitles(state, t, appliedCastTime)
 			for _, time in ipairs(candidates(state, setHunts, t)) do
 				if completeAt(state, setHunts, time) then
 					local tier = tierOneAt(state, setHunts, time)
-					local date = tier and tier.date or civilFromDays(math.floor(time / SECONDS_PER_DAY))
+					local date = tier and tier.date or ns.UtcDate(time)
 					state.sets[set.id] = {
 						earnedAt = time,
 						date = { year = date.year, month = date.month, day = date.day },
