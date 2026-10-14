@@ -119,4 +119,26 @@ ns.L = {
 	XP_BAR_FRESH_ONE = " Fresh Water for %d more Catch.",
 	XP_BAR_FRESH_OTHER = " Fresh Water for %d more Catches.",
 	XP_BAR_SET_ASIDE = "%s XP set aside for the next Prestige",
+
+	-- The plain hint (LED-R141, DATA-R112): "night · pools · Ashenvale · Darkshore +1 · skill ~150".
+	HINT_ANY_TIME = "Any time",
+	HINT_POOLS = "pools",
+	HINT_SEPARATOR = " · ",
+	HINT_WINDOW_SEPARATOR = ", ",
+	HINT_MORE = "%s +%d",
+	HINT_SKILL = "skill ~%d",
+
+	-- A list as prose: "A, B and C" (LED-R140).
+	LIST_SEPARATOR = ", ",
+	LIST_LAST = " and ",
+	-- A Species' entry (LED-R140, LED-R141). "First landed {date} in {zone}, by {character}. {n} caught."
+	ENTRY_STAMPS = { "Caught", "In its element", "Regular" },
+	ENTRY_FIRST = "First landed %s in %s, by %s. %s caught.",
+	ENTRY_FIRST_NO_ZONE = "First landed %s, by %s. %s caught.",
+	ENTRY_FOUND_IN = "Found in %s.",
+	ENTRY_ONLY_BY = " Only by %s.",
+	ENTRY_REMOVED = "No longer found in Forever's waters.",
+	ENTRY_UNKNOWN = "An unknown fish",
+	ENTRY_RIDDLE = "“%s”",
+	ENTRY_HINT_LINK = "Read the plain hint ▸",
 }
