@@ -11,6 +11,7 @@
 
 locale\enUS.lua
 logic\Data.lua
+logic\Days.lua
 logic\Module.lua
 logic\Seams.lua
 adapter\TackleBoard.lua
