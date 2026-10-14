@@ -86,6 +86,48 @@ function COUNT.wanderer(goal, cast, _, _, ctx)
 	return addDistinct(goal, zone)
 end
 
+function COUNT.quality(goal, _, _, item)
+	return item ~= nil and not item.noise and item.quality ~= nil and item.quality >= goal.target and addOne(goal)
+end
+
+function COUNT.size(goal, _, slot, item)
+	return item ~= nil and slot.size ~= nil and slot.size.band >= goal.target and addOne(goal)
+end
+
+-- The Collector Notice's two keys (TKB-R42): what each category counts as.
+local COLLECTOR_NOTICE_KEYS = { junk = "junk", container = "container" }
+
+-- The categories of a Sub-collection item (TKB-R46).
+local SUB_COLLECTION = { junk = true, container = true, treasure = true, trophy = true }
+
+function COUNT.collector(goal, _, slot, item, ctx)
+	if not item or item.noise then
+		return false
+	end
+	if goal.type == "e" then
+		return SUB_COLLECTION[item.category] == true
+			and not item.removed
+			and not ctx.caughtBefore(slot.itemID)
+			and addDistinct(goal, slot.itemID)
+	end
+	local key = COLLECTOR_NOTICE_KEYS[item.category]
+	return key ~= nil and addDistinct(goal, key)
+end
+
+function COUNT.lure(goal, cast)
+	local lure = cast.conditions.lure
+	return lure ~= nil and lure ~= 0 and addOne(goal)
+end
+
+function COUNT.species(goal, _, _, item, ctx)
+	local representative = ctx.pagle.GetItem(goal.target)
+	return item ~= nil
+		and item.species ~= nil
+		and representative ~= nil
+		and item.species == representative.species
+		and addOne(goal)
+end
+
 --- Whether a goal is session-bound (TKB-R41): the `wanderer` and `collector` Notices count only Catches from Casts
 --- of one Session, and display 0 outside it (TKB-R104).
 ---@param goal TackleGoalDef

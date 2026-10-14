@@ -8,7 +8,7 @@ local board = dofile("spec/Pagle_TackleBoard/support.lua")
 
 -- Zones of the fixture (its header lists what each is for).
 local DUROTAR, BARRENS, DARKSHORE, ASHENVALE, ELWYNN, WESTFALL = 14, 17, 148, 331, 12, 40
-local AUBERDINE = 442 -- a subzone of Darkshore
+local THOUSAND_NEEDLES = 400
 local KALIMDOR, EASTERN_KINGDOMS = 1, 0
 
 -- Items of the fixture.
@@ -245,6 +245,126 @@ describe("Goal progress", function()
 
 			assert.are.equal(3, progress)
 			assert.are.same({ true, false, true, false, false, true }, counted)
+		end)
+	end)
+
+	describe("quality", function()
+		it("counts +1 per Catch of the target quality or better, any category, any zone (TKB-R42)", function()
+			local quality = goal({ kind = "quality", need = 8, target = 2 })
+
+			local progress, counted = run(quality, {
+				cast(DUROTAR, { EEL, EEL, SMALLFISH, CONTAINER_B }),
+				cast(0, { LEGEND, JUNK_A, TREASURE_B }),
+			})
+
+			assert.are.equal(5, progress)
+			assert.are.same({ true, true, false, true, true, false, true }, counted)
+		end)
+
+		it("at rare counts quality 3 or better only, never an Uncharted item or item 0 (TKB-R42, TKB-R43)", function()
+			local quality = goal({ type = "e", kind = "quality", tier = 0, need = 3, target = 3 })
+
+			local progress = run(quality, { cast(DARKSHORE, { EEL, TREASURE_B, LEGEND, UNCHARTED, 0 }) })
+
+			assert.are.equal(2, progress)
+		end)
+	end)
+
+	describe("size", function()
+		it("counts +1 per Catch whose Size band is the target or better: a Monster counts for Hefty (TKB-R42)", function()
+			local size = goal({ kind = "size", need = 10, target = HEFTY })
+
+			local progress, counted = run(size, {
+				cast(DUROTAR, { { SMALLFISH, HEFTY }, { SMALLFISH, 2 }, { MACKEREL, MONSTER }, { SMALLFISH, WHOPPER } }),
+				cast(0, { TROPHY_A, { LEGEND, HEFTY }, { UNCHARTED, MONSTER }, { 0, MONSTER } }),
+			})
+
+			assert.are.equal(4, progress)
+			assert.are.same({ true, false, true, true, false, true, false, false }, counted)
+		end)
+
+		it("at Whopper counts Whopper or Monster, not Hefty (TKB-R42)", function()
+			local size = goal({ type = "e", kind = "size", tier = 0, need = 1, target = WHOPPER })
+
+			local _, counted = run(size, { cast(BARRENS, { { SMALLFISH, HEFTY }, { SMALLFISH, WHOPPER } }) })
+
+			assert.are.same({ false, true }, counted)
+		end)
+	end)
+
+	describe("lure", function()
+		it("counts +1 per Catch of a Cast with a lure on, any item and zone (TKB-R42, TKB-R43)", function()
+			local lure = goal({ kind = "lure", need = 15 })
+
+			local progress, counted = run(lure, {
+				cast(DUROTAR, { SMALLFISH, UNCHARTED, 0, MANA_POTION }, { lure = 263 }),
+				cast(0, { SMALLFISH }, { lure = 264 }),
+				cast(DUROTAR, { SMALLFISH, JUNK_A }),
+				cast(DUROTAR, { SMALLFISH }, { lure = 0 }),
+			})
+
+			assert.are.equal(5, progress)
+			assert.are.same({ true, true, true, true, true, false, false, false }, counted)
+		end)
+	end)
+
+	describe("species", function()
+		it("counts +1 per Catch of the representative item's Species, in any zone (TKB-R42)", function()
+			local species = goal({ kind = "species", need = 5, target = MIGHTFISH })
+
+			local progress, counted = run(species, {
+				cast(BARRENS, { LARGE_MIGHTFISH, MIGHTFISH, SMALLFISH }),
+				cast(0, { LARGE_MIGHTFISH, UNCHARTED, 0 }),
+			})
+
+			assert.are.equal(3, progress)
+			assert.are.same({ true, true, false, true, false, false }, counted)
+		end)
+	end)
+
+	describe("collector", function()
+		it("as a Notice counts a junk item and a container, not Noise or other categories (TKB-R42, TKB-R43)", function()
+			local collector = goal({ kind = "collector", tier = 2, need = 2 })
+
+			local progress, counted = run(collector, {
+				cast(DUROTAR, { NOISY_JUNK, TREASURE_A, UNCHARTED, 0, JUNK_A, JUNK_B }),
+				cast(BARRENS, { CONTAINER_A }),
+			})
+
+			assert.are.equal(2, progress)
+			assert.are.same({ false, false, false, false, true, false, true }, counted)
+		end)
+
+		it("as a Notice needs its junk item and container in one Session (TKB-R41)", function()
+			local collector = goal({ kind = "collector", tier = 2, need = 2 })
+
+			local progress = run(collector, {
+				cast(DUROTAR, { JUNK_A }),
+				cast(ELWYNN, { CONTAINER_A }, { session = "S2" }),
+			})
+
+			assert.are.equal(1, progress)
+			assert.are.same({ container = true }, collector.seen)
+		end)
+
+		it("as an Expedition counts distinct Sub-collection items never caught before this Catch (TKB-R42, TKB-R46)", function()
+			local collector = goal({ type = "e", kind = "collector", tier = 0, need = 3 })
+
+			local progress, counted = run(collector, {
+				cast(THOUSAND_NEEDLES, { TREASURE_A, JUNK_A, JUNK_A, CONTAINER_B }),
+				cast(ASHENVALE, { REMOVED_CONTAINER, NOISY_JUNK, SMALLFISH, UNCHARTED, 0 }),
+			}, { [TREASURE_A] = true })
+
+			assert.are.equal(2, progress)
+			assert.are.same({ false, true, false, true, false, false, false, false, false }, counted)
+		end)
+
+		it("as an Expedition counts treasure and trophies too (TKB-R46)", function()
+			local collector = goal({ type = "e", kind = "collector", tier = 0, need = 3 })
+
+			local progress = run(collector, { cast(DARKSHORE, { TREASURE_B, TROPHY_A, CONTAINER_A }) })
+
+			assert.are.equal(3, progress)
 		end)
 	end)
 end)
