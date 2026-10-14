@@ -54,4 +54,7 @@ function ns.Hunts.OnInitialize()
 
 	-- Grouping (HNT-R40–R44): pins of Hunts gone are dropped now; the first grouping waits for the world.
 	ns.StartGroups()
+
+	-- Calendar event names for the conditions line, looked up once this login (HNT-R53).
+	ns.StartNames()
 end
