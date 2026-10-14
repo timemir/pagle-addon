@@ -35,6 +35,7 @@ local ns = select(2, ...)
 ---@field wallet PagleWallet Core's one wallet (ns.WireWallet).
 ---@field goods PagleGoods Core's one goods registry (ns.WireGoods).
 ---@field shop PagleShop The Curio Shop's entry points (ns.WireShop).
+---@field dock PagleDockWiring Core's tracker dock (ns.WireDock).
 ---@field fieldReport PagleFieldReportReaders? Core's Field report, from login step 1 on (ns.WireFieldReport).
 ---@field walletProjection PagleProjection? Core's wallet projection, from login step 1 (ns.WireWalletProjection).
 ---@field LengthUnit fun(): PagleLengthUnit The Angler's length unit now (ns.WireLength).
@@ -466,6 +467,135 @@ function ns.WireShop(host, seams)
 			seams.hide()
 		end
 	end)
+end
+
+--- Where the tracker dock is drawn: adapter/Dock.lua's anchor frame on the client, or FakePagle's record of it.
+---@class PagleDockView
+---@field isRestricted fun(): boolean            -- Pagle.IsRestricted()
+---@field watch fun(tracker: PagleTracker)       -- a tracker docked: reflow as its frame shows, hides or resizes, and
+--- move the dock on a Shift-drag of it
+---@field reflow fun()                           -- lays the stack out again (ns.dock:Layout)
+---@field place fun(point: PagleDockPoint)       -- puts the dock's anchor at `point`
+---@field stopMoving fun(): PagleDockPoint?      -- ends a drag in progress where the dock is now, returning that point
+--- to save; nil with none in progress
+
+--- The tracker dock (CORE-R70–R72) as ns.dock (ns.WireDock).
+---@class PagleDockWiring
+---@field package host PagleHost
+---@field package view PagleDockView
+---@field package trackers PagleDock
+local DockWiring = {}
+DockWiring.__index = DockWiring
+
+-- PagleDB.profile.dock, read at each call.
+---@param wiring PagleDockWiring
+---@return { point: PagleDockPoint? }
+local function storedDock(wiring)
+	local profile = wiring.host.db().profile
+	if type(profile.dock) ~= "table" then
+		profile.dock = {}
+	end
+	return profile.dock
+end
+
+--- The docked trackers, in stack order (CORE-R70).
+---@return PagleTracker[]
+function DockWiring:Trackers()
+	return self.trackers:Trackers()
+end
+
+--- The stack now (CORE-R70, CORE-R72): see PagleDock:Layout.
+---@param isShown fun(frame: table): boolean
+---@param sizeOf PagleDockSizeOf
+---@return PagleDockLayout
+function DockWiring:Layout(isShown, sizeOf)
+	return self.trackers:Layout(isShown, sizeOf)
+end
+
+--- Where the anchor goes now: dock.point, or under the minimap (CORE-R70, CORE-R71).
+---@return PagleDockPoint
+function DockWiring:Anchor()
+	return ns.DockAnchor(storedDock(self).point)
+end
+
+--- Whether a Shift-drag may move the dock: never while restricted (CORE-R71).
+---@return boolean
+function DockWiring:CanMove()
+	return not self.view.isRestricted()
+end
+
+--- The player dropped the dock at `point`: saved to dock.point, relative to UIParent (core/README.md › Data).
+---@param point PagleDockPoint
+function DockWiring:Moved(point)
+	storedDock(self).point = {
+		point = point.point,
+		relativeTo = "UIParent",
+		relativePoint = point.relativePoint,
+		x = point.x,
+		y = point.y,
+	}
+end
+
+--- The Trackers page's Reset (SET-R40): clears dock.point and puts the dock back under the minimap. While restricted
+--- it does nothing (CORE-R71). True when it did.
+---@return boolean
+function DockWiring:Reset()
+	if self.view.isRestricted() then
+		return false
+	end
+	storedDock(self).point = nil
+	self.view.place(self:Anchor())
+	return true
+end
+
+--- The tracker dock (CORE-R70–R72) as ns.dock, over PagleDB.profile.dock (core/README.md › Data), and
+--- `M:RegisterTracker` on every Module handle. The anchor is placed at ModulesChanged, at dock.point or under the
+--- minimap; each docked tracker is watched and the stack reflowed. A drag in progress when restriction starts stops
+--- where it is and is saved.
+---@param host PagleHost
+---@param view PagleDockView
+function ns.WireDock(host, view)
+	local trackers = ns.NewDock()
+	---@type PagleDockWiring
+	local dock = setmetatable({ host = host, view = view, trackers = trackers }, DockWiring)
+	ns.dock = dock
+
+	-- Its own owner on the bus. CORE-R19: every enabled Module has registered, so every tracker is in.
+	host.listen("Pagle dock", "ModulesChanged", function()
+		view.place(dock:Anchor())
+		view.reflow()
+	end)
+	-- CORE-R71: the dock never moves while restricted.
+	host.listen("Pagle dock", "RestrictionChanged", function(_, isRestricted)
+		if isRestricted then
+			local point = view.stopMoving()
+			if point then
+				dock:Moved(point)
+			end
+		end
+	end)
+
+	---@class PagleModuleHandle
+	local ModuleHandle = ns.ModuleHandle
+	--- Docks the Module's tracker frame (CORE-R70): `{ id, order, frame }`. The dock stacks the visible docked frames
+	--- top to bottom by order (Hunts 10, Stats 20, Tackle Board 30; ties by Module name), 8 px apart, under the
+	--- minimap, and reflows as one shows, hides or resizes; the Module shows and hides its own (CORE-R72). Raises an
+	--- error at the Module's call, docking nothing, for a missing or non-string id, a non-number order, no frame, or an
+	--- id already docked.
+	---@param tracker { id: string, order: number, frame: table }
+	function ModuleHandle:RegisterTracker(tracker)
+		local module = host.registry:ModuleCalling(self, "RegisterTracker", "{ id, order, frame }")
+		local problem = trackers:Add(module.def.name, tracker)
+		if problem then
+			error(problem, 2)
+		end
+		for _, docked in ipairs(trackers:Trackers()) do
+			if docked.id == tracker.id then
+				view.watch(docked)
+			end
+		end
+		view.reflow()
+	end
 end
 
 --- The Field report's two readers (field-report.md › The projection).

@@ -117,6 +117,11 @@ stds.wow = {
 		-- The Curio Shop's purse: each Module's segment shows its lifetime Coins in the tooltip (wallet-and-shop.md › UI).
 		-- The window is drawn on CreateFrame and UIParent above and hides with Esc through UISpecialFrames (below).
 		"GameTooltip",
+		-- The tracker dock (CORE-R70, CORE-R71): its anchor sits under the minimap cluster by default, and a drag of a
+		-- docked tracker moves it only with Shift held. Both are in the pinned forever dump: Frames.lua lists
+		-- MinimapCluster and GlobalAPI.lua lists IsShiftKeyDown.
+		"MinimapCluster",
+		"IsShiftKeyDown",
 	},
 }
 
