@@ -93,15 +93,12 @@ describe("M:AppendRecord", function()
 			assert.are.same({ ("%d issue live"):format(before + 1) }, { unpack(seen.board, boardSeen + 1) })
 			assert.are.equal(ledgerSeen, #seen.ledger)
 			local global = loaded.env.PagleDB.global
-			assert.are.same(
-				{ before + 1, before + 1, before + 1, before + 1 },
-				{
-					dbs.board.lastSeq,
-					dbs.ledger.lastSeq,
-					global.projections.fieldReport.lastSeq,
-					global.projections.wallet.lastSeq,
-				}
-			)
+			assert.are.same({ before + 1, before + 1, before + 1, before + 1 }, {
+				dbs.board.lastSeq,
+				dbs.ledger.lastSeq,
+				global.projections.fieldReport.lastSeq,
+				global.projections.wallet.lastSeq,
+			})
 		end
 	)
 
@@ -349,15 +346,12 @@ describe("Module records in the log", function()
 			}, seen.ledger)
 			local global = loaded.env.PagleDB.global
 			local length = #loaded.env.PagleLog.entries
-			assert.are.same(
-				{ length, length, length, length },
-				{
-					dbs.board.lastSeq,
-					dbs.ledger.lastSeq,
-					global.projections.fieldReport.lastSeq,
-					global.projections.wallet.lastSeq,
-				}
-			)
+			assert.are.same({ length, length, length, length }, {
+				dbs.board.lastSeq,
+				dbs.ledger.lastSeq,
+				global.projections.fieldReport.lastSeq,
+				global.projections.wallet.lastSeq,
+			})
 			assert.are.equal(0, global.decodeErrors)
 		end
 	)
