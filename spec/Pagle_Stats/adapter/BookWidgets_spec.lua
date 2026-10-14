@@ -53,9 +53,14 @@ describe("the Stats book's art (STA-R70, graph.md open question 4)", function()
 			assert.matches("^Interface\\", path)
 			listed[path] = true
 		end
-		for _, path in ipairs(texturesOf(parent)) do
-			assert.is_true(listed[path], path .. " is not in ns.BOOK_TEXTURES")
+		local drawn, unlisted = texturesOf(parent), {}
+		for _, path in ipairs(drawn) do
+			if not listed[path] then
+				unlisted[#unlisted + 1] = path
+			end
 		end
+		assert.are.same({}, unlisted)
+		assert.is_true(#drawn >= 6)
 	end)
 
 	it("sets its text in the client's serif face and its handwriting in another, both listed", function()
@@ -154,43 +159,49 @@ describe("the Stats book's art (STA-R70, graph.md open question 4)", function()
 		assert.is_false(bar.fill.shown)
 	end)
 
-	it("rules a ledger: small-caps column heads, a line per row, a row opening what it names, the chosen one shaded", function()
-		local ns, parent = kit()
-		local opened = {}
+	it(
+		"rules a ledger: small-caps column heads, a line per row, a row opening what it names, the chosen one shaded",
+		function()
+			local ns, parent = kit()
+			local opened = {}
 
-		local ledger = ns.NewBookLedger(parent, 400, {
-			{ label = "Started", width = 140 },
-			{ label = "Where", width = 140 },
-			{ label = "Casts", width = 60, align = "RIGHT" },
-		})
-		local height = ledger:SetRows({
-			{ cells = { "5 Oct 2026 18:02", "Darkshore", "51" }, onClick = function()
-				opened[#opened + 1] = "first"
-			end },
-			{ cells = { "4 Oct 2026 21:40", "Elwynn Forest", "1,204" } },
-		}, 2)
+			local ledger = ns.NewBookLedger(parent, 400, {
+				{ label = "Started", width = 140 },
+				{ label = "Where", width = 140 },
+				{ label = "Casts", width = 60, align = "RIGHT" },
+			})
+			local height = ledger:SetRows({
+				{
+					cells = { "5 Oct 2026 18:02", "Darkshore", "51" },
+					onClick = function()
+						opened[#opened + 1] = "first"
+					end,
+				},
+				{ cells = { "4 Oct 2026 21:40", "Elwynn Forest", "1,204" } },
+			}, 2)
 
-		assert.are.same({
-			"STARTED",
-			"WHERE",
-			"CASTS",
-			"5 Oct 2026 18:02",
-			"Darkshore",
-			"51",
-			"4 Oct 2026 21:40",
-			"Elwynn Forest",
-			"1,204",
-		}, textsOf(ledger))
-		ledger.rows[1]:Click()
-		ledger.rows[2]:Click()
-		assert.are.same({ "first" }, opened)
-		assert.is_false(ledger.rows[1].shade.shown)
-		assert.is_true(ledger.rows[2].shade.shown)
-		assert.is_true(height > 0)
+			assert.are.same({
+				"STARTED",
+				"WHERE",
+				"CASTS",
+				"5 Oct 2026 18:02",
+				"Darkshore",
+				"51",
+				"4 Oct 2026 21:40",
+				"Elwynn Forest",
+				"1,204",
+			}, textsOf(ledger))
+			ledger.rows[1]:Click()
+			ledger.rows[2]:Click()
+			assert.are.same({ "first" }, opened)
+			assert.is_false(ledger.rows[1].shade.shown)
+			assert.is_true(ledger.rows[2].shade.shown)
+			assert.is_true(height > 0)
 
-		ledger:SetRows({ { cells = { "5 Oct 2026 18:02", "Darkshore", "51" } } })
-		assert.is_false(ledger.rows[2].shown)
-	end)
+			ledger:SetRows({ { cells = { "5 Oct 2026 18:02", "Darkshore", "51" } } })
+			assert.is_false(ledger.rows[2].shown)
+		end
+	)
 
 	it('draws a tile with its name, its line, "I\'m here" and a red note, opening what it names', function()
 		local ns, parent = kit()

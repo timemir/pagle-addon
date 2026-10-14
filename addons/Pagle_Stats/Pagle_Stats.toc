@@ -21,4 +21,5 @@ logic\Text.lua
 logic\Book.lua
 adapter\Text.lua
 adapter\BookWidgets.lua
+adapter\Book.lua
 adapter\Stats.lua

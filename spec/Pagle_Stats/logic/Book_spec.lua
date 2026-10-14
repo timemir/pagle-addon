@@ -123,17 +123,20 @@ describe("the Stats book's breadcrumbs (STA-R74)", function()
 		assert.are.same({ "stats - -> home - -", "zone 148 -> place 148 -" }, trailOf(router))
 	end)
 
-	it('adds "❧ {subzone}" on a subzone page, then "❧ {item}", which does nothing, while an entry is chosen', function()
-		local router = newRouter()
-		router:Open({ page = "place", area = AUBERDINE, item = NIGHTFIN })
+	it(
+		'adds "❧ {subzone}" on a subzone page, then "❧ {item}", which does nothing, while an entry is chosen',
+		function()
+			local router = newRouter()
+			router:Open({ page = "place", area = AUBERDINE, item = NIGHTFIN })
 
-		assert.are.same({
-			"stats - -> home - -",
-			"zone 148 -> place 148 -",
-			"subzone 442 -> place 442 -",
-			"item 13759",
-		}, trailOf(router))
-	end)
+			assert.are.same({
+				"stats - -> home - -",
+				"zone 148 -> place 148 -",
+				"subzone 442 -> place 442 -",
+				"item 13759",
+			}, trailOf(router))
+		end
+	)
 
 	it('reads "Stats ❧ {item}" on an item page', function()
 		local router = newRouter()
@@ -161,10 +164,7 @@ describe("the Stats book's ribbons (STA-R74)", function()
 	it("opens Where I am on the current subzone's place page, the zone's with subzone 0, home with zone 0", function()
 		local _, ns = newRouter()
 
-		assert.are.same(
-			{ page = "place", area = AUBERDINE },
-			ns.WhereIAm({ zone = DARKSHORE, subzone = AUBERDINE })
-		)
+		assert.are.same({ page = "place", area = AUBERDINE }, ns.WhereIAm({ zone = DARKSHORE, subzone = AUBERDINE }))
 		assert.are.same({ page = "place", area = ELWYNN }, ns.WhereIAm({ zone = ELWYNN, subzone = 0 }))
 		assert.are.same({ page = "home" }, ns.WhereIAm({ zone = 0, subzone = AUBERDINE }))
 	end)
@@ -179,15 +179,18 @@ describe("the Stats book's ribbons (STA-R74)", function()
 		assert.are.same({ "here nil green", "session session", "lifetime lifetime", "sessions sessions" }, ribbons)
 	end)
 
-	it("marks the ribbon of the page shown: Where I am on the current place's page, with or without an entry", function()
-		local _, ns = newRouter()
+	it(
+		"marks the ribbon of the page shown: Where I am on the current place's page, with or without an entry",
+		function()
+			local _, ns = newRouter()
 
-		assert.are.equal("here", ns.ChosenRibbon({ page = "place", area = AUBERDINE, item = NIGHTFIN }, AUBERDINE))
-		assert.is_nil(ns.ChosenRibbon({ page = "place", area = DARKSHORE }, AUBERDINE))
-		assert.is_nil(ns.ChosenRibbon({ page = "home" }, nil))
-		assert.are.equal("session", ns.ChosenRibbon({ page = "session" }, AUBERDINE))
-		assert.are.equal("lifetime", ns.ChosenRibbon({ page = "lifetime" }, nil))
-		assert.are.equal("sessions", ns.ChosenRibbon({ page = "sessions", ledgerPage = 2 }, nil))
-		assert.is_nil(ns.ChosenRibbon({ page = "item", item = NIGHTFIN }, AUBERDINE))
-	end)
+			assert.are.equal("here", ns.ChosenRibbon({ page = "place", area = AUBERDINE, item = NIGHTFIN }, AUBERDINE))
+			assert.is_nil(ns.ChosenRibbon({ page = "place", area = DARKSHORE }, AUBERDINE))
+			assert.is_nil(ns.ChosenRibbon({ page = "home" }, nil))
+			assert.are.equal("session", ns.ChosenRibbon({ page = "session" }, AUBERDINE))
+			assert.are.equal("lifetime", ns.ChosenRibbon({ page = "lifetime" }, nil))
+			assert.are.equal("sessions", ns.ChosenRibbon({ page = "sessions", ledgerPage = 2 }, nil))
+			assert.is_nil(ns.ChosenRibbon({ page = "item", item = NIGHTFIN }, AUBERDINE))
+		end
+	)
 end)

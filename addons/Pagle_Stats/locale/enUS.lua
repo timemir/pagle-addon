@@ -15,6 +15,24 @@ ns.L = {
 	BOOK = "Stats",
 	BOOK_SLASH_HELP = "Open or close the Stats book.",
 
+	-- The book's leather (STA-R72, STA-R74, STA-R75; stats.md › UI › On the leather): the breadcrumbs' root, the ribbons
+	-- and the ribbon pages' kickers, the nameplate, the live line, and what the nameplate and every page body read while
+	-- the projection is updating.
+	BOOK_ROOT = "Stats",
+	BOOK_WHERE_I_AM = "Where I am",
+	BOOK_THIS_SESSION = "This Session",
+	BOOK_LAST_SESSION = "My last Session",
+	BOOK_LIFETIME = "Lifetime",
+	BOOK_SESSIONS = "Sessions",
+	-- "1,840 Casts · 31 Sessions · since 5 Oct 2026": the Casts and Sessions counts (ns.Count) and the first Cast's date.
+	BOOK_NAMEPLATE = "%s · %s · since %s",
+	-- The same without a date, should no Session record hold the Casts.
+	BOOK_NAMEPLATE_UNDATED = "%s · %s",
+	BOOK_NO_CASTS = "No Casts yet",
+	-- "Session: 51 Casts · 46 Catches · 21m", after the live line's gilt dot.
+	BOOK_LIVE_LINE = "Session: %s · %s · %s",
+	BOOK_UPDATING = "Updating my records…",
+
 	-- STA-R58's one allowed line: no other Stats string says or implies a Catch is owed (spec/Pagle_Stats/copy_spec.lua).
 	NOTHING_IS_OWED = "Every Cast is its own roll; nothing is owed.",
 

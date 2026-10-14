@@ -116,7 +116,10 @@ end
 function Router:Open(target)
 	local page = PAGES[target.page]
 	assert(page, "the Stats book has no page " .. tostring(target.page))
-	assert(not page.needs or target[page.needs] ~= nil, "a Stats book " .. target.page .. " page needs its " .. tostring(page.needs))
+	assert(
+		not page.needs or target[page.needs] ~= nil,
+		"a Stats book " .. target.page .. " page needs its " .. tostring(page.needs)
+	)
 	self.place = copy(target)
 end
 
@@ -176,7 +179,7 @@ function ns.ChosenRibbon(place, here)
 		return (here ~= nil and place.area == here) and "here" or nil
 	end
 	if page == "session" or page == "lifetime" or page == "sessions" then
-		return page
+		return page --[[@as "session"|"lifetime"|"sessions"]]
 	end
 	return nil
 end
