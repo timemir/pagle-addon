@@ -354,9 +354,10 @@ describe("the Journal's Home, right page", function()
 		assert.are.same({
 			{ kind = "leader", text = "The Trophy Room", value = "0 / 1", place = { id = "trophy" } },
 			{ kind = "leader", text = "Curios: junk, treasure, uncharted", value = "0 / 2", place = { id = "curios" } },
+			{ kind = "leader", text = "Legends", value = "0 / 0", place = { id = "legends" } },
 			{ kind = "leader", text = "The Angler: hands, titles, bindings", place = { id = "angler" } },
-		}, { right[6], right[7], right[8] })
-		assert.are.equal(8, #right)
+		}, { right[6], right[7], right[8], right[9] })
+		assert.are.equal(9, #right)
 	end)
 
 	it(
@@ -436,7 +437,7 @@ describe("the Journal's Home, right page", function()
 		local _, loaded = openHome({ cast(ELWYNN, MACKEREL) })
 		local journal = loaded.ns.journal
 
-		journal.frame.right.drawn.leader[3]:Click()
+		journal.frame.right.drawn.leader[4]:Click()
 
 		assert.are.same({ id = "angler" }, journal.router:Place())
 		local labels = {}

@@ -7,8 +7,8 @@ local ns = select(2, ...)
 
 -- The Journal's Home (LED-R130–R133, LED-R149): the spread the Journal opens on. The left page has every charted
 -- and every fished zone as a tile under its continent's tab; the right page the bookplate summary, Notes to self and
--- the contents; the brass plate sits on the cover. Pure logic over the Journal's context (CORE-R7). The bookplate
--- and the brass plate carry M4's title and Prestige (LED-R4).
+-- the contents; the brass plate sits on the cover. Pure logic over the Journal's context (CORE-R7); its M3 stage
+-- left out titles, Prestige and Legends, and M4 brings them back (LED-R4).
 
 --- The tab of every continent but the Eastern Kingdoms (0) and Kalimdor (1): Home's args `{ tab = ns.OTHER_TAB }`.
 ns.OTHER_TAB = "other"
@@ -211,7 +211,7 @@ end
 
 -- The right page (LED-R132): the bookplate summary (the shown level in large numerals with the Prestige emblem and
 -- stars beside them, the active title in handwriting, Ledger completion's seal), the ink XP bar, Notes to self, and
--- In this Ledger's contents, each line opening its spread.
+-- In this Ledger's contents with M4's Legends line, each line opening its spread (LED-R4).
 ---@param context LedgerHomeContext
 ---@return LedgerBlock[]
 local function rightPage(context)
@@ -246,6 +246,12 @@ local function rightPage(context)
 		text = L.HOME_CURIOS,
 		value = countText(completion.junk, completion.treasure),
 		place = { id = ns.JOURNAL_CURIOS },
+	}
+	right[#right + 1] = {
+		kind = "leader",
+		text = L.HOME_LEGENDS,
+		value = countText(completion.legends),
+		place = { id = ns.JOURNAL_LEGENDS },
 	}
 	right[#right + 1] = { kind = "leader", text = L.HOME_ANGLER, place = { id = ns.JOURNAL_ANGLER } }
 	return right
