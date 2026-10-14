@@ -373,9 +373,12 @@ def check_hunts(
                         problems.add(hunt.at / "conditions", f"{field_name}: {value} isn't on the {what} ({rule})")
 
 
-def hunt_classes(layer: HuntLayer, items: Mapping[int, Record]) -> dict[str, dict[int, bool]]:
+def hunt_classes(
+    layer: HuntLayer, items: Mapping[int, Record], locked: Mapping[str, Collection[int]] | None = None
+) -> dict[str, dict[int, bool]]:
     """Every class as an item ID set (DATA-R90, DATA-R91): each fixed class as given, and the generated classes over
-    every catalogue item that isn't Noise, removed items included. All are emitted, targeted or not."""
+    every catalogue item that isn't Noise, removed items included, each also holding every member the release lock
+    records for it (locked, by class ID), so it never loses one. All are emitted, targeted or not."""
     counted = {item: record for item, record in items.items() if record.get("noise") is not True}
 
     def quality_at_least(least: int) -> dict[int, bool]:
@@ -391,6 +394,8 @@ def hunt_classes(layer: HuntLayer, items: Mapping[int, Record]) -> dict[str, dic
         QUALITY_RARE: quality_at_least(3),
         SPECIES_ANY: {item: True for item, record in counted.items() if "species" in record},
     }
+    for class_id in GENERATED_CLASSES:  # DATA-R91, ADR 0005: whatever has changed since the lock
+        classes[class_id] |= {member: True for member in (locked or {}).get(class_id, ())}
     for fixed in layer.classes:
         classes[fixed.id] = {member: True for member in fixed.members}
     return classes
@@ -402,12 +407,15 @@ def hunt_hash(record: Mapping[str, object]) -> str:
     return sha256_hex(canonical({key: value for key, value in record.items() if key != "retired"}))
 
 
-def build_hunt_list(layer: HuntLayer, items: Mapping[int, Record]) -> HuntList:
+def build_hunt_list(
+    layer: HuntLayer, items: Mapping[int, Record], locked: Mapping[str, Collection[int]] | None = None
+) -> HuntList:
     """ns.huntList (DATA-R93) with its fingerprint (DATA-R72): the first 16 hex characters of the SHA-256 of the
-    canonical JSON of the list without its fingerprint. Lore is never in it, so a wording change changes nothing."""
+    canonical JSON of the list without its fingerprint. Lore is never in it, so a wording change changes nothing.
+    locked holds the release lock's class members (DATA-R91, DATA-R95)."""
     sets: list[dict[str, object]] = [{"id": entry.id} for entry in layer.sets]
     hunts = [dict(hunt.record) for hunt in layer.hunts]
-    classes = hunt_classes(layer, items)
+    classes = hunt_classes(layer, items, locked)
     fingerprint = sha256_hex(canonical({"sets": sets, "hunts": hunts, "classes": classes}))[:FINGERPRINT_LENGTH]
     return {"fingerprint": fingerprint, "sets": sets, "hunts": hunts, "classes": classes}
 

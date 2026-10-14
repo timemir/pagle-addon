@@ -2,7 +2,8 @@
 removes a Lore.lua whose lore file is gone; --check writes nothing and fails if any generated file would change. The read-only modes write nothing and print no warning:
 --propose-aliases prints the alias candidates not yet committed (DATA-R32), --min-build <n> the facts that would lose
 confirmation if only builds >= n counted (DATA-R57), and --explain <id> every layer's value for an item or an area
-and which won. --lock arrives with the Hunt list (DATA-R95).
+and which won. --lock rewrites data/hunts/released.lock from the Hunt list and writes nothing else (DATA-R95); it is run
+when a release is tagged, from 1.0 on, and never before (DATA-R73).
 """
 
 import argparse
@@ -17,7 +18,8 @@ from pagle_data.errors import DataError
 from pagle_data.explain import explain
 from pagle_data.files import write_atomic
 from pagle_data.forever import ALIASES
-from pagle_data.generate import Layers, outputs, read_layers
+from pagle_data.generate import Layers, hunt_list_of, outputs, read_layers
+from pagle_data.lock import LOCK, lock_toml
 from pagle_data.lore import retired_lore
 from pagle_data.min_build import lost
 from pagle_data.observed import OBSERVED
@@ -53,6 +55,12 @@ def _parser() -> argparse.ArgumentParser:
         type=int,
         metavar="ID",
         help="write nothing; print every layer's value for an item or an area (or both) and which won (DATA-R60)",
+    )
+    modes.add_argument(
+        "--lock",
+        action="store_true",
+        help=f"rewrite {LOCK} from the Hunt list, every Hunt counting as released, and write nothing else"
+        " (DATA-R95); run it only when a release is tagged, from 1.0 on, and never before (DATA-R73)",
     )
     return parser
 
@@ -152,6 +160,10 @@ def main(argv: Sequence[str], root: Path) -> int:
         return _print_min_build(root, layers, args.min_build)
     if args.explain is not None:
         return _print_explain(layers, args.explain)
+    if args.lock:
+        write_atomic(root / LOCK, lock_toml(hunt_list_of(layers)).encode("utf-8"))
+        print(f"{PROG}: wrote {LOCK}")
+        return 0
     _warn(layers)
 
     contents = {path: text.encode("utf-8") for path, text in sorted(outputs(layers).items())}
