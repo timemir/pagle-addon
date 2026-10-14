@@ -22,8 +22,10 @@ logic\Projection.lua
 logic\Groups.lua
 logic\Labels.lua
 logic\Board.lua
+logic\Entry.lua
 adapter\BoardWidgets.lua
 adapter\Board.lua
 adapter\Hunts.lua
 adapter\Groups.lua
 adapter\Names.lua
+adapter\Entry.lua
