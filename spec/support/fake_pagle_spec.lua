@@ -1561,21 +1561,21 @@ describe("FakePagle", function()
 			end
 		)
 
-		it("end when fake.wait(900) passes with no Cast, then GetSession is nil (LOG-R62, LOG-R64)", function()
+		it("end when fake.wait(300) passes with no Cast, then GetSession is nil (LOG-R62, LOG-R64)", function()
 			local fake = newFakePagle()
 			local seen = listen(fake)
 			fake.login()
 			fake.enterWorld()
 			fake.playCast("caught", { { itemID = 6358, quantity = 1 } })
 
-			fake.wait(899)
+			fake.wait(299)
 			assert.is_not_nil(fake.Pagle.GetSession())
 			fake.wait(1)
 
 			assert.are.equal("SessionEnded " .. id(0), seen[#seen])
 			assert.is_nil(fake.Pagle.GetSession())
 			fake.playCast("gotAway")
-			assert.are.equal("SessionStarted " .. id(900), seen[#seen - 1])
+			assert.are.equal("SessionStarted " .. id(300), seen[#seen - 1])
 		end)
 
 		it("end a Session that ended before login with whileAway, once no projection is updating (LOG-R63)", function()
@@ -1584,7 +1584,7 @@ describe("FakePagle", function()
 			fake.catchLog:Append({
 				kind = "cast",
 				char = 1,
-				time = SERVER_TIME - 900,
+				time = SERVER_TIME - 300,
 				outcome = "caught",
 				conditions = { minute = 494, zone = 148, subzone = 453, events = {}, auras = {} },
 				items = { { itemID = 6358, quantity = 1 } },
@@ -1595,8 +1595,8 @@ describe("FakePagle", function()
 			assert.are.same({}, seen)
 			fake.enterWorld()
 
-			assert.are.same({ "1 rebuild", "SessionEnded " .. id(-900) .. " whileAway" }, seen)
-			assert.are.equal(id(-900), fake.global.lastEndedSession)
+			assert.are.same({ "1 rebuild", "SessionEnded " .. id(-300) .. " whileAway" }, seen)
+			assert.are.equal(id(-300), fake.global.lastEndedSession)
 		end)
 
 		it("fire no SessionEnded at login for the Session a seeded global.lastEndedSession names (LOG-R63)", function()
@@ -1605,12 +1605,12 @@ describe("FakePagle", function()
 			fake.catchLog:Append({
 				kind = "cast",
 				char = 1,
-				time = SERVER_TIME - 900,
+				time = SERVER_TIME - 300,
 				outcome = "caught",
 				conditions = { minute = 494, zone = 148, subzone = 453, events = {}, auras = {} },
 				items = { { itemID = 6358, quantity = 1 } },
 			})
-			fake.global.lastEndedSession = id(-900)
+			fake.global.lastEndedSession = id(-300)
 			local seen = listen(fake)
 
 			fake.login()
@@ -1660,7 +1660,7 @@ describe("FakePagle", function()
 					fake.global.summary.moments[1].title,
 					fake.global.summary.moments[2].title,
 				})
-				fake.wait(900)
+				fake.wait(300)
 
 				local card = fake.global.cards[1]
 				assert.are.same({ casts = 1, catches = 1, gotAway = 0, seconds = 0 }, card.numbers)
@@ -1679,7 +1679,7 @@ describe("FakePagle", function()
 			fake.enterWorld()
 			fake.playCast("gotAway")
 
-			fake.wait(900)
+			fake.wait(300)
 
 			assert.are.same({}, fake.global.cards)
 		end)
@@ -1693,7 +1693,7 @@ describe("FakePagle", function()
 			assert.are.equal("Welcome back", fake.global.pending[1].title)
 
 			fake.playCast("gotAway")
-			fake.wait(900)
+			fake.wait(300)
 
 			assert.are.equal("Welcome back", fake.global.cards[1].moments[1].moments[1].title)
 		end)
@@ -1725,7 +1725,7 @@ describe("FakePagle", function()
 				fake.playCast("caught", { { itemID = 6358, quantity = 1 } })
 				fake.playCast("caught", { { itemID = 6358, quantity = 1 } })
 				assert.are.equal("Pagle · 2 waiting", fake.compartmentText())
-				fake.wait(900)
+				fake.wait(300)
 
 				assert.are.equal("Fishing session", fake.cardsShown[1].title)
 				assert.are.equal("Pagle", fake.compartmentText())
@@ -1740,7 +1740,7 @@ describe("FakePagle", function()
 					kind = "window",
 					title = "Window open",
 					cast = record.id,
-					expiresAt = SERVER_TIME + 600,
+					expiresAt = SERVER_TIME + 200,
 					pastText = "Window opened 21:00–06:00",
 				}
 			end)
@@ -1748,7 +1748,7 @@ describe("FakePagle", function()
 			fake.enterWorld()
 
 			fake.playCast("caught", { { itemID = 6358, quantity = 1 } })
-			fake.wait(900)
+			fake.wait(300)
 
 			local moment = fake.global.cards[1].moments[1].moments[1]
 			assert.is_true(moment.expired)
@@ -1767,7 +1767,7 @@ describe("FakePagle", function()
 				fake.catchLog:Append({
 					kind = "cast",
 					char = 1,
-					time = 1791731000 + i,
+					time = SERVER_TIME - 100 + i,
 					outcome = "caught",
 					conditions = { minute = 494, zone = 148, subzone = 453, events = {}, auras = {} },
 					items = { { itemID = 6358, quantity = 1 } },
@@ -1853,7 +1853,7 @@ describe("FakePagle", function()
 				assert.are.same({}, fake.cardsShown)
 
 				fake.playCast("gotAway")
-				fake.wait(900)
+				fake.wait(300)
 
 				assert.are.same({ "Fishing session", "Ledger written up" }, {
 					fake.cardsShown[1].title,

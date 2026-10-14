@@ -54,7 +54,7 @@ function ns.WireProjections(host)
 end
 
 --- Sessions as Core runs them (LOG-R60–R64): the tracker over the Catch log and PagleDB.global, on the server time,
---- with a timer for the 900 s after each Cast.
+--- with a timer for the 300 s after each Cast.
 ---@class PagleSessions
 ---@field package host PagleHost
 ---@field package tracker PagleSessionTracker? -- from Open on
@@ -85,7 +85,7 @@ local function waitFor(sessions, seconds)
 end
 
 --- Login step 1 (LOG-R1), once the Catch log and PagleDB are open: notes the latest Session (LOG-R63). One still
---- open ends 900 s after its last Cast; one that ended while away gets its SessionEnded once no projection is
+--- open ends 300 s after its last Cast; one that ended while away gets its SessionEnded once no projection is
 --- updating, unless a Cast fires it first.
 function Sessions:Open()
 	local host = self.host
@@ -105,7 +105,7 @@ function Sessions:Cast()
 	end
 end
 
---- The Session open now, while its last Cast is under 900 s ago, else nil (LOG-R64). A fresh copy each call.
+--- The Session open now, while its last Cast is under 300 s ago, else nil (LOG-R64). A fresh copy each call.
 ---@return PagleSession?
 function Sessions:Get()
 	return self.tracker and self.tracker:Get(self.host.serverTime())

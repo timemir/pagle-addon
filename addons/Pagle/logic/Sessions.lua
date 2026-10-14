@@ -6,9 +6,9 @@ local ns = select(2, ...)
 -- does it, for the session tag on every record Core hands out and for the live Session events alike.
 
 --- Consecutive Casts this many seconds apart, or more, are in different Sessions (Tunables: Session gap).
-ns.SESSION_GAP = 900
+ns.SESSION_GAP = 300
 --- Changes whenever the Session rule changes; Modules that store Sessions fold it into their rules version (LOG-R61).
-ns.SESSION_RULES_VERSION = 1
+ns.SESSION_RULES_VERSION = 2
 
 --- A Session, as `SessionStarted`, `SessionEnded` and `Pagle.GetSession` hand it out (catch-log.md › Events).
 ---@class PagleSession
@@ -189,7 +189,7 @@ local function fireEnded(tracker)
 	tracker.options.fire("SessionEnded", ns.SessionPayload(session, whileAway))
 end
 
---- At login (LOG-R63): notes the log's latest Session. One that ended 900 s or more before `now` and isn't
+--- At login (LOG-R63): notes the log's latest Session. One that ended 300 s or more before `now` and isn't
 --- `lastEndedSession` gets its SessionEnded, with `whileAway`, at Idle or at the next Cast, whichever comes first.
 --- Returns the seconds until a Session still open ends (call Tick then), else nil.
 ---@param now integer server time
@@ -226,7 +226,7 @@ function Tracker:Cast()
 	return ns.SESSION_GAP
 end
 
---- Fires SessionEnded for the Session open while logged in once 900 s have passed since its last Cast (LOG-R62).
+--- Fires SessionEnded for the Session open while logged in once 300 s have passed since its last Cast (LOG-R62).
 --- Returns the seconds still to wait if they haven't, else nil.
 ---@param now integer server time
 ---@return integer?
@@ -249,7 +249,7 @@ function Tracker:Idle()
 	end
 end
 
---- The Session open at `now`, its last Cast under 900 s before, as a fresh copy; else nil (LOG-R64).
+--- The Session open at `now`, its last Cast under 300 s before, as a fresh copy; else nil (LOG-R64).
 ---@param now integer server time
 ---@return PagleSession?
 function Tracker:Get(now)

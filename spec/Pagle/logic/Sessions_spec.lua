@@ -57,20 +57,20 @@ local function tags(catchLog, afterSeq)
 end
 
 describe("cutting Sessions", function()
-	it("keeps Casts 899 s apart in one Session and splits Casts 900 s apart (LOG-R60)", function()
-		local catchLog = ns.OpenCatchLog(log({ cast(0), cast(899), cast(1799) }), {})
+	it("keeps Casts 299 s apart in one Session and splits Casts 300 s apart (LOG-R60)", function()
+		local catchLog = ns.OpenCatchLog(log({ cast(0), cast(299), cast(599) }), {})
 
-		assert.are.same({ idAt(0), idAt(0), idAt(1799) }, tags(catchLog, 0))
+		assert.are.same({ idAt(0), idAt(0), idAt(599) }, tags(catchLog, 0))
 	end)
 
 	it("doesn't split one for a character switch, a zone change or a reload between Casts (LOG-R60)", function()
 		local catchLog = ns.OpenCatchLog(
 			log({
 				cast(0),
-				cast(600, 2), -- Bram, on another login
-				"B1|2|1791731700|0|70338|1.60.1", -- a reload in between: a build entry
-				cast(1200, 2, 1519, 0), -- Stormwind
-				cast(2000, 1),
+				cast(200, 2), -- Bram, on another login
+				"B1|2|1791731300|0|70338|1.60.1", -- a reload in between: a build entry
+				cast(400, 2, 1519, 0), -- Stormwind
+				cast(650, 1),
 			}),
 			{}
 		)
@@ -79,11 +79,11 @@ describe("cutting Sessions", function()
 	end)
 
 	it("keeps a Session that crosses realm midnight as one (LOG-R95)", function()
-		-- realm 23:58, then 00:06 the next day, 480 s later
+		-- realm 23:58, then 00:02 the next day, 240 s later
 		local catchLog = ns.OpenCatchLog(
 			log({
 				("C1|1|%d|0|c|1438|1439|1|148|453|86|25|263|||6358x1"):format(T),
-				("C1|1|%d|0|c|6|1439|1|148|453|86|25|263|||6358x1"):format(T + 480),
+				("C1|1|%d|0|c|2|1439|1|148|453|86|25|263|||6358x1"):format(T + 240),
 			}),
 			{}
 		)
@@ -92,7 +92,7 @@ describe("cutting Sessions", function()
 	end)
 
 	it("tags a Skill Reading with the Session open when it was appended, else with none (LOG-R98)", function()
-		local catchLog = ns.OpenCatchLog(log({ skill(0), cast(10), skill(909), skill(910), cast(2000) }), {})
+		local catchLog = ns.OpenCatchLog(log({ skill(0), cast(10), skill(309), skill(310), cast(2000) }), {})
 
 		assert.are.same({ false, idAt(10), idAt(10), false, idAt(2000) }, tags(catchLog, 0))
 	end)
@@ -105,7 +105,7 @@ describe("cutting Sessions", function()
 
 	it("tags the same whether the log is read from seq 0 or from any later afterSeq (LOG-R98)", function()
 		local catchLog = ns.OpenCatchLog(
-			log({ cast(0), skill(5), cast(300), cast(890, 2), skill(1700), cast(2000), skill(2100), cast(2500) }),
+			log({ cast(0), skill(5), cast(100), cast(290, 2), skill(600), cast(700), skill(750), cast(900) }),
 			{}
 		)
 		local whole = tags(catchLog, 0)
@@ -123,7 +123,7 @@ describe("cutting Sessions", function()
 		function()
 			-- Each projection reads the log from its own seq at login, and again from its target when it finishes: the
 			-- look-back decodes the open Session, so its cost grows with the Session. It is kept for the login.
-			local catchLog = ns.OpenCatchLog(log({ cast(0), cast(300, 2), cast(600) }), {})
+			local catchLog = ns.OpenCatchLog(log({ cast(0), cast(100, 2), cast(200) }), {})
 			local lookBack = spy.on(ns, "SessionStartSeq")
 			finally(function()
 				lookBack:revert()
@@ -139,13 +139,13 @@ describe("cutting Sessions", function()
 	)
 
 	it("keeps each read's Session its own when a look-back is reused (LOG-R62, LOG-R98)", function()
-		local catchLog = ns.OpenCatchLog(log({ cast(0), cast(300, 2), cast(600) }), {})
+		local catchLog = ns.OpenCatchLog(log({ cast(0), cast(100, 2), cast(200) }), {})
 		tags(catchLog, 3)
 		local conditions = { minute = 494, zone = 1519, subzone = 0, events = {}, auras = {} }
 		catchLog:Append({
 			kind = "cast",
 			char = 1,
-			time = T + 700,
+			time = T + 250,
 			outcome = "caught",
 			conditions = conditions,
 			items = {},
@@ -166,13 +166,13 @@ describe("cutting Sessions", function()
 		end
 
 		local appended = {
-			append({ kind = "cast", char = 1, time = T + 600, outcome = "caught", conditions = conditions, items = {} }),
-			append({ kind = "skill", char = 1, time = T + 1400, rank = 81, max = 150, mod = 0 }),
-			append({ kind = "skill", char = 1, time = T + 1500, rank = 82, max = 150, mod = 0 }),
+			append({ kind = "cast", char = 1, time = T + 200, outcome = "caught", conditions = conditions, items = {} }),
+			append({ kind = "skill", char = 1, time = T + 450, rank = 81, max = 150, mod = 0 }),
+			append({ kind = "skill", char = 1, time = T + 500, rank = 82, max = 150, mod = 0 }),
 			append({
 				kind = "cast",
 				char = 1,
-				time = T + 1500,
+				time = T + 500,
 				outcome = "gotAway",
 				conditions = conditions,
 				items = {},
@@ -180,7 +180,7 @@ describe("cutting Sessions", function()
 		}
 
 		-- tie 1: the Skill Reading took tie 0 in that second (LOG-R12)
-		assert.are.same({ idAt(0), idAt(0), false, ("%s-%d-1"):format(ADA, T + 1500) }, appended)
+		assert.are.same({ idAt(0), idAt(0), false, ("%s-%d-1"):format(ADA, T + 500) }, appended)
 		local back = tags(catchLog, 2)
 		assert.are.same(appended, { back[3], back[4], back[5], back[6] })
 	end)
@@ -284,17 +284,17 @@ describe("the Session events", function()
 
 		assert.are.same({ "SessionStarted " .. idAt(0) }, seen.fired)
 		assert.are.same({ 1, 1 }, { seen.payloads[1].casts, seen.payloads[1].catches })
-		assert.are.equal(ns.SESSION_GAP, wait)
+		assert.are.equal(300, wait)
 	end)
 
-	it("fires SessionEnded once 900 s pass with no Cast, and sets lastEndedSession (LOG-R62, LOG-R63)", function()
+	it("fires SessionEnded once 300 s pass with no Cast, and sets lastEndedSession (LOG-R62, LOG-R63)", function()
 		local seen = tracked({})
 		seen.tracker:Start(T)
 		castAt(seen, 0)
 
-		assert.are.equal(1, seen.tracker:Tick(T + 899))
+		assert.are.equal(1, seen.tracker:Tick(T + 299))
 		assert.are.same({ "SessionStarted " .. idAt(0) }, seen.fired)
-		assert.is_nil(seen.tracker:Tick(T + 900))
+		assert.is_nil(seen.tracker:Tick(T + 300))
 		seen.tracker:Tick(T + 2000)
 
 		assert.are.same({ "SessionStarted " .. idAt(0), "SessionEnded " .. idAt(0) }, seen.fired)
@@ -309,29 +309,29 @@ describe("the Session events", function()
 			seen.tracker:Start(T)
 			castAt(seen, 0)
 
-			castAt(seen, 900)
+			castAt(seen, 300)
 
 			assert.are.same({
 				"SessionStarted " .. idAt(0),
 				"SessionEnded " .. idAt(0),
-				"SessionStarted " .. idAt(900),
+				"SessionStarted " .. idAt(300),
 			}, seen.fired)
 			assert.are.same({ 1, 1 }, { seen.payloads[2].casts, seen.payloads[3].casts })
 		end
 	)
 
-	it("serves the Session open now, as a fresh copy, and nil 900 s after its last Cast (LOG-R64)", function()
+	it("serves the Session open now, as a fresh copy, and nil 300 s after its last Cast (LOG-R64)", function()
 		local seen = tracked({})
 		assert.is_nil(seen.tracker:Get(T))
 		seen.tracker:Start(T)
 		castAt(seen, 0)
 		castAt(seen, 10)
 
-		local session = seen.tracker:Get(T + 909)
+		local session = seen.tracker:Get(T + 309)
 		session.casts = 99
 
-		assert.are.same({ idAt(0), 2 }, { session.id, seen.tracker:Get(T + 909).casts })
-		assert.is_nil(seen.tracker:Get(T + 910))
+		assert.are.same({ idAt(0), 2 }, { session.id, seen.tracker:Get(T + 309).casts })
+		assert.is_nil(seen.tracker:Get(T + 310))
 	end)
 
 	describe("at login", function()
@@ -385,14 +385,14 @@ describe("the Session events", function()
 		end)
 
 		it(
-			"keeps a Session still open after a reload, ending it live when its 900 s pass (LOG-R60, LOG-R62)",
+			"keeps a Session still open after a reload, ending it live when its 300 s pass (LOG-R60, LOG-R62)",
 			function()
 				local seen = tracked({ cast(0) })
 
-				assert.are.equal(600, seen.tracker:Start(T + 300))
+				assert.are.equal(200, seen.tracker:Start(T + 100))
 				seen.tracker:Idle()
-				assert.are.equal(idAt(0), seen.tracker:Get(T + 300).id)
-				seen.tracker:Tick(T + 900)
+				assert.are.equal(idAt(0), seen.tracker:Get(T + 100).id)
+				seen.tracker:Tick(T + 300)
 
 				assert.are.same({ "SessionEnded " .. idAt(0) }, seen.fired)
 			end

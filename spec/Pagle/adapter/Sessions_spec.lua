@@ -66,8 +66,8 @@ local function playerId(offset)
 end
 
 describe("Sessions on the client", function()
-	it("publishes Pagle.SESSION_RULES_VERSION 1 (LOG-R61)", function()
-		assert.are.equal(1, loadAddon("Pagle", FOREVER_GLOBALS).env.Pagle.SESSION_RULES_VERSION)
+	it("publishes Pagle.SESSION_RULES_VERSION 2 (LOG-R61)", function()
+		assert.are.equal(2, loadAddon("Pagle", FOREVER_GLOBALS).env.Pagle.SESSION_RULES_VERSION)
 	end)
 
 	it(
@@ -77,7 +77,7 @@ describe("Sessions on the client", function()
 			local loaded, seen = core({ BUILD_ENTRY })
 			enterWorld(loaded)
 			catchOne(loaded)
-			seen.jump(1000) -- the 900 s timer hasn't run
+			seen.jump(1000) -- the 300 s timer hasn't run
 			seen.order = {}
 
 			catchOne(loaded)
@@ -93,14 +93,14 @@ describe("Sessions on the client", function()
 		end
 	)
 
-	it("ends a Session when 900 s pass with no Cast, then GetSession is nil (LOG-R62, LOG-R64)", function()
+	it("ends a Session when 300 s pass with no Cast, then GetSession is nil (LOG-R62, LOG-R64)", function()
 		local loaded, seen = core({ BUILD_ENTRY })
 		local Pagle = loaded.env.Pagle
 		enterWorld(loaded)
 		catchOne(loaded)
 		seen.order = {}
 
-		loaded.client.advance(899)
+		loaded.client.advance(299)
 		assert.are.equal(playerId(0), Pagle.GetSession().id)
 		assert.are.same({}, seen.order)
 		loaded.client.advance(1)
@@ -110,15 +110,15 @@ describe("Sessions on the client", function()
 		assert.are.equal(playerId(0), loaded.env.PagleDB.global.lastEndedSession)
 	end)
 
-	it("waits 900 s from the last Cast, not the first (LOG-R62)", function()
+	it("waits 300 s from the last Cast, not the first (LOG-R62)", function()
 		local loaded, seen = core({ BUILD_ENTRY })
 		enterWorld(loaded)
 		catchOne(loaded)
-		loaded.client.advance(600)
+		loaded.client.advance(200)
 		catchOne(loaded)
 		seen.order = {}
 
-		loaded.client.advance(899)
+		loaded.client.advance(299)
 		assert.are.same({}, seen.order)
 		loaded.client.advance(1)
 

@@ -133,7 +133,7 @@
 ---@field closeLoot fun() LOOT_CLOSED.
 ---@field escape fun() The game reports the fish escaped (LOG-R6).
 ---@field wait fun(seconds: number) Moves the fake's clock on, running each grace timer that comes due, and ending
---- the Session 900 s after its last Cast (LOG-R62).
+--- the Session 300 s after its last Cast (LOG-R62).
 ---@field serverTime fun(): integer The fake's server time: SERVER_TIME plus its clock, in whole seconds.
 ---@field compartmentText fun(): string The compartment entry's label as it reads now (CORE-R51): "Pagle", or with
 --- moments kept while Cozy mode was on and no Session summary card shown since, "Pagle · 2 waiting" (ANN-R42).
@@ -751,7 +751,7 @@ part(function(fake, Pagle, ns, host)
 	-- Sessions (LOG-R60–R64), on Core's wiring over fake.catchLog and fake.global, at the fake's server time. The
 	-- session tag is the Catch log's own. Login opens them, noting the latest Session (one ended before it gets its
 	-- SessionEnded, whileAway, once no projection is updating, unless global.lastEndedSession names it); each Cast
-	-- fires the Session events after its append (LOG-R9 step 3); the Session ends when fake.wait has passed 900 s
+	-- fires the Session events after its append (LOG-R9 step 3); the Session ends when fake.wait has passed 300 s
 	-- after its last Cast.
 	fake.serverTime = host.serverTime
 	Pagle.SESSION_RULES_VERSION = ns.SESSION_RULES_VERSION
