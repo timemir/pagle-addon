@@ -94,12 +94,25 @@ echo "types: no warnings"
 # --- 5. tests (#49): busted on Lua 5.1, every spec/**/*_spec.lua. spec/support/addon.lua loads each addon from its
 # real .toc, in order, so TOC and load-order mistakes fail specs. luacov then reports coverage of addons/ (.luacov);
 # the report never gates.
+# busted itself only ever exits 0 or 1, so a status over 128 means a signal killed it before the specs finished: it
+# says nothing about them. On the dev's machine the coverage run has died of SIGSEGV that way, at instructions that
+# can't fault (#149). Such a run gets one rerun, without coverage, which gates instead, and no report is made.
 stage tests
 mkdir -p .tools/cache
 rm -f .tools/cache/luacov.*.out # luacov adds to an existing stats file
-"$bin/busted" --coverage || fail tests
-{ "$bin/luacov" && echo "coverage (reported, never gates):" && sed -n '/^File /,$p' .tools/cache/luacov.report.out; } ||
+status=0
+"$bin/busted" --coverage || status=$?
+if ((status > 128)); then
+	echo "tests: busted --coverage was killed by signal $((status - 128));" \
+		"running the specs again without coverage (#149)" >&2
+	"$bin/busted" || fail tests
 	echo "check: no coverage report (coverage never gates)"
+elif ((status != 0)); then
+	fail tests
+else
+	{ "$bin/luacov" && echo "coverage (reported, never gates):" && sed -n '/^File /,$p' .tools/cache/luacov.report.out; } ||
+		echo "check: no coverage report (coverage never gates)"
+fi
 
 # --- 6. generator (#55, DATA-R61): every generated file is what data/ gives (generate-data.py --check), the
 # generator's pytest suite passes, and mypy --strict passes over the typed package (DATA-R60). scripts/pyproject.toml
