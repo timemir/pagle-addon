@@ -26,11 +26,13 @@ logic\Labels.lua
 logic\Timeline.lua
 logic\WindowMoments.lua
 logic\Board.lua
+logic\Sets.lua
 logic\Goods.lua
 logic\Entry.lua
 logic\Tracker.lua
 adapter\BoardWidgets.lua
 adapter\Board.lua
+adapter\Sets.lua
 adapter\Goods.lua
 adapter\Hunts.lua
 adapter\Groups.lua
