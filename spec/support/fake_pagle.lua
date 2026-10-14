@@ -73,7 +73,8 @@
 --- reports it and returns nothing.
 ---@field openedSettings string[] What each Pagle.OpenSettings opened: "root" or the topic (CORE-R43).
 ---@field menu fun(): PagleMenuEntry[] The compartment menu as it would open now, labels read (CORE-R50, CORE-R52);
---- each entry's onClick is what clicking it does. Its last two entries are the Curio Shop (disabled) and Settings.
+--- each entry's onClick is what clicking it does. Its last three entries are the Curio Shop (disabled), "Help chart
+--- the waters" (with " (N)" while Pagle.GetFieldReportCount() is above 0; it calls Pagle.OpenFieldReport) and Settings.
 ---@field coinReports { module: string, total: integer }[] Each M:ReportCoinsEarned Core accepted, in order, an
 --- unchanged total too (SHOP-R2).
 ---@field setSpent fun(spent: integer) Sets the Coins spent, as the Curio Shop will (M4): BalanceChanged fires if the
@@ -112,6 +113,11 @@
 --- adds entries for the P rows Pagle.GetFieldReportCount counts (REP-R22).
 ---@field fieldReportDB table PagleDB.global.projections.fieldReport (REP-R25); a spec may fill it before enterWorld,
 --- as a saved one.
+---@field setFieldReportCount fun(n: integer?) Makes Pagle.GetFieldReportCount return `n`, whatever the rows; nil goes
+--- back to the count Core's projection gives (REP-R26).
+---@field fieldReportsOpened PagleFieldReportView[] Each box Pagle.OpenFieldReport opened, in order: its message
+--- (REP-R41, REP-R42), or its parts and the issue form's URL (REP-R40). While restricted it opens none and prints
+--- REP-R44's line in `printed`.
 ---@field conditions ConditionsSnapshot The live conditions Pagle.GetConditions serves (without `restricted`, which
 --- follows setRestricted). Read it; change it with setConditions.
 ---@field setConditions fun(snapshot: ConditionsSnapshot) Replaces the live conditions and fires ConditionsChanged
@@ -452,17 +458,23 @@ part(function(fake, Pagle, ns)
 		commands:AddModules(fake.registry:Modules(), fake.report)
 	end)
 
-	local function openSettings()
-		Pagle.OpenSettings()
-	end
-	local settings = ns.SettingsMenuEntry(openSettings)
+	local core = {
+		settings = function()
+			Pagle.OpenSettings()
+		end,
+		report = function()
+			Pagle.OpenFieldReport()
+		end,
+	}
+	local settings = ns.SettingsMenuEntry(core.settings)
 	function fake.menu()
 		local shop = ns.CurioShopMenuEntry(Pagle.GetBalance(), breakUpLargeNumbers)
-		return ns.CompartmentMenu(fake.registry:Modules(), shop, settings, fake.securecall)
+		local report = ns.FieldReportMenuEntry(Pagle.GetFieldReportCount(), core.report)
+		return ns.CompartmentMenu(fake.registry:Modules(), shop, report, settings, fake.securecall)
 	end
 
 	function fake.slash(line)
-		commands:Run(line, openSettings, fake.securecall, fake.print)
+		commands:Run(line, core, fake.securecall, fake.print)
 	end
 end)
 
@@ -579,7 +591,7 @@ part(function(fake, Pagle, ns)
 			return ns.Catalogue[name]
 		end,
 	})
-	local _, count = ns.AddFieldReport({
+	local rows, count = ns.AddFieldReport({
 		projections = fake.projections,
 		db = fake.fieldReportDB,
 		catalogue = catalogue,
@@ -593,7 +605,42 @@ part(function(fake, Pagle, ns)
 			return fake.catchLog:Reverse("cast")
 		end,
 	})
-	Pagle.GetFieldReportCount = count
+	local setCount
+	function Pagle.GetFieldReportCount()
+		if setCount then
+			return setCount
+		end
+		return count()
+	end
+	function fake.setFieldReportCount(n)
+		setCount = n
+	end
+
+	-- The box (REP-R40–R44), on Core's real Pagle.OpenFieldReport: each opening's view, its text built now from the
+	-- rows above as Core's adapter builds it (the header's addon version reads "test", and no name is cached), lands
+	-- in fake.fieldReportsOpened; while restricted it prints REP-R44's line instead.
+	fake.fieldReportsOpened = {}
+	local noName = function()
+		return nil
+	end
+	Pagle.OpenFieldReport = ns.OpenFieldReportFunction({
+		isRestricted = function()
+			return Pagle.IsRestricted()
+		end,
+		print = fake.print,
+		rows = rows,
+		text = function(reportRows)
+			return ns.FieldReportParts(reportRows, {
+				addon = "test",
+				fingerprint = Pagle.CONTENT_FINGERPRINT,
+				locale = "enUS",
+				logId = fake.catchLog.data.logId or "",
+			}, { item = noName, area = noName })
+		end,
+		show = function(view)
+			fake.fieldReportsOpened[#fake.fieldReportsOpened + 1] = view
+		end,
+	})
 end)
 
 -- The live conditions (LOG-R45, LOG-R47). Pagle.GetConditions hands out fake.conditions, read-only, with the
