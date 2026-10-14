@@ -88,6 +88,20 @@ describe("Stats' spec support", function()
 			assert.are.same({ "day" }, windowsOf(fake, ELWYNN, MUD_SNAPPER))
 		end)
 
+		it(
+			"has a zone with skillBase 205 whose subzone has its own skillBase, and gated Noise and removed items (STA-R12, STA-R16)",
+			function()
+				local FERALAS, FEATHERMOON = 357, 1116
+				assert.are.equal(205, Pagle.GetArea(FERALAS).skillBase)
+				assert.are.same(
+					{ FERALAS, 300 },
+					{ Pagle.GetZoneOf(FEATHERMOON), Pagle.GetArea(FEATHERMOON).skillBase }
+				)
+				assert.are.same({ "day" }, windowsOf(fake, FERALAS, MANA_POTION))
+				assert.are.same({ "summer" }, windowsOf(fake, FERALAS, RUSTED_LURE))
+			end
+		)
+
 		it("has a pool-associated item, a Noise item and a removed item (STA-R17, STA-R18)", function()
 			assert.is_true(Pagle.GetItem(BLACKMOUTH).pool)
 			assert.is_true(Pagle.GetItem(MANA_POTION).noise)
