@@ -87,6 +87,9 @@ local function readContext()
 		getArea = Pagle.GetArea,
 		angler = Pagle.GetAngler(),
 		openFieldReport = Pagle.OpenFieldReport,
+		sizeText = function(size)
+			return ns.SizeText(size, Pagle.SIZE_BANDS, Pagle.FormatLength)
+		end,
 		-- The Angler page's M4 parts (LED-R146): the crest, Prestige, the title pick and the bindings.
 		crest = ns.CrestIcon(),
 		canPrestige = ns.CanPrestige(),
