@@ -100,4 +100,160 @@ describe("board days and weeks", function()
 			end)
 		end)
 	end)
+
+	describe("ns.NumberBoundary", function()
+		-- The `start` record of a board started now: day 0, week 0, live boundaries.
+		local START = { day = 0, week = 0, dayStart = DAILY, weekStart = WEEKLY }
+
+		it("numbers the start record day 0 and week 0 (TKB-R12)", function()
+			assert.are.same({ day = 0, week = 0 }, ns.NumberBoundary(nil, DAILY, WEEKLY))
+		end)
+
+		it("numbers a day record 3 days after start day 3, a weekly reset later week 1 (TKB-R12)", function()
+			-- Wed 14 Oct: the weekly reset of Tue 13 Oct is behind it.
+			assert.are.same({ day = 3, week = 1 }, ns.NumberBoundary(START, DAILY + 3 * DAY, WEEKLY + WEEK))
+		end)
+
+		it("rounds a day start an hour later or earlier (daylight saving) to whole days (TKB-R12)", function()
+			assert.are.same({ day = 3, week = 0 }, ns.NumberBoundary(START, DAILY + 3 * DAY + 3600, WEEKLY))
+			assert.are.same({ day = 3, week = 0 }, ns.NumberBoundary(START, DAILY + 3 * DAY - 3600, WEEKLY))
+		end)
+
+		it("never numbers below the previous record when the day start steps back an hour (TKB-R12)", function()
+			local day3 = { day = 3, week = 1, dayStart = DAILY + 3 * DAY, weekStart = WEEKLY + WEEK }
+			assert.are.same({ day = 3, week = 1 }, ns.NumberBoundary(day3, DAILY + 3 * DAY - 3600, WEEKLY + WEEK))
+		end)
+
+		it("never numbers below the previous record when the clock steps back a day or a week (TKB-R12)", function()
+			local day3 = { day = 3, week = 1, dayStart = DAILY + 3 * DAY, weekStart = WEEKLY + WEEK }
+			assert.are.same({ day = 3, week = 1 }, ns.NumberBoundary(day3, DAILY + 2 * DAY, WEEKLY))
+		end)
+
+		it("never numbers below the previous record on a switch to the fallback and back (TKB-R11, TKB-R12)", function()
+			-- Today, both calls failed: realm midnight (8 h before the daily reset) and Tuesday's realm midnight.
+			local fallback = { ns.LiveBoundaries(api(NOW, { daily = false, weekly = false })) }
+			local onFallback = ns.NumberBoundary(START, fallback[1], fallback[2])
+			assert.are.same({ day = 0, week = 0 }, onFallback)
+
+			-- The next day, the calls answer again.
+			local back = { day = 0, week = 0, dayStart = fallback[1], weekStart = fallback[2] }
+			assert.are.same({ day = 1, week = 0 }, ns.NumberBoundary(back, DAILY + DAY, WEEKLY))
+		end)
+
+		it("raises the week by one for a weekly reset 10 seconds off a daily reset (TKB-R12)", function()
+			assert.are.same({ day = 7, week = 1 }, ns.NumberBoundary(START, DAILY + 7 * DAY, WEEKLY + WEEK - 10))
+			assert.are.same({ day = 7, week = 1 }, ns.NumberBoundary(START, DAILY + 7 * DAY, WEEKLY + WEEK + 10))
+		end)
+	end)
+
+	describe("an entry's day and a day's start and week", function()
+		-- A board started now: its `start` record is day 0, week 0 (Sun 11 Oct; the week began Tue 6 Oct).
+		local START = { day = 0, week = 0, dayStart = DAILY, weekStart = WEEKLY }
+
+		it("gives an entry before the start record no day (TKB-R12)", function()
+			assert.is_nil(ns.DayOf(nil, NOW))
+		end)
+
+		it("puts an entry on the day it falls in, counted from the latest boundary record (TKB-R12)", function()
+			assert.are.equal(0, ns.DayOf(START, NOW))
+			assert.are.equal(0, ns.DayOf(START, DAILY + DAY - 1))
+			assert.are.equal(1, ns.DayOf(START, DAILY + DAY))
+			assert.are.equal(3, ns.DayOf(START, DAILY + 3 * DAY + 5))
+			-- From a later `day` record: day 3 started Wed 14 Oct 15:00.
+			local day3 = { day = 3, week = 1, dayStart = DAILY + 3 * DAY, weekStart = WEEKLY + WEEK }
+			assert.are.equal(5, ns.DayOf(day3, DAILY + 5 * DAY + 600))
+		end)
+
+		it("starts day k k whole days after the boundary's day start (TKB-R12)", function()
+			assert.are.equal(DAILY, ns.DayStartOf(START, 0))
+			assert.are.equal(DAILY + 4 * DAY, ns.DayStartOf(START, 4)) -- Thu 15 Oct 15:00
+			local day3 = { day = 3, week = 1, dayStart = DAILY + 3 * DAY, weekStart = WEEKLY + WEEK }
+			assert.are.equal(DAILY + 9 * DAY, ns.DayStartOf(day3, 9))
+		end)
+
+		it("puts a day in the week its start falls in, from the weekly reset on (TKB-R12)", function()
+			-- Day 1 is Mon 12 Oct, day 2 Tue 13 Oct (the weekly reset), day 8 Mon 19, day 9 Tue 20 Oct.
+			local weeks = {}
+			for k = 0, 9 do
+				weeks[#weeks + 1] = ns.WeekOfDay(START, k)
+			end
+			assert.are.same({ 0, 0, 1, 1, 1, 1, 1, 1, 1, 2 }, weeks)
+		end)
+
+		it("keeps a weekly reset 10 seconds after a daily one from being missed, with the 12 h slack (TKB-R12)", function()
+			local late = { day = 0, week = 0, dayStart = DAILY, weekStart = WEEKLY + 10 }
+			assert.are.same({ 0, 1 }, { ns.WeekOfDay(late, 1), ns.WeekOfDay(late, 2) })
+			local early = { day = 0, week = 0, dayStart = DAILY, weekStart = WEEKLY - 10 }
+			assert.are.same({ 0, 1 }, { ns.WeekOfDay(early, 1), ns.WeekOfDay(early, 2) })
+		end)
+
+		it("agree with each other and with the day record written live, across a week boundary (TKB-R12)", function()
+			-- Each day from Sun 11 to Wed 21 Oct, a minute after its reset: what live play, catch-up and rebuild see.
+			local expectedWeeks = { [0] = 0, 0, 1, 1, 1, 1, 1, 1, 1, 2, 2 }
+			for k = 0, 10 do
+				local t = DAILY + k * DAY + 60
+				local live = api(t)
+				local dayStart, weekStart = ns.LiveBoundaries(live)
+				local record = ns.NumberBoundary(START, dayStart, weekStart)
+
+				assert.are.same({ day = k, week = expectedWeeks[k] }, record, "day " .. k)
+				assert.are.equal(k, ns.DayOf(START, t), "DayOf, day " .. k)
+				assert.are.equal(k, ns.Today(START, live), "Today, day " .. k)
+				assert.are.equal(dayStart, ns.DayStartOf(START, k), "DayStartOf, day " .. k)
+				assert.are.equal(expectedWeeks[k], ns.WeekOfDay(START, k), "WeekOfDay, day " .. k)
+			end
+		end)
+
+		it("gives today the number a day record written now would get, never below the boundary's (TKB-R12)", function()
+			local day3 = { day = 3, week = 1, dayStart = DAILY + 3 * DAY, weekStart = WEEKLY + WEEK }
+			-- The clock stepped back to day 1: today stays day 3, as a `day` record would.
+			assert.are.equal(3, ns.Today(day3, api(DAILY + DAY + 60)))
+			-- On the fallback, 8 h before the daily reset, today is still day 3, and day 4 a day on.
+			assert.are.equal(3, ns.Today(day3, api(DAILY + 3 * DAY + 60, { daily = false })))
+			assert.are.equal(4, ns.Today(day3, api(DAILY + 4 * DAY + 60, { daily = false })))
+		end)
+
+		it("has no today before the start record (TKB-R12)", function()
+			assert.is_nil(ns.Today(nil, api(NOW)))
+		end)
+
+		describe("when the reset shifts an hour (daylight saving)", function()
+			-- From Wed 14 Oct (day 3) the daily reset is at 16:00 UTC instead of 15:00.
+			local function shiftedReset(k)
+				return DAILY + k * DAY + (k >= 3 and 3600 or 0)
+			end
+			local function shifted(now)
+				return api(now, {
+					daily = function()
+						local k = 0
+						while shiftedReset(k) <= now do
+							k = k + 1
+						end
+						return shiftedReset(k) - now
+					end,
+				})
+			end
+			local wed1530 = DAILY + 3 * DAY + 1800 -- before Wednesday's (shifted) reset: really still day 2
+			local thu1530 = DAILY + 4 * DAY + 1800 -- before Thursday's reset: really still day 3
+
+			it("puts a Cast within the shifted hour on the neighbouring day, as accepted (TKB-R12)", function()
+				assert.are.equal(3, ns.DayOf(START, wed1530))
+				assert.are.equal(4, ns.DayOf(START, thu1530))
+			end)
+
+			it("is corrected from the next day record on (TKB-R12)", function()
+				-- The live step writes a `day` record on Wednesday at 16:30, after the shifted reset.
+				local wed1630 = DAILY + 3 * DAY + 5400
+				local dayStart, weekStart = ns.LiveBoundaries(shifted(wed1630))
+				assert.are.equal(DAILY + 3 * DAY + 3600, dayStart)
+				local record = ns.NumberBoundary(START, dayStart, weekStart)
+				assert.are.same({ day = 3, week = 1 }, record)
+				local day3 = { day = 3, week = 1, dayStart = dayStart, weekStart = weekStart }
+
+				assert.are.equal(3, ns.DayOf(day3, thu1530))
+				assert.are.equal(3, ns.Today(day3, shifted(thu1530)))
+				assert.are.equal(4, ns.DayOf(day3, DAILY + 4 * DAY + 3600))
+			end)
+		end)
+	end)
 end)

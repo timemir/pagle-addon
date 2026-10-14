@@ -66,3 +66,82 @@ function ns.LiveBoundaries(api)
 	local weekStart = weekly and now + weekly - ns.WEEK_SECONDS or fallbackWeekStart(api, now)
 	return dayStart, weekStart
 end
+
+--- The latest `start` or `day` record's numbers and boundaries (TKB-R12), what DayOf, DayStartOf, WeekOfDay and Today
+--- count from. The projection's `state.boundary` is one (it also carries the record's `seq`).
+---@class TackleBoundary
+---@field day integer
+---@field week integer
+---@field dayStart integer
+---@field weekStart integer
+
+--- `floor(x + 0.5)` (TKB-R12's round).
+---@param x number
+---@return integer
+local function round(x)
+	return math.floor(x + 0.5)
+end
+
+--- The day and week a `start` or `day` record with these boundaries gets (TKB-R12): 0 and 0 for the `start` record
+--- (`previous` nil); for a `day` record, the previous boundary record's plus the whole days and weeks its boundaries
+--- moved, rounded, never lower than the previous record's (a clock step back or a switch to or from the fallback can't
+--- number backwards).
+---@param previous TackleBoundary? the latest earlier `start` or `day` record; nil for the `start` record
+---@param dayStart integer
+---@param weekStart integer
+---@return { day: integer, week: integer }
+function ns.NumberBoundary(previous, dayStart, weekStart)
+	if not previous then
+		return { day = 0, week = 0 }
+	end
+	local days = round((dayStart - previous.dayStart) / ns.DAY_SECONDS)
+	local weeks = round((weekStart - previous.weekStart) / ns.WEEK_SECONDS)
+	return { day = previous.day + math.max(0, days), week = previous.week + math.max(0, weeks) }
+end
+
+--- The board day of an entry at server time `t` (TKB-R12), counted from `boundary`, the latest `start` or `day` record
+--- with a lower `seq` than the entry; nil for an entry before the `start` record (no boundary). A `start` or `day`
+--- record's own day is the number NumberBoundary gave it, not this.
+---@param boundary TackleBoundary?
+---@param t integer
+---@return integer?
+function ns.DayOf(boundary, t)
+	if not boundary then
+		return nil
+	end
+	return boundary.day + math.floor((t - boundary.dayStart) / ns.DAY_SECONDS)
+end
+
+--- The server time board day `k` starts at, counted from `boundary` (TKB-R12).
+---@param boundary TackleBoundary
+---@param k integer
+---@return integer
+function ns.DayStartOf(boundary, k)
+	return boundary.dayStart + (k - boundary.day) * ns.DAY_SECONDS
+end
+
+--- The 12 h slack in WeekOfDay, so a weekly reset that coincides with a daily one isn't missed by seconds (TKB-R12,
+--- tackle-board.md › Tunables).
+ns.WEEK_SLACK = 43200
+
+--- The board week board day `k` belongs to, counted from `boundary` (TKB-R12): the week its start falls in, with
+--- ns.WEEK_SLACK.
+---@param boundary TackleBoundary
+---@param k integer
+---@return integer
+function ns.WeekOfDay(boundary, k)
+	local since = ns.DayStartOf(boundary, k) - boundary.weekStart + ns.WEEK_SLACK
+	return boundary.week + math.floor(since / ns.WEEK_SECONDS)
+end
+
+--- Today's board day, live (TKB-R12): the number a `day` record written now would get against `boundary`, the latest
+--- `start` or `day` record, so never below its day. Nil before the `start` record (no boundary).
+---@param boundary TackleBoundary?
+---@param api TackleResetAPI
+---@return integer?
+function ns.Today(boundary, api)
+	if not boundary then
+		return nil
+	end
+	return ns.NumberBoundary(boundary, ns.LiveBoundaries(api)).day
+end
