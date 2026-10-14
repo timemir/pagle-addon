@@ -183,3 +183,153 @@ describe("a caught Species' entry (LED-R140)", function()
 		}, textsOf(openFish(loaded, GONE).left))
 	end)
 end)
+
+describe("an uncaught Species' entry (LED-R141)", function()
+	it('shows a silhouette, "An unknown fish", its riddle in quotes and the hint link (LED-R141, LED-R124)', function()
+		local _, loaded = loggedIn()
+
+		local left = openFish(loaded, SECRET).left
+
+		assert.are.same({
+			{ kind = "icon", icon = SECRET, look = "silhouette", large = true },
+			{ kind = "title", text = "An unknown fish" },
+			{ kind = "text", text = "“Strange schools out on the dry plains.”" },
+			{
+				kind = "link",
+				text = "Read the plain hint ▸",
+				place = { id = "fish", args = { species = SECRET, hint = true } },
+			},
+		}, left)
+	end)
+
+	it("replaces the link with the plain hint, open until the spread changes (LED-R141, DATA-R112)", function()
+		local _, loaded = loggedIn()
+		local journal = loaded.ns.journal
+		openFish(loaded, SECRET)
+
+		journal.frame.left.drawn.link[1]:Click()
+
+		local hint = { kind = "text", hand = true, text = "night · pools · Elwynn Forest · Westfall +1 · skill ~25" }
+		assert.are.same(hint, journal.pages.left[4])
+		journal:Draw()
+		assert.are.same(hint, journal.pages.left[4])
+
+		journal:Open("home")
+		openFish(loaded, SECRET)
+		assert.are.equal("link", journal.pages.left[4].kind)
+	end)
+end)
+
+describe("the fish spread (LED-R142)", function()
+	-- The realm's clock and the server's both move on `minutes`: fake.conditions through setConditions, and the
+	-- client's GetServerTime and GetGameTime.
+	local function moveClocks(fake, loaded, minutes)
+		local snapshot = {}
+		for key, value in pairs(fake.conditions) do
+			snapshot[key] = value
+		end
+		snapshot.time = snapshot.time + minutes * MINUTE
+		snapshot.minute = (snapshot.minute + minutes) % 1440
+		fake.setConditions(snapshot)
+		loaded.env.GetServerTime = function()
+			return snapshot.time
+		end
+		loaded.env.GetGameTime = function()
+			return math.floor(snapshot.minute / 60), snapshot.minute % 60
+		end
+	end
+
+	-- The zone spread's place for `zone` with Species `id` selected.
+	local function zonePlace(zone, id)
+		return { id = "zone", args = { zone = zone, species = id } }
+	end
+
+	it("reads Home ❧ {fish} in its crumbs (LED-R125, LED-R142)", function()
+		local _, loaded = loggedIn()
+
+		local crumbs = openFish(loaded, MACKEREL).crumbs
+
+		assert.are.same({ "Home", "Raw Slitherskin Mackerel" }, { crumbs[1].label, crumbs[2].label })
+	end)
+
+	it('shows its listed zones as tiles by skill base, with "caught ✓", and its checklist (LED-R142, LED-R131)', function()
+		local _, loaded = loggedIn()
+
+		local right = openFish(loaded, MACKEREL).right
+
+		assert.are.same({
+			{ kind = "kicker", text = "Where to find it" },
+			{ kind = "title", text = "Its waters" },
+			{
+				kind = "tiles",
+				tiles = {
+					{
+						name = "Elwynn Forest",
+						line = "Local · 50%",
+						line2 = "caught ✓",
+						bar = 0.5,
+						place = zonePlace(ELWYNN, MACKEREL),
+					},
+					{
+						name = "Westfall",
+						line = "Local · 50%",
+						line2 = "caught ✓",
+						bar = 0.5,
+						place = zonePlace(WESTFALL, MACKEREL),
+					},
+					{
+						name = "Duskwood",
+						line = "unfished · skill ~150",
+						faded = true,
+						place = zonePlace(DUSKWOOD, MACKEREL),
+					},
+				},
+			},
+			{ kind = "text", text = "☐ In its element (2/3)" },
+			{ kind = "text", text = "☐ Regular (2/50)" },
+		}, right)
+	end)
+
+	it("counts windows for ★★ by windows, and shows each element window's line under \"When\" (LED-R142, LED-R45)", function()
+		local _, loaded = loggedIn()
+
+		local right = openFish(loaded, NIGHTFISH).right
+
+		assert.are.same({ kind = "kicker", text = "When" }, right[4])
+		assert.are.same({ kind = "text", text = "☑ In its element (1/1)" }, right[6])
+		assert.are.same({ kind = "text", text = "☐ Regular (1/50)" }, right[7])
+	end)
+
+	it("reads a night-only fish's window state live each time it is drawn (LED-R142, LED-R127, LOG-R50)", function()
+		local fake, loaded = loggedIn()
+
+		-- The fake's realm 08:15: night opens at 20:00, 11 h 45 min away.
+		assert.are.same({ kind = "text", hand = true, text = "night, back in 12 h" }, openFish(loaded, NIGHTFISH).right[5])
+
+		-- Realm 21:15, in the night.
+		moveClocks(fake, loaded, 13 * 60)
+		loaded.ns.journal:Draw()
+
+		assert.are.equal("night, biting now", loaded.ns.journal.pages.right[5].text)
+	end)
+
+	it("opens the zone spread with the fish selected from a tile (LED-R142)", function()
+		local _, loaded = loggedIn()
+		local opened
+		loaded.ns.RegisterJournalSpread("zone", {
+			crumbs = function()
+				return {}
+			end,
+			draw = function(args)
+				opened = args
+				return { left = {}, right = {} }
+			end,
+		})
+		openFish(loaded, MACKEREL)
+
+		local tiles = loaded.ns.journal.frame.right.drawn.tiles[1]
+		tiles.children[2]:Click()
+
+		assert.are.same({ zone = WESTFALL, species = MACKEREL }, opened)
+	end)
+end)

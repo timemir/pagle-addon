@@ -223,6 +223,82 @@ local function fishLabel(id, context)
 	return context.state.species[id] and context.text:Item(id) or ns.L.ENTRY_UNKNOWN
 end
 
+-- ★★ and ★★★ Tunables (LED-R45): zones needed and Catches.
+local ZONES_NEEDED, REGULAR_CATCHES = 3, 50
+
+-- How far a caught Species is towards ★★ (LED-R45, LED-R142): by windows, its element windows met of all of them;
+-- otherwise its distinct zones caught in (never 0) of `min(3, max(1, listed zones))`. `have` stops at `need`.
+---@param listing LedgerWorldSpecies?
+---@param species LedgerSpecies
+---@return integer have
+---@return integer need
+local function elementProgress(listing, species)
+	local have, need = 0, 0
+	if listing and listing.elements then
+		local met = species.windowsMet or {}
+		for window in pairs(listing.elements) do
+			need = need + 1
+			have = have + (met[window] and 1 or 0)
+		end
+		return have, need
+	end
+	need = math.min(ZONES_NEEDED, math.max(1, listing and #listing.zones or 0))
+	for _ in pairs(species.zones) do
+		have = have + 1
+	end
+	return math.min(have, need), need
+end
+
+-- The fish spread's right page (LED-R142): "Where to find it", "Its waters", its listed zones as tiles in tile order
+-- (LED-R131) with "caught ✓" where caught, each opening the zone's spread with the fish selected; "When" with each
+-- element window's line, its state forecast now (LED-R127); and for a caught Species its ★★ and ★★★ checklist.
+---@param id integer
+---@param context LedgerJournalContext
+---@return LedgerBlock[]
+local function waters(id, context)
+	local L, text = ns.L, context.text
+	local state, world = context.state --[[@as LedgerState]], context.world --[[@as LedgerWorld]]
+	local listing, species = world.species[id], state.species[id]
+	---@type LedgerBlock[]
+	local blocks = { { kind = "kicker", text = L.FISH_KICKER }, { kind = "title", text = L.FISH_TITLE } }
+	local zones = {}
+	for i, zone in ipairs(listing and listing.zones or {}) do
+		zones[i] = zone
+	end
+	local tiles = {}
+	for i, zone in ipairs(ns.SortZonesBySkill(zones, world.skillBase)) do
+		local tile = ns.JournalZoneTile(zone, context)
+		tile.place = ns.JournalZonePlace(zone, id)
+		if species and species.zones[zone] then
+			tile.line2 = L.FISH_CAUGHT_HERE
+		end
+		tiles[i] = tile
+	end
+	if #tiles > 0 then
+		blocks[#blocks + 1] = { kind = "tiles", tiles = tiles }
+	end
+	local windows = elementWindows(listing)
+	if #windows > 0 then
+		blocks[#blocks + 1] = { kind = "kicker", text = L.FISH_WHEN }
+		for _, window in ipairs(windows) do
+			blocks[#blocks + 1] = { kind = "text", hand = true, text = text:WindowLine(window) }
+		end
+	end
+	if species then
+		local stars = ns.ShownSpeciesStars(world, state, context.celebrated or {}, id)
+		local function box(star)
+			return stars[star] and L.CHECK_ON or L.CHECK_OFF
+		end
+		local have, need = elementProgress(listing, species)
+		blocks[#blocks + 1] = { kind = "text", text = L.FISH_ELEMENT:format(box(2), have, need) }
+		blocks[#blocks + 1] = {
+			kind = "text",
+			text = L.FISH_REGULAR:format(box(3), math.min(species.n, REGULAR_CATCHES), REGULAR_CATCHES),
+		}
+	end
+	return blocks
+end
+
 ns.RegisterJournalSpread(ns.JOURNAL_FISH, {
 	-- Home ❧ {fish} (LED-R125).
 	crumbs = function(args, context)
@@ -231,6 +307,6 @@ ns.RegisterJournalSpread(ns.JOURNAL_FISH, {
 	draw = function(args, context)
 		local id = args.species
 		local hint = { open = args.hint, place = { id = ns.JOURNAL_FISH, args = { species = id, hint = true } } }
-		return { left = ns.JournalSpeciesEntry(id, context, hint), right = {} }
+		return { left = ns.JournalSpeciesEntry(id, context, hint), right = waters(id, context) }
 	end,
 })

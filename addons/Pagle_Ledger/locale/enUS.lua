@@ -128,6 +128,14 @@ ns.L = {
 	HINT_MORE = "%s +%d",
 	HINT_SKILL = "skill ~%d",
 
+	-- Zone Mastery's ranks (LED-R50), and a zone tile's lines (LED-R131): "Local · 63%", "2 new!".
+	ZONE_RANKS = { "Visitor", "Regular", "Local", "Expert", "Master" },
+	TILE_RANK = "%s · %d%%",
+	TILE_NEW = "%d new!",
+	TILE_UNFISHED = "unfished",
+	TILE_UNFISHED_SKILL = "unfished · skill ~%d",
+	TILE_UNCHARTED = "uncharted waters",
+
 	-- A list as prose: "A, B and C" (LED-R140).
 	LIST_SEPARATOR = ", ",
 	LIST_LAST = " and ",
@@ -141,4 +149,13 @@ ns.L = {
 	ENTRY_UNKNOWN = "An unknown fish",
 	ENTRY_RIDDLE = "“%s”",
 	ENTRY_HINT_LINK = "Read the plain hint ▸",
+	-- The fish spread's right page (LED-R142): "☑ In its element (1/1)", "☐ Regular (12/50)".
+	FISH_KICKER = "Where to find it",
+	FISH_TITLE = "Its waters",
+	FISH_CAUGHT_HERE = "caught ✓",
+	FISH_WHEN = "When",
+	FISH_ELEMENT = "%s In its element (%d/%d)",
+	FISH_REGULAR = "%s Regular (%d/%d)",
+	CHECK_ON = "☑",
+	CHECK_OFF = "☐",
 }
