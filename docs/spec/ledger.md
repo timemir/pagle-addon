@@ -426,7 +426,7 @@ Pagle.RegisterModule{
 | `M:IterateCatches`, `M:NewProjection` | LED-R2 |
 | `M:RecordPrestige` | LED-R33 |
 | `Pagle.GetItem` (with `pool`), `GetZones`, `GetArea`, `GetZoneCatches` (with `window` and `gate`, LOG-R55) | LED-R5, LED-R10, LED-R135, LED-R141 |
-| `Pagle.MatchesConditions`, `Pagle.NextWindow` | LED-R45, LED-R127 |
+| `Pagle.MatchesConditions`, `Pagle.NextWindow`, `Pagle.GetWindowSpec` | LED-R45, LED-R127 |
 | Catch `size`, `Pagle.SIZE_BANDS`, `Pagle.SIZE_RULES_VERSION`, `Pagle.FormatLength` | LED-R2, LED-R80–R85 |
 | `Pagle.GetAngler` | LED-R41, LED-R126 |
 | `M:RaiseMoment`, `M:RaiseWriteUp`, `M:SetSummaryLine` | LED-R93–R97 |
@@ -435,7 +435,7 @@ Pagle.RegisterModule{
 | `Pagle.OpenFieldReport` | LED-R135, LED-R138, LED-R144 (REP-R43) |
 | `Pagle.RegisterEvent` (for `GET_ITEM_INFO_RECEIVED`) | LED-R126 |
 
-WoW APIs for its own presentation: `C_Item.GetItemNameByID`, `C_Item.RequestLoadItemDataByID`, `C_Map.GetAreaInfo`, `C_Map.GetMapInfo`, `GetServerTime`, `StaticPopup_Show`, `BreakUpLargeNumbers`.
+WoW APIs for its own presentation: `C_Item.GetItemNameByID`, `C_Item.RequestLoadItemDataByID`, `C_Map.GetAreaInfo`, `C_Map.GetMapInfo`, `GetServerTime`, `GetGameTime`, `StaticPopup_Show`, `BreakUpLargeNumbers`.
 
 ### Coins paid
 

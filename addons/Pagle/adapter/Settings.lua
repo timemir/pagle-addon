@@ -188,8 +188,25 @@ local function statusList()
 	end, L.SETTINGS_MODULES)
 end
 
--- The root's rows (SET-R10): the paragraph while no Module is On, the status list under "Modules", the note, then
--- Saving's reminder checkbox, whose default the root's Defaults button restores (SET-R13).
+-- The Field report row (CORE-R40, SET-R10 row 4): "Field report" with the button "Open Field report", "Open Field
+-- report (3)" while the count is above 0. The native button control calls a function caption each time the row is
+-- shown, so the count is read then (SET-R12). Its search tags are added here, as the native ones take strings only.
+-- Pressing it closes the panel first, since the box would open behind it; while restricted Pagle.OpenFieldReport then
+-- prints REP-R44's line (SET-R12).
+---@return SettingsInitializer
+local function fieldReportRow()
+	local initializer = CreateSettingsButtonInitializer(L.SETTINGS_FIELD_REPORT_ROW, function()
+		return ns.FieldReportButtonText(Pagle.GetFieldReportCount())
+	end, function()
+		HideUIPanel(SettingsPanel)
+		Pagle.OpenFieldReport()
+	end, L.SETTINGS_FIELD_REPORT_TOOLTIP, false)
+	initializer:AddSearchTags(L.SETTINGS_FIELD_REPORT_ROW, L.SETTINGS_FIELD_REPORT_BUTTON)
+	return initializer
+end
+
+-- The root's rows (SET-R10): the paragraph while no Module is On, the status list under "Modules", the note, the
+-- Field report section, then Saving's reminder checkbox, whose default the root's Defaults button restores (SET-R13).
 ---@param category SettingsCategory
 ---@param layout SettingsLayout
 ---@param anyModuleOn boolean
@@ -200,6 +217,8 @@ local function buildRoot(category, layout, anyModuleOn)
 	layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L.SETTINGS_MODULES))
 	layout:AddInitializer(statusList())
 	layout:AddInitializer(textRow(L.SETTINGS_MODULES_NOTE))
+	layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L.SETTINGS_FIELD_REPORT))
+	layout:AddInitializer(fieldReportRow())
 	layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L.SETTINGS_SAVING))
 	local reminder = Settings.RegisterProxySetting(
 		category,

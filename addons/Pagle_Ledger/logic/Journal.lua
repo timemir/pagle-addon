@@ -27,6 +27,10 @@ local ns = select(2, ...)
 ---@field celebrated? LedgerCelebrated   -- nil while updating
 ---@field now integer                    -- GetServerTime()
 ---@field formatNumber fun(n: integer): string -- BreakUpLargeNumbers
+---@field text LedgerJournalText         -- names, dates, window lines and lore (LED-R126, LED-R127, LED-R161)
+---@field world? LedgerWorld            -- the world index (LED-R10); nil while updating
+---@field getItem? fun(itemID: integer): PagleItem? -- Pagle.GetItem; nil while updating
+---@field angler? Angler                 -- Pagle.GetAngler(), read at each draw (LED-R41); nil while updating
 
 --- One thing drawn on a page, top to bottom, as data; adapter/JournalWidgets.lua draws each kind:
 --- - `kicker`, `title`, `text` (`text`, in the serif face; `hand` for the handwriting face, `color` "faded", "red" or

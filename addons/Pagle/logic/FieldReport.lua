@@ -8,7 +8,7 @@ local ns = select(2, ...)
 -- timestamp (REP-R1, REP-R5).
 
 --- The Field report rules version (field-report.md › Tunables): a change rebuilds the projection (REP-R25).
-ns.FIELD_REPORT_RULES_VERSION = 1
+ns.FIELD_REPORT_RULES_VERSION = 2
 --- The width of a row's realm-time bucket, in minutes (field-report.md › Tunables, REP-R20).
 ns.FIELD_REPORT_TIME_BUCKET = 15
 
@@ -220,11 +220,13 @@ function ns.NewFieldReport(catalogue)
 				qualified, timed = qualifies(cast, area, itemID, listedActive)
 			end
 			if qualified then
+				-- A Cast recorded while the realm clock was secret has no realm minute or date: its row carries
+				-- neither t nor m, never a made-up time (REP-R20).
 				local t, m
-				if timed then
-					local minute = conditions.minute or 0
+				local minute, date = conditions.minute, conditions.date
+				if timed and minute ~= nil and date ~= nil then
 					t = minute - minute % ns.FIELD_REPORT_TIME_BUCKET
-					m = conditions.date and conditions.date.month
+					m = date.month
 				end
 				local key = table.concat({
 					area,
