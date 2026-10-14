@@ -291,4 +291,17 @@ describe("the Ledger's projection", function()
 			assert.are.equal(loaded.ns.RulesVersion(1), loaded.env.PagleLedgerDB.global.projection.rulesVersion)
 		end
 	)
+
+	it("rebuilds a projection stored at 201, M3's fold with Core's sizes, at 301 (LED-R4, LED-R2)", function()
+		local last, lastLoaded = firstSession()
+		lastLoaded.env.PagleLedgerDB.global.projection.rulesVersion = 201
+		local fake = nextSession(last, lastLoaded, 0)
+		local loaded, applied = loadLedger(fake)
+
+		fake.login()
+		fake.enterWorld()
+
+		assert.are.same(rebuiltTo(fake, 5), applied)
+		assert.are.equal(301, loaded.env.PagleLedgerDB.global.projection.rulesVersion)
+	end)
 end)
