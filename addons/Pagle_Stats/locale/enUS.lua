@@ -83,4 +83,29 @@ ns.L = {
 		event = "during its event",
 		other = "in its window",
 	},
+	-- Dry spells (STA-R50, STA-R53, STA-R54), as logic/DrySpell.lua writes them. The first sentence: never caught in
+	-- the scope ("412 Casts here, none yet."), on an item's entry, in the tracker's hover, or a Dry spell of 0.
+	DRY_NONE_YET = "%s %s, none yet.",
+	DRY_SINCE_ENTRY = "%s since my last one, %s.",
+	DRY_SINCE_TRACKER = "%s since my last %s.",
+	DRY_CAUGHT_LAST = "Caught one on my last Cast %s.",
+	DRY_LEARNING = "A luck reading comes once Your odds have a number.",
+	-- The luck wording after it, by band and the steps inside normal ("About 38 anglers in 100 wait this long.").
+	LUCK_NOTHING_UNUSUAL = "Nothing unusual.",
+	LUCK_ABOUT = "About %s this long. Nothing unusual.",
+	LUCK_LONG_WAIT = "Roughly 1 angler in %s waits this long. A long wait, but well within normal luck.",
+	LUCK_UNLUCKY = "Roughly 1 angler in %s waits this long. Unlucky, not broken.",
+	LUCK_VERY_UNLUCKY = "Only about 1 angler in %s waits this long. %s",
+	LUCK_UNDER_A_MILLION = "Fewer than 1 angler in a million waits this long. %s",
+	LUCK_VERY_UNLUCKY_ROLL = "Very unlucky, and every Cast is still its own roll.",
+	-- Each band in a word, as the tracker's line and the short forms' ", unlucky" name it (STA-R52, STA-R82).
+	BANDS = { normal = "normal", unlucky = "unlucky", veryUnlucky = "very unlucky" },
+	-- The short forms: a row's margin and a tile ("212 since", ", unlucky", "just now"), a home spread watch line's
+	-- end ("212 since the last, unlucky.", "caught on my last Cast.", "412 Casts, none yet.").
+	DRY_SHORT_SINCE = "%s since",
+	DRY_SHORT_BAND = ", %s",
+	DRY_JUST_NOW = "just now",
+	DRY_WATCH_SINCE = "%s since the last%s.",
+	DRY_WATCH_CAUGHT_LAST = "caught on my last Cast.",
+	DRY_WATCH_NONE_YET = "%s, none yet.",
 }
