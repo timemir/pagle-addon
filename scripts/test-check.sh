@@ -243,11 +243,13 @@ expect "a coverage report that can't be made doesn't gate" pass "no coverage rep
 # Plants a spec that kills the busted running it with SIGSEGV, as the coverage run has died on the dev's machine
 # (#149). With "coverage", only a busted running with luacov dies.
 kills_busted() {
-	local when='true'
+	local when='package.loaded'
 	[[ ${1:-} == coverage ]] && when='package.loaded["luacov.runner"]'
 	cat >"$scratch/tree/spec/killed_spec.lua" <<EOF
 it("is killed", function()
+	---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no package
 	if $when then
+		---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no os
 		os.execute("kill -SEGV \$PPID")
 	end
 end)
