@@ -13,36 +13,40 @@
 # 1.0 a released Hunt never changes: a fix is a new Hunt plus a retired date on the old one (ADR 0005, DATA-R96).
 #
 # This is hunts.md's v1 Hunt list (hunts.md › Data), in its table order. Every since is the pre-1.0 placeholder
-# 2026-11-04 (DATA-R87, Tunables); the M8 checklist sets it to the release day. Names, titles and notes are working
-# drafts that the M5 lore batch polishes. Each item and area ID is checked by its enUS name in data/db2/ (named in the
-# comment beside it); scripts/tests/test_repo_hunts.py keeps those names, and that every Hunt can be completed.
+# 2026-11-04 (DATA-R87, Tunables); the M8 checklist sets it to the release day. Each item and area ID is checked by
+# its enUS name in data/db2/ (named in the comment beside it); scripts/tests/test_repo_hunts.py keeps those names, and
+# that every Hunt can be completed.
+#
+# Names, titles and notes are the M5 lore batch (DATA-R111, #183), drafted from data/lore/VOICE.md and emitted into
+# Pagle_Hunts' Lore.lua. A title is a bare epithet, read after "Title:" and on the nameplate (HNT-R22); a note is a
+# chip on the Hunt's entry (HNT-R65), so it says what the board doesn't.
 
 [[set]]
 id = "round_the_clock"
 name = "Round the Clock"
-title = "the Clockwatcher"
+title = "Clockwatcher"
 
 [[set]]
 id = "turn_of_the_year"
 name = "Turn of the Year"
-title = "of All Seasons"
+title = "All-Seasons Hand"
 
 [[set]]
 id = "sunday_showdown"
 name = "Sunday Showdown"
-title = "the Tastyfish"
-note = "Extravaganza, requires level 60"
+title = "Jungle Contender"
+note = "The Extravaganza, for level 60 characters only."
 
 [[set]]
 id = "camp_hours"
 name = "Camp Hours"
-title = "the Hut Keeper"
+title = "Hut Keeper"
 
 [[set]]
 id = "pagles_wagers"
-name = "Pagle's Wagers"
-title = "Pagle's Apprentice"
-note = "Pagle's own wagers: his fish, his water, his hours."
+name = "House Wagers"
+title = "Bookmaker's Bane"
+note = "The house's own wagers: a fish, an hour, and sometimes a place."
 
 # One member for each faction's waters: 6522 Deviate Fish, 251524 Whimsyfin.
 [[class]]
@@ -70,6 +74,7 @@ species = 13760 # Raw Sunscale Salmon
 window = "day"
 tiers = [1, 10, 40]
 name = "First Light"
+note = "Dawn is only the start: the salmon bites well into the evening."
 
 [[hunt]]
 id = "live_wire"
@@ -178,7 +183,7 @@ conditions = { auras = [1280342] } # Hut
 tiers = [1, 5, 15]
 name = "Hut Hour"
 
-# Pagle's Wagers: Pagle's own rules, a fish or a class at an hour, sometimes in one zone.
+# House Wagers (pagles_wagers): Pagle's own rules, a fish or a class at an hour, sometimes in one zone.
 
 [[hunt]]
 id = "grouper_by_moonlight"
