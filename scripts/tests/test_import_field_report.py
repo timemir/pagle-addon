@@ -11,7 +11,8 @@ from pathlib import Path
 import pytest
 
 from pagle_data.errors import Problems
-from pagle_data.importer import FetchError, main, upsert
+from pagle_data.generate import read_layers
+from pagle_data.importer import FetchError, catalogue_changes, imported, main, read_reports, upsert
 from pagle_data.observed import Header, Report
 from pagle_data.report import join, observed_toml, parse_part
 from test_catch_lists import CATALOGUE, write_tree
@@ -277,6 +278,30 @@ def test_the_changes_list_new_and_confirmed_pairs_contradictions_and_an_item_nee
     assert (root / REPORTS / f"{ALICE}.toml").read_text(encoding="utf-8") == ALICE_TOML
     assert (root / REPORTS / f"{BOB}.toml").exists()
     assert "Closes #41, #42, #43" in output
+
+
+def test_the_change_list_is_one_function_of_the_layers_before_and_the_imported_observed_layer(
+    tmp_path: Path,
+) -> None:
+    # DATA-R119: what importing changes in the catalogue, items now needing a category included, computed in memory
+    # from the layers before and the observed layer after (#127's triage runs it so). Over the same tree as above:
+    # 30500 needs a category, and the rest of the change list is read as if it were deferred (DATA-R18).
+    root = write_tree(tmp_path)
+    problems = Problems()
+    reports = read_reports([41, 42, 43], Fetched(ISSUES), problems)
+    assert problems.found == []
+    before = read_layers(root)
+    found = catalogue_changes(before, imported(before.observed, reports), root)
+    assert found.needing == (30500,)
+    assert "new pair: item 6308 in area 368 (confirmed)" in found.lines
+    assert "contradicted skill base: area 33 (130)" in found.lines
+    assert found.problems == ()
+    assert not (root / REPORTS).exists()  # nothing written
+    # DATA-R63: when data/ fails for more than those items, the change list is its problems instead.
+    (root / "data" / "forever" / "items.toml").write_text("[item.6308\n", encoding="utf-8")
+    failed = catalogue_changes(before, imported(before.observed, reports), root)
+    assert failed.lines == () and failed.needing == (30500,)
+    assert any(problem.startswith("data/forever/items.toml") for problem in failed.problems), failed.problems
 
 
 def test_a_contradiction_demotes_what_was_confirmed(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:

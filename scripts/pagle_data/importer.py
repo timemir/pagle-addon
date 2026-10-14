@@ -5,18 +5,20 @@ It fetches each issue with gh, takes the report field and parses it (pagle_data.
 of each report among the issues given. It then upserts each report into its reporter's file (DATA-R121), runs the
 generator, and prints what changed in the catalogue between the layers read before and after.
 
-upsert() is a pure function of the stored file and a report, so the triage Action (#127) can run it in memory.
+upsert() and catalogue_changes() run in memory over layers already read, so the triage Action (#127) can run them
+too.
 """
 
 import argparse
 import subprocess
 import sys
 from collections.abc import Callable, Collection, Iterable, Sequence
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import TypeVar
 
 from pagle_data import cli
+from pagle_data.db2_update import fail
 from pagle_data.errors import At, DataError, Problems
 from pagle_data.files import write_atomic
 from pagle_data.generate import Layers, read_layers
@@ -164,6 +166,29 @@ def changes(before: Layers, after: Layers) -> list[str]:
     return lines
 
 
+@dataclass(frozen=True)
+class CatalogueChanges:
+    """What importing changes in the catalogue (DATA-R119): the items now needing a category, and changes() with
+    them deferred; or, when data/ fails to generate for more than those items, its problems in place of changes."""
+
+    needing: tuple[int, ...]
+    lines: tuple[str, ...] = ()
+    problems: tuple[str, ...] = ()
+
+
+def catalogue_changes(before: Layers, observed: ObservedLayer, root: Path) -> CatalogueChanges:
+    """The change list of importing into before's layers, giving the observed layer: the items needing a category
+    (needing_category), and changes() from before to the layers read from root with observed in place of
+    data/observed/ and those items left out, as if deferred (DATA-R18), so the rest shows while the generator would
+    fail on them. It writes and prints nothing."""
+    needing = tuple(needing_category(before, observed))
+    try:
+        after = read_layers(root, observed=without_items(observed, needing))
+    except DataError as error:
+        return CatalogueChanges(needing, problems=tuple(error.problems))
+    return CatalogueChanges(needing, tuple(changes(before, after)))
+
+
 # The issues
 
 
@@ -215,24 +240,17 @@ def _parser() -> argparse.ArgumentParser:
     return parser
 
 
-def _failed(problems: Iterable[str], undone: str) -> int:
-    found = list(problems)
-    for problem in found:
-        print(f"{PROG}: {problem}", file=sys.stderr)
-    print(f"{PROG}: {len(found)} problem(s); {undone}", file=sys.stderr)
-    return 1
-
-
 def _print_changes(before: Layers, observed: ObservedLayer, root: Path) -> None:
-    """What the import changes in the catalogue (DATA-R119), with the items needing a category left out as if
-    deferred, and those items after it."""
-    needing = needing_category(before, observed)
-    lines: list[str] = []
-    try:
-        lines = changes(before, read_layers(root, observed=without_items(observed, needing)))
-    except DataError:  # cli.main has printed every problem
-        print(f"{PROG}: the generator fails for more than items needing a category: fix the rest to see the changes")
-    for item in needing:
+    """Prints what the import changes in the catalogue (catalogue_changes, DATA-R119): the changes, then the items
+    needing a category."""
+    found = catalogue_changes(before, observed, root)
+    lines = list(found.lines)
+    for problem in found.problems:
+        print(f"{PROG}: {problem}", file=sys.stderr)
+    if found.problems:
+        message = "the generator fails for more than items needing a category: fix the rest to see the changes"
+        print(f"{PROG}: {message}", file=sys.stderr)
+    for item in found.needing:
         known = before.db2.items.get(item)
         name = f" ({known.name})" if known is not None and known.name else ""
         lines.append(
@@ -254,11 +272,11 @@ def main(argv: Sequence[str], root: Path, fetch: Fetch = gh_issue_body) -> int:
     problems = Problems()
     reports = read_reports(numbers, fetch, problems)
     if problems:
-        return _failed(problems.found, WROTE_NOTHING)
+        return fail(PROG, problems, WROTE_NOTHING)
     try:
         before = read_layers(root)
     except DataError as error:
-        return _failed(error.problems, f"data/ must generate cleanly before an import; {WROTE_NOTHING}")
+        return fail(PROG, error.problems, f"data/ must generate cleanly before an import; {WROTE_NOTHING}")
 
     after = imported(before.observed, reports)
     for key in sorted({report.key for report in reports}):
