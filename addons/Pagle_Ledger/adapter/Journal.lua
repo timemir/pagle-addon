@@ -41,9 +41,15 @@ local SPINE_STRIPS, SPINE_STRIP_WIDTH = 6, 5
 ---@field left LedgerJournalPage
 ---@field right LedgerJournalPage
 ---@field plate LedgerJournalPlate     -- the brass plate on the cover (LED-R149)
+---@field leather Texture             -- the cover's tint, and its grain over it (LED-R112)
+---@field grain Texture
+---@field rules Texture[]             -- the gilt rules inside the leather's edge
+---@field papers Texture[]            -- each page's paper tint, then each page's paper texture, and the search box's
+---@field paperGrains Texture[]
 
 ---@class LedgerJournalPlate: Frame
 ---@field label FontString
+---@field brass Texture                -- its face, in the binding's gilt (LED-R110)
 
 --- The Fish Journal: its router, its frame once made, and what its pages and brass plate show as last drawn.
 ---@class LedgerJournal
@@ -51,6 +57,7 @@ local SPINE_STRIPS, SPINE_STRIP_WIDTH = 6, 5
 ---@field frame LedgerJournalFrame?
 ---@field pages LedgerJournalPages?
 ---@field plate string?                -- the brass plate's words; nil while the projection updates (LED-R149)
+---@field binding string?             -- the binding it was last drawn in (LED-R112)
 ---@field private redrawQueued boolean
 ---@field private drawnPlace LedgerJournalPlace?
 local Journal = {}
@@ -88,17 +95,16 @@ function Journal.Context()
 	return readContext()
 end
 
--- A thin rule in `color` along one edge of `frame`, `inset` in from it.
+-- A thin rule along one edge of `frame`, `inset` in from it, in the tint the binding gives it at each draw.
 ---@param frame Frame
----@param color number[]
 ---@param from FramePoint
 ---@param to FramePoint
 ---@param x number
 ---@param y number
 ---@param vertical boolean
-local function rule(frame, color, from, to, x, y, vertical)
+---@return Texture
+local function rule(frame, from, to, x, y, vertical)
 	local line = frame:CreateTexture(nil, "BORDER")
-	line:SetColorTexture(color[1], color[2], color[3], 1)
 	line:SetPoint(from, x, y)
 	line:SetPoint(to, vertical and x or -x, vertical and -y or y)
 	if vertical then
@@ -106,40 +112,45 @@ local function rule(frame, color, from, to, x, y, vertical)
 	else
 		line:SetHeight(1)
 	end
+	return line
 end
 
--- The leather cover: its tint and grain, the dark outline and the gilt rule inside its edge.
----@param frame Frame
+-- The leather cover: its tint and grain, the dark outline and the gilt rule inside its edge. The binding tints them
+-- at each draw (tint).
+---@param frame LedgerJournalFrame
 local function drawLeather(frame)
 	ns.JournalSolid(frame, LOOK.leatherEdge, "BACKGROUND")
-	local leather = ns.JournalSolid(frame, LOOK.leather, "BACKGROUND")
-	leather:SetPoint("TOPLEFT", 2, -2)
-	leather:SetPoint("BOTTOMRIGHT", -2, 2)
-	local grain = frame:CreateTexture(nil, "BORDER")
-	grain:SetTexture(ns.JOURNAL_TEXTURES.leather)
-	grain:SetVertexColor(LOOK.leather[1], LOOK.leather[2], LOOK.leather[3])
-	grain:SetAlpha(0.5)
-	grain:SetPoint("TOPLEFT", 2, -2)
-	grain:SetPoint("BOTTOMRIGHT", -2, 2)
-	rule(frame, LOOK.giltRule, "TOPLEFT", "TOPRIGHT", 5, -5, false)
-	rule(frame, LOOK.giltRule, "BOTTOMLEFT", "BOTTOMRIGHT", 5, 5, false)
-	rule(frame, LOOK.giltRule, "TOPLEFT", "BOTTOMLEFT", 5, -5, true)
-	rule(frame, LOOK.giltRule, "TOPRIGHT", "BOTTOMRIGHT", -5, -5, true)
+	frame.leather = ns.JournalSolid(frame, LOOK.leather, "BACKGROUND")
+	frame.leather:SetPoint("TOPLEFT", 2, -2)
+	frame.leather:SetPoint("BOTTOMRIGHT", -2, 2)
+	frame.grain = frame:CreateTexture(nil, "BORDER")
+	frame.grain:SetTexture(ns.JOURNAL_TEXTURES.leather)
+	frame.grain:SetAlpha(0.5)
+	frame.grain:SetPoint("TOPLEFT", 2, -2)
+	frame.grain:SetPoint("BOTTOMRIGHT", -2, 2)
+	frame.rules = {
+		rule(frame, "TOPLEFT", "TOPRIGHT", 5, -5, false),
+		rule(frame, "BOTTOMLEFT", "BOTTOMRIGHT", 5, 5, false),
+		rule(frame, "TOPLEFT", "BOTTOMLEFT", 5, -5, true),
+		rule(frame, "TOPRIGHT", "BOTTOMRIGHT", -5, -5, true),
+	}
+	frame.papers, frame.paperGrains = {}, {}
 end
 
--- One parchment page: the paper's tint and texture, and the spine's shadow at its inner edge.
----@param frame Frame
+-- One parchment page: the paper's tint and texture, and the spine's shadow at its inner edge. The binding tints the
+-- paper at each draw (tint).
+---@param frame LedgerJournalFrame
 ---@param side "left"|"right"
 ---@return Frame
 local function drawPaper(frame, side)
 	local paper = CreateFrame("Frame", nil, frame)
 	paper:SetSize(PAGE_WIDTH, PAGE_HEIGHT)
 	paper:SetPoint("BOTTOMLEFT", side == "left" and MARGIN or MARGIN + PAGE_WIDTH, MARGIN)
-	ns.JournalSolid(paper, LOOK.paper, "BACKGROUND")
+	frame.papers[#frame.papers + 1] = ns.JournalSolid(paper, LOOK.paper, "BACKGROUND")
 	local texture = paper:CreateTexture(nil, "BORDER")
 	texture:SetTexture(ns.JOURNAL_TEXTURES.paper)
-	texture:SetVertexColor(LOOK.paper[1], LOOK.paper[2], LOOK.paper[3])
 	texture:SetAlpha(0.35)
+	frame.paperGrains[#frame.paperGrains + 1] = texture
 	texture:SetAllPoints()
 	local edge = side == "left" and "RIGHT" or "LEFT"
 	for i = 1, SPINE_STRIPS do
@@ -215,7 +226,7 @@ local function build(journal)
 	frame.search:SetFontObject(fonts.text)
 	frame.search:SetTextColor(LOOK.ink[1], LOOK.ink[2], LOOK.ink[3])
 	frame.search:SetTextInsets(8, 8, 0, 0)
-	ns.JournalSolid(frame.search, LOOK.paper, "BACKGROUND")
+	frame.papers[#frame.papers + 1] = ns.JournalSolid(frame.search, LOOK.paper, "BACKGROUND")
 	frame.search:SetScript("OnEscapePressed", function(self)
 		self:ClearFocus()
 	end)
@@ -237,9 +248,9 @@ local function build(journal)
 	local plate = CreateFrame("Frame", nil, frame) --[[@as LedgerJournalPlate]]
 	plate:SetPoint("BOTTOMLEFT", -12, -14)
 	ns.JournalSolid(plate, LOOK.brassEdge, "BACKGROUND")
-	local brass = ns.JournalSolid(plate, LOOK.brass, "BORDER")
-	brass:SetPoint("TOPLEFT", 1, -1)
-	brass:SetPoint("BOTTOMRIGHT", -1, 1)
+	plate.brass = ns.JournalSolid(plate, LOOK.brass, "BORDER")
+	plate.brass:SetPoint("TOPLEFT", 1, -1)
+	plate.brass:SetPoint("BOTTOMRIGHT", -1, 1)
 	plate.label = ns.JournalText(plate, fonts.plate, LOOK.brassText)
 	plate.label:SetPoint("CENTER")
 	frame.plate = plate
@@ -278,16 +289,41 @@ local function crumbAt(frame, i)
 	return crumb
 end
 
--- Lays the crumbs out along the strip, each opening its level (LED-R125).
+-- Tints the book in a binding's look (LED-R110, LED-R112): the leather and its grain, the rules, the paper of both
+-- pages and the search box, and the brass plate's face and words.
+---@param frame LedgerJournalFrame
+---@param look LedgerBindingLook
+local function tint(frame, look)
+	local leather, rules, paper = look.leather, look.rule, look.paper
+	frame.leather:SetColorTexture(leather[1], leather[2], leather[3], 1)
+	frame.grain:SetVertexColor(leather[1], leather[2], leather[3])
+	for _, line in ipairs(frame.rules) do
+		line:SetColorTexture(rules[1], rules[2], rules[3], 1)
+	end
+	for _, texture in ipairs(frame.papers) do
+		texture:SetColorTexture(paper[1], paper[2], paper[3], 1)
+	end
+	for _, texture in ipairs(frame.paperGrains) do
+		texture:SetVertexColor(paper[1], paper[2], paper[3])
+	end
+	local plate, words = look.plate, look.plateText
+	frame.plate.brass:SetColorTexture(plate[1], plate[2], plate[3], 1)
+	frame.plate.label:SetTextColor(words[1], words[2], words[3])
+end
+
+-- Lays the crumbs out along the strip in the binding's gilt, each opening its level (LED-R125, LED-R110).
 ---@param journal LedgerJournal
 ---@param crumbs LedgerCrumb[]
-local function drawCrumbs(journal, crumbs)
+---@param look LedgerBindingLook
+local function drawCrumbs(journal, crumbs, look)
 	local frame = journal.frame --[[@as LedgerJournalFrame]]
 	local x = 0
 	for i, data in ipairs(crumbs) do
 		local crumb = crumbAt(frame, i)
+		crumb.label:SetTextColor(look.gilt[1], look.gilt[2], look.gilt[3])
 		local separator = crumb.separator
 		if separator then
+			separator:SetTextColor(look.rule[1], look.rule[2], look.rule[3])
 			separator:ClearAllPoints()
 			separator:SetPoint("LEFT", x + 6, 0)
 			separator:Show()
@@ -347,13 +383,16 @@ function Journal:Open(id, args)
 	return true
 end
 
---- Draws both pages, the crumbs, the search box and the back link from the router now, if the book is open
---- (LED-R122, LED-R125).
+--- Draws both pages, the crumbs, the search box and the back link from the router now, in the equipped binding, if
+--- the book is open (LED-R122, LED-R125, LED-R112).
 function Journal:Draw()
 	local frame = self.frame
 	if not frame or not frame:IsShown() then
 		return
 	end
+	self.binding = Pagle.GetEquipped(ns.BINDING_SLOT)
+	local look = ns.BindingLook(self.binding)
+	tint(frame, look)
 	local context = readContext()
 	local pages = self.router:Pages(context)
 	self.pages = pages
@@ -368,7 +407,7 @@ function Journal:Draw()
 	frame.crumbs:SetShown(not pages.updating)
 	frame.search:SetShown(not pages.updating)
 	frame.back:SetShown(pages.back ~= nil)
-	drawCrumbs(self, pages.crumbs or {})
+	drawCrumbs(self, pages.crumbs or {}, look)
 	local function open(target)
 		self:Open(target.id, target.args)
 	end

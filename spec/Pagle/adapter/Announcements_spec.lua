@@ -310,6 +310,36 @@ describe("Announcement sounds on the client", function()
 		end
 	)
 
+	it(
+		"play the equipped set: Gilded's one toast and its banner, the shared sting, then Driftwood's rotation where it"
+			.. " left off (ANN-R70, ANN-R72, SHOP-R33)",
+		function()
+			local GILDED = SOUNDS .. "gilded\\"
+			local loaded, M = loadCore()
+			local Pagle = loaded.env.Pagle
+			raise(loaded, M, moment("toast", "Toast 1"))
+			loaded.client.advance(6)
+			loaded.ns.RecordPurchase("core.soundset.gilded", 400) -- the Curio Shop's buy (SHOP-R10, SHOP-R11)
+			assert.is_true(Pagle.SetEquipped("core.soundset", "core.soundset.gilded"))
+
+			for _, step in ipairs({ { "toast", 6 }, { "toast", 6 }, { "banner", 4 }, { "splash", 8 } }) do
+				raise(loaded, M, moment(step[1], step[1]))
+				loaded.client.advance(step[2])
+			end
+			assert.is_true(Pagle.SetEquipped("core.soundset", "core.soundset.driftwood"))
+			raise(loaded, M, moment("toast", "Toast 2"))
+
+			assert.are.same({
+				DRIFTWOOD .. "toast_1.ogg SFX",
+				GILDED .. "toast_1.ogg SFX",
+				GILDED .. "toast_1.ogg SFX",
+				GILDED .. "banner.ogg SFX",
+				SOUNDS .. "legend.ogg SFX",
+				DRIFTWOOD .. "toast_2.ogg SFX",
+			}, loaded.client.sounds)
+		end
+	)
+
 	it("keep a headline with sound = false silent (ANN-R71)", function()
 		local loaded, M = loadCore()
 

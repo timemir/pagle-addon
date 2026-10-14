@@ -39,10 +39,12 @@ function ns.Ledger.OnInitialize()
 	ns.projection = ns.Module:NewProjection(
 		ns.WithJournalRedraws(ns.ProjectionDef(ns.db.global, lookups, ns.Outlets(ns.Module), sizeRulesVersion))
 	)
+	-- The Journal bindings (LED-R110): after the projection, which their isEarned reads (LED-R111).
+	ns.RegisterBindings(ns.Module)
 end
 
 --- Where the Ledger's moments, Write-up sections, Coins and summary line go, and what they read: the client's names
---- and numbers, and the Angler's logId (LED-R89, LED-R90, LED-R93–R95, LED-R97).
+--- and numbers, the Angler's logId, and the goods' refresh (LED-R89, LED-R90, LED-R93–R95, LED-R97, LED-R111).
 ---@param module PagleModuleHandle
 ---@return LedgerOutlets
 function ns.Outlets(module)
@@ -70,6 +72,9 @@ function ns.Outlets(module)
 		end,
 		FormatNumber = function(n)
 			return BreakUpLargeNumbers(n)
+		end,
+		RefreshGoods = function()
+			module:RefreshGoods()
 		end,
 	}
 end

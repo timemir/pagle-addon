@@ -33,6 +33,7 @@ local ns = select(2, ...)
 ---@field RaiseWriteUp fun(section: PagleWriteUpSection) -- M:RaiseWriteUp
 ---@field LogId fun(): string?                          -- Pagle.GetAngler().logId
 ---@field FormatNumber fun(n: integer): string          -- BreakUpLargeNumbers
+---@field RefreshGoods fun()                            -- M:RefreshGoods (LED-R111)
 
 -- In-client textures for the moments that have no item (LED-R97): the level's ledger book and Fishing's own icon.
 local LEVEL_ICON = "Interface\\Icons\\INV_Misc_Book_09"

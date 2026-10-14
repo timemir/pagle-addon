@@ -449,9 +449,11 @@ end)
 -- fake.profile.appearance: M:RegisterSlot, M:RegisterGood and M:RefreshGoods on the handle, Pagle.IsOwned,
 -- GetEquipped, SetEquipped and GetGood (read-only), and AppearanceChanged from login on. The purchased set comes
 -- from the wallet projection part below (SHOP-R11), or from fake.setPurchased. Pagle.OpenShop only records what it
--- was asked for in fake.shopsOpened.
+-- was asked for in fake.shopsOpened. Core's own slots and goods (SHOP-R25) are registered from the start, as login
+-- step 1 registers them before any Module, without previews: no shop draws here.
 part(function(fake, Pagle, ns, host)
 	ns.WireGoods(host)
+	ns.RegisterCoreGoods()
 	fake.goods = fake.global.goods
 	fake.shopsOpened = {}
 
