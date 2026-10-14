@@ -634,7 +634,8 @@ describe("FakePagle", function()
 				Pagle.GetEquipped("core.soundset"),
 				Pagle.GetEquipped("core.crest"),
 			})
-			assert.are.same({ "core.crest.crest3", "Interface\\Icons\\Spell_Frost_SummonWaterElemental", "Core" }, {
+			-- Named from Core's committed lore, as Core names it (DATA-R104, SHOP-R25).
+			assert.are.same({ "Water Spirit", "Interface\\Icons\\Spell_Frost_SummonWaterElemental", "Core" }, {
 				Pagle.GetGood("core.crest.crest3").name,
 				Pagle.GetGood("core.crest.crest3").icon,
 				fake.goods["core.crest.crest3"].module,

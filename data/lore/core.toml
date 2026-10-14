@@ -1,0 +1,46 @@
+# Core's lore (DATA-R100), emitted into addons/Pagle/data/Lore.lua as ns.L entries (DATA-R104): the names and
+# descriptions of Core's own goods (SHOP-R25), one table per [good."<goodID>"] with its name and description
+# (DATA-R101), every good manifest.toml lists under [core.good] (DATA-R106). Lore is never part of the catalogue and
+# changes no count (DATA-R109).
+# The M4 batch, drafted from VOICE.md, came with Core's lore check (DATA-R111, #161). The comment after each table
+# is the good's slot, for review only.
+#
+# The Curio Shop shows a good's name and description beside its preview, under its slot and Module
+# (wallet-and-shop.md › UI), so a description is about the look or the sound itself, never the shop or the addon.
+# A crest's name follows the in-client icon that stands in for it until Pagle has its own art (#155).
+
+[good."core.toaststyle.timber"] # Toast style, the default
+name = "Timber"
+description = "Dark, weathered planks and plain trim, like the end of a good dock."
+
+[good."core.toaststyle.ripple"] # Toast style, tier 1
+name = "Ripple"
+description = "Cool blue water, with rings spreading out as if something just bit."
+
+[good."core.toaststyle.lanternglow"] # Toast style, tier 2
+name = "Lantern Glow"
+description = "A warm lamp behind each catch, for anglers who stay out past dark."
+
+[good."core.soundset.driftwood"] # Sound set, the default
+name = "Driftwood"
+description = "Soft wooden knocks, like a hull bumping the jetty."
+
+[good."core.soundset.gilded"] # Sound set, tier 2
+name = "Gilded"
+description = "Small, bright bells. A touch grand for a mackerel, and none the worse for it."
+
+[good."core.crest.plain"] # Bookplate crest, the default
+name = "Plain"
+description = "No emblem, only the owner's name. Plenty of fine anglers never wanted more."
+
+[good."core.crest.crest1"] # Bookplate crest, tier 1: a fishing pole
+name = "Rod and Line"
+description = "A rod with its line out, drawn in a steady hand."
+
+[good."core.crest.crest2"] # Bookplate crest, tier 2: a pearl
+name = "Pearl"
+description = "A single pearl, the sort a clam gives up only after an argument."
+
+[good."core.crest.crest3"] # Bookplate crest, tier 3: a water elemental
+name = "Water Spirit"
+description = "Deep water given a face. It watches over the book, or possibly just watches."

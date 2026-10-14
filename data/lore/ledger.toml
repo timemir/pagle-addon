@@ -2,9 +2,9 @@
 # One table per <kind>.<id> holding its fields (DATA-R101): [species.<speciesID>] blurb and riddle, [legend.<itemID>]
 # blurb and title, [sub.<itemID>] plaque and [family.<familyID>] name (DATA-R103), and the kinds manifest.toml lists
 # under [ledger.*] (DATA-R106). Lore is never part of the catalogue and changes no count (DATA-R109).
-# The first batch, drafted from VOICE.md, came with the Ledger's lore check (DATA-R111, #131). A PR that adds a
-# Species or item adds its lore here, drafted from VOICE.md the same way. The comment after each table is the enUS
-# DB2 name, for review only (DATA-R3).
+# The first batch, drafted from VOICE.md, came with the Ledger's lore check (DATA-R111, #131); the titles and
+# bindings came with the M4 batch (#161). A PR that adds a Species or item adds its lore here, drafted from VOICE.md
+# the same way. The comment after each catalogue-keyed table is the enUS DB2 name, for review only (DATA-R3).
 #
 # Riddles show only until the thing is caught (LED-R124, LED-R141): a kind of place or time, never a zone, hour or
 # skill, and never a word from the fish's name (DATA-R110). Each is written against where its fish is listed
@@ -309,3 +309,96 @@ text = "Something sealed, not yet found."
 
 [line.unchartedwaters] # a zone with no data, before "Every catch here is still written down..." (LED-R138)
 text = "Uncharted waters. No map of these yet."
+
+# Titles (LED-R75, manifest.toml's [ledger.title]), from the M4 batch (#161): each an epithet the Angler signs with
+# (LED-R77), shown on the bookplate, the brass plate and "Signed As". A short noun phrase, capitalised, no "the" in
+# front; never "Master Angler", and "Angler" is never a ladder rung. The comment says when it's earned.
+
+[title.level1] # from the start
+text = "Minnow"
+
+[title.level10] # peak level 10
+text = "Dabbler"
+
+[title.level20] # peak level 20
+text = "Line-Caster"
+
+[title.level30] # peak level 30
+text = "Fisher"
+
+[title.level40] # peak level 40
+text = "Old Salt"
+
+[title.level50] # peak level 50
+text = "Tide-Reader"
+
+[title.level60] # peak level 60
+text = "Nat's Peer"
+
+[title.prestige1] # prestige rank 1
+text = "Returning Tide"
+
+[title.prestige5] # prestige rank 5
+text = "Undertow"
+
+[title.prestige10] # prestige rank 10
+text = "High-Water Mark"
+
+[title.zonemaster] # a zone's shown rank reaches Master; {zone} is the zone's name (LED-R161)
+text = "Warden of {zone} Waters"
+
+[title."complete.ledger"] # Ledger completion reaches 100
+text = "Angler of Azeroth"
+
+[title."complete.junk"] # the Junk Museum's count reaches its total
+text = "Collector of Boots"
+
+[title."complete.treasure"] # the Treasures' count reaches its total
+text = "Keeper of Lost Cargo"
+
+[title."complete.trophy"] # the Trophy Room's weights reach their total
+text = "Tipper of Scales"
+
+# Journal bindings (LED-R110, manifest.toml's [ledger.binding]), from the M4 batch (#161): the good
+# ledger.binding.<id>'s name, and the description the Curio Shop shows beside its closed-book preview. A binding is
+# a look only, so its description is about the book's leather or cloth. The comment says how it's had.
+
+[binding.field] # the default
+name = "Field Leather"
+description = "Plain brown leather, made to be rained on, and it usually is."
+
+[binding.level10] # earned at Angler Level 10
+name = "Tanned Hide"
+description = "Lighter, softer hide, worn smooth at the corners by a few seasons of wet thumbs."
+
+[binding.level20] # earned at Angler Level 20
+name = "Tidewater Blue"
+description = "Deep blue leather with silver rules, the colour of a harbour at dusk."
+
+[binding.level30] # earned at Angler Level 30
+name = "Reed Green"
+description = "Dark green leather, gilt the colour of dry reeds, and a faint smell of riverbank."
+
+[binding.level40] # earned at Angler Level 40
+name = "Oxblood"
+description = "Deep red leather and heavy gilt. Fish blood barely shows on it."
+
+[binding.level50] # earned at Angler Level 50
+name = "Storm Grey"
+description = "Slate-grey leather with silver tooling, for the days nobody else goes out."
+
+[binding.level60] # earned at Angler Level 60
+name = "Nat's Own"
+description = "Near-black leather and bright gold. About as fine as an angler's book gets."
+
+[binding.birch] # Curio Shop, tier 1
+name = "Birch Bark"
+description = "Pale and papery, with dark flecks. Likely the only book here that would float."
+
+[binding.buckram] # Curio Shop, tier 2
+name = "Sea-green Buckram"
+description = "Stiff sea-green cloth with cream rules. Spray beads up and rolls straight off."
+
+[binding.sharkskin] # Curio Shop, tier 3
+name = "Sharkskin"
+description = "Rough grey hide with silver tooling. It won't slip out of a wet hand."
