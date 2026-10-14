@@ -34,6 +34,27 @@ local function kindOf(good)
 	return "tier " .. tostring(good.tier)
 end
 
+-- Every widget under `widget`, depth first.
+local function descendants(widget, list)
+	list = list or {}
+	for _, child in ipairs(widget.children) do
+		list[#list + 1] = child
+		descendants(child, list)
+	end
+	return list
+end
+
+-- The texts of every shown font string under `widget`, depth first.
+local function textsOf(widget)
+	local texts = {}
+	for _, child in ipairs(descendants(widget)) do
+		if child.kind == "FontString" and child.shown and child.text then
+			texts[#texts + 1] = child.text
+		end
+	end
+	return texts
+end
+
 -- Pagle_Hunts on a fake that has logged in.
 ---@param options { lore: boolean? }?
 local function loggedIn(options)
@@ -122,4 +143,98 @@ describe("Hunts' goods", function()
 			},
 		})
 	end)
+
+	it("show each good's icon as its swatch in the shop's list (HNT-R121, SHOP-R26)", function()
+		local _, fake = loggedIn()
+
+		local icons = {}
+		for _, slot in ipairs({ COVER, FRAME }) do
+			for _, row in ipairs(GOODS[slot]) do
+				local icon = fake.Pagle.GetGood(row[1]).icon
+				assert.matches("^Interface\\Icons\\", icon)
+				icons[icon] = true
+			end
+		end
+		local distinct = 0
+		for _ in pairs(icons) do
+			distinct = distinct + 1
+		end
+		assert.are.equal(7, distinct)
+	end)
+end)
+
+describe("a notebook cover's preview", function()
+	it("draws the closed notebook in that cover on the good's stage: its leather, no pages (HNT-R121)", function()
+		local loaded, fake = loggedIn()
+		local ns = loaded.ns
+		local paper = ns.BOARD_TEXTURES.paper
+
+		local leathers = {}
+		for _, row in ipairs(GOODS[COVER]) do
+			local id = row[1]
+			local stage = loaded.env.CreateFrame("Frame") -- each good's own stage frame (#157)
+
+			fake.ns.goods:Good(id).preview(stage)
+			fake.ns.goods:Good(id).preview(stage) -- the shop draws it again at each selection
+
+			assert.are.equal(1, #stage.children, id) -- one notebook, drawn afresh
+			local notebook = stage.children[1]
+			assert.is_true(notebook:IsShown())
+			local leather = notebook.cover.leather.color
+			assert.are.same(ns.COVERS[id].leather, { leather[1], leather[2], leather[3] }, id)
+			leathers[#leathers + 1] = ("%.3f %.3f %.3f"):format(leather[1], leather[2], leather[3])
+			for _, widget in ipairs(descendants(notebook)) do
+				assert.are_not.equal(paper, widget.texture, id) -- closed: no parchment
+			end
+		end
+		assert.are.equal(ns.BOARD_COVER.leather, ns.COVERS["hunts.notebookcover.leather"].leather) -- the board's own
+		table.sort(leathers)
+		for i = 2, #leathers do
+			assert.are_not.equal(leathers[i - 1], leathers[i]) -- four different leathers
+		end
+	end)
+end)
+
+describe("a tracker frame's preview", function()
+	it(
+		'draws a sample tracker with "Night Run · in 37m" and "Rack Hour · on demand" in that frame on the good\'s stage (HNT-R121, CORE-R73)',
+		function()
+			local loaded, fake = loggedIn()
+			local ns = loaded.ns
+			assert.is_nil(ns.TRACKER_FRAMES["hunts.trackerframe.none"]) -- the plain native block
+
+			for _, row in ipairs(GOODS[FRAME]) do
+				local id = row[1]
+				local stage = loaded.env.CreateFrame("Frame")
+
+				fake.ns.goods:Good(id).preview(stage)
+				fake.ns.goods:Good(id).preview(stage)
+
+				assert.are.equal(1, #stage.children, id)
+				local tracker = stage.children[1]
+				assert.is_true(tracker:IsShown())
+				assert.are.same({ "Hunts", "Night Run · in 37m", "Rack Hour · on demand" }, textsOf(tracker), id)
+				local look, dressed = ns.TRACKER_FRAMES[id], tracker.frame
+				if look then
+					assert.is_true(dressed.backdrop:IsShown(), id)
+					assert.are.equal(look.backdrop, dressed.backdrop.texture, id)
+					local tinted = dressed.backdrop.vertexColor
+					assert.are.same(look.tint, { tinted[1], tinted[2], tinted[3] }, id)
+					for _, line in ipairs(dressed.border) do
+						assert.is_true(line:IsShown(), id)
+						assert.are.same(look.border, { line.color[1], line.color[2], line.color[3] }, id)
+					end
+				else
+					assert.is_false(dressed.backdrop:IsShown())
+					for _, line in ipairs(dressed.border) do
+						assert.is_false(line:IsShown())
+					end
+				end
+			end
+			assert.are_not.same(
+				ns.TRACKER_FRAMES["hunts.trackerframe.inkwash"].tint,
+				ns.TRACKER_FRAMES["hunts.trackerframe.waxseal"].tint
+			)
+		end
+	)
 end)
