@@ -417,6 +417,16 @@ def lore_lua_text(lore_id: str, texts: Mapping[str, Text], header: str) -> str:
     return "\n".join(parts)
 
 
+def retired_lore(present: Callable[[str], bool], outputs: Collection[str]) -> dict[str, str]:
+    """Each Lore.lua present (by present(path)) that outputs doesn't give, by path, with the lore file it was
+    generated from: that file is gone, so the Lore.lua is stale (DATA-R60) and the generator removes it."""
+    return {
+        lore_lua(lore_id): lore_file(lore_id)
+        for lore_id in ADDONS
+        if lore_lua(lore_id) not in outputs and present(lore_lua(lore_id))
+    }
+
+
 def lore_outputs(layer: LoreLayer, header_of: Callable[[str], str]) -> dict[str, str]:
     """Each Lore.lua by path: one for every lore ID with a lore file, emitted whether or not its check is on
     (DATA-R104). header_of gives DATA-R6's header for a file's sources."""
