@@ -1,0 +1,369 @@
+-- Labels in realm time (HNT-R50–R55): the pure wording of logic/Labels.lua, each case's inputs passed in, the name
+-- lookups a table of stand-ins (adapter/Names.lua builds the real one).
+
+---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
+local hunts = dofile("spec/Pagle_Hunts/support.lua")
+
+local MINUTE, HOUR, DAY = 60, 3600, 86400
+
+-- A live snapshot (LOG-R45) at server time `time`: realm `minute` of day on `date`; weekday 1 is Sunday.
+local function snapshotAt(time, minute, year, month, day, weekday)
+	return { time = time, minute = minute, date = { year = year, month = month, day = day, weekday = weekday } }
+end
+
+-- Sunday 11 October 2026 at realm 08:15 (FakePagle's clock).
+local NOW = 1791731700
+local SUNDAY = snapshotAt(NOW, 8 * 60 + 15, 2026, 10, 11, 1)
+
+describe("Labels in realm time", function()
+	local ns = hunts.load().ns
+
+	describe("realm time (HNT-R50)", function()
+		it("converts a server time 26 hours ahead across midnight and a month's end", function()
+			-- Wednesday 30 September 2026, 23:00.
+			local snapshot = snapshotAt(1000000, 23 * 60, 2026, 9, 30, 4)
+
+			local clock = ns.RealmClockAt(1000000 + 26 * HOUR, snapshot)
+
+			assert.are.equal(60, clock.minute) -- 01:00
+			assert.are.same({ year = 2026, month = 10, day = 2, weekday = 6 }, clock.date) -- Friday 2 October
+		end)
+
+		it("converts across a year's end, and back across midnight to the day before", function()
+			-- Thursday 31 December 2026, 22:00.
+			local snapshot = snapshotAt(5000, 22 * 60, 2026, 12, 31, 5)
+
+			assert.are.same(
+				{ minute = 0, date = { year = 2027, month = 1, day = 2, weekday = 7 } },
+				ns.RealmClockAt(5000 + 26 * HOUR, snapshot)
+			)
+			assert.are.same(
+				{ minute = 23 * 60, date = { year = 2026, month = 12, day = 30, weekday = 4 } },
+				ns.RealmClockAt(5000 - 23 * HOUR, snapshot)
+			)
+		end)
+
+		it("counts whole minutes from the snapshot: 59 seconds on is the same realm minute", function()
+			assert.are.equal(8 * 60 + 15, ns.RealmClockAt(NOW + 59, SUNDAY).minute)
+			assert.are.equal(8 * 60 + 16, ns.RealmClockAt(NOW + 60, SUNDAY).minute)
+		end)
+
+		it("rounds durations down to the minute: 37m, 2h, 2h 10m, 1d, 1d 4h", function()
+			assert.are.equal("0m", ns.FormatDuration(59))
+			assert.are.equal("37m", ns.FormatDuration(37 * MINUTE + 59))
+			assert.are.equal("59m", ns.FormatDuration(HOUR - 1))
+			assert.are.equal("2h", ns.FormatDuration(2 * HOUR + 59))
+			assert.are.equal("2h 10m", ns.FormatDuration(2 * HOUR + 10 * MINUTE + 30))
+			assert.are.equal("23h 59m", ns.FormatDuration(DAY - 1))
+			assert.are.equal("1d", ns.FormatDuration(DAY + 59 * MINUTE))
+			assert.are.equal("1d 4h", ns.FormatDuration(DAY + 4 * HOUR + 59 * MINUTE))
+		end)
+
+		it("writes clock times in 24 hours, weekdays, short and full dates and months from ns.L", function()
+			local friday = { year = 2026, month = 10, day = 2, weekday = 6 }
+
+			assert.are.equal("06:00", ns.FormatClock(6 * 60))
+			assert.are.equal("23:05", ns.FormatClock(23 * 60 + 5))
+			assert.are.equal("Fri", ns.FormatWeekday(friday))
+			assert.are.equal("2 Oct", ns.FormatShortDate(friday))
+			assert.are.equal("2 Oct 2026", ns.FormatFullDate(friday))
+			assert.are.equal("March", ns.MonthName(3))
+		end)
+
+		it("is the same realm day when the target's realm date is today's, by the realm clock, not UTC", function()
+			-- 08:15 now: 23:59 today is the same day; 15:45 later, 00:00 tomorrow, isn't.
+			assert.is_true(ns.IsSameRealmDay(NOW + (15 * 60 + 44) * MINUTE, NOW, SUNDAY))
+			assert.is_false(ns.IsSameRealmDay(NOW + (15 * 60 + 45) * MINUTE, NOW, SUNDAY))
+			assert.are.equal("23:59", ns.FormatRealmWhen(NOW + (15 * 60 + 44) * MINUTE, NOW, SUNDAY))
+			assert.are.equal("Mon 00:00", ns.FormatRealmWhen(NOW + (15 * 60 + 45) * MINUTE, NOW, SUNDAY))
+		end)
+	end)
+
+	-- A row's case at Sunday 08:15: its group, aura up, NextWindow result, board spec and skill (HNT-R40, HNT-R33).
+	local function case(fields)
+		fields.now, fields.snapshot = NOW, SUNDAY
+		return fields
+	end
+
+	-- The margin label, the tracker label and the window line of a case, as one list.
+	local sources = {
+		AuraName = function(spellID)
+			return ({ [1280341] = "Fishing Rack" })[spellID]
+		end,
+	}
+	local function labels(c)
+		local margin, tracker = ns.HuntLabels(c)
+		return { margin, tracker, ns.HuntWindowLine(c, sources) }
+	end
+
+	describe("the margin and tracker labels (HNT-R51) and the window line (HNT-R52), row by row", function()
+		it("short of skill: need 225 / needs 225, and the line adds the need and the best", function()
+			local c = case({ group = "later", window = { opensAt = NOW + 37 * MINUTE }, need = 225, best = 180 })
+
+			assert.are.same({
+				"need 225",
+				"needs 225",
+				"Opens in 37m, at 08:52. Needs 225; my best is 180. A lure gets me there.",
+			}, labels(c))
+		end)
+
+		it("short of skill beyond the lure reach of 100: no lure sentence (HNT-R33, Tunables)", function()
+			local c = case({ group = "later", window = { opensAt = NOW + 37 * MINUTE }, need = 225, best = 124 })
+
+			assert.are.equal("Opens in 37m, at 08:52. Needs 225; my best is 124.", ns.HuntWindowLine(c, sources))
+			c.best = 125
+			assert.are.equal(
+				"Opens in 37m, at 08:52. Needs 225; my best is 125. A lure gets me there.",
+				ns.HuntWindowLine(c, sources)
+			)
+		end)
+
+		it("short of skill while open: the line ignores skill, by the window as if not short (HNT-R52)", function()
+			local c = case({ group = "later", window = { openNow = true, closesAt = NOW + 3 * HOUR + 45 * MINUTE } })
+			c.need, c.best = 225, 180
+
+			assert.are.same({
+				"need 225",
+				"needs 225",
+				"Open now. Closes in 3h 45m, at 12:00. Needs 225; my best is 180. A lure gets me there.",
+			}, labels(c))
+		end)
+
+		it("a skill need at or under the best isn't short", function()
+			local c = case({ group = "soon", window = { opensAt = NOW + 37 * MINUTE }, need = 180, best = 180 })
+
+			assert.are.same({ "in 37m", "in 37m", "Opens in 37m, at 08:52." }, labels(c))
+		end)
+
+		it("Now with aura up: up now / up now / Up now.", function()
+			local c = case({ group = "now", auraUp = true, window = { onDemand = true }, spec = { auras = { 1280341 } } })
+
+			assert.are.same({ "up now", "up now", "Up now." }, labels(c))
+		end)
+
+		it("On demand: on demand, and the line names the spec's first aura", function()
+			local c = case({ group = "onDemand", window = { onDemand = true }, spec = { auras = { 1280341, 1280342 } } })
+
+			assert.are.same({ "on demand", "on demand", "Whenever I set up Fishing Rack." }, labels(c))
+		end)
+
+		it("On demand with an aura whose name the client hasn't given: …", function()
+			local c = case({ group = "onDemand", window = { onDemand = true }, spec = { auras = { 1280342 } } })
+
+			assert.are.equal("Whenever I set up ….", ns.HuntWindowLine(c, sources))
+		end)
+
+		it("Now, always: any time / any time / Open any time.", function()
+			assert.are.same(
+				{ "any time", "any time", "Open any time." },
+				labels(case({ group = "now", window = { always = true } }))
+			)
+		end)
+
+		it("Now with no closesAt: while the event runs / now / Open while the event runs.", function()
+			assert.are.same(
+				{ "while the event runs", "now", "Open while the event runs." },
+				labels(case({ group = "now", window = { openNow = true } }))
+			)
+		end)
+
+		it("Now, closing within 7 days on the same realm day: until 10:25 / ends in 2h 10m", function()
+			local c = case({ group = "now", window = { openNow = true, closesAt = NOW + 2 * HOUR + 10 * MINUTE } })
+
+			assert.are.same({ "until 10:25", "ends in 2h 10m", "Open now. Closes in 2h 10m, at 10:25." }, labels(c))
+		end)
+
+		it("Now, closing within 7 days on another realm day: until Sat 16:00 / ends in 6d 7h", function()
+			local c = case({ group = "now", window = { openNow = true, closesAt = NOW + 6 * DAY + 7 * HOUR + 45 * MINUTE } })
+
+			assert.are.same(
+				{ "until Sat 16:00", "ends in 6d 7h", "Open now. Closes in 6d 7h, at Sat 16:00." },
+				labels(c)
+			)
+		end)
+
+		it("Now, closing exactly 7 days on still reads the time: the month wording starts beyond (Tunables)", function()
+			local c = case({ group = "now", window = { openNow = true, closesAt = NOW + 7 * DAY } })
+
+			assert.are.equal("until Sun 08:15", (ns.HuntLabels(c)))
+			c.window = { openNow = true, closesAt = NOW + 7 * DAY + MINUTE }
+			assert.are.same({ "until October", "until October", "Open now, until October." }, labels(c))
+		end)
+
+		it("Now, closing later: until September, in the closing's realm month", function()
+			local c = case({ group = "now", window = { openNow = true, closesAt = NOW + 340 * DAY } })
+
+			assert.are.same({ "until September", "until September", "Open now, until September." }, labels(c))
+		end)
+
+		it("Soon: in 37m, and the line gives the opening's time", function()
+			local c = case({ group = "soon", window = { opensAt = NOW + 37 * MINUTE + 30 } })
+
+			assert.are.same({ "in 37m", "in 37m", "Opens in 37m, at 08:52." }, labels(c))
+		end)
+
+		it("Soon across realm midnight: the line's time takes the weekday, as every other-day time does", function()
+			local late = snapshotAt(NOW, 23 * 60, 2026, 10, 11, 1)
+			local c = { group = "soon", window = { opensAt = NOW + 2 * HOUR }, now = NOW, snapshot = late }
+
+			assert.are.equal("Opens in 2h, at Mon 01:00.", ns.HuntWindowLine(c, sources))
+		end)
+
+		it("Later, opening within 7 days on the same realm day: 21:00 / Opens at 21:00.", function()
+			local c = case({ group = "later", window = { opensAt = NOW + 12 * HOUR + 45 * MINUTE } })
+
+			assert.are.same({ "21:00", "21:00", "Opens at 21:00." }, labels(c))
+		end)
+
+		it("Later, opening within 7 days on another realm day: Tue 14:00 / Opens Tue 14:00.", function()
+			local c = case({ group = "later", window = { opensAt = NOW + 2 * DAY + 5 * HOUR + 45 * MINUTE } })
+
+			assert.are.same({ "Tue 14:00", "Tue 14:00", "Opens Tue 14:00." }, labels(c))
+		end)
+
+		it("Later, opening later: back in March / Back in March.", function()
+			local c = case({ group = "later", window = { opensAt = NOW + 150 * DAY } })
+
+			assert.are.same({ "back in March", "back in March", "Back in March." }, labels(c))
+		end)
+
+		it("Later with a nil result, or no board spec: no date known / No date known.", function()
+			assert.are.same(
+				{ "no date known", "no date known", "No date known." },
+				labels(case({ group = "later" }))
+			)
+		end)
+	end)
+
+	describe("the conditions line (HNT-R53)", function()
+		local loaded, fake = hunts.load()
+		-- The names as the client would give them, and FakePagle's forecasts (its Extravaganza: Sundays 14:00 for 2
+		-- hours, LOG-R56), over FakePagle's clock, Sunday 08:15.
+		local names = {
+			AreaName = function(areaID)
+				return ({ [148] = "Darkshore", [10] = "Duskwood" })[areaID]
+			end,
+			AuraName = function(spellID)
+				return ({ [1280341] = "Fishing Rack", [1280342] = "Fishing Hut" })[spellID]
+			end,
+			EventName = function(eventID)
+				if eventID == 301 then
+					return "Stranglethorn Fishing Extravaganza"
+				elseif eventID == 999 then
+					return false -- looked up, not on the calendar
+				end
+				return nil -- not looked up yet
+			end,
+			NextWindow = fake.Pagle.NextWindow,
+		}
+		local function line(spec, windowID, sources)
+			return loaded.ns.HuntConditionsLine(spec, windowID, NOW, SUNDAY, sources or names)
+		end
+
+		it("reads Grouper by Moonlight's: Realm time 22:00–04:00 · In Darkshore", function()
+			assert.are.equal(
+				"Realm time 22:00–04:00 · In Darkshore",
+				line({ areas = { 148 }, time = { { 1320, 240 } } })
+			)
+		end)
+
+		it("names the time Night or Day by the board spec's window ID, never by comparing specs", function()
+			local spec = { time = { { 1320, 240 } } }
+
+			assert.are.equal("Night 22:00–04:00", line(spec, "night"))
+			assert.are.equal("Day 06:00–00:00", line({ time = { { 360, 0 } } }, "day"))
+			assert.are.equal("Realm time 22:00–04:00", line(spec, nil))
+			assert.are.equal("Realm time 05:00–08:00, 18:00–21:00", line({ time = { { 300, 480 }, { 1080, 1260 } } }))
+		end)
+
+		it("names a season window's season, and gives an imposed season its bare ranges", function()
+			local summer = { season = { { from = { 3, 20 }, to = { 9, 19 } } } }
+
+			assert.are.equal("Summer (20 Mar – 19 Sep)", line(summer, "summer"))
+			assert.are.equal("20 Mar – 19 Sep", line(summer, nil))
+			assert.are.equal(
+				"1 Jan – 31 Jan, 1 Jun – 30 Jun",
+				line({ season = { { from = { 1, 1 }, to = { 1, 31 } }, { from = { 6, 1 }, to = { 6, 30 } } } })
+			)
+		end)
+
+		it("gives the Extravaganza its name, then Sundays 14:00 for 2h from its next forecast opening", function()
+			assert.are.equal(
+				"Stranglethorn Fishing Extravaganza, Sundays 14:00 for 2h",
+				line({ events = { 301 } }, "event.301")
+			)
+		end)
+
+		it("forecasts an event open now from its closesAt: the opening after this one gives the schedule", function()
+			local closesAt = NOW + HOUR
+			local asked = {}
+			local sources = setmetatable({
+				NextWindow = function(spec, fromTime)
+					asked[#asked + 1] = { spec.events[1], fromTime }
+					if fromTime == NOW then
+						return { openNow = true, closesAt = closesAt }
+					end
+					return { opensAt = closesAt + 7 * DAY - 2 * HOUR, closesAt = closesAt + 7 * DAY }
+				end,
+			}, { __index = names })
+
+			assert.are.equal(
+				"Stranglethorn Fishing Extravaganza, Sundays 07:15 for 2h",
+				line({ events = { 301 } }, "event.301", sources)
+			)
+			assert.are.same({ { 301, NOW }, { 301, closesAt } }, asked)
+		end)
+
+		it("shows only the name with no forecast", function()
+			local sources = setmetatable({
+				NextWindow = function()
+					return nil
+				end,
+			}, { __index = names })
+
+			assert.are.equal("Stranglethorn Fishing Extravaganza", line({ events = { 301 } }, nil, sources))
+		end)
+
+		it("reads an event the calendar doesn't list as a calendar event, and one not looked up yet as …", function()
+			local sources = setmetatable({
+				NextWindow = function()
+					return nil
+				end,
+			}, { __index = names })
+
+			assert.are.equal("a calendar event", line({ events = { 999 } }, nil, sources))
+			assert.are.equal("…", line({ events = { 998 } }, nil, sources))
+			assert.are.equal("Stranglethorn Fishing Extravaganza or a calendar event", line({ events = { 301, 999 } }, nil, sources))
+		end)
+
+		it("joins areas and auras with or, and says the lure and the skill in plain words", function()
+			assert.are.equal("In Darkshore or Duskwood or …", line({ areas = { 148, 10, 17 } }))
+			assert.are.equal("While Fishing Rack or Fishing Hut is up", line({ auras = { 1280341, 1280342 } }))
+			assert.are.equal("With a lure on", line({ lure = true }))
+			assert.are.equal("With a lure on", line({ lure = { 263 } }))
+			assert.are.equal("Skill 150 or more (lures count)", line({ skill = { min = 150 } }))
+		end)
+
+		it("lists the fields in its order whatever the spec's: time, season, events, areas, auras, lure, skill", function()
+			local spec = {
+				skill = { min = 150 },
+				lure = true,
+				auras = { 1280341 },
+				areas = { 10 },
+				season = { { from = { 3, 20 }, to = { 9, 19 } } },
+				time = { { 0, 180 } },
+				confirmed = false,
+			}
+
+			assert.are.equal(
+				"Realm time 00:00–03:00 · 20 Mar – 19 Sep · In Duskwood · While Fishing Rack is up · With a lure on"
+					.. " · Skill 150 or more (lures count)",
+				line(spec)
+			)
+		end)
+
+		it("is nil for a Hunt without a board spec (HNT-R7)", function()
+			assert.is_nil(line(nil))
+		end)
+	end)
+end)

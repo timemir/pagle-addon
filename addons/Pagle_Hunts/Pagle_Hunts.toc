@@ -15,4 +15,5 @@ logic\Data.lua
 logic\Module.lua
 logic\HuntList.lua
 logic\Seams.lua
+logic\Labels.lua
 adapter\Hunts.lua
