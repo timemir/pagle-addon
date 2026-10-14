@@ -11,6 +11,7 @@ ns.PAGLEDB_DEFAULTS = {
 	global = {
 		decodeErrors = 0, -- LOG-R16
 		coins = { earned = {} }, -- SHOP-R3
+		goods = {}, -- SHOP-R26: every registered good, by ID
 		-- announcements.md › Data: the open Session's summary, moments raised with no Session open, the stored
 		-- Session summary cards and the Write-up sections waiting (ANN-R50–R54, ANN-R61).
 		summary = { moments = {}, lines = {} },
@@ -20,6 +21,7 @@ ns.PAGLEDB_DEFAULTS = {
 	},
 	profile = {
 		reloadReminder = false, -- LOG-R86
+		appearance = {}, -- SHOP-R32: each slot's pick, by slot ID
 		announcements = { cozy = false, budget = { on = true, count = 4, window = 300 } }, -- announcements.md › Data
 	},
 }

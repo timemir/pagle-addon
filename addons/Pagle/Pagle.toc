@@ -38,6 +38,7 @@ logic\FieldReport.lua
 logic\Settings.lua
 logic\Slash.lua
 logic\Wallet.lua
+logic\Goods.lua
 logic\Moments.lua
 logic\Summary.lua
 logic\Cards.lua
@@ -67,6 +68,7 @@ adapter\Settings.lua
 adapter\AnnouncementSettings.lua
 adapter\Slash.lua
 adapter\Wallet.lua
+adapter\Goods.lua
 adapter\Moments.lua
 adapter\Summary.lua
 adapter\Timber.lua
