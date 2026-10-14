@@ -127,6 +127,39 @@ ns.L = {
 	DRY_WATCH_CAUGHT_LAST = "caught on my last Cast.",
 	DRY_WATCH_NONE_YET = "%s, none yet.",
 
+	-- The home spread (stats.md › UI › Home spread). The left page: its kicker, title and line, a zone's tile ("1,840
+	-- Casts · 6 waters", the Casts and waters counts by ns.Count), and the line with no Casts (STA-R97).
+	HOME_KICKER = "The waters",
+	HOME_TITLE = "Where I've fished",
+	HOME_INTRO = "Your odds and Dry spells come only from my own Casts, never from game data.",
+	HOME_TILE_LINE = "%s · %s",
+	HOME_TILE_NOT_FISHED = "not fished yet",
+	HOME_HERE = "I'm here",
+	HOME_WATCHING = "watching %d",
+	HOME_NOT_FISHED = "Not fished anywhere yet.",
+	-- The right page, in handwriting: where I am ("Auberdine, Darkshore", then ", by night" from WINDOW_NAMES), my skill
+	-- against the zone's no-junk line, the Session (its Casts and Catches by ns.Count, the got away count, the time so
+	-- far; or the time ago the last one ended).
+	HOME_RIGHT_NOW = "Right now",
+	HOME_PLACE = "%s, %s",
+	HOME_FISHING = "Fishing %s.",
+	HOME_FISHING_WHEN = "Fishing %s, %s.",
+	HOME_NOWHERE = "I can't tell where I am.",
+	HOME_SKILL_HI = "Skill %d, past the no-junk line (%d).",
+	HOME_SKILL_LO = "Skill %d, below the no-junk line (%d).",
+	HOME_SESSION = "This Session: %s, %s, %s got away, %s so far.",
+	HOME_LAST_SESSION = "No Session right now. The last one ended %s.",
+	HOME_NO_SESSION = "No Session yet.",
+	-- The watched Dry spells (after the pencil mark: the item, the place, then DRY_WATCH_*), and In this book.
+	HOME_WATCHED = "Dry spells I'm watching",
+	HOME_WATCHED_NOTE = "also on the live tracker",
+	HOME_WATCH = "%s, %s: %s",
+	HOME_NO_WATCHES = "Nothing yet. Watch a Dry spell from any fish's page.",
+	HOME_CONTENTS = "In this book",
+	HOME_WHERE_I_AM = "Where I am: %s",
+	HOME_WHERE_UNKNOWN = "Where I am: unknown",
+	HOME_EVERY_SESSION = "Every Session",
+
 	-- The Lifetime spread (stats.md › UI › Lifetime; its kicker is BOOK_LIFETIME). The left page's title and totals, the
 	-- got-away count with its rate ("2 (22%)").
 	LIFETIME_TITLE = "Every Cast I've made",

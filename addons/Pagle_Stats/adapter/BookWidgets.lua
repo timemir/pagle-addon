@@ -83,6 +83,9 @@ ns.BOOK_TEXTURES = {
 	-- The fleuron between crumbs (the quest log's bullet) and the pointing hand (the gauntlet cursor).
 	fleuron = "Interface\\QuestFrame\\UI-Quest-BulletPoint",
 	hand = "Interface\\Cursor\\Point",
+	-- A pencil on a note (the friends list's note icon, Blizzard_FriendsFrame/Camelot/FriendsFrame.xml): the "✎" before
+	-- a watched Dry spell on the home spread (#212).
+	pencil = "Interface\\FriendsFrame\\UI-FriendsFrame-Note",
 }
 local TEXTURES = ns.BOOK_TEXTURES
 
@@ -229,14 +232,15 @@ end
 
 --- A mark drawn as a texture (STA-R70's art, never a font glyph): the fleuron between crumbs in the fleuron's gilt,
 --- the pointing hand "☛" after a link, or "☚" before one, in red ink. The gauntlet cursor points up and to the left:
---- mirrored and turned it points right, turned the other way it points left.
----@alias StatsBookMark "fleuron"|"hand"|"handLeft"
+--- mirrored and turned it points right, turned the other way it points left. The pencil "✎" is in the hand's ink.
+---@alias StatsBookMark "fleuron"|"hand"|"handLeft"|"pencil"
 
 ---@type table<StatsBookMark, { texture: string, color: number[], mirror: boolean, turn: number }>
 local MARKS = {
 	fleuron = { texture = TEXTURES.fleuron, color = LOOK.fleuron, mirror = false, turn = 0 },
 	hand = { texture = TEXTURES.hand, color = LOOK.red, mirror = true, turn = -math.pi / 4 },
 	handLeft = { texture = TEXTURES.hand, color = LOOK.red, mirror = false, turn = math.pi / 4 },
+	pencil = { texture = TEXTURES.pencil, color = LOOK.hand, mirror = false, turn = 0 },
 }
 
 ---@param parent Frame
