@@ -356,7 +356,7 @@ function Journal:Draw()
 	-- The brass plate always shows (LED-R149): LED-R122 hides only the pages' contents, so while the projection updates
 	-- it keeps the words last read. Only an update before anything was read (the login rebuild) leaves it hidden.
 	if not pages.updating then
-		self.plate = ns.BrassPlate(context --[[@as LedgerHomeContext]])
+		self.plate = ns.BrassPlate(context --[[@as LedgerSpreadContext]])
 	end
 	frame.plate.label:SetText(self.plate or "")
 	frame.plate:SetSize(frame.plate.label:GetStringWidth() + 20, 22)

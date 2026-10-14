@@ -24,6 +24,7 @@ logic\Projection.lua
 logic\InkBar.lua
 logic\JournalText.lua
 logic\Journal.lua
+logic\JournalParts.lua
 logic\JournalTile.lua
 logic\JournalSpecies.lua
 logic\Home.lua

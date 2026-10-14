@@ -369,9 +369,10 @@ end
 --- `options`, each optional: `catalogue` (fake.setCatalogue's; the generated one by default), `characters` (the
 --- log's; the player's alone by default), `log` (records appended in order), `itemNames`, `areaNames` and `mapNames`
 --- (what the fake client's C_Item and C_Map know), `before` (run with loaded and fake before the book opens), and
---- `id` and `args`: the spread it opens on, which must be registered; Home, at its first opening, by default; with
---- `id` false the book stays closed.
----@param options { catalogue: table?, characters: table[]?, log: table[]?, itemNames: table?, areaNames: table?, mapNames: table?, before: fun(loaded: LoadedAddon, fake: FakePagle)?, id: string|false|nil, args: table? }?
+--- where it opens: `place`, one of the Ledger's own places as `{ constructor, args... }` (ns.JournalPlace, e.g.
+--- `{ "zone", 148 }`), or `id` and `args` for a spec's own spread, which must be registered; Home, at its first
+--- opening, by default; with `id` false the book stays closed.
+---@param options { catalogue: table?, characters: table[]?, log: table[]?, itemNames: table?, areaNames: table?, mapNames: table?, before: fun(loaded: LoadedAddon, fake: FakePagle)?, place: table?, id: string|false|nil, args: table? }?
 ---@return FakePagle fake
 ---@return LoadedAddon loaded
 function openJournal(options)
@@ -393,9 +394,13 @@ function openJournal(options)
 	if options.before then
 		options.before(loaded, fake)
 	end
-	local id = options.id
+	local id, args = options.id, options.args
+	if options.place then
+		local at = loaded.ns.JournalPlace[options.place[1]](unpack(options.place, 2))
+		id, args = at.id, at.args
+	end
 	if id then
-		assert(loaded.ns.journal:Open(id, options.args), "no spread is registered as " .. id)
+		assert(loaded.ns.journal:Open(id, args), "no spread is registered as " .. id)
 	elseif id == nil then
 		loaded.ns.journal:Toggle()
 	end

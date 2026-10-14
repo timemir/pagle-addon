@@ -149,7 +149,7 @@ end
 
 -- Opens Home on tab `tab` (0, 1 or "other") as clicking it does.
 local function chooseTab(loaded, tab)
-	loaded.ns.journal:Open("home", { tab = tab })
+	loaded.ns.journal:OpenPlace(loaded.ns.JournalPlace.home(tab))
 end
 
 describe("the Journal's Home, left page", function()

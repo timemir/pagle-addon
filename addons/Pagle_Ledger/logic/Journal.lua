@@ -34,6 +34,17 @@ local ns = select(2, ...)
 ---@field angler? Angler                 -- Pagle.GetAngler(), read at each draw (LED-R41); nil while updating
 ---@field openFieldReport? fun()         -- Pagle.OpenFieldReport (REP-R43); nil while updating
 
+--- What a spread draws from: the Journal's context while the projection isn't updating, when every field is set (the
+--- router draws no spread while it updates, LED-R122). The router casts once; spreads and their parts take this.
+---@class LedgerSpreadContext: LedgerJournalContext
+---@field state LedgerState
+---@field celebrated LedgerCelebrated
+---@field world LedgerWorld
+---@field getItem fun(itemID: integer): PagleItem?
+---@field getArea fun(areaID: integer): PagleArea?
+---@field angler Angler
+---@field openFieldReport fun()
+
 --- One thing drawn on a page, top to bottom, as data; adapter/JournalWidgets.lua draws each kind:
 --- - `kicker`, `title`, `text` (`text`, in the serif face; `hand` for the handwriting face, `color` "faded", "red" or
 ---   "blue" over the ink)
@@ -98,8 +109,8 @@ local ns = select(2, ...)
 
 --- A spread, registered by ID: its crumbs after Home's (none for Home itself) and its pages, both for its args.
 ---@class LedgerSpread
----@field crumbs fun(args: table, context: LedgerJournalContext): LedgerCrumb[]
----@field draw fun(args: table, context: LedgerJournalContext): LedgerSpreadPages
+---@field crumbs fun(args: table, context: LedgerSpreadContext): LedgerCrumb[]
+---@field draw fun(args: table, context: LedgerSpreadContext): LedgerSpreadPages
 
 --- What the open book shows (LED-R122, LED-R125): both pages, and while not updating, the crumbs (Home first) and
 --- the back link's place (nil on Home). The search box shows whenever the crumbs do.
@@ -110,9 +121,70 @@ local ns = select(2, ...)
 ---@field left LedgerBlock[]
 ---@field right LedgerBlock[]
 
---- Home's ID: the spread the Journal shows at its first opening after a login or `/reload` (LED-R120). logic/Home.lua
---- registers it.
+--- Home's ID: the spread the Journal shows at its first opening after a login or `/reload` (LED-R120). Its args are
+--- `{ tab = continent tab }` (LED-R130). logic/Home.lua registers it.
 ns.JOURNAL_HOME = "home"
+--- The zone spread's ID (LED-R135): its args are `{ zone = areaID, species = id?, hint = true? }`, the Species
+--- selected if any and whether its entry's plain hint is open (LED-R136, LED-R141). logic/JournalZone.lua registers it.
+ns.JOURNAL_ZONE = "zone"
+--- The fish spread's ID (LED-R142): its args are `{ species = id, hint = true? }`. logic/JournalSpecies.lua registers it.
+ns.JOURNAL_FISH = "fish"
+--- The Trophy Room's ID (LED-R143): its args may name a `family` to open on (LED-R137's "Trophies landed here").
+--- logic/JournalCollections.lua registers it.
+ns.JOURNAL_TROPHY_ROOM = "trophy"
+--- Curios' ID (LED-R144): the Junk Museum, Treasures and the loose pages of Uncharted catches.
+--- logic/JournalCollections.lua registers it.
+ns.JOURNAL_CURIOS = "curios"
+--- The Angler page's ID (LED-R146). logic/JournalAngler.lua registers it.
+ns.JOURNAL_ANGLER = "angler"
+
+--- Every spread's place, one constructor per spread (LED-R125): each link, crumb, tile and note opens one. A place
+--- names its spread by ID, so a link to a spread that hasn't registered does nothing (Router:Open).
+ns.JournalPlace = {}
+
+--- Home, on continent tab `tab` when given (LED-R130).
+---@param tab integer|string?
+---@return LedgerJournalPlace
+function ns.JournalPlace.home(tab)
+	return { id = ns.JOURNAL_HOME, args = tab ~= nil and { tab = tab } or nil }
+end
+
+--- Zone `zone`'s spread, with Species `species` selected when given and its plain hint open with `hint` (LED-R136,
+--- LED-R141, LED-R142).
+---@param zone integer
+---@param species integer?
+---@param hint true?
+---@return LedgerJournalPlace
+function ns.JournalPlace.zone(zone, species, hint)
+	return { id = ns.JOURNAL_ZONE, args = { zone = zone, species = species, hint = hint } }
+end
+
+--- Species `species`' fish spread, its plain hint open with `hint` (LED-R141, LED-R142): what search and notes open.
+---@param species integer
+---@param hint true?
+---@return LedgerJournalPlace
+function ns.JournalPlace.fish(species, hint)
+	return { id = ns.JOURNAL_FISH, args = { species = species, hint = hint } }
+end
+
+--- The Trophy Room, open on family `family` when given (LED-R143, LED-R137).
+---@param family integer?
+---@return LedgerJournalPlace
+function ns.JournalPlace.trophyRoom(family)
+	return { id = ns.JOURNAL_TROPHY_ROOM, args = family and { family = family } or nil }
+end
+
+--- Curios (LED-R144).
+---@return LedgerJournalPlace
+function ns.JournalPlace.curios()
+	return { id = ns.JOURNAL_CURIOS }
+end
+
+--- The Angler page (LED-R146).
+---@return LedgerJournalPlace
+function ns.JournalPlace.angler()
+	return { id = ns.JOURNAL_ANGLER }
+end
 
 --- The spreads, by ID. Each spread's ticket registers it with ns.RegisterJournalSpread when its file loads.
 ---@type table<string, LedgerSpread>
@@ -127,7 +199,7 @@ end
 
 --- The "Help chart the waters" link, on uncharted waters and Curios' loose pages (LED-R138, LED-R144): it calls
 --- Pagle.OpenFieldReport(), which prints Core's line while restricted (LED-R121, REP-R43, REP-R44).
----@param context LedgerJournalContext
+---@param context LedgerSpreadContext
 ---@return LedgerBlock
 function ns.JournalHelpChartLink(context)
 	return { kind = "link", text = ns.L.JOURNAL_HELP_CHART, action = context.openFieldReport }
@@ -143,7 +215,7 @@ Router.__index = Router
 ---@param spreads table<string, LedgerSpread>
 ---@return LedgerJournalRouter
 function ns.NewJournalRouter(spreads)
-	return setmetatable({ spreads = spreads, place = { id = ns.JOURNAL_HOME } }, Router)
+	return setmetatable({ spreads = spreads, place = ns.JournalPlace.home() }, Router)
 end
 
 --- Opens spread `id` with `args`; does nothing and returns false when no spread is registered as `id`, so a link
@@ -178,13 +250,15 @@ function Router:Pages(context)
 			right = { { kind = "text", text = ns.L.JOURNAL_UPDATING } },
 		}
 	end
+	-- Not updating, every field of the context is set: the spreads read it as a LedgerSpreadContext.
+	local ready = context --[[@as LedgerSpreadContext]]
 	local spread = self.spreads[self.place.id]
 	local args = self.place.args or {}
-	local crumbs = { { label = ns.L.JOURNAL_HOME, place = { id = ns.JOURNAL_HOME } } }
-	for _, crumb in ipairs(spread.crumbs(args, context)) do
+	local crumbs = { { label = ns.L.JOURNAL_HOME, place = ns.JournalPlace.home() } }
+	for _, crumb in ipairs(spread.crumbs(args, ready)) do
 		crumbs[#crumbs + 1] = crumb
 	end
-	local pages = spread.draw(args, context)
+	local pages = spread.draw(args, ready)
 	-- Every spread but Home goes back one crumb up; one that adds no crumb of its own goes back to Home.
 	local back = crumbs[#crumbs - 1] and crumbs[#crumbs - 1].place
 	if not back and self.place.id ~= ns.JOURNAL_HOME then

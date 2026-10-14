@@ -19,15 +19,6 @@ local TAB_ORDER = { 0, 1, ns.OTHER_TAB }
 -- At most this many Notes to self (LED-R133, Tunables).
 local MAX_NOTES = 3
 
---- What Home reads: the Journal's context while the projection isn't updating, when every field is set (the
---- router draws no spread while it updates, LED-R122).
----@class LedgerHomeContext: LedgerJournalContext
----@field state LedgerState
----@field celebrated LedgerCelebrated
----@field world LedgerWorld
----@field getItem fun(itemID: integer): PagleItem?
----@field getArea fun(areaID: integer): PagleArea?
-
 --- The continent tab a zone's tile sits under (LED-R130): its `continent` from GetArea when 0 or 1, else "Other
 --- waters" (any other ContinentID, or a zone GetArea doesn't know). Home's args take it as `tab`; its label is
 --- `context.text:Continent(tab)`.
@@ -43,29 +34,9 @@ function ns.HomeTabOf(getArea, zone)
 	return ns.OTHER_TAB
 end
 
---- The zones with a tile (LED-R131), in tile order (skill base, zones without one last, then areaID): every charted
---- zone and every fished zone that isn't charted.
----@param context LedgerHomeContext
----@return integer[]
-function ns.HomeZones(context)
-	local world, state = context.world, context.state
-	local set = {}
-	for _, zone in ipairs(world.charted) do
-		set[zone] = true
-	end
-	for zone in pairs(state.zones) do
-		set[zone] = true
-	end
-	local zones = {}
-	for zone in pairs(set) do
-		zones[#zones + 1] = zone
-	end
-	return ns.SortZonesBySkill(zones, world.skillBase)
-end
-
 -- The left page (LED-R130): kicker, title, the tabs that have a tile, and the chosen tab's tiles. `chosen` is the
 -- tab asked for; when it has no tile, the first tab shown.
----@param context LedgerHomeContext
+---@param context LedgerSpreadContext
 ---@param chosen integer|string?
 ---@return LedgerBlock[] left
 ---@return integer|string? tab the tab shown
@@ -89,9 +60,9 @@ local function leftPage(context, chosen)
 	local tabs = {}
 	for i, tab in ipairs(shown) do
 		tabs[i] = {
-			text = context.text:Continent(tab ~= ns.OTHER_TAB and tab or nil),
+			text = context.text:Continent(tab),
 			on = tab == chosen,
-			place = { id = ns.JOURNAL_HOME, args = { tab = tab } },
+			place = ns.JournalPlace.home(tab),
 		}
 	end
 	return {
@@ -105,7 +76,7 @@ end
 
 -- Note 1, the next rank (LED-R133): of the fished charted zones shown Visitor to Expert with no new to find, the one
 -- with the highest completion (ties: higher rank, lower skill base, lower areaID).
----@param context LedgerHomeContext
+---@param context LedgerSpreadContext
 ---@param zones integer[] the zones with a tile, in tile order
 ---@return LedgerBlock?
 local function nextRankNote(context, zones)
@@ -133,11 +104,11 @@ local function nextRankNote(context, zones)
 		ns.L.ZONE_RANKS[bestRank],
 		ns.NextRequirement(world, state, celebrated, best)
 	)
-	return { kind = "link", text = line, hand = true, place = ns.JournalZonePlace(best) }
+	return { kind = "link", text = line, hand = true, place = ns.JournalPlace.zone(best) }
 end
 
 -- Note 2, new to find (LED-R133): the first zone in tile order with new to find.
----@param context LedgerHomeContext
+---@param context LedgerSpreadContext
 ---@param zones integer[] the zones with a tile, in tile order
 ---@return LedgerBlock?
 local function newToFindNote(context, zones)
@@ -145,7 +116,7 @@ local function newToFindNote(context, zones)
 		local count = ns.NewToFind(context.world, context.state, context.celebrated, zone)
 		if count > 0 then
 			local line = ns.L.HOME_NOTE_NEW:format(context.text:Zone(zone), count)
-			return { kind = "link", text = line, hand = true, place = ns.JournalZonePlace(zone) }
+			return { kind = "link", text = line, hand = true, place = ns.JournalPlace.zone(zone) }
 		end
 	end
 	return nil
@@ -153,7 +124,7 @@ end
 
 -- Note 3, the next star (LED-R133): the caught, not removed Species without a shown ★★★ with the most Catches (ties:
 -- lower Species ID). Only a caught Species is ever named (LED-R124).
----@param context LedgerHomeContext
+---@param context LedgerSpreadContext
 ---@return LedgerBlock?
 local function nextStarNote(context)
 	local world, state, celebrated = context.world, context.state, context.celebrated
@@ -171,13 +142,13 @@ local function nextStarNote(context)
 		return nil
 	end
 	local line = ns.L.HOME_NOTE_STAR:format(context.text:Item(best), ns.REGULAR_CATCHES - bestN)
-	return { kind = "link", text = line, hand = true, place = ns.JournalFishPlace(best) }
+	return { kind = "link", text = line, hand = true, place = ns.JournalPlace.fish(best) }
 end
 
 --- Notes to self (LED-R133): at most three progress nudges, in order, each only if it applies and each opening the
 --- spread it names: the next rank, new to find and the next star; "Go fishing!" with none. None says what is
 --- catchable now. Each is a handwritten link (or text, for "Go fishing!").
----@param context LedgerHomeContext
+---@param context LedgerSpreadContext
 ---@return LedgerBlock[]
 function ns.NotesToSelf(context)
 	local zones = ns.HomeZones(context)
@@ -212,7 +183,7 @@ end
 -- The right page (LED-R132): the bookplate summary (the shown level in large numerals, Ledger completion's seal),
 -- the ink XP bar, Notes to self, and In this Ledger's contents, each line opening its spread. M3 draws no title, no
 -- Prestige emblem or stars and no Legends line (LED-R4).
----@param context LedgerHomeContext
+---@param context LedgerSpreadContext
 ---@return LedgerBlock[]
 local function rightPage(context)
 	local L = ns.L
@@ -236,20 +207,20 @@ local function rightPage(context)
 		kind = "leader",
 		text = L.HOME_TROPHY_ROOM,
 		value = countText(completion.trophy),
-		place = { id = ns.JOURNAL_TROPHY_ROOM },
+		place = ns.JournalPlace.trophyRoom(),
 	}
 	right[#right + 1] = {
 		kind = "leader",
 		text = L.HOME_CURIOS,
 		value = countText(completion.junk, completion.treasure),
-		place = { id = ns.JOURNAL_CURIOS },
+		place = ns.JournalPlace.curios(),
 	}
-	right[#right + 1] = { kind = "leader", text = L.HOME_ANGLER, place = { id = ns.JOURNAL_ANGLER } }
+	right[#right + 1] = { kind = "leader", text = L.HOME_ANGLER, place = ns.JournalPlace.angler() }
 	return right
 end
 
 --- The brass plate on the cover (LED-R149, LED-R4's M3 stage, without the title): "Lv {shown level} · Ledger {p}%".
----@param context LedgerHomeContext
+---@param context LedgerSpreadContext
 ---@return string
 function ns.BrassPlate(context)
 	local state = context.state
@@ -269,10 +240,9 @@ function ns.NewHomeSpread()
 			return {}
 		end,
 		draw = function(args, context)
-			local home = context --[[@as LedgerHomeContext]]
-			local left, tab = leftPage(home, args.tab == nil and lastTab or args.tab)
+			local left, tab = leftPage(context, args.tab == nil and lastTab or args.tab)
 			lastTab = tab
-			return { left = left, right = rightPage(home) }
+			return { left = left, right = rightPage(context) }
 		end,
 	}
 end

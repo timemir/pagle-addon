@@ -195,11 +195,12 @@ function Text:Zone(areaID)
 end
 
 --- A continent tab's label (LED-R126, LED-R130): Eastern Kingdoms (0) and Kalimdor (1) from C_Map.GetMapInfo on the
---- continent's uiMapID ("…" if it has no name), "Other waters" for any other ContinentID or none.
----@param continentID integer?
+--- continent's uiMapID ("…" if it has no name), "Other waters" for any other ContinentID, none, or Home's
+--- ns.OTHER_TAB: any of Home's tabs (ns.HomeTabOf) as it is.
+---@param tab integer|string?
 ---@return string
-function Text:Continent(continentID)
-	local uiMapID = continentID and CONTINENT_MAPS[continentID]
+function Text:Continent(tab)
+	local uiMapID = tab and CONTINENT_MAPS[tab]
 	if not uiMapID then
 		return ns.L.OTHER_WATERS
 	end

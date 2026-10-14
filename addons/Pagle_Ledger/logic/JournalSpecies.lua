@@ -12,34 +12,11 @@ local ns = select(2, ...)
 -- Tunables: plain hint zones (LED-R141).
 local HINT_ZONES = 2
 
---- Zones in tile order (LED-R131): by skill base, zones without one last, then by areaID. Sorts `zones` in place.
----@param zones integer[]
----@param skillBase { [integer]: integer }
----@return integer[]
-function ns.SortZonesBySkill(zones, skillBase)
-	table.sort(zones, function(a, b)
-		local sa, sb = skillBase[a], skillBase[b]
-		if sa ~= sb then
-			if sa == nil or sb == nil then
-				return sb == nil
-			end
-			return sa < sb
-		end
-		return a < b
-	end)
-	return zones
-end
-
 -- A Species' element window IDs (LED-R10), ascending; empty when it has none.
 ---@param listing LedgerWorldSpecies?
 ---@return string[]
 local function elementWindows(listing)
-	local windows = {}
-	for window in pairs(listing and listing.elements or {}) do
-		windows[#windows + 1] = window
-	end
-	table.sort(windows)
-	return windows
+	return ns.SortedKeys(listing and listing.elements or {})
 end
 
 --- The plain hint (DATA-R112, LED-R141), generated from the world index, not lore: the Species' element window labels
@@ -58,10 +35,9 @@ function ns.PlainHint(world, id, text)
 		labels[i] = text:WindowLabel(window)
 	end
 	local parts = { #labels > 0 and table.concat(labels, L.HINT_WINDOW_SEPARATOR) or L.HINT_ANY_TIME }
-	local zones = {}
+	local listed = listing and listing.zones or {}
 	local pool = false
-	for i, zone in ipairs(listing and listing.zones or {}) do
-		zones[i] = zone
+	for _, zone in ipairs(listed) do
 		local zoneIndex = world.zones[zone]
 		local inZone = zoneIndex and zoneIndex.species[id]
 		pool = pool or (inZone ~= nil and inZone.pool)
@@ -69,10 +45,10 @@ function ns.PlainHint(world, id, text)
 	if pool then
 		parts[#parts + 1] = L.HINT_POOLS
 	end
-	if #zones == 0 then
+	if #listed == 0 then
 		return table.concat(parts, L.HINT_SEPARATOR)
 	end
-	ns.SortZonesBySkill(zones, world.skillBase)
+	local zones = ns.SortZonesBySkill(listed, world.skillBase)
 	local skill
 	for i = 1, math.min(HINT_ZONES, #zones) do
 		local name = text:Zone(zones[i])
@@ -89,28 +65,6 @@ function ns.PlainHint(world, id, text)
 		parts[#parts + 1] = skill > 0 and L.HINT_SKILL:format(skill) or L.HINT_ANY_SKILL
 	end
 	return table.concat(parts, L.HINT_SEPARATOR)
-end
-
---- A list as prose (LED-R140): "A", "A and B", "A, B and C".
----@param items string[]
----@return string
-function ns.JoinAnd(items)
-	local L = ns.L
-	if #items <= 1 then
-		return items[1] or ""
-	end
-	return table.concat(items, L.LIST_SEPARATOR, 1, #items - 1) .. L.LIST_LAST .. items[#items]
-end
-
--- The three stamps of a caught Species (LED-R140), inked when shown (LED-R48, LED-R92).
----@param stars LedgerStars
----@return { text: string, inked: boolean }[]
-local function stamps(stars)
-	local list = {}
-	for star, text in ipairs(ns.L.ENTRY_STAMPS) do
-		list[star] = { text = text, inked = stars[star] == true }
-	end
-	return list
 end
 
 -- "Found in {zones}." with " Only by {element windows}." (LED-R140), nil with neither.
@@ -148,13 +102,12 @@ end
 --- line (LED-R12). Uncaught, and never named (LED-R124): a silhouette, "An unknown fish", its riddle in quotes and
 --- the plain hint's link, or the plain hint itself once opened (DATA-R112).
 ---@param id integer the Species ID
----@param context LedgerJournalContext
+---@param context LedgerSpreadContext
 ---@param hint LedgerHintState
 ---@return LedgerBlock[]
 function ns.JournalSpeciesEntry(id, context, hint)
 	local L, text = ns.L, context.text
-	local state = context.state --[[@as LedgerState]]
-	local world = context.world --[[@as LedgerWorld]]
+	local state, world = context.state, context.world
 	local species = state.species[id]
 	if not species then
 		---@type LedgerBlock[]
@@ -180,7 +133,10 @@ function ns.JournalSpeciesEntry(id, context, hint)
 	local blocks = {
 		{ kind = "icon", icon = id, look = "sepia", large = true },
 		{ kind = "title", text = text:Item(id) },
-		{ kind = "stamps", stamps = stamps(ns.ShownSpeciesStars(world, state, context.celebrated or {}, id)) },
+		{
+			kind = "stamps",
+			stamps = ns.JournalStamps(ns.ShownSpeciesStars(world, state, context.celebrated, id), L.ENTRY_STAMPS),
+		},
 		{ kind = "text", hand = true, text = first },
 	}
 	local blurb = text:Lore(("species.%d.blurb"):format(id))
@@ -191,28 +147,19 @@ function ns.JournalSpeciesEntry(id, context, hint)
 	if found then
 		blocks[#blocks + 1] = { kind = "text", text = found }
 	end
-	local item = context.getItem and context.getItem(id)
+	local item = context.getItem(id)
 	if item and item.removed then
 		blocks[#blocks + 1] = { kind = "text", text = L.ENTRY_REMOVED }
 	end
 	return blocks
 end
 
---- The fish spread's ID (LED-R142); its args are `{ species = id, hint = true? }`.
-ns.JOURNAL_FISH = "fish"
-
---- The fish spread's place for Species `id` (LED-R142): what search and notes open.
+--- A Species' label in the crumbs (LED-R125), on the fish and the zone spread: its name once caught, never before
+--- (LED-R124).
 ---@param id integer
----@return LedgerJournalPlace
-function ns.JournalFishPlace(id)
-	return { id = ns.JOURNAL_FISH, args = { species = id } }
-end
-
--- A Species' label in the crumbs (LED-R125): its name once caught, never before (LED-R124).
----@param id integer
----@param context LedgerJournalContext
+---@param context LedgerSpreadContext
 ---@return string
-local function fishLabel(id, context)
+function ns.JournalFishLabel(id, context)
 	return context.state.species[id] and context.text:Item(id) or ns.L.ENTRY_UNKNOWN
 end
 
@@ -254,7 +201,7 @@ end
 --- never anything uncaught (LED-R124). At most 4 zones then 6 fish, each part sorted by name. A name the client
 --- hasn't loaded yet doesn't match. Nil for an empty box (no dropdown); an empty list for no match.
 ---@param query string
----@param context LedgerJournalContext
+---@param context LedgerSpreadContext
 ---@return LedgerSearchResult[]?
 function ns.JournalSearch(query, context)
 	if query == "" then
@@ -262,23 +209,20 @@ function ns.JournalSearch(query, context)
 	end
 	query = query:lower()
 	local text = context.text
-	local world = context.world --[[@as LedgerWorld]]
-	local state = context.state --[[@as LedgerState]]
 	local zones, fish = {}, {}
-	for _, zone in ipairs(world.charted) do
+	for _, zone in ipairs(ns.HomeZones(context)) do
 		zones[zone] = text:Zone(zone)
 	end
-	for zone in pairs(state.zones) do
-		zones[zone] = text:Zone(zone)
-	end
-	for id in pairs(state.species) do
+	for id in pairs(context.state.species) do
 		fish[id] = text:Item(id)
 	end
 	local results = {}
 	addMatches(zones, query, SEARCH_ZONES, function(zone)
-		return ns.JournalZonePlace(zone)
+		return ns.JournalPlace.zone(zone)
 	end, results)
-	addMatches(fish, query, SEARCH_FISH, ns.JournalFishPlace, results)
+	addMatches(fish, query, SEARCH_FISH, function(id)
+		return ns.JournalPlace.fish(id)
+	end, results)
 	return results
 end
 
@@ -286,23 +230,18 @@ end
 -- (LED-R131) with "caught ✓" where caught, each opening the zone's spread with the fish selected; "When" with each
 -- element window's line, its state forecast now (LED-R127); and for a caught Species its ★★ and ★★★ checklist.
 ---@param id integer
----@param context LedgerJournalContext
+---@param context LedgerSpreadContext
 ---@return LedgerBlock[]
 local function waters(id, context)
 	local L, text = ns.L, context.text
-	local state = context.state --[[@as LedgerState]]
-	local world = context.world --[[@as LedgerWorld]]
+	local state, world = context.state, context.world
 	local listing, species = world.species[id], state.species[id]
 	---@type LedgerBlock[]
 	local blocks = { { kind = "kicker", text = L.FISH_KICKER }, { kind = "title", text = L.FISH_TITLE } }
-	local zones = {}
-	for i, zone in ipairs(listing and listing.zones or {}) do
-		zones[i] = zone
-	end
 	local tiles = {}
-	for i, zone in ipairs(ns.SortZonesBySkill(zones, world.skillBase)) do
+	for i, zone in ipairs(ns.SortZonesBySkill(listing and listing.zones or {}, world.skillBase)) do
 		local tile = ns.JournalZoneTile(zone, context)
-		tile.place = ns.JournalZonePlace(zone, id)
+		tile.place = ns.JournalPlace.zone(zone, id)
 		if species and species.zones[zone] then
 			tile.line2 = L.FISH_CAUGHT_HERE
 		end
@@ -319,7 +258,7 @@ local function waters(id, context)
 		end
 	end
 	if species then
-		local stars = ns.ShownSpeciesStars(world, state, context.celebrated or {}, id)
+		local stars = ns.ShownSpeciesStars(world, state, context.celebrated, id)
 		local function box(star)
 			return stars[star] and L.CHECK_ON or L.CHECK_OFF
 		end
@@ -336,11 +275,11 @@ end
 ns.RegisterJournalSpread(ns.JOURNAL_FISH, {
 	-- Home ❧ {fish} (LED-R125).
 	crumbs = function(args, context)
-		return { { label = fishLabel(args.species, context), place = ns.JournalFishPlace(args.species) } }
+		return { { label = ns.JournalFishLabel(args.species, context), place = ns.JournalPlace.fish(args.species) } }
 	end,
 	draw = function(args, context)
 		local id = args.species
-		local hint = { open = args.hint, place = { id = ns.JOURNAL_FISH, args = { species = id, hint = true } } }
+		local hint = { open = args.hint, place = ns.JournalPlace.fish(id, true) }
 		return { left = ns.JournalSpeciesEntry(id, context, hint), right = waters(id, context) }
 	end,
 })

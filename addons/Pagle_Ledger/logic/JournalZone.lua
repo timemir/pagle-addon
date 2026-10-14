@@ -11,30 +11,18 @@ local ns = select(2, ...)
 -- (CORE-R7); the book draws it (adapter/Journal.lua). Window states are read afresh at each draw, never kept
 -- (LED-R127). M4 adds the zonemaster line of LED-R137.
 
--- The zone spread is ns.JOURNAL_ZONE (logic/JournalTile.lua). Its args are `{ zone = areaID, species = id?,
--- hint = true? }`: the zone, the Species selected (LED-R136, LED-R142) and whether its entry's plain hint is open
--- (LED-R141); it ignores any other.
+-- The zone spread is ns.JOURNAL_ZONE, its places ns.JournalPlace.zone (logic/Journal.lua): the zone, the Species
+-- selected (LED-R136, LED-R142) and whether its entry's plain hint is open (LED-R141); it ignores any other args.
 
 -- The groups of a charted zone's catches, in their order (LED-R135).
 local SPECIES_GROUPS = { "anyTime", "pools", "dayNight", "seasonal", "events" }
 
---- What the zone spread reads: the Journal's context while the projection isn't updating, when every field is set
---- (the router draws no spread while it updates, LED-R122).
----@class LedgerZoneContext: LedgerJournalContext
----@field state LedgerState
----@field celebrated LedgerCelebrated
----@field world LedgerWorld
----@field getItem fun(itemID: integer): PagleItem?
----@field getArea fun(areaID: integer): PagleArea?
----@field openFieldReport fun()
-
 -- The label of the continent tab a zone sits under (LED-R126, LED-R130, logic/Home.lua).
----@param context LedgerZoneContext
+---@param context LedgerSpreadContext
 ---@param zone integer
 ---@return string
 local function tabLabel(context, zone)
-	local tab = ns.HomeTabOf(context.getArea, zone)
-	return context.text:Continent(tab ~= ns.OTHER_TAB and tab --[[@as integer]] or nil)
+	return context.text:Continent(ns.HomeTabOf(context.getArea, zone))
 end
 
 -- Which group a listed Species sits in (LED-R135): ungated, Any time or Pools; gated, by its windows here, so a
@@ -55,24 +43,11 @@ local function groupOf(listing)
 	return onlyEvents and "events" or "seasonal"
 end
 
--- The keys of a set, ascending (LED-R123).
----@generic K
----@param set table<K, any>
----@return K[]
-local function sortedKeys(set)
-	local keys = {}
-	for key in pairs(set) do
-		keys[#keys + 1] = key
-	end
-	table.sort(keys)
-	return keys
-end
-
 -- A Species row (LED-R136): its icon (a silhouette if never caught, LED-R124); its name if caught anywhere, with
 -- "(caught elsewhere)" when not caught here, else "— unknown —"; in the margin each of its windows here as
 -- "{label}, {state}" read now (LED-R127) and "pools" when pool-associated (none for `listing` nil, a Species not on
 -- the list); its shown stars when caught here (LED-R48); and the place that selects it.
----@param context LedgerZoneContext
+---@param context LedgerSpreadContext
 ---@param zone integer
 ---@param id integer the Species ID
 ---@param listing LedgerWorldListing?
@@ -89,7 +64,7 @@ local function speciesRow(context, zone, id, listing, selected)
 		kind = "row",
 		icon = id,
 		look = caught and "sepia" or "silhouette",
-		place = ns.JournalZonePlace(zone, id),
+		place = ns.JournalPlace.zone(zone, id),
 		selected = id == selected or nil,
 	}
 	if not caught then
@@ -101,7 +76,7 @@ local function speciesRow(context, zone, id, listing, selected)
 	end
 	if listing then
 		local margin = {}
-		for _, window in ipairs(sortedKeys(listing.windows)) do
+		for _, window in ipairs(ns.SortedKeys(listing.windows)) do
 			margin[#margin + 1] = context.text:WindowLine(window)
 		end
 		if listing.pool then
@@ -134,7 +109,7 @@ local function ticked(text, met)
 end
 
 -- A trophy family's name, from lore (LED-R135, LED-R161), or "…" while it has none.
----@param context LedgerZoneContext
+---@param context LedgerSpreadContext
 ---@param family integer
 ---@return string
 local function familyName(context, family)
@@ -142,7 +117,7 @@ local function familyName(context, family)
 end
 
 -- The seal, the rank ladder, the next requirement and new to find (LED-R135, LED-R52, LED-R134).
----@param context LedgerZoneContext
+---@param context LedgerSpreadContext
 ---@param zone integer
 ---@param blocks LedgerBlock[]
 local function standing(context, zone, blocks)
@@ -170,7 +145,7 @@ end
 
 -- The catches in groups (LED-R135): the Species groups, Trophies, Curios and Also caught here, each left out when
 -- empty, rows by Species ID (families by ID).
----@param context LedgerZoneContext
+---@param context LedgerSpreadContext
 ---@param zone integer
 ---@param selected integer?
 ---@param blocks LedgerBlock[]
@@ -179,7 +154,7 @@ local function catches(context, zone, selected, blocks)
 	local zoneIndex = context.world.zones[zone]
 	local zoneState = context.state.zones[zone] or ns.NewZoneState()
 	local groups = {}
-	for _, id in ipairs(sortedKeys(zoneIndex.species)) do
+	for _, id in ipairs(ns.SortedKeys(zoneIndex.species)) do
 		local group = groupOf(zoneIndex.species[id])
 		groups[group] = groups[group] or {}
 		table.insert(groups[group], id)
@@ -201,13 +176,10 @@ local function catches(context, zone, selected, blocks)
 		end
 	end
 
-	local families = sortedKeys(zoneIndex.families)
+	local families = ns.SortedKeys(zoneIndex.families)
 	if #families > 0 then
-		local landed = 0
-		for _, family in ipairs(families) do
-			landed = landed + (zoneState.families[family] and 1 or 0)
-		end
-		blocks[#blocks + 1] = header("trophies", landed, #families)
+		local counts = ns.ZoneCounts(context.world, context.state, zone) --[[@as LedgerZoneCounts]]
+		blocks[#blocks + 1] = header("trophies", counts.landed, counts.families)
 		for _, family in ipairs(families) do
 			local line = L.ZONE_TROPHY:format(familyName(context, family))
 			blocks[#blocks + 1] = ticked(line, zoneState.families[family] == true)
@@ -233,7 +205,7 @@ local function catches(context, zone, selected, blocks)
 	end
 
 	local also = {}
-	for _, id in ipairs(sortedKeys(zoneState.species)) do
+	for _, id in ipairs(ns.SortedKeys(zoneState.species)) do
 		if not zoneIndex.species[id] then
 			also[#also + 1] = id
 		end
@@ -249,7 +221,7 @@ local function catches(context, zone, selected, blocks)
 end
 
 -- A charted zone's left page (LED-R135).
----@param context LedgerZoneContext
+---@param context LedgerSpreadContext
 ---@param zone integer
 ---@param selected integer?
 ---@return LedgerBlock[]
@@ -263,60 +235,49 @@ local function chartedLeft(context, zone, selected)
 	return blocks
 end
 
--- A family's weights landed, of its weights in the Trophy Room's world (LED-R11, LED-R60), removed ones left out of
--- both sides (LED-R12): "x / N".
----@param context LedgerZoneContext
----@param family integer
----@return string
-local function weightsOf(context, family)
-	local landed, total = 0, 0
-	for _, itemID in ipairs(ns.CollectionWorlds(context.world, context.state).trophy) do
-		local item = context.getItem(itemID)
-		if item and item.family == family and not item.removed then
-			total = total + 1
-			landed = landed + (context.state.items[itemID] and 1 or 0)
-		end
+-- Each family's weights landed, of its weights in the Trophy Room's world (LED-R11, LED-R60), removed ones left out
+-- of both sides (LED-R12), as the Trophy Room counts them: "x / N" by family.
+---@param context LedgerSpreadContext
+---@return { [integer]: string }
+local function weightsByFamily(context)
+	local weights = {}
+	for _, family in ipairs(ns.TrophyFamilies(context.world, context.state)) do
+		weights[family.id] = ns.L.ZONE_WEIGHTS:format(family.count.done, family.count.total)
 	end
-	return ns.L.ZONE_WEIGHTS:format(landed, total)
+	return weights
 end
 
 -- "About these waters" (LED-R137, without M4's zonemaster line, LED-R4): the skill base, the zone's completion
 -- (LED-R53) with its fish and families known, each family on the list with its shown stars and overall weights,
 -- opening it in the Trophy Room, the reward, and the nudge to pick a fish.
----@param context LedgerZoneContext
+---@param context LedgerSpreadContext
 ---@param zone integer
 ---@return LedgerBlock[]
 local function about(context, zone)
 	local L = ns.L
 	local world, state = context.world, context.state
-	local zoneIndex = world.zones[zone]
-	local zoneState = state.zones[zone] or ns.NewZoneState()
 	local blocks = { { kind = "kicker", text = L.ZONE_ABOUT } }
 	local skill = world.skillBase[zone]
 	if skill then
 		blocks[#blocks + 1] = { kind = "text", text = skill > 0 and L.ZONE_SKILL:format(skill) or L.ZONE_ANY_SKILL }
 	end
-	local fish, fishKnown = 0, 0
-	for id in pairs(zoneIndex.species) do
-		fish = fish + 1
-		fishKnown = fishKnown + (zoneState.species[id] and 1 or 0)
-	end
-	local families = sortedKeys(zoneIndex.families)
-	local landed = 0
-	for _, family in ipairs(families) do
-		landed = landed + (zoneState.families[family] and 1 or 0)
-	end
+	local counts = ns.ZoneCounts(world, state, zone) --[[@as LedgerZoneCounts]]
 	local completion = ns.ZoneCompletion(world, state, zone) --[[@as integer]]
-	blocks[#blocks + 1] = { kind = "text", text = L.ZONE_KNOWN:format(completion, fishKnown, fish, landed, #families) }
+	blocks[#blocks + 1] = {
+		kind = "text",
+		text = L.ZONE_KNOWN:format(completion, counts.fishKnown, counts.fish, counts.landed, counts.families),
+	}
+	local families = ns.SortedKeys(world.zones[zone].families)
 	if #families > 0 then
+		local weights = weightsByFamily(context)
 		blocks[#blocks + 1] = { kind = "kicker", text = L.ZONE_TROPHIES_HERE }
 		for _, family in ipairs(families) do
 			blocks[#blocks + 1] = {
 				kind = "row",
 				text = familyName(context, family),
 				stars = ns.ShownFamilyStars(world, state, context.celebrated, family),
-				value = weightsOf(context, family),
-				place = { id = ns.JOURNAL_TROPHY_ROOM, args = { family = family } },
+				value = weights[family],
+				place = ns.JournalPlace.trophyRoom(family),
 			}
 		end
 	end
@@ -327,7 +288,7 @@ end
 
 -- An uncharted zone's left page (LED-R138): its name, the uncharted waters lore line (left out while it has no
 -- text, LED-R161) and the note that its catches still count.
----@param context LedgerZoneContext
+---@param context LedgerSpreadContext
 ---@param zone integer
 ---@return LedgerBlock[]
 local function unchartedLeft(context, zone)
@@ -343,14 +304,14 @@ end
 -- An uncharted zone's right page (LED-R138): "Loose pages", its Uncharted items caught here with their count here
 -- (LED-R64); "Also caught here", each Species caught here (rows, no margin) and each trophy and curio item caught
 -- here by name, or "Nothing caught here yet."; and the "Help chart the waters" link.
----@param context LedgerZoneContext
+---@param context LedgerSpreadContext
 ---@param zone integer
 ---@return LedgerBlock[]
 local function loosePages(context, zone)
 	local L = ns.L
 	local state = context.state
 	local blocks = { { kind = "kicker", text = L.ZONE_LOOSE_PAGES } }
-	for _, itemID in ipairs(sortedKeys(state.uncharted)) do
+	for _, itemID in ipairs(ns.SortedKeys(state.uncharted)) do
 		local count = state.uncharted[itemID].zones and state.uncharted[itemID].zones[zone]
 		if count then
 			blocks[#blocks + 1] =
@@ -359,7 +320,7 @@ local function loosePages(context, zone)
 	end
 	blocks[#blocks + 1] = { kind = "kicker", text = L.ZONE_ALSO_CAUGHT_TITLE }
 	local zoneState = state.zones[zone] or ns.NewZoneState()
-	local species, items = sortedKeys(zoneState.species), sortedKeys(zoneState.items)
+	local species, items = ns.SortedKeys(zoneState.species), ns.SortedKeys(zoneState.items)
 	for _, id in ipairs(species) do
 		blocks[#blocks + 1] = speciesRow(context, zone, id, nil, nil)
 	end
@@ -375,14 +336,13 @@ end
 
 -- The selected fish's entry (LED-R136, LED-R140, LED-R141), logic/JournalSpecies.lua's, its plain hint opening on
 -- this spread.
----@param context LedgerZoneContext
+---@param context LedgerSpreadContext
 ---@param zone integer
 ---@param species integer
 ---@param hint boolean?
 ---@return LedgerBlock[]
 local function entry(context, zone, species, hint)
-	local place = ns.JournalZonePlace(zone, species)
-	place.args.hint = true
+	local place = ns.JournalPlace.zone(zone, species, true)
 	return ns.JournalSpeciesEntry(species, context, { open = hint, place = place })
 end
 
@@ -390,23 +350,20 @@ ns.RegisterJournalSpread(ns.JOURNAL_ZONE, {
 	-- Home ❧ {continent tab label} ❧ {zone}, and ❧ {fish} with one selected: its name once caught, never before
 	-- (LED-R125, LED-R124). The continent crumb opens Home on that tab.
 	crumbs = function(args, context)
-		---@cast context LedgerZoneContext
 		local zone, species = args.zone, args.species
 		local crumbs = {
 			{
 				label = tabLabel(context, zone),
-				place = { id = ns.JOURNAL_HOME, args = { tab = ns.HomeTabOf(context.getArea, zone) } },
+				place = ns.JournalPlace.home(ns.HomeTabOf(context.getArea, zone)),
 			},
-			{ label = context.text:Zone(zone), place = ns.JournalZonePlace(zone) },
+			{ label = context.text:Zone(zone), place = ns.JournalPlace.zone(zone) },
 		}
 		if species then
-			local label = context.state.species[species] and context.text:Item(species) or ns.L.ENTRY_UNKNOWN
-			crumbs[3] = { label = label, place = ns.JournalZonePlace(zone, species) }
+			crumbs[3] = { label = ns.JournalFishLabel(species, context), place = ns.JournalPlace.zone(zone, species) }
 		end
 		return crumbs
 	end,
 	draw = function(args, context)
-		---@cast context LedgerZoneContext
 		local zone, species = args.zone, args.species
 		local selected = species and entry(context, zone, species, args.hint)
 		if not context.world.zones[zone] then

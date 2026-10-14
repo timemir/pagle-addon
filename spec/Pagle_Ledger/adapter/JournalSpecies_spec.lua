@@ -88,7 +88,7 @@ end
 
 -- Opens the fish spread on Species `id` (with the plain hint open when `hint`).
 local function openFish(loaded, id, hint)
-	assert.is_true(loaded.ns.journal:Open("fish", { species = id, hint = hint }))
+	assert.is_true(loaded.ns.journal:OpenPlace(loaded.ns.JournalPlace.fish(id, hint)))
 	return loaded.ns.journal.pages
 end
 
@@ -189,7 +189,7 @@ describe("an uncaught Species' entry (LED-R141)", function()
 		journal:Draw()
 		assert.are.same(hint, journal.pages.left[4])
 
-		journal:Open("home")
+		journal:OpenPlace(loaded.ns.JournalPlace.home())
 		openFish(loaded, SECRET)
 		assert.are.equal("link", journal.pages.left[4].kind)
 	end)

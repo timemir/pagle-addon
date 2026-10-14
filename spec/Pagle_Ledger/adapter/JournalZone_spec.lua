@@ -102,25 +102,19 @@ local ITEM_NAMES = {
 }
 
 -- A Ledger on a fake over the catalogue and `log` (the fixture by default), logged in, in the world, with the names
--- above, and the book open on zone `zone`'s spread with `args`.
+-- above, and the book open on zone `zone`'s spread.
 ---@param zone integer
----@param args table?
 ---@param log table[]?
 ---@return FakePagle fake
 ---@return LoadedAddon loaded
-local function zoneSpread(zone, args, log)
-	local place = { zone = zone }
-	for key, value in pairs(args or {}) do
-		place[key] = value
-	end
+local function zoneSpread(zone, log)
 	return openJournal({
 		catalogue = catalogue(),
 		log = log or FIXTURE,
 		itemNames = ITEM_NAMES,
 		areaNames = { [DARKSHORE] = "Darkshore", [ELWYNN] = "Elwynn Forest", [STORMWIND] = "Stormwind City" },
 		mapNames = { [1414] = "Kalimdor", [1415] = "Eastern Kingdoms" },
-		id = "zone",
-		args = place,
+		place = { "zone", zone },
 	})
 end
 
@@ -305,7 +299,7 @@ describe("the Journal's zone spread", function()
 		)
 
 		it('seals an unfished zone "unfished", with nothing on the ladder inked (LED-R135, LED-R134)', function()
-			local _, loaded = zoneSpread(ELWYNN, nil, { FIXTURE[1] })
+			local _, loaded = zoneSpread(ELWYNN, { FIXTURE[1] })
 			local left = loaded.ns.journal.pages.left
 
 			assert.are.same({
@@ -403,7 +397,7 @@ describe("the Journal's zone spread", function()
 		end)
 
 		it('reads "Nothing caught here yet." with nothing caught there (LED-R138)', function()
-			local _, loaded = zoneSpread(STORMWIND, nil, { FIXTURE[1] })
+			local _, loaded = zoneSpread(STORMWIND, { FIXTURE[1] })
 
 			assert.are.same(
 				{ "Loose pages", "Also caught here", "Nothing caught here yet.", "Help chart the waters" },
@@ -553,7 +547,7 @@ describe("the Journal's zone spread", function()
 		it("is where the fish spread's tiles lead, with that fish selected (LED-R142, LED-R136)", function()
 			local _, loaded = zoneSpread(DARKSHORE)
 			local journal = loaded.ns.journal
-			journal:Open("fish", { species = BLACKMOUTH })
+			journal:OpenPlace(loaded.ns.JournalPlace.fish(BLACKMOUTH))
 
 			-- Its one tile, Darkshore's: the tiles widget's first child.
 			local tile = journal.frame.right.drawn.tiles[1].children[1]
@@ -624,7 +618,7 @@ describe("the Journal's zone spread", function()
 		it('reads "Any skill" for a zone whose skill base is 0 or below (LED-R137, DATA-R30)', function()
 			local startingZone = catalogue()
 			startingZone.areas[DARKSHORE].skillBase = -70
-			local _, loaded = openJournal({ catalogue = startingZone, id = "zone", args = { zone = DARKSHORE } })
+			local _, loaded = openJournal({ catalogue = startingZone, place = { "zone", DARKSHORE } })
 
 			assert.are.same(
 				{ "About these waters", "Any skill" },
@@ -635,7 +629,7 @@ describe("the Journal's zone spread", function()
 		it('leaves out "Skill ~" for a zone without a skill base (LED-R137)', function()
 			local noSkill = catalogue()
 			noSkill.areas[DARKSHORE].skillBase = nil
-			local _, loaded = openJournal({ catalogue = noSkill, id = "zone", args = { zone = DARKSHORE } })
+			local _, loaded = openJournal({ catalogue = noSkill, place = { "zone", DARKSHORE } })
 
 			local right = blockTexts(loaded.ns.journal.pages.right)
 			assert.are.same(

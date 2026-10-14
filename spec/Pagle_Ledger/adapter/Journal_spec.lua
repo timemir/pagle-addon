@@ -380,7 +380,7 @@ describe("the Fish Journal's widgets (ledger.md › UI)", function()
 	it("hides the widgets a redraw no longer uses", function()
 		local loaded = drawn({ { kind = "seal", text = "Local" }, { kind = "seal", text = "Expert" } })
 
-		loaded.ns.journal:Open("home")
+		loaded.ns.journal:OpenPlace(loaded.ns.JournalPlace.home())
 
 		local texts = shownTexts(loaded.ns.journal.frame.left)
 		assert.are.same({ "The Waters", "Where I've Fished" }, { texts[1], texts[2] })

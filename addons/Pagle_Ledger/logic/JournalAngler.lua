@@ -10,18 +10,17 @@ local ns = select(2, ...)
 -- book draws it (adapter/Journal.lua). M4 adds the crest (LED-R112), the active title, the Prestige emblems and
 -- button, the Catch Milestone part, "Signed As" and "Bindings" to these pages.
 
---- The Angler page's ID (LED-R125).
-ns.JOURNAL_ANGLER = "angler"
+-- The Angler page is ns.JOURNAL_ANGLER, its place ns.JournalPlace.angler (logic/Journal.lua).
 
 -- The bookplate (LED-R146): "Ex Libris", "The Angler's Ledger", "kept since {firstDate}" (none before the first
 -- Catch), the shown level (LED-R36), the ink XP bar (LED-R145), Ledger completion and its parts (LED-R70, LED-R71),
 -- and the lifetime Catches (LED-R42; M3 shows no next milestone, LED-R4).
----@param context LedgerJournalContext
+---@param context LedgerSpreadContext
 ---@return LedgerBlock[]
 local function bookplate(context)
 	local L = ns.L
-	local state = context.state --[[@as LedgerState]]
-	local celebrated = context.celebrated --[[@as LedgerCelebrated]]
+	local state = context.state
+	local celebrated = context.celebrated
 	local format = context.formatNumber
 	local blocks = {
 		{ kind = "kicker", text = L.ANGLER_EX_LIBRIS },
@@ -32,7 +31,7 @@ local function bookplate(context)
 	end
 	blocks[#blocks + 1] = { kind = "title", text = L.ANGLER_LEVEL:format(ns.ShownLevel(state, celebrated)) }
 	blocks[#blocks + 1] = { kind = "xpBar", bar = ns.InkXpBar(state, celebrated, context.now, format) }
-	local completion = ns.LedgerCompletion(context.world --[[@as LedgerWorld]], state)
+	local completion = ns.LedgerCompletion(context.world, state)
 	blocks[#blocks + 1] = {
 		kind = "text",
 		text = L.ANGLER_COMPLETE:format(completion.percent, format(completion.done), format(completion.total)),
@@ -49,11 +48,11 @@ end
 
 -- "Hands on the Rod" (LED-R146): one line per character with a Skill Reading, by character index, read from
 -- Pagle.GetAngler().skill and not from the projection (LED-R41).
----@param context LedgerJournalContext
+---@param context LedgerSpreadContext
 ---@param blocks LedgerBlock[]
 local function hands(context, blocks)
 	local L = ns.L
-	local skill = (context.angler --[[@as Angler]]).skill
+	local skill = context.angler.skill
 	local indices = {}
 	for index in pairs(skill) do
 		indices[#indices + 1] = index
@@ -72,12 +71,12 @@ end
 
 -- "Milestones" (LED-R146): ☑ for each Skill Milestone credited, in the state or the celebrated set (LED-R40,
 -- LED-R92), ☐ for the rest.
----@param context LedgerJournalContext
+---@param context LedgerSpreadContext
 ---@param blocks LedgerBlock[]
 local function milestones(context, blocks)
 	local L = ns.L
-	local credited = (context.state --[[@as LedgerState]]).skill
-	local celebrated = (context.celebrated --[[@as LedgerCelebrated]]).skill
+	local credited = context.state.skill
+	local celebrated = context.celebrated.skill
 	local boxes = {}
 	for i, threshold in ipairs(ns.SKILL_MILESTONES) do
 		local done = credited[threshold] ~= nil or celebrated[threshold] ~= nil
@@ -90,7 +89,7 @@ end
 ns.RegisterJournalSpread(ns.JOURNAL_ANGLER, {
 	-- Home ❧ The Angler (LED-R125).
 	crumbs = function()
-		return { { label = ns.L.ANGLER_CRUMB, place = { id = ns.JOURNAL_ANGLER } } }
+		return { { label = ns.L.ANGLER_CRUMB, place = ns.JournalPlace.angler() } }
 	end,
 	draw = function(_, context)
 		local right = {}

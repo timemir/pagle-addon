@@ -69,7 +69,12 @@ local FIXTURE = {
 ---@return FakePagle fake
 ---@return LoadedAddon loaded
 local function anglerPage(log)
-	return openJournal({ catalogue = catalogue(), characters = characters(), log = log or FIXTURE, id = "angler" })
+	return openJournal({
+		catalogue = catalogue(),
+		characters = characters(),
+		log = log or FIXTURE,
+		place = { "angler" },
+	})
 end
 
 describe("the Journal's Angler page", function()
