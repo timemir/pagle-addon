@@ -70,20 +70,18 @@ local NAMES = {
 local ZONES = { [ELWYNN] = "Elwynn Forest", [DUSKWOOD] = "Duskwood", [WESTFALL] = "Westfall" }
 
 -- A Ledger on a fake over the catalogue and `log` (the fixture by default), logged in, in the world, with the
--- Journal open on spread `id` with `args`.
----@param id string
----@param args table?
+-- Journal open at `place` (openJournal's: an ns.JournalPlace constructor and its args).
+---@param place table
 ---@param log table[]?
 ---@return FakePagle fake
 ---@return LoadedAddon loaded
-local function spread(id, args, log)
+local function spread(place, log)
 	return openJournal({
 		catalogue = catalogue(),
 		log = log or FIXTURE,
 		itemNames = NAMES,
 		areaNames = ZONES,
-		id = id,
-		args = args,
+		place = place,
 	})
 end
 
@@ -103,7 +101,7 @@ describe("the Journal's Trophy Room", function()
 	it(
 		"lists each family by its lore name with its shown stars and its weights landed, x / N (LED-R143, LED-R47, LED-R48)",
 		function()
-			local _, loaded = spread("trophy")
+			local _, loaded = spread({ "trophyRoom" })
 			local left = loaded.ns.journal.pages.left
 
 			assert.are.same({
@@ -120,7 +118,7 @@ describe("the Journal's Trophy Room", function()
 	it(
 		"shows a family's stamps, a measuring board ticking the weights landed, and its heaviest so far (LED-R143, LED-R62)",
 		function()
-			local _, loaded = spread("trophy", { family = 2 })
+			local _, loaded = spread({ "trophyRoom", 2 })
 			local right = loaded.ns.journal.pages.right
 
 			assert.are.same({
@@ -148,7 +146,7 @@ describe("the Journal's Trophy Room", function()
 	)
 
 	it("opens on the first family by default, and says so when none of it is landed yet (LED-R143)", function()
-		local _, loaded = spread("trophy")
+		local _, loaded = spread({ "trophyRoom" })
 		local right = loaded.ns.journal.pages.right
 
 		assert.are.same({
@@ -162,8 +160,29 @@ describe("the Journal's Trophy Room", function()
 		assert.are.same({ { text = "10", at = 0.5, inked = false } }, right[3].ticks)
 	end)
 
+	it("leaves out the index line and the title of a family whose lore name has no text (LED-R161)", function()
+		local _, loaded = spread({ "trophyRoom" })
+		-- Mud Snapper (family 1) before the Ledger's lore check turns on: its key has no text.
+		loaded.ns.L["family.1.name"] = nil
+		loaded.ns.journal:Draw()
+		local pages = loaded.ns.journal.pages
+
+		assert.are.same({
+			"The Trophy Room",
+			"2 of 5 weights. Real weights, from the game's own trophy fish.",
+			"Catfish ★★☆",
+		}, blockTexts(pages.left))
+		assert.are.same({
+			"[stamps]",
+			"[board]",
+			"pounds, as the game weighs them",
+			"Not one of this family yet.",
+			"Found in Duskwood.",
+		}, blockTexts(pages.right))
+	end)
+
 	it("is the spread Home ❧ The Trophy Room, whichever family it is open on (LED-R125)", function()
-		local _, loaded = spread("trophy", { family = 2 })
+		local _, loaded = spread({ "trophyRoom", 2 })
 		local pages = loaded.ns.journal.pages
 
 		assert.are.same({ "Home", "The Trophy Room" }, { pages.crumbs[1].label, pages.crumbs[2].label })
@@ -172,7 +191,7 @@ describe("the Journal's Trophy Room", function()
 	end)
 
 	it("opens a family from its index line (LED-R143)", function()
-		local _, loaded = spread("trophy")
+		local _, loaded = spread({ "trophyRoom" })
 		local journal = loaded.ns.journal
 
 		journal.frame.left.drawn.leader[2]:Click()
@@ -181,22 +200,28 @@ describe("the Journal's Trophy Room", function()
 	end)
 
 	it(
-		"leaves a removed weight out of both sides of every x of N and off the board, keeping its record (LED-R12)",
+		"leaves a removed weight out of both sides of every x of N, off the board and out of the heaviest so far (LED-R12, LED-R143)",
 		function()
 			local log = { unpack(FIXTURE) }
 			log[#log + 1] = cast(T0 + 300, ELWYNN, CAT30)
-			local _, loaded = spread("trophy", { family = 2 }, log)
+			local _, loaded = spread({ "trophyRoom", 2 }, log)
 			local pages = loaded.ns.journal.pages
 
 			assert.are.equal("2 of 5 weights. Real weights, from the game's own trophy fish.", pages.left[2].text)
 			assert.are.equal("2 / 4", pages.left[4].value)
 			assert.are.equal(4, #pages.right[3].ticks)
-			assert.are.equal("Landed 2 of 4. Heaviest so far: 30 lb.", pages.right[5].text)
+			assert.are.equal("Landed 2 of 4. Heaviest so far: 22 lb.", pages.right[5].text)
 		end
 	)
 
+	it("reads Not one of this family yet when only a removed weight of it is landed (LED-R12, LED-R143)", function()
+		local _, loaded = spread({ "trophyRoom", 2 }, { cast(T0, ELWYNN, CAT30) })
+
+		assert.are.equal("Not one of this family yet.", loaded.ns.journal.pages.right[5].text)
+	end)
+
 	it("draws the measuring board: each weight in pounds, a ✓ over those landed (LED-R143, LED-R62)", function()
-		local _, loaded = spread("trophy", { family = 2 })
+		local _, loaded = spread({ "trophyRoom", 2 })
 
 		local board = loaded.ns.journal.frame.right.drawn.board[1]
 
@@ -206,7 +231,7 @@ end)
 
 describe("the Journal's Curios", function()
 	it("is the spread Home ❧ Curios (LED-R125)", function()
-		local _, loaded = spread("curios")
+		local _, loaded = spread({ "curios" })
 		local pages = loaded.ns.journal.pages
 
 		assert.are.same({ "Home", "Curios" }, { pages.crumbs[1].label, pages.crumbs[2].label })
@@ -217,7 +242,7 @@ describe("the Journal's Curios", function()
 	it(
 		"shows the Junk Museum: a plinth per junk item, caught with its icon, name and plaque, uncaught empty (LED-R144, LED-R124, LED-R12)",
 		function()
-			local _, loaded = spread("curios")
+			local _, loaded = spread({ "curios" })
 			local left = loaded.ns.journal.pages.left
 
 			-- The removed wagonwheel keeps its plinth but is out of both sides of the count.
@@ -250,7 +275,7 @@ describe("the Journal's Curios", function()
 	)
 
 	it("leaves an empty plinth's lore line out while its key has no text (LED-R161)", function()
-		local _, loaded = spread("curios")
+		local _, loaded = spread({ "curios" })
 
 		loaded.ns.L["line.uncaughtjunk.text"] = nil
 		loaded.ns.journal:Draw()
@@ -261,7 +286,7 @@ describe("the Journal's Curios", function()
 	end)
 
 	it("draws an empty plinth's icon as a silhouette, with its words (LED-R144, LED-R124)", function()
-		local _, loaded = spread("curios")
+		local _, loaded = spread({ "curios" })
 
 		local plinths = loaded.ns.journal.frame.left.drawn.plinth
 
@@ -276,7 +301,7 @@ describe("the Journal's Curios", function()
 	it(
 		"shows Treasures: each container or treasure item, caught by name and plaque, uncaught by the lore line (LED-R144)",
 		function()
-			local _, loaded = spread("curios")
+			local _, loaded = spread({ "curios" })
 			local right = loaded.ns.journal.pages.right
 
 			assert.are.same({
@@ -293,7 +318,7 @@ describe("the Journal's Curios", function()
 	)
 
 	it("never names an uncaught curio anywhere on the spread (LED-R124)", function()
-		local _, loaded = spread("curios")
+		local _, loaded = spread({ "curios" })
 
 		for _, side in ipairs({ "left", "right" }) do
 			for _, text in ipairs(shownTexts(loaded.ns.journal.frame[side])) do
@@ -312,7 +337,7 @@ describe("the Journal's Curios", function()
 				cast(T0 + 120, DUSKWOOD, ODD),
 				cast(T0 + 180, ELWYNN, ODD),
 			}
-			local _, loaded = spread("curios", nil, log)
+			local _, loaded = spread({ "curios" }, log)
 			local pages = loosePages(loaded.ns.journal.pages.right)
 
 			assert.are.same({
@@ -326,7 +351,7 @@ describe("the Journal's Curios", function()
 	)
 
 	it("names an Uncharted item once the client has loaded it (LED-R126)", function()
-		local _, loaded = spread("curios", nil, { cast(T0, ELWYNN, ODD) })
+		local _, loaded = spread({ "curios" }, { cast(T0, ELWYNN, ODD) })
 
 		loaded.client.itemNames[ODD] = "Curious Pebble"
 		loaded.ns.journal:Draw()
@@ -338,7 +363,7 @@ describe("the Journal's Curios", function()
 	end)
 
 	it("opens the Field report from Help chart the waters (LED-R144, REP-R43)", function()
-		local fake, loaded = spread("curios")
+		local fake, loaded = spread({ "curios" })
 		local links = loaded.ns.journal.frame.right.drawn.link
 
 		links[#links]:Click()
@@ -347,7 +372,7 @@ describe("the Journal's Curios", function()
 	end)
 
 	it("prints Core's line instead while restricted, the Journal still open (LED-R121, REP-R44)", function()
-		local fake, loaded = spread("curios")
+		local fake, loaded = spread({ "curios" })
 		fake.setRestricted(true)
 		local links = loaded.ns.journal.frame.right.drawn.link
 
@@ -372,13 +397,13 @@ describe("the Journal's ways into the collections", function()
 	end
 
 	it("opens the Trophy Room and Curios from Home's contents (LED-R132, LED-R125)", function()
-		local _, loaded = spread("home")
+		local _, loaded = spread({ "home" })
 		local journal = loaded.ns.journal
 
 		clickContents(loaded, "The Trophy Room")
 		assert.are.same({ "Home", "The Trophy Room" }, { journal.pages.crumbs[1].label, journal.pages.crumbs[2].label })
 
-		journal:Open("home")
+		journal:OpenPlace(loaded.ns.JournalPlace.home())
 		clickContents(loaded, "Curios: junk, treasure, uncharted")
 		assert.are.same({ "Home", "Curios" }, { journal.pages.crumbs[1].label, journal.pages.crumbs[2].label })
 	end)

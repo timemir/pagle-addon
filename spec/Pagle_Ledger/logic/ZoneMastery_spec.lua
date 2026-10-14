@@ -31,7 +31,7 @@ local ITEMS = {
 	[TROPHY_2] = itemRecord("trophy", { family = 2, weight = 8 }),
 }
 
-local NIGHT_SPEC = { time = { { 1260, 360 } } }
+local NIGHT_SPEC = NIGHT_WINDOW
 local EVENT_SPEC = { events = { 301 } }
 
 -- The fixture's zones, each a zone with no subzones: `hasData` and its catches (LOG-R55). Marsh has a list but no
@@ -61,12 +61,7 @@ local function areas()
 	}
 end
 
----@param itemID integer
----@return PagleItem?
-local function getItem(itemID)
-	assert(itemID ~= 0, "item 0 is never looked up (LED-R5)")
-	return ITEMS[itemID]
-end
+local getItem = itemLookup(ITEMS)
 
 -- Core's lookups over `areaTable` (LOG-R55): zones ascending, each catch with its areaID.
 local function lookups(areaTable)
@@ -128,12 +123,7 @@ describe("Zone Mastery", function()
 
 	-- Applies each record live to `state` (a fresh one if nil); returns it and every achievement earned, in order.
 	local function applyAll(records, state)
-		state = state or fold.reset()
-		local earned = {}
-		for _, record in ipairs(records) do
-			fold.apply(state, record, "live", earned)
-		end
-		return state, earned
+		return applyLive(fold, records, state)
 	end
 
 	-- The `zoneRank` achievements among `earned`.

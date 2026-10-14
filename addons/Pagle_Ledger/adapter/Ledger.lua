@@ -60,12 +60,8 @@ function ns.Outlets(module)
 		SetSummaryLine = function(text)
 			module:SetSummaryLine("ledger", text)
 		end,
-		ItemName = function(itemID)
-			return C_Item.GetItemNameByID(itemID)
-		end,
-		ZoneName = function(zone)
-			return (C_Map.GetAreaInfo(zone))
-		end,
+		ItemName = ns.ClientNames.ItemName,
+		AreaName = ns.ClientNames.AreaName,
 		RaiseWriteUp = function(section)
 			module:RaiseWriteUp(section)
 		end,

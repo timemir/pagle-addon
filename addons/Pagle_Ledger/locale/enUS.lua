@@ -7,8 +7,21 @@ end
 ---@class PagleLedgerNS
 local ns = select(2, ...)
 
+-- Words more than one key reads: Species Mastery's ★★ and ★★★ (LED-R45), a check box (LED-R40, LED-R135, LED-R142).
+local IN_ITS_ELEMENT, REGULAR = "In its element", "Regular"
+local CHECK_ON, CHECK_OFF = "☑", "☐"
+
 ---@class PagleLedgerStrings
 ns.L = {
+	-- "x / N" wherever the Journal counts (LED-R132, LED-R137, LED-R143), its numbers BreakUpLargeNumbers'.
+	COUNT_OF = "%s / %s",
+	-- "unfished": a zone's tile and its seal with no rank (LED-R131, LED-R135); "pools" in the plain hint and a row's
+	-- margin (LED-R136, LED-R141).
+	UNFISHED = "unfished",
+	POOLS = "pools",
+	-- The Trophy Room's title, on Home's contents and its own pages (LED-R132, LED-R143).
+	TROPHY_TITLE = "The Trophy Room",
+
 	-- The Ledger's def title (LED-R1).
 	TITLE = "Ledger",
 
@@ -43,12 +56,12 @@ ns.L = {
 	NEW_CURIO_STAMP = "New!",
 	UNCHARTED_TITLE = "Unknown catch, logged",
 	UNCHARTED_STAMP = "Logged",
-	ELEMENT_STAR_TITLE = "In its element",
-	REGULAR_STAR_TITLE = "Regular",
+	ELEMENT_STAR_TITLE = IN_ITS_ELEMENT,
+	REGULAR_STAR_TITLE = REGULAR,
 	FAMILY_STAR_TITLE = "Trophy family",
 	-- The family's name (lore, LED-R160) and its stars.
 	FAMILY_STAR_TEXT = "%s %s",
-	-- One star; a moment's stars repeat it (LED-R97).
+	-- One star: a moment's stars repeat it (LED-R97), and the Journal prints a shown one with it (LED-R48).
 	STAR = "★",
 
 	-- Zone Mastery's ranks, Visitor to Master (LED-R50).
@@ -118,10 +131,8 @@ ns.L = {
 	HOME_LEVEL = "Angler Level",
 	HOME_PERCENT = "%d%%",
 	HOME_CONTENTS = "In this Ledger",
-	HOME_TROPHY_ROOM = "The Trophy Room",
 	HOME_CURIOS = "Curios: junk, treasure, uncharted",
 	HOME_ANGLER = "The Angler: hands, titles, bindings",
-	HOME_COUNT = "%d / %d",
 	BRASS_PLATE = "Lv %d · Ledger %d%%",
 
 	-- Dates (LED-R126): "3 Mar", and "3 Mar 2025" outside the current realm year.
@@ -170,7 +181,6 @@ ns.L = {
 
 	-- The plain hint (LED-R141, DATA-R112): "night · pools · Ashenvale · Darkshore +1 · skill ~150".
 	HINT_ANY_TIME = "Any time",
-	HINT_POOLS = "pools",
 	HINT_SEPARATOR = " · ",
 	HINT_WINDOW_SEPARATOR = ", ",
 	HINT_MORE = "%s +%d",
@@ -180,7 +190,6 @@ ns.L = {
 	-- A zone tile's lines (LED-R131): "Local · 63%", "2 new!".
 	TILE_RANK = "%s · %d%%",
 	TILE_NEW = "%d new!",
-	TILE_UNFISHED = "unfished",
 	TILE_UNFISHED_SKILL = "unfished · skill ~%d",
 	TILE_UNFISHED_ANY_SKILL = "unfished · any skill", -- a skill base of 0 or below (DATA-R30)
 	TILE_UNCHARTED = "uncharted waters",
@@ -189,7 +198,7 @@ ns.L = {
 	LIST_SEPARATOR = ", ",
 	LIST_LAST = " and ",
 	-- A Species' entry (LED-R140, LED-R141). "First landed {date} in {zone}, by {character}. {n} caught."
-	ENTRY_STAMPS = { "Caught", "In its element", "Regular" },
+	ENTRY_STAMPS = { "Caught", IN_ITS_ELEMENT, REGULAR },
 	ENTRY_FIRST = "First landed %s in %s, by %s. %s caught.",
 	ENTRY_FIRST_NO_ZONE = "First landed %s, by %s. %s caught.",
 	ENTRY_FOUND_IN = "Found in %s.",
@@ -203,10 +212,10 @@ ns.L = {
 	FISH_TITLE = "Its waters",
 	FISH_CAUGHT_HERE = "caught ✓",
 	FISH_WHEN = "When",
-	FISH_ELEMENT = "%s In its element (%d/%d)",
-	FISH_REGULAR = "%s Regular (%d/%d)",
-	CHECK_ON = "☑",
-	CHECK_OFF = "☐",
+	FISH_ELEMENT = "%s " .. IN_ITS_ELEMENT .. " (%d/%d)",
+	FISH_REGULAR = "%s " .. REGULAR .. " (%d/%d)",
+	CHECK_ON = CHECK_ON,
+	CHECK_OFF = CHECK_OFF,
 	-- Search with no match (LED-R148).
 	SEARCH_NONE = "Nothing by that name in the Ledger yet.",
 
@@ -230,15 +239,13 @@ ns.L = {
 	ANGLER_CATCHES_OTHER = "%s Catches",
 	ANGLER_HANDS = "Hands on the Rod",
 	ANGLER_HAND = "%s: skill %d / %d",
-	-- The Skill Milestones (LED-R40): ☑ credited, ☐ not yet.
+	-- The Skill Milestones (LED-R40): CHECK_ON credited, CHECK_OFF not yet, then the threshold: "☑ 75".
 	ANGLER_MILESTONES = "Milestones",
-	ANGLER_MILESTONE_DONE = "☑ %d",
-	ANGLER_MILESTONE_OPEN = "☐ %d",
+	ANGLER_MILESTONE = "%s %d",
 	ANGLER_MILESTONE_SEPARATOR = "   ",
 
-	-- The zone spread (LED-R135–R138), M3's part (LED-R4): its seal and ladder read ZONE_RANKS; "unfished" on the
+	-- The zone spread (LED-R135–R138), M3's part (LED-R4): its seal and ladder read ZONE_RANKS; UNFISHED on the
 	-- seal with no rank.
-	ZONE_UNFISHED = "unfished",
 	ZONE_LADDER_SEPARATOR = "·",
 	ZONE_NEXT = "Next: %s",
 	ZONE_NEW_HERE_ONE = "%d new to find here! My seal stays.",
@@ -264,7 +271,6 @@ ns.L = {
 	-- A Species row (LED-R136): never named until caught (LED-R124).
 	ZONE_UNKNOWN_FISH = "— unknown —",
 	ZONE_CAUGHT_ELSEWHERE = "%s (caught elsewhere)",
-	ZONE_POOLS_MARGIN = "pools",
 	ZONE_MARGIN_SEPARATOR = " · ",
 	-- "About these waters" (LED-R137, without M4's zonemaster line).
 	ZONE_ABOUT = "About these waters",
@@ -272,7 +278,6 @@ ns.L = {
 	ZONE_ANY_SKILL = "Any skill", -- a skill base of 0 or below (DATA-R30)
 	ZONE_KNOWN = "%d%% of these waters known: %d of %d fish, %d of %d trophy families",
 	ZONE_TROPHIES_HERE = "Trophies landed here",
-	ZONE_WEIGHTS = "%d / %d",
 	ZONE_REWARD = "Reward for mastery: each new seal earns XP.",
 	ZONE_PICK = "Pick a fish on the left to read its page.",
 	-- A zone that isn't charted (LED-R138).
@@ -282,14 +287,11 @@ ns.L = {
 	ZONE_ALSO_CAUGHT_TITLE = "Also caught here",
 	ZONE_NOTHING_YET = "Nothing caught here yet.",
 
-	-- Stars as the Journal prints them (LED-R48): a shown star, a blank one.
-	STAR_ON = "★",
+	-- A blank star as the Journal prints it (LED-R48); a shown one is STAR.
 	STAR_OFF = "☆",
-	-- The Trophy Room (LED-R143, LED-R62). Numbers in %s are BreakUpLargeNumbers'.
-	TROPHY_TITLE = "The Trophy Room",
+	-- The Trophy Room (LED-R143, LED-R62), titled TROPHY_TITLE. Numbers in %s are BreakUpLargeNumbers'.
 	TROPHY_WEIGHTS = "%s of %s weights. Real weights, from the game's own trophy fish.",
 	TROPHY_INDEX_LINE = "%s %s",
-	TROPHY_INDEX_COUNT = "%s / %s",
 	TROPHY_STAMPS = { "Any weight", "Half the weights", "The heaviest" },
 	TROPHY_POUNDS = "pounds, as the game weighs them",
 	TROPHY_LANDED = "Landed %s of %s. Heaviest so far: %s lb.",

@@ -26,12 +26,7 @@ local ELWYNN, WESTFALL = 12, 40
 local T0 = SERVER_TIME - 700
 local HOUR = 3600
 
----@param itemID integer
----@return PagleItem?
-local function getItem(itemID)
-	assert(itemID ~= 0, "item 0 is never looked up (LED-R5)")
-	return ITEMS[itemID]
-end
+local getItem = itemLookup(ITEMS)
 
 local DAY = 86400
 
@@ -131,12 +126,7 @@ describe("The Ledger's fold", function()
 
 	-- A fresh state with every record applied in "live" mode; returns it and every achievement, in order.
 	local function applyAll(records, mode, state)
-		state = state or fold.reset()
-		local earned = {}
-		for _, record in ipairs(records) do
-			fold.apply(state, record, mode or "live", earned)
-		end
-		return state, earned
+		return applyLive(fold, records, state, mode)
 	end
 
 	-- The kinds of a list of achievements, in order.

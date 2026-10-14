@@ -315,8 +315,9 @@ end
 ---@field zones LedgerCount    -- charted zones whose computed rank is Master
 ---@field legends LedgerCount  -- Legends caught: outside the percent (LED-R63); 0 caught until M4 (#163)
 
--- The parts that make up Ledger completion (LED-R70), in the Angler page's order (LED-R146).
-local PARTS = { "species", "junk", "treasure", "trophy", "zones" }
+--- The parts that make up Ledger completion (LED-R70), in the Angler page's order (LED-R71, LED-R146): each a field of
+--- LedgerCompletion.
+ns.COMPLETION_PARTS = { "species", "junk", "treasure", "trophy", "zones" }
 
 -- An "x of N" over `ids`, removed ones left out of both sides (LED-R12). A Species' ID is its representative item's,
 -- so a Species counts as removed when that item is (LED-R5).
@@ -368,7 +369,7 @@ function ns.LedgerCompletion(world, state)
 		zones = mastered,
 		legends = countOf(worlds.legends, caughtItems, getItem),
 	}
-	for _, part in ipairs(PARTS) do
+	for _, part in ipairs(ns.COMPLETION_PARTS) do
 		completion.done = completion.done + completion[part].done
 		completion.total = completion.total + completion[part].total
 	end

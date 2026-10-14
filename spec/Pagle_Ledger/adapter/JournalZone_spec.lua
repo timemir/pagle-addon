@@ -102,39 +102,20 @@ local ITEM_NAMES = {
 }
 
 -- A Ledger on a fake over the catalogue and `log` (the fixture by default), logged in, in the world, with the names
--- above, and the book open on zone `zone`'s spread with `args`.
+-- above, and the book open on zone `zone`'s spread.
 ---@param zone integer
----@param args table?
 ---@param log table[]?
 ---@return FakePagle fake
 ---@return LoadedAddon loaded
-local function zoneSpread(zone, args, log)
-	local place = { zone = zone }
-	for key, value in pairs(args or {}) do
-		place[key] = value
-	end
+local function zoneSpread(zone, log)
 	return openJournal({
 		catalogue = catalogue(),
 		log = log or FIXTURE,
 		itemNames = ITEM_NAMES,
 		areaNames = { [DARKSHORE] = "Darkshore", [ELWYNN] = "Elwynn Forest", [STORMWIND] = "Stormwind City" },
 		mapNames = { [1414] = "Kalimdor", [1415] = "Eastern Kingdoms" },
-		id = "zone",
-		args = place,
+		place = { "zone", zone },
 	})
-end
-
--- The first block on `blocks` whose text is `text`.
----@param blocks LedgerBlock[]
----@param text string
----@return LedgerBlock
-local function blockOf(blocks, text)
-	for _, block in ipairs(blocks) do
-		if block.text == text then
-			return block
-		end
-	end
-	error("no block reads " .. text)
 end
 
 -- The crumbs' labels.
@@ -206,7 +187,7 @@ describe("the Journal's zone spread", function()
 			'reads "(caught elsewhere)" for a Species caught only in another zone, in sepia and without stars (LED-R136)',
 			function()
 				local _, loaded = zoneSpread(DARKSHORE)
-				local nightfin = blockOf(loaded.ns.journal.pages.left, "Raw Nightfin Snapper (caught elsewhere)")
+				local nightfin = blockWithText(loaded.ns.journal.pages.left, "Raw Nightfin Snapper (caught elsewhere)")
 
 				assert.are.equal("sepia", nightfin.look)
 				assert.is_nil(nightfin.stars)
@@ -215,7 +196,7 @@ describe("the Journal's zone spread", function()
 
 		it("shows a Species caught here with its shown stars and no margin when ungated (LED-R136, LED-R48)", function()
 			local _, loaded = zoneSpread(DARKSHORE)
-			local mackerel = blockOf(loaded.ns.journal.pages.left, "Raw Slitherskin Mackerel")
+			local mackerel = blockWithText(loaded.ns.journal.pages.left, "Raw Slitherskin Mackerel")
 
 			-- Listed in Darkshore alone, so caught in one zone is ★★ (LED-R45).
 			assert.are.same({ [1] = true, [2] = true }, mackerel.stars)
@@ -234,7 +215,7 @@ describe("the Journal's zone spread", function()
 				assert.are.same({ "night, back in 12 h" }, left[13].margin)
 				assert.are.same({ "summer, back in March" }, left[15].margin)
 				assert.are.same({ "Extravaganza" }, left[17].margin)
-				assert.are.same({ "pools" }, blockOf(left, "Oily Blackmouth").margin)
+				assert.are.same({ "pools" }, blockWithText(left, "Oily Blackmouth").margin)
 			end
 		)
 
@@ -243,7 +224,7 @@ describe("the Journal's zone spread", function()
 			function()
 				local fake, loaded = zoneSpread(DARKSHORE)
 				local function nightfin()
-					return blockOf(loaded.ns.journal.pages.left, "Raw Nightfin Snapper (caught elsewhere)").margin[1]
+					return blockWithText(loaded.ns.journal.pages.left, "Raw Nightfin Snapper (caught elsewhere)").margin[1]
 				end
 				assert.are.equal("night, back in 12 h", nightfin())
 
@@ -305,7 +286,7 @@ describe("the Journal's zone spread", function()
 		)
 
 		it('seals an unfished zone "unfished", with nothing on the ladder inked (LED-R135, LED-R134)', function()
-			local _, loaded = zoneSpread(ELWYNN, nil, { FIXTURE[1] })
+			local _, loaded = zoneSpread(ELWYNN, { FIXTURE[1] })
 			local left = loaded.ns.journal.pages.left
 
 			assert.are.same({
@@ -395,7 +376,7 @@ describe("the Journal's zone spread", function()
 
 		it("draws its Species caught as rows without a margin, with their stars (LED-R138, LED-R136)", function()
 			local _, loaded = zoneSpread(STORMWIND)
-			local mackerel = blockOf(loaded.ns.journal.pages.right, "Raw Slitherskin Mackerel")
+			local mackerel = blockWithText(loaded.ns.journal.pages.right, "Raw Slitherskin Mackerel")
 
 			assert.are.same({ "row", "sepia" }, { mackerel.kind, mackerel.look })
 			assert.is_nil(mackerel.margin)
@@ -403,7 +384,7 @@ describe("the Journal's zone spread", function()
 		end)
 
 		it('reads "Nothing caught here yet." with nothing caught there (LED-R138)', function()
-			local _, loaded = zoneSpread(STORMWIND, nil, { FIXTURE[1] })
+			local _, loaded = zoneSpread(STORMWIND, { FIXTURE[1] })
 
 			assert.are.same(
 				{ "Loose pages", "Also caught here", "Nothing caught here yet.", "Help chart the waters" },
@@ -503,7 +484,7 @@ describe("the Journal's zone spread", function()
 
 				local pages = loaded.ns.journal.pages
 				assert.are.equal("An unknown fish", pages.crumbs[4].label)
-				local link = blockOf(pages.right, "Read the plain hint ▸")
+				local link = blockWithText(pages.right, "Read the plain hint ▸")
 				assert.are.same(
 					{ id = "zone", args = { zone = DARKSHORE, species = FIREFIN, hint = true } },
 					link.place
@@ -553,7 +534,7 @@ describe("the Journal's zone spread", function()
 		it("is where the fish spread's tiles lead, with that fish selected (LED-R142, LED-R136)", function()
 			local _, loaded = zoneSpread(DARKSHORE)
 			local journal = loaded.ns.journal
-			journal:Open("fish", { species = BLACKMOUTH })
+			journal:OpenPlace(loaded.ns.JournalPlace.fish(BLACKMOUTH))
 
 			-- Its one tile, Darkshore's: the tiles widget's first child.
 			local tile = journal.frame.right.drawn.tiles[1].children[1]
@@ -561,7 +542,7 @@ describe("the Journal's zone spread", function()
 			tile:Click()
 
 			assert.are.same({ "Home", "Kalimdor", "Darkshore", "Oily Blackmouth" }, crumbLabels(loaded))
-			assert.is_true(blockOf(journal.pages.left, "Oily Blackmouth").selected)
+			assert.is_true(blockWithText(journal.pages.left, "Oily Blackmouth").selected)
 			assert.are.equal("Oily Blackmouth", journal.pages.right[2].text)
 		end)
 	end)
@@ -595,7 +576,7 @@ describe("the Journal's zone spread", function()
 			function()
 				local _, loaded = zoneSpread(DARKSHORE)
 				local right = loaded.ns.journal.pages.right
-				local catfish, redgill = blockOf(right, "Catfish"), blockOf(right, "Redgill")
+				local catfish, redgill = blockWithText(right, "Catfish"), blockWithText(right, "Redgill")
 
 				-- The Catfish's weights are the 17 lb (landed here) and Elwynn's 22 lb: ★ and ★★ (ceil(2 / 2) = 1
 				-- landed), not ★★★, as its heaviest isn't landed.
@@ -621,10 +602,34 @@ describe("the Journal's zone spread", function()
 			assert.are.equal("Redgill", journal.pages.right[1].text)
 		end)
 
+		it(
+			"leaves out a family's lines on both pages while its lore name has no text (LED-R161, LED-R135, LED-R137)",
+			function()
+				local _, loaded = zoneSpread(DARKSHORE)
+				-- Redgill (family 4) before the Ledger's lore check turns on: its key has no text.
+				loaded.ns.L["family.4.name"] = nil
+				loaded.ns.journal:Draw()
+				local pages = loaded.ns.journal.pages
+
+				local trophies = {}
+				for _, text in ipairs(blockTexts(pages.left)) do
+					if text:find("trophy, any weight", 1, true) then
+						trophies[#trophies + 1] = text
+					end
+				end
+				assert.are.same({ "☑ a Catfish trophy, any weight" }, trophies)
+				assert.are.same({ "Trophies landed here", "Catfish", "Reward for mastery: each new seal earns XP." }, {
+					pages.right[4].text,
+					pages.right[5].text,
+					pages.right[6].text,
+				})
+			end
+		)
+
 		it('reads "Any skill" for a zone whose skill base is 0 or below (LED-R137, DATA-R30)', function()
 			local startingZone = catalogue()
 			startingZone.areas[DARKSHORE].skillBase = -70
-			local _, loaded = openJournal({ catalogue = startingZone, id = "zone", args = { zone = DARKSHORE } })
+			local _, loaded = openJournal({ catalogue = startingZone, place = { "zone", DARKSHORE } })
 
 			assert.are.same(
 				{ "About these waters", "Any skill" },
@@ -635,7 +640,7 @@ describe("the Journal's zone spread", function()
 		it('leaves out "Skill ~" for a zone without a skill base (LED-R137)', function()
 			local noSkill = catalogue()
 			noSkill.areas[DARKSHORE].skillBase = nil
-			local _, loaded = openJournal({ catalogue = noSkill, id = "zone", args = { zone = DARKSHORE } })
+			local _, loaded = openJournal({ catalogue = noSkill, place = { "zone", DARKSHORE } })
 
 			local right = blockTexts(loaded.ns.journal.pages.right)
 			assert.are.same(

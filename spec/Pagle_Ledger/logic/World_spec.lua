@@ -65,7 +65,7 @@ end
 local ELWYNN, GOLDSHIRE, WESTFALL, DUSKWOOD, DUROTAR = 12, 87, 40, 10, 14
 
 -- The night window's spec, shared by every entry it gates (DATA-R78), and the Extravaganza's.
-local NIGHT = { time = { { 1260, 360 } } }
+local NIGHT = NIGHT_WINDOW
 local EXTRAVAGANZA = { events = { 301 } }
 
 -- The fixture's areas, in the shape of ns.catalogue.areas (DATA-R78).

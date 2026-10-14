@@ -320,10 +320,15 @@ local helperGlobals = {
 	"fishRecord",
 	"areaRecord",
 	"catchEntry",
+	"NIGHT_WINDOW",
+	"itemLookup",
+	"applyLive",
 	"catalogueWith",
 	"castRecord",
 	"shownTexts",
 	"blockTexts",
+	"blockOfKind",
+	"blockWithText",
 	"openJournal",
 }
 files["spec/**"] = { std = "lua51+busted", read_globals = helperGlobals }

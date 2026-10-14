@@ -5,13 +5,9 @@ local MACKEREL = 6303 -- Raw Slitherskin Mackerel
 local SNAPPER, SPRINGSCALE = 6362, 6358
 local MINUTE = 60
 
--- A Ledger on a fake that has logged in and built its projection (login step 3).
+-- A Ledger on a fake that has logged in and built its projection (login step 3), the book closed.
 local function loggedIn()
-	local fake = newFakePagle()
-	local loaded = fake.load("Pagle_Ledger")
-	fake.login()
-	fake.enterWorld()
-	return fake, loaded
+	return openJournal({ id = false })
 end
 
 -- Registers a test spread, "words", whose left page shows `line(text)` and counts its draws, and opens it.
