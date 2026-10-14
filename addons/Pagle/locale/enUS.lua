@@ -165,6 +165,14 @@ ns.L = {
 	SHOP_MODULE_OFF = "%s is off",
 	SHOP_PICK = "Pick a look to see it here.",
 	SHOP_USE = "Use",
+	-- Buying (wallet-and-shop.md › UI: Buy): the popup's question with the good's name, the Coins left after, its
+	-- checkbox and buttons; and SHOP-R12's held line under the purse, which never mentions debt or a negative number.
+	SHOP_BUY_CONFIRM = "Buy %s?",
+	SHOP_LEFT_AFTER = "Pagle Coins left after: %s. Looks are yours for good.",
+	SHOP_USE_NOW = "Use it now",
+	SHOP_BUY_ACCEPT = "Buy",
+	SHOP_BUY_CANCEL = "Cancel",
+	SHOP_HELD = "Your balance is 0 while Pagle re-counts earlier Coins. New Coins fill that in first.",
 
 	-- The compartment entry's label (CORE-R51): Pagle, with the moments Cozy mode holds for a summary (ANN-R42).
 	COMPARTMENT = "Pagle",

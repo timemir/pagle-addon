@@ -11,6 +11,7 @@ local ns = select(2, ...)
 ---@field cache table<string, table>       -- PagleDB.global.goods, every good ever registered (SHOP-R26)
 ---@field modules PagleModule[]            -- the Modules On, by def.order
 ---@field balance Balance                  -- Pagle.GetBalance()
+---@field updating boolean                 -- a projection, Core's or a Module's, is updating (SHOP-R13)
 ---@field format? fun(value: number): string -- writes a number of Coins (BreakUpLargeNumbers); tostring by default
 
 ---@class PagleShopModel
@@ -360,6 +361,7 @@ end
 ---@field price? string             -- a good for sale's price, with the coin
 ---@field short? true               -- the balance doesn't cover it: the price shows in red
 ---@field buy? string               -- "Buy for 400" for a good for sale not owned
+---@field canBuy? true              -- Buy is enabled (SHOP-R13): the balance covers it and no projection is updating
 ---@field needed? string            -- "250 more needed" when the balance doesn't cover it
 ---@field use? true                 -- Use shows: owned, not in use, its Module On
 ---@field greyed? true              -- put away
@@ -393,6 +395,7 @@ function Model:Stage(goodID)
 		local price = assert(entry.price)
 		stage.price = L.SHOP_PRICE:format(self.format(price))
 		stage.buy = L.SHOP_BUY:format(self.format(price))
+		stage.canBuy = self:CanBuy(entry) or nil
 		if state == "short" then
 			stage.short = true
 			stage.needed = L.SHOP_MORE_NEEDED:format(self.format(price - self.sources.balance.balance))
@@ -417,6 +420,47 @@ function Model:Stage(goodID)
 		stage.notes[#stage.notes + 1] = L.SHOP_REWARD:format(owner)
 	end
 	return stage
+end
+
+-- Whether `entry` may be bought now (SHOP-R13): for sale (a good of a live slot, so its Module is enabled), not owned,
+-- the balance covering its price (the "forSale" state), and no projection updating.
+---@private
+---@param entry PagleShopEntry
+---@return boolean
+function Model:CanBuy(entry)
+	return entry.state == "forSale" and not self.sources.updating
+end
+
+--- What Buy asks the Angler to confirm, and what the purchase entry records (SHOP-R10, wallet-and-shop.md › UI: Buy).
+---@class PagleShopPurchase
+---@field id string
+---@field slot string        -- the good's slot, for "Use it now"
+---@field name string
+---@field icon? integer|string -- the swatch
+---@field price integer      -- the price now, which the purchase entry records (SHOP-R10)
+---@field priceText string   -- the price, with the coin
+---@field leftAfter string   -- "Pagle Coins left after: 250. Looks are yours for good."
+
+--- The purchase of `goodID` as it would be now, or nil unless Buy is enabled for it (SHOP-R13): a good for sale of a
+--- live slot, not owned, that the balance covers, with no projection updating.
+---@param goodID any
+---@return PagleShopPurchase?
+function Model:Purchase(goodID)
+	local entry = self:Entry(goodID)
+	if not entry or not self:CanBuy(entry) then
+		return nil
+	end
+	local price = assert(entry.price)
+	local L = ns.L
+	return {
+		id = entry.id,
+		slot = assert(self.sources.goods:Good(entry.id)).slot,
+		name = entry.name,
+		icon = entry.icon,
+		price = price,
+		priceText = L.SHOP_PRICE:format(self.format(price)),
+		leftAfter = L.SHOP_LEFT_AFTER:format(self.format(self.sources.balance.balance - price)),
+	}
 end
 
 --- A category chip.
