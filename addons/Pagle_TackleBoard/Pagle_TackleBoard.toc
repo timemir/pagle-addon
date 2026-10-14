@@ -1,0 +1,16 @@
+## Interface: 16001
+## AllowLoadGameType: camelot
+## Title: Pagle Tackle Board
+## Notes: Pagle's Tackle Board: Notices and Expeditions that never expire, a Campfire kept alight by Kindling, and a Fly Box.
+## Group: Pagle
+## Category: Professions
+## Version: @project-version@
+## Dependencies: Pagle
+## X-Pagle-API: 1
+## SavedVariables: PagleTackleBoardDB
+
+locale\enUS.lua
+logic\Data.lua
+logic\Module.lua
+logic\Seams.lua
+adapter\TackleBoard.lua
