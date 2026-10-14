@@ -34,6 +34,7 @@ local ns = select(2, ...)
 ---@field cards PagleCards Core's cards (ns.WireCards).
 ---@field wallet PagleWallet Core's one wallet (ns.WireWallet).
 ---@field goods PagleGoods Core's one goods registry (ns.WireGoods).
+---@field shop PagleShop The Curio Shop's entry points (ns.WireShop).
 ---@field fieldReport PagleFieldReportReaders? Core's Field report, from login step 1 on (ns.WireFieldReport).
 ---@field walletProjection PagleProjection? Core's wallet projection, from login step 1 (ns.WireWalletProjection).
 ---@field LengthUnit fun(): PagleLengthUnit The Angler's length unit now (ns.WireLength).
@@ -403,6 +404,68 @@ function ns.WireGoods(host)
 			error(problem, 2)
 		end
 	end
+end
+
+--- Where the Curio Shop shows: the window (adapter/Shop.lua), or FakePagle's record of it.
+---@class PagleShopSeams
+---@field isRestricted fun(): boolean -- Pagle.IsRestricted()
+---@field print fun(line: string)     -- prints a chat line
+---@field isShown fun(): boolean      -- the shop is open
+---@field show fun(selection: string|false|nil) -- opens it, or keeps it open: selecting that good, nothing (false), or
+--- keeping the selection it has (nil)
+---@field hide fun()                  -- closes it
+
+--- The Curio Shop's entry points (SHOP-R40, SHOP-R41), which Pagle.OpenShop, /pagle shop and the compartment entry call.
+---@class PagleShop
+---@field Open fun(goodID: string?) -- Pagle.OpenShop
+---@field Toggle fun()              -- /pagle shop
+
+--- The Curio Shop's entry points as ns.shop (SHOP-R40, SHOP-R41), and ns.ShopModel, the shop's data now: Core's goods,
+--- their cache, the Modules On and the balance (logic/Shop.lua). Opening while restricted prints "Pagle: the Curio
+--- Shop opens after combat." and opens nothing; at RestrictionChanged(true) an open shop closes, and nothing is queued.
+---@param host PagleHost
+---@param seams PagleShopSeams
+function ns.WireShop(host, seams)
+	--- The shop's model now; `format` writes a number of Coins (BreakUpLargeNumbers).
+	---@param format (fun(value: number): string)?
+	---@return PagleShopModel
+	function ns.ShopModel(format)
+		local db = host.db()
+		return ns.NewShopModel({
+			goods = ns.goods,
+			cache = db and db.global.goods or {},
+			modules = host.registry:Modules(),
+			balance = ns.wallet:Get(),
+			format = format,
+		})
+	end
+
+	---@param goodID string?
+	local function open(goodID)
+		if seams.isRestricted() then
+			seams.print(ns.L.SHOP_AFTER_COMBAT)
+			return
+		end
+		local selection
+		if goodID ~= nil then
+			selection = ns.ShopModel():Select(goodID) or false
+		end
+		seams.show(selection)
+	end
+	local function toggle()
+		if seams.isShown() then
+			seams.hide()
+		else
+			open()
+		end
+	end
+	ns.shop = { Open = open, Toggle = toggle }
+	-- CORE-R33's row, SHOP-R41: an open shop closes as restriction starts. Its own owner on the bus.
+	host.listen("Pagle shop", "RestrictionChanged", function(_, isRestricted)
+		if isRestricted and seams.isShown() then
+			seams.hide()
+		end
+	end)
 end
 
 --- The Field report's two readers (field-report.md › The projection).

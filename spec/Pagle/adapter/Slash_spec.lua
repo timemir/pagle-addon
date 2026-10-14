@@ -45,6 +45,19 @@ describe("/pagle", function()
 		assert.are.same({}, loaded.printed)
 	end)
 
+	it("toggles the Curio Shop with /pagle shop (CORE-R61, SHOP-R40)", function()
+		local loaded = loadCore()
+		enterWorld(loaded, 2)
+
+		pagle(loaded, "Shop")
+		assert.is_true(assert(loaded.ns.shopFrame):IsShown())
+		pagle(loaded, "shop")
+
+		assert.is_false(loaded.ns.shopFrame:IsShown())
+		assert.are.same({}, openedNames(loaded))
+		assert.are.same({}, loaded.printed)
+	end)
+
 	it("prints REP-R44's line for /pagle report while restricted, opening nothing (REP-R44, CORE-R33)", function()
 		local loaded = loadCore()
 		enterWorld(loaded, 2)
@@ -69,6 +82,7 @@ end
 local HELP = {
 	"Pagle commands:",
 	"/pagle settings: open Pagle's settings (also /pagle on its own)",
+	"/pagle shop: open or close the Curio Shop",
 	"/pagle report: open the Field report, to help chart the waters",
 	"/pagle help: list these commands",
 	"/pagle hunts: open the Hunts board",
@@ -94,8 +108,8 @@ describe("/pagle help", function()
 		assert.are.same({}, openedNames(loaded))
 	end)
 
-	for _, line in ipairs({ "shop", "fly away", "HELP" }) do
-		it(("prints the help list for /pagle %s (CORE-R61, CORE-R62, roadmap M1, M3)"):format(line), function()
+	for _, line in ipairs({ "fly away", "HELP" }) do
+		it(("prints the help list for /pagle %s (CORE-R61, CORE-R62)"):format(line), function()
 			local loaded = loadCore()
 			both(loaded)
 
@@ -211,7 +225,7 @@ describe("A Module's /pagle subcommand", function()
 
 		pagle(loaded, "qol")
 
-		assert.are.same({ HELP[1], HELP[2], HELP[3], HELP[4] }, loaded.printed)
+		assert.are.same({ HELP[1], HELP[2], HELP[3], HELP[4], HELP[5] }, loaded.printed)
 	end)
 end)
 

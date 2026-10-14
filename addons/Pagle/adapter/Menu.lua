@@ -25,19 +25,21 @@ local function openFieldReport()
 	Pagle.OpenFieldReport()
 end
 
+-- The Curio Shop: while restricted Pagle.OpenShop prints SHOP-R41's line instead (CORE-R33).
+local function openShop()
+	Pagle.OpenShop()
+end
+
 -- Fills the context menu, reading each label, the balance and the Field report count now (CORE-R50, CORE-R52). It
 -- opens while restricted too (CORE-R33).
 ---@param root table the menu's root description
 local function generate(_, root)
-	local shop = ns.CurioShopMenuEntry(Pagle.GetBalance(), BreakUpLargeNumbers)
+	local shop = ns.CurioShopMenuEntry(Pagle.GetBalance(), BreakUpLargeNumbers, openShop)
 	local report = ns.FieldReportMenuEntry(Pagle.GetFieldReportCount(), openFieldReport)
 	for _, entry in ipairs(ns.CompartmentMenu(ns.Modules:Modules(), shop, report, SETTINGS, securecallfunction)) do
-		local button = root:CreateButton(entry.label, function()
+		root:CreateButton(entry.label, function()
 			securecallfunction(entry.onClick)
 		end)
-		if entry.disabled then
-			button:SetEnabled(false)
-		end
 	end
 end
 

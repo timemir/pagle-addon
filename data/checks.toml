@@ -1,4 +1,5 @@
 # Milestone-gated checks (DATA-R66). Before a switch is on, its check is skipped and the data is still emitted.
-# typicalLength is on from M4 (DATA-R20); lore lists the lore IDs whose check is on, from M3 (DATA-R107).
+# typicalLength is on from M4 (DATA-R20); lore lists the lore IDs whose check is on: the Ledger's from M3, Core's from
+# M4 (DATA-R107).
 typicalLength = true
-lore = ["ledger"]
+lore = ["ledger", "core"]

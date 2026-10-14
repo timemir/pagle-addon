@@ -20,18 +20,15 @@ local LAYOUT_METHODS = {
 	"SetPoint",
 	"ClearAllPoints",
 	"SetAllPoints",
-	"SetSize",
-	"SetWidth",
-	"SetHeight",
 	"SetJustifyH",
 	"SetJustifyV",
 	"SetWordWrap",
-	"SetTextColor",
-	"SetFontObject",
-	"SetAlpha",
 	"SetFrameStrata",
+	"SetClampedToScreen",
+	"RegisterForDrag",
+	"StartMoving",
+	"StopMovingOrSizing",
 	"EnableMouse",
-	"SetTexCoord",
 	"SetScrollChild",
 	"EnableMouseWheel",
 	"SetRotation",
@@ -45,7 +42,7 @@ local LAYOUT_METHODS = {
 
 --- A widget (frame, button or font string) that keeps what specs read back: its text, whether it's shown, its
 --- scripts and the widgets created on it.
----@param kind string "Frame", "Button", "FontString", …
+---@param kind string "Frame", "Button", "FontString", â€¦
 ---@param parent table?
 ---@return table
 function widgets.newWidget(kind, parent)
@@ -72,9 +69,61 @@ function widgets.newWidget(kind, parent)
 	function widget:IsMovable()
 		return self.movable == true
 	end
-	-- A texture's tint, as { r, g, b }, and whether it is drawn in greys.
-	function widget:SetVertexColor(r, g, b)
-		self.vertexColor = { r, g, b }
+	-- A texture's tint, as { r, g, b[, a] }, and whether it is drawn in greys.
+	function widget:SetVertexColor(r, g, b, a)
+		self.vertexColor = { r, g, b, a }
+	end
+	-- Its size as set, for layout code that reads it back.
+	function widget:SetSize(width, height)
+		self.width, self.height = width, height
+	end
+	function widget:SetWidth(width)
+		self.width = width
+	end
+	function widget:SetHeight(height)
+		self.height = height
+	end
+	function widget:GetWidth()
+		return self.width or 0
+	end
+	function widget:GetHeight()
+		return self.height or 0
+	end
+	-- A font string's colour ({ r, g, b[, a] }), and its font: `fontObject` (its template or SetFontObject's name), or
+	-- `font` ({ file, size, flags }) after SetFont, until the next SetFontObject.
+	function widget:SetTextColor(r, g, b, a)
+		self.textColor = { r, g, b, a }
+	end
+	function widget:SetFontObject(fontObject)
+		self.fontObject, self.font = fontObject, nil
+	end
+	function widget:SetFont(file, size, flags)
+		self.font = { file, size, flags }
+		return true
+	end
+	-- A texture's blend mode and texture coordinates ({ left, right, top, bottom }).
+	function widget:SetBlendMode(mode)
+		self.blendMode = mode
+	end
+	function widget:SetTexCoord(left, right, top, bottom)
+		self.texCoord = { left, right, top, bottom }
+	end
+	-- A region's opacity (1 until set).
+	function widget:SetAlpha(alpha)
+		self.alpha = alpha
+	end
+	function widget:GetAlpha()
+		return self.alpha or 1
+	end
+	-- A button's text width, 6 pixels a character as GetStringWidth; and whether its highlight is locked on.
+	function widget:GetTextWidth()
+		return #(self.text or "") * 6
+	end
+	function widget:LockHighlight()
+		self.highlightLocked = true
+	end
+	function widget:UnlockHighlight()
+		self.highlightLocked = false
 	end
 	function widget:SetDesaturated(desaturated)
 		self.desaturated = desaturated
@@ -107,6 +156,16 @@ function widgets.newWidget(kind, parent)
 	function widget:GetScript(script)
 		return self.scripts[script]
 	end
+	-- Runs `fn` after the script already set, as the client's HookScript does.
+	function widget:HookScript(script, fn)
+		local before = self.scripts[script]
+		self.scripts[script] = function(...)
+			if before then
+				before(...)
+			end
+			fn(...)
+		end
+	end
 	-- Whether it takes clicks: SetEnabled(false) greys a button, and a click on it does nothing.
 	function widget:SetEnabled(enabled)
 		self.enabled = not not enabled
@@ -121,8 +180,10 @@ function widgets.newWidget(kind, parent)
 			onClick(self, "LeftButton", false)
 		end
 	end
-	function widget:CreateFontString()
-		return widgets.newWidget("FontString", self)
+	function widget:CreateFontString(_, _, template)
+		local fontString = widgets.newWidget("FontString", self)
+		fontString.fontObject = template
+		return fontString
 	end
 	-- A texture that keeps what it shows: `texture` (SetTexture's file ID or path) or `color` ({ r, g, b, a }).
 	function widget:CreateTexture()
@@ -137,6 +198,9 @@ function widgets.newWidget(kind, parent)
 	end
 	for _, method in ipairs(LAYOUT_METHODS) do
 		widget[method] = function() end
+	end
+	function widget.GetParent()
+		return parent
 	end
 	if parent then
 		parent.children[#parent.children + 1] = widget
@@ -222,6 +286,40 @@ function widgets.editBox(client, box)
 		self.text = text
 		self.highlight = nil
 		run("OnTextChanged", true)
+	end
+end
+
+--- Adds the children and methods a FrameXML template gives a frame, as far as Pagle reads them. Gethe/wow-ui-source
+--- branch forever at 943764493e6b16d63ded3ab304150d1f05e58b57 ("1.60.1 (70338)"), Interface/AddOns/Blizzard_SharedXML/:
+--- ButtonFrameTemplate (Mainline/SharedUIPanelTemplates.xml) has an `Inset` frame, a `CloseButton` whose click hides
+--- its parent (UIPanelCloseButton_OnClick, HideUIPanel), the title (PortraitFrame.lua's TitledPanelMixin:SetTitle)
+--- and a portrait (PortraitFrameMixin:SetPortraitToAsset); SearchBoxTemplate (Shared/InputBox/InputBoxTemplates.xml)
+--- has its `Instructions` hint and its `clearButton`. Other templates add nothing here.
+---@param client FakeClient
+---@param frame table
+---@param template string?
+function widgets.applyTemplate(client, frame, template)
+	if template == "ButtonFrameTemplate" then
+		frame.Inset = widgets.newFrame(client, "Frame", frame)
+		frame.CloseButton = widgets.newFrame(client, "Button", frame)
+		frame.CloseButton:SetScript("OnClick", function()
+			if frame:IsShown() then
+				frame:Hide()
+				local onHide = frame:GetScript("OnHide")
+				if onHide then
+					onHide(frame)
+				end
+			end
+		end)
+		function frame:SetTitle(title)
+			self.title = title
+		end
+		function frame:SetPortraitToAsset(texture)
+			self.portrait = texture
+		end
+	elseif template == "SearchBoxTemplate" then
+		frame.Instructions = widgets.newWidget("FontString", frame)
+		frame.clearButton = widgets.newFrame(client, "Button", frame)
 	end
 end
 

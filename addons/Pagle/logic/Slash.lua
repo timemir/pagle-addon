@@ -84,19 +84,19 @@ function Commands:Add(def)
 	return problems
 end
 
---- What `/pagle <line>` does (CORE-R60–R62): `"settings"` with no argument or `settings`; `"report"` with `report`
---- (the Field report); `"module"` with the Module subcommand it names and the rest of the line, trimmed; otherwise
---- `"help"`. That covers `help`, an unknown name, and `shop` until the Curio Shop exists (M4).
+--- What `/pagle <line>` does (CORE-R60–R62): `"settings"` with no argument or `settings`; `"shop"` with `shop` (the
+--- Curio Shop, a toggle); `"report"` with `report` (the Field report); `"module"` with the Module subcommand it names
+--- and the rest of the line, trimmed; otherwise `"help"`, for `help` and an unknown name.
 ---@param line string what follows /pagle
----@return "settings"|"report"|"module"|"help" action
+---@return "settings"|"shop"|"report"|"module"|"help" action
 ---@return PagleSlashCommand? command
 ---@return string? args
 function Commands:Resolve(line)
 	local name, args = ns.ParseSlash(line)
 	if name == "" or name == "settings" then
 		return "settings"
-	elseif name == "report" then
-		return "report"
+	elseif name == "shop" or name == "report" then
+		return name
 	end
 	local command = self.byName[name]
 	if command then
@@ -134,6 +134,7 @@ end
 --- What Core's own subcommands do (CORE-R61). Each prints its surface's chat line instead while restricted (CORE-R33).
 ---@class PagleSlashCore
 ---@field settings fun() opens the Settings root (Pagle.OpenSettings)
+---@field shop fun() opens or closes the Curio Shop (ns.shop.Toggle)
 ---@field report fun() opens the Field report box (Pagle.OpenFieldReport)
 
 --- Runs `/pagle <line>` (CORE-R60–R62): one of Core's own subcommands, a Module's subcommand through `call`, or the
@@ -144,7 +145,7 @@ end
 ---@param print fun(line: string) prints a chat line
 function Commands:Run(line, core, call, print)
 	local action, command, args = self:Resolve(line)
-	if action == "settings" or action == "report" then
+	if action == "settings" or action == "shop" or action == "report" then
 		core[action]()
 	elseif command then
 		call(command.fn, args)

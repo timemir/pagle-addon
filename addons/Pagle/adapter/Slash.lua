@@ -26,12 +26,16 @@ local CORE = {
 	settings = function()
 		Pagle.OpenSettings()
 	end,
+	shop = function()
+		ns.shop.Toggle()
+	end,
 	report = function()
 		Pagle.OpenFieldReport()
 	end,
 }
 
--- Runs `/pagle <line>`: the Settings root, the Field report box, a Module's subcommand, or the help list.
+-- Runs `/pagle <line>`: the Settings root, the Curio Shop, the Field report box, a Module's subcommand, or the help
+-- list.
 ---@param line string what the player typed after /pagle
 local function run(line)
 	commands:Run(line, CORE, securecallfunction, print)

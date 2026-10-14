@@ -13,6 +13,8 @@
 ---@field hover fun(text: any) Shows the tooltip of a world object whose first line is `text`, as the mouse going over
 --- it does: data.type is Object (4) and data.lines[1].leftText is `text`.
 ---@field showTooltip fun(type: integer, data: table) Runs the post-calls for a tooltip of `type` filled with `data`.
+---@field gameTooltip { owner: table?, anchor: string?, lines: string[], shown: boolean } GameTooltip as the addon
+--- filled it last: SetOwner's owner and anchor, the lines (SetText's, then each AddLine's), and Show or Hide.
 
 ---@param client FakeClient
 ---@param stubs table<string, any> The fake client's stubs, which this adds to.
@@ -38,6 +40,28 @@ return function(client, stubs)
 			end
 		end
 	end
+
+	-- GameTooltip as an addon fills it: its owner, its lines (SetText starts them, AddLine adds one) and whether it is
+	-- shown, in client.gameTooltip.
+	client.gameTooltip = { lines = {}, shown = false }
+	local shown = client.gameTooltip
+	stubs.GameTooltip = {
+		SetOwner = function(_, owner, anchor)
+			shown.owner, shown.anchor, shown.lines = owner, anchor, {}
+		end,
+		SetText = function(_, text)
+			shown.lines = { text }
+		end,
+		AddLine = function(_, text)
+			shown.lines[#shown.lines + 1] = text
+		end,
+		Show = function()
+			shown.shown = true
+		end,
+		Hide = function()
+			shown.shown = false
+		end,
+	}
 
 	function client.hover(text)
 		local Object = stubs.Enum.TooltipDataType.Object
