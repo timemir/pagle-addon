@@ -1,11 +1,11 @@
 ---@class PagleNS
 local ns = select(2, ...)
 
--- Core's wiring (CORE-R18): how its projection machinery, Sessions, moments, Session summary, cards, wallet and
--- Prestige and purchase entries are built and connected to each other, to PagleDB and to the Module handle. Pure
--- logic over a host (CORE-R7): Core's adapter builds its host over the WoW client (adapter/Host.lua), and FakePagle
--- builds one over its fakes, so both run this one wiring and the double can't drift from Core. What differs between
--- them is only the host and the display each factory is handed.
+-- Core's wiring (CORE-R18): how its projection machinery, Sessions, moments, Session summary, cards, wallet,
+-- Prestige and purchase entries and goods are built and connected to each other, to PagleDB and to the Module handle.
+-- Pure logic over a host (CORE-R7): Core's adapter builds its host over the WoW client (adapter/Host.lua), and
+-- FakePagle builds one over its fakes, so both run this one wiring and the double can't drift from Core. What differs
+-- between them is only the host and the display each factory is handed.
 
 --- What the wiring needs from where Core runs. Every function is called when needed, never stored.
 ---@class PagleHost
@@ -32,6 +32,7 @@ local ns = select(2, ...)
 ---@field summary PagleSummary Core's one Session summary (ns.WireSummary).
 ---@field cards PagleCards Core's cards (ns.WireCards).
 ---@field wallet PagleWallet Core's one wallet (ns.WireWallet).
+---@field goods PagleGoods Core's one goods registry (ns.WireGoods).
 
 --- Core's projection machinery (LOG-R70–R78) as ns.projections, and `M:NewProjection` and `M:IterateCatches` on every
 --- Module handle. Until Module records (M7), a Module's records are the ones Pagle.IterateCatches yields.
@@ -308,5 +309,80 @@ function ns.WireLogEntries(host)
 	function ModuleHandle:RecordPrestige()
 		host.registry:ModuleCalling(self, "RecordPrestige", "")
 		return ns.RecordPrestige()
+	end
+end
+
+--- Core's goods registry as ns.goods (SHOP-R20–R26, SHOP-R30–R33) over PagleDB.global.goods and
+--- PagleDB.profile.appearance, firing AppearanceChanged on the bus from ModulesChanged on, and `M:RegisterSlot`,
+--- `M:RegisterGood` and `M:RefreshGoods` on every Module handle. Core registers its own goods with
+--- ns.RegisterCoreSlot and ns.RegisterCoreGood, and refreshes them with ns.goods:Refresh("Core"). The wallet
+--- projection hands it the purchased set with ns.goods:SetPurchased (SHOP-R11).
+---@param host PagleHost
+function ns.WireGoods(host)
+	local goods = ns.NewGoods({
+		db = host.db,
+		modules = function()
+			return host.registry:Modules()
+		end,
+		fire = host.fire,
+		call = host.call,
+		report = host.report,
+	})
+	ns.goods = goods
+	-- CORE-R19: every enabled Module has registered its goods, or failed to. Its own owner on the bus.
+	host.listen("Pagle goods", "ModulesChanged", function()
+		goods:Start()
+	end)
+
+	---@class PagleModuleHandle
+	local ModuleHandle = ns.ModuleHandle
+	--- Registers one of the Module's slots (SHOP-R21), any time after RegisterModule. Raises an error at the Module's
+	--- call, registering nothing, for each mistake SHOP-R23 lists: an ID that isn't `<name lowercased>.<name>` of
+	--- [%w_.], a duplicate, no label, or a category other than "Announcements", "Bookplate", "Fish Journal", "Hunts"
+	--- and "Trackers".
+	---@param slot PagleSlot
+	function ModuleHandle:RegisterSlot(slot)
+		local module = host.registry:ModuleCalling(self, "RegisterSlot", "slot")
+		local problem = goods:RegisterSlot(module.def.name, slot)
+		if problem then
+			error(problem, 2)
+		end
+	end
+	--- Registers one of the Module's goods in one of its slots (SHOP-R21, SHOP-R22), calling its isEarned() now if
+	--- it is earned (SHOP-R31). Raises an error at the Module's call, registering nothing, for each mistake SHOP-R23
+	--- lists: a duplicate ID or one without the Module's prefix, an unknown slot or another's, a second default, or
+	--- not exactly one of `default`, `tier` (1, 2 or 3) and `isEarned`.
+	---@param good PagleGood
+	function ModuleHandle:RegisterGood(good)
+		local module = host.registry:ModuleCalling(self, "RegisterGood", "good")
+		local problem = goods:RegisterGood(module.def.name, good)
+		if problem then
+			error(problem, 2)
+		end
+	end
+	--- Calls each of the Module's earned goods' isEarned() and caches the results (SHOP-R31); looks follow. Call it
+	--- after a live entry that could change one, and from the projection's done, never mid-catch-up or mid-rebuild.
+	function ModuleHandle:RefreshGoods()
+		local module = host.registry:ModuleCalling(self, "RefreshGoods", "")
+		goods:Refresh(module.def.name)
+	end
+
+	--- Registers one of Core's slots, with the `core.` prefix (SHOP-R21, SHOP-R25). Raises an error at Core's call,
+	--- registering nothing, for a SHOP-R23 mistake.
+	---@param slot PagleSlot
+	function ns.RegisterCoreSlot(slot)
+		local problem = goods:RegisterSlot("Core", slot)
+		if problem then
+			error(problem, 2)
+		end
+	end
+	--- Registers one of Core's goods in one of its slots (SHOP-R21, SHOP-R25). Raises an error at Core's call,
+	--- registering nothing, for a SHOP-R23 mistake.
+	---@param good PagleGood
+	function ns.RegisterCoreGood(good)
+		local problem = goods:RegisterGood("Core", good)
+		if problem then
+			error(problem, 2)
+		end
 	end
 end

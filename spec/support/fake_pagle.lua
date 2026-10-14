@@ -84,6 +84,14 @@
 --- unchanged total too (SHOP-R2).
 ---@field setSpent fun(spent: integer) Sets the Coins spent, as the Curio Shop will (M4): BalanceChanged fires if the
 --- balance or held changes (SHOP-R12).
+---@field goods table<string, table> PagleDB.global.goods, the goods cache (SHOP-R26), the same table as
+--- fake.global.goods: every good registered, by ID, with name, slot, slotLabel, category, module, icon, default, tier,
+--- description and, for an earned good, `earned` (isEarned()'s result at registration or the last M:RefreshGoods).
+--- A spec may fill it before login, as a saved PagleDB, for goods of a Module that isn't loaded (SHOP-R90).
+---@field setPurchased fun(purchased: table<string, true>) Hands Core the purchased goods, `{ [goodID] = true }`, as
+--- the wallet projection does (SHOP-R11); empty until then. AppearanceChanged fires if a look changes (SHOP-R33).
+---@field shopsOpened { goodID: string? }[] Each Pagle.OpenShop(goodID?) call, in order, with the good it asked for
+--- (SHOP-R40). The fake has no Curio Shop: it only records.
 ---@field announcements PagleAnnouncement[] Each Announcement Core would hand the display, in order (ANN-R11): its
 --- headline, rung, stamps (at most 4), more ("+N"), coins and every moment, ranked. One per Cast, made on the frame
 --- after its moments were raised, or after the last projection finishes (ANN-R10); one per moment without a Cast.
@@ -96,7 +104,8 @@
 --- ANN-R52), `cards` (each SessionEnded's card for a Session that raised a moment, ANN-R53, at most 3, ANN-R54) and
 --- `writeUp` (the Write-up sections waiting, ANN-R61). A spec may seed its keys before login, as a saved PagleDB.
 ---@field profile table PagleDB.profile, from Core's defaults: `announcements.cozy` is Cozy mode (ANN-R62), off; a
---- spec may set it.
+--- spec may set it. `appearance` holds each slot's pick, `{ [slot] = goodID }` (SHOP-R32), which Pagle.SetEquipped
+--- writes and a spec may seed.
 ---@field writeUps PagleWriteUpStored[] Each Write-up section Core kept from a Module's M:RaiseWriteUp, in order, as
 --- stored: module, order, title, heading, lines (ANN-R60). Closing the Write-up card doesn't empty it.
 ---@field cardsShown PagleCard[] Each card Core would show, in order (ANN-R21): the Write-up (title "Write-up" and
@@ -427,6 +436,41 @@ part(function(fake, Pagle, ns, host)
 
 	function fake.setSpent(spent)
 		wallet:SetSpent(spent)
+	end
+end)
+
+-- Goods (SHOP-R20–R26, SHOP-R30–R33, SHOP-R90), on Core's wiring over fake.global.goods (fake.goods) and
+-- fake.profile.appearance: M:RegisterSlot, M:RegisterGood and M:RefreshGoods on the handle, Pagle.IsOwned,
+-- GetEquipped, SetEquipped and GetGood (read-only), and AppearanceChanged from login on. The purchased set is
+-- empty until fake.setPurchased hands one over, as the wallet projection will (SHOP-R11). Pagle.OpenShop only
+-- records what it was asked for in fake.shopsOpened.
+part(function(fake, Pagle, ns, host)
+	ns.WireGoods(host)
+	fake.goods = fake.global.goods
+	fake.shopsOpened = {}
+
+	function Pagle.IsOwned(goodID)
+		return ns.goods:IsOwned(goodID)
+	end
+
+	function Pagle.GetEquipped(slot)
+		return ns.goods:GetEquipped(slot)
+	end
+
+	function Pagle.SetEquipped(slot, goodID)
+		return ns.goods:SetEquipped(slot, goodID)
+	end
+
+	function Pagle.GetGood(goodID)
+		return readOnly(ns.goods:GetGood(goodID))
+	end
+
+	function Pagle.OpenShop(goodID)
+		fake.shopsOpened[#fake.shopsOpened + 1] = { goodID = goodID }
+	end
+
+	function fake.setPurchased(purchased)
+		ns.goods:SetPurchased(purchased)
 	end
 end)
 
