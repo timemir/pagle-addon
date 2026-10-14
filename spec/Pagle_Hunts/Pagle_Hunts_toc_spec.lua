@@ -84,25 +84,22 @@ describe("Pagle_Hunts.toc", function()
 		assert.are.same({}, handWrittenData)
 	end)
 
-	it(
-		"lists the generated HuntList.lua after locale/enUS.lua and before any code (DATA-R93)",
-		function()
-			local listed = addonFiles("Pagle_Hunts")
-			local at = {}
-			for index, file in ipairs(listed) do
-				at[file] = index
-			end
-			local huntList = at["data/HuntList.lua"]
-			assert.is_not_nil(huntList)
-
-			assert.is_true(huntList > at["locale/enUS.lua"])
-			local codeBefore = {}
-			for file, index in pairs(at) do
-				if (file:match("^logic/") or file:match("^adapter/")) and index < huntList then
-					codeBefore[#codeBefore + 1] = file
-				end
-			end
-			assert.are.same({}, codeBefore)
+	it("lists the generated HuntList.lua after locale/enUS.lua and before any code (DATA-R93)", function()
+		local listed = addonFiles("Pagle_Hunts")
+		local at = {}
+		for index, file in ipairs(listed) do
+			at[file] = index
 		end
-	)
+		local huntList = at["data/HuntList.lua"]
+		assert.is_not_nil(huntList)
+
+		assert.is_true(huntList > at["locale/enUS.lua"])
+		local codeBefore = {}
+		for file, index in pairs(at) do
+			if (file:match("^logic/") or file:match("^adapter/")) and index < huntList then
+				codeBefore[#codeBefore + 1] = file
+			end
+		end
+		assert.are.same({}, codeBefore)
+	end)
 end)

@@ -10,10 +10,9 @@ local ns = select(2, ...)
 -- ns at call time (`ns.State()`, never a copy made at load), so the replacement reaches them all.
 --
 --   ns.ToggleBoard()          Opens the Hunts board, or closes it if shown (HNT-R68). Registration's view and
---                             `/pagle hunts` call it (HNT-R135). Stand-in: does nothing. The board's ticket (#191)
---                             assigns the real one when its file loads.
+--                             `/pagle hunts` call it (HNT-R135). Defined by the board, adapter/Board.lua (#191).
 --   ns.OpenBoard(huntID?)     Opens the board (never closes it), on that Hunt if given (HNT-R67, HNT-R77): the
---                             tracker's lines call it. Stand-in: does nothing. The board's ticket (#191) assigns it.
+--                             tracker's lines call it. Defined by the board, adapter/Board.lua (#191).
 --   ns.State()                The projection's HuntsState (hunts.md › Projection state). Read-only for views.
 --                             Stand-in: a new empty state each call. The projection's ticket (#188) binds it to
 --                             `projection:GetState()` in OnInitialize.
@@ -29,14 +28,6 @@ local ns = select(2, ...)
 --                             runs only while the board or the tracker is visible (HNT-R42). Callers: the board
 --                             ("board", #191), the tracker ("tracker", #197). Stand-in: does nothing. The grouping's
 --                             ticket (#189) assigns it.
-
---- Opens or closes the Hunts board (HNT-R68). A stand-in until the board's ticket assigns the real one.
-function ns.ToggleBoard() end
-
---- Opens the Hunts board on `huntID`, or on the Board mode with none (HNT-R67, HNT-R77). A stand-in until the
---- board's ticket assigns the real one.
----@param huntID string?
-function ns.OpenBoard(huntID) end -- luacheck: no unused args
 
 --- A view showed or hid (HNT-R42's refresh). A stand-in until the grouping's ticket assigns the real one.
 ---@param view "board"|"tracker"

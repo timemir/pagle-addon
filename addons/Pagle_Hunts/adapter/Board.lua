@@ -48,7 +48,7 @@ local LEATHER_PARTS = { "crumbs", "clock", "completed", "nameplate", "ribbons" }
 ---@field router BoardRouter
 ---@field frame BoardFrame?
 ---@field cover BoardCoverLook?              -- the cover set, nil for the default leather
----@field private pages table<string, Frame>   -- each renderer's page, by "mode:side", made at its first draw
+---@field pages table<string, Frame>           -- each renderer's page, by "mode:side", made at its first draw
 ---@field private leather table<BoardLeatherPart, BoardLeatherRenderer>
 ---@field private told boolean               -- whether the grouping was last told it shows
 local Board = {}
@@ -279,6 +279,8 @@ function Board:Draw()
 		end
 	end
 end
+
+-- The board's entry points (logic/Seams.lua lists them); every caller calls them through ns at call time.
 
 --- Opens or closes the Hunts board (HNT-R68): Registration's view, `/pagle hunts` and so the compartment's "Hunts"
 --- and the status button's "Open Hunts" call it.

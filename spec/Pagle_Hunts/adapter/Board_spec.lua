@@ -230,9 +230,13 @@ describe("the Hunts board's leather (HNT-R61)", function()
 		local _, _, board = loggedIn()
 		board:Toggle()
 
+		local missing = {}
 		for _, part in ipairs({ "crumbs", "clock", "completed", "nameplate", "ribbons" }) do
-			assert.is_table(board.frame.anchors[part], part)
+			if type(board.frame.anchors[part]) ~= "table" then
+				missing[#missing + 1] = part
+			end
 		end
+		assert.are.same({}, missing)
 	end)
 
 	it("draws each anchor's renderer after the pages, so it sees the Hunt the timeline selected", function()
