@@ -135,6 +135,36 @@ describe("Where a Hunt bites", function()
 		end)
 	end)
 
+	describe("short of skill (HNT-R33)", function()
+		it("flips as the Angler's bestBaseSkill crosses the need, a lure getting there within 100", function()
+			local loaded, fake = load()
+			local ns, Pagle = loaded.ns, fake.globals.Pagle
+			local grouper = ns.hunts:Hunt("fixture_grouper") -- needs 150
+			fake.login()
+
+			-- (short, a lure gets me there) at each best base rank, read from the Angler as it is then.
+			local function at(rank)
+				if rank then
+					fake.readSkill(rank, 300, 0)
+				end
+				return { ns.ShortOfSkill(grouper, Pagle.GetAngler()) }
+			end
+			assert.are.same({ true, false }, at()) -- no reading yet: best 0, 150 short
+			assert.are.same({ true, false }, at(49)) -- 101 short
+			assert.are.same({ true, true }, at(50)) -- 100 short: the lure reach
+			assert.are.same({ true, true }, at(149))
+			assert.are.same({ false, false }, at(150))
+			assert.are.same({ false, false }, at(225))
+		end)
+
+		it("is never short for a Hunt with no skill need", function()
+			local loaded, fake = load()
+			fake.login()
+			local rack = loaded.ns.hunts:Hunt("fixture_rack")
+			assert.are.same({ false, false }, { loaded.ns.ShortOfSkill(rack, fake.globals.Pagle.GetAngler()) })
+		end)
+	end)
+
 	describe("in its waters (HNT-R25, HNT-R30)", function()
 		local loaded, fake = load()
 		local ns = loaded.ns

@@ -151,6 +151,23 @@ function ns.NewWhere(list, lookups)
 	return where
 end
 
+--- Tunables (hunts.md): how far a lure's skill bonus reaches, for "A lure gets me there." (HNT-R33, HNT-R52).
+ns.LURE_REACH = 100
+
+--- Whether the Angler is short of skill for the Hunt (HNT-R33): it has a skill need above the Angler's
+--- bestBaseSkill. A function of the Angler, which changes at runtime (SkillChanged). Reads `ns.where`.
+---@param hunt HuntDef
+---@param angler { bestBaseSkill: integer } Pagle.GetAngler()
+---@return boolean short
+---@return boolean lureGetsThere -- short by at most the lure reach
+function ns.ShortOfSkill(hunt, angler)
+	local need = ns.where[hunt.id].skillNeed
+	if not need or need <= angler.bestBaseSkill then
+		return false, false
+	end
+	return true, need - angler.bestBaseSkill <= ns.LURE_REACH
+end
+
 --- Whether a Cast was fished in the Hunt's waters (HNT-R25, HNT-R30): its subzone or zone is one of them. A Hunt
 --- without waters holds everywhere (its `areas`, if any, constrain it through MatchesConditions), except a natural
 --- Hunt, whose waters the data left empty: it has no effort Casts. Reads `ns.where`, built at load.
