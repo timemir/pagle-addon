@@ -13,6 +13,8 @@
 ---@field hover fun(text: any) Shows the tooltip of a world object whose first line is `text`, as the mouse going over
 --- it does: data.type is Object (4) and data.lines[1].leftText is `text`.
 ---@field showTooltip fun(type: integer, data: table) Runs the post-calls for a tooltip of `type` filled with `data`.
+---@field tooltipLines fun(): string[] The texts an addon put on GameTooltip since its last SetOwner or ClearLines,
+--- each side of a double line on its own, while it is shown; none while it is hidden.
 
 ---@param client FakeClient
 ---@param stubs table<string, any> The fake client's stubs, which this adds to.
@@ -30,6 +32,44 @@ return function(client, stubs)
 	}
 
 	local tooltip = {} -- GameTooltip, as far as a post-call sees it here: never read
+
+	-- GameTooltip as an addon fills it (SetOwner, SetText, AddLine, AddDoubleLine, Show, Hide), keeping its lines.
+	local lines, shown = {}, false
+	stubs.GameTooltip = {
+		SetOwner = function()
+			lines = {}
+		end,
+		ClearLines = function()
+			lines = {}
+		end,
+		SetText = function(_, text)
+			lines = { text }
+		end,
+		AddLine = function(_, text)
+			lines[#lines + 1] = text
+		end,
+		AddDoubleLine = function(_, left, right)
+			lines[#lines + 1] = left
+			lines[#lines + 1] = right
+		end,
+		Show = function()
+			shown = true
+		end,
+		Hide = function()
+			shown = false
+		end,
+		IsShown = function()
+			return shown
+		end,
+	}
+
+	function client.tooltipLines()
+		local copy = {}
+		for i, line in ipairs(shown and lines or {}) do
+			copy[i] = tostring(line)
+		end
+		return copy
+	end
 
 	function client.showTooltip(tooltipType, data)
 		for _, key in ipairs({ "ALL", tooltipType }) do

@@ -16,7 +16,7 @@ local FAMILY, LOOSE_FAMILY = 2, 3
 local ELWYNN, WESTFALL, DUSKWOOD, REDRIDGE, STRANGLETHORN, DARKSHORE = 12, 40, 10, 44, 33, 148
 
 -- Window specs (DATA-R78): night 21:00–06:00, summer and winter by realm date.
-local NIGHT = { time = { { 1260, 360 } } }
+local NIGHT = NIGHT_WINDOW
 local SUMMER = { season = { { from = { 3, 20 }, to = { 9, 18 } } } }
 local WINTER = { season = { { from = { 9, 23 }, to = { 3, 24 } } } }
 
@@ -65,10 +65,7 @@ local CATCHES = {
 	[DARKSHORE] = { catchEntry(W40) },
 }
 
-local function getItem(itemID)
-	assert(itemID ~= 0, "item 0 is never looked up (LED-R5)")
-	return ITEMS[itemID]
-end
+local getItem = itemLookup(ITEMS)
 
 local T0 = SERVER_TIME - 700
 local MIDNIGHT, NOON = 0, 720
@@ -121,11 +118,8 @@ describe("Stars", function()
 
 	-- Applies each record live to `state` (a fresh one by default); returns the state and the star achievements.
 	local function applyAll(records, state)
-		state = state or fold.reset()
-		local earned = {}
-		for _, record in ipairs(records) do
-			fold.apply(state, record, "live", earned)
-		end
+		local earned
+		state, earned = applyLive(fold, records, state)
 		local stars = {}
 		for _, achievement in ipairs(earned) do
 			local kind = achievement.kind
@@ -228,6 +222,29 @@ describe("Stars", function()
 		it("gives a Legend a Species' stars until M4's Legend class: on no list, one zone (LED-R4, LED-R45)", function()
 			assert.are.same({ WESTFALL }, starredAt(LEGEND, { WESTFALL, ELWYNN }))
 		end)
+	end)
+
+	describe("progress towards ★★ (LED-R45, LED-R142)", function()
+		it(
+			"counts element windows met of all of them, else distinct zones of min(3, listed), stopping at the need (LED-R45, LED-R142)",
+			function()
+				local state = applyAll({
+					cast(WESTFALL, { SEASONFISH }, NOON, JULY),
+					cast(ELWYNN, { WIDEFISH }),
+					cast(ELWYNN, { WIDEFISH }),
+					cast(WESTFALL, { WIDEFISH }),
+					cast(ELWYNN, { LONEFISH }),
+					cast(WESTFALL, { LONEFISH }),
+				})
+
+				local function progress(id)
+					return { ns.ElementProgress(world.species[id], state.species[id]) }
+				end
+				assert.are.same({ 1, 2 }, progress(SEASONFISH))
+				assert.are.same({ 2, 3 }, progress(WIDEFISH))
+				assert.are.same({ 1, 1 }, progress(LONEFISH))
+			end
+		)
 	end)
 
 	describe("Regular (LED-R45)", function()

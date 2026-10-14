@@ -10,7 +10,7 @@ local T0 = SERVER_TIME - 700 -- Sunday 11 October 2026, 15:03 UTC; realm minute 
 -- piece of junk, a chest and a trophy; Duskwood without data. So Ledger completion's world is 2 Species, 1 junk,
 -- 1 treasure, 1 trophy weight and 1 charted zone (LED-R70, LED-R71).
 local function catalogue()
-	local night = { time = { { 1260, 360 } } }
+	local night = NIGHT_WINDOW
 	return catalogueWith({
 		items = {
 			[MACKEREL] = fishRecord(MACKEREL),
@@ -69,7 +69,12 @@ local FIXTURE = {
 ---@return FakePagle fake
 ---@return LoadedAddon loaded
 local function anglerPage(log)
-	return openJournal({ catalogue = catalogue(), characters = characters(), log = log or FIXTURE, id = "angler" })
+	return openJournal({
+		catalogue = catalogue(),
+		characters = characters(),
+		log = log or FIXTURE,
+		place = { "angler" },
+	})
 end
 
 describe("the Journal's Angler page", function()
@@ -119,6 +124,28 @@ describe("the Journal's Angler page", function()
 		for _, text in ipairs(left) do
 			assert.is_nil(text:find("kept since", 1, true))
 		end
+	end)
+
+	-- A Cast logged while the realm clock was secret: no realm minute, so no realm date (LOG-R49).
+	local function secretCast(char, time, itemID)
+		local record = cast(char, time, itemID)
+		record.conditions.minute = nil
+		return record
+	end
+
+	it(
+		"keeps since the first Catch's server date at the realm's offset now when no Catch has a realm date (LED-R146, LED-R126)",
+		function()
+			local _, loaded = anglerPage({ secretCast(1, T0, MACKEREL), secretCast(1, T0 + 3 * 86400, BOOT) })
+
+			assert.are.equal("kept since 11 Oct", loaded.ns.journal.pages.left[3].text)
+		end
+	)
+
+	it("keeps since the first Catch with a realm date, past one without (LED-R146, ledger.md › Data)", function()
+		local _, loaded = anglerPage({ secretCast(1, T0, MACKEREL), cast(1, T0 + 3 * 86400, BOOT) })
+
+		assert.are.equal("kept since 14 Oct", loaded.ns.journal.pages.left[3].text)
 	end)
 
 	it(

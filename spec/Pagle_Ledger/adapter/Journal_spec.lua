@@ -7,13 +7,7 @@ local MACKEREL = 6303 -- Raw Slitherskin Mackerel, a Species in the generated ca
 -- A Ledger on a fake that has logged in, with the projection built (login step 3) unless `updating`.
 ---@param updating boolean?
 local function loggedIn(updating)
-	local fake = newFakePagle()
-	local loaded = fake.load("Pagle_Ledger")
-	fake.login()
-	if not updating then
-		fake.enterWorld()
-	end
-	return fake, loaded
+	return openJournal({ building = updating, id = false })
 end
 
 -- Whether `list` has `text`.
@@ -377,10 +371,10 @@ describe("the Fish Journal's widgets (ledger.md › UI)", function()
 		assert.are.same({ "Home" }, crumbLabels(loaded))
 	end)
 
-	it("hides the widgets a redraw no longer uses", function()
+	it("hides the widgets a redraw no longer uses (ledger.md › UI, LED-R123)", function()
 		local loaded = drawn({ { kind = "seal", text = "Local" }, { kind = "seal", text = "Expert" } })
 
-		loaded.ns.journal:Open("home")
+		loaded.ns.journal:OpenPlace(loaded.ns.JournalPlace.home())
 
 		local texts = shownTexts(loaded.ns.journal.frame.left)
 		assert.are.same({ "The Waters", "Where I've Fished" }, { texts[1], texts[2] })

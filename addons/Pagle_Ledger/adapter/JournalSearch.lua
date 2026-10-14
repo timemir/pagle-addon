@@ -62,7 +62,9 @@ function ns.AttachJournalSearch(journal, box)
 
 	box:SetScript("OnTextChanged", function(self)
 		local context = journal:Context()
-		local results = not context.updating and ns.JournalSearch(self:GetText() or "", context) or nil
+		local results = not context.updating
+				and ns.JournalSearch(self:GetText() or "", context --[[@as LedgerSpreadContext]])
+			or nil
 		if not results then
 			drop:Hide()
 			return

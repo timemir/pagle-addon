@@ -50,7 +50,7 @@ local SPINE_STRIPS, SPINE_STRIP_WIDTH = 6, 5
 ---@field router LedgerJournalRouter
 ---@field frame LedgerJournalFrame?
 ---@field pages LedgerJournalPages?
----@field plate string?                -- the brass plate's words; nil while the projection updates (LED-R149)
+---@field plate string?                -- the brass plate's words as last read; nil until first read (LED-R149)
 ---@field private redrawQueued boolean
 ---@field private drawnPlace LedgerJournalPlace?
 local Journal = {}
@@ -59,9 +59,10 @@ Journal.__index = Journal
 --- The Journal, on Home until it is first left (LED-R120): a login or `/reload` starts it afresh.
 ns.journal = setmetatable({ router = ns.NewJournalRouter(ns.journalSpreads), redrawQueued = false }, Journal)
 
--- What the spreads read now (LED-R122, LED-R123): nothing of the state while the projection is updating.
+--- What the spreads, and the search box, read now (LED-R122, LED-R123, LED-R148): nothing of the state while the
+--- projection is updating.
 ---@return LedgerJournalContext
-local function readContext()
+function Journal:Context() -- luacheck: no self
 	local projection = ns.projection
 	local state = projection and not projection:IsUpdating() and projection:GetState() --[[@as LedgerState?]]
 	if not state then
@@ -80,12 +81,6 @@ local function readContext()
 		angler = Pagle.GetAngler(),
 		openFieldReport = Pagle.OpenFieldReport,
 	}
-end
-
---- What the spreads, and the search box, read now (LED-R122, LED-R123, LED-R148).
----@return LedgerJournalContext
-function Journal.Context()
-	return readContext()
 end
 
 -- A thin rule in `color` along one edge of `frame`, `inset` in from it.
@@ -355,11 +350,14 @@ function Journal:Draw()
 	if not frame or not frame:IsShown() then
 		return
 	end
-	local context = readContext()
+	local context = self:Context()
 	local pages = self.router:Pages(context)
 	self.pages = pages
-	-- The brass plate shows on every spread; while the projection updates there is nothing yet to read (LED-R122).
-	self.plate = not pages.updating and ns.BrassPlate(context --[[@as LedgerHomeContext]]) or nil
+	-- The brass plate always shows (LED-R149): LED-R122 hides only the pages' contents, so while the projection updates
+	-- it keeps the words last read. Only an update before anything was read (the login rebuild) leaves it hidden.
+	if not pages.updating then
+		self.plate = ns.BrassPlate(context --[[@as LedgerSpreadContext]])
+	end
 	frame.plate.label:SetText(self.plate or "")
 	frame.plate:SetSize(frame.plate.label:GetStringWidth() + 20, 22)
 	frame.plate:SetShown(self.plate ~= nil)

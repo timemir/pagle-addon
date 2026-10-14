@@ -16,7 +16,8 @@ local FORECAST_HOURS = 48 -- Tunables: forecast in hours up to (LED-R127)
 
 --- The realm's UTC offset in minutes, worked out live as LOG-R49 does (LED-R126): the realm minute less the UTC
 --- minute of the server time, rounded to 15 minutes, taken after −10 h up to and including +14 h. The Ledger can't
---- call Core's ns.RealmDate (ADR 0001), so it has its own.
+--- call Core's ns.RealmDate (ADR 0001), so it has its own: a copy of Core's ns.RealmUtcOffset and civilFromDays
+--- (addons/Pagle/logic/Conditions.lua). A change to LOG-R49 changes both.
 ---@param serverTime integer GetServerTime()
 ---@param realmMinute integer the realm clock's minute of day, 0–1439 (GetGameTime())
 ---@return integer minutes
@@ -195,11 +196,12 @@ function Text:Zone(areaID)
 end
 
 --- A continent tab's label (LED-R126, LED-R130): Eastern Kingdoms (0) and Kalimdor (1) from C_Map.GetMapInfo on the
---- continent's uiMapID ("…" if it has no name), "Other waters" for any other ContinentID or none.
----@param continentID integer?
+--- continent's uiMapID ("…" if it has no name), "Other waters" for any other ContinentID, none, or Home's
+--- ns.OTHER_TAB: any of Home's tabs (ns.HomeTabOf) as it is.
+---@param tab integer|string?
 ---@return string
-function Text:Continent(continentID)
-	local uiMapID = continentID and CONTINENT_MAPS[continentID]
+function Text:Continent(tab)
+	local uiMapID = tab and CONTINENT_MAPS[tab]
 	if not uiMapID then
 		return ns.L.OTHER_WATERS
 	end
@@ -223,6 +225,16 @@ function Text:Date(date)
 	return ns.FormatJournalDate(date, ns.RealmDateAt(now, offsetAt(self.client, now)).year)
 end
 
+--- A server time's realm date as the Journal prints it (LED-R126), at the realm's offset now: for a Cast stored
+--- without a realm date (the bookplate's "kept since", LED-R146).
+---@param serverTime integer
+---@return string
+function Text:DateAt(serverTime)
+	local now = self.client.ServerTime()
+	local offset = offsetAt(self.client, now)
+	return ns.FormatJournalDate(ns.RealmDateAt(serverTime, offset), ns.RealmDateAt(now, offset).year)
+end
+
 --- A window's label alone (LED-R127), e.g. for the plain hint's window part (LED-R141).
 ---@param _ LedgerJournalText
 ---@param windowID string
@@ -244,6 +256,23 @@ function Text:WindowLine(windowID)
 	local now = self.client.ServerTime()
 	local state = ns.WindowState(self.client.NextWindow(spec, now), now, offsetAt(self.client, now))
 	return state and ns.L.WINDOW_LINE:format(label, state) or label
+end
+
+--- A trophy family's name from lore (`family.<id>.name`, LED-R160): the Journal's spreads and the familyStar moment
+--- read it here. nil while the key has no text, so the line naming it is left out (LED-R161).
+---@param family integer
+---@return string?
+function ns.FamilyName(family)
+	local name = ns.L[("family.%d.name"):format(family)]
+	return type(name) == "string" and name or nil
+end
+
+--- A trophy family's name from lore, as ns.FamilyName (LED-R160, LED-R161).
+---@param _ LedgerJournalText
+---@param family integer
+---@return string?
+Text.FamilyName = function(_, family)
+	return ns.FamilyName(family)
 end
 
 --- A lore key's text (LED-R160, LED-R161), e.g. `species.6303.riddle` or `line.unchartedwaters.text`, with `{zone}`

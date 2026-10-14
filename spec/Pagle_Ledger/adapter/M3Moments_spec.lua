@@ -28,17 +28,11 @@ local ITEM_NAMES = {
 	[HEAVY] = "60 Pound Snapper",
 }
 
-local NIGHT_SPEC = { time = { { 1260, 360 } } }
+local NIGHT_SPEC = NIGHT_WINDOW
 
 -- A catch entry (LOG-R55): ungated, or gated by the night window.
 local function entry(itemID, night)
-	return {
-		itemID = itemID,
-		confirmed = true,
-		window = night and "night" or nil,
-		gate = night and NIGHT_SPEC or nil,
-		gateConfirmed = night or nil,
-	}
+	return night and catchEntry(itemID, "night", NIGHT_SPEC) or catchEntry(itemID)
 end
 
 -- A catalogue in the shape of ns.catalogue (DATA-R76) charting Cove, with `extra` catch entries on its list. The

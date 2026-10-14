@@ -60,6 +60,14 @@ end
 ---@field treasure boolean  -- its treasure requirement, unmet
 ---@field done integer      -- completion's parts met (LED-R53)
 ---@field needed integer    -- completion's parts: listed Species, families, junk and treasure requirements
+---@field counts LedgerZoneCounts
+
+--- A charted zone's catches counted against its list (LED-R135, LED-R137): only what is on the list counts.
+---@class LedgerZoneCounts
+---@field fish integer      -- its listed Species
+---@field fishKnown integer -- of those, caught there
+---@field families integer  -- its listed trophy families
+---@field landed integer    -- of those, landed there
 
 -- A charted zone's needs (LED-R50): Visitor lacks 1 until the zone is fished; Regular the shortfall to `ceil(U / 2)`
 -- of its `U` ungated Species; Local each other uncaught ungated Species; Expert each uncaught gated Species plus 1 for
@@ -72,10 +80,13 @@ local function needsOf(zoneIndex, zoneState)
 	local landed = zoneState and zoneState.families or {}
 	local ungated, ungatedCaught, gated, families = 0, 0, 0, 0
 	local done, needed = 0, 0
+	local counts = { fish = 0, fishKnown = 0, families = 0, landed = 0 }
 	for id, listing in pairs(zoneIndex.species) do
 		needed = needed + 1
+		counts.fish = counts.fish + 1
 		if caught[id] then
 			done = done + 1
+			counts.fishKnown = counts.fishKnown + 1
 		end
 		if not listing.gated then
 			ungated = ungated + 1
@@ -86,8 +97,10 @@ local function needsOf(zoneIndex, zoneState)
 	end
 	for family in pairs(zoneIndex.families) do
 		needed = needed + 1
+		counts.families = counts.families + 1
 		if landed[family] then
 			done = done + 1
+			counts.landed = counts.landed + 1
 		else
 			families = families + 1
 		end
@@ -110,6 +123,7 @@ local function needsOf(zoneIndex, zoneState)
 		treasure = treasure,
 		done = done,
 		needed = needed,
+		counts = counts,
 	}
 end
 
@@ -203,6 +217,17 @@ function ns.ZoneCompletion(world, state, zone)
 	end
 	local needs = needsOf(zoneIndex, state.zones[zone])
 	return math.floor(100 * needs.done / needs.needed)
+end
+
+--- A charted zone's catches counted against its list (LED-R135, LED-R137): its listed Species and those caught there,
+--- its families and those landed there; nil for a zone that isn't charted (LED-R54).
+---@param world LedgerWorld
+---@param state LedgerState
+---@param zone integer
+---@return LedgerZoneCounts?
+function ns.ZoneCounts(world, state, zone)
+	local zoneIndex = world.zones[zone]
+	return zoneIndex and needsOf(zoneIndex, state.zones[zone]).counts
 end
 
 --- The next requirement (LED-R134), from the shown rank: what the rank above it still needs beyond the shown rank's

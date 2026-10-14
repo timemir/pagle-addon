@@ -164,7 +164,7 @@ describe("the Fish Journal's router", function()
 		assert.are.same({ id = "deep", args = { zone = 12, fish = 6303 } }, router:Place())
 	end)
 
-	it("registers spreads by ID through ns.RegisterJournalSpread", function()
+	it("registers spreads by ID through ns.RegisterJournalSpread (LED-R125)", function()
 		local loaded = loadAddon("Pagle_Ledger", FOREVER_GLOBALS).ns
 
 		loaded.RegisterJournalSpread("deep", deep)
