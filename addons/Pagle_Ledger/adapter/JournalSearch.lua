@@ -71,7 +71,7 @@ function ns.AttachJournalSearch(journal, box)
 		if lines == 0 then
 			local row = rowAt(1)
 			row.label:SetText(ns.L.SEARCH_NONE)
-			row.label:SetTextColor(LOOK.faded[1], LOOK.faded[2], LOOK.faded[3])
+			row.label:SetTextColor(unpack(LOOK.faded))
 			row.place = nil
 			row:Show()
 			lines = 1
@@ -79,7 +79,7 @@ function ns.AttachJournalSearch(journal, box)
 		for i, result in ipairs(results) do
 			local row = rowAt(i)
 			row.label:SetText(result.label)
-			row.label:SetTextColor(LOOK.ink[1], LOOK.ink[2], LOOK.ink[3])
+			row.label:SetTextColor(unpack(LOOK.ink))
 			row.place = result.place
 			row:Show()
 		end

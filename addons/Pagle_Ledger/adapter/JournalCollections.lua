@@ -26,7 +26,7 @@ ns.RegisterJournalWidget("board", function(parent)
 	local widget = CreateFrame("Button", nil, parent) --[[@as LedgerJournalWidget]]
 	local fonts = ns.JournalFonts()
 	local rule = widget:CreateTexture(nil, "BORDER")
-	rule:SetColorTexture(LOOK.kicker[1], LOOK.kicker[2], LOOK.kicker[3], 1)
+	ns.JournalPaint(rule, LOOK.kicker)
 	rule:SetPoint("BOTTOMLEFT")
 	rule:SetPoint("BOTTOMRIGHT")
 	rule:SetHeight(2)
@@ -49,12 +49,12 @@ ns.RegisterJournalWidget("board", function(parent)
 			local x = BOARD_END + tick.at * (width - 2 * BOARD_END)
 			local color = tick.inked and LOOK.red or LOOK.stampOff
 			local length = tick.inked and TICK_INKED or TICK
-			view.line:SetColorTexture(color[1], color[2], color[3], 1)
+			ns.JournalPaint(view.line, color)
 			view.line:SetSize(2, length)
 			view.line:ClearAllPoints()
 			view.line:SetPoint("BOTTOM", widget, "BOTTOMLEFT", x, 2)
 			local ink = tick.inked and LOOK.title or LOOK.stampOff
-			view.weight:SetTextColor(ink[1], ink[2], ink[3])
+			view.weight:SetTextColor(unpack(ink))
 			view.weight:SetText(tick.text)
 			view.weight:ClearAllPoints()
 			view.weight:SetPoint("BOTTOM", view.line, "TOP", 0, 2)

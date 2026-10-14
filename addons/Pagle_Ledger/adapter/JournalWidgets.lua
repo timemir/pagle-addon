@@ -107,6 +107,15 @@ function ns.JournalFonts()
 	return fonts
 end
 
+--- Paints `texture` a solid tint: `color` ({ r, g, b }, as ns.JOURNAL_LOOK holds them) at `alpha`, 1 when nil. Text and
+--- vertex colours take a tint whole, as `SetTextColor(unpack(color))`.
+---@param texture Texture
+---@param color number[]
+---@param alpha number?
+function ns.JournalPaint(texture, color, alpha)
+	texture:SetColorTexture(color[1], color[2], color[3], alpha or 1)
+end
+
 --- A solid tint filling `frame`, or the part its points give.
 ---@param frame Frame
 ---@param color number[]
@@ -115,7 +124,7 @@ end
 ---@return Texture
 function ns.JournalSolid(frame, color, layer, alpha)
 	local texture = frame:CreateTexture(nil, layer or "BACKGROUND")
-	texture:SetColorTexture(color[1], color[2], color[3], alpha or 1)
+	ns.JournalPaint(texture, color, alpha)
 	texture:SetAllPoints()
 	return texture
 end
@@ -128,7 +137,7 @@ end
 function ns.JournalText(frame, font, color)
 	local text = frame:CreateFontString(nil, "OVERLAY")
 	text:SetFontObject(font)
-	text:SetTextColor(color[1], color[2], color[3])
+	text:SetTextColor(unpack(color))
 	text:SetJustifyH("LEFT")
 	return text
 end
@@ -146,7 +155,7 @@ function ns.JournalItemIcon(texture, icon, look)
 	texture:SetTexture(icon)
 	texture:SetDesaturated(true)
 	local ink = look == "silhouette" and SILHOUETTE or LOOK.sepia
-	texture:SetVertexColor(ink[1], ink[2], ink[3])
+	texture:SetVertexColor(unpack(ink))
 	texture:SetAlpha(1)
 end
 
@@ -199,7 +208,7 @@ local function textWidget(font, color)
 		function widget.Fill(_, block, width)
 			local ink = color(block)
 			text:SetFontObject(block.hand and ns.JournalFonts().hand or font())
-			text:SetTextColor(ink[1], ink[2], ink[3])
+			text:SetTextColor(unpack(ink))
 			text:SetWidth(width)
 			text:SetText(block.text)
 			return text:GetStringHeight()
@@ -241,7 +250,7 @@ local TAB_GAP = 14
 local function disc(frame, size)
 	local texture = frame:CreateTexture(nil, "ARTWORK")
 	texture:SetTexture(ns.JOURNAL_TEXTURES.disc)
-	texture:SetVertexColor(LOOK.seal[1], LOOK.seal[2], LOOK.seal[3])
+	texture:SetVertexColor(unpack(LOOK.seal))
 	texture:SetSize(size, size)
 	return texture
 end
@@ -256,12 +265,12 @@ end
 ---@return LedgerInkBarView
 local function inkBar(frame, height)
 	local outline = frame:CreateTexture(nil, "BORDER")
-	outline:SetColorTexture(LOOK.barInk[1], LOOK.barInk[2], LOOK.barInk[3], 0.25)
+	ns.JournalPaint(outline, LOOK.barInk, 0.25)
 	outline:SetPoint("TOPLEFT")
 	outline:SetPoint("TOPRIGHT")
 	outline:SetHeight(height)
 	local fill = frame:CreateTexture(nil, "ARTWORK")
-	fill:SetColorTexture(LOOK.barInk[1], LOOK.barInk[2], LOOK.barInk[3], 1)
+	ns.JournalPaint(fill, LOOK.barInk)
 	fill:SetPoint("TOPLEFT")
 	fill:SetHeight(height)
 	return {
@@ -315,7 +324,7 @@ function makers.link(parent)
 		widget.place, widget.action, widget.open = block.place, block.action, open
 		local ink = block.hand and LOOK.blue or LOOK.red
 		text:SetFontObject(block.hand and ns.JournalFonts().hand or ns.JournalFonts().text)
-		text:SetTextColor(ink[1], ink[2], ink[3])
+		text:SetTextColor(unpack(ink))
 		text:SetWidth(width)
 		text:SetText(block.text)
 		return text:GetStringHeight()
@@ -334,7 +343,7 @@ function makers.leader(parent)
 	local dots = {}
 	for i = 1, LEADER_DOTS do
 		local dot = widget:CreateTexture(nil, "ARTWORK")
-		dot:SetColorTexture(LOOK.kicker[1], LOOK.kicker[2], LOOK.kicker[3], 1)
+		ns.JournalPaint(dot, LOOK.kicker)
 		dot:SetSize(1, 1)
 		dots[i] = dot
 	end
@@ -434,9 +443,9 @@ function makers.stamps(parent)
 			local stamp = stampAt(i)
 			local color = data.inked and LOOK.red or LOOK.stampOff
 			stamp.text:SetText(data.text)
-			stamp.text:SetTextColor(color[1], color[2], color[3])
+			stamp.text:SetTextColor(unpack(color))
 			for _, edge in ipairs(stamp.edges) do
-				edge:SetColorTexture(color[1], color[2], color[3], 1)
+				ns.JournalPaint(edge, color)
 			end
 			local width = stamp.text:GetStringWidth() + 14
 			stamp.frame:SetSize(width, 20)
@@ -470,7 +479,7 @@ local function newTile(parent)
 	ns.JournalClickable(tile)
 	ns.JournalSolid(tile, LOOK.paper, "BACKGROUND", 0.6)
 	local border = tile:CreateTexture(nil, "BORDER")
-	border:SetColorTexture(LOOK.kicker[1], LOOK.kicker[2], LOOK.kicker[3], 0.35)
+	ns.JournalPaint(border, LOOK.kicker, 0.35)
 	border:SetPoint("TOPLEFT", -1, 1)
 	border:SetPoint("BOTTOMRIGHT", 1, -1)
 	tile.name = ns.JournalText(tile, ns.JournalFonts().text, LOOK.title)
@@ -562,7 +571,7 @@ function makers.tabs(parent)
 				tab.label = ns.JournalText(tab, ns.JournalFonts().kicker, LOOK.kicker)
 				tab.label:SetPoint("TOPLEFT")
 				tab.underline = tab:CreateTexture(nil, "ARTWORK")
-				tab.underline:SetColorTexture(LOOK.red[1], LOOK.red[2], LOOK.red[3], 1)
+				ns.JournalPaint(tab.underline, LOOK.red)
 				tab.underline:SetPoint("BOTTOMLEFT")
 				tab.underline:SetPoint("BOTTOMRIGHT")
 				tab.underline:SetHeight(2)
@@ -571,7 +580,7 @@ function makers.tabs(parent)
 			end
 			local ink = data.on and LOOK.title or LOOK.kicker
 			tab.label:SetText(data.text)
-			tab.label:SetTextColor(ink[1], ink[2], ink[3])
+			tab.label:SetTextColor(unpack(ink))
 			tab.underline:SetShown(data.on)
 			tab.place, tab.open = data.place, open
 			local width = tab.label:GetStringWidth() + 2
@@ -614,7 +623,7 @@ function makers.xpBar(parent)
 	track:SetHeight(BAR_HEIGHT)
 	local bar = inkBar(track, BAR_HEIGHT)
 	local fresh = track:CreateTexture(nil, "ARTWORK")
-	fresh:SetColorTexture(LOOK.blue[1], LOOK.blue[2], LOOK.blue[3], 0.35)
+	ns.JournalPaint(fresh, LOOK.blue, 0.35)
 	fresh:SetHeight(BAR_HEIGHT)
 	local text = ns.JournalText(widget, ns.JournalFonts().small, LOOK.ink)
 	text:SetPoint("TOPLEFT", 0, -(BAR_HEIGHT + 4))

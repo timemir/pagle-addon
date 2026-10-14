@@ -34,7 +34,7 @@ local function redBox(frame)
 		else
 			edge:SetWidth(1.5)
 		end
-		edge:SetColorTexture(LOOK.red[1], LOOK.red[2], LOOK.red[3], 1)
+		ns.JournalPaint(edge, LOOK.red)
 		edges[#edges + 1] = edge
 	end
 	return edges
@@ -78,7 +78,7 @@ ns.RegisterJournalWidget("ladder", function(parent)
 			end
 			local color = data.circled and LOOK.red or data.inked and LOOK.title or LOOK.stampOff
 			rung.text:SetText(data.text)
-			rung.text:SetTextColor(color[1], color[2], color[3])
+			rung.text:SetTextColor(unpack(color))
 			for _, edge in ipairs(rung.box) do
 				edge:SetShown(data.circled)
 			end
@@ -149,7 +149,7 @@ ns.RegisterJournalWidget("row", function(parent)
 		widget.stars:SetShown(block.stars ~= nil)
 		right = right + (block.stars and widget.stars:GetStringWidth() + ROW_GAP or 0)
 		local ink = block.color == "faded" and LOOK.faded or LOOK.ink
-		widget.name:SetTextColor(ink[1], ink[2], ink[3])
+		widget.name:SetTextColor(unpack(ink))
 		widget.name:ClearAllPoints()
 		widget.name:SetPoint("TOPLEFT", left, 0)
 		widget.name:SetWidth(width - left - right)
