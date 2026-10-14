@@ -107,6 +107,7 @@
 --- commands work as Core's (#247): `fake.slash("dev on")`, then `"dev endsession"` ends the open Session now, and
 --- with `fake.catchLog.data.test = true` (a test log) `"dev catch 6358 [areaID]"` records a caught Cast through the
 --- fishing part's real append path, with its events and live projections, as playCast would without the signals.
+--- `"dev preview <kind>"` adds a sample to fake.announcements, or for "card" to fake.cardsShown.
 ---@field load fun(name: string, options: table?): LoadedAddon Loads a Module with `loadAddon` against this fake:
 --- `globals`, and of Pagle.toc only the vendored libs/ the Module reaches through LibStub (CORE-R6). Options as
 --- loadAddon's. WoW events its client raises on its own (`client.fireGameEvent`) go to `fake.fireGameEvent`.
@@ -471,7 +472,9 @@ part(function(fake, Pagle, ns, host)
 	end
 
 	-- /pagle dev (#247), on Core's wiring: the same switch in fake.global, Sessions and fishing as Core's.
-	ns.WireDev(host)
+	ns.WireDev(host, function(announcement)
+		fake.announcements[#fake.announcements + 1] = announcement
+	end)
 	function fake.slash(line)
 		commands:Run(line, openSettings, fake.securecall, fake.print, function(args)
 			ns.dev:Run(args)

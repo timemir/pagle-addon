@@ -37,7 +37,9 @@ local function run(line)
 end
 
 --- `/pagle dev …` (#247): hidden dev commands, as ns.dev (logic/Wiring.lua).
-ns.WireDev(ns.host)
+ns.WireDev(ns.host, function(announcement)
+	ns.lanes:Push(announcement)
+end)
 
 SLASH_PAGLE1 = "/pagle"
 SlashCmdList.PAGLE = run

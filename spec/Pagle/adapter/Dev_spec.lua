@@ -246,3 +246,84 @@ describe("/pagle dev catch", function()
 		assert.are.equal("Pagle dev: 999999 isn't an area in Pagle's catalogue.", loaded.printed[2])
 	end)
 end)
+
+-- A plain copy of a table, nested tables too, to compare saved state before and after.
+local function copy(value)
+	if type(value) ~= "table" then
+		return value
+	end
+	local result = {}
+	for key, item in pairs(value) do
+		result[key] = copy(item)
+	end
+	return result
+end
+
+describe("/pagle dev preview", function()
+	for _, kind in ipairs({ "toast", "nod", "banner", "splash" }) do
+		it(
+			("draws a sample %s through the lanes, with its sound, changing no saved state (#247, ANN-R20)"):format(
+				kind
+			),
+			function()
+				local loaded = enterWorld(loadCore({ BUILD_ENTRY }), 2)
+				pagle(loaded, "dev on")
+				local saved, log = copy(loaded.env.PagleDB.global), copy(loaded.env.PagleLog)
+
+				pagle(loaded, "dev preview " .. kind:upper())
+
+				local frame = loaded.ns.announcementFrames[kind]
+				assert.is_true(frame:IsShown())
+				assert.is_truthy(frame.title:GetText())
+				assert.are.same(saved, copy(loaded.env.PagleDB.global))
+				assert.are.same(log, copy(loaded.env.PagleLog))
+				assert.are.equal(("Pagle dev: previewing a %s."):format(kind), loaded.printed[2])
+				if kind ~= "nod" then
+					assert.are.equal(1, #loaded.client.sounds)
+				end
+			end
+		)
+	end
+
+	it("shows a sample Session summary card that closing removes nothing from (#247, ANN-R53)", function()
+		local loaded = enterWorld(loadCore({ BUILD_ENTRY }), 2)
+		pagle(loaded, "dev on")
+		local saved = copy(loaded.env.PagleDB.global)
+
+		pagle(loaded, "dev preview card")
+		local frame = loaded.ns.cardFrame
+		assert.is_true(frame:IsShown())
+		assert.are.equal("Fishing session", frame.title:GetText())
+		frame.close:Click()
+
+		assert.is_false(frame:IsShown())
+		assert.are.same(saved, copy(loaded.env.PagleDB.global))
+	end)
+
+	it("lists the kinds with none or an unknown one (#247)", function()
+		local loaded = enterWorld(loadCore({ BUILD_ENTRY }), 2)
+		pagle(loaded, "dev on")
+
+		pagle(loaded, "dev preview")
+		pagle(loaded, "dev preview whale")
+
+		local kinds = "Pagle dev: /pagle dev preview <kind>, where kind is one of toast, nod, banner, splash, card"
+		assert.are.same({ kinds, kinds }, { loaded.printed[2], loaded.printed[3] })
+	end)
+
+	it(
+		"holds a sample through combat as the lanes hold any Announcement, and refuses a card (#247, ANN-R35)",
+		function()
+			local loaded = enterWorld(loadCore({ BUILD_ENTRY }), 2)
+			pagle(loaded, "dev on")
+			setCombat(loaded, true)
+
+			pagle(loaded, "dev preview banner")
+			pagle(loaded, "dev preview card")
+
+			local banner = loaded.ns.announcementFrames.banner
+			assert.is_true(banner == nil or not banner:IsShown())
+			assert.are.equal("Pagle dev: cards wait until combat ends; try again then.", loaded.printed[3])
+		end
+	)
+end)

@@ -708,6 +708,24 @@ describe("FakePagle", function()
 				assert.are.equal(record.session, assert(fake.Pagle.GetSession()).id)
 			end
 		)
+
+		it("hands a preview's sample to the display and its card to the cards, as Core does (#247)", function()
+			local fake = newFakePagle()
+			fake.login()
+			fake.enterWorld()
+			fake.slash("dev on")
+
+			fake.slash("dev preview banner")
+			fake.slash("dev preview card")
+
+			assert.are.same({ "banner", "Angler Level 12" }, {
+				fake.announcements[1].rung,
+				fake.announcements[1].headline.title,
+			})
+			assert.are.equal(1, #fake.cardsShown)
+			assert.is_true(fake.cardsShown[1].preview)
+			assert.are.same({}, fake.global.cards)
+		end)
 	end)
 
 	describe("/pagle", function()
