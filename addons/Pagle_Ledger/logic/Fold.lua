@@ -12,7 +12,7 @@ local ns = select(2, ...)
 -- Uncharted list (LED-R64), the collections' items (LED-R60, LED-R61) with their XP and Coins, and first-Catch facts.
 -- M4's catches (LED-R4): the Legend class (LED-R63, logic/Legends.lua) and Catch Milestones (LED-R42,
 -- logic/CatchMilestones.lua). M4's Prestige (LED-R30–R32): Prestige entries start a new climb (logic/Prestige.lua)
--- and a climb at 60 is ready.
+-- and a climb at 60 is ready. M4's Simulated Size records (LED-R80–R83): logic/Records.lua.
 
 --- A realm date (LOG-R49), as the Journal prints it.
 ---@alias LedgerDate { year: integer, month: integer, day: integer }
@@ -36,7 +36,7 @@ local ns = select(2, ...)
 ---@field zones { [integer]: LedgerZone }     -- every zone fished, never 0 (LED-R6)
 
 --- An item's Catches and its first Catch (ledger.md › Data, LedgerFirst): that Cast's time, character, zone and realm
---- date. Legend items' `record` and `since` come with Simulated Size records (LED-R80).
+--- date. Legend items also keep their Simulated Size record and `since` (LED-R80, logic/Records.lua).
 ---@class LedgerFirst
 ---@field n integer                           -- Catches of the item
 ---@field time integer
@@ -44,6 +44,8 @@ local ns = select(2, ...)
 ---@field zone integer
 ---@field date? LedgerDate                    -- nil only for a Cast stored without its realm minute
 ---@field zones? { [integer]: integer }       -- Uncharted only: Catches per zone (never 0)
+---@field record? LedgerRecord                -- Legend items only, from their first sized Catch (LED-R80)
+---@field since? integer                      -- with `record`: Catches of the item after it
 
 --- A Species' Catches (ledger.md › Data, LedgerSpecies) and its first Catch, as in LedgerFirst (LED-R140).
 ---@class LedgerSpecies
@@ -54,6 +56,8 @@ local ns = select(2, ...)
 ---@field date? LedgerDate
 ---@field zones { [integer]: true }           -- zones caught in (never 0)
 ---@field windowsMet? { [string]: true }     -- element windows met (LED-R45): made at its first Catch, logic/Stars.lua
+---@field record? LedgerRecord                -- its longest Catch, from its first sized Catch (LED-R80)
+---@field since? integer                      -- with `record`: Catches of the Species after it
 
 --- A fished zone (ledger.md › Data, LedgerZone). logic/ZoneMastery.lua makes it and fills all but `species`.
 ---@class LedgerZone
@@ -68,7 +72,7 @@ local ns = select(2, ...)
 --- Coins (LED-R88; 0 when it pays none). Tickets #101 and #102 turn M2's kinds into moments and Write-up lines, ticket
 --- #137 M3's; the fold never reads the celebrated set (LED-R3).
 ---@class LedgerAchievement
----@field kind "levelUp"|"newSpecies"|"newInZone"|"skillMilestone"|"newCurio"|"trophyWeight"|"uncharted"|"elementStar"|"regularStar"|"familyStar"|"zoneRank"|"prestigeReady"|"prestige"|"legend"|"catchMilestone"
+---@field kind "levelUp"|"newSpecies"|"newInZone"|"skillMilestone"|"newCurio"|"trophyWeight"|"uncharted"|"elementStar"|"regularStar"|"familyStar"|"zoneRank"|"prestigeReady"|"prestige"|"legend"|"catchMilestone"|"sizeRecord"
 ---@field cast? string
 ---@field coins integer
 ---@field levels? integer[]                   -- levelUp: the levels it raised, ascending
@@ -82,6 +86,7 @@ local ns = select(2, ...)
 ---@field stars? integer[]                    -- familyStar: the stars it newly computed, 2 and/or 3, ascending
 ---@field old? number                         -- trophyWeight with a ruler (LED-R61): the family's heaviest before
 ---@field new? number                         -- trophyWeight with a ruler: the new item's weight
+---@field flair? boolean                      -- sizeRecord (LED-R82): the rare-record flair; old and new are its mm
 ---@field rank? integer                       -- prestigeReady: the climb's prestige rank; prestige: the new rank
 
 --- The lookups the fold reads: Core's `Pagle.GetItem` (LOG-R55) and `Pagle.MatchesConditions` (LOG-R49), and the
@@ -358,6 +363,7 @@ function ns.NewLedgerFold(lookups)
 					end
 				end
 			end
+			ns.CreditSizeRecord(state, class, id, record, catch, earned)
 			stars.credit(state, record, starsBefore, earned)
 		end
 		ns.CreditZoneRank(state, world, zone, record.id, earned)
