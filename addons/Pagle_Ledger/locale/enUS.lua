@@ -21,6 +21,11 @@ ns.L = {
 	-- The tab of every continent but the Eastern Kingdoms and Kalimdor (LED-R126, LED-R130).
 	OTHER_WATERS = "Other waters",
 
+	-- The Journal bindings (LED-R110): the slot's label and how a level binding is earned. Their names and
+	-- descriptions are lore (LED-R160).
+	BINDING_SLOT_LABEL = "Journal binding",
+	BINDING_EARNED = "Angler Level %d",
+
 	-- The moments (LED-R97). A level-up's text counts the levels it raised.
 	LEVEL_UP_TITLE = "Angler Level %d",
 	LEVEL_UP_STAMP = "Level %d",
