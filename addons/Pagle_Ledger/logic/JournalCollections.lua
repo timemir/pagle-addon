@@ -351,7 +351,8 @@ ns.RegisterJournalSpread(ns.JOURNAL_CURIOS, {
 		return { { label = ns.L.CURIOS_CRUMB, place = { id = ns.JOURNAL_CURIOS } } }
 	end,
 	draw = function(_, context)
-		local world, state = context.world --[[@as LedgerWorld]], context.state --[[@as LedgerState]]
+		local world = context.world --[[@as LedgerWorld]]
+		local state = context.state --[[@as LedgerState]]
 		local getItem = context.getItem --[[@as fun(itemID: integer): PagleItem?]]
 		local worlds = ns.CollectionWorlds(world, state, getItem)
 		local completion = ns.LedgerCompletion(world, state, getItem)
