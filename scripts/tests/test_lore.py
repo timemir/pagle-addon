@@ -410,7 +410,7 @@ def test_text_for_something_that_isn_t_there_is_an_orphan(
     fails(write_lore_tree(tmp_path, LEDGER + "\n" + extra, checks=ON), capsys, f"{FILE}: {problem}")
 
 
-def test_a_kind_another_addon_owns_is_an_orphan_and_core_s_check_is_still_not_built(
+def test_a_kind_another_addon_owns_is_an_orphan_and_hunts_check_is_still_not_built(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
     # DATA-R102: each kind belongs to one addon, and a lore file holds only its own addon's kinds.
@@ -421,11 +421,47 @@ def test_a_kind_another_addon_owns_is_an_orphan_and_core_s_check_is_still_not_bu
         capsys,
         f"{FILE}: good.core.toaststyle.timber.name: orphan: the kind good is core's (DATA-R102, DATA-R107)",
     )
-    # Only the Ledger's check is built in M3 (DATA-R107): core, hunts, stats and tackleboard wait for their milestones.
+    # Only the Ledger's and Core's checks are built by M4 (DATA-R107): hunts, stats and tackleboard wait for their
+    # milestones.
     fails(
-        write_lore_tree(tmp_path / "core", checks='typicalLength = false\nlore = ["core"]\n'),
+        write_lore_tree(tmp_path / "hunts", checks='typicalLength = false\nlore = ["hunts"]\n'),
         capsys,
-        "data/checks.toml: lore[0]: the core lore check isn't built yet (DATA-R107); leave it off",
+        "data/checks.toml: lore[0]: the hunts lore check isn't built yet (DATA-R107); leave it off",
+    )
+
+
+# Core's goods (DATA-R106): two, each with a name and a description.
+CORE_MANIFEST = MANIFEST + '\n[core.good]\nfields = ["name", "description"]\nids = ["core.a.x", "core.a.y"]\n'
+CORE_GOODS = """\
+[good."core.a.x"]
+name = "Timber"
+description = "Dark planks."
+
+[good."core.a.y"]
+name = "Ripple"
+description = "Cool water."
+"""
+CORE_ON = 'typicalLength = false\nlore = ["ledger", "core"]\n'
+
+
+def test_core_s_lore_check_is_built(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    # DATA-R107, for the core lore ID from M4: with every good's name and description it passes, and Pagle's Lore.lua
+    # holds them (DATA-R104).
+    write_lore_tree(tmp_path, LEDGER, CORE_MANIFEST, checks=CORE_ON, core=CORE_GOODS)
+    code, output = run(tmp_path, capsys)
+    assert code == 0, output
+    assert 'L["good.core.a.y.description"] = "Cool water."\n' in (tmp_path / "addons/Pagle/data/Lore.lua").read_text(
+        encoding="utf-8"
+    )
+
+
+def test_core_s_lore_check_names_a_missing_good_name(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    # DATA-R107's missing, for the core lore ID: the manifest lists the good (DATA-R106), so its name is needed.
+    core = CORE_GOODS.replace('name = "Ripple"\n', "")
+    fails(
+        write_lore_tree(tmp_path, LEDGER, CORE_MANIFEST, checks=CORE_ON, core=core),
+        capsys,
+        "data/lore/core.toml: good.core.a.y.name: missing: manifest.toml lists it (DATA-R106, DATA-R107)",
     )
 
 

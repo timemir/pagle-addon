@@ -133,6 +133,9 @@ describe("the Ledger's Journal bindings", function()
 			local loaded = fake.load("Pagle_Ledger", { holdAddonLoaded = true })
 			loaded.ns.L["binding.birch.name"] = "Birch Bark"
 			loaded.ns.L["binding.birch.description"] = "Pale bark with dark flecks."
+			-- As before the committed Lore.lua had them (LED-R161): level10's keys with no text.
+			loaded.ns.L["binding.level10.name"] = nil
+			loaded.ns.L["binding.level10.description"] = nil
 			loaded.client.fire("ADDON_LOADED", "Pagle_Ledger")
 
 			assert.are.same({ "Birch Bark", "Pale bark with dark flecks." }, {
