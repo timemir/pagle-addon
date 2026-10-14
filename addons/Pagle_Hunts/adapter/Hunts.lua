@@ -53,6 +53,23 @@ function ns.Hunts.OnInitialize()
 		end,
 		ServerTime = GetServerTime,
 	}))
+	--- Hunts' moments, Write-up and summary line (HNT-R85–R91, HNT-R111, HNT-R112): the projection's outlets and the
+	--- redraws reach them (logic/Moments.lua).
+	ns.moments = ns.NewHuntsMoments(ns.db.global, {
+		RaiseMoment = function(moment)
+			ns.Module:RaiseMoment(moment)
+		end,
+		RaiseWriteUp = function(section)
+			ns.Module:RaiseWriteUp(section)
+		end,
+		SetSummaryLine = function(text)
+			ns.Module:SetSummaryLine("hunts", text)
+		end,
+		FormatNumber = function(n)
+			return BreakUpLargeNumbers(n)
+		end,
+		ServerTime = GetServerTime,
+	})
 
 	-- Grouping (HNT-R40–R44): pins of Hunts gone are dropped now; the first grouping waits for the world.
 	ns.StartGroups()
