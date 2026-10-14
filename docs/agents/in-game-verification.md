@@ -101,3 +101,33 @@ The dev does everything in the game: casting, combat, killing the client, clicki
 | 6 Crash | kills the client with `taskkill /F` (not **End task**, which closes cleanly), logs in, `/reload` | the leased CVars after the kill and after the `/reload`; the dev posts the result on #72 |
 | 7 Conflict popup | sees the popup, clicks "Use Pagle", reloads, the key works | Angleur `disabled` after the `/reload` |
 | 8 QoL off | disables Pagle_QoL, `/reload`, fishes, checks the Fishing page and the bindings are gone | Pagle_QoL `disabled` and the new `C1` entries after a `/reload` |
+
+## Test logs (#172)
+
+The M4 exit check needs an Angler a few Catches short of level 10, of level 60 and of 1,000 lifetime Catches. Nothing in the game appends to the Catch log by hand, so `scripts/make-test-log.sh` writes a **test log**: a copy of the dev's `Pagle.lua` with `PagleLog` replaced by a synthetic one, `PagleDB` and every other line kept byte for byte. Run it in WSL with the game fully closed: the client rewrites every SavedVariables file at logout, over whatever was put there.
+
+| Preset | The log folds to | Exit-check step |
+|---|---|---|
+| `level10` | Angler Level 9, three Catches short of level 10 | 2 |
+| `level60` | Angler Level 59, three Catches short of level 60 | 3 |
+| `catches1000` | 995 lifetime Catches, five short of the 1,000 Catches milestone | 5 |
+
+`level10` can't also be at 995 Catches: 995 Catches earn at least 12,950 XP (10 each, the first 300 doubled by Fresh Water, LED-R20, LED-R22), past the 12,600 level 10 costs (LED-R30). So step 5 has its own preset.
+
+The log has a new `logId` (LOG-R15), the dev's own `characters`, their last `B1`, each character's last `S1` (so Core appends no Skill Reading at login, whose Skill Milestones would earn XP, LOG-R31, LED-R40), and caught `C1` Casts for the character of the dev's last Cast: one item each, an ordinary Species, junk or trophy on a charted zone's list outside any window (never a Legend, Noise or an Uncharted item), the zones the dev fished first. The Casts come in sessions of 60, 30 s apart, 12 h between session starts, the last an hour before the run, so Fresh Water doubles every test Catch and the next three. Core's codec (`addons/Pagle/logic/CatchLog.lua`) writes the entries, and the Ledger's own `logic/` (from `Pagle_Ledger.toc`) folds the written log over the catalogue (the repo's, or `--catalogue <file>`, such as the installed addon's): nothing is written unless it lands where the preset says. It prints the level, the XP to the next one, the XP one more Catch gives and lifetime Catches.
+
+```sh
+ACCT="/mnt/g/World of Warcraft/_classic_beta_/WTF/Account/<ACCT>"
+scripts/make-test-log.sh --account "$ACCT" --preset level10     # reads the account, writes only the stage
+scripts/make-test-log.sh --account "$ACCT" --install            # the game fully closed
+# play: log in as the character it names
+scripts/make-test-log.sh --account "$ACCT" --restore            # the game fully closed
+```
+
+- **`--preset`** only reads the account folder. It writes a stage folder `<out>/<ACCT>/<UTC time>-<preset>/` (`--out` defaults to `~/pagle-test-logs`, outside the WTF folder): first `original/`, a byte-for-byte backup of `Pagle.lua`, `Pagle_Ledger.lua` and their `.bak`, then the test `Pagle.lua` and `stage.txt` (the preset, both logIds, the character). When a test log is installed, the backup is copied from that test log's stage, so switching presets never backs up a test log as the real one.
+- **`--install`** copies the newest stage's `Pagle.lua` into `SavedVariables/`, only when the account's `Pagle.lua` is still the one backed up, or is a test log made here (switching presets). Otherwise the backup is stale: run `--preset` again.
+- **The next login is a first build.** The new `logId` makes Core rebuild every projection (LOG-R72); the Ledger empties its celebrated set and writes itself up from the test log in one Write-up section, with no moment (LED-R90, LED-R93). The Catches after it are live, so the milestone's moments are raised.
+- **`--restore`** puts back the backup of the stage whose test log is installed: the four files byte for byte, and a file that wasn't there (a `Pagle_Ledger.lua.bak` the test play made) removed. The real `Pagle_Ledger.lua` comes back with the real `logId` and celebrated set, so nothing rebuilds or is written up again. It refuses while the real log is in place, so it can never put an old backup over newer real Catches.
+- `--install` and `--restore` first copy every file they replace into `<stage>/replaced-<UTC time>/`, so nothing is lost, and the `.sh` refuses both while a WoW process runs. Every refusal exits 1 and changes nothing.
+
+The stage folders hold the dev's account folder name and characters: they stay outside the repo.
