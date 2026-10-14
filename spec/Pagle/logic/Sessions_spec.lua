@@ -334,6 +334,70 @@ describe("the Session events", function()
 		assert.is_nil(seen.tracker:Get(T + 910))
 	end)
 
+	describe("ended early by /pagle dev endsession", function()
+		it("fires SessionEnded now, as if the gap had passed, and serves no open Session (#247, LOG-R62)", function()
+			local seen = tracked({})
+			seen.tracker:Start(T)
+			castAt(seen, 0)
+
+			assert.is_true(seen.tracker:EndNow(T + 60))
+			seen.tracker:Tick(T + ns.SESSION_GAP)
+
+			assert.are.same({ "SessionStarted " .. idAt(0), "SessionEnded " .. idAt(0) }, seen.fired)
+			assert.is_nil(seen.payloads[2].whileAway)
+			assert.are.equal(idAt(0), seen.global.lastEndedSession)
+			assert.is_nil(seen.tracker:Get(T + 60))
+			assert.are.equal(1, #seen.catchLog.data.entries)
+		end)
+
+		it("ends nothing with no Session open (#247, LOG-R64)", function()
+			local seen = tracked({ cast(0) })
+			local later = 2 * ns.SESSION_GAP
+			seen.tracker:Start(T + later)
+
+			assert.is_false(seen.tracker:EndNow(T + later))
+			castAt(seen, later)
+			assert.is_true(seen.tracker:EndNow(T + later + 10))
+			assert.is_false(seen.tracker:EndNow(T + later + 20))
+
+			assert.are.same({
+				"SessionEnded " .. idAt(0) .. " whileAway",
+				"SessionStarted " .. idAt(later),
+				"SessionEnded " .. idAt(later),
+			}, seen.fired)
+		end)
+
+		it("reopens it with SessionStarted when a Cast still joins it, and ends it again (#247, LOG-R60)", function()
+			local seen = tracked({})
+			seen.tracker:Start(T)
+			castAt(seen, 0)
+			seen.tracker:EndNow(T + 10)
+
+			castAt(seen, 20)
+			assert.are.equal(idAt(0), seen.tracker:Get(T + 20).id)
+			seen.tracker:Tick(T + 20 + ns.SESSION_GAP)
+
+			assert.are.same({
+				"SessionStarted " .. idAt(0),
+				"SessionEnded " .. idAt(0),
+				"SessionStarted " .. idAt(0),
+				"SessionEnded " .. idAt(0),
+			}, seen.fired)
+			assert.are.equal(2, seen.payloads[3].casts)
+		end)
+
+		it("stays ended after a reload within the gap: lastEndedSession names it (#247, LOG-R63)", function()
+			local seen = tracked({ cast(0) }, { lastEndedSession = idAt(0) })
+
+			assert.is_nil(seen.tracker:Start(T + 10))
+			seen.tracker:Idle()
+			seen.tracker:Tick(T + ns.SESSION_GAP)
+
+			assert.are.same({}, seen.fired)
+			assert.is_nil(seen.tracker:Get(T + 10))
+		end)
+	end)
+
 	describe("at login", function()
 		it(
 			"fires SessionEnded with whileAway for a Session ended while away, once, when Idle comes (LOG-R63)",
