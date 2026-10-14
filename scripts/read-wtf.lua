@@ -1246,7 +1246,8 @@ local function printHunts(account, log, options)
 	local hunts, listErr = loadHuntsLogic(options.huntList)
 	local now = options.now or os.time()
 	local global = tableOr(db.global)
-	local stored, list, state = global.projection, nil, nil
+	local stored = global.projection
+	local list, state
 	if type(stored) ~= "table" or type(stored.projection) ~= "table" then
 		print("projection: none stored (no build has finished, LOG-R72)")
 		list = not listErr and hunts.hunts or nil
