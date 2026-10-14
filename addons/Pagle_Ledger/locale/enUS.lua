@@ -145,4 +145,22 @@ ns.L = {
 	ANGLER_MILESTONE_DONE = "☑ %d",
 	ANGLER_MILESTONE_OPEN = "☐ %d",
 	ANGLER_MILESTONE_SEPARATOR = "   ",
+
+	-- Stars as the Journal prints them (LED-R48): a shown star, a blank one.
+	STAR_ON = "★",
+	STAR_OFF = "☆",
+	-- The Trophy Room (LED-R143, LED-R62). Numbers in %s are BreakUpLargeNumbers'.
+	TROPHY_TITLE = "The Trophy Room",
+	TROPHY_WEIGHTS = "%s of %s weights. Real weights, from the game's own trophy fish.",
+	TROPHY_INDEX_LINE = "%s %s",
+	TROPHY_INDEX_COUNT = "%s / %s",
+	TROPHY_STAMPS = { "Any weight", "Half the weights", "The heaviest" },
+	TROPHY_POUNDS = "pounds, as the game weighs them",
+	TROPHY_LANDED = "Landed %s of %s. Heaviest so far: %s lb.",
+	TROPHY_NONE_LANDED = "Not one of this family yet.",
+	TROPHY_FOUND_IN = "Found in %s.",
+	TROPHY_TICK_MARK = "✓",
+	-- Names as prose: "A, B and C".
+	LIST_COMMA = ", ",
+	LIST_AND = " and ",
 }

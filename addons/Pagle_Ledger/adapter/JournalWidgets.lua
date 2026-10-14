@@ -226,6 +226,13 @@ end
 ---@type table<string, fun(parent: Frame): LedgerJournalWidget>
 local makers = {}
 
+--- Registers `maker` as the widget of block kind `kind`: a spread's own adapter file adds the kinds only it draws.
+---@param kind string
+---@param maker fun(parent: Frame): LedgerJournalWidget
+function ns.RegisterJournalWidget(kind, maker)
+	makers[kind] = maker
+end
+
 makers.kicker = textWidget(function()
 	return ns.JournalFonts().kicker
 end, function()
