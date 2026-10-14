@@ -15,5 +15,6 @@ logic\Data.lua
 logic\Module.lua
 logic\HuntList.lua
 logic\Seams.lua
+logic\Qualify.lua
 logic\Waters.lua
 adapter\Hunts.lua
