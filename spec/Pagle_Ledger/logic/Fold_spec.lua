@@ -493,9 +493,11 @@ describe("The Ledger's fold", function()
 			end
 			local state, earned = applyAll(records)
 
+			local seen = {}
 			for _, achievement in ipairs(earned) do
-				assert.is_true(achievement.kind == "legend" or achievement.kind == "levelUp", achievement.kind)
+				seen[achievement.kind] = true
 			end
+			assert.are.same({ legend = true, levelUp = true }, seen)
 			assert.are.same({}, ns.SpeciesStars(world, state, LEGEND))
 		end)
 
