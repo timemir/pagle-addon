@@ -2,7 +2,7 @@
 local ns = select(2, ...)
 
 -- Core's wiring (CORE-R18): how its projection machinery, Sessions, moments, Session summary, cards, wallet,
--- Prestige and purchase entries and goods are built and connected to each other, to PagleDB and to the Module handle.
+-- Prestige and purchase entries, goods and wallet projection are built and connected to each other, to PagleDB and to the Module handle.
 -- Pure logic over a host (CORE-R7): Core's adapter builds its host over the WoW client (adapter/Host.lua), and
 -- FakePagle builds one over its fakes, so both run this one wiring and the double can't drift from Core. What differs
 -- between them is only the host and the display each factory is handed.
@@ -33,6 +33,7 @@ local ns = select(2, ...)
 ---@field cards PagleCards Core's cards (ns.WireCards).
 ---@field wallet PagleWallet Core's one wallet (ns.WireWallet).
 ---@field goods PagleGoods Core's one goods registry (ns.WireGoods).
+---@field walletProjection PagleProjection? Core's wallet projection, from login step 1 (ns.WireWalletProjection).
 
 --- Core's projection machinery (LOG-R70–R78) as ns.projections, and `M:NewProjection` and `M:IterateCatches` on every
 --- Module handle. Until Module records (M7), a Module's records are the ones Pagle.IterateCatches yields.
@@ -384,5 +385,30 @@ function ns.WireGoods(host)
 		if problem then
 			error(problem, 2)
 		end
+	end
+end
+
+--- Core's wallet projection (LOG-R78, SHOP-R11, SHOP-R34): `ns.StartWalletProjection()` binds it at login step 1,
+--- after the Field report's and ahead of every Module's, to PagleDB.global.projections.wallet (created if missing),
+--- over the log's records. It hands ns.wallet the Coins spent and ns.goods the purchased set: what it stored at
+--- once, its new totals in its done, and each live purchase as it counts.
+---@param host PagleHost
+function ns.WireWalletProjection(host)
+	--- Login step 1, once PagleDB is open and ns.wallet and ns.goods are wired.
+	function ns.StartWalletProjection()
+		local global = host.db().global
+		if type(global.projections) ~= "table" then
+			global.projections = {}
+		end
+		if type(global.projections.wallet) ~= "table" then
+			global.projections.wallet = {}
+		end
+		ns.walletProjection = ns.AddWalletProjection({
+			projections = ns.projections,
+			db = global.projections.wallet,
+			iterate = host.iterate,
+			wallet = ns.wallet,
+			goods = ns.goods,
+		})
 	end
 end
