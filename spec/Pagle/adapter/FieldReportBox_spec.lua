@@ -248,8 +248,8 @@ describe("The Field report box's size (REP-R47)", function()
 			assert.are.same({ 520, 360 }, { frame:GetSize() }, rows .. " rows")
 			assert.are.same({ { "CENTER" } }, frame.points, "anchored only at its centre, never over the screen")
 			assert.are.equal(frame.text, frame.scroll.scrollChild, "the text scrolls in the scroll frame")
-			local width, height = frame.scroll:GetSize()
-			assert.is_true(width < 520 and height < 360, "the scroll frame sits inside the box")
+			-- The scroll frame sits inside the box, between the privacy line and the part controls.
+			assert.are.same({ 452, 180 }, { frame.scroll:GetSize() })
 		end
 	end)
 end)
