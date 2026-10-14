@@ -9,6 +9,8 @@ local DIR = "addons/Pagle_Ledger/"
 local FORBIDDEN = {
 	{ "%f[%w_]PagleLog%f[^%w_]", "ADR 0001, LED-R2: the Ledger reads Catches only through M:IterateCatches" },
 	{ "%f[%w_]PagleDB%f[^%w_]", "ADR 0001: the Ledger never reads Core's SavedVariables" },
+	-- Its state is rebuilt from Catches alone; only the Tackle Board appends Module records (ADR 0008, LOG-R41).
+	{ "%f[%w_]AppendRecord%f[^%w_]", "ADR 0008: the Ledger appends no Module records" },
 }
 -- Every other roster Module (CORE-R1): its addon (its AceAddon and its folder name), any global named after it, and
 -- its DB.
@@ -51,6 +53,7 @@ describe("The Ledger's boundary", function()
 			{ 'C_AddOns.IsAddOnLoaded("Pagle_Hunts")', "ADR 0001: the Ledger calls no other Module" },
 			{ 'local stats = _G["Pagle_Stats"]', "ADR 0001: the Ledger calls no other Module" },
 			{ "Pagle_TackleBoard_Open()", "ADR 0001: the Ledger calls no other Module" },
+			{ 'M:AppendRecord("celebrated", "1")', "ADR 0008: the Ledger appends no Module records" },
 		}
 		for _, case in ipairs(planted) do
 			it(case[1], function()
