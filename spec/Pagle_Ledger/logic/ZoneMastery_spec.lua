@@ -373,29 +373,32 @@ describe("Zone Mastery", function()
 	end
 
 	describe("zone completion (LED-R53)", function()
-		it("counts Lake's 5 listed Species, 2 families, junk and treasure: 9 parts, 100 only at Master", function()
-			local state = fold.reset()
-			assert.are.equal(0, ns.ZoneCompletion(world, state, LAKE))
+		it(
+			"counts Lake's 5 listed Species, 2 families, junk and treasure: 9 parts, 100 only at Master (LED-R53)",
+			function()
+				local state = fold.reset()
+				assert.are.equal(0, ns.ZoneCompletion(world, state, LAKE))
 
-			local seen = {}
-			for _, items in ipairs({
-				{ ANY_1 },
-				{ JUNK },
-				{ NIGHT },
-				{ ANY_2B },
-				{ EVENT },
-				{ ANY_3, CHEST },
-				{ TROPHY_1 },
-				{ TROPHY_2 },
-			}) do
-				applyAll({ cast(LAKE, items) }, state)
-				local completion = ns.ZoneCompletion(world, state, LAKE)
-				seen[#seen + 1] = completion
-				assert.are.equal(state.zones[LAKE].rank == 5, completion == 100)
+				local seen = {}
+				for _, items in ipairs({
+					{ ANY_1 },
+					{ JUNK },
+					{ NIGHT },
+					{ ANY_2B },
+					{ EVENT },
+					{ ANY_3, CHEST },
+					{ TROPHY_1 },
+					{ TROPHY_2 },
+				}) do
+					applyAll({ cast(LAKE, items) }, state)
+					local completion = ns.ZoneCompletion(world, state, LAKE)
+					seen[#seen + 1] = completion
+					assert.are.equal(state.zones[LAKE].rank == 5, completion == 100)
+				end
+
+				assert.are.same({ 11, 22, 33, 44, 55, 77, 88, 100 }, seen)
 			end
-
-			assert.are.same({ 11, 22, 33, 44, 55, 77, 88, 100 }, seen)
-		end)
+		)
 
 		it("is nil for a zone that isn't charted, fished or not (LED-R54)", function()
 			local state = applyAll({ cast(MARSH, { ANY_1 }) })
@@ -412,7 +415,7 @@ describe("Zone Mastery", function()
 		end
 
 		it(
-			"shows Expert for a celebrated 4 over a computed 3, with 2 gated Species and the treasure to find",
+			"shows Expert for a celebrated 4 over a computed 3, with 2 gated Species and the treasure to find (LED-R52)",
 			function()
 				local state = lakeAtLocal()
 				local celebrated = celebratedWith({ [LAKE] = 4 })
@@ -432,18 +435,21 @@ describe("Zone Mastery", function()
 			assert.are.equal(1 + 1 + 4 + 2, ns.NewToFind(world, state, celebrated, LAKE))
 		end)
 
-		it("shows the computed rank, with nothing new to find, when the celebrated one isn't higher", function()
-			local state = lakeAtLocal()
+		it(
+			"shows the computed rank, with nothing new to find, when the celebrated one isn't higher (LED-R52)",
+			function()
+				local state = lakeAtLocal()
 
-			for _, celebrated in ipairs({
-				celebratedWith(),
-				celebratedWith({ [LAKE] = 0 }),
-				celebratedWith({ [LAKE] = 3 }),
-			}) do
-				assert.are.equal(3, ns.ShownZoneRank(world, state, celebrated, LAKE))
-				assert.are.equal(0, ns.NewToFind(world, state, celebrated, LAKE))
+				for _, celebrated in ipairs({
+					celebratedWith(),
+					celebratedWith({ [LAKE] = 0 }),
+					celebratedWith({ [LAKE] = 3 }),
+				}) do
+					assert.are.equal(3, ns.ShownZoneRank(world, state, celebrated, LAKE))
+					assert.are.equal(0, ns.NewToFind(world, state, celebrated, LAKE))
+				end
 			end
-		end)
+		)
 
 		it("shows no rank for a zone that isn't charted, its celebrated rank kept but unused (LED-R54)", function()
 			local state = applyAll({ cast(MARSH, { ANY_1 }) })
@@ -465,7 +471,7 @@ describe("Zone Mastery", function()
 			return ns.NextRequirement(world, state, celebratedWith({ [LAKE] = rank }), LAKE)
 		end
 
-		it("reads from the shown rank, rank by rank up Lake's climb", function()
+		it("reads from the shown rank, rank by rank up Lake's climb (LED-R134)", function()
 			assert.are.equal("Catch anything here to become a Visitor", nextFor({}))
 			assert.are.equal("Regular: 2 more any-time Species", nextFor({ { JUNK } }))
 			assert.are.equal("Regular: 1 more any-time Species", nextFor({ { ANY_1 } }))
@@ -506,11 +512,11 @@ describe("Zone Mastery", function()
 			)
 		end)
 
-		it("puts new to find in place of Master of these waters at a celebrated Master", function()
+		it("puts new to find in place of Master of these waters at a celebrated Master (LED-R134)", function()
 			assert.are.equal("8 new to find: the data grew, and your seal stays", nextFor({ { ANY_1 } }, 5))
 		end)
 
-		it("is new to find alone when the rank above the shown one needs nothing more of its own", function()
+		it("is new to find alone when the rank above the shown one needs nothing more of its own (LED-R134)", function()
 			-- Shown Local over a computed Visitor, with Expert's own parts all met.
 			assert.are.equal(
 				"2 new to find: the data grew, and your seal stays",
