@@ -27,25 +27,6 @@ ns.FIELD_REPORT_FORMAT = "PAGLE-REPORT 1"
 --- Tunable: the most bytes a part may hold, its header lines and END included (REP-R33).
 ns.FIELD_REPORT_PART_BYTES = 60000
 
---- One row as ticket #121's `ns.FieldReportRows()` hands it over, unsorted (REP-R20–R22).
----@class PagleReportRow
----@field kind "I"|"K"|"P"
----@field area integer        -- the report area (REP-R3)
----@field build integer?      -- I, K: the build (REP-R4)
----@field item integer?       -- I
----@field count integer?      -- I: Catches
----@field auras integer[]?    -- I: active listed auras, ascending, maybe empty
----@field events integer[]?   -- I: active listed events, ascending, maybe empty
----@field t integer?          -- I: the start of the 15-minute realm-time bucket, in realm minutes of the day
----@field m integer?          -- I: the realm month, 1–12
----@field casts integer?      -- K, P
----@field away integer?       -- K
----@field land integer?       -- K
----@field lost integer?       -- K
----@field locale string?      -- P
----@field text string?        -- P: the hovered text
----@field items { item: integer, count: integer }[]? -- P: ascending by item
-
 --- What the adapter looks up for the header (REP-R30, REP-R36).
 ---@class PagleReportHeader
 ---@field addon string        -- C_AddOns.GetAddOnMetadata("Pagle", "Version")
@@ -321,9 +302,9 @@ local function fill(lines, header, digits)
 	return groups
 end
 
---- The Field report's text, as its parts in order (REP-R23, REP-R30–R33, REP-R36). `rows` is ticket #121's, in any
---- order, and isn't changed. Each part is `PAGLE-REPORT 1`, the header, its rows in sort order and END, at most
---- `ns.FIELD_REPORT_PART_BYTES` bytes; a row is never cut. No rows give one part with none.
+--- The Field report's text, as its parts in order (REP-R23, REP-R30–R33, REP-R36). `rows` are ns.FieldReportRows()'s,
+--- in any order, and aren't changed. Each part is `PAGLE-REPORT 1`, the header, its rows in sort order and END, at
+--- most `ns.FIELD_REPORT_PART_BYTES` bytes; a row is never cut. No rows give one part with none.
 ---@param rows PagleReportRow[]
 ---@param header PagleReportHeader
 ---@param names PagleReportNames

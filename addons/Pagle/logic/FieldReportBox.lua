@@ -15,12 +15,12 @@ ns.FIELD_REPORT_URL = "https://github.com/timemir/wow-fish/issues/new?template=f
 ---@field parts string[]    -- the report's parts, in order (REP-R33); none with a message
 ---@field url string?       -- the issue form (REP-R46); nil with a message
 
---- What the box shows for `rows` (ticket #121's ns.FieldReportRows(): nil while the projection is updating):
+--- What the box shows for `rows` (ns.FieldReportRows(): nil while the projection is updating):
 --- "Updating… try again in a moment." while it updates (REP-R42), "Nothing to report. Thanks for checking!" with
 --- no row (REP-R41), and otherwise the report's parts from `text` (ns.FieldReportText) with the issue form's URL. The
 --- URL goes with the text: with a message there's nothing to paste.
----@param rows table[]?
----@param text fun(rows: table[]): string[]
+---@param rows PagleReportRow[]?
+---@param text fun(rows: PagleReportRow[]): string[]
 ---@return PagleFieldReportView
 function ns.FieldReportView(rows, text)
 	if rows == nil then
@@ -74,11 +74,11 @@ end
 
 --- What Pagle.OpenFieldReport is handed: where Core runs it (adapter/FieldReportBox.lua, or FakePagle).
 ---@class PagleFieldReportSeams
----@field isRestricted fun(): boolean            -- Pagle.IsRestricted()
----@field print fun(line: string)                -- prints a chat line
----@field rows fun(): table[]?                   -- ns.FieldReportRows()
----@field text fun(rows: table[]): string[]      -- ns.FieldReportText
----@field show fun(view: PagleFieldReportView)   -- opens the box at part 1 with this view
+---@field isRestricted fun(): boolean              -- Pagle.IsRestricted()
+---@field print fun(line: string)                  -- prints a chat line
+---@field rows fun(): PagleReportRow[]?            -- ns.FieldReportRows()
+---@field text fun(rows: PagleReportRow[]): string[] -- ns.FieldReportText
+---@field show fun(view: PagleFieldReportView)     -- opens the box at part 1 with this view
 
 --- Pagle.OpenFieldReport (REP-R40–R44), which every entry point calls: while restricted it prints "Pagle: the Field
 --- report opens after combat." and opens nothing, leaving a box already open as it is (REP-R44, CORE-R33);

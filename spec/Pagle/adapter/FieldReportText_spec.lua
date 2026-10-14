@@ -42,7 +42,7 @@ describe("ns.FieldReportText", function()
 		return loaded
 	end
 
-	-- One row of each kind in ticket #121's shape.
+	-- One row of each kind as ns.FieldReportRows() hands it over (PagleReportRow).
 	local ROWS = {
 		{ kind = "I", item = 6362, area = 33, build = 70338, count = 2, auras = {}, events = {} },
 		{ kind = "I", item = 6359, area = 1519, build = 70338, count = 1, auras = {}, events = {} },

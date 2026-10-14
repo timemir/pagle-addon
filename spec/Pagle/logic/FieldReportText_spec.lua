@@ -29,7 +29,7 @@ describe("ns.FieldReportParts", function()
 		logId = "3f9a2c1e7b0d4a65",
 	}
 
-	-- An I row in ticket #121's shape, with no aura, event, t or m unless `extra` sets them.
+	-- An I row as ns.FieldReportRows() hands it over, with no aura, event, t or m unless `extra` sets them.
 	local function iRow(item, area, build, count, extra)
 		local row = { kind = "I", item = item, area = area, build = build, count = count, auras = {}, events = {} }
 		for key, value in pairs(extra or {}) do
