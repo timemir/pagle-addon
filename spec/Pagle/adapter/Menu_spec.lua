@@ -60,7 +60,7 @@ describe("The compartment entry", function()
 		assert.are.equal("Pagle · 2 waiting", loaded.client.compartment[1].text)
 		loaded.client.clickCompartment("Pagle · 2 waiting")
 		loaded.client.runTimers()
-		assert.are.same({ curioShop(0), "Settings" }, loaded.client.menus[1].texts())
+		assert.are.same({ curioShop(0), "Help chart the waters", "Settings" }, loaded.client.menus[1].texts())
 	end)
 
 	it(
@@ -70,7 +70,7 @@ describe("The compartment entry", function()
 			loaded.client.fire("PLAYER_LOGIN")
 
 			local menu = clickCompartment(loaded)
-			assert.are.same({ curioShop(0), "Settings" }, menu.texts())
+			assert.are.same({ curioShop(0), "Help chart the waters", "Settings" }, menu.texts())
 			menu.click("Settings")
 
 			assert.are.same({ "Pagle" }, openedNames(loaded))
@@ -125,10 +125,15 @@ describe("The compartment menu with Modules", function()
 
 			local menu = clickCompartment(loaded)
 
-			assert.are.same(
-				{ "Hunts", "Hunt map", "Pin a Hunt", "Input: Both 1", curioShop(0), "Settings" },
-				menu.texts()
-			)
+			assert.are.same({
+				"Hunts",
+				"Hunt map",
+				"Pin a Hunt",
+				"Input: Both 1",
+				curioShop(0),
+				"Help chart the waters",
+				"Settings",
+			}, menu.texts())
 		end
 	)
 
@@ -179,7 +184,7 @@ describe("The compartment menu with Modules", function()
 		})
 		loaded.client.fire("PLAYER_LOGIN")
 
-		assert.are.same({ curioShop(0), "Settings" }, clickCompartment(loaded).texts())
+		assert.are.same({ curioShop(0), "Help chart the waters", "Settings" }, clickCompartment(loaded).texts())
 		assert.are.equal(1, #reported)
 		assert.matches("no input yet", reported[1], 1, true)
 	end)
@@ -203,11 +208,11 @@ describe("The compartment menu's Curio Shop entry", function()
 		local ledger, board = withPayers(loaded)
 		ledger:ReportCoinsEarned(1200)
 		board:ReportCoinsEarned(150)
-		assert.are.same({ curioShop("1,350"), "Settings" }, clickCompartment(loaded).texts())
+		assert.are.same({ curioShop("1,350"), "Help chart the waters", "Settings" }, clickCompartment(loaded).texts())
 
 		board:ReportCoinsEarned(750)
 
-		assert.are.same({ curioShop("1,950"), "Settings" }, clickCompartment(loaded).texts())
+		assert.are.same({ curioShop("1,950"), "Help chart the waters", "Settings" }, clickCompartment(loaded).texts())
 	end)
 
 	it("is disabled until the Curio Shop exists, so clicking it does nothing (CORE-R50)", function()
@@ -229,7 +234,7 @@ describe("The compartment menu's Curio Shop entry", function()
 		ledger:ReportCoinsEarned(400)
 		loaded.ns.wallet:SetSpent(900)
 
-		assert.are.same({ curioShop(0), "Settings" }, clickCompartment(loaded).texts())
+		assert.are.same({ curioShop(0), "Help chart the waters", "Settings" }, clickCompartment(loaded).texts())
 	end)
 end)
 
@@ -240,7 +245,7 @@ describe("The compartment menu while restricted", function()
 		setCombat(loaded, true)
 
 		local menu = clickCompartment(loaded)
-		assert.are.same({ curioShop(0), "Settings" }, menu.texts())
+		assert.are.same({ curioShop(0), "Help chart the waters", "Settings" }, menu.texts())
 		menu.click("Settings")
 
 		assert.are.same({}, openedNames(loaded))

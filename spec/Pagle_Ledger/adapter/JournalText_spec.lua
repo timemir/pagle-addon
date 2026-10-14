@@ -119,7 +119,7 @@ describe("the Journal's words on the client", function()
 	it("leave a lore key with no text out (LED-R161)", function()
 		local _, loaded = loggedIn()
 
-		assert.is_nil(loaded.ns.journalText:Lore("line.unchartedwaters.text"))
+		assert.is_nil(loaded.ns.journalText:Lore("line.neverwritten.text"))
 	end)
 
 	it('label continent tabs from GetMapInfo, and any other continent "Other waters" (LED-R126, LED-R130)', function()
