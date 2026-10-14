@@ -28,8 +28,10 @@ logic\JournalTile.lua
 logic\JournalSpecies.lua
 logic\Home.lua
 logic\JournalAngler.lua
+logic\JournalCollections.lua
 adapter\JournalWidgets.lua
 adapter\JournalText.lua
+adapter\JournalCollections.lua
 adapter\JournalSearch.lua
 adapter\Journal.lua
 adapter\Ledger.lua

@@ -237,6 +237,13 @@ end
 ---@type table<string, fun(parent: Frame): LedgerJournalWidget>
 local makers = {}
 
+--- Registers `maker` as the widget of block kind `kind`: a spread's own adapter file adds the kinds only it draws.
+---@param kind string
+---@param maker fun(parent: Frame): LedgerJournalWidget
+function ns.RegisterJournalWidget(kind, maker)
+	makers[kind] = maker
+end
+
 makers.kicker = textWidget(function()
 	return ns.JournalFonts().kicker
 end, function()
@@ -255,21 +262,24 @@ end, function(block)
 	return TEXT_COLORS[block.color] or (block.hand and LOOK.blue) or LOOK.ink
 end)
 
--- A link: red ink, or in handwriting blue ink (Notes to self, LED-R133), wrapping across the width, opening its place.
+-- A link: red ink, or in handwriting blue ink (Notes to self, LED-R133), wrapping across the width, opening its place,
+-- or calling its action instead (the Field report, REP-R43).
 function makers.link(parent)
 	local widget = newWidget(parent)
 	local text = ns.JournalText(widget, ns.JournalFonts().text, LOOK.red)
 	text:SetPoint("TOPLEFT")
 	text:SetWordWrap(true)
 	widget.label = text
-	local place, openPlace
+	local place, action, openPlace
 	widget:SetScript("OnClick", function()
-		if place then
+		if action then
+			action()
+		elseif place then
 			openPlace(place)
 		end
 	end)
 	function widget.Fill(_, block, width, open)
-		place, openPlace = block.place, open
+		place, action, openPlace = block.place, block.action, open
 		local ink = block.hand and LOOK.blue or LOOK.red
 		text:SetFontObject(block.hand and ns.JournalFonts().hand or ns.JournalFonts().text)
 		text:SetTextColor(ink[1], ink[2], ink[3])
