@@ -478,9 +478,12 @@ part(function(fake, Pagle, ns)
 	end
 end)
 
--- Condition specs (LOG-R48): pure, so the real one.
+-- Condition specs (LOG-R48): pure, so the real one. A Module hands back the specs and conditions Core gave it, here
+-- read-only proxies, which the real one sees through as Core does its own tables in the client.
 part(function(_, Pagle, ns)
-	Pagle.MatchesConditions = ns.MatchesConditions
+	function Pagle.MatchesConditions(spec, snapshot)
+		return ns.MatchesConditions(originalOf[spec] or spec, originalOf[snapshot] or snapshot)
+	end
 end)
 
 -- The Catch log (LOG-R10–R16, LOG-R42) on Core's real codec, over an empty in-memory PagleLog. A spec adds
