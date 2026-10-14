@@ -7,9 +7,9 @@ import pytest
 
 from areas_fixture import write_areas
 from baseline_fixture import CSVS, write_baseline
+from cli_fixture import run
 from item_fixture import write_item_layer
 from observed_fixture import NO_FACTS, write_observed
-from pagle_data.cli import main
 from pools_fixture import write_pools
 from windows_fixture import write_windows
 
@@ -233,12 +233,6 @@ def write_tree(
     (db2 / "areas.csv").write_text(AREAS_CSV, encoding="utf-8")
     (db2 / "items.csv").write_text("ID,ClassID,SubclassID,OverallQualityID,Display_lang\n", encoding="utf-8")
     return root
-
-
-def run(root: Path, capsys: pytest.CaptureFixture[str], *args: str) -> tuple[int, str]:
-    code = main(list(args), root)
-    out, err = capsys.readouterr()
-    return code, out + err
 
 
 def generated(root: Path, capsys: pytest.CaptureFixture[str]) -> str:
