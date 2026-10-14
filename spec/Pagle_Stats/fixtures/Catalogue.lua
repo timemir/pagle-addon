@@ -12,6 +12,10 @@
 --   Elwynn Forest (12)    a zone with no skillBase, so no line and side `na` (STA-R12, STA-R13)
 --   Stranglethorn (33)    a zone whose line isn't confirmed: skillBase 130, skillBaseConfirmed = false
 --   Stormwind City (1519) an area with hasData = false: no catch data (LOG-R55)
+--   Feralas (357)         skillBase 205, so its line is 300 (STA-R12); its windows come from a Noise item (day), a fish
+--                         (night) and a removed item (summer), so a zone's windows include Noise's and removed ones'
+--                         (STA-R16)
+--     Feathermoon Stronghold (1116)  a subzone with its own skillBase (300), which its zone's line overrides (STA-R12)
 --
 --   Nightfin (13759)      gated by `night` in Darkshore, ungated in Elwynn (STA-R14)
 --   Firefin (6359)        gated by `night` in Darkshore's own list, ungated in Auberdine's: mixed entries in one zone,
@@ -31,6 +35,7 @@
 
 local DARKSHORE, AUBERDINE, BASHAL_ARAN = 148, 442, 446
 local ELWYNN, STRANGLETHORN, STORMWIND = 12, 33, 1519
+local FERALAS, FEATHERMOON = 357, 1116
 
 local MACKEREL, BLACKMOUTH, FIREFIN, NIGHTFIN = 6303, 6358, 6359, 13759
 local BASS, MUD_SNAPPER, SMALLFISH = 13756, 6289, 6291
@@ -138,6 +143,16 @@ return {
 			catches = { listed(MACKEREL), listed(MANA_POTION) },
 		}),
 		[STORMWIND] = area({ hasData = false }),
+		[FERALAS] = area({
+			continent = 1,
+			skillBase = 205,
+			catches = {
+				gated(NIGHTFIN, "night", NIGHT),
+				gated(MANA_POTION, "day", DAY),
+				gated(RUSTED_LURE, "summer", SUMMER),
+			},
+		}),
+		[FEATHERMOON] = area({ parent = FERALAS, continent = 1, skillBase = 300 }),
 	},
 	aliases = {},
 	pools = { oilyBlackmouthSchool = { BLACKMOUTH } },
