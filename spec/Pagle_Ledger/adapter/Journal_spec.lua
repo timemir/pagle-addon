@@ -371,7 +371,7 @@ describe("the Fish Journal's widgets (ledger.md › UI)", function()
 		assert.are.same({ "Home" }, crumbLabels(loaded))
 	end)
 
-	it("hides the widgets a redraw no longer uses", function()
+	it("hides the widgets a redraw no longer uses (ledger.md › UI, LED-R123)", function()
 		local loaded = drawn({ { kind = "seal", text = "Local" }, { kind = "seal", text = "Expert" } })
 
 		loaded.ns.journal:OpenPlace(loaded.ns.JournalPlace.home())
