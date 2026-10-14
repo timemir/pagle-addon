@@ -156,7 +156,9 @@ describe("the Hunts board's pages (the page router)", function()
 	end)
 
 	it("leaves a page blank in a mode with no renderer for it", function()
-		local _, _, board = loggedIn()
+		local loaded, _, board = loggedIn()
+		-- Only this spec's renderers: the board tickets' own (#194's entry) register at load.
+		board.router = loaded.ns.NewBoardRouter()
 		local draws = {}
 		board:RegisterPage("board", "left", writer("timeline", draws))
 		board:RegisterPage("board", "right", writer("entry", draws))
