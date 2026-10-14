@@ -8,8 +8,8 @@ local ns = select(2, ...)
 -- The Stats book's art kit (STA-R70, stats.md › UI): the book language's tints, fonts and in-client textures, and a
 -- widget maker for each piece the book and its pages draw: the leather, parchment, ribbons and the nameplate for the
 -- shell (adapter/Book.lua); a kicker, a title, a handwriting line, a heading with its small note, a "☛" link, sepia
--- ink icons, an ink bar, a ruled ledger and a tile for the pages (#212–#217); and the fleuron and pointing hands,
--- drawn as textures, never as font glyphs. The look follows prototypes/stats-window/ variant D. Stats shares no code
+-- ink icons, an ink bar, a ruled ledger, a tile, a place's row and a short list's line for the pages (#212–#217); and
+-- the fleuron, pointing hands and star, drawn as textures, never as font glyphs. The look follows prototypes/stats-window/ variant D. Stats shares no code
 -- with the Ledger's Fish Journal (ADR 0001), though some textures and fonts are the same client files. Every texture
 -- sits on a solid tint or carries a vertex tint, so a texture the client lacks leaves the tint showing.
 --
@@ -66,6 +66,17 @@ ns.BOOK_LOOK = {
 	plateEdge = tint("4a3008"),
 	plateText = tint("2a1a04"),
 	searchPaper = tint("efe0bb"), -- the search box (#215)
+	margin = tint("7a6a50"), -- a row's margin: its Dry spell in handwriting
+	-- Item names by quality, in inks that read on the paper (variant D's `.vD .qn.q<n>`; the game's own white and
+	-- yellows don't): poor, common, uncommon, rare, epic, then legendary in a dark orange of our own.
+	quality = {
+		[0] = tint("7a7060"),
+		tint("3a2614"),
+		tint("2a7a1a"),
+		tint("1a4a9a"),
+		tint("6a2a9a"),
+		tint("9a5a10"),
+	},
 }
 local LOOK = ns.BOOK_LOOK
 
@@ -83,6 +94,8 @@ ns.BOOK_TEXTURES = {
 	-- The fleuron between crumbs (the quest log's bullet) and the pointing hand (the gauntlet cursor).
 	fleuron = "Interface\\QuestFrame\\UI-Quest-BulletPoint",
 	hand = "Interface\\Cursor\\Point",
+	-- The star raid target (Blizzard_ChatFrameBase/Shared/ChatFrameConstants.lua's {rt1}): a watched row's ★.
+	star = "Interface\\TargetingFrame\\UI-RaidTargetingIcon_1",
 }
 local TEXTURES = ns.BOOK_TEXTURES
 
@@ -230,11 +243,13 @@ end
 --- A mark drawn as a texture (STA-R70's art, never a font glyph): the fleuron between crumbs in the fleuron's gilt,
 --- the pointing hand "☛" after a link, or "☚" before one, in red ink. The gauntlet cursor points up and to the left:
 --- mirrored and turned it points right, turned the other way it points left.
----@alias StatsBookMark "fleuron"|"hand"|"handLeft"
+--- The star "★" marks a watched row, in red ink.
+---@alias StatsBookMark "fleuron"|"hand"|"handLeft"|"star"
 
 ---@type table<StatsBookMark, { texture: string, color: number[], mirror: boolean, turn: number }>
 local MARKS = {
 	fleuron = { texture = TEXTURES.fleuron, color = LOOK.fleuron, mirror = false, turn = 0 },
+	star = { texture = TEXTURES.star, color = LOOK.red, mirror = false, turn = 0 },
 	hand = { texture = TEXTURES.hand, color = LOOK.red, mirror = true, turn = -math.pi / 4 },
 	handLeft = { texture = TEXTURES.hand, color = LOOK.red, mirror = false, turn = math.pi / 4 },
 }
@@ -537,6 +552,159 @@ function ns.NewBookTile(parent, width, height)
 		end or nil)
 	end
 	return tile
+end
+
+--- An item name's ink on the paper by its quality (variant D): `ns.BOOK_LOOK.quality`, or plain ink for a quality it
+--- has none for or none known (an Uncharted item the client hasn't described).
+---@param quality integer?
+---@return number[]
+function ns.BookQualityInk(quality)
+	return quality and LOOK.quality[quality] or LOOK.ink
+end
+
+--- A row on a place's page (stats.md › UI › Place spread): an ink icon, the name in its quality's ink, ★ when watched,
+--- Your odds in short ("learning {n}/100" in handwriting, "not seen yet" in the note's italic ink), and in the margin,
+--- in handwriting, the Dry spell with ", unlucky" or ", very unlucky" after it in red. Clicking it chooses the item;
+--- the chosen row is shaded.
+---@class StatsBookRowData
+---@field icon string|integer
+---@field name string
+---@field ink number[]                 -- the name's ink (ns.BookQualityInk)
+---@field watched boolean
+---@field odds string
+---@field oddsState "learning"|"unseen"|"known"
+---@field margin string?               -- nothing in the margin when nil
+---@field band string?                 -- red, after the margin
+---@field chosen boolean
+---@field onClick fun()?
+
+---@class StatsBookRowView: Button
+---@field isBookRow true
+---@field shade Texture
+---@field icon StatsBookIconView
+---@field name FontString
+---@field star Texture
+---@field odds FontString
+---@field margin FontString
+---@field band FontString
+---@field SetRow fun(self: StatsBookRowView, row: StatsBookRowData)
+
+-- A row's height, its icon's size, the margin's width and the gap before it.
+local ROW_HEIGHT, ROW_ICON, ROW_MARGIN, ROW_GAP = 24, 20, 104, 8
+-- How much room a row's odds take at most, and the star's size.
+local ROW_ODDS, ROW_STAR = 96, 12
+
+---@param parent Frame
+---@param width number
+---@return StatsBookRowView
+function ns.NewBookRow(parent, width)
+	local row = CreateFrame("Button", nil, parent) --[[@as StatsBookRowView]]
+	row:SetSize(width, ROW_HEIGHT)
+	row.isBookRow = true
+	row.shade = ns.BookSolid(row, LOOK.shade, "BACKGROUND", LOOK.shadeAlpha)
+	row.icon = ns.NewBookIcon(row, ROW_ICON)
+	row.icon:SetPoint("LEFT", 2, 0)
+	local faces = ns.BookFonts()
+	row.name = ns.BookText(row, faces.text, LOOK.ink)
+	row.name:SetPoint("LEFT", row.icon, "RIGHT", 6, 0)
+	row.name:SetWordWrap(false)
+	row.star = ns.NewBookMark(row, "star", ROW_STAR)
+	row.star:SetPoint("LEFT", row.name, "RIGHT", 3, 0)
+	row.odds = ns.BookText(row, faces.small, LOOK.title)
+	row.odds:SetPoint("RIGHT", -(ROW_MARGIN + ROW_GAP), 0)
+	row.odds:SetJustifyH("RIGHT")
+	row.margin = ns.BookText(row, faces.hand, LOOK.margin)
+	row.margin:SetJustifyH("RIGHT")
+	row.band = ns.BookText(row, faces.hand, LOOK.red)
+	row.band:SetPoint("RIGHT", -2, 0)
+	row.band:SetJustifyH("RIGHT")
+	-- The name's room: the row less the icon, the star, the odds and the margin.
+	local nameRoom = width - (ROW_ICON + 8) - (ROW_STAR + 6) - ROW_ODDS - ROW_MARGIN - ROW_GAP
+	function row.SetRow(self, data)
+		self.icon:SetIcon(data.icon)
+		self.name:SetText(data.name)
+		self.name:SetTextColor(data.ink[1], data.ink[2], data.ink[3])
+		self.name:SetWidth(math.min(self.name:GetStringWidth() + 1, nameRoom))
+		self.star:SetShown(data.watched)
+		self.odds:SetText(data.odds)
+		if data.oddsState == "learning" then
+			self.odds:SetFontObject(faces.hand)
+			self.odds:SetTextColor(LOOK.hand[1], LOOK.hand[2], LOOK.hand[3])
+		elseif data.oddsState == "unseen" then
+			self.odds:SetFontObject(faces.note)
+			self.odds:SetTextColor(LOOK.note[1], LOOK.note[2], LOOK.note[3])
+		else
+			self.odds:SetFontObject(faces.small)
+			self.odds:SetTextColor(LOOK.title[1], LOOK.title[2], LOOK.title[3])
+		end
+		self.margin:SetText(data.margin or "")
+		self.margin:SetShown(data.margin ~= nil)
+		self.band:SetText(data.band or "")
+		self.band:SetShown(data.band ~= nil)
+		self.margin:ClearAllPoints()
+		if data.band then
+			self.margin:SetPoint("RIGHT", self.band, "LEFT", 0, 0)
+		else
+			self.margin:SetPoint("RIGHT", -2, 0)
+		end
+		self.shade:SetShown(data.chosen)
+		local onClick = data.onClick
+		self:SetScript("OnClick", onClick and function()
+			onClick()
+		end or nil)
+	end
+	return row
+end
+
+--- A line of a short list (stats.md › UI: a zone's waters, a place's numbers): its label at the left, "I'm here" in
+--- green handwriting after it when given, its value at the right, and a faint rule under it. With `onClick` it opens
+--- what it names.
+---@class StatsBookLineData
+---@field label string
+---@field value string
+---@field here string?
+---@field onClick fun()?
+
+---@class StatsBookLineView: Button
+---@field label FontString
+---@field here FontString
+---@field value FontString
+---@field rule Texture
+---@field SetLine fun(self: StatsBookLineView, line: StatsBookLineData)
+
+-- A line's height.
+local LINE_HEIGHT = 20
+
+---@param parent Frame
+---@param width number
+---@return StatsBookLineView
+function ns.NewBookLine(parent, width)
+	local line = CreateFrame("Button", nil, parent) --[[@as StatsBookLineView]]
+	line:SetSize(width, LINE_HEIGHT)
+	local faces = ns.BookFonts()
+	line.label = ns.BookText(line, faces.text, LOOK.ink)
+	line.label:SetPoint("LEFT", 0, 0)
+	line.here = ns.BookText(line, faces.hand, LOOK.green)
+	line.here:SetPoint("LEFT", line.label, "RIGHT", 8, 0)
+	line.value = ns.BookText(line, faces.text, LOOK.ink)
+	line.value:SetPoint("RIGHT", 0, 0)
+	line.value:SetJustifyH("RIGHT")
+	line.rule = line:CreateTexture(nil, "BORDER")
+	line.rule:SetColorTexture(LOOK.rowRule[1], LOOK.rowRule[2], LOOK.rowRule[3], LOOK.rowRuleAlpha)
+	line.rule:SetPoint("BOTTOMLEFT")
+	line.rule:SetPoint("BOTTOMRIGHT")
+	line.rule:SetHeight(1)
+	function line.SetLine(self, data)
+		self.label:SetText(data.label)
+		self.here:SetText(data.here or "")
+		self.here:SetShown(data.here ~= nil)
+		self.value:SetText(data.value)
+		local onClick = data.onClick
+		self:SetScript("OnClick", onClick and function()
+			onClick()
+		end or nil)
+	end
+	return line
 end
 
 --- The leather on `frame`, filling it: the outline, the leather's tint, its grain and the gilt rule inside its edge.

@@ -74,19 +74,22 @@ describe("the Stats book's art (STA-R70, graph.md open question 4)", function()
 		assert.matches("^Fonts\\", ns.BOOK_FONT_FILES.serif)
 	end)
 
-	it("draws the fleuron and the pointing hands as textures, never as font glyphs, and no other mark", function()
+	it("draws the fleuron, the pointing hands and the star as textures, never as font glyphs, and no other mark", function()
 		local ns, parent = kit()
 
 		local fleuron = ns.NewBookMark(parent, "fleuron", 12)
 		local right = ns.NewBookMark(parent, "hand", 16)
 		local left = ns.NewBookMark(parent, "handLeft", 16)
+		local star = ns.NewBookMark(parent, "star", 12) -- a watched row's ★ (#213)
 
 		assert.are.equal("Texture", fleuron.kind)
 		assert.are.equal(ns.BOOK_TEXTURES.fleuron, fleuron.texture)
 		assert.are.same({ ns.BOOK_TEXTURES.hand, ns.BOOK_TEXTURES.hand }, { right.texture, left.texture })
 		assert.are_not.same(right.texCoord, left.texCoord) -- ☛ is ☚ mirrored
+		assert.are.equal(ns.BOOK_TEXTURES.star, star.texture)
+		assert.are.same(ns.BOOK_LOOK.red, { unpack(star.vertexColor, 1, 3) })
 		assert.has_error(function()
-			ns.NewBookMark(parent, "star", 12)
+			ns.NewBookMark(parent, "asterisk", 12)
 		end)
 	end)
 
