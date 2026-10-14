@@ -17,8 +17,6 @@ local widgets = {}
 
 -- Widget methods that only lay out or colour: nothing for a spec to read back.
 local LAYOUT_METHODS = {
-	"SetPoint",
-	"ClearAllPoints",
 	"SetAllPoints",
 	"SetJustifyH",
 	"SetJustifyV",
@@ -26,8 +24,6 @@ local LAYOUT_METHODS = {
 	"SetFrameStrata",
 	"SetClampedToScreen",
 	"RegisterForDrag",
-	"StartMoving",
-	"StopMovingOrSizing",
 	"EnableMouse",
 	"SetScrollChild",
 	"EnableMouseWheel",
@@ -68,6 +64,54 @@ function widgets.newWidget(kind, parent)
 	end
 	function widget:IsMovable()
 		return self.movable == true
+	end
+	-- Whether the client would save where the player moved it (SetUserPlaced; StartMoving sets it, as the client
+	-- does).
+	function widget:SetUserPlaced(userPlaced)
+		self.userPlaced = userPlaced
+	end
+	function widget:IsUserPlaced()
+		return self.userPlaced == true
+	end
+	-- Its anchors as SetPoint gave them, in order, each { point, relativeTo, relativePoint, x, y } as passed; a second
+	-- SetPoint of the same point replaces the first, and ClearAllPoints drops them all. The fake lays nothing out.
+	widget.points = {}
+	function widget:SetPoint(point, ...)
+		for i, anchor in ipairs(self.points) do
+			if anchor[1] == point then
+				table.remove(self.points, i)
+				break
+			end
+		end
+		self.points[#self.points + 1] = { point, ... }
+	end
+	function widget:ClearAllPoints()
+		self.points = {}
+	end
+	function widget:GetNumPoints()
+		return #self.points
+	end
+	function widget:GetPoint(index)
+		local anchor = self.points[index or 1]
+		if anchor then
+			return anchor[1], anchor[2], anchor[3], anchor[4], anchor[5]
+		end
+	end
+	-- Whether the player is dragging it, from StartMoving to StopMovingOrSizing; while they are, a spec plays the
+	-- client moving it by setting `screenRight` and `screenTop`, its right and top edges as GetRight and GetTop read
+	-- them (nil until set: the fake lays nothing out).
+	function widget:StartMoving()
+		self.moving = true
+		self.userPlaced = true -- as the client does
+	end
+	function widget:StopMovingOrSizing()
+		self.moving = false
+	end
+	function widget:GetRight()
+		return self.screenRight
+	end
+	function widget:GetTop()
+		return self.screenTop
 	end
 	-- A texture's tint, as { r, g, b[, a] }, and whether it is drawn in greys.
 	function widget:SetVertexColor(r, g, b, a)
@@ -241,6 +285,8 @@ function widgets.newFrame(client, kind, parent)
 	end
 	if frame.kind == "EditBox" then
 		widgets.editBox(client, frame)
+	elseif frame.kind == "CheckButton" then
+		widgets.checkButton(frame)
 	end
 	client.frames[#client.frames + 1] = frame
 	return frame
@@ -289,12 +335,33 @@ function widgets.editBox(client, box)
 	end
 end
 
+--- Makes `button` a check button, as the client's CheckButton behaves for what Pagle calls: SetChecked and GetChecked
+--- keep its state, and a click (enabled) toggles it before OnClick runs.
+---@param button table
+function widgets.checkButton(button)
+	button.checked = false
+	function button:SetChecked(checked)
+		self.checked = not not checked
+	end
+	function button:GetChecked()
+		return self.checked
+	end
+	local click = button.Click
+	function button:Click()
+		if self.enabled ~= false then
+			self.checked = not self.checked
+		end
+		click(self)
+	end
+end
+
 --- Adds the children and methods a FrameXML template gives a frame, as far as Pagle reads them. Gethe/wow-ui-source
 --- branch forever at 943764493e6b16d63ded3ab304150d1f05e58b57 ("1.60.1 (70338)"), Interface/AddOns/Blizzard_SharedXML/:
 --- ButtonFrameTemplate (Mainline/SharedUIPanelTemplates.xml) has an `Inset` frame, a `CloseButton` whose click hides
 --- its parent (UIPanelCloseButton_OnClick, HideUIPanel), the title (PortraitFrame.lua's TitledPanelMixin:SetTitle)
 --- and a portrait (PortraitFrameMixin:SetPortraitToAsset); SearchBoxTemplate (Shared/InputBox/InputBoxTemplates.xml)
---- has its `Instructions` hint and its `clearButton`. Other templates add nothing here.
+--- has its `Instructions` hint and its `clearButton`; UICheckButtonTemplate (Shared/Button/CheckButtonTemplates.xml)
+--- has its label, `Text`. Other templates add nothing here.
 ---@param client FakeClient
 ---@param frame table
 ---@param template string?
@@ -320,6 +387,8 @@ function widgets.applyTemplate(client, frame, template)
 	elseif template == "SearchBoxTemplate" then
 		frame.Instructions = widgets.newWidget("FontString", frame)
 		frame.clearButton = widgets.newFrame(client, "Button", frame)
+	elseif template == "UICheckButtonTemplate" then
+		frame.Text = widgets.newWidget("FontString", frame)
 	end
 end
 

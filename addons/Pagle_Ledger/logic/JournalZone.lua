@@ -288,9 +288,9 @@ local function weightsOf(context, family)
 	return ns.L.ZONE_WEIGHTS:format(landed, total)
 end
 
--- "About these waters" (LED-R137, without M4's zonemaster line, LED-R4): the skill base, the zone's completion
--- (LED-R53) with its fish and families known, each family on the list with its shown stars and overall weights,
--- opening it in the Trophy Room, the reward, and the nudge to pick a fish.
+-- "About these waters" (LED-R137): the skill base, the zone's completion (LED-R53) with its fish and families known,
+-- each family on the list with its shown stars and overall weights, opening it in the Trophy Room, the reward with the
+-- zone's Master title (left out while it has no lore text, LED-R161), and the nudge to pick a fish.
 ---@param context LedgerZoneContext
 ---@param zone integer
 ---@return LedgerBlock[]
@@ -328,7 +328,8 @@ local function about(context, zone)
 			}
 		end
 	end
-	blocks[#blocks + 1] = { kind = "text", text = L.ZONE_REWARD }
+	local title = ns.TitleName("zonemaster:" .. zone, context.text)
+	blocks[#blocks + 1] = { kind = "text", text = title and L.ZONE_REWARD_TITLE:format(title) or L.ZONE_REWARD }
 	blocks[#blocks + 1] = { kind = "text", hand = true, text = L.ZONE_PICK }
 	return blocks
 end

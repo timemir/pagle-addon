@@ -8,18 +8,21 @@ local ns = select(2, ...)
 -- What the Ledger tells the player as they fish (LED-R89–R92, LED-R95–R97): a live entry's achievements become
 -- moments unless already celebrated, and the celebrated set grows with them. Pure logic, everything passed in (CORE-R7).
 
---- The celebrated set (LED-R90), M2's and M3's keys. It only grows, except `coins`, which follows the total. `logId`
---- is set, and the set emptied for a new one, in the projection's `done` (logic/Done.lua).
+--- The celebrated set (LED-R90), M2's, M3's and M4's keys. It only grows, except `coins`, which follows the total.
+--- `logId` is set, and the set emptied for a new one, in the projection's `done` (logic/Done.lua).
 ---@class LedgerCelebrated
----@field levels { [integer]: integer }      -- the highest level celebrated, by prestige rank
+---@field levels { [integer]: integer }      -- the highest level celebrated, by prestige rank; 60 also stands for
+--- that climb's `prestigeReady`
+---@field prestige integer                   -- the highest prestige rank celebrated
 ---@field species { [integer]: true }        -- Species IDs
 ---@field stars { [integer]: LedgerStars }   -- each Species' stars, by Species ID (LED-R48)
 ---@field familyStars { [integer]: LedgerStars } -- each trophy family's stars, by family ID (LED-R48)
 ---@field speciesZones { [string]: true }    -- "<speciesID>:<zone>"
 ---@field zones { [integer]: integer }       -- zones fished: the shown rank, 0 for none (LED-R52)
----@field items { [integer]: true }          -- curio and trophy items (LED-R60)
+---@field items { [integer]: true }          -- curio, trophy and Legend items (LED-R60, LED-R63)
 ---@field uncharted { [integer]: true }      -- Uncharted item IDs (LED-R64)
 ---@field skill { [integer]: true }          -- Skill Milestone thresholds
+---@field milestones { [integer]: true }     -- Catch Milestones (LED-R42)
 ---@field coins integer                      -- the lifetime Coins total
 ---@field logId? string                      -- the PagleLog.logId it belongs to
 
@@ -34,6 +37,7 @@ local ns = select(2, ...)
 ---@field LogId fun(): string?                          -- Pagle.GetAngler().logId
 ---@field FormatNumber fun(n: integer): string          -- BreakUpLargeNumbers
 ---@field RefreshGoods fun()                            -- M:RefreshGoods (LED-R111)
+---@field SizeText fun(size: PagleSize?): string?       -- ns.SizeText over Pagle.SIZE_BANDS and Pagle.FormatLength
 
 -- In-client textures for the moments that have no item (LED-R97): the level's ledger book and Fishing's own icon.
 local LEVEL_ICON = "Interface\\Icons\\INV_Misc_Book_09"
@@ -42,8 +46,14 @@ local SKILL_ICON = "Interface\\Icons\\Trade_Fishing"
 local ZONE_RANK_ICON = "Interface\\Icons\\INV_Misc_Map_01"
 local ZONE_MASTER_ICON = "Interface\\Icons\\INV_Misc_Spyglass_03"
 local FAMILY_STAR_ICON = "Interface\\Icons\\INV_Misc_Fish_02"
+-- M4's: a fresh book for Prestige ready, a ribbon for a Prestige, a fish for a Catch Milestone and a scroll for a
+-- completion title.
+local PRESTIGE_READY_ICON = "Interface\\Icons\\INV_Misc_Book_11"
+local PRESTIGE_ICON = "Interface\\Icons\\INV_Misc_Ribbon_01"
+local CATCH_MILESTONE_ICON = "Interface\\Icons\\INV_Misc_Fish_14"
+local TITLE_ICON = "Interface\\Icons\\INV_Scroll_03"
 
---- The celebrated set in PagleLedgerDB.global, with M2's and M3's keys made if missing (LED-R90).
+--- The celebrated set in PagleLedgerDB.global, with M2's, M3's and M4's keys made if missing (LED-R90).
 ---@param global table PagleLedgerDB's global section
 ---@return LedgerCelebrated
 function ns.CelebratedSet(global)
@@ -62,11 +72,14 @@ function ns.CelebratedSet(global)
 		"items",
 		"uncharted",
 		"skill",
+		"milestones",
+		"titles",
 	}) do
 		if type(celebrated[key]) ~= "table" then
 			celebrated[key] = {}
 		end
 	end
+	celebrated.prestige = celebrated.prestige or 0
 	celebrated.coins = celebrated.coins or 0
 	return celebrated
 end
@@ -88,15 +101,19 @@ function ns.ShownLevel(state, celebrated)
 	return math.max(ns.Level(state), celebrated.levels[state.prestige] or 0)
 end
 
---- The Ledger's summary line (LED-R95): the shown level and Ledger completion's percent (LED-R70). The Prestige
---- part is M4's.
+--- The Ledger's summary line (LED-R95): the prestige rank when above 0, the shown level and Ledger completion's
+--- percent (LED-R70).
 ---@param state LedgerState
 ---@param celebrated LedgerCelebrated
 ---@param lookups LedgerLookups the world index and Core's GetItem, for completion
 ---@return string
 function ns.SummaryLine(state, celebrated, lookups)
-	local completion = ns.LedgerCompletion(lookups.world, state, lookups.GetItem)
-	return ns.L.SUMMARY_LINE:format(ns.ShownLevel(state, celebrated), completion.percent)
+	local percent = ns.LedgerCompletion(lookups.world, state, lookups.GetItem).percent
+	local level = ns.ShownLevel(state, celebrated)
+	if state.prestige > 0 then
+		return ns.L.SUMMARY_LINE_PRESTIGE:format(state.prestige, level, percent)
+	end
+	return ns.L.SUMMARY_LINE:format(level, percent)
 end
 
 -- An item's name, or "Item {id}" when the client doesn't have it yet (LED-R97).
@@ -105,6 +122,17 @@ end
 ---@return string
 local function itemName(outlets, itemID)
 	return outlets.ItemName(itemID) or ns.L.ITEM_FALLBACK:format(itemID)
+end
+
+-- A Catch moment's "{item} · {size text}" (LED-R81, LED-R97): the item alone, with no separator, when the Catch has
+-- no size.
+---@param outlets LedgerOutlets
+---@param earned LedgerAchievement
+---@return string
+local function itemWithSize(outlets, earned)
+	local name = itemName(outlets, earned.itemID --[[@as integer]])
+	local size = outlets.SizeText(earned.size)
+	return size and ns.L.ITEM_SIZE:format(name, size) or name
 end
 
 --- Adds `stars` to the celebrated stars of `key` (a Species or a trophy family, LED-R90), returning those that weren't
@@ -145,8 +173,9 @@ local function speciesZone(species, zone)
 end
 
 -- Each kind's moment (LED-R97) for an achievement not yet celebrated, which it adds to the set; nil when already
--- celebrated (LED-R91).
----@type { [string]: fun(celebrated: LedgerCelebrated, state: LedgerState, earned: LedgerAchievement, outlets: LedgerOutlets): PagleMoment? }
+-- celebrated (LED-R91). `before` is the celebrated levels as they were before the list being celebrated, for
+-- `prestigeReady`, which a climb's celebrated 60 stands for (LED-R90).
+---@type { [string]: fun(celebrated: LedgerCelebrated, state: LedgerState, earned: LedgerAchievement, outlets: LedgerOutlets, before: { [integer]: integer }): PagleMoment? }
 local celebrate = {}
 
 function celebrate.newSpecies(celebrated, _, earned, outlets)
@@ -168,7 +197,7 @@ function celebrate.newSpecies(celebrated, _, earned, outlets)
 		kind = "newSpecies",
 		order = 100,
 		title = L.NEW_SPECIES_TITLE,
-		text = itemName(outlets, earned.itemID --[[@as integer]]),
+		text = itemWithSize(outlets, earned),
 		stamp = L.NEW_SPECIES_STAMP,
 		icon = earned.itemID,
 		cast = earned.cast,
@@ -322,16 +351,18 @@ function celebrate.skillMilestone(celebrated, _, earned)
 	}
 end
 
--- One per entry, for the levels above the celebrated one, with 20 Coins for each of those (LED-R97). The levels at
--- or below it raise nothing again, and their Coins count only in the total (LED-R36). M2 has no titles.
+-- One per entry, for the levels above the celebrated one in its climb, with 20 Coins for each of those (LED-R97).
+-- The levels at or below it raise nothing again, and their Coins count only in the total (LED-R36). The titles earned
+-- with it ride in its text (celebrateTitles).
 function celebrate.levelUp(celebrated, state, earned)
 	local levels = earned.levels --[[@as integer[] ]]
 	local top = levels[#levels]
-	local above = celebrated.levels[state.prestige] or 0
+	local rank = earned.rank or state.prestige
+	local above = celebrated.levels[rank] or 0
 	if top <= above then
 		return nil
 	end
-	celebrated.levels[state.prestige] = top
+	celebrated.levels[rank] = top
 	local raised = 0
 	for _, level in ipairs(levels) do
 		if level > above then
@@ -354,7 +385,7 @@ end
 
 -- One per zone per entry, for the ranks above the celebrated one, with 2 Coins × each of those ranks (LED-R97):
 -- "Zone rank" up to Expert, and "Zone Master" in its place when the zone reaches Master. The celebrated set keeps the
--- zone's shown rank (LED-R90, LED-R92). M3 has no titles: the Zone Master's waits for M4.
+-- zone's shown rank (LED-R90, LED-R92). The Zone Master's title rides in its text (celebrateTitles).
 function celebrate.zoneRank(celebrated, _, earned, outlets)
 	local zone = earned.zone --[[@as integer]]
 	local ranks = earned.ranks --[[@as integer[] ]]
@@ -398,39 +429,259 @@ function celebrate.zoneRank(celebrated, _, earned, outlets)
 	}
 end
 
---- One achievement's moment (LED-R97) when it isn't celebrated yet, adding it to the set; nil when it already is
---- (LED-R91). A projection's done raises them too, from the scratch list (LED-R93).
+-- A Legend item's first Catch (LED-R63): the splash, its size text and 100 Coins. Its title rides in its text
+-- (celebrateTitles). The item joins the celebrated items (LED-R90).
+function celebrate.legend(celebrated, _, earned, outlets)
+	local itemID = earned.itemID --[[@as integer]]
+	if celebrated.items[itemID] then
+		return nil
+	end
+	celebrated.items[itemID] = true
+	local L = ns.L
+	return {
+		rung = "splash",
+		kind = "legend",
+		order = 100,
+		title = L.LEGEND_TITLE,
+		text = itemWithSize(outlets, earned),
+		stamp = L.LEGEND_STAMP,
+		icon = itemID,
+		cast = earned.cast,
+		coins = earned.coins,
+	}
+end
+
+-- A climb reaching 60 (LED-R97), once per climb: its celebrated 60 stands for it (LED-R90), so it raises nothing when
+-- the climb's 60 was celebrated before this list, however the level-up just before it moved the set.
+function celebrate.prestigeReady(celebrated, _, earned, _, before)
+	local rank = earned.rank --[[@as integer]]
+	if (before[rank] or 0) >= ns.LEVEL_CAP then
+		return nil
+	end
+	celebrated.levels[rank] = math.max(celebrated.levels[rank] or 0, ns.LEVEL_CAP)
+	local L = ns.L
+	return {
+		rung = "banner",
+		kind = "prestigeReady",
+		order = 110,
+		title = L.PRESTIGE_READY_TITLE,
+		text = L.PRESTIGE_READY_TEXT,
+		stamp = L.PRESTIGE_READY_STAMP,
+		icon = PRESTIGE_READY_ICON,
+		cast = earned.cast,
+	}
+end
+
+-- A Prestige (LED-R32, LED-R34): "Prestige {I…X}", or "Master Prestige {rank − 10}" from rank 11, with its 100 Coins
+-- and no `cast` (LED-R96). Its title rides in its text (celebrateTitles); the new climb's levels ride on their own
+-- cast-less levelUp beside it.
+function celebrate.prestige(celebrated, _, earned)
+	local rank = earned.rank --[[@as integer]]
+	if rank <= celebrated.prestige then
+		return nil
+	end
+	celebrated.prestige = rank
+	local L = ns.L
+	local mark = ns.PrestigeMark(rank)
+	return {
+		rung = "banner",
+		kind = "prestige",
+		order = 90,
+		title = mark.stars > 0 and L.MASTER_PRESTIGE_TITLE:format(mark.stars) or L.PRESTIGE_TITLE:format(mark.emblem),
+		icon = PRESTIGE_ICON,
+		coins = earned.coins,
+	}
+end
+
+-- A Catch Milestone (LED-R42): "{N} Catches" as its title and stamp, N with BreakUpLargeNumbers.
+function celebrate.catchMilestone(celebrated, _, earned, outlets)
+	local n = earned.n --[[@as integer]]
+	if celebrated.milestones[n] then
+		return nil
+	end
+	celebrated.milestones[n] = true
+	local L = ns.L
+	local catches = (n == 1 and L.CATCHES_ONE or L.CATCHES_OTHER):format(outlets.FormatNumber(n))
+	return {
+		rung = "banner",
+		kind = "catchMilestone",
+		order = 130,
+		title = catches,
+		stamp = catches,
+		icon = CATCH_MILESTONE_ICON,
+		cast = earned.cast,
+	}
+end
+
+-- A Simulated Size record beaten live (LED-R82): `toast.low`, or `toast` with the rare-record flair, and the ruler
+-- from the old length to the new, always (ANN-R22). Records are never in the celebrated set (LED-R84).
+function celebrate.sizeRecord(_, _, earned, outlets)
+	local L = ns.L
+	return {
+		rung = earned.flair and "toast" or "toast.low",
+		kind = "sizeRecord",
+		order = 100,
+		title = L.SIZE_RECORD_TITLE,
+		text = itemWithSize(outlets, earned),
+		stamp = L.SIZE_RECORD_STAMP,
+		icon = earned.itemID,
+		cast = earned.cast,
+		ruler = { old = earned.old, new = earned.new, unit = "length", label = "Pagle size" },
+	}
+end
+
+-- The titles' names (LED-R75, LED-R161): the Journal's lore lookup, with zone names from the outlets.
+---@param outlets LedgerOutlets
+---@return LedgerJournalText
+local function titleText(outlets)
+	return ns.NewLoreText(outlets.ZoneName)
+end
+
+--- The names of title keys (LED-R75), in the order given, leaving out each key with no text (LED-R161).
+---@param keys string[]
+---@param outlets LedgerOutlets
+---@return string[]
+function ns.TitleNames(keys, outlets)
+	local text, names = titleText(outlets), {}
+	for _, key in ipairs(keys) do
+		names[#names + 1] = ns.TitleName(key, text)
+	end
+	return names
+end
+
+-- Whether `moment`, raised for `achievement`, is the one a title of `kind` and `n` rides in (LED-R97): the level-up
+-- that raised its level, the Prestige that reached its rank, its zone's Zone Master or its Legend.
+---@param moment PagleMoment
+---@param achievement LedgerAchievement
+---@param kind string
+---@param n integer|string
+---@return boolean
+local function carries(moment, achievement, kind, n)
+	if kind == "level" and moment.kind == "levelUp" then
+		for _, level in
+			ipairs(achievement.levels --[[@as integer[] ]])
+		do
+			if level == n then
+				return true
+			end
+		end
+	elseif kind == "prestige" and moment.kind == "prestige" then
+		local rank = achievement.rank --[[@as integer]]
+		return rank >= n
+	elseif kind == "zonemaster" and moment.kind == "zoneMaster" then
+		return achievement.zone == n
+	elseif kind == "legend" and moment.kind == "legend" then
+		return achievement.itemID == n
+	end
+	return false
+end
+
+-- The titles the state newly earns (LED-R75, LED-R76), each added to the celebrated set's title keys: a level,
+-- Prestige, Zone Master or Legend title rides as "Title: {title}" in the moment that earned it, and a `complete.*`
+-- title raises its own `completeTitle` moment, with `cast` (LED-R97). A title whose moment isn't raised (its level or
+-- zone celebrated before titles were) is added with no moment, as is a title with no text (LED-R161).
 ---@param celebrated LedgerCelebrated
 ---@param state LedgerState
----@param achievement LedgerAchievement
+---@param moments PagleMoment[] the moments raised so far, which this adds to
+---@param achievements LedgerAchievement[] the achievement of each moment
 ---@param outlets LedgerOutlets
----@return PagleMoment?
-function ns.CelebrateAchievement(celebrated, state, achievement, outlets)
-	local moment = celebrate[achievement.kind]
-	return moment and moment(celebrated, state, achievement, outlets)
+---@param lookups LedgerLookups
+---@param cast string? the entry's Cast, for a completeTitle
+---@return string[] keys the titles newly celebrated, in LED-R75's order
+local function celebrateTitles(celebrated, state, moments, achievements, outlets, lookups, cast)
+	local keys =
+		ns.NewTitles({ world = lookups.world, state = state, celebrated = celebrated, getItem = lookups.GetItem })
+	local L, text = ns.L, titleText(outlets)
+	---@type { [integer]: string[] }
+	local riding = {}
+	local count = #moments
+	for _, key in ipairs(keys) do
+		celebrated.titles[key] = true
+		local name = ns.TitleName(key, text)
+		local kind, n = ns.TitleKind(key)
+		if name and kind == "complete" then
+			moments[#moments + 1] = {
+				rung = "banner",
+				kind = "completeTitle",
+				order = 140,
+				title = L.TITLE_EARNED,
+				text = name,
+				stamp = L.TITLE_LINE:format(name),
+				icon = TITLE_ICON,
+				cast = cast,
+			}
+			achievements[#achievements + 1] = { kind = "completeTitle", cast = cast, coins = 0 }
+		elseif name and kind then
+			for i = 1, count do
+				if
+					carries(moments[i], achievements[i], kind, n --[[@as integer|string]])
+				then
+					riding[i] = riding[i] or {}
+					table.insert(riding[i], L.TITLE_LINE:format(name))
+					break
+				end
+			end
+		end
+	end
+	for i, lines in pairs(riding) do
+		local moment, titles = moments[i], table.concat(lines, "\n")
+		-- A level-up's or Prestige's text is its titles alone; a Zone Master's or Legend's adds them (LED-R97).
+		if moment.kind == "levelUp" or moment.kind == "prestige" then
+			moment.text = titles
+		else
+			moment.text = L.TEXT_WITH_TITLE:format(moment.text, titles)
+		end
+	end
+	return keys
+end
+
+--- The moments (LED-R97) of the achievements in `earned` not yet celebrated, in order, each added to the set
+--- (LED-R91), then the titles they newly earn (LED-R75): what a live entry or a projection's done (LED-R93) raises.
+---@param celebrated LedgerCelebrated
+---@param state LedgerState
+---@param earned LedgerAchievement[]
+---@param outlets LedgerOutlets
+---@param lookups LedgerLookups
+---@param cast string? the entry's Cast, for a completeTitle; nil in a done
+---@return PagleMoment[] moments
+---@return LedgerAchievement[] achievements the achievement of each moment
+---@return string[] titles the title keys newly celebrated, in LED-R75's order
+function ns.CelebrateEarned(celebrated, state, earned, outlets, lookups, cast)
+	local before = {}
+	for rank, level in pairs(celebrated.levels) do
+		before[rank] = level
+	end
+	local moments, achievements = {}, {}
+	for _, achievement in ipairs(earned) do
+		local celebrateKind = celebrate[achievement.kind]
+		local moment = celebrateKind and celebrateKind(celebrated, state, achievement, outlets, before)
+		if moment then
+			moments[#moments + 1] = moment
+			achievements[#achievements + 1] = achievement
+		end
+	end
+	local titles = celebrateTitles(celebrated, state, moments, achievements, outlets, lookups, cast)
+	return moments, achievements, titles
 end
 
 --- Celebrates one `"live"` entry (LED-R91, LED-R96, LED-R97): the moment of each achievement it earned that isn't
---- celebrated yet, in the order earned, each added to the set. The zone a Cast fished joins the set too.
+--- celebrated yet, in the order earned, each added to the set, and the titles it newly earns. The zone a Cast fished
+--- joins the set too.
 ---@param celebrated LedgerCelebrated
 ---@param state LedgerState the state with the entry applied
 ---@param record PagleRecord
 ---@param earned LedgerAchievement[] what the fold reported for the entry
 ---@param outlets LedgerOutlets
+---@param lookups LedgerLookups the world index and Core's GetItem, for the titles
 ---@return PagleMoment[]
-function ns.Celebrate(celebrated, state, record, earned, outlets)
+function ns.Celebrate(celebrated, state, record, earned, outlets, lookups)
+	local cast
 	if record.kind == "cast" then
+		cast = record.id
 		local zone = (record --[[@as PagleCast]]).conditions.zone
 		if state.zones[zone] and celebrated.zones[zone] == nil then
 			celebrated.zones[zone] = 0
 		end
 	end
-	local moments = {}
-	for _, achievement in ipairs(earned) do
-		local moment = ns.CelebrateAchievement(celebrated, state, achievement, outlets)
-		if moment then
-			moments[#moments + 1] = moment
-		end
-	end
-	return moments
+	return (ns.CelebrateEarned(celebrated, state, earned, outlets, lookups, cast))
 end

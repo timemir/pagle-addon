@@ -273,7 +273,8 @@ describe("the Ledger's M3 live moments", function()
 			assert.is_nil(moments.zoneRank)
 			local master = moments.zoneMaster
 			assert.are.same(
-				{ "banner", 120, "Zone Master", "Cove", "Master", 10, record.id },
+				-- M4: the Zone Master's title rides in it (LED-R97).
+				{ "banner", 120, "Zone Master", "Cove. Title: Warden of Cove Waters", "Master", 10, record.id },
 				{ master.rung, master.order, master.title, master.text, master.stamp, master.coins, master.cast }
 			)
 			assert.are.equal("string", type(master.icon))
@@ -474,6 +475,10 @@ describe("the Ledger's M3 done", function()
 					"1 zone ranked · 1 mastered",
 					"1 trophy weight",
 					"2 curios",
+					-- M4's titles: Cove's, the Junk Museum's and the Treasures' (LED-R75, LED-R94).
+					"Title: Warden of Cove Waters",
+					"Title: Collector of Boots",
+					"Title: Keeper of Lost Cargo",
 					"Pagle Coins +185",
 				},
 			}, writeUps(fake))
@@ -507,6 +512,8 @@ describe("the Ledger's M3 done", function()
 					"1 zone ranked · 1 mastered",
 					"1 trophy weight",
 					"1 curio",
+					"Title: Warden of Cove Waters",
+					"Title: Keeper of Lost Cargo",
 					"Pagle Coins +40",
 				},
 			}, writeUps(fake))
@@ -522,7 +529,14 @@ describe("the Ledger's M3 done", function()
 
 		-- Expert and the junk: 1,000 + 170 XP, from 4,180 past level 5 (4,800); Coins 8 + 5 + 20.
 		assert.are.same({
-			{ "While the Ledger was off", "Angler Level 4 → 5", "1 zone ranked", "1 curio", "Pagle Coins +33" },
+			{
+				"While the Ledger was off",
+				"Angler Level 4 → 5",
+				"1 zone ranked",
+				"1 curio",
+				"Title: Collector of Boots", -- M4: the junk completes the Junk Museum (LED-R75, LED-R94)
+				"Pagle Coins +33",
+			},
 		}, writeUps(fake))
 	end)
 
@@ -565,6 +579,9 @@ describe("the Ledger's M3 done", function()
 				"zoneMaster",
 				"levelUp",
 				"newCurio",
+				-- M4's completion titles, Junk Museum and Treasures complete (LED-R75, LED-R97).
+				"completeTitle",
+				"completeTitle",
 			}, kinds)
 			fake.nextFrame()
 			assert.are.same({}, fake.announcements)
