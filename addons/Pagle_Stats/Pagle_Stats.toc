@@ -17,9 +17,11 @@ logic\Places.lua
 logic\Rows.lua
 logic\Fold.lua
 logic\Sessions.lua
+logic\SessionPages.lua
 logic\Text.lua
 logic\Odds.lua
 logic\DrySpell.lua
+logic\Groups.lua
 logic\Book.lua
 logic\Home.lua
 logic\Lifetime.lua
@@ -28,8 +30,10 @@ logic\Search.lua
 adapter\Text.lua
 adapter\BookWidgets.lua
 adapter\Book.lua
+adapter\Place.lua
 adapter\Home.lua
 adapter\Lifetime.lua
+adapter\Sessions.lua
 adapter\Item.lua
 adapter\Search.lua
 adapter\Stats.lua

@@ -23,6 +23,8 @@
 ---@field items table<integer, integer[]> `{ classID, subclassID }` per item ID, for `C_Item.GetItemInfoInstant`.
 ---@field itemNames table<integer, string> Each item's name, for `C_Item.GetItemNameByID` and `C_Item.GetItemInfo`.
 --- Default none: no item cached.
+---@field itemQualities table<integer, integer> Each item's quality once loaded, for `C_Item.GetItemQualityByID`.
+--- Default none: nil, as the client gives for an item it hasn't loaded.
 ---@field itemRequests integer[] Each `C_Item.RequestLoadItemDataByID` call's item ID, in order. The client loads
 --- nothing on its own: a spec sets `itemNames` and fires GET_ITEM_INFO_RECEIVED itself.
 ---@field itemIcons table<integer, integer|string> Each item's icon (a file ID, or a texture path), for
@@ -65,6 +67,7 @@ return function(client, stubs)
 	-- A Fishing Pole (6256, as probe B1 read it) and a Worn Shortsword (25).
 	client.items = { [6256] = { 2, 20 }, [25] = { 2, 7 } }
 	client.itemNames = {}
+	client.itemQualities = {}
 	client.itemRequests = {}
 	client.itemIcons, client.itemLoads = {}, {}
 	client.fireGameEvent = client.fire
@@ -162,6 +165,10 @@ return function(client, stubs)
 	-- in it (a Hunt's icon, HNT-R55; Stats' names, STA-R59).
 	stubs.C_Item.GetItemIconByID = function(itemID)
 		return client.itemIcons[itemID]
+	end
+	-- The item's quality; nil for one not in client.itemQualities, not loaded yet (Stats' Catches by quality, STA-R33).
+	stubs.C_Item.GetItemQualityByID = function(itemID)
+		return client.itemQualities[itemID]
 	end
 	-- ItemMixin's loader (Blizzard_ObjectAPI's Item.lua): ContinueOnItemLoad runs the callback at once for an item in
 	-- client.itemNames, else when client.loadItem loads it (HNT-R54).

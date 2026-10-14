@@ -33,6 +33,40 @@ ns.L = {
 	BOOK_LIVE_LINE = "Session: %s · %s · %s",
 	BOOK_UPDATING = "Updating my records…",
 
+	-- The Session pages (stats.md › UI › This Session, Sessions; STA-R97). A Session's entry: its kicker on the Sessions
+	-- page ("Session 12", numbered from the oldest), "21:04 to now, 25m at the water.", its figures and headings.
+	SESSION_NUMBERED = "Session %s",
+	SESSION_SPAN = "%s to %s, %s at the water.",
+	SESSION_NOW = "now",
+	SESSION_CASTS = "Casts",
+	SESSION_CATCHES = "Catches",
+	SESSION_GOT_AWAY = "Got away",
+	-- "7 (12%)": the got-away count and its rate.
+	SESSION_GOT_AWAY_VALUE = "%s (%d%%)",
+	SESSION_PER_HOUR = "Catches per hour",
+	SESSION_SKILL = "Skill gained",
+	SESSION_SKILL_VALUE = "+%s",
+	SESSION_BY_QUALITY = "By quality",
+	SESSION_WHERE_AND_WHO = "Where and who",
+	-- This Session's right page, and the ruled ledgers' columns: "Started" reads "5 Oct 2026 21:04" (date, time), and
+	-- "Where" the zones joined by ", ".
+	SESSIONS_BEFORE_THAT = "Before that",
+	SESSIONS_EARLIER = "Earlier Sessions",
+	SESSIONS_EVERY = "Every Session",
+	SESSIONS_STARTED = "Started",
+	SESSIONS_WHERE = "Where",
+	SESSIONS_LENGTH = "Length",
+	SESSIONS_CASTS = "Casts",
+	SESSIONS_CATCHES = "Catches",
+	SESSIONS_STARTED_AT = "%s %s",
+	SESSIONS_WHERE_JOIN = ", ",
+	-- The Sessions page's note, by Core's Session gap in minutes (LOG-R60), and its pager.
+	SESSIONS_NOTE = "A Session ends after %d minutes without a Cast.",
+	SESSIONS_LATER = "later",
+	SESSIONS_EARLIER_PAGE = "earlier",
+	SESSIONS_PAGE = "page %d of %d",
+	NO_SESSIONS = "No Sessions yet.",
+
 	-- STA-R58's one allowed line: no other Stats string says or implies a Catch is owed (spec/Pagle_Stats/copy_spec.lua).
 	NOTHING_IS_OWED = "Every Cast is its own roll; nothing is owed.",
 
@@ -127,6 +161,34 @@ ns.L = {
 	DRY_WATCH_CAUGHT_LAST = "caught on my last Cast.",
 	DRY_WATCH_NONE_YET = "%s, none yet.",
 
+	-- A place's page (stats.md › UI › Place spread; adapter/Place.lua, logic/Groups.lua). The row groups (STA-R18), each
+	-- with its heading and small note.
+	GROUPS = {
+		any = { heading = "Any time", note = "Your odds · Dry spell" },
+		pools = { heading = "Pools", note = "open water and pools combined" },
+		window = { heading = "In their window", note = "only Casts in their window" },
+		added = { heading = "Also caught here", note = "not on Pagle's chart for these waters" },
+	},
+	-- The left page: the kicker of a zone's page (a subzone's is its zone's name), "I'm here", my Casts and the no-junk
+	-- sentence after them, the no-chart line, *Its waters* with "—" for none, and the line under a subzone's rows.
+	PLACE_ZONE_KICKER = "Waters",
+	PLACE_HERE = "I'm here",
+	PLACE_CASTS = "%s of my Casts here.",
+	PLACE_NO_JUNK = "No junk from %d.",
+	PLACE_NO_JUNK_PAST = "No junk from %d; at %d I'm past it, so only those Casts count.",
+	PLACE_NO_JUNK_BELOW = "No junk from %d; at %d I'm below it, so only my Casts below it count.",
+	PLACE_NO_CHART = "Pagle has no chart of these waters yet.",
+	PLACE_WATERS = "Its waters",
+	PLACE_WATERS_NOTE = "my Casts",
+	PLACE_NONE = "—",
+	PLACE_ACROSS_ZONE = "Fish with fewer than %d Casts in %s use all of %s until then.",
+	-- The right page with no item chosen: "Got away" as "{n} ({rate}%)".
+	PLACE_ABOUT = "About these waters",
+	PLACE_CASTS_LABEL = "Casts",
+	PLACE_CATCHES_LABEL = "Catches",
+	PLACE_GOT_AWAY_LABEL = "Got away",
+	PLACE_GOT_AWAY = "%s (%d%%)",
+	PLACE_PICK = "Pick a fish on the left for its odds and its Dry spell.",
 	-- The home spread (stats.md › UI › Home spread). The left page: its kicker, title and line, a zone's tile ("1,840
 	-- Casts · 6 waters", the Casts and waters counts by ns.Count), and the line with no Casts (STA-R97).
 	HOME_KICKER = "The waters",
