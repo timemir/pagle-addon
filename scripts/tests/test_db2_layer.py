@@ -7,9 +7,9 @@ import pytest
 
 from areas_fixture import write_areas
 from baseline_fixture import write_baseline
+from cli_fixture import run
 from item_fixture import ITEMS_LUA, write_item_layer
 from observed_fixture import write_observed
-from pagle_data.cli import main
 from pools_fixture import POOLS_LUA, write_pools
 from windows_fixture import W_LUA, WINDOWS_LUA, write_windows
 
@@ -89,12 +89,6 @@ def write_tree(root: Path, *, areas: str | None = AREAS, build: str | None = BUI
     if build is not None:
         (db2 / "build.toml").write_text(build, encoding="utf-8")
     return root
-
-
-def run(root: Path, capsys: pytest.CaptureFixture[str], *args: str) -> tuple[int, str]:
-    code = main(list(args), root)
-    out, err = capsys.readouterr()
-    return code, out + err
 
 
 def test_every_areas_csv_row_is_a_catalogue_area(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:

@@ -536,9 +536,13 @@ part(function(_, Pagle, ns)
 end)
 
 -- The Catch log (LOG-R10–R16, LOG-R42) on Core's real codec, over an empty in-memory PagleLog. A spec adds
--- characters to fake.catchLog.data.characters and entries with fake.catchLog:Append(record).
+-- characters to fake.catchLog.data.characters and entries with fake.catchLog:Append(record). Every Cast it hands out
+-- carries Core's Simulated Sizes over the catalogue served when it's read (LOG-R65), and the band list and size
+-- rules version are Core's (LOG-R67, LOG-R68).
 part(function(fake, Pagle, ns)
-	fake.catchLog = ns.OpenCatchLog(nil, fake.global, SERVER_TIME)
+	fake.catchLog = ns.OpenCatchLog(nil, fake.global, SERVER_TIME, ns.CatalogueItem)
+	Pagle.SIZE_BANDS = ns.SIZE_BANDS
+	Pagle.SIZE_RULES_VERSION = ns.SIZE_RULES_VERSION
 	function Pagle.IterateCatches(afterSeq)
 		local iterate = fake.catchLog:Iterate(afterSeq)
 		return function()

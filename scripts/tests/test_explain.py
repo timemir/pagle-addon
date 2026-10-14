@@ -6,8 +6,9 @@ from pathlib import Path
 
 import pytest
 
+from cli_fixture import run
 from observed_fixture import i_row, report
-from test_catch_lists import CATALOGUE, ITEMS, run, write_tree
+from test_catch_lists import CATALOGUE, ITEMS, write_tree
 from test_confirmed import ALICE
 
 # 6308 is junk. items.csv gives it class 2 (Weapon), a Noise class, so it is Noise by DATA-R16's rule; items.toml
