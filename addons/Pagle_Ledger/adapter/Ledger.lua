@@ -37,7 +37,12 @@ function ns.Ledger.OnInitialize()
 	--- its live entries and its done (LED-R122, LED-R123).
 	ns.projection = ns.Module:NewProjection(
 		ns.WithJournalRedraws(
-			ns.ProjectionDef(ns.db.global, { GetItem = Pagle.GetItem }, ns.Outlets(ns.Module), sizeRulesVersion)
+			ns.ProjectionDef(
+				ns.db.global,
+				{ GetItem = Pagle.GetItem, world = ns.world },
+				ns.Outlets(ns.Module),
+				sizeRulesVersion
+			)
 		)
 	)
 end

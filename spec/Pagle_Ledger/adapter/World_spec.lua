@@ -86,6 +86,28 @@ describe("the Ledger's world index (LED-R10)", function()
 		end
 	end)
 
+	it("is the world the projection's fold ranks zones by (LED-R10, LED-R50)", function()
+		local fake = newFakePagle()
+		fake.setCatalogue(fixture())
+		fake.catchLog.data.characters[1] = { guid = PLAYER_GUID }
+		fake.catchLog:Append({
+			kind = "cast",
+			char = 1,
+			time = 1791731000,
+			outcome = "caught",
+			conditions = { minute = 494, zone = ELWYNN, subzone = 0, events = {}, auras = {} },
+			items = { { itemID = MACKEREL, quantity = 1 } },
+		})
+		local loaded = fake.load("Pagle_Ledger")
+
+		fake.login()
+		fake.enterWorld()
+
+		-- Elwynn's one ungated Species makes the Angler a Local there at once; its night fish and trophy are still to
+		-- come.
+		assert.are.equal(3, loaded.ns.projection:GetState().zones[ELWYNN].rank)
+	end)
+
 	it("charts Stranglethorn over the generated catalogue, Tastyfish gated there (LED-R10, DATA-R28)", function()
 		local world = newFakePagle().load("Pagle_Ledger").ns.world
 		local stranglethorn = world.zones[33]

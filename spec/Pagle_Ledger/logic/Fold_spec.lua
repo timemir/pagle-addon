@@ -154,9 +154,20 @@ end
 describe("The Ledger's fold", function()
 	local ns = loadAddon("Pagle_Ledger", FOREVER_GLOBALS).ns
 
+	-- A world index charting no zone (LED-R10), so no Catch here earns a Zone Mastery rank: ZoneMastery_spec.lua has
+	-- those.
+	local world = ns.NewWorld({
+		GetItem = getItem,
+		GetZones = function()
+			return {}
+		end,
+		GetArea = function() end,
+		GetZoneCatches = function() end,
+	})
+
 	local fold, log
 	before_each(function()
-		fold = ns.NewLedgerFold({ GetItem = getItem })
+		fold = ns.NewLedgerFold({ GetItem = getItem, world = world })
 		log = newLog()
 	end)
 
@@ -268,6 +279,7 @@ describe("The Ledger's fold", function()
 					end
 					return getItem(itemID)
 				end,
+				world = world,
 			})
 			local state, scratch = released.reset(), {}
 			for _, record in ipairs(records) do
@@ -416,7 +428,10 @@ describe("The Ledger's fold", function()
 		it("makes a zone fished at any Catch there, earning 200 XP once (LED-R6, LED-R20, LED-R21)", function()
 			local state = applyAll({ log.cast(T0, ELWYNN, { NOISE }), log.cast(T0 + 60, ELWYNN, { OTHER }) })
 
-			assert.are.same({ [ELWYNN] = { species = {} } }, state.zones)
+			assert.are.same(
+				{ [ELWYNN] = { species = {}, families = {}, items = {}, junk = false, treasure = false, rank = 0 } },
+				state.zones
+			)
 			assert.are.equal(20 + 200 + 20, state.xp)
 		end)
 

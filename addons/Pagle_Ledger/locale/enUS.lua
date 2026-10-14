@@ -32,6 +32,25 @@ ns.L = {
 	SKILL_MILESTONE_TITLE = "Skill Milestone",
 	SKILL_MILESTONE_TEXT = "Fishing %d",
 
+	-- A zone's next requirement (LED-R134), from its shown rank, and new to find (LED-R52) after it.
+	ZONE_NEXT_VISITOR = "Catch anything here to become a Visitor",
+	ZONE_NEXT_REGULAR_ONE = "Regular: %d more any-time Species",
+	ZONE_NEXT_REGULAR_OTHER = "Regular: %d more any-time Species",
+	ZONE_NEXT_LOCAL_ONE = "Local: %d more any-time Species",
+	ZONE_NEXT_LOCAL_OTHER = "Local: %d more any-time Species",
+	ZONE_NEXT_EXPERT = "Expert: %s",
+	ZONE_NEXT_GATED_ONE = "%d more day, night, seasonal or event catch",
+	ZONE_NEXT_GATED_OTHER = "%d more day, night, seasonal or event catches",
+	ZONE_NEXT_JUNK = "a piece of junk",
+	ZONE_NEXT_TREASURE = "a treasure",
+	ZONE_NEXT_SEPARATOR = ", ",
+	ZONE_NEXT_MASTER_ONE = "Master: a trophy from %d more family",
+	ZONE_NEXT_MASTER_OTHER = "Master: a trophy from %d more families",
+	ZONE_NEXT_MASTERED = "Master of these waters",
+	ZONE_NEXT_WITH_NEW = "%s · %s",
+	ZONE_NEW_TO_FIND_ONE = "%d new to find: the data grew, and your seal stays",
+	ZONE_NEW_TO_FIND_OTHER = "%d new to find: the data grew, and your seal stays",
+
 	-- Write-up sections (LED-R93) and their lines (LED-R94). Numbers in %s are BreakUpLargeNumbers'.
 	WRITE_UP_FIRST_BUILD_ONE = "Your Ledger was written up from %s Cast",
 	WRITE_UP_FIRST_BUILD_OTHER = "Your Ledger was written up from %s Casts",
