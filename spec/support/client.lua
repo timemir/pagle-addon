@@ -76,13 +76,15 @@ end
 local function clientStubs(client)
 	local stubs
 	stubs = {
-		CreateFrame = function(frameType, name, parent)
+		-- As the client's, a named frame is also the global of that name, and keeps its template.
+		CreateFrame = function(frameType, name, parent, template)
 			local frame = widgets.newFrame(client, frameType, parent)
-			frame.name = name
+			frame.name, frame.template = name, template
+			if name then
+				stubs[name] = frame
+			end
 			return frame
 		end,
-		-- The frame every addon frame hangs from; a plain widget, so it gets no events.
-		UIParent = widgets.newWidget("Frame"),
 		-- A font object, keeping its name and what SetFont gave it (`font`: file, size, flags).
 		CreateFont = function(name)
 			local font = { name = name }
@@ -102,6 +104,20 @@ local function clientStubs(client)
 			client.sounds[#client.sounds + 1] = ("%s %s"):format(path, tostring(channel))
 			return true, #client.sounds
 		end,
+		-- The screen's root frame, which every addon frame hangs from, and the game's error text under it (both in the
+		-- forever dump's Frames.lua), and the yellow FrameXML's GlobalColors defines (CreateColor(1, 1, 0, 1)). UIParent
+		-- is a plain widget, so it gets no events.
+		UIParent = widgets.newWidget("Frame"),
+		-- The game world's frame, which the mouse is over when it's over no UI (Frames.lua in the forever dump).
+		WorldFrame = widgets.newWidget("Frame"),
+		YELLOW_FONT_COLOR = {
+			r = 1,
+			g = 1,
+			b = 0,
+			GetRGB = function(color)
+				return color.r, color.g, color.b
+			end,
+		},
 		IsLoggedIn = function()
 			return false
 		end,
@@ -154,7 +170,8 @@ local function clientStubs(client)
 			end,
 		},
 		-- The conditions service's reads (LOG-R20, LOG-R45–R47): realm 08:15 on Sunday 11 October 2026 (a US Pacific
-		-- realm, GetServerTime's 15:15 UTC), no zone text, no lure, no calendar event, no aura; Fishing is below.
+		-- realm, GetServerTime's 15:15 UTC), no zone text, no calendar event, no aura; Fishing is below. The lure
+		-- (GetWeaponEnchantInfo, none by default) is with QoL's game side, spec/support/fake_game.lua.
 		GetRealZoneText = function()
 			return ""
 		end,
@@ -166,9 +183,6 @@ local function clientStubs(client)
 		end,
 		GetGameTime = function()
 			return 8, 15
-		end,
-		GetWeaponEnchantInfo = function()
-			return false, nil, nil, nil, false, nil, nil, nil, false, nil, nil, nil
 		end,
 		C_DateAndTime = {
 			GetCurrentCalendarTime = function()
@@ -304,6 +318,7 @@ local function clientStubs(client)
 			end
 		end
 	end
+	stubs.UIErrorsFrame = widgets.newWidget("MessageFrame", stubs.UIParent)
 	return stubs
 end
 

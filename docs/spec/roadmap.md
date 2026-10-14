@@ -128,6 +128,8 @@ Input isn't built yet, so the Fishing key is always armed (as under *Both*), and
 
 Each step's rows take their place in SET-R20's order.
 
+**Added after the M1 exit check (#114):** QOL-R20 step 2's "unless the reel didn't take" and QOL-R35, recasting when a reel didn't take. It has no settings row and is checked before the exit check. In-game check: cast so the bobber lands beyond interact range, and press once: nothing reels, and from half a second later the next-action button shows Cast; the next press casts a new bobber, and a press on it in range reels.
+
 **Exit check** (after step 6), on one character with a fishing set chosen, lures and exactly one clam in the bags, standing at water with no pole in hand, Input *Both*, using only the Fishing key: presses equip the set, apply the best lure and cast; a press reels; after the loot, a press opens a clam, the next casts. A double right-click casts. The music stays muted until the stretch ends; mounting ends it, restores every leased CVar and shows the swap-back Nudge, and Swap gear swaps back. Every rule of `qol.md` is now built except QOL-R100–R104 (M8).
 
 ## M2 Ledger core

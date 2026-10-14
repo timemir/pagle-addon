@@ -220,6 +220,21 @@ describe("FakePagle", function()
 			assert.is_nil(fake.settingsPage("trackers"))
 		end)
 
+		it("gives a button row its caption, nil without one, as Core draws them (CORE-R42, SET-R2)", function()
+			local fake, M = withQoL()
+			M:AddSetting("fishing", { kind = "header", label = "Casting" })
+			M:AddSetting(
+				"fishing",
+				{ kind = "button", label = "Position", caption = "Reset", onClick = function() end }
+			)
+			M:AddSetting("fishing", { kind = "button", label = "Save", onClick = function() end })
+			fake.login()
+
+			local page = assert(fake.settingsPage("fishing"))
+			assert.are.same({ "Position", "Reset" }, { page[2].label, page[2].caption })
+			assert.are.same({ "Save" }, { page[3].label, page[3].caption })
+		end)
+
 		it("raises an error at the caller for a row Core refuses (CORE-R42)", function()
 			local _, M = withQoL()
 			M:AddSetting("fishing", { kind = "header", id = "casting", label = "Casting" })
@@ -229,6 +244,7 @@ describe("FakePagle", function()
 				{ "fishing", { kind = "toggle", label = "Casting" } },
 				{ "fishing", { kind = "header", id = "casting", label = "Again" } },
 				{ "fishing", { kind = "header", parent = "gear", label = "Swap" } },
+				{ "fishing", { kind = "button", label = "Position", caption = true, onClick = function() end } },
 			}) do
 				local ok, err = pcall(function()
 					M:AddSetting(call[1], call[2])
@@ -247,6 +263,50 @@ describe("FakePagle", function()
 			assert.are.equal(1, #fake.reported)
 			assert.matches("after ModulesChanged", fake.reported[1])
 			assert.is_nil(fake.settingsPage("fishing"))
+		end)
+	end)
+
+	describe("M:RefreshSetting", function()
+		-- A fake with QoL's dropdown "set" and button "save" on Fishing; returns the fake and QoL's handle.
+		local function withRows()
+			local fake = newFakePagle()
+			local M = fake.Pagle.RegisterModule({ name = "QoL", title = "QoL", order = 50 })
+			M:AddSetting("fishing", {
+				kind = "dropdown",
+				id = "set",
+				label = "Fishing set",
+				get = function() end,
+				set = function() end,
+				options = function() end,
+			})
+			M:AddSetting("fishing", { kind = "button", id = "save", label = "Save", onClick = function() end })
+			return fake, M
+		end
+
+		it("records each refresh once the page is registered, and none before (CORE-R42)", function()
+			local fake, M = withRows()
+			M:RefreshSetting("set")
+			assert.are.same({}, fake.refreshed)
+
+			fake.login()
+			M:RefreshSetting("set")
+			M:RefreshSetting("set")
+
+			assert.are.same({ { module = "QoL", id = "set" }, { module = "QoL", id = "set" } }, fake.refreshed)
+		end)
+
+		it("raises an error at the caller for an id none of the Module's value rows has (CORE-R42)", function()
+			local fake, M = withRows()
+			fake.login()
+
+			for _, id in ipairs({ "gear", "save" }) do
+				local ok, err = pcall(function()
+					M:RefreshSetting(id)
+				end)
+				assert.is_false(ok)
+				assert.matches("fake_pagle_spec%.lua:%d+: QoL's RefreshSetting: no checkbox", tostring(err))
+			end
+			assert.are.same({}, fake.refreshed)
 		end)
 	end)
 

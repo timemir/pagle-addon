@@ -5,7 +5,7 @@ describe("QoL's Fishing key logic", function()
 	local ns = loadAddon("Pagle_QoL", FOREVER_GLOBALS).ns
 
 	describe("ns.NextAction", function()
-		-- Each row: the state, then the next action. Unlisted fields are false. M1 has steps 1, 2 and 6 only.
+		-- Each row: the state, then the next action. Unlisted fields are false.
 		local LADDER = {
 			-- Step 1: disarmed, a loot window open, or casting a spell with a cast time (QOL-R20, QOL-R28, QOL-R30).
 			{ "disarmed, idle", {}, "nothing" },
@@ -19,6 +19,77 @@ describe("QoL's Fishing key logic", function()
 			{ "casting a spell with a cast time", { armed = true, casting = true, poleInHand = true }, "nothing" },
 			-- Step 2: channeling Fishing (QOL-R22).
 			{ "channeling Fishing", { armed = true, channelingFishing = true, poleInHand = true }, "reel" },
+			-- Step 4: a pole in hand with no lure on, and a lure available under the Lures setting (QOL-R20, QOL-R51).
+			{ "a pole with no lure on and a lure available", { armed = true, poleInHand = true, lure = 6529 }, "lure" },
+			{
+				"a pole with a lure on (or counting as lured, QOL-R29)",
+				{ armed = true, poleInHand = true, lured = true, lure = 6529 },
+				"cast",
+			},
+			{ "a pole with no lure on and none available", { armed = true, poleInHand = true }, "cast" },
+			{ "no pole in hand with a lure available", { armed = true, lure = 6529 }, "cast" },
+			{
+				"channeling Fishing with no lure on: never mid-channel",
+				{ armed = true, channelingFishing = true, poleInHand = true, lure = 6529 },
+				"reel",
+			},
+			{
+				"a loot window open with no lure on",
+				{ armed = true, lootOpen = true, poleInHand = true, lure = 6529 },
+				"nothing",
+			},
+			{
+				"casting a lure's use",
+				{ armed = true, casting = true, poleInHand = true, lure = 6529 },
+				"nothing",
+			},
+			-- Step 3: the gear step is ready (QOL-R43), on the Fishing key only (QOL-R15).
+			{ "the gear step ready", { armed = true, gearReady = true, lure = 6529 }, "gear" },
+			{
+				"the gear step ready while channeling Fishing",
+				{ armed = true, channelingFishing = true, gearReady = true },
+				"reel",
+			},
+			{
+				"the gear step ready with a loot window open",
+				{ armed = true, lootOpen = true, gearReady = true },
+				"nothing",
+			},
+			{
+				"the gear step ready, for the double-click, which skips it",
+				{ armed = true, gearReady = true, skipGear = true },
+				"cast",
+			},
+			-- Step 5: a clam available under Open clams between Casts (QOL-R55, QOL-R56), after the lure and before
+			-- the cast, never mid-channel, and with or without a pole (QOL-R23).
+			{ "a clam available, a lure on", { armed = true, poleInHand = true, lured = true, clam = 5524 }, "clam" },
+			{ "a clam available with no pole in hand", { armed = true, clam = 5524 }, "clam" },
+			{
+				"a clam and a lure available, no lure on: the lure goes on first",
+				{ armed = true, poleInHand = true, lure = 6529, clam = 5524 },
+				"lure",
+			},
+			{
+				"a clam available while channeling Fishing: never mid-channel",
+				{ armed = true, poleInHand = true, channelingFishing = true, clam = 5524 },
+				"reel",
+			},
+			{
+				"a clam available with a loot window open",
+				{ armed = true, poleInHand = true, lootOpen = true, clam = 5524 },
+				"nothing",
+			},
+			{ "a clam available while disarmed", { poleInHand = true, clam = 5524 }, "nothing" },
+			{
+				"a clam available with the gear step ready",
+				{ armed = true, gearReady = true, clam = 5524 },
+				"gear",
+			},
+			{
+				"a clam available with the gear step ready, for the double-click",
+				{ armed = true, gearReady = true, skipGear = true, clam = 5524 },
+				"clam",
+			},
 			-- Step 6, with or without a pole (QOL-R23).
 			{ "idle with a pole in hand", { armed = true, poleInHand = true }, "cast" },
 			{ "idle with no pole in hand", { armed = true }, "cast" },
@@ -28,6 +99,110 @@ describe("QoL's Fishing key logic", function()
 				assert.are.equal(row[3], ns.NextAction(row[2]))
 			end)
 		end
+
+		-- Step 2's "unless the reel didn't take" (QOL-R35).
+		it("casts while channeling Fishing once the reel didn't take (QOL-R20, QOL-R35)", function()
+			assert.are.equal(
+				"cast",
+				ns.NextAction({ armed = true, channelingFishing = true, poleInHand = true, reelMissed = true })
+			)
+			-- The cast takes the existing target: no lure goes on mid-channel.
+			assert.are.equal(
+				"cast",
+				ns.NextAction({
+					armed = true,
+					channelingFishing = true,
+					poleInHand = true,
+					lure = 6529,
+					reelMissed = true,
+				})
+			)
+		end)
+
+		it("casts, never opens a clam, while channeling once the reel didn't take (QOL-R35, QOL-R56)", function()
+			assert.are.equal(
+				"cast",
+				ns.NextAction({
+					armed = true,
+					channelingFishing = true,
+					poleInHand = true,
+					lured = true,
+					clam = 5524,
+					reelMissed = true,
+				})
+			)
+		end)
+
+		it("still does nothing at step 1 when the reel didn't take (QOL-R20, QOL-R35)", function()
+			assert.are.equal("nothing", ns.NextAction({ channelingFishing = true, reelMissed = true }))
+			assert.are.equal(
+				"nothing",
+				ns.NextAction({ armed = true, lootOpen = true, channelingFishing = true, reelMissed = true })
+			)
+		end)
+	end)
+
+	describe("ns.NewReelWatch", function()
+		local WAIT = 0.5 -- qol.md › Tunables, the reel wait
+
+		it("takes a key going down while the reel is armed as a reel press (QOL-R35)", function()
+			local watch = ns.NewReelWatch()
+			assert.is_false(watch:Frame(true, false, 10))
+			assert.is_false(watch:Frame(true, true, 10.25))
+			assert.is_false(watch:Frame(true, false, 10.5))
+			assert.is_false(watch:Missed())
+
+			assert.is_true(watch:Frame(true, false, 10.25 + WAIT))
+			assert.is_true(watch:Missed())
+			-- It says so once.
+			assert.is_false(watch:Frame(true, false, 11))
+			assert.is_true(watch:Missed())
+		end)
+
+		it("holds no press before the reel wait has passed (QOL-R35)", function()
+			local watch = ns.NewReelWatch()
+			watch:Frame(true, false, 10)
+			watch:Frame(true, true, 10.25)
+
+			assert.is_false(watch:Frame(true, true, 10.5))
+			assert.is_false(watch:Missed())
+		end)
+
+		it("counts no press while the reel isn't armed, or for a key already down (QOL-R35)", function()
+			local watch = ns.NewReelWatch()
+			watch:Frame(false, false, 10)
+			watch:Frame(false, true, 10.1)
+			-- Held from before the reel was armed: not a press.
+			watch:Frame(true, true, 10.2)
+
+			assert.is_false(watch:Frame(true, true, 11))
+			assert.is_false(watch:Missed())
+		end)
+
+		it("keeps the first press's time when another comes while it waits (QOL-R35)", function()
+			local watch = ns.NewReelWatch()
+			watch:Frame(true, false, 10)
+			watch:Frame(true, true, 10.25)
+			watch:Frame(true, false, 10.5)
+			watch:Frame(true, true, 10.625)
+
+			assert.is_true(watch:Frame(true, true, 10.25 + WAIT))
+		end)
+
+		it("drops a waiting press and the miss on Clear (QOL-R35)", function()
+			local watch = ns.NewReelWatch()
+			watch:Frame(true, false, 10)
+			watch:Frame(true, true, 10.1)
+			watch:Clear()
+			assert.is_false(watch:Frame(true, false, 11))
+			assert.is_false(watch:Missed())
+
+			watch:Frame(true, true, 11.1)
+			watch:Frame(true, false, 12)
+			assert.is_true(watch:Missed())
+			watch:Clear()
+			assert.is_false(watch:Missed())
+		end)
 	end)
 
 	describe("ns.IsFishingPole", function()
@@ -49,6 +224,48 @@ describe("QoL's Fishing key logic", function()
 		it("has no cast target while the Fishing spell's name is unknown (QOL-R24)", function()
 			assert.is_nil(ns.KeyTarget("cast", nil))
 		end)
+
+		it(
+			"applies a lure by clicking PagleQoLActionButton set to the lure's item, on the main hand (QOL-R24, QOL-R52)",
+			function()
+				-- Slot 16 (INVSLOT_MAINHAND): on Forever the lure's use alone starts targeting (#147).
+				assert.are.same(
+					{ kind = "click", value = "PagleQoLActionButton", item = 6529, slot = 16 },
+					ns.KeyTarget("lure", "Fishing", 6529)
+				)
+			end
+		)
+
+		it("opens a clam by clicking PagleQoLActionButton set to the clam's item, on no slot (QOL-R24)", function()
+			assert.are.same(
+				{ kind = "click", value = "PagleQoLActionButton", item = 5524 },
+				ns.KeyTarget("clam", "Fishing", nil, 5524)
+			)
+			-- The clam's item, not the lure's, though both are known.
+			assert.are.same(
+				{ kind = "click", value = "PagleQoLActionButton", item = 5524 },
+				ns.KeyTarget("clam", "Fishing", 6529, 5524)
+			)
+			assert.is_nil(ns.KeyTarget("clam", "Fishing"))
+		end)
+
+		it("re-points from a lure to a clam, and between clams (QOL-R24, QOL-R25)", function()
+			local thickShelled = ns.Arming({ "F" }, ns.KeyTarget("clam", "Fishing", nil, 5524))
+			local bigMouth = ns.Arming({ "F" }, ns.KeyTarget("clam", "Fishing", nil, 7973))
+
+			assert.is_false(ns.SameArming(thickShelled, ns.Arming({ "F" }, ns.KeyTarget("lure", "Fishing", 6529))))
+			assert.is_false(ns.SameArming(thickShelled, bigMouth))
+		end)
+
+		it("equips the fishing set by clicking PagleQoLGearButton, with no item (QOL-R24)", function()
+			assert.are.same({ kind = "click", value = "PagleQoLGearButton" }, ns.KeyTarget("gear", "Fishing"))
+			assert.is_false(
+				ns.SameArming(
+					ns.Arming({ "F" }, ns.KeyTarget("gear", "Fishing")),
+					ns.Arming({ "F" }, ns.KeyTarget("lure", "Fishing", 6529))
+				)
+			)
+		end)
 	end)
 
 	describe("ns.Arming", function()
@@ -64,6 +281,13 @@ describe("QoL's Fishing key logic", function()
 			assert.is_false(ns.SameArming(now, ns.Arming({ "G", "SHIFT-F" }, CAST)))
 		end)
 
+		it("re-points for another lure, though the click is the same (QOL-R24, QOL-R25)", function()
+			local bauble = ns.Arming({ "F" }, ns.KeyTarget("lure", "Fishing", 6529))
+
+			assert.is_true(ns.SameArming(bauble, ns.Arming({ "F" }, ns.KeyTarget("lure", "Fishing", 6529))))
+			assert.is_false(ns.SameArming(bauble, ns.Arming({ "F" }, ns.KeyTarget("lure", "Fishing", 6532))))
+		end)
+
 		it("binds no key when there's no target, so a rebinding while disarmed changes nothing (QOL-R11)", function()
 			assert.are.same({}, ns.Arming({ "F" }, nil).keys)
 			assert.is_true(ns.SameArming(ns.Arming({ "F" }, nil), ns.Arming({ "G" }, nil)))
@@ -73,6 +297,14 @@ describe("QoL's Fishing key logic", function()
 		it("has nothing to arm with no key bound, whatever the target (QOL-R11)", function()
 			assert.is_true(ns.SameArming(ns.Arming({}, CAST), ns.Arming({}, nil)))
 			assert.is_nil(ns.Arming({}, REEL).target)
+		end)
+	end)
+
+	describe("ns.ClickRegistration", function()
+		it("fires on key-down while ActionButtonUseKeyDown is 1, else on key-up (QOL-R27)", function()
+			assert.are.equal("AnyDown", ns.ClickRegistration("1"))
+			assert.are.equal("AnyUp", ns.ClickRegistration("0"))
+			assert.are.equal("AnyUp", ns.ClickRegistration(nil)) -- a client that doesn't know the CVar
 		end)
 	end)
 

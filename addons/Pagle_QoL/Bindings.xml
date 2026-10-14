@@ -2,4 +2,7 @@
 	<!-- The Fishing key (QOL-R1, QOL-R10). Its own body does nothing: QoL arms it with override bindings (QOL-R11). -->
 	<Binding name="PAGLE_FISHING_KEY" header="PAGLE" category="ADDONS">
 	</Binding>
+	<!-- Swap gear (QOL-R1, QOL-R46), under the same Pagle header. Its body is adapter/Gear.lua's, which a QoL that loaded
+	without Core's Pagle never defines. -->
+	<Binding name="PAGLE_SWAP_GEAR" category="ADDONS">if PagleQoL_SwapGear then PagleQoL_SwapGear() end</Binding>
 </Bindings>

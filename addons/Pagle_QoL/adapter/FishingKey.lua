@@ -17,6 +17,10 @@ local TICK = 0.5
 -- The override owner (QOL-R11); its OnUpdate runs the tick and the wait for a key to be up. Nil until createFrame
 -- makes it (QOL-R33); evaluate and ns.DisarmFishingKey do nothing until then.
 local frame ---@type Frame
+-- PagleQoLActionButton, the secure button a lure's override clicks (QOL-R24); made with frame (QOL-R33).
+local button ---@type Button
+-- PagleQoLGearButton, the plain button the gear step's override clicks (QOL-R24); made with frame (QOL-R33).
+local gearButton ---@type Button
 local loggedIn = false
 local lootOpen = false -- QOL-R28
 local channeling = false -- QOL-R22
@@ -27,6 +31,7 @@ local waitingForKeyUp = false -- QOL-R26
 local updating = false -- whether frame's OnUpdate runs
 local sinceTick = 0 -- seconds since the last evaluation
 local disarming = false -- inside ns.DisarmFishingKey, whose own UPDATE_BINDINGS must not re-arm (QOL-R31)
+local reelWatch = ns.NewReelWatch() -- the Fishing key's reel presses, and whether the reel didn't take (QOL-R35)
 local evaluate
 
 --- QoL is armed once logged in, while it isn't standing down (QOL-R82) or restricted (QOL-R30). Only a registered
@@ -61,13 +66,30 @@ local function ladderState(armed, fishingName)
 		readChannel = false
 		channeling = fishingName ~= nil and UnitChannelInfo("player") == fishingName
 	end
+	local pole = poleInHand()
+	local lure, lured = ns.ReadLures(pole)
 	return {
 		armed = true,
 		lootOpen = lootOpen,
 		casting = UnitCastingInfo("player") ~= nil,
 		channelingFishing = channeling,
-		-- poleInHand stays unread until a step uses it (Track Q's gear step); M1's ladder casts either way (QOL-R23).
+		poleInHand = pole,
+		lured = lured,
+		lure = lure,
+		clam = ns.ReadClams(),
+		gearReady = ns.ReadGearStep(pole),
+		reelMissed = reelWatch:Missed(),
 	}
+end
+
+-- Registers PagleQoLActionButton's clicks so a press fires it once (QOL-R27). Under lockdown the secure button
+-- can't change; the arm after it reads the CVar again (QOL-R32).
+local function registerClicks()
+	if button and not InCombatLockdown() then
+		button:RegisterForClicks(ns.ClickRegistration(GetCVar("ActionButtonUseKeyDown")))
+		-- PagleQoLGearButton follows the same rule (QOL-R27).
+		gearButton:RegisterForClicks(ns.ClickRegistration(GetCVar("ActionButtonUseKeyDown")))
+	end
 end
 
 -- Whether any key of either arming is held down (QOL-R26).
@@ -85,6 +107,19 @@ local function keyHeld(a, b)
 	return false
 end
 
+-- Sets PagleQoLActionButton to use a click target's item (QOL-R24). A lure goes on the main hand: on Forever its use
+-- alone starts targeting, so the button names the slot. After the secure button's action, a use that can target an
+-- item goes to `target-slot` (`UseInventoryItem`, or `C_Container.UseContainerItem` with a `target-bag`), else to
+-- `target-item` (Gethe/wow-ui-source branch forever at 943764493e6b16d63ded3ab304150d1f05e58b57, "1.60.1 (70338)":
+-- Interface/AddOns/Blizzard_FrameXML/SecureTemplates.lua, OnActionButtonClick, lines 759–785). Any other item, a
+-- clam, has no slot (QOL-R52, #147).
+---@param target PagleQoLKeyTarget a click target with an item
+local function setButtonItem(target)
+	button:SetAttribute("type", "item")
+	button:SetAttribute("item", "item:" .. target.item)
+	button:SetAttribute("target-slot", target.slot)
+end
+
 -- Clears the old overrides, then sets the new ones (QOL-R11, QOL-R98). `current` changes first: each call fires
 -- UPDATE_BINDINGS, and the re-evaluation that runs must find nothing to do (QOL-R25).
 ---@param want PagleQoLArming
@@ -95,20 +130,54 @@ local function repoint(want)
 	if not target then
 		return
 	end
+	-- Arming re-reads the click registration (QOL-R27), and tells the lures what the key applies (QOL-R29).
+	registerClicks()
+	ns.LureTargeted(target.item)
+	-- The gear step's click has no item: PagleQoLGearButton runs the swap itself (QOL-R44).
+	if target.kind == "click" and target.item then
+		setButtonItem(target)
+	end
 	for _, key in ipairs(want.keys) do
 		if target.kind == "spell" then
 			SetOverrideBindingSpell(frame, true, key, target.value)
+		elseif target.kind == "click" then
+			SetOverrideBindingClick(frame, true, key, target.value, "LeftButton")
 		else
 			SetOverrideBinding(frame, true, key, target.value)
 		end
 	end
 end
 
+--- Readies PagleQoLActionButton for a target the double-click's BUTTON2 arms (adapter/DoubleClick.lua), as repoint does
+--- for the Fishing key: the click registration (QOL-R27), the lure it now applies (QOL-R29), and for a click, the item
+--- to use (QOL-R52). The double-click never arms the gear step (QOL-R15), so a click target always has an item.
+--- While the Fishing key waits for key-up it does nothing: the held key's press is still the old target's, and the
+--- key's re-point readies the button on the first frame it is up (QOL-R26, QOL-R29).
+---@param target PagleQoLKeyTarget
+function ns.ArmActionButton(target)
+	if waitingForKeyUp then
+		return
+	end
+	registerClicks()
+	ns.LureTargeted(target.item)
+	if target.kind == "click" then
+		setButtonItem(target)
+	end
+end
+
+-- Whether the Fishing key's override is the reel now (QOL-R24), so a key going down is a reel press (QOL-R35).
+---@return boolean
+local function reelArmed()
+	return current.target ~= nil and current.target.value == ns.KeyTarget("reel").value
+end
+
 ---@param _ Frame
 ---@param elapsed number
 local function onUpdate(_, elapsed)
 	sinceTick = sinceTick + elapsed
-	if waitingForKeyUp or sinceTick >= TICK then
+	-- Each frame looks for a reel press; the frame its reel wait passes, the reel didn't take (QOL-R35).
+	local missed = reelWatch:Frame(reelArmed(), keyHeld(current, current), GetTime())
+	if missed or waitingForKeyUp or sinceTick >= TICK then
 		evaluate()
 	end
 end
@@ -130,15 +199,23 @@ function evaluate()
 	end
 	sinceTick = 0
 	local armed = isArmed()
+	-- Disarmed, a waiting reel press is dropped (QOL-R35).
+	if not armed then
+		reelWatch:Clear()
+	end
 	-- Every override change that falls due while restricted is skipped; the end of restriction re-evaluates (QOL-R32).
 	if Pagle.IsRestricted() then
 		waitingForKeyUp = false
 		setOnUpdate(false)
+		-- Restricted, the next-action button shows *nothing* (QOL-R72).
+		ns.ShowNextAction(ladderState(false), keys)
 		return
 	end
 	local fishingName = C_Spell.GetSpellName(ns.FISHING_SPELL_ID)
-	local action = ns.NextAction(ladderState(armed, fishingName))
-	local want = ns.Arming(keys, ns.KeyTarget(action, fishingName))
+	local state = ladderState(armed, fishingName)
+	-- Under Input *Double-click* the Fishing key has no key to arm (QOL-R12).
+	local keyKeys = ns.InputArmsKey(ns.CurrentInput()) and keys or {}
+	local want = ns.Arming(keyKeys, ns.KeyTarget(ns.NextAction(state), fishingName, state.lure, state.clam))
 	if ns.SameArming(current, want) then
 		waitingForKeyUp = false
 	elseif keyHeld(current, want) then
@@ -147,8 +224,15 @@ function evaluate()
 		waitingForKeyUp = false
 		repoint(want)
 	end
+	-- An open double-click window re-points from the same evaluation (QOL-R13, QOL-R25).
+	ns.PointDoubleClick(state, fishingName)
+	-- The next-action button shows the same evaluation (QOL-R70).
+	ns.ShowNextAction(state, keys)
 	setOnUpdate(armed)
 end
+
+--- Re-evaluates the next action now (QOL-R25): for a QoL setting change, and a lure's result (QOL-R29).
+ns.EvaluateFishingKey = evaluate
 
 --- Clears the Fishing key's overrides now, held key or not, and arms nothing (QOL-R31). adapter/Combat.lua calls it
 --- as restriction starts, before lockdown; the end of restriction re-evaluates (QOL-R32).
@@ -167,6 +251,13 @@ function ns.DisarmFishingKey()
 	disarming = false
 end
 
+--- Logout or /reload has begun (PLAYER_LOGOUT): QoL is disarmed from now on and evaluates nothing, so nothing reads
+--- a setting AceDB may already have stripped to nil (QOL-R30). It makes no binding call: the overrides set go with the
+--- session, and in lockdown the call would be blocked. The Fishing stretch calls it before it restores (QOL-R61).
+function ns.LogOut()
+	loggedIn = false
+end
+
 ---@param event string
 local function onEvent(event)
 	-- The conflict check comes right before the first arm, so QoL never arms and then stands down (QOL-R33).
@@ -179,10 +270,12 @@ local function onEvent(event)
 		loggedIn = loggedIn or event == "PLAYER_LOGIN"
 	elseif event == "LOOT_READY" then
 		lootOpen = true
+		reelWatch:Clear() -- QOL-R35
 	elseif event == "LOOT_CLOSED" then
 		lootOpen = false
 	elseif event == "UNIT_SPELLCAST_CHANNEL_STOP" then
 		channeling = false
+		reelWatch:Clear() -- QOL-R35
 	end
 	evaluate()
 end
@@ -204,11 +297,19 @@ local PLAYER_EVENTS = {
 	"UNIT_INVENTORY_CHANGED",
 }
 
--- The override owner is made at OnInitialize, or, after a /reload in combat, at RestrictionChanged(false); until
--- then QoL stays disarmed (QOL-R33).
+-- The override owner and PagleQoLActionButton are made at OnInitialize, or, after a /reload in combat, at
+-- RestrictionChanged(false); until then QoL stays disarmed (QOL-R33). The button has no parent, size or anchor,
+-- so it is never shown (QOL-R24); a click binding still clicks it.
 local function createFrame()
 	if not frame and not Pagle.IsRestricted() then
 		frame = CreateFrame("Frame")
+		button = CreateFrame("Button", ns.ACTION_BUTTON, nil, "SecureActionButtonTemplate") --[[@as Button]]
+		-- PagleQoLGearButton: a plain Button, never shown either, whose click is the gear step's swap (QOL-R24).
+		gearButton = CreateFrame("Button", ns.GEAR_BUTTON) --[[@as Button]]
+		gearButton:SetScript("OnClick", function()
+			ns.PressGearButton()
+		end)
+		registerClicks()
 	end
 end
 
@@ -222,8 +323,16 @@ function ns.StartFishingKey()
 	for _, event in ipairs(PLAYER_EVENTS) do
 		Pagle.RegisterUnitEvent(OWNER, event, "player", onEvent)
 	end
+	-- ActionButtonUseKeyDown may have changed (QOL-R27). Every CVAR_UPDATE re-reads it: the payload's first value is
+	-- the CVar's name on Retail but has been an event name instead, and the read is cheap either way. It re-evaluates
+	-- too, so an open double-click window drops its reel target at once (QOL-R105).
+	Pagle.RegisterEvent(OWNER, "CVAR_UPDATE", function()
+		registerClicks()
+		evaluate()
+	end)
 	Pagle.RegisterCallback(OWNER, "CastStarted", function()
 		channeling = true
+		reelWatch:Clear() -- a new channel: its reel is untried (QOL-R35)
 		evaluate()
 	end)
 	for _, event in ipairs({ "CastEnded", "FishingStateChanged" }) do

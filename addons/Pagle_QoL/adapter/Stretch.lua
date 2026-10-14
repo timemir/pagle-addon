@@ -5,16 +5,23 @@ end
 ---@class PagleQoLNS
 local ns = select(2, ...)
 
--- The Fishing stretch (QOL-R61) and the CVars leased for it (QOL-R62–R64, QOL-R66): QoL hears when a stretch
--- starts and ends (logic/Stretch.lua decides), leases the soft-interact row for it, and restores the lease when it
--- ends, at load and when lockdown ends. It changes only CVars (QOL-R5); what it reads, it uses only to decide
--- (QOL-R4).
+-- The Fishing stretch (QOL-R61) and the CVars leased for it (QOL-R62–R66): QoL hears when a stretch starts and ends
+-- (logic/Stretch.lua decides), leases soft-interact and each While you fish feature that is on for it, follows those
+-- settings mid-stretch, and restores the lease when it ends, at load and when lockdown ends. It changes only CVars
+-- (QOL-R5); what it reads, it uses only to decide (QOL-R4).
 
 -- The owner of the stretch's Core event callbacks and WoW event registrations.
 local OWNER = "Pagle_QoL Fishing stretch"
 
 local stretch = ns.NewStretch()
 local frame ---@type Frame? its OnUpdate counts the idle end while it counts (QOL-R61)
+
+--- The running Fishing stretch's number this session, or nil while none runs (QOL-R61): the out-of-lures Nudge
+--- shows once per stretch (QOL-R53).
+---@return integer?
+function ns.RunningStretch()
+	return stretch:Number()
+end
 
 -- The client's CVars, looked up at each call.
 ---@type PagleQoLCVars
@@ -36,12 +43,30 @@ local function lease()
 	return global.lease
 end
 
--- Restores every leased CVar now, or, under lockdown, leaves the lease to wait for RestrictionChanged(false)
--- (QOL-R63, QOL-R66).
-local function restore()
+-- Restores every leased CVar now, or with `only` just the ones it names, or, under lockdown, leaves the lease to
+-- wait for RestrictionChanged(false) (QOL-R63, QOL-R65, QOL-R66).
+---@param only table<string, true>?
+local function restore(only)
 	if not InCombatLockdown() then
-		ns.RestoreLease(lease(), cvars)
+		ns.RestoreLease(lease(), cvars, only)
 	end
+end
+
+--- Changes a While you fish setting with `change(profile)` (QOL-R62). During a stretch, the CVars of a feature it
+--- turned off are restored at once and those of one it turned on are leased at once; the rest of the lease stays
+--- as it is (QOL-R65). Outside one, the next stretch follows the new setting.
+---@param change fun(profile: PagleQoLLeaseSettings) changes `PagleQoLDB.profile` in place
+function ns.ChangeLeaseSetting(change)
+	---@type PagleQoLLeaseSettings QoL's OnInitialize opened PagleQoLDB before its page has any row to change
+	local profile = ns.db.profile
+	local before = ns.LeaseRows(profile)
+	change(profile)
+	if not stretch:IsRunning() then
+		return
+	end
+	local rows, names = ns.LeaseChange(before, ns.LeaseRows(profile))
+	restore(names)
+	ns.Lease(lease(), rows, cvars)
 end
 
 local onUpdate
@@ -67,11 +92,23 @@ function ns.EndStretch()
 	setOnUpdate()
 end
 
+-- The stretch ends on its own: the pole came off or the player mounted (QOL-R61). Then the swap-back Nudge may show;
+-- restriction and logout end it through ns.EndStretch alone, with none (QOL-R77).
+local function endOnItsOwn()
+	local running = stretch:IsRunning()
+	ns.EndStretch()
+	if running then
+		ns.NudgeSwapBack()
+	end
+end
+
 ---@param _ Frame
 ---@param elapsed number
 function onUpdate(_, elapsed)
 	if stretch:Elapse(elapsed) then
 		restore()
+		-- The idle end is the stretch ending on its own too (QOL-R77).
+		ns.NudgeSwapBack()
 	end
 	setOnUpdate()
 end
@@ -81,10 +118,11 @@ end
 function ns.StartStretch()
 	restore()
 
-	-- A stretch starts only while armed, so never while restricted or standing down (QOL-R30, QOL-R82).
+	-- A stretch starts only while armed, so never while restricted or standing down (QOL-R30, QOL-R82). It leases
+	-- soft-interact and each While you fish feature that is on (QOL-R62).
 	Pagle.RegisterCallback(OWNER, "CastStarted", function()
 		if stretch:CastStarted(ns.IsArmed()) then
-			ns.Lease(lease(), ns.SOFT_INTERACT_LEASE, cvars)
+			ns.Lease(lease(), ns.LeaseRows(ns.db.profile), cvars)
 		end
 		setOnUpdate()
 	end)
@@ -96,17 +134,22 @@ function ns.StartStretch()
 	-- The pole comes off (QOL-R21 stops holding).
 	Pagle.RegisterEvent(OWNER, "PLAYER_EQUIPMENT_CHANGED", function()
 		if not ns.PoleInHand() then
-			ns.EndStretch()
+			endOnItsOwn()
 		end
 	end)
 	-- The player mounts.
 	Pagle.RegisterEvent(OWNER, "PLAYER_MOUNT_DISPLAY_CHANGED", function()
 		if IsMounted() then
-			ns.EndStretch()
+			endOnItsOwn()
 		end
 	end)
-	-- Logout or /reload. A restore that must wait stays in the lease, saved for the leftover restore (QOL-R64).
-	Pagle.RegisterEvent(OWNER, "PLAYER_LOGOUT", ns.EndStretch)
+	-- Logout or /reload. QoL logs out first: each restore's SetCVar fires CVAR_UPDATE, which then evaluates nothing, as
+	-- AceDB may have stripped the profile's defaults already (QOL-R30, QOL-R63). A restore that must wait stays in the
+	-- lease, saved for the leftover restore (QOL-R64).
+	Pagle.RegisterEvent(OWNER, "PLAYER_LOGOUT", function()
+		ns.LogOut()
+		ns.EndStretch()
+	end)
 	-- Restriction starting ends the stretch from adapter/Combat.lua (QOL-R31). Its end runs the restores that fell
 	-- due under lockdown (QOL-R66); no stretch can have started since.
 	Pagle.RegisterCallback(OWNER, "RestrictionChanged", function(_, isRestricted)
