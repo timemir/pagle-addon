@@ -26,12 +26,54 @@ ADDONS = {
     "tackleboard": "Pagle_TackleBoard",
 }
 
-# DATA-R103: the kinds keyed by catalogue IDs, all the Ledger's, with their fields.
-CATALOGUE_KINDS: dict[str, tuple[str, ...]] = {
-    "species": ("blurb", "riddle"),
-    "legend": ("blurb", "title"),
-    "sub": ("plaque",),
-    "family": ("name",),
+
+@dataclass(frozen=True)
+class CatalogueIds:
+    """What the catalogue-keyed kinds are keyed by (DATA-R103), from the item records and families.toml."""
+
+    species: frozenset[int] = frozenset()  # Species IDs whose item isn't a Legend (LED-R4 in M3)
+    legends: frozenset[int] = frozenset()
+    subs: frozenset[int] = frozenset()  # non-Noise junk, container and treasure items
+    families: frozenset[int] = frozenset()
+
+
+@dataclass(frozen=True)
+class CatalogueKind:
+    """A kind keyed by catalogue IDs (DATA-R103): its fields, the IDs that need them, why each of those does
+    (DATA-R107's missing), and what an ID outside them isn't (DATA-R107's orphan)."""
+
+    fields: tuple[str, ...]
+    ids: Callable[[CatalogueIds], frozenset[int]]
+    missing: str
+    orphan: str
+
+
+# DATA-R103: the kinds keyed by catalogue IDs, all the Ledger's, one entry each.
+CATALOGUE_KINDS: dict[str, CatalogueKind] = {
+    "species": CatalogueKind(
+        ("blurb", "riddle"),
+        lambda ids: ids.species,
+        "every Species needs it (DATA-R103, DATA-R107)",
+        "isn't a Species ID (DATA-R19, DATA-R107)",
+    ),
+    "legend": CatalogueKind(
+        ("blurb", "title"),
+        lambda ids: ids.legends,
+        "every Legend needs it (DATA-R103, DATA-R107)",
+        "isn't a Legend (DATA-R22, DATA-R107)",
+    ),
+    "sub": CatalogueKind(
+        ("plaque",),
+        lambda ids: ids.subs,
+        "every non-Noise junk, container and treasure item needs it (DATA-R103, DATA-R107)",
+        "isn't a non-Noise junk, container or treasure item (DATA-R103, DATA-R107)",
+    ),
+    "family": CatalogueKind(
+        ("name",),
+        lambda ids: ids.families,
+        "every family in data/forever/families.toml needs it (DATA-R103, DATA-R107)",
+        "isn't a family in data/forever/families.toml (DATA-R21, DATA-R107)",
+    ),
 }
 CATALOGUE_OWNER = "ledger"
 # DATA-R105: the text of Hunts and Hunt sets, Pagle_Hunts' kinds, kept in data/hunts/hunts.toml and never in the
@@ -238,16 +280,6 @@ def has_text(value: str) -> bool:
     return bool(value.strip())
 
 
-@dataclass(frozen=True)
-class CatalogueIds:
-    """What the catalogue-keyed kinds are keyed by (DATA-R103), from the item records and families.toml."""
-
-    species: frozenset[int] = frozenset()  # Species IDs whose item isn't a Legend (LED-R4 in M3)
-    legends: frozenset[int] = frozenset()
-    subs: frozenset[int] = frozenset()  # non-Noise junk, container and treasure items
-    families: frozenset[int] = frozenset()
-
-
 SUB_CATEGORIES = frozenset({"junk", "container", "treasure"})
 
 
@@ -282,38 +314,25 @@ def _catalogue_id(id_: str) -> int | None:
     return int(id_) if id_.isascii() and id_.isdecimal() and not id_.startswith("0") else None
 
 
-# Tunables › Lore limits (DATA-R107), in Unicode code points, by field; a title's text has a limit of its own.
-LIMITS = {"riddle": 80, "blurb": 200, "plaque": 100, "name": 28, "title": 32}
-TITLE_TEXT_LIMIT = 32
-_MISSING = {
-    "species": "every Species needs it (DATA-R103, DATA-R107)",
-    "legend": "every Legend needs it (DATA-R103, DATA-R107)",
-    "sub": "every non-Noise junk, container and treasure item needs it (DATA-R103, DATA-R107)",
-    "family": "every family in data/forever/families.toml needs it (DATA-R103, DATA-R107)",
-}
+# Tunables › Lore limits (DATA-R107), in Unicode code points. By field name, in whatever kind: "title" here is a
+# Legend's title field (DATA-R103), and "name" every kind's name field.
+FIELD_LIMITS = {"riddle": 80, "blurb": 200, "plaque": 100, "name": 28, "title": 32}
+# By (kind, field), for one kind's field only: the text of a title, the Ledger's Module-defined title kind (DATA-R106).
+KIND_FIELD_LIMITS = {("title", "text"): 32}
 
 
 def limit(kind: str, name: str) -> int | None:
     """A field's length limit (Tunables), or None for an unlimited one."""
-    if kind == "title" and name == "text":
-        return TITLE_TEXT_LIMIT
-    return LIMITS.get(name)
+    return KIND_FIELD_LIMITS.get((kind, name), FIELD_LIMITS.get(name))
 
 
 def _catalogue_orphan(kind: str, id_: str, ids: CatalogueIds) -> str | None:
     """Why a catalogue-keyed text's ID is no such thing, or None when it is one (DATA-R107's orphan)."""
     item = _catalogue_id(id_)
-    if kind == "species":
-        if item in ids.legends:
-            return f"{id_} is a Legend, which needs legend text only (LED-R4, DATA-R107)"
-        return None if item in ids.species else f"{id_} isn't a Species ID (DATA-R19, DATA-R107)"
-    if kind == "legend":
-        return None if item in ids.legends else f"{id_} isn't a Legend (DATA-R22, DATA-R107)"
-    if kind == "sub":
-        if item in ids.subs:
-            return None
-        return f"{id_} isn't a non-Noise junk, container or treasure item (DATA-R103, DATA-R107)"
-    return None if item in ids.families else f"{id_} isn't a family in data/forever/families.toml (DATA-R21, DATA-R107)"
+    if kind == "species" and item in ids.legends:
+        return f"{id_} is a Legend, which needs legend text only (LED-R4, DATA-R107)"
+    entry = CATALOGUE_KINDS[kind]
+    return None if item in entry.ids(ids) else f"{id_} {entry.orphan}"
 
 
 def _check_text(lore_id: str, text: Text, layer: LoreLayer, ids: CatalogueIds, problems: Problems) -> None:
@@ -327,7 +346,7 @@ def _check_text(lore_id: str, text: Text, layer: LoreLayer, ids: CatalogueIds, p
         problems.add(at, f"orphan: the kind {text.kind} is {_possessive(owner)} (DATA-R102, DATA-R107)")
         return
     entry = layer.manifest.get(lore_id, {}).get(text.kind)
-    fields = CATALOGUE_KINDS[text.kind] if entry is None else entry.fields
+    fields = CATALOGUE_KINDS[text.kind].fields if entry is None else entry.fields
     if text.field not in fields:
         shown = ", ".join(fields)
         problems.add(at, f"orphan: {text.field} isn't one of {_possessive(text.kind)} fields ({shown}) (DATA-R107)")
@@ -367,10 +386,9 @@ def _needed(lore_id: str, layer: LoreLayer, ids: CatalogueIds) -> list[tuple[str
     """Every key lore_id's file needs (DATA-R103, DATA-R106), with why, in key order."""
     needed: list[tuple[str, str]] = []
     if lore_id == CATALOGUE_OWNER:
-        kinds = (("species", ids.species), ("legend", ids.legends), ("sub", ids.subs), ("family", ids.families))
-        for kind, of in kinds:
-            fields = CATALOGUE_KINDS[kind]
-            needed.extend((f"{kind}.{item}.{name}", _MISSING[kind]) for item in sorted(of) for name in fields)
+        for kind, catalogue_kind in CATALOGUE_KINDS.items():
+            of, fields = catalogue_kind.ids(ids), catalogue_kind.fields
+            needed.extend((f"{kind}.{item}.{name}", catalogue_kind.missing) for item in sorted(of) for name in fields)
     for kind, entry in sorted(layer.manifest.get(lore_id, {}).items()):
         why = "manifest.toml lists it (DATA-R106, DATA-R107)"
         needed.extend((f"{kind}.{id_}.{name}", why) for id_ in entry.ids for name in entry.fields)
@@ -415,6 +433,16 @@ def lore_lua_text(lore_id: str, texts: Mapping[str, Text], header: str) -> str:
         lines = [f"L[{to_lua(key)}] = {to_lua(texts[key].value)}\n" for key in keys]
         parts.append("local L = select(2, ...).L\n\n" + "".join(lines))
     return "\n".join(parts)
+
+
+def retired_lore(present: Callable[[str], bool], outputs: Collection[str]) -> dict[str, str]:
+    """Each Lore.lua present (by present(path)) that outputs doesn't give, by path, with the lore file it was
+    generated from: that file is gone, so the Lore.lua is stale (DATA-R60) and the generator removes it."""
+    return {
+        lore_lua(lore_id): lore_file(lore_id)
+        for lore_id in ADDONS
+        if lore_lua(lore_id) not in outputs and present(lore_lua(lore_id))
+    }
 
 
 def lore_outputs(layer: LoreLayer, header_of: Callable[[str], str]) -> dict[str, str]:

@@ -42,6 +42,9 @@ ns.JOURNAL_LOOK = {
 	sealText = tint("f4dfa8"), -- a seal's words
 	stampOff = tint("b8a080"), -- a stamp not yet inked
 	sepia = tint("dcb37a"), -- an icon's tint over its greys (CSS sepia(.6))
+	brass = tint("c19e45"), -- the brass plate: between its #e8c96a and #9a7420
+	brassEdge = tint("4a3008"), -- the brass plate's outline
+	brassText = tint("2a1a04"), -- its words
 }
 local LOOK = ns.JOURNAL_LOOK
 
@@ -75,6 +78,8 @@ end
 ---@field hand Font
 ---@field crumb Font
 ---@field seal Font
+---@field numeral Font -- the bookplate's level (LED-R132)
+---@field plate Font   -- the brass plate (LED-R149)
 local fonts
 
 ---@return LedgerJournalFonts
@@ -93,6 +98,8 @@ function ns.JournalFonts()
 			hand = font("Hand", HAND, 16),
 			crumb = font("Crumb", SERIF, 13),
 			seal = font("Seal", SERIF, 10),
+			numeral = font("Numeral", SERIF, 40),
+			plate = font("Plate", SERIF, 12),
 		}
 	end
 	return fonts
@@ -175,13 +182,17 @@ local BAR_HEIGHT = 12
 local SEAL_SIZE = 64
 local TILE_SEAL_SIZE = 26
 
--- An icon's size on a page.
-local ICON_SIZE = 40
+-- An icon's size on a page, and a large one's (a Species' entry, LED-R140).
+local ICON_SIZE, LARGE_ICON_SIZE = 40, 80
 
 -- Zone tiles: three across, with a gap.
 local TILE_COLUMNS = 3
 local TILE_HEIGHT = 74
 local TILE_GAP = 8
+
+-- Tabs: their height, and the gap between them.
+local TAB_HEIGHT = 18
+local TAB_GAP = 14
 
 -- A disc in `color`: a seal's wax.
 ---@param frame Frame
@@ -244,11 +255,12 @@ end, function(block)
 	return TEXT_COLORS[block.color] or (block.hand and LOOK.blue) or LOOK.ink
 end)
 
--- A link: red ink, opening its place.
+-- A link: red ink, or in handwriting blue ink (Notes to self, LED-R133), wrapping across the width, opening its place.
 function makers.link(parent)
 	local widget = newWidget(parent)
 	local text = ns.JournalText(widget, ns.JournalFonts().text, LOOK.red)
 	text:SetPoint("TOPLEFT")
+	text:SetWordWrap(true)
 	widget.label = text
 	local place, openPlace
 	widget:SetScript("OnClick", function()
@@ -256,8 +268,12 @@ function makers.link(parent)
 			openPlace(place)
 		end
 	end)
-	function widget.Fill(_, block, _, open)
+	function widget.Fill(_, block, width, open)
 		place, openPlace = block.place, open
+		local ink = block.hand and LOOK.blue or LOOK.red
+		text:SetFontObject(block.hand and ns.JournalFonts().hand or ns.JournalFonts().text)
+		text:SetTextColor(ink[1], ink[2], ink[3])
+		text:SetWidth(width)
 		text:SetText(block.text)
 		return text:GetStringHeight()
 	end
@@ -315,6 +331,31 @@ function makers.seal(parent)
 	widget.label = text
 	function widget.Fill(_, block)
 		text:SetText(block.text)
+		return SEAL_SIZE
+	end
+	return widget
+end
+
+-- The bookplate summary's row (LED-R132): the level in large numerals, its caption beside them, and a wax seal at
+-- the right with Ledger completion.
+function makers.bookplate(parent)
+	local widget = newWidget(parent)
+	local numerals = ns.JournalText(widget, ns.JournalFonts().numeral, LOOK.title)
+	numerals:SetPoint("LEFT")
+	local caption = ns.JournalText(widget, ns.JournalFonts().small, LOOK.ink)
+	caption:SetPoint("LEFT", numerals, "RIGHT", 12, 0)
+	local wax = disc(widget, SEAL_SIZE)
+	wax:SetPoint("RIGHT")
+	wax:SetRotation(math.rad(-6))
+	local seal = ns.JournalText(widget, ns.JournalFonts().seal, LOOK.sealText)
+	seal:SetPoint("CENTER", wax)
+	seal:SetJustifyH("CENTER")
+	widget.label = numerals
+	function widget.Fill(_, block)
+		numerals:SetText(block.text)
+		caption:SetText(block.value or "")
+		seal:SetText(block.seal or "")
+		wax:SetShown(block.seal ~= nil)
 		return SEAL_SIZE
 	end
 	return widget
@@ -475,6 +516,59 @@ function makers.tiles(parent)
 	return widget
 end
 
+-- Tabs side by side (LED-R130's continent tabs): the chosen one in the title's ink, underlined in red; each opens
+-- its place.
+---@class LedgerTabView: Button
+---@field label FontString
+---@field underline Texture
+---@field place LedgerJournalPlace?
+
+function makers.tabs(parent)
+	local widget = newWidget(parent)
+	---@type LedgerTabView[]
+	local tabs = {}
+	local opener
+	function widget.Fill(_, block, _, open)
+		opener = open
+		local x = 0
+		for i, data in ipairs(block.tabs or {}) do
+			local tab = tabs[i]
+			if not tab then
+				tab = CreateFrame("Button", nil, widget) --[[@as LedgerTabView]]
+				tab.label = ns.JournalText(tab, ns.JournalFonts().kicker, LOOK.kicker)
+				tab.label:SetPoint("TOPLEFT")
+				tab.underline = tab:CreateTexture(nil, "ARTWORK")
+				tab.underline:SetColorTexture(LOOK.red[1], LOOK.red[2], LOOK.red[3], 1)
+				tab.underline:SetPoint("BOTTOMLEFT")
+				tab.underline:SetPoint("BOTTOMRIGHT")
+				tab.underline:SetHeight(2)
+				tab:SetScript("OnClick", function(self)
+					if self.place then
+						opener(self.place)
+					end
+				end)
+				tabs[i] = tab
+			end
+			local ink = data.on and LOOK.title or LOOK.kicker
+			tab.label:SetText(data.text)
+			tab.label:SetTextColor(ink[1], ink[2], ink[3])
+			tab.underline:SetShown(data.on)
+			tab.place = data.place
+			local width = tab.label:GetStringWidth() + 2
+			tab:SetSize(width, TAB_HEIGHT)
+			tab:ClearAllPoints()
+			tab:SetPoint("TOPLEFT", x, 0)
+			tab:Show()
+			x = x + width + TAB_GAP
+		end
+		for i = #(block.tabs or {}) + 1, #tabs do
+			tabs[i]:Hide()
+		end
+		return TAB_HEIGHT
+	end
+	return widget
+end
+
 -- An icon: an item's (by ID) or a texture, in sepia, or as a black silhouette for what isn't caught (LED-R124).
 function makers.icon(parent)
 	local widget = newWidget(parent)
@@ -488,6 +582,8 @@ function makers.icon(parent)
 			local _, _, _, _, fileID = C_Item.GetItemInfoInstant(icon)
 			icon = fileID or icon
 		end
+		local size = block.large and LARGE_ICON_SIZE or ICON_SIZE
+		texture:SetSize(size, size)
 		texture:SetTexture(icon)
 		texture:SetDesaturated(true)
 		if block.look == "silhouette" then
@@ -497,7 +593,7 @@ function makers.icon(parent)
 			texture:SetVertexColor(LOOK.sepia[1], LOOK.sepia[2], LOOK.sepia[3])
 			texture:SetAlpha(1)
 		end
-		return ICON_SIZE
+		return size
 	end
 	return widget
 end

@@ -103,8 +103,24 @@ ns.L = {
 	JOURNAL_HOME = "Home",
 	JOURNAL_CRUMB_SEPARATOR = "❧",
 	JOURNAL_BACK = "☚ back",
-	-- Home's left page's title (LED-R130), all the placeholder Home draws until the Home ticket.
+	-- Home (LED-R130–R133, LED-R149). Its left page's kicker and title; its tiles are TILE_*'s.
+	HOME_KICKER = "The Waters",
 	HOME_TITLE = "Where I've Fished",
+	-- Notes to self (LED-R133): the next rank ("{zone}: {rank}. {next requirement}"), new to find, the next star.
+	HOME_NOTES = "Notes to self",
+	HOME_NOTE_RANK = "%s: %s. %s",
+	HOME_NOTE_NEW = "%s: %d new to find",
+	HOME_NOTE_STAR = "%s: %d to ★★★",
+	HOME_NOTE_NONE = "Go fishing!",
+	-- Its bookplate summary and contents (LED-R132), and the brass plate (LED-R149, without the title in M3).
+	HOME_LEVEL = "Angler Level",
+	HOME_PERCENT = "%d%%",
+	HOME_CONTENTS = "In this Ledger",
+	HOME_TROPHY_ROOM = "The Trophy Room",
+	HOME_CURIOS = "Curios: junk, treasure, uncharted",
+	HOME_ANGLER = "The Angler: hands, titles, bindings",
+	HOME_COUNT = "%d / %d",
+	BRASS_PLATE = "Lv %d · Ledger %d%%",
 
 	-- Dates (LED-R126): "3 Mar", and "3 Mar 2025" outside the current realm year.
 	DATE_SHORT = "%d %s",
@@ -149,6 +165,46 @@ ns.L = {
 	XP_BAR_FRESH_ONE = " Fresh Water for %d more Catch.",
 	XP_BAR_FRESH_OTHER = " Fresh Water for %d more Catches.",
 	XP_BAR_SET_ASIDE = "%s XP set aside for the next Prestige",
+
+	-- The plain hint (LED-R141, DATA-R112): "night · pools · Ashenvale · Darkshore +1 · skill ~150".
+	HINT_ANY_TIME = "Any time",
+	HINT_POOLS = "pools",
+	HINT_SEPARATOR = " · ",
+	HINT_WINDOW_SEPARATOR = ", ",
+	HINT_MORE = "%s +%d",
+	HINT_SKILL = "skill ~%d",
+
+	-- A zone tile's lines (LED-R131): "Local · 63%", "2 new!".
+	TILE_RANK = "%s · %d%%",
+	TILE_NEW = "%d new!",
+	TILE_UNFISHED = "unfished",
+	TILE_UNFISHED_SKILL = "unfished · skill ~%d",
+	TILE_UNCHARTED = "uncharted waters",
+
+	-- A list as prose: "A, B and C" (LED-R140).
+	LIST_SEPARATOR = ", ",
+	LIST_LAST = " and ",
+	-- A Species' entry (LED-R140, LED-R141). "First landed {date} in {zone}, by {character}. {n} caught."
+	ENTRY_STAMPS = { "Caught", "In its element", "Regular" },
+	ENTRY_FIRST = "First landed %s in %s, by %s. %s caught.",
+	ENTRY_FIRST_NO_ZONE = "First landed %s, by %s. %s caught.",
+	ENTRY_FOUND_IN = "Found in %s.",
+	ENTRY_ONLY_BY = " Only by %s.",
+	ENTRY_REMOVED = "No longer found in Forever's waters.",
+	ENTRY_UNKNOWN = "An unknown fish",
+	ENTRY_RIDDLE = "“%s”",
+	ENTRY_HINT_LINK = "Read the plain hint ▸",
+	-- The fish spread's right page (LED-R142): "☑ In its element (1/1)", "☐ Regular (12/50)".
+	FISH_KICKER = "Where to find it",
+	FISH_TITLE = "Its waters",
+	FISH_CAUGHT_HERE = "caught ✓",
+	FISH_WHEN = "When",
+	FISH_ELEMENT = "%s In its element (%d/%d)",
+	FISH_REGULAR = "%s Regular (%d/%d)",
+	CHECK_ON = "☑",
+	CHECK_OFF = "☐",
+	-- Search with no match (LED-R148).
+	SEARCH_NONE = "Nothing by that name in the Ledger yet.",
 
 	-- The Angler page (LED-R146), M3's part (LED-R4): its crumb, the bookplate and the hands on the rod. Numbers in
 	-- %s are BreakUpLargeNumbers'.

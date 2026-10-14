@@ -6,9 +6,9 @@ import pytest
 
 from areas_fixture import write_areas
 from baseline_fixture import CSVS, SNAPSHOT, write_baseline
+from cli_fixture import run
 from item_fixture import write_item_layer
 from observed_fixture import write_observed
-from pagle_data.cli import main
 from pagle_data.extract_baseline import source_toml
 from pools_fixture import write_pools
 from windows_fixture import write_windows
@@ -38,12 +38,6 @@ def write_tree(root: Path) -> Path:
     write_pools(root)  # test_pools.py covers pool types
     write_observed(root)  # dev.toml with no facts; test_observed.py covers the layer
     return root
-
-
-def run(root: Path, capsys: pytest.CaptureFixture[str], *args: str) -> tuple[int, str]:
-    code = main(list(args), root)
-    out, err = capsys.readouterr()
-    return code, out + err
 
 
 def test_the_baseline_is_a_source_layer_and_no_chance_reaches_a_generated_file(

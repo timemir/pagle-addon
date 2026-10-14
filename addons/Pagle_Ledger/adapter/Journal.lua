@@ -35,16 +35,22 @@ local SPINE_STRIPS, SPINE_STRIP_WIDTH = 6, 5
 ---@field close Button
 ---@field crumbs Frame                 -- the breadcrumbs' strip (LED-R125)
 ---@field crumbButtons LedgerJournalCrumbView[]
----@field search EditBox               -- the search box's place; ticket #142 makes it search (LED-R148)
+---@field search EditBox               -- the search box (LED-R148)
+---@field searchDrop LedgerJournalSearchDrop -- its results (adapter/JournalSearch.lua)
 ---@field back Button                  -- "☚ back", under the left page (LED-R125)
 ---@field left LedgerJournalPage
 ---@field right LedgerJournalPage
+---@field plate LedgerJournalPlate     -- the brass plate on the cover (LED-R149)
 
---- The Fish Journal: its router, its frame once made, and what its pages show as last drawn.
+---@class LedgerJournalPlate: Frame
+---@field label FontString
+
+--- The Fish Journal: its router, its frame once made, and what its pages and brass plate show as last drawn.
 ---@class LedgerJournal
 ---@field router LedgerJournalRouter
 ---@field frame LedgerJournalFrame?
 ---@field pages LedgerJournalPages?
+---@field plate string?                -- the brass plate's words; nil while the projection updates (LED-R149)
 ---@field private redrawQueued boolean
 ---@field private drawnPlace LedgerJournalPlace?
 local Journal = {}
@@ -70,8 +76,15 @@ local function readContext()
 		text = ns.journalText,
 		world = ns.world,
 		getItem = Pagle.GetItem,
+		getArea = Pagle.GetArea,
 		angler = Pagle.GetAngler(),
 	}
+end
+
+--- What the spreads, and the search box, read now (LED-R122, LED-R123, LED-R148).
+---@return LedgerJournalContext
+function Journal.Context()
+	return readContext()
 end
 
 -- A thin rule in `color` along one edge of `frame`, `inset` in from it.
@@ -205,6 +218,7 @@ local function build(journal)
 	frame.search:SetScript("OnEscapePressed", function(self)
 		self:ClearFocus()
 	end)
+	frame.searchDrop = ns.AttachJournalSearch(journal, frame.search)
 
 	local back = textButton(frame, fonts.text, LOOK.red)
 	back:SetPoint("BOTTOMLEFT", MARGIN + 16, MARGIN + 8)
@@ -216,6 +230,18 @@ local function build(journal)
 		end
 	end)
 	frame.back = back
+
+	-- The brass plate on the cover's lower corner, hanging over its edge as variant E's does (LED-R149), below the
+	-- pages, so it covers only leather.
+	local plate = CreateFrame("Frame", nil, frame) --[[@as LedgerJournalPlate]]
+	plate:SetPoint("BOTTOMLEFT", -12, -14)
+	ns.JournalSolid(plate, LOOK.brassEdge, "BACKGROUND")
+	local brass = ns.JournalSolid(plate, LOOK.brass, "BORDER")
+	brass:SetPoint("TOPLEFT", 1, -1)
+	brass:SetPoint("BOTTOMRIGHT", -1, 1)
+	plate.label = ns.JournalText(plate, fonts.plate, LOOK.brassText)
+	plate.label:SetPoint("CENTER")
+	frame.plate = plate
 
 	frame.close = CreateFrame("Button", nil, frame, "UIPanelCloseButton") --[[@as Button]]
 	frame.close:SetPoint("TOPRIGHT", -2, -2)
@@ -323,8 +349,14 @@ function Journal:Draw()
 	if not frame or not frame:IsShown() then
 		return
 	end
-	local pages = self.router:Pages(readContext())
+	local context = readContext()
+	local pages = self.router:Pages(context)
 	self.pages = pages
+	-- The brass plate shows on every spread; while the projection updates there is nothing yet to read (LED-R122).
+	self.plate = not pages.updating and ns.BrassPlate(context --[[@as LedgerHomeContext]]) or nil
+	frame.plate.label:SetText(self.plate or "")
+	frame.plate:SetSize(frame.plate.label:GetStringWidth() + 20, 22)
+	frame.plate:SetShown(self.plate ~= nil)
 	local place = self.router:Place()
 	local moved = place ~= self.drawnPlace
 	self.drawnPlace = place
