@@ -30,8 +30,8 @@ local MARBLE = "Interface\\FrameGeneral\\UI-Background-Marble"
 ---@field strap number[]
 
 --- Each notebook cover's look, by good ID (HNT-R121). Leather is the board's own (ns.BOARD_COVER); Oilcloth takes
---- prototypes/curio-shop/'s swatch (#1a2a1a, #8aa07a, #d0a020); Tooled Leather and Verdigris are picked to sit beside
---- them.
+--- prototypes/curio-shop/'s swatch (#1a2a1a, #8aa07a, #d0a020); Tooled Leather and Verdigris are picked from their
+--- lore (data/lore/hunts.toml).
 ---@type table<string, HuntsCoverLook>
 ns.COVERS = {
 	["hunts.notebookcover.leather"] = {
@@ -51,23 +51,24 @@ ns.COVERS = {
 		grainAlpha = 0.35,
 		strap = tint("d0a020"),
 	},
-	-- Tan hide, deeply grained as if worked with a tool, with a gilt rule.
+	-- Dark hide, deeply grained as if worked with a tool (its lore: tooled with reeds and leaping fish), gilt rule.
 	["hunts.notebookcover.tooled"] = {
-		leather = tint("6a3e20"),
-		edge = tint("1a0c04"),
+		leather = tint("3a2212"),
+		edge = tint("120a04"),
 		rule = tint("c9a46a"),
 		grain = ROCK,
-		grainAlpha = 0.75,
-		strap = tint("3a2010"),
+		grainAlpha = 0.8,
+		strap = tint("6a3e20"),
 	},
-	-- Copper gone green: a blue-green patina with a copper rule.
+	-- Copper gone green (its lore: copper corners and clasp, green in the sea air): dark leather, a verdigris rule and
+	-- clasp.
 	["hunts.notebookcover.verdigris"] = {
-		leather = tint("2f6a5e"),
-		edge = tint("0e2420"),
-		rule = tint("b87333"),
+		leather = tint("24302a"),
+		edge = tint("0c120e"),
+		rule = tint("5aa08a"),
 		grain = ROCK,
 		grainAlpha = 0.45,
-		strap = tint("7a3a14"),
+		strap = tint("4a8a78"),
 	},
 }
 
@@ -138,27 +139,29 @@ end
 ---@field border number[]   -- the border's colour
 ---@field borderSize number -- its width, in pixels
 ---@field seal number[]?    -- a wax seal's tint, if it has one
+---@field ink number[]?     -- the words' colour on a pale backdrop; nil keeps the native block's
 
 --- Each tracker frame's look, by good ID (HNT-R121). No frame (`hunts.trackerframe.none`) has none: the plain native
 --- block.
 ---@type table<string, HuntsTrackerFrameLook>
 ns.TRACKER_FRAMES = {
-	-- Thinned ink washed over the block: the board's handwriting blue, in a fine ink line.
+	-- A thin grey wash of ink behind the lines (its lore), in a fine ink line.
 	["hunts.trackerframe.inkwash"] = {
 		backdrop = MARBLE,
-		tint = tint("23407a"),
-		alpha = 0.7,
-		border = tint("162a50"),
+		tint = tint("3a3e44"),
+		alpha = 0.55,
+		border = tint("22262c"),
 		borderSize = 1,
 	},
-	-- Dark hide in a red wax border, with a seal on the header's corner.
+	-- Parchment edged in brown, with a red seal pressed in the corner (its lore): the words in the board's ink.
 	["hunts.trackerframe.waxseal"] = {
-		backdrop = ROCK,
-		tint = tint("2a1a0e"),
-		alpha = 0.85,
-		border = tint("a82a1a"),
+		backdrop = ns.BOARD_TEXTURES.paper,
+		tint = ns.BOARD_LOOK.paper,
+		alpha = 0.95,
+		border = tint("5a3a1a"),
 		borderSize = 2,
-		seal = tint("a82a1a"),
+		seal = ns.BOARD_LOOK.seal,
+		ink = ns.BOARD_LOOK.ink,
 	},
 }
 
@@ -234,6 +237,7 @@ local SAMPLE_WIDTH, HEADER_HEIGHT, LINE_HEIGHT, DOT_SIZE = 220, 18, 16, 8
 --- A sample Hunts tracker on a stage (HNT-R121): the "Hunts" header and two fixed lines, in a tracker frame.
 ---@class HuntsSampleTracker: Frame
 ---@field frame HuntsTrackerFrameView
+---@field words { text: FontString, font: string }[] -- the header and the lines, with their native font objects
 
 -- Builds a stage's sample tracker: a native objective-tracker-style block, its header in the gold header font over a
 -- faint gold rule, then a Hunt Now and a Hunt On demand.
@@ -248,6 +252,7 @@ local function buildSampleTracker(stage)
 	local header = tracker:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 	header:SetPoint("TOPLEFT")
 	header:SetText(L.TITLE)
+	tracker.words = { { text = header, font = "GameFontNormal" } }
 	local rule = tracker:CreateTexture(nil, "ARTWORK")
 	rule:SetColorTexture(1, 0.82, 0, 0.35)
 	rule:SetPoint("TOPLEFT", 0, -HEADER_HEIGHT + 2)
@@ -261,8 +266,23 @@ local function buildSampleTracker(stage)
 		local text = tracker:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 		text:SetPoint("TOPLEFT", DOT_SIZE + 8, top)
 		text:SetText(line[1])
+		tracker.words[#tracker.words + 1] = { text = text, font = "GameFontHighlightSmall" }
 	end
 	return tracker
+end
+
+--- Sets the words of a tracker on `look`'s backdrop: in its ink, or back in their native font objects' colours.
+---@param words { text: FontString, font: string }[]
+---@param look HuntsTrackerFrameLook?
+function ns.InkTrackerWords(words, look)
+	local ink = look and look.ink
+	for _, word in ipairs(words) do
+		if ink then
+			word.text:SetTextColor(ink[1], ink[2], ink[3])
+		else
+			word.text:SetFontObject(word.font)
+		end
+	end
 end
 
 --- Draws tracker frame `goodID`'s sample tracker on `stage` (HNT-R121), in that frame.
@@ -274,7 +294,9 @@ local function previewTrackerFrame(stage, goodID)
 		tracker = buildSampleTracker(stage)
 		drawn[stage] = tracker
 	end
-	tracker.frame:SetFrame(ns.TRACKER_FRAMES[goodID])
+	local look = ns.TRACKER_FRAMES[goodID]
+	tracker.frame:SetFrame(look)
+	ns.InkTrackerWords(tracker.words, look)
 	tracker:Show()
 end
 

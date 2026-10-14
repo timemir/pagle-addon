@@ -118,7 +118,17 @@ describe("Hunts' goods", function()
 	it(
 		"are named by their IDs, with no description, while their lore keys have no text (HNT-R121, HNT-R130)",
 		function()
-			local _, fake = loggedIn({ lore = false })
+			-- No fixture lore, and the shipped data/Lore.lua's goods keys taken out, as before the M5 batch (#183).
+			local _, fake = loggedIn({
+				lore = false,
+				prepare = function(loaded)
+					for key in pairs(loaded.ns.L) do
+						if type(key) == "string" and key:find("^huntgood%.") then
+							loaded.ns.L[key] = nil
+						end
+					end
+				end,
+			})
 
 			for _, slot in ipairs({ COVER, FRAME }) do
 				for _, row in ipairs(GOODS[slot]) do
@@ -337,6 +347,35 @@ describe("a tracker frame's preview", function()
 				ns.TRACKER_FRAMES["hunts.trackerframe.inkwash"].tint,
 				ns.TRACKER_FRAMES["hunts.trackerframe.waxseal"].tint
 			)
+		end
+	)
+
+	it(
+		"sets the sample's words in a frame's own ink on a pale backdrop, and in the native colours otherwise",
+		function()
+			local loaded, fake = loggedIn()
+			local ns = loaded.ns
+			local waxseal = ns.TRACKER_FRAMES["hunts.trackerframe.waxseal"]
+			assert.is_not_nil(waxseal.ink) -- parchment (its lore): dark words
+
+			-- Each tracker frame drawn on one stage in turn, so the words are set afresh each time.
+			local stage = loaded.env.CreateFrame("Frame")
+			local colours = {}
+			for _, row in ipairs(GOODS[FRAME]) do
+				fake.ns.goods:Good(row[1]).preview(stage)
+				local tracker = stage.children[1]
+				local words = {}
+				for _, widget in ipairs(descendants(tracker)) do
+					if widget.kind == "FontString" then
+						local color = widget.textColor
+						words[#words + 1] = color and { color[1], color[2], color[3] } or "native"
+					end
+				end
+				colours[row[1]] = words
+			end
+
+			assert.are.same({ "native", "native", "native" }, colours["hunts.trackerframe.none"])
+			assert.are.same({ waxseal.ink, waxseal.ink, waxseal.ink }, colours["hunts.trackerframe.waxseal"])
 		end
 	)
 end)
