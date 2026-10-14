@@ -13,11 +13,16 @@ local ns = select(2, ...)
 ---@field GetItem fun(itemID: integer): PagleItem?
 ---@field GetZones fun(): integer[]
 ---@field GetZoneCatches fun(zoneAreaID: integer): PagleZoneCatchEntry[]?
+---@field GetZoneOf fun(areaID: integer): integer?
+---@field GetArea fun(areaID: integer): PagleArea?
 
 --- Where one Hunt bites, worked out at load.
 ---@class HuntWhere
 ---@field waters integer[]      -- areaIDs, ascending (HNT-R30); empty when it has none
 ---@field isWater table<integer, true>   -- the same areaIDs as a set, for ns.InWaters
+---@field places integer[]      -- its waters, or its `areas` as listed (HNT-R31)
+---@field zones integer[]       -- its places' zones, without duplicates, ascending (HNT-R31)
+---@field skillNeed integer?    -- HNT-R32; nil when it has none
 
 ---@class PagleHuntsNS
 ---@field where table<string, HuntWhere>   -- by Hunt ID, built at OnInitialize (HNT-R137)
@@ -66,6 +71,48 @@ local function watersTest(hunt, list, getItem)
 	return nil
 end
 
+-- The zones of a Hunt's places, without duplicates, ascending (HNT-R31). A place outside the slice has none.
+---@param places integer[]
+---@param getZoneOf fun(areaID: integer): integer?
+---@return integer[]
+local function zonesOf(places, getZoneOf)
+	local zones = {}
+	for _, areaID in ipairs(places) do
+		local zone = getZoneOf(areaID)
+		if zone then
+			zones[zone] = true
+		end
+	end
+	return sorted(zones)
+end
+
+-- A Hunt's skill need (HNT-R32): the larger of the lowest skill base among its places (an area's own, else its
+-- zone's; places with neither skipped) and its `skill.min`; nil when it has neither, or it is 0 or less.
+---@param places integer[]
+---@param skill { min: integer }?
+---@param lookups HuntsWaterLookups
+---@return integer?
+local function skillNeedOf(places, skill, lookups)
+	local lowest
+	for _, areaID in ipairs(places) do
+		local area = lookups.GetArea(areaID)
+		local base = area and area.skillBase
+		if area and not base then
+			local zone = lookups.GetZoneOf(areaID)
+			local zoneArea = zone and lookups.GetArea(zone)
+			base = zoneArea and zoneArea.skillBase
+		end
+		if base and (not lowest or base < lowest) then
+			lowest = base
+		end
+	end
+	local need = math.max(lowest or 0, skill and skill.min or 0)
+	if need <= 0 then
+		return nil
+	end
+	return need
+end
+
 --- Where every Hunt of `list` bites, by Hunt ID, Retired Hunts and Hunts not yet out included (HNT-R30).
 ---@param list HuntList
 ---@param lookups HuntsWaterLookups
@@ -90,7 +137,16 @@ function ns.NewWhere(list, lookups)
 				end
 			end
 		end
-		where[hunt.id] = { waters = sorted(waters), isWater = waters }
+		local conditions = hunt.conditions or {}
+		local waterList = sorted(waters)
+		local places = conditions.areas and { unpack(conditions.areas) } or waterList
+		where[hunt.id] = {
+			waters = waterList,
+			isWater = waters,
+			places = places,
+			zones = zonesOf(places, lookups.GetZoneOf),
+			skillNeed = skillNeedOf(places, conditions.skill, lookups),
+		}
 	end
 	return where
 end

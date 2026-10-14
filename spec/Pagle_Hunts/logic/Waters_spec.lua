@@ -73,6 +73,68 @@ describe("Where a Hunt bites", function()
 		end)
 	end)
 
+	describe("places and zones (HNT-R31)", function()
+		local loaded, fake = load()
+		local where = loaded.ns.where
+
+		it("are its waters, and their zones without duplicates, ascending", function()
+			assert.are.same({ C.DARKSHORE, C.ASHENVALE, C.AUBERDINE }, where.fixture_snapper.places)
+			-- Auberdine is in Darkshore, so Darkshore is listed once.
+			assert.are.same({ C.DARKSHORE, C.ASHENVALE }, where.fixture_snapper.zones)
+			-- Westfall 40 comes before Darkshore 148; the Pier is two levels down in Darkshore.
+			assert.are.same({ C.WESTFALL, C.DARKSHORE }, where.fixture_hefty_blackmouth.zones)
+			assert.are.same({ C.DARKSHORE }, where.fixture_grouper.zones)
+		end)
+
+		it("are a Hunt's areas when it has them", function()
+			local extra = whereOf(loaded, fake, { { species = C.BLACKMOUTH, conditions = { areas = { C.PIER, C.ELWYNN } } } })
+			assert.are.same({ C.PIER, C.ELWYNN }, extra.extra_1.places)
+			assert.are.same({ C.ELWYNN, C.DARKSHORE }, extra.extra_1.zones)
+		end)
+
+		it("are none for a generated-class Hunt without areas", function()
+			assert.are.same({}, where.fixture_rack.places)
+			assert.are.same({}, where.fixture_rack.zones)
+		end)
+	end)
+
+	describe("skill need (HNT-R32)", function()
+		local loaded, fake = load()
+		local where = loaded.ns.where
+
+		it("is the lowest skill base among its places, a subzone without one taking its zone's", function()
+			-- Darkshore 75, Ashenvale 150, Auberdine none of its own so Darkshore's 75.
+			assert.are.equal(75, where.fixture_snapper.skillNeed)
+			-- The Pier's own 150.
+			assert.are.equal(150, where.fixture_grouper.skillNeed)
+			-- Westfall has no base and is skipped; Darkshore 75, the Pier 150.
+			assert.are.equal(75, where.fixture_hefty_blackmouth.skillNeed)
+		end)
+
+		it("is raised by skill.min, and is skill.min alone for a Hunt with no places", function()
+			local extra = whereOf(loaded, fake, {
+				{ species = C.BLACKMOUTH, conditions = { areas = { C.PIER, C.ELWYNN }, skill = { min = 100 } } },
+				{ species = C.BLACKMOUTH, conditions = { areas = { C.PIER, C.ELWYNN }, skill = { min = 10 } } },
+				{ class = "quality.uncommon", conditions = { skill = { min = 225 } } },
+			})
+			-- Elwynn's 25 is the lowest base; 100 raises it, 10 doesn't.
+			assert.are.equal(100, extra.extra_1.skillNeed)
+			assert.are.equal(25, extra.extra_2.skillNeed)
+			assert.are.equal(225, extra.extra_3.skillNeed)
+		end)
+
+		it("is none with no base among its places and no skill condition, or when it is 0 or less", function()
+			local extra = whereOf(loaded, fake, {
+				{ species = C.SMALLFISH }, -- Westfall only, which has no base
+				{ class = "quality.uncommon", conditions = { areas = { C.STORMWIND, C.WESTFALL }, skill = { min = 0 } } },
+			})
+			assert.is_nil(where.fixture_rack.skillNeed)
+			assert.are.same({ C.WESTFALL }, extra.extra_1.places)
+			assert.is_nil(extra.extra_1.skillNeed)
+			assert.is_nil(extra.extra_2.skillNeed)
+		end)
+	end)
+
 	describe("in its waters (HNT-R25, HNT-R30)", function()
 		local loaded, fake = load()
 		local ns = loaded.ns
