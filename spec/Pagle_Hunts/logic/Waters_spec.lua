@@ -344,6 +344,44 @@ describe("Where a Hunt bites", function()
 			assert.is_false(after.ns.InWaters(after.ns.hunts:Hunt("fixture_snapper"), cast))
 		end)
 
+		it("changes which Casts match the board spec, but no qualifying result (HNT-R4, HNT-R10)", function()
+			-- A Nightfin caught in Auberdine at realm 20:30, on a UTC realm: in the first night (20:00–06:00), not in
+			-- the corrected one (21:00–05:00).
+			local time = JAN_1 + 30 * 86400 + 20 * 3600 + 30 * 60
+			local cast = {
+				kind = "cast",
+				char = 1,
+				time = time,
+				outcome = "caught",
+				conditions = {
+					time = time,
+					minute = 1230,
+					date = { year = 2026, month = 1, day = 31, weekday = 7 },
+					zone = C.DARKSHORE,
+					subzone = C.AUBERDINE,
+					events = {},
+					auras = {},
+				},
+				items = { { n = 1, itemID = C.NIGHTFIN, quantity = 1, catchId = "c:1" } },
+			}
+			local matched, qualified = {}, {}
+			for i, loaded in ipairs({ before, after }) do
+				local ns, Pagle = loaded.ns, loaded.env.Pagle
+				local lookups = {
+					GetItem = Pagle.GetItem,
+					MatchesConditions = Pagle.MatchesConditions,
+					Class = function(classID)
+						return ns.hunts:Class(classID)
+					end,
+				}
+				local snapper = ns.hunts:Hunt("fixture_snapper")
+				matched[i] = Pagle.MatchesConditions(ns.where.fixture_snapper.boardSpec, cast.conditions)
+				qualified[i] = #ns.QualifyingCatches(snapper, cast, lookups)
+			end
+			assert.are.same({ true, false }, matched)
+			assert.are.same({ 1, 1 }, qualified)
+		end)
+
 		it("leaves an imposed Hunt's board spec and waters alone: it never refers to a window (HNT-R5)", function()
 			for _, loaded in ipairs({ before, after }) do
 				local where = loaded.ns.where.fixture_hefty_blackmouth
