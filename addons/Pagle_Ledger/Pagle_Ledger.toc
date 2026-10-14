@@ -32,4 +32,5 @@ adapter\JournalWidgets.lua
 adapter\JournalText.lua
 adapter\JournalSearch.lua
 adapter\Journal.lua
+adapter\Bindings.lua
 adapter\Ledger.lua

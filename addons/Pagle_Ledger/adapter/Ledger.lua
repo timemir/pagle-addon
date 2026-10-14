@@ -39,6 +39,8 @@ function ns.Ledger.OnInitialize()
 	ns.projection = ns.Module:NewProjection(
 		ns.WithJournalRedraws(ns.ProjectionDef(ns.db.global, lookups, ns.Outlets(ns.Module), sizeRulesVersion))
 	)
+	-- The Journal bindings (LED-R110): after the projection, which their isEarned reads (LED-R111).
+	ns.RegisterBindings(ns.Module)
 end
 
 --- Where the Ledger's moments, Write-up sections, Coins and summary line go, and what they read: the client's names
