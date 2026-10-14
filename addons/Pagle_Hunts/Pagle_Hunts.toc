@@ -10,6 +10,7 @@
 ## SavedVariables: PagleHuntsDB
 
 locale\enUS.lua
+data\Lore.lua
 data\HuntList.lua
 logic\Data.lua
 logic\Module.lua
@@ -19,6 +20,7 @@ logic\Qualify.lua
 logic\Waters.lua
 logic\Titles.lua
 logic\Projection.lua
+logic\Moments.lua
 logic\Groups.lua
 logic\Labels.lua
 logic\WindowMoments.lua

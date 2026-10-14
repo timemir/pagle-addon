@@ -103,4 +103,26 @@ ns.L = {
 	TARGET_RARE = "Any rare-or-better Catch",
 	TARGET_ANY = "Any fish",
 	TARGET_MIN_BAND = "%s, %s or better",
+
+	-- Hunts' moments, Write-up and summary line (HNT-R86, HNT-R89, HNT-R111). Counts come in singular and plural
+	-- pairs, *_ONE and *_OTHER.
+	HUNT_COMPLETE = "Hunt complete",
+	HUNT_COMPLETE_STAMP = "Hunt",
+	HUNT_TIER = "%s tier", -- "Silver tier"
+	HUNT_TIER_TEXT = "%s · %d caught", -- "Night Run · 10 caught"
+	TRIMS = { bronze = "Bronze", silver = "Silver", gold = "Gold" }, -- HNT-R18
+	TITLE_EARNED = "Title earned",
+	TITLE_EARNED_STAMP = "Title",
+	WRITE_UP_FIRST_BUILD_ONE = "Your Hunts were written up from %s Cast",
+	WRITE_UP_FIRST_BUILD_OTHER = "Your Hunts were written up from %s Casts",
+	WRITE_UP_WHILE_OFF = "While Hunts was off",
+	WRITE_UP_COMPLETED_ONE = "%s Hunt completed",
+	WRITE_UP_COMPLETED_OTHER = "%s Hunts completed",
+	WRITE_UP_FURTHER_ONE = "%s further tier",
+	WRITE_UP_FURTHER_OTHER = "%s further tiers",
+	WRITE_UP_TITLE = "Title: %s",
+	WRITE_UP_COINS = "Pagle Coins +%s",
+	SUMMARY_LINE = "Hunts: %s of %s done · %s", -- "Hunts: 3 of 16 done · 1 title"
+	SUMMARY_TITLES_ONE = "%s title",
+	SUMMARY_TITLES_OTHER = "%s titles",
 }

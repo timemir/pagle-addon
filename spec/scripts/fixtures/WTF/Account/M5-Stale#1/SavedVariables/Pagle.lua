@@ -1,0 +1,43 @@
+
+PagleLog = {
+["characters"] = {
+{
+["guid"] = "Player-4618-0A1B2C3D",
+["name"] = "Ada",
+["surname"] = "Brook",
+["firstSeen"] = 1791800000,
+["lastSeen"] = 1791800000,
+},
+},
+["format"] = 1,
+["logId"] = "6c2f9e0a1b3d5e77",
+["entries"] = {
+"B1|1|1791800000|0|70338|1.60.1",
+"S1|1|1791800000|1|150|150|25",
+"C1|1|1791800060|0|c|494|1439|1|12|0|150|25||||13759x1",
+"C1|1|1791810000|0|c|495|1439|1|40|0|150|25||||6643x1",
+"C1|1|1791900000|0|c|496|1439|1|12|0|150|25||||13759x1",
+"C1|1|1791900060|0|g|497|1439|1|12|0|150|25||||",
+},
+}
+PagleDB = {
+["global"] = {
+["schemaVersion"] = 1,
+},
+["profileKeys"] = {
+["Ada - Brook"] = "Default",
+},
+["profiles"] = {
+["Default"] = {
+["dock"] = {
+["point"] = {
+["point"] = "TOPRIGHT",
+["relativeTo"] = "Minimap",
+["relativePoint"] = "BOTTOMRIGHT",
+["x"] = 0,
+["y"] = -10,
+},
+},
+},
+},
+}
