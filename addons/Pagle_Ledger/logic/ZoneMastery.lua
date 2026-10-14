@@ -17,7 +17,10 @@ ns.ZONE_MASTER = 5
 local VISITOR, REGULAR, LOCAL, EXPERT, MASTER = 1, 2, 3, 4, ns.ZONE_MASTER
 -- Each rank reached earns 250 × rank XP (LED-R20) and 2 × rank Coins (LED-R88, Tunables).
 local RANK_XP = 250
-local RANK_COINS = 2
+--- Coins for each Zone Mastery rank reached, × the rank (LED-R88); a zoneRank moment pays them for the ranks it
+--- raises above the celebrated one (LED-R97).
+ns.ZONE_RANK_COINS = 2
+local RANK_COINS = ns.ZONE_RANK_COINS
 
 --- A zone's first Catch makes its state (ledger.md › Data, LedgerZone): nothing noted yet, rank 0.
 ---@return LedgerZone

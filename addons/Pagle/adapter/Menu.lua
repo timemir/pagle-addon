@@ -20,12 +20,18 @@ local SETTINGS = ns.SettingsMenuEntry(function()
 	Pagle.OpenSettings()
 end)
 
--- Fills the context menu, reading each label and the balance now (CORE-R52). It opens while restricted too
--- (CORE-R33).
+-- Help chart the waters: while restricted Pagle.OpenFieldReport prints REP-R44's line instead (CORE-R33).
+local function openFieldReport()
+	Pagle.OpenFieldReport()
+end
+
+-- Fills the context menu, reading each label, the balance and the Field report count now (CORE-R50, CORE-R52). It
+-- opens while restricted too (CORE-R33).
 ---@param root table the menu's root description
 local function generate(_, root)
 	local shop = ns.CurioShopMenuEntry(Pagle.GetBalance(), BreakUpLargeNumbers)
-	for _, entry in ipairs(ns.CompartmentMenu(ns.Modules:Modules(), shop, SETTINGS, securecallfunction)) do
+	local report = ns.FieldReportMenuEntry(Pagle.GetFieldReportCount(), openFieldReport)
+	for _, entry in ipairs(ns.CompartmentMenu(ns.Modules:Modules(), shop, report, SETTINGS, securecallfunction)) do
 		local button = root:CreateButton(entry.label, function()
 			securecallfunction(entry.onClick)
 		end)

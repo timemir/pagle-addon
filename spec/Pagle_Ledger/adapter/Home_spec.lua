@@ -403,6 +403,20 @@ describe("the Journal's Home, right page", function()
 		end
 	)
 
+	it("opens the Angler page from its contents line, Home ❧ The Angler (LED-R132, LED-R125, LED-R146)", function()
+		local _, loaded = openHome({ cast(ELWYNN, MACKEREL) })
+		local journal = loaded.ns.journal
+
+		journal.frame.right.drawn.leader[3]:Click()
+
+		assert.are.same({ id = "angler" }, journal.router:Place())
+		local labels = {}
+		for i, crumb in ipairs(journal.pages.crumbs) do
+			labels[i] = crumb.label
+		end
+		assert.are.same({ "Home", "The Angler" }, labels)
+	end)
+
 	it("draws none of M4's elements: no title, no Prestige, no Legends line (LED-R4, LED-R132)", function()
 		local _, loaded = openHome({ cast(ELWYNN, MACKEREL) }, level12)
 

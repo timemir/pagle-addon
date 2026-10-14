@@ -74,8 +74,9 @@ local function readContext()
 		formatNumber = BreakUpLargeNumbers,
 		text = ns.journalText,
 		world = ns.world,
-		GetItem = Pagle.GetItem,
-		GetArea = Pagle.GetArea,
+		getItem = Pagle.GetItem,
+		getArea = Pagle.GetArea,
+		angler = Pagle.GetAngler(),
 	}
 end
 

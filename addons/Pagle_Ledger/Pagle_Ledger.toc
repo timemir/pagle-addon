@@ -25,6 +25,7 @@ logic\InkBar.lua
 logic\JournalText.lua
 logic\Journal.lua
 logic\Home.lua
+logic\JournalAngler.lua
 adapter\JournalWidgets.lua
 adapter\JournalText.lua
 adapter\Journal.lua

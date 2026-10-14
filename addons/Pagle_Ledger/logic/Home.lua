@@ -11,10 +11,10 @@ local ns = select(2, ...)
 -- leaves out titles, Prestige and Legends (LED-R4).
 
 -- The spreads Home links to, by ID, with the args each takes: a zone's spread `{ zone = areaID }` (ticket #141),
--- a fish spread `{ species = speciesID }` (#142), the Trophy Room and Curios (#143) and the Angler (#144). A link to
--- a spread not registered yet does nothing (LED-R125).
+-- a fish spread `{ species = speciesID }` (#142), the Trophy Room and Curios (#143), and the Angler (#144,
+-- ns.JOURNAL_ANGLER). A link to a spread not registered yet does nothing (LED-R125).
 local ZONE_SPREAD, FISH_SPREAD = "zone", "fish"
-local TROPHY_SPREAD, CURIOS_SPREAD, ANGLER_SPREAD = "trophy", "curios", "angler"
+local TROPHY_SPREAD, CURIOS_SPREAD = "trophy", "curios"
 
 --- The tab of every continent but the Eastern Kingdoms (0) and Kalimdor (1): Home's args `{ tab = ns.OTHER_TAB }`.
 ns.OTHER_TAB = "other"
@@ -31,8 +31,8 @@ local MAX_NOTES = 3
 ---@field state LedgerState
 ---@field celebrated LedgerCelebrated
 ---@field world LedgerWorld
----@field GetItem fun(itemID: integer): PagleItem?
----@field GetArea fun(areaID: integer): PagleArea?
+---@field getItem fun(itemID: integer): PagleItem?
+---@field getArea fun(areaID: integer): PagleArea?
 
 --- The continent tab a zone's tile sits under (LED-R130): its `continent` from GetArea when 0 or 1, else "Other
 --- waters" (any other ContinentID, or a zone GetArea doesn't know). Home's args take it as `tab`; its label is
@@ -128,7 +128,7 @@ local function leftPage(context, chosen)
 	local L = ns.L
 	local byTab = {}
 	for _, zone in ipairs(ns.HomeZones(context)) do
-		local tab = ns.HomeTabOf(context.GetArea, zone)
+		local tab = ns.HomeTabOf(context.getArea, zone)
 		byTab[tab] = byTab[tab] or {}
 		table.insert(byTab[tab], tileOf(context, zone))
 	end
@@ -214,7 +214,7 @@ local function nextStarNote(context)
 	local world, state, celebrated = context.world, context.state, context.celebrated
 	local best, bestN
 	for id, species in pairs(state.species) do
-		local item = context.GetItem(id)
+		local item = context.getItem(id)
 		local removed = item and item.removed
 		if not removed and not ns.ShownSpeciesStars(world, state, celebrated, id)[3] then
 			if not best or species.n > bestN or (species.n == bestN and id < best) then
@@ -272,7 +272,7 @@ end
 local function rightPage(context)
 	local L = ns.L
 	local state, celebrated = context.state, context.celebrated
-	local completion = ns.LedgerCompletion(context.world, state, context.GetItem)
+	local completion = ns.LedgerCompletion(context.world, state, context.getItem)
 	local right = {
 		{
 			kind = "bookplate",
@@ -299,7 +299,7 @@ local function rightPage(context)
 		value = countText(completion.junk, completion.treasure),
 		place = { id = CURIOS_SPREAD },
 	}
-	right[#right + 1] = { kind = "leader", text = L.HOME_ANGLER, place = { id = ANGLER_SPREAD } }
+	right[#right + 1] = { kind = "leader", text = L.HOME_ANGLER, place = { id = ns.JOURNAL_ANGLER } }
 	return right
 end
 
@@ -309,7 +309,7 @@ end
 function ns.BrassPlate(context)
 	local state = context.state
 	local level = ns.ShownLevel(state, context.celebrated)
-	return ns.L.BRASS_PLATE:format(level, ns.LedgerCompletion(context.world, state, context.GetItem).percent)
+	return ns.L.BRASS_PLATE:format(level, ns.LedgerCompletion(context.world, state, context.getItem).percent)
 end
 
 --- Home as a spread (LED-R130–R133): no crumbs of its own; its args' `tab` chooses a continent tab. The tab last

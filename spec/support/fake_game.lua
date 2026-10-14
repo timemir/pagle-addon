@@ -21,8 +21,8 @@
 ---@field casting string? The spell the player is casting with a cast time; `UnitCastingInfo("player")` returns it.
 ---@field mainHand integer? The item ID in the main hand (slot 16).
 ---@field items table<integer, integer[]> `{ classID, subclassID }` per item ID, for `C_Item.GetItemInfoInstant`.
----@field itemNames table<integer, string> Each item's name, for `C_Item.GetItemNameByID`. Default none: no item
---- cached.
+---@field itemNames table<integer, string> Each item's name, for `C_Item.GetItemNameByID` and `C_Item.GetItemInfo`.
+--- Default none: no item cached.
 ---@field itemRequests integer[] Each `C_Item.RequestLoadItemDataByID` call's item ID, in order. The client loads
 --- nothing on its own: a spec sets `itemNames` and fires GET_ITEM_INFO_RECEIVED itself.
 ---@field bindingCalls string[] Each override call, in order: "set <key> <action>" or "clear".
@@ -145,6 +145,11 @@ return function(client, stubs)
 	end
 	stubs.C_Item.RequestLoadItemDataByID = function(itemID)
 		client.itemRequests[#client.itemRequests + 1] = itemID
+	end
+	-- The item's name first, as GetItemInfo returns it once the client has the item cached (the Field report's
+	-- comments, REP-R30); nothing for one it doesn't know.
+	stubs.C_Item.GetItemInfo = function(itemID)
+		return client.itemNames[itemID]
 	end
 	stubs.GetCVar = function(name)
 		return client.cvars[name]

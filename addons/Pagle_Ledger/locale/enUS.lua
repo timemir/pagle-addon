@@ -12,8 +12,8 @@ ns.L = {
 	-- The Ledger's def title (LED-R1).
 	TITLE = "Ledger",
 
-	-- The summary line (LED-R95), without the completion part until M3.
-	SUMMARY_LINE = "Ledger: Angler Level %d",
+	-- The summary line (LED-R95): the shown level and Ledger completion's percent.
+	SUMMARY_LINE = "Ledger: Angler Level %d · %d%% complete",
 
 	-- Names the client doesn't have (LED-R97, LED-R126).
 	ITEM_FALLBACK = "Item %d",
@@ -33,6 +33,26 @@ ns.L = {
 	NEW_IN_ZONE_STAMP = "New here",
 	SKILL_MILESTONE_TITLE = "Skill Milestone",
 	SKILL_MILESTONE_TEXT = "Fishing %d",
+	ZONE_RANK_TITLE = "Zone rank: %s",
+	ZONE_RANK_STAMP = "Rank up",
+	ZONE_MASTER_TITLE = "Zone Master",
+	ZONE_MASTER_STAMP = "Master",
+	TROPHY_WEIGHT_TITLE = "Trophy weight",
+	TROPHY_WEIGHT_STAMP = "Trophy",
+	NEW_CURIO_TITLE = "New curio",
+	NEW_CURIO_STAMP = "New!",
+	UNCHARTED_TITLE = "Unknown catch, logged",
+	UNCHARTED_STAMP = "Logged",
+	ELEMENT_STAR_TITLE = "In its element",
+	REGULAR_STAR_TITLE = "Regular",
+	FAMILY_STAR_TITLE = "Trophy family",
+	-- The family's name (lore, LED-R160) and its stars.
+	FAMILY_STAR_TEXT = "%s %s",
+	-- One star; a moment's stars repeat it (LED-R97).
+	STAR = "★",
+
+	-- Zone Mastery's ranks, Visitor to Master (LED-R50).
+	ZONE_RANKS = { "Visitor", "Regular", "Local", "Expert", "Master" },
 
 	-- A zone's next requirement (LED-R134), from its shown rank, and new to find (LED-R52) after it.
 	ZONE_NEXT_VISITOR = "Catch anything here to become a Visitor",
@@ -61,6 +81,16 @@ ns.L = {
 	WRITE_UP_LEVEL_ROSE = "Angler Level %d → %d",
 	WRITE_UP_SPECIES_ONE = "%d Species",
 	WRITE_UP_SPECIES_OTHER = "%d Species",
+	WRITE_UP_ZONES_ONE = "%d zone ranked",
+	WRITE_UP_ZONES_OTHER = "%d zones ranked",
+	WRITE_UP_MASTERED_ONE = "%d mastered",
+	WRITE_UP_MASTERED_OTHER = "%d mastered",
+	-- Zones ranked, then those mastered.
+	WRITE_UP_ZONES_MASTERED = "%s · %s",
+	WRITE_UP_TROPHY_ONE = "%d trophy weight",
+	WRITE_UP_TROPHY_OTHER = "%d trophy weights",
+	WRITE_UP_CURIO_ONE = "%d curio",
+	WRITE_UP_CURIO_OTHER = "%d curios",
 	WRITE_UP_SKILL_ONE = "%d Skill Milestone",
 	WRITE_UP_SKILL_OTHER = "%d Skill Milestones",
 	WRITE_UP_COINS = "Pagle Coins +%s",
@@ -73,9 +103,6 @@ ns.L = {
 	JOURNAL_HOME = "Home",
 	JOURNAL_CRUMB_SEPARATOR = "❧",
 	JOURNAL_BACK = "☚ back",
-	-- Zone Mastery's ranks, Visitor to Master (LED-R50), by rank.
-	ZONE_RANKS = { "Visitor", "Regular", "Local", "Expert", "Master" },
-
 	-- Home (LED-R130–R133, LED-R149). Its left page: kicker, title and the tiles' lines.
 	HOME_KICKER = "The Waters",
 	HOME_TITLE = "Where I've Fished",
@@ -143,4 +170,30 @@ ns.L = {
 	XP_BAR_FRESH_ONE = " Fresh Water for %d more Catch.",
 	XP_BAR_FRESH_OTHER = " Fresh Water for %d more Catches.",
 	XP_BAR_SET_ASIDE = "%s XP set aside for the next Prestige",
+
+	-- The Angler page (LED-R146), M3's part (LED-R4): its crumb, the bookplate and the hands on the rod. Numbers in
+	-- %s are BreakUpLargeNumbers'.
+	ANGLER_CRUMB = "The Angler",
+	ANGLER_EX_LIBRIS = "Ex Libris",
+	ANGLER_LEDGER = "The Angler's Ledger",
+	ANGLER_KEPT_SINCE = "kept since %s",
+	ANGLER_LEVEL = "Angler Level %d",
+	ANGLER_COMPLETE = "%d%% of the Ledger complete (%s of %s)",
+	-- The parts of Ledger completion (LED-R71), by part.
+	ANGLER_PARTS = {
+		species = "Species %s of %s",
+		junk = "Junk Museum %s of %s",
+		treasure = "Treasures %s of %s",
+		trophy = "Trophy Room weights %s of %s",
+		zones = "Zones mastered %s of %s",
+	},
+	ANGLER_CATCHES_ONE = "%s Catch",
+	ANGLER_CATCHES_OTHER = "%s Catches",
+	ANGLER_HANDS = "Hands on the Rod",
+	ANGLER_HAND = "%s: skill %d / %d",
+	-- The Skill Milestones (LED-R40): ☑ credited, ☐ not yet.
+	ANGLER_MILESTONES = "Milestones",
+	ANGLER_MILESTONE_DONE = "☑ %d",
+	ANGLER_MILESTONE_OPEN = "☐ %d",
+	ANGLER_MILESTONE_SEPARATOR = "   ",
 }

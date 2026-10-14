@@ -302,7 +302,7 @@ describe("the Journal's words", function()
 			it("returns nil for a key with no text, so its line is left out (LED-R161)", function()
 				local _, text = newClient()
 
-				assert.is_nil(text:Lore("line.nosuchline.text"))
+				assert.is_nil(text:Lore("line.neverwritten.text"))
 				assert.is_nil(text:Lore("MONTHS"))
 			end)
 

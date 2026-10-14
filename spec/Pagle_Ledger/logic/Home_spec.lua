@@ -78,7 +78,7 @@ describe("Home's Notes to self (LED-R133)", function()
 			celebrated = celebrated
 				or { zones = {}, levels = {}, species = {}, speciesZones = {}, skill = {}, coins = 0 },
 			text = text,
-			GetItem = function(itemID)
+			getItem = function(itemID)
 				return (items or {})[itemID] or { category = "fish", species = itemID, removed = false }
 			end,
 		}
