@@ -110,17 +110,6 @@ local function trophyIndex(context, families)
 	return blocks
 end
 
--- Names joined as prose: "A", "A and B", "A, B and C".
----@param names string[]
----@return string
-local function joinAnd(names)
-	local L = ns.L
-	if #names <= 1 then
-		return names[1] or ""
-	end
-	return table.concat(names, L.LIST_COMMA, 1, #names - 1) .. L.LIST_AND .. names[#names]
-end
-
 -- A family's measuring board (LED-R143, LED-R62): a tick per weight not removed, by its real weight in pounds,
 -- placed from the lightest (0) to the heaviest (1), the middle for one alone, and inked where landed.
 ---@param context LedgerJournalContext
@@ -210,7 +199,7 @@ local function familyPage(context, family)
 		end
 	end
 	if #zones > 0 then
-		blocks[#blocks + 1] = { kind = "text", text = L.TROPHY_FOUND_IN:format(joinAnd(zones)) }
+		blocks[#blocks + 1] = { kind = "text", text = L.ENTRY_FOUND_IN:format(ns.JoinAnd(zones)) }
 	end
 	return blocks
 end
@@ -338,7 +327,7 @@ local function loosePages(context, blocks)
 		for i, zone in ipairs(zones) do
 			zones[i] = context.text:Zone(zone)
 		end
-		local where = #zones > 0 and table.concat(zones, L.LIST_COMMA) or L.CURIOS_UNKNOWN_WATERS
+		local where = #zones > 0 and table.concat(zones, L.LIST_SEPARATOR) or L.CURIOS_UNKNOWN_WATERS
 		blocks[#blocks + 1] = {
 			kind = "text",
 			hand = true,

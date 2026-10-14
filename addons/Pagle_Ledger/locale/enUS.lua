@@ -228,7 +228,6 @@ ns.L = {
 	TROPHY_POUNDS = "pounds, as the game weighs them",
 	TROPHY_LANDED = "Landed %s of %s. Heaviest so far: %s lb.",
 	TROPHY_NONE_LANDED = "Not one of this family yet.",
-	TROPHY_FOUND_IN = "Found in %s.",
 	TROPHY_TICK_MARK = "✓",
 	-- Curios (LED-R144): the Junk Museum, Treasures and the loose pages. "{item}: {n}× at {zones}, first {date}. …"
 	CURIOS_CRUMB = "Curios",
@@ -242,7 +241,4 @@ ns.L = {
 	CURIOS_UNKNOWN_WATERS = "unknown waters",
 	CURIOS_NONE_UNCHARTED = "None. Every catch is in the Ledger.",
 	CURIOS_HELP_CHART = "Help chart the waters",
-	-- Names as prose: "A, B and C".
-	LIST_COMMA = ", ",
-	LIST_AND = " and ",
 }
