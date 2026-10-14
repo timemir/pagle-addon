@@ -17,8 +17,6 @@ local widgets = {}
 
 -- Widget methods that only lay out or colour: nothing for a spec to read back.
 local LAYOUT_METHODS = {
-	"SetPoint",
-	"ClearAllPoints",
 	"SetAllPoints",
 	"SetJustifyH",
 	"SetJustifyV",
@@ -26,7 +24,6 @@ local LAYOUT_METHODS = {
 	"SetFrameStrata",
 	"SetClampedToScreen",
 	"RegisterForDrag",
-	"StartMoving",
 	"StopMovingOrSizing",
 	"EnableMouse",
 	"SetScrollChild",
@@ -68,6 +65,26 @@ function widgets.newWidget(kind, parent)
 	end
 	function widget:IsMovable()
 		return self.movable == true
+	end
+	-- Whether the client would save where the player moved it (SetUserPlaced; StartMoving sets it, as the client
+	-- does).
+	function widget:SetUserPlaced(userPlaced)
+		self.userPlaced = userPlaced
+	end
+	function widget:IsUserPlaced()
+		return self.userPlaced == true
+	end
+	function widget:StartMoving()
+		self.userPlaced = true
+	end
+	-- Its anchors, in order, each as SetPoint's arguments ({ point, relativeTo, relativePoint, x, y } or shorter);
+	-- ClearAllPoints empties them.
+	function widget:SetPoint(...)
+		self.points = self.points or {}
+		self.points[#self.points + 1] = { ... }
+	end
+	function widget:ClearAllPoints()
+		self.points = {}
 	end
 	-- A texture's tint, as { r, g, b[, a] }, and whether it is drawn in greys.
 	function widget:SetVertexColor(r, g, b, a)

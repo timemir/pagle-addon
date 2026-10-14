@@ -5,14 +5,25 @@
 local hunts = dofile("spec/Pagle_Hunts/support.lua")
 
 describe("Hunts' seams", function()
-	describe("the board's entry points (HNT-R68, until the board's ticket)", function()
-		it("toggle and open nothing yet, with or without a Hunt, and raise no error", function()
+	describe("the board's entry points (HNT-R68)", function()
+		it("are the board's own once its file loads: each opens the notebook (adapter/Board_spec)", function()
+			local ns = hunts.load().ns
+
+			ns.ToggleBoard()
+			assert.is_true(ns.board:IsShown())
+			ns.ToggleBoard()
+			ns.OpenBoard("fixture_snapper")
+			assert.is_true(ns.board:IsShown())
+		end)
+	end)
+
+	describe("a view's showing and hiding (HNT-R42's refresh, until the grouping's ticket)", function()
+		it("is told to nobody yet, and raises no error", function()
 			local ns = hunts.load().ns
 
 			assert.has_no_error(function()
-				ns.ToggleBoard()
-				ns.OpenBoard()
-				ns.OpenBoard("fixture_snapper")
+				ns.ViewShown("board", true)
+				ns.ViewShown("tracker", false)
 			end)
 		end)
 	end)

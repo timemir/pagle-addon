@@ -25,6 +25,10 @@ local ns = select(2, ...)
 --                             reasons: "groups" after each regroup (#189), "projection" after each live apply that
 --                             changes the state and after each done (#188), "names" when item names load (#190).
 --                             A view that is hidden may ignore it.
+--   ns.ViewShown(view, shown) A view tells the grouping it showed or hid, once per change: the refresh interval
+--                             runs only while the board or the tracker is visible (HNT-R42). Callers: the board
+--                             ("board", #191), the tracker ("tracker", #197). Stand-in: does nothing. The grouping's
+--                             ticket (#189) assigns it.
 
 --- Opens or closes the Hunts board (HNT-R68). A stand-in until the board's ticket assigns the real one.
 function ns.ToggleBoard() end
@@ -33,6 +37,11 @@ function ns.ToggleBoard() end
 --- board's ticket assigns the real one.
 ---@param huntID string?
 function ns.OpenBoard(huntID) end -- luacheck: no unused args
+
+--- A view showed or hid (HNT-R42's refresh). A stand-in until the grouping's ticket assigns the real one.
+---@param view "board"|"tracker"
+---@param shown boolean
+function ns.ViewShown(view, shown) end -- luacheck: no unused args
 
 -- The projection's state, as hunts.md › Projection state gives it; the projection's ticket fills it in.
 

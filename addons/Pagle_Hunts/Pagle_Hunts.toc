@@ -16,4 +16,6 @@ logic\Module.lua
 logic\HuntList.lua
 logic\Seams.lua
 logic\Board.lua
+adapter\BoardWidgets.lua
+adapter\Board.lua
 adapter\Hunts.lua
