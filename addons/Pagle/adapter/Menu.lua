@@ -15,15 +15,9 @@ local Pagle = Pagle
 -- Its own owner on the event frames, so no other Core file's registration replaces it.
 local OWNER = "Pagle compartment"
 
--- The last entry. While restricted Pagle.OpenSettings prints CORE-R33's line instead (SET-R75).
-local SETTINGS = ns.SettingsMenuEntry(function()
-	Pagle.OpenSettings()
-end)
-
--- Help chart the waters: while restricted Pagle.OpenFieldReport prints REP-R44's line instead (CORE-R33).
-local function openFieldReport()
-	Pagle.OpenFieldReport()
-end
+-- The last entry, Core's settings subcommand. While restricted Pagle.OpenSettings prints CORE-R33's line instead
+-- (SET-R75).
+local SETTINGS = ns.SettingsMenuEntry(ns.coreSubcommands.settings)
 
 -- The Curio Shop: while restricted Pagle.OpenShop prints SHOP-R41's line instead (CORE-R33).
 local function openShop()
@@ -35,8 +29,9 @@ end
 ---@param root table the menu's root description
 local function generate(_, root)
 	local shop = ns.CurioShopMenuEntry(Pagle.GetBalance(), BreakUpLargeNumbers, openShop)
-	local report = ns.FieldReportMenuEntry(Pagle.GetFieldReportCount(), openFieldReport)
-	for _, entry in ipairs(ns.CompartmentMenu(ns.Modules:Modules(), shop, report, SETTINGS, securecallfunction)) do
+	-- Help chart the waters, Core's report subcommand: while restricted it prints REP-R44's line instead (CORE-R33).
+	local fieldReport = ns.FieldReportMenuEntry(Pagle.GetFieldReportCount(), ns.coreSubcommands.report)
+	for _, entry in ipairs(ns.CompartmentMenu(ns.Modules:Modules(), shop, fieldReport, SETTINGS, securecallfunction)) do
 		root:CreateButton(entry.label, function()
 			securecallfunction(entry.onClick)
 		end)

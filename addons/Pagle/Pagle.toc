@@ -40,6 +40,7 @@ logic\Diagnostics.lua
 logic\FieldReport.lua
 logic\Settings.lua
 logic\Slash.lua
+logic\Dev.lua
 logic\Wallet.lua
 logic\Goods.lua
 logic\Shop.lua

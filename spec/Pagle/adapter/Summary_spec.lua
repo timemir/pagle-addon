@@ -62,7 +62,7 @@ describe("the Session summary on the client", function()
 			local log = loaded.env.PagleLog
 			local entries = { unpack(log.entries) }
 
-			loaded.client.advance(900)
+			loaded.client.advance(300)
 
 			local cards = loaded.env.PagleDB.global.cards
 			assert.are.equal(1, #cards)
@@ -87,7 +87,7 @@ describe("the Session summary on the client", function()
 		enterWorld(loaded, 1)
 		catchAndFlush(loaded)
 
-		loaded.client.advance(900)
+		loaded.client.advance(300)
 
 		assert.are.same({}, loaded.env.PagleDB.global.cards)
 		assert.are.equal("Angler Level 12", loaded.env.PagleDB.global.summary.lines.Ledger.lines.level)
@@ -102,7 +102,7 @@ describe("the Session summary on the client", function()
 		assert.are.equal("Welcome back", loaded.env.PagleDB.global.pending[1].title)
 
 		catchAndFlush(loaded)
-		loaded.client.advance(900)
+		loaded.client.advance(300)
 
 		assert.are.same({ { { "Ledger", { "Welcome back" } } } }, cardMoments(loaded.env.PagleDB.global.cards))
 		assert.are.same({}, loaded.env.PagleDB.global.pending)
@@ -121,7 +121,7 @@ describe("the Session summary on the client", function()
 			enterWorld(first, 1)
 			catchAndFlush(first)
 			ledger:RaiseMoment({ rung = "toast", kind = "newSpecies", title = "New Species" })
-			first.client.advance(900)
+			first.client.advance(300)
 
 			-- This login, Hunts is disabled, so it never registers.
 			local second = loadCore({ BUILD_ENTRY }, first.env.PagleDB)
@@ -129,7 +129,7 @@ describe("the Session summary on the client", function()
 			enterWorld(second, 1)
 			catchAndFlush(second)
 			again:RaiseMoment({ rung = "toast", kind = "newSpecies", title = "New Species" })
-			second.client.advance(900)
+			second.client.advance(300)
 
 			-- The next login, Hunts is back.
 			local third = loadCore({ BUILD_ENTRY }, second.env.PagleDB)
@@ -138,7 +138,7 @@ describe("the Session summary on the client", function()
 			enterWorld(third, 1)
 			catchAndFlush(third)
 			ledger3:RaiseMoment({ rung = "toast", kind = "newSpecies", title = "New Species" })
-			third.client.advance(900)
+			third.client.advance(300)
 
 			local lines = {}
 			for c, card in ipairs(third.env.PagleDB.global.cards) do

@@ -310,10 +310,10 @@ describe("The Curio Shop's purse", function()
 			assert.are.same({ { "Ledger 1,500", 0.75, 1, false }, { "Hunts 500", 0.25, 1, false } }, shown)
 
 			purse.segments[1]:GetScript("OnEnter")(purse.segments[1])
-			assert.are.same({ "Ledger", "1,500 Coins all time" }, loaded.client.gameTooltip.lines)
-			assert.is_true(loaded.client.gameTooltip.shown)
+			assert.are.same({ "Ledger", "1,500 Coins all time" }, loaded.client.tooltipLines())
+			assert.are.equal(purse.segments[1], loaded.env.GameTooltip.owner)
 			purse.segments[1]:GetScript("OnLeave")(purse.segments[1])
-			assert.is_false(loaded.client.gameTooltip.shown)
+			assert.are.same({}, loaded.client.tooltipLines())
 		end
 	)
 

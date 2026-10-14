@@ -39,6 +39,24 @@ ModuleHandle.AddSetting = ns.AddSettingMethod(ns.Modules, rows, function(problem
 	geterrorhandler()(problem)
 end)
 
+-- Each value row's native setting, by the Module's PagleSetting, once its page is built.
+---@type table<PagleSetting, SettingsProxySetting>
+local nativeOf = {}
+
+--- Makes a value row's native control re-read `get`, and the rows under it their greying (CORE-R42): see
+--- ns.RefreshSettingMethod. Nothing before the page is built, which reads `get` when shown. NotifyUpdate re-reads
+--- the value and fires the setting's value-changed callback: the shown control re-reads (SettingsControlMixin:
+--- OnSettingValueChanged) and each row under it re-evaluates its modify predicates (SettingsListElementMixin:
+--- OnParentSettingValueChanged). Gethe/wow-ui-source branch forever at 943764493e6b16d63ded3ab304150d1f05e58b57
+--- ("1.60.1 (70338)"), Blizzard_Settings_Shared/Blizzard_Setting.lua (SettingMixin:NotifyUpdate) and
+--- Blizzard_SettingControls.lua.
+ModuleHandle.RefreshSetting = ns.RefreshSettingMethod(ns.Modules, rows, function(_, setting)
+	local native = nativeOf[setting]
+	if native then
+		securecallfunction(native.NotifyUpdate, native)
+	end
+end)
+
 -- Core's own widgets on a pooled list frame, by frame. Weak, as the panel owns the frames.
 ---@type table<Frame, { text: FontString, status: { name: FontString, version: FontString, state: FontString, button: Button }[] }>
 local widgetsOf = setmetatable({}, { __mode = "k" })
@@ -247,7 +265,7 @@ local function buildRoot(category, layout, anyModuleOn)
 	layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L.SETTINGS_MODULES))
 	layout:AddInitializer(statusList())
 	layout:AddInitializer(textRow(L.SETTINGS_MODULES_NOTE))
-	layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L.SETTINGS_FIELD_REPORT))
+	layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L.HELP_CHART))
 	layout:AddInitializer(fieldReportRow())
 	layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L.SETTINGS_SAVING))
 	local reminder = Settings.RegisterProxySetting(
@@ -288,15 +306,10 @@ end
 ---@param setting PagleSetting
 ---@return SettingsProxySetting
 local function valueSetting(page, variable, varType, setting)
-	return Settings.RegisterProxySetting(
-		page,
-		variable,
-		varType,
-		setting.label,
-		setting.default,
-		setting.get,
-		setting.set
-	)
+	local native =
+		Settings.RegisterProxySetting(page, variable, varType, setting.label, setting.default, setting.get, setting.set)
+	nativeOf[setting] = native
+	return native
 end
 
 -- One Module row as a native initializer on `page` (SET-R5).
@@ -337,8 +350,14 @@ local function nativeRow(page, layout, setting, variable)
 	if kind == "header" then
 		initializer = CreateSettingsListSectionHeaderInitializer(setting.label, setting.tooltip)
 	elseif kind == "button" then
-		-- PagleSetting has one string for a button: its caption, with no label beside it (SET-R2).
-		initializer = CreateSettingsButtonInitializer("", setting.label, setting.onClick, setting.tooltip, true)
+		-- A button row's label sits beside the button and its caption is on it. Without a caption, the label is the
+		-- caption and the row has no label (SET-R2).
+		if setting.caption then
+			initializer =
+				CreateSettingsButtonInitializer(setting.label, setting.caption, setting.onClick, setting.tooltip, true)
+		else
+			initializer = CreateSettingsButtonInitializer("", setting.label, setting.onClick, setting.tooltip, true)
+		end
 	elseif kind == "keybinding" then
 		local index = C_KeyBindings.GetBindingIndex(setting.binding)
 		if not index then

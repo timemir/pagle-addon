@@ -69,6 +69,20 @@ describe("QoL's Fishing stretch logic", function()
 			stretch:CastStarted(true)
 			assert.is_false(stretch:Elapse(60))
 		end)
+
+		it("numbers each stretch it starts, so a Nudge can show once per stretch (QOL-R53, QOL-R61)", function()
+			local stretch = ns.NewStretch()
+			assert.is_nil(stretch:Number())
+
+			stretch:CastStarted(true)
+			stretch:CastStarted(true)
+			assert.are.equal(1, stretch:Number())
+			stretch:End()
+			assert.is_nil(stretch:Number())
+
+			stretch:CastStarted(true)
+			assert.are.equal(2, stretch:Number())
+		end)
 	end)
 
 	describe("ns.SameCVarValue", function()
@@ -191,6 +205,29 @@ describe("QoL's Fishing stretch logic", function()
 			end
 		end)
 
+		it(
+			"leases the audio mix and auto-loot, skipping each CVar already at its value as numbers (QOL-R62)",
+			function()
+				local lease = {}
+				local cvars = newCVars({
+					Sound_EnableSFX = "1",
+					Sound_SFXVolume = "1",
+					Sound_EnableMusic = "1",
+					Sound_EnableAmbience = "0",
+					Sound_EnableDialog = "1",
+					autoLootDefault = "1",
+				})
+
+				ns.Lease(lease, ns.LeaseRows({ audio = { on = true, background = false }, autoLoot = true }), cvars)
+
+				assert.are.same({ "set Sound_EnableMusic 0", "set Sound_EnableDialog 0" }, cvars.log)
+				assert.are.same({
+					{ name = "Sound_EnableMusic", orig = "1", set = "0" },
+					{ name = "Sound_EnableDialog", orig = "1", set = "0" },
+				}, lease)
+			end
+		)
+
 		it("leases no CVar the client doesn't know (GetCVar returns nil)", function()
 			local lease, cvars = {}, newCVars({ SoftTargetInteract = "1" })
 
@@ -220,6 +257,135 @@ describe("QoL's Fishing stretch logic", function()
 			ns.Lease(lease, { ns.SOFT_INTERACT_LEASE[1] }, newCVars(values))
 
 			assert.are.same({ { name = "SoftTargetInteract", orig = "2", set = "3" } }, lease)
+		end)
+	end)
+
+	describe("ns.LeaseRows", function()
+		-- The CVar names and values of a row list, in order, as "name=value".
+		local function named(rows)
+			local list = {}
+			for i, row in ipairs(rows) do
+				list[i] = row.name .. "=" .. row.value
+			end
+			return list
+		end
+
+		local SOFT = { "SoftTargetInteract=3", "SoftTargetInteractRange=15", "SoftTargetInteractRangeIsHard=0" }
+		local AUDIO = {
+			"Sound_EnableSFX=1",
+			"Sound_SFXVolume=1.0",
+			"Sound_EnableMusic=0",
+			"Sound_EnableAmbience=0",
+			"Sound_EnableDialog=0",
+		}
+		local BACKGROUND = { "Sound_EnableSoundWhenGameIsInBG=1" }
+		local AUTO_LOOT = { "autoLootDefault=1" }
+
+		-- Each row: the While you fish settings, then the rows a stretch leases under them (QOL-R62).
+		local ROWS = {
+			{
+				"the defaults",
+				{ audio = { on = true, background = false }, autoLoot = true },
+				{ SOFT, AUDIO, AUTO_LOOT },
+			},
+			{
+				"everything on",
+				{ audio = { on = true, background = true }, autoLoot = true },
+				{ SOFT, AUDIO, BACKGROUND, AUTO_LOOT },
+			},
+			{ "everything off", { audio = { on = false, background = false }, autoLoot = false }, { SOFT } },
+			{
+				"the background option without the audio mix",
+				{ audio = { on = false, background = true }, autoLoot = false },
+				{ SOFT },
+			},
+			{ "auto-loot alone", { audio = { on = false, background = false }, autoLoot = true }, { SOFT, AUTO_LOOT } },
+		}
+		for _, row in ipairs(ROWS) do
+			it(
+				("leases soft-interact always, then each feature that is on, under %s (QOL-R62)"):format(row[1]),
+				function()
+					local want = {}
+					for _, part in ipairs(row[3]) do
+						for _, entry in ipairs(part) do
+							want[#want + 1] = entry
+						end
+					end
+
+					assert.are.same(want, named(ns.LeaseRows(row[2])))
+				end
+			)
+		end
+
+		it("leaves master volume and Sound_EnableAllSound alone (QOL-R62)", function()
+			for _, row in ipairs(ns.LeaseRows({ audio = { on = true, background = true }, autoLoot = true })) do
+				assert.are_not.equal("Sound_MasterVolume", row.name)
+				assert.are_not.equal("Sound_EnableAllSound", row.name)
+			end
+		end)
+	end)
+
+	describe("ns.LeaseChange", function()
+		local ON = { audio = { on = true, background = true }, autoLoot = true }
+		local OFF = { audio = { on = false, background = true }, autoLoot = true }
+
+		-- The names of a row list, in order.
+		local function names(rows)
+			local list = {}
+			for i, row in ipairs(rows) do
+				list[i] = row.name
+			end
+			return list
+		end
+
+		it("restores the audio mix's CVars and the background one when the mix turns off (QOL-R65)", function()
+			local lease, restore = ns.LeaseChange(ns.LeaseRows(ON), ns.LeaseRows(OFF))
+
+			assert.are.same({}, lease)
+			assert.are.same({
+				Sound_EnableSFX = true,
+				Sound_SFXVolume = true,
+				Sound_EnableMusic = true,
+				Sound_EnableAmbience = true,
+				Sound_EnableDialog = true,
+				Sound_EnableSoundWhenGameIsInBG = true,
+			}, restore)
+		end)
+
+		it("leases them again when the mix turns back on, and nothing that stayed on (QOL-R65)", function()
+			local lease, restore = ns.LeaseChange(ns.LeaseRows(OFF), ns.LeaseRows(ON))
+
+			assert.are.same({
+				"Sound_EnableSFX",
+				"Sound_SFXVolume",
+				"Sound_EnableMusic",
+				"Sound_EnableAmbience",
+				"Sound_EnableDialog",
+				"Sound_EnableSoundWhenGameIsInBG",
+			}, names(lease))
+			assert.are.same({}, restore)
+		end)
+
+		it("restores or leases auto-loot alone when only it changes (QOL-R65)", function()
+			local noLoot = { audio = ON.audio, autoLoot = false }
+
+			local lease, restore = ns.LeaseChange(ns.LeaseRows(ON), ns.LeaseRows(noLoot))
+			assert.are.same({}, lease)
+			assert.are.same({ autoLootDefault = true }, restore)
+
+			lease, restore = ns.LeaseChange(ns.LeaseRows(noLoot), ns.LeaseRows(ON))
+			assert.are.same({ "autoLootDefault" }, names(lease))
+			assert.are.same({}, restore)
+		end)
+
+		it("changes nothing when the background option turns while the mix is off (QOL-R62, QOL-R65)", function()
+			local lease, restore = ns.LeaseChange(
+				ns.LeaseRows(OFF),
+				ns.LeaseRows({ audio = { on = false, background = false }, autoLoot = true })
+			)
+
+			assert.are.same({}, lease)
+			assert.are.same({}, restore)
 		end)
 	end)
 
@@ -282,6 +448,32 @@ describe("QoL's Fishing stretch logic", function()
 
 			assert.are.same({}, cvars.log)
 			assert.are.same({}, lease)
+		end)
+
+		it("restores only the named entries when given names, keeping the rest leased (QOL-R65)", function()
+			local cvars = newCVars({ A = "3", B = "0", C = "1" })
+			local lease = {
+				{ name = "A", orig = "1", set = "3" },
+				{ name = "B", orig = "1", set = "0" },
+				{ name = "C", orig = "0", set = "1" },
+			}
+
+			ns.RestoreLease(lease, cvars, { B = true, C = true })
+
+			assert.are.same({ A = "3", B = "1", C = "0" }, cvars.values)
+			assert.are.same({ { name = "A", orig = "1", set = "3" } }, lease)
+		end)
+
+		it("keeps a named entry whose restore didn't take, beside the unnamed ones (QOL-R65, QOL-R64)", function()
+			local cvars = newCVars({ A = "3", B = "0" }, function(name, value)
+				return name == "B" and "0" or value
+			end)
+			local lease = { { name = "A", orig = "1", set = "3" }, { name = "B", orig = "1", set = "0" } }
+
+			ns.RestoreLease(lease, cvars, { B = true })
+
+			assert.are.same({ "set B 1" }, cvars.log)
+			assert.are.same({ { name = "A", orig = "1", set = "3" }, { name = "B", orig = "1", set = "0" } }, lease)
 		end)
 	end)
 end)

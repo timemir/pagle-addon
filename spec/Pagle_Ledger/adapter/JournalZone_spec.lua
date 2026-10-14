@@ -11,7 +11,7 @@ local CATFISH_17, CATFISH_22, REDGILL_34 = 6309, 6311, 13901
 local SKULL, CRATE = 6297, 6351
 local UNKNOWN = 99999 -- an item the catalogue doesn't know: Uncharted (LED-R64)
 local DARKSHORE, ELWYNN, STORMWIND = 148, 12, 1519
-local T0 = 1791731000 -- Sunday 11 October 2026, 15:03 UTC
+local T0 = SERVER_TIME - 700 -- Sunday 11 October 2026, 15:03 UTC
 local MINUTE = 60
 
 -- Night is 20:00 to 06:00 realm time, so at the fake's realm 08:15 it opens in 11 h 45 min (LED-R127).
@@ -21,42 +21,27 @@ local EXTRAVAGANZA = { events = { 301 } }
 
 -- A catalogue in the shape of ns.catalogue (DATA-R76).
 local function catalogue()
-	local function item(category, fields)
-		local record = { category = category, legend = false, noise = false, removed = false, pool = false }
-		for key, value in pairs(fields) do
-			record[key] = value
-		end
-		return record
-	end
-	local function area(fields)
-		local record = { parent = 0, continent = 0, hasData = true, skillBaseConfirmed = false, catches = {} }
-		for key, value in pairs(fields) do
-			record[key] = value
-		end
-		return record
-	end
 	local function listed(itemID, window, gate)
 		return { itemID = itemID, confirmed = false, window = window, gate = gate, gateConfirmed = gate and false }
 	end
-	return {
-		fingerprint = "0123456789abcdef",
+	return catalogueWith({
 		items = {
-			[MACKEREL] = item("fish", { species = MACKEREL }),
-			[BLACKMOUTH] = item("fish", { species = BLACKMOUTH, pool = true }),
-			[FIREFIN] = item("fish", { species = FIREFIN, pool = true }),
-			[NIGHTFIN] = item("fish", { species = NIGHTFIN }),
-			[BASS] = item("fish", { species = BASS }),
-			[TASTYFISH] = item("fish", { species = TASTYFISH }),
-			[SMALLFISH] = item("fish", { species = SMALLFISH }),
-			[MUD_SNAPPER] = item("fish", { species = MUD_SNAPPER }),
-			[CATFISH_17] = item("trophy", { family = 2, weight = 17 }),
-			[CATFISH_22] = item("trophy", { family = 2, weight = 22 }),
-			[REDGILL_34] = item("trophy", { family = 4, weight = 34 }),
-			[SKULL] = item("junk", {}),
-			[CRATE] = item("container", {}),
+			[MACKEREL] = fishRecord(MACKEREL),
+			[BLACKMOUTH] = fishRecord(BLACKMOUTH, { pool = true }),
+			[FIREFIN] = fishRecord(FIREFIN, { pool = true }),
+			[NIGHTFIN] = fishRecord(NIGHTFIN),
+			[BASS] = fishRecord(BASS),
+			[TASTYFISH] = fishRecord(TASTYFISH),
+			[SMALLFISH] = fishRecord(SMALLFISH),
+			[MUD_SNAPPER] = fishRecord(MUD_SNAPPER),
+			[CATFISH_17] = itemRecord("trophy", { family = 2, weight = 17 }),
+			[CATFISH_22] = itemRecord("trophy", { family = 2, weight = 22 }),
+			[REDGILL_34] = itemRecord("trophy", { family = 4, weight = 34 }),
+			[SKULL] = itemRecord("junk"),
+			[CRATE] = itemRecord("container"),
 		},
 		areas = {
-			[DARKSHORE] = area({
+			[DARKSHORE] = areaRecord(0, {
 				continent = 1,
 				skillBase = 75,
 				catches = {
@@ -72,39 +57,23 @@ local function catalogue()
 					listed(CRATE),
 				},
 			}),
-			[ELWYNN] = area({
+			[ELWYNN] = areaRecord(0, {
 				skillBase = 25,
 				catches = { listed(SMALLFISH), listed(MUD_SNAPPER), listed(CATFISH_22) },
 			}),
-			[STORMWIND] = area({ hasData = false }),
+			[STORMWIND] = areaRecord(0, { hasData = false }),
 		},
-		aliases = {},
-		pools = {},
 		windows = {
 			night = { spec = NIGHT, confirmed = false },
 			summer = { spec = SUMMER, confirmed = false },
 			["event.301"] = { spec = EXTRAVAGANZA, confirmed = false },
 		},
-		events = {},
-		fishingSpells = {},
-		auras = {},
-	}
+	})
 end
 
 -- A caught Cast of `itemIDs` in `zone` at `time`, by the fake client's character.
 local function cast(time, zone, itemIDs)
-	local items = {}
-	for i, itemID in ipairs(itemIDs) do
-		items[i] = { itemID = itemID, quantity = 1 }
-	end
-	return {
-		kind = "cast",
-		char = 1,
-		time = time,
-		outcome = "caught",
-		conditions = { minute = 494, zone = zone, subzone = 0, events = {}, auras = {} },
-		items = items,
-	}
+	return castRecord({ time = time, zone = zone, items = itemIDs })
 end
 
 -- The fixture log: in Darkshore, Mackerel, Blackmouth, the 17 lb Catfish and the skull, and Smallfish (on Elwynn's
@@ -133,60 +102,20 @@ local ITEM_NAMES = {
 }
 
 -- A Ledger on a fake over the catalogue and `log` (the fixture by default), logged in, in the world, with the names
--- above, and the book open on zone `zone`'s spread with `args`.
+-- above, and the book open on zone `zone`'s spread.
 ---@param zone integer
----@param args table?
 ---@param log table[]?
 ---@return FakePagle fake
 ---@return LoadedAddon loaded
-local function zoneSpread(zone, args, log)
-	local fake = newFakePagle()
-	fake.setCatalogue(catalogue())
-	fake.catchLog.data.characters = {
-		{ guid = PLAYER_GUID, name = "Angler", classID = 1, raceID = 1, faction = "Alliance", realmID = 4618 },
-	}
-	for _, record in ipairs(log or FIXTURE) do
-		fake.catchLog:Append(record)
-	end
-	fake.globals.BreakUpLargeNumbers = breakUpLargeNumbers
-	local loaded = fake.load("Pagle_Ledger")
-	for itemID, name in pairs(ITEM_NAMES) do
-		loaded.client.itemNames[itemID] = name
-	end
-	loaded.client.areaNames = { [DARKSHORE] = "Darkshore", [ELWYNN] = "Elwynn Forest", [STORMWIND] = "Stormwind City" }
-	loaded.client.mapNames = { [1414] = "Kalimdor", [1415] = "Eastern Kingdoms" }
-	fake.login()
-	fake.enterWorld()
-	local place = { zone = zone }
-	for key, value in pairs(args or {}) do
-		place[key] = value
-	end
-	assert.is_true(loaded.ns.journal:Open("zone", place))
-	return fake, loaded
-end
-
--- The texts of a page's blocks, in order (a block without text as its kind in brackets).
----@param blocks LedgerBlock[]
----@return string[]
-local function texts(blocks)
-	local list = {}
-	for i, block in ipairs(blocks) do
-		list[i] = block.text or ("[" .. block.kind .. "]")
-	end
-	return list
-end
-
--- The first block on `blocks` whose text is `text`.
----@param blocks LedgerBlock[]
----@param text string
----@return LedgerBlock
-local function blockOf(blocks, text)
-	for _, block in ipairs(blocks) do
-		if block.text == text then
-			return block
-		end
-	end
-	error("no block reads " .. text)
+local function zoneSpread(zone, log)
+	return openJournal({
+		catalogue = catalogue(),
+		log = log or FIXTURE,
+		itemNames = ITEM_NAMES,
+		areaNames = { [DARKSHORE] = "Darkshore", [ELWYNN] = "Elwynn Forest", [STORMWIND] = "Stormwind City" },
+		mapNames = { [1414] = "Kalimdor", [1415] = "Eastern Kingdoms" },
+		place = { "zone", zone },
+	})
 end
 
 -- The crumbs' labels.
@@ -204,7 +133,7 @@ describe("the Journal's zone spread", function()
 			"lists the catches in groups, in order, each headed with its counts, the Pools note, a gated pool-associated Species in its window's group, and no empty group (LED-R135)",
 			function()
 				local _, loaded = zoneSpread(DARKSHORE)
-				local left = texts(loaded.ns.journal.pages.left)
+				local left = blockTexts(loaded.ns.journal.pages.left)
 
 				assert.are.same({
 					"Kalimdor",
@@ -258,7 +187,7 @@ describe("the Journal's zone spread", function()
 			'reads "(caught elsewhere)" for a Species caught only in another zone, in sepia and without stars (LED-R136)',
 			function()
 				local _, loaded = zoneSpread(DARKSHORE)
-				local nightfin = blockOf(loaded.ns.journal.pages.left, "Raw Nightfin Snapper (caught elsewhere)")
+				local nightfin = blockWithText(loaded.ns.journal.pages.left, "Raw Nightfin Snapper (caught elsewhere)")
 
 				assert.are.equal("sepia", nightfin.look)
 				assert.is_nil(nightfin.stars)
@@ -267,7 +196,7 @@ describe("the Journal's zone spread", function()
 
 		it("shows a Species caught here with its shown stars and no margin when ungated (LED-R136, LED-R48)", function()
 			local _, loaded = zoneSpread(DARKSHORE)
-			local mackerel = blockOf(loaded.ns.journal.pages.left, "Raw Slitherskin Mackerel")
+			local mackerel = blockWithText(loaded.ns.journal.pages.left, "Raw Slitherskin Mackerel")
 
 			-- Listed in Darkshore alone, so caught in one zone is ★★ (LED-R45).
 			assert.are.same({ [1] = true, [2] = true }, mackerel.stars)
@@ -286,7 +215,7 @@ describe("the Journal's zone spread", function()
 				assert.are.same({ "night, back in 12 h" }, left[13].margin)
 				assert.are.same({ "summer, back in March" }, left[15].margin)
 				assert.are.same({ "Extravaganza" }, left[17].margin)
-				assert.are.same({ "pools" }, blockOf(left, "Oily Blackmouth").margin)
+				assert.are.same({ "pools" }, blockWithText(left, "Oily Blackmouth").margin)
 			end
 		)
 
@@ -295,7 +224,7 @@ describe("the Journal's zone spread", function()
 			function()
 				local fake, loaded = zoneSpread(DARKSHORE)
 				local function nightfin()
-					return blockOf(loaded.ns.journal.pages.left, "Raw Nightfin Snapper (caught elsewhere)").margin[1]
+					return blockWithText(loaded.ns.journal.pages.left, "Raw Nightfin Snapper (caught elsewhere)").margin[1]
 				end
 				assert.are.equal("night, back in 12 h", nightfin())
 
@@ -357,7 +286,7 @@ describe("the Journal's zone spread", function()
 		)
 
 		it('seals an unfished zone "unfished", with nothing on the ladder inked (LED-R135, LED-R134)', function()
-			local _, loaded = zoneSpread(ELWYNN, nil, { FIXTURE[1] })
+			local _, loaded = zoneSpread(ELWYNN, { FIXTURE[1] })
 			local left = loaded.ns.journal.pages.left
 
 			assert.are.same({
@@ -371,7 +300,7 @@ describe("the Journal's zone spread", function()
 				"— unknown —",
 				"Trophies · 0 / 1",
 				"☐ a Catfish trophy, any weight",
-			}, texts(left))
+			}, blockTexts(left))
 			for _, rung in ipairs(left[4].rungs) do
 				assert.is_false(rung.inked or rung.circled)
 			end
@@ -432,7 +361,7 @@ describe("the Journal's zone spread", function()
 					"Stormwind City",
 					"Uncharted waters. No map of these yet.",
 					"Every catch here is still written down, and counted once Pagle's data catches up.",
-				}, texts(pages.left))
+				}, blockTexts(pages.left))
 				-- The unknown item's name isn't loaded: "Item {id}" (LED-R126).
 				assert.are.same({
 					"Loose pages",
@@ -441,13 +370,13 @@ describe("the Journal's zone spread", function()
 					"Raw Slitherskin Mackerel",
 					"Dented Crate",
 					"Help chart the waters",
-				}, texts(pages.right))
+				}, blockTexts(pages.right))
 			end
 		)
 
 		it("draws its Species caught as rows without a margin, with their stars (LED-R138, LED-R136)", function()
 			local _, loaded = zoneSpread(STORMWIND)
-			local mackerel = blockOf(loaded.ns.journal.pages.right, "Raw Slitherskin Mackerel")
+			local mackerel = blockWithText(loaded.ns.journal.pages.right, "Raw Slitherskin Mackerel")
 
 			assert.are.same({ "row", "sepia" }, { mackerel.kind, mackerel.look })
 			assert.is_nil(mackerel.margin)
@@ -455,11 +384,11 @@ describe("the Journal's zone spread", function()
 		end)
 
 		it('reads "Nothing caught here yet." with nothing caught there (LED-R138)', function()
-			local _, loaded = zoneSpread(STORMWIND, nil, { FIXTURE[1] })
+			local _, loaded = zoneSpread(STORMWIND, { FIXTURE[1] })
 
 			assert.are.same(
 				{ "Loose pages", "Also caught here", "Nothing caught here yet.", "Help chart the waters" },
-				texts(loaded.ns.journal.pages.right)
+				blockTexts(loaded.ns.journal.pages.right)
 			)
 		end)
 
@@ -472,7 +401,7 @@ describe("the Journal's zone spread", function()
 			assert.are.same({
 				"Stormwind City",
 				"Every catch here is still written down, and counted once Pagle's data catches up.",
-			}, texts(loaded.ns.journal.pages.left))
+			}, blockTexts(loaded.ns.journal.pages.left))
 		end)
 
 		it("opens the Field report from its Help chart the waters link (LED-R138, REP-R43)", function()
@@ -541,7 +470,7 @@ describe("the Journal's zone spread", function()
 				assert.are.same({ id = "zone", args = { zone = DARKSHORE, species = MACKEREL } }, pages.crumbs[4].place)
 				assert.is_true(pages.left[7].selected)
 				assert.is_nil(pages.left[10].selected)
-				local right = texts(pages.right)
+				local right = blockTexts(pages.right)
 				assert.are.same({ "[icon]", "Raw Slitherskin Mackerel", "[stamps]" }, { right[1], right[2], right[3] })
 			end
 		)
@@ -555,7 +484,7 @@ describe("the Journal's zone spread", function()
 
 				local pages = loaded.ns.journal.pages
 				assert.are.equal("An unknown fish", pages.crumbs[4].label)
-				local link = blockOf(pages.right, "Read the plain hint ▸")
+				local link = blockWithText(pages.right, "Read the plain hint ▸")
 				assert.are.same(
 					{ id = "zone", args = { zone = DARKSHORE, species = FIREFIN, hint = true } },
 					link.place
@@ -605,7 +534,7 @@ describe("the Journal's zone spread", function()
 		it("is where the fish spread's tiles lead, with that fish selected (LED-R142, LED-R136)", function()
 			local _, loaded = zoneSpread(DARKSHORE)
 			local journal = loaded.ns.journal
-			journal:Open("fish", { species = BLACKMOUTH })
+			journal:OpenPlace(loaded.ns.JournalPlace.fish(BLACKMOUTH))
 
 			-- Its one tile, Darkshore's: the tiles widget's first child.
 			local tile = journal.frame.right.drawn.tiles[1].children[1]
@@ -613,7 +542,7 @@ describe("the Journal's zone spread", function()
 			tile:Click()
 
 			assert.are.same({ "Home", "Kalimdor", "Darkshore", "Oily Blackmouth" }, crumbLabels(loaded))
-			assert.is_true(blockOf(journal.pages.left, "Oily Blackmouth").selected)
+			assert.is_true(blockWithText(journal.pages.left, "Oily Blackmouth").selected)
 			assert.are.equal("Oily Blackmouth", journal.pages.right[2].text)
 		end)
 	end)
@@ -635,7 +564,7 @@ describe("the Journal's zone spread", function()
 					"Redgill",
 					"Reward for mastery: each new seal earns XP. The Master seal earns the title Warden of Darkshore Waters.",
 					"Pick a fish on the left to read its page.",
-				}, texts(right))
+				}, blockTexts(right))
 			end
 		)
 
@@ -659,7 +588,7 @@ describe("the Journal's zone spread", function()
 			function()
 				local _, loaded = zoneSpread(DARKSHORE)
 				local right = loaded.ns.journal.pages.right
-				local catfish, redgill = blockOf(right, "Catfish"), blockOf(right, "Redgill")
+				local catfish, redgill = blockWithText(right, "Catfish"), blockWithText(right, "Redgill")
 
 				-- The Catfish's weights are the 17 lb (landed here) and Elwynn's 22 lb: ★ and ★★ (ceil(2 / 2) = 1
 				-- landed), not ★★★, as its heaviest isn't landed.
@@ -685,20 +614,51 @@ describe("the Journal's zone spread", function()
 			assert.are.equal("Redgill", journal.pages.right[1].text)
 		end)
 
-		it('leaves out "Skill ~" for a zone without a skill base (LED-R137)', function()
-			local function noSkill()
-				local data = catalogue()
-				data.areas[DARKSHORE].skillBase = nil
-				return data
-			end
-			local fake = newFakePagle()
-			fake.setCatalogue(noSkill())
-			local loaded = fake.load("Pagle_Ledger")
-			fake.login()
-			fake.enterWorld()
-			loaded.ns.journal:Open("zone", { zone = DARKSHORE })
+		it(
+			"leaves out a family's lines on both pages while its lore name has no text (LED-R161, LED-R135, LED-R137)",
+			function()
+				local _, loaded = zoneSpread(DARKSHORE)
+				-- Redgill (family 4) before the Ledger's lore check turns on: its key has no text.
+				loaded.ns.L["family.4.name"] = nil
+				loaded.ns.journal:Draw()
+				local pages = loaded.ns.journal.pages
 
-			local right = texts(loaded.ns.journal.pages.right)
+				local trophies = {}
+				for _, text in ipairs(blockTexts(pages.left)) do
+					if text:find("trophy, any weight", 1, true) then
+						trophies[#trophies + 1] = text
+					end
+				end
+				assert.are.same({ "☑ a Catfish trophy, any weight" }, trophies)
+				assert.are.same({
+					"Trophies landed here",
+					"Catfish",
+					"Reward for mastery: each new seal earns XP. The Master seal earns the title Warden of Darkshore Waters.",
+				}, {
+					pages.right[4].text,
+					pages.right[5].text,
+					pages.right[6].text,
+				})
+			end
+		)
+
+		it('reads "Any skill" for a zone whose skill base is 0 or below (LED-R137, DATA-R30)', function()
+			local startingZone = catalogue()
+			startingZone.areas[DARKSHORE].skillBase = -70
+			local _, loaded = openJournal({ catalogue = startingZone, place = { "zone", DARKSHORE } })
+
+			assert.are.same(
+				{ "About these waters", "Any skill" },
+				{ unpack(blockTexts(loaded.ns.journal.pages.right), 1, 2) }
+			)
+		end)
+
+		it('leaves out "Skill ~" for a zone without a skill base (LED-R137)', function()
+			local noSkill = catalogue()
+			noSkill.areas[DARKSHORE].skillBase = nil
+			local _, loaded = openJournal({ catalogue = noSkill, place = { "zone", DARKSHORE } })
+
+			local right = blockTexts(loaded.ns.journal.pages.right)
 			assert.are.same(
 				{ "About these waters", "0% of these waters known: 0 of 6 fish, 0 of 2 trophy families" },
 				{ right[1], right[2] }

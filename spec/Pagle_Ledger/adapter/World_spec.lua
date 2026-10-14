@@ -6,47 +6,27 @@ local ELWYNN, GOLDSHIRE, DUSKWOOD = 12, 87, 10
 
 -- A catalogue in the shape of ns.catalogue (DATA-R76): Elwynn and Goldshire with a list, Duskwood without data.
 local function fixture()
-	local night = { time = { { 1260, 360 } } }
-	local function item(category, fields)
-		local record = { category = category, legend = false, noise = false, removed = false, pool = false }
-		for key, value in pairs(fields) do
-			record[key] = value
-		end
-		return record
-	end
-	local function area(parent, fields)
-		local record = { parent = parent, continent = 0, hasData = true, skillBaseConfirmed = false, catches = {} }
-		for key, value in pairs(fields) do
-			record[key] = value
-		end
-		return record
-	end
-	return {
-		fingerprint = "0123456789abcdef",
+	local night = NIGHT_WINDOW
+	return catalogueWith({
 		items = {
-			[MACKEREL] = item("fish", { species = MACKEREL }),
-			[NIGHTFISH] = item("fish", { species = NIGHTFISH }),
-			[LEGEND] = item("fish", { species = LEGEND, legend = true }),
-			[TROPHY] = item("trophy", { family = 1, weight = 19 }),
+			[MACKEREL] = fishRecord(MACKEREL),
+			[NIGHTFISH] = fishRecord(NIGHTFISH),
+			[LEGEND] = fishRecord(LEGEND, { legend = true }),
+			[TROPHY] = itemRecord("trophy", { family = 1, weight = 19 }),
 		},
 		areas = {
-			[ELWYNN] = area(0, { skillBase = 25, catches = { { itemID = MACKEREL, confirmed = false } } }),
-			[GOLDSHIRE] = area(ELWYNN, {
+			[ELWYNN] = areaRecord(0, { skillBase = 25, catches = { { itemID = MACKEREL, confirmed = false } } }),
+			[GOLDSHIRE] = areaRecord(ELWYNN, {
 				catches = {
 					{ itemID = NIGHTFISH, confirmed = false, window = "night", gate = night, gateConfirmed = false },
 					{ itemID = LEGEND, confirmed = false },
 					{ itemID = TROPHY, confirmed = false },
 				},
 			}),
-			[DUSKWOOD] = area(0, { hasData = false }),
+			[DUSKWOOD] = areaRecord(0, { hasData = false }),
 		},
-		aliases = {},
-		pools = {},
 		windows = { night = { spec = night, confirmed = false } },
-		events = {},
-		fishingSpells = {},
-		auras = {},
-	}
+	})
 end
 
 -- The keys of a set, ascending.
@@ -90,14 +70,7 @@ describe("the Ledger's world index (LED-R10)", function()
 		local fake = newFakePagle()
 		fake.setCatalogue(fixture())
 		fake.catchLog.data.characters[1] = { guid = PLAYER_GUID }
-		fake.catchLog:Append({
-			kind = "cast",
-			char = 1,
-			time = 1791731000,
-			outcome = "caught",
-			conditions = { minute = 494, zone = ELWYNN, subzone = 0, events = {}, auras = {} },
-			items = { { itemID = MACKEREL, quantity = 1 } },
-		})
+		fake.catchLog:Append(castRecord({ zone = ELWYNN, items = { MACKEREL } }))
 		local loaded = fake.load("Pagle_Ledger")
 
 		fake.login()

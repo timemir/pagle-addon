@@ -1,7 +1,8 @@
 """Where a problem in data/ sits and how problems are collected (DATA-R63): every script reports through these,
 whatever it reads (TOML, CSV, DB2 downloads), so one run lists every problem before it fails."""
 
-from collections.abc import Iterator
+import sys
+from collections.abc import Iterable, Iterator
 from dataclasses import dataclass, field
 
 
@@ -42,3 +43,13 @@ class DataError(Exception):
     def __init__(self, problems: list[str]) -> None:
         super().__init__(f"{len(problems)} problem(s) in data/")
         self.problems = problems
+
+
+def fail(prog: str, problems: Iterable[str], undone: str) -> int:
+    """Prints every problem (DATA-R63), then their count and what the run didn't do ("wrote nothing"); returns the
+    exit code, 1. problems is a Problems or a DataError's list."""
+    found = list(problems)
+    for problem in found:
+        print(f"{prog}: {problem}", file=sys.stderr)
+    print(f"{prog}: {len(found)} problem(s); {undone}", file=sys.stderr)
+    return 1

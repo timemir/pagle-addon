@@ -75,17 +75,6 @@ local function close(loaded)
 	loaded.ns.cardFrame.close:Click()
 end
 
--- Presses Esc: CloseSpecialWindows hides every shown frame named in UISpecialFrames, and its OnHide runs.
-local function escape(loaded)
-	local frame = loaded.ns.cardFrame
-	for _, name in ipairs(loaded.env.UISpecialFrames) do
-		if name == frame.name and frame.shown then
-			frame:Hide()
-			frame.scripts.OnHide(frame)
-		end
-	end
-end
-
 -- A stored summary card for PagleDB.global.cards, with `casts` Casts and one Ledger moment titled `title`.
 local function storedCard(casts, title)
 	return {
@@ -161,7 +150,7 @@ describe("the Write-up card", function()
 			close(second)
 			assert.are.same({}, second.env.PagleDB.global.writeUp)
 			assert.are.same({ "# Ledger", "New Species" }, shownCard(second).rows)
-			escape(second)
+			second.client.pressEscape()
 			assert.is_nil(shownCard(second))
 			assert.are.same({}, second.env.PagleDB.global.cards)
 		end
@@ -180,7 +169,7 @@ describe("the Write-up card", function()
 			loaded.ns.db.profile.announcements.cozy = true
 			catchAndFlush(loaded)
 			ledger:RaiseMoment({ rung = "toast", kind = "newSpecies", title = "New Species" })
-			loaded.client.advance(900)
+			loaded.client.advance(300)
 			assert.are.equal("Write-up", shownTitle(loaded))
 			close(loaded)
 
@@ -227,7 +216,7 @@ describe("the Write-up card", function()
 			assert.is_nil(shownCard(loaded))
 
 			catchAndFlush(loaded)
-			loaded.client.advance(900)
+			loaded.client.advance(300)
 
 			assert.are.same({
 				title = "Fishing session",
@@ -397,7 +386,7 @@ describe("the Session summary cards", function()
 			assert.is_nil(shownCard(loaded))
 
 			catchAndFlush(loaded)
-			loaded.client.advance(899)
+			loaded.client.advance(299)
 			assert.is_nil(shownCard(loaded))
 			loaded.client.advance(1)
 
@@ -429,7 +418,7 @@ describe("the Session summary cards", function()
 		frames(loaded)
 		catchAndFlush(loaded)
 		M:RaiseMoment({ rung = "toast", kind = "newSpecies", title = "New Species" })
-		loaded.client.advance(895)
+		loaded.client.advance(295)
 		M:RaiseMoment({ rung = "toast", kind = "late", title = "Late toast" })
 		loaded.client.advance(5)
 		assert.is_true(loaded.ns.announcementFrames.toast.shown)

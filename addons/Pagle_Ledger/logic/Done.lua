@@ -75,7 +75,7 @@ local function celebrateAll(celebrated, state, lookups)
 		celebrated.items[itemID] = true
 		local item = getItem(itemID)
 		if item and item.category == "trophy" and item.family then
-			local stars = ns.FamilyStars(world, state, item.family, getItem)
+			local stars = ns.FamilyStars(world, state, item.family)
 			ns.CelebrateStars(celebrated.familyStars, item.family, starList(stars))
 		end
 	end
@@ -201,8 +201,10 @@ local function stateCounts(celebrated, state, lookups)
 	end
 	for itemID in pairs(state.items) do
 		local class = ns.ClassifyCatch(itemID, lookups.GetItem(itemID))
-		if class == "trophy" or class == "curio" then
-			counts[class] = counts[class] + 1
+		if class == "trophy" then
+			counts.trophy = counts.trophy + 1
+		elseif class == "curio" then
+			counts.curio = counts.curio + 1
 		elseif class == "legend" then
 			counts.legends = counts.legends + 1
 		end

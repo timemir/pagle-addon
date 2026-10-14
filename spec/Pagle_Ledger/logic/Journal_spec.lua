@@ -6,7 +6,7 @@ describe("the Fish Journal's router", function()
 	local L = ns.L
 
 	---@type LedgerJournalContext
-	local context = { updating = false, now = 1791731700, formatNumber = breakUpLargeNumbers, text = ns.journalText }
+	local context = { updating = false, now = SERVER_TIME, formatNumber = breakUpLargeNumbers, text = ns.journalText }
 
 	-- A spread three crumbs deep (Home ❧ Waters ❧ {zone} ❧ {fish}), its left page naming its args.
 	---@type LedgerSpread
@@ -23,7 +23,7 @@ describe("the Fish Journal's router", function()
 		end,
 	}
 
-	-- The zone level above it: Home ❧ Waters ❧ {zone}.
+	-- The zone crumb above it: Home ❧ Waters ❧ {zone}.
 	---@type LedgerSpread
 	local zone = {
 		crumbs = function(args)
@@ -106,6 +106,23 @@ describe("the Fish Journal's router", function()
 		assert.are.same({ id = "waters" }, pages.back)
 	end)
 
+	it("gives every spread but Home a back link, to Home when it adds no crumb of its own (LED-R125)", function()
+		local spreads = { home = home }
+		spreads.bare = {
+			crumbs = function()
+				return {}
+			end,
+			draw = function()
+				return { left = {}, right = {} }
+			end,
+		}
+		local router = ns.NewJournalRouter(spreads)
+
+		router:Open("bare")
+
+		assert.are.same({ id = "home" }, router:Pages(context).back)
+	end)
+
 	it("does nothing when asked to open a spread nobody registered (LED-R125)", function()
 		local router = newRouter()
 		router:Open("deep", { zone = 12, fish = 6303 })
@@ -115,7 +132,7 @@ describe("the Fish Journal's router", function()
 		assert.are.same({ id = "deep", args = { zone = 12, fish = 6303 } }, router:Place())
 	end)
 
-	it("takes later registrations, a spread registered again replacing the one before", function()
+	it("takes later registrations, a spread registered again replacing the one before (LED-R125)", function()
 		local spreads = { home = home }
 		local router = ns.NewJournalRouter(spreads)
 
@@ -147,7 +164,7 @@ describe("the Fish Journal's router", function()
 		assert.are.same({ id = "deep", args = { zone = 12, fish = 6303 } }, router:Place())
 	end)
 
-	it("registers spreads by ID through ns.RegisterJournalSpread", function()
+	it("registers spreads by ID through ns.RegisterJournalSpread (LED-R125)", function()
 		local loaded = loadAddon("Pagle_Ledger", FOREVER_GLOBALS).ns
 
 		loaded.RegisterJournalSpread("deep", deep)

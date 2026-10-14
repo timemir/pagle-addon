@@ -6,7 +6,6 @@ by hand.
 
 import argparse
 import re
-import sys
 import urllib.request
 from collections.abc import Callable, Iterable, Sequence
 from pathlib import Path
@@ -25,7 +24,7 @@ from pagle_data.db2 import (
     parse_table,
     read_build,
 )
-from pagle_data.errors import At, Problems
+from pagle_data.errors import At, Problems, fail
 from pagle_data.files import csv_text, write_atomic
 from pagle_data.universe import item_universe
 
@@ -107,16 +106,6 @@ def _parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("build", help="the build as wago.tools names it, e.g. 1.60.1.70338")
     return parser
-
-
-def fail(prog: str, problems: Iterable[str], undone: str) -> int:
-    """Prints every problem (DATA-R63), then their count and what the run didn't do ("wrote nothing"); returns the
-    exit code, 1. problems is a Problems or a DataError's list."""
-    found = list(problems)
-    for problem in found:
-        print(f"{prog}: {problem}", file=sys.stderr)
-    print(f"{prog}: {len(found)} problem(s); {undone}", file=sys.stderr)
-    return 1
 
 
 def repo_universe(root: Path, problems: Problems) -> frozenset[int]:

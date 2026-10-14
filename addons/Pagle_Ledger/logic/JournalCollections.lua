@@ -10,24 +10,8 @@ local ns = select(2, ...)
 -- everything read from the spread's context (CORE-R7); the book draws it (adapter/Journal.lua,
 -- adapter/JournalCollections.lua). Each "x of N" is World's count, removed items out of both sides (LED-R12).
 
---- The Trophy Room's ID (LED-R125); its args may name a `family` to open on (LED-R137's "Trophies landed here").
-ns.JOURNAL_TROPHY_ROOM = "trophy"
-
---- Curios' ID (LED-R125): the Junk Museum, Treasures and the loose pages of Uncharted catches.
-ns.JOURNAL_CURIOS = "curios"
-
---- A set of stars as the Journal prints it (LED-R48): three marks, ★ for each star shown and ☆ for each blank, so
---- ★★★ without ★★ reads "★☆★".
----@param stars LedgerStars
----@return string
-function ns.JournalStars(stars)
-	local L = ns.L
-	local marks = {}
-	for star = 1, 3 do
-		marks[star] = stars[star] and L.STAR_ON or L.STAR_OFF
-	end
-	return table.concat(marks)
-end
+-- The Trophy Room is ns.JOURNAL_TROPHY_ROOM and Curios ns.JOURNAL_CURIOS, their places ns.JournalPlace.trophyRoom and
+-- .curios (logic/Journal.lua).
 
 --- A trophy family as the Trophy Room shows it (LED-R143): its weights in the Trophy Room's world (LED-R11), and the
 --- "x / N" of those not removed (LED-R12).
@@ -36,16 +20,15 @@ end
 ---@field weights integer[] -- its trophy items in the world, ascending item ID
 ---@field count LedgerCount
 
--- The Trophy Room's families (LED-R60, LED-R143): the trophy items of the world grouped by family, ascending family
--- ID (LED-R123).
----@param context LedgerJournalContext
+--- The Trophy Room's families (LED-R60, LED-R143): the trophy items of its world grouped by family, ascending family
+--- ID (LED-R123). The zone spread reads each family's "x / N" from it too (LED-R137).
+---@param world LedgerWorld
+---@param state LedgerState
 ---@return LedgerTrophyFamily[]
-local function trophyFamilies(context)
-	local state = context.state --[[@as LedgerState]]
-	local getItem = context.getItem --[[@as fun(itemID: integer): PagleItem?]]
-	local worlds = ns.CollectionWorlds(context.world --[[@as LedgerWorld]], state, getItem)
+function ns.TrophyFamilies(world, state)
+	local getItem = world.getItem
 	local byID, families = {}, {}
-	for _, itemID in ipairs(worlds.trophy) do
+	for _, itemID in ipairs(ns.CollectionWorlds(world, state).trophy) do
 		local item = getItem(itemID) --[[@as PagleItem]]
 		local family = byID[item.family]
 		if not family then
@@ -67,57 +50,43 @@ local function trophyFamilies(context)
 	return families
 end
 
--- A family's name: its lore name (`family.<id>.name`, LED-R160), "…" while it has none (LED-R126).
----@param context LedgerJournalContext
----@param family integer
----@return string
-local function familyName(context, family)
-	return context.text:Lore(("family.%d.name"):format(family)) or ns.L.NAME_UNKNOWN
-end
-
 -- The Trophy Room's left page (LED-R143): its title, the weights landed of the room's, and the family index, each
--- line the family's name and shown stars (LED-R48), its "x / N", opening it on the right page.
----@param context LedgerJournalContext
+-- line the family's lore name and shown stars (LED-R48), its "x / N", opening it on the right page; a family whose
+-- name has no text has no line (LED-R161).
+---@param context LedgerSpreadContext
 ---@param families LedgerTrophyFamily[]
 ---@return LedgerBlock[]
 local function trophyIndex(context, families)
 	local L = ns.L
 	local format = context.formatNumber
-	local count = ns.LedgerCompletion(
-		context.world --[[@as LedgerWorld]],
-		context.state --[[@as LedgerState]],
-		context.getItem --[[@as fun(itemID: integer): PagleItem?]]
-	).trophy
+	local count = ns.LedgerCompletion(context.world, context.state).trophy
 	local blocks = {
 		{ kind = "title", text = L.TROPHY_TITLE },
 		{ kind = "text", text = L.TROPHY_WEIGHTS:format(format(count.done), format(count.total)) },
 	}
 	for _, family in ipairs(families) do
-		local stars = ns.ShownFamilyStars(
-			context.world --[[@as LedgerWorld]],
-			context.state --[[@as LedgerState]],
-			context.celebrated --[[@as LedgerCelebrated]],
-			family.id,
-			context.getItem --[[@as fun(itemID: integer): PagleItem?]]
-		)
-		blocks[#blocks + 1] = {
-			kind = "leader",
-			text = L.TROPHY_INDEX_LINE:format(familyName(context, family.id), ns.JournalStars(stars)),
-			value = L.TROPHY_INDEX_COUNT:format(format(family.count.done), format(family.count.total)),
-			place = { id = ns.JOURNAL_TROPHY_ROOM, args = { family = family.id } },
-		}
+		local name = context.text:FamilyName(family.id)
+		if name then
+			local stars = ns.ShownFamilyStars(context.world, context.state, context.celebrated, family.id)
+			blocks[#blocks + 1] = {
+				kind = "leader",
+				text = L.TROPHY_INDEX_LINE:format(name, ns.JournalStars(stars)),
+				value = L.COUNT_OF:format(format(family.count.done), format(family.count.total)),
+				place = ns.JournalPlace.trophyRoom(family.id),
+			}
+		end
 	end
 	return blocks
 end
 
 -- A family's measuring board (LED-R143, LED-R62): a tick per weight not removed, by its real weight in pounds,
 -- placed from the lightest (0) to the heaviest (1), the middle for one alone, and inked where landed.
----@param context LedgerJournalContext
+---@param context LedgerSpreadContext
 ---@param family LedgerTrophyFamily
 ---@return LedgerBoardTick[]
 local function board(context, family)
-	local getItem = context.getItem --[[@as fun(itemID: integer): PagleItem?]]
-	local landed = (context.state --[[@as LedgerState]]).items
+	local getItem = context.getItem
+	local landed = context.state.items
 	local weights = {}
 	for _, itemID in ipairs(family.weights) do
 		local item = getItem(itemID) --[[@as PagleItem]]
@@ -144,54 +113,50 @@ local function board(context, family)
 	return ticks
 end
 
--- The heaviest weight of a family landed, removed or not (its Catches keep their records, LED-R12); nil for none.
----@param context LedgerJournalContext
+-- The heaviest weight of a family landed, as "Landed {x} of {N}" counts them: a removed weight is left out (LED-R12),
+-- though its Catches keep their records. nil for none.
+---@param context LedgerSpreadContext
 ---@param family LedgerTrophyFamily
 ---@return integer?
 local function heaviestLanded(context, family)
-	local getItem = context.getItem --[[@as fun(itemID: integer): PagleItem?]]
-	local landed = (context.state --[[@as LedgerState]]).items
+	local getItem = context.getItem
+	local landed = context.state.items
 	local heaviest
 	for _, itemID in ipairs(family.weights) do
-		local weight = (getItem(itemID) --[[@as PagleItem]]).weight or 0
-		if landed[itemID] and (heaviest == nil or weight > heaviest) then
+		local item = getItem(itemID) --[[@as PagleItem]]
+		local weight = item.weight or 0
+		if landed[itemID] and not item.removed and (heaviest == nil or weight > heaviest) then
 			heaviest = weight
 		end
 	end
 	return heaviest
 end
 
--- The Trophy Room's right page (LED-R143): the chosen family's name, its three stamps (its shown stars, LED-R48), its
+-- The Trophy Room's right page (LED-R143): the chosen family's name (left out while it has no text, LED-R161), its
+-- three stamps (its shown stars, LED-R48), its
 -- measuring board in real pounds (LED-R62), what is landed of it, and the charted zones whose list has it.
----@param context LedgerJournalContext
+---@param context LedgerSpreadContext
 ---@param family LedgerTrophyFamily
 ---@return LedgerBlock[]
 local function familyPage(context, family)
 	local L = ns.L
 	local format = context.formatNumber
-	local world = context.world --[[@as LedgerWorld]]
-	local stars = ns.ShownFamilyStars(
-		world,
-		context.state --[[@as LedgerState]],
-		context.celebrated --[[@as LedgerCelebrated]],
-		family.id,
-		context.getItem --[[@as fun(itemID: integer): PagleItem?]]
-	)
-	local stamps = {}
-	for star, text in ipairs(L.TROPHY_STAMPS) do
-		stamps[star] = { text = text, inked = stars[star] == true }
-	end
+	local world = context.world
+	local stars = ns.ShownFamilyStars(world, context.state, context.celebrated, family.id)
 	local heaviest = heaviestLanded(context, family)
 	local landed = heaviest
 			and L.TROPHY_LANDED:format(format(family.count.done), format(family.count.total), format(heaviest))
 		or L.TROPHY_NONE_LANDED
-	local blocks = {
-		{ kind = "title", text = familyName(context, family.id) },
-		{ kind = "stamps", stamps = stamps },
-		{ kind = "board", ticks = board(context, family) },
-		{ kind = "text", text = L.TROPHY_POUNDS, color = "faded" },
-		{ kind = "text", text = landed, hand = true },
-	}
+	---@type LedgerBlock[]
+	local blocks = {}
+	local name = context.text:FamilyName(family.id)
+	if name then
+		blocks[1] = { kind = "title", text = name }
+	end
+	blocks[#blocks + 1] = { kind = "stamps", stamps = ns.JournalStamps(stars, L.TROPHY_STAMPS) }
+	blocks[#blocks + 1] = { kind = "board", ticks = board(context, family) }
+	blocks[#blocks + 1] = { kind = "text", text = L.TROPHY_POUNDS, color = "faded" }
+	blocks[#blocks + 1] = { kind = "text", text = landed, hand = true }
 	local zones = {}
 	for _, zone in ipairs(world.charted) do
 		if world.zones[zone].families[family.id] then
@@ -207,11 +172,11 @@ end
 ns.RegisterJournalSpread(ns.JOURNAL_TROPHY_ROOM, {
 	-- Home ❧ The Trophy Room (LED-R125).
 	crumbs = function()
-		return { { label = ns.L.TROPHY_TITLE, place = { id = ns.JOURNAL_TROPHY_ROOM } } }
+		return { { label = ns.L.TROPHY_TITLE, place = ns.JournalPlace.trophyRoom() } }
 	end,
 	-- The family index on the left, the family `args.family` on the right: the first when it names none in the room.
 	draw = function(args, context)
-		local families = trophyFamilies(context)
+		local families = ns.TrophyFamilies(context.world, context.state)
 		local chosen = families[1]
 		for _, family in ipairs(families) do
 			if family.id == args.family then
@@ -223,7 +188,7 @@ ns.RegisterJournalSpread(ns.JOURNAL_TROPHY_ROOM, {
 })
 
 -- A curio's plaque (lore, `sub.<itemID>.plaque`, LED-R160); nil without text, so its line is left out (LED-R161).
----@param context LedgerJournalContext
+---@param context LedgerSpreadContext
 ---@param itemID integer
 ---@return string?
 local function plaque(context, itemID)
@@ -233,14 +198,14 @@ end
 -- The Junk Museum, Curios' left page (LED-R144): its title, the exhibits caught of its world's (removed out of both
 -- sides, LED-R12), and a plinth per junk item of the world, ascending item ID (LED-R123): caught, its icon, name and
 -- plaque; uncaught, never named (LED-R124): a silhouette, "An empty plinth" and the shared lore line.
----@param context LedgerJournalContext
+---@param context LedgerSpreadContext
 ---@param worlds LedgerCollectionWorlds
 ---@param completion LedgerCompletion
 ---@return LedgerBlock[]
 local function junkMuseum(context, worlds, completion)
 	local L = ns.L
 	local format = context.formatNumber
-	local caught = (context.state --[[@as LedgerState]]).items
+	local caught = context.state.items
 	local blocks = {
 		{ kind = "title", text = L.CURIOS_JUNK_TITLE },
 		{ kind = "text", text = L.CURIOS_EXHIBITS:format(format(completion.junk.done), format(completion.junk.total)) },
@@ -269,14 +234,14 @@ end
 
 -- Treasures, at the top of Curios' right page (LED-R144): its title, the items opened of its world's, and a line per
 -- container or treasure item, ascending item ID: caught, its name and plaque; uncaught, only the shared lore line.
----@param context LedgerJournalContext
+---@param context LedgerSpreadContext
 ---@param worlds LedgerCollectionWorlds
 ---@param completion LedgerCompletion
 ---@param blocks LedgerBlock[]
 local function treasures(context, worlds, completion, blocks)
 	local L = ns.L
 	local format = context.formatNumber
-	local caught = (context.state --[[@as LedgerState]]).items
+	local caught = context.state.items
 	local count = completion.treasure
 	blocks[#blocks + 1] = { kind = "title", text = L.CURIOS_TREASURES_TITLE }
 	blocks[#blocks + 1] = { kind = "text", text = L.CURIOS_OPENED:format(format(count.done), format(count.total)) }
@@ -299,12 +264,12 @@ end
 -- "Loose pages: Uncharted" (LED-R144, LED-R64): one handwritten line per Uncharted item, by first Catch (item ID on
 -- a tie), "Item {id}" until the client has its name (LED-R126), at its zones by areaID or "unknown waters"; then the
 -- "Help chart the waters" link, which opens the Field report (REP-R43).
----@param context LedgerJournalContext
+---@param context LedgerSpreadContext
 ---@param blocks LedgerBlock[]
 local function loosePages(context, blocks)
 	local L = ns.L
 	local format = context.formatNumber
-	local uncharted = (context.state --[[@as LedgerState]]).uncharted
+	local uncharted = context.state.uncharted
 	local ids = {}
 	for itemID in pairs(uncharted) do
 		ids[#ids + 1] = itemID
@@ -320,11 +285,7 @@ local function loosePages(context, blocks)
 	for _, itemID in ipairs(ids) do
 		local entry = uncharted[itemID]
 		local zones = {}
-		for zone in pairs(entry.zones or {}) do
-			zones[#zones + 1] = zone
-		end
-		table.sort(zones)
-		for i, zone in ipairs(zones) do
+		for i, zone in ipairs(ns.SortedKeys(entry.zones or {})) do
 			zones[i] = context.text:Zone(zone)
 		end
 		local where = #zones > 0 and table.concat(zones, L.LIST_SEPARATOR) or L.CURIOS_UNKNOWN_WATERS
@@ -342,20 +303,18 @@ local function loosePages(context, blocks)
 	if #ids == 0 then
 		blocks[#blocks + 1] = { kind = "text", text = L.CURIOS_NONE_UNCHARTED, color = "faded" }
 	end
-	blocks[#blocks + 1] = { kind = "link", text = L.CURIOS_HELP_CHART, action = context.openFieldReport }
+	blocks[#blocks + 1] = ns.JournalHelpChartLink(context)
 end
 
 ns.RegisterJournalSpread(ns.JOURNAL_CURIOS, {
 	-- Home ❧ Curios (LED-R125).
 	crumbs = function()
-		return { { label = ns.L.CURIOS_CRUMB, place = { id = ns.JOURNAL_CURIOS } } }
+		return { { label = ns.L.CURIOS_CRUMB, place = ns.JournalPlace.curios() } }
 	end,
 	draw = function(_, context)
-		local world = context.world --[[@as LedgerWorld]]
-		local state = context.state --[[@as LedgerState]]
-		local getItem = context.getItem --[[@as fun(itemID: integer): PagleItem?]]
-		local worlds = ns.CollectionWorlds(world, state, getItem)
-		local completion = ns.LedgerCompletion(world, state, getItem)
+		local world, state = context.world, context.state
+		local worlds = ns.CollectionWorlds(world, state)
+		local completion = ns.LedgerCompletion(world, state)
 		local right = {}
 		treasures(context, worlds, completion, right)
 		loosePages(context, right)

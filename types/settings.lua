@@ -43,6 +43,7 @@
 --- SettingMixin:NotifyUpdate (Blizzard_Setting.lua): the value changed elsewhere, so the shown controls read it again.
 ---@field NotifyUpdate fun(self: SettingsProxySetting)
 ---@field SetValue fun(self: SettingsProxySetting, value: any)
+---@field NotifyUpdate fun(self: SettingsProxySetting)   -- reads the value again and fires its value-changed callback
 
 --- SettingsSliderOptionsMixin.
 ---@class SettingsSliderOptions

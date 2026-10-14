@@ -5,7 +5,7 @@ local MACKEREL, SMALLFISH, OILY = 6303, 6291, 6358
 -- Two zones the generated catalogue doesn't chart (no catch data), so no Zone Mastery rank adds its XP and Coins to
 -- these numbers (LED-R54). ZoneMastery_spec.lua has the ranks.
 local BADLANDS, BLASTED_LANDS = 3, 4
-local T0 = 1791731000
+local T0 = SERVER_TIME - 700
 
 -- The names the fake client's C_Item knows.
 local ITEM_NAMES = { [MACKEREL] = "Raw Spotted Yellowtail", [SMALLFISH] = "Raw Brilliant Smallfish" }
@@ -15,18 +15,7 @@ local ITEM_NAMES = { [MACKEREL] = "Raw Spotted Yellowtail", [SMALLFISH] = "Raw B
 ---@param zone integer
 ---@param itemIDs integer[]? nil for a got-away Cast
 local function cast(time, zone, itemIDs)
-	local items = {}
-	for i, itemID in ipairs(itemIDs or {}) do
-		items[i] = { itemID = itemID, quantity = 1 }
-	end
-	return {
-		kind = "cast",
-		char = 1,
-		time = time,
-		outcome = itemIDs and "caught" or "gotAway",
-		conditions = { minute = 494, zone = zone, subzone = 0, events = {}, auras = {} },
-		items = items,
-	}
+	return castRecord({ time = time, zone = zone, items = itemIDs, outcome = itemIDs and "caught" or "gotAway" })
 end
 
 -- History before the first login: two Species in Badlands, a got-away Cast and a known Species in Blasted Lands. XP: 820 +
@@ -64,7 +53,6 @@ local function session(options)
 	fake.globals.C_Map = {
 		GetAreaInfo = function() end,
 	}
-	fake.globals.BreakUpLargeNumbers = breakUpLargeNumbers
 	if options.prepare then
 		options.prepare(fake)
 	end

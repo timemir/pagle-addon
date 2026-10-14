@@ -220,6 +220,21 @@ describe("FakePagle", function()
 			assert.is_nil(fake.settingsPage("trackers"))
 		end)
 
+		it("gives a button row its caption, nil without one, as Core draws them (CORE-R42, SET-R2)", function()
+			local fake, M = withQoL()
+			M:AddSetting("fishing", { kind = "header", label = "Casting" })
+			M:AddSetting(
+				"fishing",
+				{ kind = "button", label = "Position", caption = "Reset", onClick = function() end }
+			)
+			M:AddSetting("fishing", { kind = "button", label = "Save", onClick = function() end })
+			fake.login()
+
+			local page = assert(fake.settingsPage("fishing"))
+			assert.are.same({ "Position", "Reset" }, { page[2].label, page[2].caption })
+			assert.are.same({ "Save" }, { page[3].label, page[3].caption })
+		end)
+
 		it("raises an error at the caller for a row Core refuses (CORE-R42)", function()
 			local _, M = withQoL()
 			M:AddSetting("fishing", { kind = "header", id = "casting", label = "Casting" })
@@ -229,6 +244,7 @@ describe("FakePagle", function()
 				{ "fishing", { kind = "toggle", label = "Casting" } },
 				{ "fishing", { kind = "header", id = "casting", label = "Again" } },
 				{ "fishing", { kind = "header", parent = "gear", label = "Swap" } },
+				{ "fishing", { kind = "button", label = "Position", caption = true, onClick = function() end } },
 			}) do
 				local ok, err = pcall(function()
 					M:AddSetting(call[1], call[2])
@@ -247,6 +263,50 @@ describe("FakePagle", function()
 			assert.are.equal(1, #fake.reported)
 			assert.matches("after ModulesChanged", fake.reported[1])
 			assert.is_nil(fake.settingsPage("fishing"))
+		end)
+	end)
+
+	describe("M:RefreshSetting", function()
+		-- A fake with QoL's dropdown "set" and button "save" on Fishing; returns the fake and QoL's handle.
+		local function withRows()
+			local fake = newFakePagle()
+			local M = fake.Pagle.RegisterModule({ name = "QoL", title = "QoL", order = 50 })
+			M:AddSetting("fishing", {
+				kind = "dropdown",
+				id = "set",
+				label = "Fishing set",
+				get = function() end,
+				set = function() end,
+				options = function() end,
+			})
+			M:AddSetting("fishing", { kind = "button", id = "save", label = "Save", onClick = function() end })
+			return fake, M
+		end
+
+		it("records each refresh once the page is registered, and none before (CORE-R42)", function()
+			local fake, M = withRows()
+			M:RefreshSetting("set")
+			assert.are.same({}, fake.refreshed)
+
+			fake.login()
+			M:RefreshSetting("set")
+			M:RefreshSetting("set")
+
+			assert.are.same({ { module = "QoL", id = "set" }, { module = "QoL", id = "set" } }, fake.refreshed)
+		end)
+
+		it("raises an error at the caller for an id none of the Module's value rows has (CORE-R42)", function()
+			local fake, M = withRows()
+			fake.login()
+
+			for _, id in ipairs({ "gear", "save" }) do
+				local ok, err = pcall(function()
+					M:RefreshSetting(id)
+				end)
+				assert.is_false(ok)
+				assert.matches("fake_pagle_spec%.lua:%d+: QoL's RefreshSetting: no checkbox", tostring(err))
+			end
+			assert.are.same({}, fake.refreshed)
 		end)
 	end)
 
@@ -841,6 +901,81 @@ describe("FakePagle", function()
 		end)
 	end)
 
+	describe("/pagle dev", function()
+		it("ends the open Session now, as Core does, once dev is on (#247, LOG-R62)", function()
+			local fake = newFakePagle()
+			local ended = {}
+			fake.Pagle.RegisterCallback(ended, "SessionEnded", function(_, session)
+				ended[#ended + 1] = session.id
+			end)
+			fake.login()
+			fake.enterWorld()
+			local cast = assert(fake.playCast("caught", { { itemID = 6358, quantity = 1 } }))
+
+			fake.slash("dev endsession")
+			fake.slash("dev on")
+			fake.slash("dev endsession")
+
+			assert.are.same({ cast.id }, ended)
+			assert.is_nil(fake.Pagle.GetSession())
+			assert.are.same({
+				"Pagle dev: dev commands are off; /pagle dev on turns them on.",
+				"Pagle dev: dev commands are on.",
+				"Pagle dev: the Session ended, as if its gap had passed.",
+			}, fake.printed)
+		end)
+
+		it(
+			"records a caught Cast in the area given on a test log, with Catch, CastEnded and live projections; on a"
+				.. " real log refuses (#247, LOG-R9)",
+			function()
+				local fake = newFakePagle()
+				local events = {}
+				for _, event in ipairs({ "CastStarted", "Catch", "CastEnded" }) do
+					fake.Pagle.RegisterCallback(events, event, function()
+						events[#events + 1] = event
+					end)
+				end
+				fake.login()
+				fake.enterWorld()
+				fake.slash("dev on")
+
+				fake.slash("dev catch 6358")
+				local refused = #fake.catchLog.data.entries
+				fake.catchLog.data.test = true
+				fake.slash("dev catch 6358 453")
+
+				assert.are.equal(0, refused)
+				local record = assert(fake.catchLog:Iterate()())
+				---@cast record PagleCast
+				assert.are.same(
+					{ 6358, 148, 453, "caught" },
+					{ record.items[1].itemID, record.conditions.zone, record.conditions.subzone, record.outcome }
+				)
+				assert.are.same({ "Catch", "CastEnded" }, events)
+				assert.are.equal(record.session, assert(fake.Pagle.GetSession()).id)
+			end
+		)
+
+		it("hands a preview's sample to the display and its card to the cards, as Core does (#247)", function()
+			local fake = newFakePagle()
+			fake.login()
+			fake.enterWorld()
+			fake.slash("dev on")
+
+			fake.slash("dev preview banner")
+			fake.slash("dev preview card")
+
+			assert.are.same({ "banner", "Angler Level 12" }, {
+				fake.announcements[1].rung,
+				fake.announcements[1].headline.title,
+			})
+			assert.are.equal(1, #fake.cardsShown)
+			assert.is_true(fake.cardsShown[1].preview)
+			assert.are.same({}, fake.global.cards)
+		end)
+	end)
+
 	describe("/pagle", function()
 		it(
 			"runs a Module's subcommand case-insensitively with the rest of the line, trimmed, from login (CORE-R62)",
@@ -1135,19 +1270,11 @@ describe("FakePagle", function()
 		-- A catalogue in the M1 shape (DATA-R79): Darkshore (148) with The Long Wash (453).
 		local function fixture()
 			local function area(parent)
-				return { parent = parent, continent = 1, hasData = false, skillBaseConfirmed = false, catches = {} }
+				return areaRecord(parent, { continent = 1, hasData = false })
 			end
-			return {
-				fingerprint = "0123456789abcdef",
-				items = {},
+			return catalogueWith({
 				areas = { [148] = area(0), [453] = area(148) },
-				aliases = {},
-				pools = {},
-				windows = {},
-				events = {},
-				fishingSpells = {},
-				auras = {},
-			}
+			})
 		end
 
 		it("serves the generated catalogue, as Core does (LOG-R55)", function()
@@ -1276,23 +1403,16 @@ describe("FakePagle", function()
 		end)
 	end)
 
-	describe("the Field report", function()
+	describe("the Field report (REP-R25, REP-R26)", function()
 		-- Darkshore (148) with The Long Wash (453), neither with a skill base, and no items: every item is Uncharted.
 		local function fixture()
 			local function area(parent)
-				return { parent = parent, continent = 1, hasData = false, skillBaseConfirmed = false, catches = {} }
+				return areaRecord(parent, { continent = 1, hasData = false })
 			end
-			return {
-				fingerprint = "0123456789abcdef",
-				items = {},
+			return catalogueWith({
 				areas = { [148] = area(0), [453] = area(148) },
-				aliases = {},
-				pools = {},
-				windows = {},
-				events = {},
 				fishingSpells = { 7731 },
-				auras = {},
-			}
+			})
 		end
 
 		it(
@@ -1369,7 +1489,7 @@ describe("FakePagle", function()
 			assert.are.equal("Help chart the waters", menu[#menu - 1].label)
 		end)
 
-		describe("the Field report box", function()
+		describe("the Field report box (REP-R40–R44)", function()
 			it(
 				"records each Pagle.OpenFieldReport a Module makes, with the report's parts and the URL (REP-R40, REP-R43)",
 				function()
@@ -1570,17 +1690,9 @@ describe("FakePagle", function()
 		-- A catalogue in the M1 shape (DATA-R79) whose event list holds the Extravaganza (301) on Sundays from 14:00
 		-- for 2 hours, confirmed.
 		local function fixture()
-			return {
-				fingerprint = "0123456789abcdef",
-				items = {},
-				areas = {},
-				aliases = {},
-				pools = {},
-				windows = {},
+			return catalogueWith({
 				events = { [301] = { weekday = 1, start = 840, duration = 120, confirmed = true } },
-				fishingSpells = {},
-				auras = {},
-			}
+			})
 		end
 
 		-- fake.conditions moved on to the realm clock time `minute`, later the same realm day.
@@ -2009,21 +2121,21 @@ describe("FakePagle", function()
 			end
 		)
 
-		it("end when fake.wait(900) passes with no Cast, then GetSession is nil (LOG-R62, LOG-R64)", function()
+		it("end when fake.wait(300) passes with no Cast, then GetSession is nil (LOG-R62, LOG-R64)", function()
 			local fake = newFakePagle()
 			local seen = listen(fake)
 			fake.login()
 			fake.enterWorld()
 			fake.playCast("caught", { { itemID = 6358, quantity = 1 } })
 
-			fake.wait(899)
+			fake.wait(299)
 			assert.is_not_nil(fake.Pagle.GetSession())
 			fake.wait(1)
 
 			assert.are.equal("SessionEnded " .. id(0), seen[#seen])
 			assert.is_nil(fake.Pagle.GetSession())
 			fake.playCast("gotAway")
-			assert.are.equal("SessionStarted " .. id(900), seen[#seen - 1])
+			assert.are.equal("SessionStarted " .. id(300), seen[#seen - 1])
 		end)
 
 		it("end a Session that ended before login with whileAway, once no projection is updating (LOG-R63)", function()
@@ -2032,7 +2144,7 @@ describe("FakePagle", function()
 			fake.catchLog:Append({
 				kind = "cast",
 				char = 1,
-				time = SERVER_TIME - 900,
+				time = SERVER_TIME - 300,
 				outcome = "caught",
 				conditions = { minute = 494, zone = 148, subzone = 453, events = {}, auras = {} },
 				items = { { itemID = 6358, quantity = 1 } },
@@ -2043,8 +2155,8 @@ describe("FakePagle", function()
 			assert.are.same({}, seen)
 			fake.enterWorld()
 
-			assert.are.same({ "1 rebuild", "SessionEnded " .. id(-900) .. " whileAway" }, seen)
-			assert.are.equal(id(-900), fake.global.lastEndedSession)
+			assert.are.same({ "1 rebuild", "SessionEnded " .. id(-300) .. " whileAway" }, seen)
+			assert.are.equal(id(-300), fake.global.lastEndedSession)
 		end)
 
 		it("fire no SessionEnded at login for the Session a seeded global.lastEndedSession names (LOG-R63)", function()
@@ -2053,12 +2165,12 @@ describe("FakePagle", function()
 			fake.catchLog:Append({
 				kind = "cast",
 				char = 1,
-				time = SERVER_TIME - 900,
+				time = SERVER_TIME - 300,
 				outcome = "caught",
 				conditions = { minute = 494, zone = 148, subzone = 453, events = {}, auras = {} },
 				items = { { itemID = 6358, quantity = 1 } },
 			})
-			fake.global.lastEndedSession = id(-900)
+			fake.global.lastEndedSession = id(-300)
 			local seen = listen(fake)
 
 			fake.login()
@@ -2108,7 +2220,7 @@ describe("FakePagle", function()
 					fake.global.summary.moments[1].title,
 					fake.global.summary.moments[2].title,
 				})
-				fake.wait(900)
+				fake.wait(300)
 
 				local card = fake.global.cards[1]
 				assert.are.same({ casts = 1, catches = 1, gotAway = 0, seconds = 0 }, card.numbers)
@@ -2127,7 +2239,7 @@ describe("FakePagle", function()
 			fake.enterWorld()
 			fake.playCast("gotAway")
 
-			fake.wait(900)
+			fake.wait(300)
 
 			assert.are.same({}, fake.global.cards)
 		end)
@@ -2141,7 +2253,7 @@ describe("FakePagle", function()
 			assert.are.equal("Welcome back", fake.global.pending[1].title)
 
 			fake.playCast("gotAway")
-			fake.wait(900)
+			fake.wait(300)
 
 			assert.are.equal("Welcome back", fake.global.cards[1].moments[1].moments[1].title)
 		end)
@@ -2173,7 +2285,7 @@ describe("FakePagle", function()
 				fake.playCast("caught", { { itemID = 6358, quantity = 1 } })
 				fake.playCast("caught", { { itemID = 6358, quantity = 1 } })
 				assert.are.equal("Pagle · 2 waiting", fake.compartmentText())
-				fake.wait(900)
+				fake.wait(300)
 
 				assert.are.equal("Fishing session", fake.cardsShown[1].title)
 				assert.are.equal("Pagle", fake.compartmentText())
@@ -2188,7 +2300,7 @@ describe("FakePagle", function()
 					kind = "window",
 					title = "Window open",
 					cast = record.id,
-					expiresAt = SERVER_TIME + 600,
+					expiresAt = SERVER_TIME + 200,
 					pastText = "Window opened 21:00–06:00",
 				}
 			end)
@@ -2196,7 +2308,7 @@ describe("FakePagle", function()
 			fake.enterWorld()
 
 			fake.playCast("caught", { { itemID = 6358, quantity = 1 } })
-			fake.wait(900)
+			fake.wait(300)
 
 			local moment = fake.global.cards[1].moments[1].moments[1]
 			assert.is_true(moment.expired)
@@ -2215,7 +2327,7 @@ describe("FakePagle", function()
 				fake.catchLog:Append({
 					kind = "cast",
 					char = 1,
-					time = 1791731000 + i,
+					time = SERVER_TIME - 100 + i,
 					outcome = "caught",
 					conditions = { minute = 494, zone = 148, subzone = 453, events = {}, auras = {} },
 					items = { { itemID = 6358, quantity = 1 } },
@@ -2301,7 +2413,7 @@ describe("FakePagle", function()
 				assert.are.same({}, fake.cardsShown)
 
 				fake.playCast("gotAway")
-				fake.wait(900)
+				fake.wait(300)
 
 				assert.are.same({ "Fishing session", "Ledger written up" }, {
 					fake.cardsShown[1].title,

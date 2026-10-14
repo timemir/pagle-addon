@@ -32,7 +32,7 @@ local ns = select(2, ...)
 ---@field ReportCoinsEarned fun(total: integer)         -- M:ReportCoinsEarned
 ---@field SetSummaryLine fun(text: string)              -- M:SetSummaryLine("ledger", text)
 ---@field ItemName fun(itemID: integer): string?        -- C_Item.GetItemNameByID
----@field ZoneName fun(zone: integer): string?          -- C_Map.GetAreaInfo
+---@field AreaName fun(areaID: integer): string?    -- C_Map.GetAreaInfo
 ---@field RaiseWriteUp fun(section: PagleWriteUpSection) -- M:RaiseWriteUp
 ---@field LogId fun(): string?                          -- Pagle.GetAngler().logId
 ---@field FormatNumber fun(n: integer): string          -- BreakUpLargeNumbers
@@ -84,13 +84,15 @@ function ns.CelebratedSet(global)
 	return celebrated
 end
 
---- `n` with the singular or the plural form (`%d` in each), as every count in the Ledger has both (LED-R94).
+--- `n` with the singular or the plural form, as every count in the Ledger has both (LED-R94): `%d` in each, or `%s`
+--- with `format`, which writes the number (the client's BreakUpLargeNumbers, LED-R146).
 ---@param n integer
 ---@param one string
 ---@param other string
+---@param format? fun(n: integer): string
 ---@return string
-function ns.CountText(n, one, other)
-	return (n == 1 and one or other):format(n)
+function ns.CountText(n, one, other, format)
+	return (n == 1 and one or other):format(format and format(n) or n)
 end
 
 --- The shown level (LED-R36, LED-R92): the higher of the computed level and the highest celebrated in this climb.
@@ -105,10 +107,10 @@ end
 --- percent (LED-R70).
 ---@param state LedgerState
 ---@param celebrated LedgerCelebrated
----@param lookups LedgerLookups the world index and Core's GetItem, for completion
+---@param lookups LedgerLookups the world index, for completion
 ---@return string
 function ns.SummaryLine(state, celebrated, lookups)
-	local percent = ns.LedgerCompletion(lookups.world, state, lookups.GetItem).percent
+	local percent = ns.LedgerCompletion(lookups.world, state).percent
 	local level = ns.ShownLevel(state, celebrated)
 	if state.prestige > 0 then
 		return ns.L.SUMMARY_LINE_PRESTIGE:format(state.prestige, level, percent)
@@ -219,7 +221,7 @@ function celebrate.newInZone(celebrated, _, earned, outlets)
 		title = L.NEW_IN_ZONE_TITLE,
 		text = L.NEW_IN_ZONE_TEXT:format(
 			itemName(outlets, earned.itemID --[[@as integer]]),
-			outlets.ZoneName(earned.zone --[[@as integer]]) or L.NAME_UNKNOWN
+			outlets.AreaName(earned.zone --[[@as integer]]) or L.NAME_UNKNOWN
 		),
 		stamp = L.NEW_IN_ZONE_STAMP,
 		icon = earned.itemID,
@@ -320,7 +322,7 @@ function celebrate.familyStar(celebrated, _, earned)
 	end
 	local L = ns.L
 	local stars = starsText(new[#new])
-	local name = L["family." .. family .. ".name"]
+	local name = ns.FamilyName(family)
 	return {
 		rung = "nod",
 		kind = "familyStar",
@@ -402,7 +404,7 @@ function celebrate.zoneRank(celebrated, _, earned, outlets)
 		end
 	end
 	local L = ns.L
-	local name = outlets.ZoneName(zone) or L.NAME_UNKNOWN
+	local name = outlets.AreaName(zone) or L.NAME_UNKNOWN
 	if top == ns.ZONE_MASTER then
 		return {
 			rung = "banner",
@@ -534,7 +536,7 @@ end
 ---@param outlets LedgerOutlets
 ---@return LedgerJournalText
 local function titleText(outlets)
-	return ns.NewLoreText(outlets.ZoneName)
+	return ns.NewLoreText(outlets.AreaName)
 end
 
 --- The names of title keys (LED-R75), in the order given, leaving out each key with no text (LED-R161).

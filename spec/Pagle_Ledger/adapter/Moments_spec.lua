@@ -6,7 +6,7 @@ local ELWYNN, WESTFALL, DARKSHORE = 12, 40, 148
 -- Where the live Casts here are fished: a zone the generated catalogue doesn't chart (no catch data), so no Zone
 -- Mastery rank adds its XP and Coins to these numbers (LED-R54). ZoneMastery_spec.lua has the ranks.
 local BLASTED_LANDS = 4
-local T0 = 1791731000
+local T0 = SERVER_TIME - 700
 -- The fake log's logId, which a saved celebrated set names to belong to it (LED-R90).
 local LOG_ID = "0123456789abcdef"
 
@@ -24,18 +24,7 @@ local ZONE_NAMES = {
 ---@param zone integer
 ---@param itemIDs integer[]
 local function cast(time, zone, itemIDs)
-	local items = {}
-	for i, itemID in ipairs(itemIDs) do
-		items[i] = { itemID = itemID, quantity = 1 }
-	end
-	return {
-		kind = "cast",
-		char = 1,
-		time = time,
-		outcome = "caught",
-		conditions = { minute = 494, zone = zone, subzone = 0, events = {}, auras = {} },
-		items = items,
-	}
+	return castRecord({ time = time, zone = zone, items = itemIDs })
 end
 
 -- Loot of one item each, for fake.playCast.
@@ -78,7 +67,6 @@ local function session(history, saved, extra)
 			return ZONE_NAMES[areaID]
 		end,
 	}
-	fake.globals.BreakUpLargeNumbers = breakUpLargeNumbers
 	for key, value in pairs(extra or {}) do
 		fake.globals[key] = value
 	end
@@ -135,6 +123,22 @@ describe("the Ledger's live moments", function()
 			})
 		end
 	)
+
+	it("raise New Species for a /pagle dev catch on a test log, as for a real Catch (#247, LED-R96)", function()
+		local fake = session()
+		fake.catchLog.data.test = true
+		fake.slash("dev on")
+
+		fake.slash("dev catch " .. MACKEREL)
+
+		local announcements = shown(fake)
+		assert.are.equal(1, #announcements)
+		-- Its text carries the Catch's size, as a real Catch's does (LED-R81).
+		assert.are.same(
+			{ "newSpecies New Species / Raw Spotted Yellowtail · Typical · 9.5 in 10" },
+			momentsOf(announcements[1])
+		)
+	end)
 
 	it(
 		"raise a New here Nod for a known Species in a new zone, and celebrate the pair and the zone (LED-R90, LED-R97)",

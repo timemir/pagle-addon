@@ -24,11 +24,19 @@ local function itemArrived(_, itemID, success)
 	end
 end
 
---- The Journal's words, as every spread reads them (`context.text`).
-ns.journalText = ns.NewJournalText({
+--- The client's item and area names, as both the Journal's words and the moments read them (LED-R126, LED-R97).
+ns.ClientNames = {
 	ItemName = function(itemID)
 		return C_Item.GetItemNameByID(itemID)
 	end,
+	AreaName = function(areaID)
+		return (C_Map.GetAreaInfo(areaID))
+	end,
+}
+
+--- The Journal's words, as every spread reads them (`context.text`).
+ns.journalText = ns.NewJournalText({
+	ItemName = ns.ClientNames.ItemName,
 	-- Registered on the first item asked for: only a drawn Journal asks, so an inert Ledger never listens (CORE-R13).
 	RequestItem = function(itemID)
 		if not listening then
@@ -37,9 +45,7 @@ ns.journalText = ns.NewJournalText({
 		end
 		C_Item.RequestLoadItemDataByID(itemID)
 	end,
-	AreaName = function(areaID)
-		return (C_Map.GetAreaInfo(areaID))
-	end,
+	AreaName = ns.ClientNames.AreaName,
 	MapName = function(uiMapID)
 		local info = C_Map.GetMapInfo(uiMapID)
 		return info and info.name

@@ -105,7 +105,7 @@ local function computed(view, made)
 			keys["legend:" .. itemID] = true
 		end
 	end
-	local completion = ns.LedgerCompletion(view.world, made, view.getItem)
+	local completion = ns.LedgerCompletion(view.world, made)
 	if completion.percent == 100 then
 		keys["title:complete.ledger"] = true
 	end

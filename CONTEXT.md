@@ -16,7 +16,7 @@ _Avoid_: plugin, sub-addon, feature
 
 **Ledger**:
 The Module for the player's angler identity: the fish journal, levels, mastery and personal records.
-_Avoid_: Angler's Ledger, journal module, progression module
+_Avoid_: Angler's Ledger, journal module, progression module (one exception: the Angler page's bookplate is printed "The Angler's Ledger" as an in-world title, LED-R146; it never names the Module)
 
 **Fish Journal**:
 The Ledger's book, where the Angler reads their progress: the waters they have fished, each Species' page, the collections, Legends and their titles. Fish not yet caught stay nameless in it.
@@ -69,7 +69,7 @@ One character's fishing skill as Pagle saw it at a moment, recorded the first ti
 _Avoid_: skill snapshot, skill event
 
 **Session**:
-A run of the Angler's Casts with no break of 15 minutes or more, across characters and zones. It is cut from the Catch log after the fact, never stored.
+A run of the Angler's Casts with no break of 5 minutes or more, across characters and zones. It is cut from the Catch log after the fact, never stored.
 _Avoid_: Fishing stretch (QoL's live span), trip, outing
 
 **Species**:
