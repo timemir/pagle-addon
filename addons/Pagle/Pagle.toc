@@ -45,6 +45,7 @@ logic\Moments.lua
 logic\Summary.lua
 logic\Cards.lua
 logic\Announcements.lua
+logic\ToastStyles.lua
 logic\Menu.lua
 logic\ReloadReminder.lua
 logic\FieldReportText.lua
