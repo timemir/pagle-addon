@@ -20,7 +20,20 @@ from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, replace
 
 from pagle_data.errors import At, Problems
-from pagle_data.observed import CatchRow, Header, PoolTextRow, Report, SkillRow, duplicate_rows
+from pagle_data.observed import (
+    DATA,
+    LOCALE,
+    REPORTER_KEY,
+    CatchRow,
+    Header,
+    PoolTextRow,
+    Report,
+    Row,
+    SkillRow,
+    bucket_minute,
+    bucket_text,
+    duplicate_rows,
+)
 
 _NOWHERE = At("")
 
@@ -31,11 +44,8 @@ END = "END"
 # The issue form's report field label (DATA-R115): GitHub renders the field under "### <label>".
 REPORT_LABEL = "Report"
 
-_HEX8 = re.compile(r"[0-9a-f]{8}")
-_LOCALE = re.compile(r"[a-z]{2}[A-Z]{2}")
 _PART = re.compile(r"([1-9][0-9]*)/([1-9][0-9]*)")
 _INTEGER = re.compile(r"-?[0-9]+")
-_BUCKET = re.compile(r"([01][0-9]|2[0-3]):(00|15|30|45)")
 _ITEM_COUNT = re.compile(r"([0-9]+)x([0-9]+)")
 # Each row's known keys (REP-R20–R22); any other key=value is ignored (REP-R31).
 _I_KEYS = ("aura", "event", "t", "m")
@@ -84,6 +94,10 @@ class Part:
     skills: tuple[SkillRow, ...]
     pool_texts: tuple[PoolTextRow, ...]
 
+    @property
+    def rows(self) -> tuple[Row, ...]:
+        return (*self.catches, *self.skills, *self.pool_texts)
+
 
 @dataclass(frozen=True)
 class FieldReport:
@@ -114,6 +128,10 @@ class FieldReport:
     @property
     def pool_texts(self) -> tuple[PoolTextRow, ...]:
         return tuple(row for part in self.parts for row in part.pool_texts)
+
+    @property
+    def rows(self) -> tuple[Row, ...]:
+        return (*self.catches, *self.skills, *self.pool_texts)
 
     def observed(self, issues: Iterable[int]) -> Report:
         """The report as data/observed/reports/<reporter>.toml holds it (DATA-R121), imported from issues."""
@@ -240,11 +258,9 @@ def _catch(row: _Row, reporter: str) -> CatchRow | None:
     auras, events = row.ids("aura"), row.ids("event")
     t: int | None = None
     if "t" in row.keys:
-        bucket = _BUCKET.fullmatch(row.keys["t"])
-        if bucket is None:
+        t = bucket_minute(row.keys["t"])
+        if t is None:
             row.fail(f"t=: expected the start of a 15-minute bucket, HH:MM, got '{row.keys['t']}' (REP-R20)")
-        else:
-            t = int(bucket[1]) * 60 + int(bucket[2])
     m = row.key("m", 1, 12)
     if ("t" in row.keys) != ("m" in row.keys):
         row.fail("t= and m= go together (REP-R20)")
@@ -274,7 +290,7 @@ def _pool_text(row: _Row) -> PoolTextRow | None:
         return None
     area = row.integer("area", row.fields[0].text, 1)
     locale, text = row.fields[1].text, row.fields[2]
-    if not _LOCALE.fullmatch(locale):
+    if not LOCALE.fullmatch(locale):
         row.fail(f"locale: expected a client locale such as enUS, got '{locale}'")
     if not text.quoted:
         row.fail(f"text: expected a quoted text, got '{text.text}' (REP-R22)")
@@ -304,11 +320,11 @@ def _header(tokens: list[_Token]) -> PartHeader | str:
     if len(tokens) != 10 or names != ["addon", "data", "locale", "reporter", "part"]:
         return f"expected {shape}"
     addon, data, locale, reporter, part = (token.text for token in tokens[1::2])
-    if not _HEX8.fullmatch(data):
+    if not DATA.fullmatch(data):
         return f"data: expected 8 lowercase hex characters, got '{data}'"
-    if not _LOCALE.fullmatch(locale):
+    if not LOCALE.fullmatch(locale):
         return f"locale: expected a client locale such as enUS, got '{locale}'"
-    if not _HEX8.fullmatch(reporter):
+    if not REPORTER_KEY.fullmatch(reporter):
         return f"reporter: expected 8 lowercase hex characters, got '{reporter}' (REP-R36)"
     numbers = _PART.fullmatch(part)
     if numbers is None or int(numbers[1]) > int(numbers[2]):
@@ -406,14 +422,13 @@ def join(parts: Iterable[Part], problems: Problems) -> list[FieldReport]:
         for identity, numbered in found.items()
     ]
     for report in reports:
-        duplicate_rows((*report.catches, *report.skills, *report.pool_texts), problems)
+        duplicate_rows(report.rows, problems)
     return reports
 
 
-def _rows(part: Part) -> tuple[CatchRow | SkillRow | PoolTextRow, ...]:
+def _rows(part: Part) -> tuple[Row, ...]:
     """A part's rows, wherever they were read."""
-    rows: tuple[CatchRow | SkillRow | PoolTextRow, ...] = (*part.catches, *part.skills, *part.pool_texts)
-    return tuple(replace(row, at=_NOWHERE) for row in rows)
+    return tuple(replace(row, at=_NOWHERE) for row in part.rows)
 
 
 # data/observed/reports/<reporter>.toml
@@ -440,10 +455,6 @@ def _ints(values: Iterable[int]) -> str:
     return "[" + ", ".join(str(value) for value in values) + "]"
 
 
-def _bucket(minute: int) -> str:
-    return f"{minute // 60:02d}:{minute % 60:02d}"
-
-
 def observed_toml(report: Report) -> str:
     """report as data/observed/reports/<key>.toml (DATA-R121, the Data section's data/observed/ table): issues, the
     header, then [[i]], [[k]] and [[p]] rows in the order given, with REP-R20–R22's fields and any rejected mark.
@@ -458,7 +469,7 @@ def observed_toml(report: Report) -> str:
         lines.append(f"count = {catch.count}")
         lines += [f"aura = {_ints(catch.auras)}"] if catch.auras else []
         lines += [f"event = {_ints(catch.events)}"] if catch.events else []
-        lines += [f"t = {toml_string(_bucket(catch.t))}"] if catch.t is not None else []
+        lines += [f"t = {toml_string(bucket_text(catch.t))}"] if catch.t is not None else []
         lines += [f"m = {catch.m}"] if catch.m is not None else []
         lines += [f"rejected = {toml_string(catch.rejected)}"] if catch.rejected is not None else []
     for skill in report.skills:

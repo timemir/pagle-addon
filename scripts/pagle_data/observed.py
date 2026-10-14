@@ -40,14 +40,15 @@ DEV_REPORTER = "dev"
 # Tunables: the minimum confirming build (DATA-R46, DATA-R57). 0 counts every Forever build.
 MINIMUM_CONFIRMING_BUILD = 0
 
+# The report fields' shapes, shared with the Field report parser (pagle_data.report), so what it parses reads back.
 # A reporter key (REP-R36): FNV-1a 32-bit as 8 lowercase hex characters.
-_REPORTER_KEY = re.compile(r"[0-9a-f]{8}")
+REPORTER_KEY = re.compile(r"[0-9a-f]{8}")
 # The header's data (REP-R30): the first 8 characters of the content fingerprint, lowercase hex.
-_DATA = re.compile(r"[0-9a-f]{8}")
+DATA = re.compile(r"[0-9a-f]{8}")
 # A client locale as GetLocale() gives it, such as enUS or deDE.
-_LOCALE = re.compile(r"[a-z]{2}[A-Z]{2}")
+LOCALE = re.compile(r"[a-z]{2}[A-Z]{2}")
 # t (REP-R20): the start of a 15-minute realm-time bucket, HH:MM.
-_BUCKET = re.compile(r"([01][0-9]|2[0-3]):(00|15|30|45)")
+BUCKET = re.compile(r"([01][0-9]|2[0-3]):(00|15|30|45)")
 # A window ID (DATA-R35): the six named windows, or event.<eventID>.
 _WINDOW = re.compile(r"day|night|spring|summer|autumn|winter|event\.[1-9][0-9]*")
 
@@ -64,6 +65,17 @@ _FACT_ID_KEYS = ("item", "area", "window", "event")
 # FNV-1a 32-bit (REP-R36): the offset basis and the prime.
 _FNV_BASIS = 0x811C9DC5
 _FNV_PRIME = 0x01000193
+
+
+def bucket_minute(text: str) -> int | None:
+    """t (REP-R20) as its minute of the realm day, or None when text isn't a 15-minute bucket's start, HH:MM."""
+    found = BUCKET.fullmatch(text)
+    return None if found is None else int(found[1]) * 60 + int(found[2])
+
+
+def bucket_text(minute: int) -> str:
+    """t (REP-R20) as HH:MM, from its minute of the realm day: bucket_minute's inverse."""
+    return f"{minute // 60:02d}:{minute % 60:02d}"
 
 
 def reporter_key(log_id: str) -> str:
@@ -143,6 +155,14 @@ class Report:
     catches: tuple[CatchRow, ...]
     skills: tuple[SkillRow, ...]
     pool_texts: tuple[PoolTextRow, ...]
+
+    @property
+    def rows(self) -> tuple["Row", ...]:
+        return (*self.catches, *self.skills, *self.pool_texts)
+
+
+# A report's row: I, K or P (REP-R20–R22).
+Row = CatchRow | SkillRow | PoolTextRow
 
 
 @dataclass(frozen=True)
@@ -335,14 +355,14 @@ def _catch_row(table: Mapping[str, object], at: At, key: str, problems: Problems
     item, area = fields.number("item", 1), fields.number("area", 1)
     build, count = fields.number("build", 0), fields.number("count", 1)
     auras, events = fields.ids("aura"), fields.ids("event")
-    bucket, month = fields.text("t", _BUCKET), fields.number("m", 1, 12)
+    bucket, month = fields.text("t", BUCKET), fields.number("m", 1, 12)
     rejected = fields.text("rejected")
     if ("t" in table) != ("m" in table):
         problems.add(at, "t and m go together (REP-R20)")
         return None
     if not fields.has(*_I_KEYS) or item is None or area is None or build is None or count is None:
         return None
-    t = None if bucket is None else int(bucket[:2]) * 60 + int(bucket[3:])
+    t = None if bucket is None else bucket_minute(bucket)
     return CatchRow(item, area, build, count, auras, events, t, month, rejected, key, at)
 
 
@@ -379,7 +399,7 @@ def _pool_text_row(table: Mapping[str, object], at: At, problems: Problems) -> P
     check_keys(table, at, problems, required=_P_KEYS, optional=("items", "rejected"))
     fields = _Fields(table, at, problems)
     area, casts = fields.number("area", 1), fields.number("casts", 1)
-    locale, text = fields.text("locale", _LOCALE), fields.text("text", blank=True)  # a hovered text (REP-R22)
+    locale, text = fields.text("locale", LOCALE), fields.text("text", blank=True)  # a hovered text (REP-R22)
     rejected = fields.text("rejected")
     items = _pool_items(table["items"], at / "items", problems) if "items" in table else ()
     if not fields.has(*_P_KEYS) or items is None or area is None or casts is None or locale is None or text is None:
@@ -393,13 +413,13 @@ def _header(value: object, at: At, problems: Problems) -> Header | None:
         return None
     check_keys(table, at, problems, required=("addon", "data", "locale"), optional=())
     fields = _Fields(table, at, problems)
-    addon, data, locale = fields.text("addon"), fields.text("data", _DATA), fields.text("locale", _LOCALE)
+    addon, data, locale = fields.text("addon"), fields.text("data", DATA), fields.text("locale", LOCALE)
     if addon is None or data is None or locale is None:
         return None
     return Header(addon, data, locale)
 
 
-def row_key(row: CatchRow | SkillRow | PoolTextRow) -> tuple[object, ...]:
+def row_key(row: Row) -> tuple[object, ...]:
     """A row's key (DATA-R121), led by its kind: I by (item, area, build, auras, events, t, m), K by (area, build), P
     by (area, locale, text). The one definition of a duplicate row, shared by this reader and the Field report
     parser (DATA-R116), so the generator, the importer and the triage Action agree on it."""
@@ -410,7 +430,7 @@ def row_key(row: CatchRow | SkillRow | PoolTextRow) -> tuple[object, ...]:
     return ("P", row.area, row.locale, row.text)
 
 
-def duplicate_rows(rows: Iterable[CatchRow | SkillRow | PoolTextRow], problems: Problems) -> None:
+def duplicate_rows(rows: Iterable[Row], problems: Problems) -> None:
     """DATA-R121: one row per row key. Each row whose key an earlier row has is a problem at the later row, naming
     the earlier one's place, and its file (or issue) when that is another."""
     first: dict[tuple[object, ...], At] = {}
@@ -450,8 +470,9 @@ def _report(
     i_rows = tuple(row for row in catches if row is not None)
     k_rows = tuple(row for row in skills if row is not None)
     p_rows = tuple(row for row in pool_texts if row is not None)
-    duplicate_rows((*i_rows, *k_rows, *p_rows), problems)
-    return Report(key, tuple(issues), header, i_rows, k_rows, p_rows)
+    report = Report(key, tuple(issues), header, i_rows, k_rows, p_rows)
+    duplicate_rows(report.rows, problems)
+    return report
 
 
 def _read_reports(root: Path, problems: Problems) -> dict[str, Report]:
@@ -463,7 +484,7 @@ def _read_reports(root: Path, problems: Problems) -> dict[str, Report]:
     reports: dict[str, Report] = {}
     for path in sorted(directory.iterdir()):
         file = f"{REPORTS}/{path.name}"
-        if not (path.is_file() and path.suffix == ".toml" and _REPORTER_KEY.fullmatch(path.stem)):
+        if not (path.is_file() and path.suffix == ".toml" and REPORTER_KEY.fullmatch(path.stem)):
             problems.add(At(file), "not a report file: expected <reporterKey>.toml, the key 8 lowercase hex (REP-R36)")
             continue
         report = _read_report(root, file, path.stem, problems)
@@ -502,7 +523,7 @@ def _read_dev(root: Path, layer: ObservedLayer, problems: Problems) -> None:
     else:
         for index, key in enumerate(value):
             key_at = At(DEV, f"keys[{index}]")
-            read = _expect_string(key, key_at, problems, _REPORTER_KEY)
+            read = _expect_string(key, key_at, problems, REPORTER_KEY)
             if read is not None and read in keys:
                 problems.add(key_at, f"'{read}' is listed twice")
             elif read is not None:
@@ -526,7 +547,7 @@ def _read_pooltext(root: Path, problems: Problems) -> tuple[PoolTextEntry, ...]:
     for entry_at, table in _tables(document, "text", at, problems):
         check_keys(table, entry_at, problems, required=("locale", "text", "pool"), optional=())
         fields = _Fields(table, entry_at, problems)
-        locale, text, pool = fields.text("locale", _LOCALE), fields.text("text", blank=True), fields.text("pool")
+        locale, text, pool = fields.text("locale", LOCALE), fields.text("text", blank=True), fields.text("pool")
         if locale is None or text is None or pool is None:
             continue
         if (locale, text) in seen:
