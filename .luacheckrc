@@ -102,6 +102,9 @@ stds.wow = {
 		"debugprofilestop",
 		-- LuaBitOp, which the client ships: the Simulated Size hash (LOG-R66), in Core's logic/Size.lua (files[] below).
 		bit = { fields = { "bxor", "rshift" } },
+		-- The default length unit (LOG-R69): read only through adapter/Host.lua's region, which allows for it missing.
+		-- On the launch re-verification list (roadmap.md › Launch re-verification checklist, item 19).
+		"GetCurrentRegion",
 		-- The Announcement frames, hung from UIParent, and their sounds on the SFX channel (ANN-R73, ANN-R80); their
 		-- lanes run on GetTime and C_Timer.After, and an item icon comes from C_Item.GetItemInfoInstant (above).
 		"UIParent",

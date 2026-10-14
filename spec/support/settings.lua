@@ -24,7 +24,8 @@
 --- registered under AddOns, as the panel lists it.
 ---@field show fun(category: table): { initializer: table, frame: table }[] Shows a page as the panel does: a fresh
 --- frame per row, through its initializer's InitFrame, so a row reads its value or label then. A value row's frame
---- has `value`, a slider's `valueLabel` (its Right label formatter's text, nil with none), and every frame `enabled`.
+--- has `value`, a slider's `valueLabel` (its Right label formatter's text, nil with none), a dropdown's `valueLabel`
+--- (the label of the option holding its value), and every frame `enabled`.
 --- Until the next show, a setting's SetValue updates these frames as the panel's controls do (valueChanged).
 ---@field shown { initializer: table, frame: table }[]? The rows show returned last.
 ---@field valueChanged fun(setting: table) What the panel does when a setting's value changes.
@@ -87,9 +88,20 @@ local function newInitializer(template, data)
 		end
 	end
 	-- A slider shows its value through its options' Right label formatter, as MinimalSliderWithSteppersMixin's
-	-- FormatValue does; with none, it shows no value label.
+	-- FormatValue does; with none, it shows no value label. A dropdown, whose options are a function returning the
+	-- control text container's data, shows the label of the option holding its value (nil if none does).
 	function initializer:FormatValue(frame)
-		local formatters = self.data.options and self.data.options.formatters
+		local options = self.data.options
+		if type(options) == "function" then
+			frame.valueLabel = nil
+			for _, option in ipairs(options()) do
+				if option.value == frame.value then
+					frame.valueLabel = option.label
+				end
+			end
+			return
+		end
+		local formatters = options and options.formatters
 		local formatter = formatters and formatters[2] -- MinimalSliderWithSteppersMixin.Label.Right
 		frame.valueLabel = formatter and formatter(frame.value) or nil
 	end

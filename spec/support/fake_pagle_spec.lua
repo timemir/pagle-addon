@@ -1152,6 +1152,29 @@ describe("FakePagle", function()
 		)
 	end)
 
+	describe("the length unit", function()
+		it("reads Pagle.FormatLength in inches by default, as Core does on region 1 (LOG-R69)", function()
+			local fake = newFakePagle()
+
+			assert.is_nil(fake.profile.lengthUnit)
+			assert.are.same({ "13.5 in", 1 }, { fake.Pagle.FormatLength(342), fake.region })
+		end)
+
+		it("follows fake.profile.lengthUnit, and fake.region with none stored (LOG-R69)", function()
+			local fake = newFakePagle()
+			fake.login()
+
+			fake.profile.lengthUnit = "cm"
+			local cm = fake.Pagle.FormatLength(342)
+			fake.profile.lengthUnit, fake.region = nil, 3
+			local europe = fake.Pagle.FormatLength(342)
+			fake.region = nil
+			local none = fake.Pagle.FormatLength(342)
+
+			assert.are.same({ "34.2 cm", "34.2 cm", "34.2 cm" }, { cm, europe, none })
+		end)
+	end)
+
 	describe("the Field report", function()
 		-- Darkshore (148) with The Long Wash (453), neither with a skill base, and no items: every item is Uncharted.
 		local function fixture()
