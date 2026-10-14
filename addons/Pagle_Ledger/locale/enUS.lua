@@ -257,4 +257,9 @@ ns.L = {
 	CURIOS_UNKNOWN_WATERS = "unknown waters",
 	CURIOS_NONE_UNCHARTED = "None. Every catch is in the Ledger.",
 	CURIOS_HELP_CHART = "Help chart the waters",
+	-- The Prestige confirm (LED-R33), and a Master Prestige's star stamp beside emblem X (LED-R34).
+	PRESTIGE_CONFIRM = "Begin a new Ledger? Your Angler Level starts again at 1, and climbs at half the cost. Nothing you've earned is taken away.",
+	PRESTIGE_CONFIRM_YES = "Prestige",
+	PRESTIGE_CONFIRM_NO = "Not yet",
+	PRESTIGE_STAR = "★",
 }

@@ -251,6 +251,10 @@ local function build(journal)
 	end)
 
 	table.insert(UISpecialFrames, FRAME_NAME)
+	-- Closing the book, however it closes, hides the Prestige confirm (LED-R33, adapter/Prestige.lua).
+	frame:SetScript("OnHide", function()
+		ns.HidePrestigeConfirm()
+	end)
 	frame:Hide()
 	return frame
 end
