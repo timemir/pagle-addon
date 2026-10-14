@@ -169,6 +169,9 @@ function widgets.newWidget(kind, parent)
 	for _, method in ipairs(LAYOUT_METHODS) do
 		widget[method] = function() end
 	end
+	function widget:GetParent()
+		return parent
+	end
 	if parent then
 		parent.children[#parent.children + 1] = widget
 	end

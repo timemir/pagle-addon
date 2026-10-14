@@ -199,3 +199,173 @@ describe("the frames' toast style", function()
 		assert.is_false(toast.shown)
 	end)
 end)
+describe("a toast style change", function()
+	-- What shows over 40 s from a burst of moments, sampled each half second as "<s> <form>: <title>", and the sounds
+	-- played: three toasts and a banner, a Nod while the slot is busy, four more toasts (two past the 2 that wait),
+	-- then, with the budget spent, a toast.low and a splash.
+	local function timeline(style)
+		local loaded, M = styledCore()
+		if style then
+			equip(loaded, style)
+		end
+		for i = 1, 3 do
+			M:RaiseMoment({ rung = "toast", kind = "spec", title = "Toast " .. i })
+		end
+		M:RaiseMoment({ rung = "banner", kind = "spec", title = "Level 12" })
+		loaded.client.advance(0)
+		local seen = {}
+		local function sample(step)
+			for _, form in ipairs({ "toast", "nod", "banner", "splash" }) do
+				local frame = loaded.ns.announcementFrames[form]
+				if frame and frame.shown then
+					seen[#seen + 1] = ("%.1f %s: %s"):format(step / 2, form, frame.title:GetText())
+				end
+			end
+		end
+		for step = 1, 80 do
+			if step == 30 then
+				raise(loaded, M, "nod", "New here")
+			elseif step == 40 then
+				for i = 4, 7 do
+					raise(loaded, M, "toast", "Toast " .. i)
+				end
+			elseif step == 69 then
+				raise(loaded, M, "toast.low", "Size record")
+			elseif step == 70 then
+				raise(loaded, M, "splash", "Legend")
+			end
+			loaded.client.advance(0.5)
+			sample(step)
+		end
+		return seen, loaded.client.sounds
+	end
+
+	it(
+		"leaves the lanes, the timing, the Interruption budget and the sounds as they were: the same Announcements show"
+			.. " in the same order with the same sounds (ANN-R80, ANN-R20, ANN-R31, ANN-R72)",
+		function()
+			local timberSeen, timberSounds = timeline()
+
+			for _, style in ipairs({ RIPPLE, LANTERN }) do
+				local seen, sounds = timeline(style)
+				assert.are.same(timberSeen, seen)
+				assert.are.same(timberSounds, sounds)
+			end
+			local DRIFTWOOD = "Interface\\AddOns\\Pagle\\media\\sounds\\driftwood\\"
+			assert.are.same({
+				DRIFTWOOD .. "toast_1.ogg SFX",
+				DRIFTWOOD .. "banner.ogg SFX",
+				DRIFTWOOD .. "toast_2.ogg SFX",
+				DRIFTWOOD .. "toast_3.ogg SFX",
+				DRIFTWOOD .. "toast_1.ogg SFX",
+				DRIFTWOOD .. "toast_2.ogg SFX",
+				"Interface\\AddOns\\Pagle\\media\\sounds\\legend.ogg SFX",
+			}, timberSounds)
+			assert.are.same(
+				{ "5.5 toast: Toast 1", "6.0 banner: Level 12", "34.5 nod: Size record", "35.0 splash: Legend" },
+				{ timberSeen[11], timberSeen[12], timberSeen[68], timberSeen[70] }
+			)
+		end
+	)
+end)
+describe("the sample toast", function()
+	-- A stage frame as the Curio Shop hands a good's preview, and a spy on the Session summary: each moment Core
+	-- hands it, in order.
+	local function stageOf(loaded)
+		local summarized = {}
+		function loaded.ns.summary.Add(_, moment)
+			summarized[#summarized + 1] = moment
+		end
+		return loaded.env.CreateFrame("Frame", nil, loaded.env.UIParent), summarized
+	end
+
+	-- The texts of a frame's stamps on show, then its Coins stamp's.
+	local function stampsOf(frame)
+		local texts = {}
+		for _, stamp in ipairs(frame.stamps) do
+			if stamp.shown then
+				texts[#texts + 1] = stamp.label:GetText()
+			end
+		end
+		texts[#texts + 1] = frame.coins.shown and frame.coins.label:GetText() or nil
+		return texts
+	end
+
+	it(
+		"draws on a given frame in a given style, Timber still equipped, with nothing shown, played or summarized"
+			.. " (ANN-R80, wallet-and-shop.md › UI)",
+		function()
+			local loaded = styledCore()
+			local stage, summarized = stageOf(loaded)
+
+			local sample = loaded.ns.DrawSampleToast(stage, RIPPLE)
+
+			assert.are.equal(stage, sample:GetParent())
+			assert.are.same(
+				{ true, "New Species", "A sample toast", 136245 },
+				{ sample.shown, sample.title:GetText(), sample.text:GetText(), sample.icon.texture }
+			)
+			assert.are.same({ "New here", "+5 |TInterface\\MoneyFrame\\UI-GoldIcon:0|t" }, stampsOf(sample))
+			assert.are.same({ { 0.37, 0.71, 0.84, 1 }, PING }, { lookOf(sample).edge, lookOf(sample).glow })
+			assert.are.same({ {}, {}, nil }, { summarized, loaded.client.sounds, loaded.ns.announcementFrames.toast })
+			assert.are.equal(TIMBER, loaded.env.Pagle.GetEquipped("core.toaststyle"))
+		end
+	)
+
+	it("redraws the same frame on the same stage in the next style asked for, Timber for an unknown one (ANN-R80)", function()
+		local loaded = styledCore()
+		local stage = stageOf(loaded)
+		local first = loaded.ns.DrawSampleToast(stage, LANTERN)
+
+		local again = loaded.ns.DrawSampleToast(stage, "core.toaststyle.moonlit")
+
+		assert.are.equal(first, again)
+		assert.are.same(
+			{ { 0.16, 0.11, 0.07, 0.94 }, false, "GameFontNormalLarge" },
+			{ lookOf(again).background, lookOf(again).glow, lookOf(again).titleFont }
+		)
+	end)
+
+	it(
+		"shows on screen through the real lanes in its own style, with the toast's sound, never reaching the Session"
+			.. " summary; the next toast is in the equipped style again (ANN-R80, ANN-R20, ANN-R25)",
+		function()
+			local loaded, M = styledCore()
+			local _, summarized = stageOf(loaded)
+
+			loaded.ns.ShowSampleToast(LANTERN)
+
+			local toast = loaded.ns.announcementFrames.toast
+			assert.are.same(
+				{ true, "New Species", { 0.85, 0.47, 0.16, 1 } },
+				{ toast.shown, toast.title:GetText(), lookOf(toast).edge }
+			)
+			assert.are.same({ "Interface\\AddOns\\Pagle\\media\\sounds\\driftwood\\toast_1.ogg SFX" }, loaded.client.sounds)
+			equip(loaded, RIPPLE)
+			assert.are.same({ 0.85, 0.47, 0.16, 1 }, lookOf(toast).edge)
+			loaded.client.advance(6)
+			assert.is_false(toast.shown)
+			raise(loaded, M, "toast", "New Species")
+			assert.are.same({ 0.37, 0.71, 0.84, 1 }, lookOf(toast).edge)
+			assert.are.same({ "New Species" }, { summarized[1].title, summarized[2] })
+		end
+	)
+
+	it(
+		"is a toast style's preview: the sample on the stage and Show on screen, which shows it in that style"
+			.. " (wallet-and-shop.md › UI, ANN-R80)",
+		function()
+			local loaded = styledCore()
+			local stage, summarized = stageOf(loaded)
+
+			loaded.ns.ToastStylePreview(RIPPLE)(stage)
+
+			local sample, button = stage.children[1], stage.children[2]
+			assert.are.same({ "New Species", MARBLE }, { sample.title:GetText(), lookOf(sample).backdrop })
+			assert.are.same({ true, "Show on screen" }, { button.shown, button:GetText() })
+			button:Click()
+			local toast = loaded.ns.announcementFrames.toast
+			assert.are.same({ true, MARBLE, {} }, { toast.shown, lookOf(toast).backdrop, summarized })
+		end
+	)
+end)

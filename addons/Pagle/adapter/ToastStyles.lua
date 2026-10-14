@@ -34,3 +34,55 @@ Pagle.RegisterCallback(OWNER, "AppearanceChanged", function(_, slot)
 		ns.RepaintToastFrames()
 	end
 end)
+-- Each stage's sample toast and Show on screen button, made the first time a preview draws on it.
+---@type table<Frame, PagleAnnouncementFrame>
+local samples = setmetatable({}, { __mode = "k" })
+---@type table<Frame, Button>
+local buttons = setmetatable({}, { __mode = "k" })
+
+--- Draws a sample toast in a toast style on `parent` (wallet-and-shop.md › UI, the preview stage; ANN-R80): a toast
+--- frame of its own there, made on the first call and redrawn on each, Timber for an ID that isn't a style. Nothing
+--- reaches the lanes, the sounds or the Session summary.
+---@param parent Frame
+---@param styleID string
+---@return PagleAnnouncementFrame
+function ns.DrawSampleToast(parent, styleID)
+	local frame = samples[parent]
+	if not frame then
+		frame = ns.NewToastFrame(parent)
+		frame:SetPoint("TOP", parent, "TOP", 0, -24)
+		samples[parent] = frame
+	end
+	ns.DrawAnnouncement(frame, { announcement = ns.SampleAnnouncement(styleID), form = "toast", overflow = 0 })
+	frame:Show()
+	return frame
+end
+
+--- "Show on screen": the sample toast in a style, pushed through the real lanes (ANN-R20) as any toast is, its sound
+--- and the Interruption budget with it, but raised by no Module, so the Session summary never gets it (ANN-R25).
+---@param styleID string
+function ns.ShowSampleToast(styleID)
+	ns.lanes:Push(ns.SampleAnnouncement(styleID))
+end
+
+--- A toast style good's `preview(stage)` (wallet-and-shop.md › Contracts, › UI): the sample toast in that style on the
+--- stage, and a Show on screen button under it.
+---@param styleID string
+---@return fun(stage: Frame)
+function ns.ToastStylePreview(styleID)
+	return function(stage)
+		local sample = ns.DrawSampleToast(stage, styleID)
+		local button = buttons[stage]
+		if not button then
+			button = CreateFrame("Button", nil, stage, "UIPanelButtonTemplate") --[[@as Button]]
+			button:SetSize(140, 22)
+			button:SetPoint("TOP", sample, "BOTTOM", 0, -16)
+			button:SetText(L.TOAST_SHOW_ON_SCREEN)
+			buttons[stage] = button
+		end
+		button:SetScript("OnClick", function()
+			ns.ShowSampleToast(styleID)
+		end)
+		button:Show()
+	end
+end
