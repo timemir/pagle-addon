@@ -31,8 +31,9 @@ end
 --- catalogue with the fixture items' names loaded, `options.saved` as PagleHuntsDB, `options.history(fake)` appended
 --- before login, Fishing read at 150, and the projection caught up unless `options.caughtUp` is false (it then stays
 --- updating, HNT-R78). The server time starts `options.from` seconds after SERVER_TIME (realm 08:15), so the realm
---- clock does too: the live conditions' realm minute is read against their own time (HNT-R50).
----@param options { saved: table?, history: fun(fake: table)?, caughtUp: boolean?, from: integer? }?
+--- clock does too: the live conditions' realm minute is read against their own time (HNT-R50). With
+--- `options.grouped` false, the first PLAYER_ENTERING_WORLD hasn't come yet.
+---@param options { saved: table?, history: fun(fake: table)?, caughtUp: boolean?, from: integer?, grouped: boolean? }?
 ---@return TrackerRun
 local function start(options)
 	options = options or {}
@@ -64,7 +65,9 @@ local function start(options)
 	if options.caughtUp ~= false then
 		fake.enterWorld()
 	end
-	fake.fireGameEvent("PLAYER_ENTERING_WORLD", true, false)
+	if options.grouped ~= false then
+		fake.fireGameEvent("PLAYER_ENTERING_WORLD", true, false)
+	end
 	return { loaded = loaded, fake = fake, ns = loaded.ns }
 end
 
@@ -117,6 +120,13 @@ describe("the Hunts tracker", function()
 			local trackers = run.fake.ns.dock:Trackers()
 			assert.are.same({ { "hunts", 10, "Hunts" } }, { { trackers[1].id, trackers[1].order, trackers[1].module } })
 			assert.are.equal(run.ns.tracker.frame, run.fake.dock.stack()[1].frame)
+			assert.are.same({ header = "Hunts", hunts = {}, empty = "Pin a Hunt to keep it here." }, read(run))
+		end)
+
+		it('reads "Pin a Hunt to keep it here." before the first grouping too (HNT-R76)', function()
+			local run = start({ grouped = false })
+
+			assert.is_nil(run.ns.groups:Grouping())
 			assert.are.same({ header = "Hunts", hunts = {}, empty = "Pin a Hunt to keep it here." }, read(run))
 		end)
 
@@ -388,6 +398,19 @@ describe("the Hunts tracker", function()
 			wait(run, 120)
 
 			assert.are.equal(grouped, run.ns.groups:Time())
+		end)
+
+		it("counts down from now on expanding, however long it was collapsed (HNT-R42, HNT-R43)", function()
+			local run = start({ from = untilRealm(15, 30) })
+			run.ns.SetPinned("fixture_oddity", true) -- 18:00 to 21:00 realm time
+			run.ns.tracker.header:Click()
+			local grouped = run.ns.groups:Time()
+			wait(run, 3600)
+			assert.are.equal(grouped, run.ns.groups:Time()) -- no regroup while collapsed
+
+			run.ns.tracker.header:Click()
+
+			assert.are.equal("Oddity Hour · in 1h 30m", read(run).hunts[1].first)
 		end)
 	end)
 
