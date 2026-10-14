@@ -42,16 +42,6 @@ local FORBIDDEN = {
 	{ "&#[xX]0*[aAdD];", "QOL-R6: no line break, so no macro text with a second command" },
 }
 
--- Code with its comments removed: Lua's --[[ ]] and -- comments, XML's <!-- -->.
----@param text string
----@return string
-local function withoutComments(text)
-	text = text:gsub("<!%-%-.-%-%->", "")
-	text = text:gsub("%-%-%[(=*)%[.-%]%1%]", "")
-	text = text:gsub("%-%-[^\n]*", "")
-	return text
-end
-
 -- QOL-R6, QOL-R83: the one ReloadUI() QoL may call, the OnAccept of the Reload now popup in adapter/Conflict.lua,
 -- whose first button says "Reload now". It runs only when that button is clicked (StaticPopup_OnClick), never on
 -- load, an event or a timer. The pattern captures the code around the call, so that call alone can be taken out.
@@ -64,59 +54,29 @@ local RELOAD_NOW = "(StaticPopupDialogs%.PAGLE_QOL_RELOAD%s*=%s*{[^{}]-button1%s
 ---@param path string? the file it's from; only RELOAD_NOW_FILE may hold the Reload now call
 ---@return string[]
 local function offences(text, path)
-	local found = {}
 	local code = withoutComments(text)
 	if path == RELOAD_NOW_FILE then
 		code = code:gsub(RELOAD_NOW, "%1%2", 1)
 	end
-	for _, rule in ipairs(FORBIDDEN) do
-		local match = code:match(rule[1])
-		if match then
-			found[#found + 1] = rule[2] .. ": " .. match
-		end
-	end
-	return found
-end
-
----@return string[]
-local function shippedFiles()
-	local files = {}
-	---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io
-	local find = assert(io.popen("find " .. DIR .. " -type f \\( -name '*.lua' -o -name '*.xml' \\)"))
-	for path in find:lines() do
-		files[#files + 1] = path
-	end
-	find:close()
-	table.sort(files)
-	return files
-end
-
----@param path string
----@return string
-local function read(path)
-	---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io
-	local file = assert(io.open(path, "r"))
-	local text = file:read("*a")
-	file:close()
-	return text
+	return forbiddenIn(code, FORBIDDEN)
 end
 
 describe("QoL's boundary", function()
 	it("covers both the Lua and the XML QoL ships", function()
-		local files = shippedFiles()
+		local files = shippedFiles(DIR)
 
 		assert.is_true(#files > 1)
 		assert.are.equal(DIR .. "Bindings.xml", files[1])
 	end)
 
-	for _, path in ipairs(shippedFiles()) do
+	for _, path in ipairs(shippedFiles(DIR)) do
 		it(path .. " does nothing QOL-R3 and QOL-R6 forbid (QOL-R91, QOL-R92, QOL-R95, QOL-R96)", function()
-			assert.are.same({}, offences(read(path), path))
+			assert.are.same({}, offences(readFile(path), path))
 		end)
 	end
 
 	it("calls ReloadUI() from the Reload now button alone (QOL-R6, QOL-R83)", function()
-		local code = withoutComments(read(RELOAD_NOW_FILE))
+		local code = withoutComments(readFile(RELOAD_NOW_FILE))
 		local _, allowed = code:gsub(RELOAD_NOW, "")
 		local _, calls = code:gsub("%f[%w_]ReloadUI%f[^%w_]", "")
 

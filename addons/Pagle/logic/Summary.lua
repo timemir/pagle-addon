@@ -5,11 +5,6 @@ local ns = select(2, ...)
 -- Every moment Core keeps lands in the open Session's summary, and a Session that earned one becomes a card when it
 -- ends. logic/Cards.lua shows the cards; the data lives in PagleDB only, never in the Catch log (ANN-R56).
 
-local RUNG_HEIGHT = {}
-for height, rung in ipairs(ns.MOMENT_RUNGS) do
-	RUNG_HEIGHT[rung] = height
-end
-
 --- A moment as the summary stores it (announcements.md › Data): who raised it, by its stored title and order so a
 --- since-disabled Module still sorts, and what the card shows.
 ---@class PagleStoredMoment
@@ -44,7 +39,7 @@ end
 --- (ANN-R54). logic/Cards.lua shows it.
 ---@class PagleSummaryCard: PagleCard
 ---@field title string                 -- "Your last session" for a `whileAway` one, else "Fishing session" (ANN-R54)
----@field numbers { casts: integer, catches: integer, gotAway: integer, seconds: integer } -- Core's, from the Session
+---@field numbers PagleSessionNumbers -- Core's, from the Session
 ---@field coins integer                -- the moments' coins summed; "Pagle Coins +N" shows only above 0
 ---@field lines PagleCardLines[]       -- the registered Modules' lines, by Module order
 ---@field moments PagleCardMoments[]   -- by stored Module order
@@ -93,14 +88,11 @@ local function byModule(moments)
 		group.moments[#group.moments + 1] = { moment = moment, position = position }
 	end
 	table.sort(groups, function(a, b)
-		if a.order ~= b.order then
-			return a.order < b.order
-		end
-		return a.module < b.module
+		return ns.ModuleSortsBefore(a.order, a.module, b.order, b.module)
 	end)
 	for _, group in ipairs(groups) do
 		table.sort(group.moments, function(a, b)
-			local heightA, heightB = RUNG_HEIGHT[a.moment.rung], RUNG_HEIGHT[b.moment.rung]
+			local heightA, heightB = ns.RUNG_HEIGHT[a.moment.rung], ns.RUNG_HEIGHT[b.moment.rung]
 			if heightA ~= heightB then
 				return heightA > heightB
 			end
@@ -121,6 +113,7 @@ end
 ---@field cozy fun(): boolean              -- Cozy mode is on (ANN-R42, ANN-R62)
 ---@field serverTime fun(): number         -- server time, which a moment's expiresAt is in (ANN-R45)
 ---@field waitingChanged fun(waiting: integer) -- the waiting count changed (ANN-R42): the compartment entry's label
+---@field takeWriteUp fun(): PagleWriteUpStored[] -- takes the Write-up sections waiting off screen (ns.cards:TakeWriteUp)
 
 --- The Session summary over PagleDB.global (ANN-R50–R53), and the count of moments Cozy mode sent it (ANN-R42).
 ---@class PagleSummary
@@ -150,17 +143,11 @@ function Summary:SummaryShown()
 	end
 end
 
--- PagleDB.global with the summary's keys in place.
+-- PagleDB.global, whose summary keys ns.PAGLEDB_DEFAULTS puts in place.
 ---@package
----@return { summary: { moments: PagleStoredMoment[], lines: table }, pending: PagleStoredMoment[], cards: PagleSummaryCard[], writeUp: PagleWriteUpStored[]? }
+---@return { summary: { moments: PagleStoredMoment[], lines: table }, pending: PagleStoredMoment[], cards: PagleSummaryCard[] }
 function Summary:data()
-	local global = self.options.global()
-	global.summary = global.summary or {}
-	global.summary.moments = global.summary.moments or {}
-	global.summary.lines = global.summary.lines or {}
-	global.pending = global.pending or {}
-	global.cards = global.cards or {}
-	return global
+	return self.options.global()
 end
 
 --- Keeps a moment Core accepted, popped up or not (ANN-R25): in the open Session's summary (ANN-R50), or, with no
@@ -235,10 +222,7 @@ end
 ---@return fun(self: PagleModuleHandle, key: string, text: string?)
 function ns.SetSummaryLineMethod(registry, summary)
 	return function(self, key, text)
-		local module = registry:ModuleOf(self)
-		if not module then
-			error("SetSummaryLine is a Module handle method: call M:SetSummaryLine(key, text)", 2)
-		end
+		local module = registry:ModuleCalling(self, "SetSummaryLine", "key, text")
 		if type(key) ~= "string" or key == "" then
 			error("SetSummaryLine: the key must be a non-empty string, got " .. type(key), 2)
 		end
@@ -251,7 +235,7 @@ end
 
 --- At SessionEnded (ANN-R53): with at least one moment raised in the Session, or in Cozy mode a Write-up waiting
 --- (ANN-R62), adds a card to `global.cards`, dropping the oldest beyond CARDS_KEPT (ANN-R54), and returns it. In Cozy
---- mode the waiting Write-up sections move onto it. Either way the moments are cleared for the next Session, and the
+--- mode the waiting Write-up sections move onto it, except those on screen (ANN-R61). Either way the moments are cleared for the next Session, and the
 --- lines stay (ANN-R51). Lines alone make no card. Expiry is checked again as the card is made: a moment past its
 --- expiresAt is marked expired, so the card shows its pastText (ANN-R45).
 ---@param session PagleSession
@@ -267,8 +251,9 @@ function Summary:Ended(session)
 		end
 	end
 	local writeUp
-	if self.options.cozy() and data.writeUp and #data.writeUp > 0 then
-		writeUp, data.writeUp = ns.WriteUpInOrder(data.writeUp), {}
+	if self.options.cozy() then
+		local taken = self.options.takeWriteUp()
+		writeUp = #taken > 0 and taken or nil
 	end
 	if #moments == 0 and not writeUp then
 		return nil

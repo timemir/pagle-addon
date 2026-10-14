@@ -2,48 +2,6 @@
 -- › Write-up, › UI): Write-up sections a Module raises from its projection's done and the Session summary cards
 -- SessionEnded stores show one at a time in the card frame, closed with its button or Esc.
 
-local OILY_BLACKMOUTH = "|cffffffff|Hitem:6358::::::::15:::::::::|h[Oily Blackmouth]|h|r"
-local FISHING = 7731
-
--- The build entry the fake client's build matches, so login appends no B1.
-local BUILD = ("B1|1|%d|0|70338|1.60.1"):format(SERVER_TIME - 5000)
-
--- Ada's caught Cast of one Oily Blackmouth at server time `time`.
-local function cast(time)
-	return ("C1|1|%d|0|c|494|1439|1|148|453|86|25|263|||6358x1"):format(time)
-end
-
--- `n` Casts long ago, then the build entry.
-local function history(n)
-	local entries = {}
-	for i = 1, n do
-		entries[i] = cast(SERVER_TIME - 90000 + i)
-	end
-	entries[n + 1] = BUILD
-	return entries
-end
-
--- Core over a saved log holding `entries` and PagleDB `saved`, if given, its server time SERVER_TIME plus the
--- client's clock, with the Ledger and Hunts installed.
-local function core(entries, saved)
-	local clock
-	local loaded = loadAddon(
-		"Pagle",
-		foreverWith({
-			PagleLog = savedLog(entries),
-			PagleDB = saved,
-			GetServerTime = function()
-				return SERVER_TIME + math.floor(clock and clock() or 0)
-			end,
-		})
-	)
-	clock = loaded.client.time
-	for _, name in ipairs({ "Ledger", "Hunts" }) do
-		loaded.client.addons["Pagle_" .. name] = { metadata = { ["X-Pagle-API"] = "1" } }
-	end
-	return loaded
-end
-
 -- Registers a Module whose projection, over `db`, raises a Write-up section from its done when it first builds:
 -- "<name> written up" with the Casts it applied.
 local function moduleWritingUp(loaded, name, order, db)
@@ -69,28 +27,12 @@ local function moduleWritingUp(loaded, name, order, db)
 	return M
 end
 
--- Login up to the first PLAYER_ENTERING_WORLD.
-local function enterWorld(loaded)
-	loaded.client.fire("PLAYER_LOGIN")
-	loaded.client.fire("PLAYER_ENTERING_WORLD", true, false)
-end
-
 -- Runs `n` frames (3 by default): enough for every catch-up under 500 entries per frame, the held Announcements'
 -- frame and the cards' frame after it.
 local function frames(loaded, n)
 	for _ = 1, n or 3 do
 		loaded.client.advance(0)
 	end
-end
-
--- Plays a caught Cast of one Oily Blackmouth on the fake client, then lets the next frame flush its moments.
-local function catchOne(loaded)
-	loaded.client.fire("UNIT_SPELLCAST_CHANNEL_START", "player", "Cast-1", FISHING)
-	loaded.client.loot = { fishing = true, slots = { { link = OILY_BLACKMOUTH, quantity = 1 } } }
-	loaded.client.fire("LOOT_READY", true)
-	loaded.client.fire("UNIT_SPELLCAST_CHANNEL_STOP", "player", "Cast-1", FISHING)
-	loaded.client.fire("LOOT_CLOSED")
-	loaded.client.advance(0)
 end
 
 -- The card on screen as { title, numbers, rows }: the numbers grid's values (nil when it's hidden), and each shown
@@ -176,7 +118,7 @@ describe("the Write-up card", function()
 		"puts two Modules' first-build sections on one Write-up card by Module order, shown only after the last"
 			.. " projection finishes and the lanes are empty, with no sound (ANN-R21, ANN-R60, ANN-R61, ANN-R92)",
 		function()
-			local loaded = core(history(501))
+			local loaded = loadCore(history(501))
 			moduleWritingUp(loaded, "Hunts", 20)
 			local ledger = moduleWritingUp(loaded, "Ledger", 10)
 			loaded.client.fire("PLAYER_LOGIN")
@@ -202,7 +144,7 @@ describe("the Write-up card", function()
 		"keeps a Write-up not closed before logout and shows it at the next login, before any summary card; each"
 			.. " closes with its button or Esc (ANN-R54, ANN-R61, announcements.md › UI)",
 		function()
-			local first = core(history(2))
+			local first = loadCore(history(2))
 			moduleWritingUp(first, "Ledger", 10)
 			enterWorld(first)
 			frames(first)
@@ -210,7 +152,7 @@ describe("the Write-up card", function()
 
 			local global = first.env.PagleDB.global
 			global.cards = { storedCard(3, "New Species") }
-			local second = core(history(2), { global = global })
+			local second = loadCore(history(2), { global = global })
 			moduleWritingUp(second, "Ledger", 10, {})
 			enterWorld(second)
 			frames(second)
@@ -225,8 +167,32 @@ describe("the Write-up card", function()
 		end
 	)
 
+	it(
+		"keeps the sections on screen out of a Session card made after Cozy mode goes on, so they show once"
+			.. " (ANN-R61, ANN-R62)",
+		function()
+			local loaded = loadCore(history(2))
+			local ledger = moduleWritingUp(loaded, "Ledger", 10)
+			enterWorld(loaded)
+			frames(loaded)
+			assert.are.equal("Write-up", shownTitle(loaded))
+
+			loaded.ns.db.profile.announcements.cozy = true
+			catchAndFlush(loaded)
+			ledger:RaiseMoment({ rung = "toast", kind = "newSpecies", title = "New Species" })
+			loaded.client.advance(900)
+			assert.are.equal("Write-up", shownTitle(loaded))
+			close(loaded)
+
+			assert.are.same({ "# Ledger", "New Species" }, shownCard(loaded).rows)
+			assert.are.same({}, loaded.env.PagleDB.global.writeUp)
+			close(loaded)
+			assert.is_nil(shownCard(loaded))
+		end
+	)
+
 	it("stays on screen while UIParent hides, which isn't the player closing it (announcements.md › UI)", function()
-		local loaded = core(history(2))
+		local loaded = loadCore(history(2))
 		moduleWritingUp(loaded, "Ledger", 10)
 		enterWorld(loaded)
 		frames(loaded)
@@ -243,7 +209,7 @@ describe("the Write-up card", function()
 			.. " raised nothing (ANN-R53, ANN-R62)",
 		function()
 			-- No Session to end at login: the log holds no Cast yet.
-			local loaded = core({ BUILD })
+			local loaded = loadCore({ BUILD_ENTRY })
 			loaded.env.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
 			-- A Write-up waiting from an earlier login.
 			loaded.ns.db.global.writeUp = {
@@ -260,7 +226,7 @@ describe("the Write-up card", function()
 			frames(loaded)
 			assert.is_nil(shownCard(loaded))
 
-			catchOne(loaded)
+			catchAndFlush(loaded)
 			loaded.client.advance(900)
 
 			assert.are.same({
@@ -273,7 +239,7 @@ describe("the Write-up card", function()
 	)
 
 	it("raises an error at the Module's call outside a projection's done (ANN-R60)", function()
-		local loaded = core(history(2))
+		local loaded = loadCore(history(2))
 		local M = loaded.env.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
 		enterWorld(loaded)
 
@@ -287,7 +253,7 @@ describe("the Write-up card", function()
 	it(
 		"covers a Module's catch-up after it was off with a section and no pop-ups (ANN-R4, ANN-R60, ANN-R90)",
 		function()
-			local loaded = core(history(3))
+			local loaded = loadCore(history(3))
 			local M = loaded.env.Pagle.RegisterModule({ name = "Hunts", title = "Hunts", order = 20 })
 			local fingerprint = loaded.env.Pagle.CONTENT_FINGERPRINT
 			M:NewProjection({
@@ -352,7 +318,8 @@ describe("the Session summary cards", function()
 					},
 				},
 			}
-			local loaded = core({ BUILD, cast(SERVER_TIME - 2000), cast(SERVER_TIME - 1990) }, saved)
+			local loaded =
+				loadCore({ BUILD_ENTRY, castEntry(SERVER_TIME - 2000), castEntry(SERVER_TIME - 1990) }, saved)
 			enterWorld(loaded)
 			frames(loaded)
 
@@ -368,7 +335,11 @@ describe("the Session summary cards", function()
 				{
 					title = "Your last session",
 					numbers = { "2", "2", "0", "1 min" },
-					rows = { "Pagle Coins +1,200", "# Ledger", "Angler Level 12" },
+					rows = {
+						"Pagle Coins +1,200 |TInterface\\MoneyFrame\\UI-GoldIcon:0|t",
+						"# Ledger",
+						"Angler Level 12",
+					},
 				},
 			}, shown)
 			assert.are.same({}, loaded.env.PagleDB.global.cards)
@@ -394,7 +365,7 @@ describe("the Session summary cards", function()
 			},
 		}
 		card.lines = { { module = "Hunts", title = "Hunts", lines = { "Hunts: 2 pinned" } } }
-		local loaded = core(history(2), { global = { cards = { card } } })
+		local loaded = loadCore(history(2), { global = { cards = { card } } })
 		loaded.ns.db.profile.announcements.cozy = true
 		enterWorld(loaded)
 		frames(loaded)
@@ -406,7 +377,7 @@ describe("the Session summary cards", function()
 		"show when the Session ends and the lanes are empty; a summaryOnly moment never pops up and makes its"
 			.. " Session's card (ANN-R21, ANN-R63, ANN-R91)",
 		function()
-			local loaded = core(history(2))
+			local loaded = loadCore(history(2))
 			local M = loaded.env.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
 			M:NewProjection({
 				-- Built before, under other rules: a rebuild that isn't a first build.
@@ -425,7 +396,7 @@ describe("the Session summary cards", function()
 			frames(loaded)
 			assert.is_nil(shownCard(loaded))
 
-			catchOne(loaded)
+			catchAndFlush(loaded)
 			loaded.client.advance(899)
 			assert.is_nil(shownCard(loaded))
 			loaded.client.advance(1)
@@ -436,12 +407,27 @@ describe("the Session summary cards", function()
 		end
 	)
 
-	it("wait while a toast shows when the Session ends, and show once it goes (ANN-R21)", function()
-		local loaded = core(history(2))
+	it("draw in the toast's one Timber style: the same planks and brass edge (ANN-R80)", function()
+		local loaded = loadCore(history(2), { global = { cards = { storedCard(1, "First") } } })
 		local M = loaded.env.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
 		enterWorld(loaded)
 		frames(loaded)
-		catchOne(loaded)
+		M:RaiseMoment({ rung = "toast", kind = "newSpecies", title = "New Species" })
+		loaded.client.advance(0)
+
+		local toast, card = loaded.ns.announcementFrames.toast, loaded.ns.cardFrame
+		assert.are.same(
+			{ wood = toast.children[1].color, edge = toast.children[2].color },
+			{ wood = card.children[1].color, edge = card.children[2].color }
+		)
+	end)
+
+	it("wait while a toast shows when the Session ends, and show once it goes (ANN-R21)", function()
+		local loaded = loadCore(history(2))
+		local M = loaded.env.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
+		enterWorld(loaded)
+		frames(loaded)
+		catchAndFlush(loaded)
 		M:RaiseMoment({ rung = "toast", kind = "newSpecies", title = "New Species" })
 		loaded.client.advance(895)
 		M:RaiseMoment({ rung = "toast", kind = "late", title = "Late toast" })

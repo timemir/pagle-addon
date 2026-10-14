@@ -48,7 +48,7 @@ local function recordCast(outcome, items, startedAt)
 	})
 	---@cast cast PagleCast
 	ns.AddCastDiagnostic(cast, unresolved, startedAt)
-	ns.SessionCast() -- LOG-R9 step 3: SessionEnded still due, then SessionStarted
+	ns.sessions:Cast() -- LOG-R9 step 3: SessionEnded still due, then SessionStarted
 	ns.projections:Live(cast) -- LOG-R9 step 4, before Catch and CastEnded (LOG-R73)
 	return cast
 end

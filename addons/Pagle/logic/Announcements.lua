@@ -428,15 +428,19 @@ end
 
 --- Seconds the record ruler takes to fill (ANN-R22; Tunables).
 ns.RULER_SECONDS = 1.5
+--- Seconds after the margin lands until the "New record" stamp does (ANN-R22): a beat, so the two land one by one.
+ns.RULER_STAMP_DELAY = 0.4
 
 --- A record ruler at one moment of its animation (ANN-R22): where the old record's mark and the fill sit along the
---- track (0 to 1), the number counted up so far, and the margin, which shows once it has landed.
+--- track (0 to 1), the number counted up so far, the margin, which shows once it has landed, and the "New record"
+--- stamp a beat after.
 ---@class PagleRulerFrame
 ---@field mark number     -- the old record's mark
 ---@field fill number     -- how far the fill has come
 ---@field value string    -- the number so far, with its unit ("11.4 lb")
 ---@field passed boolean  -- the fill is past the old mark
----@field done boolean    -- it has landed: the margin and the "New record" stamp show
+---@field done boolean    -- it has landed: the margin shows
+---@field stamped boolean -- RULER_STAMP_DELAY after it landed: the "New record" stamp shows, and the animation ends
 ---@field margin string   -- "+x" with the unit ("+1.6 lb")
 ---@field label string    -- whose number it is ("weight")
 
@@ -450,7 +454,8 @@ local function withUnit(value, unit)
 end
 
 --- The ruler `elapsed` seconds after it appeared (ANN-R22): the number eases up from 0 to the new record over
---- RULER_SECONDS, on a track a tenth longer than it, past the old record's mark.
+--- RULER_SECONDS, on a track a tenth longer than it, past the old record's mark; then the margin lands, and the
+--- stamp RULER_STAMP_DELAY later.
 ---@param ruler { old: number, new: number, unit: string, label: string }
 ---@param elapsed number
 ---@return PagleRulerFrame
@@ -464,6 +469,7 @@ function ns.RulerAt(ruler, elapsed)
 		value = withUnit(value, ruler.unit),
 		passed = value > ruler.old,
 		done = progress >= 1,
+		stamped = elapsed >= ns.RULER_SECONDS + ns.RULER_STAMP_DELAY,
 		margin = "+" .. withUnit(ruler.new - ruler.old, ruler.unit),
 		label = ruler.label,
 	}

@@ -644,7 +644,10 @@ describe("the record ruler", function()
 
 	it("fills past the old mark while the number counts up over 1.5 s, then lands the margin (ANN-R22)", function()
 		local start = ns.RulerAt(RULER, 0)
-		assert.are.same({ 0, "0.0 lb", false, false }, { start.fill, start.value, start.passed, start.done })
+		assert.are.same(
+			{ 0, "0.0 lb", false, false, false },
+			{ start.fill, start.value, start.passed, start.done, start.stamped }
+		)
 		assert.is_near(10 / 13.2, start.mark, 1e-9)
 		assert.are.same({ "+2.0 lb", "weight" }, { start.margin, start.label })
 
@@ -655,6 +658,16 @@ describe("the record ruler", function()
 		local landed = ns.RulerAt(RULER, 1.5)
 		assert.is_near(12 / 13.2, landed.fill, 1e-9)
 		assert.are.same({ "12.0 lb", true, true }, { landed.value, landed.passed, landed.done })
+	end)
+
+	it("lands the New record stamp a beat after the margin, not with it (ANN-R22)", function()
+		assert.is_false(ns.RulerAt(RULER, 1.5).stamped)
+		assert.is_false(ns.RulerAt(RULER, 1.5 + ns.RULER_STAMP_DELAY / 2).stamped)
+
+		local stamped = ns.RulerAt(RULER, 1.5 + ns.RULER_STAMP_DELAY)
+
+		assert.are.same({ true, true }, { stamped.done, stamped.stamped })
+		assert.is_true(ns.RULER_STAMP_DELAY > 0)
 	end)
 
 	it("shows a unit other than length as given (ANN-R22)", function()

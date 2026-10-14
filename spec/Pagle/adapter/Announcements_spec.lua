@@ -4,14 +4,16 @@
 
 local SOUNDS = "Interface\\AddOns\\Pagle\\media\\sounds\\"
 local DRIFTWOOD = SOUNDS .. "driftwood\\"
-local CAST = PLAYER_GUID .. "-1791731700-0"
+local CAST = ("%s-%d-0"):format(PLAYER_GUID, SERVER_TIME)
+-- The Pagle Coin icon the Coins stamp shows after its "+N" (ANN-R23).
+local COIN = "|TInterface\\MoneyFrame\\UI-GoldIcon:0|t"
 
 -- Core logged in on Forever with the Ledger registered. Each moment Core hands the summary is in `summarized`.
 local function loadCore()
 	local loaded = loadAddon("Pagle", foreverWith({ PagleLog = savedLog() }))
 	loaded.client.addons.Pagle_Ledger = { metadata = { ["X-Pagle-API"] = "1" } }
 	local summarized = {}
-	function loaded.ns.SummarizeMoment(moment)
+	function loaded.ns.summary.Add(_, moment)
 		summarized[#summarized + 1] = moment
 	end
 	local M = loaded.env.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
@@ -83,7 +85,7 @@ describe("Announcement frames", function()
 				{ 136245, "New Species", "Nightfin Snapper" },
 				{ toast.icon.texture, toast.title:GetText(), toast.text:GetText() }
 			)
-			assert.are.same({ "New here", "★★", "Rank up", "Skill", "+1", "+25 Coins" }, stampsOf(toast))
+			assert.are.same({ "New here", "★★", "Rank up", "Skill", "+1", "+25 " .. COIN }, stampsOf(toast))
 			assert.is_false(toast.more.shown)
 			loaded.client.advance(5.9)
 			assert.is_true(toast.shown)
@@ -161,14 +163,15 @@ describe("Announcement frames", function()
 
 		local nod = frameOf(loaded, "nod")
 		assert.is_true(nod.shown)
-		assert.are.same({ "New here", "+10 Coins" }, stampsOf(nod))
+		assert.are.same({ "New here", "+10 " .. COIN }, stampsOf(nod))
 		assert.are.same({}, loaded.client.sounds)
 		loaded.client.advance(3)
 		assert.is_false(nod.shown)
 	end)
 
 	it(
-		"animate a toast's record ruler: the number counts up over 1.5 s, then the margin and New record land (ANN-R22)",
+		"animate a toast's record ruler: the number counts up over 1.5 s, the margin lands, then New record a beat"
+			.. " later (ANN-R22)",
 		function()
 			local loaded, M = loadCore()
 			local ruler = { old = 10, new = 12, unit = "lb", label = "weight" }
@@ -185,10 +188,9 @@ describe("Announcement frames", function()
 				view.margin:GetText(),
 				view.label:GetText(),
 			})
-			assert.are.same(
-				{ true, true, "New record" },
-				{ view.margin.shown, view.record.shown, view.record.label:GetText() }
-			)
+			assert.are.same({ true, false }, { view.margin.shown, view.record.shown })
+			loaded.client.update(loaded.ns.RULER_STAMP_DELAY)
+			assert.are.same({ true, "New record" }, { view.record.shown, view.record.label:GetText() })
 		end
 	)
 end)

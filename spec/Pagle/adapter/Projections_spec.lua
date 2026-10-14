@@ -2,24 +2,6 @@
 -- projection bound through its handle, started at the first PLAYER_ENTERING_WORLD and handed each entry Core
 -- appends, driven through the fake client's events.
 
-local OILY_BLACKMOUTH = "|cffffffff|Hitem:6358::::::::15:::::::::|h[Oily Blackmouth]|h|r"
-local FISHING = 7731
-
--- Entry `i` of a saved log: a caught Cast by Ada.
-local function cast(i)
-	return ("C1|1|%d|0|c|494|1439|1|148|453|86|25|263|||6358x1"):format(1791731000 + i)
-end
-
--- `n` Casts, then the build entry the fake client's build matches, so login appends no B1.
-local function history(n)
-	local entries = {}
-	for i = 1, n do
-		entries[i] = cast(i)
-	end
-	entries[n + 1] = "B1|1|1791731999|0|70338|1.60.1"
-	return entries
-end
-
 -- Core over a saved log holding `entries`, with the Ledger installed and registered, its projection over `db`
 -- noting what it's handed in `seen.applied` ("<seq> <kind> <mode>") and `seen.done`, and each event in `seen.events`.
 local function coreWithLedger(entries, db)
@@ -50,22 +32,13 @@ local function coreWithLedger(entries, db)
 	return loaded, seen, projection, M
 end
 
--- Plays a caught Cast of one Oily Blackmouth on the fake client.
-local function catchOne(loaded)
-	loaded.client.fire("UNIT_SPELLCAST_CHANNEL_START", "player", "Cast-1", FISHING)
-	loaded.client.loot = { fishing = true, slots = { { link = OILY_BLACKMOUTH, quantity = 1 } } }
-	loaded.client.fire("LOOT_READY", true)
-	loaded.client.fire("UNIT_SPELLCAST_CHANNEL_STOP", "player", "Cast-1", FISHING)
-	loaded.client.fire("LOOT_CLOSED")
-end
-
 describe("a Module's projection at login", function()
 	it(
 		"rebuilds at the first PLAYER_ENTERING_WORLD, before the Skill Reading login appends, which is live"
 			.. " (LOG-R1, LOG-R70, LOG-R72)",
 		function()
 			local db = {}
-			local loaded, seen, projection = coreWithLedger(history(2), db)
+			local loaded, seen, projection = coreWithLedger(history(2, 1791731000), db)
 
 			loaded.client.fire("PLAYER_LOGIN")
 			assert.is_true(projection:IsUpdating())
@@ -94,7 +67,7 @@ describe("a Module's projection at login", function()
 		local fingerprint = loadAddon("Pagle", FOREVER_GLOBALS).env.Pagle.CONTENT_FINGERPRINT
 		local db =
 			{ projection = {}, lastSeq = 1, logId = "3f9a2c1e7b0d4a65", fingerprint = fingerprint, rulesVersion = 1 }
-		local loaded, seen = coreWithLedger(history(2), db)
+		local loaded, seen = coreWithLedger(history(2, 1791731000), db)
 
 		loaded.client.fire("PLAYER_LOGIN")
 		loaded.client.fire("PLAYER_ENTERING_WORLD", true, false)
@@ -104,7 +77,7 @@ describe("a Module's projection at login", function()
 	end)
 
 	it("runs more than 500 pending entries on later frames, still updating until done (LOG-R71)", function()
-		local loaded, seen, projection = coreWithLedger(history(501), {})
+		local loaded, seen, projection = coreWithLedger(history(501, 1791731000), {})
 
 		loaded.client.fire("PLAYER_LOGIN")
 		loaded.client.fire("PLAYER_ENTERING_WORLD", true, false)
@@ -123,7 +96,7 @@ describe("a Cast recorded", function()
 	it(
 		"while the projection is up to date is applied live before Catch and CastEnded fire (LOG-R9, LOG-R73)",
 		function()
-			local loaded, seen = coreWithLedger(history(1), {})
+			local loaded, seen = coreWithLedger(history(1, 1791731000), {})
 			loaded.client.fire("PLAYER_LOGIN")
 			loaded.client.fire("PLAYER_ENTERING_WORLD", true, false)
 			seen.applied = {}
@@ -135,7 +108,7 @@ describe("a Cast recorded", function()
 	)
 
 	it("during an update is applied once, as live, after done and in order (LOG-R74)", function()
-		local loaded, seen = coreWithLedger(history(501), {})
+		local loaded, seen = coreWithLedger(history(501, 1791731000), {})
 		loaded.client.fire("PLAYER_LOGIN")
 		loaded.client.fire("PLAYER_ENTERING_WORLD", true, false)
 
@@ -152,7 +125,7 @@ end)
 
 describe("M:IterateCatches", function()
 	it("yields what Pagle.IterateCatches yields (LOG-R42)", function()
-		local loaded, _, _, M = coreWithLedger(history(2), {})
+		local loaded, _, _, M = coreWithLedger(history(2, 1791731000), {})
 		local fromHandle, fromPagle = {}, {}
 
 		for record in M:IterateCatches(1) do

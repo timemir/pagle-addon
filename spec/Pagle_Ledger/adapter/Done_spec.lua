@@ -184,7 +184,7 @@ describe("the Ledger's done", function()
 	)
 
 	it(
-		"writes up no catch-up whose only new achievement is a Species new in a zone: it has no line (LED-R94)",
+		"writes up no catch-up whose only new achievement is a Species new in a zone: it has no line (LED-R93, LED-R94)",
 		function()
 			local last, lastLoaded = session({ history = HISTORY })
 

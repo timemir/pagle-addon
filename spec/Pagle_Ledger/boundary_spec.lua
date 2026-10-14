@@ -20,61 +20,21 @@ for _, name in ipairs(newFakePagle().ns.MODULE_ROSTER) do
 	end
 end
 
--- Code with its comments removed: Lua's --[[ ]] and -- comments.
----@param text string
----@return string
-local function withoutComments(text)
-	text = text:gsub("%-%-%[(=*)%[.-%]%1%]", "")
-	text = text:gsub("%-%-[^\n]*", "")
-	return text
-end
-
 -- Each forbidden thing the code says, as "<why>: <match>".
 ---@param text string
 ---@return string[]
 local function offences(text)
-	local found = {}
-	local code = withoutComments(text)
-	for _, rule in ipairs(FORBIDDEN) do
-		local match = code:match(rule[1])
-		if match then
-			found[#found + 1] = rule[2] .. ": " .. match
-		end
-	end
-	return found
-end
-
----@return string[]
-local function shippedFiles()
-	local files = {}
-	---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io
-	local find = assert(io.popen("find " .. DIR .. " -type f \\( -name '*.lua' -o -name '*.xml' \\)"))
-	for path in find:lines() do
-		files[#files + 1] = path
-	end
-	find:close()
-	table.sort(files)
-	return files
-end
-
----@param path string
----@return string
-local function read(path)
-	---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io
-	local file = assert(io.open(path, "r"))
-	local text = file:read("*a")
-	file:close()
-	return text
+	return forbiddenIn(withoutComments(text), FORBIDDEN)
 end
 
 describe("The Ledger's boundary", function()
 	it("covers every file the Ledger ships", function()
-		assert.are.equal(#addonFiles("Pagle_Ledger"), #shippedFiles())
+		assert.are.equal(#addonFiles("Pagle_Ledger"), #shippedFiles(DIR))
 	end)
 
-	for _, path in ipairs(shippedFiles()) do
+	for _, path in ipairs(shippedFiles(DIR)) do
 		it(path .. " reads no other addon's data and calls no other Module (ADR 0001)", function()
-			assert.are.same({}, offences(read(path)))
+			assert.are.same({}, offences(readFile(path)))
 		end)
 	end
 
@@ -106,6 +66,7 @@ describe("The Ledger's boundary", function()
 				{},
 				offences('-- never PagleLog\n--[[ PagleQoLDB ]]\nlocal db = PagleLedgerDB\nlocal _ = "Pagle_Ledger"')
 			)
+			assert.are.same({}, offences('<!--\nPagleDB, Pagle_QoL\n-->\n<Bindings name="Pagle_Ledger"/>'))
 		end)
 	end)
 end)

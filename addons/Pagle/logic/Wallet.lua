@@ -86,10 +86,7 @@ end
 ---@return fun(self: PagleModuleHandle, total: integer)
 function ns.ReportCoinsEarnedMethod(registry, wallet)
 	return function(self, total)
-		local module = registry:ModuleOf(self)
-		if not module then
-			error("ReportCoinsEarned is a Module handle method: call M:ReportCoinsEarned(total)", 2)
-		end
+		local module = registry:ModuleCalling(self, "ReportCoinsEarned", "total")
 		local problem = ns.CoinTotalProblem(total)
 		if problem then
 			error(problem, 2)

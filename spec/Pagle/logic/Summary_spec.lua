@@ -38,10 +38,18 @@ end
 
 -- A summary over `world`: `world.global` is PagleDB.global, `world.open` whether a Session is open,
 -- `world.modules` the registered Modules, by order, `world.cozy` the player's Cozy mode and `world.serverTime` the
--- server time. `world.waiting` is each waiting count the summary reported, in order.
+-- server time. `world.waiting` is each waiting count the summary reported, in order. `world.writeUp` is the Write-up
+-- sections waiting off screen, which the cards hand over when asked (logic/Cards.lua's TakeWriteUp).
 local function newWorld()
-	local world =
-		{ global = {}, open = true, modules = { LEDGER, HUNTS }, cozy = false, serverTime = SERVER_TIME, waiting = {} }
+	local world = {
+		global = { summary = { moments = {}, lines = {} }, pending = {}, cards = {}, writeUp = {} },
+		open = true,
+		modules = { LEDGER, HUNTS },
+		cozy = false,
+		serverTime = SERVER_TIME,
+		waiting = {},
+		writeUp = {},
+	}
 	world.summary = ns.NewSummary({
 		global = function()
 			return world.global
@@ -60,6 +68,11 @@ local function newWorld()
 		end,
 		waitingChanged = function(count)
 			world.waiting[#world.waiting + 1] = count
+		end,
+		takeWriteUp = function()
+			local taken = world.writeUp
+			world.writeUp = {}
+			return taken
 		end,
 	})
 	return world
@@ -349,31 +362,22 @@ describe("the Session summary", function()
 	end)
 
 	it(
-		"in Cozy mode, puts the waiting Write-up sections on the next card, by Module order, and makes that card"
-			.. " although its Session raised no moment (ANN-R53, ANN-R62)",
+		"in Cozy mode, takes the waiting Write-up sections onto the next card and makes that card although its"
+			.. " Session raised no moment (ANN-R53, ANN-R62)",
 		function()
 			local world = newWorld()
 			world.cozy = true
-			world.global.writeUp = {
-				{
-					module = "Hunts",
-					order = 20,
-					title = "Hunts",
-					heading = "While Hunts was off",
-					lines = { "2 Hunts" },
-				},
-				{ module = "Ledger", order = 10, title = "Ledger", heading = "Your Ledger was written up", lines = {} },
-			}
+			local ledger = { module = "Ledger", order = 10, title = "Ledger", heading = "Written up", lines = {} }
+			local hunts =
+				{ module = "Hunts", order = 20, title = "Hunts", heading = "While off", lines = { "2 Hunts" } }
+			world.writeUp = { ledger, hunts }
 
 			local card = world.summary:Ended(SESSION)
 
-			assert.are.same({ "Your Ledger was written up", "While Hunts was off" }, {
-				card.writeUp[1].heading,
-				card.writeUp[2].heading,
-			})
+			assert.are.same({ ledger, hunts }, card.writeUp)
 			assert.are.same({}, card.moments)
 			assert.are.same({ card }, world.global.cards)
-			assert.are.same({}, world.global.writeUp)
+			assert.are.same({}, world.writeUp)
 		end
 	)
 
@@ -382,14 +386,14 @@ describe("the Session summary", function()
 		function()
 			local world = newWorld()
 			local section = { module = "Ledger", order = 10, title = "Ledger", heading = "Written up", lines = {} }
-			world.global.writeUp = { section }
+			world.writeUp = { section }
 
 			assert.is_nil(world.summary:Ended(SESSION))
 			world.summary:Add(raised(LEDGER, { rung = "toast", kind = "newSpecies", title = "New Species" }))
 			local card = world.summary:Ended(SESSION)
 
 			assert.is_nil(card.writeUp)
-			assert.are.same({ section }, world.global.writeUp)
+			assert.are.same({ section }, world.writeUp)
 		end
 	)
 end)

@@ -15,7 +15,7 @@ local Pagle = Pagle
 ---@alias PagleModulesChangedHandler fun(event: "ModulesChanged")
 
 --- Core's one registry. Core's other files reach registered Modules through it: `ns.Modules:Modules()` by order,
---- `ns.Modules:ModuleOf(handle)` in a handle method.
+--- `ns.Modules:ModuleCalling(self, method, args)` in a handle method.
 ns.Modules = ns.NewModuleRegistry(Pagle.API_VERSION)
 
 ---@param addon string

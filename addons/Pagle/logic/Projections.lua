@@ -437,9 +437,7 @@ function ns.AddProjectionMethods(registry, projections, iterate)
 	---@param afterSeq integer?
 	---@return fun(): PagleRecord?
 	function ModuleHandle:IterateCatches(afterSeq)
-		if not registry:ModuleOf(self) then
-			error("IterateCatches must be called on a Module handle, as M:IterateCatches(afterSeq)", 2)
-		end
+		registry:ModuleCalling(self, "IterateCatches", "afterSeq")
 		return iterate(afterSeq)
 	end
 
@@ -449,9 +447,7 @@ function ns.AddProjectionMethods(registry, projections, iterate)
 	---@param def PagleProjectionDef
 	---@return PagleProjection
 	function ModuleHandle:NewProjection(def)
-		if not registry:ModuleOf(self) then
-			error("NewProjection must be called on a Module handle, as M:NewProjection(def)", 2)
-		end
+		registry:ModuleCalling(self, "NewProjection", "def")
 		local projection, problem = projections:Add(def, function(afterSeq)
 			return self:IterateCatches(afterSeq)
 		end)

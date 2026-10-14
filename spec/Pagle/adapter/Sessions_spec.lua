@@ -1,18 +1,8 @@
 -- Sessions on the client (LOG-R9 step 3, LOG-R60–R64, LOG-R98): the Session events, Pagle.GetSession and the session
 -- tag, driven through the fake client's events, with a server time that moves with the client's clock.
 
-local OILY_BLACKMOUTH = "|cffffffff|Hitem:6358::::::::15:::::::::|h[Oily Blackmouth]|h|r"
 local FIRESCALE = "|cffffffff|Hitem:6303::::::::15:::::::::|h[Raw Slitherskin Mackerel]|h|r"
-local FISHING = 7731
 local ADA = "Player-4618-0A1B2C3D"
-
--- Ada's caught Cast of one Oily Blackmouth at server time `time`.
-local function cast(time)
-	return ("C1|1|%d|0|c|494|1439|1|148|453|86|25|263|||6358x1"):format(time)
-end
-
--- The build entry the fake client's build matches, so login appends no B1.
-local BUILD = ("B1|1|%d|0|70338|1.60.1"):format(SERVER_TIME - 5000)
 
 -- Core over a saved log holding `entries` (or the PagleLog `entries` itself, when it has `format`), and PagleDB
 -- `saved` if given, its server time SERVER_TIME plus the client's clock, plus what `seen.jump(seconds)` adds without
@@ -69,21 +59,6 @@ local function core(entries, saved)
 	return loaded, seen
 end
 
--- PLAYER_LOGIN and the first PLAYER_ENTERING_WORLD.
-local function login(loaded)
-	loaded.client.fire("PLAYER_LOGIN")
-	loaded.client.fire("PLAYER_ENTERING_WORLD", true, false)
-end
-
--- Plays a caught Cast of `slots` (one Oily Blackmouth by default) on the fake client.
-local function catchOne(loaded, slots)
-	loaded.client.fire("UNIT_SPELLCAST_CHANNEL_START", "player", "Cast-1", FISHING)
-	loaded.client.loot = { fishing = true, slots = slots or { { link = OILY_BLACKMOUTH, quantity = 1 } } }
-	loaded.client.fire("LOOT_READY", true)
-	loaded.client.fire("UNIT_SPELLCAST_CHANNEL_STOP", "player", "Cast-1", FISHING)
-	loaded.client.fire("LOOT_CLOSED")
-end
-
 -- The entry ID of the player's (PLAYER_GUID, character 2 here) entry at SERVER_TIME + `offset`. A Cast in the login's
 -- second has tie 1, after the login's Skill Reading (LOG-R12).
 local function playerId(offset)
@@ -99,8 +74,8 @@ describe("Sessions on the client", function()
 		"for a Cast that opens a Session: appends, ends the previous Session, starts this one, applies it live, then"
 			.. " Catch and CastEnded (LOG-R9, LOG-R62, LOG-R73)",
 		function()
-			local loaded, seen = core({ BUILD })
-			login(loaded)
+			local loaded, seen = core({ BUILD_ENTRY })
+			enterWorld(loaded)
 			catchOne(loaded)
 			seen.jump(1000) -- the 900 s timer hasn't run
 			seen.order = {}
@@ -119,9 +94,9 @@ describe("Sessions on the client", function()
 	)
 
 	it("ends a Session when 900 s pass with no Cast, then GetSession is nil (LOG-R62, LOG-R64)", function()
-		local loaded, seen = core({ BUILD })
+		local loaded, seen = core({ BUILD_ENTRY })
 		local Pagle = loaded.env.Pagle
-		login(loaded)
+		enterWorld(loaded)
 		catchOne(loaded)
 		seen.order = {}
 
@@ -136,8 +111,8 @@ describe("Sessions on the client", function()
 	end)
 
 	it("waits 900 s from the last Cast, not the first (LOG-R62)", function()
-		local loaded, seen = core({ BUILD })
-		login(loaded)
+		local loaded, seen = core({ BUILD_ENTRY })
+		enterWorld(loaded)
 		catchOne(loaded)
 		loaded.client.advance(600)
 		catchOne(loaded)
@@ -152,8 +127,8 @@ describe("Sessions on the client", function()
 	end)
 
 	it("counts a Cast's 3 items as 3 Catches, whatever their quantities (LOG-R64)", function()
-		local loaded = core({ BUILD })
-		login(loaded)
+		local loaded = core({ BUILD_ENTRY })
+		enterWorld(loaded)
 
 		catchOne(loaded, {
 			{ link = OILY_BLACKMOUTH, quantity = 5 },
@@ -167,13 +142,13 @@ describe("Sessions on the client", function()
 	it(
 		"tags the records Catch, CastEnded, SkillChanged and IterateCatches hand out with their Session (LOG-R98)",
 		function()
-			local loaded, seen = core({ BUILD })
+			local loaded, seen = core({ BUILD_ENTRY })
 			local Pagle = loaded.env.Pagle
 			local readings = {}
 			Pagle.RegisterCallback("Spec readings", "SkillChanged", function(_, reading)
 				readings[#readings + 1] = reading.session or false
 			end)
-			login(loaded) -- a Skill Reading at login, before any Cast
+			enterWorld(loaded) -- a Skill Reading at login, before any Cast
 			catchOne(loaded)
 			loaded.client.advance(10)
 			loaded.env.GetProfessionInfo = function()
@@ -197,9 +172,9 @@ describe("Sessions on the client", function()
 		local function awayHistory()
 			local entries = {}
 			for i = 1, 501 do
-				entries[i] = cast(SERVER_TIME - 5000 + i)
+				entries[i] = castEntry(SERVER_TIME - 5000 + i)
 			end
-			entries[502] = BUILD
+			entries[502] = BUILD_ENTRY
 			return entries
 		end
 		local AWAY_ID = ("%s-%d-0"):format(ADA, SERVER_TIME - 4999)
@@ -210,7 +185,7 @@ describe("Sessions on the client", function()
 			function()
 				local loaded, seen = core(awayHistory())
 
-				login(loaded)
+				enterWorld(loaded)
 				assert.is_true(seen.projection:IsUpdating())
 				assert.are.same({}, seen.payloads)
 				loaded.client.runTimers() -- Core's Field report projection rebuilds first (LOG-R78)
@@ -226,7 +201,7 @@ describe("Sessions on the client", function()
 
 		it("fires it before the first new Cast's SessionStarted when that comes first (LOG-R63)", function()
 			local loaded, seen = core(awayHistory())
-			login(loaded)
+			enterWorld(loaded)
 
 			catchOne(loaded)
 			loaded.client.runTimers()
@@ -242,12 +217,12 @@ describe("Sessions on the client", function()
 		end)
 
 		it("fires nothing at a second login (LOG-R63)", function()
-			local first = core({ cast(SERVER_TIME - 2000), BUILD })
-			login(first)
+			local first = core({ castEntry(SERVER_TIME - 2000), BUILD_ENTRY })
+			enterWorld(first)
 			assert.are.equal(ADA .. "-" .. (SERVER_TIME - 2000) .. "-0", first.env.PagleDB.global.lastEndedSession)
 
 			local second, seen = core(first.env.PagleLog, first.env.PagleDB)
-			login(second)
+			enterWorld(second)
 			second.client.runTimers()
 
 			assert.are.same({}, seen.payloads)

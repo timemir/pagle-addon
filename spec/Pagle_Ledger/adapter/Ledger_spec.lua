@@ -40,7 +40,7 @@ describe("Pagle_Ledger with Core", function()
 	end)
 
 	it("registers the Fish Journal view and /pagle journal, and no menu entry or settingsAction (LED-R1)", function()
-		local def = loadAddon("Pagle_Ledger", FOREVER_GLOBALS).namespaces.Pagle.Modules:Modules()[1].def
+		local def = loadAddon("Pagle_Ledger", FOREVER_GLOBALS).ns.ModuleDef()
 
 		assert.are.equal(1, #def.views)
 		assert.are.same({ "journal", "Fish Journal" }, { def.views[1].id, def.views[1].label })

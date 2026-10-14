@@ -1,7 +1,7 @@
 ## Interface: 16001
 ## AllowLoadGameType: camelot
 ## Title: Pagle Ledger
-## Notes: Pagle's Fishing Ledger: your Angler Level, the Species you have caught and the Coins they earn.
+## Notes: Pagle's Ledger: your Angler Level, the Species you have caught and the Coins they earn.
 ## Group: Pagle
 ## Category: Professions
 ## Version: @project-version@

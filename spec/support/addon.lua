@@ -23,7 +23,8 @@
 --
 -- The fake client is split by concern, one file each under spec/support/: client.lua (events, addons, loot and the
 -- base WoW API), widgets.lua, timers.lua, settings.lua (the Settings panel), menu.lua (slash commands and context
--- menus), fake_game.lua, fake_popup.lua, fake_tooltip.lua, and toc.lua (the TOC reader).
+-- menus), fake_game.lua, fake_popup.lua, fake_tooltip.lua, toc.lua (the TOC reader), and errors.lua (the error lists
+-- that fail a spec which never asserts what they got).
 --
 -- Globals rather than a module: the types stage checks spec/ against the WoW client's Lua, which has no require.
 
@@ -48,6 +49,13 @@ PLAYER_GUID = "Player-1-00000001"
 --- The fake client's server time, as GetServerTime() returns it, and FakePagle's at its clock's 0: 2026-10-11
 --- 15:15:00 UTC, which is realm 08:15 on a US Pacific realm.
 SERVER_TIME = 1791731700
+
+-- The error lists the fake client and FakePagle keep, which fail a spec that never reads them (see the end).
+---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
+local errors = dofile("spec/support/errors.lua")
+--- Puts a fresh error list at `owner[key]` and returns what adds to it (spec/support/errors.lua): the fake client's
+--- `client.errors` and FakePagle's `fake.reported`.
+watchErrors = errors.watch
 
 -- A fresh fake client and its base WoW API stubs.
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
@@ -173,3 +181,25 @@ dofile("spec/support/fake_pagle.lua")
 -- foreverWith, setCombat, openedNames, savedLog and loadCollectingErrors, for every spec.
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 dofile("spec/support/helpers.lua")
+
+-- busted calls what its helper returns with itself: every spec, in every file, ends by failing if an error reached
+-- an error list it never read (spec/support/errors.lua), so an unexpected error can't pass unseen.
+---@param busted table
+---@return boolean
+return function(busted)
+	local running -- the spec running, to name it: busted reports a failing after_each as the suite's
+	busted.subscribe({ "test", "start" }, function(element)
+		running = element.name
+		return nil, true
+	end)
+	busted.executors.after_each(function()
+		local unread = errors.unasserted()
+		if #unread > 0 then
+			local heading = ('"%s" got errors it never asserted (read client.errors or fake.reported):\n'):format(
+				tostring(running)
+			)
+			error(heading .. table.concat(unread, "\n"), 0)
+		end
+	end)
+	return true
+end

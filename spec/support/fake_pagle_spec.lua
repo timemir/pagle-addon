@@ -378,7 +378,7 @@ describe("FakePagle", function()
 
 	describe("the wallet", function()
 		it(
-			"adds Modules' reports in Pagle.GetBalance, by def.name, stored in fake.coins (SHOP-R3, SHOP-R12)",
+			"adds Modules' reports in Pagle.GetBalance, by def.name, stored in fake.global.coins (SHOP-R3, SHOP-R12)",
 			function()
 				local fake = newFakePagle()
 				local ledger = fake.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
@@ -393,7 +393,7 @@ describe("FakePagle", function()
 					balance.earned.Ledger,
 					balance.held,
 					balance.earned.Hunts,
-					fake.coins.earned.Ledger,
+					fake.global.coins.earned.Ledger,
 				})
 				assert.are.equal(130, balance.balance)
 			end
@@ -429,7 +429,7 @@ describe("FakePagle", function()
 
 		it("counts a stored total with no report, and holds at 0 below spent (SHOP-R3, SHOP-R12)", function()
 			local fake = newFakePagle()
-			fake.coins.earned.Hunts = 300
+			fake.global.coins.earned.Hunts = 300
 
 			assert.are.equal(300, fake.Pagle.GetBalance().balance)
 			fake.setSpent(500)
@@ -1398,6 +1398,27 @@ describe("FakePagle", function()
 			fake.enterWorld()
 
 			assert.are.same({ "1 rebuild", "SessionEnded " .. id(-900) .. " whileAway" }, seen)
+			assert.are.equal(id(-900), fake.global.lastEndedSession)
+		end)
+
+		it("fire no SessionEnded at login for the Session a seeded global.lastEndedSession names (LOG-R63)", function()
+			local fake = newFakePagle()
+			fake.catchLog.data.characters[1] = { guid = PLAYER_GUID }
+			fake.catchLog:Append({
+				kind = "cast",
+				char = 1,
+				time = SERVER_TIME - 900,
+				outcome = "caught",
+				conditions = { minute = 494, zone = 148, subzone = 453, events = {}, auras = {} },
+				items = { { itemID = 6358, quantity = 1 } },
+			})
+			fake.global.lastEndedSession = id(-900)
+			local seen = listen(fake)
+
+			fake.login()
+			fake.enterWorld()
+
+			assert.are.same({ "1 rebuild" }, seen)
 		end)
 	end)
 

@@ -6,6 +6,10 @@
 --   openedNames(loaded)                       -- { "Pagle", "Fishing" }
 --   local loaded, errors = loadCollectingErrors()
 --   breakUpLargeNumbers(1950)                -- "1,950"
+--
+--   local loaded = loadCore(history(2))       -- Core over Ada's 2 old Casts, its server time on the client's clock
+--   enterWorld(loaded, 3)                     -- PLAYER_LOGIN, the first PLAYER_ENTERING_WORLD, then 3 frames
+--   catchOne(loaded)                          -- a caught Cast of one Oily Blackmouth (catchAndFlush: then a frame)
 
 --- FOREVER_GLOBALS plus `extra`, as loadAddon's globals.
 ---@param extra table<string, any>?
@@ -69,18 +73,13 @@ function savedLog(entries, format, characters)
 	}
 end
 
---- Loads Core on Forever with an error handler that collects what reaches it instead of failing the spec.
+--- Loads Core on Forever, with the errors its default handler gets (loaded.client.errors), for a spec that asserts
+--- them.
 ---@return LoadedAddon loaded
 ---@return string[] errors Each error the handler got, as text, in order.
 function loadCollectingErrors()
-	local errors = {}
 	local loaded = loadAddon("Pagle", FOREVER_GLOBALS)
-	loaded.env.geterrorhandler = function()
-		return function(err)
-			errors[#errors + 1] = tostring(err)
-		end
-	end
-	return loaded, errors
+	return loaded, loaded.client.errors
 end
 
 --- What the enUS client's BreakUpLargeNumbers writes for a whole number, 0 or more: commas between groups of three
@@ -90,4 +89,139 @@ end
 function breakUpLargeNumbers(value)
 	local grouped = tostring(value):reverse():gsub("(%d%d%d)", "%1,"):reverse()
 	return (grouped:gsub("^,", ""))
+end
+
+--- Oily Blackmouth's item link, as the loot window hands it.
+OILY_BLACKMOUTH = "|cffffffff|Hitem:6358::::::::15:::::::::|h[Oily Blackmouth]|h|r"
+--- Fishing (Classic Journeyman), on the generated catalogue's fishing-spell list (probe report 70338 §4).
+FISHING = 7731
+--- The build entry the fake client's build matches, so login appends no B1.
+BUILD_ENTRY = ("B1|1|%d|0|70338|1.60.1"):format(SERVER_TIME - 5000)
+
+--- Ada's caught Cast of one Oily Blackmouth at server time `time`, as a PagleLog entry (savedLog's character 1).
+---@param time integer
+---@return string
+function castEntry(time)
+	return ("C1|1|%d|0|c|494|1439|1|148|453|86|25|263|||6358x1"):format(time)
+end
+
+--- `n` of Ada's Casts, at `first` + 1, + 2, … (default SERVER_TIME - 90000, long ended), then BUILD_ENTRY.
+---@param n integer
+---@param first integer?
+---@return string[]
+function history(n, first)
+	local entries = {}
+	for i = 1, n do
+		entries[i] = castEntry((first or SERVER_TIME - 90000) + i)
+	end
+	entries[n + 1] = BUILD_ENTRY
+	return entries
+end
+
+--- Core on Forever over a saved log holding `entries` (or the PagleLog `entries` itself, when it has `format`) and
+--- PagleDB `saved`, if given, with the Ledger and Hunts installed. Its server time is SERVER_TIME plus the client's
+--- clock, so loaded.client.advance moves both.
+---@param entries table?
+---@param saved table?
+---@return LoadedAddon
+function loadCore(entries, saved)
+	local clock
+	local loaded = loadAddon(
+		"Pagle",
+		foreverWith({
+			PagleLog = entries and entries.format and entries or savedLog(entries),
+			PagleDB = saved,
+			GetServerTime = function()
+				return SERVER_TIME + math.floor(clock and clock() or 0)
+			end,
+		})
+	)
+	clock = loaded.client.time
+	for _, name in ipairs({ "Ledger", "Hunts" }) do
+		loaded.client.addons["Pagle_" .. name] = { metadata = { ["X-Pagle-API"] = "1" } }
+	end
+	return loaded
+end
+
+--- Login up to the first PLAYER_ENTERING_WORLD (LOG-R1), then `frames` frames (none by default).
+---@param loaded LoadedAddon
+---@param frames integer?
+---@return LoadedAddon loaded
+function enterWorld(loaded, frames)
+	loaded.client.fire("PLAYER_LOGIN")
+	loaded.client.fire("PLAYER_ENTERING_WORLD", true, false)
+	for _ = 1, frames or 0 do
+		loaded.client.advance(0)
+	end
+	return loaded
+end
+
+--- Plays a caught Cast of `slots` (one Oily Blackmouth by default) on the fake client: the channel, the loot, the
+--- channel stopping and the loot closing.
+---@param loaded LoadedAddon
+---@param slots table[]?
+function catchOne(loaded, slots)
+	loaded.client.fire("UNIT_SPELLCAST_CHANNEL_START", "player", "Cast-1", FISHING)
+	loaded.client.loot = { fishing = true, slots = slots or { { link = OILY_BLACKMOUTH, quantity = 1 } } }
+	loaded.client.fire("LOOT_READY", true)
+	loaded.client.fire("UNIT_SPELLCAST_CHANNEL_STOP", "player", "Cast-1", FISHING)
+	loaded.client.fire("LOOT_CLOSED")
+end
+
+--- catchOne, then the next frame, where Core flushes the Cast's moments (ANN-R10).
+---@param loaded LoadedAddon
+function catchAndFlush(loaded)
+	catchOne(loaded)
+	loaded.client.advance(0)
+end
+
+--- Code with its comments removed, for a Module's boundary spec: Lua's --[[ ]] and -- comments, XML's <!-- -->.
+---@param text string
+---@return string
+function withoutComments(text)
+	text = text:gsub("<!%-%-.-%-%->", "")
+	text = text:gsub("%-%-%[(=*)%[.-%]%1%]", "")
+	text = text:gsub("%-%-[^\n]*", "")
+	return text
+end
+
+--- Each forbidden thing `code` (comments removed) says, as "<why>: <match>": `forbidden` lists { Lua pattern, why }.
+---@param code string
+---@param forbidden string[][]
+---@return string[]
+function forbiddenIn(code, forbidden)
+	local found = {}
+	for _, rule in ipairs(forbidden) do
+		local match = code:match(rule[1])
+		if match then
+			found[#found + 1] = rule[2] .. ": " .. match
+		end
+	end
+	return found
+end
+
+--- Every .lua and .xml file under `dir` (an addon's folder, "addons/Pagle_QoL/"), sorted.
+---@param dir string
+---@return string[]
+function shippedFiles(dir)
+	local files = {}
+	---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io
+	local find = assert(io.popen("find " .. dir .. " -type f \\( -name '*.lua' -o -name '*.xml' \\)"))
+	for path in find:lines() do
+		files[#files + 1] = path
+	end
+	find:close()
+	table.sort(files)
+	return files
+end
+
+--- A file's text.
+---@param path string
+---@return string
+function readFile(path)
+	---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io
+	local file = assert(io.open(path, "r"))
+	local text = file:read("*a")
+	file:close()
+	return text
 end

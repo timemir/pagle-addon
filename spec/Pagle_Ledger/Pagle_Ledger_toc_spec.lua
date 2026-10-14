@@ -34,6 +34,11 @@ describe("Pagle_Ledger.toc", function()
 		assert.are.equal("@project-version@", fields.Version)
 	end)
 
+	it("names the Module the Ledger in its Notes, the glossary's word, not a variant on its Avoid list", function()
+		assert.matches("^Pagle's Ledger: ", fields.Notes)
+		assert.is_nil(fields.Notes:find("Fishing Ledger", 1, true))
+	end)
+
 	it("is the addon's only TOC: no per-flavour TOC files (CORE-R2)", function()
 		assert.are.same({ "Pagle_Ledger.toc" }, filesIn({ "toc" }))
 	end)

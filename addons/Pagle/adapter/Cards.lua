@@ -14,15 +14,9 @@ local L = ns.L
 
 -- The card frame's global name: UISpecialFrames takes names, and Esc hides the frames it lists.
 local FRAME_NAME = "PagleCard"
--- Timber's card colours (ANN-R80): the toast's planks and brass, gold headings, a darker well for the numbers.
-local TIMBER = {
-	wood = { 0.11, 0.09, 0.07, 0.96 },
-	edge = { 0.54, 0.48, 0.37, 1 },
-	band = { 0.18, 0.15, 0.12, 1 },
-	well = { 0, 0, 0, 0.42 },
-	gold = { 1, 0.82, 0 },
-	dim = { 0.66, 0.62, 0.55 },
-}
+-- Timber (ANN-R80), the toast's style: adapter/Timber.lua.
+local TIMBER = ns.TIMBER
+local solid, framed, text, textureOf = ns.SolidTexture, ns.Framed, ns.Text, ns.TextureOf
 local WIDTH = 520
 -- The numbers grid (ANN-R53): Casts, Catches, got away, time fished.
 local NUMBERS = { "casts", "catches", "gotAway", "seconds" }
@@ -30,8 +24,6 @@ local NUMBER_LABELS = { L.CARD_CASTS, L.CARD_CATCHES, L.CARD_GOT_AWAY, L.CARD_TI
 local ROW_HEIGHT = 22
 -- Rows shown before the list scrolls with the mouse wheel.
 local ROWS_SHOWN = 14
--- Trade_Fishing, for a moment with no icon.
-local DEFAULT_ICON = 136245
 
 ---@class PagleCardRowView: Frame
 ---@field kind "heading"|"line"|"moment"
@@ -56,41 +48,6 @@ local DEFAULT_ICON = 136245
 --- The card frame, made the first time a card shows.
 ---@type PagleCardFrame?
 ns.cardFrame = nil
-
--- A solid texture on `frame`, filling it.
----@param frame Frame
----@param color number[]
----@param layer DrawLayer?
----@return Texture
-local function solid(frame, color, layer)
-	local texture = frame:CreateTexture(nil, layer or "BACKGROUND")
-	texture:SetColorTexture(color[1], color[2], color[3], color[4])
-	texture:SetAllPoints()
-	return texture
-end
-
----@param frame Frame
----@param template string
----@param color number[]?
----@return FontString
-local function text(frame, template, color)
-	local fontString = frame:CreateFontString(nil, "OVERLAY", template)
-	if color then
-		fontString:SetTextColor(color[1], color[2], color[3])
-	end
-	return fontString
-end
-
--- A moment's icon as a texture (announcements.md › Contracts), as the Announcement frames show it.
----@param icon integer|string|nil
----@return integer|string
-local function textureOf(icon)
-	if type(icon) == "number" then
-		local _, _, _, _, fileID = C_Item.GetItemInfoInstant(icon)
-		return fileID or icon
-	end
-	return icon or DEFAULT_ICON
-end
 
 -- The player closed the card on screen, with the button or Esc: logic/Cards.lua removes it and shows the next.
 ---@param frame PagleCardFrame
@@ -159,19 +116,12 @@ local function build()
 	frame:SetWidth(WIDTH)
 	frame:SetFrameStrata("MEDIUM")
 	frame:EnableMouse(true)
-	solid(frame, TIMBER.wood)
-	for _, side in ipairs({ { "TOPLEFT", "TOPRIGHT" }, { "BOTTOMLEFT", "BOTTOMRIGHT" } }) do
-		local line = frame:CreateTexture(nil, "BORDER")
-		line:SetColorTexture(TIMBER.edge[1], TIMBER.edge[2], TIMBER.edge[3], TIMBER.edge[4])
-		line:SetPoint(side[1])
-		line:SetPoint(side[2])
-		line:SetHeight(2)
-	end
+	framed(frame, TIMBER.wood, TIMBER.edge, 2, { "top", "bottom" })
 	local band = CreateFrame("Frame", nil, frame)
 	band:SetPoint("TOPLEFT", 2, -2)
 	band:SetPoint("TOPRIGHT", -2, -2)
 	band:SetHeight(28)
-	solid(band, TIMBER.band, "ARTWORK")
+	solid(band, TIMBER.titleBand, "ARTWORK")
 	frame.title = text(band, "GameFontNormalLarge", TIMBER.gold)
 	frame.title:SetPoint("CENTER")
 
@@ -257,10 +207,6 @@ local function show(card)
 	frame.scroll:SetHeight(math.max(1, listHeight))
 	frame:SetHeight(40 + (numbers and 54 or 0) + listHeight + 56)
 	frame:Show()
-	-- A Session summary showing ends the compartment's waiting count (ANN-R42).
-	if numbers then
-		ns.summary:SummaryShown()
-	end
 end
 
 -- logic/Cards.lua's hide, for the combat hold (ANN-R35): off screen without closing it, so it shows again after.
@@ -273,39 +219,16 @@ local function hide(card)
 	end
 end
 
---- Core's cards (ANN-R21, ANN-R54, ANN-R61): they wait for the projections' idle hook from load, then show whenever
---- the toast and big lanes are empty and not held through combat (ANN-R55).
----@type PagleCards
-ns.cards = ns.NewCards({
-	global = function()
-		return ns.db.global
-	end,
-	mode = function()
-		return ns.projections:Mode()
-	end,
-	whenIdle = function(fn)
-		ns.projections:WhenIdle(fn)
-	end,
-	nextFrame = function(step)
-		C_Timer.After(0, step)
-	end,
+--- Core's cards, as ns.cards, with M:RaiseWriteUp on every Module handle (logic/Wiring.lua; ANN-R21, ANN-R54,
+--- ANN-R61): they wait for the projections' idle hook from load, then show in the card frame whenever the toast and
+--- big lanes are empty and not held through combat (ANN-R55).
+ns.WireCards(ns.host, {
+	show = show,
+	hide = hide,
 	lanesEmpty = function()
 		return ns.lanes:IsEmpty()
 	end,
 	held = function()
 		return ns.lanes:IsHeld()
 	end,
-	cozy = function()
-		return ns.db.profile.announcements.cozy
-	end,
-	show = show,
-	hide = hide,
 })
-ns.cards:Start()
-
----@class PagleModuleHandle
-local ModuleHandle = ns.ModuleHandle
-
---- Raises a Write-up section from a projection's done (ANN-R60): see ns.RaiseWriteUpMethod. Raises an error outside
---- a done, or for a section without a heading or with lines that aren't strings.
-ModuleHandle.RaiseWriteUp = ns.RaiseWriteUpMethod(ns.Modules, ns.cards)

@@ -50,10 +50,13 @@ ns.MOMENT_STAMPS = 4
 --- A moment's `order` when it gives none (ANN-R2).
 ns.MOMENT_ORDER = 100
 
-local RUNG_HEIGHT = {}
+--- Each rung's height on the ladder (ANN-R1): 1 for a Nod up to 6 for a splash.
+---@type table<PagleRung, integer>
+ns.RUNG_HEIGHT = {}
 for height, rung in ipairs(ns.MOMENT_RUNGS) do
-	RUNG_HEIGHT[rung] = height
+	ns.RUNG_HEIGHT[rung] = height
 end
+local RUNG_HEIGHT = ns.RUNG_HEIGHT
 
 --- Why a Module's moment can't be raised, or nil if it can (ANN-R1, announcements.md › Contracts).
 ---@param moment any
@@ -325,10 +328,7 @@ end
 ---@return fun(self: PagleModuleHandle, moment: PagleMoment)
 function ns.RaiseMomentMethod(registry, moments)
 	return function(self, moment)
-		local module = registry:ModuleOf(self)
-		if not module then
-			error("RaiseMoment is a Module handle method: call M:RaiseMoment(moment)", 2)
-		end
+		local module = registry:ModuleCalling(self, "RaiseMoment", "moment")
 		local problem = ns.MomentProblem(moment)
 		if problem then
 			error(problem, 2)

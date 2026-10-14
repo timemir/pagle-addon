@@ -33,7 +33,7 @@ ns.MODULE_ROSTER = { "Ledger", "Hunts", "Stats", "TackleBoard", "QoL" }
 
 --- The handle `Pagle.RegisterModule` returns: the only way to reach the calls that act for one Module (CORE-R12).
 --- Its methods live on this table; each Core ticket adds its own (`M:AddSetting`, `M:AppendRecord`, …) and finds
---- the Module with `registry:ModuleOf(self)`.
+--- the Module with `registry:ModuleCalling(self, method, args)`.
 ---@class PagleModuleHandle
 ns.ModuleHandle = {}
 ns.ModuleHandle.__index = ns.ModuleHandle
@@ -153,6 +153,34 @@ function Registry:ModuleOf(handle)
 	return self.byHandle[handle]
 end
 
+--- The Module a handle method was called on (CORE-R12): `handle`'s Module, or an error at the Module's call, for
+--- anything that isn't a handle this registry gave out, saying how to call `method` (`M:<method>(<args>)`). For a
+--- handle method to call first thing, so the error is the caller's.
+---@param handle any the method's self
+---@param method string "RaiseMoment"
+---@param args string "moment"
+---@return PagleModule
+function Registry:ModuleCalling(handle, method, args)
+	local module = self.byHandle[handle]
+	if not module then
+		error(("%s is a Module handle method: call M:%s(%s)"):format(method, method, args), 3)
+	end
+	return module
+end
+
+--- Whether a Module sorts before another, wherever Modules are listed: by def.order, ties by def.name.
+---@param orderA integer
+---@param nameA string
+---@param orderB integer
+---@param nameB string
+---@return boolean
+function ns.ModuleSortsBefore(orderA, nameA, orderB, nameB)
+	if orderA ~= orderB then
+		return orderA < orderB
+	end
+	return nameA < nameB
+end
+
 --- The registered Modules, by `def.order`, ties by name.
 ---@return PagleModule[]
 function Registry:Modules()
@@ -161,10 +189,7 @@ function Registry:Modules()
 		list[#list + 1] = module
 	end
 	table.sort(list, function(a, b)
-		if a.def.order ~= b.def.order then
-			return a.def.order < b.def.order
-		end
-		return a.def.name < b.def.name
+		return ns.ModuleSortsBefore(a.def.order, a.def.name, b.def.order, b.def.name)
 	end)
 	return list
 end

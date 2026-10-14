@@ -218,6 +218,7 @@ local helperGlobals = {
 	"SERVER_TIME",
 	"addonFiles",
 	"newFakePagle",
+	"watchErrors",
 	-- spec/support/helpers.lua
 	"foreverWith",
 	"setCombat",
@@ -225,6 +226,19 @@ local helperGlobals = {
 	"savedLog",
 	"loadCollectingErrors",
 	"breakUpLargeNumbers",
+	"OILY_BLACKMOUTH",
+	"FISHING",
+	"BUILD_ENTRY",
+	"castEntry",
+	"history",
+	"loadCore",
+	"enterWorld",
+	"catchOne",
+	"catchAndFlush",
+	"withoutComments",
+	"forbiddenIn",
+	"shippedFiles",
+	"readFile",
 }
 files["spec/**"] = { std = "lua51+busted", read_globals = helperGlobals }
 files["spec/support/*.lua"] = { globals = helperGlobals }

@@ -15,6 +15,9 @@
 --- to it.
 ---@field loot FakeLoot The loot window, as the loot API reads it.
 ---@field sounds string[] Each PlaySoundFile call, in order, as "<path> <channel>".
+---@field errors string[] Each error the default geterrorhandler() got, in order. A spec that gets one must read
+--- this list (assert it), or it fails at its end (spec/support/errors.lua).
+---@field addError fun(err: any) The default geterrorhandler(): adds the error to `errors`.
 
 --- The loot window the loot API reads: whether it's fishing loot (`IsFishingLoot()`) and its slots, in order.
 --- Specs set both before firing LOOT_READY.
@@ -44,6 +47,7 @@ local function newClient()
 		loot = { fishing = false, slots = {} },
 		sounds = {},
 	}
+	client.addError = watchErrors(client, "errors")
 
 	function client.fire(event, ...)
 		local unit = ...
@@ -95,11 +99,11 @@ local function clientStubs(client)
 		IsLoggedIn = function()
 			return false
 		end,
-		-- The client's default handler reports an error and carries on; here it fails the spec instead.
+		-- The client's default handler reports an error and carries on; here it keeps it in client.errors, and a spec
+		-- that never reads that list fails at its end (spec/support/errors.lua). Raising here instead would lose an
+		-- error AceAddon's xpcall hands it, as "error in error handling".
 		geterrorhandler = function()
-			return function(err)
-				error(err, 0)
-			end
+			return client.addError
 		end,
 		-- As the client's: an error goes to whatever geterrorhandler() returns at the time, and the caller carries on.
 		securecallfunction = newSecureCall(function()
