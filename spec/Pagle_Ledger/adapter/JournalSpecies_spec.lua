@@ -22,34 +22,19 @@ local DAY_MINUTE, NIGHT_MINUTE = 494, 1300
 -- removed, on no list. Skill bases: Elwynn 25, Westfall 55, Duskwood 150; Darkshore none.
 local function fixture()
 	local night = { time = { { 1200, 360 } } }
-	local function fish(id, fields)
-		local record = { category = "fish", species = id, legend = false, noise = false, removed = false, pool = false }
-		for key, value in pairs(fields or {}) do
-			record[key] = value
-		end
-		return record
-	end
 	local function area(skillBase, catches)
-		return {
-			parent = 0,
-			continent = 0,
-			hasData = true,
-			skillBase = skillBase,
-			skillBaseConfirmed = false,
-			catches = catches,
-		}
+		return areaRecord(0, { skillBase = skillBase, catches = catches })
 	end
 	local function entry(itemID, window)
 		return { itemID = itemID, confirmed = false, window = window, gate = window and night, gateConfirmed = false }
 	end
-	return {
-		fingerprint = "0123456789abcdef",
+	return catalogueWith({
 		items = {
-			[MACKEREL] = fish(MACKEREL),
-			[NIGHTFISH] = fish(NIGHTFISH, { pool = true }),
-			[SECRET] = fish(SECRET, { pool = true }),
-			[STRAY] = fish(STRAY),
-			[GONE] = fish(GONE, { removed = true }),
+			[MACKEREL] = fishRecord(MACKEREL),
+			[NIGHTFISH] = fishRecord(NIGHTFISH, { pool = true }),
+			[SECRET] = fishRecord(SECRET, { pool = true }),
+			[STRAY] = fishRecord(STRAY),
+			[GONE] = fishRecord(GONE, { removed = true }),
 		},
 		areas = {
 			[ELWYNN] = area(25, { entry(MACKEREL), entry(SECRET, "night") }),
@@ -57,26 +42,14 @@ local function fixture()
 			[DUSKWOOD] = area(150, { entry(MACKEREL), entry(NIGHTFISH, "night"), entry(SECRET, "night") }),
 			[DARKSHORE] = area(nil, { entry(STRAY) }),
 		},
-		aliases = {},
-		pools = {},
 		windows = { night = { spec = night, confirmed = false } },
-		events = {},
-		fishingSpells = {},
-		auras = {},
-	}
+	})
 end
 
 -- A caught Cast of one `itemID` by character 1 in `zone` at realm `minute`. The log works its realm date out from the
 -- time and minute (LOG-R49): 3 Oct 2026 by day, 2 Oct by night.
 local function cast(time, itemID, zone, minute)
-	return {
-		kind = "cast",
-		char = 1,
-		time = time,
-		outcome = "caught",
-		conditions = { minute = minute, zone = zone, subzone = 0, events = {}, auras = {} },
-		items = { { itemID = itemID, quantity = 1 } },
-	}
+	return castRecord({ time = time, zone = zone, minute = minute, items = { itemID } })
 end
 
 -- The fixture's log: MACKEREL first in Westfall on 3 March, then in Elwynn; NIGHTFISH at night in Elwynn; STRAY in
@@ -94,30 +67,23 @@ end
 -- A Ledger on a fake over the fixture and its log, logged in with the projection built, every name loaded, and lore
 -- for MACKEREL and SECRET only.
 local function loggedIn()
-	local fake = newFakePagle()
-	fake.setCatalogue(fixture())
-	fake.catchLog.data.characters[1] = { guid = PLAYER_GUID }
-	for _, record in ipairs(log()) do
-		fake.catchLog:Append(record)
-	end
-	local loaded = fake.load("Pagle_Ledger")
-	for id, name in pairs(NAMES) do
-		loaded.client.itemNames[id] = name
-	end
-	for zone, name in pairs(ZONES) do
-		loaded.client.areaNames[zone] = name
-	end
-	local L = loaded.ns.L
-	for key in pairs(L) do
-		if type(key) == "string" and key:find("^species%.") then
-			L[key] = nil
-		end
-	end
-	L["species.6303.blurb"] = "Slippery enough to earn the name."
-	L["species.6522.riddle"] = "Strange schools out on the dry plains."
-	fake.login()
-	fake.enterWorld()
-	return fake, loaded
+	return openJournal({
+		catalogue = fixture(),
+		log = log(),
+		itemNames = NAMES,
+		areaNames = ZONES,
+		before = function(loaded)
+			local L = loaded.ns.L
+			for key in pairs(L) do
+				if type(key) == "string" and key:find("^species%.") then
+					L[key] = nil
+				end
+			end
+			L["species.6303.blurb"] = "Slippery enough to earn the name."
+			L["species.6522.riddle"] = "Strange schools out on the dry plains."
+		end,
+		id = false,
+	})
 end
 
 -- Opens the fish spread on Species `id` (with the plain hint open when `hint`).
@@ -425,20 +391,6 @@ describe("never named until caught (LED-R124)", function()
 		{ species = SECRET, zone = ELWYNN, tab = 0, hint = true },
 	}
 
-	-- Every text the open book shows, depth first: crumbs, both pages, the back link and the search box's dropdown.
-	local function drawnTexts(widget, texts)
-		texts = texts or {}
-		for _, child in ipairs(widget.children) do
-			if child.shown then
-				if type(child.text) == "string" and child.text ~= "" then
-					texts[#texts + 1] = child.text
-				end
-				drawnTexts(child, texts)
-			end
-		end
-		return texts
-	end
-
 	-- The first text the book shows with `name` in it, as "{spread}: {text}", on any registered spread drawn with each
 	-- of ARGS and Species `species` chosen; nil if none.
 	local function anywhere(loaded, name, species)
@@ -457,7 +409,7 @@ describe("never named until caught (LED-R124)", function()
 				end
 				copy.species = species
 				journal:Open(id, copy)
-				for _, text in ipairs(drawnTexts(journal.frame)) do
+				for _, text in ipairs(shownTexts(journal.frame)) do
 					if text:lower():find(name:lower(), 1, true) then
 						return id .. ": " .. text
 					end

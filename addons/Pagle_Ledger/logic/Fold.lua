@@ -41,13 +41,9 @@ local ns = select(2, ...)
 ---@field date? LedgerDate                    -- nil only for a Cast stored without its realm minute
 ---@field zones? { [integer]: integer }       -- Uncharted only: Catches per zone (never 0)
 
---- A Species' Catches (ledger.md › Data, LedgerSpecies) and its first Catch, as in LedgerFirst (LED-R140).
----@class LedgerSpecies
----@field n integer                           -- Catches of the Species
----@field time integer
----@field char integer
----@field zone integer
----@field date? LedgerDate
+--- A Species' Catches (ledger.md › Data, LedgerSpecies) and its first Catch, as in LedgerFirst (LED-R140). Its `zones`
+--- is a set, where an Uncharted item's counts.
+---@class LedgerSpecies: LedgerFirst
 ---@field zones { [integer]: true }           -- zones caught in (never 0)
 ---@field windowsMet? { [string]: true }     -- element windows met (LED-R45): made at its first Catch, logic/Stars.lua
 
@@ -94,7 +90,8 @@ local ns = select(2, ...)
 ns.LEDGER_RULES_VERSION = 2
 
 -- XP (LED-R20, Tunables), M2's rows and M3's curio items and trophy weights.
-local CATCH_XP = 10
+--- Catch XP, before Fresh Water (LED-R20); one Fresh Water doubles it (LED-R22), as the ink XP bar shows (LED-R145).
+ns.CATCH_XP = 10
 local NEW_SPECIES_XP = 500
 local SPECIES_IN_ZONE_XP = 100
 local FIRST_IN_ZONE_XP = 200
@@ -289,7 +286,7 @@ function ns.NewLedgerFold(lookups)
 			local item = itemID ~= 0 and getItem(itemID) or nil
 			-- The base, for every class (LED-R5): lifetime Catches, Catch XP with Fresh Water, the zone fished.
 			state.catches = state.catches + 1
-			state.xp = state.xp + CATCH_XP * spendFreshWater(state, record.time)
+			state.xp = state.xp + ns.CATCH_XP * spendFreshWater(state, record.time)
 			state.firstDate = state.firstDate or copyDate(record.conditions.date)
 			local zoneState
 			if zone ~= 0 then
@@ -312,6 +309,7 @@ function ns.NewLedgerFold(lookups)
 				local species = state.species[id]
 				local new = not species
 				if not species then
+					-- A LedgerFirst until its zones set is added on the next line.
 					species = firstCatch(record) --[[@as LedgerSpecies]]
 					species.zones = {}
 					state.species[id] = species

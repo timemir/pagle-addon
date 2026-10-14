@@ -22,13 +22,17 @@ function ns.Ledger.OnInitialize()
 	ns.db = LibStub("AceDB-3.0"):New("PagleLedgerDB", ns.DB_DEFAULTS, true)
 	ns.MigrateDB(ns.db.global)
 
-	--- The world index (LED-R10): built here, where the catalogue is ready (CORE-R10), held in memory, never stored.
-	ns.world = ns.NewWorld({
+	-- Core's lookups the Ledger reads (LOG-R55, LOG-R49): the world index's, and the fold's with the world added.
+	local lookups = {
 		GetItem = Pagle.GetItem,
 		GetZones = Pagle.GetZones,
 		GetArea = Pagle.GetArea,
 		GetZoneCatches = Pagle.GetZoneCatches,
-	})
+		MatchesConditions = Pagle.MatchesConditions,
+	}
+	--- The world index (LED-R10): built here, where the catalogue is ready (CORE-R10), held in memory, never stored.
+	ns.world = ns.NewWorld(lookups)
+	lookups.world = ns.world
 
 	---@diagnostic disable-next-line: undefined-field -- Core defines it in M4, with Simulated Size (LOG-R68); nil till then
 	local sizeRulesVersion = Pagle.SIZE_RULES_VERSION --[[@as integer?]]
@@ -36,7 +40,6 @@ function ns.Ledger.OnInitialize()
 	--- live (LOG-R71–R74). While `:IsUpdating()`, the Ledger shows nothing (LOG-R74). The Fish Journal redraws after
 	--- its live entries and its done (LED-R122, LED-R123).
 	--- The fold reads the world index and Core's MatchesConditions as lookups (LED-R3, LED-R45).
-	local lookups = { GetItem = Pagle.GetItem, MatchesConditions = Pagle.MatchesConditions, world = ns.world }
 	ns.projection = ns.Module:NewProjection(
 		ns.WithJournalRedraws(ns.ProjectionDef(ns.db.global, lookups, ns.Outlets(ns.Module), sizeRulesVersion))
 	)

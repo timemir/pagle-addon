@@ -91,10 +91,10 @@ end
 --- part is M4's.
 ---@param state LedgerState
 ---@param celebrated LedgerCelebrated
----@param lookups LedgerLookups the world index and Core's GetItem, for completion
+---@param lookups LedgerLookups the world index, for completion
 ---@return string
 function ns.SummaryLine(state, celebrated, lookups)
-	local completion = ns.LedgerCompletion(lookups.world, state, lookups.GetItem)
+	local completion = ns.LedgerCompletion(lookups.world, state)
 	return ns.L.SUMMARY_LINE:format(ns.ShownLevel(state, celebrated), completion.percent)
 end
 

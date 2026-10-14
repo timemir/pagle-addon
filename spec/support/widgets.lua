@@ -28,7 +28,6 @@ local LAYOUT_METHODS = {
 	"SetWordWrap",
 	"SetTextColor",
 	"SetFontObject",
-	"SetAlpha",
 	"SetFrameStrata",
 	"EnableMouse",
 	"SetTexCoord",
@@ -78,6 +77,10 @@ function widgets.newWidget(kind, parent)
 	end
 	function widget:SetDesaturated(desaturated)
 		self.desaturated = desaturated
+	end
+	-- Its opacity, 0 to 1, as SetAlpha last set it; nil until then (the client's 1).
+	function widget:SetAlpha(alpha)
+		self.alpha = alpha
 	end
 	-- A scroll frame's offset; nothing overflows here, so its range is 0.
 	function widget:SetVerticalScroll(offset)

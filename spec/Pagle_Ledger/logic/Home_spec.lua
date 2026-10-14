@@ -181,3 +181,39 @@ describe("Home's Notes to self (LED-R133)", function()
 		}, notes(world, state, celebrated))
 	end)
 end)
+
+describe("a zone tile (LED-R131)", function()
+	local ns = loadAddon("Pagle_Ledger", FOREVER_GLOBALS).ns
+
+	it("reads any skill for a charted, unfished zone whose skill base is 0 or below (LED-R131, DATA-R30)", function()
+		local charted = { list = {}, species = {}, families = {}, junk = false, treasure = false }
+		local context = {
+			updating = false,
+			now = SERVER_TIME,
+			formatNumber = breakUpLargeNumbers,
+			world = {
+				zones = { [1] = charted, [2] = charted, [3] = charted },
+				charted = { 1, 2, 3 },
+				legends = {},
+				species = {},
+				items = {},
+				families = {},
+				skillBase = { [1] = -70, [2] = 0, [3] = 1 },
+				getItem = function() end,
+			},
+			state = { zones = {} },
+			text = {
+				Zone = function(_, zone)
+					return "Zone " .. zone
+				end,
+			},
+		}
+
+		local lines = {}
+		for zone = 1, 3 do
+			lines[zone] = ns.JournalZoneTile(zone, context).line
+		end
+
+		assert.are.same({ "unfished · any skill", "unfished · any skill", "unfished · skill ~1" }, lines)
+	end)
+end)

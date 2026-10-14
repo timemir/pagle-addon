@@ -12,24 +12,10 @@ local SKULL, BOTTLE, WAGONWHEEL = 6297, 6307, 6455
 local CRATE, CHEST = 6351, 6353
 -- Items the catalogue doesn't know: Uncharted (LED-R64).
 local ODD, STRANGE = 777001, 777002
-local T0 = 1791731000 -- Sunday 11 October 2026, 15:03 UTC; realm minute 494 makes it 11 Oct on the realm too
+local T0 = SERVER_TIME - 700 -- Sunday 11 October 2026, 15:03 UTC; realm minute 494 makes it 11 Oct on the realm too
 
 -- A catalogue in the shape of ns.catalogue (DATA-R76): Elwynn and Duskwood charted, Westfall without data.
 local function catalogue()
-	local function item(category, fields)
-		local record = { category = category, legend = false, noise = false, removed = false, pool = false }
-		for key, value in pairs(fields or {}) do
-			record[key] = value
-		end
-		return record
-	end
-	local function area(fields)
-		local record = { parent = 0, continent = 0, hasData = true, skillBaseConfirmed = false, catches = {} }
-		for key, value in pairs(fields) do
-			record[key] = value
-		end
-		return record
-	end
 	local function listed(...)
 		local catches = {}
 		for i, itemID in ipairs({ ... }) do
@@ -37,45 +23,31 @@ local function catalogue()
 		end
 		return catches
 	end
-	return {
-		fingerprint = "0123456789abcdef",
+	return catalogueWith({
 		items = {
-			[CAT17] = item("trophy", { family = 2, weight = 17 }),
-			[CAT19] = item("trophy", { family = 2, weight = 19 }),
-			[CAT22] = item("trophy", { family = 2, weight = 22 }),
-			[CAT26] = item("trophy", { family = 2, weight = 26 }),
-			[CAT30] = item("trophy", { family = 2, weight = 30, removed = true }),
-			[SNAPPER10] = item("trophy", { family = 1, weight = 10 }),
-			[SKULL] = item("junk"),
-			[BOTTLE] = item("junk"),
-			[WAGONWHEEL] = item("junk", { removed = true }),
-			[CRATE] = item("container"),
-			[CHEST] = item("treasure"),
+			[CAT17] = itemRecord("trophy", { family = 2, weight = 17 }),
+			[CAT19] = itemRecord("trophy", { family = 2, weight = 19 }),
+			[CAT22] = itemRecord("trophy", { family = 2, weight = 22 }),
+			[CAT26] = itemRecord("trophy", { family = 2, weight = 26 }),
+			[CAT30] = itemRecord("trophy", { family = 2, weight = 30, removed = true }),
+			[SNAPPER10] = itemRecord("trophy", { family = 1, weight = 10 }),
+			[SKULL] = itemRecord("junk"),
+			[BOTTLE] = itemRecord("junk"),
+			[WAGONWHEEL] = itemRecord("junk", { removed = true }),
+			[CRATE] = itemRecord("container"),
+			[CHEST] = itemRecord("treasure"),
 		},
 		areas = {
-			[ELWYNN] = area({ skillBase = 25, catches = listed(CAT26, CAT17, CAT22, CAT19, SKULL, CRATE) }),
-			[DUSKWOOD] = area({ skillBase = 150, catches = listed(SNAPPER10, BOTTLE, CHEST) }),
-			[WESTFALL] = area({ hasData = false }),
+			[ELWYNN] = areaRecord(0, { skillBase = 25, catches = listed(CAT26, CAT17, CAT22, CAT19, SKULL, CRATE) }),
+			[DUSKWOOD] = areaRecord(0, { skillBase = 150, catches = listed(SNAPPER10, BOTTLE, CHEST) }),
+			[WESTFALL] = areaRecord(0, { hasData = false }),
 		},
-		aliases = {},
-		pools = {},
-		windows = {},
-		events = {},
-		fishingSpells = {},
-		auras = {},
-	}
+	})
 end
 
 -- A caught Cast of `itemID` in `zone` at `time`.
 local function cast(time, zone, itemID)
-	return {
-		kind = "cast",
-		char = 1,
-		time = time,
-		outcome = "caught",
-		conditions = { minute = 494, zone = zone, subzone = 0, events = {}, auras = {} },
-		items = { { itemID = itemID, quantity = 1 } },
-	}
+	return castRecord({ time = time, zone = zone, items = { itemID } })
 end
 
 -- The fixture log: two Catfish weights (17 and 22 lb) landed, the skull, the removed wagonwheel and the crate.
@@ -105,37 +77,14 @@ local ZONES = { [ELWYNN] = "Elwynn Forest", [DUSKWOOD] = "Duskwood", [WESTFALL] 
 ---@return FakePagle fake
 ---@return LoadedAddon loaded
 local function spread(id, args, log)
-	local fake = newFakePagle()
-	fake.setCatalogue(catalogue())
-	fake.catchLog.data.characters = {
-		{ guid = PLAYER_GUID, name = "Angler", classID = 1, raceID = 1, faction = "Alliance", realmID = 4618 },
-	}
-	for _, record in ipairs(log or FIXTURE) do
-		fake.catchLog:Append(record)
-	end
-	fake.globals.BreakUpLargeNumbers = breakUpLargeNumbers
-	local loaded = fake.load("Pagle_Ledger")
-	for itemID, name in pairs(NAMES) do
-		loaded.client.itemNames[itemID] = name
-	end
-	for areaID, name in pairs(ZONES) do
-		loaded.client.areaNames[areaID] = name
-	end
-	fake.login()
-	fake.enterWorld()
-	assert.is_true(loaded.ns.journal:Open(id, args))
-	return fake, loaded
-end
-
--- The texts of a page's blocks, in order (a block without text as its kind in brackets).
----@param blocks LedgerBlock[]
----@return string[]
-local function texts(blocks)
-	local list = {}
-	for i, block in ipairs(blocks) do
-		list[i] = block.text or ("[" .. block.kind .. "]")
-	end
-	return list
+	return openJournal({
+		catalogue = catalogue(),
+		log = log or FIXTURE,
+		itemNames = NAMES,
+		areaNames = ZONES,
+		id = id,
+		args = args,
+	})
 end
 
 -- Curios' right page from its "Loose pages: Uncharted" kicker on.
@@ -150,23 +99,6 @@ local function loosePages(right)
 	return {}
 end
 
--- The words a drawn widget shows, in the order its parts were made.
----@param widget table
----@param list string[]?
----@return string[]
-local function textsOf(widget, list)
-	list = list or {}
-	for _, child in ipairs(widget.children) do
-		if child.shown then
-			if child.text ~= nil and child.text ~= "" then
-				list[#list + 1] = child.text
-			end
-			textsOf(child, list)
-		end
-	end
-	return list
-end
-
 describe("the Journal's Trophy Room", function()
 	it(
 		"lists each family by its lore name with its shown stars and its weights landed, x / N (LED-R143, LED-R47, LED-R48)",
@@ -179,7 +111,7 @@ describe("the Journal's Trophy Room", function()
 				"2 of 5 weights. Real weights, from the game's own trophy fish.",
 				"Mud Snapper ☆☆☆",
 				"Catfish ★★☆",
-			}, texts(left))
+			}, blockTexts(left))
 			assert.are.same({ "0 / 1", "2 / 4" }, { left[3].value, left[4].value })
 			assert.are.same({ id = "trophy", args = { family = 2 } }, left[4].place)
 		end
@@ -198,7 +130,7 @@ describe("the Journal's Trophy Room", function()
 				"pounds, as the game weighs them",
 				"Landed 2 of 4. Heaviest so far: 22 lb.",
 				"Found in Elwynn Forest.",
-			}, texts(right))
+			}, blockTexts(right))
 			assert.are.same({
 				{ text = "Any weight", inked = true },
 				{ text = "Half the weights", inked = true },
@@ -226,7 +158,7 @@ describe("the Journal's Trophy Room", function()
 			"pounds, as the game weighs them",
 			"Not one of this family yet.",
 			"Found in Duskwood.",
-		}, texts(right))
+		}, blockTexts(right))
 		assert.are.same({ { text = "10", at = 0.5, inked = false } }, right[3].ticks)
 	end)
 
@@ -268,7 +200,7 @@ describe("the Journal's Trophy Room", function()
 
 		local board = loaded.ns.journal.frame.right.drawn.board[1]
 
-		assert.are.same({ "✓", "17", "19", "✓", "22", "26" }, textsOf(board))
+		assert.are.same({ "✓", "17", "19", "✓", "22", "26" }, shownTexts(board))
 	end)
 end)
 
@@ -335,7 +267,7 @@ describe("the Journal's Curios", function()
 
 		assert.are.same(
 			{ "An empty plinth", "The plinth is dusted and ready. The exhibit is late." },
-			textsOf(plinths[2])
+			shownTexts(plinths[2])
 		)
 		assert.are.same({ 0, 0, 0 }, plinths[2].texture.vertexColor)
 		assert.are_not.same({ 0, 0, 0 }, plinths[1].texture.vertexColor)
@@ -356,7 +288,7 @@ describe("the Journal's Curios", function()
 				"Loose pages: Uncharted",
 				"None. Every catch is in the Ledger.",
 				"Help chart the waters",
-			}, texts(right))
+			}, blockTexts(right))
 		end
 	)
 
@@ -364,7 +296,7 @@ describe("the Journal's Curios", function()
 		local _, loaded = spread("curios")
 
 		for _, side in ipairs({ "left", "right" }) do
-			for _, text in ipairs(textsOf(loaded.ns.journal.frame[side])) do
+			for _, text in ipairs(shownTexts(loaded.ns.journal.frame[side])) do
 				assert.is_nil(text:find("Message in a Bottle", 1, true))
 				assert.is_nil(text:find("Small Chest", 1, true))
 			end
@@ -388,7 +320,7 @@ describe("the Journal's Curios", function()
 				"Item 777002: 1× at unknown waters, first 11 Oct. Unknown to Pagle. Logged.",
 				"Item 777001: 3× at Duskwood, Elwynn Forest, first 11 Oct. Unknown to Pagle. Logged.",
 				"Help chart the waters",
-			}, texts(pages))
+			}, blockTexts(pages))
 			assert.is_true(pages[2].hand and pages[3].hand)
 		end
 	)
@@ -431,7 +363,7 @@ describe("the Journal's ways into the collections", function()
 	-- Clicks the drawn leader on Home's right page whose words begin with `label`.
 	local function clickContents(loaded, label)
 		for _, leader in ipairs(loaded.ns.journal.frame.right.drawn.leader) do
-			if textsOf(leader)[1] == label then
+			if shownTexts(leader)[1] == label then
 				leader:Click()
 				return
 			end

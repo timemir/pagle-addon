@@ -150,7 +150,7 @@ describe("the Write-up card", function()
 			close(second)
 			assert.are.same({}, second.env.PagleDB.global.writeUp)
 			assert.are.same({ "# Ledger", "New Species" }, shownCard(second).rows)
-			second.client.pressEscape() -- CloseSpecialWindows hides it, and its OnHide runs
+			second.client.pressEscape()
 			assert.is_nil(shownCard(second))
 			assert.are.same({}, second.env.PagleDB.global.cards)
 		end

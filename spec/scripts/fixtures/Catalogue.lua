@@ -1,8 +1,8 @@
 -- A catalogue in the shape of addons/Pagle/data/Catalogue.lua (ns.catalogue, DATA-R76), for read-wtf_spec.lua's
 -- --catalogue runs, so the Ledger's computed lines don't move with the generated data. Elwynn Forest (12) and
 -- Westfall (40) are charted; Duskwood (10) has no catch data. Item 999001 is in no catalogue: Uncharted.
--- Its item() and area() builders are its own, not spec/support/helpers.lua's: read-wtf.lua loads this file as the
--- client loads a data file, outside busted, where the spec helpers don't exist.
+-- scripts/read-wtf.lua loads this file outside busted, where spec/support/helpers.lua's itemRecord and areaRecord
+-- don't exist, so it builds its records itself.
 
 local ns = select(2, ...)
 

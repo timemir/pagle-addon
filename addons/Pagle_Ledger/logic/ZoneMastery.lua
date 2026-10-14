@@ -40,12 +40,12 @@ function ns.NoteZoneCatch(zoneState, class, itemID, item)
 		return
 	end
 	zoneState.items[itemID] = true
-	local category = item.category
-	if category == "trophy" then
+	local collection = ns.CollectionOf(item)
+	if collection == "trophy" then
 		if item.family then
 			zoneState.families[item.family] = true
 		end
-	elseif category == "junk" then
+	elseif collection == "junk" then
 		zoneState.junk = true
 	else
 		zoneState.treasure = true
