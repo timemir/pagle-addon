@@ -23,7 +23,7 @@ describe("the Fish Journal's router", function()
 		end,
 	}
 
-	-- The zone level above it: Home ❧ Waters ❧ {zone}.
+	-- The zone crumb above it: Home ❧ Waters ❧ {zone}.
 	---@type LedgerSpread
 	local zone = {
 		crumbs = function(args)
@@ -132,7 +132,7 @@ describe("the Fish Journal's router", function()
 		assert.are.same({ id = "deep", args = { zone = 12, fish = 6303 } }, router:Place())
 	end)
 
-	it("takes later registrations, a spread registered again replacing the one before", function()
+	it("takes later registrations, a spread registered again replacing the one before (LED-R125)", function()
 		local spreads = { home = home }
 		local router = ns.NewJournalRouter(spreads)
 

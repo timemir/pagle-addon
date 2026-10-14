@@ -83,7 +83,7 @@ local DEEP = {
 	end,
 }
 
-describe("the Fish Journal's frame", function()
+describe("the Fish Journal's frame (LED-R120, LED-R121)", function()
 	it("is PagleLedgerJournal, centred, not movable, closed until opened, and Esc closes it (LED-R120)", function()
 		local _, loaded = loggedIn()
 		local journal = loaded.ns.journal
@@ -154,7 +154,7 @@ describe("the Fish Journal's frame", function()
 	end)
 end)
 
-describe("the Fish Journal while the projection updates", function()
+describe("the Fish Journal while the projection updates (LED-R122)", function()
 	it("shows only LED-R122's line on both pages, with the crumbs and search hidden (LED-R122)", function()
 		local _, loaded = loggedIn(true)
 		local journal = loaded.ns.journal
@@ -210,7 +210,7 @@ describe("the Fish Journal while the projection updates", function()
 	)
 end)
 
-describe("the Fish Journal's live redraw", function()
+describe("the Fish Journal's live redraw (LED-R123)", function()
 	it("redraws the open spread on the frame after a live entry, keeping its selection (LED-R123)", function()
 		local fake, loaded = loggedIn()
 		local journal = loaded.ns.journal
@@ -228,7 +228,7 @@ describe("the Fish Journal's live redraw", function()
 		assert.are.same({ "Home", "Waters", "Zone", "Fish 6303" }, crumbLabels(loaded))
 	end)
 
-	it("doesn't draw a closed book for a live entry", function()
+	it("doesn't draw a closed book for a live entry (LED-R123)", function()
 		local fake, loaded = loggedIn()
 		local journal = loaded.ns.journal
 		local draws = 0
@@ -250,7 +250,7 @@ describe("the Fish Journal's live redraw", function()
 	end)
 end)
 
-describe("the Fish Journal's navigation", function()
+describe("the Fish Journal's navigation (LED-R125)", function()
 	it("shows three crumbs for a spread three deep, and back goes one crumb up (LED-R125)", function()
 		local _, loaded = loggedIn()
 		local journal = loaded.ns.journal
@@ -300,7 +300,7 @@ describe("the Fish Journal's navigation", function()
 	end)
 end)
 
-describe("the Fish Journal's widgets", function()
+describe("the Fish Journal's widgets (ledger.md › UI)", function()
 	-- Opens a spread whose left page is `blocks`.
 	local function drawn(blocks)
 		local _, loaded = loggedIn()
@@ -396,7 +396,7 @@ describe("the Fish Journal's widgets", function()
 		end
 	end)
 
-	it("opens a link's place when it is clicked", function()
+	it("opens a link's place when it is clicked (LED-R125)", function()
 		local loaded = drawn({ { kind = "link", text = "Home", place = { id = "home" } } })
 
 		loaded.ns.journal.frame.left.drawn.link[1]:Click()
