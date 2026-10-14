@@ -48,6 +48,12 @@ local function textsOf(widget, texts)
 	return texts
 end
 
+-- The texts on the board's two pages, left then right: the leather's anchors (the sets' crumbs, ribbons and
+-- nameplate, #195) left out.
+local function pageTexts(board)
+	return textsOf(board.frame.bodies.right, textsOf(board.frame.bodies.left))
+end
+
 -- A renderer that writes `label` and the place it was given on its page, once per page frame, and counts its draws.
 local function writer(label, draws)
 	return function(page, place)
@@ -146,7 +152,7 @@ describe("the Hunts board's pages (the page router)", function()
 
 		assert.are.same({ "timeline", "entry" }, { draws[1].label, draws[2].label })
 		assert.are_not.equal(draws[1].page, draws[2].page)
-		assert.are.same({ "timeline board - -", "entry board - -" }, textsOf(board.frame))
+		assert.are.same({ "timeline board - -", "entry board - -" }, pageTexts(board))
 	end)
 
 	it("leaves a page blank in a mode with no renderer for it", function()
@@ -158,9 +164,9 @@ describe("the Hunts board's pages (the page router)", function()
 
 		board:Open({ mode = "set", set = "fixture_dusk" })
 
-		assert.are.same({ "set page set fixture_dusk -" }, textsOf(board.frame))
+		assert.are.same({ "set page set fixture_dusk -" }, pageTexts(board))
 		board:Open({ mode = "retired", set = "fixture_dusk", hunt = "fixture_sunscale" })
-		assert.are.same({}, textsOf(board.frame))
+		assert.are.same({}, pageTexts(board))
 	end)
 
 	it("gives a renderer registered on two modes a frame for each", function()
@@ -174,7 +180,7 @@ describe("the Hunts board's pages (the page router)", function()
 		board:Open({ mode = "set", set = "fixture_wagers" })
 
 		assert.are_not.equal(draws[1].page, draws[2].page)
-		assert.are.same({ "timeline set fixture_wagers -" }, textsOf(board.frame))
+		assert.are.same({ "timeline set fixture_wagers -" }, textsOf(board.frame.bodies.left))
 	end)
 
 	it("opens on the Board mode each time, whatever mode it closed on (HNT-R67)", function()

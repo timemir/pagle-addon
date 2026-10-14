@@ -24,8 +24,10 @@ logic\Moments.lua
 logic\Groups.lua
 logic\Labels.lua
 logic\Board.lua
+logic\Sets.lua
 adapter\BoardWidgets.lua
 adapter\Board.lua
+adapter\Sets.lua
 adapter\Hunts.lua
 adapter\Groups.lua
 adapter\Names.lua
