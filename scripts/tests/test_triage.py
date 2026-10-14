@@ -7,11 +7,12 @@ download goes through a canned fetch. The trees are test_catch_lists.py's; every
 
 import hashlib
 import json
-from collections.abc import Mapping, Sequence
+from collections.abc import Sequence
 from pathlib import Path
 
 import pytest
 
+from cli_fixture import Canned
 from pagle_data.triage import CUT_NOTE, MARKER, Issue, main
 from pagle_data.triage import triage as build
 from report_fixture import issue_body
@@ -31,20 +32,6 @@ CATALOGUE = "addons/Pagle/data/Catalogue.lua"
 
 # The fixture reports' reporter key (REP-R36).
 CAROL = "cccccccc"
-
-
-class Canned:
-    """A fetch that answers from a table of URLs and records what was asked."""
-
-    def __init__(self, responses: Mapping[str, bytes]) -> None:
-        self.responses = responses
-        self.asked: list[str] = []
-
-    def __call__(self, url: str) -> bytes:
-        self.asked.append(url)
-        if url not in self.responses:
-            raise OSError(f"no canned response for {url}")
-        return self.responses[url]
 
 
 def tree(root: Path, pooltext: str = "", reports: dict[str, str] | None = None) -> Path:

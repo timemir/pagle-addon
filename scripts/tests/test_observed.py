@@ -8,10 +8,10 @@ import pytest
 
 from areas_fixture import write_areas
 from baseline_fixture import write_baseline
+from cli_fixture import run_split
 from item_fixture import write_item_layer
 from observed_fixture import i_row, report, write_observed
 from pagle_data.baseline import read_baseline
-from pagle_data.cli import main
 from pagle_data.errors import Problems
 from pagle_data.generate import read_layers
 from pagle_data.observed import Observations, observations, read_observed
@@ -156,12 +156,6 @@ def write_tree(root: Path, dev: str = "keys = []\n", reports: dict[str, str] | N
     return root
 
 
-def run(root: Path, capsys: pytest.CaptureFixture[str], *args: str) -> tuple[int, str, str]:
-    code = main(list(args), root)
-    out, err = capsys.readouterr()
-    return code, out, err
-
-
 def test_an_observed_row_in_an_aliased_area_counts_for_its_target(tmp_path: Path) -> None:
     # DATA-R34: every area ID in data/observed/ goes through the alias table before it is used, so a row from
     # 16521 lands on 33; so do K rows and dev facts' areas.
@@ -179,7 +173,7 @@ def test_an_area_missing_from_the_slice_is_a_warning_and_stays_out_of_the_catalo
     # DATA-R33: an area seen in data/observed/ but missing from areas.csv is kept in the sources, left out of the
     # catalogue and printed as a warning, "update the DB2 slice"; DATA-R64: printed, not failing.
     write_tree(tmp_path, reports={OTHER_KEY: report(i_row(6303, 99999), i_row(6358, 99999), i_row(6303, 40))})
-    code, out, err = run(tmp_path, capsys)
+    code, out, err = run_split(tmp_path, capsys)
     assert code == 0, err
     assert (
         "generate-data: warning: area 99999 seen in data/observed/ is not in data/db2/areas.csv; update the DB2"
@@ -201,13 +195,13 @@ def test_a_bad_data_observed_file_fails_the_generator_naming_file_and_key(
     # reporters (DATA-R46).
     bad_row = report(i_row(6303, 40, extra="zone = 1\n"))
     write_tree(tmp_path, dev="keys = []\nfact = 1\n", reports={OTHER_KEY: bad_row})
-    code, _, err = run(tmp_path, capsys)
+    code, _, err = run_split(tmp_path, capsys)
     assert code == 1
     assert "generate-data: data/observed/dev.toml: fact: expected an array of tables ([[fact]]), got an integer" in err
     assert f"generate-data: {REPORT_FILE}: i[0]: unknown key 'zone'" in err
     assert not (tmp_path / "addons").exists()
     (tmp_path / "data" / "observed" / "dev.toml").unlink()
-    code, _, err = run(tmp_path, capsys)
+    code, _, err = run_split(tmp_path, capsys)
     assert code == 1
     assert "generate-data: data/observed/dev.toml: missing" in err
 
@@ -217,7 +211,7 @@ def test_the_header_names_data_observed_as_the_fourth_layer(
 ) -> None:
     # DATA-R6: every generated file names the source layers; DATA-R8: data/observed/ is the fourth, after
     # data/baseline/, data/forever/ and data/db2/.
-    code, _, err = run(write_tree(tmp_path), capsys)
+    code, _, err = run_split(write_tree(tmp_path), capsys)
     assert code == 0, err
     text = (tmp_path / "addons/Pagle/data/Catalogue.lua").read_text(encoding="utf-8")
     assert text.startswith(

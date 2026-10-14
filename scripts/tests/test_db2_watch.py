@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 from baseline_fixture import write_baseline
+from cli_fixture import Canned, run
 from observed_fixture import write_observed
 from pagle_data.db2_watch import has_keyword, main
 
@@ -53,20 +54,6 @@ def builds_json(*versions: str, product: str = "wow_classic_beta") -> bytes:
     return json.dumps(answer).encode("utf-8")
 
 
-class Canned:
-    """A fetch that answers from a table of URLs and records what was asked."""
-
-    def __init__(self, responses: dict[str, bytes]) -> None:
-        self.responses = responses
-        self.asked: list[str] = []
-
-    def __call__(self, url: str) -> bytes:
-        self.asked.append(url)
-        if url not in self.responses:
-            raise OSError(f"no canned response for {url}")
-        return self.responses[url]
-
-
 def tree(root: Path) -> Path:
     write_baseline(root)
     write_observed(root)  # dev.toml with no facts; test_observed.py covers the layer
@@ -83,14 +70,6 @@ def snapshot(root: Path) -> dict[str, bytes]:
     return {str(path.relative_to(data)): path.read_bytes() for path in sorted(data.rglob("*")) if path.is_file()}
 
 
-def run(
-    root: Path, out: Path, capsys: pytest.CaptureFixture[str], fetch: Canned, *args: str
-) -> tuple[int, str]:
-    code = main(["--out", str(out), *args], root, fetch)
-    printed, err = capsys.readouterr()
-    return code, printed + err
-
-
 def test_a_newer_build_on_another_version_line_opens_nothing(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
@@ -99,7 +78,7 @@ def test_a_newer_build_on_another_version_line_opens_nothing(
     root, out = tree(tmp_path / "repo"), tmp_path / "out"
     fetch = Canned({BUILDS_URL: builds_json("5.5.0.70400", "1.60.1.70338", "1.60.1.70334", "5.5.0.62071")})
     before = snapshot(root)
-    code, output = run(root, out, capsys, fetch)
+    code, output = run(root, capsys, "--out", str(out), main=main, fetch=fetch)
     assert code == 0, output
     assert fetch.asked == [BUILDS_URL]
     assert not out.exists() or not any(out.iterdir())
@@ -239,7 +218,7 @@ def test_a_newer_forever_build_writes_the_issue_listing_its_changes(
     root, out = tree(tmp_path / "repo"), tmp_path / "out"
     fetch = Canned(newer())
     before = snapshot(root)
-    code, output = run(root, out, capsys, fetch)
+    code, output = run(root, capsys, "--out", str(out), main=main, fetch=fetch)
     assert code == 0, output
     assert (out / "title.txt").read_text(encoding="utf-8") == "Forever build 1.60.1.70400: DB2 changes\n"
     assert (out / "body.md").read_text(encoding="utf-8") == BODY
@@ -261,7 +240,7 @@ def test_an_existing_issue_with_the_title_means_nothing_new_is_opened(
     ]
     issues.write_text(json.dumps(listed), encoding="utf-8")
     fetch = Canned(newer())
-    code, output = run(root, out, capsys, fetch, "--issues", str(issues))
+    code, output = run(root, capsys, "--out", str(out), "--issues", str(issues), main=main, fetch=fetch)
     assert code == 0, output
     assert fetch.asked == [BUILDS_URL]
     assert not out.exists() or not any(out.iterdir())
@@ -273,7 +252,7 @@ def test_an_issue_list_without_the_title_still_opens_one(tmp_path: Path, capsys:
     root, out = tree(tmp_path / "repo"), tmp_path / "out"
     issues = tmp_path / "issues.json"
     issues.write_text(json.dumps([{"number": 120, "title": "Forever build 1.60.1.70338: DB2 changes"}]), "utf-8")
-    code, output = run(root, out, capsys, Canned(newer()), "--issues", str(issues))
+    code, output = run(root, capsys, "--out", str(out), "--issues", str(issues), main=main, fetch=Canned(newer()))
     assert code == 0, output
     assert (out / "body.md").read_text(encoding="utf-8") == BODY
 
@@ -285,7 +264,8 @@ def test_a_body_too_long_for_an_issue_is_cut_and_the_log_keeps_it_all(
     # still opens it, cut at a line with a note, keeping "## Next"; the run's log prints the whole body.
     root, out = tree(tmp_path / "repo"), tmp_path / "out"
     many = "".join(f"{20000 + n},Z,Somewhere Quite Far Away Number {n},2940,0,{n}\n" for n in range(3000))
-    code, output = run(root, out, capsys, Canned(newer(**{table("AreaTable", NEW): (NEW_AREAS + many).encode()})))
+    fetch = Canned(newer(**{table("AreaTable", NEW): (NEW_AREAS + many).encode()}))
+    code, output = run(root, capsys, "--out", str(out), main=main, fetch=fetch)
     assert code == 0, output
     body = (out / "body.md").read_text(encoding="utf-8")
     assert len(body) <= 65536
@@ -300,7 +280,7 @@ def test_the_watch_refuses_to_write_under_data(tmp_path: Path, capsys: pytest.Ca
     # DATA-R130: the watch never edits data/, so it won't even put its issue files there.
     root = tree(tmp_path / "repo")
     before = snapshot(root)
-    code, output = run(root, root / "data" / "watch", capsys, Canned(newer()))
+    code, output = run(root, capsys, "--out", str(root / "data" / "watch"), main=main, fetch=Canned(newer()))
     assert code == 1
     assert "db2-watch: --out: must be outside data/ (DATA-R130)" in output
     assert snapshot(root) == before
@@ -333,7 +313,7 @@ def test_a_failed_download_fails_the_run_and_writes_nothing(
     root, out = tree(tmp_path / "repo"), tmp_path / "out"
     responses = newer()
     del responses[table("SpellName", OLD)]
-    code, output = run(root, out, capsys, Canned(responses))
+    code, output = run(root, capsys, "--out", str(out), main=main, fetch=Canned(responses))
     assert code == 1
     # DATA-R63: every problem is reported where it sits, here the URL.
     assert f"db2-watch: {table('SpellName', OLD)}: can't download" in output
@@ -344,7 +324,8 @@ def test_a_bad_table_fails_the_run_naming_the_line(tmp_path: Path, capsys: pytes
     # DATA-R128: a table that can't be read is reported as update-db2.py reports it (DATA-R12), not diffed.
     root, out = tree(tmp_path / "repo"), tmp_path / "out"
     broken = NEW_AREAS.replace("12,ElwynnForest", "x12,ElwynnForest").encode("utf-8")
-    code, output = run(root, out, capsys, Canned(newer(**{table("AreaTable", NEW): broken})))
+    fetch = Canned(newer(**{table("AreaTable", NEW): broken}))
+    code, output = run(root, capsys, "--out", str(out), main=main, fetch=fetch)
     assert code == 1
     assert "AreaTable 1.60.1.70400: line 3: ID: expected a positive integer, got 'x12'" in output
     assert not out.exists() or not any(out.iterdir())
@@ -353,6 +334,7 @@ def test_a_bad_table_fails_the_run_naming_the_line(tmp_path: Path, capsys: pytes
 def test_a_product_wago_does_not_list_fails_the_run(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     # DATA-R128: the watch reads the builds of build.toml's products; one the API lacks is the dev's to fix.
     root, out = tree(tmp_path / "repo"), tmp_path / "out"
-    code, output = run(root, out, capsys, Canned({BUILDS_URL: builds_json(NEW, product="wow_forever")}))
+    fetch = Canned({BUILDS_URL: builds_json(NEW, product="wow_forever")})
+    code, output = run(root, capsys, "--out", str(out), main=main, fetch=fetch)
     assert code == 1
     assert f"{BUILDS_URL}: lists no product 'wow_classic_beta'" in output
