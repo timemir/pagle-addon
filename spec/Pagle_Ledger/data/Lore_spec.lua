@@ -1,5 +1,5 @@
 -- The Ledger's generated lore (DATA-R104): addons/Pagle_Ledger/data/Lore.lua adds each key's text to ns.L. The
--- fixture is the generator's output for scripts/tests/test_lore.py's fixture ledger.toml (a pytest checks they agree),
+-- fixture is the generator's output for scripts/tests/test_lore.py's BLANK_RIDDLE ledger.toml (a pytest checks they agree),
 -- loaded in the committed file's TOC place.
 
 local FIXTURE = "spec/Pagle_Ledger/fixtures/Lore.lua"
@@ -20,9 +20,11 @@ describe("the Ledger's Lore.lua", function()
 	end)
 
 	it("leaves a key with no text out, so its line shows nothing (LED-R161)", function()
+		-- The fixture's source gives Species 6303 a blurb and a whitespace-only riddle (test_lore.py's BLANK_RIDDLE).
 		local loaded = loadAddon("Pagle_Ledger", FOREVER_GLOBALS, { replace = { ["data/Lore.lua"] = FIXTURE } })
 
-		assert.is_nil(loaded.ns.L["species.6358.riddle"])
+		assert.are.equal("Slick, quick and gone from the shoals.", loaded.ns.L["species.6303.blurb"])
+		assert.is_nil(loaded.ns.L["species.6303.riddle"])
 	end)
 
 	it("loads as committed, in the TOC after locale\\enUS.lua (DATA-R75)", function()
