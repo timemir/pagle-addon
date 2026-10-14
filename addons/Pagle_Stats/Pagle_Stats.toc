@@ -18,6 +18,7 @@ logic\Rows.lua
 logic\Fold.lua
 logic\Sessions.lua
 logic\Text.lua
+logic\Odds.lua
 logic\DrySpell.lua
 adapter\Text.lua
 adapter\Stats.lua
