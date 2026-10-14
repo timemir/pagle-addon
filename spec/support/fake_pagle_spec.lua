@@ -445,6 +445,153 @@ describe("FakePagle", function()
 		end)
 	end)
 
+	describe("goods", function()
+		-- Hunts registered on `fake`, with its notebook cover slot: a default, a tier-2 good and an earned good whose
+		-- isEarned() returns `earned.value`.
+		local function huntsCovers(fake, earned)
+			local hunts = fake.Pagle.RegisterModule({ name = "Hunts", title = "Hunts", order = 20 })
+			hunts:RegisterSlot({ id = "hunts.cover", label = "Notebook cover", category = "Hunts" })
+			hunts:RegisterGood({ id = "hunts.cover.plain", slot = "hunts.cover", name = "Plain", default = true })
+			hunts:RegisterGood({
+				id = "hunts.cover.velvet",
+				slot = "hunts.cover",
+				name = "Velvet",
+				tier = 2,
+				icon = 134939,
+			})
+			hunts:RegisterGood({
+				id = "hunts.cover.gold",
+				slot = "hunts.cover",
+				name = "Gold",
+				isEarned = function()
+					return earned.value
+				end,
+			})
+			return hunts
+		end
+
+		it(
+			"owns the default, a tier-2 good once fake.setPurchased has it, and an earned good by its cache (SHOP-R30, SHOP-R31)",
+			function()
+				local fake = newFakePagle()
+				local earned = { value = false }
+				local hunts = huntsCovers(fake, earned)
+				fake.login()
+				local Pagle = fake.Pagle
+
+				assert.are.same({ true, false, false }, {
+					Pagle.IsOwned("hunts.cover.plain"),
+					Pagle.IsOwned("hunts.cover.velvet"),
+					Pagle.IsOwned("hunts.cover.gold"),
+				})
+				fake.setPurchased({ ["hunts.cover.velvet"] = true })
+				earned.value = true
+				assert.are.same(
+					{ true, false },
+					{ Pagle.IsOwned("hunts.cover.velvet"), Pagle.IsOwned("hunts.cover.gold") }
+				)
+				hunts:RefreshGoods()
+				assert.is_true(Pagle.IsOwned("hunts.cover.gold"))
+				assert.is_true(fake.goods["hunts.cover.gold"].earned)
+			end
+		)
+
+		it("caches each good in fake.goods, which is fake.global.goods (SHOP-R26)", function()
+			local fake = newFakePagle()
+			huntsCovers(fake, { value = false })
+
+			assert.are.equal(fake.global.goods, fake.goods)
+			assert.are.same({
+				name = "Velvet",
+				slot = "hunts.cover",
+				slotLabel = "Notebook cover",
+				category = "Hunts",
+				module = "Hunts",
+				icon = 134939,
+				tier = 2,
+			}, fake.goods["hunts.cover.velvet"])
+		end)
+
+		it("raises a SHOP-R23 mistake at the Module's call and reports a slot with no default at login", function()
+			local fake = newFakePagle()
+			local hunts = huntsCovers(fake, { value = false })
+			hunts:RegisterSlot({ id = "hunts.frame", label = "Tracker frame", category = "Trackers" })
+
+			assert.has_error(function()
+				hunts:RegisterGood({ id = "hunts.cover.tide", slot = "hunts.cover", name = "Tide", default = true })
+			end, "M:RegisterGood: hunts.cover already has a default, hunts.cover.plain")
+			fake.login()
+
+			assert.are.same({ "Pagle: the slot hunts.frame has no default good" }, fake.reported)
+		end)
+
+		it(
+			"equips an owned pick in fake.profile.appearance and fires AppearanceChanged once per change (SHOP-R32, SHOP-R33)",
+			function()
+				local fake = newFakePagle()
+				local earned = { value = true }
+				local hunts = huntsCovers(fake, earned)
+				fake.login()
+				local fired = {}
+				fake.Pagle.RegisterCallback("spec", "AppearanceChanged", function(_, slot, goodID)
+					fired[#fired + 1] = slot .. " " .. goodID
+				end)
+
+				assert.is_false(fake.Pagle.SetEquipped("hunts.cover", "hunts.cover.velvet"))
+				assert.is_true(fake.Pagle.SetEquipped("hunts.cover", "hunts.cover.gold"))
+				earned.value = false
+				hunts:RefreshGoods()
+
+				assert.are.same({ "hunts.cover hunts.cover.gold", "hunts.cover hunts.cover.plain" }, fired)
+				assert.are.equal("hunts.cover.plain", fake.Pagle.GetEquipped("hunts.cover"))
+				assert.are.equal("hunts.cover.gold", fake.profile.appearance["hunts.cover"])
+			end
+		)
+
+		it(
+			"falls back to the cached default for a Module that isn't loaded, keeping its goods owned (SHOP-R90)",
+			function()
+				local fake = newFakePagle()
+				fake.goods["hunts.cover.plain"] =
+					{ name = "Plain", slot = "hunts.cover", module = "Hunts", default = true }
+				fake.goods["hunts.cover.velvet"] = { name = "Velvet", slot = "hunts.cover", module = "Hunts", tier = 2 }
+				fake.profile.appearance["hunts.cover"] = "hunts.cover.velvet"
+				fake.setPurchased({ ["hunts.cover.velvet"] = true })
+				fake.login()
+
+				assert.are.same(
+					{ "hunts.cover.plain", true },
+					{ fake.Pagle.GetEquipped("hunts.cover"), fake.Pagle.IsOwned("hunts.cover.velvet") }
+				)
+			end
+		)
+
+		it("reads a good's cached look with Pagle.GetGood, read-only (graph.md question 2, CORE-R18)", function()
+			local fake = newFakePagle()
+			huntsCovers(fake, { value = false })
+
+			local good = fake.Pagle.GetGood("hunts.cover.velvet")
+
+			assert.are.same(
+				{ "Velvet", "hunts.cover", 134939, "Hunts" },
+				{ good.name, good.slot, good.icon, good.module }
+			)
+			assert.has_error(function()
+				good.name = "Changed"
+			end)
+			assert.is_nil(fake.Pagle.GetGood("hunts.cover.none"))
+		end)
+
+		it("records each Pagle.OpenShop in fake.shopsOpened, with the good asked for (SHOP-R40)", function()
+			local fake = newFakePagle()
+
+			fake.Pagle.OpenShop("hunts.cover.velvet")
+			fake.Pagle.OpenShop()
+
+			assert.are.same({ { goodID = "hunts.cover.velvet" }, {} }, fake.shopsOpened)
+		end)
+	end)
+
 	describe("moments", function()
 		-- A Module registered on `fake` whose projection raises `raise(record, mode)`'s moment, if any, for each Cast it
 		-- applies, and `done(info)`'s from its done.
