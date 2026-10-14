@@ -587,6 +587,26 @@ describe("FakePagle", function()
 			assert.is_nil(fake.Pagle.GetGood("hunts.cover.none"))
 		end)
 
+		it("has Core's own slots and goods, as Core registers them at login, with no previews (SHOP-R25)", function()
+			local fake = newFakePagle()
+			fake.login()
+			local Pagle = fake.Pagle
+
+			assert.are.same({ "core.toaststyle.timber", "core.soundset.driftwood", "core.crest.plain" }, {
+				Pagle.GetEquipped("core.toaststyle"),
+				Pagle.GetEquipped("core.soundset"),
+				Pagle.GetEquipped("core.crest"),
+			})
+			assert.are.same({ "core.crest.crest3", "Interface\\Icons\\Spell_Frost_SummonWaterElemental", "Core" }, {
+				Pagle.GetGood("core.crest.crest3").name,
+				Pagle.GetGood("core.crest.crest3").icon,
+				fake.goods["core.crest.crest3"].module,
+			})
+			assert.is_nil(fake.ns.goods:Good("core.crest.plain").preview)
+			fake.setPurchased({ ["core.crest.crest3"] = true })
+			assert.is_true(Pagle.SetEquipped("core.crest", "core.crest.crest3"))
+		end)
+
 		it("records each Pagle.OpenShop in fake.shopsOpened, with the good asked for (SHOP-R40)", function()
 			local fake = newFakePagle()
 
@@ -1154,6 +1174,29 @@ describe("FakePagle", function()
 				assert.are.same(expected, read) -- the first Cast too, re-sized over the catalogue served now
 			end
 		)
+	end)
+
+	describe("the length unit", function()
+		it("reads Pagle.FormatLength in inches by default, as Core does on region 1 (LOG-R69)", function()
+			local fake = newFakePagle()
+
+			assert.is_nil(fake.profile.lengthUnit)
+			assert.are.same({ "13.5 in", 1 }, { fake.Pagle.FormatLength(342), fake.region })
+		end)
+
+		it("follows fake.profile.lengthUnit, and fake.region with none stored (LOG-R69)", function()
+			local fake = newFakePagle()
+			fake.login()
+
+			fake.profile.lengthUnit = "cm"
+			local cm = fake.Pagle.FormatLength(342)
+			fake.profile.lengthUnit, fake.region = nil, 3
+			local europe = fake.Pagle.FormatLength(342)
+			fake.region = nil
+			local none = fake.Pagle.FormatLength(342)
+
+			assert.are.same({ "34.2 cm", "34.2 cm", "34.2 cm" }, { cm, europe, none })
+		end)
 	end)
 
 	describe("the Field report", function()

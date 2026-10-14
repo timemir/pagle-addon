@@ -14,6 +14,9 @@ ns.L = {
 	NOT_FOREVER = "Pagle: this isn't World of Warcraft: Forever, so Pagle stays off.",
 	-- LOG-R67: the Size band names, Tiddler to Monster, in band order (Pagle.SIZE_BANDS). Drafts for the lore pass.
 	SIZE_BANDS = { "Tiddler", "Typical", "Hefty", "Whopper", "Monster" },
+	-- LOG-R69: a length in each length unit, to 0.1 of it; ANN-R22: a size record's margin that rounds to zero.
+	LENGTH = { cm = "%.1f cm", ["in"] = "%.1f in" },
+	LENGTH_MARGIN_UNDER = { cm = "+<0.1 cm", ["in"] = "+<0.1 in" },
 	-- Error reports (CORE-R23): owner, event, the error.
 	EVENT_REGISTER_FAILED = "Pagle: %s couldn't register the event %s: %s",
 	EVENT_HANDLER_FAILED = "Pagle: %s's handler for the event %s failed: %s",
@@ -37,6 +40,11 @@ ns.L = {
 	SETTINGS_SAVING = "Saving",
 	SETTINGS_RELOAD_REMINDER = "Remind me to /reload when Casts are unsaved",
 	SETTINGS_RELOAD_REMINDER_TOOLTIP = "A chat line every %d Casts not yet saved. WoW saves only on /reload or logout, so a crash loses them.",
+	-- The root's Units section (SET-R10 row 6): its header, the dropdown's label, tooltip and options (LOG-R69).
+	SETTINGS_UNITS = "Units",
+	SETTINGS_LENGTH_UNIT = "Length unit",
+	SETTINGS_LENGTH_UNIT_TOOLTIP = "How Pagle shows the length of your Catches. Records are kept in millimetres, so switching changes only what you see.",
+	SETTINGS_LENGTH_UNITS = { cm = "Centimetres", ["in"] = "Inches" },
 	-- The Announcements page's Core rows (SET-R30): labels and tooltips, and Per's value in minutes.
 	SETTINGS_COZY = "Cozy mode",
 	SETTINGS_COZY_TOOLTIP = "Nothing pops up or plays. Every moment waits in the Session summary. A Legend's splash still shows, silently.",
@@ -137,4 +145,18 @@ ns.L = {
 		{ name = "report", help = "open the Field report, to help chart the waters" },
 		{ name = "help", help = "list these commands" },
 	},
+
+	-- Core's own slots (SHOP-R25): their labels. Their goods' names and descriptions are lore (DATA-R101), in
+	-- data\Lore.lua as `good.<goodID>.name` and `good.<goodID>.description`.
+	SLOT_TOAST_STYLE = "Toast style",
+	SLOT_SOUND_SET = "Sound set",
+	SLOT_CREST = "Bookplate crest",
+	-- A sound set's preview on the Curio Shop's stage (wallet-and-shop.md › UI): a button per sound, and a note.
+	PREVIEW_TOAST = "▶ Toast",
+	PREVIEW_BANNER = "▶ Banner",
+	PREVIEW_LEGEND = "▶ Legend",
+	PREVIEW_STING_SHARED = "The Legend sting is the same in every set.",
+	-- A crest's preview (wallet-and-shop.md › UI): a small bookplate, then where it shows.
+	PREVIEW_EX_LIBRIS = "Ex Libris",
+	PREVIEW_CREST_NOTE = "On the Fish Journal's bookplate.",
 }

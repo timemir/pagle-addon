@@ -23,8 +23,8 @@ local SOUNDS = "Interface\\AddOns\\Pagle\\media\\sounds\\"
 ---@field toast string[]
 ---@field banner string
 
---- The sound sets Core plays, by name (ANN-R72, ANN-R74). Driftwood is the free default and the only one in M2;
---- Gilded is rendered too and joins as a Curio Shop good in M4.
+--- The sound sets Core plays, by name (ANN-R72, ANN-R74): Driftwood, the free default, and Gilded, a Curio Shop
+--- good (logic/CoreGoods.lua's sound set slot).
 ---@type table<string, PagleSoundSet>
 ns.SOUND_SETS = {
 	driftwood = {
@@ -34,6 +34,10 @@ ns.SOUND_SETS = {
 			SOUNDS .. "driftwood\\toast_3.ogg",
 		},
 		banner = SOUNDS .. "driftwood\\banner.ogg",
+	},
+	gilded = {
+		toast = { SOUNDS .. "gilded\\toast_1.ogg" },
+		banner = SOUNDS .. "gilded\\banner.ogg",
 	},
 }
 --- The Legend sting every set shares (ANN-R72).
@@ -70,7 +74,7 @@ ns.LEGEND_STING = SOUNDS .. "legend.ogg"
 ---@field package big PagleAnnouncement[]       -- banners and splashes waiting: splashes first, then in order raised
 ---@field package overflow integer              -- toasts not shown since the last toast appeared
 ---@field package interruptions number[]        -- when each recent interruption appeared (ANN-R30), oldest first
----@field package toastSounds integer           -- toast sounds played, for the next variant (ANN-R72)
+---@field package toastSounds table<PagleSoundSet, integer> -- toast sounds played per set, for its next variant (ANN-R72)
 ---@field package holding boolean               -- restricted, or within the wait after (ANN-R35, ANN-R36)
 ---@field package heldToasts PagleAnnouncement[] -- toasts held, in order
 ---@field package heldBig PagleAnnouncement[]   -- banners and splashes held: splashes first, then in order raised
@@ -87,7 +91,7 @@ function ns.NewLanes(options)
 		big = {},
 		overflow = 0,
 		interruptions = {},
-		toastSounds = 0,
+		toastSounds = {},
 		holding = false,
 		heldToasts = {},
 		heldBig = {},
@@ -346,7 +350,8 @@ end
 
 -- The sound an Announcement shown as `form` plays as it appears (ANN-R70–R72): the equipped set's toast variant
 -- next in turn, its banner sound, or the Legend sting. None for a Nod, for a headline with sound = false, or in Cozy
--- mode, where a splash shows silently (ANN-R41).
+-- mode, where a splash shows silently (ANN-R41). Each set keeps its own turn, so a set equipped again goes on where
+-- it left off.
 ---@package
 ---@param announcement PagleAnnouncement
 ---@param form PagleAnnouncementForm
@@ -357,8 +362,9 @@ function Lanes:sound(announcement, form)
 	end
 	local set = self.options.soundSet()
 	if form == "toast" then
-		self.toastSounds = self.toastSounds + 1
-		return set.toast[(self.toastSounds - 1) % #set.toast + 1]
+		local played = self.toastSounds[set] or 0
+		self.toastSounds[set] = played + 1
+		return set.toast[played % #set.toast + 1]
 	elseif form == "banner" then
 		return set.banner
 	end
@@ -432,10 +438,11 @@ ns.RULER_SECONDS = 1.5
 ns.RULER_STAMP_DELAY = 0.4
 
 --- A record ruler at one moment of its animation (ANN-R22): where the old record's mark and the fill sit along the
---- track (0 to 1), the number counted up so far, the margin, which shows once it has landed, and the "New record"
---- stamp a beat after.
+--- track (0 to 1), the old record's number by its mark, the number counted up so far, the margin, which shows once it
+--- has landed, and the "New record" stamp a beat after.
 ---@class PagleRulerFrame
 ---@field mark number     -- the old record's mark
+---@field old string      -- the old record, with its unit ("10.0 lb")
 ---@field fill number     -- how far the fill has come
 ---@field value string    -- the number so far, with its unit ("11.4 lb")
 ---@field passed boolean  -- the fill is past the old mark
@@ -444,33 +451,42 @@ ns.RULER_STAMP_DELAY = 0.4
 ---@field margin string   -- "+x" with the unit ("+1.6 lb")
 ---@field label string    -- whose number it is ("weight")
 
--- A ruler's number with its unit, to one decimal. A unit other than "length" shows as given; "length" in the Angler's
--- unit through Pagle.FormatLength comes with Simulated Size (M4).
+-- A ruler's number with its unit, to one decimal: millimetres in the Angler's length unit for "length" (LOG-R69),
+-- any other unit as given.
 ---@param value number
 ---@param unit string
+---@param lengthUnit PagleLengthUnit?
 ---@return string
-local function withUnit(value, unit)
+local function withUnit(value, unit, lengthUnit)
+	if unit == "length" then
+		return ns.FormatLength(value, lengthUnit --[[@as PagleLengthUnit]])
+	end
 	return ("%.1f %s"):format(value, unit)
 end
 
 --- The ruler `elapsed` seconds after it appeared (ANN-R22): the number eases up from 0 to the new record over
 --- RULER_SECONDS, on a track a tenth longer than it, past the old record's mark; then the margin lands, and the
---- stamp RULER_STAMP_DELAY later.
+--- stamp RULER_STAMP_DELAY later. A Simulated Size (`unit` "length", in millimetres) reads in `lengthUnit`, and a
+--- margin that rounds to zero there as "+<0.1 cm".
 ---@param ruler { old: number, new: number, unit: string, label: string }
 ---@param elapsed number
+---@param lengthUnit PagleLengthUnit? the Angler's length unit (LOG-R69), which a "length" ruler needs
 ---@return PagleRulerFrame
-function ns.RulerAt(ruler, elapsed)
+function ns.RulerAt(ruler, elapsed, lengthUnit)
 	local length = ruler.new * 1.1
 	local progress = math.min(1, elapsed / ns.RULER_SECONDS)
 	local value = ruler.new * (1 - (1 - progress) ^ 3)
+	local unit, margin = ruler.unit, ruler.new - ruler.old
 	return {
 		mark = ruler.old / length,
+		old = withUnit(ruler.old, unit, lengthUnit),
 		fill = value / length,
-		value = withUnit(value, ruler.unit),
+		value = withUnit(value, unit, lengthUnit),
 		passed = value > ruler.old,
 		done = progress >= 1,
 		stamped = elapsed >= ns.RULER_SECONDS + ns.RULER_STAMP_DELAY,
-		margin = "+" .. withUnit(ruler.new - ruler.old, ruler.unit),
+		margin = unit == "length" and ns.FormatLengthMargin(margin, lengthUnit --[[@as PagleLengthUnit]])
+			or "+" .. withUnit(margin, unit),
 		label = ruler.label,
 	}
 end
