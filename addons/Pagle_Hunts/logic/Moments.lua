@@ -11,9 +11,6 @@ local ns = select(2, ...)
 -- (logic/Projection.lua) and the redraws (logic/Seams.lua) reach it through `ns.moments`, which the adapter makes in
 -- OnInitialize; the Hunt list (`ns.hunts`) is read at call time.
 
--- A set title's icon (HNT-R86).
-local TRADE_FISHING = "Interface\\Icons\\Trade_Fishing"
-
 --- Where Hunts' moments, Write-up sections and summary line go, and what they read (HNT-R86, HNT-R89, HNT-R111).
 ---@class HuntsMomentsClient
 ---@field RaiseMoment fun(moment: PagleMoment)
@@ -58,7 +55,7 @@ function ns.HuntTierMoment(hunt, k, huntTier)
 			title = L.HUNT_COMPLETE,
 			text = name,
 			stamp = L.HUNT_COMPLETE_STAMP,
-			icon = huntTier.itemID,
+			icon = ns.HuntMomentIcon(huntTier.itemID),
 			coins = ns.COINS_COMPLETED,
 		}
 	end
@@ -69,7 +66,7 @@ function ns.HuntTierMoment(hunt, k, huntTier)
 		title = L.HUNT_TIER:format(trim),
 		text = L.HUNT_TIER_TEXT:format(name, hunt.tiers[k]),
 		stamp = trim,
-		icon = huntTier.itemID,
+		icon = ns.HuntMomentIcon(huntTier.itemID),
 		coins = ns.COINS_TIER,
 	}
 end
@@ -85,7 +82,7 @@ function ns.HuntSetTitleMoment(setID)
 		title = L.TITLE_EARNED,
 		text = ns.hunts:SetTitle(setID),
 		stamp = L.TITLE_EARNED_STAMP,
-		icon = TRADE_FISHING,
+		icon = ns.HuntMomentIcon(nil), -- no Catch: Trade_Fishing (HNT-R55)
 		coins = ns.COINS_TITLE,
 	}
 end
