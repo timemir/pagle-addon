@@ -170,31 +170,35 @@ describe("Simulated Size records", function()
 	end)
 
 	describe("beating it (LED-R82)", function()
-		it("gives a strictly longer Catch one sizeRecord with old and new in millimetres, and the record", function()
-			local longer = log.cast(T0 + 120, WESTFALL, { { MACKEREL, 343, HEFTY } })
-			local state, earned = applyAll({ log.cast(T0, ELWYNN, { { MACKEREL, 342 } }), longer })
+		it(
+			"gives a strictly longer Catch one sizeRecord with old and new in millimetres and its size, and the record",
+			function()
+				local longer = log.cast(T0 + 120, WESTFALL, { { MACKEREL, 343, HEFTY } })
+				local state, earned = applyAll({ log.cast(T0, ELWYNN, { { MACKEREL, 342 } }), longer })
 
-			assert.are.same({
-				{
-					kind = "sizeRecord",
-					cast = longer.id,
-					coins = 0,
-					itemID = MACKEREL,
-					old = 342,
-					new = 343,
-					flair = false,
-				},
-			}, ofKind(earned, "sizeRecord"))
-			assert.are.same({
-				length = 343,
-				band = HEFTY,
-				catchId = longer.id .. ":1",
-				time = T0 + 120,
-				char = 1,
-				zone = WESTFALL,
-			}, state.species[MACKEREL].record)
-			assert.are.equal(0, state.species[MACKEREL].since)
-		end)
+				assert.are.same({
+					{
+						kind = "sizeRecord",
+						cast = longer.id,
+						coins = 0,
+						itemID = MACKEREL,
+						old = 342,
+						new = 343,
+						flair = false,
+						size = { length = 343, band = HEFTY },
+					},
+				}, ofKind(earned, "sizeRecord"))
+				assert.are.same({
+					length = 343,
+					band = HEFTY,
+					catchId = longer.id .. ":1",
+					time = T0 + 120,
+					char = 1,
+					zone = WESTFALL,
+				}, state.species[MACKEREL].record)
+				assert.are.equal(0, state.species[MACKEREL].since)
+			end
+		)
 
 		it(
 			"gives an equal Catch nothing and keeps the earlier Catch as the record, one more since (LED-R80)",
@@ -241,6 +245,7 @@ describe("Simulated Size records", function()
 					old = 342,
 					new = 400,
 					flair = false,
+					size = { length = 400, band = HEFTY },
 				},
 			}, ofKind(earned, "sizeRecord"))
 		end)
@@ -289,6 +294,7 @@ describe("Simulated Size records", function()
 					old = 2100,
 					new = 2300,
 					flair = false,
+					size = { length = 2300, band = HEFTY },
 				},
 			}, ofKind(earned, "sizeRecord"))
 		end)

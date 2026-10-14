@@ -15,12 +15,14 @@ local LEGEND_XP = 2000
 ns.LEGEND_COINS = 100
 
 --- A Legend Catch (LED-R63): its item's count and first Catch, as a LedgerFirst in `state.items`. The first Catch of
---- each Legend item earns 2,000 XP, 100 Coins and a `legend` achievement; later ones only the base the fold gives.
+--- each Legend item earns 2,000 XP, 100 Coins and a `legend` achievement, with the Catch's size for its moment
+--- (LED-R81); later ones only the base the fold gives.
 ---@param state LedgerState
 ---@param record PagleCast
 ---@param itemID integer
 ---@param earned LedgerAchievement[]
-function ns.CreditLegend(state, record, itemID, earned)
+---@param size PagleSize? the Catch's Simulated Size (LOG-R65)
+function ns.CreditLegend(state, record, itemID, earned, size)
 	local entry = state.items[itemID]
 	if entry then
 		entry.n = entry.n + 1
@@ -31,5 +33,6 @@ function ns.CreditLegend(state, record, itemID, earned)
 	state.items[itemID] = entry
 	state.xp = state.xp + LEGEND_XP
 	state.coins = state.coins + ns.LEGEND_COINS
-	earned[#earned + 1] = { kind = "legend", cast = record.id, coins = ns.LEGEND_COINS, itemID = itemID }
+	earned[#earned + 1] =
+		{ kind = "legend", cast = record.id, coins = ns.LEGEND_COINS, itemID = itemID, size = ns.CopySize(size) }
 end
