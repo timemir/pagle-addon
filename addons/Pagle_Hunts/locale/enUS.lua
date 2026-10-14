@@ -21,6 +21,12 @@ ns.L = {
 	SLOT_TRACKER_FRAME = "Hunts tracker frame",
 	PREVIEW_TRACKER_LINE_1 = "Night Run · in 37m",
 	PREVIEW_TRACKER_LINE_2 = "Rack Hour · on demand",
+	-- Window moments (HNT-R88) and their row on the Announcements page (SET-R32): logic/WindowMoments.lua.
+	WINDOW_MOMENTS_SETTING = "Tell me when a pinned Hunt's window opens",
+	WINDOW_MOMENTS_TOOLTIP = "A quiet Nod when a pinned Hunt's window opens. It fades when the window closes.",
+	WINDOW_OPEN = "%s is open",
+	WINDOW_OPENED = "%s window opened %s",
+	WINDOW_OPENED_UNTIL = "%s window opened %s–%s",
 
 	-- Labels in realm time (HNT-R50–R55): logic/Labels.lua. A name not loaded yet reads "…".
 	NAME_UNKNOWN = "…",
@@ -103,6 +109,26 @@ ns.L = {
 	TARGET_ANY = "Any fish",
 	TARGET_MIN_BAND = "%s, %s or better",
 
+	-- The board's timeline (HNT-R61–R63, HNT-R66, HNT-R67): logic/Timeline.lua and adapter/Timeline.lua.
+	TIMELINE_TITLE = "What's biting, and when",
+	GROUP_HEADINGS = {
+		now = "Now: open right now",
+		soon = "Soon: opens within 3 hours",
+		later = "Later: opens after that, or needs more skill",
+		onDemand = "On demand: starts when you do",
+	},
+	TIMELINE_LEGEND = "Hatched: open · Dashed: window unconfirmed · Pencil: needs more skill · Blue: your camp is up",
+	RULER_NOW = "now",
+	OUT_OF_SEASON = "out of season",
+	-- A set's page, its left side (HNT-R66): "{set name}: earns {title}", or "{set name}: {title}" once earned.
+	SET_HEADING_EARNS = "%s: earns %s",
+	SET_HEADING_EARNED = "%s: %s",
+	NO_HUNTS = "No Hunts yet.",
+	-- The leather's realm clock ("14:05 · Tue 14 Oct · Autumn") and checkbox (HNT-R61, HNT-R43, HNT-R82).
+	WEEKDAY_DATE = "%s %s",
+	CLOCK_PAUSED = "%s (paused in combat)",
+	SHOW_COMPLETED = "show completed",
+
 	-- The Hunts tracker (HNT-R75–R78) and its setting on the Trackers page (SET-R41).
 	TRACKER_EMPTY = "Pin a Hunt to keep it here.",
 	TRACKER_MORE = "+%d more",
@@ -136,4 +162,44 @@ ns.L = {
 	SUMMARY_LINE = "Hunts: %s of %s done · %s", -- "Hunts: 3 of 16 done · 1 title"
 	SUMMARY_TITLES_ONE = "%s title",
 	SUMMARY_TITLES_OTHER = "%s titles",
+
+	-- A Hunt's entry on the board's right page (HNT-R3, HNT-R64–R66, HNT-R69): logic/Entry.lua.
+	ENTRY_KICKER = "%s · %s",
+	ENTRY_NATURAL = "Natural",
+	ENTRY_IMPOSED = "Imposed",
+	ENTRY_RETIRED = "Retired %s",
+	ENTRY_BACK = "back to %s",
+	ENTRY_PIN = "Pin to the tracker",
+	ENTRY_UNPIN = "Unpin",
+	ENTRY_UPDATING = "Updating from your Catch log…",
+	-- The wax seal: the full date tier 1 was reached, or the dashed ring before it.
+	SEAL_HUNTED = "Hunted %s",
+	SEAL_NOT_YET = "not yet",
+	-- The tier ladder: each tier's threshold, its Catch's short date and zone, and the ink bar's words.
+	LADDER_TIER = "Tier %d · %d",
+	LADDER_WHEN_ZONE = "%s, %s",
+	LADDER_PROGRESS = "%d / %d",
+	LADDER_CAUGHT = "%d caught",
+	-- The effort counter (HNT-R26) and HNT-R27's note: plain counts, no link; "1 Cast", "2 Casts".
+	EFFORT_CASTS_ONE = "%d Cast",
+	EFFORT_CASTS_OTHER = "%d Casts",
+	EFFORT = "%s under these conditions.",
+	EFFORT_SINCE = "%s under these conditions, %d since my last one.",
+	EFFORT_ODDS = "Odds live in Stats.",
+	-- The set line: "{set}: {done} of {current} · earns {title}", or "· earned {title}".
+	SET_LINE = "%s: %d of %d · %s",
+	SET_EARNS = "earns %s",
+	SET_EARNED = "earned %s",
+	SET_LINE_UPDATING = "%s: %s",
+	-- Chips (HNT-R65).
+	CHIP_HERE = "you're here",
+	CHIP_MORE = "+%d more",
+	CHIP_SKILL = "skill %d",
+	CHIP_SHORT = "needs %d, best: %d",
+	CHIP_LURE = "needs a lure",
+	CHIP_UNCONFIRMED = "unconfirmed",
+	UNCONFIRMED_WINDOW = "This window is an estimate.",
+	UNCONFIRMED_GATING = "Not yet seen biting only in this window.",
+	-- HNT-R67's right page on the Board when no row is visible.
+	ENTRY_ALL_DONE = 'Every Hunt here is done. Tick "show completed" to see them again.',
 }

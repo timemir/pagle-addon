@@ -5,11 +5,17 @@
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local hunts = dofile("spec/Pagle_Hunts/support.lua")
 
--- Pagle_Hunts on a fake that has logged in, and its board.
+-- Pagle_Hunts on a fake that has logged in, and its board as the shell alone: a router with no page renderers and a
+-- leather whose anchors draw nothing, so the board tickets' own renderers (#193–#195) stay out of these specs.
 local function loggedIn()
 	local loaded, fake = hunts.load()
 	fake.login()
-	return loaded, fake, loaded.ns.board
+	local board = loaded.ns.board
+	board.router = loaded.ns.NewBoardRouter()
+	for _, part in ipairs({ "crumbs", "clock", "completed", "nameplate", "ribbons" }) do
+		board:RegisterLeather(part, function() end)
+	end
+	return loaded, fake, board
 end
 
 -- Hides `frame` as the client does, running its OnHide (the fake's Hide runs no script).
