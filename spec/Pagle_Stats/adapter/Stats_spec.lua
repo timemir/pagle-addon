@@ -189,25 +189,28 @@ describe("Pagle_Stats with Core", function()
 		assert.are.same(expected, categories(loaded.client))
 	end)
 
-	it("sets no global but PagleStatsDB and its row's mixin: its AceAddon is reached through LibStub (STA-R1)", function()
-		local loaded = loadAddon("Pagle_Stats", FOREVER_GLOBALS)
-		local plain = loadAddon("Pagle", FOREVER_GLOBALS)
-		loaded.client.fire("PLAYER_LOGIN")
-		plain.client.fire("PLAYER_LOGIN")
+	it(
+		"sets no global but PagleStatsDB and its row's mixin: its AceAddon is reached through LibStub (STA-R1)",
+		function()
+			local loaded = loadAddon("Pagle_Stats", FOREVER_GLOBALS)
+			local plain = loadAddon("Pagle", FOREVER_GLOBALS)
+			loaded.client.fire("PLAYER_LOGIN")
+			plain.client.fire("PLAYER_LOGIN")
 
-		local added = {}
-		local before = globalNames(plain.env)
-		for name in pairs(globalNames(loaded.env)) do
-			if not before[name] then
-				added[#added + 1] = name
+			local added = {}
+			local before = globalNames(plain.env)
+			for name in pairs(globalNames(loaded.env)) do
+				if not before[name] then
+					added[#added + 1] = name
+				end
 			end
-		end
 
-		-- The Watched Dry spells row's mixin, which its XML template names (adapter/Settings.xml, SET-R5).
-		table.sort(added)
-		assert.are.same({ "PagleStatsDB", "PagleStatsWatchedRowMixin" }, added)
-		assert.are.equal(loaded.ns.Stats, loaded.env.LibStub("AceAddon-3.0"):GetAddon("Pagle_Stats"))
-	end)
+			-- The Watched Dry spells row's mixin, which its XML template names (adapter/Settings.xml, SET-R5).
+			table.sort(added)
+			assert.are.same({ "PagleStatsDB", "PagleStatsWatchedRowMixin" }, added)
+			assert.are.equal(loaded.ns.Stats, loaded.env.LibStub("AceAddon-3.0"):GetAddon("Pagle_Stats"))
+		end
+	)
 
 	it("keeps PagleStatsDB account-wide in one shared profile, at schema 1 (stats.md › Data)", function()
 		local loaded = loadAddon("Pagle_Stats", FOREVER_GLOBALS)

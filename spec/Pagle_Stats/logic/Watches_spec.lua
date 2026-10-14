@@ -117,7 +117,7 @@ describe("Watched Dry spells", function()
 		assert.are.equal(drawn, #redraws)
 	end)
 
-	it("asks every view to redraw for \"watches\" after each change (STA-R60, Seams)", function()
+	it('asks every view to redraw for "watches" after each change (STA-R60, Seams)', function()
 		local loaded, redraws = load()
 		local ns = loaded.ns
 

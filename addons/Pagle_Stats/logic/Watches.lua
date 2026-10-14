@@ -16,10 +16,8 @@ ns.MAX_WATCHES = 3
 --- The red of the game's error text, as UIErrorsFrame shows a refused action (STA-R61).
 local ERROR_RED = { r = 1, g = 0.1, b = 0.1 }
 
---- A watch (STA-R60): an item and the place whose page it was watched from, a zone or a subzone.
----@class StatsWatch
----@field item integer
----@field area integer
+-- A watch (STA-R60), StatsWatch (logic/Home.lua): an item and the place whose page it was watched from, a zone or a
+-- subzone.
 
 --- The client's side of the watches, passed in (CORE-R7). adapter/Settings.lua passes the game's.
 ---@class StatsWatchesClient

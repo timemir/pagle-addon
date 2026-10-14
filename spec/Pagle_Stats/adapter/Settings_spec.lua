@@ -71,16 +71,19 @@ describe("Stats' section on Trackers, as Core gets it", function()
 		assert.is_true(rowLabelled(fake, "Show the live tracker").setting.get())
 	end)
 
-	it("its Watched Dry spells row hangs under the checkbox, is never greyed out and has no default (SET-R42)", function()
-		local _, fake = stats.load()
-		fake.login()
-		local row = rowLabelled(fake, "Watched Dry spells").setting
+	it(
+		"its Watched Dry spells row hangs under the checkbox, is never greyed out and has no default (SET-R42)",
+		function()
+			local _, fake = stats.load()
+			fake.login()
+			local row = rowLabelled(fake, "Watched Dry spells").setting
 
-		assert.are.equal("tracker", row.parent)
-		assert.is_nil(row.isEnabled)
-		assert.is_nil(row.default)
-		assert.are.equal("Watch or stop watching from any fish's page in the Stats book.", row.tooltip)
-	end)
+			assert.are.equal("tracker", row.parent)
+			assert.is_nil(row.isEnabled)
+			assert.is_nil(row.default)
+			assert.are.equal("Watch or stop watching from any fish's page in the Stats book.", row.tooltip)
+		end
+	)
 
 	it("is gone while Stats is inert: no rows, so no Trackers page (STA-R90, CORE-R13, CORE-R42)", function()
 		local fake = newFakePagle()
@@ -152,7 +155,7 @@ describe("Stats' section on the Trackers page, in the panel", function()
 		assert.is_false(rowNamed(rows, "Show the live tracker").frame.value)
 	end)
 
-	it("reads \"0 of 3\" and the line for none, with no watches (SET-R42)", function()
+	it('reads "0 of 3" and the line for none, with no watches (SET-R42)', function()
 		local loaded = session()
 
 		local row = rowNamed(showTrackers(loaded), "Watched Dry spells")
@@ -184,7 +187,7 @@ describe("Stats' section on the Trackers page, in the panel", function()
 		assert.are.same({ "Watched Dry spells", "1 of 3", "Firefin, Auberdine", STOP }, texts(loaded, row))
 	end)
 
-	it("\"Stop watching\" removes that watch and shrinks the row, leaving the tracker on (STA-R63)", function()
+	it('"Stop watching" removes that watch and shrinks the row, leaving the tracker on (STA-R63)', function()
 		local loaded = session()
 		loaded.ns.Watch(NIGHTFIN, DARKSHORE)
 		loaded.ns.Watch(FIREFIN, AUBERDINE)
