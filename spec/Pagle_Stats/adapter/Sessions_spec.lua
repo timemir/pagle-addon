@@ -270,7 +270,8 @@ describe("the Session pages", function()
 		it("asks for an item whose quality isn't loaded, and counts it once it loads (STA-R33)", function()
 			local loaded, fake, book = withHistory(concat(OLD, RICH))
 			loaded.ns.OpenBook({ page = "session" })
-			assert.are.same({ LATE }, loaded.client.itemRequests)
+			-- search (#215) also asks, as the book opens, for the unnamed fish of my records and fished zones' rows
+			assert.are.equal(LATE, loaded.client.itemRequests[1])
 
 			loaded.client.itemQualities[LATE] = 2
 			fake.fireGameEvent("ITEM_DATA_LOAD_RESULT", LATE, true)
