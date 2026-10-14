@@ -18,11 +18,13 @@ local MINUTES_PER_DAY = 1440
 local HORIZON_DAYS = 400 -- Tunables: the NextWindow horizon (LOG-R50)
 
 -- A span [from, to) of realm seconds: a server time plus the realm's UTC offset, so a realm day starts at a
--- multiple of a day.
----@alias PagleSpan { [1]: number, [2]: number }
+-- multiple of a day. `confirmed` is false for an occurrence of an unconfirmed weekly rule (LOG-R56). A merged span
+-- keeps as `parts` the spans that made it.
+---@alias PagleSpan { [1]: number, [2]: number, confirmed: boolean?, parts: PagleSpan[]? }
 
 -- Spans clipped to [from, to), in order, with overlapping or touching ones merged into one (LOG-R50): a night
--- written as two ranges meeting at midnight is one opening.
+-- written as two ranges meeting at midnight is one opening. A span lying inside another adds nothing, so it isn't
+-- among the merged span's parts.
 ---@param spans PagleSpan[]
 ---@param from integer
 ---@param to integer
@@ -32,19 +34,26 @@ local function normalize(spans, from, to)
 	for _, span in ipairs(spans) do
 		local opens, closes = math.max(span[1], from), math.min(span[2], to)
 		if opens < closes then
-			clipped[#clipped + 1] = { opens, closes }
+			clipped[#clipped + 1] = { opens, closes, confirmed = span.confirmed }
 		end
 	end
+	-- The longer of two spans opening together first, so the shorter lies inside it.
 	table.sort(clipped, function(a, b)
-		return a[1] < b[1]
+		if a[1] ~= b[1] then
+			return a[1] < b[1]
+		end
+		return a[2] > b[2]
 	end)
 	local merged = {}
 	for _, span in ipairs(clipped) do
 		local last = merged[#merged]
 		if last and span[1] <= last[2] then
-			last[2] = math.max(last[2], span[2])
+			if span[2] > last[2] then
+				last[2] = span[2]
+				table.insert(last.parts, span)
+			end
 		else
-			merged[#merged + 1] = span
+			merged[#merged + 1] = { span[1], span[2], parts = { span } }
 		end
 	end
 	return merged
@@ -70,16 +79,35 @@ local function intersect(a, b)
 	return both
 end
 
----@param list integer[]?
----@param value integer
+-- Where every field's normalized spans hold, the first such span (fields combine with AND, LOG-R48), or nil.
+---@param fields PagleSpan[][]
+---@return PagleSpan?
+local function firstOpening(fields)
+	local open = fields[1]
+	for i = 2, #fields do
+		open = intersect(open, fields[i])
+	end
+	return open[1]
+end
+
+-- Whether every part of the fields' spans the opening used is confirmed (LOG-R50): the parts overlapping it, of
+-- the span in each field it lies in.
+---@param fields PagleSpan[][]
+---@param opening PagleSpan
 ---@return boolean
-local function listHas(list, value)
-	for _, item in ipairs(list or {}) do
-		if item == value then
-			return true
+local function usedConfirmed(fields, opening)
+	for _, spans in ipairs(fields) do
+		for _, span in ipairs(spans) do
+			if span[1] <= opening[1] and opening[1] < span[2] then
+				for _, part in ipairs(span.parts) do
+					if part.confirmed == false and part[1] < opening[2] and opening[1] < part[2] then
+						return false
+					end
+				end
+			end
 		end
 	end
-	return false
+	return true
 end
 
 --- What one forecast walks over: realm days, their dates and the instant it starts from.
@@ -125,17 +153,15 @@ local spansOf = {
 
 	-- Each event's weekly occurrences (LOG-R56), never later calendar days (LOG-R50). The live calendar decides now
 	-- alone (LOG-R46): an occurrence under way while the event isn't active doesn't count, and an active event is
-	-- open from now, to the end of the occurrence under way or, with none, past the horizon.
+	-- open from now, to the end of the occurrence under way or, with none, past the horizon. ns.NextWindow keeps
+	-- that last span only when the forecast is open now.
 	events = function(events, range, context)
 		local spans = {}
 		for _, eventID in ipairs(events) do
-			local active = listHas(context.activeEvents, eventID)
+			local active = context.activeEvents ~= nil and ns.ListHas(context.activeEvents, eventID)
 			local rule = context.getEventRule(eventID)
 			local underWay = false
 			if rule then
-				if rule.confirmed == false then
-					context.confirmed = false
-				end
 				-- An occurrence that started this many days back may still be under way.
 				local back = math.ceil(rule.duration / MINUTES_PER_DAY)
 				for day = range.firstDay - back, range.lastDay do
@@ -145,7 +171,7 @@ local spansOf = {
 						local isUnderWay = opens <= range.from and range.from < closes
 						underWay = underWay or isUnderWay
 						if active or not isUnderWay then
-							spans[#spans + 1] = { opens, closes }
+							spans[#spans + 1] = { opens, closes, confirmed = rule.confirmed }
 						end
 					end
 				end
@@ -164,8 +190,10 @@ local TIME_FIELDS = { "time", "season", "events" }
 --- `{ openNow = true, closesAt? }` when they all hold at `fromTime`, else `{ opensAt, closesAt? }` for the next
 --- opening within 400 days, or nil with none. `closesAt` is left out when the opening doesn't stop within the
 --- horizon. A spec with none of them gives `{ onDemand = true }` when it has `auras`, else `{ always = true }`; its
---- `areas`, `auras`, `lure` and `skill` never constrain the forecast. Every result carries `confirmed`: false when
---- the spec's own `confirmed` (a window spec, LOG-R55) or a weekly rule it read is false.
+--- `areas`, `auras`, `lure` and `skill` never constrain the forecast. The live calendar's active events can only
+--- make it open now: every later opening comes from the weekly rules. Every result carries `confirmed`: false when
+--- the spec's own `confirmed` (a window spec, LOG-R55) is false, or the weekly rule of an occurrence the opening
+--- used is unconfirmed.
 ---
 --- Realm days are walked, never minutes, at one UTC offset for the whole horizon: across a daylight-saving change
 --- an hour-level state can be an hour off. Raises an error in the caller for an invalid spec, as MatchesConditions
@@ -207,21 +235,27 @@ function ns.NextWindow(spec, fromTime, offset, activeEvents, getEventRule)
 			return dates[day]
 		end,
 	}
-	local context = { activeEvents = activeEvents, getEventRule = getEventRule, confirmed = confirmed }
+	local context = { activeEvents = activeEvents, getEventRule = getEventRule }
 
-	local open
+	local fields = {}
 	for _, field in ipairs(TIME_FIELDS) do
 		if spec[field] ~= nil then
-			local spans = normalize(spansOf[field](spec[field], range, context), from, horizon)
-			open = open and intersect(open, spans) or spans
+			fields[#fields + 1] = normalize(spansOf[field](spec[field], range, context), from, horizon)
 		end
 	end
+	local first = firstOpening(fields)
+	-- Not open now: the calendar's active events open nothing later, so the events field (last of TIME_FIELDS) is
+	-- read again from the weekly rules alone (LOG-R50).
+	if first and first[1] ~= from and spec.events ~= nil and activeEvents ~= nil and #activeEvents > 0 then
+		context.activeEvents = nil
+		fields[#fields] = normalize(spansOf.events(spec.events, range, context), from, horizon)
+		first = firstOpening(fields)
+	end
 
-	local first = open[1]
 	if first == nil then
 		return nil
 	end
-	local window = { confirmed = context.confirmed }
+	local window = { confirmed = confirmed and usedConfirmed(fields, first) }
 	if first[1] == from then
 		window.openNow = true
 	else
