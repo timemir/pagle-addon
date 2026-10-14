@@ -435,7 +435,7 @@ Pagle.RegisterModule{
 | `Pagle.OpenFieldReport` | LED-R135, LED-R138, LED-R144 (REP-R43) |
 | `Pagle.RegisterEvent` (for `GET_ITEM_INFO_RECEIVED`) | LED-R126 |
 
-WoW APIs for its own presentation: `C_Item.GetItemNameByID`, `C_Item.RequestLoadItemDataByID`, `C_Map.GetAreaInfo`, `C_Map.GetMapInfo`, `GetServerTime`, `GetGameTime`, `StaticPopup_Show`, `BreakUpLargeNumbers`.
+WoW APIs for its own presentation: `C_Item.GetItemNameByID`, `C_Item.RequestLoadItemDataByID`, `C_Map.GetAreaInfo`, `C_Map.GetMapInfo`, `GetServerTime`, `GetGameTime`, `issecretvalue` (to leave out a secret realm clock, CORE-R31), `StaticPopup_Show`, `BreakUpLargeNumbers`.
 
 ### Coins paid
 
