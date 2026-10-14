@@ -176,16 +176,36 @@ describe("The Hunt list at runtime", function()
 		end)
 	end)
 
-	describe("with no Hunt list loaded", function()
-		it("reads as an empty list until data\\HuntList.lua is in the TOC (HNT-R1)", function()
-			local empty = ns.NewHuntList(nil, ns.L)
+	describe("the shipped list (DATA-R93)", function()
+		it(
+			"is what Hunts reads without the fixture: data\\HuntList.lua sets ns.huntList before OnInitialize",
+			function()
+				local shipped = newFakePagle().load("Pagle_Hunts").ns
 
-			assert.are.same({}, empty:Hunts())
-			assert.are.same({}, empty:Sets())
-			assert.are.same({}, empty:Current(SERVER_TIME))
-			assert.are.same({}, empty:Retired(SERVER_TIME))
-			assert.is_nil(empty:Hunt("fixture_snapper"))
-			assert.is_nil(empty:Fingerprint())
+				assert.is_string(shipped.huntList.fingerprint)
+				assert.are.equal(shipped.huntList.fingerprint, shipped.hunts:Fingerprint())
+				assert.are.equal(#shipped.huntList.hunts, #shipped.hunts:Hunts())
+			end
+		)
+
+		it("gives way to the fixture list in specs (hunts.md › Data: tests inject their own Hunt list)", function()
+			assert.are.equal("f1c7f1c7f1c7f1c7", list:Fingerprint())
 		end)
+	end)
+
+	describe("with no Hunt list loaded", function()
+		it(
+			"reads a missing list as an empty one, so a broken install shows no Hunts rather than an error (HNT-R1)",
+			function()
+				local empty = ns.NewHuntList(nil, ns.L)
+
+				assert.are.same({}, empty:Hunts())
+				assert.are.same({}, empty:Sets())
+				assert.are.same({}, empty:Current(SERVER_TIME))
+				assert.are.same({}, empty:Retired(SERVER_TIME))
+				assert.is_nil(empty:Hunt("fixture_snapper"))
+				assert.is_nil(empty:Fingerprint())
+			end
+		)
 	end)
 end)

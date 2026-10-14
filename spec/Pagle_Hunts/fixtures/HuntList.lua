@@ -13,7 +13,7 @@ end
 local ns = select(2, ...)
 
 ns.huntList = {
-	fingerprint = "f1x7f1x7f1x7f1x7f1x7f1x7f1x7f1x7f1x7f1x7f1x7f1x7f1x7f1x7f1x7f1x7",
+	fingerprint = "f1c7f1c7f1c7f1c7",
 	sets = {
 		{ id = "fixture_dusk" },
 		{ id = "fixture_wagers" },

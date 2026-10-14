@@ -57,7 +57,7 @@ function ns.IsRetired(hunt, now)
 end
 
 ---@class PagleHuntsNS
----@field huntList HuntListData? -- set by data\HuntList.lua (DATA-R93); nil until the TOC lists it
+---@field huntList HuntListData? -- set by the generated data\HuntList.lua (DATA-R93), which the TOC lists first
 
 ---@class HuntList
 ---@field data HuntListData        -- read through the methods below, never directly

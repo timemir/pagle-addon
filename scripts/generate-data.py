@@ -10,6 +10,8 @@
     .tools/bin/python scripts/generate-data.py --explain <itemID|areaID>
                                                           write nothing; print every layer's value for it and
                                                           which won
+    .tools/bin/python scripts/generate-data.py --lock     rewrite data/hunts/released.lock from the Hunt list and
+                                                          nothing else; only when a release is tagged, from 1.0 on
 
 Runs on the pinned Python in .tools/ (scripts/setup.sh); scripts/check.sh runs --check as its generator stage.
 """
