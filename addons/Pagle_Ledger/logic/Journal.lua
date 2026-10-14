@@ -25,6 +25,7 @@ local ns = select(2, ...)
 ---@field updating boolean               -- the projection is catching up or rebuilding (LOG-R74)
 ---@field state? LedgerState             -- nil while updating
 ---@field celebrated? LedgerCelebrated   -- nil while updating
+---@field activeTitle? string            -- the stored active title (LED-R77), for ns.ActiveTitle; nil while updating
 ---@field now integer                    -- GetServerTime()
 ---@field formatNumber fun(n: integer): string -- BreakUpLargeNumbers
 ---@field text LedgerJournalText         -- names, dates, window lines and lore (LED-R126, LED-R127, LED-R161)

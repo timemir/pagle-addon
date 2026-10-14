@@ -78,6 +78,7 @@ local function readContext()
 		updating = false,
 		state = state,
 		celebrated = ns.CelebratedSet(ns.db.global),
+		activeTitle = ns.db.profile.activeTitle,
 		now = GetServerTime(),
 		formatNumber = BreakUpLargeNumbers,
 		text = ns.journalText,

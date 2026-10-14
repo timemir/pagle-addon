@@ -18,6 +18,7 @@ logic\Prestige.lua
 logic\Bindings.lua
 logic\Fold.lua
 logic\World.lua
+logic\Titles.lua
 logic\Stars.lua
 logic\ZoneMastery.lua
 logic\Legends.lua
@@ -42,4 +43,5 @@ adapter\JournalSearch.lua
 adapter\Journal.lua
 adapter\Prestige.lua
 adapter\Bindings.lua
+adapter\Titles.lua
 adapter\Ledger.lua
