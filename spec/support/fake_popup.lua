@@ -37,6 +37,8 @@ return function(client, stubs)
 	---@field info table the dialog definition (StaticPopupDialogInfo, with the fields the fake also reads)
 	---@field data any
 	---@field buttons table<integer, string>
+	---@field text string the dialog's text, formatted with text_arg1 and text_arg2
+	---@field insertedFrame table? the frame StaticPopup_Show inserted, until the dialog hides
 
 	---@type FakeDialogFrame[]
 	local shown = {} -- the shown dialog frames, oldest first

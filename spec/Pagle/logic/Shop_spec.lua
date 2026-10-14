@@ -614,8 +614,7 @@ describe("Buy on the stage", function()
 				"hunts.cover.gold", -- earned, not yet
 				"ledger.binding.lapis", -- 900, one more needed
 			}) do
-				assert.is_nil(assert(shop:Stage(goodID)).canBuy, goodID)
-				assert.is_nil(shop:Purchase(goodID), goodID)
+				assert.are.same({ goodID }, { goodID, assert(shop:Stage(goodID)).canBuy, shop:Purchase(goodID) })
 			end
 			earned.value = true
 			handles.Hunts:RefreshGoods()
@@ -636,30 +635,33 @@ describe("Buy on the stage", function()
 		assert.is_nil(shop:Purchase("hunts.cover.velvet"))
 	end)
 
-	it("is disabled while any projection updates: at login, and while a Module's catches up (SHOP-R13, SHOP-R91)", function()
-		local fake, handles = session()
-		huntsCovers(handles.Hunts, { value = false })
-		handles.Ledger:ReportCoinsEarned(1000)
-		local during
-		handles.Hunts:NewProjection({
-			db = {},
-			rulesVersion = 1,
-			reset = function()
-				return {}
-			end,
-			apply = function() end,
-			done = function()
-				during = model(fake)
-			end,
-		})
-		fake.login()
+	it(
+		"is disabled while any projection updates: at login, and while a Module's catches up (SHOP-R13, SHOP-R91)",
+		function()
+			local fake, handles = session()
+			huntsCovers(handles.Hunts, { value = false })
+			handles.Ledger:ReportCoinsEarned(1000)
+			local during
+			handles.Hunts:NewProjection({
+				db = {},
+				rulesVersion = 1,
+				reset = function()
+					return {}
+				end,
+				apply = function() end,
+				done = function()
+					during = model(fake)
+				end,
+			})
+			fake.login()
 
-		assert.is_nil(assert(model(fake):Stage("hunts.cover.velvet")).canBuy) -- nothing has caught up yet
-		fake.enterWorld()
-		assert.is_nil(assert(during:Stage("hunts.cover.velvet")).canBuy) -- in Hunts' done
-		assert.is_nil(during:Purchase("hunts.cover.velvet"))
-		assert.is_true(assert(model(fake):Stage("hunts.cover.velvet")).canBuy)
-	end)
+			assert.is_nil(assert(model(fake):Stage("hunts.cover.velvet")).canBuy) -- nothing has caught up yet
+			fake.enterWorld()
+			assert.is_nil(assert(during:Stage("hunts.cover.velvet")).canBuy) -- in Hunts' done
+			assert.is_nil(during:Purchase("hunts.cover.velvet"))
+			assert.is_true(assert(model(fake):Stage("hunts.cover.velvet")).canBuy)
+		end
+	)
 end)
 
 describe("A purchase", function()

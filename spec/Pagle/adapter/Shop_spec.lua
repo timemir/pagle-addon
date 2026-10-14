@@ -639,44 +639,50 @@ local function confirmShown(loaded)
 end
 
 describe("Buy on the stage", function()
-	it("is disabled for a good the balance doesn't cover, and hidden for an owned good or a default (SHOP-R13)", function()
-		local loaded, handles = shopSession()
-		handles.Ledger:ReportCoinsEarned(399)
-		loaded.ns.goods:SetPurchased({ ["core.toaststyle.ripple"] = true })
-		local Pagle = loaded.env.Pagle
+	it(
+		"is disabled for a good the balance doesn't cover, and hidden for an owned good or a default (SHOP-R13)",
+		function()
+			local loaded, handles = shopSession()
+			handles.Ledger:ReportCoinsEarned(399)
+			loaded.ns.goods:SetPurchased({ ["core.toaststyle.ripple"] = true })
+			local Pagle = loaded.env.Pagle
 
-		Pagle.OpenShop("hunts.cover.velvet")
-		local stage = shop(loaded).stage
-		assert.is_false(stage.buy:IsEnabled())
-		assert.are.equal("1 more needed", stage.needed:GetText())
-		stage.buy:Click()
-		assert.is_nil(loaded.client.popup)
-		Pagle.OpenShop("core.toaststyle.ripple")
-		assert.is_false(stage.buy:IsShown())
-		Pagle.OpenShop("hunts.cover.plain")
-		assert.is_false(stage.buy:IsShown())
+			Pagle.OpenShop("hunts.cover.velvet")
+			local stage = shop(loaded).stage
+			assert.is_false(stage.buy:IsEnabled())
+			assert.are.equal("1 more needed", stage.needed:GetText())
+			stage.buy:Click()
+			assert.is_nil(loaded.client.popup)
+			Pagle.OpenShop("core.toaststyle.ripple")
+			assert.is_false(stage.buy:IsShown())
+			Pagle.OpenShop("hunts.cover.plain")
+			assert.is_false(stage.buy:IsShown())
 
-		handles.Ledger:ReportCoinsEarned(400) -- BalanceChanged re-evaluates it
-		Pagle.OpenShop("hunts.cover.velvet")
-		assert.is_true(stage.buy:IsEnabled())
-	end)
+			handles.Ledger:ReportCoinsEarned(400) -- BalanceChanged re-evaluates it
+			Pagle.OpenShop("hunts.cover.velvet")
+			assert.is_true(stage.buy:IsEnabled())
+		end
+	)
 
-	it("is disabled while a projection updates, and enabled again once the update finishes (SHOP-R13, SHOP-R91)", function()
-		local loaded, handles = shopSession(nil, { entries = history(600) })
-		settle(loaded)
-		handles.Ledger:ReportCoinsEarned(1000)
-		loaded.env.Pagle.OpenShop("hunts.cover.velvet")
-		local stage = shop(loaded).stage
-		assert.is_true(stage.buy:IsEnabled())
+	it(
+		"is disabled while a projection updates, and enabled again once the update finishes (SHOP-R13, SHOP-R91)",
+		function()
+			local loaded, handles = shopSession(nil, { entries = history(600) })
+			settle(loaded)
+			handles.Ledger:ReportCoinsEarned(1000)
+			loaded.env.Pagle.OpenShop("hunts.cover.velvet")
+			local stage = shop(loaded).stage
+			assert.is_true(stage.buy:IsEnabled())
 
-		loaded.ns.walletProjection:Rebuild() -- 601 entries: across frames
-		loaded.env.Pagle.OpenShop("hunts.cover.velvet")
-		assert.is_true(loaded.ns.projections:IsUpdating())
-		assert.is_false(stage.buy:IsEnabled())
-		settle(loaded)
+			loaded.ns.walletProjection:Rebuild() -- 601 entries: across frames
+			loaded.env.Pagle.OpenShop("hunts.cover.velvet")
+			assert.is_true(loaded.ns.projections:IsUpdating())
+			assert.is_false(stage.buy:IsEnabled())
+			settle(loaded)
 
-		assert.is_true(stage.buy:IsEnabled())
-	end)
+			assert.is_true(stage.buy:IsEnabled())
+		end
+	)
 end)
 
 describe("The Buy popup", function()
@@ -785,7 +791,7 @@ describe("The Buy popup", function()
 		loaded.client.runTimers()
 
 		assert.is_true(loaded.env.Pagle.IsOwned("core.toaststyle.ripple"))
-		assert.is_nil(next(loaded.ns.announcementFrames or {}), "no Announcement frame was ever drawn")
+		assert.is_nil(next(loaded.ns.announcementFrames or {})) -- no Announcement frame was ever drawn
 	end)
 
 	it("closes with the shop: in combat, and when the shop closes (SHOP-R41, CORE-R33)", function()
@@ -825,7 +831,7 @@ describe("The purse's held line", function()
 			for _, region in ipairs(loaded.client.frames) do
 				for _, child in ipairs(region.children) do
 					local text = tostring(child.text)
-					assert.falsy(text:find("-%d") or text:lower():find("debt"), text)
+					assert.falsy(text:find("-%d") or text:lower():find("debt"))
 				end
 			end
 		end
@@ -834,7 +840,10 @@ describe("The purse's held line", function()
 	it("hides once new Coins fill it in (SHOP-R12)", function()
 		local entries = history(2)
 		entries[#entries + 1] = purchaseEntry(SERVER_TIME - 1000, "core.crest.crest3", 900)
-		local loaded, handles = shopSession({ global = { coins = { earned = { Ledger = 600 } } } }, { entries = entries })
+		local loaded, handles = shopSession(
+			{ global = { coins = { earned = { Ledger = 600 } } } },
+			{ entries = entries }
+		)
 		loaded.env.Pagle.OpenShop()
 
 		handles.Ledger:ReportCoinsEarned(1000)
