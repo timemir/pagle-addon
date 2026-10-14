@@ -26,8 +26,11 @@ local function bookplate(context)
 		{ kind = "kicker", text = L.ANGLER_EX_LIBRIS },
 		{ kind = "title", text = L.ANGLER_LEDGER },
 	}
-	if state.firstDate then
-		blocks[#blocks + 1] = { kind = "text", text = L.ANGLER_KEPT_SINCE:format(context.text:Date(state.firstDate)) }
+	-- The first Catch with a realm date; with none, the first Catch's server time at the realm's offset now.
+	local since = state.firstDate and context.text:Date(state.firstDate)
+		or state.firstTime and context.text:DateAt(state.firstTime)
+	if since then
+		blocks[#blocks + 1] = { kind = "text", text = L.ANGLER_KEPT_SINCE:format(since) }
 	end
 	blocks[#blocks + 1] = { kind = "title", text = L.ANGLER_LEVEL:format(ns.ShownLevel(state, celebrated)) }
 	blocks[#blocks + 1] = { kind = "xpBar", bar = ns.InkXpBar(state, celebrated, context.now, format) }

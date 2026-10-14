@@ -224,6 +224,16 @@ function Text:Date(date)
 	return ns.FormatJournalDate(date, ns.RealmDateAt(now, offsetAt(self.client, now)).year)
 end
 
+--- A server time's realm date as the Journal prints it (LED-R126), at the realm's offset now: for a Cast stored
+--- without a realm date (the bookplate's "kept since", LED-R146).
+---@param serverTime integer
+---@return string
+function Text:DateAt(serverTime)
+	local now = self.client.ServerTime()
+	local offset = offsetAt(self.client, now)
+	return ns.FormatJournalDate(ns.RealmDateAt(serverTime, offset), ns.RealmDateAt(now, offset).year)
+end
+
 --- A window's label alone (LED-R127), e.g. for the plain hint's window part (LED-R141).
 ---@param _ LedgerJournalText
 ---@param windowID string

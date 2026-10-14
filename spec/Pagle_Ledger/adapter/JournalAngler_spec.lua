@@ -126,6 +126,28 @@ describe("the Journal's Angler page", function()
 		end
 	end)
 
+	-- A Cast logged while the realm clock was secret: no realm minute, so no realm date (LOG-R49).
+	local function secretCast(char, time, itemID)
+		local record = cast(char, time, itemID)
+		record.conditions.minute = nil
+		return record
+	end
+
+	it(
+		"keeps since the first Catch's server date at the realm's offset now when no Catch has a realm date (LED-R146, LED-R126)",
+		function()
+			local _, loaded = anglerPage({ secretCast(1, T0, MACKEREL), secretCast(1, T0 + 3 * 86400, BOOT) })
+
+			assert.are.equal("kept since 11 Oct", loaded.ns.journal.pages.left[3].text)
+		end
+	)
+
+	it("keeps since the first Catch with a realm date, past one without (LED-R146, ledger.md › Data)", function()
+		local _, loaded = anglerPage({ secretCast(1, T0, MACKEREL), cast(1, T0 + 3 * 86400, BOOT) })
+
+		assert.are.equal("kept since 14 Oct", loaded.ns.journal.pages.left[3].text)
+	end)
+
 	it(
 		"lists the hands on the rod by character index from Pagle.GetAngler().skill, leaving out one without a Skill Reading (LED-R146, LED-R41)",
 		function()

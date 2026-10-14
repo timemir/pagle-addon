@@ -23,7 +23,8 @@ local ns = select(2, ...)
 ---@field prestige integer                    -- prestige rank: 0 until M4's Prestige
 ---@field fresh number                        -- Fresh Water F after the last Catch (LED-R22)
 ---@field lastCatch? integer                  -- server time of the last Catch's Cast
----@field firstDate? LedgerDate               -- realm date of the first Catch of any class (LED-R146)
+---@field firstDate? LedgerDate               -- realm date of the first Catch of any class with one (LED-R146)
+---@field firstTime? integer                  -- server time of the first Catch of any class (LED-R146)
 ---@field coins integer                       -- lifetime Coins earned (LED-R88)
 ---@field skill { [integer]: integer }        -- Skill Milestone threshold -> time credited (LED-R40)
 ---@field species { [integer]: LedgerSpecies } -- by Species ID (LED-R5)
@@ -288,6 +289,7 @@ function ns.NewLedgerFold(lookups)
 			state.catches = state.catches + 1
 			state.xp = state.xp + ns.CATCH_XP * spendFreshWater(state, record.time)
 			state.firstDate = state.firstDate or copyDate(record.conditions.date)
+			state.firstTime = state.firstTime or record.time
 			local zoneState
 			if zone ~= 0 then
 				zoneState = state.zones[zone]
