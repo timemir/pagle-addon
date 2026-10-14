@@ -250,10 +250,10 @@ end
 local function progressOf(input)
 	local L, hunt = ns.L, input.hunt
 	if input.updating then
-		return { text = L.ENTRY_UPDATING, filled = false },
-			{ updating = L.ENTRY_UPDATING },
-			{ text = L.ENTRY_UPDATING, odds = L.EFFORT_ODDS },
-			L.SET_LINE_UPDATING:format(input.list:SetName(hunt.set), L.ENTRY_UPDATING)
+		return { text = L.UPDATING, filled = false },
+			{ updating = L.UPDATING },
+			{ text = L.UPDATING, odds = L.EFFORT_ODDS },
+			L.SET_LINE_UPDATING:format(input.list:SetName(hunt.set), L.UPDATING)
 	end
 	local progress = input.state.hunts[hunt.id]
 	return sealOf(progress), ladderOf(hunt, progress, input.sources), effortOf(progress), setLineOf(input)

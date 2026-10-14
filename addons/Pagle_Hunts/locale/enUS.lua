@@ -171,7 +171,6 @@ ns.L = {
 	ENTRY_BACK = "back to %s",
 	ENTRY_PIN = "Pin to the tracker",
 	ENTRY_UNPIN = "Unpin",
-	ENTRY_UPDATING = "Updating from your Catch log…",
 	-- The wax seal: the full date tier 1 was reached, or the dashed ring before it.
 	SEAL_HUNTED = "Hunted %s",
 	SEAL_NOT_YET = "not yet",
@@ -206,7 +205,7 @@ ns.L = {
 	-- Sets on the board (HNT-R61, HNT-R66, HNT-R69): logic/Sets.lua. The nameplate's titles reuse SUMMARY_TITLES_*.
 	RIBBON_BOARD = "Board",
 	CRUMB_HUNTS = "Hunts",
-	UPDATING = "Updating from your Catch log…",
+	UPDATING = "Updating from your Catch log…", -- the entry's lines say it too (logic/Entry.lua)
 	NAMEPLATE = "%s · %s", -- "2 titles · 5 Hunts done"
 	NAMEPLATE_DONE_ONE = "%s Hunt done",
 	NAMEPLATE_DONE_OTHER = "%s Hunts done",
