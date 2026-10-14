@@ -44,7 +44,8 @@ function ns.Ledger.OnInitialize()
 end
 
 --- Where the Ledger's moments, Write-up sections, Coins and summary line go, and what they read: the client's names
---- and numbers, the Angler's logId, and the goods' refresh (LED-R89, LED-R90, LED-R93–R95, LED-R97, LED-R111).
+--- and numbers, the Angler's logId, the goods' refresh and Core's size text (LED-R81, LED-R89, LED-R90, LED-R93–R95,
+--- LED-R97, LED-R111).
 ---@param module PagleModuleHandle
 ---@return LedgerOutlets
 function ns.Outlets(module)
@@ -75,6 +76,9 @@ function ns.Outlets(module)
 		end,
 		RefreshGoods = function()
 			module:RefreshGoods()
+		end,
+		SizeText = function(size)
+			return ns.SizeText(size, Pagle.SIZE_BANDS, Pagle.FormatLength)
 		end,
 	}
 end

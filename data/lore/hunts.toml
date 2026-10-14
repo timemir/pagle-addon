@@ -1,0 +1,40 @@
+# Hunts' lore (DATA-R100, HNT-R130), emitted into addons/Pagle_Hunts/data/Lore.lua as ns.L entries (DATA-R104): the
+# names and descriptions of Hunts' goods (HNT-R121), one table per [huntgood."<goodID>"] with its name and description
+# (DATA-R101), every good manifest.toml lists under [hunts.huntgood] (DATA-R106). Core owns the kind good, so Hunts'
+# goods are huntgood (DATA-R102). The Hunts' and sets' own names, titles and notes stay beside their definitions in
+# data/hunts/hunts.toml (DATA-R105) and land in the same Lore.lua. Lore is never part of the catalogue or the Hunt
+# list's fingerprint, and changes no count (DATA-R109).
+# The M5 batch, drafted from VOICE.md, came with Hunts' lore check (DATA-R111, #183). The comment after each table is
+# the good's slot, for review only.
+#
+# The Curio Shop shows a good's name and description beside its preview, under its slot and Module
+# (wallet-and-shop.md › UI), so a description is about the look itself, never the shop, the board or the addon. A
+# notebook cover is the board's leather (HNT-R70); a tracker frame is drawn around the pinned lines on screen.
+
+[huntgood."hunts.notebookcover.leather"] # Notebook cover, the default
+name = "Saddle Leather"
+description = "Worn tan leather, gone soft at the corners from a season in a coat pocket."
+
+[huntgood."hunts.notebookcover.oilcloth"] # Notebook cover, tier 1
+name = "Oilcloth"
+description = "Stiff oiled canvas that sheds the rain, and most of the fish slime."
+
+[huntgood."hunts.notebookcover.tooled"] # Notebook cover, tier 2
+name = "Tooled Leather"
+description = "Dark leather tooled with reeds and leaping fish, by someone with a steady hand and a long winter."
+
+[huntgood."hunts.notebookcover.verdigris"] # Notebook cover, tier 3
+name = "Verdigris"
+description = "Copper corners and a copper clasp, gone green in the sea air. It was bright once, briefly."
+
+[huntgood."hunts.trackerframe.none"] # Tracker frame, the default
+name = "No Frame"
+description = "Only the lines themselves, with nothing drawn around them."
+
+[huntgood."hunts.trackerframe.inkwash"] # Tracker frame, tier 1
+name = "Ink Wash"
+description = "A thin grey wash of ink behind the lines, like a page that caught the spray."
+
+[huntgood."hunts.trackerframe.waxseal"] # Tracker frame, tier 2
+name = "Wax Seal"
+description = "Parchment edged in brown, with a red seal pressed in the corner, as if the list were official."

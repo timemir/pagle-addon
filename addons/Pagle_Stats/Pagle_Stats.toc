@@ -22,12 +22,14 @@ logic\Odds.lua
 logic\DrySpell.lua
 logic\Book.lua
 logic\Home.lua
+logic\Lifetime.lua
 logic\Item.lua
 logic\Search.lua
 adapter\Text.lua
 adapter\BookWidgets.lua
 adapter\Book.lua
 adapter\Home.lua
+adapter\Lifetime.lua
 adapter\Item.lua
 adapter\Search.lua
 adapter\Stats.lua

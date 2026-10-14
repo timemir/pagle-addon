@@ -37,6 +37,7 @@ describe("the Ledger's projection def", function()
 			LogId = function() end,
 			FormatNumber = tostring,
 			RefreshGoods = note("RefreshGoods"),
+			SizeText = function() end,
 		}
 	end
 	local outlets = noting({})

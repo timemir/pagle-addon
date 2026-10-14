@@ -20,6 +20,7 @@
 ---@field errors string[] Each error the default geterrorhandler() got, in order. A spec that gets one must read
 --- this list (assert it), or it fails at its end (spec/support/errors.lua).
 ---@field addError fun(err: any) The default geterrorhandler(): adds the error to `errors`.
+---@field shiftDown boolean? Whether Shift is held, as IsShiftKeyDown() reads it. Specs set it.
 
 --- The loot window the loot API reads: whether it's fishing loot (`IsFishingLoot()`) and its slots, in order.
 --- Specs set both before firing LOOT_READY.
@@ -84,6 +85,12 @@ local function clientStubs(client)
 		end,
 		-- The frame every addon frame hangs from; a plain widget, so it gets no events.
 		UIParent = widgets.newWidget("Frame"),
+		-- The minimap and what hangs around it (Blizzard_Minimap), which the tracker dock sits under (CORE-R70).
+		MinimapCluster = widgets.newWidget("Frame"),
+		-- Whether Shift is held: client.shiftDown, which specs set. Default not.
+		IsShiftKeyDown = function()
+			return client.shiftDown == true
+		end,
 		-- A font object, keeping its name and what SetFont gave it (`font`: file, size, flags).
 		CreateFont = function(name)
 			local font = { name = name }

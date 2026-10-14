@@ -19,7 +19,7 @@ from pagle_data.catalogue import FINGERPRINT_LENGTH, canonical, sha256_hex
 from pagle_data.conditions import check_spec
 from pagle_data.errors import At, Problems
 from pagle_data.items import Record
-from pagle_data.lore import CORE_GUARD
+from pagle_data.lore import CORE_GUARD, Text
 from pagle_data.lua import to_lua
 from pagle_data.toml_reader import check_keys, describe, expect_ids, expect_table, read_toml
 from pagle_data.universe import HUNTS_TOML
@@ -57,10 +57,11 @@ HuntRecord = dict[str, object]
 
 @dataclass(frozen=True)
 class HuntSet:
-    """A [[set]] (DATA-R85): its ID, and where it sits for a message."""
+    """A [[set]] (DATA-R85): its ID, where it sits for a message, and its text (DATA-R105)."""
 
     id: str
     at: At
+    texts: tuple[Text, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -74,11 +75,13 @@ class FixedClass:
 
 @dataclass(frozen=True)
 class Hunt:
-    """A [[hunt]] (DATA-R85-R89): its emitted record (DATA-R93), lore left out, and where it sits for a message."""
+    """A [[hunt]] (DATA-R85-R89): its emitted record (DATA-R93), lore left out, where it sits for a message, and its
+    text (DATA-R105)."""
 
     id: str
     record: HuntRecord
     at: At
+    texts: tuple[Text, ...] = ()
 
     def get(self, key: str) -> object:
         return self.record.get(key)
@@ -95,6 +98,12 @@ class HuntLayer:
     def members(self) -> set[int]:
         """Every fixed class's members: they join the item universe (DATA-R15)."""
         return {member for fixed in self.classes for member in fixed.members}
+
+    def texts(self) -> dict[str, Text]:
+        """Every Hunt's and set's text by lore key, hunt.<id>.<field> and set.<id>.<field> (DATA-R105): Pagle_Hunts'
+        lore that stays beside its definitions, never in a record, a hash or the fingerprint."""
+        entries: list[HuntSet | Hunt] = [*self.sets, *self.hunts]
+        return {text.key: text for entry in entries for text in entry.texts}
 
 
 class HuntList(TypedDict):
@@ -182,12 +191,25 @@ def _check_unique(kind: str, ids: list[tuple[str, At]], problems: Problems) -> N
         seen.add(entry_id)
 
 
+def _texts(
+    kind: str, entry_id: str | None, table: Mapping[str, object], fields: tuple[str, ...], at: At, problems: Problems
+) -> tuple[Text, ...]:
+    """An entry's lore fields that are strings, as <kind>.<id>.<field> texts (DATA-R105). Each is required in its
+    shape (a missing name or title is check_keys' problem, a wrong type one here); what the text says is the Hunts
+    lore check's (DATA-R107)."""
+    texts: list[Text] = []
+    for key in fields:
+        value = _string(table, key, at, problems)
+        if value is not None and entry_id is not None:
+            texts.append(Text(kind, entry_id, key, value))
+    return tuple(texts)
+
+
 def _read_set(table: Mapping[str, object], at: At, problems: Problems) -> HuntSet | None:
     check_keys(table, at, problems, required=_SET_REQUIRED, optional=_SET_OPTIONAL)
-    for key in ("name", "title", "note"):
-        _string(table, key, at, problems)  # DATA-R105: lore, required in its shape
     set_id = _id(table, at, _ID, "[%w_]+", problems)
-    return None if set_id is None else HuntSet(set_id, at)
+    texts = _texts("set", set_id, table, ("name", "title", "note"), at, problems)
+    return None if set_id is None else HuntSet(set_id, at, texts)
 
 
 def _read_class(table: Mapping[str, object], at: At, problems: Problems) -> FixedClass | None:
@@ -239,9 +261,8 @@ def _tiers(table: Mapping[str, object], at: At, problems: Problems) -> list[int]
 def _read_hunt(table: Mapping[str, object], at: At, problems: Problems) -> Hunt | None:
     """A [[hunt]]'s record (DATA-R93), with every check that needs nothing but the file (DATA-R86-R89, DATA-R92)."""
     check_keys(table, at, problems, required=_HUNT_REQUIRED, optional=_HUNT_OPTIONAL)
-    for key in ("name", "note"):
-        _string(table, key, at, problems)  # DATA-R105: lore, required in its shape
     hunt_id = _id(table, at, _ID, "[%w_]+", problems)
+    texts = _texts("hunt", hunt_id, table, ("name", "note"), at, problems)
     record: HuntRecord = {}
     if hunt_id is not None:
         record["id"] = hunt_id
@@ -292,7 +313,7 @@ def _read_hunt(table: Mapping[str, object], at: At, problems: Problems) -> Hunt 
     since, retired = record.get("since"), record.get("retired")
     if isinstance(since, int) and isinstance(retired, int) and retired < since:
         problems.add(at / "retired", "is before since (DATA-R92)")
-    return None if hunt_id is None else Hunt(hunt_id, record, at)
+    return None if hunt_id is None else Hunt(hunt_id, record, at, texts)
 
 
 def read_hunts(root: Path, problems: Problems) -> HuntLayer:

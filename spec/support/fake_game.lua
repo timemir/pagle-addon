@@ -23,9 +23,14 @@
 ---@field items table<integer, integer[]> `{ classID, subclassID }` per item ID, for `C_Item.GetItemInfoInstant`.
 ---@field itemNames table<integer, string> Each item's name, for `C_Item.GetItemNameByID` and `C_Item.GetItemInfo`.
 --- Default none: no item cached.
----@field itemIcons table<integer, integer> Each item's icon file ID, for `C_Item.GetItemIconByID`. Default none.
 ---@field itemRequests integer[] Each `C_Item.RequestLoadItemDataByID` call's item ID, in order. The client loads
 --- nothing on its own: a spec sets `itemNames` and fires GET_ITEM_INFO_RECEIVED itself.
+---@field itemIcons table<integer, integer|string> Each item's icon (a file ID, or a texture path), for
+--- `C_Item.GetItemIconByID`. Default none.
+---@field itemLoads table<integer, function[]> The `Item:CreateFromItemID(id):ContinueOnItemLoad` callbacks waiting
+--- for each item not in `itemNames`, in order.
+---@field loadItem fun(itemID: integer, name: string) The client loads an item: it goes into `itemNames`, and each
+--- callback waiting for it runs, in order.
 ---@field bindingCalls string[] Each override call, in order: "set <key> <action>" or "clear".
 ---@field overrideAction fun(key: string): string? The priority override on `key`, as `GetBindingAction` reads it.
 ---@field fireGameEvent fun(event: string, ...) Fires a WoW event the game raises on its own. `client.fire` unless a
@@ -60,8 +65,8 @@ return function(client, stubs)
 	-- A Fishing Pole (6256, as probe B1 read it) and a Worn Shortsword (25).
 	client.items = { [6256] = { 2, 20 }, [25] = { 2, 7 } }
 	client.itemNames = {}
-	client.itemIcons = {}
 	client.itemRequests = {}
+	client.itemIcons, client.itemLoads = {}, {}
 	client.fireGameEvent = client.fire
 
 	-- Override calls are protected: in combat lockdown the client blocks them (ADDON_ACTION_BLOCKED). Here they
@@ -153,12 +158,38 @@ return function(client, stubs)
 	stubs.C_Item.GetItemInfo = function(itemID)
 		return client.itemNames[itemID]
 	end
-	-- The item's icon file ID; nil for one not in client.itemIcons (Stats' names, STA-R59).
+	-- The item's icon from client.itemIcons, cached or not, as the client answers from its item data; nil for one not
+	-- in it (a Hunt's icon, HNT-R55; Stats' names, STA-R59).
 	stubs.C_Item.GetItemIconByID = function(itemID)
 		return client.itemIcons[itemID]
 	end
-	-- The enUS client's quality names and colours (Stats' qualities, STA-R59): GlobalStrings' ITEM_QUALITY<n>_DESC,
-	-- and ITEM_QUALITY_COLORS as Blizzard_Colors' ColorManager fills it, with no colour overrides.
+	-- ItemMixin's loader (Blizzard_ObjectAPI's Item.lua): ContinueOnItemLoad runs the callback at once for an item in
+	-- client.itemNames, else when client.loadItem loads it (HNT-R54).
+	stubs.Item = {
+		CreateFromItemID = function(_, itemID)
+			return {
+				ContinueOnItemLoad = function(_, callback)
+					if client.itemNames[itemID] then
+						callback()
+						return
+					end
+					client.itemLoads[itemID] = client.itemLoads[itemID] or {}
+					table.insert(client.itemLoads[itemID], callback)
+				end,
+			}
+		end,
+	}
+	function client.loadItem(itemID, name)
+		client.itemNames[itemID] = name
+		local waiting = client.itemLoads[itemID] or {}
+		client.itemLoads[itemID] = nil
+		for _, callback in ipairs(waiting) do
+			callback()
+		end
+	end
+	-- The enUS client's quality names and colours (Stats' qualities, STA-R59; a quality class's icon tint, HNT-R55):
+	-- GlobalStrings' ITEM_QUALITY<n>_DESC, and ITEM_QUALITY_COLORS as Blizzard_Colors' ColorManager fills it, with no
+	-- colour overrides.
 	for quality, name in pairs({
 		[0] = "Poor",
 		"Common",

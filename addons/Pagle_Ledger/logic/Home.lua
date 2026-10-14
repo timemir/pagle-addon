@@ -8,7 +8,7 @@ local ns = select(2, ...)
 -- The Journal's Home (LED-R130–R133, LED-R149): the spread the Journal opens on. The left page has every charted
 -- and every fished zone as a tile under its continent's tab; the right page the bookplate summary, Notes to self and
 -- the contents; the brass plate sits on the cover. Pure logic over the Journal's context (CORE-R7); its M3 stage
--- leaves out titles, Prestige and Legends (LED-R4).
+-- left out titles, Prestige and Legends, and M4 brings them back (LED-R4).
 
 --- The tab of every continent but the Eastern Kingdoms (0) and Kalimdor (1): Home's args `{ tab = ns.OTHER_TAB }`.
 ns.OTHER_TAB = "other"
@@ -209,21 +209,24 @@ local function countText(...)
 	return ns.L.HOME_COUNT:format(done, total)
 end
 
--- The right page (LED-R132): the bookplate summary (the shown level in large numerals, Ledger completion's seal),
--- the ink XP bar, Notes to self, and In this Ledger's contents, each line opening its spread. M3 draws no title, no
--- Prestige emblem or stars and no Legends line (LED-R4).
+-- The right page (LED-R132): the bookplate summary (the shown level in large numerals with the Prestige emblem and
+-- stars beside them, the active title in handwriting, Ledger completion's seal), the ink XP bar, Notes to self, and
+-- In this Ledger's contents with M4's Legends line, each line opening its spread (LED-R4).
 ---@param context LedgerHomeContext
 ---@return LedgerBlock[]
 local function rightPage(context)
 	local L = ns.L
 	local state, celebrated = context.state, context.celebrated
 	local completion = ns.LedgerCompletion(context.world, state, context.getItem)
+	local _, title = ns.ActiveTitle(context --[[@as LedgerTitleView]])
 	local right = {
 		{
 			kind = "bookplate",
 			text = tostring(ns.ShownLevel(state, celebrated)),
 			value = L.HOME_LEVEL,
 			seal = L.HOME_PERCENT:format(completion.percent),
+			mark = ns.PrestigeMark(state.prestige),
+			signature = title,
 		},
 		{ kind = "xpBar", bar = ns.InkXpBar(state, celebrated, context.now, context.formatNumber) },
 		{ kind = "kicker", text = L.HOME_NOTES },
@@ -244,17 +247,29 @@ local function rightPage(context)
 		value = countText(completion.junk, completion.treasure),
 		place = { id = ns.JOURNAL_CURIOS },
 	}
+	right[#right + 1] = {
+		kind = "leader",
+		text = L.HOME_LEGENDS,
+		value = countText(completion.legends),
+		place = { id = ns.JOURNAL_LEGENDS },
+	}
 	right[#right + 1] = { kind = "leader", text = L.HOME_ANGLER, place = { id = ns.JOURNAL_ANGLER } }
 	return right
 end
 
---- The brass plate on the cover (LED-R149, LED-R4's M3 stage, without the title): "Lv {shown level} · Ledger {p}%".
+--- The brass plate on the cover (LED-R149): "Lv {shown level} · {active title} · Ledger {p}%", the title and its
+--- separator left out while the active title has no lore text (LED-R161).
 ---@param context LedgerHomeContext
 ---@return string
 function ns.BrassPlate(context)
 	local state = context.state
 	local level = ns.ShownLevel(state, context.celebrated)
-	return ns.L.BRASS_PLATE:format(level, ns.LedgerCompletion(context.world, state, context.getItem).percent)
+	local percent = ns.LedgerCompletion(context.world, state, context.getItem).percent
+	local _, title = ns.ActiveTitle(context --[[@as LedgerTitleView]])
+	if title then
+		return ns.L.BRASS_PLATE_TITLE:format(level, title, percent)
+	end
+	return ns.L.BRASS_PLATE:format(level, percent)
 end
 
 --- Home as a spread (LED-R130–R133): no crumbs of its own; its args' `tab` chooses a continent tab. The tab last
