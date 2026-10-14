@@ -98,11 +98,19 @@ echo "types: no warnings"
 # busted itself only ever exits 0 or 1, so a status over 128 means a signal killed it before the specs finished: it
 # says nothing about them. On the dev's machine the coverage run has died of SIGSEGV that way, at instructions that
 # can't fault (#149). Such a run gets one rerun, without coverage, which gates instead, and no report is made.
+# PAGLE_NO_COVERAGE=1 skips luacov from the start: the specs gate the same, faster and in about half the memory.
+# The agents' gate limiter sets it; a run without it reports coverage as before.
 stage tests
 mkdir -p .tools/cache
 rm -f .tools/cache/luacov.*.out # luacov adds to an existing stats file
 coverage=yes status=0
-"$bin/busted" --coverage --exclude-tags=slow || status=$?
+if [[ ${PAGLE_NO_COVERAGE:-0} == 1 ]]; then
+	coverage=no
+	echo "tests: PAGLE_NO_COVERAGE=1, so the specs run without coverage"
+	"$bin/busted" --exclude-tags=slow || fail tests
+else
+	"$bin/busted" --coverage --exclude-tags=slow || status=$?
+fi
 if ((status > 128)); then
 	echo "tests: busted --coverage was killed by signal $((status - 128));" \
 		"running the specs again without coverage (#149)" >&2
