@@ -36,6 +36,8 @@
 local widgets = dofile("spec/support/widgets.lua")
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local newSecureCall = dofile("spec/support/securecall.lua")
+---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no require
+local BIT = require("bit")
 
 ---@return FakeClient
 local function newClient()
@@ -269,6 +271,8 @@ local function clientStubs(client)
 		GetCurrentRegionName = function()
 			return "US"
 		end,
+		-- LuaBitOp, the `bit` library the client ships (LOG-R66), from the luabitop rock scripts/tools.env pins.
+		bit = BIT,
 	}
 	return stubs
 end
