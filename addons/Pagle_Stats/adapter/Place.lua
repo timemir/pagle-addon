@@ -370,7 +370,11 @@ local function drawRight(content, place)
 	for _, line in ipairs({
 		{ view.casts, L.PLACE_CASTS_LABEL, ns.Number(casts) },
 		{ view.catches, L.PLACE_CATCHES_LABEL, ns.Number(catches) },
-		{ view.gotAway, L.PLACE_GOT_AWAY_LABEL, rate and L.PLACE_GOT_AWAY:format(ns.Number(gotAway), rate) or L.PLACE_NONE },
+		{
+			view.gotAway,
+			L.PLACE_GOT_AWAY_LABEL,
+			rate and L.PLACE_GOT_AWAY:format(ns.Number(gotAway), rate) or L.PLACE_NONE,
+		},
 	}) do
 		line[1]:SetLine({ label = line[2], value = line[3] })
 		put(line[1], y)

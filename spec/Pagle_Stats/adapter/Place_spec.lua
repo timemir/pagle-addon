@@ -239,10 +239,7 @@ describe("a place's page (stats.md › UI › Place spread)", function()
 			local left = open(ns, DARKSHORE)
 
 			-- Rusted Lure (removed) is on Darkshore's list but never a row.
-			assert.are.same(
-				{ "Smallfish", "Firefin", "Mackerel", "Blackmouth", "Nightfin", "Odd Fish" },
-				namesOf(left)
-			)
+			assert.are.same({ "Smallfish", "Firefin", "Mackerel", "Blackmouth", "Nightfin", "Odd Fish" }, namesOf(left))
 			left = open(ns, STRANGLETHORN)
 			assert.are.same({ "Mackerel" }, namesOf(left)) -- not the Noise Minor Mana Potion
 		end)
@@ -326,7 +323,10 @@ describe("a place's page (stats.md › UI › Place spread)", function()
 			assert.are.equal(hand, nightfin.odds.fontObject)
 			assert.are_not.equal(hand, smallfish.odds.fontObject)
 
-			assert.are.same({ "1 in 150", "50 since" }, { rowNamed(left, "Odd Fish").odds.text, rowNamed(left, "Odd Fish").margin.text })
+			assert.are.same(
+				{ "1 in 150", "50 since" },
+				{ rowNamed(left, "Odd Fish").odds.text, rowNamed(left, "Odd Fish").margin.text }
+			)
 		end)
 
 		it("stars a row watched from this place, and only from this place (STA-R60)", function()
@@ -359,7 +359,10 @@ describe("a place's page (stats.md › UI › Place spread)", function()
 			records[#records + 1] = cast({ time = T0 + 2000, subzone = AUBERDINE, items = { UNCHARTED } })
 			local ns = ready(records)
 
-			assert.are.same({ "ANY TIME", "Smallfish", "Firefin", "ALSO CAUGHT HERE", "Odd Fish" }, layoutOf((open(ns, AUBERDINE))))
+			assert.are.same(
+				{ "ANY TIME", "Smallfish", "Firefin", "ALSO CAUGHT HERE", "Odd Fish" },
+				layoutOf((open(ns, AUBERDINE)))
+			)
 			assert.is_nil(ns.State().places[BASHAL_ARAN])
 			assert.is_false(has(namesOf((open(ns, BASHAL_ARAN))), "Odd Fish"))
 		end)
@@ -368,11 +371,21 @@ describe("a place's page (stats.md › UI › Place spread)", function()
 			local fake = withHistory(darkshore())
 			local ns, loaded = ready(fake)
 			local log, global = fake.catchLog.data, loaded.env.PagleStatsDB.global
+			local before = layoutOf((open(ns, DARKSHORE)))
+			assert.are.same({ "ALSO CAUGHT HERE", "Odd Fish" }, { before[9], before[10] })
 
 			-- The next release lists it in Darkshore by night.
 			local catalogue = stats.catalogue()
 			catalogue.fingerprint = "0123456789abcdef"
-			catalogue.items[UNCHARTED] = { category = "fish", species = UNCHARTED, quality = 1, legend = false, noise = false, removed = false, pool = false }
+			catalogue.items[UNCHARTED] = {
+				category = "fish",
+				species = UNCHARTED,
+				quality = 1,
+				legend = false,
+				noise = false,
+				removed = false,
+				pool = false,
+			}
 			local entries = catalogue.areas[DARKSHORE].catches
 			entries[#entries + 1] = {
 				itemID = UNCHARTED,
@@ -400,7 +413,10 @@ describe("a place's page (stats.md › UI › Place spread)", function()
 			local texts = textsOf((open(ns, DARKSHORE)))
 
 			assert.are.same({ "WATERS", "Darkshore", "I'm here" }, { texts[1], texts[2], texts[3] })
-			assert.are.equal("150 of my Casts here. No junk from 170; at 200 I'm past it, so only those Casts count.", texts[4])
+			assert.are.equal(
+				"150 of my Casts here. No junk from 170; at 200 I'm past it, so only those Casts count.",
+				texts[4]
+			)
 		end)
 
 		it("reads a subzone's zone as its kicker, and I'm here only in the place I'm in", function()
@@ -411,7 +427,10 @@ describe("a place's page (stats.md › UI › Place spread)", function()
 
 			texts = textsOf((open(ns, BASHAL_ARAN)))
 			assert.are.same({ "DARKSHORE", "Bashal'Aran" }, { texts[1], texts[2] })
-			assert.are.equal("0 of my Casts here. No junk from 170; at 200 I'm past it, so only those Casts count.", texts[3])
+			assert.are.equal(
+				"0 of my Casts here. No junk from 170; at 200 I'm past it, so only those Casts count.",
+				texts[3]
+			)
 
 			moveTo(fake, STRANGLETHORN, 0, 200)
 			assert.is_false(has(textsOf((open(ns, DARKSHORE))), "I'm here"))
@@ -421,7 +440,12 @@ describe("a place's page (stats.md › UI › Place spread)", function()
 			local ns, _, fake = ready(darkshore())
 
 			moveTo(fake, DARKSHORE, AUBERDINE, 120)
-			assert.is_true(has(textsOf((open(ns, DARKSHORE))), "150 of my Casts here. No junk from 170; at 120 I'm below it, so only my Casts below it count."))
+			assert.is_true(
+				has(
+					textsOf((open(ns, DARKSHORE))),
+					"150 of my Casts here. No junk from 170; at 120 I'm below it, so only my Casts below it count."
+				)
+			)
 			moveTo(fake, DARKSHORE, AUBERDINE, nil)
 			assert.is_true(has(textsOf((open(ns, DARKSHORE))), "150 of my Casts here. No junk from 170."))
 			assert.is_true(has(textsOf((open(ns, STORMWIND))), "0 of my Casts here."))

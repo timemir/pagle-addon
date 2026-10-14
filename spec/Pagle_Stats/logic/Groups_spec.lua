@@ -56,7 +56,15 @@ describe("a place's page in logic", function()
 			local state = stateWith(
 				{ ["148:hi"] = 150, ["148:hi:night"] = 120 },
 				{ ["148:hi#6303"] = hit(3), ["148:hi#6359"] = hit(6), ["148:hi#6358"] = hit(2) },
-				{ [DARKSHORE] = { zone = DARKSHORE, casts = 270, catches = 12, gotAway = 0, items = { [UNCHARTED] = 1 } } }
+				{
+					[DARKSHORE] = {
+						zone = DARKSHORE,
+						casts = 270,
+						catches = 12,
+						gotAway = 0,
+						items = { [UNCHARTED] = 1 },
+					},
+				}
 			)
 
 			local groups = ns.Groups(state, DARKSHORE, 200)
