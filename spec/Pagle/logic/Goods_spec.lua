@@ -517,6 +517,19 @@ describe("ns.NewGoods", function()
 			assert.is_true(env.goods:IsOwned("hunts.frame.oak"))
 		end)
 
+		it("passes over a cached entry without a slot, as a hand-edited PagleDB might hold (SHOP-R26)", function()
+			local env = newGoods({
+				global = { goods = { ["hunts.cover.odd"] = { name = "Odd" } } },
+				profile = { appearance = {} },
+			})
+			huntsCovers(env, { value = false })
+
+			env.goods:Start()
+			env.goods:Settle()
+
+			assert.are.equal("hunts.cover.plain", env.goods:GetEquipped("hunts.cover"))
+		end)
+
 		it("reports nothing when every slot has a default (SHOP-R23)", function()
 			local env = newGoods()
 			huntsCovers(env, { value = false })

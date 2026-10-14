@@ -347,7 +347,7 @@ function Goods:DefaultOf(slotID)
 	end
 	local found
 	for goodID, cached in pairs(self:Cache()) do
-		if cached.slot == slotID and cached.default and (not found or goodID < found) then
+		if type(cached) == "table" and cached.slot == slotID and cached.default and (not found or goodID < found) then
 			found = goodID
 		end
 	end
@@ -442,7 +442,9 @@ function Goods:KnownSlots()
 		seen[slotID] = true
 	end
 	for _, cached in pairs(self:Cache()) do
-		seen[cached.slot] = true
+		if type(cached) == "table" and type(cached.slot) == "string" then
+			seen[cached.slot] = true
+		end
 	end
 	for slotID in pairs(self.options.db().profile.appearance) do
 		seen[slotID] = true
