@@ -403,22 +403,26 @@ function ns.ToggleJournal()
 end
 
 --- `def` with the Journal's redraws added (LED-R122, LED-R123): after each live entry, on the next frame, and as the
---- projection's catch-up or rebuild finishes, after its own `done`.
+--- projection's catch-up or rebuild finishes, after its own `done`. A copy: `def` itself is left as it was.
 ---@param def PagleProjectionDef
 ---@return PagleProjectionDef
 function ns.WithJournalRedraws(def)
 	local apply, done = def.apply, def.done
-	def.apply = function(state, record, mode)
+	local wrapped = {}
+	for key, value in pairs(def) do
+		wrapped[key] = value
+	end
+	wrapped.apply = function(state, record, mode)
 		apply(state, record, mode)
 		if mode == "live" then
 			ns.journal:LiveApplied()
 		end
 	end
-	def.done = function(state, info)
+	wrapped.done = function(state, info)
 		if done then
 			done(state, info)
 		end
 		ns.journal:Draw()
 	end
-	return def
+	return wrapped
 end

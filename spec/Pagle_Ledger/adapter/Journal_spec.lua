@@ -183,6 +183,31 @@ describe("the Fish Journal while the projection updates", function()
 		assert.is_true(journal.frame.search:IsShown())
 		assert.is_true(has(textsOf(journal.frame), "Where I've Fished"))
 	end)
+
+	it(
+		"adds its redraws to a copy of the projection's def, leaving the def it was given as it was (LED-R122)",
+		function()
+			local _, loaded = loggedIn(true)
+			local applied, finished = {}, 0
+			local def = {
+				apply = function(_, record)
+					applied[#applied + 1] = record
+				end,
+				done = function()
+					finished = finished + 1
+				end,
+			}
+			local apply, done = def.apply, def.done
+
+			local wrapped = loaded.ns.WithJournalRedraws(def)
+			wrapped.apply({}, "record", "live")
+			wrapped.done({}, {})
+
+			assert.are_not.equal(def, wrapped)
+			assert.are.same({ apply, done }, { def.apply, def.done })
+			assert.are.same({ { "record" }, 1 }, { applied, finished })
+		end
+	)
 end)
 
 describe("the Fish Journal's live redraw", function()
