@@ -303,24 +303,43 @@ describe("the timeline's rows (HNT-R63)", function()
 	end)
 
 	it("draws it from the now line when the weekly forecast gives no span at now", function()
-		-- Event 302 has no weekly rule: forecast from the ruler's start alone, it has no span (LOG-R50), while the
-		-- calendar shows it open now. FakePagle's forecast counts the calendar at any start time, so the names'
-		-- NextWindow here answers from the weekly rules alone before now, as LOG-R50's forecast says.
+		-- Event 302 has no weekly rule: forecast from the ruler's start, the calendar opens it at now and never
+		-- before (LOG-R46, LOG-R50).
 		local run = start({ list = extraList({ { class = "fixed.oddity", conditions = { events = { 302 } } } }) })
 		local now = SERVER_TIME
 		setConditions(run, { events = { 302 } })
-		local forecast = run.ns.names.NextWindow
-		run.ns.names.NextWindow = function(spec, fromTime)
-			if fromTime < now then
-				return nil
-			end
-			return forecast(spec, fromTime)
-		end
 
 		local row = rowIn(run.ns.BoardTimeline({ mode = "board" }), "extra_1")
 
 		assert.are.same({ bar(at(now, now), 1, "hatched") }, bars(row))
 		assert.are.equal("while the event runs", row.margin)
+	end)
+
+	it("draws a live occurrence from its weekly opening to its end (HNT-R63, LOG-R50)", function()
+		-- Sunday 15:00, the Extravaganza live in its 14:00–16:00 occurrence: the ruler starts at 13:00, before it.
+		local run = start({ list = extraList({ { class = "fixed.oddity", conditions = { events = { 301 } } } }) })
+		run.loaded.client.advance(untilRealm(15))
+		setConditions(run, { events = { 301 } })
+		local now = realm(15)
+
+		local row = rowIn(run.ns.BoardTimeline({ mode = "board" }), "extra_1")
+
+		-- The fixture's weekly rule is unconfirmed (HNT-R34).
+		assert.are.same({ bar(at(realm(14), now), at(realm(16), now), "dashed") }, bars(row))
+		assert.are.equal("until 16:00", row.margin)
+	end)
+end)
+
+describe("an event's conditions line while it runs (HNT-R53)", function()
+	it("keeps its weekly wording, from its next forecast opening after closesAt", function()
+		local spec = { events = { 301 } }
+		local run = start({ list = extraList({ { class = "fixed.oddity", conditions = spec } }) })
+		run.loaded.client.advance(untilRealm(15))
+		setConditions(run, { events = { 301 } })
+
+		local line = run.ns.HuntConditionsLine(spec, nil, realm(15), run.fake.conditions, run.ns.names)
+
+		assert.are.equal("Sundays 14:00 for 2h", line:match("Sundays .*$"))
 	end)
 end)
 
