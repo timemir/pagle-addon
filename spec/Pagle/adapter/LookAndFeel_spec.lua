@@ -21,7 +21,12 @@ local function session(options)
 	if options.hunts then
 		local hunts = Pagle.RegisterModule({ name = "Hunts", title = "Hunts", order = 20 })
 		hunts:RegisterSlot({ id = "hunts.trackerframe", label = "Hunts tracker frame", category = "Trackers" })
-		hunts:RegisterGood({ id = "hunts.trackerframe.none", slot = "hunts.trackerframe", name = "None", default = true })
+		hunts:RegisterGood({
+			id = "hunts.trackerframe.none",
+			slot = "hunts.trackerframe",
+			name = "None",
+			default = true,
+		})
 	end
 	enterWorld(loaded, 2)
 	return loaded
@@ -116,17 +121,20 @@ describe("The Look and Feel page", function()
 		end
 	)
 
-	it("leaves out a Module's slots and header while it isn't On, and adds a Trackers one after (SET-R4, SET-R50)", function()
-		local loaded = session({ noLedger = true, hunts = true })
+	it(
+		"leaves out a Module's slots and header while it isn't On, and adds a Trackers one after (SET-R4, SET-R50)",
+		function()
+			local loaded = session({ noLedger = true, hunts = true })
 
-		local shown = lines(showLook(loaded), loaded.client.settings)
+			local shown = lines(showLook(loaded), loaded.client.settings)
 
-		assert.is_false(table.concat(shown, "\n"):find("Fish Journal", 1, true) ~= nil)
-		assert.are.same(
-			{ "# Trackers", "Hunts tracker frame = hunts.trackerframe.none", "# Curio Shop" },
-			{ shown[10], shown[11], shown[12] }
-		)
-	end)
+			assert.is_false(table.concat(shown, "\n"):find("Fish Journal", 1, true) ~= nil)
+			assert.are.same(
+				{ "# Trackers", "Hunts tracker frame = hunts.trackerframe.none", "# Curio Shop" },
+				{ shown[10], shown[11], shown[12] }
+			)
+		end
+	)
 
 	it("adds a slot registered after ModulesChanged the next time the panel shows (SET-R50)", function()
 		local loaded = session()
@@ -134,7 +142,12 @@ describe("The Look and Feel page", function()
 		showLook(loaded)
 		loaded.env.HideUIPanel(loaded.env.SettingsPanel)
 		hunts:RegisterSlot({ id = "hunts.notebookcover", label = "Notebook cover", category = "Hunts" })
-		hunts:RegisterGood({ id = "hunts.notebookcover.plain", slot = "hunts.notebookcover", name = "Plain", default = true })
+		hunts:RegisterGood({
+			id = "hunts.notebookcover.plain",
+			slot = "hunts.notebookcover",
+			name = "Plain",
+			default = true,
+		})
 
 		local shown = lines(showLook(loaded), loaded.client.settings)
 
@@ -144,7 +157,7 @@ describe("The Look and Feel page", function()
 		)
 	end)
 
-	it("is opened by Pagle.OpenSettings(\"look\") (CORE-R43)", function()
+	it('is opened by Pagle.OpenSettings("look") (CORE-R43)', function()
 		local loaded = session()
 
 		loaded.env.Pagle.OpenSettings("look")
@@ -154,16 +167,19 @@ describe("The Look and Feel page", function()
 end)
 
 describe("A slot dropdown", function()
-	it("is a dropdown found by its slot's label, never greyed out, with no tooltip (SET-R5, SET-R51, SET-R2)", function()
-		local loaded = session()
+	it(
+		"is a dropdown found by its slot's label, never greyed out, with no tooltip (SET-R5, SET-R51, SET-R2)",
+		function()
+			local loaded = session()
 
-		local row = rowNamed(showLook(loaded), "Journal binding")
+			local row = rowNamed(showLook(loaded), "Journal binding")
 
-		assert.are.equal("SettingsDropdownControlTemplate", row.initializer.template)
-		assert.is_true(row.frame.enabled)
-		assert.is_nil(row.initializer:GetTooltip())
-		assert.are.equal("ledger.binding.oak", row.initializer:GetSetting():GetDefaultValue())
-	end)
+			assert.are.equal("SettingsDropdownControlTemplate", row.initializer.template)
+			assert.is_true(row.frame.enabled)
+			assert.is_nil(row.initializer:GetTooltip())
+			assert.are.equal("ledger.binding.oak", row.initializer:GetSetting():GetDefaultValue())
+		end
+	)
 
 	it("lists only the slot's owned goods, read each time it opens (SET-R51, SHOP-R30)", function()
 		local loaded = session()
@@ -258,28 +274,31 @@ describe("Defaults", function()
 		["hunts.cover.velvet"] = true,
 	}
 
-	it("on Look and Feel sets every slot shown to its default good, keeping what is owned (SET-R52, SET-R60)", function()
-		local loaded = session({ saved = picked() })
-		loaded.ns.goods:SetPurchased(BOUGHT)
-		local Pagle = loaded.env.Pagle
-		assert.are.equal("ledger.binding.lapis", Pagle.GetEquipped("ledger.binding"))
-		showLook(loaded)
+	it(
+		"on Look and Feel sets every slot shown to its default good, keeping what is owned (SET-R52, SET-R60)",
+		function()
+			local loaded = session({ saved = picked() })
+			loaded.ns.goods:SetPurchased(BOUGHT)
+			local Pagle = loaded.env.Pagle
+			assert.are.equal("ledger.binding.lapis", Pagle.GetEquipped("ledger.binding"))
+			showLook(loaded)
 
-		loaded.client.settings.defaults(page(loaded, "Look and Feel"))
+			loaded.client.settings.defaults(page(loaded, "Look and Feel"))
 
-		assert.are.same({
-			"core.toaststyle.timber",
-			"core.soundset.driftwood",
-			"core.crest.plain",
-			"ledger.binding.oak",
-		}, {
-			Pagle.GetEquipped("core.toaststyle"),
-			Pagle.GetEquipped("core.soundset"),
-			Pagle.GetEquipped("core.crest"),
-			Pagle.GetEquipped("ledger.binding"),
-		})
-		assert.is_true(Pagle.IsOwned("ledger.binding.lapis"))
-	end)
+			assert.are.same({
+				"core.toaststyle.timber",
+				"core.soundset.driftwood",
+				"core.crest.plain",
+				"ledger.binding.oak",
+			}, {
+				Pagle.GetEquipped("core.toaststyle"),
+				Pagle.GetEquipped("core.soundset"),
+				Pagle.GetEquipped("core.crest"),
+				Pagle.GetEquipped("ledger.binding"),
+			})
+			assert.is_true(Pagle.IsOwned("ledger.binding.lapis"))
+		end
+	)
 
 	it("on Look and Feel leaves the stored look of a Module that isn't On (SET-R52, SHOP-R32, SET-R90)", function()
 		local loaded = session({ saved = picked() })

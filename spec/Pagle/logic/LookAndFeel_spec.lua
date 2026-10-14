@@ -34,11 +34,23 @@ describe("Look and Feel's logic", function()
 		})
 		local goods = env.goods
 		goods:RegisterSlot("Core", { id = "core.toaststyle", label = "Toast style", category = "Announcements" })
-		goods:RegisterGood("Core", { id = "core.toaststyle.timber", slot = "core.toaststyle", name = "Timber", default = true })
-		goods:RegisterGood("Core", { id = "core.toaststyle.ripple", slot = "core.toaststyle", name = "Ripple", tier = 1 })
-		goods:RegisterGood("Core", { id = "core.toaststyle.lantern", slot = "core.toaststyle", name = "Lantern", tier = 2 })
+		goods:RegisterGood(
+			"Core",
+			{ id = "core.toaststyle.timber", slot = "core.toaststyle", name = "Timber", default = true }
+		)
+		goods:RegisterGood(
+			"Core",
+			{ id = "core.toaststyle.ripple", slot = "core.toaststyle", name = "Ripple", tier = 1 }
+		)
+		goods:RegisterGood(
+			"Core",
+			{ id = "core.toaststyle.lantern", slot = "core.toaststyle", name = "Lantern", tier = 2 }
+		)
 		goods:RegisterSlot("Core", { id = "core.soundset", label = "Sound set", category = "Announcements" })
-		goods:RegisterGood("Core", { id = "core.soundset.driftwood", slot = "core.soundset", name = "Driftwood", default = true })
+		goods:RegisterGood(
+			"Core",
+			{ id = "core.soundset.driftwood", slot = "core.soundset", name = "Driftwood", default = true }
+		)
 		goods:RegisterSlot("Core", { id = "core.crest", label = "Bookplate crest", category = "Bookplate" })
 		goods:RegisterGood("Core", { id = "core.crest.plain", slot = "core.crest", name = "Plain", default = true })
 		return env
@@ -106,17 +118,20 @@ describe("Look and Feel's logic", function()
 	end)
 
 	describe("ns.CoreAnnouncementSlots", function()
-		it("lists Core's Announcements slots with goods, in registration order, not a Module's (CORE-R42, SET-R30)", function()
-			local env = newGoods()
-			slotWithDefault(env, "Hunts", "hunts.chime", "Announcements")
-			env.goods:RegisterSlot("Core", { id = "core.empty", label = "Empty", category = "Announcements" })
+		it(
+			"lists Core's Announcements slots with goods, in registration order, not a Module's (CORE-R42, SET-R30)",
+			function()
+				local env = newGoods()
+				slotWithDefault(env, "Hunts", "hunts.chime", "Announcements")
+				env.goods:RegisterSlot("Core", { id = "core.empty", label = "Empty", category = "Announcements" })
 
-			local ids = {}
-			for i, slot in ipairs(ns.CoreAnnouncementSlots(env.goods)) do
-				ids[i] = slot.id
+				local ids = {}
+				for i, slot in ipairs(ns.CoreAnnouncementSlots(env.goods)) do
+					ids[i] = slot.id
+				end
+				assert.are.same({ "core.toaststyle", "core.soundset" }, ids)
 			end
-			assert.are.same({ "core.toaststyle", "core.soundset" }, ids)
-		end)
+		)
 	end)
 
 	describe("ns.SlotChoices", function()
@@ -133,8 +148,14 @@ describe("Look and Feel's logic", function()
 		it("lists an earned good once its cached isEarned() is true (SET-R51, SHOP-R30)", function()
 			local env = newGoods()
 			local earned = false
-			env.goods:RegisterSlot("Ledger", { id = "ledger.binding", label = "Journal binding", category = "Fish Journal" })
-			env.goods:RegisterGood("Ledger", { id = "ledger.binding.field", slot = "ledger.binding", name = "Field", default = true })
+			env.goods:RegisterSlot(
+				"Ledger",
+				{ id = "ledger.binding", label = "Journal binding", category = "Fish Journal" }
+			)
+			env.goods:RegisterGood(
+				"Ledger",
+				{ id = "ledger.binding.field", slot = "ledger.binding", name = "Field", default = true }
+			)
 			env.goods:RegisterGood("Ledger", {
 				id = "ledger.binding.hide",
 				slot = "ledger.binding",
@@ -169,8 +190,14 @@ describe("Look and Feel's logic", function()
 
 		it("doesn't count an earned good, which isn't for sale (SET-R51, SHOP-R22)", function()
 			local env = newGoods()
-			env.goods:RegisterSlot("Ledger", { id = "ledger.binding", label = "Journal binding", category = "Fish Journal" })
-			env.goods:RegisterGood("Ledger", { id = "ledger.binding.field", slot = "ledger.binding", name = "Field", default = true })
+			env.goods:RegisterSlot(
+				"Ledger",
+				{ id = "ledger.binding", label = "Journal binding", category = "Fish Journal" }
+			)
+			env.goods:RegisterGood(
+				"Ledger",
+				{ id = "ledger.binding.field", slot = "ledger.binding", name = "Field", default = true }
+			)
 			env.goods:RegisterGood("Ledger", {
 				id = "ledger.binding.hide",
 				slot = "ledger.binding",
