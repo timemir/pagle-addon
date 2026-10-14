@@ -150,7 +150,9 @@ end
 ---@return { windows: string[], items: table<integer, { [1]: string, [2]: boolean }> }
 local function zoneTable(zone, lookups)
 	local windows, seen = {}, {}
-	local first, mixed, unconfirmed = {}, {}, {} -- by item: its first entry's window (false for none), ...
+	-- By item: its first entry's window (false for none), whether a later entry's differs, whether any gate is
+	-- unconfirmed.
+	local first, mixed, unconfirmed = {}, {}, {}
 	for _, entry in ipairs(lookups.GetZoneCatches(zone) or {}) do
 		local itemID, window = entry.itemID, entry.window or false
 		if first[itemID] == nil then
@@ -194,7 +196,7 @@ function ns.NewPlaceTables(lookups)
 	end
 
 	---@param zone integer
-	local function zoneOf(zone)
+	local function builtZone(zone)
 		current()
 		local built = zones[zone]
 		if not built then
@@ -235,7 +237,7 @@ function ns.NewPlaceTables(lookups)
 	---@return string? windowID
 	---@return boolean unconfirmed
 	function tables.ItemWindow(_, zone, itemID)
-		local window = zoneOf(zone).items[itemID]
+		local window = builtZone(zone).items[itemID]
 		if not window then
 			return nil, false
 		end
@@ -246,7 +248,7 @@ function ns.NewPlaceTables(lookups)
 	---@param zone integer
 	---@return string[]
 	function tables.ZoneWindows(_, zone)
-		return zoneOf(zone).windows
+		return builtZone(zone).windows
 	end
 
 	--- ns.InWindow (STA-R15).
