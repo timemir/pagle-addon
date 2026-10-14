@@ -38,15 +38,6 @@ describe("ns.FieldReportParts", function()
 		return row
 	end
 
-	-- The file's bytes, exactly.
-	local function readFile(path)
-		---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io
-		local file = assert(io.open(path, "rb"))
-		local text = file:read("*a")
-		file:close()
-		return text
-	end
-
 	-- The lines of one part, without their line ends.
 	local function linesOf(part)
 		local lines = {}
