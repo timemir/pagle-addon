@@ -28,4 +28,6 @@ adapter\Text.lua
 adapter\BookWidgets.lua
 adapter\Book.lua
 adapter\Home.lua
+adapter\Item.lua
+adapter\Search.lua
 adapter\Stats.lua
