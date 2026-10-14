@@ -209,21 +209,24 @@ local function countText(...)
 	return ns.L.HOME_COUNT:format(done, total)
 end
 
--- The right page (LED-R132): the bookplate summary (the shown level in large numerals, Ledger completion's seal),
--- the ink XP bar, Notes to self, and In this Ledger's contents, each line opening its spread, with M4's Legends line
--- (LED-R4). It draws no title, Prestige emblem or stars yet (LED-R4).
+-- The right page (LED-R132): the bookplate summary (the shown level in large numerals with the Prestige emblem and
+-- stars beside them, the active title in handwriting, Ledger completion's seal), the ink XP bar, Notes to self, and
+-- In this Ledger's contents with M4's Legends line, each line opening its spread (LED-R4).
 ---@param context LedgerHomeContext
 ---@return LedgerBlock[]
 local function rightPage(context)
 	local L = ns.L
 	local state, celebrated = context.state, context.celebrated
 	local completion = ns.LedgerCompletion(context.world, state, context.getItem)
+	local _, title = ns.ActiveTitle(context --[[@as LedgerTitleView]])
 	local right = {
 		{
 			kind = "bookplate",
 			text = tostring(ns.ShownLevel(state, celebrated)),
 			value = L.HOME_LEVEL,
 			seal = L.HOME_PERCENT:format(completion.percent),
+			mark = ns.PrestigeMark(state.prestige),
+			signature = title,
 		},
 		{ kind = "xpBar", bar = ns.InkXpBar(state, celebrated, context.now, context.formatNumber) },
 		{ kind = "kicker", text = L.HOME_NOTES },
@@ -254,13 +257,19 @@ local function rightPage(context)
 	return right
 end
 
---- The brass plate on the cover (LED-R149, LED-R4's M3 stage, without the title): "Lv {shown level} · Ledger {p}%".
+--- The brass plate on the cover (LED-R149): "Lv {shown level} · {active title} · Ledger {p}%", the title and its
+--- separator left out while the active title has no lore text (LED-R161).
 ---@param context LedgerHomeContext
 ---@return string
 function ns.BrassPlate(context)
 	local state = context.state
 	local level = ns.ShownLevel(state, context.celebrated)
-	return ns.L.BRASS_PLATE:format(level, ns.LedgerCompletion(context.world, state, context.getItem).percent)
+	local percent = ns.LedgerCompletion(context.world, state, context.getItem).percent
+	local _, title = ns.ActiveTitle(context --[[@as LedgerTitleView]])
+	if title then
+		return ns.L.BRASS_PLATE_TITLE:format(level, title, percent)
+	end
+	return ns.L.BRASS_PLATE:format(level, percent)
 end
 
 --- Home as a spread (LED-R130–R133): no crumbs of its own; its args' `tab` chooses a continent tab. The tab last

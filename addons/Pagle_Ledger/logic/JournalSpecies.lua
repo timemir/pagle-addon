@@ -144,8 +144,8 @@ end
 
 --- A Species' entry (LED-R140, LED-R141): the fish spread's left page, and the zone spread's right page with a fish
 --- selected. Caught: its icon in sepia, large; its name; the stamps (LED-R48); "First landed …" (the zone part left
---- out for zone 0); its blurb (left out while missing, LED-R161); "Found in …" with " Only by …"; and the removed
---- line (LED-R12). Uncaught, and never named (LED-R124): a silhouette, "An unknown fish", its riddle in quotes and
+--- out for zone 0); its blurb (left out while missing, LED-R161); "Found in …" with " Only by …"; its size line
+--- once it has a record (LED-R80, by Pagle's measure, in the Angler's unit, LED-R85); and the removed line (LED-R12). Uncaught, and never named (LED-R124): a silhouette, "An unknown fish", its riddle in quotes and
 --- the plain hint's link, or the plain hint itself once opened (DATA-R112).
 ---@param id integer the Species ID
 ---@param context LedgerJournalContext
@@ -190,6 +190,10 @@ function ns.JournalSpeciesEntry(id, context, hint)
 	local found = foundIn(world.species[id], text)
 	if found then
 		blocks[#blocks + 1] = { kind = "text", text = found }
+	end
+	local size = context.sizeText and context.sizeText(species.record)
+	if size then
+		blocks[#blocks + 1] = { kind = "text", text = L.ENTRY_LARGEST:format(size) }
 	end
 	local item = context.getItem and context.getItem(id)
 	if item and item.removed then

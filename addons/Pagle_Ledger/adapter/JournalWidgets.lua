@@ -356,14 +356,18 @@ function makers.seal(parent)
 	return widget
 end
 
--- The bookplate summary's row (LED-R132): the level in large numerals, its caption beside them, and a wax seal at
--- the right with Ledger completion.
+-- The bookplate summary's row (LED-R132), as variant E's: the level in large numerals; beside them its caption with
+-- the Prestige emblem and stars after it (makers.emblem), and the active title in handwriting under the caption; a
+-- wax seal at the right with Ledger completion.
 function makers.bookplate(parent)
 	local widget = newWidget(parent)
 	local numerals = ns.JournalText(widget, ns.JournalFonts().numeral, LOOK.title)
 	numerals:SetPoint("LEFT")
 	local caption = ns.JournalText(widget, ns.JournalFonts().small, LOOK.ink)
-	caption:SetPoint("LEFT", numerals, "RIGHT", 12, 0)
+	local emblem = makers.emblem(widget)
+	emblem:SetPoint("LEFT", caption, "RIGHT", 8, 0)
+	local signature = ns.JournalText(widget, ns.JournalFonts().hand, LOOK.blue)
+	signature:SetPoint("TOPLEFT", caption, "BOTTOMLEFT", 0, -4)
 	local wax = disc(widget, SEAL_SIZE)
 	wax:SetPoint("RIGHT")
 	wax:SetRotation(math.rad(-6))
@@ -371,9 +375,18 @@ function makers.bookplate(parent)
 	seal:SetPoint("CENTER", wax)
 	seal:SetJustifyH("CENTER")
 	widget.label = numerals
-	function widget.Fill(_, block)
+	function widget.Fill(_, block, width, open)
 		numerals:SetText(block.text)
 		caption:SetText(block.value or "")
+		signature:SetText(block.signature or "")
+		signature:SetShown(block.signature ~= nil)
+		-- With a title under it, the caption rides above the numerals' middle so the two stay centred beside them.
+		caption:ClearAllPoints()
+		caption:SetPoint(block.signature and "BOTTOMLEFT" or "LEFT", numerals, "RIGHT", 12, block.signature and 2 or 0)
+		local room = math.max(1, width - numerals:GetStringWidth() - caption:GetStringWidth() - SEAL_SIZE - 32)
+		emblem:SetWidth(room)
+		emblem:SetHeight(emblem:Fill({ kind = "emblem", mark = block.mark }, room, open))
+		emblem:SetShown(block.mark ~= nil and block.mark.emblem ~= nil)
 		seal:SetText(block.seal or "")
 		wax:SetShown(block.seal ~= nil)
 		return SEAL_SIZE
