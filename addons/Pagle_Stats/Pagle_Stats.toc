@@ -25,9 +25,11 @@ logic\Groups.lua
 logic\Book.lua
 logic\Home.lua
 logic\Lifetime.lua
+logic\Goods.lua
 adapter\Text.lua
 adapter\BookWidgets.lua
 adapter\TrackerBlock.lua
+adapter\Goods.lua
 adapter\Book.lua
 adapter\Place.lua
 adapter\Home.lua
