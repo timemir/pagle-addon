@@ -117,6 +117,8 @@ describe("scripts/read-wtf.lua", function()
 				"zone areaID 0: 2 Casts, seq 7, 8",
 				"B1: 1 entry, the last build 70338 (1.60.1)",
 				"S1: 2 entries, the last rank 86, max 150, mod 25 (character 1)",
+				"P1: none",
+				"U1: none",
 			}, section(out, "== Catch log"))
 		end)
 
@@ -362,6 +364,32 @@ describe("scripts/read-wtf.lua", function()
 				"lastSeq: equals PagleLog's length (11 entries)",
 				"count: 3 I and K rows stored",
 			}, section(out, "== Field report"))
+		end)
+	end)
+
+	-- M4#1 holds what the M4 exit check reads (#173, #174): a log with a Prestige (P1) and two purchases (U1), a
+	-- Ledger one Prestige in with a Catch Milestone, a Legend, size records and titles, the wallet projection, the
+	-- goods cache and the equipped looks. Read against spec/scripts/fixtures/Catalogue.lua, where 19803 is a Legend.
+	describe("on an account after the M4 exit check's steps", function()
+		local out, err, code = run(ACCOUNTS .. "M4#1", "--catalogue", CATALOGUE, "--item", "6303", "--item", "19803")
+
+		it("exits 0 and writes nothing to stderr", function()
+			assert.are.equal(0, code)
+			assert.are.equal("", err)
+		end)
+
+		it("counts and lists the Prestige and purchase entries (LOG-R38, LOG-R39)", function()
+			-- catch-log.md › Entry formats: P1 carries the new rank, U1 the good and the price paid. Two U1s, each listed.
+			local log = section(out, "== Catch log")
+			assert.are.same({
+				"P1: 1 entry",
+				"  rank 1, 1 Ada Brook (Player-4618-0A1B2C3D), 2026-10-12 10:20:00 UTC",
+				"U1: 2 entries",
+				"  core.toaststyle.ripple for 150 Coins, 1 Ada Brook (Player-4618-0A1B2C3D), 2026-10-12 10:21:40 UTC",
+				"  core.soundset.gilded for 400 Coins, 1 Ada Brook (Player-4618-0A1B2C3D), 2026-10-12 10:23:20 UTC",
+			}, { unpack(log, #log - 4) })
+			assert.are.equal("entries by tag: B1 1, C1 4, P1 1, S1 1, U1 2", log[3])
+			assert.are.equal("entries Core's codec can't decode: none", log[4])
 		end)
 	end)
 

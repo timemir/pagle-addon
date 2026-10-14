@@ -38,7 +38,7 @@ local ROOT = ((arg and arg[0] or ""):match("^(.*)[/\\]") or ".") .. "/.."
 
 -- The arguments as options, or nil and what's wrong with them.
 local function parseArgs(args)
-	local options = { cvars = {}, addons = {} }
+	local options = { cvars = {}, addons = {}, items = {} }
 	local i = 1
 	while args[i] do
 		local word, value = args[i], args[i + 1]
@@ -55,11 +55,15 @@ local function parseArgs(args)
 				list[#list + 1] = value
 			end
 			i = i + 2
-		elseif word == "--expect-casts" or word == "--since" then
+		elseif word == "--expect-casts" or word == "--since" or word == "--item" then
 			if not value or not value:match("^%d+$") then
 				return nil, word .. " needs a whole number"
 			end
-			options[word == "--since" and "since" or "expectCasts"] = tonumber(value)
+			if word == "--item" then
+				options.items[#options.items + 1] = tonumber(value)
+			else
+				options[word == "--since" and "since" or "expectCasts"] = tonumber(value)
+			end
 			i = i + 2
 		elseif word:sub(1, 1) == "-" then
 			return nil, "unknown option " .. word
@@ -204,6 +208,7 @@ local function readLog(ns, log, since)
 	local global = { decodeErrors = 0 }
 	local catchLog = ns.OpenCatchLog(log, global, 0)
 	local facts = { tags = tags, casts = {}, allCasts = 0, builds = 0, skills = 0, repeated = {} }
+	facts.prestiges, facts.purchases = {}, {}
 	local ids = {}
 	for record in catchLog:Iterate() do
 		if ids[record.id] then
@@ -219,6 +224,9 @@ local function readLog(ns, log, since)
 			facts.builds, facts.build = facts.builds + 1, record
 		elseif record.kind == "skill" then
 			facts.skills, facts.skill = facts.skills + 1, record
+		elseif record.kind == "prestige" or record.kind == "purchase" then
+			local list = record.kind == "prestige" and facts.prestiges or facts.purchases
+			list[#list + 1] = record
 		end
 	end
 	facts.undecodable = global.decodeErrors
@@ -267,6 +275,20 @@ local function printCasts(log, facts, since)
 	print("zone areaID 0: " .. (zero or "none"))
 end
 
+-- The Prestige (P1, LOG-R38) and purchase (U1, LOG-R39) entries: a count each, then one line per entry, P1 with
+-- its rank and U1 with its good and price, each with its character and time.
+local function printPrestigesAndPurchases(log, facts)
+	for _, kind in ipairs({ { "P1", facts.prestiges }, { "U1", facts.purchases } }) do
+		local tag, records = kind[1], kind[2]
+		print(tag .. ": " .. (#records > 0 and count(#records, "entry", "entries") or "none"))
+		for _, record in ipairs(records) do
+			local what = tag == "P1" and "rank " .. record.rank
+				or ("%s for %s"):format(record.good, count(record.price, "Coin"))
+			print(("  %s, %s, %s"):format(what, characterName(log, record.char), utc(record.time)))
+		end
+	end
+end
+
 local function printLog(log, facts, since)
 	local tags = {}
 	for _, tag in ipairs(sortedKeys(facts.tags)) do
@@ -290,6 +312,7 @@ local function printLog(log, facts, since)
 	else
 		print("S1: none")
 	end
+	printPrestigesAndPurchases(log, facts)
 end
 
 -- The exit check's steps 3 and 4 (#75) over the Casts counted, as { ok, line } pairs.
