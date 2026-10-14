@@ -999,12 +999,11 @@ part(function(fake, Pagle, ns, host)
 		return frame:GetWidth(), frame:GetHeight()
 	end
 
-	fake.dock = {}
-	function fake.dock.stack()
-		local stack = {}
+	local function stack()
+		local list = {}
 		for i, placement in ipairs(ns.dock:Layout(isShown, sizeOf).placements) do
 			local tracker = placement.tracker
-			stack[i] = {
+			list[i] = {
 				id = tracker.id,
 				module = tracker.module,
 				frame = tracker.frame,
@@ -1015,21 +1014,24 @@ part(function(fake, Pagle, ns, host)
 				y = placement.y,
 			}
 		end
-		return stack
+		return list
 	end
-	function fake.dock.point()
-		return ns.dock:Anchor()
-	end
-	function fake.dock.drag(point)
-		if not ns.dock:CanMove() then
-			return false
-		end
-		ns.dock:Moved(point)
-		return true
-	end
-	function fake.dock.reset()
-		return ns.dock:Reset()
-	end
+	fake.dock = {
+		stack = stack,
+		point = function()
+			return ns.dock:Anchor()
+		end,
+		drag = function(point)
+			if not ns.dock:CanMove() then
+				return false
+			end
+			ns.dock:Moved(point)
+			return true
+		end,
+		reset = function()
+			return ns.dock:Reset()
+		end,
+	}
 end)
 
 --- A fresh FakePagle: no Module registered, not restricted, before PLAYER_LOGIN.

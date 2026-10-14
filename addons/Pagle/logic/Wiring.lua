@@ -35,6 +35,7 @@ local ns = select(2, ...)
 ---@field wallet PagleWallet Core's one wallet (ns.WireWallet).
 ---@field goods PagleGoods Core's one goods registry (ns.WireGoods).
 ---@field shop PagleShop The Curio Shop's entry points (ns.WireShop).
+---@field dock PagleDockWiring Core's tracker dock (ns.WireDock).
 ---@field fieldReport PagleFieldReportReaders? Core's Field report, from login step 1 on (ns.WireFieldReport).
 ---@field walletProjection PagleProjection? Core's wallet projection, from login step 1 (ns.WireWalletProjection).
 ---@field LengthUnit fun(): PagleLengthUnit The Angler's length unit now (ns.WireLength).
@@ -478,15 +479,74 @@ end
 ---@field stopMoving fun(): PagleDockPoint?      -- ends a drag in progress where the dock is now, returning that point
 --- to save; nil with none in progress
 
---- The tracker dock (CORE-R70–R72) as ns.dock.
+--- The tracker dock (CORE-R70–R72) as ns.dock (ns.WireDock).
 ---@class PagleDockWiring
----@field Trackers fun(self): PagleTracker[]     -- the docked trackers, in stack order
----@field Layout fun(self, isShown: fun(frame: table): boolean, sizeOf: fun(frame: table): number, number): PagleDockLayout
----@field Anchor fun(self): PagleDockPoint       -- where the anchor goes now: dock.point, or the default
----@field CanMove fun(self): boolean             -- a Shift-drag may move the dock: not while restricted (CORE-R71)
----@field Moved fun(self, point: PagleDockPoint) -- the player dropped the dock at `point`: saved to dock.point
----@field Reset fun(self): boolean               -- Reset (SET-R40): clears dock.point and puts the dock back; does
---- nothing while restricted. True when it did.
+---@field package host PagleHost
+---@field package view PagleDockView
+---@field package trackers PagleDock
+local DockWiring = {}
+DockWiring.__index = DockWiring
+
+-- PagleDB.profile.dock, read at each call.
+---@param wiring PagleDockWiring
+---@return { point: PagleDockPoint? }
+local function storedDock(wiring)
+	local profile = wiring.host.db().profile
+	if type(profile.dock) ~= "table" then
+		profile.dock = {}
+	end
+	return profile.dock
+end
+
+--- The docked trackers, in stack order (CORE-R70).
+---@return PagleTracker[]
+function DockWiring:Trackers()
+	return self.trackers:Trackers()
+end
+
+--- The stack now (CORE-R70, CORE-R72): see PagleDock:Layout.
+---@param isShown fun(frame: table): boolean
+---@param sizeOf PagleDockSizeOf
+---@return PagleDockLayout
+function DockWiring:Layout(isShown, sizeOf)
+	return self.trackers:Layout(isShown, sizeOf)
+end
+
+--- Where the anchor goes now: dock.point, or under the minimap (CORE-R70, CORE-R71).
+---@return PagleDockPoint
+function DockWiring:Anchor()
+	return ns.DockAnchor(storedDock(self).point)
+end
+
+--- Whether a Shift-drag may move the dock: never while restricted (CORE-R71).
+---@return boolean
+function DockWiring:CanMove()
+	return not self.view.isRestricted()
+end
+
+--- The player dropped the dock at `point`: saved to dock.point, relative to UIParent (core/README.md › Data).
+---@param point PagleDockPoint
+function DockWiring:Moved(point)
+	storedDock(self).point = {
+		point = point.point,
+		relativeTo = "UIParent",
+		relativePoint = point.relativePoint,
+		x = point.x,
+		y = point.y,
+	}
+end
+
+--- The Trackers page's Reset (SET-R40): clears dock.point and puts the dock back under the minimap. While restricted
+--- it does nothing (CORE-R71). True when it did.
+---@return boolean
+function DockWiring:Reset()
+	if self.view.isRestricted() then
+		return false
+	end
+	storedDock(self).point = nil
+	self.view.place(self:Anchor())
+	return true
+end
 
 --- The tracker dock (CORE-R70–R72) as ns.dock, over PagleDB.profile.dock (core/README.md › Data), and
 --- `M:RegisterTracker` on every Module handle. The anchor is placed at ModulesChanged, at dock.point or under the
@@ -496,47 +556,8 @@ end
 ---@param view PagleDockView
 function ns.WireDock(host, view)
 	local trackers = ns.NewDock()
-	-- PagleDB.profile.dock, read at each call.
-	local function stored()
-		local profile = host.db().profile
-		if type(profile.dock) ~= "table" then
-			profile.dock = {}
-		end
-		return profile.dock
-	end
-
 	---@type PagleDockWiring
-	local dock = {
-		Trackers = function()
-			return trackers:Trackers()
-		end,
-		Layout = function(_, isShown, sizeOf)
-			return trackers:Layout(isShown, sizeOf)
-		end,
-		Anchor = function()
-			return ns.DockAnchor(stored().point)
-		end,
-		CanMove = function()
-			return not view.isRestricted()
-		end,
-		Moved = function(_, point)
-			stored().point = {
-				point = point.point,
-				relativeTo = "UIParent",
-				relativePoint = point.relativePoint,
-				x = point.x,
-				y = point.y,
-			}
-		end,
-		Reset = function(self)
-			if view.isRestricted() then
-				return false
-			end
-			stored().point = nil
-			view.place(self:Anchor())
-			return true
-		end,
-	}
+	local dock = setmetatable({ host = host, view = view, trackers = trackers }, DockWiring)
 	ns.dock = dock
 
 	-- Its own owner on the bus. CORE-R19: every enabled Module has registered, so every tracker is in.

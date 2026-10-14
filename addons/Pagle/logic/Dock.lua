@@ -38,6 +38,9 @@ ns.DOCK_SPACING = 8
 ---@field width number
 ---@field height number
 
+--- Reads a frame's width and height now.
+---@alias PagleDockSizeOf fun(frame: table): number, number
+
 --- The trackers docked so far.
 ---@class PagleDock
 ---@field private trackers PagleTracker[]
@@ -110,7 +113,7 @@ end
 --- and below the ones above it with DOCK_SPACING between; a hidden one takes no room. With none shown it is empty,
 --- 0 by 0. `sizeOf` reads a frame's width and height now, so a resized frame moves the ones below it.
 ---@param isShown fun(frame: table): boolean
----@param sizeOf fun(frame: table): number, number
+---@param sizeOf PagleDockSizeOf
 ---@return PagleDockLayout
 function Dock:Layout(isShown, sizeOf)
 	local placements, width, offset = {}, 0, 0
