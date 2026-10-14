@@ -122,7 +122,8 @@ describe("the Ledger's projection def", function()
 				"RaiseMoment skillMilestone",
 				"RaiseMoment levelUp",
 				"ReportCoinsEarned 40",
-				"SetSummaryLine Ledger: Angler Level 3",
+				-- Nothing charted: 0% (LED-R70).
+				"SetSummaryLine Ledger: Angler Level 3 · 0% complete",
 			}, calls)
 			assert.are.same({ [225] = true }, global.celebrated.skill)
 			assert.are.same({ [0] = 3 }, global.celebrated.levels)
@@ -177,9 +178,9 @@ describe("the Ledger's projection def", function()
 		return record
 	end
 
-	it("takes M3's achievements live and in a rebuild's done, with no moment until ticket #137 (LED-R4)", function()
-		local calls = {}
-		local def = ns.ProjectionDef({}, lookups, noting(calls)) -- the set's logId and the log's are both nil
+	it("raises M3's achievements live and, summary-only, in a rebuild's done (LED-R4, LED-R93, LED-R97)", function()
+		local raised = {}
+		local def = ns.ProjectionDef({ celebrated = { logId = "log" } }, lookups, collecting(raised))
 		local state = def.reset()
 
 		-- Every item is Uncharted to these lookups: each first Catch earns an `uncharted` achievement (LED-R64).
@@ -188,7 +189,10 @@ describe("the Ledger's projection def", function()
 		def.apply(state, caught(2, 99902), "live")
 
 		assert.are.same({ 1, 1 }, { state.uncharted[99901].n, state.uncharted[99902].n })
-		assert.are.same({ "ReportCoinsEarned 0", "SetSummaryLine Ledger: Angler Level 1" }, calls)
+		assert.are.same({
+			"uncharted Unknown catch, logged / Item 99901 nil true",
+			"uncharted Unknown catch, logged / Item 99902 nil nil",
+		}, raised)
 	end)
 
 	it("merges a rebuild's new levels into one summary-only levelUp for the highest (LED-R93, LED-R97)", function()

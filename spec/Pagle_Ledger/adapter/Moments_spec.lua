@@ -181,14 +181,17 @@ describe("the Ledger's live moments", function()
 	end)
 
 	it(
-		"report a Zone Mastery rank's Coins with its Cast's, raising no moment for the rank (LED-R51, LED-R88)",
+		"report a Zone Mastery rank's Coins with its Cast's, on its Zone rank moment (LED-R51, LED-R88, LED-R97)",
 		function()
 			local fake, loaded = session()
 			fake.conditions.zone = DARKSHORE -- charted: its first Catch makes the Angler a Visitor there
 
 			fake.playCast("caught", loot(MACKEREL))
 
-			assert.are.same({ "newSpecies New Species / Raw Spotted Yellowtail 10" }, momentsOf(shown(fake)[1]))
+			assert.are.same({
+				"newSpecies New Species / Raw Spotted Yellowtail 10",
+				"zoneRank Zone rank: Visitor / Darkshore 2",
+			}, momentsOf(shown(fake)[1]))
 			assert.are.same(
 				{ { module = "Ledger", total = 0 }, { module = "Ledger", total = 10 + 2 } },
 				fake.coinReports
@@ -239,12 +242,12 @@ describe("the Ledger's live moments", function()
 		end
 	)
 
-	it("set the summary line to the shown level after a live entry changes it (LED-R95)", function()
+	it("set the summary line to the shown level and completion after a live entry changes them (LED-R95)", function()
 		local fake = session()
 
 		fake.playCast("caught", loot(unpack(FOUR)))
 
-		assert.are.same({ ledger = "Ledger: Angler Level 3" }, fake.global.summary.lines.Ledger.lines)
+		assert.are.same({ ledger = "Ledger: Angler Level 3 · 2% complete" }, fake.global.summary.lines.Ledger.lines)
 	end)
 
 	it("raise Skill Milestone with no cast for a Skill Reading past 75 (LED-R96, LED-R97)", function()
@@ -298,7 +301,10 @@ describe("the Ledger's live moments", function()
 				kinds[moment.kind] = true
 			end
 			assert.is_nil(kinds.levelUp)
-			assert.are.same({ ledger = "Ledger: Angler Level 9" }, fake.global.summary.lines.Ledger.lines)
+			assert.are.same(
+				{ ledger = "Ledger: Angler Level 9 · 2% complete" },
+				fake.global.summary.lines.Ledger.lines
+			)
 			local state = loaded.ns.projection:GetState()
 			assert.are.equal(3, loaded.ns.Level(state))
 			assert.are.equal(9, loaded.ns.ShownLevel(state, loaded.env.PagleLedgerDB.global.celebrated))
