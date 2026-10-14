@@ -12,4 +12,210 @@
 # set's name, title and note are lore (DATA-R105): never in a Hunt's hash or the list's fingerprint (DATA-R94). From
 # 1.0 a released Hunt never changes: a fix is a new Hunt plus a retired date on the old one (ADR 0005, DATA-R96).
 #
-# The v1 list (hunts.md › Data) arrives with ticket #182.
+# This is hunts.md's v1 Hunt list (hunts.md › Data), in its table order. Every since is the pre-1.0 placeholder
+# 2026-11-04 (DATA-R87, Tunables); the M8 checklist sets it to the release day. Names, titles and notes are working
+# drafts that the M5 lore batch polishes. Each item and area ID is checked by its enUS name in data/db2/ (named in the
+# comment beside it); scripts/tests/test_repo_hunts.py keeps those names, and that every Hunt can be completed.
+
+[[set]]
+id = "round_the_clock"
+name = "Round the Clock"
+title = "the Clockwatcher"
+
+[[set]]
+id = "turn_of_the_year"
+name = "Turn of the Year"
+title = "of All Seasons"
+
+[[set]]
+id = "sunday_showdown"
+name = "Sunday Showdown"
+title = "the Tastyfish"
+note = "Extravaganza, requires level 60"
+
+[[set]]
+id = "camp_hours"
+name = "Camp Hours"
+title = "the Hut Keeper"
+
+[[set]]
+id = "pagles_wagers"
+name = "Pagle's Wagers"
+title = "Pagle's Apprentice"
+note = "Pagle's own wagers: his fish, his water, his hours."
+
+# One member for each faction's waters: 6522 Deviate Fish, 251524 Whimsyfin.
+[[class]]
+id = "fixed.oddity"
+members = [6522, 251524]
+
+# Round the Clock: the day and night fish.
+
+[[hunt]]
+id = "night_run"
+set = "round_the_clock"
+kind = "natural"
+since = 2026-11-04
+species = 13759 # Raw Nightfin Snapper
+window = "night"
+tiers = [1, 10, 40]
+name = "Night Run"
+
+[[hunt]]
+id = "first_light"
+set = "round_the_clock"
+kind = "natural"
+since = 2026-11-04
+species = 13760 # Raw Sunscale Salmon
+window = "day"
+tiers = [1, 10, 40]
+name = "First Light"
+
+[[hunt]]
+id = "live_wire"
+set = "round_the_clock"
+kind = "natural"
+since = 2026-11-04
+species = 13757 # Lightning Eel
+window = "day"
+tiers = [1, 10]
+name = "Live Wire"
+
+[[hunt]]
+id = "armoured_after_dark"
+set = "round_the_clock"
+kind = "natural"
+since = 2026-11-04
+species = 13890 # Raw Plated Armorfish
+window = "night"
+tiers = [1, 5]
+name = "Armoured After Dark"
+
+# Turn of the Year: the half-year season fish.
+
+[[hunt]]
+id = "summers_bass"
+set = "turn_of_the_year"
+kind = "natural"
+since = 2026-11-04
+species = 13756 # Raw Summer Bass
+window = "summer"
+tiers = [1, 10, 40]
+name = "Summer's Bass"
+
+[[hunt]]
+id = "winters_squid"
+set = "turn_of_the_year"
+kind = "natural"
+since = 2026-11-04
+species = 13755 # Raw Winter Squid
+window = "winter"
+tiers = [1, 10, 40]
+name = "Winter's Squid"
+
+# Sunday Showdown: the Stranglethorn Fishing Extravaganza, event 301 (data/forever/events.toml).
+
+[[hunt]]
+id = "tastyfish_haul"
+set = "sunday_showdown"
+kind = "natural"
+since = 2026-11-04
+species = 19807 # Speckled Tastyfish
+window = "event.301"
+tiers = [1, 10, 40]
+name = "Tastyfish Haul"
+
+[[hunt]]
+id = "riggles_angelfish"
+set = "sunday_showdown"
+kind = "natural"
+since = 2026-11-04
+species = 19805 # Keefer's Angelfish
+window = "event.301"
+tiers = [1]
+name = "Riggle's Angelfish"
+
+[[hunt]]
+id = "riggles_queenfish"
+set = "sunday_showdown"
+kind = "natural"
+since = 2026-11-04
+species = 19806 # Dezian Queenfish
+window = "event.301"
+tiers = [1]
+name = "Riggle's Queenfish"
+
+[[hunt]]
+id = "riggles_racer"
+set = "sunday_showdown"
+kind = "natural"
+since = 2026-11-04
+species = 19803 # Brownell's Blue Striped Racer
+window = "event.301"
+tiers = [1]
+name = "Riggle's Racer"
+
+# Camp Hours: Catches under the Rack's and the Hut's auras (data/forever/lists.toml), by the generated classes, so
+# they work whatever the Rack and the Hut turn out to add: an uncommon-or-better fish at the Rack, any fish at the Hut.
+
+[[hunt]]
+id = "rack_hour"
+set = "camp_hours"
+kind = "imposed"
+since = 2026-11-04
+class = "quality.uncommon"
+conditions = { auras = [1280341] } # Rack
+tiers = [1, 10, 25]
+name = "Rack Hour"
+
+[[hunt]]
+id = "hut_hour"
+set = "camp_hours"
+kind = "imposed"
+since = 2026-11-04
+class = "species.any" # not hunts.md's first quality.rare: no catalogue item is rare yet, so it could never be done
+conditions = { auras = [1280342] } # Hut
+tiers = [1, 5, 15]
+name = "Hut Hour"
+
+# Pagle's Wagers: Pagle's own rules, a fish or a class at an hour, sometimes in one zone.
+
+[[hunt]]
+id = "grouper_by_moonlight"
+set = "pagles_wagers"
+kind = "imposed"
+since = 2026-11-04
+species = 12238 # Darkshore Grouper
+conditions = { areas = [148], time = [[1320, 240]] } # Darkshore, 22:00-04:00
+tiers = [1, 5, 20]
+name = "Grouper by Moonlight"
+
+[[hunt]]
+id = "oddity_at_dusk"
+set = "pagles_wagers"
+kind = "imposed"
+since = 2026-11-04
+class = "fixed.oddity"
+conditions = { time = [[1080, 1260]] } # 18:00-21:00
+tiers = [1, 10, 25]
+name = "Oddity at Dusk"
+
+[[hunt]]
+id = "witching_hour"
+set = "pagles_wagers"
+kind = "imposed"
+since = 2026-11-04
+class = "species.any"
+conditions = { areas = [10], time = [[0, 180]] } # Duskwood, 00:00-03:00
+tiers = [1, 10, 30]
+name = "Witching Hour"
+
+[[hunt]]
+id = "dawn_trout"
+set = "pagles_wagers"
+kind = "imposed"
+since = 2026-11-04
+species = 8365 # Raw Mithril Head Trout
+conditions = { time = [[300, 480]] } # 05:00-08:00
+tiers = [1, 10, 25]
+name = "Dawn Trout"
