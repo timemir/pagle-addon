@@ -26,6 +26,7 @@ logic\Labels.lua
 logic\WindowMoments.lua
 logic\Board.lua
 logic\Goods.lua
+logic\Entry.lua
 adapter\BoardWidgets.lua
 adapter\Board.lua
 adapter\Goods.lua
@@ -33,3 +34,4 @@ adapter\Hunts.lua
 adapter\Groups.lua
 adapter\Names.lua
 adapter\WindowMoments.lua
+adapter\Entry.lua
