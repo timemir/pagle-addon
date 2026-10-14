@@ -250,6 +250,128 @@ describe("FakePagle", function()
 		end)
 	end)
 
+	describe("the tracker dock", function()
+		---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
+		local newWidget = dofile("spec/support/widgets.lua").newWidget
+
+		-- Registers a Module and docks a plain frame, 200 wide and `height` tall, as tracker `id` at `order`. Returns
+		-- the frame.
+		local function dock(fake, name, order, height, id)
+			local handle = fake.Pagle.RegisterModule({ name = name, title = name, order = order })
+			local frame = newWidget("Frame")
+			frame:SetSize(200, height)
+			handle:RegisterTracker({ id = id or name:lower(), order = order, frame = frame })
+			return frame
+		end
+
+		-- The stack as { id, y } pairs, top to bottom.
+		local function stack(fake)
+			local list = {}
+			for i, entry in ipairs(fake.dock.stack()) do
+				list[i] = { entry.id, entry.y }
+			end
+			return list
+		end
+
+		it("stacks shown trackers by order, 8 px apart, ties by Module name, reflowing as read (CORE-R70)", function()
+			local fake = newFakePagle()
+			dock(fake, "Stats", 20, 60)
+			local hunts = dock(fake, "Hunts", 10, 40)
+			dock(fake, "TackleBoard", 20, 30, "board")
+			fake.login()
+
+			assert.are.same({ { "hunts", 0 }, { "stats", -48 }, { "board", -116 } }, stack(fake))
+			local top = fake.dock.stack()[1]
+			assert.are.same(
+				{ "Hunts", hunts, "TOPRIGHT", "dock", "TOPRIGHT", 0 },
+				{ top.module, top.frame, top.point, top.relativeTo, top.relativePoint, top.x }
+			)
+
+			hunts:Hide()
+			assert.are.same({ { "stats", 0 }, { "board", -68 } }, stack(fake))
+			hunts:Show()
+			hunts:SetHeight(10)
+			assert.are.same({ { "hunts", 0 }, { "stats", -18 }, { "board", -86 } }, stack(fake))
+		end)
+
+		it("is empty with no tracker shown (CORE-R72)", function()
+			local fake = newFakePagle()
+			dock(fake, "Hunts", 10, 40):Hide()
+
+			assert.are.same({}, fake.dock.stack())
+		end)
+
+		it("raises an error at the caller for each RegisterTracker mistake, docking nothing (CORE-R70)", function()
+			local fake = newFakePagle()
+			local hunts = fake.Pagle.RegisterModule({ name = "Hunts", title = "Hunts", order = 20 })
+			hunts:RegisterTracker({ id = "hunts", order = 10, frame = newWidget("Frame") })
+
+			for _, tracker in ipairs({
+				{ order = 10, frame = newWidget("Frame") },
+				{ id = 4, order = 10, frame = newWidget("Frame") },
+				{ id = "pins", order = "10", frame = newWidget("Frame") },
+				{ id = "pins", order = 10 },
+				{ id = "hunts", order = 10, frame = newWidget("Frame") },
+			}) do
+				local ok, err = pcall(function()
+					hunts:RegisterTracker(tracker)
+				end)
+				assert.is_false(ok)
+				assert.matches("fake_pagle_spec%.lua:%d+: M:RegisterTracker: ", tostring(err))
+			end
+			assert.are.same({ { "hunts", 0 } }, stack(fake))
+		end)
+
+		it(
+			"sits under the minimap until a Shift-drag saves dock.point; Reset puts it back (CORE-R71, SET-R40)",
+			function()
+				local fake = newFakePagle()
+				dock(fake, "Hunts", 10, 40)
+				fake.login()
+				local default = fake.dock.point()
+				assert.are.same(
+					{ point = "TOPRIGHT", relativeTo = "MinimapCluster", relativePoint = "BOTTOMRIGHT", x = 0, y = -10 },
+					default
+				)
+				local moved =
+					{ point = "TOPRIGHT", relativeTo = "UIParent", relativePoint = "BOTTOMLEFT", x = 812, y = 640 }
+
+				assert.is_true(fake.dock.drag(moved))
+
+				assert.are.same(moved, fake.profile.dock.point)
+				assert.are.same(moved, fake.dock.point())
+
+				assert.is_true(fake.dock.reset())
+
+				assert.is_nil(fake.profile.dock.point)
+				assert.are.same(default, fake.dock.point())
+			end
+		)
+
+		it("never moves while restricted: a drag or Reset does nothing (CORE-R71, SET-R40)", function()
+			local fake = newFakePagle()
+			dock(fake, "Hunts", 10, 40)
+			fake.login()
+			local moved =
+				{ point = "TOPRIGHT", relativeTo = "UIParent", relativePoint = "BOTTOMLEFT", x = 812, y = 640 }
+			fake.dock.drag(moved)
+			fake.setRestricted(true)
+
+			assert.is_false(
+				fake.dock.drag({
+					point = "TOPRIGHT",
+					relativeTo = "UIParent",
+					relativePoint = "BOTTOMLEFT",
+					x = 1,
+					y = 1,
+				})
+			)
+			assert.is_false(fake.dock.reset())
+
+			assert.are.same(moved, fake.profile.dock.point)
+		end)
+	end)
+
 	describe("OpenSettings", function()
 		it(
 			"opens the root, or a registered topic page; while restricted prints Core's line (CORE-R33, CORE-R43)",
