@@ -240,6 +240,31 @@ copy
 rm "$scratch/tree/.luacov"
 expect "a coverage report that can't be made doesn't gate" pass "no coverage report"
 
+# Plants a spec that kills the busted running it with SIGSEGV, as the coverage run has died on the dev's machine
+# (#149). With "coverage", only a busted running with luacov dies.
+kills_busted() {
+	local when='package.loaded'
+	[[ ${1:-} == coverage ]] && when='package.loaded["luacov.runner"]'
+	cat >"$scratch/tree/spec/killed_spec.lua" <<EOF
+it("is killed", function()
+	---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no package
+	if $when then
+		---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no os
+		os.execute("kill -SEGV \$PPID")
+	end
+end)
+EOF
+}
+
+copy
+kills_busted coverage
+expect "a coverage run killed by a signal doesn't gate; the specs run again without coverage" pass \
+	"killed by signal 11; running the specs again without coverage"
+
+copy
+kills_busted
+expect "specs that kill busted without coverage too fail tests" tests "killed by signal 11"
+
 copy
 printf 'Pagle.API_VERSION = "2"\n' >>"$addon/adapter/Core.lua"
 expect "a string assigned to Pagle.API_VERSION in Core fails types" types "assign-type-mismatch"
