@@ -77,9 +77,10 @@ adapter\Goods.lua
 adapter\WalletProjection.lua
 adapter\Moments.lua
 adapter\Summary.lua
-adapter\Timber.lua
+adapter\Skins.lua
 adapter\Announcements.lua
 adapter\Cards.lua
+adapter\ToastStyles.lua
 adapter\Menu.lua
 adapter\ReloadReminder.lua
 adapter\FieldReportText.lua

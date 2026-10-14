@@ -8,8 +8,8 @@ end
 
 -- Showing Announcements on the client (announcements.md › The display queue, › Interruption budget, › Sounds,
 -- › Toast styles, › UI; ADR 0007): logic/Announcements.lua's lanes on GetTime and C_Timer.After, reading the budget
--- from PagleDB.profile.announcements, drawing the toast, Nod, banner and splash in the Timber style (ANN-R80) and
--- playing the sounds with PlaySoundFile on the SFX channel (ANN-R73). The look follows prototypes/catch-feedback/
+-- from PagleDB.profile.announcements, drawing the toast, Nod, banner and splash in the equipped toast style
+-- (ANN-R80, adapter/Skins.lua) and playing the sounds with PlaySoundFile on the SFX channel (ANN-R73). The look follows prototypes/catch-feedback/
 -- (variant A).
 local L = ns.L
 ---@class Pagle
@@ -18,14 +18,14 @@ local Pagle = Pagle
 -- Its own owner on Core's bus, so no other Core file's registration replaces its RestrictionChanged listener.
 local OWNER = "Pagle announcements"
 
--- Timber (ANN-R80), shared with the card frame: adapter/Timber.lua.
-local TIMBER = ns.TIMBER
+-- Painted in a toast style (ANN-R80), as the card frame is: adapter/Skins.lua.
 local solid, framed, text, textureOf = ns.SolidTexture, ns.Framed, ns.Text, ns.TextureOf
 
 -- Stamp slots on a frame: the 4 stamps shown and the "+N" for the rest (ANN-R11).
 local STAMP_SLOTS = ns.MOMENT_STAMPS + 1
 
 ---@class PagleStamp: Frame
+---@field background Texture
 ---@field label FontString
 
 ---@class PagleRulerView: Frame
@@ -36,6 +36,7 @@ local STAMP_SLOTS = ns.MOMENT_STAMPS + 1
 ---@field margin FontString
 ---@field label FontString
 ---@field record PagleStamp
+---@field skin PagleSkin
 ---@field compact boolean
 ---@field ruler { old: number, new: number, unit: string, label: string }
 ---@field elapsed number
@@ -45,6 +46,7 @@ local STAMP_SLOTS = ns.MOMENT_STAMPS + 1
 ---@field icon Texture
 ---@field title FontString
 ---@field text FontString
+---@field skin PagleSkin
 ---@field stamps PagleStamp[]
 ---@field coins PagleStamp
 ---@field more FontString?
@@ -54,14 +56,15 @@ local STAMP_SLOTS = ns.MOMENT_STAMPS + 1
 ---@type table<PagleAnnouncementForm, PagleAnnouncementFrame>
 ns.announcementFrames = {}
 
--- A stamp: a short label on a coloured tab (ANN-R11).
+-- A stamp: a short label on a tab in a colour role (ANN-R11).
+---@param skin PagleSkin
 ---@param parent Frame
----@param color number[]
+---@param role string
 ---@return PagleStamp
-local function newStamp(parent, color)
+local function newStamp(skin, parent, role)
 	local stamp = CreateFrame("Frame", nil, parent) --[[@as PagleStamp]]
-	solid(stamp, color, "ARTWORK")
-	stamp.label = text(stamp, "GameFontHighlightSmall")
+	stamp.background = solid(skin, stamp, role, "ARTWORK")
+	stamp.label = text(skin, stamp, "GameFontHighlightSmall", "stampText")
 	stamp.label:SetPoint("CENTER")
 	stamp:Hide()
 	return stamp
@@ -140,26 +143,26 @@ end
 ---@return PagleRulerView
 local function newRuler(parent, compact)
 	local ruler = CreateFrame("Frame", nil, parent) --[[@as PagleRulerView]]
-	ruler.compact = compact
+	local skin = parent.skin
+	ruler.skin, ruler.compact = skin, compact
 	ruler:SetSize(compact and 120 or 270, compact and 18 or 34)
-	ruler.track = solid(ruler, TIMBER.track, "ARTWORK")
+	ruler.track = solid(skin, ruler, "track", "ARTWORK")
 	ruler.track:ClearAllPoints()
 	ruler.track:SetPoint("TOPLEFT")
 	ruler.track:SetPoint("TOPRIGHT")
 	ruler.track:SetHeight(compact and 7 or 12)
-	ruler.fill = ruler:CreateTexture(nil, "OVERLAY")
-	ruler.fill:SetColorTexture(TIMBER.fill[1], TIMBER.fill[2], TIMBER.fill[3], TIMBER.fill[4])
+	ruler.fill = ns.Painted(skin, ruler:CreateTexture(nil, "OVERLAY"), "fill") --[[@as Texture]]
 	ruler.fill:SetPoint("TOPLEFT", ruler.track)
 	ruler.fill:SetPoint("BOTTOMLEFT", ruler.track)
-	ruler.mark = ruler:CreateTexture(nil, "OVERLAY")
+	ruler.mark = ns.Painted(skin, ruler:CreateTexture(nil, "OVERLAY"), "mark") --[[@as Texture]]
 	ruler.mark:SetSize(2, compact and 11 or 18)
-	ruler.value = text(ruler, compact and "GameFontHighlightSmall" or "GameFontHighlight")
+	ruler.value = text(skin, ruler, compact and "GameFontHighlightSmall" or "GameFontHighlight", "text")
 	ruler.value:SetPoint("TOPLEFT", ruler.track, "BOTTOMLEFT", 0, -3)
-	ruler.margin = text(ruler, "GameFontNormalSmall", TIMBER.gold)
+	ruler.margin = text(skin, ruler, "GameFontNormalSmall", "gold")
 	ruler.margin:SetPoint("LEFT", ruler.value, "RIGHT", 6, 0)
-	ruler.label = text(ruler, "GameFontDisableSmall")
+	ruler.label = text(skin, ruler, "GameFontDisableSmall", "label")
 	ruler.label:SetPoint("LEFT", ruler.margin, "RIGHT", 6, 0)
-	ruler.record = newStamp(ruler, TIMBER.record)
+	ruler.record = newStamp(skin, ruler, "record")
 	ruler.record:SetPoint("LEFT", ruler.label, "RIGHT", 6, 0)
 	ruler.record.label:SetText(L.ANNOUNCEMENT_NEW_RECORD)
 	return ruler
@@ -173,8 +176,7 @@ local function drawRuler(ruler, at)
 	ruler.fill:SetWidth(math.max(1, width * math.min(1, at.fill)))
 	ruler.mark:ClearAllPoints()
 	ruler.mark:SetPoint("CENTER", ruler.track, "LEFT", width * at.mark, 0)
-	local mark = at.passed and TIMBER.passed or TIMBER.mark
-	ruler.mark:SetColorTexture(mark[1], mark[2], mark[3], mark[4])
+	ns.PaintAs(ruler.skin, ruler.mark, at.passed and "passed" or "mark")
 	ruler.value:SetText(at.value)
 	ruler.margin:SetText(at.margin)
 	ruler.margin:SetShown(at.done)
@@ -220,25 +222,31 @@ local function addParts(frame, content, iconSize, titleTemplate, textTemplate)
 	frame:SetFrameStrata("HIGH")
 	frame.icon = content:CreateTexture(nil, "ARTWORK")
 	frame.icon:SetSize(iconSize, iconSize)
-	frame.title = text(content, titleTemplate)
-	frame.text = text(content, textTemplate)
+	local skin = frame.skin
+	frame.title = text(skin, content, titleTemplate, "title", true)
+	frame.text = text(skin, content, textTemplate, "text")
 	frame.stamps = {}
 	for i = 1, STAMP_SLOTS do
-		frame.stamps[i] = newStamp(frame, i == STAMP_SLOTS and TIMBER.stampsMore or TIMBER.stamp)
+		frame.stamps[i] = newStamp(skin, frame, i == STAMP_SLOTS and "stampsMore" or "stamp")
 	end
-	frame.coins = newStamp(frame, TIMBER.coins)
+	frame.coins = newStamp(skin, frame, "coins")
 	frame:Hide()
 end
 
 -- The frames, one per form, as announcements.md › UI draws them.
----@type table<PagleAnnouncementForm, fun(): PagleAnnouncementFrame>
+---@type table<PagleAnnouncementForm, fun(parent: Frame?): PagleAnnouncementFrame>
 local BUILD = {
-	-- Above the action bar: icon, title, text, stamps over the top right corner, a ruler, "+N more".
-	toast = function()
-		local frame = CreateFrame("Frame", nil, UIParent) --[[@as PagleAnnouncementFrame]]
-		frame:SetPoint("BOTTOM", UIParent, "BOTTOM", 0, 190)
+	-- Above the action bar: icon, title, text, stamps over the top right corner, a ruler, "+N more". On `parent`
+	-- instead, for a sample toast.
+	toast = function(parent)
+		local frame = CreateFrame("Frame", nil, parent or UIParent) --[[@as PagleAnnouncementFrame]]
+		if not parent then
+			frame:SetPoint("BOTTOM", UIParent, "BOTTOM", 0, 190)
+		end
 		frame:SetWidth(350)
-		framed(frame, TIMBER.wood, TIMBER.edge, 2)
+		local skin = ns.NewSkin(frame)
+		framed(skin, frame, "wood", "edge", 2)
+		ns.GlowAround(skin, frame, 32, 32, 44)
 		addParts(frame, frame, 44, "GameFontNormalLarge", "GameFontHighlight")
 		frame.icon:SetPoint("TOPLEFT", 10, -10)
 		frame.title:SetPoint("TOPLEFT", frame.icon, "TOPRIGHT", 10, -2)
@@ -249,7 +257,7 @@ local BUILD = {
 		frame.text:SetJustifyH("LEFT")
 		frame.ruler = newRuler(frame, false)
 		frame.ruler:SetPoint("TOPLEFT", frame.text, "BOTTOMLEFT", 0, -8)
-		frame.more = text(frame, "GameFontHighlightSmall", TIMBER.more)
+		frame.more = text(skin, frame, "GameFontHighlightSmall", "more")
 		frame.more:SetPoint("BOTTOMLEFT", 64, 8)
 		return frame
 	end,
@@ -258,7 +266,9 @@ local BUILD = {
 		local frame = CreateFrame("Frame", nil, UIParent) --[[@as PagleAnnouncementFrame]]
 		frame:SetPoint("BOTTOM", UIParent, "BOTTOM", 0, 156)
 		frame:SetSize(460, 28)
-		framed(frame, TIMBER.wood, TIMBER.edge, 1)
+		local skin = ns.NewSkin(frame)
+		framed(skin, frame, "wood", "edge", 1)
+		ns.GlowAround(skin, frame, 16, 14, 20)
 		addParts(frame, frame, 20, "GameFontNormal", "GameFontHighlightSmall")
 		frame.icon:SetPoint("LEFT", 6, 0)
 		frame.title:SetPoint("LEFT", frame.icon, "RIGHT", 6, 0)
@@ -272,7 +282,9 @@ local BUILD = {
 		local frame = CreateFrame("Frame", nil, UIParent) --[[@as PagleAnnouncementFrame]]
 		frame:SetPoint("TOP", UIParent, "TOP", 0, -160)
 		frame:SetSize(720, 112)
-		framed(frame, TIMBER.band, TIMBER.edge, 1)
+		local skin = ns.NewSkin(frame)
+		framed(skin, frame, "band", "edge", 1)
+		ns.GlowAround(skin, frame, 360, 28, 40)
 		addParts(frame, frame, 40, "GameFontNormalHuge", "GameFontHighlightLarge")
 		frame.icon:SetPoint("TOP", 0, -8)
 		frame.title:SetPoint("TOP", frame.icon, "BOTTOM", 0, -4)
@@ -283,20 +295,22 @@ local BUILD = {
 	splash = function()
 		local frame = CreateFrame("Button", nil, UIParent) --[[@as PagleAnnouncementFrame]]
 		frame:SetAllPoints(UIParent)
-		solid(frame, TIMBER.shade)
+		local skin = ns.NewSkin(frame)
+		solid(skin, frame, "shade")
 		local card = CreateFrame("Frame", nil, frame)
 		card:SetPoint("CENTER")
 		card:SetSize(440, 260)
-		framed(card, TIMBER.parchment, TIMBER.parchmentEdge, 3)
+		framed(skin, card, "parchment", "parchmentEdge", 3)
+		ns.GlowAround(skin, card, 220, 66, 84)
 		addParts(frame, card, 84, "GameFontNormalHuge", "GameFontHighlightLarge")
 		frame:SetFrameStrata("FULLSCREEN_DIALOG")
 		frame:EnableMouse(true)
 		frame.icon:SetPoint("TOP", card, "TOP", 0, -24)
-		frame.title:SetTextColor(TIMBER.legend[1], TIMBER.legend[2], TIMBER.legend[3])
+		ns.PaintAs(skin, frame.title, "legend")
 		frame.title:SetPoint("TOP", frame.icon, "BOTTOM", 0, -10)
-		frame.text:SetTextColor(TIMBER.ink[1], TIMBER.ink[2], TIMBER.ink[3])
+		ns.PaintAs(skin, frame.text, "ink")
 		frame.text:SetPoint("TOP", frame.title, "BOTTOM", 0, -6)
-		local hint = text(card, "GameFontDisableSmall", TIMBER.ink)
+		local hint = text(skin, card, "GameFontDisableSmall", "ink")
 		hint:SetPoint("BOTTOM", 0, 12)
 		hint:SetText(L.ANNOUNCEMENT_SPLASH_HINT)
 		frame:SetScript("OnClick", function(self)
@@ -345,6 +359,23 @@ local function draw(frame, display)
 	end
 end
 
+--- Draws a display in a frame of its form, in the toast style it carries (a sample's) or else the equipped one
+--- (ANN-R80).
+---@param frame PagleAnnouncementFrame
+---@param display PagleDisplay
+function ns.DrawAnnouncement(frame, display)
+	draw(frame, display)
+	local style = display.announcement.style
+	ns.PaintSkin(frame.skin, style and ns.ToastStyleOf(style) or ns.EquippedToastStyle())
+end
+
+--- A toast frame on `parent`, for a sample toast (wallet-and-shop.md › UI, the preview stage).
+---@param parent Frame
+---@return PagleAnnouncementFrame
+function ns.NewToastFrame(parent)
+	return BUILD.toast(parent)
+end
+
 -- The lanes' show: the form's frame, made on first use, drawn and on screen.
 ---@param display PagleDisplay
 local function show(display)
@@ -354,7 +385,7 @@ local function show(display)
 		ns.announcementFrames[display.form] = frame
 	end
 	frame.display = display
-	draw(frame, display)
+	ns.DrawAnnouncement(frame, display)
 	frame:Show()
 end
 

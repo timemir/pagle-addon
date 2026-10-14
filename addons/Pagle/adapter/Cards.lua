@@ -8,14 +8,13 @@ end
 
 -- The cards on the client (announcements.md › Session summary, › Write-up, › UI): logic/Cards.lua over
 -- PagleDB.global, the projection machinery's idle hook and the lanes' empty state, drawing each card centre-screen
--- in the Timber style (ANN-R80), closed with its button or Esc. The look follows prototypes/catch-feedback/
+-- in the equipped toast style (ANN-R80), closed with its button or Esc. The look follows prototypes/catch-feedback/
 -- (variant A)'s session summary.
 local L = ns.L
 
 -- The card frame's global name: UISpecialFrames takes names, and Esc hides the frames it lists.
 local FRAME_NAME = "PagleCard"
--- Timber (ANN-R80), the toast's style: adapter/Timber.lua.
-local TIMBER = ns.TIMBER
+-- Painted in the equipped toast style (ANN-R80), as the toast is: adapter/Skins.lua.
 local solid, framed, text, textureOf = ns.SolidTexture, ns.Framed, ns.Text, ns.TextureOf
 local WIDTH = 520
 -- The numbers grid (ANN-R53): Casts, Catches, got away, time fished.
@@ -44,6 +43,7 @@ local ROWS_SHOWN = 14
 ---@field content Frame
 ---@field rows PagleCardRowView[]
 ---@field close Button
+---@field skin PagleSkin
 
 --- The card frame, made the first time a card shows.
 ---@type PagleCardFrame?
@@ -73,8 +73,8 @@ local function rowAt(frame, i)
 		row.icon = row:CreateTexture(nil, "ARTWORK")
 		row.icon:SetSize(18, 18)
 		row.icon:SetPoint("LEFT")
-		row.text = text(row, "GameFontHighlight")
-		row.detail = text(row, "GameFontHighlightSmall", TIMBER.dim)
+		row.text = text(frame.skin, row, "GameFontHighlight", "text")
+		row.detail = text(frame.skin, row, "GameFontHighlightSmall", "dim")
 		row.detail:SetPoint("RIGHT")
 		row.detail:SetJustifyH("RIGHT")
 		frame.rows[i] = row
@@ -82,25 +82,26 @@ local function rowAt(frame, i)
 	return row
 end
 
--- Fills row `row` from a card row: a heading in gold, a line, or a moment with its icon and its own text.
+-- Fills row `row` from a card row: a heading in the title colour, a line, or a moment with its icon and its own text.
+---@param skin PagleSkin
 ---@param row PagleCardRowView
 ---@param data PagleCardRow
-local function fillRow(row, data)
+local function fillRow(skin, row, data)
 	row.kind = data.kind
 	row.text:ClearAllPoints()
 	row.text:SetText(data.text)
 	row.detail:SetText(data.detail or "")
 	if data.kind == "heading" then
-		row.text:SetFontObject("GameFontNormal")
+		ns.PaintAs(skin, row.text, "title", "GameFontNormal")
 		row.text:SetPoint("BOTTOMLEFT", 0, 3)
 		row.icon:Hide()
 	elseif data.kind == "moment" then
-		row.text:SetFontObject("GameFontHighlight")
+		ns.PaintAs(skin, row.text, "text", "GameFontHighlight")
 		row.text:SetPoint("LEFT", row.icon, "RIGHT", 6, 0)
 		row.icon:SetTexture(textureOf(data.icon))
 		row.icon:Show()
 	else
-		row.text:SetFontObject("GameFontHighlight")
+		ns.PaintAs(skin, row.text, "text", "GameFontHighlight")
 		row.text:SetPoint("LEFT", 4, 0)
 		row.icon:Hide()
 	end
@@ -116,13 +117,14 @@ local function build()
 	frame:SetWidth(WIDTH)
 	frame:SetFrameStrata("MEDIUM")
 	frame:EnableMouse(true)
-	framed(frame, TIMBER.wood, TIMBER.edge, 2, { "top", "bottom" })
+	local skin = ns.NewSkin(frame)
+	framed(skin, frame, "wood", "edge", 2, { "top", "bottom" })
 	local band = CreateFrame("Frame", nil, frame)
 	band:SetPoint("TOPLEFT", 2, -2)
 	band:SetPoint("TOPRIGHT", -2, -2)
 	band:SetHeight(28)
-	solid(band, TIMBER.titleBand, "ARTWORK")
-	frame.title = text(band, "GameFontNormalLarge", TIMBER.gold)
+	solid(skin, band, "titleBand", "ARTWORK")
+	frame.title = text(skin, band, "GameFontNormalLarge", "title", true)
 	frame.title:SetPoint("CENTER")
 
 	frame.numbersBox = CreateFrame("Frame", nil, frame)
@@ -135,10 +137,10 @@ local function build()
 		local cell = CreateFrame("Frame", nil, frame.numbersBox)
 		cell:SetSize(cellWidth, 44)
 		cell:SetPoint("TOPLEFT", (i - 1) * (cellWidth + 6), 0)
-		solid(cell, TIMBER.well, "ARTWORK")
-		local value = text(cell, "GameFontHighlightLarge")
+		solid(skin, cell, "well", "ARTWORK")
+		local value = text(skin, cell, "GameFontHighlightLarge", "text")
 		value:SetPoint("TOP", 0, -6)
-		local label = text(cell, "GameFontHighlightSmall", TIMBER.dim)
+		local label = text(skin, cell, "GameFontHighlightSmall", "dim")
 		label:SetPoint("BOTTOM", 0, 6)
 		label:SetText(NUMBER_LABELS[i])
 		frame.numbers[i] = { value = value, label = label }
@@ -196,7 +198,7 @@ local function show(card)
 	end
 	local rows = ns.CardRows(card, BreakUpLargeNumbers)
 	for i, data in ipairs(rows) do
-		fillRow(rowAt(frame, i), data)
+		fillRow(frame.skin, rowAt(frame, i), data)
 	end
 	for i = #rows + 1, #frame.rows do
 		frame.rows[i]:Hide()
@@ -206,6 +208,7 @@ local function show(card)
 	local listHeight = math.min(#rows, ROWS_SHOWN) * ROW_HEIGHT
 	frame.scroll:SetHeight(math.max(1, listHeight))
 	frame:SetHeight(40 + (numbers and 54 or 0) + listHeight + 56)
+	ns.PaintSkin(frame.skin, ns.EquippedToastStyle())
 	frame:Show()
 end
 
