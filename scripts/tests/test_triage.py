@@ -14,6 +14,8 @@ import pytest
 
 from pagle_data.triage import CUT_NOTE, MARKER, Issue, main
 from pagle_data.triage import triage as build
+from report_fixture import issue_body
+from report_fixture import part as report_part
 from test_catch_lists import write_tree
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
@@ -58,9 +60,8 @@ def tree(root: Path, pooltext: str = "", reports: dict[str, str] | None = None) 
 
 def part(rows: str, n: int = 1, m: int = 1, data: str = "3f9a2c1e", reporter: str = CAROL) -> str:
     """An issue body as the form renders it (DATA-R115), holding one PAGLE-REPORT part (REP-R30) with these rows."""
-    header = f"addon 0.9.0 data {data} locale deDE reporter {reporter} part {n}/{m}"
-    report = f"PAGLE-REPORT 1\n{header}\n{rows}END"
-    return f"### Report\n\n```text\n{report}\n```\n\n### Anything you noticed?\n\n_No response_"
+    report = report_part(rows, n, m, data=data, locale="deDE", reporter=reporter)
+    return issue_body(report.removesuffix("\n"))
 
 
 def bot_comment(number: int, body: str) -> dict[str, object]:
