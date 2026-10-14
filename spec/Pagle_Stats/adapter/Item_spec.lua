@@ -121,7 +121,10 @@ describe("the item page's left page (stats.md › UI › Item page)", function()
 		assert.is_false(view.here.shown)
 		assert.is_false(view.hereText.shown)
 		assert.is_false(view.open.shown)
-		assert.are.same({ "0", "—", "—" }, { view.facts[1].value.text, view.facts[2].value.text, view.facts[3].value.text })
+		assert.are.same(
+			{ "0", "—", "—" },
+			{ view.facts[1].value.text, view.facts[2].value.text, view.facts[3].value.text }
+		)
 	end)
 
 	it("asks for an item's name, and redraws with it once it loads (STA-R73)", function()
@@ -159,7 +162,7 @@ describe("the item page's right page, Where I've fished for it (stats.md › UI 
 		assert.are.same({ page = "place", area = AUBERDINE, item = MACKEREL }, book.router:Place())
 	end)
 
-	it("reads \"I haven't fished anywhere it bites.\" with no tiles", function()
+	it('reads "I haven\'t fished anywhere it bites." with no tiles', function()
 		local loaded, fake, book = ready()
 		fish(fake, 1)
 

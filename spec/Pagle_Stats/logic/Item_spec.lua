@@ -147,10 +147,7 @@ describe("the item page", function()
 
 			local facts = ns.ItemFacts(state, NIGHTFIN, conditions(0, 0), NOW)
 
-			assert.are.same(
-				{ "1,234", "1 Oct 2026", "11 Oct 2026, 3h ago" },
-				{ facts.caught, facts.first, facts.last }
-			)
+			assert.are.same({ "1,234", "1 Oct 2026", "11 Oct 2026, 3h ago" }, { facts.caught, facts.first, facts.last })
 		end)
 
 		it('reads 0 and "—" for an item never caught', function()
@@ -184,7 +181,12 @@ describe("the item page", function()
 		end)
 
 		it("reads its other two forms: caught on my last Cast, and none yet", function()
-			local caught = ns.ItemFacts(darkshore({ n = 10, at = 200, last = NOW }), MACKEREL, conditions(DARKSHORE, 0, 86, 25), NOW)
+			local caught = ns.ItemFacts(
+				darkshore({ n = 10, at = 200, last = NOW }),
+				MACKEREL,
+				conditions(DARKSHORE, 0, 86, 25),
+				NOW
+			)
 			local never = ns.ItemFacts(darkshore(nil), MACKEREL, conditions(DARKSHORE, 0, 86, 25), NOW)
 
 			assert.are.equal("1 in 20; caught on my last Cast.", caught.here.text)
@@ -235,10 +237,7 @@ describe("the item page", function()
 
 			assert.is_nil(waters.empty)
 			assert.are.same({ ELWYNN, DARKSHORE, AUBERDINE, BASHAL_ARAN }, pluck(waters.tiles, "area"))
-			assert.are.same(
-				{ "Elwynn Forest", "Darkshore", "Auberdine", "Bashal'Aran" },
-				pluck(waters.tiles, "name")
-			)
+			assert.are.same({ "Elwynn Forest", "Darkshore", "Auberdine", "Bashal'Aran" }, pluck(waters.tiles, "name"))
 			assert.are.same({ page = "place", area = BASHAL_ARAN, item = FIREFIN }, waters.tiles[4].target)
 		end)
 
@@ -274,7 +273,10 @@ describe("the item page", function()
 
 			local waters = ns.ItemWaters(state, FIREFIN, conditions(0, 0, 86, 25))
 
-			assert.are.same({ "1 in 2", "1 in 2", "Darkshore · 1 in 2", "Darkshore · 1 in 2" }, pluck(waters.tiles, "line"))
+			assert.are.same(
+				{ "1 in 2", "1 in 2", "Darkshore · 1 in 2", "Darkshore · 1 in 2" },
+				pluck(waters.tiles, "line")
+			)
 			assert.are.same({ false, "10 since", "10 since", "10 since" }, pluck(waters.tiles, "note"))
 		end)
 
