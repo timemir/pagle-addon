@@ -371,8 +371,9 @@ local function hide(display)
 	end
 end
 
---- Core's three lanes (ANN-R20) on the client.
+--- Core's three lanes (ANN-R20) on the client. Each form has its own frame, so a banner and a toast show together.
 ns.lanes = ns.NewLanes({
+	-- GetTime() reads the same all frame, which is how the lanes tell a toast appears with a banner (ANN-R24).
 	now = function()
 		return GetTime()
 	end,
@@ -397,7 +398,7 @@ ns.lanes = ns.NewLanes({
 	play = function(path)
 		PlaySoundFile(path, "SFX")
 	end,
-	-- The slot freed with nothing waiting: a card may show (ANN-R21). adapter/Cards.lua's, looked up when called.
+	-- Both lanes freed with nothing waiting: a card may show (ANN-R21). adapter/Cards.lua's, looked up when called.
 	empty = function()
 		ns.cards:Next()
 	end,
