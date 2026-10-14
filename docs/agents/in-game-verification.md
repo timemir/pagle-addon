@@ -11,7 +11,7 @@ Under `WTF/Account/<ACCT>/` (find `<ACCT>` with `ls WTF/Account/`; skip its `Sav
 | Fact | File | Format |
 |---|---|---|
 | Lua errors with stacks | `SavedVariables/!BugGrabber.lua` | `BugGrabberDB`. The latest session is the errors whose `session` equals `BugGrabberDB.session`. Needs `!BugGrabber` installed. |
-| Catch log, wallet, cards, Field report | `SavedVariables/Pagle.lua` | `PagleLog` and `PagleDB` ([catch-log.md › Data](../spec/core/catch-log.md#data), [wallet-and-shop.md › Data](../spec/core/wallet-and-shop.md#data), [announcements.md › Data](../spec/core/announcements.md#data), [field-report.md › Data](../spec/core/field-report.md#data)). Pagle writes no SavedVariables before M1, so the file is missing until then. |
+| Catch log, wallet, looks, cards, Field report | `SavedVariables/Pagle.lua` | `PagleLog` and `PagleDB` ([catch-log.md › Data](../spec/core/catch-log.md#data), [wallet-and-shop.md › Data](../spec/core/wallet-and-shop.md#data), [announcements.md › Data](../spec/core/announcements.md#data), [field-report.md › Data](../spec/core/field-report.md#data)). Pagle writes no SavedVariables before M1, so the file is missing until then. |
 | Ledger | `SavedVariables/Pagle_Ledger.lua` | `PagleLedgerDB` ([ledger.md › Data](../spec/ledger.md#data)). Missing until Pagle_Ledger (M2) has run. |
 | Account CVars (`SoftTargetInteract` etc.) | `config-cache.wtf` | `SET <name> "<value>"` lines |
 | Character CVars | `<realm folder>/<Name-Surname>/config-cache.wtf` | the same |
@@ -29,31 +29,42 @@ Run it in WSL, with the Lua 5.1 from `scripts/setup.sh`. `scripts/read-wtf.sh` r
 ```sh
 scripts/read-wtf.sh "/mnt/g/World of Warcraft/_classic_beta_/WTF/Account/<ACCT>" \
     --character 70/<Name-Surname> [--cvar <name>]... [--addon <name>]... [--catalogue <Catalogue.lua>] \
-    [--expect-casts N] [--since T]
+    [--item <id>]... [--expect-casts N] [--since T]
 ```
 
-It prints eight sections, and a ninth with `--expect-casts`:
+It prints ten sections, and an eleventh with `--expect-casts`:
 
 - **Lua errors:** the latest !BugGrabber session's errors, each with its count and stack, or `0 errors`.
-- **Catch log:** `PagleLog` decoded with Core's own codec (`addons/Pagle/logic/CatchLog.lua`), so it reads entries exactly as Pagle does: the format, logId, character and entry counts, `PagleDB.global.decodeErrors`, the entries by tag, the entries the codec can't decode, repeated entry IDs, the `C1` Casts and their time span, by outcome, per character and per zone areaID, the Casts in zone areaID 0 by seq, and the `B1` and `S1` entries. A log in another format than the codec's is reported, not decoded.
+- **Catch log:** `PagleLog` decoded with Core's own codec (`addons/Pagle/logic/CatchLog.lua`), so it reads entries exactly as Pagle does: the format, logId, character and entry counts, `PagleDB.global.decodeErrors`, the entries by tag, the entries the codec can't decode, repeated entry IDs, the `C1` Casts and their time span, by outcome, per character and per zone areaID, the Casts in zone areaID 0 by seq, and the `B1` and `S1` entries. Then `P1:` and `U1:`, the count of Prestige and purchase entries (`none` without any), with one line per entry: a `P1`'s rank, a `U1`'s good and price, each with its character and time. A log in another format than the codec's is reported, not decoded.
 - **Ledger:** `PagleLedgerDB` from `Pagle_Ledger.lua`. One line when the file or `PagleLedgerDB` is missing. Otherwise, in order:
-  - `projection:` the stored `lastSeq`, `logId`, `fingerprint` and `rulesVersion`. Then `logId:` whether it matches `PagleLog`'s (a different one is flagged `DIFFERS`: Core rebuilds at login), `lastSeq:` whether it equals the log's length, and `rulesVersion:` whether it is the Ledger's own (`LEDGER_RULES_VERSION` × 100, so 200 in M3; any other is flagged `DIFFERS`: Core rebuilds at login).
+  - `projection:` the stored `lastSeq`, `logId`, `fingerprint` and `rulesVersion`. Then `logId:` whether it matches `PagleLog`'s (a different one is flagged `DIFFERS`: Core rebuilds at login), `lastSeq:` whether it equals the log's length, and `rulesVersion:` whether it is the Ledger's own (`LEDGER_RULES_VERSION` × 100 + Core's `SIZE_RULES_VERSION`, so 301 in M4; any other is flagged `DIFFERS`: Core rebuilds at login).
   - `world:` the catalogue the Ledger's world index was built from, its fingerprint, whether that is the projection's (flagged `NOT the projection's` otherwise: the computed lines then use a different catalogue than the game did), and its charted zone count. One `can't load` line instead when the catalogue doesn't load, and then nothing below is computed.
   - `state:` the Casts, Catches, XP, Coins and Species count, with the Angler Level.
-  - `state curio items:` and `state trophy items:` each caught item with its Catches (`6309 ×2`), classed by the Ledger's own `ClassifyCatch`; `state other items:` only if some item is neither now.
+  - `state curio items:` and `state trophy items:` each caught item with its Catches (`6309 ×2`), classed by the Ledger's own `ClassifyCatch`; `state other items:` only if some item is neither now. Legend items are listed in the Ledger M4 section.
   - `state Uncharted:` the Uncharted list: one line per item ID with its Catches and its Catches per zone.
   - `state zones:` one line per fished zone: its computed rank (`none` in an M2 state), whether it is charted, and its shown rank.
   - `completion:` Ledger completion, its percent, done and total, each part's "x of N" (Species, junk, treasure, trophy, zones at Master), and the Legends beside it.
   - `celebrated` lines: the highest level, Coins, Species, Species × zone pairs, zones with their celebrated rank, Species stars and family stars (the stars in all, then each one's, as `6303 ★1 ★2`), curio and trophy items, Uncharted item IDs, and Skill Milestones.
 
   Everything computed (the level, charted, shown ranks, completion, the classes) comes from the Ledger's own `logic/` files, over the world index built from the repo's `addons/Pagle/data/Catalogue.lua` with Core's `logic/Catalogue.lua`. `--catalogue <file>` builds it from another, such as the installed addon's `Interface/AddOns/Pagle/data/Catalogue.lua`, when the repo's has moved on.
-- **Wallet:** the balance, and each Module's last reported total from `PagleDB.global.coins.earned`.
+- **Ledger M4:** what M4 adds to `PagleLedgerDB`, after the Ledger section whenever `Pagle_Ledger.lua` holds one. In order:
+  - `climb:` the prestige rank, the climb's XP, the computed level and the peak level (60 once the rank is above 0), from the Ledger's own `Level` and `PeakLevel`. An M2 or M3 state reads as rank 0.
+  - `Catch Milestones:` each one reached with its time, and the lifetime Catches.
+  - `Legends caught:` each Legend item (classed by `ClassifyCatch` over the world) with its Catches and its first Catch's time, character and zone.
+  - `records:` how many Species hold a Simulated Size record, of all Species caught, and how many Legends do. With `--item <id>` (repeatable), one `record of <id>` line each: a Species' or Legend item's record as length in mm, band (with Core's band name), Catch ID and `since`; `none` when it has no sized Catch yet; `not in the state` when nothing of that ID is caught.
+  - `titles earned:` the title keys, computed by the Ledger's own `TitleKeys` plus the celebrated ones, in LED-R75's order (the celebrated ones only, said so, without a state or a world).
+  - `active title:` `profile.activeTitle` when it's earned; `automatic, so <key>` when none is stored; a stored key that isn't earned is said so, with the automatic key it reads as.
+  - `celebrated` lines: the highest level per climb (`prestige rank 0 level 60, prestige rank 1 level 4`), the prestige rank, the Catch Milestones, the title keys and the Legend items.
+
+  Without a world, `Legends caught:` and `celebrated Legend items:` say they can't be told from the other items.
+- **Wallet:** the balance from Core's own `logic/Wallet.lua`, and each Module's last reported total from `PagleDB.global.coins.earned`. With Coins spent, the heading shows earned − spent; while that is negative the balance is 0 and flagged `held` with the difference. Then the wallet projection, `PagleDB.global.projections.wallet`: `projection:` with the same `logId:` and `lastSeq:` checks as the Ledger's, `rulesVersion:` against Core's wallet rules version (`DIFFERS` otherwise), `spent:` and `purchased:` (each good ID). One `wallet projection: none stored` line before it's built.
+- **Looks:** from `PagleDB` (one shared profile, `Default`): one line per slot that a cached good or a stored pick names, with its `profile.appearance` pick or `default (<the slot's default good>)`; `goods cached:` the count in `global.goods`; `earned goods:` how many cached goods are earned goods and which are cached as earned; `length unit:` `profile.lengthUnit`, or `region default` when none is stored.
 - **Cards:** from `PagleDB.global`: each `writeUp` section's heading and lines; each card in `cards` with its title ("Your last session" for a `whileAway` one, otherwise "Session summary"), numbers, Coins, lines and its moments' titles by Module; the open `summary`'s moment count and lines; and the `pending` moment count.
 - **Field report:** `PagleDB.global.projections.fieldReport`: the reporter key of `PagleLog.logId` (REP-R36, from Core's own `logic/FieldReportText.lua`) on the heading line; the projection's `lastSeq`, `logId`, `fingerprint` and `rulesVersion` with the same `logId:` and `lastSeq:` checks as the Ledger's; and `count:`, the I and K rows stored (the box's count adds the P rows built in the game). One line, the heading's, when no projection is stored yet.
 - **CVars:** each named CVar from every file that sets it. `--cvar` defaults to `SoftTargetInteract`.
 - **Addons:** each named addon's state. `--addon` defaults to `Pagle`, `Pagle_Ledger` and `Pagle_QoL`.
 
-AceDB leaves out of the file every value equal to its default, so a missing `decodeErrors`, `coins`, `writeUp`, `cards`, `summary`, `pending` or celebrated set reads as its default: 0 or empty.
+AceDB leaves out of the file every value equal to its default, so a missing `decodeErrors`, `coins`, `writeUp`, `cards`, `summary`, `pending`, celebrated set, `appearance`, `goods`, `lengthUnit` or `activeTitle` reads as its default: 0, empty or unset.
 - **Exit check (#75 steps 3 and 4)**, with `--expect-casts N`, the dev's Cast count: one `ok` or `FAIL` line each for N `C1` Casts, no repeated entry ID among them, none in zone areaID 0, a `B1` and an `S1` entry, `decodeErrors` 0, every entry decoding, and at least one got-away Cast (`g`). It comes last, so the verdict is the last line.
 
 `--since T` counts only the Casts at server time T (Unix seconds) or later, so earlier sessions don't change the count; `B1` and `S1` are still looked for in the whole log, since Core writes them only when the build or the skill changes. Naming a `--cvar` or `--addon` replaces its defaults. Without `--character`, the character's CVars and addons are skipped. The script loads SavedVariables files as data in an empty environment and never runs them with globals.

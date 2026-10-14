@@ -3,8 +3,9 @@
 -- with several sessions, M0#1 a client where Pagle saves nothing yet, Code#1 files that must not run as code. M2#1
 -- and M2-Stale#1 hold a Pagle_Ledger.lua as well, for the Ledger, Wallet and Cards sections the M2 exit check reads
 -- (#103, #104). M3#1 holds an M3 Ledger and a Field report projection, for what the M3 exit check reads (#145,
--- #146). The Ledger runs read their world from spec/scripts/fixtures/Catalogue.lua (--catalogue), so the lines the
--- Ledger's logic computes are counted by hand, and don't move with the generated catalogue.
+-- #146). M4#1 holds what the M4 exit check reads (#173, #174). The Ledger runs read their world from
+-- spec/scripts/fixtures/Catalogue.lua (--catalogue), so the lines the Ledger's logic computes are counted by hand,
+-- and don't move with the generated catalogue.
 
 local ACCOUNTS = "spec/scripts/fixtures/WTF/Account/"
 local CATALOGUE = "spec/scripts/fixtures/Catalogue.lua"
@@ -265,6 +266,17 @@ describe("scripts/read-wtf.lua", function()
 			}, section(out, "== Wallet"))
 		end)
 
+		it("reads a PagleDB with no goods, looks or length unit as all defaults (AceDB leaves them out)", function()
+			-- SHOP-R32: no stored pick is the default look; LOG-R69: no stored unit is the region's.
+			assert.are.same({
+				"== Looks (PagleDB.profile.appearance, PagleDB.global.goods)",
+				"slots: none cached or stored, so every look is its slot's default",
+				"goods cached: 0",
+				"earned goods: none",
+				"length unit: region default",
+			}, section(out, "== Looks"))
+		end)
+
 		it("reads a PagleDB with no Write-up, cards, summary or pending as having none", function()
 			assert.are.same({
 				"== Cards (PagleDB.global)",
@@ -460,6 +472,21 @@ describe("scripts/read-wtf.lua", function()
 				"spent: 550",
 				"purchased: 2 (core.soundset.gilded, core.toaststyle.ripple)",
 			}, section(out, "== Wallet"))
+		end)
+
+		it("prints each slot's equipped look, the goods cache and the length unit (SHOP-R26, SHOP-R32, LOG-R69)", function()
+			-- SHOP-R32: a slot with no stored pick shows its default; the slots are the cached goods' and the stored
+			-- picks'. SHOP-R26: 8 goods cached, two of them earned goods, one cached as earned. LOG-R69: "in" stored.
+			assert.are.same({
+				"== Looks (PagleDB.profile.appearance, PagleDB.global.goods)",
+				"core.crest: default (core.crest.plain)",
+				"core.soundset: default (core.soundset.driftwood)",
+				"core.toaststyle: core.toaststyle.ripple",
+				"ledger.binding: ledger.binding.level10",
+				"goods cached: 8",
+				"earned goods: 2, cached as earned: 1 (ledger.binding.level10)",
+				"length unit: in",
+			}, section(out, "== Looks"))
 		end)
 
 		it("prints the stored M4 lines and the celebrated titles alone when the catalogue can't be loaded", function()

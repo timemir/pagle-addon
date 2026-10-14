@@ -3,12 +3,16 @@
 --   - the latest !BugGrabber session's Lua errors, with their stacks;
 --   - the Catch log, decoded with Core's own codec (addons/Pagle/logic/CatchLog.lua): the logId, the entries by
 --     tag, the C1 Casts by outcome, per character and per zone areaID, those in zone areaID 0, their time span, the
---     B1 and S1 entries and PagleDB.global.decodeErrors (0 when AceDB left that default out of the file);
+--     B1 and S1 entries, each P1 (Prestige) and U1 (purchase) entry, and PagleDB.global.decodeErrors (0 when AceDB
+--     left that default out of the file);
 --   - the Ledger (PagleLedgerDB in Pagle_Ledger.lua): the projection Core stores and whether its logId, lastSeq and
 --     rulesVersion are current, its state (items, the Uncharted list, zone ranks) with what the Ledger's own logic/
 --     computes from it over the world index (the level, charted zones, shown ranks, Ledger completion), and the
---     celebrated set;
---   - the wallet: each Module's reported Coins (PagleDB.global.coins.earned) and the balance;
+--     celebrated set; then, in a Ledger M4 section, the climb with Prestige, the Catch Milestones, the Legends, the
+--     Simulated Size records, the earned and active titles and the celebrated set's M4 keys;
+--   - the wallet: each Module's reported Coins (PagleDB.global.coins.earned), the balance (held while negative) and
+--     the wallet projection (PagleDB.global.projections.wallet): spent and purchased;
+--   - the looks: each slot's equipped good (PagleDB.profile.appearance), the goods cache and the length unit;
 --   - the cards: the Write-up waiting, the Session summary cards, the open summary and the pending moments;
 --   - the Field report projection (PagleDB.global.projections.fieldReport), its row count and the reporter key;
 --   - named CVars from Config.wtf and the account's and the character's config-cache.wtf;
@@ -980,6 +984,49 @@ local function printWallet(pagle, log)
 	printWalletProjection(stored, log, core.WALLET_RULES_VERSION)
 end
 
+-- Prints the Looks section (wallet-and-shop.md › Data, catch-log.md › Data, #173): each slot's stored pick from
+-- PagleDB.profile.appearance, or its default (SHOP-R32), for every slot a cached good or a stored pick names; the
+-- goods cache's size and its earned goods cached as earned (SHOP-R26); and profile.lengthUnit (LOG-R69). PagleDB
+-- has one shared profile, AceDB's "Default". AceDB leaves an empty appearance, goods or a nil unit out of the file.
+local function printLooks(pagle)
+	local global, why = pagleGlobal(pagle)
+	if not global then
+		print("== Looks: " .. why)
+		return
+	end
+	print("== Looks (PagleDB.profile.appearance, PagleDB.global.goods)")
+	local profile = tableOr(tableOr(pagle.saved.PagleDB.profiles).Default)
+	local appearance, goods = tableOr(profile.appearance), tableOr(global.goods)
+	local slots, defaults, earned, cachedEarned = {}, {}, {}, {}
+	for goodID, good in pairs(goods) do
+		good = tableOr(good)
+		if good.slot then
+			slots[good.slot] = true
+			defaults[good.slot] = good.default and goodID or defaults[good.slot]
+		end
+		if good.earned ~= nil then
+			earned[goodID] = true
+			cachedEarned[goodID] = good.earned == true or nil
+		end
+	end
+	for slot in pairs(appearance) do
+		slots[slot] = true
+	end
+	local ids = sortedKeys(slots)
+	if #ids == 0 then
+		print("slots: none cached or stored, so every look is its slot's default")
+	end
+	for _, slot in ipairs(ids) do
+		local default = defaults[slot] and " (" .. defaults[slot] .. ")" or ""
+		print(slot .. ": " .. (appearance[slot] and tostring(appearance[slot]) or "default" .. default))
+	end
+	print("goods cached: " .. #sortedKeys(goods))
+	local earnedCount = #sortedKeys(earned)
+	local earnedText = earnedCount > 0 and earnedCount .. ", cached as earned: " .. listed(cachedEarned) or "none"
+	print("earned goods: " .. earnedText)
+	print("length unit: " .. tostring(profile.lengthUnit or "region default"))
+end
+
 -- The titles of a card's moments, one line per Module group (ANN-R53), each indented by `indent`.
 local function printMoments(groups, indent)
 	for _, group in ipairs(groups) do
@@ -1191,6 +1238,7 @@ local function main(args)
 	local checks = printCatchLog(pagle, options.expectCasts, options.since)
 	printLedger(options.account, pagleLog(pagle.saved), options.catalogue, options.items)
 	printWallet(pagle, pagleLog(pagle.saved))
+	printLooks(pagle)
 	printCards(pagle)
 	printFieldReport(pagle, pagleLog(pagle.saved))
 	printCVars(options.account, options.character, options.cvars)
