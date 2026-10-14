@@ -8,7 +8,8 @@ local JUNK, CHEST = 90010, 90011
 local LIGHT, HEAVY = 90020, 90021
 -- On no list and not in the catalogue: Uncharted (LED-R5).
 local UNKNOWN = 99001
-local FAMILY = 7
+-- A trophy family no lore batch names (LED-R161): a spec gives it a name where it needs one.
+local FAMILY = 999
 local COVE = 9001
 local T0 = 1791731000
 -- The fake log's logId, which a saved celebrated set names to belong to it (LED-R90).
@@ -285,7 +286,7 @@ describe("the Ledger's M3 live moments", function()
 		function()
 			local fake, loaded = session({
 				history = { cast(T0, { LIGHT }, { zone = 0 }) },
-				lore = { ["family.7.name"] = "Snappers" },
+				lore = { ["family.999.name"] = "Snappers" },
 			})
 
 			local record = assert(fake.playCast("caught", loot(HEAVY)))
