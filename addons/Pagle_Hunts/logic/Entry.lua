@@ -122,7 +122,7 @@ end
 local function effortOf(progress)
 	local L = ns.L
 	local effort = progress and progress.effort or 0
-	local casts = (effort == 1 and L.EFFORT_CAST or L.EFFORT_CASTS):format(effort)
+	local casts = (effort == 1 and L.EFFORT_CASTS_ONE or L.EFFORT_CASTS_OTHER):format(effort)
 	local text
 	if progress and progress.caught then
 		text = L.EFFORT_SINCE:format(casts, progress.sinceLast)

@@ -60,15 +60,37 @@ def test_the_committed_catalogue_holds_one_area_per_areas_csv_row() -> None:
     assert [int(area_id) for area_id in rows] == sorted(layer.areas)
 
 
+# DATA-R3: "Everything Pagle ships is IDs, numbers and Pagle's own text." Pagle's own lore that happens to spell an
+# area's name, by the generated file it is in, with the lore that does: plain English words some subzone also uses,
+# not a name taken from the game.
+OWN_TEXT = {
+    "addons/Pagle_Hunts/data/Lore.lua": {
+        "Camp": "the set Camp Hours (set.camp_hours.name, DATA-R105), for the Rack and the Hut",
+        "Night Run": "the Hunt Night Run (hunt.night_run.name, DATA-R105), a night window's run",
+    },
+}
+
+
 def test_no_name_from_areas_csv_appears_in_any_generated_file() -> None:
     # DATA-R3: no area name from the game ships; the source layer keeps the enUS names, the generator never emits
-    # them. Every generated file, as generated and as committed.
+    # them. Every generated file, as generated and as committed, apart from OWN_TEXT's reviewed coincidences.
     names = {area.name for area in _slice().areas.values() if area.name}
     assert len(names) > 1000
     for path, text in generate(REPO).items():
+        allowed = OWN_TEXT.get(path, {})
         for content in (text, (REPO / path).read_text(encoding="utf-8")):
-            leaked = sorted(name for name in names if name in content)
+            leaked = sorted(name for name in names if name in content and name not in allowed)
             assert leaked == [], f"{path} holds area names {leaked}"
+
+
+def test_every_area_name_allowed_as_own_text_is_still_an_area_s_name_and_in_its_file() -> None:
+    # DATA-R3: OWN_TEXT only excuses a coincidence that is really there, so a stale entry can't hide a later leak.
+    names = {area.name for area in _slice().areas.values() if area.name}
+    for path, allowed in OWN_TEXT.items():
+        content = (REPO / path).read_text(encoding="utf-8")
+        for name in allowed:
+            assert name in names, name
+            assert name in content, name
 
 
 def test_the_committed_catalogue_s_aliases_are_aliases_toml_s() -> None:

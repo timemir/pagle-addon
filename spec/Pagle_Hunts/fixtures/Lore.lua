@@ -18,3 +18,8 @@ L["set.fixture_dusk.name"] = "Dusk"
 L["set.fixture_dusk.note"] = "After the lamps are lit."
 L["set.fixture_dusk.title"] = "the Duskwatcher"
 L["set.fixture_wagers.name"] = "Wagers"
+-- Two of Hunts' goods (HNT-R121, from #192); the other five have no keys, so they read their IDs.
+L["huntgood.hunts.notebookcover.oilcloth.description"] = "Black-green oilcloth that keeps the rain off the pages."
+L["huntgood.hunts.notebookcover.oilcloth.name"] = "Oilcloth"
+L["huntgood.hunts.trackerframe.inkwash.description"] = "A wash of thinned ink behind your pinned Hunts."
+L["huntgood.hunts.trackerframe.inkwash.name"] = "Ink Wash"

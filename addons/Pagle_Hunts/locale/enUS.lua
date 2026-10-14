@@ -16,6 +16,12 @@ ns.L = {
 	BOARD = "Hunts",
 	BOARD_SLASH_HELP = "Open or close the Hunts board",
 
+	-- Hunts' slots (HNT-R120) and the sample tracker a tracker frame's preview draws (HNT-R121).
+	SLOT_NOTEBOOK_COVER = "Notebook cover",
+	SLOT_TRACKER_FRAME = "Hunts tracker frame",
+	PREVIEW_TRACKER_LINE_1 = "Night Run · in 37m",
+	PREVIEW_TRACKER_LINE_2 = "Rack Hour · on demand",
+
 	-- Labels in realm time (HNT-R50–R55): logic/Labels.lua. A name not loaded yet reads "…".
 	NAME_UNKNOWN = "…",
 	-- Durations, rounded down to the minute (HNT-R50): "37m", "2h", "2h 10m", "1d", "1d 4h".
@@ -97,6 +103,28 @@ ns.L = {
 	TARGET_ANY = "Any fish",
 	TARGET_MIN_BAND = "%s, %s or better",
 
+	-- Hunts' moments, Write-up and summary line (HNT-R86, HNT-R89, HNT-R111). Counts come in singular and plural
+	-- pairs, *_ONE and *_OTHER.
+	HUNT_COMPLETE = "Hunt complete",
+	HUNT_COMPLETE_STAMP = "Hunt",
+	HUNT_TIER = "%s tier", -- "Silver tier"
+	HUNT_TIER_TEXT = "%s · %d caught", -- "Night Run · 10 caught"
+	TRIMS = { bronze = "Bronze", silver = "Silver", gold = "Gold" }, -- HNT-R18
+	TITLE_EARNED = "Title earned",
+	TITLE_EARNED_STAMP = "Title",
+	WRITE_UP_FIRST_BUILD_ONE = "Your Hunts were written up from %s Cast",
+	WRITE_UP_FIRST_BUILD_OTHER = "Your Hunts were written up from %s Casts",
+	WRITE_UP_WHILE_OFF = "While Hunts was off",
+	WRITE_UP_COMPLETED_ONE = "%s Hunt completed",
+	WRITE_UP_COMPLETED_OTHER = "%s Hunts completed",
+	WRITE_UP_FURTHER_ONE = "%s further tier",
+	WRITE_UP_FURTHER_OTHER = "%s further tiers",
+	WRITE_UP_TITLE = "Title: %s",
+	WRITE_UP_COINS = "Pagle Coins +%s",
+	SUMMARY_LINE = "Hunts: %s of %s done · %s", -- "Hunts: 3 of 16 done · 1 title"
+	SUMMARY_TITLES_ONE = "%s title",
+	SUMMARY_TITLES_OTHER = "%s titles",
+
 	-- A Hunt's entry on the board's right page (HNT-R3, HNT-R64–R66, HNT-R69): logic/Entry.lua.
 	ENTRY_KICKER = "%s · %s",
 	ENTRY_NATURAL = "Natural",
@@ -114,9 +142,9 @@ ns.L = {
 	LADDER_WHEN_ZONE = "%s, %s",
 	LADDER_PROGRESS = "%d / %d",
 	LADDER_CAUGHT = "%d caught",
-	-- The effort counter (HNT-R26) and HNT-R27's note: plain counts, no link.
-	EFFORT_CASTS = "%d Casts",
-	EFFORT_CAST = "%d Cast",
+	-- The effort counter (HNT-R26) and HNT-R27's note: plain counts, no link; "1 Cast", "2 Casts".
+	EFFORT_CASTS_ONE = "%d Cast",
+	EFFORT_CASTS_OTHER = "%d Casts",
 	EFFORT = "%s under these conditions.",
 	EFFORT_SINCE = "%s under these conditions, %d since my last one.",
 	EFFORT_ODDS = "Odds live in Stats.",
