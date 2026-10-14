@@ -231,4 +231,50 @@ ns.L = {
 	ANGLER_MILESTONE_DONE = "☑ %d",
 	ANGLER_MILESTONE_OPEN = "☐ %d",
 	ANGLER_MILESTONE_SEPARATOR = "   ",
+
+	-- The zone spread (LED-R135–R138), M3's part (LED-R4): its seal and ladder read ZONE_RANKS; "unfished" on the
+	-- seal with no rank.
+	ZONE_UNFISHED = "unfished",
+	ZONE_LADDER_SEPARATOR = "·",
+	ZONE_NEXT = "Next: %s",
+	ZONE_NEW_HERE_ONE = "%d new to find here! My seal stays.",
+	ZONE_NEW_HERE_OTHER = "%d new to find here! My seal stays.",
+	-- The groups of the catches (LED-R135), by group, and a group's header: "{group} · {caught here} / {total}".
+	ZONE_GROUPS = {
+		anyTime = "Any time",
+		pools = "Pools",
+		dayNight = "Day and night",
+		seasonal = "Seasonal",
+		events = "Events",
+		trophies = "Trophies",
+		curios = "Curios",
+	},
+	ZONE_GROUP_HEADER = "%s · %d / %d",
+	ZONE_POOLS_NOTE = "open water and pools combined",
+	-- A requirement's line, CHECK_ON or CHECK_OFF before it: "☑ a piece of junk" (the junk and treasure lines are
+	-- ZONE_NEXT_JUNK and ZONE_NEXT_TREASURE).
+	ZONE_REQUIREMENT = "%s %s",
+	ZONE_TROPHY = "a %s trophy, any weight",
+	ZONE_ALSO_CAUGHT = "Also caught here · %d",
+	ZONE_ALSO_NOTE = "Not in Pagle's list for these waters yet.",
+	ZONE_HELP_CHART = "Help chart the waters",
+	-- A Species row (LED-R136): never named until caught (LED-R124).
+	ZONE_UNKNOWN_FISH = "— unknown —",
+	ZONE_CAUGHT_ELSEWHERE = "%s (caught elsewhere)",
+	ZONE_POOLS_MARGIN = "pools",
+	ZONE_MARGIN_SEPARATOR = " · ",
+	-- "About these waters" (LED-R137, without M4's zonemaster line).
+	ZONE_ABOUT = "About these waters",
+	ZONE_SKILL = "Skill ~%d",
+	ZONE_KNOWN = "%d%% of these waters known: %d of %d fish, %d of %d trophy families",
+	ZONE_TROPHIES_HERE = "Trophies landed here",
+	ZONE_WEIGHTS = "%d / %d",
+	ZONE_REWARD = "Reward for mastery: each new seal earns XP.",
+	ZONE_PICK = "Pick a fish on the left to read its page.",
+	-- A zone that isn't charted (LED-R138).
+	ZONE_UNCHARTED_NOTE = "Every catch here is still written down, and counted once Pagle's data catches up.",
+	ZONE_LOOSE_PAGES = "Loose pages",
+	ZONE_LOOSE_ITEM = "%s: %d×",
+	ZONE_ALSO_CAUGHT_TITLE = "Also caught here",
+	ZONE_NOTHING_YET = "Nothing caught here yet.",
 }
