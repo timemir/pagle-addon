@@ -6,6 +6,9 @@ local ns = select(2, ...)
 -- The Pagle Coin icon after a Coins amount (ANN-R23, ANN-R53, SHOP-R12): the gold coin texture stands in until
 -- Pagle has its own coin art.
 local COIN = "|TInterface\\MoneyFrame\\UI-GoldIcon:0|t"
+-- The Field report's one name on Core's surfaces: the compartment entry, the box's title and the Settings section
+-- (REP-R40, REP-R43, SET-R10).
+local HELP_CHART = "Help chart the waters"
 
 ---@class PagleStrings
 ns.L = {
@@ -93,25 +96,24 @@ ns.L = {
 	MENU_SETTINGS = "Settings",
 	-- Its Curio Shop entry (CORE-R50): the balance as BreakUpLargeNumbers writes it, then a coin icon.
 	MENU_CURIO_SHOP = "Curio Shop  %s " .. COIN,
-	-- Its Field report entry (CORE-R50, REP-R43), with the count while it is above 0.
-	MENU_FIELD_REPORT = "Help chart the waters",
-	MENU_FIELD_REPORT_COUNT = "Help chart the waters (%d)",
+	-- Its Field report entry (CORE-R50, REP-R43), which is also the box's title (REP-R40) and the Settings root's
+	-- section header (SET-R10 row 4); the entry adds the count while it is above 0.
+	HELP_CHART = HELP_CHART,
+	HELP_CHART_COUNT = HELP_CHART .. " (%d)",
 
-	-- The Field report box (field-report.md › The box and its entry points): its title (REP-R40), the privacy line
-	-- above the text (REP-R37), the part line and its buttons, Close, the lines shown instead of the text (REP-R41,
-	-- REP-R42), and the chat line an entry point prints while restricted (REP-R44).
-	REPORT_TITLE = "Help chart the waters",
-	REPORT_PRIVACY = "This will be posted publicly. It contains no character names.",
-	REPORT_PART = "Part %d of %d",
-	REPORT_PREVIOUS = "Previous",
-	REPORT_NEXT = "Next",
-	REPORT_CLOSE = "Close",
-	REPORT_NOTHING = "Nothing to report. Thanks for checking!",
-	REPORT_UPDATING = "Updating… try again in a moment.",
-	REPORT_AFTER_COMBAT = "Pagle: the Field report opens after combat.",
-	-- The Settings root's Help chart the waters section (SET-R10 row 4): its header, the row's label, the button's
-	-- caption, with the count while it is above 0, and the tooltip.
-	SETTINGS_FIELD_REPORT = "Help chart the waters",
+	-- The Field report box (field-report.md › The box and its entry points), titled HELP_CHART (REP-R40): the privacy
+	-- line above the text (REP-R37), the part line and its buttons, Close, the lines shown instead of the text
+	-- (REP-R41, REP-R42), and the chat line an entry point prints while restricted (REP-R44).
+	FIELD_REPORT_PRIVACY = "This will be posted publicly. It contains no character names.",
+	FIELD_REPORT_PART = "Part %d of %d",
+	FIELD_REPORT_PREVIOUS = "Previous",
+	FIELD_REPORT_NEXT = "Next",
+	FIELD_REPORT_CLOSE = "Close",
+	FIELD_REPORT_NOTHING = "Nothing to report. Thanks for checking!",
+	FIELD_REPORT_UPDATING = "Updating… try again in a moment.",
+	FIELD_REPORT_AFTER_COMBAT = "Pagle: the Field report opens after combat.",
+	-- The Settings root's HELP_CHART section (SET-R10 row 4): the row's label, the button's caption, with the count
+	-- while it is above 0, and the tooltip.
 	SETTINGS_FIELD_REPORT_ROW = "Field report",
 	SETTINGS_FIELD_REPORT_BUTTON = "Open Field report",
 	SETTINGS_FIELD_REPORT_BUTTON_COUNT = "Open Field report (%d)",

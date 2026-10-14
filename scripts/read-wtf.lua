@@ -155,15 +155,28 @@ local function printErrors(account)
 	end
 end
 
--- Core's namespace with its Catch log codec: the logic/ files the codec needs, each called with ("Pagle", ns) as
--- the client calls an addon's files. logic/ is plain Lua 5.1 (CORE-R7), so the standard globals are all it gets.
-local function loadCodec()
+-- Runs the addon file at `path` as the client runs an addon's files, as chunk(addonName, ns), with `env` as its
+-- globals. Returns true, or nil and why when the file can't be loaded or raises.
+local function loadInto(ns, env, path, addonName)
+	local chunk, loadErr = loadfile(path)
+	if not chunk then
+		return nil, loadErr
+	end
+	setfenv(chunk, env)
+	local ok, runErr = pcall(chunk, addonName, ns)
+	if not ok then
+		return nil, runErr
+	end
+	return true
+end
+
+-- Core's namespace with the logic/ files the reader uses: the Catch log codec, the Field report's P rows and the
+-- reporter key (REP-R22, REP-R36). logic/ is plain Lua 5.1 (CORE-R7), so the standard globals are all it gets.
+local function loadCoreLogic()
 	local ns = {}
 	local env = setmetatable({}, { __index = _G })
-	for _, file in ipairs({ "Conditions.lua", "Sessions.lua", "CatchLog.lua" }) do
-		local chunk = assert(loadfile(ROOT .. "/addons/Pagle/logic/" .. file))
-		setfenv(chunk, env)
-		chunk("Pagle", ns)
+	for _, file in ipairs({ "Conditions.lua", "Sessions.lua", "CatchLog.lua", "FieldReport.lua", "FieldReportText.lua" }) do
+		assert(loadInto(ns, env, ROOT .. "/addons/Pagle/logic/" .. file, "Pagle"))
 	end
 	return ns
 end
@@ -360,7 +373,7 @@ local function printCatchLog(pagle, expectCasts, since)
 		decodeErrors = { count = 0, text = "0 (not saved: AceDB leaves out a default)" }
 	end
 	print(type(db) == "table" and "PagleDB.global.decodeErrors: " .. decodeErrors.text or "PagleDB: not in Pagle.lua")
-	local ns = loadCodec()
+	local ns = loadCoreLogic()
 	if log.format ~= ns.LOG_FORMAT then
 		-- Opening it would set it aside for a new log (LOG-R18), so it isn't decoded at all.
 		local format = ("format %s, the codec reads format %d"):format(tostring(log.format), ns.LOG_FORMAT)
@@ -383,9 +396,7 @@ local function loadLedgerLogic()
 	for _, line in ipairs(assert(readLines(dir .. "Pagle_Ledger.toc"))) do
 		local file = line:match("^%s*(.-)%s*$"):gsub("\\", "/")
 		if file:match("^logic/[^/]+%.lua$") then
-			local chunk = assert(loadfile(dir .. file))
-			setfenv(chunk, env)
-			chunk("Pagle_Ledger", ns)
+			assert(loadInto(ns, env, dir .. file, "Pagle_Ledger"))
 		end
 	end
 	return ns
@@ -434,14 +445,9 @@ local function loadCatalogue(path)
 	local ns = {}
 	local env = setmetatable({}, { __index = _G })
 	for _, file in ipairs({ path, ROOT .. "/addons/Pagle/logic/Catalogue.lua" }) do
-		local chunk, loadErr = loadfile(file)
-		if not chunk then
-			return nil, loadErr
-		end
-		setfenv(chunk, env)
-		local ok, runErr = pcall(chunk, "Pagle", ns)
+		local ok, err = loadInto(ns, env, file, "Pagle")
 		if not ok then
-			return nil, runErr
+			return nil, err
 		end
 	end
 	if type(ns.catalogue) ~= "table" then
@@ -485,27 +491,32 @@ local function loadWorld(ledger, path, stored)
 	return world, catalogue.GetItem
 end
 
--- The state's trophy and curio items (LED-R60, LED-R64), each with its Catches, by the class the Ledger's own
--- ClassifyCatch gives it now (LED-R5); "other" for any other class, such as an item no longer in the catalogue.
--- Without a catalogue they are listed together, unclassed.
-local function printItems(ledger, items, getItem)
-	local function withCatches(itemID, first)
-		return itemID .. " ×" .. tostring(tableOr(first).n)
-	end
+-- Prints a set of items keyed by item ID as "<what> curio items: …" and "<what> trophy items: …", by the class the
+-- Ledger's own ClassifyCatch gives each now (LED-R5), and "<what> other items: …" when any has another class, such as
+-- an item no longer in the catalogue. Without a catalogue they are listed together, unclassed. `describe` is
+-- listed's.
+local function printClassed(what, ledger, items, getItem, describe)
 	if not getItem then
-		print("state items, not classed: " .. listed(items, withCatches))
+		print(what .. " items, not classed: " .. listed(items, describe))
 		return
 	end
 	local byClass = { curio = {}, trophy = {}, other = {} }
-	for itemID, first in pairs(items) do
+	for itemID, value in pairs(items) do
 		local class = ledger.ClassifyCatch(itemID, getItem(itemID))
-		byClass[byClass[class] and class or "other"][itemID] = first
+		byClass[byClass[class] and class or "other"][itemID] = value
 	end
-	print("state curio items: " .. listed(byClass.curio, withCatches))
-	print("state trophy items: " .. listed(byClass.trophy, withCatches))
+	print(what .. " curio items: " .. listed(byClass.curio, describe))
+	print(what .. " trophy items: " .. listed(byClass.trophy, describe))
 	if next(byClass.other) then
-		print("state other items: " .. listed(byClass.other, withCatches))
+		print(what .. " other items: " .. listed(byClass.other, describe))
 	end
+end
+
+-- The state's trophy and curio items (LED-R60, LED-R64), each with its Catches, by class (printClassed).
+local function printItems(ledger, items, getItem)
+	printClassed("state", ledger, items, getItem, function(itemID, first)
+		return itemID .. " ×" .. tostring(tableOr(first).n)
+	end)
 end
 
 -- The Uncharted list (LED-R64): each item ID, its Catches and its Catches per zone.
@@ -611,7 +622,8 @@ local function celebratedStars(set, noun, plural)
 	return ("%d on %s (%s)"):format(total, count(#ids, noun, plural), table.concat(texts, ", "))
 end
 
-local function printCelebrated(celebrated)
+-- The celebrated set (LED-R90), its curio and trophy items by class (printClassed) when there's a catalogue.
+local function printCelebrated(celebrated, ledger, getItem)
 	local highest
 	for _, level in pairs(tableOr(celebrated.levels)) do
 		highest = math.max(highest or level, level)
@@ -625,7 +637,7 @@ local function printCelebrated(celebrated)
 	end))
 	print("celebrated Species stars: " .. celebratedStars(tableOr(celebrated.stars), "Species", "Species"))
 	print("celebrated family stars: " .. celebratedStars(tableOr(celebrated.familyStars), "family", "families"))
-	print("celebrated items: " .. listed(tableOr(celebrated.items)))
+	printClassed("celebrated", ledger, tableOr(celebrated.items), getItem)
 	print("celebrated Uncharted: " .. listed(tableOr(celebrated.uncharted)))
 	print("celebrated Skill Milestones: " .. listed(tableOr(celebrated.skill)))
 end
@@ -674,11 +686,12 @@ local function printLedger(account, log, catalogue)
 	print("== Ledger (PagleLedgerDB)")
 	local global = tableOr(db.global)
 	local stored = global.projection
+	local ledger, getItem
 	if type(stored) ~= "table" or type(stored.projection) ~= "table" then
 		print("projection: none stored (no build has finished, LOG-R72)")
 	else
 		printStored(stored, log)
-		local ledger = loadLedgerLogic()
+		ledger = loadLedgerLogic()
 		-- The Ledger's own rules version, from its logic/ (LED-R2): Core defines no SIZE_RULES_VERSION before M4.
 		local rulesVersion = ledger.RulesVersion(nil)
 		if stored.rulesVersion == rulesVersion then
@@ -691,10 +704,11 @@ local function printLedger(account, log, catalogue)
 				)
 			)
 		end
-		local world, getItem = loadWorld(ledger, catalogue, stored)
+		local world
+		world, getItem = loadWorld(ledger, catalogue, stored)
 		printLedgerState(ledger, stored.projection, world, getItem, tableOr(global.celebrated))
 	end
-	printCelebrated(tableOr(global.celebrated))
+	printCelebrated(tableOr(global.celebrated), ledger, getItem)
 end
 
 -- PagleDB.global from Pagle.lua's globals, or nil and why there's none.
@@ -810,27 +824,30 @@ local function printCards(pagle)
 	print("pending: " .. count(#tableOr(global.pending), "moment"))
 end
 
--- The reporter key of a logId (REP-R36), with Core's own function: logic/FieldReportText.lua, called with
--- ("Pagle", ns) as the client calls it. It is plain Lua 5.1 (CORE-R7) and needs nothing else of Core's.
-local function reporterKey(logId)
-	local ns = {}
-	local chunk = assert(loadfile(ROOT .. "/addons/Pagle/logic/FieldReportText.lua"))
-	setfenv(chunk, setmetatable({}, { __index = _G }))
-	chunk("Pagle", ns)
-	return ns.ReporterKey(logId)
+-- The P rows (REP-R22) Core builds in the game from the diagnostics buffer (LOG-R81) and the log's Casts, with its
+-- own ns.FieldReportPRows; none without a log the codec reads.
+local function pRows(ns, global, log)
+	if not log or log.format ~= ns.LOG_FORMAT then
+		return {}
+	end
+	local buffer = type(global.diagnostics) == "table" and global.diagnostics or {}
+	local catchLog = ns.OpenCatchLog(log, { decodeErrors = 0 }, 0)
+	return ns.FieldReportPRows(buffer, catchLog:Reverse("cast"))
 end
 
 -- Prints the Field report section (field-report.md › Data): the projection Core stores in
--- PagleDB.global.projections.fieldReport (REP-R25), checked against PagleLog (LOG-R72), its stored I and K row
--- count (REP-R26), and the reporter key of PagleLog.logId (REP-R36). One line while no projection is stored.
+-- PagleDB.global.projections.fieldReport (REP-R25), checked against PagleLog (LOG-R72), its count as the box's
+-- entry points show it, the stored I and K rows plus the P rows built from the buffer (REP-R26), and the reporter
+-- key of PagleLog.logId (REP-R36), all with Core's own logic/. One line while no projection is stored.
 local function printFieldReport(pagle, log)
 	local global, why = pagleGlobal(pagle)
 	if not global then
 		print("== Field report: " .. why)
 		return
 	end
+	local ns = loadCoreLogic()
 	local heading = "== Field report (PagleDB.global.projections.fieldReport): reporter key "
-		.. (log and type(log.logId) == "string" and reporterKey(log.logId) or "none (no PagleLog logId)")
+		.. (log and type(log.logId) == "string" and ns.ReporterKey(log.logId) or "none (no PagleLog logId)")
 	local stored = tableOr(global.projections).fieldReport
 	if type(stored) ~= "table" or type(stored.projection) ~= "table" then
 		print(heading .. ", projection: none stored (no build has finished, LOG-R72)")
@@ -838,7 +855,15 @@ local function printFieldReport(pagle, log)
 	end
 	print(heading)
 	printStored(stored, log)
-	print("count: " .. tostring(stored.projection.count or 0) .. " I and K rows stored")
+	local kept, built = tonumber(stored.projection.count) or 0, #pRows(ns, global, log)
+	print(
+		('count: %d I and K rows stored + %d P rows from the buffer = %d (the menu\'s "(%d)", REP-R26)'):format(
+			kept,
+			built,
+			kept + built,
+			kept + built
+		)
+	)
 end
 
 -- Prints the exit check's checks under one heading; true when every one passed.

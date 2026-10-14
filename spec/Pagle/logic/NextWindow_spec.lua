@@ -294,7 +294,7 @@ describe("ns.NextWindow", function()
 			assert.is_false(forecast({ events = { 301 } }, realm(2026, 10, 18, 15, 0), { 301 }, rules).confirmed)
 		end)
 
-		it("reads only the weekly rules of the occurrence the opening used", function()
+		it("reads only the weekly rules of the occurrence the opening used (LOG-R50, LOG-R56)", function()
 			-- 301 confirmed on Sundays at 14:00; 302 unconfirmed on Tuesdays at 14:00.
 			local rules = rulesOf({
 				[301] = sundayRule(),

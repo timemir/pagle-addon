@@ -457,19 +457,12 @@ part(function(fake, Pagle, ns)
 		commands:AddModules(fake.registry:Modules(), fake.report)
 	end)
 
-	local core = {
-		settings = function()
-			Pagle.OpenSettings()
-		end,
-		report = function()
-			Pagle.OpenFieldReport()
-		end,
-	}
+	local core = ns.CoreSubcommands(Pagle)
 	local settings = ns.SettingsMenuEntry(core.settings)
 	function fake.menu()
 		local shop = ns.CurioShopMenuEntry(Pagle.GetBalance(), breakUpLargeNumbers)
-		local report = ns.FieldReportMenuEntry(Pagle.GetFieldReportCount(), core.report)
-		return ns.CompartmentMenu(fake.registry:Modules(), shop, report, settings, fake.securecall)
+		local fieldReport = ns.FieldReportMenuEntry(Pagle.GetFieldReportCount(), core.report)
+		return ns.CompartmentMenu(fake.registry:Modules(), shop, fieldReport, settings, fake.securecall)
 	end
 
 	function fake.slash(line)
@@ -601,8 +594,9 @@ part(function(fake, Pagle, ns, host)
 	end
 
 	-- The box (REP-R40–R44), on Core's real Pagle.OpenFieldReport: each opening's view, its text built now from the
-	-- rows above as Core's adapter builds it (the header's addon version reads "test", and no name is cached), lands
-	-- in fake.fieldReportsOpened; while restricted it prints REP-R44's line instead.
+	-- rows above on Core's wiring, as Core's adapter builds it (the header's addon version reads "test", the locale
+	-- "enUS", and no name is cached), lands in fake.fieldReportsOpened; while restricted it prints REP-R44's line
+	-- instead.
 	fake.fieldReportsOpened = {}
 	local noName = function()
 		return nil
@@ -613,14 +607,15 @@ part(function(fake, Pagle, ns, host)
 		end,
 		print = fake.print,
 		rows = fieldReport.rows,
-		text = function(reportRows)
-			return ns.FieldReportParts(reportRows, {
-				addon = "test",
-				fingerprint = Pagle.CONTENT_FINGERPRINT,
-				locale = "enUS",
-				logId = fake.catchLog.data.logId or "",
-			}, { item = noName, area = noName })
-		end,
+		text = ns.FieldReportTextFunction(host, {
+			addon = function()
+				return "test"
+			end,
+			locale = function()
+				return "enUS"
+			end,
+			names = { item = noName, area = noName },
+		}),
 		show = function(view)
 			fake.fieldReportsOpened[#fake.fieldReportsOpened + 1] = view
 		end,

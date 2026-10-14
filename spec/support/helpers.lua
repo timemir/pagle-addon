@@ -46,6 +46,26 @@ function openedNames(loaded)
 	return names
 end
 
+--- A character record of PagleLog's `characters` (catch-log.md › Data): an Alliance character on the fake client's
+--- realm (4618), first and last seen at 1791700000. By default Ada (Player-4618-0A1B2C3D), a human warrior.
+---@param guid string?
+---@param name string?
+---@param classID integer?
+---@param raceID integer?
+---@return table
+function characterRecord(guid, name, classID, raceID)
+	return {
+		guid = guid or "Player-4618-0A1B2C3D",
+		name = name or "Ada",
+		classID = classID or 1,
+		raceID = raceID or 1,
+		faction = "Alliance",
+		realmID = 4618,
+		firstSeen = 1791700000,
+		lastSeen = 1791700000,
+	}
+end
+
 --- A PagleLog as SavedVariables hand it back (catch-log.md › Data), holding `entries`. Its characters are
 --- `characters`, or by default Ada (Player-4618-0A1B2C3D), first and last seen at 1791700000. Each call makes a
 --- fresh table, which Core may change.
@@ -57,18 +77,7 @@ function savedLog(entries, format, characters)
 	return {
 		format = format or 1,
 		logId = "3f9a2c1e7b0d4a65",
-		characters = characters or {
-			{
-				guid = "Player-4618-0A1B2C3D",
-				name = "Ada",
-				classID = 1,
-				raceID = 1,
-				faction = "Alliance",
-				realmID = 4618,
-				firstSeen = 1791700000,
-				lastSeen = 1791700000,
-			},
-		},
+		characters = characters or { characterRecord() },
 		entries = entries or {},
 	}
 end
@@ -98,15 +107,16 @@ FISHING = 7731
 --- The build entry the fake client's build matches, so login appends no B1.
 BUILD_ENTRY = ("B1|1|%d|0|70338|1.60.1"):format(SERVER_TIME - 5000)
 
---- Ada's caught Cast at server time `time`, as a PagleLog entry (savedLog's character 1): in Darkshore (148) at realm
---- 08:14, Fishing 86+25 with lure 263, catching one item. By default the item is Oily Blackmouth (6358) and the
---- subzone The Long Wash (453).
+--- A caught Cast at server time `time`, as a PagleLog entry: in Darkshore (148) at realm 08:14, Fishing 86+25 with
+--- lure 263, catching one item. By default the item is Oily Blackmouth (6358), the subzone The Long Wash (453), and
+--- the character savedLog's character 1 (Ada); `char` is another index into the log's characters.
 ---@param time integer
 ---@param itemID integer?
 ---@param subzone integer?
+---@param char integer?
 ---@return string
-function castEntry(time, itemID, subzone)
-	return ("C1|1|%d|0|c|494|1439|1|148|%d|86|25|263|||%dx1"):format(time, subzone or 453, itemID or 6358)
+function castEntry(time, itemID, subzone, char)
+	return ("C1|%d|%d|0|c|494|1439|1|148|%d|86|25|263|||%dx1"):format(char or 1, time, subzone or 453, itemID or 6358)
 end
 
 --- `n` of Ada's Casts, at `first` + 1, + 2, … (default SERVER_TIME - 90000, long ended), then BUILD_ENTRY.
@@ -119,6 +129,21 @@ function history(n, first)
 		entries[i] = castEntry((first or SERVER_TIME - 90000) + i)
 	end
 	entries[n + 1] = BUILD_ENTRY
+	return entries
+end
+
+--- BUILD_ENTRY, then `n` of Ada's Casts in Darkshore (148, subzone 0) at `first` + 1, + 2, …, each catching an item
+--- no catalogue has, so it is Uncharted and makes an I row (REP-R10, REP-R20): `item` every time, or by default a new
+--- one each (9999, 9998, …).
+---@param n integer
+---@param first integer
+---@param item integer?
+---@return string[]
+function unchartedHistory(n, first, item)
+	local entries = { BUILD_ENTRY }
+	for i = 1, n do
+		entries[#entries + 1] = castEntry(first + i, item or (10000 - i), 0)
+	end
 	return entries
 end
 

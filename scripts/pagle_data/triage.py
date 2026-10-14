@@ -18,12 +18,12 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from pagle_data.db2 import Row, parse_table, read_db2
-from pagle_data.db2_update import Fetch, download, download_tables, fail
-from pagle_data.db2_watch import md_text
-from pagle_data.errors import At, DataError, Problems
+from pagle_data.db2_update import Fetch, download, download_tables
+from pagle_data.errors import At, DataError, Problems, fail
 from pagle_data.files import write_atomic
 from pagle_data.generate import CATALOGUE_LUA, Layers, read_layers
 from pagle_data.importer import catalogue_changes, imported
+from pagle_data.markdown import md_text
 from pagle_data.observed import POOLTEXT, REPORTS, ObservedLayer, PoolTextRow, read_observed
 from pagle_data.report import FieldReport, Part, join, parse_part, report_field, toml_string
 
@@ -218,7 +218,7 @@ def _superseded(
     stored = observed.reports.get(header.reporter) if observed is not None else None
     if stored is not None and stored.header is not None:
         was = stored.header
-        if (was.addon, was.data, was.locale) != (header.addon, header.data, header.locale):
+        if was != header.identity.observed_header:
             file = f"{REPORTS}/{header.reporter}.toml"
             for imported_number in stored.issues:
                 if imported_number < number and imported_number not in found:

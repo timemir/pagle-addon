@@ -14,6 +14,7 @@ import re
 from collections.abc import Collection, Iterable, Mapping
 from dataclasses import dataclass, field, replace
 from pathlib import Path
+from typing import Protocol
 
 from pagle_data.errors import At, Problems
 from pagle_data.toml_reader import (
@@ -158,11 +159,29 @@ class Report:
 
     @property
     def rows(self) -> tuple["Row", ...]:
-        return (*self.catches, *self.skills, *self.pool_texts)
+        return rows_of(self)
 
 
 # A report's row: I, K or P (REP-R20–R22).
 Row = CatchRow | SkillRow | PoolTextRow
+
+
+class HoldsRows(Protocol):
+    """A report's rows by kind: a stored report, a parsed part or a joined Field report."""
+
+    @property
+    def catches(self) -> tuple[CatchRow, ...]: ...
+
+    @property
+    def skills(self) -> tuple[SkillRow, ...]: ...
+
+    @property
+    def pool_texts(self) -> tuple[PoolTextRow, ...]: ...
+
+
+def rows_of(report: HoldsRows) -> tuple[Row, ...]:
+    """Every row of a report: its I rows, then its K rows, then its P rows, each in the order held."""
+    return (*report.catches, *report.skills, *report.pool_texts)
 
 
 @dataclass(frozen=True)
@@ -343,37 +362,60 @@ class _Fields:
     def has(self, *keys: str) -> bool:
         return self.ok and all(key in self.table for key in keys)
 
+    def row_field(self, key: str) -> int | None:
+        """A row's integer field, within its FIELD_BOUNDS."""
+        return self.number(key, *FIELD_BOUNDS[key])
 
-_I_KEYS = ("item", "area", "build", "count")
-_K_KEYS = ("area", "build", "casts", "away")
-_P_KEYS = ("area", "locale", "text", "casts")
+
+# Every integer field of a row and its bounds, (minimum, maximum), None for none (REP-R20–R22): the one table this
+# reader and the Field report parser (pagle_data.report) both read, so a row one refuses the other refuses too
+# (DATA-R116). aura and event bound each ID of their lists; item and count are also a P row's itemID and total; land
+# and lost are effective skill, rank plus a modifier that may be below 0 (REP-R21).
+FIELD_BOUNDS: dict[str, tuple[int | None, int | None]] = {
+    "item": (1, None),
+    "area": (1, None),
+    "build": (0, None),
+    "count": (1, None),
+    "aura": (1, None),
+    "event": (1, None),
+    "m": (1, 12),
+    "casts": (1, None),
+    "away": (0, None),
+    "land": (None, None),
+    "lost": (None, None),
+}
+
+# Each row's required keys in reports/<key>.toml.
+_I_REQUIRED_KEYS = ("item", "area", "build", "count")
+_K_REQUIRED_KEYS = ("area", "build", "casts", "away")
+_P_REQUIRED_KEYS = ("area", "locale", "text", "casts")
 
 
 def _catch_row(table: Mapping[str, object], at: At, key: str, problems: Problems) -> CatchRow | None:
-    check_keys(table, at, problems, required=_I_KEYS, optional=("aura", "event", "t", "m", "rejected"))
+    check_keys(table, at, problems, required=_I_REQUIRED_KEYS, optional=("aura", "event", "t", "m", "rejected"))
     fields = _Fields(table, at, problems)
-    item, area = fields.number("item", 1), fields.number("area", 1)
-    build, count = fields.number("build", 0), fields.number("count", 1)
+    item, area = fields.row_field("item"), fields.row_field("area")
+    build, count = fields.row_field("build"), fields.row_field("count")
     auras, events = fields.ids("aura"), fields.ids("event")
-    bucket, month = fields.text("t", BUCKET), fields.number("m", 1, 12)
+    bucket, month = fields.text("t", BUCKET), fields.row_field("m")
     rejected = fields.text("rejected")
     if ("t" in table) != ("m" in table):
         problems.add(at, "t and m go together (REP-R20)")
         return None
-    if not fields.has(*_I_KEYS) or item is None or area is None or build is None or count is None:
+    if not fields.has(*_I_REQUIRED_KEYS) or item is None or area is None or build is None or count is None:
         return None
     t = None if bucket is None else bucket_minute(bucket)
     return CatchRow(item, area, build, count, auras, events, t, month, rejected, key, at)
 
 
 def _skill_row(table: Mapping[str, object], at: At, key: str, problems: Problems) -> SkillRow | None:
-    check_keys(table, at, problems, required=_K_KEYS, optional=("land", "lost", "rejected"))
+    check_keys(table, at, problems, required=_K_REQUIRED_KEYS, optional=("land", "lost", "rejected"))
     fields = _Fields(table, at, problems)
-    area, build = fields.number("area", 1), fields.number("build", 0)
-    casts, away = fields.number("casts", 1), fields.number("away", 0)
-    land, lost = fields.number("land", None), fields.number("lost", None)  # effective skill, maybe < 0 (REP-R21)
+    area, build = fields.row_field("area"), fields.row_field("build")
+    casts, away = fields.row_field("casts"), fields.row_field("away")
+    land, lost = fields.row_field("land"), fields.row_field("lost")
     rejected = fields.text("rejected")
-    if not fields.has(*_K_KEYS) or area is None or build is None or casts is None or away is None:
+    if not fields.has(*_K_REQUIRED_KEYS) or area is None or build is None or casts is None or away is None:
         return None
     return SkillRow(area, build, casts, away, land, lost, rejected, key, at)
 
@@ -387,7 +429,7 @@ def _pool_items(value: object, at: At, problems: Problems) -> tuple[tuple[int, i
     ok = True
     for key, count in table.items():
         item = parse_id(key, at / key, problems)
-        quantity = expect_int(count, at / key, problems, minimum=1)
+        quantity = expect_int(count, at / key, problems, minimum=FIELD_BOUNDS["count"][0])
         if item is None or quantity is None:
             ok = False
         else:
@@ -396,13 +438,13 @@ def _pool_items(value: object, at: At, problems: Problems) -> tuple[tuple[int, i
 
 
 def _pool_text_row(table: Mapping[str, object], at: At, problems: Problems) -> PoolTextRow | None:
-    check_keys(table, at, problems, required=_P_KEYS, optional=("items", "rejected"))
+    check_keys(table, at, problems, required=_P_REQUIRED_KEYS, optional=("items", "rejected"))
     fields = _Fields(table, at, problems)
-    area, casts = fields.number("area", 1), fields.number("casts", 1)
+    area, casts = fields.row_field("area"), fields.row_field("casts")
     locale, text = fields.text("locale", LOCALE), fields.text("text", blank=True)  # a hovered text (REP-R22)
     rejected = fields.text("rejected")
     items = _pool_items(table["items"], at / "items", problems) if "items" in table else ()
-    if not fields.has(*_P_KEYS) or items is None or area is None or casts is None or locale is None or text is None:
+    if not fields.has(*_P_REQUIRED_KEYS) or items is None or area is None or casts is None or locale is None or text is None:
         return None
     return PoolTextRow(area, locale, text, casts, items, rejected, at)
 

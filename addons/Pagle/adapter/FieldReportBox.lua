@@ -45,13 +45,13 @@ local function close(frame)
 	frame:Hide()
 end
 
--- Makes `box` read-only: whatever the player types is put back to `read()`, selected again, so the report stays as
+-- Keeps `box` showing `read()`: whatever the player types is put back, selected again, so the report stays as
 -- built and Ctrl+C still copies all of it. It is selected whenever it gets the focus, and Esc in it closes the box,
 -- since a focused edit box takes Esc before UISpecialFrames does.
 ---@param frame PagleFieldReportBox
 ---@param box EditBox
 ---@param read fun(): string
-local function readOnly(frame, box, read)
+local function keepText(frame, box, read)
 	box:SetAutoFocus(false)
 	box:SetScript("OnTextChanged", function(self, userInput)
 		if userInput then
@@ -116,10 +116,10 @@ local function build()
 
 	frame.title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 	frame.title:SetPoint("TOP", 0, -20)
-	frame.title:SetText(L.REPORT_TITLE)
+	frame.title:SetText(L.HELP_CHART)
 	frame.privacy = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 	frame.privacy:SetPoint("TOP", 0, -46)
-	frame.privacy:SetText(L.REPORT_PRIVACY)
+	frame.privacy:SetText(L.FIELD_REPORT_PRIVACY)
 	frame.message = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 	frame.message:SetPoint("CENTER", 0, 20)
 
@@ -132,16 +132,16 @@ local function build()
 	frame.text:SetFontObject("ChatFontNormal")
 	frame.text:SetWidth(WIDTH - 68)
 	frame.scroll:SetScrollChild(frame.text)
-	readOnly(frame, frame.text, function()
+	keepText(frame, frame.text, function()
 		return frame.view.parts[frame.part]
 	end)
 
-	frame.previous = button(frame, L.REPORT_PREVIOUS, 100)
+	frame.previous = button(frame, L.FIELD_REPORT_PREVIOUS, 100)
 	frame.previous:SetPoint("BOTTOMLEFT", 24, 76)
 	frame.previous:SetScript("OnClick", function()
 		showPart(frame, frame.part - 1)
 	end)
-	frame.next = button(frame, L.REPORT_NEXT, 100)
+	frame.next = button(frame, L.FIELD_REPORT_NEXT, 100)
 	frame.next:SetPoint("BOTTOMRIGHT", -24, 76)
 	frame.next:SetScript("OnClick", function()
 		showPart(frame, frame.part + 1)
@@ -153,11 +153,11 @@ local function build()
 	frame.url:SetPoint("BOTTOMLEFT", 30, 46)
 	frame.url:SetPoint("BOTTOMRIGHT", -30, 46)
 	frame.url:SetHeight(20)
-	readOnly(frame, frame.url, function()
+	keepText(frame, frame.url, function()
 		return ns.FIELD_REPORT_URL
 	end)
 
-	frame.close = button(frame, L.REPORT_CLOSE, 100)
+	frame.close = button(frame, L.FIELD_REPORT_CLOSE, 100)
 	frame.close:SetPoint("BOTTOM", 0, 16)
 	frame.close:SetScript("OnClick", function()
 		close(frame)

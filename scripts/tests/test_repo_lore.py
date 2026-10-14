@@ -105,3 +105,69 @@ def test_no_riddle_holds_a_digit_or_a_zone_s_name(species: int) -> None:
     assert not re.search(r"\d", riddle), riddle
     named = [name for name in _zone_names() if re.search(rf"(?<!\w){re.escape(name)}(?!\w)", riddle, re.IGNORECASE)]
     assert named == [], riddle
+
+
+# Words that pin one zone through a landmark or a translated name, each with what it points to: the ones the M3
+# reviews found in riddles (VOICE.md open choice 15). A word matches whole, ignoring case, plurals included.
+LANDMARKS = {
+    "red hills": "Redridge Mountains, its name translated",
+    "gnoll": "Redridge's gnolls",
+    "giant": "Feralas' giants",
+    "centaur": "Desolace's centaur clans",
+    "troll ruin": "Zul'Gurub",
+    "drowned ruin": "Azshara's drowned ruins",
+    "dam": "Loch Modan's dam",
+    "cave": "the Wailing Caverns",
+}
+
+
+@pytest.mark.parametrize("species", sorted(_riddles()))
+def test_no_riddle_pins_a_zone_by_a_landmark_or_a_translated_name(species: int) -> None:
+    # DATA-R110: "never an exact zone", which a landmark or a zone's name in plain words breaks as surely as the
+    # name itself.
+    riddle = _riddles()[species]
+    pinned = [
+        f"{word} ({place})"
+        for word, place in LANDMARKS.items()
+        if re.search(rf"(?<!\w){re.escape(word)}s?(?!\w)", riddle, re.IGNORECASE)
+    ]
+    assert pinned == [], riddle
+
+
+def _lines() -> dict[str, str]:
+    # Every text in the batch, by its key ("species.13760.blurb").
+    with LEDGER_TOML.open("rb") as handle:
+        lore = tomllib.load(handle)
+    return {
+        f"{kind}.{lore_id}.{field}": text
+        for kind, tables in lore.items()
+        for lore_id, fields in tables.items()
+        for field, text in fields.items()
+    }
+
+
+# Pagle's capitalised terms (CONTEXT.md), which lore never uses, even to start a sentence: it writes "fish", "catch",
+# "angler" (VOICE.md › The voice, "Not the addon talking").
+PAGLE_TERMS = ("Catch", "Catches", "XP", "Coin", "Coins", "Ledger", "Hunt", "Hunts", "Notice", "Notices", "Session")
+
+
+def test_no_lore_line_uses_one_of_pagle_s_terms() -> None:
+    # DATA-R110, VOICE.md: lore isn't the addon talking.
+    found = [
+        f"{key}: {text}"
+        for key, text in sorted(_lines().items())
+        if any(re.search(rf"(?<!\w){term}(?!\w)", text) for term in PAGLE_TERMS)
+    ]
+    assert found == []
+
+
+def test_no_day_or_night_line_says_only() -> None:
+    # #175: the day (06:00–24:00) and night (18:00–12:00) windows overlap by twelve hours, so a day fish also bites
+    # after dark and a night fish in the morning; a line can't say one bites only by day or only at night.
+    timed = re.compile(r"\b(sun|daylight|day|night|dark|dawn|dusk)\b", re.IGNORECASE)
+    found = [
+        f"{key}: {text}"
+        for key, text in sorted(_lines().items())
+        if timed.search(text) and re.search(r"\bonly\b", text, re.IGNORECASE)
+    ]
+    assert found == []

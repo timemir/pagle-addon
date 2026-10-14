@@ -181,7 +181,8 @@ describe("scripts/read-wtf.lua", function()
 				"celebrated zones: 2 (148 rank 0, 1519 rank 0)",
 				"celebrated Species stars: none",
 				"celebrated family stars: none",
-				"celebrated items: none",
+				"celebrated curio items: none",
+				"celebrated trophy items: none",
 				"celebrated Uncharted: none",
 				"celebrated Skill Milestones: 1 (75)",
 			}, section(out, "== Ledger"))
@@ -247,7 +248,8 @@ describe("scripts/read-wtf.lua", function()
 				"celebrated zones: none",
 				"celebrated Species stars: none",
 				"celebrated family stars: none",
-				"celebrated items: none",
+				"celebrated curio items: none",
+				"celebrated trophy items: none",
 				"celebrated Uncharted: none",
 				"celebrated Skill Milestones: none",
 			}, section(out, "== Ledger"))
@@ -274,53 +276,58 @@ describe("scripts/read-wtf.lua", function()
 	-- M3#1 holds what the M3 exit check reads (#146): a Ledger built with M3's fold (curio and trophy items, the
 	-- Uncharted list, zone ranks) and its celebrated set, and Core's Field report projection. Its Ledger is read
 	-- against spec/scripts/fixtures/Catalogue.lua, a world small enough to count by hand.
-	describe("on an account after the M3 exit check's steps", function()
+	describe("on an account after the M3 exit check's steps (#146)", function()
 		local out, err, code = run(ACCOUNTS .. "M3#1", "--catalogue", CATALOGUE)
 
-		it("exits 0 and writes nothing to stderr", function()
+		it("exits 0 and writes nothing to stderr (LED-R2, REP-R25: every M3 section reads)", function()
 			assert.are.equal(0, code)
 			assert.are.equal("", err)
 		end)
 
-		it("prints M3's state and celebrated set, with ranks and completion from the Ledger's logic", function()
-			-- ledger.md › Data for the state and the celebrated set; LED-R4: M3's rules version is 200. LED-R30: 4,560 XP
-			-- = 1,080 + 1,160 + 1,240 to level 4, 1,080 into it, whose step costs 1,000 + 80 × 4 = 1,320. LED-R5: 6309
-			-- is junk, a curio; 13901 a trophy; 999001 is in no catalogue. LED-R50, LED-R54: Duskwood (10) has no data,
-			-- so it isn't charted and shows rank 0; Elwynn (12) is computed Local (3) but celebrated Expert (4), and the
-			-- shown rank is the higher (LED-R52, LED-R92). LED-R70, LED-R71: Species 6291 and 6303 of 6291, 6299, 6303
-			-- and 13759; junk 6309 of 6309; treasure none of 6351; trophy 13901 of 13901 and 13902; no zone at Master
-			-- of 12 and 40; 4 of 10 is 40%; Legend 19803 beside it (LED-R63).
-			assert.are.same({
-				"== Ledger (PagleLedgerDB)",
-				"projection: lastSeq 11, logId 3f9a2c1e7b0d4a65, fingerprint 0123456789abcdef, rulesVersion 200",
-				"logId: matches PagleLog's",
-				"lastSeq: equals PagleLog's length (11 entries)",
-				"rulesVersion: the Ledger's, 200 (LED-R2)",
-				"world: " .. CATALOGUE .. ", fingerprint 0123456789abcdef (the projection's), 2 charted zones",
-				"state: 9 Casts, 8 Catches, 4560 XP (Angler Level 4, 1080 into it, next step 1320), 44 Coins, 2 Species",
-				"state curio items: 1 (6309 ×2)",
-				"state trophy items: 1 (13901 ×1)",
-				"state Uncharted: 1 item",
-				"  999001: 2 Catches, zones 10 ×1, 12 ×1",
-				"state zones: 3",
-				"  10: rank 0, not charted, shown 0",
-				"  12: rank 3, charted, shown 4",
-				"  40: rank 1, charted, shown 1",
-				"completion: 40% (4 of 10): Species 2 of 4, junk 1 of 1, treasure 0 of 1, trophy 1 of 2, zones 0 of 2;"
-					.. " Legends 0 of 1",
-				"celebrated: highest level 4, 44 Coins",
-				"celebrated Species: 2 (6291, 6303)",
-				"celebrated Species × zone pairs: 3 (6291:12, 6303:12, 6303:40)",
-				"celebrated zones: 3 (10 rank 0, 12 rank 4, 40 rank 1)",
-				"celebrated Species stars: 3 on 2 Species (6291 ★1, 6303 ★1 ★2)",
-				"celebrated family stars: 1 on 1 family (1 ★1)",
-				"celebrated items: 2 (6309, 13901)",
-				"celebrated Uncharted: 1 (999001)",
-				"celebrated Skill Milestones: 1 (75)",
-			}, section(out, "== Ledger"))
-		end)
+		it(
+			"prints M3's state and celebrated set, with ranks and completion from the Ledger's logic (LED-R4, LED-R5, LED-R30,"
+				.. " LED-R50, LED-R52, LED-R54, LED-R63, LED-R70, LED-R71, LED-R92)",
+			function()
+				-- ledger.md › Data for the state and the celebrated set; LED-R4: M3's rules version is 200. LED-R30: 4,560 XP
+				-- = 1,080 + 1,160 + 1,240 to level 4, 1,080 into it, whose step costs 1,000 + 80 × 4 = 1,320. LED-R5: 6309
+				-- is junk, a curio; 13901 a trophy; 999001 is in no catalogue. LED-R50, LED-R54: Duskwood (10) has no data,
+				-- so it isn't charted and shows rank 0; Elwynn (12) is computed Local (3) but celebrated Expert (4), and the
+				-- shown rank is the higher (LED-R52, LED-R92). LED-R70, LED-R71: Species 6291 and 6303 of 6291, 6299, 6303
+				-- and 13759; junk 6309 of 6309; treasure none of 6351; trophy 13901 of 13901 and 13902; no zone at Master
+				-- of 12 and 40; 4 of 10 is 40%; Legend 19803 beside it (LED-R63).
+				assert.are.same({
+					"== Ledger (PagleLedgerDB)",
+					"projection: lastSeq 11, logId 3f9a2c1e7b0d4a65, fingerprint 0123456789abcdef, rulesVersion 200",
+					"logId: matches PagleLog's",
+					"lastSeq: equals PagleLog's length (11 entries)",
+					"rulesVersion: the Ledger's, 200 (LED-R2)",
+					"world: " .. CATALOGUE .. ", fingerprint 0123456789abcdef (the projection's), 2 charted zones",
+					"state: 9 Casts, 8 Catches, 4560 XP (Angler Level 4, 1080 into it, next step 1320), 44 Coins, 2 Species",
+					"state curio items: 1 (6309 ×2)",
+					"state trophy items: 1 (13901 ×1)",
+					"state Uncharted: 1 item",
+					"  999001: 2 Catches, zones 10 ×1, 12 ×1",
+					"state zones: 3",
+					"  10: rank 0, not charted, shown 0",
+					"  12: rank 3, charted, shown 4",
+					"  40: rank 1, charted, shown 1",
+					"completion: 40% (4 of 10): Species 2 of 4, junk 1 of 1, treasure 0 of 1, trophy 1 of 2, zones 0 of 2;"
+						.. " Legends 0 of 1",
+					"celebrated: highest level 4, 44 Coins",
+					"celebrated Species: 2 (6291, 6303)",
+					"celebrated Species × zone pairs: 3 (6291:12, 6303:12, 6303:40)",
+					"celebrated zones: 3 (10 rank 0, 12 rank 4, 40 rank 1)",
+					"celebrated Species stars: 3 on 2 Species (6291 ★1, 6303 ★1 ★2)",
+					"celebrated family stars: 1 on 1 family (1 ★1)",
+					"celebrated curio items: 1 (6309)",
+					"celebrated trophy items: 1 (13901)",
+					"celebrated Uncharted: 1 (999001)",
+					"celebrated Skill Milestones: 1 (75)",
+				}, section(out, "== Ledger"))
+			end
+		)
 
-		it("reads the repo's catalogue by default, and flags one that isn't the projection's", function()
+		it("reads the repo's catalogue by default, and flags one that isn't the projection's (DATA-R70)", function()
 			-- DATA-R70: the generated file carries the content fingerprint the client's projections are built against.
 			local file = assert(io.open("addons/Pagle/data/Catalogue.lua", "rb"))
 			local fingerprint = file:read("*a"):match('fingerprint = "(%x+)"')
@@ -333,7 +340,7 @@ describe("scripts/read-wtf.lua", function()
 			assert.matches("^%d+ charted zones$", world:sub(#prefix + 1))
 		end)
 
-		it("says so and prints the stored lines alone when the catalogue can't be loaded", function()
+		it("says so and prints the stored lines alone when the catalogue can't be loaded (LED-R10, LED-R5)", function()
 			local missing = "spec/scripts/fixtures/no-such-Catalogue.lua"
 			local lines = section(run(ACCOUNTS .. "M3#1", "--catalogue", missing), "== Ledger")
 			assert.are.equal("world: can't load " .. missing, lines[6]:sub(1, #missing + 18))
@@ -350,16 +357,19 @@ describe("scripts/read-wtf.lua", function()
 				"  40: rank 1",
 				"celebrated: highest level 4, 44 Coins",
 			}, { unpack(lines, 7, 15) })
+			assert.are.equal("celebrated items, not classed: 2 (6309, 13901)", lines[21])
 		end)
 
 		it("prints the Field report projection, its count and reporter key (REP-R25, REP-R26, REP-R36)", function()
-			-- REP-R36's test vector: logId 3f9a2c1e7b0d4a65 gives f38e76b0.
+			-- REP-R36's test vector: logId 3f9a2c1e7b0d4a65 gives f38e76b0. REP-R22, REP-R26: the buffer holds three
+			-- Casts, so 2 P rows: Floating Wreckage in Elwynn (12), and Oily Blackmouth School in Westfall (40), whose
+			-- two Casts (one got away) make one row. The menu's count is the 3 stored rows plus those 2.
 			assert.are.same({
 				"== Field report (PagleDB.global.projections.fieldReport): reporter key f38e76b0",
 				"projection: lastSeq 11, logId 3f9a2c1e7b0d4a65, fingerprint 0123456789abcdef, rulesVersion 1",
 				"logId: matches PagleLog's",
 				"lastSeq: equals PagleLog's length (11 entries)",
-				"count: 3 I and K rows stored",
+				'count: 3 I and K rows stored + 2 P rows from the buffer = 5 (the menu\'s "(5)", REP-R26)',
 			}, section(out, "== Field report"))
 		end)
 	end)
