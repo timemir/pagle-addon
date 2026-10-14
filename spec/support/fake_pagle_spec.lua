@@ -357,15 +357,8 @@ describe("FakePagle", function()
 			fake.dock.drag(moved)
 			fake.setRestricted(true)
 
-			assert.is_false(
-				fake.dock.drag({
-					point = "TOPRIGHT",
-					relativeTo = "UIParent",
-					relativePoint = "BOTTOMLEFT",
-					x = 1,
-					y = 1,
-				})
-			)
+			local corner = { point = "TOPRIGHT", relativeTo = "UIParent", relativePoint = "BOTTOMLEFT", x = 1, y = 1 }
+			assert.is_false(fake.dock.drag(corner))
 			assert.is_false(fake.dock.reset())
 
 			assert.are.same(moved, fake.profile.dock.point)
