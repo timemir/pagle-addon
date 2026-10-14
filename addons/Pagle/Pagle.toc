@@ -16,6 +16,7 @@ libs\AceDB-3.0\AceDB-3.0.lua
 data\Catalogue.lua
 
 locale\enUS.lua
+data\Lore.lua
 logic\Forever.lua
 logic\Secrets.lua
 logic\ReportOnce.lua
@@ -41,12 +42,14 @@ logic\Settings.lua
 logic\Slash.lua
 logic\Wallet.lua
 logic\Goods.lua
+logic\Shop.lua
 logic\CoreGoods.lua
 logic\WalletProjection.lua
 logic\Moments.lua
 logic\Summary.lua
 logic\Cards.lua
 logic\Announcements.lua
+logic\ToastStyles.lua
 logic\Menu.lua
 logic\ReloadReminder.lua
 logic\FieldReportText.lua
@@ -78,12 +81,14 @@ adapter\Goods.lua
 adapter\WalletProjection.lua
 adapter\Moments.lua
 adapter\Summary.lua
-adapter\Timber.lua
+adapter\Skins.lua
 adapter\Announcements.lua
 adapter\CoreGoods.lua
 adapter\Cards.lua
+adapter\ToastStyles.lua
 adapter\Menu.lua
 adapter\ReloadReminder.lua
 adapter\FieldReportText.lua
 adapter\FieldReportBox.lua
+adapter\Shop.lua
 adapter\Login.lua

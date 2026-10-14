@@ -5,17 +5,11 @@
 -- The generator's Core Lore.lua for a few good keys (DATA-R104), in its shape: plain assignments to ns.L.
 local FIXTURE = "spec/Pagle/fixtures/Lore.lua"
 
--- Core over an empty log with the fixture Lore.lua loaded after its files and before ADDON_LOADED, as a
--- data\Lore.lua in its TOC would be (DATA-R75).
+-- Core over an empty log with the fixture Lore.lua loaded in place of the committed data\Lore.lua, in its TOC place
+-- (DATA-R75).
 ---@return LoadedAddon
 local function loadCoreWithLore()
-	local loaded = loadAddon("Pagle", foreverWith({ PagleLog = savedLog() }), { holdAddonLoaded = true })
-	---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no loadfile
-	local chunk = assert(loadfile(FIXTURE))
-	setfenv(chunk, loaded.env)
-	chunk("Pagle", loaded.ns)
-	loaded.client.fire("ADDON_LOADED", "Pagle")
-	return loaded
+	return loadAddon("Pagle", foreverWith({ PagleLog = savedLog() }), { replace = { ["data/Lore.lua"] = FIXTURE } })
 end
 
 describe("Core's slots and goods", function()
@@ -93,14 +87,14 @@ end)
 
 describe("Core's goods' names", function()
 	it("are each good's ID, with no description, while its lore key has no text (graph.md question 3)", function()
-		local loaded = loadCore()
+		local loaded = loadCoreWithLore() -- the fixture has no key for crest2
 
 		assert.are.same({
-			name = "core.crest.crest1",
+			name = "core.crest.crest2",
 			slot = "core.crest",
-			icon = "Interface\\Icons\\INV_Fishingpole_02",
+			icon = "Interface\\Icons\\INV_Misc_Gem_Pearl_04",
 			module = "Core",
-		}, loaded.env.Pagle.GetGood("core.crest.crest1"))
+		}, loaded.env.Pagle.GetGood("core.crest.crest2"))
 	end)
 
 	it("are read from lore, good.<goodID>.name and .description, once Lore.lua has them (DATA-R101)", function()

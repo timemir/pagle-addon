@@ -7,7 +7,8 @@
 #
 # An ID entry may allow {zone}, the one placeholder (DATA-R108). Each kind belongs to one addon (DATA-R102); the
 # catalogue-keyed kinds (species, legend, sub, family, DATA-R103) and Hunts' hunt and set (DATA-R105) are never listed.
-# The Ledger's line IDs came with its first batch (#131); its title and binding IDs come in M4 (LED-R162).
+# The Ledger's line IDs came with its first batch (#131), its title and binding IDs with the M4 batch (#161,
+# LED-R162), and Core's good IDs with Core's lore check (#161).
 
 # The Ledger's shared lines (LED-R160), each shown in place of something not yet caught or charted: an uncaught
 # Legend's page (LED-R147), an empty Junk Museum plinth and an unopened Treasures row (LED-R144), and a zone with no
@@ -15,3 +16,47 @@
 [ledger.line]
 fields = ["text"]
 ids = ["uncaughtlegend", "uncaughtjunk", "uncaughttreasure", "unchartedwaters"]
+
+# The Ledger's titles (LED-R75), each a text the Angler signs with (LED-R77); only zonemaster's allows {zone}, filled
+# with the zone's name at runtime (DATA-R108, LED-R161). From M4, with the title and binding batch (LED-R162).
+[ledger.title]
+fields = ["text"]
+ids = [
+	"level1",
+	"level10",
+	"level20",
+	"level30",
+	"level40",
+	"level50",
+	"level60",
+	"prestige1",
+	"prestige5",
+	"prestige10",
+	{ id = "zonemaster", placeholders = ["zone"] },
+	"complete.ledger",
+	"complete.junk",
+	"complete.treasure",
+	"complete.trophy",
+]
+
+# The Ledger's Journal bindings (LED-R110), each good ledger.binding.<id> with a name and a description, from M4
+# (LED-R162).
+[ledger.binding]
+fields = ["name", "description"]
+ids = ["field", "level10", "level20", "level30", "level40", "level50", "level60", "birch", "buckram", "sharkskin"]
+
+# Core's goods (SHOP-R25), each with a name and a description (wallet-and-shop.md › UI), from M4 with Core's lore
+# check (DATA-R107).
+[core.good]
+fields = ["name", "description"]
+ids = [
+	"core.toaststyle.timber",
+	"core.toaststyle.ripple",
+	"core.toaststyle.lanternglow",
+	"core.soundset.driftwood",
+	"core.soundset.gilded",
+	"core.crest.plain",
+	"core.crest.crest1",
+	"core.crest.crest2",
+	"core.crest.crest3",
+]
