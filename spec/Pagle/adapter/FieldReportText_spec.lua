@@ -1,7 +1,7 @@
 -- ns.FieldReportText: the Field report's text on the client, logic/FieldReportText.lua over the client's lookups
 -- (REP-R30, REP-R35, REP-R36), through the real TOC.
 
-describe("ns.FieldReportText", function()
+describe("ns.FieldReportText (REP-R30, REP-R35, REP-R36)", function()
 	-- A fixture Angler: two characters on the fake client's realm, and REP-R36's logId (savedLog's).
 	local CHARACTERS = {
 		characterRecord(),
@@ -94,7 +94,7 @@ describe("ns.FieldReportText", function()
 	end)
 end)
 
-describe("the Field report from a fixture Angler's log, rows to text", function()
+describe("the Field report from a fixture Angler's log, rows to text (REP-R20–R22, REP-R30, REP-R35)", function()
 	local ADA, BRINDLEWICK = "Player-4618-0A1B2C3D", "Player-4618-0B2C3D4E"
 	local FIRST = SERVER_TIME - 4000
 	-- A fixture Angler: two characters on the fake client's realm, and REP-R36's logId (savedLog's).

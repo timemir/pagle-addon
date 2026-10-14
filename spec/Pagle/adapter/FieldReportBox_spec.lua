@@ -10,7 +10,7 @@ local function box(loaded)
 	return loaded.ns.fieldReportBox
 end
 
-describe("Pagle.OpenFieldReport", function()
+describe("Pagle.OpenFieldReport (REP-R40)", function()
 	it(
 		"opens the box titled Help chart the waters, the privacy line above the report text, selected, and the issue"
 			.. " form URL below it (REP-R37, REP-R40, REP-R46)",
@@ -45,7 +45,7 @@ local function catchUncharted(loaded)
 	loaded.client.advance(0)
 end
 
-describe("The Field report box", function()
+describe("The Field report box (REP-R40–R42)", function()
 	it("puts the report back, selected, when the player types in the text box (REP-R40)", function()
 		local loaded = enterWorld(loadCore(unchartedHistory(2, FIRST)), 2)
 		loaded.env.Pagle.OpenFieldReport()
@@ -225,7 +225,7 @@ local function compartmentMenu(loaded)
 	return assert(loaded.client.menus[opened + 1])
 end
 
-describe("The compartment menu's Help chart the waters entry", function()
+describe("The compartment menu's Help chart the waters entry (CORE-R50, REP-R43)", function()
 	it("reads Help chart the waters (3) at a count of 3, between the Curio Shop and Settings (CORE-R50)", function()
 		local loaded = enterWorld(loadCore(unchartedHistory(2, FIRST)), 2)
 		assert.are.equal(3, loaded.env.Pagle.GetFieldReportCount())
@@ -279,7 +279,7 @@ local function reportRows(loaded)
 	error("no Help chart the waters header on the root")
 end
 
-describe("The Settings root's Help chart the waters section", function()
+describe("The Settings root's Help chart the waters section (SET-R10)", function()
 	it(
 		"has the header and the Field report row after the Modules note, before Saving, with SET-R10's tooltip"
 			.. " (CORE-R40, SET-R10)",
@@ -355,7 +355,7 @@ describe("The Settings root's Help chart the waters section", function()
 	end)
 end)
 
-describe("Pagle.OpenFieldReport while restricted", function()
+describe("Pagle.OpenFieldReport while restricted (REP-R44, CORE-R33)", function()
 	it("prints the chat line and opens nothing (REP-R44, CORE-R33, REP-R93)", function()
 		local loaded = enterWorld(loadCore(unchartedHistory(2, FIRST)), 2)
 		setCombat(loaded, true)

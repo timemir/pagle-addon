@@ -870,7 +870,7 @@ describe("FakePagle", function()
 		end)
 	end)
 
-	describe("the Field report", function()
+	describe("the Field report (REP-R25, REP-R26)", function()
 		-- Darkshore (148) with The Long Wash (453), neither with a skill base, and no items: every item is Uncharted.
 		local function fixture()
 			local function area(parent)
@@ -963,7 +963,7 @@ describe("FakePagle", function()
 			assert.are.equal("Help chart the waters", menu[#menu - 1].label)
 		end)
 
-		describe("the Field report box", function()
+		describe("the Field report box (REP-R40–R44)", function()
 			it(
 				"records each Pagle.OpenFieldReport a Module makes, with the report's parts and the URL (REP-R40, REP-R43)",
 				function()

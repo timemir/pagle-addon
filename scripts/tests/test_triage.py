@@ -312,8 +312,8 @@ def test_a_default_branch_whose_data_doesnt_generate_says_so(
 
 
 def test_a_comment_over_githubs_limit_is_cut_with_a_note_and_its_code_block_closed(tmp_path: Path) -> None:
-    # GitHub refuses a comment over 65,536 characters: the comment is cut at a line, an open code block closed, with
-    # a note pointing at the run's log, which prints all of it.
+    # DATA-R117: the Action's one comment. GitHub refuses a comment over 65,536 characters: the comment is cut at a
+    # line, an open code block closed, with a note pointing at the run's log, which prints all of it.
     rows = "".join(f'P 368 deDE "Text {n}" casts=1\n' for n in range(400))
     found = build(Issue(50, part(rows)), [], tree(tmp_path), Canned({}), limit=4000)
     assert len(found.comment) <= 4000
