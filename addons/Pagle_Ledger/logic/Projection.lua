@@ -8,8 +8,9 @@ local ns = select(2, ...)
 -- The Ledger's one projection (LED-R2): the def it hands `M:NewProjection`, over the fold (LED-R3). Pure logic,
 -- everything passed in (CORE-R7).
 
---- The projection's rules version (LED-R2): `LEDGER_RULES_VERSION × 100 + Pagle.SIZE_RULES_VERSION`. Core defines
---- no `SIZE_RULES_VERSION` until M4's Simulated Sizes (LOG-R68), so a missing one counts as 0: M2's is 100.
+--- The projection's rules version (LED-R2): `LEDGER_RULES_VERSION × 100 + Pagle.SIZE_RULES_VERSION`. Core declared
+--- no `SIZE_RULES_VERSION` before M4's Simulated Sizes (LOG-R68), so a missing one counts as 0, as M2's 100 and M3's
+--- 200 were stored.
 ---@param sizeRulesVersion integer? Pagle.SIZE_RULES_VERSION
 ---@return integer
 function ns.RulesVersion(sizeRulesVersion)

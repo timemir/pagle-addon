@@ -30,8 +30,7 @@ function ns.Ledger.OnInitialize()
 		GetZoneCatches = Pagle.GetZoneCatches,
 	})
 
-	---@diagnostic disable-next-line: undefined-field -- Core defines it in M4, with Simulated Size (LOG-R68); nil till then
-	local sizeRulesVersion = Pagle.SIZE_RULES_VERSION --[[@as integer?]]
+	local sizeRulesVersion = Pagle.SIZE_RULES_VERSION -- the Ledger stores lengths (LED-R2, LOG-R68)
 	--- The Ledger's projection (LED-R2): Core catches it up or rebuilds it after login and hands it each new entry
 	--- live (LOG-R71–R74). While `:IsUpdating()`, the Ledger shows nothing (LOG-R74). The Fish Journal redraws after
 	--- its live entries and its done (LED-R122, LED-R123).
