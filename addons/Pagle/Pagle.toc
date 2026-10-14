@@ -39,6 +39,7 @@ logic\Settings.lua
 logic\Slash.lua
 logic\Wallet.lua
 logic\Goods.lua
+logic\Shop.lua
 logic\Moments.lua
 logic\Summary.lua
 logic\Cards.lua
