@@ -6,7 +6,7 @@ describe("the Fish Journal's router", function()
 	local L = ns.L
 
 	---@type LedgerJournalContext
-	local context = { updating = false, now = 1791731700, formatNumber = breakUpLargeNumbers, text = ns.journalText }
+	local context = { updating = false, now = SERVER_TIME, formatNumber = breakUpLargeNumbers, text = ns.journalText }
 
 	-- A spread three crumbs deep (Home ❧ Waters ❧ {zone} ❧ {fish}), its left page naming its args.
 	---@type LedgerSpread

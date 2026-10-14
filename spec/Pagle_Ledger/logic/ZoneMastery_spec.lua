@@ -115,7 +115,7 @@ local function lookups(areaTable)
 	}
 end
 
-local T0 = 1791731000
+local T0 = SERVER_TIME - 700
 
 -- Records the way the Catch log hands them out (LOG-R42): one caught Cast per call, a minute apart.
 local function newLog()

@@ -78,13 +78,13 @@ local function cast(items, fields)
 	fields = fields or {}
 	local record = {
 		seq = seq,
-		id = "Player-4618-0A1B2C3D-" .. (1791731000 + seq) .. "-0",
+		id = "Player-4618-0A1B2C3D-" .. (SERVER_TIME - 700 + seq) .. "-0",
 		kind = "cast",
 		char = 1,
-		time = 1791731000 + seq,
+		time = SERVER_TIME - 700 + seq,
 		outcome = fields.outcome or (items and "caught" or "gotAway"),
 		conditions = {
-			time = 1791731000 + seq,
+			time = SERVER_TIME - 700 + seq,
 			minute = not fields.secretClock and (fields.minute or 495) or nil,
 			date = not fields.secretClock and { year = 2026, month = fields.month or 10, day = 11, weekday = 1 } or nil,
 			zone = fields.zone or 148,

@@ -56,7 +56,7 @@ local function items()
 end
 
 -- Hand-made projection states in ledger.md › Data's shape (LedgerState), with only what the world reads.
-local T0 = 1791731000
+local T0 = SERVER_TIME - 700
 local DATE = { year = 2026, month = 10, day = 11 }
 
 local function emptyState()

@@ -93,7 +93,7 @@ describe("the Ledger's world index (LED-R10)", function()
 		fake.catchLog:Append({
 			kind = "cast",
 			char = 1,
-			time = 1791731000,
+			time = SERVER_TIME - 700,
 			outcome = "caught",
 			conditions = { minute = 494, zone = ELWYNN, subzone = 0, events = {}, auras = {} },
 			items = { { itemID = MACKEREL, quantity = 1 } },

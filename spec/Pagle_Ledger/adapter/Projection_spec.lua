@@ -3,7 +3,7 @@
 
 local MACKEREL, SMALLFISH, OILY = 6303, 6291, 6358
 local ELWYNN, WESTFALL = 12, 40
-local T0 = 1791731000
+local T0 = SERVER_TIME - 700
 
 -- A Cast record for fake.catchLog:Append, by the player's character (char 1).
 ---@param time integer

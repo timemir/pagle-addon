@@ -6,7 +6,7 @@ local ELWYNN, WESTFALL, DARKSHORE = 12, 40, 148
 -- Where the live Casts here are fished: a zone the generated catalogue doesn't chart (no catch data), so no Zone
 -- Mastery rank adds its XP and Coins to these numbers (LED-R54). ZoneMastery_spec.lua has the ranks.
 local BLASTED_LANDS = 4
-local T0 = 1791731000
+local T0 = SERVER_TIME - 700
 -- The fake log's logId, which a saved celebrated set names to belong to it (LED-R90).
 local LOG_ID = "0123456789abcdef"
 

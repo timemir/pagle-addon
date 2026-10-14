@@ -11,7 +11,7 @@ local UNKNOWN = 99001
 -- A trophy family no lore batch names (LED-R161): a spec gives it a name where it needs one.
 local FAMILY = 999
 local COVE = 9001
-local T0 = 1791731000
+local T0 = SERVER_TIME - 700
 -- The fake log's logId, which a saved celebrated set names to belong to it (LED-R90).
 local LOG_ID = "0123456789abcdef"
 -- Realm minutes of day (LOG-R48): 08:14, and 21:40, inside the night window.

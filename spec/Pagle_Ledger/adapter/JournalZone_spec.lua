@@ -11,7 +11,7 @@ local CATFISH_17, CATFISH_22, REDGILL_34 = 6309, 6311, 13901
 local SKULL, CRATE = 6297, 6351
 local UNKNOWN = 99999 -- an item the catalogue doesn't know: Uncharted (LED-R64)
 local DARKSHORE, ELWYNN, STORMWIND = 148, 12, 1519
-local T0 = 1791731000 -- Sunday 11 October 2026, 15:03 UTC
+local T0 = SERVER_TIME - 700 -- Sunday 11 October 2026, 15:03 UTC
 local MINUTE = 60
 
 -- Night is 20:00 to 06:00 realm time, so at the fake's realm 08:15 it opens in 11 h 45 min (LED-R127).

@@ -87,7 +87,7 @@ local function getItem(itemID)
 	return ITEMS[itemID]
 end
 
-local T0 = 1791731000
+local T0 = SERVER_TIME - 700
 local MIDNIGHT, NOON = 0, 720
 local OCTOBER, JULY = { 10, 14 }, { 7, 1 }
 

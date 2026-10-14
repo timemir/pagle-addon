@@ -3,7 +3,7 @@
 
 local NIGHTFISH = 13759
 local ELWYNN, GOLDSHIRE = 12, 87
-local T0 = 1791731000
+local T0 = SERVER_TIME - 700
 -- Realm minutes of day (LOG-R48): 08:14, and 21:40, inside the night window.
 local DAY_MINUTE, NIGHT_MINUTE = 494, 1300
 

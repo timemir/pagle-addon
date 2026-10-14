@@ -4,7 +4,7 @@
 
 local MACKEREL, NIGHTFISH, BOOT, CHEST, TROPHY = 6303, 13759, 2, 3, 13901
 local ELWYNN, DUSKWOOD = 12, 10
-local T0 = 1791731000 -- Sunday 11 October 2026, 15:03 UTC; realm minute 494 makes it 11 Oct on the realm too
+local T0 = SERVER_TIME - 700 -- Sunday 11 October 2026, 15:03 UTC; realm minute 494 makes it 11 Oct on the realm too
 
 -- A catalogue in the shape of ns.catalogue (DATA-R76): Elwynn charted, listing two Species (one gated at night), a
 -- piece of junk, a chest and a trophy; Duskwood without data. So Ledger completion's world is 2 Species, 1 junk,

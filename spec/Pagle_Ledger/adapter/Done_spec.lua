@@ -5,7 +5,7 @@ local MACKEREL, SMALLFISH, OILY = 6303, 6291, 6358
 -- Two zones the generated catalogue doesn't chart (no catch data), so no Zone Mastery rank adds its XP and Coins to
 -- these numbers (LED-R54). ZoneMastery_spec.lua has the ranks.
 local BADLANDS, BLASTED_LANDS = 3, 4
-local T0 = 1791731000
+local T0 = SERVER_TIME - 700
 
 -- The names the fake client's C_Item knows.
 local ITEM_NAMES = { [MACKEREL] = "Raw Spotted Yellowtail", [SMALLFISH] = "Raw Brilliant Smallfish" }

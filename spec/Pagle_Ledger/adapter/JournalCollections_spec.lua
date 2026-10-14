@@ -12,7 +12,7 @@ local SKULL, BOTTLE, WAGONWHEEL = 6297, 6307, 6455
 local CRATE, CHEST = 6351, 6353
 -- Items the catalogue doesn't know: Uncharted (LED-R64).
 local ODD, STRANGE = 777001, 777002
-local T0 = 1791731000 -- Sunday 11 October 2026, 15:03 UTC; realm minute 494 makes it 11 Oct on the realm too
+local T0 = SERVER_TIME - 700 -- Sunday 11 October 2026, 15:03 UTC; realm minute 494 makes it 11 Oct on the realm too
 
 -- A catalogue in the shape of ns.catalogue (DATA-R76): Elwynn and Duskwood charted, Westfall without data.
 local function catalogue()

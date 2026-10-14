@@ -7,7 +7,7 @@ local TROPHY, SKULL, CHEST = 13901, 6297, 6351
 local ELWYNN, WESTFALL, DUSKWOOD, REDRIDGE, DARKSHORE, ASHENVALE, ISLE = 12, 40, 10, 44, 148, 331, 3500
 -- A zone the catalogue doesn't know at all: GetArea returns nil for it.
 local NOWHERE = 7777
-local T0 = 1791731000
+local T0 = SERVER_TIME - 700
 
 -- The names the fake client's C_Item and C_Map know.
 local ITEM_NAMES = {

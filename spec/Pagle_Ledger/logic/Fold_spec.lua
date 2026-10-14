@@ -62,7 +62,7 @@ local ITEMS = {
 }
 
 local ELWYNN, WESTFALL = 12, 40
-local T0 = 1791731000
+local T0 = SERVER_TIME - 700
 local HOUR = 3600
 
 ---@param itemID integer
