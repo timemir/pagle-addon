@@ -446,7 +446,8 @@ describe("the ribbons, crumbs and nameplate on the leather (HNT-R61)", function(
 		assert.is_true(buttonWith(ribbons, stacked("Wagers")).chosen)
 
 		buttonWith(ribbons, stacked("Board")):Click()
-		assert.are.same({ mode = "board" }, run.ns.board.router:Place())
+		-- the timeline then selects its Hunt on the Board (HNT-R67)
+		assert.are.equal("board", run.ns.board.router:Place().mode)
 	end)
 
 	it("land on the Board ribbon whenever the board opens again (HNT-R67)", function()
@@ -486,7 +487,8 @@ describe("the ribbons, crumbs and nameplate on the leather (HNT-R61)", function(
 		assert.are.same({ "Hunts", "Dusk" }, textsOf(crumbs))
 
 		buttonWith(crumbs, "Hunts"):Click()
-		assert.are.same({ mode = "board" }, run.ns.board.router:Place())
+		-- the timeline then selects its Hunt on the Board (HNT-R67)
+		assert.are.equal("board", run.ns.board.router:Place().mode)
 	end)
 
 	it("write the nameplate, with each earned title and its full date in its tooltip", function()

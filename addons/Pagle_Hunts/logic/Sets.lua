@@ -184,7 +184,7 @@ function ns.BuildSetPage(input, setID, trackerLabel)
 	local earned = not input.updating and state.sets[setID] or nil
 	local page = {
 		name = list:SetName(setID),
-		titleLine = (earned and L.SET_EARNED or L.SET_EARNS):format(list:SetTitle(setID)),
+		titleLine = (earned and L.SET_PAGE_EARNED or L.SET_PAGE_EARNS):format(list:SetTitle(setID)),
 		seal = earned and L.SET_SEAL:format(ns.FormatFullDate(earned.date)) or nil,
 		line = L.SET_RULE,
 		note = list:SetNote(setID),

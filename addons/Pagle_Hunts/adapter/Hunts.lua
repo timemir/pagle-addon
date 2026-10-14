@@ -19,6 +19,8 @@ function ns.Hunts.OnInitialize()
 	if not ns.Module then
 		return
 	end
+	-- Hunts' slots and goods, right after RegisterModule (HNT-R122).
+	ns.RegisterGoods(ns.Module)
 
 	-- Account-wide, one shared profile, with the defaults in hunts.md › Data.
 	ns.db = LibStub("AceDB-3.0"):New("PagleHuntsDB", ns.DB_DEFAULTS, true)
@@ -74,4 +76,7 @@ function ns.Hunts.OnInitialize()
 
 	-- Calendar event names for the conditions line, looked up once this login (HNT-R53).
 	ns.StartNames()
+
+	-- Window moments (HNT-R88): their Announcements row (SET-R32) and the regroup baseline.
+	ns.StartWindowMoments()
 end
