@@ -112,14 +112,11 @@ describe("the frames' toast style", function()
 
 		raise(loaded, M, "toast")
 
-		assert.are.same(
-			{ { 0.16, 0.11, 0.07, 0.94 }, false, { 1, 0.82, 0 } },
-			{
-				lookOf(loaded.ns.announcementFrames.toast).background,
-				lookOf(loaded.ns.announcementFrames.toast).glow,
-				lookOf(loaded.ns.announcementFrames.toast).title,
-			}
-		)
+		assert.are.same({ { 0.16, 0.11, 0.07, 0.94 }, false, { 1, 0.82, 0 } }, {
+			lookOf(loaded.ns.announcementFrames.toast).background,
+			lookOf(loaded.ns.announcementFrames.toast).glow,
+			lookOf(loaded.ns.announcementFrames.toast).title,
+		})
 	end)
 
 	it("draws a toast in Ripple once Ripple is equipped: its water, rings and colours (ANN-R80, SHOP-R33)", function()
