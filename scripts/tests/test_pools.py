@@ -11,6 +11,7 @@ from baseline_fixture import CSVS, write_baseline
 from cli_fixture import run
 from item_fixture import write_item_layer
 from observed_fixture import write_observed
+from hunts_fixture import write_hunts
 from pools_fixture import write_pools
 from windows_fixture import write_windows
 
@@ -109,6 +110,7 @@ def write_tree(root: Path, pools: str = POOLS, items: str = ITEMS, csvs: dict[st
     write_observed(root)  # dev.toml with no facts; test_observed.py covers the layer
     write_item_layer(root, items)  # test_item_records.py covers the item layer
     write_pools(root, pools)
+    write_hunts(root)  # test_hunts.py covers the Hunt list
     return root
 
 

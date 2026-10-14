@@ -1,0 +1,36 @@
+if not Pagle then -- luacheck: read globals Pagle (CORE-R11: the one read of Core outside adapter/)
+	return
+end
+
+---@class PagleHuntsNS
+local ns = select(2, ...)
+
+-- PagleHuntsDB's schema (hunts.md › Data): pure logic, everything passed in (CORE-R7). Every key hunts.md › Data
+-- lists has its default here from the start; a ticket that changes one that has shipped adds a migration step.
+
+--- The schema PagleHuntsDB is at once Hunts has loaded.
+ns.SCHEMA_VERSION = 1
+
+--- PagleHuntsDB's AceDB defaults (hunts.md › Data). `global.projection` has none: Core owns that table (LOG-R70).
+--- `global.schemaVersion` has none either: ns.MigrateDB stamps it, so it is saved even while it equals the current
+--- version and a later version can tell an old DB from a new one.
+ns.DB_DEFAULTS = {
+	profile = {
+		tracker = { shown = true, collapsed = false }, -- the Hunts tracker (HNT-R75–R79)
+		windowMoments = false, -- "Tell me when a pinned Hunt's window opens" (HNT-R88)
+		showCompleted = false, -- the board's "show completed" filter (HNT-R82)
+		pins = {}, -- { [huntID] = true } (HNT-R81)
+	},
+	global = {
+		celebrated = { tiers = {}, sets = {} }, -- { tiers = { [huntID] = highestTier }, sets = { [setID] = true } } (HNT-R90)
+	},
+}
+
+--- Brings PagleHuntsDB.global up to SCHEMA_VERSION, one ordered step at a time (hunts.md › Data). A new DB starts
+--- at SCHEMA_VERSION; schema 1 has no steps yet.
+---@param global table PagleHuntsDB's global section
+function ns.MigrateDB(global)
+	if global.schemaVersion == nil then
+		global.schemaVersion = ns.SCHEMA_VERSION
+	end
+end
