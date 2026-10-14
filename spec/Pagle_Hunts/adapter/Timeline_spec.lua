@@ -627,6 +627,35 @@ describe("opening the board (HNT-R67)", function()
 	end)
 end)
 
+describe("countdowns on the right page, an hour after the last regroup (HNT-R42, HNT-R43, HNT-R52)", function()
+	-- At 08:15 the day window (06:00–20:00) is open: fixture_eel closes at 20:00. The tracker is collapsed and the
+	-- board shut, so nothing refreshes the grouping for an hour; the countdowns still count from now.
+	local function anHourLater()
+		local run = start()
+		run.ns.tracker.header:Click() -- collapsed: no 60 s refresh (HNT-R42)
+		local grouped = run.ns.groups:Time()
+		wait(run, HOUR)
+		assert.are.equal(grouped, run.ns.groups:Time())
+		return run
+	end
+
+	it("counts the entry's window line down from now (HNT-R52)", function()
+		local run = anHourLater()
+
+		run.ns.OpenBoard("fixture_eel")
+
+		assert.is_true(has(pageTexts(run, "right"), "Open now. Closes in 10h 45m, at 20:00."))
+	end)
+
+	it("counts a set page's tracker labels down from now (HNT-R51, HNT-R66)", function()
+		local run = anHourLater()
+
+		local eel = run.ns.BoardSetPage("fixture_pair").hunts[1] -- fixture_eel, first in Hunt list order
+
+		assert.are.equal("ends in 10h 45m", eel.when)
+	end)
+end)
+
 describe("the leather's clock and checkbox (HNT-R61)", function()
 	-- The fixture catalogue with season windows: autumn from 22 September to 20 December (LOG-R55).
 	local function withSeasons()
