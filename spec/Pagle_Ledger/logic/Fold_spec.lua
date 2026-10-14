@@ -156,11 +156,12 @@ describe("The Ledger's fold", function()
 	local ns = loaded.ns
 
 	-- The world index (LED-R10) over the fixture: Mackerel and Smallfish ungated in three zones, so a spec here
-	-- reaches ★★ only with three zones (LED-R45; logic/Stars_spec.lua covers the stars).
+	-- reaches ★★ only with three zones (LED-R45; logic/Stars_spec.lua covers the stars). None of them is a zone the
+	-- specs here fish in, so no Catch here earns a Zone Mastery rank (LED-R50; logic/ZoneMastery_spec.lua has those).
 	local world = ns.NewWorld({
 		GetItem = getItem,
 		GetZones = function()
-			return { ELWYNN, WESTFALL, 10 }
+			return { 1, 3, 10 }
 		end,
 		GetArea = function()
 			return { parent = 0, continent = 0, hasData = true, skillBaseConfirmed = true, catches = {} }
@@ -436,7 +437,10 @@ describe("The Ledger's fold", function()
 		it("makes a zone fished at any Catch there, earning 200 XP once (LED-R6, LED-R20, LED-R21)", function()
 			local state = applyAll({ log.cast(T0, ELWYNN, { NOISE }), log.cast(T0 + 60, ELWYNN, { OTHER }) })
 
-			assert.are.same({ [ELWYNN] = { species = {} } }, state.zones)
+			assert.are.same(
+				{ [ELWYNN] = { species = {}, families = {}, items = {}, junk = false, treasure = false, rank = 0 } },
+				state.zones
+			)
 			assert.are.equal(20 + 200 + 20, state.xp)
 		end)
 

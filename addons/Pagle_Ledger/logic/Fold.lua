@@ -51,21 +51,27 @@ local ns = select(2, ...)
 ---@field zones { [integer]: true }           -- zones caught in (never 0)
 ---@field windowsMet? { [string]: true }     -- element windows met (LED-R45): made at its first Catch, logic/Stars.lua
 
---- A fished zone (ledger.md › Data, LedgerZone, M2's fields).
+--- A fished zone (ledger.md › Data, LedgerZone). logic/ZoneMastery.lua makes it and fills all but `species`.
 ---@class LedgerZone
 ---@field species { [integer]: true }         -- Species caught here
+---@field families { [integer]: true }        -- trophy families landed here (LED-R50)
+---@field items { [integer]: true }           -- trophy and curio items caught here (LED-R138)
+---@field junk boolean                        -- a `junk` Catch here (LED-R50)
+---@field treasure boolean                    -- a `container` or `treasure` Catch here (LED-R50)
+---@field rank integer                        -- computed rank, 0 if not charted (LED-R50, LED-R54)
 
 --- What one `apply` earned (LED-R97's rows). `cast` is the Cast's entry ID (nil for a Skill Reading) and `coins` its
 --- Coins (LED-R88; 0 when it pays none). Tickets #101 and #102 turn M2's kinds into moments and Write-up lines, ticket
 --- #137 M3's; the fold never reads the celebrated set (LED-R3).
 ---@class LedgerAchievement
----@field kind "levelUp"|"newSpecies"|"newInZone"|"skillMilestone"|"newCurio"|"trophyWeight"|"uncharted"|"elementStar"|"regularStar"|"familyStar"
+---@field kind "levelUp"|"newSpecies"|"newInZone"|"skillMilestone"|"newCurio"|"trophyWeight"|"uncharted"|"elementStar"|"regularStar"|"familyStar"|"zoneRank"
 ---@field cast? string
 ---@field coins integer
 ---@field levels? integer[]                   -- levelUp: the levels it raised, ascending
 ---@field species? integer                    -- newSpecies, newInZone, elementStar, regularStar: the Species ID
 ---@field itemID? integer                     -- the item caught, for every Catch's kind but familyStar
----@field zone? integer                       -- newSpecies, newInZone: the Cast's zone
+---@field zone? integer                       -- newSpecies, newInZone, zoneRank: the Cast's zone
+---@field ranks? integer[]                    -- zoneRank: the Zone Mastery ranks it passed, ascending (LED-R51)
 ---@field threshold? integer                  -- skillMilestone
 ---@field family? integer                     -- trophyWeight, familyStar: the trophy family
 ---@field stars? integer[]                    -- familyStar: the stars it newly computed, 2 and/or 3, ascending
@@ -214,6 +220,7 @@ end
 ---@return LedgerFold
 function ns.NewLedgerFold(lookups)
 	local getItem = lookups.GetItem
+	local world = lookups.world
 	local stars = ns.NewStarsFold(lookups)
 
 	-- The greatest `weight` among a trophy family's items landed so far, nil when none is (LED-R61).
@@ -288,12 +295,13 @@ function ns.NewLedgerFold(lookups)
 			if zone ~= 0 then
 				zoneState = state.zones[zone]
 				if not zoneState then
-					zoneState = { species = {} }
+					zoneState = ns.NewZoneState()
 					state.zones[zone] = zoneState
 					state.xp = state.xp + FIRST_IN_ZONE_XP
 				end
 			end
 			local class = ns.ClassifyCatch(itemID, item)
+			ns.NoteZoneCatch(zoneState, class, itemID, item)
 			local id = class == "species" and item and item.species or nil
 			local starsBefore = stars.mark(state, class, itemID, item)
 			if class == "uncharted" then
@@ -337,6 +345,7 @@ function ns.NewLedgerFold(lookups)
 			end
 			stars.credit(state, record, starsBefore, earned)
 		end
+		ns.CreditZoneRank(state, world, zone, record.id, earned)
 	end
 
 	-- A Skill Reading (LED-R40): each Skill Milestone not yet credited, at or below its rank, ascending.
