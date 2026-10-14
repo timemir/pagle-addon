@@ -158,4 +158,6 @@ ns.L = {
 	FISH_REGULAR = "%s Regular (%d/%d)",
 	CHECK_ON = "☑",
 	CHECK_OFF = "☐",
+	-- Search with no match (LED-R148).
+	SEARCH_NONE = "Nothing by that name in the Ledger yet.",
 }

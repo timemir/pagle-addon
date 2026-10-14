@@ -64,3 +64,75 @@ describe("the plain hint", function()
 		assert.are.equal("Any time · Moonglade", ns.PlainHint(world({ MOONGLADE }), FISH, text))
 	end)
 end)
+
+describe("the Journal's search", function()
+	local ns = loadAddon("Pagle_Ledger", FOREVER_GLOBALS).ns
+
+	-- Seven charted zones and one fished uncharted zone named "Lake {n}", eight caught Species named "Lake fish {n}",
+	-- one caught Species whose name isn't loaded yet (9), and one uncaught Species, "Lake secret" (10), listed.
+	local zoneNames, itemNames = {}, { [10] = "Lake secret" }
+	local world = { charted = {}, zones = {}, species = { [10] = { zones = { 101 } } }, skillBase = {} }
+	local state = { species = {}, zones = { [108] = {} } }
+	for n = 1, 8 do
+		zoneNames[100 + n] = "Lake " .. (9 - n)
+		itemNames[n] = "Lake fish " .. (9 - n)
+		state.species[n] = { n = 1, zones = {} }
+		if n < 8 then
+			world.charted[n] = 100 + n
+			world.zones[100 + n] = { species = {} }
+		end
+	end
+	state.species[9] = { n = 1, zones = {} }
+	---@type LedgerJournalContext
+	local context = {
+		updating = false,
+		state = state,
+		world = world,
+		now = 0,
+		formatNumber = tostring,
+		text = {
+			Zone = function(_, zone)
+				return zoneNames[zone] or "…"
+			end,
+			Item = function(_, id)
+				return itemNames[id] or "…"
+			end,
+		},
+	}
+
+	local function labels(results)
+		local list = {}
+		for i, result in ipairs(results) do
+			list[i] = result.label
+		end
+		return list
+	end
+
+	it("shows at most 4 zones, then 6 caught fish, each part sorted by name, never one uncaught (LED-R148)", function()
+		local results = ns.JournalSearch("LAKE", context)
+
+		assert.are.same({
+			"Lake 1",
+			"Lake 2",
+			"Lake 3",
+			"Lake 4",
+			"Lake fish 1",
+			"Lake fish 2",
+			"Lake fish 3",
+			"Lake fish 4",
+			"Lake fish 5",
+			"Lake fish 6",
+		}, labels(results))
+		assert.are.same({ id = "zone", args = { zone = 108 } }, results[1].place)
+		assert.are.same({ id = "fish", args = { species = 8 } }, results[5].place)
+	end)
+
+	it("matches from the first character, anywhere in the name (LED-R148)", function()
+		assert.are.same({ "Lake 5" }, labels(ns.JournalSearch("e 5", context)))
+	end)
+
+	it("finds nothing for a name not loaded yet, nor for an empty box (LED-R148, LED-R126)", function()
+		assert.are.same({}, ns.JournalSearch("…", context))
+		assert.is_nil(ns.JournalSearch("", context))
+	end)
+end)

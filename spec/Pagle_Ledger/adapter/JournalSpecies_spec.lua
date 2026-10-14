@@ -2,7 +2,7 @@
 -- log, the Ledger's projection built at login, and the fish spread's pages and the search box's results as data.
 
 local MACKEREL, NIGHTFISH, SECRET, STRAY, GONE = 6303, 13759, 6522, 6291, 6299
-local DUSKWOOD, ELWYNN, WESTFALL, REDRIDGE = 10, 12, 40, 44
+local DUSKWOOD, ELWYNN, WESTFALL, DARKSHORE = 10, 12, 40, 148
 local NAMES = {
 	[MACKEREL] = "Raw Slitherskin Mackerel",
 	[NIGHTFISH] = "Raw Nightfin Snapper",
@@ -10,15 +10,15 @@ local NAMES = {
 	[STRAY] = "Raw Brilliant Smallfish",
 	[GONE] = "Sickly Looking Fish",
 }
-local ZONES = { [DUSKWOOD] = "Duskwood", [ELWYNN] = "Elwynn Forest", [WESTFALL] = "Westfall", [REDRIDGE] = "Redridge" }
+local ZONES = { [DUSKWOOD] = "Duskwood", [ELWYNN] = "Elwynn Forest", [WESTFALL] = "Westfall", [DARKSHORE] = "Darkshore" }
 local T0 = 1791000000
 local MINUTE = 60
 -- Realm minutes of day: 08:14, and 21:40, inside the fixture's night (20:00 to 06:00).
 local DAY_MINUTE, NIGHT_MINUTE = 494, 1300
 
 -- A catalogue in the shape of ns.catalogue (DATA-R76). MACKEREL any time in Duskwood, Elwynn and Westfall; NIGHTFISH
--- by night in Duskwood, from pools; SECRET by night in all three, from pools in Duskwood; STRAY in Redridge; GONE
--- removed, on no list. Skill bases: Elwynn 25, Westfall 55, Duskwood 150; Redridge none.
+-- by night in Duskwood, from pools; SECRET by night in all three, from pools; STRAY in Darkshore; GONE
+-- removed, on no list. Skill bases: Elwynn 25, Westfall 55, Duskwood 150; Darkshore none.
 local function fixture()
 	local night = { time = { { 1200, 360 } } }
 	local function fish(id, fields)
@@ -47,7 +47,7 @@ local function fixture()
 			[ELWYNN] = area(25, { entry(MACKEREL), entry(SECRET, "night") }),
 			[WESTFALL] = area(55, { entry(MACKEREL), entry(SECRET, "night") }),
 			[DUSKWOOD] = area(150, { entry(MACKEREL), entry(NIGHTFISH, "night"), entry(SECRET, "night") }),
-			[REDRIDGE] = area(nil, { entry(STRAY) }),
+			[DARKSHORE] = area(nil, { entry(STRAY) }),
 		},
 		aliases = {},
 		pools = {},
@@ -331,5 +331,63 @@ describe("the fish spread (LED-R142)", function()
 		tiles.children[2]:Click()
 
 		assert.are.same({ zone = WESTFALL, species = MACKEREL }, opened)
+	end)
+end)
+
+describe("the Journal's search box (LED-R148)", function()
+	-- Types `query` into the open book's search box, as the player does: its text changes.
+	local function typeInto(loaded, query)
+		local search = loaded.ns.journal.frame.search
+		search:SetText(query)
+		search:GetScript("OnTextChanged")(search, true)
+	end
+
+	-- The dropdown's shown lines, in order.
+	local function dropdown(loaded)
+		local frame = loaded.ns.journal.frame
+		local lines = {}
+		if not frame.searchDrop:IsShown() then
+			return lines
+		end
+		for _, row in ipairs(frame.searchDrop.rows) do
+			if row:IsShown() then
+				lines[#lines + 1] = row.label:GetText()
+			end
+		end
+		return lines
+	end
+
+	it("finds a zone and caught Species from two letters, zones first, never an uncaught one (LED-R148, LED-R124)", function()
+		local _, loaded = loggedIn()
+		loaded.ns.journal:Toggle()
+
+		typeInto(loaded, "sH")
+
+		assert.are.same({ "Darkshore", "Raw Brilliant Smallfish", "Sickly Looking Fish" }, dropdown(loaded))
+	end)
+
+	it("opens the fish spread picked, and closes the dropdown (LED-R148, LED-R125)", function()
+		local _, loaded = loggedIn()
+		local journal = loaded.ns.journal
+		journal:Toggle()
+		typeInto(loaded, "sh")
+
+		journal.frame.searchDrop.rows[2]:Click()
+
+		assert.are.same({ id = "fish", args = { species = STRAY } }, journal.router:Place())
+		assert.are.same({ "Home", "Raw Brilliant Smallfish" }, { journal.pages.crumbs[1].label, journal.pages.crumbs[2].label })
+		assert.are.same({}, dropdown(loaded))
+		assert.are.equal("", journal.frame.search:GetText())
+	end)
+
+	it("shows the no-match line for a string matching nothing, and nothing for an empty box (LED-R148)", function()
+		local _, loaded = loggedIn()
+		loaded.ns.journal:Toggle()
+
+		typeInto(loaded, "deviate")
+		assert.are.same({ "Nothing by that name in the Ledger yet." }, dropdown(loaded))
+
+		typeInto(loaded, "")
+		assert.are.same({}, dropdown(loaded))
 	end)
 end)

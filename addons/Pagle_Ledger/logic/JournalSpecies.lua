@@ -223,6 +223,70 @@ local function fishLabel(id, context)
 	return context.state.species[id] and context.text:Item(id) or ns.L.ENTRY_UNKNOWN
 end
 
+-- Tunables: search results (LED-R148), 4 zones then 6 fish.
+local SEARCH_ZONES, SEARCH_FISH = 4, 6
+
+--- One search result (LED-R148): a zone's or a caught Species' name, and the spread it opens.
+---@class LedgerSearchResult
+---@field label string
+---@field place LedgerJournalPlace
+
+-- The names in `names` (ID -> name) containing `query` (lowercase, plain), sorted by name then ID, at most `limit`,
+-- each opening `placeOf(id)`.
+---@param names { [integer]: string }
+---@param query string
+---@param limit integer
+---@param placeOf fun(id: integer): LedgerJournalPlace
+---@param results LedgerSearchResult[]
+local function addMatches(names, query, limit, placeOf, results)
+	local found = {}
+	for id, name in pairs(names) do
+		if name ~= ns.L.NAME_UNKNOWN and name:lower():find(query, 1, true) then
+			found[#found + 1] = id
+		end
+	end
+	table.sort(found, function(a, b)
+		if names[a] ~= names[b] then
+			return names[a] < names[b]
+		end
+		return a < b
+	end)
+	for i = 1, math.min(limit, #found) do
+		results[#results + 1] = { label = names[found[i]], place = placeOf(found[i]) }
+	end
+end
+
+--- Search (LED-R148, zones and Species; Legends come in M4): a case-insensitive substring of the names of the zones
+--- with a tile (LED-R131: charted, or fished) and of the caught Species, by their representative item's name (LED-R5),
+--- never anything uncaught (LED-R124). At most 4 zones then 6 fish, each part sorted by name. A name the client
+--- hasn't loaded yet doesn't match. Nil for an empty box (no dropdown); an empty list for no match.
+---@param query string
+---@param context LedgerJournalContext
+---@return LedgerSearchResult[]?
+function ns.JournalSearch(query, context)
+	if query == "" then
+		return nil
+	end
+	query = query:lower()
+	local text, world, state = context.text, context.world --[[@as LedgerWorld]], context.state --[[@as LedgerState]]
+	local zones, fish = {}, {}
+	for _, zone in ipairs(world.charted) do
+		zones[zone] = text:Zone(zone)
+	end
+	for zone in pairs(state.zones) do
+		zones[zone] = text:Zone(zone)
+	end
+	for id in pairs(state.species) do
+		fish[id] = text:Item(id)
+	end
+	local results = {}
+	addMatches(zones, query, SEARCH_ZONES, function(zone)
+		return ns.JournalZonePlace(zone)
+	end, results)
+	addMatches(fish, query, SEARCH_FISH, ns.JournalFishPlace, results)
+	return results
+end
+
 -- ★★ and ★★★ Tunables (LED-R45): zones needed and Catches.
 local ZONES_NEEDED, REGULAR_CATCHES = 3, 50
 
