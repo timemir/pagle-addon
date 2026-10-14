@@ -40,7 +40,7 @@ local ns = select(2, ...)
 --- - `seal` (a wax seal reading `text`)
 --- - `stamps` (`stamps`: ink stamps, each `{ text, inked }`)
 --- - `tiles` (`tiles`: zone tiles, LedgerZoneTile)
---- - `icon` (`icon`, an item ID or texture, drawn `look` "sepia" or "silhouette")
+--- - `icon` (`icon`, an item ID or texture, drawn `look` "sepia" or "silhouette", `large` on an entry, LED-R140)
 --- - `xpBar` (`bar`: the ink XP bar, ns.InkXpBar)
 --- - `emblem` (`mark`: a prestige rank's emblem and stars, ns.PrestigeMark; nothing drawn without an emblem)
 ---@class LedgerBlock
@@ -54,6 +54,7 @@ local ns = select(2, ...)
 ---@field tiles? LedgerZoneTile[]
 ---@field icon? integer|string
 ---@field look? "sepia"|"silhouette"
+---@field large? boolean
 ---@field bar? LedgerInkXpBar
 ---@field mark? LedgerPrestigeMark
 

@@ -106,6 +106,7 @@ Part of [Core](README.md). Core holds the Angler's **Pagle Coins** and runs the 
 | `M:RefreshGoods()` | SHOP-R31 |
 | `Pagle.GetBalance()` | SHOP-R12 |
 | `Pagle.IsOwned(goodID)`, `Pagle.GetEquipped(slot)`, `Pagle.SetEquipped(slot, goodID)` | SHOP-R30–R34 |
+| `Pagle.GetGood(goodID)` | SHOP-R26: a read-only copy of the cached `{ name, slot, icon, module, description }`, whether or not the good's Module is enabled, or `nil` for a good never registered |
 | `Pagle.OpenShop(goodID?)` | SHOP-R40, SHOP-R41 |
 | event `BalanceChanged(balance: Balance)` | whenever any field of `Balance` changes |
 | event `AppearanceChanged(slot, goodID)` | SHOP-R33 |

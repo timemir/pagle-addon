@@ -6,8 +6,9 @@ from pathlib import Path
 
 import pytest
 
+from cli_fixture import run
 from observed_fixture import i_row, report
-from test_catch_lists import CATALOGUE, run, write_tree
+from test_catch_lists import CATALOGUE, write_tree
 from test_confirmed import ALICE, DEV, INSIDE_DAY, fact, skill_row
 
 # Every kind of fact DATA-R57 names, each confirmed by one observation on build 100 alone:

@@ -215,11 +215,11 @@ describe("the Ledger's projection", function()
 		assert.are.equal("a new release", loaded.env.PagleLedgerDB.global.projection.fingerprint)
 	end)
 
-	it("rebuilds an M2 projection, rules version 100, at M3's 200 at the first M3 login (LED-R4, LED-R191)", function()
+	it("rebuilds an M2 projection, rules version 100, at this build's rules version (LED-R4, LED-R191)", function()
 		local last, lastLoaded = firstSession(function(loading)
 			loading.ns.LEDGER_RULES_VERSION = 1 -- M2's
 		end)
-		assert.are.equal(100, lastLoaded.env.PagleLedgerDB.global.projection.rulesVersion)
+		lastLoaded.env.PagleLedgerDB.global.projection.rulesVersion = 100 -- as M2 stored it, before Core's sizes
 		local fake = nextSession(last, lastLoaded, 0)
 		local loaded, applied = loadLedger(fake)
 
@@ -228,7 +228,7 @@ describe("the Ledger's projection", function()
 
 		assert.are.same(rebuiltTo(fake, 5), applied)
 		assert.are.same(foldOfLog(fake, loaded.ns), loaded.ns.projection:GetState())
-		assert.are.equal(200, loaded.env.PagleLedgerDB.global.projection.rulesVersion)
+		assert.are.equal(loaded.ns.RulesVersion(1), loaded.env.PagleLedgerDB.global.projection.rulesVersion)
 	end)
 
 	it(
@@ -266,23 +266,29 @@ describe("the Ledger's projection", function()
 		assert.are.same(before, loaded.ns.projection:GetState())
 	end)
 
-	it("stores rulesVersion 200 with no Pagle.SIZE_RULES_VERSION, as in M3 (LED-R2, LED-R4, LOG-R68)", function()
-		local _, loaded = firstSession()
+	it("stores rulesVersion LEDGER_RULES_VERSION × 100 + Core's SIZE_RULES_VERSION 1 (LED-R2, LOG-R68)", function()
+		local fake, loaded = firstSession()
 
-		assert.is_nil(newFakePagle().Pagle.SIZE_RULES_VERSION)
-		assert.are.equal(200, loaded.env.PagleLedgerDB.global.projection.rulesVersion)
+		assert.are.equal(1, fake.Pagle.SIZE_RULES_VERSION)
+		assert.are.equal(
+			loaded.ns.LEDGER_RULES_VERSION * 100 + 1,
+			loaded.env.PagleLedgerDB.global.projection.rulesVersion
+		)
 	end)
 
-	it("stores 201 and rebuilds once Pagle.SIZE_RULES_VERSION is 1 (LED-R2, LED-R191, LOG-R68)", function()
-		local last, lastLoaded = firstSession()
-		local fake = nextSession(last, lastLoaded, 0)
-		fake.Pagle.SIZE_RULES_VERSION = 1
-		local loaded, applied = loadLedger(fake)
+	it(
+		"rebuilds an M3 projection, stored at 200 with no SIZE_RULES_VERSION, at the first M4 login (LED-R2, LED-R191, LOG-R68)",
+		function()
+			local last, lastLoaded = firstSession()
+			lastLoaded.env.PagleLedgerDB.global.projection.rulesVersion = 200 -- as M3 stored it
+			local fake = nextSession(last, lastLoaded, 0)
+			local loaded, applied = loadLedger(fake)
 
-		fake.login()
-		fake.enterWorld()
+			fake.login()
+			fake.enterWorld()
 
-		assert.are.same(rebuiltTo(fake, 5), applied)
-		assert.are.equal(201, loaded.env.PagleLedgerDB.global.projection.rulesVersion)
-	end)
+			assert.are.same(rebuiltTo(fake, 5), applied)
+			assert.are.equal(loaded.ns.RulesVersion(1), loaded.env.PagleLedgerDB.global.projection.rulesVersion)
+		end
+	)
 end)
