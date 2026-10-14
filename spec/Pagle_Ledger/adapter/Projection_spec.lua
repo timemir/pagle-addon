@@ -39,7 +39,11 @@ end
 ---@param fake FakePagle
 ---@param ns PagleLedgerNS
 local function foldOfLog(fake, ns)
-	local fold = ns.NewLedgerFold({ GetItem = fake.Pagle.GetItem, world = ns.world })
+	local fold = ns.NewLedgerFold({
+		GetItem = fake.Pagle.GetItem,
+		MatchesConditions = fake.Pagle.MatchesConditions,
+		world = ns.world,
+	})
 	local state = fold.reset()
 	for record in fake.catchLog:Iterate(0) do
 		fold.apply(state, record, "rebuild")

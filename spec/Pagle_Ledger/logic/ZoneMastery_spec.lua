@@ -146,12 +146,18 @@ local function newLog()
 end
 
 describe("Zone Mastery", function()
-	local ns = loadAddon("Pagle_Ledger", FOREVER_GLOBALS).ns
+	local loaded = loadAddon("Pagle_Ledger", FOREVER_GLOBALS)
+	local ns = loaded.ns
+
+	-- The fold's lookups (LED-R3) over the fixture, Core's MatchesConditions and `fixtureWorld`.
+	local function foldLookups(fixtureWorld)
+		return { GetItem = getItem, MatchesConditions = loaded.env.Pagle.MatchesConditions, world = fixtureWorld }
+	end
 
 	local world, fold, cast
 	before_each(function()
 		world = ns.NewWorld(lookups(areas()))
-		fold = ns.NewLedgerFold({ GetItem = getItem, world = world })
+		fold = ns.NewLedgerFold(foldLookups(world))
 		cast = newLog()
 	end)
 
@@ -239,7 +245,7 @@ describe("Zone Mastery", function()
 				-- The same records over a world that charts nothing earn every row but the ranks.
 				local uncharted = areas()
 				uncharted[LAKE].hasData = false
-				local plain = ns.NewLedgerFold({ GetItem = getItem, world = ns.NewWorld(lookups(uncharted)) })
+				local plain = ns.NewLedgerFold(foldLookups(ns.NewWorld(lookups(uncharted))))
 				local plainState = plain.reset()
 				for _, record in ipairs(records) do
 					plain.apply(plainState, record, "live")
@@ -281,16 +287,16 @@ describe("Zone Mastery", function()
 				local record = cast(LAKE, { ANY_1, ANY_2, ANY_3 })
 				local state, earned = applyAll({ record })
 
-				local kinds = {}
-				for i, achievement in ipairs(earned) do
-					kinds[i] = achievement.kind
-				end
-				assert.are.same({ "newSpecies", "newSpecies", "newSpecies", "zoneRank", "levelUp" }, kinds)
-				assert.are.same({ 1, 2, 3 }, earned[4].ranks)
-				assert.are.equal(12, earned[4].coins)
-				-- 3 × 20 Catch XP, 3 × 600 discovery, 200 for the zone and 1,500 for the ranks: 3,560, past level 4 (3,480).
+				-- One zoneRank, after every Catch's achievements (and their stars), then the levelUp.
+				assert.are.equal(1, #zoneRanks(earned))
+				local rank, levelUp = earned[#earned - 1], earned[#earned]
+				assert.are.same({ "zoneRank", "levelUp" }, { rank.kind, levelUp.kind })
+				assert.are.same({ 1, 2, 3 }, rank.ranks)
+				assert.are.equal(12, rank.coins)
+				-- 3 × 20 Catch XP, 3 × 600 discovery, 200 for the zone and 1,500 for the ranks: 3,560, past
+				-- level 4 (3,480).
 				assert.are.equal(60 + 1800 + 200 + 1500, state.xp)
-				assert.are.same({ 2, 3, 4 }, earned[5].levels)
+				assert.are.same({ 2, 3, 4 }, levelUp.levels)
 				assert.are.equal(3 * 10 + 12 + 3 * 20, state.coins)
 			end
 		)

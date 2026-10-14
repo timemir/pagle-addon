@@ -16,6 +16,7 @@ logic\Module.lua
 logic\Progress.lua
 logic\Fold.lua
 logic\World.lua
+logic\Stars.lua
 logic\ZoneMastery.lua
 logic\Moments.lua
 logic\Done.lua

@@ -35,15 +35,10 @@ function ns.Ledger.OnInitialize()
 	--- The Ledger's projection (LED-R2): Core catches it up or rebuilds it after login and hands it each new entry
 	--- live (LOG-R71–R74). While `:IsUpdating()`, the Ledger shows nothing (LOG-R74). The Fish Journal redraws after
 	--- its live entries and its done (LED-R122, LED-R123).
+	--- The fold reads the world index and Core's MatchesConditions as lookups (LED-R3, LED-R45).
+	local lookups = { GetItem = Pagle.GetItem, MatchesConditions = Pagle.MatchesConditions, world = ns.world }
 	ns.projection = ns.Module:NewProjection(
-		ns.WithJournalRedraws(
-			ns.ProjectionDef(
-				ns.db.global,
-				{ GetItem = Pagle.GetItem, world = ns.world },
-				ns.Outlets(ns.Module),
-				sizeRulesVersion
-			)
-		)
+		ns.WithJournalRedraws(ns.ProjectionDef(ns.db.global, lookups, ns.Outlets(ns.Module), sizeRulesVersion))
 	)
 end
 
