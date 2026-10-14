@@ -64,7 +64,7 @@ end
 
 --- A trophy family's computed stars (LED-R47): ★ any of its trophy items landed, listed or not; ★★ at least
 --- `ceil(n / 2)` of its `n` listed weights landed; ★★★ its heaviest listed weight landed. Without a listed weight
---- (`n` = 0) only ★ can be earned.
+--- (`n` = 0) only ★ can be earned. A Legend item in `state.items` is never a trophy (LED-R5).
 ---@param world LedgerWorld
 ---@param state LedgerState
 ---@param family integer
@@ -74,7 +74,7 @@ function ns.FamilyStars(world, state, family, getItem)
 	local stars = {}
 	for itemID in pairs(state.items) do
 		local item = getItem(itemID)
-		if item and item.category == "trophy" and item.family == family then
+		if item and ns.ClassifyCatch(itemID, item) == "trophy" and item.family == family then
 			stars[1] = true
 			break
 		end

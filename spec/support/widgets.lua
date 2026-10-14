@@ -23,8 +23,11 @@ local LAYOUT_METHODS = {
 	"SetJustifyH",
 	"SetJustifyV",
 	"SetWordWrap",
-	"SetAlpha",
 	"SetFrameStrata",
+	"SetClampedToScreen",
+	"RegisterForDrag",
+	"StartMoving",
+	"StopMovingOrSizing",
 	"EnableMouse",
 	"SetScrollChild",
 	"EnableMouseWheel",
@@ -105,6 +108,23 @@ function widgets.newWidget(kind, parent)
 	function widget:SetTexCoord(left, right, top, bottom)
 		self.texCoord = { left, right, top, bottom }
 	end
+	-- A region's opacity (1 until set).
+	function widget:SetAlpha(alpha)
+		self.alpha = alpha
+	end
+	function widget:GetAlpha()
+		return self.alpha or 1
+	end
+	-- A button's text width, 6 pixels a character as GetStringWidth; and whether its highlight is locked on.
+	function widget:GetTextWidth()
+		return #(self.text or "") * 6
+	end
+	function widget:LockHighlight()
+		self.highlightLocked = true
+	end
+	function widget:UnlockHighlight()
+		self.highlightLocked = false
+	end
 	function widget:SetDesaturated(desaturated)
 		self.desaturated = desaturated
 	end
@@ -135,6 +155,16 @@ function widgets.newWidget(kind, parent)
 	end
 	function widget:GetScript(script)
 		return self.scripts[script]
+	end
+	-- Runs `fn` after the script already set, as the client's HookScript does.
+	function widget:HookScript(script, fn)
+		local before = self.scripts[script]
+		self.scripts[script] = function(...)
+			if before then
+				before(...)
+			end
+			fn(...)
+		end
 	end
 	-- Whether it takes clicks: SetEnabled(false) greys a button, and a click on it does nothing.
 	function widget:SetEnabled(enabled)
@@ -256,6 +286,40 @@ function widgets.editBox(client, box)
 		self.text = text
 		self.highlight = nil
 		run("OnTextChanged", true)
+	end
+end
+
+--- Adds the children and methods a FrameXML template gives a frame, as far as Pagle reads them. Gethe/wow-ui-source
+--- branch forever at 943764493e6b16d63ded3ab304150d1f05e58b57 ("1.60.1 (70338)"), Interface/AddOns/Blizzard_SharedXML/:
+--- ButtonFrameTemplate (Mainline/SharedUIPanelTemplates.xml) has an `Inset` frame, a `CloseButton` whose click hides
+--- its parent (UIPanelCloseButton_OnClick, HideUIPanel), the title (PortraitFrame.lua's TitledPanelMixin:SetTitle)
+--- and a portrait (PortraitFrameMixin:SetPortraitToAsset); SearchBoxTemplate (Shared/InputBox/InputBoxTemplates.xml)
+--- has its `Instructions` hint and its `clearButton`. Other templates add nothing here.
+---@param client FakeClient
+---@param frame table
+---@param template string?
+function widgets.applyTemplate(client, frame, template)
+	if template == "ButtonFrameTemplate" then
+		frame.Inset = widgets.newFrame(client, "Frame", frame)
+		frame.CloseButton = widgets.newFrame(client, "Button", frame)
+		frame.CloseButton:SetScript("OnClick", function()
+			if frame:IsShown() then
+				frame:Hide()
+				local onHide = frame:GetScript("OnHide")
+				if onHide then
+					onHide(frame)
+				end
+			end
+		end)
+		function frame:SetTitle(title)
+			self.title = title
+		end
+		function frame:SetPortraitToAsset(texture)
+			self.portrait = texture
+		end
+	elseif template == "SearchBoxTemplate" then
+		frame.Instructions = widgets.newWidget("FontString", frame)
+		frame.clearButton = widgets.newFrame(client, "Button", frame)
 	end
 end
 

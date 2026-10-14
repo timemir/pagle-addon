@@ -78,8 +78,9 @@
 --- reports it and returns nothing.
 ---@field openedSettings string[] What each Pagle.OpenSettings opened: "root" or the topic (CORE-R43).
 ---@field menu fun(): PagleMenuEntry[] The compartment menu as it would open now, labels read (CORE-R50, CORE-R52);
---- each entry's onClick is what clicking it does. Its last three entries are the Curio Shop (disabled), "Help chart
---- the waters" (with " (N)" while Pagle.GetFieldReportCount() is above 0; it calls Pagle.OpenFieldReport) and Settings.
+--- each entry's onClick is what clicking it does. Its last three entries are the Curio Shop (it calls
+--- Pagle.OpenShop), "Help chart the waters" (with " (N)" while Pagle.GetFieldReportCount() is above 0; it calls
+--- Pagle.OpenFieldReport) and Settings.
 ---@field coinReports { module: string, total: integer }[] Each M:ReportCoinsEarned Core accepted, in order, an
 --- unchanged total too (SHOP-R2).
 ---@field setSpent fun(spent: integer) Sets the Coins spent, for a spec that doesn't care about the log: BalanceChanged
@@ -94,8 +95,12 @@
 --- hands over the log's own set at enterWorld's done and on each live purchase (SHOP-R11), replacing it; a spec that
 --- wants its set kept hands it over after enterWorld. A U1 in fake.catchLog's history (helpers.lua's purchaseEntry, or
 --- fake.catchLog:Append) gives the spent total, the purchased set and the balance the way Core's log does.
----@field shopsOpened { goodID: string? }[] Each Pagle.OpenShop(goodID?) call, in order, with the good it asked for
---- (SHOP-R40). The fake has no Curio Shop: it only records.
+---@field shopsOpened { goodID: string?, selected: string? }[] Each time the Curio Shop opened (or Pagle.OpenShop
+--- reached it open), in order: the good Pagle.OpenShop asked for, and the one Core selected (SHOP-R40: a good the
+--- shop shows, a Module off's under Put away; nil for an unknown ID or none asked). While restricted nothing opens and
+--- SHOP-R41's line is printed. /pagle shop and the compartment entry open it with no good. The fake has no window.
+---@field shopOpen boolean Whether the Curio Shop is open: /pagle shop toggles it, and RestrictionChanged(true) closes
+--- it (SHOP-R41).
 ---@field announcements PagleAnnouncement[] Each Announcement Core would hand the display, in order (ANN-R11): its
 --- headline, rung, stamps (at most 4), more ("+N"), coins and every moment, ranked. One per Cast, made on the frame
 --- after its moments were raised, or after the last projection finishes (ANN-R10); one per moment without a Cast.
@@ -448,14 +453,33 @@ end)
 -- Goods (SHOP-R20–R26, SHOP-R30–R33, SHOP-R90), on Core's wiring over fake.global.goods (fake.goods) and
 -- fake.profile.appearance: M:RegisterSlot, M:RegisterGood and M:RefreshGoods on the handle, Pagle.IsOwned,
 -- GetEquipped, SetEquipped and GetGood (read-only), and AppearanceChanged from login on. The purchased set comes
--- from the wallet projection part below (SHOP-R11), or from fake.setPurchased. Pagle.OpenShop only records what it
--- was asked for in fake.shopsOpened. Core's own slots and goods (SHOP-R25) are registered from the start, as login
--- step 1 registers them before any Module, without previews: no shop draws here.
+-- from the wallet projection part below (SHOP-R11), or from fake.setPurchased. Pagle.OpenShop runs Core's entry
+-- points (SHOP-R40, SHOP-R41) over a shop that only records: each opening lands in fake.shopsOpened, and
+-- fake.shopOpen says whether it is open. Core's own slots and goods (SHOP-R25) are registered from the start, as
+-- login step 1 registers them before any Module, without previews: no shop draws here.
 part(function(fake, Pagle, ns, host)
 	ns.WireGoods(host)
 	ns.RegisterCoreGoods()
 	fake.goods = fake.global.goods
 	fake.shopsOpened = {}
+	fake.shopOpen = false
+	local asked -- the good the Pagle.OpenShop running asked for
+	ns.WireShop(host, {
+		isRestricted = function()
+			return Pagle.IsRestricted()
+		end,
+		print = fake.print,
+		isShown = function()
+			return fake.shopOpen
+		end,
+		show = function(selection)
+			fake.shopOpen = true
+			fake.shopsOpened[#fake.shopsOpened + 1] = { goodID = asked, selected = selection or nil }
+		end,
+		hide = function()
+			fake.shopOpen = false
+		end,
+	})
 
 	function Pagle.IsOwned(goodID)
 		return ns.goods:IsOwned(goodID)
@@ -474,7 +498,9 @@ part(function(fake, Pagle, ns, host)
 	end
 
 	function Pagle.OpenShop(goodID)
-		fake.shopsOpened[#fake.shopsOpened + 1] = { goodID = goodID }
+		asked = goodID
+		ns.shop.Open(goodID)
+		asked = nil
 	end
 
 	function fake.setPurchased(purchased)
@@ -519,13 +545,19 @@ part(function(fake, Pagle, ns)
 		settings = function()
 			Pagle.OpenSettings()
 		end,
+		shop = function()
+			ns.shop.Toggle()
+		end,
 		report = function()
 			Pagle.OpenFieldReport()
 		end,
 	}
 	local settings = ns.SettingsMenuEntry(core.settings)
+	local function openShop()
+		Pagle.OpenShop()
+	end
 	function fake.menu()
-		local shop = ns.CurioShopMenuEntry(Pagle.GetBalance(), breakUpLargeNumbers)
+		local shop = ns.CurioShopMenuEntry(Pagle.GetBalance(), breakUpLargeNumbers, openShop)
 		local report = ns.FieldReportMenuEntry(Pagle.GetFieldReportCount(), core.report)
 		return ns.CompartmentMenu(fake.registry:Modules(), shop, report, settings, fake.securecall)
 	end

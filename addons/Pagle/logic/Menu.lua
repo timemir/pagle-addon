@@ -19,7 +19,6 @@ end
 ---@class PagleMenuEntry
 ---@field label string
 ---@field onClick fun()
----@field disabled? boolean   shown greyed, and clicking it does nothing
 
 --- The menu's last entry, "Settings" (CORE-R50): it calls `openSettings`, which while restricted prints CORE-R33's
 --- line instead (SET-R75).
@@ -30,16 +29,14 @@ function ns.SettingsMenuEntry(openSettings)
 end
 
 --- The menu's Curio Shop entry (CORE-R50): "Curio Shop", the balance as `breakUpLargeNumbers` writes it (0 while
---- held, SHOP-R12), then a coin icon. Disabled until the Curio Shop exists (M4).
+--- held, SHOP-R12), then a coin icon. `open` is Pagle.OpenShop, which prints SHOP-R41's line while restricted
+--- (CORE-R33).
 ---@param balance Balance
 ---@param breakUpLargeNumbers fun(value: number): string the client's BreakUpLargeNumbers
+---@param open fun()
 ---@return PagleMenuEntry
-function ns.CurioShopMenuEntry(balance, breakUpLargeNumbers)
-	return {
-		label = ns.L.MENU_CURIO_SHOP:format(breakUpLargeNumbers(balance.balance)),
-		onClick = function() end,
-		disabled = true,
-	}
+function ns.CurioShopMenuEntry(balance, breakUpLargeNumbers, open)
+	return { label = ns.L.MENU_CURIO_SHOP:format(breakUpLargeNumbers(balance.balance)), onClick = open }
 end
 
 --- The compartment menu's entries, read now, as each opening reads them (CORE-R50, CORE-R52): for each registered

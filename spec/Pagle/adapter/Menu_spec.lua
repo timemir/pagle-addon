@@ -215,15 +215,15 @@ describe("The compartment menu's Curio Shop entry", function()
 		assert.are.same({ curioShop("1,950"), "Help chart the waters", "Settings" }, clickCompartment(loaded).texts())
 	end)
 
-	it("is disabled until the Curio Shop exists, so clicking it does nothing (CORE-R50)", function()
+	it("is enabled and opens the Curio Shop (CORE-R50, SHOP-R40)", function()
 		local loaded = loadCore()
 		withPayers(loaded)
 
 		local menu = clickCompartment(loaded)
 		menu.click(curioShop(0))
 
-		assert.is_false(menu.enabled(curioShop(0)))
-		assert.is_true(menu.enabled("Settings"))
+		assert.is_true(menu.enabled(curioShop(0)))
+		assert.is_true(assert(loaded.ns.shopFrame):IsShown())
 		assert.are.same({}, openedNames(loaded))
 		assert.are.same({}, loaded.printed)
 	end)
