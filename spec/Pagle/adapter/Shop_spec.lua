@@ -4,13 +4,30 @@
 local COIN = " |TInterface\\MoneyFrame\\UI-GoldIcon:0|t"
 local AFTER_COMBAT = "Pagle: the Curio Shop opens after combat."
 
--- Core with the Ledger and Hunts registered, Core's toast style slot, Hunts' covers and the Ledger's bindings, logged
--- in and in the world. `saved` is a PagleDB; `options.noHunts` leaves Hunts unregistered (off); `options.preview` is
+-- Core's own slots (SHOP-R25) as the list shows them while nothing of Core's is bought and the balance is under 150,
+-- each good named by its ID until its lore lands.
+local CORE_UNBOUGHT = {
+	"Toast style 1/3",
+	"core.toaststyle.timber | In use",
+	"core.toaststyle.ripple | 150" .. COIN,
+	"core.toaststyle.lanternglow | 400" .. COIN,
+	"Sound set 1/2",
+	"core.soundset.driftwood | In use",
+	"core.soundset.gilded | 400" .. COIN,
+	"Bookplate crest 1/4",
+	"core.crest.plain | In use",
+	"core.crest.crest1 | 150" .. COIN,
+	"core.crest.crest2 | 400" .. COIN,
+	"core.crest.crest3 | 900" .. COIN,
+}
+
+-- Core with the Ledger and Hunts registered, Core's own goods, Hunts' covers and the Ledger's bindings, logged in and
+-- in the world. `saved` is a PagleDB; `options.noHunts` leaves Hunts unregistered (off); `options.preview` is
 -- Velvet's preview. Returns the loaded addon and the handles.
 local function shopSession(saved, options)
 	options = options or {}
 	local loaded = loadCore(nil, saved)
-	local Pagle, ns = loaded.env.Pagle, loaded.ns
+	local Pagle = loaded.env.Pagle
 	local ledger = Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
 	ledger:RegisterSlot({ id = "ledger.binding", label = "Journal binding", category = "Fish Journal" })
 	ledger:RegisterGood({ id = "ledger.binding.oak", slot = "ledger.binding", name = "Oak", default = true })
@@ -30,9 +47,6 @@ local function shopSession(saved, options)
 			preview = options.preview,
 		})
 	end
-	ns.RegisterCoreSlot({ id = "core.toaststyle", label = "Toast style", category = "Announcements" })
-	ns.RegisterCoreGood({ id = "core.toaststyle.timber", slot = "core.toaststyle", name = "Timber", default = true })
-	ns.RegisterCoreGood({ id = "core.toaststyle.ripple", slot = "core.toaststyle", name = "Ripple", tier = 1 })
 	enterWorld(loaded, 2)
 	return loaded, { Ledger = ledger, Hunts = hunts }
 end
@@ -330,7 +344,7 @@ describe("The Curio Shop's purse", function()
 
 		local frame = shop(loaded)
 		assert.are.equal("200", frame.purse.balance:GetText())
-		assert.are.equal("Ripple | 150" .. COIN, listed(loaded)[3])
+		assert.are.equal("core.toaststyle.ripple | 150" .. COIN, listed(loaded)[3])
 		for _, region in ipairs(loaded.client.frames) do
 			assert.falsy(tostring(region.text):find("Spent", 1, true))
 			for _, child in ipairs(region.children) do
@@ -348,17 +362,18 @@ describe("The Curio Shop's list", function()
 
 			loaded.env.Pagle.OpenShop()
 
-			assert.are.same({
-				"Toast style 1/2",
-				"Timber | In use",
-				"Ripple | 150" .. COIN,
+			local expected = { unpack(CORE_UNBOUGHT) }
+			for _, line in ipairs({
 				"Journal binding 1/2",
 				"Oak | In use",
 				"Lapis | 900" .. COIN,
 				"Notebook cover 1/2",
 				"Plain | In use",
 				"Velvet | 400" .. COIN,
-			}, listed(loaded))
+			}) do
+				expected[#expected + 1] = line
+			end
+			assert.are.same(expected, listed(loaded))
 			local velvet = rowOf(loaded, "hunts.cover.velvet")
 			assert.are.equal(134939, velvet.swatch.texture)
 			assert.are.same({ 1, 0.25, 0.25 }, velvet.tag.textColor, "a price the balance can't cover is red")
@@ -371,7 +386,7 @@ describe("The Curio Shop's list", function()
 
 		shop(loaded).search:Type("RIP")
 
-		assert.are.same({ "Toast style 1/2", "Ripple | 150" .. COIN }, listed(loaded))
+		assert.are.same({ "Toast style 1/3", "core.toaststyle.ripple | 150" .. COIN }, listed(loaded))
 		shop(loaded).search:Type("nothing like it")
 		assert.are.same({}, listed(loaded))
 		assert.is_true(shop(loaded).empty:IsShown())
@@ -389,25 +404,37 @@ describe("The Curio Shop's list", function()
 			{ filters.all:GetText(), filters.owned:GetText(), filters.notOwned:GetText(), filters.canAfford:GetText() }
 		)
 		filters.canAfford:Click()
-		assert.are.same(
-			{ "Toast style 1/2", "Ripple | 150" .. COIN, "Notebook cover 1/2", "Velvet | 400" .. COIN },
-			listed(loaded)
-		)
+		assert.are.same({
+			"Toast style 1/3",
+			"core.toaststyle.ripple | 150" .. COIN,
+			"core.toaststyle.lanternglow | 400" .. COIN,
+			"Sound set 1/2",
+			"core.soundset.gilded | 400" .. COIN,
+			"Bookplate crest 1/4",
+			"core.crest.crest1 | 150" .. COIN,
+			"core.crest.crest2 | 400" .. COIN,
+			"Notebook cover 1/2",
+			"Velvet | 400" .. COIN,
+		}, listed(loaded))
 		assert.is_true(filters.canAfford.highlightLocked)
 		assert.is_false(filters.all.highlightLocked)
 		filters.owned:Click()
 		assert.are.same({
-			"Toast style 1/2",
-			"Timber | In use",
+			"Toast style 1/3",
+			"core.toaststyle.timber | In use",
+			"Sound set 1/2",
+			"core.soundset.driftwood | In use",
+			"Bookplate crest 1/4",
+			"core.crest.plain | In use",
 			"Journal binding 1/2",
 			"Oak | In use",
 			"Notebook cover 1/2",
 			"Plain | In use",
 		}, listed(loaded))
 		filters.notOwned:Click()
-		assert.are.equal(6, #listed(loaded))
+		assert.are.equal(13, #listed(loaded))
 		filters.all:Click()
-		assert.are.equal(9, #listed(loaded))
+		assert.are.equal(18, #listed(loaded))
 	end)
 
 	it(
@@ -423,13 +450,13 @@ describe("The Curio Shop's list", function()
 					labels[#labels + 1] = chip:GetText()
 				end
 			end
-			assert.are.same({ "All", "Announcements", "Fish Journal", "Hunts" }, labels)
+			assert.are.same({ "All", "Announcements", "Bookplate", "Fish Journal", "Hunts" }, labels)
 
-			frame.chips[3]:Click()
+			frame.chips[4]:Click()
 			assert.are.same({ "Journal binding 1/2", "Oak | In use", "Lapis | 900" .. COIN }, listed(loaded))
-			assert.is_true(frame.chips[3].highlightLocked)
+			assert.is_true(frame.chips[4].highlightLocked)
 			frame.chips[1]:Click()
-			assert.are.equal(9, #listed(loaded))
+			assert.are.equal(18, #listed(loaded))
 		end
 	)
 
@@ -498,7 +525,7 @@ describe("The Curio Shop's stage", function()
 			assert.are.equal("In use", stage.tags:GetText())
 			assert.is_false(stage.use:IsShown())
 			assert.are.same(
-				{ "Toast style 2/2", "Timber | default", "Ripple | In use" },
+				{ "Toast style 2/3", "core.toaststyle.timber | default", "core.toaststyle.ripple | In use" },
 				{ listed(loaded)[1], listed(loaded)[2], listed(loaded)[3] }
 			)
 		end
@@ -539,7 +566,7 @@ describe("The Curio Shop's stage", function()
 		assert.are.equal("Angler Level 30\nA Ledger reward, not for sale", stage.notes:GetText())
 		assert.is_false(stage.buy:IsShown())
 		assert.is_false(stage.price:IsShown())
-		assert.are.equal("Level 30 | Angler Level 30", listed(loaded)[3])
+		assert.are.equal("Angler Level 30", rowOf(loaded, "ledger.binding.level30").tag:GetText())
 	end)
 
 	it(

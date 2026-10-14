@@ -4,7 +4,8 @@
 local COIN = " |TInterface\\MoneyFrame\\UI-GoldIcon:0|t"
 
 -- A FakePagle with the Ledger (order 10) and Hunts (order 20) On, unless `off` names one to leave unregistered, and
--- Core's toast style slot; nothing logged in yet. Returns the fake and the handles, by def.name.
+-- Core's own slots and goods, as Core registers them (SHOP-R25), named by their IDs until their lore lands; nothing
+-- logged in yet. Returns the fake and the handles, by def.name.
 local function session(off)
 	local fake = newFakePagle()
 	local handles = {}
@@ -13,26 +14,51 @@ local function session(off)
 			handles[def.name] = fake.Pagle.RegisterModule({ name = def.name, title = def.name, order = def.order })
 		end
 	end
-	local ns = fake.ns
-	ns.RegisterCoreSlot({ id = "core.toaststyle", label = "Toast style", category = "Announcements" })
-	ns.RegisterCoreGood({ id = "core.toaststyle.timber", slot = "core.toaststyle", name = "Timber", default = true })
-	ns.RegisterCoreGood({ id = "core.toaststyle.ripple", slot = "core.toaststyle", name = "Ripple", tier = 1 })
-	ns.RegisterCoreGood({
-		id = "core.toaststyle.lanternglow",
-		slot = "core.toaststyle",
-		name = "Lantern Glow",
-		tier = 2,
-		description = "A warm lamp behind the toast.",
-	})
 	return fake, handles
 end
 
--- Hunts' notebook covers on its handle: Plain (default), Velvet (tier 2, icon 134939) and Gold (earned while
--- `earned.value`, "Every Hunt done").
+-- Core's own slots (SHOP-R25) as the list outlines them while nothing of Core's is bought and the balance is under
+-- 150: each default in use, everything else priced in red.
+local CORE_UNBOUGHT = {
+	"Toast style (1/3)",
+	"  core.toaststyle.timber In use",
+	"  core.toaststyle.ripple 150" .. COIN .. " [red]",
+	"  core.toaststyle.lanternglow 400" .. COIN .. " [red]",
+	"Sound set (1/2)",
+	"  core.soundset.driftwood In use",
+	"  core.soundset.gilded 400" .. COIN .. " [red]",
+	"Bookplate crest (1/4)",
+	"  core.crest.plain In use",
+	"  core.crest.crest1 150" .. COIN .. " [red]",
+	"  core.crest.crest2 400" .. COIN .. " [red]",
+	"  core.crest.crest3 900" .. COIN .. " [red]",
+}
+
+-- CORE_UNBOUGHT, then `lines`.
+local function afterCore(lines)
+	local all = {}
+	for _, line in ipairs(CORE_UNBOUGHT) do
+		all[#all + 1] = line
+	end
+	for _, line in ipairs(lines) do
+		all[#all + 1] = line
+	end
+	return all
+end
+
+-- Hunts' notebook covers on its handle: Plain (default), Velvet (tier 2, icon 134939, a description) and Gold (earned
+-- while `earned.value`, "Every Hunt done").
 local function huntsCovers(hunts, earned)
 	hunts:RegisterSlot({ id = "hunts.cover", label = "Notebook cover", category = "Hunts" })
 	hunts:RegisterGood({ id = "hunts.cover.plain", slot = "hunts.cover", name = "Plain", default = true })
-	hunts:RegisterGood({ id = "hunts.cover.velvet", slot = "hunts.cover", name = "Velvet", tier = 2, icon = 134939 })
+	hunts:RegisterGood({
+		id = "hunts.cover.velvet",
+		slot = "hunts.cover",
+		name = "Velvet",
+		tier = 2,
+		icon = 134939,
+		description = "Soft to the touch.",
+	})
 	hunts:RegisterGood({
 		id = "hunts.cover.gold",
 		slot = "hunts.cover",
@@ -172,6 +198,14 @@ describe("The shop's list", function()
 				"  core.toaststyle.timber default",
 				"  core.toaststyle.ripple In use",
 				"  core.toaststyle.lanternglow 400" .. COIN .. " [red]",
+				"Sound set (1/2)",
+				"  core.soundset.driftwood In use",
+				"  core.soundset.gilded 400" .. COIN .. " [red]",
+				"Bookplate crest (1/4)",
+				"  core.crest.plain In use",
+				"  core.crest.crest1 150" .. COIN,
+				"  core.crest.crest2 400" .. COIN .. " [red]",
+				"  core.crest.crest3 900" .. COIN .. " [red]",
 				"Journal binding (1/2)",
 				"  ledger.binding.oak In use",
 				"  ledger.binding.lapis 900" .. COIN .. " [red]",
@@ -189,7 +223,7 @@ describe("The shop's list", function()
 			local fake, handles = shopping()
 			handles.Ledger:ReportCoinsEarned(1000)
 
-			local rows = model(fake):List({})[3].rows
+			local rows = model(fake):List({ category = "Hunts" })[1].rows
 
 			assert.are.same(
 				{ id = "hunts.cover.velvet", name = "Velvet", icon = 134939, state = "forSale", price = "400" .. COIN },
@@ -202,14 +236,16 @@ describe("The shop's list", function()
 		local fake = shopping()
 
 		assert.are.same({
-			"Toast style (2/3)",
-			"  core.toaststyle.lanternglow 400" .. COIN .. " [red]",
 			"Journal binding (1/2)",
 			"  ledger.binding.lapis 900" .. COIN .. " [red]",
+		}, outline(model(fake):List({ search = "LaPi" })))
+		assert.are.same({
+			"Bookplate crest (1/4)",
+			"  core.crest.plain In use",
 			"Notebook cover (1/3)",
 			"  hunts.cover.plain In use",
-		}, outline(model(fake):List({ search = "LA" })))
-		assert.are.same({}, model(fake):List({ search = "toast" }), "names only, not the slot's label")
+		}, outline(model(fake):List({ search = "plain" })))
+		assert.are.same({}, model(fake):List({ search = "binding" }), "names only, not the slot's label")
 	end)
 
 	it("filters All, Owned, Not owned and Can afford (wallet-and-shop.md › UI)", function()
@@ -226,18 +262,32 @@ describe("The shop's list", function()
 			return list
 		end
 
-		assert.are.equal(8, #ids("all"))
+		assert.are.equal(14, #ids("all"))
 		assert.are.same({
 			"core.toaststyle.timber",
 			"core.toaststyle.ripple",
+			"core.soundset.driftwood",
+			"core.crest.plain",
 			"ledger.binding.oak",
 			"hunts.cover.plain",
 		}, ids("owned"))
-		assert.are.same(
-			{ "core.toaststyle.lanternglow", "ledger.binding.lapis", "hunts.cover.velvet", "hunts.cover.gold" },
-			ids("notOwned")
-		)
-		assert.are.same({ "core.toaststyle.lanternglow", "hunts.cover.velvet" }, ids("canAfford"))
+		assert.are.same({
+			"core.toaststyle.lanternglow",
+			"core.soundset.gilded",
+			"core.crest.crest1",
+			"core.crest.crest2",
+			"core.crest.crest3",
+			"ledger.binding.lapis",
+			"hunts.cover.velvet",
+			"hunts.cover.gold",
+		}, ids("notOwned"))
+		assert.are.same({
+			"core.toaststyle.lanternglow",
+			"core.soundset.gilded",
+			"core.crest.crest1",
+			"core.crest.crest2",
+			"hunts.cover.velvet",
+		}, ids("canAfford"))
 	end)
 
 	it(
@@ -248,6 +298,7 @@ describe("The shop's list", function()
 
 			assert.are.same({
 				{ category = "Announcements", label = "Announcements" },
+				{ category = "Bookplate", label = "Bookplate" },
 				{ category = "Fish Journal", label = "Fish Journal" },
 				{ category = "Hunts", label = "Hunts" },
 			}, shop:Chips())
@@ -264,16 +315,15 @@ describe("The shop's list", function()
 		huntsCovers(handles.Hunts, { value = true })
 		fake.login()
 
-		assert.are.same({
-			"Toast style (1/3)",
-			"  core.toaststyle.timber In use",
-			"  core.toaststyle.ripple 150" .. COIN .. " [red]",
-			"  core.toaststyle.lanternglow 400" .. COIN .. " [red]",
-			"Notebook cover (2/3)",
-			"  hunts.cover.plain In use",
-			"  hunts.cover.velvet 400" .. COIN .. " [red]",
-			"  hunts.cover.gold Owned",
-		}, outline(model(fake):List({})))
+		assert.are.same(
+			afterCore({
+				"Notebook cover (2/3)",
+				"  hunts.cover.plain In use",
+				"  hunts.cover.velvet 400" .. COIN .. " [red]",
+				"  hunts.cover.gold Owned",
+			}),
+			outline(model(fake):List({}))
+		)
 	end)
 end)
 
@@ -315,18 +365,17 @@ describe("The shop's Put away group", function()
 
 			local groups = model(fake):List({})
 
-			assert.are.same({
-				"Toast style (1/3)",
-				"  core.toaststyle.timber In use",
-				"  core.toaststyle.ripple 150" .. COIN .. " [red]",
-				"  core.toaststyle.lanternglow 400" .. COIN .. " [red]",
-				"Journal binding (1/2)",
-				"  ledger.binding.oak In use",
-				"  ledger.binding.lapis 900" .. COIN .. " [red]",
-				"Put away: Module off (Yours to keep)",
-				"  hunts.cover.gold Hunts is off",
-				"  hunts.cover.velvet Hunts is off",
-			}, outline(groups))
+			assert.are.same(
+				afterCore({
+					"Journal binding (1/2)",
+					"  ledger.binding.oak In use",
+					"  ledger.binding.lapis 900" .. COIN .. " [red]",
+					"Put away: Module off (Yours to keep)",
+					"  hunts.cover.gold Hunts is off",
+					"  hunts.cover.velvet Hunts is off",
+				}),
+				outline(groups)
+			)
 			local putAway = groups[#groups]
 			assert.is_true(putAway.putAway)
 			assert.are.same(
@@ -335,6 +384,7 @@ describe("The shop's Put away group", function()
 			)
 			assert.are.same({
 				{ category = "Announcements", label = "Announcements" },
+				{ category = "Bookplate", label = "Bookplate" },
 				{ category = "Fish Journal", label = "Fish Journal" },
 			}, model(fake):Chips(), "no chip for a slot that isn't live")
 		end
@@ -376,8 +426,8 @@ describe("Selecting a good", function()
 end)
 
 describe("The shop's stage", function()
-	-- Core's toast styles, Hunts' covers (Gold earned while `earned.value`) and the Ledger's bindings, logged in, with
-	-- a balance of `balance`.
+	-- Core's own goods, Hunts' covers (Gold earned while `earned.value`) and the Ledger's bindings, logged in, with a
+	-- balance of `balance`.
 	local function staged(balance, earned)
 		local fake, handles = session()
 		huntsCovers(handles.Hunts, earned or { value = false })
@@ -392,13 +442,14 @@ describe("The shop's stage", function()
 		function()
 			local fake = staged(1000)
 
-			local stage = assert(model(fake):Stage("core.toaststyle.lanternglow"))
+			local stage = assert(model(fake):Stage("hunts.cover.velvet"))
 
 			assert.are.same({
-				id = "core.toaststyle.lanternglow",
-				name = "Lantern Glow",
-				slotLine = "Toast style · Pagle",
-				description = "A warm lamp behind the toast.",
+				id = "hunts.cover.velvet",
+				name = "Velvet",
+				icon = 134939,
+				slotLine = "Notebook cover · Hunts",
+				description = "Soft to the touch.",
 				state = "forSale",
 				price = "400" .. COIN,
 				buy = "Buy for 400" .. COIN,
@@ -428,7 +479,10 @@ describe("The shop's stage", function()
 
 			local timber, plain = assert(shop:Stage("core.toaststyle.timber")), assert(shop:Stage("hunts.cover.plain"))
 
-			assert.are.same({ "equipped", { "In use", "default" } }, { timber.state, timber.tags })
+			assert.are.same(
+				{ "equipped", { "In use", "default" }, "Toast style · Pagle" },
+				{ timber.state, timber.tags, timber.slotLine }
+			)
 			assert.is_nil(timber.use)
 			assert.is_nil(timber.buy)
 			assert.are.equal("Notebook cover · Hunts", plain.slotLine)
