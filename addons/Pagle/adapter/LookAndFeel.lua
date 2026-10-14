@@ -11,7 +11,8 @@ local Pagle = Pagle
 -- The Look and Feel page and the slot dropdowns (settings.md SET-R50–R53, SET-R30; CORE-R42; wallet-and-shop.md › UI).
 -- A slot dropdown is the native dropdown over a proxy setting that reads Pagle.GetEquipped and writes
 -- Pagle.SetEquipped, with "{N} more in the Curio Shop" drawn under it. adapter/Settings.lua registers the page and
--- calls ns.BuildLookAndFeel; adapter/AnnouncementSettings.lua ends Core's Announcements rows with ns.SlotDropdown.
+-- calls ns.BuildLookAndFeel, and ends each Module's section on Trackers with ns.SlotDropdown (SET-R44);
+-- adapter/AnnouncementSettings.lua ends Core's Announcements rows with it.
 -- Its own owner on Core's bus.
 local OWNER = "Pagle look and feel"
 local L = ns.L

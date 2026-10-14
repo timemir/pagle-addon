@@ -20,8 +20,10 @@ logic\Waters.lua
 logic\Titles.lua
 logic\Projection.lua
 logic\Groups.lua
+logic\Labels.lua
 logic\Board.lua
 adapter\BoardWidgets.lua
 adapter\Board.lua
 adapter\Hunts.lua
 adapter\Groups.lua
+adapter\Names.lua
