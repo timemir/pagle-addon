@@ -217,8 +217,9 @@ def test_a_two_part_report_from_two_issues_writes_one_file_with_both_parts(
     assert code == 0, output
     assert (root / REPORTS / f"{ALICE}.toml").read_text(encoding="utf-8") == ALICE_TOML
     assert "{ confirmed = true, itemID = 6308 }" in (root / CATALOGUE).read_text(encoding="utf-8")
-    # DATA-R120: the line for the PR's message, and what to commit with the observed file.
-    assert "Closes #41, #42" in output
+    # DATA-R120: the line for the PR's message, a Closes for each issue (GitHub links only the number right after
+    # the keyword), and what to commit with the observed file.
+    assert "Closes #41, Closes #42" in output
     assert "data/forever/" in output and "regenerated" in output
 
 
@@ -276,7 +277,7 @@ def test_the_changes_list_new_and_confirmed_pairs_contradictions_and_an_item_nee
     assert "no category; every item of the universe that isn't Noise needs one (DATA-R17)" in output
     assert (root / REPORTS / f"{ALICE}.toml").read_text(encoding="utf-8") == ALICE_TOML
     assert (root / REPORTS / f"{BOB}.toml").exists()
-    assert "Closes #41, #42, #43" in output
+    assert "Closes #41, Closes #42, Closes #43" in output
 
 
 def test_a_contradiction_demotes_what_was_confirmed(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:

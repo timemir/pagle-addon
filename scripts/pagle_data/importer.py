@@ -274,8 +274,9 @@ def main(argv: Sequence[str], root: Path, fetch: Fetch = gh_issue_body) -> int:
             file=sys.stderr,
         )
 
-    closes = ", ".join(f"#{number}" for number in sorted(numbers))
-    print(f"{PROG}: for the PR's message (DATA-R120): Closes {closes}")
+    # One keyword per issue: GitHub links only the number right after "Closes".
+    closes = ", ".join(f"Closes #{number}" for number in sorted(numbers))
+    print(f"{PROG}: for the PR's message (DATA-R120): {closes}")
     print(
         f"{PROG}: commit the observed file, any data/forever/ and lore edits and the regenerated files together, in"
         " one PR (DATA-R120)"
