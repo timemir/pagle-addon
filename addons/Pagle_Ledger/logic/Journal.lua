@@ -34,6 +34,8 @@ local ns = select(2, ...)
 ---@field getArea? fun(areaID: integer): PagleArea? -- Pagle.GetArea; nil while updating
 ---@field angler? Angler                 -- Pagle.GetAngler(), read at each draw (LED-R41); nil while updating
 ---@field openFieldReport? fun()         -- Pagle.OpenFieldReport (REP-R43); nil while updating
+---@field sizeBands? { key: string, name: string }[] -- Pagle.SIZE_BANDS (LOG-R67); nil while updating
+---@field formatLength? fun(mm: integer): string -- Pagle.FormatLength (LOG-R69); nil while updating
 
 --- One thing drawn on a page, top to bottom, as data; adapter/JournalWidgets.lua draws each kind:
 --- - `kicker`, `title`, `text` (`text`, in the serif face; `hand` for the handwriting face, `color` "faded", "red" or
@@ -46,7 +48,8 @@ local ns = select(2, ...)
 --- - `icon` (`icon`, an item ID or texture, drawn `look` "sepia" or "silhouette", `large` on an entry, LED-R140)
 --- - `xpBar` (`bar`: the ink XP bar, ns.InkXpBar)
 --- - `tabs` (`tabs`: tabs side by side, each `{ text, on, place }`, the chosen one `on`, LED-R130)
---- - `bookplate` (the level `text` in large numerals over its caption `value`, and a wax seal reading `seal`, LED-R132)
+--- - `bookplate` (the level `text` in large numerals, its caption `value` with the Prestige `mark` beside it and the
+---   active title `signature` in handwriting under it, and a wax seal reading `seal`, LED-R132)
 --- - `board` (`ticks`: the Trophy Room's measuring board, LED-R143) and `plinth` (`icon` and `look`, `text` the name,
 ---   `value` the plaque, LED-R144), drawn by adapter/JournalCollections.lua
 --- - `emblem` (`mark`: a prestige rank's emblem and stars, ns.PrestigeMark; nothing drawn without an emblem)
@@ -71,6 +74,7 @@ local ns = select(2, ...)
 ---@field action? fun()
 ---@field ticks? LedgerBoardTick[]
 ---@field mark? LedgerPrestigeMark
+---@field signature? string
 ---@field rungs? { text: string, inked: boolean, circled: boolean }[]
 ---@field margin? string[]
 ---@field stars? LedgerStars

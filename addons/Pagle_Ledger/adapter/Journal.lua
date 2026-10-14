@@ -87,6 +87,8 @@ local function readContext()
 		getArea = Pagle.GetArea,
 		angler = Pagle.GetAngler(),
 		openFieldReport = Pagle.OpenFieldReport,
+		sizeBands = Pagle.SIZE_BANDS,
+		formatLength = Pagle.FormatLength,
 	}
 end
 

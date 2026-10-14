@@ -119,7 +119,8 @@ ns.L = {
 	HOME_NOTE_NEW = "%s: %d new to find",
 	HOME_NOTE_STAR = "%s: %d to ★★★",
 	HOME_NOTE_NONE = "Go fishing!",
-	-- Its bookplate summary and contents (LED-R132), and the brass plate (LED-R149, without the title in M3).
+	-- Its bookplate summary and contents (LED-R132), and the brass plate (LED-R149): "Lv {L} · {title} · Ledger {p}%",
+	-- or BRASS_PLATE while the active title has no lore text (LED-R161).
 	HOME_LEVEL = "Angler Level",
 	HOME_PERCENT = "%d%%",
 	HOME_CONTENTS = "In this Ledger",
@@ -128,6 +129,7 @@ ns.L = {
 	HOME_ANGLER = "The Angler: hands, titles, bindings",
 	HOME_COUNT = "%d / %d",
 	BRASS_PLATE = "Lv %d · Ledger %d%%",
+	BRASS_PLATE_TITLE = "Lv %d · %s · Ledger %d%%",
 
 	-- Dates (LED-R126): "3 Mar", and "3 Mar 2025" outside the current realm year.
 	DATE_SHORT = "%d %s",
@@ -197,6 +199,8 @@ ns.L = {
 	ENTRY_FIRST_NO_ZONE = "First landed %s, by %s. %s caught.",
 	ENTRY_FOUND_IN = "Found in %s.",
 	ENTRY_ONLY_BY = " Only by %s.",
+	-- The size line (LED-R140): the record's size text, "{band} · {length}" (LED-R81).
+	ENTRY_LARGEST = "Largest by my own measure: %s (Pagle's measure, not the game's)",
 	ENTRY_REMOVED = "No longer found in Forever's waters.",
 	ENTRY_UNKNOWN = "An unknown fish",
 	ENTRY_RIDDLE = "“%s”",
@@ -270,13 +274,15 @@ ns.L = {
 	ZONE_CAUGHT_ELSEWHERE = "%s (caught elsewhere)",
 	ZONE_POOLS_MARGIN = "pools",
 	ZONE_MARGIN_SEPARATOR = " · ",
-	-- "About these waters" (LED-R137, without M4's zonemaster line).
+	-- "About these waters" (LED-R137); the reward names the zone's Master title, or ends after "earns XP." while it has
+	-- no lore text (LED-R161).
 	ZONE_ABOUT = "About these waters",
 	ZONE_SKILL = "Skill ~%d",
 	ZONE_KNOWN = "%d%% of these waters known: %d of %d fish, %d of %d trophy families",
 	ZONE_TROPHIES_HERE = "Trophies landed here",
 	ZONE_WEIGHTS = "%d / %d",
 	ZONE_REWARD = "Reward for mastery: each new seal earns XP.",
+	ZONE_REWARD_TITLE = "Reward for mastery: each new seal earns XP. The Master seal earns the title %s.",
 	ZONE_PICK = "Pick a fish on the left to read its page.",
 	-- A zone that isn't charted (LED-R138).
 	ZONE_UNCHARTED_NOTE = "Every catch here is still written down, and counted once Pagle's data catches up.",
