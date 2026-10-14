@@ -103,8 +103,24 @@ ns.L = {
 	JOURNAL_HOME = "Home",
 	JOURNAL_CRUMB_SEPARATOR = "❧",
 	JOURNAL_BACK = "☚ back",
-	-- Home's left page's title (LED-R130), all the placeholder Home draws until the Home ticket.
+	-- Home (LED-R130–R133, LED-R149). Its left page's kicker and title; its tiles are TILE_*'s.
+	HOME_KICKER = "The Waters",
 	HOME_TITLE = "Where I've Fished",
+	-- Notes to self (LED-R133): the next rank ("{zone}: {rank}. {next requirement}"), new to find, the next star.
+	HOME_NOTES = "Notes to self",
+	HOME_NOTE_RANK = "%s: %s. %s",
+	HOME_NOTE_NEW = "%s: %d new to find",
+	HOME_NOTE_STAR = "%s: %d to ★★★",
+	HOME_NOTE_NONE = "Go fishing!",
+	-- Its bookplate summary and contents (LED-R132), and the brass plate (LED-R149, without the title in M3).
+	HOME_LEVEL = "Angler Level",
+	HOME_PERCENT = "%d%%",
+	HOME_CONTENTS = "In this Ledger",
+	HOME_TROPHY_ROOM = "The Trophy Room",
+	HOME_CURIOS = "Curios: junk, treasure, uncharted",
+	HOME_ANGLER = "The Angler: hands, titles, bindings",
+	HOME_COUNT = "%d / %d",
+	BRASS_PLATE = "Lv %d · Ledger %d%%",
 
 	-- Dates (LED-R126): "3 Mar", and "3 Mar 2025" outside the current realm year.
 	DATE_SHORT = "%d %s",
@@ -215,4 +231,35 @@ ns.L = {
 	ANGLER_MILESTONE_DONE = "☑ %d",
 	ANGLER_MILESTONE_OPEN = "☐ %d",
 	ANGLER_MILESTONE_SEPARATOR = "   ",
+
+	-- Stars as the Journal prints them (LED-R48): a shown star, a blank one.
+	STAR_ON = "★",
+	STAR_OFF = "☆",
+	-- The Trophy Room (LED-R143, LED-R62). Numbers in %s are BreakUpLargeNumbers'.
+	TROPHY_TITLE = "The Trophy Room",
+	TROPHY_WEIGHTS = "%s of %s weights. Real weights, from the game's own trophy fish.",
+	TROPHY_INDEX_LINE = "%s %s",
+	TROPHY_INDEX_COUNT = "%s / %s",
+	TROPHY_STAMPS = { "Any weight", "Half the weights", "The heaviest" },
+	TROPHY_POUNDS = "pounds, as the game weighs them",
+	TROPHY_LANDED = "Landed %s of %s. Heaviest so far: %s lb.",
+	TROPHY_NONE_LANDED = "Not one of this family yet.",
+	TROPHY_TICK_MARK = "✓",
+	-- Curios (LED-R144): the Junk Museum, Treasures and the loose pages. "{item}: {n}× at {zones}, first {date}. …"
+	CURIOS_CRUMB = "Curios",
+	CURIOS_JUNK_TITLE = "The Junk Museum",
+	CURIOS_EXHIBITS = "%s of %s exhibits",
+	CURIOS_EMPTY_PLINTH = "An empty plinth",
+	CURIOS_TREASURES_TITLE = "Treasures",
+	CURIOS_OPENED = "%s of %s opened",
+	CURIOS_LOOSE_PAGES = "Loose pages: Uncharted",
+	CURIOS_LOOSE_PAGE = "%s: %s× at %s, first %s. Unknown to Pagle. Logged.",
+	CURIOS_UNKNOWN_WATERS = "unknown waters",
+	CURIOS_NONE_UNCHARTED = "None. Every catch is in the Ledger.",
+	CURIOS_HELP_CHART = "Help chart the waters",
+	-- The Prestige confirm (LED-R33), and a Master Prestige's star stamp beside emblem X (LED-R34).
+	PRESTIGE_CONFIRM = "Begin a new Ledger? Your Angler Level starts again at 1, and climbs at half the cost. Nothing you've earned is taken away.",
+	PRESTIGE_CONFIRM_YES = "Prestige",
+	PRESTIGE_CONFIRM_NO = "Not yet",
+	PRESTIGE_STAR = "★",
 }

@@ -37,9 +37,20 @@ describe("the Fish Journal's router", function()
 		end,
 	}
 
-	-- A registry with Home's placeholder, the zone spread and the deep one.
+	-- A Home with no crumbs of its own and its title only (Home's own pages are Home_spec's).
+	---@type LedgerSpread
+	local home = {
+		crumbs = function()
+			return {}
+		end,
+		draw = function()
+			return { left = { { kind = "title", text = "Home" } }, right = {} }
+		end,
+	}
+
+	-- A registry with the test Home, the zone spread and the deep one.
 	local function newRouter()
-		local spreads = { home = ns.journalSpreads.home, zone = zone, deep = deep }
+		local spreads = { home = home, zone = zone, deep = deep }
 		return ns.NewJournalRouter(spreads)
 	end
 
@@ -63,10 +74,10 @@ describe("the Fish Journal's router", function()
 		assert.is_false(pages.updating)
 	end)
 
-	it("draws a placeholder Home with its title only until the Home spread lands (LED-R130)", function()
+	it("draws the open spread's pages, Home's at first (LED-R120)", function()
 		local pages = newRouter():Pages(context)
 
-		assert.are.same({ { kind = "title", text = "Where I've Fished" } }, pages.left)
+		assert.are.same({ { kind = "title", text = "Home" } }, pages.left)
 		assert.are.same({}, pages.right)
 	end)
 
@@ -104,8 +115,8 @@ describe("the Fish Journal's router", function()
 		assert.are.same({ id = "deep", args = { zone = 12, fish = 6303 } }, router:Place())
 	end)
 
-	it("takes later registrations, so Home's spread replaces the placeholder", function()
-		local spreads = { home = ns.journalSpreads.home }
+	it("takes later registrations, a spread registered again replacing the one before", function()
+		local spreads = { home = home }
 		local router = ns.NewJournalRouter(spreads)
 
 		spreads.home = {

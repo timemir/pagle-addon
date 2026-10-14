@@ -14,8 +14,12 @@ describe("the generated catalogue", function()
 
 		it("returns each Extravaganza rare as a Legend fish (DATA-R22, DATA-R77)", function()
 			-- Brownell's Blue Striped Racer, Keefer's Angelfish, Dezian Queenfish: uncommon (quality 2) in DB2, and
-			-- pool, as School of Tastyfish's catches (DATA-R43).
+			-- pool, as School of Tastyfish's catches (DATA-R43). Each carries its Species' typical length (DATA-R20,
+			-- from #160), whose value the dev tunes in species.toml.
 			for _, itemID in ipairs({ 19803, 19805, 19806 }) do
+				local item = GetItem(itemID)
+				assert.is_number(item.typicalLength)
+				assert.is_true(item.typicalLength >= 1 and item.typicalLength % 1 == 0)
 				assert.are.same({
 					category = "fish",
 					species = itemID,
@@ -24,7 +28,8 @@ describe("the generated catalogue", function()
 					noise = false,
 					removed = false,
 					pool = true,
-				}, GetItem(itemID))
+					typicalLength = item.typicalLength,
+				}, item)
 			end
 		end)
 

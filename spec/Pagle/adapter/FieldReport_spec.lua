@@ -4,28 +4,41 @@
 
 local LOG_ID = "3f9a2c1e7b0d4a65" -- savedLog's
 local GUID = "Player-4618-0A1B2C3D" -- savedLog's Ada
+local UNCHARTED = 9999 -- in no catalogue
+local FIRST = SERVER_TIME - 4000 -- the history's Casts are at FIRST + 1, + 2, …
 
--- Entry `i` of a saved log: a Cast by Ada in Darkshore (148, subzone 0) at realm 08:14, Fishing 86+25, catching an
--- Uncharted item (9999, in no catalogue).
-local function cast(i)
-	return ("C1|1|%d|0|c|494|1439|1|148|0|86|25|263|||9999x1"):format(1791731000 + i)
-end
-
--- `n` Casts after the build entry the fake client's build matches, so login appends no B1.
-local function history(n)
-	local entries = { "B1|1|1791730000|0|70338|1.60.1" }
+-- BUILD_ENTRY, then `n` of Ada's Casts in Darkshore (148, subzone 0) at realm 08:14, each catching an Uncharted item.
+local function unchartedHistory(n)
+	local entries = { BUILD_ENTRY }
 	for i = 1, n do
-		entries[#entries + 1] = cast(i)
+		entries[#entries + 1] = castEntry(FIRST + i, UNCHARTED, 0)
 	end
 	return entries
 end
 
 -- Core over a saved log holding `entries` and PagleDB `saved`, logged in and in the world.
 local function core(entries, saved)
-	local loaded = loadAddon("Pagle", foreverWith({ PagleLog = savedLog(entries), PagleDB = saved }))
-	loaded.client.fire("PLAYER_LOGIN")
-	loaded.client.fire("PLAYER_ENTERING_WORLD", true, false)
-	return loaded
+	return enterWorld(loadCore(entries, saved))
+end
+
+-- A Cast in Darkshore catching `itemID`, recorded live now.
+local function liveCast(loaded, itemID)
+	loaded.ns.projections:Live(loaded.ns.catchLog:Append({
+		kind = "cast",
+		char = 1,
+		time = SERVER_TIME,
+		outcome = "caught",
+		conditions = {
+			minute = 600,
+			zone = 148,
+			subzone = 0,
+			skillRank = 86,
+			skillMod = 25,
+			events = {},
+			auras = {},
+		},
+		items = { { itemID = itemID, quantity = 1 } },
+	}))
 end
 
 -- The I rows of one item.
@@ -44,7 +57,7 @@ describe("the Field report projection", function()
 		"is Core's own, bound to PagleDB.global.projections.fieldReport with rules version 2 and the content"
 			.. " fingerprint alone (REP-R25, LOG-R70, LOG-R78)",
 		function()
-			local loaded = core(history(2))
+			local loaded = core(unchartedHistory(2))
 			local Pagle = loaded.env.Pagle
 
 			local db = loaded.env.PagleDB.global.projections.fieldReport
@@ -56,7 +69,7 @@ describe("the Field report projection", function()
 	)
 
 	it("yields the I row of two Uncharted Catches on one build, with the count (REP-R11, REP-R20, REP-R26)", function()
-		local loaded = core(history(2))
+		local loaded = core(unchartedHistory(2))
 
 		local rows = assert(loaded.ns.FieldReportRows())
 
@@ -64,7 +77,7 @@ describe("the Field report projection", function()
 			{
 				kind = "I",
 				area = 148,
-				item = 9999,
+				item = UNCHARTED,
 				build = 70338,
 				count = 2,
 				auras = {},
@@ -72,30 +85,15 @@ describe("the Field report projection", function()
 				t = 480,
 				m = 10,
 			},
-		}, iRows(rows, 9999))
+		}, iRows(rows, UNCHARTED))
 		assert.are.equal(#rows, loaded.env.Pagle.GetFieldReportCount())
 	end)
 
 	it("takes a Cast recorded later live, and the count follows (LOG-R73, REP-R26)", function()
-		local loaded = core(history(1))
+		local loaded = core(unchartedHistory(1))
 		local before = loaded.env.Pagle.GetFieldReportCount()
 
-		loaded.ns.projections:Live(loaded.ns.catchLog:Append({
-			kind = "cast",
-			char = 1,
-			time = 1791732000,
-			outcome = "caught",
-			conditions = {
-				minute = 600,
-				zone = 148,
-				subzone = 0,
-				skillRank = 86,
-				skillMod = 25,
-				events = {},
-				auras = {},
-			},
-			items = { { itemID = 9998, quantity = 1 } },
-		}))
+		liveCast(loaded, 9998)
 
 		assert.are.equal(1, #iRows(loaded.ns.FieldReportRows(), 9998))
 		assert.are.equal(before + 1, loaded.env.Pagle.GetFieldReportCount())
@@ -118,7 +116,7 @@ describe("the Field report projection", function()
 					},
 					diagnostics = {
 						{
-							id = GUID .. "-1791731600-0",
+							id = GUID .. "-" .. FIRST + 600 .. "-0",
 							zone = 148,
 							subzone = 0,
 							locale = "enUS",
@@ -127,7 +125,7 @@ describe("the Field report projection", function()
 					},
 				},
 			}
-			local loaded = core(history(600), saved)
+			local loaded = core(unchartedHistory(600), saved)
 			local Pagle = loaded.env.Pagle
 
 			assert.is_nil(loaded.ns.FieldReportRows()) -- no rows while the projection rebuilds (REP-R42)
@@ -137,7 +135,7 @@ describe("the Field report projection", function()
 			loaded.client.runTimers() -- done, in a frame of its own
 
 			local rows = assert(loaded.ns.FieldReportRows())
-			assert.are.equal(600, iRows(rows, 9999)[1].count)
+			assert.are.equal(600, iRows(rows, UNCHARTED)[1].count)
 			assert.are.equal(#rows, Pagle.GetFieldReportCount())
 			assert.are.equal(Pagle.CONTENT_FINGERPRINT, loaded.env.PagleDB.global.projections.fieldReport.fingerprint)
 		end
@@ -146,8 +144,7 @@ end)
 
 describe("the Field report projection, beside a Module's", function()
 	it("runs ahead of it, so the Module's live apply already sees the Catch counted (LOG-R78)", function()
-		local loaded = loadAddon("Pagle", foreverWith({ PagleLog = savedLog(history(1)) }))
-		loaded.client.addons.Pagle_Ledger = { metadata = { ["X-Pagle-API"] = "1" } }
+		local loaded = loadCore(unchartedHistory(1))
 		local Pagle = loaded.env.Pagle
 		local M = Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
 		local seen = {}
@@ -163,26 +160,10 @@ describe("the Field report projection, beside a Module's", function()
 				end
 			end,
 		})
-		loaded.client.fire("PLAYER_LOGIN")
-		loaded.client.fire("PLAYER_ENTERING_WORLD", true, false)
+		enterWorld(loaded)
 		local before = Pagle.GetFieldReportCount()
 
-		loaded.ns.projections:Live(loaded.ns.catchLog:Append({
-			kind = "cast",
-			char = 1,
-			time = 1791732000,
-			outcome = "caught",
-			conditions = {
-				minute = 600,
-				zone = 148,
-				subzone = 0,
-				skillRank = 86,
-				skillMod = 25,
-				events = {},
-				auras = {},
-			},
-			items = { { itemID = 9998, quantity = 1 } },
-		}))
+		liveCast(loaded, 9998)
 
 		assert.are.same({ before + 1 }, seen)
 	end)
@@ -193,11 +174,17 @@ describe("Pagle.GetFieldReportCount", function()
 		local saved = {
 			global = {
 				diagnostics = {
-					{ id = GUID .. "-1791731001-0", zone = 148, subzone = 0, locale = "enUS", texts = { "A", "B" } },
+					{
+						id = GUID .. "-" .. FIRST + 1 .. "-0",
+						zone = 148,
+						subzone = 0,
+						locale = "enUS",
+						texts = { "A", "B" },
+					},
 				},
 			},
 		}
-		local loaded = core(history(1), saved)
+		local loaded = core(unchartedHistory(1), saved)
 
 		local rows = loaded.ns.FieldReportRows()
 		local p = {}

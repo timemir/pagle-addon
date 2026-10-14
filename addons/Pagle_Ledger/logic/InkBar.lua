@@ -29,14 +29,14 @@ local CATCH_XP = 10
 ---@return LedgerInkXpBar
 function ns.InkXpBar(state, celebrated, now, formatNumber)
 	local L = ns.L
-	local level, into, cost = ns.ClimbOf(state.xp)
+	local level, into, cost = ns.ClimbOf(state.xp, state.prestige)
 	local shown = ns.ShownLevel(state, celebrated)
 	if shown >= ns.LEVEL_CAP then
 		local carried = level >= ns.LEVEL_CAP and into or 0
 		return { fill = 1, text = L.XP_BAR_SET_ASIDE:format(formatNumber(carried)) }
 	end
 	if shown > level or not cost then
-		into, cost = 0, ns.StepCost(shown)
+		into, cost = 0, ns.StepCost(shown, state.prestige)
 	end
 	local bar = { fill = into / cost, text = L.XP_BAR_TEXT:format(formatNumber(into), formatNumber(cost)) }
 	local fresh = ns.FreshWaterShown(state, now)

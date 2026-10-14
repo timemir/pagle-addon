@@ -101,11 +101,15 @@ FISHING = 7731
 --- The build entry the fake client's build matches, so login appends no B1.
 BUILD_ENTRY = ("B1|1|%d|0|70338|1.60.1"):format(SERVER_TIME - 5000)
 
---- Ada's caught Cast of one Oily Blackmouth at server time `time`, as a PagleLog entry (savedLog's character 1).
+--- Ada's caught Cast at server time `time`, as a PagleLog entry (savedLog's character 1): in Darkshore (148) at realm
+--- 08:14, Fishing 86+25 with lure 263, catching one item. By default the item is Oily Blackmouth (6358) and the
+--- subzone The Long Wash (453).
 ---@param time integer
+---@param itemID integer?
+---@param subzone integer?
 ---@return string
-function castEntry(time)
-	return ("C1|1|%d|0|c|494|1439|1|148|453|86|25|263|||6358x1"):format(time)
+function castEntry(time, itemID, subzone)
+	return ("C1|1|%d|0|c|494|1439|1|148|%d|86|25|263|||%dx1"):format(time, subzone or 453, itemID or 6358)
 end
 
 --- Ada's Prestige to `rank` at server time `time`, as a PagleLog entry (LOG-R38).
@@ -235,12 +239,12 @@ function shippedFiles(dir)
 	return files
 end
 
---- A file's text.
+--- A file's bytes, exactly (binary mode: no line-end translation), for goldens as for code.
 ---@param path string
 ---@return string
 function readFile(path)
 	---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io
-	local file = assert(io.open(path, "r"))
+	local file = assert(io.open(path, "rb"))
 	local text = file:read("*a")
 	file:close()
 	return text

@@ -15,7 +15,9 @@ local ns = select(2, ...)
 
 -- ★★ zones needed, and ★★★ Catches (LED-R45, Tunables).
 local ZONES_NEEDED = 3
-local REGULAR_CATCHES = 50
+--- A Species' ★★★ Catches (LED-R45, Tunables); Home's next-star note counts down to it (LED-R133).
+ns.REGULAR_CATCHES = 50
+local REGULAR_CATCHES = ns.REGULAR_CATCHES
 
 -- The achievement a Species' ★★ and ★★★ earn (LED-R97).
 local SPECIES_STAR_KINDS = { [2] = "elementStar", [3] = "regularStar" }

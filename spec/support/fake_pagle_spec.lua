@@ -1130,16 +1130,20 @@ describe("FakePagle", function()
 				local function plain(size)
 					return size and { length = size.length, band = size.band }
 				end
+				local core = loadAddon("Pagle", FOREVER_GLOBALS).ns
+				-- Oily Blackmouth's typical length in the generated catalogue (DATA-R20, #160).
+				local shipped = assert(fake.ns.catalogue.items[6358].typicalLength)
 				local first = assert(fake.playCast("caught", { { itemID = 6358, quantity = 1 } }))
-				assert.is_nil(first.items[1].size) -- the generated catalogue has no typical lengths yet
+				assert.are.same(core.SimulatedSize(first.items[1].catchId, shipped), plain(first.items[1].size))
+				assert.are.same(plain(first.items[1].size), plain(catches[1].size))
 
-				fake.ns.catalogue.items[6358].typicalLength = 300 -- a release gives Oily Blackmouth's Species one
+				local retuned = shipped * 2 -- a release retunes the Species' typical length (LOG-R68)
+				fake.ns.catalogue.items[6358].typicalLength = retuned
 				local second = assert(fake.playCast("caught", { { itemID = 6358, quantity = 2 } }))
 
-				local core = loadAddon("Pagle", FOREVER_GLOBALS).ns
 				local expected = {
-					core.SimulatedSize(first.items[1].catchId, 300),
-					core.SimulatedSize(second.items[1].catchId, 300),
+					core.SimulatedSize(first.items[1].catchId, retuned),
+					core.SimulatedSize(second.items[1].catchId, retuned),
 				}
 				assert.are.same(expected[2], plain(second.items[1].size))
 				assert.are.same(expected[2], plain(catches[2].size))
@@ -1147,7 +1151,7 @@ describe("FakePagle", function()
 				for record in fake.Pagle.IterateCatches(0) do
 					read[#read + 1] = plain(record.items[1].size)
 				end
-				assert.are.same(expected, read) -- the first Cast too, once it's sized
+				assert.are.same(expected, read) -- the first Cast too, re-sized over the catalogue served now
 			end
 		)
 	end)
@@ -1172,7 +1176,8 @@ describe("FakePagle", function()
 		end
 
 		it(
-			"counts a live Uncharted Catch's I row, and the P rows of fake.diagnostics (REP-R10, REP-R22, REP-R26)",
+			"counts a live Uncharted Catch's I row, and the P rows of fake.global.diagnostics (REP-R10, REP-R22,"
+				.. " REP-R26)",
 			function()
 				local fake = newFakePagle()
 				fake.setCatalogue(fixture())
@@ -1184,14 +1189,39 @@ describe("FakePagle", function()
 				fake.playCast("caught", { { itemID = 9999, quantity = 1 } })
 				assert.are.equal(1, fake.Pagle.GetFieldReportCount(), "two Catches on one key make one row")
 
-				fake.diagnostics[1] = { id = cast.id, zone = 148, subzone = 453, locale = "enUS", texts = { "A", "B" } }
+				fake.global.diagnostics[1] =
+					{ id = cast.id, zone = 148, subzone = 453, locale = "enUS", texts = { "A", "B" } }
 				assert.are.equal(3, fake.Pagle.GetFieldReportCount())
+			end
+		)
+
+		it(
+			"catches up on the Casts already in the log at enterWorld, read-only as any projection (REP-R25, LOG-R71)",
+			function()
+				local fake = newFakePagle()
+				fake.setCatalogue(fixture())
+				fake.catchLog.data.characters[1] = { guid = PLAYER_GUID }
+				for i = 1, 2 do
+					fake.catchLog:Append({
+						kind = "cast",
+						char = 1,
+						time = SERVER_TIME - 1000 + i,
+						outcome = "caught",
+						conditions = { minute = 494, zone = 148, subzone = 453, events = {}, auras = {} },
+						items = { { itemID = 9998 + i, quantity = 1 } },
+					})
+				end
+				fake.login()
+				fake.enterWorld()
+
+				assert.are.equal(2, fake.Pagle.GetFieldReportCount(), "one I row per item")
+				assert.is_table(fake.global.projections.fieldReport.projection) -- stored in fake.global
 			end
 		)
 
 		it("gives the last stored count while the projection updates (REP-R26)", function()
 			local fake = newFakePagle()
-			fake.fieldReportDB.projection = { build = 0, count = 5, I = {}, K = {} }
+			fake.global.projections.fieldReport.projection = { build = 0, count = 5, I = {}, K = {} }
 
 			assert.are.equal(5, fake.Pagle.GetFieldReportCount())
 		end)
@@ -1291,6 +1321,85 @@ describe("FakePagle", function()
 				}, fake.printed)
 			end)
 		end)
+	end)
+
+	describe("the wallet projection", function()
+		-- A fake whose history holds purchases of two Hunts covers at 150 and 400, and the first one again, with 600
+		-- Coins earned, logged in.
+		local function withPurchases()
+			local fake = newFakePagle()
+			fake.global.coins.earned.Ledger = 600
+			fake.catchLog.data.characters[1] = { guid = PLAYER_GUID }
+			for i, purchase in ipairs({
+				{ "hunts.cover.velvet", 150 },
+				{ "hunts.cover.silk", 400 },
+				{ "hunts.cover.velvet", 150 },
+			}) do
+				fake.catchLog:Append({
+					kind = "purchase",
+					char = 1,
+					time = 1791731000 + i,
+					good = purchase[1],
+					price = purchase[2],
+				})
+			end
+			fake.login()
+			return fake
+		end
+
+		it(
+			"gives the spent total, the purchased set and the balance from the U1 entries in a history (SHOP-R11,"
+				.. " SHOP-R12, LOG-R78)",
+			function()
+				local fake = withPurchases()
+
+				fake.enterWorld()
+
+				assert.are.same(
+					{ spent = 550, purchased = { ["hunts.cover.velvet"] = true, ["hunts.cover.silk"] = true } },
+					fake.global.projections.wallet.projection
+				)
+				assert.are.equal(50, fake.Pagle.GetBalance().balance)
+				assert.are.same(
+					{ true, true },
+					{ fake.Pagle.IsOwned("hunts.cover.velvet"), fake.Pagle.IsOwned("hunts.cover.silk") }
+				)
+			end
+		)
+
+		it("takes a live ns.RecordPurchase, firing BalanceChanged once (SHOP-R10, SHOP-R11)", function()
+			local fake = withPurchases()
+			fake.enterWorld()
+			local balances = {}
+			fake.Pagle.RegisterCallback("spec", "BalanceChanged", function(_, balance)
+				balances[#balances + 1] = balance.balance
+			end)
+
+			fake.ns.RecordPurchase("hunts.cover.gilt", 30)
+
+			assert.are.same({ 20 }, balances)
+			assert.is_true(fake.Pagle.IsOwned("hunts.cover.gilt"))
+		end)
+
+		it(
+			"leaves fake.setSpent and fake.setPurchased in place until the projection hands over its own (SHOP-R11)",
+			function()
+				local fake = withPurchases()
+
+				fake.setSpent(100)
+				fake.setPurchased({ ["hunts.cover.gilt"] = true })
+				assert.are.same(
+					{ 500, true },
+					{ fake.Pagle.GetBalance().balance, fake.Pagle.IsOwned("hunts.cover.gilt") }
+				)
+
+				fake.enterWorld()
+				assert.are.same(
+					{ 50, false },
+					{ fake.Pagle.GetBalance().balance, fake.Pagle.IsOwned("hunts.cover.gilt") }
+				)
+			end
+		)
 	end)
 
 	describe("the live conditions", function()

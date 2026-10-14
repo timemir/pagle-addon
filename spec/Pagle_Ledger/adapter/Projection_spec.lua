@@ -253,19 +253,16 @@ describe("the Ledger's projection", function()
 		end
 	)
 
-	it("changes nothing in the state for a Prestige, build or purchase record, in M2 (LED-R2, LED-R4)", function()
+	it("changes nothing in the state for a build or purchase record (LED-R2, LED-R4)", function()
 		local fake, loaded = firstSession()
 		local before = foldOfLog(fake, loaded.ns)
-		-- A build entry through the log (LOG-R36); Prestige and purchase entries arrive in M4, so the codec can't
-		-- store them yet: they are handed over as Core would hand them (catch-log.md › Records).
+		-- A build entry (LOG-R36) and a purchase (LOG-R39) through the log, each handed over live.
 		local build =
 			fake.catchLog:Append({ kind = "build", char = 1, time = T0 + 900, build = 66432, version = "1.60.1" })
 		fake.live(build)
-		local id = "Player-4618-0A1B2C3D-" .. (T0 + 960)
-		fake.live({ kind = "prestige", seq = 7, id = id .. "-7", char = 1, time = T0 + 960, rank = 1 })
-		fake.live({ kind = "purchase", seq = 8, id = id .. "-8", char = 1, time = T0 + 960, good = 1, price = 50 })
+		fake.ns.RecordPurchase("core.toaststyle.ripple", 50)
 
-		assert.are.equal(8, loaded.env.PagleLedgerDB.global.projection.lastSeq) -- each was handed over
+		assert.are.equal(7, loaded.env.PagleLedgerDB.global.projection.lastSeq) -- each was handed over
 		assert.are.same(before, loaded.ns.projection:GetState())
 	end)
 
