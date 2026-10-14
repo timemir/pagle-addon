@@ -801,19 +801,11 @@ describe("FakePagle", function()
 		-- A catalogue in the M1 shape (DATA-R79): Darkshore (148) with The Long Wash (453).
 		local function fixture()
 			local function area(parent)
-				return { parent = parent, continent = 1, hasData = false, skillBaseConfirmed = false, catches = {} }
+				return areaRecord(parent, { continent = 1, hasData = false })
 			end
-			return {
-				fingerprint = "0123456789abcdef",
-				items = {},
+			return catalogueWith({
 				areas = { [148] = area(0), [453] = area(148) },
-				aliases = {},
-				pools = {},
-				windows = {},
-				events = {},
-				fishingSpells = {},
-				auras = {},
-			}
+			})
 		end
 
 		it("serves the generated catalogue, as Core does (LOG-R55)", function()
@@ -874,19 +866,12 @@ describe("FakePagle", function()
 		-- Darkshore (148) with The Long Wash (453), neither with a skill base, and no items: every item is Uncharted.
 		local function fixture()
 			local function area(parent)
-				return { parent = parent, continent = 1, hasData = false, skillBaseConfirmed = false, catches = {} }
+				return areaRecord(parent, { continent = 1, hasData = false })
 			end
-			return {
-				fingerprint = "0123456789abcdef",
-				items = {},
+			return catalogueWith({
 				areas = { [148] = area(0), [453] = area(148) },
-				aliases = {},
-				pools = {},
-				windows = {},
-				events = {},
 				fishingSpells = { 7731 },
-				auras = {},
-			}
+			})
 		end
 
 		it(
@@ -1085,17 +1070,9 @@ describe("FakePagle", function()
 		-- A catalogue in the M1 shape (DATA-R79) whose event list holds the Extravaganza (301) on Sundays from 14:00
 		-- for 2 hours, confirmed.
 		local function fixture()
-			return {
-				fingerprint = "0123456789abcdef",
-				items = {},
-				areas = {},
-				aliases = {},
-				pools = {},
-				windows = {},
+			return catalogueWith({
 				events = { [301] = { weekday = 1, start = 840, duration = 120, confirmed = true } },
-				fishingSpells = {},
-				auras = {},
-			}
+			})
 		end
 
 		-- fake.conditions moved on to the realm clock time `minute`, later the same realm day.

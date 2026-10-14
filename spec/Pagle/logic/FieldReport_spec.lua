@@ -14,34 +14,25 @@ local EXTRAVAGANZA = { events = { 301 } }
 -- (442, no list); The Barrens (17, skill base 100, unconfirmed); Elwynn Forest (12, no skill base). Listed: aura
 -- 1280341, event 301.
 local function fixture()
-	local function item(category, extra)
-		local record = { category = category, legend = false, noise = false, removed = false, pool = false }
-		for key, value in pairs(extra or {}) do
-			record[key] = value
-		end
-		return record
-	end
 	local function area(parent, skillBase, skillBaseConfirmed, catches)
-		return {
-			parent = parent,
+		return areaRecord(parent, {
 			continent = 1,
 			skillBase = skillBase,
 			skillBaseConfirmed = skillBaseConfirmed or false,
 			hasData = #(catches or {}) > 0,
 			catches = catches or {},
-		}
+		})
 	end
-	return {
-		fingerprint = "0123456789abcdef",
+	return catalogueWith({
 		items = {
-			[6358] = item("fish"),
-			[6291] = item("fish"),
-			[13755] = item("fish"),
-			[13760] = item("fish"),
-			[6362] = item("fish"),
-			[6352] = item("treasure"),
-			[6292] = item("junk"),
-			[2934] = item("other", { noise = true }),
+			[6358] = itemRecord("fish"),
+			[6291] = itemRecord("fish"),
+			[13755] = itemRecord("fish"),
+			[13760] = itemRecord("fish"),
+			[6362] = itemRecord("fish"),
+			[6352] = itemRecord("treasure"),
+			[6292] = itemRecord("junk"),
+			[2934] = itemRecord("other", { noise = true }),
 		},
 		areas = {
 			[148] = area(0, 55, true, {
@@ -58,13 +49,10 @@ local function fixture()
 			[17] = area(0, 100, false, { { itemID = 6358, confirmed = true } }),
 			[12] = area(0, nil, false, { { itemID = 6358, confirmed = true } }),
 		},
-		aliases = {},
-		pools = {},
-		windows = {},
 		events = { [301] = {} },
 		fishingSpells = { 7731 },
 		auras = { 1280341 },
-	}
+	})
 end
 
 local seq = 0

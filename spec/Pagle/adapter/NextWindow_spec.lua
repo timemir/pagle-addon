@@ -11,17 +11,11 @@ local SECRET = setmetatable({}, {
 -- A catalogue in the M1 shape (DATA-R79) whose event list holds the Extravaganza (301) on Sundays from 14:00 for
 -- 2 hours, unconfirmed, and Hallow's End (324) with no weekly rule.
 local function fixture()
-	return {
-		fingerprint = "0123456789abcdef",
-		items = {},
-		areas = {},
-		aliases = {},
-		pools = {},
-		windows = {},
+	return catalogueWith({
 		events = { [301] = { weekday = 1, start = 840, duration = 120, confirmed = false }, [324] = {} },
 		fishingSpells = { 7620 },
 		auras = { 1265220 },
-	}
+	})
 end
 
 -- Loads Core over the fixture catalogue on the fake client, which reads realm 08:15 on Sunday 11 October 2026 at
