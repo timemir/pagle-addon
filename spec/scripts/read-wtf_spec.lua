@@ -887,7 +887,19 @@ describe("scripts/read-wtf.lua", function()
 		it("reads the other side with --skill, and the side with the most Casts without it (STA-R41)", function()
 			-- STA-R41: 100 is below Elwynn's line; Ada never fished there below it, so the scope is empty: learning
 			-- (STA-R43) and never caught, a bare count (STA-R50). Without --skill, 12:hi's 124 Casts beat lo's and na's 0.
-			local below = run(ACCOUNTS .. "M6#1", "--catalogue", CATALOGUE, "--now", NOW, "--stats-item", "13759", "--area", "12", "--skill", "100")
+			local below = run(
+				ACCOUNTS .. "M6#1",
+				"--catalogue",
+				CATALOGUE,
+				"--now",
+				NOW,
+				"--stats-item",
+				"13759",
+				"--area",
+				"12",
+				"--skill",
+				"100"
+			)
 			assert.are.same({
 				"== Stats item 13759 in area 12 (--stats-item, --area)",
 				"side: lo, --skill 100 against the line 120 (STA-R41)",
@@ -903,7 +915,8 @@ describe("scripts/read-wtf.lua", function()
 				"Dry spell text: 0 Casts here, none yet.",
 				"short: learning 0/100",
 			}, section(below, "== Stats item"))
-			local unknown = run(ACCOUNTS .. "M6#1", "--catalogue", CATALOGUE, "--now", NOW, "--stats-item", "13759", "--area", "12")
+			local unknown =
+				run(ACCOUNTS .. "M6#1", "--catalogue", CATALOGUE, "--now", NOW, "--stats-item", "13759", "--area", "12")
 			assert.are.equal(
 				"side: hi, the most Casts here (hi 124, lo 0, na 0), no --skill (STA-R41)",
 				section(unknown, "== Stats item")[2]
@@ -959,10 +972,7 @@ describe("scripts/read-wtf.lua", function()
 
 		it("prints the Stats tracker frame's pick, and Pagle_Stats' enable state by default", function()
 			-- SHOP-R32: the slot's stored pick; STA-R88: Stats' one slot.
-			assert.are.same(
-				{ "stats.trackerframe: stats.trackerframe.logbook" },
-				{ section(out, "== Looks")[2] }
-			)
+			assert.are.same({ "stats.trackerframe: stats.trackerframe.logbook" }, { section(out, "== Looks")[2] })
 			local lines = section(run(ACCOUNTS .. "M6#1", "--character", "70/Ada-Brook"), "== Addons")
 			assert.are.same({
 				"== Addons (70/Ada-Brook/AddOns.txt)",
@@ -978,7 +988,8 @@ describe("scripts/read-wtf.lua", function()
 	-- M6-Stale#1: a Stats projection built under another rules version and catalogue, one Cast behind its log, and
 	-- AceDB left the profile's defaults out of the file (stats.md › Data).
 	it("flags a stale projection and a Session behind the log, and reads the left-out defaults (STA-R20)", function()
-		local out, _, code = run(ACCOUNTS .. "M6-Stale#1", "--catalogue", CATALOGUE, "--stats-item", "13759", "--area", "12")
+		local out, _, code =
+			run(ACCOUNTS .. "M6-Stale#1", "--catalogue", CATALOGUE, "--stats-item", "13759", "--area", "12")
 		assert.are.equal(0, code)
 		assert.are.same({
 			"== Stats (PagleStatsDB)",

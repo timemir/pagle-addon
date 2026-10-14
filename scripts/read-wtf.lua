@@ -1361,7 +1361,12 @@ local function printStatsStored(stats, core, stored, log, context)
 		local text = "rulesVersion: %s DIFFERS from Stats' %d (100 × %d + Core's SESSION_RULES_VERSION %d), so Core"
 			.. " rebuilds it at login (STA-R20, LOG-R72)"
 		print(
-			text:format(tostring(stored.rulesVersion), rulesVersion, stats.STATS_RULES_VERSION, core.SESSION_RULES_VERSION)
+			text:format(
+				tostring(stored.rulesVersion),
+				rulesVersion,
+				stats.STATS_RULES_VERSION,
+				core.SESSION_RULES_VERSION
+			)
 		)
 	end
 	if not context.places then
@@ -1446,11 +1451,14 @@ local function printStatsSessions(core, sessions, facts)
 		return
 	end
 	local shown = #sessions - first + 1
-	print(("Sessions: %d stored, the log's Casts carry %s; the last %d, oldest first:"):format(#sessions, carried, shown))
+	print(
+		("Sessions: %d stored, the log's Casts carry %s; the last %d, oldest first:"):format(#sessions, carried, shown)
+	)
 	for i = first, #sessions do
 		local session = tableOr(sessions[i])
 		local logged = tagged[session.id]
-		local span = realmSpan(core, session, logged and logged.first) or "realm time unknown (no Cast of it in the log)"
+		local span = realmSpan(core, session, logged and logged.first)
+			or "realm time unknown (no Cast of it in the log)"
 		print(
 			("  %d. %s: %s, server %s to %s"):format(
 				i,
@@ -1510,11 +1518,10 @@ local function printStatsItem(stats, state, places, options)
 	print(heading)
 	local reading = stats.Reading(state, options.statsItem, options.area, options.skill, places)
 	print(sideText(reading, state, options.skill, (places:NoJunkLine(reading.zone))))
-	local via = reading.viaZone and (", its zone's: area %d has under %d there"):format(reading.area, stats.ODDS_THRESHOLD)
+	local via = reading.viaZone
+			and (", its zone's: area %d has under %d there"):format(reading.area, stats.ODDS_THRESHOLD)
 		or ""
-	print(
-		("scope: %s, %s, %d caught%s (STA-R42)"):format(reading.scope, count(reading.n, "Cast"), reading.k, via)
-	)
+	print(("scope: %s, %s, %d caught%s (STA-R42)"):format(reading.scope, count(reading.n, "Cast"), reading.k, via))
 	print(("state: %s (STA-R43)"):format(reading.state))
 	print(("Your odds: %s (short: %s)"):format(stats.OddsHeadline(reading), stats.OddsShort(reading)))
 	print("range: " .. (stats.OddsRange(reading) or "none until known (STA-R45)"))
