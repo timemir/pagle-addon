@@ -7,7 +7,7 @@ end
 
 local L = select(2, ...).L
 
-L["binding.birch.description"] = "Pale as birch bark, with dark flecks. Likely the only book here that would float."
+L["binding.birch.description"] = "Pale and papery, with dark flecks. Likely the only book here that would float."
 L["binding.birch.name"] = "Birch Bark"
 L["binding.buckram.description"] = "Stiff sea-green cloth with cream rules. Spray beads up and rolls straight off."
 L["binding.buckram.name"] = "Sea-green Buckram"

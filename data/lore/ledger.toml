@@ -393,7 +393,7 @@ description = "Near-black leather and bright gold. About as fine as an angler's 
 
 [binding.birch] # Curio Shop, tier 1
 name = "Birch Bark"
-description = "Pale as birch bark, with dark flecks. Likely the only book here that would float."
+description = "Pale and papery, with dark flecks. Likely the only book here that would float."
 
 [binding.buckram] # Curio Shop, tier 2
 name = "Sea-green Buckram"
