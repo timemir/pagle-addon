@@ -42,7 +42,7 @@ describe("ns.FieldReportText", function()
 		return loaded
 	end
 
-	-- One row of each kind in ticket #121's shape.
+	-- One row of each kind as ns.FieldReportRows() hands it over (PagleReportRow).
 	local ROWS = {
 		{ kind = "I", item = 6362, area = 33, build = 70338, count = 2, auras = {}, events = {} },
 		{ kind = "I", item = 6359, area = 1519, build = 70338, count = 1, auras = {}, events = {} },
@@ -100,6 +100,99 @@ describe("ns.FieldReportText", function()
 			"Brindlewick",
 			"Player-4618-0A1B2C3D",
 			"Player-4618-0B2C3D4E",
+			loaded.env.GetRealmName(),
+			"Alliance",
+			"3f9a2c1e7b0d4a65",
+		}) do
+			if text:find(secret, 1, true) then
+				found[#found + 1] = secret
+			end
+		end
+		assert.are.same({}, found)
+	end)
+end)
+
+describe("the Field report from a fixture Angler's log, rows to text", function()
+	local ADA, BRINDLEWICK = "Player-4618-0A1B2C3D", "Player-4618-0B2C3D4E"
+	local FIRST = SERVER_TIME - 4000
+	-- A fixture Angler: two characters on the fake client's realm, and REP-R36's logId (savedLog's).
+	local function character(guid, name, classID, raceID)
+		return {
+			guid = guid,
+			name = name,
+			classID = classID,
+			raceID = raceID,
+			faction = "Alliance",
+			realmID = 4618,
+			firstSeen = 1791700000,
+			lastSeen = 1791700000,
+		}
+	end
+	local CHARACTERS = { character(ADA, "Ada", 1, 1), character(BRINDLEWICK, "Brindlewick", 8, 7) }
+
+	-- Ada catches an Oily Blackmouth in The Long Wash (453), whose zone Darkshore (148) has an unconfirmed skill base;
+	-- Brindlewick catches an Uncharted item (9999) in Darkshore, hovering a school first.
+	local function report()
+		local log = savedLog({
+			BUILD_ENTRY,
+			castEntry(FIRST + 1),
+			(castEntry(FIRST + 2, 9999, 0):gsub("^C1|1|", "C1|2|")),
+		}, 1, CHARACTERS)
+		local loaded = loadCore(log, {
+			global = {
+				diagnostics = {
+					{
+						id = BRINDLEWICK .. "-" .. FIRST + 2 .. "-0",
+						zone = 148,
+						subzone = 0,
+						locale = "enUS",
+						texts = { "Oily Blackmouth School" },
+					},
+				},
+			},
+		})
+		loaded.client.itemNames[6358] = "Oily Blackmouth"
+		loaded.client.areaNames[148] = "Darkshore"
+		loaded.client.areaNames[453] = "The Long Wash"
+		enterWorld(loaded)
+		return loaded, table.concat(loaded.ns.FieldReportText(assert(loaded.ns.FieldReportRows())))
+	end
+
+	it(
+		"writes the rows ns.FieldReportRows builds from the log and the diagnostics buffer (REP-R20–R23, REP-R30)",
+		function()
+			local _, text = report()
+
+			local rows = {}
+			for line in text:gmatch("([^\n]*)\n") do
+				if line:match("^[IKP] ") then
+					rows[#rows + 1] = line
+				end
+			end
+			assert.are.same({
+				-- Brindlewick's Uncharted Catch: timed, at realm 08:14 in October (REP-R10, REP-R20).
+				"I 9999 148 70338 1 t=08:00 m=10 # Darkshore",
+				-- Ada's: Oily Blackmouth is on Darkshore's list, unconfirmed, so untimed (REP-R10, REP-R20).
+				"I 6358 453 70338 1              # Oily Blackmouth, The Long Wash",
+				-- Darkshore's skill base is unconfirmed: both Casts, and Ada's 86+25 landed a known item (REP-R21).
+				"K 148 70338 casts=2 away=0 land=111 # Darkshore",
+				-- Brindlewick's buffered Cast, with what it caught (REP-R22).
+				'P 148 enUS "Oily Blackmouth School" casts=1 9999x1 # Darkshore',
+			}, rows)
+		end
+	)
+
+	it("holds none of the Angler's character names, GUIDs, realm, faction or logId (REP-R35)", function()
+		local loaded, text = report()
+
+		local found = {}
+		for _, secret in ipairs({
+			"Ada",
+			"Brindlewick",
+			ADA,
+			BRINDLEWICK,
+			"0A1B2C3D",
+			"0B2C3D4E",
 			loaded.env.GetRealmName(),
 			"Alliance",
 			"3f9a2c1e7b0d4a65",

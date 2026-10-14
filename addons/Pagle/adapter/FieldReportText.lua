@@ -23,7 +23,7 @@ local NAMES = {
 	end,
 }
 
---- The Field report's text for `rows` (ticket #121's rows, any order), as its parts in order (REP-R30–R33): the
+--- The Field report's text for `rows` (ns.FieldReportRows(), any order), as its parts in order (REP-R30–R33): the
 --- header from this addon's TOC version, `Pagle.CONTENT_FINGERPRINT`, `GetLocale()` and PagleLog's logId, which is
 --- written only as its reporter key (REP-R35, REP-R36). Built when called, never stored.
 ---@param rows PagleReportRow[]
