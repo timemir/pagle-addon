@@ -153,7 +153,7 @@ describe("Cozy mode", function()
 			loaded.client.advance(8)
 			loaded.ns.db.profile.announcements.cozy = false
 			assert.are.equal("Pagle · 3 waiting", loaded.client.compartment[1].text)
-			loaded.client.advance(900)
+			loaded.client.advance(300)
 
 			assert.are.equal("Fishing session", card(loaded))
 			assert.are.equal("Pagle", loaded.client.compartment[1].text)
@@ -184,7 +184,7 @@ describe("expiry", function()
 			assert.are.equal("New Species", showing(loaded, "toast"))
 			loaded.client.advance(6)
 			assert.is_nil(showing(loaded, "banner"))
-			loaded.client.advance(900)
+			loaded.client.advance(300)
 
 			local rows = {}
 			for _, row in ipairs(loaded.ns.cardFrame.rows) do

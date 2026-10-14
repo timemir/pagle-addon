@@ -180,7 +180,7 @@ describe("the Write-up card", function()
 			loaded.ns.db.profile.announcements.cozy = true
 			catchAndFlush(loaded)
 			ledger:RaiseMoment({ rung = "toast", kind = "newSpecies", title = "New Species" })
-			loaded.client.advance(900)
+			loaded.client.advance(300)
 			assert.are.equal("Write-up", shownTitle(loaded))
 			close(loaded)
 
@@ -227,7 +227,7 @@ describe("the Write-up card", function()
 			assert.is_nil(shownCard(loaded))
 
 			catchAndFlush(loaded)
-			loaded.client.advance(900)
+			loaded.client.advance(300)
 
 			assert.are.same({
 				title = "Fishing session",
@@ -397,7 +397,7 @@ describe("the Session summary cards", function()
 			assert.is_nil(shownCard(loaded))
 
 			catchAndFlush(loaded)
-			loaded.client.advance(899)
+			loaded.client.advance(299)
 			assert.is_nil(shownCard(loaded))
 			loaded.client.advance(1)
 
@@ -429,7 +429,7 @@ describe("the Session summary cards", function()
 		frames(loaded)
 		catchAndFlush(loaded)
 		M:RaiseMoment({ rung = "toast", kind = "newSpecies", title = "New Species" })
-		loaded.client.advance(895)
+		loaded.client.advance(295)
 		M:RaiseMoment({ rung = "toast", kind = "late", title = "Late toast" })
 		loaded.client.advance(5)
 		assert.is_true(loaded.ns.announcementFrames.toast.shown)

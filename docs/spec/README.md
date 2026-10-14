@@ -68,7 +68,7 @@ A Module talks to Core and nothing else (ADR 0001): it never calls, reads or lis
 
 **Everything a Module shows is derived from the log**, read through the content catalogue. Each Module keeps a **stored projection** in its own SavedVariable (ADR 0004): Core feeds it every entry once, as `"live"` while the Module runs, as `"replay"` when it catches up on entries recorded while it was off, or as `"rebuild"` when the content fingerprint or its rules version changed (LOG-R70–R77). Only live entries may raise moments. A Module's **celebrated set**, kept outside the projection, remembers what was already shown, so a rebuild never shows anything twice or takes anything away. History a Module first builds from, or catches up on, becomes one **Write-up** card instead of pop-ups (ANN-R60–R63).
 
-Sessions (runs of Casts with no 15-minute gap) are cut by Core from the log and tagged on every record, never stored and never cut by a Module (LOG-R60–R64, LOG-R98). Simulated Sizes are computed by Core from the Catch ID alone, with frozen bands (LOG-R65–R69, ADR 0010).
+Sessions (runs of Casts with no 5-minute gap) are cut by Core from the log and tagged on every record, never stored and never cut by a Module (LOG-R60–R64, LOG-R98). Simulated Sizes are computed by Core from the Catch ID alone, with frozen bands (LOG-R65–R69, ADR 0010).
 
 ### Feedback, Coins and looks
 

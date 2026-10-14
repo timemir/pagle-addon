@@ -69,7 +69,7 @@ One character's fishing skill as Pagle saw it at a moment, recorded the first ti
 _Avoid_: skill snapshot, skill event
 
 **Session**:
-A run of the Angler's Casts with no break of 15 minutes or more, across characters and zones. It is cut from the Catch log after the fact, never stored.
+A run of the Angler's Casts with no break of 5 minutes or more, across characters and zones. It is cut from the Catch log after the fact, never stored.
 _Avoid_: Fishing stretch (QoL's live span), trip, outing
 
 **Species**:
