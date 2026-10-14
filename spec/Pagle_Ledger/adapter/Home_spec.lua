@@ -347,9 +347,10 @@ describe("the Journal's Home, right page", function()
 		assert.are.same({
 			{ kind = "leader", text = "The Trophy Room", value = "0 / 1", place = { id = "trophy" } },
 			{ kind = "leader", text = "Curios: junk, treasure, uncharted", value = "0 / 2", place = { id = "curios" } },
+			{ kind = "leader", text = "Legends", value = "0 / 0", place = { id = "legends" } },
 			{ kind = "leader", text = "The Angler: hands, titles, bindings", place = { id = "angler" } },
-		}, { right[6], right[7], right[8] })
-		assert.are.equal(8, #right)
+		}, { right[6], right[7], right[8], right[9] })
+		assert.are.equal(9, #right)
 	end)
 
 	it(
@@ -429,7 +430,7 @@ describe("the Journal's Home, right page", function()
 		local _, loaded = openHome({ cast(ELWYNN, MACKEREL) })
 		local journal = loaded.ns.journal
 
-		journal.frame.right.drawn.leader[3]:Click()
+		journal.frame.right.drawn.leader[4]:Click()
 
 		assert.are.same({ id = "angler" }, journal.router:Place())
 		local labels = {}
@@ -439,12 +440,11 @@ describe("the Journal's Home, right page", function()
 		assert.are.same({ "Home", "The Angler" }, labels)
 	end)
 
-	it("draws none of M4's elements: no title, no Prestige, no Legends line (LED-R4, LED-R132)", function()
+	it("draws no title and no Prestige yet; the Legends line is M4's (LED-R4, LED-R132)", function()
 		local _, loaded = openHome({ cast(ELWYNN, MACKEREL) }, level12)
 
 		local texts = textsOf(loaded.ns.journal.frame.right)
 		for _, text in ipairs(texts) do
-			assert.is_nil(text:find("Legend", 1, true))
 			assert.is_nil(text:find("Prestige", 1, true))
 		end
 		for _, block in ipairs(pages(loaded).right) do

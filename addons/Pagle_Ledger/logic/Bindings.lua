@@ -150,8 +150,16 @@ function ns.BindingSlot()
 	return { id = ns.BINDING_SLOT, label = ns.L.BINDING_SLOT_LABEL, category = "Fish Journal" }
 end
 
---- The goods to register, in LED-R110's order: named from lore (`binding.<name>.name`, `.description`, LED-R160), by
---- the good's ID while a key has no text (graph.md open question 3).
+--- A binding's name (LED-R110): its lore, `binding.<name>.name` (LED-R160), or its good's ID while the key has no
+--- text (graph.md open question 3).
+---@param binding LedgerBinding
+---@return string
+function ns.BindingName(binding)
+	return ns.L["binding." .. binding.name .. ".name"] or ns.BindingID(binding)
+end
+
+--- The goods to register, in LED-R110's order: named from lore (ns.BindingName, and `binding.<name>.description`,
+--- LED-R160), with no description while its key has no text.
 ---@param hooks LedgerBindingHooks
 ---@return PagleGood[]
 function ns.BindingGoods(hooks)
@@ -164,7 +172,7 @@ function ns.BindingGoods(hooks)
 		goods[i] = {
 			id = id,
 			slot = ns.BINDING_SLOT,
-			name = L["binding." .. binding.name .. ".name"] or id,
+			name = ns.BindingName(binding),
 			description = L["binding." .. binding.name .. ".description"],
 			icon = ns.BINDING_ICON,
 			default = binding.default,
