@@ -29,7 +29,7 @@ local ns = select(2, ...)
 ---@field ReportCoinsEarned fun(total: integer)         -- M:ReportCoinsEarned
 ---@field SetSummaryLine fun(text: string)              -- M:SetSummaryLine("ledger", text)
 ---@field ItemName fun(itemID: integer): string?        -- C_Item.GetItemNameByID
----@field ZoneName fun(zone: integer): string?          -- C_Map.GetAreaInfo
+---@field AreaName fun(areaID: integer): string?    -- C_Map.GetAreaInfo
 ---@field RaiseWriteUp fun(section: PagleWriteUpSection) -- M:RaiseWriteUp
 ---@field LogId fun(): string?                          -- Pagle.GetAngler().logId
 ---@field FormatNumber fun(n: integer): string          -- BreakUpLargeNumbers
@@ -191,7 +191,7 @@ function celebrate.newInZone(celebrated, _, earned, outlets)
 		title = L.NEW_IN_ZONE_TITLE,
 		text = L.NEW_IN_ZONE_TEXT:format(
 			itemName(outlets, earned.itemID --[[@as integer]]),
-			outlets.ZoneName(earned.zone --[[@as integer]]) or L.NAME_UNKNOWN
+			outlets.AreaName(earned.zone --[[@as integer]]) or L.NAME_UNKNOWN
 		),
 		stamp = L.NEW_IN_ZONE_STAMP,
 		icon = earned.itemID,
@@ -372,7 +372,7 @@ function celebrate.zoneRank(celebrated, _, earned, outlets)
 		end
 	end
 	local L = ns.L
-	local name = outlets.ZoneName(zone) or L.NAME_UNKNOWN
+	local name = outlets.AreaName(zone) or L.NAME_UNKNOWN
 	if top == ns.ZONE_MASTER then
 		return {
 			rung = "banner",

@@ -16,7 +16,8 @@ local FORECAST_HOURS = 48 -- Tunables: forecast in hours up to (LED-R127)
 
 --- The realm's UTC offset in minutes, worked out live as LOG-R49 does (LED-R126): the realm minute less the UTC
 --- minute of the server time, rounded to 15 minutes, taken after −10 h up to and including +14 h. The Ledger can't
---- call Core's ns.RealmDate (ADR 0001), so it has its own.
+--- call Core's ns.RealmDate (ADR 0001), so it has its own: a copy of Core's ns.RealmUtcOffset and civilFromDays
+--- (addons/Pagle/logic/Conditions.lua). A change to LOG-R49 changes both.
 ---@param serverTime integer GetServerTime()
 ---@param realmMinute integer the realm clock's minute of day, 0–1439 (GetGameTime())
 ---@return integer minutes
