@@ -12,30 +12,13 @@ from observed_fixture import write_observed
 from pagle_data.errors import At, Problems
 from pagle_data.observed import CatchRow, PoolTextRow, SkillRow, read_observed
 from pagle_data.report import FieldReport, Identity, Part, join, observed_toml, parse_part, report_field
+from report_fixture import HEADER, parsed_part, part_of, part_text
 
 FIXTURES = Path(__file__).parent / "fixtures"
-HEADER = "addon 0.9.0 data 3f9a2c1e locale enUS reporter f38e76b0 part 1/1"
 
 
 def golden(name: str) -> str:
     return (FIXTURES / "reports" / name).read_text(encoding="utf-8")
-
-
-def part_of(*rows: str, header: str = HEADER, source: str = "paste") -> Part:
-    """A part with the rows given, parsed without problems."""
-    problems = Problems()
-    part = parse_part("\n".join(["PAGLE-REPORT 1", header, *rows, "END"]), source, problems)
-    assert problems.found == []
-    assert part is not None
-    return part
-
-
-def parsed(text: str) -> Part:
-    problems = Problems()
-    part = parse_part(text, "paste", problems)
-    assert problems.found == []
-    assert part is not None
-    return part
 
 
 def unplaced[Row: (CatchRow, SkillRow, PoolTextRow)](rows: Iterable[Row]) -> list[Row]:
@@ -52,7 +35,7 @@ def problems_of(text: str) -> list[str]:
 def test_rep_r30_s_example_parses_into_its_header_and_six_rows() -> None:
     # REP-R30: line 1 the format version; line 2 addon, data, locale, reporter and part; the rows (REP-R20–R22);
     # END. The comments (" # " and the names after it) are left out (REP-R31).
-    part = parsed(golden("rep-r30.txt"))
+    part = parsed_part(golden("rep-r30.txt"))
     header = part.header
     assert (header.addon, header.data, header.locale, header.reporter) == ("0.9.0", "3f9a2c1e", "deDE", "f38e76b0")
     assert (header.part, header.parts) == (1, 1)
@@ -73,7 +56,7 @@ def test_rep_r30_s_example_parses_into_its_header_and_six_rows() -> None:
 
 def test_a_quoted_text_keeps_its_hash_and_its_escapes() -> None:
     # REP-R31: " # " starts a comment only outside double quotes. REP-R32: inside quotes, \ escapes ", \ and n.
-    part = parsed(golden("quotes.txt"))
+    part = parsed_part(golden("quotes.txt"))
     assert [p.text for p in part.pool_texts] == [
         'School of "Oily" Blackmouth # not a comment',
         "back\\slash\nsecond line",
@@ -92,7 +75,7 @@ def test_k_and_p_rows_leave_out_their_optional_fields() -> None:
 def test_crlf_line_ends_and_stray_blank_lines_read_the_same() -> None:
     # DATA-R115: a paste through the issue form may come back with CRLF line ends; a blank line is no row.
     text = golden("rep-r30.txt").replace("\n", "\n\n").replace("\n", "\r\n")
-    spaced, plain = parsed(text), parsed(golden("rep-r30.txt"))
+    spaced, plain = parsed_part(text), parsed_part(golden("rep-r30.txt"))
     assert spaced.header == plain.header
     assert unplaced(spaced.catches) == unplaced(plain.catches)
     assert unplaced(spaced.pool_texts) == unplaced(plain.pool_texts)
@@ -136,16 +119,12 @@ def test_rows_core_can_write_parse_and_read_back_from_the_observed_shape(tmp_pat
     assert unplaced(read.pool_texts) == unplaced(part.pool_texts)
 
 
-def report_of(*rows: str) -> str:
-    return "\n".join(["PAGLE-REPORT 1", HEADER, *rows, "END"])
-
-
 @pytest.mark.parametrize(
     ("text", "expected"),
     [
         # A first line other than PAGLE-REPORT 1 (REP-R30).
         ("PAGLE-REPORT 2\n" + HEADER + "\nEND", "#7: line 1: expected 'PAGLE-REPORT 1', got 'PAGLE-REPORT 2'"),
-        ("Hi! Here is my report:\n" + report_of(), "#7: line 1: expected 'PAGLE-REPORT 1'"),
+        ("Hi! Here is my report:\n" + part_text(), "#7: line 1: expected 'PAGLE-REPORT 1'"),
         # A malformed header (REP-R30, REP-R33, REP-R36).
         ("PAGLE-REPORT 1\naddon 0.9.0 data 3f9a2c1e locale enUS part 1/1\nEND", "#7: line 2: a malformed header"),
         ("PAGLE-REPORT 1\n" + HEADER.replace("3f9a2c1e", "3F9A2C1E") + "\nEND", "#7: line 2: a malformed header"),
@@ -153,40 +132,40 @@ def report_of(*rows: str) -> str:
         ("PAGLE-REPORT 1\n" + HEADER.replace("f38e76b0", "f38e76b") + "\nEND", "#7: line 2: a malformed header"),
         ("PAGLE-REPORT 1\n" + HEADER.replace("1/1", "3/2") + "\nEND", "#7: line 2: a malformed header"),
         # A missing field and a non-integer field (REP-R20–R22).
-        (report_of("I 6362 33 70338"), "#7: line 3: missing fields"),
-        (report_of("I 6362 33 70338 two"), "#7: line 3: count: expected an integer, got 'two'"),
-        (report_of("I 6362 33 70338 2 aura=1280341,x"), "#7: line 3: aura=: expected an integer, got 'x'"),
-        (report_of("I 6362 33 70338 2 t=14:30 m=May"), "#7: line 3: m=: expected an integer, got 'May'"),
-        (report_of("K 1519 70338 away=6"), "#7: line 3: missing field casts="),
-        (report_of("K 1519 70338 casts=40 away=6 land=high"), "#7: line 3: land=: expected an integer"),
-        (report_of("I 6362 33 70338 2 aura=5 aura=7"), "#7: line 3: aura= is given twice"),
-        (report_of('P 1519 enUS "" casts=5'), "#7: line 3: text: expected a non-empty text"),
-        (report_of('P 1519 enUS "Oily" casts=5 6358xfive'), "#7: line 3: expected <itemID>x<count>"),
-        (report_of("P 1519 enUS casts=5"), "#7: line 3: missing fields"),
+        (part_text("I 6362 33 70338"), "#7: line 3: missing fields"),
+        (part_text("I 6362 33 70338 two"), "#7: line 3: count: expected an integer, got 'two'"),
+        (part_text("I 6362 33 70338 2 aura=1280341,x"), "#7: line 3: aura=: expected an integer, got 'x'"),
+        (part_text("I 6362 33 70338 2 t=14:30 m=May"), "#7: line 3: m=: expected an integer, got 'May'"),
+        (part_text("K 1519 70338 away=6"), "#7: line 3: missing field casts="),
+        (part_text("K 1519 70338 casts=40 away=6 land=high"), "#7: line 3: land=: expected an integer"),
+        (part_text("I 6362 33 70338 2 aura=5 aura=7"), "#7: line 3: aura= is given twice"),
+        (part_text('P 1519 enUS "" casts=5'), "#7: line 3: text: expected a non-empty text"),
+        (part_text('P 1519 enUS "Oily" casts=5 6358xfive'), "#7: line 3: expected <itemID>x<count>"),
+        (part_text("P 1519 enUS casts=5"), "#7: line 3: missing fields"),
         # A bad quote escape (REP-R32), and a quote never closed.
-        (report_of('P 1519 enUS "Oily \\t" casts=5'), "#7: line 3: a bad quote escape '\\t'"),
-        (report_of('P 1519 enUS "Oily casts=5'), "#7: line 3: a quote isn't closed"),
+        (part_text('P 1519 enUS "Oily \\t" casts=5'), "#7: line 3: a bad quote escape '\\t'"),
+        (part_text('P 1519 enUS "Oily casts=5'), "#7: line 3: a quote isn't closed"),
         # Two rows with the same key (DATA-R121): I by everything but count, K by area and build, P by area, locale
         # and text.
-        (report_of("I 6359 1519 70338 14", "I 6359 1519 70338 2 # again"), "#7: line 4: the same row key as line 3"),
-        (report_of("K 1519 70338 casts=4 away=0", "K 1519 70338 casts=9 away=1"), "#7: line 4: the same row key"),
-        (report_of('P 1519 enUS "Oily" casts=5', 'P 1519 enUS "Oily" casts=1'), "#7: line 4: the same row key"),
+        (part_text("I 6359 1519 70338 14", "I 6359 1519 70338 2 # again"), "#7: line 4: the same row key as line 3"),
+        (part_text("K 1519 70338 casts=4 away=0", "K 1519 70338 casts=9 away=1"), "#7: line 4: the same row key"),
+        (part_text('P 1519 enUS "Oily" casts=5', 'P 1519 enUS "Oily" casts=1'), "#7: line 4: the same row key"),
         # Text after END (REP-R33: each part in its own issue), and END with more on its line.
-        (report_of() + "\nI 6359 1519 70338 14", "#7: line 4: text after END (line 3)"),
-        (report_of().replace("END", "END I"), "#7: line 3: expected END alone"),
+        (part_text() + "\nI 6359 1519 70338 14", "#7: line 4: text after END (line 3)"),
+        (part_text().replace("END", "END I"), "#7: line 3: expected END alone"),
         # A field beyond the row's own (REP-R20–R22).
-        (report_of("I 6362 33 70338 2 7"), "#7: line 3: unexpected field '7'"),
+        (part_text("I 6362 33 70338 2 7"), "#7: line 3: unexpected field '7'"),
         # A value out of its bounds: IDs and counts from 1, build and away from 0, m a month.
-        (report_of("I 0 33 70338 2"), "#7: line 3: item: expected an integer at least 1, got 0"),
-        (report_of("K 1519 -1 casts=40 away=6"), "#7: line 3: build: expected an integer at least 0, got -1"),
-        (report_of("I 6362 33 70338 2 t=14:30 m=13"), "#7: line 3: m=: expected an integer from 1 to 12, got 13"),
+        (part_text("I 0 33 70338 2"), "#7: line 3: item: expected an integer at least 1, got 0"),
+        (part_text("K 1519 -1 casts=40 away=6"), "#7: line 3: build: expected an integer at least 0, got -1"),
+        (part_text("I 6362 33 70338 2 t=14:30 m=13"), "#7: line 3: m=: expected an integer from 1 to 12, got 13"),
         # t and m go together, and t is a 15-minute bucket's start (REP-R20).
-        (report_of("I 6362 33 70338 2 t=14:30"), "#7: line 3: t= and m= go together"),
-        (report_of("I 6362 33 70338 2 t=14:20 m=5"), "#7: line 3: t=: expected the start of a 15-minute bucket"),
+        (part_text("I 6362 33 70338 2 t=14:30"), "#7: line 3: t= and m= go together"),
+        (part_text("I 6362 33 70338 2 t=14:20 m=5"), "#7: line 3: t=: expected the start of a 15-minute bucket"),
         # A P row's text is quoted and its locale a client locale (REP-R22), each item listed once.
-        (report_of("P 1519 enUS Oily casts=5"), "#7: line 3: text: expected a quoted text"),
-        (report_of('P 1519 german "Oily" casts=5'), "#7: line 3: locale: expected a client locale"),
-        (report_of('P 1519 enUS "Oily" casts=5 6358x1 6358x2'), "#7: line 3: item 6358 is listed twice"),
+        (part_text("P 1519 enUS Oily casts=5"), "#7: line 3: text: expected a quoted text"),
+        (part_text('P 1519 german "Oily" casts=5'), "#7: line 3: locale: expected a client locale"),
+        (part_text('P 1519 enUS "Oily" casts=5 6358x1 6358x2'), "#7: line 3: item 6358 is listed twice"),
     ],
 )
 def test_each_failure_fails_the_part_naming_its_line(text: str, expected: str) -> None:
@@ -285,7 +264,7 @@ def test_rows_converted_to_the_observed_shape_read_back_equal(tmp_path: Path) ->
     # DATA-R121, the Data section's data/observed/ table: the importer writes reports/<reporterKey>.toml with
     # issues, the header and [[i]], [[k]], [[p]] rows; pagle_data.observed (#94) reads them back as the same rows.
     # REP-R30's example, plus the quotes golden's escaped texts and a rejected mark the importer keeps.
-    rep_r30, quotes = parsed(golden("rep-r30.txt")), parsed(golden("quotes.txt"))
+    rep_r30, quotes = parsed_part(golden("rep-r30.txt")), parsed_part(golden("quotes.txt"))
     (report,) = joined(rep_r30)
     stored = report.observed([7, 9])
     stored = replace(stored, pool_texts=stored.pool_texts + quotes.pool_texts)
@@ -322,7 +301,7 @@ def test_the_form_helper_pulls_the_report_field_out_of_an_issue_body() -> None:
     expected = golden("rep-r30.txt").removesuffix("\n")
     assert report_field(body) == expected
     assert report_field(body.replace("\n", "\r\n")) == expected
-    assert parsed(expected).header.reporter == "f38e76b0"
+    assert parsed_part(expected).header.reporter == "f38e76b0"
 
 
 def test_the_form_helper_finds_no_report_in_a_body_without_the_field() -> None:

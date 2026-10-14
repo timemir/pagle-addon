@@ -10,11 +10,14 @@ from pathlib import Path
 
 import pytest
 
+from cli_fixture import run as run_main
 from pagle_data.errors import Problems
 from pagle_data.generate import read_layers
 from pagle_data.importer import FetchError, catalogue_changes, imported, main, read_reports, upsert
-from pagle_data.observed import Header, Report
-from pagle_data.report import join, observed_toml, parse_part
+from pagle_data.observed import Header
+from pagle_data.report import observed_toml
+from report_fixture import part
+from report_fixture import parsed_report as parsed
 from test_catch_lists import CATALOGUE, write_tree
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
@@ -49,25 +52,7 @@ def run(
     root: Path, capsys: pytest.CaptureFixture[str], *issues: int, bodies: Mapping[int, str] = ISSUES
 ) -> tuple[int, str]:
     """The importer on the tree at root for these issues: its exit code and everything it printed."""
-    code = main([str(number) for number in issues], root, Fetched(bodies))
-    out, err = capsys.readouterr()
-    return code, out + err
-
-
-def part(rows: str, n: int = 1, m: int = 1, data: str = "3f9a2c1e", reporter: str = ALICE) -> str:
-    """A PAGLE-REPORT part (REP-R30) with these rows, as Core writes it."""
-    header = f"addon 0.9.0 data {data} locale enUS reporter {reporter} part {n}/{m}"
-    return f"PAGLE-REPORT 1\n{header}\n{rows}END\n"
-
-
-def parsed(text: str, issues: tuple[int, ...]) -> Report:
-    """One whole report parsed from text, as data/observed/ holds it after importing issues."""
-    problems = Problems()
-    found = parse_part(text, "test", problems)
-    assert found is not None, problems.found
-    (field_report,) = join([found], problems)
-    assert problems.found == []
-    return field_report.observed(issues)
+    return run_main(root, capsys, *map(str, issues), main=main, fetch=Fetched(bodies))
 
 
 def test_an_upsert_replaces_rows_by_key_keeps_their_rejected_marks_and_keeps_rows_the_report_lacks() -> None:
