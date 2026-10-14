@@ -421,7 +421,7 @@ local function bySpeciesThenZone(a, b)
 end
 
 local function printLedgerState(ledger, state)
-	local level, into, cost = ledger.ClimbOf(tonumber(state.xp) or 0)
+	local level, into, cost = ledger.ClimbOf(tonumber(state.xp) or 0, tonumber(state.prestige) or 0)
 	local climb = cost and ("Angler Level %d, %d into it, next step %d"):format(level, into, cost)
 		or ("Angler Level %d, %d carried"):format(level, into)
 	local species = 0
