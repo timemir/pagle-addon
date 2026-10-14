@@ -655,6 +655,21 @@ local function printStored(stored, log)
 	end
 end
 
+-- Core's namespace with what M4's lines read of it: its strings (locale/enUS.lua), the size rules and bands
+-- (logic/Size.lua, LOG-R65–R68), the wallet (logic/Wallet.lua, SHOP-R12) and the wallet projection's rules version
+-- (logic/WalletProjection.lua), each called with ("Pagle", ns) as the client calls them. logic/ is plain Lua 5.1
+-- (CORE-R7). Size.lua takes LuaBitOp's functions at load; nothing here hashes a Catch ID, so an empty `bit` serves.
+local function loadCoreRules()
+	local ns = {}
+	local env = setmetatable({ bit = {} }, { __index = _G })
+	for _, file in ipairs({ "locale/enUS.lua", "logic/Size.lua", "logic/Wallet.lua", "logic/WalletProjection.lua" }) do
+		local chunk = assert(loadfile(ROOT .. "/addons/Pagle/" .. file))
+		setfenv(chunk, env)
+		chunk("Pagle", ns)
+	end
+	return ns
+end
+
 -- Prints the Ledger section from SavedVariables/Pagle_Ledger.lua (ledger.md › Data): the projection Core stores
 -- (LOG-R70), checked against PagleLog (LOG-R72) and the Ledger's rules version (LED-R2), the state with what the
 -- Ledger's own logic/ computes from it over the world index, and the celebrated set (LED-R90). `catalogue` is the
@@ -679,8 +694,9 @@ local function printLedger(account, log, catalogue)
 	else
 		printStored(stored, log)
 		local ledger = loadLedgerLogic()
-		-- The Ledger's own rules version, from its logic/ (LED-R2): Core defines no SIZE_RULES_VERSION before M4.
-		local rulesVersion = ledger.RulesVersion(nil)
+		-- The Ledger's own rules version, from its logic/ with Core's size rules (LED-R2, LOG-R68), as
+		-- adapter/Ledger.lua passes Pagle.SIZE_RULES_VERSION.
+		local rulesVersion = ledger.RulesVersion(loadCoreRules().SIZE_RULES_VERSION)
 		if stored.rulesVersion == rulesVersion then
 			print(("rulesVersion: the Ledger's, %d (LED-R2)"):format(rulesVersion))
 		else
