@@ -96,4 +96,44 @@ ns.L = {
 	TARGET_RARE = "Any rare-or-better Catch",
 	TARGET_ANY = "Any fish",
 	TARGET_MIN_BAND = "%s, %s or better",
+
+	-- A Hunt's entry on the board's right page (HNT-R3, HNT-R64–R66, HNT-R69): logic/Entry.lua.
+	ENTRY_KICKER = "%s · %s",
+	ENTRY_NATURAL = "Natural",
+	ENTRY_IMPOSED = "Imposed",
+	ENTRY_RETIRED = "Retired %s",
+	ENTRY_BACK = "back to %s",
+	ENTRY_PIN = "Pin to the tracker",
+	ENTRY_UNPIN = "Unpin",
+	ENTRY_UPDATING = "Updating from your Catch log…",
+	-- The wax seal: the full date tier 1 was reached, or the dashed ring before it.
+	SEAL_HUNTED = "Hunted %s",
+	SEAL_NOT_YET = "not yet",
+	-- The tier ladder: each tier's threshold, its Catch's short date and zone, and the ink bar's words.
+	LADDER_TIER = "Tier %d · %d",
+	LADDER_WHEN_ZONE = "%s, %s",
+	LADDER_PROGRESS = "%d / %d",
+	LADDER_CAUGHT = "%d caught",
+	-- The effort counter (HNT-R26) and HNT-R27's note: plain counts, no link.
+	EFFORT_CASTS = "%d Casts",
+	EFFORT_CAST = "%d Cast",
+	EFFORT = "%s under these conditions.",
+	EFFORT_SINCE = "%s under these conditions, %d since my last one.",
+	EFFORT_ODDS = "Odds live in Stats.",
+	-- The set line: "{set}: {done} of {current} · earns {title}", or "· earned {title}".
+	SET_LINE = "%s: %d of %d · %s",
+	SET_EARNS = "earns %s",
+	SET_EARNED = "earned %s",
+	SET_LINE_UPDATING = "%s: %s",
+	-- Chips (HNT-R65).
+	CHIP_HERE = "you're here",
+	CHIP_MORE = "+%d more",
+	CHIP_SKILL = "skill %d",
+	CHIP_SHORT = "needs %d, best: %d",
+	CHIP_LURE = "needs a lure",
+	CHIP_UNCONFIRMED = "unconfirmed",
+	UNCONFIRMED_WINDOW = "This window is an estimate.",
+	UNCONFIRMED_GATING = "Not yet seen biting only in this window.",
+	-- HNT-R67's right page on the Board when no row is visible.
+	ENTRY_ALL_DONE = 'Every Hunt here is done. Tick "show completed" to see them again.',
 }
