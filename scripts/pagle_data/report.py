@@ -411,7 +411,7 @@ def _rows(part: Part) -> tuple[CatchRow | SkillRow | PoolTextRow, ...]:
 # data/observed/reports/<reporter>.toml
 
 
-def _string(text: str) -> str:
+def toml_string(text: str) -> str:
     """text as a TOML basic string."""
     escaped = []
     for char in text:
@@ -443,28 +443,28 @@ def observed_toml(report: Report) -> str:
     lines = [f"issues = {_ints(report.issues)}"]
     if report.header is not None:
         header = report.header
-        lines += ["", "[header]", f"addon = {_string(header.addon)}", f"data = {_string(header.data)}"]
-        lines.append(f"locale = {_string(header.locale)}")
+        lines += ["", "[header]", f"addon = {toml_string(header.addon)}", f"data = {toml_string(header.data)}"]
+        lines.append(f"locale = {toml_string(header.locale)}")
     for catch in report.catches:
         lines += ["", "[[i]]", f"item = {catch.item}", f"area = {catch.area}", f"build = {catch.build}"]
         lines.append(f"count = {catch.count}")
         lines += [f"aura = {_ints(catch.auras)}"] if catch.auras else []
         lines += [f"event = {_ints(catch.events)}"] if catch.events else []
-        lines += [f"t = {_string(_bucket(catch.t))}"] if catch.t is not None else []
+        lines += [f"t = {toml_string(_bucket(catch.t))}"] if catch.t is not None else []
         lines += [f"m = {catch.m}"] if catch.m is not None else []
-        lines += [f"rejected = {_string(catch.rejected)}"] if catch.rejected is not None else []
+        lines += [f"rejected = {toml_string(catch.rejected)}"] if catch.rejected is not None else []
     for skill in report.skills:
         lines += ["", "[[k]]", f"area = {skill.area}", f"build = {skill.build}", f"casts = {skill.casts}"]
         lines.append(f"away = {skill.away}")
         lines += [f"land = {skill.land}"] if skill.land is not None else []
         lines += [f"lost = {skill.lost}"] if skill.lost is not None else []
-        lines += [f"rejected = {_string(skill.rejected)}"] if skill.rejected is not None else []
+        lines += [f"rejected = {toml_string(skill.rejected)}"] if skill.rejected is not None else []
     for pool in report.pool_texts:
-        lines += ["", "[[p]]", f"area = {pool.area}", f"locale = {_string(pool.locale)}"]
-        lines += [f"text = {_string(pool.text)}", f"casts = {pool.casts}"]
+        lines += ["", "[[p]]", f"area = {pool.area}", f"locale = {toml_string(pool.locale)}"]
+        lines += [f"text = {toml_string(pool.text)}", f"casts = {pool.casts}"]
         if pool.items:
             lines.append("items = { " + ", ".join(f"{item} = {count}" for item, count in pool.items) + " }")
-        lines += [f"rejected = {_string(pool.rejected)}"] if pool.rejected is not None else []
+        lines += [f"rejected = {toml_string(pool.rejected)}"] if pool.rejected is not None else []
     return "\n".join(lines) + "\n"
 
 

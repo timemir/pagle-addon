@@ -261,8 +261,10 @@ def test_the_observed_shape_writes_t_as_hh_mm() -> None:
 def test_the_form_helper_pulls_the_report_field_out_of_an_issue_body() -> None:
     # DATA-R115: the report field is a textarea rendered as a code block. GitHub renders the form's fields as
     # "### <label>" sections; the helper returns the paste without its fence or the blank lines around it, whether
-    # the body comes with LF or CRLF line ends. The body is the form's rendering as GitHub documents it (#127 adds
-    # the form itself).
+    # the body comes with LF or CRLF line ends. The body is #127's form (.github/ISSUE_TEMPLATE/field-report.yml) in
+    # the shape GitHub's issue forms render it: "### <label>", a blank line, the value (the report in a ```text
+    # fence, "_No response_" for an empty field, "- [X] <option>" for a ticked box), fields a blank line apart, no
+    # final newline. A body recorded from a real issue replaces it at the M3 exit check.
     body = (FIXTURES / "issues" / "rep-r30.md").read_text(encoding="utf-8")
     expected = golden("rep-r30.txt").removesuffix("\n")
     assert report_field(body) == expected
