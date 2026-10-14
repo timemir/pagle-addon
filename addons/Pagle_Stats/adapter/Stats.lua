@@ -29,4 +29,9 @@ function ns.Stats.OnInitialize()
 	--- `Pagle` itself is the lookups, read at each call, so a new fingerprint drops the tables (LOG-R72). Core sets
 	--- these fields at runtime, so the type checker can't see them on Pagle: hence the cast.
 	ns.places = ns.NewPlaceTables(Pagle --[[@as StatsLookups]])
+
+	--- Stats' one projection (STA-R20): Core catches it up or rebuilds it after login and hands it each new entry
+	--- (LOG-R71–R73). ns.State and ns.IsUpdating follow it from here on: before its first build the state is an empty
+	--- one, and it reads as updating (LOG-R74).
+	ns.projection = ns.Module:NewProjection(ns.ProjectionDef(ns.db.global, ns.places, Pagle.SESSION_RULES_VERSION))
 end
