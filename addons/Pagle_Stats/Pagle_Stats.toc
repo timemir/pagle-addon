@@ -16,4 +16,5 @@ logic\Seams.lua
 logic\Places.lua
 logic\Rows.lua
 logic\Fold.lua
+logic\Sessions.lua
 adapter\Stats.lua
