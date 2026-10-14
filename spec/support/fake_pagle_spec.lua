@@ -864,6 +864,51 @@ describe("FakePagle", function()
 		end)
 	end)
 
+	describe("Simulated Size", function()
+		it("serves Pagle.SIZE_BANDS and Pagle.SIZE_RULES_VERSION as Core does (LOG-R67, LOG-R68)", function()
+			local Pagle = loadAddon("Pagle", FOREVER_GLOBALS).env.Pagle
+			local fake = newFakePagle()
+
+			assert.are.same(Pagle.SIZE_BANDS, fake.Pagle.SIZE_BANDS)
+			assert.are.equal(Pagle.SIZE_RULES_VERSION, fake.Pagle.SIZE_RULES_VERSION)
+		end)
+
+		it(
+			"puts Core's size on the played Cast, its Catch event and the records IterateCatches yields, over the"
+				.. " catalogue served now (LOG-R43, LOG-R65, LOG-R96)",
+			function()
+				local fake = newFakePagle()
+				fake.login()
+				local catches = {}
+				fake.Pagle.RegisterCallback("Spec", "Catch", function(_, catch)
+					catches[#catches + 1] = catch
+				end)
+				-- A size handed out read-only, as a plain table.
+				local function plain(size)
+					return size and { length = size.length, band = size.band }
+				end
+				local first = assert(fake.playCast("caught", { { itemID = 6358, quantity = 1 } }))
+				assert.is_nil(first.items[1].size) -- the generated catalogue has no typical lengths yet
+
+				fake.ns.catalogue.items[6358].typicalLength = 300 -- a release gives Oily Blackmouth's Species one
+				local second = assert(fake.playCast("caught", { { itemID = 6358, quantity = 2 } }))
+
+				local core = loadAddon("Pagle", FOREVER_GLOBALS).ns
+				local expected = {
+					core.SimulatedSize(first.items[1].catchId, 300),
+					core.SimulatedSize(second.items[1].catchId, 300),
+				}
+				assert.are.same(expected[2], plain(second.items[1].size))
+				assert.are.same(expected[2], plain(catches[2].size))
+				local read = {}
+				for record in fake.Pagle.IterateCatches(0) do
+					read[#read + 1] = plain(record.items[1].size)
+				end
+				assert.are.same(expected, read) -- the first Cast too, once it's sized
+			end
+		)
+	end)
+
 	describe("the Field report count", function()
 		-- Darkshore (148) with The Long Wash (453), neither with a skill base, and no items: every item is Uncharted.
 		local function fixture()
