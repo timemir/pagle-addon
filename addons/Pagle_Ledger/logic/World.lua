@@ -142,10 +142,11 @@ local function indexFamilies(world, getItem)
 	end
 end
 
--- The collection an item belongs to (LED-R5, LED-R60, LED-R63), or nil for none.
+--- The collection an item belongs to (LED-R5, LED-R60, LED-R63), or nil for none: the one place an item's category
+--- decides its collection.
 ---@param item PagleItem?
 ---@return "junk"|"treasure"|"trophy"|"legends"?
-local function collectionOf(item)
+function ns.CollectionOf(item)
 	if item == nil or item.noise then
 		return nil
 	elseif item.legend then
@@ -183,7 +184,7 @@ local function indexZone(world, catches, getItem)
 				noteSpecies(zoneIndex, item.species, item, catch)
 			else
 				-- A trophy or curio item (LED-R5): what it adds to the zone is its collection's.
-				local collection = collectionOf(item)
+				local collection = ns.CollectionOf(item)
 				if collection == "trophy" then
 					zoneIndex.families[item.family] = true
 				elseif collection == "junk" then
@@ -192,7 +193,7 @@ local function indexZone(world, catches, getItem)
 					zoneIndex.treasure = true
 				end
 			end
-		elseif collectionOf(item) == "legends" then
+		elseif ns.CollectionOf(item) == "legends" then
 			world.legends[itemID] = true
 		end
 	end
@@ -282,7 +283,7 @@ function ns.CollectionWorlds(world, state)
 	-- Listed trophy and curio items, then every item the state holds (trophy, curio and Legend items, ledger.md › Data).
 	for _, held in ipairs({ world.items, state.items or {} }) do
 		for itemID in pairs(held) do
-			local collection = collectionOf(getItem(itemID))
+			local collection = ns.CollectionOf(getItem(itemID))
 			if collection then
 				sets[collection][itemID] = true
 			end

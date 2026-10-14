@@ -138,8 +138,10 @@ local function stateCounts(celebrated, state, lookups)
 	end
 	for itemID in pairs(state.items) do
 		local class = ns.ClassifyCatch(itemID, lookups.GetItem(itemID))
-		if class == "trophy" or class == "curio" then
-			counts[class] = counts[class] + 1
+		if class == "trophy" then
+			counts.trophy = counts.trophy + 1
+		elseif class == "curio" then
+			counts.curio = counts.curio + 1
 		end
 	end
 	return counts
