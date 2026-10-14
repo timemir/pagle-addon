@@ -30,6 +30,7 @@ Pagle.RegisterEvent(OWNER, "ADDON_LOADED", function(_, loadedName)
 	ns.loginSeq = #ns.catchLog.data.entries
 	ns.Migrate(ns.db, ns.PAGLEDB_MIGRATIONS)
 	ns.OpenWallet() -- SHOP-R3
+	ns.RegisterCoreGoods(ns.CORE_PREVIEWS) -- SHOP-R25: before any Module registers its own
 	ns.BuildCatalogue()
 	ns.WireFieldReport(ns.host) -- LOG-R78: Core's projection, ahead of every Module's
 	ns.StartWalletProjection() -- SHOP-R11, SHOP-R34: the stored spent and purchased set, before the catch-up

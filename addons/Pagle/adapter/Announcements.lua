@@ -19,7 +19,7 @@ local Pagle = Pagle
 local OWNER = "Pagle announcements"
 
 -- Painted in a toast style (ANN-R80), as the card frame is: adapter/Skins.lua.
-local solid, framed, text, textureOf = ns.SolidTexture, ns.Framed, ns.Text, ns.TextureOf
+local solid, framed, text, textureOf = ns.SkinSolid, ns.SkinFramed, ns.SkinText, ns.TextureOf
 
 -- Stamp slots on a frame: the 4 stamps shown and the "+N" for the rest (ANN-R11).
 local STAMP_SLOTS = ns.MOMENT_STAMPS + 1
@@ -32,6 +32,7 @@ local STAMP_SLOTS = ns.MOMENT_STAMPS + 1
 ---@field track Texture
 ---@field fill Texture
 ---@field mark Texture
+---@field old FontString
 ---@field value FontString
 ---@field margin FontString
 ---@field label FontString
@@ -40,6 +41,7 @@ local STAMP_SLOTS = ns.MOMENT_STAMPS + 1
 ---@field compact boolean
 ---@field ruler { old: number, new: number, unit: string, label: string }
 ---@field elapsed number
+---@field lengthUnit PagleLengthUnit
 
 ---@class PagleAnnouncementFrame: Frame
 ---@field display PagleDisplay?
@@ -137,9 +139,9 @@ local function rowWidth(stamps)
 end
 
 -- A record ruler (ANN-R22): a track with the old record's mark and a fill, the number, and once landed the margin
--- and, full size only, the "New record" stamp.
+-- and, full size only, the old record's number over its mark and the "New record" stamp.
 ---@param parent PagleAnnouncementFrame
----@param compact boolean a Nod's: shorter and thinner, with no label or stamp
+---@param compact boolean a Nod's: shorter and thinner, with no old record's number, label or stamp
 ---@return PagleRulerView
 local function newRuler(parent, compact)
 	local ruler = CreateFrame("Frame", nil, parent) --[[@as PagleRulerView]]
@@ -156,6 +158,10 @@ local function newRuler(parent, compact)
 	ruler.fill:SetPoint("BOTTOMLEFT", ruler.track)
 	ruler.mark = ns.Painted(skin, ruler:CreateTexture(nil, "OVERLAY"), "mark") --[[@as Texture]]
 	ruler.mark:SetSize(2, compact and 11 or 18)
+	-- The old record's number, over its mark; a compact ruler has no room for it.
+	ruler.old = text(skin, ruler, "GameFontDisableSmall", "label")
+	ruler.old:SetPoint("BOTTOM", ruler.mark, "TOP", 0, 1)
+	ruler.old:SetShown(not compact)
 	ruler.value = text(skin, ruler, compact and "GameFontHighlightSmall" or "GameFontHighlight", "text")
 	ruler.value:SetPoint("TOPLEFT", ruler.track, "BOTTOMLEFT", 0, -3)
 	ruler.margin = text(skin, ruler, "GameFontNormalSmall", "gold")
@@ -177,6 +183,7 @@ local function drawRuler(ruler, at)
 	ruler.mark:ClearAllPoints()
 	ruler.mark:SetPoint("CENTER", ruler.track, "LEFT", width * at.mark, 0)
 	ns.PaintAs(ruler.skin, ruler.mark, at.passed and "passed" or "mark")
+	ruler.old:SetText(at.old)
 	ruler.value:SetText(at.value)
 	ruler.margin:SetText(at.margin)
 	ruler.margin:SetShown(at.done)
@@ -198,12 +205,13 @@ local function startRuler(view, ruler)
 		view:Hide()
 		return
 	end
-	view.ruler, view.elapsed = ruler, 0
-	drawRuler(view, ns.RulerAt(ruler, 0))
+	-- A Simulated Size reads in the Angler's length unit as the ruler appears (LOG-R69).
+	view.ruler, view.elapsed, view.lengthUnit = ruler, 0, ns.LengthUnit()
+	drawRuler(view, ns.RulerAt(ruler, 0, view.lengthUnit))
 	view:Show()
 	view:SetScript("OnUpdate", function(self, elapsed)
 		self.elapsed = self.elapsed + elapsed
-		local at = ns.RulerAt(self.ruler, self.elapsed)
+		local at = ns.RulerAt(self.ruler, self.elapsed, self.lengthUnit)
 		drawRuler(self, at)
 		if at.stamped then
 			self:SetScript("OnUpdate", nil)
@@ -256,7 +264,8 @@ local BUILD = {
 		frame.text:SetWidth(270)
 		frame.text:SetJustifyH("LEFT")
 		frame.ruler = newRuler(frame, false)
-		frame.ruler:SetPoint("TOPLEFT", frame.text, "BOTTOMLEFT", 0, -8)
+		-- Room above the track for the old record's number.
+		frame.ruler:SetPoint("TOPLEFT", frame.text, "BOTTOMLEFT", 0, -18)
 		frame.more = text(skin, frame, "GameFontHighlightSmall", "more")
 		frame.more:SetPoint("BOTTOMLEFT", 64, 8)
 		return frame
@@ -348,7 +357,7 @@ local function draw(frame, display)
 		local more = frame.more --[[@as FontString]]
 		more:SetText(L.ANNOUNCEMENT_MORE:format(display.overflow))
 		more:SetShown(display.overflow > 0)
-		frame:SetHeight(64 + lines * 14 + (headline.ruler and 40 or 0) + (display.overflow > 0 and 14 or 0))
+		frame:SetHeight(64 + lines * 14 + (headline.ruler and 50 or 0) + (display.overflow > 0 and 14 or 0))
 	elseif form == "nod" then
 		rowRight(stamps, "LEFT", headline.ruler and frame.ruler or frame.text, "RIGHT", 8, 0)
 	else
@@ -419,9 +428,10 @@ ns.lanes = ns.NewLanes({
 	serverTime = function()
 		return GetServerTime()
 	end,
-	-- Driftwood, the only set in M2 (ANN-R72); the Sound set slot comes with the Curio Shop (M4).
+	-- The equipped sound set (ANN-R70, ANN-R72), read as each sound is picked, so it follows AppearanceChanged
+	-- (SHOP-R33).
 	soundSet = function()
-		return ns.SOUND_SETS.driftwood
+		return ns.SoundSetOf(Pagle.GetEquipped("core.soundset"))
 	end,
 	show = show,
 	hide = hide,

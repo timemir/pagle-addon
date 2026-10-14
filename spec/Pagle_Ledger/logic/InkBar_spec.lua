@@ -45,6 +45,18 @@ describe("the ink XP bar", function()
 		end
 	)
 
+	it("reads the climb's half-cost steps after a Prestige (LED-R145, LED-R30)", function()
+		-- At rank 1, level 1 costs 540 and level 2 580: 600 XP is 60 into level 2. A shown level above it reads 0 of
+		-- that level's half-cost step (LED-R36).
+		local state = stateAt(600, 0)
+		state.prestige = 1
+		local celebrated = celebratedAt(nil)
+		assert.are.equal("60 of 580.", ns.InkXpBar(state, celebrated, NOW, breakUpLargeNumbers).text)
+
+		celebrated.levels[1] = 4
+		assert.are.equal("0 of 660.", ns.InkXpBar(state, celebrated, NOW, breakUpLargeNumbers).text)
+	end)
+
 	it("clips Fresh Water at the bar's end (LED-R23)", function()
 		local bar = ns.InkXpBar(stateAt(1580, 300), celebratedAt(2), NOW, breakUpLargeNumbers)
 

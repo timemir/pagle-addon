@@ -34,9 +34,10 @@ Pagle.RegisterCallback(OWNER, "AppearanceChanged", function(_, slot)
 		ns.RepaintToastFrames()
 	end
 end)
--- Each stage's sample toast and Show on screen button, made the first time a preview draws on it.
+-- Each parent's sample toast, made the first time one draws on it. Weak, so a stage the shop drops goes.
 ---@type table<Frame, PagleAnnouncementFrame>
 local samples = setmetatable({}, { __mode = "k" })
+-- Each preview panel's Show on screen button.
 ---@type table<Frame, Button>
 local buttons = setmetatable({}, { __mode = "k" })
 
@@ -65,24 +66,28 @@ function ns.ShowSampleToast(styleID)
 	ns.lanes:Push(ns.SampleAnnouncement(styleID))
 end
 
---- A toast style good's `preview(stage)` (wallet-and-shop.md › Contracts, › UI): the sample toast in that style on the
---- stage, and a Show on screen button under it.
+--- A toast style good's `preview(stage)` (wallet-and-shop.md › Contracts, › UI): on Core's preview panel for the slot
+--- (adapter/CoreGoods.lua), the sample toast in that style and a Show on screen button under it.
 ---@param styleID string
 ---@return fun(stage: Frame)
 function ns.ToastStylePreview(styleID)
 	return function(stage)
-		local sample = ns.DrawSampleToast(stage, styleID)
-		local button = buttons[stage]
-		if not button then
-			button = CreateFrame("Button", nil, stage, "UIPanelButtonTemplate") --[[@as Button]]
+		local panel = ns.CorePreviewPanel(stage, ns.TOAST_STYLE_SLOT, function(panel)
+			local sample = ns.DrawSampleToast(panel, styleID)
+			local button = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate") --[[@as Button]]
 			button:SetSize(140, 22)
 			button:SetPoint("TOP", sample, "BOTTOM", 0, -16)
 			button:SetText(L.TOAST_SHOW_ON_SCREEN)
-			buttons[stage] = button
-		end
-		button:SetScript("OnClick", function()
+			buttons[panel] = button
+		end)
+		ns.DrawSampleToast(panel, styleID)
+		buttons[panel]:SetScript("OnClick", function()
 			ns.ShowSampleToast(styleID)
 		end)
-		button:Show()
 	end
+end
+
+-- Each toast style good's preview on the Curio Shop's stage (logic/CoreGoods.lua registers the goods).
+ns.CORE_PREVIEWS[ns.TOAST_STYLE_SLOT] = function(stage, good)
+	ns.ToastStylePreview(good.id)(stage)
 end

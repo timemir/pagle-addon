@@ -5,7 +5,7 @@ local ns = select(2, ...)
 -- Nod, banner, splash and card frames are drawn in, as data keyed by Core's toast style good IDs. Timber is the free
 -- default and M2's look; Ripple and Lantern Glow are Curio Shop goods, after prototypes/curio-shop/ (variant B)'s
 -- .ts-ripple and .ts-lantern. A style changes only the look, never timing, lanes, the Interruption budget, sounds or
--- which moments show. adapter/Timber.lua paints the frames in one, and adapter/ToastStyles.lua follows the pick.
+-- which moments show. adapter/Skins.lua paints the frames in one, and adapter/ToastStyles.lua follows the pick.
 
 --- Core's toast style slot (SHOP-R25), registered with its goods by Core's own goods.
 ns.TOAST_STYLE_SLOT = "core.toaststyle"

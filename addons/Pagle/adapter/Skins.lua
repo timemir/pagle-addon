@@ -158,13 +158,41 @@ function ns.PaintAs(skin, region, role, template)
 	ns.PaintRegion(skin, painted)
 end
 
+-- A `size`-pixel line on each of `sides` of `frame` (default all four): "top", "bottom", "left", "right".
+---@param frame Frame
+---@param size number
+---@param sides string[]?
+---@return Texture[]
+local function edgeLines(frame, size, sides)
+	local SIDES = {
+		top = { "TOPLEFT", "TOPRIGHT", "SetHeight" },
+		bottom = { "BOTTOMLEFT", "BOTTOMRIGHT", "SetHeight" },
+		left = { "TOPLEFT", "BOTTOMLEFT", "SetWidth" },
+		right = { "TOPRIGHT", "BOTTOMRIGHT", "SetWidth" },
+	}
+	local lines = {}
+	for _, name in ipairs(sides or { "top", "bottom", "left", "right" }) do
+		local side = SIDES[name]
+		local line = frame:CreateTexture(nil, "BORDER")
+		line:SetPoint(side[1])
+		line:SetPoint(side[2])
+		if side[3] == "SetHeight" then
+			line:SetHeight(size)
+		else
+			line:SetWidth(size)
+		end
+		lines[#lines + 1] = line
+	end
+	return lines
+end
+
 --- A texture on `frame` in a colour role, filling it unless placed afterwards.
 ---@param skin PagleSkin
 ---@param frame Frame
 ---@param role string
 ---@param layer DrawLayer?
 ---@return Texture
-function ns.SolidTexture(skin, frame, role, layer)
+function ns.SkinSolid(skin, frame, role, layer)
 	local texture = frame:CreateTexture(nil, layer or "BACKGROUND")
 	texture:SetAllPoints()
 	return ns.Painted(skin, texture, role) --[[@as Texture]]
@@ -178,27 +206,12 @@ end
 ---@param edge string
 ---@param size number
 ---@param sides string[]?
-function ns.Framed(skin, frame, background, edge, size, sides)
-	skin.background = ns.SolidTexture(skin, frame, background)
+function ns.SkinFramed(skin, frame, background, edge, size, sides)
+	skin.background = ns.SkinSolid(skin, frame, background)
 	skin.backdrop = frame:CreateTexture(nil, "BACKGROUND", nil, 1)
 	skin.backdrop:SetAllPoints()
 	skin.backdrop:Hide()
-	local SIDES = {
-		top = { "TOPLEFT", "TOPRIGHT", "SetHeight" },
-		bottom = { "BOTTOMLEFT", "BOTTOMRIGHT", "SetHeight" },
-		left = { "TOPLEFT", "BOTTOMLEFT", "SetWidth" },
-		right = { "TOPRIGHT", "BOTTOMRIGHT", "SetWidth" },
-	}
-	for _, name in ipairs(sides or { "top", "bottom", "left", "right" }) do
-		local side = SIDES[name]
-		local line = frame:CreateTexture(nil, "BORDER")
-		line:SetPoint(side[1])
-		line:SetPoint(side[2])
-		if side[3] == "SetHeight" then
-			line:SetHeight(size)
-		else
-			line:SetWidth(size)
-		end
+	for _, line in ipairs(edgeLines(frame, size, sides)) do
 		skin.edges[#skin.edges + 1] = ns.Painted(skin, line, edge) --[[@as Texture]]
 	end
 end
@@ -220,7 +233,51 @@ end
 ---@param role string
 ---@param title boolean?
 ---@return FontString
-function ns.Text(skin, frame, template, role, title)
+function ns.SkinText(skin, frame, template, role, title)
 	local fontString = frame:CreateFontString(nil, "OVERLAY", template)
 	return ns.Painted(skin, fontString, role, template, title) --[[@as FontString]]
+end
+
+-- Frames drawn in fixed colours, outside the toast styles: a crest's bookplate on the shop's stage is parchment
+-- whatever the style.
+
+--- Timber's colours, each { r, g, b[, a] }, for what is drawn in fixed colours.
+ns.TIMBER = ns.ToastStyleOf(ns.TOAST_STYLE_DEFAULT).colors
+
+--- A solid texture on `frame` in `color`, filling it unless placed afterwards.
+---@param frame Frame
+---@param color number[]
+---@param layer DrawLayer?
+---@return Texture
+function ns.SolidTexture(frame, color, layer)
+	local texture = frame:CreateTexture(nil, layer or "BACKGROUND")
+	texture:SetColorTexture(color[1], color[2], color[3], color[4])
+	texture:SetAllPoints()
+	return texture
+end
+
+--- A frame's background in `background` and a `size`-pixel edge in `edge` on `sides` (default all four).
+---@param frame Frame
+---@param background number[]
+---@param edge number[]
+---@param size number
+---@param sides string[]?
+function ns.Framed(frame, background, edge, size, sides)
+	ns.SolidTexture(frame, background)
+	for _, line in ipairs(edgeLines(frame, size, sides)) do
+		line:SetColorTexture(edge[1], edge[2], edge[3], edge[4])
+	end
+end
+
+--- A font string on `frame` in `template`, in `color` if given.
+---@param frame Frame
+---@param template string
+---@param color number[]?
+---@return FontString
+function ns.Text(frame, template, color)
+	local fontString = frame:CreateFontString(nil, "OVERLAY", template)
+	if color then
+		fontString:SetTextColor(color[1], color[2], color[3])
+	end
+	return fontString
 end

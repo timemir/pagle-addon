@@ -673,4 +673,27 @@ describe("the record ruler", function()
 	it("shows a unit other than length as given (ANN-R22)", function()
 		assert.are.equal("+0.3 kg", ns.RulerAt({ old = 1.2, new = 1.5, unit = "kg", label = "weight" }, 2).margin)
 	end)
+
+	it("shows the old record's number by its mark, in the ruler's unit (ANN-R22)", function()
+		assert.are.equal("10.0 lb", ns.RulerAt(RULER, 0).old)
+	end)
+
+	it("shows a Simulated Size's millimetres and margin in the Angler's length unit (ANN-R22, LOG-R69)", function()
+		local size = { old = 300, new = 342, unit = "length", label = "Pagle size" }
+
+		local cm, inches = ns.RulerAt(size, 2, "cm"), ns.RulerAt(size, 2, "in")
+
+		assert.are.same({ "30.0 cm", "34.2 cm", "+4.2 cm", "Pagle size" }, { cm.old, cm.value, cm.margin, cm.label })
+		assert.are.same({ "11.8 in", "13.5 in", "+1.7 in" }, { inches.old, inches.value, inches.margin })
+		assert.are.equal("0.0 cm", ns.RulerAt(size, 0, "cm").value)
+	end)
+
+	it("shows a size margin that rounds to zero in the unit as +<0.1 (ANN-R22)", function()
+		local size = { old = 300, new = 300.2, unit = "length", label = "Pagle size" }
+
+		assert.are.same(
+			{ "+<0.1 in", "+<0.1 cm" },
+			{ ns.RulerAt(size, 2, "in").margin, ns.RulerAt(size, 2, "cm").margin }
+		)
+	end)
 end)

@@ -35,6 +35,8 @@ WTF/
 !spec/scripts/fixtures/WTF/
 Logs/
 *.bak
+# ...except the .bak a fixture account holds, as the client keeps one (scripts/make-test-log.lua backs it up)
+!spec/scripts/fixtures/WTF/**/*.bak
 
 # Claude Code local settings
 .claude/settings.local.json

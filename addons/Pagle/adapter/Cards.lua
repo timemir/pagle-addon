@@ -15,7 +15,7 @@ local L = ns.L
 -- The card frame's global name: UISpecialFrames takes names, and Esc hides the frames it lists.
 local FRAME_NAME = "PagleCard"
 -- Painted in the equipped toast style (ANN-R80), as the toast is: adapter/Skins.lua.
-local solid, framed, text, textureOf = ns.SolidTexture, ns.Framed, ns.Text, ns.TextureOf
+local solid, framed, text, textureOf = ns.SkinSolid, ns.SkinFramed, ns.SkinText, ns.TextureOf
 local WIDTH = 520
 -- The numbers grid (ANN-R53): Casts, Catches, got away, time fished.
 local NUMBERS = { "casts", "catches", "gotAway", "seconds" }

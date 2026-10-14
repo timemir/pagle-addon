@@ -10,19 +10,6 @@ local PING = "Interface\\Cooldown\\ping4"
 local DISC = "Interface\\CharacterFrame\\TempPortraitAlphaMask"
 local MORPHEUS = "Fonts\\MORPHEUS.TTF"
 
--- Core's toast style slot and goods as SHOP-R25 lists them, registered here unless Core already has them (Core's own
--- goods register them at login).
-local function registerStyles(loaded)
-	local ns = loaded.ns
-	if ns.goods:Good(TIMBER) then
-		return
-	end
-	ns.RegisterCoreSlot({ id = "core.toaststyle", label = "Toast style", category = "Announcements" })
-	ns.RegisterCoreGood({ id = TIMBER, slot = "core.toaststyle", name = "Timber", default = true })
-	ns.RegisterCoreGood({ id = RIPPLE, slot = "core.toaststyle", name = "Ripple", tier = 1 })
-	ns.RegisterCoreGood({ id = LANTERN, slot = "core.toaststyle", name = "Lantern Glow", tier = 2 })
-end
-
 -- A summary card for PagleDB.global.cards, with one Ledger moment.
 local function storedCard()
 	local moment = { module = "Ledger", moduleTitle = "Ledger", moduleOrder = 10, kind = "x", rung = "toast" }
@@ -36,18 +23,20 @@ local function storedCard()
 	}
 end
 
--- Core logged in on Forever over Ada's log, in which she bought Ripple and Lantern Glow, with the Ledger registered
--- and, unless `unregistered`, the toast styles. With `card`, a stored summary card shows at login.
+-- Core logged in on Forever over Ada's log, in which she bought Ripple and Lantern Glow, with the Ledger registered;
+-- Core registers its toast styles at login (SHOP-R25). With `card`, a stored summary card shows at login; with
+-- `picked`, that is the stored toast style pick.
 local function styledCore(options)
 	options = options or {}
 	local entries = history(2)
 	entries[#entries + 1] = purchaseEntry(SERVER_TIME - 2000, RIPPLE, 150)
 	entries[#entries + 1] = purchaseEntry(SERVER_TIME - 1900, LANTERN, 400)
-	local loaded = loadCore(entries, options.card and { global = { cards = { storedCard() } } } or nil)
+	local saved = {
+		global = options.card and { cards = { storedCard() } } or nil,
+		profiles = options.picked and { Default = { appearance = { ["core.toaststyle"] = options.picked } } } or nil,
+	}
+	local loaded = loadCore(entries, saved)
 	local M = loaded.env.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
-	if not options.unregistered then
-		registerStyles(loaded)
-	end
 	enterWorld(loaded, 3)
 	loaded.client.runTimers()
 	return loaded, M
@@ -100,8 +89,8 @@ local function showEveryForm(loaded, M)
 end
 
 describe("the frames' toast style", function()
-	it("is Timber, M2's look, while Core's toast style slot isn't registered (ANN-R80)", function()
-		local loaded, M = styledCore({ unregistered = true })
+	it("is Timber, M2's look, at login: the slot's default (ANN-R80, SHOP-R25)", function()
+		local loaded, M = styledCore()
 
 		raise(loaded, M, "toast")
 
@@ -116,6 +105,21 @@ describe("the frames' toast style", function()
 			stamp = { 0.70, 0.13, 0.10, 1 },
 			coins = { 0.63, 0.47, 0, 1 },
 		}, lookOf(loaded.ns.announcementFrames.toast))
+	end)
+
+	it("is Timber for a stored pick that is no toast style (ANN-R80, SHOP-R32)", function()
+		local loaded, M = styledCore({ picked = "core.toaststyle.moonlit" })
+
+		raise(loaded, M, "toast")
+
+		assert.are.same(
+			{ { 0.16, 0.11, 0.07, 0.94 }, false, { 1, 0.82, 0 } },
+			{
+				lookOf(loaded.ns.announcementFrames.toast).background,
+				lookOf(loaded.ns.announcementFrames.toast).glow,
+				lookOf(loaded.ns.announcementFrames.toast).title,
+			}
+		)
 	end)
 
 	it("draws a toast in Ripple once Ripple is equipped: its water, rings and colours (ANN-R80, SHOP-R33)", function()
@@ -358,20 +362,42 @@ describe("the sample toast", function()
 	)
 
 	it(
-		"is a toast style's preview: the sample on the stage and Show on screen, which shows it in that style"
-			.. " (wallet-and-shop.md › UI, ANN-R80)",
+		"is each toast style good's preview: the sample on the stage in that style and Show on screen, which shows it"
+			.. " (wallet-and-shop.md › UI, ANN-R80, SHOP-R25)",
 		function()
 			local loaded = styledCore()
 			local stage, summarized = stageOf(loaded)
 
-			loaded.ns.ToastStylePreview(RIPPLE)(stage)
+			loaded.ns.goods:Good(RIPPLE).preview(stage)
 
-			local sample, button = stage.children[1], stage.children[2]
-			assert.are.same({ "New Species", MARBLE }, { sample.title:GetText(), lookOf(sample).backdrop })
+			local panel = stage.children[1]
+			local sample, button = panel.children[1], panel.children[2]
+			assert.are.same(
+				{ true, "New Species", MARBLE },
+				{ panel.shown, sample.title:GetText(), lookOf(sample).backdrop }
+			)
 			assert.are.same({ true, "Show on screen" }, { button.shown, button:GetText() })
+			loaded.ns.goods:Good(LANTERN).preview(stage)
+			assert.are.same({ sample, DISC }, { panel.children[1], lookOf(sample).glow })
 			button:Click()
 			local toast = loaded.ns.announcementFrames.toast
-			assert.are.same({ true, MARBLE, {} }, { toast.shown, lookOf(toast).backdrop, summarized })
+			assert.are.same({ true, DISC, {} }, { toast.shown, lookOf(toast).glow, summarized })
+		end
+	)
+
+	it(
+		"hides behind another of Core's previews on the same stage, and comes back (wallet-and-shop.md › UI)",
+		function()
+			local loaded = styledCore()
+			local stage = stageOf(loaded)
+			loaded.ns.goods:Good(TIMBER).preview(stage)
+			local panel = stage.children[1]
+
+			loaded.ns.goods:Good("core.crest.crest1").preview(stage)
+			assert.is_false(panel.shown)
+			loaded.ns.goods:Good(RIPPLE).preview(stage)
+
+			assert.are.same({ true, false }, { panel.shown, stage.children[2].shown })
 		end
 	)
 end)

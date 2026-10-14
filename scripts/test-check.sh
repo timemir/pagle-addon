@@ -309,6 +309,13 @@ sed -i "/^\[species\.13759\]/,/^\$/ s/^riddle = .*/riddle = \"$(head -c 81 /dev/
 expect "with the ledger lore check on, a riddle over 80 code points fails generator" generator \
 	"data/lore/ledger.toml: species.13759.riddle: length: 81 code points, over riddle's limit of 80"
 
+copy
+# With the typicalLength check on since #160 (DATA-R66), drops Raw Nightfin Snapper's species.toml entry: its table
+# header and the typicalLength line after it (DATA-R20).
+sed -i '/^\[species\.13759\]$/{N;d;}' "$scratch/tree/data/forever/species.toml"
+expect "with the typicalLength check on, a Species with no typical length fails generator" generator \
+	"data/forever/species.toml: Species 13759 has no typicalLength, and the check is on (DATA-R20, DATA-R66)"
+
 wait
 report
 if ((reported != cases)); then
