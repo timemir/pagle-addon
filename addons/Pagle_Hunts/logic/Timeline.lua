@@ -71,7 +71,7 @@ local MAX_SPANS = 48
 --- What ns.BuildTimeline reads: the rows to show and the sources the labels and bars need.
 ---@class HuntsTimelineInput
 ---@field rows HuntRow[]             -- the shown rows, sorted: ns.groups:Rows(filter)
----@field anyCurrent boolean         -- whether any Hunt is current at all (HNT-R67)
+---@field current table<string, true>   -- every current Hunt's ID, shown or not (HNT-R67)
 ---@field now integer                -- the grouping's time: the timeline freezes with it (HNT-R43)
 ---@field snapshot table             -- one live Pagle.GetConditions(), for realm time (HNT-R50)
 ---@field where table<string, HuntWhere>   -- ns.where
@@ -266,16 +266,15 @@ local function rowOf(row, ruler, input)
 	}
 end
 
--- The Hunt the timeline selects (HNT-R67): the one asked for while it has a row; otherwise, when the Board picks,
--- the first under Now, or the first row if Now is empty; none when no row shows.
+-- The Hunt the timeline selects (HNT-R67): the one asked for or selected before while it is current, even with its
+-- row filtered away (a Hunt just finished keeps its entry); otherwise, when the Board picks, the first under Now, or
+-- the first row if Now is empty; none when no row shows.
 ---@param rows HuntRow[]
 ---@param input HuntsTimelineInput
 ---@return string?
 local function selectionOf(rows, input)
-	for _, row in ipairs(rows) do
-		if row.id == input.selected then
-			return row.id
-		end
+	if input.selected and input.current[input.selected] then
+		return input.selected
 	end
 	if not input.pick or #rows == 0 then
 		return nil
@@ -312,7 +311,7 @@ function ns.BuildTimeline(input)
 		title = (set.earned and L.SET_HEADING_EARNED or L.SET_HEADING_EARNS):format(set.name, set.title)
 	end
 	local empty
-	if not input.anyCurrent then
+	if next(input.current) == nil then
 		empty = "noHunts"
 	elseif #input.rows == 0 then
 		empty = "allDone"

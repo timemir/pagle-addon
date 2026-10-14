@@ -553,6 +553,17 @@ describe("opening the board (HNT-R67)", function()
 		assert.are.same({ mode = "board", hunt = "fixture_oddity" }, place(run))
 	end)
 
+	it("keeps a current Hunt asked for though the filter hides its row, and picks for a Hunt not current", function()
+		local run = start()
+		useState(run, { fixture_hefty_blackmouth = reached(2) }) -- finished: show completed off hides its row
+
+		run.ns.OpenBoard("fixture_hefty_blackmouth")
+		assert.are.equal("fixture_hefty_blackmouth", place(run).hunt)
+
+		run.ns.OpenBoard("fixture_sunscale") -- Retired: the first Hunt under Now instead
+		assert.are.equal("fixture_eel", place(run).hunt)
+	end)
+
 	it("draws each shown row with its name and margin label", function()
 		local run = start()
 		wait(run, untilRealm(14))

@@ -7,8 +7,9 @@ local ns = select(2, ...)
 
 -- The board's left page on the client (HNT-R61–R63, HNT-R66's left page, HNT-R67, HNT-R69): ns.BoardTimeline gathers
 -- logic/Timeline.lua's inputs from the grouping, the projection, the names and Core, and this file draws the result
--- on the left page of every mode (the Board, a set's page, an entry opened from it), HNT-R67's lines on the Board's
--- right page, and the realm clock and the "show completed" checkbox on the leather. The look follows
+-- on the left page of every mode (the Board, a set's page, an entry opened from it), and the realm clock and the "show
+-- completed" checkbox on the leather. On the Board it selects the Hunt HNT-R67 picks before the right page draws; the
+-- entry's renderer (adapter/Entry.lua, #194) draws that Hunt, or HNT-R67's line when none is. The look follows
 -- prototypes/hunts-board/ variant E in adapter/BoardWidgets.lua's art.
 --
 -- The checkbox is FrameXML's UICheckButtonTemplate (Gethe/wow-ui-source branch forever,
@@ -73,9 +74,13 @@ function ns.BoardTimeline(place)
 			earned = not updating and state.sets[setID] ~= nil,
 		}
 	end
+	local current = {}
+	for _, hunt in ipairs(ns.hunts:Current(now)) do
+		current[hunt.id] = true
+	end
 	return ns.BuildTimeline({
 		rows = ns.groups:Rows({ filtered = true, set = setID }),
-		anyCurrent = #ns.hunts:Current(now) > 0,
+		current = current,
 		now = now,
 		snapshot = Pagle.GetConditions(),
 		where = ns.where,
@@ -415,27 +420,6 @@ local function drawList(view, timeline)
 	view.content:SetHeight(math.max(1, y))
 end
 
--- HNT-R67's line on the Board's right page, over whatever the entry's renderer leaves there: made once, on the right
--- page's body.
----@type FontString?
-local rightLine
-
--- Shows HNT-R67's line on the right page when the Board shows no row, and hides it otherwise.
----@param text string?
-local function setRightLine(text)
-	if not rightLine then
-		if not text then
-			return
-		end
-		local body = (ns.board.frame --[[@as BoardFrame]]).bodies.right
-		rightLine = ns.BoardText(body, ns.BoardFonts().hand, LOOK.hand)
-		rightLine:SetPoint("TOPLEFT", 0, -TITLE_HEIGHT)
-		rightLine:SetWidth(body:GetWidth())
-	end
-	rightLine:SetText(text or "")
-	rightLine:SetShown(text ~= nil)
-end
-
 -- Each left page's view, by its page frame: each mode has its own page (adapter/Board.lua).
 ---@type table<Frame, TimelinePageView>
 local views = {}
@@ -463,7 +447,6 @@ local function drawPage(page, place)
 	view.legend:SetShown(not none)
 	view.empty:SetText(none and ns.L.NO_HUNTS or "")
 	view.empty:SetShown(none)
-	setRightLine(place.mode == "board" and timeline.empty == "allDone" and ns.L.ALL_DONE or nil)
 	if none then
 		return
 	end

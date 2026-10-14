@@ -341,6 +341,8 @@ describe("a Hunt's entry on the board", function()
 
 		it("is empty with rows to pick from, and shows no Retired Hunt on the Board", function()
 			local run = start()
+			-- The entry alone: the timeline (#193) would pick a Hunt from the rows (HNT-R67) before the right page.
+			run.ns.board:RegisterPage("board", "left", function() end)
 
 			assert.are.same({}, textsOf((open(run, { mode = "board" }))))
 			assert.are.same({}, textsOf((open(run, { mode = "board", hunt = "fixture_sunscale" }))))

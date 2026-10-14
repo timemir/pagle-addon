@@ -124,7 +124,6 @@ ns.L = {
 	SET_HEADING_EARNS = "%s: earns %s",
 	SET_HEADING_EARNED = "%s: %s",
 	NO_HUNTS = "No Hunts yet.",
-	ALL_DONE = 'Every Hunt here is done. Tick "show completed" to see them again.',
 	-- The leather's realm clock ("14:05 · Tue 14 Oct · Autumn") and checkbox (HNT-R61, HNT-R43, HNT-R82).
 	WEEKDAY_DATE = "%s %s",
 	CLOCK_PAUSED = "%s (paused in combat)",
