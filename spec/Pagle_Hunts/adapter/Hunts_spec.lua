@@ -177,21 +177,27 @@ describe("Pagle_Hunts with Core", function()
 		assert.is_true(loaded.ns.board:IsShown())
 	end)
 
-	it("adds no settings pages of its own yet (HNT-R135, CORE-R42)", function()
-		local loaded = loadAddon("Pagle_Hunts", FOREVER_GLOBALS)
-		local plain = loadAddon("Pagle", FOREVER_GLOBALS)
-		loaded.client.fire("PLAYER_LOGIN")
-		plain.client.fire("PLAYER_LOGIN")
+	it(
+		"adds no settings page but Trackers, for its tracker frame's dropdown (HNT-R135, HNT-R120, CORE-R42, SET-R44)",
+		function()
+			local loaded = loadAddon("Pagle_Hunts", FOREVER_GLOBALS)
+			local plain = loadAddon("Pagle", FOREVER_GLOBALS)
+			loaded.client.fire("PLAYER_LOGIN")
+			plain.client.fire("PLAYER_LOGIN")
 
-		local function categories(client)
-			local names = {}
-			for i, category in ipairs(client.settings.categories) do
-				names[i] = category.name
+			local function categories(client)
+				local names = {}
+				for i, category in ipairs(client.settings.categories) do
+					names[i] = category.name
+				end
+				return names
 			end
-			return names
+			local expected = categories(plain.client)
+			assert.are.equal("Look and Feel", expected[#expected])
+			table.insert(expected, #expected, "Trackers") -- before Look and Feel, the last (SET-R1)
+			assert.are.same(expected, categories(loaded.client))
 		end
-		assert.are.same(categories(plain.client), categories(loaded.client))
-	end)
+	)
 
 	it("keeps PagleHuntsDB account-wide in one shared profile, at schema 1 (hunts.md › Data)", function()
 		local loaded = loadAddon("Pagle_Hunts", FOREVER_GLOBALS)

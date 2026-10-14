@@ -16,6 +16,12 @@ ns.L = {
 	BOARD = "Hunts",
 	BOARD_SLASH_HELP = "Open or close the Hunts board",
 
+	-- Hunts' slots (HNT-R120) and the sample tracker a tracker frame's preview draws (HNT-R121).
+	SLOT_NOTEBOOK_COVER = "Notebook cover",
+	SLOT_TRACKER_FRAME = "Hunts tracker frame",
+	PREVIEW_TRACKER_LINE_1 = "Night Run · in 37m",
+	PREVIEW_TRACKER_LINE_2 = "Rack Hour · on demand",
+
 	-- Labels in realm time (HNT-R50–R55): logic/Labels.lua. A name not loaded yet reads "…".
 	NAME_UNKNOWN = "…",
 	-- Durations, rounded down to the minute (HNT-R50): "37m", "2h", "2h 10m", "1d", "1d 4h".
@@ -117,4 +123,26 @@ ns.L = {
 	WEEKDAY_DATE = "%s %s",
 	CLOCK_PAUSED = "%s (paused in combat)",
 	SHOW_COMPLETED = "show completed",
+
+	-- Hunts' moments, Write-up and summary line (HNT-R86, HNT-R89, HNT-R111). Counts come in singular and plural
+	-- pairs, *_ONE and *_OTHER.
+	HUNT_COMPLETE = "Hunt complete",
+	HUNT_COMPLETE_STAMP = "Hunt",
+	HUNT_TIER = "%s tier", -- "Silver tier"
+	HUNT_TIER_TEXT = "%s · %d caught", -- "Night Run · 10 caught"
+	TRIMS = { bronze = "Bronze", silver = "Silver", gold = "Gold" }, -- HNT-R18
+	TITLE_EARNED = "Title earned",
+	TITLE_EARNED_STAMP = "Title",
+	WRITE_UP_FIRST_BUILD_ONE = "Your Hunts were written up from %s Cast",
+	WRITE_UP_FIRST_BUILD_OTHER = "Your Hunts were written up from %s Casts",
+	WRITE_UP_WHILE_OFF = "While Hunts was off",
+	WRITE_UP_COMPLETED_ONE = "%s Hunt completed",
+	WRITE_UP_COMPLETED_OTHER = "%s Hunts completed",
+	WRITE_UP_FURTHER_ONE = "%s further tier",
+	WRITE_UP_FURTHER_OTHER = "%s further tiers",
+	WRITE_UP_TITLE = "Title: %s",
+	WRITE_UP_COINS = "Pagle Coins +%s",
+	SUMMARY_LINE = "Hunts: %s of %s done · %s", -- "Hunts: 3 of 16 done · 1 title"
+	SUMMARY_TITLES_ONE = "%s title",
+	SUMMARY_TITLES_OTHER = "%s titles",
 }
