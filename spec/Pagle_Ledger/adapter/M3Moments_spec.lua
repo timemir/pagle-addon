@@ -222,10 +222,12 @@ describe("the Ledger's M3 live moments", function()
 
 			local record = assert(fake.playCast("caught", loot(LIGHT)))
 
+			-- The banner, then the Cast's catch Announcement of its own (ANN-R11).
 			local announcements = shown(fake)
-			assert.are.equal(1, #announcements)
+			assert.are.equal(2, #announcements)
 			local moments = byKind(announcements[1])
 			assert.is_nil(moments.zoneRank)
+			assert.is_nil(byKind(announcements[2]).zoneRank)
 			local master = moments.zoneMaster
 			assert.are.same(
 				{ "banner", 120, "Zone Master", "Cove", "Master", 10, record.id },
