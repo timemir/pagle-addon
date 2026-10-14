@@ -639,11 +639,13 @@ end)
 
 -- Window forecasts (LOG-R50), on Core's real logic over the fake's catalogue: the realm's UTC offset comes from
 -- fake.conditions' time and minute, and the events open now from fake.conditions.events, so setConditions moves the
--- clock and the calendar. Each Window is read-only.
+-- clock and the calendar. Each Window is read-only. A spec Pagle.GetWindowSpec handed out goes in as its record,
+-- as Core takes its own (`#` sees nothing in a proxy).
 part(function(fake, Pagle, ns)
 	function Pagle.NextWindow(spec, fromTime)
 		local now = fake.conditions
 		local offset = ns.RealmUtcOffset(now.time, now.minute)
+		spec = originalOf[spec] or spec
 		return readOnly(ns.NextWindow(spec, fromTime, offset, now.events, ns.Catalogue.GetEventRule))
 	end
 end)

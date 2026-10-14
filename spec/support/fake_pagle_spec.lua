@@ -1018,6 +1018,13 @@ describe("FakePagle", function()
 			end
 		)
 
+		it("forecasts a window spec Pagle.GetWindowSpec handed out, as Core does (LOG-R50, LOG-R55)", function()
+			local Pagle = newFakePagle().globals.Pagle
+
+			-- The generated day runs from 06:00 to midnight: open at realm 08:15.
+			assert.is_true(Pagle.NextWindow(Pagle.GetWindowSpec("day"), SERVER_TIME).openNow)
+		end)
+
 		it("hands out a read-only Window (CORE-R18)", function()
 			local window = newFakePagle().globals.Pagle.NextWindow(DAY, SERVER_TIME)
 			assert.has_error(function()
