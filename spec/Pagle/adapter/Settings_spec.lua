@@ -41,7 +41,7 @@ end
 
 describe("The Settings root with no Module On", function()
 	it(
-		"registers one Pagle category under AddOns at ModulesChanged, with only Core's Announcements page (CORE-R40, SET-R1)",
+		"registers one Pagle category under AddOns at ModulesChanged, with only Core's two pages (CORE-R40, SET-R1)",
 		function()
 			local loaded = loadWith()
 			assert.is_nil(loaded.client.settings.category("Pagle"))
@@ -51,9 +51,13 @@ describe("The Settings root with no Module On", function()
 			local settings = loaded.client.settings
 			assert.are.equal(1, #settings.addOnCategories)
 			assert.are.equal("Pagle", settings.addOnCategories[1].name)
-			-- The Announcements page: spec/Pagle/adapter/AnnouncementSettings_spec.lua.
-			assert.are.same({ "Pagle", "Announcements" }, { settings.categories[1].name, settings.categories[2].name })
-			assert.are.equal(2, #settings.categories)
+			-- The Announcements page: spec/Pagle/adapter/AnnouncementSettings_spec.lua; Look and Feel:
+			-- spec/Pagle/adapter/LookAndFeel_spec.lua.
+			local names = {}
+			for i, category in ipairs(settings.categories) do
+				names[i] = category.name
+			end
+			assert.are.same({ "Pagle", "Announcements", "Look and Feel" }, names)
 		end
 	)
 
@@ -138,7 +142,7 @@ describe("A topic page", function()
 		local fishing = assert(loaded.client.settings.category("Fishing"))
 		assert.is_table(fishing)
 		assert.are.equal(loaded.client.settings.category("Pagle"), fishing.parent)
-		assert.are.equal(3, #loaded.client.settings.categories) -- the root, Fishing and Announcements
+		assert.are.equal(4, #loaded.client.settings.categories) -- the root, Fishing, Announcements and Look and Feel
 	end)
 
 	it("isn't registered while the Module that has its rows isn't On (CORE-R42, SET-R4, SET-R90)", function()
@@ -320,7 +324,7 @@ describe("Pagle.OpenSettings", function()
 		registerQoL(loaded)
 		loaded.client.fire("PLAYER_LOGIN")
 
-		for _, topic in ipairs({ "fishing", "look", "trackers", "Fishing", 5 }) do
+		for _, topic in ipairs({ "fishing", "Look", "trackers", "Fishing", 5 }) do
 			loaded.env.Pagle.OpenSettings(topic)
 		end
 

@@ -1,11 +1,14 @@
--- The Announcements page: Core's rows for how Announcements behave, Cozy mode and the Interruption budget, driven
--- through the fake client's Settings panel (settings.md SET-R1, SET-R30, SET-R31, SET-R33, SET-R60, SET-R61;
--- core/announcements.md › Settings, Data; CORE-R32, CORE-R40, CORE-R43).
+-- The Announcements page: Core's rows for how Announcements behave, Cozy mode and the Interruption budget, then its
+-- two slot rows, driven through the fake client's Settings panel (settings.md SET-R1, SET-R30, SET-R31, SET-R33,
+-- SET-R60, SET-R61; core/announcements.md › Settings, Data; CORE-R32, CORE-R40, CORE-R43). The slot rows themselves:
+-- spec/Pagle/adapter/LookAndFeel_spec.lua.
 
 local COZY = "Cozy mode"
 local BUDGET = "Interruption budget"
 local COUNT = "Interruptions"
 local WINDOW = "Per"
+local TOAST_STYLE = "Toast style"
+local SOUND_SET = "Sound set"
 
 -- Core, logged in on the fake client, its Settings registered. `modules` installs roster Modules by name, as
 -- Settings_spec's loadWith does; `extra` adds globals.
@@ -51,7 +54,7 @@ describe("The Announcements page", function()
 		for i, category in ipairs(loaded.client.settings.categories) do
 			names[i] = category.name
 		end
-		assert.are.same({ "Pagle", "Announcements" }, names)
+		assert.are.same({ "Pagle", "Announcements", "Look and Feel" }, names)
 		assert.are.equal(loaded.client.settings.category("Pagle"), page(loaded).parent)
 	end)
 
@@ -66,11 +69,11 @@ describe("The Announcements page", function()
 		for i, category in ipairs(loaded.client.settings.categories) do
 			names[i] = category.name
 		end
-		assert.are.same({ "Pagle", "Fishing", "Announcements" }, names)
+		assert.are.same({ "Pagle", "Fishing", "Announcements", "Look and Feel" }, names)
 	end)
 
 	it(
-		"holds Core's four rows in SET-R30's order, each found by its label, and ends after Per (SET-R30, SET-R5)",
+		"holds Core's six rows in SET-R30's order, each found by its label, ending with the slot rows (SET-R30, SET-R5)",
 		function()
 			local loaded = login(core())
 
@@ -78,7 +81,7 @@ describe("The Announcements page", function()
 			for i, initializer in ipairs(page(loaded).layout.initializers) do
 				names[i] = initializer:GetName()
 			end
-			assert.are.same({ COZY, BUDGET, COUNT, WINDOW }, names)
+			assert.are.same({ COZY, BUDGET, COUNT, WINDOW, TOAST_STYLE, SOUND_SET }, names)
 		end
 	)
 
@@ -152,13 +155,13 @@ describe("The Announcements page", function()
 
 		setCombat(loaded, false)
 
-		assert.are.equal(4, #page(loaded).layout.initializers)
+		assert.are.equal(6, #page(loaded).layout.initializers)
 	end)
 end)
 
 describe("Core's Announcements rows", function()
 	it(
-		"start from profile.announcements' defaults: Cozy off, the budget on, 4 per 5 min (announcements.md Data)",
+		"start from the defaults: Cozy off, the budget on, 4 per 5 min, Timber and Driftwood (announcements.md Data)",
 		function()
 			local loaded = login(core())
 
@@ -166,7 +169,7 @@ describe("Core's Announcements rows", function()
 			for i, shown in ipairs(loaded.client.settings.show(page(loaded))) do
 				values[i] = shown.frame.value
 			end
-			assert.are.same({ false, true, 4, 5 }, values)
+			assert.are.same({ false, true, 4, 5, "core.toaststyle.timber", "core.soundset.driftwood" }, values)
 			assert.are.same({ cozy = false, budget = { on = true, count = 4, window = 300 } }, stored(loaded))
 		end
 	)
@@ -202,11 +205,12 @@ describe("Core's Announcements rows", function()
 	end)
 end)
 
--- Whether each row is live, as the page shown last draws it: Cozy mode, Interruption budget, Interruptions, Per.
+-- Whether each of the four greyable rows is live, as the page shown last draws it: Cozy mode, Interruption budget,
+-- Interruptions, Per. The slot rows are never greyed out (SET-R51).
 local function live(shown)
 	local enabled = {}
-	for i, each in ipairs(shown) do
-		enabled[i] = each.frame.enabled
+	for i = 1, 4 do
+		enabled[i] = shown[i].frame.enabled
 	end
 	return enabled
 end
@@ -257,15 +261,6 @@ describe("Greying on the Announcements page", function()
 	end)
 end)
 
--- Presses a page's Defaults button: every setting registered on it goes back to its default (SET-R60).
-local function pressDefaults(loaded, category)
-	for _, setting in pairs(loaded.client.settings.variables) do
-		if setting.category == category then
-			setting:SetValue(setting:GetDefaultValue())
-		end
-	end
-end
-
 describe("The Announcements page's Defaults button", function()
 	it("restores Cozy off, the budget on, 4 and 5 min, greyed rows included (SET-R33, SET-R60)", function()
 		local loaded = login(core())
@@ -274,7 +269,7 @@ describe("The Announcements page's Defaults button", function()
 		row(loaded, WINDOW):GetSetting():SetValue(15)
 		row(loaded, COZY):GetSetting():SetValue(true)
 
-		pressDefaults(loaded, page(loaded))
+		loaded.client.settings.defaults(page(loaded))
 
 		assert.are.same({ cozy = false, budget = { on = true, count = 4, window = 300 } }, stored(loaded))
 	end)
@@ -283,7 +278,7 @@ describe("The Announcements page's Defaults button", function()
 		local loaded = login(core())
 		loaded.ns.db.profile.reloadReminder = true
 
-		pressDefaults(loaded, page(loaded))
+		loaded.client.settings.defaults(page(loaded))
 
 		assert.is_true(loaded.ns.db.profile.reloadReminder)
 	end)
