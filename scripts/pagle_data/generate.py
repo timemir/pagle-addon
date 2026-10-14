@@ -23,6 +23,7 @@ from pagle_data.hunts import (
     read_hunts,
 )
 from pagle_data.items import ITEMS_TOML, ItemLayer, Record, item_records, read_item_layer
+from pagle_data.lock import Lock, check_lock, check_locked_members, read_lock
 from pagle_data.lore import LoreLayer, catalogue_ids, check_lore, lore_outputs, read_lore
 from pagle_data.lua import to_lua
 from pagle_data.observed import (
@@ -123,6 +124,7 @@ class Layers:
     area_layer: AreaLayer  # areas.toml as read (DATA-R10)
     lore: LoreLayer  # data/lore/ as read (DATA-R100); never part of the catalogue (DATA-R109)
     hunts: HuntLayer  # data/hunts/hunts.toml as read and checked (DATA-R85-R92)
+    lock: Lock  # data/hunts/released.lock as read; the Hunt list is checked against it (DATA-R95, DATA-R96)
 
     def fishing_areas(self) -> set[int]:
         """The areas with a catch list (DATA-R32)."""
@@ -176,7 +178,11 @@ def read_layers(
     pool_types = read_pools_toml(root, problems)
     check_pooltext(observed.pooltext, pool_types.keys(), problems)  # DATA-R118: pools.toml's IDs, bobber or other
     lore = read_lore(root, problems)
+    before_hunts = len(problems.found)
     hunts = read_hunts(root, problems)
+    lock = read_lock(root, problems)
+    if len(problems.found) == before_hunts:  # DATA-R96: the lock judges a Hunt list that read cleanly
+        check_lock(lock, hunts, problems)
     items: dict[int, Record] = {}
     catch_lists = CatchLists()
     pools: dict[str, list[int]] = {}
@@ -200,6 +206,7 @@ def read_layers(
         check_lore(lore, checks.lore, catalogue_ids(items, item_layer.families), problems)
         # DATA-R92: the Hunt checks that need the catalogue's items, windows, auras and events.
         check_hunts(hunts, items, windows.keys(), forever.auras, forever.events.keys(), problems)
+        check_locked_members(lock, items.keys(), problems)  # DATA-R91: a locked generated class member still ships
         # DATA-R46: only observations on builds at or above the minimum confirming build count; DATA-R33: those in
         # areas missing from the slice stay out of the catalogue; DATA-R34: areas through the alias table.
         seen = observations(observed, {alias.source: alias.target for alias in forever.aliases})
@@ -239,6 +246,7 @@ def read_layers(
         area_layer,
         lore,
         hunts,
+        lock,
     )
 
 
@@ -256,8 +264,9 @@ def catalogue_of(layers: Layers) -> Catalogue:
 
 
 def hunt_list_of(layers: Layers) -> HuntList:
-    """The Hunt list the layers give (DATA-R93), its generated classes over the catalogue's items (DATA-R91)."""
-    return build_hunt_list(layers.hunts, layers.items)
+    """The Hunt list the layers give (DATA-R93), its generated classes over the catalogue's items and holding every
+    member the release lock records for them (DATA-R91)."""
+    return build_hunt_list(layers.hunts, layers.items, layers.lock.classes)
 
 
 def outputs(layers: Layers) -> dict[str, str]:

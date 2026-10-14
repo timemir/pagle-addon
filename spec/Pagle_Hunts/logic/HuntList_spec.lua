@@ -22,7 +22,7 @@ describe("The Hunt list at runtime", function()
 
 	describe("in file order (HNT-R1)", function()
 		it("gives every set in the order the list has them", function()
-			assert.are.same({ "fixture_dusk", "fixture_wagers" }, ids(list:Sets()))
+			assert.are.same({ "fixture_dusk", "fixture_wagers", "fixture_pair", "fixture_tide" }, ids(list:Sets()))
 		end)
 
 		it("gives every Hunt in file order, not grouped by set, retired and not-yet ones too, for the rules", function()
@@ -33,6 +33,11 @@ describe("The Hunt list at runtime", function()
 				"fixture_hefty_blackmouth",
 				"fixture_sunscale",
 				"fixture_grouper",
+				"fixture_eel",
+				"fixture_bass",
+				"fixture_squid",
+				"fixture_tide_retired",
+				"fixture_tide_late",
 			}, ids(list:Hunts()))
 		end)
 
@@ -101,24 +106,35 @@ describe("The Hunt list at runtime", function()
 				"fixture_rack",
 				"fixture_hefty_blackmouth",
 				"fixture_sunscale",
+				"fixture_eel",
+				"fixture_bass",
+				"fixture_squid",
+				"fixture_tide_retired",
+				"fixture_tide_late",
 			}, ids(list:Current(JUN_1 - 1)))
-			assert.are.same(
-				{ "fixture_snapper", "fixture_oddity", "fixture_rack", "fixture_hefty_blackmouth" },
-				ids(list:Current(SERVER_TIME))
-			)
+			assert.are.same({
+				"fixture_snapper",
+				"fixture_oddity",
+				"fixture_rack",
+				"fixture_hefty_blackmouth",
+				"fixture_eel",
+				"fixture_bass",
+				"fixture_squid",
+				"fixture_tide_late",
+			}, ids(list:Current(SERVER_TIME)))
 		end)
 
 		it("lists the Retired Hunts in file order, from their retired date on (HNT-R3)", function()
 			assert.are.same({}, list:Retired(JUN_1 - 1))
-			assert.are.same({ "fixture_sunscale" }, ids(list:Retired(JUN_1)))
+			assert.are.same({ "fixture_sunscale", "fixture_tide_retired" }, ids(list:Retired(JUN_1)))
 		end)
 
 		it("keeps a Hunt whose since is still ahead out of every list a view reads, until its since", function()
 			local grouper = list:Hunt("fixture_grouper")
 			assert.is_false(ns.IsCurrent(grouper, SERVER_TIME))
 			assert.is_false(ns.IsRetired(grouper, SERVER_TIME))
-			assert.is_nil(ids(list:Current(SERVER_TIME))[6])
-			assert.are.same({ "fixture_sunscale" }, ids(list:Retired(SERVER_TIME)))
+			assert.is_nil(ids(list:Current(SERVER_TIME))[9])
+			assert.are.same({ "fixture_sunscale", "fixture_tide_retired" }, ids(list:Retired(SERVER_TIME)))
 
 			assert.are.equal("fixture_grouper", ids(list:Current(NOV_4))[5])
 		end)
@@ -160,16 +176,36 @@ describe("The Hunt list at runtime", function()
 		end)
 	end)
 
-	describe("with no Hunt list loaded", function()
-		it("reads as an empty list until data\\HuntList.lua is in the TOC (HNT-R1)", function()
-			local empty = ns.NewHuntList(nil, ns.L)
+	describe("the shipped list (DATA-R93)", function()
+		it(
+			"is what Hunts reads without the fixture: data\\HuntList.lua sets ns.huntList before OnInitialize",
+			function()
+				local shipped = newFakePagle().load("Pagle_Hunts").ns
 
-			assert.are.same({}, empty:Hunts())
-			assert.are.same({}, empty:Sets())
-			assert.are.same({}, empty:Current(SERVER_TIME))
-			assert.are.same({}, empty:Retired(SERVER_TIME))
-			assert.is_nil(empty:Hunt("fixture_snapper"))
-			assert.is_nil(empty:Fingerprint())
+				assert.is_string(shipped.huntList.fingerprint)
+				assert.are.equal(shipped.huntList.fingerprint, shipped.hunts:Fingerprint())
+				assert.are.equal(#shipped.huntList.hunts, #shipped.hunts:Hunts())
+			end
+		)
+
+		it("gives way to the fixture list in specs (hunts.md › Data: tests inject their own Hunt list)", function()
+			assert.are.equal("f1c7f1c7f1c7f1c7", list:Fingerprint())
 		end)
+	end)
+
+	describe("with no Hunt list loaded", function()
+		it(
+			"reads a missing list as an empty one, so a broken install shows no Hunts rather than an error (HNT-R1)",
+			function()
+				local empty = ns.NewHuntList(nil, ns.L)
+
+				assert.are.same({}, empty:Hunts())
+				assert.are.same({}, empty:Sets())
+				assert.are.same({}, empty:Current(SERVER_TIME))
+				assert.are.same({}, empty:Retired(SERVER_TIME))
+				assert.is_nil(empty:Hunt("fixture_snapper"))
+				assert.is_nil(empty:Fingerprint())
+			end
+		)
 	end)
 end)

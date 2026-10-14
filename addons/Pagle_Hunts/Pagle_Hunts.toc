@@ -15,6 +15,9 @@ logic\Data.lua
 logic\Module.lua
 logic\HuntList.lua
 logic\Seams.lua
+logic\Qualify.lua
+logic\Waters.lua
+logic\Titles.lua
 logic\Board.lua
 adapter\BoardWidgets.lua
 adapter\Board.lua
