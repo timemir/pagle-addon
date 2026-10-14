@@ -9,6 +9,11 @@ local ns = select(2, ...)
 -- saw, summary-only moments for what a rebuild newly earned, and nothing that pops up. Pure logic, everything passed
 -- in (CORE-R7).
 
+-- Title lines a Write-up lists before "+{k} more titles" (LED-R94, Tunables).
+local TITLE_LINES = 3
+-- The title held from the start, which no Write-up lists (LED-R75).
+local FROM_THE_START = "title:level1"
+
 -- The number of keys in `set`.
 ---@param set table
 ---@return integer
@@ -33,9 +38,9 @@ local function starList(stars)
 	return list
 end
 
--- Adds every achievement in the state to the celebrated set (LED-R93's first build): the level, Species and their
--- stars, Species × zone pairs, Skill Milestones, the zones fished at their computed rank, curio and trophy items, their
--- families' stars and the Uncharted items.
+-- Adds every achievement in the state to the celebrated set (LED-R93's first build): the level, the prestige rank,
+-- Species and their stars, Species × zone pairs, Skill and Catch Milestones, the zones fished at their computed rank,
+-- curio, trophy and Legend items, their families' stars, the Uncharted items and the titles earned.
 ---@param celebrated LedgerCelebrated
 ---@param state LedgerState
 ---@param lookups LedgerLookups
@@ -44,6 +49,14 @@ local function celebrateAll(celebrated, state, lookups)
 	local level = ns.Level(state)
 	if level > (celebrated.levels[state.prestige] or 0) then
 		celebrated.levels[state.prestige] = level
+	end
+	-- Each earlier climb is history written up whole: its 60 stands for its Prestige ready too (LED-R90).
+	for rank = 0, state.prestige - 1 do
+		celebrated.levels[rank] = math.max(celebrated.levels[rank] or 0, ns.LEVEL_CAP)
+	end
+	celebrated.prestige = math.max(celebrated.prestige, state.prestige)
+	for n in pairs(state.milestones) do
+		celebrated.milestones[n] = true
 	end
 	for id, species in pairs(state.species) do
 		celebrated.species[id] = true
@@ -69,6 +82,10 @@ local function celebrateAll(celebrated, state, lookups)
 	for itemID in pairs(state.uncharted) do
 		celebrated.uncharted[itemID] = true
 	end
+	-- After the zones: a Zone Master title follows the shown rank (LED-R75).
+	for _, key in ipairs(ns.TitleKeys({ world = world, state = state, celebrated = celebrated, getItem = getItem })) do
+		celebrated.titles[key] = true
+	end
 end
 
 --- What a Write-up section counts (LED-R94); each line only when its count is above 0.
@@ -79,12 +96,32 @@ end
 ---@field trophy integer         -- trophy weights
 ---@field curio integer          -- curio items
 ---@field skill integer          -- Skill Milestones
+---@field legends integer        -- Legend items
+---@field catches integer        -- the highest Catch Milestone reached, 0 for none new
+---@field titles string[]        -- title keys, in LED-R75's order
 
--- Write-up lines after the level's, in LED-R94's order: Species, zones ranked and mastered, trophy weights, curios
--- and Skill Milestones. Stars and Uncharted items have none.
+-- The title lines (LED-R94): "Title: {title}" for each of the first 3 with a name (LED-R161), then "+{k} more
+-- titles".
+---@param lines string[]
+---@param keys string[] in LED-R75's order
+---@param outlets LedgerOutlets
+local function addTitleLines(lines, keys, outlets)
+	local L = ns.L
+	local names = ns.TitleNames(keys, outlets)
+	for i = 1, math.min(#names, TITLE_LINES) do
+		lines[#lines + 1] = L.TITLE_LINE:format(names[i])
+	end
+	if #names > TITLE_LINES then
+		lines[#lines + 1] = ns.CountText(#names - TITLE_LINES, L.WRITE_UP_MORE_TITLES_ONE, L.WRITE_UP_MORE_TITLES_OTHER)
+	end
+end
+
+-- Write-up lines after the level's, in LED-R94's order: Species, zones ranked and mastered, trophy weights, curios,
+-- Legends, Skill Milestones, the Catch Milestone and titles. Stars and Uncharted items have none.
 ---@param lines string[] holding the level's line, when there is one
 ---@param counts LedgerWriteUpCounts
-local function addLines(lines, counts)
+---@param outlets LedgerOutlets
+local function addLines(lines, counts, outlets)
 	local L = ns.L
 	if counts.species > 0 then
 		lines[#lines + 1] = ns.CountText(counts.species, L.WRITE_UP_SPECIES_ONE, L.WRITE_UP_SPECIES_OTHER)
@@ -103,9 +140,25 @@ local function addLines(lines, counts)
 	if counts.curio > 0 then
 		lines[#lines + 1] = ns.CountText(counts.curio, L.WRITE_UP_CURIO_ONE, L.WRITE_UP_CURIO_OTHER)
 	end
+	if counts.legends > 0 then
+		lines[#lines + 1] = ns.CountText(counts.legends, L.WRITE_UP_LEGENDS_ONE, L.WRITE_UP_LEGENDS_OTHER)
+	end
 	if counts.skill > 0 then
 		lines[#lines + 1] = ns.CountText(counts.skill, L.WRITE_UP_SKILL_ONE, L.WRITE_UP_SKILL_OTHER)
 	end
+	if counts.catches > 0 then
+		local n = counts.catches
+		lines[#lines + 1] = (n == 1 and L.CATCHES_ONE or L.CATCHES_OTHER):format(outlets.FormatNumber(n))
+	end
+	addTitleLines(lines, counts.titles, outlets)
+end
+
+-- The level's line with " · Prestige {R}" when the rank is above 0 (LED-R94).
+---@param line string
+---@param rank integer
+---@return string
+local function withPrestige(line, rank)
+	return rank > 0 and ns.L.WRITE_UP_WITH_PRESTIGE:format(line, rank) or line
 end
 
 -- The Coins line (LED-R94), last: the Coins earned since the celebrated total, only when above 0.
@@ -118,15 +171,25 @@ local function addCoinsLine(lines, coins, outlets)
 	end
 end
 
--- What a first build's section counts (LED-R94): everything in the state, zones by their shown rank.
+-- What a first build's section counts (LED-R94): everything in the state, zones by their shown rank, every title
+-- earned but the one held from the start (LED-R75).
 ---@param celebrated LedgerCelebrated
 ---@param state LedgerState
 ---@param lookups LedgerLookups
 ---@return LedgerWriteUpCounts
 local function stateCounts(celebrated, state, lookups)
 	local world = lookups.world
-	local counts =
-		{ species = count(state.species), zones = 0, mastered = 0, trophy = 0, curio = 0, skill = count(state.skill) }
+	local counts = {
+		species = count(state.species),
+		zones = 0,
+		mastered = 0,
+		trophy = 0,
+		curio = 0,
+		skill = count(state.skill),
+		legends = 0,
+		catches = 0,
+		titles = {},
+	}
 	for _, zone in ipairs(world.charted) do
 		local rank = ns.ShownZoneRank(world, state, celebrated, zone)
 		if rank > 0 then
@@ -140,6 +203,17 @@ local function stateCounts(celebrated, state, lookups)
 		local class = ns.ClassifyCatch(itemID, lookups.GetItem(itemID))
 		if class == "trophy" or class == "curio" then
 			counts[class] = counts[class] + 1
+		elseif class == "legend" then
+			counts.legends = counts.legends + 1
+		end
+	end
+	for n in pairs(state.milestones) do
+		counts.catches = math.max(counts.catches, n)
+	end
+	local view = { world = world, state = state, celebrated = celebrated, getItem = lookups.GetItem }
+	for _, key in ipairs(ns.TitleKeys(view)) do
+		if key ~= FROM_THE_START then
+			counts.titles[#counts.titles + 1] = key
 		end
 	end
 	return counts
@@ -158,114 +232,157 @@ local function firstBuild(celebrated, state, coinsBefore, outlets, lookups)
 		return
 	end
 	local L = ns.L
-	local lines = { L.WRITE_UP_LEVEL:format(ns.ShownLevel(state, celebrated)) }
-	addLines(lines, stateCounts(celebrated, state, lookups))
+	local lines = { withPrestige(L.WRITE_UP_LEVEL:format(ns.ShownLevel(state, celebrated)), state.prestige) }
+	addLines(lines, stateCounts(celebrated, state, lookups), outlets)
 	addCoinsLine(lines, state.coins - coinsBefore, outlets)
 	local heading = state.casts == 1 and L.WRITE_UP_FIRST_BUILD_ONE or L.WRITE_UP_FIRST_BUILD_OTHER
 	outlets.RaiseWriteUp({ heading = heading:format(outlets.FormatNumber(state.casts)), lines = lines })
 end
 
--- The scratch list's achievements with its level-ups merged into one, at the last one's place: every level they
--- raised, that entry's `cast` (LED-R93). celebrate.levelUp then pays it for the levels above the celebrated one.
+-- The scratch list's achievements with each climb's level-ups merged into one, at that climb's last one's place:
+-- every level they raised in it, that entry's `cast` and the climb's rank (LED-R93), so a Prestige among them never
+-- mixes two climbs' levels. celebrate.levelUp then pays it for the levels above the climb's celebrated one. Size
+-- records are left out: only live Catches raise them (LED-R84).
 ---@param scratch LedgerAchievement[]
+---@param rank integer the state's prestige rank, for a level-up the scratch list didn't mark with its climb
 ---@return LedgerAchievement[]
-local function mergeLevelUps(scratch)
-	local levels, last = {}, nil
+local function mergeLevelUps(scratch, rank)
+	---@type { [integer]: integer[] }
+	local levels = {}
+	---@type { [integer]: integer }
+	local last = {}
 	for i, achievement in ipairs(scratch) do
 		if achievement.kind == "levelUp" then
-			local raised = achievement.levels --[[@as integer[] ]]
-			for _, level in ipairs(raised) do
-				levels[#levels + 1] = level
+			local climb = achievement.rank or rank
+			levels[climb] = levels[climb] or {}
+			for _, level in
+				ipairs(achievement.levels --[[@as integer[] ]])
+			do
+				table.insert(levels[climb], level)
 			end
-			last = i
+			last[climb] = i
 		end
 	end
 	local merged = {}
 	for i, achievement in ipairs(scratch) do
-		if i == last then
-			merged[#merged + 1] =
-				{ kind = "levelUp", cast = achievement.cast, coins = ns.LEVEL_UP_COINS * #levels, levels = levels }
-		elseif achievement.kind ~= "levelUp" then
+		local kind = achievement.kind
+		if kind == "levelUp" then
+			local climb = achievement.rank or rank
+			if last[climb] == i then
+				local raised = levels[climb]
+				merged[#merged + 1] = {
+					kind = "levelUp",
+					cast = achievement.cast,
+					coins = ns.LEVEL_UP_COINS * #raised,
+					levels = raised,
+					rank = climb,
+				}
+			end
+		elseif kind ~= "sizeRecord" then
 			merged[#merged + 1] = achievement
 		end
 	end
 	return merged
 end
 
--- The moments of the scratch list's achievements not yet celebrated, each added to the set (LED-R91, LED-R93), and
--- the achievement each was raised for.
+-- The moments of the scratch list's achievements not yet celebrated, each added to the set (LED-R91, LED-R93), the
+-- achievement each was raised for, and the titles newly earned (LED-R75).
 ---@param celebrated LedgerCelebrated
 ---@param state LedgerState
 ---@param scratch LedgerAchievement[]
 ---@param outlets LedgerOutlets
+---@param lookups LedgerLookups
 ---@return PagleMoment[] moments
 ---@return LedgerAchievement[] achievements
-local function celebrateScratch(celebrated, state, scratch, outlets)
-	local moments, achievements = {}, {}
-	for _, achievement in ipairs(mergeLevelUps(scratch)) do
-		local moment = ns.CelebrateAchievement(celebrated, state, achievement, outlets)
-		if moment then
-			moments[#moments + 1] = moment
-			achievements[#achievements + 1] = achievement
-		end
-	end
-	return moments, achievements
+---@return string[] titles
+local function celebrateScratch(celebrated, state, scratch, outlets, lookups)
+	return ns.CelebrateEarned(celebrated, state, mergeLevelUps(scratch, state.prestige), outlets, lookups)
 end
 
 -- What a catch-up's section counts (LED-R94): only the moments it newly celebrated, a zone counted once however many
--- of its ranks rose, as ranked, and as mastered when one of them was its Zone Master.
+-- of its ranks rose, as ranked, and as mastered when one of them was its Zone Master; the highest Catch Milestone
+-- among them; the titles newly earned.
 ---@param moments PagleMoment[]
 ---@param achievements LedgerAchievement[] the achievement of each moment
+---@param titles string[] the title keys newly celebrated
+---@param rank integer the current climb's prestige rank
 ---@return LedgerWriteUpCounts counts
----@return boolean levelUp a level-up among them
-local function newCounts(moments, achievements)
-	local counts = { species = 0, zones = 0, mastered = 0, trophy = 0, curio = 0, skill = 0 }
-	local kinds = { newSpecies = "species", trophyWeight = "trophy", newCurio = "curio", skillMilestone = "skill" }
-	local ranked, mastered, levelUp = {}, {}, false
+---@return boolean levelUp a level-up of the current climb among them
+---@return boolean prestige a Prestige among them
+local function newCounts(moments, achievements, titles, rank)
+	local counts = {
+		species = 0,
+		zones = 0,
+		mastered = 0,
+		trophy = 0,
+		curio = 0,
+		skill = 0,
+		legends = 0,
+		catches = 0,
+		titles = titles,
+	}
+	local kinds = {
+		newSpecies = "species",
+		trophyWeight = "trophy",
+		newCurio = "curio",
+		skillMilestone = "skill",
+		legend = "legends",
+	}
+	local ranked, mastered, levelUp, prestige = {}, {}, false, false
 	for i, moment in ipairs(moments) do
-		local kind = moment.kind
+		local kind, achievement = moment.kind, achievements[i]
 		if kinds[kind] then
 			counts[kinds[kind]] = counts[kinds[kind]] + 1
 		elseif kind == "zoneRank" or kind == "zoneMaster" then
-			local zone = achievements[i].zone --[[@as integer]]
+			local zone = achievement.zone --[[@as integer]]
 			ranked[zone] = true
 			mastered[zone] = mastered[zone] or kind == "zoneMaster" or nil
+		elseif kind == "catchMilestone" then
+			counts.catches = math.max(counts.catches, achievement.n --[[@as integer]])
 		elseif kind == "levelUp" then
-			levelUp = true
+			levelUp = levelUp or (achievement.rank or rank) == rank
+		elseif kind == "prestige" then
+			prestige = true
 		end
 	end
 	counts.zones, counts.mastered = count(ranked), count(mastered)
-	return counts, levelUp
+	return counts, levelUp, prestige
 end
 
 -- A catch-up (LED-R93, LED-R94, LED-R190): what the replayed entries newly earned, celebrated with no moment and
 -- counted in one "While the Ledger was off" section. Achievements with no line (a Species new in a zone, stars,
--- Uncharted items) alone raise none.
+-- Uncharted items, size records) alone raise none. The level line is the current climb's, with the rank; a Prestige
+-- among them gives it even when that climb's level didn't rise.
 ---@param celebrated LedgerCelebrated
 ---@param state LedgerState
 ---@param scratch LedgerAchievement[]
 ---@param coinsBefore integer the celebrated Coins before this done
 ---@param outlets LedgerOutlets
-local function catchUp(celebrated, state, scratch, coinsBefore, outlets)
+---@param lookups LedgerLookups
+local function catchUp(celebrated, state, scratch, coinsBefore, outlets, lookups)
+	local rank = state.prestige
 	-- The shown level before the catch-up (LED-R36): the celebrated one, or the one its first level-up left.
-	local before = celebrated.levels[state.prestige] or 1
+	local before = celebrated.levels[rank] or 1
 	for _, achievement in ipairs(scratch) do
-		if achievement.kind == "levelUp" then
+		if achievement.kind == "levelUp" and (achievement.rank or rank) == rank then
 			before = math.max(before, achievement.levels[1] - 1)
 			break
 		end
 	end
-	local moments, achievements = celebrateScratch(celebrated, state, scratch, outlets)
-	if #moments == 0 then
+	local moments, achievements, titles = celebrateScratch(celebrated, state, scratch, outlets, lookups)
+	if #moments == 0 and #titles == 0 then
 		return
 	end
-	local counts, levelUp = newCounts(moments, achievements)
+	local counts, levelUp, prestige = newCounts(moments, achievements, titles, rank)
 	local L = ns.L
 	local lines = {}
+	local shown = ns.ShownLevel(state, celebrated)
 	if levelUp then
-		lines[1] = L.WRITE_UP_LEVEL_ROSE:format(before, ns.ShownLevel(state, celebrated))
+		lines[1] = withPrestige(L.WRITE_UP_LEVEL_ROSE:format(before, shown), rank)
+	elseif prestige then
+		lines[1] = withPrestige(L.WRITE_UP_LEVEL:format(shown), rank)
 	end
-	addLines(lines, counts)
+	addLines(lines, counts, outlets)
 	addCoinsLine(lines, state.coins - coinsBefore, outlets)
 	if #lines > 0 then
 		outlets.RaiseWriteUp({ heading = L.WRITE_UP_WHILE_OFF, lines = lines })
@@ -279,7 +396,7 @@ end
 ---@param scratch LedgerAchievement[] what the replayed or rebuilt entries earned (LED-R98)
 ---@param info PagleProjectionInfo
 ---@param outlets LedgerOutlets
----@param lookups LedgerLookups the fold's: the world index and Core's GetItem, for the first build's stars and lines
+---@param lookups LedgerLookups the fold's: the world index and Core's GetItem, for the stars, titles and lines
 ---@return LedgerCelebrated
 function ns.CelebrateDone(global, state, scratch, info, outlets, lookups)
 	local celebrated = ns.CelebratedSet(global)
@@ -296,12 +413,12 @@ function ns.CelebrateDone(global, state, scratch, info, outlets, lookups)
 		firstBuild(celebrated, state, coinsBefore, outlets, lookups)
 	elseif info.rebuilt then
 		-- Raised as live, but summary-only: no pop-up (LED-R191, ANN-R63).
-		for _, moment in ipairs((celebrateScratch(celebrated, state, scratch, outlets))) do
+		for _, moment in ipairs((celebrateScratch(celebrated, state, scratch, outlets, lookups))) do
 			moment.summaryOnly = true
 			outlets.RaiseMoment(moment)
 		end
 	elseif info.replayed > 0 then
-		catchUp(celebrated, state, scratch, coinsBefore, outlets)
+		catchUp(celebrated, state, scratch, coinsBefore, outlets, lookups)
 	end
 	celebrated.coins = state.coins
 	outlets.ReportCoinsEarned(state.coins)

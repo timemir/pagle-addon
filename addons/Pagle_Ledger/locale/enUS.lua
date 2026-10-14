@@ -12,8 +12,9 @@ ns.L = {
 	-- The Ledger's def title (LED-R1).
 	TITLE = "Ledger",
 
-	-- The summary line (LED-R95): the shown level and Ledger completion's percent.
+	-- The summary line (LED-R95): the shown level and Ledger completion's percent, after the prestige rank above 0.
 	SUMMARY_LINE = "Ledger: Angler Level %d · %d%% complete",
+	SUMMARY_LINE_PRESTIGE = "Ledger: Prestige %d · Angler Level %d · %d%% complete",
 
 	-- Names the client doesn't have (LED-R97, LED-R126).
 	ITEM_FALLBACK = "Item %d",
@@ -50,6 +51,25 @@ ns.L = {
 	NEW_CURIO_STAMP = "New!",
 	UNCHARTED_TITLE = "Unknown catch, logged",
 	UNCHARTED_STAMP = "Logged",
+	-- A Catch moment's item and its size text (LED-R81, LED-R97).
+	ITEM_SIZE = "%s · %s",
+	LEGEND_TITLE = "Legend",
+	LEGEND_STAMP = "Legend!",
+	PRESTIGE_READY_TITLE = "Prestige ready",
+	PRESTIGE_READY_TEXT = "Open the Fish Journal to begin a new Ledger.",
+	PRESTIGE_READY_STAMP = "Prestige ready",
+	-- A Prestige's emblem, I to X, then the Master Prestige's rank − 10 (LED-R34).
+	PRESTIGE_TITLE = "Prestige %s",
+	MASTER_PRESTIGE_TITLE = "Master Prestige %d",
+	-- A Catch Milestone's moment and Write-up line (LED-R42, LED-R94), the count with BreakUpLargeNumbers.
+	CATCHES_ONE = "%s Catch",
+	CATCHES_OTHER = "%s Catches",
+	SIZE_RECORD_TITLE = "Size record",
+	SIZE_RECORD_STAMP = "Record",
+	-- A title (lore, LED-R75) riding in a moment's text, after the text it has (LED-R97), and a completion title's own.
+	TITLE_LINE = "Title: %s",
+	TEXT_WITH_TITLE = "%s. %s",
+	TITLE_EARNED = "Title earned",
 	ELEMENT_STAR_TITLE = "In its element",
 	REGULAR_STAR_TITLE = "Regular",
 	FAMILY_STAR_TITLE = "Trophy family",
@@ -98,6 +118,13 @@ ns.L = {
 	WRITE_UP_TROPHY_OTHER = "%d trophy weights",
 	WRITE_UP_CURIO_ONE = "%d curio",
 	WRITE_UP_CURIO_OTHER = "%d curios",
+	-- The level's line with the prestige rank above 0.
+	WRITE_UP_WITH_PRESTIGE = "%s · Prestige %d",
+	WRITE_UP_LEGENDS_ONE = "%d Legend",
+	WRITE_UP_LEGENDS_OTHER = "%d Legends",
+	-- After the first three title lines (TITLE_LINE).
+	WRITE_UP_MORE_TITLES_ONE = "+%d more title",
+	WRITE_UP_MORE_TITLES_OTHER = "+%d more titles",
 	WRITE_UP_SKILL_ONE = "%d Skill Milestone",
 	WRITE_UP_SKILL_OTHER = "%d Skill Milestones",
 	WRITE_UP_COINS = "Pagle Coins +%s",
