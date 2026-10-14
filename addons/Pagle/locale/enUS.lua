@@ -126,12 +126,52 @@ ns.L = {
 	SETTINGS_FIELD_REPORT_BUTTON = "Open Field report",
 	SETTINGS_FIELD_REPORT_BUTTON_COUNT = "Open Field report (%d)",
 	SETTINGS_FIELD_REPORT_TOOLTIP = "Copy what you've caught that Pagle's data doesn't know yet, and paste it into the issue form.",
+	-- The Curio Shop (wallet-and-shop.md › UI): its title, the chat line its entry points print while restricted
+	-- (SHOP-R41); the purse (its label, a Module's legend entry with its total, the segment's tooltip lines, who pays
+	-- nothing); the list (the search box's hint, the filters, the category chips, a slot's owned count, the Put away
+	-- group and its note, a list with no row); a row's and the stage's tags; the stage (the line under the name, with
+	-- the slot and its owner, Core's owner name, a price, Buy, the Coins still needed, an earned good's line, a Module
+	-- off, the hint with nothing selected, Use).
+	SHOP_TITLE = "Curio Shop",
+	SHOP_AFTER_COMBAT = "Pagle: the Curio Shop opens after combat.",
+	SHOP_COINS = "Pagle Coins",
+	SHOP_LEGEND = "%s %s",
+	SHOP_ALL_TIME = "%s Coins all time",
+	SHOP_OFF_NOTE = "Off: pays nothing new, keeps what it paid.",
+	SHOP_PAY_NONE = "Stats and QoL pay none",
+	SHOP_SEARCH = "Search looks",
+	SHOP_FILTERS = { all = "All", owned = "Owned", notOwned = "Not owned", canAfford = "Can afford" },
+	SHOP_ALL_CATEGORIES = "All",
+	SHOP_CATEGORIES = {
+		Announcements = "Announcements",
+		Bookplate = "Bookplate",
+		["Fish Journal"] = "Fish Journal",
+		Hunts = "Hunts",
+		Trackers = "Trackers",
+	},
+	SHOP_OWNED_COUNT = "%d/%d",
+	SHOP_PUT_AWAY = "Put away: Module off",
+	SHOP_KEEP = "Yours to keep",
+	SHOP_NO_MATCH = "No looks match.",
+	SHOP_OWNED = "Owned",
+	SHOP_IN_USE = "In use",
+	SHOP_DEFAULT = "default",
+	SHOP_SLOT_LINE = "%s · %s",
+	SHOP_CORE = "Pagle",
+	SHOP_PRICE = "%s " .. COIN,
+	SHOP_BUY = "Buy for %s " .. COIN,
+	SHOP_MORE_NEEDED = "%s more needed",
+	SHOP_REWARD = "A %s reward, not for sale",
+	SHOP_MODULE_OFF = "%s is off",
+	SHOP_PICK = "Pick a look to see it here.",
+	SHOP_USE = "Use",
+
 	-- The compartment entry's label (CORE-R51): Pagle, with the moments Cozy mode holds for a summary (ANN-R42).
 	COMPARTMENT = "Pagle",
 	COMPARTMENT_WAITING = "Pagle · %d waiting",
 
 	-- /pagle help (CORE-R60, CORE-R61): the header, then a line per command (its name, its help). Core lists the
-	-- reserved commands that work; shop joins with the Curio Shop (M4).
+	-- reserved commands.
 	SLASH_HELP_HEADER = "Pagle commands:",
 	SLASH_HELP_LINE = "/pagle %s: %s",
 	-- CORE-R62: a Module's /pagle entry skipped, reported. Each takes the Module's def.name and the entry's name, then
@@ -142,6 +182,7 @@ ns.L = {
 	SLASH_SKIPPED_TAKEN = "Pagle: %s's /pagle %s is skipped: %s already uses it",
 	SLASH_CORE_HELP = {
 		{ name = "settings", help = "open Pagle's settings (also /pagle on its own)" },
+		{ name = "shop", help = "open or close the Curio Shop" },
 		{ name = "report", help = "open the Field report, to help chart the waters" },
 		{ name = "help", help = "list these commands" },
 	},

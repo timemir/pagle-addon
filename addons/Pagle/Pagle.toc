@@ -41,6 +41,7 @@ logic\Settings.lua
 logic\Slash.lua
 logic\Wallet.lua
 logic\Goods.lua
+logic\Shop.lua
 logic\CoreGoods.lua
 logic\WalletProjection.lua
 logic\Moments.lua
@@ -86,4 +87,5 @@ adapter\Menu.lua
 adapter\ReloadReminder.lua
 adapter\FieldReportText.lua
 adapter\FieldReportBox.lua
+adapter\Shop.lua
 adapter\Login.lua
