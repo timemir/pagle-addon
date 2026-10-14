@@ -161,6 +161,34 @@ ns.L = {
 	DRY_WATCH_CAUGHT_LAST = "caught on my last Cast.",
 	DRY_WATCH_NONE_YET = "%s, none yet.",
 
+	-- A place's page (stats.md › UI › Place spread; adapter/Place.lua, logic/Groups.lua). The row groups (STA-R18), each
+	-- with its heading and small note.
+	GROUPS = {
+		any = { heading = "Any time", note = "Your odds · Dry spell" },
+		pools = { heading = "Pools", note = "open water and pools combined" },
+		window = { heading = "In their window", note = "only Casts in their window" },
+		added = { heading = "Also caught here", note = "not on Pagle's chart for these waters" },
+	},
+	-- The left page: the kicker of a zone's page (a subzone's is its zone's name), "I'm here", my Casts and the no-junk
+	-- sentence after them, the no-chart line, *Its waters* with "—" for none, and the line under a subzone's rows.
+	PLACE_ZONE_KICKER = "Waters",
+	PLACE_HERE = "I'm here",
+	PLACE_CASTS = "%s of my Casts here.",
+	PLACE_NO_JUNK = "No junk from %d.",
+	PLACE_NO_JUNK_PAST = "No junk from %d; at %d I'm past it, so only those Casts count.",
+	PLACE_NO_JUNK_BELOW = "No junk from %d; at %d I'm below it, so only my Casts below it count.",
+	PLACE_NO_CHART = "Pagle has no chart of these waters yet.",
+	PLACE_WATERS = "Its waters",
+	PLACE_WATERS_NOTE = "my Casts",
+	PLACE_NONE = "—",
+	PLACE_ACROSS_ZONE = "Fish with fewer than %d Casts in %s use all of %s until then.",
+	-- The right page with no item chosen: "Got away" as "{n} ({rate}%)".
+	PLACE_ABOUT = "About these waters",
+	PLACE_CASTS_LABEL = "Casts",
+	PLACE_CATCHES_LABEL = "Catches",
+	PLACE_GOT_AWAY_LABEL = "Got away",
+	PLACE_GOT_AWAY = "%s (%d%%)",
+	PLACE_PICK = "Pick a fish on the left for its odds and its Dry spell.",
 	-- The home spread (stats.md › UI › Home spread). The left page: its kicker, title and line, a zone's tile ("1,840
 	-- Casts · 6 waters", the Casts and waters counts by ns.Count), and the line with no Casts (STA-R97).
 	HOME_KICKER = "The waters",
