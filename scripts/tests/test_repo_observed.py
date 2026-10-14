@@ -62,6 +62,17 @@ def test_the_committed_dev_toml_reads_clean_with_no_facts_and_no_report_is_commi
     assert not (REPO / "data" / "observed" / "reports").exists()
 
 
+def test_the_committed_pooltext_toml_is_empty_and_says_how_the_dev_fills_it() -> None:
+    # DATA-R118: pooltext.toml is kept by hand from the triage comments' P row texts; #127 commits it with no
+    # entries and a comment saying how to fill it.
+    text = (REPO / "data" / "observed" / "pooltext.toml").read_text(encoding="utf-8")
+    assert tomllib.loads(text) == {}
+    assert "triage comment" in text and "pools.toml" in text and "bobber" in text and "other" in text
+    problems = Problems()
+    assert read_observed(REPO, problems).pooltext == ()
+    assert problems.found == []
+
+
 def test_the_committed_catalogue_confirms_nothing_while_no_observation_is_committed() -> None:
     # DATA-R56: before any observation every confirmed, gateConfirmed and skillBaseConfirmed is false (#95: the
     # committed flags stay false while dev.toml has no facts).

@@ -31,3 +31,67 @@ describe("the Ledger's Lore.lua", function()
 		assert.are.equal("Ledger", loaded.ns.L.TITLE)
 	end)
 end)
+
+describe("the Ledger's committed lore (DATA-R111, its M3 batch)", function()
+	-- The text each key needs, from the committed catalogue and Lore.lua as Pagle_Ledger loads them (DATA-R103,
+	-- LED-R160): a key missing here would leave its Journal line out (LED-R161).
+	local L, items
+
+	setup(function()
+		local loaded = loadAddon("Pagle_Ledger", FOREVER_GLOBALS)
+		L, items = loaded.ns.L, loaded.namespaces.Pagle.catalogue.items
+	end)
+
+	---@param key string
+	local function hasText(key)
+		local text = L[key]
+		assert(type(text) == "string" and text:find("%S"), key .. " has no text")
+	end
+
+	it("has a blurb and a riddle for every Species in the catalogue, Legends aside (DATA-R103, LED-R160)", function()
+		local species = 0
+		for itemID, item in pairs(items) do
+			if item.species == itemID and not item.legend then
+				species = species + 1
+				hasText(("species.%d.blurb"):format(itemID))
+				hasText(("species.%d.riddle"):format(itemID))
+			end
+		end
+		assert.is_true(species > 30)
+	end)
+
+	it("has a blurb and a title for every Legend (DATA-R103, LED-R160)", function()
+		local legends = {}
+		for itemID, item in pairs(items) do
+			if item.legend then
+				legends[#legends + 1] = itemID
+				hasText(("legend.%d.blurb"):format(itemID))
+				hasText(("legend.%d.title"):format(itemID))
+			end
+		end
+		table.sort(legends)
+		assert.are.same({ 19803, 19805, 19806 }, legends)
+	end)
+
+	it("never gives a Legend the title Master Angler (LED-R75)", function()
+		for _, itemID in ipairs({ 19803, 19805, 19806 }) do
+			assert.are_not.equal("Master Angler", L[("legend.%d.title"):format(itemID)])
+		end
+	end)
+
+	it("has a plaque for every curio item and a name for every trophy family (LED-R160)", function()
+		for itemID, item in pairs(items) do
+			if item.category == "junk" or item.category == "container" or item.category == "treasure" then
+				hasText(("sub.%d.plaque"):format(itemID))
+			elseif item.category == "trophy" then
+				hasText(("family.%d.name"):format(item.family))
+			end
+		end
+	end)
+
+	it("has the four shared lines (LED-R138, LED-R144, LED-R147, LED-R162)", function()
+		for _, id in ipairs({ "uncaughtlegend", "uncaughtjunk", "uncaughttreasure", "unchartedwaters" }) do
+			hasText(("line.%s.text"):format(id))
+		end
+	end)
+end)
