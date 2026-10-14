@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from pagle_data.cli import main
+from cli_fixture import run
 from test_item_records import CATALOGUE, write_tree
 
 LORE_LUA = "addons/Pagle_Ledger/data/Lore.lua"
@@ -131,12 +131,6 @@ def write_lore_tree(
     return root
 
 
-def run(root: Path, capsys: pytest.CaptureFixture[str], *args: str) -> tuple[int, str]:
-    code = main(list(args), root)
-    out, err = capsys.readouterr()
-    return code, out + err
-
-
 def emitted(root: Path, capsys: pytest.CaptureFixture[str]) -> str:
     code, output = run(root, capsys)
     assert code == 0, output
@@ -210,6 +204,26 @@ def test_a_stale_lore_lua_fails_check(tmp_path: Path, capsys: pytest.CaptureFixt
     code, output = run(root, capsys, "--check")
     assert code == 1
     assert f"{LORE_LUA} is out of date with data/" in output
+
+
+def test_a_lore_lua_left_without_its_lore_file_fails_check_and_is_removed(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    # DATA-R60, DATA-R61: --check fails if any generated file would change. A Lore.lua is generated from its lore file
+    # alone (DATA-R104), so once the file is gone the committed Lore.lua is stale; without --check the generator
+    # removes it.
+    root = write_lore_tree(tmp_path)
+    emitted(root, capsys)
+    (root / "data" / "lore" / "ledger.toml").unlink()
+    code, output = run(root, capsys, "--check")
+    assert code == 1
+    assert f"{LORE_LUA} is out of date with data/: data/lore/ledger.toml is gone" in output
+    assert (root / LORE_LUA).exists()
+    code, output = run(root, capsys)
+    assert code == 0, output
+    assert f"removed {LORE_LUA}" in output
+    assert not (root / LORE_LUA).exists()
+    assert run(root, capsys, "--check")[0] == 0
 
 
 def test_with_the_check_on_complete_lore_passes_and_is_emitted(

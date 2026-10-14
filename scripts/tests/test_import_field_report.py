@@ -10,10 +10,14 @@ from pathlib import Path
 
 import pytest
 
+from cli_fixture import run as run_main
 from pagle_data.errors import Problems
-from pagle_data.importer import FetchError, imported, main, upsert
-from pagle_data.observed import Header, ObservedLayer, Report
-from pagle_data.report import join, observed_toml, parse_part
+from pagle_data.generate import read_layers
+from pagle_data.importer import FetchError, catalogue_changes, imported, main, read_reports, upsert
+from pagle_data.observed import Header, ObservedLayer
+from pagle_data.report import observed_toml
+from report_fixture import part as report_part
+from report_fixture import parsed_report as parsed
 from test_catch_lists import CATALOGUE, write_tree
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
@@ -48,25 +52,12 @@ def run(
     root: Path, capsys: pytest.CaptureFixture[str], *issues: int, bodies: Mapping[int, str] = ISSUES
 ) -> tuple[int, str]:
     """The importer on the tree at root for these issues: its exit code and everything it printed."""
-    code = main([str(number) for number in issues], root, Fetched(bodies))
-    out, err = capsys.readouterr()
-    return code, out + err
+    return run_main(root, capsys, *map(str, issues), main=main, fetch=Fetched(bodies))
 
 
-def part(rows: str, n: int = 1, m: int = 1, data: str = "3f9a2c1e", reporter: str = ALICE) -> str:
-    """A PAGLE-REPORT part (REP-R30) with these rows, as Core writes it."""
-    header = f"addon 0.9.0 data {data} locale enUS reporter {reporter} part {n}/{m}"
-    return f"PAGLE-REPORT 1\n{header}\n{rows}END\n"
-
-
-def parsed(text: str, issues: tuple[int, ...]) -> Report:
-    """One whole report parsed from text, as data/observed/ holds it after importing issues."""
-    problems = Problems()
-    found = parse_part(text, "test", problems)
-    assert found is not None, problems.found
-    (field_report,) = join([found], problems)
-    assert problems.found == []
-    return field_report.observed(issues)
+def part(rows: str, n: int = 1, m: int = 1, data: str = "3f9a2c1e") -> str:
+    """Alice's PAGLE-REPORT part (REP-R30) with these rows, as Core writes it."""
+    return report_part(rows, n, m, data=data, reporter=ALICE)
 
 
 def test_an_upsert_replaces_rows_by_key_keeps_their_rejected_marks_and_keeps_rows_the_report_lacks() -> None:
@@ -290,6 +281,30 @@ def test_the_changes_list_new_and_confirmed_pairs_contradictions_and_an_item_nee
     assert (root / REPORTS / f"{ALICE}.toml").read_text(encoding="utf-8") == ALICE_TOML
     assert (root / REPORTS / f"{BOB}.toml").exists()
     assert "Closes #41, Closes #42, Closes #43" in output
+
+
+def test_the_change_list_is_one_function_of_the_layers_before_and_the_imported_observed_layer(
+    tmp_path: Path,
+) -> None:
+    # DATA-R119: what importing changes in the catalogue, items now needing a category included, computed in memory
+    # from the layers before and the observed layer after (#127's triage runs it so). Over the same tree as above:
+    # 30500 needs a category, and the rest of the change list is read as if it were deferred (DATA-R18).
+    root = write_tree(tmp_path)
+    problems = Problems()
+    reports = read_reports([41, 42, 43], Fetched(ISSUES), problems)
+    assert problems.found == []
+    before = read_layers(root)
+    found = catalogue_changes(before, imported(before.observed, reports), root)
+    assert found.needing == (30500,)
+    assert "new pair: item 6308 in area 368 (confirmed)" in found.lines
+    assert "contradicted skill base: area 33 (130)" in found.lines
+    assert found.problems == ()
+    assert not (root / REPORTS).exists()  # nothing written
+    # DATA-R63: when data/ fails for more than those items, the change list is its problems instead.
+    (root / "data" / "forever" / "items.toml").write_text("[item.6308\n", encoding="utf-8")
+    failed = catalogue_changes(before, imported(before.observed, reports), root)
+    assert failed.lines == () and failed.needing == (30500,)
+    assert any(problem.startswith("data/forever/items.toml") for problem in failed.problems), failed.problems
 
 
 def test_a_contradiction_demotes_what_was_confirmed(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:

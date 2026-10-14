@@ -7,9 +7,10 @@ from pathlib import Path
 
 import pytest
 
+from cli_fixture import run
 from observed_fixture import i_row, report
 from pools_fixture import POOLS
-from test_catch_lists import AREA_LOOT, AREAS_TOML, CATALOGUE, ITEMS, catch, run, write_tree
+from test_catch_lists import AREA_LOOT, AREAS_TOML, CATALOGUE, ITEMS, catch, write_tree
 from test_confirmed import ALICE, INSIDE_DAY
 from windows_fixture import WINDOWS
 
