@@ -1,0 +1,3 @@
+Pagle: enabled
+Pagle_Ledger: enabled
+Pagle_QoL: enabled

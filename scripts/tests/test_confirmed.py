@@ -11,8 +11,9 @@ from pathlib import Path
 
 import pytest
 
+from cli_fixture import run
 from observed_fixture import i_row, report
-from test_catch_lists import AREAS_TOML, CATALOGUE, ITEMS, area_record, run, write_tree
+from test_catch_lists import AREAS_TOML, CATALOGUE, ITEMS, area_record, write_tree
 
 # Reporter keys (REP-R36). DEV_KEY is listed in dev.toml's keys, so it reports as dev (DATA-R46).
 ALICE = "aaaaaaaa"

@@ -6,9 +6,9 @@ import pytest
 
 from areas_fixture import write_areas
 from baseline_fixture import write_baseline
+from cli_fixture import run
 from item_fixture import ITEMS_LUA, write_item_layer
 from observed_fixture import write_observed
-from pagle_data.cli import main
 from pools_fixture import POOLS_LUA, write_pools
 from windows_fixture import W_LUA, WINDOWS_LUA, write_windows
 
@@ -86,13 +86,6 @@ def write_tree(root: Path, events: str = EVENTS, lists: str = LISTS) -> Path:
     (db2 / "areas.csv").write_text("ID,ParentAreaID,ContinentID,AreaName_lang\n", encoding="utf-8")
     (db2 / "items.csv").write_text("ID,ClassID,SubclassID,OverallQualityID,Display_lang\n", encoding="utf-8")
     return root
-
-
-def run(root: Path, capsys: pytest.CaptureFixture[str], *args: str) -> tuple[int, str]:
-    """Runs the command line on root; returns its exit code and everything it printed."""
-    code = main(list(args), root)
-    out, err = capsys.readouterr()
-    return code, out + err
 
 
 def test_writes_the_catalogue_in_its_contract_shape(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:

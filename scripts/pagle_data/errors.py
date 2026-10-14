@@ -1,6 +1,7 @@
 """Where a problem in data/ sits and how problems are collected (DATA-R63): every script reports through these,
 whatever it reads (TOML, CSV, DB2 downloads), so one run lists every problem before it fails."""
 
+from collections.abc import Iterator
 from dataclasses import dataclass, field
 
 
@@ -30,6 +31,9 @@ class Problems:
 
     def __bool__(self) -> bool:
         return bool(self.found)
+
+    def __iter__(self) -> Iterator[str]:
+        return iter(self.found)
 
 
 class DataError(Exception):

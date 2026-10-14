@@ -23,7 +23,7 @@ from pagle_data.db2_watch import md_text
 from pagle_data.errors import At, DataError, Problems
 from pagle_data.files import write_atomic
 from pagle_data.generate import CATALOGUE_LUA, Layers, read_layers
-from pagle_data.importer import changes, imported, needing_category, without_items
+from pagle_data.importer import catalogue_changes, imported
 from pagle_data.observed import POOLTEXT, REPORTS, ObservedLayer, PoolTextRow, read_observed
 from pagle_data.report import FieldReport, Part, join, parse_part, report_field, toml_string
 
@@ -298,13 +298,9 @@ def _catalogue(report: FieldReport, issues: Sequence[int], root: Path, fetch: Fe
             "",
             *_bullets(md_text(problem) for problem in error.problems),
         ]
-    after = imported(before.observed, [report.observed(issues)])
-    needing = needing_category(before, after)
-    lines = _uncharted(report, before, needing, root, fetch)
-    try:
-        # Items needing a category are left out as if deferred, so the rest shows while the generator would fail.
-        changed = changes(before, read_layers(root, observed=without_items(after, needing)))
-    except DataError as error:
+    found = catalogue_changes(before, imported(before.observed, [report.observed(issues)]), root)
+    lines = _uncharted(report, before, found.needing, root, fetch)
+    if found.problems:
         return lines + [
             *([""] if lines else []),
             "#### What importing would change",
@@ -312,9 +308,9 @@ def _catalogue(report: FieldReport, issues: Sequence[int], root: Path, fetch: Fe
             "Can't tell: with this report imported, the generator fails for more than items needing a category"
             " (DATA-R63):",
             "",
-            *_bullets(md_text(problem) for problem in error.problems),
+            *_bullets(md_text(problem) for problem in found.problems),
         ]
-    return lines + [*([""] if lines else []), *_changes(changed)]
+    return lines + [*([""] if lines else []), *_changes(found.lines)]
 
 
 def _pool_texts(rows: Iterable[PoolTextRow], observed: ObservedLayer | None) -> list[str]:
