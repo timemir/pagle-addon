@@ -139,28 +139,35 @@ local function leftView(content)
 		text:SetWordWrap(true)
 		return text
 	end
-	view = {} --[[@as StatsPlaceLeftView]]
-	view.kicker = ns.NewBookKicker(content)
-	view.titleLine = CreateFrame("Frame", nil, content)
-	view.titleLine:SetSize(width, TITLE)
-	view.title = ns.NewBookTitle(view.titleLine)
-	view.title:SetPoint("LEFT", 0, 0)
-	view.here = ns.BookText(view.titleLine, faces.hand, LOOK.green)
-	view.here:SetPoint("LEFT", view.title, "RIGHT", 10, 0)
-	view.here:SetText(L.PLACE_HERE)
-	view.casts = paragraph(faces.small, LOOK.small)
-	view.noChart = paragraph(faces.small, LOOK.small)
-	view.noChart:SetText(L.PLACE_NO_CHART)
-	view.across = paragraph(faces.note, LOOK.note)
-	view.headings = newPool(function()
-		return ns.NewBookHeading(content, width)
-	end)
-	view.rows = newPool(function()
-		return ns.NewBookRow(content, width)
-	end)
-	view.lines = newPool(function()
-		return ns.NewBookLine(content, width)
-	end)
+	local kicker = ns.NewBookKicker(content)
+	local titleLine = CreateFrame("Frame", nil, content)
+	titleLine:SetSize(width, TITLE)
+	local title = ns.NewBookTitle(titleLine)
+	title:SetPoint("LEFT", 0, 0)
+	local here = ns.BookText(titleLine, faces.hand, LOOK.green)
+	here:SetPoint("LEFT", title, "RIGHT", 10, 0)
+	here:SetText(L.PLACE_HERE)
+	local casts = paragraph(faces.small, LOOK.small)
+	local noChart = paragraph(faces.small, LOOK.small)
+	noChart:SetText(L.PLACE_NO_CHART)
+	view = {
+		kicker = kicker,
+		titleLine = titleLine,
+		title = title,
+		here = here,
+		casts = casts,
+		noChart = noChart,
+		across = paragraph(faces.note, LOOK.note),
+		headings = newPool(function()
+			return ns.NewBookHeading(content, width)
+		end),
+		rows = newPool(function()
+			return ns.NewBookRow(content, width)
+		end),
+		lines = newPool(function()
+			return ns.NewBookLine(content, width)
+		end),
+	}
 	lefts[content] = view
 	return view
 end
@@ -309,22 +316,30 @@ local function rightView(content)
 		return view
 	end
 	local width = content:GetWidth()
-	view = {} --[[@as StatsPlaceRightView]]
-	view.numbers = CreateFrame("Frame", nil, content)
-	view.numbers:SetAllPoints()
-	view.entry = CreateFrame("Frame", nil, content)
-	view.entry:SetAllPoints()
-	view.entry:SetWidth(width)
-	local numbers = view.numbers
-	view.kicker = ns.NewBookKicker(numbers)
-	view.kicker:SetText(L.PLACE_ABOUT)
-	view.title = ns.NewBookTitle(numbers)
-	view.casts = ns.NewBookLine(numbers, width)
-	view.catches = ns.NewBookLine(numbers, width)
-	view.gotAway = ns.NewBookLine(numbers, width)
-	view.pick = ns.NewBookHand(numbers)
-	view.pick:SetWidth(width)
-	view.pick:SetText(L.PLACE_PICK)
+	local numbers = CreateFrame("Frame", nil, content)
+	numbers:SetAllPoints()
+	local entry = CreateFrame("Frame", nil, content)
+	entry:SetAllPoints()
+	entry:SetWidth(width)
+	local kicker = ns.NewBookKicker(numbers)
+	kicker:SetText(L.PLACE_ABOUT)
+	local title = ns.NewBookTitle(numbers)
+	local casts = ns.NewBookLine(numbers, width)
+	local catches = ns.NewBookLine(numbers, width)
+	local gotAway = ns.NewBookLine(numbers, width)
+	local pick = ns.NewBookHand(numbers)
+	pick:SetWidth(width)
+	pick:SetText(L.PLACE_PICK)
+	view = {
+		numbers = numbers,
+		entry = entry,
+		kicker = kicker,
+		title = title,
+		casts = casts,
+		catches = catches,
+		gotAway = gotAway,
+		pick = pick,
+	}
 	rights[content] = view
 	return view
 end
