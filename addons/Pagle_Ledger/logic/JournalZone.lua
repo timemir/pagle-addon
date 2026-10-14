@@ -302,7 +302,7 @@ local function about(context, zone)
 	local blocks = { { kind = "kicker", text = L.ZONE_ABOUT } }
 	local skill = world.skillBase[zone]
 	if skill then
-		blocks[#blocks + 1] = { kind = "text", text = L.ZONE_SKILL:format(skill) }
+		blocks[#blocks + 1] = { kind = "text", text = skill > 0 and L.ZONE_SKILL:format(skill) or L.ZONE_ANY_SKILL }
 	end
 	local fish, fishKnown = 0, 0
 	for id in pairs(zoneIndex.species) do

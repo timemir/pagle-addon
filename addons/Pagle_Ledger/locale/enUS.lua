@@ -173,12 +173,14 @@ ns.L = {
 	HINT_WINDOW_SEPARATOR = ", ",
 	HINT_MORE = "%s +%d",
 	HINT_SKILL = "skill ~%d",
+	HINT_ANY_SKILL = "any skill", -- the lowest skill base is 0 or below (DATA-R30: starting zones)
 
 	-- A zone tile's lines (LED-R131): "Local · 63%", "2 new!".
 	TILE_RANK = "%s · %d%%",
 	TILE_NEW = "%d new!",
 	TILE_UNFISHED = "unfished",
 	TILE_UNFISHED_SKILL = "unfished · skill ~%d",
+	TILE_UNFISHED_ANY_SKILL = "unfished · any skill", -- a skill base of 0 or below (DATA-R30)
 	TILE_UNCHARTED = "uncharted waters",
 
 	-- A list as prose: "A, B and C" (LED-R140).
@@ -266,6 +268,7 @@ ns.L = {
 	-- "About these waters" (LED-R137, without M4's zonemaster line).
 	ZONE_ABOUT = "About these waters",
 	ZONE_SKILL = "Skill ~%d",
+	ZONE_ANY_SKILL = "Any skill", -- a skill base of 0 or below (DATA-R30)
 	ZONE_KNOWN = "%d%% of these waters known: %d of %d fish, %d of %d trophy families",
 	ZONE_TROPHIES_HERE = "Trophies landed here",
 	ZONE_WEIGHTS = "%d / %d",

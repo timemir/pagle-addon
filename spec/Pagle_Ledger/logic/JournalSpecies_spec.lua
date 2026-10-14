@@ -72,6 +72,13 @@ describe("the plain hint", function()
 		end
 	)
 
+	it("reads any skill when the lowest skill base of the two zones is 0 or below (LED-R141, DATA-R30)", function()
+		local index = world({ ELWYNN, WESTFALL })
+		index.skillBase[ELWYNN], index.skillBase[WESTFALL] = -70, 0
+
+		assert.are.equal("Any time · Elwynn Forest · Westfall · any skill", ns.PlainHint(index, FISH, text))
+	end)
+
 	it("leaves the skill out when neither of the two zones has a skill base (LED-R141)", function()
 		assert.are.equal("Any time · Moonglade", ns.PlainHint(world({ MOONGLADE }), FISH, text))
 	end)

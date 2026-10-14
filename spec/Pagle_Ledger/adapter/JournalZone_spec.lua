@@ -673,6 +673,25 @@ describe("the Journal's zone spread", function()
 			assert.are.equal("Redgill", journal.pages.right[1].text)
 		end)
 
+		it('reads "Any skill" for a zone whose skill base is 0 or below (LED-R137, DATA-R30)', function()
+			local function startingZone()
+				local data = catalogue()
+				data.areas[DARKSHORE].skillBase = -70
+				return data
+			end
+			local fake = newFakePagle()
+			fake.setCatalogue(startingZone())
+			local loaded = fake.load("Pagle_Ledger")
+			fake.login()
+			fake.enterWorld()
+			loaded.ns.journal:Open("zone", { zone = DARKSHORE })
+
+			assert.are.same(
+				{ "About these waters", "Any skill" },
+				{ unpack(texts(loaded.ns.journal.pages.right), 1, 2) }
+			)
+		end)
+
 		it('leaves out "Skill ~" for a zone without a skill base (LED-R137)', function()
 			local function noSkill()
 				local data = catalogue()
