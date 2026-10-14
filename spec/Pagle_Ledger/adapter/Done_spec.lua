@@ -111,6 +111,10 @@ describe("the Ledger's done", function()
 				items = {},
 				uncharted = {},
 				skill = {},
+				-- M4's keys: no Prestige or Catch Milestone yet, and the title held from the start (LED-R75).
+				prestige = 0,
+				milestones = {},
+				titles = { ["title:level1"] = true },
 				coins = 40,
 				logId = fake.catchLog.data.logId,
 			}, celebrated)
