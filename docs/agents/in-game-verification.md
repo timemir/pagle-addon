@@ -44,7 +44,7 @@ It prints eight sections, and a ninth with `--expect-casts`:
   - `state Uncharted:` the Uncharted list: one line per item ID with its Catches and its Catches per zone.
   - `state zones:` one line per fished zone: its computed rank (`none` in an M2 state), whether it is charted, and its shown rank.
   - `completion:` Ledger completion, its percent, done and total, each part's "x of N" (Species, junk, treasure, trophy, zones at Master), and the Legends beside it.
-  - `celebrated` lines: the highest level, Coins, Species, Species × zone pairs, zones with their celebrated rank, Species stars and family stars (the stars in all, then each one's, as `6303 ★1 ★2`), curio and trophy items, Uncharted item IDs, and Skill Milestones.
+  - `celebrated` lines: the highest level, Coins, Species, Species × zone pairs, zones with their celebrated rank, Species stars and family stars (the stars in all, then each one's, as `6303 ★1 ★2`), curio items and trophy items as two lists, classed as the state's are (one unclassed `celebrated items, not classed:` line when the catalogue can't be loaded), Uncharted item IDs, and Skill Milestones.
 
   Everything computed (the level, charted, shown ranks, completion, the classes) comes from the Ledger's own `logic/` files, over the world index built from the repo's `addons/Pagle/data/Catalogue.lua` with Core's `logic/Catalogue.lua`. `--catalogue <file>` builds it from another, such as the installed addon's `Interface/AddOns/Pagle/data/Catalogue.lua`, when the repo's has moved on.
 - **Wallet:** the balance, and each Module's last reported total from `PagleDB.global.coins.earned`.

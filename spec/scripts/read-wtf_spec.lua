@@ -181,7 +181,8 @@ describe("scripts/read-wtf.lua", function()
 				"celebrated zones: 2 (148 rank 0, 1519 rank 0)",
 				"celebrated Species stars: none",
 				"celebrated family stars: none",
-				"celebrated items: none",
+				"celebrated curio items: none",
+				"celebrated trophy items: none",
 				"celebrated Uncharted: none",
 				"celebrated Skill Milestones: 1 (75)",
 			}, section(out, "== Ledger"))
@@ -247,7 +248,8 @@ describe("scripts/read-wtf.lua", function()
 				"celebrated zones: none",
 				"celebrated Species stars: none",
 				"celebrated family stars: none",
-				"celebrated items: none",
+				"celebrated curio items: none",
+				"celebrated trophy items: none",
 				"celebrated Uncharted: none",
 				"celebrated Skill Milestones: none",
 			}, section(out, "== Ledger"))
@@ -317,7 +319,8 @@ describe("scripts/read-wtf.lua", function()
 					"celebrated zones: 3 (10 rank 0, 12 rank 4, 40 rank 1)",
 					"celebrated Species stars: 3 on 2 Species (6291 ★1, 6303 ★1 ★2)",
 					"celebrated family stars: 1 on 1 family (1 ★1)",
-					"celebrated items: 2 (6309, 13901)",
+					"celebrated curio items: 1 (6309)",
+					"celebrated trophy items: 1 (13901)",
 					"celebrated Uncharted: 1 (999001)",
 					"celebrated Skill Milestones: 1 (75)",
 				}, section(out, "== Ledger"))
@@ -354,6 +357,7 @@ describe("scripts/read-wtf.lua", function()
 				"  40: rank 1",
 				"celebrated: highest level 4, 44 Coins",
 			}, { unpack(lines, 7, 15) })
+			assert.are.equal("celebrated items, not classed: 2 (6309, 13901)", lines[21])
 		end)
 
 		it("prints the Field report projection, its count and reporter key (REP-R25, REP-R26, REP-R36)", function()
@@ -365,7 +369,7 @@ describe("scripts/read-wtf.lua", function()
 				"projection: lastSeq 11, logId 3f9a2c1e7b0d4a65, fingerprint 0123456789abcdef, rulesVersion 1",
 				"logId: matches PagleLog's",
 				"lastSeq: equals PagleLog's length (11 entries)",
-				"count: 3 I and K rows stored + 2 P rows from the buffer = 5 (the menu's \"(5)\", REP-R26)",
+				'count: 3 I and K rows stored + 2 P rows from the buffer = 5 (the menu\'s "(5)", REP-R26)',
 			}, section(out, "== Field report"))
 		end)
 	end)

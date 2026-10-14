@@ -491,27 +491,32 @@ local function loadWorld(ledger, path, stored)
 	return world, catalogue.GetItem
 end
 
--- The state's trophy and curio items (LED-R60, LED-R64), each with its Catches, by the class the Ledger's own
--- ClassifyCatch gives it now (LED-R5); "other" for any other class, such as an item no longer in the catalogue.
--- Without a catalogue they are listed together, unclassed.
-local function printItems(ledger, items, getItem)
-	local function withCatches(itemID, first)
-		return itemID .. " ×" .. tostring(tableOr(first).n)
-	end
+-- Prints a set of items keyed by item ID as "<what> curio items: …" and "<what> trophy items: …", by the class the
+-- Ledger's own ClassifyCatch gives each now (LED-R5), and "<what> other items: …" when any has another class, such as
+-- an item no longer in the catalogue. Without a catalogue they are listed together, unclassed. `describe` is
+-- listed's.
+local function printClassed(what, ledger, items, getItem, describe)
 	if not getItem then
-		print("state items, not classed: " .. listed(items, withCatches))
+		print(what .. " items, not classed: " .. listed(items, describe))
 		return
 	end
 	local byClass = { curio = {}, trophy = {}, other = {} }
-	for itemID, first in pairs(items) do
+	for itemID, value in pairs(items) do
 		local class = ledger.ClassifyCatch(itemID, getItem(itemID))
-		byClass[byClass[class] and class or "other"][itemID] = first
+		byClass[byClass[class] and class or "other"][itemID] = value
 	end
-	print("state curio items: " .. listed(byClass.curio, withCatches))
-	print("state trophy items: " .. listed(byClass.trophy, withCatches))
+	print(what .. " curio items: " .. listed(byClass.curio, describe))
+	print(what .. " trophy items: " .. listed(byClass.trophy, describe))
 	if next(byClass.other) then
-		print("state other items: " .. listed(byClass.other, withCatches))
+		print(what .. " other items: " .. listed(byClass.other, describe))
 	end
+end
+
+-- The state's trophy and curio items (LED-R60, LED-R64), each with its Catches, by class (printClassed).
+local function printItems(ledger, items, getItem)
+	printClassed("state", ledger, items, getItem, function(itemID, first)
+		return itemID .. " ×" .. tostring(tableOr(first).n)
+	end)
 end
 
 -- The Uncharted list (LED-R64): each item ID, its Catches and its Catches per zone.
@@ -617,7 +622,8 @@ local function celebratedStars(set, noun, plural)
 	return ("%d on %s (%s)"):format(total, count(#ids, noun, plural), table.concat(texts, ", "))
 end
 
-local function printCelebrated(celebrated)
+-- The celebrated set (LED-R90), its curio and trophy items by class (printClassed) when there's a catalogue.
+local function printCelebrated(celebrated, ledger, getItem)
 	local highest
 	for _, level in pairs(tableOr(celebrated.levels)) do
 		highest = math.max(highest or level, level)
@@ -631,7 +637,7 @@ local function printCelebrated(celebrated)
 	end))
 	print("celebrated Species stars: " .. celebratedStars(tableOr(celebrated.stars), "Species", "Species"))
 	print("celebrated family stars: " .. celebratedStars(tableOr(celebrated.familyStars), "family", "families"))
-	print("celebrated items: " .. listed(tableOr(celebrated.items)))
+	printClassed("celebrated", ledger, tableOr(celebrated.items), getItem)
 	print("celebrated Uncharted: " .. listed(tableOr(celebrated.uncharted)))
 	print("celebrated Skill Milestones: " .. listed(tableOr(celebrated.skill)))
 end
@@ -680,11 +686,12 @@ local function printLedger(account, log, catalogue)
 	print("== Ledger (PagleLedgerDB)")
 	local global = tableOr(db.global)
 	local stored = global.projection
+	local ledger, getItem
 	if type(stored) ~= "table" or type(stored.projection) ~= "table" then
 		print("projection: none stored (no build has finished, LOG-R72)")
 	else
 		printStored(stored, log)
-		local ledger = loadLedgerLogic()
+		ledger = loadLedgerLogic()
 		-- The Ledger's own rules version, from its logic/ (LED-R2): Core defines no SIZE_RULES_VERSION before M4.
 		local rulesVersion = ledger.RulesVersion(nil)
 		if stored.rulesVersion == rulesVersion then
@@ -697,10 +704,11 @@ local function printLedger(account, log, catalogue)
 				)
 			)
 		end
-		local world, getItem = loadWorld(ledger, catalogue, stored)
+		local world
+		world, getItem = loadWorld(ledger, catalogue, stored)
 		printLedgerState(ledger, stored.projection, world, getItem, tableOr(global.celebrated))
 	end
-	printCelebrated(tableOr(global.celebrated))
+	printCelebrated(tableOr(global.celebrated), ledger, getItem)
 end
 
 -- PagleDB.global from Pagle.lua's globals, or nil and why there's none.
