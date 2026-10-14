@@ -171,21 +171,26 @@ describe("Pagle_Stats with Core", function()
 		assert.is_true(loaded.ns.book:IsShown())
 	end)
 
-	it("adds no settings pages of its own (STA-R4, CORE-R42)", function()
-		local loaded = loadAddon("Pagle_Stats", FOREVER_GLOBALS)
-		local plain = loadAddon("Pagle", FOREVER_GLOBALS)
-		loaded.client.fire("PLAYER_LOGIN")
-		plain.client.fire("PLAYER_LOGIN")
+	it(
+		"adds no settings pages of its own, only Core's Trackers page for its section (STA-R4, CORE-R42, SET-R44)",
+		function()
+			local loaded = loadAddon("Pagle_Stats", FOREVER_GLOBALS)
+			local plain = loadAddon("Pagle", FOREVER_GLOBALS)
+			loaded.client.fire("PLAYER_LOGIN")
+			plain.client.fire("PLAYER_LOGIN")
 
-		local function categories(client)
-			local names = {}
-			for i, category in ipairs(client.settings.categories) do
-				names[i] = category.name
+			local function categories(client)
+				local names = {}
+				for i, category in ipairs(client.settings.categories) do
+					names[i] = category.name
+				end
+				return names
 			end
-			return names
+			assert.are.same({ "Pagle", "Announcements", "Look and Feel" }, categories(plain.client))
+			-- Core's own pages, with its Trackers page for Stats' section: Core's frame dropdown at least (STA-R88).
+			assert.are.same({ "Pagle", "Announcements", "Trackers", "Look and Feel" }, categories(loaded.client))
 		end
-		assert.are.same(categories(plain.client), categories(loaded.client))
-	end)
+	)
 
 	it("sets no global but PagleStatsDB: its AceAddon is reached through LibStub alone (STA-R1)", function()
 		local loaded = loadAddon("Pagle_Stats", FOREVER_GLOBALS)

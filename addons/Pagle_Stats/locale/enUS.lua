@@ -250,4 +250,15 @@ ns.L = {
 	LIFETIME_FIRST_LAST = "First %s, last %s",
 	-- Both pages with no Casts (STA-R97).
 	LIFETIME_NO_SESSIONS = "No Sessions yet.",
+
+	-- Stats' Curio Shop slot (STA-R88). Its goods' names and descriptions are lore (`statsgood.<goodID>.*`).
+	SLOT_TRACKER_FRAME = "Stats tracker frame",
+
+	-- The live tracker's words (STA-R82), as the shop's sample (STA-R88) and the tracker (#218) write them: the header's
+	-- right text ("Session · 21m"), the Session's lines ("38 Casts · 31 Catches · 7 got away", "62 per hour · skill
+	-- +3"), and what joins a watch's sub-line ("Feralas · by night · unlucky").
+	TRACKER_SESSION = "Session · %s",
+	TRACKER_COUNTS = "%s · %s · %s got away",
+	TRACKER_PER_HOUR = "%s per hour · skill +%s",
+	TRACKER_JOIN = " · ",
 }
