@@ -11,10 +11,15 @@
 
 ---@class SettingsLayout
 ---@field AddInitializer fun(self: SettingsLayout, initializer: SettingsInitializer): SettingsInitializer
+--- The page's rows, in order: the list SettingsPanelMixin:DisplayLayout shows (Blizzard_SettingsLayouts.lua).
+---@field GetInitializers fun(self: SettingsLayout): SettingsInitializer[]
 
 --- A list frame from the panel's pool. Templates based on SettingsListElementTemplate have the row's label in Text.
 ---@class SettingsListElementFrame : Frame
 ---@field Text FontString?
+--- A dropdown row's control, made in SettingsDropdownControlMixin:OnLoad (Blizzard_SettingControls.lua), with its
+--- dropdown button; nil on other rows.
+---@field Control { Dropdown: Frame }?
 
 --- SettingsListElementInitializer: one row of a vertical layout.
 ---@class SettingsInitializer
@@ -35,6 +40,8 @@
 ---@field GetName fun(self: SettingsProxySetting): string
 ---@field GetVariable fun(self: SettingsProxySetting): string
 ---@field GetValue fun(self: SettingsProxySetting): any
+--- SettingMixin:NotifyUpdate (Blizzard_Setting.lua): the value changed elsewhere, so the shown controls read it again.
+---@field NotifyUpdate fun(self: SettingsProxySetting)
 ---@field SetValue fun(self: SettingsProxySetting, value: any)
 
 --- SettingsSliderOptionsMixin.

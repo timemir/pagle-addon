@@ -78,6 +78,7 @@ local function readContext()
 		updating = false,
 		state = state,
 		celebrated = ns.CelebratedSet(ns.db.global),
+		activeTitle = ns.db.profile.activeTitle,
 		now = GetServerTime(),
 		formatNumber = BreakUpLargeNumbers,
 		text = ns.journalText,
@@ -86,6 +87,18 @@ local function readContext()
 		getArea = Pagle.GetArea,
 		angler = Pagle.GetAngler(),
 		openFieldReport = Pagle.OpenFieldReport,
+		sizeText = function(size)
+			return ns.SizeText(size, Pagle.SIZE_BANDS, Pagle.FormatLength)
+		end,
+		-- The Angler page's M4 parts (LED-R146): the crest, Prestige, the title pick and the bindings.
+		crest = ns.CrestIcon(),
+		canPrestige = ns.CanPrestige(),
+		askPrestige = ns.AskPrestige,
+		pickTitle = ns.PickActiveTitle,
+		isOwned = Pagle.IsOwned,
+		getEquipped = Pagle.GetEquipped,
+		setEquipped = Pagle.SetEquipped,
+		openShop = Pagle.OpenShop,
 	}
 end
 

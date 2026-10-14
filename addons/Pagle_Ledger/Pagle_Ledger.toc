@@ -19,6 +19,7 @@ logic\Bindings.lua
 logic\Fold.lua
 logic\Records.lua
 logic\World.lua
+logic\Titles.lua
 logic\Stars.lua
 logic\ZoneMastery.lua
 logic\Legends.lua
@@ -34,13 +35,16 @@ logic\JournalSpecies.lua
 logic\Home.lua
 logic\JournalAngler.lua
 logic\JournalCollections.lua
+logic\JournalLegends.lua
 logic\JournalZone.lua
 adapter\JournalWidgets.lua
 adapter\JournalText.lua
 adapter\JournalCollections.lua
+adapter\JournalLegends.lua
 adapter\JournalZone.lua
 adapter\JournalSearch.lua
 adapter\Journal.lua
 adapter\Prestige.lua
 adapter\Bindings.lua
+adapter\Titles.lua
 adapter\Ledger.lua

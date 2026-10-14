@@ -119,15 +119,18 @@ ns.L = {
 	HOME_NOTE_NEW = "%s: %d new to find",
 	HOME_NOTE_STAR = "%s: %d to ★★★",
 	HOME_NOTE_NONE = "Go fishing!",
-	-- Its bookplate summary and contents (LED-R132), and the brass plate (LED-R149, without the title in M3).
+	-- Its bookplate summary and contents (LED-R132), and the brass plate (LED-R149): "Lv {L} · {title} · Ledger {p}%",
+	-- or BRASS_PLATE while the active title has no lore text (LED-R161).
 	HOME_LEVEL = "Angler Level",
 	HOME_PERCENT = "%d%%",
 	HOME_CONTENTS = "In this Ledger",
 	HOME_TROPHY_ROOM = "The Trophy Room",
 	HOME_CURIOS = "Curios: junk, treasure, uncharted",
+	HOME_LEGENDS = "Legends",
 	HOME_ANGLER = "The Angler: hands, titles, bindings",
 	HOME_COUNT = "%d / %d",
 	BRASS_PLATE = "Lv %d · Ledger %d%%",
+	BRASS_PLATE_TITLE = "Lv %d · %s · Ledger %d%%",
 
 	-- Dates (LED-R126): "3 Mar", and "3 Mar 2025" outside the current realm year.
 	DATE_SHORT = "%d %s",
@@ -197,6 +200,8 @@ ns.L = {
 	ENTRY_FIRST_NO_ZONE = "First landed %s, by %s. %s caught.",
 	ENTRY_FOUND_IN = "Found in %s.",
 	ENTRY_ONLY_BY = " Only by %s.",
+	-- The size line (LED-R140): the record's size text, "{band} · {length}" (LED-R81).
+	ENTRY_LARGEST = "Largest by my own measure: %s (Pagle's measure, not the game's)",
 	ENTRY_REMOVED = "No longer found in Forever's waters.",
 	ENTRY_UNKNOWN = "An unknown fish",
 	ENTRY_RIDDLE = "“%s”",
@@ -238,6 +243,20 @@ ns.L = {
 	ANGLER_MILESTONE_DONE = "☑ %d",
 	ANGLER_MILESTONE_OPEN = "☐ %d",
 	ANGLER_MILESTONE_SEPARATOR = "   ",
+	-- The Angler page's M4 parts (LED-R146): the next Catch Milestone after the Catches (LED-R42), the bookplate's
+	-- Prestige line and button (LED-R33, LED-R34), "Signed As" (LED-R77: the active pick marked) and "Bindings" with
+	-- each binding's state (LED-R110; "Angler Level {L}" is BINDING_EARNED).
+	ANGLER_NEXT_MILESTONE = " · next milestone %s",
+	ANGLER_NO_PRESTIGE = "No Prestige seals yet",
+	ANGLER_PRESTIGE = "Begin a new Ledger (Prestige)",
+	ANGLER_SIGNED_AS = "Signed As",
+	ANGLER_AUTOMATIC = "Automatic",
+	ANGLER_SIGNED_ON = "» %s",
+	ANGLER_SIGNED_OFF = "· %s",
+	ANGLER_BINDINGS = "Bindings",
+	ANGLER_BINDING_IN_USE = "In use",
+	ANGLER_BINDING_USE = "Use",
+	ANGLER_BINDING_SHOP = "In the Curio Shop",
 
 	-- The zone spread (LED-R135–R138), M3's part (LED-R4): its seal and ladder read ZONE_RANKS; "unfished" on the
 	-- seal with no rank.
@@ -270,13 +289,15 @@ ns.L = {
 	ZONE_CAUGHT_ELSEWHERE = "%s (caught elsewhere)",
 	ZONE_POOLS_MARGIN = "pools",
 	ZONE_MARGIN_SEPARATOR = " · ",
-	-- "About these waters" (LED-R137, without M4's zonemaster line).
+	-- "About these waters" (LED-R137); the reward names the zone's Master title, or ends after "earns XP." while it has
+	-- no lore text (LED-R161).
 	ZONE_ABOUT = "About these waters",
 	ZONE_SKILL = "Skill ~%d",
 	ZONE_KNOWN = "%d%% of these waters known: %d of %d fish, %d of %d trophy families",
 	ZONE_TROPHIES_HERE = "Trophies landed here",
 	ZONE_WEIGHTS = "%d / %d",
 	ZONE_REWARD = "Reward for mastery: each new seal earns XP.",
+	ZONE_REWARD_TITLE = "Reward for mastery: each new seal earns XP. The Master seal earns the title %s.",
 	ZONE_PICK = "Pick a fish on the left to read its page.",
 	-- A zone that isn't charted (LED-R138).
 	ZONE_UNCHARTED_NOTE = "Every catch here is still written down, and counted once Pagle's data catches up.",
@@ -310,6 +331,18 @@ ns.L = {
 	CURIOS_UNKNOWN_WATERS = "unknown waters",
 	CURIOS_NONE_UNCHARTED = "None. Every catch is in the Ledger.",
 	CURIOS_HELP_CHART = "Help chart the waters",
+	-- Legends (LED-R147). Numbers in %s are BreakUpLargeNumbers'; the first Catch is "{date}, {zone}, {character}".
+	LEGENDS_TITLE = "Legends",
+	LEGENDS_COUNT = "%s of %s. These sit outside the Ledger's hundred.",
+	LEGENDS_UNWRITTEN = "an unwritten legend",
+	LEGENDS_UNWRITTEN_TITLE = "An unwritten legend",
+	LEGENDS_CAUGHT_MARK = "✦",
+	LEGENDS_KICKER = "Legend",
+	LEGENDS_FIRST = "%s, %s, %s",
+	LEGENDS_FIRST_NO_ZONE = "%s, %s",
+	LEGENDS_TITLE_LINE = "Title: %s",
+	LEGENDS_OPEN_PLATE = "Open the plate",
+	LEGENDS_PLATE_RETURN = "Click anywhere to return.",
 	-- The Prestige confirm (LED-R33), and a Master Prestige's star stamp beside emblem X (LED-R34).
 	PRESTIGE_CONFIRM = "Begin a new Ledger? Your Angler Level starts again at 1, and climbs at half the cost. Nothing you've earned is taken away.",
 	PRESTIGE_CONFIRM_YES = "Prestige",

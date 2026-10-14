@@ -144,8 +144,8 @@ end
 
 --- A Species' entry (LED-R140, LED-R141): the fish spread's left page, and the zone spread's right page with a fish
 --- selected. Caught: its icon in sepia, large; its name; the stamps (LED-R48); "First landed …" (the zone part left
---- out for zone 0); its blurb (left out while missing, LED-R161); "Found in …" with " Only by …"; and the removed
---- line (LED-R12). Uncaught, and never named (LED-R124): a silhouette, "An unknown fish", its riddle in quotes and
+--- out for zone 0); its blurb (left out while missing, LED-R161); "Found in …" with " Only by …"; its size line
+--- once it has a record (LED-R80, by Pagle's measure, in the Angler's unit, LED-R85); and the removed line (LED-R12). Uncaught, and never named (LED-R124): a silhouette, "An unknown fish", its riddle in quotes and
 --- the plain hint's link, or the plain hint itself once opened (DATA-R112).
 ---@param id integer the Species ID
 ---@param context LedgerJournalContext
@@ -190,6 +190,10 @@ function ns.JournalSpeciesEntry(id, context, hint)
 	local found = foundIn(world.species[id], text)
 	if found then
 		blocks[#blocks + 1] = { kind = "text", text = found }
+	end
+	local size = context.sizeText and context.sizeText(species.record)
+	if size then
+		blocks[#blocks + 1] = { kind = "text", text = L.ENTRY_LARGEST:format(size) }
 	end
 	local item = context.getItem and context.getItem(id)
 	if item and item.removed then
@@ -249,10 +253,11 @@ local function addMatches(names, query, limit, placeOf, results)
 	end
 end
 
---- Search (LED-R148, zones and Species; Legends come in M4): a case-insensitive substring of the names of the zones
---- with a tile (LED-R131: charted, or fished) and of the caught Species, by their representative item's name (LED-R5),
---- never anything uncaught (LED-R124). At most 4 zones then 6 fish, each part sorted by name. A name the client
---- hasn't loaded yet doesn't match. Nil for an empty box (no dropdown); an empty list for no match.
+--- Search (LED-R148): a case-insensitive substring of the names of the zones with a tile (LED-R131: charted, or
+--- fished), of the caught Species, by their representative item's name (LED-R5), and of the caught Legends, never
+--- anything uncaught (LED-R124). At most 4 zones then 6 fish (Species and Legends together), each part sorted by name;
+--- a Legend opens the Legends spread with it chosen. A name the client hasn't loaded yet doesn't match. Nil for an
+--- empty box (no dropdown); an empty list for no match.
 ---@param query string
 ---@param context LedgerJournalContext
 ---@return LedgerSearchResult[]?
@@ -274,11 +279,22 @@ function ns.JournalSearch(query, context)
 	for id in pairs(state.species) do
 		fish[id] = text:Item(id)
 	end
+	-- Caught Legends, kept in `items` and never as Species (LED-R5), so their IDs never meet a Species'.
+	local legends = {}
+	for itemID in pairs(state.items or {}) do
+		local item = context.getItem and context.getItem(itemID)
+		if item and item.legend then
+			legends[itemID] = true
+			fish[itemID] = text:Item(itemID)
+		end
+	end
 	local results = {}
 	addMatches(zones, query, SEARCH_ZONES, function(zone)
 		return ns.JournalZonePlace(zone)
 	end, results)
-	addMatches(fish, query, SEARCH_FISH, ns.JournalFishPlace, results)
+	addMatches(fish, query, SEARCH_FISH, function(id)
+		return legends[id] and ns.JournalLegendPlace(id) or ns.JournalFishPlace(id)
+	end, results)
 	return results
 end
 
