@@ -217,7 +217,7 @@ local function buildRoot(category, layout, anyModuleOn)
 	layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L.SETTINGS_MODULES))
 	layout:AddInitializer(statusList())
 	layout:AddInitializer(textRow(L.SETTINGS_MODULES_NOTE))
-	layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L.SETTINGS_FIELD_REPORT))
+	layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L.HELP_CHART))
 	layout:AddInitializer(fieldReportRow())
 	layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L.SETTINGS_SAVING))
 	local reminder = Settings.RegisterProxySetting(

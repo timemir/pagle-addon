@@ -20,21 +20,13 @@ Pagle.RegisterCallback(OWNER, "ModulesChanged", function()
 	end)
 end)
 
--- Core's own subcommands (CORE-R61): each prints its surface's chat line instead while restricted (CORE-R33).
----@type PagleSlashCore
-local CORE = {
-	settings = function()
-		Pagle.OpenSettings()
-	end,
-	report = function()
-		Pagle.OpenFieldReport()
-	end,
-}
+--- Core's own subcommands (CORE-R61), for /pagle and the compartment menu (adapter/Menu.lua).
+ns.coreSubcommands = ns.CoreSubcommands(Pagle)
 
 -- Runs `/pagle <line>`: the Settings root, the Field report box, a Module's subcommand, or the help list.
 ---@param line string what the player typed after /pagle
 local function run(line)
-	commands:Run(line, CORE, securecallfunction, print)
+	commands:Run(line, ns.coreSubcommands, securecallfunction, print)
 end
 
 SLASH_PAGLE1 = "/pagle"

@@ -457,19 +457,12 @@ part(function(fake, Pagle, ns)
 		commands:AddModules(fake.registry:Modules(), fake.report)
 	end)
 
-	local core = {
-		settings = function()
-			Pagle.OpenSettings()
-		end,
-		report = function()
-			Pagle.OpenFieldReport()
-		end,
-	}
+	local core = ns.CoreSubcommands(Pagle)
 	local settings = ns.SettingsMenuEntry(core.settings)
 	function fake.menu()
 		local shop = ns.CurioShopMenuEntry(Pagle.GetBalance(), breakUpLargeNumbers)
-		local report = ns.FieldReportMenuEntry(Pagle.GetFieldReportCount(), core.report)
-		return ns.CompartmentMenu(fake.registry:Modules(), shop, report, settings, fake.securecall)
+		local fieldReport = ns.FieldReportMenuEntry(Pagle.GetFieldReportCount(), core.report)
+		return ns.CompartmentMenu(fake.registry:Modules(), shop, fieldReport, settings, fake.securecall)
 	end
 
 	function fake.slash(line)
