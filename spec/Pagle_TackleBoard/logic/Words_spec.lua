@@ -10,7 +10,15 @@ local BLACKMOUTH = 6358
 
 -- A goal record (TackleGoalDef) of `kind` and `goalType`, with `need` and `target`.
 local function goal(goalType, kind, need, target, items)
-	return { type = goalType, kind = kind, tier = goalType == "e" and 0 or 1, pay = 10, need = need, target = target, items = items }
+	return {
+		type = goalType,
+		kind = kind,
+		tier = goalType == "e" and 0 or 1,
+		pay = 10,
+		need = need,
+		target = target,
+		items = items,
+	}
 end
 
 -- A loaded Tackle Board whose client knows the names TKB-R36's examples use.
@@ -122,41 +130,44 @@ describe("the goal text", function()
 end)
 
 describe("the kind's label", function()
-	it("is the kind's ID capitalised, with one in-client icon per kind (TKB-R102; M7 graph, open question 8)", function()
-		local ns = board.load().ns
-		local labels, icons = {}, {}
+	it(
+		"is the kind's ID capitalised, with one in-client icon per kind (TKB-R102; M7 graph, open question 8)",
+		function()
+			local ns = board.load().ns
+			local labels, icons = {}, {}
 
-		for _, kind in ipairs({ "haul", "variety", "wanderer", "quality", "size", "collector", "lure", "species" }) do
-			labels[#labels + 1] = ns.KindLabel(kind)
-			local icon = ns.KIND_ICONS[kind]
-			icons[icon] = true
-			assert.is_truthy(icon and icon:match("^Interface\\Icons\\[%w_]+$"), kind .. "'s icon is an in-client icon")
-		end
+			for _, kind in ipairs({ "haul", "variety", "wanderer", "quality", "size", "collector", "lure", "species" }) do
+				labels[#labels + 1] = ns.KindLabel(kind)
+				local icon = ns.KIND_ICONS[kind]
+				icons[icon] = true
+				assert.is_truthy(
+					icon and icon:match("^Interface\\Icons\\[%w_]+$"),
+					kind .. "'s icon is an in-client icon"
+				)
+			end
 
-		local kinds = { "Haul", "Variety", "Wanderer", "Quality", "Size", "Collector", "Lure", "Species" }
-		assert.are.same(kinds, labels)
-		local distinct = 0
-		for _ in pairs(icons) do
-			distinct = distinct + 1
+			local kinds = { "Haul", "Variety", "Wanderer", "Quality", "Size", "Collector", "Lure", "Species" }
+			assert.are.same(kinds, labels)
+			local distinct = 0
+			for _ in pairs(icons) do
+				distinct = distinct + 1
+			end
+			assert.are.equal(8, distinct, "each kind has its own icon")
 		end
-		assert.are.equal(8, distinct, "each kind has its own icon")
-	end)
+	)
 end)
 
 describe("ns.Plural", function()
 	it("takes the singular form for 1 and the plural otherwise, with {n} filled (M7 graph, conventions)", function()
 		local ns = board.load().ns
 
-		assert.are.same(
-			{ "1 Catch", "0 Catches", "30 Catches", "1 Coin", "60 Coins" },
-			{
-				ns.Plural(1, "CATCHES"),
-				ns.Plural(0, "CATCHES"),
-				ns.Plural(30, "CATCHES"),
-				ns.Plural(1, "COINS"),
-				ns.Plural(60, "COINS"),
-			}
-		)
+		assert.are.same({ "1 Catch", "0 Catches", "30 Catches", "1 Coin", "60 Coins" }, {
+			ns.Plural(1, "CATCHES"),
+			ns.Plural(0, "CATCHES"),
+			ns.Plural(30, "CATCHES"),
+			ns.Plural(1, "COINS"),
+			ns.Plural(60, "COINS"),
+		})
 	end)
 
 	it("fills any other field it is given (M7 graph, conventions)", function()
@@ -294,54 +305,51 @@ describe("where a goal is worked", function()
 			local ns = board.load().ns
 			local haul, variety = goal("n", "haul", 20, DUROTAR), goal("e", "variety", 5, DARKSHORE, { 6303 })
 
-			assert.are.same(
-				{ true, false, true, false },
-				{
-					ns.IsWorkableHere(haul, DUROTAR),
-					ns.IsWorkableHere(haul, DARKSHORE),
-					ns.IsWorkableHere(variety, DARKSHORE),
-					ns.IsWorkableHere(variety, AUBERDINE),
-				}
-			)
+			assert.are.same({ true, false, true, false }, {
+				ns.IsWorkableHere(haul, DUROTAR),
+				ns.IsWorkableHere(haul, DARKSHORE),
+				ns.IsWorkableHere(variety, DARKSHORE),
+				ns.IsWorkableHere(variety, AUBERDINE),
+			})
 		end)
 
 		it("holds for a Wanderer Expedition anywhere on its continent (TKB-R121)", function()
 			local ns = board.load().ns
 			local kalimdor = goal("e", "wanderer", 5, 1)
 
-			assert.are.same(
-				{ true, true, false, false },
-				{
-					ns.IsWorkableHere(kalimdor, DUROTAR),
-					ns.IsWorkableHere(kalimdor, FERALAS_ZONE),
-					ns.IsWorkableHere(kalimdor, ELWYNN),
-					ns.IsWorkableHere(kalimdor, UNKNOWN),
-				}
-			)
-		end)
-
-		it("holds for a Species goal where its Species has a catch entry, by Species, gated or not (TKB-R121)", function()
-			local ns = board.load().ns
-			local mightfish, bass = goal("n", "species", 10, MIGHTFISH), goal("n", "species", 5, BASS)
-
-			assert.are.same({
-				-- Darkshore lists Large Raw Mightfish (Species 13754), and Auberdine Mightfish itself
-				darkshore = true,
-				feralas = true,
-				durotar = false,
-				-- Bass is in Durotar's list only behind its summer gate
-				bassDurotar = true,
-				bassBarrens = false,
-				unknown = false,
-			}, {
-				darkshore = ns.IsWorkableHere(mightfish, DARKSHORE),
-				feralas = ns.IsWorkableHere(mightfish, FERALAS_ZONE),
-				durotar = ns.IsWorkableHere(mightfish, DUROTAR),
-				bassDurotar = ns.IsWorkableHere(bass, DUROTAR),
-				bassBarrens = ns.IsWorkableHere(bass, BARRENS),
-				unknown = ns.IsWorkableHere(mightfish, UNKNOWN),
+			assert.are.same({ true, true, false, false }, {
+				ns.IsWorkableHere(kalimdor, DUROTAR),
+				ns.IsWorkableHere(kalimdor, FERALAS_ZONE),
+				ns.IsWorkableHere(kalimdor, ELWYNN),
+				ns.IsWorkableHere(kalimdor, UNKNOWN),
 			})
 		end)
+
+		it(
+			"holds for a Species goal where its Species has a catch entry, by Species, gated or not (TKB-R121)",
+			function()
+				local ns = board.load().ns
+				local mightfish, bass = goal("n", "species", 10, MIGHTFISH), goal("n", "species", 5, BASS)
+
+				assert.are.same({
+					-- Darkshore lists Large Raw Mightfish (Species 13754), and Auberdine Mightfish itself
+					darkshore = true,
+					feralas = true,
+					durotar = false,
+					-- Bass is in Durotar's list only behind its summer gate
+					bassDurotar = true,
+					bassBarrens = false,
+					unknown = false,
+				}, {
+					darkshore = ns.IsWorkableHere(mightfish, DARKSHORE),
+					feralas = ns.IsWorkableHere(mightfish, FERALAS_ZONE),
+					durotar = ns.IsWorkableHere(mightfish, DUROTAR),
+					bassDurotar = ns.IsWorkableHere(bass, DUROTAR),
+					bassBarrens = ns.IsWorkableHere(bass, BARRENS),
+					unknown = ns.IsWorkableHere(mightfish, UNKNOWN),
+				})
+			end
+		)
 
 		it("always holds for every other kind, and in zone 0 only for those (TKB-R121)", function()
 			local ns = board.load().ns
@@ -427,33 +435,40 @@ describe("realm dates and times", function()
 			{ 1792018800, 787, 840 }, -- -9:53 rounds to -10:00, which is +14:00
 		}
 
-		it("matches LOG-R49's cases, a +13 h realm and one wrapping from −11 h among them (TKB-R105, LOG-R49)", function()
-			local ns = board.load().ns
-			local expected, offsets = {}, {}
+		it(
+			"matches LOG-R49's cases, a +13 h realm and one wrapping from −11 h among them (TKB-R105, LOG-R49)",
+			function()
+				local ns = board.load().ns
+				local expected, offsets = {}, {}
 
-			for i, case in ipairs(CORE_CASES) do
-				expected[i], offsets[i] = case[3], ns.RealmOffset(case[1], case[2])
+				for i, case in ipairs(CORE_CASES) do
+					expected[i], offsets[i] = case[3], ns.RealmOffset(case[1], case[2])
+				end
+
+				assert.are.same(expected, offsets)
 			end
+		)
 
-			assert.are.same(expected, offsets)
-		end)
+		it(
+			"agrees with Core's own LOG-R49 offset at every realm minute of a day (TKB-R105, LOG-R49, ADR 0001)",
+			function()
+				local ns = board.load().ns
+				local core = loadAddon("Pagle", FOREVER_GLOBALS).ns
+				local disagreements = {}
 
-		it("agrees with Core's own LOG-R49 offset at every realm minute of a day (TKB-R105, LOG-R49, ADR 0001)", function()
-			local ns = board.load().ns
-			local core = loadAddon("Pagle", FOREVER_GLOBALS).ns
-			local disagreements = {}
-
-			for _, serverTime in ipairs({ 1791936000, 1791954000, 1792015200, 1792002600 }) do
-				for realmMinute = 0, 1439, 7 do
-					local mine, cores = ns.RealmOffset(serverTime, realmMinute), core.RealmUtcOffset(serverTime, realmMinute)
-					if mine ~= cores then
-						disagreements[#disagreements + 1] = serverTime .. "/" .. realmMinute
+				for _, serverTime in ipairs({ 1791936000, 1791954000, 1792015200, 1792002600 }) do
+					for realmMinute = 0, 1439, 7 do
+						local mine, cores =
+							ns.RealmOffset(serverTime, realmMinute), core.RealmUtcOffset(serverTime, realmMinute)
+						if mine ~= cores then
+							disagreements[#disagreements + 1] = serverTime .. "/" .. realmMinute
+						end
 					end
 				end
-			end
 
-			assert.are.same({}, disagreements)
-		end)
+				assert.are.same({}, disagreements)
+			end
+		)
 	end)
 
 	describe("ns.RealmDate", function()
@@ -524,17 +539,14 @@ describe("realm dates and times", function()
 	it("counts down in whole hours from one hour up and whole minutes below (TKB-R105)", function()
 		local ns = board.load().ns
 
-		assert.are.same(
-			{ "13h", "13h", "1h", "59m", "45m", "45m", "0m" },
-			{
-				ns.Countdown(13 * HOUR + 59 * MINUTE + 59),
-				ns.Countdown(13 * HOUR),
-				ns.Countdown(HOUR),
-				ns.Countdown(HOUR - 1),
-				ns.Countdown(45 * MINUTE + 59),
-				ns.Countdown(45 * MINUTE),
-				ns.Countdown(59),
-			}
-		)
+		assert.are.same({ "13h", "13h", "1h", "59m", "45m", "45m", "0m" }, {
+			ns.Countdown(13 * HOUR + 59 * MINUTE + 59),
+			ns.Countdown(13 * HOUR),
+			ns.Countdown(HOUR),
+			ns.Countdown(HOUR - 1),
+			ns.Countdown(45 * MINUTE + 59),
+			ns.Countdown(45 * MINUTE),
+			ns.Countdown(59),
+		})
 	end)
 end)
