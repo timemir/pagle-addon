@@ -77,22 +77,21 @@ describe("the Ledger's projection def", function()
 			local state = def.reset()
 			local empty = ns.NewLedgerFold(lookups).reset()
 
-			def.apply(state, { kind = "prestige", seq = 1, id = "x-1", char = 1, time = 1, rank = 1 }, "live")
 			def.apply(
 				state,
-				{ kind = "build", seq = 2, id = "x-2", char = 1, time = 1, build = 1, version = "1" },
+				{ kind = "build", seq = 1, id = "x-1", char = 1, time = 1, build = 1, version = "1" },
 				"live"
 			)
 			def.apply(
 				state,
-				{ kind = "purchase", seq = 3, id = "x-3", char = 1, time = 1, good = 1, price = 5 },
+				{ kind = "purchase", seq = 2, id = "x-2", char = 1, time = 1, good = 1, price = 5 },
 				"live"
 			)
 			assert.are.same(empty, state)
 
 			def.apply(
 				state,
-				{ kind = "skill", seq = 4, id = "x-4", char = 1, time = 9, rank = 80, max = 150, mod = 0 },
+				{ kind = "skill", seq = 3, id = "x-3", char = 1, time = 9, rank = 80, max = 150, mod = 0 },
 				"replay"
 			)
 			assert.are.same({ [75] = 9 }, state.skill)

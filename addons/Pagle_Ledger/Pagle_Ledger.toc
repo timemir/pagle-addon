@@ -14,6 +14,7 @@ data\Lore.lua
 logic\Data.lua
 logic\Module.lua
 logic\Progress.lua
+logic\Prestige.lua
 logic\Fold.lua
 logic\World.lua
 logic\Stars.lua
@@ -36,4 +37,5 @@ adapter\JournalText.lua
 adapter\JournalCollections.lua
 adapter\JournalSearch.lua
 adapter\Journal.lua
+adapter\Prestige.lua
 adapter\Ledger.lua

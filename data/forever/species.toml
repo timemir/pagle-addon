@@ -1,2 +1,178 @@
-# Typical lengths (DATA-R20): [species.<speciesID>] typicalLength, in whole millimetres, for each Species. They come
-# with Simulated Size in M4, when data/checks.toml turns the typicalLength check on (DATA-R66).
+# Typical lengths (DATA-R20): [species.<speciesID>] typicalLength, in whole millimetres, for each Species, emitted on
+# every item of the Species. data/checks.toml has the typicalLength check on from M4 (DATA-R66), so every Species needs
+# one, removed ones and the Legends included.
+#
+# No game source gives a length: a Simulated Size is never game data (LOG-R65). Drafted in #160 from each Species'
+# name, kind and a real-world counterpart's common adult length, so a Typical Catch reads plausibly; Species of one
+# kind stay consistent, and the Legends are longer than every ordinary fish. The dev reviews them in #162. The comment
+# above each entry is its enUS DB2 name and the reason, kept for review only (DATA-R3).
+
+# Spotted Sunfish: a real sunfish (Lepomis punctatus), about 15 cm
+[species.1467]
+typicalLength = 150
+
+# Raw Spotted Yellowtail (Spotted Yellowtail, 6887, folds in): a yellowtail amberjack at the low end of its 60-100 cm,
+# as a mid-level fish
+[species.4603]
+typicalLength = 600
+
+# Raw Longjaw Mud Snapper: the low-level snapper, the smallest of the three; a mangrove snapper is about 35 cm
+[species.6289]
+typicalLength = 350
+
+# Raw Brilliant Smallfish: a starter baitfish, like a shiner, about 10 cm
+[species.6291]
+typicalLength = 100
+
+# Sickly Looking Fish: a stunted panfish, no real counterpart; small but over the Smallfish
+[species.6299]
+typicalLength = 200
+
+# Raw Slitherskin Mackerel: an Atlantic mackerel, about 30 cm
+[species.6303]
+typicalLength = 300
+
+# Raw Bristle Whisker Catfish: a channel catfish, about 55 cm
+[species.6308]
+typicalLength = 550
+
+# Raw Loch Frenzy: a piranha-like biter by its name, about 25 cm
+[species.6317]
+typicalLength = 250
+
+# Oily Blackmouth: a blackmouth (a young chinook salmon), about 45 cm
+[species.6358]
+typicalLength = 450
+
+# Firefin Snapper: a red snapper, about 50 cm; between the Longjaw Mud and Nightfin snappers
+[species.6359]
+typicalLength = 500
+
+# Raw Rainbow Fin Albacore: an albacore tuna at the low end of its 80-100 cm, as a low-level fish
+[species.6361]
+typicalLength = 800
+
+# Raw Rockscale Cod: an Atlantic cod, about 70 cm
+[species.6362]
+typicalLength = 700
+
+# Oil Covered Fish: an ordinary small fish fouled with oil, no real counterpart; Sagefish-sized
+[species.6458]
+typicalLength = 250
+
+# Deviate Fish: a mutated fish of the Wailing Caverns, no real counterpart; mackerel-sized
+[species.6522]
+typicalLength = 300
+
+# Gaffer Jack: a crevalle jack, about 60 cm
+[species.6717]
+typicalLength = 600
+
+# Electropeller: an electric fish with no clear counterpart, caught for the same quest giver as the Gaffer Jack; a
+# little smaller than it
+[species.6718]
+typicalLength = 450
+
+# Raw Mithril Head Trout: a rainbow trout, about 50 cm
+[species.8365]
+typicalLength = 500
+
+# Darkshore Grouper: a red grouper, about 70 cm
+[species.12238]
+typicalLength = 700
+
+# Stonescale Eel: a conger or moray eel, about 1 m; the two eels stay close
+[species.13422]
+typicalLength = 1000
+
+# Raw Glossy Mightfish: no real counterpart; a stout high-level fish, shorter than the Large Raw Mightfish
+[species.13754]
+typicalLength = 600
+
+# Raw Winter Squid: a common squid, arms included, about 45 cm
+[species.13755]
+typicalLength = 450
+
+# Raw Summer Bass: a largemouth bass, about 45 cm
+[species.13756]
+typicalLength = 450
+
+# Lightning Eel: an electric eel, which runs 1-1.5 m; kept a little over the Stonescale Eel
+[species.13757]
+typicalLength = 1100
+
+# Raw Redgill: a perch-like fish by its name, about 30 cm
+[species.13758]
+typicalLength = 300
+
+# Raw Nightfin Snapper: the high-level snapper, the largest of the three; a big red snapper, about 55 cm
+[species.13759]
+typicalLength = 550
+
+# Raw Sunscale Salmon: an Atlantic salmon, about 70 cm
+[species.13760]
+typicalLength = 700
+
+# Darkclaw Lobster: an American lobster, about 35 cm
+[species.13888]
+typicalLength = 350
+
+# Raw Whitescale Salmon: an Atlantic salmon, about 75 cm; the cold-water salmon a little over the Sunscale
+[species.13889]
+typicalLength = 750
+
+# Raw Plated Armorfish: armoured with plates like a sturgeon; a small sturgeon, about 90 cm
+[species.13890]
+typicalLength = 900
+
+# Large Raw Mightfish: the Glossy Mightfish's larger kin by its name, half again its length
+[species.13893]
+typicalLength = 900
+
+# Feralas Ahi: a yellowfin tuna (ahi), which runs 1-1.5 m
+[species.16967]
+typicalLength = 1300
+
+# Sar'theris Striker: a striking predator like a barracuda, about 90 cm
+[species.16968]
+typicalLength = 900
+
+# Savage Coast Blue Sailfin: a sailfish, about 1.5 m without its bill; the longest ordinary fish
+[species.16969]
+typicalLength = 1500
+
+# Misty Reed Mahi Mahi: a mahi-mahi, about 1 m
+[species.16970]
+typicalLength = 1000
+
+# Brownell's Blue Striped Racer: a Legend; a striped marlin, about 2.2 m, the longest Legend
+[species.19803]
+typicalLength = 2200
+
+# Keefer's Angelfish: a Legend; a real angelfish is under 45 cm, so a giant one, still over every ordinary fish
+[species.19805]
+typicalLength = 1800
+
+# Dezian Queenfish: a Legend; a real queenfish reaches 1.2 m, so a giant one, 2 m
+[species.19806]
+typicalLength = 2000
+
+# Speckled Tastyfish: a spotted seatrout, about 40 cm
+[species.19807]
+typicalLength = 400
+
+# Zulian Mudskunk: a mud-dwelling bottom feeder like a bullhead catfish, about 30 cm
+[species.19975]
+typicalLength = 300
+
+# Raw Sagefish: a small food fish, no real counterpart; about 25 cm
+[species.21071]
+typicalLength = 250
+
+# Raw Greater Sagefish: the Sagefish's larger kin by its name, about 40 cm
+[species.21153]
+typicalLength = 400
+
+# Whimsyfin: a small fanciful fish by its name, no real counterpart; sunfish-sized
+[species.251524]
+typicalLength = 150

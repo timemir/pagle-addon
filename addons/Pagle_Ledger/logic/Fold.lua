@@ -11,7 +11,8 @@ local ns = select(2, ...)
 -- Skill Milestones, lifetime Catches as a count, and Coins for level-ups and new Species. M3's catches (LED-R4): the
 -- Uncharted list (LED-R64), the collections' items (LED-R60, LED-R61) with their XP and Coins, and first-Catch facts.
 -- M4's catches (LED-R4): the Legend class (LED-R63, logic/Legends.lua) and Catch Milestones (LED-R42,
--- logic/CatchMilestones.lua).
+-- logic/CatchMilestones.lua). M4's Prestige (LED-R30–R32): Prestige entries start a new climb (logic/Prestige.lua)
+-- and a climb at 60 is ready.
 
 --- A realm date (LOG-R49), as the Journal prints it.
 ---@alias LedgerDate { year: integer, month: integer, day: integer }
@@ -22,7 +23,7 @@ local ns = select(2, ...)
 ---@field casts integer                       -- caught and got-away Casts applied (LED-R93)
 ---@field catches integer                     -- lifetime Catches (LED-R42)
 ---@field xp integer                          -- the climb's XP (LED-R31)
----@field prestige integer                    -- prestige rank: 0 until M4's Prestige
+---@field prestige integer                    -- prestige rank: 0 until the first Prestige (LED-R32)
 ---@field fresh number                        -- Fresh Water F after the last Catch (LED-R22)
 ---@field lastCatch? integer                  -- server time of the last Catch's Cast
 ---@field firstDate? LedgerDate               -- realm date of the first Catch of any class (LED-R146)
@@ -67,7 +68,7 @@ local ns = select(2, ...)
 --- Coins (LED-R88; 0 when it pays none). Tickets #101 and #102 turn M2's kinds into moments and Write-up lines, ticket
 --- #137 M3's; the fold never reads the celebrated set (LED-R3).
 ---@class LedgerAchievement
----@field kind "levelUp"|"newSpecies"|"newInZone"|"skillMilestone"|"newCurio"|"trophyWeight"|"uncharted"|"elementStar"|"regularStar"|"familyStar"|"zoneRank"|"legend"|"catchMilestone"
+---@field kind "levelUp"|"newSpecies"|"newInZone"|"skillMilestone"|"newCurio"|"trophyWeight"|"uncharted"|"elementStar"|"regularStar"|"familyStar"|"zoneRank"|"prestigeReady"|"prestige"|"legend"|"catchMilestone"
 ---@field cast? string
 ---@field coins integer
 ---@field levels? integer[]                   -- levelUp: the levels it raised, ascending
@@ -81,6 +82,7 @@ local ns = select(2, ...)
 ---@field stars? integer[]                    -- familyStar: the stars it newly computed, 2 and/or 3, ascending
 ---@field old? number                         -- trophyWeight with a ruler (LED-R61): the family's heaviest before
 ---@field new? number                         -- trophyWeight with a ruler: the new item's weight
+---@field rank? integer                       -- prestigeReady: the climb's prestige rank; prestige: the new rank
 
 --- The lookups the fold reads: Core's `Pagle.GetItem` (LOG-R55) and `Pagle.MatchesConditions` (LOG-R49), and the
 --- world index, which changes only with the catalogue, whose new fingerprint rebuilds the projection (LED-R10).
@@ -383,14 +385,18 @@ function ns.NewLedgerFold(lookups)
 	local function apply(state, record, mode, earned) -- luacheck: no unused args (mode: the same in every mode, LED-R3)
 		earned = earned or {}
 		local kind = record.kind
-		if kind ~= "cast" and kind ~= "skill" then
+		if kind ~= "cast" and kind ~= "skill" and kind ~= "prestige" then
 			return earned
 		end
 		local before = ns.Level(state)
 		if kind == "cast" then
 			applyCast(state, record --[[@as PagleCast]], earned)
-		else
+		elseif kind == "skill" then
 			applySkill(state, record --[[@as PagleSkillReading]], earned)
+		else
+			-- A new climb from level 1: its levels from the carried XP are the Prestige's (LED-R32).
+			ns.ApplyPrestige(state, record --[[@as PaglePrestige]], earned)
+			before = 1
 		end
 		-- One levelUp per entry, however many levels it raised (LED-R97), with 20 Coins each (LED-R88).
 		local after = ns.Level(state)
@@ -403,6 +409,15 @@ function ns.NewLedgerFold(lookups)
 			state.coins = state.coins + coins
 			earned[#earned + 1] =
 				{ kind = "levelUp", cast = kind == "cast" and record.id or nil, coins = coins, levels = levels }
+			-- The climb reaching 60 makes Prestige ready, once per climb, with that climb's rank (LED-R97).
+			if after >= ns.LEVEL_CAP then
+				earned[#earned + 1] = {
+					kind = "prestigeReady",
+					cast = kind == "cast" and record.id or nil,
+					coins = 0,
+					rank = state.prestige,
+				}
+			end
 		end
 		return earned
 	end

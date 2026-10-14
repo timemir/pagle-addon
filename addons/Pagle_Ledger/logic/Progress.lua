@@ -39,24 +39,34 @@ end
 --- The level cap (LED-R30, Tunables).
 ns.LEVEL_CAP = 60
 
---- What going from level `level` to the next costs (LED-R30, Tunables): 1,000 + 80 × L. The Prestige factor comes in
---- M4.
+-- The Prestige climb cost factor (LED-R30, Tunables): every step costs this much of its rank-0 cost after any Prestige.
+local PRESTIGE_FACTOR = 0.5
+
+--- What going from level `level` to the next costs at prestige rank `rank` (LED-R30, Tunables): (1,000 + 80 × L) × f,
+--- with f = 1 at rank 0 and 0.5 after any Prestige. 1,000 + 80 × L is even, so half of it is whole too.
 ---@param level integer
+---@param rank integer the prestige rank
 ---@return integer
-function ns.StepCost(level)
-	return 1000 + 80 * level
+function ns.StepCost(level, rank)
+	local cost = 1000 + 80 * level
+	if rank > 0 then
+		return math.floor(cost * PRESTIGE_FACTOR)
+	end
+	return cost
 end
 
---- The climb `xp` covers (LED-R30): the level, 1 plus the steps covered, at most 60; then below 60 the XP into the
---- level and the next step's cost, at 60 the carried XP (kept, unused until Prestige) and no cost.
+--- The climb `xp` covers at prestige rank `rank` (LED-R30): the level, 1 plus the steps covered, at most 60; then
+--- below 60 the XP into the level and the next step's cost, at 60 the carried XP (unused until a Prestige carries it
+--- into the next climb, LED-R32) and no cost.
 ---@param xp integer the climb's XP (LED-R31)
+---@param rank integer the prestige rank
 ---@return integer level
 ---@return integer into XP into the level, or the carried XP at 60
 ---@return integer? cost the next step's cost; nil at 60
-function ns.ClimbOf(xp)
+function ns.ClimbOf(xp, rank)
 	local level = 1
 	while level < ns.LEVEL_CAP do
-		local cost = ns.StepCost(level)
+		local cost = ns.StepCost(level, rank)
 		if xp < cost then
 			return level, xp, cost
 		end
@@ -66,14 +76,15 @@ function ns.ClimbOf(xp)
 	return level, xp, nil
 end
 
---- The climb's computed level (LED-R30).
+--- The climb's computed level (LED-R30), at the state's prestige rank.
 ---@param state LedgerState
 ---@return integer
 function ns.Level(state)
-	return (ns.ClimbOf(state.xp))
+	return (ns.ClimbOf(state.xp, state.prestige))
 end
 
---- The peak level (LED-R35): 60 once the prestige rank is above 0, else the current level.
+--- The peak level (LED-R35): 60 once the prestige rank is above 0, else the current level. Level rewards follow it,
+--- so a Prestige never takes them away.
 ---@param state LedgerState
 ---@return integer
 function ns.PeakLevel(state)

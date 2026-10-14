@@ -793,18 +793,18 @@ describe("The Ledger's fold", function()
 		local TO_60 = 59 * 1000 + 80 * (59 * 60 / 2)
 
 		it("is level 1 at 1,079 XP and 2 at 1,080: the step from level 1 costs 1,000 + 80 (LED-R30)", function()
-			assert.are.same({ 1, 0, 1080 }, { ns.ClimbOf(0) })
-			assert.are.same({ 1, 1079, 1080 }, { ns.ClimbOf(1079) })
-			assert.are.same({ 2, 0, 1160 }, { ns.ClimbOf(1080) })
-			assert.are.same({ 3, 5, 1240 }, { ns.ClimbOf(1080 + 1160 + 5) })
+			assert.are.same({ 1, 0, 1080 }, { ns.ClimbOf(0, 0) })
+			assert.are.same({ 1, 1079, 1080 }, { ns.ClimbOf(1079, 0) })
+			assert.are.same({ 2, 0, 1160 }, { ns.ClimbOf(1080, 0) })
+			assert.are.same({ 3, 5, 1240 }, { ns.ClimbOf(1080 + 1160 + 5, 0) })
 		end)
 
 		it("stops at 60 and keeps the carried XP past it, unused until Prestige (LED-R30, LED-R31)", function()
 			assert.are.equal(200600, TO_60)
-			assert.are.same({ 59, 1000 + 80 * 59 - 1, 1000 + 80 * 59 }, { ns.ClimbOf(TO_60 - 1) })
+			assert.are.same({ 59, 1000 + 80 * 59 - 1, 1000 + 80 * 59 }, { ns.ClimbOf(TO_60 - 1, 0) })
 			-- At 60 there is no next step; the second value is the carried XP.
-			assert.are.same({ 60, 0 }, { ns.ClimbOf(TO_60) })
-			assert.are.same({ 60, 12345 }, { ns.ClimbOf(TO_60 + 12345) })
+			assert.are.same({ 60, 0 }, { ns.ClimbOf(TO_60, 0) })
+			assert.are.same({ 60, 12345 }, { ns.ClimbOf(TO_60 + 12345, 0) })
 		end)
 
 		it("reads the level and the peak level, the level at prestige rank 0, from the state (LED-R35)", function()
@@ -847,7 +847,7 @@ describe("The Ledger's fold", function()
 			assert.are.equal(60, ns.Level(state))
 			assert.are.same({ kind = "levelUp", coins = 20, levels = { 60 } }, earned[5])
 			assert.are.equal(TO_60 - 1 + 4000, state.xp)
-			assert.are.same({ 60, 3999 }, { ns.ClimbOf(state.xp) })
+			assert.are.same({ 60, 3999 }, { ns.ClimbOf(state.xp, 0) })
 		end)
 	end)
 
@@ -993,9 +993,9 @@ describe("The Ledger's fold", function()
 			assert.are.same({}, earned)
 		end)
 
-		it("ignores Prestige, build, purchase and Module records in M2 (LED-R2, LED-R4)", function()
+		it("ignores build, purchase and Module records (LED-R2, LED-R4)", function()
 			local records = {}
-			for i, kind in ipairs({ "prestige", "build", "purchase", "module" }) do
+			for i, kind in ipairs({ "build", "purchase", "module" }) do
 				records[i] = log.other(T0 + i, kind)
 			end
 			local state, earned = applyAll(records)

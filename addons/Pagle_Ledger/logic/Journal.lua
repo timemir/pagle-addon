@@ -48,8 +48,9 @@ local ns = select(2, ...)
 --- - `bookplate` (the level `text` in large numerals over its caption `value`, and a wax seal reading `seal`, LED-R132)
 --- - `board` (`ticks`: the Trophy Room's measuring board, LED-R143) and `plinth` (`icon` and `look`, `text` the name,
 ---   `value` the plaque, LED-R144), drawn by adapter/JournalCollections.lua
+--- - `emblem` (`mark`: a prestige rank's emblem and stars, ns.PrestigeMark; nothing drawn without an emblem)
 ---@class LedgerBlock
----@field kind "kicker"|"title"|"text"|"link"|"leader"|"seal"|"stamps"|"tiles"|"icon"|"xpBar"|"tabs"|"bookplate"|"board"|"plinth"
+---@field kind "kicker"|"title"|"text"|"link"|"leader"|"seal"|"stamps"|"tiles"|"icon"|"xpBar"|"tabs"|"bookplate"|"board"|"plinth"|"emblem"
 ---@field text? string
 ---@field hand? boolean
 ---@field color? "faded"|"red"|"blue"
@@ -65,6 +66,7 @@ local ns = select(2, ...)
 ---@field seal? string
 ---@field action? fun()
 ---@field ticks? LedgerBoardTick[]
+---@field mark? LedgerPrestigeMark
 
 --- One weight's tick on a measuring board (LED-R143): its pounds, where it sits from the lightest weight (0) to the
 --- heaviest (1), and whether it is landed.
