@@ -93,12 +93,35 @@ ns.L = {
 	MENU_SETTINGS = "Settings",
 	-- Its Curio Shop entry (CORE-R50): the balance as BreakUpLargeNumbers writes it, then a coin icon.
 	MENU_CURIO_SHOP = "Curio Shop  %s " .. COIN,
+	-- Its Field report entry (CORE-R50, REP-R43), with the count while it is above 0.
+	MENU_FIELD_REPORT = "Help chart the waters",
+	MENU_FIELD_REPORT_COUNT = "Help chart the waters (%d)",
+
+	-- The Field report box (field-report.md › The box and its entry points): its title (REP-R40), the privacy line
+	-- above the text (REP-R37), the part line and its buttons, Close, the lines shown instead of the text (REP-R41,
+	-- REP-R42), and the chat line an entry point prints while restricted (REP-R44).
+	REPORT_TITLE = "Help chart the waters",
+	REPORT_PRIVACY = "This will be posted publicly. It contains no character names.",
+	REPORT_PART = "Part %d of %d",
+	REPORT_PREVIOUS = "Previous",
+	REPORT_NEXT = "Next",
+	REPORT_CLOSE = "Close",
+	REPORT_NOTHING = "Nothing to report. Thanks for checking!",
+	REPORT_UPDATING = "Updating… try again in a moment.",
+	REPORT_AFTER_COMBAT = "Pagle: the Field report opens after combat.",
+	-- The Settings root's Help chart the waters section (SET-R10 row 4): its header, the row's label, the button's
+	-- caption, with the count while it is above 0, and the tooltip.
+	SETTINGS_FIELD_REPORT = "Help chart the waters",
+	SETTINGS_FIELD_REPORT_ROW = "Field report",
+	SETTINGS_FIELD_REPORT_BUTTON = "Open Field report",
+	SETTINGS_FIELD_REPORT_BUTTON_COUNT = "Open Field report (%d)",
+	SETTINGS_FIELD_REPORT_TOOLTIP = "Copy what you've caught that Pagle's data doesn't know yet, and paste it into the issue form.",
 	-- The compartment entry's label (CORE-R51): Pagle, with the moments Cozy mode holds for a summary (ANN-R42).
 	COMPARTMENT = "Pagle",
 	COMPARTMENT_WAITING = "Pagle · %d waiting",
 
 	-- /pagle help (CORE-R60, CORE-R61): the header, then a line per command (its name, its help). Core lists the
-	-- reserved commands that work; shop and report join with their surfaces (M4, M3).
+	-- reserved commands that work; shop joins with the Curio Shop (M4).
 	SLASH_HELP_HEADER = "Pagle commands:",
 	SLASH_HELP_LINE = "/pagle %s: %s",
 	-- CORE-R62: a Module's /pagle entry skipped, reported. Each takes the Module's def.name and the entry's name, then
@@ -109,6 +132,7 @@ ns.L = {
 	SLASH_SKIPPED_TAKEN = "Pagle: %s's /pagle %s is skipped: %s already uses it",
 	SLASH_CORE_HELP = {
 		{ name = "settings", help = "open Pagle's settings (also /pagle on its own)" },
+		{ name = "report", help = "open the Field report, to help chart the waters" },
 		{ name = "help", help = "list these commands" },
 	},
 }

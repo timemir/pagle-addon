@@ -84,17 +84,19 @@ function Commands:Add(def)
 	return problems
 end
 
---- What `/pagle <line>` does (CORE-R60–R62): `"settings"` with no argument or `settings`; `"module"` with the
---- Module subcommand it names and the rest of the line, trimmed; otherwise `"help"`. That covers `help`, an unknown
---- name, and `shop` and `report` until their surfaces exist (M4, M3).
+--- What `/pagle <line>` does (CORE-R60–R62): `"settings"` with no argument or `settings`; `"report"` with `report`
+--- (the Field report); `"module"` with the Module subcommand it names and the rest of the line, trimmed; otherwise
+--- `"help"`. That covers `help`, an unknown name, and `shop` until the Curio Shop exists (M4).
 ---@param line string what follows /pagle
----@return "settings"|"module"|"help" action
+---@return "settings"|"report"|"module"|"help" action
 ---@return PagleSlashCommand? command
 ---@return string? args
 function Commands:Resolve(line)
 	local name, args = ns.ParseSlash(line)
 	if name == "" or name == "settings" then
 		return "settings"
+	elseif name == "report" then
+		return "report"
 	end
 	local command = self.byName[name]
 	if command then
@@ -129,16 +131,21 @@ function Commands:AddModules(modules, report)
 	end
 end
 
---- Runs `/pagle <line>` (CORE-R60–R62): opens Settings, runs a Module's subcommand through `call`, or prints the
+--- What Core's own subcommands do (CORE-R61). Each prints its surface's chat line instead while restricted (CORE-R33).
+---@class PagleSlashCore
+---@field settings fun() opens the Settings root (Pagle.OpenSettings)
+---@field report fun() opens the Field report box (Pagle.OpenFieldReport)
+
+--- Runs `/pagle <line>` (CORE-R60–R62): one of Core's own subcommands, a Module's subcommand through `call`, or the
 --- help list.
 ---@param line string what follows /pagle
----@param openSettings fun() opens the Settings root (Pagle.OpenSettings, which prints CORE-R33's line instead while restricted)
+---@param core PagleSlashCore
 ---@param call fun(fn: function, ...: any) calls a Module's function; an error is reported, not raised (securecallfunction)
 ---@param print fun(line: string) prints a chat line
-function Commands:Run(line, openSettings, call, print)
+function Commands:Run(line, core, call, print)
 	local action, command, args = self:Resolve(line)
-	if action == "settings" then
-		openSettings()
+	if action == "settings" or action == "report" then
+		core[action]()
 	elseif command then
 		call(command.fn, args)
 	else

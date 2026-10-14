@@ -95,6 +95,17 @@ local function newInitializer(template, data)
 	end
 	function initializer:InitFrame(frame)
 		frame.initializer = self
+		if self.template == "SettingButtonControlTemplate" then
+			-- As SettingsButtonControlMixin:Init: the row's label, then a button whose caption is buttonText, called
+			-- now when it is a function (EvaluateName), and whose OnClick is buttonClick.
+			if self.data.name and self.data.name ~= "" then
+				newWidget("FontString", frame):SetText(self.data.name)
+			end
+			local button = newWidget("Button", frame)
+			local caption = self.data.buttonText
+			button:SetText(type(caption) == "function" and caption() or caption)
+			button:SetScript("OnClick", self.data.buttonClick)
+		end
 		if self.data.setting then
 			frame.value = self.data.setting:GetValue()
 			self:FormatValue(frame)
