@@ -33,6 +33,40 @@ ns.L = {
 	BOOK_LIVE_LINE = "Session: %s · %s · %s",
 	BOOK_UPDATING = "Updating my records…",
 
+	-- The Session pages (stats.md › UI › This Session, Sessions; STA-R97). A Session's entry: its kicker on the Sessions
+	-- page ("Session 12", numbered from the oldest), "21:04 to now, 25m at the water.", its figures and headings.
+	SESSION_NUMBERED = "Session %s",
+	SESSION_SPAN = "%s to %s, %s at the water.",
+	SESSION_NOW = "now",
+	SESSION_CASTS = "Casts",
+	SESSION_CATCHES = "Catches",
+	SESSION_GOT_AWAY = "Got away",
+	-- "7 (12%)": the got-away count and its rate.
+	SESSION_GOT_AWAY_VALUE = "%s (%d%%)",
+	SESSION_PER_HOUR = "Catches per hour",
+	SESSION_SKILL = "Skill gained",
+	SESSION_SKILL_VALUE = "+%s",
+	SESSION_BY_QUALITY = "By quality",
+	SESSION_WHERE_AND_WHO = "Where and who",
+	-- This Session's right page, and the ruled ledgers' columns: "Started" reads "5 Oct 2026 21:04" (date, time), and
+	-- "Where" the zones joined by ", ".
+	SESSIONS_BEFORE_THAT = "Before that",
+	SESSIONS_EARLIER = "Earlier Sessions",
+	SESSIONS_EVERY = "Every Session",
+	SESSIONS_STARTED = "Started",
+	SESSIONS_WHERE = "Where",
+	SESSIONS_LENGTH = "Length",
+	SESSIONS_CASTS = "Casts",
+	SESSIONS_CATCHES = "Catches",
+	SESSIONS_STARTED_AT = "%s %s",
+	SESSIONS_WHERE_JOIN = ", ",
+	-- The Sessions page's note, by Core's Session gap in minutes (LOG-R60), and its pager.
+	SESSIONS_NOTE = "A Session ends after %d minutes without a Cast.",
+	SESSIONS_LATER = "later",
+	SESSIONS_EARLIER_PAGE = "earlier",
+	SESSIONS_PAGE = "page %d of %d",
+	NO_SESSIONS = "No Sessions yet.",
+
 	-- STA-R58's one allowed line: no other Stats string says or implies a Catch is owed (spec/Pagle_Stats/copy_spec.lua).
 	NOTHING_IS_OWED = "Every Cast is its own roll; nothing is owed.",
 

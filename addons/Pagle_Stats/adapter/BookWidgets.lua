@@ -420,6 +420,7 @@ function ns.NewBookLedger(parent, width, columns)
 			cell:SetPoint("LEFT", line, "LEFT", x + 4, 0)
 			cell:SetWidth(column.width - 8)
 			cell:SetJustifyH(column.align or "LEFT")
+			cell:SetWordWrap(false) -- a long cell ("Where") is cut short, never wrapped over the next row
 			x = x + column.width
 		end
 	end
