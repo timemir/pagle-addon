@@ -40,6 +40,7 @@ logic\Settings.lua
 logic\Slash.lua
 logic\Wallet.lua
 logic\Goods.lua
+logic\CoreGoods.lua
 logic\Moments.lua
 logic\Summary.lua
 logic\Cards.lua
@@ -76,6 +77,7 @@ adapter\Moments.lua
 adapter\Summary.lua
 adapter\Timber.lua
 adapter\Announcements.lua
+adapter\CoreGoods.lua
 adapter\Cards.lua
 adapter\Menu.lua
 adapter\ReloadReminder.lua

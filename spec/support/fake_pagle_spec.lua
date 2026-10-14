@@ -587,6 +587,26 @@ describe("FakePagle", function()
 			assert.is_nil(fake.Pagle.GetGood("hunts.cover.none"))
 		end)
 
+		it("has Core's own slots and goods, as Core registers them at login, with no previews (SHOP-R25)", function()
+			local fake = newFakePagle()
+			fake.login()
+			local Pagle = fake.Pagle
+
+			assert.are.same({ "core.toaststyle.timber", "core.soundset.driftwood", "core.crest.plain" }, {
+				Pagle.GetEquipped("core.toaststyle"),
+				Pagle.GetEquipped("core.soundset"),
+				Pagle.GetEquipped("core.crest"),
+			})
+			assert.are.same({ "core.crest.crest3", "Interface\\Icons\\Spell_Frost_SummonWaterElemental", "Core" }, {
+				Pagle.GetGood("core.crest.crest3").name,
+				Pagle.GetGood("core.crest.crest3").icon,
+				fake.goods["core.crest.crest3"].module,
+			})
+			assert.is_nil(fake.ns.goods:Good("core.crest.plain").preview)
+			fake.setPurchased({ ["core.crest.crest3"] = true })
+			assert.is_true(Pagle.SetEquipped("core.crest", "core.crest.crest3"))
+		end)
+
 		it("records each Pagle.OpenShop in fake.shopsOpened, with the good asked for (SHOP-R40)", function()
 			local fake = newFakePagle()
 

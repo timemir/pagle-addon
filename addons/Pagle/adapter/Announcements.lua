@@ -388,9 +388,10 @@ ns.lanes = ns.NewLanes({
 	serverTime = function()
 		return GetServerTime()
 	end,
-	-- Driftwood, the only set in M2 (ANN-R72); the Sound set slot comes with the Curio Shop (M4).
+	-- The equipped sound set (ANN-R70, ANN-R72), read as each sound is picked, so it follows AppearanceChanged
+	-- (SHOP-R33).
 	soundSet = function()
-		return ns.SOUND_SETS.driftwood
+		return ns.SoundSetOf(Pagle.GetEquipped("core.soundset"))
 	end,
 	show = show,
 	hide = hide,
