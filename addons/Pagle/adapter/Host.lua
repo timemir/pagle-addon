@@ -52,4 +52,8 @@ ns.host = {
 	report = function(message)
 		geterrorhandler()(message)
 	end,
+	-- On the launch re-verification list (roadmap.md › Launch re-verification checklist, item 19).
+	region = function()
+		return GetCurrentRegion and GetCurrentRegion()
+	end,
 }

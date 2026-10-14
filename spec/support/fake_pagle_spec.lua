@@ -1130,16 +1130,20 @@ describe("FakePagle", function()
 				local function plain(size)
 					return size and { length = size.length, band = size.band }
 				end
+				local core = loadAddon("Pagle", FOREVER_GLOBALS).ns
+				-- Oily Blackmouth's typical length in the generated catalogue (DATA-R20, #160).
+				local shipped = assert(fake.ns.catalogue.items[6358].typicalLength)
 				local first = assert(fake.playCast("caught", { { itemID = 6358, quantity = 1 } }))
-				assert.is_nil(first.items[1].size) -- the generated catalogue has no typical lengths yet
+				assert.are.same(core.SimulatedSize(first.items[1].catchId, shipped), plain(first.items[1].size))
+				assert.are.same(plain(first.items[1].size), plain(catches[1].size))
 
-				fake.ns.catalogue.items[6358].typicalLength = 300 -- a release gives Oily Blackmouth's Species one
+				local retuned = shipped * 2 -- a release retunes the Species' typical length (LOG-R68)
+				fake.ns.catalogue.items[6358].typicalLength = retuned
 				local second = assert(fake.playCast("caught", { { itemID = 6358, quantity = 2 } }))
 
-				local core = loadAddon("Pagle", FOREVER_GLOBALS).ns
 				local expected = {
-					core.SimulatedSize(first.items[1].catchId, 300),
-					core.SimulatedSize(second.items[1].catchId, 300),
+					core.SimulatedSize(first.items[1].catchId, retuned),
+					core.SimulatedSize(second.items[1].catchId, retuned),
 				}
 				assert.are.same(expected[2], plain(second.items[1].size))
 				assert.are.same(expected[2], plain(catches[2].size))
@@ -1147,9 +1151,32 @@ describe("FakePagle", function()
 				for record in fake.Pagle.IterateCatches(0) do
 					read[#read + 1] = plain(record.items[1].size)
 				end
-				assert.are.same(expected, read) -- the first Cast too, once it's sized
+				assert.are.same(expected, read) -- the first Cast too, re-sized over the catalogue served now
 			end
 		)
+	end)
+
+	describe("the length unit", function()
+		it("reads Pagle.FormatLength in inches by default, as Core does on region 1 (LOG-R69)", function()
+			local fake = newFakePagle()
+
+			assert.is_nil(fake.profile.lengthUnit)
+			assert.are.same({ "13.5 in", 1 }, { fake.Pagle.FormatLength(342), fake.region })
+		end)
+
+		it("follows fake.profile.lengthUnit, and fake.region with none stored (LOG-R69)", function()
+			local fake = newFakePagle()
+			fake.login()
+
+			fake.profile.lengthUnit = "cm"
+			local cm = fake.Pagle.FormatLength(342)
+			fake.profile.lengthUnit, fake.region = nil, 3
+			local europe = fake.Pagle.FormatLength(342)
+			fake.region = nil
+			local none = fake.Pagle.FormatLength(342)
+
+			assert.are.same({ "34.2 cm", "34.2 cm", "34.2 cm" }, { cm, europe, none })
+		end)
 	end)
 
 	describe("the Field report", function()
