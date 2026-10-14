@@ -41,11 +41,11 @@ Terms are used as `CONTEXT.md` defines them. A **game action** is the character 
     name = "QoL", title = "QoL", order = 50,
     settingsAction = { label = "Fishing settings ›", onClick = function() Pagle.OpenSettings("fishing") end },
     menu = { { label = function() return "Input: " .. inputLabel() end, onClick = cycleInput } },   -- QOL-R16
-    slash = { { name = "qol", fn = qolSlash, help = "qol input key|click|both: choose how you cast" } }, -- QOL-R17
+    slash = { { name = "qol", fn = qolSlash, help = "input key|click|both: choose how you cast" } }, -- QOL-R17
   }
   ```
 
-  It has no views. It adds its settings with `M:AddSetting("fishing", …)` before `ModulesChanged` (CORE-R42; rows under [Settings](#settings)).
+  The help text doesn't repeat "qol": `/pagle help` already prints it as `/pagle qol: …` (CORE-R60). It has no views. It adds its settings with `M:AddSetting("fishing", …)` before `ModulesChanged` (CORE-R42; rows under [Settings](#settings)).
 - **QOL-R3** QoL keeps no projection, appends no Module records, raises no moments, sets no summary line, pays no Coins, registers no goods, slots or tracker. It never reads the Catch log.
 - **QOL-R4** Core alone observes Casts and Catches (ADR 0001). QoL reads the live game state it needs to choose and arm its next action (the main-hand item, bag counts, the pole's lure enchant, mount state, open loot windows, the end of the player's channel, equipment sets, key bindings) and uses it for nothing else: it records, counts and publishes none of it.
 - **QOL-R5** Everything QoL does on its own (on an event, a timer or a setting change) changes only bindings, CVars, equipment-set definitions and frames, never game state. Every game action QoL makes possible is the target of one press (QOL-R24).
@@ -72,7 +72,7 @@ Terms are used as `CONTEXT.md` defines them. A **game action** is the character 
 
 - **QOL-R20** On each evaluation QoL picks the **next action** by checking these in order; the first that holds wins, so a press is always one game action:
   1. QoL is disarmed (QOL-R30), a loot window is open (QOL-R28), or the player is casting a spell with a cast time (`UnitCastingInfo("player")` isn't `nil`, such as a lure going on) → **nothing**
-  2. The player is channeling Fishing (QOL-R22) → **reel**
+  2. The player is channeling Fishing (QOL-R22) → **reel**, unless the reel didn't take (QOL-R35), then **cast**
   3. The gear step is ready (QOL-R43) → **equip the fishing set** (Fishing key only; the double-click skips this step)
   4. Lures aren't *Off*, a pole is in hand, the pole has no lure on (`GetWeaponEnchantInfo()` returns `false` for the main hand), and a lure is available (QOL-R51) → **apply that lure**
   5. *Open clams between Casts* is on and a clam is available (QOL-R55) → **open one clam**
@@ -86,17 +86,17 @@ Terms are used as `CONTEXT.md` defines them. A **game action** is the character 
 
   | Next action | Fishing key override | Double-click override (`BUTTON2`) | Evidence |
   |---|---|---|---|
-  | cast | `SetOverrideBindingSpell(owner, true, key, fishingName)` | the same on `BUTTON2` | key: probe B1, B2. Double-click: B3 proved a `BUTTON2` override clicking a secure spell button; a direct spell override on `BUTTON2` is checked in Track Q (QOL-R105) |
-  | reel | `SetOverrideBinding(owner, true, key, "INTERACTTARGET")` (soft-interact, QOL-R62) | the same on `BUTTON2` | key: probe B1. `BUTTON2`: checked in Track Q (QOL-R105) |
+  | cast | `SetOverrideBindingSpell(owner, true, key, fishingName)` | the same on `BUTTON2` | key: probe B1, B2. Double-click: QOL-R105 (both values) |
+  | reel | `SetOverrideBinding(owner, true, key, "INTERACTTARGET")` (soft-interact, QOL-R62) | `INTERACTTARGET` on `BUTTON2` at `ActionButtonUseKeyDown` 1; at 0, no target, and the game's right-click on the bobber reels | key: probe B1. `BUTTON2`: QOL-R105 |
   | equip the fishing set | `SetOverrideBindingClick(owner, true, key, "PagleQoLGearButton")` | never | B9 proved `UseEquipmentSet` from addon code on a keypress |
-  | apply a lure | `SetOverrideBindingClick(owner, true, key, "PagleQoLActionButton")`, the button set to `type = "item"`, `item = "item:<lureID>"` | the same on `BUTTON2` | probe B4 |
-  | open a clam | the same button, `item = "item:<clamID>"` | the same on `BUTTON2` | same mechanism as B4; re-verified in M8 (QOL-R100) |
+  | apply a lure | `SetOverrideBindingClick(owner, true, key, "PagleQoLActionButton")`, the button set to `type = "item"`, `item = "item:<lureID>"`, `target-slot = 16` (QOL-R52) | the same on `BUTTON2` | probe B4; `target-slot`: the exit check (#147) |
+  | open a clam | the same button, `item = "item:<clamID>"`, no `target-slot` | the same on `BUTTON2` | same mechanism as B4; re-verified in M8 (QOL-R100) |
   | nothing | no override (disarmed) | no override | |
 
   `PagleQoLActionButton` is one `SecureActionButtonTemplate` button. `PagleQoLGearButton` is a plain `Button` whose `OnClick` runs QOL-R44. Neither is ever shown.
 - **QOL-R25** QoL re-evaluates the next action:
   - on Core's `CastStarted`, `CastEnded`, `FishingStateChanged`, `RestrictionChanged`
-  - on `UNIT_SPELLCAST_CHANNEL_STOP`, `UNIT_SPELLCAST_START` and `UNIT_SPELLCAST_STOP` (player), `LOOT_READY`, `LOOT_CLOSED`, `BAG_UPDATE_DELAYED`, `PLAYER_EQUIPMENT_CHANGED`, `UNIT_INVENTORY_CHANGED` (player), `PLAYER_MOUNT_DISPLAY_CHANGED`, `EQUIPMENT_SETS_CHANGED`, `UPDATE_BINDINGS`
+  - on `UNIT_SPELLCAST_CHANNEL_STOP`, `UNIT_SPELLCAST_START` and `UNIT_SPELLCAST_STOP` (player), `LOOT_READY`, `LOOT_CLOSED`, `BAG_UPDATE_DELAYED`, `PLAYER_EQUIPMENT_CHANGED`, `UNIT_INVENTORY_CHANGED` (player), `PLAYER_MOUNT_DISPLAY_CHANGED`, `EQUIPMENT_SETS_CHANGED`, `UPDATE_BINDINGS`, and `CVAR_UPDATE` for `ActionButtonUseKeyDown` (so an open double-click window drops its reel at once at 0, QOL-R105)
   - on any QoL setting change
   - every 0.5 s while armed, which catches a lure expiring between events
 
@@ -105,13 +105,19 @@ Terms are used as `CONTEXT.md` defines them. A **game action** is the character 
 - **QOL-R27** `PagleQoLActionButton` and `PagleQoLGearButton` fire once per press: they register for clicks on key-down when the `ActionButtonUseKeyDown` CVar is `1`, otherwise on key-up (`RegisterForClicks("AnyDown")` or `("AnyUp")`), re-read whenever QoL arms (sets overrides, QOL-R11) and on `CVAR_UPDATE` for `ActionButtonUseKeyDown`.
 - **QOL-R28** **Loot guard:** a loot window is open from `LOOT_READY` until `LOOT_CLOSED`, for fishing loot or any other loot (a clam's, a mob's). While it is open the next action is *nothing*, so a press can't close it with a recast.
 - **QOL-R29** **Waiting for a press's result.** Some results arrive after the press, so QoL holds the step back meanwhile:
-  - After a swap to the fishing set, the gear step isn't ready (QOL-R43), and Swap gear does nothing, until `EQUIPMENT_SWAP_FINISHED` or the result wait, whichever comes first.
+  - After a swap, to the fishing set (QOL-R44) or back (QOL-R45), the gear step isn't ready (QOL-R43), and Swap gear does nothing, until `EQUIPMENT_SWAP_FINISHED` or the result wait, whichever comes first. Either swap can leave a half-swapped outfit meanwhile.
   - After a lure's use finishes casting (`UNIT_SPELLCAST_SUCCEEDED` for the player), the pole counts as lured until `GetWeaponEnchantInfo()` shows the lure or the result wait passes.
   - If a lure's use fails (`UNIT_SPELLCAST_FAILED` for the player while that lure was the target), or the result wait passes with no lure on, that lure ID is skipped by QOL-R51 until the next login or `/reload`, or until fishing skill changes (`SKILL_LINES_CHANGED`). So a lure the game won't apply never blocks the key.
+- **QOL-R35** **The reel didn't take.** A bobber beyond the game's interact range can't be reeled: `INTERACTTARGET` does nothing and the channel runs on. So a reel that changes nothing turns the next press into a cast:
+  - A **reel press** is a Fishing key going down while its override is the reel (QOL-R24). The override reports no press to addon code, so QoL looks: every frame while armed, it checks each bound key with `IsKeyDown` on the key without its modifiers (as QOL-R26), and a key down on this frame and up on the one before is one press. Probe B1's key watcher saw every `INTERACTTARGET` press this way. A press shorter than a frame can go unseen; the next one is seen.
+  - When the reel wait has passed since a reel press and the player is still channeling Fishing with no loot window opened since, **the reel didn't take**: QoL re-evaluates at once (QOL-R25, R26), the next action is *cast* (QOL-R20 step 2), and the next press casts again. That cast ends the old Cast, which Core records as interrupted (LOG-R7).
+  - A waiting reel press is dropped, and the reel didn't take is cleared, when the channel stops (QOL-R22), a new channel starts (Core's `CastStarted`), a loot window opens (QOL-R28) or QoL is disarmed (QOL-R30: restriction, standing down). Another reel press while one waits changes nothing.
+  - Only the Fishing key's presses are watched. The double-click reads the same ladder (QOL-R13), so once the reel didn't take its window casts too, but its second click never counts as a reel press: at `ActionButtonUseKeyDown` 0 its reel is the game's own right-click (QOL-R105), which QoL can't tell from a camera click.
+  - QoL can't see why a reel failed, so this is a guess on purpose. It never looks for the bobber, and there is no separate recast key (see "Never").
 
 ### Arming, combat and restriction
 
-- **QOL-R30** QoL is **armed** while all of these hold: it registered with Core, it isn't standing down (QOL-R82), and `Pagle.IsRestricted()` is false. Otherwise it is disarmed: no override bindings, no double-click, and the next action is *nothing*.
+- **QOL-R30** QoL is **armed** while all of these hold: it registered with Core, it is logged in (from `PLAYER_LOGIN`, QOL-R33, until `PLAYER_LOGOUT`), it isn't standing down (QOL-R82), and `Pagle.IsRestricted()` is false. Otherwise it is disarmed: no override bindings, no double-click, and the next action is *nothing*. From `PLAYER_LOGOUT` on, QoL evaluates nothing (QOL-R25) and reads no setting: AceDB-3.0 may already have stripped `PagleQoLDB`'s defaults, and each restore's `SetCVar` fires `CVAR_UPDATE` (QOL-R61, QOL-R63). It makes no binding call either; the overrides set go with the session.
 - **QOL-R31** **Restriction starts:** on `PLAYER_REGEN_DISABLED` (which runs before combat lockdown starts) and on `RestrictionChanged(true)`, whichever comes first, if `InCombatLockdown()` is still false QoL disarms (clears both owners' override bindings). It does this even though `Pagle.IsRestricted()` may already be true; it never arms there. In the same handler it ends the Fishing stretch (QOL-R61), restoring every leased CVar it can (QOL-R63). If `InCombatLockdown()` is already true, the overrides stay until restriction ends, the stretch still ends, and the restores wait (QOL-R66).
 - **QOL-R32** **Leaving restriction:** on `RestrictionChanged(false)` QoL re-evaluates (QOL-R25) and re-arms. Every arm, override change or secure-frame change that falls due while restricted is skipped, and that re-evaluation does it (CORE-R32); QoL keeps no queue of its own.
 - **QOL-R33** QoL creates its owner frames and buttons in `OnInitialize`. After a `/reload` in combat, it creates them at `RestrictionChanged(false)`, and stays disarmed until then. It first arms at `PLAYER_LOGIN`, right after the conflict check (QOL-R80), so it never arms and then stands down.
@@ -121,11 +127,11 @@ Terms are used as `CONTEXT.md` defines them. A **game action** is the character 
 
 - **QOL-R40** The **fishing set** is one of the character's own equipment sets, chosen per character (keyed by character GUID). The choice is stored as the set's ID and name; if no set has that ID with that name any more, no set is chosen. *Pagle Previous* can't be chosen. Set IDs are looked up with `C_EquipmentSet.GetEquipmentSetID(name)`, since `CreateEquipmentSet` returns none.
 - **QOL-R41** "Save what I'm wearing as my fishing set" saves the gear worn now, with no ignored slots (`C_EquipmentSet.ClearIgnoredSlotsForSave()` first), into a set named *Pagle Fishing* (`C_EquipmentSet.CreateEquipmentSet(name, icon)` if it doesn't exist, with the main-hand item's icon if it is a fishing pole, else the Fishing spell's; `SaveEquipmentSet` if it does) and chooses it (QOL-R42). It is disabled while restricted, and so is the Fishing set dropdown.
-- **QOL-R42** Choosing a fishing set also creates *Pagle Previous* from the gear worn now if it doesn't exist, so its slot is taken up front. Before creating anything, QoL counts the free slots (`MAX_EQUIPMENT_SETS_PER_PLAYER` minus `C_EquipmentSet.GetNumEquipmentSets()`) against the sets it would create (*Pagle Fishing* for QOL-R41, *Pagle Previous*). If there are too few, it creates nothing, keeps the previous choice (the dropdown re-reads it and shows that), and prints "Pagle: needs a free equipment set slot for Pagle Previous." (or "…two free equipment set slots…" when both are needed). The set names *Pagle Fishing* and *Pagle Previous* are lookup keys, never translated.
+- **QOL-R42** Choosing a fishing set also creates *Pagle Previous* from the gear worn now if it doesn't exist, so its slot is taken up front. *Pagle Previous* is never saved from gear with a fishing pole in hand (QOL-R21), so with one in hand the choice creates no *Pagle Previous*: the slot check below is then all that reserves its slot, and the first swap to the fishing set creates it (QOL-R44). Before creating anything, QoL counts the free slots (`MAX_EQUIPMENT_SETS_PER_PLAYER` minus `C_EquipmentSet.GetNumEquipmentSets()`) against the sets it would create (*Pagle Fishing* for QOL-R41, *Pagle Previous* while it doesn't exist, counted with a pole in hand too). If there are too few, it creates nothing, keeps the previous choice (the dropdown re-reads it and shows that), and prints "Pagle: needs a free equipment set slot for Pagle Previous." (or "…two free equipment set slots…" when both are needed). The set names *Pagle Fishing* and *Pagle Previous* are lookup keys, never translated.
 - **QOL-R43** The **gear step is ready** when a fishing set is chosen, no fishing pole is in hand, the set's main-hand item (`C_EquipmentSet.GetItemIDs(setID)[16]`) is a fishing pole, and none of the set's items is missing (`GetEquipmentSetInfo`'s `numLost` is 0), and no swap is still settling (QOL-R29). So a set without a pole, or with its pole in the bank, never offers the step, and pressing again can't overwrite *Pagle Previous* with a half-swapped outfit.
-- **QOL-R44** A **swap to the fishing set** (the Fishing key's gear step, or Swap gear) first saves the gear worn now into *Pagle Previous*, with no ignored slots (`SaveEquipmentSet`, or `CreateEquipmentSet` with the main-hand item's icon if the player deleted it and a slot is free), then calls `C_EquipmentSet.UseEquipmentSet(fishingSetID)` once. If *Pagle Previous* is missing and can't be created, the swap still happens and there is nothing to swap back to. Saving a set definition isn't a game action; the swap is one, like Blizzard's own set button.
+- **QOL-R44** A **swap to the fishing set** (the Fishing key's gear step, or Swap gear) first saves the gear worn now into *Pagle Previous*, with no ignored slots (`SaveEquipmentSet`, or `CreateEquipmentSet` with the main-hand item's icon if it doesn't exist and a slot is free), then calls `C_EquipmentSet.UseEquipmentSet(fishingSetID)` once. With a fishing pole in hand (a swap that ended half done, or a fishing item put on by hand), it saves nothing, since *Pagle Previous* is never saved from gear with a pole in hand: it only calls `UseEquipmentSet(fishingSetID)`. If *Pagle Previous* is missing and can't be created, the swap still happens and there is nothing to swap back to. Saving a set definition isn't a game action; the swap is one, like Blizzard's own set button.
 - **QOL-R45** A **swap back** calls `C_EquipmentSet.UseEquipmentSet(previousSetID)` once.
-- **QOL-R46** **Swap gear** is the binding `PAGLE_SWAP_GEAR`, listed as "Pagle: Swap gear". Its body: if QoL isn't armed (QOL-R30), or no fishing set is chosen, nothing. Otherwise, if the fishing set is fully worn (`GetEquipmentSetInfo`'s `isEquipped`), a swap back if *Pagle Previous* exists, else nothing; otherwise, if none of the fishing set's items is missing, a swap to the fishing set; else nothing.
+- **QOL-R46** **Swap gear** is the binding `PAGLE_SWAP_GEAR`, listed as "Pagle: Swap gear". Its body: if QoL isn't armed (QOL-R30), or no fishing set is chosen, nothing. Otherwise, if the fishing set is fully worn (`GetEquipmentSetInfo`'s `isEquipped`), a swap back if *Pagle Previous* is there, else nothing; otherwise, if none of the fishing set's items is missing, a swap to the fishing set; else nothing. *Pagle Previous* is there when it exists and its main-hand item (`C_EquipmentSet.GetItemIDs(previousSetID)[16]`) isn't a fishing pole. One whose main hand is a pole counts as absent, so there is no swap back into it; the next swap to the fishing set without a pole in hand saves over it (QOL-R44).
 - **QOL-R47** QoL never swaps gear without a press. When a Fishing stretch ends with the fishing set still worn, it shows the swap-back Nudge (QOL-R77).
 
 
@@ -133,7 +139,7 @@ Terms are used as `CONTEXT.md` defines them. A **game action** is the character 
 
 - **QOL-R50** **Lures** is *Off*, *Best I have* (default) or *Only this one*, with a chosen lure for *Only this one* (default Shiny Bauble).
 - **QOL-R51** A lure is **available** when it is in the bags (`C_Item.GetItemCount > 0`) and `C_Item.IsUsableItem` says it can be used, and it isn't being skipped after a failed use (QOL-R29). Under *Best I have*, the next lure is the available one with the highest bonus in the lure table (QOL-R54), ties to the lower item ID. Under *Only this one*, it is the chosen lure if available, else none.
-- **QOL-R52** The lure is applied by item use on the secure button (QOL-R24) and goes on the pole in hand; no `target-slot` and no macro is needed (probe B4).
+- **QOL-R52** The lure is applied by item use on the secure button (QOL-R24), with `target-slot` 16 (the main hand, `INVSLOT_MAINHAND`), so it goes on the pole in hand in one press; no macro is needed. After its item action, the secure button applies a use that is targeting an item to its `target-slot` (forever's `SecureTemplates.lua`, `OnActionButtonClick`). Any other item use on the button, a clam's, has no `target-slot`. Found in the Track Q exit check (Forever beta 1.60.1.70338, 2026-10-13, #147): with no `target-slot`, the use alone starts targeting, and the lure goes on only when the player clicks the pole on the character sheet.
 - **QOL-R53** **Out-of-lures Nudge:** when the pole's lure goes from on to off during a Fishing stretch, Lures isn't *Off*, and no lure is available, QoL shows "Your lure is gone and there are none left in your bags." (under *Best I have*) or "Your lure is gone and there's no {lure name} left in your bags." (under *Only this one*). At most once per Fishing stretch. There is no "running low" Nudge: the key re-applies lures by itself.
 - **QOL-R54** The **lure table** is QoL's own, in `addons/Pagle_QoL/data/lures.lua`: `{ itemID, enchantID, bonus }` per lure, from the Classic baseline:
 
@@ -150,7 +156,7 @@ Terms are used as `CONTEXT.md` defines them. A **game action** is the character 
 
 ### Clams
 
-- **QOL-R55** A clam is **available** when one of the clam table's items is in the bags and usable (as QOL-R51). The lowest item ID in the bags opens first.
+- **QOL-R55** A clam is **available** when one of the clam table's items is in the bags (`C_Item.GetItemCount > 0`). `C_Item.IsUsableItem` isn't read: on Forever it is `false` for a clam in the bags (beta 1.60.1.70338, 2026-10-13, #147). The lowest item ID in the bags opens first.
 - **QOL-R56** *Open clams between Casts* is on by default. A clam opens only between Casts (QOL-R20 puts *reel* above it) and one per press.
 - **QOL-R57** The **clam table** is QoL's own, in `addons/Pagle_QoL/data/clams.lua`: Small Barnacled Clam (5523), Thick-shelled Clam (5524), Big-mouth Clam (7973). It holds only containers that open with a plain item use; locked boxes and other treasure aren't clams. Forever additions are found in M8 (QOL-R100).
 
@@ -195,7 +201,7 @@ Terms are used as `CONTEXT.md` defines them. A **game action** is the character 
 
 - **QOL-R75** A **Nudge** is one line of text QoL draws itself in its own frame at the top centre of the screen, 4 px below the game's error text (`UIErrorsFrame`), in `GameFontNormalLarge` and `YELLOW_FONT_COLOR`. It shows for 3 s, then fades out over 0.5 s. A new Nudge replaces the one showing.
 - **QOL-R76** Nudges are silent, aren't Announcements (they don't go through Core, the Interruption budget or the Session summary), and still show in Cozy mode and in combat.
-- **QOL-R77** **Swap-back Nudge:** when a Fishing stretch ends for any reason but restriction or logout, and Swap gear would swap back (the fishing set is fully worn and *Pagle Previous* exists, QOL-R46), QoL shows "Still holding your pole. Press *X* to swap back.", with *X* the first key bound to Swap gear. If Swap gear isn't bound, it reads "Still holding your pole. Bind Pagle: Swap gear to swap back in one press."
+- **QOL-R77** **Swap-back Nudge:** when a Fishing stretch ends for any reason but restriction or logout, and Swap gear would swap back (the fishing set is fully worn and *Pagle Previous* is there, its main hand no fishing pole, QOL-R46), QoL shows "Still holding your pole. Press *X* to swap back.", with *X* the first key bound to Swap gear. If Swap gear isn't bound, it reads "Still holding your pole. Bind Pagle: Swap gear to swap back in one press."
 - **QOL-R78** QoL has exactly two Nudges: the swap-back Nudge and the out-of-lures Nudge (QOL-R53).
 
 ### Coexisting with Angleur and Fishing Buddy
@@ -215,7 +221,7 @@ Checked on the live build in M8 (each failure retires or changes only the rule i
 - **QOL-R102** `C_AddOns.DisableAddOn` from addon code, and that `ReloadUI()` is still unprotected (QOL-R6, QOL-R83). Checked on build 1.60.1.70338 on 2026-10-13: a plain addon button whose `OnClick` calls `ReloadUI()` reloads the UI (Thunderz96/forever-addon-kit had found it protected on build 69893, `docs/research/angleur-qol-feasibility.md` [K1]). If it is protected again at launch, the Reload now popup is dropped and the chat line's /reload is the only way to finish.
 - **QOL-R103** The equipment-set limit, with *Pagle Previous* taking a slot (QOL-R42).
 - **QOL-R104** The conflict list's folder names, including the two Forever Fishing Buddy ports (QOL-R80).
-- **QOL-R105** Checked earlier, while building the double-click (Track Q), with `ActionButtonUseKeyDown` at both 1 and 0: a direct `SetOverrideBindingSpell` on `BUTTON2` casts, and `INTERACTTARGET` on `BUTTON2` reels. If either fails, the double-click's target for that action becomes a click on a secure button (`type = "spell"`, as probe B3 proved) or, for the reel, the double-click doesn't reel and the game's own right-click on the bobber does.
+- **QOL-R105** Checked earlier, while building the double-click (Track Q), with `ActionButtonUseKeyDown` at both 1 and 0: a direct `SetOverrideBindingSpell` on `BUTTON2` casts, and `INTERACTTARGET` on `BUTTON2` reels. If either fails, the double-click's target for that action becomes a click on a secure button (`type = "spell"`, as probe B3 proved) or, for the reel, the double-click doesn't reel and the game's own right-click on the bobber does. Result (Forever beta 1.60.1.70338, 2026-10-13; at water, pole in hand, `SoftTargetInteract` 3, right-clicking the world): at 1, the spell override casts and `INTERACTTARGET` reels; at 0, the spell override casts and `INTERACTTARGET` doesn't reel. So the cast stays a spell override at both values, and at 0 the double-click has no reel target (QOL-R24).
 
 ## Data
 
@@ -315,6 +321,7 @@ The Fishing set dropdown reads and writes the current character's choice (`globa
 | Audio mix | SFX on at 1.0; music, ambience, dialog off | QOL-R62 |
 | Nudge display | 3 s, then a 0.5 s fade; 4 px below `UIErrorsFrame` | QOL-R75 |
 | Result wait (gear swap, lure) | 2 s | QOL-R29 |
+| Reel wait (the reel didn't take) | 0.5 s after a reel press | QOL-R35 |
 | Next-action button size | 36 px | QOL-R70 |
 | Next-action button default position | bottom centre, 230 px up | QOL-R73 |
 | Lure table | 6 Classic lures | QOL-R54 |

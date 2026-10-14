@@ -25,7 +25,8 @@
 ---@field show fun(category: table): { initializer: table, frame: table }[] Shows a page as the panel does: a fresh
 --- frame per row, through its initializer's InitFrame, so a row reads its value or label then. A value row's frame
 --- has `value`, a slider's `valueLabel` (its Right label formatter's text, nil with none), and every frame `enabled`.
---- Until the next show, a setting's SetValue updates these frames as the panel's controls do (valueChanged).
+--- Until the next show, a setting's SetValue or NotifyUpdate updates these frames as the panel's controls do
+--- (valueChanged).
 ---@field shown { initializer: table, frame: table }[]? The rows show returned last.
 ---@field valueChanged fun(setting: table) What the panel does when a setting's value changes.
 ---@field textsOf fun(frame: table): string[] The text of every shown widget in a row's frame, depth first.
@@ -89,7 +90,8 @@ local function newInitializer(template, data)
 	-- A slider shows its value through its options' Right label formatter, as MinimalSliderWithSteppersMixin's
 	-- FormatValue does; with none, it shows no value label.
 	function initializer:FormatValue(frame)
-		local formatters = self.data.options and self.data.options.formatters
+		local options = self.data.options -- a dropdown's is a function, with no formatters
+		local formatters = type(options) == "table" and options.formatters
 		local formatter = formatters and formatters[2] -- MinimalSliderWithSteppersMixin.Label.Right
 		frame.valueLabel = formatter and formatter(frame.value) or nil
 	end
@@ -113,7 +115,7 @@ end
 ---@param client FakeClient
 ---@param stubs table<string, any> The fake client's stubs, which this adds to.
 return function(client, stubs)
-	local settings = { categories = {}, addOnCategories = {}, opened = {}, variables = {} }
+	local settings = { categories = {}, addOnCategories = {}, opened = {}, variables = {}, shown = {} }
 	client.settings = settings
 	settings.panel = newWidget("Frame")
 	settings.panel.shown = false
@@ -198,6 +200,10 @@ return function(client, stubs)
 				self.set(value)
 				settings.valueChanged(self)
 			end
+			-- As SettingMixin:NotifyUpdate: reads the value again and tells the shown rows it changed.
+			function setting:NotifyUpdate()
+				settings.valueChanged(self)
+			end
 			return setting
 		end,
 		CreateCheckbox = function(category, setting, tooltip)
@@ -247,6 +253,18 @@ return function(client, stubs)
 		)
 		if addSearchTags then
 			initializer:AddSearchTags(name, buttonText)
+		end
+		-- As SettingButtonControlMixin:Init draws the row: its label (`name`, "" for none) in Text, through
+		-- SettingsListElementMixin:Init, and `buttonText` on a button that runs `buttonClick` (Blizzard_Settings_Shared/
+		-- Blizzard_SettingControls.lua at the forever 1.60.1 commit).
+		local initFrame = initializer.InitFrame
+		function initializer:InitFrame(frame)
+			initFrame(self, frame)
+			frame.Text = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+			frame.Text:SetText(self.data.name)
+			frame.Button = newWidget("Button", frame)
+			frame.Button:SetText(self.data.buttonText)
+			frame.Button:SetScript("OnClick", self.data.buttonClick)
 		end
 		return initializer
 	end
@@ -298,23 +316,26 @@ return function(client, stubs)
 		return rows
 	end
 
-	-- What a value change does to the rows shown last (Blizzard_SettingControls.lua): a control shows its own
-	-- setting's new value; a row re-evaluates its state when its parent's setting changes
-	-- (OnParentSettingValueChanged) or a variable it added with AddEvaluateStateCVar does.
+	-- What a value change does to the rows shown last (SettingMixin:TriggerValueChanged, Blizzard_SettingControls.lua
+	-- at the forever 1.60.1 commit): a control shows its own setting's new value and re-evaluates its state
+	-- (SettingsControlMixin:OnSettingValueChanged); a row re-evaluates its state when its parent's setting changes
+	-- (OnParentSettingValueChanged) or a variable it added with AddEvaluateStateCVar does. A keybinding row isn't a
+	-- SettingsListElementMixin (Blizzard_Keybindings.lua), so it hears none of these.
 	function settings.valueChanged(setting)
 		local variable = setting:GetVariable()
 		for _, shown in ipairs(settings.shown or {}) do
 			local initializer, frame = shown.initializer, shown.frame
-			if initializer:GetSetting() == setting then
-				frame.value = setting:GetValue()
-				initializer:FormatValue(frame)
-			end
 			local parent = initializer:GetParentInitializer()
 			local watched = parent and parent:GetSetting() == setting
 			for _, name in ipairs(initializer.evaluateStateVariables or {}) do
 				watched = watched or name == variable
 			end
-			if watched then
+			if initializer:GetSetting() == setting then
+				frame.value = setting:GetValue()
+				initializer:FormatValue(frame)
+				watched = true
+			end
+			if watched and initializer.template ~= "KeyBindingFrameBindingTemplate" then
 				frame.enabled = initializer:EvaluateModifyPredicates()
 			end
 		end

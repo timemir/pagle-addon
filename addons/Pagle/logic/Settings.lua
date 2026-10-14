@@ -21,6 +21,7 @@ ns.SETTINGS_TOPICS = { "fishing", "announcements", "trackers" }
 ---@field step? number
 ---@field options? fun(): { value: any, label: string }[]   -- dropdown
 ---@field onClick? fun()           -- button
+---@field caption? string          -- button: the text on the button, with `label` beside it; without it, `label` is on the button and the row has no label (SET-R2)
 ---@field binding? string          -- keybinding: the Bindings.xml name, also listed in Key Bindings › AddOns
 ---@field parent? string           -- id of the row it hangs under (indented), a row of the same Module on the same page
 ---@field isEnabled? fun(): boolean  -- greyed out when false
@@ -35,6 +36,11 @@ local KINDS = {
 	button = { onClick = "function" },
 	keybinding = { binding = "string" },
 	custom = { init = "function" },
+}
+
+-- What each kind may have besides, as field = Lua type: checked only when it is there (CORE-R42's PagleSetting).
+local OPTIONAL = {
+	button = { caption = "string" },
 }
 
 --- A row on a topic page, in page order: a Module's row, or the header Core puts before a Module's rows.
@@ -94,6 +100,11 @@ local function problem(section, topic, setting)
 			return ("a %s setting needs %s, a %s"):format(setting.kind, field, luaType)
 		end
 	end
+	for field, luaType in pairs(OPTIONAL[setting.kind] or {}) do
+		if setting[field] ~= nil and type(setting[field]) ~= luaType then
+			return ("a %s setting's %s is a %s"):format(setting.kind, field, luaType)
+		end
+	end
 	if setting.id ~= nil and section and section.ids[setting.id] then
 		return ("id %s is already used on %s"):format(tostring(setting.id), topic)
 	end
@@ -135,6 +146,23 @@ end
 --- Closes the rows at `ModulesChanged`: Core builds the pages from them, and a later call is late (CORE-R42).
 function Rows:Close()
 	self.closed = true
+end
+
+--- The checkbox, slider and dropdown rows a Module added with the id `id`, on any topic page (CORE-R42).
+---@param name string the Module's def.name
+---@param id any
+---@return PagleSetting[]
+function Rows:ValueRows(name, id)
+	local found = {}
+	for _, topic in ipairs(ns.SETTINGS_TOPICS) do
+		local section = self.sections[name] and self.sections[name][topic]
+		for _, setting in ipairs(section and section.list or {}) do
+			if setting.id == id and KINDS[setting.kind].get then
+				found[#found + 1] = setting
+			end
+		end
+	end
+	return found
 end
 
 --- A topic page's Module rows, in page order (CORE-R42, SET-R3): each Module's in `modules` order, after a header
@@ -181,6 +209,31 @@ function ns.AddSettingMethod(registry, rows, report)
 			report(why)
 		elseif why then
 			error(why, 2)
+		end
+	end
+end
+
+--- `M:RefreshSetting` over `registry` and `rows`, so Core's adapter and FakePagle install one method (CORE-R42). A
+--- Module calls it after a value changed outside the row, naming one of its checkbox, slider or dropdown rows by
+--- `id`; `refresh` then gets each such row, on any page. It raises an error for an id none of its value rows has.
+---@param registry PagleModuleRegistry
+---@param rows PagleSettingsRows
+---@param refresh fun(name: string, setting: PagleSetting) makes the row's native control re-read; nothing while
+--- the page isn't registered
+---@return fun(self: PagleModuleHandle, id: string)
+function ns.RefreshSettingMethod(registry, rows, refresh)
+	return function(self, id)
+		local module = registry:ModuleOf(self)
+		if not module then
+			error("RefreshSetting is a Module handle method: call M:RefreshSetting(id)", 2)
+		end
+		local name = module.def.name
+		local found = rows:ValueRows(name, id)
+		if #found == 0 then
+			error(("%s's RefreshSetting: no checkbox, slider or dropdown with id %s"):format(name, tostring(id)), 2)
+		end
+		for _, setting in ipairs(found) do
+			refresh(name, setting)
 		end
 	end
 end

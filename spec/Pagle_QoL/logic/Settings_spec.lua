@@ -1,26 +1,334 @@
--- QoL's rows on Core's Fishing page in M1: the Casting header and the Fishing key (qol.md › Settings, SET-R20,
--- SET-R21, CORE-R42).
+-- QoL's rows on Core's Fishing page: the Casting header and the Fishing key (M1), the Lures and clams rows (Track Q
+-- step 1), the Gear rows (Track Q step 2), Cast with (Track Q step 3), the While you fish rows (Track Q step 4), the
+-- next-action button's (Track Q step 5) and Open clams between Casts (Track Q step 6) (qol.md › Settings, SET-R20,
+-- SET-R21, CORE-R42). Then the rows' logic alone, reading and changing only the store it's given (CORE-R7).
+
+-- QoL's row on a FakePagle Fishing page by its label.
+---@param fake FakePagle
+---@param label string
+---@return PagleSetting
+local function rowOf(fake, label)
+	for _, row in ipairs(assert(fake.settingsPage("fishing"))) do
+		if row.label == label then
+			return row.setting
+		end
+	end
+	error("no row " .. label)
+end
 
 describe("QoL's Fishing page with FakePagle", function()
-	it(
-		"holds exactly the Casting header and the Fishing key, in that order, with QoL On (SET-R20, CORE-R42)",
-		function()
-			local fake = newFakePagle()
-			fake.load("Pagle_QoL")
+	it("holds exactly its rows so far, in SET-R20's order, with QoL On (SET-R20, CORE-R42)", function()
+		local fake = newFakePagle()
+		fake.load("Pagle_QoL")
 
-			fake.login()
+		fake.login()
 
-			local page = assert(fake.settingsPage("fishing"))
-			local rows = {}
-			for i, row in ipairs(page) do
-				rows[i] = { row.module, row.kind, row.label, row.indented }
-			end
-			assert.are.same({
-				{ "QoL", "header", "Casting", false },
-				{ "QoL", "keybinding", "Fishing key", false },
-			}, rows)
+		local page = assert(fake.settingsPage("fishing"))
+		local rows = {}
+		for i, row in ipairs(page) do
+			rows[i] = { row.module, row.kind, row.label, row.indented }
 		end
-	)
+		assert.are.same({
+			{ "QoL", "header", "Casting", false },
+			{ "QoL", "dropdown", "Cast with", false },
+			{ "QoL", "keybinding", "Fishing key", true },
+			{ "QoL", "header", "Gear", false },
+			{ "QoL", "dropdown", "Fishing set", false },
+			{ "QoL", "button", "Save what I'm wearing as my fishing set", true },
+			{ "QoL", "keybinding", "Swap gear", true },
+			{ "QoL", "header", "Lures and clams", false },
+			{ "QoL", "dropdown", "Lures", false },
+			{ "QoL", "dropdown", "Lure", true },
+			{ "QoL", "checkbox", "Open clams between Casts", false },
+			{ "QoL", "header", "While you fish", false },
+			{ "QoL", "checkbox", "Fishing audio mix", false },
+			{ "QoL", "checkbox", "Keep sound when the game is in the background", true },
+			{ "QoL", "checkbox", "Auto-loot while fishing", false },
+			{ "QoL", "checkbox", "Show the next-action button", false },
+			{ "QoL", "button", "Button position", true },
+		}, rows)
+	end)
+
+	it("gives Show the next-action button qol.md's tooltip, on by default (SET-R20, qol.md › Data)", function()
+		local fake = newFakePagle()
+		local loaded = fake.load("Pagle_QoL")
+		fake.login()
+
+		local show = rowOf(fake, "Show the next-action button")
+
+		-- qol.md › Settings › Tooltips, word for word.
+		assert.are.equal("Shows what your next press will do. Shift-drag to move.", show.tooltip)
+		assert.are.equal("indicator", show.id)
+		assert.is_true(show.default)
+		assert.is_true(show.get())
+		show.set(false)
+		assert.is_false(loaded.env.PagleQoLDB.profiles.Default.indicator.shown)
+		assert.is_false(show.get())
+		assert.is_nil(show.isEnabled)
+	end)
+
+	it("makes Button position a Reset button under it, greyed while the button is off (SET-R20, SET-R2)", function()
+		local fake = newFakePagle()
+		fake.load("Pagle_QoL")
+		fake.login()
+		local show = rowOf(fake, "Show the next-action button")
+		local position
+		for _, row in ipairs(assert(fake.settingsPage("fishing"))) do
+			position = row.label == "Button position" and row or position
+		end
+
+		assert.are.same({ "Button position", "Reset" }, { position.label, position.caption })
+		assert.are.equal("indicator", position.setting.parent)
+		-- qol.md gives it no tooltip.
+		assert.is_nil(position.setting.tooltip)
+		assert.is_true(position.setting.isEnabled())
+		show.set(false)
+		assert.is_false(position.setting.isEnabled())
+		show.set(true)
+		assert.is_true(position.setting.isEnabled())
+	end)
+
+	it("puts the button's place back to the default with Reset, and leaves it shown (QOL-R73)", function()
+		local fake = newFakePagle()
+		local loaded = fake.load("Pagle_QoL")
+		fake.login()
+		local indicator = loaded.ns.db.profile.indicator
+		indicator.point = { point = "CENTER", relativeTo = "UIParent", relativePoint = "CENTER", x = 10, y = 20 }
+
+		rowOf(fake, "Button position").onClick()
+
+		assert.is_nil(indicator.point)
+		assert.is_true(indicator.shown)
+	end)
+
+	it("gives the Gear rows qol.md's tooltips, and the fishing set no default (SET-R20, SET-R21)", function()
+		local fake = newFakePagle()
+		fake.load("Pagle_QoL")
+		fake.login()
+
+		local set = rowOf(fake, "Fishing set")
+		local save = rowOf(fake, "Save what I'm wearing as my fishing set")
+		local swap = rowOf(fake, "Swap gear")
+
+		-- qol.md › Settings › Tooltips, word for word; it gives the button none.
+		assert.are.equal("The Fishing key puts it on when no pole is in hand. Double-click skips this.", set.tooltip)
+		assert.is_nil(save.tooltip)
+		assert.are.equal(
+			"Swaps between your fishing set and what you wore before (saved as Pagle Previous).",
+			swap.tooltip
+		)
+		assert.are.equal("PAGLE_SWAP_GEAR", swap.binding)
+		-- None is chosen at first, and Defaults has no value to put back.
+		assert.is_nil(set.default)
+		assert.are.equal(-1, set.get())
+		assert.are.equal("fishingSet", save.parent)
+		assert.are.equal("fishingSet", swap.parent)
+	end)
+
+	it("greys Swap gear out while no fishing set is chosen (SET-R20)", function()
+		local fake = newFakePagle()
+		local loaded = fake.load("Pagle_QoL")
+		local client = loaded.client
+		client.equipmentSets[3] = { name = "Fishing", items = { [16] = 6256 } }
+		client.equipmentSets[5] = { name = "Pagle Previous", items = {} }
+		fake.login()
+		fake.fireGameEvent("PLAYER_LOGIN")
+		local swap = rowOf(fake, "Swap gear")
+
+		assert.is_false(swap.isEnabled())
+		rowOf(fake, "Fishing set").set(3)
+		assert.is_true(swap.isEnabled())
+		rowOf(fake, "Fishing set").set(-1)
+		assert.is_false(swap.isEnabled())
+	end)
+
+	it("greys the Fishing set and its button out while restricted (QOL-R41)", function()
+		local fake = newFakePagle()
+		fake.load("Pagle_QoL")
+		fake.login()
+		local set = rowOf(fake, "Fishing set")
+		local save = rowOf(fake, "Save what I'm wearing as my fishing set")
+
+		fake.setRestricted(true)
+		assert.is_false(set.isEnabled())
+		assert.is_false(save.isEnabled())
+		fake.setRestricted(false)
+		assert.is_true(set.isEnabled())
+		assert.is_true(save.isEnabled())
+	end)
+
+	it("offers Off, Best I have and Only this one for Lures (SET-R20, QOL-R50)", function()
+		local fake = newFakePagle()
+		fake.load("Pagle_QoL")
+		fake.login()
+
+		assert.are.same({
+			{ value = "off", label = "Off" },
+			{ value = "best", label = "Best I have" },
+			{ value = "one", label = "Only this one" },
+		}, rowOf(fake, "Lures").options())
+	end)
+
+	it("offers the lure table's six items for Lure, by their names from C_Item (SET-R20, QOL-R54)", function()
+		local fake = newFakePagle()
+		local loaded = fake.load("Pagle_QoL")
+		fake.login()
+
+		-- The fake client has every lure's enUS name cached.
+		assert.are.same({
+			{ value = 6529, label = "Shiny Bauble" },
+			{ value = 6530, label = "Nightcrawlers" },
+			{ value = 6811, label = "Aquadynamic Fish Lens" },
+			{ value = 6532, label = "Bright Baubles" },
+			{ value = 7307, label = "Flesh Eating Worm" },
+			{ value = 6533, label = "Aquadynamic Fish Attractor" },
+		}, rowOf(fake, "Lure").options())
+
+		-- A name the client hasn't loaded yet shows as its item ID and is asked for, then read again the next time the
+		-- list opens.
+		local requested = {}
+		loaded.env.C_Item.RequestLoadItemDataByID = function(itemID)
+			requested[#requested + 1] = itemID
+		end
+		loaded.client.itemNames[6811] = nil
+		assert.are.same({ value = 6811, label = "Item 6811" }, rowOf(fake, "Lure").options()[3])
+		assert.are.same({ 6811 }, requested)
+		loaded.client.itemNames[6811] = "Aquadynamic Fish Lens"
+		assert.are.same({ value = 6811, label = "Aquadynamic Fish Lens" }, rowOf(fake, "Lure").options()[3])
+	end)
+
+	it("gives Lures qol.md's tooltip, and the defaults Best I have and Shiny Bauble (SET-R20, QOL-R50)", function()
+		local fake = newFakePagle()
+		fake.load("Pagle_QoL")
+		fake.login()
+
+		local lures = rowOf(fake, "Lures")
+		local lure = rowOf(fake, "Lure")
+
+		-- qol.md › Settings › Tooltips, word for word; it gives Lure none.
+		assert.are.equal("A press before a cast applies a lure when none is on.", lures.tooltip)
+		assert.is_nil(lure.tooltip)
+		assert.are.equal("best", lures.default)
+		assert.are.equal(6529, lure.default)
+		-- A new PagleQoLDB starts at the defaults.
+		assert.are.equal("best", lures.get())
+		assert.are.equal(6529, lure.get())
+	end)
+
+	it("stores both in profile.lures, as QoL's lure logic reads them (qol.md › Data, QOL-R50, QOL-R51)", function()
+		local fake = newFakePagle()
+		local loaded = fake.load("Pagle_QoL")
+		fake.login()
+
+		rowOf(fake, "Lures").set("one")
+		rowOf(fake, "Lure").set(6532)
+
+		local stored = loaded.env.PagleQoLDB.profiles.Default.lures
+		assert.are.same({ mode = "one", item = 6532 }, stored)
+		assert.are.equal("one", rowOf(fake, "Lures").get())
+		assert.are.equal(6532, rowOf(fake, "Lure").get())
+		-- With every lure available, Only this one picks Bright Baubles, where Best I have would pick the Attractor.
+		local function always()
+			return true
+		end
+		assert.are.equal(6532, loaded.ns.ChooseLure(stored.mode, stored.item, always))
+	end)
+
+	it("greys Lure out unless Lures is Only this one, keeping its value (SET-R20, SET-R31, QOL-R50)", function()
+		local fake = newFakePagle()
+		fake.load("Pagle_QoL")
+		fake.login()
+		local lures = rowOf(fake, "Lures")
+		local lure = rowOf(fake, "Lure")
+		lure.set(6533)
+
+		assert.is_false(lure.isEnabled())
+		lures.set("one")
+		assert.is_true(lure.isEnabled())
+		lures.set("off")
+		assert.is_false(lure.isEnabled())
+		assert.are.equal(6533, lure.get())
+
+		assert.is_nil(lures.isEnabled)
+	end)
+
+	it("gives Open clams between Casts its tooltip and default on, in profile.clams (SET-R20, QOL-R56)", function()
+		local fake = newFakePagle()
+		local loaded = fake.load("Pagle_QoL")
+		fake.login()
+		local clams = rowOf(fake, "Open clams between Casts")
+
+		-- qol.md › Settings › Tooltips, word for word.
+		assert.are.equal("One clam per press, never during a cast.", clams.tooltip)
+		assert.is_true(clams.default)
+		assert.is_true(clams.get())
+		assert.is_nil(clams.isEnabled)
+
+		clams.set(false)
+		assert.is_false(loaded.env.PagleQoLDB.profiles.Default.clams)
+		assert.is_false(clams.get())
+	end)
+
+	it("gives the While you fish checkboxes qol.md's tooltips and defaults (SET-R20, qol.md › Data)", function()
+		local fake = newFakePagle()
+		fake.load("Pagle_QoL")
+		fake.login()
+
+		local audio = rowOf(fake, "Fishing audio mix")
+		local background = rowOf(fake, "Keep sound when the game is in the background")
+		local autoLoot = rowOf(fake, "Auto-loot while fishing")
+
+		-- qol.md › Settings › Tooltips, word for word; it gives the background option none.
+		assert.are.equal(
+			"While you fish: effects at full; music, ambience and dialog muted; master untouched. Put back afterwards.",
+			audio.tooltip
+		)
+		assert.is_nil(background.tooltip)
+		assert.are.equal("Only while you fish. Skipped if you already have auto-loot on.", autoLoot.tooltip)
+		assert.is_true(audio.default)
+		assert.is_false(background.default)
+		assert.is_true(autoLoot.default)
+		-- A new PagleQoLDB starts at the defaults.
+		assert.is_true(audio.get())
+		assert.is_false(background.get())
+		assert.is_true(autoLoot.get())
+	end)
+
+	it("stores the three in profile.audio and profile.autoLoot (qol.md › Data)", function()
+		local fake = newFakePagle()
+		local loaded = fake.load("Pagle_QoL")
+		fake.login()
+
+		rowOf(fake, "Fishing audio mix").set(false)
+		rowOf(fake, "Keep sound when the game is in the background").set(true)
+		rowOf(fake, "Auto-loot while fishing").set(false)
+
+		local profile = loaded.env.PagleQoLDB.profiles.Default
+		assert.are.same({ on = false, background = true }, profile.audio)
+		assert.is_false(profile.autoLoot)
+		assert.is_false(rowOf(fake, "Fishing audio mix").get())
+		assert.is_true(rowOf(fake, "Keep sound when the game is in the background").get())
+		assert.is_false(rowOf(fake, "Auto-loot while fishing").get())
+	end)
+
+	it("greys the background option out while the audio mix is off, keeping its value (SET-R20, SET-R31)", function()
+		local fake = newFakePagle()
+		fake.load("Pagle_QoL")
+		fake.login()
+		local audio = rowOf(fake, "Fishing audio mix")
+		local background = rowOf(fake, "Keep sound when the game is in the background")
+		background.set(true)
+
+		assert.is_true(background.isEnabled())
+		audio.set(false)
+		assert.is_false(background.isEnabled())
+		assert.is_true(background.get())
+		audio.set(true)
+		assert.is_true(background.isEnabled())
+
+		assert.is_nil(audio.isEnabled)
+		assert.is_nil(rowOf(fake, "Auto-loot while fishing").isEnabled)
+	end)
 
 	it("registers no Fishing page while QoL is inert (SET-R20, CORE-R13, CORE-R42)", function()
 		local fake = newFakePagle()
@@ -32,12 +340,13 @@ describe("QoL's Fishing page with FakePagle", function()
 		assert.is_nil(fake.settingsPage("fishing"))
 	end)
 
-	it("binds the key row to PAGLE_FISHING_KEY with qol.md's tooltip, no parent and no greying (SET-R20)", function()
+	it("binds the key row to PAGLE_FISHING_KEY with qol.md's tooltip, under Cast with (SET-R20)", function()
 		local fake = newFakePagle()
 		fake.load("Pagle_QoL")
 		fake.login()
 
-		local key = assert(fake.settingsPage("fishing"))[2].setting
+		local castWith = rowOf(fake, "Cast with")
+		local key = rowOf(fake, "Fishing key")
 
 		assert.are.equal("PAGLE_FISHING_KEY", key.binding)
 		-- qol.md › Settings › Tooltips, word for word.
@@ -45,8 +354,57 @@ describe("QoL's Fishing page with FakePagle", function()
 			"Each press does the next single thing: cast, reel, or a lure, gear or clam when needed.",
 			key.tooltip
 		)
-		assert.is_nil(key.parent)
-		assert.is_nil(key.isEnabled)
+		assert.are.equal("input", castWith.id)
+		assert.are.equal("input", key.parent)
+	end)
+
+	it("offers Fishing key, Double right-click and Both for Cast with, with its tooltip (SET-R20, QOL-R12)", function()
+		local fake = newFakePagle()
+		fake.load("Pagle_QoL")
+		fake.login()
+
+		local castWith = rowOf(fake, "Cast with")
+
+		assert.are.same({
+			{ value = "key", label = "Fishing key" },
+			{ value = "click", label = "Double right-click" },
+			{ value = "both", label = "Both" },
+		}, castWith.options())
+		-- qol.md › Settings › Tooltips, word for word.
+		assert.are.equal("Also on the compartment menu and /pagle qol input.", castWith.tooltip)
+		assert.are.equal("both", castWith.default)
+		assert.are.equal("both", castWith.get())
+		assert.is_nil(castWith.isEnabled)
+	end)
+
+	it("stores Cast with in profile.input, as the menu and /pagle qol do (qol.md › Data, QOL-R18)", function()
+		local fake = newFakePagle()
+		local loaded = fake.load("Pagle_QoL")
+		fake.login()
+		local castWith = rowOf(fake, "Cast with")
+
+		castWith.set("click")
+		assert.are.equal("click", loaded.env.PagleQoLDB.profiles.Default.input)
+		assert.are.equal("Input: Double-click", fake.menu()[1].label)
+
+		fake.slash("qol input key")
+		assert.are.equal("key", castWith.get())
+	end)
+
+	it("greys the key row out under Double right-click only (SET-R20, QOL-R12)", function()
+		local fake = newFakePagle()
+		fake.load("Pagle_QoL")
+		fake.login()
+		local castWith = rowOf(fake, "Cast with")
+		local key = rowOf(fake, "Fishing key")
+
+		local enabled = {}
+		for _, input in ipairs({ "key", "click", "both" }) do
+			castWith.set(input)
+			enabled[input] = key.isEnabled()
+		end
+
+		assert.are.same({ key = true, click = false, both = true }, enabled)
 	end)
 end)
 
@@ -54,36 +412,262 @@ describe("QoL's Fishing page with Core", function()
 	-- Loads Core and QoL with the client knowing QoL's Bindings.xml, then logs in; returns the Fishing page.
 	local function fishingPage()
 		local loaded = loadAddon("Pagle_QoL", FOREVER_GLOBALS)
-		loaded.client.bindings = { "MOVEFORWARD", "PAGLE_FISHING_KEY" }
+		loaded.client.bindings = { "MOVEFORWARD", "PAGLE_FISHING_KEY", "PAGLE_SWAP_GEAR" }
 		loaded.client.fire("PLAYER_LOGIN")
 		return loaded, assert(loaded.client.settings.category("Fishing"))
 	end
 
-	it("registers under Pagle as a native header and the Fishing key's binding row (SET-R5, SET-R20)", function()
+	it(
+		"registers under Pagle as a native header, Cast with and the Fishing key's binding row under it (SET-R5, SET-R20)",
+		function()
+			local loaded, fishing = fishingPage()
+
+			local header, castWith, key = unpack(fishing.layout.initializers)
+			assert.are.equal(loaded.client.settings.category("Pagle"), fishing.parent)
+			assert.are.equal("SettingsListSectionHeaderTemplate", header.template)
+			assert.are.equal("Casting", header:GetName())
+			assert.are.equal("SettingsDropdownControlTemplate", castWith.template)
+			assert.are.equal("Cast with", castWith:GetSetting():GetName())
+			assert.are.equal("Also on the compartment menu and /pagle qol input.", castWith:GetTooltip())
+			assert.are.equal("KeyBindingFrameBindingTemplate", key.template)
+			assert.are.equal(2, key:GetData().bindingIndex)
+			assert.are.same({ "FISHING KEY" }, key.searchTags)
+			assert.are.equal(castWith, key:GetParentInitializer())
+
+			-- Greyed out under Double right-click only (SET-R20).
+			assert.is_true(key:EvaluateModifyPredicates())
+			castWith:GetSetting():SetValue("click")
+			assert.is_false(key:EvaluateModifyPredicates())
+			castWith:GetSetting():SetValue("key")
+			assert.is_true(key:EvaluateModifyPredicates())
+		end
+	)
+
+	-- The Fishing page's native row by its label.
+	local function initializerOf(fishing, label)
+		for _, initializer in ipairs(fishing.layout.initializers) do
+			local setting = initializer:GetSetting()
+			if setting and setting:GetName() == label or initializer:GetName() == label then
+				return initializer
+			end
+		end
+		error("no row " .. label)
+	end
+
+	-- Presses the Fishing page's Defaults button: every setting registered on it goes back to its default (SET-R60),
+	-- skipping one with no default, as Blizzard's SettingMixin:SetValueToDefault does (Gethe/wow-ui-source branch
+	-- forever, Blizzard_Settings_Shared/Blizzard_Setting.lua).
+	local function pressDefaults(loaded, fishing)
+		for _, setting in pairs(loaded.client.settings.variables) do
+			if setting.category == fishing and setting:GetDefaultValue() ~= nil then
+				setting:SetValue(setting:GetDefaultValue())
+			end
+		end
+	end
+
+	it(
+		"restores Cast with to Both with Defaults and leaves the Fishing key's binding alone (SET-R21, SET-R60)",
+		function()
+			local loaded, fishing = fishingPage()
+			local castWith = initializerOf(fishing, "Cast with"):GetSetting()
+			castWith:SetValue("click")
+
+			pressDefaults(loaded, fishing)
+
+			assert.are.equal("both", castWith:GetValue())
+			assert.are.equal("both", loaded.env.PagleQoLDB.profiles.Default.input)
+			-- The key row under it carries no setting, only its binding index, so Defaults has nothing of it to restore.
+			local key = fishing.layout.initializers[3]
+			assert.are.equal("KeyBindingFrameBindingTemplate", key.template)
+			assert.is_nil(key:GetSetting())
+		end
+	)
+
+	it("registers Gear as a header, a native dropdown, a button and Swap gear's binding row (SET-R20)", function()
 		local loaded, fishing = fishingPage()
 
-		local header, key = unpack(fishing.layout.initializers)
-		assert.are.equal(loaded.client.settings.category("Pagle"), fishing.parent)
-		assert.are.equal(2, #fishing.layout.initializers)
+		local header = initializerOf(fishing, "Gear")
+		local set = initializerOf(fishing, "Fishing set")
 		assert.are.equal("SettingsListSectionHeaderTemplate", header.template)
-		assert.are.equal("Casting", header:GetName())
-		assert.are.equal("KeyBindingFrameBindingTemplate", key.template)
-		assert.are.equal(2, key:GetData().bindingIndex)
-		assert.are.same({ "FISHING KEY" }, key.searchTags)
-		assert.is_nil(key:GetParentInitializer())
-		assert.is_true(key:EvaluateModifyPredicates())
+		assert.are.equal("SettingsDropdownControlTemplate", set.template)
+		assert.are.equal(
+			"The Fishing key puts it on when no pole is in hand. Double-click skips this.",
+			set:GetTooltip()
+		)
+		-- The rows after the dropdown hang under it: the button, then Swap gear's binding row.
+		local initializers = fishing.layout.initializers
+		local at
+		for i, initializer in ipairs(initializers) do
+			if initializer == set then
+				at = i
+			end
+		end
+		local save, swap = initializers[at + 1], initializers[at + 2]
+		assert.are.equal("SettingButtonControlTemplate", save.template)
+		assert.are.equal(set, save:GetParentInitializer())
+		assert.are.equal("KeyBindingFrameBindingTemplate", swap.template)
+		assert.are.equal(3, swap:GetData().bindingIndex)
+		assert.are.same({ "SWAP GEAR" }, swap.searchTags)
+		assert.are.equal(set, swap:GetParentInitializer())
+		-- Greyed out while no set is chosen.
+		assert.is_false(swap:EvaluateModifyPredicates())
+		loaded.client.equipmentSets[0] = { name = "Fishing", items = { [16] = 6256 } }
+		set:GetSetting():SetValue(0)
+		assert.is_true(swap:EvaluateModifyPredicates())
 	end)
 
-	it("gives the Defaults button nothing to restore, so the binding is left alone (SET-R21, SET-R60)", function()
+	it("leaves the fishing set alone with Defaults (SET-R21, SET-R60)", function()
 		local loaded, fishing = fishingPage()
+		loaded.client.equipmentSets[0] = { name = "Fishing", items = { [16] = 6256 } }
+		local set = initializerOf(fishing, "Fishing set"):GetSetting()
+		set:SetValue(0)
 
-		-- Defaults restores the page's registered settings; the key row carries none, only its binding index.
+		pressDefaults(loaded, fishing)
+
+		assert.is_nil(set:GetDefaultValue())
+		assert.are.equal(0, set:GetValue())
+		assert.are.same({ setID = 0, name = "Fishing" }, loaded.env.PagleQoLDB.global.gear[PLAYER_GUID])
+	end)
+
+	it("registers Lures and clams as a header and two native dropdowns, greying as SET-R20 says", function()
+		local _, fishing = fishingPage()
+
+		local header = initializerOf(fishing, "Lures and clams")
+		local lures = initializerOf(fishing, "Lures")
+		local lure = initializerOf(fishing, "Lure")
+		assert.are.equal("SettingsListSectionHeaderTemplate", header.template)
+		assert.are.equal("SettingsDropdownControlTemplate", lures.template)
+		assert.are.equal("SettingsDropdownControlTemplate", lure.template)
+		assert.are.equal("A press before a cast applies a lure when none is on.", lures:GetTooltip())
+		assert.is_nil(lures:GetParentInitializer())
+		assert.are.equal(lures, lure:GetParentInitializer())
+		-- The native list's labels, read as it opens: Lure's come from C_Item (QOL-R54).
+		local labels = {}
+		for i, option in ipairs(lures:GetData().options()) do
+			labels[i] = option.label
+		end
+		assert.are.same({ "Off", "Best I have", "Only this one" }, labels)
+		assert.are.equal("Bright Baubles", lure:GetData().options()[4].label)
+
+		-- Live only for Only this one (QOL-R50).
+		assert.is_false(lure:EvaluateModifyPredicates())
+		lures:GetSetting():SetValue("one")
+		assert.is_true(lure:EvaluateModifyPredicates())
+		lures:GetSetting():SetValue("off")
+		assert.is_false(lure:EvaluateModifyPredicates())
+	end)
+
+	it("restores Lures and Lure with Defaults (SET-R21, SET-R60, QOL-R50)", function()
+		local loaded, fishing = fishingPage()
+		local lures = initializerOf(fishing, "Lures"):GetSetting()
+		local lure = initializerOf(fishing, "Lure"):GetSetting()
+		lures:SetValue("one")
+		lure:SetValue(6533)
+
+		pressDefaults(loaded, fishing)
+
+		assert.are.equal("best", lures:GetValue())
+		assert.are.equal(6529, lure:GetValue())
+		assert.are.same({ mode = "best", item = 6529 }, loaded.env.PagleQoLDB.profiles.Default.lures)
+	end)
+
+	it("registers Open clams between Casts as a native checkbox under Lures and clams, restored by Defaults", function()
+		local loaded, fishing = fishingPage()
+		local initializer = initializerOf(fishing, "Open clams between Casts")
+		local clams = initializer:GetSetting()
+		assert.are.equal("SettingsCheckboxControlTemplate", initializer.template)
+		assert.is_nil(initializer:GetParentInitializer())
+		assert.are.equal("One clam per press, never during a cast.", initializer:GetTooltip())
+		clams:SetValue(false)
+		assert.is_false(loaded.env.PagleQoLDB.profiles.Default.clams)
+
+		pressDefaults(loaded, fishing)
+
+		-- SET-R21: Defaults restores it (QOL-R56).
+		assert.is_true(clams:GetValue())
+		assert.is_true(loaded.env.PagleQoLDB.profiles.Default.clams)
+	end)
+
+	it("registers While you fish as a header and three native checkboxes, greying as SET-R20 says", function()
+		local _, fishing = fishingPage()
+
+		local header = initializerOf(fishing, "While you fish")
+		local audio = initializerOf(fishing, "Fishing audio mix")
+		local background = initializerOf(fishing, "Keep sound when the game is in the background")
+		local autoLoot = initializerOf(fishing, "Auto-loot while fishing")
+		assert.are.equal("SettingsListSectionHeaderTemplate", header.template)
+		for _, row in ipairs({ audio, background, autoLoot }) do
+			assert.are.equal("SettingsCheckboxControlTemplate", row.template)
+		end
+		assert.are.equal(audio, background:GetParentInitializer())
+		assert.is_nil(autoLoot:GetParentInitializer())
+
+		assert.is_true(background:EvaluateModifyPredicates())
+		audio:GetSetting():SetValue(false)
+		assert.is_false(background:EvaluateModifyPredicates())
+	end)
+
+	it("restores the three checkboxes with Defaults and leaves the binding alone (SET-R21, SET-R60)", function()
+		local loaded, fishing = fishingPage()
+		local audio = initializerOf(fishing, "Fishing audio mix"):GetSetting()
+		local background = initializerOf(fishing, "Keep sound when the game is in the background"):GetSetting()
+		local autoLoot = initializerOf(fishing, "Auto-loot while fishing"):GetSetting()
+		audio:SetValue(false)
+		background:SetValue(true)
+		autoLoot:SetValue(false)
+
+		pressDefaults(loaded, fishing)
+
+		assert.is_true(audio:GetValue())
+		assert.is_false(background:GetValue())
+		assert.is_true(autoLoot:GetValue())
+		-- The key row carries no setting, only its binding index, so Defaults has nothing of it to restore.
 		for _, initializer in ipairs(fishing.layout.initializers) do
-			assert.is_nil(initializer:GetSetting())
+			if initializer.template == "KeyBindingFrameBindingTemplate" then
+				assert.is_nil(initializer:GetSetting())
+			end
 		end
-		for _, setting in pairs(loaded.client.settings.variables) do
-			assert.are_not.equal(fishing, setting.category)
+	end)
+
+	it(
+		"registers Show the next-action button as a native checkbox, and Button position under it as a row labelled Button position with a Reset button (SET-R20, SET-R2)",
+		function()
+			local loaded, fishing = fishingPage()
+
+			local show = initializerOf(fishing, "Show the next-action button")
+			local position = initializerOf(fishing, "Button position")
+			assert.are.equal("SettingsCheckboxControlTemplate", show.template)
+			assert.are.equal("Shows what your next press will do. Shift-drag to move.", show:GetTooltip())
+			assert.is_nil(show:GetParentInitializer())
+			assert.are.equal("SettingButtonControlTemplate", position.template)
+			assert.are.equal(show, position:GetParentInitializer())
+			-- As the panel draws it: the label on the left, the caption on the button.
+			local frame = loaded.client.settings.show(fishing)[#fishing.layout.initializers].frame
+			assert.are.same({ "Button position", "Reset" }, loaded.client.settings.textsOf(frame))
+			-- The last two rows of the page, after Auto-loot while fishing.
+			local initializers = fishing.layout.initializers
+			assert.are.same({ show, position }, { initializers[#initializers - 1], initializers[#initializers] })
+
+			-- Greyed out while the button is off.
+			assert.is_true(position:EvaluateModifyPredicates())
+			show:GetSetting():SetValue(false)
+			assert.is_false(position:EvaluateModifyPredicates())
 		end
+	)
+
+	it("restores Show the next-action button with Defaults and leaves the button's place alone (SET-R21)", function()
+		local loaded, fishing = fishingPage()
+		local show = initializerOf(fishing, "Show the next-action button"):GetSetting()
+		local indicator = loaded.env.PagleQoLDB.profiles.Default.indicator
+		local moved = { point = "CENTER", relativeTo = "UIParent", relativePoint = "CENTER", x = 10, y = 20 }
+		indicator.point = moved
+		show:SetValue(false)
+
+		pressDefaults(loaded, fishing)
+
+		assert.is_true(show:GetValue())
+		assert.is_true(indicator.shown)
+		assert.are.equal(moved, indicator.point)
 	end)
 
 	it("isn't registered with QoL Off (SET-R20, SET-R4, CORE-R42)", function()
@@ -95,5 +679,175 @@ describe("QoL's Fishing page with Core", function()
 
 		assert.is_table(loaded.client.settings.category("Pagle"))
 		assert.is_nil(loaded.client.settings.category("Fishing"))
+	end)
+end)
+
+describe("ns.AddSettings with a fake store", function()
+	-- QoL's logic with PagleQoLDB never opened: a row that read ns.db would fail (CORE-R7).
+	local ns = loadAddon("Pagle_QoL", FOREVER_GLOBALS, { holdAddonLoaded = true }).ns
+
+	-- QoL's rows, added to a fake handle, by their labels; the fake store's profile; each store call, in order; and
+	-- a switch for whether the Gear rows can change anything.
+	---@return table<string, table> rows
+	---@return table profile
+	---@return table[] calls
+	---@return fun(canEdit: boolean) setCanEdit
+	local function addRows()
+		local rows, calls = {}, {}
+		local profile = {
+			input = "both",
+			lures = { mode = "best", item = 6529 },
+			clams = true,
+			audio = { on = true, background = false },
+			autoLoot = true,
+			indicator = { shown = true },
+		}
+		local choice, canEdit = ns.NO_FISHING_SET, true
+		-- A store call that only records its name.
+		local function record(name)
+			return function()
+				calls[#calls + 1] = { name }
+			end
+		end
+		---@type PagleQoLStore
+		local store = {
+			profile = function()
+				return profile
+			end,
+			input = function()
+				return profile.input
+			end,
+			setInput = function(input)
+				calls[#calls + 1] = { "setInput", input }
+				profile.input = input
+			end,
+			evaluate = record("evaluate"),
+			changeLease = function(change)
+				calls[#calls + 1] = { "changeLease" }
+				change(profile)
+			end,
+			-- Every item's name has loaded but the Aquadynamic Fish Lens's.
+			itemName = function(itemID)
+				return itemID ~= 6811 and ("Name " .. itemID) or nil
+			end,
+			fishingSetChoice = function()
+				return choice
+			end,
+			chooseFishingSet = function(setID)
+				calls[#calls + 1] = { "chooseFishingSet", setID }
+				choice = setID
+			end,
+			fishingSetOptions = function()
+				return { { value = ns.NO_FISHING_SET, label = "None" } }
+			end,
+			canEditGear = function()
+				return canEdit
+			end,
+			saveFishingSet = record("saveFishingSet"),
+			resetButton = record("resetButton"),
+		}
+		local M = {}
+		function M.AddSetting(_, topic, row)
+			assert.are.equal("fishing", topic)
+			if row.label then
+				rows[row.label] = row
+			end
+		end
+		ns.AddSettings(M, store)
+		return rows, profile, calls, function(value)
+			canEdit = value
+		end
+	end
+
+	it("leaves PagleQoLDB unopened (CORE-R7)", function()
+		addRows()
+
+		assert.is_nil(ns.db)
+	end)
+
+	it(
+		"reads and sets Cast with through the store's Input, and greys the key row from it (QOL-R12, QOL-R18)",
+		function()
+			local rows, profile, calls = addRows()
+
+			assert.are.equal("both", rows["Cast with"].get())
+			rows["Cast with"].set("click")
+			assert.are.same({ { "setInput", "click" } }, calls)
+			assert.are.equal("click", rows["Cast with"].get())
+			assert.is_false(rows["Fishing key"].isEnabled())
+			profile.input = "key"
+			assert.is_true(rows["Fishing key"].isEnabled())
+		end
+	)
+
+	it("hands the Gear rows to the store's gear calls (QOL-R40, QOL-R41, QOL-R46)", function()
+		local rows, _, calls, setCanEdit = addRows()
+		local set, save, swap = rows["Fishing set"], rows["Save what I'm wearing as my fishing set"], rows["Swap gear"]
+
+		assert.are.equal(ns.NO_FISHING_SET, set.get())
+		assert.are.same({ { value = ns.NO_FISHING_SET, label = "None" } }, set.options())
+		assert.is_false(swap.isEnabled())
+		set.set(3)
+		assert.are.equal(3, set.get())
+		assert.is_true(swap.isEnabled())
+		save.onClick()
+		assert.are.same({ { "chooseFishingSet", 3 }, { "saveFishingSet" } }, calls)
+		assert.is_true(set.isEnabled())
+		assert.is_true(save.isEnabled())
+		setCanEdit(false)
+		assert.is_false(set.isEnabled())
+		assert.is_false(save.isEnabled())
+	end)
+
+	it("stores Lures, Lure, clams and the button in the profile and re-evaluates after each (QOL-R25)", function()
+		local rows, profile, calls = addRows()
+
+		rows["Lures"].set("one")
+		rows["Lure"].set(6532)
+		rows["Open clams between Casts"].set(false)
+		rows["Show the next-action button"].set(false)
+
+		assert.are.same({ mode = "one", item = 6532 }, profile.lures)
+		assert.is_false(profile.clams)
+		assert.is_false(profile.indicator.shown)
+		assert.are.same({ { "evaluate" }, { "evaluate" }, { "evaluate" }, { "evaluate" } }, calls)
+		assert.are.same({ "one", 6532, false, false }, {
+			rows["Lures"].get(),
+			rows["Lure"].get(),
+			rows["Open clams between Casts"].get(),
+			rows["Show the next-action button"].get(),
+		})
+		assert.is_true(rows["Lure"].isEnabled())
+		assert.is_false(rows["Button position"].isEnabled())
+	end)
+
+	it("names each lure with the store's item names, or its item ID while one loads (QOL-R54)", function()
+		local rows = addRows()
+
+		local options = rows["Lure"].options()
+
+		assert.are.same({ value = 6529, label = "Name 6529" }, options[1])
+		assert.are.same({ value = 6811, label = "Item 6811" }, options[3])
+	end)
+
+	it("changes the While you fish rows through the store's lease change (QOL-R62, QOL-R65)", function()
+		local rows, profile, calls = addRows()
+
+		rows["Fishing audio mix"].set(false)
+		rows["Keep sound when the game is in the background"].set(true)
+		rows["Auto-loot while fishing"].set(false)
+
+		assert.are.same({ on = false, background = true }, profile.audio)
+		assert.is_false(profile.autoLoot)
+		assert.are.same({ { "changeLease" }, { "changeLease" }, { "changeLease" } }, calls)
+		assert.is_false(rows["Keep sound when the game is in the background"].isEnabled())
+	end)
+
+	it("resets the button's place through the store (QOL-R73)", function()
+		local rows, _, calls = addRows()
+
+		rows["Button position"].onClick()
+
+		assert.are.same({ { "resetButton" } }, calls)
 	end)
 end)
