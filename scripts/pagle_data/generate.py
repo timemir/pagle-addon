@@ -22,6 +22,7 @@ from pagle_data.hunts import (
     hunt_list_lua,
     read_hunts,
 )
+from pagle_data.hunt_windows import check_hunt_windows
 from pagle_data.items import ITEMS_TOML, ItemLayer, Record, item_records, read_item_layer
 from pagle_data.lock import Lock, check_lock, check_locked_members, read_lock
 from pagle_data.lore import LoreLayer, catalogue_ids, check_lore, lore_outputs, read_lore
@@ -216,6 +217,8 @@ def read_layers(
         catch_lists = build_catch_lists(
             baseline, area_layer, items, windows.keys(), db2.areas, counting, required, problems
         )
+        # DATA-R92: admission reads these catch lists' gates, and the rarity cap each Hunt's time.
+        check_hunt_windows(hunts, items, catch_lists, windows, forever.events, problems)
         # DATA-R32: an alias's target and source are judged by these catch lists.
         check_aliases(forever.aliases, catch_lists.fishing_areas(), problems)
         confirmation = confirm(
