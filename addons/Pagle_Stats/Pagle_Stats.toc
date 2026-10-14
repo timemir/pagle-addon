@@ -13,4 +13,6 @@ locale\enUS.lua
 logic\Data.lua
 logic\Module.lua
 logic\Seams.lua
+logic\Text.lua
+adapter\Text.lua
 adapter\Stats.lua
