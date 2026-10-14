@@ -312,19 +312,22 @@ describe("the sample toast", function()
 		end
 	)
 
-	it("redraws the same frame on the same stage in the next style asked for, Timber for an unknown one (ANN-R80)", function()
-		local loaded = styledCore()
-		local stage = stageOf(loaded)
-		local first = loaded.ns.DrawSampleToast(stage, LANTERN)
+	it(
+		"redraws the same frame on the same stage in the next style asked for, Timber for an unknown one (ANN-R80)",
+		function()
+			local loaded = styledCore()
+			local stage = stageOf(loaded)
+			local first = loaded.ns.DrawSampleToast(stage, LANTERN)
 
-		local again = loaded.ns.DrawSampleToast(stage, "core.toaststyle.moonlit")
+			local again = loaded.ns.DrawSampleToast(stage, "core.toaststyle.moonlit")
 
-		assert.are.equal(first, again)
-		assert.are.same(
-			{ { 0.16, 0.11, 0.07, 0.94 }, false, "GameFontNormalLarge" },
-			{ lookOf(again).background, lookOf(again).glow, lookOf(again).titleFont }
-		)
-	end)
+			assert.are.equal(first, again)
+			assert.are.same(
+				{ { 0.16, 0.11, 0.07, 0.94 }, false, "GameFontNormalLarge" },
+				{ lookOf(again).background, lookOf(again).glow, lookOf(again).titleFont }
+			)
+		end
+	)
 
 	it(
 		"shows on screen through the real lanes in its own style, with the toast's sound, never reaching the Session"
@@ -340,7 +343,10 @@ describe("the sample toast", function()
 				{ true, "New Species", { 0.85, 0.47, 0.16, 1 } },
 				{ toast.shown, toast.title:GetText(), lookOf(toast).edge }
 			)
-			assert.are.same({ "Interface\\AddOns\\Pagle\\media\\sounds\\driftwood\\toast_1.ogg SFX" }, loaded.client.sounds)
+			assert.are.same(
+				{ "Interface\\AddOns\\Pagle\\media\\sounds\\driftwood\\toast_1.ogg SFX" },
+				loaded.client.sounds
+			)
 			equip(loaded, RIPPLE)
 			assert.are.same({ 0.85, 0.47, 0.16, 1 }, lookOf(toast).edge)
 			loaded.client.advance(6)

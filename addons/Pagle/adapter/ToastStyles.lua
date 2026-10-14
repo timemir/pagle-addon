@@ -40,7 +40,7 @@ local samples = setmetatable({}, { __mode = "k" })
 ---@type table<Frame, Button>
 local buttons = setmetatable({}, { __mode = "k" })
 
---- Draws a sample toast in a toast style on `parent` (wallet-and-shop.md › UI, the preview stage; ANN-R80): a toast
+--- Draws a sample toast in a toast style on `parent` (wallet-and-shop.md â€º UI, the preview stage; ANN-R80): a toast
 --- frame of its own there, made on the first call and redrawn on each, Timber for an ID that isn't a style. Nothing
 --- reaches the lanes, the sounds or the Session summary.
 ---@param parent Frame
@@ -65,7 +65,7 @@ function ns.ShowSampleToast(styleID)
 	ns.lanes:Push(ns.SampleAnnouncement(styleID))
 end
 
---- A toast style good's `preview(stage)` (wallet-and-shop.md › Contracts, › UI): the sample toast in that style on the
+--- A toast style good's `preview(stage)` (wallet-and-shop.md â€º Contracts, â€º UI): the sample toast in that style on the
 --- stage, and a Show on screen button under it.
 ---@param styleID string
 ---@return fun(stage: Frame)

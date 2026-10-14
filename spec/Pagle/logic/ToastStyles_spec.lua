@@ -19,16 +19,19 @@ describe("the toast styles", function()
 		assert.are.same({ "core.toaststyle", TIMBER }, { ns.TOAST_STYLE_SLOT, ns.TOAST_STYLE_DEFAULT })
 	end)
 
-	it("keep Timber as M2 drew it: its colours, no backdrop texture, no glow and the frames' own fonts (ANN-R80)", function()
-		local timber = ns.ToastStyleOf(TIMBER)
+	it(
+		"keep Timber as M2 drew it: its colours, no backdrop texture, no glow and the frames' own fonts (ANN-R80)",
+		function()
+			local timber = ns.ToastStyleOf(TIMBER)
 
-		assert.are.same({ 0.16, 0.11, 0.07, 0.94 }, timber.colors.wood)
-		assert.are.same({ 0.54, 0.42, 0.25, 1 }, timber.colors.edge)
-		assert.are.same({ 1, 0.82, 0 }, timber.colors.title)
-		assert.are.same({ 0.70, 0.13, 0.10, 1 }, timber.colors.stamp)
-		assert.are.same({ 0.93, 0.87, 0.72, 1 }, timber.colors.parchment)
-		assert.are.same({ nil, nil, nil }, { timber.backdrop, timber.glow, timber.titleFace })
-	end)
+			assert.are.same({ 0.16, 0.11, 0.07, 0.94 }, timber.colors.wood)
+			assert.are.same({ 0.54, 0.42, 0.25, 1 }, timber.colors.edge)
+			assert.are.same({ 1, 0.82, 0 }, timber.colors.title)
+			assert.are.same({ 0.70, 0.13, 0.10, 1 }, timber.colors.stamp)
+			assert.are.same({ 0.93, 0.87, 0.72, 1 }, timber.colors.parchment)
+			assert.are.same({ nil, nil, nil }, { timber.backdrop, timber.glow, timber.titleFace })
+		end
+	)
 
 	it("each name every colour role Timber does, so a frame finds each in any style (ANN-R80)", function()
 		local timber = ns.ToastStyleOf(TIMBER)

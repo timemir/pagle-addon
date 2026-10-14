@@ -138,7 +138,7 @@ end
 
 -- A record ruler (ANN-R22): a track with the old record's mark and a fill, the number, and once landed the margin
 -- and, full size only, the "New record" stamp.
----@param parent Frame
+---@param parent PagleAnnouncementFrame
 ---@param compact boolean a Nod's: shorter and thinner, with no label or stamp
 ---@return PagleRulerView
 local function newRuler(parent, compact)

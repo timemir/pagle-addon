@@ -69,7 +69,7 @@ function ns.PaintRegion(skin, region)
 		local fontString = region --[[@as FontString]]
 		local face = region.paintTitle and skin.style.titleFace
 		local size = face and face.sizes[region.paintTemplate]
-		if size then
+		if face and size then
 			fontString:SetFont(face.file, size, "")
 		else
 			fontString:SetFontObject(region.paintTemplate)
@@ -86,7 +86,10 @@ end
 ---@param skin PagleSkin
 local function paintGlow(skin)
 	local glow, at = skin.style.glow, skin.glowAt
-	local rings = glow and at and glow.rings or {}
+	if not at then
+		return
+	end
+	local rings = glow and glow.rings or {}
 	for i = #skin.glow + 1, #rings do
 		skin.glow[i] = at.frame:CreateTexture(nil, "BACKGROUND", nil, 2)
 	end
