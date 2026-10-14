@@ -14,4 +14,6 @@ logic\Data.lua
 logic\Module.lua
 logic\Rewards.lua
 logic\Seams.lua
+logic\Words.lua
 adapter\TackleBoard.lua
+adapter\Words.lua
