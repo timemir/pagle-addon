@@ -20,6 +20,10 @@
 ---@field errors string[] Each error the default geterrorhandler() got, in order. A spec that gets one must read
 --- this list (assert it), or it fails at its end (spec/support/errors.lua).
 ---@field addError fun(err: any) The default geterrorhandler(): adds the error to `errors`.
+---@field pressEscape fun() Presses Esc as the client does: the focused edit box takes it (its OnEscapePressed);
+--- else shown popups take it (fake_popup.lua's escapePopups); else CloseSpecialWindows hides every shown frame named
+--- in UISpecialFrames, running its OnHide.
+---@field escapePopups (fun(): boolean)? Esc on the shown popups; true when there was one (fake_popup.lua).
 
 --- The loot window the loot API reads: whether it's fishing loot (`IsFishingLoot()`) and its slots, in order.
 --- Specs set both before firing LOOT_READY.
@@ -93,7 +97,7 @@ local function clientStubs(client)
 			font.SetShadowColor = function() end
 			return font
 		end,
-		-- The frame names Esc hides (CloseSpecialWindows), as FrameXML starts it.
+		-- The frame names Esc hides (CloseSpecialWindows), as FrameXML starts it; client.pressEscape reads it.
 		UISpecialFrames = { "ItemRefTooltip", "ColorPickerFrame" },
 		-- Records the call in client.sounds and reports it played, as willPlay, soundHandle.
 		PlaySoundFile = function(path, channel)
@@ -280,6 +284,32 @@ local function clientStubs(client)
 			return "US"
 		end,
 	}
+
+	-- Esc as the client handles it: an edit box with the focus gets the key first; else StaticPopup_EscapePressed
+	-- takes it when a popup shows, else CloseSpecialWindows (UIParent.lua's ToggleGameMenu order).
+	function client.pressEscape()
+		local focus = client.focus
+		local onEscape = focus and focus:GetScript("OnEscapePressed")
+		if onEscape then
+			onEscape(focus)
+			return
+		end
+		if client.escapePopups and client.escapePopups() then
+			return
+		end
+		for _, name in ipairs(stubs.UISpecialFrames) do
+			for _, frame in ipairs({ unpack(client.frames) }) do
+				if frame.name == name and frame:IsShown() then
+					frame:Hide()
+					local onHide = frame:GetScript("OnHide")
+					if onHide then
+						onHide(frame)
+					end
+				end
+			end
+		end
+	end
+
 	return stubs
 end
 
