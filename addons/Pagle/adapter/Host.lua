@@ -19,6 +19,9 @@ ns.host = {
 	catchLog = function()
 		return ns.catchLog
 	end,
+	character = function()
+		return ns.angler and ns.angler.current
+	end,
 	fire = function(event, ...)
 		ns.Fire(event, ...)
 	end,

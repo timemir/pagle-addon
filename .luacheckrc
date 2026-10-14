@@ -230,6 +230,8 @@ local helperGlobals = {
 	"FISHING",
 	"BUILD_ENTRY",
 	"castEntry",
+	"prestigeEntry",
+	"purchaseEntry",
 	"history",
 	"loadCore",
 	"enterWorld",
