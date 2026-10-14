@@ -9,7 +9,7 @@ ns.SETTINGS_TOPICS = { "fishing", "announcements", "trackers" }
 
 --- One row a Module adds to a topic page (core/README.md › Contracts, CORE-R42).
 ---@class PagleSetting
----@field kind "header"|"checkbox"|"slider"|"dropdown"|"button"|"keybinding"|"custom"
+---@field kind "header"|"checkbox"|"slider"|"dropdown"|"button"|"keybinding"|"custom"|"slot"   -- "slot": Core's slot dropdown (SET-R44), never a Module's
 ---@field id? string               -- needed if another row names it as parent; unique among this Module's rows on this page
 ---@field label string
 ---@field tooltip? string
@@ -37,11 +37,14 @@ local KINDS = {
 	custom = { init = "function" },
 }
 
---- A row on a topic page, in page order: a Module's row, or the header Core puts before a Module's rows.
+--- A row on a topic page, in page order: a Module's row, the header Core puts before a Module's rows, or a slot
+--- dropdown Core ends a Module's section with.
 ---@class PagleSettingsEntry
 ---@field module PagleModule
----@field setting PagleSetting   for Core's header, `{ kind = "header", label = def.title }`
+---@field setting PagleSetting   for Core's header, `{ kind = "header", label = def.title }`; for a slot dropdown,
+--- `{ kind = "slot", label = slot.label }`
 ---@field parent PagleSettingsEntry?   the row it hangs under (indented)
+---@field slot PagleRegisteredSlot?   the slot whose dropdown (SET-R51) this row is, never indented (SET-R44)
 
 ---@class PagleSettingsSection
 ---@field list PagleSetting[]
@@ -137,26 +140,37 @@ function Rows:Close()
 	self.closed = true
 end
 
---- A topic page's Module rows, in page order (CORE-R42, SET-R3): each Module's in `modules` order, after a header
---- with its title unless its first row is a header. Empty when the page has no rows, so it isn't registered.
+--- A topic page's Module rows, in page order (CORE-R42, SET-R3, SET-R44): each Module's in `modules` order, after a
+--- header with its title unless its first row is a header, then the slot dropdowns `slots` gives it
+--- (ns.SectionSlots), unindented. A Module with slots there but no rows gets its header and its slots. Empty when the
+--- page has no rows, so it isn't registered.
 ---@param topic string
 ---@param modules PagleModule[] the On Modules, by def.order
+---@param slots table<string, PagleRegisteredSlot[]>? the slots ending each Module's section, by Module name
 ---@return PagleSettingsEntry[]
-function Rows:Page(topic, modules)
+function Rows:Page(topic, modules, slots)
 	local entries = {}
 	for _, module in ipairs(modules) do
-		local section = self.sections[module.def.name] and self.sections[module.def.name][topic]
-		if section then
-			if section.list[1].kind ~= "header" then
+		local name = module.def.name
+		local section = self.sections[name] and self.sections[name][topic]
+		local list = section and section.list or {}
+		---@type PagleRegisteredSlot[]
+		local ending = slots and slots[name] or {}
+		if #list + #ending > 0 then
+			if not (list[1] and list[1].kind == "header") then
 				entries[#entries + 1] = { module = module, setting = { kind = "header", label = module.def.title } }
 			end
 			local byId = {}
-			for _, setting in ipairs(section.list) do
+			for _, setting in ipairs(list) do
 				local entry = { module = module, setting = setting, parent = setting.parent and byId[setting.parent] }
 				entries[#entries + 1] = entry
 				if setting.id ~= nil then
 					byId[setting.id] = entry
 				end
+			end
+			for _, slot in ipairs(ending) do
+				entries[#entries + 1] =
+					{ module = module, setting = { kind = "slot", label = slot.label }, slot = slot }
 			end
 		end
 	end
