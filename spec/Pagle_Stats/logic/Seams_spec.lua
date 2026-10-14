@@ -1,25 +1,11 @@
--- The seams later Stats tickets meet at (M6 graph, open question 3): the book's entry points, the projection's state
--- and updating flag, and the redraw bus the book and the tracker subscribe to, as they stand before those tickets
--- fill them in.
+-- The seams later Stats tickets meet at (M6 graph, open question 3): the projection's state and updating flag, and the
+-- redraw bus the book and the tracker subscribe to, as they stand before those tickets fill them in. The book's entry
+-- points are adapter/Book.lua's own (spec/Pagle_Stats/adapter/Book_spec.lua).
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local stats = dofile("spec/Pagle_Stats/support.lua")
 
 describe("Stats' seams", function()
-	describe("the book's entry points (STA-R70, until the book's ticket)", function()
-		it("toggle and open nothing yet, with or without a target, and raise no error", function()
-			local ns = stats.load().ns
-
-			assert.has_no_error(function()
-				ns.ToggleBook()
-				ns.OpenBook()
-				ns.OpenBook({ page = "home" })
-				ns.OpenBook({ page = "item", area = 148, item = 13759 })
-				ns.OpenBook({ page = "session", session = "Player-4618-0A1B2C3D-1791731747-0" })
-			end)
-		end)
-	end)
-
 	describe("the projection's state before its first build (STA-R20, LOG-R74)", function()
 		it("is an empty StatsState: no Casts anywhere, no hits, no Sessions (stats.md › Projection state)", function()
 			local ns = stats.load().ns

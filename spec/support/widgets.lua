@@ -17,8 +17,6 @@ local widgets = {}
 
 -- Widget methods that only lay out or colour: nothing for a spec to read back.
 local LAYOUT_METHODS = {
-	"SetPoint",
-	"ClearAllPoints",
 	"SetAllPoints",
 	"SetJustifyH",
 	"SetJustifyV",
@@ -26,8 +24,6 @@ local LAYOUT_METHODS = {
 	"SetFrameStrata",
 	"SetClampedToScreen",
 	"RegisterForDrag",
-	"StartMoving",
-	"StopMovingOrSizing",
 	"EnableMouse",
 	"SetScrollChild",
 	"EnableMouseWheel",
@@ -68,6 +64,54 @@ function widgets.newWidget(kind, parent)
 	end
 	function widget:IsMovable()
 		return self.movable == true
+	end
+	-- Whether the client would save where the player moved it (SetUserPlaced; StartMoving sets it, as the client
+	-- does).
+	function widget:SetUserPlaced(userPlaced)
+		self.userPlaced = userPlaced
+	end
+	function widget:IsUserPlaced()
+		return self.userPlaced == true
+	end
+	-- Its anchors as SetPoint gave them, in order, each { point, relativeTo, relativePoint, x, y } as passed; a second
+	-- SetPoint of the same point replaces the first, and ClearAllPoints drops them all. The fake lays nothing out.
+	widget.points = {}
+	function widget:SetPoint(point, ...)
+		for i, anchor in ipairs(self.points) do
+			if anchor[1] == point then
+				table.remove(self.points, i)
+				break
+			end
+		end
+		self.points[#self.points + 1] = { point, ... }
+	end
+	function widget:ClearAllPoints()
+		self.points = {}
+	end
+	function widget:GetNumPoints()
+		return #self.points
+	end
+	function widget:GetPoint(index)
+		local anchor = self.points[index or 1]
+		if anchor then
+			return anchor[1], anchor[2], anchor[3], anchor[4], anchor[5]
+		end
+	end
+	-- Whether the player is dragging it, from StartMoving to StopMovingOrSizing; while they are, a spec plays the
+	-- client moving it by setting `screenRight` and `screenTop`, its right and top edges as GetRight and GetTop read
+	-- them (nil until set: the fake lays nothing out).
+	function widget:StartMoving()
+		self.moving = true
+		self.userPlaced = true -- as the client does
+	end
+	function widget:StopMovingOrSizing()
+		self.moving = false
+	end
+	function widget:GetRight()
+		return self.screenRight
+	end
+	function widget:GetTop()
+		return self.screenTop
 	end
 	-- A texture's tint, as { r, g, b[, a] }, and whether it is drawn in greys.
 	function widget:SetVertexColor(r, g, b, a)

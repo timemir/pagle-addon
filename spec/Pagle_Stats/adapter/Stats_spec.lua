@@ -131,6 +131,46 @@ describe("Pagle_Stats with Core", function()
 		end
 	)
 
+	it(
+		"toggles PagleStatsBook from /pagle stats, /pagle stats with any text, the compartment and the status button",
+		function()
+			-- STA-R70, STA-R4, CORE-R44, CORE-R50, CORE-R62, SET-R12: each entry point toggles the book.
+			local loaded = loadAddon("Pagle_Stats", FOREVER_GLOBALS)
+			loaded.client.fire("PLAYER_LOGIN")
+			local function shown()
+				for _, frame in ipairs(loaded.client.frames) do
+					if frame.name == "PagleStatsBook" then
+						return frame:IsShown()
+					end
+				end
+				return false
+			end
+
+			local seen = {}
+			loaded.env.SlashCmdList.PAGLE("stats")
+			seen[#seen + 1] = shown()
+			loaded.env.SlashCmdList.PAGLE("stats anything at all")
+			seen[#seen + 1] = shown()
+			compartmentMenu(loaded).click("Stats")
+			seen[#seen + 1] = shown()
+			local _, buttons = statusList(loaded)
+			buttons[1]:Click()
+			seen[#seen + 1] = shown()
+
+			assert.are.same({ true, false, true, false }, seen)
+		end
+	)
+
+	it("opens and toggles the book in combat, while restricted (STA-R70, STA-R93)", function()
+		local loaded = loadAddon("Pagle_Stats", FOREVER_GLOBALS)
+		loaded.client.fire("PLAYER_LOGIN")
+		setCombat(loaded, true)
+
+		loaded.env.SlashCmdList.PAGLE("stats")
+
+		assert.is_true(loaded.ns.book:IsShown())
+	end)
+
 	it("adds no settings pages of its own (STA-R4, CORE-R42)", function()
 		local loaded = loadAddon("Pagle_Stats", FOREVER_GLOBALS)
 		local plain = loadAddon("Pagle", FOREVER_GLOBALS)

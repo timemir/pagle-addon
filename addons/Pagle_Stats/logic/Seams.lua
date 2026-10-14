@@ -11,11 +11,11 @@ local ns = select(2, ...)
 --
 --   ns.ToggleBook()           Opens the Stats book, or closes it if shown (STA-R70). Registration's view, the
 --                             compartment entry, the "Open Stats" button and `/pagle stats` call it (STA-R4); so does
---                             the tracker header. Stand-in: does nothing. The book's ticket (#211) assigns the real one
---                             when its file loads.
+--                             the tracker header. Defined in adapter/Book.lua (#211), which every caller loads before
+--                             it calls: no stand-in here (a second definition would be a duplicate field to LuaLS).
 --   ns.OpenBook(target?)      Opens the book (never closes it) on `target`, a StatsBookTarget, or where it was left
 --                             (STA-R70) with none. The place page's rows, the item page, search, Lifetime and the
---                             tracker's lines call it. Stand-in: does nothing. The book's ticket (#211) assigns it.
+--                             tracker's lines call it. Defined in adapter/Book.lua (#211), as ns.ToggleBook.
 --   ns.State()                The projection's StatsState (stats.md › Projection state). Read-only for views.
 --                             `ns.projection:GetState()` once the adapter's OnInitialize has made the projection
 --                             (#203); a new empty state before its first build, or with no projection.
@@ -35,15 +35,8 @@ local ns = select(2, ...)
 ---@field page StatsBookPage
 ---@field area integer?       -- the place, a zone or subzone areaID ("place", and "item" when opened from a place)
 ---@field item integer?       -- the item ID ("item", or an entry chosen on a "place" spread)
----@field session string?     -- Core's Session ID ("session")
-
---- Opens or closes the Stats book (STA-R70). A stand-in until the book's ticket assigns the real one.
-function ns.ToggleBook() end
-
---- Opens the Stats book on `target`, or where it was left with none (STA-R70). A stand-in until the book's ticket
---- assigns the real one.
----@param target StatsBookTarget?
-function ns.OpenBook(target) end -- luacheck: no unused args
+---@field session string?     -- Core's Session ID: the Session chosen on "sessions"
+---@field ledgerPage integer? -- the Sessions ledger's page number ("sessions"; 1, the newest, when nil)
 
 -- The projection's state, as stats.md › Projection state gives it; the projection's ticket fills it in. Scope keys
 -- are "<area>:<side>" and "<area>:<side>:<windowID>", hit keys "<scope>#<itemID>", sides "hi", "lo" or "na"
