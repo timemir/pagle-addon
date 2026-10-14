@@ -90,6 +90,15 @@ local function readContext()
 		sizeText = function(size)
 			return ns.SizeText(size, Pagle.SIZE_BANDS, Pagle.FormatLength)
 		end,
+		-- The Angler page's M4 parts (LED-R146): the crest, Prestige, the title pick and the bindings.
+		crest = ns.CrestIcon(),
+		canPrestige = ns.CanPrestige(),
+		askPrestige = ns.AskPrestige,
+		pickTitle = ns.PickActiveTitle,
+		isOwned = Pagle.IsOwned,
+		getEquipped = Pagle.GetEquipped,
+		setEquipped = Pagle.SetEquipped,
+		openShop = Pagle.OpenShop,
 	}
 end
 
