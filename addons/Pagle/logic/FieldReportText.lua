@@ -16,7 +16,7 @@ local ns = select(2, ...)
 --
 -- Each line ends in "\n", END's too. A comment is " # " then the names, for humans only; within each kind of row the
 -- comments line up, the shorter rows padded with spaces. Inside the quotes of a P text, `\` escapes `"`, `\` and a
--- newline (`\n`) (REP-R32).
+-- newline (`\n`), and a carriage return, alone or before a newline, is written as `\n` (REP-R32).
 --
 -- Versioning (REP-R31): the repo's parser (scripts/pagle_data/, DATA-R116) ignores comments and unknown `key=value`
 -- keys, so adding a key needs no version bump. Changing the meaning of anything already written (a field, a key, the
@@ -164,11 +164,12 @@ local function rowBefore(a, b)
 	return false
 end
 
--- A P row's text in double quotes, with `\` escaping `"`, `\` and a newline (REP-R32).
+-- A P row's text in double quotes, with `\` escaping `"`, `\` and a newline (REP-R32). A carriage return, alone or
+-- before a newline, is a newline too: a browser's textarea would turn it into one and split the row.
 ---@param text string
 ---@return string
 local function quote(text)
-	local escaped = text:gsub('[\\"\n]', { ["\\"] = "\\\\", ['"'] = '\\"', ["\n"] = "\\n" })
+	local escaped = text:gsub("\r\n?", "\n"):gsub('[\\"\n]', { ["\\"] = "\\\\", ['"'] = '\\"', ["\n"] = "\\n" })
 	return '"' .. escaped .. '"'
 end
 

@@ -178,6 +178,20 @@ describe("ns.FieldReportParts", function()
 	end)
 
 	it(
+		"writes a P text's carriage return, alone or before a newline, as one \\n, so the row never splits (REP-R32)",
+		function()
+			local rows = {
+				{ kind = "P", area = 1, locale = "enUS", text = "a\rb\r\nc\n\rd", casts = 1, items = {} },
+			}
+
+			local parts = ns.FieldReportParts(rows, HEADER, { item = function() end, area = function() end })
+
+			assert.are.same({ 'P 1 enUS "a\\nb\\nc\\n\\nd" casts=1' }, rowLines(parts[1]))
+			assert.is_nil(parts[1]:find("\r", 1, true))
+		end
+	)
+
+	it(
 		"comments an I row with its item and area names, leaving out a missing one, and writes none with no names (REP-R30)",
 		function()
 			local rows = {
