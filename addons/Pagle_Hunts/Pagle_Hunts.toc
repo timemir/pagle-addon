@@ -18,4 +18,5 @@ logic\Seams.lua
 logic\Qualify.lua
 logic\Waters.lua
 logic\Titles.lua
+logic\Projection.lua
 adapter\Hunts.lua

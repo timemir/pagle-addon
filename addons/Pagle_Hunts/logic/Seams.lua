@@ -15,10 +15,10 @@ local ns = select(2, ...)
 --   ns.OpenBoard(huntID?)     Opens the board (never closes it), on that Hunt if given (HNT-R67, HNT-R77): the
 --                             tracker's lines call it. Stand-in: does nothing. The board's ticket (#191) assigns it.
 --   ns.State()                The projection's HuntsState (hunts.md › Projection state). Read-only for views.
---                             Stand-in: a new empty state each call. The projection's ticket (#188) binds it to
---                             `projection:GetState()` in OnInitialize.
+--                             Reads `ns.projection` (#188, made in OnInitialize) at call time: a new empty state
+--                             each call while it has none.
 --   ns.IsUpdating()           Whether the projection is catching up or rebuilding (LOG-R74, HNT-R69): views then
---                             draw nothing from ns.State(). Stand-in: false. The projection's ticket (#188) binds it.
+--                             draw nothing from ns.State(). Reads `ns.projection` at call time; false with none.
 --   ns.OnRedraw(fn)           Subscribes a view (the board, the tracker, the summary line) to redraws: fn(reason) is
 --                             called at every ns.Redraw, in subscription order. Subscribe once, when the view is made.
 --   ns.Redraw(reason)         Asks every subscribed view to redraw (HNT-R42's last paragraph). Callers and their
@@ -54,18 +54,25 @@ function ns.OpenBoard(huntID) end -- luacheck: no unused args
 ---@field catchId string
 ---@field itemID integer
 ---@field zone integer        -- the Cast's zone areaID (0 if unresolved)
----@field date { year: integer, month: integer, day: integer }   -- the Cast's realm date (cast.conditions.date)
+---@field date { year: integer, month: integer, day: integer }   -- the Cast's realm date (cast.conditions.date; its UTC day without one)
 
---- The projection's state: a new empty HuntsState until the projection binds it.
+---@class PagleHuntsNS
+---@field projection PagleProjection? -- Hunts' projection, made in OnInitialize (HNT-R136, logic/Projection.lua)
+
+--- The projection's state (`ns.projection:GetState()`): a new empty HuntsState while there is none, before the
+--- projection's first build or with no projection.
 ---@return HuntsState
 function ns.State()
-	return { casts = 0, coins = 0, hunts = {}, sets = {} }
+	local projection = ns.projection
+	return projection and projection:GetState() or { casts = 0, coins = 0, hunts = {}, sets = {} }
 end
 
---- Whether the projection is catching up or rebuilding (LOG-R74): false until the projection binds it.
+--- Whether the projection is catching up or rebuilding, or waiting for login to start it (LOG-R74,
+--- `ns.projection:IsUpdating()`); false with no projection.
 ---@return boolean
 function ns.IsUpdating()
-	return false
+	local projection = ns.projection
+	return projection ~= nil and projection:IsUpdating()
 end
 
 local redrawn = {} -- the subscribed views' redraws, in subscription order

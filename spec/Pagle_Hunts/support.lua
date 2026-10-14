@@ -24,7 +24,9 @@ local support = {}
 --- Loads Pagle_Hunts on `fake` (a new FakePagle if nil) with the fixture Hunt list, which replaces a shipped
 --- data/HuntList.lua if the TOC lists one, then fires its ADDON_LOADED, so OnInitialize reads the fixture.
 ---@param fake table? a FakePagle (newFakePagle()), for a spec that set it up first
----@param options { lore: boolean? }? lore = false loads no fixture lore, so names fall back to IDs (HNT-R1)
+---@param options { lore: boolean?, prepare: fun(loaded: LoadedAddon)? }? lore = false loads no fixture lore, so names
+--- fall back to IDs (HNT-R1); prepare(loaded) runs after the fixtures, before ADDON_LOADED, e.g. to change the list
+--- or the rules version OnInitialize reads
 ---@return LoadedAddon loaded
 ---@return table fake
 function support.load(fake, options)
@@ -34,6 +36,9 @@ function support.load(fake, options)
 	runAsHunts(FIXTURE_LIST, loaded)
 	if options.lore ~= false then
 		runAsHunts(FIXTURE_LORE, loaded)
+	end
+	if options.prepare then
+		options.prepare(loaded)
 	end
 	loaded.client.fire("ADDON_LOADED", "Pagle_Hunts")
 	return loaded, fake
