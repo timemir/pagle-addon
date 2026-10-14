@@ -209,62 +209,74 @@ end
 local function build(page)
 	local width = page:GetWidth()
 	local fonts = ns.BoardFonts()
-	---@type TimelinePageView
-	local view = {
-		width = width,
-		trackLeft = NAME_WIDTH + GAP,
-		trackWidth = width - NAME_WIDTH - MARGIN_WIDTH - 2 * GAP,
-		ticks = {},
-		washes = {},
-		rows = {},
-		headings = {},
-		place = { mode = "board" },
-	} --[[@as TimelinePageView]]
-	view.title = ns.BoardText(page, fonts.title, LOOK.title)
-	view.title:SetPoint("TOPLEFT", 0, 0)
-	view.title:SetWidth(width)
+	local trackLeft = NAME_WIDTH + GAP
+	local trackWidth = width - NAME_WIDTH - MARGIN_WIDTH - 2 * GAP
 
-	view.ruler = CreateFrame("Frame", nil, page)
-	view.ruler:SetSize(view.trackWidth, RULER_HEIGHT)
-	view.ruler:SetPoint("TOPLEFT", view.trackLeft, -TITLE_HEIGHT)
-	local base = view.ruler:CreateTexture(nil, "BORDER")
+	local title = ns.BoardText(page, fonts.title, LOOK.title)
+	title:SetPoint("TOPLEFT", 0, 0)
+	title:SetWidth(width)
+
+	local ruler = CreateFrame("Frame", nil, page)
+	ruler:SetSize(trackWidth, RULER_HEIGHT)
+	ruler:SetPoint("TOPLEFT", trackLeft, -TITLE_HEIGHT)
+	local base = ruler:CreateTexture(nil, "BORDER")
 	base:SetColorTexture(LOOK.kicker[1], LOOK.kicker[2], LOOK.kicker[3], 1)
 	base:SetHeight(2)
 	base:SetPoint("BOTTOMLEFT")
 	base:SetPoint("BOTTOMRIGHT")
-	view.nowLine = ns.BoardSolid(view.ruler, LOOK.red, "ARTWORK", 0.85)
-	view.nowLine:SetSize(2, RULER_HEIGHT)
-	view.nowLabel = ns.BoardText(view.ruler, fonts.margin, LOOK.red)
-	view.nowLabel:SetText(ns.L.RULER_NOW)
+	local nowLine = ns.BoardSolid(ruler, LOOK.red, "ARTWORK", 0.85)
+	nowLine:SetSize(2, RULER_HEIGHT)
+	local nowLabel = ns.BoardText(ruler, fonts.margin, LOOK.red)
+	nowLabel:SetText(ns.L.RULER_NOW)
 
 	local listTop = TITLE_HEIGHT + RULER_HEIGHT + 2
-	view.column = CreateFrame("Frame", nil, page)
-	view.column:SetPoint("TOPLEFT", view.trackLeft, -listTop)
-	view.column:SetPoint("BOTTOMLEFT", view.trackLeft, LEGEND_HEIGHT)
-	view.column:SetSize(view.trackWidth, page:GetHeight() - listTop - LEGEND_HEIGHT)
+	local column = CreateFrame("Frame", nil, page)
+	column:SetPoint("TOPLEFT", trackLeft, -listTop)
+	column:SetPoint("BOTTOMLEFT", trackLeft, LEGEND_HEIGHT)
+	column:SetSize(trackWidth, page:GetHeight() - listTop - LEGEND_HEIGHT)
 
-	view.scroll = CreateFrame("ScrollFrame", nil, page) --[[@as ScrollFrame]]
-	view.scroll:SetPoint("TOPLEFT", 0, -listTop)
-	view.scroll:SetPoint("BOTTOMRIGHT", 0, LEGEND_HEIGHT)
-	view.content = CreateFrame("Frame", nil, view.scroll)
-	view.content:SetSize(width, 1)
-	view.scroll:SetScrollChild(view.content)
-	view.scroll:EnableMouseWheel(true)
-	view.scroll:SetScript("OnMouseWheel", function(self, delta)
+	local scroll = CreateFrame("ScrollFrame", nil, page) --[[@as ScrollFrame]]
+	scroll:SetPoint("TOPLEFT", 0, -listTop)
+	scroll:SetPoint("BOTTOMRIGHT", 0, LEGEND_HEIGHT)
+	local content = CreateFrame("Frame", nil, scroll)
+	content:SetSize(width, 1)
+	scroll:SetScrollChild(content)
+	scroll:EnableMouseWheel(true)
+	scroll:SetScript("OnMouseWheel", function(self, delta)
 		local offset = self:GetVerticalScroll() - delta * 40
 		self:SetVerticalScroll(math.max(0, math.min(offset, self:GetVerticalScrollRange())))
 	end)
 
-	view.legend = ns.BoardText(page, fonts.small, LOOK.note)
-	view.legend:SetPoint("BOTTOMLEFT", 0, 0)
-	view.legend:SetWidth(width)
-	view.legend:SetHeight(LEGEND_HEIGHT - 4)
-	view.legend:SetText(ns.L.TIMELINE_LEGEND)
+	local legend = ns.BoardText(page, fonts.small, LOOK.note)
+	legend:SetPoint("BOTTOMLEFT", 0, 0)
+	legend:SetWidth(width)
+	legend:SetHeight(LEGEND_HEIGHT - 4)
+	legend:SetText(ns.L.TIMELINE_LEGEND)
 
-	view.empty = ns.BoardText(page, fonts.hand, LOOK.hand)
-	view.empty:SetPoint("TOPLEFT", 0, -TITLE_HEIGHT)
-	view.empty:SetWidth(width)
-	return view
+	local empty = ns.BoardText(page, fonts.hand, LOOK.hand)
+	empty:SetPoint("TOPLEFT", 0, -TITLE_HEIGHT)
+	empty:SetWidth(width)
+
+	---@type TimelinePageView
+	return {
+		title = title,
+		ruler = ruler,
+		ticks = {},
+		nowLabel = nowLabel,
+		nowLine = nowLine,
+		column = column,
+		washes = {},
+		scroll = scroll,
+		content = content,
+		rows = {},
+		headings = {},
+		legend = legend,
+		empty = empty,
+		width = width,
+		trackLeft = trackLeft,
+		trackWidth = trackWidth,
+		place = { mode = "board" },
+	}
 end
 
 -- Draws the ruler (HNT-R62): its hour ticks, the labelled ones' times, and the now line with "now" over it.

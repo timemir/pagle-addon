@@ -631,7 +631,10 @@ describe("the leather's clock and checkbox (HNT-R61)", function()
 		wait(run, 600)
 		run.ns.board:Draw()
 
-		assert.are.same({ "08:15 · Sun 11 Oct · Autumn (paused in combat)" }, textsOf(run.ns.board.frame.anchors.clock))
+		assert.are.same(
+			{ "08:15 · Sun 11 Oct · Autumn (paused in combat)" },
+			textsOf(run.ns.board.frame.anchors.clock)
+		)
 
 		run.fake.setRestricted(false)
 		assert.are.same({ "08:25 · Sun 11 Oct · Autumn" }, textsOf(run.ns.board.frame.anchors.clock))
