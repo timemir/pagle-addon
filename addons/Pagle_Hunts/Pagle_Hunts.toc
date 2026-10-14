@@ -19,6 +19,7 @@ logic\Qualify.lua
 logic\Waters.lua
 logic\Titles.lua
 logic\Projection.lua
+logic\Moments.lua
 logic\Groups.lua
 logic\Board.lua
 adapter\BoardWidgets.lua
