@@ -13,6 +13,7 @@ locale\enUS.lua
 logic\Data.lua
 logic\Days.lua
 logic\Module.lua
+logic\Progress.lua
 logic\Rewards.lua
 logic\Seams.lua
 adapter\TackleBoard.lua
