@@ -71,6 +71,8 @@ stds.wow = {
 		-- (QOL-R83): ReloadUI is unprotected on build 70338 (QOL-R102), and the QoL boundary spec allows that one call.
 		"StaticPopup_Show",
 		"ReloadUI",
+		-- The Ledger's Prestige confirm (LED-R33), hidden when the Fish Journal closes.
+		"StaticPopup_Hide",
 		-- The character table, Skill Readings and build entries (LOG-R26, LOG-R30, LOG-R36).
 		"UnitName",
 		"UnitClass",
@@ -102,6 +104,9 @@ stds.wow = {
 		"debugprofilestop",
 		-- LuaBitOp, which the client ships: the Simulated Size hash (LOG-R66), in Core's logic/Size.lua (files[] below).
 		bit = { fields = { "bxor", "rshift" } },
+		-- The default length unit (LOG-R69): read only through adapter/Host.lua's region, which allows for it missing.
+		-- On the launch re-verification list (roadmap.md › Launch re-verification checklist, item 19).
+		"GetCurrentRegion",
 		-- The Announcement frames, hung from UIParent, and their sounds on the SFX channel (ANN-R73, ANN-R80); their
 		-- lanes run on GetTime and C_Timer.After, and an item icon comes from C_Item.GetItemInfoInstant (above).
 		"UIParent",
@@ -158,9 +163,14 @@ stds.wow_variables = {
 		-- A FrameXML table the dump doesn't list (QOL-R81). No probe has shown a popup yet; the M1 exit check (step 7)
 		-- does. Gethe/wow-ui-source branch forever at 943764493e6b16d63ded3ab304150d1f05e58b57 ("1.60.1 (70338)"),
 		-- Interface/AddOns/Blizzard_StaticPopup/StaticPopup.lua: `StaticPopupDialogs = {}; -- Definitions`. QoL adds
-		-- its two dialogs to it: the conflict popup and its Reload now popup (QOL-R81, QOL-R83).
+		-- its two dialogs to it: the conflict popup and its Reload now popup (QOL-R81, QOL-R83); the Ledger adds its
+		-- Prestige confirm (LED-R33).
 		StaticPopupDialogs = {
-			fields = { PAGLE_QOL_CONFLICT = { read_only = false }, PAGLE_QOL_RELOAD = { read_only = false } },
+			fields = {
+				PAGLE_QOL_CONFLICT = { read_only = false },
+				PAGLE_QOL_RELOAD = { read_only = false },
+				PAGLE_LEDGER_PRESTIGE = { read_only = false },
+			},
 		},
 		-- A FrameXML table the dump doesn't list (CORE-R60). probes/fishing-signals/results/
 		-- 2026-10-11-build70338-report.md is the /pprobe report from build 70338, and /pprobe is registered with

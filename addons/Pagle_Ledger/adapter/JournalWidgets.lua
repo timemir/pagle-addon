@@ -640,6 +640,51 @@ function makers.xpBar(parent)
 	return widget
 end
 
+-- A Prestige emblem's plate: a strip of leather the numeral is stamped on.
+local EMBLEM_HEIGHT = 30
+local EMBLEM_PAD = 10
+
+---@class LedgerEmblemWidget: LedgerJournalWidget
+---@field numeral FontString
+
+-- A Prestige emblem (LED-R34): its roman numeral stamped in gilt on a leather plate, then a Master Prestige's stars
+-- as ink stamps beside it. No custom art (ledger.md › UI). Nothing at all before the first Prestige.
+function makers.emblem(parent)
+	local widget = newWidget(parent) --[[@as LedgerEmblemWidget]]
+	local plate = CreateFrame("Frame", nil, widget)
+	plate:SetPoint("TOPLEFT")
+	plate:SetHeight(EMBLEM_HEIGHT)
+	ns.JournalSolid(plate, LOOK.leather, "BACKGROUND")
+	local numeral = ns.JournalText(plate, ns.JournalFonts().title, LOOK.gilt)
+	numeral:SetPoint("CENTER")
+	numeral:SetJustifyH("CENTER")
+	widget.numeral = numeral
+	local stars = makers.stamps(widget)
+	function widget.Fill(_, block, width, open)
+		local mark = block.mark or { stars = 0 }
+		if not mark.emblem then
+			plate:Hide()
+			stars:Hide()
+			return 0
+		end
+		numeral:SetText(mark.emblem)
+		local plateWidth = numeral:GetStringWidth() + 2 * EMBLEM_PAD
+		plate:SetWidth(plateWidth)
+		plate:Show()
+		local list = {}
+		for i = 1, mark.stars do
+			list[i] = { text = ns.L.PRESTIGE_STAR, inked = true }
+		end
+		stars:ClearAllPoints()
+		stars:SetPoint("LEFT", plate, "RIGHT", 6, 0)
+		stars:SetSize(math.max(1, width - plateWidth - 6), 20)
+		stars:Fill({ kind = "stamps", stamps = list }, width, open)
+		stars:SetShown(mark.stars > 0)
+		return EMBLEM_HEIGHT
+	end
+	return widget
+end
+
 -- The gap between blocks on a page.
 local BLOCK_GAP = 6
 

@@ -23,6 +23,7 @@ local ns = select(2, ...)
 ---@field clock fun(): number                    -- a clock in ms, for the projections' frame budget (debugprofilestop)
 ---@field call fun(fn: function, ...: any): ...  -- calls fn; an error is reported, not raised (securecallfunction)
 ---@field report fun(message: string)            -- reports an error and carries on (geterrorhandler())
+---@field region fun(): integer?                 -- GetCurrentRegion(), nil where the call doesn't exist (LOG-R69)
 ---@field syncLimit? integer                     -- the projections' sync limit; default PROJECTION_SYNC_LIMIT
 
 ---@class PagleNS
@@ -36,6 +37,7 @@ local ns = select(2, ...)
 ---@field shop PagleShop The Curio Shop's entry points (ns.WireShop).
 ---@field fieldReport PagleFieldReportReaders? Core's Field report, from login step 1 on (ns.WireFieldReport).
 ---@field walletProjection PagleProjection? Core's wallet projection, from login step 1 (ns.WireWalletProjection).
+---@field LengthUnit fun(): PagleLengthUnit The Angler's length unit now (ns.WireLength).
 
 --- Core's projection machinery (LOG-R70–R78) as ns.projections, and `M:NewProjection` and `M:IterateCatches` on every
 --- Module handle. Until Module records (M7), a Module's records are the ones Pagle.IterateCatches yields.
@@ -113,6 +115,20 @@ end
 ---@return PagleSession?
 function Sessions:Get()
 	return self.tracker and self.tracker:Get(self.host.serverTime())
+end
+
+--- The Angler's length unit (LOG-R69) as ns.LengthUnit(): PagleDB.profile.lengthUnit, or with none stored (or before
+--- PagleDB is open) the host's region default, read at each call. Returns Pagle.FormatLength, a length in it.
+---@param host PagleHost
+---@return fun(mm: number): string
+function ns.WireLength(host)
+	function ns.LengthUnit()
+		local db = host.db()
+		return ns.LengthUnitOf(db and db.profile.lengthUnit, host.region())
+	end
+	return function(mm)
+		return ns.FormatLength(mm, ns.LengthUnit())
+	end
 end
 
 --- Core's moment collector as ns.moments (ANN-R1–R4, ANN-R10–R12), and `M:RaiseMoment` on every Module handle. Each

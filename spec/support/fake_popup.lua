@@ -1,4 +1,5 @@
--- The fake client's popups and addon switches, for QoL's conflict popup and its Reload now popup (QOL-R81–R84).
+-- The fake client's popups and addon switches, for QoL's conflict popup and its Reload now popup (QOL-R81–R84) and
+-- the Ledger's Prestige confirm (LED-R33).
 -- spec/support/addon.lua adds these stubs to every load.
 --
 --   loaded.client.popup                  -- the popup shown last: { which, text, buttons = { [index] = label } }, or nil
@@ -82,6 +83,20 @@ return function(client, stubs)
 		shown[#shown + 1] = frame
 		update()
 		return frame
+	end
+
+	-- StaticPopup_Hide(which, data): hides every shown dialog of `which` (with `data`, if given), running its OnHide but
+	-- no button's callback.
+	stubs.StaticPopup_Hide = function(which, data)
+		for i = #shown, 1, -1 do
+			local frame = shown[i]
+			if frame and frame.which == which and (data == nil or frame.data == data) then
+				if frame.info.OnHide then
+					frame.info.OnHide(frame, frame.data)
+				end
+				hide(frame)
+			end
+		end
 	end
 
 	function client.clickPopup(index)

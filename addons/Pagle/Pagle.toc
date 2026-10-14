@@ -27,6 +27,7 @@ logic\LiveConditions.lua
 logic\Modules.lua
 logic\Sessions.lua
 logic\Size.lua
+logic\Length.lua
 logic\CatchLog.lua
 logic\Projections.lua
 logic\Migrations.lua
@@ -41,6 +42,7 @@ logic\Slash.lua
 logic\Wallet.lua
 logic\Goods.lua
 logic\Shop.lua
+logic\CoreGoods.lua
 logic\WalletProjection.lua
 logic\Moments.lua
 logic\Summary.lua
@@ -79,6 +81,7 @@ adapter\Moments.lua
 adapter\Summary.lua
 adapter\Timber.lua
 adapter\Announcements.lua
+adapter\CoreGoods.lua
 adapter\Cards.lua
 adapter\Menu.lua
 adapter\ReloadReminder.lua

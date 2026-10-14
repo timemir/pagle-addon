@@ -75,3 +75,36 @@ def test_items_db2_lacks_take_their_class_from_items_toml_and_ship_without_a_qua
 def test_a_trophy_ships_its_weight_from_its_enus_name() -> None:
     # DATA-R21: 13876's enUS DB2 name is "40 Pound Yellowtail" (items.csv), so its weight is 40.
     assert re.search(r"family = \d+, .*weight = 40 \}", _committed_items()[13876])
+
+
+def _species_lengths() -> dict[int, tuple[int, int | None]]:
+    """Each Species item's (Species ID, typicalLength or None), by item ID, from the committed Catalogue.lua."""
+    found: dict[int, tuple[int, int | None]] = {}
+    for item, record in _committed_items().items():
+        species = re.search(r"\bspecies = (\d+)", record)
+        if species is not None:
+            length = re.search(r"\btypicalLength = (\d+)", record)
+            found[item] = (int(species.group(1)), int(length.group(1)) if length else None)
+    return found
+
+
+def test_every_species_item_ships_a_typical_length_with_the_check_on() -> None:
+    # DATA-R20, DATA-R66: from M4 the typicalLength check is on, so every Species (removed ones and the Legends
+    # included) has a typical length of at least 1 mm on each of its items: LOG-R65's Simulated Size input.
+    with (REPO / "data" / "checks.toml").open("rb") as handle:
+        assert tomllib.load(handle)["typicalLength"] is True
+    lengths = _species_lengths()
+    assert len(lengths) == 43  # 42 Species IDs, plus Spotted Yellowtail (6887) folded into 4603 (DATA-R19)
+    assert EXTRAVAGANZA_RARES <= lengths.keys()
+    for item, (_, length) in lengths.items():
+        assert length is not None and length >= 1, item
+    # DATA-R20: a folded item carries its Species' typical length.
+    assert lengths[6887] == lengths[4603]
+
+
+def test_every_legend_is_longer_than_every_ordinary_species() -> None:
+    # #160 (the drafted values, M4 open question 5): Legends read visibly bigger than ordinary fish, so DATA-R22's
+    # three Extravaganza rares each outmeasure every other Species.
+    lengths = {item: length or 0 for item, (_, length) in _species_lengths().items()}
+    ordinary = max(length for item, length in lengths.items() if item not in EXTRAVAGANZA_RARES)
+    assert min(lengths[item] for item in EXTRAVAGANZA_RARES) > ordinary

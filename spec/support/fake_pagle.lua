@@ -117,7 +117,10 @@
 --- may seed its keys before login, as a saved PagleDB.
 ---@field profile table PagleDB.profile, from Core's defaults: `announcements.cozy` is Cozy mode (ANN-R62), off; a
 --- spec may set it. `appearance` holds each slot's pick, `{ [slot] = goodID }` (SHOP-R32), which Pagle.SetEquipped
---- writes and a spec may seed.
+--- writes and a spec may seed. `lengthUnit` is the Angler's length unit Pagle.FormatLength reads in, "cm" or "in"
+--- (LOG-R69); nil, the default, follows `region`.
+---@field region integer? GetCurrentRegion() as the fake's client answers it: 1 (Americas), so with no lengthUnit
+--- lengths read in inches; a spec may set another region, or nil for a client without the call (centimetres).
 ---@field writeUps PagleWriteUpStored[] Each Write-up section Core kept from a Module's M:RaiseWriteUp, in order, as
 --- stored: module, order, title, heading, lines (ANN-R60). Closing the Write-up card doesn't empty it.
 ---@field cardsShown PagleCard[] Each card Core would show, in order (ANN-R21): the Write-up (title "Write-up" and
@@ -452,9 +455,11 @@ end)
 -- GetEquipped, SetEquipped and GetGood (read-only), and AppearanceChanged from login on. The purchased set comes
 -- from the wallet projection part below (SHOP-R11), or from fake.setPurchased. Pagle.OpenShop runs Core's entry
 -- points (SHOP-R40, SHOP-R41) over a shop that only records: each opening lands in fake.shopsOpened, and
--- fake.shopOpen says whether it is open.
+-- fake.shopOpen says whether it is open. Core's own slots and goods (SHOP-R25) are registered from the start, as
+-- login step 1 registers them before any Module, without previews: no shop draws here.
 part(function(fake, Pagle, ns, host)
 	ns.WireGoods(host)
+	ns.RegisterCoreGoods()
 	fake.goods = fake.global.goods
 	fake.shopsOpened = {}
 	fake.shopOpen = false
@@ -584,6 +589,12 @@ part(function(fake, Pagle, ns)
 			return readOnly(iterate())
 		end
 	end
+end)
+
+-- The length unit (LOG-R69): Pagle.FormatLength on Core's wiring, in fake.profile.lengthUnit or fake.region's default.
+part(function(fake, Pagle, ns, host)
+	fake.region = 1
+	Pagle.FormatLength = ns.WireLength(host)
 end)
 
 -- Projections (LOG-R70–R77), on Core's wiring over fake.catchLog: M:NewProjection and M:IterateCatches on the
@@ -1023,6 +1034,9 @@ function newFakePagle()
 		end,
 		call = fake.securecall,
 		report = fake.report,
+		region = function()
+			return fake.region
+		end,
 		syncLimit = math.huge, -- every catch-up and rebuild runs at once
 		timers = timers,
 	}
