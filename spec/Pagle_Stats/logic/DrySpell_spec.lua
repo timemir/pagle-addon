@@ -30,7 +30,7 @@ end
 
 describe("Dry spells", function()
 	describe("the count and the luck reading (STA-R50, STA-R51, STA-R52)", function()
-		it("counts n − at since the last catch and reads P = (1 − k/n)^since: 412, 9, at 200 is 212, unlucky", function()
+		it("counts n − at and reads P = (1 − k/n)^since: 412, 9, at 200 is 212 since, unlucky", function()
 			local ns = stats.load().ns
 
 			local dry = ns.DrySpell(reading({ n = 412, k = 9, at = 200 }))
@@ -83,7 +83,7 @@ describe("Dry spells", function()
 			assert.is_nil(luck)
 		end)
 
-		it("says where as the odds do, and counts in the singular and with thousands separators (STA-R46, STA-R59)", function()
+		it("says where as the odds do; counts take the singular and thousands separators (STA-R59)", function()
 			local ns = stats.load().ns
 
 			assert.are.equal(
@@ -151,14 +151,8 @@ describe("Dry spells", function()
 			local ns = stats.load().ns
 
 			-- 1/0.00999 is 100.1: nice() reads 100
-			assert.are.equal(
-				"Roughly 1 angler in 100 waits this long. Unlucky, not broken.",
-				ns.LuckWording(0.00999)
-			)
-			assert.are.equal(
-				"Roughly 1 angler in 10,000 waits this long. Unlucky, not broken.",
-				ns.LuckWording(0.0001)
-			)
+			assert.are.equal("Roughly 1 angler in 100 waits this long. Unlucky, not broken.", ns.LuckWording(0.00999))
+			assert.are.equal("Roughly 1 angler in 10,000 waits this long. Unlucky, not broken.", ns.LuckWording(0.0001))
 		end)
 
 		it("reads very unlucky below 1 in 10,000 and down to 1 in a million", function()
@@ -199,7 +193,7 @@ describe("Dry spells", function()
 	end)
 
 	describe("zero and learning (STA-R54)", function()
-		it("reads a Dry spell of 0 as Caught one on my last Cast here., with no luck reading, in every state", function()
+		it("reads 0 as Caught one on my last Cast here., with no luck reading, in every state", function()
 			local ns = stats.load().ns
 
 			for _, state in ipairs({ "learning", "unseen", "known" }) do
@@ -208,10 +202,10 @@ describe("Dry spells", function()
 				local dry = ns.DrySpell(zero)
 
 				assert.are.equal("Caught one on my last Cast here.", first, state)
-				assert.is_nil(after, state)
+				assert.are.equal(nil, after, state)
 				assert.are.equal(0, dry.since, state)
-				assert.is_nil(dry.P, state) -- no luck wording, no ruler
-				assert.is_nil(dry.band, state)
+				assert.are.equal(nil, dry.P, state) -- no luck wording, no ruler
+				assert.are.equal(nil, dry.band, state)
 				assert.are.equal("Caught one on my last Cast here.", (ns.DrySpellText(zero, "Nightfin Snapper")), state)
 			end
 		end)
@@ -225,7 +219,7 @@ describe("Dry spells", function()
 			)
 		end)
 
-		it("reads the first sentence, then A luck reading comes …, with no band, while learning with a hit", function()
+		it("reads the first sentence and A luck reading comes …, no band, while learning with a hit", function()
 			local ns = stats.load().ns
 
 			local learning = reading({ n = 37, k = 2, at = 30, ago = 21 * 60 })
@@ -265,7 +259,7 @@ describe("Dry spells", function()
 			}
 		end
 
-		it("writes a row's margin: {since} since, the band's word apart, just now for 0, nothing when never caught", function()
+		it("writes a row's margin: {since} since, the band apart, just now for 0, nothing when never caught", function()
 			local ns = stats.load().ns
 			local r = readings()
 
@@ -277,7 +271,7 @@ describe("Dry spells", function()
 			assert.are.same({}, { ns.DrySpellShort(r.never) })
 		end)
 
-		it("writes a home spread watch line's end: since the last, caught on my last Cast, or a count, none yet", function()
+		it("ends a home spread watch line: since the last, caught on my last Cast, or none yet", function()
 			local ns = stats.load().ns
 			local r = readings()
 
@@ -318,7 +312,7 @@ describe("Dry spells", function()
 
 	describe("the luck ruler's mark (stats.md › UI, Place spread: a log scale of P from 1 to 10⁻⁶)", function()
 		local function near(expected, actual)
-			assert.is_true(math.abs(expected - actual) < 1e-9, ("expected %s, got %s"):format(expected, actual))
+			assert.are.equal(true, math.abs(expected - actual) < 1e-9, ("expected %s, got %s"):format(expected, actual))
 		end
 
 		it("puts 1 at the left end, 10⁻⁶ at the right and each tick a sixth along", function()
