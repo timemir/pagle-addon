@@ -31,7 +31,7 @@ ns.WireText({
 		return BreakUpLargeNumbers(n)
 	end,
 	Date = function(format, time)
-		return date(format, time)
+		return (date(format, time)) --[[@as string]]
 	end,
 	ServerTime = function()
 		return GetServerTime()

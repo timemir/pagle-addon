@@ -22,7 +22,7 @@ local MINUTE, HOUR, DAY = 60, 3600, 86400
 ---@field Date fun(format: string, time: integer): string   -- `date`, the player's local clock
 ---@field ServerTime fun(): integer                    -- GetServerTime()
 ---@field ItemName fun(itemID: integer): string?       -- C_Item.GetItemNameByID
----@field ItemIcon fun(itemID: integer): (integer|string)?   -- C_Item.GetItemIconByID
+---@field ItemIcon fun(itemID: integer): integer?        -- C_Item.GetItemIconByID, a file ID
 ---@field AreaName fun(areaID: integer): string?       -- C_Map.GetAreaInfo
 ---@field Characters fun(): table                      -- Pagle.GetAngler().characters
 ---@field QualityName fun(quality: integer): string?   -- ITEM_QUALITY<n>_DESC

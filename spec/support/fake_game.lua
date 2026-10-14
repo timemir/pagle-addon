@@ -186,6 +186,7 @@ return function(client, stubs)
 	end
 	-- The client's local clock: the fake player sits at UTC, so `date` reads as os.date in UTC.
 	stubs.date = function(format, time)
+		---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no os
 		return os.date("!" .. format, time)
 	end
 	stubs.GetCVar = function(name)

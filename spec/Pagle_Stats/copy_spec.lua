@@ -222,13 +222,16 @@ describe("the copy test (STA-R58)", function()
 
 			assert.is_true(read["Lantern Glow"])
 			-- The generator's Lua for the same file (addons/Pagle/data/Lore.lua) holds the same strings.
-			local generated = 0
+			local generated, unread = 0, {}
 			for key, text in pairs(loadAddon("Pagle", FOREVER_GLOBALS).ns.L) do
 				if type(key) == "string" and key:match("^good%.core%.") then
 					generated = generated + 1
-					assert.is_true(read[text], key)
+					if not read[text] then
+						unread[#unread + 1] = key
+					end
 				end
 			end
+			assert.are.same({}, unread)
 			assert.are.equal(generated, nRead)
 		end)
 
@@ -245,7 +248,7 @@ describe("the copy test (STA-R58)", function()
 			os.remove(path)
 
 			assert.is_false(ok)
-			assert.matches("can't read as a string", err)
+			assert.matches("can't read as a string", tostring(err))
 		end)
 	end)
 end)

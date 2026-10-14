@@ -189,6 +189,7 @@ describe("Stats' words", function()
 			local loaded = stats.load()
 			-- A player two hours east of UTC: their 5 October starts at 22:00 UTC on the 4th.
 			loaded.env.date = function(format, time)
+				---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no os
 				return os.date("!" .. format, time + 2 * 3600)
 			end
 			local ns = loaded.ns
