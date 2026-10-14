@@ -653,6 +653,63 @@ describe("FakePagle", function()
 		end)
 	end)
 
+	describe("/pagle dev", function()
+		it("ends the open Session now, as Core does, once dev is on (#247, LOG-R62)", function()
+			local fake = newFakePagle()
+			local ended = {}
+			fake.Pagle.RegisterCallback(ended, "SessionEnded", function(_, session)
+				ended[#ended + 1] = session.id
+			end)
+			fake.login()
+			fake.enterWorld()
+			local cast = assert(fake.playCast("caught", { { itemID = 6358, quantity = 1 } }))
+
+			fake.slash("dev endsession")
+			fake.slash("dev on")
+			fake.slash("dev endsession")
+
+			assert.are.same({ cast.id }, ended)
+			assert.is_nil(fake.Pagle.GetSession())
+			assert.are.same({
+				"Pagle dev: dev commands are off; /pagle dev on turns them on.",
+				"Pagle dev: dev commands are on.",
+				"Pagle dev: the Session ended, as if its gap had passed.",
+			}, fake.printed)
+		end)
+
+		it(
+			"records a caught Cast in the area given on a test log, with Catch, CastEnded and live projections; on a"
+				.. " real log refuses (#247, LOG-R9)",
+			function()
+				local fake = newFakePagle()
+				local events = {}
+				for _, event in ipairs({ "CastStarted", "Catch", "CastEnded" }) do
+					fake.Pagle.RegisterCallback(events, event, function()
+						events[#events + 1] = event
+					end)
+				end
+				fake.login()
+				fake.enterWorld()
+				fake.slash("dev on")
+
+				fake.slash("dev catch 6358")
+				local refused = #fake.catchLog.data.entries
+				fake.catchLog.data.test = true
+				fake.slash("dev catch 6358 453")
+
+				assert.are.equal(0, refused)
+				local record = assert(fake.catchLog:Iterate()())
+				---@cast record PagleCast
+				assert.are.same(
+					{ 6358, 148, 453, "caught" },
+					{ record.items[1].itemID, record.conditions.zone, record.conditions.subzone, record.outcome }
+				)
+				assert.are.same({ "Catch", "CastEnded" }, events)
+				assert.are.equal(record.session, assert(fake.Pagle.GetSession()).id)
+			end
+		)
+	end)
+
 	describe("/pagle", function()
 		it(
 			"runs a Module's subcommand case-insensitively with the rest of the line, trimmed, from login (CORE-R62)",

@@ -35,6 +35,7 @@ logic\Fishing.lua
 logic\Diagnostics.lua
 logic\Settings.lua
 logic\Slash.lua
+logic\Dev.lua
 logic\Wallet.lua
 logic\Moments.lua
 logic\Summary.lua

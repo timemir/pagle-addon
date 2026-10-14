@@ -49,4 +49,7 @@ ns.host = {
 	report = function(message)
 		geterrorhandler()(message)
 	end,
+	print = function(line)
+		print(line)
+	end,
 }

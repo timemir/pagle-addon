@@ -103,7 +103,10 @@
 ---@field nextFrame fun() Runs the next frame: what Core queued for it so far, such as flushing moments into
 --- fake.announcements (ANN-R10, ANN-R12).
 ---@field queueFrame fun(step: fun()) Queues a step for the next fake.nextFrame; the parts' own frame scheduler.
----@field slash fun(line: string) Types `/pagle <line>` (CORE-R60–R62); help lines go to `printed`.
+---@field slash fun(line: string) Types `/pagle <line>` (CORE-R60–R62); help lines go to `printed`. The hidden dev
+--- commands work as Core's (#247): `fake.slash("dev on")`, then `"dev endsession"` ends the open Session now, and
+--- with `fake.catchLog.data.test = true` (a test log) `"dev catch 6358 [areaID]"` records a caught Cast through the
+--- fishing part's real append path, with its events and live projections, as playCast would without the signals.
 ---@field load fun(name: string, options: table?): LoadedAddon Loads a Module with `loadAddon` against this fake:
 --- `globals`, and of Pagle.toc only the vendored libs/ the Module reaches through LibStub (CORE-R6). Options as
 --- loadAddon's. WoW events its client raises on its own (`client.fireGameEvent`) go to `fake.fireGameEvent`.
@@ -452,7 +455,7 @@ end)
 -- The compartment menu and /pagle (CORE-R50, CORE-R52, CORE-R60–R62), on Core's real logic. Modules' subcommands
 -- are added at login, by def.order; one Core skips is in fake.reported. Labels and subcommands run through
 -- fake.securecall, as Core's run through securecallfunction.
-part(function(fake, Pagle, ns)
+part(function(fake, Pagle, ns, host)
 	local commands = ns.NewSlashCommands()
 	Pagle.RegisterCallback(commands, "ModulesChanged", function()
 		commands:AddModules(fake.registry:Modules(), fake.report)
@@ -467,8 +470,12 @@ part(function(fake, Pagle, ns)
 		return ns.CompartmentMenu(fake.registry:Modules(), shop, settings, fake.securecall)
 	end
 
+	-- /pagle dev (#247), on Core's wiring: the same switch in fake.global, Sessions and fishing as Core's.
+	ns.WireDev(host)
 	function fake.slash(line)
-		commands:Run(line, openSettings, fake.securecall, fake.print)
+		commands:Run(line, openSettings, fake.securecall, fake.print, function(args)
+			ns.dev:Run(args)
+		end)
 	end
 end)
 
@@ -622,13 +629,16 @@ part(function(fake, Pagle, ns, host)
 
 	local fishing = ns.NewFishing({
 		isFishingSpell = ns.IsFishingChannel,
-		record = function(outcome, items)
+		record = function(outcome, items, _, area)
 			local char = Pagle.GetAngler().current
 			if not char then
 				return nil
 			end
 			local conditions = copyConditions(fake.conditions)
 			conditions.time, conditions.date = SERVER_TIME + math.floor(clock.time()), nil
+			if area then
+				conditions.zone, conditions.subzone = area.zone, area.subzone
+			end
 			recorded = fake.catchLog:Append({
 				kind = "cast",
 				char = char,
@@ -643,6 +653,7 @@ part(function(fake, Pagle, ns, host)
 		end,
 		fire = fake.fire,
 	})
+	ns.fishing = fishing
 
 	function Pagle.GetFishingState()
 		return fishing:GetState()
@@ -832,6 +843,7 @@ function newFakePagle()
 		end,
 		call = fake.securecall,
 		report = fake.report,
+		print = fake.print,
 		syncLimit = math.huge, -- every catch-up and rebuild runs at once
 		timers = timers,
 	}

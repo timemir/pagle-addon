@@ -107,6 +107,21 @@ ns.L = {
 	SLASH_SKIPPED_NO_FN = "Pagle: %s's /pagle %s has no fn; it is skipped",
 	SLASH_SKIPPED_RESERVED = "Pagle: %s's /pagle %s is skipped: Pagle reserves %s",
 	SLASH_SKIPPED_TAKEN = "Pagle: %s's /pagle %s is skipped: %s already uses it",
+	-- /pagle dev (#247): hidden dev commands, never in the help list.
+	DEV_ON = "Pagle dev: dev commands are on.",
+	DEV_OFF = "Pagle dev: dev commands are off.",
+	DEV_IS_OFF = "Pagle dev: dev commands are off; /pagle dev on turns them on.",
+	DEV_USAGE = "Pagle dev: /pagle dev on | off | endsession | catch <itemID> [areaID]",
+	DEV_SESSION_ENDED = "Pagle dev: the Session ended, as if its gap had passed.",
+	DEV_NO_SESSION = "Pagle dev: no Session is open.",
+	DEV_CATCH_USAGE = "Pagle dev: /pagle dev catch <itemID> [areaID]",
+	DEV_REAL_LOG = "Pagle dev: catch writes to the Catch log, so it runs on a test log only (PagleLog.test); "
+		.. "this log is real, and nothing was added.",
+	-- The areaID as typed.
+	DEV_UNKNOWN_AREA = "Pagle dev: %s isn't an area in Pagle's catalogue.",
+	DEV_NO_CHARACTER = "Pagle dev: no character is logged in yet.",
+	-- The item ID, the zone areaID and the entry's seq.
+	DEV_CAUGHT = "Pagle dev: caught item %d in zone %d (entry %d).",
 	SLASH_CORE_HELP = {
 		{ name = "settings", help = "open Pagle's settings (also /pagle on its own)" },
 		{ name = "help", help = "list these commands" },

@@ -48,6 +48,18 @@ AceDB leaves out of the file every value equal to its default, so a missing `dec
 
 Exit codes: 2 on a usage error, 1 when an `--expect-casts` check fails (a missing `Pagle.lua` fails it too), otherwise 0, whatever the files hold.
 
+## Dev commands
+
+`/pagle dev …` drives Core's real code paths for a fast exit check, instead of waiting for a rare bite or a Session's gap. It's hidden: `/pagle help` never lists it, and a Module can't take the name.
+
+| Command | What it does |
+|---|---|
+| `/pagle dev on`, `/pagle dev off` | Sets `PagleDB.global.dev`. While it's off, every other dev command prints one line saying how to turn it on, and does nothing. |
+| `/pagle dev endsession` | Ends the open Session now, as if its gap had passed (LOG-R62): `SessionEnded` fires and the Session summary card shows (it needs a moment raised in the Session, ANN-R53). It adds nothing to the log. A later Cast that the gap still puts in the same Session opens it again (`SessionStarted` with the same ID); a `/reload` within the gap finds it ended. |
+| `/pagle dev catch <itemID> [areaID]` | Appends one synthetic caught Cast of one item, for the logged-in character, at the server time now, through Core's real append path: the Session events, the projections live, then `Catch` and `CastEnded`, so every Module's moments fire as for a real Catch. No fishing signal is played: no `CastStarted`, so QoL leases nothing. The area defaults to the current one; a zone's areaID records that zone with no subzone, a subzone's records it in its zone. **Only on a test log** (`PagleLog.test == true`, [catch-log.md › Data](../spec/core/catch-log.md#data)); on a real log it refuses with one line and appends nothing. |
+
+They're ordinary `/pagle` subcommands, so they follow the restriction rules: in combat the lanes and cards hold what the commands raise (ANN-R35).
+
 ## Protocol
 
 1. **Ask for one action.** Tell the dev exactly what to do in the game: `/reload`, log out to the character screen, or quit. Say which one; the write timing below decides it.

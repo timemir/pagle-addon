@@ -30,8 +30,13 @@ ns.FISHING_GRACE = 2
 --- be written) and how a Core event is fired.
 ---@class PagleFishingDeps
 ---@field isFishingSpell fun(spellID: integer?): boolean
----@field record fun(outcome: "caught"|"gotAway", items: PagleLootItem[], startedAt: number?): PagleCast?
+---@field record fun(outcome: "caught"|"gotAway", items: PagleLootItem[], startedAt: number?, area: PagleDevArea?): PagleCast?
 ---@field fire fun(event: string, ...: any)
+
+--- The area a synthetic Cast (`/pagle dev catch`, #247) is recorded in instead of the current one.
+---@class PagleDevArea
+---@field zone integer
+---@field subzone integer
 
 --- The Cast in progress: when its channel started (nil for loot with no channel seen) and stopped.
 ---@class PagleCastInProgress
@@ -83,6 +88,23 @@ local function expire(self, now)
 	end
 end
 
+-- Tells Modules about a recorded Cast (LOG-R9): Catch per item, then CastEnded.
+---@param self PagleFishing
+---@param outcome "caught"|"gotAway"
+---@param cast PagleCast
+local function tell(self, outcome, cast)
+	for _, item in ipairs(cast.items) do
+		self.deps.fire("Catch", {
+			catchId = item.catchId,
+			itemID = item.itemID,
+			quantity = item.quantity,
+			n = item.n,
+			cast = cast,
+		})
+	end
+	self.deps.fire("CastEnded", outcome, cast)
+end
+
 -- Ends the Cast in progress (or one with no channel seen) caught or got away, in LOG-R9's order: record it (the
 -- snapshot, then the entry), fire Catch per item then CastEnded, then set the state. A Cast ends once: it is gone
 -- before anything is recorded, so a later signal for it is ignored (LOG-R7).
@@ -94,16 +116,7 @@ local function finish(self, outcome, items)
 	self.cast = nil
 	local ok, cast = pcall(self.deps.record, outcome, items, startedAt)
 	if ok and cast then
-		for _, item in ipairs(cast.items) do
-			self.deps.fire("Catch", {
-				catchId = item.catchId,
-				itemID = item.itemID,
-				quantity = item.quantity,
-				n = item.n,
-				cast = cast,
-			})
-		end
-		self.deps.fire("CastEnded", outcome, cast)
+		tell(self, outcome, cast)
 	end
 	setState(self, restingState(self))
 	if not ok then
@@ -197,6 +210,20 @@ function Fishing:Escaped(now)
 	if self.cast then
 		finish(self, "gotAway", {})
 	end
+end
+
+--- `/pagle dev catch` (#247): records a synthetic caught Cast of `items` through the real append path, in `area` or
+--- the current one, and tells Modules as for a real Catch (LOG-R9 from step 1). No fishing signal is involved: no
+--- CastStarted, no state change, and a Cast in progress goes on. Returns the record, or nil before PLAYER_LOGIN.
+---@param items PagleLootItem[]
+---@param area PagleDevArea?
+---@return PagleCast?
+function Fishing:RecordSynthetic(items, area)
+	local cast = self.deps.record("caught", items, nil, area)
+	if cast then
+		tell(self, "caught", cast)
+	end
+	return cast
 end
 
 --- The fishing state now (LOG-R2, LOG-R3). A Cast stays channeling through its grace time, until it ends.

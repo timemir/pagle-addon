@@ -232,8 +232,11 @@ PagleLog = {
       firstSeen = 1791731680, lastSeen = 1791735000 },
   },
   entries = { "C1|1|1791731747|0|c|494|1439|1|148|453|86|25|263|||6358x1", ... },
+  test = true,           -- only on a test log (see below); absent on a player's log
 }
 ```
+
+`test = true` marks a **test log**: one the test-log tooling wrote for the dev, never one a player fished. Only on a test log does `/pagle dev catch` append synthetic Casts ([in-game verification › Dev commands](../../agents/in-game-verification.md#dev-commands)). A test log is never a release concern: 1.0's freeze rules (LOG-R17) don't apply to it. A format change (LOG-R18) starts a new log without the flag.
 
 ### Entry formats
 
@@ -260,6 +263,7 @@ The ADR 0003 and ADR 0008 notes sketch `B1`, `U1` and `A1` without the shared he
 | `global.lastBuild` | `{ logId, build }`, the last logged build number (LOG-R36) |
 | `global.lastEndedSession` | the ID of the last Session `SessionEnded` fired for (LOG-R63) |
 | `global.decodeErrors` | count of entries the codec couldn't decode (LOG-R16) |
+| `global.dev` | boolean, the `/pagle dev` switch (#247); default `false`. Never shown to players. |
 | `global.diagnostics` | ring buffer of up to 500 entries (LOG-R81) |
 | `global.summary`, `global.pending`, `global.cards`, `global.writeUp` | Announcement data ([announcements.md](announcements.md#data)) |
 | `global.coins`, `global.goods` | the wallet ([wallet-and-shop.md](wallet-and-shop.md#data)) |

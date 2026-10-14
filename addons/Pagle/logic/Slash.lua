@@ -4,8 +4,8 @@ local ns = select(2, ...)
 -- /pagle as data (CORE-R60–R62): which subcommand a line names, the Modules' subcommands and the help list. Pure
 -- logic, everything passed in (CORE-R7); adapter/Slash.lua registers the command and acts on what this resolves.
 
---- Core's own subcommands, reserved for it (CORE-R61).
-ns.SLASH_RESERVED = { "help", "settings", "shop", "report" }
+--- Core's own subcommands, reserved for it (CORE-R61), and its hidden `dev` (#247), which help never lists.
+ns.SLASH_RESERVED = { "help", "settings", "shop", "report", "dev" }
 
 --- Splits what follows `/pagle` into its subcommand, lowercased, and the rest of the line, trimmed (CORE-R62).
 ---@param line string
@@ -88,13 +88,15 @@ end
 --- Module subcommand it names and the rest of the line, trimmed; otherwise `"help"`. That covers `help`, an unknown
 --- name, and `shop` and `report` until their surfaces exist (M4, M3).
 ---@param line string what follows /pagle
----@return "settings"|"module"|"help" action
+---@return "settings"|"module"|"dev"|"help" action
 ---@return PagleSlashCommand? command
 ---@return string? args
 function Commands:Resolve(line)
 	local name, args = ns.ParseSlash(line)
 	if name == "" or name == "settings" then
 		return "settings"
+	elseif name == "dev" then
+		return "dev", nil, args -- #247: hidden, never in the help list
 	end
 	local command = self.byName[name]
 	if command then
@@ -135,10 +137,13 @@ end
 ---@param openSettings fun() opens the Settings root (Pagle.OpenSettings, which prints CORE-R33's line instead while restricted)
 ---@param call fun(fn: function, ...: any) calls a Module's function; an error is reported, not raised (securecallfunction)
 ---@param print fun(line: string) prints a chat line
-function Commands:Run(line, openSettings, call, print)
+---@param dev fun(args: string) runs `/pagle dev <args>` (ns.dev:Run, #247), through `call` too
+function Commands:Run(line, openSettings, call, print, dev)
 	local action, command, args = self:Resolve(line)
 	if action == "settings" then
 		openSettings()
+	elseif action == "dev" then
+		call(dev, args)
 	elseif command then
 		call(command.fn, args)
 	else
