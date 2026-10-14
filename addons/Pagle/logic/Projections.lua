@@ -45,6 +45,7 @@ ns.PROJECTION_BUDGET = 4
 ---@class PagleProjection
 ---@field package def PagleProjectionDef
 ---@field package iterate fun(afterSeq: integer): fun(): PagleRecord?
+---@field package module string?      -- the Module whose records it gets (LOG-R41); nil for Core's own
 ---@field package machinery PagleProjections
 ---@field package state table?         -- the state apply builds
 ---@field package updating boolean     -- not caught up: before Start, and while catching up or rebuilding
@@ -118,11 +119,13 @@ end
 
 --- Binds a projection to `def.db` (LOG-R70). It counts as updating until its first catch-up or rebuild finishes,
 --- which starts at `Start`, or at once when added after it. Returns nil and why for a def the contract refuses.
+--- It gets the Module records of `module` only, which `iterate` yields too (LOG-R41); others pass it by.
 ---@param def PagleProjectionDef
 ---@param iterate fun(afterSeq: integer): fun(): PagleRecord? the Module's records after a seq (M:IterateCatches)
+---@param module string? the Module's def.name; nil for Core's own projections, which get no Module records
 ---@return PagleProjection? projection
 ---@return string? problem
-function Projections:Add(def, iterate)
+function Projections:Add(def, iterate, module)
 	local problem = problemWith(def)
 	if problem then
 		return nil, problem
@@ -131,6 +134,7 @@ function Projections:Add(def, iterate)
 	local projection = setmetatable({
 		def = def,
 		iterate = iterate,
+		module = module,
 		machinery = self,
 		state = type(db.projection) == "table" and db.projection or nil,
 		updating = true,
@@ -268,6 +272,8 @@ function Projections:advance(projection)
 			return true
 		end
 		if record == nil then
+			-- Read to the log's end: another Module's records it passed by count as reached (LOG-R41).
+			projection.def.db.lastSeq = math.max(projection.def.db.lastSeq, run.liveTo)
 			projection.run = nil
 			return false
 		end
@@ -377,7 +383,8 @@ end
 
 --- Hands a just-appended entry to every projection (LOG-R73, LOG-R74): one that is up to date applies it as
 --- `"live"` now and sets `lastSeq`; one that is updating, or still applying the entries appended during its update,
---- reads it back from the log as `"live"` when it gets there.
+--- reads it back from the log as `"live"` when it gets there. A Module record goes only to its Module's projections;
+--- every other one that is up to date just moves `lastSeq` past it (LOG-R41).
 --- Called from inside an apply or a done, it is handed over when that returns (LOG-R40).
 ---@param record PagleRecord
 function Projections:Live(record)
@@ -387,7 +394,11 @@ function Projections:Live(record)
 	end
 	for _, projection in ipairs(self.list) do
 		if not projection.run and not projection.updating and record.seq > projection.def.db.lastSeq then
-			applyOne(projection, record, "live")
+			if record.kind == "module" and record.module ~= projection.module then
+				projection.def.db.lastSeq = record.seq
+			else
+				applyOne(projection, record, "live")
+			end
 		end
 	end
 	self:settle()
@@ -427,18 +438,19 @@ end
 --- Core's adapter and FakePagle publish the same methods.
 ---@param registry PagleModuleRegistry
 ---@param projections PagleProjections
----@param iterate fun(afterSeq: integer?): fun(): PagleRecord? the log's records after a seq (Pagle.IterateCatches)
+---@param iterate fun(afterSeq: integer?, module: string?): fun(): PagleRecord? the log's records after a seq, with
+--- the Module records of `module` (PagleHost.iterate)
 function ns.AddProjectionMethods(registry, projections, iterate)
 	---@class PagleModuleHandle
 	local ModuleHandle = ns.ModuleHandle
 
 	--- Walks the log's records with `seq > afterSeq` (0 if nil), up to its length now, in order (LOG-R42): what
-	--- `Pagle.IterateCatches` yields, plus, from M7, this Module's own Module records.
+	--- `Pagle.IterateCatches` yields, plus this Module's own Module records, never another Module's (LOG-R41).
 	---@param afterSeq integer?
 	---@return fun(): PagleRecord?
 	function ModuleHandle:IterateCatches(afterSeq)
-		registry:ModuleCalling(self, "IterateCatches", "afterSeq")
-		return iterate(afterSeq)
+		local module = registry:ModuleCalling(self, "IterateCatches", "afterSeq")
+		return iterate(afterSeq, module.def.name)
 	end
 
 	--- Binds a projection to `def.db`, a table in the Module's SavedVariables that Core owns from now on (LOG-R70).
@@ -447,10 +459,10 @@ function ns.AddProjectionMethods(registry, projections, iterate)
 	---@param def PagleProjectionDef
 	---@return PagleProjection
 	function ModuleHandle:NewProjection(def)
-		registry:ModuleCalling(self, "NewProjection", "def")
+		local module = registry:ModuleCalling(self, "NewProjection", "def")
 		local projection, problem = projections:Add(def, function(afterSeq)
 			return self:IterateCatches(afterSeq)
-		end)
+		end, module.def.name)
 		if not projection then
 			error(problem, 2)
 		end

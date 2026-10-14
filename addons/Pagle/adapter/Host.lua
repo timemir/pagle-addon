@@ -31,8 +31,9 @@ ns.host = {
 	fingerprint = function()
 		return Pagle.CONTENT_FINGERPRINT
 	end,
-	iterate = function(afterSeq)
-		return Pagle.IterateCatches(afterSeq)
+	-- Pagle.IterateCatches, plus the Module records of `module` if given (M:IterateCatches, LOG-R41, LOG-R42).
+	iterate = function(afterSeq, module)
+		return ns.catchLog:Iterate(afterSeq, module)
 	end,
 	serverTime = function()
 		return GetServerTime()
