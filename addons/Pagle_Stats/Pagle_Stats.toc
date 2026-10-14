@@ -22,6 +22,8 @@ logic\Odds.lua
 logic\DrySpell.lua
 logic\Book.lua
 logic\Home.lua
+logic\Item.lua
+logic\Search.lua
 adapter\Text.lua
 adapter\BookWidgets.lua
 adapter\Book.lua
