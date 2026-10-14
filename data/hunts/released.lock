@@ -1,0 +1,4 @@
+# The release lock (DATA-R95, ADR 0005): each released Hunt's hash and retired date, and the members of each class a
+# released Hunt targets. Written by scripts/generate-data.py --lock; don't edit it by hand.
+# Run --lock only when a release is tagged, from 1.0 on, and never before: this file stays empty until the 1.0 tag
+# (DATA-R73). The generator fails when data/hunts/hunts.toml breaks it (DATA-R96).

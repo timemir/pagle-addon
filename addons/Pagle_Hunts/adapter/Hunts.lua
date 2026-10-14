@@ -26,6 +26,15 @@ function ns.Hunts.OnInitialize()
 
 	--- The Hunt list at runtime (HNT-R1): every file has loaded by now, data\HuntList.lua and the lore included.
 	ns.hunts = ns.NewHuntList(ns.huntList, ns.L)
+	--- Where each Hunt bites (HNT-R30–R34): worked out here, once per load, where the catalogue is ready (CORE-R10).
+	ns.where = ns.NewWhere(ns.hunts, {
+		GetItem = Pagle.GetItem,
+		GetZones = Pagle.GetZones,
+		GetZoneCatches = Pagle.GetZoneCatches,
+		GetZoneOf = Pagle.GetZoneOf,
+		GetArea = Pagle.GetArea,
+		GetWindowSpec = Pagle.GetWindowSpec,
+	})
 
 	-- Calendar event names for the conditions line, looked up once this login (HNT-R53).
 	ns.StartNames()
