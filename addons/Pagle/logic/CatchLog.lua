@@ -12,12 +12,12 @@ local ns = select(2, ...)
 ---@field char integer           -- index into Angler.characters
 ---@field time integer           -- server time
 
---- A Cast (`C1`). Records carry `size` from M4 (LOG-R65).
+--- A Cast (`C1`). A Species item carries its Simulated Size as `size` (LOG-R65).
 ---@class PagleCast : PagleRecord
 ---@field outcome "caught"|"gotAway"
 ---@field session string         -- its Session's ID (LOG-R98)
 ---@field conditions ConditionsSnapshot
----@field items { n: integer, itemID: integer, quantity: integer, catchId: string }[]
+---@field items { n: integer, itemID: integer, quantity: integer, catchId: string, size: PagleSize? }[]
 
 --- A Skill Reading (`S1`, LOG-R31).
 ---@class PagleSkillReading : PagleRecord
@@ -280,12 +280,15 @@ local kinds = {
 ---@type table<string, string>
 local TAGS = { cast = "C1", skill = "S1", build = "B1", prestige = "P1", purchase = "U1" }
 
--- Decodes one entry string into a typed record, or nil if the codec can't read it (LOG-R16).
+-- Decodes one entry string into a typed record, or nil if the codec can't read it (LOG-R16). With `getItem`, each
+-- item of a Cast carries its Simulated Size, from its Catch ID and the catalogue now (LOG-R65); item 0 is never
+-- looked up.
 ---@param entry any
 ---@param seq integer
 ---@param characters table[]
+---@param getItem (fun(itemID: integer): PagleItem?)?
 ---@return PagleRecord?
-local function decode(entry, seq, characters)
+local function decode(entry, seq, characters, getItem)
 	if type(entry) ~= "string" then
 		return nil
 	end
@@ -308,6 +311,13 @@ local function decode(entry, seq, characters)
 	}
 	if not codec.decode(record, { unpack(f, 5) }) then
 		return nil
+	end
+	if getItem and record.kind == "cast" then
+		for _, item in ipairs(record.items) do
+			if item.itemID ~= 0 then
+				item.size = ns.SizeOf(item.catchId, getItem(item.itemID))
+			end
+		end
 	end
 	return record
 end
@@ -370,6 +380,7 @@ end
 ---@field package cutters table<integer, PagleSessionCutter> a cutter fed up to each seq a read started or ended at
 ---@field package tail PagleSessionCutter? fed every entry up to the log's end, once something needs it (Append)
 ---@field package prestiges integer? the Prestiges in the log, once something needs them (Prestiges)
+---@field package getItem (fun(itemID: integer): PagleItem?)? the catalogue the Casts it hands out are sized by (LOG-R65)
 local CatchLog = {}
 CatchLog.__index = CatchLog
 
@@ -423,7 +434,7 @@ function CatchLog:Iterate(afterSeq)
 	return function()
 		while seq < last do
 			seq = seq + 1
-			local record = decode(entries[seq], seq, characters)
+			local record = decode(entries[seq], seq, characters, self.getItem)
 			if record then
 				cutter:Add(record)
 				return record
@@ -454,7 +465,7 @@ function CatchLog:Reverse(kind, fromSeq)
 			local entry = entries[seq]
 			local codec = type(entry) == "string" and kinds[string.match(entry, "^[^|]*")]
 			if codec and codec.kind == kind then
-				local record = decode(entry, seq, characters)
+				local record = decode(entry, seq, characters, self.getItem)
 				if record then
 					return record
 				end
@@ -484,7 +495,7 @@ function CatchLog:Append(record)
 		local header = { tag, integerField(record.char), integerField(record.time), integerField(tie) }
 		return table.concat(header, "|") .. "|" .. table.concat(fields, "|")
 	end)
-	local appended = ok and decode(entry, seq, self.data.characters)
+	local appended = ok and decode(entry, seq, self.data.characters, self.getItem)
 	if not appended then
 		error(("the Catch log can't write this %s record"):format(tostring(record.kind)), 2)
 	end
@@ -540,13 +551,15 @@ end
 --- Opens the Catch log stored in `saved`, the PagleLog SavedVariable (LOG-R10). A fresh install (`saved` nil)
 --- starts an empty log. A log in another format than the codec's starts a new one, keeping its characters
 --- (LOG-R18); `started` says so, for the chat line. The logId is created once the log has a first character
---- (LOG-R15).
+--- (LOG-R15). Every Cast it hands out sizes its Species items through `getItem`, the catalogue's GetItem, asked at
+--- each decode, so a released catalogue sizes them from then on (LOG-R65, LOG-R96); without it, no item has a size.
 ---@param saved table?
 ---@param global table PagleDB.global, where undecodable entries are counted (LOG-R16)
 ---@param now integer server time
+---@param getItem (fun(itemID: integer): PagleItem?)?
 ---@return PagleCatchLog catchLog
 ---@return boolean started true when a log in another format was set aside for a new one
-function ns.OpenCatchLog(saved, global, now)
+function ns.OpenCatchLog(saved, global, now, getItem)
 	local started = false
 	local data = saved
 	if type(data) ~= "table" then
@@ -560,5 +573,6 @@ function ns.OpenCatchLog(saved, global, now)
 		started = true
 	end
 	ensureLogId(data, now)
-	return setmetatable({ data = data, global = global, undecodable = {}, cutters = {} }, CatchLog), started
+	local catchLog = { data = data, global = global, undecodable = {}, cutters = {}, getItem = getItem }
+	return setmetatable(catchLog, CatchLog), started
 end
