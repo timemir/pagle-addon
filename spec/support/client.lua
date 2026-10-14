@@ -38,6 +38,12 @@
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local widgets = dofile("spec/support/widgets.lua")
+
+-- The templates Pagle uses that anchor a frame over all of its parent (setAllPoints="true"), in FrameXML at Gethe/
+-- wow-ui-source branch forever, 943764493e6b16d63ded3ab304150d1f05e58b57 ("1.60.1 (70338)"): NineSlicePanelTemplate
+-- (Blizzard_SharedXML/Mainline/SharedUIPanelTemplates.xml, line 381), which DialogBorderNoCenterTemplate and so
+-- DialogBorderTemplate inherit (Blizzard_SharedXML/Shared/Dialog/DialogTemplates.xml, lines 63 and 69).
+local SET_ALL_POINTS = { DialogBorderTemplate = true }
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local newSecureCall = dofile("spec/support/securecall.lua")
 
@@ -76,10 +82,14 @@ end
 local function clientStubs(client)
 	local stubs
 	stubs = {
-		-- As the client's, a named frame is also the global of that name, and keeps its template.
+		-- As the client's, a named frame is also the global of that name, and keeps its template. A template that sets
+		-- all points (SET_ALL_POINTS) starts it anchored over all of its parent.
 		CreateFrame = function(frameType, name, parent, template)
 			local frame = widgets.newFrame(client, frameType, parent)
 			frame.name, frame.template = name, template
+			if SET_ALL_POINTS[template] then
+				frame:SetAllPoints(parent)
+			end
 			if name then
 				stubs[name] = frame
 			end
@@ -319,6 +329,8 @@ local function clientStubs(client)
 		end
 	end
 	stubs.UIErrorsFrame = widgets.newWidget("MessageFrame", stubs.UIParent)
+	-- A 1920×1080 screen at UI scale 1.
+	stubs.UIParent:SetSize(1920, 1080)
 	return stubs
 end
 

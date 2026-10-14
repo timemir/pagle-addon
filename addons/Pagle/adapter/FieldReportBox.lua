@@ -15,7 +15,8 @@ local L = ns.L
 
 -- The frame's global name: UISpecialFrames takes names, and Esc hides the frames it lists.
 local FRAME_NAME = "PagleFieldReport"
-local WIDTH, HEIGHT = 600, 480
+-- Fixed, whatever the report's length: the text scrolls inside it (REP-R47).
+local WIDTH, HEIGHT = 520, 360
 -- The report text's area: from under the privacy line down to the part controls.
 local TEXT_TOP, TEXT_BOTTOM = -70, 110
 
@@ -106,9 +107,13 @@ end
 -- ("1.60.1 (70338)"), Interface/AddOns/Blizzard_SharedXML/: DialogBorderTemplate (Shared/Dialog/DialogTemplates.xml),
 -- UIPanelScrollFrameTemplate (SecureScrollTemplates.xml) and InputBoxTemplate (Shared/InputBox/InputBoxTemplates.xml),
 -- which Blizzard_SharedXML.toc loads for every game type, and UIPanelButtonTemplate, as Core's cards use it.
+-- DialogBorderTemplate inherits NineSlicePanelTemplate's setAllPoints="true" (Mainline/SharedUIPanelTemplates.xml,
+-- line 381), so the frame starts anchored over all of UIParent: those anchors go before it takes its own size, or
+-- it fills the screen (#250, REP-R47).
 ---@return PagleFieldReportBox
 local function build()
 	local frame = CreateFrame("Frame", FRAME_NAME, UIParent, "DialogBorderTemplate") --[[@as PagleFieldReportBox]]
+	frame:ClearAllPoints()
 	frame:SetSize(WIDTH, HEIGHT)
 	frame:SetPoint("CENTER")
 	frame:SetFrameStrata("DIALOG")

@@ -1,5 +1,5 @@
 -- The Field report box and its entry points (field-report.md › Privacy, › The box and its entry points; REP-R37,
--- REP-R40–R46, REP-R93; CORE-R33, CORE-R40, CORE-R50, CORE-R61; settings.md SET-R10, SET-R12).
+-- REP-R40–R47, REP-R93; CORE-R33, CORE-R40, CORE-R50, CORE-R61; settings.md SET-R10, SET-R12).
 
 local URL = "https://github.com/timemir/wow-fish/issues/new?template=field-report.yml"
 
@@ -224,6 +224,35 @@ local function compartmentMenu(loaded)
 	loaded.client.runTimers()
 	return assert(loaded.client.menus[opened + 1])
 end
+
+describe("The Field report box's size (REP-R47)", function()
+	-- The box opened over `rows` Casts in Darkshore, each of an Uncharted item no catalogue will have, so it shows one
+	-- I row each (REP-R10, REP-R20).
+	local function opened(rows)
+		local entries = { BUILD_ENTRY }
+		for i = 1, rows do
+			entries[#entries + 1] = castEntry(FIRST + i, 900000 + i, 0)
+		end
+		local loaded = enterWorld(loadCore(entries), 2)
+		loaded.env.Pagle.OpenFieldReport()
+		local frame = assert(box(loaded))
+		local _, shown = frame.text:GetText():gsub("\nI ", "")
+		assert.are.equal(rows, shown)
+		return frame
+	end
+
+	it("is 520 × 360 and centred, whether the report has 1 row or 300, and the text scrolls inside it", function()
+		for _, rows in ipairs({ 1, 300 }) do
+			local frame = opened(rows)
+
+			assert.are.same({ 520, 360 }, { frame:GetSize() }, rows .. " rows")
+			assert.are.same({ { "CENTER" } }, frame.points, "anchored only at its centre, never over the screen")
+			assert.are.equal(frame.text, frame.scroll.scrollChild, "the text scrolls in the scroll frame")
+			local width, height = frame.scroll:GetSize()
+			assert.is_true(width < 520 and height < 360, "the scroll frame sits inside the box")
+		end
+	end)
+end)
 
 describe("The compartment menu's Help chart the waters entry (CORE-R50, REP-R43)", function()
 	it("reads Help chart the waters (3) at a count of 3, between the Curio Shop and Settings (CORE-R50)", function()
