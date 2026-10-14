@@ -258,8 +258,8 @@ describe("Stars", function()
 			assert.are.same({ ELWYNN }, starredAt(STRAY, { 0, 0, ELWYNN }))
 		end)
 
-		it("gives a Legend a Species' stars until M4's Legend class: on no list, one zone (LED-R4, LED-R45)", function()
-			assert.are.same({ WESTFALL }, starredAt(LEGEND, { WESTFALL, ELWYNN }))
+		it("gives a Legend no stars: it is never a Species, wherever it is caught (LED-R63, LED-R5)", function()
+			assert.are.same({}, starredAt(LEGEND, { WESTFALL, ELWYNN, DUSKWOOD, REDRIDGE }))
 		end)
 	end)
 

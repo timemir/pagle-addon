@@ -10,12 +10,14 @@ local ns = select(2, ...)
 -- Catch XP, new Species, Species in a zone, first Catch in a zone and Skill Milestones, Fresh Water, the first climb,
 -- Skill Milestones, lifetime Catches as a count, and Coins for level-ups and new Species. M3's catches (LED-R4): the
 -- Uncharted list (LED-R64), the collections' items (LED-R60, LED-R61) with their XP and Coins, and first-Catch facts.
+-- M4's catches (LED-R4): the Legend class (LED-R63, logic/Legends.lua) and Catch Milestones (LED-R42,
+-- logic/CatchMilestones.lua).
 
 --- A realm date (LOG-R49), as the Journal prints it.
 ---@alias LedgerDate { year: integer, month: integer, day: integer }
 
---- The Ledger's projection state (ledger.md › Data, LedgerState), holding what M2 and M3's catches fill. Levels, XP
---- into the level and Fresh Water shown are computed from it (logic/Progress.lua), never stored.
+--- The Ledger's projection state (ledger.md › Data, LedgerState), holding what M2, M3 and M4's catches fill. Levels,
+--- XP into the level and Fresh Water shown are computed from it (logic/Progress.lua), never stored.
 ---@class LedgerState
 ---@field casts integer                       -- caught and got-away Casts applied (LED-R93)
 ---@field catches integer                     -- lifetime Catches (LED-R42)
@@ -26,13 +28,14 @@ local ns = select(2, ...)
 ---@field firstDate? LedgerDate               -- realm date of the first Catch of any class (LED-R146)
 ---@field coins integer                       -- lifetime Coins earned (LED-R88)
 ---@field skill { [integer]: integer }        -- Skill Milestone threshold -> time credited (LED-R40)
----@field species { [integer]: LedgerSpecies } -- by Species ID (LED-R5)
----@field items { [integer]: LedgerFirst }    -- trophy and curio items, by item ID (LED-R60)
+---@field milestones { [integer]: integer }   -- Catch Milestone -> time reached (LED-R42)
+---@field species { [integer]: LedgerSpecies } -- by Species ID (LED-R5); Species Catches only, never Legends
+---@field items { [integer]: LedgerFirst }    -- trophy, curio and Legend items, by item ID (LED-R60, LED-R63)
 ---@field uncharted { [integer]: LedgerFirst } -- Uncharted item IDs, with zones (LED-R64)
 ---@field zones { [integer]: LedgerZone }     -- every zone fished, never 0 (LED-R6)
 
 --- An item's Catches and its first Catch (ledger.md › Data, LedgerFirst): that Cast's time, character, zone and realm
---- date. Legends' `record` and `since` are M4's.
+--- date. Legend items' `record` and `since` come with Simulated Size records (LED-R80).
 ---@class LedgerFirst
 ---@field n integer                           -- Catches of the item
 ---@field time integer
@@ -64,12 +67,13 @@ local ns = select(2, ...)
 --- Coins (LED-R88; 0 when it pays none). Tickets #101 and #102 turn M2's kinds into moments and Write-up lines, ticket
 --- #137 M3's; the fold never reads the celebrated set (LED-R3).
 ---@class LedgerAchievement
----@field kind "levelUp"|"newSpecies"|"newInZone"|"skillMilestone"|"newCurio"|"trophyWeight"|"uncharted"|"elementStar"|"regularStar"|"familyStar"|"zoneRank"
+---@field kind "levelUp"|"newSpecies"|"newInZone"|"skillMilestone"|"newCurio"|"trophyWeight"|"uncharted"|"elementStar"|"regularStar"|"familyStar"|"zoneRank"|"legend"|"catchMilestone"
 ---@field cast? string
 ---@field coins integer
 ---@field levels? integer[]                   -- levelUp: the levels it raised, ascending
+---@field n? integer                          -- catchMilestone: the lifetime Catches it marks (LED-R42)
 ---@field species? integer                    -- newSpecies, newInZone, elementStar, regularStar: the Species ID
----@field itemID? integer                     -- the item caught, for every Catch's kind but familyStar
+---@field itemID? integer                     -- the item caught, for every Catch's kind but familyStar and catchMilestone
 ---@field zone? integer                       -- newSpecies, newInZone, zoneRank: the Cast's zone
 ---@field ranks? integer[]                    -- zoneRank: the Zone Mastery ranks it passed, ascending (LED-R51)
 ---@field threshold? integer                  -- skillMilestone
@@ -91,7 +95,7 @@ local ns = select(2, ...)
 ---@field apply fun(state: LedgerState, record: PagleRecord, mode: PagleApplyMode, earned: LedgerAchievement[]?): LedgerAchievement[]
 
 --- The Ledger's rules version (LED-R2, LED-R4, Tunables): 1 in M2, 2 in M3, 3 in M4, then +1 per change.
-ns.LEDGER_RULES_VERSION = 2
+ns.LEDGER_RULES_VERSION = 3
 
 -- XP (LED-R20, Tunables), M2's rows and M3's curio items and trophy weights.
 local CATCH_XP = 10
@@ -149,6 +153,8 @@ local function firstCatch(record)
 		date = copyDate(record.conditions.date),
 	}
 end
+--- A first Catch's facts (ledger.md › Data, LedgerFirst), with no Catch counted yet: for logic/Legends.lua.
+ns.FirstCatch = firstCatch
 
 -- An Uncharted Catch (LED-R64): its item's count, first Catch and Catches per zone (zone 0 left out), and an
 -- `uncharted` achievement at its first Catch, paying nothing (LED-R88).
@@ -172,10 +178,10 @@ local function creditUncharted(state, record, itemID, earned)
 end
 
 --- The class of one Catch (LED-R5), first match wins: "zero" (item 0), "uncharted" (GetItem knows nothing),
---- "noise", "species", "trophy", "curio" or "other". M2 has no Legend class: a Legend counts as its category (LED-R4).
+--- "noise", "legend", "species", "trophy", "curio" or "other". A Legend is never also a Species (M4's class, LED-R4).
 ---@param itemID integer
 ---@param item PagleItem?
----@return "zero"|"uncharted"|"noise"|"species"|"trophy"|"curio"|"other"
+---@return "zero"|"uncharted"|"noise"|"legend"|"species"|"trophy"|"curio"|"other"
 function ns.ClassifyCatch(itemID, item)
 	if itemID == 0 then
 		return "zero"
@@ -183,6 +189,8 @@ function ns.ClassifyCatch(itemID, item)
 		return "uncharted"
 	elseif item.noise then
 		return "noise"
+	elseif item.legend then
+		return "legend"
 	end
 	local category = item.category
 	if category == "fish" or category == "questFish" then
@@ -206,6 +214,7 @@ local function reset()
 		fresh = ns.FRESH_WATER_CAP,
 		coins = 0,
 		skill = {},
+		milestones = {},
 		species = {},
 		items = {},
 		uncharted = {},
@@ -223,7 +232,8 @@ function ns.NewLedgerFold(lookups)
 	local world = lookups.world
 	local stars = ns.NewStarsFold(lookups)
 
-	-- The greatest `weight` among a trophy family's items landed so far, nil when none is (LED-R61).
+	-- The greatest `weight` among a trophy family's items landed so far, nil when none is (LED-R61). `state.items` holds
+	-- Legend items too, which are never trophies (LED-R5).
 	---@param state LedgerState
 	---@param family integer?
 	---@return number?
@@ -231,7 +241,7 @@ function ns.NewLedgerFold(lookups)
 		local heaviest
 		for itemID in pairs(state.items) do
 			local item = getItem(itemID)
-			if item and item.category == "trophy" and item.family == family then
+			if item and ns.ClassifyCatch(itemID, item) == "trophy" and item.family == family then
 				local weight = item.weight or 0
 				heaviest = heaviest and math.max(heaviest, weight) or weight
 			end
@@ -289,6 +299,7 @@ function ns.NewLedgerFold(lookups)
 			local item = itemID ~= 0 and getItem(itemID) or nil
 			-- The base, for every class (LED-R5): lifetime Catches, Catch XP with Fresh Water, the zone fished.
 			state.catches = state.catches + 1
+			ns.CreditCatchMilestones(state, record, earned)
 			state.xp = state.xp + CATCH_XP * spendFreshWater(state, record.time)
 			state.firstDate = state.firstDate or copyDate(record.conditions.date)
 			local zoneState
@@ -308,6 +319,8 @@ function ns.NewLedgerFold(lookups)
 				creditUncharted(state, record, itemID, earned)
 			elseif item and (class == "trophy" or class == "curio") then
 				creditItem(state, record, itemID, item, earned)
+			elseif class == "legend" then
+				ns.CreditLegend(state, record, itemID, earned)
 			elseif id then
 				local species = state.species[id]
 				local new = not species

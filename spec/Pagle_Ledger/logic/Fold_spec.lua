@@ -4,6 +4,10 @@
 
 -- The fixture catalogue: what GetItem returns for each item ID (LOG-R55). Unlisted IDs are Uncharted.
 local MACKEREL, SMALLFISH, LEGEND, NOISE = 6303, 6291, 19803, 6358
+-- Two more Legends: one listed beside LEGEND, and a removed one, on no list (LED-R10, LED-R12, DATA-R26).
+local LEGEND_2, REMOVED_LEGEND = 19805, 19806
+-- A Legend flagged on a trophy item of family 2, heavier than its weights: still a Legend (LED-R5).
+local TROPHY_LEGEND = 19807
 local TROPHY, JUNK, CHEST, TREASURE, OTHER, UNCHARTED = 13901, 6309, 6307, 6308, 4592, 99999
 -- One trophy family's three weights, in pounds (LED-R61).
 local TROPHY40, TROPHY60, TROPHY50 = 13876, 13877, 13878
@@ -18,6 +22,24 @@ local ITEMS = {
 		pool = true,
 	},
 	[LEGEND] = { category = "fish", species = LEGEND, legend = true, noise = false, removed = false, pool = false },
+	[LEGEND_2] = { category = "fish", species = LEGEND_2, legend = true, noise = false, removed = false, pool = false },
+	[REMOVED_LEGEND] = {
+		category = "fish",
+		species = REMOVED_LEGEND,
+		legend = true,
+		noise = false,
+		removed = true,
+		pool = false,
+	},
+	[TROPHY_LEGEND] = {
+		category = "trophy",
+		family = 2,
+		weight = 90,
+		legend = true,
+		noise = false,
+		removed = false,
+		pool = false,
+	},
 	[NOISE] = { category = "fish", species = NOISE, legend = false, noise = true, removed = false, pool = false },
 	[TROPHY] = {
 		category = "trophy",
@@ -158,6 +180,7 @@ describe("The Ledger's fold", function()
 	-- The world index (LED-R10) over the fixture: Mackerel and Smallfish ungated in three zones, so a spec here
 	-- reaches ★★ only with three zones (LED-R45; logic/Stars_spec.lua covers the stars). None of them is a zone the
 	-- specs here fish in, so no Catch here earns a Zone Mastery rank (LED-R50; logic/ZoneMastery_spec.lua has those).
+	-- LEGEND and LEGEND_2 are listed there too, which keeps them off the zone lists but in the Legends' world (LED-R10).
 	local world = ns.NewWorld({
 		GetItem = getItem,
 		GetZones = function()
@@ -167,7 +190,12 @@ describe("The Ledger's fold", function()
 			return { parent = 0, continent = 0, hasData = true, skillBaseConfirmed = true, catches = {} }
 		end,
 		GetZoneCatches = function()
-			return { { itemID = MACKEREL, confirmed = true }, { itemID = SMALLFISH, confirmed = true } }
+			return {
+				{ itemID = MACKEREL, confirmed = true },
+				{ itemID = SMALLFISH, confirmed = true },
+				{ itemID = LEGEND, confirmed = true },
+				{ itemID = LEGEND_2, confirmed = true },
+			}
 		end,
 	})
 
@@ -204,13 +232,16 @@ describe("The Ledger's fold", function()
 	end
 
 	describe("classifying a Catch (LED-R5)", function()
-		it("counts a Legend item as its category's Catch until M4: here a Species (LED-R4, LED-R5)", function()
-			local state, earned = applyAll({ log.cast(T0, 0, { LEGEND }) })
+		it(
+			"never counts a Legend as a Species, though its item is a fish with a Species ID (LED-R4, LED-R5)",
+			function()
+				local state, earned = applyAll({ log.cast(T0, ELWYNN, { LEGEND }) })
 
-			assert.are.equal(1, state.species[LEGEND].n)
-			assert.are.equal("newSpecies", earned[1].kind)
-			assert.are.equal(LEGEND, earned[1].species)
-		end)
+				assert.are.same({}, state.species)
+				assert.are.same({}, state.zones[ELWYNN].species)
+				assert.are.same({ "legend", "levelUp" }, kinds(earned))
+			end
+		)
 
 		it("gives Noise, other and item 0 the base only (LED-R5, LED-R196)", function()
 			local state, earned = applyAll({ log.cast(T0, ELWYNN, { NOISE, OTHER, 0 }) })
@@ -225,19 +256,28 @@ describe("The Ledger's fold", function()
 			assert.is_truthy(state.zones[ELWYNN])
 		end)
 
-		it("classifies first match wins: item 0, Uncharted, Noise, Species, trophy, curio, other (LED-R5)", function()
-			assert.are.equal("zero", ns.ClassifyCatch(0, nil))
-			assert.are.equal("uncharted", ns.ClassifyCatch(UNCHARTED, nil))
-			assert.are.equal("noise", ns.ClassifyCatch(NOISE, ITEMS[NOISE]))
-			assert.are.equal("species", ns.ClassifyCatch(MACKEREL, ITEMS[MACKEREL]))
-			assert.are.equal("species", ns.ClassifyCatch(SMALLFISH, ITEMS[SMALLFISH]))
-			assert.are.equal("species", ns.ClassifyCatch(LEGEND, ITEMS[LEGEND]))
-			assert.are.equal("trophy", ns.ClassifyCatch(TROPHY, ITEMS[TROPHY]))
-			assert.are.equal("curio", ns.ClassifyCatch(JUNK, ITEMS[JUNK]))
-			assert.are.equal("curio", ns.ClassifyCatch(CHEST, ITEMS[CHEST]))
-			assert.are.equal("curio", ns.ClassifyCatch(TREASURE, ITEMS[TREASURE]))
-			assert.are.equal("other", ns.ClassifyCatch(OTHER, ITEMS[OTHER]))
-		end)
+		it(
+			"classifies first match wins: item 0, Uncharted, Noise, Legend, Species, trophy, curio, other (LED-R5)",
+			function()
+				assert.are.equal("zero", ns.ClassifyCatch(0, nil))
+				assert.are.equal("uncharted", ns.ClassifyCatch(UNCHARTED, nil))
+				assert.are.equal("noise", ns.ClassifyCatch(NOISE, ITEMS[NOISE]))
+				-- Noise comes first, even for an item flagged both (DATA-R16 forbids it in the data).
+				local both = { category = "other", legend = true, noise = true, removed = false, pool = false }
+				assert.are.equal("noise", ns.ClassifyCatch(NOISE, both))
+				assert.are.equal("legend", ns.ClassifyCatch(LEGEND, ITEMS[LEGEND]))
+				assert.are.equal("legend", ns.ClassifyCatch(REMOVED_LEGEND, ITEMS[REMOVED_LEGEND]))
+				-- Before every category: a Legend flagged on a trophy item is still a Legend.
+				assert.are.equal("legend", ns.ClassifyCatch(TROPHY_LEGEND, ITEMS[TROPHY_LEGEND]))
+				assert.are.equal("species", ns.ClassifyCatch(MACKEREL, ITEMS[MACKEREL]))
+				assert.are.equal("species", ns.ClassifyCatch(SMALLFISH, ITEMS[SMALLFISH]))
+				assert.are.equal("trophy", ns.ClassifyCatch(TROPHY, ITEMS[TROPHY]))
+				assert.are.equal("curio", ns.ClassifyCatch(JUNK, ITEMS[JUNK]))
+				assert.are.equal("curio", ns.ClassifyCatch(CHEST, ITEMS[CHEST]))
+				assert.are.equal("curio", ns.ClassifyCatch(TREASURE, ITEMS[TREASURE]))
+				assert.are.equal("other", ns.ClassifyCatch(OTHER, ITEMS[OTHER]))
+			end
+		)
 	end)
 
 	describe("the Uncharted list (LED-R64, LED-R196)", function()
@@ -395,6 +435,173 @@ describe("The Ledger's fold", function()
 			assert.are.same({ "trophyWeight", "trophyWeight" }, kinds(earned))
 			assert.is_nil(earned[2].old)
 			assert.are.equal(2, state.items[TROPHY].n)
+		end)
+	end)
+
+	describe("Legends (LED-R63)", function()
+		it(
+			"gives a Legend's first Catch Catch XP, 2,000 XP, 100 Coins and a legend achievement (LED-R20, LED-R88)",
+			function()
+				local first = log.cast(T0, ELWYNN, { LEGEND }, 2)
+				local state, earned = applyAll({ first })
+
+				-- Catch XP doubled under Fresh Water, the zone's first Catch, and the Legend's 2,000 (LED-R20, LED-R22):
+				-- 2,220 XP, past level 2 (1,080) and short of 3 (2,240).
+				assert.are.equal(20 + 200 + 2000, state.xp)
+				assert.are.same({
+					{ kind = "legend", cast = first.id, coins = 100, itemID = LEGEND },
+					{ kind = "levelUp", cast = first.id, coins = 20, levels = { 2 } },
+				}, earned)
+				assert.are.equal(100 + 20, state.coins)
+			end
+		)
+
+		it("keeps the Legend in items as a LedgerFirst, never as a Species (LED-R5, ledger.md › Data)", function()
+			local state = applyAll({
+				log.cast(T0, ELWYNN, { LEGEND }, 2),
+				log.cast(T0 + DAY, WESTFALL, { LEGEND }),
+			})
+
+			assert.are.same({
+				[LEGEND] = { n = 2, time = T0, char = 2, zone = ELWYNN, date = { year = 2026, month = 10, day = 1 } },
+			}, state.items)
+			assert.are.same({}, state.species)
+			-- Its zones are fished (LED-R6), but no Species, item or family of theirs is a Legend (LED-R63).
+			for _, zone in ipairs({ ELWYNN, WESTFALL }) do
+				assert.are.same(
+					{ species = {}, families = {}, items = {}, junk = false, treasure = false, rank = 0 },
+					state.zones[zone]
+				)
+			end
+		end)
+
+		it("gives its second Catch only Catch XP, and no achievement (LED-R20, LED-R63)", function()
+			local state = applyAll({ log.cast(T0, 0, { LEGEND }) })
+			local xp, coins = state.xp, state.coins
+			local _, earned = applyAll({ log.cast(T0 + 60, 0, { LEGEND }) }, "live", state)
+
+			assert.are.equal(xp + 20, state.xp)
+			assert.are.equal(coins, state.coins)
+			assert.are.same({}, earned)
+		end)
+
+		it("earns no star for a Legend, even after 50 Catches in three zones (LED-R63, LED-R45)", function()
+			local records = {}
+			for i = 1, 50 do
+				-- Three zones the world doesn't chart, so no Zone Mastery rank joins in (LED-R54).
+				records[i] = log.cast(T0 + i * 60, ({ ELWYNN, WESTFALL, 33 })[i % 3 + 1], { LEGEND })
+			end
+			local state, earned = applyAll(records)
+
+			for _, achievement in ipairs(earned) do
+				assert.is_true(achievement.kind == "legend" or achievement.kind == "levelUp", achievement.kind)
+			end
+			assert.are.same({}, ns.SpeciesStars(world, state, LEGEND))
+		end)
+
+		it("never counts a Legend on a trophy item as its family's weight (LED-R5, LED-R61, LED-R47)", function()
+			local state, earned = applyAll({ log.cast(T0, 0, { TROPHY_LEGEND }), log.cast(T0 + 60, 0, { TROPHY40 }) })
+
+			assert.are.same({}, ns.FamilyStars(world, applyAll({ log.cast(T0, 0, { TROPHY_LEGEND }) }), 2, getItem))
+			-- The family's first weight: no ruler from the Legend's 90 (LED-R61). The Legend's 2,020 XP reach level 2.
+			assert.are.same({ "legend", "levelUp", "trophyWeight" }, kinds(earned))
+			assert.is_nil(earned[3].old)
+			assert.are.equal(100 + 20 + 5, state.coins)
+		end)
+
+		it(
+			"leaves completion and its Species part as they were, and counts Legends 1 of 2 (LED-R63, LED-R70)",
+			function()
+				local without = applyAll({ log.cast(T0, ELWYNN, { MACKEREL }) })
+				local with = applyAll({
+					log.cast(T0, ELWYNN, { MACKEREL }),
+					log.cast(T0 + 60, ELWYNN, { LEGEND, REMOVED_LEGEND }),
+				})
+				local before = ns.LedgerCompletion(world, without, getItem)
+				local after = ns.LedgerCompletion(world, with, getItem)
+
+				assert.are.same(
+					{ before.percent, before.done, before.total, before.species },
+					{ after.percent, after.done, after.total, after.species }
+				)
+				-- Mackerel of the two listed Species; LEGEND of the two listed Legends, the removed one in neither side.
+				assert.are.same({ done = 1, total = 2 }, after.species)
+				assert.are.same({ done = 0, total = 2 }, before.legends)
+				assert.are.same({ done = 1, total = 2 }, after.legends)
+				assert.are.same({ LEGEND, LEGEND_2, REMOVED_LEGEND }, ns.CollectionWorlds(world, with, getItem).legends)
+			end
+		)
+	end)
+
+	describe("Catch Milestones (LED-R42)", function()
+		-- A state `catches` Catches in, as a log would leave it: every milestone up to there credited, at T0 - DAY.
+		local function stateAt(catches)
+			local state = fold.reset()
+			state.catches = catches
+			for _, n in ipairs({ 1000, 5000, 10000, 25000, 50000 }) do
+				if n <= catches then
+					state.milestones[n] = T0 - DAY
+				end
+			end
+			return state
+		end
+
+		it("credits the 1,000th lifetime Catch with no XP or Coins, and the 1,001st with nothing (LED-R42)", function()
+			local state = stateAt(999)
+			state.fresh = 0
+			local thousandth = log.cast(T0, 0, { OTHER })
+			local _, earned = applyAll({ thousandth }, "live", state)
+
+			assert.are.same({ [1000] = T0 }, state.milestones)
+			assert.are.same({ { kind = "catchMilestone", cast = thousandth.id, coins = 0, n = 1000 } }, earned)
+			-- Catch XP alone, undoubled with no Fresh Water (LED-R20, LED-R88).
+			assert.are.same({ 10, 0 }, { state.xp, state.coins })
+
+			local _, later = applyAll({ log.cast(T0 + 60, 0, { OTHER }) }, "live", state)
+			assert.are.same({}, later)
+			assert.are.same({ [1000] = T0 }, state.milestones)
+		end)
+
+		it("credits a milestone at the Catch that reaches it, in a Cast's item order (LED-R42, LED-R3)", function()
+			local state = stateAt(4998)
+			local cast = log.cast(T0, 0, { OTHER, MACKEREL, JUNK })
+			local _, earned = applyAll({ cast }, "live", state)
+
+			-- The second Catch is the 5,000th: after the first's nothing, before the Mackerel's and junk's own.
+			assert.are.same({ "catchMilestone", "newSpecies", "newCurio" }, kinds(earned))
+			assert.are.equal(5000, earned[1].n)
+			assert.are.same({ [1000] = T0 - DAY, [5000] = T0 }, state.milestones)
+		end)
+
+		it("is at 1,000, 5,000, 10,000, 25,000 and 50,000, and at nothing past them (LED-R42, Tunables)", function()
+			local credited = {}
+			for _, before in ipairs({ 999, 4999, 9999, 24999, 49999, 99999 }) do
+				local state = stateAt(before)
+				local _, earned = applyAll({ log.cast(T0, 0, { OTHER }) }, "live", state)
+				for _, achievement in ipairs(earned) do
+					credited[#credited + 1] = achievement.n
+				end
+			end
+
+			assert.are.same({ 1000, 5000, 10000, 25000, 50000 }, credited)
+		end)
+
+		it("credits each one reached and not yet credited, a stride over two crediting both (LED-R42)", function()
+			-- A hand-made state 4,999 Catches in with none credited: a stride no log makes, one Catch at a time.
+			local state = fold.reset()
+			state.catches = 4999
+			local _, earned = applyAll({ log.cast(T0, 0, { OTHER }) }, "live", state)
+
+			assert.are.same({ 1000, 5000 }, { earned[1].n, earned[2].n })
+			assert.are.same({ [1000] = T0, [5000] = T0 }, state.milestones)
+		end)
+
+		it("counts every class toward them, item 0 and Uncharted too (LED-R42, LED-R5)", function()
+			local state = stateAt(997)
+			local _, earned = applyAll({ log.cast(T0, 0, { 0, UNCHARTED, NOISE }) }, "live", state)
+
+			assert.are.same({ "uncharted", "catchMilestone" }, kinds(earned))
+			assert.are.same({ [1000] = T0 }, state.milestones)
 		end)
 	end)
 
@@ -759,6 +966,7 @@ describe("The Ledger's fold", function()
 				fresh = 300,
 				coins = 0,
 				skill = {},
+				milestones = {},
 				species = {},
 				items = {},
 				uncharted = {},
@@ -766,8 +974,8 @@ describe("The Ledger's fold", function()
 			}, a)
 		end)
 
-		it("is LEDGER_RULES_VERSION 2 in M3 (LED-R4, Tunables)", function()
-			assert.are.equal(2, ns.LEDGER_RULES_VERSION)
+		it("is LEDGER_RULES_VERSION 3 in M4 (LED-R4, Tunables)", function()
+			assert.are.equal(3, ns.LEDGER_RULES_VERSION)
 		end)
 	end)
 

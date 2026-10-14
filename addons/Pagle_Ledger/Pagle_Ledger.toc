@@ -18,6 +18,8 @@ logic\Fold.lua
 logic\World.lua
 logic\Stars.lua
 logic\ZoneMastery.lua
+logic\Legends.lua
+logic\CatchMilestones.lua
 logic\Moments.lua
 logic\Done.lua
 logic\Projection.lua
