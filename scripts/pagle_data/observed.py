@@ -259,12 +259,15 @@ def observations(layer: ObservedLayer, aliases: Mapping[int, int]) -> Observatio
 # Reading
 
 
-def _expect_string(value: object, at: At, problems: Problems, pattern: re.Pattern[str] | None = None) -> str | None:
-    """value as a non-empty string (matching pattern, when given), or None with a problem."""
+def _expect_string(
+    value: object, at: At, problems: Problems, pattern: re.Pattern[str] | None = None, *, blank: bool = False
+) -> str | None:
+    """value as a non-empty string (matching pattern, when given), or None with a problem. A blank one (only
+    whitespace) is a problem unless blank is set."""
     if not isinstance(value, str):
         problems.add(at, f"expected a string, got {describe(value)}")
         return None
-    if not value.strip():
+    if not (value if blank else value.strip()):
         problems.add(at, "expected a non-empty string")
         return None
     if pattern is not None and not pattern.fullmatch(value):
@@ -296,17 +299,17 @@ class _Fields:
     def __init__(self, table: Mapping[str, object], at: At, problems: Problems) -> None:
         self.table, self.at, self.problems, self.ok = table, at, problems, True
 
-    def number(self, key: str, minimum: int, maximum: int | None = None) -> int | None:
+    def number(self, key: str, minimum: int | None, maximum: int | None = None) -> int | None:
         if key not in self.table:
             return None  # check_keys reports a missing required key
         value = expect_int(self.table[key], self.at / key, self.problems, minimum=minimum, maximum=maximum)
         self.ok = self.ok and value is not None
         return value
 
-    def text(self, key: str, pattern: re.Pattern[str] | None = None) -> str | None:
+    def text(self, key: str, pattern: re.Pattern[str] | None = None, *, blank: bool = False) -> str | None:
         if key not in self.table:
             return None
-        value = _expect_string(self.table[key], self.at / key, self.problems, pattern)
+        value = _expect_string(self.table[key], self.at / key, self.problems, pattern, blank=blank)
         self.ok = self.ok and value is not None
         return value
 
@@ -348,7 +351,7 @@ def _skill_row(table: Mapping[str, object], at: At, key: str, problems: Problems
     fields = _Fields(table, at, problems)
     area, build = fields.number("area", 1), fields.number("build", 0)
     casts, away = fields.number("casts", 1), fields.number("away", 0)
-    land, lost = fields.number("land", 0), fields.number("lost", 0)
+    land, lost = fields.number("land", None), fields.number("lost", None)  # effective skill, maybe < 0 (REP-R21)
     rejected = fields.text("rejected")
     if not fields.has(*_K_KEYS) or area is None or build is None or casts is None or away is None:
         return None
@@ -376,7 +379,7 @@ def _pool_text_row(table: Mapping[str, object], at: At, problems: Problems) -> P
     check_keys(table, at, problems, required=_P_KEYS, optional=("items", "rejected"))
     fields = _Fields(table, at, problems)
     area, casts = fields.number("area", 1), fields.number("casts", 1)
-    locale, text = fields.text("locale", _LOCALE), fields.text("text")
+    locale, text = fields.text("locale", _LOCALE), fields.text("text", blank=True)  # a hovered text (REP-R22)
     rejected = fields.text("rejected")
     items = _pool_items(table["items"], at / "items", problems) if "items" in table else ()
     if not fields.has(*_P_KEYS) or items is None or area is None or casts is None or locale is None or text is None:
@@ -521,7 +524,7 @@ def _read_pooltext(root: Path, problems: Problems) -> tuple[PoolTextEntry, ...]:
     for entry_at, table in _tables(document, "text", at, problems):
         check_keys(table, entry_at, problems, required=("locale", "text", "pool"), optional=())
         fields = _Fields(table, entry_at, problems)
-        locale, text, pool = fields.text("locale", _LOCALE), fields.text("text"), fields.text("pool")
+        locale, text, pool = fields.text("locale", _LOCALE), fields.text("text", blank=True), fields.text("pool")
         if locale is None or text is None or pool is None:
             continue
         if (locale, text) in seen:

@@ -112,6 +112,30 @@ def test_an_unknown_key_and_an_unknown_row_letter_are_ignored() -> None:
     assert [p.text for p in part.pool_texts] == ["Oily"]
 
 
+def test_an_unknown_key_given_twice_and_an_unknown_header_key_are_ignored() -> None:
+    # REP-R31: parsers ignore unknown key=value keys, so a later Core may add one, to a row or to the header, without
+    # a version bump; an unknown key given twice is still an unknown key. Only a known key given twice fails.
+    part = part_of("I 6362 33 70338 2 depth=1 depth=2", header=HEADER + " build=70338 build=70339")
+    assert [(r.item, r.count) for r in part.catches] == [(6362, 2)]
+    assert part.header.identity == Identity("0.9.0", "3f9a2c1e", "enUS", "f38e76b0", 1)
+
+
+def test_rows_core_can_write_parse_and_read_back_from_the_observed_shape(tmp_path: Path) -> None:
+    # #125: the parser accepts exactly what Core writes. REP-R22: every hovered text is sent, and Core drops only an
+    # empty one, so a whitespace-only text is a text. REP-R21: land and lost are effective skill, rank + modifier, which
+    # a negative modifier can take below 0. DATA-R121: pagle_data.observed reads both back from the importer's file.
+    part = part_of("K 1519 70338 casts=4 away=1 land=-3 lost=-12", 'P 1519 enUS " " casts=2')
+    assert [(k.land, k.lost) for k in part.skills] == [(-3, -12)]
+    assert [p.text for p in part.pool_texts] == [" "]
+    (report,) = joined(part)
+    write_observed(tmp_path, reports={"f38e76b0": observed_toml(report.observed([7]))})
+    problems = Problems()
+    read = read_observed(tmp_path, problems).reports["f38e76b0"]
+    assert problems.found == []
+    assert unplaced(read.skills) == unplaced(part.skills)
+    assert unplaced(read.pool_texts) == unplaced(part.pool_texts)
+
+
 def report_of(*rows: str) -> str:
     return "\n".join(["PAGLE-REPORT 1", HEADER, *rows, "END"])
 
@@ -135,6 +159,8 @@ def report_of(*rows: str) -> str:
         (report_of("I 6362 33 70338 2 t=14:30 m=May"), "#7: line 3: m=: expected an integer, got 'May'"),
         (report_of("K 1519 70338 away=6"), "#7: line 3: missing field casts="),
         (report_of("K 1519 70338 casts=40 away=6 land=high"), "#7: line 3: land=: expected an integer"),
+        (report_of("I 6362 33 70338 2 aura=5 aura=7"), "#7: line 3: aura= is given twice"),
+        (report_of('P 1519 enUS "" casts=5'), "#7: line 3: text: expected a non-empty text"),
         (report_of('P 1519 enUS "Oily" casts=5 6358xfive'), "#7: line 3: expected <itemID>x<count>"),
         (report_of("P 1519 enUS casts=5"), "#7: line 3: missing fields"),
         # A bad quote escape (REP-R32), and a quote never closed.

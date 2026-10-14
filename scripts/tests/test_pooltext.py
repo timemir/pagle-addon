@@ -50,6 +50,17 @@ def test_a_missing_pooltext_toml_is_no_entries(tmp_path: Path) -> None:
     assert layer.pooltext == ()
 
 
+def test_a_blank_hovered_text_can_be_mapped(tmp_path: Path) -> None:
+    # DATA-R118 maps the hovered texts of P rows, and REP-R22 sends every text Core doesn't drop as empty: a blank one
+    # too, so the dev can map it.
+    problems = Problems()
+    write_tree(tmp_path)
+    (tmp_path / POOLTEXT).write_text(entry("deDE", " ", "other"), encoding="utf-8")
+    layer = read_observed(tmp_path, problems)
+    assert problems.found == []
+    assert [(known.locale, known.text, known.pool) for known in layer.pooltext] == [("deDE", " ", "other")]
+
+
 @pytest.mark.parametrize(
     ("text", "problem"),
     [
@@ -58,7 +69,7 @@ def test_a_missing_pooltext_toml_is_no_entries(tmp_path: Path) -> None:
         ('[[text]]\nlocale = "deDE"\ntext = "x"\n', "text[0]: missing key 'pool'"),
         (entry("deDE", "x", "bobber") + "area = 12\n", "text[0]: unknown key 'area'"),
         (entry("german", "x", "bobber"), "text[0].locale: expected [a-z]{2}[A-Z]{2}, got 'german'"),
-        (entry("deDE", " ", "bobber"), "text[0].text: expected a non-empty string"),
+        (entry("deDE", "", "bobber"), "text[0].text: expected a non-empty string"),
         ('[[text]]\nlocale = "deDE"\ntext = "x"\npool = 3\n', "text[0].pool: expected a string, got an integer"),
         (entry("deDE", "x", "bobber") + entry("deDE", "x", "other"), "text[1]: (deDE, 'x') is already mapped"),
     ],

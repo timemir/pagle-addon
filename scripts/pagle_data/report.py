@@ -32,9 +32,13 @@ REPORT_LABEL = "Report"
 _HEX8 = re.compile(r"[0-9a-f]{8}")
 _LOCALE = re.compile(r"[a-z]{2}[A-Z]{2}")
 _PART = re.compile(r"([1-9][0-9]*)/([1-9][0-9]*)")
-_INTEGER = re.compile(r"[0-9]+")
+_INTEGER = re.compile(r"-?[0-9]+")
 _BUCKET = re.compile(r"([01][0-9]|2[0-3]):(00|15|30|45)")
 _ITEM_COUNT = re.compile(r"([0-9]+)x([0-9]+)")
+# Each row's known keys (REP-R20–R22); any other key=value is ignored (REP-R31).
+_I_KEYS = ("aura", "event", "t", "m")
+_K_KEYS = ("casts", "away", "land", "lost")
+_P_KEYS = ("casts",)
 # An unknown row letter (REP-R31): one capital letter other than I, K and P.
 _ROW_LETTER = re.compile(r"[A-Z]")
 _ESCAPES = {'"': '"', "\\": "\\", "n": "\n"}
@@ -169,9 +173,10 @@ def _tokens(line: str) -> list[_Token]:
 
 
 class _Row:
-    """One row's tokens: its positional fields and its key=value keys, read with their problems at the row's line."""
+    """One row's tokens: its positional fields and its key=value keys, read with their problems at the row's line.
+    Only a known key given twice is a problem: an unknown one is ignored however often it comes (REP-R31)."""
 
-    def __init__(self, tokens: list[_Token], at: At, problems: Problems) -> None:
+    def __init__(self, tokens: list[_Token], at: At, problems: Problems, known: Sequence[str]) -> None:
         self.at, self.problems, self.ok = at, problems, True
         self.fields: list[_Token] = []
         self.keys: dict[str, str] = {}
@@ -179,7 +184,7 @@ class _Row:
             key, equals, value = token.text.partition("=")
             if token.quoted or not equals:
                 self.fields.append(token)
-            elif key in self.keys:
+            elif key in self.keys and key in known:
                 self.fail(f"{key}= is given twice")
             else:
                 self.keys[key] = value
@@ -188,12 +193,12 @@ class _Row:
         self.problems.add(self.at, message)
         self.ok = False
 
-    def integer(self, name: str, text: str, minimum: int, maximum: int | None = None) -> int:
+    def integer(self, name: str, text: str, minimum: int | None, maximum: int | None = None) -> int:
         if not _INTEGER.fullmatch(text):
             self.fail(f"{name}: expected an integer, got '{text}'")
             return 0
         value = int(text)
-        if value < minimum or (maximum is not None and value > maximum):
+        if minimum is not None and (value < minimum or (maximum is not None and value > maximum)):
             bounds = f"from {minimum} to {maximum}" if maximum is not None else f"at least {minimum}"
             self.fail(f"{name}: expected an integer {bounds}, got {value}")
         return value
@@ -209,7 +214,7 @@ class _Row:
         for token in self.fields[used:]:
             self.fail(f"unexpected field '{token.text}'")
 
-    def key(self, name: str, minimum: int, maximum: int | None = None) -> int | None:
+    def key(self, name: str, minimum: int | None, maximum: int | None = None) -> int | None:
         if name not in self.keys:
             return None
         return self.integer(f"{name}=", self.keys[name], minimum, maximum)
@@ -252,7 +257,7 @@ def _skill(row: _Row, reporter: str) -> SkillRow | None:
     numbers = row.positional("K <areaID> <build>", ("area", "build"), (1, 0))
     row.no_more_fields(2)
     casts, away = row.required("casts", 1), row.required("away", 0)
-    land, lost = row.key("land", 0), row.key("lost", 0)
+    land, lost = row.key("land", None), row.key("lost", None)  # effective skill: rank + a modifier that may be < 0
     if numbers is None or not row.ok:
         return None
     area, build = numbers
@@ -271,8 +276,8 @@ def _pool_text(row: _Row) -> PoolTextRow | None:
         row.fail(f"locale: expected a client locale such as enUS, got '{locale}'")
     if not text.quoted:
         row.fail(f"text: expected a quoted text, got '{text.text}' (REP-R22)")
-    elif not text.text.strip():
-        row.fail("text: expected a non-empty text")
+    elif not text.text:
+        row.fail("text: expected a non-empty text")  # Core drops only "": a blank text is a text (REP-R22)
     casts = row.required("casts", 1)
     items: dict[int, int] = {}
     for token in row.fields[3:]:
@@ -292,6 +297,7 @@ def _pool_text(row: _Row) -> PoolTextRow | None:
 def _header(tokens: list[_Token]) -> PartHeader | str:
     """The header line's fields (REP-R30), or what's wrong with it."""
     shape = "addon <version> data <8 hex> locale <locale> reporter <8 hex> part <n>/<m>"
+    tokens = [token for token in tokens if token.quoted or "=" not in token.text]  # unknown keys (REP-R31)
     names = [token.text for token in tokens[0::2]]
     if len(tokens) != 10 or names != ["addon", "data", "locale", "reporter", "part"]:
         return f"expected {shape}"
@@ -362,13 +368,13 @@ def parse_part(text: str, source: str, problems: Problems) -> Part | None:
             ended = number
             continue
         if kind == "I":
-            catch = _catch(_Row(words, at(number), problems), reporter)
+            catch = _catch(_Row(words, at(number), problems, _I_KEYS), reporter)
             catches += [catch] if catch is not None else []
         elif kind == "K":
-            skill = _skill(_Row(words, at(number), problems), reporter)
+            skill = _skill(_Row(words, at(number), problems, _K_KEYS), reporter)
             skills += [skill] if skill is not None else []
         elif kind == "P":
-            pool_text = _pool_text(_Row(words, at(number), problems))
+            pool_text = _pool_text(_Row(words, at(number), problems, _P_KEYS))
             pool_texts += [pool_text] if pool_text is not None else []
         elif not _ROW_LETTER.fullmatch(kind):
             problems.add(at(number), f"expected a row (I, K or P) or END, got '{kind}'")
