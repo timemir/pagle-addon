@@ -282,32 +282,6 @@ function ns.JournalSearch(query, context)
 	return results
 end
 
--- ★★ and ★★★ Tunables (LED-R45): zones needed and Catches.
-local ZONES_NEEDED, REGULAR_CATCHES = 3, 50
-
--- How far a caught Species is towards ★★ (LED-R45, LED-R142): by windows, its element windows met of all of them;
--- otherwise its distinct zones caught in (never 0) of `min(3, max(1, listed zones))`. `have` stops at `need`.
----@param listing LedgerWorldSpecies?
----@param species LedgerSpecies
----@return integer have
----@return integer need
-local function elementProgress(listing, species)
-	local have, need = 0, 0
-	if listing and listing.elements then
-		local met = species.windowsMet or {}
-		for window in pairs(listing.elements) do
-			need = need + 1
-			have = have + (met[window] and 1 or 0)
-		end
-		return have, need
-	end
-	need = math.min(ZONES_NEEDED, math.max(1, listing and #listing.zones or 0))
-	for _ in pairs(species.zones) do
-		have = have + 1
-	end
-	return math.min(have, need), need
-end
-
 -- The fish spread's right page (LED-R142): "Where to find it", "Its waters", its listed zones as tiles in tile order
 -- (LED-R131) with "caught ✓" where caught, each opening the zone's spread with the fish selected; "When" with each
 -- element window's line, its state forecast now (LED-R127); and for a caught Species its ★★ and ★★★ checklist.
@@ -349,11 +323,11 @@ local function waters(id, context)
 		local function box(star)
 			return stars[star] and L.CHECK_ON or L.CHECK_OFF
 		end
-		local have, need = elementProgress(listing, species)
+		local have, need = ns.ElementProgress(listing, species)
 		blocks[#blocks + 1] = { kind = "text", text = L.FISH_ELEMENT:format(box(2), have, need) }
 		blocks[#blocks + 1] = {
 			kind = "text",
-			text = L.FISH_REGULAR:format(box(3), math.min(species.n, REGULAR_CATCHES), REGULAR_CATCHES),
+			text = L.FISH_REGULAR:format(box(3), math.min(species.n, ns.REGULAR_CATCHES), ns.REGULAR_CATCHES),
 		}
 	end
 	return blocks

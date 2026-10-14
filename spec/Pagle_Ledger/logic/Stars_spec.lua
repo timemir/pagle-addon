@@ -230,6 +230,29 @@ describe("Stars", function()
 		end)
 	end)
 
+	describe("progress towards ★★ (LED-R45, LED-R142)", function()
+		it(
+			"counts element windows met of all of them, else distinct zones of min(3, listed), stopping at the need (LED-R45, LED-R142)",
+			function()
+				local state = applyAll({
+					cast(WESTFALL, { SEASONFISH }, NOON, JULY),
+					cast(ELWYNN, { WIDEFISH }),
+					cast(ELWYNN, { WIDEFISH }),
+					cast(WESTFALL, { WIDEFISH }),
+					cast(ELWYNN, { LONEFISH }),
+					cast(WESTFALL, { LONEFISH }),
+				})
+
+				local function progress(id)
+					return { ns.ElementProgress(world.species[id], state.species[id]) }
+				end
+				assert.are.same({ 1, 2 }, progress(SEASONFISH))
+				assert.are.same({ 2, 3 }, progress(WIDEFISH))
+				assert.are.same({ 1, 1 }, progress(LONEFISH))
+			end
+		)
+	end)
+
 	describe("Regular (LED-R45)", function()
 		it(
 			"earns regularStar at the 50th Catch of a Species, once, and nothing at the 51st (LED-R45, Tunables)",
