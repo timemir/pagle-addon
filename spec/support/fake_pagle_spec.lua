@@ -366,7 +366,8 @@ describe("FakePagle", function()
 		end)
 
 		it(
-			"shows the Curio Shop entry disabled, with the balance as BreakUpLargeNumbers writes it (CORE-R50)",
+			"shows the Curio Shop entry with the balance as BreakUpLargeNumbers writes it, opening the shop (CORE-R50,"
+				.. " SHOP-R40)",
 			function()
 				local fake = newFakePagle()
 				local ledger = fake.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
@@ -374,11 +375,24 @@ describe("FakePagle", function()
 				ledger:ReportCoinsEarned(1950)
 
 				local menu = fake.menu()
+				menu[1].onClick()
 
 				assert.are.equal("Curio Shop  1,950 |TInterface\\MoneyFrame\\UI-GoldIcon:0|t", menu[1].label)
-				assert.is_true(menu[1].disabled)
+				assert.are.same({ {} }, fake.shopsOpened)
+				assert.is_true(fake.shopOpen)
 			end
 		)
+
+		it("prints SHOP-R41's line for the Curio Shop entry while restricted (SHOP-R41, CORE-R33)", function()
+			local fake = newFakePagle()
+			fake.login()
+			fake.setRestricted(true)
+
+			fake.menu()[1].onClick()
+
+			assert.are.same({}, fake.shopsOpened)
+			assert.are.same({ "Pagle: the Curio Shop opens after combat." }, fake.printed)
+		end)
 	end)
 
 	describe("the wallet", function()
@@ -587,13 +601,74 @@ describe("FakePagle", function()
 			assert.is_nil(fake.Pagle.GetGood("hunts.cover.none"))
 		end)
 
-		it("records each Pagle.OpenShop in fake.shopsOpened, with the good asked for (SHOP-R40)", function()
+		it(
+			"records each Pagle.OpenShop in fake.shopsOpened, with the good asked for and the one selected (SHOP-R40)",
+			function()
+				local fake = newFakePagle()
+				local hunts = fake.Pagle.RegisterModule({ name = "Hunts", title = "Hunts", order = 20 })
+				hunts:RegisterSlot({ id = "hunts.cover", label = "Notebook cover", category = "Hunts" })
+				hunts:RegisterGood({ id = "hunts.cover.plain", slot = "hunts.cover", name = "Plain", default = true })
+				hunts:RegisterGood({ id = "hunts.cover.velvet", slot = "hunts.cover", name = "Velvet", tier = 2 })
+				fake.login()
+
+				fake.Pagle.OpenShop("hunts.cover.velvet")
+				fake.Pagle.OpenShop("hunts.cover.none")
+				fake.Pagle.OpenShop()
+
+				assert.are.same({
+					{ goodID = "hunts.cover.velvet", selected = "hunts.cover.velvet" },
+					{ goodID = "hunts.cover.none" },
+					{},
+				}, fake.shopsOpened)
+				assert.is_true(fake.shopOpen)
+			end
+		)
+
+		it("selects an owned good of a Module off under Put away, from the cache (SHOP-R40, SHOP-R35)", function()
 			local fake = newFakePagle()
+			fake.goods["hunts.cover.velvet"] = {
+				name = "Velvet",
+				slot = "hunts.cover",
+				slotLabel = "Notebook cover",
+				category = "Hunts",
+				module = "Hunts",
+				tier = 2,
+			}
+			fake.login()
+			fake.setPurchased({ ["hunts.cover.velvet"] = true })
 
 			fake.Pagle.OpenShop("hunts.cover.velvet")
+
+			assert.are.same({ { goodID = "hunts.cover.velvet", selected = "hunts.cover.velvet" } }, fake.shopsOpened)
+		end)
+
+		it("toggles the shop with /pagle shop (CORE-R61, SHOP-R40)", function()
+			local fake = newFakePagle()
+			fake.login()
+
+			fake.slash("shop")
+			assert.is_true(fake.shopOpen)
+			fake.slash(" SHOP ")
+			assert.is_false(fake.shopOpen)
+			assert.are.same({ {} }, fake.shopsOpened)
+		end)
+
+		it("prints SHOP-R41's line while restricted, and closes the shop when restriction starts (SHOP-R41)", function()
+			local fake = newFakePagle()
+			fake.login()
 			fake.Pagle.OpenShop()
 
-			assert.are.same({ { goodID = "hunts.cover.velvet" }, {} }, fake.shopsOpened)
+			fake.setRestricted(true)
+			assert.is_false(fake.shopOpen)
+			fake.Pagle.OpenShop()
+			fake.slash("shop")
+
+			assert.are.same({ {} }, fake.shopsOpened)
+			assert.is_false(fake.shopOpen)
+			assert.are.same(
+				{ "Pagle: the Curio Shop opens after combat.", "Pagle: the Curio Shop opens after combat." },
+				fake.printed
+			)
 		end)
 	end)
 
@@ -776,6 +851,7 @@ describe("FakePagle", function()
 				assert.are.same({
 					"Pagle commands:",
 					"/pagle settings: open Pagle's settings (also /pagle on its own)",
+					"/pagle shop: open or close the Curio Shop",
 					"/pagle report: open the Field report, to help chart the waters",
 					"/pagle help: list these commands",
 					"/pagle qol: cycle Input",
@@ -823,7 +899,7 @@ describe("FakePagle", function()
 			fake.slash("help")
 
 			assert.are.same({ "Pagle: QoL's /pagle Report is skipped: Pagle reserves report" }, fake.reported)
-			assert.are.equal("/pagle qol: cycle Input", fake.printed[5])
+			assert.are.equal("/pagle qol: cycle Input", fake.printed[6])
 		end)
 	end)
 

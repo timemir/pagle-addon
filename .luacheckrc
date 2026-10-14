@@ -107,6 +107,9 @@ stds.wow = {
 		-- The Fish Journal's serif and handwriting font objects (ledger.md › UI); its frame is drawn on CreateFrame and
 		-- UIParent above and hides with Esc through UISpecialFrames (below).
 		"CreateFont",
+		-- The Curio Shop's purse: each Module's segment shows its lifetime Coins in the tooltip (wallet-and-shop.md › UI).
+		-- The window is drawn on CreateFrame and UIParent above and hides with Esc through UISpecialFrames (below).
+		"GameTooltip",
 	},
 }
 

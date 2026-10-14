@@ -74,9 +74,10 @@ end
 local function clientStubs(client)
 	local stubs
 	stubs = {
-		CreateFrame = function(frameType, name, parent)
+		CreateFrame = function(frameType, name, parent, template)
 			local frame = widgets.newFrame(client, frameType, parent)
 			frame.name = name
+			widgets.applyTemplate(client, frame, template)
 			return frame
 		end,
 		-- The frame every addon frame hangs from; a plain widget, so it gets no events.

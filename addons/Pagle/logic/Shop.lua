@@ -236,10 +236,10 @@ end
 ---@field tag? string     -- otherwise: "In use", "default", "Owned", its earnedText, or "Hunts is off"
 
 -- The row for `entry`.
----@param self PagleShopModel
+---@private
 ---@param entry PagleShopEntry
 ---@return PagleShopRow
-local function rowOf(self, entry)
+function Model:RowOf(entry)
 	local L = ns.L
 	local row = { id = entry.id, name = entry.name, icon = entry.icon, state = entry.state }
 	local state = entry.state
@@ -305,7 +305,7 @@ function Model:List(query)
 				owned = owned + 1
 			end
 			if matches(entry, query) then
-				rows[#rows + 1] = rowOf(self, entry)
+				rows[#rows + 1] = self:RowOf(entry)
 			end
 		end
 		if #rows > 0 then
@@ -332,7 +332,7 @@ function Model:List(query)
 	if #putAway > 0 then
 		local rows = {}
 		for i, entry in ipairs(putAway) do
-			rows[i] = rowOf(self, entry)
+			rows[i] = self:RowOf(entry)
 		end
 		groups[#groups + 1] = { label = L.SHOP_PUT_AWAY, note = L.SHOP_KEEP, putAway = true, rows = rows }
 	end

@@ -96,25 +96,28 @@ describe("The shop's purse", function()
 		end
 	)
 
-	it("marks an off Module's segment, whose total still counts, and names it by its title (SHOP-R3, CORE-R41)", function()
-		local fake = session("Hunts")
-		fake.global.coins.earned.TackleBoard = 300
-		fake.global.coins.earned.Ledger = 100
+	it(
+		"marks an off Module's segment, whose total still counts, and names it by its title (SHOP-R3, CORE-R41)",
+		function()
+			local fake = session("Hunts")
+			fake.global.coins.earned.TackleBoard = 300
+			fake.global.coins.earned.Ledger = 100
 
-		local purse = model(fake):Purse()
+			local purse = model(fake):Purse()
 
-		assert.are.equal("400", purse.balance)
-		assert.are.same({ "Ledger", "TackleBoard" }, { purse.segments[1].module, purse.segments[2].module })
-		assert.is_false(purse.segments[1].off)
-		local board = purse.segments[2]
-		assert.is_true(board.off)
-		assert.are.equal(0.75, board.share)
-		assert.are.equal("Tackle Board 300", board.legend)
-		assert.are.same(
-			{ "Tackle Board", "300 Coins all time", "Off: pays nothing new, keeps what it paid." },
-			board.tooltip
-		)
-	end)
+			assert.are.equal("400", purse.balance)
+			assert.are.same({ "Ledger", "TackleBoard" }, { purse.segments[1].module, purse.segments[2].module })
+			assert.is_false(purse.segments[1].off)
+			local board = purse.segments[2]
+			assert.is_true(board.off)
+			assert.are.equal(0.75, board.share)
+			assert.are.equal("Tackle Board 300", board.legend)
+			assert.are.same(
+				{ "Tackle Board", "300 Coins all time", "Off: pays nothing new, keeps what it paid." },
+				board.tooltip
+			)
+		end
+	)
 
 	it("has no segment before any Module reports, and never says Spent (wallet-and-shop.md › UI)", function()
 		local fake = session()
@@ -180,17 +183,20 @@ describe("The shop's list", function()
 		end
 	)
 
-	it("prices a good the balance covers in white, with its name and icon on the row (wallet-and-shop.md › UI)", function()
-		local fake, handles = shopping()
-		handles.Ledger:ReportCoinsEarned(1000)
+	it(
+		"prices a good the balance covers in white, with its name and icon on the row (wallet-and-shop.md › UI)",
+		function()
+			local fake, handles = shopping()
+			handles.Ledger:ReportCoinsEarned(1000)
 
-		local rows = model(fake):List({})[3].rows
+			local rows = model(fake):List({})[3].rows
 
-		assert.are.same(
-			{ id = "hunts.cover.velvet", name = "Velvet", icon = 134939, state = "forSale", price = "400" .. COIN },
-			rows[2]
-		)
-	end)
+			assert.are.same(
+				{ id = "hunts.cover.velvet", name = "Velvet", icon = 134939, state = "forSale", price = "400" .. COIN },
+				rows[2]
+			)
+		end
+	)
 
 	it("matches the search against names, ignoring case (wallet-and-shop.md › UI)", function()
 		local fake = shopping()
@@ -234,21 +240,24 @@ describe("The shop's list", function()
 		assert.are.same({ "core.toaststyle.lanternglow", "hunts.cover.velvet" }, ids("canAfford"))
 	end)
 
-	it("shows a chip for each category a live slot uses, in SHOP's order, and narrows to one (wallet-and-shop.md › UI)", function()
-		local fake = shopping()
-		local shop = model(fake)
+	it(
+		"shows a chip for each category a live slot uses, in SHOP's order, and narrows to one (wallet-and-shop.md › UI)",
+		function()
+			local fake = shopping()
+			local shop = model(fake)
 
-		assert.are.same({
-			{ category = "Announcements", label = "Announcements" },
-			{ category = "Fish Journal", label = "Fish Journal" },
-			{ category = "Hunts", label = "Hunts" },
-		}, shop:Chips())
-		assert.are.same({
-			"Journal binding (1/2)",
-			"  ledger.binding.oak In use",
-			"  ledger.binding.lapis 900" .. COIN .. " [red]",
-		}, outline(shop:List({ category = "Fish Journal" })))
-	end)
+			assert.are.same({
+				{ category = "Announcements", label = "Announcements" },
+				{ category = "Fish Journal", label = "Fish Journal" },
+				{ category = "Hunts", label = "Hunts" },
+			}, shop:Chips())
+			assert.are.same({
+				"Journal binding (1/2)",
+				"  ledger.binding.oak In use",
+				"  ledger.binding.lapis 900" .. COIN .. " [red]",
+			}, outline(shop:List({ category = "Fish Journal" })))
+		end
+	)
 
 	it("counts an earned good owned once its Module says so (SHOP-R22, SHOP-R30)", function()
 		local fake, handles = session()
@@ -324,11 +333,10 @@ describe("The shop's Put away group", function()
 				{ id = "hunts.cover.velvet", name = "Velvet", icon = 134939, state = "putAway", tag = "Hunts is off" },
 				putAway.rows[2]
 			)
-			assert.are.same(
-				{ { category = "Announcements", label = "Announcements" }, { category = "Fish Journal", label = "Fish Journal" } },
-				model(fake):Chips(),
-				"no chip for a slot that isn't live"
-			)
+			assert.are.same({
+				{ category = "Announcements", label = "Announcements" },
+				{ category = "Fish Journal", label = "Fish Journal" },
+			}, model(fake):Chips(), "no chip for a slot that isn't live")
 		end
 	)
 
@@ -359,8 +367,8 @@ describe("Selecting a good", function()
 		assert.are.equal("ledger.binding.lapis", shop:Select("ledger.binding.lapis"))
 		assert.are.equal("core.toaststyle.timber", shop:Select("core.toaststyle.timber"))
 		assert.are.equal("hunts.cover.velvet", shop:Select("hunts.cover.velvet"))
-		assert.is_nil(shop:Select("hunts.cover.tide"), "for sale, of a Module off")
-		assert.is_nil(shop:Select("hunts.cover.plain"), "a default of a Module off")
+		assert.is_nil(shop:Select("hunts.cover.tide")) -- for sale, of a Module off
+		assert.is_nil(shop:Select("hunts.cover.plain")) -- a default of a Module off
 		assert.is_nil(shop:Select("nobody.nothing"))
 		assert.is_nil(shop:Select(42))
 		assert.is_nil(shop:Select(nil))
@@ -379,23 +387,26 @@ describe("The shop's stage", function()
 		return fake, handles
 	end
 
-	it("shows a good for sale with its name, slot, owner, description, price and Buy (wallet-and-shop.md › UI)", function()
-		local fake = staged(1000)
+	it(
+		"shows a good for sale with its name, slot, owner, description, price and Buy (wallet-and-shop.md › UI)",
+		function()
+			local fake = staged(1000)
 
-		local stage = assert(model(fake):Stage("core.toaststyle.lanternglow"))
+			local stage = assert(model(fake):Stage("core.toaststyle.lanternglow"))
 
-		assert.are.same({
-			id = "core.toaststyle.lanternglow",
-			name = "Lantern Glow",
-			slotLine = "Toast style · Pagle",
-			description = "A warm lamp behind the toast.",
-			state = "forSale",
-			price = "400" .. COIN,
-			buy = "Buy for 400" .. COIN,
-			tags = {},
-			notes = {},
-		}, stage)
-	end)
+			assert.are.same({
+				id = "core.toaststyle.lanternglow",
+				name = "Lantern Glow",
+				slotLine = "Toast style · Pagle",
+				description = "A warm lamp behind the toast.",
+				state = "forSale",
+				price = "400" .. COIN,
+				buy = "Buy for 400" .. COIN,
+				tags = {},
+				notes = {},
+			}, stage)
+		end
+	)
 
 	it("shows what more a good the balance can't cover needs, its price in red (wallet-and-shop.md › UI)", function()
 		local fake = staged(650)
@@ -409,51 +420,57 @@ describe("The shop's stage", function()
 		assert.are.equal("350 more needed", assert(model(staged(50)):Stage("hunts.cover.velvet")).needed)
 	end)
 
-	it("shows Owned and Use for an owned good, In use for the equipped one, and default (wallet-and-shop.md › UI)", function()
-		local fake = staged(0)
-		local shop = model(fake)
+	it(
+		"shows Owned and Use for an owned good, In use for the equipped one, and default (wallet-and-shop.md › UI)",
+		function()
+			local fake = staged(0)
+			local shop = model(fake)
 
-		local timber, plain = assert(shop:Stage("core.toaststyle.timber")), assert(shop:Stage("hunts.cover.plain"))
+			local timber, plain = assert(shop:Stage("core.toaststyle.timber")), assert(shop:Stage("hunts.cover.plain"))
 
-		assert.are.same({ "equipped", { "In use", "default" } }, { timber.state, timber.tags })
-		assert.is_nil(timber.use)
-		assert.is_nil(timber.buy)
-		assert.are.equal("Notebook cover · Hunts", plain.slotLine)
+			assert.are.same({ "equipped", { "In use", "default" } }, { timber.state, timber.tags })
+			assert.is_nil(timber.use)
+			assert.is_nil(timber.buy)
+			assert.are.equal("Notebook cover · Hunts", plain.slotLine)
 
-		fake.setPurchased({ ["core.toaststyle.ripple"] = true })
-		fake.Pagle.SetEquipped("core.toaststyle", "core.toaststyle.ripple")
-		shop = model(fake)
-		local ripple = assert(shop:Stage("core.toaststyle.ripple"))
-		timber = assert(shop:Stage("core.toaststyle.timber"))
+			fake.setPurchased({ ["core.toaststyle.ripple"] = true })
+			fake.Pagle.SetEquipped("core.toaststyle", "core.toaststyle.ripple")
+			shop = model(fake)
+			local ripple = assert(shop:Stage("core.toaststyle.ripple"))
+			timber = assert(shop:Stage("core.toaststyle.timber"))
 
-		assert.are.same({ "equipped", { "In use" } }, { ripple.state, ripple.tags })
-		assert.are.same({ "owned", { "default" }, true }, { timber.state, timber.tags, timber.use })
-		fake.setPurchased({ ["core.toaststyle.ripple"] = true, ["core.toaststyle.lanternglow"] = true })
-		local lantern = assert(model(fake):Stage("core.toaststyle.lanternglow"))
-		assert.are.same({ "owned", { "Owned" }, true }, { lantern.state, lantern.tags, lantern.use })
-		assert.is_nil(lantern.price)
-	end)
+			assert.are.same({ "equipped", { "In use" } }, { ripple.state, ripple.tags })
+			assert.are.same({ "owned", { "default" }, true }, { timber.state, timber.tags, timber.use })
+			fake.setPurchased({ ["core.toaststyle.ripple"] = true, ["core.toaststyle.lanternglow"] = true })
+			local lantern = assert(model(fake):Stage("core.toaststyle.lanternglow"))
+			assert.are.same({ "owned", { "Owned" }, true }, { lantern.state, lantern.tags, lantern.use })
+			assert.is_nil(lantern.price)
+		end
+	)
 
-	it("shows an earned good's earnedText and that it isn't for sale, earned or not (wallet-and-shop.md › UI)", function()
-		local earned = { value = false }
-		local fake, handles = staged(5000, earned)
+	it(
+		"shows an earned good's earnedText and that it isn't for sale, earned or not (wallet-and-shop.md › UI)",
+		function()
+			local earned = { value = false }
+			local fake, handles = staged(5000, earned)
 
-		local gold = assert(model(fake):Stage("hunts.cover.gold"))
-		assert.are.same(
-			{ "unearned", {}, { "Every Hunt done", "A Hunts reward, not for sale" } },
-			{ gold.state, gold.tags, gold.notes }
-		)
-		assert.is_nil(gold.buy)
-		assert.is_nil(gold.price)
+			local gold = assert(model(fake):Stage("hunts.cover.gold"))
+			assert.are.same(
+				{ "unearned", {}, { "Every Hunt done", "A Hunts reward, not for sale" } },
+				{ gold.state, gold.tags, gold.notes }
+			)
+			assert.is_nil(gold.buy)
+			assert.is_nil(gold.price)
 
-		earned.value = true
-		handles.Hunts:RefreshGoods()
-		gold = assert(model(fake):Stage("hunts.cover.gold"))
-		assert.are.same(
-			{ "owned", { "Owned" }, { "Every Hunt done", "A Hunts reward, not for sale" }, true },
-			{ gold.state, gold.tags, gold.notes, gold.use }
-		)
-	end)
+			earned.value = true
+			handles.Hunts:RefreshGoods()
+			gold = assert(model(fake):Stage("hunts.cover.gold"))
+			assert.are.same(
+				{ "owned", { "Owned" }, { "Every Hunt done", "A Hunts reward, not for sale" }, true },
+				{ gold.state, gold.tags, gold.notes, gold.use }
+			)
+		end
+	)
 
 	it("hands over the good's preview and icon (wallet-and-shop.md › UI)", function()
 		local fake, handles = session()
@@ -475,23 +492,26 @@ describe("The shop's stage", function()
 		assert.are.equal(134939, stage.icon)
 	end)
 
-	it("shows a good put away greyed, with its cached icon, its Module off and Yours to keep, and no Use (SHOP-R35)", function()
-		local fake = huntsOff()
+	it(
+		"shows a good put away greyed, with its cached icon, its Module off and Yours to keep, and no Use (SHOP-R35)",
+		function()
+			local fake = huntsOff()
 
-		local velvet = assert(model(fake):Stage("hunts.cover.velvet"))
+			local velvet = assert(model(fake):Stage("hunts.cover.velvet"))
 
-		assert.are.same({
-			id = "hunts.cover.velvet",
-			name = "Velvet",
-			icon = 134939,
-			slotLine = "Notebook cover · Hunts",
-			description = "Soft.",
-			state = "putAway",
-			greyed = true,
-			tags = { "Hunts is off" },
-			notes = { "Yours to keep" },
-		}, velvet)
-	end)
+			assert.are.same({
+				id = "hunts.cover.velvet",
+				name = "Velvet",
+				icon = 134939,
+				slotLine = "Notebook cover · Hunts",
+				description = "Soft.",
+				state = "putAway",
+				greyed = true,
+				tags = { "Hunts is off" },
+				notes = { "Yours to keep" },
+			}, velvet)
+		end
+	)
 
 	it("is nil for a good the shop doesn't show (SHOP-R40)", function()
 		local fake = huntsOff()
