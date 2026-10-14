@@ -23,8 +23,8 @@ local SOUNDS = "Interface\\AddOns\\Pagle\\media\\sounds\\"
 ---@field toast string[]
 ---@field banner string
 
---- The sound sets Core plays, by name (ANN-R72, ANN-R74). Driftwood is the free default and the only one in M2;
---- Gilded is rendered too and joins as a Curio Shop good in M4.
+--- The sound sets Core plays, by name (ANN-R72, ANN-R74): Driftwood, the free default, and Gilded, a Curio Shop
+--- good (logic/CoreGoods.lua's sound set slot).
 ---@type table<string, PagleSoundSet>
 ns.SOUND_SETS = {
 	driftwood = {
@@ -34,6 +34,10 @@ ns.SOUND_SETS = {
 			SOUNDS .. "driftwood\\toast_3.ogg",
 		},
 		banner = SOUNDS .. "driftwood\\banner.ogg",
+	},
+	gilded = {
+		toast = { SOUNDS .. "gilded\\toast_1.ogg" },
+		banner = SOUNDS .. "gilded\\banner.ogg",
 	},
 }
 --- The Legend sting every set shares (ANN-R72).
@@ -70,7 +74,7 @@ ns.LEGEND_STING = SOUNDS .. "legend.ogg"
 ---@field package big PagleAnnouncement[]       -- banners and splashes waiting: splashes first, then in order raised
 ---@field package overflow integer              -- toasts not shown since the last toast appeared
 ---@field package interruptions number[]        -- when each recent interruption appeared (ANN-R30), oldest first
----@field package toastSounds integer           -- toast sounds played, for the next variant (ANN-R72)
+---@field package toastSounds table<PagleSoundSet, integer> -- toast sounds played per set, for its next variant (ANN-R72)
 ---@field package holding boolean               -- restricted, or within the wait after (ANN-R35, ANN-R36)
 ---@field package heldToasts PagleAnnouncement[] -- toasts held, in order
 ---@field package heldBig PagleAnnouncement[]   -- banners and splashes held: splashes first, then in order raised
@@ -87,7 +91,7 @@ function ns.NewLanes(options)
 		big = {},
 		overflow = 0,
 		interruptions = {},
-		toastSounds = 0,
+		toastSounds = {},
 		holding = false,
 		heldToasts = {},
 		heldBig = {},
@@ -346,7 +350,8 @@ end
 
 -- The sound an Announcement shown as `form` plays as it appears (ANN-R70–R72): the equipped set's toast variant
 -- next in turn, its banner sound, or the Legend sting. None for a Nod, for a headline with sound = false, or in Cozy
--- mode, where a splash shows silently (ANN-R41).
+-- mode, where a splash shows silently (ANN-R41). Each set keeps its own turn, so a set equipped again goes on where
+-- it left off.
 ---@package
 ---@param announcement PagleAnnouncement
 ---@param form PagleAnnouncementForm
@@ -357,8 +362,9 @@ function Lanes:sound(announcement, form)
 	end
 	local set = self.options.soundSet()
 	if form == "toast" then
-		self.toastSounds = self.toastSounds + 1
-		return set.toast[(self.toastSounds - 1) % #set.toast + 1]
+		local played = self.toastSounds[set] or 0
+		self.toastSounds[set] = played + 1
+		return set.toast[played % #set.toast + 1]
 	elseif form == "banner" then
 		return set.banner
 	end

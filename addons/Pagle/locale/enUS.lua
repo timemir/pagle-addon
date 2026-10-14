@@ -145,4 +145,18 @@ ns.L = {
 		{ name = "report", help = "open the Field report, to help chart the waters" },
 		{ name = "help", help = "list these commands" },
 	},
+
+	-- Core's own slots (SHOP-R25): their labels. Their goods' names and descriptions are lore (DATA-R101), in
+	-- data\Lore.lua as `good.<goodID>.name` and `good.<goodID>.description`.
+	SLOT_TOAST_STYLE = "Toast style",
+	SLOT_SOUND_SET = "Sound set",
+	SLOT_CREST = "Bookplate crest",
+	-- A sound set's preview on the Curio Shop's stage (wallet-and-shop.md › UI): a button per sound, and a note.
+	PREVIEW_TOAST = "▶ Toast",
+	PREVIEW_BANNER = "▶ Banner",
+	PREVIEW_LEGEND = "▶ Legend",
+	PREVIEW_STING_SHARED = "The Legend sting is the same in every set.",
+	-- A crest's preview (wallet-and-shop.md › UI): a small bookplate, then where it shows.
+	PREVIEW_EX_LIBRIS = "Ex Libris",
+	PREVIEW_CREST_NOTE = "On the Fish Journal's bookplate.",
 }

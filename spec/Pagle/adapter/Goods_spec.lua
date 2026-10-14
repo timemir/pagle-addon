@@ -273,20 +273,21 @@ describe("Core's own goods", function()
 		local loaded = huntsSession()
 		local ns = loaded.ns
 
-		ns.RegisterCoreSlot({ id = "core.crest", label = "Bookplate crest", category = "Bookplate" })
-		ns.RegisterCoreGood({ id = "core.crest.plain", slot = "core.crest", name = "Plain", default = true })
+		-- Core's three slots (SHOP-R25) are in already, from login step 1 (spec/Pagle/adapter/CoreGoods_spec.lua).
+		ns.RegisterCoreSlot({ id = "core.frame", label = "Tracker frame", category = "Trackers" })
+		ns.RegisterCoreGood({ id = "core.frame.plain", slot = "core.frame", name = "Plain", default = true })
 		local ok, err = pcall(function()
-			ns.RegisterCoreGood({ id = "hunts.crest", slot = "core.crest", name = "Crest", tier = 1 })
+			ns.RegisterCoreGood({ id = "hunts.frame", slot = "core.frame", name = "Frame", tier = 1 })
 		end)
 		loaded.client.fire("PLAYER_LOGIN")
 
 		assert.is_false(ok)
-		assert.matches("Goods_spec.lua:%d+: M:RegisterGood: hunts.crest doesn't start with core.", tostring(err))
-		assert.are.same({ "core.crest", "hunts.cover" }, {
-			ns.goods:Slots()[1].id,
-			ns.goods:Slots()[2].id,
+		assert.matches("Goods_spec.lua:%d+: M:RegisterGood: hunts.frame doesn't start with core.", tostring(err))
+		assert.are.same({ "core.frame", "hunts.cover" }, {
+			ns.goods:Slots()[4].id,
+			ns.goods:Slots()[5].id,
 		})
-		assert.are.equal("Core", loaded.env.Pagle.GetGood("core.crest.plain").module)
-		assert.are.equal("core.crest.plain", loaded.env.Pagle.GetEquipped("core.crest"))
+		assert.are.equal("Core", loaded.env.Pagle.GetGood("core.frame.plain").module)
+		assert.are.equal("core.frame.plain", loaded.env.Pagle.GetEquipped("core.frame"))
 	end)
 end)
