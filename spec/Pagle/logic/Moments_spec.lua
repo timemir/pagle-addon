@@ -1,4 +1,4 @@
--- Moments and one Announcement per Cast (announcements.md › Moments and the ladder, › One Announcement per Cast;
+-- Moments and a Cast's Announcements (announcements.md › Moments and the ladder, › A Cast's Announcements;
 -- ADR 0007): logic/Moments.lua fed moments, the projection machinery's seams and a frame queue.
 
 local ns = loadAddon("Pagle", FOREVER_GLOBALS).ns
@@ -101,7 +101,7 @@ local function ranked(announcement)
 	return titles
 end
 
-describe("one Announcement per Cast", function()
+describe("a Cast's Announcements", function()
 	it("merges two Modules' moments for one Cast, raised in either order (ANN-R10, ANN-R11)", function()
 		for _, ledgerFirst in ipairs({ true, false }) do
 			local world = newWorld()
@@ -123,21 +123,50 @@ describe("one Announcement per Cast", function()
 		end
 	end)
 
+	it(
+		"split into a big one of its banners and splash and a catch one of its toasts and Nods, the big one first"
+			.. " (ANN-R11)",
+		function()
+			local world = newWorld()
+			world.moments:Raise(LEDGER, moment("toast", "New Species", { stamp = "New!" }))
+			world.moments:Raise(LEDGER, moment("banner", "Level 12"))
+			world.moments:Raise(LEDGER, moment("nod", "New in this zone"))
+			world.moments:Raise(LEDGER, moment("banner", "1,000 Catches"))
+			world.frame()
+
+			assert.are.same({ "Level 12", "New Species" }, headlines(world))
+			local big, catch = world.shown[1], world.shown[2]
+			assert.are.same({ "banner", { "1,000 Catches" }, CAST }, { big.rung, big.stamps, big.cast })
+			assert.are.same({ "toast", { "New in this zone" }, CAST }, { catch.rung, catch.stamps, catch.cast })
+			assert.are.same({ "Level 12", "1,000 Catches" }, ranked(big))
+		end
+	)
+
+	it("makes one Announcement for a Cast with moments on one side only (ANN-R11)", function()
+		local world = newWorld()
+		world.moments:Raise(LEDGER, moment("splash", "Legend"))
+		world.moments:Raise(LEDGER, moment("banner", "Level 12"))
+		world.frame()
+
+		assert.are.same({ "Legend" }, headlines(world))
+		assert.are.same({ "Level 12" }, world.shown[1].stamps)
+	end)
+
 	it("shows at most 4 stamps, highest ranked first, and the rest as +N (ANN-R11)", function()
 		local world = newWorld()
-		for i, rung in ipairs({ "nod", "toast.low", "toast", "toast.high", "banner", "splash" }) do
+		for i, rung in ipairs({ "toast.high", "toast", "toast", "toast.low", "nod", "nod" }) do
 			world.moments:Raise(LEDGER, moment(rung, "Moment " .. i))
 		end
 		world.frame()
 
-		assert.are.same({ "Moment 6" }, headlines(world))
-		assert.are.same({ "Moment 5", "Moment 4", "Moment 3", "Moment 2" }, world.shown[1].stamps)
+		assert.are.same({ "Moment 1" }, headlines(world))
+		assert.are.same({ "Moment 2", "Moment 3", "Moment 4", "Moment 5" }, world.shown[1].stamps)
 		assert.are.equal(1, world.shown[1].more)
 	end)
 
 	it("merges identical stamp texts into one, a stamp's text being its stamp, else its title (ANN-R11)", function()
 		local world = newWorld()
-		world.moments:Raise(LEDGER, moment("banner", "Level 12"))
+		world.moments:Raise(HUNTS, moment("toast.high", "Hunt completed"))
 		world.moments:Raise(LEDGER, moment("toast", "New Species", { stamp = "New!" }))
 		world.moments:Raise(HUNTS, moment("toast", "Nightfin found", { stamp = "New!" }))
 		world.moments:Raise(LEDGER, moment("nod", "New in this zone"))
@@ -147,19 +176,24 @@ describe("one Announcement per Cast", function()
 		assert.are.equal(0, world.shown[1].more)
 	end)
 
-	it("sums every moment's coins apart from the 4 stamps, a nod's too (ANN-R11, ANN-R23)", function()
-		local world = newWorld()
-		world.moments:Raise(LEDGER, moment("banner", "Level 12", { coins = 50 }))
-		for i = 1, 5 do
-			world.moments:Raise(HUNTS, moment("toast", "Hunt " .. i, { coins = 10 }))
-		end
-		world.moments:Raise(LEDGER, moment("nod", "New in this zone", { coins = 2 }))
-		world.frame()
+	it(
+		"sums the coins of each Announcement's own moments apart from the 4 stamps, a Nod's too, so none show"
+			.. " twice (ANN-R11, ANN-R23)",
+		function()
+			local world = newWorld()
+			world.moments:Raise(LEDGER, moment("banner", "Level 12", { coins = 50 }))
+			for i = 1, 5 do
+				world.moments:Raise(HUNTS, moment("toast", "Hunt " .. i, { coins = 10 }))
+			end
+			world.moments:Raise(LEDGER, moment("nod", "New in this zone", { coins = 2 }))
+			world.frame()
 
-		assert.are.equal(102, world.shown[1].coins)
-		assert.are.equal(4, #world.shown[1].stamps)
-		assert.are.equal(2, world.shown[1].more)
-	end)
+			assert.are.same({ "Level 12", "Hunt 1" }, headlines(world))
+			assert.are.same({ 50, 52 }, { world.shown[1].coins, world.shown[2].coins })
+			assert.are.equal(4, #world.shown[2].stamps)
+			assert.are.equal(1, world.shown[2].more)
+		end
+	)
 
 	it("breaks ties on a rung by order, then the Module's def.order, then the earliest raised (ANN-R2)", function()
 		local world = newWorld()
@@ -258,8 +292,8 @@ describe("while a projection updates", function()
 	local SAME_SECOND = "Player-4618-0A1B2C3D-1791731005-1"
 
 	it(
-		"Cast moments wait, then flush one Announcement per Cast, in Cast order, on the frame after the last"
-			.. " projection finishes (ANN-R10)",
+		"Cast moments wait, then flush Cast by Cast, in Cast order, on the frame after the last projection"
+			.. " finishes (ANN-R10, ANN-R11)",
 		function()
 			local world = newWorld()
 			world.updating = true
@@ -268,6 +302,7 @@ describe("while a projection updates", function()
 			world.moments:Raise(LEDGER, moment("toast", "Later", { cast = LATER }))
 			world.moments:Raise(HUNTS, moment("toast.high", "First", { cast = CAST }))
 			world.moments:Raise(LEDGER, moment("toast", "First, merged", { cast = CAST }))
+			world.moments:Raise(LEDGER, moment("banner", "Later, level", { cast = LATER }))
 			world.frame()
 			world.frame()
 			assert.are.same({}, world.shown)
@@ -276,7 +311,7 @@ describe("while a projection updates", function()
 			assert.are.same({}, world.shown)
 			world.frame()
 
-			assert.are.same({ "First", "Later", "Same second" }, headlines(world))
+			assert.are.same({ "First", "Later, level", "Later", "Same second" }, headlines(world))
 			assert.are.same({ "First, merged" }, world.shown[1].stamps)
 		end
 	)
