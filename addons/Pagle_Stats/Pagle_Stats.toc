@@ -20,4 +20,5 @@ logic\Sessions.lua
 logic\Text.lua
 logic\Book.lua
 adapter\Text.lua
+adapter\BookWidgets.lua
 adapter\Stats.lua
