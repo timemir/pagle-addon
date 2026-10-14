@@ -70,13 +70,15 @@ function ns.CelebratedSet(global)
 	return celebrated
 end
 
---- `n` with the singular or the plural form (`%d` in each), as every count in the Ledger has both (LED-R94).
+--- `n` with the singular or the plural form, as every count in the Ledger has both (LED-R94): `%d` in each, or `%s`
+--- with `format`, which writes the number (the client's BreakUpLargeNumbers, LED-R146).
 ---@param n integer
 ---@param one string
 ---@param other string
+---@param format? fun(n: integer): string
 ---@return string
-function ns.CountText(n, one, other)
-	return (n == 1 and one or other):format(n)
+function ns.CountText(n, one, other, format)
+	return (n == 1 and one or other):format(format and format(n) or n)
 end
 
 --- The shown level (LED-R36, LED-R92): the higher of the computed level and the highest celebrated in this climb.

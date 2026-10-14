@@ -13,9 +13,6 @@ local ns = select(2, ...)
 --- The Angler page's ID (LED-R125).
 ns.JOURNAL_ANGLER = "angler"
 
--- The parts of Ledger completion, one line each, in the Angler page's order (LED-R71, LED-R146).
-local PARTS = { "species", "junk", "treasure", "trophy", "zones" }
-
 -- The bookplate (LED-R146): "Ex Libris", "The Angler's Ledger", "kept since {firstDate}" (none before the first
 -- Catch), the shown level (LED-R36), the ink XP bar (LED-R145), Ledger completion and its parts (LED-R70, LED-R71),
 -- and the lifetime Catches (LED-R42; M3 shows no next milestone, LED-R4).
@@ -40,14 +37,13 @@ local function bookplate(context)
 		kind = "text",
 		text = L.ANGLER_COMPLETE:format(completion.percent, format(completion.done), format(completion.total)),
 	}
-	for _, part in ipairs(PARTS) do
+	for _, part in ipairs(ns.COMPLETION_PARTS) do
 		local count = completion[part]
 		blocks[#blocks + 1] =
 			{ kind = "text", text = L.ANGLER_PARTS[part]:format(format(count.done), format(count.total)) }
 	end
-	local catches = state.catches
-	local catchesText = catches == 1 and L.ANGLER_CATCHES_ONE or L.ANGLER_CATCHES_OTHER
-	blocks[#blocks + 1] = { kind = "text", text = catchesText:format(format(catches)) }
+	blocks[#blocks + 1] =
+		{ kind = "text", text = ns.CountText(state.catches, L.ANGLER_CATCHES_ONE, L.ANGLER_CATCHES_OTHER, format) }
 	return blocks
 end
 
