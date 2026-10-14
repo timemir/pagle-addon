@@ -12,16 +12,13 @@ local Pagle = Pagle
 --- `{ opensAt, closesAt? }` within 400 days, `{ onDemand = true }`, `{ always = true }` or nil, each with
 --- `confirmed`. Times are server times. The realm's UTC offset comes from the realm clock (LOG-R49) and the events
 --- open now from the live calendar (LOG-R46), both read on each call; later event openings come from the
---- catalogue's weekly rules. Nil while the realm clock is secret, as the offset can't be read then. Nothing is cached
---- or polled: callers pass now and call again when they redraw.
+--- catalogue's weekly rules alone. While the realm clock is secret, a spec with `time`, `season` or `events` gives
+--- nil, as the offset can't be read then; one without them is still answered. Nothing is cached or polled: callers
+--- pass now and call again when they redraw. A new table each call, shared and never changed once handed out
+--- (CORE-R18).
 ---@param spec PagleConditionSpec|PagleWindowSpec
 ---@param fromTime integer server time to forecast from
 ---@return Window?
 function Pagle.NextWindow(spec, fromTime)
-	local now = Pagle.GetConditions()
-	if now.time == nil or now.minute == nil then
-		return nil
-	end
-	local offset = ns.RealmUtcOffset(now.time, now.minute)
-	return ns.NextWindow(spec, fromTime, offset, now.events, ns.Catalogue.GetEventRule)
+	return ns.ForecastWindow(spec, fromTime, (ns.TakeSnapshot()), ns.Catalogue.GetEventRule)
 end

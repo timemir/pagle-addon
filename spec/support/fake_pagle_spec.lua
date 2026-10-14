@@ -1120,6 +1120,20 @@ describe("FakePagle", function()
 			end
 		)
 
+		it(
+			"forecasts only specs without time-based fields while the realm clock is secret (LOG-R49, LOG-R50)",
+			function()
+				local fake = newFakePagle()
+				local Pagle = fake.globals.Pagle
+				local secret = laterToday(fake, fake.conditions.minute)
+				secret.minute = nil
+				fake.setConditions(secret)
+				assert.is_nil(Pagle.NextWindow(DAY, fake.conditions.time))
+				assert.is_true(Pagle.NextWindow({ auras = { 1265220 } }, fake.conditions.time).onDemand)
+				assert.is_true(Pagle.NextWindow({}, fake.conditions.time).always)
+			end
+		)
+
 		it("forecasts a window spec Pagle.GetWindowSpec handed out, as Core does (LOG-R50, LOG-R55)", function()
 			local Pagle = newFakePagle().globals.Pagle
 
