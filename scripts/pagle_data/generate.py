@@ -1,7 +1,7 @@
 """From the source layers to the generated files' contents (DATA-R75), without writing anything."""
 
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 from pagle_data.aliases import Proposal, check_aliases, propose
@@ -181,6 +181,7 @@ def read_layers(
     lore = read_lore(root, problems)
     before_hunts = len(problems.found)
     hunts = read_hunts(root, problems)
+    lore = replace(lore, hunts=hunts.texts())  # DATA-R105: Pagle_Hunts' lore kept beside the Hunt definitions
     lock = read_lock(root, problems)
     if len(problems.found) == before_hunts:  # DATA-R96: the lock judges a Hunt list that read cleanly
         check_lock(lock, hunts, problems)
