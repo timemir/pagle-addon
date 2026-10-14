@@ -311,3 +311,26 @@ def test_a_reimport_of_the_same_issues_leaves_the_file_byte_identical(
     assert run(root, capsys, 41, 42)[0] == 0
     assert run(root, capsys, 42, 41)[0] == 0
     assert (root / REPORTS / f"{ALICE}.toml").read_text(encoding="utf-8") == ALICE_TOML
+
+
+def test_an_i_row_without_t_and_m_imports_and_is_no_time_gated_evidence(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    # REP-R20: a Cast with no realm minute (read while the realm clock was secret) gives even a gated item's row
+    # neither t nor m. The parser and the importer take the row as it is (DATA-R116, DATA-R121), and it is neither
+    # inside nor outside a time gate (DATA-R51): Bob's 13759 row in Stranglethorn Vale (33) leaves (13759, night) as
+    # it was, where a row at 22:00 in June confirms it.
+    def body(row: str) -> str:
+        return ISSUES[43].replace("I 30500 33 70338 1", row)
+
+    root = write_tree(tmp_path / "unknown")
+    code, output = run(root, capsys, 43, bodies={43: body("I 13759 33 70338 4")})
+    assert code == 0, output
+    stored = (root / REPORTS / f"{BOB}.toml").read_text(encoding="utf-8")
+    assert stored.endswith("[[i]]\nitem = 13759\narea = 33\nbuild = 70338\ncount = 4\n"), stored
+    assert not [line for line in output.splitlines() if "gate" in line], output
+
+    root = write_tree(tmp_path / "inside")
+    code, output = run(root, capsys, 43, bodies={43: body("I 13759 33 70338 4 t=22:00 m=6")})
+    assert code == 0, output
+    assert [line for line in output.splitlines() if "gate" in line and "13759" in line], output

@@ -41,14 +41,14 @@ end
 
 describe("the Field report projection", function()
 	it(
-		"is Core's own, bound to PagleDB.global.projections.fieldReport with rules version 1 and the content"
+		"is Core's own, bound to PagleDB.global.projections.fieldReport with rules version 2 and the content"
 			.. " fingerprint alone (REP-R25, LOG-R70, LOG-R78)",
 		function()
 			local loaded = core(history(2))
 			local Pagle = loaded.env.Pagle
 
 			local db = loaded.env.PagleDB.global.projections.fieldReport
-			assert.are.equal(1, db.rulesVersion)
+			assert.are.equal(2, db.rulesVersion) -- field-report.md › Tunables
 			assert.are.equal(Pagle.CONTENT_FINGERPRINT, db.fingerprint)
 			assert.are.equal(LOG_ID, db.logId)
 			assert.are.equal(#loaded.env.PagleLog.entries, db.lastSeq, "up to date, login's Skill Reading too")
@@ -113,7 +113,7 @@ describe("the Field report projection", function()
 							lastSeq = 601,
 							logId = LOG_ID,
 							fingerprint = "an older release",
-							rulesVersion = 1,
+							rulesVersion = 2,
 						},
 					},
 					diagnostics = {
