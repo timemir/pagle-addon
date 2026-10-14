@@ -34,10 +34,12 @@ logic\JournalSpecies.lua
 logic\Home.lua
 logic\JournalAngler.lua
 logic\JournalCollections.lua
+logic\JournalLegends.lua
 logic\JournalZone.lua
 adapter\JournalWidgets.lua
 adapter\JournalText.lua
 adapter\JournalCollections.lua
+adapter\JournalLegends.lua
 adapter\JournalZone.lua
 adapter\JournalSearch.lua
 adapter\Journal.lua

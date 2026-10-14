@@ -249,10 +249,11 @@ local function addMatches(names, query, limit, placeOf, results)
 	end
 end
 
---- Search (LED-R148, zones and Species; Legends come in M4): a case-insensitive substring of the names of the zones
---- with a tile (LED-R131: charted, or fished) and of the caught Species, by their representative item's name (LED-R5),
---- never anything uncaught (LED-R124). At most 4 zones then 6 fish, each part sorted by name. A name the client
---- hasn't loaded yet doesn't match. Nil for an empty box (no dropdown); an empty list for no match.
+--- Search (LED-R148): a case-insensitive substring of the names of the zones with a tile (LED-R131: charted, or
+--- fished), of the caught Species, by their representative item's name (LED-R5), and of the caught Legends, never
+--- anything uncaught (LED-R124). At most 4 zones then 6 fish (Species and Legends together), each part sorted by name;
+--- a Legend opens the Legends spread with it chosen. A name the client hasn't loaded yet doesn't match. Nil for an
+--- empty box (no dropdown); an empty list for no match.
 ---@param query string
 ---@param context LedgerJournalContext
 ---@return LedgerSearchResult[]?
@@ -274,11 +275,22 @@ function ns.JournalSearch(query, context)
 	for id in pairs(state.species) do
 		fish[id] = text:Item(id)
 	end
+	-- Caught Legends, kept in `items` and never as Species (LED-R5), so their IDs never meet a Species'.
+	local legends = {}
+	for itemID in pairs(state.items or {}) do
+		local item = context.getItem and context.getItem(itemID)
+		if item and item.legend then
+			legends[itemID] = true
+			fish[itemID] = text:Item(itemID)
+		end
+	end
 	local results = {}
 	addMatches(zones, query, SEARCH_ZONES, function(zone)
 		return ns.JournalZonePlace(zone)
 	end, results)
-	addMatches(fish, query, SEARCH_FISH, ns.JournalFishPlace, results)
+	addMatches(fish, query, SEARCH_FISH, function(id)
+		return legends[id] and ns.JournalLegendPlace(id) or ns.JournalFishPlace(id)
+	end, results)
 	return results
 end
 
