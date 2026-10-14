@@ -158,12 +158,54 @@ function ns.GoalNeed(goal, pagle)
 	return goal.need
 end
 
+-- Whether a goal's target no longer resolves in the current catalogue (TKB-R44). A Wanderer Expedition's continent is
+-- looked for among GetZones' zones only when `scanContinents` is set: CountCatch skips the scan, since a Catch counts
+-- for it only in a zone on that continent, which a stranded one has none of.
+---@param goal TackleGoal
+---@param pagle table
+---@param scanContinents boolean
+---@return boolean
+local function stranded(goal, pagle, scanContinents)
+	local kind = goal.kind
+	if kind == "haul" or kind == "variety" then
+		if pagle.GetArea(goal.target) == nil then
+			return true
+		end
+		return goal.type == "e" and kind == "variety" and ns.GoalNeed(goal, pagle) == 0
+	end
+	if kind == "species" then
+		local item = pagle.GetItem(goal.target)
+		return item == nil or item.species == nil or item.removed == true
+	end
+	if kind == "wanderer" and goal.type == "e" and scanContinents then
+		for _, zone in ipairs(pagle.GetZones()) do
+			local area = pagle.GetArea(zone)
+			if area and area.continent == goal.target then
+				return false
+			end
+		end
+		return true
+	end
+	return false
+end
+
+--- Whether a goal is stranded (TKB-R44): its target no longer resolves in the current catalogue. That is a Variety
+--- Expedition with no Species left (ns.GoalNeed 0), a Species goal whose representative item is Uncharted, has no
+--- `species` or is `removed`, a zone goal (Haul, Variety) whose zone GetArea no longer knows, and a Wanderer
+--- Expedition whose continent no zone of GetZones is on. A stranded goal counts nothing and never completes.
+---@param goal TackleGoal
+---@param pagle table Core's catalogue calls (LOG-R55)
+---@return boolean
+function ns.IsStranded(goal, pagle)
+	return stranded(goal, pagle, true)
+end
+
 --- Whether a goal is complete (TKB-R45): its progress has reached its need, and it isn't stranded (TKB-R44).
 ---@param goal TackleGoal
 ---@param pagle table Core's catalogue calls (LOG-R55)
 ---@return boolean
 function ns.IsComplete(goal, pagle)
-	return goal.progress >= ns.GoalNeed(goal, pagle)
+	return goal.progress >= ns.GoalNeed(goal, pagle) and not stranded(goal, pagle, true)
 end
 
 --- Starts a caught Cast for a goal (TKB-R41): a session-bound goal whose progress belongs to another Session than the
@@ -195,8 +237,8 @@ function ns.CountCatch(goal, cast, slot, ctx)
 	if ns.IsSessionBound(goal) and goal.session ~= cast.session then
 		return false -- not entered (EnterCast): its progress belongs to another Session (TKB-R41)
 	end
-	if ns.IsComplete(goal, ctx.pagle) then
-		return false -- TKB-R45
+	if stranded(goal, ctx.pagle, false) or goal.progress >= ns.GoalNeed(goal, ctx.pagle) then
+		return false -- stranded (TKB-R44), or complete: later Catches don't count for it (TKB-R45)
 	end
 	local item = slot.itemID ~= 0 and ctx.pagle.GetItem(slot.itemID) or nil
 	return COUNT[goal.kind](goal, cast, slot, item, ctx)

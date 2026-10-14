@@ -25,73 +25,85 @@ local HEFTY, WHOPPER, MONSTER = 3, 4, 5
 
 local GOAL_SEQ = 100 -- the seq of the record that issued every goal here
 
-describe("Goal progress", function()
-	local loaded = board.load()
-	local ns = loaded.ns
-	local Pagle = loaded.env.Pagle
+-- The fixture catalogue as a later release might change it (TKB-R44, TKB-R196): `change(catalogue)` edits a copy.
+---@param change fun(catalogue: table)
+---@return table catalogue
+local function changedCatalogue(change)
+	local catalogue = board.catalogue()
+	change(catalogue)
+	return catalogue
+end
 
-	-- A goal (TackleGoal) issued at GOAL_SEQ with no progress: `fields` gives its type, kind, need and target or items.
-	local function goal(fields)
-		local made = {
-			id = "Player-4618-0A1B2C3D-1791731747-0",
-			seq = GOAL_SEQ,
-			type = "n",
-			tier = 1,
-			pay = 10,
-			reposted = false,
-			issuedDay = 1,
-			time = 1791731747,
-			progress = 0,
-			seen = {},
-		}
-		for key, value in pairs(fields) do
-			made[key] = value
-		end
-		return made
+-- A goal (TackleGoal) issued at GOAL_SEQ with no progress: `fields` gives its type, kind, need and target or items.
+---@param fields table
+---@return table
+local function goal(fields)
+	local made = {
+		id = "Player-4618-0A1B2C3D-1791731747-0",
+		seq = GOAL_SEQ,
+		type = "n",
+		tier = 1,
+		pay = 10,
+		reposted = false,
+		issuedDay = 1,
+		time = 1791731747,
+		progress = 0,
+		seen = {},
+	}
+	for key, value in pairs(fields) do
+		made[key] = value
 	end
+	return made
+end
 
-	-- A caught Cast record (LOG-R42) after the goal, in `zone`, in Session "S1", with one Catch per entry of
-	-- `catches`: an item ID, or `{ itemID, band }` for a Catch with a Simulated Size of that band (LOG-R65). Every
-	-- Catch is a stack of 3, to show quantity never matters (TKB-R40). `options` sets `seq`, `outcome`, `session`
-	-- and `lure`.
-	local seq = GOAL_SEQ
-	local function cast(zone, catches, options)
-		options = options or {}
-		seq = seq + 1
-		local id = ("Player-4618-0A1B2C3D-%d-0"):format(1791732000 + seq)
-		local items = {}
-		for n, catch in ipairs(catches) do
-			local itemID, band = catch, nil
-			if type(catch) == "table" then
-				itemID, band = catch[1], catch[2]
-			end
-			items[n] = {
-				n = n,
-				itemID = itemID,
-				quantity = 3,
-				catchId = id .. ":" .. n,
-				size = band and { length = 400, band = band } or nil,
-			}
+-- A caught Cast record (LOG-R42) after the goal, in `zone`, in Session "S1", with one Catch per entry of `catches`:
+-- an item ID, or `{ itemID, band }` for a Catch with a Simulated Size of that band (LOG-R65). Every Catch is a stack
+-- of 3, to show quantity never matters (TKB-R40). `options` sets `seq`, `outcome`, `session` and `lure`.
+local seq = GOAL_SEQ
+---@param zone integer
+---@param catches (integer|integer[])[]
+---@param options { seq: integer?, outcome: string?, session: string?, lure: integer? }?
+---@return table
+local function cast(zone, catches, options)
+	options = options or {}
+	seq = seq + 1
+	local id = ("Player-4618-0A1B2C3D-%d-0"):format(1791732000 + seq)
+	local items = {}
+	for n, catch in ipairs(catches) do
+		local itemID, band = catch, nil
+		if type(catch) == "table" then
+			itemID, band = catch[1], catch[2]
 		end
-		return {
-			seq = options.seq or seq,
-			id = id,
-			kind = "cast",
-			char = 1,
-			time = 1791732000 + seq,
-			outcome = options.outcome or "caught",
-			session = options.session or "S1",
-			conditions = { time = 1791732000 + seq, minute = 500, zone = zone, subzone = 0, lure = options.lure },
-			items = items, -- kept on a got-away Cast too (Core's has none), so the spec sees CountCatch refuse them
-
+		items[n] = {
+			n = n,
+			itemID = itemID,
+			quantity = 3,
+			catchId = id .. ":" .. n,
+			size = band and { length = 400, band = band } or nil,
 		}
 	end
+	return {
+		seq = options.seq or seq,
+		id = id,
+		kind = "cast",
+		char = 1,
+		time = 1791732000 + seq,
+		outcome = options.outcome or "caught",
+		session = options.session or "S1",
+		conditions = { time = 1791732000 + seq, minute = 500, zone = zone, subzone = 0, lure = options.lure },
+		items = items, -- kept on a got-away Cast too (Core's has none), so the spec sees CountCatch refuse them
+	}
+end
 
-	-- Runs `casts` through `goal` as the completions' ticket does (TKB-R41, TKB-R45, TKB-R46): EnterCast once per
-	-- Cast, then CountCatch for each Catch in item order, adding each Catch's item to the ever-caught set after
-	-- counting it. `caught` is the ever-caught set before the first Cast. Returns the goal's progress and, per Catch,
-	-- whether it counted.
-	local function run(subject, casts, caught)
+-- A runner over the loaded board's `ns` and catalogue calls `Pagle`: run(goal, casts, caught) runs `casts` through
+-- the goal as the completions' ticket does (TKB-R41, TKB-R45, TKB-R46): EnterCast once per Cast, then CountCatch for
+-- each Catch in item order, adding each Catch's item to the ever-caught set after counting it. `caught` is the
+-- ever-caught set before the first Cast. It returns the goal's progress and, per Catch, whether it counted.
+---@param ns table
+---@param Pagle table
+---@return fun(subject: table, casts: table[], caught: table?): integer, boolean[]
+local function runner(ns, Pagle)
+	return function(subject, casts, caught)
 		caught = caught or {}
 		local ctx = {
 			pagle = Pagle,
@@ -109,6 +121,13 @@ describe("Goal progress", function()
 		end
 		return subject.progress, counted
 	end
+end
+
+describe("Goal progress", function()
+	local loaded = board.load()
+	local ns = loaded.ns
+	local Pagle = loaded.env.Pagle
+	local run = runner(ns, Pagle)
 
 	describe("haul", function()
 		it("counts +1 per Catch in the zone, whatever its quantity, Noise and Uncharted included (TKB-R40, TKB-R42, TKB-R43)", function()
@@ -422,6 +441,173 @@ describe("Goal progress", function()
 			assert.are.equal(30, ns.GoalNeed(goal({ kind = "haul", need = 30, target = DUROTAR }), Pagle))
 			assert.are.equal(3, ns.GoalNeed(goal({ kind = "variety", need = 3, target = DUROTAR }), Pagle))
 			assert.are.equal(1, ns.GoalNeed(goal({ type = "e", kind = "size", need = 1, target = WHOPPER }), Pagle))
+		end)
+	end)
+end)
+
+describe("Goal progress over a changed catalogue", function()
+	local UNKNOWN_AREA = 9999 -- an area the catalogue doesn't know (GetArea nil)
+
+	-- Darkshore's Variety Expedition: its five eligible Species by representative item.
+	local function darkshoreVariety()
+		return goal({
+			type = "e",
+			kind = "variety",
+			tier = 0,
+			need = 5,
+			target = DARKSHORE,
+			items = { SMALLFISH, MACKEREL, BLACKMOUTH, GROUPER, MIGHTFISH },
+		})
+	end
+
+	describe("where two of Darkshore's Species are gone and Mightfish is removed", function()
+		local loaded = board.load(nil, {
+			catalogue = changedCatalogue(function(catalogue)
+				catalogue.items[GROUPER].removed = true
+				catalogue.items[MACKEREL].species = nil
+				catalogue.items[MIGHTFISH].removed = true
+			end),
+		})
+		local ns, Pagle = loaded.ns, loaded.env.Pagle
+		local run = runner(ns, Pagle)
+
+		it("a Variety Expedition leaves them out of its need and its progress (TKB-R44)", function()
+			local variety = darkshoreVariety()
+
+			local progress = run(variety, { cast(DARKSHORE, { GROUPER, MACKEREL, MIGHTFISH, SMALLFISH, BLACKMOUTH }) })
+
+			assert.are.equal(2, ns.GoalNeed(variety, Pagle))
+			assert.are.equal(2, progress)
+			assert.is_false(ns.IsStranded(variety, Pagle))
+			assert.is_true(ns.IsComplete(variety, Pagle))
+		end)
+
+		it("a Species goal on the removed item is stranded and counts nothing (TKB-R44)", function()
+			local species = goal({ kind = "species", need = 5, target = MIGHTFISH })
+
+			local progress = run(species, { cast(DARKSHORE, { MIGHTFISH, LARGE_MIGHTFISH }) })
+
+			assert.is_true(ns.IsStranded(species, Pagle))
+			assert.are.equal(0, progress)
+		end)
+
+		it("a Species goal whose representative item lost its species, or is Uncharted, is stranded (TKB-R44)", function()
+			assert.is_true(ns.IsStranded(goal({ kind = "species", need = 5, target = MACKEREL }), Pagle))
+			assert.is_true(ns.IsStranded(goal({ kind = "species", need = 5, target = UNCHARTED }), Pagle))
+			assert.is_false(ns.IsStranded(goal({ kind = "species", need = 5, target = SMALLFISH }), Pagle))
+		end)
+	end)
+
+	describe("where every Species of Darkshore is gone", function()
+		local loaded = board.load(nil, {
+			catalogue = changedCatalogue(function(catalogue)
+				for _, itemID in ipairs({ SMALLFISH, MACKEREL, BLACKMOUTH, GROUPER, MIGHTFISH }) do
+					catalogue.items[itemID].removed = true
+				end
+			end),
+		})
+		local ns, Pagle = loaded.ns, loaded.env.Pagle
+		local run = runner(ns, Pagle)
+
+		it("a Variety Expedition is stranded and never completes, at 0 of 0 (TKB-R44)", function()
+			local variety = darkshoreVariety()
+
+			local progress = run(variety, { cast(DARKSHORE, { SMALLFISH, MACKEREL, LARGE_MIGHTFISH }) })
+
+			assert.are.equal(0, ns.GoalNeed(variety, Pagle))
+			assert.are.equal(0, progress)
+			assert.is_true(ns.IsStranded(variety, Pagle))
+			assert.is_false(ns.IsComplete(variety, Pagle))
+		end)
+	end)
+
+	describe("over the fixture catalogue", function()
+		local loaded = board.load()
+		local ns, Pagle = loaded.ns, loaded.env.Pagle
+		local run = runner(ns, Pagle)
+
+		it("a zone goal whose area GetArea doesn't know is stranded and counts nothing (TKB-R44)", function()
+			local haul = goal({ kind = "haul", need = 1, target = UNKNOWN_AREA })
+			local variety = goal({ kind = "variety", need = 3, target = UNKNOWN_AREA })
+			local expedition = goal({ type = "e", kind = "variety", tier = 0, need = 1, target = UNKNOWN_AREA })
+			expedition.items = { SMALLFISH }
+
+			local progress = run(haul, { cast(UNKNOWN_AREA, { SMALLFISH }) })
+
+			assert.are.equal(0, progress)
+			assert.is_false(ns.IsComplete(haul, Pagle))
+			assert.are.same({ true, true, true }, {
+				ns.IsStranded(haul, Pagle),
+				ns.IsStranded(variety, Pagle),
+				ns.IsStranded(expedition, Pagle),
+			})
+		end)
+
+		it("a Wanderer Expedition is stranded on a continent no zone is on, not on Kalimdor (TKB-R44)", function()
+			local unknown = goal({ type = "e", kind = "wanderer", tier = 0, need = 5, target = 7 })
+			local kalimdor = goal({ type = "e", kind = "wanderer", tier = 0, need = 5, target = KALIMDOR })
+			local eastern = goal({ type = "e", kind = "wanderer", tier = 0, need = 5, target = EASTERN_KINGDOMS })
+
+			assert.are.same(
+				{ true, false, false },
+				{ ns.IsStranded(unknown, Pagle), ns.IsStranded(kalimdor, Pagle), ns.IsStranded(eastern, Pagle) }
+			)
+		end)
+
+		it("a goal of a kind without a catalogue target is never stranded (TKB-R44)", function()
+			local goals = {
+				goal({ kind = "wanderer", tier = 3, need = 3 }),
+				goal({ kind = "quality", need = 3, target = 2 }),
+				goal({ kind = "size", need = 3, target = HEFTY }),
+				goal({ kind = "collector", tier = 2, need = 2 }),
+				goal({ type = "e", kind = "collector", tier = 0, need = 3 }),
+				goal({ kind = "lure", need = 15 }),
+				goal({ kind = "haul", need = 20, target = WESTFALL }),
+			}
+
+			for _, subject in ipairs(goals) do
+				assert.is_false(ns.IsStranded(subject, Pagle), subject.kind)
+			end
+		end)
+	end)
+
+	describe("where Noise has a quality, a fish has none and a release classifies the Uncharted item", function()
+		local loaded = board.load(nil, {
+			catalogue = changedCatalogue(function(catalogue)
+				catalogue.items[MANA_POTION].quality = 2
+				catalogue.items[EEL].quality = nil
+				catalogue.items[UNCHARTED] = {
+					category = "fish",
+					species = MIGHTFISH,
+					quality = 3,
+					legend = false,
+					noise = false,
+					removed = false,
+					pool = false,
+				}
+			end),
+		})
+		local ns, Pagle = loaded.ns, loaded.env.Pagle
+		local run = runner(ns, Pagle)
+
+		it("a Quality goal counts neither the Noise nor the item without a quality (TKB-R42)", function()
+			local quality = goal({ kind = "quality", need = 3, target = 2 })
+
+			local _, counted = run(quality, { cast(DUROTAR, { MANA_POTION, EEL, CONTAINER_B }) })
+
+			assert.are.same({ false, false, true }, counted)
+		end)
+
+		it("the classified item now counts like any other Catch (TKB-R196)", function()
+			local species = goal({ kind = "species", need = 5, target = MIGHTFISH })
+			local quality = goal({ kind = "quality", need = 3, target = 3 })
+			local variety = darkshoreVariety()
+
+			run(species, { cast(DUROTAR, { UNCHARTED }) })
+			run(quality, { cast(DUROTAR, { UNCHARTED }) })
+			run(variety, { cast(DARKSHORE, { UNCHARTED }) })
+
+			assert.are.same({ 1, 1, 1 }, { species.progress, quality.progress, variety.progress })
 		end)
 	end)
 end)
