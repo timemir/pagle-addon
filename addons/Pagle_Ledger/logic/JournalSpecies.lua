@@ -43,7 +43,7 @@ function ns.PlainHint(world, id, text)
 		pool = pool or (inZone ~= nil and inZone.pool)
 	end
 	if pool then
-		parts[#parts + 1] = L.HINT_POOLS
+		parts[#parts + 1] = L.POOLS
 	end
 	if #listed == 0 then
 		return table.concat(parts, L.HINT_SEPARATOR)

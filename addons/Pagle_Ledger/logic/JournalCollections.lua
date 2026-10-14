@@ -71,7 +71,7 @@ local function trophyIndex(context, families)
 			blocks[#blocks + 1] = {
 				kind = "leader",
 				text = L.TROPHY_INDEX_LINE:format(name, ns.JournalStars(stars)),
-				value = L.TROPHY_INDEX_COUNT:format(format(family.count.done), format(family.count.total)),
+				value = L.COUNT_OF:format(format(family.count.done), format(family.count.total)),
 				place = ns.JournalPlace.trophyRoom(family.id),
 			}
 		end

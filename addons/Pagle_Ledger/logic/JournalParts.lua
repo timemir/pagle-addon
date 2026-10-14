@@ -63,7 +63,7 @@ function ns.JournalStars(stars)
 	local L = ns.L
 	local marks = {}
 	for star = 1, 3 do
-		marks[star] = stars[star] and L.STAR_ON or L.STAR_OFF
+		marks[star] = stars[star] and L.STAR or L.STAR_OFF
 	end
 	return table.concat(marks)
 end

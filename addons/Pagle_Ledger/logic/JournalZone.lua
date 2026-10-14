@@ -80,7 +80,7 @@ local function speciesRow(context, zone, id, listing, selected)
 			margin[#margin + 1] = context.text:WindowLine(window)
 		end
 		if listing.pool then
-			margin[#margin + 1] = L.ZONE_POOLS_MARGIN
+			margin[#margin + 1] = L.POOLS
 		end
 		row.margin = #margin > 0 and margin or nil
 	end
@@ -116,7 +116,7 @@ local function standing(context, zone, blocks)
 	local L = ns.L
 	local world, state, celebrated = context.world, context.state, context.celebrated
 	local shown = ns.ShownZoneRank(world, state, celebrated, zone)
-	blocks[#blocks + 1] = { kind = "seal", text = L.ZONE_RANKS[shown] or L.ZONE_UNFISHED }
+	blocks[#blocks + 1] = { kind = "seal", text = L.ZONE_RANKS[shown] or L.UNFISHED }
 	local rungs = {}
 	for rank, name in ipairs(L.ZONE_RANKS) do
 		rungs[rank] = { text = name, inked = rank <= shown, circled = rank == shown }
@@ -237,7 +237,8 @@ end
 local function weightsByFamily(context)
 	local weights = {}
 	for _, family in ipairs(ns.TrophyFamilies(context.world, context.state)) do
-		weights[family.id] = ns.L.ZONE_WEIGHTS:format(family.count.done, family.count.total)
+		local format = context.formatNumber
+		weights[family.id] = ns.L.COUNT_OF:format(format(family.count.done), format(family.count.total))
 	end
 	return weights
 end

@@ -169,15 +169,16 @@ function ns.NotesToSelf(context)
 	return notes
 end
 
--- "x / N" over two counts summed.
+-- "x / N" over counts summed, in the client's number format.
+---@param format fun(n: integer): string
 ---@param ... LedgerCount
 ---@return string
-local function countText(...)
+local function countText(format, ...)
 	local done, total = 0, 0
 	for _, count in ipairs({ ... }) do
 		done, total = done + count.done, total + count.total
 	end
-	return ns.L.HOME_COUNT:format(done, total)
+	return ns.L.COUNT_OF:format(format(done), format(total))
 end
 
 -- The right page (LED-R132): the bookplate summary (the shown level in large numerals, Ledger completion's seal),
@@ -205,14 +206,14 @@ local function rightPage(context)
 	right[#right + 1] = { kind = "kicker", text = L.HOME_CONTENTS }
 	right[#right + 1] = {
 		kind = "leader",
-		text = L.HOME_TROPHY_ROOM,
-		value = countText(completion.trophy),
+		text = L.TROPHY_TITLE,
+		value = countText(context.formatNumber, completion.trophy),
 		place = ns.JournalPlace.trophyRoom(),
 	}
 	right[#right + 1] = {
 		kind = "leader",
 		text = L.HOME_CURIOS,
-		value = countText(completion.junk, completion.treasure),
+		value = countText(context.formatNumber, completion.junk, completion.treasure),
 		place = ns.JournalPlace.curios(),
 	}
 	right[#right + 1] = { kind = "leader", text = L.HOME_ANGLER, place = ns.JournalPlace.angler() }

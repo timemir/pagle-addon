@@ -83,7 +83,7 @@ local function milestones(context, blocks)
 	local boxes = {}
 	for i, threshold in ipairs(ns.SKILL_MILESTONES) do
 		local done = credited[threshold] ~= nil or celebrated[threshold] ~= nil
-		boxes[i] = (done and L.ANGLER_MILESTONE_DONE or L.ANGLER_MILESTONE_OPEN):format(threshold)
+		boxes[i] = L.ANGLER_MILESTONE:format(done and L.CHECK_ON or L.CHECK_OFF, threshold)
 	end
 	blocks[#blocks + 1] = { kind = "kicker", text = L.ANGLER_MILESTONES }
 	blocks[#blocks + 1] = { kind = "text", text = table.concat(boxes, L.ANGLER_MILESTONE_SEPARATOR) }
