@@ -43,7 +43,7 @@ end
 local function trophyFamilies(context)
 	local state = context.state --[[@as LedgerState]]
 	local getItem = context.getItem --[[@as fun(itemID: integer): PagleItem?]]
-	local worlds = ns.CollectionWorlds(context.world --[[@as LedgerWorld]], state, getItem)
+	local worlds = ns.CollectionWorlds(context.world --[[@as LedgerWorld]], state)
 	local byID, families = {}, {}
 	for _, itemID in ipairs(worlds.trophy) do
 		local item = getItem(itemID) --[[@as PagleItem]]
@@ -83,11 +83,7 @@ end
 local function trophyIndex(context, families)
 	local L = ns.L
 	local format = context.formatNumber
-	local count = ns.LedgerCompletion(
-		context.world --[[@as LedgerWorld]],
-		context.state --[[@as LedgerState]],
-		context.getItem --[[@as fun(itemID: integer): PagleItem?]]
-	).trophy
+	local count = ns.LedgerCompletion(context.world --[[@as LedgerWorld]], context.state --[[@as LedgerState]]).trophy
 	local blocks = {
 		{ kind = "title", text = L.TROPHY_TITLE },
 		{ kind = "text", text = L.TROPHY_WEIGHTS:format(format(count.done), format(count.total)) },
@@ -97,8 +93,7 @@ local function trophyIndex(context, families)
 			context.world --[[@as LedgerWorld]],
 			context.state --[[@as LedgerState]],
 			context.celebrated --[[@as LedgerCelebrated]],
-			family.id,
-			context.getItem --[[@as fun(itemID: integer): PagleItem?]]
+			family.id
 		)
 		blocks[#blocks + 1] = {
 			kind = "leader",
@@ -174,8 +169,7 @@ local function familyPage(context, family)
 		world,
 		context.state --[[@as LedgerState]],
 		context.celebrated --[[@as LedgerCelebrated]],
-		family.id,
-		context.getItem --[[@as fun(itemID: integer): PagleItem?]]
+		family.id
 	)
 	local stamps = {}
 	for star, text in ipairs(L.TROPHY_STAMPS) do
@@ -353,9 +347,8 @@ ns.RegisterJournalSpread(ns.JOURNAL_CURIOS, {
 	draw = function(_, context)
 		local world = context.world --[[@as LedgerWorld]]
 		local state = context.state --[[@as LedgerState]]
-		local getItem = context.getItem --[[@as fun(itemID: integer): PagleItem?]]
-		local worlds = ns.CollectionWorlds(world, state, getItem)
-		local completion = ns.LedgerCompletion(world, state, getItem)
+		local worlds = ns.CollectionWorlds(world, state)
+		local completion = ns.LedgerCompletion(world, state)
 		local right = {}
 		treasures(context, worlds, completion, right)
 		loosePages(context, right)

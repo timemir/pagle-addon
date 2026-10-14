@@ -278,7 +278,7 @@ end
 ---@return string
 local function weightsOf(context, family)
 	local landed, total = 0, 0
-	for _, itemID in ipairs(ns.CollectionWorlds(context.world, context.state, context.getItem).trophy) do
+	for _, itemID in ipairs(ns.CollectionWorlds(context.world, context.state).trophy) do
 		local item = context.getItem(itemID)
 		if item and item.family == family and not item.removed then
 			total = total + 1
@@ -322,7 +322,7 @@ local function about(context, zone)
 			blocks[#blocks + 1] = {
 				kind = "row",
 				text = familyName(context, family),
-				stars = ns.ShownFamilyStars(world, state, context.celebrated, family, context.getItem),
+				stars = ns.ShownFamilyStars(world, state, context.celebrated, family),
 				value = weightsOf(context, family),
 				place = { id = ns.JOURNAL_TROPHY_ROOM, args = { family = family } },
 			}

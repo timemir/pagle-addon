@@ -35,11 +35,7 @@ local function bookplate(context)
 	end
 	blocks[#blocks + 1] = { kind = "title", text = L.ANGLER_LEVEL:format(ns.ShownLevel(state, celebrated)) }
 	blocks[#blocks + 1] = { kind = "xpBar", bar = ns.InkXpBar(state, celebrated, context.now, format) }
-	local completion = ns.LedgerCompletion(
-		context.world --[[@as LedgerWorld]],
-		state,
-		context.getItem --[[@as fun(itemID: integer): PagleItem?]]
-	)
+	local completion = ns.LedgerCompletion(context.world --[[@as LedgerWorld]], state)
 	blocks[#blocks + 1] = {
 		kind = "text",
 		text = L.ANGLER_COMPLETE:format(completion.percent, format(completion.done), format(completion.total)),

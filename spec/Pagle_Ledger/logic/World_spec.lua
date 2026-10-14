@@ -356,7 +356,7 @@ describe("The Ledger's world", function()
 				treasure = { CHEST },
 				trophy = { TROPHY_A, TROPHY_B, TROPHY_C, TROPHY_D },
 				legends = { LEGEND, LEGEND_2 },
-			}, ns.CollectionWorlds(world, emptyState(), lookup.GetItem))
+			}, ns.CollectionWorlds(world, emptyState()))
 		end)
 
 		it("adds what was caught on no list, and never an uncaught unlisted item (LED-R11)", function()
@@ -366,7 +366,7 @@ describe("The Ledger's world", function()
 			state.items[TREASURE_2] = first(1)
 			state.items[LEGEND_3] = first(1)
 
-			local worlds = ns.CollectionWorlds(world, state, lookup.GetItem)
+			local worlds = ns.CollectionWorlds(world, state)
 
 			assert.are.same({ STRAY, SMALLFISH, MACKEREL, NIGHTFISH, MIXED }, worlds.species)
 			-- The unlisted trophy joins the Trophy Room; the unlisted, uncaught TREASURE is nowhere.
@@ -381,7 +381,7 @@ describe("The Ledger's world", function()
 
 			assert.are.same(
 				{ SMALLFISH, REMOVED, MACKEREL, NIGHTFISH, MIXED },
-				ns.CollectionWorlds(world, state, lookup.GetItem).species
+				ns.CollectionWorlds(world, state).species
 			)
 		end)
 	end)
@@ -406,7 +406,7 @@ describe("The Ledger's world", function()
 				trophy = { done = 0, total = 0 },
 				zones = { done = 0, total = 0 },
 				legends = { done = 0, total = 0 },
-			}, ns.LedgerCompletion(ns.NewWorld(empty), emptyState(), empty.GetItem))
+			}, ns.LedgerCompletion(ns.NewWorld(empty), emptyState()))
 		end)
 
 		it("matches the parts worked out by hand (LED-R70, LED-R71)", function()
@@ -438,7 +438,7 @@ describe("The Ledger's world", function()
 				trophy = { done = 2, total = 5 },
 				zones = { done = 1, total = 2 },
 				legends = { done = 1, total = 2 },
-			}, ns.LedgerCompletion(world, state, lookup.GetItem))
+			}, ns.LedgerCompletion(world, state))
 		end)
 
 		-- A state with every Species, curio and trophy in the fixture's world caught and every charted zone Master.
@@ -456,7 +456,7 @@ describe("The Ledger's world", function()
 		end
 
 		it("reads 100 when every Species, curio, trophy and zone is done (LED-R70)", function()
-			local completion = ns.LedgerCompletion(world, everything(), lookup.GetItem)
+			local completion = ns.LedgerCompletion(world, everything())
 
 			assert.are.same({ 100, 12, 12 }, { completion.percent, completion.done, completion.total })
 		end)
@@ -480,7 +480,7 @@ describe("The Ledger's world", function()
 				local state = everything()
 				remove(state)
 
-				assert.are.equal(91, ns.LedgerCompletion(world, state, lookup.GetItem).percent)
+				assert.are.equal(91, ns.LedgerCompletion(world, state).percent)
 			end
 		end)
 
@@ -488,7 +488,7 @@ describe("The Ledger's world", function()
 			local state = everything()
 			state.species[REMOVED] = species(9)
 
-			local completion = ns.LedgerCompletion(world, state, lookup.GetItem)
+			local completion = ns.LedgerCompletion(world, state)
 
 			assert.are.same({ done = 4, total = 4 }, completion.species)
 			assert.are.equal(100, completion.percent)
@@ -508,6 +508,8 @@ describe("The Ledger's world", function()
 			end
 		end
 		local lookup, flippedLookup = lookups(items(), areas()), lookups(items(), flipped)
+		-- Only the areas differ: both worlds keep the one GetItem.
+		flippedLookup.GetItem = lookup.GetItem
 		local state = emptyState()
 		state.species[MACKEREL] = species(1)
 		state.zones[ELWYNN] = zoneState(5)
@@ -515,9 +517,6 @@ describe("The Ledger's world", function()
 		local world, flippedWorld = ns.NewWorld(lookup), ns.NewWorld(flippedLookup)
 
 		assert.are.same(world, flippedWorld)
-		assert.are.same(
-			ns.LedgerCompletion(world, state, lookup.GetItem),
-			ns.LedgerCompletion(flippedWorld, state, flippedLookup.GetItem)
-		)
+		assert.are.same(ns.LedgerCompletion(world, state), ns.LedgerCompletion(flippedWorld, state))
 	end)
 end)

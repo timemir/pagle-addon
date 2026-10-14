@@ -321,7 +321,7 @@ describe("Stars", function()
 			assert.are.same({
 				{ kind = "familyStar", cast = second.id, coins = 0, family = FAMILY, stars = { 2 } },
 			}, stars)
-			assert.are.same({ [1] = true, [2] = true }, ns.FamilyStars(world, state, FAMILY, getItem))
+			assert.are.same({ [1] = true, [2] = true }, ns.FamilyStars(world, state, FAMILY))
 		end)
 
 		it(
@@ -335,7 +335,7 @@ describe("Stars", function()
 				assert.are.same({
 					{ kind = "familyStar", cast = heaviest.id, coins = 0, family = FAMILY, stars = { 3 } },
 				}, stars)
-				assert.are.same({ [1] = true, [3] = true }, ns.FamilyStars(world, state, FAMILY, getItem))
+				assert.are.same({ [1] = true, [3] = true }, ns.FamilyStars(world, state, FAMILY))
 
 				local _, later = applyAll({ second }, state)
 				assert.are.same(
@@ -349,8 +349,8 @@ describe("Stars", function()
 			local state, stars = applyAll({ cast(ELWYNN, { W70 }), cast(ELWYNN, { LOOSE }) })
 
 			assert.are.same({}, stars)
-			assert.are.same({ [1] = true }, ns.FamilyStars(world, state, FAMILY, getItem))
-			assert.are.same({ [1] = true }, ns.FamilyStars(world, state, LOOSE_FAMILY, getItem))
+			assert.are.same({ [1] = true }, ns.FamilyStars(world, state, FAMILY))
+			assert.are.same({ [1] = true }, ns.FamilyStars(world, state, LOOSE_FAMILY))
 		end)
 
 		it(
@@ -387,14 +387,14 @@ describe("Stars", function()
 			local state = applyAll({ cast(ELWYNN, { W40 }) })
 			local celebrated = { familyStars = { [FAMILY] = { [2] = true } } }
 
-			assert.are.same({ [1] = true, [2] = true }, ns.ShownFamilyStars(world, state, celebrated, FAMILY, getItem))
+			assert.are.same({ [1] = true, [2] = true }, ns.ShownFamilyStars(world, state, celebrated, FAMILY))
 		end)
 
 		it("shows the computed stars alone while the celebrated set has no star keys (LED-R48)", function()
 			local state = applyAll({ cast(ELWYNN, { W40 }), cast(ELWYNN, { NIGHTFISH }, MIDNIGHT) })
 
 			assert.are.same({ [1] = true, [2] = true }, ns.ShownSpeciesStars(world, state, {}, NIGHTFISH))
-			assert.are.same({ [1] = true }, ns.ShownFamilyStars(world, state, {}, FAMILY, getItem))
+			assert.are.same({ [1] = true }, ns.ShownFamilyStars(world, state, {}, FAMILY))
 		end)
 	end)
 end)

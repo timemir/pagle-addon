@@ -62,7 +62,7 @@ local function celebrateAll(celebrated, state, lookups)
 		celebrated.items[itemID] = true
 		local item = getItem(itemID)
 		if item and item.category == "trophy" and item.family then
-			local stars = ns.FamilyStars(world, state, item.family, getItem)
+			local stars = ns.FamilyStars(world, state, item.family)
 			ns.CelebrateStars(celebrated.familyStars, item.family, starList(stars))
 		end
 	end
