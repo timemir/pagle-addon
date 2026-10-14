@@ -14,6 +14,8 @@
 --- them. loadAddon lists each addon it loads, with its TOC fields as metadata. One not listed is missing. Specs add
 --- to it.
 ---@field loot FakeLoot The loot window, as the loot API reads it.
+---@field areaNames table<integer, string> Each area's name, as `C_Map.GetAreaInfo` returns it. Default none.
+---@field mapNames table<integer, string> Each uiMap's name, for `C_Map.GetMapInfo`. Default none.
 ---@field sounds string[] Each PlaySoundFile call, in order, as "<path> <channel>".
 ---@field errors string[] Each error the default geterrorhandler() got, in order. A spec that gets one must read
 --- this list (assert it), or it fails at its end (spec/support/errors.lua).
@@ -46,6 +48,8 @@ local function newClient()
 		bindings = {},
 		loot = { fishing = false, slots = {} },
 		sounds = {},
+		areaNames = {},
+		mapNames = {},
 	}
 	client.addError = watchErrors(client, "errors")
 
@@ -132,10 +136,16 @@ local function clientStubs(client)
 			AddOnRestrictionState = { Inactive = 0, Activating = 1, Active = 2 },
 			AddOnEnableState = { None = 0, Some = 1, All = 2 },
 		},
-		-- No area has a name, so the area index Core builds at PLAYER_LOGIN is empty.
+		-- Areas and maps have the names in client.areaNames and client.mapNames: none by default, so the area index
+		-- Core builds at PLAYER_LOGIN is empty.
 		C_Map = {
-			GetAreaInfo = function()
-				return nil
+			GetAreaInfo = function(areaID)
+				return client.areaNames[areaID]
+			end,
+			-- UiMapDetails, with only the name (the Ledger's continent tabs, LED-R126); nil for a map with no name.
+			GetMapInfo = function(uiMapID)
+				local name = client.mapNames[uiMapID]
+				return name and { uiMapID = uiMapID, name = name } or nil
 			end,
 			GetBestMapForUnit = function()
 				return nil

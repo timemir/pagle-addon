@@ -362,7 +362,8 @@ describe("Stars", function()
 					kinds[i] = achievement.kind
 				end
 
-				assert.are.same({ "trophyWeight", "trophyWeight", "familyStar" }, kinds)
+				-- Then the Cast's Zone Mastery rank in Elwynn, after every Catch's achievements (LED-R51).
+				assert.are.same({ "trophyWeight", "trophyWeight", "familyStar", "zoneRank" }, kinds)
 				assert.are.same({ 2, 3 }, earned[3].stars)
 			end
 		)

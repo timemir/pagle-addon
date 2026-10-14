@@ -59,7 +59,7 @@ local function readContext()
 	local projection = ns.projection
 	local state = projection and not projection:IsUpdating() and projection:GetState() --[[@as LedgerState?]]
 	if not state then
-		return { updating = true, now = GetServerTime(), formatNumber = BreakUpLargeNumbers }
+		return { updating = true, now = GetServerTime(), formatNumber = BreakUpLargeNumbers, text = ns.journalText }
 	end
 	return {
 		updating = false,
@@ -67,6 +67,10 @@ local function readContext()
 		celebrated = ns.CelebratedSet(ns.db.global),
 		now = GetServerTime(),
 		formatNumber = BreakUpLargeNumbers,
+		text = ns.journalText,
+		world = ns.world,
+		getItem = Pagle.GetItem,
+		angler = Pagle.GetAngler(),
 	}
 end
 
@@ -338,6 +342,12 @@ end
 --- A live entry was applied (LED-R123): the open spread redraws on the next frame, once however many arrive in it,
 --- keeping its place and selection.
 function Journal:LiveApplied()
+	self:QueueDraw()
+end
+
+--- The open spread redraws on the next frame, once however many ask in this one (LED-R123, LED-R126), keeping its
+--- place and selection; nothing while the book is closed.
+function Journal:QueueDraw()
 	if self.redrawQueued or not self:IsShown() then
 		return
 	end
