@@ -76,4 +76,7 @@ function ns.Hunts.OnInitialize()
 
 	-- Calendar event names for the conditions line, looked up once this login (HNT-R53).
 	ns.StartNames()
+
+	-- Window moments (HNT-R88): their Announcements row (SET-R32) and the regroup baseline.
+	ns.StartWindowMoments()
 end
