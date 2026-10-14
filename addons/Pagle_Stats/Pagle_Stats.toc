@@ -25,4 +25,5 @@ logic\Home.lua
 adapter\Text.lua
 adapter\BookWidgets.lua
 adapter\Book.lua
+adapter\Home.lua
 adapter\Stats.lua
