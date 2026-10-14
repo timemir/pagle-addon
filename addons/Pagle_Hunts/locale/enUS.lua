@@ -21,6 +21,12 @@ ns.L = {
 	SLOT_TRACKER_FRAME = "Hunts tracker frame",
 	PREVIEW_TRACKER_LINE_1 = "Night Run · in 37m",
 	PREVIEW_TRACKER_LINE_2 = "Rack Hour · on demand",
+	-- Window moments (HNT-R88) and their row on the Announcements page (SET-R32): logic/WindowMoments.lua.
+	WINDOW_MOMENTS_SETTING = "Tell me when a pinned Hunt's window opens",
+	WINDOW_MOMENTS_TOOLTIP = "A quiet Nod when a pinned Hunt's window opens. It fades when the window closes.",
+	WINDOW_OPEN = "%s is open",
+	WINDOW_OPENED = "%s window opened %s",
+	WINDOW_OPENED_UNTIL = "%s window opened %s–%s",
 
 	-- Labels in realm time (HNT-R50–R55): logic/Labels.lua. A name not loaded yet reads "…".
 	NAME_UNKNOWN = "…",
