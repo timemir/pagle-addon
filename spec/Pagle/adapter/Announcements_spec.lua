@@ -193,6 +193,49 @@ describe("Announcement frames", function()
 			assert.are.same({ true, "New record" }, { view.record.shown, view.record.label:GetText() })
 		end
 	)
+
+	it("show a weight ruler's old record by its mark, as given (ANN-R22)", function()
+		local loaded, M = loadCore()
+
+		raise(
+			loaded,
+			M,
+			moment("toast", "Trophy weight", { ruler = { old = 10, new = 12, unit = "lb", label = "weight" } })
+		)
+
+		local view = frameOf(loaded, "toast").ruler
+		assert.are.same({ "10.0 lb", true }, { view.old:GetText(), view.old.shown })
+	end)
+
+	it(
+		"show a size ruler's old and new lengths and its margin in the Angler's length unit (ANN-R22, LOG-R69)",
+		function()
+			local loaded, M = loadCore()
+			loaded.ns.db.profile.lengthUnit = "cm"
+			local size = { old = 300, new = 342, unit = "length", label = "Pagle size" }
+
+			raise(loaded, M, moment("toast", "Size record", { ruler = size }))
+			loaded.client.update(1.5)
+
+			local view = frameOf(loaded, "toast").ruler
+			assert.are.same(
+				{ "30.0 cm", "34.2 cm", "+4.2 cm", "Pagle size" },
+				{ view.old:GetText(), view.value:GetText(), view.margin:GetText(), view.label:GetText() }
+			)
+		end
+	)
+
+	it("show a size margin that rounds to zero in inches as +<0.1 in (ANN-R22)", function()
+		local loaded, M = loadCore()
+		loaded.ns.db.profile.lengthUnit = "in"
+		local size = { old = 300, new = 300.2, unit = "length", label = "Pagle size" }
+
+		raise(loaded, M, moment("toast", "Size record", { ruler = size }))
+		loaded.client.update(1.5)
+
+		local view = frameOf(loaded, "toast").ruler
+		assert.are.same({ "11.8 in", "+<0.1 in" }, { view.value:GetText(), view.margin:GetText() })
+	end)
 end)
 
 describe("the Interruption budget on the client", function()
@@ -220,7 +263,11 @@ describe("the Interruption budget on the client", function()
 			assert.are.same({ true, false }, { nod.shown, showing(loaded, "toast") })
 			assert.are.same({ "Size record", true }, { nod.title:GetText(), nod.ruler.shown })
 			loaded.client.update(1.5)
-			assert.are.same({ true, false }, { nod.ruler.margin.shown, nod.ruler.record.shown })
+			-- A compact ruler: the margin, with no old record's number or stamp.
+			assert.are.same(
+				{ true, false, false },
+				{ nod.ruler.margin.shown, nod.ruler.old.shown, nod.ruler.record.shown }
+			)
 			loaded.client.advance(3)
 			raise(loaded, M, moment("toast", "New Species"))
 			assert.is_true(showing(loaded, "toast"))
@@ -259,6 +306,36 @@ describe("Announcement sounds on the client", function()
 				DRIFTWOOD .. "toast_2.ogg SFX",
 				DRIFTWOOD .. "toast_3.ogg SFX",
 				DRIFTWOOD .. "banner.ogg SFX",
+			}, loaded.client.sounds)
+		end
+	)
+
+	it(
+		"play the equipped set: Gilded's one toast and its banner, the shared sting, then Driftwood's rotation where it"
+			.. " left off (ANN-R70, ANN-R72, SHOP-R33)",
+		function()
+			local GILDED = SOUNDS .. "gilded\\"
+			local loaded, M = loadCore()
+			local Pagle = loaded.env.Pagle
+			raise(loaded, M, moment("toast", "Toast 1"))
+			loaded.client.advance(6)
+			loaded.ns.RecordPurchase("core.soundset.gilded", 400) -- the Curio Shop's buy (SHOP-R10, SHOP-R11)
+			assert.is_true(Pagle.SetEquipped("core.soundset", "core.soundset.gilded"))
+
+			for _, step in ipairs({ { "toast", 6 }, { "toast", 6 }, { "banner", 4 }, { "splash", 8 } }) do
+				raise(loaded, M, moment(step[1], step[1]))
+				loaded.client.advance(step[2])
+			end
+			assert.is_true(Pagle.SetEquipped("core.soundset", "core.soundset.driftwood"))
+			raise(loaded, M, moment("toast", "Toast 2"))
+
+			assert.are.same({
+				DRIFTWOOD .. "toast_1.ogg SFX",
+				GILDED .. "toast_1.ogg SFX",
+				GILDED .. "toast_1.ogg SFX",
+				GILDED .. "banner.ogg SFX",
+				SOUNDS .. "legend.ogg SFX",
+				DRIFTWOOD .. "toast_2.ogg SFX",
 			}, loaded.client.sounds)
 		end
 	)

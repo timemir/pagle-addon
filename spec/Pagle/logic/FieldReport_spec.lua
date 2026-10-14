@@ -1,6 +1,6 @@
 -- The Field report's rows (field-report.md, REP-R1–R26): ns.NewFieldReport's projection def over hand-made records
--- and a fixture catalogue, read back as the plain I and K rows ticket #122 writes out, and ns.FieldReportPRows over a
--- hand-made diagnostics buffer.
+-- and a fixture catalogue, read back as the plain I and K rows ns.FieldReportParts writes out, and
+-- ns.FieldReportPRows over a hand-made diagnostics buffer.
 
 local ns = loadAddon("Pagle", FOREVER_GLOBALS).ns
 

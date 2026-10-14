@@ -110,12 +110,13 @@ describe("the Ledger's Journal bindings", function()
 			local fake = ledger()
 			local goods = fake.ns.goods
 
-			local slots = goods:Slots()
-			assert.are.equal(1, #slots)
-			assert.are.same(
-				{ SLOT, "Journal binding", "Fish Journal", "Ledger" },
-				{ slots[1].id, slots[1].label, slots[1].category, slots[1].module }
-			)
+			local ledgerSlots = {}
+			for _, slot in ipairs(goods:Slots()) do
+				if slot.module == "Ledger" then
+					ledgerSlots[#ledgerSlots + 1] = { slot.id, slot.label, slot.category }
+				end
+			end
+			assert.are.same({ { SLOT, "Journal binding", "Fish Journal" } }, ledgerSlots)
 			local registered = {}
 			for i, good in ipairs(goods:GoodsOf(SLOT)) do
 				registered[i] = { good.id, kindOf(good), good.earnedText }
@@ -186,13 +187,19 @@ describe("the Ledger's Journal bindings", function()
 		end
 	)
 
-	-- The leather, the two pages' paper and the leather's rules of the open Journal, as { r, g, b } each.
+	-- The leather, the two pages' paper, the leather's rules and the brass plate's face of the open Journal, as
+	-- { r, g, b } each.
 	---@param frame LedgerJournalFrame
 	local function bookTints(frame)
 		local function rgb(texture)
 			return { texture.color[1], texture.color[2], texture.color[3] }
 		end
-		return { leather = rgb(frame.leather), paper = rgb(frame.papers[1]), rule = rgb(frame.rules[1]) }
+		return {
+			leather = rgb(frame.leather),
+			paper = rgb(frame.papers[1]),
+			rule = rgb(frame.rules[1]),
+			plate = rgb(frame.plate.brass),
+		}
 	end
 
 	-- What binding `goodID` tints those three in (logic/Bindings.lua).
@@ -200,7 +207,7 @@ describe("the Ledger's Journal bindings", function()
 	---@param goodID string
 	local function lookOf(ns, goodID)
 		local look = ns.BindingLook(goodID)
-		return { leather = look.leather, paper = look.paper, rule = look.rule }
+		return { leather = look.leather, paper = look.paper, rule = look.rule, plate = look.plate }
 	end
 
 	it(
@@ -211,25 +218,15 @@ describe("the Ledger's Journal bindings", function()
 			-- Celebrated at level 10 before (LED-R90): Tanned Hide is earned (LED-R111).
 			fake.globals.PagleLedgerDB =
 				{ global = { celebrated = { coins = 0, levels = { [0] = 10 }, logId = "log" } } }
-			-- A crest slot as Core's own (SHOP-R25), with one crest bought.
-			fake.ns.RegisterCoreSlot({ id = "core.crest", label = "Bookplate crest", category = "Bookplate" })
-			fake.ns.RegisterCoreGood({ id = "core.crest.plain", slot = "core.crest", name = "Plain", default = true })
-			fake.ns.RegisterCoreGood({
-				id = "core.crest.crest1",
-				slot = "core.crest",
-				name = "Trout",
-				tier = 1,
-				icon = 133888,
-			})
-			fake.setPurchased({ ["core.crest.crest1"] = true })
 			local loaded = fake.load("Pagle_Ledger")
 			fake.login()
 			fake.enterWorld()
+			fake.setPurchased({ ["core.crest.crest1"] = true }) -- one of Core's crests bought (SHOP-R25, SHOP-R11)
 			local ns = loaded.ns
 			ns.ToggleJournal()
 			local journal = ns.journal
 			assert.are.same(lookOf(ns, "ledger.binding.field"), bookTints(journal.frame))
-			assert.is_nil(ns.CrestIcon())
+			assert.are.equal("Interface\\Icons\\INV_Misc_Note_01", ns.CrestIcon()) -- Plain's
 
 			assert.is_true(fake.Pagle.SetEquipped("ledger.binding", "ledger.binding.level10"))
 
@@ -241,7 +238,7 @@ describe("the Ledger's Journal bindings", function()
 			assert.is_true(fake.Pagle.SetEquipped("core.crest", "core.crest.crest1"))
 
 			assert.are_not.equal(drawn, journal.pages)
-			assert.are.equal(133888, ns.CrestIcon())
+			assert.are.equal("Interface\\Icons\\INV_Fishingpole_02", ns.CrestIcon())
 		end
 	)
 

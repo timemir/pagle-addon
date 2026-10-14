@@ -57,13 +57,13 @@ local function line(frame, from, fromX, fromY, to, toX, toY)
 	return texture
 end
 
--- Builds a stage's swatch, centred on it.
+-- Builds a stage's swatch, at its top as Core's crest bookplate sits (adapter/CoreGoods.lua).
 ---@param stage Frame
 ---@return LedgerBindingSwatch
 local function buildSwatch(stage)
 	local swatch = CreateFrame("Frame", nil, stage) --[[@as LedgerBindingSwatch]]
 	swatch:SetSize(SWATCH_WIDTH, SWATCH_HEIGHT)
-	swatch:SetPoint("CENTER")
+	swatch:SetPoint("TOP", 0, -16)
 	ns.JournalSolid(swatch, LOOK.leatherEdge, "BACKGROUND")
 	swatch.leather = ns.JournalSolid(swatch, LOOK.leather, "BACKGROUND")
 	swatch.leather:SetPoint("TOPLEFT", 1, -1)

@@ -43,8 +43,8 @@ end)
 
 --- Adds the diagnostics entry of a Cast just recorded (LOG-R81): its entry ID, zone and subzone, the client's
 --- locale, the texts hovered in the 60 s before its channel started (before now for a Cast with no channel seen),
---- and the zone and subzone texts when either didn't resolve. A buffer that isn't a table is started again: it may
---- be dropped (LOG-R82).
+--- and the zone and subzone texts when either didn't resolve. ns.PAGLEDB_DEFAULTS gives a new PagleDB an empty
+--- buffer; a saved one that isn't a table is started again, since it may be dropped (LOG-R82).
 ---@param cast PagleCast
 ---@param unresolved PagleUnresolvedAreas?
 ---@param startedAt number? GetTime() when the Cast's channel started

@@ -42,6 +42,9 @@ ns.JOURNAL_LOOK = {
 	sealText = tint("f4dfa8"), -- a seal's words
 	stampOff = tint("b8a080"), -- a stamp not yet inked
 	sepia = tint("dcb37a"), -- an icon's tint over its greys (CSS sepia(.6))
+	brass = tint("c19e45"), -- the brass plate: between its #e8c96a and #9a7420
+	brassEdge = tint("4a3008"), -- the brass plate's outline
+	brassText = tint("2a1a04"), -- its words
 }
 local LOOK = ns.JOURNAL_LOOK
 
@@ -75,6 +78,8 @@ end
 ---@field hand Font
 ---@field crumb Font
 ---@field seal Font
+---@field numeral Font -- the bookplate's level (LED-R132)
+---@field plate Font   -- the brass plate (LED-R149)
 local fonts
 
 ---@return LedgerJournalFonts
@@ -93,6 +98,8 @@ function ns.JournalFonts()
 			hand = font("Hand", HAND, 16),
 			crumb = font("Crumb", SERIF, 13),
 			seal = font("Seal", SERIF, 10),
+			numeral = font("Numeral", SERIF, 40),
+			plate = font("Plate", SERIF, 12),
 		}
 	end
 	return fonts
@@ -183,6 +190,10 @@ local TILE_COLUMNS = 3
 local TILE_HEIGHT = 74
 local TILE_GAP = 8
 
+-- Tabs: their height, and the gap between them.
+local TAB_HEIGHT = 18
+local TAB_GAP = 14
+
 -- A disc in `color`: a seal's wax.
 ---@param frame Frame
 ---@param size number
@@ -226,6 +237,13 @@ end
 ---@type table<string, fun(parent: Frame): LedgerJournalWidget>
 local makers = {}
 
+--- Registers `maker` as the widget of block kind `kind`: a spread's own adapter file adds the kinds only it draws.
+---@param kind string
+---@param maker fun(parent: Frame): LedgerJournalWidget
+function ns.RegisterJournalWidget(kind, maker)
+	makers[kind] = maker
+end
+
 makers.kicker = textWidget(function()
 	return ns.JournalFonts().kicker
 end, function()
@@ -244,20 +262,28 @@ end, function(block)
 	return TEXT_COLORS[block.color] or (block.hand and LOOK.blue) or LOOK.ink
 end)
 
--- A link: red ink, opening its place.
+-- A link: red ink, or in handwriting blue ink (Notes to self, LED-R133), wrapping across the width, opening its place,
+-- or calling its action instead (the Field report, REP-R43).
 function makers.link(parent)
 	local widget = newWidget(parent)
 	local text = ns.JournalText(widget, ns.JournalFonts().text, LOOK.red)
 	text:SetPoint("TOPLEFT")
+	text:SetWordWrap(true)
 	widget.label = text
-	local place, openPlace
+	local place, action, openPlace
 	widget:SetScript("OnClick", function()
-		if place then
+		if action then
+			action()
+		elseif place then
 			openPlace(place)
 		end
 	end)
-	function widget.Fill(_, block, _, open)
-		place, openPlace = block.place, open
+	function widget.Fill(_, block, width, open)
+		place, action, openPlace = block.place, block.action, open
+		local ink = block.hand and LOOK.blue or LOOK.red
+		text:SetFontObject(block.hand and ns.JournalFonts().hand or ns.JournalFonts().text)
+		text:SetTextColor(ink[1], ink[2], ink[3])
+		text:SetWidth(width)
 		text:SetText(block.text)
 		return text:GetStringHeight()
 	end
@@ -315,6 +341,31 @@ function makers.seal(parent)
 	widget.label = text
 	function widget.Fill(_, block)
 		text:SetText(block.text)
+		return SEAL_SIZE
+	end
+	return widget
+end
+
+-- The bookplate summary's row (LED-R132): the level in large numerals, its caption beside them, and a wax seal at
+-- the right with Ledger completion.
+function makers.bookplate(parent)
+	local widget = newWidget(parent)
+	local numerals = ns.JournalText(widget, ns.JournalFonts().numeral, LOOK.title)
+	numerals:SetPoint("LEFT")
+	local caption = ns.JournalText(widget, ns.JournalFonts().small, LOOK.ink)
+	caption:SetPoint("LEFT", numerals, "RIGHT", 12, 0)
+	local wax = disc(widget, SEAL_SIZE)
+	wax:SetPoint("RIGHT")
+	wax:SetRotation(math.rad(-6))
+	local seal = ns.JournalText(widget, ns.JournalFonts().seal, LOOK.sealText)
+	seal:SetPoint("CENTER", wax)
+	seal:SetJustifyH("CENTER")
+	widget.label = numerals
+	function widget.Fill(_, block)
+		numerals:SetText(block.text)
+		caption:SetText(block.value or "")
+		seal:SetText(block.seal or "")
+		wax:SetShown(block.seal ~= nil)
 		return SEAL_SIZE
 	end
 	return widget
@@ -475,6 +526,59 @@ function makers.tiles(parent)
 	return widget
 end
 
+-- Tabs side by side (LED-R130's continent tabs): the chosen one in the title's ink, underlined in red; each opens
+-- its place.
+---@class LedgerTabView: Button
+---@field label FontString
+---@field underline Texture
+---@field place LedgerJournalPlace?
+
+function makers.tabs(parent)
+	local widget = newWidget(parent)
+	---@type LedgerTabView[]
+	local tabs = {}
+	local opener
+	function widget.Fill(_, block, _, open)
+		opener = open
+		local x = 0
+		for i, data in ipairs(block.tabs or {}) do
+			local tab = tabs[i]
+			if not tab then
+				tab = CreateFrame("Button", nil, widget) --[[@as LedgerTabView]]
+				tab.label = ns.JournalText(tab, ns.JournalFonts().kicker, LOOK.kicker)
+				tab.label:SetPoint("TOPLEFT")
+				tab.underline = tab:CreateTexture(nil, "ARTWORK")
+				tab.underline:SetColorTexture(LOOK.red[1], LOOK.red[2], LOOK.red[3], 1)
+				tab.underline:SetPoint("BOTTOMLEFT")
+				tab.underline:SetPoint("BOTTOMRIGHT")
+				tab.underline:SetHeight(2)
+				tab:SetScript("OnClick", function(self)
+					if self.place then
+						opener(self.place)
+					end
+				end)
+				tabs[i] = tab
+			end
+			local ink = data.on and LOOK.title or LOOK.kicker
+			tab.label:SetText(data.text)
+			tab.label:SetTextColor(ink[1], ink[2], ink[3])
+			tab.underline:SetShown(data.on)
+			tab.place = data.place
+			local width = tab.label:GetStringWidth() + 2
+			tab:SetSize(width, TAB_HEIGHT)
+			tab:ClearAllPoints()
+			tab:SetPoint("TOPLEFT", x, 0)
+			tab:Show()
+			x = x + width + TAB_GAP
+		end
+		for i = #(block.tabs or {}) + 1, #tabs do
+			tabs[i]:Hide()
+		end
+		return TAB_HEIGHT
+	end
+	return widget
+end
+
 -- An icon: an item's (by ID) or a texture, in sepia, or as a black silhouette for what isn't caught (LED-R124).
 function makers.icon(parent)
 	local widget = newWidget(parent)
@@ -532,6 +636,51 @@ function makers.xpBar(parent)
 		text:SetWidth(width)
 		text:SetText(data.text .. (data.freshText and (colorCode(LOOK.blue) .. data.freshText .. "|r") or ""))
 		return BAR_HEIGHT + 4 + text:GetStringHeight()
+	end
+	return widget
+end
+
+-- A Prestige emblem's plate: a strip of leather the numeral is stamped on.
+local EMBLEM_HEIGHT = 30
+local EMBLEM_PAD = 10
+
+---@class LedgerEmblemWidget: LedgerJournalWidget
+---@field numeral FontString
+
+-- A Prestige emblem (LED-R34): its roman numeral stamped in gilt on a leather plate, then a Master Prestige's stars
+-- as ink stamps beside it. No custom art (ledger.md › UI). Nothing at all before the first Prestige.
+function makers.emblem(parent)
+	local widget = newWidget(parent) --[[@as LedgerEmblemWidget]]
+	local plate = CreateFrame("Frame", nil, widget)
+	plate:SetPoint("TOPLEFT")
+	plate:SetHeight(EMBLEM_HEIGHT)
+	ns.JournalSolid(plate, LOOK.leather, "BACKGROUND")
+	local numeral = ns.JournalText(plate, ns.JournalFonts().title, LOOK.gilt)
+	numeral:SetPoint("CENTER")
+	numeral:SetJustifyH("CENTER")
+	widget.numeral = numeral
+	local stars = makers.stamps(widget)
+	function widget.Fill(_, block, width, open)
+		local mark = block.mark or { stars = 0 }
+		if not mark.emblem then
+			plate:Hide()
+			stars:Hide()
+			return 0
+		end
+		numeral:SetText(mark.emblem)
+		local plateWidth = numeral:GetStringWidth() + 2 * EMBLEM_PAD
+		plate:SetWidth(plateWidth)
+		plate:Show()
+		local list = {}
+		for i = 1, mark.stars do
+			list[i] = { text = ns.L.PRESTIGE_STAR, inked = true }
+		end
+		stars:ClearAllPoints()
+		stars:SetPoint("LEFT", plate, "RIGHT", 6, 0)
+		stars:SetSize(math.max(1, width - plateWidth - 6), 20)
+		stars:Fill({ kind = "stamps", stamps = list }, width, open)
+		stars:SetShown(mark.stars > 0)
+		return EMBLEM_HEIGHT
 	end
 	return widget
 end

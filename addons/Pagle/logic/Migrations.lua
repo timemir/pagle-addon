@@ -18,9 +18,13 @@ ns.PAGLEDB_DEFAULTS = {
 		pending = {},
 		cards = {},
 		writeUp = {},
+		-- catch-log.md › Data: Core's own projections (LOG-R78), and the diagnostics buffer (LOG-R81).
+		projections = { fieldReport = {} }, -- REP-R25
+		diagnostics = {},
 	},
 	profile = {
 		reloadReminder = false, -- LOG-R86
+		lengthUnit = nil, -- LOG-R69: "cm", "in", or nil (no default key) for the region default
 		appearance = {}, -- SHOP-R32: each slot's pick, by slot ID
 		announcements = { cozy = false, budget = { on = true, count = 4, window = 300 } }, -- announcements.md › Data
 	},

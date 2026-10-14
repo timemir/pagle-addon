@@ -40,17 +40,23 @@ local SPINE_STRIPS, SPINE_STRIP_WIDTH = 6, 5
 ---@field back Button                  -- "☚ back", under the left page (LED-R125)
 ---@field left LedgerJournalPage
 ---@field right LedgerJournalPage
+---@field plate LedgerJournalPlate     -- the brass plate on the cover (LED-R149)
 ---@field leather Texture             -- the cover's tint, and its grain over it (LED-R112)
 ---@field grain Texture
 ---@field rules Texture[]             -- the gilt rules inside the leather's edge
 ---@field papers Texture[]            -- each page's paper tint, then each page's paper texture, and the search box's
 ---@field paperGrains Texture[]
 
---- The Fish Journal: its router, its frame once made, and what its pages show as last drawn.
+---@class LedgerJournalPlate: Frame
+---@field label FontString
+---@field brass Texture                -- its face, in the binding's gilt (LED-R110)
+
+--- The Fish Journal: its router, its frame once made, and what its pages and brass plate show as last drawn.
 ---@class LedgerJournal
 ---@field router LedgerJournalRouter
 ---@field frame LedgerJournalFrame?
 ---@field pages LedgerJournalPages?
+---@field plate string?                -- the brass plate's words; nil while the projection updates (LED-R149)
 ---@field binding string?             -- the binding it was last drawn in (LED-R112)
 ---@field private redrawQueued boolean
 ---@field private drawnPlace LedgerJournalPlace?
@@ -77,7 +83,9 @@ local function readContext()
 		text = ns.journalText,
 		world = ns.world,
 		getItem = Pagle.GetItem,
+		getArea = Pagle.GetArea,
 		angler = Pagle.GetAngler(),
+		openFieldReport = Pagle.OpenFieldReport,
 	}
 end
 
@@ -235,6 +243,18 @@ local function build(journal)
 	end)
 	frame.back = back
 
+	-- The brass plate on the cover's lower corner, hanging over its edge as variant E's does (LED-R149), below the
+	-- pages, so it covers only leather.
+	local plate = CreateFrame("Frame", nil, frame) --[[@as LedgerJournalPlate]]
+	plate:SetPoint("BOTTOMLEFT", -12, -14)
+	ns.JournalSolid(plate, LOOK.brassEdge, "BACKGROUND")
+	plate.brass = ns.JournalSolid(plate, LOOK.brass, "BORDER")
+	plate.brass:SetPoint("TOPLEFT", 1, -1)
+	plate.brass:SetPoint("BOTTOMRIGHT", -1, 1)
+	plate.label = ns.JournalText(plate, fonts.plate, LOOK.brassText)
+	plate.label:SetPoint("CENTER")
+	frame.plate = plate
+
 	frame.close = CreateFrame("Button", nil, frame, "UIPanelCloseButton") --[[@as Button]]
 	frame.close:SetPoint("TOPRIGHT", -2, -2)
 	frame.close:SetScript("OnClick", function()
@@ -242,6 +262,10 @@ local function build(journal)
 	end)
 
 	table.insert(UISpecialFrames, FRAME_NAME)
+	-- Closing the book, however it closes, hides the Prestige confirm (LED-R33, adapter/Prestige.lua).
+	frame:SetScript("OnHide", function()
+		ns.HidePrestigeConfirm()
+	end)
 	frame:Hide()
 	return frame
 end
@@ -266,7 +290,7 @@ local function crumbAt(frame, i)
 end
 
 -- Tints the book in a binding's look (LED-R110, LED-R112): the leather and its grain, the rules, the paper of both
--- pages and the search box.
+-- pages and the search box, and the brass plate's face and words.
 ---@param frame LedgerJournalFrame
 ---@param look LedgerBindingLook
 local function tint(frame, look)
@@ -282,6 +306,9 @@ local function tint(frame, look)
 	for _, texture in ipairs(frame.paperGrains) do
 		texture:SetVertexColor(paper[1], paper[2], paper[3])
 	end
+	local plate, words = look.plate, look.plateText
+	frame.plate.brass:SetColorTexture(plate[1], plate[2], plate[3], 1)
+	frame.plate.label:SetTextColor(words[1], words[2], words[3])
 end
 
 -- Lays the crumbs out along the strip in the binding's gilt, each opening its level (LED-R125, LED-R110).
@@ -366,8 +393,14 @@ function Journal:Draw()
 	self.binding = Pagle.GetEquipped(ns.BINDING_SLOT)
 	local look = ns.BindingLook(self.binding)
 	tint(frame, look)
-	local pages = self.router:Pages(readContext())
+	local context = readContext()
+	local pages = self.router:Pages(context)
 	self.pages = pages
+	-- The brass plate shows on every spread; while the projection updates there is nothing yet to read (LED-R122).
+	self.plate = not pages.updating and ns.BrassPlate(context --[[@as LedgerHomeContext]]) or nil
+	frame.plate.label:SetText(self.plate or "")
+	frame.plate:SetSize(frame.plate.label:GetStringWidth() + 20, 22)
+	frame.plate:SetShown(self.plate ~= nil)
 	local place = self.router:Place()
 	local moved = place ~= self.drawnPlace
 	self.drawnPlace = place

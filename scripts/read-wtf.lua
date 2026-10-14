@@ -564,7 +564,7 @@ end
 -- The state's lines (ledger.md › Data): its counts with the level from the Ledger's own logic/Progress.lua
 -- (LED-R30), its items and Uncharted list, its zones, and, with a world, Ledger completion.
 local function printLedgerState(ledger, state, world, getItem, celebrated)
-	local level, into, cost = ledger.ClimbOf(tonumber(state.xp) or 0)
+	local level, into, cost = ledger.ClimbOf(tonumber(state.xp) or 0, tonumber(state.prestige) or 0)
 	local climb = cost and ("Angler Level %d, %d into it, next step %d"):format(level, into, cost)
 		or ("Angler Level %d, %d carried"):format(level, into)
 	-- An M2 state has no items, Uncharted list or zone ranks.
