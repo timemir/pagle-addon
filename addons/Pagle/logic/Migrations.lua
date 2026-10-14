@@ -10,6 +10,7 @@ local ns = select(2, ...)
 ns.PAGLEDB_DEFAULTS = {
 	global = {
 		decodeErrors = 0, -- LOG-R16
+		dev = false, -- the /pagle dev switch (#247)
 		coins = { earned = {} }, -- SHOP-R3
 		-- announcements.md › Data: the open Session's summary, moments raised with no Session open, the stored
 		-- Session summary cards and the Write-up sections waiting (ANN-R50–R54, ANN-R61).

@@ -121,6 +121,18 @@ describe("the Ledger's live moments", function()
 		end
 	)
 
+	it("raise New Species for a /pagle dev catch on a test log, as for a real Catch (#247, LED-R96)", function()
+		local fake = session()
+		fake.catchLog.data.test = true
+		fake.slash("dev on")
+
+		fake.slash("dev catch " .. MACKEREL)
+
+		local announcements = shown(fake)
+		assert.are.equal(1, #announcements)
+		assert.are.same({ "newSpecies New Species / Raw Spotted Yellowtail 10" }, momentsOf(announcements[1]))
+	end)
+
 	it(
 		"raise a New here Nod for a known Species in a new zone, and celebrate the pair and the zone (LED-R90, LED-R97)",
 		function()

@@ -132,6 +132,33 @@ ns.L = {
 	SLASH_SKIPPED_NO_FN = "Pagle: %s's /pagle %s has no fn; it is skipped",
 	SLASH_SKIPPED_RESERVED = "Pagle: %s's /pagle %s is skipped: Pagle reserves %s",
 	SLASH_SKIPPED_TAKEN = "Pagle: %s's /pagle %s is skipped: %s already uses it",
+	-- /pagle dev (#247): hidden dev commands, never in the help list.
+	DEV_ON = "Pagle dev: dev commands are on.",
+	DEV_OFF = "Pagle dev: dev commands are off.",
+	DEV_IS_OFF = "Pagle dev: dev commands are off; /pagle dev on turns them on.",
+	DEV_USAGE = "Pagle dev: /pagle dev on | off | endsession | preview <kind> | catch <itemID> [areaID]",
+	-- The kinds, comma-separated.
+	DEV_PREVIEW_KINDS = "Pagle dev: /pagle dev preview <kind>, where kind is one of %s",
+	-- The kind.
+	DEV_PREVIEWING = "Pagle dev: previewing a %s.",
+	DEV_CARD_HELD = "Pagle dev: cards wait until combat ends; try again then.",
+	DEV_SAMPLE_TOAST = "New Species",
+	DEV_SAMPLE_STAMP = "Size record",
+	DEV_SAMPLE_NOD = "New here",
+	DEV_SAMPLE_BANNER = "Angler Level 12",
+	DEV_SAMPLE_SPLASH = "A Legend",
+	DEV_SAMPLE_TEXT = "Oily Blackmouth (a /pagle dev preview)",
+	DEV_SAMPLE_LINE = "A sample summary line",
+	DEV_SESSION_ENDED = "Pagle dev: the Session ended, as if its gap had passed.",
+	DEV_NO_SESSION = "Pagle dev: no Session is open.",
+	DEV_CATCH_USAGE = "Pagle dev: /pagle dev catch <itemID> [areaID]",
+	DEV_REAL_LOG = "Pagle dev: catch writes to the Catch log, so it runs on a test log only (PagleLog.test); "
+		.. "this log is real, and nothing was added.",
+	-- The areaID as typed.
+	DEV_UNKNOWN_AREA = "Pagle dev: %s isn't an area in Pagle's catalogue.",
+	DEV_NO_CHARACTER = "Pagle dev: no character is logged in yet.",
+	-- The item ID, the zone areaID and the entry's seq.
+	DEV_CAUGHT = "Pagle dev: caught item %d in zone %d (entry %d).",
 	SLASH_CORE_HELP = {
 		{ name = "settings", help = "open Pagle's settings (also /pagle on its own)" },
 		{ name = "report", help = "open the Field report, to help chart the waters" },

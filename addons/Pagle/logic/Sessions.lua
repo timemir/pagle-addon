@@ -201,7 +201,11 @@ function Tracker:Start(now)
 		return nil
 	end
 	local wait = remaining(session, now)
-	if wait > 0 then
+	if wait > 0 and session.id == self.options.global.lastEndedSession then
+		-- Still within the gap, yet already ended: `/pagle dev endsession` ended it early (EndNow).
+		self.ended, self.away = true, false
+		return nil
+	elseif wait > 0 then
 		self.ended, self.away = false, false
 		return wait
 	end
@@ -221,6 +225,10 @@ function Tracker:Cast()
 			fireEnded(self)
 		end
 		self.session, self.ended, self.away = session, false, false
+		self.options.fire("SessionStarted", ns.SessionPayload(session))
+	elseif self.ended then
+		-- A Session ended early (EndNow) that this Cast still joins in the log (LOG-R60): it opens again.
+		self.session, self.ended = session, false
 		self.options.fire("SessionStarted", ns.SessionPayload(session))
 	end
 	return ns.SESSION_GAP
@@ -242,6 +250,21 @@ function Tracker:Tick(now)
 	return nil
 end
 
+--- `/pagle dev endsession` (#247): ends the Session open at `now` as if its gap had passed (LOG-R62), firing
+--- SessionEnded and noting it in lastEndedSession. The log is untouched, so a later Cast that the gap still puts in
+--- this Session opens it again (Cast), and a reload within the gap finds it ended (Start). Returns false, firing
+--- nothing, when no Session is open.
+---@param now integer server time
+---@return boolean ended
+function Tracker:EndNow(now)
+	local session = self.session
+	if not session or self.ended or self.away or remaining(session, now) <= 0 then
+		return false
+	end
+	fireEnded(self)
+	return true
+end
+
 --- Once no projection is updating (LOG-R63): fires the SessionEnded due since login, if no Cast has fired it yet.
 function Tracker:Idle()
 	if self.away then
@@ -254,7 +277,8 @@ end
 ---@return PagleSession?
 function Tracker:Get(now)
 	local session = self.options.catchLog:Session()
-	if session and remaining(session, now) > 0 then
+	local endedEarly = self.ended and session and self.session and session.id == self.session.id
+	if session and not endedEarly and remaining(session, now) > 0 then
 		return ns.SessionPayload(session)
 	end
 	return nil

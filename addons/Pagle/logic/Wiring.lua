@@ -22,6 +22,7 @@ local ns = select(2, ...)
 ---@field clock fun(): number                    -- a clock in ms, for the projections' frame budget (debugprofilestop)
 ---@field call fun(fn: function, ...: any): ...  -- calls fn; an error is reported, not raised (securecallfunction)
 ---@field report fun(message: string)            -- reports an error and carries on (geterrorhandler())
+---@field print fun(line: string)                -- prints a chat line
 ---@field syncLimit? integer                     -- the projections' sync limit; default PROJECTION_SYNC_LIMIT
 
 ---@class PagleNS
@@ -32,6 +33,8 @@ local ns = select(2, ...)
 ---@field cards PagleCards Core's cards (ns.WireCards).
 ---@field wallet PagleWallet Core's one wallet (ns.WireWallet).
 ---@field fieldReport PagleFieldReportReaders? Core's Field report, from login step 1 on (ns.WireFieldReport).
+---@field fishing PagleFishing Core's Cast state machine, which Core's adapter and FakePagle each build.
+---@field dev PagleDevCommands Core's `/pagle dev` commands (ns.WireDev).
 
 --- Core's projection machinery (LOG-R70–R78) as ns.projections, and `M:NewProjection` and `M:IterateCatches` on every
 --- Module handle. Until Module records (M7), a Module's records are the ones Pagle.IterateCatches yields.
@@ -109,6 +112,18 @@ end
 ---@return PagleSession?
 function Sessions:Get()
 	return self.tracker and self.tracker:Get(self.host.serverTime())
+end
+
+--- `/pagle dev endsession` (#247): ends the Session open now as if its gap had passed (LOG-R62), and stops its
+--- timer. Returns false when none is open.
+---@return boolean ended
+function Sessions:EndNow()
+	local tracker = self.tracker
+	if not tracker or not tracker:EndNow(self.host.serverTime()) then
+		return false
+	end
+	waitFor(self, nil)
+	return true
 end
 
 --- Core's moment collector as ns.moments (ANN-R1–R4, ANN-R10–R12), and `M:RaiseMoment` on every Module handle. Each
@@ -218,7 +233,7 @@ function ns.WireCards(host, view)
 		end,
 		show = function(card)
 			view.show(card)
-			if card.numbers then
+			if card.numbers and not card.preview then
 				ns.summary:SummaryShown()
 			end
 		end,
@@ -304,4 +319,37 @@ function ns.FieldReportTextFunction(host, client)
 			logId = host.catchLog().data.logId or "",
 		}, client.names)
 	end
+end
+
+--- Core's `/pagle dev` commands as ns.dev (#247), over PagleDB.global's `dev` switch, Core's Sessions, the
+--- catalogue's areas and the Cast state machine (ns.fishing). `catch` runs only on a test log (`PagleLog.test`).
+--- `preview` hands its samples to `show`, the display (as ns.WireMoments' is), and its card to ns.cards.
+---@param host PagleHost
+---@param show fun(announcement: PagleAnnouncement) hands an Announcement to the display (ANN-R20)
+function ns.WireDev(host, show)
+	ns.dev = ns.NewDevCommands({
+		global = function()
+			return host.db().global
+		end,
+		testLog = function()
+			return host.catchLog().data.test == true
+		end,
+		endSession = function()
+			return ns.sessions:EndNow()
+		end,
+		area = function(areaID)
+			return ns.DevArea(ns.Catalogue, areaID)
+		end,
+		catch = function(itemID, zone, subzone)
+			local area = zone and { zone = zone, subzone = subzone } or nil
+			return ns.fishing:RecordSynthetic({ { itemID = itemID, quantity = 1 } }, area)
+		end,
+		announce = function(announcement)
+			host.call(show, announcement)
+		end,
+		showCard = function(card)
+			return ns.cards:Preview(card)
+		end,
+		print = host.print,
+	})
 end

@@ -4,8 +4,8 @@ local ns = select(2, ...)
 -- /pagle as data (CORE-R60–R62): which subcommand a line names, the Modules' subcommands and the help list. Pure
 -- logic, everything passed in (CORE-R7); adapter/Slash.lua registers the command and acts on what this resolves.
 
---- Core's own subcommands, reserved for it (CORE-R61).
-ns.SLASH_RESERVED = { "help", "settings", "shop", "report" }
+--- Core's own subcommands, reserved for it (CORE-R61), and its hidden `dev` (#247), which help never lists.
+ns.SLASH_RESERVED = { "help", "settings", "shop", "report", "dev" }
 
 --- Splits what follows `/pagle` into its subcommand, lowercased, and the rest of the line, trimmed (CORE-R62).
 ---@param line string
@@ -90,6 +90,7 @@ end
 ---@class PagleCoreSubcommands
 ---@field settings fun() opens the Settings root (Pagle.OpenSettings); also /pagle on its own
 ---@field report fun()   opens the Field report box (Pagle.OpenFieldReport)
+---@field dev fun(args: string) the hidden dev commands (ns.dev, #247), which /pagle help never lists
 
 --- Core's own subcommands over `Pagle`'s functions, each looked up when it runs.
 ---@param Pagle Pagle
@@ -102,24 +103,28 @@ function ns.CoreSubcommands(Pagle)
 		report = function()
 			Pagle.OpenFieldReport()
 		end,
+		dev = function(args)
+			ns.dev:Run(args)
+		end,
 	}
 end
 
 --- What `/pagle <line>` does (CORE-R60–R62): `"core"` and the name of one of Core's own subcommands (`settings` too
 --- with no subcommand); `"module"` with the Module subcommand it names and the rest of the line, trimmed; otherwise
---- `"help"`. That covers `help`, an unknown name, and `shop` until the Curio Shop exists (M4).
+--- `"help"`. That covers `help`, an unknown name, and `shop` until the Curio Shop exists (M4). A core subcommand gets
+--- the rest of the line too: only `dev` (#247) reads it.
 ---@param line string what follows /pagle
 ---@param core PagleCoreSubcommands
 ---@return "core"|"module"|"help" action
 ---@return string|PagleSlashCommand|nil command the core subcommand's name, or the Module's subcommand
----@return string? args
+---@return string? args the rest of the line, trimmed
 function Commands:Resolve(line, core)
 	local name, args = ns.ParseSlash(line)
 	if name == "" then
 		name = "settings"
 	end
 	if core[name] then
-		return "core", name
+		return "core", name, args
 	end
 	local command = self.byName[name]
 	if command then
@@ -164,7 +169,7 @@ function Commands:Run(line, core, call, print)
 	local action, command, args = self:Resolve(line, core)
 	if action == "core" then
 		---@cast command string
-		core[command]()
+		core[command](args --[[@as string]])
 	elseif action == "module" then
 		---@cast command PagleSlashCommand
 		call(command.fn, args)
