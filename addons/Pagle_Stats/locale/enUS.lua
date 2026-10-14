@@ -159,4 +159,33 @@ ns.L = {
 	HOME_WHERE_I_AM = "Where I am: %s",
 	HOME_WHERE_UNKNOWN = "Where I am: unknown",
 	HOME_EVERY_SESSION = "Every Session",
+
+	-- The Lifetime spread (stats.md › UI › Lifetime; its kicker is BOOK_LIFETIME). The left page's title and totals, the
+	-- got-away count with its rate ("2 (22%)").
+	LIFETIME_TITLE = "Every Cast I've made",
+	LIFETIME_CASTS = "Casts",
+	LIFETIME_CATCHES = "Catches",
+	LIFETIME_GOT_AWAY = "Got away",
+	LIFETIME_GOT_AWAY_VALUE = "%s (%d%%)",
+	LIFETIME_SESSIONS = "Sessions",
+	LIFETIME_TIME_AT_THE_WATER = "Time at the water",
+	-- The bests (STA-R33): each with its Session's date ("Longest Session, 5 Oct 2026").
+	LIFETIME_BESTS = "Bests",
+	LIFETIME_LONGEST = "Longest Session, %s",
+	LIFETIME_BEST_RATE = "Most Catches per hour, %s",
+	-- Got away by skill (STA-R26): each margin bucket's words, and its line's "25% of 4 Casts".
+	LIFETIME_BY_SKILL = "Got away, by skill",
+	LIFETIME_BY_SKILL_NOTE = "against each water's no-junk line",
+	LIFETIME_MARGIN_NAMES = { lo50 = "below by 50+", lo1 = "below by 1–49", hi0 = "0–24 over", hi25 = "25+ over" },
+	LIFETIME_MARGIN_VALUE = "%d%% of %s",
+	-- A character's line after its name: "1,840 Casts · 1,602 Catches · 238 got away".
+	LIFETIME_CHARACTERS = "Characters",
+	LIFETIME_CHARACTER_VALUE = "%s · %s · %s got away",
+	-- The right page: the index of every fish, and what hovering an item shows ("First 5 Oct 2026, last 12 Oct 2026").
+	LIFETIME_CATCH_KICKER = "The catch",
+	LIFETIME_EVERY_FISH = "Every fish",
+	LIFETIME_INDEX_NOTE = "How many I've caught. Hover for first and last; click for its waters.",
+	LIFETIME_FIRST_LAST = "First %s, last %s",
+	-- Both pages with no Casts (STA-R97).
+	LIFETIME_NO_SESSIONS = "No Sessions yet.",
 }
