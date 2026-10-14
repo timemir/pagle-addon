@@ -141,14 +141,6 @@ local function familyName(context, family)
 	return context.text:Lore(("family.%d.name"):format(family)) or ns.L.NAME_UNKNOWN
 end
 
--- The "Help chart the waters" link: Pagle.OpenFieldReport(), which prints Core's line while restricted (LED-R121,
--- REP-R43, REP-R44).
----@param context LedgerZoneContext
----@return LedgerBlock
-local function helpChart(context)
-	return { kind = "link", text = ns.L.ZONE_HELP_CHART, action = context.openFieldReport }
-end
-
 -- The seal, the rank ladder, the next requirement and new to find (LED-R135, LED-R52, LED-R134).
 ---@param context LedgerZoneContext
 ---@param zone integer
@@ -252,7 +244,7 @@ local function catches(context, zone, selected, blocks)
 			blocks[#blocks + 1] = speciesRow(context, zone, id, nil, selected)
 		end
 		blocks[#blocks + 1] = { kind = "text", color = "faded", text = L.ZONE_ALSO_NOTE }
-		blocks[#blocks + 1] = helpChart(context)
+		blocks[#blocks + 1] = ns.JournalHelpChartLink(context)
 	end
 end
 
@@ -377,7 +369,7 @@ local function loosePages(context, zone)
 	if #species + #items == 0 then
 		blocks[#blocks + 1] = { kind = "text", color = "faded", text = L.ZONE_NOTHING_YET }
 	end
-	blocks[#blocks + 1] = helpChart(context)
+	blocks[#blocks + 1] = ns.JournalHelpChartLink(context)
 	return blocks
 end
 

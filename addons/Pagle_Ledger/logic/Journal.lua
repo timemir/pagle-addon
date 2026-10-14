@@ -125,6 +125,14 @@ function ns.RegisterJournalSpread(id, spread)
 	ns.journalSpreads[id] = spread
 end
 
+--- The "Help chart the waters" link, on uncharted waters and Curios' loose pages (LED-R138, LED-R144): it calls
+--- Pagle.OpenFieldReport(), which prints Core's line while restricted (LED-R121, REP-R43, REP-R44).
+---@param context LedgerJournalContext
+---@return LedgerBlock
+function ns.JournalHelpChartLink(context)
+	return { kind = "link", text = ns.L.JOURNAL_HELP_CHART, action = context.openFieldReport }
+end
+
 ---@class LedgerJournalRouter
 ---@field private spreads table<string, LedgerSpread>
 ---@field private place LedgerJournalPlace

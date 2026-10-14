@@ -336,7 +336,7 @@ local function loosePages(context, blocks)
 	if #ids == 0 then
 		blocks[#blocks + 1] = { kind = "text", text = L.CURIOS_NONE_UNCHARTED, color = "faded" }
 	end
-	blocks[#blocks + 1] = { kind = "link", text = L.CURIOS_HELP_CHART, action = context.openFieldReport }
+	blocks[#blocks + 1] = ns.JournalHelpChartLink(context)
 end
 
 ns.RegisterJournalSpread(ns.JOURNAL_CURIOS, {

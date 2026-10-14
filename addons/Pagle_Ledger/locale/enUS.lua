@@ -103,6 +103,8 @@ ns.L = {
 	JOURNAL_HOME = "Home",
 	JOURNAL_CRUMB_SEPARATOR = "❧",
 	JOURNAL_BACK = "☚ back",
+	-- The link to the Field report box on uncharted waters and Curios' loose pages (LED-R138, LED-R144, REP-R43).
+	JOURNAL_HELP_CHART = "Help chart the waters",
 	-- Home (LED-R130–R133, LED-R149). Its left page's kicker and title; its tiles are TILE_*'s.
 	HOME_KICKER = "The Waters",
 	HOME_TITLE = "Where I've Fished",
@@ -259,7 +261,6 @@ ns.L = {
 	ZONE_TROPHY = "a %s trophy, any weight",
 	ZONE_ALSO_CAUGHT = "Also caught here · %d",
 	ZONE_ALSO_NOTE = "Not in Pagle's list for these waters yet.",
-	ZONE_HELP_CHART = "Help chart the waters",
 	-- A Species row (LED-R136): never named until caught (LED-R124).
 	ZONE_UNKNOWN_FISH = "— unknown —",
 	ZONE_CAUGHT_ELSEWHERE = "%s (caught elsewhere)",
@@ -305,5 +306,4 @@ ns.L = {
 	CURIOS_LOOSE_PAGE = "%s: %s× at %s, first %s. Unknown to Pagle. Logged.",
 	CURIOS_UNKNOWN_WATERS = "unknown waters",
 	CURIOS_NONE_UNCHARTED = "None. Every catch is in the Ledger.",
-	CURIOS_HELP_CHART = "Help chart the waters",
 }
