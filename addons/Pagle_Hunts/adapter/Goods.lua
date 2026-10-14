@@ -291,8 +291,18 @@ function ns.PreviewGood(stage, slotID, goodID)
 	end
 end
 
+-- The bus owner of the board's cover (CORE-R23).
+local OWNER = "Pagle_Hunts goods"
+
+--- Dresses the board's leather in the equipped notebook cover (HNT-R70), open or not.
+local function wearCover()
+	ns.board:SetCover(ns.CoverLook(Pagle.GetEquipped(ns.COVER_SLOT)))
+end
+
 --- Registers Hunts' slots and goods (HNT-R120, HNT-R121, SHOP-R21), from OnInitialize right after RegisterModule
---- (HNT-R122).
+--- (HNT-R122), and dresses the board in the equipped cover: at ModulesChanged, when every slot is registered and the
+--- stored purchases are owned (Core notes that look without an AppearanceChanged, SHOP-R33), and at once at every
+--- AppearanceChanged for the slot after.
 ---@param module PagleModuleHandle
 function ns.RegisterGoods(module)
 	for _, entry in ipairs(ns.HuntsGoods(ns.PreviewGood)) do
@@ -301,4 +311,10 @@ function ns.RegisterGoods(module)
 			module:RegisterGood(good)
 		end
 	end
+	Pagle.RegisterCallback(OWNER, "ModulesChanged", wearCover)
+	Pagle.RegisterCallback(OWNER, "AppearanceChanged", function(_, slot)
+		if slot == ns.COVER_SLOT then
+			wearCover()
+		end
+	end)
 end

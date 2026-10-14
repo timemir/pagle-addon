@@ -115,16 +115,19 @@ describe("Hunts' goods", function()
 		})
 	end)
 
-	it("are named by their IDs, with no description, while their lore keys have no text (HNT-R121, HNT-R130)", function()
-		local _, fake = loggedIn({ lore = false })
+	it(
+		"are named by their IDs, with no description, while their lore keys have no text (HNT-R121, HNT-R130)",
+		function()
+			local _, fake = loggedIn({ lore = false })
 
-		for _, slot in ipairs({ COVER, FRAME }) do
-			for _, row in ipairs(GOODS[slot]) do
-				local good = fake.Pagle.GetGood(row[1])
-				assert.are.same({ row[1] }, { good.name, good.description })
+			for _, slot in ipairs({ COVER, FRAME }) do
+				for _, row in ipairs(GOODS[slot]) do
+					local good = fake.Pagle.GetGood(row[1])
+					assert.are.same({ row[1] }, { good.name, good.description })
+				end
 			end
 		end
-	end)
+	)
 
 	it("are named and described from their huntgood lore keys (HNT-R121, HNT-R130, SHOP-R26)", function()
 		local _, fake = loggedIn()
@@ -160,6 +163,98 @@ describe("Hunts' goods", function()
 			distinct = distinct + 1
 		end
 		assert.are.equal(7, distinct)
+	end)
+end)
+
+describe("the board's cover", function()
+	-- The open board's leather tint, as { r, g, b }.
+	local function leatherOf(board)
+		local color = board.frame.cover.leather.color
+		return { color[1], color[2], color[3] }
+	end
+
+	it("redraws the open board's leather in Oilcloth's look when Oilcloth is equipped (HNT-R70, SHOP-R33)", function()
+		local loaded, fake = loggedIn()
+		local ns = loaded.ns
+		ns.ToggleBoard()
+		assert.are.same(ns.BOARD_COVER.leather, leatherOf(ns.board))
+
+		fake.setPurchased({ ["hunts.notebookcover.oilcloth"] = true }) -- bought (SHOP-R11)
+		assert.is_true(fake.Pagle.SetEquipped(COVER, "hunts.notebookcover.oilcloth"))
+
+		assert.are.same(ns.COVERS["hunts.notebookcover.oilcloth"].leather, leatherOf(ns.board))
+		local rule = ns.board.frame.cover.rules[1].color
+		assert.are.same(ns.COVERS["hunts.notebookcover.oilcloth"].rule, { rule[1], rule[2], rule[3] })
+
+		assert.is_true(fake.Pagle.SetEquipped(COVER, "hunts.notebookcover.leather"))
+		assert.are.same(ns.BOARD_COVER.leather, leatherOf(ns.board))
+	end)
+
+	it("opens in the cover equipped in an earlier session, bought then (HNT-R70, SHOP-R32)", function()
+		local fake = newFakePagle()
+		fake.setPurchased({ ["hunts.notebookcover.tooled"] = true })
+		fake.profile.appearance[COVER] = "hunts.notebookcover.tooled"
+		local loaded = hunts.load(fake)
+		fake.login()
+		local ns = loaded.ns
+
+		ns.ToggleBoard()
+
+		assert.are.same(ns.COVERS["hunts.notebookcover.tooled"].leather, leatherOf(ns.board))
+	end)
+
+	it(
+		"falls back to Leather while Hunts is disabled, keeping the pick, which comes back with Hunts (HNT-R70, SHOP-R32, SHOP-R90)",
+		function()
+			local _, first = loggedIn()
+			first.setPurchased({ ["hunts.notebookcover.oilcloth"] = true })
+			assert.is_true(first.Pagle.SetEquipped(COVER, "hunts.notebookcover.oilcloth"))
+
+			-- The next session, Hunts disabled: it runs no code, so it registers nothing (CORE-R17).
+			local off = newFakePagle()
+			off.global.goods = first.global.goods
+			off.goods = off.global.goods
+			off.profile.appearance = first.profile.appearance
+			off.setPurchased({ ["hunts.notebookcover.oilcloth"] = true })
+			off.login()
+
+			assert.are.equal("hunts.notebookcover.leather", off.Pagle.GetEquipped(COVER))
+			assert.are.equal("hunts.notebookcover.oilcloth", off.profile.appearance[COVER])
+
+			-- Enabled again: Oilcloth is back on the board with no SetEquipped.
+			local on = newFakePagle()
+			on.global.goods = first.global.goods
+			on.goods = on.global.goods
+			on.profile.appearance = off.profile.appearance
+			on.setPurchased({ ["hunts.notebookcover.oilcloth"] = true })
+			local loaded = hunts.load(on)
+			on.login()
+			loaded.ns.ToggleBoard()
+
+			assert.are.equal("hunts.notebookcover.oilcloth", on.Pagle.GetEquipped(COVER))
+			assert.are.same(loaded.ns.COVERS["hunts.notebookcover.oilcloth"].leather, leatherOf(loaded.ns.board))
+		end
+	)
+end)
+
+describe("Look and Feel", function()
+	it("lists the notebook cover under Hunts and the tracker frame under Trackers (SET-R50, HNT-R120)", function()
+		local _, fake = loggedIn()
+
+		local listed = {}
+		for _, section in ipairs(fake.ns.LookAndFeelSections(fake.ns.goods)) do
+			for _, slot in ipairs(section.slots) do
+				if slot.module == "Hunts" then
+					listed[#listed + 1] = { section.category, slot.id }
+				end
+			end
+		end
+		assert.are.same({ { "Hunts", COVER }, { "Trackers", FRAME } }, listed)
+		local choices = {}
+		for _, choice in ipairs(fake.ns.SlotChoices(fake.ns.goods, COVER)) do
+			choices[#choices + 1] = choice.value
+		end
+		assert.are.same({ "hunts.notebookcover.leather" }, choices) -- only what is owned (SET-R51)
 	end)
 end)
 
@@ -216,12 +311,12 @@ describe("a tracker frame's preview", function()
 				assert.are.same({ "Hunts", "Night Run · in 37m", "Rack Hour · on demand" }, textsOf(tracker), id)
 				local look, dressed = ns.TRACKER_FRAMES[id], tracker.frame
 				if look then
-					assert.is_true(dressed.backdrop:IsShown(), id)
+					assert.is_true(dressed.backdrop:IsShown())
 					assert.are.equal(look.backdrop, dressed.backdrop.texture, id)
 					local tinted = dressed.backdrop.vertexColor
 					assert.are.same(look.tint, { tinted[1], tinted[2], tinted[3] }, id)
 					for _, line in ipairs(dressed.border) do
-						assert.is_true(line:IsShown(), id)
+						assert.is_true(line:IsShown())
 						assert.are.same(look.border, { line.color[1], line.color[2], line.color[3] }, id)
 					end
 				else
