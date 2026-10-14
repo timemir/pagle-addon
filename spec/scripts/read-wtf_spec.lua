@@ -391,6 +391,108 @@ describe("scripts/read-wtf.lua", function()
 			assert.are.equal("entries by tag: B1 1, C1 4, P1 1, S1 1, U1 2", log[3])
 			assert.are.equal("entries Core's codec can't decode: none", log[4])
 		end)
+
+		it("prints an M4 projection as current, and leaves its Legend out of the curio and trophy items", function()
+			-- LED-R2: 301 = LEDGER_RULES_VERSION 3 × 100 + Core's SIZE_RULES_VERSION 1 (LOG-R68). LED-R30 at prestige
+			-- rank 1, steps at half cost: 540 + 580 + 620 = 1,740 to level 4, 260 into it, whose step costs 660. LED-R5:
+			-- 19803 is a Legend, neither curio nor trophy (LED-R63). LED-R70: Species 6291 and 6303 of 6291, 6299, 6303
+			-- and 13759 (19803, a Legend, is outside it), junk 1 of 1, treasure 0 of 1, trophy 1 of 2, no zone at
+			-- Master: 4 of 10 is 40%; Legends 1 of 1.
+			local ledger = section(out, "== Ledger (PagleLedgerDB)")
+			assert.are.same({
+				"== Ledger (PagleLedgerDB)",
+				"projection: lastSeq 9, logId 8e1d4b7a2c6f0935, fingerprint 0123456789abcdef, rulesVersion 301",
+				"logId: matches PagleLog's",
+				"lastSeq: equals PagleLog's length (9 entries)",
+				"rulesVersion: the Ledger's, 301 (LED-R2)",
+				"world: " .. CATALOGUE .. ", fingerprint 0123456789abcdef (the projection's), 2 charted zones",
+				"state: 1004 Casts, 1003 Catches, 2000 XP (Angler Level 4, 260 into it, next step 660), 900 Coins,"
+					.. " 2 Species",
+				"state curio items: 1 (6309 ×3)",
+				"state trophy items: 1 (13901 ×1)",
+				"state Uncharted: none",
+				"state zones: 2",
+				"  12: rank 3, charted, shown 3",
+				"  40: rank 1, charted, shown 1",
+				"completion: 40% (4 of 10): Species 2 of 4, junk 1 of 1, treasure 0 of 1, trophy 1 of 2, zones 0 of 2;"
+					.. " Legends 1 of 1",
+			}, { unpack(ledger, 1, 14) })
+		end)
+
+		it("prints the climb, Catch Milestones, Legends, records and titles, and --item's records (LED-R30–R85)", function()
+			-- LED-R30, LED-R35: level 4 at rank 1 (above), peak level 60 once ranked. LED-R42: the 1,000 milestone.
+			-- LED-R63, LED-R80: the Legend's first Catch and its record on its items entry; 6303's record, and 6291 has
+			-- none. LOG-R67: band 3 is Hefty, band 4 Whopper. LED-R75, LED-R76: computed (peak 60's seven level
+			-- titles, prestige1, the Legend's, complete.junk with 6309 of 6309) plus the celebrated keys, in LED-R75's
+			-- order. LED-R77: the stored key is earned, so it's the active title. LED-R90: the celebrated set's M4 keys.
+			assert.are.same({
+				"== Ledger M4 (PagleLedgerDB): Prestige, Catch Milestones, Legends, records, titles",
+				"climb: prestige rank 1, 2000 XP, computed level 4, peak level 60",
+				"Catch Milestones: 1 (1000 at 2026-10-12 10:22:40 UTC), 1003 lifetime Catches",
+				"Legends caught: 1 (19803 ×1, first at 2026-10-12 10:15:20 UTC by character 1 in zone 40)",
+				"records: 1 of 2 Species, 1 Legend",
+				"record of 6303 (Species): 342 mm, band 3 Hefty, Catch Player-4618-0A1B2C3D-1791800560-0:1, since 4",
+				"record of 19803 (Legend): 1820 mm, band 4 Whopper, Catch Player-4618-0A1B2C3D-1791800120-0:1, since 0",
+				"titles earned: 10 (title:level1, title:level10, title:level20, title:level30, title:level40,"
+					.. " title:level50, title:level60, title:prestige1, legend:19803, title:complete.junk)",
+				"active title: legend:19803 (profile.activeTitle)",
+				"celebrated levels: prestige rank 0 level 60, prestige rank 1 level 4",
+				"celebrated prestige: 1",
+				"celebrated Catch Milestones: 1 (1000)",
+				"celebrated titles: 8 (title:level10, title:level20, title:level30, title:level40, title:level50,"
+					.. " title:level60, title:prestige1, legend:19803)",
+				"celebrated Legend items: 1 (19803)",
+			}, section(out, "== Ledger M4"))
+		end)
+
+		it("prints the stored M4 lines and the celebrated titles alone when the catalogue can't be loaded", function()
+			-- Without a world (LED-R10) nothing classes an item as a Legend (LED-R5) or computes a title (LED-R75); the
+			-- celebrated titles are still earned (LED-R76), so the stored active title is too (LED-R77).
+			local missing = "spec/scripts/fixtures/no-such-Catalogue.lua"
+			local lines = section(run(ACCOUNTS .. "M4#1", "--catalogue", missing, "--item", "19803"), "== Ledger M4")
+			local celebratedTitles = "8 (title:level10, title:level20, title:level30, title:level40, title:level50,"
+				.. " title:level60, title:prestige1, legend:19803)"
+			assert.are.same({
+				"== Ledger M4 (PagleLedgerDB): Prestige, Catch Milestones, Legends, records, titles",
+				"climb: prestige rank 1, 2000 XP, computed level 4, peak level 60",
+				"Catch Milestones: 1 (1000 at 2026-10-12 10:22:40 UTC), 1003 lifetime Catches",
+				"Legends caught: can't be told from the other items without the world (see world: above)",
+				"records: 1 of 2 Species, 1 Legend",
+				"record of 19803 (item): 1820 mm, band 4 Whopper, Catch Player-4618-0A1B2C3D-1791800120-0:1, since 0",
+				"titles earned: "
+					.. celebratedTitles
+					.. ", the celebrated ones only (no state or no world to compute from)",
+				"active title: legend:19803 (profile.activeTitle)",
+				"celebrated levels: prestige rank 0 level 60, prestige rank 1 level 4",
+				"celebrated prestige: 1",
+				"celebrated Catch Milestones: 1 (1000)",
+				"celebrated titles: " .. celebratedTitles,
+				"celebrated Legend items: can't be told from the other items without the world (see world: above)",
+			}, lines)
+		end)
+	end)
+
+	it("prints an M3 Ledger's M4 lines as none yet, with the automatic title (LED-R35, LED-R77, LED-R80)", function()
+		-- M3#1 has no prestige rank, milestones, Legends, records, titles or activeTitle. Level 4 (4,560 XP at rank
+		-- 0) earns level1, the automatic title; 6309 of the fixture's one junk item earns complete.junk (LED-R75). 6291
+		-- is a Species with no record; 6299 isn't in the state.
+		local out = run(ACCOUNTS .. "M3#1", "--catalogue", CATALOGUE, "--item", "6291", "--item", "6299")
+		assert.are.same({
+			"== Ledger M4 (PagleLedgerDB): Prestige, Catch Milestones, Legends, records, titles",
+			"climb: prestige rank 0, 4560 XP, computed level 4, peak level 4",
+			"Catch Milestones: none, 8 lifetime Catches",
+			"Legends caught: none",
+			"records: 0 of 2 Species, 0 Legends",
+			"record of 6291 (Species): none (no sized Catch yet)",
+			"record of 6299: not in the state (no Species or item 6299 caught)",
+			"titles earned: 2 (title:level1, title:complete.junk)",
+			"active title: automatic, so title:level1",
+			"celebrated levels: prestige rank 0 level 4",
+			"celebrated prestige: 0",
+			"celebrated Catch Milestones: none",
+			"celebrated titles: none",
+			"celebrated Legend items: none",
+		}, section(out, "== Ledger M4"))
 	end)
 
 	it("says in one line that no Field report projection is stored yet (REP-R25)", function()
@@ -477,6 +579,7 @@ describe("scripts/read-wtf.lua", function()
 			["an unknown option"] = { ACCOUNTS .. "M1#1", "--bogus" },
 			["an option with no value"] = { ACCOUNTS .. "M1#1", "--cvar" },
 			["two account folders"] = { ACCOUNTS .. "M1#1", ACCOUNTS .. "M0#1" },
+			["an --item that isn't an ID"] = { ACCOUNTS .. "M1#1", "--item", "6303a" },
 		}) do
 			it("exits 2, prints nothing and writes the usage to stderr, given " .. case, function()
 				local out, err, code = run(unpack(args))
