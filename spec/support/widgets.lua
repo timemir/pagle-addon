@@ -65,6 +65,14 @@ function widgets.newWidget(kind, parent)
 	function widget:IsMovable()
 		return self.movable == true
 	end
+	-- Whether the client would save where the player moved it (SetUserPlaced; StartMoving sets it, as the client
+	-- does).
+	function widget:SetUserPlaced(userPlaced)
+		self.userPlaced = userPlaced
+	end
+	function widget:IsUserPlaced()
+		return self.userPlaced == true
+	end
 	-- Its anchors as SetPoint gave them, in order, each { point, relativeTo, relativePoint, x, y } as passed; a second
 	-- SetPoint of the same point replaces the first, and ClearAllPoints drops them all. The fake lays nothing out.
 	widget.points = {}
@@ -94,6 +102,7 @@ function widgets.newWidget(kind, parent)
 	-- them (nil until set: the fake lays nothing out).
 	function widget:StartMoving()
 		self.moving = true
+		self.userPlaced = true -- as the client does
 	end
 	function widget:StopMovingOrSizing()
 		self.moving = false
