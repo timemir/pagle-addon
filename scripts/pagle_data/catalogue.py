@@ -45,13 +45,22 @@ def _canonical(value: object) -> object:
     return value
 
 
+def canonical(table: Mapping[str, object]) -> str:
+    """A table's canonical JSON (DATA-R70), as Python's json.dumps writes it with sorted keys and no spaces. The Hunt
+    list and each Hunt's record are written the same way (DATA-R72, DATA-R94)."""
+    return json.dumps(_canonical(table), sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+
+
+def sha256_hex(text: str) -> str:
+    """The lowercase hex SHA-256 of text, encoded as UTF-8 (DATA-R70, DATA-R94)."""
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
 def canonical_json(catalogue: Catalogue) -> str:
     """The catalogue's canonical JSON (DATA-R70): the catalogue without its fingerprint field."""
-    body = {key: value for key, value in catalogue.items() if key != "fingerprint"}
-    return json.dumps(_canonical(body), sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    return canonical({key: value for key, value in catalogue.items() if key != "fingerprint"})
 
 
 def fingerprint(catalogue: Catalogue) -> str:
     """CONTENT_FINGERPRINT (DATA-R70): the first 16 lowercase hex characters of the canonical JSON's SHA-256."""
-    digest = hashlib.sha256(canonical_json(catalogue).encode("utf-8")).hexdigest()
-    return digest[:FINGERPRINT_LENGTH]
+    return sha256_hex(canonical_json(catalogue))[:FINGERPRINT_LENGTH]
