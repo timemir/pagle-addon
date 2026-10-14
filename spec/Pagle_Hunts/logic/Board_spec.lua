@@ -1,0 +1,154 @@
+-- The Hunts board's page router (HNT-R60, HNT-R61, HNT-R66, HNT-R67): which mode the board shows, which renderer
+-- draws each page in it, and the breadcrumb trail back up. Pure logic, on the fixture Hunt list's IDs.
+
+---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
+local hunts = dofile("spec/Pagle_Hunts/support.lua")
+
+-- A fresh router from Hunts' logic.
+local function newRouter()
+	return hunts.load().ns.NewBoardRouter()
+end
+
+-- A renderer that does nothing, told apart from another by identity.
+local function renderer()
+	return function() end
+end
+
+describe("the board's page router", function()
+	it("starts on the Board mode with nothing asked for (HNT-R67)", function()
+		assert.are.same({ mode = "board" }, newRouter():Place())
+	end)
+
+	it("gives each mode's page the renderer registered for it, and none to a mode with none", function()
+		local router = newRouter()
+		local timeline, entry, setPage = renderer(), renderer(), renderer()
+
+		router:Register("board", "left", timeline)
+		router:Register("board", "right", entry)
+		router:Register("set", "right", setPage)
+
+		assert.are.equal(timeline, router:Renderer("board", "left"))
+		assert.are.equal(entry, router:Renderer("board", "right"))
+		assert.are.equal(setPage, router:Renderer("set", "right"))
+		assert.is_nil(router:Renderer("set", "left"))
+		assert.is_nil(router:Renderer("entry", "left"))
+		assert.is_nil(router:Renderer("retired", "right"))
+	end)
+
+	it("lets one renderer draw several modes' pages, and a later registration replace an earlier one", function()
+		local router = newRouter()
+		local first, second = renderer(), renderer()
+
+		router:Register("board", "left", first)
+		router:Register("set", "left", first)
+		router:Register("board", "left", second)
+
+		assert.are.equal(second, router:Renderer("board", "left"))
+		assert.are.equal(first, router:Renderer("set", "left"))
+	end)
+
+	it("refuses a mode, side or renderer it doesn't know, so a typo fails at load", function()
+		local router = newRouter()
+
+		assert.has_error(function()
+			router:Register("timeline", "left", renderer())
+		end)
+		assert.has_error(function()
+			router:Register("board", "middle", renderer())
+		end)
+		assert.has_error(function()
+			router:Register("board", "left", nil)
+		end)
+	end)
+
+	it("opens each of the four modes: the Board, a set's page, a Hunt's entry and a retired entry", function()
+		local router = newRouter()
+
+		router:Open({ mode = "set", set = "fixture_dusk" })
+		assert.are.same({ mode = "set", set = "fixture_dusk" }, router:Place())
+		router:Open({ mode = "entry", set = "fixture_dusk", hunt = "fixture_snapper" })
+		assert.are.same({ mode = "entry", set = "fixture_dusk", hunt = "fixture_snapper" }, router:Place())
+		router:Open({ mode = "retired", set = "fixture_dusk", hunt = "fixture_sunscale" })
+		assert.are.same({ mode = "retired", set = "fixture_dusk", hunt = "fixture_sunscale" }, router:Place())
+		router:Open({ mode = "board", hunt = "fixture_rack" })
+		assert.are.same({ mode = "board", hunt = "fixture_rack" }, router:Place())
+	end)
+
+	it("refuses a place its mode can't show: a set's page with no set, an entry with no Hunt", function()
+		local router = newRouter()
+
+		for _, place in ipairs({
+			{ mode = "timeline" },
+			{ mode = "set" },
+			{ mode = "entry", set = "fixture_dusk" },
+			{ mode = "retired" },
+		}) do
+			assert.has_error(function()
+				router:Open(place)
+			end)
+		end
+		assert.are.same({ mode = "board" }, router:Place())
+	end)
+
+	it("keeps its own copy of a place, so the caller's table changes nothing", function()
+		local router = newRouter()
+		local place = { mode = "set", set = "fixture_dusk" }
+
+		router:Open(place)
+		place.set = "fixture_wagers"
+		router:Place().set = "fixture_wagers"
+
+		assert.are.same({ mode = "set", set = "fixture_dusk" }, router:Place())
+	end)
+
+	it("selects a Hunt in the mode it shows, as the timeline does when it picks one (HNT-R67)", function()
+		local router = newRouter()
+
+		router:Select("fixture_snapper")
+		assert.are.same({ mode = "board", hunt = "fixture_snapper" }, router:Place())
+		router:Select(nil)
+		assert.are.same({ mode = "board" }, router:Place())
+	end)
+
+	describe("the breadcrumb trail (HNT-R61)", function()
+		it('is "Hunts" alone on the Board, and "Hunts", then the Hunt, once one is selected', function()
+			local router = newRouter()
+
+			assert.are.same({ { kind = "hunts", place = { mode = "board" } } }, router:Trail())
+			router:Select("fixture_snapper")
+			assert.are.same({
+				{ kind = "hunts", place = { mode = "board" } },
+				{ kind = "hunt", id = "fixture_snapper", place = { mode = "board", hunt = "fixture_snapper" } },
+			}, router:Trail())
+		end)
+
+		it('is "Hunts", then the set, on a set\'s page', function()
+			local router = newRouter()
+
+			router:Open({ mode = "set", set = "fixture_dusk" })
+
+			assert.are.same({
+				{ kind = "hunts", place = { mode = "board" } },
+				{ kind = "set", id = "fixture_dusk", place = { mode = "set", set = "fixture_dusk" } },
+			}, router:Trail())
+		end)
+
+		it('is "Hunts", the set, then the Hunt on an entry opened from a set, each going back up (HNT-R66)', function()
+			local router = newRouter()
+
+			for _, mode in ipairs({ "entry", "retired" }) do
+				router:Open({ mode = mode, set = "fixture_dusk", hunt = "fixture_snapper" })
+
+				assert.are.same({
+					{ kind = "hunts", place = { mode = "board" } },
+					{ kind = "set", id = "fixture_dusk", place = { mode = "set", set = "fixture_dusk" } },
+					{
+						kind = "hunt",
+						id = "fixture_snapper",
+						place = { mode = mode, set = "fixture_dusk", hunt = "fixture_snapper" },
+					},
+				}, router:Trail())
+			end
+		end)
+	end)
+end)

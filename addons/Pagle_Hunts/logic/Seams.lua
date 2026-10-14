@@ -10,10 +10,9 @@ local ns = select(2, ...)
 -- ns at call time (`ns.State()`, never a copy made at load), so the replacement reaches them all.
 --
 --   ns.ToggleBoard()          Opens the Hunts board, or closes it if shown (HNT-R68). Registration's view and
---                             `/pagle hunts` call it (HNT-R135). Stand-in: does nothing. The board's ticket (#191)
---                             assigns the real one when its file loads.
+--                             `/pagle hunts` call it (HNT-R135). Defined by the board, adapter/Board.lua (#191).
 --   ns.OpenBoard(huntID?)     Opens the board (never closes it), on that Hunt if given (HNT-R67, HNT-R77): the
---                             tracker's lines call it. Stand-in: does nothing. The board's ticket (#191) assigns it.
+--                             tracker's lines call it. Defined by the board, adapter/Board.lua (#191).
 --   ns.State()                The projection's HuntsState (hunts.md › Projection state). Read-only for views.
 --                             Stand-in: a new empty state each call. The projection's ticket (#188) binds it to
 --                             `projection:GetState()` in OnInitialize.
@@ -26,14 +25,8 @@ local ns = select(2, ...)
 --                             adapter/Groups.lua), "projection" after each live apply that
 --                             changes the state and after each done (#188), "names" when item names load (#190).
 --                             A view that is hidden may ignore it.
-
---- Opens or closes the Hunts board (HNT-R68). A stand-in until the board's ticket assigns the real one.
-function ns.ToggleBoard() end
-
---- Opens the Hunts board on `huntID`, or on the Board mode with none (HNT-R67, HNT-R77). A stand-in until the
---- board's ticket assigns the real one.
----@param huntID string?
-function ns.OpenBoard(huntID) end -- luacheck: no unused args
+--   ns.SetViewShown(view, shown) A view tells the grouping it showed or hid (HNT-R42's refresh): the board
+--                             ("board", #191) and the tracker ("tracker", #197). Defined in adapter/Groups.lua (#189).
 
 -- The projection's state, as hunts.md › Projection state gives it; the projection's ticket fills it in.
 
