@@ -29,4 +29,5 @@ logic\JournalAngler.lua
 adapter\JournalWidgets.lua
 adapter\JournalText.lua
 adapter\Journal.lua
+adapter\Prestige.lua
 adapter\Ledger.lua

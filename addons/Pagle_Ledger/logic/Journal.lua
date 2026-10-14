@@ -42,8 +42,9 @@ local ns = select(2, ...)
 --- - `tiles` (`tiles`: zone tiles, LedgerZoneTile)
 --- - `icon` (`icon`, an item ID or texture, drawn `look` "sepia" or "silhouette")
 --- - `xpBar` (`bar`: the ink XP bar, ns.InkXpBar)
+--- - `emblem` (`mark`: a prestige rank's emblem and stars, ns.PrestigeMark; nothing drawn without an emblem)
 ---@class LedgerBlock
----@field kind "kicker"|"title"|"text"|"link"|"leader"|"seal"|"stamps"|"tiles"|"icon"|"xpBar"
+---@field kind "kicker"|"title"|"text"|"link"|"leader"|"seal"|"stamps"|"tiles"|"icon"|"xpBar"|"emblem"
 ---@field text? string
 ---@field hand? boolean
 ---@field color? "faded"|"red"|"blue"
@@ -54,6 +55,7 @@ local ns = select(2, ...)
 ---@field icon? integer|string
 ---@field look? "sepia"|"silhouette"
 ---@field bar? LedgerInkXpBar
+---@field mark? LedgerPrestigeMark
 
 --- A zone tile (LED-R131): the zone's name, up to two lines under it, a thin ink bar, a wax seal and a red note.
 ---@class LedgerZoneTile

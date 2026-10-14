@@ -145,4 +145,10 @@ ns.L = {
 	ANGLER_MILESTONE_DONE = "☑ %d",
 	ANGLER_MILESTONE_OPEN = "☐ %d",
 	ANGLER_MILESTONE_SEPARATOR = "   ",
+
+	-- The Prestige confirm (LED-R33), and a Master Prestige's star stamp beside emblem X (LED-R34).
+	PRESTIGE_CONFIRM = "Begin a new Ledger? Your Angler Level starts again at 1, and climbs at half the cost. Nothing you've earned is taken away.",
+	PRESTIGE_CONFIRM_YES = "Prestige",
+	PRESTIGE_CONFIRM_NO = "Not yet",
+	PRESTIGE_STAR = "★",
 }
