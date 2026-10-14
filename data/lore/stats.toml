@@ -1,0 +1,15 @@
+# Stats' lore (DATA-R100): its goods, the three tracker frames of the Curio Shop's stats.trackerframe slot (STA-R88),
+# each with a name and a description. Core owns the kind good, so Stats' is statsgood (DATA-R102). The M6 batch
+# (DATA-R111), drafted from VOICE.md for the dev's review (#220).
+
+[statsgood."stats.trackerframe.none"]
+name = "No Frame"
+description = "The figures on their own, with no border. Nothing to polish, and nothing to get wet."
+
+[statsgood."stats.trackerframe.logbook"]
+name = "Logbook"
+description = "Parchment ruled in faint columns, like a harbourmaster's log. Every figure keeps to its line."
+
+[statsgood."stats.trackerframe.brass"]
+name = "Ship's Brass"
+description = "A thin brass rim, riveted at each corner like a ship's compass. It keeps its shine in any weather."

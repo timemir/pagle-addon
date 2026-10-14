@@ -91,4 +91,15 @@ describe("Pagle_Stats.toc", function()
 	it("loads locale/enUS.lua first, so every file after it has ns.L (CORE-R8)", function()
 		assert.are.equal("locale/enUS.lua", addonFiles("Pagle_Stats")[1])
 	end)
+
+	it("lists its generated Lore.lua right after locale/enUS.lua, the file that creates ns.L (DATA-R75)", function()
+		-- DATA-R104, STA-R88: the lore extends ns.L, so it loads after the locale and before any code reads a name.
+		local at = {}
+		for index, file in ipairs(addonFiles("Pagle_Stats")) do
+			at[file] = index
+		end
+
+		assert.is_number(at["data/Lore.lua"])
+		assert.are.equal(at["locale/enUS.lua"] + 1, at["data/Lore.lua"])
+	end)
 end)

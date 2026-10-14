@@ -1,6 +1,6 @@
 -- STA-R58, the copy test: no Stats string says or implies that a Catch is owed. Every value in Stats' string table
 -- (ns.L, as Stats loads it, so the generated data/Lore.lua's entries too) and every string value in
--- data/lore/stats.toml, once that file exists (the M6 lore batch, #210), is checked for "due", "overdue", "soon",
+-- data/lore/stats.toml (the M6 lore batch, #210) is checked for "due", "overdue", "soon",
 -- "pity", "guaranteed", "bound to" and "owed", case-insensitively and as whole words. The one exception is the exact
 -- line "Every Cast is its own roll; nothing is owed." This spec runs in scripts/check.sh's busted stage, so every
 -- Stats ticket's strings are held to it.
@@ -147,10 +147,9 @@ describe("the copy test (STA-R58)", function()
 		assert.are.same({}, problemsIn(stringsOf(stats.load().ns.L)))
 	end)
 
-	it("passes every string in data/lore/stats.toml, once the M6 lore batch adds it (#210)", function()
-		if exists(LORE) then
-			assert.are.same({}, problemsIn(loreStrings(LORE)))
-		end
+	it("passes every string in data/lore/stats.toml, the M6 lore batch (#210)", function()
+		assert.is_true(exists(LORE), LORE .. " is missing")
+		assert.are.same({}, problemsIn(loreStrings(LORE)))
 	end)
 
 	it("has the one allowed line in Stats' string table, exactly", function()
