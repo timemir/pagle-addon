@@ -28,14 +28,17 @@ The angler has fished everywhere, is impressed by little, and likes fish more th
 
 The generator fails a batch that breaks these (DATA-R107; ticket #128 builds the check). Lengths count Unicode code points (Tunables › Lore limits).
 
-| Field | Kinds in the M3 batch | Limit |
+| Field | Kinds | Limit |
 |---|---|---|
 | `riddle` | `species` | 80 |
 | `blurb` | `species`, `legend` | 200 |
 | `plaque` | `sub` | 100 |
-| `name` | `family` | 28 |
+| `name` | every kind's `name`: `family` in the M3 batch; goods, Hunts and sets later | 28 |
 | `title` | `legend` | 32 |
+| `text` | `title`, the Ledger's titles (from M4, LED-R162) | 32 |
 | `text` | `line` | none (keep it under 100, like a plaque) |
+
+Changed (M3 review): the `title` text row is added, and `name`'s 28 applies to every kind's `name`, as Tunables › Lore limits says.
 
 - **No line breaks** in any field.
 - **No `{` or `}`**, except `{zone}` in a key whose manifest entry allows it (DATA-R107, DATA-R108). In 1.0 that's only the `zonemaster` title, which isn't in the M3 batch.
@@ -56,7 +59,7 @@ In `data/lore/ledger.toml` each key is a table per `<kind>.<id>` (DATA-R101). Sp
 ```toml
 [species.6317] # Raw Loch Frenzy
 blurb = "Named by dwarves, who name everything after how it behaves when you try to hold it."
-riddle = "A great dammed lake in dwarf country."
+riddle = "Cold highland lake water, in dwarf country."
 
 [line.uncaughtjunk]
 text = "Something odd is still out there."
@@ -75,13 +78,13 @@ Shown on an uncaught Species' page, in quotes, above a "Read the plain hint ▸"
 | Species | Line | Chars | Source |
 |---|---|---|---|
 | Raw Longjaw Mud Snapper (6289) | Lazy rivers in the lands where heroes begin. | 44 | P309 |
-| Raw Loch Frenzy (6317) | A great dammed lake in dwarf country. | 37 | P312 |
-| Raw Sunscale Salmon (13760) | Southern waters while the sun is up. | 36 | P322 |
+| Raw Loch Frenzy (6317) | Cold highland lake water, in dwarf country. | 43 | P312, changed (M3 review): "a great dammed lake" pinned Loch Modan (open choice 15) |
+| Raw Sunscale Salmon (13760) | Far rivers and lakes, warm or cold, while the sun is up. | 56 | P322, changed (M3 review): "Southern waters", but about half its zones in the catalogue are northern (the Plaguelands, the Hinterlands, Winterspring) |
 | Raw Summer Bass (13756) | Warm shores in the warm half of the year. | 41 | P325 |
 | Speckled Tastyfish (19807) | Only while the jungle's great contest is on. | 44 | P335 |
 | Raw Bristle Whisker Catfish (6308) | Murky rivers on both sides of the sea. | 38 | P313, changed: named Redridge and the Barrens |
 | Raw Winter Squid (13755) | Warm shores, once the year turns cold. | 38 | P326, changed: "The same shores" leaned on the Summer Bass riddle |
-| Deviate Fish (6522) | Strange schools by a cave of bad dreams, out on the dry plains. | 63 | P332, changed: named the Barrens |
+| Deviate Fish (6522) | Strange schools out on the dry plains, where the water itself seems unwell. | 75 | P332, changed: named the Barrens; changed (M3 review): "a cave of bad dreams" pinned the Wailing Caverns (open choice 15) |
 
 ### Species blurb (`species.<id>.blurb`, 200)
 
@@ -167,7 +170,7 @@ One line each, shown in place of anything not yet caught (LED-R138, LED-R144, LE
 | An exact zone, hour or skill in a riddle: "Coastal shallows of Feralas and the swamp." (P321) "Past skill 200, between six and nine." | A kind of place or time: "Cold, rocky coasts of the middle lands." (P314) |
 | The fish's own name in its riddle: "A bass for the summer shores." | Around it: "Warm shores in the warm half of the year." (P325) |
 | Restating the page: "Found in Feralas, and only by day." | Something the page can't say: "Gills like embers. Bites like it means it." (P321) |
-| The game's history: "Back from the old days, and still not worth cooking." | The fish as it is now: "Looks bad, smells worse." (P334) |
+| The game's history: "Back from the old days, and still not worth cooking." | The fish as it is now: "Looks bad, smells worse." (P334, changed: trimmed; the prototype goes on ", cooks into something a raptor would eat.") |
 | A race joke in every other line. The prototype has four gnome or dwarf jokes in some sixty-five lines; that's the ceiling. | Vary the turn: the table, the weather, the angler's patience. |
 | Taking a side: "The Horde can keep this one." | A line both factions read the same way: "Slippery enough to earn the name." (P310) |
 
@@ -193,4 +196,15 @@ Choices this draft made that the specs don't settle. Ticket #130 confirms or cha
 7. **Race jokes capped** at the prototype's rate, about one in fifteen lines.
 8. **British spelling** in invented words, following CONTEXT.md and the prototype.
 9. **The prototype's riddle for Darkshore Grouper** ("Only off the shore it's named for.", P333) isn't used: it pins one zone through the fish's name. Allow word-play riddles like it, or not?
-10. **Edited prototype lines** (marked "changed" above): Bristle Whisker Catfish, Winter Squid and Deviate Fish riddles; Brilliant Smallfish and Deviate Fish blurbs; the Old Skull plaque; the `uncaughttreasure` line's capital and full stop.
+10. **Edited prototype lines** (marked "changed" above): Bristle Whisker Catfish, Winter Squid and Deviate Fish riddles; Brilliant Smallfish and Deviate Fish blurbs; the Old Skull plaque; the `uncaughttreasure` line's capital and full stop. The M3 review adds the Loch Frenzy and Sunscale Salmon riddles, and marks P334 ("Looks bad, smells worse.") as trimmed.
+
+Added after the M3 review: rules this draft makes that DATA-R110 doesn't have (11–14), how close a riddle may get (15), and what the review changed here (16).
+
+11. **Nothing about patches, expansions or other versions of the game** ("In-world only"). DATA-R110 forbids only real-world references and memes.
+12. **Not the addon talking**: no Pagle, its systems or its capitalised terms in lore. DATA-R110 doesn't say it, and it clashes with LED-R75's working level titles "Ledgerkeeper" (level 50) and "Pagle's Peer" (level 60), which name the Ledger and Pagle, while this guide lets their batch (M4) keep the working names. Either titles are an exception, or the M4 batch renames those two.
+13. **No exclamation marks.** Not in DATA-R110.
+14. **Faction-neutral.** Not in DATA-R110.
+15. **How close a riddle may get** (with 9). "Never an exact zone" (DATA-R110) can't hold for a Species listed in one zone: Loch Frenzy lives only in Loch Modan, so any true riddle narrows to it. The review softened the two samples that pinned a zone through a landmark, Loch Frenzy's "a great dammed lake" (Loch Modan's dam) and Deviate Fish's "a cave of bad dreams" (the Wailing Caverns), to the lines the Ledger's batch (#131) ships. Allow a landmark, or only a kind of land and water?
+16. **What the M3 review changed, and where these samples still differ from the Ledger's batch** (#131, drafted from this draft before #130).
+    - Changed: Hard rules' `title` text row and `name` for every kind; the Sunscale Salmon, Loch Frenzy and Deviate Fish riddles, now the batch's lines (Loch Frenzy's in the TOML example too); the "changed: trimmed" mark on P334; choices 11–16.
+    - Still different: the batch ships the new `uncaughtjunk` line (the TOML example above shows the prototype's) and the prototype's line for the other three (choice 2); its Sickly Looking Fish blurb is P334 in full; and it doesn't use P314's "Cold, rocky coasts of the middle lands." for Rockscale Cod (the Do example under Dos and don'ts, and "cold, rocky coasts" under the riddle's places), since the catalogue lists it on warm coasts too and "rocky" echoes its name.
