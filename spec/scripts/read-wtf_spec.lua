@@ -118,6 +118,8 @@ describe("scripts/read-wtf.lua", function()
 				"  148: caught 2, got away 1",
 				"  1519: caught 1",
 				"zone areaID 0: 2 Casts, seq 7, 8",
+				-- The latest Cast: realm minute 524 (08:44) at 15:45:47 UTC, a US Pacific realm (LOG-R49).
+				"realm clock: UTC-07:00 (from the latest Cast)",
 				"B1: 1 entry, the last build 70338 (1.60.1)",
 				"S1: 2 entries, the last rank 86, max 150, mod 25 (character 1)",
 				"P1: none",
