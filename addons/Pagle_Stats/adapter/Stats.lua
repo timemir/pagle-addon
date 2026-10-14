@@ -26,6 +26,7 @@ function ns.Stats.OnInitialize()
 	ns.MigrateDB(ns.db.global)
 
 	--- The places rules over Core's catalogue (STA-R10–R17): built here, where the catalogue is ready (CORE-R10).
-	--- `Pagle` itself is the lookups, read at each call, so a new fingerprint drops the tables (LOG-R72).
-	ns.places = ns.NewPlaceTables(Pagle)
+	--- `Pagle` itself is the lookups, read at each call, so a new fingerprint drops the tables (LOG-R72). Core sets
+	--- these fields at runtime, so the type checker can't see them on Pagle: hence the cast.
+	ns.places = ns.NewPlaceTables(Pagle --[[@as StatsLookups]])
 end
