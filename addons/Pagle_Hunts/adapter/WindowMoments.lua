@@ -49,7 +49,9 @@ end
 --- Adds the setting and starts watching regroups, from OnInitialize: the row before ModulesChanged (CORE-R42), under
 --- the "Hunts" header Core puts before Hunts' first row (SET-R3). It has no isEnabled, so Cozy mode never greys it
 --- (SET-R32). Every regroup records the baseline, setting on or off; with it on, each window found opened raises its
---- Nod (no cast: an Announcement of its own, ANN-R12).
+--- Nod (no cast: an Announcement of its own, ANN-R12). A first grouping made paused, in combat, records none: it read
+--- the calendar as no events and a secret clock as no window (LOG-R46), so its redo at RestrictionChanged(false) is
+--- the first grouping that sets the baseline (HNT-R43, HNT-R88).
 function ns.StartWindowMoments()
 	local L = ns.L
 	ns.Module:AddSetting("announcements", {
@@ -68,7 +70,7 @@ function ns.StartWindowMoments()
 	local baseline -- HuntWindowBaseline? the last regroup's; nil until the first grouping (HNT-R88)
 	ns.OnRegroup(function(_, current)
 		local opened = ns.WindowOpenings(baseline, current.rows, ns.db.profile.pins, ns.db.profile.windowMoments)
-		baseline = ns.WindowBaseline(current)
+		baseline = not ns.groups:IsPaused() and ns.WindowBaseline(current) or nil
 		if #opened == 0 then
 			return
 		end

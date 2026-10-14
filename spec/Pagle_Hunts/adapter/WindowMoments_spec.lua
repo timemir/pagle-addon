@@ -53,8 +53,9 @@ end
 ---@field ns table
 
 --- Hunts on a FakePagle with the spec's Hunt list, `options.pins` pinned and the setting `options.on` saved, logged
---- in with Fishing at 300, through its first PLAYER_ENTERING_WORLD at realm 08:15.
----@param options { pins: string[]?, on: boolean? }?
+--- in with Fishing at 300, through its first PLAYER_ENTERING_WORLD at realm 08:15; in combat with `options.restricted`
+--- (a `/reload` in combat).
+---@param options { pins: string[]?, on: boolean?, restricted: boolean? }?
 ---@return WindowRun
 local function start(options)
 	options = options or {}
@@ -84,6 +85,9 @@ local function start(options)
 	fake.login()
 	fake.readSkill(300, 300, 0)
 	fake.enterWorld()
+	if options.restricted then
+		fake.setRestricted(true)
+	end
 	fake.fireGameEvent("PLAYER_ENTERING_WORLD", true, false)
 	return { loaded = loaded, fake = fake, ns = loaded.ns }
 end
@@ -186,6 +190,19 @@ describe("No window moment (HNT-R88)", function()
 		regroup(run)
 		assert.are.same({}, windowMoments(run))
 		assert.are.same({}, run.fake.announcements)
+	end)
+
+	it("at the redo of a first grouping made in combat: the paused one sets no baseline (HNT-R43, HNT-R88)", function()
+		-- A /reload in combat: the first grouping runs paused while the calendar reads as no events (LOG-R46), so the
+		-- Extravaganza, live all along, looks closed in it.
+		local run = start({ pins = { "fair" }, on = true, restricted = true })
+		assert.is_true(run.ns.groups:IsPaused())
+		setConditions(run, { events = { EXTRAVAGANZA } })
+
+		run.fake.setRestricted(false) -- the redo is the first grouping that counts
+
+		assert.is_true(run.ns.groups:Row("fair").window.openNow)
+		assert.are.same({}, windowMoments(run))
 	end)
 
 	it("for an unpinned Hunt", function()
