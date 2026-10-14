@@ -191,11 +191,13 @@ describe("scripts/read-wtf.lua", function()
 		end)
 
 		it("prints each Module's reported total and the balance (SHOP-R3, SHOP-R12)", function()
-			-- Nothing spends before the Curio Shop (M4), so the balance is 30 + 12.
+			-- Nothing spends before the Curio Shop (M4), so the balance is 30 + 12, and there's no wallet projection
+			-- (SHOP-R11) yet.
 			assert.are.same({
 				"== Wallet (PagleDB.global.coins.earned): balance 42",
 				"Hunts: 12",
 				"Ledger: 30",
+				"wallet projection: none stored (no build has finished, LOG-R72)",
 			}, section(out, "== Wallet"))
 		end)
 
@@ -257,10 +259,10 @@ describe("scripts/read-wtf.lua", function()
 		end)
 
 		it("reads a PagleDB with no coins as no Module having reported (AceDB leaves out the empty default)", function()
-			assert.are.same(
-				{ "== Wallet (PagleDB.global.coins.earned): balance 0, no Module has reported Coins" },
-				section(out, "== Wallet")
-			)
+			assert.are.same({
+				"== Wallet (PagleDB.global.coins.earned): balance 0, no Module has reported Coins",
+				"wallet projection: none stored (no build has finished, LOG-R72)",
+			}, section(out, "== Wallet"))
 		end)
 
 		it("reads a PagleDB with no Write-up, cards, summary or pending as having none", function()
@@ -443,6 +445,21 @@ describe("scripts/read-wtf.lua", function()
 					.. " title:level60, title:prestige1, legend:19803)",
 				"celebrated Legend items: 1 (19803)",
 			}, section(out, "== Ledger M4"))
+		end)
+
+		it("prints the wallet projection, and a balance held at 0 while earned is below spent (SHOP-R11, SHOP-R12)", function()
+			-- 500 earned − (150 + 400) spent is −50: the balance shows 0, held (SHOP-R12). Each good counted once, the
+			-- wallet rules version 1 is Core's (wallet-and-shop.md › Data), and the projection is current (LOG-R72).
+			assert.are.same({
+				"== Wallet (PagleDB.global.coins.earned): balance 0, held (500 earned − 550 spent = -50, SHOP-R12)",
+				"Ledger: 500",
+				"projection: lastSeq 9, logId 8e1d4b7a2c6f0935, fingerprint 0123456789abcdef, rulesVersion 1",
+				"logId: matches PagleLog's",
+				"lastSeq: equals PagleLog's length (9 entries)",
+				"rulesVersion: Core's wallet rules, 1",
+				"spent: 550",
+				"purchased: 2 (core.soundset.gilded, core.toaststyle.ripple)",
+			}, section(out, "== Wallet"))
 		end)
 
 		it("prints the stored M4 lines and the celebrated titles alone when the catalogue can't be loaded", function()

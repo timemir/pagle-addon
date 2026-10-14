@@ -924,29 +924,60 @@ local function pagleGlobal(pagle)
 	return tableOr(db.global)
 end
 
+-- The wallet projection's lines (#173): its bookkeeping, checked against PagleLog (LOG-R72) and Core's wallet rules
+-- version (wallet-and-shop.md › Data), then its state, the Coins spent and the goods purchased (SHOP-R11). One line
+-- while none is stored.
+local function printWalletProjection(stored, log, rulesVersion)
+	if type(stored) ~= "table" or type(stored.projection) ~= "table" then
+		print("wallet projection: none stored (no build has finished, LOG-R72)")
+		return
+	end
+	printStored(stored, log)
+	if stored.rulesVersion == rulesVersion then
+		print(("rulesVersion: Core's wallet rules, %d"):format(rulesVersion))
+	else
+		local text = "rulesVersion: %s DIFFERS from Core's wallet rules %d, so Core rebuilds it at login (LOG-R72)"
+		print(text:format(tostring(stored.rulesVersion), rulesVersion))
+	end
+	print("spent: " .. tostring(stored.projection.spent))
+	print("purchased: " .. listed(tableOr(stored.projection.purchased)))
+end
+
 -- Prints the Wallet section (wallet-and-shop.md › Data): each Module's last reported total (SHOP-R3) and the balance,
--- Σ earned − spent and never below 0 (SHOP-R12). `spent` is stored only from M4's wallet projection (SHOP-R11).
-local function printWallet(pagle)
+-- Σ earned − spent, 0 and held while that is negative (SHOP-R12), from Core's own logic/Wallet.lua; `spent` is the
+-- wallet projection's (SHOP-R11), which the section prints last.
+local function printWallet(pagle, log)
 	local global, why = pagleGlobal(pagle)
 	if not global then
 		print("== Wallet: " .. why)
 		return
 	end
 	local earned = tableOr(tableOr(global.coins).earned)
-	local spent = tonumber(tableOr(tableOr(global.projections).wallet).spent) or 0
+	local stored = tableOr(global.projections).wallet
+	local state = type(stored) == "table" and type(stored.projection) == "table" and stored.projection or {}
+	local spent = tonumber(state.spent) or 0
 	local sum, names = 0, sortedKeys(earned)
 	for _, name in ipairs(names) do
 		sum = sum + (tonumber(earned[name]) or 0)
 	end
-	local heading = "== Wallet (PagleDB.global.coins.earned): balance " .. math.max(sum - spent, 0)
-	if spent > 0 then
-		heading = heading .. (" (%d earned, %d spent)"):format(sum, spent)
+	-- The balance and held from Core's own wallet (logic/Wallet.lua).
+	local core = loadCoreRules()
+	local wallet = core.NewWallet(function() end)
+	wallet:Open(earned)
+	wallet:SetSpent(spent)
+	local balance = wallet:Get()
+	local heading = "== Wallet (PagleDB.global.coins.earned): balance " .. balance.balance
+	if balance.held then
+		heading = heading .. (", held (%d earned − %d spent = %d, SHOP-R12)"):format(sum, spent, sum - spent)
+	elseif spent > 0 then
+		heading = heading .. (" (%d earned − %d spent)"):format(sum, spent)
 	end
 	-- AceDB leaves the default, an empty earned table, out of the file.
 	print(heading .. (#names == 0 and ", no Module has reported Coins" or ""))
 	for _, name in ipairs(names) do
 		print(name .. ": " .. tostring(earned[name]))
 	end
+	printWalletProjection(stored, log, core.WALLET_RULES_VERSION)
 end
 
 -- The titles of a card's moments, one line per Module group (ANN-R53), each indented by `indent`.
@@ -1159,7 +1190,7 @@ local function main(args)
 	pagle.saved, pagle.err = loadSavedVariables(pagle.path)
 	local checks = printCatchLog(pagle, options.expectCasts, options.since)
 	printLedger(options.account, pagleLog(pagle.saved), options.catalogue, options.items)
-	printWallet(pagle)
+	printWallet(pagle, pagleLog(pagle.saved))
 	printCards(pagle)
 	printFieldReport(pagle, pagleLog(pagle.saved))
 	printCVars(options.account, options.character, options.cvars)
