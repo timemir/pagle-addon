@@ -20,7 +20,7 @@ describe("Stats' seams", function()
 		end)
 	end)
 
-	describe("the projection's state (STA-R20, until the projection's ticket)", function()
+	describe("the projection's state before its first build (STA-R20, LOG-R74)", function()
 		it("is an empty StatsState: no Casts anywhere, no hits, no Sessions (stats.md › Projection state)", function()
 			local ns = stats.load().ns
 
@@ -55,8 +55,8 @@ describe("Stats' seams", function()
 			assert.are.same({}, ns.State().places)
 		end)
 
-		it("is never updating (LOG-R74, STA-R91)", function()
-			assert.is_false(stats.load().ns.IsUpdating())
+		it("reads as updating until login starts the projection (LOG-R74, STA-R92)", function()
+			assert.is_true(stats.load().ns.IsUpdating())
 		end)
 	end)
 

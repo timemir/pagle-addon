@@ -182,12 +182,12 @@ describe("Pagle_Stats with Core", function()
 	end)
 
 	it(
-		"keeps no celebrated set and leaves the projection table to Core (stats.md › Data, LOG-R70, LOG-R77)",
+		"keeps no celebrated set and makes an empty projection table for Core (stats.md › Data, LOG-R70, LOG-R77)",
 		function()
 			local db = loadAddon("Pagle_Stats", FOREVER_GLOBALS).ns.db
 
 			assert.is_nil(db.global.celebrated)
-			assert.is_nil(db.global.projection)
+			assert.are.same({}, db.global.projection) -- before login: Core writes its keys at the first build
 		end
 	)
 
@@ -241,6 +241,29 @@ describe("Pagle_Stats with FakePagle", function()
 		assert.are.same(expected, labels(fake.menu()))
 		assert.are.same({ "/pagle stats: Open or close the Stats book." }, { unpack(fake.printed, 6) })
 	end)
+
+	it(
+		"reads places, lines and windows from Core's catalogue, afresh after a content update (STA-R12–R17, LOG-R72)",
+		function()
+			local loaded, fake = stats.load()
+			local places = loaded.ns.places
+
+			assert.are.same({ 170, true }, { places:NoJunkLine(442) })
+			assert.are.equal("night", (places:ItemWindow(148, 13759)))
+			assert.are.equal("hi", places:Side(148, 170))
+			assert.are.same(
+				{ { item = 6359, added = false }, { item = 6291, added = false } },
+				places:Rows({ places = {} }, 442)
+			)
+
+			local updated = stats.catalogue()
+			updated.fingerprint = "0000000000000003"
+			updated.areas[148].skillBase = 200
+			fake.setCatalogue(updated)
+
+			assert.are.equal("lo", places:Side(148, 170))
+		end
+	)
 
 	it("stops after RegisterModule returns nil, with no SavedVariables touched (CORE-R13)", function()
 		local fake = newFakePagle()

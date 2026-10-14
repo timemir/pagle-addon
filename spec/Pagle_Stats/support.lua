@@ -18,16 +18,22 @@ function support.catalogue()
 end
 
 --- Loads Pagle_Stats on `fake` (a new FakePagle if nil), serving `options.catalogue` or else the fixture catalogue
---- through fake.setCatalogue first, so Stats reads it from OnInitialize on.
+--- through fake.setCatalogue first, so Stats reads it from OnInitialize on. `options.prepare(loaded)` runs after
+--- Stats' files load and before its ADDON_LOADED (OnInitialize), e.g. to change `loaded.ns.STATS_RULES_VERSION`.
 ---@param fake table? a FakePagle (newFakePagle()), for a spec that set it up first
----@param options { catalogue: table? }? catalogue: a catalogue in the shape of ns.catalogue to serve instead
+---@param options { catalogue: table?, prepare: fun(loaded: LoadedAddon)? }? catalogue: a catalogue in the shape of
+--- ns.catalogue to serve instead
 ---@return LoadedAddon loaded
 ---@return table fake
 function support.load(fake, options)
 	fake = fake or newFakePagle()
 	options = options or {}
 	fake.setCatalogue(options.catalogue or support.catalogue())
-	local loaded = fake.load("Pagle_Stats")
+	local loaded = fake.load("Pagle_Stats", { holdAddonLoaded = true })
+	if options.prepare then
+		options.prepare(loaded)
+	end
+	loaded.client.fire("ADDON_LOADED", "Pagle_Stats")
 	return loaded, fake
 end
 

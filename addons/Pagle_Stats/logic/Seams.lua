@@ -17,11 +17,11 @@ local ns = select(2, ...)
 --                             (STA-R70) with none. The place page's rows, the item page, search, Lifetime and the
 --                             tracker's lines call it. Stand-in: does nothing. The book's ticket (#211) assigns it.
 --   ns.State()                The projection's StatsState (stats.md › Projection state). Read-only for views.
---                             Stand-in: a new empty state each call. The projection's ticket (#203) binds it to
---                             `projection:GetState()` in OnInitialize.
+--                             `ns.projection:GetState()` once the adapter's OnInitialize has made the projection
+--                             (#203); a new empty state before its first build, or with no projection.
 --   ns.IsUpdating()           Whether the projection is catching up or rebuilding (LOG-R74): views then draw nothing
---                             from ns.State() (STA-R72, STA-R85). Stand-in: false. The projection's ticket (#203)
---                             binds it.
+--                             from ns.State() (STA-R72, STA-R85). `ns.projection:IsUpdating()` (#203): true from load
+--                             until the first build ends; false with no projection.
 --   ns.OnRedraw(fn)           Subscribes a view (the book, the tracker) to redraws: fn(reason) is called at every
 --                             ns.Redraw, in subscription order. Subscribe once, when the view is made.
 --   ns.Redraw(reason)         Asks every subscribed view to redraw (STA-R73, STA-R91). Callers and their reasons:
@@ -94,29 +94,20 @@ function ns.OpenBook(target) end -- luacheck: no unused args
 ---@field items table<integer, integer>   -- catches by item ID, item 0 left out
 ---@field skill integer       -- skill gained (STA-R27)
 
---- The projection's state: a new empty StatsState until the projection binds it.
+--- The projection's state (`ns.projection:GetState()`), or a new empty StatsState (logic/Fold.lua) before its first
+--- build or with no projection.
 ---@return StatsState
 function ns.State()
-	local function margin()
-		return { casts = 0, gotAway = 0 }
-	end
-	return {
-		totals = { casts = 0, catches = 0, gotAway = 0 },
-		places = {},
-		chars = {},
-		scopes = {},
-		hits = {},
-		items = {},
-		margins = { lo50 = margin(), lo1 = margin(), hi0 = margin(), hi25 = margin() },
-		lastRank = {},
-		sessions = {},
-	}
+	local projection = ns.projection
+	return projection and projection:GetState() or ns.NewStatsState()
 end
 
---- Whether the projection is catching up or rebuilding (LOG-R74): false until the projection binds it.
+--- Whether the projection is catching up or rebuilding, or waiting for login to start it (LOG-R74,
+--- `ns.projection:IsUpdating()`); false with no projection.
 ---@return boolean
 function ns.IsUpdating()
-	return false
+	local projection = ns.projection
+	return projection ~= nil and projection:IsUpdating()
 end
 
 local redrawn = {} -- the subscribed views' redraws, in subscription order
