@@ -32,6 +32,15 @@ local function whereOf(loaded, fake, huntFields, classes)
 	return ns.NewWhere(ns.NewHuntList(list, ns.L), fake.globals.Pagle), list.hunts
 end
 
+-- Runs `fn` with `where` as ns.where, which ns.InWaters, ns.ShortOfSkill and ns.Unconfirmed read, then puts the one
+-- built at load back.
+local function withWhere(loaded, where, fn)
+	local shipped = loaded.ns.where
+	loaded.ns.where = where
+	fn()
+	loaded.ns.where = shipped
+end
+
 describe("Where a Hunt bites", function()
 	describe("waters (HNT-R30)", function()
 		local loaded, fake = load()
@@ -39,7 +48,7 @@ describe("Where a Hunt bites", function()
 
 		it("are worked out at load for every Hunt of the list, Retired and not-yet ones too (HNT-R137)", function()
 			for _, hunt in ipairs(loaded.ns.hunts:Hunts()) do
-				assert.is_table(where[hunt.id], hunt.id)
+				assert.is_table(where[hunt.id])
 			end
 		end)
 
@@ -55,9 +64,12 @@ describe("Where a Hunt bites", function()
 			assert.are.same({ C.PIER }, where.fixture_grouper.waters)
 		end)
 
-		it("are, for an imposed fixed-class Hunt, every area listing a member; a member listed nowhere adds none", function()
-			assert.are.same({ C.DARKSHORE }, where.fixture_oddity.waters)
-		end)
+		it(
+			"are, for an imposed fixed-class Hunt, every area listing a member; a member listed nowhere adds none",
+			function()
+				assert.are.same({ C.DARKSHORE }, where.fixture_oddity.waters)
+			end
+		)
 
 		it("are none for a generated-class Hunt", function()
 			assert.are.same({}, where.fixture_rack.waters)
@@ -87,7 +99,8 @@ describe("Where a Hunt bites", function()
 		end)
 
 		it("are a Hunt's areas when it has them", function()
-			local extra = whereOf(loaded, fake, { { species = C.BLACKMOUTH, conditions = { areas = { C.PIER, C.ELWYNN } } } })
+			local extra =
+				whereOf(loaded, fake, { { species = C.BLACKMOUTH, conditions = { areas = { C.PIER, C.ELWYNN } } } })
 			assert.are.same({ C.PIER, C.ELWYNN }, extra.extra_1.places)
 			assert.are.same({ C.ELWYNN, C.DARKSHORE }, extra.extra_1.zones)
 		end)
@@ -126,7 +139,10 @@ describe("Where a Hunt bites", function()
 		it("is none with no base among its places and no skill condition, or when it is 0 or less", function()
 			local extra = whereOf(loaded, fake, {
 				{ species = C.SMALLFISH }, -- Westfall only, which has no base
-				{ class = "quality.uncommon", conditions = { areas = { C.STORMWIND, C.WESTFALL }, skill = { min = 0 } } },
+				{
+					class = "quality.uncommon",
+					conditions = { areas = { C.STORMWIND, C.WESTFALL }, skill = { min = 0 } },
+				},
 			})
 			assert.is_nil(where.fixture_rack.skillNeed)
 			assert.are.same({ C.WESTFALL }, extra.extra_1.places)
@@ -152,13 +168,13 @@ describe("Where a Hunt bites", function()
 		end)
 
 		it("is none for a natural Hunt whose window has no spec, which is never unconfirmed", function()
-			local where, extra = whereOf(loaded, fake, { { kind = "natural", species = C.NIGHTFIN, window = "event.999" } })
-			local shipped = ns.where
-			ns.where = where
+			local where, extra =
+				whereOf(loaded, fake, { { kind = "natural", species = C.NIGHTFIN, window = "event.999" } })
 			assert.is_nil(where.extra_1.boardSpec)
 			assert.is_nil(where.extra_1.unconfirmedWindow)
-			assert.is_nil(ns.Unconfirmed(extra[1], { opensAt = 0, confirmed = false }))
-			ns.where = shipped
+			withWhere(loaded, where, function()
+				assert.is_nil(ns.Unconfirmed(extra[1], { opensAt = 0, confirmed = false }))
+			end)
 		end)
 	end)
 
@@ -182,36 +198,37 @@ describe("Where a Hunt bites", function()
 			assert.are.equal("window", ns.Unconfirmed(ns.hunts:Hunt("fixture_sunscale"), forecast("fixture_sunscale")))
 		end)
 
-		it("is a natural Hunt none of whose waters' entries has gateConfirmed: not yet seen biting only then", function()
-			local where, extra = whereOf(loaded, fake, {
-				-- Ashenvale's Forever Nightfin, its one night water, has gateConfirmed false.
-				{ kind = "natural", species = C.NIGHTFIN, window = "night" },
-				-- Smallfish is gated nowhere, so this one has no waters, and none gateConfirmed.
-				{ kind = "natural", species = C.SMALLFISH, window = "night" },
-			})
-			assert.is_nil(where.extra_1.unconfirmedWindow) -- Auberdine's entry is gateConfirmed
-			assert.are.equal("gating", where.extra_2.unconfirmedWindow)
-			local shipped = ns.where
-			ns.where = where
-			assert.are.equal("gating", ns.Unconfirmed(extra[2], Pagle.NextWindow(where.extra_2.boardSpec, now)))
-			ns.where = shipped
-		end)
+		it(
+			"is a natural Hunt none of whose waters' entries has gateConfirmed: not yet seen biting only then",
+			function()
+				local where, extra = whereOf(loaded, fake, {
+					-- Ashenvale's Forever Nightfin, its one night water, has gateConfirmed false.
+					{ kind = "natural", species = C.NIGHTFIN, window = "night" },
+					-- Smallfish is gated nowhere, so this one has no waters, and none gateConfirmed.
+					{ kind = "natural", species = C.SMALLFISH, window = "night" },
+				})
+				assert.is_nil(where.extra_1.unconfirmedWindow) -- Auberdine's entry is gateConfirmed
+				assert.are.equal("gating", where.extra_2.unconfirmedWindow)
+				withWhere(loaded, where, function()
+					assert.are.equal("gating", ns.Unconfirmed(extra[2], Pagle.NextWindow(where.extra_2.boardSpec, now)))
+				end)
+			end
+		)
 
 		it("is any Hunt whose NextWindow result has confirmed = false, an estimate whatever its gating", function()
 			local where, extra = whereOf(loaded, fake, {
 				{ species = C.BLACKMOUTH, conditions = { events = { 301 } } }, -- an unconfirmed weekly rule
 				{ kind = "natural", species = C.SMALLFISH, window = "event.301" },
 			})
-			local shipped = ns.where
-			ns.where = where
 			local window = Pagle.NextWindow(where.extra_1.boardSpec, now)
 			assert.is_false(window.confirmed)
 			assert.is_nil(where.extra_1.unconfirmedWindow)
-			assert.are.equal("window", ns.Unconfirmed(extra[1], window))
-			assert.are.equal("window", ns.Unconfirmed(extra[2], Pagle.NextWindow(where.extra_2.boardSpec, now)))
-			-- With no result (a secret realm clock), only what was worked out at load.
-			assert.is_nil(ns.Unconfirmed(extra[1], nil))
-			ns.where = shipped
+			withWhere(loaded, where, function()
+				assert.are.equal("window", ns.Unconfirmed(extra[1], window))
+				assert.are.equal("window", ns.Unconfirmed(extra[2], Pagle.NextWindow(where.extra_2.boardSpec, now)))
+				-- With no result (a secret realm clock), only what was worked out at load.
+				assert.is_nil(ns.Unconfirmed(extra[1], nil))
+			end)
 			assert.are.equal("window", ns.Unconfirmed(ns.hunts:Hunt("fixture_sunscale"), nil))
 		end)
 
@@ -287,21 +304,52 @@ describe("Where a Hunt bites", function()
 
 		it("never holds for a natural Hunt left with no waters", function()
 			-- No catch entry is gated by event.999, so the data left this natural Hunt without waters.
-			local where, extra = whereOf(loaded, fake, { { kind = "natural", species = C.NIGHTFIN, window = "event.999" } })
-			local shipped = ns.where
-			ns.where = where
+			local where, extra =
+				whereOf(loaded, fake, { { kind = "natural", species = C.NIGHTFIN, window = "event.999" } })
 			assert.are.same({}, where.extra_1.waters)
-			assert.is_false(ns.InWaters(extra[1], castIn(C.DARKSHORE, C.AUBERDINE)))
-			ns.where = shipped
+			withWhere(loaded, where, function()
+				assert.is_false(ns.InWaters(extra[1], castIn(C.DARKSHORE, C.AUBERDINE)))
+			end)
 		end)
 
 		it("holds anywhere for an imposed target Hunt whose target no area lists", function()
-			local where, extra = whereOf(loaded, fake, { { class = "fixed.lost" } }, { ["fixed.lost"] = { [1] = true } })
-			local shipped = ns.where
-			ns.where = where
+			local lost = { ["fixed.lost"] = { [1] = true } } -- item 1 is in no area's list
+			local where, extra = whereOf(loaded, fake, { { class = "fixed.lost" } }, lost)
 			assert.are.same({}, where.extra_1.waters)
-			assert.is_true(ns.InWaters(extra[1], castIn(C.ELWYNN)))
-			ns.where = shipped
+			withWhere(loaded, where, function()
+				assert.is_true(ns.InWaters(extra[1], castIn(C.ELWYNN)))
+			end)
+		end)
+	end)
+
+	describe("a window corrected in a new catalogue (HNT-R198)", function()
+		local before = load(catalogue.base())
+		local after = load(catalogue.corrected())
+
+		it("changes the natural Hunt's board spec, waters, zones, skill need and unconfirmed", function()
+			local old, new = before.ns.where.fixture_snapper, after.ns.where.fixture_snapper
+			assert.are.same({ 1200, 1260 }, { old.boardSpec.time[1][1], new.boardSpec.time[1][1] })
+			assert.are.same({ C.DARKSHORE, C.ASHENVALE, C.AUBERDINE }, old.waters)
+			assert.are.same({ C.ASHENVALE }, new.waters)
+			assert.are.same({ C.ASHENVALE }, new.zones)
+			assert.are.same({ 75, 150 }, { old.skillNeed, new.skillNeed })
+			-- Ashenvale's entry, now its only water, has gateConfirmed false.
+			assert.is_nil(old.unconfirmedWindow)
+			assert.are.equal("gating", new.unconfirmedWindow)
+		end)
+
+		it("changes where its effort Casts are", function()
+			local cast = { conditions = { zone = C.DARKSHORE, subzone = C.AUBERDINE } }
+			assert.is_true(before.ns.InWaters(before.ns.hunts:Hunt("fixture_snapper"), cast))
+			assert.is_false(after.ns.InWaters(after.ns.hunts:Hunt("fixture_snapper"), cast))
+		end)
+
+		it("leaves an imposed Hunt's board spec and waters alone: it never refers to a window (HNT-R5)", function()
+			for _, loaded in ipairs({ before, after }) do
+				local where = loaded.ns.where.fixture_hefty_blackmouth
+				assert.are.equal(loaded.ns.hunts:Hunt("fixture_hefty_blackmouth").conditions, where.boardSpec)
+				assert.are.same({ C.WESTFALL, C.DARKSHORE, C.PIER }, where.waters)
+			end
 		end)
 	end)
 end)
