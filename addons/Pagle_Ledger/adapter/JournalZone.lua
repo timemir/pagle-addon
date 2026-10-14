@@ -122,7 +122,6 @@ ns.RegisterJournalWidget("row", function(parent)
 	widget.icon = widget:CreateTexture(nil, "ARTWORK")
 	widget.icon:SetSize(ROW_ICON_SIZE, ROW_ICON_SIZE)
 	widget.icon:SetPoint("TOPLEFT")
-	widget.icon:SetDesaturated(true)
 	widget.value = ns.JournalText(widget, fonts.text, LOOK.ink)
 	widget.value:SetPoint("TOPRIGHT")
 	widget.value:SetJustifyH("RIGHT")
@@ -144,13 +143,7 @@ ns.RegisterJournalWidget("row", function(parent)
 		widget.highlight:SetShown(block.selected == true)
 		local icon = block.icon
 		widget.icon:SetShown(icon ~= nil)
-		if type(icon) == "number" then
-			local _, _, _, _, fileID = C_Item.GetItemInfoInstant(icon)
-			icon = fileID or icon
-		end
-		widget.icon:SetTexture(icon)
-		local tint = block.look == "silhouette" and { 0, 0, 0 } or LOOK.sepia
-		widget.icon:SetVertexColor(tint[1], tint[2], tint[3])
+		ns.JournalItemIcon(widget.icon, icon, block.look)
 		local left = icon and ROW_ICON_SIZE + ROW_GAP or 0
 		widget.value:SetText(block.value or "")
 		widget.value:SetShown(block.value ~= nil)

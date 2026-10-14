@@ -47,6 +47,8 @@ ns.JOURNAL_LOOK = {
 	brassText = tint("2a1a04"), -- its words
 }
 local LOOK = ns.JOURNAL_LOOK
+-- A silhouette's ink: black (LED-R124).
+local SILHOUETTE = { 0, 0, 0 }
 
 --- In-client textures (ledger.md › UI): the leather's grain, the page paper and the seal's disc.
 ns.JOURNAL_TEXTURES = {
@@ -129,6 +131,23 @@ function ns.JournalText(frame, font, color)
 	text:SetTextColor(color[1], color[2], color[3])
 	text:SetJustifyH("LEFT")
 	return text
+end
+
+--- Shows `icon` on `texture` (LED-R124, ledger.md › UI): an item ID's icon, or a texture, in greys tinted sepia, or
+--- solid black as the silhouette of what isn't caught. Every widget that draws an item icon draws it here.
+---@param texture Texture
+---@param icon integer|string? an item ID or a texture
+---@param look "sepia"|"silhouette"?
+function ns.JournalItemIcon(texture, icon, look)
+	if type(icon) == "number" then
+		local _, _, _, _, fileID = C_Item.GetItemInfoInstant(icon)
+		icon = fileID or icon
+	end
+	texture:SetTexture(icon)
+	texture:SetDesaturated(true)
+	local ink = look == "silhouette" and SILHOUETTE or LOOK.sepia
+	texture:SetVertexColor(ink[1], ink[2], ink[3])
+	texture:SetAlpha(1)
 end
 
 --- A widget drawing one kind of block: `Fill` draws the block across `width` and returns the height it takes;
@@ -587,22 +606,9 @@ function makers.icon(parent)
 	texture:SetPoint("TOPLEFT")
 	widget.texture = texture
 	function widget.Fill(_, block)
-		local icon = block.icon
-		if type(icon) == "number" then
-			local _, _, _, _, fileID = C_Item.GetItemInfoInstant(icon)
-			icon = fileID or icon
-		end
 		local size = block.large and LARGE_ICON_SIZE or ICON_SIZE
 		texture:SetSize(size, size)
-		texture:SetTexture(icon)
-		texture:SetDesaturated(true)
-		if block.look == "silhouette" then
-			texture:SetVertexColor(0, 0, 0)
-			texture:SetAlpha(0.6)
-		else
-			texture:SetVertexColor(LOOK.sepia[1], LOOK.sepia[2], LOOK.sepia[3])
-			texture:SetAlpha(1)
-		end
+		ns.JournalItemIcon(texture, block.icon, block.look)
 		return size
 	end
 	return widget

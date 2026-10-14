@@ -94,20 +94,7 @@ ns.RegisterJournalWidget("plinth", function(parent)
 	words:SetPoint("TOPLEFT", name, "BOTTOMLEFT", 0, -2)
 	words:SetWordWrap(true)
 	function widget.Fill(_, block, width)
-		local icon = block.icon
-		if type(icon) == "number" then
-			local _, _, _, _, fileID = C_Item.GetItemInfoInstant(icon)
-			icon = fileID or icon
-		end
-		texture:SetTexture(icon)
-		texture:SetDesaturated(true)
-		if block.look == "silhouette" then
-			texture:SetVertexColor(0, 0, 0)
-			texture:SetAlpha(0.6)
-		else
-			texture:SetVertexColor(LOOK.sepia[1], LOOK.sepia[2], LOOK.sepia[3])
-			texture:SetAlpha(1)
-		end
+		ns.JournalItemIcon(texture, block.icon, block.look)
 		local textWidth = width - PLINTH_ICON - PLINTH_GAP
 		name:SetWidth(textWidth)
 		name:SetText(block.text)

@@ -354,6 +354,23 @@ describe("the Fish Journal's widgets", function()
 		end
 	)
 
+	it("draws every silhouette solid black, on an entry, a list row and a plinth alike (LED-R124)", function()
+		local loaded = drawn({
+			{ kind = "icon", icon = MACKEREL, look = "silhouette" },
+			{ kind = "row", icon = MACKEREL, look = "silhouette", text = "— unknown —" },
+			{ kind = "plinth", icon = MACKEREL, look = "silhouette", text = "An empty plinth" },
+		})
+
+		local drawnWidgets = loaded.ns.journal.frame.left.drawn
+		for _, texture in ipairs({
+			drawnWidgets.icon[1].texture,
+			drawnWidgets.row[1].icon,
+			drawnWidgets.plinth[1].texture,
+		}) do
+			assert.are.same({ { 0, 0, 0 }, 1, true }, { texture.vertexColor, texture.alpha, texture.desaturated })
+		end
+	end)
+
 	it("opens a link's place when it is clicked", function()
 		local loaded = drawn({ { kind = "link", text = "Home", place = { id = "home" } } })
 
