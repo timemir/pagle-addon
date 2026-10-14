@@ -1,17 +1,18 @@
 ---@class PagleNS
 local ns = select(2, ...)
 
--- Core's wiring (CORE-R18): how its projection machinery, Sessions, moments, Session summary, cards and wallet are
--- built and connected to each other, to PagleDB and to the Module handle. Pure logic over a host (CORE-R7): Core's
--- adapter builds its host over the WoW client (adapter/Host.lua), and FakePagle builds one over its fakes, so both
--- run this one wiring and the double can't drift from Core. What differs between them is only the host and the
--- display each factory is handed.
+-- Core's wiring (CORE-R18): how its projection machinery, Sessions, moments, Session summary, cards, wallet and
+-- Prestige and purchase entries are built and connected to each other, to PagleDB and to the Module handle. Pure
+-- logic over a host (CORE-R7): Core's adapter builds its host over the WoW client (adapter/Host.lua), and FakePagle
+-- builds one over its fakes, so both run this one wiring and the double can't drift from Core. What differs between
+-- them is only the host and the display each factory is handed.
 
 --- What the wiring needs from where Core runs. Every function is called when needed, never stored.
 ---@class PagleHost
 ---@field registry PagleModuleRegistry          -- the Module registry, whose handles get the methods
 ---@field db fun(): { global: table, profile: table } -- PagleDB, once login step 1 has opened it
 ---@field catchLog fun(): PagleCatchLog          -- the Catch log, once login step 1 has opened it
+---@field character fun(): integer?             -- the logged-in character's index in PagleLog.characters (LOG-R25)
 ---@field fire fun(event: PagleEvent, ...: any)  -- fires a Core event on the bus (CORE-R22)
 ---@field listen fun(owner: string, event: PagleEvent, fn: fun(event: string, ...: any)) -- Pagle.RegisterCallback
 ---@field fingerprint fun(): string?             -- Pagle.CONTENT_FINGERPRINT
@@ -244,5 +245,68 @@ function ns.WireWallet(host)
 	--- Login step 1, once PagleDB is open: the wallet reads and writes the stored totals from now on (SHOP-R3).
 	function ns.OpenWallet()
 		ns.wallet:Open(host.db().global.coins.earned)
+	end
+end
+
+--- Prestige and purchase entries (LOG-R38, LOG-R39) as Core appends them: `M:RecordPrestige()` on every Module
+--- handle, and Core's own `ns.RecordPrestige()` and `ns.RecordPurchase(goodID, price)`. Each appends for the
+--- logged-in character at the server time and hands the record to the projections live (LOG-R73). A purchase has no
+--- Pagle or Module call: the Curio Shop's buy flow is its only caller.
+---@param host PagleHost
+function ns.WireLogEntries(host)
+	-- Appends `record` (its kind and fields) for the logged-in character now, and hands it over live. Raises an error
+	-- at the caller of `what`, appending nothing, before login or from a replay, rebuild or done: an entry appended
+	-- while a projection updates would be appended again at its next rebuild, and the log is never rewritten
+	-- (LOG-R14, LOG-R75).
+	---@param record table
+	---@param what string the call, for its error
+	---@return PagleRecord
+	local function append(record, what)
+		local mode = ns.projections:Mode()
+		if mode and mode ~= "live" then
+			error(("%s can't append from a projection's %s"):format(what, mode), 3)
+		end
+		local char = host.character()
+		if not char then
+			error(("%s appends for the logged-in character: call it after PLAYER_LOGIN"):format(what), 3)
+		end
+		record.char, record.time = char, host.serverTime()
+		local appended = host.catchLog():Append(record)
+		ns.projections:Live(appended) -- LOG-R73
+		return appended
+	end
+
+	--- Appends a Prestige (`P1`) with the new prestige rank, one more than the Prestiges already in the log, hands
+	--- it to the projections live, then fires `Prestige(record)` (LOG-R38). Returns the record.
+	---@return PaglePrestige
+	function ns.RecordPrestige()
+		local rank = host.catchLog():Prestiges() + 1
+		local prestige = append({ kind = "prestige", rank = rank }, "M:RecordPrestige()")
+		---@cast prestige PaglePrestige
+		host.fire("Prestige", prestige)
+		return prestige
+	end
+
+	--- Appends a purchase (`U1`) of `goodID` for `price` Coins and hands it to the projections live (LOG-R39,
+	--- SHOP-R10). Returns the record. Raises an error, appending nothing, for a good ID outside `[%w_.]+` or a price
+	--- that isn't a whole number of Coins.
+	---@param goodID string
+	---@param price integer
+	---@return PaglePurchase
+	function ns.RecordPurchase(goodID, price)
+		local purchase = append({ kind = "purchase", good = goodID, price = price }, "ns.RecordPurchase")
+		---@cast purchase PaglePurchase
+		return purchase
+	end
+
+	---@class PagleModuleHandle
+	local ModuleHandle = ns.ModuleHandle
+	--- Appends a Prestige for the logged-in character, hands it to the projections live, then fires `Prestige`
+	--- (LOG-R38): see ns.RecordPrestige. Any Module may call it; Core decides nothing about when. Raises an error
+	--- before login or from a projection's replay, rebuild or done.
+	---@return PaglePrestige
+	function ModuleHandle:RecordPrestige()
+		host.registry:ModuleCalling(self, "RecordPrestige", "")
+		return ns.RecordPrestige()
 	end
 end

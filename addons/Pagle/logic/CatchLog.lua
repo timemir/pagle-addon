@@ -31,6 +31,15 @@ local ns = select(2, ...)
 ---@field build integer          -- the GetBuildInfo() build number
 ---@field version string         -- e.g. "1.60.1"
 
+--- A Prestige (`P1`, LOG-R38): the Angler's new prestige rank, one more than the Prestiges before it.
+---@class PaglePrestige : PagleRecord
+---@field rank integer
+
+--- A purchase in the Curio Shop (`U1`, LOG-R39, SHOP-R10): the good bought and the price paid, in Coins.
+---@class PaglePurchase : PagleRecord
+---@field good string            -- the good's ID, [%w_.]+
+---@field price integer          -- a whole number of Coins
+
 --- The PagleLog layout version (LOG-R18). Before 1.0 it changes with any entry format change.
 ns.LOG_FORMAT = 1
 
@@ -56,6 +65,16 @@ end
 ---@return integer?
 local function integer(field)
 	if string.find(field, "^%-?%d+$") then
+		return tonumber(field)
+	end
+	return nil
+end
+
+-- A whole number field, 0 or more (a rank, a price), or nil if the field isn't one.
+---@param field string
+---@return integer?
+local function wholeNumber(field)
+	if string.find(field, "^%d+$") then
 		return tonumber(field)
 	end
 	return nil
@@ -228,11 +247,38 @@ local kinds = {
 			return record.build ~= nil and f[2] ~= ""
 		end,
 	},
+
+	P1 = {
+		kind = "prestige",
+		count = 1,
+		encode = function(record)
+			return { integerField(record.rank) }
+		end,
+		decode = function(record, f)
+			record.rank = wholeNumber(f[1])
+			return record.rank ~= nil and record.rank >= 1
+		end,
+	},
+
+	U1 = {
+		kind = "purchase",
+		count = 2,
+		encode = function(record)
+			if type(record.good) ~= "string" then
+				error("not a good ID: " .. tostring(record.good))
+			end
+			return { record.good, integerField(record.price) }
+		end,
+		decode = function(record, f)
+			record.good, record.price = f[1], wholeNumber(f[2])
+			return string.find(f[1], "^[%w_.]+$") ~= nil and record.price ~= nil
+		end,
+	},
 }
 
 -- The tag each record kind is written with: the newest one for that kind.
 ---@type table<string, string>
-local TAGS = { cast = "C1", skill = "S1", build = "B1" }
+local TAGS = { cast = "C1", skill = "S1", build = "B1", prestige = "P1", purchase = "U1" }
 
 -- Decodes one entry string into a typed record, or nil if the codec can't read it (LOG-R16).
 ---@param entry any
@@ -323,6 +369,7 @@ end
 ---@field undecodable table<integer, true> the seqs counted in decodeErrors this login
 ---@field package cutters table<integer, PagleSessionCutter> a cutter fed up to each seq a read started or ended at
 ---@field package tail PagleSessionCutter? fed every entry up to the log's end, once something needs it (Append)
+---@field package prestiges integer? the Prestiges in the log, once something needs them (Prestiges)
 local CatchLog = {}
 CatchLog.__index = CatchLog
 
@@ -395,7 +442,7 @@ end
 --- the last build entry (LOG-R36) and each character's last Skill Reading (LOG-R31) without decoding every Cast.
 --- It starts at `fromSeq` when given, else at the log's end. Records it yields carry no session tag. An entry of
 --- that kind the codec can't read is skipped and counted as `Iterate` does (LOG-R16).
----@param kind "cast"|"skill"|"build"
+---@param kind "cast"|"skill"|"prestige"|"build"|"purchase"
 ---@param fromSeq integer?
 ---@return fun(): PagleRecord?
 function CatchLog:Reverse(kind, fromSeq)
@@ -419,8 +466,9 @@ function CatchLog:Reverse(kind, fromSeq)
 end
 
 --- Appends an entry for `record`, a typed record without `seq` and `id` (`{ kind = "cast", char, time, outcome,
---- conditions, items = { { itemID, quantity } } }`, `{ kind = "skill", char, time, rank, max, mod }` or
---- `{ kind = "build", char, time, build, version }`), and returns the record as every reader will see it.
+--- conditions, items = { { itemID, quantity } } }`, `{ kind = "skill", char, time, rank, max, mod }`,
+--- `{ kind = "build", char, time, build, version }`, `{ kind = "prestige", char, time, rank }` or
+--- `{ kind = "purchase", char, time, good, price }`), and returns the record as every reader will see it.
 --- A Cast or Skill Reading carries its Session's ID (LOG-R98). Raises an error in the caller, appending nothing, for a
 --- record the codec can't write and read back.
 ---@param record table
@@ -443,7 +491,25 @@ function CatchLog:Append(record)
 	ensureLogId(self.data, record.time)
 	entries[seq] = entry
 	tail:Add(appended)
+	if appended.kind == "prestige" and self.prestiges then
+		self.prestiges = self.prestiges + 1
+	end
 	return appended
+end
+
+--- The number of Prestiges in the log (LOG-R38): its `P1` entries the codec can read, as every reader sees them.
+--- Found once a login by walking the log for `P1` entries, decoding only those, then kept by Append. A login opens
+--- the log once, so the count always belongs to this logId.
+---@return integer
+function CatchLog:Prestiges()
+	if not self.prestiges then
+		local count = 0
+		for _ in self:Reverse("prestige") do
+			count = count + 1
+		end
+		self.prestiges = count
+	end
+	return self.prestiges
 end
 
 -- The cutter fed every entry up to the log's end, made from the log the first time it's needed and fed each entry
