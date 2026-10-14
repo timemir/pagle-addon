@@ -42,6 +42,7 @@ local ns = select(2, ...)
 ---@field coins integer               -- the sum of every moment's coins, kept apart from the stamps (ANN-R23)
 ---@field moments PagleRaisedMoment[] -- every moment in it, ranked (ANN-R2), the headline first
 ---@field fighting? PagleRaisedMoment[] -- the "While you were fighting" toast's held headlines, in order (ANN-R36)
+---@field style? string                -- a sample's toast style, drawn in that, not the equipped one (ANN-R80)
 
 --- The ladder (ANN-R1), lowest to highest.
 ns.MOMENT_RUNGS = { "nod", "toast.low", "toast", "toast.high", "banner", "splash" }

@@ -20,20 +20,15 @@ local LAYOUT_METHODS = {
 	"SetPoint",
 	"ClearAllPoints",
 	"SetAllPoints",
-	"SetSize",
-	"SetWidth",
-	"SetHeight",
 	"SetJustifyH",
 	"SetJustifyV",
 	"SetWordWrap",
-	"SetFontObject",
 	"SetFrameStrata",
 	"SetClampedToScreen",
 	"RegisterForDrag",
 	"StartMoving",
 	"StopMovingOrSizing",
 	"EnableMouse",
-	"SetTexCoord",
 	"SetScrollChild",
 	"EnableMouseWheel",
 	"SetRotation",
@@ -47,7 +42,7 @@ local LAYOUT_METHODS = {
 
 --- A widget (frame, button or font string) that keeps what specs read back: its text, whether it's shown, its
 --- scripts and the widgets created on it.
----@param kind string "Frame", "Button", "FontString", …
+---@param kind string "Frame", "Button", "FontString", â€¦
 ---@param parent table?
 ---@return table
 function widgets.newWidget(kind, parent)
@@ -74,10 +69,46 @@ function widgets.newWidget(kind, parent)
 	function widget:IsMovable()
 		return self.movable == true
 	end
-	-- A font string's colour, as { r, g, b }, and a region's opacity (1 until set).
-	function widget:SetTextColor(r, g, b)
-		self.textColor = { r, g, b }
+	-- A texture's tint, as { r, g, b[, a] }, and whether it is drawn in greys.
+	function widget:SetVertexColor(r, g, b, a)
+		self.vertexColor = { r, g, b, a }
 	end
+	-- Its size as set, for layout code that reads it back.
+	function widget:SetSize(width, height)
+		self.width, self.height = width, height
+	end
+	function widget:SetWidth(width)
+		self.width = width
+	end
+	function widget:SetHeight(height)
+		self.height = height
+	end
+	function widget:GetWidth()
+		return self.width or 0
+	end
+	function widget:GetHeight()
+		return self.height or 0
+	end
+	-- A font string's colour ({ r, g, b[, a] }), and its font: `fontObject` (its template or SetFontObject's name), or
+	-- `font` ({ file, size, flags }) after SetFont, until the next SetFontObject.
+	function widget:SetTextColor(r, g, b, a)
+		self.textColor = { r, g, b, a }
+	end
+	function widget:SetFontObject(fontObject)
+		self.fontObject, self.font = fontObject, nil
+	end
+	function widget:SetFont(file, size, flags)
+		self.font = { file, size, flags }
+		return true
+	end
+	-- A texture's blend mode and texture coordinates ({ left, right, top, bottom }).
+	function widget:SetBlendMode(mode)
+		self.blendMode = mode
+	end
+	function widget:SetTexCoord(left, right, top, bottom)
+		self.texCoord = { left, right, top, bottom }
+	end
+	-- A region's opacity (1 until set).
 	function widget:SetAlpha(alpha)
 		self.alpha = alpha
 	end
@@ -93,10 +124,6 @@ function widgets.newWidget(kind, parent)
 	end
 	function widget:UnlockHighlight()
 		self.highlightLocked = false
-	end
-	-- A texture's tint, as { r, g, b }, and whether it is drawn in greys.
-	function widget:SetVertexColor(r, g, b)
-		self.vertexColor = { r, g, b }
 	end
 	function widget:SetDesaturated(desaturated)
 		self.desaturated = desaturated
@@ -153,8 +180,10 @@ function widgets.newWidget(kind, parent)
 			onClick(self, "LeftButton", false)
 		end
 	end
-	function widget:CreateFontString()
-		return widgets.newWidget("FontString", self)
+	function widget:CreateFontString(_, _, template)
+		local fontString = widgets.newWidget("FontString", self)
+		fontString.fontObject = template
+		return fontString
 	end
 	-- A texture that keeps what it shows: `texture` (SetTexture's file ID or path) or `color` ({ r, g, b, a }).
 	function widget:CreateTexture()
@@ -169,6 +198,9 @@ function widgets.newWidget(kind, parent)
 	end
 	for _, method in ipairs(LAYOUT_METHODS) do
 		widget[method] = function() end
+	end
+	function widget.GetParent()
+		return parent
 	end
 	if parent then
 		parent.children[#parent.children + 1] = widget

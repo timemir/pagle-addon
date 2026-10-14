@@ -77,6 +77,12 @@ ns.L = {
 	CARD_HOURS = "%d h %02d min",
 	CARD_COINS = "Pagle Coins +%s " .. COIN,
 	CARD_CLOSE = "Close",
+	-- A toast style's sample on the Curio Shop's preview stage (wallet-and-shop.md › UI, ANN-R80): its headline, its
+	-- one stamp, and the button that shows it through the lanes.
+	TOAST_SAMPLE_TITLE = "New Species",
+	TOAST_SAMPLE_TEXT = "A sample toast",
+	TOAST_SAMPLE_STAMP = "New here",
+	TOAST_SHOW_ON_SCREEN = "Show on screen",
 	-- LOG-R86: the unsaved-Casts reminder, with the number of Casts recorded since load.
 	RELOAD_REMINDER = "Pagle: %d Casts not yet saved. /reload to keep them safe.",
 	-- CORE-R33: Settings opened while restricted.
