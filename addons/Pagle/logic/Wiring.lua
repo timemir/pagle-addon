@@ -468,6 +468,115 @@ function ns.WireShop(host, seams)
 	end)
 end
 
+--- Where the tracker dock is drawn: adapter/Dock.lua's anchor frame on the client, or FakePagle's record of it.
+---@class PagleDockView
+---@field isRestricted fun(): boolean            -- Pagle.IsRestricted()
+---@field watch fun(tracker: PagleTracker)       -- a tracker docked: reflow as its frame shows, hides or resizes, and
+--- move the dock on a Shift-drag of it
+---@field reflow fun()                           -- lays the stack out again (ns.dock:Layout)
+---@field place fun(point: PagleDockPoint)       -- puts the dock's anchor at `point`
+---@field stopMoving fun(): PagleDockPoint?      -- ends a drag in progress where the dock is now, returning that point
+--- to save; nil with none in progress
+
+--- The tracker dock (CORE-R70–R72) as ns.dock.
+---@class PagleDockWiring
+---@field Trackers fun(self): PagleTracker[]     -- the docked trackers, in stack order
+---@field Layout fun(self, isShown: fun(frame: table): boolean, sizeOf: fun(frame: table): number, number): PagleDockLayout
+---@field Anchor fun(self): PagleDockPoint       -- where the anchor goes now: dock.point, or the default
+---@field CanMove fun(self): boolean             -- a Shift-drag may move the dock: not while restricted (CORE-R71)
+---@field Moved fun(self, point: PagleDockPoint) -- the player dropped the dock at `point`: saved to dock.point
+---@field Reset fun(self): boolean               -- Reset (SET-R40): clears dock.point and puts the dock back; does
+--- nothing while restricted. True when it did.
+
+--- The tracker dock (CORE-R70–R72) as ns.dock, over PagleDB.profile.dock (core/README.md › Data), and
+--- `M:RegisterTracker` on every Module handle. The anchor is placed at ModulesChanged, at dock.point or under the
+--- minimap; each docked tracker is watched and the stack reflowed. A drag in progress when restriction starts stops
+--- where it is and is saved.
+---@param host PagleHost
+---@param view PagleDockView
+function ns.WireDock(host, view)
+	local trackers = ns.NewDock()
+	-- PagleDB.profile.dock, read at each call.
+	local function stored()
+		local profile = host.db().profile
+		if type(profile.dock) ~= "table" then
+			profile.dock = {}
+		end
+		return profile.dock
+	end
+
+	---@type PagleDockWiring
+	local dock = {
+		Trackers = function()
+			return trackers:Trackers()
+		end,
+		Layout = function(_, isShown, sizeOf)
+			return trackers:Layout(isShown, sizeOf)
+		end,
+		Anchor = function()
+			return ns.DockAnchor(stored().point)
+		end,
+		CanMove = function()
+			return not view.isRestricted()
+		end,
+		Moved = function(_, point)
+			stored().point = {
+				point = point.point,
+				relativeTo = "UIParent",
+				relativePoint = point.relativePoint,
+				x = point.x,
+				y = point.y,
+			}
+		end,
+		Reset = function(self)
+			if view.isRestricted() then
+				return false
+			end
+			stored().point = nil
+			view.place(self:Anchor())
+			return true
+		end,
+	}
+	ns.dock = dock
+
+	-- Its own owner on the bus. CORE-R19: every enabled Module has registered, so every tracker is in.
+	host.listen("Pagle dock", "ModulesChanged", function()
+		view.place(dock:Anchor())
+		view.reflow()
+	end)
+	-- CORE-R71: the dock never moves while restricted.
+	host.listen("Pagle dock", "RestrictionChanged", function(_, isRestricted)
+		if isRestricted then
+			local point = view.stopMoving()
+			if point then
+				dock:Moved(point)
+			end
+		end
+	end)
+
+	---@class PagleModuleHandle
+	local ModuleHandle = ns.ModuleHandle
+	--- Docks the Module's tracker frame (CORE-R70): `{ id, order, frame }`. The dock stacks the visible docked frames
+	--- top to bottom by order (Hunts 10, Stats 20, Tackle Board 30; ties by Module name), 8 px apart, under the
+	--- minimap, and reflows as one shows, hides or resizes; the Module shows and hides its own (CORE-R72). Raises an
+	--- error at the Module's call, docking nothing, for a missing or non-string id, a non-number order, no frame, or an
+	--- id already docked.
+	---@param tracker { id: string, order: number, frame: table }
+	function ModuleHandle:RegisterTracker(tracker)
+		local module = host.registry:ModuleCalling(self, "RegisterTracker", "{ id, order, frame }")
+		local problem = trackers:Add(module.def.name, tracker)
+		if problem then
+			error(problem, 2)
+		end
+		for _, docked in ipairs(trackers:Trackers()) do
+			if docked.id == tracker.id then
+				view.watch(docked)
+			end
+		end
+		view.reflow()
+	end
+end
+
 --- The Field report's two readers (field-report.md › The projection).
 ---@class PagleFieldReportReaders
 ---@field rows fun(): PagleReportRow[]? -- every I, K and P row, unsorted; nil while the projection updates (REP-R42)

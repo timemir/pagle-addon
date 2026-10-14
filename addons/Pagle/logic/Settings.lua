@@ -163,6 +163,16 @@ function Rows:Page(topic, modules)
 	return entries
 end
 
+--- Whether Core registers a topic page (SET-R1, CORE-R42): while Modules gave it rows, or while Core has rows of its
+--- own there, except on Trackers, whose Core row never registers the page alone (SET-R40).
+---@param topic string
+---@param hasCoreRows boolean
+---@param moduleRows integer how many rows Modules added to it
+---@return boolean
+function ns.IsPageRegistered(topic, hasCoreRows, moduleRows)
+	return moduleRows > 0 or (hasCoreRows and topic ~= "trackers")
+end
+
 --- `M:AddSetting` over `registry` and `rows`, so Core's adapter and FakePagle install one method (CORE-R42). It adds
 --- a row to a topic page: `"fishing"`, `"announcements"` or `"trackers"`. Call it before `ModulesChanged`, in
 --- OnInitialize; Core builds the pages then, each Module's rows in `def.order` under a header with its title, left
