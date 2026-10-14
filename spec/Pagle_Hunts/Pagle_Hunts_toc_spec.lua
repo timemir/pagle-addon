@@ -84,30 +84,23 @@ describe("Pagle_Hunts.toc", function()
 		assert.are.same({}, handWrittenData)
 	end)
 
-	it(
-		"lists the generated HuntList.lua, once it ships, after locale/enUS.lua and before any code (DATA-R93)",
-		function()
-			-- Whichever of #176 and #179 lands second lists data\HuntList.lua (M5 graph, open question 3). Until it
-			-- ships, the Hunt list reads as empty (HNT-R1).
-			local listed = addonFiles("Pagle_Hunts")
-			local at = {}
-			for index, file in ipairs(listed) do
-				at[file] = index
-			end
-			local huntList = at["data/HuntList.lua"]
-			if huntList == nil then
-				-- Not generated yet, so the folder doesn't hold it either: the test above fails on an unlisted file.
-				return
-			end
-
-			assert.is_true(huntList > at["locale/enUS.lua"])
-			local codeBefore = {}
-			for file, index in pairs(at) do
-				if (file:match("^logic/") or file:match("^adapter/")) and index < huntList then
-					codeBefore[#codeBefore + 1] = file
-				end
-			end
-			assert.are.same({}, codeBefore)
+	it("lists the generated HuntList.lua after locale/enUS.lua and before any code that reads it (DATA-R93)", function()
+		-- DATA-R75: the generator writes data/HuntList.lua; ns.huntList must be set before OnInitialize reads it.
+		local listed = addonFiles("Pagle_Hunts")
+		local at = {}
+		for index, file in ipairs(listed) do
+			at[file] = index
 		end
-	)
+		local huntList = at["data/HuntList.lua"]
+
+		assert.is_not_nil(huntList)
+		assert.is_true(huntList > at["locale/enUS.lua"])
+		local codeBefore = {}
+		for file, index in pairs(at) do
+			if (file:match("^logic/") or file:match("^adapter/")) and index < huntList then
+				codeBefore[#codeBefore + 1] = file
+			end
+		end
+		assert.are.same({}, codeBefore)
+	end)
 end)
