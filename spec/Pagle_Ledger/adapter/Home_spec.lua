@@ -1,0 +1,523 @@
+-- The Journal's Home on FakePagle (LED-R130–R133, LED-R149, LED-R4's M3 stage), over a fixture catalogue and log:
+-- the zone tiles under their continent tabs, the bookplate summary, Notes to self, the contents and the brass plate,
+-- as the page data the open book shows (ns.journal.pages) and as drawn.
+
+local MACKEREL, BLACKMOUTH, NIGHTFISH, SNAPPER = 6303, 6358, 13759, 6362
+local TROPHY, SKULL, CHEST = 13901, 6297, 6351
+local ELWYNN, WESTFALL, DUSKWOOD, REDRIDGE, DARKSHORE, ASHENVALE, ISLE = 12, 40, 10, 44, 148, 331, 3500
+-- A zone the catalogue doesn't know at all: GetArea returns nil for it.
+local NOWHERE = 7777
+local T0 = 1791731000
+
+-- The names the fake client's C_Item and C_Map know.
+local ITEM_NAMES = {
+	[MACKEREL] = "Raw Slitherskin Mackerel",
+	[BLACKMOUTH] = "Oily Blackmouth",
+	[NIGHTFISH] = "Raw Nightfin Snapper",
+	[SNAPPER] = "Raw Rockscale Cod",
+}
+local ZONE_NAMES = {
+	[ELWYNN] = "Elwynn Forest",
+	[WESTFALL] = "Westfall",
+	[DUSKWOOD] = "Duskwood",
+	[REDRIDGE] = "Redridge Mountains",
+	[DARKSHORE] = "Darkshore",
+	[ASHENVALE] = "Ashenvale",
+	[ISLE] = "Isle of Dread",
+	[NOWHERE] = "Nowhere",
+}
+local MAP_NAMES = { [1415] = "Eastern Kingdoms", [1414] = "Kalimdor" }
+
+-- A catalogue in the shape of ns.catalogue (DATA-R76), without the zones in `without`:
+-- - Eastern Kingdoms (0): Elwynn (skill 25) lists the Mackerel alone; Westfall (75) the Mackerel and Blackmouth, the
+--   night-gated Nightfish and a junk Skull; Duskwood (150) the Blackmouth; Redridge, without a skill base, the
+--   Blackmouth
+-- - Kalimdor (1): Darkshore (75) lists the Blackmouth, the Rockscale Cod and a chest; Ashenvale (75) the Blackmouth
+--   and a trophy of family 1
+-- - the Isle (continent 2, skill 300) lists the Cod
+---@param without integer[]?
+local function fixture(without)
+	local night = { time = { { 1260, 360 } } }
+	local function item(category, fields)
+		local record = { category = category, legend = false, noise = false, removed = false, pool = false }
+		for key, value in pairs(fields or {}) do
+			record[key] = value
+		end
+		return record
+	end
+	local function area(continent, skillBase, catches)
+		return {
+			parent = 0,
+			continent = continent,
+			skillBase = skillBase,
+			hasData = true,
+			skillBaseConfirmed = false,
+			catches = catches,
+		}
+	end
+	local function on(itemID)
+		return { itemID = itemID, confirmed = false }
+	end
+	local areas = {
+		[ELWYNN] = area(0, 25, { on(MACKEREL) }),
+		[WESTFALL] = area(0, 75, {
+			on(MACKEREL),
+			on(BLACKMOUTH),
+			{ itemID = NIGHTFISH, confirmed = false, window = "night", gate = night, gateConfirmed = false },
+			on(SKULL),
+		}),
+		[DUSKWOOD] = area(0, 150, { on(BLACKMOUTH) }),
+		[REDRIDGE] = area(0, nil, { on(BLACKMOUTH) }),
+		[DARKSHORE] = area(1, 75, { on(BLACKMOUTH), on(SNAPPER), on(CHEST) }),
+		[ASHENVALE] = area(1, 75, { on(BLACKMOUTH), on(TROPHY) }),
+		[ISLE] = area(2, 300, { on(SNAPPER) }),
+	}
+	for _, zone in ipairs(without or {}) do
+		areas[zone] = nil
+	end
+	return {
+		fingerprint = "0123456789abcdef",
+		items = {
+			[MACKEREL] = item("fish", { species = MACKEREL }),
+			[BLACKMOUTH] = item("fish", { species = BLACKMOUTH }),
+			[NIGHTFISH] = item("fish", { species = NIGHTFISH }),
+			[SNAPPER] = item("fish", { species = SNAPPER }),
+			[TROPHY] = item("trophy", { family = 1, weight = 19 }),
+			[SKULL] = item("junk"),
+			[CHEST] = item("container"),
+		},
+		areas = areas,
+		aliases = {},
+		pools = {},
+		windows = { night = { spec = night, confirmed = false } },
+		events = {},
+		fishingSpells = {},
+		auras = {},
+	}
+end
+
+-- A caught Cast record for fake.catchLog:Append, by the player's character (char 1), one of each item.
+---@param zone integer
+---@param ... integer item IDs
+local function cast(zone, ...)
+	local items = {}
+	for i, itemID in ipairs({ ... }) do
+		items[i] = { itemID = itemID, quantity = 1 }
+	end
+	return {
+		kind = "cast",
+		char = 1,
+		time = T0,
+		outcome = "caught",
+		conditions = { minute = 494, zone = zone, subzone = 0, events = {}, auras = {} },
+		items = items,
+	}
+end
+
+-- A Ledger on FakePagle over the fixture catalogue with `history` in its log, logged in and in the world, its
+-- client knowing the names above. `before`, if given, runs before the book opens (e.g. to seed the celebrated set).
+---@param history table[]?
+---@param before fun(loaded: LoadedAddon, fake: FakePagle)?
+---@param catalogue table? the catalogue, fixture() by default
+---@return FakePagle fake
+---@return LoadedAddon loaded
+local function openHome(history, before, catalogue)
+	local fake = newFakePagle()
+	fake.setCatalogue(catalogue or fixture())
+	fake.catchLog.data.characters[1] = { guid = PLAYER_GUID }
+	for _, record in ipairs(history or {}) do
+		fake.catchLog:Append(record)
+	end
+	local loaded = fake.load("Pagle_Ledger")
+	for id, name in pairs(ITEM_NAMES) do
+		loaded.client.itemNames[id] = name
+	end
+	for id, name in pairs(ZONE_NAMES) do
+		loaded.client.areaNames[id] = name
+	end
+	loaded.client.mapNames = MAP_NAMES
+	fake.login()
+	fake.enterWorld()
+	if before then
+		before(loaded, fake)
+	end
+	loaded.ns.journal:Toggle()
+	return fake, loaded
+end
+
+-- The open book's page data.
+---@param loaded LoadedAddon
+---@return LedgerJournalPages
+local function pages(loaded)
+	return loaded.ns.journal.pages
+end
+
+-- The first block of `kind` on a page.
+---@param page LedgerBlock[]
+---@param kind string
+---@return LedgerBlock?
+local function blockOf(page, kind)
+	for _, block in ipairs(page) do
+		if block.kind == kind then
+			return block
+		end
+	end
+	return nil
+end
+
+-- The tiles the left page shows.
+local function tiles(loaded)
+	return (blockOf(pages(loaded).left, "tiles") or {}).tiles
+end
+
+-- The tabs' labels, and the one chosen.
+local function tabs(loaded)
+	local labels, chosen = {}, nil
+	for i, tab in ipairs((blockOf(pages(loaded).left, "tabs") or { tabs = {} }).tabs) do
+		labels[i] = tab.text
+		if tab.on then
+			chosen = tab.text
+		end
+	end
+	return labels, chosen
+end
+
+-- The tiles' names.
+local function tileNames(loaded)
+	local names = {}
+	for i, tile in ipairs(tiles(loaded)) do
+		names[i] = tile.name
+	end
+	return names
+end
+
+-- Opens Home on tab `tab` (0, 1 or "other") as clicking it does.
+local function chooseTab(loaded, tab)
+	loaded.ns.journal:Open("home", { tab = tab })
+end
+
+describe("the Journal's Home, left page", function()
+	it("reads The Waters, Where I've Fished, then the tabs and the chosen tab's tiles (LED-R130)", function()
+		local _, loaded = openHome({ cast(ELWYNN, MACKEREL) })
+
+		local left = pages(loaded).left
+		assert.are.same({ kind = "kicker", text = "The Waters" }, left[1])
+		assert.are.same({ kind = "title", text = "Where I've Fished" }, left[2])
+		assert.are.equal("tabs", left[3].kind)
+		assert.are.equal("tiles", left[4].kind)
+		assert.are.equal(4, #left)
+	end)
+
+	it(
+		"puts a tile under its continent's tab, in skill base then areaID order, with each kind's text (LED-R131)",
+		function()
+			-- Elwynn's one Species makes it Master; Westfall's Mackerel makes it Regular (1 of 4 parts, 25%).
+			local _, loaded = openHome({ cast(ELWYNN, MACKEREL), cast(WESTFALL, MACKEREL), cast(NOWHERE, SKULL) })
+
+			local labels, chosen = tabs(loaded)
+			assert.are.same({ "Eastern Kingdoms", "Kalimdor", "Other waters" }, labels)
+			assert.are.equal("Eastern Kingdoms", chosen)
+			assert.are.same({
+				{
+					name = "Elwynn Forest",
+					line = "Master · 100%",
+					bar = 1,
+					seal = "Master",
+					place = { id = "zone", args = { zone = ELWYNN } },
+				},
+				{
+					name = "Westfall",
+					line = "Regular · 25%",
+					bar = 0.25,
+					place = { id = "zone", args = { zone = WESTFALL } },
+				},
+				{
+					name = "Duskwood",
+					line = "unfished · skill ~150",
+					faded = true,
+					place = { id = "zone", args = { zone = DUSKWOOD } },
+				},
+				{
+					name = "Redridge Mountains",
+					line = "unfished",
+					faded = true,
+					place = { id = "zone", args = { zone = REDRIDGE } },
+				},
+			}, tiles(loaded))
+
+			chooseTab(loaded, 1)
+			assert.are.same({ "Darkshore", "Ashenvale" }, tileNames(loaded))
+			assert.are.equal("unfished · skill ~75", tiles(loaded)[1].line)
+
+			chooseTab(loaded, "other")
+			assert.are.same({ "Isle of Dread", "Nowhere" }, tileNames(loaded))
+			assert.are.same(
+				{ name = "Nowhere", line = "uncharted waters", place = { id = "zone", args = { zone = NOWHERE } } },
+				tiles(loaded)[2]
+			)
+		end
+	)
+
+	it("shows a red {N} new! note while the shown rank is above the computed one (LED-R131, LED-R52)", function()
+		-- Westfall is Regular by its Catches, but Expert was celebrated before the data grew: the Blackmouth (Local),
+		-- the Nightfish and the junk (Expert) are new to find.
+		local _, loaded = openHome({ cast(WESTFALL, MACKEREL) }, function(loaded)
+			loaded.ns.db.global.celebrated.zones[WESTFALL] = 4
+		end)
+
+		local westfall = tiles(loaded)[2]
+		assert.are.equal("Expert · 25%", westfall.line)
+		assert.are.equal("3 new!", westfall.note)
+		assert.is_nil(westfall.seal)
+	end)
+
+	it("puts a zone GetArea doesn't know under Other waters, and shows no tab without a tile (LED-R130)", function()
+		local catalogue = fixture({ DARKSHORE, ASHENVALE, ISLE })
+		local _, loaded = openHome({ cast(NOWHERE, SKULL) }, nil, catalogue)
+
+		local labels = tabs(loaded)
+		assert.are.same({ "Eastern Kingdoms", "Other waters" }, labels)
+		chooseTab(loaded, "other")
+		assert.are.same({ "Nowhere" }, tileNames(loaded))
+	end)
+
+	it("chooses the first tab shown at the first opening, and keeps the tab chosen after (LED-R130)", function()
+		local catalogue = fixture({ ELWYNN, WESTFALL, DUSKWOOD, REDRIDGE })
+		local _, loaded = openHome({}, nil, catalogue)
+		local _, chosen = tabs(loaded)
+		assert.are.equal("Kalimdor", chosen)
+
+		-- Clicking the Other waters tab, then a tile's zone and back Home by the Home crumb.
+		local frame = loaded.ns.journal.frame
+		frame.left.drawn.tabs[1].children[2]:Click()
+		assert.are.same({ "Isle of Dread" }, tileNames(loaded))
+		loaded.ns.RegisterJournalSpread("zone", {
+			crumbs = function()
+				return { { label = "Zone", place = { id = "zone" } } }
+			end,
+			draw = function()
+				return { left = {}, right = {} }
+			end,
+		})
+		frame.left.drawn.tiles[1].children[1]:Click()
+		assert.are.same({ id = "zone", args = { zone = ISLE } }, loaded.ns.journal.router:Place())
+		frame.crumbButtons[1]:Click()
+
+		_, chosen = tabs(loaded)
+		assert.are.equal("Other waters", chosen)
+	end)
+end)
+
+-- Seeds the celebrated set: level 12 celebrated in this climb, so the shown level is 12 (LED-R36).
+local function level12(loaded)
+	loaded.ns.db.global.celebrated.levels[0] = 12
+end
+
+-- Every text drawn on the open book, depth first.
+local function textsOf(widget, texts)
+	texts = texts or {}
+	for _, child in ipairs(widget.children) do
+		if child.shown then
+			if child.text ~= nil and child.text ~= "" then
+				texts[#texts + 1] = child.text
+			end
+			textsOf(child, texts)
+		end
+	end
+	return texts
+end
+
+describe("the Journal's Home, right page", function()
+	it("reads the bookplate summary, the ink XP bar, Notes to self and In this Ledger (LED-R132)", function()
+		-- Of 14 parts (4 Species, a junk, a chest, a trophy, 7 charted zones), the Mackerel and Elwynn are done: 14%.
+		local _, loaded = openHome({ cast(ELWYNN, MACKEREL) }, level12)
+
+		local right = pages(loaded).right
+		assert.are.same({ kind = "bookplate", text = "12", value = "Angler Level", seal = "14%" }, right[1])
+		assert.are.equal("xpBar", right[2].kind)
+		assert.are.equal("0 of 1,960.", right[2].bar.text)
+		assert.are.same({ kind = "kicker", text = "Notes to self" }, right[3])
+		assert.are.same({
+			kind = "link",
+			text = "Raw Slitherskin Mackerel: 49 to ★★★",
+			hand = true,
+			place = { id = "fish", args = { species = MACKEREL } },
+		}, right[4])
+		assert.are.same({ kind = "kicker", text = "In this Ledger" }, right[5])
+		assert.are.same({
+			{ kind = "leader", text = "The Trophy Room", value = "0 / 1", place = { id = "trophy" } },
+			{ kind = "leader", text = "Curios: junk, treasure, uncharted", value = "0 / 2", place = { id = "curios" } },
+			{ kind = "leader", text = "The Angler: hands, titles, bindings", place = { id = "angler" } },
+		}, { right[6], right[7], right[8] })
+		assert.are.equal(8, #right)
+	end)
+
+	it(
+		"counts the weights landed, and the junk and treasure collected, as Ledger completion does (LED-R132, LED-R71)",
+		function()
+			-- The Skull counts though caught in waters nobody charted: a collection counts an item caught anywhere.
+			local _, loaded = openHome({ cast(NOWHERE, SKULL), cast(DARKSHORE, CHEST), cast(ASHENVALE, TROPHY) })
+
+			local right = pages(loaded).right
+			assert.are.equal("1 / 1", right[6].value)
+			assert.are.equal("2 / 2", right[7].value)
+		end
+	)
+
+	it('reads "Go fishing!" as its one note when nothing applies (LED-R133)', function()
+		local _, loaded = openHome()
+
+		local right = pages(loaded).right
+		assert.are.same({ kind = "kicker", text = "Notes to self" }, right[3])
+		assert.are.same({ kind = "text", text = "Go fishing!", hand = true }, right[4])
+		assert.are.same({ kind = "kicker", text = "In this Ledger" }, right[5])
+	end)
+
+	it(
+		"opens a note's or a contents line's spread once it is registered, and does nothing before (LED-R133, LED-R125)",
+		function()
+			local _, loaded = openHome({ cast(ELWYNN, MACKEREL) })
+			local journal = loaded.ns.journal
+			local function spread(label)
+				return {
+					crumbs = function()
+						return { { label = label, place = { id = label } } }
+					end,
+					draw = function()
+						return { left = {}, right = {} }
+					end,
+				}
+			end
+
+			-- The Trophy Room (#143) registers itself; take it away to see a link to a spread not yet registered.
+			loaded.ns.journalSpreads.trophy = nil
+			journal.frame.right.drawn.leader[1]:Click()
+			assert.are.same({ id = "home" }, journal.router:Place())
+
+			loaded.ns.RegisterJournalSpread("trophy", spread("trophy"))
+			journal.frame.right.drawn.leader[1]:Click()
+			assert.are.same({ id = "trophy" }, journal.router:Place())
+		end
+	)
+
+	it("opens the fish spread from the next-star note, Home ❧ {fish} (LED-R133, LED-R125, LED-R142)", function()
+		local _, loaded = openHome({ cast(ELWYNN, MACKEREL) })
+		local journal = loaded.ns.journal
+
+		journal.frame.right.drawn.link[1]:Click()
+
+		assert.are.same({ id = "fish", args = { species = MACKEREL } }, journal.router:Place())
+		local labels = {}
+		for i, crumb in ipairs(journal.pages.crumbs) do
+			labels[i] = crumb.label
+		end
+		assert.are.same({ "Home", "Raw Slitherskin Mackerel" }, labels)
+	end)
+
+	it("is where the fish spread's back link returns from a note (LED-R125)", function()
+		local _, loaded = openHome({ cast(ELWYNN, MACKEREL) })
+		local journal = loaded.ns.journal
+		journal.frame.right.drawn.link[1]:Click()
+
+		journal.frame.back:Click()
+
+		assert.are.same({ id = "home" }, journal.router:Place())
+		assert.are.equal("Where I've Fished", pages(loaded).left[2].text)
+	end)
+
+	it("opens the Angler page from its contents line, Home ❧ The Angler (LED-R132, LED-R125, LED-R146)", function()
+		local _, loaded = openHome({ cast(ELWYNN, MACKEREL) })
+		local journal = loaded.ns.journal
+
+		journal.frame.right.drawn.leader[3]:Click()
+
+		assert.are.same({ id = "angler" }, journal.router:Place())
+		local labels = {}
+		for i, crumb in ipairs(journal.pages.crumbs) do
+			labels[i] = crumb.label
+		end
+		assert.are.same({ "Home", "The Angler" }, labels)
+	end)
+
+	it("draws none of M4's elements: no title, no Prestige, no Legends line (LED-R4, LED-R132)", function()
+		local _, loaded = openHome({ cast(ELWYNN, MACKEREL) }, level12)
+
+		local texts = textsOf(loaded.ns.journal.frame.right)
+		for _, text in ipairs(texts) do
+			assert.is_nil(text:find("Legend", 1, true))
+			assert.is_nil(text:find("Prestige", 1, true))
+		end
+		for _, block in ipairs(pages(loaded).right) do
+			assert.is_false(block.kind == "text" and block.hand == true and block.text ~= "Go fishing!")
+		end
+		assert.is_true(#texts > 0)
+	end)
+end)
+
+describe("the Journal's Home and what isn't caught", function()
+	it("names no uncaught Species anywhere on Home (LED-R124)", function()
+		-- Only the Mackerel is caught; the client knows every fixture Species' name.
+		local _, loaded = openHome({ cast(WESTFALL, MACKEREL) })
+		loaded.ns.journal:Draw()
+
+		for _, text in ipairs(textsOf(loaded.ns.journal.frame)) do
+			for id, name in pairs(ITEM_NAMES) do
+				if id ~= MACKEREL then
+					assert.is_nil(text:find(name, 1, true))
+				end
+			end
+		end
+	end)
+end)
+
+describe("the brass plate (LED-R149)", function()
+	it('reads "Lv {L} · Ledger {p}%" on the cover, on every spread (LED-R149, LED-R4)', function()
+		local _, loaded = openHome({ cast(ELWYNN, MACKEREL) }, level12)
+		local journal = loaded.ns.journal
+
+		assert.are.equal("Lv 12 · Ledger 14%", journal.plate)
+		assert.are.equal("Lv 12 · Ledger 14%", journal.frame.plate.label.text)
+		assert.is_true(journal.frame.plate:IsShown())
+
+		loaded.ns.RegisterJournalSpread("trophy", {
+			crumbs = function()
+				return {}
+			end,
+			draw = function()
+				return { left = {}, right = {} }
+			end,
+		})
+		journal:Open("trophy")
+		assert.is_true(journal.frame.plate:IsShown())
+		assert.are.equal("Lv 12 · Ledger 14%", journal.frame.plate.label.text)
+	end)
+end)
+
+describe("the Journal's Home, live", function()
+	it(
+		"updates a tile, its seal and the plate on the frame after a live Catch raises the zone's rank (LED-R123)",
+		function()
+			local fake, loaded = openHome({ cast(ELWYNN, MACKEREL) }, level12)
+			local function duskwood()
+				return tiles(loaded)[3]
+			end
+			assert.are.equal("unfished · skill ~150", duskwood().line)
+
+			local conditions = {}
+			for key, value in pairs(fake.conditions) do
+				conditions[key] = value
+			end
+			conditions.zone, conditions.subzone = DUSKWOOD, 0
+			fake.setConditions(conditions)
+			fake.playCast("caught", { { itemID = BLACKMOUTH, quantity = 1 } })
+			assert.are.equal("unfished · skill ~150", duskwood().line, "the redraw waits for the next frame")
+			loaded.client.runTimers()
+
+			assert.are.equal("Master · 100%", duskwood().line)
+			assert.are.equal("Master", duskwood().seal)
+			assert.is_nil(duskwood().faded)
+			-- The Blackmouth and Duskwood join the Mackerel and Elwynn: 4 of 14.
+			assert.are.equal("Lv 12 · Ledger 28%", loaded.ns.journal.plate)
+		end
+	)
+end)

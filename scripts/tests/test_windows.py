@@ -1,5 +1,6 @@
 """The named windows (DATA-R35–R38): the baseline seeds, windows.toml and the event windows."""
 
+import tomllib
 from pathlib import Path
 
 import pytest
@@ -8,10 +9,10 @@ from areas_fixture import write_areas
 from baseline_fixture import CSVS, EVENTS_CSV_HEADER, SEED_EVENTS, write_baseline
 from item_fixture import write_item_layer
 from observed_fixture import write_observed
-from pagle_data.baseline import BaselineEvent
-from pagle_data.errors import DataError
+from pagle_data.baseline import BaselineEvent, read_baseline
+from pagle_data.errors import DataError, Problems
 from pagle_data.generate import read_layers
-from pagle_data.windows import seed_spec, window_of_event
+from pagle_data.windows import WINDOWS_TOML, seed_spec, window_of_event
 from pools_fixture import write_pools
 from windows_fixture import WINDOWS, write_windows
 
@@ -70,6 +71,22 @@ REPO = Path(__file__).resolve().parents[2]
 def test_the_committed_baseline_seeds_day_and_night_as_time_ranges() -> None:
     # DATA-R36 over data/baseline/events.csv. Event 47 (Sunscale Cycle) starts 06:00 for 1080 minutes: 360 to
     # (360 + 1080) % 1440 = 0. Event 48 (Nightfin Cycle) starts 18:00 for 1080 minutes: 1080 to 720, wrapping.
+    problems = Problems()
+    events = {event.event: event for event in read_baseline(REPO, problems).events}
+    assert problems.found == []
+    assert seed_spec(events[47]) == {"time": [[360, 0]]}
+    assert seed_spec(events[48]) == {"time": [[1080, 720]]}
+
+
+def test_the_committed_day_and_night_overlap_by_six_hours_as_classic_s_four_fishing_periods() -> None:
+    # #175, DATA-R10, DATA-R35, DATA-R36: Classic's day and night fish follow four 6-hour periods. Sunscale (day)
+    # bites from 06:00 to midnight and never 00:00-06:00; Nightfin (night) from 18:00 to noon and never 12:00-18:00.
+    # So day is 06:00-24:00 and night 18:00-12:00, overlapping 06:00-12:00 and 18:00-24:00, as VMaNGOS's events 47
+    # and 48 have it. windows.toml pins both with the sources in its why, so nobody "fixes" the overlap later.
+    with (REPO / WINDOWS_TOML).open("rb") as handle:
+        entries = tomllib.load(handle)["window"]
+    for window_id in ("day", "night"):
+        assert "#175" in entries[window_id]["why"], f"window.{window_id}'s why cites #175's sources"
     windows = read_layers(REPO).windows
     assert windows["day"] == {"time": [[360, 0]]}
     assert windows["night"] == {"time": [[1080, 720]]}

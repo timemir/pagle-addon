@@ -1,9 +1,10 @@
 -- The generated catalogue's windows on Pagle (LOG-R55's window part, DATA-R35–R37): every window ID has its spec,
 -- with confirmed false (DATA-R56), and Pagle.MatchesConditions takes every one.
 
--- Each window's spec as DATA-R36 and DATA-R37 give it from the committed data: day and night from VMaNGOS's events
--- 47 and 48 (06:00 and 18:00, each for 1080 minutes), summer and winter from 45 and 46 (20 Mar and 23 Sep, each for
--- 182.5 days), spring and autumn from windows.toml at their Tunables dates, event.301 its event alone.
+-- Each window's spec as DATA-R36 and DATA-R37 give it from the committed data: day and night from windows.toml at
+-- VMaNGOS's events 47 and 48 (06:00 and 18:00, each for 1080 minutes, #175), summer and winter from 45 and 46 (20 Mar
+-- and 23 Sep, each for 182.5 days), spring and autumn from windows.toml at their Tunables dates, event.301 its event
+-- alone.
 local EXPECTED = {
 	day = { time = { { 360, 0 } } },
 	night = { time = { { 1080, 720 } } },
@@ -74,8 +75,8 @@ describe("the generated catalogue's windows on Pagle", function()
 		local function matches(windowID, s)
 			return Pagle.MatchesConditions((windowSpec(Pagle, windowID)), s)
 		end
-		-- VMaNGOS's day runs 06:00 to midnight and its night 18:00 to noon (wrapping past midnight), so they
-		-- overlap: 14:00 is day only, 02:00 night only, 08:14 and 20:00 both.
+		-- The day runs 06:00 to midnight and the night 18:00 to noon (wrapping past midnight), so they overlap, as
+		-- Classic's four 6-hour fishing periods do (#175): 14:00 is day only, 02:00 night only, 08:14 and 20:00 both.
 		assert.is_true(matches("day", snapshot(840, 10, 14)))
 		assert.is_false(matches("night", snapshot(840, 10, 14)))
 		assert.is_true(matches("night", snapshot(120, 10, 14)))

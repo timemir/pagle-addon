@@ -29,22 +29,13 @@ describe("ns.FieldReportParts", function()
 		logId = "3f9a2c1e7b0d4a65",
 	}
 
-	-- An I row in ticket #121's shape, with no aura, event, t or m unless `extra` sets them.
+	-- An I row as ns.FieldReportRows() hands it over, with no aura, event, t or m unless `extra` sets them.
 	local function iRow(item, area, build, count, extra)
 		local row = { kind = "I", item = item, area = area, build = build, count = count, auras = {}, events = {} }
 		for key, value in pairs(extra or {}) do
 			row[key] = value
 		end
 		return row
-	end
-
-	-- The file's bytes, exactly.
-	local function readFile(path)
-		---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io
-		local file = assert(io.open(path, "rb"))
-		local text = file:read("*a")
-		file:close()
-		return text
 	end
 
 	-- The lines of one part, without their line ends.
@@ -185,6 +176,20 @@ describe("ns.FieldReportParts", function()
 
 		assert.are.same({ 'P 1 enUS "say \\"hi\\"\\\\\\nbye # not" casts=1' }, rowLines(parts[1]))
 	end)
+
+	it(
+		"writes a P text's carriage return, alone or before a newline, as one \\n, so the row never splits (REP-R32)",
+		function()
+			local rows = {
+				{ kind = "P", area = 1, locale = "enUS", text = "a\rb\r\nc\n\rd", casts = 1, items = {} },
+			}
+
+			local parts = ns.FieldReportParts(rows, HEADER, { item = function() end, area = function() end })
+
+			assert.are.same({ 'P 1 enUS "a\\nb\\nc\\n\\nd" casts=1' }, rowLines(parts[1]))
+			assert.is_nil(parts[1]:find("\r", 1, true))
+		end
+	)
 
 	it(
 		"comments an I row with its item and area names, leaving out a missing one, and writes none with no names (REP-R30)",

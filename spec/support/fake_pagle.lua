@@ -102,7 +102,10 @@
 --- `lastEndedSession` (LOG-R63); and the Session summary keys (announcements.md › Data): `summary` (the open
 --- Session's moments and every Module's M:SetSummaryLine lines), `pending` (moments raised with no Session open,
 --- ANN-R52), `cards` (each SessionEnded's card for a Session that raised a moment, ANN-R53, at most 3, ANN-R54) and
---- `writeUp` (the Write-up sections waiting, ANN-R61). A spec may seed its keys before login, as a saved PagleDB.
+--- `writeUp` (the Write-up sections waiting, ANN-R61). The Field report's (catch-log.md › Data): `diagnostics`
+--- (LOG-R81; empty, and playCast adds nothing, so a spec adds the entries for the P rows, REP-R22) and
+--- `projections.fieldReport` (REP-R25; bound at construction, so a spec fills that table, never replaces it). A spec
+--- may seed its keys before login, as a saved PagleDB.
 ---@field profile table PagleDB.profile, from Core's defaults: `announcements.cozy` is Cozy mode (ANN-R62), off; a
 --- spec may set it. `appearance` holds each slot's pick, `{ [slot] = goodID }` (SHOP-R32), which Pagle.SetEquipped
 --- writes and a spec may seed.
@@ -123,10 +126,6 @@
 ---@field catchLog PagleCatchLog The Catch log Pagle.IterateCatches reads, on Core's real codec; empty at first.
 ---@field setCatalogue fun(data: table) Serves the catalogue calls over `data` (shaped as ns.catalogue, DATA-R76)
 --- instead of the generated catalogue.
----@field diagnostics PagleDiagnostic[] PagleDB.global.diagnostics (LOG-R81): empty, and playCast adds nothing; a spec
---- adds entries for the P rows Pagle.GetFieldReportCount counts (REP-R22).
----@field fieldReportDB table PagleDB.global.projections.fieldReport (REP-R25); a spec may fill it before enterWorld,
---- as a saved one.
 ---@field setFieldReportCount fun(n: integer?) Makes Pagle.GetFieldReportCount return `n`, whatever the rows; nil goes
 --- back to the count Core's projection gives (REP-R26).
 ---@field fieldReportsOpened PagleFieldReportView[] Each box Pagle.OpenFieldReport opened, in order: its message
@@ -656,38 +655,20 @@ part(function(fake, Pagle, ns)
 	fake.setCatalogue(ns.catalogue)
 end)
 
--- The Field report's count (REP-R25, REP-R26, LOG-R78), on Core's real projection, bound on fake.projections ahead
--- of every Module's, over fake.catchLog, the catalogue served now and fake.diagnostics (empty; a spec fills it with
--- LOG-R81 entries). Live entries reach it as read-only proxies, which Core's logic walks with newFakePagle's
--- proxy-aware pairs and ipairs.
-part(function(fake, Pagle, ns)
-	fake.diagnostics = {}
-	fake.fieldReportDB = {}
-	local catalogue = setmetatable({}, {
-		__index = function(_, name)
-			return ns.Catalogue[name]
-		end,
-	})
-	local rows, count = ns.AddFieldReport({
-		projections = fake.projections,
-		db = fake.fieldReportDB,
-		catalogue = catalogue,
-		iterate = function(afterSeq)
-			return fake.catchLog:Iterate(afterSeq)
-		end,
-		buffer = function()
-			return fake.diagnostics
-		end,
-		casts = function()
-			return fake.catchLog:Reverse("cast")
-		end,
-	})
+-- The Field report's count (REP-R25, REP-R26, LOG-R78), on Core's wiring over the fake's host, bound on
+-- fake.projections ahead of every Module's: fake.catchLog, the catalogue served now, and fake.global's
+-- projections.fieldReport and diagnostics (empty; a spec fills the buffer with LOG-R81 entries). Its records reach it
+-- read-only, as every projection's do here, and Core's logic walks them with newFakePagle's proxy-aware pairs and
+-- ipairs.
+part(function(fake, Pagle, ns, host)
+	ns.WireFieldReport(host)
+	local fieldReport = assert(ns.fieldReport)
 	local setCount
 	function Pagle.GetFieldReportCount()
 		if setCount then
 			return setCount
 		end
-		return count()
+		return fieldReport.count()
 	end
 	function fake.setFieldReportCount(n)
 		setCount = n
@@ -705,7 +686,7 @@ part(function(fake, Pagle, ns)
 			return Pagle.IsRestricted()
 		end,
 		print = fake.print,
-		rows = rows,
+		rows = fieldReport.rows,
 		text = function(reportRows)
 			return ns.FieldReportParts(reportRows, {
 				addon = "test",
@@ -925,8 +906,9 @@ end)
 ---@return FakePagle
 function newFakePagle()
 	local ns, env = loadCoreLogic()
-	-- Core's own projections get live entries as the read-only proxies every projection gets here; on plain tables
-	-- these behave as the stock ones.
+	-- Core's own projection (the Field report's) gets its records as the read-only proxies every projection gets here,
+	-- through host.iterate and fake.live, and walks them with Core's logic: these see through a proxy, and on plain
+	-- tables behave as the stock ones.
 	env.pairs, env.ipairs, env.next = proxyPairs, proxyIpairs, proxyNext
 	-- Pagle.API_VERSION as adapter/Core.lua sets it; fake_pagle_spec.lua checks they agree.
 	local Pagle = { API_VERSION = 1 }
