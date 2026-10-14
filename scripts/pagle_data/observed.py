@@ -411,12 +411,14 @@ def row_key(row: CatchRow | SkillRow | PoolTextRow) -> tuple[object, ...]:
 
 
 def duplicate_rows(rows: Iterable[CatchRow | SkillRow | PoolTextRow], problems: Problems) -> None:
-    """DATA-R121: one row per row key. Each row whose key an earlier row has is a problem at the later row."""
+    """DATA-R121: one row per row key. Each row whose key an earlier row has is a problem at the later row, naming
+    the earlier one's place, and its file (or issue) when that is another."""
     first: dict[tuple[object, ...], At] = {}
     for row in rows:
         key = row_key(row)
         if key in first:
-            problems.add(row.at, f"the same row key as {first[key].path} (DATA-R121)")
+            earlier = first[key].path if first[key].file == row.at.file else str(first[key])
+            problems.add(row.at, f"the same row key as {earlier} (DATA-R121)")
         else:
             first[key] = row.at
 

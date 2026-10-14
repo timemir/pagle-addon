@@ -269,6 +269,15 @@ def test_a_part_pasted_twice_counts_once_unless_its_rows_differ() -> None:
     assert problems.found == ["#13: part 1/2 again, with other rows than in #11"]
 
 
+def test_a_row_key_two_parts_share_names_the_first_row_s_issue() -> None:
+    # DATA-R116, DATA-R121: two rows with the same key fail, naming the line; when the first row is in another part,
+    # the problem names that part's issue too, since both rows may be on the same line of their own issue.
+    problems = Problems()
+    row = "I 6359 1519 70338 14"
+    join([part_of(row, header=PART_1, source="#41"), part_of(row, header=PART_2, source="#42")], problems)
+    assert problems.found == ["#42: line 3: the same row key as #41: line 3 (DATA-R121)"]
+
+
 # data/observed/'s shape (DATA-R121, #94's reader)
 
 
