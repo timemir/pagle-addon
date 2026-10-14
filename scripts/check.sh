@@ -100,19 +100,19 @@ echo "types: no warnings"
 stage tests
 mkdir -p .tools/cache
 rm -f .tools/cache/luacov.*.out # luacov adds to an existing stats file
-status=0
+coverage=yes status=0
 "$bin/busted" --coverage || status=$?
 if ((status > 128)); then
 	echo "tests: busted --coverage was killed by signal $((status - 128));" \
 		"running the specs again without coverage (#149)" >&2
+	coverage=no
 	"$bin/busted" || fail tests
-	echo "check: no coverage report (coverage never gates)"
 elif ((status != 0)); then
 	fail tests
-else
-	{ "$bin/luacov" && echo "coverage (reported, never gates):" && sed -n '/^File /,$p' .tools/cache/luacov.report.out; } ||
-		echo "check: no coverage report (coverage never gates)"
 fi
+{ [[ $coverage == yes ]] && "$bin/luacov" && echo "coverage (reported, never gates):" &&
+	sed -n '/^File /,$p' .tools/cache/luacov.report.out; } ||
+	echo "check: no coverage report (coverage never gates)"
 
 # --- 6. generator (#55, DATA-R61): every generated file is what data/ gives (generate-data.py --check), the
 # generator's pytest suite passes, and mypy --strict passes over the typed package (DATA-R60). scripts/pyproject.toml
