@@ -25,6 +25,7 @@ logic\Groups.lua
 logic\Book.lua
 logic\Home.lua
 logic\Lifetime.lua
+logic\Watches.lua
 adapter\Text.lua
 adapter\BookWidgets.lua
 adapter\Book.lua
@@ -32,4 +33,5 @@ adapter\Place.lua
 adapter\Home.lua
 adapter\Lifetime.lua
 adapter\Sessions.lua
+adapter\Settings.lua
 adapter\Stats.lua

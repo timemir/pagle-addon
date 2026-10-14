@@ -145,6 +145,9 @@ stds.wow = {
 		-- MinimapCluster and GlobalAPI.lua lists IsShiftKeyDown.
 		"MinimapCluster",
 		"IsShiftKeyDown",
+		-- The game's red error text, where Stats refuses a 4th watched Dry spell (STA-R61). The pinned forever dump's
+		-- Frames.lua lists UIErrorsFrame.
+		"UIErrorsFrame",
 	},
 }
 
