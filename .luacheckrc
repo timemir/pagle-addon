@@ -60,8 +60,17 @@ stds.wow = {
 		"UnitCastingInfo",
 		"GetInventoryItemID",
 		-- GetItemNameByID: the Ledger's item names (LED-R97, LED-R126), and RequestLoadItemDataByID for the Journal's
-		-- uncached ones (LED-R126). GetItemInfo: the Field report's item names (REP-R30).
-		C_Item = { fields = { "GetItemInfoInstant", "GetItemNameByID", "RequestLoadItemDataByID", "GetItemInfo" } },
+		-- uncached ones (LED-R126). GetItemInfo: the Field report's item names (REP-R30). GetItemIconByID: Stats' item icons
+		-- (STA-R59).
+		C_Item = {
+			fields = {
+				"GetItemInfoInstant",
+				"GetItemNameByID",
+				"RequestLoadItemDataByID",
+				"GetItemInfo",
+				"GetItemIconByID",
+			},
+		},
 		C_Spell = { fields = { "GetSpellName" } },
 		-- QoL's Fishing stretch and its CVar lease (QOL-R61–R64).
 		"GetCVar",
@@ -117,6 +126,17 @@ stds.wow = {
 		-- The Curio Shop's purse: each Module's segment shows its lifetime Coins in the tooltip (wallet-and-shop.md › UI).
 		-- The window is drawn on CreateFrame and UIParent above and hides with Esc through UISpecialFrames (below).
 		"GameTooltip",
+		-- Stats' words (STA-R59): times and dates in the player's local clock, and the game's quality names (GlobalStrings);
+		-- their colours are ITEM_QUALITY_COLORS, in stds.wow_variables.
+		"date",
+		"ITEM_QUALITY0_DESC",
+		"ITEM_QUALITY1_DESC",
+		"ITEM_QUALITY2_DESC",
+		"ITEM_QUALITY3_DESC",
+		"ITEM_QUALITY4_DESC",
+		"ITEM_QUALITY5_DESC",
+		"ITEM_QUALITY6_DESC",
+		"ITEM_QUALITY7_DESC",
 	},
 }
 
@@ -197,6 +217,13 @@ stds.wow_variables = {
 		-- Interface/AddOns/Blizzard_UIParentPanelManager/Shared/UIParentPanelManager.lua: "UISpecialFrames = {", and
 		-- CloseSpecialWindows hides each frame named in it that is shown. Core adds its card frame's name.
 		"UISpecialFrames",
+		-- A FrameXML table the dump doesn't list (STA-R59: item qualities in the game's own colours). Gethe/wow-ui-source
+		-- branch forever at 943764493e6b16d63ded3ab304150d1f05e58b57 ("1.60.1 (70338)"),
+		-- Interface/AddOns/Blizzard_Colors/Mainline/ColorManager.lua: `ITEM_QUALITY_COLORS = {};` then, per quality,
+		-- `ITEM_QUALITY_COLORS[i] = { r = color.r, g = color.g, b = color.b, hex = color:GenerateHexColorMarkup(), color =
+		-- color };`. ColorManager.UpdateColorData makes a new table when the colour overrides change, so Stats reads it at
+		-- each draw.
+		"ITEM_QUALITY_COLORS",
 	},
 }
 

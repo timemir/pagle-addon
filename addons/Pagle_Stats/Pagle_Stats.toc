@@ -17,4 +17,6 @@ logic\Places.lua
 logic\Rows.lua
 logic\Fold.lua
 logic\Sessions.lua
+logic\Text.lua
+adapter\Text.lua
 adapter\Stats.lua

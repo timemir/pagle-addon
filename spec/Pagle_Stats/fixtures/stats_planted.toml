@@ -1,0 +1,24 @@
+# A lore file in data/lore/stats.toml's shape (DATA-R101) with banned words planted, for the copy test
+# (spec/Pagle_Stats/copy_spec.lua, STA-R58): each kind of TOML string, some clean and some not. Not lore: never
+# generated or shipped. The copy spec names its lines, so add to the end only.
+
+[statsgood."stats.trackerframe.none"]
+name = "No frame" # a comment = "soon" after a value isn't text
+description = 'The plain tracker, as it comes. Soonest to read.'
+
+[statsgood."stats.trackerframe.logbook"]
+name = """
+Logbook"""
+# A comment is not text: due, soon, owed.
+
+description = "The \"logbook\" frame. You're due one."
+
+[statsgood."stats.trackerframe.brass"]
+description = '''
+Coming soon.
+Ruled lines.'''
+
+[extra]
+plain = "Every Cast is its own roll; nothing is owed."
+name = 'Bound to please'
+description = "No pity here." # trailing

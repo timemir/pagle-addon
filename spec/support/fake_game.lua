@@ -23,6 +23,7 @@
 ---@field items table<integer, integer[]> `{ classID, subclassID }` per item ID, for `C_Item.GetItemInfoInstant`.
 ---@field itemNames table<integer, string> Each item's name, for `C_Item.GetItemNameByID` and `C_Item.GetItemInfo`.
 --- Default none: no item cached.
+---@field itemIcons table<integer, integer> Each item's icon file ID, for `C_Item.GetItemIconByID`. Default none.
 ---@field itemRequests integer[] Each `C_Item.RequestLoadItemDataByID` call's item ID, in order. The client loads
 --- nothing on its own: a spec sets `itemNames` and fires GET_ITEM_INFO_RECEIVED itself.
 ---@field bindingCalls string[] Each override call, in order: "set <key> <action>" or "clear".
@@ -59,6 +60,7 @@ return function(client, stubs)
 	-- A Fishing Pole (6256, as probe B1 read it) and a Worn Shortsword (25).
 	client.items = { [6256] = { 2, 20 }, [25] = { 2, 7 } }
 	client.itemNames = {}
+	client.itemIcons = {}
 	client.itemRequests = {}
 	client.fireGameEvent = client.fire
 
@@ -150,6 +152,42 @@ return function(client, stubs)
 	-- comments, REP-R30); nothing for one it doesn't know.
 	stubs.C_Item.GetItemInfo = function(itemID)
 		return client.itemNames[itemID]
+	end
+	-- The item's icon file ID; nil for one not in client.itemIcons (Stats' names, STA-R59).
+	stubs.C_Item.GetItemIconByID = function(itemID)
+		return client.itemIcons[itemID]
+	end
+	-- The enUS client's quality names and colours (Stats' qualities, STA-R59): GlobalStrings' ITEM_QUALITY<n>_DESC,
+	-- and ITEM_QUALITY_COLORS as Blizzard_Colors' ColorManager fills it, with no colour overrides.
+	for quality, name in pairs({
+		[0] = "Poor",
+		"Common",
+		"Uncommon",
+		"Rare",
+		"Epic",
+		"Legendary",
+		"Artifact",
+		"Heirloom",
+	}) do
+		stubs["ITEM_QUALITY" .. quality .. "_DESC"] = name
+	end
+	stubs.ITEM_QUALITY_COLORS = {}
+	for quality, rgb in pairs({
+		[0] = { 0.62, 0.62, 0.62, "9d9d9d" },
+		{ 1, 1, 1, "ffffff" },
+		{ 0.12, 1, 0, "1eff00" },
+		{ 0, 0.44, 0.87, "0070dd" },
+		{ 0.64, 0.21, 0.93, "a335ee" },
+		{ 1, 0.5, 0, "ff8000" },
+		{ 0.9, 0.8, 0.5, "e6cc80" },
+		{ 0, 0.8, 1, "00ccff" },
+	}) do
+		stubs.ITEM_QUALITY_COLORS[quality] = { r = rgb[1], g = rgb[2], b = rgb[3], hex = "|cff" .. rgb[4] }
+	end
+	-- The client's local clock: the fake player sits at UTC, so `date` reads as os.date in UTC.
+	stubs.date = function(format, time)
+		---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no os
+		return os.date("!" .. format, time)
 	end
 	stubs.GetCVar = function(name)
 		return client.cvars[name]
