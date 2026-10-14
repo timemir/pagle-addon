@@ -109,8 +109,8 @@ ns.LEVEL_UP_COINS = 20
 local NEW_SPECIES_COINS = 10
 local CURIO_COINS = 5
 local TROPHY_WEIGHT_COINS = 5
--- Skill Milestones, ascending (LED-R40, Tunables).
-local SKILL_MILESTONES = { 75, 150, 225, 300 }
+--- Skill Milestones, ascending (LED-R40, Tunables); the Angler page ticks them (LED-R146).
+ns.SKILL_MILESTONES = { 75, 150, 225, 300 }
 
 -- Fresh Water at one Catch (LED-R22): refills from the previous Catch's time (none at the first Catch ever), then
 -- spends 1 when F ≥ 1. Returns the Catch XP multiplier.
@@ -353,7 +353,7 @@ function ns.NewLedgerFold(lookups)
 	---@param record PagleSkillReading
 	---@param earned LedgerAchievement[]
 	local function applySkill(state, record, earned)
-		for _, threshold in ipairs(SKILL_MILESTONES) do
+		for _, threshold in ipairs(ns.SKILL_MILESTONES) do
 			if record.rank >= threshold and not state.skill[threshold] then
 				state.skill[threshold] = record.time
 				state.xp = state.xp + SKILL_MILESTONE_XP

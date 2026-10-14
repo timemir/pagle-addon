@@ -68,6 +68,9 @@ local function readContext()
 		now = GetServerTime(),
 		formatNumber = BreakUpLargeNumbers,
 		text = ns.journalText,
+		world = ns.world,
+		getItem = Pagle.GetItem,
+		angler = Pagle.GetAngler(),
 	}
 end
 
