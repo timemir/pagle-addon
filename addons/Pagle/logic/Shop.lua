@@ -91,7 +91,7 @@ end
 ---@class PagleShopPurse
 ---@field label string               -- "Pagle Coins"
 ---@field balance string             -- the balance, 0 while held (SHOP-R12)
----@field held boolean               -- SHOP-R12's held line shows (ticket #158)
+---@field held boolean               -- SHOP-R12's held line shows: earned is below spent
 ---@field segments PagleShopSegment[] -- one per Module that has reported Coins, in roster order
 ---@field payNone string             -- "Stats and QoL pay none"
 
@@ -349,7 +349,7 @@ function Model:Select(goodID)
 end
 
 --- The selected good on the stage (wallet-and-shop.md › UI): its look, name, slot and owner, description, and what
---- its state shows. Buy is shown for a good for sale, never enabled here (ticket #158 enables it).
+--- its state shows. Buy is shown for a good for sale, enabled per SHOP-R13 (canBuy).
 ---@class PagleShopStage
 ---@field id string
 ---@field name string

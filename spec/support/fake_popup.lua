@@ -1,8 +1,9 @@
--- The fake client's popups and addon switches, for QoL's conflict popup and its Reload now popup (QOL-R81–R84) and
--- the Ledger's Prestige confirm (LED-R33).
+-- The fake client's popups and addon switches, for QoL's conflict popup and its Reload now popup (QOL-R81–R84), the
+-- Ledger's Prestige confirm (LED-R33) and the Curio Shop's Buy popup (wallet-and-shop.md › UI: Buy).
 -- spec/support/addon.lua adds these stubs to every load.
 --
---   loaded.client.popup                  -- the popup shown last: { which, text, buttons = { [index] = label } }, or nil
+--   loaded.client.popup                  -- the popup shown last: { which, text, buttons = { [index] = label },
+--                                        -- inserted = its inserted frame }, or nil
 --   loaded.client.clickPopup(3)          -- clicks that popup's button, as StaticPopup_OnClick does
 --   loaded.client.pressEscape()          -- Esc, as StaticPopup_EscapePressed does: every shown popup with hideOnEscape
 --   loaded.client.disabledAddOns         -- each C_AddOns.DisableAddOn call: { name, character }
@@ -11,13 +12,14 @@
 -- How dialogs show and their callbacks run follows Gethe/wow-ui-source branch forever at
 -- 943764493e6b16d63ded3ab304150d1f05e58b57 ("1.60.1 (70338)"): Interface/AddOns/Blizzard_StaticPopup/StaticPopup.lua
 -- (StaticPopup_Show reuses the shown frame of the same dialog, else takes a free one, so a callback can show a second
--- dialog; StaticPopup_OnClick without selectCallbackByIndex: button 1 → OnAccept, 3 → OnAlt, any other → OnCancel,
+-- dialog; it formats the text with text_arg1 and text_arg2 and shows the inserted frame, which hiding releases; StaticPopup_OnClick without selectCallbackByIndex: button 1 → OnAccept, 3 → OnAlt, any other → OnCancel,
 -- then hides the clicked frame if it still shows that dialog; StaticPopup_EscapePressed: OnEscape, else OnCancel
 -- unless noCancelOnEscape, then hide) and Interface/AddOns/Blizzard_StaticPopup_Game/GameDialog.lua (SetupButtons
 -- shows button N when it has a label).
 
 ---@class FakeClient
----@field popup { which: string, text: string, buttons: table<integer, string> }? The popup shown last, if any.
+---@field popup { which: string, text: string, buttons: table<integer, string>, inserted: table? }? The popup shown
+--- last, if any: its text formatted with StaticPopup_Show's text_arg1 and text_arg2, and the frame it inserted.
 ---@field clickPopup fun(index: integer) Clicks the last shown popup's button `index`; raises if it isn't shown.
 ---@field pressEscape fun() Presses Esc; raises if no popup is shown.
 ---@field disabledAddOns { name: string, character: string? }[] Each C_AddOns.DisableAddOn call, in order.
@@ -41,9 +43,12 @@ return function(client, stubs)
 
 	local function update()
 		local top = shown[#shown]
-		client.popup = top and { which = top.which, text = top.info.text, buttons = top.buttons } or nil
+		client.popup = top
+				and { which = top.which, text = top.text, buttons = top.buttons, inserted = top.insertedFrame }
+			or nil
 	end
 
+	-- Hides `frame`, releasing its inserted frame as StaticPopup_ReleaseInsertedFrame does: hidden, unparented.
 	---@param frame FakeDialogFrame
 	local function hide(frame)
 		for i, other in ipairs(shown) do
@@ -52,10 +57,14 @@ return function(client, stubs)
 				break
 			end
 		end
+		if frame.insertedFrame then
+			frame.insertedFrame:Hide()
+			frame.insertedFrame = nil
+		end
 		update()
 	end
 
-	stubs.StaticPopup_Show = function(which, _, _, data)
+	stubs.StaticPopup_Show = function(which, textArg1, textArg2, data, insertedFrame)
 		local info = dialogs[which]
 		if not info then
 			error("Dialog " .. which .. " does not exist.")
@@ -80,6 +89,12 @@ return function(client, stubs)
 			frame = {}
 		end
 		frame.which, frame.info, frame.data, frame.buttons = which, info, data, buttons
+		-- GameDialogMixin:SetupText: SetFormattedText(info.text, text_arg1, text_arg2).
+		frame.text = textArg1 ~= nil and info.text:format(textArg1, textArg2) or info.text
+		frame.insertedFrame = insertedFrame
+		if insertedFrame then
+			insertedFrame:Show()
+		end
 		shown[#shown + 1] = frame
 		update()
 		return frame
