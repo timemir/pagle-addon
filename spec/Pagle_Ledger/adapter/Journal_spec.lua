@@ -54,16 +54,6 @@ local function crumbLabels(loaded)
 	return labels
 end
 
--- Presses Esc: CloseSpecialWindows hides every shown frame named in UISpecialFrames.
-local function escape(loaded)
-	for _, name in ipairs(loaded.env.UISpecialFrames) do
-		local frame = loaded.ns.journal.frame
-		if frame and name == frame.name and frame:IsShown() then
-			frame:Hide()
-		end
-	end
-end
-
 -- A test spread three crumbs deep (Home ❧ Waters ❧ Zone ❧ Fish), showing the lifetime Catches on its left page
 -- and the fish chosen (its selection) on its right.
 ---@type LedgerSpread
@@ -96,7 +86,7 @@ describe("the Fish Journal's frame (LED-R120, LED-R121)", function()
 		assert.is_true(has(loaded.env.UISpecialFrames, "PagleLedgerJournal"))
 		assert.is_true(frame:IsShown())
 		assert.is_not_true(frame.movable)
-		escape(loaded)
+		loaded.client.pressEscape()
 		assert.is_false(journal:IsShown())
 	end)
 
@@ -123,7 +113,7 @@ describe("the Fish Journal's frame (LED-R120, LED-R121)", function()
 		assert.is_true(has(textsOf(journal.frame), "Where I've Fished"))
 
 		journal:Open("deep", { fish = MACKEREL })
-		escape(loaded)
+		loaded.client.pressEscape()
 		journal:Toggle()
 
 		assert.are.same({ "Home", "Waters", "Zone", "Fish 6303" }, crumbLabels(loaded))

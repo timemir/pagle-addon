@@ -20,6 +20,8 @@
 ---@field errors string[] Each error the default geterrorhandler() got, in order. A spec that gets one must read
 --- this list (assert it), or it fails at its end (spec/support/errors.lua).
 ---@field addError fun(err: any) The default geterrorhandler(): adds the error to `errors`.
+---@field pressEscape fun() Presses Esc: the focused edit box's OnEscapePressed, or with none focused,
+--- CloseSpecialWindows (every shown frame named in UISpecialFrames hides, and its OnHide runs).
 
 --- The loot window the loot API reads: whether it's fishing loot (`IsFishingLoot()`) and its slots, in order.
 --- Specs set both before firing LOOT_READY.
@@ -280,6 +282,28 @@ local function clientStubs(client)
 			return "US"
 		end,
 	}
+
+	-- Presses Esc as the client does: the focused edit box takes it (OnEscapePressed); with none focused,
+	-- CloseSpecialWindows hides every shown frame named in UISpecialFrames, running its OnHide.
+	function client.pressEscape()
+		local focus = client.focus
+		local onEscape = focus and focus.scripts.OnEscapePressed
+		if onEscape then
+			onEscape(focus)
+			return
+		end
+		for _, name in ipairs(stubs.UISpecialFrames) do
+			for _, frame in ipairs(client.frames) do
+				if frame.name == name and frame.shown then
+					frame:Hide()
+					local onHide = frame.scripts.OnHide
+					if onHide then
+						onHide(frame)
+					end
+				end
+			end
+		end
+	end
 	return stubs
 end
 

@@ -3,7 +3,8 @@
 --
 --   loaded.client.popup                  -- the popup shown last: { which, text, buttons = { [index] = label } }, or nil
 --   loaded.client.clickPopup(3)          -- clicks that popup's button, as StaticPopup_OnClick does
---   loaded.client.pressEscape()          -- Esc, as StaticPopup_EscapePressed does: every shown popup with hideOnEscape
+--   loaded.client.pressEscape()          -- Esc, as StaticPopup_EscapePressed does: every shown popup with hideOnEscape;
+--                                        -- with none shown, the client's own Esc (spec/support/client.lua)
 --   loaded.client.disabledAddOns         -- each C_AddOns.DisableAddOn call: { name, character }
 --   loaded.client.reloads                -- how many times ReloadUI() was called (the spy for QOL-R6)
 --
@@ -18,7 +19,7 @@
 ---@class FakeClient
 ---@field popup { which: string, text: string, buttons: table<integer, string> }? The popup shown last, if any.
 ---@field clickPopup fun(index: integer) Clicks the last shown popup's button `index`; raises if it isn't shown.
----@field pressEscape fun() Presses Esc; raises if no popup is shown.
+---@field pressEscape fun() Presses Esc: the shown popups take it; with none shown, the client's own Esc does.
 ---@field disabledAddOns { name: string, character: string? }[] Each C_AddOns.DisableAddOn call, in order.
 ---@field reloads integer How many times ReloadUI() was called.
 
@@ -105,8 +106,13 @@ return function(client, stubs)
 		end
 	end
 
+	-- The client's own Esc (the focused edit box, then CloseSpecialWindows), for when no popup is shown.
+	local closeWindows = client.pressEscape
 	function client.pressEscape()
-		assert(#shown > 0, "FakeClient: Esc pressed with no popup shown")
+		if #shown == 0 then
+			closeWindows()
+			return
+		end
 		for i = #shown, 1, -1 do
 			local frame = shown[i]
 			if frame and frame.info.hideOnEscape then

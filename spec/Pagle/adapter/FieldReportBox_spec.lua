@@ -57,27 +57,6 @@ describe("Pagle.OpenFieldReport", function()
 	)
 end)
 
--- Presses Esc as the client does: the focused edit box takes it (OnEscapePressed); with none focused,
--- CloseSpecialWindows hides every shown frame named in UISpecialFrames.
-local function escape(loaded)
-	local focus = loaded.client.focus
-	local onEscape = focus and focus:GetScript("OnEscapePressed")
-	if onEscape then
-		onEscape(focus)
-		return
-	end
-	local frame = box(loaded)
-	for _, name in ipairs(loaded.env.UISpecialFrames) do
-		if frame and name == frame.name and frame:IsShown() then
-			frame:Hide()
-			local onHide = frame:GetScript("OnHide")
-			if onHide then
-				onHide(frame)
-			end
-		end
-	end
-end
-
 -- A caught Cast of an item no catalogue has, on the fake client.
 local function catchUncharted(loaded)
 	catchOne(loaded, { { link = "|cffffffff|Hitem:9990::::::::15:::::::::|h[Mystery]|h|r", quantity = 1 } })
@@ -113,14 +92,14 @@ describe("The Field report box", function()
 		local Pagle = loaded.env.Pagle
 
 		Pagle.OpenFieldReport()
-		escape(loaded)
+		loaded.client.pressEscape()
 		assert.is_false(box(loaded):IsShown())
 		-- A hidden box keeps no keyboard focus.
 		assert.is_nil(loaded.client.focus)
 
 		Pagle.OpenFieldReport()
 		box(loaded).text:ClearFocus()
-		escape(loaded)
+		loaded.client.pressEscape()
 		assert.is_false(box(loaded):IsShown())
 
 		Pagle.OpenFieldReport()
