@@ -71,6 +71,7 @@ local function readContext()
 		text = ns.journalText,
 		world = ns.world,
 		getItem = Pagle.GetItem,
+		angler = Pagle.GetAngler(),
 	}
 end
 

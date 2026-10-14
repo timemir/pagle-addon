@@ -26,6 +26,7 @@ logic\JournalText.lua
 logic\Journal.lua
 logic\JournalTile.lua
 logic\JournalSpecies.lua
+logic\JournalAngler.lua
 adapter\JournalWidgets.lua
 adapter\JournalText.lua
 adapter\JournalSearch.lua
