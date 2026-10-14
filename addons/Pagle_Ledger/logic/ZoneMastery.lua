@@ -10,8 +10,11 @@ local ns = select(2, ...)
 -- find, completion and the next requirement are computed from the state, the world index (LED-R10) and the
 -- celebrated set (LED-R90). Pure logic, everything passed in (CORE-R7).
 
+--- Zone Mastery's top rank, Master (LED-R50): Ledger completion counts the zones at it (LED-R70).
+ns.ZONE_MASTER = 5
+
 -- The ranks (LED-R50).
-local VISITOR, REGULAR, LOCAL, EXPERT, MASTER = 1, 2, 3, 4, 5
+local VISITOR, REGULAR, LOCAL, EXPERT, MASTER = 1, 2, 3, 4, ns.ZONE_MASTER
 -- Each rank reached earns 250 × rank XP (LED-R20) and 2 × rank Coins (LED-R88, Tunables).
 local RANK_XP = 250
 local RANK_COINS = 2
