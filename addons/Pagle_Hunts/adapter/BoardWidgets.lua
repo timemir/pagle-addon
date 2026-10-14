@@ -97,6 +97,15 @@ local HATCH_TILE = 16
 ---@field rule number[]?      -- the gilt rule inside the edge (#8a5a2a)
 ---@field grain string?       -- the grain's texture
 ---@field grainAlpha number?
+
+---@class BoardCover: BoardCoverLook -- a cover look with every field
+---@field leather number[]
+---@field edge number[]
+---@field rule number[]
+---@field grain string
+---@field grainAlpha number
+
+---@type BoardCover
 ns.BOARD_COVER = {
 	leather = tint("4e2c16"),
 	edge = tint("120a04"),
@@ -326,15 +335,20 @@ end
 ---@param frame Frame
 ---@return BoardLeatherView
 function ns.NewBoardLeather(frame)
-	local view = {}
-	view.edge = ns.BoardSolid(frame, ns.BOARD_COVER.edge, "BACKGROUND")
-	view.leather = frame:CreateTexture(nil, "BACKGROUND", nil, 1)
-	view.leather:SetPoint("TOPLEFT", 2, -2)
-	view.leather:SetPoint("BOTTOMRIGHT", -2, 2)
-	view.grain = frame:CreateTexture(nil, "BORDER")
-	view.grain:SetPoint("TOPLEFT", 2, -2)
-	view.grain:SetPoint("BOTTOMRIGHT", -2, 2)
-	view.rules = {}
+	local leatherTexture = frame:CreateTexture(nil, "BACKGROUND", nil, 1)
+	leatherTexture:SetPoint("TOPLEFT", 2, -2)
+	leatherTexture:SetPoint("BOTTOMRIGHT", -2, 2)
+	local grain = frame:CreateTexture(nil, "BORDER")
+	grain:SetPoint("TOPLEFT", 2, -2)
+	grain:SetPoint("BOTTOMRIGHT", -2, 2)
+	---@type BoardLeatherView
+	local view = {
+		edge = ns.BoardSolid(frame, ns.BOARD_COVER.edge, "BACKGROUND"),
+		leather = leatherTexture,
+		grain = grain,
+		rules = {},
+		SetCover = function() end, -- below
+	}
 	for i, points in ipairs({
 		{ "TOPLEFT", "TOPRIGHT", 5, -5 },
 		{ "BOTTOMLEFT", "BOTTOMRIGHT", 5, 5 },
@@ -355,7 +369,8 @@ function ns.NewBoardLeather(frame)
 	end
 	function view.SetCover(_, look)
 		local default = ns.BOARD_COVER
-		local leather, edge, rule = look.leather or default.leather, look.edge or default.edge, look.rule or default.rule
+		local leather, edge, rule =
+			look.leather or default.leather, look.edge or default.edge, look.rule or default.rule
 		view.edge:SetColorTexture(edge[1], edge[2], edge[3], 1)
 		view.leather:SetColorTexture(leather[1], leather[2], leather[3], 1)
 		view.grain:SetTexture(look.grain or default.grain)
