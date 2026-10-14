@@ -34,4 +34,5 @@ adapter\Home.lua
 adapter\Lifetime.lua
 adapter\Sessions.lua
 adapter\Settings.lua
+adapter\Settings.xml
 adapter\Stats.lua

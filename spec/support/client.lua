@@ -21,6 +21,8 @@
 --- this list (assert it), or it fails at its end (spec/support/errors.lua).
 ---@field addError fun(err: any) The default geterrorhandler(): adds the error to `errors`.
 ---@field shiftDown boolean? Whether Shift is held, as IsShiftKeyDown() reads it. Specs set it.
+---@field templates table<string, { mixin: string? }> The virtual frame templates the loaded addons' XML files define,
+--- by name, with the global mixin each names: loadAddon reads them from each XML file a TOC lists.
 
 --- The loot window the loot API reads: whether it's fishing loot (`IsFishingLoot()`) and its slots, in order.
 --- Specs set both before firing LOOT_READY.
@@ -53,6 +55,7 @@ local function newClient()
 		sounds = {},
 		areaNames = {},
 		mapNames = {},
+		templates = {},
 	}
 	client.addError = watchErrors(client, "errors")
 

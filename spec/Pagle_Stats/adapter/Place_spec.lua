@@ -342,6 +342,20 @@ describe("a place's page (stats.md › UI › Place spread)", function()
 			assert.is_false(rowNamed(left, "Smallfish").star.shown)
 		end)
 
+		it("stars a row as ns.Watch adds it and unstars it as ns.StopWatching stops it (STA-R60, STA-R63)", function()
+			local ns, loaded = ready(darkshore())
+			local left = open(ns, DARKSHORE)
+			assert.is_false(rowNamed(left, "Smallfish").star.shown)
+
+			ns.Watch(SMALLFISH, DARKSHORE)
+			loaded.client.runTimers()
+
+			assert.is_true(rowNamed(left, "Smallfish").star.shown)
+			ns.StopWatching(SMALLFISH, DARKSHORE)
+			loaded.client.runTimers()
+			assert.is_false(rowNamed(left, "Smallfish").star.shown)
+		end)
+
 		it("names each row in an ink of its quality", function()
 			local ns = ready(darkshore())
 

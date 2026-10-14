@@ -34,4 +34,7 @@ function ns.Stats.OnInitialize()
 	--- (LOG-R71–R73). ns.State and ns.IsUpdating follow it from here on: before its first build the state is an empty
 	--- one, and it reads as updating (LOG-R74).
 	ns.projection = ns.Module:NewProjection(ns.ProjectionDef(ns.db.global, ns.places, Pagle.SESSION_RULES_VERSION))
+
+	--- Stats' section on the Trackers page (SET-R42), before ModulesChanged (CORE-R42).
+	ns.AddSettings(ns.Module)
 end

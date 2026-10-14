@@ -171,7 +171,7 @@ describe("Pagle_Stats with Core", function()
 		assert.is_true(loaded.ns.book:IsShown())
 	end)
 
-	it("adds no settings pages of its own (STA-R4, CORE-R42)", function()
+	it("adds no settings pages of its own: its rows go on Core's Trackers page (STA-R4, CORE-R42, SET-R42)", function()
 		local loaded = loadAddon("Pagle_Stats", FOREVER_GLOBALS)
 		local plain = loadAddon("Pagle", FOREVER_GLOBALS)
 		loaded.client.fire("PLAYER_LOGIN")
@@ -184,10 +184,12 @@ describe("Pagle_Stats with Core", function()
 			end
 			return names
 		end
-		assert.are.same(categories(plain.client), categories(loaded.client))
+		local expected = categories(plain.client)
+		table.insert(expected, #expected, "Trackers") -- before Look and Feel, the last page (CORE-R40)
+		assert.are.same(expected, categories(loaded.client))
 	end)
 
-	it("sets no global but PagleStatsDB: its AceAddon is reached through LibStub alone (STA-R1)", function()
+	it("sets no global but PagleStatsDB and its row's mixin: its AceAddon is reached through LibStub (STA-R1)", function()
 		local loaded = loadAddon("Pagle_Stats", FOREVER_GLOBALS)
 		local plain = loadAddon("Pagle", FOREVER_GLOBALS)
 		loaded.client.fire("PLAYER_LOGIN")
@@ -201,7 +203,9 @@ describe("Pagle_Stats with Core", function()
 			end
 		end
 
-		assert.are.same({ "PagleStatsDB" }, added)
+		-- The Watched Dry spells row's mixin, which its XML template names (adapter/Settings.xml, SET-R5).
+		table.sort(added)
+		assert.are.same({ "PagleStatsDB", "PagleStatsWatchedRowMixin" }, added)
 		assert.are.equal(loaded.ns.Stats, loaded.env.LibStub("AceAddon-3.0"):GetAddon("Pagle_Stats"))
 	end)
 
@@ -339,8 +343,15 @@ describe("Pagle_Stats without Pagle", function()
 	end)
 
 	-- A broken install: no Pagle, and nothing else either. Each file must stop at its first line, so it reads no
-	-- global but Pagle and writes none.
+	-- global but Pagle and writes none. An XML file only defines templates, which the client builds without running
+	-- Lua (adapter/Settings.xml).
+	local luaFiles = {}
 	for _, file in ipairs(addonFiles("Pagle_Stats")) do
+		if file:match("%.lua$") then
+			luaFiles[#luaFiles + 1] = file
+		end
+	end
+	for _, file in ipairs(luaFiles) do
 		it(file .. " starts with the Core guard and does nothing without Pagle (CORE-R11)", function()
 			---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no loadfile
 			local chunk = assert(loadfile("addons/Pagle_Stats/" .. file))

@@ -271,6 +271,8 @@ files["addons/Pagle/logic/Size.lua"] = { read_globals = { bit = stds.wow.read_gl
 files["addons/Pagle/adapter/**"] = { globals = { "Pagle" } }
 -- /pagle's name (CORE-R60).
 files["addons/Pagle/adapter/Slash.lua"] = { globals = { "SLASH_PAGLE1" } }
+-- The mixin of Stats' Watched Dry spells row, which adapter/Settings.xml's template names (SET-R5, SET-R42).
+files["addons/Pagle_Stats/adapter/Settings.lua"] = { globals = { "PagleStatsWatchedRowMixin" } }
 -- A Module's adapter/ reads Pagle through stds.pagle above. Its logic/ and locale/ files read it only in their CORE-R11
 -- guard, `if not Pagle then -- luacheck: read globals Pagle …`, whose inline option reaches that line alone: any other
 -- use of Pagle there fails lint (CORE-R7).
