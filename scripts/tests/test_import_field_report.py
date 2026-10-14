@@ -11,8 +11,8 @@ from pathlib import Path
 import pytest
 
 from pagle_data.errors import Problems
-from pagle_data.importer import FetchError, main, upsert
-from pagle_data.observed import Header, Report
+from pagle_data.importer import FetchError, imported, main, upsert
+from pagle_data.observed import Header, ObservedLayer, Report
 from pagle_data.report import join, observed_toml, parse_part
 from test_catch_lists import CATALOGUE, write_tree
 
@@ -111,6 +111,18 @@ build = 70338
 casts = 9
 away = 1
 """
+
+
+def test_reports_of_one_reporter_upsert_oldest_issue_first_whatever_order_they_are_given_in() -> None:
+    # DATA-R121: a new row replaces the stored row with its key, and the file records the latest header. Reports
+    # are upserted in ascending issue-number order, so the newer report (#50) wins over the older one (#40) even
+    # when #50 is named first.
+    older = parsed(part("I 6291 12 70338 2\nI 6303 297 70338 1\n"), (40,))
+    newer = parsed(part("I 6291 12 70338 5\n", data="0badf00d"), (50,))
+    stored = imported(ObservedLayer(), [newer, older]).reports[ALICE]
+    assert stored.issues == (40, 50)
+    assert stored.header is not None and stored.header.data == "0badf00d"
+    assert [(row.item, row.count) for row in stored.catches] == [(6291, 5), (6303, 1)]
 
 
 def test_an_upsert_into_no_stored_file_is_the_report_sorted() -> None:
@@ -217,8 +229,9 @@ def test_a_two_part_report_from_two_issues_writes_one_file_with_both_parts(
     assert code == 0, output
     assert (root / REPORTS / f"{ALICE}.toml").read_text(encoding="utf-8") == ALICE_TOML
     assert "{ confirmed = true, itemID = 6308 }" in (root / CATALOGUE).read_text(encoding="utf-8")
-    # DATA-R120: the line for the PR's message, and what to commit with the observed file.
-    assert "Closes #41, #42" in output
+    # DATA-R120: the line for the PR's message, a Closes for each issue (GitHub links only the number right after
+    # the keyword), and what to commit with the observed file.
+    assert "Closes #41, Closes #42" in output
     assert "data/forever/" in output and "regenerated" in output
 
 
@@ -276,7 +289,7 @@ def test_the_changes_list_new_and_confirmed_pairs_contradictions_and_an_item_nee
     assert "no category; every item of the universe that isn't Noise needs one (DATA-R17)" in output
     assert (root / REPORTS / f"{ALICE}.toml").read_text(encoding="utf-8") == ALICE_TOML
     assert (root / REPORTS / f"{BOB}.toml").exists()
-    assert "Closes #41, #42, #43" in output
+    assert "Closes #41, Closes #42, Closes #43" in output
 
 
 def test_a_contradiction_demotes_what_was_confirmed(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
@@ -311,3 +324,26 @@ def test_a_reimport_of_the_same_issues_leaves_the_file_byte_identical(
     assert run(root, capsys, 41, 42)[0] == 0
     assert run(root, capsys, 42, 41)[0] == 0
     assert (root / REPORTS / f"{ALICE}.toml").read_text(encoding="utf-8") == ALICE_TOML
+
+
+def test_an_i_row_without_t_and_m_imports_and_is_no_time_gated_evidence(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    # REP-R20: a Cast with no realm minute (read while the realm clock was secret) gives even a gated item's row
+    # neither t nor m. The parser and the importer take the row as it is (DATA-R116, DATA-R121), and it is neither
+    # inside nor outside a time gate (DATA-R51): Bob's 13759 row in Stranglethorn Vale (33) leaves (13759, night) as
+    # it was, where a row at 22:00 in June confirms it.
+    def body(row: str) -> str:
+        return ISSUES[43].replace("I 30500 33 70338 1", row)
+
+    root = write_tree(tmp_path / "unknown")
+    code, output = run(root, capsys, 43, bodies={43: body("I 13759 33 70338 4")})
+    assert code == 0, output
+    stored = (root / REPORTS / f"{BOB}.toml").read_text(encoding="utf-8")
+    assert stored.endswith("[[i]]\nitem = 13759\narea = 33\nbuild = 70338\ncount = 4\n"), stored
+    assert not [line for line in output.splitlines() if "gate" in line], output
+
+    root = write_tree(tmp_path / "inside")
+    code, output = run(root, capsys, 43, bodies={43: body("I 13759 33 70338 4 t=22:00 m=6")})
+    assert code == 0, output
+    assert [line for line in output.splitlines() if "gate" in line and "13759" in line], output

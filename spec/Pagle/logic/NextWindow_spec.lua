@@ -172,6 +172,20 @@ describe("ns.NextWindow", function()
 			)
 		end)
 
+		it("opens later only by its weekly rule when active now but closed by another field (LOG-R50)", function()
+			-- Wednesday 22:00, active by the calendar outside its Sunday rule, after the 06:00–21:00 time range: the
+			-- calendar opens nothing later, so Sunday's occurrence is next.
+			local daytime = { events = { 301 }, time = { { 360, 1260 } } }
+			assert.are.same({
+				opensAt = realm(2026, 10, 18, 14, 0),
+				closesAt = realm(2026, 10, 18, 16, 0),
+				confirmed = true,
+			}, forecast(daytime, realm(2026, 10, 14, 22, 0), { 301 }, RULES))
+			-- With no weekly rule, nothing opens later (LOG-R50's parenthesis).
+			local noRule = { events = { 999 }, time = { { 360, 1260 } } }
+			assert.is_nil(forecast(noRule, realm(2026, 10, 14, 22, 0), { 999 }, RULES))
+		end)
+
 		it("takes the first occurrence of any of its events (LOG-R48, LOG-R50)", function()
 			local rules = rulesOf({
 				[301] = sundayRule(),
@@ -278,6 +292,21 @@ describe("ns.NextWindow", function()
 			local rules = rulesOf({ [301] = sundayRule(false) })
 			assert.is_false(forecast({ events = { 301 } }, realm(2026, 10, 17, 10, 0), {}, rules).confirmed)
 			assert.is_false(forecast({ events = { 301 } }, realm(2026, 10, 18, 15, 0), { 301 }, rules).confirmed)
+		end)
+
+		it("reads only the weekly rules of the occurrence the opening used", function()
+			-- 301 confirmed on Sundays at 14:00; 302 unconfirmed on Tuesdays at 14:00.
+			local rules = rulesOf({
+				[301] = sundayRule(),
+				[302] = { weekday = 3, start = 840, duration = 120, confirmed = false },
+			})
+			local both = { events = { 301, 302 } }
+			local sunday = forecast(both, realm(2026, 10, 17, 10, 0), {}, rules)
+			assert.are.same({ realm(2026, 10, 18, 14, 0), true }, { sunday.opensAt, sunday.confirmed })
+			local tuesday = forecast(both, realm(2026, 10, 19, 10, 0), {}, rules)
+			assert.are.same({ realm(2026, 10, 20, 14, 0), false }, { tuesday.opensAt, tuesday.confirmed })
+			-- Active by the calendar outside every rule: no rule made the opening.
+			assert.is_true(forecast(both, realm(2026, 10, 19, 10, 0), { 302 }, rules).confirmed)
 		end)
 
 		it("is true for a Module's own spec, with no confirmed field and confirmed weekly rules", function()
