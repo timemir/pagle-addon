@@ -72,7 +72,7 @@ Part of [Core](README.md). Core presents every Announcement (ADR 0007): Modules 
 
 ### Expiry
 
-- **ANN-R45** A moment may carry `expiresAt` (server time) and `pastText`. Expiry is checked when an Announcement is about to show: an expired moment is dropped from it (as headline or stamp), the next-ranked moment becomes the headline, and if none is left, nothing shows. A moment already expired when raised goes straight to the summary. In the summary, an expired moment shows its `pastText` ("Nightfin window opened 21:00–06:00"), or its `title` if it has none. Cozy mode still suppresses it, so a Legend's splash stays Cozy mode's only exception.
+- **ANN-R45** A moment may carry `expiresAt` (server time) and `pastText`. Expiry is checked when an Announcement is about to show: an expired moment is dropped from it (as headline or stamp), the next-ranked moment becomes the headline, and if none is left, nothing shows. A moment already expired when raised goes straight to the summary. In the summary, an expired moment shows its `pastText` ("Nightfin window opened 18:00–12:00"), or its `title` if it has none. Cozy mode still suppresses it, so a Legend's splash stays Cozy mode's only exception.
 
 ### Session summary
 

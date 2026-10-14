@@ -458,6 +458,22 @@ function ns.AddProjectionMethods(registry, projections, iterate)
 	end
 end
 
+--- Binds one of Core's own projections (LOG-R78) to a table in PagleDB: the same machinery as a Module's, with no
+--- Module handle and no moments. Core adds its own at login step 1, before any Module's OnInitialize, so they run
+--- first and the Modules' keep their order. Raises an error at the caller, binding nothing, for a def the contract
+--- refuses.
+---@param projections PagleProjections
+---@param def PagleProjectionDef
+---@param iterate fun(afterSeq: integer?): fun(): PagleRecord? the log's records after a seq (Pagle.IterateCatches)
+---@return PagleProjection
+function ns.AddCoreProjection(projections, def, iterate)
+	local projection, problem = projections:Add(def, iterate)
+	if not projection then
+		error(problem, 2)
+	end
+	return projection
+end
+
 --- The state `apply` builds (LOG-R70): the stored projection, a rebuild's fresh one while it runs, or nil before a
 --- first build starts.
 ---@return table?

@@ -2,32 +2,29 @@
 -- LED-R193, LED-R194) on FakePagle: the Announcements Core would show for each live entry.
 
 local MACKEREL, SMALLFISH, BLACKMOUTH, TROUT = 6303, 6291, 6289, 6308
-local ELWYNN, WESTFALL = 12, 40
-local T0 = 1791731000
+local ELWYNN, WESTFALL, DARKSHORE = 12, 40, 148
+-- Where the live Casts here are fished: a zone the generated catalogue doesn't chart (no catch data), so no Zone
+-- Mastery rank adds its XP and Coins to these numbers (LED-R54). ZoneMastery_spec.lua has the ranks.
+local BLASTED_LANDS = 4
+local T0 = SERVER_TIME - 700
 -- The fake log's logId, which a saved celebrated set names to belong to it (LED-R90).
 local LOG_ID = "0123456789abcdef"
 
 -- The names the fake client's C_Item and C_Map know.
 local ITEM_NAMES = { [MACKEREL] = "Raw Spotted Yellowtail", [SMALLFISH] = "Raw Brilliant Smallfish" }
-local ZONE_NAMES = { [ELWYNN] = "Elwynn Forest", [WESTFALL] = "Westfall", [148] = "Darkshore" }
+local ZONE_NAMES = {
+	[ELWYNN] = "Elwynn Forest",
+	[WESTFALL] = "Westfall",
+	[DARKSHORE] = "Darkshore",
+	[BLASTED_LANDS] = "Blasted Lands",
+}
 
 -- A Cast record for fake.catchLog:Append, by the player's character (char 1).
 ---@param time integer
 ---@param zone integer
 ---@param itemIDs integer[]
 local function cast(time, zone, itemIDs)
-	local items = {}
-	for i, itemID in ipairs(itemIDs) do
-		items[i] = { itemID = itemID, quantity = 1 }
-	end
-	return {
-		kind = "cast",
-		char = 1,
-		time = time,
-		outcome = "caught",
-		conditions = { minute = 494, zone = zone, subzone = 0, events = {}, auras = {} },
-		items = items,
-	}
+	return castRecord({ time = time, zone = zone, items = itemIDs })
 end
 
 -- Loot of one item each, for fake.playCast.
@@ -42,7 +39,7 @@ local function loot(...)
 end
 
 -- A FakePagle with `history` (Cast records) in its log and `saved` as PagleLedgerDB, the Ledger loaded on it,
--- logged in and in the world: every live Cast after this is fished in Darkshore (148), fake.conditions' zone. The
+-- logged in and in the world: every live Cast after this is fished in Blasted Lands, fake.conditions' zone. The
 -- log's logId is LOG_ID.
 ---@param history table[]?
 ---@param saved table?
@@ -51,6 +48,7 @@ end
 ---@return LoadedAddon loaded
 local function session(history, saved, extra)
 	local fake = newFakePagle()
+	fake.conditions.zone = BLASTED_LANDS
 	fake.catchLog.data.logId = LOG_ID
 	fake.catchLog.data.characters[1] = { guid = PLAYER_GUID }
 	for _, record in ipairs(history or {}) do
@@ -69,7 +67,6 @@ local function session(history, saved, extra)
 			return ZONE_NAMES[areaID]
 		end,
 	}
-	fake.globals.BreakUpLargeNumbers = breakUpLargeNumbers
 	for key, value in pairs(extra or {}) do
 		fake.globals[key] = value
 	end
@@ -124,6 +121,18 @@ describe("the Ledger's live moments", function()
 		end
 	)
 
+	it("raise New Species for a /pagle dev catch on a test log, as for a real Catch (#247, LED-R96)", function()
+		local fake = session()
+		fake.catchLog.data.test = true
+		fake.slash("dev on")
+
+		fake.slash("dev catch " .. MACKEREL)
+
+		local announcements = shown(fake)
+		assert.are.equal(1, #announcements)
+		assert.are.same({ "newSpecies New Species / Raw Spotted Yellowtail 10" }, momentsOf(announcements[1]))
+	end)
+
 	it(
 		"raise a New here Nod for a known Species in a new zone, and celebrate the pair and the zone (LED-R90, LED-R97)",
 		function()
@@ -135,7 +144,7 @@ describe("the Ledger's live moments", function()
 			local announcements = shown(fake)
 			assert.are.equal(1, #announcements)
 			assert.are.same(
-				{ "newInZone New here / Raw Spotted Yellowtail in Darkshore nil" },
+				{ "newInZone New here / Raw Spotted Yellowtail in Blasted Lands nil" },
 				momentsOf(announcements[1])
 			)
 			local headline = announcements[1].headline
@@ -144,8 +153,8 @@ describe("the Ledger's live moments", function()
 				{ headline.rung, headline.order, headline.stamp, headline.icon, headline.cast }
 			)
 			local celebrated = loaded.env.PagleLedgerDB.global.celebrated
-			assert.are.same({ ["6303:148"] = true }, celebrated.speciesZones)
-			assert.are.same({ [148] = 0 }, celebrated.zones)
+			assert.are.same({ ["6303:4"] = true }, celebrated.speciesZones)
+			assert.are.same({ [BLASTED_LANDS] = 0 }, celebrated.zones)
 		end
 	)
 
@@ -170,6 +179,26 @@ describe("the Ledger's live moments", function()
 		-- The first is the projection's done's, at login (LED-R89).
 		assert.are.same({ { module = "Ledger", total = 0 }, { module = "Ledger", total = 10 } }, fake.coinReports)
 	end)
+
+	it(
+		"report a Zone Mastery rank's Coins with its Cast's, on its Zone rank moment (LED-R51, LED-R88, LED-R97)",
+		function()
+			local fake, loaded = session()
+			fake.conditions.zone = DARKSHORE -- charted: its first Catch makes the Angler a Visitor there
+
+			fake.playCast("caught", loot(MACKEREL))
+
+			assert.are.same({
+				"newSpecies New Species / Raw Spotted Yellowtail 10",
+				"zoneRank Zone rank: Visitor / Darkshore 2",
+			}, momentsOf(shown(fake)[1]))
+			assert.are.same(
+				{ { module = "Ledger", total = 0 }, { module = "Ledger", total = 10 + 2 } },
+				fake.coinReports
+			)
+			assert.are.equal(1, loaded.ns.projection:GetState().zones[DARKSHORE].rank)
+		end
+	)
 
 	it("report the Coins total after each live entry that changes it (LED-R89, SHOP-R2)", function()
 		local fake, loaded = session()
@@ -213,12 +242,12 @@ describe("the Ledger's live moments", function()
 		end
 	)
 
-	it("set the summary line to the shown level after a live entry changes it (LED-R95)", function()
+	it("set the summary line to the shown level and completion after a live entry changes them (LED-R95)", function()
 		local fake = session()
 
 		fake.playCast("caught", loot(unpack(FOUR)))
 
-		assert.are.same({ ledger = "Ledger: Angler Level 3" }, fake.global.summary.lines.Ledger.lines)
+		assert.are.same({ ledger = "Ledger: Angler Level 3 · 2% complete" }, fake.global.summary.lines.Ledger.lines)
 	end)
 
 	it("raise Skill Milestone with no cast for a Skill Reading past 75 (LED-R96, LED-R97)", function()
@@ -272,7 +301,10 @@ describe("the Ledger's live moments", function()
 				kinds[moment.kind] = true
 			end
 			assert.is_nil(kinds.levelUp)
-			assert.are.same({ ledger = "Ledger: Angler Level 9" }, fake.global.summary.lines.Ledger.lines)
+			assert.are.same(
+				{ ledger = "Ledger: Angler Level 9 · 2% complete" },
+				fake.global.summary.lines.Ledger.lines
+			)
 			local state = loaded.ns.projection:GetState()
 			assert.are.equal(3, loaded.ns.Level(state))
 			assert.are.equal(9, loaded.ns.ShownLevel(state, loaded.env.PagleLedgerDB.global.celebrated))

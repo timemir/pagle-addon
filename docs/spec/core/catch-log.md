@@ -1,6 +1,6 @@
 # Core: Catch log, conditions, Sessions and projections
 
-> Status: Done · Milestones: M1 (recording, conditions snapshot, catalogue lookup), M2 (projections, Sessions, catalogue v1), M3 (the Field report projection), M4 (Simulated Size, the length unit, Prestige and purchase entries, the wallet projection), M5 (`NextWindow`), M7 (Module records) · Sources: [Define the Core data model](https://github.com/timemir/wow-fish/issues/10#issuecomment-6112707372), [Define the Core/Module contract](https://github.com/timemir/wow-fish/issues/9#issuecomment-6112445901), [Beta probe: which fishing signals can the Forever client see?](https://github.com/timemir/wow-fish/issues/7#issuecomment-6110508010), [How can Pagle identify items and places independent of client language?](https://github.com/timemir/wow-fish/issues/20), [Design Hunts and the Now/Soon board](https://github.com/timemir/wow-fish/issues/14#issuecomment-6113353568), [Design Stats: session stats, honest odds and dry spells](https://github.com/timemir/wow-fish/issues/21#issuecomment-6113657288), [Define the content data pipeline](https://github.com/timemir/wow-fish/issues/19#issuecomment-6113646946), [Design the /pagle report format and issue form](https://github.com/timemir/wow-fish/issues/26#issuecomment-6124884698), [Design the Tackle Board](https://github.com/timemir/wow-fish/issues/25#issuecomment-6124911363), [Design the Pagle currency and shop](https://github.com/timemir/wow-fish/issues/28#issuecomment-6125331898), [Cut the MVP slice and roadmap](https://github.com/timemir/wow-fish/issues/18#issuecomment-6113973068), [Decide how the spec is assembled](https://github.com/timemir/wow-fish/issues/31#issuecomment-6128960652), [Design the Simulated Size bands](https://github.com/timemir/wow-fish/issues/33#issuecomment-6129722545); ADR 0001, 0003, 0004, 0008, 0009, 0010
+> Status: Done · Milestones: M1 (recording, conditions snapshot, catalogue lookup), M2 (projections, Sessions, catalogue v1), M3 (the Field report projection, `NextWindow`), M4 (Simulated Size, the length unit, Prestige and purchase entries, the wallet projection), M7 (Module records) · Sources: [Define the Core data model](https://github.com/timemir/wow-fish/issues/10#issuecomment-6112707372), [Define the Core/Module contract](https://github.com/timemir/wow-fish/issues/9#issuecomment-6112445901), [Beta probe: which fishing signals can the Forever client see?](https://github.com/timemir/wow-fish/issues/7#issuecomment-6110508010), [How can Pagle identify items and places independent of client language?](https://github.com/timemir/wow-fish/issues/20), [Design Hunts and the Now/Soon board](https://github.com/timemir/wow-fish/issues/14#issuecomment-6113353568), [Design Stats: session stats, honest odds and dry spells](https://github.com/timemir/wow-fish/issues/21#issuecomment-6113657288), [Define the content data pipeline](https://github.com/timemir/wow-fish/issues/19#issuecomment-6113646946), [Design the /pagle report format and issue form](https://github.com/timemir/wow-fish/issues/26#issuecomment-6124884698), [Design the Tackle Board](https://github.com/timemir/wow-fish/issues/25#issuecomment-6124911363), [Design the Pagle currency and shop](https://github.com/timemir/wow-fish/issues/28#issuecomment-6125331898), [Cut the MVP slice and roadmap](https://github.com/timemir/wow-fish/issues/18#issuecomment-6113973068), [Decide how the spec is assembled](https://github.com/timemir/wow-fish/issues/31#issuecomment-6128960652), [Design the Simulated Size bands](https://github.com/timemir/wow-fish/issues/33#issuecomment-6129722545); ADR 0001, 0003, 0004, 0008, 0009, 0010
 
 Part of [Core](README.md). This file covers what Core observes, how it is stored, and how Modules read it back.
 
@@ -154,14 +154,14 @@ Part of [Core](README.md). This file covers what Core observes, how it is stored
 
 ### Sessions
 
-- **LOG-R60** A **Session** is a run of the Angler's Casts (caught and got away) in which no two consecutive Casts are 900 seconds or more apart, by entry `time`. Character switches, zone changes, logouts and reloads don't split it; only the gap does.
-- **LOG-R61** Sessions are cut from the log by a pure function in Core `logic/`; they are never stored in `PagleLog`. `Pagle.SESSION_RULES_VERSION` changes whenever the rule changes, and Modules that store Sessions fold it into their rules version.
-- **LOG-R62** Live: `SessionStarted(session)` fires right after the entry of a Cast that starts a new Session is appended (LOG-R9); its payload already counts that Cast. `SessionEnded(session)` fires when 900 seconds pass with no Cast while logged in. A Session's `endTime` is its last Cast's `time`.
-- **LOG-R63** At login, if the latest Session's last Cast is 900 seconds or more ago and its ID isn't `PagleDB.global.lastEndedSession`, Core fires `SessionEnded(session)` once, with `whileAway = true`, as soon as no projection is updating (catching up or rebuilding, LOG-R74), or earlier if a new Cast is recorded first (LOG-R9), so a `SessionEnded` always comes before the next `SessionStarted`. `lastEndedSession` is set whenever `SessionEnded` fires.
-- **LOG-R64** `Pagle.GetSession()` returns the current Session while one is open (last Cast under 900 seconds ago), else `nil`. A Session's `catches` counts Catches (items), not quantities; `zones` lists zone areaIDs (not subzones), without `0`.
+- **LOG-R60** A **Session** is a run of the Angler's Casts (caught and got away) in which no two consecutive Casts are 300 seconds (5 minutes) or more apart, by entry `time`. Character switches, zone changes, logouts and reloads don't split it; only the gap does.
+- **LOG-R61** Sessions are cut from the log by a pure function in Core `logic/`; they are never stored in `PagleLog`. `Pagle.SESSION_RULES_VERSION` changes whenever the rule changes (Tunables; it went from 1 to 2 when the gap went from 900 s to 300 s), and Modules that store Sessions fold it into their rules version.
+- **LOG-R62** Live: `SessionStarted(session)` fires right after the entry of a Cast that starts a new Session is appended (LOG-R9); its payload already counts that Cast. `SessionEnded(session)` fires when 300 seconds pass with no Cast while logged in. A Session's `endTime` is its last Cast's `time`.
+- **LOG-R63** At login, if the latest Session's last Cast is 300 seconds or more ago and its ID isn't `PagleDB.global.lastEndedSession`, Core fires `SessionEnded(session)` once, with `whileAway = true`, as soon as no projection is updating (catching up or rebuilding, LOG-R74), or earlier if a new Cast is recorded first (LOG-R9), so a `SessionEnded` always comes before the next `SessionStarted`. `lastEndedSession` is set whenever `SessionEnded` fires.
+- **LOG-R64** `Pagle.GetSession()` returns the current Session while one is open (last Cast under 300 seconds ago), else `nil`. A Session's `catches` counts Catches (items), not quantities; `zones` lists zone areaIDs (not subzones), without `0`.
 - **LOG-R98** Every Cast and Skill Reading record Core hands out (from `Pagle.IterateCatches`, `M:IterateCatches`, `Catch`, `CastEnded` and `SkillChanged`) carries `session`, so Modules never cut Sessions themselves:
   - a Cast: the ID of the Session it belongs to (LOG-R60)
-  - a Skill Reading: the ID of the Session open when it was appended, meaning the latest earlier Cast is less than 900 seconds before it; otherwise `nil`. A Skill Reading appended before a new Session's first Cast belongs to no Session.
+  - a Skill Reading: the ID of the Session open when it was appended, meaning the latest earlier Cast is less than 300 seconds before it; otherwise `nil`. A Skill Reading appended before a new Session's first Cast belongs to no Session.
 
   The tag is computed by the same `logic/` function that cuts Sessions and is never stored in the entry. When an iteration starts after `seq` 0, Core looks back from `afterSeq` to the Casts that open the Session in progress, so the tags are the same whether the log is read whole or in parts.
 
@@ -232,8 +232,11 @@ PagleLog = {
       firstSeen = 1791731680, lastSeen = 1791735000 },
   },
   entries = { "C1|1|1791731747|0|c|494|1439|1|148|453|86|25|263|||6358x1", ... },
+  test = true,           -- only on a test log (see below); absent on a player's log
 }
 ```
+
+`test = true` marks a **test log**: one the test-log tooling wrote for the dev, never one a player fished. Only on a test log does `/pagle dev catch` append synthetic Casts ([in-game verification › Dev commands](../../agents/in-game-verification.md#dev-commands)). A test log is never a release concern: 1.0's freeze rules (LOG-R17) don't apply to it. A format change (LOG-R18) starts a new log without the flag.
 
 ### Entry formats
 
@@ -260,6 +263,7 @@ The ADR 0003 and ADR 0008 notes sketch `B1`, `U1` and `A1` without the shared he
 | `global.lastBuild` | `{ logId, build }`, the last logged build number (LOG-R36) |
 | `global.lastEndedSession` | the ID of the last Session `SessionEnded` fired for (LOG-R63) |
 | `global.decodeErrors` | count of entries the codec couldn't decode (LOG-R16) |
+| `global.dev` | boolean, the `/pagle dev` switch (#247); default `false`. Never shown to players. |
 | `global.diagnostics` | ring buffer of up to 500 entries (LOG-R81) |
 | `global.summary`, `global.pending`, `global.cards`, `global.writeUp` | Announcement data ([announcements.md](announcements.md#data)) |
 | `global.coins`, `global.goods` | the wallet ([wallet-and-shop.md](wallet-and-shop.md#data)) |
@@ -411,7 +415,8 @@ Both sit on the Settings root, in its Saving and Units sections (CORE-R40, SET-R
 |---|---|---|
 | Grace after the channel stops | 2 s | LOG-R6, LOG-R7 |
 | Module record payload limit | 200 bytes | LOG-R40 |
-| Session gap | 900 s | LOG-R60–R64, LOG-R98 |
+| Session gap | 300 s | LOG-R60–R64, LOG-R98 |
+| `Pagle.SESSION_RULES_VERSION` | 2 | LOG-R61 |
 | Synchronous catch-up limit | 500 entries | LOG-R71 |
 | Catch-up and rebuild time budget per frame | 4 ms | LOG-R71, LOG-R72 |
 | Runtime area index range | ids 1–40,000 | LOG-R23 |

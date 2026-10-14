@@ -14,12 +14,16 @@
 --- them. loadAddon lists each addon it loads, with its TOC fields as metadata. One not listed is missing. Specs add
 --- to it.
 ---@field loot FakeLoot The loot window, as the loot API reads it.
+---@field areaNames table<integer, string> Each area's name, as `C_Map.GetAreaInfo` returns it. Default none.
+---@field mapNames table<integer, string> Each uiMap's name, for `C_Map.GetMapInfo`. Default none.
 ---@field sounds string[] Each PlaySoundFile call, in order, as "<path> <channel>".
 ---@field errors string[] Each error the default geterrorhandler() got, in order. A spec that gets one must read
 --- this list (assert it), or it fails at its end (spec/support/errors.lua).
 ---@field addError fun(err: any) The default geterrorhandler(): adds the error to `errors`.
 ---@field templates table<string, { mixin: string? }> The virtual frame templates the loaded addons' XML files define,
 --- by name, with the global mixin each names: loadAddon reads them from each XML file a TOC lists.
+---@field pressEscape fun() Presses Esc: the focused edit box's OnEscapePressed, or with none focused,
+--- CloseSpecialWindows (every shown frame named in UISpecialFrames hides, and its OnHide runs).
 
 --- The loot window the loot API reads: whether it's fishing loot (`IsFishingLoot()`) and its slots, in order.
 --- Specs set both before firing LOOT_READY.
@@ -49,6 +53,8 @@ local function newClient()
 		loot = { fishing = false, slots = {} },
 		sounds = {},
 		templates = {},
+		areaNames = {},
+		mapNames = {},
 	}
 	client.addError = watchErrors(client, "errors")
 
@@ -81,6 +87,18 @@ local function clientStubs(client)
 				stubs[name] = frame
 			end
 			return frame
+		end,
+		-- A font object, keeping its name and what SetFont gave it (`font`: file, size, flags).
+		CreateFont = function(name)
+			local font = { name = name }
+			function font:SetFont(file, size, flags)
+				self.font = { file, size, flags }
+				return true
+			end
+			font.SetTextColor = function() end
+			font.SetShadowOffset = function() end
+			font.SetShadowColor = function() end
+			return font
 		end,
 		-- The frame names Esc hides (CloseSpecialWindows), as FrameXML starts it.
 		UISpecialFrames = { "ItemRefTooltip", "ColorPickerFrame" },
@@ -139,10 +157,16 @@ local function clientStubs(client)
 			AddOnRestrictionState = { Inactive = 0, Activating = 1, Active = 2 },
 			AddOnEnableState = { None = 0, Some = 1, All = 2 },
 		},
-		-- No area has a name, so the area index Core builds at PLAYER_LOGIN is empty.
+		-- Areas and maps have the names in client.areaNames and client.mapNames: none by default, so the area index
+		-- Core builds at PLAYER_LOGIN is empty.
 		C_Map = {
-			GetAreaInfo = function()
-				return nil
+			GetAreaInfo = function(areaID)
+				return client.areaNames[areaID]
+			end,
+			-- UiMapDetails, with only the name (the Ledger's continent tabs, LED-R126); nil for a map with no name.
+			GetMapInfo = function(uiMapID)
+				local name = client.mapNames[uiMapID]
+				return name and { uiMapID = uiMapID, name = name } or nil
 			end,
 			GetBestMapForUnit = function()
 				return nil
@@ -275,6 +299,28 @@ local function clientStubs(client)
 			return "US"
 		end,
 	}
+
+	-- Presses Esc as the client does: the focused edit box takes it (OnEscapePressed); with none focused,
+	-- CloseSpecialWindows hides every shown frame named in UISpecialFrames, running its OnHide.
+	function client.pressEscape()
+		local focus = client.focus
+		local onEscape = focus and focus.scripts.OnEscapePressed
+		if onEscape then
+			onEscape(focus)
+			return
+		end
+		for _, name in ipairs(stubs.UISpecialFrames) do
+			for _, frame in ipairs(client.frames) do
+				if frame.name == name and frame.shown then
+					frame:Hide()
+					local onHide = frame.scripts.OnHide
+					if onHide then
+						onHide(frame)
+					end
+				end
+			end
+		end
+	end
 	stubs.UIErrorsFrame = widgets.newWidget("MessageFrame", stubs.UIParent)
 	return stubs
 end

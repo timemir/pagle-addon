@@ -4,8 +4,8 @@ local ns = select(2, ...)
 -- /pagle as data (CORE-R60–R62): which subcommand a line names, the Modules' subcommands and the help list. Pure
 -- logic, everything passed in (CORE-R7); adapter/Slash.lua registers the command and acts on what this resolves.
 
---- Core's own subcommands, reserved for it (CORE-R61).
-ns.SLASH_RESERVED = { "help", "settings", "shop", "report" }
+--- Core's own subcommands, reserved for it (CORE-R61), and its hidden `dev` (#247), which help never lists.
+ns.SLASH_RESERVED = { "help", "settings", "shop", "report", "dev" }
 
 --- Splits what follows `/pagle` into its subcommand, lowercased, and the rest of the line, trimmed (CORE-R62).
 ---@param line string
@@ -84,17 +84,47 @@ function Commands:Add(def)
 	return problems
 end
 
---- What `/pagle <line>` does (CORE-R60–R62): `"settings"` with no argument or `settings`; `"module"` with the
---- Module subcommand it names and the rest of the line, trimmed; otherwise `"help"`. That covers `help`, an unknown
---- name, and `shop` and `report` until their surfaces exist (M4, M3).
+--- Core's own subcommands (CORE-R61), by the word typed after /pagle: each opens its surface, or prints that
+--- surface's chat line instead while restricted (CORE-R33). One table, for /pagle, the compartment menu and FakePagle;
+--- the Curio Shop adds `shop` (M4).
+---@class PagleCoreSubcommands
+---@field settings fun() opens the Settings root (Pagle.OpenSettings); also /pagle on its own
+---@field report fun()   opens the Field report box (Pagle.OpenFieldReport)
+---@field dev fun(args: string) the hidden dev commands (ns.dev, #247), which /pagle help never lists
+
+--- Core's own subcommands over `Pagle`'s functions, each looked up when it runs.
+---@param Pagle Pagle
+---@return PagleCoreSubcommands
+function ns.CoreSubcommands(Pagle)
+	return {
+		settings = function()
+			Pagle.OpenSettings()
+		end,
+		report = function()
+			Pagle.OpenFieldReport()
+		end,
+		dev = function(args)
+			ns.dev:Run(args)
+		end,
+	}
+end
+
+--- What `/pagle <line>` does (CORE-R60–R62): `"core"` and the name of one of Core's own subcommands (`settings` too
+--- with no subcommand); `"module"` with the Module subcommand it names and the rest of the line, trimmed; otherwise
+--- `"help"`. That covers `help`, an unknown name, and `shop` until the Curio Shop exists (M4). A core subcommand gets
+--- the rest of the line too: only `dev` (#247) reads it.
 ---@param line string what follows /pagle
----@return "settings"|"module"|"help" action
----@return PagleSlashCommand? command
----@return string? args
-function Commands:Resolve(line)
+---@param core PagleCoreSubcommands
+---@return "core"|"module"|"help" action
+---@return string|PagleSlashCommand|nil command the core subcommand's name, or the Module's subcommand
+---@return string? args the rest of the line, trimmed
+function Commands:Resolve(line, core)
 	local name, args = ns.ParseSlash(line)
-	if name == "" or name == "settings" then
-		return "settings"
+	if name == "" then
+		name = "settings"
+	end
+	if core[name] then
+		return "core", name, args
 	end
 	local command = self.byName[name]
 	if command then
@@ -129,17 +159,19 @@ function Commands:AddModules(modules, report)
 	end
 end
 
---- Runs `/pagle <line>` (CORE-R60–R62): opens Settings, runs a Module's subcommand through `call`, or prints the
+--- Runs `/pagle <line>` (CORE-R60–R62): one of Core's own subcommands, a Module's subcommand through `call`, or the
 --- help list.
 ---@param line string what follows /pagle
----@param openSettings fun() opens the Settings root (Pagle.OpenSettings, which prints CORE-R33's line instead while restricted)
+---@param core PagleCoreSubcommands
 ---@param call fun(fn: function, ...: any) calls a Module's function; an error is reported, not raised (securecallfunction)
 ---@param print fun(line: string) prints a chat line
-function Commands:Run(line, openSettings, call, print)
-	local action, command, args = self:Resolve(line)
-	if action == "settings" then
-		openSettings()
-	elseif command then
+function Commands:Run(line, core, call, print)
+	local action, command, args = self:Resolve(line, core)
+	if action == "core" then
+		---@cast command string
+		core[command](args --[[@as string]])
+	elseif action == "module" then
+		---@cast command PagleSlashCommand
 		call(command.fn, args)
 	else
 		for _, helpLine in ipairs(self:HelpLines()) do

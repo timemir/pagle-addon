@@ -13,9 +13,10 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from pagle_data.db2 import Area, Db2Layer, Item, Row, parse_areas, parse_table, read_db2
-from pagle_data.db2_update import Fetch, download, download_tables, fail, repo_universe
-from pagle_data.errors import At, Problems
+from pagle_data.db2_update import Fetch, download, download_tables, repo_universe
+from pagle_data.errors import At, Problems, fail
 from pagle_data.files import write_atomic
+from pagle_data.markdown import md_text
 
 PROG = "db2-watch"
 OPENED_NOTHING = "opened nothing"
@@ -108,11 +109,6 @@ def issue_title(build: Build) -> str:
     return f"Forever build {build.name}: DB2 changes"
 
 
-def _md(text: str) -> str:
-    """text with the characters Markdown would act on escaped, so a DB2 name shows as written."""
-    return re.sub(r"([\\`*_\[\]<>|~])", r"\\\1", text)
-
-
 def item_changes(
     recorded: dict[int, Item],
     universe: frozenset[int],
@@ -128,9 +124,9 @@ def item_changes(
         for item_id in universe
         if item_id in new_names and item_id in new_classes
     }
-    joining = [f"{item_id} {_md(joined[item_id][2])}" for item_id in sorted(joined) if item_id not in recorded]
+    joining = [f"{item_id} {md_text(joined[item_id][2])}" for item_id in sorted(joined) if item_id not in recorded]
     keyword = [
-        f"{item_id} {_md(new_names[item_id].name)}"
+        f"{item_id} {md_text(new_names[item_id].name)}"
         for item_id in sorted(new_names)
         if item_id not in old_names and item_id not in joined and has_keyword(new_names[item_id].name)
     ]
@@ -140,14 +136,14 @@ def item_changes(
         class_id, quality, name = joined[item_id]
         old = recorded[item_id]
         if name != old.name:
-            renamed.append(f"{item_id} {_md(old.name)} → {_md(name)}")
+            renamed.append(f"{item_id} {md_text(old.name)} → {md_text(name)}")
         moves = []
         if class_id != old.class_id:
             moves.append(f"class {old.class_id} → {class_id}")
         if quality != old.quality:
             moves.append(f"quality {old.quality} → {quality}")
         if moves:
-            changed.append(f"{item_id} {_md(name)}: {', '.join(moves)}")
+            changed.append(f"{item_id} {md_text(name)}: {', '.join(moves)}")
     return (
         "Items",
         [
@@ -168,24 +164,24 @@ def area_changes(recorded: dict[int, Area], new: dict[int, Area]) -> Section:
         area = new[area_id]
         old = recorded.get(area_id)
         if old is None:
-            added.append(f"{area_id} {_md(area.name)} (parent {area.parent}, continent {area.continent})")
+            added.append(f"{area_id} {md_text(area.name)} (parent {area.parent}, continent {area.continent})")
             continue
         if area.name != old.name:
-            renamed.append(f"{area_id} {_md(old.name)} → {_md(area.name)}")
+            renamed.append(f"{area_id} {md_text(old.name)} → {md_text(area.name)}")
         moves = []
         if area.parent != old.parent:
             moves.append(f"parent {old.parent} → {area.parent}")
         if area.continent != old.continent:
             moves.append(f"continent {old.continent} → {area.continent}")
         if moves:
-            moved.append(f"{area_id} {_md(area.name)}: {', '.join(moves)}")
+            moved.append(f"{area_id} {md_text(area.name)}: {', '.join(moves)}")
     return "Areas", [("New:", added), ("Renamed:", renamed), ("Moved:", moved)]
 
 
 def new_with_keyword(old: dict[int, Row], new: dict[int, Row]) -> list[str]:
     """The rows new has and old hasn't whose enUS name holds a watch keyword (DATA-R129)."""
     added = sorted(new.keys() - old.keys())
-    return [f"{row_id} {_md(new[row_id].name)}" for row_id in added if has_keyword(new[row_id].name)]
+    return [f"{row_id} {md_text(new[row_id].name)}" for row_id in added if has_keyword(new[row_id].name)]
 
 
 def issue_body(build: Build, recorded: Build, sections: Sequence[Section], limit: int = BODY_LIMIT) -> str:

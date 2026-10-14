@@ -6,9 +6,10 @@ from pathlib import Path
 
 import pytest
 
+from cli_fixture import run
 from observed_fixture import i_row, report
 from pools_fixture import POOLS
-from test_catch_lists import CATALOGUE, ITEMS, area_record, run, write_tree
+from test_catch_lists import CATALOGUE, ITEMS, area_record, write_tree
 from test_confirmed import ALICE
 
 # 30002 is in no layer but a report: an item the client saw that Pagle doesn't know.
@@ -85,10 +86,14 @@ def test_a_lore_only_change_leaves_the_catalogue_and_its_fingerprint_alone(
     before = (root / CATALOGUE).read_bytes()
     lore = root / "data" / "lore"
     lore.mkdir(parents=True)
-    (lore / "core.toml").write_text('[enUS]\n"family.1.name" = "Groupers"\n', encoding="utf-8")
-    code, output = run(root, capsys, "--check")
-    assert code == 0, output
-    (lore / "core.toml").write_text('[enUS]\n"family.1.name" = "Big groupers"\n', encoding="utf-8")
+    (lore / "ledger.toml").write_text('[family.1]\nname = "Groupers"\n', encoding="utf-8")
     code, output = run(root, capsys)
     assert code == 0, output
     assert (root / CATALOGUE).read_bytes() == before
+    lore_lua = root / "addons" / "Pagle_Ledger" / "data" / "Lore.lua"
+    first = lore_lua.read_bytes()
+    (lore / "ledger.toml").write_text('[family.1]\nname = "Big groupers"\n', encoding="utf-8")
+    code, output = run(root, capsys)
+    assert code == 0, output
+    assert (root / CATALOGUE).read_bytes() == before
+    assert lore_lua.read_bytes() != first  # #128: the text went to the Ledger's Lore.lua (DATA-R104) instead

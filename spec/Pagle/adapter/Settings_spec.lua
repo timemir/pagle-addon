@@ -94,12 +94,16 @@ describe("The Settings root with no Module On", function()
 
 			assert.are.equal("Recording your Catches. Enable a Module to see them.", texts[1])
 			assert.are.equal("Modules", texts[2])
-			-- The note, then Saving's header and row (spec/Pagle/adapter/ReloadReminder_spec.lua).
+			-- The note, the Field report section (spec/Pagle/adapter/FieldReportBox_spec.lua), then Saving's header
+			-- and row (spec/Pagle/adapter/ReloadReminder_spec.lua).
 			assert.are.same({
 				"Turn Modules on or off in the AddOns list.",
+				"Help chart the waters",
+				"Field report",
+				"Open Field report",
 				"Saving",
 				"Remind me to /reload when Casts are unsaved",
-			}, { texts[#texts - 2], texts[#texts - 1], texts[#texts] })
+			}, { unpack(texts, #texts - 5) })
 			for _, name in ipairs({ "Ledger", "Hunts", "Stats", "Tackle Board", "QoL" }) do
 				assert.is_true(contains(texts, name))
 			end

@@ -94,10 +94,12 @@ local readToc = dofile("spec/support/toc.lua")
 ---@param name string The addon's folder under addons/, which is also its TOC's name.
 ---@param globals table<string, any>? Globals the client defines for this load, e.g. WOW_PROJECT_ID. They replace
 --- the fake client's stubs of the same name, e.g. InCombatLockdown for a load in combat.
----@param options { holdAddonLoaded: boolean?, dependencyLibsOnly: boolean? }? holdAddonLoaded: don't fire
---- ADDON_LOADED(name); the spec fires it with loaded.client.fire, e.g. after adding a listener that must be there
---- before it. dependencyLibsOnly: load only the libs/ files of each dependency, for a stand-in that provides the
---- rest (FakePagle's fake.load).
+---@param options { holdAddonLoaded: boolean?, dependencyLibsOnly: boolean?, replace: table<string, string>? }?
+--- holdAddonLoaded: don't fire ADDON_LOADED(name); the spec fires it with loaded.client.fire, e.g. after adding a
+--- listener that must be there before it. dependencyLibsOnly: load only the libs/ files of each dependency, for a
+--- stand-in that provides the rest (FakePagle's fake.load). replace: files of the named addon to load from another
+--- path, in their TOC place, by the path the TOC lists (`{ ["data/Lore.lua"] = "spec/…/Lore.lua" }`), e.g. a
+--- generated fixture in place of the committed generated file.
 ---@return LoadedAddon
 function loadAddon(name, globals, options)
 	options = options or {}
@@ -164,7 +166,7 @@ function loadAddon(name, globals, options)
 				xml:close()
 			elseif not (isDependency and options.dependencyLibsOnly) or file:match("^libs/") then
 				---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no loadfile
-				local chunk, loadErr = loadfile(dir .. file)
+				local chunk, loadErr = loadfile((not isDependency and (options.replace or {})[file]) or dir .. file)
 				if not chunk then
 					return ("%s lists %s, which doesn't load: %s"):format(toc, file, loadErr)
 				end

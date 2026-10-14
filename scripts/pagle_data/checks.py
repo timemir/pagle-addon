@@ -11,6 +11,9 @@ CHECKS = "data/checks.toml"
 
 # The lore IDs (DATA-R100), one per addon with lore.
 LORE_IDS = ("core", "ledger", "hunts", "stats", "tackleboard")
+# The lore checks built so far (DATA-R107): the Ledger's from M3; Core's comes in M4, Hunts' in M5, Stats' in M6 and
+# the Tackle Board's in M7.
+BUILT_LORE_CHECKS = ("ledger",)
 
 
 @dataclass(frozen=True)
@@ -25,8 +28,8 @@ class Checks:
 def read_checks(root: Path, problems: Problems) -> Checks:
     """root/data/checks.toml. Each problem found goes into problems; the switches read are returned either way.
 
-    No lore check is built yet (M3 builds the Ledger's, DATA-R107), so a lore ID switched on is a problem rather than
-    a check that silently passes."""
+    A lore ID whose check isn't built yet (BUILT_LORE_CHECKS) switched on is a problem rather than a check that
+    silently passes."""
     document = read_toml(root, CHECKS, problems)
     if document is None:
         return Checks()
@@ -52,7 +55,8 @@ def read_checks(root: Path, problems: Problems) -> Checks:
                 problems.add(item_at, f"expected a lore ID ({', '.join(LORE_IDS)}), got {shown}")
             elif item in lore:
                 problems.add(item_at, f"'{item}' is listed twice")
-            else:
+            elif item not in BUILT_LORE_CHECKS:
                 problems.add(item_at, f"the {item} lore check isn't built yet (DATA-R107); leave it off")
+            else:
                 lore.append(item)
     return Checks(typical_length, tuple(lore))

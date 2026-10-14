@@ -250,7 +250,7 @@ describe("Clam names", function()
 		local loaded = newFakePagle().load("Pagle_QoL")
 
 		local asked = {}
-		for _, itemID in ipairs(loaded.client.itemDataRequests) do
+		for _, itemID in ipairs(loaded.client.itemRequests) do
 			asked[itemID] = true
 		end
 		assert.is_true(asked[SMALL_BARNACLED] and asked[THICK_SHELLED] and asked[BIG_MOUTH])

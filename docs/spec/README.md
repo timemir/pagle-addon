@@ -11,7 +11,7 @@ This directory is Pagle's product spec. It describes the current state only, and
 | File | Prefix | Covers | Milestones |
 |---|---|---|---|
 | [core/README.md](core/README.md) | `CORE` | Packaging and load, attaching a Module, the `Pagle` API at a glance, the event bus, restriction state, the Settings root and topic pages, the compartment menu, `/pagle`, the tracker dock | M0–M5 |
-| [core/catch-log.md](core/catch-log.md) | `LOG` | Observing fishing, the Catch log and its entry formats, characters and the Angler, Skill Readings, conditions and `NextWindow`, the content catalogue at runtime, Sessions, Simulated Size, projections, the diagnostics buffer | M1, M2, M3, M4, M5, M7 |
+| [core/catch-log.md](core/catch-log.md) | `LOG` | Observing fishing, the Catch log and its entry formats, characters and the Angler, Skill Readings, conditions and `NextWindow`, the content catalogue at runtime, Sessions, Simulated Size, projections, the diagnostics buffer | M1, M2, M3, M4, M7 |
 | [core/announcements.md](core/announcements.md) | `ANN` | Moments and the rung ladder, one Announcement per Cast, the display lanes, the Interruption budget, combat hold, Cozy mode, the Session summary, the Write-up, sounds and toast styles | M2, M4 |
 | [core/wallet-and-shop.md](core/wallet-and-shop.md) | `SHOP` | Pagle Coins (earning, spending, balance), goods and slots, owning and equipping, the Curio Shop window, the Look and Feel page | M2, M4 |
 | [core/field-report.md](core/field-report.md) | `REP` | The Field report: what goes in, the `PAGLE-REPORT 1` format, privacy, the report box | M3 |
@@ -68,7 +68,7 @@ A Module talks to Core and nothing else (ADR 0001): it never calls, reads or lis
 
 **Everything a Module shows is derived from the log**, read through the content catalogue. Each Module keeps a **stored projection** in its own SavedVariable (ADR 0004): Core feeds it every entry once, as `"live"` while the Module runs, as `"replay"` when it catches up on entries recorded while it was off, or as `"rebuild"` when the content fingerprint or its rules version changed (LOG-R70–R77). Only live entries may raise moments. A Module's **celebrated set**, kept outside the projection, remembers what was already shown, so a rebuild never shows anything twice or takes anything away. History a Module first builds from, or catches up on, becomes one **Write-up** card instead of pop-ups (ANN-R60–R63).
 
-Sessions (runs of Casts with no 15-minute gap) are cut by Core from the log and tagged on every record, never stored and never cut by a Module (LOG-R60–R64, LOG-R98). Simulated Sizes are computed by Core from the Catch ID alone, with frozen bands (LOG-R65–R69, ADR 0010).
+Sessions (runs of Casts with no 5-minute gap) are cut by Core from the log and tagged on every record, never stored and never cut by a Module (LOG-R60–R64, LOG-R98). Simulated Sizes are computed by Core from the Catch ID alone, with frozen bands (LOG-R65–R69, ADR 0010).
 
 ### Feedback, Coins and looks
 

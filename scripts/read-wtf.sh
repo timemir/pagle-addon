@@ -3,7 +3,7 @@
 # from a WTF account folder (docs/agents/in-game-verification.md).
 #
 #   scripts/read-wtf.sh <WTF/Account/<ACCT> folder> [--character <realm>/<Name-Surname>] [--cvar <name>]...
-#       [--addon <name>]... [--expect-casts N] [--since T]
+#       [--addon <name>]... [--catalogue <Catalogue.lua>] [--expect-casts N] [--since T]
 #
 # Run it in WSL. Exits as the Lua script does: 0 read (and, with --expect-casts, passed), 1 an --expect-casts
 # check failed, 2 a usage error.

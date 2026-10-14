@@ -321,10 +321,13 @@ describe("FakePagle", function()
 				end
 				fake.menu()
 
-				assert.are.same(
-					{ "Hunts", "Input: Both", "Curio Shop  0 |TInterface\\MoneyFrame\\UI-GoldIcon:0|t", "Settings" },
-					labels
-				)
+				assert.are.same({
+					"Hunts",
+					"Input: Both",
+					"Curio Shop  0 |TInterface\\MoneyFrame\\UI-GoldIcon:0|t",
+					"Help chart the waters",
+					"Settings",
+				}, labels)
 				assert.are.equal(2, reads)
 			end
 		)
@@ -354,10 +357,12 @@ describe("FakePagle", function()
 					labels[i] = entry.label
 				end
 
-				assert.are.same(
-					{ "Input: Both", "Curio Shop  0 |TInterface\\MoneyFrame\\UI-GoldIcon:0|t", "Settings" },
-					labels
-				)
+				assert.are.same({
+					"Input: Both",
+					"Curio Shop  0 |TInterface\\MoneyFrame\\UI-GoldIcon:0|t",
+					"Help chart the waters",
+					"Settings",
+				}, labels)
 				assert.are.equal(1, #fake.reported)
 				assert.matches("no input yet", fake.reported[1], 1, true)
 			end
@@ -609,6 +614,81 @@ describe("FakePagle", function()
 		end)
 	end)
 
+	describe("/pagle dev", function()
+		it("ends the open Session now, as Core does, once dev is on (#247, LOG-R62)", function()
+			local fake = newFakePagle()
+			local ended = {}
+			fake.Pagle.RegisterCallback(ended, "SessionEnded", function(_, session)
+				ended[#ended + 1] = session.id
+			end)
+			fake.login()
+			fake.enterWorld()
+			local cast = assert(fake.playCast("caught", { { itemID = 6358, quantity = 1 } }))
+
+			fake.slash("dev endsession")
+			fake.slash("dev on")
+			fake.slash("dev endsession")
+
+			assert.are.same({ cast.id }, ended)
+			assert.is_nil(fake.Pagle.GetSession())
+			assert.are.same({
+				"Pagle dev: dev commands are off; /pagle dev on turns them on.",
+				"Pagle dev: dev commands are on.",
+				"Pagle dev: the Session ended, as if its gap had passed.",
+			}, fake.printed)
+		end)
+
+		it(
+			"records a caught Cast in the area given on a test log, with Catch, CastEnded and live projections; on a"
+				.. " real log refuses (#247, LOG-R9)",
+			function()
+				local fake = newFakePagle()
+				local events = {}
+				for _, event in ipairs({ "CastStarted", "Catch", "CastEnded" }) do
+					fake.Pagle.RegisterCallback(events, event, function()
+						events[#events + 1] = event
+					end)
+				end
+				fake.login()
+				fake.enterWorld()
+				fake.slash("dev on")
+
+				fake.slash("dev catch 6358")
+				local refused = #fake.catchLog.data.entries
+				fake.catchLog.data.test = true
+				fake.slash("dev catch 6358 453")
+
+				assert.are.equal(0, refused)
+				local record = assert(fake.catchLog:Iterate()())
+				---@cast record PagleCast
+				assert.are.same(
+					{ 6358, 148, 453, "caught" },
+					{ record.items[1].itemID, record.conditions.zone, record.conditions.subzone, record.outcome }
+				)
+				assert.are.same({ "Catch", "CastEnded" }, events)
+				assert.are.equal(record.session, assert(fake.Pagle.GetSession()).id)
+			end
+		)
+
+		it("hands a preview's sample to the display and its card to the cards, as Core does (#247)", function()
+			local fake = newFakePagle()
+			fake.login()
+			fake.enterWorld()
+			fake.slash("dev on")
+
+			fake.slash("dev preview banner")
+			fake.slash("dev preview card")
+
+			assert.are.same({ "banner", "Angler Level 12" }, {
+				fake.announcements[1].rung,
+				fake.announcements[1].headline.title,
+			})
+			assert.are.equal(1, #fake.cardsShown)
+			assert.is_true(fake.cardsShown[1].preview)
+			assert.are.same({}, fake.global.cards)
+		end)
+	end)
+
 	describe("/pagle", function()
 		it(
 			"runs a Module's subcommand case-insensitively with the rest of the line, trimmed, from login (CORE-R62)",
@@ -640,6 +720,7 @@ describe("FakePagle", function()
 				assert.are.same({
 					"Pagle commands:",
 					"/pagle settings: open Pagle's settings (also /pagle on its own)",
+					"/pagle report: open the Field report, to help chart the waters",
 					"/pagle help: list these commands",
 					"/pagle qol: cycle Input",
 				}, fake.printed)
@@ -686,7 +767,7 @@ describe("FakePagle", function()
 			fake.slash("help")
 
 			assert.are.same({ "Pagle: QoL's /pagle Report is skipped: Pagle reserves report" }, fake.reported)
-			assert.are.equal("/pagle qol: cycle Input", fake.printed[4])
+			assert.are.equal("/pagle qol: cycle Input", fake.printed[5])
 		end)
 	end)
 
@@ -727,6 +808,18 @@ describe("FakePagle", function()
 		assert.has_error(function()
 			Pagle.MatchesConditions({ pools = { 1 } }, { zone = 40 })
 		end)
+	end)
+
+	it("matches a window spec and conditions it handed out read-only, as Core takes its own (LOG-R48)", function()
+		local fake = newFakePagle()
+		-- What a Module sees: read-only proxies (CORE-R18).
+		local Pagle = fake.globals.Pagle
+		local night = Pagle.GetWindowSpec("night")
+
+		fake.conditions.minute = 800 -- 13:20, outside the generated night (18:00–12:00)
+		assert.is_false(Pagle.MatchesConditions(night, Pagle.GetConditions()))
+		fake.conditions.minute = 1300
+		assert.is_true(Pagle.MatchesConditions(night, Pagle.GetConditions()))
 	end)
 
 	it("iterates its Catch log with Core's real codec, handing out read-only records (LOG-R42, CORE-R18)", function()
@@ -799,19 +892,11 @@ describe("FakePagle", function()
 		-- A catalogue in the M1 shape (DATA-R79): Darkshore (148) with The Long Wash (453).
 		local function fixture()
 			local function area(parent)
-				return { parent = parent, continent = 1, hasData = false, skillBaseConfirmed = false, catches = {} }
+				return areaRecord(parent, { continent = 1, hasData = false })
 			end
-			return {
-				fingerprint = "0123456789abcdef",
-				items = {},
+			return catalogueWith({
 				areas = { [148] = area(0), [453] = area(148) },
-				aliases = {},
-				pools = {},
-				windows = {},
-				events = {},
-				fishingSpells = {},
-				auras = {},
-			}
+			})
 		end
 
 		it("serves the generated catalogue, as Core does (LOG-R55)", function()
@@ -868,6 +953,166 @@ describe("FakePagle", function()
 		end)
 	end)
 
+	describe("the Field report (REP-R25, REP-R26)", function()
+		-- Darkshore (148) with The Long Wash (453), neither with a skill base, and no items: every item is Uncharted.
+		local function fixture()
+			local function area(parent)
+				return areaRecord(parent, { continent = 1, hasData = false })
+			end
+			return catalogueWith({
+				areas = { [148] = area(0), [453] = area(148) },
+				fishingSpells = { 7731 },
+			})
+		end
+
+		it(
+			"counts a live Uncharted Catch's I row, and the P rows of fake.global.diagnostics (REP-R10, REP-R22,"
+				.. " REP-R26)",
+			function()
+				local fake = newFakePagle()
+				fake.setCatalogue(fixture())
+				fake.login()
+				fake.enterWorld()
+				assert.are.equal(0, fake.Pagle.GetFieldReportCount())
+
+				local cast = assert(fake.playCast("caught", { { itemID = 9999, quantity = 1 } }))
+				fake.playCast("caught", { { itemID = 9999, quantity = 1 } })
+				assert.are.equal(1, fake.Pagle.GetFieldReportCount(), "two Catches on one key make one row")
+
+				fake.global.diagnostics[1] =
+					{ id = cast.id, zone = 148, subzone = 453, locale = "enUS", texts = { "A", "B" } }
+				assert.are.equal(3, fake.Pagle.GetFieldReportCount())
+			end
+		)
+
+		it(
+			"catches up on the Casts already in the log at enterWorld, read-only as any projection (REP-R25, LOG-R71)",
+			function()
+				local fake = newFakePagle()
+				fake.setCatalogue(fixture())
+				fake.catchLog.data.characters[1] = { guid = PLAYER_GUID }
+				for i = 1, 2 do
+					fake.catchLog:Append({
+						kind = "cast",
+						char = 1,
+						time = SERVER_TIME - 1000 + i,
+						outcome = "caught",
+						conditions = { minute = 494, zone = 148, subzone = 453, events = {}, auras = {} },
+						items = { { itemID = 9998 + i, quantity = 1 } },
+					})
+				end
+				fake.login()
+				fake.enterWorld()
+
+				assert.are.equal(2, fake.Pagle.GetFieldReportCount(), "one I row per item")
+				assert.is_table(fake.global.projections.fieldReport.projection) -- stored in fake.global
+			end
+		)
+
+		it("gives the last stored count while the projection updates (REP-R26)", function()
+			local fake = newFakePagle()
+			fake.global.projections.fieldReport.projection = { build = 0, count = 5, I = {}, K = {} }
+
+			assert.are.equal(5, fake.Pagle.GetFieldReportCount())
+		end)
+
+		it("returns the count a spec sets, until it sets nil (REP-R26)", function()
+			local fake = newFakePagle()
+			fake.login()
+			fake.enterWorld()
+
+			fake.setFieldReportCount(3)
+			assert.are.equal(3, fake.Pagle.GetFieldReportCount())
+			fake.setFieldReportCount(nil)
+			assert.are.equal(0, fake.Pagle.GetFieldReportCount())
+		end)
+
+		it("shows on the compartment menu's entry, read as the menu opens (CORE-R50)", function()
+			local fake = newFakePagle()
+			fake.login()
+
+			fake.setFieldReportCount(3)
+			local menu = fake.menu()
+			assert.are.equal("Help chart the waters (3)", menu[#menu - 1].label)
+			fake.setFieldReportCount(0)
+			menu = fake.menu()
+			assert.are.equal("Help chart the waters", menu[#menu - 1].label)
+		end)
+
+		describe("the Field report box (REP-R40–R44)", function()
+			it(
+				"records each Pagle.OpenFieldReport a Module makes, with the report's parts and the URL (REP-R40, REP-R43)",
+				function()
+					local fake = newFakePagle()
+					fake.setCatalogue(fixture())
+					local loaded = fake.load("Pagle_QoL")
+					fake.login()
+					fake.enterWorld()
+					fake.playCast("caught", { { itemID = 9999, quantity = 1 } })
+
+					-- A Module reaches it through the read-only Pagle its globals hold.
+					loaded.env.Pagle.OpenFieldReport()
+
+					assert.are.equal(1, #fake.fieldReportsOpened)
+					local view = fake.fieldReportsOpened[1]
+					assert.is_nil(view.message)
+					assert.are.equal(1, #view.parts)
+					assert.truthy(view.parts[1]:find("^PAGLE%-REPORT 1\naddon test "))
+					assert.truthy(view.parts[1]:find("\nI 9999 453 ", 1, true))
+					assert.are.equal(
+						"https://github.com/timemir/wow-fish/issues/new?template=field-report.yml",
+						view.url
+					)
+					assert.are.same({}, fake.printed)
+				end
+			)
+
+			it(
+				"records REP-R41's line with no row, and REP-R42's while the projection updates (REP-R41, REP-R42)",
+				function()
+					local fake = newFakePagle()
+					fake.login()
+					fake.Pagle.OpenFieldReport()
+					fake.enterWorld()
+					fake.Pagle.OpenFieldReport()
+
+					assert.are.same({
+						{ message = "Updating… try again in a moment.", parts = {} },
+						{ message = "Nothing to report. Thanks for checking!", parts = {} },
+					}, fake.fieldReportsOpened)
+				end
+			)
+
+			it("opens from /pagle report and the compartment entry (CORE-R61, REP-R43)", function()
+				local fake = newFakePagle()
+				fake.login()
+				fake.enterWorld()
+
+				fake.slash("report")
+				local menu = fake.menu()
+				menu[#menu - 1].onClick()
+
+				assert.are.equal(2, #fake.fieldReportsOpened)
+			end)
+
+			it("prints REP-R44's line while restricted and records nothing (REP-R44, CORE-R33)", function()
+				local fake = newFakePagle()
+				fake.login()
+				fake.enterWorld()
+				fake.setRestricted(true)
+
+				fake.Pagle.OpenFieldReport()
+				fake.slash("report")
+
+				assert.are.same({}, fake.fieldReportsOpened)
+				assert.are.same({
+					"Pagle: the Field report opens after combat.",
+					"Pagle: the Field report opens after combat.",
+				}, fake.printed)
+			end)
+		end)
+	end)
+
 	describe("the live conditions", function()
 		-- fake.conditions with `fields` changed.
 		local function changed(fake, fields)
@@ -906,6 +1151,95 @@ describe("FakePagle", function()
 
 			assert.are.same({ { "area", "lure" } }, fired)
 			assert.are.equal(264, fake.globals.Pagle.GetConditions().lure)
+		end)
+	end)
+
+	describe("window forecasts", function()
+		local MINUTE = 60
+		local DAY = { time = { { 360, 1260 } } } -- 06:00–21:00
+
+		-- A catalogue in the M1 shape (DATA-R79) whose event list holds the Extravaganza (301) on Sundays from 14:00
+		-- for 2 hours, confirmed.
+		local function fixture()
+			return catalogueWith({
+				events = { [301] = { weekday = 1, start = 840, duration = 120, confirmed = true } },
+			})
+		end
+
+		-- fake.conditions moved on to the realm clock time `minute`, later the same realm day.
+		local function laterToday(fake, minute)
+			local snapshot = {}
+			for key, value in pairs(fake.conditions) do
+				snapshot[key] = value
+			end
+			snapshot.time = snapshot.time + (minute - snapshot.minute) * MINUTE
+			snapshot.minute = minute
+			return snapshot
+		end
+
+		it("forecasts at the realm clock of fake.conditions, following setConditions (LOG-R49, LOG-R50)", function()
+			local fake = newFakePagle()
+			local Pagle = fake.globals.Pagle
+
+			-- Realm 08:15: open until 21:00.
+			local window = Pagle.NextWindow(DAY, fake.conditions.time)
+			assert.is_true(window.openNow)
+			assert.are.equal(SERVER_TIME + 765 * MINUTE, window.closesAt)
+
+			-- Realm 22:00: back at 06:00 the next morning, until 21:00.
+			fake.setConditions(laterToday(fake, 1320))
+			window = Pagle.NextWindow(DAY, fake.conditions.time)
+			assert.is_nil(window.openNow)
+			assert.are.equal(SERVER_TIME + 1305 * MINUTE, window.opensAt)
+			assert.are.equal(SERVER_TIME + 2205 * MINUTE, window.closesAt)
+		end)
+
+		it(
+			"forecasts events from the fake's catalogue, open now when fake.conditions.events holds them (LOG-R50)",
+			function()
+				local fake = newFakePagle()
+				fake.setCatalogue(fixture())
+				local Pagle = fake.globals.Pagle
+
+				-- Sunday 08:15: the Extravaganza opens at 14:00, for 2 hours.
+				local window = Pagle.NextWindow({ events = { 301 } }, fake.conditions.time)
+				assert.are.equal(SERVER_TIME + 345 * MINUTE, window.opensAt)
+				assert.are.equal(SERVER_TIME + 465 * MINUTE, window.closesAt)
+				assert.is_true(window.confirmed)
+
+				local active = laterToday(fake, fake.conditions.minute)
+				active.events = { 301 }
+				fake.setConditions(active)
+				assert.is_true(Pagle.NextWindow({ events = { 301 } }, fake.conditions.time).openNow)
+			end
+		)
+
+		it(
+			"forecasts only specs without time-based fields while the realm clock is secret (LOG-R49, LOG-R50)",
+			function()
+				local fake = newFakePagle()
+				local Pagle = fake.globals.Pagle
+				local secret = laterToday(fake, fake.conditions.minute)
+				secret.minute = nil
+				fake.setConditions(secret)
+				assert.is_nil(Pagle.NextWindow(DAY, fake.conditions.time))
+				assert.is_true(Pagle.NextWindow({ auras = { 1265220 } }, fake.conditions.time).onDemand)
+				assert.is_true(Pagle.NextWindow({}, fake.conditions.time).always)
+			end
+		)
+
+		it("forecasts a window spec Pagle.GetWindowSpec handed out, as Core does (LOG-R50, LOG-R55)", function()
+			local Pagle = newFakePagle().globals.Pagle
+
+			-- The generated day runs from 06:00 to midnight: open at realm 08:15.
+			assert.is_true(Pagle.NextWindow(Pagle.GetWindowSpec("day"), SERVER_TIME).openNow)
+		end)
+
+		it("hands out a read-only Window (CORE-R18)", function()
+			local window = newFakePagle().globals.Pagle.NextWindow(DAY, SERVER_TIME)
+			assert.has_error(function()
+				window.openNow = false
+			end)
 		end)
 	end)
 
@@ -1258,21 +1592,21 @@ describe("FakePagle", function()
 			end
 		)
 
-		it("end when fake.wait(900) passes with no Cast, then GetSession is nil (LOG-R62, LOG-R64)", function()
+		it("end when fake.wait(300) passes with no Cast, then GetSession is nil (LOG-R62, LOG-R64)", function()
 			local fake = newFakePagle()
 			local seen = listen(fake)
 			fake.login()
 			fake.enterWorld()
 			fake.playCast("caught", { { itemID = 6358, quantity = 1 } })
 
-			fake.wait(899)
+			fake.wait(299)
 			assert.is_not_nil(fake.Pagle.GetSession())
 			fake.wait(1)
 
 			assert.are.equal("SessionEnded " .. id(0), seen[#seen])
 			assert.is_nil(fake.Pagle.GetSession())
 			fake.playCast("gotAway")
-			assert.are.equal("SessionStarted " .. id(900), seen[#seen - 1])
+			assert.are.equal("SessionStarted " .. id(300), seen[#seen - 1])
 		end)
 
 		it("end a Session that ended before login with whileAway, once no projection is updating (LOG-R63)", function()
@@ -1281,7 +1615,7 @@ describe("FakePagle", function()
 			fake.catchLog:Append({
 				kind = "cast",
 				char = 1,
-				time = SERVER_TIME - 900,
+				time = SERVER_TIME - 300,
 				outcome = "caught",
 				conditions = { minute = 494, zone = 148, subzone = 453, events = {}, auras = {} },
 				items = { { itemID = 6358, quantity = 1 } },
@@ -1292,8 +1626,8 @@ describe("FakePagle", function()
 			assert.are.same({}, seen)
 			fake.enterWorld()
 
-			assert.are.same({ "1 rebuild", "SessionEnded " .. id(-900) .. " whileAway" }, seen)
-			assert.are.equal(id(-900), fake.global.lastEndedSession)
+			assert.are.same({ "1 rebuild", "SessionEnded " .. id(-300) .. " whileAway" }, seen)
+			assert.are.equal(id(-300), fake.global.lastEndedSession)
 		end)
 
 		it("fire no SessionEnded at login for the Session a seeded global.lastEndedSession names (LOG-R63)", function()
@@ -1302,12 +1636,12 @@ describe("FakePagle", function()
 			fake.catchLog:Append({
 				kind = "cast",
 				char = 1,
-				time = SERVER_TIME - 900,
+				time = SERVER_TIME - 300,
 				outcome = "caught",
 				conditions = { minute = 494, zone = 148, subzone = 453, events = {}, auras = {} },
 				items = { { itemID = 6358, quantity = 1 } },
 			})
-			fake.global.lastEndedSession = id(-900)
+			fake.global.lastEndedSession = id(-300)
 			local seen = listen(fake)
 
 			fake.login()
@@ -1357,7 +1691,7 @@ describe("FakePagle", function()
 					fake.global.summary.moments[1].title,
 					fake.global.summary.moments[2].title,
 				})
-				fake.wait(900)
+				fake.wait(300)
 
 				local card = fake.global.cards[1]
 				assert.are.same({ casts = 1, catches = 1, gotAway = 0, seconds = 0 }, card.numbers)
@@ -1376,7 +1710,7 @@ describe("FakePagle", function()
 			fake.enterWorld()
 			fake.playCast("gotAway")
 
-			fake.wait(900)
+			fake.wait(300)
 
 			assert.are.same({}, fake.global.cards)
 		end)
@@ -1390,7 +1724,7 @@ describe("FakePagle", function()
 			assert.are.equal("Welcome back", fake.global.pending[1].title)
 
 			fake.playCast("gotAway")
-			fake.wait(900)
+			fake.wait(300)
 
 			assert.are.equal("Welcome back", fake.global.cards[1].moments[1].moments[1].title)
 		end)
@@ -1422,7 +1756,7 @@ describe("FakePagle", function()
 				fake.playCast("caught", { { itemID = 6358, quantity = 1 } })
 				fake.playCast("caught", { { itemID = 6358, quantity = 1 } })
 				assert.are.equal("Pagle · 2 waiting", fake.compartmentText())
-				fake.wait(900)
+				fake.wait(300)
 
 				assert.are.equal("Fishing session", fake.cardsShown[1].title)
 				assert.are.equal("Pagle", fake.compartmentText())
@@ -1437,7 +1771,7 @@ describe("FakePagle", function()
 					kind = "window",
 					title = "Window open",
 					cast = record.id,
-					expiresAt = SERVER_TIME + 600,
+					expiresAt = SERVER_TIME + 200,
 					pastText = "Window opened 21:00–06:00",
 				}
 			end)
@@ -1445,7 +1779,7 @@ describe("FakePagle", function()
 			fake.enterWorld()
 
 			fake.playCast("caught", { { itemID = 6358, quantity = 1 } })
-			fake.wait(900)
+			fake.wait(300)
 
 			local moment = fake.global.cards[1].moments[1].moments[1]
 			assert.is_true(moment.expired)
@@ -1464,7 +1798,7 @@ describe("FakePagle", function()
 				fake.catchLog:Append({
 					kind = "cast",
 					char = 1,
-					time = 1791731000 + i,
+					time = SERVER_TIME - 100 + i,
 					outcome = "caught",
 					conditions = { minute = 494, zone = 148, subzone = 453, events = {}, auras = {} },
 					items = { { itemID = 6358, quantity = 1 } },
@@ -1550,7 +1884,7 @@ describe("FakePagle", function()
 				assert.are.same({}, fake.cardsShown)
 
 				fake.playCast("gotAway")
-				fake.wait(900)
+				fake.wait(300)
 
 				assert.are.same({ "Fishing session", "Ledger written up" }, {
 					fake.cardsShown[1].title,

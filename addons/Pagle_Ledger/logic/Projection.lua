@@ -42,7 +42,7 @@ function ns.ProjectionDef(global, lookups, outlets, sizeRulesVersion)
 	---@param state LedgerState
 	---@param celebrated LedgerCelebrated
 	local function setSummaryLine(state, celebrated)
-		local text = ns.SummaryLine(state, celebrated)
+		local text = ns.SummaryLine(state, celebrated, lookups)
 		if text ~= summaryLine then
 			summaryLine = text
 			outlets.SetSummaryLine(text)
@@ -64,7 +64,11 @@ function ns.ProjectionDef(global, lookups, outlets, sizeRulesVersion)
 		if state.coins ~= coins then
 			outlets.ReportCoinsEarned(state.coins)
 		end
-		setSummaryLine(state, celebrated)
+		-- The shown level and completion change only with an achievement (a level-up, a first Catch, a rank), so an
+		-- entry that earned none leaves the line as it is, once set.
+		if #earned > 0 or not summaryLine then
+			setSummaryLine(state, celebrated)
+		end
 	end
 
 	return {
@@ -83,7 +87,7 @@ function ns.ProjectionDef(global, lookups, outlets, sizeRulesVersion)
 		end,
 		-- LED-R93: the first build's, rebuild's or catch-up's celebration, then Coins and the summary line.
 		done = function(state, info)
-			local celebrated = ns.CelebrateDone(global, state, scratch, info, outlets)
+			local celebrated = ns.CelebrateDone(global, state, scratch, info, outlets, lookups)
 			scratch = {}
 			setSummaryLine(state, celebrated)
 		end,

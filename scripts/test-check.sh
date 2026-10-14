@@ -240,6 +240,31 @@ copy
 rm "$scratch/tree/.luacov"
 expect "a coverage report that can't be made doesn't gate" pass "no coverage report"
 
+# Plants a spec that kills the busted running it with SIGSEGV, as the coverage run has died on the dev's machine
+# (#149). With "coverage", only a busted running with luacov dies.
+kills_busted() {
+	local when='package.loaded'
+	[[ ${1:-} == coverage ]] && when='package.loaded["luacov.runner"]'
+	cat >"$scratch/tree/spec/killed_spec.lua" <<EOF
+it("is killed", function()
+	---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no package
+	if $when then
+		---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no os
+		os.execute("kill -SEGV \$PPID")
+	end
+end)
+EOF
+}
+
+copy
+kills_busted coverage
+expect "a coverage run killed by a signal doesn't gate; the specs run again without coverage" pass \
+	"killed by signal 11; running the specs again without coverage"
+
+copy
+kills_busted
+expect "specs that kill busted without coverage too fail tests" tests "killed by signal 11"
+
 copy
 printf 'Pagle.API_VERSION = "2"\n' >>"$addon/adapter/Core.lua"
 expect "a string assigned to Pagle.API_VERSION in Core fails types" types "assign-type-mismatch"
@@ -300,6 +325,14 @@ expect "a pool type without a why fails generator" generator "data/forever/pools
 copy
 sed -i '1i colour = "red"' "$scratch/tree/data/observed/dev.toml"
 expect "an unknown key in dev.toml fails generator" generator "data/observed/dev.toml: unknown key 'colour'"
+
+copy
+# With the Ledger's lore check on since #131 (DATA-R66), replaces Raw Nightfin Snapper's riddle, inside its table,
+# with an 81-character one (DATA-R107).
+sed -i "/^\[species\.13759\]/,/^\$/ s/^riddle = .*/riddle = \"$(head -c 81 /dev/zero | tr '\0' x)\"/" \
+	"$scratch/tree/data/lore/ledger.toml"
+expect "with the ledger lore check on, a riddle over 80 code points fails generator" generator \
+	"data/lore/ledger.toml: species.13759.riddle: length: 81 code points, over riddle's limit of 80"
 
 wait
 report

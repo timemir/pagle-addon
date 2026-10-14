@@ -20,13 +20,19 @@ Pagle.RegisterCallback(OWNER, "ModulesChanged", function()
 	end)
 end)
 
--- Runs `/pagle <line>`: the Settings root (CORE-R33's line while restricted), a Module's subcommand, or the help list.
+--- Core's own subcommands (CORE-R61), for /pagle and the compartment menu (adapter/Menu.lua).
+ns.coreSubcommands = ns.CoreSubcommands(Pagle)
+
+-- Runs `/pagle <line>`: the Settings root, the Field report box, a Module's subcommand, or the help list.
 ---@param line string what the player typed after /pagle
 local function run(line)
-	commands:Run(line, function()
-		Pagle.OpenSettings()
-	end, securecallfunction, print)
+	commands:Run(line, ns.coreSubcommands, securecallfunction, print)
 end
+
+--- `/pagle dev …` (#247): hidden dev commands, as ns.dev (logic/Wiring.lua).
+ns.WireDev(ns.host, function(announcement)
+	ns.lanes:Push(announcement)
+end)
 
 SLASH_PAGLE1 = "/pagle"
 SlashCmdList.PAGLE = run

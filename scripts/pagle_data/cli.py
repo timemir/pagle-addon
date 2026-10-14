@@ -1,8 +1,8 @@
-"""scripts/generate-data.py's command line (DATA-R60): with no flag it rewrites every generated file; --check
-writes nothing and fails if any generated file would change. The read-only modes write nothing and print no warning:
---propose-aliases prints the alias candidates not yet committed (DATA-R32), --min-build <n> the facts that would lose
-confirmation if only builds >= n counted (DATA-R57), and --explain <id> every layer's value for an item or an area
-and which won. --lock arrives with the Hunt list (DATA-R95).
+"""scripts/generate-data.py's command line (DATA-R60): with no flag it rewrites every generated file, and
+removes a Lore.lua whose lore file is gone; --check writes nothing and fails if any generated file would change. The
+read-only modes write nothing and print no warning: --propose-aliases prints the alias candidates not yet committed
+(DATA-R32), --min-build <n> the facts that would lose confirmation if only builds >= n counted (DATA-R57), and
+--explain <id> every layer's value for an item or an area and which won. --lock arrives with the Hunt list (DATA-R95).
 """
 
 import argparse
@@ -18,6 +18,7 @@ from pagle_data.explain import explain
 from pagle_data.files import write_atomic
 from pagle_data.forever import ALIASES
 from pagle_data.generate import Layers, outputs, read_layers
+from pagle_data.lore import retired_lore
 from pagle_data.min_build import lost
 from pagle_data.observed import OBSERVED
 from pagle_data.pools import POOLS_TOML
@@ -155,12 +156,16 @@ def main(argv: Sequence[str], root: Path) -> int:
 
     contents = {path: text.encode("utf-8") for path, text in sorted(outputs(layers).items())}
     stale = [path for path, content in contents.items() if _current(root / path) != content]
+    retired = retired_lore(lambda path: (root / path).is_file(), contents)
 
     if args.check:
         for path in stale:
             message = f"{path} is out of date with data/; run scripts/generate-data.py and commit it"
             print(f"{PROG}: {message}", file=sys.stderr)
-        if stale:
+        for path, source in retired.items():
+            message = f"{path} is out of date with data/: {source} is gone; run scripts/generate-data.py to remove it"
+            print(f"{PROG}: {message}", file=sys.stderr)
+        if stale or retired:
             return 1
         print(f"{PROG}: {len(contents)} generated file(s) up to date")
         return 0
@@ -168,5 +173,8 @@ def main(argv: Sequence[str], root: Path) -> int:
     for path in stale:
         write_atomic(root / path, contents[path])
         print(f"{PROG}: wrote {path}")
+    for path in retired:
+        (root / path).unlink()
+        print(f"{PROG}: removed {path}, as {retired[path]} is gone")
     print(f"{PROG}: {len(contents)} generated file(s) up to date")
     return 0

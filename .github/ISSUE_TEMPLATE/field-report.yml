@@ -1,0 +1,54 @@
+# The Field report form (DATA-R115), at the URL Pagle's report box shows (REP-R46):
+# https://github.com/timemir/wow-fish/issues/new?template=field-report.yml
+# The triage Action (.github/workflows/field-report-triage.yml, DATA-R117) reads the report field: GitHub renders it
+# under "### Report" in a code block, which scripts/pagle_data/report.py's report_field() takes it out of. Keep the
+# field's label "Report" (REPORT_LABEL there).
+name: Field report
+description: >-
+  Paste a Field report from Pagle (/pagle report) to help chart the waters. A report in several parts is filed as one
+  issue per part. A report posted anywhere else reaches Pagle only when the dev pastes it into an issue.
+title: Field report
+labels: ["field-report", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping chart the waters! In game, type `/pagle report` (or use "Help chart the waters" in Pagle's
+        menu or settings), press Ctrl+C in the report box, and paste the text below.
+
+        - **One part per issue.** A report in several parts ("Part 1 of 2") is filed as one issue per part: paste
+          part 1 here, then file the form again for part 2, and so on. Paste each part whole, from `PAGLE-REPORT 1`
+          to `END`.
+        - **GitHub only.** Pagle takes Field reports through this form. A report posted anywhere else (a forum, a
+          Discord) reaches Pagle only when the dev pastes it into an issue here.
+
+        A bot comments on the issue with what the report holds; if it can't read the paste, it says why. Edit the
+        issue to fix it.
+  - type: textarea
+    id: report
+    attributes:
+      label: Report
+      description: One part of the report, exactly as Pagle's report box gives it.
+      placeholder: |
+        PAGLE-REPORT 1
+        addon … data … locale … reporter … part 1/1
+        …
+        END
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything you noticed?
+      description: Optional. Where you fished, what seemed odd, anything else.
+    validations:
+      required: false
+  - type: checkboxes
+    id: public
+    attributes:
+      label: Public
+      description: The report contains no character names, but the issue is public.
+      options:
+        - label: I understand this is posted publicly
+          required: true

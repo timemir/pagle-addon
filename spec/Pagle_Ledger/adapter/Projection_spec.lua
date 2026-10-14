@@ -3,25 +3,14 @@
 
 local MACKEREL, SMALLFISH, OILY = 6303, 6291, 6358
 local ELWYNN, WESTFALL = 12, 40
-local T0 = 1791731000
+local T0 = SERVER_TIME - 700
 
 -- A Cast record for fake.catchLog:Append, by the player's character (char 1).
 ---@param time integer
 ---@param zone integer
 ---@param itemIDs integer[]? nil for a got-away Cast
 local function cast(time, zone, itemIDs)
-	local items = {}
-	for i, itemID in ipairs(itemIDs or {}) do
-		items[i] = { itemID = itemID, quantity = 1 }
-	end
-	return {
-		kind = "cast",
-		char = 1,
-		time = time,
-		outcome = itemIDs and "caught" or "gotAway",
-		conditions = { minute = 494, zone = zone, subzone = 0, events = {}, auras = {} },
-		items = items,
-	}
+	return castRecord({ time = time, zone = zone, items = itemIDs, outcome = itemIDs and "caught" or "gotAway" })
 end
 
 -- History before login: Catches in two zones, a got-away Cast and a Skill Reading that credits two Skill
@@ -35,11 +24,15 @@ local function withHistory(fake)
 	fake.catchLog:Append(cast(T0 + 120, WESTFALL, { MACKEREL, OILY }))
 end
 
--- Ticket #99's fold, with the fake's GetItem, over every record in fake.catchLog: the state the projection must hold.
+-- Ticket #99's fold, with the fake's GetItem and the Ledger's world index, over every record in fake.catchLog: the state the projection must hold.
 ---@param fake FakePagle
 ---@param ns PagleLedgerNS
 local function foldOfLog(fake, ns)
-	local fold = ns.NewLedgerFold({ GetItem = fake.Pagle.GetItem })
+	local fold = ns.NewLedgerFold({
+		GetItem = fake.Pagle.GetItem,
+		MatchesConditions = fake.Pagle.MatchesConditions,
+		world = ns.world,
+	})
 	local state = fold.reset()
 	for record in fake.catchLog:Iterate(0) do
 		fold.apply(state, record, "rebuild")
@@ -211,12 +204,13 @@ describe("the Ledger's projection", function()
 		assert.are.equal("a new release", loaded.env.PagleLedgerDB.global.projection.fingerprint)
 	end)
 
-	it("rebuilds from seq 0 at a login with a raised LEDGER_RULES_VERSION (LED-R2, LED-R4, LED-R191)", function()
-		local last, lastLoaded = firstSession()
-		local fake = nextSession(last, lastLoaded, 0)
-		local loaded, applied = loadLedger(fake, function(loading)
-			loading.ns.LEDGER_RULES_VERSION = 2 -- M3's
+	it("rebuilds an M2 projection, rules version 100, at M3's 200 at the first M3 login (LED-R4, LED-R191)", function()
+		local last, lastLoaded = firstSession(function(loading)
+			loading.ns.LEDGER_RULES_VERSION = 1 -- M2's
 		end)
+		assert.are.equal(100, lastLoaded.env.PagleLedgerDB.global.projection.rulesVersion)
+		local fake = nextSession(last, lastLoaded, 0)
+		local loaded, applied = loadLedger(fake)
 
 		fake.login()
 		fake.enterWorld()
@@ -264,14 +258,14 @@ describe("the Ledger's projection", function()
 		assert.are.same(before, loaded.ns.projection:GetState())
 	end)
 
-	it("stores rulesVersion 100 with no Pagle.SIZE_RULES_VERSION, as in M2 (LED-R2, LED-R4, LOG-R68)", function()
+	it("stores rulesVersion 200 with no Pagle.SIZE_RULES_VERSION, as in M3 (LED-R2, LED-R4, LOG-R68)", function()
 		local _, loaded = firstSession()
 
 		assert.is_nil(newFakePagle().Pagle.SIZE_RULES_VERSION)
-		assert.are.equal(100, loaded.env.PagleLedgerDB.global.projection.rulesVersion)
+		assert.are.equal(200, loaded.env.PagleLedgerDB.global.projection.rulesVersion)
 	end)
 
-	it("stores 101 and rebuilds once Pagle.SIZE_RULES_VERSION is 1 (LED-R2, LED-R191, LOG-R68)", function()
+	it("stores 201 and rebuilds once Pagle.SIZE_RULES_VERSION is 1 (LED-R2, LED-R191, LOG-R68)", function()
 		local last, lastLoaded = firstSession()
 		local fake = nextSession(last, lastLoaded, 0)
 		fake.Pagle.SIZE_RULES_VERSION = 1
@@ -281,6 +275,6 @@ describe("the Ledger's projection", function()
 		fake.enterWorld()
 
 		assert.are.same(rebuiltTo(fake, 5), applied)
-		assert.are.equal(101, loaded.env.PagleLedgerDB.global.projection.rulesVersion)
+		assert.are.equal(201, loaded.env.PagleLedgerDB.global.projection.rulesVersion)
 	end)
 end)

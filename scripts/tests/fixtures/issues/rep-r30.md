@@ -1,0 +1,21 @@
+### Report
+
+```text
+PAGLE-REPORT 1
+addon 0.9.0 data 3f9a2c1e locale deDE reporter f38e76b0 part 1/1
+I 6362 33 70338 2 aura=1280341            # Raw Spotted Yellowtail, Stranglethorn Vale
+I 13755 331 70338 6 event=301 t=14:30 m=5 # Winter Squid, Ashenvale
+I 6359 1519 70338 14                      # Stormwind City
+I 13760 2657 70338 3 t=21:15 m=11         # Raw Sunscale Salmon, Feralas
+K 1519 70338 casts=40 away=6 land=75 lost=60 # Stormwind City
+P 1519 deDE "Schwarm öliger Schwarzmaulfische" casts=5 6358x5 # Stormwind City
+END
+```
+
+### Anything you noticed?
+
+_No response_
+
+### Public
+
+- [X] I understand this is posted publicly

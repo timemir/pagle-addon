@@ -281,16 +281,18 @@ return function(client, stubs)
 			initializer:AddSearchTags(name, buttonText)
 		end
 		-- As SettingButtonControlMixin:Init draws the row: its label (`name`, "" for none) in Text, through
-		-- SettingsListElementMixin:Init, and `buttonText` on a button that runs `buttonClick` (Blizzard_Settings_Shared/
-		-- Blizzard_SettingControls.lua at the forever 1.60.1 commit).
-		-- Blizzard's own template does this, so the fake sets it raw, past the guard against Pagle's writes.
+		-- SettingsListElementMixin:Init, and `buttonText` on a button that runs `buttonClick`; a function `buttonText`
+		-- is called each time the row is drawn (EvaluateName) (Blizzard_Settings_Shared/Blizzard_SettingControls.lua at
+		-- the forever 1.60.1 commit). Blizzard's own template does this, so the fake sets it raw, past the guard
+		-- against Pagle's writes.
 		local initFrame = initializer.InitFrame
 		rawset(initializer, "InitFrame", function(self, frame)
 			initFrame(self, frame)
 			frame.Text = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 			frame.Text:SetText(self.data.name)
 			frame.Button = newWidget("Button", frame)
-			frame.Button:SetText(self.data.buttonText)
+			local caption = self.data.buttonText
+			frame.Button:SetText(type(caption) == "function" and caption() or caption)
 			frame.Button:SetScript("OnClick", self.data.buttonClick)
 		end)
 		return initializer

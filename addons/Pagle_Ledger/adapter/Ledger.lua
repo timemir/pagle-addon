@@ -12,7 +12,7 @@ ns.Ledger = LibStub("AceAddon-3.0"):NewAddon(addonName)
 --- AceAddon calls it once, at the Ledger's ADDON_LOADED, after Core's (CORE-R10).
 function ns.Ledger.OnInitialize()
 	--- The Ledger's Module handle: the calls that act for the Ledger (CORE-R12). Nil while the Ledger is inert.
-	ns.Module = Pagle.RegisterModule(ns.ModuleDef())
+	ns.Module = Pagle.RegisterModule(ns.ModuleDef(ns.ToggleJournal))
 	-- An inert Module must stop (CORE-R13).
 	if not ns.Module then
 		return
@@ -22,12 +22,26 @@ function ns.Ledger.OnInitialize()
 	ns.db = LibStub("AceDB-3.0"):New("PagleLedgerDB", ns.DB_DEFAULTS, true)
 	ns.MigrateDB(ns.db.global)
 
+	-- Core's lookups the Ledger reads (LOG-R55, LOG-R49): the world index's, and the fold's with the world added.
+	local lookups = {
+		GetItem = Pagle.GetItem,
+		GetZones = Pagle.GetZones,
+		GetArea = Pagle.GetArea,
+		GetZoneCatches = Pagle.GetZoneCatches,
+		MatchesConditions = Pagle.MatchesConditions,
+	}
+	--- The world index (LED-R10): built here, where the catalogue is ready (CORE-R10), held in memory, never stored.
+	ns.world = ns.NewWorld(lookups)
+	lookups.world = ns.world
+
 	---@diagnostic disable-next-line: undefined-field -- Core defines it in M4, with Simulated Size (LOG-R68); nil till then
 	local sizeRulesVersion = Pagle.SIZE_RULES_VERSION --[[@as integer?]]
 	--- The Ledger's projection (LED-R2): Core catches it up or rebuilds it after login and hands it each new entry
-	--- live (LOG-R71–R74). While `:IsUpdating()`, the Ledger shows nothing (LOG-R74).
+	--- live (LOG-R71–R74). While `:IsUpdating()`, the Ledger shows nothing (LOG-R74). The Fish Journal redraws after
+	--- its live entries and its done (LED-R122, LED-R123).
+	--- The fold reads the world index and Core's MatchesConditions as lookups (LED-R3, LED-R45).
 	ns.projection = ns.Module:NewProjection(
-		ns.ProjectionDef(ns.db.global, { GetItem = Pagle.GetItem }, ns.Outlets(ns.Module), sizeRulesVersion)
+		ns.WithJournalRedraws(ns.ProjectionDef(ns.db.global, lookups, ns.Outlets(ns.Module), sizeRulesVersion))
 	)
 end
 
@@ -46,12 +60,8 @@ function ns.Outlets(module)
 		SetSummaryLine = function(text)
 			module:SetSummaryLine("ledger", text)
 		end,
-		ItemName = function(itemID)
-			return C_Item.GetItemNameByID(itemID)
-		end,
-		ZoneName = function(zone)
-			return (C_Map.GetAreaInfo(zone))
-		end,
+		ItemName = ns.ClientNames.ItemName,
+		AreaName = ns.ClientNames.AreaName,
 		RaiseWriteUp = function(section)
 			module:RaiseWriteUp(section)
 		end,

@@ -73,7 +73,8 @@
 --- reports it and returns nothing.
 ---@field openedSettings string[] What each Pagle.OpenSettings opened: "root" or the topic (CORE-R43).
 ---@field menu fun(): PagleMenuEntry[] The compartment menu as it would open now, labels read (CORE-R50, CORE-R52);
---- each entry's onClick is what clicking it does. Its last two entries are the Curio Shop (disabled) and Settings.
+--- each entry's onClick is what clicking it does. Its last three entries are the Curio Shop (disabled), "Help chart
+--- the waters" (with " (N)" while Pagle.GetFieldReportCount() is above 0; it calls Pagle.OpenFieldReport) and Settings.
 ---@field coinReports { module: string, total: integer }[] Each M:ReportCoinsEarned Core accepted, in order, an
 --- unchanged total too (SHOP-R2).
 ---@field setSpent fun(spent: integer) Sets the Coins spent, as the Curio Shop will (M4): BalanceChanged fires if the
@@ -88,7 +89,10 @@
 --- `lastEndedSession` (LOG-R63); and the Session summary keys (announcements.md › Data): `summary` (the open
 --- Session's moments and every Module's M:SetSummaryLine lines), `pending` (moments raised with no Session open,
 --- ANN-R52), `cards` (each SessionEnded's card for a Session that raised a moment, ANN-R53, at most 3, ANN-R54) and
---- `writeUp` (the Write-up sections waiting, ANN-R61). A spec may seed its keys before login, as a saved PagleDB.
+--- `writeUp` (the Write-up sections waiting, ANN-R61). The Field report's (catch-log.md › Data): `diagnostics`
+--- (LOG-R81; empty, and playCast adds nothing, so a spec adds the entries for the P rows, REP-R22) and
+--- `projections.fieldReport` (REP-R25; bound at construction, so a spec fills that table, never replaces it). A spec
+--- may seed its keys before login, as a saved PagleDB.
 ---@field profile table PagleDB.profile, from Core's defaults: `announcements.cozy` is Cozy mode (ANN-R62), off; a
 --- spec may set it.
 ---@field writeUps PagleWriteUpStored[] Each Write-up section Core kept from a Module's M:RaiseWriteUp, in order, as
@@ -101,13 +105,22 @@
 ---@field nextFrame fun() Runs the next frame: what Core queued for it so far, such as flushing moments into
 --- fake.announcements (ANN-R10, ANN-R12).
 ---@field queueFrame fun(step: fun()) Queues a step for the next fake.nextFrame; the parts' own frame scheduler.
----@field slash fun(line: string) Types `/pagle <line>` (CORE-R60–R62); help lines go to `printed`.
+---@field slash fun(line: string) Types `/pagle <line>` (CORE-R60–R62); help lines go to `printed`. The hidden dev
+--- commands work as Core's (#247): `fake.slash("dev on")`, then `"dev endsession"` ends the open Session now, and
+--- with `fake.catchLog.data.test = true` (a test log) `"dev catch 6358 [areaID]"` records a caught Cast through the
+--- fishing part's real append path, with its events and live projections, as playCast would without the signals.
+--- `"dev preview <kind>"` adds a sample to fake.announcements, or for "card" to fake.cardsShown.
 ---@field load fun(name: string, options: table?): LoadedAddon Loads a Module with `loadAddon` against this fake:
 --- `globals`, and of Pagle.toc only the vendored libs/ the Module reaches through LibStub (CORE-R6). Options as
 --- loadAddon's. WoW events its client raises on its own (`client.fireGameEvent`) go to `fake.fireGameEvent`.
 ---@field catchLog PagleCatchLog The Catch log Pagle.IterateCatches reads, on Core's real codec; empty at first.
 ---@field setCatalogue fun(data: table) Serves the catalogue calls over `data` (shaped as ns.catalogue, DATA-R76)
 --- instead of the generated catalogue.
+---@field setFieldReportCount fun(n: integer?) Makes Pagle.GetFieldReportCount return `n`, whatever the rows; nil goes
+--- back to the count Core's projection gives (REP-R26).
+---@field fieldReportsOpened PagleFieldReportView[] Each box Pagle.OpenFieldReport opened, in order: its message
+--- (REP-R41, REP-R42), or its parts and the issue form's URL (REP-R40). While restricted it opens none and prints
+--- REP-R44's line in `printed`.
 ---@field conditions ConditionsSnapshot The live conditions Pagle.GetConditions serves (without `restricted`, which
 --- follows setRestricted). Read it; change it with setConditions.
 ---@field setConditions fun(snapshot: ConditionsSnapshot) Replaces the live conditions and fires ConditionsChanged
@@ -122,7 +135,7 @@
 ---@field closeLoot fun() LOOT_CLOSED.
 ---@field escape fun() The game reports the fish escaped (LOG-R6).
 ---@field wait fun(seconds: number) Moves the fake's clock on, running each grace timer that comes due, and ending
---- the Session 900 s after its last Cast (LOG-R62).
+--- the Session 300 s after its last Cast (LOG-R62).
 ---@field serverTime fun(): integer The fake's server time: SERVER_TIME plus its clock, in whole seconds.
 ---@field compartmentText fun(): string The compartment entry's label as it reads now (CORE-R51): "Pagle", or with
 --- moments kept while Cozy mode was on and no Session summary card shown since, "Pagle · 2 waiting" (ANN-R42).
@@ -443,29 +456,35 @@ end)
 -- The compartment menu and /pagle (CORE-R50, CORE-R52, CORE-R60–R62), on Core's real logic. Modules' subcommands
 -- are added at login, by def.order; one Core skips is in fake.reported. Labels and subcommands run through
 -- fake.securecall, as Core's run through securecallfunction.
-part(function(fake, Pagle, ns)
+part(function(fake, Pagle, ns, host)
 	local commands = ns.NewSlashCommands()
 	Pagle.RegisterCallback(commands, "ModulesChanged", function()
 		commands:AddModules(fake.registry:Modules(), fake.report)
 	end)
 
-	local function openSettings()
-		Pagle.OpenSettings()
-	end
-	local settings = ns.SettingsMenuEntry(openSettings)
+	local core = ns.CoreSubcommands(Pagle)
+	local settings = ns.SettingsMenuEntry(core.settings)
 	function fake.menu()
 		local shop = ns.CurioShopMenuEntry(Pagle.GetBalance(), breakUpLargeNumbers)
-		return ns.CompartmentMenu(fake.registry:Modules(), shop, settings, fake.securecall)
+		local fieldReport = ns.FieldReportMenuEntry(Pagle.GetFieldReportCount(), core.report)
+		return ns.CompartmentMenu(fake.registry:Modules(), shop, fieldReport, settings, fake.securecall)
 	end
 
+	-- /pagle dev (#247), on Core's wiring: the same switch in fake.global, Sessions and fishing as Core's.
+	ns.WireDev(host, function(announcement)
+		fake.announcements[#fake.announcements + 1] = announcement
+	end)
 	function fake.slash(line)
-		commands:Run(line, openSettings, fake.securecall, fake.print)
+		commands:Run(line, core, fake.securecall, fake.print)
 	end
 end)
 
--- Condition specs (LOG-R48): pure, so the real one.
+-- Condition specs (LOG-R48): pure, so the real one. A Module hands back the specs and conditions Core gave it, here
+-- read-only proxies, which the real one sees through as Core does its own tables in the client.
 part(function(_, Pagle, ns)
-	Pagle.MatchesConditions = ns.MatchesConditions
+	function Pagle.MatchesConditions(spec, snapshot)
+		return ns.MatchesConditions(originalOf[spec] or spec, originalOf[snapshot] or snapshot)
+	end
 end)
 
 -- The Catch log (LOG-R10–R16, LOG-R42) on Core's real codec, over an empty in-memory PagleLog. A spec adds
@@ -564,6 +583,54 @@ part(function(fake, Pagle, ns)
 	fake.setCatalogue(ns.catalogue)
 end)
 
+-- The Field report's count (REP-R25, REP-R26, LOG-R78), on Core's wiring over the fake's host, bound on
+-- fake.projections ahead of every Module's: fake.catchLog, the catalogue served now, and fake.global's
+-- projections.fieldReport and diagnostics (empty; a spec fills the buffer with LOG-R81 entries). Its records reach it
+-- read-only, as every projection's do here, and Core's logic walks them with newFakePagle's proxy-aware pairs and
+-- ipairs.
+part(function(fake, Pagle, ns, host)
+	ns.WireFieldReport(host)
+	local fieldReport = assert(ns.fieldReport)
+	local setCount
+	function Pagle.GetFieldReportCount()
+		if setCount then
+			return setCount
+		end
+		return fieldReport.count()
+	end
+	function fake.setFieldReportCount(n)
+		setCount = n
+	end
+
+	-- The box (REP-R40–R44), on Core's real Pagle.OpenFieldReport: each opening's view, its text built now from the
+	-- rows above on Core's wiring, as Core's adapter builds it (the header's addon version reads "test", the locale
+	-- "enUS", and no name is cached), lands in fake.fieldReportsOpened; while restricted it prints REP-R44's line
+	-- instead.
+	fake.fieldReportsOpened = {}
+	local noName = function()
+		return nil
+	end
+	Pagle.OpenFieldReport = ns.OpenFieldReportFunction({
+		isRestricted = function()
+			return Pagle.IsRestricted()
+		end,
+		print = fake.print,
+		rows = fieldReport.rows,
+		text = ns.FieldReportTextFunction(host, {
+			addon = function()
+				return "test"
+			end,
+			locale = function()
+				return "enUS"
+			end,
+			names = { item = noName, area = noName },
+		}),
+		show = function(view)
+			fake.fieldReportsOpened[#fake.fieldReportsOpened + 1] = view
+		end,
+	})
+end)
+
 -- The live conditions (LOG-R45, LOG-R47). Pagle.GetConditions hands out fake.conditions, read-only, with the
 -- restriction flag; fake.setConditions replaces it and fires ConditionsChanged with the keys Core's real tracker
 -- finds changed.
@@ -602,6 +669,17 @@ part(function(fake, Pagle, ns)
 	end
 end)
 
+-- Window forecasts (LOG-R50), on Core's own Pagle.NextWindow body (ns.ForecastWindow) over the fake's catalogue: the
+-- realm's UTC offset comes from fake.conditions' time and minute (a nil minute is a secret clock), and the events
+-- open now from fake.conditions.events, so setConditions moves the clock and the calendar. Each Window is read-only.
+-- A spec Pagle.GetWindowSpec handed out goes in as its record, as Core takes its own (`#` sees nothing in a proxy).
+part(function(fake, Pagle, ns)
+	function Pagle.NextWindow(spec, fromTime)
+		spec = originalOf[spec] or spec
+		return readOnly(ns.ForecastWindow(spec, fromTime, fake.conditions, ns.Catalogue.GetEventRule))
+	end
+end)
+
 -- Fishing (LOG-R2–R9, LOG-R43), on Core's real Cast state machine: a spec plays a Cast's signals (or a whole Cast
 -- with playCast) and the Module gets Core's events, each Cast recorded to fake.catchLog first, with fake.conditions
 -- as its snapshot, at the fake's server time. The fake's clock starts at 0 (server time SERVER_TIME) and moves only
@@ -613,13 +691,16 @@ part(function(fake, Pagle, ns, host)
 
 	local fishing = ns.NewFishing({
 		isFishingSpell = ns.IsFishingChannel,
-		record = function(outcome, items)
+		record = function(outcome, items, _, area)
 			local char = Pagle.GetAngler().current
 			if not char then
 				return nil
 			end
 			local conditions = copyConditions(fake.conditions)
 			conditions.time, conditions.date = SERVER_TIME + math.floor(clock.time()), nil
+			if area then
+				conditions.zone, conditions.subzone = area.zone, area.subzone
+			end
 			recorded = fake.catchLog:Append({
 				kind = "cast",
 				char = char,
@@ -634,6 +715,7 @@ part(function(fake, Pagle, ns, host)
 		end,
 		fire = fake.fire,
 	})
+	ns.fishing = fishing
 
 	function Pagle.GetFishingState()
 		return fishing:GetState()
@@ -672,7 +754,7 @@ part(function(fake, Pagle, ns, host)
 	-- Sessions (LOG-R60–R64), on Core's wiring over fake.catchLog and fake.global, at the fake's server time. The
 	-- session tag is the Catch log's own. Login opens them, noting the latest Session (one ended before it gets its
 	-- SessionEnded, whileAway, once no projection is updating, unless global.lastEndedSession names it); each Cast
-	-- fires the Session events after its append (LOG-R9 step 3); the Session ends when fake.wait has passed 900 s
+	-- fires the Session events after its append (LOG-R9 step 3); the Session ends when fake.wait has passed 300 s
 	-- after its last Cast.
 	fake.serverTime = host.serverTime
 	Pagle.SESSION_RULES_VERSION = ns.SESSION_RULES_VERSION
@@ -758,6 +840,10 @@ end)
 ---@return FakePagle
 function newFakePagle()
 	local ns, env = loadCoreLogic()
+	-- Core's own projection (the Field report's) gets its records as the read-only proxies every projection gets here,
+	-- through host.iterate and fake.live, and walks them with Core's logic: these see through a proxy, and on plain
+	-- tables behave as the stock ones.
+	env.pairs, env.ipairs, env.next = proxyPairs, proxyIpairs, proxyNext
 	-- Pagle.API_VERSION as adapter/Core.lua sets it; fake_pagle_spec.lua checks they agree.
 	local Pagle = { API_VERSION = 1 }
 	local fake = { Pagle = Pagle, ns = ns, printed = {}, readOnly = readOnly }
@@ -823,6 +909,7 @@ function newFakePagle()
 		end,
 		call = fake.securecall,
 		report = fake.report,
+		print = fake.print,
 		syncLimit = math.huge, -- every catch-up and rebuild runs at once
 		timers = timers,
 	}

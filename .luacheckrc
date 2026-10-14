@@ -44,8 +44,9 @@ stds.wow = {
 		"BreakUpLargeNumbers",
 		-- The Catch log (LOG-R11, LOG-R15).
 		"GetServerTime",
-		-- The runtime area index and zone resolution (LOG-R22, LOG-R23).
-		C_Map = { fields = { "GetAreaInfo", "GetBestMapForUnit" } },
+		-- The runtime area index and zone resolution (LOG-R22, LOG-R23); GetMapInfo: the Journal's continent tabs
+		-- (LED-R126).
+		C_Map = { fields = { "GetAreaInfo", "GetBestMapForUnit", "GetMapInfo" } },
 		"GetRealZoneText",
 		"GetSubZoneText",
 		"GetInstanceInfo",
@@ -63,6 +64,8 @@ stds.wow = {
 		-- GetWeaponEnchantInfo is in stds.wow_variables. Its clams (QOL-R55, QOL-R57) use the same click, bag and
 		-- name calls.
 		"SetOverrideBindingClick",
+		-- GetItemNameByID is also the Ledger's item names (LED-R97, LED-R126), and RequestLoadItemDataByID the
+		-- Journal's uncached ones (LED-R126). GetItemInfo: the Field report's item names (REP-R30).
 		C_Item = {
 			fields = {
 				"GetItemInfoInstant",
@@ -72,6 +75,7 @@ stds.wow = {
 				"GetItemNameByID",
 				"RequestLoadItemDataByID",
 				"GetItemIconByID", -- the next-action button's lure icon (QOL-R71)
+				"GetItemInfo",
 			},
 		},
 		C_Spell = { fields = { "GetSpellName", "GetSpellTexture" } }, -- GetSpellTexture: the icon of QOL-R41
@@ -122,7 +126,8 @@ stds.wow = {
 		"GetProfessions",
 		"GetProfessionInfo",
 		"GetBuildInfo",
-		-- The conditions snapshot and service (LOG-R20, LOG-R45–R47); it reads skill as above (LOG-R30).
+		-- The conditions snapshot and service (LOG-R20, LOG-R45–R47); it reads skill as above (LOG-R30). GetGameTime
+		-- also gives the Journal its realm offset (LED-R126).
 		"GetGameTime",
 		C_DateAndTime = { fields = { "GetCurrentCalendarTime" } },
 		C_Calendar = { fields = { "OpenCalendar", "GetMonthInfo", "GetNumDayEvents", "GetDayEvent" } },
@@ -145,6 +150,9 @@ stds.wow = {
 		-- lanes run on GetTime and C_Timer.After, and an item icon comes from C_Item.GetItemInfoInstant (above).
 		"UIParent",
 		"PlaySoundFile",
+		-- The Fish Journal's serif and handwriting font objects (ledger.md › UI); its frame is drawn on CreateFrame and
+		-- UIParent above and hides with Esc through UISpecialFrames (below).
+		"CreateFont",
 	},
 }
 
@@ -292,6 +300,7 @@ local helperGlobals = {
 	"foreverWith",
 	"setCombat",
 	"openedNames",
+	"characterRecord",
 	"savedLog",
 	"loadCollectingErrors",
 	"breakUpLargeNumbers",
@@ -300,6 +309,7 @@ local helperGlobals = {
 	"BUILD_ENTRY",
 	"castEntry",
 	"history",
+	"unchartedHistory",
 	"loadCore",
 	"enterWorld",
 	"catchOne",
@@ -308,6 +318,20 @@ local helperGlobals = {
 	"forbiddenIn",
 	"shippedFiles",
 	"readFile",
+	"itemRecord",
+	"fishRecord",
+	"areaRecord",
+	"catchEntry",
+	"NIGHT_WINDOW",
+	"itemLookup",
+	"applyLive",
+	"catalogueWith",
+	"castRecord",
+	"shownTexts",
+	"blockTexts",
+	"blockOfKind",
+	"blockWithText",
+	"openJournal",
 }
 files["spec/**"] = { std = "lua51+busted", read_globals = helperGlobals }
 files["spec/support/*.lua"] = { globals = helperGlobals }

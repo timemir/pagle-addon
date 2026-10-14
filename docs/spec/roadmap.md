@@ -191,6 +191,7 @@ Ledger slice 2: the Journal book (Species, Zone Mastery, Sub-collections, Trophy
 **Core rules:**
 - CORE-R40's "Help chart the waters" button, CORE-R50's "Help chart the waters" entry, CORE-R61's `report`
 - LOG-R78 for the Field report projection
+- LOG-R50 (`Pagle.NextWindow`), for LED-R127's window states
 - every rule in `field-report.md`: REP-R1–R5, REP-R10–R12, REP-R20–R23, REP-R25, REP-R26, REP-R30–R33, REP-R35–R37, REP-R40–R46, REP-R90–R96
 
 **Content data rules:**
@@ -259,11 +260,10 @@ Legends, titles, Simulated Size with the typical-length check on, Catch Mileston
 
 ## M5 Hunts
 
-**Goal:** the Hunts Module, the Now/Soon board and its tracker, Core's tracker dock (built with its first tracker), `NextWindow`, the Hunt list and its lock tooling, and Hunts lore with its check on.
+**Goal:** the Hunts Module, the Now/Soon board and its tracker, Core's tracker dock (built with its first tracker), the Hunt list and its lock tooling, and Hunts lore with its check on.
 
 **Core rules:**
 - CORE-R70–R73 (the tracker dock), with the Trackers page's "Tracker position" row and its Reset button (SET-R40). The Trackers page is registered from here on, since Hunts gives it rows (CORE-R42).
-- LOG-R50 (`Pagle.NextWindow`)
 
 **Content data rules:**
 - DATA-R72, DATA-R75 for `HuntList.lua`
@@ -308,7 +308,7 @@ Legends, titles, Simulated Size with the typical-length check on, Catch Mileston
 1. With a log from earlier milestones, enable Pagle_Stats and log in: no Write-up and nothing pops up. `/pagle stats` and the compartment entry toggle the book; the nameplate reads "{n} Casts · {m} Sessions · since {date}", and the home spread has a tile per fished zone.
 2. Open *Where I am*: rows are grouped Any time, Pools, In their window and Also caught here. An item with under 100 Casts in its scope reads "learning {n}/100"; a known one reads "about 1 in N" with its range and a scope line naming the Casts it rests on, on the right skill side.
 3. With the live tracker off, watch a Dry spell: the tracker turns on with one chat line and docks below the Hunts tracker. A 4th watch is refused with the UI error. Catch the watched item: its count reads "just now".
-4. Stop fishing for 15 minutes, then cast again: a new Session starts, and the Sessions page lists both. Nothing pops up at any point.
+4. Stop fishing for 5 minutes, then cast again: a new Session starts, and the Sessions page lists both. Nothing pops up at any point.
 5. Change a window or a catch list in content data and `/reload`: the book and tracker show their updating states, the numbers follow the new data, and nothing is announced.
 6. `scripts/check.sh` passes with `stats` in `data/checks.toml`'s `lore`, including the copy test that finds no "due" wording (STA-R58).
 

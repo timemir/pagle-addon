@@ -1,6 +1,8 @@
 """The data/observed/ layer (DATA-R8 order 4): what was seen in-game. dev.toml holds the dev's reporter keys and own
 facts (DATA-R122); reports/<reporterKey>.toml holds one reporter's imported Field report rows (DATA-R121), written
 by M3's importer. Keys and types are the Data section's in docs/spec/content-data.md, the rows' fields REP-R20–R22's.
+pooltext.toml is the dev's hand-kept map of hovered texts to pool types (DATA-R118): read here, strictly, but not an
+observation; only the triage Action uses it.
 
 observations() turns the layer into DATA-R45's observations: non-rejected I and K rows (DATA-R50) and dev facts,
 each with its reporter (DATA-R46) and its areas mapped through the alias table (DATA-R34). P rows are kept here but
@@ -9,9 +11,10 @@ computes the observed pairs and confirmed flags (DATA-R47–R55).
 """
 
 import re
-from collections.abc import Collection, Mapping
+from collections.abc import Collection, Iterable, Mapping
 from dataclasses import dataclass, field, replace
 from pathlib import Path
+from typing import Protocol
 
 from pagle_data.errors import At, Problems
 from pagle_data.toml_reader import (
@@ -27,6 +30,10 @@ from pagle_data.toml_reader import (
 OBSERVED = "data/observed/"
 DEV = "data/observed/dev.toml"
 REPORTS = "data/observed/reports"
+POOLTEXT = "data/observed/pooltext.toml"
+
+# What a pooltext.toml entry may map a text to besides a pool type ID (DATA-R118).
+POOLTEXT_KINDS = ("bobber", "other")
 
 # The one reporter every dev key and every dev fact counts as (DATA-R46).
 DEV_REPORTER = "dev"
@@ -34,14 +41,15 @@ DEV_REPORTER = "dev"
 # Tunables: the minimum confirming build (DATA-R46, DATA-R57). 0 counts every Forever build.
 MINIMUM_CONFIRMING_BUILD = 0
 
+# The report fields' shapes, shared with the Field report parser (pagle_data.report), so what it parses reads back.
 # A reporter key (REP-R36): FNV-1a 32-bit as 8 lowercase hex characters.
-_REPORTER_KEY = re.compile(r"[0-9a-f]{8}")
+REPORTER_KEY = re.compile(r"[0-9a-f]{8}")
 # The header's data (REP-R30): the first 8 characters of the content fingerprint, lowercase hex.
-_DATA = re.compile(r"[0-9a-f]{8}")
+DATA = re.compile(r"[0-9a-f]{8}")
 # A client locale as GetLocale() gives it, such as enUS or deDE.
-_LOCALE = re.compile(r"[a-z]{2}[A-Z]{2}")
+LOCALE = re.compile(r"[a-z]{2}[A-Z]{2}")
 # t (REP-R20): the start of a 15-minute realm-time bucket, HH:MM.
-_BUCKET = re.compile(r"([01][0-9]|2[0-3]):(00|15|30|45)")
+BUCKET = re.compile(r"([01][0-9]|2[0-3]):(00|15|30|45)")
 # A window ID (DATA-R35): the six named windows, or event.<eventID>.
 _WINDOW = re.compile(r"day|night|spring|summer|autumn|winter|event\.[1-9][0-9]*")
 
@@ -54,6 +62,30 @@ FACT_IDS: dict[str, tuple[str, ...]] = {
     "skillBase": ("area",),
 }
 _FACT_ID_KEYS = ("item", "area", "window", "event")
+
+# FNV-1a 32-bit (REP-R36): the offset basis and the prime.
+_FNV_BASIS = 0x811C9DC5
+_FNV_PRIME = 0x01000193
+
+
+def bucket_minute(text: str) -> int | None:
+    """t (REP-R20) as its minute of the realm day, or None when text isn't a 15-minute bucket's start, HH:MM."""
+    found = BUCKET.fullmatch(text)
+    return None if found is None else int(found[1]) * 60 + int(found[2])
+
+
+def bucket_text(minute: int) -> str:
+    """t (REP-R20) as HH:MM, from its minute of the realm day: bucket_minute's inverse."""
+    return f"{minute // 60:02d}:{minute % 60:02d}"
+
+
+def reporter_key(log_id: str) -> str:
+    """The reporter key of a log (REP-R36): FNV-1a 32-bit of PagleLog.logId's bytes, 8 lowercase hex characters,
+    zero-padded. The key dev.toml's keys list for the dev's own logs (DATA-R122)."""
+    hashed = _FNV_BASIS
+    for byte in log_id.encode("utf-8"):
+        hashed = ((hashed ^ byte) * _FNV_PRIME) & 0xFFFFFFFF
+    return f"{hashed:08x}"
 
 
 @dataclass(frozen=True)
@@ -125,6 +157,32 @@ class Report:
     skills: tuple[SkillRow, ...]
     pool_texts: tuple[PoolTextRow, ...]
 
+    @property
+    def rows(self) -> tuple["Row", ...]:
+        return rows_of(self)
+
+
+# A report's row: I, K or P (REP-R20–R22).
+Row = CatchRow | SkillRow | PoolTextRow
+
+
+class HoldsRows(Protocol):
+    """A report's rows by kind: a stored report, a parsed part or a joined Field report."""
+
+    @property
+    def catches(self) -> tuple[CatchRow, ...]: ...
+
+    @property
+    def skills(self) -> tuple[SkillRow, ...]: ...
+
+    @property
+    def pool_texts(self) -> tuple[PoolTextRow, ...]: ...
+
+
+def rows_of(report: HoldsRows) -> tuple[Row, ...]:
+    """Every row of a report: its I rows, then its K rows, then its P rows, each in the order held."""
+    return (*report.catches, *report.skills, *report.pool_texts)
+
 
 @dataclass(frozen=True)
 class DevFact:
@@ -143,13 +201,26 @@ class DevFact:
     reporter = DEV_REPORTER
 
 
+@dataclass(frozen=True)
+class PoolTextEntry:
+    """A [[text]] in pooltext.toml (DATA-R118): a hovered text in a locale, mapped to a pool type ID, bobber or
+    other."""
+
+    locale: str
+    text: str
+    pool: str
+    at: At
+
+
 @dataclass
 class ObservedLayer:
-    """data/observed/ as read: dev.toml's keys and facts, and the report files by reporter key."""
+    """data/observed/ as read: dev.toml's keys and facts, the report files by reporter key, and pooltext.toml's
+    entries."""
 
     keys: tuple[str, ...] = ()
     facts: tuple[DevFact, ...] = ()
     reports: Mapping[str, Report] = field(default_factory=dict)
+    pooltext: tuple[PoolTextEntry, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -227,12 +298,15 @@ def observations(layer: ObservedLayer, aliases: Mapping[int, int]) -> Observatio
 # Reading
 
 
-def _expect_string(value: object, at: At, problems: Problems, pattern: re.Pattern[str] | None = None) -> str | None:
-    """value as a non-empty string (matching pattern, when given), or None with a problem."""
+def _expect_string(
+    value: object, at: At, problems: Problems, pattern: re.Pattern[str] | None = None, *, blank: bool = False
+) -> str | None:
+    """value as a non-empty string (matching pattern, when given), or None with a problem. A blank one (only
+    whitespace) is a problem unless blank is set."""
     if not isinstance(value, str):
         problems.add(at, f"expected a string, got {describe(value)}")
         return None
-    if not value.strip():
+    if not (value if blank else value.strip()):
         problems.add(at, "expected a non-empty string")
         return None
     if pattern is not None and not pattern.fullmatch(value):
@@ -264,17 +338,17 @@ class _Fields:
     def __init__(self, table: Mapping[str, object], at: At, problems: Problems) -> None:
         self.table, self.at, self.problems, self.ok = table, at, problems, True
 
-    def number(self, key: str, minimum: int, maximum: int | None = None) -> int | None:
+    def number(self, key: str, minimum: int | None, maximum: int | None = None) -> int | None:
         if key not in self.table:
             return None  # check_keys reports a missing required key
         value = expect_int(self.table[key], self.at / key, self.problems, minimum=minimum, maximum=maximum)
         self.ok = self.ok and value is not None
         return value
 
-    def text(self, key: str, pattern: re.Pattern[str] | None = None) -> str | None:
+    def text(self, key: str, pattern: re.Pattern[str] | None = None, *, blank: bool = False) -> str | None:
         if key not in self.table:
             return None
-        value = _expect_string(self.table[key], self.at / key, self.problems, pattern)
+        value = _expect_string(self.table[key], self.at / key, self.problems, pattern, blank=blank)
         self.ok = self.ok and value is not None
         return value
 
@@ -288,37 +362,60 @@ class _Fields:
     def has(self, *keys: str) -> bool:
         return self.ok and all(key in self.table for key in keys)
 
+    def row_field(self, key: str) -> int | None:
+        """A row's integer field, within its FIELD_BOUNDS."""
+        return self.number(key, *FIELD_BOUNDS[key])
 
-_I_KEYS = ("item", "area", "build", "count")
-_K_KEYS = ("area", "build", "casts", "away")
-_P_KEYS = ("area", "locale", "text", "casts")
+
+# Every integer field of a row and its bounds, (minimum, maximum), None for none (REP-R20–R22): the one table this
+# reader and the Field report parser (pagle_data.report) both read, so a row one refuses the other refuses too
+# (DATA-R116). aura and event bound each ID of their lists; item and count are also a P row's itemID and total; land
+# and lost are effective skill, rank plus a modifier that may be below 0 (REP-R21).
+FIELD_BOUNDS: dict[str, tuple[int | None, int | None]] = {
+    "item": (1, None),
+    "area": (1, None),
+    "build": (0, None),
+    "count": (1, None),
+    "aura": (1, None),
+    "event": (1, None),
+    "m": (1, 12),
+    "casts": (1, None),
+    "away": (0, None),
+    "land": (None, None),
+    "lost": (None, None),
+}
+
+# Each row's required keys in reports/<key>.toml.
+_I_REQUIRED_KEYS = ("item", "area", "build", "count")
+_K_REQUIRED_KEYS = ("area", "build", "casts", "away")
+_P_REQUIRED_KEYS = ("area", "locale", "text", "casts")
 
 
 def _catch_row(table: Mapping[str, object], at: At, key: str, problems: Problems) -> CatchRow | None:
-    check_keys(table, at, problems, required=_I_KEYS, optional=("aura", "event", "t", "m", "rejected"))
+    check_keys(table, at, problems, required=_I_REQUIRED_KEYS, optional=("aura", "event", "t", "m", "rejected"))
     fields = _Fields(table, at, problems)
-    item, area = fields.number("item", 1), fields.number("area", 1)
-    build, count = fields.number("build", 0), fields.number("count", 1)
+    item, area = fields.row_field("item"), fields.row_field("area")
+    build, count = fields.row_field("build"), fields.row_field("count")
     auras, events = fields.ids("aura"), fields.ids("event")
-    bucket, month = fields.text("t", _BUCKET), fields.number("m", 1, 12)
+    bucket, month = fields.text("t", BUCKET), fields.row_field("m")
     rejected = fields.text("rejected")
     if ("t" in table) != ("m" in table):
         problems.add(at, "t and m go together (REP-R20)")
         return None
-    if not fields.has(*_I_KEYS) or item is None or area is None or build is None or count is None:
+    if not fields.has(*_I_REQUIRED_KEYS) or item is None or area is None or build is None or count is None:
         return None
-    t = None if bucket is None else int(bucket[:2]) * 60 + int(bucket[3:])
+    t = None if bucket is None else bucket_minute(bucket)
     return CatchRow(item, area, build, count, auras, events, t, month, rejected, key, at)
 
 
 def _skill_row(table: Mapping[str, object], at: At, key: str, problems: Problems) -> SkillRow | None:
-    check_keys(table, at, problems, required=_K_KEYS, optional=("land", "lost", "rejected"))
+    check_keys(table, at, problems, required=_K_REQUIRED_KEYS, optional=("land", "lost", "rejected"))
     fields = _Fields(table, at, problems)
-    area, build = fields.number("area", 1), fields.number("build", 0)
-    casts, away = fields.number("casts", 1), fields.number("away", 0)
-    land, lost = fields.number("land", 0), fields.number("lost", 0)
+    area, build = fields.row_field("area"), fields.row_field("build")
+    casts, away = fields.row_field("casts"), fields.row_field("away")
+    land, lost = fields.row_field("land"), fields.row_field("lost")
     rejected = fields.text("rejected")
-    if not fields.has(*_K_KEYS) or area is None or build is None or casts is None or away is None:
+    if not fields.has(*_K_REQUIRED_KEYS) or area is None or build is None or casts is None or away is None:
         return None
     return SkillRow(area, build, casts, away, land, lost, rejected, key, at)
 
@@ -332,7 +429,7 @@ def _pool_items(value: object, at: At, problems: Problems) -> tuple[tuple[int, i
     ok = True
     for key, count in table.items():
         item = parse_id(key, at / key, problems)
-        quantity = expect_int(count, at / key, problems, minimum=1)
+        quantity = expect_int(count, at / key, problems, minimum=FIELD_BOUNDS["count"][0])
         if item is None or quantity is None:
             ok = False
         else:
@@ -341,13 +438,13 @@ def _pool_items(value: object, at: At, problems: Problems) -> tuple[tuple[int, i
 
 
 def _pool_text_row(table: Mapping[str, object], at: At, problems: Problems) -> PoolTextRow | None:
-    check_keys(table, at, problems, required=_P_KEYS, optional=("items", "rejected"))
+    check_keys(table, at, problems, required=_P_REQUIRED_KEYS, optional=("items", "rejected"))
     fields = _Fields(table, at, problems)
-    area, casts = fields.number("area", 1), fields.number("casts", 1)
-    locale, text = fields.text("locale", _LOCALE), fields.text("text")
+    area, casts = fields.row_field("area"), fields.row_field("casts")
+    locale, text = fields.text("locale", LOCALE), fields.text("text", blank=True)  # a hovered text (REP-R22)
     rejected = fields.text("rejected")
     items = _pool_items(table["items"], at / "items", problems) if "items" in table else ()
-    if not fields.has(*_P_KEYS) or items is None or area is None or casts is None or locale is None or text is None:
+    if not fields.has(*_P_REQUIRED_KEYS) or items is None or area is None or casts is None or locale is None or text is None:
         return None
     return PoolTextRow(area, locale, text, casts, items, rejected, at)
 
@@ -358,20 +455,34 @@ def _header(value: object, at: At, problems: Problems) -> Header | None:
         return None
     check_keys(table, at, problems, required=("addon", "data", "locale"), optional=())
     fields = _Fields(table, at, problems)
-    addon, data, locale = fields.text("addon"), fields.text("data", _DATA), fields.text("locale", _LOCALE)
+    addon, data, locale = fields.text("addon"), fields.text("data", DATA), fields.text("locale", LOCALE)
     if addon is None or data is None or locale is None:
         return None
     return Header(addon, data, locale)
 
 
-def _row_key_check(keys: list[tuple[At, object]], problems: Problems) -> None:
-    """DATA-R121: a reporter's file keeps one row per row key."""
-    first: dict[object, At] = {}
-    for at, key in keys:
+def row_key(row: Row) -> tuple[object, ...]:
+    """A row's key (DATA-R121), led by its kind: I by (item, area, build, auras, events, t, m), K by (area, build), P
+    by (area, locale, text). The one definition of a duplicate row, shared by this reader and the Field report
+    parser (DATA-R116), so the generator, the importer and the triage Action agree on it."""
+    if isinstance(row, CatchRow):
+        return ("I", row.item, row.area, row.build, row.auras, row.events, row.t, row.m)
+    if isinstance(row, SkillRow):
+        return ("K", row.area, row.build)
+    return ("P", row.area, row.locale, row.text)
+
+
+def duplicate_rows(rows: Iterable[Row], problems: Problems) -> None:
+    """DATA-R121: one row per row key. Each row whose key an earlier row has is a problem at the later row, naming
+    the earlier one's place, and its file (or issue) when that is another."""
+    first: dict[tuple[object, ...], At] = {}
+    for row in rows:
+        key = row_key(row)
         if key in first:
-            problems.add(at, f"the same row key as {first[key].path} (DATA-R121)")
+            earlier = first[key].path if first[key].file == row.at.file else str(first[key])
+            problems.add(row.at, f"the same row key as {earlier} (DATA-R121)")
         else:
-            first[key] = at
+            first[key] = row.at
 
 
 def _read_report(root: Path, file: str, key: str, problems: Problems) -> Report | None:
@@ -401,10 +512,9 @@ def _report(
     i_rows = tuple(row for row in catches if row is not None)
     k_rows = tuple(row for row in skills if row is not None)
     p_rows = tuple(row for row in pool_texts if row is not None)
-    _row_key_check([(r.at, (r.item, r.area, r.build, r.auras, r.events, r.t, r.m)) for r in i_rows], problems)
-    _row_key_check([(r.at, (r.area, r.build)) for r in k_rows], problems)
-    _row_key_check([(r.at, (r.area, r.locale, r.text)) for r in p_rows], problems)
-    return Report(key, tuple(issues), header, i_rows, k_rows, p_rows)
+    report = Report(key, tuple(issues), header, i_rows, k_rows, p_rows)
+    duplicate_rows(report.rows, problems)
+    return report
 
 
 def _read_reports(root: Path, problems: Problems) -> dict[str, Report]:
@@ -416,7 +526,7 @@ def _read_reports(root: Path, problems: Problems) -> dict[str, Report]:
     reports: dict[str, Report] = {}
     for path in sorted(directory.iterdir()):
         file = f"{REPORTS}/{path.name}"
-        if not (path.is_file() and path.suffix == ".toml" and _REPORTER_KEY.fullmatch(path.stem)):
+        if not (path.is_file() and path.suffix == ".toml" and REPORTER_KEY.fullmatch(path.stem)):
             problems.add(At(file), "not a report file: expected <reporterKey>.toml, the key 8 lowercase hex (REP-R36)")
             continue
         report = _read_report(root, file, path.stem, problems)
@@ -455,7 +565,7 @@ def _read_dev(root: Path, layer: ObservedLayer, problems: Problems) -> None:
     else:
         for index, key in enumerate(value):
             key_at = At(DEV, f"keys[{index}]")
-            read = _expect_string(key, key_at, problems, _REPORTER_KEY)
+            read = _expect_string(key, key_at, problems, REPORTER_KEY)
             if read is not None and read in keys:
                 problems.add(key_at, f"'{read}' is listed twice")
             elif read is not None:
@@ -464,10 +574,48 @@ def _read_dev(root: Path, layer: ObservedLayer, problems: Problems) -> None:
     layer.keys, layer.facts = tuple(keys), tuple(fact for fact in facts if fact is not None)
 
 
+def _read_pooltext(root: Path, problems: Problems) -> tuple[PoolTextEntry, ...]:
+    """pooltext.toml's entries (DATA-R118), each (locale, text) once. A missing file has none: the dev keeps it by
+    hand. Which pool types exist is pools.toml's, so check_pooltext judges pool once both are read."""
+    if not (root / POOLTEXT).is_file():
+        return ()
+    document = read_toml(root, POOLTEXT, problems)
+    if document is None:
+        return ()
+    at = At(POOLTEXT)
+    check_keys(document, at, problems, required=(), optional=("text",))
+    entries: list[PoolTextEntry] = []
+    seen: set[tuple[str, str]] = set()
+    for entry_at, table in _tables(document, "text", at, problems):
+        check_keys(table, entry_at, problems, required=("locale", "text", "pool"), optional=())
+        fields = _Fields(table, entry_at, problems)
+        locale, text, pool = fields.text("locale", LOCALE), fields.text("text", blank=True), fields.text("pool")
+        if locale is None or text is None or pool is None:
+            continue
+        if (locale, text) in seen:
+            problems.add(entry_at, f"({locale}, '{text}') is already mapped: one pool per text and locale (DATA-R118)")
+            continue
+        seen.add((locale, text))
+        entries.append(PoolTextEntry(locale, text, pool, entry_at))
+    return tuple(entries)
+
+
+def check_pooltext(entries: Iterable[PoolTextEntry], pool_types: Collection[str], problems: Problems) -> None:
+    """DATA-R118: each entry's pool is a pool type ID of pools.toml, bobber or other."""
+    for entry in entries:
+        if entry.pool not in pool_types and entry.pool not in POOLTEXT_KINDS:
+            problems.add(
+                entry.at / "pool",
+                f"'{entry.pool}' is no pool type in data/forever/pools.toml, nor bobber or other (DATA-R118)",
+            )
+
+
 def read_observed(root: Path, problems: Problems) -> ObservedLayer:
-    """The layer under root/data/observed/: dev.toml (required) and any report files. Each problem found goes into
-    problems; what was read is returned either way, and the caller must not use it while there are problems."""
+    """The layer under root/data/observed/: dev.toml (required), any report files and pooltext.toml, if any. Each
+    problem found goes into problems; what was read is returned either way, and the caller must not use it while
+    there are problems."""
     layer = ObservedLayer()
     _read_dev(root, layer, problems)
     layer.reports = _read_reports(root, problems)
+    layer.pooltext = _read_pooltext(root, problems)
     return layer

@@ -5,42 +5,36 @@
 -- The fixture catalogue: what GetItem returns for each item ID (LOG-R55). Unlisted IDs are Uncharted.
 local MACKEREL, SMALLFISH, LEGEND, NOISE = 6303, 6291, 19803, 6358
 local TROPHY, JUNK, CHEST, TREASURE, OTHER, UNCHARTED = 13901, 6309, 6307, 6308, 4592, 99999
+-- One trophy family's three weights, in pounds (LED-R61).
+local TROPHY40, TROPHY60, TROPHY50 = 13876, 13877, 13878
 local ITEMS = {
-	[MACKEREL] = { category = "fish", species = MACKEREL, legend = false, noise = false, removed = false, pool = false },
-	[SMALLFISH] = {
-		category = "questFish",
-		species = SMALLFISH,
-		legend = false,
-		noise = false,
-		removed = false,
-		pool = true,
-	},
-	[LEGEND] = { category = "fish", species = LEGEND, legend = true, noise = false, removed = false, pool = false },
-	[NOISE] = { category = "fish", species = NOISE, legend = false, noise = true, removed = false, pool = false },
-	[TROPHY] = {
-		category = "trophy",
-		family = 1,
-		weight = 19,
-		legend = false,
-		noise = false,
-		removed = false,
-		pool = false,
-	},
-	[JUNK] = { category = "junk", legend = false, noise = false, removed = false, pool = false },
-	[CHEST] = { category = "container", legend = false, noise = false, removed = false, pool = false },
-	[TREASURE] = { category = "treasure", legend = false, noise = false, removed = false, pool = false },
-	[OTHER] = { category = "other", legend = false, noise = false, removed = false, pool = false },
+	[MACKEREL] = fishRecord(MACKEREL),
+	[SMALLFISH] = fishRecord(SMALLFISH, { category = "questFish", pool = true }),
+	[LEGEND] = fishRecord(LEGEND, { legend = true }),
+	[NOISE] = fishRecord(NOISE, { noise = true }),
+	[TROPHY] = itemRecord("trophy", { family = 1, weight = 19 }),
+	[TROPHY40] = itemRecord("trophy", { family = 2, weight = 40 }),
+	[TROPHY60] = itemRecord("trophy", { family = 2, weight = 60 }),
+	[TROPHY50] = itemRecord("trophy", { family = 2, weight = 50 }),
+	[JUNK] = itemRecord("junk"),
+	[CHEST] = itemRecord("container"),
+	[TREASURE] = itemRecord("treasure"),
+	[OTHER] = itemRecord("other"),
 }
 
 local ELWYNN, WESTFALL = 12, 40
-local T0 = 1791731000
+local T0 = SERVER_TIME - 700
 local HOUR = 3600
 
----@param itemID integer
----@return PagleItem?
-local function getItem(itemID)
-	assert(itemID ~= 0, "item 0 is never looked up (LED-R5)")
-	return ITEMS[itemID]
+local getItem = itemLookup(ITEMS)
+
+local DAY = 86400
+
+-- A Cast's realm date (LOG-R49), made up for the fixture: T0 falls on 1 October 2026, one day later each 24 hours.
+---@param time integer
+local function dateOf(time)
+	local day = 1 + math.floor((time - T0) / DAY)
+	return { year = 2026, month = 10, day = day, weekday = 1 + (day + 3) % 7 }
 end
 
 -- Builds records the way the Catch log hands them out (LOG-R42), with seq and entry IDs in order.
@@ -61,22 +55,16 @@ local function newLog()
 	---@param char integer?
 	---@return PagleCast
 	function log.cast(time, zone, itemIDs, char)
-		local s, id = header(time)
-		local items = {}
-		for n, itemID in ipairs(itemIDs) do
-			items[n] = { n = n, itemID = itemID, quantity = 1, catchId = id .. ":" .. n }
-		end
-		return {
+		local s = header(time)
+		return castRecord({
 			seq = s,
-			id = id,
-			kind = "cast",
-			char = char or 1,
 			time = time,
-			outcome = "caught",
-			session = "s",
-			conditions = { time = time, zone = zone, subzone = 0, minute = 0, events = {}, auras = {} },
-			items = items,
-		}
+			zone = zone,
+			items = itemIDs,
+			char = char,
+			minute = 0,
+			date = dateOf(time),
+		})
 	end
 
 	--- A got-away Cast (LOG-R7).
@@ -106,22 +94,39 @@ local function newLog()
 end
 
 describe("The Ledger's fold", function()
-	local ns = loadAddon("Pagle_Ledger", FOREVER_GLOBALS).ns
+	local loaded = loadAddon("Pagle_Ledger", FOREVER_GLOBALS)
+	local ns = loaded.ns
+
+	-- The world index (LED-R10) over the fixture: Mackerel and Smallfish ungated in three zones, so a spec here
+	-- reaches ★★ only with three zones (LED-R45; logic/Stars_spec.lua covers the stars). None of them is a zone the
+	-- specs here fish in, so no Catch here earns a Zone Mastery rank (LED-R50; logic/ZoneMastery_spec.lua has those).
+	local world = ns.NewWorld({
+		GetItem = getItem,
+		GetZones = function()
+			return { 1, 3, 10 }
+		end,
+		GetArea = function()
+			return { parent = 0, continent = 0, hasData = true, skillBaseConfirmed = true, catches = {} }
+		end,
+		GetZoneCatches = function()
+			return { { itemID = MACKEREL, confirmed = true }, { itemID = SMALLFISH, confirmed = true } }
+		end,
+	})
+
+	-- The fold's lookups over `get` (the fixture's GetItem by default), Core's MatchesConditions and the world.
+	local function lookups(get)
+		return { GetItem = get or getItem, MatchesConditions = loaded.env.Pagle.MatchesConditions, world = world }
+	end
 
 	local fold, log
 	before_each(function()
-		fold = ns.NewLedgerFold({ GetItem = getItem })
+		fold = ns.NewLedgerFold(lookups())
 		log = newLog()
 	end)
 
 	-- A fresh state with every record applied in "live" mode; returns it and every achievement, in order.
 	local function applyAll(records, mode, state)
-		state = state or fold.reset()
-		local earned = {}
-		for _, record in ipairs(records) do
-			fold.apply(state, record, mode or "live", earned)
-		end
-		return state, earned
+		return applyLive(fold, records, state, mode)
 	end
 
 	-- The kinds of a list of achievements, in order.
@@ -144,24 +149,17 @@ describe("The Ledger's fold", function()
 			assert.are.equal(LEGEND, earned[1].species)
 		end)
 
-		it("gives Noise, other, Uncharted and item 0 the base only (LED-R5, LED-R196)", function()
-			local state, earned = applyAll({ log.cast(T0, ELWYNN, { NOISE, OTHER, UNCHARTED, 0 }) })
-
-			assert.are.equal(4, state.catches)
-			assert.are.same({}, state.species)
-			assert.are.same({}, earned)
-			-- Catch XP for each, doubled under Fresh Water, and the first Catch in the zone (LED-R20, LED-R22).
-			assert.are.equal(4 * 20 + 200, state.xp)
-			assert.is_truthy(state.zones[ELWYNN])
-		end)
-
-		it("gives trophy and curio items the base only in M2: their collections come in M3 (LED-R4)", function()
-			local state, earned = applyAll({ log.cast(T0, 0, { TROPHY, JUNK, CHEST }) })
+		it("gives Noise, other and item 0 the base only (LED-R5, LED-R196)", function()
+			local state, earned = applyAll({ log.cast(T0, ELWYNN, { NOISE, OTHER, 0 }) })
 
 			assert.are.equal(3, state.catches)
-			assert.are.equal(3 * 20, state.xp)
 			assert.are.same({}, state.species)
+			assert.are.same({}, state.items)
+			assert.are.same({}, state.uncharted)
 			assert.are.same({}, earned)
+			-- Catch XP for each, doubled under Fresh Water, and the first Catch in the zone (LED-R20, LED-R22).
+			assert.are.equal(3 * 20 + 200, state.xp)
+			assert.is_truthy(state.zones[ELWYNN])
 		end)
 
 		it("classifies first match wins: item 0, Uncharted, Noise, Species, trophy, curio, other (LED-R5)", function()
@@ -179,11 +177,207 @@ describe("The Ledger's fold", function()
 		end)
 	end)
 
+	describe("the Uncharted list (LED-R64, LED-R196)", function()
+		it("lists an Uncharted item by Catches, first Catch and Catches per zone, zone 0 left out (LED-R64)", function()
+			local first = log.cast(T0, ELWYNN, { UNCHARTED }, 2)
+			local state, earned = applyAll({
+				first,
+				log.cast(T0 + DAY, WESTFALL, { UNCHARTED }),
+				log.cast(T0 + 2 * DAY, 0, { UNCHARTED }),
+				log.cast(T0 + 3 * DAY, ELWYNN, { UNCHARTED }),
+			})
+
+			assert.are.same({
+				[UNCHARTED] = {
+					n = 4,
+					time = T0,
+					char = 2,
+					zone = ELWYNN,
+					date = { year = 2026, month = 10, day = 1 },
+					zones = { [ELWYNN] = 2, [WESTFALL] = 1 },
+				},
+			}, state.uncharted)
+			-- One Nod's achievement, at its first Catch (LED-R64, LED-R97), paying no Coins (LED-R88).
+			assert.are.same({ { kind = "uncharted", cast = first.id, coins = 0, itemID = UNCHARTED } }, earned)
+			assert.are.equal(0, state.coins)
+		end)
+
+		it("gives an Uncharted Catch the base and nothing else (LED-R5, LED-R196)", function()
+			local state = applyAll({ log.cast(T0, ELWYNN, { UNCHARTED }) })
+
+			assert.are.equal(1, state.catches)
+			assert.are.equal(20 + 200, state.xp)
+			assert.are.same({}, state.species)
+			assert.are.same({}, state.items)
+		end)
+
+		it("credits every earlier Catch as its class once a release classifies it, on a rebuild (LED-R196)", function()
+			local records = {
+				log.cast(T0, ELWYNN, { UNCHARTED }),
+				log.cast(T0 + DAY, WESTFALL, { UNCHARTED, UNCHARTED }),
+			}
+			local _, before = applyAll(records, "rebuild")
+			assert.are.same({ "uncharted" }, kinds(before))
+
+			-- The next release knows the item: a junk item (LOG-R96). The rebuild runs over the new catalogue.
+			local released = ns.NewLedgerFold(lookups(function(itemID)
+				if itemID == UNCHARTED then
+					return itemRecord("junk")
+				end
+				return getItem(itemID)
+			end))
+			local state, scratch = released.reset(), {}
+			for _, record in ipairs(records) do
+				released.apply(state, record, "rebuild", scratch)
+			end
+
+			assert.are.same({}, state.uncharted)
+			assert.are.same(
+				{ n = 3, time = T0, char = 1, zone = ELWYNN, date = { year = 2026, month = 10, day = 1 } },
+				state.items[UNCHARTED]
+			)
+			-- Its achievements go to the scratch list, with the Cast that earned them (LED-R98).
+			assert.are.same({ kind = "newCurio", cast = records[1].id, coins = 5, itemID = UNCHARTED }, scratch[1])
+			assert.are.same({ "newCurio" }, kinds(scratch))
+			assert.are.equal(5, state.coins)
+		end)
+
+		it("never lists item 0 (LED-R64, LED-R196, LOG-R96)", function()
+			local state, earned = applyAll({ log.cast(T0, ELWYNN, { 0 }), log.cast(T0 + 60, 0, { 0 }) })
+
+			assert.are.same({}, state.uncharted)
+			assert.are.same({}, earned)
+			assert.are.equal(2, state.catches)
+		end)
+	end)
+
+	describe("collections (LED-R60, LED-R61)", function()
+		it(
+			"gives a junk item's first Catch 150 XP, 5 Coins and newCurio, its second the base only (LED-R20, LED-R88)",
+			function()
+				local first = log.cast(T0, 0, { JUNK })
+				local state, earned = applyAll({ first })
+
+				assert.are.equal(20 + 150, state.xp)
+				assert.are.equal(5, state.coins)
+				assert.are.same({ { kind = "newCurio", cast = first.id, coins = 5, itemID = JUNK } }, earned)
+
+				local xp = state.xp
+				local _, again = applyAll({ log.cast(T0 + 60, 0, { JUNK }) }, "live", state)
+				assert.are.equal(xp + 20, state.xp)
+				assert.are.equal(5, state.coins)
+				assert.are.same({}, again)
+			end
+		)
+
+		it("collects container and treasure items as curios too, by item ID (LED-R60, LED-R20)", function()
+			local cast = log.cast(T0, 0, { CHEST, TREASURE, CHEST })
+			local state, earned = applyAll({ cast })
+
+			assert.are.equal(3 * 20 + 2 * 150, state.xp)
+			assert.are.equal(10, state.coins)
+			assert.are.same({ "newCurio", "newCurio" }, kinds(earned))
+			assert.are.same({ CHEST, TREASURE }, { earned[1].itemID, earned[2].itemID })
+			assert.are.same({ 2, 1 }, { state.items[CHEST].n, state.items[TREASURE].n })
+		end)
+
+		it("keeps each trophy and curio item's Catches and first Catch (LED-R60, ledger.md › Data)", function()
+			local state = applyAll({
+				log.cast(T0, ELWYNN, { TROPHY }, 2),
+				log.cast(T0 + DAY, WESTFALL, { TROPHY, JUNK }),
+			})
+
+			assert.are.same({
+				[TROPHY] = { n = 2, time = T0, char = 2, zone = ELWYNN, date = { year = 2026, month = 10, day = 1 } },
+				[JUNK] = {
+					n = 1,
+					time = T0 + DAY,
+					char = 1,
+					zone = WESTFALL,
+					date = { year = 2026, month = 10, day = 2 },
+				},
+			}, state.items)
+		end)
+
+		it(
+			"rules a family's heavier weight from the heaviest landed: 40 none, 60 from 40, 50 none (LED-R61)",
+			function()
+				local c40 = log.cast(T0, ELWYNN, { TROPHY40 })
+				local c60 = log.cast(T0 + 60, ELWYNN, { TROPHY60 })
+				local c50 = log.cast(T0 + 120, ELWYNN, { TROPHY50 })
+				local state, earned = applyAll({ c40, c60, c50 })
+
+				assert.are.same({
+					{ kind = "trophyWeight", cast = c40.id, coins = 5, itemID = TROPHY40, family = 2 },
+					{
+						kind = "trophyWeight",
+						cast = c60.id,
+						coins = 5,
+						itemID = TROPHY60,
+						family = 2,
+						old = 40,
+						new = 60,
+					},
+					{ kind = "trophyWeight", cast = c50.id, coins = 5, itemID = TROPHY50, family = 2 },
+				}, earned)
+				-- Each a new trophy weight: 100 XP and 5 Coins (LED-R20, LED-R88), with the zone's first Catch.
+				assert.are.equal(3 * 20 + 3 * 100 + 200, state.xp)
+				assert.are.equal(15, state.coins)
+			end
+		)
+
+		it("rules no weight against another family's, nor a weight landed again (LED-R61)", function()
+			local state, earned = applyAll({ log.cast(T0, 0, { TROPHY, TROPHY40, TROPHY }) })
+
+			assert.are.same({ "trophyWeight", "trophyWeight" }, kinds(earned))
+			assert.is_nil(earned[2].old)
+			assert.are.equal(2, state.items[TROPHY].n)
+		end)
+	end)
+
+	describe("first Catches (LED-R140, LED-R146)", function()
+		it("keeps the realm date of the first Catch of any class, item 0 too (LED-R146)", function()
+			local state = applyAll({ log.gotAway(T0, ELWYNN), log.cast(T0 + DAY, 0, { 0 }) })
+			assert.are.same({ year = 2026, month = 10, day = 2 }, state.firstDate)
+
+			applyAll({ log.cast(T0 + 2 * DAY, ELWYNN, { MACKEREL }) }, "live", state)
+			assert.are.same({ year = 2026, month = 10, day = 2 }, state.firstDate)
+		end)
+
+		it("has no first date before the first Catch (LED-R146)", function()
+			assert.is_nil(applyAll({ log.gotAway(T0, ELWYNN) }).firstDate)
+		end)
+
+		it(
+			"keeps a Species' first Catch: time, character, zone and realm date, by any of its items (LED-R140)",
+			function()
+				local state = applyAll({
+					log.cast(T0, 0, { OTHER }),
+					log.cast(T0 + DAY, WESTFALL, { MACKEREL }, 2),
+					log.cast(T0 + 3 * DAY, ELWYNN, { MACKEREL }),
+				})
+
+				assert.are.same({
+					n = 2,
+					time = T0 + DAY,
+					char = 2,
+					zone = WESTFALL,
+					date = { year = 2026, month = 10, day = 2 },
+					zones = { [WESTFALL] = true, [ELWYNN] = true },
+					windowsMet = {}, -- Mackerel has no element windows (LED-R45)
+				}, state.species[MACKEREL])
+			end
+		)
+	end)
+
 	describe("zones (LED-R6)", function()
 		it("makes a zone fished at any Catch there, earning 200 XP once (LED-R6, LED-R20, LED-R21)", function()
-			local state = applyAll({ log.cast(T0, ELWYNN, { JUNK }), log.cast(T0 + 60, ELWYNN, { OTHER }) })
+			local state = applyAll({ log.cast(T0, ELWYNN, { NOISE }), log.cast(T0 + 60, ELWYNN, { OTHER }) })
 
-			assert.are.same({ [ELWYNN] = { species = {} } }, state.zones)
+			assert.are.same(
+				{ [ELWYNN] = { species = {}, families = {}, items = {}, junk = false, treasure = false, rank = 0 } },
+				state.zones
+			)
 			assert.are.equal(20 + 200 + 20, state.xp)
 		end)
 
@@ -437,6 +631,8 @@ describe("The Ledger's fold", function()
 				l.cast(T0 + 5 * HOUR, WESTFALL, { MACKEREL, SMALLFISH, TROPHY }, 2),
 				l.skill(T0 + 6 * HOUR, 300, 2),
 				l.cast(T0 + 40 * HOUR, WESTFALL, { LEGEND, JUNK, OTHER }),
+				l.cast(T0 + 41 * HOUR, ELWYNN, { TROPHY40, UNCHARTED, CHEST, JUNK }),
+				l.cast(T0 + 42 * HOUR, 0, { TROPHY60, TROPHY50, UNCHARTED }),
 			}
 		end
 
@@ -501,12 +697,14 @@ describe("The Ledger's fold", function()
 				coins = 0,
 				skill = {},
 				species = {},
+				items = {},
+				uncharted = {},
 				zones = {},
 			}, a)
 		end)
 
-		it("is LEDGER_RULES_VERSION 1 in M2 (LED-R4, Tunables)", function()
-			assert.are.equal(1, ns.LEDGER_RULES_VERSION)
+		it("is LEDGER_RULES_VERSION 2 in M3 (LED-R4, Tunables)", function()
+			assert.are.equal(2, ns.LEDGER_RULES_VERSION)
 		end)
 	end)
 

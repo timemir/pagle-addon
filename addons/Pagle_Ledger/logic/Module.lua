@@ -7,14 +7,25 @@ local ns = select(2, ...)
 
 -- What the Ledger registers with Core (LED-R1): pure logic, everything passed in (CORE-R7).
 
---- The Ledger's def for `Pagle.RegisterModule` (LED-R1). In M2 it has no view, slash command, menu entry,
---- `settingsAction` or settings rows, so its status row has no button (SET-R11, LED-R4). Its Fish Journal view and
---- `/pagle journal` come in M3.
+--- The Ledger's def for `Pagle.RegisterModule` (LED-R1): its one view, the Fish Journal, and `/pagle journal`, both
+--- toggling the Journal (any text after the command is ignored). No menu entry, `settingsAction` or settings rows, so
+--- its status button is "Open Fish Journal" (CORE-R44, SET-R11).
+---@param toggleJournal fun() opens or closes the Fish Journal
 ---@return PagleModuleDef
-function ns.ModuleDef()
+function ns.ModuleDef(toggleJournal)
 	return {
 		name = "Ledger",
 		title = ns.L.TITLE,
 		order = 10,
+		views = { { id = "journal", label = ns.L.JOURNAL, open = toggleJournal } },
+		slash = {
+			{
+				name = "journal",
+				fn = function()
+					toggleJournal()
+				end,
+				help = ns.L.JOURNAL_SLASH_HELP,
+			},
+		},
 	}
 end

@@ -41,7 +41,7 @@ Part of [Core](README.md). A **Field report** is the text an Angler copies out o
 
 - **REP-R20** **`I` rows**: `I <itemID> <areaID> <build> <count>`, plus optional keys:
   - `aura=<id,id…>` and `event=<id,id…>`: the Cast's active listed auras and events, ascending, comma-separated; left out when none
-  - `t=<HH:MM>` and `m=<month>`: only for items whose catch entry has a `gate`, and for Uncharted items. `t` is the start of the Cast's 15-minute realm-time bucket; `m` is the realm month, 1–12. Both are emitted together, whatever kind of window the gate has.
+  - `t=<HH:MM>` and `m=<month>`: only for items whose catch entry has a `gate`, and for Uncharted items. `t` is the start of the Cast's 15-minute realm-time bucket; `m` is the realm month, 1–12. Both are emitted together, whatever kind of window the gate has. A Cast with no realm minute (recorded while the realm clock was secret, LOG-R49) has neither: its row leaves out both, and so does its key (REP-R11). Such a row is never time-gated evidence, inside or outside a `time` or `season` gate (DATA-R51).
   No row carries a server timestamp.
 - **REP-R21** **`K` rows**, for skill evidence. An area **qualifies**, across all builds, when its catalogue entry has a `skillBase` with `skillBaseConfirmed = false`, or when its `skillBase` is **contradicted**: some Cast there caught a non-junk, known item at an effective skill (rank + modifier) below `skillBase`. The `skillBase` used for a Cast is its report area's, else its zone's; the row's area is the area that `skillBase` came from. A qualifying area gets one row per build that has Casts there: `K <areaID> <build> casts=<n> away=<n> land=<skill> lost=<skill>`, where:
   - `casts` counts every Cast there (caught and got away), `away` the got-away ones
@@ -83,7 +83,7 @@ Part of [Core](README.md). A **Field report** is the text an Angler copies out o
   - A comment is ` # ` followed by names in the player's locale, for humans only: `I` rows get the item name (left out if `C_Item.GetItemInfo` hasn't cached it), then the area name; `K` and `P` rows get the area name.
   - `END` closes every part, so a truncated paste is detectable.
 - **REP-R31** Parsers treat ` # ` outside double quotes as the start of a comment and ignore the rest of the line. They ignore unknown `key=value` keys, so adding a key needs no version bump; a changed meaning of anything existing bumps `PAGLE-REPORT`.
-- **REP-R32** Inside quotes, `\` escapes `"`, `\` and `n` (a newline).
+- **REP-R32** Inside quotes, `\` escapes `"`, `\` and `n` (a newline). A carriage return in a text, alone or before a newline, is written as `\n` too, so a pasted row never splits.
 - **REP-R33** A report over 60,000 bytes (header and `END` included) is split into numbered parts (`part 1/2`), each with its own two header lines and `END`, each at most 60,000 bytes, never truncated. Rows fill each part in sort order before the next part starts.
 
 ### Privacy
@@ -140,7 +140,7 @@ None of its own; the Settings root has its button (CORE-R40).
 | Time bucket | 15 min | REP-R20 |
 | Part size limit | 60,000 bytes | REP-R33 |
 | Reporter key | 8 hex, FNV-1a 32-bit of `logId` | REP-R36 |
-| Field report rules version | 1 | REP-R25 |
+| Field report rules version | 2 | REP-R25 |
 | Format version | `PAGLE-REPORT 1` | REP-R30 |
 
 ## Edge cases

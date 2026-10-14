@@ -103,7 +103,7 @@ Join three layers on item ID and area ID. Ship IDs and resolve names, icons and 
 2. **What the Fishing Rack ("uncommon fish") and Fishing Hut ("rare fish") unlock**, and whether the uncommon tier is the Bloated containers.
 3. **Whimsyfin:** so far only seen at School of Whimsyfin pools east of Lake Everstill, Redridge (Wowhead comments: ~150 skill for no fails, 10 spawn points, 2 active). Open water and other zones are unknown.
 4. **Fishing in the 4 new zones** (Riverglades, Shen'dralas, Gilneas, Mount Hyjal) and new subzones (Hayward Fishery, Shark-Infested Waters): skill and catches.
-5. **Exact Forever windows** for Nightfin/Sunscale and Summer Bass/Winter Squid, and whether Lightning Eel and Plated Armorfish are really gated.
+5. **Exact Forever windows** for Nightfin/Sunscale and Summer Bass/Winter Squid, and whether Lightning Eel and Plated Armorfish are really gated. #175 kept the 18-hour cycles in the table above (day 06:00–24:00, night 18:00–12:00, overlapping 06–12 and 18–24) in `data/forever/windows.toml`, both unconfirmed until observed catches settle them.
 6. **Zone skill gates.** A forum player says "zones may require a minimum level to fish in them". Is that a hard minimum (vanilla-style) or a junk curve? Do Classic base levels hold?
 7. **Extravaganza** loot, rare fish and the 50-winner rule. It needs level 60, above the beta cap, so it is untested (foreverdb).
 8. **"Unique fish" for Prepare Fish/Chef's Knife** and what feeds Seasonal Fish Steaks.

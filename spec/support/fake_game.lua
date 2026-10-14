@@ -58,9 +58,11 @@
 ---@field mainHandEnchant integer? The enchant ID on the main hand (a lure), as `GetWeaponEnchantInfo()` reads it.
 ---@field itemSpells table<integer, { [1]: string, [2]: integer }> The spell each item's use casts, by item ID, as
 --- `C_Item.GetItemSpell` returns it: name, spell ID.
----@field itemNames table<integer, string> Each item's name, by item ID, as `C_Item.GetItemNameByID` returns it once
---- the item is cached; an item not listed isn't cached.
----@field itemDataRequests integer[] Each `C_Item.RequestLoadItemDataByID` call's item ID, in order.
+---@field itemNames table<integer, string> Each item's name, by item ID, as `C_Item.GetItemNameByID` and
+--- `C_Item.GetItemInfo` return it once the item is cached; an item not listed isn't cached. Default: the lure and
+--- clam tables' items only.
+---@field itemRequests integer[] Each `C_Item.RequestLoadItemDataByID` call's item ID, in order. The client loads
+--- nothing on its own: a spec sets `itemNames` and fires GET_ITEM_INFO_RECEIVED itself, or calls `loadItem`.
 ---@field itemIcons table<integer, integer> Each item's icon file ID, by item ID, as `GetInventoryItemTexture` reads
 --- it for a worn item and `C_Item.GetItemIconByID` for any.
 ---@field loadItem fun(itemID: integer, name: string) An item's data arrives: its name is cached as `name`, and each
@@ -139,7 +141,7 @@ return function(client, stubs)
 		[5524] = "Thick-shelled Clam",
 		[7973] = "Big-mouth Clam",
 	}
-	client.itemDataRequests = {}
+	client.itemRequests = {}
 	client.fireGameEvent = client.fire
 
 	-- Override calls are protected: in combat lockdown the client blocks them (ADDON_ACTION_BLOCKED). Here they
@@ -260,7 +262,12 @@ return function(client, stubs)
 		return client.itemNames[itemID]
 	end
 	stubs.C_Item.RequestLoadItemDataByID = function(itemID)
-		client.itemDataRequests[#client.itemDataRequests + 1] = itemID
+		client.itemRequests[#client.itemRequests + 1] = itemID
+	end
+	-- The item's name first, as GetItemInfo returns it once the client has the item cached (the Field report's
+	-- comments, REP-R30); nothing for one it doesn't know.
+	stubs.C_Item.GetItemInfo = function(itemID)
+		return client.itemNames[itemID]
 	end
 	-- An item's icon by item ID, from client.itemIcons, whether or not its name is cached.
 	stubs.C_Item.GetItemIconByID = function(itemID)

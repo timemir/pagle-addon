@@ -1,0 +1,311 @@
+# The Ledger's lore (DATA-R100), emitted into addons/Pagle_Ledger/data/Lore.lua as ns.L entries (DATA-R104).
+# One table per <kind>.<id> holding its fields (DATA-R101): [species.<speciesID>] blurb and riddle, [legend.<itemID>]
+# blurb and title, [sub.<itemID>] plaque and [family.<familyID>] name (DATA-R103), and the kinds manifest.toml lists
+# under [ledger.*] (DATA-R106). Lore is never part of the catalogue and changes no count (DATA-R109).
+# The first batch, drafted from VOICE.md, came with the Ledger's lore check (DATA-R111, #131). A PR that adds a
+# Species or item adds its lore here, drafted from VOICE.md the same way. The comment after each table is the enUS
+# DB2 name, for review only (DATA-R3).
+#
+# Riddles show only until the thing is caught (LED-R124, LED-R141): a kind of place or time, never a zone, hour or
+# skill, and never a word from the fish's name (DATA-R110). Each is written against where its fish is listed
+# (scripts/generate-data.py --explain <itemID>).
+
+# Species (LED-R140, LED-R141), by Species ID, removed ones included.
+
+[species.1467] # Spotted Sunfish
+blurb = "A cheerful little fish with no idea how many cooks are waiting for it."
+riddle = "A calm hill lake in settled farming country."
+
+[species.4603] # Raw Spotted Yellowtail
+blurb = "Fast, bright, and very pleased with itself."
+riddle = "Salt coasts north and south, on both sides of the sea."
+
+[species.6289] # Raw Longjaw Mud Snapper
+blurb = "It bites anything, including, once, a gnome's boot."
+riddle = "Lazy rivers in the lands where heroes begin."
+
+[species.6291] # Raw Brilliant Smallfish
+blurb = "Small, bright and everywhere. Every angler's book starts here, and nobody admits how many they threw back."
+riddle = "The very first thing to tug a beginner's line, in the gentlest waters of all."
+
+[species.6299] # Sickly Looking Fish
+blurb = "Looks bad, smells worse, cooks into something a raptor would eat."
+riddle = "Tired, grey water in the gloomy north, on both sides of the sea."
+
+[species.6303] # Raw Slitherskin Mackerel
+blurb = "Slippery enough to earn the name. Fries up better than it has any right to."
+riddle = "Shallow coasts, where new adventurers wade."
+
+[species.6308] # Raw Bristle Whisker Catfish
+blurb = "All whiskers and grudge. It sulks on the bottom until it decides to fight."
+riddle = "Murky rivers on both sides of the sea."
+
+[species.6317] # Raw Loch Frenzy
+blurb = "Named by dwarves, who name everything after how it behaves when you try to hold it."
+riddle = "Cold highland lake water, in dwarf country."
+
+[species.6358] # Oily Blackmouth
+blurb = "Alchemists want the oil. Cooks want nothing to do with it."
+riddle = "A school that leaves a slick on coastal waters."
+
+[species.6359] # Firefin Snapper
+blurb = "Warm to the touch, even out of the water."
+riddle = "Swirling schools the colour of embers, off coasts north and south."
+
+[species.6361] # Raw Rainbow Fin Albacore
+blurb = "The colours fade within an hour of landing. Look quickly."
+riddle = "Open coast, a little further from shore than you're used to."
+
+[species.6362] # Raw Rockscale Cod
+blurb = "Stubborn on the line, sweet on the plate."
+riddle = "Sea coasts from the misty north to the hot south, where the bottom drops away."
+
+[species.6458] # Oil Covered Fish
+blurb = "Less a fish than a warning about the water. Wash it twice, then think again."
+riddle = "Fouled water where goblins drill the dry hills and plains."
+
+[species.6522] # Deviate Fish
+blurb = "Eat one at your own risk. No two anglers who did tell the same story about the hour after."
+riddle = "Strange schools out on the dry plains, where the water itself seems unwell."
+
+[species.6717] # Gaffer Jack
+blurb = "Gruff, bony and hard to unhook, like most old hands on a dock."
+riddle = "An old hand's catch, off a misty northern coast or in the desert far south."
+
+[species.6718] # Electropeller
+blurb = "Hums faintly in the hand, and the hairs on your arm stand up to listen."
+riddle = "A hum under the water, from the dim northern shores to the hot southern sands."
+
+[species.8365] # Raw Mithril Head Trout
+blurb = "The head really does shine. No, it isn't mithril. Stop asking the smith."
+riddle = "Lakes and rivers in rougher country, from deep forest to bare desert."
+
+[species.12238] # Darkshore Grouper
+blurb = "Broad, slow and grey as the coast it's named for. It makes a better stew than a first impression."
+riddle = "Grey water under old trees on a moonlit coast, or far south in the desert."
+
+[species.13422] # Stonescale Eel
+blurb = "Armourers pay well for the scales. The eel disagrees with the arrangement."
+riddle = "A writhing swarm in deep sea water off the wilder coasts."
+
+[species.13754] # Raw Glossy Mightfish
+blurb = "Heavy enough that some anglers fish it sitting down."
+riddle = "Open sea off the far coasts, deep enough for the heavy ones."
+
+[species.13755] # Raw Winter Squid
+blurb = "Arrives with the frost. More arms than an angler can reasonably untangle."
+riddle = "Warm shores, once the year turns cold."
+
+[species.13756] # Raw Summer Bass
+blurb = "Turns up with the long days and leaves with the first cold wind."
+riddle = "Warm shores in the warm half of the year."
+
+[species.13757] # Lightning Eel
+blurb = "Tingles. Don't lick it."
+riddle = "A crackle in far, wild waters, from sunrise into the late evening."
+
+[species.13758] # Raw Redgill
+blurb = "Gills like embers. Bites like it means it."
+riddle = "Inland waters of the wilder lands, by day or by night."
+
+[species.13759] # Raw Nightfin Snapper
+blurb = "Feeds by starlight. Anglers who want it learn to like the dark."
+riddle = "Wild waters far from the gentle shores, after the sun goes down."
+
+[species.13760] # Raw Sunscale Salmon
+blurb = "Rises with the sun and keeps late hours. Nobody knows where it goes before dawn."
+riddle = "Far rivers and lakes, warm or cold, while the sun is up."
+
+[species.13888] # Darkclaw Lobster
+blurb = "Pinches first, asks questions never."
+riddle = "Deep rocky waters at the far edges of the world."
+
+[species.13889] # Raw Whitescale Salmon
+blurb = "Pale as frost. Best eaten the day it's caught, which is rarely possible."
+riddle = "The farthest waters there are, from frozen lakes to scorched hills."
+
+[species.13890] # Raw Plated Armorfish
+blurb = "Wears its armour on the outside and its temper on the inside. Bring a heavier knife."
+riddle = "Something heavy in the farthest waters, after the sun goes down."
+
+[species.13893] # Large Raw Mightfish
+blurb = "The big cousin. You will need both hands and probably a friend."
+riddle = "Deep water off a far and forgotten coast."
+
+[species.16967] # Feralas Ahi
+blurb = "Big, quick and good eating. Most are caught as a favour for someone else, which seems a waste."
+riddle = "A broad river through wet, overgrown forest in the far west."
+
+[species.16968] # Sar'theris Striker
+blurb = "Hits the bait like it's been waiting all day for an argument."
+riddle = "A bleak, grey shore on a dry and empty western coast."
+
+[species.16969] # Savage Coast Blue Sailfin
+blurb = "That sail is for show, and it knows it. Fights like it has an audience."
+riddle = "Warm jungle shallows along a wild and dangerous shore."
+
+[species.16970] # Misty Reed Mahi Mahi
+blurb = "Bright as a jungle bird and twice as much trouble on the line."
+riddle = "Warm, murky shallows where a swamp meets the sea."
+
+[species.19807] # Speckled Tastyfish
+blurb = "Tournament fish. Tastes like winning, or at least like trying."
+riddle = "Only while the jungle's great contest is on."
+
+[species.19975] # Zulian Mudskunk
+blurb = "Smells exactly as the name promises. Somebody, somewhere, still wants a dozen."
+riddle = "Churning brown water, deep in the steaming jungle."
+
+[species.21071] # Raw Sagefish
+blurb = "Smells like the hills it swims past."
+riddle = "Small schools in the hills and forests, smelling faintly of herbs."
+
+[species.21153] # Raw Greater Sagefish
+blurb = "The sage grew up."
+riddle = "Bigger herb-scented schools, in snowy hills and steaming jungle."
+
+[species.251524] # Whimsyfin
+blurb = "New to these waters, and nobody's quite sure how it got here."
+riddle = "Bright new schools on a quiet lake in the eastern hills."
+
+# Legends (LED-R147): the blurb under the first Catch, and the title the Angler can sign with (LED-R75, LED-R77),
+# never "Master Angler". Uncaught Legends share line.uncaughtlegend; none has a riddle (DATA-R110).
+
+[legend.19803] # Brownell's Blue Striped Racer
+blurb = "Most anglers only ever see its wake. This one slowed down long enough to be landed."
+title = "Racer-Chaser"
+
+[legend.19805] # Keefer's Angelfish
+blurb = "Far too handsome for a contest table, and it seems to know it."
+title = "Keefer's Rival"
+
+[legend.19806] # Dezian Queenfish
+blurb = "Carries itself like royalty, and fights as if it had a crown to lose."
+title = "Queen-Catcher"
+
+# Sub-collections (LED-R144): a plaque beside each caught junk, container and treasure item. Junk plaques are museum
+# labels; container and treasure plaques are about who lost it or what's left. None says where it was found.
+
+[sub.6297] # Old Skull
+plaque = "Donated by the water. Owner unknown, and preferably staying that way."
+
+[sub.6301] # Old Teamster's Skull
+plaque = "Belonged to someone who drove wagons. Still looks like it's waiting for one."
+
+[sub.6307] # Message in a Bottle
+plaque = "The ink ran long ago. The cork, to its credit, held."
+
+[sub.6351] # Dented Crate
+plaque = "Dropped once, by the look of it, and then again for good measure."
+
+[sub.6352] # Waterlogged Crate
+plaque = "Packed for a dry voyage. It did not get one."
+
+[sub.6353] # Small Chest
+plaque = "Small enough to lose over the side. Someone proved it."
+
+[sub.6354] # Small Locked Chest
+plaque = "Small, locked, and more trouble to open than it ever was to carry."
+
+[sub.6355] # Sturdy Locked Chest
+plaque = "Built to survive anything. The sea has been testing the claim."
+
+[sub.6356] # Battered Chest
+plaque = "Someone locked it, someone sank it, and neither came back for it."
+
+[sub.6357] # Sealed Crate
+plaque = "Sealed tight against the water. The water was patient."
+
+[sub.6455] # Old Wagonwheel
+plaque = "Where the wagon went is still under investigation."
+
+[sub.6456] # Acidic Slime
+plaque = "Please do not touch the exhibit."
+
+[sub.6457] # Rusted Engineering Parts
+plaque = "A gnome would call this 'nearly working'."
+
+[sub.6643] # Bloated Brilliant Smallfish
+plaque = "A small fish with a large appetite and no sense of what counts as food."
+
+[sub.6645] # Bloated Mud Snapper
+plaque = "It bit something far too big to swallow, and swallowed it anyway."
+
+[sub.6647] # Bloated Bristle Whisker Catfish
+plaque = "Fed off the bottom, where everyone's dropped things end up."
+
+[sub.7973] # Big-mouth Clam
+plaque = "Says nothing about what's inside. Open it anyway; sometimes it's a pearl."
+
+[sub.8366] # Bloated Mithril Head Trout
+plaque = "Ate something shiny. Possibly even mithril, this time."
+
+[sub.13874] # Heavy Crate
+plaque = "Too heavy to float and too heavy to carry far. Someone tried both."
+
+[sub.13875] # Ironbound Locked Chest
+plaque = "Bound in iron and locked besides. Whatever's inside was worth the worry."
+
+[sub.13881] # Bloated Redgill
+plaque = "Too greedy to stop eating, and too full to swim away."
+
+[sub.13918] # Reinforced Locked Chest
+plaque = "Reinforced, locked, and sunk anyway. Some cargo never gets a break."
+
+[sub.20708] # Tightly Sealed Trunk
+plaque = "Sealed so tight the water never got in. Neither, it seems, did the owner."
+
+[sub.21113] # Watertight Trunk
+plaque = "Watertight, as promised. Nobody promised it would float."
+
+[sub.21150] # Iron Bound Trunk
+plaque = "The iron held. The ship it came off did not."
+
+[sub.21162] # Bloated Oily Blackmouth
+plaque = "Swollen, slick and full of someone else's luck. Wash your hands after."
+
+[sub.21164] # Bloated Rockscale Cod
+plaque = "Stubborn to the last. It gave up what it swallowed only to a knife."
+
+[sub.21228] # Mithril Bound Trunk
+plaque = "Bound in mithril. Whoever packed it expected trouble, and got some."
+
+[sub.21243] # Bloated Glossy Mightfish
+plaque = "Big enough to swallow a purse whole, and it did."
+
+# Trophy families (LED-R143): the fish's plain name, singular, as the game's trophy items spell it.
+
+[family.1] # 10, 12 and 15 Pound Mud Snapper
+name = "Mud Snapper"
+
+[family.2] # 17, 19, 22 and 26 Pound Catfish
+name = "Catfish"
+
+[family.3] # 40, 47 and 53 Pound Yellowtail
+name = "Yellowtail"
+
+[family.4] # 34, 37, 42, 45 and 49 Pound Redgill
+name = "Redgill"
+
+[family.5] # 15, 18 and 22 Pound Salmon
+name = "Salmon"
+
+[family.6] # 7 Pound Lobster
+name = "Lobster"
+
+[family.7] # 70 Pound Mightfish
+name = "Mightfish"
+
+# Shared lines (manifest.toml's [ledger.line]), shown in place of whatever isn't caught yet, so never hinting at which.
+
+[line.uncaughtlegend] # an uncaught Legend's page (LED-R147)
+text = "Some fish are only caught once in a long while. This page waits for one."
+
+[line.uncaughtjunk] # under "An empty plinth" in the Junk Museum (LED-R144)
+text = "The plinth is dusted and ready. The exhibit is late."
+
+[line.uncaughttreasure] # a Treasures row not yet opened (LED-R144)
+text = "Something sealed, not yet found."
+
+[line.unchartedwaters] # a zone with no data, before "Every catch here is still written down..." (LED-R138)
+text = "Uncharted waters. No map of these yet."

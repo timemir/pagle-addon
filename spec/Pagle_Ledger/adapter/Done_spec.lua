@@ -2,8 +2,10 @@
 -- what it raises when its projection finishes a first build, a catch-up or a rebuild after login.
 
 local MACKEREL, SMALLFISH, OILY = 6303, 6291, 6358
-local ELWYNN, WESTFALL = 12, 40
-local T0 = 1791731000
+-- Two zones the generated catalogue doesn't chart (no catch data), so no Zone Mastery rank adds its XP and Coins to
+-- these numbers (LED-R54). ZoneMastery_spec.lua has the ranks.
+local BADLANDS, BLASTED_LANDS = 3, 4
+local T0 = SERVER_TIME - 700
 
 -- The names the fake client's C_Item knows.
 local ITEM_NAMES = { [MACKEREL] = "Raw Spotted Yellowtail", [SMALLFISH] = "Raw Brilliant Smallfish" }
@@ -13,35 +15,26 @@ local ITEM_NAMES = { [MACKEREL] = "Raw Spotted Yellowtail", [SMALLFISH] = "Raw B
 ---@param zone integer
 ---@param itemIDs integer[]? nil for a got-away Cast
 local function cast(time, zone, itemIDs)
-	local items = {}
-	for i, itemID in ipairs(itemIDs or {}) do
-		items[i] = { itemID = itemID, quantity = 1 }
-	end
-	return {
-		kind = "cast",
-		char = 1,
-		time = time,
-		outcome = itemIDs and "caught" or "gotAway",
-		conditions = { minute = 494, zone = zone, subzone = 0, events = {}, auras = {} },
-		items = items,
-	}
+	return castRecord({ time = time, zone = zone, items = itemIDs, outcome = itemIDs and "caught" or "gotAway" })
 end
 
--- History before the first login: two Species in Elwynn, a got-away Cast and a known Species in Westfall. XP: 820 +
+-- History before the first login: two Species in Badlands, a got-away Cast and a known Species in Blasted Lands. XP: 820 +
 -- 620 + 320 = 1,760, level 2 (1,080); Coins 10 + 10 + 20 (LED-R20, LED-R22, LED-R30, LED-R88).
 local HISTORY = {
-	cast(T0, ELWYNN, { MACKEREL, SMALLFISH }),
-	cast(T0 + 60, ELWYNN),
-	cast(T0 + 120, WESTFALL, { MACKEREL }),
+	cast(T0, BADLANDS, { MACKEREL, SMALLFISH }),
+	cast(T0 + 60, BADLANDS),
+	cast(T0 + 120, BLASTED_LANDS, { MACKEREL }),
 }
 
 -- A FakePagle over `log` (a PagleLog table, shared between sessions as the saved one is) with `history` appended
--- before login, and `saved` as PagleLedgerDB: the Ledger loaded, logged in and in the world.
+-- before login, and `saved` as PagleLedgerDB: the Ledger loaded, logged in and in the world, fishing live in Blasted
+-- Lands (fake.conditions' zone).
 ---@param options { log: table?, history: table[]?, saved: table?, prepare: fun(fake: FakePagle)? }
 ---@return FakePagle fake
 ---@return LoadedAddon loaded
 local function session(options)
 	local fake = newFakePagle()
+	fake.conditions.zone = BLASTED_LANDS
 	if options.log then
 		fake.catchLog.data = options.log
 	end
@@ -60,7 +53,6 @@ local function session(options)
 	fake.globals.C_Map = {
 		GetAreaInfo = function() end,
 	}
-	fake.globals.BreakUpLargeNumbers = breakUpLargeNumbers
 	if options.prepare then
 		options.prepare(fake)
 	end
@@ -99,13 +91,21 @@ describe("the Ledger's done", function()
 			assert.are.same({
 				levels = { [0] = 2 },
 				species = { [MACKEREL] = true, [SMALLFISH] = true },
-				speciesZones = { ["6303:12"] = true, ["6291:12"] = true, ["6303:40"] = true },
-				zones = { [ELWYNN] = 0, [WESTFALL] = 0 },
+				-- Each Species' ★; neither is in its element yet (LED-R45, LED-R90).
+				stars = { [MACKEREL] = { [1] = true }, [SMALLFISH] = { [1] = true } },
+				familyStars = {},
+				speciesZones = { ["6303:3"] = true, ["6291:3"] = true, ["6303:4"] = true },
+				zones = { [BADLANDS] = 0, [BLASTED_LANDS] = 0 },
+				items = {},
+				uncharted = {},
 				skill = {},
 				coins = 40,
 				logId = fake.catchLog.data.logId,
 			}, celebrated)
-			assert.are.same({ ledger = "Ledger: Angler Level 2" }, fake.global.summary.lines.Ledger.lines)
+			assert.are.same(
+				{ ledger = "Ledger: Angler Level 2 · 1% complete" },
+				fake.global.summary.lines.Ledger.lines
+			)
 		end
 	)
 
@@ -121,7 +121,7 @@ describe("the Ledger's done", function()
 	it(
 		"empties the celebrated set of another logId and handles the done as a first build (LED-R90, LED-R197)",
 		function()
-			local _, lastLoaded = session({ history = { cast(T0, WESTFALL, { OILY }) } })
+			local _, lastLoaded = session({ history = { cast(T0, BLASTED_LANDS, { OILY }) } })
 			local saved = lastLoaded.env.PagleLedgerDB
 			saved.global.celebrated.levels[0] = 9
 			local oldLogId = saved.global.celebrated.logId
@@ -161,10 +161,10 @@ describe("the Ledger's done", function()
 		function()
 			local last, lastLoaded = session({ history = HISTORY })
 
-			-- A new Species, 620 XP to 2,380: level 3 (2,240); and a known one new in Westfall, 120 XP (LED-R20).
+			-- A new Species, 620 XP to 2,380: level 3 (2,240); and a known one new in Blasted Lands, 120 XP (LED-R20).
 			local fake, loaded = nextSession(last, lastLoaded, {
-				cast(T0 + 600, WESTFALL, { OILY }),
-				cast(T0 + 660, WESTFALL, { SMALLFISH }),
+				cast(T0 + 600, BLASTED_LANDS, { OILY }),
+				cast(T0 + 660, BLASTED_LANDS, { SMALLFISH }),
 			})
 
 			assert.are.same(
@@ -176,10 +176,13 @@ describe("the Ledger's done", function()
 			assert.are.same({ { module = "Ledger", total = 70 } }, fake.coinReports)
 			local celebrated = loaded.env.PagleLedgerDB.global.celebrated
 			assert.is_true(celebrated.species[OILY])
-			assert.is_true(celebrated.speciesZones["6291:40"])
+			assert.is_true(celebrated.speciesZones["6291:4"])
 			assert.are.same({ [0] = 3 }, celebrated.levels)
 			assert.are.equal(70, celebrated.coins)
-			assert.are.same({ ledger = "Ledger: Angler Level 3" }, fake.global.summary.lines.Ledger.lines)
+			assert.are.same(
+				{ ledger = "Ledger: Angler Level 3 · 2% complete" },
+				fake.global.summary.lines.Ledger.lines
+			)
 		end
 	)
 
@@ -188,11 +191,11 @@ describe("the Ledger's done", function()
 		function()
 			local last, lastLoaded = session({ history = HISTORY })
 
-			local fake, loaded = nextSession(last, lastLoaded, { cast(T0 + 600, WESTFALL, { SMALLFISH }) })
+			local fake, loaded = nextSession(last, lastLoaded, { cast(T0 + 600, BLASTED_LANDS, { SMALLFISH }) })
 
 			assert.are.same({}, fake.writeUps)
 			assert.are.same({}, fake.summarized)
-			assert.is_true(loaded.env.PagleLedgerDB.global.celebrated.speciesZones["6291:40"])
+			assert.is_true(loaded.env.PagleLedgerDB.global.celebrated.speciesZones["6291:4"])
 		end
 	)
 
@@ -204,7 +207,8 @@ describe("the Ledger's done", function()
 		function()
 			local last, lastLoaded = session({ history = HISTORY })
 			local record = assert(last.playCast("caught", { { itemID = CHARTED_LATER, quantity = 1 } }))
-			assert.are.same({}, last.summarized) -- 20 XP: still level 2
+			-- 20 XP: still level 2. Uncharted, it raises only its Nod (LED-R97).
+			assert.are.same({ "uncharted" }, { last.summarized[1].kind, last.summarized[2] })
 
 			-- The release charts it as a Species: 500 + 100 XP more, past level 3 (2,240), and 10 + 20 Coins.
 			local fake, loaded = nextSession(last, lastLoaded, {}, function(next)
@@ -229,8 +233,10 @@ describe("the Ledger's done", function()
 					tostring(moment.summaryOnly)
 				)
 			end
+			-- On no list, one zone puts it in its element: ★★ with its first Catch (LED-R45, LED-R97).
 			assert.are.same({
 				"newSpecies New Species / Item 99001 10 true true",
+				"elementStar In its element / Item 99001 nil true true",
 				"levelUp Angler Level 3 / nil 20 true true",
 			}, raised)
 			fake.nextFrame()

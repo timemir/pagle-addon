@@ -10,6 +10,8 @@
 ---@field missingEvents table<string, true> Events this client doesn't know: registering one raises an error, as the
 --- client does. Specs add to it.
 ---@field frames table[] Every frame CreateFrame made, in order. A named one is also the load's global of that name.
+---@field focus table? The edit box with the keyboard focus, if any: the one SetFocus was called on last, until its
+--- ClearFocus or another one's SetFocus.
 
 local widgets = {}
 
@@ -22,16 +24,19 @@ local LAYOUT_METHODS = {
 	"SetJustifyV",
 	"SetWordWrap",
 	"SetFontObject",
-	"SetEnabled",
 	"SetTexCoord",
 	"SetClampedToScreen",
 	"SetFrameStrata",
 	"SetUserPlaced",
-	"EnableMouse",
-	"SetVertexColor",
 	"SetScrollChild",
-	"SetVerticalScroll",
 	"EnableMouseWheel",
+	"SetRotation",
+	"SetAutoFocus",
+	"ClearFocus",
+	"SetTextInsets",
+	"SetMaxLetters",
+	"SetMultiLine",
+	"SetCursorPosition",
 }
 
 --- A widget (frame, button, font string or texture) that keeps what specs read back: its text, whether it's shown,
@@ -39,7 +44,8 @@ local LAYOUT_METHODS = {
 --- ClearAllPoints), size (`width`, `height`, as SetSize set them), alpha, text colour (`textColor`, { r, g, b }), a font string's font object (`fontObject`,
 --- CreateFontString's template), a texture's file (`texture`) and whether it's desaturated (`desaturated`), a
 --- button's attributes (`attributes`) and click registration (`clicks`, RegisterForClicks's arguments), and a frame's
---- mouse and moving state: `mouseEnabled`, `movable`, `dragButtons` (RegisterForDrag's arguments) and `moving`.
+--- mouse and moving state: `mouseEnabled`, `movable`, `dragButtons` (RegisterForDrag's arguments) and `moving`; also
+--- a texture's tint (`vertexColor`), whether it takes clicks (`enabled`) and a scroll frame's `verticalScroll`.
 ---@param kind string "Frame", "Button", "FontString", "Texture", …
 ---@param parent table?
 ---@return table
@@ -149,6 +155,28 @@ function widgets.newWidget(kind, parent)
 	function widget:GetStringWidth()
 		return #(self.text or "") * 6
 	end
+	-- One 14-pixel line, as a text that doesn't wrap.
+	function widget.GetStringHeight()
+		return 14
+	end
+	-- Whether SetMovable(true) let the player drag it.
+	function widget:IsMovable()
+		return self.movable == true
+	end
+	-- A texture's tint, as { r, g, b }.
+	function widget:SetVertexColor(r, g, b)
+		self.vertexColor = { r, g, b }
+	end
+	-- A scroll frame's offset; nothing overflows here, so its range is 0.
+	function widget:SetVerticalScroll(offset)
+		self.verticalScroll = offset
+	end
+	function widget:GetVerticalScroll()
+		return self.verticalScroll or 0
+	end
+	function widget.GetVerticalScrollRange()
+		return 0
+	end
 	function widget:Show()
 		self.shown = true
 	end
@@ -167,10 +195,17 @@ function widgets.newWidget(kind, parent)
 	function widget:GetScript(script)
 		return self.scripts[script]
 	end
-	-- As a mouse click does: OnClick with the button, not down.
+	-- Whether it takes clicks: SetEnabled(false) greys a button, and a click on it does nothing.
+	function widget:SetEnabled(enabled)
+		self.enabled = not not enabled
+	end
+	function widget:IsEnabled()
+		return self.enabled ~= false
+	end
+	-- As a mouse click does: OnClick with the button, not down. A disabled button ignores it.
 	function widget:Click()
 		local onClick = self.scripts.OnClick
-		if onClick then
+		if onClick and self.enabled ~= false then
 			onClick(self, "LeftButton", false)
 		end
 	end
@@ -232,8 +267,54 @@ function widgets.newFrame(client, kind, parent)
 	function frame:UnregisterAllEvents()
 		self.events = {}
 	end
+	if frame.kind == "EditBox" then
+		widgets.editBox(client, frame)
+	end
 	client.frames[#client.frames + 1] = frame
 	return frame
+end
+
+--- Makes `box` an edit box, as the client's EditBox behaves for what Pagle calls: SetText runs OnTextChanged with
+--- userInput false and drops the selection; HighlightText keeps the selection in `highlight` ({ start, stop }, the
+--- client's defaults 0 and -1 for all of it); SetFocus and ClearFocus move `client.focus`, SetFocus running
+--- OnEditFocusGained. A spec plays the player with `box:Type(text)`: what the box holds after typing replaces its text
+--- and selection, and OnTextChanged runs with userInput true.
+---@param client FakeClient
+---@param box table
+function widgets.editBox(client, box)
+	local function run(script, ...)
+		local fn = box.scripts[script]
+		if fn then
+			fn(box, ...)
+		end
+	end
+	function box:SetText(text)
+		self.text = text
+		self.highlight = nil
+		run("OnTextChanged", false)
+	end
+	function box:HighlightText(start, stop)
+		self.highlight = { start or 0, stop or -1 }
+	end
+	function box:SetFocus()
+		if client.focus ~= self then
+			client.focus = self
+			run("OnEditFocusGained")
+		end
+	end
+	function box:ClearFocus()
+		if client.focus == self then
+			client.focus = nil
+		end
+	end
+	function box:HasFocus()
+		return client.focus == self
+	end
+	function box:Type(text)
+		self.text = text
+		self.highlight = nil
+		run("OnTextChanged", true)
+	end
 end
 
 return widgets

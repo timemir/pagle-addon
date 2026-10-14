@@ -10,6 +10,7 @@ local PAGLEDB_KEYS = {
 		"lastBuild",
 		"lastEndedSession",
 		"decodeErrors",
+		"dev",
 		"diagnostics",
 		"summary",
 		"pending",

@@ -22,6 +22,7 @@ logic\ReportOnce.lua
 logic\Restriction.lua
 logic\WorkQueue.lua
 logic\Conditions.lua
+logic\NextWindow.lua
 logic\LiveConditions.lua
 logic\Modules.lua
 logic\Sessions.lua
@@ -33,8 +34,10 @@ logic\Areas.lua
 logic\Angler.lua
 logic\Fishing.lua
 logic\Diagnostics.lua
+logic\FieldReport.lua
 logic\Settings.lua
 logic\Slash.lua
+logic\Dev.lua
 logic\Wallet.lua
 logic\Moments.lua
 logic\Summary.lua
@@ -42,6 +45,8 @@ logic\Cards.lua
 logic\Announcements.lua
 logic\Menu.lua
 logic\ReloadReminder.lua
+logic\FieldReportText.lua
+logic\FieldReportBox.lua
 logic\Wiring.lua
 adapter\Core.lua
 adapter\Callbacks.lua
@@ -50,6 +55,7 @@ adapter\Restriction.lua
 adapter\Conditions.lua
 adapter\Catalogue.lua
 adapter\LiveConditions.lua
+adapter\NextWindow.lua
 adapter\Modules.lua
 adapter\Host.lua
 adapter\CatchLog.lua
@@ -57,6 +63,7 @@ adapter\Projections.lua
 adapter\Angler.lua
 adapter\Fishing.lua
 adapter\Diagnostics.lua
+adapter\FieldReport.lua
 adapter\Sessions.lua
 adapter\Settings.lua
 adapter\Settings.xml
@@ -70,4 +77,6 @@ adapter\Announcements.lua
 adapter\Cards.lua
 adapter\Menu.lua
 adapter\ReloadReminder.lua
+adapter\FieldReportText.lua
+adapter\FieldReportBox.lua
 adapter\Login.lua
