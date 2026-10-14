@@ -36,6 +36,7 @@ describe("the Ledger's projection def", function()
 			RaiseWriteUp = note("RaiseWriteUp"),
 			LogId = function() end,
 			FormatNumber = tostring,
+			RefreshGoods = note("RefreshGoods"),
 		}
 	end
 	local outlets = noting({})
@@ -127,6 +128,51 @@ describe("the Ledger's projection def", function()
 			assert.are.same({ [225] = true }, global.celebrated.skill)
 			assert.are.same({ [0] = 3 }, global.celebrated.levels)
 			assert.are.equal(40, global.celebrated.coins)
+		end
+	)
+
+	it(
+		"refreshes the goods after a live entry that takes the peak level past a multiple of 10, and only then (LED-R111, SHOP-R31)",
+		function()
+			local calls = {}
+			local def = ns.ProjectionDef({}, lookups, noting(calls))
+			local state = def.reset()
+			-- 10 XP short of level 10: the steps to it cost 9 × 1,000 + 80 × (1 + … + 9) = 12,600 (LED-R30).
+			state.xp = 12590
+			local function refreshes()
+				local n = 0
+				for _, call in ipairs(calls) do
+					n = n + (call == "RefreshGoods nil" and 1 or 0)
+				end
+				return n
+			end
+			def.apply(state, reading(1, 10), "live") -- no Skill Milestone, no XP: still level 9
+			assert.are.same({ 9, 0 }, { ns.PeakLevel(state), refreshes() })
+
+			def.apply(state, reading(2, 80), "live") -- Skill Milestone 75: 1,000 XP
+
+			assert.are.same({ 10, 1 }, { ns.PeakLevel(state), refreshes() })
+		end
+	)
+
+	it(
+		"refreshes the goods in every done, after Coins and before the summary line, and never mid-rebuild (LED-R93, LED-R111, SHOP-R31)",
+		function()
+			local calls = {}
+			local def = ns.ProjectionDef({}, lookups, noting(calls))
+			local state = def.reset()
+			for seq = 1, 3 do
+				def.apply(state, reading(seq, 80 * seq), "rebuild")
+			end
+			assert.are.same({}, calls)
+
+			def.done(state, { firstBuild = false, rebuilt = true, replayed = 0 })
+
+			assert.are.same({ "ReportCoinsEarned", "RefreshGoods", "SetSummaryLine" }, {
+				calls[#calls - 2]:match("^%a+"),
+				calls[#calls - 1]:match("^%a+"),
+				calls[#calls]:match("^%a+"),
+			})
 		end
 	)
 

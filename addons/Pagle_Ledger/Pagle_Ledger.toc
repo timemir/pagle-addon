@@ -15,6 +15,7 @@ logic\Data.lua
 logic\Module.lua
 logic\Progress.lua
 logic\Prestige.lua
+logic\Bindings.lua
 logic\Fold.lua
 logic\World.lua
 logic\Stars.lua
@@ -30,10 +31,13 @@ logic\JournalSpecies.lua
 logic\Home.lua
 logic\JournalAngler.lua
 logic\JournalCollections.lua
+logic\JournalZone.lua
 adapter\JournalWidgets.lua
 adapter\JournalText.lua
 adapter\JournalCollections.lua
+adapter\JournalZone.lua
 adapter\JournalSearch.lua
 adapter\Journal.lua
 adapter\Prestige.lua
+adapter\Bindings.lua
 adapter\Ledger.lua

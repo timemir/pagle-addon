@@ -49,8 +49,11 @@ local ns = select(2, ...)
 --- - `board` (`ticks`: the Trophy Room's measuring board, LED-R143) and `plinth` (`icon` and `look`, `text` the name,
 ---   `value` the plaque, LED-R144), drawn by adapter/JournalCollections.lua
 --- - `emblem` (`mark`: a prestige rank's emblem and stars, ns.PrestigeMark; nothing drawn without an emblem)
+--- - `ladder` (`rungs` side by side, each `{ text, inked, circled }`: Zone Mastery's ranks, LED-R135) and `row` (a list
+---   row: a small `icon` drawn `look`, `text` in `color`, its `margin` notes in handwriting, its `stars`, a `value` at
+---   the right, `selected` marked, opening `place`; LED-R136, LED-R137), drawn by adapter/JournalZone.lua
 ---@class LedgerBlock
----@field kind "kicker"|"title"|"text"|"link"|"leader"|"seal"|"stamps"|"tiles"|"icon"|"xpBar"|"tabs"|"bookplate"|"board"|"plinth"|"emblem"
+---@field kind "kicker"|"title"|"text"|"link"|"leader"|"seal"|"stamps"|"tiles"|"icon"|"xpBar"|"tabs"|"bookplate"|"board"|"plinth"|"ladder"|"row"|"emblem"
 ---@field text? string
 ---@field hand? boolean
 ---@field color? "faded"|"red"|"blue"
@@ -67,6 +70,10 @@ local ns = select(2, ...)
 ---@field action? fun()
 ---@field ticks? LedgerBoardTick[]
 ---@field mark? LedgerPrestigeMark
+---@field rungs? { text: string, inked: boolean, circled: boolean }[]
+---@field margin? string[]
+---@field stars? LedgerStars
+---@field selected? boolean
 
 --- One weight's tick on a measuring board (LED-R143): its pounds, where it sits from the lightest weight (0) to the
 --- heaviest (1), and whether it is landed.

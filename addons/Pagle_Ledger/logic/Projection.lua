@@ -55,7 +55,7 @@ function ns.ProjectionDef(global, lookups, outlets, sizeRulesVersion)
 	---@param state LedgerState
 	---@param record PagleRecord
 	local function applyLive(state, record)
-		local coins = state.coins
+		local coins, peak = state.coins, ns.PeakLevel(state)
 		local earned = fold.apply(state, record, "live")
 		local celebrated = ns.CelebratedSet(global)
 		for _, moment in ipairs(ns.Celebrate(celebrated, state, record, earned, outlets)) do
@@ -64,6 +64,10 @@ function ns.ProjectionDef(global, lookups, outlets, sizeRulesVersion)
 		celebrated.coins = state.coins
 		if state.coins ~= coins then
 			outlets.ReportCoinsEarned(state.coins)
+		end
+		-- A level binding may be earned now (LED-R111, SHOP-R31).
+		if math.floor(ns.PeakLevel(state) / 10) > math.floor(peak / 10) then
+			outlets.RefreshGoods()
 		end
 		-- The shown level and completion change only with an achievement (a level-up, a first Catch, a rank), so an
 		-- entry that earned none leaves the line as it is, once set.
@@ -86,10 +90,11 @@ function ns.ProjectionDef(global, lookups, outlets, sizeRulesVersion)
 				fold.apply(state, record, mode, scratch)
 			end
 		end,
-		-- LED-R93: the first build's, rebuild's or catch-up's celebration, then Coins and the summary line.
+		-- LED-R93: the first build's, rebuild's or catch-up's celebration, then Coins, the goods and the summary line.
 		done = function(state, info)
 			local celebrated = ns.CelebrateDone(global, state, scratch, info, outlets, lookups)
 			scratch = {}
+			outlets.RefreshGoods() -- the level bindings, never mid-rebuild (LED-R111, SHOP-R31)
 			setSummaryLine(state, celebrated)
 		end,
 	}

@@ -95,12 +95,25 @@ echo "types: no warnings"
 # real .toc, in order, so TOC and load-order mistakes fail specs. luacov then reports coverage of addons/ (.luacov);
 # the report never gates. A spec tagged #slow (LOG-R66's 300,000-ID draw) runs once, in a second pass without
 # coverage, where it takes a tenth of the time luacov's line hook gives it.
+# busted itself only ever exits 0 or 1, so a status over 128 means a signal killed it before the specs finished: it
+# says nothing about them. On the dev's machine the coverage run has died of SIGSEGV that way, at instructions that
+# can't fault (#149). Such a run gets one rerun, without coverage, which gates instead, and no report is made.
 stage tests
 mkdir -p .tools/cache
 rm -f .tools/cache/luacov.*.out # luacov adds to an existing stats file
-"$bin/busted" --coverage --exclude-tags=slow || fail tests
+coverage=yes status=0
+"$bin/busted" --coverage --exclude-tags=slow || status=$?
+if ((status > 128)); then
+	echo "tests: busted --coverage was killed by signal $((status - 128));" \
+		"running the specs again without coverage (#149)" >&2
+	coverage=no
+	"$bin/busted" --exclude-tags=slow || fail tests
+elif ((status != 0)); then
+	fail tests
+fi
 "$bin/busted" --tags=slow || fail tests
-{ "$bin/luacov" && echo "coverage (reported, never gates):" && sed -n '/^File /,$p' .tools/cache/luacov.report.out; } ||
+{ [[ $coverage == yes ]] && "$bin/luacov" && echo "coverage (reported, never gates):" &&
+	sed -n '/^File /,$p' .tools/cache/luacov.report.out; } ||
 	echo "check: no coverage report (coverage never gates)"
 
 # --- 6. generator (#55, DATA-R61): every generated file is what data/ gives (generate-data.py --check), the
