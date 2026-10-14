@@ -122,7 +122,7 @@ local function customRow(extent, draw, searchLabel)
 	return initializer
 end
 
--- A paragraph or note (SET-R5, SET-R10).
+--- A paragraph or note (SET-R5, SET-R10, SET-R50): a row Core draws itself, with no search label.
 ---@param text string
 ---@return SettingsInitializer
 local function textRow(text)
@@ -132,6 +132,7 @@ local function textRow(text)
 		own.text:Show()
 	end)
 end
+ns.SettingsTextRow = textRow
 
 --- Each roster Module's line in the status list, read now (CORE-R41, CORE-R44, SET-R11): its name, its TOC
 --- version, its state and, while On, its button.
@@ -399,6 +400,11 @@ local function register()
 			pages[topic] = page
 		end
 	end
+	-- Look and Feel, the last topic page, always registered from M4: Core builds it from the goods registry and takes
+	-- no rows for it (SET-R1, SET-R50, CORE-R42).
+	local look, lookLayout = Settings.RegisterVerticalLayoutSubcategory(category, L.SETTINGS_PAGES.look)
+	ns.BuildLookAndFeel(look, lookLayout)
+	pages.look = look
 	Settings.RegisterAddOnCategory(category)
 	root = category
 end
