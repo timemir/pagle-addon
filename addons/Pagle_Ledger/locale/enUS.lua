@@ -160,6 +160,18 @@ ns.L = {
 	TROPHY_NONE_LANDED = "Not one of this family yet.",
 	TROPHY_FOUND_IN = "Found in %s.",
 	TROPHY_TICK_MARK = "✓",
+	-- Curios (LED-R144): the Junk Museum, Treasures and the loose pages. "{item}: {n}× at {zones}, first {date}. …"
+	CURIOS_CRUMB = "Curios",
+	CURIOS_JUNK_TITLE = "The Junk Museum",
+	CURIOS_EXHIBITS = "%s of %s exhibits",
+	CURIOS_EMPTY_PLINTH = "An empty plinth",
+	CURIOS_TREASURES_TITLE = "Treasures",
+	CURIOS_OPENED = "%s of %s opened",
+	CURIOS_LOOSE_PAGES = "Loose pages: Uncharted",
+	CURIOS_LOOSE_PAGE = "%s: %s× at %s, first %s. Unknown to Pagle. Logged.",
+	CURIOS_UNKNOWN_WATERS = "unknown waters",
+	CURIOS_NONE_UNCHARTED = "None. Every catch is in the Ledger.",
+	CURIOS_HELP_CHART = "Help chart the waters",
 	-- Names as prose: "A, B and C".
 	LIST_COMMA = ", ",
 	LIST_AND = " and ",

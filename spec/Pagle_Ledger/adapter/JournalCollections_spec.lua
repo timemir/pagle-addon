@@ -138,6 +138,18 @@ local function texts(blocks)
 	return list
 end
 
+-- Curios' right page from its "Loose pages: Uncharted" kicker on.
+---@param right LedgerBlock[]
+---@return LedgerBlock[]
+local function loosePages(right)
+	for i, block in ipairs(right) do
+		if block.text == "Loose pages: Uncharted" then
+			return { unpack(right, i) }
+		end
+	end
+	return {}
+end
+
 -- The words a drawn widget shows, in the order its parts were made.
 ---@param widget table
 ---@param list string[]?
@@ -257,5 +269,160 @@ describe("the Journal's Trophy Room", function()
 		local board = loaded.ns.journal.frame.right.drawn.board[1]
 
 		assert.are.same({ "✓", "17", "19", "✓", "22", "26" }, textsOf(board))
+	end)
+end)
+
+describe("the Journal's Curios", function()
+	it("is the spread Home ❧ Curios (LED-R125)", function()
+		local _, loaded = spread("curios")
+		local pages = loaded.ns.journal.pages
+
+		assert.are.same({ "Home", "Curios" }, { pages.crumbs[1].label, pages.crumbs[2].label })
+		assert.are.same({ id = "curios" }, pages.crumbs[2].place)
+		assert.are.same({ id = "home" }, pages.back)
+	end)
+
+	it(
+		"shows the Junk Museum: a plinth per junk item, caught with its icon, name and plaque, uncaught empty (LED-R144, LED-R124, LED-R12)",
+		function()
+			local _, loaded = spread("curios")
+			local left = loaded.ns.journal.pages.left
+
+			-- The removed wagonwheel keeps its plinth but is out of both sides of the count.
+			assert.are.same({ "The Junk Museum", "1 of 2 exhibits" }, { left[1].text, left[2].text })
+			assert.are.same({
+				{
+					kind = "plinth",
+					icon = SKULL,
+					look = "sepia",
+					text = "Old Skull",
+					value = "Donated by the water. Owner unknown, and preferably staying that way.",
+				},
+				{
+					kind = "plinth",
+					icon = BOTTLE,
+					look = "silhouette",
+					text = "An empty plinth",
+					value = "The plinth is dusted and ready. The exhibit is late.",
+				},
+				{
+					kind = "plinth",
+					icon = WAGONWHEEL,
+					look = "sepia",
+					text = "Old Wagonwheel",
+					value = "Where the wagon went is still under investigation.",
+				},
+			}, { left[3], left[4], left[5] })
+			assert.are.equal(5, #left)
+		end
+	)
+
+	it("leaves an empty plinth's lore line out while its key has no text (LED-R161)", function()
+		local _, loaded = spread("curios")
+
+		loaded.ns.L["line.uncaughtjunk.text"] = nil
+		loaded.ns.journal:Draw()
+
+		local plinth = loaded.ns.journal.pages.left[4]
+		assert.are.same({ "silhouette", "An empty plinth" }, { plinth.look, plinth.text })
+		assert.is_nil(plinth.value)
+	end)
+
+	it("draws an empty plinth's icon as a silhouette, with its words (LED-R144, LED-R124)", function()
+		local _, loaded = spread("curios")
+
+		local plinths = loaded.ns.journal.frame.left.drawn.plinth
+
+		assert.are.same(
+			{ "An empty plinth", "The plinth is dusted and ready. The exhibit is late." },
+			textsOf(plinths[2])
+		)
+		assert.are.same({ 0, 0, 0 }, plinths[2].texture.vertexColor)
+		assert.are_not.same({ 0, 0, 0 }, plinths[1].texture.vertexColor)
+	end)
+
+	it(
+		"shows Treasures: each container or treasure item, caught by name and plaque, uncaught by the lore line (LED-R144)",
+		function()
+			local _, loaded = spread("curios")
+			local right = loaded.ns.journal.pages.right
+
+			assert.are.same({
+				"Treasures",
+				"1 of 2 opened",
+				"Dented Crate",
+				"Dropped once, by the look of it, and then again for good measure.",
+				"Something sealed, not yet found.",
+				"Loose pages: Uncharted",
+				"None. Every catch is in the Ledger.",
+				"Help chart the waters",
+			}, texts(right))
+		end
+	)
+
+	it("never names an uncaught curio anywhere on the spread (LED-R124)", function()
+		local _, loaded = spread("curios")
+
+		for _, side in ipairs({ "left", "right" }) do
+			for _, text in ipairs(textsOf(loaded.ns.journal.frame[side])) do
+				assert.is_nil(text:find("Message in a Bottle", 1, true))
+				assert.is_nil(text:find("Small Chest", 1, true))
+			end
+		end
+	end)
+
+	it(
+		"writes a loose page per Uncharted item by first Catch: Item {id} until its name loads, its zones or unknown waters (LED-R144, LED-R64, LED-R126)",
+		function()
+			local log = {
+				cast(T0, 0, STRANGE),
+				cast(T0 + 60, ELWYNN, ODD),
+				cast(T0 + 120, DUSKWOOD, ODD),
+				cast(T0 + 180, ELWYNN, ODD),
+			}
+			local _, loaded = spread("curios", nil, log)
+			local pages = loosePages(loaded.ns.journal.pages.right)
+
+			assert.are.same({
+				"Loose pages: Uncharted",
+				"Item 777002: 1× at unknown waters, first 11 Oct. Unknown to Pagle. Logged.",
+				"Item 777001: 3× at Duskwood, Elwynn Forest, first 11 Oct. Unknown to Pagle. Logged.",
+				"Help chart the waters",
+			}, texts(pages))
+			assert.is_true(pages[2].hand and pages[3].hand)
+		end
+	)
+
+	it("names an Uncharted item once the client has loaded it (LED-R126)", function()
+		local _, loaded = spread("curios", nil, { cast(T0, ELWYNN, ODD) })
+
+		loaded.client.itemNames[ODD] = "Curious Pebble"
+		loaded.ns.journal:Draw()
+
+		assert.are.equal(
+			"Curious Pebble: 1× at Elwynn Forest, first 11 Oct. Unknown to Pagle. Logged.",
+			loosePages(loaded.ns.journal.pages.right)[2].text
+		)
+	end)
+
+	it("opens the Field report from Help chart the waters (LED-R144, REP-R43)", function()
+		local fake, loaded = spread("curios")
+		local links = loaded.ns.journal.frame.right.drawn.link
+
+		links[#links]:Click()
+
+		assert.are.equal(1, #fake.fieldReportsOpened)
+	end)
+
+	it("prints Core's line instead while restricted, the Journal still open (LED-R121, REP-R44)", function()
+		local fake, loaded = spread("curios")
+		fake.setRestricted(true)
+		local links = loaded.ns.journal.frame.right.drawn.link
+
+		links[#links]:Click()
+
+		assert.are.same({}, fake.fieldReportsOpened)
+		assert.are.same({ "Pagle: the Field report opens after combat." }, fake.printed)
+		assert.is_true(loaded.ns.journal:IsShown())
 	end)
 end)

@@ -73,3 +73,49 @@ ns.RegisterJournalWidget("board", function(parent)
 	end
 	return widget
 end)
+
+-- A plinth's icon size, and the gap between it and its words.
+local PLINTH_ICON, PLINTH_GAP = 34, 10
+
+-- A plinth in the Junk Museum (LED-R144, LED-R124): the item's icon in sepia, or a black silhouette while uncaught,
+-- with its name (or "An empty plinth") beside it and its plaque (or the shared line) under that, faded.
+ns.RegisterJournalWidget("plinth", function(parent)
+	local widget = CreateFrame("Button", nil, parent) --[[@as LedgerJournalWidget]]
+	local fonts = ns.JournalFonts()
+	local texture = widget:CreateTexture(nil, "ARTWORK")
+	texture:SetSize(PLINTH_ICON, PLINTH_ICON)
+	texture:SetPoint("TOPLEFT")
+	widget.texture = texture
+	local name = ns.JournalText(widget, fonts.text, LOOK.title)
+	name:SetPoint("TOPLEFT", PLINTH_ICON + PLINTH_GAP, 0)
+	name:SetWordWrap(true)
+	widget.label = name
+	local words = ns.JournalText(widget, fonts.small, LOOK.faded)
+	words:SetPoint("TOPLEFT", name, "BOTTOMLEFT", 0, -2)
+	words:SetWordWrap(true)
+	function widget.Fill(_, block, width)
+		local icon = block.icon
+		if type(icon) == "number" then
+			local _, _, _, _, fileID = C_Item.GetItemInfoInstant(icon)
+			icon = fileID or icon
+		end
+		texture:SetTexture(icon)
+		texture:SetDesaturated(true)
+		if block.look == "silhouette" then
+			texture:SetVertexColor(0, 0, 0)
+			texture:SetAlpha(0.6)
+		else
+			texture:SetVertexColor(LOOK.sepia[1], LOOK.sepia[2], LOOK.sepia[3])
+			texture:SetAlpha(1)
+		end
+		local textWidth = width - PLINTH_ICON - PLINTH_GAP
+		name:SetWidth(textWidth)
+		name:SetText(block.text)
+		words:SetWidth(textWidth)
+		words:SetText(block.value or "")
+		words:SetShown(block.value ~= nil)
+		local height = name:GetStringHeight() + (block.value and (2 + words:GetStringHeight()) or 0)
+		return math.max(PLINTH_ICON, height)
+	end
+	return widget
+end)

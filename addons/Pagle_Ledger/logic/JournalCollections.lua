@@ -13,6 +13,9 @@ local ns = select(2, ...)
 --- The Trophy Room's ID (LED-R125); its args may name a `family` to open on (LED-R137's "Trophies landed here").
 ns.JOURNAL_TROPHY_ROOM = "trophy"
 
+--- Curios' ID (LED-R125): the Junk Museum, Treasures and the loose pages of Uncharted catches.
+ns.JOURNAL_CURIOS = "curios"
+
 --- A set of stars as the Journal prints it (LED-R48): three marks, ★ for each star shown and ☆ for each blank, so
 --- ★★★ without ★★ reads "★☆★".
 ---@param stars LedgerStars
@@ -227,5 +230,145 @@ ns.RegisterJournalSpread(ns.JOURNAL_TROPHY_ROOM, {
 			end
 		end
 		return { left = trophyIndex(context, families), right = chosen and familyPage(context, chosen) or {} }
+	end,
+})
+
+-- A curio's plaque (lore, `sub.<itemID>.plaque`, LED-R160); nil without text, so its line is left out (LED-R161).
+---@param context LedgerJournalContext
+---@param itemID integer
+---@return string?
+local function plaque(context, itemID)
+	return context.text:Lore(("sub.%d.plaque"):format(itemID))
+end
+
+-- The Junk Museum, Curios' left page (LED-R144): its title, the exhibits caught of its world's (removed out of both
+-- sides, LED-R12), and a plinth per junk item of the world, ascending item ID (LED-R123): caught, its icon, name and
+-- plaque; uncaught, never named (LED-R124): a silhouette, "An empty plinth" and the shared lore line.
+---@param context LedgerJournalContext
+---@param worlds LedgerCollectionWorlds
+---@param completion LedgerCompletion
+---@return LedgerBlock[]
+local function junkMuseum(context, worlds, completion)
+	local L = ns.L
+	local format = context.formatNumber
+	local caught = (context.state --[[@as LedgerState]]).items
+	local blocks = {
+		{ kind = "title", text = L.CURIOS_JUNK_TITLE },
+		{ kind = "text", text = L.CURIOS_EXHIBITS:format(format(completion.junk.done), format(completion.junk.total)) },
+	}
+	for _, itemID in ipairs(worlds.junk) do
+		if caught[itemID] then
+			blocks[#blocks + 1] = {
+				kind = "plinth",
+				icon = itemID,
+				look = "sepia",
+				text = context.text:Item(itemID),
+				value = plaque(context, itemID),
+			}
+		else
+			blocks[#blocks + 1] = {
+				kind = "plinth",
+				icon = itemID,
+				look = "silhouette",
+				text = L.CURIOS_EMPTY_PLINTH,
+				value = context.text:Lore("line.uncaughtjunk.text"),
+			}
+		end
+	end
+	return blocks
+end
+
+-- Treasures, at the top of Curios' right page (LED-R144): its title, the items opened of its world's, and a line per
+-- container or treasure item, ascending item ID: caught, its name and plaque; uncaught, only the shared lore line.
+---@param context LedgerJournalContext
+---@param worlds LedgerCollectionWorlds
+---@param completion LedgerCompletion
+---@param blocks LedgerBlock[]
+local function treasures(context, worlds, completion, blocks)
+	local L = ns.L
+	local format = context.formatNumber
+	local caught = (context.state --[[@as LedgerState]]).items
+	local count = completion.treasure
+	blocks[#blocks + 1] = { kind = "title", text = L.CURIOS_TREASURES_TITLE }
+	blocks[#blocks + 1] = { kind = "text", text = L.CURIOS_OPENED:format(format(count.done), format(count.total)) }
+	for _, itemID in ipairs(worlds.treasure) do
+		if caught[itemID] then
+			blocks[#blocks + 1] = { kind = "text", text = context.text:Item(itemID) }
+			local words = plaque(context, itemID)
+			if words then
+				blocks[#blocks + 1] = { kind = "text", text = words, color = "faded" }
+			end
+		else
+			local words = context.text:Lore("line.uncaughttreasure.text")
+			if words then
+				blocks[#blocks + 1] = { kind = "text", text = words, color = "faded" }
+			end
+		end
+	end
+end
+
+-- "Loose pages: Uncharted" (LED-R144, LED-R64): one handwritten line per Uncharted item, by first Catch (item ID on
+-- a tie), "Item {id}" until the client has its name (LED-R126), at its zones by areaID or "unknown waters"; then the
+-- "Help chart the waters" link, which opens the Field report (REP-R43).
+---@param context LedgerJournalContext
+---@param blocks LedgerBlock[]
+local function loosePages(context, blocks)
+	local L = ns.L
+	local format = context.formatNumber
+	local uncharted = (context.state --[[@as LedgerState]]).uncharted
+	local ids = {}
+	for itemID in pairs(uncharted) do
+		ids[#ids + 1] = itemID
+	end
+	table.sort(ids, function(a, b)
+		local timeA, timeB = uncharted[a].time, uncharted[b].time
+		if timeA ~= timeB then
+			return timeA < timeB
+		end
+		return a < b
+	end)
+	blocks[#blocks + 1] = { kind = "kicker", text = L.CURIOS_LOOSE_PAGES }
+	for _, itemID in ipairs(ids) do
+		local entry = uncharted[itemID]
+		local zones = {}
+		for zone in pairs(entry.zones or {}) do
+			zones[#zones + 1] = zone
+		end
+		table.sort(zones)
+		for i, zone in ipairs(zones) do
+			zones[i] = context.text:Zone(zone)
+		end
+		local where = #zones > 0 and table.concat(zones, L.LIST_COMMA) or L.CURIOS_UNKNOWN_WATERS
+		blocks[#blocks + 1] = {
+			kind = "text",
+			hand = true,
+			text = L.CURIOS_LOOSE_PAGE:format(
+				context.text:Item(itemID, true),
+				format(entry.n),
+				where,
+				context.text:Date(entry.date)
+			),
+		}
+	end
+	if #ids == 0 then
+		blocks[#blocks + 1] = { kind = "text", text = L.CURIOS_NONE_UNCHARTED, color = "faded" }
+	end
+	blocks[#blocks + 1] = { kind = "link", text = L.CURIOS_HELP_CHART, action = context.openFieldReport }
+end
+
+ns.RegisterJournalSpread(ns.JOURNAL_CURIOS, {
+	-- Home ❧ Curios (LED-R125).
+	crumbs = function()
+		return { { label = ns.L.CURIOS_CRUMB, place = { id = ns.JOURNAL_CURIOS } } }
+	end,
+	draw = function(_, context)
+		local world, state = context.world --[[@as LedgerWorld]], context.state --[[@as LedgerState]]
+		local getItem = context.getItem --[[@as fun(itemID: integer): PagleItem?]]
+		local worlds = ns.CollectionWorlds(world, state, getItem)
+		local completion = ns.LedgerCompletion(world, state, getItem)
+		local right = {}
+		treasures(context, worlds, completion, right)
+		loosePages(context, right)
+		return { left = junkMuseum(context, worlds, completion), right = right }
 	end,
 })

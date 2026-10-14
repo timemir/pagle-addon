@@ -71,6 +71,7 @@ local function readContext()
 		world = ns.world,
 		getItem = Pagle.GetItem,
 		angler = Pagle.GetAngler(),
+		openFieldReport = Pagle.OpenFieldReport,
 	}
 end
 

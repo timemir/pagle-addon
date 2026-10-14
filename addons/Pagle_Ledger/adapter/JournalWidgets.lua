@@ -251,20 +251,22 @@ end, function(block)
 	return TEXT_COLORS[block.color] or (block.hand and LOOK.blue) or LOOK.ink
 end)
 
--- A link: red ink, opening its place.
+-- A link: red ink, opening its place, or calling its action (the Field report, REP-R43).
 function makers.link(parent)
 	local widget = newWidget(parent)
 	local text = ns.JournalText(widget, ns.JournalFonts().text, LOOK.red)
 	text:SetPoint("TOPLEFT")
 	widget.label = text
-	local place, openPlace
+	local place, action, openPlace
 	widget:SetScript("OnClick", function()
-		if place then
+		if action then
+			action()
+		elseif place then
 			openPlace(place)
 		end
 	end)
 	function widget.Fill(_, block, _, open)
-		place, openPlace = block.place, open
+		place, action, openPlace = block.place, block.action, open
 		text:SetText(block.text)
 		return text:GetStringHeight()
 	end
