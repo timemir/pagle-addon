@@ -75,17 +75,6 @@ local function close(loaded)
 	loaded.ns.cardFrame.close:Click()
 end
 
--- Presses Esc: CloseSpecialWindows hides every shown frame named in UISpecialFrames, and its OnHide runs.
-local function escape(loaded)
-	local frame = loaded.ns.cardFrame
-	for _, name in ipairs(loaded.env.UISpecialFrames) do
-		if name == frame.name and frame.shown then
-			frame:Hide()
-			frame.scripts.OnHide(frame)
-		end
-	end
-end
-
 -- A stored summary card for PagleDB.global.cards, with `casts` Casts and one Ledger moment titled `title`.
 local function storedCard(casts, title)
 	return {
@@ -161,7 +150,7 @@ describe("the Write-up card", function()
 			close(second)
 			assert.are.same({}, second.env.PagleDB.global.writeUp)
 			assert.are.same({ "# Ledger", "New Species" }, shownCard(second).rows)
-			escape(second)
+			second.client.pressEscape()
 			assert.is_nil(shownCard(second))
 			assert.are.same({}, second.env.PagleDB.global.cards)
 		end

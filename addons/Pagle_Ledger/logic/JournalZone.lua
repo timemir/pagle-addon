@@ -141,14 +141,6 @@ local function familyName(context, family)
 	return context.text:Lore(("family.%d.name"):format(family)) or ns.L.NAME_UNKNOWN
 end
 
--- The "Help chart the waters" link: Pagle.OpenFieldReport(), which prints Core's line while restricted (LED-R121,
--- REP-R43, REP-R44).
----@param context LedgerZoneContext
----@return LedgerBlock
-local function helpChart(context)
-	return { kind = "link", text = ns.L.ZONE_HELP_CHART, action = context.openFieldReport }
-end
-
 -- The seal, the rank ladder, the next requirement and new to find (LED-R135, LED-R52, LED-R134).
 ---@param context LedgerZoneContext
 ---@param zone integer
@@ -252,7 +244,7 @@ local function catches(context, zone, selected, blocks)
 			blocks[#blocks + 1] = speciesRow(context, zone, id, nil, selected)
 		end
 		blocks[#blocks + 1] = { kind = "text", color = "faded", text = L.ZONE_ALSO_NOTE }
-		blocks[#blocks + 1] = helpChart(context)
+		blocks[#blocks + 1] = ns.JournalHelpChartLink(context)
 	end
 end
 
@@ -278,7 +270,7 @@ end
 ---@return string
 local function weightsOf(context, family)
 	local landed, total = 0, 0
-	for _, itemID in ipairs(ns.CollectionWorlds(context.world, context.state, context.getItem).trophy) do
+	for _, itemID in ipairs(ns.CollectionWorlds(context.world, context.state).trophy) do
 		local item = context.getItem(itemID)
 		if item and item.family == family and not item.removed then
 			total = total + 1
@@ -302,7 +294,7 @@ local function about(context, zone)
 	local blocks = { { kind = "kicker", text = L.ZONE_ABOUT } }
 	local skill = world.skillBase[zone]
 	if skill then
-		blocks[#blocks + 1] = { kind = "text", text = L.ZONE_SKILL:format(skill) }
+		blocks[#blocks + 1] = { kind = "text", text = skill > 0 and L.ZONE_SKILL:format(skill) or L.ZONE_ANY_SKILL }
 	end
 	local fish, fishKnown = 0, 0
 	for id in pairs(zoneIndex.species) do
@@ -322,7 +314,7 @@ local function about(context, zone)
 			blocks[#blocks + 1] = {
 				kind = "row",
 				text = familyName(context, family),
-				stars = ns.ShownFamilyStars(world, state, context.celebrated, family, context.getItem),
+				stars = ns.ShownFamilyStars(world, state, context.celebrated, family),
 				value = weightsOf(context, family),
 				place = { id = ns.JOURNAL_TROPHY_ROOM, args = { family = family } },
 			}
@@ -377,7 +369,7 @@ local function loosePages(context, zone)
 	if #species + #items == 0 then
 		blocks[#blocks + 1] = { kind = "text", color = "faded", text = L.ZONE_NOTHING_YET }
 	end
-	blocks[#blocks + 1] = helpChart(context)
+	blocks[#blocks + 1] = ns.JournalHelpChartLink(context)
 	return blocks
 end
 

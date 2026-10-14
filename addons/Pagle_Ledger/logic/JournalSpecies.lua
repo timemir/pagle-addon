@@ -45,7 +45,7 @@ end
 --- The plain hint (DATA-R112, LED-R141), generated from the world index, not lore: the Species' element window labels
 --- joined with ", " (or "Any time"), " · pools" when any of its listed items is pool-associated, then " · " and its
 --- first two listed zones by skill base (" +{n}" for the rest), then " · skill ~{lowest skill base of those two}"
---- when either has one. With no listed zones, the window part alone.
+--- when either has one (" · any skill" when it is 0 or below, DATA-R30). With no listed zones, the window part alone.
 ---@param world LedgerWorld
 ---@param id integer the Species ID
 ---@param text LedgerJournalText
@@ -86,7 +86,7 @@ function ns.PlainHint(world, id, text)
 		end
 	end
 	if skill then
-		parts[#parts + 1] = L.HINT_SKILL:format(skill)
+		parts[#parts + 1] = skill > 0 and L.HINT_SKILL:format(skill) or L.HINT_ANY_SKILL
 	end
 	return table.concat(parts, L.HINT_SEPARATOR)
 end

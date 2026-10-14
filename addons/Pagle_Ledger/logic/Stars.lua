@@ -68,9 +68,9 @@ end
 ---@param world LedgerWorld
 ---@param state LedgerState
 ---@param family integer
----@param getItem fun(itemID: integer): PagleItem?
 ---@return LedgerStars
-function ns.FamilyStars(world, state, family, getItem)
+function ns.FamilyStars(world, state, family)
+	local getItem = world.getItem
 	local stars = {}
 	for itemID in pairs(state.items) do
 		local item = getItem(itemID)
@@ -121,11 +121,10 @@ end
 ---@param state LedgerState
 ---@param celebrated table the celebrated set (LED-R90): its `familyStars`, if any
 ---@param family integer
----@param getItem fun(itemID: integer): PagleItem?
 ---@return LedgerStars
-function ns.ShownFamilyStars(world, state, celebrated, family, getItem)
+function ns.ShownFamilyStars(world, state, celebrated, family)
 	local familyStars = celebrated.familyStars
-	return union(ns.FamilyStars(world, state, family, getItem), familyStars and familyStars[family])
+	return union(ns.FamilyStars(world, state, family), familyStars and familyStars[family])
 end
 
 --- The stars a Catch could change, as they stood before it: its Species', or its trophy family's when it lands a
@@ -147,7 +146,7 @@ end
 ---@param lookups LedgerLookups
 ---@return LedgerStarsFold
 function ns.NewStarsFold(lookups)
-	local world, matches, getItem = lookups.world, lookups.MatchesConditions, lookups.GetItem
+	local world, matches = lookups.world, lookups.MatchesConditions
 
 	---@param state LedgerState
 	---@param class string the Catch's class (LED-R5)
@@ -162,7 +161,7 @@ function ns.NewStarsFold(lookups)
 			return { species = id, itemID = itemID, stars = ns.SpeciesStars(world, state, id) }
 		elseif class == "trophy" and not state.items[itemID] then
 			local family = item.family --[[@as integer]]
-			return { family = family, itemID = itemID, stars = ns.FamilyStars(world, state, family, getItem) }
+			return { family = family, itemID = itemID, stars = ns.FamilyStars(world, state, family) }
 		end
 		return nil
 	end
@@ -213,7 +212,7 @@ function ns.NewStarsFold(lookups)
 			return
 		end
 		local family = marked.family --[[@as integer]]
-		local after = ns.FamilyStars(world, state, family, getItem)
+		local after = ns.FamilyStars(world, state, family)
 		local stars = {}
 		for star = 2, 3 do
 			if after[star] and not before[star] then

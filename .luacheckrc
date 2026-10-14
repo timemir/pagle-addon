@@ -242,6 +242,15 @@ local helperGlobals = {
 	"forbiddenIn",
 	"shippedFiles",
 	"readFile",
+	"itemRecord",
+	"fishRecord",
+	"areaRecord",
+	"catchEntry",
+	"catalogueWith",
+	"castRecord",
+	"shownTexts",
+	"blockTexts",
+	"openJournal",
 }
 files["spec/**"] = { std = "lua51+busted", read_globals = helperGlobals }
 files["spec/support/*.lua"] = { globals = helperGlobals }

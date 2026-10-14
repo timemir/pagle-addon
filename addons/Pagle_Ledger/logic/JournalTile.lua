@@ -21,8 +21,8 @@ end
 
 --- A zone's tile (LED-R131): its name, then fished and charted, its shown rank and completion ("Local · 63%"), an ink
 --- bar of the completion, a wax seal at Master and a red "{N} new!" note with new to find; charted and never fished,
---- faded, "unfished · skill ~{skillBase}" (just "unfished" without one); not charted, "uncharted waters". It opens the
---- zone's spread.
+--- faded, "unfished · skill ~{skillBase}" ("unfished · any skill" at 0 or below, DATA-R30; just "unfished" without
+--- one); not charted, "uncharted waters". It opens the zone's spread.
 ---@param zone integer
 ---@param context LedgerJournalContext
 ---@return LedgerZoneTile
@@ -36,7 +36,11 @@ function ns.JournalZoneTile(zone, context)
 		tile.line = L.TILE_UNCHARTED
 	elseif not state.zones[zone] then
 		local skill = world.skillBase[zone]
-		tile.line = skill and L.TILE_UNFISHED_SKILL:format(skill) or L.TILE_UNFISHED
+		if not skill then
+			tile.line = L.TILE_UNFISHED
+		else
+			tile.line = skill > 0 and L.TILE_UNFISHED_SKILL:format(skill) or L.TILE_UNFISHED_ANY_SKILL
+		end
 		tile.faded = true
 	else
 		local celebrated = context.celebrated or {}

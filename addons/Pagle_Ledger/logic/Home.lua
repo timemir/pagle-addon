@@ -217,7 +217,7 @@ end
 local function rightPage(context)
 	local L = ns.L
 	local state, celebrated = context.state, context.celebrated
-	local completion = ns.LedgerCompletion(context.world, state, context.getItem)
+	local completion = ns.LedgerCompletion(context.world, state)
 	local right = {
 		{
 			kind = "bookplate",
@@ -254,7 +254,7 @@ end
 function ns.BrassPlate(context)
 	local state = context.state
 	local level = ns.ShownLevel(state, context.celebrated)
-	return ns.L.BRASS_PLATE:format(level, ns.LedgerCompletion(context.world, state, context.getItem).percent)
+	return ns.L.BRASS_PLATE:format(level, ns.LedgerCompletion(context.world, state).percent)
 end
 
 --- Home as a spread (LED-R130–R133): no crumbs of its own; its args' `tab` chooses a continent tab. The tab last
