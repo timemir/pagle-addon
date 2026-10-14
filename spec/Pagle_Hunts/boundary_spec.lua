@@ -1,6 +1,7 @@
 -- What Hunts never does (ADR 0001, Modules only see Core): it never reads the Catch log's SavedVariables or Core's,
 -- never reads another Module's DB and calls no other Module, the Ledger included, even for the board's art. Nor does
--- it read an item's quality or class from the client: class membership comes only from the Hunt list (HNT-R12).
+-- it read an item's quality or class from the client: class membership comes only from the Hunt list (HNT-R12). Nor
+-- does it give a set title to the game (HNT-R22).
 -- Checked over every file Hunts ships: each name below fails the spec wherever Hunts' code says it.
 
 local DIR = "addons/Pagle_Hunts/"
@@ -18,6 +19,8 @@ local FORBIDDEN = {
 	{ "[:.]GetItemQuality%f[^%w_]", QUALITY_OR_CLASS },
 	{ "%f[%w_]GetItemClassInfo%f[^%w_]", QUALITY_OR_CLASS },
 	{ "%f[%w_]GetItemSubClassInfo%f[^%w_]", QUALITY_OR_CLASS },
+	-- The game's own titles: a set title is never given to the game (HNT-R22).
+	{ "%f[%w_]SetCurrentTitle%f[^%w_]", "HNT-R22: set titles stay in Hunts' own views" },
 }
 -- Every other roster Module (CORE-R1): its addon (its AceAddon and its folder name), any global named after it, and
 -- its DB.
@@ -67,6 +70,7 @@ describe("Hunts' boundary", function()
 			{ "local quality = Item:CreateFromItemID(itemID):GetItemQuality()", QUALITY_OR_CLASS },
 			{ "local name = C_Item.GetItemClassInfo(classID)", QUALITY_OR_CLASS },
 			{ "local name = GetItemSubClassInfo(classID, subClassID)", QUALITY_OR_CLASS },
+			{ "SetCurrentTitle(titleID)", "HNT-R22: set titles stay in Hunts' own views" },
 		}
 		for _, case in ipairs(planted) do
 			it(case[1], function()

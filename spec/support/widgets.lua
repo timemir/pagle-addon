@@ -285,6 +285,8 @@ function widgets.newFrame(client, kind, parent)
 	end
 	if frame.kind == "EditBox" then
 		widgets.editBox(client, frame)
+	elseif frame.kind == "CheckButton" then
+		widgets.checkButton(frame)
 	end
 	client.frames[#client.frames + 1] = frame
 	return frame
@@ -333,12 +335,33 @@ function widgets.editBox(client, box)
 	end
 end
 
+--- Makes `button` a check button, as the client's CheckButton behaves for what Pagle calls: SetChecked and GetChecked
+--- keep its state, and a click (enabled) toggles it before OnClick runs.
+---@param button table
+function widgets.checkButton(button)
+	button.checked = false
+	function button:SetChecked(checked)
+		self.checked = not not checked
+	end
+	function button:GetChecked()
+		return self.checked
+	end
+	local click = button.Click
+	function button:Click()
+		if self.enabled ~= false then
+			self.checked = not self.checked
+		end
+		click(self)
+	end
+end
+
 --- Adds the children and methods a FrameXML template gives a frame, as far as Pagle reads them. Gethe/wow-ui-source
 --- branch forever at 943764493e6b16d63ded3ab304150d1f05e58b57 ("1.60.1 (70338)"), Interface/AddOns/Blizzard_SharedXML/:
 --- ButtonFrameTemplate (Mainline/SharedUIPanelTemplates.xml) has an `Inset` frame, a `CloseButton` whose click hides
 --- its parent (UIPanelCloseButton_OnClick, HideUIPanel), the title (PortraitFrame.lua's TitledPanelMixin:SetTitle)
 --- and a portrait (PortraitFrameMixin:SetPortraitToAsset); SearchBoxTemplate (Shared/InputBox/InputBoxTemplates.xml)
---- has its `Instructions` hint and its `clearButton`. Other templates add nothing here.
+--- has its `Instructions` hint and its `clearButton`; UICheckButtonTemplate (Shared/Button/CheckButtonTemplates.xml)
+--- has its label, `Text`. Other templates add nothing here.
 ---@param client FakeClient
 ---@param frame table
 ---@param template string?
@@ -364,6 +387,8 @@ function widgets.applyTemplate(client, frame, template)
 	elseif template == "SearchBoxTemplate" then
 		frame.Instructions = widgets.newWidget("FontString", frame)
 		frame.clearButton = widgets.newFrame(client, "Button", frame)
+	elseif template == "UICheckButtonTemplate" then
+		frame.Text = widgets.newWidget("FontString", frame)
 	end
 end
 

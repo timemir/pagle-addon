@@ -10,10 +10,22 @@
 ## SavedVariables: PagleHuntsDB
 
 locale\enUS.lua
+data\Lore.lua
 data\HuntList.lua
 logic\Data.lua
 logic\Module.lua
 logic\HuntList.lua
 logic\Seams.lua
 logic\Qualify.lua
+logic\Waters.lua
+logic\Titles.lua
+logic\Projection.lua
+logic\Moments.lua
+logic\Groups.lua
+logic\Labels.lua
+logic\Board.lua
+adapter\BoardWidgets.lua
+adapter\Board.lua
 adapter\Hunts.lua
+adapter\Groups.lua
+adapter\Names.lua

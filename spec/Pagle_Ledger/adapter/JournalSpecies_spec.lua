@@ -92,10 +92,13 @@ local function log()
 end
 
 -- A Ledger on a fake over the fixture and its log, logged in with the projection built, every name loaded, and lore
--- for MACKEREL and SECRET only.
-local function loggedIn()
+-- for MACKEREL and SECRET only. `typicalLength`, if given, is MACKEREL's typical length (mm), so Core sizes its Catches.
+---@param typicalLength integer?
+local function loggedIn(typicalLength)
 	local fake = newFakePagle()
-	fake.setCatalogue(fixture())
+	local catalogue = fixture()
+	catalogue.items[MACKEREL].typicalLength = typicalLength
+	fake.setCatalogue(catalogue)
 	fake.catchLog.data.characters[1] = { guid = PLAYER_GUID }
 	for _, record in ipairs(log()) do
 		fake.catchLog:Append(record)
@@ -189,6 +192,79 @@ describe("a caught Species' entry (LED-R140)", function()
 			"First landed 3 Oct in Elwynn Forest, by Angler. 1 caught.",
 			"No longer found in Forever's waters.",
 		}, textsOf(openFish(loaded, GONE).left))
+	end)
+end)
+
+-- The size line's form (LED-R140), with the size text's "{band} · {length}" (LED-R81).
+local SIZE_LINE = "^Largest by my own measure: %a+ · %d+%.%d cm %(Pagle's measure, not the game's%)$"
+
+-- Gives Species `id` the record `record` on the projection's state (LED-R80), as a sized Catch leaves it.
+local function seedRecord(loaded, id, length, band)
+	local species = loaded.ns.projection:GetState().species[id]
+	species.record = { length = length, band = band, catchId = "1-1", time = T0, char = 1, zone = ELWYNN }
+	species.since = 0
+end
+
+describe("a caught Species' size line (LED-R140, LED-R80, LED-R85)", function()
+	it("reads its record by Pagle's measure, in centimetres when set, after Found in (LED-R140, LOG-R69)", function()
+		local fake, loaded = loggedIn()
+		fake.profile.lengthUnit = "cm"
+		seedRecord(loaded, MACKEREL, 342, 3)
+
+		assert.are.same({
+			"First landed 3 Oct in Westfall, by Angler. 2 caught.",
+			"Slippery enough to earn the name.",
+			"Found in Duskwood, Elwynn Forest and Westfall.",
+			"Largest by my own measure: Hefty · 34.2 cm (Pagle's measure, not the game's)",
+		}, textsOf(openFish(loaded, MACKEREL).left))
+	end)
+
+	it("reads it in the Angler's unit, inches by default in the Americas (LED-R85, LOG-R69)", function()
+		local _, loaded = loggedIn()
+		seedRecord(loaded, MACKEREL, 342, 3)
+
+		local texts = textsOf(openFish(loaded, MACKEREL).left)
+		assert.are.equal("Largest by my own measure: Hefty · 13.5 in (Pagle's measure, not the game's)", texts[4])
+	end)
+
+	it("comes before the removed line (LED-R140, LED-R12)", function()
+		local fake, loaded = loggedIn()
+		fake.profile.lengthUnit = "cm"
+		seedRecord(loaded, GONE, 1205, 5)
+
+		assert.are.same({
+			"First landed 3 Oct in Elwynn Forest, by Angler. 1 caught.",
+			"Largest by my own measure: Monster · 120.5 cm (Pagle's measure, not the game's)",
+			"No longer found in Forever's waters.",
+		}, textsOf(openFish(loaded, GONE).left))
+	end)
+
+	it("shows none for a Species without a sized Catch (LED-R140, LED-R80)", function()
+		-- The fixture gives no Species a typical length, so Core sizes none of its Catches (LOG-R65).
+		local _, loaded = loggedIn()
+
+		assert.is_nil(loaded.ns.projection:GetState().species[MACKEREL].record)
+		for _, text in ipairs(textsOf(openFish(loaded, MACKEREL).left)) do
+			assert.is_nil(text:find("Largest", 1, true))
+		end
+	end)
+
+	it("reads the record Core's sizes leave once the Species has a typical length (LED-R140, LOG-R65)", function()
+		local fake, loaded = loggedIn(300)
+		fake.profile.lengthUnit = "cm"
+
+		assert.is_not_nil(loaded.ns.projection:GetState().species[MACKEREL].record)
+		assert.matches(SIZE_LINE, textsOf(openFish(loaded, MACKEREL).left)[4])
+	end)
+
+	it("is the same line on the zone spread's entry (LED-R140, LED-R136)", function()
+		local fake, loaded = loggedIn()
+		fake.profile.lengthUnit = "cm"
+		seedRecord(loaded, MACKEREL, 342, 3)
+
+		assert.is_true(loaded.ns.journal:Open("zone", { zone = ELWYNN, species = MACKEREL }))
+		local texts = textsOf(loaded.ns.journal.pages.right)
+		assert.are.equal("Largest by my own measure: Hefty · 34.2 cm (Pagle's measure, not the game's)", texts[#texts])
 	end)
 end)
 

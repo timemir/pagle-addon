@@ -43,6 +43,7 @@ logic\Slash.lua
 logic\Wallet.lua
 logic\Goods.lua
 logic\Shop.lua
+logic\LookAndFeel.lua
 logic\CoreGoods.lua
 logic\WalletProjection.lua
 logic\Moments.lua
@@ -54,6 +55,7 @@ logic\Menu.lua
 logic\ReloadReminder.lua
 logic\FieldReportText.lua
 logic\FieldReportBox.lua
+logic\Dock.lua
 logic\Wiring.lua
 adapter\Core.lua
 adapter\Callbacks.lua
@@ -75,6 +77,8 @@ adapter\FieldReport.lua
 adapter\Sessions.lua
 adapter\Settings.lua
 adapter\AnnouncementSettings.lua
+adapter\Dock.lua
+adapter\LookAndFeel.lua
 adapter\Slash.lua
 adapter\Wallet.lua
 adapter\Goods.lua

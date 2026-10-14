@@ -41,7 +41,7 @@ end
 
 describe("The Settings root with no Module On", function()
 	it(
-		"registers one Pagle category under AddOns at ModulesChanged, with only Core's Announcements page (CORE-R40, SET-R1)",
+		"registers one Pagle category under AddOns at ModulesChanged, with only Core's two pages (CORE-R40, SET-R1)",
 		function()
 			local loaded = loadWith()
 			assert.is_nil(loaded.client.settings.category("Pagle"))
@@ -51,9 +51,13 @@ describe("The Settings root with no Module On", function()
 			local settings = loaded.client.settings
 			assert.are.equal(1, #settings.addOnCategories)
 			assert.are.equal("Pagle", settings.addOnCategories[1].name)
-			-- The Announcements page: spec/Pagle/adapter/AnnouncementSettings_spec.lua.
-			assert.are.same({ "Pagle", "Announcements" }, { settings.categories[1].name, settings.categories[2].name })
-			assert.are.equal(2, #settings.categories)
+			-- The Announcements page: spec/Pagle/adapter/AnnouncementSettings_spec.lua; Look and Feel:
+			-- spec/Pagle/adapter/LookAndFeel_spec.lua.
+			local names = {}
+			for i, category in ipairs(settings.categories) do
+				names[i] = category.name
+			end
+			assert.are.same({ "Pagle", "Announcements", "Look and Feel" }, names)
 		end
 	)
 
@@ -138,7 +142,7 @@ describe("A topic page", function()
 		local fishing = assert(loaded.client.settings.category("Fishing"))
 		assert.is_table(fishing)
 		assert.are.equal(loaded.client.settings.category("Pagle"), fishing.parent)
-		assert.are.equal(3, #loaded.client.settings.categories) -- the root, Fishing and Announcements
+		assert.are.equal(4, #loaded.client.settings.categories) -- the root, Fishing, Announcements and Look and Feel
 	end)
 
 	it("isn't registered while the Module that has its rows isn't On (CORE-R42, SET-R4, SET-R90)", function()
@@ -172,7 +176,11 @@ describe("A topic page", function()
 		stats:AddSetting("trackers", checkbox("Stats'"))
 		loaded.client.fire("PLAYER_LOGIN")
 
-		assert.are.same({ "Stats", "Stats'", "QoL", "QoL's" }, rowNames(loaded.client.settings.category("Trackers")))
+		-- After Core's own Tracker position row (SET-R40).
+		assert.are.same(
+			{ "Tracker position", "Stats", "Stats'", "QoL", "QoL's" },
+			rowNames(loaded.client.settings.category("Trackers"))
+		)
 	end)
 
 	it("indents a row under its parent, a row of the same Module (CORE-R42, SET-R2)", function()
@@ -188,9 +196,9 @@ describe("A topic page", function()
 		loaded.client.fire("PLAYER_LOGIN")
 
 		local initializers = loaded.client.settings.category("Trackers").layout.initializers
-		-- Stats header, Stats' tracker, QoL header, QoL's tracker, QoL's child.
-		assert.are.equal(initializers[4], initializers[5]:GetParentInitializer())
-		assert.is_nil(initializers[4]:GetParentInitializer())
+		-- Core's Tracker position row (SET-R40), Stats header, Stats' tracker, QoL header, QoL's tracker, QoL's child.
+		assert.are.equal(initializers[5], initializers[6]:GetParentInitializer())
+		assert.is_nil(initializers[5]:GetParentInitializer())
 	end)
 end)
 
@@ -320,7 +328,7 @@ describe("Pagle.OpenSettings", function()
 		registerQoL(loaded)
 		loaded.client.fire("PLAYER_LOGIN")
 
-		for _, topic in ipairs({ "fishing", "look", "trackers", "Fishing", 5 }) do
+		for _, topic in ipairs({ "fishing", "Look", "trackers", "Fishing", 5 }) do
 			loaded.env.Pagle.OpenSettings(topic)
 		end
 
@@ -521,7 +529,8 @@ describe("The status list with a Module On", function()
 end)
 
 describe("A Module's value rows", function()
-	-- Loads Core with QoL On and `settings` added to Trackers, and returns the page once registered.
+	-- Loads Core with QoL On and `settings` added to Trackers, and returns the page once registered: Core's Tracker
+	-- position row (SET-R40), the QoL header, then the rows.
 	local function trackersWith(settings)
 		local loaded = loadWithQoL()
 		local M = registerQoL(loaded)
@@ -558,7 +567,7 @@ describe("A Module's value rows", function()
 		})
 
 		local defaults = {}
-		for i = 2, 4 do -- after the QoL header
+		for i = 3, 5 do -- after Core's Tracker position row (SET-R40) and the QoL header
 			defaults[#defaults + 1] = page.layout.initializers[i]:GetSetting():GetDefaultValue()
 		end
 		assert.are.same({ true, 5, "best" }, defaults)
@@ -582,11 +591,11 @@ describe("A Module's value rows", function()
 		value = true -- changed outside Settings
 
 		local rows = loaded.client.settings.show(page)
-		assert.is_true(rows[2].frame.value)
-		rows[2].initializer:GetSetting():SetValue(false)
+		assert.is_true(rows[3].frame.value)
+		rows[3].initializer:GetSetting():SetValue(false)
 
 		assert.is_false(value)
-		assert.is_false(loaded.client.settings.show(page)[2].frame.value)
+		assert.is_false(loaded.client.settings.show(page)[3].frame.value)
 	end)
 
 	it("re-evaluate isEnabled each time the page is shown (SET-R61)", function()
@@ -602,9 +611,9 @@ describe("A Module's value rows", function()
 			},
 		})
 
-		assert.is_false(loaded.client.settings.show(page)[2].frame.enabled)
+		assert.is_false(loaded.client.settings.show(page)[3].frame.enabled)
 		live = true
-		assert.is_true(loaded.client.settings.show(page)[2].frame.enabled)
+		assert.is_true(loaded.client.settings.show(page)[3].frame.enabled)
 	end)
 
 	it("offer a dropdown's options read each time it opens (SET-R62)", function()
@@ -622,11 +631,11 @@ describe("A Module's value rows", function()
 				end,
 			},
 		})
-		local read = page.layout.initializers[2].data.options
+		local read = page.layout.initializers[3].data.options
 
 		options = { { value = 1, label = "One" }, { value = 2, label = "Two" } }
 
-		assert.are.same({ "number", 2 }, { page.layout.initializers[2]:GetSetting():GetVariableType(), #read() })
+		assert.are.same({ "number", 2 }, { page.layout.initializers[3]:GetSetting():GetVariableType(), #read() })
 	end)
 
 	it("build without one that fails, reporting it through geterrorhandler() (SET-R5)", function()

@@ -25,9 +25,9 @@ local root
 ---@type table<string, SettingsCategory> the registered topic pages, by topic
 local pages = {}
 
---- Core's own rows on a topic page, by topic, filled by the file that owns them (adapter/AnnouncementSettings.lua).
---- Each builds its rows on the page, before the Modules' rows (SET-R3); a topic Core has rows on is always
---- registered (SET-R1).
+--- Core's own rows on a topic page, by topic, filled by the file that owns them (adapter/AnnouncementSettings.lua,
+--- adapter/Dock.lua). Each builds its rows on the page, before the Modules' rows (SET-R3); whether they register the
+--- page alone is ns.IsPageRegistered's (SET-R1).
 ---@type table<string, fun(page: SettingsCategory, layout: SettingsLayout)>
 ns.CoreSettingsRows = {}
 
@@ -122,7 +122,7 @@ local function customRow(extent, draw, searchLabel)
 	return initializer
 end
 
--- A paragraph or note (SET-R5, SET-R10).
+--- A paragraph or note (SET-R5, SET-R10, SET-R50): a row Core draws itself, with no search label.
 ---@param text string
 ---@return SettingsInitializer
 local function textRow(text)
@@ -132,6 +132,7 @@ local function textRow(text)
 		own.text:Show()
 	end)
 end
+ns.SettingsTextRow = textRow
 
 --- Each roster Module's line in the status list, read now (CORE-R41, CORE-R44, SET-R11): its name, its TOC
 --- version, its state and, while On, its button.
@@ -355,8 +356,10 @@ local function nativeRow(page, layout, setting, variable)
 	return initializer
 end
 
--- A topic page's rows (CORE-R42, SET-R2, SET-R3). A row that fails to build goes to geterrorhandler(); the rest
--- of the page is still built.
+-- A topic page's rows (CORE-R42, SET-R2, SET-R3, SET-R44). A Module row that fails to build goes to
+-- geterrorhandler(); the rest of the page is still built. A slot row ending a Module's section is Core's: the same
+-- slot dropdown as on Look and Feel, with no parent and never greyed out, which the page's Defaults button restores to
+-- the slot's default good (SET-R44, SET-R45, SET-R51).
 ---@param topic string
 ---@param page SettingsCategory
 ---@param layout SettingsLayout
@@ -366,16 +369,20 @@ local function buildPage(topic, page, layout, entries)
 	local built = {}
 	for i, entry in ipairs(entries) do
 		local setting = entry.setting
-		local variable = ("Pagle_%s_%s_%d"):format(entry.module.def.name, topic, i)
-		local initializer = securecallfunction(nativeRow, page, layout, setting, variable)
-		if initializer then
-			built[entry] = initializer
-			local parent = entry.parent and built[entry.parent]
-			if parent then
-				initializer:SetParentInitializer(parent)
-			end
-			if setting.isEnabled then
-				initializer:AddModifyPredicate(setting.isEnabled)
+		if entry.slot then
+			ns.SlotDropdown(page, entry.slot, ("Pagle_Core_%s_%s"):format(topic, entry.slot.id))
+		else
+			local variable = ("Pagle_%s_%s_%d"):format(entry.module.def.name, topic, i)
+			local initializer = securecallfunction(nativeRow, page, layout, setting, variable)
+			if initializer then
+				built[entry] = initializer
+				local parent = entry.parent and built[entry.parent]
+				if parent then
+					initializer:SetParentInitializer(parent)
+				end
+				if setting.isEnabled then
+					initializer:AddModifyPredicate(setting.isEnabled)
+				end
 			end
 		end
 	end
@@ -388,9 +395,9 @@ local function register()
 	local category, layout = Settings.RegisterVerticalLayoutCategory(L.SETTINGS_CATEGORY)
 	buildRoot(category, layout, #modules > 0)
 	for _, topic in ipairs(ns.SETTINGS_TOPICS) do
-		local entries = rows:Page(topic, modules)
+		local entries = rows:Page(topic, modules, ns.SectionSlots(ns.goods, topic))
 		local coreRows = ns.CoreSettingsRows[topic]
-		if coreRows or #entries > 0 then
+		if ns.IsPageRegistered(topic, coreRows ~= nil, #entries) then
 			local page, pageLayout = Settings.RegisterVerticalLayoutSubcategory(category, L.SETTINGS_PAGES[topic])
 			if coreRows then
 				coreRows(page, pageLayout)
@@ -399,6 +406,11 @@ local function register()
 			pages[topic] = page
 		end
 	end
+	-- Look and Feel, the last topic page, always registered from M4: Core builds it from the goods registry and takes
+	-- no rows for it (SET-R1, SET-R50, CORE-R42).
+	local look, lookLayout = Settings.RegisterVerticalLayoutSubcategory(category, L.SETTINGS_PAGES.look)
+	ns.BuildLookAndFeel(look, lookLayout)
+	pages.look = look
 	Settings.RegisterAddOnCategory(category)
 	root = category
 end

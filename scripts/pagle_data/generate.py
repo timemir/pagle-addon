@@ -1,7 +1,7 @@
 """From the source layers to the generated files' contents (DATA-R75), without writing anything."""
 
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 from pagle_data.aliases import Proposal, check_aliases, propose
@@ -22,6 +22,7 @@ from pagle_data.hunts import (
     hunt_list_lua,
     read_hunts,
 )
+from pagle_data.hunt_windows import check_hunt_windows
 from pagle_data.items import ITEMS_TOML, ItemLayer, Record, item_records, read_item_layer
 from pagle_data.lock import Lock, check_lock, check_locked_members, read_lock
 from pagle_data.lore import LoreLayer, catalogue_ids, check_lore, lore_outputs, read_lore
@@ -180,6 +181,7 @@ def read_layers(
     lore = read_lore(root, problems)
     before_hunts = len(problems.found)
     hunts = read_hunts(root, problems)
+    lore = replace(lore, hunts=hunts.texts())  # DATA-R105: Pagle_Hunts' lore kept beside the Hunt definitions
     lock = read_lock(root, problems)
     if len(problems.found) == before_hunts:  # DATA-R96: the lock judges a Hunt list that read cleanly
         check_lock(lock, hunts, problems)
@@ -216,6 +218,8 @@ def read_layers(
         catch_lists = build_catch_lists(
             baseline, area_layer, items, windows.keys(), db2.areas, counting, required, problems
         )
+        # DATA-R92: admission reads these catch lists' gates, and the rarity cap each Hunt's time.
+        check_hunt_windows(hunts, items, catch_lists, windows, forever.events, problems)
         # DATA-R32: an alias's target and source are judged by these catch lists.
         check_aliases(forever.aliases, catch_lists.fishing_areas(), problems)
         confirmation = confirm(

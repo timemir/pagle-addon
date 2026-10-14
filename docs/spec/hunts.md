@@ -340,7 +340,7 @@ Hunts never cuts Sessions and doesn't read a record's `session` (LOG-R98).
 | | `riggles_queenfish` | Riggle's Queenfish | natural | species 19806 (Dezian Queenfish) | `event.301` | 1 |
 | | `riggles_racer` | Riggle's Racer | natural | species 19803 (Brownell's Blue Striped Racer) | `event.301` | 1 |
 | `camp_hours` · the Hut Keeper | `rack_hour` | Rack Hour | imposed | class `quality.uncommon` | `auras = { 1280341 }` | 1 / 10 / 25 |
-| | `hut_hour` | Hut Hour | imposed | class `quality.rare` | `auras = { 1280342 }` | 1 / 5 / 15 |
+| | `hut_hour` | Hut Hour | imposed | class `species.any` | `auras = { 1280342 }` | 1 / 5 / 15 |
 | `pagles_wagers` · Pagle's Apprentice; set note says these are Pagle's own wagers | `grouper_by_moonlight` | Grouper by Moonlight | imposed | species 12238 (Darkshore Grouper) | `areas = { 148 }`, `time = { { 1320, 240 } }` (Darkshore, 22:00–04:00) | 1 / 5 / 20 |
 | | `oddity_at_dusk` | Oddity at Dusk | imposed | class `fixed.oddity` | `time = { { 1080, 1260 } }` (18:00–21:00) | 1 / 10 / 25 |
 | | `witching_hour` | Witching Hour | imposed | class `species.any` | `areas = { 10 }`, `time = { { 0, 180 } }` (Duskwood, 00:00–03:00) | 1 / 10 / 30 |
@@ -348,7 +348,7 @@ Hunts never cuts Sessions and doesn't read a record's `session` (LOG-R98).
 
 The one fixed class: `fixed.oddity`, members 6522 (Deviate Fish) and 251524 (Whimsyfin), one for each faction's waters.
 
-The M5 build ticket checks every item and area ID above against `data/db2/` by its enUS name before the list is committed; the names in brackets are the intent, and a wrong ID is fixed in the table and the file together. The Camp Hunts use item quality rather than an observed Rack or Hut catch list, so they work whatever the Rack and Hut turn out to add. If Live Wire or Armoured After Dark prove ungated on Forever, they fail admission (DATA-R92) and are retired (or, before 1.0, removed), keeping completions.
+The M5 build ticket checks every item and area ID above against `data/db2/` by its enUS name before the list is committed; the names in brackets are the intent, and a wrong ID is fixed in the table and the file together. The Camp Hunts use generated classes (item quality, or any fish) rather than an observed Rack or Hut catch list, so they work whatever the Rack and Hut turn out to add. Hut Hour targets `species.any`, not `quality.rare`: no catalogue item that isn't Noise is rare yet, so a `quality.rare` Hunt could never be done. If Live Wire or Armoured After Dark prove ungated on Forever, they fail admission (DATA-R92) and are retired (or, before 1.0, removed), keeping completions.
 
 ### `PagleHuntsDB` (AceDB, account-wide, one shared `Default` profile)
 

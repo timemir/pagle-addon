@@ -119,7 +119,10 @@ describe("the Ledger's live moments", function()
 			local announcements = shown(fake)
 			assert.are.equal(1, #announcements)
 			local announcement = announcements[1]
-			assert.are.same({ "newSpecies New Species / Raw Spotted Yellowtail 10" }, momentsOf(announcement))
+			assert.are.same(
+				{ "newSpecies New Species / Raw Spotted Yellowtail · Typical · 9.5 in 10" },
+				momentsOf(announcement)
+			)
 			assert.are.same(
 				{ "New Species", "toast", 10 },
 				{ announcement.headline.title, announcement.rung, announcement.coins }
@@ -170,6 +173,8 @@ describe("the Ledger's live moments", function()
 	it("raise nothing and report no Coins for an ordinary Catch or a got-away Cast (LED-R89, LED-R96)", function()
 		local fake = session()
 		fake.playCast("caught", loot(MACKEREL))
+		-- Its second Catch is longer, a size record (LED-R82); the third, Core's size says, is not.
+		fake.playCast("caught", loot(MACKEREL))
 		local seen = #shown(fake)
 
 		fake.playCast("caught", loot(MACKEREL))
@@ -189,7 +194,7 @@ describe("the Ledger's live moments", function()
 			fake.playCast("caught", loot(MACKEREL))
 
 			assert.are.same({
-				"newSpecies New Species / Raw Spotted Yellowtail 10",
+				"newSpecies New Species / Raw Spotted Yellowtail · Typical · 9.5 in 10",
 				"zoneRank Zone rank: Visitor / Darkshore 2",
 			}, momentsOf(shown(fake)[1]))
 			assert.are.same(
@@ -352,7 +357,7 @@ describe("the Ledger's live moments", function()
 		local celebrated = momentsOf(shown(fake)[1])
 		assert.are.same({
 			"levelUp Angler Level 2 / nil 20",
-			"newSpecies New Species / Raw Spotted Yellowtail 10",
+			"newSpecies New Species / Raw Spotted Yellowtail · Typical · 9.5 in 10",
 		}, celebrated)
 
 		-- The crash: neither that Cast nor the celebrated set's growth was saved.
