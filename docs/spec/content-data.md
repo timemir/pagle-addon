@@ -365,6 +365,7 @@ The parser accepts exactly the `PAGLE-REPORT 1` format (REP-R30–R33). Core and
 |---|---|
 | `scripts/generate-data.py [--check \| --propose-aliases \| --min-build <n> \| --explain <id> \| --lock]` | DATA-R60–R66, DATA-R57, DATA-R95 |
 | `scripts/import-field-report.py <issue> …` | DATA-R119–R121 |
+| `scripts/triage-field-report.py --event <file> --open-issues <file> --comments <file> --out <dir>` (the triage Action's) | DATA-R117, DATA-R118 |
 | `scripts/update-db2.py <build>` | DATA-R12 |
 | `scripts/db2-watch.py --out <dir> [--issues <file>]` | DATA-R128–R130 |
 | `scripts/extract-baseline.py <dump>` | DATA-R9 (run once) |

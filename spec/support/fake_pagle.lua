@@ -466,9 +466,12 @@ part(function(fake, Pagle, ns)
 	end
 end)
 
--- Condition specs (LOG-R48): pure, so the real one.
+-- Condition specs (LOG-R48): pure, so the real one. A Module hands back the specs and conditions Core gave it, here
+-- read-only proxies, which the real one sees through as Core does its own tables in the client.
 part(function(_, Pagle, ns)
-	Pagle.MatchesConditions = ns.MatchesConditions
+	function Pagle.MatchesConditions(spec, snapshot)
+		return ns.MatchesConditions(originalOf[spec] or spec, originalOf[snapshot] or snapshot)
+	end
 end)
 
 -- The Catch log (LOG-R10–R16, LOG-R42) on Core's real codec, over an empty in-memory PagleLog. A spec adds
@@ -637,8 +640,10 @@ end)
 -- Window forecasts (LOG-R50), on Core's own Pagle.NextWindow body (ns.ForecastWindow) over the fake's catalogue: the
 -- realm's UTC offset comes from fake.conditions' time and minute (a nil minute is a secret clock), and the events
 -- open now from fake.conditions.events, so setConditions moves the clock and the calendar. Each Window is read-only.
+-- A spec Pagle.GetWindowSpec handed out goes in as its record, as Core takes its own (`#` sees nothing in a proxy).
 part(function(fake, Pagle, ns)
 	function Pagle.NextWindow(spec, fromTime)
+		spec = originalOf[spec] or spec
 		return readOnly(ns.ForecastWindow(spec, fromTime, fake.conditions, ns.Catalogue.GetEventRule))
 	end
 end)

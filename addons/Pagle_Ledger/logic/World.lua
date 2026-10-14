@@ -297,9 +297,6 @@ end
 ---@field zones LedgerCount    -- charted zones whose computed rank is Master
 ---@field legends LedgerCount  -- Legends caught: outside the percent (LED-R63)
 
--- Zone Mastery's top rank, Master (LED-R50).
-local MASTER = 5
-
 -- The parts that make up Ledger completion (LED-R70), in the Angler page's order (LED-R146).
 local PARTS = { "species", "junk", "treasure", "trophy", "zones" }
 
@@ -337,7 +334,7 @@ function ns.LedgerCompletion(world, state, getItem)
 	local mastered = { done = 0, total = #world.charted }
 	for _, zone in ipairs(world.charted) do
 		local zoneState = state.zones and state.zones[zone]
-		if zoneState and zoneState.rank == MASTER then
+		if zoneState and zoneState.rank == ns.ZONE_MASTER then
 			mastered.done = mastered.done + 1
 		end
 	end

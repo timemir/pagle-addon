@@ -1,6 +1,8 @@
 """The data/observed/ layer (DATA-R8 order 4): what was seen in-game. dev.toml holds the dev's reporter keys and own
 facts (DATA-R122); reports/<reporterKey>.toml holds one reporter's imported Field report rows (DATA-R121), written
 by M3's importer. Keys and types are the Data section's in docs/spec/content-data.md, the rows' fields REP-R20–R22's.
+pooltext.toml is the dev's hand-kept map of hovered texts to pool types (DATA-R118): read here, strictly, but not an
+observation; only the triage Action uses it.
 
 observations() turns the layer into DATA-R45's observations: non-rejected I and K rows (DATA-R50) and dev facts,
 each with its reporter (DATA-R46) and its areas mapped through the alias table (DATA-R34). P rows are kept here but
@@ -27,6 +29,10 @@ from pagle_data.toml_reader import (
 OBSERVED = "data/observed/"
 DEV = "data/observed/dev.toml"
 REPORTS = "data/observed/reports"
+POOLTEXT = "data/observed/pooltext.toml"
+
+# What a pooltext.toml entry may map a text to besides a pool type ID (DATA-R118).
+POOLTEXT_KINDS = ("bobber", "other")
 
 # The one reporter every dev key and every dev fact counts as (DATA-R46).
 DEV_REPORTER = "dev"
@@ -156,13 +162,26 @@ class DevFact:
     reporter = DEV_REPORTER
 
 
+@dataclass(frozen=True)
+class PoolTextEntry:
+    """A [[text]] in pooltext.toml (DATA-R118): a hovered text in a locale, mapped to a pool type ID, bobber or
+    other."""
+
+    locale: str
+    text: str
+    pool: str
+    at: At
+
+
 @dataclass
 class ObservedLayer:
-    """data/observed/ as read: dev.toml's keys and facts, and the report files by reporter key."""
+    """data/observed/ as read: dev.toml's keys and facts, the report files by reporter key, and pooltext.toml's
+    entries."""
 
     keys: tuple[str, ...] = ()
     facts: tuple[DevFact, ...] = ()
     reports: Mapping[str, Report] = field(default_factory=dict)
+    pooltext: tuple[PoolTextEntry, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -487,10 +506,48 @@ def _read_dev(root: Path, layer: ObservedLayer, problems: Problems) -> None:
     layer.keys, layer.facts = tuple(keys), tuple(fact for fact in facts if fact is not None)
 
 
+def _read_pooltext(root: Path, problems: Problems) -> tuple[PoolTextEntry, ...]:
+    """pooltext.toml's entries (DATA-R118), each (locale, text) once. A missing file has none: the dev keeps it by
+    hand. Which pool types exist is pools.toml's, so check_pooltext judges pool once both are read."""
+    if not (root / POOLTEXT).is_file():
+        return ()
+    document = read_toml(root, POOLTEXT, problems)
+    if document is None:
+        return ()
+    at = At(POOLTEXT)
+    check_keys(document, at, problems, required=(), optional=("text",))
+    entries: list[PoolTextEntry] = []
+    seen: set[tuple[str, str]] = set()
+    for entry_at, table in _tables(document, "text", at, problems):
+        check_keys(table, entry_at, problems, required=("locale", "text", "pool"), optional=())
+        fields = _Fields(table, entry_at, problems)
+        locale, text, pool = fields.text("locale", _LOCALE), fields.text("text"), fields.text("pool")
+        if locale is None or text is None or pool is None:
+            continue
+        if (locale, text) in seen:
+            problems.add(entry_at, f"({locale}, '{text}') is already mapped: one pool per text and locale (DATA-R118)")
+            continue
+        seen.add((locale, text))
+        entries.append(PoolTextEntry(locale, text, pool, entry_at))
+    return tuple(entries)
+
+
+def check_pooltext(entries: Iterable[PoolTextEntry], pool_types: Collection[str], problems: Problems) -> None:
+    """DATA-R118: each entry's pool is a pool type ID of pools.toml, bobber or other."""
+    for entry in entries:
+        if entry.pool not in pool_types and entry.pool not in POOLTEXT_KINDS:
+            problems.add(
+                entry.at / "pool",
+                f"'{entry.pool}' is no pool type in data/forever/pools.toml, nor bobber or other (DATA-R118)",
+            )
+
+
 def read_observed(root: Path, problems: Problems) -> ObservedLayer:
-    """The layer under root/data/observed/: dev.toml (required) and any report files. Each problem found goes into
-    problems; what was read is returned either way, and the caller must not use it while there are problems."""
+    """The layer under root/data/observed/: dev.toml (required), any report files and pooltext.toml, if any. Each
+    problem found goes into problems; what was read is returned either way, and the caller must not use it while
+    there are problems."""
     layer = ObservedLayer()
     _read_dev(root, layer, problems)
     layer.reports = _read_reports(root, problems)
+    layer.pooltext = _read_pooltext(root, problems)
     return layer

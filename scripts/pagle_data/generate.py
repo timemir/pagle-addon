@@ -21,6 +21,7 @@ from pagle_data.observed import (
     OBSERVED,
     ObservedLayer,
     Observations,
+    check_pooltext,
     observations,
     read_observed,
 )
@@ -163,6 +164,7 @@ def read_layers(
     area_layer = read_areas_toml(root, problems)
     checks = read_checks(root, problems)
     pool_types = read_pools_toml(root, problems)
+    check_pooltext(observed.pooltext, pool_types.keys(), problems)  # DATA-R118: pools.toml's IDs, bobber or other
     lore = read_lore(root, problems)
     items: dict[int, Record] = {}
     catch_lists = CatchLists()
