@@ -38,11 +38,11 @@ describe("Pagle_TackleBoard.toc", function()
 		-- CONTEXT.md › Tackle Board: Notice, Expedition, Campfire, Fly Box.
 		assert.matches("^Pagle's Tackle Board: ", fields.Notes)
 		for _, term in ipairs({ "Notices", "Expeditions", "Campfire", "Fly Box" }) do
-			assert.is_not_nil(fields.Notes:find(term, 1, true), term)
+			assert.is_not_nil(fields.Notes:find(term, 1, true))
 		end
 		local notes = fields.Notes:lower()
 		for _, avoided in ipairs({ "daily", "quest", "challenge", "task", "weekly", "streak", "tackle box" }) do
-			assert.is_nil(notes:find(avoided, 1, true), avoided)
+			assert.is_nil(notes:find(avoided, 1, true))
 		end
 	end)
 
