@@ -333,7 +333,14 @@ describe("the Journal's Home, right page", function()
 		local _, loaded = openHome({ cast(ELWYNN, MACKEREL) }, level12)
 
 		local right = pages(loaded).right
-		assert.are.same({ kind = "bookplate", text = "12", value = "Angler Level", seal = "14%" }, right[1])
+		assert.are.same({
+			kind = "bookplate",
+			text = "12",
+			value = "Angler Level",
+			seal = "14%",
+			mark = { stars = 0 },
+			signature = "Minnow",
+		}, right[1])
 		assert.are.equal("xpBar", right[2].kind)
 		assert.are.equal("0 of 1,960.", right[2].bar.text)
 		assert.are.same({ kind = "kicker", text = "Notes to self" }, right[3])
@@ -439,18 +446,76 @@ describe("the Journal's Home, right page", function()
 		end
 		assert.are.same({ "Home", "The Angler" }, labels)
 	end)
+end)
 
-	it("draws no title and no Prestige yet; the Legends line is M4's (LED-R4, LED-R132)", function()
+-- Seeds prestige rank `rank` on the projection's state, as a Prestige entry (LED-R32) leaves it.
+---@param rank integer
+local function prestige(rank)
+	return function(loaded)
+		level12(loaded)
+		loaded.ns.projection:GetState().prestige = rank
+	end
+end
+
+-- The drawn bookplate row's widget (LED-R132).
+local function drawnBookplate(loaded)
+	return loaded.ns.journal.frame.right.drawn.bookplate[1]
+end
+
+describe("the Journal's Home, the bookplate's title and Prestige (LED-R132, LED-R4's M4 stage)", function()
+	it("shows no emblem at rank 0, and the active title in handwriting (LED-R132, LED-R34, LED-R77)", function()
 		local _, loaded = openHome({ cast(ELWYNN, MACKEREL) }, level12)
 
-		local texts = textsOf(loaded.ns.journal.frame.right)
-		for _, text in ipairs(texts) do
-			assert.is_nil(text:find("Prestige", 1, true))
-		end
-		for _, block in ipairs(pages(loaded).right) do
-			assert.is_false(block.kind == "text" and block.hand == true and block.text ~= "Go fishing!")
-		end
-		assert.is_true(#texts > 0)
+		-- Automatic: the highest level title earned, level1's Minnow from the start (LED-R75, LED-R77).
+		assert.are.same({
+			kind = "bookplate",
+			text = "12",
+			value = "Angler Level",
+			seal = "14%",
+			mark = { stars = 0 },
+			signature = "Minnow",
+		}, pages(loaded).right[1])
+		local texts = textsOf(drawnBookplate(loaded))
+		assert.are.same({ "12", "Angler Level", "Minnow", "14%" }, texts)
+	end)
+
+	it("shows emblem III beside the level at rank 3, and the active title under it (LED-R132, LED-R34)", function()
+		local _, loaded = openHome({ cast(ELWYNN, MACKEREL) }, prestige(3))
+
+		-- A Prestige means a climb reached 60, so the peak level is 60 and automatic signs with level60 (LED-R35).
+		local bookplate = pages(loaded).right[1]
+		assert.are.same({ emblem = "III", stars = 0 }, bookplate.mark)
+		assert.are.equal("Nat's Peer", bookplate.signature)
+		local texts = textsOf(drawnBookplate(loaded))
+		assert.are.same({ bookplate.text, "Angler Level", "III", "Nat's Peer", "14%" }, texts)
+	end)
+
+	it("shows a Master Prestige's stars beside emblem X (LED-R34)", function()
+		local _, loaded = openHome({ cast(ELWYNN, MACKEREL) }, prestige(12))
+
+		local bookplate = pages(loaded).right[1]
+		assert.are.same({ emblem = "X", stars = 2 }, bookplate.mark)
+		local texts = textsOf(drawnBookplate(loaded))
+		assert.are.same({ bookplate.text, "Angler Level", "X", "★", "★", "Nat's Peer", "14%" }, texts)
+	end)
+
+	it("signs with the stored active title once it is earned (LED-R77)", function()
+		local _, loaded = openHome({ cast(ELWYNN, MACKEREL) }, function(ledger)
+			prestige(1)(ledger)
+			ledger.ns.db.profile.activeTitle = "title:prestige1"
+		end)
+
+		assert.are.equal("Returning Tide", pages(loaded).right[1].signature)
+	end)
+
+	it("leaves the title out while the active title has no lore text (LED-R161)", function()
+		local _, loaded = openHome({ cast(ELWYNN, MACKEREL) }, function(ledger)
+			level12(ledger)
+			ledger.ns.L["title.level1.text"] = nil
+		end)
+
+		assert.is_nil(pages(loaded).right[1].signature)
+		assert.are.same({ "12", "Angler Level", "14%" }, textsOf(drawnBookplate(loaded)))
 	end)
 end)
 
@@ -471,12 +536,12 @@ describe("the Journal's Home and what isn't caught", function()
 end)
 
 describe("the brass plate (LED-R149)", function()
-	it('reads "Lv {L} · Ledger {p}%" on the cover, on every spread (LED-R149, LED-R4)', function()
+	it('reads "Lv {L} · {active title} · Ledger {p}%" on the cover, on every spread (LED-R149, LED-R77)', function()
 		local _, loaded = openHome({ cast(ELWYNN, MACKEREL) }, level12)
 		local journal = loaded.ns.journal
 
-		assert.are.equal("Lv 12 · Ledger 14%", journal.plate)
-		assert.are.equal("Lv 12 · Ledger 14%", journal.frame.plate.label.text)
+		assert.are.equal("Lv 12 · Minnow · Ledger 14%", journal.plate)
+		assert.are.equal("Lv 12 · Minnow · Ledger 14%", journal.frame.plate.label.text)
 		assert.is_true(journal.frame.plate:IsShown())
 
 		loaded.ns.RegisterJournalSpread("trophy", {
@@ -489,7 +554,26 @@ describe("the brass plate (LED-R149)", function()
 		})
 		journal:Open("trophy")
 		assert.is_true(journal.frame.plate:IsShown())
-		assert.are.equal("Lv 12 · Ledger 14%", journal.frame.plate.label.text)
+		assert.are.equal("Lv 12 · Minnow · Ledger 14%", journal.frame.plate.label.text)
+	end)
+
+	it("names the stored active title once earned (LED-R149, LED-R77)", function()
+		local _, loaded = openHome({ cast(ELWYNN, MACKEREL) }, function(ledger)
+			prestige(1)(ledger)
+			ledger.ns.db.profile.activeTitle = "title:prestige1"
+		end)
+
+		assert.matches("^Lv %d+ · Returning Tide · Ledger 14%%$", loaded.ns.journal.plate)
+	end)
+
+	it('reads "Lv {L} · Ledger {p}%" while the active title has no lore text (LED-R149, LED-R161)', function()
+		local _, loaded = openHome({ cast(ELWYNN, MACKEREL) }, function(ledger)
+			level12(ledger)
+			ledger.ns.L["title.level1.text"] = nil
+		end)
+
+		assert.are.equal("Lv 12 · Ledger 14%", loaded.ns.journal.plate)
+		assert.are.equal("Lv 12 · Ledger 14%", loaded.ns.journal.frame.plate.label.text)
 	end)
 end)
 
@@ -517,7 +601,7 @@ describe("the Journal's Home, live", function()
 			assert.are.equal("Master", duskwood().seal)
 			assert.is_nil(duskwood().faded)
 			-- The Blackmouth and Duskwood join the Mackerel and Elwynn: 4 of 14.
-			assert.are.equal("Lv 12 · Ledger 28%", loaded.ns.journal.plate)
+			assert.are.equal("Lv 12 · Minnow · Ledger 28%", loaded.ns.journal.plate)
 		end
 	)
 end)
