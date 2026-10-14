@@ -27,16 +27,9 @@
 ---@field AddSearchTags fun(self: SettingsInitializer, ...: string)
 --- A setting variable (despite the name, any registered setting's) whose change re-evaluates the shown row's state.
 ---@field AddEvaluateStateCVar fun(self: SettingsInitializer, variable: string)
----@field InitFrame fun(self: SettingsInitializer, frame: SettingsListElementFrame)
----@field Resetter fun(self: SettingsInitializer, frame: SettingsListElementFrame)
----@field GetExtent fun(self: SettingsInitializer): number?
 
+--- A registered setting. Pagle only hands it to the panel: it calls none of its methods (SET-R6).
 ---@class SettingsProxySetting
----@field GetName fun(self: SettingsProxySetting): string
----@field GetVariable fun(self: SettingsProxySetting): string
----@field GetValue fun(self: SettingsProxySetting): any
----@field SetValue fun(self: SettingsProxySetting, value: any)
----@field NotifyUpdate fun(self: SettingsProxySetting)   -- reads the value again and fires its value-changed callback
 
 --- SettingsSliderOptionsMixin.
 ---@class SettingsSliderOptions

@@ -746,37 +746,16 @@ describe("Choosing the fishing set", function()
 		assert.are.same({}, client.equipmentSetCalls)
 	end)
 
-	describe("refreshes the Fishing set row, so the dropdown and the rows under it re-read the choice", function()
-		local REFRESHED = { { module = "QoL", id = "fishingSet" } }
-
-		it("after a choice rejected for slots (QOL-R42, CORE-R42)", function()
-			local fake = choosing(function(_, client)
-				fillSets(client, 10)
-			end)
-
-			rowOf(fake, "Fishing set").set(FISHING)
-
-			assert.are.same(REFRESHED, fake.refreshed)
+	-- The dropdown re-reads `get` after its own change and each time it is drawn (SET-R62); QoL never makes a shown
+	-- control re-read (SET-R6, spec/Pagle/settings_taint_spec.lua).
+	it("reads the chosen set back from the row after Save what I'm wearing (QOL-R41, SET-R62)", function()
+		local fake = choosing(function(_, client)
+			withPrevious(client)
 		end)
 
-		it("after a choice rejected while restricted (QOL-R41, QOL-R42, CORE-R42)", function()
-			local fake = choosing()
-			fake.setRestricted(true)
+		rowOf(fake, "Save what I'm wearing as my fishing set").onClick()
 
-			rowOf(fake, "Fishing set").set(FISHING)
-
-			assert.are.same(REFRESHED, fake.refreshed)
-		end)
-
-		it("after Save what I'm wearing chooses Pagle Fishing (QOL-R41, CORE-R42)", function()
-			local fake = choosing(function(_, client)
-				withPrevious(client)
-			end)
-
-			rowOf(fake, "Save what I'm wearing as my fishing set").onClick()
-
-			assert.are.same(REFRESHED, fake.refreshed)
-		end)
+		assert.are.equal(1, rowOf(fake, "Fishing set").get()) -- Pagle Fishing, the lowest free ID: Raid holds 0
 	end)
 end)
 

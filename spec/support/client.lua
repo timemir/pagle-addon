@@ -20,6 +20,8 @@
 ---@field errors string[] Each error the default geterrorhandler() got, in order. A spec that gets one must read
 --- this list (assert it), or it fails at its end (spec/support/errors.lua).
 ---@field addError fun(err: any) The default geterrorhandler(): adds the error to `errors`.
+---@field templates table<string, { mixin: string? }> The virtual frame templates the loaded addons' XML files define,
+--- by name, with the global mixin each names: loadAddon reads them from each XML file a TOC lists.
 ---@field pressEscape fun() Presses Esc: the focused edit box's OnEscapePressed, or with none focused,
 --- CloseSpecialWindows (every shown frame named in UISpecialFrames hides, and its OnHide runs).
 
@@ -56,6 +58,7 @@ local function newClient()
 		bindings = {},
 		loot = { fishing = false, slots = {} },
 		sounds = {},
+		templates = {},
 		areaNames = {},
 		mapNames = {},
 	}

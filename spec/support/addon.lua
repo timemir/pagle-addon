@@ -150,7 +150,21 @@ function loadAddon(name, globals, options)
 		local ns = {}
 		namespaces[addon] = ns
 		for _, file in ipairs(files) do
-			if not (isDependency and options.dependencyLibsOnly) or file:match("^libs/") then
+			if file:match("%.xml$") then
+				-- The client builds an XML file's frames; specs need only its virtual templates, by name.
+				---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io
+				local xml = io.open(dir .. file, "r")
+				if not xml then
+					return ("%s lists %s, which doesn't exist"):format(toc, file)
+				end
+				for attributes in xml:read("*a"):gsub("<!%-%-.-%-%->", ""):gmatch("<Frame%s([^>]*)>") do
+					local template = attributes:match('name="([^"]+)"')
+					if template and attributes:match('virtual="true"') then
+						client.templates[template] = { mixin = attributes:match('mixin="([^"]+)"') }
+					end
+				end
+				xml:close()
+			elseif not (isDependency and options.dependencyLibsOnly) or file:match("^libs/") then
 				---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no loadfile
 				local chunk, loadErr = loadfile((not isDependency and (options.replace or {})[file]) or dir .. file)
 				if not chunk then

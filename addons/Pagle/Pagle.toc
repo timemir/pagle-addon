@@ -66,6 +66,7 @@ adapter\Diagnostics.lua
 adapter\FieldReport.lua
 adapter\Sessions.lua
 adapter\Settings.lua
+adapter\Settings.xml
 adapter\AnnouncementSettings.lua
 adapter\Slash.lua
 adapter\Wallet.lua
