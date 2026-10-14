@@ -615,6 +615,30 @@ describe("the Journal's zone spread", function()
 			assert.are.equal("Redgill", journal.pages.right[1].text)
 		end)
 
+		it(
+			"leaves out a family's lines on both pages while its lore name has no text (LED-R161, LED-R135, LED-R137)",
+			function()
+				local _, loaded = zoneSpread(DARKSHORE)
+				-- Redgill (family 4) before the Ledger's lore check turns on: its key has no text.
+				loaded.ns.L["family.4.name"] = nil
+				loaded.ns.journal:Draw()
+				local pages = loaded.ns.journal.pages
+
+				local trophies = {}
+				for _, text in ipairs(blockTexts(pages.left)) do
+					if text:find("trophy, any weight", 1, true) then
+						trophies[#trophies + 1] = text
+					end
+				end
+				assert.are.same({ "☑ a Catfish trophy, any weight" }, trophies)
+				assert.are.same({ "Trophies landed here", "Catfish", "Reward for mastery: each new seal earns XP." }, {
+					pages.right[4].text,
+					pages.right[5].text,
+					pages.right[6].text,
+				})
+			end
+		)
+
 		it('reads "Any skill" for a zone whose skill base is 0 or below (LED-R137, DATA-R30)', function()
 			local startingZone = catalogue()
 			startingZone.areas[DARKSHORE].skillBase = -70

@@ -160,6 +160,27 @@ describe("the Journal's Trophy Room", function()
 		assert.are.same({ { text = "10", at = 0.5, inked = false } }, right[3].ticks)
 	end)
 
+	it("leaves out the index line and the title of a family whose lore name has no text (LED-R161)", function()
+		local _, loaded = spread({ "trophyRoom" })
+		-- Mud Snapper (family 1) before the Ledger's lore check turns on: its key has no text.
+		loaded.ns.L["family.1.name"] = nil
+		loaded.ns.journal:Draw()
+		local pages = loaded.ns.journal.pages
+
+		assert.are.same({
+			"The Trophy Room",
+			"2 of 5 weights. Real weights, from the game's own trophy fish.",
+			"Catfish ★★☆",
+		}, blockTexts(pages.left))
+		assert.are.same({
+			"[stamps]",
+			"[board]",
+			"pounds, as the game weighs them",
+			"Not one of this family yet.",
+			"Found in Duskwood.",
+		}, blockTexts(pages.right))
+	end)
+
 	it("is the spread Home ❧ The Trophy Room, whichever family it is open on (LED-R125)", function()
 		local _, loaded = spread({ "trophyRoom", 2 })
 		local pages = loaded.ns.journal.pages
@@ -179,7 +200,7 @@ describe("the Journal's Trophy Room", function()
 	end)
 
 	it(
-		"leaves a removed weight out of both sides of every x of N and off the board, keeping its record (LED-R12)",
+		"leaves a removed weight out of both sides of every x of N, off the board and out of the heaviest so far (LED-R12, LED-R143)",
 		function()
 			local log = { unpack(FIXTURE) }
 			log[#log + 1] = cast(T0 + 300, ELWYNN, CAT30)
@@ -189,9 +210,15 @@ describe("the Journal's Trophy Room", function()
 			assert.are.equal("2 of 5 weights. Real weights, from the game's own trophy fish.", pages.left[2].text)
 			assert.are.equal("2 / 4", pages.left[4].value)
 			assert.are.equal(4, #pages.right[3].ticks)
-			assert.are.equal("Landed 2 of 4. Heaviest so far: 30 lb.", pages.right[5].text)
+			assert.are.equal("Landed 2 of 4. Heaviest so far: 22 lb.", pages.right[5].text)
 		end
 	)
+
+	it("reads Not one of this family yet when only a removed weight of it is landed (LED-R12, LED-R143)", function()
+		local _, loaded = spread({ "trophyRoom", 2 }, { cast(T0, ELWYNN, CAT30) })
+
+		assert.are.equal("Not one of this family yet.", loaded.ns.journal.pages.right[5].text)
+	end)
 
 	it("draws the measuring board: each weight in pounds, a ✓ over those landed (LED-R143, LED-R62)", function()
 		local _, loaded = spread({ "trophyRoom", 2 })

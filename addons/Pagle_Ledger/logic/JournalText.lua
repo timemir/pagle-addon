@@ -247,6 +247,23 @@ function Text:WindowLine(windowID)
 	return state and ns.L.WINDOW_LINE:format(label, state) or label
 end
 
+--- A trophy family's name from lore (`family.<id>.name`, LED-R160): the Journal's spreads and the familyStar moment
+--- read it here. nil while the key has no text, so the line naming it is left out (LED-R161).
+---@param family integer
+---@return string?
+function ns.FamilyName(family)
+	local name = ns.L[("family.%d.name"):format(family)]
+	return type(name) == "string" and name or nil
+end
+
+--- A trophy family's name from lore, as ns.FamilyName (LED-R160, LED-R161).
+---@param _ LedgerJournalText
+---@param family integer
+---@return string?
+Text.FamilyName = function(_, family)
+	return ns.FamilyName(family)
+end
+
 --- A lore key's text (LED-R160, LED-R161), e.g. `species.6303.riddle` or `line.unchartedwaters.text`, with `{zone}`
 --- filled with zone `zone`'s name (DATA-R108); nil when the key has no text, so the caller leaves its line out.
 ---@param key string

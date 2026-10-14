@@ -50,16 +50,9 @@ function ns.TrophyFamilies(world, state)
 	return families
 end
 
--- A family's name: its lore name (`family.<id>.name`, LED-R160), "…" while it has none (LED-R126).
----@param context LedgerSpreadContext
----@param family integer
----@return string
-local function familyName(context, family)
-	return context.text:Lore(("family.%d.name"):format(family)) or ns.L.NAME_UNKNOWN
-end
-
 -- The Trophy Room's left page (LED-R143): its title, the weights landed of the room's, and the family index, each
--- line the family's name and shown stars (LED-R48), its "x / N", opening it on the right page.
+-- line the family's lore name and shown stars (LED-R48), its "x / N", opening it on the right page; a family whose
+-- name has no text has no line (LED-R161).
 ---@param context LedgerSpreadContext
 ---@param families LedgerTrophyFamily[]
 ---@return LedgerBlock[]
@@ -72,13 +65,16 @@ local function trophyIndex(context, families)
 		{ kind = "text", text = L.TROPHY_WEIGHTS:format(format(count.done), format(count.total)) },
 	}
 	for _, family in ipairs(families) do
-		local stars = ns.ShownFamilyStars(context.world, context.state, context.celebrated, family.id)
-		blocks[#blocks + 1] = {
-			kind = "leader",
-			text = L.TROPHY_INDEX_LINE:format(familyName(context, family.id), ns.JournalStars(stars)),
-			value = L.TROPHY_INDEX_COUNT:format(format(family.count.done), format(family.count.total)),
-			place = ns.JournalPlace.trophyRoom(family.id),
-		}
+		local name = context.text:FamilyName(family.id)
+		if name then
+			local stars = ns.ShownFamilyStars(context.world, context.state, context.celebrated, family.id)
+			blocks[#blocks + 1] = {
+				kind = "leader",
+				text = L.TROPHY_INDEX_LINE:format(name, ns.JournalStars(stars)),
+				value = L.TROPHY_INDEX_COUNT:format(format(family.count.done), format(family.count.total)),
+				place = ns.JournalPlace.trophyRoom(family.id),
+			}
+		end
 	end
 	return blocks
 end
@@ -117,7 +113,8 @@ local function board(context, family)
 	return ticks
 end
 
--- The heaviest weight of a family landed, removed or not (its Catches keep their records, LED-R12); nil for none.
+-- The heaviest weight of a family landed, as "Landed {x} of {N}" counts them: a removed weight is left out (LED-R12),
+-- though its Catches keep their records. nil for none.
 ---@param context LedgerSpreadContext
 ---@param family LedgerTrophyFamily
 ---@return integer?
@@ -126,15 +123,17 @@ local function heaviestLanded(context, family)
 	local landed = context.state.items
 	local heaviest
 	for _, itemID in ipairs(family.weights) do
-		local weight = (getItem(itemID) --[[@as PagleItem]]).weight or 0
-		if landed[itemID] and (heaviest == nil or weight > heaviest) then
+		local item = getItem(itemID) --[[@as PagleItem]]
+		local weight = item.weight or 0
+		if landed[itemID] and not item.removed and (heaviest == nil or weight > heaviest) then
 			heaviest = weight
 		end
 	end
 	return heaviest
 end
 
--- The Trophy Room's right page (LED-R143): the chosen family's name, its three stamps (its shown stars, LED-R48), its
+-- The Trophy Room's right page (LED-R143): the chosen family's name (left out while it has no text, LED-R161), its
+-- three stamps (its shown stars, LED-R48), its
 -- measuring board in real pounds (LED-R62), what is landed of it, and the charted zones whose list has it.
 ---@param context LedgerSpreadContext
 ---@param family LedgerTrophyFamily
@@ -148,13 +147,16 @@ local function familyPage(context, family)
 	local landed = heaviest
 			and L.TROPHY_LANDED:format(format(family.count.done), format(family.count.total), format(heaviest))
 		or L.TROPHY_NONE_LANDED
-	local blocks = {
-		{ kind = "title", text = familyName(context, family.id) },
-		{ kind = "stamps", stamps = ns.JournalStamps(stars, L.TROPHY_STAMPS) },
-		{ kind = "board", ticks = board(context, family) },
-		{ kind = "text", text = L.TROPHY_POUNDS, color = "faded" },
-		{ kind = "text", text = landed, hand = true },
-	}
+	---@type LedgerBlock[]
+	local blocks = {}
+	local name = context.text:FamilyName(family.id)
+	if name then
+		blocks[1] = { kind = "title", text = name }
+	end
+	blocks[#blocks + 1] = { kind = "stamps", stamps = ns.JournalStamps(stars, L.TROPHY_STAMPS) }
+	blocks[#blocks + 1] = { kind = "board", ticks = board(context, family) }
+	blocks[#blocks + 1] = { kind = "text", text = L.TROPHY_POUNDS, color = "faded" }
+	blocks[#blocks + 1] = { kind = "text", text = landed, hand = true }
 	local zones = {}
 	for _, zone in ipairs(world.charted) do
 		if world.zones[zone].families[family.id] then

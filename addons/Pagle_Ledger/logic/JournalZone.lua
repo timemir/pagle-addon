@@ -108,14 +108,6 @@ local function ticked(text, met)
 	return { kind = "text", text = L.ZONE_REQUIREMENT:format(met and L.CHECK_ON or L.CHECK_OFF, text) }
 end
 
--- A trophy family's name, from lore (LED-R135, LED-R161), or "…" while it has none.
----@param context LedgerSpreadContext
----@param family integer
----@return string
-local function familyName(context, family)
-	return context.text:Lore(("family.%d.name"):format(family)) or ns.L.NAME_UNKNOWN
-end
-
 -- The seal, the rank ladder, the next requirement and new to find (LED-R135, LED-R52, LED-R134).
 ---@param context LedgerSpreadContext
 ---@param zone integer
@@ -180,9 +172,12 @@ local function catches(context, zone, selected, blocks)
 	if #families > 0 then
 		local counts = ns.ZoneCounts(context.world, context.state, zone) --[[@as LedgerZoneCounts]]
 		blocks[#blocks + 1] = header("trophies", counts.landed, counts.families)
+		-- A family whose lore name has no text has no line, though the header counts it (LED-R161).
 		for _, family in ipairs(families) do
-			local line = L.ZONE_TROPHY:format(familyName(context, family))
-			blocks[#blocks + 1] = ticked(line, zoneState.families[family] == true)
+			local name = context.text:FamilyName(family)
+			if name then
+				blocks[#blocks + 1] = ticked(L.ZONE_TROPHY:format(name), zoneState.families[family] == true)
+			end
 		end
 	end
 
@@ -272,13 +267,16 @@ local function about(context, zone)
 		local weights = weightsByFamily(context)
 		blocks[#blocks + 1] = { kind = "kicker", text = L.ZONE_TROPHIES_HERE }
 		for _, family in ipairs(families) do
-			blocks[#blocks + 1] = {
-				kind = "row",
-				text = familyName(context, family),
-				stars = ns.ShownFamilyStars(world, state, context.celebrated, family),
-				value = weights[family],
-				place = ns.JournalPlace.trophyRoom(family),
-			}
+			local name = context.text:FamilyName(family)
+			if name then
+				blocks[#blocks + 1] = {
+					kind = "row",
+					text = name,
+					stars = ns.ShownFamilyStars(world, state, context.celebrated, family),
+					value = weights[family],
+					place = ns.JournalPlace.trophyRoom(family),
+				}
+			end
 		end
 	end
 	blocks[#blocks + 1] = { kind = "text", text = L.ZONE_REWARD }

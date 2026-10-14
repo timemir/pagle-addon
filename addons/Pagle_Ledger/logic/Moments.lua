@@ -292,7 +292,7 @@ function celebrate.familyStar(celebrated, _, earned)
 	end
 	local L = ns.L
 	local stars = starsText(new[#new])
-	local name = L["family." .. family .. ".name"]
+	local name = ns.FamilyName(family)
 	return {
 		rung = "nod",
 		kind = "familyStar",
