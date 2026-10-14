@@ -26,6 +26,7 @@ logic\NextWindow.lua
 logic\LiveConditions.lua
 logic\Modules.lua
 logic\Sessions.lua
+logic\Size.lua
 logic\CatchLog.lua
 logic\Projections.lua
 logic\Migrations.lua
@@ -60,6 +61,7 @@ adapter\NextWindow.lua
 adapter\Modules.lua
 adapter\Host.lua
 adapter\CatchLog.lua
+adapter\Size.lua
 adapter\Projections.lua
 adapter\Angler.lua
 adapter\Fishing.lua

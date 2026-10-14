@@ -8,9 +8,9 @@ import pytest
 
 from areas_fixture import write_areas
 from baseline_fixture import CSVS, write_baseline
+from cli_fixture import run
 from item_fixture import write_item_layer
 from observed_fixture import write_observed
-from pagle_data.cli import main
 from pools_fixture import write_pools
 from windows_fixture import write_windows
 
@@ -110,12 +110,6 @@ def write_tree(root: Path, pools: str = POOLS, items: str = ITEMS, csvs: dict[st
     write_item_layer(root, items)  # test_item_records.py covers the item layer
     write_pools(root, pools)
     return root
-
-
-def run(root: Path, capsys: pytest.CaptureFixture[str]) -> tuple[int, str]:
-    code = main([], root)
-    out, err = capsys.readouterr()
-    return code, out + err
 
 
 def catalogue(root: Path, capsys: pytest.CaptureFixture[str]) -> str:

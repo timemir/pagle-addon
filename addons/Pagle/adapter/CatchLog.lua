@@ -17,7 +17,8 @@ end
 function ns.OpenSavedVariables()
 	-- One shared Default profile, account-wide (CORE-R5), with logic/Migrations.lua's defaults.
 	ns.db = LibStub("AceDB-3.0"):New("PagleDB", ns.PAGLEDB_DEFAULTS, true)
-	local catchLog, started = ns.OpenCatchLog(_G.PagleLog, ns.db.global, GetServerTime())
+	-- Casts are sized by the catalogue built later in this step, which nothing decodes before (LOG-R65).
+	local catchLog, started = ns.OpenCatchLog(_G.PagleLog, ns.db.global, GetServerTime(), ns.CatalogueItem)
 	_G.PagleLog = catchLog.data
 	ns.catchLog = catchLog
 	if started then

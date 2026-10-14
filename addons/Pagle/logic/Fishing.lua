@@ -18,6 +18,7 @@ ns.FISHING_GRACE = 2
 ---@field itemID integer         -- 0 if it was secret (LOG-R8)
 ---@field quantity integer
 ---@field n integer              -- position in the Cast's items
+---@field size PagleSize?        -- its Simulated Size, as the Cast's item carries it (LOG-R65)
 ---@field cast PagleCast
 
 --- One offered item, as the Cast entry stores it (LOG-R8).
@@ -100,6 +101,7 @@ local function finish(self, outcome, items)
 				itemID = item.itemID,
 				quantity = item.quantity,
 				n = item.n,
+				size = item.size,
 				cast = cast,
 			})
 		end

@@ -40,7 +40,7 @@ local ns = select(2, ...)
 --- - `seal` (a wax seal reading `text`)
 --- - `stamps` (`stamps`: ink stamps, each `{ text, inked }`)
 --- - `tiles` (`tiles`: zone tiles, LedgerZoneTile)
---- - `icon` (`icon`, an item ID or texture, drawn `look` "sepia" or "silhouette")
+--- - `icon` (`icon`, an item ID or texture, drawn `look` "sepia" or "silhouette", `large` on an entry, LED-R140)
 --- - `xpBar` (`bar`: the ink XP bar, ns.InkXpBar)
 ---@class LedgerBlock
 ---@field kind "kicker"|"title"|"text"|"link"|"leader"|"seal"|"stamps"|"tiles"|"icon"|"xpBar"
@@ -53,6 +53,7 @@ local ns = select(2, ...)
 ---@field tiles? LedgerZoneTile[]
 ---@field icon? integer|string
 ---@field look? "sepia"|"silhouette"
+---@field large? boolean
 ---@field bar? LedgerInkXpBar
 
 --- A zone tile (LED-R131): the zone's name, up to two lines under it, a thin ink bar, a wax seal and a red note.
