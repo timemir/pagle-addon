@@ -22,6 +22,7 @@ from dataclasses import dataclass, replace
 from pagle_data.errors import At, Problems
 from pagle_data.observed import (
     DATA,
+    FIELD_BOUNDS,
     LOCALE,
     REPORTER_KEY,
     CatchRow,
@@ -33,7 +34,9 @@ from pagle_data.observed import (
     bucket_minute,
     bucket_text,
     duplicate_rows,
+    rows_of,
 )
+from pagle_data.toml_reader import broken_bounds
 
 _NOWHERE = At("")
 
@@ -47,10 +50,10 @@ REPORT_LABEL = "Report"
 _PART = re.compile(r"([1-9][0-9]*)/([1-9][0-9]*)")
 _INTEGER = re.compile(r"-?[0-9]+")
 _ITEM_COUNT = re.compile(r"([0-9]+)x([0-9]+)")
-# Each row's known keys (REP-R20–R22); any other key=value is ignored (REP-R31).
-_I_KEYS = ("aura", "event", "t", "m")
-_K_KEYS = ("casts", "away", "land", "lost")
-_P_KEYS = ("casts",)
+# Each row's known key=value keys (REP-R20–R22); any other is ignored (REP-R31).
+_I_KNOWN_KEYS = ("aura", "event", "t", "m")
+_K_KNOWN_KEYS = ("casts", "away", "land", "lost")
+_P_KNOWN_KEYS = ("casts",)
 # An unknown row letter (REP-R31): one capital letter other than I, K and P.
 _ROW_LETTER = re.compile(r"[A-Z]")
 _ESCAPES = {'"': '"', "\\": "\\", "n": "\n"}
@@ -65,6 +68,11 @@ class Identity:
     locale: str
     reporter: str
     parts: int
+
+    @property
+    def observed_header(self) -> Header:
+        """The header reports/<reporter>.toml keeps for this identity: its addon, data and locale (DATA-R121)."""
+        return Header(self.addon, self.data, self.locale)
 
 
 @dataclass(frozen=True)
@@ -96,7 +104,7 @@ class Part:
 
     @property
     def rows(self) -> tuple[Row, ...]:
-        return (*self.catches, *self.skills, *self.pool_texts)
+        return rows_of(self)
 
 
 @dataclass(frozen=True)
@@ -131,13 +139,14 @@ class FieldReport:
 
     @property
     def rows(self) -> tuple[Row, ...]:
-        return (*self.catches, *self.skills, *self.pool_texts)
+        return rows_of(self)
 
     def observed(self, issues: Iterable[int]) -> Report:
         """The report as data/observed/reports/<reporter>.toml holds it (DATA-R121), imported from issues."""
         identity = self.identity
-        header = Header(identity.addon, identity.data, identity.locale)
-        return Report(identity.reporter, tuple(issues), header, self.catches, self.skills, self.pool_texts)
+        return Report(
+            identity.reporter, tuple(issues), identity.observed_header, self.catches, self.skills, self.pool_texts
+        )
 
 
 # Lines
@@ -213,47 +222,48 @@ class _Row:
         self.problems.add(self.at, message)
         self.ok = False
 
-    def integer(self, name: str, text: str, minimum: int | None, maximum: int | None = None) -> int:
+    def integer(self, name: str, text: str, field: str) -> int:
+        """text as the integer field `field`, within its FIELD_BOUNDS; `name` is how a problem names it."""
         if not _INTEGER.fullmatch(text):
             self.fail(f"{name}: expected an integer, got '{text}'")
             return 0
         value = int(text)
-        if minimum is not None and (value < minimum or (maximum is not None and value > maximum)):
-            bounds = f"from {minimum} to {maximum}" if maximum is not None else f"at least {minimum}"
+        bounds = broken_bounds(value, *FIELD_BOUNDS[field])
+        if bounds is not None:
             self.fail(f"{name}: expected an integer {bounds}, got {value}")
         return value
 
-    def positional(self, shape: str, names: Sequence[str], minimums: Sequence[int]) -> list[int] | None:
+    def positional(self, shape: str, names: Sequence[str]) -> list[int] | None:
         """The leading integer fields, or None with a problem when one is missing."""
         if len(self.fields) < len(names):
             self.fail(f"missing fields: expected {shape} (REP-R20–R22)")
             return None
-        return [self.integer(name, field.text, low) for name, field, low in zip(names, self.fields, minimums)]
+        return [self.integer(name, field.text, name) for name, field in zip(names, self.fields)]
 
     def no_more_fields(self, used: int) -> None:
         for token in self.fields[used:]:
             self.fail(f"unexpected field '{token.text}'")
 
-    def key(self, name: str, minimum: int | None, maximum: int | None = None) -> int | None:
+    def key(self, name: str) -> int | None:
         if name not in self.keys:
             return None
-        return self.integer(f"{name}=", self.keys[name], minimum, maximum)
+        return self.integer(f"{name}=", self.keys[name], name)
 
-    def required(self, name: str, minimum: int) -> int:
+    def required(self, name: str) -> int:
         if name not in self.keys:
             self.fail(f"missing field {name}= (REP-R21, REP-R22)")
             return 0
-        return self.integer(f"{name}=", self.keys[name], minimum)
+        return self.integer(f"{name}=", self.keys[name], name)
 
     def ids(self, name: str) -> tuple[int, ...]:
         if name not in self.keys:
             return ()
-        return tuple(sorted(self.integer(f"{name}=", part, 1) for part in self.keys[name].split(",")))
+        return tuple(sorted(self.integer(f"{name}=", part, name) for part in self.keys[name].split(",")))
 
 
 def _catch(row: _Row, reporter: str) -> CatchRow | None:
     """I <itemID> <areaID> <build> <count> [aura=…] [event=…] [t=HH:MM m=<month>] (REP-R20)."""
-    numbers = row.positional("I <itemID> <areaID> <build> <count>", ("item", "area", "build", "count"), (1, 1, 0, 1))
+    numbers = row.positional("I <itemID> <areaID> <build> <count>", ("item", "area", "build", "count"))
     row.no_more_fields(4)
     auras, events = row.ids("aura"), row.ids("event")
     t: int | None = None
@@ -261,7 +271,7 @@ def _catch(row: _Row, reporter: str) -> CatchRow | None:
         t = bucket_minute(row.keys["t"])
         if t is None:
             row.fail(f"t=: expected the start of a 15-minute bucket, HH:MM, got '{row.keys['t']}' (REP-R20)")
-    m = row.key("m", 1, 12)
+    m = row.key("m")
     if ("t" in row.keys) != ("m" in row.keys):
         row.fail("t= and m= go together (REP-R20)")
     if numbers is None or not row.ok:
@@ -272,10 +282,10 @@ def _catch(row: _Row, reporter: str) -> CatchRow | None:
 
 def _skill(row: _Row, reporter: str) -> SkillRow | None:
     """K <areaID> <build> casts=<n> away=<n> [land=<skill>] [lost=<skill>] (REP-R21)."""
-    numbers = row.positional("K <areaID> <build>", ("area", "build"), (1, 0))
+    numbers = row.positional("K <areaID> <build>", ("area", "build"))
     row.no_more_fields(2)
-    casts, away = row.required("casts", 1), row.required("away", 0)
-    land, lost = row.key("land", None), row.key("lost", None)  # effective skill: rank + a modifier that may be < 0
+    casts, away = row.required("casts"), row.required("away")
+    land, lost = row.key("land"), row.key("lost")
     if numbers is None or not row.ok:
         return None
     area, build = numbers
@@ -288,7 +298,7 @@ def _pool_text(row: _Row) -> PoolTextRow | None:
     if len(row.fields) < 3:
         row.fail(f"missing fields: expected {shape} (REP-R22)")
         return None
-    area = row.integer("area", row.fields[0].text, 1)
+    area = row.integer("area", row.fields[0].text, "area")
     locale, text = row.fields[1].text, row.fields[2]
     if not LOCALE.fullmatch(locale):
         row.fail(f"locale: expected a client locale such as enUS, got '{locale}'")
@@ -296,14 +306,14 @@ def _pool_text(row: _Row) -> PoolTextRow | None:
         row.fail(f"text: expected a quoted text, got '{text.text}' (REP-R22)")
     elif not text.text:
         row.fail("text: expected a non-empty text")  # Core drops only "": a blank text is a text (REP-R22)
-    casts = row.required("casts", 1)
+    casts = row.required("casts")
     items: dict[int, int] = {}
     for token in row.fields[3:]:
         pair = _ITEM_COUNT.fullmatch(token.text)
         if pair is None:
             row.fail(f"expected <itemID>x<count>, got '{token.text}' (REP-R22)")
             continue
-        item, count = row.integer("item", pair[1], 1), row.integer("count", pair[2], 1)
+        item, count = row.integer("item", pair[1], "item"), row.integer("count", pair[2], "count")
         if item in items:
             row.fail(f"item {item} is listed twice")
         items[item] = count
@@ -386,13 +396,13 @@ def parse_part(text: str, source: str, problems: Problems) -> Part | None:
             ended = number
             continue
         if kind == "I":
-            catch = _catch(_Row(words, at(number), problems, _I_KEYS), reporter)
+            catch = _catch(_Row(words, at(number), problems, _I_KNOWN_KEYS), reporter)
             catches += [catch] if catch is not None else []
         elif kind == "K":
-            skill = _skill(_Row(words, at(number), problems, _K_KEYS), reporter)
+            skill = _skill(_Row(words, at(number), problems, _K_KNOWN_KEYS), reporter)
             skills += [skill] if skill is not None else []
         elif kind == "P":
-            pool_text = _pool_text(_Row(words, at(number), problems, _P_KEYS))
+            pool_text = _pool_text(_Row(words, at(number), problems, _P_KNOWN_KEYS))
             pool_texts += [pool_text] if pool_text is not None else []
         elif not _ROW_LETTER.fullmatch(kind):
             problems.add(at(number), f"expected a row (I, K or P) or END, got '{kind}'")

@@ -18,8 +18,7 @@ from pathlib import Path
 from typing import TypeVar
 
 from pagle_data import cli
-from pagle_data.db2_update import fail
-from pagle_data.errors import At, DataError, Problems
+from pagle_data.errors import At, DataError, Problems, fail
 from pagle_data.files import write_atomic
 from pagle_data.generate import Layers, read_layers
 from pagle_data.items import NOISE_CLASSES, identity
