@@ -426,3 +426,28 @@ describe("the Journal's Curios", function()
 		assert.is_true(loaded.ns.journal:IsShown())
 	end)
 end)
+
+describe("the Journal's ways into the collections", function()
+	-- Clicks the drawn leader on Home's right page whose words begin with `label`.
+	local function clickContents(loaded, label)
+		for _, leader in ipairs(loaded.ns.journal.frame.right.drawn.leader) do
+			if textsOf(leader)[1] == label then
+				leader:Click()
+				return
+			end
+		end
+		error("no contents line " .. label)
+	end
+
+	it("opens the Trophy Room and Curios from Home's contents (LED-R132, LED-R125)", function()
+		local _, loaded = spread("home")
+		local journal = loaded.ns.journal
+
+		clickContents(loaded, "The Trophy Room")
+		assert.are.same({ "Home", "The Trophy Room" }, { journal.pages.crumbs[1].label, journal.pages.crumbs[2].label })
+
+		journal:Open("home")
+		clickContents(loaded, "Curios: junk, treasure, uncharted")
+		assert.are.same({ "Home", "Curios" }, { journal.pages.crumbs[1].label, journal.pages.crumbs[2].label })
+	end)
+end)

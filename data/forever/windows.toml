@@ -5,6 +5,37 @@
 # its seed whole. spring and autumn have no seed, so they are defined only here. The IDs are day, night, spring,
 # summer, autumn and winter; the generator makes event.<eventID> from events.toml, never from here.
 # Edit this, then run scripts/generate-data.py and commit the regenerated files with it (DATA-R61).
+#
+# day and night overlap on purpose (#175): day is 06:00-24:00 and night 18:00-12:00, so both are open 06:00-12:00
+# and 18:00-24:00. That is Classic's four 6-hour fishing periods, not a VMaNGOS slip: the day fish (Raw Sunscale
+# Salmon, Lightning Eel) never bite 00:00-06:00 and the night fish (Raw Nightfin Snapper, Plated Armorfish) never
+# 12:00-18:00; in the other two periods both bite. The entries below pin VMaNGOS's ranges with the sources. Don't
+# split them at 06:00/18:00 without observed catches (data/observed/) that put a day or night fish outside them.
+# Both stay unconfirmed until observations confirm their gates (DATA-R52, DATA-R53).
+
+[window.day]
+time = [[360, 0]]
+why = """\
+#175: Classic's day fish bite 06:00-24:00 realm time, overlapping night 06:00-12:00 and 18:00-24:00. VMaNGOS event \
+47 (Sunscale Cycle, 06:00 for 1080 min, data/baseline/events.csv). Blizzard Watch, "Want gold in WoW Classic?" \
+(2019-10-02): Sunscale "not available between 12 a.m. and 6 a.m.", best 12-6 p.m., lower 6 a.m.-12 p.m. and 6 p.m.-12 \
+a.m. Wowhead Classic item 13759, top comment (2007-04-08, from WoWWiki's Fishing page): "12am-6am - Nightfin only", \
+"12pm-6pm - Sunscale only", both in the other two periods. Wowhead item 13757 (Lightning Eel, Thottbot 2007-04-18): \
+eels caught up to 23:58 in Eastern Plaguelands, none after midnight. legacy-wow.com/?p=1922 (Willhelm's 6-hour rule, \
+2006): Sunscale "occasionally" before midnight, "never" after. CMaNGOS classic-db (z2815) gates neither fish, so it \
+gives no range."""
+
+[window.night]
+time = [[1080, 720]]
+why = """\
+#175: Classic's night fish bite 18:00-12:00 realm time, overlapping day 06:00-12:00 and 18:00-24:00. VMaNGOS event \
+48 (Nightfin Cycle, 18:00 for 1080 min, data/baseline/events.csv). Blizzard Watch, "Want gold in WoW Classic?" \
+(2019-10-02): Nightfin "not available between 12 p.m. and 6 p.m. at all", best 12-6 a.m., lower 6 a.m.-12 p.m. and 6 \
+p.m.-12 a.m. Wowhead Classic item 13759, top comment (2007-04-08, from WoWWiki's Fishing page): "never found between \
+12pm-6pm". Classic-era catch logs on that page take Nightfin at 08:00-09:00 (Lake Mennar, 2020), 10:45-12:00 (TBC \
+Classic, Camp Mojache, 2021) and 18:00-19:00 (Un'Goro, 2025), and none in a session ending 18:00 (Moonglade, 2021). \
+legacy-wow.com/?p=1922 (Willhelm's 6-hour rule, 2006): Nightfin none 12:00-18:00, best 00:00-06:00. warcraft.wiki.gg's \
+"6 PM to 6 AM" is contradicted by those logs. CMaNGOS classic-db (z2815) gates neither fish, so it gives no range."""
 
 [window.spring]
 season = [{ from = [3, 20], to = [6, 20] }]

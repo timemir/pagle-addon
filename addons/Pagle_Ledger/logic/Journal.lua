@@ -30,6 +30,7 @@ local ns = select(2, ...)
 ---@field text LedgerJournalText         -- names, dates, window lines and lore (LED-R126, LED-R127, LED-R161)
 ---@field world? LedgerWorld            -- the world index (LED-R10); nil while updating
 ---@field getItem? fun(itemID: integer): PagleItem? -- Pagle.GetItem; nil while updating
+---@field getArea? fun(areaID: integer): PagleArea? -- Pagle.GetArea; nil while updating
 ---@field angler? Angler                 -- Pagle.GetAngler(), read at each draw (LED-R41); nil while updating
 ---@field openFieldReport? fun()         -- Pagle.OpenFieldReport (REP-R43); nil while updating
 
@@ -43,10 +44,12 @@ local ns = select(2, ...)
 --- - `tiles` (`tiles`: zone tiles, LedgerZoneTile)
 --- - `icon` (`icon`, an item ID or texture, drawn `look` "sepia" or "silhouette", `large` on an entry, LED-R140)
 --- - `xpBar` (`bar`: the ink XP bar, ns.InkXpBar)
+--- - `tabs` (`tabs`: tabs side by side, each `{ text, on, place }`, the chosen one `on`, LED-R130)
+--- - `bookplate` (the level `text` in large numerals over its caption `value`, and a wax seal reading `seal`, LED-R132)
 --- - `board` (`ticks`: the Trophy Room's measuring board, LED-R143) and `plinth` (`icon` and `look`, `text` the name,
 ---   `value` the plaque, LED-R144), drawn by adapter/JournalCollections.lua
 ---@class LedgerBlock
----@field kind "kicker"|"title"|"text"|"link"|"leader"|"seal"|"stamps"|"tiles"|"icon"|"xpBar"|"board"|"plinth"
+---@field kind "kicker"|"title"|"text"|"link"|"leader"|"seal"|"stamps"|"tiles"|"icon"|"xpBar"|"tabs"|"bookplate"|"board"|"plinth"
 ---@field text? string
 ---@field hand? boolean
 ---@field color? "faded"|"red"|"blue"
@@ -58,6 +61,8 @@ local ns = select(2, ...)
 ---@field look? "sepia"|"silhouette"
 ---@field large? boolean
 ---@field bar? LedgerInkXpBar
+---@field tabs? { text: string, on: boolean, place: LedgerJournalPlace }[]
+---@field seal? string
 ---@field action? fun()
 ---@field ticks? LedgerBoardTick[]
 
@@ -98,29 +103,20 @@ local ns = select(2, ...)
 ---@field left LedgerBlock[]
 ---@field right LedgerBlock[]
 
---- Home's ID: the spread the Journal shows at its first opening after a login or `/reload` (LED-R120).
+--- Home's ID: the spread the Journal shows at its first opening after a login or `/reload` (LED-R120). logic/Home.lua
+--- registers it.
 ns.JOURNAL_HOME = "home"
 
 --- The spreads, by ID. Each spread's ticket registers it with ns.RegisterJournalSpread when its file loads.
 ---@type table<string, LedgerSpread>
 ns.journalSpreads = {}
 
---- Registers spread `spread` as `id`, replacing any spread registered as `id` before (Home's placeholder).
+--- Registers spread `spread` as `id`, replacing any spread registered as `id` before.
 ---@param id string
 ---@param spread LedgerSpread
 function ns.RegisterJournalSpread(id, spread)
 	ns.journalSpreads[id] = spread
 end
-
--- Home's placeholder until the Home ticket registers Home: its left page's title only (LED-R130).
-ns.RegisterJournalSpread(ns.JOURNAL_HOME, {
-	crumbs = function()
-		return {}
-	end,
-	draw = function()
-		return { left = { { kind = "title", text = ns.L.HOME_TITLE } }, right = {} }
-	end,
-})
 
 ---@class LedgerJournalRouter
 ---@field private spreads table<string, LedgerSpread>
