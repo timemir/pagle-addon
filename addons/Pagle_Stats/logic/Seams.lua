@@ -35,7 +35,8 @@ local ns = select(2, ...)
 ---@field page StatsBookPage
 ---@field area integer?       -- the place, a zone or subzone areaID ("place", and "item" when opened from a place)
 ---@field item integer?       -- the item ID ("item", or an entry chosen on a "place" spread)
----@field session string?     -- Core's Session ID ("session")
+---@field session string?     -- Core's Session ID: the Session chosen on "sessions"
+---@field ledgerPage integer? -- the Sessions ledger's page number ("sessions"; 1, the newest, when nil)
 
 --- Opens or closes the Stats book (STA-R70). A stand-in until the book's ticket assigns the real one.
 function ns.ToggleBook() end
