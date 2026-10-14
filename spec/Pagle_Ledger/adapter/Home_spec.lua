@@ -433,6 +433,21 @@ describe("the brass plate (LED-R149)", function()
 		assert.is_true(journal.frame.plate:IsShown())
 		assert.are.equal("Lv 12 · Ledger 14%", journal.frame.plate.label.text)
 	end)
+
+	it("keeps its last words while the projection updates, where LED-R122 hides only the pages' (LED-R149)", function()
+		local _, loaded = openHome({ cast(ELWYNN, MACKEREL) }, level12)
+		local journal = loaded.ns.journal
+
+		-- The projection starts updating with the book open (LOG-R74): there is no state to read until it finishes.
+		loaded.ns.projection.IsUpdating = function()
+			return true
+		end
+		journal:Draw()
+
+		assert.is_true(journal.pages.updating)
+		assert.is_true(journal.frame.plate:IsShown())
+		assert.are.equal("Lv 12 · Ledger 14%", journal.frame.plate.label.text)
+	end)
 end)
 
 describe("the Journal's Home, live", function()
