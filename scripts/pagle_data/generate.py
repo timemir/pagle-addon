@@ -4,38 +4,48 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 
-from pagle_data.aliases import Proposal, check_aliases, fishing_areas, propose
-from pagle_data.baseline import BASELINE, AreaLoot, BaselineLayer, conditional_rows, read_baseline
+from pagle_data.aliases import Proposal, check_aliases, propose
+from pagle_data.areas import AreaLayer, CatchLists, area_records, build_catch_lists, read_areas_toml
+from pagle_data.baseline import BASELINE, AreaLoot, BaselineLayer, Pool, conditional_rows, read_baseline
 from pagle_data.catalogue import Catalogue, Event, fingerprint
+from pagle_data.checks import read_checks
+from pagle_data.confirmed import Confirmation, UngatedPair, check_removed, confirm, required_reporters
 from pagle_data.db2 import DB2, Db2Layer, read_db2
-from pagle_data.errors import DataError, Problems
+from pagle_data.errors import At, DataError, Problems
 from pagle_data.forever import ForeverLayer, read_forever
+from pagle_data.items import ITEMS_TOML, ItemLayer, Record, item_records, read_item_layer
 from pagle_data.lua import to_lua
+from pagle_data.observed import (
+    MINIMUM_CONFIRMING_BUILD,
+    OBSERVED,
+    ObservedLayer,
+    Observations,
+    observations,
+    read_observed,
+)
+from pagle_data.pools import POOLS_TOML, PoolType, build_pools, pool_items, read_pools_toml, ungrouped, with_pool_flags
+from pagle_data.universe import AREAS_TOML, item_universe
+from pagle_data.windows import Spec, build_windows, catalogue_windows, local_lua, read_windows_toml
 
 CATALOGUE_LUA = "addons/Pagle/data/Catalogue.lua"
 
-# The layers the generator reads, in DATA-R8's order (a later one wins). data/observed/ comes in M2.
-LAYERS = (f"{BASELINE}/", "data/forever/", DB2)
+# The layers the generator reads, in DATA-R8's order (a later one wins).
+LAYERS = (f"{BASELINE}/", "data/forever/", DB2, OBSERVED)
 
 
-def _areas(db2: Db2Layer) -> dict[int, Mapping[str, object]]:
-    """Every DB2 area (DATA-R25) in its pre-M2 shape (DATA-R79). Only the identity facts come from DB2 (DATA-R13);
-    no layer gives a where/when fact yet, so none is known. The enUS name never ships (DATA-R3)."""
-    return {
-        area_id: {
-            "parent": area.parent,
-            "continent": area.continent,
-            "hasData": False,
-            "skillBaseConfirmed": False,
-            "catches": [],
-        }
-        for area_id, area in db2.areas.items()
-    }
-
-
-def build_catalogue(forever: ForeverLayer, db2: Db2Layer) -> Catalogue:
-    """The catalogue in its pre-M2 shape (DATA-R79): aliases.toml's aliases, and nothing confirms an event's weekly
-    rule yet."""
+def build_catalogue(
+    forever: ForeverLayer,
+    db2: Db2Layer,
+    windows: Mapping[str, Spec],
+    items: Mapping[int, Record],
+    catch_lists: CatchLists,
+    pools: Mapping[str, list[int]],
+    confirmation: Confirmation,
+) -> Catalogue:
+    """The catalogue (DATA-R76): aliases.toml's aliases, the windows (DATA-R35), the item records that ship
+    (DATA-R77), every DB2 area's record with its catch list (DATA-R25, DATA-R78) and each pool type's catches
+    (DATA-R43), with every confirmed flag from confirmation (DATA-R48–R56). Only identity facts come from DB2
+    (DATA-R13), and no enUS name ships (DATA-R3)."""
     events: dict[int, Event] = {}
     for event_id, rule in forever.events.items():
         if rule is None:
@@ -45,15 +55,18 @@ def build_catalogue(forever: ForeverLayer, db2: Db2Layer) -> Catalogue:
                 "weekday": rule.weekday,
                 "start": rule.start,
                 "duration": rule.duration,
-                "confirmed": False,
+                "confirmed": event_id in confirmation.weekly,
             }
+    aliases = {alias.source: alias.target for alias in forever.aliases}
+    # Each gate is its window's shared spec, so Catalogue.lua writes it as W.<id> (Contracts).
+    shared_windows = catalogue_windows(windows, confirmation.windows)
     catalogue: Catalogue = {
         "fingerprint": "",
-        "items": {},
-        "areas": _areas(db2),
-        "aliases": {alias.source: alias.target for alias in forever.aliases},
-        "pools": {},
-        "windows": {},
+        "items": dict(items),
+        "areas": dict(area_records(db2.areas, catch_lists, aliases.keys(), shared_windows, confirmation)),
+        "aliases": aliases,
+        "pools": {pool_type: list(catches) for pool_type, catches in pools.items()},
+        "windows": shared_windows,
         "events": events,
         "fishingSpells": sorted(forever.fishing_spells),
         "auras": sorted(forever.auras),
@@ -73,8 +86,12 @@ def header() -> str:
 
 
 def catalogue_lua(catalogue: Catalogue) -> str:
-    """Catalogue.lua (DATA-R76): sets ns.catalogue. Core's TOC lists it before Core's own files."""
-    return f"{header()}\n---@class PagleNS\nlocal ns = select(2, ...)\n\nns.catalogue = {to_lua(catalogue)}\n"
+    """Catalogue.lua (DATA-R76): sets ns.catalogue, after the local W of window specs it points at (Contracts).
+    Core's TOC lists it before Core's own files."""
+    return (
+        f"{header()}\n---@class PagleNS\nlocal ns = select(2, ...)\n\n"
+        f"{local_lua(catalogue['windows'])}\nns.catalogue = {to_lua(catalogue)}\n"
+    )
 
 
 @dataclass(frozen=True)
@@ -84,9 +101,19 @@ class Layers:
     baseline: BaselineLayer
     forever: ForeverLayer
     db2: Db2Layer
+    windows: dict[str, Spec]  # every window by ID (DATA-R35)
+    observed: ObservedLayer
+    items: dict[int, Record]  # the item records that ship (DATA-R77), pool flags set
+    catch_lists: CatchLists  # every area's catch list and the skill bases (DATA-R26, DATA-R30)
+    pool_types: dict[str, PoolType]  # pools.toml's pool types by ID (DATA-R43)
+    pools: dict[str, list[int]]  # each pool type's catches (DATA-R43)
+    confirmation: Confirmation  # every confirmed flag (DATA-R48–R56)
+    item_layer: ItemLayer  # items.toml, species.toml and families.toml as read (DATA-R10)
+    area_layer: AreaLayer  # areas.toml as read (DATA-R10)
 
     def fishing_areas(self) -> set[int]:
-        return fishing_areas(self.baseline)
+        """The areas with a catch list (DATA-R32)."""
+        return self.catch_lists.fishing_areas()
 
     def conditional_rows(self) -> list[AreaLoot]:
         """The baseline loot rows treated as ungated because their condition isn't a single event (DATA-R9)."""
@@ -96,26 +123,115 @@ class Layers:
         """The alias candidates not yet committed to aliases.toml (DATA-R32, DATA-R64)."""
         return propose(self.db2, self.fishing_areas(), self.forever.aliases)
 
+    def observations(self) -> Observations:
+        """data/observed/'s observations on every build, their areas through the alias table (DATA-R34)."""
+        return observations(self.observed, {alias.source: alias.target for alias in self.forever.aliases})
 
-def read_layers(root: Path) -> Layers:
-    """Every source layer under root/data/. Raises DataError listing every problem found (DATA-R63)."""
+    def ungated_pairs(self) -> list[UngatedPair]:
+        """The observed pairs that joined ungated though their item is gated elsewhere (DATA-R47, DATA-R64)."""
+        return self.catch_lists.ungated
+
+    def missing_areas(self) -> dict[int, list[At]]:
+        """Observed areas missing from data/db2/areas.csv, kept in the sources and left out of the catalogue
+        (DATA-R33)."""
+        return self.observations().missing_areas(self.db2.areas)
+
+    def ungrouped_pools(self) -> list[Pool]:
+        """The baseline's pool templates in no pool type, warned about so none is silently dropped (DATA-R43)."""
+        return ungrouped(self.pool_types, self.baseline)
+
+
+def read_layers(root: Path, minimum_build: int = MINIMUM_CONFIRMING_BUILD) -> Layers:
+    """Every source layer under root/data/, with only observations on builds at or above minimum_build counting for
+    confirming (DATA-R46; --min-build asks what a higher one would lose, DATA-R57). Raises DataError listing every
+    problem found (DATA-R63)."""
     problems = Problems()
-    # DATA-R9: the baseline is read so that a hand-edited CSV fails. DATA-R79: M1's catalogue holds nothing from it;
-    # the alias checks and proposals (DATA-R32) are its only reader.
+    # DATA-R9: a hand-edited baseline CSV fails, and nothing is built from a baseline that didn't read cleanly.
     baseline = read_baseline(root, problems)
     baseline_read = not problems
     forever = read_forever(root, problems)
     db2 = read_db2(root, problems)
-    if baseline_read:  # without the whole baseline, every target would look like it has no catch list
-        check_aliases(forever.aliases, fishing_areas(baseline), problems)
+    window_overrides = read_windows_toml(root, problems)
+    windows: dict[str, Spec] = {}
+    observed = read_observed(root, problems)
+    item_layer = read_item_layer(root, problems)
+    area_layer = read_areas_toml(root, problems)
+    checks = read_checks(root, problems)
+    pool_types = read_pools_toml(root, problems)
+    items: dict[int, Record] = {}
+    catch_lists = CatchLists()
+    pools: dict[str, list[int]] = {}
+    confirmation = Confirmation()
+    if baseline_read:  # without the whole baseline, every seeded window would look missing (DATA-R35, DATA-R36)
+        windows = build_windows(baseline.events, window_overrides, forever.events, problems)
+        # DATA-R15: items.toml's, areas.toml's and pools.toml's IDs come from their strict readers, so a bad one is
+        # reported once.
+        parsed = {
+            ITEMS_TOML: item_layer.items.keys(),
+            AREAS_TOML: area_layer.items(),
+            POOLS_TOML: pool_items(pool_types),
+        }
+        universe = item_universe(root, baseline, problems, observed, parsed)
+        items = item_records(universe, baseline, item_layer, db2, checks, problems)
+        # DATA-R43: the catches leave out what doesn't ship; DATA-R77: pool is true for an item in any of them.
+        pools = build_pools(pool_types, baseline, items)
+        items = with_pool_flags(items, pools)
+        # DATA-R46: only observations on builds at or above the minimum confirming build count; DATA-R33: those in
+        # areas missing from the slice stay out of the catalogue; DATA-R34: areas through the alias table.
+        seen = observations(observed, {alias.source: alias.target for alias in forever.aliases})
+        check_removed(seen, item_layer.items, problems)  # DATA-R23
+        counting = seen.confirming(minimum_build).within(db2.areas)
+        required = required_reporters(baseline, items)  # DATA-R49
+        catch_lists = build_catch_lists(
+            baseline, area_layer, items, windows.keys(), db2.areas, counting, required, problems
+        )
+        # DATA-R32: an alias's target and source are judged by these catch lists.
+        check_aliases(forever.aliases, catch_lists.fishing_areas(), problems)
+        confirmation = confirm(
+            catch_lists.windows(),
+            catch_lists.evidence,
+            catch_lists.skill_bases,
+            db2.areas,
+            counting,
+            required,
+            windows,
+            forever.events,
+            problems,
+        )
     if problems:
         raise DataError(problems.found)
-    return Layers(baseline, forever, db2)
+    return Layers(
+        baseline,
+        forever,
+        db2,
+        windows,
+        observed,
+        items,
+        catch_lists,
+        pool_types,
+        pools,
+        confirmation,
+        item_layer,
+        area_layer,
+    )
+
+
+def catalogue_of(layers: Layers) -> Catalogue:
+    """The catalogue the layers give (DATA-R76)."""
+    return build_catalogue(
+        layers.forever,
+        layers.db2,
+        layers.windows,
+        layers.items,
+        layers.catch_lists,
+        layers.pools,
+        layers.confirmation,
+    )
 
 
 def outputs(layers: Layers) -> dict[str, str]:
     """Every generated file's path (relative to the repo root) and content."""
-    return {CATALOGUE_LUA: catalogue_lua(build_catalogue(layers.forever, layers.db2))}
+    return {CATALOGUE_LUA: catalogue_lua(catalogue_of(layers))}
 
 
 def generate(root: Path) -> dict[str, str]:

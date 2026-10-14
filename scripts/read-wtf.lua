@@ -4,13 +4,18 @@
 --   - the Catch log, decoded with Core's own codec (addons/Pagle/logic/CatchLog.lua): the logId, the entries by
 --     tag, the C1 Casts by outcome, per character and per zone areaID, those in zone areaID 0, their time span, the
 --     B1 and S1 entries and PagleDB.global.decodeErrors (0 when AceDB left that default out of the file);
+--   - the Ledger (PagleLedgerDB in Pagle_Ledger.lua): the projection Core stores and whether its logId and lastSeq
+--     match PagleLog's, its state with the level from the Ledger's own logic/, and the celebrated set;
+--   - the wallet: each Module's reported Coins (PagleDB.global.coins.earned) and the balance;
+--   - the cards: the Write-up waiting, the Session summary cards, the open summary and the pending moments;
 --   - named CVars from Config.wtf and the account's and the character's config-cache.wtf;
 --   - named addons' enable state from the character's AddOns.txt.
 --
 --   lua scripts/read-wtf.lua <WTF/Account/<ACCT> folder> [--character <realm folder>/<Name-Surname>]
 --       [--cvar <name>]... [--addon <name>]... [--expect-casts N] [--since T]
 --
--- --cvar defaults to SoftTargetInteract and --addon to Pagle and Pagle_QoL; naming one replaces its defaults.
+-- --cvar defaults to SoftTargetInteract and --addon to Pagle, Pagle_Ledger and Pagle_QoL; naming one replaces its
+-- defaults.
 -- The character's CVars and addons need --character, e.g. --character 70/Ada-Brook.
 -- --expect-casts N checks the M1 exit check's steps 3 and 4 (#75): N C1 Casts, each there once, no zone areaID 0,
 -- a B1 and an S1 entry, decodeErrors 0, every entry decodes, and at least one Cast got away (`g`). --since T
@@ -65,7 +70,7 @@ local function parseArgs(args)
 		options.cvars = { "SoftTargetInteract" }
 	end
 	if #options.addons == 0 then
-		options.addons = { "Pagle", "Pagle_QoL" }
+		options.addons = { "Pagle", "Pagle_Ledger", "Pagle_QoL" }
 	end
 	return options
 end
@@ -148,7 +153,7 @@ end
 local function loadCodec()
 	local ns = {}
 	local env = setmetatable({}, { __index = _G })
-	for _, file in ipairs({ "Conditions.lua", "CatchLog.lua" }) do
+	for _, file in ipairs({ "Conditions.lua", "Sessions.lua", "CatchLog.lua" }) do
 		local chunk = assert(loadfile(ROOT .. "/addons/Pagle/logic/" .. file))
 		setfenv(chunk, env)
 		chunk("Pagle", ns)
@@ -310,18 +315,27 @@ local function exitChecks(facts, decodeErrors, expected)
 	return checks
 end
 
--- Prints the Catch log section and returns the exit check's checks (#75 steps 3 and 4), which need expectCasts.
-local function printCatchLog(account, expectCasts, since)
-	local path = account .. "/SavedVariables/Pagle.lua"
-	local saved, err = loadSavedVariables(path)
+-- PagleLog from Pagle.lua's globals, or nil when it isn't a log with characters and entries.
+local function pagleLog(saved)
+	local log = saved and saved.PagleLog
+	if type(log) ~= "table" or type(log.entries) ~= "table" or type(log.characters) ~= "table" then
+		return nil
+	end
+	return log
+end
+
+-- Prints the Catch log section from Pagle.lua (its globals, or nil and why not) and returns the exit check's checks
+-- (#75 steps 3 and 4), which need expectCasts.
+local function printCatchLog(pagle, expectCasts, since)
+	local saved = pagle.saved
 	if not saved then
-		print("== Catch log: can't read " .. path .. ": " .. err)
+		print("== Catch log: can't read " .. pagle.path .. ": " .. pagle.err)
 		return { { ok = false, line = "no Pagle.lua to read" } }
 	end
 	local db = saved.PagleDB
 	local global = type(db) == "table" and type(db.global) == "table" and db.global or {}
-	local log = saved.PagleLog
-	if type(log) ~= "table" or type(log.entries) ~= "table" or type(log.characters) ~= "table" then
+	local log = pagleLog(saved)
+	if not log then
 		print("== Catch log: Pagle.lua holds no PagleLog with characters and entries")
 		return { { ok = false, line = "no PagleLog in Pagle.lua" } }
 	end
@@ -349,6 +363,254 @@ local function printCatchLog(account, expectCasts, since)
 	local facts = readLog(ns, log, since)
 	printLog(log, facts, since)
 	return expectCasts and exitChecks(facts, decodeErrors, expectCasts) or {}
+end
+
+-- The Ledger's namespace with its logic: each logic/ file Pagle_Ledger.toc lists, in TOC order, called with
+-- ("Pagle_Ledger", ns) as the client calls an addon's files (spec/support/addon.lua loads them the same way), so the
+-- level shown is the Ledger's own (logic/Progress.lua). Their CORE-R11 guard reads the Pagle global, so it's a table
+-- here; logic/ is plain Lua 5.1 (CORE-R7) and reads nothing else of Core's at load.
+local function loadLedgerLogic()
+	local ns = {}
+	local env = setmetatable({ Pagle = {} }, { __index = _G })
+	local dir = ROOT .. "/addons/Pagle_Ledger/"
+	for _, line in ipairs(assert(readLines(dir .. "Pagle_Ledger.toc"))) do
+		local file = line:match("^%s*(.-)%s*$"):gsub("\\", "/")
+		if file:match("^logic/[^/]+%.lua$") then
+			local chunk = assert(loadfile(dir .. file))
+			setfenv(chunk, env)
+			chunk("Pagle_Ledger", ns)
+		end
+	end
+	return ns
+end
+
+-- A table's value, or an empty table when it isn't one (AceDB leaves an empty default out of the file).
+local function tableOr(value)
+	return type(value) == "table" and value or {}
+end
+
+-- A count of a set's keys and the keys themselves, as "2 (6303, 6358)", or "none"; `describe` turns a key and its
+-- value into the text shown, `less` orders the keys.
+local function listed(set, describe, less)
+	local keys = {}
+	for key in pairs(set) do
+		keys[#keys + 1] = key
+	end
+	table.sort(keys, less)
+	if #keys == 0 then
+		return "none"
+	end
+	local texts = {}
+	for i, key in ipairs(keys) do
+		texts[i] = describe and describe(key, set[key]) or tostring(key)
+	end
+	return #keys .. " (" .. table.concat(texts, ", ") .. ")"
+end
+
+-- "<speciesID>:<zone>" keys in Species then zone order, as numbers.
+local function bySpeciesThenZone(a, b)
+	local speciesA, zoneA = a:match("^(%d+):(%d+)$")
+	local speciesB, zoneB = b:match("^(%d+):(%d+)$")
+	if not (speciesA and speciesB) then
+		return a < b
+	end
+	if speciesA ~= speciesB then
+		return tonumber(speciesA) < tonumber(speciesB)
+	end
+	return tonumber(zoneA) < tonumber(zoneB)
+end
+
+local function printLedgerState(ledger, state)
+	local level, into, cost = ledger.ClimbOf(tonumber(state.xp) or 0)
+	local climb = cost and ("Angler Level %d, %d into it, next step %d"):format(level, into, cost)
+		or ("Angler Level %d, %d carried"):format(level, into)
+	local species = 0
+	for _ in pairs(tableOr(state.species)) do
+		species = species + 1
+	end
+	print(
+		("state: %s, %s, %s XP (%s), %s, %s"):format(
+			count(tonumber(state.casts) or 0, "Cast"),
+			count(tonumber(state.catches) or 0, "Catch", "Catches"),
+			tostring(state.xp),
+			climb,
+			count(tonumber(state.coins) or 0, "Coin"),
+			count(species, "Species", "Species")
+		)
+	)
+end
+
+local function printCelebrated(celebrated)
+	local highest
+	for _, level in pairs(tableOr(celebrated.levels)) do
+		highest = math.max(highest or level, level)
+	end
+	local coins = tonumber(celebrated.coins) or 0 -- AceDB leaves out the default, 0 (LED-R90)
+	print(("celebrated: highest level %s, %s"):format(tostring(highest or "none"), count(coins, "Coin")))
+	print("celebrated Species: " .. listed(tableOr(celebrated.species)))
+	print("celebrated Species × zone pairs: " .. listed(tableOr(celebrated.speciesZones), nil, bySpeciesThenZone))
+	print("celebrated zones: " .. listed(tableOr(celebrated.zones), function(zone, rank)
+		return zone .. " rank " .. tostring(rank)
+	end))
+	print("celebrated Skill Milestones: " .. listed(tableOr(celebrated.skill)))
+end
+
+-- Prints the Ledger section from SavedVariables/Pagle_Ledger.lua (ledger.md › Data): the projection Core stores
+-- (LOG-R70), checked against PagleLog (LOG-R72), the state with its level, and the celebrated set (LED-R90).
+local function printLedger(account, log)
+	local path = account .. "/SavedVariables/Pagle_Ledger.lua"
+	local saved, err = loadSavedVariables(path)
+	if not saved then
+		print("== Ledger: can't read " .. path .. ": " .. err)
+		return
+	end
+	local db = saved.PagleLedgerDB
+	if type(db) ~= "table" then
+		print("== Ledger: Pagle_Ledger.lua holds no PagleLedgerDB")
+		return
+	end
+	print("== Ledger (PagleLedgerDB)")
+	local global = tableOr(db.global)
+	local stored = global.projection
+	if type(stored) ~= "table" or type(stored.projection) ~= "table" then
+		print("projection: none stored (no build has finished, LOG-R72)")
+	else
+		print(
+			("projection: lastSeq %s, logId %s, fingerprint %s, rulesVersion %s"):format(
+				tostring(stored.lastSeq),
+				tostring(stored.logId),
+				tostring(stored.fingerprint),
+				tostring(stored.rulesVersion)
+			)
+		)
+		if not log then
+			print("logId: no PagleLog to compare with")
+		elseif stored.logId == log.logId then
+			print("logId: matches PagleLog's")
+		else
+			print(("logId: DIFFERS from PagleLog's %s, so Core rebuilds it at login (LOG-R72)"):format(log.logId))
+		end
+		if log then
+			local entries = count(#log.entries, "entry", "entries")
+			local same = stored.lastSeq == #log.entries
+			print(("lastSeq: %s PagleLog's length (%s)"):format(same and "equals" or "differs from", entries))
+		end
+		printLedgerState(loadLedgerLogic(), stored.projection)
+	end
+	printCelebrated(tableOr(global.celebrated))
+end
+
+-- PagleDB.global from Pagle.lua's globals, or nil and why there's none.
+local function pagleGlobal(pagle)
+	if not pagle.saved then
+		return nil, "can't read Pagle.lua: " .. pagle.err
+	end
+	local db = pagle.saved.PagleDB
+	if type(db) ~= "table" then
+		return nil, "Pagle.lua holds no PagleDB"
+	end
+	return tableOr(db.global)
+end
+
+-- Prints the Wallet section (wallet-and-shop.md › Data): each Module's last reported total (SHOP-R3) and the balance,
+-- Σ earned − spent and never below 0 (SHOP-R12). `spent` is stored only from M4's wallet projection (SHOP-R11).
+local function printWallet(pagle)
+	local global, why = pagleGlobal(pagle)
+	if not global then
+		print("== Wallet: " .. why)
+		return
+	end
+	local earned = tableOr(tableOr(global.coins).earned)
+	local spent = tonumber(tableOr(tableOr(global.projections).wallet).spent) or 0
+	local sum, names = 0, sortedKeys(earned)
+	for _, name in ipairs(names) do
+		sum = sum + (tonumber(earned[name]) or 0)
+	end
+	local heading = "== Wallet (PagleDB.global.coins.earned): balance " .. math.max(sum - spent, 0)
+	if spent > 0 then
+		heading = heading .. (" (%d earned, %d spent)"):format(sum, spent)
+	end
+	-- AceDB leaves the default, an empty earned table, out of the file.
+	print(heading .. (#names == 0 and ", no Module has reported Coins" or ""))
+	for _, name in ipairs(names) do
+		print(name .. ": " .. tostring(earned[name]))
+	end
+end
+
+-- The titles of a card's moments, one line per Module group (ANN-R53), each indented by `indent`.
+local function printMoments(groups, indent)
+	for _, group in ipairs(groups) do
+		local titles = {}
+		for i, moment in ipairs(tableOr(group.moments)) do
+			titles[i] = tostring(tableOr(moment).title)
+		end
+		print(("%s%s moments: %s"):format(indent, tostring(group.title), table.concat(titles, ", ")))
+	end
+end
+
+-- The open summary's lines (ANN-R51): by Module order, then each Module's by key.
+local function printSummaryLines(lines, indent)
+	local modules = sortedKeys(lines)
+	table.sort(modules, function(a, b)
+		local orderA, orderB = tonumber(tableOr(lines[a]).order) or 0, tonumber(tableOr(lines[b]).order) or 0
+		if orderA ~= orderB then
+			return orderA < orderB
+		end
+		return a < b
+	end)
+	for _, module in ipairs(modules) do
+		local texts = tableOr(tableOr(lines[module]).lines)
+		for _, key in ipairs(sortedKeys(texts)) do
+			print(indent .. "line: " .. tostring(texts[key]))
+		end
+	end
+end
+
+-- Prints the Cards section (announcements.md › Data): the Write-up sections waiting (ANN-R61), the cards waiting
+-- (ANN-R53, ANN-R54), and the open Session's summary and the pending moments (ANN-R50, ANN-R52). AceDB leaves out
+-- each of them while it's empty.
+local function printCards(pagle)
+	local global, why = pagleGlobal(pagle)
+	if not global then
+		print("== Cards: " .. why)
+		return
+	end
+	print("== Cards (PagleDB.global)")
+	local writeUp = tableOr(global.writeUp)
+	print("writeUp: " .. (#writeUp > 0 and count(#writeUp, "section") or "none"))
+	for _, section in ipairs(writeUp) do
+		print(("  %s: %s"):format(tostring(section.title or section.module), tostring(section.heading)))
+		for _, line in ipairs(tableOr(section.lines)) do
+			print("    " .. tostring(line))
+		end
+	end
+	local cards = tableOr(global.cards)
+	print("cards: " .. (#cards > 0 and #cards or "none"))
+	for i, card in ipairs(cards) do
+		local title = card.title or (card.whileAway and "Your last session" or "Session summary")
+		local numbers = tableOr(card.numbers)
+		print(
+			("  %d. %s: %s, %s, %s got away, %s s, %s"):format(
+				i,
+				tostring(title),
+				count(tonumber(numbers.casts) or 0, "Cast"),
+				count(tonumber(numbers.catches) or 0, "Catch", "Catches"),
+				tostring(numbers.gotAway or 0),
+				tostring(numbers.seconds or 0),
+				count(tonumber(card.coins) or 0, "Coin")
+			)
+		)
+		for _, module in ipairs(tableOr(card.lines)) do
+			for _, line in ipairs(tableOr(module.lines)) do
+				print("    line: " .. tostring(line))
+			end
+		end
+		printMoments(tableOr(card.moments), "    ")
+	end
+	local summary = tableOr(global.summary)
+	print("summary: " .. count(#tableOr(summary.moments), "moment"))
+	printSummaryLines(tableOr(summary.lines), "  ")
+	print("pending: " .. count(#tableOr(global.pending), "moment"))
 end
 
 -- Prints the exit check's checks under one heading; true when every one passed.
@@ -450,7 +712,12 @@ local function main(args)
 		return 2
 	end
 	printErrors(options.account)
-	local checks = printCatchLog(options.account, options.expectCasts, options.since)
+	local pagle = { path = options.account .. "/SavedVariables/Pagle.lua" }
+	pagle.saved, pagle.err = loadSavedVariables(pagle.path)
+	local checks = printCatchLog(pagle, options.expectCasts, options.since)
+	printLedger(options.account, pagleLog(pagle.saved))
+	printWallet(pagle)
+	printCards(pagle)
 	printCVars(options.account, options.character, options.cvars)
 	printAddons(options.account, options.character, options.addons)
 	-- Last, so the verdict is the output's last word.

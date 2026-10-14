@@ -14,6 +14,10 @@
 --- them. loadAddon lists each addon it loads, with its TOC fields as metadata. One not listed is missing. Specs add
 --- to it.
 ---@field loot FakeLoot The loot window, as the loot API reads it.
+---@field sounds string[] Each PlaySoundFile call, in order, as "<path> <channel>".
+---@field errors string[] Each error the default geterrorhandler() got, in order. A spec that gets one must read
+--- this list (assert it), or it fails at its end (spec/support/errors.lua).
+---@field addError fun(err: any) The default geterrorhandler(): adds the error to `errors`.
 
 --- The loot window the loot API reads: whether it's fishing loot (`IsFishingLoot()`) and its slots, in order.
 --- Specs set both before firing LOOT_READY.
@@ -41,7 +45,9 @@ local function newClient()
 		addons = {},
 		bindings = {},
 		loot = { fishing = false, slots = {} },
+		sounds = {},
 	}
+	client.addError = watchErrors(client, "errors")
 
 	function client.fire(event, ...)
 		local unit = ...
@@ -73,8 +79,16 @@ local function clientStubs(client)
 			end
 			return frame
 		end,
-		-- The screen's root frame and the game's error text under it (both in the forever dump's Frames.lua), and the
-		-- yellow FrameXML's GlobalColors defines (CreateColor(1, 1, 0, 1)).
+		-- The frame names Esc hides (CloseSpecialWindows), as FrameXML starts it.
+		UISpecialFrames = { "ItemRefTooltip", "ColorPickerFrame" },
+		-- Records the call in client.sounds and reports it played, as willPlay, soundHandle.
+		PlaySoundFile = function(path, channel)
+			client.sounds[#client.sounds + 1] = ("%s %s"):format(path, tostring(channel))
+			return true, #client.sounds
+		end,
+		-- The screen's root frame, which every addon frame hangs from, and the game's error text under it (both in the
+		-- forever dump's Frames.lua), and the yellow FrameXML's GlobalColors defines (CreateColor(1, 1, 0, 1)). UIParent
+		-- is a plain widget, so it gets no events.
 		UIParent = widgets.newWidget("Frame"),
 		-- The game world's frame, which the mouse is over when it's over no UI (Frames.lua in the forever dump).
 		WorldFrame = widgets.newWidget("Frame"),
@@ -89,11 +103,11 @@ local function clientStubs(client)
 		IsLoggedIn = function()
 			return false
 		end,
-		-- The client's default handler reports an error and carries on; here it fails the spec instead.
+		-- The client's default handler reports an error and carries on; here it keeps it in client.errors, and a spec
+		-- that never reads that list fails at its end (spec/support/errors.lua). Raising here instead would lose an
+		-- error AceAddon's xpcall hands it, as "error in error handling".
 		geterrorhandler = function()
-			return function(err)
-				error(err, 0)
-			end
+			return client.addError
 		end,
 		-- As the client's: an error goes to whatever geterrorhandler() returns at the time, and the caller carries on.
 		securecallfunction = newSecureCall(function()
@@ -101,6 +115,12 @@ local function clientStubs(client)
 		end),
 		issecretvalue = function()
 			return false
+		end,
+		-- The client's string extension: a UTF-8 string's length in code points, counting every byte that doesn't
+		-- continue a sequence (10xxxxxx). AceDB reads it to check a saved profile key.
+		strlenutf8 = function(s)
+			local _, codePoints = string.gsub(s, "[^\128-\191]", "")
+			return codePoints
 		end,
 		InCombatLockdown = function()
 			return false

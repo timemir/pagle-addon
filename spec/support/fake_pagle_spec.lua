@@ -333,7 +333,7 @@ describe("FakePagle", function()
 
 	describe("the compartment menu", function()
 		it(
-			"lists each Module's views then menu entries by def.order, then Settings, reading labels each time (CORE-R50, CORE-R52)",
+			"lists each Module's views then menu entries by def.order, then the Curio Shop and Settings, reading labels each time (CORE-R50, CORE-R52)",
 			function()
 				local fake = newFakePagle()
 				local reads = 0
@@ -365,7 +365,10 @@ describe("FakePagle", function()
 				end
 				fake.menu()
 
-				assert.are.same({ "Hunts", "Input: Both", "Settings" }, labels)
+				assert.are.same(
+					{ "Hunts", "Input: Both", "Curio Shop  0 |TInterface\\MoneyFrame\\UI-GoldIcon:0|t", "Settings" },
+					labels
+				)
 				assert.are.equal(2, reads)
 			end
 		)
@@ -395,7 +398,10 @@ describe("FakePagle", function()
 					labels[i] = entry.label
 				end
 
-				assert.are.same({ "Input: Both", "Settings" }, labels)
+				assert.are.same(
+					{ "Input: Both", "Curio Shop  0 |TInterface\\MoneyFrame\\UI-GoldIcon:0|t", "Settings" },
+					labels
+				)
 				assert.are.equal(1, #fake.reported)
 				assert.matches("no input yet", fake.reported[1], 1, true)
 			end
@@ -412,6 +418,238 @@ describe("FakePagle", function()
 
 			assert.are.same({ "root" }, fake.openedSettings)
 			assert.are.same({ "Pagle: settings open after combat." }, fake.printed)
+		end)
+
+		it(
+			"shows the Curio Shop entry disabled, with the balance as BreakUpLargeNumbers writes it (CORE-R50)",
+			function()
+				local fake = newFakePagle()
+				local ledger = fake.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
+				fake.login()
+				ledger:ReportCoinsEarned(1950)
+
+				local menu = fake.menu()
+
+				assert.are.equal("Curio Shop  1,950 |TInterface\\MoneyFrame\\UI-GoldIcon:0|t", menu[1].label)
+				assert.is_true(menu[1].disabled)
+			end
+		)
+	end)
+
+	describe("the wallet", function()
+		it(
+			"adds Modules' reports in Pagle.GetBalance, by def.name, stored in fake.global.coins (SHOP-R3, SHOP-R12)",
+			function()
+				local fake = newFakePagle()
+				local ledger = fake.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
+				local hunts = fake.Pagle.RegisterModule({ name = "Hunts", title = "Hunts", order = 20 })
+
+				ledger:ReportCoinsEarned(120)
+				hunts:ReportCoinsEarned(30)
+				ledger:ReportCoinsEarned(100)
+
+				local balance = fake.Pagle.GetBalance()
+				assert.are.same({ 100, false, 30, 100 }, {
+					balance.earned.Ledger,
+					balance.held,
+					balance.earned.Hunts,
+					fake.global.coins.earned.Ledger,
+				})
+				assert.are.equal(130, balance.balance)
+			end
+		)
+
+		it("records every report, an unchanged one too, and fires BalanceChanged only on a change (SHOP-R2)", function()
+			local fake = newFakePagle()
+			local ledger = fake.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
+			local balances = {}
+			fake.Pagle.RegisterCallback("spec", "BalanceChanged", function(_, balance)
+				balances[#balances + 1] = balance.balance
+			end)
+
+			ledger:ReportCoinsEarned(40)
+			ledger:ReportCoinsEarned(40)
+
+			assert.are.same({ { module = "Ledger", total = 40 }, { module = "Ledger", total = 40 } }, fake.coinReports)
+			assert.are.same({ 40 }, balances)
+		end)
+
+		it("raises an error for a negative, fractional or string total, recording nothing (SHOP-R2)", function()
+			local fake = newFakePagle()
+			local ledger = fake.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
+
+			for _, total in ipairs({ -1, 0.5, "10" }) do
+				assert.has_error(function()
+					ledger:ReportCoinsEarned(total)
+				end)
+			end
+
+			assert.are.same({}, fake.coinReports)
+		end)
+
+		it("counts a stored total with no report, and holds at 0 below spent (SHOP-R3, SHOP-R12)", function()
+			local fake = newFakePagle()
+			fake.global.coins.earned.Hunts = 300
+
+			assert.are.equal(300, fake.Pagle.GetBalance().balance)
+			fake.setSpent(500)
+			assert.are.same({ 0, true }, { fake.Pagle.GetBalance().balance, fake.Pagle.GetBalance().held })
+		end)
+
+		it("hands out a read-only Balance (CORE-R18)", function()
+			local fake = newFakePagle()
+
+			assert.has_error(function()
+				fake.Pagle.GetBalance().balance = 5
+			end)
+		end)
+	end)
+
+	describe("moments", function()
+		-- A Module registered on `fake` whose projection raises `raise(record, mode)`'s moment, if any, for each Cast it
+		-- applies, and `done(info)`'s from its done.
+		local function raising(fake, name, order, raise, done)
+			local M = fake.Pagle.RegisterModule({ name = name, title = name, order = order })
+			M:NewProjection({
+				db = {},
+				rulesVersion = 1,
+				reset = function()
+					return {}
+				end,
+				apply = function(_, record, mode)
+					local moment = record.kind == "cast" and raise(record, mode)
+					if moment then
+						M:RaiseMoment(moment)
+					end
+				end,
+				done = done and function(_, info)
+					M:RaiseMoment(done(info))
+				end,
+			})
+			return M
+		end
+
+		-- fake.catchLog with the player's character and `casts` Casts in it, as history before login.
+		local function withHistory(fake, casts)
+			fake.catchLog.data.characters[1] = { guid = PLAYER_GUID }
+			for i = 1, casts do
+				fake.catchLog:Append({
+					kind = "cast",
+					char = 1,
+					time = 1791731000 + i,
+					outcome = "caught",
+					conditions = { minute = 494, zone = 148, subzone = 453, events = {}, auras = {} },
+					items = { { itemID = 6358, quantity = 1 } },
+				})
+			end
+		end
+
+		it(
+			"make two Modules' moments for a played Cast one Announcement on the next frame, coins apart (ANN-R10,"
+				.. " ANN-R11, ANN-R23)",
+			function()
+				local fake = newFakePagle()
+				raising(fake, "Hunts", 20, function(record)
+					return { rung = "toast.high", kind = "hunt", title = "Hunt completed", cast = record.id, coins = 15 }
+				end)
+				raising(fake, "Ledger", 10, function(record)
+					return {
+						rung = "toast",
+						kind = "newSpecies",
+						title = "New Species",
+						stamp = "New!",
+						cast = record.id,
+					}
+				end)
+				fake.login()
+				fake.enterWorld()
+
+				fake.playCast("caught", { { itemID = 6358, quantity = 1 } })
+				assert.are.same({}, fake.announcements)
+				fake.nextFrame()
+
+				assert.are.equal(1, #fake.announcements)
+				local shown = fake.announcements[1]
+				assert.are.same({ "Hunt completed", "toast.high", { "New!" }, 15 }, {
+					shown.headline.title,
+					shown.rung,
+					shown.stamps,
+					shown.coins,
+				})
+			end
+		)
+
+		it("refuses a moment as Core does: an unknown rung, or no kind or title (ANN-R1)", function()
+			local fake = newFakePagle()
+			local M = fake.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
+
+			for _, moment in ipairs({
+				{ rung = "fanfare", kind = "k", title = "t" },
+				{ rung = "toast", title = "t" },
+				{ rung = "toast", kind = "k" },
+			}) do
+				assert.has_error(function()
+					M:RaiseMoment(moment)
+				end)
+			end
+			assert.are.same({}, fake.summarized)
+		end)
+
+		it(
+			"drop a rebuild's moments, reported once, and keep a summaryOnly one from done, never shown (ANN-R4,"
+				.. " ANN-R63)",
+			function()
+				local fake = newFakePagle()
+				withHistory(fake, 2)
+				raising(fake, "Ledger", 10, function(record, mode)
+					return { rung = "toast", kind = mode, title = "Cast " .. record.seq, cast = record.id }
+				end, function()
+					return { rung = "toast", kind = "reclassified", title = "Reclassified", summaryOnly = true }
+				end)
+
+				fake.login()
+				fake.enterWorld()
+				fake.nextFrame()
+
+				assert.are.same({}, fake.announcements)
+				assert.are.equal(1, #fake.reported)
+				assert.are.same({ "Reclassified" }, { fake.summarized[1].title })
+				assert.are.equal(1, #fake.summarized)
+			end
+		)
+
+		it(
+			"hold a Cast played before enterWorld until the frame after every projection caught up (ANN-R10,"
+				.. " LOG-R74)",
+			function()
+				local fake = newFakePagle()
+				raising(fake, "Ledger", 10, function(record)
+					return { rung = "toast", kind = "newSpecies", title = "New Species", cast = record.id }
+				end)
+				fake.login()
+
+				fake.playCast("caught", { { itemID = 6358, quantity = 1 } })
+				fake.nextFrame()
+				assert.are.same({}, fake.announcements)
+				fake.enterWorld()
+				assert.are.same({}, fake.announcements)
+				fake.nextFrame()
+
+				assert.are.same({ "New Species" }, { fake.announcements[1].headline.title })
+			end
+		)
+
+		it("flush a moment without a Cast on the next frame, as its own Announcement (ANN-R12)", function()
+			local fake = newFakePagle()
+			local M = fake.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
+
+			M:RaiseMoment({ rung = "nod", kind = "login", title = "Welcome back" })
+			fake.nextFrame()
+
+			assert.are.same(
+				{ "Welcome back", "nod" },
+				{ fake.announcements[1].headline.title, fake.announcements[1].rung }
+			)
 		end)
 	end)
 
@@ -874,5 +1112,497 @@ describe("FakePagle", function()
 			assert.are.same({}, fired)
 			assert.are.equal("idle", fake.globals.Pagle.GetFishingState())
 		end)
+	end)
+
+	describe("projections", function()
+		-- The Ledger registered on `fake`, its projection over `db` noting each apply ("<seq> <kind> <mode>"), each
+		-- done ("done") and the Cast and skill events, in order, in `seen`.
+		local function ledger(fake, db)
+			local seen = {}
+			local M = fake.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
+			local projection = M:NewProjection({
+				db = db,
+				rulesVersion = 1,
+				reset = function()
+					return {}
+				end,
+				apply = function(state, record, mode)
+					seen[#seen + 1] = record.seq .. " " .. record.kind .. " " .. mode
+					seen.writable = pcall(function()
+						record.seq = 0
+					end)
+					state.last = record.seq
+				end,
+				done = function(_, info)
+					seen[#seen + 1] = "done"
+					seen.info = info
+				end,
+			})
+			for _, event in ipairs({ "Catch", "CastEnded", "SkillChanged" }) do
+				fake.Pagle.RegisterCallback("Spec " .. event, event, function()
+					seen[#seen + 1] = event
+				end)
+			end
+			return M, projection, seen
+		end
+
+		-- fake.catchLog with the player's character and `casts` Casts in it, as history before login.
+		local function withHistory(fake, casts)
+			fake.catchLog.data.characters[1] = { guid = PLAYER_GUID }
+			for i = 1, casts do
+				fake.catchLog:Append({
+					kind = "cast",
+					char = 1,
+					time = 1791731000 + i,
+					outcome = "caught",
+					conditions = { minute = 494, zone = 148, subzone = 453, events = {}, auras = {} },
+					items = { { itemID = 6358, quantity = 1 } },
+				})
+			end
+		end
+
+		it(
+			"rebuild a fresh projection at enterWorld, at once, over the log as it was at login (LOG-R1, LOG-R72,"
+				.. " LOG-R76)",
+			function()
+				local fake = newFakePagle()
+				withHistory(fake, 600)
+				local db = {}
+				local _, projection, seen = ledger(fake, db)
+
+				fake.login()
+				fake.enterWorld()
+
+				assert.are.equal(601, #seen)
+				assert.are.same({ "600 cast rebuild", "done" }, { seen[600], seen[601] })
+				assert.are.same({ firstBuild = true, rebuilt = true, replayed = 0 }, seen.info)
+				assert.are.same({ 600, fake.catchLog.data.logId, 1 }, { db.lastSeq, db.logId, db.rulesVersion })
+				assert.are.equal(fake.Pagle.CONTENT_FINGERPRINT, db.fingerprint)
+				assert.is_false(projection:IsUpdating())
+				assert.is_false(seen.writable)
+			end
+		)
+
+		it("catch a stored projection up in replay mode (LOG-R71)", function()
+			local fake = newFakePagle()
+			withHistory(fake, 3)
+			fake.login() -- the logId
+			local db = {
+				projection = {},
+				lastSeq = 1,
+				logId = fake.catchLog.data.logId,
+				fingerprint = fake.Pagle.CONTENT_FINGERPRINT,
+				rulesVersion = 1,
+			}
+			local _, _, seen = ledger(fake, db)
+
+			fake.enterWorld()
+
+			assert.are.same({ "2 cast replay", "3 cast replay", "done" }, { unpack(seen) })
+			assert.are.same({ firstBuild = false, rebuilt = false, replayed = 2 }, seen.info)
+		end)
+
+		it("hand a Cast to the projection live, before Catch and CastEnded fire (LOG-R9, LOG-R73)", function()
+			local fake = newFakePagle()
+			local _, projection, seen = ledger(fake, {})
+			fake.login()
+			fake.enterWorld()
+
+			fake.playCast("caught", { { itemID = 6358, quantity = 1 } })
+
+			assert.are.same({ "done", "1 cast live", "Catch", "CastEnded" }, { unpack(seen) })
+			assert.are.equal(1, projection:GetState().last)
+		end)
+
+		it(
+			"hand a Skill Reading over live before SkillChanged, and queue it before enterWorld (LOG-R1, LOG-R74)",
+			function()
+				local fake = newFakePagle()
+				local _, _, seen = ledger(fake, {})
+				fake.login()
+
+				fake.readSkill(86, 150, 0)
+				fake.enterWorld()
+				fake.readSkill(87, 150, 0)
+
+				assert.are.same(
+					{ "SkillChanged", "done", "1 skill live", "2 skill live", "SkillChanged" },
+					{ unpack(seen) }
+				)
+			end
+		)
+
+		it("serve the machinery's seams on fake.projections (LOG-R74, LOG-R75)", function()
+			local fake = newFakePagle()
+			local idle = false
+			fake.projections:WhenIdle(function()
+				idle = true
+			end)
+			fake.login()
+			assert.is_true(fake.projections:IsUpdating())
+
+			fake.enterWorld()
+
+			assert.is_true(idle)
+			assert.is_nil(fake.projections:Mode())
+			assert.has_error(fake.enterWorld)
+		end)
+	end)
+
+	describe("Sessions", function()
+		-- Each Session event and each apply, in order, as "<event> <session id> [whileAway]" and "<seq> <mode>".
+		local function listen(fake)
+			local seen = {}
+			for _, event in ipairs({ "SessionStarted", "SessionEnded", "Catch" }) do
+				fake.Pagle.RegisterCallback("Spec " .. event, event, function(_, payload)
+					local id = event == "Catch" and payload.cast.session or payload.id
+					seen[#seen + 1] = event .. " " .. id .. (payload.whileAway and " whileAway" or "")
+				end)
+			end
+			local M = fake.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
+			M:NewProjection({
+				db = {},
+				rulesVersion = 1,
+				reset = function()
+					return {}
+				end,
+				apply = function(_, record, mode)
+					seen[#seen + 1] = record.seq .. " " .. mode
+				end,
+			})
+			return seen
+		end
+
+		-- The player's entry ID at the fake's server time SERVER_TIME + `offset` (LOG-R13).
+		local function id(offset)
+			return ("%s-%d-0"):format(PLAYER_GUID, SERVER_TIME + offset)
+		end
+
+		it("serve Pagle.SESSION_RULES_VERSION as Core does (LOG-R61)", function()
+			assert.are.equal(
+				loadAddon("Pagle", FOREVER_GLOBALS).env.Pagle.SESSION_RULES_VERSION,
+				newFakePagle().Pagle.SESSION_RULES_VERSION
+			)
+		end)
+
+		it(
+			"start with a played Cast, after its append and before its live apply, tagging it (LOG-R9, LOG-R62,"
+				.. " LOG-R98)",
+			function()
+				local fake = newFakePagle()
+				local seen = listen(fake)
+				fake.login()
+				fake.enterWorld()
+
+				local cast = assert(fake.playCast("caught", { { itemID = 6358, quantity = 1 } }))
+
+				assert.are.same({ "SessionStarted " .. id(0), "1 live", "Catch " .. id(0) }, seen)
+				assert.are.equal(id(0), cast.session)
+				assert.are.same({ id(0), 1 }, { fake.Pagle.GetSession().id, fake.Pagle.GetSession().casts })
+			end
+		)
+
+		it("end when fake.wait(900) passes with no Cast, then GetSession is nil (LOG-R62, LOG-R64)", function()
+			local fake = newFakePagle()
+			local seen = listen(fake)
+			fake.login()
+			fake.enterWorld()
+			fake.playCast("caught", { { itemID = 6358, quantity = 1 } })
+
+			fake.wait(899)
+			assert.is_not_nil(fake.Pagle.GetSession())
+			fake.wait(1)
+
+			assert.are.equal("SessionEnded " .. id(0), seen[#seen])
+			assert.is_nil(fake.Pagle.GetSession())
+			fake.playCast("gotAway")
+			assert.are.equal("SessionStarted " .. id(900), seen[#seen - 1])
+		end)
+
+		it("end a Session that ended before login with whileAway, once no projection is updating (LOG-R63)", function()
+			local fake = newFakePagle()
+			fake.catchLog.data.characters[1] = { guid = PLAYER_GUID }
+			fake.catchLog:Append({
+				kind = "cast",
+				char = 1,
+				time = SERVER_TIME - 900,
+				outcome = "caught",
+				conditions = { minute = 494, zone = 148, subzone = 453, events = {}, auras = {} },
+				items = { { itemID = 6358, quantity = 1 } },
+			})
+			local seen = listen(fake)
+
+			fake.login()
+			assert.are.same({}, seen)
+			fake.enterWorld()
+
+			assert.are.same({ "1 rebuild", "SessionEnded " .. id(-900) .. " whileAway" }, seen)
+			assert.are.equal(id(-900), fake.global.lastEndedSession)
+		end)
+
+		it("fire no SessionEnded at login for the Session a seeded global.lastEndedSession names (LOG-R63)", function()
+			local fake = newFakePagle()
+			fake.catchLog.data.characters[1] = { guid = PLAYER_GUID }
+			fake.catchLog:Append({
+				kind = "cast",
+				char = 1,
+				time = SERVER_TIME - 900,
+				outcome = "caught",
+				conditions = { minute = 494, zone = 148, subzone = 453, events = {}, auras = {} },
+				items = { { itemID = 6358, quantity = 1 } },
+			})
+			fake.global.lastEndedSession = id(-900)
+			local seen = listen(fake)
+
+			fake.login()
+			fake.enterWorld()
+
+			assert.are.same({ "1 rebuild" }, seen)
+		end)
+	end)
+
+	describe("the Session summary", function()
+		-- A Module registered on `fake` whose projection raises `raise(record)`'s moment for each live Cast.
+		local function raising(fake, name, order, raise)
+			local M = fake.Pagle.RegisterModule({ name = name, title = name, order = order })
+			M:NewProjection({
+				db = {},
+				rulesVersion = 1,
+				reset = function()
+					return {}
+				end,
+				apply = function(_, record, mode)
+					if record.kind == "cast" and mode == "live" then
+						M:RaiseMoment(raise(record))
+					end
+				end,
+			})
+			return M
+		end
+
+		it(
+			"make a card when a Session with moments ends, with Core's numbers, the Coins sum, the lines and the"
+				.. " moments by Module order (ANN-R25, ANN-R51, ANN-R53)",
+			function()
+				local fake = newFakePagle()
+				raising(fake, "Hunts", 20, function(record)
+					return { rung = "toast.high", kind = "hunt", title = "Hunt completed", cast = record.id, coins = 15 }
+				end)
+				local ledger = raising(fake, "Ledger", 10, function(record)
+					return { rung = "toast", kind = "newSpecies", title = "New Species", cast = record.id }
+				end)
+				ledger:SetSummaryLine("level", "Angler Level 12")
+				fake.login()
+				fake.enterWorld()
+
+				fake.playCast("caught", { { itemID = 6358, quantity = 1 } })
+				-- In the order raised: Hunts' projection was added first, so it applied the Cast first.
+				assert.are.same({ "Hunt completed", "New Species" }, {
+					fake.global.summary.moments[1].title,
+					fake.global.summary.moments[2].title,
+				})
+				fake.wait(900)
+
+				local card = fake.global.cards[1]
+				assert.are.same({ casts = 1, catches = 1, gotAway = 0, seconds = 0 }, card.numbers)
+				assert.are.equal(15, card.coins)
+				assert.are.same({ { module = "Ledger", title = "Ledger", lines = { "Angler Level 12" } } }, card.lines)
+				assert.are.same({ "Ledger", "Hunts" }, { card.moments[1].module, card.moments[2].module })
+				assert.are.same({}, fake.global.summary.moments)
+			end
+		)
+
+		it("make no card for a Session without moments, lines or not (ANN-R53)", function()
+			local fake = newFakePagle()
+			local M = fake.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
+			M:SetSummaryLine("level", "Angler Level 12")
+			fake.login()
+			fake.enterWorld()
+			fake.playCast("gotAway")
+
+			fake.wait(900)
+
+			assert.are.same({}, fake.global.cards)
+		end)
+
+		it("keep a moment raised with no Session open for the next Session's card (ANN-R52)", function()
+			local fake = newFakePagle()
+			local M = fake.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
+			fake.login()
+			fake.enterWorld()
+			M:RaiseMoment({ rung = "nod", kind = "loginNod", title = "Welcome back" })
+			assert.are.equal("Welcome back", fake.global.pending[1].title)
+
+			fake.playCast("gotAway")
+			fake.wait(900)
+
+			assert.are.equal("Welcome back", fake.global.cards[1].moments[1].moments[1].title)
+		end)
+
+		it("raise an error for M:SetSummaryLine with a bad key, as Core does (ANN-R51)", function()
+			local fake = newFakePagle()
+			local M = fake.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
+
+			assert.has_error(function()
+				M:SetSummaryLine(nil, "text")
+			end)
+		end)
+
+		it(
+			"count the moments kept in Cozy mode on the compartment's label until the Session's card shows"
+				.. " (CORE-R51, ANN-R42)",
+			function()
+				local fake = newFakePagle()
+				raising(fake, "Ledger", 10, function(record)
+					return { rung = "toast", kind = "newSpecies", title = "New Species", cast = record.id }
+				end)
+				fake.profile.announcements.cozy = true
+				fake.login()
+				fake.enterWorld()
+				fake.nextFrame()
+				fake.nextFrame()
+				assert.are.equal("Pagle", fake.compartmentText())
+
+				fake.playCast("caught", { { itemID = 6358, quantity = 1 } })
+				fake.playCast("caught", { { itemID = 6358, quantity = 1 } })
+				assert.are.equal("Pagle · 2 waiting", fake.compartmentText())
+				fake.wait(900)
+
+				assert.are.equal("Fishing session", fake.cardsShown[1].title)
+				assert.are.equal("Pagle", fake.compartmentText())
+			end
+		)
+
+		it("mark a moment expired by the Session's end, so its card shows its pastText (ANN-R45)", function()
+			local fake = newFakePagle()
+			raising(fake, "Hunts", 20, function(record)
+				return {
+					rung = "nod",
+					kind = "window",
+					title = "Window open",
+					cast = record.id,
+					expiresAt = SERVER_TIME + 600,
+					pastText = "Window opened 21:00–06:00",
+				}
+			end)
+			fake.login()
+			fake.enterWorld()
+
+			fake.playCast("caught", { { itemID = 6358, quantity = 1 } })
+			fake.wait(900)
+
+			local moment = fake.global.cards[1].moments[1].moments[1]
+			assert.is_true(moment.expired)
+			assert.are.same(
+				{ { kind = "heading", text = "Hunts" }, { kind = "moment", text = "Window opened 21:00–06:00" } },
+				fake.ns.CardRows(fake.global.cards[1], tostring)
+			)
+		end)
+	end)
+
+	describe("the cards", function()
+		-- `casts` caught Casts in fake.catchLog, of a Session still open at login.
+		local function withHistory(fake, casts)
+			fake.catchLog.data.characters[1] = { guid = PLAYER_GUID }
+			for i = 1, casts do
+				fake.catchLog:Append({
+					kind = "cast",
+					char = 1,
+					time = 1791731000 + i,
+					outcome = "caught",
+					conditions = { minute = 494, zone = 148, subzone = 453, events = {}, auras = {} },
+					items = { { itemID = 6358, quantity = 1 } },
+				})
+			end
+		end
+
+		-- A Module registered on `fake` whose projection raises a Write-up section from its done on a first build.
+		local function writingUp(fake, name, order)
+			local M = fake.Pagle.RegisterModule({ name = name, title = name, order = order })
+			M:NewProjection({
+				db = {},
+				rulesVersion = 1,
+				reset = function()
+					return {}
+				end,
+				apply = function() end,
+				done = function(_, info)
+					if info.firstBuild then
+						M:RaiseWriteUp({ heading = name .. " written up", lines = { "3 Species" } })
+					end
+				end,
+			})
+			return M
+		end
+
+		it(
+			"record each Write-up section raised, and show one Write-up card by Module order on the frame after the"
+				.. " held Announcements' (ANN-R21, ANN-R60, ANN-R61)",
+			function()
+				local fake = newFakePagle()
+				withHistory(fake, 2)
+				writingUp(fake, "Hunts", 20)
+				writingUp(fake, "Ledger", 10)
+				fake.login()
+				fake.enterWorld()
+
+				assert.are.same({ "Hunts", "Ledger" }, { fake.writeUps[1].module, fake.writeUps[2].module })
+				assert.are.same(
+					{ "Hunts written up", { "3 Species" } },
+					{ fake.writeUps[1].heading, fake.writeUps[1].lines }
+				)
+				fake.nextFrame()
+				assert.are.same({}, fake.cardsShown)
+				fake.nextFrame()
+
+				assert.are.equal(1, #fake.cardsShown)
+				local card = fake.cardsShown[1]
+				assert.are.same({ "Write-up", "Ledger written up", "Hunts written up" }, {
+					card.title,
+					card.writeUp[1].heading,
+					card.writeUp[2].heading,
+				})
+				fake.closeCard()
+				assert.are.same({}, fake.global.writeUp)
+			end
+		)
+
+		it("raise an error for M:RaiseWriteUp outside a projection's done, as Core does (ANN-R60)", function()
+			local fake = newFakePagle()
+			local M = fake.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
+			fake.login()
+			fake.enterWorld()
+
+			assert.has_error(function()
+				M:RaiseWriteUp({ heading = "Written up", lines = {} })
+			end)
+			assert.are.same({}, fake.writeUps)
+		end)
+
+		it(
+			"in Cozy mode show no Write-up card, and put its section on the next Session's card, which shows although"
+				.. " that Session raised nothing (ANN-R54, ANN-R62)",
+			function()
+				local fake = newFakePagle()
+				withHistory(fake, 2)
+				writingUp(fake, "Ledger", 10)
+				fake.profile.announcements.cozy = true
+				fake.login()
+				fake.enterWorld()
+				fake.nextFrame()
+				fake.nextFrame()
+				assert.are.same({}, fake.cardsShown)
+
+				fake.playCast("gotAway")
+				fake.wait(900)
+
+				assert.are.same({ "Fishing session", "Ledger written up" }, {
+					fake.cardsShown[1].title,
+					fake.cardsShown[1].writeUp[1].heading,
+				})
+				fake.closeCard()
+				assert.are.same({}, fake.global.cards)
+			end
+		)
 	end)
 end)

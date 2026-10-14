@@ -1,0 +1,354 @@
+"""Catch lists, gates, skill bases and hasData (DATA-R26–R31): data/forever/areas.toml (DATA-R10), and the record
+each area of the DB2 slice ships with in the catalogue's areas (DATA-R78).
+
+An area's catch list is built per area, never inherited (DATA-R26): the baseline's area loot without Noise, then
+areas.toml's edits, then observed pairs (step 3, pagle_data.confirmed), then removed, Noise and uncharted items
+leave. Keys and types are the Data section's in docs/spec/content-data.md.
+"""
+
+from collections.abc import Collection, Iterator, Mapping
+from dataclasses import dataclass, field
+from pathlib import Path
+
+from pagle_data.baseline import AREA_LOOT, AreaLoot, BaselineLayer
+from pagle_data.confirmed import Confirmation, Evidence, Required, UngatedPair, observed_pairs, zone_of
+from pagle_data.db2 import Area
+from pagle_data.errors import At, Problems
+from pagle_data.items import Record
+from pagle_data.observed import Observations
+from pagle_data.toml_reader import check_keys, describe, expect_int, expect_table, expect_why, read_toml
+from pagle_data.universe import AREAS_TOML
+from pagle_data.windows import window_of_event
+
+# DATA-R29: `gate = "none"` on an add removes the item's gate.
+NO_GATE = "none"
+OPS = ("add", "drop")
+
+
+@dataclass(frozen=True)
+class AreaEdit:
+    """An [[area]] entry: clearBaseline empties the area's baseline list (DATA-R26 step 2); skillBase overrides its
+    skill base (DATA-R30)."""
+
+    area: int
+    clear_baseline: bool
+    skill_base: int | None
+    at: At
+
+
+@dataclass(frozen=True)
+class CatchEdit:
+    """A [[catch]] entry (DATA-R26 step 2): op is add or drop; gate is a window ID, NO_GATE, or None when not
+    given (an add only)."""
+
+    area: int
+    item: int
+    op: str
+    gate: str | None
+    at: At
+
+
+@dataclass
+class AreaLayer:
+    """areas.toml's [[area]] entries by area ID and its [[catch]] entries in file order."""
+
+    areas: dict[int, AreaEdit] = field(default_factory=dict)
+    catches: list[CatchEdit] = field(default_factory=list)
+
+    def items(self) -> set[int]:
+        """The item IDs the [[catch]] entries name, added or dropped (DATA-R15)."""
+        return {edit.item for edit in self.catches}
+
+
+def _entries(document: Mapping[str, object], key: str, at: At, problems: Problems) -> Iterator[tuple[object, At]]:
+    entries = document.get(key, [])
+    if not isinstance(entries, list):
+        problems.add(at / key, f"expected an array of tables ([[{key}]]), got {describe(entries)}")
+        return
+    for index, entry in enumerate(entries):
+        yield entry, At(at.file, f"{key}[{index}]")
+
+
+def _read_area(entry: object, at: At, problems: Problems) -> AreaEdit | None:
+    before = len(problems.found)
+    table = expect_table(entry, at, problems)
+    if table is None:
+        return None
+    check_keys(table, at, problems, required=("id", "why"), optional=("clearBaseline", "skillBase"))
+    area = expect_int(table["id"], at / "id", problems, minimum=1) if "id" in table else None
+    clear = table.get("clearBaseline", False)
+    if not isinstance(clear, bool):
+        problems.add(at / "clearBaseline", f"expected a boolean, got {describe(clear)}")
+    skill_base = table.get("skillBase")
+    if skill_base is not None and (isinstance(skill_base, bool) or not isinstance(skill_base, int)):
+        problems.add(at / "skillBase", f"expected an integer, got {describe(skill_base)}")
+    if clear is not True and "skillBase" not in table:
+        problems.add(at, "sets neither clearBaseline = true nor skillBase")
+    expect_why(table, at, problems)
+    if area is None or len(problems.found) != before:
+        return None
+    return AreaEdit(area, clear is True, skill_base if isinstance(skill_base, int) else None, at)
+
+
+def _read_catch(entry: object, at: At, problems: Problems) -> CatchEdit | None:
+    before = len(problems.found)
+    table = expect_table(entry, at, problems)
+    if table is None:
+        return None
+    check_keys(table, at, problems, required=("area", "item", "op", "why"), optional=("gate",))
+    area = expect_int(table["area"], at / "area", problems, minimum=1) if "area" in table else None
+    item = expect_int(table["item"], at / "item", problems, minimum=1) if "item" in table else None
+    op = table.get("op")
+    if "op" in table and op not in OPS:
+        shown = f"'{op}'" if isinstance(op, str) else describe(op)
+        problems.add(at / "op", f"expected add or drop, got {shown}")
+    gate = table.get("gate")
+    if gate is not None and not isinstance(gate, str):
+        problems.add(at / "gate", f"expected a window ID or \"{NO_GATE}\", got {describe(gate)}")
+    if op == "drop" and "gate" in table:
+        problems.add(at / "gate", "a drop takes no gate: it removes the item (DATA-R26)")
+    expect_why(table, at, problems)
+    if area is None or item is None or not isinstance(op, str) or len(problems.found) != before:
+        return None
+    return CatchEdit(area, item, op, gate if isinstance(gate, str) else None, at)
+
+
+def read_areas_toml(root: Path, problems: Problems) -> AreaLayer:
+    """areas.toml under root/data/forever/ (DATA-R10). Each problem found goes into problems; a bad entry is left
+    out, and the caller must not use the layer while there are problems."""
+    layer = AreaLayer()
+    document = read_toml(root, AREAS_TOML, problems)
+    if document is None:
+        return layer
+    at = At(AREAS_TOML)
+    check_keys(document, at, problems, required=(), optional=("area", "catch"))
+    for entry, entry_at in _entries(document, "area", at, problems):
+        area = _read_area(entry, entry_at, problems)
+        if area is None:
+            continue
+        if area.area in layer.areas:
+            problems.add(entry_at / "id", f"area {area.area} is listed twice")
+            continue
+        layer.areas[area.area] = area
+    listed: set[tuple[int, int]] = set()
+    for entry, entry_at in _entries(document, "catch", at, problems):
+        catch = _read_catch(entry, entry_at, problems)
+        if catch is None:
+            continue
+        if (catch.area, catch.item) in listed:
+            problems.add(entry_at, f"item {catch.item} in area {catch.area} is listed twice")
+            continue
+        listed.add((catch.area, catch.item))
+        layer.catches.append(catch)
+    return layer
+
+
+@dataclass(frozen=True)
+class Catch:
+    """A catch-list entry: the item and its gate's window ID, None when ungated (DATA-R29)."""
+
+    item: int
+    window: str | None
+
+
+@dataclass(frozen=True)
+class CatchLists:
+    """Every non-empty catch list by area, each sorted by item ID (DATA-R26), the skill bases (DATA-R30), the
+    observed pairs that joined ungated though their item is gated elsewhere (a DATA-R47 warning), what each layer
+    did to each (area, item) in DATA-R26's steps, in order (for --explain, DATA-R60), and what a row evidences
+    (DATA-R47: the lists after steps 1 and 2, and the pairs step 3 joined)."""
+
+    lists: dict[int, list[Catch]] = field(default_factory=dict)
+    skill_bases: dict[int, int] = field(default_factory=dict)
+    ungated: list[UngatedPair] = field(default_factory=list)
+    history: dict[int, dict[int, list[str]]] = field(default_factory=dict)
+    evidence: Evidence = field(default_factory=Evidence)
+
+    def windows(self) -> dict[int, dict[int, str | None]]:
+        """Each list as {item: its gate's window ID, None when ungated}."""
+        return {area: {catch.item: catch.window for catch in catches} for area, catches in self.lists.items()}
+
+    def fishing_areas(self) -> set[int]:
+        """The areas with a catch list: DATA-R32's baseline fishing areas."""
+        return set(self.lists)
+
+
+def _baseline_rows(baseline: BaselineLayer) -> dict[int, dict[int, list[AreaLoot]]]:
+    """Each area's items and each area-loot row that gives it, a reference row giving every item of its table
+    (DATA-R26 step 1)."""
+    tables: dict[int, list[int]] = {}
+    for reference in baseline.reference_loot:
+        tables.setdefault(reference.ref, []).append(reference.item)
+    rows: dict[int, dict[int, list[AreaLoot]]] = {}
+    for row in baseline.area_loot:
+        items = [row.item] if row.item is not None else tables.get(row.ref, []) if row.ref is not None else []
+        for item in items:
+            rows.setdefault(row.area, {}).setdefault(item, []).append(row)
+    return rows
+
+
+def _listed_by(rows: list[AreaLoot]) -> str:
+    """How area_loot.csv lists an item in an area, for --explain: directly, through reference tables, or both."""
+    refs = ", ".join(str(ref) for ref in sorted({row.ref for row in rows if row.item is None and row.ref is not None}))
+    if not refs:
+        return f"{AREA_LOOT} lists it"
+    if any(row.item is not None for row in rows):
+        return f"{AREA_LOOT} lists it, also through reference table {refs}"
+    return f"{AREA_LOOT} lists it through reference table {refs}"
+
+
+def _leaves(record: Record | None) -> str | None:
+    """Why an item leaves every list in DATA-R26 step 4, or None when it stays: an item outside the shipped records
+    is uncharted (DATA-R18)."""
+    if record is None:
+        return "uncharted"
+    if record.get("removed") is True:
+        return "removed"
+    return "Noise" if record.get("noise") is True else None
+
+
+def _noise(items: Mapping[int, Record], item: int) -> bool:
+    record = items.get(item)
+    return record is not None and record.get("noise") is True
+
+
+def build_catch_lists(
+    baseline: BaselineLayer,
+    layer: AreaLayer,
+    items: Mapping[int, Record],
+    windows: Collection[str],
+    areas: Mapping[int, Area],
+    observations: Observations,
+    required: Required,
+    problems: Problems,
+) -> CatchLists:
+    """DATA-R26's catch lists and DATA-R30's skill bases, from the baseline, areas.toml, the item records that ship
+    (items, DATA-R77), the window IDs (DATA-R35), the DB2 slice's areas, and the observations that count
+    (DATA-R46) in the slice's areas (DATA-R33) with their required reporters (DATA-R49). Each problem found goes
+    into problems."""
+    lists: dict[int, dict[int, str | None]] = {}
+    conflicts: dict[tuple[int, int], list[str]] = {}
+    history: dict[int, dict[int, list[str]]] = {}
+
+    def did(area: int, item: int, step: str) -> None:
+        history.setdefault(area, {}).setdefault(item, []).append(step)
+
+    # Step 1: the baseline's area loot, Noise left out. DATA-R29: a gate when every row maps to one window.
+    for area, by_item in _baseline_rows(baseline).items():
+        for item, rows in by_item.items():
+            if _noise(items, item):
+                did(area, item, f"{_listed_by(rows)}; Noise, left out")
+                continue
+            events = [row.event for row in rows]
+            gate: str | None = None
+            if all(event is not None for event in events):
+                found = set()
+                for event in events:
+                    window = window_of_event(event) if event is not None else None
+                    if window is None:
+                        problems.add(At(AREA_LOOT), f"item {item} in area {area}: event {event} maps to no window")
+                    else:
+                        found.add(window)
+                if len(found) > 1:
+                    conflicts[(area, item)] = sorted(found)
+                gate = found.pop() if len(found) == 1 else None
+            lists.setdefault(area, {})[item] = gate
+            gated = f", gated by {gate}" if gate is not None else ""
+            if (area, item) in conflicts:
+                gated = f", its rows map to different windows ({', '.join(conflicts[(area, item)])})"
+            did(area, item, _listed_by(rows) + gated)
+
+    # Step 2: areas.toml's edits.
+    for edit in layer.areas.values():
+        if edit.area not in areas:
+            problems.add(edit.at / "id", f"area {edit.area} isn't in data/db2/areas.csv")
+        if edit.clear_baseline:
+            for item in lists.pop(edit.area, {}):
+                did(edit.area, item, f"{edit.at}: clearBaseline empties the baseline list")
+            conflicts = {key: found for key, found in conflicts.items() if key[0] != edit.area}
+    for catch in layer.catches:
+        if catch.area not in areas:
+            problems.add(catch.at / "area", f"area {catch.area} isn't in data/db2/areas.csv")
+        if catch.gate is not None and catch.gate != NO_GATE and catch.gate not in windows:
+            problems.add(catch.at / "gate", f"'{catch.gate}' isn't a window ID (DATA-R35)")
+        listed = lists.setdefault(catch.area, {})
+        edited = " removes it" if catch.op == "drop" else "" if catch.gate is None else f", gate {catch.gate}"
+        did(catch.area, catch.item, f"{catch.at}: {catch.op}{edited}")
+        if catch.op == "drop":
+            listed.pop(catch.item, None)
+            conflicts.pop((catch.area, catch.item), None)
+        elif catch.gate is not None:
+            listed[catch.item] = None if catch.gate == NO_GATE else catch.gate
+            conflicts.pop((catch.area, catch.item), None)
+        else:
+            listed.setdefault(catch.item, None)
+    for (area, item), conflicting in sorted(conflicts.items()):
+        problems.add(
+            At(AREA_LOOT),
+            f"item {item} in area {area}: its rows map to different windows ({', '.join(conflicting)}); set its gate"
+            " with an areas.toml add (DATA-R29)",
+        )
+
+    # Step 3: observed pairs (DATA-R47), which win over a drop.
+    pairs = observed_pairs(lists, areas, observations, items, required)
+    evidence = Evidence({area: dict(listed) for area, listed in lists.items()}, frozenset(pairs.joins))
+    for (area, item), window in pairs.joins.items():
+        lists.setdefault(area, {})[item] = window
+        did(area, item, "observed pair (DATA-R47), " + (f"gated by {window}" if window is not None else "ungated"))
+
+    # Step 4: removed, Noise and uncharted items leave; an item outside the shipped records is uncharted.
+    built: dict[int, list[Catch]] = {}
+    for area, listed in sorted(lists.items()):
+        kept: list[Catch] = []
+        for item, window in sorted(listed.items()):
+            left = _leaves(items.get(item))
+            if left is None:
+                kept.append(Catch(item, window))
+            else:
+                did(area, item, f"{left}, left out")
+        if kept:
+            built[area] = kept
+
+    # DATA-R30: a zone's skill base from skill.csv, then areas.toml's, which alone can give a subzone one.
+    skill_bases = {area: base for area, base in baseline.skill.items() if area in areas and areas[area].parent == 0}
+    for edit in layer.areas.values():
+        if edit.skill_base is not None:
+            skill_bases[edit.area] = edit.skill_base
+    return CatchLists(built, skill_bases, pairs.ungated, history, evidence)
+
+
+def area_records(
+    areas: Mapping[int, Area],
+    catch_lists: CatchLists,
+    alias_sources: Collection[int],
+    windows: Mapping[str, Mapping[str, object]],
+    confirmation: Confirmation,
+) -> dict[int, Record]:
+    """Every DB2 area's record (DATA-R25, DATA-R78), its confirmed flags from confirmation (DATA-R48, DATA-R52,
+    DATA-R55). windows are the catalogue's, so a gate is its window's shared spec (Contracts)."""
+    with_data = {zone_of(areas, area) for area in catch_lists.lists if area not in alias_sources}
+    records: dict[int, Record] = {}
+    for area_id, area in areas.items():
+        alias = area_id in alias_sources
+        catches: list[Record] = []
+        for catch in [] if alias else catch_lists.lists.get(area_id, []):
+            key = (area_id, catch.item)
+            entry: Record = {"itemID": catch.item, "confirmed": key in confirmation.entries}
+            if catch.window is not None:
+                gate_confirmed = key in confirmation.gates
+                entry.update(window=catch.window, gate=windows[catch.window]["spec"], gateConfirmed=gate_confirmed)
+            catches.append(entry)
+        zone = zone_of(areas, area_id)
+        # DATA-R31: a zone has data when it or a subzone has a list, and a subzone takes its zone's value.
+        has_data = not alias and (zone in with_data if zone is not None else bool(catches))
+        record: Record = {
+            "parent": area.parent,
+            "continent": area.continent,
+            "hasData": has_data,
+            "skillBaseConfirmed": area_id in confirmation.skill_bases,
+            "catches": catches,
+        }
+        if area_id in catch_lists.skill_bases:
+            record["skillBase"] = catch_lists.skill_bases[area_id]
+        records[area_id] = record
+    return records

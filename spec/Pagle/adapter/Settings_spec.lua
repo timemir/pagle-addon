@@ -40,17 +40,22 @@ local function contains(list, value)
 end
 
 describe("The Settings root with no Module On", function()
-	it("registers one Pagle category under AddOns at ModulesChanged, and no topic page (CORE-R40, SET-R1)", function()
-		local loaded = loadWith()
-		assert.is_nil(loaded.client.settings.category("Pagle"))
+	it(
+		"registers one Pagle category under AddOns at ModulesChanged, with only Core's Announcements page (CORE-R40, SET-R1)",
+		function()
+			local loaded = loadWith()
+			assert.is_nil(loaded.client.settings.category("Pagle"))
 
-		loaded.client.fire("PLAYER_LOGIN")
+			loaded.client.fire("PLAYER_LOGIN")
 
-		local settings = loaded.client.settings
-		assert.are.equal(1, #settings.addOnCategories)
-		assert.are.equal("Pagle", settings.addOnCategories[1].name)
-		assert.are.equal(1, #settings.categories)
-	end)
+			local settings = loaded.client.settings
+			assert.are.equal(1, #settings.addOnCategories)
+			assert.are.equal("Pagle", settings.addOnCategories[1].name)
+			-- The Announcements page: spec/Pagle/adapter/AnnouncementSettings_spec.lua.
+			assert.are.same({ "Pagle", "Announcements" }, { settings.categories[1].name, settings.categories[2].name })
+			assert.are.equal(2, #settings.categories)
+		end
+	)
 
 	it(
 		"shows the paragraph, the Modules header, the five roster names Not installed and the note (SET-R10, SET-R11, CORE-R41)",
@@ -127,7 +132,7 @@ describe("A topic page", function()
 		local fishing = assert(loaded.client.settings.category("Fishing"))
 		assert.is_table(fishing)
 		assert.are.equal(loaded.client.settings.category("Pagle"), fishing.parent)
-		assert.are.equal(2, #loaded.client.settings.categories)
+		assert.are.equal(3, #loaded.client.settings.categories) -- the root, Fishing and Announcements
 	end)
 
 	it("isn't registered while the Module that has its rows isn't On (CORE-R42, SET-R4, SET-R90)", function()
@@ -309,7 +314,7 @@ describe("Pagle.OpenSettings", function()
 		registerQoL(loaded)
 		loaded.client.fire("PLAYER_LOGIN")
 
-		for _, topic in ipairs({ "fishing", "look", "announcements", "Fishing", 5 }) do
+		for _, topic in ipairs({ "fishing", "look", "trackers", "Fishing", 5 }) do
 			loaded.env.Pagle.OpenSettings(topic)
 		end
 
@@ -571,9 +576,9 @@ describe("A Module's value rows", function()
 		value = true -- changed outside Settings
 
 		local rows = loaded.client.settings.show(page)
+		assert.is_true(rows[2].frame.value)
 		rows[2].initializer:GetSetting():SetValue(false)
 
-		assert.is_true(rows[2].frame.value)
 		assert.is_false(value)
 		assert.is_false(loaded.client.settings.show(page)[2].frame.value)
 	end)

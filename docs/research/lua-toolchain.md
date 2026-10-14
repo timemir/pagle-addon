@@ -110,7 +110,7 @@ Mapped onto us:
 ## 8. Dev loop against the beta client
 
 - **Install path:** the beta uses the `_classic_beta_` product folder and `WowB.exe`.[21] Symlink each addon folder from the repo into `_classic_beta_/Interface/AddOns/` (Windows `mklink /J`) so edits are live.
-- **Reload:** type `/reload`. `ReloadUI()` is protected on Forever, so you cannot bind it from addon code.[21] Changes to `.toc` files need a full client restart; Lua and XML changes need only `/reload`. (Standard client behaviour, not verified on Forever.)
+- **Reload:** type `/reload`. `ReloadUI()` is protected on Forever, so you cannot bind it from addon code.[21] (Superseded: `ReloadUI()` is unprotected on build 1.60.1.70338, QOL-R102.) Changes to `.toc` files need a full client restart; Lua and XML changes need only `/reload`. (Standard client behaviour, not verified on Forever.)
 - **Errors:** BugSack + !BugGrabber (BugSack v12.1.5, 2026-10-10; its TOC lists 16001).[7][13]
 - **Error cap:** after 100 Lua errors in a session, the client stops sending them to handlers, so fix error floods first.[21]
 - **Unknown events throw:** "Registering an unknown event throws; wrap registration in `pcall`".[21] This matters when sharing code with Retail.

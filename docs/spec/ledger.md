@@ -207,7 +207,7 @@ The Ledger is the `Pagle_Ledger` Module: the Angler's identity as an angler. It 
 - **LED-R93** In the projection's `done` (LOG-R76), in this order:
   - `info.firstBuild` (never true for a log with no Cast, LOG-R76): add every achievement in the state to the celebrated set (moments for them are never raised), and raise a Write-up section headed "Your Ledger was written up from {N} Casts" (N = caught and got-away Casts applied, with `BreakUpLargeNumbers`), lines as LED-R94.
   - else, `info.rebuilt`: for each achievement in the scratch list (LED-R98) not yet celebrated, raise its moment as it would be raised live (its `cast` and `coins`, LED-R97) with `summaryOnly = true` (ANN-R63), and add it; level-ups merge into one `levelUp` moment for the highest new level. Big batches come only from the pre-1.0 staging bumps (LED-R4); a data release credits a handful. Size records are never among them (LED-R84). This holds even when the rebuild covers entries recorded while the Module was disabled.
-  - else, `info.replayed > 0`: if the scratch list holds any achievement not yet celebrated, raise a section headed "While the Ledger was off", lines as LED-R94 counting only those (a zone whose shown rank rose counts as ranked, one that newly reached Master as mastered), and add them.
+  - else, `info.replayed > 0`: if the scratch list holds any achievement not yet celebrated, raise a section headed "While the Ledger was off", lines as LED-R94 counting only those (a zone whose shown rank rose counts as ranked, one that newly reached Master as mastered), and add them. When none of them has a line in LED-R94 (only a Species new in a zone, say), they are added but no section is raised, so the player never sees a heading with nothing under it.
   - always: set `coins` in the celebrated set to the total, report Coins (LED-R89), call `M:RefreshGoods()` (LED-R111), set the summary line (LED-R95) and redraw the Journal if open.
 - **LED-R94** Write-up lines, each only if non-zero, in this order: "Angler Level {L}" (with " · Prestige {R}" when the rank is above 0; for a catch-up, "Angler Level {old} → {new}" and only if it rose), "{n} Species", "{n} zones ranked · {m} mastered" (zones with a shown rank, and those at Master), "{n} trophy weights", "{n} curios", "{n} Legends", "{n} Skill Milestones", "{n} Catches" (the highest Catch Milestone reached, if one is new), "Title: {title}" (one line per title in LED-R75 order, at most 3, then "+{k} more titles"), "Pagle Coins +{c}" (`c` = total minus the celebrated `coins` before this `done`). Stars and Uncharted items get no line. Every count anywhere in the Ledger has singular and plural forms in `ns.L`.
 - **LED-R95** The summary line is `M:SetSummaryLine("ledger", text)` with "Ledger: Angler Level {L} · {p}% complete" ("Ledger: Prestige {R} · Angler Level {L} · {p}% complete" when the rank is above 0; before M3, without the completion part). It uses the shown level (LED-R36) and is set in `done` and after each live entry that changes the shown level, the prestige rank or completion.
@@ -337,7 +337,7 @@ The Journal is a two-page book (UI). These rules say what it shows; [UI](#ui) sa
 
 ## Data
 
-### Projection (`PagleLedgerDB.global.projection`, LOG-R70)
+### Projection state (`PagleLedgerDB.global.projection.projection`, LOG-R70)
 
 ```lua
 ---@class LedgerState
@@ -345,7 +345,6 @@ The Journal is a two-page book (UI). These rules say what it shows; [UI](#ui) sa
 ---@field catches integer               -- lifetime Catches (LED-R42)
 ---@field xp integer                    -- the climb's XP (LED-R31)
 ---@field prestige integer              -- prestige rank
----@field peakLevel integer             -- LED-R35
 ---@field fresh number                  -- Fresh Water F after the last Catch (LED-R22)
 ---@field lastCatch? integer            -- time of the last Catch
 ---@field firstDate? { year: integer, month: integer, day: integer }  -- realm date of the first Catch of any class (bookplate)
@@ -395,13 +394,13 @@ The Journal is a two-page book (UI). These rules say what it shows; [UI](#ui) sa
 ---@field rank integer                  -- computed rank, 0 if not charted (LED-R50)
 ```
 
-Stars, levels, completion and titles are computed from this state and the world index when needed; they aren't stored.
+Stars, levels (the peak level too, LED-R35), completion and titles are computed from this state and the world index when needed; they aren't stored.
 
 ### `PagleLedgerDB` (AceDB, account-wide, one shared profile)
 
 | Key | Contents | Default |
 |---|---|---|
-| `global.projection` | the projection table (owned by Core, LOG-R70) | |
+| `global.projection` | the projection table Core manages (LOG-R70): `projection`, `lastSeq`, `logId`, `fingerprint`, `rulesVersion` | |
 | `global.celebrated` | `{ levels = { [prestigeRank] = level }, prestige, species = { [id] = true }, stars = { [speciesID] = { [1|2|3] = true } }, familyStars = { [familyID] = { [1|2|3] = true } }, speciesZones = { ["<speciesID>:<zone>"] = true }, zones = { [zone] = shownRank }, items = { [itemID] = true }, uncharted = { [itemID] = true }, skill = { [threshold] = true }, milestones = { [n] = true }, titles = { [titleKey] = true }, coins, logId }` (LED-R90) | empty, `coins = 0` |
 | `profile.activeTitle` | a title key, or `nil` for automatic (LED-R77) | `nil` |
 

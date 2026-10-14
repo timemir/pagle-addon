@@ -20,8 +20,8 @@ class Event(TypedDict, total=False):
 class Catalogue(TypedDict):
     """ns.catalogue (DATA-R76), shaped as the Contracts section of docs/spec/content-data.md shows it.
 
-    Before M2 (DATA-R79) items, pools and windows are empty, and so are areas and aliases until the DB2 and alias
-    layers fill them; their record types arrive with the rules that fill them.
+    Item records are DATA-R77's (pagle_data.items) and area records DATA-R78's (pagle_data.areas); a catch entry's
+    gate is its window's shared spec (pagle_data.lua.Shared), which the canonical JSON writes in full.
     """
 
     fingerprint: str

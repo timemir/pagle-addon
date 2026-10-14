@@ -2,9 +2,6 @@
 -- fishing signals, combat from PLAYER_REGEN_*, the option from its checkbox on the Settings root (catch-log.md
 -- LOG-R85, LOG-R86; settings.md SET-R10 row 5, SET-R13).
 
-local FISHING = 7731 -- Fishing (Classic Journeyman), on the catalogue's fishing-spell list
-local OILY_BLACKMOUTH = "|cffffffff|Hitem:6358::::::::15:::::::::|h[Oily Blackmouth]|h|r"
-
 local LABEL = "Remind me to /reload when Casts are unsaved"
 local TOOLTIP = "A chat line every 50 Casts not yet saved. WoW saves only on /reload or logout, so a crash loses them."
 
@@ -186,8 +183,7 @@ describe("The unsaved-Casts reminder", function()
 		catch(first, 40)
 
 		-- The next load reads the SavedVariables the reload wrote.
-		-- AceDB checks the stored profile key's length with the client's strlenutf8; the key is ASCII.
-		local globals = { PagleLog = first.env.PagleLog, PagleDB = first.env.PagleDB, strlenutf8 = string.len }
+		local globals = { PagleLog = first.env.PagleLog, PagleDB = first.env.PagleDB }
 		local second = loadAddon("Pagle", foreverWith(globals))
 		second.client.fire("PLAYER_LOGIN")
 		catch(second, 49)

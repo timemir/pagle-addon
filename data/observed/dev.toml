@@ -1,0 +1,9 @@
+# The dev's own observations (DATA-R122). keys lists the reporter keys of the dev's own logs (REP-R36: FNV-1a of
+# PagleLog.logId, 8 lowercase hex); a pre-1.0 log restart makes a new one (LOG-R18), so add it and keep the old.
+# Every key here and every fact counts as the one reporter dev (DATA-R46). Each [[fact]] asserts one catalogue
+# fact on a build: kind, build, note, and the IDs its kind needs: pair (item, area), gate (item, window), window
+# (window), weekly (event), skillBase (area).
+# Edit this, then run scripts/generate-data.py and commit the regenerated files with it (DATA-R61).
+
+# 38d9e978: Kukli-Vail's log 314ca8bd2fb83d86 (2026-10-13).
+keys = ["38d9e978"]

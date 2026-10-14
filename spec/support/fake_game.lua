@@ -255,6 +255,7 @@ return function(client, stubs)
 			return spell[1], spell[2]
 		end
 	end
+	-- The item's name once the client has it cached; nil for one it doesn't know (the Ledger falls back, LED-R97).
 	stubs.C_Item.GetItemNameByID = function(itemID)
 		return client.itemNames[itemID]
 	end

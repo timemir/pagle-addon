@@ -26,8 +26,9 @@ local FORBIDDEN = {
 	-- QOL-R95: no rule depends on the daily or weekly reset.
 	{ "%f[%w_]GetQuestResetTime%f[^%w_]", "QOL-R95: no QoL rule depends on the reset" },
 	{ "%f[%w_]GetSecondsUntil%a*Reset%f[^%w_]", "QOL-R95: no QoL rule depends on the reset" },
-	-- QOL-R6: never ReloadUI(), no secure snippets.
-	{ "%f[%w_]ReloadUI%f[^%w_]", "QOL-R6: QoL never calls ReloadUI()" },
+	-- QOL-R6: ReloadUI() only from a click on Reload now (RELOAD_NOW below takes that one call out), no secure
+	-- snippets.
+	{ "%f[%w_]ReloadUI%f[^%w_]", "QOL-R6: ReloadUI() only from a click on Reload now" },
 	{ "SecureHandler", "QOL-R6: QoL uses no secure snippets" },
 	{ "WrapScript", "QOL-R6: QoL uses no secure snippets" },
 	{ "[\"']_on%a", "QOL-R6: QoL uses no secure snippets (a _on… snippet attribute)" },
@@ -48,77 +49,63 @@ local FORBIDDEN_IN_LOGIC = {
 	{ "%f[%w_]ns%.db%f[^%w_]", "CORE-R7: logic/ is passed what it reads of PagleQoLDB, never ns.db" },
 }
 
--- Code with its comments removed: Lua's --[[ ]] and -- comments, XML's <!-- -->.
----@param text string
----@return string
-local function withoutComments(text)
-	text = text:gsub("<!%-%-.-%-%->", "")
-	text = text:gsub("%-%-%[(=*)%[.-%]%1%]", "")
-	text = text:gsub("%-%-[^\n]*", "")
-	return text
-end
+-- QOL-R6, QOL-R83: the one ReloadUI() QoL may call, the OnAccept of the Reload now popup in adapter/Conflict.lua,
+-- whose first button says "Reload now". It runs only when that button is clicked (StaticPopup_OnClick), never on
+-- load, an event or a timer. The pattern captures the code around the call, so that call alone can be taken out.
+local RELOAD_NOW_FILE = DIR .. "adapter/Conflict.lua"
+local RELOAD_NOW = "(StaticPopupDialogs%.PAGLE_QOL_RELOAD%s*=%s*{[^{}]-button1%s*=%s*ns%.L%.CONFLICT_RELOAD_NOW%s*,"
+	.. "[^{}]-OnAccept%s*=%s*function%s*%(%)%s*)ReloadUI%(%)(%s*end)"
 
 -- Each forbidden thing the code says, as "<why>: <match>".
 ---@param text string
----@param rules { [1]: string, [2]: string }[]? FORBIDDEN by default
+---@param path string? the file it's from; only RELOAD_NOW_FILE may hold the Reload now call
 ---@return string[]
-local function offences(text, rules)
-	local found = {}
+local function offences(text, path)
 	local code = withoutComments(text)
-	for _, rule in ipairs(rules or FORBIDDEN) do
-		local match = code:match(rule[1])
-		if match then
-			found[#found + 1] = rule[2] .. ": " .. match
-		end
+	if path == RELOAD_NOW_FILE then
+		code = code:gsub(RELOAD_NOW, "%1%2", 1)
 	end
-	return found
+	return forbiddenIn(code, FORBIDDEN)
 end
 
+-- Each thing logic/ never does that the code says, as "<why>: <match>" (CORE-R7).
+---@param text string
 ---@return string[]
-local function shippedFiles()
-	local files = {}
-	---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io
-	local find = assert(io.popen("find " .. DIR .. " -type f \\( -name '*.lua' -o -name '*.xml' \\)"))
-	for path in find:lines() do
-		files[#files + 1] = path
-	end
-	find:close()
-	table.sort(files)
-	return files
-end
-
----@param path string
----@return string
-local function read(path)
-	---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io
-	local file = assert(io.open(path, "r"))
-	local text = file:read("*a")
-	file:close()
-	return text
+local function logicOffences(text)
+	return forbiddenIn(withoutComments(text), FORBIDDEN_IN_LOGIC)
 end
 
 describe("QoL's boundary", function()
 	it("covers both the Lua and the XML QoL ships", function()
-		local files = shippedFiles()
+		local files = shippedFiles(DIR)
 
 		assert.is_true(#files > 1)
 		assert.are.equal(DIR .. "Bindings.xml", files[1])
 	end)
 
-	for _, path in ipairs(shippedFiles()) do
+	for _, path in ipairs(shippedFiles(DIR)) do
 		it(path .. " does nothing QOL-R3 and QOL-R6 forbid (QOL-R91, QOL-R92, QOL-R95, QOL-R96)", function()
-			assert.are.same({}, offences(read(path)))
+			assert.are.same({}, offences(readFile(path), path))
 		end)
 		if path:find("/logic/", 1, true) then
 			it(path .. " never reads ns.db (CORE-R7)", function()
-				assert.are.same({}, offences(read(path), FORBIDDEN_IN_LOGIC))
+				assert.are.same({}, logicOffences(readFile(path)))
 			end)
 		end
 	end
 
+	it("calls ReloadUI() from the Reload now button alone (QOL-R6, QOL-R83)", function()
+		local code = withoutComments(readFile(RELOAD_NOW_FILE))
+		local _, allowed = code:gsub(RELOAD_NOW, "")
+		local _, calls = code:gsub("%f[%w_]ReloadUI%f[^%w_]", "")
+
+		assert.are.equal(1, allowed)
+		assert.are.equal(1, calls)
+	end)
+
 	describe("catches", function()
 		local planted = {
-			{ "ReloadUI()", "QOL-R6: QoL never calls ReloadUI()" },
+			{ "ReloadUI()", "QOL-R6: ReloadUI() only from a click on Reload now" },
 			{ 'SecureHandlerWrapScript(button, "OnClick", header, "")', "QOL-R6: QoL uses no secure snippets" },
 			{ 'header:WrapScript(button, "OnClick", "")', "QOL-R6: QoL uses no secure snippets" },
 			{ 'button:SetAttribute("_onclick", "")', "QOL-R6: QoL uses no secure snippets" },
@@ -150,11 +137,54 @@ describe("QoL's boundary", function()
 		end
 
 		it("ns.db in logic/, but not ns.dbx or a comment's ns.db (CORE-R7)", function()
-			local found = offences("return ns.db.profile.input", FORBIDDEN_IN_LOGIC)
+			local found = logicOffences("return ns.db.profile.input")
 
 			assert.are.same({ "CORE-R7: logic/ is passed what it reads of PagleQoLDB, never ns.db: ns.db" }, found)
-			assert.are.same({}, offences("local x = ns.dbx -- ns.db", FORBIDDEN_IN_LOGIC))
+			assert.are.same({}, logicOffences("local x = ns.dbx -- ns.db"))
 		end)
+
+		-- QOL-R6: the one ReloadUI() QoL may make, from a click on the Reload now popup's button (QOL-R83).
+		local PLANTED_RELOAD = table.concat({
+			"StaticPopupDialogs.PAGLE_QOL_RELOAD = {",
+			"	text = ns.L.CONFLICT_RELOAD_TEXT,",
+			"	button1 = ns.L.CONFLICT_RELOAD_NOW,",
+			"	OnAccept = function()",
+			"		ReloadUI()",
+			"	end,",
+			"}",
+		}, "\n")
+
+		it("but not ReloadUI() from a click on Reload now, in adapter/Conflict.lua", function()
+			assert.are.same({}, offences(PLANTED_RELOAD, DIR .. "adapter/Conflict.lua"))
+		end)
+
+		local reloads = {
+			{ "the Reload now handler in another file", PLANTED_RELOAD, DIR .. "adapter/QoL.lua" },
+			{ "a second ReloadUI()", PLANTED_RELOAD .. "\nReloadUI()", DIR .. "adapter/Conflict.lua" },
+			{
+				"ReloadUI() on another dialog's button",
+				(PLANTED_RELOAD:gsub("PAGLE_QOL_RELOAD", "PAGLE_QOL_CONFLICT")),
+				DIR .. "adapter/Conflict.lua",
+			},
+			{
+				"ReloadUI() on a button that doesn't say Reload now",
+				(PLANTED_RELOAD:gsub("CONFLICT_RELOAD_NOW", "CONFLICT_USE_PAGLE")),
+				DIR .. "adapter/Conflict.lua",
+			},
+			{
+				"ReloadUI() when the popup shows",
+				(PLANTED_RELOAD:gsub("OnAccept", "OnShow")),
+				DIR .. "adapter/Conflict.lua",
+			},
+		}
+		for _, case in ipairs(reloads) do
+			it(case[1], function()
+				assert.are.same(
+					{ "QOL-R6: ReloadUI() only from a click on Reload now: ReloadUI" },
+					offences(case[2], case[3])
+				)
+			end)
+		end
 
 		it("but not what only a comment says, nor QoL's own PagleQoLDB", function()
 			assert.are.same({}, offences("-- never ReloadUI()\n--[[ SecureHandlerWrapScript ]]\nlocal db = PagleQoLDB"))

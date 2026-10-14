@@ -26,7 +26,8 @@ local OWNER = "Pagle fishing"
 
 -- Records a Cast that ended caught or got away (LOG-R9 steps 1 and 2): takes the Cast snapshot (LOG-R20), adds the
 -- items, and appends the C1 entry for the current character at the snapshot's server time, then its diagnostics
--- entry (LOG-R81). Returns the record every reader will see, or nil before PLAYER_LOGIN, when no character is current.
+-- entry (LOG-R81), and hands it to the projections live (LOG-R9 step 4). Returns the record every reader will see, or
+-- nil before PLAYER_LOGIN, when no character is current.
 ---@param outcome "caught"|"gotAway"
 ---@param items PagleLootItem[]
 ---@param startedAt number? GetTime() when the Cast's channel started
@@ -47,6 +48,8 @@ local function recordCast(outcome, items, startedAt)
 	})
 	---@cast cast PagleCast
 	ns.AddCastDiagnostic(cast, unresolved, startedAt)
+	ns.sessions:Cast() -- LOG-R9 step 3: SessionEnded still due, then SessionStarted
+	ns.projections:Live(cast) -- LOG-R9 step 4, before Catch and CastEnded (LOG-R73)
 	return cast
 end
 

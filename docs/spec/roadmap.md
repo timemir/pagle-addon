@@ -110,7 +110,7 @@ Input isn't built yet, so the Fishing key is always armed (as under *Both*), and
 4. **Got away (LOG-R6):** at least one counted Cast ended got away and was logged with outcome `g`. If Forever reports it differently, LOG-R6 is updated.
 5. **Combat (QOL-R31, QOL-R32):** get into combat mid-stretch. The key does nothing and `SoftTargetInteract` is back to the player's value; after combat the key casts again.
 6. **Crash (QOL-R67):** mid-stretch, kill the client from the task manager, log in, and read the leased CVars. The dev records the result on the build ticket that holds QOL-R67; if the CVars stayed changed, a follow-up ticket designs a fix.
-7. **Conflict popup (QOL-R80–R84):** enable Angleur's Forever build and log in. The popup appears; "Use Pagle" turns Angleur off, and after `/reload` the Fishing key works.
+7. **Conflict popup (QOL-R80–R84):** enable Angleur's Forever build and log in. The popup appears; "Use Pagle" turns Angleur off and shows the Reload now popup; clicking Reload now reloads, Angleur stays off and the Fishing key works.
 8. **QoL off (CORE-R17):** disable Pagle_QoL and fish a few Casts. They're still recorded, and the Fishing page and the QoL bindings are gone.
 
 ## Track Q: QoL v1
@@ -366,7 +366,7 @@ Run on the live Forever build before tagging 1.0. Beta facts may change at launc
 | 12 | The live interface number and `WOW_PROJECT_CAMELOT`: if the interface number changed, bump it in every TOC | CORE-R2, CORE-R4 |
 | 13 | Clam opening through the secure button; the lure table's items and enchant IDs; any Forever lures and clams | QOL-R100 |
 | 14 | In-combat weapon swap through a secure button | QOL-R101 |
-| 15 | `C_AddOns.DisableAddOn` from addon code, and whether `ReloadUI()` is still protected | QOL-R102 |
+| 15 | `C_AddOns.DisableAddOn` from addon code, and that `ReloadUI()` is still unprotected (it was on build 70338) | QOL-R102, QOL-R6, QOL-R83 |
 | 16 | The equipment-set limit, with *Pagle Previous* taking a slot | QOL-R103 |
 | 17 | The conflict list's folder names, including the two Forever Fishing Buddy ports | QOL-R104 |
 | 18 | `C_DateAndTime.GetSecondsUntilDailyReset` and `GetSecondsUntilWeeklyReset` exist (realm midnight is the fallback) | TKB-R10, TKB-R11 (the fallback) |

@@ -161,7 +161,7 @@ Terms are used as `CONTEXT.md` defines them. "The catalogue" is what the generat
   - an unknown key or a wrong type in any TOML file under `data/`
   - any Hunt check (DATA-R92, DATA-R96)
   - any lore check of a Module whose check is on (DATA-R107)
-- **DATA-R64** Warnings (printed, not failing): baseline rows with a condition that isn't a single event (DATA-R9), observed areas missing from the slice (DATA-R33), observed pairs without a consistent gate (DATA-R47), and alias proposals not yet committed.
+- **DATA-R64** Warnings (printed, not failing): baseline rows with a condition that isn't a single event (DATA-R9), observed areas missing from the slice (DATA-R33), observed pairs without a consistent gate (DATA-R47), and alias proposals not yet committed. Those proposals are one summary line with their count, "<n> uncommitted alias proposals; run scripts/generate-data.py --propose-aliases to list them", and nothing when there are none; `--propose-aliases` lists each in full (DATA-R32).
 - **DATA-R65** The generator emits only items that ship (DATA-R15, DATA-R18), only gates by window, and nothing from `data/observed/` but the catalogue facts it implies.
 - **DATA-R66** `data/checks.toml` switches milestone-gated checks on: `typicalLength = true` from M4 (with Simulated Size), and `lore = [<lore ID>, …]`, listing the addons whose lore check is on (DATA-R100, DATA-R107). Before a switch is on, its check is skipped and the data is still emitted.
 
@@ -267,8 +267,8 @@ Terms are used as `CONTEXT.md` defines them. "The catalogue" is what the generat
 
 ### The DB2 watch
 
-- **DATA-R128** The **DB2 watch** (`.github/workflows/db2-watch.yml`) runs weekly and on manual dispatch. It reads the wago.tools builds API (`https://wago.tools/api/builds`) for the products in `data/db2/build.toml` (seeded with `wow_classic_beta`, where Forever's beta builds sit; the dev updates the list by hand when the live product appears) and, when a build newer than the recorded one exists, downloads that build's tables, diffs them against `data/db2/`, and opens one issue titled "Forever build <version>: DB2 changes" with labels `db2-diff` and `needs-triage`, unless an issue with that title exists.
-- **DATA-R129** The diff lists: new items in the item universe or whose enUS name matches a watch keyword (Tunables); renamed items and class or quality changes in the universe; new areas, renamed areas, and areas whose parent or continent moved; new spells and calendar events whose enUS name matches a watch keyword. For spells and events, which `data/db2/` doesn't keep, the watch downloads `SpellName` and `HolidayNames` for both the recorded build and the new one. A keyword matches a whole word, ignoring case ("Pool" doesn't match "Whirlpool").
+- **DATA-R128** The **DB2 watch** (`.github/workflows/db2-watch.yml`) runs weekly and on manual dispatch. It reads the wago.tools builds API (`https://wago.tools/api/builds`) for the products in `data/db2/build.toml` (seeded with `wow_classic_beta`, where Forever's beta builds sit; the dev updates the list by hand when the live product appears) and, when a build on the recorded build's version line (the major and minor of `build.toml`'s `version`, 1.60 today; a product may also list other games' builds, such as MoP Classic's 5.5.0 under `wow_classic_beta`) has a higher build number than the recorded one, downloads the newest such build's tables, diffs them against `data/db2/`, and opens one issue titled "Forever build <version>: DB2 changes" with labels `db2-diff` and `needs-triage`, unless an issue with that title exists.
+- **DATA-R129** The diff lists: new items in the item universe or whose enUS name matches a watch keyword (Tunables); renamed items and class or quality changes in the universe; new areas, renamed areas, and areas whose parent or continent moved; new spells and calendar events whose enUS name matches a watch keyword. For what `data/db2/` doesn't keep (spells, events, and which items outside the universe are new), the watch downloads `SpellName`, `HolidayNames` and `ItemSparse` for both the recorded build and the new one. A keyword matches a whole word, ignoring case ("Pool" doesn't match "Whirlpool").
 - **DATA-R130** The watch never edits `data/`. The dev refreshes the slice with `scripts/update-db2.py` (DATA-R12) and makes any follow-up edits by hand.
 
 ## Data
@@ -366,6 +366,7 @@ The parser accepts exactly the `PAGLE-REPORT 1` format (REP-R30–R33). Core and
 | `scripts/generate-data.py [--check \| --propose-aliases \| --min-build <n> \| --explain <id> \| --lock]` | DATA-R60–R66, DATA-R57, DATA-R95 |
 | `scripts/import-field-report.py <issue> …` | DATA-R119–R121 |
 | `scripts/update-db2.py <build>` | DATA-R12 |
+| `scripts/db2-watch.py --out <dir> [--issues <file>]` | DATA-R128–R130 |
 | `scripts/extract-baseline.py <dump>` | DATA-R9 (run once) |
 
 ## UI

@@ -5,8 +5,13 @@ from pathlib import Path
 
 import pytest
 
+from areas_fixture import write_areas
 from baseline_fixture import CSVS, write_baseline
+from item_fixture import write_item_layer
+from observed_fixture import write_observed
 from pagle_data.cli import main
+from pools_fixture import write_pools
+from windows_fixture import write_windows
 
 CATALOGUE = "addons/Pagle/data/Catalogue.lua"
 
@@ -26,7 +31,7 @@ ID,ParentAreaID,ContinentID,AreaName_lang
 16531,0,2940,Westfall
 """
 
-# In M1 an area's catch list is its rows in area_loot.csv (roadmap M1). 12, 18, 19 and 40 have one.
+# 6291 is a fish, so 12, 18, 19 and 40 each have a catch list (DATA-R26); test_catch_lists.py covers the lists.
 AREA_LOOT = """\
 area,item,chance,ref,event,condition
 12,6291,55.5,,,
@@ -42,11 +47,18 @@ def write_tree(root: Path, aliases: str = "") -> Path:
     (forever / "events.toml").write_text("", encoding="utf-8")
     (forever / "lists.toml").write_text("auras = []\nfishingSpells = [7620]\n", encoding="utf-8")
     (forever / "aliases.toml").write_text(aliases, encoding="utf-8")
+    write_windows(root)  # test_windows.py covers windows
+    write_areas(root)  # test_catch_lists.py covers areas.toml
     db2 = root / "data" / "db2"
     db2.mkdir(parents=True, exist_ok=True)
     (db2 / "build.toml").write_text('build = 70338\nversion = "1.60.1"\nproducts = ["wow_classic_beta"]\n', encoding="utf-8")
     (db2 / "areas.csv").write_text(AREAS, encoding="utf-8")
+    (db2 / "items.csv").write_text("ID,ClassID,SubclassID,OverallQualityID,Display_lang\n", encoding="utf-8")
     write_baseline(root, {**CSVS, "area_loot.csv": AREA_LOOT})
+    write_observed(root)  # dev.toml with no facts; test_observed.py covers the layer
+    # 6291 is this tree's area loot; test_item_records.py covers the item layer.
+    write_item_layer(root, '[item.6291]\ncategory = "fish"\n\n[item.19807]\ncategory = "fish"\n')
+    write_pools(root)  # test_pools.py covers pool types
     return root
 
 
@@ -165,25 +177,29 @@ def test_a_committed_alias_is_no_longer_proposed(tmp_path: Path, capsys: pytest.
 
 
 @pytest.mark.parametrize("mode", [[], ["--check"]])
-def test_every_run_warns_about_each_uncommitted_proposal_until_it_is_committed(
+def test_every_run_sums_up_the_uncommitted_proposals_in_one_warning_until_they_are_committed(
     tmp_path: Path, capsys: pytest.CaptureFixture[str], mode: list[str]
 ) -> None:
-    # DATA-R64: alias proposals not yet committed are warnings, printed, not failing, on every run. DATA-R32: once
-    # committed to aliases.toml, a proposal is no longer one.
+    # DATA-R64: uncommitted alias proposals are one warning, printed, not failing, on every run: their count and
+    # where to list them (--propose-aliases lists each, DATA-R32). DATA-R32: once committed to aliases.toml, a
+    # proposal is no longer one; with none left, no warning.
+    summary = "uncommitted alias proposals; run scripts/generate-data.py --propose-aliases to list them"
     write_tree(tmp_path)
     run(tmp_path, capsys)
     code, output = run(tmp_path, capsys, *mode)
     assert code == 0
-    warning = "generate-data: warning: alias proposal not in data/forever/aliases.toml:"
-    assert f"{warning} 16510 -> 12 (Elwynn Forest, continent 2940 -> 0)" in output
-    assert f"{warning} 16521 -> 18 (Crystal Lake (Elwynn Forest), continent 2940 -> 0)" in output
-    assert f"{warning} 16531 -> 40 (Westfall, continent 2940 -> 0)" in output
-    assert output.count(warning) == 3
-    assert "generate-data: warning: 3 alias proposal(s) not committed; --propose-aliases prints them" in output
+    assert f"generate-data: warning: 3 {summary}\n" in output
+    assert output.count("warning") == 1, output
 
     write_tree(tmp_path, alias(16521, 18))
     run(tmp_path, capsys)
     code, output = run(tmp_path, capsys, *mode)
     assert code == 0
-    assert "16521 -> 18" not in output
-    assert output.count(warning) == 2
+    assert f"generate-data: warning: 2 {summary}\n" in output
+    assert output.count("warning") == 1, output
+
+    write_tree(tmp_path, alias(16510, 12) + alias(16521, 18) + alias(16531, 40))
+    run(tmp_path, capsys)
+    code, output = run(tmp_path, capsys, *mode)
+    assert code == 0
+    assert "warning" not in output, output

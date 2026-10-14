@@ -2,10 +2,8 @@
 -- sequences against the fake client, read back from PagleLog.entries and Core's bus.
 
 local T = SERVER_TIME -- the fake client's GetServerTime(), 15:15 UTC: realm 08:15
-local FISHING = 7731 -- Fishing (Classic Journeyman), on the catalogue's fishing-spell list
 local DRAIN_LIFE = 689
 
-local OILY_BLACKMOUTH = "|cffffffff|Hitem:6358::::::::15:::::::::|h[Oily Blackmouth]|h|r"
 local MACKEREL = "|cffffffff|Hitem:6303::::::::15:::::::::|h[Raw Slitherskin Mackerel]|h|r"
 
 -- The snapshot fields of a Cast on the fake client (LOG-R20): realm minute 495, no uiMap, instance 1, no zone or

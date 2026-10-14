@@ -11,7 +11,8 @@ Under `WTF/Account/<ACCT>/` (find `<ACCT>` with `ls WTF/Account/`; skip its `Sav
 | Fact | File | Format |
 |---|---|---|
 | Lua errors with stacks | `SavedVariables/!BugGrabber.lua` | `BugGrabberDB`. The latest session is the errors whose `session` equals `BugGrabberDB.session`. Needs `!BugGrabber` installed. |
-| Catch log | `SavedVariables/Pagle.lua` | `PagleLog` and `PagleDB` ([catch-log.md › Data](../spec/core/catch-log.md#data)). Pagle writes no SavedVariables before M1, so the file is missing until then. |
+| Catch log, wallet, cards | `SavedVariables/Pagle.lua` | `PagleLog` and `PagleDB` ([catch-log.md › Data](../spec/core/catch-log.md#data), [wallet-and-shop.md › Data](../spec/core/wallet-and-shop.md#data), [announcements.md › Data](../spec/core/announcements.md#data)). Pagle writes no SavedVariables before M1, so the file is missing until then. |
+| Ledger | `SavedVariables/Pagle_Ledger.lua` | `PagleLedgerDB` ([ledger.md › Data](../spec/ledger.md#data)). Missing until Pagle_Ledger (M2) has run. |
 | Account CVars (`SoftTargetInteract` etc.) | `config-cache.wtf` | `SET <name> "<value>"` lines |
 | Character CVars | `<realm folder>/<Name-Surname>/config-cache.wtf` | the same |
 | Machine CVars | `WTF/Config.wtf`, two levels up | the same |
@@ -30,12 +31,17 @@ scripts/read-wtf.sh "/mnt/g/World of Warcraft/_classic_beta_/WTF/Account/<ACCT>"
     --character 70/<Name-Surname> [--cvar <name>]... [--addon <name>]... [--expect-casts N] [--since T]
 ```
 
-It prints four sections, and a fifth with `--expect-casts`:
+It prints seven sections, and an eighth with `--expect-casts`:
 
 - **Lua errors:** the latest !BugGrabber session's errors, each with its count and stack, or `0 errors`.
 - **Catch log:** `PagleLog` decoded with Core's own codec (`addons/Pagle/logic/CatchLog.lua`), so it reads entries exactly as Pagle does: the format, logId, character and entry counts, `PagleDB.global.decodeErrors`, the entries by tag, the entries the codec can't decode, repeated entry IDs, the `C1` Casts and their time span, by outcome, per character and per zone areaID, the Casts in zone areaID 0 by seq, and the `B1` and `S1` entries. A log in another format than the codec's is reported, not decoded.
+- **Ledger:** `PagleLedgerDB` from `Pagle_Ledger.lua`: the projection's `lastSeq`, `logId`, `fingerprint` and `rulesVersion`; whether its `logId` matches `PagleLog`'s (a different one is flagged `DIFFERS`: Core rebuilds at login) and its `lastSeq` equals the log's length; the state's Casts, Catches, XP, Coins and Species count, with the Angler Level from the Ledger's own `logic/` files; and the celebrated set's highest level, Coins, Species, Species × zone pairs, zones with their shown rank, and Skill Milestones. One line when the file or `PagleLedgerDB` is missing.
+- **Wallet:** the balance, and each Module's last reported total from `PagleDB.global.coins.earned`.
+- **Cards:** from `PagleDB.global`: each `writeUp` section's heading and lines; each card in `cards` with its title ("Your last session" for a `whileAway` one, otherwise "Session summary"), numbers, Coins, lines and its moments' titles by Module; the open `summary`'s moment count and lines; and the `pending` moment count.
 - **CVars:** each named CVar from every file that sets it. `--cvar` defaults to `SoftTargetInteract`.
-- **Addons:** each named addon's state. `--addon` defaults to `Pagle` and `Pagle_QoL`.
+- **Addons:** each named addon's state. `--addon` defaults to `Pagle`, `Pagle_Ledger` and `Pagle_QoL`.
+
+AceDB leaves out of the file every value equal to its default, so a missing `decodeErrors`, `coins`, `writeUp`, `cards`, `summary`, `pending` or celebrated set reads as its default: 0 or empty.
 - **Exit check (#75 steps 3 and 4)**, with `--expect-casts N`, the dev's Cast count: one `ok` or `FAIL` line each for N `C1` Casts, no repeated entry ID among them, none in zone areaID 0, a `B1` and an `S1` entry, `decodeErrors` 0, every entry decoding, and at least one got-away Cast (`g`). It comes last, so the verdict is the last line.
 
 `--since T` counts only the Casts at server time T (Unix seconds) or later, so earlier sessions don't change the count; `B1` and `S1` are still looked for in the whole log, since Core writes them only when the build or the skill changes. Naming a `--cvar` or `--addon` replaces its defaults. Without `--character`, the character's CVars and addons are skipped. The script loads SavedVariables files as data in an empty environment and never runs them with globals.

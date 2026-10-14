@@ -3,6 +3,10 @@
 ---@class PagleNS
 local ns = select(2, ...)
 
+-- The Pagle Coin icon after a Coins amount (ANN-R23, ANN-R53, SHOP-R12): the gold coin texture stands in until
+-- Pagle has its own coin art.
+local COIN = "|TInterface\\MoneyFrame\\UI-GoldIcon:0|t"
+
 ---@class PagleStrings
 ns.L = {
 	-- LOG-R18: PagleLog was in another format, so Core started a new log.
@@ -31,6 +35,38 @@ ns.L = {
 	SETTINGS_SAVING = "Saving",
 	SETTINGS_RELOAD_REMINDER = "Remind me to /reload when Casts are unsaved",
 	SETTINGS_RELOAD_REMINDER_TOOLTIP = "A chat line every %d Casts not yet saved. WoW saves only on /reload or logout, so a crash loses them.",
+	-- The Announcements page's Core rows (SET-R30): labels and tooltips, and Per's value in minutes.
+	SETTINGS_COZY = "Cozy mode",
+	SETTINGS_COZY_TOOLTIP = "Nothing pops up or plays. Every moment waits in the Session summary. A Legend's splash still shows, silently.",
+	SETTINGS_BUDGET = "Interruption budget",
+	SETTINGS_BUDGET_TOOLTIP = "When toasts come close together, the smaller ones step down to a quiet Nod. Records always keep their ruler. Greyed out in Cozy mode, which holds everything anyway.",
+	SETTINGS_BUDGET_COUNT = "Interruptions",
+	SETTINGS_BUDGET_WINDOW = "Per",
+	-- A number of minutes: the budget's window (SET-R10) and a card's time fished (ANN-R53).
+	MINUTES = "%d min",
+	-- The Announcement frames (announcements.md › UI): the toast lane's overflow (ANN-R20), stamps beyond the 4 shown
+	-- (ANN-R11), the Coins stamp with its sum (ANN-R23), the record ruler's stamp (ANN-R22) and the splash's hint.
+	ANNOUNCEMENT_MORE = "+%d more",
+	ANNOUNCEMENT_STAMPS_MORE = "+%d",
+	ANNOUNCEMENT_COINS = "+%s " .. COIN,
+	ANNOUNCEMENT_NEW_RECORD = "New record",
+	ANNOUNCEMENT_SPLASH_HINT = "Click anywhere to continue",
+	-- The toast listing the toast headlines held through combat (ANN-R36), and each line: a headline's title and text.
+	ANNOUNCEMENT_WHILE_FIGHTING = "While you were fighting",
+	ANNOUNCEMENT_FIGHTING_LINE = "%s: %s",
+	-- The cards (announcements.md › UI): a Session summary's title, "Your last session" for one that ended while away
+	-- (ANN-R54), and the Write-up's (ANN-R61); Core's numbers (ANN-R53), time fished in MINUTES or hours and minutes;
+	-- the Coins line with its sum (ANN-R53); the close button (closing also takes Esc).
+	CARD_SESSION = "Fishing session",
+	CARD_LAST_SESSION = "Your last session",
+	CARD_WRITE_UP = "Write-up",
+	CARD_CASTS = "Casts",
+	CARD_CATCHES = "Catches",
+	CARD_GOT_AWAY = "Got away",
+	CARD_TIME = "Time fished",
+	CARD_HOURS = "%d h %02d min",
+	CARD_COINS = "Pagle Coins +%s " .. COIN,
+	CARD_CLOSE = "Close",
 	-- LOG-R86: the unsaved-Casts reminder, with the number of Casts recorded since load.
 	RELOAD_REMINDER = "Pagle: %d Casts not yet saved. /reload to keep them safe.",
 	-- CORE-R33: Settings opened while restricted.
@@ -55,6 +91,11 @@ ns.L = {
 
 	-- The compartment menu's last entry (CORE-R50).
 	MENU_SETTINGS = "Settings",
+	-- Its Curio Shop entry (CORE-R50): the balance as BreakUpLargeNumbers writes it, then a coin icon.
+	MENU_CURIO_SHOP = "Curio Shop  %s " .. COIN,
+	-- The compartment entry's label (CORE-R51): Pagle, with the moments Cozy mode holds for a summary (ANN-R42).
+	COMPARTMENT = "Pagle",
+	COMPARTMENT_WAITING = "Pagle · %d waiting",
 
 	-- /pagle help (CORE-R60, CORE-R61): the header, then a line per command (its name, its help). Core lists the
 	-- reserved commands that work; shop and report join with their surfaces (M4, M3).

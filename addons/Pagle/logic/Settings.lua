@@ -203,10 +203,7 @@ end
 ---@return fun(self: PagleModuleHandle, topic: "fishing"|"announcements"|"trackers", setting: PagleSetting)
 function ns.AddSettingMethod(registry, rows, report)
 	return function(self, topic, setting)
-		local module = registry:ModuleOf(self)
-		if not module then
-			error("AddSetting is a Module handle method: call M:AddSetting(topic, setting)", 2)
-		end
+		local module = registry:ModuleCalling(self, "AddSetting", "topic, setting")
 		local why, late = rows:Add(module.def.name, topic, setting)
 		if why and late then
 			report(why)

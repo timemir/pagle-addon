@@ -40,6 +40,8 @@ stds.wow = {
 		-- The compartment menu (CORE-R50): a context menu, opened a frame after the compartment's click (C_Timer.After,
 		-- in the one C_Timer entry below).
 		MenuUtil = { fields = { "CreateContextMenu" } },
+		-- The Curio Shop entry's balance (CORE-R50).
+		"BreakUpLargeNumbers",
 		-- The Catch log (LOG-R11, LOG-R15).
 		"GetServerTime",
 		-- The runtime area index and zone resolution (LOG-R22, LOG-R23).
@@ -100,11 +102,12 @@ stds.wow = {
 		"GetCVar",
 		"SetCVar",
 		"IsMounted",
-		-- QoL's conflict popup (QOL-R81); StaticPopupDialogs itself is in stds.wow_variables.
+		-- QoL's conflict popup (QOL-R81); StaticPopupDialogs itself is in stds.wow_variables. Its Reload now button
+		-- (QOL-R83): ReloadUI is unprotected on build 70338 (QOL-R102), and the QoL boundary spec allows that one call.
 		"StaticPopup_Show",
-		-- QoL's Nudges: a frame on the screen, below the game's error text (QOL-R75); its colour is in
+		"ReloadUI",
+		-- QoL's Nudges: a frame on the screen (UIParent, below), below the game's error text (QOL-R75); its colour is in
 		-- stds.wow_variables.
-		"UIParent",
 		"UIErrorsFrame",
 		-- QoL's next-action button (QOL-R70–R74): Shift-drag moves it, and its tooltip is the game's own; Item, which
 		-- waits for a lure's name, is in stds.wow_variables.
@@ -136,6 +139,12 @@ stds.wow = {
 		"ERR_FISH_ESCAPED",
 		-- The diagnostics buffer (LOG-R81); TooltipDataProcessor, for its hovers (LOG-R80), is in stds.wow_variables.
 		"GetLocale",
+		-- The projections' time budget per frame (LOG-R71, LOG-R72); their frames go through C_Timer.After.
+		"debugprofilestop",
+		-- The Announcement frames, hung from UIParent, and their sounds on the SFX channel (ANN-R73, ANN-R80); their
+		-- lanes run on GetTime and C_Timer.After, and an item icon comes from C_Item.GetItemInfoInstant (above).
+		"UIParent",
+		"PlaySoundFile",
 	},
 }
 
@@ -173,11 +182,19 @@ stds.wow_variables = {
 				"CreateElementInitializer",
 			},
 		},
+		-- A FrameXML table the dump doesn't list (SET-R30: Per's "{n} min" label). Gethe/wow-ui-source branch forever at
+		-- 943764493e6b16d63ded3ab304150d1f05e58b57 ("1.60.1 (70338)"),
+		-- Interface/AddOns/Blizzard_SharedXML/Shared/Slider/MinimalSlider.lua: `MinimalSliderWithSteppersMixin.Label =
+		-- EnumUtil.MakeEnum("Left", "Right", "Top", "Min", "Max");`, the label types SettingsSliderOptionsMixin's
+		-- SetLabelFormatter takes (Blizzard_Settings_Shared/Blizzard_Settings.lua).
+		MinimalSliderWithSteppersMixin = { fields = { Label = { fields = { "Right" } } } },
 		-- A FrameXML table the dump doesn't list (QOL-R81). No probe has shown a popup yet; the M1 exit check (step 7)
 		-- does. Gethe/wow-ui-source branch forever at 943764493e6b16d63ded3ab304150d1f05e58b57 ("1.60.1 (70338)"),
 		-- Interface/AddOns/Blizzard_StaticPopup/StaticPopup.lua: `StaticPopupDialogs = {}; -- Definitions`. QoL adds
-		-- its one dialog to it.
-		StaticPopupDialogs = { fields = { PAGLE_QOL_CONFLICT = { read_only = false } } },
+		-- its two dialogs to it: the conflict popup and its Reload now popup (QOL-R81, QOL-R83).
+		StaticPopupDialogs = {
+			fields = { PAGLE_QOL_CONFLICT = { read_only = false }, PAGLE_QOL_RELOAD = { read_only = false } },
+		},
 		-- A FrameXML colour the dump doesn't list (QOL-R75: a Nudge's colour). No probe has drawn a Nudge yet; Track Q's
 		-- exit check (step 1) does. Gethe/wow-ui-source branch forever at 943764493e6b16d63ded3ab304150d1f05e58b57
 		-- ("1.60.1 (70338)"), Interface/AddOns/Blizzard_SharedXMLBase/Color.lua makes each of the client's UI colours a
@@ -195,8 +212,14 @@ stds.wow_variables = {
 		-- SlashCmdList.PAGLEPROBE (probes/fishing-signals/PagleProbe/Report.lua). Gethe/wow-ui-source branch forever at
 		-- 943764493e6b16d63ded3ab304150d1f05e58b57 ("1.60.1 (70338)"),
 		-- Interface/AddOns/Blizzard_ChatFrameBase/Shared/SlashCommandsRegistry.lua: "_G.SlashCmdList = {};".
-		-- The compartment entry needs no table: Pagle.toc's AddonCompartmentFunc names a global, as the probe's did.
 		SlashCmdList = { fields = { PAGLE = { read_only = false } } },
+		-- A FrameXML frame the dump doesn't list (CORE-R50, CORE-R51): Core registers its compartment entry itself, so
+		-- it can change the label. Gethe/wow-ui-source branch forever at 943764493e6b16d63ded3ab304150d1f05e58b57
+		-- ("1.60.1 (70338)"), Interface/AddOns/Blizzard_Minimap/Mainline/AddonCompartment.xml: `<DropdownButton
+		-- name="AddonCompartmentFrame" parent="MinimapCluster" mixin="AddonCompartmentMixin">`, and
+		-- AddonCompartment.lua: `function AddonCompartmentMixin:RegisterAddon(addonData)` keeps the table, whose `text`
+		-- the menu generator reads each time the compartment opens (`local text = addonData.text;`).
+		AddonCompartmentFrame = { fields = { "RegisterAddon" } },
 		-- A FrameXML table the dump doesn't list (LOG-R80). probes/fishing-signals/results/
 		-- 2026-10-11-build70338-report.md, "Packaging, Settings and events": "Tooltip post-call hook (type Object) | ok
 		-- (TooltipDataType.Object = 4); fired 31 times", and its client table shows TooltipDataProcessor with
@@ -210,6 +233,11 @@ stds.wow_variables = {
 		-- Interface/AddOns/Blizzard_ObjectAPI/Mainline/Item.lua: "Item = {};", `function Item:CreateFromItemID(itemID)`
 		-- and `function ItemMixin:ContinueOnItemLoad(callbackFunction)`.
 		Item = { fields = { "CreateFromItemID" } },
+		-- A FrameXML table the dump doesn't list (announcements.md › UI: a card closes with Esc). Gethe/wow-ui-source
+		-- branch forever at 943764493e6b16d63ded3ab304150d1f05e58b57 ("1.60.1 (70338)"),
+		-- Interface/AddOns/Blizzard_UIParentPanelManager/Shared/UIParentPanelManager.lua: "UISpecialFrames = {", and
+		-- CloseSpecialWindows hides each frame named in it that is shown. Core adds its card frame's name.
+		"UISpecialFrames",
 	},
 }
 
@@ -233,9 +261,8 @@ exclude_files = {
 files["addons/*/adapter/**"] = { std = "lua51+wow+wow_variables+pagle" }
 -- Only Core's adapter creates the Pagle global.
 files["addons/Pagle/adapter/**"] = { globals = { "Pagle" } }
--- /pagle's name, and the global Pagle.toc's AddonCompartmentFunc names (CORE-R50, CORE-R60).
+-- /pagle's name (CORE-R60).
 files["addons/Pagle/adapter/Slash.lua"] = { globals = { "SLASH_PAGLE1" } }
-files["addons/Pagle/adapter/Menu.lua"] = { globals = { "Pagle_OnAddonCompartmentClick" } }
 -- A Module's adapter/ reads Pagle through stds.pagle above. Its logic/ and locale/ files read it only in their CORE-R11
 -- guard, `if not Pagle then -- luacheck: read globals Pagle …`, whose inline option reaches that line alone: any other
 -- use of Pagle there fails lint (CORE-R7).
@@ -258,12 +285,27 @@ local helperGlobals = {
 	"SERVER_TIME",
 	"addonFiles",
 	"newFakePagle",
+	"watchErrors",
 	-- spec/support/helpers.lua
 	"foreverWith",
 	"setCombat",
 	"openedNames",
 	"savedLog",
 	"loadCollectingErrors",
+	"breakUpLargeNumbers",
+	"OILY_BLACKMOUTH",
+	"FISHING",
+	"BUILD_ENTRY",
+	"castEntry",
+	"history",
+	"loadCore",
+	"enterWorld",
+	"catchOne",
+	"catchAndFlush",
+	"withoutComments",
+	"forbiddenIn",
+	"shippedFiles",
+	"readFile",
 }
 files["spec/**"] = { std = "lua51+busted", read_globals = helperGlobals }
 files["spec/support/*.lua"] = { globals = helperGlobals }

@@ -4,7 +4,6 @@
 local loaded = loadAddon("Pagle", FOREVER_GLOBALS)
 local ns = loaded.ns
 
-local FISHING = 7731 -- Fishing (Classic Journeyman), probe report 70338 §4
 local DRAIN_LIFE = 689
 
 -- A state machine whose record step makes a Cast record the way the codec decodes one (LOG-R13), and a log of

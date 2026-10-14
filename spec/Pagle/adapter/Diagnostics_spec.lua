@@ -1,9 +1,6 @@
 -- The diagnostics buffer driven through the client (LOG-R80–R82): world-object hovers through the tooltip data hook,
 -- fishing sequences against the fake client, read back from PagleDB.global.diagnostics and PagleLog.
 
-local FISHING = 7731 -- Fishing (Classic Journeyman), on the catalogue's fishing-spell list
-local OILY_BLACKMOUTH = "|cffffffff|Hitem:6358::::::::15:::::::::|h[Oily Blackmouth]|h|r"
-
 -- The names C_Map.GetAreaInfo gives, so Core's area index resolves Darkshore (148) and The Long Wash (453), both in
 -- the generated catalogue on Kalimdor (1).
 local NAMES = { [148] = "Darkshore", [453] = "The Long Wash" }

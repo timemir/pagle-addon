@@ -1,0 +1,20 @@
+## Interface: 16001
+## AllowLoadGameType: camelot
+## Title: Pagle Ledger
+## Notes: Pagle's Ledger: your Angler Level, the Species you have caught and the Coins they earn.
+## Group: Pagle
+## Category: Professions
+## Version: @project-version@
+## Dependencies: Pagle
+## X-Pagle-API: 1
+## SavedVariables: PagleLedgerDB
+
+locale\enUS.lua
+logic\Data.lua
+logic\Module.lua
+logic\Progress.lua
+logic\Fold.lua
+logic\Moments.lua
+logic\Done.lua
+logic\Projection.lua
+adapter\Ledger.lua

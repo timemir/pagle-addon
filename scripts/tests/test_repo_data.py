@@ -53,11 +53,10 @@ def test_the_committed_catalogue_holds_one_area_per_areas_csv_row() -> None:
     outputs = generate(REPO)
     committed = (REPO / CATALOGUE_LUA).read_text(encoding="utf-8")
     assert committed == outputs[CATALOGUE_LUA]
-    area = (
-        r"^\t\t\[(\d+)\] = \{ catches = \{\}, continent = \d+, hasData = false, parent = \d+,"
-        r" skillBaseConfirmed = false \},$"
-    )
-    rows = re.findall(area, committed, flags=re.MULTILINE)
+    # Each area record opens at the areas table's depth, on one line or with its catches below (DATA-R78).
+    start = committed.index("\n\tareas = {\n")
+    block = committed[start : committed.index("\n\t},\n", start)]
+    rows = re.findall(r"^\t\t\[(\d+)\] = \{", block, flags=re.MULTILINE)
     assert [int(area_id) for area_id in rows] == sorted(layer.areas)
 
 

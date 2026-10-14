@@ -10,23 +10,12 @@ if not Pagle then
 	return
 end
 
--- PagleDB's defaults: only keys catch-log.md › Data lists. schemaVersion has none, so a DB that never stored it
--- reads as unmigrated.
-local PAGLEDB_DEFAULTS = {
-	global = {
-		decodeErrors = 0, -- LOG-R16
-	},
-	profile = {
-		reloadReminder = false, -- LOG-R86
-	},
-}
-
 --- Login step 1 (LOG-R1), once the client has loaded the SavedVariables: opens PagleDB and PagleLog, checking
 --- PagleLog's format (LOG-R18). Sets `ns.db` (the PagleDB AceDB object) and `ns.catchLog`. adapter/Login.lua then
 --- notes loginSeq and migrates PagleDB.
 function ns.OpenSavedVariables()
-	-- One shared Default profile, account-wide (CORE-R5).
-	ns.db = LibStub("AceDB-3.0"):New("PagleDB", PAGLEDB_DEFAULTS, true)
+	-- One shared Default profile, account-wide (CORE-R5), with logic/Migrations.lua's defaults.
+	ns.db = LibStub("AceDB-3.0"):New("PagleDB", ns.PAGLEDB_DEFAULTS, true)
 	local catchLog, started = ns.OpenCatchLog(_G.PagleLog, ns.db.global, GetServerTime())
 	_G.PagleLog = catchLog.data
 	ns.catchLog = catchLog

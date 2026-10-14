@@ -12,17 +12,19 @@ local ns = select(2, ...)
 ---@field char integer           -- index into Angler.characters
 ---@field time integer           -- server time
 
---- A Cast (`C1`). Records carry `session` from M2 (LOG-R98) and `size` from M4 (LOG-R65).
+--- A Cast (`C1`). Records carry `size` from M4 (LOG-R65).
 ---@class PagleCast : PagleRecord
 ---@field outcome "caught"|"gotAway"
+---@field session string         -- its Session's ID (LOG-R98)
 ---@field conditions ConditionsSnapshot
 ---@field items { n: integer, itemID: integer, quantity: integer, catchId: string }[]
 
---- A Skill Reading (`S1`, LOG-R31). Carries `session?` from M2 (LOG-R98).
+--- A Skill Reading (`S1`, LOG-R31).
 ---@class PagleSkillReading : PagleRecord
 ---@field rank integer
 ---@field max integer
 ---@field mod integer
+---@field session? string        -- the Session open when it was appended, if any (LOG-R98)
 
 --- A build entry (`B1`, LOG-R36).
 ---@class PagleBuild : PagleRecord
@@ -319,6 +321,8 @@ end
 ---@field data table the PagleLog table, to store back as the SavedVariable
 ---@field global table PagleDB.global
 ---@field undecodable table<integer, true> the seqs counted in decodeErrors this login
+---@field package cutters table<integer, PagleSessionCutter> a cutter fed up to each seq a read started or ended at
+---@field package tail PagleSessionCutter? fed every entry up to the log's end, once something needs it (Append)
 local CatchLog = {}
 CatchLog.__index = CatchLog
 
@@ -332,23 +336,56 @@ local function countUndecodable(catchLog, seq)
 	end
 end
 
+-- A Session cutter fed every record up to `afterSeq` that the tags after it depend on: from the first Cast of the
+-- Session in progress at `afterSeq` (LOG-R98). That look-back decodes the open Session, so the cutter at each seq is
+-- kept for the login: the log only grows, so the entries up to a seq never change. Each caller gets its own copy.
+---@param catchLog PagleCatchLog
+---@param afterSeq integer
+---@return PagleSessionCutter
+local function cutterAt(catchLog, afterSeq)
+	local known = catchLog.cutters[afterSeq]
+	if known then
+		return known:Copy()
+	end
+	local cutter = ns.NewSessionCutter()
+	local first = ns.SessionStartSeq(catchLog:Reverse("cast", afterSeq) --[[@as fun(): PagleCast?]])
+	if first then
+		local entries, characters = catchLog.data.entries, catchLog.data.characters
+		for seq = first, afterSeq do
+			local record = decode(entries[seq], seq, characters)
+			if record then
+				cutter:Add(record)
+			end
+		end
+	end
+	catchLog.cutters[afterSeq] = cutter:Copy()
+	return cutter
+end
+
 --- Walks the entries with `seq > afterSeq`, up to the log's length now, in order, decoding each as it goes
---- (LOG-R42). An entry the codec can't read is skipped and counted in `PagleDB.global.decodeErrors`, once per
---- entry for this login however many readers meet it (LOG-R16).
+--- (LOG-R42). Casts and Skill Readings carry their Session's ID, the same whether the log is read whole or from a
+--- later `afterSeq` (LOG-R98). An entry the codec can't read is skipped and counted in `PagleDB.global.decodeErrors`,
+--- once per entry for this login however many readers meet it (LOG-R16).
 ---@param afterSeq integer?
 ---@return fun(): PagleRecord?
 function CatchLog:Iterate(afterSeq)
 	local entries, characters = self.data.entries, self.data.characters
 	local last = #entries
-	local seq = afterSeq or 0
+	local seq = math.min(afterSeq or 0, last)
+	local cutter = cutterAt(self, seq)
 	return function()
 		while seq < last do
 			seq = seq + 1
 			local record = decode(entries[seq], seq, characters)
 			if record then
+				cutter:Add(record)
 				return record
 			end
 			countUndecodable(self, seq)
+		end
+		-- Read to its end: a later read from there needs no look-back.
+		if not self.cutters[last] then
+			self.cutters[last] = cutter:Copy()
 		end
 		return nil
 	end
@@ -356,12 +393,14 @@ end
 
 --- Walks the entries of one record kind from the newest back to the oldest, decoding only those: how Core finds
 --- the last build entry (LOG-R36) and each character's last Skill Reading (LOG-R31) without decoding every Cast.
---- An entry of that kind the codec can't read is skipped and counted as `Iterate` does (LOG-R16).
+--- It starts at `fromSeq` when given, else at the log's end. Records it yields carry no session tag. An entry of
+--- that kind the codec can't read is skipped and counted as `Iterate` does (LOG-R16).
 ---@param kind "cast"|"skill"|"build"
+---@param fromSeq integer?
 ---@return fun(): PagleRecord?
-function CatchLog:Reverse(kind)
+function CatchLog:Reverse(kind, fromSeq)
 	local entries, characters = self.data.entries, self.data.characters
-	local seq = #entries + 1
+	local seq = (fromSeq or #entries) + 1
 	return function()
 		while seq > 1 do
 			seq = seq - 1
@@ -382,12 +421,14 @@ end
 --- Appends an entry for `record`, a typed record without `seq` and `id` (`{ kind = "cast", char, time, outcome,
 --- conditions, items = { { itemID, quantity } } }`, `{ kind = "skill", char, time, rank, max, mod }` or
 --- `{ kind = "build", char, time, build, version }`), and returns the record as every reader will see it.
---- Raises an error in the caller, appending nothing, for a record the codec can't write and read back.
+--- A Cast or Skill Reading carries its Session's ID (LOG-R98). Raises an error in the caller, appending nothing, for a
+--- record the codec can't write and read back.
 ---@param record table
 ---@return PagleRecord
 function CatchLog:Append(record)
 	local entries = self.data.entries
 	local seq = #entries + 1
+	local tail = self:tailCutter()
 	local tag = TAGS[record.kind]
 	local ok, entry = pcall(function()
 		local fields = kinds[tag].encode(record)
@@ -401,7 +442,26 @@ function CatchLog:Append(record)
 	end
 	ensureLogId(self.data, record.time)
 	entries[seq] = entry
+	tail:Add(appended)
 	return appended
+end
+
+-- The cutter fed every entry up to the log's end, made from the log the first time it's needed and fed each entry
+-- appended since.
+---@package
+---@return PagleSessionCutter
+function CatchLog:tailCutter()
+	if not self.tail then
+		self.tail = cutterAt(self, #self.data.entries)
+	end
+	return self.tail
+end
+
+--- The log's latest Session (LOG-R60), open or ended, or nil before its first Cast: the cutter's own table, which
+--- changes as Casts are appended to it. Copy it (ns.SessionPayload) before handing it out.
+---@return PagleSession?
+function CatchLog:Session()
+	return self:tailCutter():Session()
 end
 
 --- Creates the log's logId if it has none yet and has a first character (LOG-R15). Core calls it once the
@@ -434,5 +494,5 @@ function ns.OpenCatchLog(saved, global, now)
 		started = true
 	end
 	ensureLogId(data, now)
-	return setmetatable({ data = data, global = global, undecodable = {} }, CatchLog), started
+	return setmetatable({ data = data, global = global, undecodable = {}, cutters = {} }, CatchLog), started
 end

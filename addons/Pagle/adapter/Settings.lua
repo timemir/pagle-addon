@@ -25,6 +25,12 @@ local root
 ---@type table<string, SettingsCategory> the registered topic pages, by topic
 local pages = {}
 
+--- Core's own rows on a topic page, by topic, filled by the file that owns them (adapter/AnnouncementSettings.lua).
+--- Each builds its rows on the page, before the Modules' rows (SET-R3); a topic Core has rows on is always
+--- registered (SET-R1).
+---@type table<string, fun(page: SettingsCategory, layout: SettingsLayout)>
+ns.CoreSettingsRows = {}
+
 ---@class PagleModuleHandle
 local ModuleHandle = ns.ModuleHandle
 
@@ -345,16 +351,20 @@ local function buildPage(topic, page, layout, entries)
 	end
 end
 
--- Registers the root and every topic page that has rows (CORE-R40, CORE-R42, SET-R1). Runs once, outside
--- restriction (CORE-R32).
+-- Registers the root and every topic page that has rows, Core's or a Module's (CORE-R40, CORE-R42, SET-R1). Runs
+-- once, outside restriction (CORE-R32).
 local function register()
 	local modules = ns.Modules:Modules()
 	local category, layout = Settings.RegisterVerticalLayoutCategory(L.SETTINGS_CATEGORY)
 	buildRoot(category, layout, #modules > 0)
 	for _, topic in ipairs(ns.SETTINGS_TOPICS) do
 		local entries = rows:Page(topic, modules)
-		if #entries > 0 then
+		local coreRows = ns.CoreSettingsRows[topic]
+		if coreRows or #entries > 0 then
 			local page, pageLayout = Settings.RegisterVerticalLayoutSubcategory(category, L.SETTINGS_PAGES[topic])
+			if coreRows then
+				coreRows(page, pageLayout)
+			end
 			buildPage(topic, page, pageLayout, entries)
 			pages[topic] = page
 		end

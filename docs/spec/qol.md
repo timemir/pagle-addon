@@ -49,7 +49,7 @@ Terms are used as `CONTEXT.md` defines them. A **game action** is the character 
 - **QOL-R3** QoL keeps no projection, appends no Module records, raises no moments, sets no summary line, pays no Coins, registers no goods, slots or tracker. It never reads the Catch log.
 - **QOL-R4** Core alone observes Casts and Catches (ADR 0001). QoL reads the live game state it needs to choose and arm its next action (the main-hand item, bag counts, the pole's lure enchant, mount state, open loot windows, the end of the player's channel, equipment sets, key bindings) and uses it for nothing else: it records, counts and publishes none of it.
 - **QOL-R5** Everything QoL does on its own (on an event, a timer or a setting change) changes only bindings, CVars, equipment-set definitions and frames, never game state. Every game action QoL makes possible is the target of one press (QOL-R24).
-- **QOL-R6** QoL uses no secure snippets (`SecureHandlerWrapScript` and the like), no macro text with more than one command, and never calls `ReloadUI()`.
+- **QOL-R6** QoL uses no secure snippets (`SecureHandlerWrapScript` and the like) and no macro text with more than one command. It calls `ReloadUI()` only from a click on a button that says it reloads (the Reload now popup, QOL-R83), never on its own: not at load, on an event, a timer or a restriction change.
 
 ### Inputs
 
@@ -209,7 +209,7 @@ Terms are used as `CONTEXT.md` defines them. A **game action** is the character 
 - **QOL-R80** At `PLAYER_LOGIN` (which also fires after a `/reload`), QoL looks for an **other fishing-key addon**: one whose folder name is in the conflict list (see [Tunables](#tunables)) and which is loaded (`C_AddOns.IsAddOnLoaded(name)`).
 - **QOL-R81** If one or more is found, QoL shows a native popup (`StaticPopupDialogs`) reading "Two addons want your fishing key." with two choices: "Use Pagle" and "Use {other}", where {other} is the other addon's title, or "Use the others" when there are several. Esc must not count as either choice: "Use {other}" is wired so that closing the popup with Esc can't trigger it (for example as the alt button, `OnAlt`, with Esc going to `OnCancel`). The popup is a real dialog, not a Nudge.
 - **QOL-R82** From the moment a conflict is found until a login without one, QoL **stands down**: it is disarmed, Swap gear does nothing, no Fishing stretch starts, it binds nothing and leases no CVars. Its settings rows and compartment entry stay, and changes to them are saved. The leftover restore (QOL-R64) still runs.
-- **QOL-R83** "Use Pagle" calls `C_AddOns.DisableAddOn(name)` for each other addon found (all characters), then prints "Pagle: turned off {other}. Type /reload to finish.", with {other} the titles joined by ", ". "Use {other}" calls `C_AddOns.DisableAddOn("Pagle_QoL")` (all characters) and prints "Pagle: turned off Pagle QoL. Type /reload to finish. Pagle keeps recording your Catches." Core and the other Modules are untouched. QoL never calls `ReloadUI()`.
+- **QOL-R83** "Use Pagle" calls `C_AddOns.DisableAddOn(name)` for each other addon found (all characters), then prints "Pagle: turned off {other}. Type /reload to finish.", with {other} the titles joined by ", ". "Use {other}" calls `C_AddOns.DisableAddOn("Pagle_QoL")` (all characters) and prints "Pagle: turned off Pagle QoL. Type /reload to finish. Pagle keeps recording your Catches." Core and the other Modules are untouched. After either choice, QoL shows a second native popup, "Reload the interface now to finish?", with "Reload now" (calls `ReloadUI()`, QOL-R6) and "Later". "Later" and Esc close it without reloading, and the chat line still says to type /reload, for a player who closes it.
 - **QOL-R84** Closing the popup with Esc chooses nothing; QoL stands down for this session and asks again at the next login or `/reload`. There is no "don't ask again": whenever both are loaded at a login, the popup returns.
 
 ### Launch re-verification
@@ -218,7 +218,7 @@ Checked on the live build in M8 (each failure retires or changes only the rule i
 
 - **QOL-R100** Clam opening through the secure button (QOL-R24, R55–R57); the lure table's items and enchant IDs and any Forever lures (QOL-R54); any Forever clams (QOL-R57). If clams can't open by item use, clam opening is cut: QOL-R55, R56, R57 are retired and QOL-R20 step 5 removed.
 - **QOL-R101** In-combat weapon swap through a secure button (dropped; a pass opens a new ticket).
-- **QOL-R102** `C_AddOns.DisableAddOn` from addon code, and whether `ReloadUI()` is still protected (QOL-R83). If `ReloadUI()` is no longer protected, a "Reload now" popup button may be added by a new ticket.
+- **QOL-R102** `C_AddOns.DisableAddOn` from addon code, and that `ReloadUI()` is still unprotected (QOL-R6, QOL-R83). Checked on build 1.60.1.70338 on 2026-10-13: a plain addon button whose `OnClick` calls `ReloadUI()` reloads the UI (Thunderz96/forever-addon-kit had found it protected on build 69893, `docs/research/angleur-qol-feasibility.md` [K1]). If it is protected again at launch, the Reload now popup is dropped and the chat line's /reload is the only way to finish.
 - **QOL-R103** The equipment-set limit, with *Pagle Previous* taking a slot (QOL-R42).
 - **QOL-R104** The conflict list's folder names, including the two Forever Fishing Buddy ports (QOL-R80).
 - **QOL-R105** Checked earlier, while building the double-click (Track Q), with `ActionButtonUseKeyDown` at both 1 and 0: a direct `SetOverrideBindingSpell` on `BUTTON2` casts, and `INTERACTTARGET` on `BUTTON2` reels. If either fails, the double-click's target for that action becomes a click on a secure button (`type = "spell"`, as probe B3 proved) or, for the reel, the double-click doesn't reel and the game's own right-click on the bobber does. Result (Forever beta 1.60.1.70338, 2026-10-13; at water, pole in hand, `SoftTargetInteract` 3, right-clicking the world): at 1, the spell override casts and `INTERACTTARGET` reels; at 0, the spell override casts and `INTERACTTARGET` doesn't reel. So the cast stays a spell override at both values, and at 0 the double-click has no reel target (QOL-R24).
@@ -273,7 +273,7 @@ Nothing: QoL fires no events, raises no moments, writes no records, pays no Coin
 
 - **Next-action button** (QOL-R70–R74): one native action-button-style frame. No prototype; the look is the Retail action button.
 - **Nudges** (QOL-R75–R78): one line of text at the top centre.
-- **Conflict popup** (QOL-R81): a native `StaticPopup`.
+- **Conflict popup** (QOL-R81): a native `StaticPopup`, followed after a choice by the **Reload now popup**, another one (QOL-R83).
 - **Fishing settings page:** QoL's rows on Core's Fishing page. Look reference: `prototypes/settings-tree/` (variant B); the row layout belongs to `docs/spec/settings.md`.
 
 ## Settings

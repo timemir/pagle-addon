@@ -25,6 +25,8 @@
 ---@field SetParentInitializer fun(self: SettingsInitializer, parent: SettingsInitializer, modifyPredicate?: fun(): boolean)
 ---@field AddModifyPredicate fun(self: SettingsInitializer, predicate: fun(): boolean)
 ---@field AddSearchTags fun(self: SettingsInitializer, ...: string)
+--- A setting variable (despite the name, any registered setting's) whose change re-evaluates the shown row's state.
+---@field AddEvaluateStateCVar fun(self: SettingsInitializer, variable: string)
 ---@field InitFrame fun(self: SettingsInitializer, frame: SettingsListElementFrame)
 ---@field Resetter fun(self: SettingsInitializer, frame: SettingsListElementFrame)
 ---@field GetExtent fun(self: SettingsInitializer): number?
@@ -36,7 +38,14 @@
 ---@field SetValue fun(self: SettingsProxySetting, value: any)
 ---@field NotifyUpdate fun(self: SettingsProxySetting)   -- reads the value again and fires its value-changed callback
 
+--- SettingsSliderOptionsMixin.
 ---@class SettingsSliderOptions
+---@field SetLabelFormatter fun(self: SettingsSliderOptions, labelType: integer, formatter: fun(value: number): string)
+
+--- The slider's label types (Blizzard_SharedXML/Shared/Slider/MinimalSlider.lua).
+MinimalSliderWithSteppersMixin = {}
+---@type { Left: integer, Right: integer, Top: integer, Min: integer, Max: integer }
+MinimalSliderWithSteppersMixin.Label = {}
 
 ---@class SettingsControlTextContainer
 ---@field Add fun(self: SettingsControlTextContainer, value: any, label: string, tooltip?: string): table

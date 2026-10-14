@@ -27,6 +27,11 @@ local LAYOUT_METHODS = {
 	"SetClampedToScreen",
 	"SetFrameStrata",
 	"SetUserPlaced",
+	"EnableMouse",
+	"SetVertexColor",
+	"SetScrollChild",
+	"SetVerticalScroll",
+	"EnableMouseWheel",
 }
 
 --- A widget (frame, button, font string or texture) that keeps what specs read back: its text, whether it's shown,
@@ -140,6 +145,10 @@ function widgets.newWidget(kind, parent)
 	function widget:GetText()
 		return self.text
 	end
+	-- 6 pixels a character: enough for layout code to size around a text.
+	function widget:GetStringWidth()
+		return #(self.text or "") * 6
+	end
 	function widget:Show()
 		self.shown = true
 	end
@@ -170,9 +179,17 @@ function widgets.newWidget(kind, parent)
 		fontString.fontObject = template
 		return fontString
 	end
+	-- A texture that keeps its layer and what it shows: `texture` (SetTexture's file ID or path) or `color`
+	-- ({ r, g, b, a }).
 	function widget:CreateTexture(_, layer)
 		local texture = widgets.newWidget("Texture", self)
 		texture.layer = layer
+		texture.SetTexture = function(region, file)
+			region.texture = file
+		end
+		texture.SetColorTexture = function(region, r, g, b, a)
+			region.color = { r, g, b, a }
+		end
 		return texture
 	end
 	for _, method in ipairs(LAYOUT_METHODS) do

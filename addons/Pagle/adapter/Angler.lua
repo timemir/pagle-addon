@@ -81,10 +81,14 @@ function ns.SeeCharacter()
 	end
 end
 
---- Login step 4 (LOG-R1): appends a build entry if the client's build differs from the last one logged (LOG-R36).
+--- Login step 4 (LOG-R1): appends a build entry if the client's build differs from the last one logged (LOG-R36),
+--- and hands it to the projections live (LOG-R73).
 function ns.LogBuild()
 	local version, build = GetBuildInfo()
-	ns.angler:LogBuild(tonumber(build) --[[@as integer]], version, GetServerTime())
+	local appended = ns.angler:LogBuild(tonumber(build) --[[@as integer]], version, GetServerTime())
+	if appended then
+		ns.projections:Live(appended) -- LOG-R73
+	end
 end
 
 --- Reads fishing skill (LOG-R31): at login (LOG-R1 step 4), on SKILL_LINES_CHANGED and on CHAT_MSG_SKILL. A Skill
@@ -98,6 +102,7 @@ function ns.ReadSkill()
 		local reading = (rank and max and mod) and { rank = rank, max = max, mod = mod } or nil
 		local appended = ns.angler:ReadSkill(reading, GetServerTime())
 		if appended then
+			ns.projections:Live(appended) -- before SkillChanged (LOG-R73)
 			ns.Fire("SkillChanged", appended)
 		end
 	end

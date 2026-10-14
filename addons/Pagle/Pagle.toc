@@ -6,7 +6,6 @@
 ## Category: Professions
 ## Version: @project-version@
 ## SavedVariables: PagleLog, PagleDB
-## AddonCompartmentFunc: Pagle_OnAddonCompartmentClick
 
 libs\LibStub\LibStub.lua
 libs\CallbackHandler-1.0\CallbackHandler-1.0.lua
@@ -25,7 +24,9 @@ logic\WorkQueue.lua
 logic\Conditions.lua
 logic\LiveConditions.lua
 logic\Modules.lua
+logic\Sessions.lua
 logic\CatchLog.lua
+logic\Projections.lua
 logic\Migrations.lua
 logic\Catalogue.lua
 logic\Areas.lua
@@ -34,8 +35,14 @@ logic\Fishing.lua
 logic\Diagnostics.lua
 logic\Settings.lua
 logic\Slash.lua
+logic\Wallet.lua
+logic\Moments.lua
+logic\Summary.lua
+logic\Cards.lua
+logic\Announcements.lua
 logic\Menu.lua
 logic\ReloadReminder.lua
+logic\Wiring.lua
 adapter\Core.lua
 adapter\Callbacks.lua
 adapter\Events.lua
@@ -44,12 +51,22 @@ adapter\Conditions.lua
 adapter\Catalogue.lua
 adapter\LiveConditions.lua
 adapter\Modules.lua
+adapter\Host.lua
 adapter\CatchLog.lua
+adapter\Projections.lua
 adapter\Angler.lua
 adapter\Fishing.lua
 adapter\Diagnostics.lua
+adapter\Sessions.lua
 adapter\Settings.lua
+adapter\AnnouncementSettings.lua
 adapter\Slash.lua
+adapter\Wallet.lua
+adapter\Moments.lua
+adapter\Summary.lua
+adapter\Timber.lua
+adapter\Announcements.lua
+adapter\Cards.lua
 adapter\Menu.lua
 adapter\ReloadReminder.lua
 adapter\Login.lua

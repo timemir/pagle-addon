@@ -278,6 +278,29 @@ copy
 printf '\n[[alias]]\nfrom = 16562\nto = 267\n' >>"$scratch/tree/data/forever/aliases.toml"
 expect "an alias without a why fails generator" generator "data/forever/aliases.toml: alias[10]: missing key 'why'"
 
+copy
+# Drops Raw Nightfin Snapper's category, the line after its table header.
+sed -i '/^\[item\.13759\]$/{n;d;}' "$scratch/tree/data/forever/items.toml"
+expect "an item with no category fails generator" generator "data/forever/items.toml: item.13759: no category"
+
+copy
+# Drops spring's why, the second line after its table header.
+sed -i '/^\[window\.spring\]$/{n;n;d;}' "$scratch/tree/data/forever/windows.toml"
+expect "a window without a why fails generator" generator "data/forever/windows.toml: window.spring: missing key 'why'"
+
+copy
+printf '\n[[catch]]\narea = 33\nitem = 6303\nop = "add"\ngate = "dusk"\nwhy = "planted"\n' \
+	>>"$scratch/tree/data/forever/areas.toml"
+expect "a catch gated by an unknown window fails generator" generator "gate: 'dusk' isn't a window ID (DATA-R35)"
+
+copy
+printf '\n[pool.planted]\nentries = [999999]\n' >>"$scratch/tree/data/forever/pools.toml"
+expect "a pool type without a why fails generator" generator "data/forever/pools.toml: pool.planted: missing key 'why'"
+
+copy
+sed -i '1i colour = "red"' "$scratch/tree/data/observed/dev.toml"
+expect "an unknown key in dev.toml fails generator" generator "data/observed/dev.toml: unknown key 'colour'"
+
 wait
 report
 if ((reported != cases)); then

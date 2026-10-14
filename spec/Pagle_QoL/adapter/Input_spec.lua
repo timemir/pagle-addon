@@ -3,6 +3,8 @@
 -- through Core's own.
 
 local CAST = "SPELL Fishing"
+-- The Curio Shop entry Core puts before Settings, with no Coins (CORE-R50).
+local CURIO_SHOP = "Curio Shop  0 |TInterface\\MoneyFrame\\UI-GoldIcon:0|t"
 
 -- QoL loaded against FakePagle and logged in, with F bound to the Fishing key.
 ---@return FakePagle fake
@@ -41,7 +43,7 @@ describe("Input", function()
 			for i, entry in ipairs(fake.menu()) do
 				labels[i] = entry.label
 			end
-			assert.are.same({ "Input: Both", "Settings" }, labels)
+			assert.are.same({ "Input: Both", CURIO_SHOP, "Settings" }, labels)
 
 			loaded.ns.db.profile.input = "click"
 			assert.are.equal("Input: Double-click", inputEntry(fake).label)
@@ -160,21 +162,20 @@ describe("Input with Core", function()
 
 			-- Clicks Pagle in the Addon Compartment; Core opens its menu on the next frame (CORE-R50).
 			local function openMenu()
-				local func = assert(client.addons.Pagle.metadata).AddonCompartmentFunc
-				loaded.env[func]("Pagle", "LeftButton")
+				client.clickCompartment("Pagle")
 				client.runTimers()
 				return client.menus[#client.menus]
 			end
 
 			local menu = openMenu()
-			assert.are.same({ "Input: Both", "Settings" }, menu.texts())
+			assert.are.same({ "Input: Both", CURIO_SHOP, "Settings" }, menu.texts())
 			menu.click("Input: Both")
-			assert.are.same({ "Input: Fishing key", "Settings" }, openMenu().texts())
+			assert.are.same({ "Input: Fishing key", CURIO_SHOP, "Settings" }, openMenu().texts())
 
 			loaded.env.SlashCmdList.PAGLE("qol input click")
 			assert.are.equal("Pagle: cast with a double right-click.", loaded.printed[#loaded.printed])
 			assert.is_nil(client.overrideAction("F"))
-			assert.are.same({ "Input: Double-click", "Settings" }, openMenu().texts())
+			assert.are.same({ "Input: Double-click", CURIO_SHOP, "Settings" }, openMenu().texts())
 		end
 	)
 end)

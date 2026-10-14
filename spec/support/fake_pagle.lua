@@ -5,13 +5,21 @@
 --   local fake = newFakePagle()
 --   local loaded = fake.load("Pagle_QoL")                 -- the Module sees fake.globals.Pagle as its Pagle
 --   fake.login()                                            -- Core's PLAYER_LOGIN: the character, ModulesChanged
+--   fake.enterWorld()                                       -- login step 3: every projection catches up or rebuilds
 --   fake.fire("RestrictionChanged", true)                   -- any Core event; tables arrive read-only
 --   fake.setRestricted(true)
 --   fake.playCast("caught", { { itemID = 6358, quantity = 1 } }) -- CastStarted … Catch, CastEnded (LOG-R9)
+--   fake.nextFrame()                                        -- the frame after: the Cast's moments are one Announcement
+--   fake.announcements[1].headline.title                    -- what Core would show (also .stamps, .more, .coins)
+--
+-- A Module raises moments only for what is worth one: an ordinary Catch raises nothing and never pops up (ANN-R13),
+-- so a Module spec playing an ordinary Cast expects fake.announcements to stay empty.
 --
 -- It is built on Core's real logic/: each FakePagle loads Pagle.toc's data/, locale/ and logic/ files (and the
--- CallbackHandler bus) afresh, so what it validates, computes and refuses is what Core does. Only the adapter part
--- is faked.
+-- CallbackHandler bus) afresh, so what it validates, computes and refuses is what Core does. Core's projections,
+-- Sessions, moments, Session summary, cards and wallet are built and connected by logic/Wiring.lua, which Core's
+-- adapter runs too: the fake hands it a host over its fakes where Core's adapter hands it the client (adapter/Host.lua).
+-- Only the client is faked.
 --
 -- Records Core hands to Modules are shared and immutable (CORE-R18). FakePagle hands out read-only proxies
 -- instead, which raise an error on any write, so a Module that writes to one fails its spec. Lua 5.1 can't make a
@@ -20,7 +28,8 @@
 -- itself uses fake.globals.pairs and friends.
 --
 -- Extending it: each Core ticket that adds a Pagle call or a Module handle method adds a part (see `part` below)
--- that fakes it, specced in spec/support/fake_pagle_spec.lua against the rule Core follows.
+-- that fakes it, specced in spec/support/fake_pagle_spec.lua against the rule Core follows. Glue between Core's
+-- parts goes in a logic/ factory both call (logic/Wiring.lua), never in a copy here.
 
 --- A fresh Core double. Every field is the spec's to read; `addons` and `Pagle` are also the spec's to change.
 ---@class FakePagle
@@ -38,7 +47,15 @@
 --- RegisterUnitEvent for a WoW event, as the client would fire it. A unit event reaches only its unit's handlers.
 ---@field setRestricted fun(isRestricted: boolean) Sets the restriction state; RestrictionChanged fires on a change.
 ---@field login fun() Does Core's PLAYER_LOGIN work: adds the character (PLAYER_GUID) to the Angler, then fires
---- ModulesChanged. Raises an error if called twice.
+--- ModulesChanged. Raises an error if called twice. The log's length then is loginSeq (LOG-R1): what the spec
+--- appended to fake.catchLog before it is history, and anything after it reaches projections live.
+---@field enterWorld fun() Login step 3 at the first PLAYER_ENTERING_WORLD (LOG-R1): starts every projection's
+--- catch-up or rebuild (LOG-R71, LOG-R72) and runs it to the end at once, then its done and the live entries queued
+--- behind it. Raises an error before login or a second time.
+---@field projections PagleProjections Core's real projection machinery, with its seams: IsUpdating, Mode,
+--- WhenIdle and Live.
+---@field live fun(record: PagleRecord) Hands an entry the spec appended to fake.catchLog to the projections, as Core
+--- does with every entry it appends (LOG-R73); playCast and readSkill do it themselves.
 ---@field readSkill fun(rank: integer, max: integer, mod: integer) Reads fishing skill as Core does after login: an
 --- S1 when rank or max changed, then SkillChanged; then fake.conditions takes the rank and modifier, firing
 --- ConditionsChanged({"skill"}) if either changed. Does nothing before login.
@@ -49,15 +66,43 @@
 --- when Core registers no page (CORE-R42). A button row's caption is nil when its label is on the button (SET-R2).
 ---@field refreshed { module: string, id: string }[] Each row M:RefreshSetting refreshed, in order: by Module name
 --- and the row's id, one per value row with that id (CORE-R42). None before login, as no page is registered yet.
----@field reported string[] Each error Core reported through geterrorhandler(), e.g. a late M:AddSetting or a
---- Module function that raised under securecallfunction.
+---@field reported string[] Each error Core reported through geterrorhandler(), e.g. a late M:AddSetting, a
+--- Module function that raised under securecallfunction, or a moment dropped in a replay or rebuild (ANN-R4). A
+--- spec that gets one must read this list (assert it), or it fails at its end (spec/support/errors.lua).
 ---@field print fun(line: string) What Core's print does: adds a chat line to `printed`.
 ---@field report fun(err: any) What Core's geterrorhandler() does: adds the error to `reported`.
 ---@field securecall fun(fn: function, ...: any): ... What Core's securecallfunction does: runs `fn`; on an error,
 --- reports it and returns nothing.
 ---@field openedSettings string[] What each Pagle.OpenSettings opened: "root" or the topic (CORE-R43).
 ---@field menu fun(): PagleMenuEntry[] The compartment menu as it would open now, labels read (CORE-R50, CORE-R52);
---- each entry's onClick is what clicking it does. Its last entry is Settings.
+--- each entry's onClick is what clicking it does. Its last two entries are the Curio Shop (disabled) and Settings.
+---@field coinReports { module: string, total: integer }[] Each M:ReportCoinsEarned Core accepted, in order, an
+--- unchanged total too (SHOP-R2).
+---@field setSpent fun(spent: integer) Sets the Coins spent, as the Curio Shop will (M4): BalanceChanged fires if the
+--- balance or held changes (SHOP-R12).
+---@field announcements PagleAnnouncement[] Each Announcement Core would hand the display, in order (ANN-R11): its
+--- headline, rung, stamps (at most 4), more ("+N"), coins and every moment, ranked. One per Cast, made on the frame
+--- after its moments were raised, or after the last projection finishes (ANN-R10); one per moment without a Cast.
+---@field summarized PagleRaisedMoment[] Each moment Core kept, as it was raised, shown or not (ANN-R25): a
+--- summaryOnly one is here and never in announcements. A moment Core dropped (ANN-R4) is in neither.
+---@field global table PagleDB.global, the one the fake's Core keeps all its keys in, from Core's defaults
+--- (ns.PAGLEDB_DEFAULTS): `coins.earned`, each Module's last reported total by def.name (SHOP-R3);
+--- `lastEndedSession` (LOG-R63); and the Session summary keys (announcements.md › Data): `summary` (the open
+--- Session's moments and every Module's M:SetSummaryLine lines), `pending` (moments raised with no Session open,
+--- ANN-R52), `cards` (each SessionEnded's card for a Session that raised a moment, ANN-R53, at most 3, ANN-R54) and
+--- `writeUp` (the Write-up sections waiting, ANN-R61). A spec may seed its keys before login, as a saved PagleDB.
+---@field profile table PagleDB.profile, from Core's defaults: `announcements.cozy` is Cozy mode (ANN-R62), off; a
+--- spec may set it.
+---@field writeUps PagleWriteUpStored[] Each Write-up section Core kept from a Module's M:RaiseWriteUp, in order, as
+--- stored: module, order, title, heading, lines (ANN-R60). Closing the Write-up card doesn't empty it.
+---@field cardsShown PagleCard[] Each card Core would show, in order (ANN-R21): the Write-up (title "Write-up" and
+--- writeUp, its sections by Module order) before the stored Session cards, oldest first, one at a time. None shows
+--- before the second fake.nextFrame after the projections are idle (enterWorld).
+---@field closeCard fun() The player closes the card on screen (the last in cardsShown): it leaves global.cards, or
+--- the Write-up's sections leave global.writeUp, and the next card shows (ANN-R54, ANN-R61).
+---@field nextFrame fun() Runs the next frame: what Core queued for it so far, such as flushing moments into
+--- fake.announcements (ANN-R10, ANN-R12).
+---@field queueFrame fun(step: fun()) Queues a step for the next fake.nextFrame; the parts' own frame scheduler.
 ---@field slash fun(line: string) Types `/pagle <line>` (CORE-R60–R62); help lines go to `printed`.
 ---@field load fun(name: string, options: table?): LoadedAddon Loads a Module with `loadAddon` against this fake:
 --- `globals`, and of Pagle.toc only the vendored libs/ the Module reaches through LibStub (CORE-R6). Options as
@@ -78,7 +123,11 @@
 ---@field loot fun(items: PagleLootItem[]?, isFishing: boolean?) LOOT_READY with these items; fishing loot by default.
 ---@field closeLoot fun() LOOT_CLOSED.
 ---@field escape fun() The game reports the fish escaped (LOG-R6).
----@field wait fun(seconds: number) Moves the fake's clock on, running each grace timer that comes due.
+---@field wait fun(seconds: number) Moves the fake's clock on, running each grace timer that comes due, and ending
+--- the Session 900 s after its last Cast (LOG-R62).
+---@field serverTime fun(): integer The fake's server time: SERVER_TIME plus its clock, in whole seconds.
+---@field compartmentText fun(): string The compartment entry's label as it reads now (CORE-R51): "Pagle", or with
+--- moments kept while Cozy mode was on and no Session summary card shown since, "Pagle · 2 waiting" (ANN-R42).
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local newSecureCall = dofile("spec/support/securecall.lua")
@@ -95,6 +144,21 @@ local function copyConditions(conditions)
 	end
 	return copy
 end
+
+-- A deep copy of a table of plain values.
+---@param source table
+---@return table
+local function copyTable(source)
+	local copy = {}
+	for key, value in pairs(source) do
+		copy[key] = type(value) == "table" and copyTable(value) or value
+	end
+	return copy
+end
+
+--- FakePagle's PagleHost: the client's seams over its fakes, plus its timer fake (spec/support/timers.lua).
+---@class FakeHost: PagleHost
+---@field timers table the fake's clock: time(), after(seconds, fn) and advance(seconds)
 
 -- Core's logic/ for one fake: Pagle.toc's libs (for the bus), generated data/, locale/ and logic/ files, in TOC
 -- order, sharing one ns, as the client would load them. None uses WoW globals (CORE-R7), so plain Lua runs them.
@@ -200,11 +264,12 @@ local function proxyUnpack(t, i, j)
 end
 
 --- One part of the fake: it adds a Core topic's calls to `fake.Pagle` (and fake helpers to `fake`), using Core's
---- real logic in `ns`. Parts run in order, each on a fresh fake.
----@type fun(fake: FakePagle, Pagle: table, ns: table)[]
+--- real logic in `ns` and, where Core's adapter runs logic/Wiring.lua, the same wiring over `host`, the fake's
+--- PagleHost (newFakePagle below). Parts run in order, each on a fresh fake.
+---@type fun(fake: FakePagle, Pagle: table, ns: table, host: FakeHost)[]
 local parts = {}
 
----@param build fun(fake: FakePagle, Pagle: table, ns: table)
+---@param build fun(fake: FakePagle, Pagle: table, ns: table, host: FakeHost)
 local function part(build)
 	parts[#parts + 1] = build
 end
@@ -261,7 +326,6 @@ part(function(fake, Pagle, ns)
 		fake.addons[ns.ModuleAddOn(name)] =
 			{ enabled = true, loaded = true, metadata = { ["X-Pagle-API"] = tostring(Pagle.API_VERSION) } }
 	end
-	fake.registry = ns.NewModuleRegistry(Pagle.API_VERSION)
 
 	local function readAPI(addon)
 		local info = fake.addons[addon]
@@ -338,6 +402,53 @@ part(function(fake, Pagle, ns)
 	end
 end)
 
+-- The wallet (SHOP-R2–R4, SHOP-R12), on Core's wiring over fake.global.coins: M:ReportCoinsEarned,
+-- Pagle.GetBalance (read-only) and BalanceChanged. Each report Core accepts is also in fake.coinReports. PagleDB is
+-- open from the start, as it is by the time any Module registers (login step 1).
+part(function(fake, Pagle, ns, host)
+	fake.coinReports = {}
+	ns.WireWallet(host)
+	ns.OpenWallet()
+	local wallet = ns.wallet
+	local report = wallet.Report
+	function wallet.Report(self, name, total)
+		fake.coinReports[#fake.coinReports + 1] = { module = name, total = total }
+		report(self, name, total)
+	end
+
+	function Pagle.GetBalance()
+		return readOnly(wallet:Get())
+	end
+
+	function fake.setSpent(spent)
+		wallet:SetSpent(spent)
+	end
+end)
+
+-- Moments (ANN-R1–R4, ANN-R10–R12), on Core's wiring over fake.projections' seams: M:RaiseMoment validates and
+-- drops as Core does, and each Announcement Core would show lands in fake.announcements when fake.nextFrame runs the
+-- frame after. A dropped moment's report is in fake.reported.
+part(function(fake, _, ns, host)
+	fake.announcements = {}
+	local frame = {}
+	ns.WireMoments(host, function(announcement)
+		fake.announcements[#fake.announcements + 1] = announcement
+	end)
+
+	function fake.nextFrame()
+		local steps = frame
+		frame = {}
+		for _, step in ipairs(steps) do
+			step()
+		end
+	end
+
+	-- Queues a step of a later part for the next fake.nextFrame.
+	function fake.queueFrame(step)
+		frame[#frame + 1] = step
+	end
+end)
+
 -- The compartment menu and /pagle (CORE-R50, CORE-R52, CORE-R60–R62), on Core's real logic. Modules' subcommands
 -- are added at login, by def.order; one Core skips is in fake.reported. Labels and subcommands run through
 -- fake.securecall, as Core's run through securecallfunction.
@@ -352,7 +463,8 @@ part(function(fake, Pagle, ns)
 	end
 	local settings = ns.SettingsMenuEntry(openSettings)
 	function fake.menu()
-		return ns.CompartmentMenu(fake.registry:Modules(), settings, fake.securecall)
+		local shop = ns.CurioShopMenuEntry(Pagle.GetBalance(), breakUpLargeNumbers)
+		return ns.CompartmentMenu(fake.registry:Modules(), shop, settings, fake.securecall)
 	end
 
 	function fake.slash(line)
@@ -368,12 +480,41 @@ end)
 -- The Catch log (LOG-R10–R16, LOG-R42) on Core's real codec, over an empty in-memory PagleLog. A spec adds
 -- characters to fake.catchLog.data.characters and entries with fake.catchLog:Append(record).
 part(function(fake, Pagle, ns)
-	fake.catchLog = ns.OpenCatchLog(nil, { decodeErrors = 0 }, SERVER_TIME)
+	fake.catchLog = ns.OpenCatchLog(nil, fake.global, SERVER_TIME)
 	function Pagle.IterateCatches(afterSeq)
 		local iterate = fake.catchLog:Iterate(afterSeq)
 		return function()
 			return readOnly(iterate())
 		end
+	end
+end)
+
+-- Projections (LOG-R70–R77), on Core's wiring over fake.catchLog: M:NewProjection and M:IterateCatches on the
+-- handle. login notes loginSeq (the log's length then); enterWorld is login step 3, running every catch-up and
+-- rebuild at once; each entry the fake appends afterwards (playCast, readSkill) is handed over live, before its events.
+-- Records reach apply read-only (CORE-R18). Module code that raises goes to fake.reported.
+part(function(fake, _, ns, host)
+	ns.WireProjections(host)
+	fake.projections = ns.projections
+
+	local loginSeq
+	local login = fake.login
+	function fake.login()
+		loginSeq = #fake.catchLog.data.entries
+		login()
+	end
+
+	local enteredWorld = false
+	function fake.enterWorld()
+		assert(loginSeq, "FakePagle: PLAYER_ENTERING_WORLD comes after fake.login()")
+		assert(not enteredWorld, "FakePagle: login step 3 runs at the first PLAYER_ENTERING_WORLD only")
+		enteredWorld = true
+		fake.projections:Start(loginSeq)
+	end
+
+	-- Hands an entry the fake just appended to the projections (LOG-R73).
+	function fake.live(record)
+		fake.projections:Live(readOnly(record))
 	end
 end)
 
@@ -406,6 +547,7 @@ part(function(fake, Pagle, ns)
 		end
 		local appended = angler:ReadSkill({ rank = rank, max = max, mod = mod }, now)
 		if appended then
+			fake.live(appended)
 			fake.fire("SkillChanged", appended)
 		end
 		-- The live conditions follow the reading, through the same tracker as setConditions (LOG-R32, LOG-R47).
@@ -473,9 +615,9 @@ end)
 -- with playCast) and the Module gets Core's events, each Cast recorded to fake.catchLog first, with fake.conditions
 -- as its snapshot, at the fake's server time. The fake's clock starts at 0 (server time SERVER_TIME) and moves only
 -- with fake.wait, which runs the grace timers that come due, on the fake client's timer fake (spec/support/timers.lua).
-part(function(fake, Pagle, ns)
+part(function(fake, Pagle, ns, host)
 	local FISHING = 7731 -- Fishing (Classic Journeyman), on the generated fishing-spell list
-	local clock = newClock()
+	local clock = host.timers
 	local recorded -- the Cast record last appended
 
 	local fishing = ns.NewFishing({
@@ -495,6 +637,8 @@ part(function(fake, Pagle, ns)
 				conditions = conditions,
 				items = items,
 			})
+			ns.sessions:Cast() -- LOG-R9 step 3
+			fake.live(recorded)
 			return recorded
 		end,
 		fire = fake.fire,
@@ -534,6 +678,25 @@ part(function(fake, Pagle, ns)
 
 	fake.wait = clock.advance
 
+	-- Sessions (LOG-R60–R64), on Core's wiring over fake.catchLog and fake.global, at the fake's server time. The
+	-- session tag is the Catch log's own. Login opens them, noting the latest Session (one ended before it gets its
+	-- SessionEnded, whileAway, once no projection is updating, unless global.lastEndedSession names it); each Cast
+	-- fires the Session events after its append (LOG-R9 step 3); the Session ends when fake.wait has passed 900 s
+	-- after its last Cast.
+	fake.serverTime = host.serverTime
+	Pagle.SESSION_RULES_VERSION = ns.SESSION_RULES_VERSION
+	ns.WireSessions(host)
+
+	local login = fake.login
+	function fake.login()
+		ns.sessions:Open()
+		login()
+	end
+
+	function Pagle.GetSession()
+		return readOnly(ns.sessions:Get())
+	end
+
 	function fake.playCast(outcome, items)
 		recorded = nil
 		fake.channel()
@@ -552,19 +715,71 @@ part(function(fake, Pagle, ns)
 	end
 end)
 
+-- The Session summary and the cards (ANN-R21, ANN-R50–R54, ANN-R60–R62), on Core's wiring over fake.global: each
+-- moment Core keeps goes to the open Session's summary (or global.pending with none open) and to fake.summarized,
+-- M:SetSummaryLine sets lines, and SessionEnded makes a card in fake.global.cards for a Session that raised a moment.
+-- M:RaiseWriteUp keeps a section in fake.global.writeUp and fake.writeUps. Cards show in fake.cardsShown, as Core's
+-- would, from the second fake.nextFrame after enterWorld; the fake has no lanes, so they never wait for them, nor for
+-- the combat hold. Each moment kept in Cozy mode counts on the compartment's label until a Session summary card shows
+-- (ANN-R42), and a card shows each moment expired by the time it was made with its pastText (ANN-R45).
+part(function(fake, _, ns, host)
+	fake.summarized = {}
+	fake.writeUps = {}
+	fake.cardsShown = {}
+	ns.WireCards(host, {
+		show = function(card)
+			fake.cardsShown[#fake.cardsShown + 1] = card
+		end,
+		hide = function() end,
+		lanesEmpty = function()
+			return true
+		end,
+		held = function()
+			return false
+		end,
+	})
+	-- Each section Core keeps is also noted in fake.writeUps, which closing the Write-up doesn't empty.
+	local cards = ns.cards
+	local raise = cards.Raise
+	function cards.Raise(self, module, section)
+		raise(self, module, section)
+		local writeUp = fake.global.writeUp
+		fake.writeUps[#fake.writeUps + 1] = writeUp[#writeUp]
+	end
+	function fake.closeCard()
+		cards:Close(fake.cardsShown[#fake.cardsShown])
+	end
+
+	ns.WireSummary(host, function() end)
+	-- Every moment Core keeps is also noted in fake.summarized, as raised.
+	local summary = ns.summary
+	local add = summary.Add
+	function summary.Add(self, moment)
+		fake.summarized[#fake.summarized + 1] = moment
+		add(self, moment)
+	end
+	function fake.compartmentText()
+		return ns.CompartmentText(summary:Waiting())
+	end
+end)
+
 --- A fresh FakePagle: no Module registered, not restricted, before PLAYER_LOGIN.
 ---@return FakePagle
 function newFakePagle()
 	local ns, env = loadCoreLogic()
 	-- Pagle.API_VERSION as adapter/Core.lua sets it; fake_pagle_spec.lua checks they agree.
 	local Pagle = { API_VERSION = 1 }
-	local fake = { Pagle = Pagle, ns = ns, printed = {}, reported = {}, readOnly = readOnly }
+	local fake = { Pagle = Pagle, ns = ns, printed = {}, readOnly = readOnly }
+	-- PagleDB as login step 1 opens it: Core's defaults, and nothing saved. A spec seeds fake.global's keys and
+	-- fake.profile's before login, as a saved PagleDB would hold them.
+	fake.global = copyTable(ns.PAGLEDB_DEFAULTS.global)
+	fake.profile = copyTable(ns.PAGLEDB_DEFAULTS.profile)
+	fake.registry = ns.NewModuleRegistry(Pagle.API_VERSION)
 	function fake.print(line)
 		fake.printed[#fake.printed + 1] = line
 	end
-	function fake.report(err)
-		fake.reported[#fake.reported + 1] = tostring(err)
-	end
+	-- fake.reported: a spec that gets a report must read it, or it fails at its end (spec/support/errors.lua).
+	fake.report = watchErrors(fake, "reported")
 	fake.securecall = newSecureCall(function()
 		return fake.report
 	end)
@@ -581,8 +796,48 @@ function newFakePagle()
 		bus:Fire(event, unpack(args, 1, count))
 	end
 
+	-- The fake's PagleHost, which logic/Wiring.lua builds Core's parts over, as adapter/Host.lua's is the client.
+	local timers = newClock()
+	---@type FakeHost
+	local host = {
+		registry = fake.registry,
+		db = function()
+			return { global = fake.global, profile = fake.profile }
+		end,
+		catchLog = function()
+			return fake.catchLog
+		end,
+		fire = fake.fire,
+		listen = function(owner, event, fn)
+			Pagle.RegisterCallback(owner, event, fn)
+		end,
+		fingerprint = function()
+			return Pagle.CONTENT_FINGERPRINT
+		end,
+		iterate = function(afterSeq)
+			local records = fake.catchLog:Iterate(afterSeq)
+			return function()
+				return readOnly(records())
+			end
+		end,
+		serverTime = function()
+			return SERVER_TIME + math.floor(timers.time())
+		end,
+		after = timers.after,
+		nextFrame = function(step)
+			fake.queueFrame(step)
+		end,
+		clock = function()
+			return 0
+		end,
+		call = fake.securecall,
+		report = fake.report,
+		syncLimit = math.huge, -- every catch-up and rebuild runs at once
+		timers = timers,
+	}
+
 	for _, build in ipairs(parts) do
-		build(fake, Pagle, ns)
+		build(fake, Pagle, ns, host)
 	end
 	fake.globals = {
 		Pagle = readOnly(Pagle),

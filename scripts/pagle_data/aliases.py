@@ -1,23 +1,17 @@
 """The alias table's rules (DATA-R32): the checks on aliases.toml's entries, and the candidates
-scripts/generate-data.py --propose-aliases prints and every run warns about until they are committed (DATA-R64).
+scripts/generate-data.py --propose-aliases prints and every run counts in one warning until they are committed
+(DATA-R64).
 
 An alias maps an area on another map to the baseline fishing area it stands for (Forever's map 2940 duplicates,
-e.g. 16521 → 18). In M1 an area's catch list is its rows in the baseline's area_loot.csv (roadmap M1), until real
-catch lists exist in M2.
+e.g. 16521 → 18). The fishing areas these take are the areas with a catch list (DATA-R26, pagle_data.areas).
 """
 
 from collections.abc import Collection, Iterable
 from dataclasses import dataclass
 
-from pagle_data.baseline import BaselineLayer
 from pagle_data.db2 import Db2Layer
 from pagle_data.errors import Problems
 from pagle_data.forever import Alias
-
-
-def fishing_areas(baseline: BaselineLayer) -> set[int]:
-    """The baseline fishing areas: every area with a catch list, which in M1 is a row in area_loot.csv."""
-    return {row.area for row in baseline.area_loot}
 
 
 def check_aliases(aliases: Iterable[Alias], fishing: Collection[int], problems: Problems) -> None:
@@ -79,15 +73,6 @@ def _name(db2: Db2Layer, area_id: int) -> str:
 
 def _label(db2: Db2Layer, area_id: int) -> str:
     return f"{_name(db2, area_id)}, continent {db2.areas[area_id].continent}"
-
-
-def proposal_line(db2: Db2Layer, proposal: Proposal) -> str:
-    """A proposal on one line, for DATA-R64's warning. Source and target share their names, by DATA-R32."""
-    source, target = db2.areas[proposal.source], db2.areas[proposal.target]
-    return (
-        f"{proposal.source} -> {proposal.target}"
-        f" ({_name(db2, proposal.source)}, continent {source.continent} -> {target.continent})"
-    )
 
 
 def proposal_toml(db2: Db2Layer, proposal: Proposal) -> str:

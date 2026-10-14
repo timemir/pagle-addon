@@ -1,20 +1,39 @@
 """scripts/update-db2.py's command line (DATA-R12): downloads one Forever build's DB2 tables from wago.tools and
-rewrites data/db2/ (DATA-R11). So far that is AreaTable, giving areas.csv, and build.toml; items.csv comes with items
-in M2. It is run by hand, in a PR; data edits that follow from the diff are made by hand.
+rewrites data/db2/ (DATA-R11): AreaTable gives areas.csv; ItemSparse joined with Item, cut to the item universe
+(DATA-R15), gives items.csv; and build.toml. It is run by hand, in a PR; data edits that follow from the diff are made
+by hand.
 """
 
 import argparse
 import re
 import sys
 import urllib.request
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from pathlib import Path
 
-from pagle_data.db2 import AREA_COLUMNS, AREAS, BUILD, Area, Db2Layer, parse_areas, read_build
-from pagle_data.errors import Problems
+from pagle_data.baseline import read_baseline
+from pagle_data.db2 import (
+    AREA_COLUMNS,
+    AREAS,
+    BUILD,
+    ITEM_COLUMNS,
+    ITEMS,
+    Area,
+    Db2Layer,
+    Item,
+    parse_areas,
+    parse_table,
+    read_build,
+)
+from pagle_data.errors import At, Problems
 from pagle_data.files import csv_text, write_atomic
+from pagle_data.universe import item_universe
 
 PROG = "update-db2"
+WROTE_NOTHING = "wrote nothing"
+
+# The tables a run downloads (DATA-R12).
+TABLES = ("AreaTable", "ItemSparse", "Item")
 
 # A Forever build as wago.tools names it: the version string, then the build number.
 _BUILD = re.compile(r"([0-9]+\.[0-9]+\.[0-9]+)\.([1-9][0-9]*)")
@@ -44,6 +63,32 @@ def areas_csv(areas: dict[int, Area]) -> str:
     return csv_text(AREA_COLUMNS, rows)
 
 
+def items_csv(items: dict[int, Item]) -> str:
+    """items.csv (DATA-R11): the header, then one row per item sorted by ID."""
+    rows = [
+        (item_id, item.class_id, item.subclass, item.quality, item.name) for item_id, item in sorted(items.items())
+    ]
+    return csv_text(ITEM_COLUMNS, rows)
+
+
+def join_items(sparse: str, item: str, build: str, universe: frozenset[int], problems: Problems) -> dict[int, Item]:
+    """The universe's items (DATA-R15) that both tables have (DATA-R12): the enUS name and quality from the
+    ItemSparse CSV, ClassID and SubclassID from the Item CSV. Each table's problems go into problems."""
+    sparse_at, item_at = f"ItemSparse {build}", f"Item {build}"
+    names = parse_table(
+        sparse, sparse_at, problems, integers=("ID", "OverallQualityID"), name="Display_lang", other_columns=True
+    )
+    classes = parse_table(
+        item, item_at, problems, integers=("ID", "ClassID", "SubclassID"), name=None, other_columns=True
+    )
+    items: dict[int, Item] = {}
+    for item_id in universe:
+        if item_id in names and item_id in classes:
+            (quality,), (class_id, subclass) = names[item_id].numbers, classes[item_id].numbers
+            items[item_id] = Item(class_id, subclass, quality, names[item_id].name)
+    return items
+
+
 def build_toml(build: int, version: str, products: list[str]) -> str:
     """build.toml (DATA-R11)."""
     listed = ", ".join(f'"{product}"' for product in products)
@@ -64,39 +109,80 @@ def _parser() -> argparse.ArgumentParser:
     return parser
 
 
-def _fail(problems: list[str]) -> int:
-    for problem in problems:
-        print(f"{PROG}: {problem}", file=sys.stderr)
-    print(f"{PROG}: {len(problems)} problem(s); wrote nothing", file=sys.stderr)
+def fail(prog: str, problems: Problems, undone: str) -> int:
+    """Prints every problem (DATA-R63), then their count and what the run didn't do ("wrote nothing"); returns the
+    exit code, 1."""
+    for problem in problems.found:
+        print(f"{prog}: {problem}", file=sys.stderr)
+    print(f"{prog}: {len(problems.found)} problem(s); {undone}", file=sys.stderr)
     return 1
+
+
+def repo_universe(root: Path, problems: Problems) -> frozenset[int]:
+    """The item universe of the repo at root (DATA-R15); empty, with problems, when its sources can't be read."""
+    baseline = read_baseline(root, problems)
+    if problems:
+        return frozenset()
+    return item_universe(root, baseline, problems)
+
+
+def download_tables(
+    wanted: Iterable[tuple[str, str]], fetch: Fetch, problems: Problems
+) -> dict[tuple[str, str], str]:
+    """Each wanted (table, build) as text, downloaded with fetch; each one that can't be had is a problem at its
+    URL."""
+    tables: dict[tuple[str, str], str] = {}
+    for table, build in wanted:
+        url = table_url(table, build)
+        try:
+            body = fetch(url)
+        except OSError as error:
+            problems.add(At(url), f"can't download: {error}")
+            continue
+        try:
+            tables[table, build] = body.decode("utf-8-sig")
+        except UnicodeDecodeError as error:
+            problems.add(At(url), f"not UTF-8: {error}")
+    return tables
 
 
 def main(argv: Sequence[str], root: Path, fetch: Fetch = download) -> int:
     """Runs the command line on the repo at root, downloading with fetch; returns the exit code."""
     args = _parser().parse_args(argv)
+    problems = Problems()
     match = _BUILD.fullmatch(args.build)
     if match is None:
-        return _fail([f"expected a build such as 1.60.1.70338 (version, then build number), got '{args.build}'"])
+        expected = f"expected a build such as 1.60.1.70338 (version, then build number), got '{args.build}'"
+        problems.add(At("build"), expected)
+        return fail(PROG, problems, WROTE_NOTHING)
     version, build = match.group(1), int(match.group(2))
 
-    problems = Problems()
     products = SEED_PRODUCTS
     if (root / BUILD).exists():
         current = Db2Layer()
         read_build(root, current, problems)
         products = current.products
-
-    url = table_url("AreaTable", args.build)
-    try:
-        text = fetch(url).decode("utf-8-sig")
-    except (OSError, UnicodeDecodeError) as error:
-        return _fail([*problems.found, f"can't download {url}: {error}"])
-    areas = parse_areas(text, f"AreaTable {args.build}", problems, other_columns=True)
+    universe = repo_universe(root, problems)
     if problems:
-        return _fail(problems.found)
+        return fail(PROG, problems, WROTE_NOTHING)  # before downloading: without the universe, items.csv can't be cut
+
+    tables = download_tables([(table, args.build) for table in TABLES], fetch, problems)
+    if problems:
+        return fail(PROG, problems, WROTE_NOTHING)
+    areas = parse_areas(tables["AreaTable", args.build], f"AreaTable {args.build}", problems, other_columns=True)
+    items = join_items(tables["ItemSparse", args.build], tables["Item", args.build], args.build, universe, problems)
+    if problems:
+        return fail(PROG, problems, WROTE_NOTHING)
 
     write_atomic(root / AREAS, areas_csv(areas).encode("utf-8"))
+    write_atomic(root / ITEMS, items_csv(items).encode("utf-8"))
     write_atomic(root / BUILD, build_toml(build, version, products).encode("utf-8"))
-    print(f"{PROG}: wrote {AREAS} ({len(areas)} areas) and {BUILD} for {args.build}")
+    print(f"{PROG}: wrote {AREAS} ({len(areas)} areas), {ITEMS} ({len(items)} items) and {BUILD} for {args.build}")
+    missing = sorted(universe - items.keys())
+    if missing:
+        print(
+            f"{PROG}: {len(missing)} item(s) of the universe not in DB2 (DATA-R24): {', '.join(map(str, missing))};"
+            " items.toml may give their class and quality"
+        )
     print(f"{PROG}: now run scripts/generate-data.py and commit data/db2/ with the regenerated files (DATA-R61)")
     return 0
