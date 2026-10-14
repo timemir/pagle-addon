@@ -1,0 +1,17 @@
+## Interface: 16001
+## AllowLoadGameType: camelot
+## Title: Pagle Hunts
+## Notes: Pagle's Hunts: the catches worth fishing for now, soon or later, and the tiers and set titles they earn.
+## Group: Pagle
+## Category: Professions
+## Version: @project-version@
+## Dependencies: Pagle
+## X-Pagle-API: 1
+## SavedVariables: PagleHuntsDB
+
+locale\enUS.lua
+logic\Data.lua
+logic\Module.lua
+logic\HuntList.lua
+logic\Seams.lua
+adapter\Hunts.lua

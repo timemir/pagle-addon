@@ -1,0 +1,109 @@
+-- Pagle_Hunts.toc and what ships beside it (CORE-R2, CORE-R3, CORE-R5; hunts.md › Data).
+
+local DIR = "addons/Pagle_Hunts/"
+
+-- Every file under addons/Pagle_Hunts/ with one of the given extensions, relative to it, sorted.
+---@param extensions string[]
+---@return string[]
+local function filesIn(extensions)
+	local found = {}
+	---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io
+	local find = assert(io.popen("find " .. DIR .. " -type f"))
+	for path in find:lines() do
+		local file = path:sub(#DIR + 1)
+		for _, extension in ipairs(extensions) do
+			if file:sub(-#extension - 1) == "." .. extension then
+				found[#found + 1] = file
+			end
+		end
+	end
+	find:close()
+	table.sort(found)
+	return found
+end
+
+describe("Pagle_Hunts.toc", function()
+	local loaded = loadAddon("Pagle_Hunts", FOREVER_GLOBALS)
+	local fields = assert(loaded.client.addons.Pagle_Hunts.metadata)
+
+	it("has the fields every TOC has (CORE-R2)", function()
+		assert.are.equal("16001", fields.Interface)
+		assert.are.equal("camelot", fields.AllowLoadGameType)
+		assert.are.equal("Pagle", fields.Group)
+		assert.are.equal("Professions", fields.Category)
+		assert.are.equal("@project-version@", fields.Version)
+	end)
+
+	it("names the Module Hunts in its Notes, the glossary's word, not a variant on its Avoid list", function()
+		assert.matches("^Pagle's Hunts: ", fields.Notes)
+		for _, avoided in ipairs({ "Hunt board", "Hunt module" }) do
+			assert.is_nil(fields.Notes:find(avoided, 1, true))
+		end
+	end)
+
+	it("is the addon's only TOC: no per-flavour TOC files (CORE-R2)", function()
+		assert.are.same({ "Pagle_Hunts.toc" }, filesIn({ "toc" }))
+	end)
+
+	it("depends on Pagle, declares X-Pagle-API 1 and loads normally, not on demand (CORE-R3)", function()
+		assert.are.equal("Pagle", fields.Dependencies)
+		assert.are.equal("1", fields["X-Pagle-API"])
+		assert.is_nil(fields.LoadOnDemand)
+	end)
+
+	it("is titled Pagle Hunts, as the Ledger's is Pagle Ledger", function()
+		assert.are.equal("Pagle Hunts", fields.Title)
+	end)
+
+	it("saves PagleHuntsDB account-wide and nothing per character (hunts.md › Data, CORE-R5)", function()
+		assert.are.equal("PagleHuntsDB", fields.SavedVariables)
+		assert.is_nil(fields.SavedVariablesPerCharacter)
+	end)
+
+	it("lists every Lua file in the addon folder, so none is left out of the load (CORE-R2)", function()
+		local listed = addonFiles("Pagle_Hunts")
+		table.sort(listed)
+
+		assert.are.same(filesIn({ "lua" }), listed)
+	end)
+
+	it("splits its code into logic/ and adapter/, its strings in locale/ and only generated files in data/", function()
+		-- CORE-R7, CORE-R8; DATA-R75: the generator writes data/HuntList.lua (and, from the lore batch, data/Lore.lua).
+		local folders = {}
+		for _, file in ipairs(filesIn({ "lua" })) do
+			local folder = file:match("^([^/]+)/")
+			folders[folder] = true
+			if folder == "data" then
+				assert.is_truthy(({ ["data/HuntList.lua"] = true, ["data/Lore.lua"] = true })[file], file)
+			end
+		end
+		folders.data = nil
+
+		assert.are.same({ adapter = true, locale = true, logic = true }, folders)
+	end)
+
+	it(
+		"lists the generated HuntList.lua, once it ships, after locale/enUS.lua and before any code (DATA-R93)",
+		function()
+			-- Whichever of #176 and #179 lands second lists data\HuntList.lua (M5 graph, open question 3). Until it
+			-- ships, the Hunt list reads as empty (HNT-R1).
+			local listed = addonFiles("Pagle_Hunts")
+			local at = {}
+			for index, file in ipairs(listed) do
+				at[file] = index
+			end
+			local huntList = at["data/HuntList.lua"]
+			if huntList == nil then
+				-- Not generated yet, so the folder doesn't hold it either: the test above fails on an unlisted file.
+				return
+			end
+
+			assert.is_true(huntList > at["locale/enUS.lua"])
+			for file, index in pairs(at) do
+				if file:match("^logic/") or file:match("^adapter/") then
+					assert.is_true(huntList < index, file)
+				end
+			end
+		end
+	)
+end)
