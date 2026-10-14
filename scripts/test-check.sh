@@ -286,7 +286,8 @@ printf '\tPagle.API_VERSION = "2"\nend\n' >>"$addon/adapter/Core.lua"
 expect "an inline suppression with codes and a reason passes types" tests "API version 1 before 1.0 (CORE-R15)"
 
 copy
-printf 'auras = [1]\nfishingSpells = [7620]\n' >"$scratch/tree/data/forever/lists.toml"
+# Keeps the auras data/hunts/hunts.toml names (Rack 1280341, Hut 1280342), which DATA-R39 checks before the catalogue.
+printf 'auras = [1280341, 1280342]\nfishingSpells = [7620]\n' >"$scratch/tree/data/forever/lists.toml"
 expect "a data/ change committed without its regenerated file fails generator" generator \
 	"addons/Pagle/data/Catalogue.lua is out of date with data/"
 
