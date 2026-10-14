@@ -119,4 +119,30 @@ ns.L = {
 	XP_BAR_FRESH_ONE = " Fresh Water for %d more Catch.",
 	XP_BAR_FRESH_OTHER = " Fresh Water for %d more Catches.",
 	XP_BAR_SET_ASIDE = "%s XP set aside for the next Prestige",
+
+	-- The Angler page (LED-R146), M3's part (LED-R4): its crumb, the bookplate and the hands on the rod. Numbers in
+	-- %s are BreakUpLargeNumbers'.
+	ANGLER_CRUMB = "The Angler",
+	ANGLER_EX_LIBRIS = "Ex Libris",
+	ANGLER_LEDGER = "The Angler's Ledger",
+	ANGLER_KEPT_SINCE = "kept since %s",
+	ANGLER_LEVEL = "Angler Level %d",
+	ANGLER_COMPLETE = "%d%% of the Ledger complete (%s of %s)",
+	-- The parts of Ledger completion (LED-R71), by part.
+	ANGLER_PARTS = {
+		species = "Species %s of %s",
+		junk = "Junk Museum %s of %s",
+		treasure = "Treasures %s of %s",
+		trophy = "Trophy Room weights %s of %s",
+		zones = "Zones mastered %s of %s",
+	},
+	ANGLER_CATCHES_ONE = "%s Catch",
+	ANGLER_CATCHES_OTHER = "%s Catches",
+	ANGLER_HANDS = "Hands on the Rod",
+	ANGLER_HAND = "%s: skill %d / %d",
+	-- The Skill Milestones (LED-R40): ☑ credited, ☐ not yet.
+	ANGLER_MILESTONES = "Milestones",
+	ANGLER_MILESTONE_DONE = "☑ %d",
+	ANGLER_MILESTONE_OPEN = "☐ %d",
+	ANGLER_MILESTONE_SEPARATOR = "   ",
 }
