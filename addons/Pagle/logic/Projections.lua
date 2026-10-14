@@ -392,9 +392,10 @@ function Projections:Live(record)
 		self.deferred[#self.deferred + 1] = record
 		return
 	end
+	local owner = record.kind == "module" and (record --[[@as PagleModuleRecord]]).module or nil
 	for _, projection in ipairs(self.list) do
 		if not projection.run and not projection.updating and record.seq > projection.def.db.lastSeq then
-			if record.kind == "module" and record.module ~= projection.module then
+			if owner and owner ~= projection.module then
 				projection.def.db.lastSeq = record.seq
 			else
 				applyOne(projection, record, "live")

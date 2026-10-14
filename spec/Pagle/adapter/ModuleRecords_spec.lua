@@ -133,7 +133,7 @@ describe("M:AppendRecord", function()
 			end)
 
 			assert.is_false(ok)
-			assert.matches("ModuleRecords_spec.lua:%d+:", err)
+			assert.matches("ModuleRecords_spec.lua:%d+:", tostring(err))
 			assert.are.equal(before, #loaded.env.PagleLog.entries)
 		end)
 	end
@@ -157,7 +157,7 @@ describe("M:AppendRecord", function()
 		end)
 
 		assert.is_false(ok)
-		assert.matches("ModuleRecords_spec.lua:%d+:.*PLAYER_LOGIN", err)
+		assert.matches("ModuleRecords_spec.lua:%d+:.*PLAYER_LOGIN", tostring(err))
 		assert.are.equal(before, #loaded.env.PagleLog.entries)
 	end)
 

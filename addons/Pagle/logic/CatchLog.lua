@@ -505,9 +505,12 @@ function CatchLog:Iterate(afterSeq, module)
 			local record = decode(entries[seq], seq, characters, self.getItem)
 			if not record then
 				countUndecodable(self, seq)
-			elseif record.kind ~= "module" or (module ~= nil and record.module == module) then
-				cutter:Add(record)
-				return record
+			else
+				local owner = record.kind == "module" and (record --[[@as PagleModuleRecord]]).module or nil
+				if owner == nil or owner == module then
+					cutter:Add(record)
+					return record
+				end
 			end
 		end
 		-- Read to its end: a later read from there needs no look-back.

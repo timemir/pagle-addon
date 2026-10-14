@@ -1187,7 +1187,7 @@ describe("FakePagle", function()
 				end)
 
 				assert.is_false(ok)
-				assert.matches("fake_pagle_spec.lua:%d+:", err)
+				assert.matches("fake_pagle_spec.lua:%d+:", tostring(err))
 				assert.are.same({ "rebuild true" }, raised)
 				assert.are.equal(1, #fake.catchLog.data.entries)
 			end
