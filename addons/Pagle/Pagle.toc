@@ -43,6 +43,7 @@ logic\Slash.lua
 logic\Wallet.lua
 logic\Goods.lua
 logic\Shop.lua
+logic\LookAndFeel.lua
 logic\CoreGoods.lua
 logic\WalletProjection.lua
 logic\Moments.lua
@@ -77,6 +78,7 @@ adapter\Sessions.lua
 adapter\Settings.lua
 adapter\AnnouncementSettings.lua
 adapter\Dock.lua
+adapter\LookAndFeel.lua
 adapter\Slash.lua
 adapter\Wallet.lua
 adapter\Goods.lua

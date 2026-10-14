@@ -3,25 +3,31 @@
 --   - the latest !BugGrabber session's Lua errors, with their stacks;
 --   - the Catch log, decoded with Core's own codec (addons/Pagle/logic/CatchLog.lua): the logId, the entries by
 --     tag, the C1 Casts by outcome, per character and per zone areaID, those in zone areaID 0, their time span, the
---     B1 and S1 entries and PagleDB.global.decodeErrors (0 when AceDB left that default out of the file);
+--     B1 and S1 entries, each P1 (Prestige) and U1 (purchase) entry, and PagleDB.global.decodeErrors (0 when AceDB
+--     left that default out of the file);
 --   - the Ledger (PagleLedgerDB in Pagle_Ledger.lua): the projection Core stores and whether its logId, lastSeq and
 --     rulesVersion are current, its state (items, the Uncharted list, zone ranks) with what the Ledger's own logic/
 --     computes from it over the world index (the level, charted zones, shown ranks, Ledger completion), and the
---     celebrated set;
---   - the wallet: each Module's reported Coins (PagleDB.global.coins.earned) and the balance;
+--     celebrated set; then, in a Ledger M4 section, the climb with Prestige, the Catch Milestones, the Legends, the
+--     Simulated Size records, the earned and active titles and the celebrated set's M4 keys;
+--   - the wallet: each Module's reported Coins (PagleDB.global.coins.earned), the balance (held while negative) and
+--     the wallet projection (PagleDB.global.projections.wallet): spent and purchased;
+--   - the looks: each slot's equipped good (PagleDB.profile.appearance), the goods cache and the length unit;
 --   - the cards: the Write-up waiting, the Session summary cards, the open summary and the pending moments;
 --   - the Field report projection (PagleDB.global.projections.fieldReport), its row count and the reporter key;
 --   - named CVars from Config.wtf and the account's and the character's config-cache.wtf;
 --   - named addons' enable state from the character's AddOns.txt.
 --
 --   lua scripts/read-wtf.lua <WTF/Account/<ACCT> folder> [--character <realm folder>/<Name-Surname>]
---       [--cvar <name>]... [--addon <name>]... [--catalogue <Catalogue.lua>] [--expect-casts N] [--since T]
+--       [--cvar <name>]... [--addon <name>]... [--catalogue <Catalogue.lua>] [--item <id>]... [--expect-casts N]
+--       [--since T]
 --
 -- --cvar defaults to SoftTargetInteract and --addon to Pagle, Pagle_Ledger and Pagle_QoL; naming one replaces its
 -- defaults.
 -- The character's CVars and addons need --character, e.g. --character 70/Ada-Brook.
 -- --catalogue builds the Ledger's world from another Catalogue.lua than the repo's addons/Pagle/data/Catalogue.lua,
 -- such as the installed addon's.
+-- --item <id> prints the Simulated Size record (LED-R80) the Ledger keeps for that Species or Legend item ID.
 -- --expect-casts N checks the M1 exit check's steps 3 and 4 (#75): N C1 Casts, each there once, no zone areaID 0,
 -- a B1 and an S1 entry, decodeErrors 0, every entry decodes, and at least one Cast got away (`g`). --since T
 -- counts only the Casts at server time T (Unix seconds) or later; B1 and S1 are still looked for in the whole log.
@@ -31,14 +37,15 @@
 -- whatever the files hold.
 
 local USAGE = "usage: lua scripts/read-wtf.lua <WTF/Account/<ACCT> folder> [--character <realm>/<Name-Surname>]"
-	.. " [--cvar <name>]... [--addon <name>]... [--catalogue <Catalogue.lua>] [--expect-casts N] [--since T]\n"
+	.. " [--cvar <name>]... [--addon <name>]... [--catalogue <Catalogue.lua>] [--item <id>]... [--expect-casts N]"
+	.. " [--since T]\n"
 
 -- The repo root, from this script's path: Core's and the Ledger's logic/ and the catalogue are read from addons/.
 local ROOT = ((arg and arg[0] or ""):match("^(.*)[/\\]") or ".") .. "/.."
 
 -- The arguments as options, or nil and what's wrong with them.
 local function parseArgs(args)
-	local options = { cvars = {}, addons = {} }
+	local options = { cvars = {}, addons = {}, items = {} }
 	local i = 1
 	while args[i] do
 		local word, value = args[i], args[i + 1]
@@ -55,11 +62,15 @@ local function parseArgs(args)
 				list[#list + 1] = value
 			end
 			i = i + 2
-		elseif word == "--expect-casts" or word == "--since" then
+		elseif word == "--expect-casts" or word == "--since" or word == "--item" then
 			if not value or not value:match("^%d+$") then
 				return nil, word .. " needs a whole number"
 			end
-			options[word == "--since" and "since" or "expectCasts"] = tonumber(value)
+			if word == "--item" then
+				options.items[#options.items + 1] = tonumber(value)
+			else
+				options[word == "--since" and "since" or "expectCasts"] = tonumber(value)
+			end
 			i = i + 2
 		elseif word:sub(1, 1) == "-" then
 			return nil, "unknown option " .. word
@@ -204,6 +215,7 @@ local function readLog(ns, log, since)
 	local global = { decodeErrors = 0 }
 	local catchLog = ns.OpenCatchLog(log, global, 0)
 	local facts = { tags = tags, casts = {}, allCasts = 0, builds = 0, skills = 0, repeated = {} }
+	facts.prestiges, facts.purchases = {}, {}
 	local ids = {}
 	for record in catchLog:Iterate() do
 		if ids[record.id] then
@@ -219,6 +231,9 @@ local function readLog(ns, log, since)
 			facts.builds, facts.build = facts.builds + 1, record
 		elseif record.kind == "skill" then
 			facts.skills, facts.skill = facts.skills + 1, record
+		elseif record.kind == "prestige" or record.kind == "purchase" then
+			local list = record.kind == "prestige" and facts.prestiges or facts.purchases
+			list[#list + 1] = record
 		end
 	end
 	facts.undecodable = global.decodeErrors
@@ -267,6 +282,20 @@ local function printCasts(log, facts, since)
 	print("zone areaID 0: " .. (zero or "none"))
 end
 
+-- The Prestige (P1, LOG-R38) and purchase (U1, LOG-R39) entries: a count each, then one line per entry, P1 with
+-- its rank and U1 with its good and price, each with its character and time.
+local function printPrestigesAndPurchases(log, facts)
+	for _, kind in ipairs({ { "P1", facts.prestiges }, { "U1", facts.purchases } }) do
+		local tag, records = kind[1], kind[2]
+		print(tag .. ": " .. (#records > 0 and count(#records, "entry", "entries") or "none"))
+		for _, record in ipairs(records) do
+			local what = tag == "P1" and "rank " .. record.rank
+				or ("%s for %s"):format(record.good, count(record.price, "Coin"))
+			print(("  %s, %s, %s"):format(what, characterName(log, record.char), utc(record.time)))
+		end
+	end
+end
+
 local function printLog(log, facts, since)
 	local tags = {}
 	for _, tag in ipairs(sortedKeys(facts.tags)) do
@@ -290,6 +319,7 @@ local function printLog(log, facts, since)
 	else
 		print("S1: none")
 	end
+	printPrestigesAndPurchases(log, facts)
 end
 
 -- The exit check's steps 3 and 4 (#75) over the Casts counted, as { ok, line } pairs.
@@ -496,7 +526,8 @@ local function printItems(ledger, items, getItem)
 		print("state items, not classed: " .. listed(items, withCatches))
 		return
 	end
-	local byClass = { curio = {}, trophy = {}, other = {} }
+	-- Legend items (LED-R63) are in the state's items too: the Ledger M4 section lists them.
+	local byClass = { curio = {}, trophy = {}, legend = {}, other = {} }
 	for itemID, first in pairs(items) do
 		local class = ledger.ClassifyCatch(itemID, getItem(itemID))
 		byClass[byClass[class] and class or "other"][itemID] = first
@@ -655,11 +686,196 @@ local function printStored(stored, log)
 	end
 end
 
+-- Core's namespace with what M4's lines read of it: its strings (locale/enUS.lua), the size rules and bands
+-- (logic/Size.lua, LOG-R65–R68), the wallet (logic/Wallet.lua, SHOP-R12) and the wallet projection's rules version
+-- (logic/WalletProjection.lua), each called with ("Pagle", ns) as the client calls them. logic/ is plain Lua 5.1
+-- (CORE-R7). Size.lua takes LuaBitOp's functions at load; nothing here hashes a Catch ID, so an empty `bit` serves.
+local function loadCoreRules()
+	local ns = {}
+	local env = setmetatable({ bit = {} }, { __index = _G })
+	for _, file in ipairs({ "locale/enUS.lua", "logic/Size.lua", "logic/Wallet.lua", "logic/WalletProjection.lua" }) do
+		local chunk = assert(loadfile(ROOT .. "/addons/Pagle/" .. file))
+		setfenv(chunk, env)
+		chunk("Pagle", ns)
+	end
+	return ns
+end
+
+-- The Ledger M4 section's lines (#173): what M4 adds to the Ledger (ledger.md › Data), with the climb, the earned
+-- titles and the active title from the Ledger's own logic/ (Progress.lua, Titles.lua) over the world index.
+
+-- A stored state as the Ledger's logic reads it, M4's keys defaulted, so an M2 or M3 state reads as prestige rank 0
+-- with no Catch Milestone, Legend or record.
+local function m4State(state)
+	return {
+		xp = tonumber(state.xp) or 0,
+		prestige = tonumber(state.prestige) or 0,
+		catches = tonumber(state.catches) or 0,
+		milestones = tableOr(state.milestones),
+		species = tableOr(state.species),
+		items = tableOr(state.items),
+		uncharted = tableOr(state.uncharted),
+		zones = tableOr(state.zones),
+	}
+end
+
+-- A list of title keys as "2 (title:level1, legend:19803)", in the order given, or "none".
+local function keysText(keys)
+	return #keys > 0 and #keys .. " (" .. table.concat(keys, ", ") .. ")" or "none"
+end
+
+-- The Catch Milestones reached (LED-R42), each with the time it was reached, and the lifetime Catches.
+local function printMilestones(made)
+	local reached = listed(made.milestones, function(n, time)
+		return ("%s at %s"):format(n, utc(tonumber(time) or 0))
+	end)
+	print(("Catch Milestones: %s, %s"):format(reached, count(made.catches, "lifetime Catch", "lifetime Catches")))
+end
+
+-- The Legend items caught (LED-R63), classed by the Ledger's own ClassifyCatch, each with its first Catch.
+local function printLegends(ledger, made, getItem)
+	if not getItem then
+		print("Legends caught: can't be told from the other items without the world (see world: above)")
+		return
+	end
+	local legends = {}
+	for itemID, first in pairs(made.items) do
+		if ledger.ClassifyCatch(itemID, getItem(itemID)) == "legend" then
+			legends[itemID] = tableOr(first)
+		end
+	end
+	print("Legends caught: " .. listed(legends, function(itemID, first)
+		return ("%s ×%s, first at %s by character %s in zone %s"):format(
+			itemID,
+			tostring(first.n),
+			utc(tonumber(first.time) or 0),
+			tostring(first.char),
+			tostring(first.zone)
+		)
+	end))
+end
+
+-- How many Species and Legends hold a record (LED-R80), then each --item ID's record: a Species' from `species`,
+-- else an item's (a Legend's) from `items`. Band names are Core's (LOG-R67).
+local function printRecords(ledger, made, getItem, ids)
+	local species, sized, legends = 0, 0, 0
+	for _, entry in pairs(made.species) do
+		species = species + 1
+		sized = sized + (type(tableOr(entry).record) == "table" and 1 or 0)
+	end
+	for _, entry in pairs(made.items) do
+		legends = legends + (type(tableOr(entry).record) == "table" and 1 or 0)
+	end
+	print(("records: %d of %s, %s"):format(sized, count(species, "Species", "Species"), count(legends, "Legend")))
+	local bands = loadCoreRules().SIZE_BANDS
+	for _, id in ipairs(ids) do
+		local entry, kind = made.species[id], "Species"
+		if not entry and made.items[id] then
+			entry = made.items[id]
+			kind = getItem and ledger.ClassifyCatch(id, getItem(id)) == "legend" and "Legend" or "item"
+		end
+		local record = tableOr(entry).record
+		if not entry then
+			print(("record of %d: not in the state (no Species or item %d caught)"):format(id, id))
+		elseif type(record) ~= "table" then
+			print(("record of %d (%s): none (no sized Catch yet)"):format(id, kind))
+		else
+			local band = bands[record.band]
+			print(
+				("record of %d (%s): %s mm, band %s%s, Catch %s, since %s"):format(
+					id,
+					kind,
+					tostring(record.length),
+					tostring(record.band),
+					band and " " .. band.name or "",
+					tostring(record.catchId),
+					tostring(entry.since)
+				)
+			)
+		end
+	end
+end
+
+-- The earned titles (LED-R75, LED-R76) and the active title (LED-R77), from the Ledger's own TitleKeys and
+-- ActiveTitle. Without a state or a world they read the celebrated titles alone, as the Ledger does before a build.
+local function printTitles(ledger, view)
+	local only = view.state and "" or ", the celebrated ones only (no state or no world to compute from)"
+	print("titles earned: " .. keysText(ledger.TitleKeys(view)) .. only)
+	local key, stored = ledger.ActiveTitle(view), view.activeTitle
+	if stored == nil then
+		print("active title: automatic, so " .. tostring(key or "none"))
+	elseif stored == key then
+		print("active title: " .. tostring(stored) .. " (profile.activeTitle)")
+	else
+		local text = "active title: %s in profile.activeTitle isn't earned, so automatic: %s"
+		print(text:format(tostring(stored), tostring(key or "none")))
+	end
+end
+
+-- The celebrated set's M4 keys (LED-R90): the highest level per climb, the prestige rank, the Catch Milestones, the
+-- title keys (in LED-R75's order) and the Legend items among its items.
+local function printCelebratedM4(ledger, celebrated, getItem)
+	local levels = tableOr(celebrated.levels)
+	local climbs = {}
+	for i, rank in ipairs(sortedKeys(levels)) do
+		climbs[i] = ("prestige rank %s level %s"):format(rank, tostring(levels[rank]))
+	end
+	print("celebrated levels: " .. (#climbs > 0 and table.concat(climbs, ", ") or "none"))
+	print("celebrated prestige: " .. tostring(celebrated.prestige or "none"))
+	print("celebrated Catch Milestones: " .. listed(tableOr(celebrated.milestones)))
+	print("celebrated titles: " .. keysText(ledger.TitleKeys({ celebrated = celebrated })))
+	if not getItem then
+		print("celebrated Legend items: can't be told from the other items without the world (see world: above)")
+		return
+	end
+	local legends = {}
+	for itemID in pairs(tableOr(celebrated.items)) do
+		if ledger.ClassifyCatch(itemID, getItem(itemID)) == "legend" then
+			legends[itemID] = true
+		end
+	end
+	print("celebrated Legend items: " .. listed(legends))
+end
+
+-- Prints the Ledger M4 section (ledger.md › Data, #173): from the state (`state`, nil when none is stored) the climb
+-- (LED-R30, LED-R35), the Catch Milestones (LED-R42), the Legends (LED-R63) and the records (LED-R80); the earned
+-- and active titles (LED-R75–R77); and the celebrated set's M4 keys (LED-R90). `context` holds the Ledger section's
+-- world index and GetItem (nil when it couldn't be built) and the --item IDs. PagleLedgerDB has one shared profile,
+-- AceDB's "Default", which holds activeTitle.
+local function printLedgerM4(ledger, db, state, context)
+	print("== Ledger M4 (PagleLedgerDB): Prestige, Catch Milestones, Legends, records, titles")
+	local celebrated = tableOr(tableOr(db.global).celebrated)
+	local made = state and m4State(state)
+	if made then
+		print(
+			("climb: prestige rank %d, %d XP, computed level %d, peak level %d"):format(
+				made.prestige,
+				made.xp,
+				ledger.Level(made),
+				ledger.PeakLevel(made)
+			)
+		)
+		printMilestones(made)
+		printLegends(ledger, made, context.getItem)
+		printRecords(ledger, made, context.getItem, context.items)
+	else
+		print("state: none stored, so the titles below are the celebrated ones")
+	end
+	printTitles(ledger, {
+		world = context.world,
+		state = context.world and made or nil,
+		celebrated = celebrated,
+		getItem = context.getItem,
+		activeTitle = tableOr(tableOr(db.profiles).Default).activeTitle,
+	})
+	printCelebratedM4(ledger, celebrated, context.getItem)
+end
+
 -- Prints the Ledger section from SavedVariables/Pagle_Ledger.lua (ledger.md › Data): the projection Core stores
 -- (LOG-R70), checked against PagleLog (LOG-R72) and the Ledger's rules version (LED-R2), the state with what the
 -- Ledger's own logic/ computes from it over the world index, and the celebrated set (LED-R90). `catalogue` is the
--- --catalogue path, or nil for the repo's.
-local function printLedger(account, log, catalogue)
+-- --catalogue path, or nil for the repo's; `items` the --item IDs. The Ledger M4 section follows it.
+local function printLedger(account, log, catalogue, items)
 	local path = account .. "/SavedVariables/Pagle_Ledger.lua"
 	local saved, err = loadSavedVariables(path)
 	if not saved then
@@ -674,13 +890,14 @@ local function printLedger(account, log, catalogue)
 	print("== Ledger (PagleLedgerDB)")
 	local global = tableOr(db.global)
 	local stored = global.projection
+	local ledger, state, world, getItem = loadLedgerLogic(), nil, nil, nil
 	if type(stored) ~= "table" or type(stored.projection) ~= "table" then
 		print("projection: none stored (no build has finished, LOG-R72)")
 	else
 		printStored(stored, log)
-		local ledger = loadLedgerLogic()
-		-- The Ledger's own rules version, from its logic/ (LED-R2): Core defines no SIZE_RULES_VERSION before M4.
-		local rulesVersion = ledger.RulesVersion(nil)
+		-- The Ledger's own rules version, from its logic/ with Core's size rules (LED-R2, LOG-R68), as
+		-- adapter/Ledger.lua passes Pagle.SIZE_RULES_VERSION.
+		local rulesVersion = ledger.RulesVersion(loadCoreRules().SIZE_RULES_VERSION)
 		if stored.rulesVersion == rulesVersion then
 			print(("rulesVersion: the Ledger's, %d (LED-R2)"):format(rulesVersion))
 		else
@@ -691,10 +908,12 @@ local function printLedger(account, log, catalogue)
 				)
 			)
 		end
-		local world, getItem = loadWorld(ledger, catalogue, stored)
-		printLedgerState(ledger, stored.projection, world, getItem, tableOr(global.celebrated))
+		world, getItem = loadWorld(ledger, catalogue, stored)
+		state = stored.projection
+		printLedgerState(ledger, state, world, getItem, tableOr(global.celebrated))
 	end
 	printCelebrated(tableOr(global.celebrated))
+	printLedgerM4(ledger, db, state, { world = world, getItem = getItem, items = items })
 end
 
 -- PagleDB.global from Pagle.lua's globals, or nil and why there's none.
@@ -709,29 +928,103 @@ local function pagleGlobal(pagle)
 	return tableOr(db.global)
 end
 
+-- The wallet projection's lines (#173): its bookkeeping, checked against PagleLog (LOG-R72) and Core's wallet rules
+-- version (wallet-and-shop.md › Data), then its state, the Coins spent and the goods purchased (SHOP-R11). One line
+-- while none is stored.
+local function printWalletProjection(stored, log, rulesVersion)
+	if type(stored) ~= "table" or type(stored.projection) ~= "table" then
+		print("wallet projection: none stored (no build has finished, LOG-R72)")
+		return
+	end
+	printStored(stored, log)
+	if stored.rulesVersion == rulesVersion then
+		print(("rulesVersion: Core's wallet rules, %d"):format(rulesVersion))
+	else
+		local text = "rulesVersion: %s DIFFERS from Core's wallet rules %d, so Core rebuilds it at login (LOG-R72)"
+		print(text:format(tostring(stored.rulesVersion), rulesVersion))
+	end
+	print("spent: " .. tostring(stored.projection.spent))
+	print("purchased: " .. listed(tableOr(stored.projection.purchased)))
+end
+
 -- Prints the Wallet section (wallet-and-shop.md › Data): each Module's last reported total (SHOP-R3) and the balance,
--- Σ earned − spent and never below 0 (SHOP-R12). `spent` is stored only from M4's wallet projection (SHOP-R11).
-local function printWallet(pagle)
+-- Σ earned − spent, 0 and held while that is negative (SHOP-R12), from Core's own logic/Wallet.lua; `spent` is the
+-- wallet projection's (SHOP-R11), which the section prints last.
+local function printWallet(pagle, log)
 	local global, why = pagleGlobal(pagle)
 	if not global then
 		print("== Wallet: " .. why)
 		return
 	end
 	local earned = tableOr(tableOr(global.coins).earned)
-	local spent = tonumber(tableOr(tableOr(global.projections).wallet).spent) or 0
+	local stored = tableOr(global.projections).wallet
+	local state = type(stored) == "table" and type(stored.projection) == "table" and stored.projection or {}
+	local spent = tonumber(state.spent) or 0
 	local sum, names = 0, sortedKeys(earned)
 	for _, name in ipairs(names) do
 		sum = sum + (tonumber(earned[name]) or 0)
 	end
-	local heading = "== Wallet (PagleDB.global.coins.earned): balance " .. math.max(sum - spent, 0)
-	if spent > 0 then
-		heading = heading .. (" (%d earned, %d spent)"):format(sum, spent)
+	-- The balance and held from Core's own wallet (logic/Wallet.lua).
+	local core = loadCoreRules()
+	local wallet = core.NewWallet(function() end)
+	wallet:Open(earned)
+	wallet:SetSpent(spent)
+	local balance = wallet:Get()
+	local heading = "== Wallet (PagleDB.global.coins.earned): balance " .. balance.balance
+	if balance.held then
+		heading = heading .. (", held (%d earned − %d spent = %d, SHOP-R12)"):format(sum, spent, sum - spent)
+	elseif spent > 0 then
+		heading = heading .. (" (%d earned − %d spent)"):format(sum, spent)
 	end
 	-- AceDB leaves the default, an empty earned table, out of the file.
 	print(heading .. (#names == 0 and ", no Module has reported Coins" or ""))
 	for _, name in ipairs(names) do
 		print(name .. ": " .. tostring(earned[name]))
 	end
+	printWalletProjection(stored, log, core.WALLET_RULES_VERSION)
+end
+
+-- Prints the Looks section (wallet-and-shop.md › Data, catch-log.md › Data, #173): each slot's stored pick from
+-- PagleDB.profile.appearance, or its default (SHOP-R32), for every slot a cached good or a stored pick names; the
+-- goods cache's size and its earned goods cached as earned (SHOP-R26); and profile.lengthUnit (LOG-R69). PagleDB
+-- has one shared profile, AceDB's "Default". AceDB leaves an empty appearance, goods or a nil unit out of the file.
+local function printLooks(pagle)
+	local global, why = pagleGlobal(pagle)
+	if not global then
+		print("== Looks: " .. why)
+		return
+	end
+	print("== Looks (PagleDB.profile.appearance, PagleDB.global.goods)")
+	local profile = tableOr(tableOr(pagle.saved.PagleDB.profiles).Default)
+	local appearance, goods = tableOr(profile.appearance), tableOr(global.goods)
+	local slots, defaults, earned, cachedEarned = {}, {}, {}, {}
+	for goodID, good in pairs(goods) do
+		good = tableOr(good)
+		if good.slot then
+			slots[good.slot] = true
+			defaults[good.slot] = good.default and goodID or defaults[good.slot]
+		end
+		if good.earned ~= nil then
+			earned[goodID] = true
+			cachedEarned[goodID] = good.earned == true or nil
+		end
+	end
+	for slot in pairs(appearance) do
+		slots[slot] = true
+	end
+	local ids = sortedKeys(slots)
+	if #ids == 0 then
+		print("slots: none cached or stored, so every look is its slot's default")
+	end
+	for _, slot in ipairs(ids) do
+		local default = defaults[slot] and " (" .. defaults[slot] .. ")" or ""
+		print(slot .. ": " .. (appearance[slot] and tostring(appearance[slot]) or "default" .. default))
+	end
+	print("goods cached: " .. #sortedKeys(goods))
+	local earnedCount = #sortedKeys(earned)
+	local earnedText = earnedCount > 0 and earnedCount .. ", cached as earned: " .. listed(cachedEarned) or "none"
+	print("earned goods: " .. earnedText)
+	print("length unit: " .. tostring(profile.lengthUnit or "region default"))
 end
 
 -- The titles of a card's moments, one line per Module group (ANN-R53), each indented by `indent`.
@@ -943,8 +1236,9 @@ local function main(args)
 	local pagle = { path = options.account .. "/SavedVariables/Pagle.lua" }
 	pagle.saved, pagle.err = loadSavedVariables(pagle.path)
 	local checks = printCatchLog(pagle, options.expectCasts, options.since)
-	printLedger(options.account, pagleLog(pagle.saved), options.catalogue)
-	printWallet(pagle)
+	printLedger(options.account, pagleLog(pagle.saved), options.catalogue, options.items)
+	printWallet(pagle, pagleLog(pagle.saved))
+	printLooks(pagle)
 	printCards(pagle)
 	printFieldReport(pagle, pagleLog(pagle.saved))
 	printCVars(options.account, options.character, options.cvars)

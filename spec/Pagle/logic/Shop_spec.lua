@@ -77,13 +77,14 @@ local function ledgerBindings(ledger)
 	ledger:RegisterGood({ id = "ledger.binding.lapis", slot = "ledger.binding", name = "Lapis", tier = 3 })
 end
 
--- The shop's model now, over the fake's goods, cache, Modules On and balance.
+-- The shop's model now, over the fake's goods, cache, Modules On, balance and projections.
 local function model(fake)
 	return fake.ns.NewShopModel({
 		goods = fake.ns.goods,
 		cache = fake.goods,
 		modules = fake.registry:Modules(),
 		balance = fake.ns.wallet:Get(),
+		updating = fake.projections:IsUpdating(),
 		format = breakUpLargeNumbers,
 	})
 end
@@ -573,4 +574,218 @@ describe("The shop's stage", function()
 		assert.is_nil(model(fake):Stage("hunts.cover.tide"))
 		assert.is_nil(model(fake):Stage(nil))
 	end)
+end)
+
+describe("Buy on the stage", function()
+	-- The Ledger's bindings and Hunts' covers (Gold earned while `earned.value`), logged in and in the world, every
+	-- projection caught up, with the Ledger's `balance` Coins.
+	local function ready(balance, earned)
+		local fake, handles = session()
+		huntsCovers(handles.Hunts, earned or { value = false })
+		ledgerBindings(handles.Ledger)
+		fake.login()
+		fake.enterWorld()
+		handles.Ledger:ReportCoinsEarned(balance)
+		return fake, handles
+	end
+
+	it(
+		"is enabled for a good for sale, not owned, of a Module On, that the balance covers, with no projection"
+			.. " updating (SHOP-R13)",
+		function()
+			local shop = model(ready(400))
+
+			assert.is_true(assert(shop:Stage("hunts.cover.velvet")).canBuy) -- 400 covers 400
+			assert.is_true(assert(shop:Stage("core.toaststyle.ripple")).canBuy)
+		end
+	)
+
+	it(
+		"is disabled for an owned good, a default, an earned good, and a good the balance doesn't cover (SHOP-R13)",
+		function()
+			local earned = { value = false }
+			local fake, handles = ready(899, earned)
+			fake.setPurchased({ ["core.toaststyle.ripple"] = true })
+			local shop = model(fake)
+
+			for _, goodID in ipairs({
+				"core.toaststyle.ripple", -- bought
+				"hunts.cover.plain", -- the default
+				"hunts.cover.gold", -- earned, not yet
+				"ledger.binding.lapis", -- 900, one more needed
+			}) do
+				assert.are.same({ goodID }, { goodID, assert(shop:Stage(goodID)).canBuy, shop:Purchase(goodID) })
+			end
+			earned.value = true
+			handles.Hunts:RefreshGoods()
+			assert.is_nil(model(fake):Purchase("hunts.cover.gold"))
+		end
+	)
+
+	it("is disabled for a good of a Module off, owned or not (SHOP-R13, SHOP-R35)", function()
+		local fake = huntsOff()
+		fake.enterWorld()
+		fake.setPurchased({ ["hunts.cover.velvet"] = true }) -- the log's own set replaced huntsOff's
+		fake.global.coins.earned.Ledger = 5000
+		local shop = model(fake)
+
+		assert.is_nil(shop:Stage("hunts.cover.tide")) -- for sale, not shown
+		assert.is_nil(shop:Purchase("hunts.cover.tide"))
+		assert.is_nil(assert(shop:Stage("hunts.cover.velvet")).canBuy) -- put away
+		assert.is_nil(shop:Purchase("hunts.cover.velvet"))
+	end)
+
+	it(
+		"is disabled while any projection updates: at login, and while a Module's catches up (SHOP-R13, SHOP-R91)",
+		function()
+			local fake, handles = session()
+			huntsCovers(handles.Hunts, { value = false })
+			handles.Ledger:ReportCoinsEarned(1000)
+			local during
+			handles.Hunts:NewProjection({
+				db = {},
+				rulesVersion = 1,
+				reset = function()
+					return {}
+				end,
+				apply = function() end,
+				done = function()
+					during = model(fake)
+				end,
+			})
+			fake.login()
+
+			assert.is_nil(assert(model(fake):Stage("hunts.cover.velvet")).canBuy) -- nothing has caught up yet
+			fake.enterWorld()
+			assert.is_nil(assert(during:Stage("hunts.cover.velvet")).canBuy) -- in Hunts' done
+			assert.is_nil(during:Purchase("hunts.cover.velvet"))
+			assert.is_true(assert(model(fake):Stage("hunts.cover.velvet")).canBuy)
+		end
+	)
+end)
+
+describe("A purchase", function()
+	it(
+		"is the good's ID, slot, name, swatch and price now, and the Coins left after (SHOP-R10, wallet-and-shop.md"
+			.. " › UI: Buy)",
+		function()
+			local fake, handles = session()
+			huntsCovers(handles.Hunts, { value = false })
+			fake.login()
+			fake.enterWorld()
+			handles.Ledger:ReportCoinsEarned(1450)
+
+			assert.are.same({
+				id = "hunts.cover.velvet",
+				slot = "hunts.cover",
+				name = "Velvet",
+				icon = 134939,
+				price = 400,
+				priceText = "400" .. COIN,
+				leftAfter = "Pagle Coins left after: 1,050. Looks are yours for good.",
+			}, model(fake):Purchase("hunts.cover.velvet"))
+			assert.is_nil(model(fake):Purchase("hunts.cover.none"))
+			assert.is_nil(model(fake):Purchase(nil))
+		end
+	)
+end)
+
+describe("Buying", function()
+	-- Hunts' covers, logged in and in the world, with the Ledger's `balance` Coins, and a Session open (one Cast), so a
+	-- moment or a summary line would land in it.
+	local function ready(balance)
+		local fake, handles = session()
+		huntsCovers(handles.Hunts, { value = false })
+		fake.login()
+		fake.enterWorld()
+		handles.Ledger:ReportCoinsEarned(balance)
+		fake.playCast("caught", { { itemID = 6358, quantity = 1 } })
+		fake.nextFrame()
+		return fake, handles
+	end
+
+	-- Each look change from now on, as "<slot> <goodID>".
+	local function looks(fake)
+		local changed = {}
+		fake.Pagle.RegisterCallback("spec", "AppearanceChanged", function(_, slot, goodID)
+			changed[#changed + 1] = slot .. " " .. goodID
+		end)
+		return changed
+	end
+
+	it(
+		"appends one U1 with the good and its price, the balance drops and it's owned; Use it now equips it (SHOP-R10,"
+			.. " SHOP-R13, LOG-R39, wallet-and-shop.md › UI: Buy)",
+		function()
+			local fake = ready(200)
+			local Pagle = fake.Pagle
+			local before = #fake.catchLog.data.entries
+			local changed = looks(fake)
+
+			assert.is_true(fake.ns.shop.Buy("core.toaststyle.ripple", true))
+
+			local entries = fake.catchLog.data.entries
+			assert.are.equal(before + 1, #entries)
+			-- Ada at the fake's server time, tie 1 after the Cast in the same second (LOG-R12).
+			assert.are.equal("U1|1|1791731700|1|core.toaststyle.ripple|150", entries[#entries])
+			assert.are.equal(50, Pagle.GetBalance().balance)
+			assert.is_true(Pagle.IsOwned("core.toaststyle.ripple"))
+			assert.are.equal("core.toaststyle.ripple", Pagle.GetEquipped("core.toaststyle"))
+			assert.are.same({ "core.toaststyle core.toaststyle.ripple" }, changed)
+		end
+	)
+
+	it("leaves the look as it was without Use it now: owned, not equipped (wallet-and-shop.md › UI: Buy)", function()
+		local fake = ready(200)
+		local changed = looks(fake)
+
+		assert.is_true(fake.ns.shop.Buy("core.toaststyle.ripple", false))
+
+		assert.is_true(fake.Pagle.IsOwned("core.toaststyle.ripple"))
+		assert.are.equal("core.toaststyle.timber", fake.Pagle.GetEquipped("core.toaststyle"))
+		assert.are.same({}, changed)
+	end)
+
+	it("raises no Announcement and no Session summary line (ANN-R23, SHOP-R5)", function()
+		local fake = ready(200)
+		local announced, summarized = #fake.announcements, #fake.summarized
+
+		fake.ns.shop.Buy("core.toaststyle.ripple", true)
+		fake.nextFrame()
+		fake.wait(900) -- the Session ends
+
+		assert.are.equal(announced, #fake.announcements)
+		assert.are.equal(summarized, #fake.summarized)
+		assert.are.same({}, fake.cardsShown)
+	end)
+
+	it(
+		"does nothing once Buy isn't enabled any more: the balance short, the good owned, a projection updating"
+			.. " (SHOP-R13)",
+		function()
+			local fake, handles = ready(200)
+			local before = #fake.catchLog.data.entries
+
+			assert.is_false(fake.ns.shop.Buy("hunts.cover.velvet", true)) -- 400, with 200
+			assert.is_true(fake.ns.shop.Buy("core.crest.crest1", false))
+			assert.is_false(fake.ns.shop.Buy("core.crest.crest1", false)) -- owned now
+			local during
+			handles.Hunts:NewProjection({
+				db = {},
+				rulesVersion = 1,
+				reset = function()
+					return {}
+				end,
+				apply = function() end,
+				done = function()
+					during = fake.ns.shop.Buy("core.toaststyle.ripple", true) -- in Hunts' first build
+				end,
+			})
+
+			assert.is_false(during)
+			assert.are.equal(before + 1, #fake.catchLog.data.entries)
+			assert.is_false(fake.Pagle.IsOwned("core.toaststyle.ripple"))
+			assert.are.equal(50, fake.Pagle.GetBalance().balance)
+		end
+	)
 end)

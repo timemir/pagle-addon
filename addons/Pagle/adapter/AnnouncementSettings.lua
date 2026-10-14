@@ -8,7 +8,8 @@ end
 
 -- Core's rows on the Announcements page (SET-R30): Cozy mode, Interruption budget, and the budget's Interruptions
 -- and Per. Native controls on proxy settings over `PagleDB.profile.announcements` (announcements.md › Data), built
--- when adapter/Settings.lua registers the page. The Toast style and Sound set rows come with Core's slots (M4).
+-- when adapter/Settings.lua registers the page. Core's slots in the "Announcements" category, Toast style and Sound
+-- set, end them as slot dropdowns (CORE-R42, adapter/LookAndFeel.lua).
 local L = ns.L
 
 -- The sliders' ranges (settings.md › Tunables). Per is in minutes; the budget's window is stored in seconds.
@@ -103,4 +104,10 @@ ns.CoreSettingsRows.announcements = function(page)
 	)
 	window:SetParentInitializer(budget)
 	greys(window, slidersLive)
+
+	-- Toast style and Sound set: the same equipped looks as on Look and Feel, which this page's Defaults button
+	-- restores too (SET-R30, SET-R33, SET-R51).
+	for _, slot in ipairs(ns.CoreAnnouncementSlots(ns.goods)) do
+		ns.SlotDropdown(page, slot, "Pagle_Core_announcements_" .. slot.id)
+	end
 end

@@ -32,6 +32,7 @@ ns.L = {
 		fishing = "Fishing",
 		announcements = "Announcements",
 		trackers = "Trackers",
+		look = "Look and Feel",
 	},
 	-- The Trackers page's first row (SET-R40): its label, its button and the tooltip.
 	SETTINGS_TRACKER_POSITION = "Tracker position",
@@ -56,6 +57,13 @@ ns.L = {
 	SETTINGS_BUDGET_TOOLTIP = "When toasts come close together, the smaller ones step down to a quiet Nod. Records always keep their ruler. Greyed out in Cozy mode, which holds everything anyway.",
 	SETTINGS_BUDGET_COUNT = "Interruptions",
 	SETTINGS_BUDGET_WINDOW = "Per",
+	-- Look and Feel (SET-R50, SET-R51): the paragraph, a slot dropdown's note with N, and the Curio Shop section's
+	-- header, row label and button caption. Its category headers are SHOP_CATEGORIES.
+	SETTINGS_LOOK_PARAGRAPH = "Looks you own. Pick one here or with Use in the Curio Shop; both change the same thing.",
+	SETTINGS_SLOT_MORE = "%d more in the Curio Shop",
+	SETTINGS_SHOP = "Curio Shop",
+	SETTINGS_SHOP_ROW = "Buy more looks with Pagle Coins",
+	SETTINGS_SHOP_BUTTON = "Open the Curio Shop",
 	-- A number of minutes: the budget's window (SET-R10) and a card's time fished (ANN-R53).
 	MINUTES = "%d min",
 	-- The Announcement frames (announcements.md › UI): the toast lane's overflow (ANN-R20), stamps beyond the 4 shown
@@ -175,6 +183,14 @@ ns.L = {
 	SHOP_MODULE_OFF = "%s is off",
 	SHOP_PICK = "Pick a look to see it here.",
 	SHOP_USE = "Use",
+	-- Buying (wallet-and-shop.md › UI: Buy): the popup's question with the good's name, the Coins left after, its
+	-- checkbox and buttons; and SHOP-R12's held line under the purse, which never mentions debt or a negative number.
+	SHOP_BUY_CONFIRM = "Buy %s?",
+	SHOP_LEFT_AFTER = "Pagle Coins left after: %s. Looks are yours for good.",
+	SHOP_USE_NOW = "Use it now",
+	SHOP_BUY_ACCEPT = "Buy",
+	SHOP_BUY_CANCEL = "Cancel",
+	SHOP_HELD = "Your balance is 0 while Pagle re-counts earlier Coins. New Coins fill that in first.",
 
 	-- The compartment entry's label (CORE-R51): Pagle, with the moments Cozy mode holds for a summary (ANN-R42).
 	COMPARTMENT = "Pagle",
