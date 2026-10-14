@@ -17,6 +17,7 @@ logic\Places.lua
 logic\Rows.lua
 logic\Fold.lua
 logic\Sessions.lua
+logic\SessionPages.lua
 logic\Text.lua
 logic\Odds.lua
 logic\DrySpell.lua
@@ -24,4 +25,5 @@ logic\Book.lua
 adapter\Text.lua
 adapter\BookWidgets.lua
 adapter\Book.lua
+adapter\Sessions.lua
 adapter\Stats.lua

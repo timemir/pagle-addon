@@ -61,7 +61,7 @@ stds.wow = {
 		"GetInventoryItemID",
 		-- GetItemNameByID: the Ledger's item names (LED-R97, LED-R126), and RequestLoadItemDataByID for the Journal's
 		-- uncached ones (LED-R126). GetItemInfo: the Field report's item names (REP-R30). GetItemIconByID: Stats' item icons
-		-- (STA-R59).
+		-- (STA-R59). GetItemQualityByID: Stats' Catches by quality for an item Core has no quality for (STA-R33).
 		C_Item = {
 			fields = {
 				"GetItemInfoInstant",
@@ -69,6 +69,7 @@ stds.wow = {
 				"RequestLoadItemDataByID",
 				"GetItemInfo",
 				"GetItemIconByID",
+				"GetItemQualityByID",
 			},
 		},
 		C_Spell = { fields = { "GetSpellName" } },

@@ -24,6 +24,8 @@
 ---@field itemNames table<integer, string> Each item's name, for `C_Item.GetItemNameByID` and `C_Item.GetItemInfo`.
 --- Default none: no item cached.
 ---@field itemIcons table<integer, integer> Each item's icon file ID, for `C_Item.GetItemIconByID`. Default none.
+---@field itemQualities table<integer, integer> Each item's quality once loaded, for `C_Item.GetItemQualityByID`.
+--- Default none: nil, as the client gives for an item it hasn't loaded.
 ---@field itemRequests integer[] Each `C_Item.RequestLoadItemDataByID` call's item ID, in order. The client loads
 --- nothing on its own: a spec sets `itemNames` and fires GET_ITEM_INFO_RECEIVED itself.
 ---@field bindingCalls string[] Each override call, in order: "set <key> <action>" or "clear".
@@ -61,6 +63,7 @@ return function(client, stubs)
 	client.items = { [6256] = { 2, 20 }, [25] = { 2, 7 } }
 	client.itemNames = {}
 	client.itemIcons = {}
+	client.itemQualities = {}
 	client.itemRequests = {}
 	client.fireGameEvent = client.fire
 
@@ -156,6 +159,10 @@ return function(client, stubs)
 	-- The item's icon file ID; nil for one not in client.itemIcons (Stats' names, STA-R59).
 	stubs.C_Item.GetItemIconByID = function(itemID)
 		return client.itemIcons[itemID]
+	end
+	-- The item's quality; nil for one not in client.itemQualities, not loaded yet (Stats' Catches by quality, STA-R33).
+	stubs.C_Item.GetItemQualityByID = function(itemID)
+		return client.itemQualities[itemID]
 	end
 	-- The enUS client's quality names and colours (Stats' qualities, STA-R59): GlobalStrings' ITEM_QUALITY<n>_DESC,
 	-- and ITEM_QUALITY_COLORS as Blizzard_Colors' ColorManager fills it, with no colour overrides.
