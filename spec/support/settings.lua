@@ -95,19 +95,45 @@ local function newInitializer(template, data)
 		local formatter = formatters and formatters[2] -- MinimalSliderWithSteppersMixin.Label.Right
 		frame.valueLabel = formatter and formatter(frame.value) or nil
 	end
-	function initializer:InitFrame(frame)
+	-- The fields the Settings list reads in its own update (Blizzard_SettingsList.lua: Factory, InitFrame, Resetter,
+	-- GetExtent, GetTemplate), from ScrollBoxFactoryInitializerMixin (ScrollUtil.lua). They live in the metatable,
+	-- and writing one from outside raises an error: a field Pagle wrote there taints the list (SET-R6, #246).
+	local listReads = {}
+	-- As ScrollBoxFactoryInitializerMixin:InitFrame, a frame of a template with an Init (Core's own rows) draws
+	-- itself with frame:Init(initializer). A native control reads its value and greying instead.
+	function listReads:InitFrame(frame)
 		frame.initializer = self
 		if self.data.setting then
 			frame.value = self.data.setting:GetValue()
 			self:FormatValue(frame)
 		end
 		frame.enabled = self:EvaluateModifyPredicates()
+		if frame.Init then
+			frame:Init(self)
+		end
 	end
-	initializer.Resetter = function() end
-	initializer.GetExtent = function()
+	-- As ScrollBoxFactoryInitializerMixin:Resetter.
+	function listReads:Resetter(frame)
+		if frame.Release then
+			frame:Release(self)
+		end
+	end
+	function listReads.GetExtent()
 		return nil
 	end
-	return initializer
+	function listReads:GetTemplate()
+		return self.template
+	end
+	function listReads.Factory() end
+	return setmetatable(initializer, {
+		__index = listReads,
+		__newindex = function(self, key, value)
+			if listReads[key] then
+				error(("SET-R6: wrote %s onto an initializer, which the Settings list reads"):format(key), 2)
+			end
+			rawset(self, key, value)
+		end,
+	})
 end
 
 -- The Settings API and panel (Blizzard_Settings_Shared at the forever 1.60.1 commit, see .luacheckrc), recording
@@ -257,15 +283,16 @@ return function(client, stubs)
 		-- As SettingButtonControlMixin:Init draws the row: its label (`name`, "" for none) in Text, through
 		-- SettingsListElementMixin:Init, and `buttonText` on a button that runs `buttonClick` (Blizzard_Settings_Shared/
 		-- Blizzard_SettingControls.lua at the forever 1.60.1 commit).
+		-- Blizzard's own template does this, so the fake sets it raw, past the guard against Pagle's writes.
 		local initFrame = initializer.InitFrame
-		function initializer:InitFrame(frame)
+		rawset(initializer, "InitFrame", function(self, frame)
 			initFrame(self, frame)
 			frame.Text = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 			frame.Text:SetText(self.data.name)
 			frame.Button = newWidget("Button", frame)
 			frame.Button:SetText(self.data.buttonText)
 			frame.Button:SetScript("OnClick", self.data.buttonClick)
-		end
+		end)
 		return initializer
 	end
 	stubs.CreateKeybindingEntryInitializer = function(bindingIndex, search)
@@ -305,10 +332,23 @@ return function(client, stubs)
 		return nil
 	end
 
+	-- A fresh list frame for `initializer`: one of a template a loaded addon's XML defines gets that template's mixin,
+	-- as the client's CreateFrame applies it.
+	local function newFrame(initializer)
+		local frame = newWidget("Frame")
+		local template = client.templates[initializer:GetTemplate()]
+		if template and template.mixin then
+			for key, value in pairs(assert(stubs[template.mixin], "no mixin " .. template.mixin)) do
+				frame[key] = value
+			end
+		end
+		return frame
+	end
+
 	function settings.show(category)
 		local rows = {}
 		for _, initializer in ipairs(category.layout.initializers) do
-			local frame = newWidget("Frame")
+			local frame = newFrame(initializer)
 			initializer:InitFrame(frame)
 			rows[#rows + 1] = { initializer = initializer, frame = frame }
 		end

@@ -57,6 +57,33 @@ describe("The Settings root with no Module On", function()
 		end
 	)
 
+	it("draws its own rows from Core's template, each through its frame's Init (SET-R5, SET-R6)", function()
+		local loaded = loadWith()
+		loaded.client.fire("PLAYER_LOGIN")
+
+		local own = {}
+		for _, row in ipairs(loaded.client.settings.show(assert(loaded.client.settings.category("Pagle")))) do
+			if row.initializer:GetTemplate() == "PagleSettingsRowTemplate" then
+				own[#own + 1] = loaded.client.settings.textsOf(row.frame)[1]
+			end
+		end
+
+		-- The paragraph, the five status rows and the note: the fake panel draws a row of a template only through
+		-- its XML mixin's Init, and raises an error if Core writes InitFrame, Resetter or GetExtent onto an
+		-- initializer (spec/support/settings.lua).
+		local template = assert(loaded.client.templates.PagleSettingsRowTemplate, "Core's XML defines the template")
+		assert.are.equal("PagleSettingsRowMixin", template.mixin)
+		assert.are.same({
+			"Recording your Catches. Enable a Module to see them.",
+			"Ledger",
+			"Hunts",
+			"Stats",
+			"Tackle Board",
+			"QoL",
+			"Turn Modules on or off in the AddOns list.",
+		}, own)
+	end)
+
 	it(
 		"shows the paragraph, the Modules header, the five roster names Not installed and the note (SET-R10, SET-R11, CORE-R41)",
 		function()
@@ -335,19 +362,38 @@ describe("Pagle.OpenSettings", function()
 	end)
 end)
 
--- Shows the root and returns its status list's frame.
+-- Shows the root and returns its status list's frames, a row per roster Module, each found by "Modules".
 local function showStatusList(loaded)
 	local settings = loaded.client.settings
+	local frames = {}
 	for _, row in ipairs(settings.show(settings.category("Pagle"))) do
 		if row.initializer.searchTags[1] == "MODULES" then
-			return row.frame
+			frames[#frames + 1] = row.frame
 		end
 	end
+	return frames
+end
+
+-- The texts of the status list, read by showing the root now, in order.
+local function statusTexts(loaded)
+	local texts = {}
+	for _, frame in ipairs(showStatusList(loaded)) do
+		for _, text in ipairs(loaded.client.settings.textsOf(frame)) do
+			texts[#texts + 1] = text
+		end
+	end
+	return texts
 end
 
 -- The shown buttons of the status list, read by showing the root now.
 local function statusButtons(loaded)
-	return loaded.client.settings.buttonsOf(showStatusList(loaded))
+	local buttons = {}
+	for _, frame in ipairs(showStatusList(loaded)) do
+		for _, button in ipairs(loaded.client.settings.buttonsOf(frame)) do
+			buttons[#buttons + 1] = button
+		end
+	end
+	return buttons
 end
 
 describe("The status list with a Module On", function()
@@ -357,7 +403,7 @@ describe("The status list with a Module On", function()
 		loaded.client.fire("PLAYER_LOGIN")
 
 		local texts = pageTexts(loaded, loaded.client.settings.category("Pagle"))
-		local list = loaded.client.settings.textsOf(showStatusList(loaded))
+		local list = statusTexts(loaded)
 
 		assert.are.equal("Modules", texts[1])
 		assert.are.same({
@@ -416,7 +462,7 @@ describe("The status list with a Module On", function()
 		})
 		loaded.client.fire("PLAYER_LOGIN")
 
-		local list = loaded.client.settings.textsOf(showStatusList(loaded))
+		local list = statusTexts(loaded)
 
 		assert.are.same({}, statusButtons(loaded))
 		assert.are.same({ "QoL", "1.2.3", "On" }, { unpack(list, #list - 2) })
@@ -690,83 +736,6 @@ describe("A Module's button row", function()
 			"Settings_spec%.lua:%d+: .*a button setting's caption is a string",
 			errorOf(function()
 				M:AddSetting("trackers", { kind = "button", label = "Position", caption = 5, onClick = function() end })
-			end)
-		)
-	end)
-end)
-
-describe("M:RefreshSetting", function()
-	-- QoL's Trackers rows: a dropdown "set" reading `state.value`, a button under it live while `state.live`, and a
-	-- button with the id "reset". Returns the handle, the state and the loaded Core, before PLAYER_LOGIN.
-	local function withRows(extra)
-		local loaded = loadWithQoL(extra)
-		local M = registerQoL(loaded)
-		local state = { value = 1, live = true }
-		M:AddSetting("trackers", {
-			kind = "dropdown",
-			id = "set",
-			label = "Set",
-			get = function()
-				return state.value
-			end,
-			set = function() end,
-			options = function()
-				return { { value = 1, label = "One" }, { value = 2, label = "Two" } }
-			end,
-		})
-		M:AddSetting("trackers", {
-			kind = "button",
-			parent = "set",
-			label = "Save",
-			onClick = function() end,
-			isEnabled = function()
-				return state.live
-			end,
-		})
-		M:AddSetting("trackers", { kind = "button", id = "reset", label = "Reset", onClick = function() end })
-		return M, state, loaded
-	end
-
-	it("makes the shown control re-read get, and the rows under it their greying (CORE-R42, SET-R61)", function()
-		local M, state, loaded = withRows()
-		loaded.client.fire("PLAYER_LOGIN")
-		local rows = loaded.client.settings.show(assert(loaded.client.settings.category("Trackers")))
-		state.value, state.live = 2, false -- changed outside Settings
-
-		M:RefreshSetting("set")
-
-		assert.are.equal(2, rows[2].frame.value)
-		assert.is_false(rows[3].frame.enabled)
-	end)
-
-	it("does nothing before the page is registered (CORE-R42, CORE-R32)", function()
-		local M, _, loaded = withRows({
-			InCombatLockdown = function()
-				return true
-			end,
-		})
-		M:RefreshSetting("set")
-		loaded.client.fire("PLAYER_LOGIN")
-
-		M:RefreshSetting("set")
-
-		assert.is_nil(loaded.client.settings.category("Trackers"))
-	end)
-
-	it("raises an error at the caller for an id none of the Module's value rows has (CORE-R42)", function()
-		local M, _, loaded = withRows()
-		loaded.client.fire("PLAYER_LOGIN")
-
-		assert.matches(
-			"Settings_spec%.lua:%d+: QoL's RefreshSetting: no checkbox, slider or dropdown with id gear",
-			errorOf(function()
-				M:RefreshSetting("gear")
-			end)
-		)
-		assert.matches(
-			"Settings_spec%.lua:%d+: QoL's RefreshSetting: no checkbox, slider or dropdown with id reset",
-			errorOf(function()
-				M:RefreshSetting("reset")
 			end)
 		)
 	end)

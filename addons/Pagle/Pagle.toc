@@ -59,6 +59,7 @@ adapter\Fishing.lua
 adapter\Diagnostics.lua
 adapter\Sessions.lua
 adapter\Settings.lua
+adapter\Settings.xml
 adapter\AnnouncementSettings.lua
 adapter\Slash.lua
 adapter\Wallet.lua
