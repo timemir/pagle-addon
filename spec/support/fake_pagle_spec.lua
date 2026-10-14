@@ -713,6 +713,18 @@ describe("FakePagle", function()
 		end)
 	end)
 
+	it("matches a window spec and conditions it handed out read-only, as Core takes its own (LOG-R48)", function()
+		local fake = newFakePagle()
+		-- What a Module sees: read-only proxies (CORE-R18).
+		local Pagle = fake.globals.Pagle
+		local night = Pagle.GetWindowSpec("night")
+
+		fake.conditions.minute = 800 -- 13:20, outside the generated night (18:00–12:00)
+		assert.is_false(Pagle.MatchesConditions(night, Pagle.GetConditions()))
+		fake.conditions.minute = 1300
+		assert.is_true(Pagle.MatchesConditions(night, Pagle.GetConditions()))
+	end)
+
 	it("iterates its Catch log with Core's real codec, handing out read-only records (LOG-R42, CORE-R18)", function()
 		local fake = newFakePagle()
 		fake.catchLog.data.characters[1] = { guid = PLAYER_GUID }
