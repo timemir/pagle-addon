@@ -8,9 +8,9 @@ import pytest
 
 from areas_fixture import write_areas
 from baseline_fixture import write_baseline
+from cli_fixture import run
 from item_fixture import CHECKS, write_item_layer
 from observed_fixture import write_observed
-from pagle_data.cli import main
 from pools_fixture import write_pools
 from windows_fixture import write_windows
 
@@ -46,12 +46,6 @@ def write_tree(
     write_observed(root)  # dev.toml with no facts; test_observed.py covers the layer
     write_pools(root)  # test_pools.py covers pool types
     return write_item_layer(root, items, species, families, checks)
-
-
-def run(root: Path, capsys: pytest.CaptureFixture[str]) -> tuple[int, str]:
-    code = main([], root)
-    out, err = capsys.readouterr()
-    return code, out + err
 
 
 def records(root: Path, capsys: pytest.CaptureFixture[str]) -> dict[int, str]:

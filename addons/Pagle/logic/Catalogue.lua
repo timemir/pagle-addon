@@ -225,3 +225,12 @@ end
 function ns.IsFishingChannel(spellID)
 	return spellID ~= nil and ns.Catalogue ~= nil and ns.Catalogue.IsFishingSpell(spellID)
 end
+
+--- An item's record in `ns.Catalogue`, the catalogue Core built at login step 1 (LOG-R1), or nil before it's built
+--- and for an Uncharted item (LOG-R55). The Catch log sizes every Cast it decodes by it (LOG-R65); Core's adapter and
+--- FakePagle both hand it to ns.OpenCatchLog.
+---@param itemID integer
+---@return PagleItem?
+function ns.CatalogueItem(itemID)
+	return ns.Catalogue and ns.Catalogue.GetItem(itemID)
+end

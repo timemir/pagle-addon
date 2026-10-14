@@ -203,6 +203,30 @@ describe("the Journal's words on the client", function()
 			end
 		)
 
+		it("read the generated day and night both biting in their overlap (LED-R127, #175)", function()
+			-- The generated day is 06:00-24:00 and night 18:00-12:00 (Classic's four 6-hour fishing periods), so a
+			-- Sunscale and a Nightfin row both read "biting now" in the morning and evening, and each reads "back in"
+			-- only in the 6 hours its fish never bites.
+			local fake, loaded = loggedIn()
+			openWords(loaded, function(text)
+				return text:WindowLine("day") .. " / " .. text:WindowLine("night")
+			end)
+			local function at(minutes)
+				moveClocks(fake, loaded, minutes)
+				loaded.ns.journal:Draw()
+				return shown(loaded)
+			end
+
+			-- Realm 08:15.
+			assert.are.equal("day, biting now / night, biting now", shown(loaded))
+			-- Realm 14:15: night opens at 18:00, 3 h 45 min away.
+			assert.are.equal("day, biting now / night, back in 4 h", at(6 * 60))
+			-- Realm 20:15.
+			assert.are.equal("day, biting now / night, biting now", at(6 * 60))
+			-- Realm 02:15: day opens at 06:00, 3 h 45 min away.
+			assert.are.equal("day, back in 4 h / night, biting now", at(6 * 60))
+		end)
+
 		it("read the label alone for a window GetWindowSpec doesn't know (LED-R127)", function()
 			local fake, loaded = loggedIn()
 			fake.setCatalogue(nightCatalogue())

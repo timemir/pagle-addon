@@ -8,8 +8,9 @@ local ns = select(2, ...)
 -- The Ledger's one projection (LED-R2): the def it hands `M:NewProjection`, over the fold (LED-R3). Pure logic,
 -- everything passed in (CORE-R7).
 
---- The projection's rules version (LED-R2): `LEDGER_RULES_VERSION × 100 + Pagle.SIZE_RULES_VERSION`. Core defines
---- no `SIZE_RULES_VERSION` until M4's Simulated Sizes (LOG-R68), so a missing one counts as 0: M2's is 100.
+--- The projection's rules version (LED-R2): `LEDGER_RULES_VERSION × 100 + Pagle.SIZE_RULES_VERSION`. Core declared
+--- no `SIZE_RULES_VERSION` before M4's Simulated Sizes (LOG-R68), so a missing one counts as 0, as M2's 100 and M3's
+--- 200 were stored.
 ---@param sizeRulesVersion integer? Pagle.SIZE_RULES_VERSION
 ---@return integer
 function ns.RulesVersion(sizeRulesVersion)
@@ -42,7 +43,7 @@ function ns.ProjectionDef(global, lookups, outlets, sizeRulesVersion)
 	---@param state LedgerState
 	---@param celebrated LedgerCelebrated
 	local function setSummaryLine(state, celebrated)
-		local text = ns.SummaryLine(state, celebrated)
+		local text = ns.SummaryLine(state, celebrated, lookups)
 		if text ~= summaryLine then
 			summaryLine = text
 			outlets.SetSummaryLine(text)
@@ -64,7 +65,11 @@ function ns.ProjectionDef(global, lookups, outlets, sizeRulesVersion)
 		if state.coins ~= coins then
 			outlets.ReportCoinsEarned(state.coins)
 		end
-		setSummaryLine(state, celebrated)
+		-- The shown level and completion change only with an achievement (a level-up, a first Catch, a rank), so an
+		-- entry that earned none leaves the line as it is, once set.
+		if #earned > 0 or not summaryLine then
+			setSummaryLine(state, celebrated)
+		end
 	end
 
 	return {
@@ -83,7 +88,7 @@ function ns.ProjectionDef(global, lookups, outlets, sizeRulesVersion)
 		end,
 		-- LED-R93: the first build's, rebuild's or catch-up's celebration, then Coins and the summary line.
 		done = function(state, info)
-			local celebrated = ns.CelebrateDone(global, state, scratch, info, outlets)
+			local celebrated = ns.CelebrateDone(global, state, scratch, info, outlets, lookups)
 			scratch = {}
 			setSummaryLine(state, celebrated)
 		end,

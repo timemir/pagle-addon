@@ -12,6 +12,8 @@ ns.L = {
 	-- LOG-R18: PagleLog was in another format, so Core started a new log.
 	LOG_FORMAT_CHANGED = "Pagle: dev log format changed; started a new log.",
 	NOT_FOREVER = "Pagle: this isn't World of Warcraft: Forever, so Pagle stays off.",
+	-- LOG-R67: the Size band names, Tiddler to Monster, in band order (Pagle.SIZE_BANDS). Drafts for the lore pass.
+	SIZE_BANDS = { "Tiddler", "Typical", "Hefty", "Whopper", "Monster" },
 	-- Error reports (CORE-R23): owner, event, the error.
 	EVENT_REGISTER_FAILED = "Pagle: %s couldn't register the event %s: %s",
 	EVENT_HANDLER_FAILED = "Pagle: %s's handler for the event %s failed: %s",

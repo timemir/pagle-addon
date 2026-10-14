@@ -93,11 +93,13 @@ echo "types: no warnings"
 
 # --- 5. tests (#49): busted on Lua 5.1, every spec/**/*_spec.lua. spec/support/addon.lua loads each addon from its
 # real .toc, in order, so TOC and load-order mistakes fail specs. luacov then reports coverage of addons/ (.luacov);
-# the report never gates.
+# the report never gates. A spec tagged #slow (LOG-R66's 300,000-ID draw) runs once, in a second pass without
+# coverage, where it takes a tenth of the time luacov's line hook gives it.
 stage tests
 mkdir -p .tools/cache
 rm -f .tools/cache/luacov.*.out # luacov adds to an existing stats file
-"$bin/busted" --coverage || fail tests
+"$bin/busted" --coverage --exclude-tags=slow || fail tests
+"$bin/busted" --tags=slow || fail tests
 { "$bin/luacov" && echo "coverage (reported, never gates):" && sed -n '/^File /,$p' .tools/cache/luacov.report.out; } ||
 	echo "check: no coverage report (coverage never gates)"
 

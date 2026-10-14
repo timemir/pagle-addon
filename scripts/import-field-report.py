@@ -7,6 +7,10 @@ Run by hand from WSL (gh lives there; docs/agents/issue-tracker.md), giving ever
 writes data/observed/reports/<reporterKey>.toml, runs scripts/generate-data.py and prints the changes, the "Closes"
 line for the PR and what to commit with it (DATA-R120). scripts/check.sh never runs it: the gate never touches the
 network.
+
+It refuses to import while data/ fails to generate, and writes nothing then. Importing a report with an item new to
+the item universe leaves the generator failing on purpose until that item is categorised or deferred (DATA-R17,
+DATA-R18), so no other report can be imported until then: categorise or defer it, regenerate, then import the next.
 """
 
 import sys

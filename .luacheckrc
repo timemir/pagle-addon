@@ -100,6 +100,8 @@ stds.wow = {
 		"GetLocale",
 		-- The projections' time budget per frame (LOG-R71, LOG-R72); their frames go through C_Timer.After.
 		"debugprofilestop",
+		-- LuaBitOp, which the client ships: the Simulated Size hash (LOG-R66), in Core's logic/Size.lua (files[] below).
+		bit = { fields = { "bxor", "rshift" } },
 		-- The Announcement frames, hung from UIParent, and their sounds on the SFX channel (ANN-R73, ANN-R80); their
 		-- lanes run on GetTime and C_Timer.After, and an item icon comes from C_Item.GetItemInfoInstant (above).
 		"UIParent",
@@ -206,6 +208,9 @@ exclude_files = {
 -- CORE-R7: adapter/ is the one place an addon talks to the client. logic/ (everything passed in as arguments),
 -- locale/ (string tables) and anything else keep the plain Lua 5.1 default.
 files["addons/*/adapter/**"] = { std = "lua51+wow+wow_variables+pagle" }
+-- LOG-R66 puts the Simulated Size hash in Core's logic/, on the client's `bit` library: the one client name a logic/
+-- file reads, as stds.wow inventories it.
+files["addons/Pagle/logic/Size.lua"] = { read_globals = { bit = stds.wow.read_globals.bit } }
 -- Only Core's adapter creates the Pagle global.
 files["addons/Pagle/adapter/**"] = { globals = { "Pagle" } }
 -- /pagle's name (CORE-R60).
