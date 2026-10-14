@@ -256,6 +256,13 @@ describe("Look and Feel", function()
 		end
 		assert.are.same({ "hunts.notebookcover.leather" }, choices) -- only what is owned (SET-R51)
 	end)
+
+	it("puts the tracker frame's dropdown in Hunts' section of the Trackers page (SET-R44, HNT-R120)", function()
+		local _, fake = loggedIn()
+
+		local slots = fake.ns.SectionSlots(fake.ns.goods, "trackers").Hunts
+		assert.are.same({ FRAME }, { slots[1].id, slots[2] })
+	end)
 end)
 
 describe("a notebook cover's preview", function()

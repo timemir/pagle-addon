@@ -60,8 +60,17 @@ stds.wow = {
 		"UnitCastingInfo",
 		"GetInventoryItemID",
 		-- GetItemNameByID: the Ledger's item names (LED-R97, LED-R126), and RequestLoadItemDataByID for the Journal's
-		-- uncached ones (LED-R126). GetItemInfo: the Field report's item names (REP-R30).
-		C_Item = { fields = { "GetItemInfoInstant", "GetItemNameByID", "RequestLoadItemDataByID", "GetItemInfo" } },
+		-- uncached ones (LED-R126). GetItemInfo: the Field report's item names (REP-R30). GetItemIconByID: a Hunt's
+		-- icon (HNT-R55).
+		C_Item = {
+			fields = {
+				"GetItemInfoInstant",
+				"GetItemNameByID",
+				"RequestLoadItemDataByID",
+				"GetItemInfo",
+				"GetItemIconByID",
+			},
+		},
 		C_Spell = { fields = { "GetSpellName" } },
 		-- QoL's Fishing stretch and its CVar lease (QOL-R61–R64).
 		"GetCVar",
@@ -204,6 +213,18 @@ stds.wow_variables = {
 		-- Interface/AddOns/Blizzard_UIParentPanelManager/Shared/UIParentPanelManager.lua: "UISpecialFrames = {", and
 		-- CloseSpecialWindows hides each frame named in it that is shown. Core adds its card frame's name.
 		"UISpecialFrames",
+		-- A FrameXML table the dump doesn't list (HNT-R54: a Hunt's target item loads with Item:CreateFromItemID).
+		-- Gethe/wow-ui-source branch forever at 943764493e6b16d63ded3ab304150d1f05e58b57 ("1.60.1 (70338)"),
+		-- Interface/AddOns/Blizzard_ObjectAPI/Mainline/Item.lua: "Item = {};", "--[[static]] function
+		-- Item:CreateFromItemID(itemID)" and "function ItemMixin:ContinueOnItemLoad(callbackFunction)"; Item.lua is
+		-- listed for every game type in Blizzard_ObjectAPI.toc.
+		Item = { fields = { "CreateFromItemID" } },
+		-- A FrameXML table the dump doesn't list (HNT-R55: a quality class's icon tint). Gethe/wow-ui-source branch
+		-- forever at 943764493e6b16d63ded3ab304150d1f05e58b57 ("1.60.1 (70338)"),
+		-- Interface/AddOns/Blizzard_Colors/Mainline/ColorConstants.lua: "ITEM_QUALITY_COLORS = { };", filled per
+		-- quality by ColorManager.UpdateColorsForItemQuality (Mainline/ColorManager.lua), which replaces the table, so
+		-- Hunts reads it at each call.
+		"ITEM_QUALITY_COLORS",
 	},
 }
 

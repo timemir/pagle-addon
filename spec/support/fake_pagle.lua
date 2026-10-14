@@ -66,9 +66,10 @@
 --- ConditionsChanged({"skill"}) if either changed. Does nothing before login.
 ---@field readOnly fun(value: any): any The read-only proxy of a table (the same one each time); other values as is.
 ---@field moduleState fun(name: string): PagleModuleState A roster Module's state (CORE-R41).
----@field settingsPage fun(topic: string): { module: string, kind: string, label: string, indented: boolean, setting: PagleSetting }[]?
+---@field settingsPage fun(topic: string): { module: string, kind: string, label: string, indented: boolean, setting: PagleSetting, slot: string? }[]?
 --- The rows Core would put on a topic page, in order, its header rows included; nil before login or with no rows,
---- when Core registers no page (CORE-R42).
+--- when Core registers no page (CORE-R42). On Trackers, each Module's section ends with Core's slot dropdown for each
+--- of its "Trackers"-category slots: kind "slot", labelled with the slot's label, `slot` its ID (SET-R44).
 ---@field reported string[] Each error Core reported through geterrorhandler(), e.g. a late M:AddSetting, a
 --- Module function that raised under securecallfunction, or a moment dropped in a replay or rebuild (ANN-R4). A
 --- spec that gets one must read this list (assert it), or it fails at its end (spec/support/errors.lua).
@@ -415,7 +416,7 @@ part(function(fake, Pagle, ns)
 	end)
 
 	function fake.settingsPage(topic)
-		local entries = loggedIn and rows:Page(topic, fake.registry:Modules()) or {}
+		local entries = loggedIn and rows:Page(topic, fake.registry:Modules(), ns.SectionSlots(ns.goods, topic)) or {}
 		if #entries == 0 then
 			return nil
 		end
@@ -428,6 +429,7 @@ part(function(fake, Pagle, ns)
 				label = setting.label,
 				indented = entry.parent ~= nil,
 				setting = setting,
+				slot = entry.slot and entry.slot.id,
 			}
 		end
 		return page

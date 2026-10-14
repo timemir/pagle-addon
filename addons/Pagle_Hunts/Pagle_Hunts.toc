@@ -18,7 +18,9 @@ logic\Seams.lua
 logic\Qualify.lua
 logic\Waters.lua
 logic\Titles.lua
+logic\Projection.lua
 logic\Groups.lua
+logic\Labels.lua
 logic\Board.lua
 logic\Goods.lua
 adapter\BoardWidgets.lua
@@ -26,3 +28,4 @@ adapter\Board.lua
 adapter\Goods.lua
 adapter\Hunts.lua
 adapter\Groups.lua
+adapter\Names.lua

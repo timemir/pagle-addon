@@ -85,6 +85,9 @@ local function start(options)
 		fake.setRestricted(true)
 	end
 	fake.enterWorld()
+	-- The projection's first build redraws at its done (#188, adapter/Projection_spec.lua); these specs count the
+	-- grouping's redraws from here.
+	run.redraws = {}
 	if options.world ~= false then
 		fake.fireGameEvent("PLAYER_ENTERING_WORLD", true, false)
 	end
