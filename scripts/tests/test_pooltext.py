@@ -6,9 +6,10 @@ from pathlib import Path
 
 import pytest
 
+from cli_fixture import run
 from pagle_data.errors import Problems
 from pagle_data.observed import PoolTextEntry, read_observed
-from test_catch_lists import CATALOGUE, run, write_tree
+from test_catch_lists import CATALOGUE, write_tree
 
 POOLTEXT = "data/observed/pooltext.toml"
 

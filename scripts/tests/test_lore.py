@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from pagle_data.cli import main
+from cli_fixture import run
 from test_item_records import CATALOGUE, write_tree
 
 LORE_LUA = "addons/Pagle_Ledger/data/Lore.lua"
@@ -129,12 +129,6 @@ def write_lore_tree(
         if text is not None:
             (directory / name).write_text(text, encoding="utf-8")
     return root
-
-
-def run(root: Path, capsys: pytest.CaptureFixture[str], *args: str) -> tuple[int, str]:
-    code = main(list(args), root)
-    out, err = capsys.readouterr()
-    return code, out + err
 
 
 def emitted(root: Path, capsys: pytest.CaptureFixture[str]) -> str:
