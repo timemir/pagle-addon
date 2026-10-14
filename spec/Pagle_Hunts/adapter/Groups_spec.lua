@@ -129,6 +129,21 @@ local function ids(rows)
 	return out
 end
 
+-- The fixture list's first four Hunts, all current; later tickets append Hunts to the fixture, so specs over it
+-- compare these four's places (`ofFour`) rather than every row.
+local FOUR = { fixture_snapper = true, fixture_oddity = true, fixture_rack = true, fixture_hefty_blackmouth = true }
+
+--- The IDs of `rows` that are among the four, in their order.
+local function ofFour(rows)
+	local out = {}
+	for _, r in ipairs(rows) do
+		if FOUR[r.id] then
+			out[#out + 1] = r.id
+		end
+	end
+	return out
+end
+
 describe("The first grouping (HNT-R42)", function()
 	it("runs at the first PLAYER_ENTERING_WORLD, not before, and asks for a redraw", function()
 		local run = start({ world = false })
@@ -146,10 +161,17 @@ describe("The first grouping (HNT-R42)", function()
 
 	it("holds every current Hunt, and no Retired Hunt or Hunt not yet out (HNT-R2, HNT-R3)", function()
 		local run = start()
+		local rows = run.regroups[1].current.rows
+		-- In Hunt list order.
 		assert.are.same(
 			{ "fixture_snapper", "fixture_oddity", "fixture_rack", "fixture_hefty_blackmouth" },
-			ids(run.regroups[1].current.rows)
+			ofFour(rows)
 		)
+		local current = run.ns.hunts:Current(SERVER_TIME)
+		assert.are.equal(#current, #rows)
+		for i, hunt in ipairs(current) do
+			assert.are.equal(hunt.id, rows[i].id)
+		end
 		assert.is_nil(rowOf(run, "fixture_sunscale"))
 		assert.is_nil(rowOf(run, "fixture_grouper"))
 	end)
@@ -228,20 +250,20 @@ describe("Groups at realm times (HNT-R40, HNT-R41)", function()
 end)
 
 describe("Rows (HNT-R44)", function()
-	it("sort pinned first, short of skill last among the unpinned, then by time, then list order", function()
+	it("sort by group, then pinned first, then by closesAt or opensAt", function()
 		-- At 19:30 with skill 150: oddity is open until 21:00 (Now), snapper opens at 20:00 and hefty at 22:00
 		-- (Soon), and rack waits for its aura (On demand).
 		local run = start()
 		wait(run, untilRealm(19, 30))
 		assert.are.same(
 			{ "fixture_oddity", "fixture_snapper", "fixture_hefty_blackmouth", "fixture_rack" },
-			ids(run.ns.groups:Rows())
+			ofFour(run.ns.groups:Rows())
 		)
 
 		assert.is_true(run.ns.SetPinned("fixture_hefty_blackmouth", true))
 		assert.are.same(
 			{ "fixture_oddity", "fixture_hefty_blackmouth", "fixture_snapper", "fixture_rack" },
-			ids(run.ns.groups:Rows())
+			ofFour(run.ns.groups:Rows())
 		)
 	end)
 
@@ -359,7 +381,7 @@ describe("In combat (HNT-R43, HNT-R193)", function()
 		assert.are.same({ realm(18) }, regroupTimes(run, 1))
 		assert.is_false(run.ns.groups:IsPaused())
 		assert.are.equal("soon", groupOf(run, "fixture_snapper"))
-		-- The timers are set again from there: the next edge, snapper's opening at 20:00, regroups.
+		-- The timers are set again from there: hefty entering Soon at 19:00 and snapper opening at 20:00 regroup.
 		run.ns.SetViewShown("board", false)
 		wait(run, untilRealm(20) - untilRealm(18))
 		assert.are.same({ realm(18), realm(19), realm(20) }, regroupTimes(run, 1))
@@ -369,7 +391,7 @@ describe("In combat (HNT-R43, HNT-R193)", function()
 		local run = start({ restricted = true })
 		assert.are.equal(1, #run.regroups)
 		assert.is_true(run.ns.groups:IsPaused())
-		assert.are.equal(4, #run.ns.groups:Rows())
+		assert.are.equal(4, #ofFour(run.ns.groups:Rows()))
 
 		wait(run, 120)
 		run.fake.setRestricted(false)
@@ -459,15 +481,18 @@ describe('The "show completed" filter (HNT-R82)', function()
 			}
 		end
 		assert.is_false(run.ns.db.profile.showCompleted)
-		assert.are.same({ "fixture_hefty_blackmouth", "fixture_rack" }, ids(run.ns.groups:Rows({ filtered = true })))
-		assert.are.equal(4, #run.ns.groups:Rows()) -- unfiltered, every current Hunt
+		assert.are.same({ "fixture_hefty_blackmouth", "fixture_rack" }, ofFour(run.ns.groups:Rows({ filtered = true })))
+		assert.are.equal(4, #ofFour(run.ns.groups:Rows())) -- unfiltered, every current Hunt
 
 		run.ns.SetPinned("fixture_oddity", true)
-		assert.are.equal(3, #run.ns.groups:Rows({ filtered = true }))
+		assert.are.same(
+			{ "fixture_oddity", "fixture_hefty_blackmouth", "fixture_rack" },
+			ofFour(run.ns.groups:Rows({ filtered = true }))
+		)
 
 		run.ns.SetShowCompleted(true)
 		assert.is_true(run.ns.db.profile.showCompleted)
-		assert.are.equal(4, #run.ns.groups:Rows({ filtered = true }))
+		assert.are.equal(4, #ofFour(run.ns.groups:Rows({ filtered = true })))
 		assert.are.equal("groups", run.redraws[#run.redraws])
 	end)
 
@@ -479,6 +504,6 @@ describe('The "show completed" filter (HNT-R82)', function()
 		run.ns.IsUpdating = function()
 			return true
 		end
-		assert.are.equal(4, #run.ns.groups:Rows({ filtered = true }))
+		assert.are.equal(4, #ofFour(run.ns.groups:Rows({ filtered = true })))
 	end)
 end)

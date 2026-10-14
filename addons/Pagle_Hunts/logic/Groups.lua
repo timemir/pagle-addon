@@ -316,8 +316,7 @@ function Groups:Rows(filter)
 	-- The "show completed" filter's inputs, read once: with no filter asked for, it shows everything.
 	local progress, showCompleted, updating = {}, true, false
 	if filter.filtered then
-		progress, showCompleted, updating =
-			self.reads.state().hunts, self.reads.showCompleted(), self.reads.updating()
+		progress, showCompleted, updating = self.reads.state().hunts, self.reads.showCompleted(), self.reads.updating()
 	end
 	for _, row in ipairs(self.grouping.rows) do
 		local out = handOut(row, pins)
