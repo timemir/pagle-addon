@@ -52,7 +52,7 @@ end
 local function open(run, place)
 	local board = run.ns.board
 	board:Open(place)
-	local page = board.pages[place.mode .. ":right"]
+	local page = board:Page(place, "right")
 	return page, page.entry
 end
 

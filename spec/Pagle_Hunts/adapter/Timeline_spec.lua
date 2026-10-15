@@ -420,7 +420,7 @@ end
 
 --- The texts shown on a page of the board: "left" or "right", as the mode shown draws them.
 local function pageTexts(run, side)
-	return shownTexts(run.ns.board.frame.bodies[side])
+	return shownTexts(run.ns.board:Page(run.ns.board.router:Place(), side))
 end
 
 --- The drawn rows of the Board's left page that show, top to bottom, as { huntID, name, margin }.
@@ -436,7 +436,11 @@ local function drawnRows(run)
 			end
 		end
 	end
-	walk(run.ns.board.pages["board:left"])
+	walk(run.ns.board:Page({ mode = "board" }, "left"))
+	-- each Hunt keeps its row's frame as it moves, so the frames' order isn't the list's: where each sits is
+	table.sort(rows, function(a, b)
+		return a.y < b.y
+	end)
 	return rows
 end
 
@@ -645,7 +649,7 @@ describe("a set's page, drawn (HNT-R66)", function()
 				walk(child)
 			end
 		end
-		walk(run.ns.board.pages["set:left"])
+		walk(run.ns.board:Page(run.ns.board.router:Place(), "left"))
 
 		assert.are.same({ mode = "entry", set = "fixture_dusk", hunt = "fixture_snapper" }, place(run))
 	end)

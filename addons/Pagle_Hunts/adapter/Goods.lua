@@ -6,69 +6,38 @@ end
 local ns = select(2, ...)
 
 -- Hunts' goods on the client (HNT-R120–R122, HNT-R70, HNT-R79): registered with Core, previewed on the Curio Shop's
--- stage, and the looks the board's leather and the tracker wear. The default cover is the books art kit's leather
--- (adapter/BoardWidgets.lua); the covers for sale keep their in-client grains over a tint, the kit having no leather
--- for them. The tracker's three looks are the kit's: the native block restyled, Ink Wash's paper and Wax Seal's
--- parchment (adapter/BookAtlas.lua's TrackerInk and TrackerWax), each with its own fonts and inks.
+-- stage, and the looks the board's leather and the tracker wear. The four covers are the books art kit v2's
+-- (adapter/BoardWidgets.lua's leather): Leather, Oilcloth and Verdigris drawn at the board's size, Tooled Leather with
+-- its gilt double rule, Verdigris with its gilt corner. The tracker's three looks are the kit's: the native block
+-- restyled, Ink Wash's paper and Wax Seal's parchment (adapter/BookAtlas.lua's TrackerInk and TrackerWax), each with
+-- its own fonts and inks.
 
 -- A tint from its hex code, as the prototypes' CSS writes it: { r, g, b }, 0 to 1 (ns.BoardTint).
 local tint = ns.BoardTint
-
--- The old covers' grains: the rock backdrop and FrameGeneral's smoother marble, for a waxed cloth.
-local ROCK = ns.BOARD_TEXTURES.leather
-local MARBLE = "Interface\\FrameGeneral\\UI-Background-Marble"
 
 --- A notebook cover's look (HNT-R70, HNT-R121): the leather the board wears (adapter/Board.lua's BoardCoverLook, every
 --- field given) and the elastic strap the closed notebook shows in the shop.
 ---@class HuntsCoverLook: BoardCover
 ---@field strap number[]
 
--- The default cover's strap; its leather is filled in from ns.BOARD_COVER below.
-local defaultCover = { strap = tint("a01818") }
+-- The straps, as the kit's cover swatches draw them: dark leather, or deep green on the green cloth.
+local STRAP, GREEN_STRAP = tint("2a1608"), tint("1c3a30")
 
---- Each notebook cover's look, by good ID (HNT-R121). Leather is the board's own (ns.BOARD_COVER, the kit's); Oilcloth
---- takes prototypes/curio-shop/'s swatch (#1a2a1a, #8aa07a, #d0a020); Tooled Leather and Verdigris are picked from
---- their lore (data/lore/hunts.toml).
+--- Each notebook cover's look, by good ID (HNT-R121), the books kit v2's Covers.lua: Leather is the board's own
+--- (ns.BOARD_COVER); Oilcloth a waxed green cloth; Tooled Leather the leather, darker at its foot, with a gilt double
+--- rule; Verdigris copper gone green, with a gilt corner.
 ---@type table<string, HuntsCoverLook>
 ns.COVERS = {
-	-- The board's own leather (ns.BOARD_COVER), filled in below, with a red strap.
-	[ns.DEFAULT_COVER] = defaultCover --[[@as HuntsCoverLook]],
-	-- Black-green waxed cloth, smooth, with a pale green rule and a mustard strap.
-	["hunts.notebookcover.oilcloth"] = {
-		kit = false,
-		leather = tint("1a2a1a"),
-		edge = tint("080e08"),
-		rule = tint("8aa07a"),
-		grain = MARBLE,
-		grainAlpha = 0.35,
-		strap = tint("d0a020"),
-	},
-	-- Dark hide, deeply grained as if worked with a tool (its lore: tooled with reeds and leaping fish), gilt rule.
-	["hunts.notebookcover.tooled"] = {
-		kit = false,
-		leather = tint("3a2212"),
-		edge = tint("120a04"),
-		rule = tint("c9a46a"),
-		grain = ROCK,
-		grainAlpha = 0.8,
-		strap = tint("6a3e20"),
-	},
-	-- Copper gone green (its lore: copper corners and clasp, green in the sea air): dark leather, a verdigris rule and
-	-- clasp.
+	[ns.DEFAULT_COVER] = { foot = ns.BOARD_COVER.foot, strap = STRAP },
+	["hunts.notebookcover.oilcloth"] = { foot = 1, fill = ns.COVER_FILES.oilcloth, strap = STRAP },
+	["hunts.notebookcover.tooled"] = { foot = 0.75, tooled = true, strap = STRAP },
 	["hunts.notebookcover.verdigris"] = {
-		kit = false,
-		leather = tint("24302a"),
-		edge = tint("0c120e"),
-		rule = tint("5aa08a"),
-		grain = ROCK,
-		grainAlpha = 0.45,
-		strap = tint("4a8a78"),
+		foot = 1,
+		fill = ns.COVER_FILES.verdigris,
+		corner = true,
+		strap = GREEN_STRAP,
 	},
 }
-
-for key, value in pairs(ns.BOARD_COVER) do
-	ns.COVERS[ns.DEFAULT_COVER][key] = value
-end
 
 --- The look of cover good `goodID`, or Leather's for an ID that isn't a cover's.
 ---@param goodID string?
@@ -78,8 +47,8 @@ function ns.CoverLook(goodID)
 end
 
 -- The closed notebook on the stage, as prototypes/curio-shop/'s notebook swatch: its size, its spine's shadow, and the
--- elastic strap down its right side.
-local NOTEBOOK_WIDTH, NOTEBOOK_HEIGHT = 110, 140
+-- elastic strap down its right side, and Verdigris's corner on it.
+local NOTEBOOK_WIDTH, NOTEBOOK_HEIGHT, NOTEBOOK_CORNER = 110, 140, 24
 local SPINE_WIDTH = 8
 local STRAP_WIDTH, STRAP_INSET, STRAP_OVER = 8, 14, 3
 
@@ -95,7 +64,7 @@ local function buildNotebook(stage)
 	local notebook = CreateFrame("Frame", nil, stage) --[[@as HuntsNotebook]]
 	notebook:SetSize(NOTEBOOK_WIDTH, NOTEBOOK_HEIGHT)
 	notebook:SetPoint("TOP", 0, -16)
-	notebook.cover = ns.NewBoardLeather(notebook)
+	notebook.cover = ns.NewBoardLeather(notebook, NOTEBOOK_CORNER)
 	local spine = notebook:CreateTexture(nil, "BORDER", nil, 2)
 	spine:SetColorTexture(0, 0, 0, 0.35)
 	spine:SetPoint("TOPLEFT", 2, -2)
@@ -541,9 +510,11 @@ end
 -- The bus owner of the board's cover (CORE-R23).
 local OWNER = "Pagle_Hunts goods"
 
---- Dresses the board's leather in the equipped notebook cover (HNT-R70), open or not.
-local function wearCover()
-	ns.board:SetCover(ns.CoverLook(Pagle.GetEquipped(ns.COVER_SLOT)))
+--- Dresses the board's leather in the equipped notebook cover (HNT-R70), open or not; `animate` for a change the
+--- player made, which an open board shows by dipping its binding while the cover changes.
+---@param animate boolean?
+local function wearCover(animate)
+	ns.board:SetCover(ns.CoverLook(Pagle.GetEquipped(ns.COVER_SLOT)), animate)
 end
 
 --- Registers Hunts' slots and goods (HNT-R120, HNT-R121, SHOP-R21), from OnInitialize right after RegisterModule
@@ -558,10 +529,12 @@ function ns.RegisterGoods(module)
 			module:RegisterGood(good)
 		end
 	end
-	Pagle.RegisterCallback(OWNER, "ModulesChanged", wearCover)
+	Pagle.RegisterCallback(OWNER, "ModulesChanged", function()
+		wearCover(false)
+	end)
 	Pagle.RegisterCallback(OWNER, "AppearanceChanged", function(_, slot)
 		if slot == ns.COVER_SLOT then
-			wearCover()
+			wearCover(true)
 		end
 	end)
 end

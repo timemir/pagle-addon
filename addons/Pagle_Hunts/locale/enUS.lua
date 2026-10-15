@@ -134,6 +134,9 @@ ns.L = {
 		camp = "your camp is up",
 	},
 	TIMELINE_KICKER = "The Board",
+	-- A set's pages' kicker, both sides, and its checklist's heading (HNT-R66, the books kit v2's "Set" board).
+	SET_KICKER = "Hunt set",
+	SET_HUNTS_HEADING = "Hunts in this set",
 	RULER_REALM_TIME = "Realm time", -- in small caps over the names, level with the ruler
 	RULER_NEXT = "next %dh", -- in the hand at the ruler's right: how far ahead it reaches
 	RULER_HOUR = "%02d", -- a labelled tick: the realm hour
@@ -238,7 +241,7 @@ ns.L = {
 	SET_PAGE_EARNED = "Earned: %s",
 	SET_SEAL = "Title earned %s", -- the seal, with the full date
 	SET_SEAL_WORD = "Earned", -- the pressed seal's word over the short date and the year
-	SET_PROGRESS = "%d / %d", -- done current Hunts / current Hunts
+	SET_PROGRESS = "%d of %d done", -- done current Hunts, current Hunts
 	SET_RULE = "The first tier of every Hunt earns the title.",
 	SET_RETIRED = "Retired",
 
