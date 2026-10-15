@@ -68,7 +68,7 @@ The Ledger is the `Pagle_Ledger` Module: the Angler's identity as an angler. It 
   - A **trophy family's weights** are its trophy items on any zone list (each item is one weight, shown by its `weight`); its **heaviest** is the one with the greatest `weight` (lowest item ID on a tie).
   - A zone's **junk requirement** exists when its list has a `junk` item; its **treasure requirement** when it has a `container` or `treasure` item.
 - **LED-R11** Each collection's **world** is what is listed plus what the Angler has caught: the Species on any zone list, together with every Species with a Catch in the projection; likewise every trophy and curio item, and every listed Legend plus every caught one. An item on no zone list (such as a fish only ever caught from pools, which reaches a list only through content data, DATA-R28) joins the world when first caught. Uncaught items that are on no list don't appear anywhere.
-- **LED-R12** A **removed** item (`removed` true) is never on a list (DATA-R26). Its earlier Catches keep their credit (XP, stars, records), its page still shows with "No longer found in Forever's waters.", and it is left out of both sides of every "x of N" count and of Ledger completion (LED-R70, LED-R71).
+- **LED-R12** A **removed** item (`removed` true) is never on a list (DATA-R26). Its earlier Catches keep their credit (XP, stars, records), its page still shows with "No longer found in Forever's waters." (an uncaught one has no page and is in no index: not the Legends' nor any collection's), and it is left out of both sides of every "x of N" count and of Ledger completion (LED-R70, LED-R71).
 
 ### XP and Fresh Water
 

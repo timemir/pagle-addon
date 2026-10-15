@@ -356,6 +356,36 @@ describe("The Ledger's world", function()
 				ns.CollectionWorlds(world, state).species
 			)
 		end)
+
+		-- A zone whose catches name a removed Legend and a removed junk item next to Elwynn's own (LED-R12).
+		local REMOVED_LEGEND, REMOVED_JUNK = 19807, 6311
+		local function withRemoved()
+			local itemTable = items()
+			itemTable[REMOVED_LEGEND] = fishRecord(REMOVED_LEGEND, { legend = true, removed = true })
+			itemTable[REMOVED_JUNK] = itemRecord("junk", { removed = true })
+			local zone = areaRecord(0, {
+				catches = { catchEntry(LEGEND), catchEntry(JUNK), catchEntry(REMOVED_LEGEND), catchEntry(REMOVED_JUNK) },
+			})
+			return ns.NewWorld(lookups(itemTable, { [ELWYNN] = zone }))
+		end
+
+		it("lists no removed item that wasn't caught, in the Legends or any collection (LED-R12)", function()
+			local worlds = ns.CollectionWorlds(withRemoved(), emptyState())
+
+			assert.are.same({ LEGEND }, worlds.legends)
+			assert.are.same({ JUNK }, worlds.junk)
+		end)
+
+		it("keeps a caught removed Legend and curio in their worlds, for their pages (LED-R12)", function()
+			local state = emptyState()
+			state.items[REMOVED_LEGEND] = first(1)
+			state.items[REMOVED_JUNK] = first(2)
+
+			local worlds = ns.CollectionWorlds(withRemoved(), state)
+
+			assert.are.same({ LEGEND, REMOVED_LEGEND }, worlds.legends)
+			assert.are.same({ JUNK, REMOVED_JUNK }, worlds.junk)
+		end)
 	end)
 
 	describe("Ledger completion (LED-R70–R72)", function()
