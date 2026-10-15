@@ -585,13 +585,19 @@ end
 --- where it opens: `place`, one of the Ledger's own places as `{ constructor, args... }` (ns.JournalPlace, e.g.
 --- `{ "zone", 148 }`), or `id` and `args` for a spec's own spread, which must be registered; Home, at its first
 --- opening, by default; with `id` false the book stays closed. With `building`, it stops after login, before entering
---- the world, so the projection is still being built (LOG-R74, LED-R122).
----@param options { catalogue: table?, characters: table[]?, logId: string?, log: table[]?, entries: string[]?, globals: table?, itemNames: table?, areaNames: table?, mapNames: table?, before: fun(loaded: LoadedAddon, fake: FakePagle)?, building: boolean?, place: table?, id: string|false|nil, args: table? }?
+--- the world, so the projection is still being built (LOG-R74, LED-R122). With `motion`, Core's Animations setting
+--- stays on and the Journal moves (its page turns, crossfades and moments); without it, everything draws settled.
+---@param options { catalogue: table?, characters: table[]?, logId: string?, log: table[]?, entries: string[]?, globals: table?, itemNames: table?, areaNames: table?, mapNames: table?, before: fun(loaded: LoadedAddon, fake: FakePagle)?, building: boolean?, place: table?, id: string|false|nil, args: table?, motion: boolean? }?
 ---@return FakePagle fake
 ---@return LoadedAddon loaded
 function openJournal(options)
 	options = options or {}
 	local fake = newFakePagle()
+	-- The Journal draws settled unless a spec watches its motion (`motion`): with Core's Animations setting on, a page
+	-- turn or a crossfade ends only on frames the fake runs when asked (client.update).
+	if not options.motion then
+		fake.profile.announcements.motion = false
+	end
 	if options.catalogue then
 		fake.setCatalogue(options.catalogue)
 	end

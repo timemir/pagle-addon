@@ -70,6 +70,7 @@ local OWNER = "Pagle_Ledger Journal"
 ---@field binding string?              -- the binding it was last drawn in (LED-R112)
 ---@field prestigeCard LedgerPrestigeCard? -- the Prestige confirm, made at its first asking (adapter/Prestige.lua)
 ---@field private redrawQueued boolean
+---@field private bindOwner table?    -- the motion driver's owner of a binding change
 ---@field private drawnSubjects { left: string?, right: string? }? -- each page's subject as last drawn (LED-R129)
 ---@field private drawnId string?      -- the spread last drawn, and its depth in crumbs
 ---@field private drawnDepth integer?
@@ -526,6 +527,39 @@ function Journal:Settle()
 	frame:SetAlpha(1)
 end
 
+--- Draws the book in binding `look` (LED-R112); `changing` from another one while open, as the kit changes binding
+--- (MOTION.md): the page-turn sound, the leather dipping to 25% and back and the band to 55% (0.4 s), the binding
+--- changing underneath at the dip.
+---@param look LedgerBindingLook
+---@param changing boolean
+function Journal:Rebind(look, changing)
+	local frame = self.frame --[[@as LedgerJournalFrame]]
+	local owner = self.bindOwner or {}
+	self.bindOwner = owner
+	ns.StopMotion(owner)
+	frame.leatherFill:SetAlpha(1)
+	frame.bandFrame:SetAlpha(1)
+	if not (changing and ns.Moving()) then
+		ns.TintJournalShell(frame, look)
+		return
+	end
+	ns.JournalSound("pageTurn")
+	ns.Animate(owner, {
+		{
+			dur = 0.4,
+			ease = ns.Ease.inOut,
+			keys = { { 0, { 1 } }, { 0.5, { 0.25 } }, { 1, { 1 } } },
+			apply = function(v)
+				frame.leatherFill:SetAlpha(v[1])
+				frame.bandFrame:SetAlpha(0.4 + 0.6 * v[1])
+			end,
+		},
+	})
+	ns.Cue(owner, 0.2, function()
+		ns.TintJournalShell(frame, look)
+	end)
+end
+
 -- The leaf of `side` not shown now, made ready: shown whole and drawn on.
 ---@param frame LedgerJournalFrame
 ---@param side "left"|"right"
@@ -681,7 +715,7 @@ function Journal:Draw()
 	local binding = Pagle.GetEquipped(ns.BINDING_SLOT)
 	local look = ns.BindingLook(binding)
 	if binding ~= self.binding or not frame.leatherTint then
-		ns.TintJournalShell(frame, look)
+		self:Rebind(look, self.binding ~= nil and frame.leatherTint ~= nil)
 	end
 	self.binding = binding
 	local context = self:Context()

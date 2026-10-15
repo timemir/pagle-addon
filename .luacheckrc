@@ -121,8 +121,6 @@ stds.wow = {
 		-- (QOL-R83): ReloadUI is unprotected on build 70338 (QOL-R102), and the QoL boundary spec allows that one call.
 		"StaticPopup_Show",
 		"ReloadUI",
-		-- The Ledger's Prestige confirm (LED-R33), hidden when the Fish Journal closes.
-		"StaticPopup_Hide",
 		-- QoL's Nudges: a frame on the screen (UIParent, below), below the game's error text (QOL-R75); its colour is in
 		-- stds.wow_variables. Stats refuses a 4th watched Dry spell in that red error text (STA-R61).
 		"UIErrorsFrame",
@@ -250,13 +248,12 @@ stds.wow_variables = {
 		-- A FrameXML table the dump doesn't list (QOL-R81). No probe has shown a popup yet; the M1 exit check (step 7)
 		-- does. Gethe/wow-ui-source branch forever at 943764493e6b16d63ded3ab304150d1f05e58b57 ("1.60.1 (70338)"),
 		-- Interface/AddOns/Blizzard_StaticPopup/StaticPopup.lua: `StaticPopupDialogs = {}; -- Definitions`. QoL adds
-		-- its two dialogs to it: the conflict popup and its Reload now popup (QOL-R81, QOL-R83); the Ledger adds its
-		-- Prestige confirm (LED-R33); and the Tackle Board adds its reroll confirm (TKB-R56).
+		-- its two dialogs to it: the conflict popup and its Reload now popup (QOL-R81, QOL-R83); and the Tackle Board adds
+		-- its reroll confirm (TKB-R56).
 		StaticPopupDialogs = {
 			fields = {
 				PAGLE_QOL_CONFLICT = { read_only = false },
 				PAGLE_QOL_RELOAD = { read_only = false },
-				PAGLE_LEDGER_PRESTIGE = { read_only = false },
 				PAGLE_TACKLEBOARD_REROLL = { read_only = false },
 			},
 		},

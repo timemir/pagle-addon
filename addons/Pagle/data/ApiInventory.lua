@@ -155,7 +155,6 @@ ns.API_INVENTORY = {
 	"SettingsPanel",
 	"SlashCmdList",
 	"StaticPopupDialogs",
-	"StaticPopup_Hide",
 	"StaticPopup_Show",
 	"TooltipDataProcessor",
 	"TooltipDataProcessor.AddTooltipPostCall",
