@@ -323,7 +323,7 @@ describe("the Angler page's bookplate in M4", function()
 		local left = loaded.ns.journal.pages.left
 
 		assert.are.same({}, ofKind(left, "button"))
-		local bookplate = blockOfKind(left, "bookplate")
+		local bookplate = assert(blockOfKind(left, "bookplate"))
 		assert.are.same({ nil, "No Prestige seals yet" }, { bookplate.mark, bookplate.note })
 	end)
 
@@ -331,7 +331,7 @@ describe("the Angler page's bookplate in M4", function()
 		local _, loaded = anglerPage(fixturePlus({ prestige(T0 + 600, 1), prestige(T0 + 900, 2) }))
 		local left = loaded.ns.journal.pages.left
 
-		local bookplate = blockOfKind(left, "bookplate")
+		local bookplate = assert(blockOfKind(left, "bookplate"))
 		assert.are.same({ { emblem = "II", stars = 0 }, "Prestige II" }, { bookplate.mark, bookplate.note })
 		-- the crest is Prestige II's frame
 		assert.are.same({ kind = "crest", rank = 2 }, left[1])

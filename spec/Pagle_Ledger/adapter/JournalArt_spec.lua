@@ -44,11 +44,11 @@ describe("the Fish Journal's art (ledger.md › UI)", function()
 			local file = atlases[name].file
 			assert.matches("^Interface\\AddOns\\Pagle_Ledger\\media\\journal\\", file)
 			local path = file:gsub("^Interface\\AddOns\\", "addons/"):gsub("\\", "/") .. ".blp"
-			assert.is_true(#readFile(path) > 0, path)
+			assert(#readFile(path) > 0, path)
 		end
 		for _, key in ipairs({ "leatherGrey", "bark", "cloth" }) do
 			local path = loaded.ns.JOURNAL_FILES[key]:gsub("^Interface\\AddOns\\", "addons/"):gsub("\\", "/") .. ".blp"
-			assert.is_true(#readFile(path) > 0, path)
+			assert(#readFile(path) > 0, path)
 		end
 	end)
 

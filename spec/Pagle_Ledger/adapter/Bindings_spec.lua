@@ -180,11 +180,11 @@ describe("the Ledger's Journal bindings", function()
 			return { color[1], color[2], color[3] }
 		end
 		return {
-			leather = frame.leatherFill.texture,
+			leather = (frame.leatherFill --[[@as table]]).texture,
 			tint = frame.leatherTint,
 			band = rgb(frame.band[1]),
 			paper = { rgb(frame.papers.left.parchment), rgb(frame.papers.right.parchment) },
-			silver = frame.plate.slices[1].desaturated == true,
+			silver = (frame.plate.slices[1] --[[@as table]]).desaturated == true,
 		}
 	end
 

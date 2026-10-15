@@ -33,6 +33,7 @@ local OWNER = "Pagle_Ledger Journal"
 ---@class LedgerJournalCrumbView: LedgerJournalClickable
 ---@field label FontString
 ---@field fleuron Texture?
+---@field gilt number[]?       -- the binding's gilt it was drawn in
 
 --- One page's leaf: a clip frame on the paper whose visible strip the page turn narrows, and the page body on it.
 ---@class LedgerJournalLeaf
@@ -76,8 +77,8 @@ local OWNER = "Pagle_Ledger Journal"
 ---@field private drawnDepth integer?
 ---@field private drawnPlate boolean?  -- whether the last drawing was a Legend's plate
 ---@field private turnDirection ("fwd"|"back")? -- the next drawing turns the page this way (a Prestige)
----@field private turnOwner table      -- the motion driver's owner of the page turn
----@field private finishTurn fun()?    -- settles the page turn or crossfade under way
+---@field turnOwner table              -- the motion driver's owner of the page turn
+---@field finishTurn fun()?            -- settles the page turn or crossfade under way
 ---@field private justOpened boolean?  -- the book has just opened: its first drawing neither turns nor fades
 local Journal = {}
 Journal.__index = Journal
@@ -445,8 +446,8 @@ end
 --- Opens the book, drawn as it stands now, fitted to the screen.
 function Journal:Show()
 	local fresh = not self.frame
-	self.frame = self.frame or build(self)
-	local frame = self.frame
+	local frame = self.frame or build(self)
+	self.frame = frame
 	if not frame:IsShown() or frame.closing then
 		ns.StopMotion(frame)
 		frame.closing = false

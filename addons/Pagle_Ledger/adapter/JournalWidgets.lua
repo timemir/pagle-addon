@@ -220,6 +220,7 @@ end
 -- ---------------------------------------------------------------- links and buttons
 
 ---@class LedgerLinkWidget: LedgerJournalWidget
+---@field style string?
 ---@field pen LedgerSpriteTexture
 ---@field dots LedgerDotLine
 ---@field radio LedgerSpriteTexture
@@ -468,10 +469,11 @@ makers.bookplate = function(parent)
 			right = width - 80
 		end
 		local mark = block.mark
-		local emblem = mark ~= nil and mark.emblem ~= nil
+		local numeral = mark and mark.emblem
+		local emblem = numeral ~= nil
 		self.emblem:SetShown(emblem)
 		self.emblemText:SetShown(emblem)
-		self.emblemText:SetText(emblem and mark.emblem or "")
+		self.emblemText:SetText(numeral or "")
 		self.emblemNote:SetShown(block.note ~= nil)
 		self.emblemNote:SetText(block.note or "")
 		bound(self.emblemNote, width * 0.45)
@@ -479,7 +481,7 @@ makers.bookplate = function(parent)
 		self.emblemNote:SetPoint("TOPRIGHT", self, "TOPLEFT", right, -11)
 		local noteW = block.note and self.emblemNote:GetWidth() + 8 or 0
 		-- a Master Prestige's stars, one per rank past X, in a row under the emblem
-		local stars = emblem and mark.stars or 0
+		local stars = emblem and mark and mark.stars or 0
 		for i = 1, math.max(stars, #self.stars) do
 			local star = self.stars[i] or ns.JournalSprite(self, "Parts", "star", "ARTWORK", 0, 10)
 			self.stars[i] = star
@@ -723,9 +725,13 @@ makers.emblem = function(parent)
 	return widget
 end
 
+---@class LedgerRuleWidget: LedgerJournalWidget
+---@field rule Frame?
+---@field ruleW number?
+
 -- The fleuron rule across the page (the kit's divider between a page's parts).
 makers.rule = function(parent)
-	local widget = newWidget(parent)
+	local widget = newWidget(parent) --[[@as LedgerRuleWidget]]
 	function widget.Fill(self, _, width)
 		if not self.rule or self.ruleW ~= width then
 			if self.rule then
@@ -739,9 +745,12 @@ makers.rule = function(parent)
 	return widget
 end
 
+---@class LedgerMapWidget: LedgerJournalWidget
+---@field texture LedgerSpriteTexture
+
 -- Uncharted waters' blank chart (LED-R138): the kit's map, a coastline and a compass with no names on it.
 makers.map = function(parent)
-	local widget = newWidget(parent)
+	local widget = newWidget(parent) --[[@as LedgerMapWidget]]
 	widget.texture = ns.JournalSprite(widget, "Parts", "map", "ARTWORK", 0, 380)
 	function widget.Fill(self, _, width)
 		local w = math.min(380, width)
@@ -772,6 +781,7 @@ end
 ---@field seal Texture
 ---@field note FontString
 ---@field tileW number
+---@field dashed boolean?
 
 local TILE_H, TILE_GAP, TILE_ROW = 76, 8, 84
 

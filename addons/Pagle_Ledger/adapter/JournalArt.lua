@@ -154,6 +154,7 @@ end
 --- A texture showing a sprite: `box` is where its drawn element sits in it.
 ---@class LedgerSpriteTexture: Texture
 ---@field box number[]
+---@field sprite string?    -- the stamp it shows, for a spec to read
 
 -- Stretched art: no pixel snapping, or it shimmers as the book moves.
 ---@param texture Texture
@@ -703,7 +704,7 @@ end
 ---@param parent Frame
 ---@param size number
 ---@return LedgerStarsView
-function ns.JournalStars(parent, size)
+function ns.JournalStarRow(parent, size)
 	local frame = CreateFrame("Frame", nil, parent) --[[@as LedgerStarsView]]
 	local k, step = size / 13, 12.5 * size / 12
 	frame:SetSize(step * 3, size)

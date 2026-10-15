@@ -84,7 +84,7 @@ ns.RegisterJournalWidget("ladder", function(parent)
 				rung.text:SetWidth(sprite.box[3])
 				rung.text:ClearAllPoints()
 				rung.text:SetPoint("TOPLEFT", x, -2)
-				local ring = rung.ring
+				local ring = rung.ring --[[@as LedgerSpriteTexture]]
 				ns.StopMotion(ring)
 				if same and before ~= nil and before ~= i and ns.Moving() then
 					-- the new circle settles from 130% (0.35 s from 0.2 s)
@@ -170,7 +170,7 @@ ns.RegisterJournalWidget("row", function(parent)
 	widget.name = ns.JournalLabel(widget, "print", 15, INK.body)
 	widget.label = widget.name
 	widget.margin = ns.JournalLabel(widget, "hand", 17, INK.note, "", { justify = "RIGHT" })
-	widget.stars = ns.JournalStars(widget, 12)
+	widget.stars = ns.JournalStarRow(widget, 12)
 	widget.value = ns.JournalLabel(widget, "print", 13.5, INK.small, "", { justify = "RIGHT" })
 	widget:SetScript("OnEnter", function(self)
 		if self.place then
@@ -239,6 +239,7 @@ ns.RegisterJournalWidget("row", function(parent)
 		-- a fish logged since the page was last drawn
 		local key = block.place and (block.place.id .. ":" .. tostring(block.place.args and block.place.args.species))
 			or block.text
+			or ""
 		local same, wasUnknown = ns.JournalRemember(self, draw, key, unknown)
 		ns.StopMotion(self)
 		self.glow:SetAlpha(0)
