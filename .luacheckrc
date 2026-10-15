@@ -170,6 +170,8 @@ stds.wow = {
 		"PlaySoundFile",
 		-- The Prestige banner's crest shows the Angler's portrait (announcements.md › UI).
 		"SetPortraitTexture",
+		-- The Tackle Board's "take it down" tooltip shows at the cursor (tackle-board.md › UI).
+		"GetCursorPosition",
 		-- The Fish Journal's serif and handwriting font objects (ledger.md › UI); its frame is drawn on CreateFrame and
 		-- UIParent above and hides with Esc through UISpecialFrames (below).
 		"CreateFont",

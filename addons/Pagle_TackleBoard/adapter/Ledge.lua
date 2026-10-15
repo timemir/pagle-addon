@@ -18,11 +18,14 @@ local ns = select(2, ...)
 -- The spike (the kit's): its slips hang from the nail's hole at 68, 12 of a slip whose top left is 7, 38; the label sits
 -- 20 under the stack, which reaches at most 250 below the first slip.
 local SLIP_X, SLIP_Y, SLIP_WIDTH, SLIP_HEIGHT, HOLE_X, HOLE_Y, STACK_ROOM = 7, 38, 136, 92, 68, 12, 250
--- The Campfire card and the Fly Box drawer: their top left on the cork and their size, how far over the cork they lie
--- (above the parts and the "Updating…" cover), and how dark the cork goes under them.
+-- The Campfire card and the Fly Box drawer: their top left on the cork and their size, and how dark the cork goes
+-- under them. They and the veil lie at their layers (ns.BOARD_LAYERS), over the parts, the nail and "Updating…".
 local CARD_X, CARD_Y, CARD_WIDTH, CARD_HEIGHT, CARD_LEAN = 76, 16, 800, 434, -0.5
 local DRAWER_X, DRAWER_Y, DRAWER_WIDTH, DRAWER_HEIGHT = 92, 6, 768, 474
-local OVERLAY_LEVEL, VEIL_ALPHA = 40, 0.45
+local VEIL_ALPHA = 0.45
+-- The most done slips stacked one level apart on the spike before they share its top level: they stay inside the
+-- spike's layer, under the nail's.
+local SLIP_LEVELS = 40
 -- The card's day cells: 38 square, 42 apart, from 84, 138; its weeks' rows 42 apart.
 local DAY_X, DAY_Y, DAY_STEP, DAY_SIZE = 84, 138, 42, 38
 -- The drawer's compartments: 6 across its 700 units, 74 high, 78 apart.
@@ -49,6 +52,7 @@ local DAY_ICONS = { lit = "d-flame", burned = "d-burn", out = "d-out", unlit = "
 
 ---@class TackleSpikeFrame: Frame
 ---@field head FontString
+---@field top Frame            -- the nail's frame, at its layer
 ---@field nail TackleSprite
 ---@field slips TackleSpikedSlip[]
 ---@field label FontString
@@ -139,7 +143,7 @@ end
 local function newSpikedSlip(spike, i)
 	local slip = CreateFrame("Frame", nil, spike) --[[@as TackleSpikedSlip]]
 	slip:SetSize(SLIP_WIDTH, SLIP_HEIGHT)
-	slip:SetFrameLevel(spike:GetFrameLevel() + i)
+	slip:SetFrameLevel(spike:GetFrameLevel() + math.min(i, SLIP_LEVELS))
 	slip:EnableMouse(true)
 	slip.paper = ns.ArtSprite(slip, "Board", "done", "ARTWORK")
 	slip.kicker = ns.ArtText(slip, "DoneKind")
@@ -182,10 +186,12 @@ local function buildSpike(spike)
 	spike.head:SetJustifyH("CENTER")
 	spike.head:SetPoint("TOP", 0, 0)
 	spike.head:SetText((ns.Spaced(ns.L.SPIKE_HEAD):gsub("   ", "  ")))
-	-- The nail on its own frame, above every slip.
+	-- The nail on its own frame, above every slip and below every overlay (ns.BOARD_LAYERS).
+	local board = ns.board.frame --[[@as TackleBoardFrame]]
 	local top = CreateFrame("Frame", nil, spike)
 	top:SetAllPoints()
-	top:SetFrameLevel(spike:GetFrameLevel() + 50)
+	top:SetFrameLevel(board:GetFrameLevel() + ns.BoardLayer("nail"))
+	spike.top = top
 	spike.nail = ns.ArtSprite(top, "Board", "nail", "OVERLAY", 5)
 	ns.PlaceSprite(spike.nail, top, 60, 32)
 	spike.label = ns.ArtWrap(spike, "SpikeLabel", 162, 1)
@@ -228,7 +234,7 @@ local function veil(ledge)
 		local board = ns.board.frame --[[@as TackleBoardFrame]]
 		local frame = CreateFrame("Frame", nil, board.cork)
 		frame:SetAllPoints()
-		frame:SetFrameLevel(board.cork:GetFrameLevel() + OVERLAY_LEVEL - 2)
+		frame:SetFrameLevel(board:GetFrameLevel() + ns.BoardLayer("veil"))
 		frame:EnableMouse(true)
 		ns.BoardSolid(frame, "140902", VEIL_ALPHA, "BACKGROUND")
 		frame:Hide()
@@ -253,7 +259,7 @@ local function overlay(ledge, x, y, width, height)
 	local frame = CreateFrame("Frame", nil, board)
 	frame:SetSize(width, height)
 	frame:SetPoint("TOPLEFT", board.cork, "TOPLEFT", x, -y)
-	frame:SetFrameLevel(board.cork:GetFrameLevel() + OVERLAY_LEVEL)
+	frame:SetFrameLevel(board:GetFrameLevel() + ns.BoardLayer("overlay"))
 	frame:EnableMouse(true)
 	frame:SetScript("OnShow", function()
 		updateVeil(ledge)

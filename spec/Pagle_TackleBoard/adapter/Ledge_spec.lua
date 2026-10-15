@@ -388,3 +388,34 @@ describe("the shop card (TKB-R106, SHOP-R41, TKB-R193)", function()
 		assert.are.equal(printed + 1, #fake.printed)
 	end)
 end)
+
+describe("the board's layers (ns.BOARD_LAYERS)", function()
+	it(
+		"draws the card, the drawer, their veil, the updating note and the welcome slip over the spike's nail",
+		function()
+			local loaded, _, spike, ledge, frame = opened(TWO_DONE_TODAY)
+			ledge.fire:Click()
+			ledge.box:Click()
+			local nail = spike.top:GetFrameLevel()
+
+			for _, slip in ipairs(spike.slips) do
+				assert.is_true(slip:GetFrameLevel() < nail) -- the nail over its own slips
+			end
+			for name, overlay in pairs({
+				card = ledge.card,
+				drawer = ledge.drawer,
+				veil = ledge.veil,
+				updating = frame.updating,
+				welcome = frame.empty,
+				close = frame.close,
+			}) do
+				assert(overlay:GetFrameLevel() > nail, name)
+			end
+			assert.is_true(ledge.card:GetFrameLevel() > ledge.veil:GetFrameLevel())
+			assert.is_true(frame.close:GetFrameLevel() > ledge.drawer:GetFrameLevel())
+			assert.has_error(function()
+				loaded.ns.BoardLayer("attic")
+			end)
+		end
+	)
+end)

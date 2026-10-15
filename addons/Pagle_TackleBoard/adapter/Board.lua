@@ -90,12 +90,16 @@ function Board.IsUpdating()
 	return ns.IsUpdating()
 end
 
--- A frame on `parent` of `width` × `height`, its top left `x`, `y` from `parent`'s (y down).
+-- A frame on `parent` of `width` × `height`, its top left `x`, `y` from `parent`'s (y down), at `layer`'s level above
+-- `board` (ns.BOARD_LAYERS) when given.
 ---@return Frame
-local function placed(parent, width, height, x, y)
+local function placed(parent, width, height, x, y, board, layer)
 	local frame = CreateFrame("Frame", nil, parent)
 	frame:SetSize(width, height)
 	frame:SetPoint("TOPLEFT", parent, "TOPLEFT", x, -y)
+	if board then
+		frame:SetFrameLevel(board:GetFrameLevel() + ns.BoardLayer(layer))
+	end
 	return frame
 end
 
@@ -103,7 +107,7 @@ end
 ---@param frame TackleBoardFrame
 local function buildParts(frame)
 	local cork = frame.cork
-	local pins = placed(cork, CORK_WIDTH, CORK_HEIGHT, 0, 0) --[[@as TacklePinsFrame]]
+	local pins = placed(cork, CORK_WIDTH, CORK_HEIGHT, 0, 0, frame, "pins") --[[@as TacklePinsFrame]]
 	pins.slots = { expeditions = {}, notices = {} }
 	local places = ns.PinPlaces(false)
 	for i, at in ipairs(places.expeditions) do
@@ -115,9 +119,9 @@ local function buildParts(frame)
 	local strip = ns.PinPlaces(true).overflow --[[@as { x: number, y: number }]]
 	frame.parts = {
 		pins = pins,
-		overflow = placed(cork, OVERFLOW_WIDTH, OVERFLOW_HEIGHT, strip.x, strip.y),
-		spike = placed(cork, SPIKE_WIDTH, SPIKE_HEIGHT, SPIKE_X, SPIKE_Y),
-		ledge = placed(frame.ledge, WIDTH, LEDGE_HEIGHT, 0, 0),
+		overflow = placed(cork, OVERFLOW_WIDTH, OVERFLOW_HEIGHT, strip.x, strip.y, frame, "overflow"),
+		spike = placed(cork, SPIKE_WIDTH, SPIKE_HEIGHT, SPIKE_X, SPIKE_Y, frame, "spike"),
+		ledge = placed(frame.ledge, WIDTH, LEDGE_HEIGHT, 0, 0, frame, "ledge"),
 	}
 end
 
@@ -141,7 +145,7 @@ end
 ---@param board TackleBoard
 ---@param frame TackleBoardFrame
 local function buildWelcome(board, frame)
-	local slip = placed(frame.cork, WELCOME_WIDTH, WELCOME_HEIGHT, WELCOME_X, WELCOME_Y) --[[@as TackleWelcomeFrame]]
+	local slip = placed(frame.cork, WELCOME_WIDTH, WELCOME_HEIGHT, WELCOME_X, WELCOME_Y, frame, "welcome") --[[@as TackleWelcomeFrame]]
 	slip:EnableMouse(true)
 	slip.paper = ns.ArtSprite(slip, "Board", "welcome", "BACKGROUND")
 	frame.slipText = ns.ArtWrap(slip, "Welcome", 256, 4.8)
@@ -161,7 +165,7 @@ end
 local function buildUpdating(frame)
 	local cover = CreateFrame("Frame", nil, frame.cork) --[[@as TackleUpdatingFrame]]
 	cover:SetAllPoints()
-	cover:SetFrameLevel(frame.cork:GetFrameLevel() + 20)
+	cover:SetFrameLevel(frame:GetFrameLevel() + ns.BoardLayer("updating"))
 	ns.BoardSolid(cover, "1C0E04", UPDATING_DIM, "BACKGROUND")
 	local note = CreateFrame("Frame", nil, cover)
 	note:SetSize(NOTE_WIDTH, NOTE_HEIGHT)
@@ -211,7 +215,7 @@ local function build(board)
 	frame.plaque = { label = title }
 
 	frame.ledge = placed(frame, WIDTH, LEDGE_HEIGHT, 0, LEDGE_Y)
-	frame.ledge:SetFrameLevel(frame:GetFrameLevel() + 3)
+	frame.ledge:SetFrameLevel(frame:GetFrameLevel() + ns.BoardLayer("ledge"))
 
 	buildParts(frame)
 	buildWelcome(board, frame)
@@ -220,7 +224,7 @@ local function build(board)
 	frame.close = CreateFrame("Button", nil, frame) --[[@as Button]]
 	frame.close:SetSize(26, 26)
 	frame.close:SetPoint("TOPLEFT", frame, "TOPLEFT", 958, -15)
-	frame.close:SetFrameLevel(frame:GetFrameLevel() + 20)
+	frame.close:SetFrameLevel(frame:GetFrameLevel() + ns.BoardLayer("close"))
 	ns.ArtSprite(frame.close, "Board", "close", "ARTWORK"):SetAllPoints()
 	frame.close:SetScript("OnClick", function()
 		board:Hide()

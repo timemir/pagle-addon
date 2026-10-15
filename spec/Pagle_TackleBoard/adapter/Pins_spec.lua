@@ -378,3 +378,120 @@ describe("the highlight (TKB-R109)", function()
 		end
 	end)
 end)
+
+describe('"take it down"\'s tooltip (TKB-R55, TKB-R44, TKB-R108)', function()
+	-- The tooltip's lines once the mouse is over a pin's "take it down".
+	local function tip(loaded, slot)
+		local button = slot.goal.takeDown
+		button:GetScript("OnEnter")(button)
+		return loaded.ns.BoardHoverLines()
+	end
+
+	it("says what it does, by type, and that the new one can't be taken down in turn, at the cursor", function()
+		local loaded, _, frame = opened(startedLog(EXPEDITION, QUALITY))
+		loaded.client.cursor = { 300, 200 }
+
+		assert.are.same({
+			"Take it down",
+			"Pin a fresh Notice of another kind in its place. Any progress on this one is lost.",
+			"The new one can't be taken down in turn, unless it stops being catchable.",
+		}, tip(loaded, notice(frame, 1)))
+		local shown = tip(loaded, expedition(frame, 1))
+		assert.are.equal(
+			"Pin a fresh Expedition of another kind in its place. Any progress on this one is lost.",
+			shown[2]
+		)
+	end)
+
+	it("says why it waits while the board is updating", function()
+		local loaded, _, frame = opened(startedLog(EXPEDITION, QUALITY))
+		loaded.ns.IsUpdating = function()
+			return true
+		end
+		loaded.ns.Redraw("projection")
+
+		assert.are.equal(
+			"Not while the board is updating. It can come down once that's done.",
+			tip(loaded, notice(frame, 1))[3]
+		)
+	end)
+
+	it("says a stranded goal is no longer catchable, re-posted or not", function()
+		local records = startedLog(EXPEDITION, QUALITY, STRANDED)
+		local loaded, _, frame = opened(records)
+
+		assert.are.equal(
+			"This one is no longer catchable: it can never be finished where it hangs.",
+			tip(loaded, notice(frame, 2))[3]
+		)
+	end)
+
+	it("keeps its words to the glyphs every font draws (CORE-R9)", function()
+		local ns = opened(startedLog(EXPEDITION)).ns
+		for _, line in ipairs({
+			ns.L.TAKE_DOWN_TIP_TITLE,
+			ns.L.TAKE_DOWN_TIP.n,
+			ns.L.TAKE_DOWN_TIP.e,
+			ns.L.TAKE_DOWN_TIP_ONCE,
+			ns.L.TAKE_DOWN_TIP_STRANDED,
+			ns.L.TAKE_DOWN_TIP_STRANDED_FIRST,
+			ns.L.TAKE_DOWN_TIP_UPDATING,
+		}) do
+			assert(line:find("[\128-\255]") == nil, line) -- plain ASCII
+			assert(line:lower():find("reroll", 1, true) == nil, line)
+		end
+	end)
+end)
+
+describe("a pinned goal's tacks (TKB-R102)", function()
+	-- A rect { left, top, right, bottom } from the paper's top left, y down.
+	local function rect(left, top, width, height)
+		return { left, top, left + width, top + height }
+	end
+	local function overlap(a, b)
+		return a[1] < b[3] and b[1] < a[3] and a[2] < b[4] and b[2] < a[4]
+	end
+	-- A tack's drawn element, from its TOPLEFT anchor on the paper (ns.PlaceSprite).
+	local function tackRect(tack)
+		local point = tack.points[1]
+		return rect(point[4] + tack.box[1], -point[5] + tack.box[2], tack.box[3], tack.box[4])
+	end
+	-- A font string anchored by its CENTER or TOPRIGHT to the paper's top left, at the fake's 6 units a character.
+	local function textRect(text)
+		local point = text.points[1]
+		local width, x, y = text:GetStringWidth(), point[4], -point[5]
+		if point[1] == "CENTER" then
+			return rect(x - width / 2, y - 7, width, 14)
+		end
+		return rect(x - width, y, width, 14) -- TOPRIGHT
+	end
+
+	for _, lean in ipairs({ true, false }) do
+		it(
+			"never sits on a pay: the posters' seals, the Notices' coins and their pay (lean " .. tostring(lean) .. ")",
+			function()
+				local loaded, _, frame = opened(startedLog(EXPEDITION, VARIETY, HAUL_HERE, QUALITY, LURE, COLLECTOR))
+				loaded.ns.db.profile.lean = lean
+				loaded.ns.Redraw("projection")
+
+				local checked = 0
+				for _, slot in ipairs(frame.parts.pins.slots.expeditions) do
+					local slip = slot.goal
+					for _, tack in ipairs(slip.tacks) do
+						assert.is_false(overlap(tackRect(tack), textRect(slip.seal.label)))
+						checked = checked + 1
+					end
+				end
+				for i = 1, 4 do
+					local slip = notice(frame, i).goal
+					for _, tack in ipairs(slip.tacks) do
+						assert.is_false(overlap(tackRect(tack), textRect(slip.coin.label)))
+						assert.is_false(overlap(tackRect(tack), textRect(slip.pay)))
+						checked = checked + 1
+					end
+				end
+				assert.are.equal(8, checked) -- two tacks on each of the two posters, one on each of four Notices
+			end
+		)
+	end
+end)

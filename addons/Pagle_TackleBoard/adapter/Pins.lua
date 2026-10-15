@@ -24,6 +24,9 @@ local REFRESH, HIGHLIGHT = 60, 2
 -- the goal's words start, the right edge of its words, where its foot sits, and how wide its words wrap.
 local NOTICE = { left = 13, top = 34, right = 223, foot = 93, wrap = 210, barDown = 4 }
 local POSTER = { left = 22, top = 36, right = 338, foot = 131, wrap = 300, barDown = 6 }
+-- Where a paper's tacks go (each tack's top left): a Notice's at its top centre; a poster's at its left corner and,
+-- on the right, clear of the wax seal and its pay (the kit's right tack, at 337, sat on the seal's "60").
+local NOTICE_TACKS, POSTER_TACKS = { { 110.5, -5 } }, { { 8, 5 }, { 284, 5 } }
 -- An empty pin's outline inside its slot: a Notice's, and an Expedition's.
 local EMPTY_NOTICE, EMPTY_EXPEDITION = { 232, 108 }, { 352, 146 }
 -- The overflow strip: at most 4 chips along its twine, the last one "+N more" when more wait; a chip's padding, its
@@ -47,6 +50,7 @@ local CHIPS, CHIP_GAP, CHIP_ICON = 4, 22, 13
 ---@field takeDown TackleTakeDownButton
 ---@field stamp TackleStampView    -- RE-POSTED (TKB-R55)
 ---@field seal { wax: TackleSprite, label: FontString }?   -- an Expedition's wax seal: its pay
+---@field tacks TackleSprite[]     -- the brass tacks pinning it
 ---@field lean number              -- its paper's lean on its pin
 ---@field leanNow number?          -- its lean now, moving to or from straight under the mouse
 ---@field lift number?             -- how far it is lifted now
@@ -153,6 +157,17 @@ local function newGoalSlip(slot, poster)
 			ns.TakeDown(self.goalID)
 		end
 	end)
+	-- Under the mouse it says what it does, at the cursor (TKB-R55): read when shown, as the board may be updating.
+	if button.SetMotionScriptsWhileDisabled then
+		button:SetMotionScriptsWhileDisabled(true)
+	end
+	button:SetScript("OnEnter", function(self)
+		local goal = self.goalID and ns.State().goals[self.goalID]
+		if goal then
+			ns.BoardHover(self, ns.TakeDownTip(goal, ns.board:IsUpdating(), ns.api.pagle), { cursor = true })
+		end
+	end)
+	button:SetScript("OnLeave", ns.BoardHoverHide)
 	slip.takeDown = button
 
 	slip.stamp = ns.NewBoardStamp(slip, L.REPOSTED)
@@ -167,13 +182,16 @@ local function newGoalSlip(slot, poster)
 		label:SetJustifyH("CENTER")
 		label:SetPoint("CENTER", slip, "TOPLEFT", 343, -19)
 		slip.seal = { wax = wax, label = label }
-		ns.PlaceSprite(ns.NewBoardTack(slip), slip, 8, 5)
-		ns.PlaceSprite(ns.NewBoardTack(slip), slip, 337, 5)
 	else
 		slip.pay = ns.ArtText(slip, "Pays")
 		slip.pay:SetJustifyH("RIGHT")
 		slip.pay:SetPoint("TOPRIGHT", slip, "TOPLEFT", 202, -15)
-		ns.PlaceSprite(ns.NewBoardTack(slip), slip, 110.5, -5)
+	end
+
+	slip.tacks = {}
+	for i, at in ipairs(poster and POSTER_TACKS or NOTICE_TACKS) do
+		slip.tacks[i] = ns.NewBoardTack(slip)
+		ns.PlaceSprite(slip.tacks[i], slip, at[1], at[2])
 	end
 
 	-- Under the mouse it straightens (TKB-R102) and lifts, above its neighbours (adapter/BoardMotion.lua).

@@ -28,6 +28,27 @@ function ns.TakeDownGoal(state, goalID, pagle)
 	return goal
 end
 
+--- What "take it down" says under the mouse (TKB-R55, TKB-R56, TKB-R44, TKB-R108): what it does for the goal's type,
+--- then the one rule that applies: while the projection is updating, that it waits; for a stranded goal, that it is no
+--- longer catchable (and so can come down though re-posted); otherwise, that the new goal can't be taken down in turn
+--- unless it stops being catchable.
+---@param goal TackleGoal
+---@param updating boolean ns.IsUpdating() (TKB-R108)
+---@param pagle table Core's catalogue calls (LOG-R55), for ns.IsStranded
+---@return string[] lines its title, what it does, the rule
+function ns.TakeDownTip(goal, updating, pagle)
+	local L = ns.L
+	local rule
+	if updating then
+		rule = L.TAKE_DOWN_TIP_UPDATING
+	elseif ns.IsStranded(goal, pagle) then
+		rule = goal.reposted and L.TAKE_DOWN_TIP_STRANDED or L.TAKE_DOWN_TIP_STRANDED_FIRST
+	else
+		rule = L.TAKE_DOWN_TIP_ONCE
+	end
+	return { L.TAKE_DOWN_TIP_TITLE, L.TAKE_DOWN_TIP[goal.type], rule }
+end
+
 --- The confirm's question (TKB-R56): its title, what is lost, and the progress inside that, which the confirm inks
 --- apart.
 ---@class TackleTakeDownQuestion

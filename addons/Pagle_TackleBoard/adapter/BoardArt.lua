@@ -637,6 +637,7 @@ end
 ---@class TackleTipExtra
 ---@field species TackleHoverSpecies[]?
 ---@field fly string?    -- a pattern ID
+---@field cursor boolean? -- at the cursor rather than by its owner
 
 --- Shows the board's tooltip by `owner`: `lines[1]` as its title in gilt, the rest under it, then `extra`.
 ---@param owner Region
@@ -702,7 +703,14 @@ function ns.BoardHover(owner, lines, extra)
 	end
 	frame:SetHeight(y + 6)
 	frame:ClearAllPoints()
-	frame:SetPoint("TOPLEFT", owner, "TOPRIGHT", 10, 0)
+	if extra.cursor then
+		-- GetCursorPosition is in screen pixels: UIParent's scale makes them its units.
+		local x, cursorY = GetCursorPosition()
+		local scale = UIParent.GetEffectiveScale and UIParent:GetEffectiveScale() or 1
+		frame:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", x / scale + 14, cursorY / scale + 10)
+	else
+		frame:SetPoint("TOPLEFT", owner, "TOPRIGHT", 10, 0)
+	end
 	frame:Show()
 end
 

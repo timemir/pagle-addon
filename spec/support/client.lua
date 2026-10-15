@@ -25,6 +25,8 @@
 --- by name, with the global mixin each names: loadAddon reads them from each XML file a TOC lists.
 ---@field pressEscape fun() Presses Esc: the focused edit box's OnEscapePressed, or with none focused,
 --- CloseSpecialWindows (every shown frame named in UISpecialFrames hides, and its OnHide runs).
+---@field cursor number[]? The cursor's position in screen pixels, { x, y } from the bottom left, as
+--- GetCursorPosition returns it; { 0, 0 } while nil.
 
 --- The loot window the loot API reads: whether it's fishing loot (`IsFishingLoot()`) and its slots, in order.
 --- Specs set both before firing LOOT_READY.
@@ -124,6 +126,11 @@ local function clientStubs(client)
 		-- A unit's portrait on a texture: the texture keeps the unit as `portrait`.
 		SetPortraitTexture = function(texture, unit)
 			texture.portrait = unit
+		end,
+		-- The cursor's position in screen pixels from the bottom left: client.cursor, { 0, 0 } until a spec moves it.
+		GetCursorPosition = function()
+			local at = client.cursor or { 0, 0 }
+			return at[1], at[2]
 		end,
 		-- Records the call in client.sounds and reports it played, as willPlay, soundHandle.
 		PlaySoundFile = function(path, channel)

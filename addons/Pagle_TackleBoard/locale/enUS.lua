@@ -106,6 +106,16 @@ ns.L = {
 	IM_HERE = "I'm here",
 	NO_LONGER_CATCHABLE = "no longer catchable",
 	TAKE_IT_DOWN = "take it down",
+	-- Its tooltip (TKB-R55, TKB-R56, TKB-R44, TKB-R108): what it does, by type, then the one rule that applies.
+	TAKE_DOWN_TIP_TITLE = "Take it down",
+	TAKE_DOWN_TIP = {
+		n = "Pin a fresh Notice of another kind in its place. Any progress on this one is lost.",
+		e = "Pin a fresh Expedition of another kind in its place. Any progress on this one is lost.",
+	},
+	TAKE_DOWN_TIP_ONCE = "The new one can't be taken down in turn, unless it stops being catchable.",
+	TAKE_DOWN_TIP_STRANDED = "This one is no longer catchable, so it can come down even though it was re-posted.",
+	TAKE_DOWN_TIP_STRANDED_FIRST = "This one is no longer catchable: it can never be finished where it hangs.",
+	TAKE_DOWN_TIP_UPDATING = "Not while the board is updating. It can come down once that's done.",
 	REPOSTED = "RE-POSTED",
 	-- Its hover, under the posted time (POSTED).
 	ONLY_SINCE = "Only my Catches since then count",
