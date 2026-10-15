@@ -277,10 +277,11 @@ RIDDLE_80 = "é" * 80  # 80 code points, 160 UTF-8 bytes: the limit counts code 
             LEDGER.replace(LAZY, RIDDLE_80 + "e"),
             f"{FILE}: species.13759.riddle: length: 81 code points, over riddle's limit of 80 (DATA-R107)",
         ),
-        # newline: any line break, a Unicode one too.
+        # newline: any line break, a carriage return too (a Unicode one, U+2028, is outside CORE-R9's set as well, so
+        # the glyph check fails it whether or not this check is on).
         (LEDGER.replace("Greenhorn", "Green\\nhorn"), f"{FILE}: title.level1.text: newline: a line break (DATA-R107)"),
         (
-            LEDGER.replace("Greenhorn", "Green\\u2028horn"),
+            LEDGER.replace("Greenhorn", "Green\\rhorn"),
             f"{FILE}: title.level1.text: newline: a line break (DATA-R107)",
         ),
         # placeholder: {zone} in a key whose manifest entry doesn't allow it.
@@ -491,6 +492,63 @@ def test_a_placeholder_is_allowed_only_where_the_manifest_allows_it(
         f"{FILE}: species.13759.riddle: placeholder: {{ or }} outside an allowed placeholder (manifest.toml allows"
         " none here)",
     )
+
+
+GLYPH = (
+    "outside CORE-R9's set: ASCII, Latin-1, the en and em dashes, curly quotes, the bullet and the ellipsis"
+    " (CORE-R9, DATA-R107)"
+)
+
+
+@pytest.mark.parametrize(
+    ("old", "new", "key", "code_point"),
+    [
+        # Each one build 1.60.1.70374 draws as a box in a font Pagle uses (#248): an arrow, stars, a tick, and a low
+        # quote and a triangular bullet, the neighbours of the allowed punctuation.
+        ("Greenhorn", "Green → horn", "title.level1.text", "U+2192"),
+        ("Groupers", "Groupers ★", "family.1.name", "U+2605"),
+        ("Bites where the water runs lazy.", "Bites where the water runs lazy ☆", "species.13759.riddle", "U+2606"),
+        ("Somebody's boot.", "Somebody's boot ✓", "sub.4000.plaque", "U+2713"),
+        ("The Tasty One", "The ‚Tasty‛ One", "legend.19807.title", "U+201A"),
+        ("Slick, quick and gone", "Slick ‣ quick and gone", "species.6303.blurb", "U+2023"),
+    ],
+)
+def test_a_character_the_fonts_lack_fails_whether_or_not_the_check_is_on(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], old: str, new: str, key: str, code_point: str
+) -> None:
+    # CORE-R9, DATA-R107's glyph: a character outside the set fails naming the file, the key and its code point, with
+    # the lore check on and off, and nothing is written (DATA-R63).
+    ledger = LEDGER.replace(old, new)
+    assert ledger != LEDGER
+    problem = f"{FILE}: {key}: glyph: {code_point} {GLYPH}"
+    fails(write_lore_tree(tmp_path / "on", ledger, checks=ON), capsys, problem)
+    fails(write_lore_tree(tmp_path / "off", ledger), capsys, problem)
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Fresh — née · 2×",
+        "“Green” ‘horn’…",
+        "Green – horn • again",
+    ],
+)
+def test_latin_1_and_the_allowed_punctuation_pass_the_glyph_check(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], text: str
+) -> None:
+    # CORE-R9: in game on 2026-10-15, every font Pagle uses drew the en and em dashes, curly quotes, the bullet, the
+    # ellipsis and the Latin-1 characters tried (· « » ×); Latin-1 is the fonts' Western European set.
+    ledger = LEDGER.replace("Greenhorn", text)
+    assert f'L["title.level1.text"] = "{text}"' in emitted(write_lore_tree(tmp_path, ledger, checks=ON), capsys)
+
+
+def test_the_glyph_check_covers_every_lore_file(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    # CORE-R9: whichever addon's lore it is, Core's here, whose lore check isn't built yet (DATA-R66).
+    write_lore_tree(tmp_path, ledger=None, manifest='[core.good]\nfields = ["name"]\nids = ["a"]\n', core=CORE)
+    (tmp_path / "data" / "lore" / "core.toml").write_text('[good.a]\nname = "Timber ★"\n', encoding="utf-8")
+    code, output = run(tmp_path, capsys)
+    assert code == 1
+    assert f"data/lore/core.toml: good.a.name: glyph: U+2605 {GLYPH}" in output
 
 
 @pytest.mark.parametrize(

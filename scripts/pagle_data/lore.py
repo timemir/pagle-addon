@@ -440,6 +440,36 @@ def check_lore(layer: LoreLayer, lore_ids: Collection[str], ids: CatalogueIds, p
                 _check_hunt_text(layer.hunts[key], problems)
 
 
+# CORE-R9's punctuation outside Latin-1, which every font Pagle uses drew in game on 2026-10-15 (#248): the en and em
+# dashes, curly single and double quotes, the bullet and the ellipsis.
+PUNCTUATION = frozenset("–—‘’“”•…")
+GLYPHS = "ASCII, Latin-1, the en and em dashes, curly quotes, the bullet and the ellipsis"
+
+
+def drawable(char: str) -> bool:
+    """Whether the client's fonts have char (CORE-R9): ASCII, Latin-1 (U+00A0-U+00FF) or PUNCTUATION."""
+    point = ord(char)
+    return point < 0x80 or 0xA0 <= point <= 0xFF or char in PUNCTUATION
+
+
+def check_glyphs(layer: LoreLayer, problems: Problems) -> None:
+    """DATA-R107's glyph check over every lore file read, whether or not its check is on: each character outside
+    CORE-R9's set, named by its code point once per text, since the client's fonts draw it as a box. The Hunt and
+    set text of hunts.toml (DATA-R105) is Pagle_Hunts' lore, so it is checked too."""
+    sources = [(lore_file(lore_id), texts) for lore_id, texts in sorted(layer.files.items())]
+    sources.append((HUNTS_TOML, layer.hunts))
+    for file, texts in sources:
+        for key in sorted(texts, key=lambda key: key.encode("utf-8")):
+            seen: set[str] = set()
+            for char in texts[key].value:
+                if not drawable(char) and char not in seen:
+                    seen.add(char)
+                    problems.add(
+                        At(file, key),
+                        f"glyph: U+{ord(char):04X} outside CORE-R9's set: {GLYPHS} (CORE-R9, DATA-R107)",
+                    )
+
+
 # CORE-R11: every file of a Module starts with Core's guard, as the hand-written ones do, so a broken install without
 # Pagle loads none of it.
 CORE_GUARD = (

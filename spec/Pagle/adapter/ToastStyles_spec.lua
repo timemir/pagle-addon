@@ -202,7 +202,7 @@ describe("the frames' toast style", function()
 end)
 describe("a toast style change", function()
 	-- What shows over 40 s from a burst of moments, sampled each half second as "<s> <form>: <title>", and the sounds
-	-- played: three toasts and a banner, a Nod while the slot is busy, four more toasts (two past the 2 that wait),
+	-- played: three toasts and a banner, a Nod while a toast shows, four more toasts (two past the 2 that wait),
 	-- then, with the budget spent, a toast.low and a splash.
 	local function timeline(style)
 		local loaded, M = styledCore()
@@ -260,12 +260,18 @@ describe("a toast style change", function()
 				DRIFTWOOD .. "toast_3.ogg SFX",
 				DRIFTWOOD .. "toast_1.ogg SFX",
 				DRIFTWOOD .. "toast_2.ogg SFX",
+				DRIFTWOOD .. "toast_3.ogg SFX",
 				"Interface\\AddOns\\Pagle\\media\\sounds\\legend.ogg SFX",
 			}, timberSounds)
+			-- The banner shows beside the first toast; the Nod and the stepped-down toast.low come while a toast shows,
+			-- so neither is shown; the splash waits for the toast on screen to end (ANN-R20, #249).
 			assert.are.same(
-				{ "5.5 toast: Toast 1", "6.0 banner: Level 12", "34.5 nod: Size record", "35.0 splash: Legend" },
-				{ timberSeen[11], timberSeen[12], timberSeen[68], timberSeen[70] }
+				{ "0.5 toast: Toast 1", "0.5 banner: Level 12", "37.0 toast: Toast 6", "37.5 splash: Legend" },
+				{ timberSeen[1], timberSeen[2], timberSeen[77], timberSeen[78] }
 			)
+			for _, line in ipairs(timberSeen) do
+				assert.is_nil(line:find(" nod: ", 1, true))
+			end
 		end
 	)
 end)

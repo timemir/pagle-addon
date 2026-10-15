@@ -8,7 +8,7 @@ local RACER, ANGELFISH, QUEENFISH = 19803, 19805, 19806
 local GONE = 777100
 local MACKEREL = 6303
 local FERALAS, STV, ELWYNN = 357, 33, 12
-local T0 = 1791731000 -- Sunday 11 October 2026, 15:03 UTC; realm minute 494 makes it 11 Oct on the realm too
+local T0 = SERVER_TIME - 700 -- Sunday 11 October 2026, 15:03 UTC; realm minute 494 makes it 11 Oct on the realm too
 
 local NAMES = {
 	[RACER] = "Brownell's Blue Striped Racer",
@@ -20,63 +20,35 @@ local NAMES = {
 local ZONES = { [FERALAS] = "Feralas", [STV] = "Stranglethorn Vale", [ELWYNN] = "Elwynn Forest" }
 
 -- A catalogue in the shape of ns.catalogue (DATA-R76): Stranglethorn lists the Racer and the Angelfish, Feralas the
--- Queenfish and the Mackerel, Elwynn the Mackerel. The removed Legend is on no list. Legends carry typical lengths, so Core sizes them
--- (LOG-R65); the removed one has none.
+-- Queenfish and the Mackerel, Elwynn the Mackerel. The removed Legend is on no list. Legends carry typical lengths,
+-- so Core sizes them (LOG-R65); the removed one has none.
 local function catalogue()
-	local function item(fields)
-		local record = { category = "fish", legend = false, noise = false, removed = false, pool = false }
-		for key, value in pairs(fields) do
-			record[key] = value
-		end
-		return record
-	end
 	local function area(skillBase, ...)
 		local catches = {}
-		for i, itemID in ipairs({ ... }) do
-			catches[i] = { itemID = itemID, confirmed = false }
+		for n, itemID in ipairs({ ... }) do
+			catches[n] = catchEntry(itemID)
 		end
-		return {
-			parent = 0,
-			continent = 1,
-			hasData = true,
-			skillBase = skillBase,
-			skillBaseConfirmed = false,
-			catches = catches,
-		}
+		return areaRecord(0, { continent = 1, skillBase = skillBase, catches = catches })
 	end
-	return {
-		fingerprint = "0123456789abcdef",
+	return catalogueWith({
 		items = {
-			[RACER] = item({ species = RACER, legend = true, typicalLength = 2200 }),
-			[ANGELFISH] = item({ species = ANGELFISH, legend = true, typicalLength = 1800 }),
-			[QUEENFISH] = item({ species = QUEENFISH, legend = true, typicalLength = 2000 }),
-			[GONE] = item({ species = GONE, legend = true, removed = true }),
-			[MACKEREL] = item({ species = MACKEREL, typicalLength = 300 }),
+			[RACER] = fishRecord(RACER, { legend = true, typicalLength = 2200 }),
+			[ANGELFISH] = fishRecord(ANGELFISH, { legend = true, typicalLength = 1800 }),
+			[QUEENFISH] = fishRecord(QUEENFISH, { legend = true, typicalLength = 2000 }),
+			[GONE] = fishRecord(GONE, { legend = true, removed = true }),
+			[MACKEREL] = fishRecord(MACKEREL, { typicalLength = 300 }),
 		},
 		areas = {
 			[STV] = area(225, RACER, ANGELFISH),
 			[FERALAS] = area(205, QUEENFISH, MACKEREL),
 			[ELWYNN] = area(25, MACKEREL),
 		},
-		aliases = {},
-		pools = {},
-		windows = {},
-		events = {},
-		fishingSpells = {},
-		auras = {},
-	}
+	})
 end
 
 -- A caught Cast of `itemID` in `zone` at `time`, by character 1.
 local function cast(time, zone, itemID)
-	return {
-		kind = "cast",
-		char = 1,
-		time = time,
-		outcome = "caught",
-		conditions = { minute = 494, zone = zone, subzone = 0, events = {}, auras = {} },
-		items = { { itemID = itemID, quantity = 1 } },
-	}
+	return castRecord({ time = time, zone = zone, items = { itemID } })
 end
 
 -- The fixture log: the Angelfish in Stranglethorn, twice, and a Mackerel in Elwynn.
@@ -94,67 +66,16 @@ local FIXTURE = {
 ---@return FakePagle fake
 ---@return LoadedAddon loaded
 local function spread(id, args, log)
-	local fake = newFakePagle()
-	fake.setCatalogue(catalogue())
-	fake.catchLog.data.characters = {
-		{ guid = PLAYER_GUID, name = "Angler", classID = 1, raceID = 1, faction = "Alliance", realmID = 4618 },
-	}
-	for _, record in ipairs(log or FIXTURE) do
-		fake.catchLog:Append(record)
-	end
-	fake.globals.BreakUpLargeNumbers = breakUpLargeNumbers
-	local loaded = fake.load("Pagle_Ledger")
-	for itemID, name in pairs(NAMES) do
-		loaded.client.itemNames[itemID] = name
-	end
-	for areaID, name in pairs(ZONES) do
-		loaded.client.areaNames[areaID] = name
-	end
-	fake.login()
-	fake.enterWorld()
-	assert.is_true(loaded.ns.journal:Open(id, args))
-	return fake, loaded
-end
-
--- The texts of a page's blocks, in order (a block without text as its kind in brackets).
----@param blocks LedgerBlock[]
----@return string[]
-local function texts(blocks)
-	local list = {}
-	for i, block in ipairs(blocks) do
-		list[i] = block.text or ("[" .. block.kind .. "]")
-	end
-	return list
-end
-
--- The first block of `kind` on a page.
----@param blocks LedgerBlock[]
----@param kind string
----@return LedgerBlock?
-local function first(blocks, kind)
-	for _, block in ipairs(blocks) do
-		if block.kind == kind then
-			return block
-		end
-	end
-	return nil
-end
-
--- Every word a drawn widget shows, depth first.
----@param widget table
----@param list string[]?
----@return string[]
-local function drawnTexts(widget, list)
-	list = list or {}
-	for _, child in ipairs(widget.children) do
-		if child.shown then
-			if type(child.text) == "string" and child.text ~= "" then
-				list[#list + 1] = child.text
-			end
-			drawnTexts(child, list)
-		end
-	end
-	return list
+	return openJournal({
+		catalogue = catalogue(),
+		characters = { characterRecord(PLAYER_GUID, "Angler") },
+		log = log or FIXTURE,
+		globals = { BreakUpLargeNumbers = breakUpLargeNumbers },
+		itemNames = NAMES,
+		areaNames = ZONES,
+		id = id,
+		args = args,
+	})
 end
 
 describe("the Journal's Legends spread (LED-R147)", function()
@@ -178,7 +99,7 @@ describe("the Journal's Legends spread (LED-R147)", function()
 				"an unwritten legend",
 				"Keefer's Angelfish",
 				"an unwritten legend",
-			}, texts(left))
+			}, blockTexts(left))
 			assert.are.same({ id = "legends", args = { legend = ANGELFISH } }, left[4].place)
 			assert.are.same({ id = "legends", args = { legend = QUEENFISH } }, left[5].place)
 		end
@@ -194,7 +115,33 @@ describe("the Journal's Legends spread (LED-R147)", function()
 
 		assert.is_falsy(journal.pages.left[3].selected)
 		assert.is_true(journal.pages.left[4].selected)
-		assert.are.equal("Keefer's Angelfish", first(journal.pages.right, "title").text)
+		assert.are.equal("Keefer's Angelfish", blockOfKind(journal.pages.right, "title").text)
+	end)
+
+	it("keeps the index's scroll as another Legend opens, starting its page at the top (LED-R129, LED-R147)", function()
+		local _, loaded = spread("legends")
+		local journal = loaded.ns.journal
+		scrollPage(loaded, "left", 120)
+		scrollPage(loaded, "right", 80)
+
+		journal.frame.left.drawn.row[2]:Click()
+
+		assert.are.equal("Keefer's Angelfish", blockOfKind(journal.pages.right, "title").text)
+		assert.are.same({ 120, 0 }, { pageScroll(loaded, "left"), pageScroll(loaded, "right") })
+		scrollPage(loaded, "right", 40)
+		journal:Draw()
+		assert.are.same({ 120, 40 }, { pageScroll(loaded, "left"), pageScroll(loaded, "right") })
+	end)
+
+	it("starts both pages at the top as the plate opens, which fills both (LED-R129, LED-R147)", function()
+		local _, loaded = spread("legends", { legend = ANGELFISH })
+		scrollPage(loaded, "left", 120)
+		scrollPage(loaded, "right", 80)
+
+		loaded.ns.journal.frame.right.drawn.link[1]:Click()
+
+		assert.are.equal("plate", loaded.ns.journal.pages.left[1].kind)
+		assert.are.same({ 0, 0 }, { pageScroll(loaded, "left"), pageScroll(loaded, "right") })
 	end)
 
 	it("shows a caught Legend's sepia icon, name, first Catch, blurb, title and the plate button (LED-R147)", function()
@@ -209,7 +156,7 @@ describe("the Journal's Legends spread (LED-R147)", function()
 			"Far too handsome for a contest table, and it seems to know it.",
 			"Title: Keefer's Rival",
 			"Open the plate",
-		}, texts(right))
+		}, blockTexts(right))
 		assert.are.same({ kind = "icon", icon = ANGELFISH, look = "sepia", large = true }, right[2])
 		assert.are.same({ id = "legends", args = { legend = ANGELFISH, plate = true } }, right[7].place)
 	end)
@@ -227,7 +174,7 @@ describe("the Journal's Legends spread (LED-R147)", function()
 			"Keefer's Angelfish",
 			"11 Oct, Stranglethorn Vale, Angler",
 			"Open the plate",
-		}, texts(loaded.ns.journal.pages.right))
+		}, blockTexts(loaded.ns.journal.pages.right))
 	end)
 
 	it(
@@ -241,7 +188,7 @@ describe("the Journal's Legends spread (LED-R147)", function()
 				"[icon]",
 				"An unwritten legend",
 				"Some fish are only caught once in a long while. This page waits for one.",
-			}, texts(right))
+			}, blockTexts(right))
 			local icon = right[2]
 			assert.are.equal("silhouette", icon.look)
 			assert.are.equal("string", type(icon.icon))
@@ -257,13 +204,13 @@ describe("the Journal's Legends spread (LED-R147)", function()
 
 		loaded.ns.journal:Draw()
 
-		assert.are.same({ "Legend", "[icon]", "An unwritten legend" }, texts(loaded.ns.journal.pages.right))
+		assert.are.same({ "Legend", "[icon]", "An unwritten legend" }, blockTexts(loaded.ns.journal.pages.right))
 	end)
 
 	it("never opens the plate of an uncaught Legend (LED-R124)", function()
 		local _, loaded = spread("legends", { legend = QUEENFISH, plate = true })
 
-		assert.are.equal("An unwritten legend", first(loaded.ns.journal.pages.right, "title").text)
+		assert.are.equal("An unwritten legend", blockOfKind(loaded.ns.journal.pages.right, "title").text)
 	end)
 
 	it(
@@ -280,7 +227,7 @@ describe("the Journal's Legends spread (LED-R147)", function()
 				"Keefer's Angelfish",
 				"an unwritten legend",
 				"Gilded Gonefish",
-			}, texts(pages.left))
+			}, blockTexts(pages.left))
 			-- Caught in zone 0: the first Catch's line has no zone (LED-R6).
 			assert.are.same({
 				"Legend",
@@ -289,7 +236,7 @@ describe("the Journal's Legends spread (LED-R147)", function()
 				"11 Oct, Angler",
 				"Open the plate",
 				"No longer found in Forever's waters.",
-			}, texts(pages.right))
+			}, blockTexts(pages.right))
 		end
 	)
 
@@ -297,7 +244,7 @@ describe("the Journal's Legends spread (LED-R147)", function()
 		local _, loaded = spread("legends", { legend = ANGELFISH })
 		local frame = loaded.ns.journal.frame
 
-		local left, right = drawnTexts(frame.left), drawnTexts(frame.right)
+		local left, right = shownTexts(frame.left), shownTexts(frame.right)
 
 		assert.is_truthy(table.concat(left, "\n"):find("an unwritten legend", 1, true))
 		assert.is_truthy(table.concat(right, "\n"):find("Title: Keefer's Rival", 1, true))
@@ -349,8 +296,8 @@ describe("a Legend's plate (LED-R147)", function()
 		local _, loaded = spread("legends", { legend = ANGELFISH, plate = true })
 		local journal = loaded.ns.journal
 		local frame = journal.frame
-		assert.is_truthy(table.concat(drawnTexts(frame.left), "\n"):find("Keefer's Angelfish", 1, true))
-		assert.is_truthy(table.concat(drawnTexts(frame.right), "\n"):find("Title: Keefer's Rival", 1, true))
+		assert.is_truthy(table.concat(shownTexts(frame.left), "\n"):find("Keefer's Angelfish", 1, true))
+		assert.is_truthy(table.concat(shownTexts(frame.right), "\n"):find("Title: Keefer's Rival", 1, true))
 
 		frame.left.drawn.plate[1]:Click()
 		assert.are.same({ id = "legends", args = { legend = ANGELFISH } }, journal.router:Place())
@@ -358,7 +305,7 @@ describe("a Legend's plate (LED-R147)", function()
 		journal:Open("legends", { legend = ANGELFISH, plate = true })
 		frame.right.drawn.plate[1]:Click()
 		assert.are.same({ id = "legends", args = { legend = ANGELFISH } }, journal.router:Place())
-		assert.are.equal("Open the plate", first(journal.pages.right, "link").text)
+		assert.are.equal("Open the plate", blockOfKind(journal.pages.right, "link").text)
 	end)
 end)
 
@@ -408,7 +355,7 @@ describe("Legends in the Journal's search (LED-R148)", function()
 		journal.frame.searchDrop.rows[1]:Click()
 
 		assert.are.same({ id = "legends", args = { legend = ANGELFISH } }, journal.router:Place())
-		assert.are.equal("Keefer's Angelfish", first(journal.pages.right, "title").text)
+		assert.are.equal("Keefer's Angelfish", blockOfKind(journal.pages.right, "title").text)
 	end)
 
 	it("never matches an uncaught Legend (LED-R148, LED-R124)", function()
@@ -440,7 +387,7 @@ describe("Home's Legends line (LED-R132)", function()
 		}, leaders)
 
 		local line = journal.frame.right.drawn.leader[3]
-		assert.are.same({ "Legends", "1 / 3" }, drawnTexts(line))
+		assert.are.same({ "Legends", "1 / 3" }, shownTexts(line))
 		line:Click()
 
 		assert.are.same({ id = "legends" }, journal.router:Place())
@@ -473,7 +420,7 @@ describe("never naming an uncaught Legend (LED-R124)", function()
 				end
 				copy.legend, copy.species = legend, legend
 				journal:Open(id, copy)
-				for _, text in ipairs(drawnTexts(journal.frame)) do
+				for _, text in ipairs(shownTexts(journal.frame)) do
 					if text:lower():find(name:lower(), 1, true) then
 						return id .. ": " .. text
 					end

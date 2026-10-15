@@ -35,7 +35,7 @@ Part of [Core](README.md). Core holds the Angler's **Pagle Coins** and runs the 
   - **default**: free and owned by everyone; each slot has exactly one
   - **for sale**: price tier 1, 2 or 3 (150, 400 or 900 Coins)
   - **earned**: never for sale; owned when its Module says so (`isEarned()`), with an `earnedText` saying how ("Angler Level 30")
-- **SHOP-R23** Registration raises a Lua error and ignores the call for: a duplicate ID, an ID without the Module's prefix, an unknown slot, a slot registered by a different Module (or by Core, for a Module), a second default in a slot, and a good with more than one of `default` / `tier` / `isEarned`, or none of them. At `ModulesChanged`, a slot with no default is reported through `geterrorhandler()`, and its first registered good acts as the default.
+- **SHOP-R23** Registration raises a Lua error and ignores the call for: a duplicate ID, an ID without the Module's prefix, an unknown slot, a slot registered by a different Module (or by Core, for a Module), a second default in a slot, and a good with more than one of `default` / `tier` / `isEarned`, or none of them. At `ModulesChanged`, a slot with no default is reported through `geterrorhandler()`, and its first registered good acts as the default. Only `default = true` marks a default; `default` is `true` or `false`, and anything else is a mistake.
 - **SHOP-R24** Stock never rotates and nothing is limited-time: every good registered is always in the shop.
 - **SHOP-R25** Core's own slots and goods, at M4 (tiers are tunable):
 
@@ -106,7 +106,7 @@ Part of [Core](README.md). Core holds the Angler's **Pagle Coins** and runs the 
 | `M:RefreshGoods()` | SHOP-R31 |
 | `Pagle.GetBalance()` | SHOP-R12 |
 | `Pagle.IsOwned(goodID)`, `Pagle.GetEquipped(slot)`, `Pagle.SetEquipped(slot, goodID)` | SHOP-R30–R34 |
-| `Pagle.GetGood(goodID)` | SHOP-R26: a read-only copy of the cached `{ name, slot, icon, module, description }`, whether or not the good's Module is enabled, or `nil` for a good never registered |
+| `Pagle.GetGood(goodID)` | SHOP-R26: a read-only copy of the cached `{ name, slot, icon, module, description, isDefault }`, whether or not the good's Module is enabled, or `nil` for a good never registered. `isDefault` is true for its slot's default (SHOP-R22), or the good standing in for one (SHOP-R23), so a view can draw a default as no look at all |
 | `Pagle.OpenShop(goodID?)` | SHOP-R40, SHOP-R41 |
 | event `BalanceChanged(balance: Balance)` | whenever any field of `Balance` changes |
 | event `AppearanceChanged(slot, goodID)` | SHOP-R33 |

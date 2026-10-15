@@ -9,45 +9,17 @@ local JUNK, CHEST, TROPHY = 6309, 6307, 13901
 local LEGEND, LEGEND_2 = 19807, 19803
 local LAKE, COVE = 12, 40
 
--- A fish item of Species `species` (DATA-R19).
-local function fish(species, fields)
-	local item = { category = "fish", species = species, legend = false, noise = false, removed = false, pool = false }
-	for key, value in pairs(fields or {}) do
-		item[key] = value
-	end
-	return item
-end
-
--- A non-fish item of `category`.
-local function thing(category, fields)
-	local item = { category = category, legend = false, noise = false, removed = false, pool = false }
-	for key, value in pairs(fields or {}) do
-		item[key] = value
-	end
-	return item
-end
-
-local ITEMS = {
-	[FISH_1] = fish(FISH_1),
-	[FISH_2] = fish(FISH_2),
-	[FISH_3] = fish(FISH_3),
-	[JUNK] = thing("junk"),
-	[CHEST] = thing("container"),
-	[TROPHY] = thing("trophy", { family = 1, weight = 19 }),
-	[LEGEND] = fish(LEGEND, { legend = true }),
-	[LEGEND_2] = fish(LEGEND_2, { legend = true }),
-}
-
----@param itemID integer
----@return PagleItem?
-local function getItem(itemID)
-	return ITEMS[itemID]
-end
-
--- A catch entry (LOG-R55), ungated.
-local function entry(itemID)
-	return { itemID = itemID, confirmed = true }
-end
+local getItem = itemLookup({
+	[FISH_1] = fishRecord(FISH_1),
+	[FISH_2] = fishRecord(FISH_2),
+	[FISH_3] = fishRecord(FISH_3),
+	[JUNK] = itemRecord("junk"),
+	[CHEST] = itemRecord("container"),
+	[TROPHY] = itemRecord("trophy", { family = 1, weight = 19 }),
+	[LEGEND] = fishRecord(LEGEND, { legend = true }),
+	[LEGEND_2] = fishRecord(LEGEND_2, { legend = true }),
+})
+local entry = catchEntry
 
 -- Core's lookups (LOG-R55) over `areas`: zones ascending, each catch with its areaID.
 ---@param areas table<integer, table>
@@ -98,7 +70,7 @@ local LEVEL_23 = 42240
 
 -- A first Catch (ledger.md › Data, LedgerFirst).
 local function first()
-	return { n = 1, time = 1791731000, char = 1, zone = LAKE }
+	return { n = 1, time = SERVER_TIME - 700, char = 1, zone = LAKE }
 end
 
 -- A hand-made state (ledger.md › Data) at `xp` XP and prestige rank `prestige`, holding `species`, `items` and each

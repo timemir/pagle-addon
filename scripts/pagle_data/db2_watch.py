@@ -13,9 +13,10 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from pagle_data.db2 import Area, Db2Layer, Item, Row, parse_areas, parse_table, read_db2
-from pagle_data.db2_update import Fetch, download, download_tables, fail, repo_universe
-from pagle_data.errors import At, Problems
+from pagle_data.db2_update import Fetch, download, download_tables, repo_universe
+from pagle_data.errors import At, Problems, fail
 from pagle_data.files import write_atomic
+from pagle_data.markdown import md_text
 
 PROG = "db2-watch"
 OPENED_NOTHING = "opened nothing"
@@ -106,11 +107,6 @@ def newer_build(builds: Sequence[Build], recorded: Build) -> Build | None:
 def issue_title(build: Build) -> str:
     """The watch issue's title (DATA-R128)."""
     return f"Forever build {build.name}: DB2 changes"
-
-
-def md_text(text: str) -> str:
-    """text with the characters Markdown would act on escaped, so a DB2 name shows as written."""
-    return re.sub(r"([\\`*_\[\]<>|~])", r"\\\1", text)
 
 
 def item_changes(

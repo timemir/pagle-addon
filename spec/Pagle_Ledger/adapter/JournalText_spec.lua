@@ -5,13 +5,9 @@ local MACKEREL = 6303 -- Raw Slitherskin Mackerel
 local SNAPPER, SPRINGSCALE = 6362, 6358
 local MINUTE = 60
 
--- A Ledger on a fake that has logged in and built its projection (login step 3).
+-- A Ledger on a fake that has logged in and built its projection (login step 3), the book closed.
 local function loggedIn()
-	local fake = newFakePagle()
-	local loaded = fake.load("Pagle_Ledger")
-	fake.login()
-	fake.enterWorld()
-	return fake, loaded
+	return openJournal({ id = false })
 end
 
 -- Registers a test spread, "words", whose left page shows `line(text)` and counts its draws, and opens it.
@@ -47,7 +43,7 @@ describe("the Journal's words on the client", function()
 				return text:Item(SPRINGSCALE)
 			end)
 
-			assert.are.equal("…", shown(loaded))
+			assert.are.equal("...", shown(loaded))
 			assert.are.same({ SPRINGSCALE }, loaded.client.itemRequests)
 		end)
 
@@ -112,7 +108,7 @@ describe("the Journal's words on the client", function()
 		local text = loaded.ns.journalText
 
 		assert.are.equal("Darkshore", text:Zone(148))
-		assert.are.equal("…", text:Zone(1519))
+		assert.are.equal("...", text:Zone(1519))
 		assert.are.equal("Master of Darkshore", text:Lore("title.zonemaster.text", 148))
 	end)
 
@@ -137,7 +133,7 @@ describe("the Journal's words on the client", function()
 		local _, loaded = loggedIn()
 
 		assert.are.equal("Angler", loaded.ns.journalText:Character(1))
-		assert.are.equal("…", loaded.ns.journalText:Character(2))
+		assert.are.equal("...", loaded.ns.journalText:Character(2))
 	end)
 
 	it("print dates against the realm year read from GetGameTime and GetServerTime (LED-R126)", function()
@@ -151,17 +147,9 @@ describe("the Journal's words on the client", function()
 	describe("window lines", function()
 		-- A catalogue whose night is 20:00 to 06:00, realm time.
 		local function nightCatalogue()
-			return {
-				fingerprint = "0123456789abcdef",
-				items = {},
-				areas = {},
-				aliases = {},
-				pools = {},
+			return catalogueWith({
 				windows = { night = { spec = { time = { { 1200, 360 } } }, confirmed = false } },
-				events = {},
-				fishingSpells = {},
-				auras = {},
-			}
+			})
 		end
 
 		-- The realm's clock and the server's both move on `minutes`: fake.conditions through setConditions, and the

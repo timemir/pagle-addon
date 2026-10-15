@@ -60,6 +60,15 @@ local function closed(frame)
 	end
 end
 
+--- Closes `card` as the player would, if it is the card on screen: a `/pagle dev tour` stop's hide (CORE-R68).
+---@param card PagleCard
+function ns.CloseCardOnScreen(card)
+	local frame = ns.cardFrame
+	if frame and frame.card == card then
+		closed(frame)
+	end
+end
+
 -- Row `i` of the list, made on first use: an icon, the text and, on the right, a moment's own text.
 ---@param frame PagleCardFrame
 ---@param i integer

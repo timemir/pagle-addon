@@ -40,15 +40,15 @@ function ns.CurioShopMenuEntry(balance, breakUpLargeNumbers, open)
 end
 
 --- The compartment menu's entries, read now, as each opening reads them (CORE-R50, CORE-R52): for each registered
---- Module by `def.order`, its views, then its `menu` entries; then `shop` (the Curio Shop), `report` ("Help chart the
---- waters") and `last` ("Settings"). An entry whose label can't be read is left out.
+--- Module by `def.order`, its views, then its `menu` entries; then `shop` (the Curio Shop), `fieldReport` ("Help
+--- chart the waters") and `last` ("Settings"). An entry whose label can't be read is left out.
 ---@param modules PagleModule[] by def.order, as `registry:Modules()` lists them
 ---@param shop PagleMenuEntry
----@param report PagleMenuEntry
+---@param fieldReport PagleMenuEntry
 ---@param last PagleMenuEntry
 ---@param call fun(fn: function): any calls a function label; returns nil when it fails (securecallfunction)
 ---@return PagleMenuEntry[]
-function ns.CompartmentMenu(modules, shop, report, last, call)
+function ns.CompartmentMenu(modules, shop, fieldReport, last, call)
 	local entries = {}
 	local function add(label, onClick)
 		local text = ns.ReadLabel(label, call)
@@ -66,7 +66,25 @@ function ns.CompartmentMenu(modules, shop, report, last, call)
 		end
 	end
 	entries[#entries + 1] = shop
-	entries[#entries + 1] = report
+	entries[#entries + 1] = fieldReport
 	entries[#entries + 1] = last
 	return entries
+end
+
+--- The compartment menu as Core opens it (CORE-R50, CORE-R52), read now: the Modules' entries, then the Curio Shop
+--- (Pagle.OpenShop, with Pagle.GetBalance()), "Help chart the waters" (Core's report subcommand, with
+--- Pagle.GetFieldReportCount()) and "Settings" (Core's settings subcommand). Each of these prints its CORE-R33 line
+--- instead while restricted. One function for Core's adapter and FakePagle.
+---@param Pagle Pagle
+---@param core PagleCoreSubcommands
+---@param modules PagleModule[] by def.order, as `registry:Modules()` lists them
+---@param breakUpLargeNumbers fun(value: number): string the client's BreakUpLargeNumbers
+---@param call fun(fn: function): any calls a function label; returns nil when it fails (securecallfunction)
+---@return PagleMenuEntry[]
+function ns.CoreCompartmentMenu(Pagle, core, modules, breakUpLargeNumbers, call)
+	local shop = ns.CurioShopMenuEntry(Pagle.GetBalance(), breakUpLargeNumbers, function()
+		Pagle.OpenShop()
+	end)
+	local fieldReport = ns.FieldReportMenuEntry(Pagle.GetFieldReportCount(), core.report)
+	return ns.CompartmentMenu(modules, shop, fieldReport, ns.SettingsMenuEntry(core.settings), call)
 end

@@ -31,13 +31,17 @@ local OWNER = "Pagle fishing"
 ---@param outcome "caught"|"gotAway"
 ---@param items PagleLootItem[]
 ---@param startedAt number? GetTime() when the Cast's channel started
+---@param area PagleDevArea? the area a synthetic Cast (/pagle dev catch) is in instead of the current one
 ---@return PagleCast?
-local function recordCast(outcome, items, startedAt)
+local function recordCast(outcome, items, startedAt, area)
 	local char = ns.angler and ns.angler.current
 	if not char then
 		return nil
 	end
 	local snapshot, unresolved = ns.TakeSnapshot()
+	if area then
+		snapshot.zone, snapshot.subzone, unresolved = area.zone, area.subzone, nil
+	end
 	local cast = ns.catchLog:Append({
 		kind = "cast",
 		char = char,
@@ -53,11 +57,13 @@ local function recordCast(outcome, items, startedAt)
 	return cast
 end
 
+--- Core's Cast state machine, as ns.fishing: `/pagle dev catch` records through it too (logic/Wiring.lua's WireDev).
 local fishing = ns.NewFishing({
 	isFishingSpell = ns.IsFishingChannel,
 	record = recordCast,
 	fire = ns.Fire,
 })
+ns.fishing = fishing
 
 -- Every offered item in the open loot window, in slot order (LOG-R3, LOG-R8).
 ---@return PagleLootItem[]

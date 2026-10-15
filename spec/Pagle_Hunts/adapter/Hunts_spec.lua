@@ -9,16 +9,6 @@ local function statesOf(core)
 	return states
 end
 
--- Shows the Settings root and returns the texts and the shown buttons of its status list (SET-R11).
-local function statusList(loaded)
-	local settings = loaded.client.settings
-	for _, row in ipairs(settings.show(settings.category("Pagle"))) do
-		if row.initializer.searchTags[1] == "MODULES" then
-			return settings.textsOf(row.frame), settings.buttonsOf(row.frame)
-		end
-	end
-end
-
 -- Clicks Pagle in the Addon Compartment and returns the menu Core opens on the next frame (CORE-R50).
 local function compartmentMenu(loaded)
 	local opened = #loaded.client.menus
@@ -64,12 +54,12 @@ describe("Pagle_Hunts with Core", function()
 		local loaded = loadAddon("Pagle_Hunts", FOREVER_GLOBALS)
 		loaded.client.fire("PLAYER_LOGIN")
 
-		local texts, buttons = statusList(loaded)
+		local texts, buttons = loaded.client.settings.statusList()
 
 		-- The roster in CORE-R1 order: the Ledger's row (not installed here, with no button) comes first.
 		local at = 1
 		while texts[at] ~= "Hunts" do
-			at = at + 1
+			at = assert(texts[at + 1] and at + 1, "no Hunts row in the status list")
 		end
 		assert.are.same({ "Hunts", "@project-version@", "On", "Open Hunts" }, { unpack(texts, at, at + 3) })
 		assert.are.equal(1, #buttons)
@@ -108,7 +98,7 @@ describe("Pagle_Hunts with Core", function()
 			loaded.env.SlashCmdList.PAGLE("hunts")
 			loaded.env.SlashCmdList.PAGLE("Hunts anything at all")
 			compartmentMenu(loaded).click("Hunts")
-			local _, buttons = statusList(loaded)
+			local _, buttons = loaded.client.settings.statusList()
 			buttons[1]:Click()
 
 			assert.are.equal(4, toggles.n)
@@ -152,13 +142,13 @@ describe("Pagle_Hunts with Core", function()
 		loaded.env.Pagle.OpenSettings()
 		assert.is_true(panel:IsShown())
 
-		local _, buttons = statusList(loaded)
+		local _, buttons = loaded.client.settings.statusList()
 		buttons[1]:Click()
 
 		assert.is_false(panelShownAtToggle)
 		assert.is_true(board:IsShown())
 		loaded.env.Pagle.OpenSettings()
-		_, buttons = statusList(loaded)
+		_, buttons = loaded.client.settings.statusList()
 		buttons[1]:Click()
 		assert.is_false(board:IsShown())
 	end)

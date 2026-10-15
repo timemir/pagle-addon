@@ -7,8 +7,32 @@ end
 ---@class PagleLedgerNS
 local ns = select(2, ...)
 
+-- Words more than one key reads: Species Mastery's ★★ and ★★★ (LED-R45), a check box (LED-R40, LED-R135, LED-R142).
+local IN_ITS_ELEMENT, REGULAR = "In its element", "Regular"
+-- The symbols the Ledger draws, as in-client textures sized to the line's text: the client's fonts have no ★, ☆, ✓,
+-- ☑ or ☐ (CORE-R9, #248). A star is the raid-target star; a blank one is the same star dimmed by its vertex colour. A
+-- tick is the check box's check, so a ticked box is a tick and an empty one the empty check box.
+local STAR_TEXTURE = "Interface\\TargetingFrame\\UI-RaidTargetingIcon_1"
+local STAR = "|T" .. STAR_TEXTURE .. ":0|t"
+local STAR_OFF = "|T" .. STAR_TEXTURE .. ":0:0:0:0:64:64:0:64:0:64:110:100:85|t"
+local TICK = "|TInterface\\Buttons\\UI-CheckBox-Check:0|t"
+local CHECK_ON, CHECK_OFF = TICK, "|TInterface\\Buttons\\UI-CheckBox-Up:0|t"
+-- Words two keys share, each built from them (LED-R33, LED-R135, LED-R147).
+local BEGIN_A_NEW_LEDGER = "Begin a new Ledger"
+local ZONE_REWARD = "Reward for mastery: each new seal earns XP."
+local UNWRITTEN_LEGEND = "unwritten legend"
+
 ---@class PagleLedgerStrings
 ns.L = {
+	-- "x / N" wherever the Journal counts (LED-R132, LED-R137, LED-R143), its numbers BreakUpLargeNumbers'.
+	COUNT_OF = "%s / %s",
+	-- "unfished": a zone's tile and its seal with no rank (LED-R131, LED-R135); "pools" in the plain hint and a row's
+	-- margin (LED-R136, LED-R141).
+	UNFISHED = "unfished",
+	POOLS = "pools",
+	-- The Trophy Room's title, on Home's contents and its own pages (LED-R132, LED-R143).
+	TROPHY_TITLE = "The Trophy Room",
+
 	-- The Ledger's def title (LED-R1).
 	TITLE = "Ledger",
 
@@ -20,7 +44,7 @@ ns.L = {
 	ITEM_FALLBACK = "Item %d",
 	-- A Catch's size text (LED-R81): the Size band's name and the length in the Angler's unit, "Hefty · 13.5 in".
 	SIZE_TEXT = "%s · %s",
-	NAME_UNKNOWN = "…",
+	NAME_UNKNOWN = "...",
 	-- The tab of every continent but the Eastern Kingdoms and Kalimdor (LED-R126, LED-R130).
 	OTHER_WATERS = "Other waters",
 
@@ -53,6 +77,7 @@ ns.L = {
 	UNCHARTED_STAMP = "Logged",
 	-- A Catch moment's item and its size text (LED-R81, LED-R97).
 	ITEM_SIZE = "%s · %s",
+	-- Also the Legends spread's kicker (LED-R147).
 	LEGEND_TITLE = "Legend",
 	LEGEND_STAMP = "Legend!",
 	PRESTIGE_READY_TITLE = "Prestige ready",
@@ -66,17 +91,19 @@ ns.L = {
 	CATCHES_OTHER = "%s Catches",
 	SIZE_RECORD_TITLE = "Size record",
 	SIZE_RECORD_STAMP = "Record",
-	-- A title (lore, LED-R75) riding in a moment's text, after the text it has (LED-R97), and a completion title's own.
+	-- A title (lore, LED-R75) riding in a moment's text, after the text it has (LED-R97), and a completion title's own;
+	-- also a Legend's page and plate (LED-R147).
 	TITLE_LINE = "Title: %s",
 	TEXT_WITH_TITLE = "%s. %s",
 	TITLE_EARNED = "Title earned",
-	ELEMENT_STAR_TITLE = "In its element",
-	REGULAR_STAR_TITLE = "Regular",
+	ELEMENT_STAR_TITLE = IN_ITS_ELEMENT,
+	REGULAR_STAR_TITLE = REGULAR,
 	FAMILY_STAR_TITLE = "Trophy family",
 	-- The family's name (lore, LED-R160) and its stars.
 	FAMILY_STAR_TEXT = "%s %s",
-	-- One star; a moment's stars repeat it (LED-R97).
-	STAR = "★",
+	-- One star: a moment's stars repeat it (LED-R97), the Journal prints a shown one with it (LED-R48), and a Master
+	-- Prestige's stars are stamps of it (LED-R34).
+	STAR = STAR,
 
 	-- Zone Mastery's ranks, Visitor to Master (LED-R50).
 	ZONE_RANKS = { "Visitor", "Regular", "Local", "Expert", "Master" },
@@ -105,7 +132,7 @@ ns.L = {
 	WRITE_UP_FIRST_BUILD_OTHER = "Your Ledger was written up from %s Casts",
 	WRITE_UP_WHILE_OFF = "While the Ledger was off",
 	WRITE_UP_LEVEL = "Angler Level %d",
-	WRITE_UP_LEVEL_ROSE = "Angler Level %d → %d",
+	WRITE_UP_LEVEL_ROSE = "Angler Level %d to %d",
 	WRITE_UP_SPECIES_ONE = "%d Species",
 	WRITE_UP_SPECIES_OTHER = "%d Species",
 	WRITE_UP_ZONES_ONE = "%d zone ranked",
@@ -135,8 +162,10 @@ ns.L = {
 	JOURNAL_UPDATING = "The Ledger is being written up from your Catch log.",
 	-- Navigation (LED-R125): the first crumb, the separator between crumbs and the back link.
 	JOURNAL_HOME = "Home",
-	JOURNAL_CRUMB_SEPARATOR = "❧",
-	JOURNAL_BACK = "☚ back",
+	JOURNAL_CRUMB_SEPARATOR = "»",
+	JOURNAL_BACK = "« back",
+	-- The link to the Field report box on uncharted waters and Curios' loose pages (LED-R138, LED-R144, REP-R43).
+	JOURNAL_HELP_CHART = "Help chart the waters",
 	-- Home (LED-R130–R133, LED-R149). Its left page's kicker and title; its tiles are TILE_*'s.
 	HOME_KICKER = "The Waters",
 	HOME_TITLE = "Where I've Fished",
@@ -144,18 +173,15 @@ ns.L = {
 	HOME_NOTES = "Notes to self",
 	HOME_NOTE_RANK = "%s: %s. %s",
 	HOME_NOTE_NEW = "%s: %d new to find",
-	HOME_NOTE_STAR = "%s: %d to ★★★",
+	HOME_NOTE_STAR = "%s: %d to " .. STAR:rep(3),
 	HOME_NOTE_NONE = "Go fishing!",
 	-- Its bookplate summary and contents (LED-R132), and the brass plate (LED-R149): "Lv {L} · {title} · Ledger {p}%",
 	-- or BRASS_PLATE while the active title has no lore text (LED-R161).
 	HOME_LEVEL = "Angler Level",
 	HOME_PERCENT = "%d%%",
 	HOME_CONTENTS = "In this Ledger",
-	HOME_TROPHY_ROOM = "The Trophy Room",
 	HOME_CURIOS = "Curios: junk, treasure, uncharted",
-	HOME_LEGENDS = "Legends",
 	HOME_ANGLER = "The Angler: hands, titles, bindings",
-	HOME_COUNT = "%d / %d",
 	BRASS_PLATE = "Lv %d · Ledger %d%%",
 	BRASS_PLATE_TITLE = "Lv %d · %s · Ledger %d%%",
 
@@ -205,24 +231,24 @@ ns.L = {
 
 	-- The plain hint (LED-R141, DATA-R112): "night · pools · Ashenvale · Darkshore +1 · skill ~150".
 	HINT_ANY_TIME = "Any time",
-	HINT_POOLS = "pools",
 	HINT_SEPARATOR = " · ",
 	HINT_WINDOW_SEPARATOR = ", ",
 	HINT_MORE = "%s +%d",
 	HINT_SKILL = "skill ~%d",
+	HINT_ANY_SKILL = "any skill", -- the lowest skill base is 0 or below (DATA-R30: starting zones)
 
 	-- A zone tile's lines (LED-R131): "Local · 63%", "2 new!".
 	TILE_RANK = "%s · %d%%",
 	TILE_NEW = "%d new!",
-	TILE_UNFISHED = "unfished",
 	TILE_UNFISHED_SKILL = "unfished · skill ~%d",
+	TILE_UNFISHED_ANY_SKILL = "unfished · any skill", -- a skill base of 0 or below (DATA-R30)
 	TILE_UNCHARTED = "uncharted waters",
 
 	-- A list as prose: "A, B and C" (LED-R140).
 	LIST_SEPARATOR = ", ",
 	LIST_LAST = " and ",
 	-- A Species' entry (LED-R140, LED-R141). "First landed {date} in {zone}, by {character}. {n} caught."
-	ENTRY_STAMPS = { "Caught", "In its element", "Regular" },
+	ENTRY_STAMPS = { "Caught", IN_ITS_ELEMENT, REGULAR },
 	ENTRY_FIRST = "First landed %s in %s, by %s. %s caught.",
 	ENTRY_FIRST_NO_ZONE = "First landed %s, by %s. %s caught.",
 	ENTRY_FOUND_IN = "Found in %s.",
@@ -231,17 +257,17 @@ ns.L = {
 	ENTRY_LARGEST = "Largest by my own measure: %s (Pagle's measure, not the game's)",
 	ENTRY_REMOVED = "No longer found in Forever's waters.",
 	ENTRY_UNKNOWN = "An unknown fish",
-	ENTRY_RIDDLE = "“%s”",
-	ENTRY_HINT_LINK = "Read the plain hint ▸",
+	ENTRY_RIDDLE = '"%s"',
+	ENTRY_HINT_LINK = "Read the plain hint »",
 	-- The fish spread's right page (LED-R142): "☑ In its element (1/1)", "☐ Regular (12/50)".
 	FISH_KICKER = "Where to find it",
 	FISH_TITLE = "Its waters",
-	FISH_CAUGHT_HERE = "caught ✓",
+	FISH_CAUGHT_HERE = "caught " .. TICK,
 	FISH_WHEN = "When",
-	FISH_ELEMENT = "%s In its element (%d/%d)",
-	FISH_REGULAR = "%s Regular (%d/%d)",
-	CHECK_ON = "☑",
-	CHECK_OFF = "☐",
+	FISH_ELEMENT = "%s " .. IN_ITS_ELEMENT .. " (%d/%d)",
+	FISH_REGULAR = "%s " .. REGULAR .. " (%d/%d)",
+	CHECK_ON = CHECK_ON,
+	CHECK_OFF = CHECK_OFF,
 	-- Search with no match (LED-R148).
 	SEARCH_NONE = "Nothing by that name in the Ledger yet.",
 
@@ -265,17 +291,16 @@ ns.L = {
 	ANGLER_CATCHES_OTHER = "%s Catches",
 	ANGLER_HANDS = "Hands on the Rod",
 	ANGLER_HAND = "%s: skill %d / %d",
-	-- The Skill Milestones (LED-R40): ☑ credited, ☐ not yet.
+	-- The Skill Milestones (LED-R40): CHECK_ON credited, CHECK_OFF not yet, then the threshold: "☑ 75".
 	ANGLER_MILESTONES = "Milestones",
-	ANGLER_MILESTONE_DONE = "☑ %d",
-	ANGLER_MILESTONE_OPEN = "☐ %d",
+	ANGLER_MILESTONE = "%s %d",
 	ANGLER_MILESTONE_SEPARATOR = "   ",
 	-- The Angler page's M4 parts (LED-R146): the next Catch Milestone after the Catches (LED-R42), the bookplate's
 	-- Prestige line and button (LED-R33, LED-R34), "Signed As" (LED-R77: the active pick marked) and "Bindings" with
 	-- each binding's state (LED-R110; "Angler Level {L}" is BINDING_EARNED).
 	ANGLER_NEXT_MILESTONE = " · next milestone %s",
 	ANGLER_NO_PRESTIGE = "No Prestige seals yet",
-	ANGLER_PRESTIGE = "Begin a new Ledger (Prestige)",
+	ANGLER_PRESTIGE = BEGIN_A_NEW_LEDGER .. " (Prestige)",
 	ANGLER_SIGNED_AS = "Signed As",
 	ANGLER_AUTOMATIC = "Automatic",
 	ANGLER_SIGNED_ON = "» %s",
@@ -285,9 +310,8 @@ ns.L = {
 	ANGLER_BINDING_USE = "Use",
 	ANGLER_BINDING_SHOP = "In the Curio Shop",
 
-	-- The zone spread (LED-R135–R138), M3's part (LED-R4): its seal and ladder read ZONE_RANKS; "unfished" on the
+	-- The zone spread (LED-R135–R138), M3's part (LED-R4): its seal and ladder read ZONE_RANKS; UNFISHED on the
 	-- seal with no rank.
-	ZONE_UNFISHED = "unfished",
 	ZONE_LADDER_SEPARATOR = "·",
 	ZONE_NEXT = "Next: %s",
 	ZONE_NEW_HERE_ONE = "%d new to find here! My seal stays.",
@@ -310,21 +334,19 @@ ns.L = {
 	ZONE_TROPHY = "a %s trophy, any weight",
 	ZONE_ALSO_CAUGHT = "Also caught here · %d",
 	ZONE_ALSO_NOTE = "Not in Pagle's list for these waters yet.",
-	ZONE_HELP_CHART = "Help chart the waters",
 	-- A Species row (LED-R136): never named until caught (LED-R124).
 	ZONE_UNKNOWN_FISH = "— unknown —",
 	ZONE_CAUGHT_ELSEWHERE = "%s (caught elsewhere)",
-	ZONE_POOLS_MARGIN = "pools",
 	ZONE_MARGIN_SEPARATOR = " · ",
 	-- "About these waters" (LED-R137); the reward names the zone's Master title, or ends after "earns XP." while it has
 	-- no lore text (LED-R161).
 	ZONE_ABOUT = "About these waters",
 	ZONE_SKILL = "Skill ~%d",
+	ZONE_ANY_SKILL = "Any skill", -- a skill base of 0 or below (DATA-R30)
 	ZONE_KNOWN = "%d%% of these waters known: %d of %d fish, %d of %d trophy families",
 	ZONE_TROPHIES_HERE = "Trophies landed here",
-	ZONE_WEIGHTS = "%d / %d",
-	ZONE_REWARD = "Reward for mastery: each new seal earns XP.",
-	ZONE_REWARD_TITLE = "Reward for mastery: each new seal earns XP. The Master seal earns the title %s.",
+	ZONE_REWARD = ZONE_REWARD,
+	ZONE_REWARD_TITLE = ZONE_REWARD .. " The Master seal earns the title %s.",
 	ZONE_PICK = "Pick a fish on the left to read its page.",
 	-- A zone that isn't charted (LED-R138).
 	ZONE_UNCHARTED_NOTE = "Every catch here is still written down, and counted once Pagle's data catches up.",
@@ -333,19 +355,16 @@ ns.L = {
 	ZONE_ALSO_CAUGHT_TITLE = "Also caught here",
 	ZONE_NOTHING_YET = "Nothing caught here yet.",
 
-	-- Stars as the Journal prints them (LED-R48): a shown star, a blank one.
-	STAR_ON = "★",
-	STAR_OFF = "☆",
-	-- The Trophy Room (LED-R143, LED-R62). Numbers in %s are BreakUpLargeNumbers'.
-	TROPHY_TITLE = "The Trophy Room",
+	-- A blank star as the Journal prints it (LED-R48); a shown one is STAR.
+	STAR_OFF = STAR_OFF,
+	-- The Trophy Room (LED-R143, LED-R62), titled TROPHY_TITLE. Numbers in %s are BreakUpLargeNumbers'.
 	TROPHY_WEIGHTS = "%s of %s weights. Real weights, from the game's own trophy fish.",
 	TROPHY_INDEX_LINE = "%s %s",
-	TROPHY_INDEX_COUNT = "%s / %s",
 	TROPHY_STAMPS = { "Any weight", "Half the weights", "The heaviest" },
 	TROPHY_POUNDS = "pounds, as the game weighs them",
 	TROPHY_LANDED = "Landed %s of %s. Heaviest so far: %s lb.",
 	TROPHY_NONE_LANDED = "Not one of this family yet.",
-	TROPHY_TICK_MARK = "✓",
+	TROPHY_TICK_MARK = TICK,
 	-- Curios (LED-R144): the Junk Museum, Treasures and the loose pages. "{item}: {n}× at {zones}, first {date}. …"
 	CURIOS_CRUMB = "Curios",
 	CURIOS_JUNK_TITLE = "The Junk Museum",
@@ -357,22 +376,29 @@ ns.L = {
 	CURIOS_LOOSE_PAGE = "%s: %s× at %s, first %s. Unknown to Pagle. Logged.",
 	CURIOS_UNKNOWN_WATERS = "unknown waters",
 	CURIOS_NONE_UNCHARTED = "None. Every catch is in the Ledger.",
-	CURIOS_HELP_CHART = "Help chart the waters",
 	-- Legends (LED-R147). Numbers in %s are BreakUpLargeNumbers'; the first Catch is "{date}, {zone}, {character}".
 	LEGENDS_TITLE = "Legends",
 	LEGENDS_COUNT = "%s of %s. These sit outside the Ledger's hundred.",
-	LEGENDS_UNWRITTEN = "an unwritten legend",
-	LEGENDS_UNWRITTEN_TITLE = "An unwritten legend",
-	LEGENDS_CAUGHT_MARK = "✦",
-	LEGENDS_KICKER = "Legend",
+	LEGENDS_UNWRITTEN = "an " .. UNWRITTEN_LEGEND,
+	LEGENDS_UNWRITTEN_TITLE = "An " .. UNWRITTEN_LEGEND,
+	-- A caught Legend's mark in the index: the star texture, as the client's fonts have no ✦ (CORE-R9, #248).
+	LEGENDS_CAUGHT_MARK = STAR,
 	LEGENDS_FIRST = "%s, %s, %s",
 	LEGENDS_FIRST_NO_ZONE = "%s, %s",
-	LEGENDS_TITLE_LINE = "Title: %s",
 	LEGENDS_OPEN_PLATE = "Open the plate",
 	LEGENDS_PLATE_RETURN = "Click anywhere to return.",
-	-- The Prestige confirm (LED-R33), and a Master Prestige's star stamp beside emblem X (LED-R34).
-	PRESTIGE_CONFIRM = "Begin a new Ledger? Your Angler Level starts again at 1, and climbs at half the cost. Nothing you've earned is taken away.",
+	-- The Prestige confirm (LED-R33); a Master Prestige's stars beside emblem X are STAR stamps (LED-R34).
+	PRESTIGE_CONFIRM = BEGIN_A_NEW_LEDGER
+		.. "? Your Angler Level starts again at 1, and climbs at half the cost. Nothing you've earned is taken away.",
 	PRESTIGE_CONFIRM_YES = "Prestige",
 	PRESTIGE_CONFIRM_NO = "Not yet",
-	PRESTIGE_STAR = "★",
+	-- The Journal's tour stops' labels, for `/pagle dev tour list` (CORE-R68): dev-only, never shown to players.
+	TOUR_HOME = "the Fish Journal: Home",
+	TOUR_ZONE = "the Fish Journal: the most-fished zone, its most-caught Species open",
+	TOUR_FISH = "the Fish Journal: the most-caught Species",
+	TOUR_TROPHY = "the Fish Journal: the Trophy Room, on a landed family",
+	TOUR_CURIOS = "the Fish Journal: Curios",
+	TOUR_LEGENDS = "the Fish Journal: Legends, on a caught one",
+	TOUR_ANGLER = "the Fish Journal: the Angler page",
+	TOUR_SEARCH = "the Fish Journal: search results for the most-caught Species' name",
 }

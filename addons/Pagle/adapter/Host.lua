@@ -56,4 +56,10 @@ ns.host = {
 	region = function()
 		return GetCurrentRegion and GetCurrentRegion()
 	end,
+	print = function(line)
+		print(line)
+	end,
+	isRestricted = function()
+		return Pagle.IsRestricted()
+	end,
 }

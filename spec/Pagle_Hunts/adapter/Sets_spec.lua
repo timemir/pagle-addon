@@ -466,7 +466,7 @@ describe("the ribbons, crumbs and nameplate on the leather (HNT-R61)", function(
 
 		ribbon:GetScript("OnEnter")(ribbon)
 
-		assert.are.same({ "Dusk" }, run.loaded.client.gameTooltip.lines)
+		assert.are.same({ "Dusk" }, run.loaded.client.tooltipLines())
 	end)
 
 	it("write the crumbs Hunts › {set} › {Hunt} with a fleuron between, each going back up", function()
@@ -502,11 +502,11 @@ describe("the ribbons, crumbs and nameplate on the leather (HNT-R61)", function(
 
 		assert.are.same(
 			{ "1 title · 1 Hunt done", "the Duskwatcher, earned 14 Feb 2026" },
-			run.loaded.client.gameTooltip.lines
+			run.loaded.client.tooltipLines()
 		)
-		assert.is_true(run.loaded.client.gameTooltip.shown)
+		assert.is_true(run.loaded.env.GameTooltip.shown)
 		plate:GetScript("OnLeave")(plate)
-		assert.is_false(run.loaded.client.gameTooltip.shown)
+		assert.is_false(run.loaded.env.GameTooltip.shown)
 	end)
 
 	it("write the updating line on the nameplate while the projection updates, and redraw when it is done", function()

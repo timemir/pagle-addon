@@ -23,30 +23,12 @@ local LINE_GAP = 12
 ---@field lines FontString[]
 ---@field foot FontString
 
--- A rectangle of four thin rules, `inset` in from `frame`'s edges.
+-- A rectangle of four thin rules in the kicker's brown, `inset` in from `frame`'s edges.
 ---@param frame Frame
 ---@param inset number
 local function ruled(frame, inset)
-	local color = LOOK.kicker
-	for _, side in ipairs({
-		{ "TOPLEFT", "TOPRIGHT", false },
-		{ "BOTTOMLEFT", "BOTTOMRIGHT", false },
-		{ "TOPLEFT", "BOTTOMLEFT", true },
-		{ "TOPRIGHT", "BOTTOMRIGHT", true },
-	}) do
-		local line = frame:CreateTexture(nil, "BORDER")
-		line:SetColorTexture(color[1], color[2], color[3], 1)
-		local x = side[1]:find("RIGHT") and -inset or inset
-		local y = side[1]:find("BOTTOM") and inset or -inset
-		local toX = side[2]:find("RIGHT") and -inset or inset
-		local toY = side[2]:find("BOTTOM") and inset or -inset
-		line:SetPoint(side[1], x, y)
-		line:SetPoint(side[2], toX, toY)
-		if side[3] then
-			line:SetWidth(1)
-		else
-			line:SetHeight(1)
-		end
+	for _, line in ipairs(ns.JournalRules(frame, inset)) do
+		ns.JournalPaint(line, LOOK.kicker)
 	end
 end
 
@@ -70,12 +52,7 @@ ns.RegisterJournalWidget("plate", function(parent)
 	widget.foot = ns.JournalText(widget, fonts.small, LOOK.faded)
 	widget.foot:SetJustifyH("CENTER")
 	widget.foot:SetPoint("BOTTOM", 0, PAD)
-	local place, openPlace
-	widget:SetScript("OnClick", function()
-		if place then
-			openPlace(place)
-		end
-	end)
+	ns.JournalClickable(widget)
 	-- Line `i` of the plate's words, made on first use: the first in handwriting, the rest in the serif face.
 	local function lineAt(i)
 		local line = widget.lines[i]
@@ -88,18 +65,12 @@ ns.RegisterJournalWidget("plate", function(parent)
 		return line
 	end
 	function widget.Fill(_, block, width, open)
-		place, openPlace = block.place, open
+		widget.place, widget.open = block.place, open
 		local inner = width - 2 * PAD
 		local icon = block.icon
 		texture:SetShown(icon ~= nil)
 		if icon ~= nil then
-			if type(icon) == "number" then
-				local _, _, _, _, fileID = C_Item.GetItemInfoInstant(icon)
-				icon = fileID or icon
-			end
-			texture:SetTexture(icon)
-			texture:SetDesaturated(true)
-			texture:SetVertexColor(LOOK.sepia[1], LOOK.sepia[2], LOOK.sepia[3])
+			ns.JournalItemIcon(texture, icon, "sepia")
 		end
 		name:SetWidth(inner)
 		name:SetText(block.text or "")

@@ -10,53 +10,35 @@ local JUNK, CHEST, TREASURE = 6309, 6307, 6308
 -- On no list: a fish (only ever caught from pools, DATA-R28), a trophy, a treasure and a Legend.
 local STRAY, TROPHY_E, TREASURE_2, LEGEND_3 = 6290, 13911, 6310, 19806
 
--- A fish item of Species `species` (DATA-R19).
-local function fish(species, fields)
-	local item = { category = "fish", species = species, legend = false, noise = false, removed = false, pool = false }
-	for key, value in pairs(fields or {}) do
-		item[key] = value
-	end
-	return item
-end
-
--- A non-fish item of `category`.
-local function thing(category, fields)
-	local item = { category = category, legend = false, noise = false, removed = false, pool = false }
-	for key, value in pairs(fields or {}) do
-		item[key] = value
-	end
-	return item
-end
-
 local function items()
 	return {
-		[MACKEREL] = fish(MACKEREL),
-		[SMALLFISH] = fish(SMALLFISH, { category = "questFish", pool = true }),
-		[NIGHTFISH] = fish(NIGHTFISH),
-		[MIXED] = fish(MIXED),
+		[MACKEREL] = fishRecord(MACKEREL),
+		[SMALLFISH] = fishRecord(SMALLFISH, { category = "questFish", pool = true }),
+		[NIGHTFISH] = fishRecord(NIGHTFISH),
+		[MIXED] = fishRecord(MIXED),
 		-- CLUB folds into MACKEREL's Species (DATA-R19).
-		[CLUB] = fish(MACKEREL, { pool = true }),
-		[LEGEND] = fish(LEGEND, { legend = true }),
-		[LEGEND_2] = fish(LEGEND_2, { legend = true }),
-		[NOISE] = fish(NOISE, { noise = true }),
-		[REMOVED] = fish(REMOVED, { removed = true }),
-		[OTHER] = thing("other"),
-		[TROPHY_A] = thing("trophy", { family = 1, weight = 19 }),
-		[TROPHY_B] = thing("trophy", { family = 1, weight = 22 }),
-		[TROPHY_C] = thing("trophy", { family = 1, weight = 22 }),
-		[TROPHY_D] = thing("trophy", { family = 2, weight = 8 }),
-		[JUNK] = thing("junk"),
-		[CHEST] = thing("container"),
-		[TREASURE] = thing("treasure"),
-		[STRAY] = fish(STRAY, { pool = true }),
-		[TROPHY_E] = thing("trophy", { family = 2, weight = 9 }),
-		[TREASURE_2] = thing("treasure"),
-		[LEGEND_3] = fish(LEGEND_3, { legend = true }),
+		[CLUB] = fishRecord(MACKEREL, { pool = true }),
+		[LEGEND] = fishRecord(LEGEND, { legend = true }),
+		[LEGEND_2] = fishRecord(LEGEND_2, { legend = true }),
+		[NOISE] = fishRecord(NOISE, { noise = true }),
+		[REMOVED] = fishRecord(REMOVED, { removed = true }),
+		[OTHER] = itemRecord("other"),
+		[TROPHY_A] = itemRecord("trophy", { family = 1, weight = 19 }),
+		[TROPHY_B] = itemRecord("trophy", { family = 1, weight = 22 }),
+		[TROPHY_C] = itemRecord("trophy", { family = 1, weight = 22 }),
+		[TROPHY_D] = itemRecord("trophy", { family = 2, weight = 8 }),
+		[JUNK] = itemRecord("junk"),
+		[CHEST] = itemRecord("container"),
+		[TREASURE] = itemRecord("treasure"),
+		[STRAY] = fishRecord(STRAY, { pool = true }),
+		[TROPHY_E] = itemRecord("trophy", { family = 2, weight = 9 }),
+		[TREASURE_2] = itemRecord("treasure"),
+		[LEGEND_3] = fishRecord(LEGEND_3, { legend = true }),
 	}
 end
 
 -- Hand-made projection states in ledger.md › Data's shape (LedgerState), with only what the world reads.
-local T0 = 1791731000
+local T0 = SERVER_TIME - 700
 local DATE = { year = 2026, month = 10, day = 11 }
 
 local function emptyState()
@@ -83,60 +65,50 @@ end
 local ELWYNN, GOLDSHIRE, WESTFALL, DUSKWOOD, DUROTAR = 12, 87, 40, 10, 14
 
 -- The night window's spec, shared by every entry it gates (DATA-R78), and the Extravaganza's.
-local NIGHT = { time = { { 1260, 360 } } }
+local NIGHT = NIGHT_WINDOW
 local EXTRAVAGANZA = { events = { 301 } }
-
--- A catch entry (LOG-R55): ungated, or gated by `window` with its spec.
-local function entry(itemID, window, gate)
-	return { itemID = itemID, confirmed = true, window = window, gate = gate, gateConfirmed = window and true or nil }
-end
-
-local function area(parent, fields)
-	local record = { parent = parent, continent = 0, hasData = true, skillBaseConfirmed = true, catches = {} }
-	for key, value in pairs(fields or {}) do
-		record[key] = value
-	end
-	return record
-end
 
 -- The fixture's areas, in the shape of ns.catalogue.areas (DATA-R78).
 local function areas()
 	return {
-		[ELWYNN] = area(0, {
+		[ELWYNN] = areaRecord(0, {
 			skillBase = 25,
 			catches = {
-				entry(MACKEREL),
-				entry(NIGHTFISH, "night", NIGHT),
-				entry(MIXED, "night", NIGHT),
-				entry(LEGEND),
-				entry(NOISE),
-				entry(OTHER),
-				entry(UNKNOWN),
-				entry(TROPHY_A),
-				entry(JUNK),
+				catchEntry(MACKEREL),
+				catchEntry(NIGHTFISH, "night", NIGHT),
+				catchEntry(MIXED, "night", NIGHT),
+				catchEntry(LEGEND),
+				catchEntry(NOISE),
+				catchEntry(OTHER),
+				catchEntry(UNKNOWN),
+				catchEntry(TROPHY_A),
+				catchEntry(JUNK),
 			},
 		}),
-		[GOLDSHIRE] = area(ELWYNN, {
+		[GOLDSHIRE] = areaRecord(ELWYNN, {
 			catches = {
-				entry(MACKEREL),
-				entry(SMALLFISH, "night", NIGHT),
-				entry(CHEST),
-				entry(TROPHY_B),
+				catchEntry(MACKEREL),
+				catchEntry(SMALLFISH, "night", NIGHT),
+				catchEntry(CHEST),
+				catchEntry(TROPHY_B),
 			},
 		}),
-		[WESTFALL] = area(0, {
+		[WESTFALL] = areaRecord(0, {
 			skillBase = 55,
 			catches = {
-				entry(SMALLFISH),
-				entry(NIGHTFISH, "night", NIGHT),
-				entry(MIXED),
-				entry(CLUB, "event.301", EXTRAVAGANZA),
-				entry(TROPHY_C),
-				entry(TROPHY_D),
+				catchEntry(SMALLFISH),
+				catchEntry(NIGHTFISH, "night", NIGHT),
+				catchEntry(MIXED),
+				catchEntry(CLUB, "event.301", EXTRAVAGANZA),
+				catchEntry(TROPHY_C),
+				catchEntry(TROPHY_D),
 			},
 		}),
-		[DUSKWOOD] = area(0, { hasData = false, skillBase = 150, catches = { entry(MACKEREL), entry(LEGEND_2) } }),
-		[DUROTAR] = area(0, { catches = { entry(NOISE), entry(OTHER), entry(UNKNOWN) } }),
+		[DUSKWOOD] = areaRecord(
+			0,
+			{ hasData = false, skillBase = 150, catches = { catchEntry(MACKEREL), catchEntry(LEGEND_2) } }
+		),
+		[DUROTAR] = areaRecord(0, { catches = { catchEntry(NOISE), catchEntry(OTHER), catchEntry(UNKNOWN) } }),
 	}
 end
 
@@ -356,7 +328,7 @@ describe("The Ledger's world", function()
 				treasure = { CHEST },
 				trophy = { TROPHY_A, TROPHY_B, TROPHY_C, TROPHY_D },
 				legends = { LEGEND, LEGEND_2 },
-			}, ns.CollectionWorlds(world, emptyState(), lookup.GetItem))
+			}, ns.CollectionWorlds(world, emptyState()))
 		end)
 
 		it("adds what was caught on no list, and never an uncaught unlisted item (LED-R11)", function()
@@ -366,7 +338,7 @@ describe("The Ledger's world", function()
 			state.items[TREASURE_2] = first(1)
 			state.items[LEGEND_3] = first(1)
 
-			local worlds = ns.CollectionWorlds(world, state, lookup.GetItem)
+			local worlds = ns.CollectionWorlds(world, state)
 
 			assert.are.same({ STRAY, SMALLFISH, MACKEREL, NIGHTFISH, MIXED }, worlds.species)
 			-- The unlisted trophy joins the Trophy Room; the unlisted, uncaught TREASURE is nowhere.
@@ -381,8 +353,38 @@ describe("The Ledger's world", function()
 
 			assert.are.same(
 				{ SMALLFISH, REMOVED, MACKEREL, NIGHTFISH, MIXED },
-				ns.CollectionWorlds(world, state, lookup.GetItem).species
+				ns.CollectionWorlds(world, state).species
 			)
+		end)
+
+		-- A zone whose catches name a removed Legend and a removed junk item next to Elwynn's own (LED-R12).
+		local REMOVED_LEGEND, REMOVED_JUNK = 19807, 6311
+		local function withRemoved()
+			local itemTable = items()
+			itemTable[REMOVED_LEGEND] = fishRecord(REMOVED_LEGEND, { legend = true, removed = true })
+			itemTable[REMOVED_JUNK] = itemRecord("junk", { removed = true })
+			local zone = areaRecord(0, {
+				catches = { catchEntry(LEGEND), catchEntry(JUNK), catchEntry(REMOVED_LEGEND), catchEntry(REMOVED_JUNK) },
+			})
+			return ns.NewWorld(lookups(itemTable, { [ELWYNN] = zone }))
+		end
+
+		it("lists no removed item that wasn't caught, in the Legends or any collection (LED-R12)", function()
+			local worlds = ns.CollectionWorlds(withRemoved(), emptyState())
+
+			assert.are.same({ LEGEND }, worlds.legends)
+			assert.are.same({ JUNK }, worlds.junk)
+		end)
+
+		it("keeps a caught removed Legend and curio in their worlds, for their pages (LED-R12)", function()
+			local state = emptyState()
+			state.items[REMOVED_LEGEND] = first(1)
+			state.items[REMOVED_JUNK] = first(2)
+
+			local worlds = ns.CollectionWorlds(withRemoved(), state)
+
+			assert.are.same({ LEGEND, REMOVED_LEGEND }, worlds.legends)
+			assert.are.same({ JUNK, REMOVED_JUNK }, worlds.junk)
 		end)
 	end)
 
@@ -406,7 +408,7 @@ describe("The Ledger's world", function()
 				trophy = { done = 0, total = 0 },
 				zones = { done = 0, total = 0 },
 				legends = { done = 0, total = 0 },
-			}, ns.LedgerCompletion(ns.NewWorld(empty), emptyState(), empty.GetItem))
+			}, ns.LedgerCompletion(ns.NewWorld(empty), emptyState()))
 		end)
 
 		it("matches the parts worked out by hand (LED-R70, LED-R71)", function()
@@ -438,7 +440,7 @@ describe("The Ledger's world", function()
 				trophy = { done = 2, total = 5 },
 				zones = { done = 1, total = 2 },
 				legends = { done = 1, total = 2 },
-			}, ns.LedgerCompletion(world, state, lookup.GetItem))
+			}, ns.LedgerCompletion(world, state))
 		end)
 
 		-- A state with every Species, curio and trophy in the fixture's world caught and every charted zone Master.
@@ -456,7 +458,7 @@ describe("The Ledger's world", function()
 		end
 
 		it("reads 100 when every Species, curio, trophy and zone is done (LED-R70)", function()
-			local completion = ns.LedgerCompletion(world, everything(), lookup.GetItem)
+			local completion = ns.LedgerCompletion(world, everything())
 
 			assert.are.same({ 100, 12, 12 }, { completion.percent, completion.done, completion.total })
 		end)
@@ -480,7 +482,7 @@ describe("The Ledger's world", function()
 				local state = everything()
 				remove(state)
 
-				assert.are.equal(91, ns.LedgerCompletion(world, state, lookup.GetItem).percent)
+				assert.are.equal(91, ns.LedgerCompletion(world, state).percent)
 			end
 		end)
 
@@ -488,7 +490,7 @@ describe("The Ledger's world", function()
 			local state = everything()
 			state.species[REMOVED] = species(9)
 
-			local completion = ns.LedgerCompletion(world, state, lookup.GetItem)
+			local completion = ns.LedgerCompletion(world, state)
 
 			assert.are.same({ done = 4, total = 4 }, completion.species)
 			assert.are.equal(100, completion.percent)
@@ -508,6 +510,8 @@ describe("The Ledger's world", function()
 			end
 		end
 		local lookup, flippedLookup = lookups(items(), areas()), lookups(items(), flipped)
+		-- Only the areas differ: both worlds keep the one GetItem.
+		flippedLookup.GetItem = lookup.GetItem
 		local state = emptyState()
 		state.species[MACKEREL] = species(1)
 		state.zones[ELWYNN] = zoneState(5)
@@ -515,9 +519,6 @@ describe("The Ledger's world", function()
 		local world, flippedWorld = ns.NewWorld(lookup), ns.NewWorld(flippedLookup)
 
 		assert.are.same(world, flippedWorld)
-		assert.are.same(
-			ns.LedgerCompletion(world, state, lookup.GetItem),
-			ns.LedgerCompletion(flippedWorld, state, flippedLookup.GetItem)
-		)
+		assert.are.same(ns.LedgerCompletion(world, state), ns.LedgerCompletion(flippedWorld, state))
 	end)
 end)

@@ -41,6 +41,7 @@ Terms are used as `CONTEXT.md` defines them. Numbers live in each file's Tunable
 - **CORE-R6** Core embeds LibStub, CallbackHandler-1.0, AceAddon-3.0, AceEvent-3.0 and AceDB-3.0, vendored at a recorded commit. Modules reach them through LibStub and embed nothing themselves.
 - **CORE-R7** Every addon splits its code into `logic/` (pure Lua: no WoW globals, everything passed in as arguments, unit-tested with busted) and `adapter/` (events, frames, SavedVariables, Ace). luacheck enforces it with a per-path `std`.
 - **CORE-R8** Every user-facing string goes through the addon's string table (`ns.L`), enUS only in 1.0.
+- **CORE-R9** Every string the package draws uses only characters the client's fonts have: ASCII, Latin-1 (U+00A0–U+00FF), the en and em dashes (– —, U+2013, U+2014), curly single and double quotes (‘ ’ “ ”, U+2018, U+2019, U+201C, U+201D), the bullet (•, U+2022) and the ellipsis (…, U+2026). On 2026-10-15 `/pagle dev glyphs` on build 1.60.1.70374 showed each of these, and every Latin-1 character tried (· « » ×), drawn in all four fonts Pagle uses (GameFontHighlight, ChatFontNormal, NumberFontNormalSmallGray, `Fonts\MORPHEUS.TTF`); ★ and ✓ as a box in all four, and → as a box in GameFontHighlight and MORPHEUS (#248). The build also draws a box for ☆, ☑, ☐, ❧, ☚ and ▸. Anything outside the set stays out, even where one font has it. A symbol outside the set is drawn as an in-client texture (`|T…|t`, its path in the build's ManifestInterfaceData) or written in words; each one the Ledger draws is one shared constant in its string table. A busted spec (`spec/glyphs_spec.lua`) checks every Lua string literal, XML and TOC line the package ships outside `libs/`, generated files included; the generator checks lore on the way in (DATA-R107). `/pagle dev glyphs` shows a probe line in each font Pagle uses, to settle in game whether a character renders.
 
 ### Attaching a Module
 
@@ -95,10 +96,11 @@ Terms are used as `CONTEXT.md` defines them. Numbers live in each file's Tunable
   - **Off**: disabled in the AddOns list (this session's state, read with CORE-R16)
   - **Not installed**: `C_AddOns.GetAddOnInfo` reports it missing
 - **CORE-R42** A Module adds options with `M:AddSetting(topic, setting)`, where `topic` is `"fishing"`, `"announcements"` or `"trackers"`. It does this before `ModulesChanged` (CORE-R19); Core builds the pages then. A later call is reported through `geterrorhandler()` and dropped.
-  - A call with a mistake in it raises an error at the caller and adds nothing: an unknown topic or `kind`, a `setting` that isn't a table, a missing `label`, a field its kind requires missing or of the wrong type (`get` and `set` for checkbox, slider and dropdown; `min`, `max` and `step` for a slider; `options` for a dropdown; `onClick` for a button; `binding` for a keybinding; `init` for custom), an `id` the Module already used on that page, or a `parent` naming none of its earlier rows there.
+  - A call with a mistake in it raises an error at the caller and adds nothing: an unknown topic or `kind`, a `setting` that isn't a table, a missing `label`, a field its kind requires missing or of the wrong type (`get` and `set` for checkbox, slider and dropdown; `min`, `max` and `step` for a slider; `options` for a dropdown; `onClick` for a button; `binding` for a keybinding; `init` for custom), a button's `caption` that isn't a string, an `id` the Module already used on that page, or a `parent` naming none of its earlier rows there.
   - On each page, Core's own rows come first. Each Module's rows follow, in `def.order`, under a header with its `def.title`. The header is left out when the Module's first row is a header of its own.
   - A page with no rows isn't registered: Fishing while QoL is off, or Trackers with no tracker Module on.
   - A setting's value lives in the Module's own DB, reached through the setting's `get` and `set`.
+  - A row reads `get` and `isEnabled` when the panel draws it and after a change through the row itself, which is when Blizzard's setting tells its control (SET-R61, SET-R62). A value that changed elsewhere (a choice the Module made itself) shows the next time the row is drawn. There is no call to make a shown row re-read: it would run Blizzard's Settings code from Pagle's, which taints the Settings list (SET-R6, [#246](https://github.com/timemir/wow-fish/issues/246)).
   - Setting ids are scoped per Module: an `id` is unique among one Module's rows on one topic page, and a `parent` names a row in the same Module's section of that page. Two Modules may use the same id (Stats and the Tackle Board both use `tracker`). `AddSetting` raises a Lua error for an id the Module already used on that page, or a `parent` that names none of its earlier rows there.
   - Look and Feel takes no rows. Core builds it from the goods registry ([wallet-and-shop.md](wallet-and-shop.md#ui)).
   - A slot's dropdown also appears beside the thing it changes. A slot in the "Announcements" category ends Core's rows on Announcements; a slot in the "Trackers" category ends its Module's rows on Trackers.
@@ -122,6 +124,15 @@ Terms are used as `CONTEXT.md` defines them. Numbers live in each file's Tunable
 - **CORE-R60** Core owns `/pagle`. With no argument it opens the Settings root. `/pagle help` lists every command with its help text, Core's and each registered Module's.
 - **CORE-R61** Core's own subcommands are `help`, `settings` (same as no argument), `shop` (toggle the Curio Shop) and `report` (open the Field report). They are reserved.
 - **CORE-R62** A Module's `slash = {{ name, fn, help }}` entries become `/pagle <name> <args>`; `fn` receives the rest of the line, trimmed. Subcommand names match case-insensitively. A name that collides with a reserved one or an earlier Module's is skipped and reported through `geterrorhandler()`; the rest of the Module's registration goes ahead. An unknown subcommand prints the help list.
+
+### Screenshot tour (dev)
+
+`/pagle dev tour` is one of the hidden dev commands ([in-game verification › Dev commands](../../agents/in-game-verification.md#dev-commands)): it shows every surface Pagle draws, one at a time, and takes a screenshot of each, so a redesign can be judged from a folder of pictures.
+
+- **CORE-R65** A Module adds a **tour stop** with `M:RegisterTourStop(id, label, show, hide)`: `show` puts one surface on screen in a representative state, and `hide` puts back everything `show` changed. The stop is named `<module>.<id>`, the Module's name lowercased (`ledger.journal.home`); Core's own stops are named `core.<id>`. `id` is `[%w_.]+` and unique among the Module's stops; `label` is a non-empty string, shown only by `/pagle dev tour list`. A mistake raises a Lua error at the Module's call and adds nothing. A Module calls it only `if M.RegisterTourStop then`, so the same code runs on a Core without it. Core's own surfaces register through the same registry.
+- **CORE-R66** `/pagle dev tour` runs every stop: Core's first, then each Module's by `def.order`, each Module's in the order registered. `/pagle dev tour <module>` runs one Module's (`core` for Core's), any case. For each stop it prints `tour <n>/<count>: <name>`, calls `show`, and 1.5 s later calls `Screenshot()`; 0.5 s after that it calls `hide`, and the next stop shows 0.3 s later. It prints the local time as it starts (the client names screenshot files by it) and as it ends. On a client without `Screenshot()` the start line asks the dev to press Print Screen as each stop's line appears, and each stop waits 4 s instead of 0.5 s before its `hide`. A `show` or `hide` that errors is reported through `geterrorhandler()` and the tour goes on.
+- **CORE-R67** The tour doesn't start while restricted (CORE-R30): it prints one line and opens nothing, since stops open Settings and the Curio Shop. A restriction that starts during a tour ends it: the stop on screen hides without its screenshot and no further stop shows. One tour runs at a time; `/pagle dev tour stop` ends the one running the same way.
+- **CORE-R68** Nothing is saved: every `hide` leaves the screen and the saved variables as they were before its `show` (a window open before its stop stays open). `/pagle dev tour list [module]` prints each stop's name and label, in tour order, and shows nothing. Core's own stops are each Announcement form (`/pagle dev preview`'s samples through the real lanes, taken back off screen at `hide`), a sample Session summary card and a sample Write-up, the Curio Shop, the Field report box, the glyph probe panel, and the Settings root and each registered page.
 
 ### Tracker dock
 
@@ -161,11 +172,12 @@ Grouped by topic; the rules live in the linked file.
 | `Pagle.NextWindow(spec, fromTime)` | `Window` or `nil` | catch-log.md |
 | `Pagle.GetSession()` | `Session` or `nil` | catch-log.md |
 | `Pagle.SESSION_RULES_VERSION` | integer | catch-log.md |
+| `Pagle.SESSION_GAP` | integer, the Session gap in seconds (300) | catch-log.md |
 | `Pagle.CONTENT_FINGERPRINT` | string | catch-log.md |
 | `Pagle.GetItem(itemID)`, `GetArea(areaID)`, `GetZones()`, `GetZoneOf(areaID)`, `GetZoneCatches(zoneAreaID)`, `GetWindowSpec(windowID)` | catalogue records | catch-log.md |
 | `Pagle.SIZE_BANDS`, `Pagle.SIZE_RULES_VERSION`, `Pagle.FormatLength(mm)` | band list, integer, string | catch-log.md |
 | `Pagle.GetBalance()` | `Balance` | [wallet-and-shop.md](wallet-and-shop.md#contracts) |
-| `Pagle.IsOwned(goodID)`, `GetEquipped(slotID)`, `SetEquipped(slotID, goodID)`, `OpenShop(goodID?)` | | wallet-and-shop.md |
+| `Pagle.IsOwned(goodID)`, `GetEquipped(slotID)`, `SetEquipped(slotID, goodID)`, `GetGood(goodID)`, `OpenShop(goodID?)` | | wallet-and-shop.md |
 | `Pagle.OpenFieldReport()`, `GetFieldReportCount()` | | [field-report.md](field-report.md#contracts) |
 
 ### Module handle (returned by `RegisterModule`)
@@ -180,6 +192,7 @@ Grouped by topic; the rules live in the linked file.
 | `M:ReportCoinsEarned(total)`, `M:RegisterSlot(slot)`, `M:RegisterGood(good)`, `M:RefreshGoods()` | wallet-and-shop.md |
 | `M:RegisterTracker{ id, order, frame }` | here |
 | `M:AddSetting(topic, setting)` | here |
+| `M:RegisterTourStop(id, label, show, hide)`: a stop for the dev screenshot tour (CORE-R65) | here |
 
 ADR 0008 names the record call `Pagle.AppendRecord`; it lives on the handle so Core knows which Module wrote the record.
 
@@ -212,6 +225,7 @@ ADR 0008 names the record call `Pagle.AppendRecord`; it lives on the handle so C
 ---@field step? number
 ---@field options? fun(): { value: any, label: string }[]   -- dropdown
 ---@field onClick? fun()           -- button
+---@field caption? string          -- button: the text on the button, with `label` beside it; without it, `label` is on the button and the row has no label (SET-R2)
 ---@field binding? string          -- keybinding: the Bindings.xml name, also listed in Key Bindings › AddOns
 ---@field parent? string           -- id of the row it hangs under (indented), a row of the same Module on the same page
 ---@field isEnabled? fun(): boolean  -- greyed out when false
@@ -219,6 +233,17 @@ ADR 0008 names the record call `Pagle.AppendRecord`; it lives on the handle so C
 ```
 
 Rows map onto the native Settings initializers; `AddSetting` raises a Lua error for an unknown `topic` or `kind`.
+
+### `M:RegisterTourStop(id, label, show, hide)`
+
+```lua
+-- A stop for /pagle dev tour (CORE-R65): named "<module>.<id>", in the order registered.
+if M.RegisterTourStop then
+  M:RegisterTourStop("journal.home", "the Fish Journal: Home",
+    function() --[[ open the surface, in a representative state ]] end,
+    function() --[[ put back everything show changed ]] end)
+end
+```
 
 ### Events Core fires (owned here)
 

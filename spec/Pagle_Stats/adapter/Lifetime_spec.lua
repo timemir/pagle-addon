@@ -243,10 +243,10 @@ describe("the Lifetime spread (stats.md › UI › Lifetime)", function()
 			local entry = pieceReading(right, "Raw Mackerel | 4")
 
 			entry:GetScript("OnEnter")(entry)
-			local tooltip = loaded.client.gameTooltip
+			local tooltip = loaded.env.GameTooltip
 			assert.are.same({ entry, { "First 8 Oct 2026, last 10 Oct 2026" }, true }, {
 				tooltip.owner,
-				tooltip.lines,
+				loaded.client.tooltipLines(),
 				tooltip.shown,
 			})
 			entry:GetScript("OnLeave")(entry)

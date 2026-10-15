@@ -9,16 +9,6 @@ local function statesOf(core)
 	return states
 end
 
--- Shows the Settings root and returns the texts and the shown buttons of its status list (SET-R11).
-local function statusList(loaded)
-	local settings = loaded.client.settings
-	for _, row in ipairs(settings.show(settings.category("Pagle"))) do
-		if row.initializer.searchTags[1] == "MODULES" then
-			return settings.textsOf(row.frame), settings.buttonsOf(row.frame)
-		end
-	end
-end
-
 -- Clicks Pagle in the Addon Compartment and returns the menu Core opens on the next frame (CORE-R50).
 local function compartmentMenu(loaded)
 	local opened = #loaded.client.menus
@@ -54,7 +44,7 @@ describe("Pagle_Ledger with Core", function()
 		local loaded = loadAddon("Pagle_Ledger", FOREVER_GLOBALS)
 		loaded.client.fire("PLAYER_LOGIN")
 
-		local texts, buttons = statusList(loaded)
+		local texts, buttons = loaded.client.settings.statusList()
 
 		assert.are.same({ "Ledger", "@project-version@", "On", "Open Fish Journal" }, { unpack(texts, 1, 4) })
 		assert.are.equal(1, #buttons)
@@ -121,13 +111,13 @@ describe("Pagle_Ledger with Core", function()
 		loaded.env.Pagle.OpenSettings()
 		assert.is_true(panel:IsShown())
 
-		local _, buttons = statusList(loaded)
+		local _, buttons = loaded.client.settings.statusList()
 		buttons[1]:Click()
 
 		assert.is_false(panelShownAtToggle)
 		assert.is_true(journal:IsShown())
 		loaded.env.Pagle.OpenSettings()
-		_, buttons = statusList(loaded)
+		_, buttons = loaded.client.settings.statusList()
 		buttons[1]:Click()
 		assert.is_false(journal:IsShown())
 	end)
@@ -192,7 +182,7 @@ describe("Pagle_Ledger with Core", function()
 			look[i] = row.initializer:GetName()
 		end
 		assert.are.same({ "Pagle", "Announcements", "Look and Feel" }, names)
-		assert.are.equal(6, #settings.category("Announcements").layout.initializers) -- Core's own (SET-R30)
+		assert.are.equal(7, #settings.category("Announcements").layout.initializers) -- Core's own (SET-R30)
 		assert.are.same({ "Fish Journal", "Journal binding", "Curio Shop" }, { look[7], look[8], look[9] })
 	end)
 end)

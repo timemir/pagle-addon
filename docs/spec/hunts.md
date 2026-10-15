@@ -348,7 +348,7 @@ Hunts never cuts Sessions and doesn't read a record's `session` (LOG-R98).
 
 The one fixed class: `fixed.oddity`, members 6522 (Deviate Fish) and 251524 (Whimsyfin), one for each faction's waters.
 
-The M5 build ticket checks every item and area ID above against `data/db2/` by its enUS name before the list is committed; the names in brackets are the intent, and a wrong ID is fixed in the table and the file together. The Camp Hunts use generated classes (item quality, or any fish) rather than an observed Rack or Hut catch list, so they work whatever the Rack and Hut turn out to add. Hut Hour targets `species.any`, not `quality.rare`: no catalogue item that isn't Noise is rare yet, so a `quality.rare` Hunt could never be done. If Live Wire or Armoured After Dark prove ungated on Forever, they fail admission (DATA-R92) and are retired (or, before 1.0, removed), keeping completions.
+The M5 build ticket checks every item and area ID above against `data/db2/` by its enUS name before the list is committed; the names in brackets are the intent, and a wrong ID is fixed in the table and the file together. The Camp Hunts use generated classes (item quality, or any fish) rather than an observed Rack or Hut catch list, so they work whatever the Rack and Hut turn out to add. Hut Hour targets `species.any`, not `quality.rare` (a spec decision, approved in #184): no catalogue item that isn't Noise is rare yet, so a `quality.rare` Hunt could never be done. If Live Wire or Armoured After Dark prove ungated on Forever, they fail admission (DATA-R92) and are retired (or, before 1.0, removed), keeping completions.
 
 ### `PagleHuntsDB` (AceDB, account-wide, one shared `Default` profile)
 

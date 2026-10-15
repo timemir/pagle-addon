@@ -225,7 +225,7 @@ describe("the live tracker", function()
 
 			row:GetScript("OnEnter")(row)
 
-			local tooltip = loaded.client.gameTooltip
+			local tooltip = loaded.env.GameTooltip
 			assert.is_true(tooltip.shown)
 			assert.are.equal(row, tooltip.owner)
 			assert.are.same({
@@ -233,7 +233,7 @@ describe("the live tracker", function()
 				"1 Cast since my last Raw Mackerel.",
 				"A luck reading comes once Your odds have a number.",
 				"3 of the 100 Casts I need across Darkshore, below 170 skill before Your odds show a number.",
-			}, tooltip.lines)
+			}, loaded.client.tooltipLines())
 			row:GetScript("OnLeave")(row)
 			assert.is_false(tooltip.shown)
 		end)

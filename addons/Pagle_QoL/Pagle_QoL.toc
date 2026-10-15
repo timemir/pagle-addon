@@ -10,15 +10,33 @@
 ## SavedVariables: PagleQoLDB
 
 locale\enUS.lua
+data\lures.lua
+data\clams.lua
 logic\Data.lua
 logic\Module.lua
 logic\FishingKey.lua
 logic\Settings.lua
 logic\Conflict.lua
 logic\Stretch.lua
+logic\Lures.lua
+logic\Clams.lua
+logic\Nudge.lua
+logic\Gear.lua
+logic\Input.lua
+logic\DoubleClick.lua
+logic\NextActionButton.lua
 adapter\Bindings.lua
+adapter\Items.lua
+adapter\Input.lua
 adapter\FishingKey.lua
+adapter\DoubleClick.lua
 adapter\Conflict.lua
 adapter\Combat.lua
 adapter\Stretch.lua
+adapter\Nudge.lua
+adapter\Lures.lua
+adapter\Clams.lua
+adapter\Gear.lua
+adapter\NextActionButton.lua
+adapter\Tour.lua
 adapter\QoL.lua

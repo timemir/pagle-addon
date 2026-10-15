@@ -6,6 +6,9 @@ local ns = select(2, ...)
 -- The Pagle Coin icon after a Coins amount (ANN-R23, ANN-R53, SHOP-R12): the gold coin texture stands in until
 -- Pagle has its own coin art.
 local COIN = "|TInterface\\MoneyFrame\\UI-GoldIcon:0|t"
+-- The Field report's one name on Core's surfaces: the compartment entry, the box's title and the Settings section
+-- (REP-R40, REP-R43, SET-R10).
+local HELP_CHART = "Help chart the waters"
 
 ---@class PagleStrings
 ns.L = {
@@ -57,6 +60,8 @@ ns.L = {
 	SETTINGS_BUDGET_TOOLTIP = "When toasts come close together, the smaller ones step down to a quiet Nod. Records always keep their ruler. Greyed out in Cozy mode, which holds everything anyway.",
 	SETTINGS_BUDGET_COUNT = "Interruptions",
 	SETTINGS_BUDGET_WINDOW = "Per",
+	SETTINGS_EVERY_CATCH = "Show every catch",
+	SETTINGS_EVERY_CATCH_TOOLTIP = "A quiet line for each catch: its name, size band and length. A toast or banner for the same catch shows instead. Greyed out in Cozy mode, which shows nothing.",
 	-- Look and Feel (SET-R50, SET-R51): the paragraph, a slot dropdown's note with N, and the Curio Shop section's
 	-- header, row label and button caption. Its category headers are SHOP_CATEGORIES.
 	SETTINGS_LOOK_PARAGRAPH = "Looks you own. Pick one here or with Use in the Curio Shop; both change the same thing.",
@@ -76,6 +81,9 @@ ns.L = {
 	-- The toast listing the toast headlines held through combat (ANN-R36), and each line: a headline's title and text.
 	ANNOUNCEMENT_WHILE_FIGHTING = "While you were fighting",
 	ANNOUNCEMENT_FIGHTING_LINE = "%s: %s",
+	-- The catch Nod (ANN-R13): a Catch's name, its Size band and its length; an item the client hasn't named yet.
+	CATCH_NOD = "%s · %s · %s",
+	CATCH_NOD_ITEM = "Item %d",
 	-- The cards (announcements.md › UI): a Session summary's title, "Your last session" for one that ended while away
 	-- (ANN-R54), and the Write-up's (ANN-R61); Core's numbers (ANN-R53), time fished in MINUTES or hours and minutes;
 	-- the Coins line with its sum (ANN-R53); the close button (closing also takes Esc).
@@ -121,25 +129,24 @@ ns.L = {
 	MENU_SETTINGS = "Settings",
 	-- Its Curio Shop entry (CORE-R50): the balance as BreakUpLargeNumbers writes it, then a coin icon.
 	MENU_CURIO_SHOP = "Curio Shop  %s " .. COIN,
-	-- Its Field report entry (CORE-R50, REP-R43), with the count while it is above 0.
-	MENU_FIELD_REPORT = "Help chart the waters",
-	MENU_FIELD_REPORT_COUNT = "Help chart the waters (%d)",
+	-- Its Field report entry (CORE-R50, REP-R43), which is also the box's title (REP-R40) and the Settings root's
+	-- section header (SET-R10 row 4); the entry adds the count while it is above 0.
+	HELP_CHART = HELP_CHART,
+	HELP_CHART_COUNT = HELP_CHART .. " (%d)",
 
-	-- The Field report box (field-report.md › The box and its entry points): its title (REP-R40), the privacy line
-	-- above the text (REP-R37), the part line and its buttons, Close, the lines shown instead of the text (REP-R41,
-	-- REP-R42), and the chat line an entry point prints while restricted (REP-R44).
-	REPORT_TITLE = "Help chart the waters",
-	REPORT_PRIVACY = "This will be posted publicly. It contains no character names.",
-	REPORT_PART = "Part %d of %d",
-	REPORT_PREVIOUS = "Previous",
-	REPORT_NEXT = "Next",
-	REPORT_CLOSE = "Close",
-	REPORT_NOTHING = "Nothing to report. Thanks for checking!",
-	REPORT_UPDATING = "Updating… try again in a moment.",
-	REPORT_AFTER_COMBAT = "Pagle: the Field report opens after combat.",
-	-- The Settings root's Help chart the waters section (SET-R10 row 4): its header, the row's label, the button's
-	-- caption, with the count while it is above 0, and the tooltip.
-	SETTINGS_FIELD_REPORT = "Help chart the waters",
+	-- The Field report box (field-report.md › The box and its entry points), titled HELP_CHART (REP-R40): the privacy
+	-- line above the text (REP-R37), the part line and its buttons, Close, the lines shown instead of the text
+	-- (REP-R41, REP-R42), and the chat line an entry point prints while restricted (REP-R44).
+	FIELD_REPORT_PRIVACY = "This will be posted publicly. It contains no character names.",
+	FIELD_REPORT_PART = "Part %d of %d",
+	FIELD_REPORT_PREVIOUS = "Previous",
+	FIELD_REPORT_NEXT = "Next",
+	FIELD_REPORT_CLOSE = "Close",
+	FIELD_REPORT_NOTHING = "Nothing to report. Thanks for checking!",
+	FIELD_REPORT_UPDATING = "Updating... try again in a moment.",
+	FIELD_REPORT_AFTER_COMBAT = "Pagle: the Field report opens after combat.",
+	-- The Settings root's HELP_CHART section (SET-R10 row 4): the row's label, the button's caption, with the count
+	-- while it is above 0, and the tooltip.
 	SETTINGS_FIELD_REPORT_ROW = "Field report",
 	SETTINGS_FIELD_REPORT_BUTTON = "Open Field report",
 	SETTINGS_FIELD_REPORT_BUTTON_COUNT = "Open Field report (%d)",
@@ -206,6 +213,77 @@ ns.L = {
 	SLASH_SKIPPED_NO_FN = "Pagle: %s's /pagle %s has no fn; it is skipped",
 	SLASH_SKIPPED_RESERVED = "Pagle: %s's /pagle %s is skipped: Pagle reserves %s",
 	SLASH_SKIPPED_TAKEN = "Pagle: %s's /pagle %s is skipped: %s already uses it",
+	-- /pagle dev (#247): hidden dev commands, never in the help list.
+	DEV_ON = "Pagle dev: dev commands are on.",
+	DEV_OFF = "Pagle dev: dev commands are off.",
+	DEV_IS_OFF = "Pagle dev: dev commands are off; /pagle dev on turns them on.",
+	DEV_USAGE = "Pagle dev: /pagle dev on | off | endsession | preview <kind> | catch <itemID> [areaID] | glyphs"
+		.. " | tour [module | list | stop]",
+	-- The kinds, comma-separated.
+	DEV_PREVIEW_KINDS = "Pagle dev: /pagle dev preview <kind>, where kind is one of %s",
+	-- The kind.
+	DEV_PREVIEWING = "Pagle dev: previewing a %s.",
+	DEV_CARD_HELD = "Pagle dev: cards wait until combat ends; try again then.",
+	DEV_SAMPLE_TOAST = "New Species",
+	DEV_SAMPLE_STAMP = "Size record",
+	DEV_SAMPLE_NOD = "New here",
+	DEV_SAMPLE_BANNER = "Angler Level 12",
+	DEV_SAMPLE_SPLASH = "A Legend",
+	DEV_SAMPLE_TEXT = "Oily Blackmouth (a /pagle dev preview)",
+	DEV_SAMPLE_LINE = "A sample summary line",
+	DEV_SAMPLE_WRITE_UP = "Your Ledger was written up from 2,340 Casts",
+	DEV_SESSION_ENDED = "Pagle dev: the Session ended, as if its gap had passed.",
+	DEV_NO_SESSION = "Pagle dev: no Session is open.",
+	DEV_CATCH_USAGE = "Pagle dev: /pagle dev catch <itemID> [areaID]",
+	DEV_REAL_LOG = "Pagle dev: catch writes to the Catch log, so it runs on a test log only (PagleLog.test); "
+		.. "this log is real, and nothing was added.",
+	-- The areaID as typed.
+	DEV_UNKNOWN_AREA = "Pagle dev: %s isn't an area in Pagle's catalogue.",
+	DEV_NO_CHARACTER = "Pagle dev: no character is logged in yet.",
+	-- The item ID, the zone areaID and the entry's seq.
+	DEV_CAUGHT = "Pagle dev: caught item %d in zone %d (entry %d).",
+	-- /pagle dev glyphs (#248, CORE-R9): the probe line, then where the rest of it is.
+	DEV_GLYPHS_CHAT = "Pagle dev: the glyph probe in the chat font: %s",
+	DEV_GLYPHS_SHOWN = "Pagle dev: the same line in each font Pagle uses is on screen; a box is a character that font"
+		.. " lacks. Click it or press Esc to close.",
+	-- A probe row: the font (its object's name or its file), what uses it, the probe line.
+	DEV_GLYPHS_ROW = "%s (%s): %s",
+	-- /pagle dev tour (CORE-R65–R68): how many stops, as DEV_TOUR_START puts it.
+	DEV_TOUR_ONE_STOP = "1 stop",
+	-- The number of stops.
+	DEV_TOUR_STOPS = "%d stops",
+	-- How many stops (DEV_TOUR_STOPS), the local time screenshot files are named by.
+	DEV_TOUR_START = "Pagle dev: touring %s from %s; a screenshot of each goes to the Screenshots folder.",
+	DEV_TOUR_START_MANUAL = "Pagle dev: touring %s from %s; this client can't take screenshots, so press Print Screen"
+		.. " as each stop's line appears.",
+	-- The stop's number, how many stops, its name ("ledger.journal.home"): one line per stop, as it shows.
+	DEV_TOUR_STOP = "Pagle dev: tour %d/%d: %s",
+	-- The local time.
+	DEV_TOUR_DONE = "Pagle dev: the tour is done at %s.",
+	-- The stop on screen's number, how many stops.
+	DEV_TOUR_STOPPED = "Pagle dev: the tour stopped at %d/%d.",
+	DEV_TOUR_RESTRICTED_STOPPED = "Pagle dev: the tour stopped at %d/%d: combat started.",
+	DEV_TOUR_STOPPING = "Pagle dev: the tour stops once this stop hides.",
+	DEV_TOUR_NOT_RUNNING = "Pagle dev: no tour is running.",
+	DEV_TOUR_RUNNING = "Pagle dev: a tour is running; /pagle dev tour stop ends it.",
+	DEV_TOUR_RESTRICTED = "Pagle dev: the tour waits until combat ends; try again then.",
+	DEV_TOUR_NO_STOPS = "Pagle dev: no tour stops are registered.",
+	-- The name typed, the names with stops, comma-separated.
+	DEV_TOUR_NO_STOPS_FOR = "Pagle dev: no tour stops for %s; stops are registered for %s.",
+	-- How many stops.
+	DEV_TOUR_LIST = "Pagle dev: %d tour stops:",
+	DEV_TOUR_LIST_ONE = "Pagle dev: 1 tour stop:",
+	-- Core's own stops' labels (CORE-R68). The Announcement form: toast, nod, banner or splash.
+	DEV_TOUR_ANNOUNCE = "a sample %s",
+	-- The card: session or writeup.
+	DEV_TOUR_CARD = "a sample %s card",
+	DEV_TOUR_SHOP = "the Curio Shop",
+	DEV_TOUR_FIELD_REPORT = "the Field report box",
+	DEV_TOUR_GLYPHS = "the glyph probe panel",
+	-- The Settings page's name.
+	DEV_TOUR_SETTINGS = "Settings: %s",
+	-- A stop's name and label.
+	DEV_TOUR_LIST_LINE = "  %s: %s",
 	SLASH_CORE_HELP = {
 		{ name = "settings", help = "open Pagle's settings (also /pagle on its own)" },
 		{ name = "shop", help = "open or close the Curio Shop" },
@@ -218,10 +296,11 @@ ns.L = {
 	SLOT_TOAST_STYLE = "Toast style",
 	SLOT_SOUND_SET = "Sound set",
 	SLOT_CREST = "Bookplate crest",
-	-- A sound set's preview on the Curio Shop's stage (wallet-and-shop.md › UI): a button per sound, and a note.
-	PREVIEW_TOAST = "▶ Toast",
-	PREVIEW_BANNER = "▶ Banner",
-	PREVIEW_LEGEND = "▶ Legend",
+	-- A sound set's preview on the Curio Shop's stage (wallet-and-shop.md › UI): a button per sound, and a note. » is
+	-- Latin-1: the client's fonts have no ▶ (CORE-R9, #248).
+	PREVIEW_TOAST = "» Toast",
+	PREVIEW_BANNER = "» Banner",
+	PREVIEW_LEGEND = "» Legend",
 	PREVIEW_STING_SHARED = "The Legend sting is the same in every set.",
 	-- A crest's preview (wallet-and-shop.md › UI): a small bookplate, then where it shows.
 	PREVIEW_EX_LIBRIS = "Ex Libris",

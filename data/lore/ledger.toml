@@ -14,7 +14,7 @@
 
 [species.1467] # Spotted Sunfish
 blurb = "A cheerful little fish with no idea how many cooks are waiting for it."
-riddle = "A long lake in the hills of human country, where gnolls make trouble."
+riddle = "A calm hill lake in settled farming country."
 
 [species.4603] # Raw Spotted Yellowtail
 blurb = "Fast, bright, and very pleased with itself."
@@ -53,7 +53,7 @@ blurb = "Warm to the touch, even out of the water."
 riddle = "Swirling schools the colour of embers, off coasts north and south."
 
 [species.6361] # Raw Rainbow Fin Albacore
-blurb = "The colours fade within an hour of landing. Catch one and look quickly."
+blurb = "The colours fade within an hour of landing. Look quickly."
 riddle = "Open coast, a little further from shore than you're used to."
 
 [species.6362] # Raw Rockscale Cod
@@ -102,7 +102,7 @@ riddle = "Warm shores in the warm half of the year."
 
 [species.13757] # Lightning Eel
 blurb = "Tingles. Don't lick it."
-riddle = "A crackle in far, wild waters, felt only while the sun is up."
+riddle = "A crackle in far, wild waters, from sunrise into the late evening."
 
 [species.13758] # Raw Redgill
 blurb = "Gills like embers. Bites like it means it."
@@ -113,7 +113,7 @@ blurb = "Feeds by starlight. Anglers who want it learn to like the dark."
 riddle = "Wild waters far from the gentle shores, after the sun goes down."
 
 [species.13760] # Raw Sunscale Salmon
-blurb = "Only rises in daylight. Nobody knows where it goes at night."
+blurb = "Rises with the sun and keeps late hours. Nobody knows where it goes before dawn."
 riddle = "Far rivers and lakes, warm or cold, while the sun is up."
 
 [species.13888] # Darkclaw Lobster
@@ -130,15 +130,15 @@ riddle = "Something heavy in the farthest waters, after the sun goes down."
 
 [species.13893] # Large Raw Mightfish
 blurb = "The big cousin. You will need both hands and probably a friend."
-riddle = "Deep water below the drowned ruins of a far, haunted coast."
+riddle = "Deep water off a far and forgotten coast."
 
 [species.16967] # Feralas Ahi
 blurb = "Big, quick and good eating. Most are caught as a favour for someone else, which seems a waste."
-riddle = "A broad river through rainy western forests, where giants walk."
+riddle = "A broad river through wet, overgrown forest in the far west."
 
 [species.16968] # Sar'theris Striker
 blurb = "Hits the bait like it's been waiting all day for an argument."
-riddle = "A bleak western shore where the centaur clans roam."
+riddle = "A bleak, grey shore on a dry and empty western coast."
 
 [species.16969] # Savage Coast Blue Sailfin
 blurb = "That sail is for show, and it knows it. Fights like it has an audience."
@@ -146,7 +146,7 @@ riddle = "Warm jungle shallows along a wild and dangerous shore."
 
 [species.16970] # Misty Reed Mahi Mahi
 blurb = "Bright as a jungle bird and twice as much trouble on the line."
-riddle = "A gloomy swamp's shore, where the grass stands taller than any angler."
+riddle = "Warm, murky shallows where a swamp meets the sea."
 
 [species.19807] # Speckled Tastyfish
 blurb = "Tournament fish. Tastes like winning, or at least like trying."
@@ -154,7 +154,7 @@ riddle = "Only while the jungle's great contest is on."
 
 [species.19975] # Zulian Mudskunk
 blurb = "Smells exactly as the name promises. Somebody, somewhere, still wants a dozen."
-riddle = "Churning brown water among the jungle's oldest troll ruins."
+riddle = "Churning brown water, deep in the steaming jungle."
 
 [species.21071] # Raw Sagefish
 blurb = "Smells like the hills it swims past."
@@ -166,7 +166,7 @@ riddle = "Bigger herb-scented schools, in snowy hills and steaming jungle."
 
 [species.251524] # Whimsyfin
 blurb = "New to these waters, and nobody's quite sure how it got here."
-riddle = "Bright new schools on a lake in the red hills."
+riddle = "Bright new schools on a quiet lake in the eastern hills."
 
 # Legends (LED-R147): the blurb under the first Catch, and the title the Angler can sign with (LED-R75, LED-R77),
 # never "Master Angler". Uncaught Legends share line.uncaughtlegend; none has a riddle (DATA-R110).

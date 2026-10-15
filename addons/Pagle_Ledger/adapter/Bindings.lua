@@ -16,6 +16,9 @@ local OWNER = "Pagle_Ledger Journal look"
 
 -- Core's crest slot (SHOP-R25): the Angler's emblem, drawn on the bookplate (LED-R112).
 local CREST_SLOT = "core.crest"
+-- Its default, Plain, which draws no emblem (SHOP-R25). Pagle's API doesn't say which good is a slot's default, so
+-- the Ledger names it, as it names the slot.
+local DEFAULT_CREST = "core.crest.plain"
 
 -- The closed book on the stage, as the prototype's swatch: its size, the spine's shadow, the gilt rules' inset from
 -- the edges (more at the spine), and the brass plate's size and place up from its foot.
@@ -25,37 +28,13 @@ local RULE_INSET, RULE_SPINE_INSET = 10, 18
 local PLATE_WIDTH, PLATE_HEIGHT, PLATE_FOOT = 46, 14, 24
 
 --- A closed-book swatch (LED-R110): the leather in its tint and grain, the gilt rules and the brass plate, no pages.
----@class LedgerBindingSwatch: Frame
----@field leather Texture
----@field grain Texture
----@field rules Texture[]
+---@class LedgerBindingSwatch: LedgerJournalCover
 ---@field plateEdge Texture
 ---@field plate Texture
 
 -- One swatch per stage, made on its first preview: the shop shows one good at a time.
 ---@type table<Frame, LedgerBindingSwatch>
 local swatches = setmetatable({}, { __mode = "k" })
-
--- A 1-pixel line on `frame` from point `from` offset by `fromX`, `fromY` to point `to` offset by `toX`, `toY`.
----@param frame Frame
----@param from FramePoint
----@param fromX number
----@param fromY number
----@param to FramePoint
----@param toX number
----@param toY number
----@return Texture
-local function line(frame, from, fromX, fromY, to, toX, toY)
-	local texture = frame:CreateTexture(nil, "ARTWORK")
-	texture:SetPoint(from, fromX, fromY)
-	texture:SetPoint(to, toX, toY)
-	if fromX == toX then
-		texture:SetWidth(1)
-	else
-		texture:SetHeight(1)
-	end
-	return texture
-end
 
 -- Builds a stage's swatch, at its top as Core's crest bookplate sits (adapter/CoreGoods.lua).
 ---@param stage Frame
@@ -64,30 +43,15 @@ local function buildSwatch(stage)
 	local swatch = CreateFrame("Frame", nil, stage) --[[@as LedgerBindingSwatch]]
 	swatch:SetSize(SWATCH_WIDTH, SWATCH_HEIGHT)
 	swatch:SetPoint("TOP", 0, -16)
-	ns.JournalSolid(swatch, LOOK.leatherEdge, "BACKGROUND")
-	swatch.leather = ns.JournalSolid(swatch, LOOK.leather, "BACKGROUND")
-	swatch.leather:SetPoint("TOPLEFT", 1, -1)
-	swatch.leather:SetPoint("BOTTOMRIGHT", -1, 1)
-	swatch.grain = swatch:CreateTexture(nil, "BORDER")
-	swatch.grain:SetTexture(ns.JOURNAL_TEXTURES.leather)
-	swatch.grain:SetAlpha(0.5)
-	swatch.grain:SetPoint("TOPLEFT", 1, -1)
-	swatch.grain:SetPoint("BOTTOMRIGHT", -1, 1)
+	-- The leather and its grain, and the gilt rules: a rectangle inset from the edges, further in at the spine.
+	ns.DrawJournalCover(swatch, 1, RULE_INSET, RULE_SPINE_INSET)
 	local spine = swatch:CreateTexture(nil, "BORDER")
 	spine:SetColorTexture(0, 0, 0, 0.35)
 	spine:SetPoint("TOPLEFT", 1, -1)
 	spine:SetPoint("BOTTOMLEFT", 1, 1)
 	spine:SetWidth(SWATCH_SPINE)
-	-- The gilt rules: a rectangle inset from the edges, further in at the spine.
-	local left, inset = RULE_SPINE_INSET, RULE_INSET
-	swatch.rules = {
-		line(swatch, "TOPLEFT", left, -inset, "TOPRIGHT", -inset, -inset),
-		line(swatch, "BOTTOMLEFT", left, inset, "BOTTOMRIGHT", -inset, inset),
-		line(swatch, "TOPLEFT", left, -inset, "BOTTOMLEFT", left, inset),
-		line(swatch, "TOPRIGHT", -inset, -inset, "BOTTOMRIGHT", -inset, inset),
-	}
 	swatch.plateEdge = swatch:CreateTexture(nil, "ARTWORK")
-	swatch.plateEdge:SetColorTexture(LOOK.leatherEdge[1], LOOK.leatherEdge[2], LOOK.leatherEdge[3], 1)
+	ns.JournalPaint(swatch.plateEdge, LOOK.leatherEdge)
 	swatch.plateEdge:SetSize(PLATE_WIDTH, PLATE_HEIGHT)
 	swatch.plateEdge:SetPoint("BOTTOM", (RULE_SPINE_INSET - RULE_INSET) / 2, PLATE_FOOT)
 	swatch.plate = swatch:CreateTexture(nil, "OVERLAY")
@@ -107,21 +71,21 @@ function ns.DrawBindingSwatch(stage, look)
 		swatch = buildSwatch(stage)
 		swatches[stage] = swatch
 	end
-	swatch.leather:SetColorTexture(look.leather[1], look.leather[2], look.leather[3], 1)
-	swatch.grain:SetVertexColor(look.leather[1], look.leather[2], look.leather[3])
-	for _, rule in ipairs(swatch.rules) do
-		rule:SetColorTexture(look.gilt[1], look.gilt[2], look.gilt[3], 0.85)
-	end
-	swatch.plate:SetColorTexture(look.plate[1], look.plate[2], look.plate[3], 1)
+	ns.TintJournalCover(swatch, look, look.gilt, 0.85)
+	ns.JournalPaint(swatch.plate, look.plate)
 	swatch:Show()
 	return swatch
 end
 
 --- The equipped crest's icon (LED-R112, SHOP-R25), to draw on the Angler page's bookplate: the icon Core cached for
---- `Pagle.GetEquipped("core.crest")` (Pagle.GetGood), or nil while the slot or its icon is missing.
+--- `Pagle.GetEquipped("core.crest")` (Pagle.GetGood); nil for the slot's default, Plain ("No emblem, only the owner's
+--- name"), and while the slot or its icon is missing.
 ---@return (integer|string)?
 function ns.CrestIcon()
 	local crest = Pagle.GetEquipped(CREST_SLOT)
+	if crest == DEFAULT_CREST then
+		return nil
+	end
 	local good = crest and Pagle.GetGood(crest)
 	return good and good.icon
 end
@@ -134,10 +98,11 @@ function ns.RegisterBindings(module)
 	module:RegisterSlot(ns.BindingSlot())
 	local goods = ns.BindingGoods({
 		earned = function(level)
+			-- The state even mid-update: Core asks only at registration, before any update, and after a live entry
+			-- or a done (SHOP-R31).
 			local projection = ns.projection
 			local state = projection and projection:GetState() --[[@as LedgerState?]]
-			-- Read as saved: asking makes none of the celebrated set's keys (LED-R90).
-			return ns.LevelBindingEarned(level, state, ns.db.global.celebrated or {})
+			return ns.LevelBindingEarned(level, state, ns.SavedCelebrated())
 		end,
 		preview = ns.DrawBindingSwatch,
 	})

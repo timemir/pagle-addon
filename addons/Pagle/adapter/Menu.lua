@@ -15,28 +15,14 @@ local Pagle = Pagle
 -- Its own owner on the event frames, so no other Core file's registration replaces it.
 local OWNER = "Pagle compartment"
 
--- The last entry. While restricted Pagle.OpenSettings prints CORE-R33's line instead (SET-R75).
-local SETTINGS = ns.SettingsMenuEntry(function()
-	Pagle.OpenSettings()
-end)
-
--- Help chart the waters: while restricted Pagle.OpenFieldReport prints REP-R44's line instead (CORE-R33).
-local function openFieldReport()
-	Pagle.OpenFieldReport()
-end
-
--- The Curio Shop: while restricted Pagle.OpenShop prints SHOP-R41's line instead (CORE-R33).
-local function openShop()
-	Pagle.OpenShop()
-end
-
 -- Fills the context menu, reading each label, the balance and the Field report count now (CORE-R50, CORE-R52). It
--- opens while restricted too (CORE-R33).
+-- opens while restricted too: the Curio Shop, Help chart the waters and Settings then print their CORE-R33 lines
+-- (SHOP-R41, REP-R44, SET-R75).
 ---@param root table the menu's root description
 local function generate(_, root)
-	local shop = ns.CurioShopMenuEntry(Pagle.GetBalance(), BreakUpLargeNumbers, openShop)
-	local report = ns.FieldReportMenuEntry(Pagle.GetFieldReportCount(), openFieldReport)
-	for _, entry in ipairs(ns.CompartmentMenu(ns.Modules:Modules(), shop, report, SETTINGS, securecallfunction)) do
+	local entries =
+		ns.CoreCompartmentMenu(Pagle, ns.coreSubcommands, ns.Modules:Modules(), BreakUpLargeNumbers, securecallfunction)
+	for _, entry in ipairs(entries) do
 		root:CreateButton(entry.label, function()
 			securecallfunction(entry.onClick)
 		end)

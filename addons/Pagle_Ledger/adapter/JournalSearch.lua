@@ -13,9 +13,8 @@ local LOOK = ns.JOURNAL_LOOK
 local ROW_HEIGHT = 20
 local ROW_INSET = 8
 
----@class LedgerSearchRowView: Button
+---@class LedgerSearchRowView: LedgerJournalClickable
 ---@field label FontString
----@field place LedgerJournalPlace?
 
 ---@class LedgerJournalSearchDrop: Frame
 ---@field rows LedgerSearchRowView[]
@@ -33,11 +32,13 @@ function ns.AttachJournalSearch(journal, box)
 	drop.rows = {}
 	drop:Hide()
 
-	-- Empties the box, which hides the dropdown.
-	local function close()
+	-- Picking a result empties the box, which hides the dropdown, and opens the result's place.
+	---@param place LedgerJournalPlace
+	local function pick(place)
 		box:SetText("")
 		box:ClearFocus()
 		drop:Hide()
+		journal:OpenPlace(place)
 	end
 
 	-- Row `i`, made on first use: a result's name opening its spread, or the no-match line, opening nothing.
@@ -52,13 +53,8 @@ function ns.AttachJournalSearch(journal, box)
 			row:SetPoint("TOPRIGHT", 0, -(i - 1) * ROW_HEIGHT)
 			row.label = ns.JournalText(row, ns.JournalFonts().text, LOOK.ink)
 			row.label:SetPoint("LEFT", ROW_INSET, 0)
-			row:SetScript("OnClick", function(self)
-				local place = self.place
-				if place then
-					close()
-					journal:Open(place.id, place.args)
-				end
-			end)
+			ns.JournalClickable(row)
+			row.open = pick
 			drop.rows[i] = row
 		end
 		return row
@@ -66,7 +62,9 @@ function ns.AttachJournalSearch(journal, box)
 
 	box:SetScript("OnTextChanged", function(self)
 		local context = journal:Context()
-		local results = not context.updating and ns.JournalSearch(self:GetText() or "", context) or nil
+		local results = not context.updating
+				and ns.JournalSearch(self:GetText() or "", context --[[@as LedgerSpreadContext]])
+			or nil
 		if not results then
 			drop:Hide()
 			return
@@ -75,7 +73,7 @@ function ns.AttachJournalSearch(journal, box)
 		if lines == 0 then
 			local row = rowAt(1)
 			row.label:SetText(ns.L.SEARCH_NONE)
-			row.label:SetTextColor(LOOK.faded[1], LOOK.faded[2], LOOK.faded[3])
+			row.label:SetTextColor(unpack(LOOK.faded))
 			row.place = nil
 			row:Show()
 			lines = 1
@@ -83,7 +81,7 @@ function ns.AttachJournalSearch(journal, box)
 		for i, result in ipairs(results) do
 			local row = rowAt(i)
 			row.label:SetText(result.label)
-			row.label:SetTextColor(LOOK.ink[1], LOOK.ink[2], LOOK.ink[3])
+			row.label:SetTextColor(unpack(LOOK.ink))
 			row.place = result.place
 			row:Show()
 		end

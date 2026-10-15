@@ -59,21 +59,52 @@ stds.wow = {
 		"UnitChannelInfo",
 		"UnitCastingInfo",
 		"GetInventoryItemID",
-		-- GetItemNameByID: the Ledger's item names (LED-R97, LED-R126), and RequestLoadItemDataByID for the Journal's
-		-- uncached ones (LED-R126). GetItemInfo: the Field report's item names (REP-R30). GetItemIconByID: a Hunt's
-		-- icon (HNT-R55) and Stats' item icons (STA-R59).
-		-- GetItemQualityByID: Stats' Catches by quality for an item Core has no quality for (STA-R33).
+		-- Its lures (QOL-R24, QOL-R27, QOL-R29, QOL-R51, QOL-R54): the click on PagleQoLActionButton, what's in the bags and
+		-- usable, the spell a lure's use casts, and the lures' names for the Lure dropdown and the out-of-lures Nudge;
+		-- GetWeaponEnchantInfo is in stds.wow_variables. Its clams (QOL-R55, QOL-R57) use the same click, bag and
+		-- name calls.
+		"SetOverrideBindingClick",
+		-- GetItemNameByID is also the Ledger's item names (LED-R97, LED-R126), and RequestLoadItemDataByID the
+		-- Journal's uncached ones (LED-R126). GetItemInfo: the Field report's item names (REP-R30). GetItemIconByID is
+		-- also Stats' item icons (STA-R59). GetItemQualityByID: Stats' Catches by quality for an item Core has no
+		-- quality for (STA-R33).
 		C_Item = {
 			fields = {
 				"GetItemInfoInstant",
+				"GetItemCount",
+				"IsUsableItem",
+				"GetItemSpell",
 				"GetItemNameByID",
 				"RequestLoadItemDataByID",
+				"GetItemIconByID", -- the next-action button's lure icon (QOL-R71), and a Hunt's icon (HNT-R55)
 				"GetItemInfo",
-				"GetItemIconByID",
 				"GetItemQualityByID",
 			},
 		},
-		C_Spell = { fields = { "GetSpellName" } },
+		C_Spell = { fields = { "GetSpellName", "GetSpellTexture" } }, -- GetSpellTexture: the icon of QOL-R41
+		-- Its gear (QOL-R40–R46, QOL-R77): the character's equipment sets, the swap, the main hand's icon a new set takes,
+		-- and Swap gear's key in the swap-back Nudge; MAX_EQUIPMENT_SETS_PER_PLAYER is in stds.wow_variables.
+		C_EquipmentSet = {
+			fields = {
+				"GetEquipmentSetID",
+				"GetEquipmentSetIDs",
+				"GetEquipmentSetInfo",
+				"GetItemIDs",
+				"GetNumEquipmentSets",
+				"ClearIgnoredSlotsForSave",
+				"CreateEquipmentSet",
+				"SaveEquipmentSet",
+				"UseEquipmentSet",
+			},
+		},
+		"GetInventoryItemTexture",
+		"GetBindingText",
+		-- QoL's double-click (QOL-R13): the frames under the mouse at a right mouse-up, and the game world's frame. It
+		-- hears GLOBAL_MOUSE_DOWN and GLOBAL_MOUSE_UP (payload: the button), which Ketho/vscode-wow-api at
+		-- WOW_API_COMMIT lists in Annotations/Core/Data/Event.lua. GetMouseFocus, QOL-R13's fallback, isn't used: the
+		-- forever dump has GetMouseFoci and not GetMouseFocus, so the fallback's case never arises on Forever.
+		"GetMouseFoci",
+		"WorldFrame",
 		-- QoL's Fishing stretch and its CVar lease (QOL-R61–R64).
 		"GetCVar",
 		"SetCVar",
@@ -85,6 +116,13 @@ stds.wow = {
 		-- The Ledger's Prestige confirm (LED-R33), hidden when the Fish Journal closes; the Curio Shop's Buy popup,
 		-- shown with StaticPopup_Show above and hidden when the shop closes (SHOP-R41).
 		"StaticPopup_Hide",
+		-- QoL's Nudges: a frame on the screen (UIParent, below), below the game's error text (QOL-R75); its colour is in
+		-- stds.wow_variables. Stats refuses a 4th watched Dry spell in that red error text (STA-R61).
+		"UIErrorsFrame",
+		-- QoL's next-action button (QOL-R70–R74): Shift-drag moves it, and its tooltip is the game's own; Item, which
+		-- waits for a lure's name, is in stds.wow_variables.
+		"IsShiftKeyDown",
+		"GameTooltip",
 		-- The character table, Skill Readings and build entries (LOG-R26, LOG-R30, LOG-R36).
 		"UnitName",
 		"UnitClass",
@@ -126,12 +164,8 @@ stds.wow = {
 		-- The Fish Journal's serif and handwriting font objects (ledger.md › UI); its frame is drawn on CreateFrame and
 		-- UIParent above and hides with Esc through UISpecialFrames (below).
 		"CreateFont",
-		-- The Curio Shop's purse: each Module's segment shows its lifetime Coins in the tooltip (wallet-and-shop.md › UI).
-		-- The window is drawn on CreateFrame and UIParent above and hides with Esc through UISpecialFrames (below).
-		"GameTooltip",
-		-- Stats' words (STA-R59): times and dates in the player's local clock, and the game's quality names (GlobalStrings);
-		-- their colours are ITEM_QUALITY_COLORS, in stds.wow_variables.
-		"date",
+		-- Stats' words (STA-R59): times and dates in the player's local clock (date, below), and the game's quality names
+		-- (GlobalStrings); their colours are ITEM_QUALITY_COLORS, in stds.wow_variables.
 		"ITEM_QUALITY0_DESC",
 		"ITEM_QUALITY1_DESC",
 		"ITEM_QUALITY2_DESC",
@@ -140,14 +174,19 @@ stds.wow = {
 		"ITEM_QUALITY5_DESC",
 		"ITEM_QUALITY6_DESC",
 		"ITEM_QUALITY7_DESC",
+		-- The Curio Shop's purse: each Module's segment shows its lifetime Coins, the total Core stores for it (SHOP-R3),
+		-- in the tooltip (wallet-and-shop.md › UI), GameTooltip above. The window is drawn on CreateFrame and UIParent above and hides with Esc through
+		-- UISpecialFrames (below).
+		-- `/pagle dev tour` (CORE-R66): Screenshot() saves each stop to the client's Screenshots folder, and date() gives
+		-- the local time the files are named by. Both are in the forever dump's GlobalAPI.lua at BIR_COMMIT ("Screenshot"
+		-- with the C API, "date" with the Lua extras); vscode-wow-api at WOW_API_COMMIT has
+		-- Blizzard_APIDocumentationGenerated/ClientDocumentation.lua's `function Screenshot() end`, with no arguments.
+		"Screenshot",
+		"date",
 		-- The tracker dock (CORE-R70, CORE-R71): its anchor sits under the minimap cluster by default, and a drag of a
-		-- docked tracker moves it only with Shift held. Both are in the pinned forever dump: Frames.lua lists
-		-- MinimapCluster and GlobalAPI.lua lists IsShiftKeyDown.
+		-- docked tracker moves it only with Shift held (IsShiftKeyDown, above). The pinned forever dump's Frames.lua
+		-- lists MinimapCluster.
 		"MinimapCluster",
-		"IsShiftKeyDown",
-		-- The game's red error text, where Stats refuses a 4th watched Dry spell (STA-R61). The pinned forever dump's
-		-- Frames.lua lists UIErrorsFrame.
-		"UIErrorsFrame",
 	},
 }
 
@@ -195,7 +234,8 @@ stds.wow_variables = {
 		-- does. Gethe/wow-ui-source branch forever at 943764493e6b16d63ded3ab304150d1f05e58b57 ("1.60.1 (70338)"),
 		-- Interface/AddOns/Blizzard_StaticPopup/StaticPopup.lua: `StaticPopupDialogs = {}; -- Definitions`. QoL adds
 		-- its two dialogs to it: the conflict popup and its Reload now popup (QOL-R81, QOL-R83); the Ledger adds its
-		-- Prestige confirm (LED-R33); Core adds the Curio Shop's Buy popup (wallet-and-shop.md › UI: Buy).
+		-- Prestige confirm (LED-R33); Core adds the Curio Shop's Buy popup, one confirmation per purchase (SHOP-R13),
+		-- which closes while restricted (SHOP-R41).
 		StaticPopupDialogs = {
 			fields = {
 				PAGLE_QOL_CONFLICT = { read_only = false },
@@ -204,6 +244,18 @@ stds.wow_variables = {
 				PAGLE_CURIO_BUY = { read_only = false },
 			},
 		},
+		-- A FrameXML colour the dump doesn't list (QOL-R75: a Nudge's colour). No probe has drawn a Nudge yet; Track Q's
+		-- exit check (step 1) does. Gethe/wow-ui-source branch forever at 943764493e6b16d63ded3ab304150d1f05e58b57
+		-- ("1.60.1 (70338)"), Interface/AddOns/Blizzard_SharedXMLBase/Color.lua makes each of the client's UI colours a
+		-- global, so no file there spells out its value: "envTbl[dbColor.baseTag] = color;" over
+		-- `C_UIColor.GetColors()`. Blizzard_Communities/CommunitiesChatFrame.lua reads it as
+		-- `YELLOW_FONT_COLOR:GetRGB()`. Only GetRGB is called on it.
+		YELLOW_FONT_COLOR = { fields = { "GetRGB" } },
+		-- A FrameXML constant the dump doesn't list (QOL-R42: the free equipment set slots). Gethe/wow-ui-source branch
+		-- forever at 943764493e6b16d63ded3ab304150d1f05e58b57 ("1.60.1 (70338)"),
+		-- Interface/AddOns/Blizzard_FrameXMLBase/Constants.lua: "MAX_EQUIPMENT_SETS_PER_PLAYER = 10;". The game's own
+		-- equipment manager counts free slots with it (Blizzard_UIPanels_Game/Camelot/PaperDollFrame.lua).
+		"MAX_EQUIPMENT_SETS_PER_PLAYER",
 		-- A FrameXML table the dump doesn't list (CORE-R60). probes/fishing-signals/results/
 		-- 2026-10-11-build70338-report.md is the /pprobe report from build 70338, and /pprobe is registered with
 		-- SlashCmdList.PAGLEPROBE (probes/fishing-signals/PagleProbe/Report.lua). Gethe/wow-ui-source branch forever at
@@ -229,7 +281,9 @@ stds.wow_variables = {
 		-- Interface/AddOns/Blizzard_UIParentPanelManager/Shared/UIParentPanelManager.lua: "UISpecialFrames = {", and
 		-- CloseSpecialWindows hides each frame named in it that is shown. Core adds its card frame's name.
 		"UISpecialFrames",
-		-- A FrameXML table the dump doesn't list (HNT-R54: a Hunt's target item loads with Item:CreateFromItemID).
+		-- A FrameXML table the dump doesn't list: QOL-R74, the next-action button's tooltip waits for an item's name with
+		-- Item:ContinueOnItemLoad (no probe has hovered the button yet; Track Q's exit check, step 5, does), and
+		-- HNT-R54, a Hunt's target item loads with Item:CreateFromItemID.
 		-- Gethe/wow-ui-source branch forever at 943764493e6b16d63ded3ab304150d1f05e58b57 ("1.60.1 (70338)"),
 		-- Interface/AddOns/Blizzard_ObjectAPI/Mainline/Item.lua: "Item = {};", "--[[static]] function
 		-- Item:CreateFromItemID(itemID)" and "function ItemMixin:ContinueOnItemLoad(callbackFunction)"; Item.lua is
@@ -273,11 +327,22 @@ files["addons/Pagle/adapter/**"] = { globals = { "Pagle" } }
 files["addons/Pagle/adapter/Slash.lua"] = { globals = { "SLASH_PAGLE1" } }
 -- The mixin of Stats' Watched Dry spells row, which adapter/Settings.xml's template names (SET-R5, SET-R42).
 files["addons/Pagle_Stats/adapter/Settings.lua"] = { globals = { "PagleStatsWatchedRowMixin" } }
+-- The mixin of Core's own Settings rows, which adapter/Settings.xml's template names (SET-R5, SET-R6).
+files["addons/Pagle/adapter/Settings.lua"] = { globals = { "Pagle", "PagleSettingsRowMixin" } }
+files["addons/Pagle/adapter/LookAndFeel.lua"] = { globals = { "Pagle", "PagleSettingsSlotRowMixin" } }
 -- A Module's adapter/ reads Pagle through stds.pagle above. Its logic/ and locale/ files read it only in their CORE-R11
 -- guard, `if not Pagle then -- luacheck: read globals Pagle …`, whose inline option reaches that line alone: any other
 -- use of Pagle there fails lint (CORE-R7).
--- QoL's adapter names its Bindings.xml entries for Key Bindings › AddOns (QOL-R1).
-files["addons/Pagle_QoL/adapter/**"] = { globals = { "BINDING_HEADER_PAGLE", "BINDING_NAME_PAGLE_FISHING_KEY" } }
+-- QoL's adapter names its Bindings.xml entries for Key Bindings › AddOns (QOL-R1), and defines Swap gear's body,
+-- which Bindings.xml calls (QOL-R46).
+files["addons/Pagle_QoL/adapter/**"] = {
+	globals = {
+		"BINDING_HEADER_PAGLE",
+		"BINDING_NAME_PAGLE_FISHING_KEY",
+		"BINDING_NAME_PAGLE_SWAP_GEAR",
+		"PagleQoL_SwapGear",
+	},
+}
 -- Specs run under busted on plain Lua 5.1. busted's helper (.busted) defines loadAddon and the Forever fixtures.
 local helperGlobals = {
 	"loadAddon",
@@ -292,6 +357,7 @@ local helperGlobals = {
 	"foreverWith",
 	"setCombat",
 	"openedNames",
+	"characterRecord",
 	"savedLog",
 	"loadCollectingErrors",
 	"breakUpLargeNumbers",
@@ -302,6 +368,7 @@ local helperGlobals = {
 	"prestigeEntry",
 	"purchaseEntry",
 	"history",
+	"unchartedHistory",
 	"loadCore",
 	"enterWorld",
 	"catchOne",
@@ -310,6 +377,23 @@ local helperGlobals = {
 	"forbiddenIn",
 	"shippedFiles",
 	"readFile",
+	"drawnSymbols",
+	"itemRecord",
+	"fishRecord",
+	"areaRecord",
+	"catchEntry",
+	"NIGHT_WINDOW",
+	"itemLookup",
+	"applyLive",
+	"catalogueWith",
+	"castRecord",
+	"shownTexts",
+	"blockTexts",
+	"blockOfKind",
+	"blockWithText",
+	"pageScroll",
+	"scrollPage",
+	"openJournal",
 }
 files["spec/**"] = { std = "lua51+busted", read_globals = helperGlobals }
 files["spec/support/*.lua"] = { globals = helperGlobals }

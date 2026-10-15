@@ -27,7 +27,7 @@ Model.__index = Model
 ---@param sources PagleShopSources
 ---@return PagleShopModel
 function ns.NewShopModel(sources)
-	local on = { Core = true }
+	local on = { [ns.CORE_OWNER] = true }
 	for _, module in ipairs(sources.modules) do
 		on[module.def.name] = true
 	end
@@ -73,7 +73,7 @@ end
 ---@param module string def.name, or "Core"
 ---@return string
 local function ownerName(module)
-	if module == "Core" then
+	if module == ns.CORE_OWNER then
 		return ns.L.SHOP_CORE
 	end
 	return ns.L.MODULE_NAMES[module] or module
@@ -472,15 +472,9 @@ end
 --- only if a live slot uses it.
 ---@return PagleShopChip[]
 function Model:Chips()
-	local used = {}
-	for _, slot in ipairs(self.slotList) do
-		used[slot.category] = true
-	end
 	local chips = {}
-	for _, category in ipairs(ns.SLOT_CATEGORY_ORDER) do
-		if used[category] then
-			chips[#chips + 1] = { category = category, label = ns.L.SHOP_CATEGORIES[category] }
-		end
+	for _, section in ipairs(ns.SlotsByCategory(self.slotList)) do
+		chips[#chips + 1] = { category = section.category, label = ns.L.SHOP_CATEGORIES[section.category] }
 	end
 	return chips
 end

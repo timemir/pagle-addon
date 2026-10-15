@@ -6,34 +6,12 @@
 
 local ns = loadAddon("Pagle", FOREVER_GLOBALS).ns
 
-local T0 = 1791731700 -- 2026-10-11 15:15:00 UTC
+---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
+local script = dofile("spec/support/script.lua")
+
+local T0 = SERVER_TIME -- 2026-10-11 15:15:00 UTC
 local ADA = { guid = "Player-4618-0A1B2C3D", name = "Ada", surname = "Brook", realmID = 4618 }
 local BRAM = { guid = "Player-4618-0F0E0D0C", name = "Bram", surname = "Reed", realmID = 4618 }
-
--- The client's SavedVariables layout for one value: `["key"] = value,` per field, array items with `-- [n]`.
-local function serialize(value, lines, prefix, suffix)
-	if type(value) == "table" then
-		lines[#lines + 1] = prefix .. "{"
-		for i, item in ipairs(value) do
-			serialize(item, lines, "", ", -- [" .. i .. "]")
-		end
-		local keys = {}
-		for key in pairs(value) do
-			if type(key) == "string" then
-				keys[#keys + 1] = key
-			end
-		end
-		table.sort(keys)
-		for _, key in ipairs(keys) do
-			serialize(value[key], lines, ('["%s"] = '):format(key), ",")
-		end
-		lines[#lines + 1] = "}" .. suffix
-	elseif type(value) == "string" then
-		lines[#lines + 1] = prefix .. ("%q"):format(value) .. suffix
-	else
-		lines[#lines + 1] = prefix .. tostring(value) .. suffix
-	end
-end
 
 -- A new account folder with a SavedVariables folder in it. Its path has a space and a `#`, as
 -- World of Warcraft/_classic_beta_/WTF/Account/<ACCOUNT>#1/ has.
@@ -48,14 +26,8 @@ local function newAccount()
 	return account
 end
 
-local function writeFile(path, text)
-	---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io
-	local file = assert(io.open(path, "wb"))
-	file:write(text)
-	file:close()
-end
-
---- An account folder whose SavedVariables/Pagle.lua holds these globals, as the client writes it.
+--- An account folder whose SavedVariables/Pagle.lua holds these globals, in the client's layout (the scripts' own
+--- serializer, scripts/lib/wtf.lua) with CRLF line ends.
 local function savedVariables(globals)
 	local lines, names = {}, {}
 	for name in pairs(globals) do
@@ -63,10 +35,10 @@ local function savedVariables(globals)
 	end
 	table.sort(names)
 	for _, name in ipairs(names) do
-		serialize(globals[name], lines, name .. " = ", "")
+		script.wtf.serialize(globals[name], lines, name .. " = ", "")
 	end
 	local account = newAccount()
-	writeFile(account .. "/SavedVariables/Pagle.lua", table.concat(lines, "\r\n") .. "\r\n")
+	script.wtf.writeFile(account .. "/SavedVariables/Pagle.lua", table.concat(lines, "\r\n") .. "\r\n")
 	return account
 end
 
@@ -127,32 +99,7 @@ local STRETCH = {
 --- stderr, and its exit code.
 ---@return string[] out, string err, integer code
 local function run(...)
-	local out, err, code = {}, {}, nil
-	---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no loadfile
-	local chunk = assert(loadfile("scripts/read-wtf.lua"))
-	local env = setmetatable({
-		arg = { [0] = "scripts/read-wtf.lua", ... },
-		print = function(line)
-			out[#out + 1] = line
-		end,
-		io = setmetatable({
-			stderr = {
-				write = function(_, text)
-					err[#err + 1] = text
-				end,
-			},
-			---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io
-		}, { __index = io }),
-		os = setmetatable({
-			exit = function(status)
-				code = status
-			end,
-			---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no os
-		}, { __index = os }),
-	}, { __index = _G })
-	setfenv(chunk, env)
-	chunk(...)
-	return out, table.concat(err), code
+	return script.run("scripts/read-wtf.lua", { ... })
 end
 
 --- The one output line that starts with `start`, or nil.

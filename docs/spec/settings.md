@@ -36,7 +36,7 @@ Fishing                                                    (QoL only)
   [While you fish]          Fishing audio mix  ↳ Keep sound when the game is in the background;
                             Auto-loot while fishing;  Show the next-action button  ↳ Button position
 Announcements
-                            Cozy mode;  Interruption budget  ↳ Interruptions  ↳ Per;  Toast style;  Sound set
+                            Cozy mode;  Interruption budget  ↳ Interruptions  ↳ Per;  Show every catch;  Toast style;  Sound set
   [Hunts]                   Tell me when a pinned Hunt's window opens
 Trackers
                             Tracker position  [Reset]
@@ -76,7 +76,8 @@ The rules below are authoritative; this sketch only summarises them.
   - A **button** row has a label on the left and a caption on the button. Where a table gives one quoted string for a button, it is the caption and the row has no label.
 - **SET-R3** Every topic page lists Core's rows first, then each On Module's rows in `def.order` (Ledger 10, Hunts 20, Stats 30, Tackle Board 40, QoL 50), each under a header with its `def.title`, which Core leaves out when the Module's first row is itself a header (CORE-R42). Core's rows on a topic page have no header of their own.
 - **SET-R4** "On" is CORE-R41's state: enabled and registered. A Module whose projection is updating is still On. A Module that isn't On has no rows and no look slots anywhere in the tree (CORE-R17, SHOP-R35), and nothing takes their place: no note and no empty header. The root's status list (SET-R11) is the only place it appears.
-- **SET-R5** Every row is a native Settings initializer, so Blizzard's settings search finds it by its label and every page has the native Defaults button (SET-R60). The status list (SET-R11), Stats' Watched Dry spells (`custom`) and the slot dropdowns (SET-R51) are custom initializers carrying their label for search. Paragraphs and notes (SET-R10, SET-R50) are custom text initializers with no search label.
+- **SET-R5** Every row is a native Settings initializer, so Blizzard's settings search finds it by its label and every page has the native Defaults button (SET-R60). The status list (SET-R11), Stats' Watched Dry spells (`custom`) and the slot dropdowns (SET-R51) are custom initializers carrying their label for search. Paragraphs and notes (SET-R10, SET-R50) are custom text initializers with no search label. A custom initializer is made with `Settings.CreateElementInitializer` on the owner's own XML template, whose mixin draws the row in `Init(initializer)` and clears it in `Release()`; Core's is `PagleSettingsRowTemplate` (`adapter/Settings.xml`), 26 pixels high (SET-R6).
+- **SET-R6** No Pagle addon's code writes a field onto anything Blizzard's Settings code made or reads, or calls into it beyond building the tree. Pagle registers categories and settings, creates initializers and controls through the public `Settings` API, and adds to them only through their own methods (`SetParentInitializer`, `AddModifyPredicate`, `AddEvaluateStateCVar`, `AddSearchTags`); it hands Blizzard data and callbacks (`get`, `set`, `isEnabled`, options, `onClick`), which Blizzard runs. It never assigns an initializer's `InitFrame`, `Resetter`, `GetExtent`, `Factory` or `GetTemplate` (the Settings list reads them in its own secure update), calls a setting's `NotifyUpdate`, `SetValue` or `SetValueToDefault`, touches `SettingsCallbackRegistry` or `SettingsInbound`, or reads, calls or hooks anything on `SettingsPanel` and its list. It opens the panel with `Settings.OpenToCategory` and closes it with `HideUIPanel(SettingsPanel)`, which go through Blizzard's own secure paths. Any of these, done from Pagle's code, taints the Settings list: a Blizzard row drawn after it, such as Audio's "Use Discord client settings", then calls a protected function as Pagle's and the client blocks it (`ADDON_ACTION_FORBIDDEN`, [#246](https://github.com/timemir/wow-fish/issues/246)). So a native row never refreshes while shown from Pagle's side: it re-reads when Blizzard draws it (SET-R61, SET-R62). A custom row's frame is its owner's, so the owner may redraw it at once (SET-R51, SET-R62), keeping its size. `spec/Pagle/settings_taint_spec.lua` checks every shipped file for these.
 
 ### The root
 
@@ -100,12 +101,12 @@ The rules below are authoritative; this sketch only summarises them.
   | Hunts | "Open Hunts" | HNT-R68, HNT-R135 |
   | Stats | "Open Stats" | STA-R4 |
   | Tackle Board | "Start my board" until the board is started, then "Open Tackle Board" | TKB-R1, TKB-R5 |
-  | QoL | "Fishing settings ›" | QOL-R2 (its `settingsAction` opens Fishing) |
+  | QoL | "Fishing settings »" | QOL-R2 (its `settingsAction` opens Fishing) |
 
   A Module in any other state shows no button. The list always shows all five roster names, so before a Module is built its row reads Not installed (CORE-R41). Each button arrives with its Module's milestone: QoL's in M1, the Ledger's in M3, Hunts' in M5, Stats' in M6, the Tackle Board's in M7. The list's search label is "Modules".
 
   Every root row without a "From" note (the paragraph, the status list, the note) is there from M1.
-- **SET-R12** Core reads each status button's label (a string, or the function's result) every time the root is shown. Pressing a button runs its action (`def.settingsAction.onClick`, or the first view's `open`). For a Module that has a view (every Module but QoL), and for "Open Field report" and "Open the Curio Shop" (SET-R50), Core first closes the Settings panel (`HideUIPanel(SettingsPanel)`), since what opens would sit behind it. QoL's "Fishing settings ›" doesn't close the panel: it moves it to Fishing. While restricted, each action behaves as its own spec says, after the panel has closed: a Module view follows its Module's rules, the Field report prints REP-R44's line and the Curio Shop SHOP-R41's. QoL's button then prints CORE-R33's line, and the panel stays on the root.
+- **SET-R12** Core reads each status button's label (a string, or the function's result) every time the root is shown. Pressing a button runs its action (`def.settingsAction.onClick`, or the first view's `open`). For a Module that has a view (every Module but QoL), and for "Open Field report" and "Open the Curio Shop" (SET-R50), Core first closes the Settings panel (`HideUIPanel(SettingsPanel)`), since what opens would sit behind it. QoL's "Fishing settings »" doesn't close the panel: it moves it to Fishing. While restricted, each action behaves as its own spec says, after the panel has closed: a Module view follows its Module's rules, the Field report prints REP-R44's line and the Curio Shop SHOP-R41's. QoL's button then prints CORE-R33's line, and the panel stays on the root.
 - **SET-R13** The root's Defaults button restores the two value rows: the reminder to off and the length unit to its region default (LOG-R69).
 
 ### Fishing
@@ -141,11 +142,12 @@ The rules below are authoritative; this sketch only summarises them.
   | Interruption budget | checkbox | on (ANN-R31, ANN-R32) | Cozy mode is on | "When toasts come close together, the smaller ones step down to a quiet Nod. Records always keep their ruler. Greyed out in Cozy mode, which holds everything anyway." |
   | ↳ Interruptions | slider | 1–10, step 1 · 4 | Cozy mode is on, or the budget is off | |
   | ↳ Per | slider, shown as "{n} min" | 1–15 min, step 1 min · 5 min (stored in seconds) | Cozy mode is on, or the budget is off | |
+  | Show every catch | checkbox | on (ANN-R13, `everyCatch`) | Cozy mode is on | "A quiet line for each catch: its name, size band and length. A toast or banner for the same catch shows instead. Greyed out in Cozy mode, which shows nothing." |
   | Toast style | slot dropdown, `core.toaststyle` (SET-R51) | owned styles · `core.toaststyle.timber` (ANN-R80) | | |
   | Sound set | slot dropdown, `core.soundset` (SET-R51) | owned sets · `core.soundset.driftwood` (ANN-R72) | | |
 
-  Values are stored in `PagleDB.profile.announcements` and the two looks in `PagleDB.profile.appearance` ([announcements.md](core/announcements.md#data)). The two slot rows exist from M4, when Core registers its slots (SHOP-R25); in M2 and M3 the page ends after Per.
-- **SET-R31** A greyed-out row keeps its value. Each row's greying is re-evaluated on its own condition (SET-R61): turning Cozy mode off makes Interruption budget live again, and Interruptions and Per too unless the budget is off.
+  Values are stored in `PagleDB.profile.announcements` and the two looks in `PagleDB.profile.appearance` ([announcements.md](core/announcements.md#data)). The two slot rows exist from M4, when Core registers its slots (SHOP-R25); in M2 and M3 the page ends after Per. Show every catch arrives with the catch Nod ([#256](https://github.com/timemir/wow-fish/issues/256)). Every row here is a native checkbox, slider or Core's own slot dropdown row (SET-R5, SET-R51), so nothing is written onto Blizzard's rows (SET-R6).
+- **SET-R31** A greyed-out row keeps its value. Each row's greying is re-evaluated on its own condition (SET-R61): turning Cozy mode off makes Interruption budget and Show every catch live again, and Interruptions and Per too unless the budget is off.
 - **SET-R32** Hunts adds one section (from M5):
 
   | Header | Row | Kind | Values · default | Tooltip |
@@ -210,7 +212,7 @@ The rules below are authoritative; this sketch only summarises them.
 
 - **SET-R60** Each page's Defaults button restores that page's value rows (checkbox, slider, dropdown, slot dropdown) to their `default` and touches nothing else: buttons, keybindings and custom rows keep their state, and a row its owner says Defaults leaves alone (QoL's fishing set) is left alone. A slot dropdown's default is its slot's default good, so Defaults never removes an owned look, only stops using it. A slot shown on two pages is restored by either page's Defaults. A greyed-out row is restored too (the Tackle Board's checkbox before Start). In the native Defaults dialog, "These Settings" means the page shown; "All Settings" is Blizzard's and resets every page.
 - **SET-R61** Core re-evaluates every row's `isEnabled` each time its page is shown and whenever any value on that page changes. So the Tackle Board's checkbox is live on the next showing of Trackers after the board is started, wherever it was started.
-- **SET-R62** A row's `get` is read each time its page is shown, so a value changed outside Settings (Cast with, cycled from the compartment menu by QOL-R16) shows by the next time the page is shown. Slot dropdowns and Stats' watched list redraw at once (SET-R51, stats.md), so a Journal binding picked on the Journal's Angler page or a watch added from the Stats book shows straight away.
+- **SET-R62** A row's `get` is read each time its page is shown and after each change through the row itself, so a value changed outside Settings (Cast with, cycled from the compartment menu by QOL-R16) shows by the next time the page is shown, and a change its `set` refuses shows the value kept at once (QOL-R42). Slot dropdowns and Stats' watched list redraw at once (SET-R51, stats.md), so a Journal binding picked on the Journal's Angler page or a watch added from the Stats book shows straight away.
 
 ### Options that aren't in Settings
 
@@ -225,7 +227,7 @@ The rules below are authoritative; this sketch only summarises them.
   | Options › AddOns › Pagle | the root | CORE-R40 |
   | the compartment menu's "Settings" | the root | CORE-R50 |
   | `/pagle`, `/pagle settings` | the root | CORE-R60, CORE-R61 |
-  | QoL's "Fishing settings ›" on the root, and `/pagle qol` with no argument | Fishing | QOL-R2, QOL-R17 |
+  | QoL's "Fishing settings »" on the root, and `/pagle qol` with no argument | Fishing | QOL-R2, QOL-R17 |
   | `Pagle.OpenSettings(topic)` from any other caller | that page, or the root if it isn't registered | CORE-R43 |
 
   While restricted, every one of these except Blizzard's own menu prints "Pagle: settings open after combat." (CORE-R33).
@@ -237,7 +239,7 @@ This file adds no data. Each row's value lives with its owner:
 | Rows | Stored in |
 |---|---|
 | Saving, Units | `PagleDB.profile.reloadReminder`, `PagleDB.profile.lengthUnit` ([catch-log.md](core/catch-log.md#data)) |
-| Cozy mode, the budget | `PagleDB.profile.announcements` |
+| Cozy mode, the budget, Show every catch | `PagleDB.profile.announcements` |
 | Every slot dropdown | `PagleDB.profile.appearance[slot]` (SHOP-R32) |
 | Tracker position | `PagleDB.profile.dock.point` (Core README Data) |
 | Fishing | `PagleQoLDB` (qol.md Data), the fishing set per character in `global.gear[guid]` |

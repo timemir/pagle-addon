@@ -7,30 +7,7 @@ local MACKEREL = 6303 -- Raw Slitherskin Mackerel, a Species in the generated ca
 -- A Ledger on a fake that has logged in, with the projection built (login step 3) unless `updating`.
 ---@param updating boolean?
 local function loggedIn(updating)
-	local fake = newFakePagle()
-	local loaded = fake.load("Pagle_Ledger")
-	fake.login()
-	if not updating then
-		fake.enterWorld()
-	end
-	return fake, loaded
-end
-
--- The texts of every shown widget under `widget`, depth first, as the player would read them.
----@param widget table
----@param texts string[]?
----@return string[]
-local function textsOf(widget, texts)
-	texts = texts or {}
-	for _, child in ipairs(widget.children) do
-		if child.shown then
-			if child.text ~= nil and child.text ~= "" then
-				texts[#texts + 1] = child.text
-			end
-			textsOf(child, texts)
-		end
-	end
-	return texts
+	return openJournal({ building = updating, id = false })
 end
 
 -- Whether `list` has `text`.
@@ -54,16 +31,6 @@ local function crumbLabels(loaded)
 	return labels
 end
 
--- Presses Esc: CloseSpecialWindows hides every shown frame named in UISpecialFrames.
-local function escape(loaded)
-	for _, name in ipairs(loaded.env.UISpecialFrames) do
-		local frame = loaded.ns.journal.frame
-		if frame and name == frame.name and frame:IsShown() then
-			frame:Hide()
-		end
-	end
-end
-
 -- A test spread three crumbs deep (Home ❧ Waters ❧ Zone ❧ Fish), showing the lifetime Catches on its left page
 -- and the fish chosen (its selection) on its right.
 ---@type LedgerSpread
@@ -83,7 +50,7 @@ local DEEP = {
 	end,
 }
 
-describe("the Fish Journal's frame", function()
+describe("the Fish Journal's frame (LED-R120, LED-R121)", function()
 	it("is PagleLedgerJournal, centred, not movable, closed until opened, and Esc closes it (LED-R120)", function()
 		local _, loaded = loggedIn()
 		local journal = loaded.ns.journal
@@ -96,7 +63,7 @@ describe("the Fish Journal's frame", function()
 		assert.is_true(has(loaded.env.UISpecialFrames, "PagleLedgerJournal"))
 		assert.is_true(frame:IsShown())
 		assert.is_not_true(frame.movable)
-		escape(loaded)
+		loaded.client.pressEscape()
 		assert.is_false(journal:IsShown())
 	end)
 
@@ -120,14 +87,14 @@ describe("the Fish Journal's frame", function()
 
 		journal:Toggle()
 		assert.are.same({ "Home" }, crumbLabels(loaded))
-		assert.is_true(has(textsOf(journal.frame), "Where I've Fished"))
+		assert.is_true(has(shownTexts(journal.frame), "Where I've Fished"))
 
 		journal:Open("deep", { fish = MACKEREL })
-		escape(loaded)
+		loaded.client.pressEscape()
 		journal:Toggle()
 
 		assert.are.same({ "Home", "Waters", "Zone", "Fish 6303" }, crumbLabels(loaded))
-		assert.is_true(has(textsOf(journal.frame), "chosen 6303"))
+		assert.is_true(has(shownTexts(journal.frame), "chosen 6303"))
 	end)
 
 	it("shows Home again after a /reload, at its first opening (LED-R120)", function()
@@ -154,7 +121,7 @@ describe("the Fish Journal's frame", function()
 	end)
 end)
 
-describe("the Fish Journal while the projection updates", function()
+describe("the Fish Journal while the projection updates (LED-R122)", function()
 	it("shows only LED-R122's line on both pages, with the crumbs and search hidden (LED-R122)", function()
 		local _, loaded = loggedIn(true)
 		local journal = loaded.ns.journal
@@ -165,7 +132,7 @@ describe("the Fish Journal while the projection updates", function()
 		assert.is_true(journal.pages.updating)
 		assert.are.same({ { kind = "text", text = line } }, journal.pages.left)
 		assert.are.same({ { kind = "text", text = line } }, journal.pages.right)
-		assert.are.same({ line, line }, textsOf(journal.frame))
+		assert.are.same({ line, line }, shownTexts(journal.frame))
 		assert.is_false(journal.frame.crumbs:IsShown())
 		assert.is_false(journal.frame.search:IsShown())
 		assert.is_false(journal.frame.back:IsShown())
@@ -181,11 +148,36 @@ describe("the Fish Journal while the projection updates", function()
 		assert.is_false(journal.pages.updating)
 		assert.is_true(journal.frame.crumbs:IsShown())
 		assert.is_true(journal.frame.search:IsShown())
-		assert.is_true(has(textsOf(journal.frame), "Where I've Fished"))
+		assert.is_true(has(shownTexts(journal.frame), "Where I've Fished"))
 	end)
+
+	it(
+		"adds its redraws to a copy of the projection's def, leaving the def it was given as it was (LED-R122)",
+		function()
+			local _, loaded = loggedIn(true)
+			local applied, finished = {}, 0
+			local def = {
+				apply = function(_, record)
+					applied[#applied + 1] = record
+				end,
+				done = function()
+					finished = finished + 1
+				end,
+			}
+			local apply, done = def.apply, def.done
+
+			local wrapped = loaded.ns.WithJournalRedraws(def)
+			wrapped.apply({}, "record", "live")
+			wrapped.done({}, {})
+
+			assert.are_not.equal(def, wrapped)
+			assert.are.same({ apply, done }, { def.apply, def.done })
+			assert.are.same({ { "record" }, 1 }, { applied, finished })
+		end
+	)
 end)
 
-describe("the Fish Journal's live redraw", function()
+describe("the Fish Journal's live redraw (LED-R123)", function()
 	it("redraws the open spread on the frame after a live entry, keeping its selection (LED-R123)", function()
 		local fake, loaded = loggedIn()
 		local journal = loaded.ns.journal
@@ -203,7 +195,7 @@ describe("the Fish Journal's live redraw", function()
 		assert.are.same({ "Home", "Waters", "Zone", "Fish 6303" }, crumbLabels(loaded))
 	end)
 
-	it("doesn't draw a closed book for a live entry", function()
+	it("doesn't draw a closed book for a live entry (LED-R123)", function()
 		local fake, loaded = loggedIn()
 		local journal = loaded.ns.journal
 		local draws = 0
@@ -225,7 +217,7 @@ describe("the Fish Journal's live redraw", function()
 	end)
 end)
 
-describe("the Fish Journal's navigation", function()
+describe("the Fish Journal's navigation (LED-R125)", function()
 	it("shows three crumbs for a spread three deep, and back goes one crumb up (LED-R125)", function()
 		local _, loaded = loggedIn()
 		local journal = loaded.ns.journal
@@ -243,14 +235,14 @@ describe("the Fish Journal's navigation", function()
 		})
 		journal:Open("deep", { fish = MACKEREL })
 
-		local texts = textsOf(journal.frame.crumbs)
-		assert.are.same({ "Home", "❧", "Waters", "❧", "Zone", "❧", "Fish 6303" }, texts)
+		local texts = shownTexts(journal.frame.crumbs)
+		assert.are.same({ "Home", "»", "Waters", "»", "Zone", "»", "Fish 6303" }, texts)
 		assert.is_true(journal.frame.back:IsShown())
 
 		journal.frame.back:Click()
 
 		assert.are.same({ "Home", "Waters", "Zone" }, crumbLabels(loaded))
-		assert.is_true(has(textsOf(journal.frame), "The zone"))
+		assert.is_true(has(shownTexts(journal.frame), "The zone"))
 	end)
 
 	it("opens a crumb's level when it is clicked, and Home has no back link (LED-R125)", function()
@@ -275,7 +267,7 @@ describe("the Fish Journal's navigation", function()
 	end)
 end)
 
-describe("the Fish Journal's widgets", function()
+describe("the Fish Journal's widgets (ledger.md › UI)", function()
 	-- Opens a spread whose left page is `blocks`.
 	local function drawn(blocks)
 		local _, loaded = loggedIn()
@@ -288,7 +280,7 @@ describe("the Fish Journal's widgets", function()
 			end,
 		})
 		loaded.ns.journal:Open("widgets")
-		return loaded, textsOf(loaded.ns.journal.frame.left)
+		return loaded, shownTexts(loaded.ns.journal.frame.left)
 	end
 
 	it("draws the ink XP bar's words, Fresh Water's in blue (LED-R145)", function()
@@ -354,7 +346,24 @@ describe("the Fish Journal's widgets", function()
 		end
 	)
 
-	it("opens a link's place when it is clicked", function()
+	it("draws every silhouette solid black, on an entry, a list row and a plinth alike (LED-R124)", function()
+		local loaded = drawn({
+			{ kind = "icon", icon = MACKEREL, look = "silhouette" },
+			{ kind = "row", icon = MACKEREL, look = "silhouette", text = "— unknown —" },
+			{ kind = "plinth", icon = MACKEREL, look = "silhouette", text = "An empty plinth" },
+		})
+
+		local drawnWidgets = loaded.ns.journal.frame.left.drawn
+		for _, texture in ipairs({
+			drawnWidgets.icon[1].texture,
+			drawnWidgets.row[1].icon,
+			drawnWidgets.plinth[1].texture,
+		}) do
+			assert.are.same({ { 0, 0, 0 }, 1, true }, { texture.vertexColor, texture.alpha, texture.desaturated })
+		end
+	end)
+
+	it("opens a link's place when it is clicked (LED-R125)", function()
 		local loaded = drawn({ { kind = "link", text = "Home", place = { id = "home" } } })
 
 		loaded.ns.journal.frame.left.drawn.link[1]:Click()
@@ -362,12 +371,12 @@ describe("the Fish Journal's widgets", function()
 		assert.are.same({ "Home" }, crumbLabels(loaded))
 	end)
 
-	it("hides the widgets a redraw no longer uses", function()
+	it("hides the widgets a redraw no longer uses (ledger.md › UI, LED-R123)", function()
 		local loaded = drawn({ { kind = "seal", text = "Local" }, { kind = "seal", text = "Expert" } })
 
-		loaded.ns.journal:Open("home")
+		loaded.ns.journal:OpenPlace(loaded.ns.JournalPlace.home())
 
-		local texts = textsOf(loaded.ns.journal.frame.left)
+		local texts = shownTexts(loaded.ns.journal.frame.left)
 		assert.are.same({ "The Waters", "Where I've Fished" }, { texts[1], texts[2] })
 		assert.is_false(has(texts, "Local"))
 		assert.is_false(has(texts, "Expert"))

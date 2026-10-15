@@ -50,6 +50,7 @@ local ns = select(2, ...)
 ---@field items { [integer]: true }                 -- every trophy and curio item on a zone list
 ---@field families { [integer]: LedgerWorldFamily } -- by family ID, every family with a weight on a zone list
 ---@field skillBase { [integer]: integer }          -- each zone's skill base, charted or not, when it has one
+---@field getItem fun(itemID: integer): PagleItem?  -- the GetItem it was built over, for what reads it with a state
 
 --- A trophy family's listed weights (LED-R10).
 ---@class LedgerWorldFamily
@@ -62,9 +63,6 @@ local ns = select(2, ...)
 ---@param item PagleItem?
 ---@return boolean
 local function onList(itemID, item)
-	if itemID == 0 or item == nil or item.legend then
-		return false
-	end
 	local class = ns.ClassifyCatch(itemID, item)
 	return class == "species" or class == "trophy" or class == "curio"
 end
@@ -141,6 +139,27 @@ local function indexFamilies(world, getItem)
 	end
 end
 
+--- The collection an item belongs to (LED-R5, LED-R60, LED-R63), or nil for none: the one place an item's category
+--- decides its collection.
+---@param item PagleItem?
+---@return "junk"|"treasure"|"trophy"|"legends"?
+function ns.CollectionOf(item)
+	if item == nil or item.noise then
+		return nil
+	elseif item.legend then
+		return "legends"
+	end
+	local category = item.category
+	if category == "trophy" then
+		return "trophy"
+	elseif category == "junk" then
+		return "junk"
+	elseif category == "container" or category == "treasure" then
+		return "treasure"
+	end
+	return nil
+end
+
 -- One zone's list and what it says (LED-R10): its Species, families and requirements. Legend items it finds go to
 -- the listed Legends.
 ---@param world LedgerWorld
@@ -158,17 +177,20 @@ local function indexZone(world, catches, getItem)
 			---@cast item PagleItem
 			-- What the Ledger reads of the entry; its `confirmed` flags change nothing (LED-R128).
 			list[#list + 1] = { itemID = itemID, areaID = catch.areaID, window = catch.window, gate = catch.gate }
-			local category = item.category
 			if ns.ClassifyCatch(itemID, item) == "species" then
 				noteSpecies(zoneIndex, item.species, item, catch)
-			elseif category == "trophy" then
-				zoneIndex.families[item.family] = true
-			elseif category == "junk" then
-				zoneIndex.junk = true
 			else
-				zoneIndex.treasure = true
+				-- A trophy or curio item (LED-R5): what it adds to the zone is its collection's.
+				local collection = ns.CollectionOf(item)
+				if collection == "trophy" then
+					zoneIndex.families[item.family] = true
+				elseif collection == "junk" then
+					zoneIndex.junk = true
+				else
+					zoneIndex.treasure = true
+				end
 			end
-		elseif item and not item.noise and item.legend then
+		elseif ns.CollectionOf(item) == "legends" then
 			world.legends[itemID] = true
 		end
 	end
@@ -181,7 +203,16 @@ end
 function ns.NewWorld(lookups)
 	local getItem = lookups.GetItem
 	---@type LedgerWorld
-	local world = { zones = {}, charted = {}, legends = {}, species = {}, items = {}, families = {}, skillBase = {} }
+	local world = {
+		zones = {},
+		charted = {},
+		legends = {},
+		species = {},
+		items = {},
+		families = {},
+		skillBase = {},
+		getItem = getItem,
+	}
 	for _, zone in ipairs(lookups.GetZones()) do
 		local zoneIndex = indexZone(world, lookups.GetZoneCatches(zone) or {}, getItem)
 		local areaRecord = lookups.GetArea(zone)
@@ -204,34 +235,14 @@ function ns.NewWorld(lookups)
 	return world
 end
 
---- Each collection's world (LED-R11), each list ascending by ID (LED-R123). Removed items stay in, for their pages
---- (LED-R12); counts leave them out.
+--- Each collection's world (LED-R11), each list ascending by ID (LED-R123). A removed item stays in only when caught,
+--- for its page (LED-R12); counts leave it out.
 ---@class LedgerCollectionWorlds
 ---@field species integer[]  -- Species IDs
 ---@field junk integer[]     -- the Junk Museum: `junk` items
 ---@field treasure integer[] -- Treasures: `container` and `treasure` items
 ---@field trophy integer[]   -- the Trophy Room: trophy items, each a weight
 ---@field legends integer[]  -- Legend items
-
--- The collection an item belongs to (LED-R5, LED-R60, LED-R63), or nil for none.
----@param item PagleItem?
----@return "junk"|"treasure"|"trophy"|"legends"?
-local function collectionOf(item)
-	if item == nil or item.noise then
-		return nil
-	elseif item.legend then
-		return "legends"
-	end
-	local category = item.category
-	if category == "trophy" then
-		return "trophy"
-	elseif category == "junk" then
-		return "junk"
-	elseif category == "container" or category == "treasure" then
-		return "treasure"
-	end
-	return nil
-end
 
 -- The keys of a set, ascending.
 ---@param set { [integer]: any }
@@ -247,26 +258,42 @@ end
 
 --- Each collection's world (LED-R11): what is listed plus what was caught. The Species on any zone list and every
 --- Species with a Catch; the trophy and curio items on any list and every one caught; the listed Legends and every
---- one caught. An uncaught item on no list appears nowhere.
+--- one caught. An uncaught item on no list appears nowhere, and neither does an uncaught removed one (LED-R12): a
+--- caught one keeps its page.
 ---@param world LedgerWorld
----@param state table a LedgerState (ledger.md › Data): its `species` and `items`
----@param getItem fun(itemID: integer): PagleItem?
+---@param state LedgerState its `species` and `items`
 ---@return LedgerCollectionWorlds
-function ns.CollectionWorlds(world, state, getItem)
+function ns.CollectionWorlds(world, state)
+	local getItem = world.getItem
+	local caughtSpecies, caughtItems = state.species or {}, state.items or {}
 	local sets = { species = {}, junk = {}, treasure = {}, trophy = {}, legends = {} }
-	for _, held in ipairs({ world.species, state.species or {} }) do
-		for id in pairs(held) do
+	-- Whether a listed `id` stays: anything caught, or anything not removed. A Species' ID is its representative
+	-- item's, so a Species counts as removed when that item is (LED-R5).
+	local function kept(id, caught)
+		if caught[id] then
+			return true
+		end
+		local item = getItem(id)
+		return not (item and item.removed)
+	end
+	for id in pairs(world.species) do
+		if kept(id, caughtSpecies) then
 			sets.species[id] = true
 		end
 	end
+	for id in pairs(caughtSpecies) do
+		sets.species[id] = true
+	end
 	for itemID in pairs(world.legends) do
-		sets.legends[itemID] = true
+		if kept(itemID, caughtItems) then
+			sets.legends[itemID] = true
+		end
 	end
 	-- Listed trophy and curio items, then every item the state holds (trophy, curio and Legend items, ledger.md › Data).
-	for _, held in ipairs({ world.items, state.items or {} }) do
+	for _, held in ipairs({ world.items, caughtItems }) do
 		for itemID in pairs(held) do
-			local collection = collectionOf(getItem(itemID))
-			if collection then
+			local collection = ns.CollectionOf(getItem(itemID))
+			if collection and kept(itemID, caughtItems) then
 				sets[collection][itemID] = true
 			end
 		end
@@ -297,8 +324,9 @@ end
 ---@field zones LedgerCount    -- charted zones whose computed rank is Master
 ---@field legends LedgerCount  -- Legends caught: outside the percent (LED-R63)
 
--- The parts that make up Ledger completion (LED-R70), in the Angler page's order (LED-R146).
-local PARTS = { "species", "junk", "treasure", "trophy", "zones" }
+--- The parts that make up Ledger completion (LED-R70), in the Angler page's order (LED-R71, LED-R146): each a field of
+--- LedgerCompletion.
+ns.COMPLETION_PARTS = { "species", "junk", "treasure", "trophy", "zones" }
 
 -- An "x of N" over `ids`, removed ones left out of both sides (LED-R12). A Species' ID is its representative item's,
 -- so a Species counts as removed when that item is (LED-R5).
@@ -325,11 +353,11 @@ end
 --- zone (done: computed rank Master, `state.zones[zone].rank`, LED-R50). Legends, Noise, `other`, Uncharted and item 0
 --- are outside it; the Legends' own count (LED-R63) is returned beside it.
 ---@param world LedgerWorld
----@param state table a LedgerState (ledger.md › Data): its `species`, `items` and `zones`
----@param getItem fun(itemID: integer): PagleItem?
+---@param state LedgerState its `species`, `items` and `zones`
 ---@return LedgerCompletion
-function ns.LedgerCompletion(world, state, getItem)
-	local worlds = ns.CollectionWorlds(world, state, getItem)
+function ns.LedgerCompletion(world, state)
+	local getItem = world.getItem
+	local worlds = ns.CollectionWorlds(world, state)
 	local caughtItems = state.items or {}
 	local mastered = { done = 0, total = #world.charted }
 	for _, zone in ipairs(world.charted) do
@@ -350,7 +378,7 @@ function ns.LedgerCompletion(world, state, getItem)
 		zones = mastered,
 		legends = countOf(worlds.legends, caughtItems, getItem),
 	}
-	for _, part in ipairs(PARTS) do
+	for _, part in ipairs(ns.COMPLETION_PARTS) do
 		completion.done = completion.done + completion[part].done
 		completion.total = completion.total + completion[part].total
 	end

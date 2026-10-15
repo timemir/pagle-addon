@@ -239,14 +239,14 @@ describe("Stats' section on the Trackers page, in the panel", function()
 
 		row.frame:GetScript("OnEnter")(row.frame)
 
-		assert.are.same({
-			owner = row.frame,
-			anchor = "ANCHOR_RIGHT",
-			lines = { "Watched Dry spells", "Watch or stop watching from any fish's page in the Stats book." },
-			shown = true,
-		}, loaded.client.gameTooltip)
+		local tooltip = loaded.env.GameTooltip
+		assert.are.same({ row.frame, "ANCHOR_RIGHT", true }, { tooltip.owner, tooltip.anchor, tooltip.shown })
+		assert.are.same(
+			{ "Watched Dry spells", "Watch or stop watching from any fish's page in the Stats book." },
+			loaded.client.tooltipLines()
+		)
 		row.frame:GetScript("OnLeave")(row.frame)
-		assert.is_false(loaded.client.gameTooltip.shown)
+		assert.is_false(tooltip.shown)
 	end)
 
 	it("the page's Defaults turns the checkbox off and keeps the watches (SET-R45, SET-R60)", function()

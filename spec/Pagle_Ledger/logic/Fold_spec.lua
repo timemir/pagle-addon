@@ -12,87 +12,28 @@ local TROPHY, JUNK, CHEST, TREASURE, OTHER, UNCHARTED = 13901, 6309, 6307, 6308,
 -- One trophy family's three weights, in pounds (LED-R61).
 local TROPHY40, TROPHY60, TROPHY50 = 13876, 13877, 13878
 local ITEMS = {
-	[MACKEREL] = { category = "fish", species = MACKEREL, legend = false, noise = false, removed = false, pool = false },
-	[SMALLFISH] = {
-		category = "questFish",
-		species = SMALLFISH,
-		legend = false,
-		noise = false,
-		removed = false,
-		pool = true,
-	},
-	[LEGEND] = { category = "fish", species = LEGEND, legend = true, noise = false, removed = false, pool = false },
-	[LEGEND_2] = { category = "fish", species = LEGEND_2, legend = true, noise = false, removed = false, pool = false },
-	[REMOVED_LEGEND] = {
-		category = "fish",
-		species = REMOVED_LEGEND,
-		legend = true,
-		noise = false,
-		removed = true,
-		pool = false,
-	},
-	[TROPHY_LEGEND] = {
-		category = "trophy",
-		family = 2,
-		weight = 90,
-		legend = true,
-		noise = false,
-		removed = false,
-		pool = false,
-	},
-	[NOISE] = { category = "fish", species = NOISE, legend = false, noise = true, removed = false, pool = false },
-	[TROPHY] = {
-		category = "trophy",
-		family = 1,
-		weight = 19,
-		legend = false,
-		noise = false,
-		removed = false,
-		pool = false,
-	},
-	[TROPHY40] = {
-		category = "trophy",
-		family = 2,
-		weight = 40,
-		legend = false,
-		noise = false,
-		removed = false,
-		pool = false,
-	},
-	[TROPHY60] = {
-		category = "trophy",
-		family = 2,
-		weight = 60,
-		legend = false,
-		noise = false,
-		removed = false,
-		pool = false,
-	},
-	[TROPHY50] = {
-		category = "trophy",
-		family = 2,
-		weight = 50,
-		legend = false,
-		noise = false,
-		removed = false,
-		pool = false,
-	},
-	[JUNK] = { category = "junk", legend = false, noise = false, removed = false, pool = false },
-	[CHEST] = { category = "container", legend = false, noise = false, removed = false, pool = false },
-	[TREASURE] = { category = "treasure", legend = false, noise = false, removed = false, pool = false },
-	[OTHER] = { category = "other", legend = false, noise = false, removed = false, pool = false },
+	[MACKEREL] = fishRecord(MACKEREL),
+	[SMALLFISH] = fishRecord(SMALLFISH, { category = "questFish", pool = true }),
+	[LEGEND] = fishRecord(LEGEND, { legend = true }),
+	[LEGEND_2] = fishRecord(LEGEND_2, { legend = true }),
+	[REMOVED_LEGEND] = fishRecord(REMOVED_LEGEND, { legend = true, removed = true }),
+	[TROPHY_LEGEND] = itemRecord("trophy", { family = 2, weight = 90, legend = true }),
+	[NOISE] = fishRecord(NOISE, { noise = true }),
+	[TROPHY] = itemRecord("trophy", { family = 1, weight = 19 }),
+	[TROPHY40] = itemRecord("trophy", { family = 2, weight = 40 }),
+	[TROPHY60] = itemRecord("trophy", { family = 2, weight = 60 }),
+	[TROPHY50] = itemRecord("trophy", { family = 2, weight = 50 }),
+	[JUNK] = itemRecord("junk"),
+	[CHEST] = itemRecord("container"),
+	[TREASURE] = itemRecord("treasure"),
+	[OTHER] = itemRecord("other"),
 }
 
 local ELWYNN, WESTFALL = 12, 40
-local T0 = 1791731000
+local T0 = SERVER_TIME - 700
 local HOUR = 3600
 
----@param itemID integer
----@return PagleItem?
-local function getItem(itemID)
-	assert(itemID ~= 0, "item 0 is never looked up (LED-R5)")
-	return ITEMS[itemID]
-end
+local getItem = itemLookup(ITEMS)
 
 local DAY = 86400
 
@@ -121,30 +62,16 @@ local function newLog()
 	---@param char integer?
 	---@return PagleCast
 	function log.cast(time, zone, itemIDs, char)
-		local s, id = header(time)
-		local items = {}
-		for n, itemID in ipairs(itemIDs) do
-			items[n] = { n = n, itemID = itemID, quantity = 1, catchId = id .. ":" .. n }
-		end
-		return {
+		local s = header(time)
+		return castRecord({
 			seq = s,
-			id = id,
-			kind = "cast",
-			char = char or 1,
 			time = time,
-			outcome = "caught",
-			session = "s",
-			conditions = {
-				time = time,
-				zone = zone,
-				subzone = 0,
-				minute = 0,
-				date = dateOf(time),
-				events = {},
-				auras = {},
-			},
-			items = items,
-		}
+			zone = zone,
+			items = itemIDs,
+			char = char,
+			minute = 0,
+			date = dateOf(time),
+		})
 	end
 
 	--- A got-away Cast (LOG-R7).
@@ -212,12 +139,7 @@ describe("The Ledger's fold", function()
 
 	-- A fresh state with every record applied in "live" mode; returns it and every achievement, in order.
 	local function applyAll(records, mode, state)
-		state = state or fold.reset()
-		local earned = {}
-		for _, record in ipairs(records) do
-			fold.apply(state, record, mode or "live", earned)
-		end
-		return state, earned
+		return applyLive(fold, records, state, mode)
 	end
 
 	-- The kinds of a list of achievements, in order.
@@ -325,7 +247,7 @@ describe("The Ledger's fold", function()
 			-- The next release knows the item: a junk item (LOG-R96). The rebuild runs over the new catalogue.
 			local released = ns.NewLedgerFold(lookups(function(itemID)
 				if itemID == UNCHARTED then
-					return { category = "junk", legend = false, noise = false, removed = false, pool = false }
+					return itemRecord("junk")
 				end
 				return getItem(itemID)
 			end))
@@ -504,7 +426,7 @@ describe("The Ledger's fold", function()
 		it("never counts a Legend on a trophy item as its family's weight (LED-R5, LED-R61, LED-R47)", function()
 			local state, earned = applyAll({ log.cast(T0, 0, { TROPHY_LEGEND }), log.cast(T0 + 60, 0, { TROPHY40 }) })
 
-			assert.are.same({}, ns.FamilyStars(world, applyAll({ log.cast(T0, 0, { TROPHY_LEGEND }) }), 2, getItem))
+			assert.are.same({}, ns.FamilyStars(world, applyAll({ log.cast(T0, 0, { TROPHY_LEGEND }) }), 2))
 			-- The family's first weight: no ruler from the Legend's 90 (LED-R61). The Legend's 2,020 XP reach level 2.
 			assert.are.same({ "legend", "levelUp", "trophyWeight" }, kinds(earned))
 			assert.is_nil(earned[3].old)
@@ -519,8 +441,8 @@ describe("The Ledger's fold", function()
 					log.cast(T0, ELWYNN, { MACKEREL }),
 					log.cast(T0 + 60, ELWYNN, { LEGEND, REMOVED_LEGEND }),
 				})
-				local before = ns.LedgerCompletion(world, without, getItem)
-				local after = ns.LedgerCompletion(world, with, getItem)
+				local before = ns.LedgerCompletion(world, without)
+				local after = ns.LedgerCompletion(world, with)
 
 				assert.are.same(
 					{ before.percent, before.done, before.total, before.species },
@@ -530,7 +452,7 @@ describe("The Ledger's fold", function()
 				assert.are.same({ done = 1, total = 2 }, after.species)
 				assert.are.same({ done = 0, total = 2 }, before.legends)
 				assert.are.same({ done = 1, total = 2 }, after.legends)
-				assert.are.same({ LEGEND, LEGEND_2, REMOVED_LEGEND }, ns.CollectionWorlds(world, with, getItem).legends)
+				assert.are.same({ LEGEND, LEGEND_2, REMOVED_LEGEND }, ns.CollectionWorlds(world, with).legends)
 			end
 		)
 	end)

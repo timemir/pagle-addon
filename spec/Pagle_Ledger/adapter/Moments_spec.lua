@@ -6,7 +6,7 @@ local ELWYNN, WESTFALL, DARKSHORE = 12, 40, 148
 -- Where the live Casts here are fished: a zone the generated catalogue doesn't chart (no catch data), so no Zone
 -- Mastery rank adds its XP and Coins to these numbers (LED-R54). ZoneMastery_spec.lua has the ranks.
 local BLASTED_LANDS = 4
-local T0 = 1791731000
+local T0 = SERVER_TIME - 700
 -- The fake log's logId, which a saved celebrated set names to belong to it (LED-R90).
 local LOG_ID = "0123456789abcdef"
 
@@ -24,18 +24,7 @@ local ZONE_NAMES = {
 ---@param zone integer
 ---@param itemIDs integer[]
 local function cast(time, zone, itemIDs)
-	local items = {}
-	for i, itemID in ipairs(itemIDs) do
-		items[i] = { itemID = itemID, quantity = 1 }
-	end
-	return {
-		kind = "cast",
-		char = 1,
-		time = time,
-		outcome = "caught",
-		conditions = { minute = 494, zone = zone, subzone = 0, events = {}, auras = {} },
-		items = items,
-	}
+	return castRecord({ time = time, zone = zone, items = itemIDs })
 end
 
 -- Loot of one item each, for fake.playCast.
@@ -78,7 +67,6 @@ local function session(history, saved, extra)
 			return ZONE_NAMES[areaID]
 		end,
 	}
-	fake.globals.BreakUpLargeNumbers = breakUpLargeNumbers
 	for key, value in pairs(extra or {}) do
 		fake.globals[key] = value
 	end
@@ -136,6 +124,22 @@ describe("the Ledger's live moments", function()
 		end
 	)
 
+	it("raise New Species for a /pagle dev catch on a test log, as for a real Catch (#247, LED-R96)", function()
+		local fake = session()
+		fake.catchLog.data.test = true
+		fake.slash("dev on")
+
+		fake.slash("dev catch " .. MACKEREL)
+
+		local announcements = shown(fake)
+		assert.are.equal(1, #announcements)
+		-- Its text carries the Catch's size, as a real Catch's does (LED-R81).
+		assert.are.same(
+			{ "newSpecies New Species / Raw Spotted Yellowtail · Typical · 9.5 in 10" },
+			momentsOf(announcements[1])
+		)
+	end)
+
 	it(
 		"raise a New here Nod for a known Species in a new zone, and celebrate the pair and the zone (LED-R90, LED-R97)",
 		function()
@@ -167,7 +171,7 @@ describe("the Ledger's live moments", function()
 
 		fake.playCast("caught", loot(TROUT))
 
-		assert.are.same({ "newInZone New here / Item 6308 in … nil" }, momentsOf(shown(fake)[1]))
+		assert.are.same({ "newInZone New here / Item 6308 in ... nil" }, momentsOf(shown(fake)[1]))
 	end)
 
 	it("raise nothing and report no Coins for an ordinary Catch or a got-away Cast (LED-R89, LED-R96)", function()
@@ -231,18 +235,19 @@ describe("the Ledger's live moments", function()
 
 			local record = assert(fake.playCast("caught", loot(unpack(FOUR))))
 
+			-- The level banner, then the four New Species as the Cast's catch Announcement (ANN-R11).
 			local announcements = shown(fake)
-			assert.are.equal(1, #announcements)
+			assert.are.equal(2, #announcements)
 			local announcement = announcements[1]
-			assert.are.same({ "levelUp Angler Level 3 / +2 levels 40" }, { momentsOf(announcement)[1] })
-			assert.are.equal(5, #announcement.moments) -- and four New Species
+			assert.are.same({ "levelUp Angler Level 3 / +2 levels 40" }, momentsOf(announcement))
+			assert.are.equal(4, #announcements[2].moments)
 			local headline = announcement.headline
 			assert.are.same(
 				{ "banner", 100, "Level 3", record.id },
 				{ headline.rung, headline.order, headline.stamp, headline.cast }
 			)
 			assert.are.equal("string", type(headline.icon))
-			assert.are.equal(80, announcement.coins)
+			assert.are.same({ 40, 40 }, { announcement.coins, announcements[2].coins })
 			assert.are.same({ { module = "Ledger", total = 0 }, { module = "Ledger", total = 80 } }, fake.coinReports)
 		end
 	)
@@ -354,16 +359,18 @@ describe("the Ledger's live moments", function()
 		local fake, loaded = session(history)
 		local lastSaved = copy(loaded.env.PagleLedgerDB)
 		fake.playCast("caught", loot(MACKEREL))
-		local celebrated = momentsOf(shown(fake)[1])
+		local announcements = shown(fake)
+		local celebrated = { momentsOf(announcements[1]), momentsOf(announcements[2]) }
 		assert.are.same({
-			"levelUp Angler Level 2 / nil 20",
-			"newSpecies New Species / Raw Spotted Yellowtail · Typical · 9.5 in 10",
+			{ "levelUp Angler Level 2 / nil 20" },
+			{ "newSpecies New Species / Raw Spotted Yellowtail · Typical · 9.5 in 10" },
 		}, celebrated)
 
 		-- The crash: neither that Cast nor the celebrated set's growth was saved.
 		local after = session(history, lastSaved)
 		after.playCast("caught", loot(MACKEREL))
+		local again = shown(after)
 
-		assert.are.same(celebrated, momentsOf(shown(after)[1]))
+		assert.are.same(celebrated, { momentsOf(again[1]), momentsOf(again[2]) })
 	end)
 end)

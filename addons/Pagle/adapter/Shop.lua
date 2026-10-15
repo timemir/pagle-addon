@@ -156,26 +156,7 @@ local function fitted(made)
 	return made:GetTextWidth() + 20
 end
 
--- A button with the native look reading `label`, `width` wide (or as wide as its text).
----@param parent Frame
----@param label string
----@param width number?
----@param height number?
----@return Button
-local function button(parent, label, width, height)
-	local made = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate") --[[@as Button]]
-	made:SetText(label)
-	made:SetSize(width or fitted(made), height or 22)
-	return made
-end
-
--- A font string on `parent` in `font`.
----@param parent Frame
----@param font string
----@return FontString
-local function text(parent, font)
-	return parent:CreateFontString(nil, "OVERLAY", font)
-end
+local button, text = ns.PanelButton, ns.Text
 
 -- Shows GameTooltip at `owner` with `lines`, the first as its title.
 ---@param owner Frame
@@ -594,9 +575,7 @@ local function buildStage(frame)
 	stage.use = button(inset, L.SHOP_USE, 120)
 	stage.use:SetPoint("TOPRIGHT", stage.tags, "BOTTOMRIGHT", 0, -6)
 	stage.use:SetScript("OnClick", function()
-		local good = selected and ns.goods:Good(selected)
-		if good then
-			Pagle.SetEquipped(good.slot, good.id)
+		if selected and ns.shop.Use(selected) then
 			redraw(false)
 		end
 	end)
@@ -784,14 +763,13 @@ local function show(selection)
 	redraw(true)
 end
 
---- The Curio Shop's entry points as ns.shop (SHOP-R40, SHOP-R41) over this window, and ns.ShopModel.
-ns.WireShop(ns.host, {
-	isRestricted = function()
-		return Pagle.IsRestricted()
-	end,
-	print = function(line)
-		print(line)
-	end,
+--- Opens the Curio Shop (SHOP-R40): selecting `goodID` if the shop shows it (under "Put away" for an owned good of a
+--- Module off), nothing for any other ID, and keeping the selection with none. While restricted it prints "Pagle:
+--- the Curio Shop opens after combat." instead and opens nothing (SHOP-R41). Every entry point calls it: /pagle shop
+--- (a toggle), the compartment entry and Look and Feel's "Open the Curio Shop". The Curio Shop's entry points are
+--- ns.shop (SHOP-R40, SHOP-R41) over this window, with ns.ShopModel.
+---@type fun(goodID: string?)
+Pagle.OpenShop = ns.WireShop(ns.host, {
 	isShown = function()
 		return ns.shopFrame ~= nil and ns.shopFrame:IsShown()
 	end,
@@ -802,15 +780,6 @@ ns.WireShop(ns.host, {
 		end
 	end,
 })
-
---- Opens the Curio Shop (SHOP-R40): selecting `goodID` if the shop shows it (under "Put away" for an owned good of a
---- Module off), nothing for any other ID, and keeping the selection with none. While restricted it prints "Pagle:
---- the Curio Shop opens after combat." instead and opens nothing (SHOP-R41). Every entry point calls it: /pagle shop
---- (a toggle), the compartment entry and Look and Feel's "Open the Curio Shop".
----@param goodID string?
-function Pagle.OpenShop(goodID)
-	ns.shop.Open(goodID)
-end
 
 -- The window follows the balance, the looks and the Modules On while it is open, so Buy re-evaluates (wallet-and-shop.md
 -- › UI, SHOP-R13, SHOP-R33). Its own owner on the bus.

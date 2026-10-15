@@ -32,7 +32,7 @@ end
 
 -- A zone the catalogue knows but doesn't chart, so no Zone Mastery rank adds XP (LED-R54).
 local DUSKWOOD = 10
-local T0 = 1791731000
+local T0 = SERVER_TIME - 700
 
 -- A catalogue in the shape of ns.catalogue (DATA-R76) listing `count` Species, items 1001 on, and Duskwood without
 -- data; `fingerprint` names the release.
@@ -41,21 +41,13 @@ local T0 = 1791731000
 local function catalogue(count, fingerprint)
 	local items = {}
 	for id = 1001, 1000 + count do
-		items[id] = { category = "fish", species = id, legend = false, noise = false, removed = false, pool = false }
+		items[id] = fishRecord(id)
 	end
-	return {
+	return catalogueWith({
 		fingerprint = fingerprint,
 		items = items,
-		areas = {
-			[DUSKWOOD] = { parent = 0, continent = 0, hasData = false, skillBaseConfirmed = false, catches = {} },
-		},
-		aliases = {},
-		pools = {},
-		windows = {},
-		events = {},
-		fishingSpells = {},
-		auras = {},
-	}
+		areas = { [DUSKWOOD] = areaRecord(0, { hasData = false }) },
+	})
 end
 
 -- One caught Cast in Duskwood of items `first` to `last`, one each.
@@ -65,16 +57,9 @@ end
 local function cast(time, first, last)
 	local items = {}
 	for id = first, last do
-		items[#items + 1] = { itemID = id, quantity = 1 }
+		items[#items + 1] = id
 	end
-	return {
-		kind = "cast",
-		char = 1,
-		time = time,
-		outcome = "caught",
-		conditions = { minute = 494, zone = DUSKWOOD, subzone = 0, events = {}, auras = {} },
-		items = items,
-	}
+	return castRecord({ time = time, zone = DUSKWOOD, items = items })
 end
 
 -- Notes the projection mode Core is in at each M:RefreshGoods (the fake's Core registry's Refresh), "idle" outside
@@ -92,15 +77,11 @@ local function noteRefreshes(fake)
 	return modes
 end
 
--- A Ledger on a fresh fake, logged in and in the world over an empty log.
+-- A Ledger on a fresh fake, logged in and in the world over an empty log, the Journal closed.
 ---@return FakePagle fake
 ---@return LoadedAddon loaded
 local function ledger()
-	local fake = newFakePagle()
-	local loaded = fake.load("Pagle_Ledger")
-	fake.login()
-	fake.enterWorld()
-	return fake, loaded
+	return openJournal({ id = false })
 end
 
 describe("the Ledger's Journal bindings", function()
@@ -229,7 +210,7 @@ describe("the Ledger's Journal bindings", function()
 			ns.ToggleJournal()
 			local journal = ns.journal
 			assert.are.same(lookOf(ns, "ledger.binding.field"), bookTints(journal.frame))
-			assert.are.equal("Interface\\Icons\\INV_Misc_Note_01", ns.CrestIcon()) -- Plain's
+			assert.is_nil(ns.CrestIcon()) -- Plain, the default: no emblem (LED-R112, SHOP-R25)
 
 			assert.is_true(fake.Pagle.SetEquipped("ledger.binding", "ledger.binding.level10"))
 

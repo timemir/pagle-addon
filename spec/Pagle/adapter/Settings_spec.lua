@@ -61,6 +61,33 @@ describe("The Settings root with no Module On", function()
 		end
 	)
 
+	it("draws its own rows from Core's template, each through its frame's Init (SET-R5, SET-R6)", function()
+		local loaded = loadWith()
+		loaded.client.fire("PLAYER_LOGIN")
+
+		local own = {}
+		for _, row in ipairs(loaded.client.settings.show(assert(loaded.client.settings.category("Pagle")))) do
+			if row.initializer:GetTemplate() == "PagleSettingsRowTemplate" then
+				own[#own + 1] = loaded.client.settings.textsOf(row.frame)[1]
+			end
+		end
+
+		-- The paragraph, the five status rows and the note: the fake panel draws a row of a template only through
+		-- its XML mixin's Init, and raises an error if Core writes InitFrame, Resetter or GetExtent onto an
+		-- initializer (spec/support/settings.lua).
+		local template = assert(loaded.client.templates.PagleSettingsRowTemplate, "Core's XML defines the template")
+		assert.are.equal("PagleSettingsRowMixin", template.mixin)
+		assert.are.same({
+			"Recording your Catches. Enable a Module to see them.",
+			"Ledger",
+			"Hunts",
+			"Stats",
+			"Tackle Board",
+			"QoL",
+			"Turn Modules on or off in the AddOns list.",
+		}, own)
+	end)
+
 	it(
 		"shows the paragraph, the Modules header, the five roster names Not installed and the note (SET-R10, SET-R11, CORE-R41)",
 		function()
@@ -349,29 +376,48 @@ describe("Pagle.OpenSettings", function()
 	end)
 end)
 
--- Shows the root and returns its status list's frame.
+-- Shows the root and returns its status list's frames, a row per roster Module, each found by "Modules".
 local function showStatusList(loaded)
 	local settings = loaded.client.settings
+	local frames = {}
 	for _, row in ipairs(settings.show(settings.category("Pagle"))) do
 		if row.initializer.searchTags[1] == "MODULES" then
-			return row.frame
+			frames[#frames + 1] = row.frame
 		end
 	end
+	return frames
+end
+
+-- The texts of the status list, read by showing the root now, in order.
+local function statusTexts(loaded)
+	local texts = {}
+	for _, frame in ipairs(showStatusList(loaded)) do
+		for _, text in ipairs(loaded.client.settings.textsOf(frame)) do
+			texts[#texts + 1] = text
+		end
+	end
+	return texts
 end
 
 -- The shown buttons of the status list, read by showing the root now.
 local function statusButtons(loaded)
-	return loaded.client.settings.buttonsOf(showStatusList(loaded))
+	local buttons = {}
+	for _, frame in ipairs(showStatusList(loaded)) do
+		for _, button in ipairs(loaded.client.settings.buttonsOf(frame)) do
+			buttons[#buttons + 1] = button
+		end
+	end
+	return buttons
 end
 
 describe("The status list with a Module On", function()
 	it("shows no paragraph, and each Module's name, TOC version and state (SET-R10, SET-R11, CORE-R41)", function()
 		local loaded = loadWith({ QoL = {}, Stats = { enabled = false, loaded = false } })
-		registerQoL(loaded, { settingsAction = { label = "Fishing settings ›", onClick = function() end } })
+		registerQoL(loaded, { settingsAction = { label = "Fishing settings »", onClick = function() end } })
 		loaded.client.fire("PLAYER_LOGIN")
 
 		local texts = pageTexts(loaded, loaded.client.settings.category("Pagle"))
-		local list = loaded.client.settings.textsOf(showStatusList(loaded))
+		local list = statusTexts(loaded)
 
 		assert.are.equal("Modules", texts[1])
 		assert.are.same({
@@ -390,7 +436,7 @@ describe("The status list with a Module On", function()
 			"QoL",
 			"1.2.3",
 			"On",
-			"Fishing settings ›",
+			"Fishing settings »",
 		}, list)
 	end)
 
@@ -430,7 +476,7 @@ describe("The status list with a Module On", function()
 		})
 		loaded.client.fire("PLAYER_LOGIN")
 
-		local list = loaded.client.settings.textsOf(showStatusList(loaded))
+		local list = statusTexts(loaded)
 
 		assert.are.same({}, statusButtons(loaded))
 		assert.are.same({ "QoL", "1.2.3", "On" }, { unpack(list, #list - 2) })
@@ -456,7 +502,7 @@ describe("The status list with a Module On", function()
 		local Pagle = loaded.env.Pagle
 		local M = registerQoL(loaded, {
 			settingsAction = {
-				label = "Fishing settings ›",
+				label = "Fishing settings »",
 				onClick = function()
 					Pagle.OpenSettings("fishing")
 				end,
@@ -477,7 +523,7 @@ describe("The status list with a Module On", function()
 		local Pagle = loaded.env.Pagle
 		addFishingRows(registerQoL(loaded, {
 			settingsAction = {
-				label = "Fishing settings ›",
+				label = "Fishing settings »",
 				onClick = function()
 					Pagle.OpenSettings("fishing")
 				end,
@@ -654,6 +700,60 @@ describe("A Module's value rows", function()
 		assert.are.same({ "QoL", "Casting", "FISHING KEY" }, rowNames(loaded.client.settings.category("Fishing")))
 		assert.are.equal(1, #reported)
 		assert.matches("no key binding PAGLE_SWAP_GEAR", reported[1])
+	end)
+end)
+
+describe("A Module's button row", function()
+	-- Loads Core with QoL On and `button` added to Trackers; returns the row's initializer and the frame the panel
+	-- draws for it.
+	local function shown(button)
+		local loaded = loadWithQoL()
+		registerQoL(loaded):AddSetting("trackers", button)
+		loaded.client.fire("PLAYER_LOGIN")
+		-- After Core's "Tracker position" row (SET-R40) and the QoL header.
+		local row = loaded.client.settings.show(assert(loaded.client.settings.category("Trackers")))[3]
+		return row.initializer, row.frame, loaded.client.settings
+	end
+
+	it("with a caption, shows its label beside a button with the caption (CORE-R42, SET-R2)", function()
+		local clicked = 0
+		local initializer, frame, settings = shown({
+			kind = "button",
+			label = "Button position",
+			caption = "Reset",
+			onClick = function()
+				clicked = clicked + 1
+			end,
+		})
+
+		assert.are.equal("SettingButtonControlTemplate", initializer.template)
+		assert.are.same({ "Button position", "Reset" }, settings.textsOf(frame))
+		assert.are.same({ "BUTTON POSITION", "RESET" }, initializer.searchTags)
+		settings.buttonsOf(frame)[1]:Click()
+		assert.are.equal(1, clicked)
+	end)
+
+	it("without a caption, puts its label on the button and shows no label, as before (CORE-R42, SET-R2)", function()
+		local initializer, frame, settings = shown({
+			kind = "button",
+			label = "Save what I'm wearing as my fishing set",
+			onClick = function() end,
+		})
+
+		assert.are.same({ "", "Save what I'm wearing as my fishing set" }, settings.textsOf(frame))
+		assert.are.same({ "SAVE WHAT I'M WEARING AS MY FISHING SET" }, initializer.searchTags)
+	end)
+
+	it("raises an error at the caller for a caption that isn't a string (CORE-R42)", function()
+		local loaded = loadWithQoL()
+		local M = registerQoL(loaded)
+
+		assert.matches(
+			"Settings_spec%.lua:%d+: .*a button setting's caption is a string",
+			errorOf(function()
+				M:AddSetting("trackers", { kind = "button", label = "Position", caption = 5, onClick = function() end })
+			end)
+		)
 	end)
 end)
 

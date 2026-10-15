@@ -22,25 +22,53 @@ function ns.Ledger.OnInitialize()
 	ns.db = LibStub("AceDB-3.0"):New("PagleLedgerDB", ns.DB_DEFAULTS, true)
 	ns.MigrateDB(ns.db.global)
 
-	--- The world index (LED-R10): built here, where the catalogue is ready (CORE-R10), held in memory, never stored.
-	ns.world = ns.NewWorld({
+	-- Core's lookups the Ledger reads (LOG-R55, LOG-R49): the world index's, and the fold's with the world added.
+	local lookups = {
 		GetItem = Pagle.GetItem,
 		GetZones = Pagle.GetZones,
 		GetArea = Pagle.GetArea,
 		GetZoneCatches = Pagle.GetZoneCatches,
-	})
+		MatchesConditions = Pagle.MatchesConditions,
+	}
+	--- The world index (LED-R10): built here, where the catalogue is ready (CORE-R10), held in memory, never stored.
+	ns.world = ns.NewWorld(lookups)
+	lookups.world = ns.world
 
 	local sizeRulesVersion = Pagle.SIZE_RULES_VERSION -- the Ledger stores lengths (LED-R2, LOG-R68)
 	--- The Ledger's projection (LED-R2): Core catches it up or rebuilds it after login and hands it each new entry
 	--- live (LOG-R71–R74). While `:IsUpdating()`, the Ledger shows nothing (LOG-R74). The Fish Journal redraws after
 	--- its live entries and its done (LED-R122, LED-R123).
 	--- The fold reads the world index and Core's MatchesConditions as lookups (LED-R3, LED-R45).
-	local lookups = { GetItem = Pagle.GetItem, MatchesConditions = Pagle.MatchesConditions, world = ns.world }
 	ns.projection = ns.Module:NewProjection(
 		ns.WithJournalRedraws(ns.ProjectionDef(ns.db.global, lookups, ns.Outlets(ns.Module), sizeRulesVersion))
 	)
 	-- The Journal bindings (LED-R110): after the projection, which their isEarned reads (LED-R111).
 	ns.RegisterBindings(ns.Module)
+	-- The Journal's stops for `/pagle dev tour` (CORE-R65), on a Core that has the call.
+	if ns.Module.RegisterTourStop then
+		ns.RegisterTourStops(ns.Module)
+	end
+end
+
+--- The projection's state for what the Ledger shows now (LOG-R74): nil while it is updating, or while the Ledger is
+--- inert.
+---@return LedgerState?
+function ns.StateNow()
+	local projection = ns.projection
+	return projection and not projection:IsUpdating() and projection:GetState() --[[@as LedgerState?]] or nil
+end
+
+--- The celebrated set as saved (LED-R90): reading it makes none of its keys, as ns.CelebratedSet would.
+---@return LedgerCelebrated
+function ns.SavedCelebrated()
+	return ns.db.global.celebrated or {}
+end
+
+--- A Catch's or record's size text (LED-R81) in Core's band names and the Angler's length unit (LED-R85).
+---@param size { length: integer, band: integer }?
+---@return string?
+function ns.ClientSizeText(size)
+	return ns.SizeText(size, Pagle.SIZE_BANDS, Pagle.FormatLength)
 end
 
 --- Where the Ledger's moments, Write-up sections, Coins and summary line go, and what they read: the client's names
@@ -59,12 +87,8 @@ function ns.Outlets(module)
 		SetSummaryLine = function(text)
 			module:SetSummaryLine("ledger", text)
 		end,
-		ItemName = function(itemID)
-			return C_Item.GetItemNameByID(itemID)
-		end,
-		ZoneName = function(zone)
-			return (C_Map.GetAreaInfo(zone))
-		end,
+		ItemName = ns.ClientNames.ItemName,
+		AreaName = ns.ClientNames.AreaName,
 		RaiseWriteUp = function(section)
 			module:RaiseWriteUp(section)
 		end,
@@ -77,8 +101,6 @@ function ns.Outlets(module)
 		RefreshGoods = function()
 			module:RefreshGoods()
 		end,
-		SizeText = function(size)
-			return ns.SizeText(size, Pagle.SIZE_BANDS, Pagle.FormatLength)
-		end,
+		SizeText = ns.ClientSizeText,
 	}
 end

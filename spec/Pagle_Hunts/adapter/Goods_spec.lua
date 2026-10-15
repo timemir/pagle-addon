@@ -223,7 +223,6 @@ describe("the board's cover", function()
 			-- The next session, Hunts disabled: it runs no code, so it registers nothing (CORE-R17).
 			local off = newFakePagle()
 			off.global.goods = first.global.goods
-			off.goods = off.global.goods
 			off.profile.appearance = first.profile.appearance
 			off.setPurchased({ ["hunts.notebookcover.oilcloth"] = true })
 			off.login()
@@ -234,7 +233,6 @@ describe("the board's cover", function()
 			-- Enabled again: Oilcloth is back on the board with no SetEquipped.
 			local on = newFakePagle()
 			on.global.goods = first.global.goods
-			on.goods = on.global.goods
 			on.profile.appearance = off.profile.appearance
 			on.setPurchased({ ["hunts.notebookcover.oilcloth"] = true })
 			local loaded = hunts.load(on)

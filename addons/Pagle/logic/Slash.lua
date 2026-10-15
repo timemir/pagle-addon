@@ -4,8 +4,8 @@ local ns = select(2, ...)
 -- /pagle as data (CORE-R60–R62): which subcommand a line names, the Modules' subcommands and the help list. Pure
 -- logic, everything passed in (CORE-R7); adapter/Slash.lua registers the command and acts on what this resolves.
 
---- Core's own subcommands, reserved for it (CORE-R61).
-ns.SLASH_RESERVED = { "help", "settings", "shop", "report" }
+--- Core's own subcommands, reserved for it (CORE-R61), and its hidden `dev` (#247), which help never lists.
+ns.SLASH_RESERVED = { "help", "settings", "shop", "report", "dev" }
 
 --- Splits what follows `/pagle` into its subcommand, lowercased, and the rest of the line, trimmed (CORE-R62).
 ---@param line string
@@ -84,19 +84,50 @@ function Commands:Add(def)
 	return problems
 end
 
---- What `/pagle <line>` does (CORE-R60–R62): `"settings"` with no argument or `settings`; `"shop"` with `shop` (the
---- Curio Shop, a toggle); `"report"` with `report` (the Field report); `"module"` with the Module subcommand it names
---- and the rest of the line, trimmed; otherwise `"help"`, for `help` and an unknown name.
+--- Core's own subcommands (CORE-R61), by the word typed after /pagle: each opens its surface, or prints that
+--- surface's chat line instead while restricted (CORE-R33). One table, for /pagle, the compartment menu and FakePagle.
+---@class PagleCoreSubcommands
+---@field settings fun() opens the Settings root (Pagle.OpenSettings); also /pagle on its own
+---@field shop fun()     opens or closes the Curio Shop (ns.shop.Toggle, SHOP-R40)
+---@field report fun()   opens the Field report box (Pagle.OpenFieldReport)
+---@field dev fun(args: string) the hidden dev commands (ns.dev, #247), which /pagle help never lists
+
+--- Core's own subcommands over `Pagle`'s functions, each looked up when it runs.
+---@param Pagle Pagle
+---@return PagleCoreSubcommands
+function ns.CoreSubcommands(Pagle)
+	return {
+		settings = function()
+			Pagle.OpenSettings()
+		end,
+		shop = function()
+			ns.shop.Toggle()
+		end,
+		report = function()
+			Pagle.OpenFieldReport()
+		end,
+		dev = function(args)
+			ns.dev:Run(args)
+		end,
+	}
+end
+
+--- What `/pagle <line>` does (CORE-R60–R62): `"core"` and the name of one of Core's own subcommands (`settings` too
+--- with no subcommand); `"module"` with the Module subcommand it names and the rest of the line, trimmed; otherwise
+--- `"help"`, for `help` and an unknown name. A core subcommand gets the rest of the line too: only `dev` (#247) reads
+--- it.
 ---@param line string what follows /pagle
----@return "settings"|"shop"|"report"|"module"|"help" action
----@return PagleSlashCommand? command
----@return string? args
-function Commands:Resolve(line)
+---@param core PagleCoreSubcommands
+---@return "core"|"module"|"help" action
+---@return string|PagleSlashCommand|nil command the core subcommand's name, or the Module's subcommand
+---@return string? args the rest of the line, trimmed
+function Commands:Resolve(line, core)
 	local name, args = ns.ParseSlash(line)
-	if name == "" or name == "settings" then
-		return "settings"
-	elseif name == "shop" or name == "report" then
-		return name
+	if name == "" then
+		name = "settings"
+	end
+	if core[name] then
+		return "core", name, args
 	end
 	local command = self.byName[name]
 	if command then
@@ -131,23 +162,19 @@ function Commands:AddModules(modules, report)
 	end
 end
 
---- What Core's own subcommands do (CORE-R61). Each prints its surface's chat line instead while restricted (CORE-R33).
----@class PagleSlashCore
----@field settings fun() opens the Settings root (Pagle.OpenSettings)
----@field shop fun() opens or closes the Curio Shop (ns.shop.Toggle)
----@field report fun() opens the Field report box (Pagle.OpenFieldReport)
-
 --- Runs `/pagle <line>` (CORE-R60–R62): one of Core's own subcommands, a Module's subcommand through `call`, or the
 --- help list.
 ---@param line string what follows /pagle
----@param core PagleSlashCore
+---@param core PagleCoreSubcommands
 ---@param call fun(fn: function, ...: any) calls a Module's function; an error is reported, not raised (securecallfunction)
 ---@param print fun(line: string) prints a chat line
 function Commands:Run(line, core, call, print)
-	local action, command, args = self:Resolve(line)
-	if action == "settings" or action == "shop" or action == "report" then
-		core[action]()
-	elseif command then
+	local action, command, args = self:Resolve(line, core)
+	if action == "core" then
+		---@cast command string
+		core[command](args --[[@as string]])
+	elseif action == "module" then
+		---@cast command PagleSlashCommand
 		call(command.fn, args)
 	else
 		for _, helpLine in ipairs(self:HelpLines()) do

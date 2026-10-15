@@ -7,11 +7,12 @@ download goes through a canned fetch. The trees are test_catch_lists.py's; every
 
 import hashlib
 import json
-from collections.abc import Mapping, Sequence
+from collections.abc import Sequence
 from pathlib import Path
 
 import pytest
 
+from cli_fixture import Canned
 from pagle_data.triage import CUT_NOTE, MARKER, Issue, main
 from pagle_data.triage import triage as build
 from report_fixture import issue_body
@@ -31,20 +32,6 @@ CATALOGUE = "addons/Pagle/data/Catalogue.lua"
 
 # The fixture reports' reporter key (REP-R36).
 CAROL = "cccccccc"
-
-
-class Canned:
-    """A fetch that answers from a table of URLs and records what was asked."""
-
-    def __init__(self, responses: Mapping[str, bytes]) -> None:
-        self.responses = responses
-        self.asked: list[str] = []
-
-    def __call__(self, url: str) -> bytes:
-        self.asked.append(url)
-        if url not in self.responses:
-            raise OSError(f"no canned response for {url}")
-        return self.responses[url]
 
 
 def tree(root: Path, pooltext: str = "", reports: dict[str, str] | None = None) -> Path:
@@ -312,8 +299,8 @@ def test_a_default_branch_whose_data_doesnt_generate_says_so(
 
 
 def test_a_comment_over_githubs_limit_is_cut_with_a_note_and_its_code_block_closed(tmp_path: Path) -> None:
-    # GitHub refuses a comment over 65,536 characters: the comment is cut at a line, an open code block closed, with
-    # a note pointing at the run's log, which prints all of it.
+    # DATA-R117: the Action's one comment. GitHub refuses a comment over 65,536 characters: the comment is cut at a
+    # line, an open code block closed, with a note pointing at the run's log, which prints all of it.
     rows = "".join(f'P 368 deDE "Text {n}" casts=1\n' for n in range(400))
     found = build(Issue(50, part(rows)), [], tree(tmp_path), Canned({}), limit=4000)
     assert len(found.comment) <= 4000

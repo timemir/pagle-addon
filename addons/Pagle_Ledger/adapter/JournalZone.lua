@@ -19,23 +19,9 @@ local RUNG_PAD = 6
 ---@param frame Frame
 ---@return Texture[]
 local function redBox(frame)
-	local edges = {}
-	for _, points in ipairs({
-		{ "TOPLEFT", "TOPRIGHT", true },
-		{ "BOTTOMLEFT", "BOTTOMRIGHT", true },
-		{ "TOPLEFT", "BOTTOMLEFT", false },
-		{ "TOPRIGHT", "BOTTOMRIGHT", false },
-	}) do
-		local edge = frame:CreateTexture(nil, "BORDER")
-		edge:SetPoint(points[1])
-		edge:SetPoint(points[2])
-		if points[3] then
-			edge:SetHeight(1.5)
-		else
-			edge:SetWidth(1.5)
-		end
-		edge:SetColorTexture(LOOK.red[1], LOOK.red[2], LOOK.red[3], 1)
-		edges[#edges + 1] = edge
+	local edges = ns.JournalRules(frame, 0, { thickness = 1.5 })
+	for _, edge in ipairs(edges) do
+		ns.JournalPaint(edge, LOOK.red)
 	end
 	return edges
 end
@@ -78,7 +64,7 @@ ns.RegisterJournalWidget("ladder", function(parent)
 			end
 			local color = data.circled and LOOK.red or data.inked and LOOK.title or LOOK.stampOff
 			rung.text:SetText(data.text)
-			rung.text:SetTextColor(color[1], color[2], color[3])
+			rung.text:SetTextColor(unpack(color))
 			for _, edge in ipairs(rung.box) do
 				edge:SetShown(data.circled)
 			end
@@ -122,7 +108,6 @@ ns.RegisterJournalWidget("row", function(parent)
 	widget.icon = widget:CreateTexture(nil, "ARTWORK")
 	widget.icon:SetSize(ROW_ICON_SIZE, ROW_ICON_SIZE)
 	widget.icon:SetPoint("TOPLEFT")
-	widget.icon:SetDesaturated(true)
 	widget.value = ns.JournalText(widget, fonts.text, LOOK.ink)
 	widget.value:SetPoint("TOPRIGHT")
 	widget.value:SetJustifyH("RIGHT")
@@ -133,24 +118,13 @@ ns.RegisterJournalWidget("row", function(parent)
 	widget.label = widget.name
 	widget.margin = ns.JournalText(widget, fonts.hand, LOOK.blue)
 	widget.margin:SetWordWrap(true)
-	local place, openPlace
-	widget:SetScript("OnClick", function()
-		if place then
-			openPlace(place)
-		end
-	end)
+	ns.JournalClickable(widget)
 	function widget.Fill(_, block, width, open)
-		place, openPlace = block.place, open
+		widget.place, widget.open = block.place, open
 		widget.highlight:SetShown(block.selected == true)
 		local icon = block.icon
 		widget.icon:SetShown(icon ~= nil)
-		if type(icon) == "number" then
-			local _, _, _, _, fileID = C_Item.GetItemInfoInstant(icon)
-			icon = fileID or icon
-		end
-		widget.icon:SetTexture(icon)
-		local tint = block.look == "silhouette" and { 0, 0, 0 } or LOOK.sepia
-		widget.icon:SetVertexColor(tint[1], tint[2], tint[3])
+		ns.JournalItemIcon(widget.icon, icon, block.look)
 		local left = icon and ROW_ICON_SIZE + ROW_GAP or 0
 		widget.value:SetText(block.value or "")
 		widget.value:SetShown(block.value ~= nil)
@@ -161,7 +135,7 @@ ns.RegisterJournalWidget("row", function(parent)
 		widget.stars:SetShown(block.stars ~= nil)
 		right = right + (block.stars and widget.stars:GetStringWidth() + ROW_GAP or 0)
 		local ink = block.color == "faded" and LOOK.faded or LOOK.ink
-		widget.name:SetTextColor(ink[1], ink[2], ink[3])
+		widget.name:SetTextColor(unpack(ink))
 		widget.name:ClearAllPoints()
 		widget.name:SetPoint("TOPLEFT", left, 0)
 		widget.name:SetWidth(width - left - right)

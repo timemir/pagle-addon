@@ -11,7 +11,7 @@ describe("the plain hint", function()
 	-- The Journal's words, as far as the hint reads them: zone names and window labels.
 	local text = {
 		Zone = function(_, zone)
-			return NAMES[zone] or "…"
+			return NAMES[zone] or "..."
 		end,
 		WindowLabel = function(_, window)
 			return ns.WindowLabel(window)
@@ -72,6 +72,13 @@ describe("the plain hint", function()
 		end
 	)
 
+	it("reads any skill when the lowest skill base of the two zones is 0 or below (LED-R141, DATA-R30)", function()
+		local index = world({ ELWYNN, WESTFALL })
+		index.skillBase[ELWYNN], index.skillBase[WESTFALL] = -70, 0
+
+		assert.are.equal("Any time · Elwynn Forest · Westfall · any skill", ns.PlainHint(index, FISH, text))
+	end)
+
 	it("leaves the skill out when neither of the two zones has a skill base (LED-R141)", function()
 		assert.are.equal("Any time · Moonglade", ns.PlainHint(world({ MOONGLADE }), FISH, text))
 	end)
@@ -84,7 +91,7 @@ describe("the Journal's search", function()
 	-- one caught Species whose name isn't loaded yet (9), and one uncaught Species, "Lake secret" (10), listed.
 	local zoneNames, itemNames = {}, { [10] = "Lake secret" }
 	local world = { charted = {}, zones = {}, species = { [10] = { zones = { 101 } } }, skillBase = {} }
-	local state = { species = {}, zones = { [108] = {} } }
+	local state = { species = {}, items = {}, zones = { [108] = {} } }
 	for n = 1, 8 do
 		zoneNames[100 + n] = "Lake " .. (9 - n)
 		itemNames[n] = "Lake fish " .. (9 - n)
@@ -98,13 +105,25 @@ describe("the Journal's search", function()
 	-- The Journal's words, as far as search reads them: zone and item names, "…" while unknown.
 	local names = {}
 	function names.Zone(_, zone)
-		return zoneNames[zone] or "…"
+		return zoneNames[zone] or "..."
 	end
 	function names.Item(_, id)
-		return itemNames[id] or "…"
+		return itemNames[id] or "..."
+	end
+	-- No item is a Legend here: none is in the catalogue (LED-R63).
+	local function getItem()
+		return nil
 	end
 	---@type LedgerJournalContext
-	local context = { updating = false, state = state, world = world, now = 0, formatNumber = tostring, text = names }
+	local context = {
+		updating = false,
+		state = state,
+		world = world,
+		getItem = getItem,
+		now = 0,
+		formatNumber = tostring,
+		text = names,
+	}
 
 	local function labels(results)
 		local list = {}
@@ -138,7 +157,7 @@ describe("the Journal's search", function()
 	end)
 
 	it("finds nothing for a name not loaded yet, nor for an empty box (LED-R148, LED-R126)", function()
-		assert.are.same({}, ns.JournalSearch("…", context))
+		assert.are.same({}, ns.JournalSearch("...", context))
 		assert.is_nil(ns.JournalSearch("", context))
 	end)
 end)

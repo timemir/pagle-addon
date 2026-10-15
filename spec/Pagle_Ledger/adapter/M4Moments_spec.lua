@@ -3,7 +3,7 @@
 -- summary line (LED-R95), on FakePagle over a fixture catalogue with Core's own Simulated Sizes (LOG-R65): the
 -- Announcements, Write-up sections and summary line Core would show.
 
-local T0 = 1791731000
+local T0 = SERVER_TIME - 700
 -- The fake log's logId, which a saved celebrated set names to belong to it (LED-R90).
 local LOG_ID = "0123456789abcdef"
 -- A zone the catalogue doesn't chart: no Zone Mastery rank adds to the numbers (LED-R54).
@@ -30,15 +30,7 @@ local ITEM_NAMES = {
 
 -- A fish item of Species `species`, `typicalLength` mm (DATA-R19, LOG-R55).
 local function fish(species, typicalLength, legend)
-	return {
-		category = "fish",
-		species = species,
-		typicalLength = typicalLength,
-		legend = legend or false,
-		noise = false,
-		removed = false,
-		pool = false,
-	}
+	return fishRecord(species, { typicalLength = typicalLength, legend = legend or false })
 end
 
 -- A catalogue in the shape of ns.catalogue (DATA-R76), charting Cove with its junk alone.
@@ -49,30 +41,16 @@ local function catalogue(fingerprint)
 		[BIG_PIKE] = fish(PIKE, 3000),
 		[HUGE_PIKE] = fish(PIKE, 30000),
 		[LEGEND] = fish(LEGEND, 900, true),
-		[JUNK] = { category = "junk", legend = false, noise = false, removed = false, pool = false },
+		[JUNK] = itemRecord("junk"),
 	}
 	for id = FIRST_FISH, FIRST_FISH + FISH_COUNT - 1 do
 		items[id] = fish(id, 300)
 	end
-	return {
-		fingerprint = fingerprint or "0123456789abcdef",
+	return catalogueWith({
+		fingerprint = fingerprint,
 		items = items,
-		areas = {
-			[COVE] = {
-				parent = 0,
-				continent = 0,
-				hasData = true,
-				skillBaseConfirmed = false,
-				catches = { { itemID = JUNK, confirmed = true } },
-			},
-		},
-		aliases = {},
-		pools = {},
-		windows = {},
-		events = {},
-		fishingSpells = {},
-		auras = {},
-	}
+		areas = { [COVE] = areaRecord(0, { catches = { catchEntry(JUNK) } }) },
+	})
 end
 
 -- `count` of the fish from fish number `from` (1 for the first), as item IDs.
@@ -104,18 +82,7 @@ end
 ---@param itemIDs integer[]
 ---@param zone integer?
 local function cast(time, itemIDs, zone)
-	local items = {}
-	for i, itemID in ipairs(itemIDs) do
-		items[i] = { itemID = itemID, quantity = 1 }
-	end
-	return {
-		kind = "cast",
-		char = 1,
-		time = time,
-		outcome = "caught",
-		conditions = { minute = 494, zone = zone or ZONE, subzone = 0, events = {}, auras = {} },
-		items = items,
-	}
+	return castRecord({ time = time, zone = zone or ZONE, items = itemIDs })
 end
 
 -- A Prestige record to `rank` (LOG-R38) for fake.catchLog:Append.
@@ -500,7 +467,7 @@ describe("the Ledger's M4 done", function()
 			assert.are.same({
 				{
 					"While the Ledger was off",
-					"Angler Level 1 → 16 · Prestige 1",
+					"Angler Level 1 to 16 · Prestige 1",
 					"21 Species",
 					"Title: Nat's Peer",
 					"Title: Returning Tide",
@@ -543,6 +510,33 @@ describe("the Ledger's M4 done", function()
 			assert.matches("Title: Racer%-Chaser$", legend.text)
 			-- Titles whose moments were celebrated before titles were join the set with no moment.
 			assert.is_true(loaded.ns.db.global.celebrated.titles["title:level10"])
+		end
+	)
+
+	it(
+		"fills the celebrated prestige rank, Catch Milestones and titles a rebuild newly earns, with no pop-up (LED-R90, LED-R93)",
+		function()
+			local history = {
+				cast(T0, fishes(1, TO_60)),
+				prestige(T0 + 60, 1),
+				cast(T0 + 120, times(FIRST_FISH, 1000 - TO_60), 0),
+			}
+			local last, lastLoaded = session({ history = history })
+			-- As M3 stored it: an older rules version, and no M4 key in the celebrated set.
+			local global = lastLoaded.env.PagleLedgerDB.global
+			global.projection.rulesVersion = 201
+			global.celebrated.milestones, global.celebrated.titles, global.celebrated.prestige = nil, nil, nil
+
+			local fake, loaded = nextSession(last, lastLoaded)
+
+			local celebrated = loaded.ns.db.global.celebrated
+			assert.are.same({ 1, true, true }, {
+				celebrated.prestige,
+				celebrated.milestones[1000],
+				celebrated.titles["title:prestige1"],
+			})
+			assert.are.same({}, fake.announcements)
+			assert.are.same({}, fake.writeUps)
 		end
 	)
 

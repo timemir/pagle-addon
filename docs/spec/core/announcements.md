@@ -1,12 +1,12 @@
 # Core: Announcements, the Session summary and the Write-up
 
-> Status: Done · Milestones: M2, M4 (the Gilded sound set and the other toast styles as Curio Shop goods, size rulers) · Sources: [Prototype Catch feedback: toasts, sounds and cozy mode](https://github.com/timemir/wow-fish/issues/13#issuecomment-6113132854), [Decide who owns Announcements: a Core service or each Module](https://github.com/timemir/wow-fish/issues/22#issuecomment-6113769547), [Prototype Pagle's sounds](https://github.com/timemir/wow-fish/issues/23#issuecomment-6113915981), [Design Stats: session stats, honest odds and dry spells](https://github.com/timemir/wow-fish/issues/21#issuecomment-6113657288), [Cut the MVP slice and roadmap](https://github.com/timemir/wow-fish/issues/18#issuecomment-6113973068), [Design the Pagle currency and shop](https://github.com/timemir/wow-fish/issues/28#issuecomment-6125331898), [Decide how the spec is assembled](https://github.com/timemir/wow-fish/issues/31#issuecomment-6128960652), [Design the Simulated Size bands](https://github.com/timemir/wow-fish/issues/33#issuecomment-6129722545); ADR 0001, 0004, 0007, 0009, 0010. Prototypes: `prototypes/catch-feedback/`, `prototype/sounds` branch (`prototypes/sounds/`)
+> Status: Done · Milestones: M2, M4 (the Gilded sound set and the other toast styles as Curio Shop goods, size rulers, the catch Nod) · Sources: [Prototype Catch feedback: toasts, sounds and cozy mode](https://github.com/timemir/wow-fish/issues/13#issuecomment-6113132854), [Decide who owns Announcements: a Core service or each Module](https://github.com/timemir/wow-fish/issues/22#issuecomment-6113769547), [Prototype Pagle's sounds](https://github.com/timemir/wow-fish/issues/23#issuecomment-6113915981), [Design Stats: session stats, honest odds and dry spells](https://github.com/timemir/wow-fish/issues/21#issuecomment-6113657288), [Cut the MVP slice and roadmap](https://github.com/timemir/wow-fish/issues/18#issuecomment-6113973068), [Design the Pagle currency and shop](https://github.com/timemir/wow-fish/issues/28#issuecomment-6125331898), [Decide how the spec is assembled](https://github.com/timemir/wow-fish/issues/31#issuecomment-6128960652), [Design the Simulated Size bands](https://github.com/timemir/wow-fish/issues/33#issuecomment-6129722545), [Show a quiet catch Nod for every ordinary Catch](https://github.com/timemir/wow-fish/issues/256); ADR 0001, 0004, 0007, 0009, 0010. Prototypes: `prototypes/catch-feedback/`, `prototype/sounds` branch (`prototypes/sounds/`)
 
 Part of [Core](README.md). Core presents every Announcement (ADR 0007): Modules raise **moments**, and Core merges, paces and draws them.
 
 ## Purpose and boundary
 
-**Owns:** the moment API, the rung ladder, merging one Cast's moments into one Announcement, the display queue, the Interruption budget, the combat hold, Cozy mode, expiry, the toast, Nod, banner and splash frames, the record ruler, Announcement sounds and sound sets, toast styles, the Session summary, and the Write-up card.
+**Owns:** the moment API, the rung ladder, the catch Nod, merging a Cast's moments into its Announcements, the display queue, the Interruption budget, the combat hold, Cozy mode, expiry, the toast, Nod, banner and splash frames, the record ruler, Announcement sounds and sound sets, toast styles, the Session summary, and the Write-up card.
 
 **Doesn't own:** deciding what is worth a moment or which rung it gets (each Module), QoL's Nudges (QoL draws them itself; they aren't Announcements), or any Module's own bar, tracker or view.
 
@@ -19,37 +19,47 @@ Part of [Core](README.md). Core presents every Announcement (ADR 0007): Modules 
 - **ANN-R3** Moments are display data. Core never tells one Module about another's moments (ADR 0001).
 - **ANN-R4** Moments may be raised only while handling a `"live"` entry (LOG-R73), from a Core event handler, or from a Module's own timer or UI. Core drops a moment raised while it is applying a `"replay"` or `"rebuild"` entry, and reports it once per Module per login through `geterrorhandler()`. In a projection's `done`, only `summaryOnly` moments and Write-ups are allowed (LOG-R76); others are dropped the same way.
 
-### One Announcement per Cast
+### A Cast's Announcements
 
-- **ANN-R10** Moments with a `cast` (a Cast's entry ID) are merged by that ID. Core collects them and flushes each Cast's moments together on the next frame after the last one arrived, but while any projection is updating (LOG-R74) it holds every Cast's moments and flushes them, one Announcement per Cast in Cast order, on the frame after the last projection finishes. Live entries reach every projection and the Cast events in one frame (LOG-R9), so a Cast's moments merge whatever order the Modules raised them in.
-- **ANN-R11** A Cast's moments become **one Announcement**. Its **headline** is the highest-ranked moment (ANN-R2). Every other moment rides on it as a **stamp** in the corner: the moment's `stamp`, or its `title` if it has none. At most 4 stamps show, highest ranked first; identical stamp texts merge into one; any beyond 4 show as "+N". The Coins stamp (ANN-R23) is separate and never counts toward the 4. The Announcement's weight is the headline's rung:
-  - `splash`: a full-screen splash (a Legend), carrying every other moment as stamps
-  - `banner`: a centre banner (level-up, Zone Master, Prestige ready, Prestige, Catch Milestone, set titles, Tackle Board milestones)
+- **ANN-R10** Moments with a `cast` (a Cast's entry ID) are merged by that ID. Core collects them and flushes each Cast's moments together on the next frame after the last one arrived, but while any projection is updating (LOG-R74) it holds every Cast's moments and flushes them, Cast by Cast in Cast order, on the frame after the last projection finishes. Live entries reach every projection and the Cast events in one frame (LOG-R9), so a Cast's moments merge whatever order the Modules raised them in.
+- **ANN-R11** A Cast's moments become at most **two Announcements**, split by lane (ANN-R20):
+  - **big:** its `banner` and `splash` moments
+  - **catch:** its `toast.*` and `nod` moments
+
+  A Cast with moments on one side only makes one Announcement. Core hands the big one to the display first, so the two appear together when their lanes are free (a level-up banner and a "New Species" toast). In each, the **headline** is its highest-ranked moment (ANN-R2). Every other moment of that side rides on it as a **stamp** in the corner: the moment's `stamp`, or its `title` if it has none. At most 4 stamps show, highest ranked first; identical stamp texts merge into one; any beyond 4 show as "+N". The Coins stamp (ANN-R23) is separate and never counts toward the 4. The Announcement's weight is the headline's rung:
+  - `splash`: a full-screen splash (a Legend), carrying the Cast's other banner and splash moments as stamps
+  - `banner`: a centre banner (level-up, Zone Master, Prestige ready, Prestige, Catch Milestone, set titles, Tackle Board milestones), carrying the Cast's other banners as stamps
   - `toast.*`: a toast above the action bar
   - `nod`: one silent line
 - **ANN-R12** A moment without a `cast` (a Skill Milestone from a Skill Reading, a Hunt window opening, a login Nod) is an Announcement of its own, flushed on the next frame.
-- **ANN-R13** Ordinary Catches raise nothing and never pop up. A Module may move its own bar or view instead.
+- **ANN-R13** An ordinary Catch gets a **catch Nod**: Core raises it for every live caught Cast (LOG-R9), while the "Show every catch" setting is on (the default). It is a `nod` moment of the Cast (`cast` = its entry ID), raised by Core itself at `CastEnded("caught", cast)`, so it merges with the Cast's other moments (ANN-R10):
+  - **Its line** names one of the Cast's Catches: the first, in slot order, with a Simulated Size (LOG-R65), or else the first that isn't item `0`. It reads "{item name} · {band} · {length}": the band's name (`Pagle.SIZE_BANDS`) and the Simulated Size in the Angler's length unit (`Pagle.FormatLength`, LOG-R69), as "Mud Snapper · Typical · 34.2 cm". An item with no Simulated Size (junk, treasure, a trophy, an Uncharted item) shows its name alone. The item's icon is its icon. A name the client hasn't cached reads "Item {itemID}".
+  - **A bigger moment replaces it.** If any Module raises a moment for the same Cast, on either side (ANN-R11), the catch Nod is dropped: it never headlines, never rides as a stamp and never adds to "+N".
+  - **It never interrupts.** It is a Nod (ANN-R30), so it never counts toward the Interruption budget and follows the Nod lane's rules (ANN-R20): it isn't shown while a toast, a splash or another Nod is up. It plays no sound (ANN-R70) and never goes to the Session summary (an exception to ANN-R25). In combat (ANN-R35) and in Cozy mode (ANN-R40) it is dropped, not held.
+  - **Only live Catches.** A got-away Cast, and a Cast whose every item is item `0`, raise none; nor does a replay or rebuild, which fires no `CastEnded` (ANN-R4, LOG-R73).
+
+  With "Show every catch" off, an ordinary Catch raises nothing and never pops up. Either way a Module may move its own bar or view, and a Module raises a moment only for what is worth one: an ordinary Catch is the catch Nod's.
 
 ### The display queue
 
-- **ANN-R20** Core shows Announcements through three lanes. The toast and big lanes share **one on-screen slot**: only one toast, banner or splash is on screen at a time.
+- **ANN-R20** Core shows Announcements through three lanes, each with its own place on screen: a banner or splash in the centre, a toast above the action bar, a Nod under it. A banner and a toast can be on screen together. A splash is full-screen, so it holds the toast and Nod lanes: it waits until no toast is on screen, and while it waits or shows, no toast starts and no Nod shows.
 
   | Lane | Shows | Duration | Waiting | When another arrives |
   |---|---|---|---|---|
-  | Toast | `toast.*` headlines | 6 s | up to 2, first in first out | beyond 2 waiting: it isn't shown, and the overflow count grows; the next toast to appear shows "+N more" and the count resets |
-  | Big | `banner` and `splash` headlines | banner 4 s; splash until clicked or 8 s | unlimited, splashes before banners, otherwise in order raised | waits for the slot to free, then goes before any waiting toast |
-  | Nod | `nod` headlines | 3 s | none | if the shared slot or a Nod is showing, it isn't shown |
+  | Toast | `toast.*` headlines | 6 s | up to 2, first in first out | waits while a toast is on screen, or a splash shows or waits; beyond 2 waiting: it isn't shown, and the overflow count grows; the next toast to appear shows "+N more" and the count resets |
+  | Big | `banner` and `splash` headlines | banner 4 s; splash until clicked or 8 s | unlimited, splashes before banners, otherwise in order raised | waits for the banner or splash on screen to end; a splash also waits for the toast on screen to end, then goes before any waiting toast |
+  | Nod | `nod` headlines | 3 s | none | if a toast, a splash or a Nod is showing, it isn't shown |
 
-  Whatever isn't shown still goes to the Session summary (ANN-R25).
-- **ANN-R21** **Cards** (the Session summary and the Write-up) show only when the toast and big lanes are empty. They don't count as interruptions and play no sound. At login, held Announcements show first, then the Write-up, then "Your last session".
+  Whatever isn't shown still goes to the Session summary (ANN-R25), except a catch Nod (ANN-R13).
+- **ANN-R21** **Cards** (the Session summary and the Write-up) show only when the toast and big lanes are empty: nothing on screen in either and nothing waiting. They don't count as interruptions and play no sound. At login, held Announcements show first, then the Write-up, then "Your last session".
 - **ANN-R22** A moment may carry a **record ruler** (`ruler = { old, new, unit, label }`). On a toast headline, the ruler fills past the old record's mark while the number counts up, shows the "+x" margin, then the "New record" stamp lands. On a Nod headline, a compact ruler with the margin shows instead. A ruler shows only for the headline; a record riding as a stamp shows only its stamp. `label` says whose number it is ("Pagle size" for a Simulated Size, "weight" for a real trophy weight). For a Simulated Size, `unit` is `"length"` and `old` and `new` are millimetres: Core shows them and the margin with `Pagle.FormatLength` in the Angler's length unit ([catch-log.md](catch-log.md#simulated-size), LOG-R69), and a margin that rounds to zero in that unit shows as "+<0.1 cm" or "+<0.1 in". Any other `unit` is shown as given ("lb"). A Module never leaves the ruler off a size record.
-- **ANN-R23** A moment may carry `coins = N`. Core sums the `coins` of every moment in an Announcement into one "+N" Pagle Coins stamp, always shown (outside the 4-stamp limit and the merging of identical stamps), Nods included. Coins never make an Announcement of their own, and a purchase makes none ([wallet-and-shop.md](wallet-and-shop.md)).
-- **ANN-R24** Ordinary display picks the headline's sound (ANN-R71) when the Announcement appears on screen, never when it is queued.
-- **ANN-R25** Every moment also goes to the Session summary (ANN-R50), whether or not it popped up.
+- **ANN-R23** A moment may carry `coins = N`. Core sums the `coins` of the moments in each Announcement into its own "+N" Pagle Coins stamp, always shown (outside the 4-stamp limit and the merging of identical stamps), Nods included. A Cast's two Announcements each sum only their own moments, so no Coins show twice. Coins never make an Announcement of their own, and a purchase makes none ([wallet-and-shop.md](wallet-and-shop.md)).
+- **ANN-R24** Ordinary display picks the headline's sound (ANN-R71) when the Announcement appears on screen, never when it is queued. When a toast appears in the same frame as a banner or splash that played its sound (a Cast's two Announcements, or the release after combat, ANN-R36), only the higher rung's sound plays: the toast is silent, and the next toast plays the variant this one would have.
+- **ANN-R25** Every moment also goes to the Session summary (ANN-R50), whether or not it popped up. The catch Nod is the one exception: it is Core's own, never a Module's moment, and never reaches the summary (ANN-R13).
 
 ### Interruption budget
 
-- **ANN-R30** An **interruption** is an Announcement shown as a toast, banner or splash. Nods and cards aren't interruptions.
+- **ANN-R30** An **interruption** is an Announcement shown as a toast, banner or splash. Each one shown counts on its own: a Cast's banner and its toast are 2. Nods and cards aren't interruptions.
 - **ANN-R31** With the budget on (the default), when an Announcement with a `toast.low` headline reaches the front of the toast lane, Core counts the interruptions shown in the last 5 minutes. If there are already 4, it steps down to a Nod (with a compact ruler if it has one) and follows the Nod lane's rules. Every other rung always gets through and always counts.
 - **ANN-R32** With the budget off, nothing steps down. The count and window are player settings.
 
@@ -58,21 +68,21 @@ Part of [Core](README.md). Core presents every Announcement (ADR 0007): Modules 
 - **ANN-R35** While `Pagle.IsRestricted()` is true, Core hides whatever is on screen and holds it, together with everything waiting in the lanes and every new Announcement and card, sounds included. Announcements raised during the 2 s wait after combat (ANN-R36) are held too.
 - **ANN-R36** 2 s after `RestrictionChanged(false)` (restarting the wait if a new restriction starts first), Core shows what it held, dropping expired moments (ANN-R45):
   1. each held splash and banner, as itself, through the big lane (splashes first, then in the order raised)
-  2. one "While you were fighting" toast listing every held toast headline, if there is at least one. It plays the toast sound once, counts as one interruption, and never steps down.
-  3. held cards (ANN-R21)
+  2. one "While you were fighting" toast listing every held toast headline, if there is at least one, through the toast lane at the same time as the first held banner (a held splash still holds it back, ANN-R20), so a held Cast's big and catch Announcements show together, as they would have live. It plays the toast sound once unless it appears with a banner (ANN-R24), counts as one interruption, and never steps down.
+  3. held cards (ANN-R21), once both lanes are empty
 
-  Held Nods don't show again; they are already in the Session summary.
+  Held Nods don't show again; they are already in the Session summary, except a catch Nod, which is simply dropped (ANN-R13).
 - **ANN-R37** Held Announcements count toward the budget only when they actually show.
 
 ### Cozy mode
 
-- **ANN-R40** With Cozy mode on, nothing pops up and nothing plays. Every moment goes only to the Session summary.
+- **ANN-R40** With Cozy mode on, nothing pops up and nothing plays. Every moment goes only to the Session summary; a catch Nod goes nowhere (ANN-R13).
 - **ANN-R41** The one exception is a `splash` (a Legend): it still shows, silently.
 - **ANN-R42** The compartment entry (CORE-R51) counts the moments raised while Cozy mode was on that are waiting for a summary. The count resets when a Session summary shows. Turning Cozy mode off doesn't replay anything.
 
 ### Expiry
 
-- **ANN-R45** A moment may carry `expiresAt` (server time) and `pastText`. Expiry is checked when an Announcement is about to show: an expired moment is dropped from it (as headline or stamp), the next-ranked moment becomes the headline, and if none is left, nothing shows. A moment already expired when raised goes straight to the summary. In the summary, an expired moment shows its `pastText` ("Nightfin window opened 21:00–06:00"), or its `title` if it has none. Cozy mode still suppresses it, so a Legend's splash stays Cozy mode's only exception.
+- **ANN-R45** A moment may carry `expiresAt` (server time) and `pastText`. Expiry is checked when an Announcement is about to show: an expired moment is dropped from it (as headline or stamp), the next-ranked moment becomes the headline, and if none is left, nothing shows. A moment already expired when raised goes straight to the summary. In the summary, an expired moment shows its `pastText` ("Nightfin window opened 18:00–12:00"), or its `title` if it has none. Cozy mode still suppresses it, so a Legend's splash stays Cozy mode's only exception.
 
 ### Session summary
 
@@ -104,7 +114,7 @@ Part of [Core](README.md). Core presents every Announcement (ADR 0007): Modules 
 ### Sounds
 
 - **ANN-R70** Core ships and plays every Announcement sound. Each rung has one sound in the equipped **sound set**: `toast.low`, `toast` and `toast.high` play the toast sound, `banner` the banner sound, `splash` the **Legend sting**, and `nod` nothing.
-- **ANN-R71** An Announcement plays its headline's sound once, when it appears (ANN-R24). A headline moment with `sound = false` makes it silent.
+- **ANN-R71** An Announcement plays its headline's sound once, when it appears (ANN-R24), unless it is a toast appearing with a banner or splash that played its own (ANN-R24). A headline moment with `sound = false` makes it silent.
 - **ANN-R72** Sound sets:
   - **Driftwood** (default, free): toast = two rising wooden notes, rotating through 3 variants in order so back-to-back toasts never sound the same; banner = a wooden run up the scale with a bell on top.
   - **Gilded** (a Curio Shop good from M4): toast = two bell notes, one variant; banner = three rising bells.
@@ -127,7 +137,7 @@ Part of [Core](README.md). Core presents every Announcement (ADR 0007): Modules 
 | `global.pending` | moments raised with no Session open (ANN-R52) |
 | `global.cards` | up to 3 cards waiting to be seen: `{ title, numbers = { casts, catches, gotAway, seconds }, coins, lines, moments, writeUp }` |
 | `global.writeUp` | Write-up sections waiting: `{ { module, order, title, heading, lines } }` |
-| `profile.announcements` | `{ cozy = false, budget = { on = true, count = 4, window = 300 } }` |
+| `profile.announcements` | `{ cozy = false, everyCatch = true, budget = { on = true, count = 4, window = 300 } }` (`everyCatch`: "Show every catch", ANN-R13) |
 | `profile.appearance` | equipped toast style and sound set, among other slots ([wallet-and-shop.md](wallet-and-shop.md#data)) |
 
 A stored moment keeps: `module`, `moduleTitle`, `moduleOrder`, `kind`, `rung`, `title`, `text`, `icon`, `stamp`, `coins`, `expiresAt`, `pastText`. The display lanes, the budget's recent interruptions and the hold live in memory only.
@@ -170,6 +180,7 @@ ANN-R51.
 
 | Module | Moment | Rung |
 |---|---|---|
+| Core | catch Nod, every live caught Cast with no other moment (ANN-R13) | `nod`, silent, never summarized |
 | Ledger | new Species, trophy weight, zone rank, Skill Milestone | `toast` |
 | Ledger | size record, new junk or treasure | `toast.low`; a record beating one that stood 50+ Catches of that Species is raised at `toast` |
 | Ledger | Species new to a zone, ★★, ★★★, trophy family ★★ or ★★★, Uncharted | `nod` |
@@ -185,12 +196,12 @@ ANN-R51.
 | Tackle Board | Kindling burned, fire out | `nod`, no `cast`, whenever a live advance closes a board day: at login for days passed while away, or when a reset passes while logged in (TKB-R86) |
 | Stats, QoL | none | |
 
-The Module specs own their rows; this table is a cross-check.
+The Module specs own their rows, and ANN-R13 owns Core's; this table is a cross-check.
 
 ## UI
 
 - **Toast:** Retail alert-style frame above the action bar: icon, title, text, up to 4 stamps in the corner, optional record ruler, "+N more" when the lane overflows. Clicking does nothing.
-- **Nod:** one line of text with an icon, under the toast position, fading after 3 s.
+- **Nod:** one line of text with an icon, under the toast position, fading after 3 s. A catch Nod's line is its title alone (ANN-R13).
 - **Banner:** centre-screen banner with title and text, like the level-up banner.
 - **Splash:** full-screen splash for a Legend: the item icon, its name and its title.
 - **"While you were fighting":** a toast listing the held headlines.
@@ -203,6 +214,7 @@ Look reference: `prototypes/catch-feedback/` (variant A). The text above wins wh
 | Option | Values | Default |
 |---|---|---|
 | Cozy mode | on/off | off |
+| Show every catch | on/off | on (ANN-R13) |
 | Interruption budget | on/off | on |
 | Budget: interruptions | 1–10 | 4 |
 | Budget: window | 1–15 min | 5 min |
@@ -238,4 +250,4 @@ These sit on the Announcements page. Toast style and sound set also appear on Lo
 - **ANN-R93 In combat.** ANN-R35–R37.
 - **ANN-R94 Crash mid-Session.** `global.summary` and `global.cards` are saved with everything else, so moments raised before the last save survive and show as "Your last session" at the next login; later ones are lost with their Casts.
 - **ANN-R95 Daily or weekly reset.** No rule here depends on it. A Tackle Board refill raises nothing; its login Nods land under ANN-R52.
-- **ANN-R96 Uncharted or unconfirmed Catch.** An Uncharted Catch is the Ledger's `nod`; its later reclassification credits arrive through ANN-R63. An unconfirmed catalogue fact changes nothing here: Modules decide whether it earns a moment.
+- **ANN-R96 Uncharted or unconfirmed Catch.** An Uncharted Catch is the Ledger's `nod`, which replaces the catch Nod (ANN-R13); its later reclassification credits arrive through ANN-R63. An unconfirmed catalogue fact changes nothing here: Modules decide whether it earns a moment.

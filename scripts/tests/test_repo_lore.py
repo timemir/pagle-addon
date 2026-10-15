@@ -13,12 +13,13 @@ from functools import cache
 from pathlib import Path
 
 import pytest
-from cli_fixture import run
 
+from cli_fixture import run
+from pagle_data.checks import BUILT_LORE_CHECKS
 from pagle_data.errors import Problems
 from pagle_data.generate import Layers, hunt_list_of, read_layers
 from pagle_data.hunts import hunt_hash
-from pagle_data.lore import catalogue_ids, check_lore
+from pagle_data.lore import Text, catalogue_ids, check_lore
 
 REPO = Path(__file__).resolve().parents[2]
 LEDGER_TOML = REPO / "data" / "lore" / "ledger.toml"
@@ -48,8 +49,6 @@ TITLES = [
     "complete.treasure",
     "complete.trophy",
 ]
-# DATA-R107: every lore check built and on by M6.
-ALL_CHECKS = ["ledger", "core", "hunts", "stats"]
 BINDINGS = ["field", "level10", "level20", "level30", "level40", "level50", "level60", "birch", "buckram", "sharkskin"]
 
 
@@ -97,20 +96,28 @@ def _zone_names() -> list[str]:
 def test_the_ledger_s_core_s_hunts_and_stats_lore_checks_are_on() -> None:
     # DATA-R66, LED-R162: the Ledger's lore check turns on in M3 with its first batch (DATA-R111); DATA-R107: Core's
     # in M4, with its goods; HNT-R130: Hunts' in M5, after Core's; DATA-R107, STA-R88: Stats' in M6, when it first
-    # registers its goods, after Hunts'.
+    # registers its goods, after Hunts'. Every check built so far is on.
     with (REPO / "data" / "checks.toml").open("rb") as handle:
-        assert tomllib.load(handle)["lore"] == ["ledger", "core", "hunts", "stats"]
+        assert tomllib.load(handle)["lore"] == list(BUILT_LORE_CHECKS) == ["ledger", "core", "hunts", "stats"]
 
 
-def _without(lore_id: str, key: str) -> list[str]:
-    """What check_lore finds over the repo's lore, with every check on, once key is deleted from lore_id's file."""
+def _problems_with(
+    lore_id: str, edit: Callable[[dict[str, Text]], dict[str, Text]], checks: tuple[str, ...] = BUILT_LORE_CHECKS
+) -> list[str]:
+    """What check_lore finds over the repo's lore, with `checks` on (every built one by default), once `edit` has
+    changed lore_id's texts."""
     layers = _layers()
     files = dict(layers.lore.files)
-    files[lore_id] = {name: text for name, text in files[lore_id].items() if name != key}
+    files[lore_id] = edit(files[lore_id])
     ids = catalogue_ids(layers.items, layers.item_layer.families)
     problems = Problems()
-    check_lore(replace(layers.lore, files=files), ALL_CHECKS, ids, problems)
+    check_lore(replace(layers.lore, files=files), list(checks), ids, problems)
     return problems.found
+
+
+def _without(lore_id: str, key: str, checks: tuple[str, ...] = BUILT_LORE_CHECKS) -> list[str]:
+    """_problems_with key deleted from lore_id's texts."""
+    return _problems_with(lore_id, lambda texts: {name: text for name, text in texts.items() if name != key}, checks)
 
 
 def test_the_manifest_lists_core_s_nine_goods() -> None:
@@ -163,14 +170,8 @@ def test_the_manifest_lists_the_ledger_s_four_shared_lines() -> None:
 @pytest.mark.parametrize("species", sorted(_riddles()))
 def test_deleting_any_one_riddle_fails_the_lore_check_naming_its_key(species: int) -> None:
     # DATA-R107's missing: with the Ledger's check on, every Species needs a riddle (DATA-R103).
-    layers = _layers()
     key = f"species.{species}.riddle"
-    files = dict(layers.lore.files)
-    files["ledger"] = {name: text for name, text in files["ledger"].items() if name != key}
-    ids = catalogue_ids(layers.items, layers.item_layer.families)
-    problems = Problems()
-    check_lore(replace(layers.lore, files=files), ["ledger"], ids, problems)
-    assert problems.found == [
+    assert _without("ledger", key, ("ledger",)) == [
         f"data/lore/ledger.toml: {key}: missing: every Species needs it (DATA-R103, DATA-R107)"
     ]
 
@@ -249,14 +250,11 @@ def test_deleting_any_one_title_s_text_fails_the_lore_check_naming_its_key(title
 
 def test_zone_in_a_title_other_than_zonemaster_is_a_placeholder_problem() -> None:
     # DATA-R107's placeholder, DATA-R108: only zonemaster's manifest entry allows {zone}.
-    layers = _layers()
-    ledger = layers.lore.files["ledger"]
-    level10 = ledger["title.level10.text"]
-    files = layers.lore.files | {"ledger": ledger | {level10.key: replace(level10, value="Warden of {zone}")}}
-    ids = catalogue_ids(layers.items, layers.item_layer.families)
-    problems = Problems()
-    check_lore(replace(layers.lore, files=files), ["ledger", "core"], ids, problems)
-    assert problems.found == [
+    def zoned(texts: dict[str, Text]) -> dict[str, Text]:
+        level10 = texts["title.level10.text"]
+        return texts | {level10.key: replace(level10, value="Warden of {zone}")}
+
+    assert _problems_with("ledger", zoned) == [
         "data/lore/ledger.toml: title.level10.text: placeholder: { or } outside an allowed placeholder"
         " (manifest.toml allows none here) (DATA-R107, DATA-R108)"
     ]
@@ -342,20 +340,22 @@ def test_sunday_showdown_s_note_says_it_is_the_extravaganza_and_needs_level_60()
     assert re.search(r"\blevel 60\b", note), note
 
 
-def test_the_wagers_set_s_note_calls_them_the_house_s_own_without_naming_pagle_or_nat() -> None:
-    # hunts.md › Data: the wagers set's note says these are its own wagers. DATA-R110: no words in Nat Pagle's mouth;
-    # VOICE.md choice 12 (approved in #130): no lore names the addon, so "the house" stands in for Pagle.
+def test_the_wagers_set_s_note_calls_them_pagle_s_own_without_quoting_him() -> None:
+    # hunts.md › Data: the set note says these are Pagle's own wagers (#183, restored in #184: Nat Pagle the angler,
+    # VOICE.md's one exception to choice 12). DATA-R110: no words in Nat Pagle's mouth, so nothing is quoted.
     note = _hunts_text()["set.pagles_wagers.note"]
-    assert "own wagers" in note
-    assert not re.search(r"\b(Pagle|Nat)\b", note), note
+    assert "Pagle's own wagers" in note
+    assert '"' not in note, note
 
 
 @pytest.mark.parametrize("key", sorted(_hunts_text()))
 def test_no_line_of_hunts_lore_names_the_addon_its_terms_or_shouts(key: str) -> None:
     # VOICE.md: "Not the addon talking" (choice 12): no Pagle and none of its capitalised terms; no "I" (choice 3);
-    # no exclamation marks (choice 13); no | (WoW's escape codes).
+    # no exclamation marks (choice 13); no | (WoW's escape codes). VOICE.md's one exception (#184): the wagers set's
+    # note names Nat Pagle the angler, so Pagle is allowed there and nowhere else.
     text = _hunts_text()[key]
-    terms = r"\b(Pagle|Pagle's|Hunts?|Ledger|Coins?|Sessions?|Notices?|Catch(es)?|Casts?|Angler|XP|I)\b"
+    pagle = "" if key == "set.pagles_wagers.note" else "Pagle|Pagle's|"
+    terms = rf"\b({pagle}Hunts?|Ledger|Coins?|Sessions?|Notices?|Catch(es)?|Casts?|Angler|XP|I)\b"
     assert not re.search(terms, text), text
     assert "!" not in text and "|" not in text, text
 
@@ -371,6 +371,18 @@ def test_every_set_title_is_a_bare_epithet(hunt_set: str) -> None:
     assert title[0].isupper(), title
     assert not re.match(r"(the|of)\b", title, re.IGNORECASE), title
     assert "master angler" not in title.lower()
+
+
+def test_the_glyph_check_covers_a_hunt_s_name(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    # CORE-R9, DATA-R107's glyph: hunts.toml's text is Pagle_Hunts' lore (DATA-R105), so a character the fonts draw
+    # as a box fails the generator there too.
+    shutil.copytree(REPO / "data", tmp_path / "data")
+    hunts = tmp_path / "data" / "hunts" / "hunts.toml"
+    text = hunts.read_text(encoding="utf-8")
+    hunts.write_text(text.replace('name = "Night Run"\n', 'name = "Night Run ★"\n'), encoding="utf-8")
+    code, output = run(tmp_path, capsys)
+    assert code == 1
+    assert "data/hunts/hunts.toml: hunt.night_run.name: glyph: U+2605 outside CORE-R9's set" in output
 
 
 def test_the_generator_fails_on_a_29_code_point_hunt_name_and_names_the_key(
@@ -464,3 +476,73 @@ def test_the_generator_fails_on_a_29_code_point_frame_name_and_names_the_key(
         _replacing(f'name = "{name}"\n', f'name = "{"L" * 29}"\n'),
         "data/lore/stats.toml: statsgood.stats.trackerframe.logbook.name: length: 29 code points",
     )
+
+
+# Words that pin one zone through a landmark or a translated name, each with what it points to: the ones the M3
+# reviews found in riddles (VOICE.md open choice 15). A word matches whole, ignoring case, plurals included.
+LANDMARKS = {
+    "red hills": "Redridge Mountains, its name translated",
+    "gnoll": "Redridge's gnolls",
+    "giant": "Feralas' giants",
+    "centaur": "Desolace's centaur clans",
+    "troll ruin": "Zul'Gurub",
+    "drowned ruin": "Azshara's drowned ruins",
+    "dam": "Loch Modan's dam",
+    "cave": "the Wailing Caverns",
+}
+
+
+@pytest.mark.parametrize("species", sorted(_riddles()))
+def test_no_riddle_pins_a_zone_by_a_landmark_or_a_translated_name(species: int) -> None:
+    # DATA-R110: "never an exact zone", which a landmark or a zone's name in plain words breaks as surely as the
+    # name itself.
+    riddle = _riddles()[species]
+    pinned = [
+        f"{word} ({place})"
+        for word, place in LANDMARKS.items()
+        if re.search(rf"(?<!\w){re.escape(word)}s?(?!\w)", riddle, re.IGNORECASE)
+    ]
+    assert pinned == [], riddle
+
+
+def _lines() -> dict[str, str]:
+    # Every text in the batch, by its key ("species.13760.blurb").
+    with LEDGER_TOML.open("rb") as handle:
+        lore = tomllib.load(handle)
+    return {
+        f"{kind}.{lore_id}.{field}": text
+        for kind, tables in lore.items()
+        for lore_id, fields in tables.items()
+        for field, text in fields.items()
+    }
+
+
+# Pagle's capitalised terms (CONTEXT.md), which lore never uses, even to start a sentence: it writes "fish", "catch",
+# "angler" (VOICE.md › The voice, "Not the addon talking").
+PAGLE_TERMS = ("Catch", "Catches", "XP", "Coin", "Coins", "Ledger", "Hunt", "Hunts", "Notice", "Notices", "Session")
+
+
+def test_no_lore_line_uses_one_of_pagle_s_terms() -> None:
+    # DATA-R110, VOICE.md: lore isn't the addon talking.
+    found = [
+        f"{key}: {text}"
+        for key, text in sorted(_lines().items())
+        if any(re.search(rf"(?<!\w){term}(?!\w)", text) for term in PAGLE_TERMS)
+    ]
+    assert found == []
+
+
+def test_no_day_or_night_line_says_only() -> None:
+    # #175: the day (06:00–24:00) and night (18:00–12:00) windows overlap by twelve hours, so a day fish also bites
+    # after dark and a night fish in the morning; a line can't say one bites only by day or only at night. M4's titles
+    # and bindings (LED-R75, LED-R110) name the Angler and the book, never when a fish bites, so they're left out
+    # ("dark flecks" on Birch Bark is its colour).
+    timed = re.compile(r"\b(sun|daylight|day|night|dark|dawn|dusk)\b", re.IGNORECASE)
+    found = [
+        f"{key}: {text}"
+        for key, text in sorted(_lines().items())
+        if not key.startswith(("title.", "binding."))
+        and timed.search(text)
+        and re.search(r"\bonly\b", text, re.IGNORECASE)
+    ]
+    assert found == []

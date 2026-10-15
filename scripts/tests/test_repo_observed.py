@@ -1,4 +1,5 @@
-"""The repo's own data/observed/ (DATA-R8 order 4): in M2 the dev's dev.toml is the only file, with no facts (#94)."""
+"""The repo's own data/observed/ (DATA-R8 order 4): the dev's dev.toml with no facts (#94), pooltext.toml and the
+imported Field reports (#253)."""
 
 import re
 import tomllib
@@ -6,12 +7,14 @@ from pathlib import Path
 
 import pytest
 
+from pagle_data.confirmed import Confirmation
 from pagle_data.errors import Problems
-from pagle_data.observed import read_observed, reporter_key
+from pagle_data.generate import read_layers
+from pagle_data.observed import ObservedLayer, read_observed, reporter_key
 
 REPO = Path(__file__).resolve().parents[2]
 
-# The dev's current log: Kukli-Vail's PagleLog.logId, read from the dev's SavedVariables on 2026-10-13 (#94).
+# The dev's current log: its PagleLog.logId, read from the dev's SavedVariables on 2026-10-13 (#94).
 DEV_LOG_ID = "314ca8bd2fb83d86"
 
 
@@ -114,31 +117,29 @@ def test_the_committed_dev_toml_lists_the_reporter_key_of_the_devs_current_log()
     assert layer.keys == ("38d9e978",)
 
 
-def test_the_committed_dev_toml_reads_clean_with_no_facts_and_no_report_is_committed() -> None:
-    # DATA-R122: dev.toml holds keys and [[fact]]s; M2 commits it with no facts and commits no report (#94). Fixture
-    # rows live in the tests (observed_fixture.py), never here.
+def test_the_committed_observed_layer_reads_clean_with_each_report_under_its_reporter_key() -> None:
+    # DATA-R121, DATA-R122: dev.toml holds keys and no facts yet (#94); each imported report lives in
+    # reports/<reporterKey>.toml (REP-R36's 8 lowercase hex). Fixture rows live in the tests (observed_fixture.py).
     problems = Problems()
     layer = read_observed(REPO, problems)
     assert problems.found == []
     assert layer.facts == ()
-    assert layer.reports == {}
-    assert not (REPO / "data" / "observed" / "reports").exists()
+    files = sorted(path.stem for path in (REPO / "data" / "observed" / "reports").glob("*.toml"))
+    assert files == sorted(layer.reports)
+    assert all(re.fullmatch(r"[0-9a-f]{8}", key) for key in files)
 
 
-def test_the_committed_pooltext_toml_is_empty_and_says_how_the_dev_fills_it() -> None:
-    # DATA-R118: pooltext.toml is kept by hand from the triage comments' P row texts; #127 commits it with no
-    # entries and a comment saying how to fill it.
+def test_the_committed_pooltext_toml_reads_clean_and_says_how_the_dev_fills_it() -> None:
+    # DATA-R118: pooltext.toml is kept by hand from the triage comments' P row texts; #127 commits it with a comment
+    # saying how to fill it, and the dev's entries follow (#253: the enUS bobber).
     text = (REPO / "data" / "observed" / "pooltext.toml").read_text(encoding="utf-8")
-    assert tomllib.loads(text) == {}
     assert "triage comment" in text and "pools.toml" in text and "bobber" in text and "other" in text
     problems = Problems()
-    assert read_observed(REPO, problems).pooltext == ()
+    assert len(read_observed(REPO, problems).pooltext) == len(tomllib.loads(text).get("text", []))
     assert problems.found == []
 
 
-def test_the_committed_catalogue_confirms_nothing_while_no_observation_is_committed() -> None:
-    # DATA-R56: before any observation every confirmed, gateConfirmed and skillBaseConfirmed is false (#95: the
-    # committed flags stay false while dev.toml has no facts).
-    text = (REPO / "addons" / "Pagle" / "data" / "Catalogue.lua").read_text(encoding="utf-8")
-    assert "onfirmed = true" not in text
-    assert "onfirmed = false" in text
+def test_the_repos_data_confirms_nothing_without_an_observation() -> None:
+    # DATA-R56: before any observation every confirmed, gateConfirmed and skillBaseConfirmed is false: the repo's
+    # data/ read with an empty data/observed/ confirms nothing.
+    assert read_layers(REPO, observed=ObservedLayer()).confirmation == Confirmation()

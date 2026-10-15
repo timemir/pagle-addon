@@ -7,7 +7,7 @@ local TROPHY, SKULL, CHEST = 13901, 6297, 6351
 local ELWYNN, WESTFALL, DUSKWOOD, REDRIDGE, DARKSHORE, ASHENVALE, ISLE = 12, 40, 10, 44, 148, 331, 3500
 -- A zone the catalogue doesn't know at all: GetArea returns nil for it.
 local NOWHERE = 7777
-local T0 = 1791731000
+local T0 = SERVER_TIME - 700
 
 -- The names the fake client's C_Item and C_Map know.
 local ITEM_NAMES = {
@@ -37,23 +37,9 @@ local MAP_NAMES = { [1415] = "Eastern Kingdoms", [1414] = "Kalimdor" }
 -- - the Isle (continent 2, skill 300) lists the Cod
 ---@param without integer[]?
 local function fixture(without)
-	local night = { time = { { 1260, 360 } } }
-	local function item(category, fields)
-		local record = { category = category, legend = false, noise = false, removed = false, pool = false }
-		for key, value in pairs(fields or {}) do
-			record[key] = value
-		end
-		return record
-	end
+	local night = NIGHT_WINDOW
 	local function area(continent, skillBase, catches)
-		return {
-			parent = 0,
-			continent = continent,
-			skillBase = skillBase,
-			hasData = true,
-			skillBaseConfirmed = false,
-			catches = catches,
-		}
+		return areaRecord(0, { continent = continent, skillBase = skillBase, catches = catches })
 	end
 	local function on(itemID)
 		return { itemID = itemID, confirmed = false }
@@ -75,43 +61,26 @@ local function fixture(without)
 	for _, zone in ipairs(without or {}) do
 		areas[zone] = nil
 	end
-	return {
-		fingerprint = "0123456789abcdef",
+	return catalogueWith({
 		items = {
-			[MACKEREL] = item("fish", { species = MACKEREL }),
-			[BLACKMOUTH] = item("fish", { species = BLACKMOUTH }),
-			[NIGHTFISH] = item("fish", { species = NIGHTFISH }),
-			[SNAPPER] = item("fish", { species = SNAPPER }),
-			[TROPHY] = item("trophy", { family = 1, weight = 19 }),
-			[SKULL] = item("junk"),
-			[CHEST] = item("container"),
+			[MACKEREL] = fishRecord(MACKEREL),
+			[BLACKMOUTH] = fishRecord(BLACKMOUTH),
+			[NIGHTFISH] = fishRecord(NIGHTFISH),
+			[SNAPPER] = fishRecord(SNAPPER),
+			[TROPHY] = itemRecord("trophy", { family = 1, weight = 19 }),
+			[SKULL] = itemRecord("junk"),
+			[CHEST] = itemRecord("container"),
 		},
 		areas = areas,
-		aliases = {},
-		pools = {},
 		windows = { night = { spec = night, confirmed = false } },
-		events = {},
-		fishingSpells = {},
-		auras = {},
-	}
+	})
 end
 
 -- A caught Cast record for fake.catchLog:Append, by the player's character (char 1), one of each item.
 ---@param zone integer
 ---@param ... integer item IDs
 local function cast(zone, ...)
-	local items = {}
-	for i, itemID in ipairs({ ... }) do
-		items[i] = { itemID = itemID, quantity = 1 }
-	end
-	return {
-		kind = "cast",
-		char = 1,
-		time = T0,
-		outcome = "caught",
-		conditions = { minute = 494, zone = zone, subzone = 0, events = {}, auras = {} },
-		items = items,
-	}
+	return castRecord({ time = T0, zone = zone, items = { ... } })
 end
 
 -- A Ledger on FakePagle over the fixture catalogue with `history` in its log, logged in and in the world, its
@@ -122,27 +91,14 @@ end
 ---@return FakePagle fake
 ---@return LoadedAddon loaded
 local function openHome(history, before, catalogue)
-	local fake = newFakePagle()
-	fake.setCatalogue(catalogue or fixture())
-	fake.catchLog.data.characters[1] = { guid = PLAYER_GUID }
-	for _, record in ipairs(history or {}) do
-		fake.catchLog:Append(record)
-	end
-	local loaded = fake.load("Pagle_Ledger")
-	for id, name in pairs(ITEM_NAMES) do
-		loaded.client.itemNames[id] = name
-	end
-	for id, name in pairs(ZONE_NAMES) do
-		loaded.client.areaNames[id] = name
-	end
-	loaded.client.mapNames = MAP_NAMES
-	fake.login()
-	fake.enterWorld()
-	if before then
-		before(loaded, fake)
-	end
-	loaded.ns.journal:Toggle()
-	return fake, loaded
+	return openJournal({
+		catalogue = catalogue or fixture(),
+		log = history,
+		itemNames = ITEM_NAMES,
+		areaNames = ZONE_NAMES,
+		mapNames = MAP_NAMES,
+		before = before,
+	})
 end
 
 -- The open book's page data.
@@ -152,28 +108,15 @@ local function pages(loaded)
 	return loaded.ns.journal.pages
 end
 
--- The first block of `kind` on a page.
----@param page LedgerBlock[]
----@param kind string
----@return LedgerBlock?
-local function blockOf(page, kind)
-	for _, block in ipairs(page) do
-		if block.kind == kind then
-			return block
-		end
-	end
-	return nil
-end
-
 -- The tiles the left page shows.
 local function tiles(loaded)
-	return (blockOf(pages(loaded).left, "tiles") or {}).tiles
+	return (blockOfKind(pages(loaded).left, "tiles") or {}).tiles
 end
 
 -- The tabs' labels, and the one chosen.
 local function tabs(loaded)
 	local labels, chosen = {}, nil
-	for i, tab in ipairs((blockOf(pages(loaded).left, "tabs") or { tabs = {} }).tabs) do
+	for i, tab in ipairs((blockOfKind(pages(loaded).left, "tabs") or { tabs = {} }).tabs) do
 		labels[i] = tab.text
 		if tab.on then
 			chosen = tab.text
@@ -193,7 +136,7 @@ end
 
 -- Opens Home on tab `tab` (0, 1 or "other") as clicking it does.
 local function chooseTab(loaded, tab)
-	loaded.ns.journal:Open("home", { tab = tab })
+	loaded.ns.journal:OpenPlace(loaded.ns.JournalPlace.home(tab))
 end
 
 describe("the Journal's Home, left page", function()
@@ -306,25 +249,26 @@ describe("the Journal's Home, left page", function()
 		_, chosen = tabs(loaded)
 		assert.are.equal("Other waters", chosen)
 	end)
+
+	it(
+		"starts the left page at the top on another tab, keeping the right page's scroll (LED-R129, LED-R130)",
+		function()
+			local _, loaded = openHome({}, nil, fixture({ ELWYNN, WESTFALL, DUSKWOOD, REDRIDGE }))
+			scrollPage(loaded, "left", 120)
+			scrollPage(loaded, "right", 80)
+
+			-- The Other waters tab.
+			loaded.ns.journal.frame.left.drawn.tabs[1].children[2]:Click()
+
+			assert.are.same({ "Isle of Dread" }, tileNames(loaded))
+			assert.are.same({ 0, 80 }, { pageScroll(loaded, "left"), pageScroll(loaded, "right") })
+		end
+	)
 end)
 
 -- Seeds the celebrated set: level 12 celebrated in this climb, so the shown level is 12 (LED-R36).
 local function level12(loaded)
 	loaded.ns.db.global.celebrated.levels[0] = 12
-end
-
--- Every text drawn on the open book, depth first.
-local function textsOf(widget, texts)
-	texts = texts or {}
-	for _, child in ipairs(widget.children) do
-		if child.shown then
-			if child.text ~= nil and child.text ~= "" then
-				texts[#texts + 1] = child.text
-			end
-			textsOf(child, texts)
-		end
-	end
-	return texts
 end
 
 describe("the Journal's Home, right page", function()
@@ -346,7 +290,7 @@ describe("the Journal's Home, right page", function()
 		assert.are.same({ kind = "kicker", text = "Notes to self" }, right[3])
 		assert.are.same({
 			kind = "link",
-			text = "Raw Slitherskin Mackerel: 49 to ★★★",
+			text = drawnSymbols("Raw Slitherskin Mackerel: 49 to ★★★"),
 			hand = true,
 			place = { id = "fish", args = { species = MACKEREL } },
 		}, right[4])
@@ -448,13 +392,12 @@ describe("the Journal's Home, right page", function()
 	end)
 end)
 
--- Seeds prestige rank `rank` on the projection's state, as a Prestige entry (LED-R32) leaves it.
+-- The fixture's Mackerel in Elwynn, then character 1's Prestige to `rank` (LOG-R38): rank `rank` from the entry
+-- (LED-R32).
 ---@param rank integer
-local function prestige(rank)
-	return function(loaded)
-		level12(loaded)
-		loaded.ns.projection:GetState().prestige = rank
-	end
+---@return table[]
+local function prestiged(rank)
+	return { cast(ELWYNN, MACKEREL), { kind = "prestige", char = 1, time = T0 + 60, rank = rank } }
 end
 
 -- The drawn bookplate row's widget (LED-R132).
@@ -475,33 +418,34 @@ describe("the Journal's Home, the bookplate's title and Prestige (LED-R132, LED-
 			mark = { stars = 0 },
 			signature = "Minnow",
 		}, pages(loaded).right[1])
-		local texts = textsOf(drawnBookplate(loaded))
+		local texts = shownTexts(drawnBookplate(loaded))
 		assert.are.same({ "12", "Angler Level", "Minnow", "14%" }, texts)
 	end)
 
 	it("shows emblem III beside the level at rank 3, and the active title under it (LED-R132, LED-R34)", function()
-		local _, loaded = openHome({ cast(ELWYNN, MACKEREL) }, prestige(3))
+		local _, loaded = openHome(prestiged(3), level12)
 
 		-- A Prestige means a climb reached 60, so the peak level is 60 and automatic signs with level60 (LED-R35).
 		local bookplate = pages(loaded).right[1]
 		assert.are.same({ emblem = "III", stars = 0 }, bookplate.mark)
 		assert.are.equal("Nat's Peer", bookplate.signature)
-		local texts = textsOf(drawnBookplate(loaded))
+		local texts = shownTexts(drawnBookplate(loaded))
 		assert.are.same({ bookplate.text, "Angler Level", "III", "Nat's Peer", "14%" }, texts)
 	end)
 
 	it("shows a Master Prestige's stars beside emblem X (LED-R34)", function()
-		local _, loaded = openHome({ cast(ELWYNN, MACKEREL) }, prestige(12))
+		local _, loaded = openHome(prestiged(12), level12)
 
 		local bookplate = pages(loaded).right[1]
 		assert.are.same({ emblem = "X", stars = 2 }, bookplate.mark)
-		local texts = textsOf(drawnBookplate(loaded))
-		assert.are.same({ bookplate.text, "Angler Level", "X", "★", "★", "Nat's Peer", "14%" }, texts)
+		local texts = shownTexts(drawnBookplate(loaded))
+		local star = drawnSymbols("★")
+		assert.are.same({ bookplate.text, "Angler Level", "X", star, star, "Nat's Peer", "14%" }, texts)
 	end)
 
 	it("signs with the stored active title once it is earned (LED-R77)", function()
-		local _, loaded = openHome({ cast(ELWYNN, MACKEREL) }, function(ledger)
-			prestige(1)(ledger)
+		local _, loaded = openHome(prestiged(1), function(ledger)
+			level12(ledger)
 			ledger.ns.db.profile.activeTitle = "title:prestige1"
 		end)
 
@@ -515,7 +459,7 @@ describe("the Journal's Home, the bookplate's title and Prestige (LED-R132, LED-
 		end)
 
 		assert.is_nil(pages(loaded).right[1].signature)
-		assert.are.same({ "12", "Angler Level", "14%" }, textsOf(drawnBookplate(loaded)))
+		assert.are.same({ "12", "Angler Level", "14%" }, shownTexts(drawnBookplate(loaded)))
 	end)
 end)
 
@@ -525,7 +469,7 @@ describe("the Journal's Home and what isn't caught", function()
 		local _, loaded = openHome({ cast(WESTFALL, MACKEREL) })
 		loaded.ns.journal:Draw()
 
-		for _, text in ipairs(textsOf(loaded.ns.journal.frame)) do
+		for _, text in ipairs(shownTexts(loaded.ns.journal.frame)) do
 			for id, name in pairs(ITEM_NAMES) do
 				if id ~= MACKEREL then
 					assert.is_nil(text:find(name, 1, true))
@@ -558,8 +502,8 @@ describe("the brass plate (LED-R149)", function()
 	end)
 
 	it("names the stored active title once earned (LED-R149, LED-R77)", function()
-		local _, loaded = openHome({ cast(ELWYNN, MACKEREL) }, function(ledger)
-			prestige(1)(ledger)
+		local _, loaded = openHome(prestiged(1), function(ledger)
+			level12(ledger)
 			ledger.ns.db.profile.activeTitle = "title:prestige1"
 		end)
 
@@ -574,6 +518,21 @@ describe("the brass plate (LED-R149)", function()
 
 		assert.are.equal("Lv 12 · Ledger 14%", loaded.ns.journal.plate)
 		assert.are.equal("Lv 12 · Ledger 14%", loaded.ns.journal.frame.plate.label.text)
+	end)
+
+	it("keeps its last words while the projection updates, where LED-R122 hides only the pages' (LED-R149)", function()
+		local _, loaded = openHome({ cast(ELWYNN, MACKEREL) }, level12)
+		local journal = loaded.ns.journal
+
+		-- The projection starts updating with the book open (LOG-R74): there is no state to read until it finishes.
+		loaded.ns.projection.IsUpdating = function()
+			return true
+		end
+		journal:Draw()
+
+		assert.is_true(journal.pages.updating)
+		assert.is_true(journal.frame.plate:IsShown())
+		assert.are.equal("Lv 12 · Minnow · Ledger 14%", journal.frame.plate.label.text)
 	end)
 end)
 

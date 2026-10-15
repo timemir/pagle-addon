@@ -15,35 +15,45 @@ local ns = select(2, ...)
 
 -- ★★ zones needed, and ★★★ Catches (LED-R45, Tunables).
 local ZONES_NEEDED = 3
---- A Species' ★★★ Catches (LED-R45, Tunables); Home's next-star note counts down to it (LED-R133).
+--- A Species' ★★★ Catches (LED-R45, Tunables); Home's next-star note counts down to it (LED-R133), and the fish
+--- spread's checklist counts up to it (LED-R142).
 ns.REGULAR_CATCHES = 50
 local REGULAR_CATCHES = ns.REGULAR_CATCHES
 
 -- The achievement a Species' ★★ and ★★★ earn (LED-R97).
 local SPECIES_STAR_KINDS = { [2] = "elementStar", [3] = "regularStar" }
 
--- Whether a caught Species is in its element (LED-R45): under each of its element windows when it has some, else
--- caught in `min(3, max(1, listed zones))` distinct zones (`zones` never holds 0, LED-R6).
+--- How far a caught Species is towards ★★, in its element (LED-R45, LED-R142): with element windows, those met of all
+--- of them; otherwise its distinct zones caught in (`zones` never holds 0, LED-R6) of `min(3, max(1, listed zones))`.
+--- `have` stops at `need`.
 ---@param listing LedgerWorldSpecies? the Species in the world index, nil when on no list
+---@param species LedgerSpecies
+---@return integer have
+---@return integer need
+function ns.ElementProgress(listing, species)
+	local have, need = 0, 0
+	if listing and listing.elements then
+		local met = species.windowsMet or {}
+		for window in pairs(listing.elements) do
+			need = need + 1
+			have = have + (met[window] and 1 or 0)
+		end
+		return have, need
+	end
+	need = math.min(ZONES_NEEDED, math.max(1, listing and #listing.zones or 0))
+	for _ in pairs(species.zones) do
+		have = have + 1
+	end
+	return math.min(have, need), need
+end
+
+-- Whether a caught Species is in its element (LED-R45): all of ns.ElementProgress's need met.
+---@param listing LedgerWorldSpecies?
 ---@param species LedgerSpecies
 ---@return boolean
 local function inElement(listing, species)
-	local elements = listing and listing.elements
-	if elements then
-		local met = species.windowsMet or {}
-		for window in pairs(elements) do
-			if not met[window] then
-				return false
-			end
-		end
-		return true
-	end
-	local needed = math.min(ZONES_NEEDED, math.max(1, listing and #listing.zones or 0))
-	local caught = 0
-	for _ in pairs(species.zones) do
-		caught = caught + 1
-	end
-	return caught >= needed
+	local have, need = ns.ElementProgress(listing, species)
+	return have >= need
 end
 
 --- A Species' computed stars (LED-R45): ★ caught, ★★ in its element, ★★★ 50 Catches.
@@ -68,9 +78,9 @@ end
 ---@param world LedgerWorld
 ---@param state LedgerState
 ---@param family integer
----@param getItem fun(itemID: integer): PagleItem?
 ---@return LedgerStars
-function ns.FamilyStars(world, state, family, getItem)
+function ns.FamilyStars(world, state, family)
+	local getItem = world.getItem
 	local stars = {}
 	for itemID in pairs(state.items) do
 		local item = getItem(itemID)
@@ -121,11 +131,10 @@ end
 ---@param state LedgerState
 ---@param celebrated table the celebrated set (LED-R90): its `familyStars`, if any
 ---@param family integer
----@param getItem fun(itemID: integer): PagleItem?
 ---@return LedgerStars
-function ns.ShownFamilyStars(world, state, celebrated, family, getItem)
+function ns.ShownFamilyStars(world, state, celebrated, family)
 	local familyStars = celebrated.familyStars
-	return union(ns.FamilyStars(world, state, family, getItem), familyStars and familyStars[family])
+	return union(ns.FamilyStars(world, state, family), familyStars and familyStars[family])
 end
 
 --- The stars a Catch could change, as they stood before it: its Species', or its trophy family's when it lands a
@@ -147,7 +156,7 @@ end
 ---@param lookups LedgerLookups
 ---@return LedgerStarsFold
 function ns.NewStarsFold(lookups)
-	local world, matches, getItem = lookups.world, lookups.MatchesConditions, lookups.GetItem
+	local world, matches = lookups.world, lookups.MatchesConditions
 
 	---@param state LedgerState
 	---@param class string the Catch's class (LED-R5)
@@ -162,7 +171,7 @@ function ns.NewStarsFold(lookups)
 			return { species = id, itemID = itemID, stars = ns.SpeciesStars(world, state, id) }
 		elseif class == "trophy" and not state.items[itemID] then
 			local family = item.family --[[@as integer]]
-			return { family = family, itemID = itemID, stars = ns.FamilyStars(world, state, family, getItem) }
+			return { family = family, itemID = itemID, stars = ns.FamilyStars(world, state, family) }
 		end
 		return nil
 	end
@@ -213,7 +222,7 @@ function ns.NewStarsFold(lookups)
 			return
 		end
 		local family = marked.family --[[@as integer]]
-		local after = ns.FamilyStars(world, state, family, getItem)
+		local after = ns.FamilyStars(world, state, family)
 		local stars = {}
 		for star = 2, 3 do
 			if after[star] and not before[star] then

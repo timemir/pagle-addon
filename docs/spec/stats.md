@@ -377,7 +377,7 @@ Every string below is mechanical interface text in `ns.L` (STA-R58, STA-R59), no
 
 ### Sessions
 
-- **Left page:** kicker "Sessions", title "{N} Sessions", the note "A Session ends after 15 minutes without a Cast." (Core's gap, LOG-R60), then the ledger (columns as on This Session), 16 per page, newest first, the chosen one highlighted, with "☚ later", "page X of Y" and "earlier ☛" (each arrow hidden at its end).
+- **Left page:** kicker "Sessions", title "{N} Sessions", the note "A Session ends after 5 minutes without a Cast." (Core's gap, LOG-R60), then the ledger (columns as on This Session), 16 per page, newest first, the chosen one highlighted, with "☚ later", "page X of Y" and "earlier ☛" (each arrow hidden at its end).
 - **Right page:** the chosen Session's entry, as on This Session's left page; the newest by default.
 
 ### Live tracker

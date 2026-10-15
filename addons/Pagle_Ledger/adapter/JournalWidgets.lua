@@ -10,16 +10,8 @@ local ns = select(2, ...)
 -- In-client textures and fonts only; custom art comes after 1.0. Every texture sits on a solid tint, so a texture
 -- the client lacks leaves the tint showing.
 
--- A tint from its hex code, as the prototype's CSS writes it: { r, g, b }, 0 to 1.
----@param hex string "RRGGBB"
----@return number[]
-local function tint(hex)
-	return {
-		tonumber(hex:sub(1, 2), 16) / 255,
-		tonumber(hex:sub(3, 4), 16) / 255,
-		tonumber(hex:sub(5, 6), 16) / 255,
-	}
-end
+-- A tint from its hex code, as the prototype's CSS writes it (logic/Bindings.lua).
+local tint = ns.HexTint
 
 --- The Field Leather look (LED-R4, LED-R110's default binding), its tints picked against
 --- prototypes/fish-journal/ variant E (its book is variant C's): leather, gilt and page paper, and the inks drawn
@@ -47,6 +39,8 @@ ns.JOURNAL_LOOK = {
 	brassText = tint("2a1a04"), -- its words
 }
 local LOOK = ns.JOURNAL_LOOK
+-- A silhouette's ink: black (LED-R124).
+local SILHOUETTE = { 0, 0, 0 }
 
 --- In-client textures (ledger.md › UI): the leather's grain, the page paper and the seal's disc.
 ns.JOURNAL_TEXTURES = {
@@ -105,6 +99,15 @@ function ns.JournalFonts()
 	return fonts
 end
 
+--- Paints `texture` a solid tint: `color` ({ r, g, b }, as ns.JOURNAL_LOOK holds them) at `alpha`, 1 when nil. Text and
+--- vertex colours take a tint whole, as `SetTextColor(unpack(color))`.
+---@param texture Texture
+---@param color number[]
+---@param alpha number?
+function ns.JournalPaint(texture, color, alpha)
+	texture:SetColorTexture(color[1], color[2], color[3], alpha or 1)
+end
+
 --- A solid tint filling `frame`, or the part its points give.
 ---@param frame Frame
 ---@param color number[]
@@ -113,9 +116,81 @@ end
 ---@return Texture
 function ns.JournalSolid(frame, color, layer, alpha)
 	local texture = frame:CreateTexture(nil, layer or "BACKGROUND")
-	texture:SetColorTexture(color[1], color[2], color[3], alpha or 1)
+	ns.JournalPaint(texture, color, alpha)
 	texture:SetAllPoints()
 	return texture
+end
+
+--- Four thin rules boxing `frame`'s inside, `inset` in from its edges, untinted: the cover's and a binding swatch's
+--- gilt rules, a Legend plate's double rule and the shown rung's box. `options`, each optional: `left`, the inset from
+--- the left edge (more at a book's spine; `inset` by default), `thickness` (1) and `layer` ("BORDER"). Top, bottom,
+--- left, right.
+---@param frame Frame
+---@param inset number
+---@param options { left: number?, thickness: number?, layer: DrawLayer? }?
+---@return Texture[]
+function ns.JournalRules(frame, inset, options)
+	options = options or {}
+	local left, thickness = options.left or inset, options.thickness or 1
+	local rules = {}
+	for i, side in ipairs({
+		{ "TOPLEFT", left, -inset, "TOPRIGHT", -inset, -inset },
+		{ "BOTTOMLEFT", left, inset, "BOTTOMRIGHT", -inset, inset },
+		{ "TOPLEFT", left, -inset, "BOTTOMLEFT", left, inset },
+		{ "TOPRIGHT", -inset, -inset, "BOTTOMRIGHT", -inset, inset },
+	}) do
+		local rule = frame:CreateTexture(nil, options.layer or "BORDER")
+		rule:SetPoint(side[1], side[2], side[3])
+		rule:SetPoint(side[4], side[5], side[6])
+		if i <= 2 then
+			rule:SetHeight(thickness)
+		else
+			rule:SetWidth(thickness)
+		end
+		rules[i] = rule
+	end
+	return rules
+end
+
+--- A leather cover (LED-R110): the Journal's, and each binding's closed-book swatch in the Curio Shop.
+---@class LedgerJournalCover: Frame
+---@field leather Texture   -- the leather's tint, and its grain over it (LED-R112)
+---@field grain Texture
+---@field rules Texture[]   -- the gilt rules inside the leather's edge
+
+--- Covers `frame` in leather: the dark outline, the leather `border` in from the edges with its grain at half alpha
+--- over it, and the gilt rules (ns.JournalRules, `inset` and `left`), in the Field Leather tints until
+--- ns.TintJournalCover tints them in a binding's look.
+---@param frame LedgerJournalCover
+---@param border number
+---@param inset number
+---@param left number?
+function ns.DrawJournalCover(frame, border, inset, left)
+	ns.JournalSolid(frame, LOOK.leatherEdge, "BACKGROUND")
+	frame.leather = ns.JournalSolid(frame, LOOK.leather, "BACKGROUND")
+	frame.grain = frame:CreateTexture(nil, "BORDER")
+	frame.grain:SetTexture(ns.JOURNAL_TEXTURES.leather)
+	frame.grain:SetAlpha(0.5)
+	for _, texture in ipairs({ frame.leather, frame.grain }) do
+		texture:SetPoint("TOPLEFT", border, -border)
+		texture:SetPoint("BOTTOMRIGHT", -border, border)
+	end
+	-- A layer above the grain's, so the rules always draw over it.
+	frame.rules = ns.JournalRules(frame, inset, { left = left, layer = "ARTWORK" })
+end
+
+--- Tints a cover in binding `look` (LED-R110, LED-R112): the leather and its grain, and the rules in `rule` at
+--- `alpha` (1 when nil).
+---@param frame LedgerJournalCover
+---@param look LedgerBindingLook
+---@param rule number[]
+---@param alpha number?
+function ns.TintJournalCover(frame, look, rule, alpha)
+	ns.JournalPaint(frame.leather, look.leather)
+	frame.grain:SetVertexColor(unpack(look.leather))
+	for _, line in ipairs(frame.rules) do
+		ns.JournalPaint(line, rule, alpha)
+	end
 end
 
 --- A font string on `frame` in one of the Journal's fonts and tints.
@@ -126,14 +201,52 @@ end
 function ns.JournalText(frame, font, color)
 	local text = frame:CreateFontString(nil, "OVERLAY")
 	text:SetFontObject(font)
-	text:SetTextColor(color[1], color[2], color[3])
+	text:SetTextColor(unpack(color))
 	text:SetJustifyH("LEFT")
 	return text
 end
 
+--- Shows `icon` on `texture` (LED-R124, ledger.md › UI): an item ID's icon, or a texture, in greys tinted sepia, or
+--- solid black as the silhouette of what isn't caught. Every widget that draws an item icon draws it here.
+---@param texture Texture
+---@param icon integer|string? an item ID or a texture
+---@param look "sepia"|"silhouette"?
+function ns.JournalItemIcon(texture, icon, look)
+	if type(icon) == "number" then
+		local _, _, _, _, fileID = C_Item.GetItemInfoInstant(icon)
+		icon = fileID or icon
+	end
+	texture:SetTexture(icon)
+	texture:SetDesaturated(true)
+	local ink = look == "silhouette" and SILHOUETTE or LOOK.sepia
+	texture:SetVertexColor(unpack(ink))
+	texture:SetAlpha(1)
+end
+
+--- A button that opens a place in the Journal (LED-R125): whoever fills it sets `place` and `open`, the Journal's
+--- opener, or `action` to call instead (a link to the Field report, REP-R43).
+---@class LedgerJournalClickable: Button
+---@field place LedgerJournalPlace?
+---@field open fun(place: LedgerJournalPlace)?
+---@field action fun()?
+
+--- Makes `button` take clicks as a LedgerJournalClickable: it calls its `action`, or opens its `place`, or with
+--- neither does nothing.
+---@param button LedgerJournalClickable
+function ns.JournalClickable(button)
+	---@param self LedgerJournalClickable
+	button:SetScript("OnClick", function(self)
+		if self.action then
+			self.action()
+		elseif self.place and self.open then
+			self.open(self.place)
+		end
+	end)
+end
+
 --- A widget drawing one kind of block: `Fill` draws the block across `width` and returns the height it takes;
---- `open` opens a place in the Journal.
----@class LedgerJournalWidget: Button
+--- `open` opens a place in the Journal. The kinds that open a place take clicks (ns.JournalClickable).
+---@class LedgerJournalWidget: LedgerJournalClickable
 ---@field Fill fun(self: LedgerJournalWidget, block: LedgerBlock, width: number, open: fun(place: LedgerJournalPlace)): number
 ---@field label FontString?
 ---@field texture Texture?
@@ -159,7 +272,7 @@ local function textWidget(font, color)
 		function widget.Fill(_, block, width)
 			local ink = color(block)
 			text:SetFontObject(block.hand and ns.JournalFonts().hand or font())
-			text:SetTextColor(ink[1], ink[2], ink[3])
+			text:SetTextColor(unpack(ink))
 			text:SetWidth(width)
 			text:SetText(block.text)
 			return text:GetStringHeight()
@@ -201,7 +314,7 @@ local TAB_GAP = 14
 local function disc(frame, size)
 	local texture = frame:CreateTexture(nil, "ARTWORK")
 	texture:SetTexture(ns.JOURNAL_TEXTURES.disc)
-	texture:SetVertexColor(LOOK.seal[1], LOOK.seal[2], LOOK.seal[3])
+	texture:SetVertexColor(unpack(LOOK.seal))
 	texture:SetSize(size, size)
 	return texture
 end
@@ -216,12 +329,12 @@ end
 ---@return LedgerInkBarView
 local function inkBar(frame, height)
 	local outline = frame:CreateTexture(nil, "BORDER")
-	outline:SetColorTexture(LOOK.barInk[1], LOOK.barInk[2], LOOK.barInk[3], 0.25)
+	ns.JournalPaint(outline, LOOK.barInk, 0.25)
 	outline:SetPoint("TOPLEFT")
 	outline:SetPoint("TOPRIGHT")
 	outline:SetHeight(height)
 	local fill = frame:CreateTexture(nil, "ARTWORK")
-	fill:SetColorTexture(LOOK.barInk[1], LOOK.barInk[2], LOOK.barInk[3], 1)
+	ns.JournalPaint(fill, LOOK.barInk)
 	fill:SetPoint("TOPLEFT")
 	fill:SetHeight(height)
 	return {
@@ -270,19 +383,12 @@ function makers.link(parent)
 	text:SetPoint("TOPLEFT")
 	text:SetWordWrap(true)
 	widget.label = text
-	local place, action, openPlace
-	widget:SetScript("OnClick", function()
-		if action then
-			action()
-		elseif place then
-			openPlace(place)
-		end
-	end)
+	ns.JournalClickable(widget)
 	function widget.Fill(_, block, width, open)
-		place, action, openPlace = block.place, block.action, open
+		widget.place, widget.action, widget.open = block.place, block.action, open
 		local ink = block.hand and LOOK.blue or LOOK.red
 		text:SetFontObject(block.hand and ns.JournalFonts().hand or ns.JournalFonts().text)
-		text:SetTextColor(ink[1], ink[2], ink[3])
+		text:SetTextColor(unpack(ink))
 		text:SetWidth(width)
 		text:SetText(block.text)
 		return text:GetStringHeight()
@@ -307,23 +413,15 @@ function makers.leader(parent)
 	local dots = {}
 	for i = 1, LEADER_DOTS do
 		local dot = widget:CreateTexture(nil, "ARTWORK")
-		dot:SetColorTexture(LOOK.kicker[1], LOOK.kicker[2], LOOK.kicker[3], 1)
+		ns.JournalPaint(dot, LOOK.kicker)
 		dot:SetSize(1, 1)
 		dots[i] = dot
 	end
-	local place, action, openPlace
-	widget:SetScript("OnClick", function()
-		if action then
-			action()
-		elseif place then
-			openPlace(place)
-		end
-	end)
+	ns.JournalClickable(widget)
 	function widget.Fill(_, block, width, open)
-		place, action, openPlace = block.place, block.action, open
+		widget.place, widget.action, widget.open = block.place, block.action, open
 		label:SetText(block.text)
-		local ink = action and LOOK.red or LOOK.ink
-		value:SetTextColor(ink[1], ink[2], ink[3])
+		value:SetTextColor(unpack(block.action and LOOK.red or LOOK.ink))
 		value:SetText(block.value or "")
 		local height = label:GetStringHeight()
 		local from, to = label:GetStringWidth() + 4, width - value:GetStringWidth() - 4
@@ -429,9 +527,9 @@ function makers.stamps(parent)
 			local stamp = stampAt(i)
 			local color = data.inked and LOOK.red or LOOK.stampOff
 			stamp.text:SetText(data.text)
-			stamp.text:SetTextColor(color[1], color[2], color[3])
+			stamp.text:SetTextColor(unpack(color))
 			for _, edge in ipairs(stamp.edges) do
-				edge:SetColorTexture(color[1], color[2], color[3], 1)
+				ns.JournalPaint(edge, color)
 			end
 			local width = stamp.text:GetStringWidth() + 14
 			stamp.frame:SetSize(width, 20)
@@ -448,7 +546,7 @@ function makers.stamps(parent)
 end
 
 -- One zone tile (LED-R131): name, two lines, a thin ink bar, a seal and a red note, opening its place.
----@class LedgerZoneTileView: Button
+---@class LedgerZoneTileView: LedgerJournalClickable
 ---@field name FontString
 ---@field line FontString
 ---@field line2 FontString
@@ -457,16 +555,15 @@ end
 ---@field seal Frame
 ---@field sealText FontString
 ---@field note FontString
----@field place LedgerJournalPlace?
 
 ---@param parent Frame
----@param open fun(): fun(place: LedgerJournalPlace)
 ---@return LedgerZoneTileView
-local function newTile(parent, open)
+local function newTile(parent)
 	local tile = CreateFrame("Button", nil, parent) --[[@as LedgerZoneTileView]]
+	ns.JournalClickable(tile)
 	ns.JournalSolid(tile, LOOK.paper, "BACKGROUND", 0.6)
 	local border = tile:CreateTexture(nil, "BORDER")
-	border:SetColorTexture(LOOK.kicker[1], LOOK.kicker[2], LOOK.kicker[3], 0.35)
+	ns.JournalPaint(border, LOOK.kicker, 0.35)
 	border:SetPoint("TOPLEFT", -1, 1)
 	border:SetPoint("BOTTOMRIGHT", 1, -1)
 	tile.name = ns.JournalText(tile, ns.JournalFonts().text, LOOK.title)
@@ -492,11 +589,6 @@ local function newTile(parent, open)
 	tile.sealText:SetPoint("CENTER")
 	tile.note = ns.JournalText(tile, ns.JournalFonts().hand, LOOK.red)
 	tile.note:SetPoint("BOTTOMRIGHT", -6, 12)
-	tile:SetScript("OnClick", function(self)
-		if self.place then
-			open()(self.place)
-		end
-	end)
 	return tile
 end
 
@@ -513,16 +605,11 @@ function makers.tiles(parent)
 	local widget = newWidget(parent)
 	---@type LedgerZoneTileView[]
 	local tiles = {}
-	local opener
-	local function open()
-		return opener
-	end
-	function widget.Fill(_, block, width, openPlace)
-		opener = openPlace
+	function widget.Fill(_, block, width, open)
 		local tileWidth = (width - (TILE_COLUMNS - 1) * TILE_GAP) / TILE_COLUMNS
 		local list = block.tiles or {}
 		for i, data in ipairs(list) do
-			local tile = tiles[i] or newTile(widget, open)
+			local tile = tiles[i] or newTile(widget)
 			tiles[i] = tile
 			local column, row = (i - 1) % TILE_COLUMNS, math.floor((i - 1) / TILE_COLUMNS)
 			tile:SetSize(tileWidth, TILE_HEIGHT)
@@ -537,7 +624,7 @@ function makers.tiles(parent)
 			tile.sealText:SetText(data.seal or "")
 			setOptional(tile.note, data.note)
 			tile:SetAlpha(data.faded and 0.5 or 1)
-			tile.place = data.place
+			tile.place, tile.open = data.place, open
 			tile:Show()
 		end
 		for i = #list + 1, #tiles do
@@ -551,18 +638,15 @@ end
 
 -- Tabs side by side (LED-R130's continent tabs): the chosen one in the title's ink, underlined in red; each opens
 -- its place.
----@class LedgerTabView: Button
+---@class LedgerTabView: LedgerJournalClickable
 ---@field label FontString
 ---@field underline Texture
----@field place LedgerJournalPlace?
 
 function makers.tabs(parent)
 	local widget = newWidget(parent)
 	---@type LedgerTabView[]
 	local tabs = {}
-	local opener
 	function widget.Fill(_, block, _, open)
-		opener = open
 		local x = 0
 		for i, data in ipairs(block.tabs or {}) do
 			local tab = tabs[i]
@@ -571,22 +655,18 @@ function makers.tabs(parent)
 				tab.label = ns.JournalText(tab, ns.JournalFonts().kicker, LOOK.kicker)
 				tab.label:SetPoint("TOPLEFT")
 				tab.underline = tab:CreateTexture(nil, "ARTWORK")
-				tab.underline:SetColorTexture(LOOK.red[1], LOOK.red[2], LOOK.red[3], 1)
+				ns.JournalPaint(tab.underline, LOOK.red)
 				tab.underline:SetPoint("BOTTOMLEFT")
 				tab.underline:SetPoint("BOTTOMRIGHT")
 				tab.underline:SetHeight(2)
-				tab:SetScript("OnClick", function(self)
-					if self.place then
-						opener(self.place)
-					end
-				end)
+				ns.JournalClickable(tab)
 				tabs[i] = tab
 			end
 			local ink = data.on and LOOK.title or LOOK.kicker
 			tab.label:SetText(data.text)
-			tab.label:SetTextColor(ink[1], ink[2], ink[3])
+			tab.label:SetTextColor(unpack(ink))
 			tab.underline:SetShown(data.on)
-			tab.place = data.place
+			tab.place, tab.open = data.place, open
 			local width = tab.label:GetStringWidth() + 2
 			tab:SetSize(width, TAB_HEIGHT)
 			tab:ClearAllPoints()
@@ -610,22 +690,9 @@ function makers.icon(parent)
 	texture:SetPoint("TOPLEFT")
 	widget.texture = texture
 	function widget.Fill(_, block)
-		local icon = block.icon
-		if type(icon) == "number" then
-			local _, _, _, _, fileID = C_Item.GetItemInfoInstant(icon)
-			icon = fileID or icon
-		end
 		local size = block.large and LARGE_ICON_SIZE or ICON_SIZE
 		texture:SetSize(size, size)
-		texture:SetTexture(icon)
-		texture:SetDesaturated(true)
-		if block.look == "silhouette" then
-			texture:SetVertexColor(0, 0, 0)
-			texture:SetAlpha(0.6)
-		else
-			texture:SetVertexColor(LOOK.sepia[1], LOOK.sepia[2], LOOK.sepia[3])
-			texture:SetAlpha(1)
-		end
+		ns.JournalItemIcon(texture, block.icon, block.look)
 		return size
 	end
 	return widget
@@ -640,7 +707,7 @@ function makers.xpBar(parent)
 	track:SetHeight(BAR_HEIGHT)
 	local bar = inkBar(track, BAR_HEIGHT)
 	local fresh = track:CreateTexture(nil, "ARTWORK")
-	fresh:SetColorTexture(LOOK.blue[1], LOOK.blue[2], LOOK.blue[3], 0.35)
+	ns.JournalPaint(fresh, LOOK.blue, 0.35)
 	fresh:SetHeight(BAR_HEIGHT)
 	local text = ns.JournalText(widget, ns.JournalFonts().small, LOOK.ink)
 	text:SetPoint("TOPLEFT", 0, -(BAR_HEIGHT + 4))
@@ -696,7 +763,7 @@ function makers.emblem(parent)
 		plate:Show()
 		local list = {}
 		for i = 1, mark.stars do
-			list[i] = { text = ns.L.PRESTIGE_STAR, inked = true }
+			list[i] = { text = ns.L.STAR, inked = true }
 		end
 		stars:ClearAllPoints()
 		stars:SetPoint("LEFT", plate, "RIGHT", 6, 0)
@@ -712,13 +779,14 @@ end
 local BUTTON_HEIGHT, BUTTON_PAD = 24, 12
 
 ---@class LedgerButtonWidget: LedgerJournalWidget
----@field face Button -- the button itself, sized to its words; the widget spans the page
+---@field face LedgerJournalClickable -- the button itself, sized to its words; the widget spans the page
 
 -- A button (the Angler page's Prestige, LED-R146): its words in gilt on a red face with a gilt edge, as variant E's
 -- `.btn`, sized to them; clicking the face calls the block's `action`.
 function makers.button(parent)
 	local widget = newWidget(parent) --[[@as LedgerButtonWidget]]
-	local face = CreateFrame("Button", nil, widget)
+	local face = CreateFrame("Button", nil, widget) --[[@as LedgerJournalClickable]]
+	ns.JournalClickable(face)
 	face:SetPoint("TOPLEFT")
 	face:SetHeight(BUTTON_HEIGHT)
 	ns.JournalSolid(face, LOOK.gilt, "BACKGROUND")
@@ -730,14 +798,8 @@ function makers.button(parent)
 	text:SetJustifyH("CENTER")
 	widget.label = text
 	widget.face = face
-	local action
-	face:SetScript("OnClick", function()
-		if action then
-			action()
-		end
-	end)
 	function widget.Fill(_, block)
-		action = block.action
+		face.action = block.action
 		text:SetText(block.text)
 		face:SetWidth(text:GetStringWidth() + 2 * BUTTON_PAD)
 		return BUTTON_HEIGHT
@@ -780,7 +842,7 @@ function ns.NewJournalPage(parent, width)
 end
 
 --- Draws `blocks` down `page`, top to bottom, reusing its widgets and hiding the ones left over. `open` opens a
---- place in the Journal; `resetScroll` scrolls back to the top (a new spread, not a redraw of the same one).
+--- place in the Journal; `resetScroll` scrolls back to the top (the page's subject changed, LED-R129).
 ---@param page LedgerJournalPage
 ---@param blocks LedgerBlock[]
 ---@param open fun(place: LedgerJournalPlace)

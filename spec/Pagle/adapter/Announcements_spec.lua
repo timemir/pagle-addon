@@ -95,7 +95,7 @@ describe("Announcement frames", function()
 	)
 
 	it(
-		"show a banner in the centre for 4 s, then the toasts that waited, the next reading +1 more (ANN-R20)",
+		"show a banner in the centre for 4 s while the toasts keep their turn, the next reading +1 more (ANN-R20)",
 		function()
 			local loaded, M = loadCore()
 			raise(
@@ -106,20 +106,43 @@ describe("Announcement frames", function()
 				moment("toast", "Toast 3"),
 				moment("toast", "Toast 4")
 			)
+			loaded.client.advance(1)
 			raise(loaded, M, moment("banner", "Level 12", { text = "Angler Level" }))
 
-			loaded.client.advance(6)
-			local banner = frameOf(loaded, "banner")
-			assert.are.same({ true, false }, { banner.shown, showing(loaded, "toast") })
+			local banner, toast = frameOf(loaded, "banner"), frameOf(loaded, "toast")
+			assert.are.same({ true, true }, { banner.shown, toast.shown })
 			assert.are.same({ "Level 12", "Angler Level" }, { banner.title:GetText(), banner.text:GetText() })
 			loaded.client.advance(4)
-
-			local toast = frameOf(loaded, "toast")
 			assert.are.same({ false, true }, { banner.shown, toast.shown })
+			loaded.client.advance(1)
+
 			assert.are.same(
 				{ "Toast 2", true, "+1 more" },
 				{ toast.title:GetText(), toast.more.shown, toast.more:GetText() }
 			)
+		end
+	)
+
+	it(
+		"show a Cast's level-up banner and its New Species toast at the same time, each with its own stamps and"
+			.. " Coins, playing only the banner's sound (ANN-R11, ANN-R20, ANN-R23, ANN-R24)",
+		function()
+			local loaded, M = loadCore()
+
+			raise(
+				loaded,
+				M,
+				moment("toast", "New Species", { text = "Nightfin Snapper", cast = CAST, coins = 10 }),
+				moment("banner", "Level 12", { text = "Angler Level", cast = CAST, coins = 20 }),
+				moment("nod", "New in this zone", { cast = CAST, coins = 2 })
+			)
+
+			local banner, toast = frameOf(loaded, "banner"), frameOf(loaded, "toast")
+			assert.are.same({ true, true }, { banner.shown, toast.shown })
+			assert.are.same({ "Level 12", "New Species" }, { banner.title:GetText(), toast.title:GetText() })
+			assert.are.same({ "+20 " .. COIN }, stampsOf(banner))
+			assert.are.same({ "New in this zone", "+12 " .. COIN }, stampsOf(toast))
+			assert.are.same({ DRIFTWOOD .. "banner.ogg SFX" }, loaded.client.sounds)
 		end
 	)
 
@@ -222,6 +245,41 @@ describe("Announcement frames", function()
 				{ "30.0 cm", "34.2 cm", "+4.2 cm", "Pagle size" },
 				{ view.old:GetText(), view.value:GetText(), view.margin:GetText(), view.label:GetText() }
 			)
+		end
+	)
+
+	it(
+		"draw the old record's mark and the ruler's labels above the fill, on the toast and the Nod (ANN-R22)",
+		function()
+			-- The client's draw layers, back to front; regions in one layer draw by sublevel.
+			local LAYERS = { BACKGROUND = 1, BORDER = 2, ARTWORK = 3, OVERLAY = 4, HIGHLIGHT = 5 }
+			local function above(region, fill)
+				local layer, sublevel = region:GetDrawLayer()
+				local fillLayer, fillSublevel = fill:GetDrawLayer()
+				return LAYERS[layer] > LAYERS[fillLayer] or (layer == fillLayer and sublevel > fillSublevel)
+			end
+			local loaded, M = loadCore()
+			local ruler = { old = 1, new = 2, unit = "lb", label = "w" }
+			raise(loaded, M, moment("toast", "Size record", { ruler = ruler }))
+			loaded.client.advance(6)
+			for _ = 1, 4 do
+				raise(loaded, M, moment("toast", "Interruption"))
+				loaded.client.advance(6)
+			end
+			raise(loaded, M, moment("toast.low", "Size record", { ruler = ruler })) -- the 5th: a Nod (ANN-R31)
+
+			local drawn = {}
+			for _, form in ipairs({ "toast", "nod" }) do
+				local view = frameOf(loaded, form).ruler
+				drawn[form] = {
+					mark = above(view.mark, view.fill),
+					old = above(view.old, view.fill),
+					margin = above(view.margin, view.fill),
+					fillOverTrack = above(view.fill, view.track),
+				}
+			end
+			local all = { mark = true, old = true, margin = true, fillOverTrack = true }
+			assert.are.same({ toast = all, nod = all }, drawn)
 		end
 	)
 
@@ -347,5 +405,68 @@ describe("Announcement sounds on the client", function()
 
 		assert.is_true(showing(loaded, "banner"))
 		assert.are.same({}, loaded.client.sounds)
+	end)
+end)
+
+describe("The catch Nod on the client", function()
+	-- Core as loadCore makes it, with Oily Blackmouth's name cached and the Angler's unit in cm.
+	local function catching()
+		local loaded, M, summarized = loadCore()
+		loaded.client.itemNames[6358] = "Oily Blackmouth"
+		loaded.ns.db.profile.lengthUnit = "cm"
+		return loaded, M, summarized
+	end
+
+	it(
+		'draws an ordinary Catch as a silent Nod, "{item name} · {band} · {length}", for 3 s, never summarized'
+			.. " (ANN-R13, ANN-R20, ANN-R25)",
+		function()
+			local loaded, _, summarized = catching()
+
+			catchAndFlush(loaded)
+
+			assert.is_true(showing(loaded, "nod"))
+			local frame = frameOf(loaded, "nod") --[[@as table]]
+			assert.matches("^Oily Blackmouth · %a+ · %d+%.%d cm$", frame.title:GetText())
+			assert.are.same({}, stampsOf(frame))
+			assert.are.same({}, loaded.client.sounds)
+			assert.are.same({}, summarized)
+			loaded.client.advance(3)
+			assert.is_false(showing(loaded, "nod"))
+		end
+	)
+
+	it("never counts toward the Interruption budget (ANN-R13, ANN-R30, ANN-R31)", function()
+		local loaded, M = catching()
+		loaded.ns.db.profile.announcements.budget.count = 1
+
+		catchAndFlush(loaded)
+		loaded.client.advance(3)
+		raise(loaded, M, moment("toast.low", "Size record"))
+
+		assert.is_true(showing(loaded, "toast"))
+	end)
+
+	it("is dropped, not held, in combat and in Cozy mode (ANN-R13, ANN-R35, ANN-R36, ANN-R40)", function()
+		local loaded = catching()
+		setCombat(loaded, true)
+		catchAndFlush(loaded)
+		setCombat(loaded, false)
+		loaded.client.advance(2)
+		assert.is_nil(frameOf(loaded, "nod"))
+
+		loaded.ns.db.profile.announcements.cozy = true
+		catchAndFlush(loaded)
+
+		assert.is_nil(frameOf(loaded, "nod"))
+	end)
+
+	it('shows nothing for an ordinary Catch with "Show every catch" off (ANN-R13, SET-R30)', function()
+		local loaded = catching()
+		loaded.ns.db.profile.announcements.everyCatch = false
+
+		catchAndFlush(loaded)
+
+		assert.is_nil(frameOf(loaded, "nod"))
 	end)
 end)

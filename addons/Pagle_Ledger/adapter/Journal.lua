@@ -27,23 +27,20 @@ local SEARCH_WIDTH = 220
 -- The spine's shadow: strips of fading shade at each page's inner edge.
 local SPINE_STRIPS, SPINE_STRIP_WIDTH = 6, 5
 
----@class LedgerJournalCrumbView: Button
+---@class LedgerJournalCrumbView: LedgerJournalClickable
 ---@field label FontString
 ---@field separator FontString?
 
----@class LedgerJournalFrame: Frame
+---@class LedgerJournalFrame: LedgerJournalCover
 ---@field close Button
 ---@field crumbs Frame                 -- the breadcrumbs' strip (LED-R125)
 ---@field crumbButtons LedgerJournalCrumbView[]
 ---@field search EditBox               -- the search box (LED-R148)
 ---@field searchDrop LedgerJournalSearchDrop -- its results (adapter/JournalSearch.lua)
----@field back Button                  -- "☚ back", under the left page (LED-R125)
+---@field back LedgerJournalCrumbView  -- "☚ back", under the left page (LED-R125)
 ---@field left LedgerJournalPage
 ---@field right LedgerJournalPage
 ---@field plate LedgerJournalPlate     -- the brass plate on the cover (LED-R149)
----@field leather Texture             -- the cover's tint, and its grain over it (LED-R112)
----@field grain Texture
----@field rules Texture[]             -- the gilt rules inside the leather's edge
 ---@field papers Texture[]            -- each page's paper tint, then each page's paper texture, and the search box's
 ---@field paperGrains Texture[]
 
@@ -56,21 +53,21 @@ local SPINE_STRIPS, SPINE_STRIP_WIDTH = 6, 5
 ---@field router LedgerJournalRouter
 ---@field frame LedgerJournalFrame?
 ---@field pages LedgerJournalPages?
----@field plate string?                -- the brass plate's words; nil while the projection updates (LED-R149)
+---@field plate string?                -- the brass plate's words as last read; nil until first read (LED-R149)
 ---@field binding string?             -- the binding it was last drawn in (LED-R112)
 ---@field private redrawQueued boolean
----@field private drawnPlace LedgerJournalPlace?
+---@field private drawnSubjects { left: string?, right: string? }? -- each page's subject as last drawn (LED-R129)
 local Journal = {}
 Journal.__index = Journal
 
 --- The Journal, on Home until it is first left (LED-R120): a login or `/reload` starts it afresh.
 ns.journal = setmetatable({ router = ns.NewJournalRouter(ns.journalSpreads), redrawQueued = false }, Journal)
 
--- What the spreads read now (LED-R122, LED-R123): nothing of the state while the projection is updating.
+--- What the spreads, and the search box, read now (LED-R122, LED-R123, LED-R148): nothing of the state while the
+--- projection is updating.
 ---@return LedgerJournalContext
-local function readContext()
-	local projection = ns.projection
-	local state = projection and not projection:IsUpdating() and projection:GetState() --[[@as LedgerState?]]
+function Journal:Context() -- luacheck: no self
+	local state = ns.StateNow()
 	if not state then
 		return { updating = true, now = GetServerTime(), formatNumber = BreakUpLargeNumbers, text = ns.journalText }
 	end
@@ -87,66 +84,26 @@ local function readContext()
 		getArea = Pagle.GetArea,
 		angler = Pagle.GetAngler(),
 		openFieldReport = Pagle.OpenFieldReport,
-		sizeText = function(size)
-			return ns.SizeText(size, Pagle.SIZE_BANDS, Pagle.FormatLength)
-		end,
+		sizeText = ns.ClientSizeText,
 		-- The Angler page's M4 parts (LED-R146): the crest, Prestige, the title pick and the bindings.
 		crest = ns.CrestIcon(),
 		canPrestige = ns.CanPrestige(),
 		askPrestige = ns.AskPrestige,
 		pickTitle = ns.PickActiveTitle,
-		isOwned = Pagle.IsOwned,
-		getEquipped = Pagle.GetEquipped,
-		setEquipped = Pagle.SetEquipped,
-		openShop = Pagle.OpenShop,
+		goods = {
+			isOwned = Pagle.IsOwned,
+			getEquipped = Pagle.GetEquipped,
+			setEquipped = Pagle.SetEquipped,
+			openShop = Pagle.OpenShop,
+		},
 	}
-end
-
---- What the spreads, and the search box, read now (LED-R122, LED-R123, LED-R148).
----@return LedgerJournalContext
-function Journal.Context()
-	return readContext()
-end
-
--- A thin rule along one edge of `frame`, `inset` in from it, in the tint the binding gives it at each draw.
----@param frame Frame
----@param from FramePoint
----@param to FramePoint
----@param x number
----@param y number
----@param vertical boolean
----@return Texture
-local function rule(frame, from, to, x, y, vertical)
-	local line = frame:CreateTexture(nil, "BORDER")
-	line:SetPoint(from, x, y)
-	line:SetPoint(to, vertical and x or -x, vertical and -y or y)
-	if vertical then
-		line:SetWidth(1)
-	else
-		line:SetHeight(1)
-	end
-	return line
 end
 
 -- The leather cover: its tint and grain, the dark outline and the gilt rule inside its edge. The binding tints them
 -- at each draw (tint).
 ---@param frame LedgerJournalFrame
 local function drawLeather(frame)
-	ns.JournalSolid(frame, LOOK.leatherEdge, "BACKGROUND")
-	frame.leather = ns.JournalSolid(frame, LOOK.leather, "BACKGROUND")
-	frame.leather:SetPoint("TOPLEFT", 2, -2)
-	frame.leather:SetPoint("BOTTOMRIGHT", -2, 2)
-	frame.grain = frame:CreateTexture(nil, "BORDER")
-	frame.grain:SetTexture(ns.JOURNAL_TEXTURES.leather)
-	frame.grain:SetAlpha(0.5)
-	frame.grain:SetPoint("TOPLEFT", 2, -2)
-	frame.grain:SetPoint("BOTTOMRIGHT", -2, 2)
-	frame.rules = {
-		rule(frame, "TOPLEFT", "TOPRIGHT", 5, -5, false),
-		rule(frame, "BOTTOMLEFT", "BOTTOMRIGHT", 5, 5, false),
-		rule(frame, "TOPLEFT", "BOTTOMLEFT", 5, -5, true),
-		rule(frame, "TOPRIGHT", "BOTTOMRIGHT", -5, -5, true),
-	}
+	ns.DrawJournalCover(frame, 2, 5)
 	frame.papers, frame.paperGrains = {}, {}
 end
 
@@ -168,7 +125,7 @@ local function drawPaper(frame, side)
 	local edge = side == "left" and "RIGHT" or "LEFT"
 	for i = 1, SPINE_STRIPS do
 		local strip = paper:CreateTexture(nil, "ARTWORK")
-		strip:SetColorTexture(LOOK.spine[1], LOOK.spine[2], LOOK.spine[3], 0.4 * (SPINE_STRIPS - i + 1) / SPINE_STRIPS)
+		ns.JournalPaint(strip, LOOK.spine, 0.4 * (SPINE_STRIPS - i + 1) / SPINE_STRIPS)
 		strip:SetWidth(SPINE_STRIP_WIDTH)
 		local x = (i - 1) * SPINE_STRIP_WIDTH * (side == "left" and -1 or 1)
 		strip:SetPoint("TOP" .. edge, x, 0)
@@ -188,13 +145,18 @@ local function pageBody(paper, bottom)
 	return page
 end
 
--- A link on the book: text in `font` and `color` on a button sized to it.
+-- A link on the book: text in `font` and `color` on a button sized to it, opening its place in `journal`.
+---@param journal LedgerJournal
 ---@param parent Frame
 ---@param font Font
 ---@param color number[]
 ---@return LedgerJournalCrumbView
-local function textButton(parent, font, color)
+local function textButton(journal, parent, font, color)
 	local button = CreateFrame("Button", nil, parent) --[[@as LedgerJournalCrumbView]]
+	ns.JournalClickable(button)
+	function button.open(place)
+		journal:OpenPlace(place)
+	end
 	button.label = ns.JournalText(button, font, color)
 	button.label:SetPoint("LEFT")
 	return button
@@ -237,7 +199,7 @@ local function build(journal)
 	frame.search:SetPoint("TOPRIGHT", -(MARGIN + 30), -9)
 	frame.search:SetAutoFocus(false)
 	frame.search:SetFontObject(fonts.text)
-	frame.search:SetTextColor(LOOK.ink[1], LOOK.ink[2], LOOK.ink[3])
+	frame.search:SetTextColor(unpack(LOOK.ink))
 	frame.search:SetTextInsets(8, 8, 0, 0)
 	frame.papers[#frame.papers + 1] = ns.JournalSolid(frame.search, LOOK.paper, "BACKGROUND")
 	frame.search:SetScript("OnEscapePressed", function(self)
@@ -245,15 +207,9 @@ local function build(journal)
 	end)
 	frame.searchDrop = ns.AttachJournalSearch(journal, frame.search)
 
-	local back = textButton(frame, fonts.text, LOOK.red)
+	local back = textButton(journal, frame, fonts.text, LOOK.red)
 	back:SetPoint("BOTTOMLEFT", MARGIN + 16, MARGIN + 8)
 	setButtonText(back, L.JOURNAL_BACK)
-	back:SetScript("OnClick", function()
-		local place = journal.pages and journal.pages.back
-		if place then
-			journal:Open(place.id, place.args)
-		end
-	end)
 	frame.back = back
 
 	-- The brass plate on the cover's lower corner, hanging over its edge as variant E's does (LED-R149), below the
@@ -284,10 +240,11 @@ local function build(journal)
 end
 
 -- Crumb `i` of the strip, made on first use: its gilt label and, after the first, the ❧ before it.
----@param frame LedgerJournalFrame
+---@param journal LedgerJournal
 ---@param i integer
 ---@return LedgerJournalCrumbView
-local function crumbAt(frame, i)
+local function crumbAt(journal, i)
+	local frame = journal.frame --[[@as LedgerJournalFrame]]
 	local crumb = frame.crumbButtons[i]
 	if not crumb then
 		local separator
@@ -295,7 +252,7 @@ local function crumbAt(frame, i)
 			separator = ns.JournalText(frame.crumbs, ns.JournalFonts().crumb, LOOK.giltRule)
 			separator:SetText(L.JOURNAL_CRUMB_SEPARATOR)
 		end
-		crumb = textButton(frame.crumbs, ns.JournalFonts().crumb, LOOK.gilt)
+		crumb = textButton(journal, frame.crumbs, ns.JournalFonts().crumb, LOOK.gilt)
 		crumb.separator = separator
 		frame.crumbButtons[i] = crumb
 	end
@@ -307,21 +264,15 @@ end
 ---@param frame LedgerJournalFrame
 ---@param look LedgerBindingLook
 local function tint(frame, look)
-	local leather, rules, paper = look.leather, look.rule, look.paper
-	frame.leather:SetColorTexture(leather[1], leather[2], leather[3], 1)
-	frame.grain:SetVertexColor(leather[1], leather[2], leather[3])
-	for _, line in ipairs(frame.rules) do
-		line:SetColorTexture(rules[1], rules[2], rules[3], 1)
-	end
+	ns.TintJournalCover(frame, look, look.rule)
 	for _, texture in ipairs(frame.papers) do
-		texture:SetColorTexture(paper[1], paper[2], paper[3], 1)
+		ns.JournalPaint(texture, look.paper)
 	end
 	for _, texture in ipairs(frame.paperGrains) do
-		texture:SetVertexColor(paper[1], paper[2], paper[3])
+		texture:SetVertexColor(unpack(look.paper))
 	end
-	local plate, words = look.plate, look.plateText
-	frame.plate.brass:SetColorTexture(plate[1], plate[2], plate[3], 1)
-	frame.plate.label:SetTextColor(words[1], words[2], words[3])
+	ns.JournalPaint(frame.plate.brass, look.plate)
+	frame.plate.label:SetTextColor(unpack(look.plateText))
 end
 
 -- Lays the crumbs out along the strip in the binding's gilt, each opening its level (LED-R125, LED-R110).
@@ -332,11 +283,11 @@ local function drawCrumbs(journal, crumbs, look)
 	local frame = journal.frame --[[@as LedgerJournalFrame]]
 	local x = 0
 	for i, data in ipairs(crumbs) do
-		local crumb = crumbAt(frame, i)
-		crumb.label:SetTextColor(look.gilt[1], look.gilt[2], look.gilt[3])
+		local crumb = crumbAt(journal, i)
+		crumb.label:SetTextColor(unpack(look.gilt))
 		local separator = crumb.separator
 		if separator then
-			separator:SetTextColor(look.rule[1], look.rule[2], look.rule[3])
+			separator:SetTextColor(unpack(look.rule))
 			separator:ClearAllPoints()
 			separator:SetPoint("LEFT", x + 6, 0)
 			separator:Show()
@@ -345,9 +296,7 @@ local function drawCrumbs(journal, crumbs, look)
 		local width = setButtonText(crumb, data.label)
 		crumb:ClearAllPoints()
 		crumb:SetPoint("LEFT", x, 0)
-		crumb:SetScript("OnClick", function()
-			journal:Open(data.place.id, data.place.args)
-		end)
+		crumb.place = data.place
 		crumb:Show()
 		x = x + width
 	end
@@ -396,6 +345,13 @@ function Journal:Open(id, args)
 	return true
 end
 
+--- Opens `place`: its spread with its args (LED-R125). Every link, crumb, tile and search result opens through it.
+---@param place LedgerJournalPlace
+---@return boolean opened
+function Journal:OpenPlace(place)
+	return self:Open(place.id, place.args)
+end
+
 --- Draws both pages, the crumbs, the search box and the back link from the router now, in the equipped binding, if
 --- the book is open (LED-R122, LED-R125, LED-R112).
 function Journal:Draw()
@@ -406,26 +362,31 @@ function Journal:Draw()
 	self.binding = Pagle.GetEquipped(ns.BINDING_SLOT)
 	local look = ns.BindingLook(self.binding)
 	tint(frame, look)
-	local context = readContext()
+	local context = self:Context()
 	local pages = self.router:Pages(context)
 	self.pages = pages
-	-- The brass plate shows on every spread; while the projection updates there is nothing yet to read (LED-R122).
-	self.plate = not pages.updating and ns.BrassPlate(context --[[@as LedgerHomeContext]]) or nil
+	-- The brass plate always shows (LED-R149): LED-R122 hides only the pages' contents, so while the projection updates
+	-- it keeps the words last read. Only an update before anything was read (the login rebuild) leaves it hidden.
+	if not pages.updating then
+		self.plate = ns.BrassPlate(context --[[@as LedgerSpreadContext]])
+	end
 	frame.plate.label:SetText(self.plate or "")
 	frame.plate:SetSize(frame.plate.label:GetStringWidth() + 20, 22)
 	frame.plate:SetShown(self.plate ~= nil)
-	local place = self.router:Place()
-	local moved = place ~= self.drawnPlace
-	self.drawnPlace = place
+	-- A page goes back to the top only when its subject changes (LED-R129); while updating it keeps its scroll.
+	local drawn = self.drawnSubjects or {}
+	local subjects = pages.subjects or drawn
+	self.drawnSubjects = subjects
 	frame.crumbs:SetShown(not pages.updating)
 	frame.search:SetShown(not pages.updating)
+	frame.back.place = pages.back
 	frame.back:SetShown(pages.back ~= nil)
 	drawCrumbs(self, pages.crumbs or {}, look)
 	local function open(target)
-		self:Open(target.id, target.args)
+		self:OpenPlace(target)
 	end
-	ns.DrawJournalPage(frame.left, pages.left, open, moved)
-	ns.DrawJournalPage(frame.right, pages.right, open, moved)
+	ns.DrawJournalPage(frame.left, pages.left, open, subjects.left ~= drawn.left)
+	ns.DrawJournalPage(frame.right, pages.right, open, subjects.right ~= drawn.right)
 end
 
 --- A live entry was applied (LED-R123): the open spread redraws on the next frame, once however many arrive in it,
@@ -453,22 +414,26 @@ function ns.ToggleJournal()
 end
 
 --- `def` with the Journal's redraws added (LED-R122, LED-R123): after each live entry, on the next frame, and as the
---- projection's catch-up or rebuild finishes, after its own `done`.
+--- projection's catch-up or rebuild finishes, after its own `done`. A copy: `def` itself is left as it was.
 ---@param def PagleProjectionDef
 ---@return PagleProjectionDef
 function ns.WithJournalRedraws(def)
 	local apply, done = def.apply, def.done
-	def.apply = function(state, record, mode)
+	local wrapped = {}
+	for key, value in pairs(def) do
+		wrapped[key] = value
+	end
+	wrapped.apply = function(state, record, mode)
 		apply(state, record, mode)
 		if mode == "live" then
 			ns.journal:LiveApplied()
 		end
 	end
-	def.done = function(state, info)
+	wrapped.done = function(state, info)
 		if done then
 			done(state, info)
 		end
 		ns.journal:Draw()
 	end
-	return def
+	return wrapped
 end

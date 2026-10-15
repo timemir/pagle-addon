@@ -32,7 +32,7 @@ describe("the Ledger's projection def", function()
 			ReportCoinsEarned = note("ReportCoinsEarned"),
 			SetSummaryLine = note("SetSummaryLine"),
 			ItemName = function() end,
-			ZoneName = function() end,
+			AreaName = function() end,
 			RaiseWriteUp = note("RaiseWriteUp"),
 			LogId = function() end,
 			FormatNumber = tostring,

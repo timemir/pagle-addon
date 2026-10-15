@@ -13,16 +13,6 @@ local function statesOf(core)
 	return states
 end
 
--- Shows the Settings root and returns the texts and the shown buttons of its status list (SET-R11).
-local function statusList(loaded)
-	local settings = loaded.client.settings
-	for _, row in ipairs(settings.show(settings.category("Pagle"))) do
-		if row.initializer.searchTags[1] == "MODULES" then
-			return settings.textsOf(row.frame), settings.buttonsOf(row.frame)
-		end
-	end
-end
-
 -- Clicks Pagle in the Addon Compartment and returns the menu Core opens on the next frame (CORE-R50).
 local function compartmentMenu(loaded)
 	local opened = #loaded.client.menus
@@ -80,12 +70,12 @@ describe("Pagle_Stats with Core", function()
 		local loaded = loadAddon("Pagle_Stats", FOREVER_GLOBALS)
 		loaded.client.fire("PLAYER_LOGIN")
 
-		local texts, buttons = statusList(loaded)
+		local texts, buttons = loaded.client.settings.statusList()
 
 		-- The roster in CORE-R1 order: the Ledger's and Hunts' rows (not installed here, with no button) come first.
 		local at = 1
 		while texts[at] ~= "Stats" do
-			at = at + 1
+			at = assert(texts[at + 1] and at + 1, "no Stats row in the status list")
 		end
 		assert.are.same({ "Stats", "@project-version@", "On", "Open Stats" }, { unpack(texts, at, at + 3) })
 		assert.are.equal(1, #buttons)
@@ -125,7 +115,7 @@ describe("Pagle_Stats with Core", function()
 			loaded.env.SlashCmdList.PAGLE("stats")
 			loaded.env.SlashCmdList.PAGLE("Stats anything at all")
 			compartmentMenu(loaded).click("Stats")
-			local _, buttons = statusList(loaded)
+			local _, buttons = loaded.client.settings.statusList()
 			buttons[1]:Click()
 
 			assert.are.equal(4, toggles.n)
@@ -155,7 +145,7 @@ describe("Pagle_Stats with Core", function()
 			seen[#seen + 1] = shown()
 			compartmentMenu(loaded).click("Stats")
 			seen[#seen + 1] = shown()
-			local _, buttons = statusList(loaded)
+			local _, buttons = loaded.client.settings.statusList()
 			buttons[1]:Click()
 			seen[#seen + 1] = shown()
 

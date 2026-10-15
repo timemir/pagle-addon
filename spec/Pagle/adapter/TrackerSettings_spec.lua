@@ -69,13 +69,24 @@ local function rowNamed(rows, label)
 	error("no row " .. label)
 end
 
--- The values of a dropdown row's options, read as the dropdown opens.
-local function optionValues(row)
-	local values = {}
-	for i, option in ipairs(row.initializer:GetOptions()()) do
-		values[i] = option.value .. "=" .. option.label
+-- A slot dropdown row's dropdown (the fake's DropdownButton, spec/support/widgets.lua).
+local function dropdownOf(row)
+	for _, child in ipairs(row.frame.children) do
+		if child.kind == "DropdownButton" then
+			return child
+		end
 	end
-	return values
+	error("no dropdown on " .. row.initializer:GetName())
+end
+
+-- The values of a slot dropdown's choices, read as the dropdown opens.
+local function optionValues(row)
+	return dropdownOf(row):choices()
+end
+
+-- The texts a slot dropdown row shows under its label and dropdown: its note while shown.
+local function notes(row, settings)
+	return { select(3, unpack(settings.textsOf(row.frame))) }
 end
 
 local function showTrackers(loaded)
@@ -102,10 +113,13 @@ describe("The Trackers page's frame row", function()
 
 		local row = rowNamed(showTrackers(loaded), "Hunts tracker frame")
 
-		assert.are.equal("SettingsDropdownControlTemplate", row.initializer.template)
-		assert.are.equal("hunts.trackerframe.none", row.frame.value)
+		assert.are.equal("PagleSettingsSlotRowTemplate", row.initializer:GetTemplate())
+		assert.are.equal("hunts.trackerframe.none", dropdownOf(row).selected)
 		assert.are.same({ "hunts.trackerframe.none=None" }, optionValues(row))
-		assert.are.same({ "1 more in the Curio Shop" }, loaded.client.settings.textsOf(row.frame))
+		assert.are.same({ "1 more in the Curio Shop" }, notes(row, loaded.client.settings))
+		-- Its Defaults setting (SET-R60): the slot's default good.
+		local setting = loaded.client.settings.variables["Pagle_Core_trackers_hunts.trackerframe"]
+		assert.are.equal("hunts.trackerframe.none", setting:GetDefaultValue())
 		loaded.ns.goods:SetPurchased({ ["hunts.trackerframe.inkwash"] = true })
 		assert.are.same({ "hunts.trackerframe.none=None", "hunts.trackerframe.inkwash=Ink wash" }, optionValues(row))
 	end)
@@ -134,12 +148,15 @@ describe("The Trackers page's frame row", function()
 			loaded.ns.goods:SetPurchased({ ["hunts.trackerframe.inkwash"] = true })
 			local row = rowNamed(showTrackers(loaded), "Hunts tracker frame")
 
-			row.initializer:GetSetting():SetValue("hunts.trackerframe.inkwash")
+			dropdownOf(row):pick("Ink wash")
 
 			assert.are.equal("hunts.trackerframe.inkwash", loaded.env.Pagle.GetEquipped("hunts.trackerframe"))
-			assert.are.equal("Ink wash", row.frame.valueLabel)
+			assert.are.equal("Ink wash", dropdownOf(row).text)
 			local look = rowNamed(loaded.client.settings.show(page(loaded, "Look and Feel")), "Hunts tracker frame")
-			assert.are.same({ "hunts.trackerframe.inkwash", "Ink wash" }, { look.frame.value, look.frame.valueLabel })
+			assert.are.same(
+				{ "hunts.trackerframe.inkwash", "Ink wash" },
+				{ dropdownOf(look).selected, dropdownOf(look).text }
+			)
 		end
 	)
 
@@ -152,7 +169,10 @@ describe("The Trackers page's frame row", function()
 
 		loaded.env.Pagle.SetEquipped("hunts.trackerframe", "hunts.trackerframe.inkwash")
 
-		assert.are.same({ "hunts.trackerframe.inkwash", "Ink wash" }, { row.frame.value, row.frame.valueLabel })
+		assert.are.same(
+			{ "hunts.trackerframe.inkwash", "Ink wash" },
+			{ dropdownOf(row).selected, dropdownOf(row).text }
+		)
 	end)
 
 	it("isn't added for a Module with no Trackers slot (SET-R44)", function()
@@ -198,7 +218,7 @@ describe("The Trackers page's Defaults", function()
 		enterWorld(loaded)
 		loaded.ns.goods:SetPurchased({ ["hunts.trackerframe.inkwash"] = true, ["core.crest.crest1"] = true })
 		loaded.env.Pagle.SetEquipped("core.crest", "core.crest.crest1")
-		loaded.client.shiftDown = true
+		loaded.client.keysDown.SHIFT = true
 		frame:GetScript("OnDragStart")(frame, "LeftButton")
 		loaded.ns.dockFrame.screenRight, loaded.ns.dockFrame.screenTop = 812, 640
 		frame:GetScript("OnDragStop")(frame)

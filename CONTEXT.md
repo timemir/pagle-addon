@@ -16,7 +16,7 @@ _Avoid_: plugin, sub-addon, feature
 
 **Ledger**:
 The Module for the player's angler identity: the fish journal, levels, mastery and personal records.
-_Avoid_: Angler's Ledger, journal module, progression module
+_Avoid_: Angler's Ledger, journal module, progression module (one exception: the Angler page's bookplate is printed "The Angler's Ledger" as an in-world title, LED-R146; it never names the Module)
 
 **Fish Journal**:
 The Ledger's book, where the Angler reads their progress: the waters they have fished, each Species' page, the collections, Legends and their titles. Fish not yet caught stay nameless in it.
@@ -69,7 +69,7 @@ One character's fishing skill as Pagle saw it at a moment, recorded the first ti
 _Avoid_: skill snapshot, skill event
 
 **Session**:
-A run of the Angler's Casts with no break of 15 minutes or more, across characters and zones. It is cut from the Catch log after the fact, never stored.
+A run of the Angler's Casts with no break of 5 minutes or more, across characters and zones. It is cut from the Catch log after the fact, never stored.
 _Avoid_: Fishing stretch (QoL's live span), trip, outing
 
 **Species**:
@@ -153,11 +153,11 @@ _Avoid_: Skill Milestone (which is about fishing skill), catch achievement
 ### Feedback
 
 **Announcement**:
-Pagle telling the player, in the moment, about something they just earned. One Cast produces at most one Announcement; every moment it earned rides on it as a stamp. By weight it is a nod, a toast, a banner (level and rank news) or a splash (a Legend).
+Pagle telling the player, in the moment, about something they just earned. One Cast produces at most two Announcements, shown at the same time: a big one for its banners and splash, and a catch one for its toasts and nods; the other moments on each side ride on it as stamps. By weight it is a nod, a toast, a banner (level and rank news) or a splash (a Legend).
 _Avoid_: notification, alert, popup
 
 **Nod**:
-The quietest Announcement: one silent line, for minor moments or toasts stepped down by the Interruption budget.
+The quietest Announcement: one silent line, for minor moments, toasts stepped down by the Interruption budget, and the **catch Nod** Core shows for an ordinary Catch ("Mud Snapper · Typical · 34.2 cm") when nothing bigger came of it.
 _Avoid_: mini toast, whisper
 
 **Interruption budget**:

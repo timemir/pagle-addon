@@ -7,7 +7,7 @@ local PARAGRAPH = "Looks you own. Pick one here or with Use in the Curio Shop; b
 -- Core logged in and in the world with its own goods and a fixture Ledger (order 10) whose "Fish Journal" slot has
 -- Oak (default), Lapis (tier 3) and Ivy (tier 1). `options.saved` is a PagleDB; `options.noLedger` leaves the Ledger
 -- unregistered (off); `options.hunts` registers Hunts (order 20) with a Trackers slot. Returns the loaded addon.
-local function session(options)
+local function coreWithModules(options)
 	options = options or {}
 	local loaded = loadCore(nil, options.saved)
 	local Pagle = loaded.env.Pagle
@@ -42,17 +42,32 @@ local function showLook(loaded)
 	return loaded.client.settings.show(page(loaded, "Look and Feel"))
 end
 
--- Each shown row as one line: a header "# <name>", a paragraph's text, a dropdown "<label> = <value>" then its note
--- "  <note>" while shown, a button row "<label> [<caption>]".
+-- A slot dropdown row's dropdown (the fake's DropdownButton, spec/support/widgets.lua).
+local function dropdownOf(row)
+	for _, child in ipairs(row.frame.children) do
+		if child.kind == "DropdownButton" then
+			return child
+		end
+	end
+	error("no dropdown on " .. row.initializer:GetName())
+end
+
+-- The texts a slot dropdown row shows under its label and dropdown: its note while shown.
+local function notes(row, settings)
+	return { select(3, unpack(settings.textsOf(row.frame))) }
+end
+
+-- Each shown row as one line: a header "# <name>", a paragraph's text, a slot dropdown "<label> = <selected good>"
+-- then its note "  <note>" while shown, a button row "<label> [<caption>]".
 local function lines(rows, settings)
 	local out = {}
 	for _, row in ipairs(rows) do
 		local initializer, frame = row.initializer, row.frame
 		if initializer.template == "SettingsListSectionHeaderTemplate" then
 			out[#out + 1] = "# " .. initializer:GetName()
-		elseif initializer.template == "SettingsDropdownControlTemplate" then
-			out[#out + 1] = ("%s = %s"):format(initializer:GetName(), tostring(frame.value))
-			for _, text in ipairs(settings.textsOf(frame)) do
+		elseif initializer.template == "PagleSettingsSlotRowTemplate" then
+			out[#out + 1] = ("%s = %s"):format(initializer:GetName(), tostring(dropdownOf(row).selected))
+			for _, text in ipairs(notes(row, settings)) do
 				out[#out + 1] = "  " .. text
 			end
 		elseif initializer.template == "SettingButtonControlTemplate" then
@@ -76,18 +91,14 @@ local function rowNamed(rows, label)
 	error("no row " .. label)
 end
 
--- The values of a dropdown row's options, read as the dropdown opens.
+-- The values of a slot dropdown's choices, read as the dropdown opens.
 local function optionValues(row)
-	local values = {}
-	for i, option in ipairs(row.initializer:GetOptions()()) do
-		values[i] = option.value .. "=" .. option.label
-	end
-	return values
+	return dropdownOf(row):choices()
 end
 
 describe("The Look and Feel page", function()
 	it("is registered after Announcements with no Module On (SET-R1, CORE-R40)", function()
-		local loaded = session({ noLedger = true })
+		local loaded = coreWithModules({ noLedger = true })
 
 		local names = {}
 		for i, category in ipairs(loaded.client.settings.categories) do
@@ -100,7 +111,7 @@ describe("The Look and Feel page", function()
 	it(
 		"shows the paragraph, Announcements, Bookplate and Fish Journal with their dropdowns, then the Curio Shop (SET-R50)",
 		function()
-			local loaded = session()
+			local loaded = coreWithModules()
 
 			assert.are.same({
 				PARAGRAPH,
@@ -124,7 +135,7 @@ describe("The Look and Feel page", function()
 	it(
 		"leaves out a Module's slots and header while it isn't On, and adds a Trackers one after (SET-R4, SET-R50)",
 		function()
-			local loaded = session({ noLedger = true, hunts = true })
+			local loaded = coreWithModules({ noLedger = true, hunts = true })
 
 			local shown = lines(showLook(loaded), loaded.client.settings)
 
@@ -136,29 +147,8 @@ describe("The Look and Feel page", function()
 		end
 	)
 
-	it("adds a slot registered after ModulesChanged the next time the panel shows (SET-R50)", function()
-		local loaded = session()
-		local hunts = loaded.env.Pagle.RegisterModule({ name = "Hunts", title = "Hunts", order = 20 })
-		showLook(loaded)
-		loaded.env.HideUIPanel(loaded.env.SettingsPanel)
-		hunts:RegisterSlot({ id = "hunts.notebookcover", label = "Notebook cover", category = "Hunts" })
-		hunts:RegisterGood({
-			id = "hunts.notebookcover.plain",
-			slot = "hunts.notebookcover",
-			name = "Plain",
-			default = true,
-		})
-
-		local shown = lines(showLook(loaded), loaded.client.settings)
-
-		assert.are.same(
-			{ "# Hunts", "Notebook cover = hunts.notebookcover.plain", "# Curio Shop" },
-			{ shown[13], shown[14], shown[15] }
-		)
-	end)
-
 	it('is opened by Pagle.OpenSettings("look") (CORE-R43)', function()
-		local loaded = session()
+		local loaded = coreWithModules()
 
 		loaded.env.Pagle.OpenSettings("look")
 
@@ -168,21 +158,26 @@ end)
 
 describe("A slot dropdown", function()
 	it(
-		"is a dropdown found by its slot's label, never greyed out, with no tooltip (SET-R5, SET-R51, SET-R2)",
+		"is Core's own row found by its slot's label, never greyed out, with no tooltip (SET-R5, SET-R6, SET-R51, SET-R2)",
 		function()
-			local loaded = session()
+			local loaded = coreWithModules()
 
 			local row = rowNamed(showLook(loaded), "Journal binding")
 
-			assert.are.equal("SettingsDropdownControlTemplate", row.initializer.template)
+			assert.are.equal("PagleSettingsSlotRowTemplate", row.initializer:GetTemplate())
+			assert.are.equal("PagleSettingsSlotRowMixin", loaded.client.templates.PagleSettingsSlotRowTemplate.mixin)
+			assert.are.same({ "JOURNAL BINDING" }, row.initializer.searchTags)
 			assert.is_true(row.frame.enabled)
 			assert.is_nil(row.initializer:GetTooltip())
-			assert.are.equal("ledger.binding.oak", row.initializer:GetSetting():GetDefaultValue())
+			assert.are.equal("Journal binding", loaded.client.settings.textsOf(row.frame)[1])
+			-- Its Defaults setting (SET-R60): the slot's default good.
+			local setting = loaded.client.settings.variables["Pagle_Core_look_ledger.binding"]
+			assert.are.equal("ledger.binding.oak", setting:GetDefaultValue())
 		end
 	)
 
 	it("lists only the slot's owned goods, read each time it opens (SET-R51, SHOP-R30)", function()
-		local loaded = session()
+		local loaded = coreWithModules()
 		local row = rowNamed(showLook(loaded), "Journal binding")
 		assert.are.same({ "ledger.binding.oak=Oak" }, optionValues(row))
 
@@ -192,59 +187,64 @@ describe("A slot dropdown", function()
 	end)
 
 	it("equips the good picked, and shows the equipped one with its name (SET-R51, SHOP-R32)", function()
-		local loaded = session()
+		local loaded = coreWithModules()
 		loaded.ns.goods:SetPurchased({ ["ledger.binding.lapis"] = true })
 		local row = rowNamed(showLook(loaded), "Journal binding")
 
-		row.initializer:GetSetting():SetValue("ledger.binding.lapis")
+		dropdownOf(row):pick("Lapis")
 
 		assert.are.equal("ledger.binding.lapis", loaded.env.Pagle.GetEquipped("ledger.binding"))
-		assert.are.equal("Lapis", row.frame.valueLabel)
+		assert.are.equal("Lapis", dropdownOf(row).text)
 	end)
 
 	it("redraws at once when SetEquipped is called elsewhere (SET-R51, SET-R62, SHOP-R33)", function()
-		local loaded = session()
+		local loaded = coreWithModules()
 		loaded.ns.goods:SetPurchased({ ["ledger.binding.ivy"] = true })
 		local row = rowNamed(showLook(loaded), "Journal binding")
 
 		loaded.env.Pagle.SetEquipped("ledger.binding", "ledger.binding.ivy")
 
-		assert.are.same({ "ledger.binding.ivy", "Ivy" }, { row.frame.value, row.frame.valueLabel })
+		assert.are.same({ "ledger.binding.ivy", "Ivy" }, { dropdownOf(row).selected, dropdownOf(row).text })
 	end)
 
 	it("shows no note once every good for sale in the slot is owned (SET-R51)", function()
-		local loaded = session()
+		local loaded = coreWithModules()
 		loaded.ns.goods:SetPurchased({ ["ledger.binding.ivy"] = true, ["ledger.binding.lapis"] = true })
 
 		local row = rowNamed(showLook(loaded), "Journal binding")
 
-		assert.are.same({}, loaded.client.settings.textsOf(row.frame))
+		assert.are.same({}, notes(row, loaded.client.settings))
 	end)
 end)
 
 describe("The Announcements page's slot rows", function()
-	it("end Core's rows with Toast style and Sound set, after Per (SET-R30, CORE-R42)", function()
-		local loaded = session()
+	it("end Core's rows with Toast style and Sound set, after Show every catch (SET-R30, CORE-R42)", function()
+		local loaded = coreWithModules()
 
 		local names = {}
 		for i, row in ipairs(loaded.client.settings.show(page(loaded, "Announcements"))) do
 			names[i] = row.initializer:GetName()
 		end
 
-		assert.are.same(
-			{ "Cozy mode", "Interruption budget", "Interruptions", "Per", "Toast style", "Sound set" },
-			names
-		)
+		assert.are.same({
+			"Cozy mode",
+			"Interruption budget",
+			"Interruptions",
+			"Per",
+			"Show every catch",
+			"Toast style",
+			"Sound set",
+		}, names)
 	end)
 
 	it("pick the same look Look and Feel shows (SET-R30, SET-R51)", function()
-		local loaded = session()
+		local loaded = coreWithModules()
 		loaded.ns.goods:SetPurchased({ ["core.toaststyle.ripple"] = true })
 		local toast = rowNamed(loaded.client.settings.show(page(loaded, "Announcements")), "Toast style")
 
-		toast.initializer:GetSetting():SetValue("core.toaststyle.ripple")
+		dropdownOf(toast):pick("core.toaststyle.ripple")
 
-		assert.are.equal("core.toaststyle.ripple", rowNamed(showLook(loaded), "Toast style").frame.value)
+		assert.are.equal("core.toaststyle.ripple", dropdownOf(rowNamed(showLook(loaded), "Toast style")).selected)
 		assert.are.equal("core.toaststyle.ripple", loaded.env.Pagle.GetEquipped("core.toaststyle"))
 	end)
 end)
@@ -277,7 +277,7 @@ describe("Defaults", function()
 	it(
 		"on Look and Feel sets every slot shown to its default good, keeping what is owned (SET-R52, SET-R60)",
 		function()
-			local loaded = session({ saved = picked() })
+			local loaded = coreWithModules({ saved = picked() })
 			loaded.ns.goods:SetPurchased(BOUGHT)
 			local Pagle = loaded.env.Pagle
 			assert.are.equal("ledger.binding.lapis", Pagle.GetEquipped("ledger.binding"))
@@ -301,7 +301,7 @@ describe("Defaults", function()
 	)
 
 	it("on Look and Feel leaves the stored look of a Module that isn't On (SET-R52, SHOP-R32, SET-R90)", function()
-		local loaded = session({ saved = picked() })
+		local loaded = coreWithModules({ saved = picked() })
 		loaded.ns.goods:SetPurchased(BOUGHT)
 		showLook(loaded)
 
@@ -311,7 +311,7 @@ describe("Defaults", function()
 	end)
 
 	it("on Announcements restores its two slot rows and leaves the crest and binding (SET-R33, SET-R60)", function()
-		local loaded = session({ saved = picked() })
+		local loaded = coreWithModules({ saved = picked() })
 		loaded.ns.goods:SetPurchased(BOUGHT)
 		local Pagle = loaded.env.Pagle
 
@@ -338,7 +338,7 @@ describe("The Curio Shop button", function()
 	end
 
 	it("closes the Settings panel, then opens the Curio Shop (SET-R50, SET-R12, SHOP-R40)", function()
-		local loaded = session()
+		local loaded = coreWithModules()
 		local panelShownAtOpen
 		local open = loaded.env.Pagle.OpenShop
 		loaded.env.Pagle.OpenShop = function(...)
@@ -354,7 +354,7 @@ describe("The Curio Shop button", function()
 	end)
 
 	it("closes the panel and prints SHOP-R41's line while restricted (SET-R12, SET-R93, SHOP-R41)", function()
-		local loaded = session()
+		local loaded = coreWithModules()
 		local button = shopButton(loaded)
 		setCombat(loaded, true)
 

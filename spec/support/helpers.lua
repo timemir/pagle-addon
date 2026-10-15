@@ -49,6 +49,26 @@ function openedNames(loaded)
 	return names
 end
 
+--- A character record of PagleLog's `characters` (catch-log.md › Data): an Alliance character on the fake client's
+--- realm (4618), first and last seen at 1791700000. By default Ada (Player-4618-0A1B2C3D), a human warrior.
+---@param guid string?
+---@param name string?
+---@param classID integer?
+---@param raceID integer?
+---@return table
+function characterRecord(guid, name, classID, raceID)
+	return {
+		guid = guid or "Player-4618-0A1B2C3D",
+		name = name or "Ada",
+		classID = classID or 1,
+		raceID = raceID or 1,
+		faction = "Alliance",
+		realmID = 4618,
+		firstSeen = 1791700000,
+		lastSeen = 1791700000,
+	}
+end
+
 --- A PagleLog as SavedVariables hand it back (catch-log.md › Data), holding `entries`. Its characters are
 --- `characters`, or by default Ada (Player-4618-0A1B2C3D), first and last seen at 1791700000. Each call makes a
 --- fresh table, which Core may change.
@@ -60,18 +80,7 @@ function savedLog(entries, format, characters)
 	return {
 		format = format or 1,
 		logId = "3f9a2c1e7b0d4a65",
-		characters = characters or {
-			{
-				guid = "Player-4618-0A1B2C3D",
-				name = "Ada",
-				classID = 1,
-				raceID = 1,
-				faction = "Alliance",
-				realmID = 4618,
-				firstSeen = 1791700000,
-				lastSeen = 1791700000,
-			},
-		},
+		characters = characters or { characterRecord() },
 		entries = entries or {},
 	}
 end
@@ -101,32 +110,39 @@ FISHING = 7731
 --- The build entry the fake client's build matches, so login appends no B1.
 BUILD_ENTRY = ("B1|1|%d|0|70338|1.60.1"):format(SERVER_TIME - 5000)
 
---- Ada's caught Cast at server time `time`, as a PagleLog entry (savedLog's character 1): in Darkshore (148) at realm
---- 08:14, Fishing 86+25 with lure 263, catching one item. By default the item is Oily Blackmouth (6358) and the
---- subzone The Long Wash (453).
+--- A caught Cast at server time `time`, as a PagleLog entry: in Darkshore (148) at realm 08:14, Fishing 86+25 with
+--- lure 263, catching one item. By default the item is Oily Blackmouth (6358), the subzone The Long Wash (453), and
+--- the character savedLog's character 1 (Ada); `char` is another index into the log's characters.
 ---@param time integer
 ---@param itemID integer?
 ---@param subzone integer?
+---@param char integer?
 ---@return string
-function castEntry(time, itemID, subzone)
-	return ("C1|1|%d|0|c|494|1439|1|148|%d|86|25|263|||%dx1"):format(time, subzone or 453, itemID or 6358)
+function castEntry(time, itemID, subzone, char)
+	return ("C1|%d|%d|0|c|494|1439|1|148|%d|86|25|263|||%dx1"):format(char or 1, time, subzone or 453, itemID or 6358)
 end
 
---- Ada's Prestige to `rank` at server time `time`, as a PagleLog entry (LOG-R38).
+--- Ada's Prestige to `rank` at server time `time`, as a PagleLog entry (LOG-R38): tie `tie` (0) within its second
+--- (LOG-R12), and `char` another index into the log's characters.
 ---@param time integer
 ---@param rank integer
+---@param tie integer?
+---@param char integer?
 ---@return string
-function prestigeEntry(time, rank)
-	return ("P1|1|%d|0|%d"):format(time, rank)
+function prestigeEntry(time, rank, tie, char)
+	return ("P1|%d|%d|%d|%d"):format(char or 1, time, tie or 0, rank)
 end
 
---- Ada's purchase of `good` for `price` Coins at server time `time`, as a PagleLog entry (LOG-R39).
+--- Ada's purchase of `good` for `price` Coins at server time `time`, as a PagleLog entry (LOG-R39): tie `tie` (0)
+--- within its second (LOG-R12), and `char` another index into the log's characters.
 ---@param time integer
 ---@param good string
 ---@param price integer
+---@param tie integer?
+---@param char integer?
 ---@return string
-function purchaseEntry(time, good, price)
-	return ("U1|1|%d|0|%s|%d"):format(time, good, price)
+function purchaseEntry(time, good, price, tie, char)
+	return ("U1|%d|%d|%d|%s|%d"):format(char or 1, time, tie or 0, good, price)
 end
 
 --- `n` of Ada's Casts, at `first` + 1, + 2, … (default SERVER_TIME - 90000, long ended), then BUILD_ENTRY.
@@ -142,9 +158,48 @@ function history(n, first)
 	return entries
 end
 
+--- BUILD_ENTRY, then `n` of Ada's Casts in Darkshore (148, subzone 0) at `first` + 1, + 2, …, each catching an item
+--- no catalogue has, so it is Uncharted and makes an I row (REP-R10, REP-R20): `item` every time, or by default a new
+--- one each (9999, 9998, …).
+---@param n integer
+---@param first integer
+---@param item integer?
+---@return string[]
+function unchartedHistory(n, first, item)
+	local entries = { BUILD_ENTRY }
+	for i = 1, n do
+		entries[#entries + 1] = castEntry(first + i, item or (10000 - i), 0)
+	end
+	return entries
+end
+
+--- Sets every `confirmed`, `gateConfirmed` and `skillBaseConfirmed` in a generated catalogue table to false, as
+--- DATA-R56 has it before any observation.
+---@param data table
+local function unconfirmed(data)
+	local seen = {}
+	local function walk(node)
+		if seen[node] then
+			return
+		end
+		seen[node] = true
+		for key, value in pairs(node) do
+			if key == "confirmed" or key == "gateConfirmed" or key == "skillBaseConfirmed" then
+				node[key] = false
+			elseif type(value) == "table" then
+				walk(value)
+			end
+		end
+	end
+	walk(data)
+end
+
 --- Core on Forever over a saved log holding `entries` (or the PagleLog `entries` itself, when it has `format`) and
 --- PagleDB `saved`, if given, with the Ledger and Hunts installed. Its server time is SERVER_TIME plus the client's
 --- clock, so loaded.client.advance moves both.
+--- Its catalogue is the shipped one with nothing confirmed (DATA-R56), so an imported Field report confirming the
+--- fixture spot (Darkshore, The Long Wash, Oily Blackmouth) changes no spec. ADDON_LOADED, where Core builds its
+--- catalogue (LOG-R1), fires once that's done.
 ---@param entries table?
 ---@param saved table?
 ---@return LoadedAddon
@@ -158,9 +213,12 @@ function loadCore(entries, saved)
 			GetServerTime = function()
 				return SERVER_TIME + math.floor(clock and clock() or 0)
 			end,
-		})
+		}),
+		{ holdAddonLoaded = true }
 	)
 	clock = loaded.client.time
+	unconfirmed(loaded.ns.catalogue)
+	loaded.client.fire("ADDON_LOADED", "Pagle")
 	for _, name in ipairs({ "Ledger", "Hunts" }) do
 		loaded.client.addons["Pagle_" .. name] = { metadata = { ["X-Pagle-API"] = "1" } }
 	end
@@ -248,4 +306,285 @@ function readFile(path)
 	local text = file:read("*a")
 	file:close()
 	return text
+end
+
+-- The in-client textures the Ledger draws for the symbols its fonts lack (CORE-R9, #248), by the glyph ledger.md
+-- writes each as: a star, a blank star, a ticked and an empty box, a tick.
+local SYMBOLS = {
+	["★"] = "|TInterface\\TargetingFrame\\UI-RaidTargetingIcon_1:0|t",
+	["☆"] = "|TInterface\\TargetingFrame\\UI-RaidTargetingIcon_1:0:0:0:0:64:64:0:64:0:64:110:100:85|t",
+	["☑"] = "|TInterface\\Buttons\\UI-CheckBox-Check:0|t",
+	["☐"] = "|TInterface\\Buttons\\UI-CheckBox-Up:0|t",
+	["✓"] = "|TInterface\\Buttons\\UI-CheckBox-Check:0|t",
+}
+
+--- `text` as the Ledger draws it: each ★, ☆, ☑, ☐ and ✓ in it as the texture escape the Ledger draws instead
+--- (CORE-R9), so a spec can say "Catfish ★★☆" as ledger.md does.
+---@param text string
+---@return string
+function drawnSymbols(text)
+	return (text:gsub("\226[\152-\157][\128-\191]", SYMBOLS))
+end
+
+-- `fields` over `record`, key by key; returns `record`.
+---@param record table
+---@param fields table?
+---@return table
+local function over(record, fields)
+	for key, value in pairs(fields or {}) do
+		record[key] = value
+	end
+	return record
+end
+
+--- A catalogue item record (DATA-R76's items, LOG-R55): `category` with `legend`, `noise`, `removed` and `pool` all
+--- false, then `fields` over it.
+---@param category string
+---@param fields table?
+---@return table
+function itemRecord(category, fields)
+	return over({ category = category, legend = false, noise = false, removed = false, pool = false }, fields)
+end
+
+--- A fish item record of Species `species` (DATA-R19), then `fields` over it.
+---@param species integer
+---@param fields table?
+---@return table
+function fishRecord(species, fields)
+	return over(itemRecord("fish", { species = species }), fields)
+end
+
+--- An area record (DATA-R76's areas): under `parent` (0 for a zone), on continent 0, with data, its skill base
+--- unconfirmed and no catches, then `fields` over it.
+---@param parent integer
+---@param fields table?
+---@return table
+function areaRecord(parent, fields)
+	return over({ parent = parent, continent = 0, hasData = true, skillBaseConfirmed = false, catches = {} }, fields)
+end
+
+--- One entry of a zone's catches (LOG-R55, GetZoneCatches), confirmed: ungated, or gated by window `window` with its
+--- spec `gate` (DATA-R78), the gate confirmed too.
+---@param itemID integer
+---@param window string?
+---@param gate table?
+---@return table
+function catchEntry(itemID, window, gate)
+	return { itemID = itemID, confirmed = true, window = window, gate = gate, gateConfirmed = window and true or nil }
+end
+
+--- A night window's spec for fixtures (DATA-R78): 21:00 to 06:00 realm time, one range wrapping midnight. Not the
+--- generated `night` (data/forever/windows.toml); a spec that needs that reads it from the catalogue.
+NIGHT_WINDOW = { time = { { 1260, 360 } } }
+
+--- Core's GetItem over a spec's `items` (item ID -> record), as the Ledger's fold and world read it: it asserts that
+--- item 0, nothing caught, is never looked up (LED-R5).
+---@param items table<integer, table>
+---@return fun(itemID: integer): table?
+function itemLookup(items)
+	return function(itemID)
+		assert(itemID ~= 0, "item 0 is never looked up (LED-R5)")
+		return items[itemID]
+	end
+end
+
+--- Applies each of `records` through the Ledger's `fold` to `state` (a fresh fold.reset() if nil) in `mode` ("live"
+--- by default), in order; returns the state and every achievement earned, in order.
+---@param fold LedgerFold
+---@param records table[]
+---@param state LedgerState?
+---@param mode string?
+---@return LedgerState state
+---@return LedgerAchievement[] earned
+function applyLive(fold, records, state, mode)
+	state = state or fold.reset()
+	local earned = {}
+	for _, record in ipairs(records) do
+		fold.apply(state, record, mode or "live", earned)
+	end
+	return state, earned
+end
+
+--- A catalogue in the shape of ns.catalogue (DATA-R76), for fake.setCatalogue: every part empty and a fixed
+--- fingerprint, then `parts` (items, areas, windows, …) over it.
+---@param parts table?
+---@return table
+function catalogueWith(parts)
+	return over({
+		fingerprint = "0123456789abcdef",
+		items = {},
+		areas = {},
+		aliases = {},
+		pools = {},
+		windows = {},
+		events = {},
+		fishingSpells = {},
+		auras = {},
+	}, parts)
+end
+
+--- A caught Cast record as the Catch log hands one out (PagleCast, LOG-R42), from named fields, each optional:
+--- `time` (SERVER_TIME - 700), `char` (1), `zone` (148), `subzone` (0), `minute` (494, realm 08:14), `date` (none),
+--- `items` (item IDs, one of each; none by default), `outcome` ("caught"; "gotAway" with no items) and `seq`. With
+--- `seq`, it carries what a stored record does too: its `seq`, an `id` from the time and seq, each Catch's `n` and
+--- `catchId`, a session and the conditions' `time`.
+---@param fields { time: integer?, char: integer?, zone: integer?, subzone: integer?, minute: integer?, date: table?, items: integer[]?, outcome: string?, seq: integer? }?
+---@return table
+function castRecord(fields)
+	fields = fields or {}
+	local time = fields.time or SERVER_TIME - 700
+	local record = {
+		kind = "cast",
+		char = fields.char or 1,
+		time = time,
+		outcome = fields.outcome or "caught",
+		conditions = {
+			minute = fields.minute or 494,
+			zone = fields.zone or 148,
+			subzone = fields.subzone or 0,
+			date = fields.date,
+			events = {},
+			auras = {},
+		},
+		items = {},
+	}
+	local seq = fields.seq
+	if seq then
+		record.seq, record.session = seq, "s"
+		record.id = ("%s-%d-%d"):format(PLAYER_GUID, time, seq)
+		record.conditions.time = time
+	end
+	for n, itemID in ipairs(fields.items or {}) do
+		record.items[n] = { itemID = itemID, quantity = 1 }
+		if seq then
+			record.items[n].n, record.items[n].catchId = n, ("%s:%d"):format(record.id, n)
+		end
+	end
+	return record
+end
+
+--- The texts a drawn widget shows, depth first through its shown children, leaving out empty ones: what a player
+--- reads on a page of the Fish Journal.
+---@param widget table
+---@param texts string[]?
+---@return string[]
+function shownTexts(widget, texts)
+	texts = texts or {}
+	for _, child in ipairs(widget.children) do
+		if child.shown then
+			if type(child.text) == "string" and child.text ~= "" then
+				texts[#texts + 1] = child.text
+			end
+			shownTexts(child, texts)
+		end
+	end
+	return texts
+end
+
+--- The texts of a Journal page's blocks, in order; a block without text (the XP bar, an icon) as its kind in
+--- brackets.
+---@param blocks LedgerBlock[]
+---@return string[]
+function blockTexts(blocks)
+	local list = {}
+	for i, block in ipairs(blocks) do
+		list[i] = block.text or ("[" .. block.kind .. "]")
+	end
+	return list
+end
+
+--- The first of a Journal page's blocks of `kind`; nil if none.
+---@param blocks LedgerBlock[]
+---@param kind string
+---@return LedgerBlock?
+function blockOfKind(blocks, kind)
+	for _, block in ipairs(blocks) do
+		if block.kind == kind then
+			return block
+		end
+	end
+	return nil
+end
+
+--- The first of a Journal page's blocks whose text is `text`; an error if none does.
+---@param blocks LedgerBlock[]
+---@param text string
+---@return LedgerBlock
+function blockWithText(blocks, text)
+	for _, block in ipairs(blocks) do
+		if block.text == text then
+			return block
+		end
+	end
+	error("no block reads " .. text)
+end
+
+--- The vertical scroll of the open Fish Journal's `side` page ("left" or "right"), as last left (LED-R129).
+---@param loaded LoadedAddon
+---@param side "left"|"right"
+---@return number
+function pageScroll(loaded, side)
+	return loaded.ns.journal.frame[side].scroll:GetVerticalScroll()
+end
+
+--- Scrolls the open Fish Journal's `side` page ("left" or "right") down to `offset`, as the mouse wheel does.
+---@param loaded LoadedAddon
+---@param side "left"|"right"
+---@param offset number
+function scrollPage(loaded, side, offset)
+	loaded.ns.journal.frame[side].scroll:SetVerticalScroll(offset)
+end
+
+--- The Ledger on FakePagle over a spec's catalogue and log, logged in and in the world, with the Fish Journal open.
+--- `options`, each optional: `catalogue` (fake.setCatalogue's; the generated one by default), `characters` (the
+--- log's; the player's alone by default), `logId` (the log's), `log` (records appended in order), `entries` (the
+--- log's entries as saved, in place of `log`), `globals` (set on
+--- the fake's globals before the Ledger loads, such as a saved PagleLedgerDB), `itemNames`, `areaNames` and `mapNames`
+--- (what the fake client's C_Item and C_Map know), `before` (run with loaded and fake before the book opens), and
+--- where it opens: `place`, one of the Ledger's own places as `{ constructor, args... }` (ns.JournalPlace, e.g.
+--- `{ "zone", 148 }`), or `id` and `args` for a spec's own spread, which must be registered; Home, at its first
+--- opening, by default; with `id` false the book stays closed. With `building`, it stops after login, before entering
+--- the world, so the projection is still being built (LOG-R74, LED-R122).
+---@param options { catalogue: table?, characters: table[]?, logId: string?, log: table[]?, entries: string[]?, globals: table?, itemNames: table?, areaNames: table?, mapNames: table?, before: fun(loaded: LoadedAddon, fake: FakePagle)?, building: boolean?, place: table?, id: string|false|nil, args: table? }?
+---@return FakePagle fake
+---@return LoadedAddon loaded
+function openJournal(options)
+	options = options or {}
+	local fake = newFakePagle()
+	if options.catalogue then
+		fake.setCatalogue(options.catalogue)
+	end
+	fake.catchLog.data.characters = options.characters or { { guid = PLAYER_GUID } }
+	if options.logId then
+		fake.catchLog.data.logId = options.logId
+	end
+	if options.entries then
+		fake.catchLog.data.entries = options.entries
+	end
+	for _, record in ipairs(options.log or {}) do
+		fake.catchLog:Append(record)
+	end
+	over(fake.globals, options.globals)
+	local loaded = fake.load("Pagle_Ledger")
+	over(loaded.client.itemNames, options.itemNames)
+	over(loaded.client.areaNames, options.areaNames)
+	over(loaded.client.mapNames, options.mapNames)
+	fake.login()
+	if not options.building then
+		fake.enterWorld()
+	end
+	if options.before then
+		options.before(loaded, fake)
+	end
+	local id, args = options.id, options.args
+	if options.place then
+		local at = loaded.ns.JournalPlace[options.place[1]](unpack(options.place, 2))
+		id, args = at.id, at.args
+	end
+	if id then
+		assert(loaded.ns.journal:Open(id, args), "no spread is registered as " .. id)
+	elseif id == nil then
+		loaded.ns.journal:Toggle()
+	end
+	return fake, loaded
 end

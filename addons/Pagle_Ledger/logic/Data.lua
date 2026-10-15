@@ -28,3 +28,15 @@ function ns.MigrateDB(global)
 		global.schemaVersion = ns.SCHEMA_VERSION
 	end
 end
+
+--- A lore key's text (LED-R160, LED-R161), e.g. `binding.birch.name` or `species.6303.riddle`: nil while the key has
+--- no text (missing or empty, as Core reads its own lore), so the caller leaves its line out or falls back.
+---@param key string
+---@return string?
+function ns.Lore(key)
+	local text = ns.L[key]
+	if type(text) ~= "string" or text == "" or not key:find("%.") then
+		return nil
+	end
+	return text
+end

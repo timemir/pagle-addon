@@ -10,6 +10,7 @@ local ns = select(2, ...)
 ns.PAGLEDB_DEFAULTS = {
 	global = {
 		decodeErrors = 0, -- LOG-R16
+		dev = false, -- the /pagle dev switch (#247)
 		coins = { earned = {} }, -- SHOP-R3
 		goods = {}, -- SHOP-R26: every registered good, by ID
 		-- announcements.md › Data: the open Session's summary, moments raised with no Session open, the stored
@@ -19,14 +20,15 @@ ns.PAGLEDB_DEFAULTS = {
 		cards = {},
 		writeUp = {},
 		-- catch-log.md › Data: Core's own projections (LOG-R78), and the diagnostics buffer (LOG-R81).
-		projections = { fieldReport = {} }, -- REP-R25
+		projections = { fieldReport = {}, wallet = {} }, -- REP-R25; wallet-and-shop.md › Data
 		diagnostics = {},
 	},
 	profile = {
 		reloadReminder = false, -- LOG-R86
 		lengthUnit = nil, -- LOG-R69: "cm", "in", or nil (no default key) for the region default
 		appearance = {}, -- SHOP-R32: each slot's pick, by slot ID
-		announcements = { cozy = false, budget = { on = true, count = 4, window = 300 } }, -- announcements.md › Data
+		-- announcements.md › Data; everyCatch is "Show every catch" (ANN-R13).
+		announcements = { cozy = false, everyCatch = true, budget = { on = true, count = 4, window = 300 } },
 		-- core/README.md › Data: `dock.point`, the tracker dock's saved place, nil (no key) until the player moves it.
 		dock = { point = nil }, -- CORE-R70, CORE-R71
 	},
