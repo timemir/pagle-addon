@@ -373,7 +373,7 @@ function ns.AddFieldReport(options)
 		rulesVersion = ns.FIELD_REPORT_RULES_VERSION,
 		reset = report.reset,
 		apply = report.apply,
-	}, options.iterate)
+	}, options.iterate, "fieldReport")
 
 	local function pRows()
 		local buffer = options.buffer()
