@@ -76,8 +76,9 @@ local function landedFamily(context)
 	local family
 	for itemID in pairs(context.state.items) do
 		local item = context.getItem(itemID)
-		if item and ns.ClassifyCatch(itemID, item) == "trophy" and (not family or item.family < family) then
-			family = item.family
+		local landed = item and ns.ClassifyCatch(itemID, item) == "trophy" and item.family
+		if landed and (not family or landed < family) then
+			family = landed
 		end
 	end
 	return family

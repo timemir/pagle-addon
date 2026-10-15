@@ -28,26 +28,38 @@ end
 -- Each Announcement form, through the real lanes with the equipped look (`/pagle dev preview <kind>`'s sample); its
 -- hide takes it back off screen.
 for _, kind in ipairs({ "toast", "nod", "banner", "splash" }) do
+	---@type PagleAnnouncement?
 	local sample
 	add("announce." .. kind, ns.L.DEV_TOUR_ANNOUNCE:format(kind), function()
-		sample = ns.DevPreviewAnnouncement(kind) --[[@as PagleAnnouncement]]
-		ns.lanes:Push(sample)
+		sample = ns.DevPreviewAnnouncement(kind)
+		if sample then
+			ns.lanes:Push(sample)
+		end
 	end, function()
-		ns.lanes:Withdraw(sample)
+		if sample then
+			ns.lanes:Withdraw(sample)
+		end
 	end)
 end
 
 -- Each card, in the card frame: a Session summary card and a Write-up, closed as the player would. Closing a sample
 -- removes nothing stored, and a card it replaced shows again (ns.cards:Close).
-for _, card in ipairs({ { "card.session", ns.DevPreviewCard }, { "card.writeup", ns.DevPreviewWriteUp } }) do
+---@param kind string "session" or "writeup"
+---@param make fun(): PagleCard
+local function card(kind, make)
+	---@type PagleCard?
 	local shown
-	add(card[1], ns.L.DEV_TOUR_CARD:format(card[1]:match("%.(.+)")), function()
-		shown = card[2]()
+	add("card." .. kind, ns.L.DEV_TOUR_CARD:format(kind), function()
+		shown = make()
 		ns.cards:Preview(shown)
 	end, function()
-		ns.CloseCardOnScreen(shown)
+		if shown then
+			ns.CloseCardOnScreen(shown)
+		end
 	end)
 end
+card("session", ns.DevPreviewCard)
+card("writeup", ns.DevPreviewWriteUp)
 
 -- A window stop: `open` shows it, and the hide closes it with `close` unless `isShown` said it was open already.
 ---@param id string
@@ -80,7 +92,10 @@ window("fieldreport", ns.L.DEV_TOUR_FIELD_REPORT, function()
 end, function()
 	Pagle.OpenFieldReport()
 end, function()
-	ns.fieldReportBox:Hide()
+	local box = ns.fieldReportBox
+	if box then
+		box:Hide()
+	end
 end)
 
 window("glyphs", ns.L.DEV_TOUR_GLYPHS, function()
@@ -88,5 +103,8 @@ window("glyphs", ns.L.DEV_TOUR_GLYPHS, function()
 end, function()
 	ns.ShowGlyphProbe(ns.DEV_GLYPH_FONTS, ns.DevGlyphProbe())
 end, function()
-	ns.glyphProbeFrame:Hide()
+	local frame = ns.glyphProbeFrame
+	if frame then
+		frame:Hide()
+	end
 end)

@@ -27,8 +27,9 @@ function ns.RegisterTourStops(M)
 			local context = journal:Context()
 			local ready = not context.updating and context --[[@as LedgerSpreadContext]]
 			journal:OpenPlace(ready and stop.place(ready) or ns.JournalPlace.home())
-			if ready and stop.search then
-				journal.frame.search:SetText(stop.search(ready))
+			local frame = journal.frame
+			if ready and stop.search and frame then
+				frame.search:SetText(stop.search(ready))
 			end
 		end, function()
 			local frame = journal.frame
