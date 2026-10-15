@@ -150,14 +150,14 @@ def test_deleting_any_one_riddle_fails_the_lore_check_naming_its_key(species: in
     ]
 
 
-def _generator_fails_without(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str], lore_file: str, cut: Callable[[str], str], expected: str
+def _generator_fails_with(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], data_file: str, edit: Callable[[str], str], expected: str
 ) -> None:
-    """DATA-R107 through the generator itself (DATA-R63): over a copy of data/ whose data/lore/<lore_file> has
-    `cut` applied, the generator exits 1, names `expected`, and writes nothing."""
+    """DATA-R107 through the generator itself (DATA-R63): over a copy of data/ whose data/<data_file> has `edit`
+    applied, the generator exits 1, names `expected`, and writes nothing."""
     shutil.copytree(REPO / "data", tmp_path / "data")
-    path = tmp_path / "data" / "lore" / lore_file
-    path.write_text(cut(path.read_text(encoding="utf-8")), encoding="utf-8")
+    path = tmp_path / "data" / data_file
+    path.write_text(edit(path.read_text(encoding="utf-8")), encoding="utf-8")
     code, output = run(tmp_path, capsys)
     assert code == 1
     assert expected in output
@@ -174,7 +174,7 @@ def test_the_generator_fails_on_a_deleted_riddle_and_names_the_key(
         return text[: riddle.start(1)] + text[riddle.end(1) :]
 
     expected = "data/lore/ledger.toml: species.6289.riddle: missing"
-    _generator_fails_without(tmp_path, capsys, "ledger.toml", cut, expected)
+    _generator_fails_with(tmp_path, capsys, "lore/ledger.toml", cut, expected)
 
 
 @pytest.mark.parametrize("species", sorted(_riddles()))
@@ -197,7 +197,7 @@ def test_the_generator_fails_on_a_deleted_good_name_and_names_the_key(
         return text.replace(name, "")
 
     expected = "data/lore/core.toml: good.core.toaststyle.ripple.name: missing"
-    _generator_fails_without(tmp_path, capsys, "core.toml", cut, expected)
+    _generator_fails_with(tmp_path, capsys, "lore/core.toml", cut, expected)
 
 
 def test_the_manifest_lists_the_ledger_s_titles_and_bindings() -> None:
@@ -363,13 +363,18 @@ def test_every_set_title_is_a_bare_epithet(hunt_set: str) -> None:
 def test_the_glyph_check_covers_a_hunt_s_name(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     # CORE-R9, DATA-R107's glyph: hunts.toml's text is Pagle_Hunts' lore (DATA-R105), so a character the fonts draw
     # as a box fails the generator there too.
-    shutil.copytree(REPO / "data", tmp_path / "data")
-    hunts = tmp_path / "data" / "hunts" / "hunts.toml"
-    text = hunts.read_text(encoding="utf-8")
-    hunts.write_text(text.replace('name = "Night Run"\n', 'name = "Night Run ★"\n'), encoding="utf-8")
-    code, output = run(tmp_path, capsys)
-    assert code == 1
-    assert "data/hunts/hunts.toml: hunt.night_run.name: glyph: U+2605 outside CORE-R9's set" in output
+    expected = "data/hunts/hunts.toml: hunt.night_run.name: glyph: U+2605 outside CORE-R9's set"
+    _generator_fails_with(tmp_path, capsys, "hunts/hunts.toml", _night_run_named("Night Run ★"), expected)
+
+
+def _night_run_named(name: str) -> Callable[[str], str]:
+    """An edit of hunts.toml that renames Night Run, its one name line."""
+
+    def edit(text: str) -> str:
+        assert text.count('name = "Night Run"\n') == 1
+        return text.replace('name = "Night Run"\n', f'name = "{name}"\n')
+
+    return edit
 
 
 def test_the_generator_fails_on_a_29_code_point_hunt_name_and_names_the_key(
@@ -377,15 +382,8 @@ def test_the_generator_fails_on_a_29_code_point_hunt_name_and_names_the_key(
 ) -> None:
     # DATA-R105, DATA-R107 through the generator itself (DATA-R63): a copy of data/ with Night Run's name one code
     # point over the 28 writes nothing.
-    shutil.copytree(REPO / "data", tmp_path / "data")
-    hunts = tmp_path / "data" / "hunts" / "hunts.toml"
-    text = hunts.read_text(encoding="utf-8")
-    assert text.count('name = "Night Run"\n') == 1
-    hunts.write_text(text.replace('name = "Night Run"\n', f'name = "{"N" * 29}"\n'), encoding="utf-8")
-    code, output = run(tmp_path, capsys)
-    assert code == 1
-    assert "data/hunts/hunts.toml: hunt.night_run.name: length: 29 code points" in output
-    assert not (tmp_path / "addons").exists()
+    expected = "data/hunts/hunts.toml: hunt.night_run.name: length: 29 code points"
+    _generator_fails_with(tmp_path, capsys, "hunts/hunts.toml", _night_run_named("N" * 29), expected)
 
 
 def test_renaming_a_hunt_changes_neither_its_hash_nor_the_hunt_list_fingerprint(tmp_path: Path) -> None:
