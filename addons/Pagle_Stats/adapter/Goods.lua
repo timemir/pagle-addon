@@ -6,41 +6,16 @@ end
 local ns = select(2, ...)
 
 -- Stats' goods on the client (STA-R88, STA-R84): registered with Core, previewed on the Curio Shop's stage as a
--- sample tracker drawn by the tracker block maker (adapter/TrackerBlock.lua), and the frame looks the live tracker
--- wears. Every texture is one the book already draws (ns.BOOK_TEXTURES, in-client files), laid under a tint.
+-- sample tracker drawn by the tracker block maker (adapter/TrackerBlock.lua), and the looks the live tracker wears:
+-- the books art kit's Logbook (ruled paper with its margin, the words in the book's inks) and Brass (a dark plate in a
+-- brass rim with a rivet on each corner, the words bright over it).
 
--- A tint from its hex code (adapter/BookWidgets.lua).
-local tint = ns.BookTint
-
-local BOOK = ns.BOOK_LOOK
-
---- Each tracker frame's look, by good ID (STA-R88, STA-R84). No frame (`stats.trackerframe.none`) has none: the plain
---- native block.
+--- Each tracker frame's look, by good ID (STA-R88, STA-R84). No frame (`stats.trackerframe.none`) has none: the native
+--- look.
 ---@type table<string, StatsTrackerFrameLook>
 ns.TRACKER_FRAMES = {
-	-- A page from the book: its parchment, edged in the ruled ledger's brown with a second, fainter rule inside it, as a
-	-- ledger's ruled border; the words in the book's inks.
-	["stats.trackerframe.logbook"] = {
-		backing = ns.BOOK_TEXTURES.paper,
-		tint = BOOK.paper,
-		alpha = 0.95,
-		border = BOOK.ledgerRule,
-		borderSize = 2,
-		inner = BOOK.rowRule,
-		innerAlpha = 0.6,
-		ink = { header = BOOK.title, text = BOOK.ink, dim = BOOK.small, name = BOOK.kicker },
-	},
-	-- prototypes/curio-shop/'s brass frame (`.fr-brass`): a dark plate (#2a2218 to #15100a), a thin #b08a3a rim with a
-	-- #5a4518 line inside it, and a bright brass rivet on each corner; the words keep their native colours.
-	["stats.trackerframe.brass"] = {
-		backing = ns.BOOK_TEXTURES.leather,
-		tint = tint("201910"),
-		alpha = 0.9,
-		border = tint("b08a3a"),
-		borderSize = 2,
-		inner = tint("5a4518"),
-		rivets = tint("e8c96a"),
-	},
+	["stats.trackerframe.logbook"] = ns.TRACKER_LOOKS.logbook,
+	["stats.trackerframe.brass"] = ns.TRACKER_LOOKS.brass,
 }
 
 -- Each stage's sample tracker, made at its first drawing: the Curio Shop gives every good its own stage, so one

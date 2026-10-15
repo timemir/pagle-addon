@@ -347,11 +347,6 @@ local function buttonWith(widget, text)
 	end
 end
 
---- A word as a ribbon stacks it, a letter a line.
-local function stacked(word)
-	return (word:gsub("(.)", "%1\n"):sub(1, -2))
-end
-
 --- The board opened (HNT-R67), then turned to `place` if given.
 local function opened(run, place)
 	run.ns.ToggleBoard()
@@ -367,23 +362,20 @@ describe("the ribbons, crumbs and nameplate on the leather (HNT-R61)", function(
 
 		local ribbons = opened(run).anchors.ribbons
 
-		assert.are.same(
-			{ stacked("Board"), stacked("Dusk"), stacked("Wagers"), stacked("fixture_pair"), stacked("fixture_tide") },
-			shownTexts(ribbons)
-		)
-		assert.is_true(buttonWith(ribbons, stacked("Board")).chosen)
-		assert.is_false(buttonWith(ribbons, stacked("Dusk")).chosen)
+		assert.are.same({ "Board", "Dusk", "Wagers", "fixture_pair", "fixture_tide" }, shownTexts(ribbons))
+		assert.is_true(buttonWith(ribbons, "Board").chosen)
+		assert.is_false(buttonWith(ribbons, "Dusk").chosen)
 	end)
 
 	it("open a set's page from its ribbon, and the Board from the Board ribbon (HNT-R66)", function()
 		local run = start()
 		local ribbons = opened(run).anchors.ribbons
 
-		buttonWith(ribbons, stacked("Wagers")):Click()
+		buttonWith(ribbons, "Wagers"):Click()
 		assert.are.same({ mode = "set", set = "fixture_wagers" }, run.ns.board.router:Place())
-		assert.is_true(buttonWith(ribbons, stacked("Wagers")).chosen)
+		assert.is_true(buttonWith(ribbons, "Wagers").chosen)
 
-		buttonWith(ribbons, stacked("Board")):Click()
+		buttonWith(ribbons, "Board"):Click()
 		-- the timeline then selects its Hunt on the Board (HNT-R67)
 		assert.are.equal("board", run.ns.board.router:Place().mode)
 	end)
@@ -395,12 +387,12 @@ describe("the ribbons, crumbs and nameplate on the leather (HNT-R61)", function(
 
 		local ribbons = opened(run).anchors.ribbons
 
-		assert.is_true(buttonWith(ribbons, stacked("Board")).chosen)
+		assert.is_true(buttonWith(ribbons, "Board").chosen)
 	end)
 
 	it("show the set's full name in a ribbon's tooltip", function()
 		local run = start()
-		local ribbon = buttonWith(opened(run).anchors.ribbons, stacked("Dusk"))
+		local ribbon = buttonWith(opened(run).anchors.ribbons, "Dusk")
 
 		ribbon:GetScript("OnEnter")(ribbon)
 
@@ -414,7 +406,7 @@ describe("the ribbons, crumbs and nameplate on the leather (HNT-R61)", function(
 		assert.are.same({ "Hunts", "Dusk", "Snapper Run" }, shownTexts(crumbs))
 		local marks = 0
 		for _, child in ipairs(crumbs.children) do
-			if child.kind == "Texture" and child.shown and child.texture == run.ns.BOARD_TEXTURES.fleuron then
+			if child.kind == "Texture" and child.shown and child.texture == run.ns.ATLASES.Book.file then
 				marks = marks + 1
 			end
 		end
@@ -475,19 +467,22 @@ describe("a set's page on the board (HNT-R66)", function()
 		opened(run, { mode = "set", set = "fixture_dusk" })
 
 		local texts = shownTexts(rightPage(run))
+		-- the pressed seal stacks its word, the short date and the year
 		assert.are.same({
-			"Title earned 12 Mar 2026",
+			"EARNED",
+			"12 Mar",
+			"2026",
 			"Dusk",
 			"Earned: the Duskwatcher",
 			"1 / 2",
 			"The first tier of every Hunt earns the title.",
 			"After the lamps are lit.",
-		}, { unpack(texts, 1, 6) })
+		}, { unpack(texts, 1, 8) })
 		assert.are.same({ "Snapper Run", "12 Mar" }, shownTexts(buttonWith(rightPage(run), "Snapper Run")))
 		assert.are.same({ "Hefty Blackmouth", "22:00" }, shownTexts(buttonWith(rightPage(run), "Hefty Blackmouth")))
 		assert.are.same({ "Old Sunscale", "3 Feb" }, shownTexts(buttonWith(rightPage(run), "Old Sunscale")))
 		-- and the "Retired" heading, in small caps, below the current Hunts and above the Retired ones
-		assert.are.equal(13, #texts)
+		assert.are.equal(15, #texts)
 		local heading
 		for _, child in ipairs(rightPage(run).children) do
 			if child.text == "RETIRED" and child.shown then

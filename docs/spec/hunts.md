@@ -186,18 +186,18 @@ Hunts never cuts Sessions and doesn't read a record's `session` (LOG-R98).
 
 - **HNT-R60** The board is one frame, a two-page notebook in the Journal's book language: leather binding, parchment, ink bars, a serif text face, a handwriting face, wax seals and small-caps headings. It is about 920 × 600 px (Tunables), opens centred, moves by dragging the leather, doesn't save its position, and closes with Esc or its close button. It never links to the Journal, and the Journal never links to it (ADR 0001).
   
-  Its art, fonts and colours are in-client textures and fonts picked in the build ticket to match the Fish Journal, with `prototypes/hunts-board/` variant E as the reference. That includes the leather, parchment, ribbons, seal, hatched bar, trim and group-dot colours, and the fleuron and pointing-hand marks, which are drawn as textures, never as font glyphs.
+  Its art is the books art kit (the dev's `PagleArtBooks` probe, a fork of the Fish Journal's book shell, which also draws the Stats book): bundled fonts in Core's media (IM Fell English and its italic for print, Caveat for handwriting, Marcellus for gilt, ribbons and brass) and BLP textures for the leather with its binding band, the parchment and its gutter, the wax seal and wax close button, the brass nameplate, grosgrain ribbons, paper chips and pill, ink strokes, the timeline's bars, item rings, tier marks and the fleuron. The book shell's textures are Core's media, which Stats reads too; each tracker frame is Hunts' own. The pointing hand, which the kit leaves out, stays an in-client texture. Marks are drawn as textures, never as font glyphs.
 - **HNT-R61** On the leather, above the pages:
   - gilt breadcrumbs: "Hunts", then "{set}", then "{Hunt}", separated by a fleuron mark, each part clickable back up
   - the realm clock: time, short date with weekday ("Tue 14 Oct") and season, plus "(paused in combat)" under HNT-R43. The season is the first of the `summer`, `winter`, `spring` and `autumn` windows whose spec matches the live snapshot, or none. With the v1 data, summer and winter cover the whole year.
   - a "show completed" checkbox (HNT-R82)
-  - a gold **nameplate** on the cover corner: "{n} titles · {m} Hunts done" (titles earned; Hunts done, retired ones included), with a tooltip listing each earned title and its full date
-  - **set ribbons** on the right edge: "Board", then one per set that has a current Hunt, an earned title, or a done Retired Hunt, in Hunt list order
+  - a brass **nameplate** on the cover corner: "{n} titles · {m} Hunts done" (titles earned; Hunts done, retired ones included), with a tooltip listing each earned title and its full date
+  - **set ribbons** hanging from under the leather's foot, left to right, each tinted grosgrain with the set's full name (the chosen one hangs longer and brighter): "Board", then one per set that has a current Hunt, an earned title, or a done Retired Hunt, in Hunt list order
 - **HNT-R62** The left page, "What's biting, and when", is a **timeline**:
-  - a realm-time ruler from 2 hours before now to 22 hours after (Tunables), with hour ticks and a red "now" line
+  - a realm-time ruler from 2 hours before now to 22 hours after (Tunables), with hour ticks, every third one labelled with its hour, and a red "now" line
   - a faint wash over the next 3 hours (Soon) and over the times the `night` window holds
-  - the rows of the four groups in the order Now, Soon, Later, On demand, each under its heading ("Now: open right now", "Soon: opens within 3 hours", "Later: opens after that, or needs more skill", "On demand: starts when you do") with its row count; an empty group is left out
-  - a line under the list explaining the bar styles: "Hatched: open · Dashed: window unconfirmed · Pencil: needs more skill · Blue: your camp is up"
+  - the rows of the four groups in the order Now, Soon, Later, On demand, each under its heading ("Now: open right now", "Soon: opens within 3 hours", "Later: opens after that, or needs more skill", "On demand: starts when you do"; set as the group's dot, its name in small caps and its note in italic) with its row count; an empty group is left out
+  - a legend under the list explaining the bar styles, each drawn in its own stroke beside its words: hatched "open", dashed "window unconfirmed", pencil "needs more skill", blue "your camp is up"
   
   The ruler stays fixed at the top of the page; the rows scroll under it when they overflow.
 - **HNT-R63** Each row shows the Hunt's icon (with trim and a pin mark if pinned), its name, its bars on the ruler, and its margin label (HNT-R51). Bars:
@@ -210,10 +210,10 @@ Hunts never cuts Sessions and doesn't read a record's `session` (LOG-R98).
     - A Hunt without a board spec (HNT-R7) has no bars.
 - **HNT-R64** The right page shows the selected Hunt's **entry**:
   - the set name and the kind ("Natural" or "Imposed") in small caps, then the Hunt's name and its target line (HNT-R54)
-  - a **wax seal**: "Hunted {full date of tier 1}" once done, a dashed "not yet" before; and a pin toggle
+  - a **wax seal**: "Hunted {full date of tier 1}" once done (pressed, its word, short date and year stacked), a dashed "not yet" before; and a pin toggle ("Pinned", or a faint "Pin")
   - the window line (HNT-R52), then the conditions line (HNT-R53)
   - **chips** (HNT-R65)
-  - the **tier ladder**: one diamond per tier in its trim colour, filled when reached, with its threshold, the short date and zone name (`C_Map.GetAreaInfo`; none when the zone was 0) of the Catch that reached it, and an ink bar with "{count} / {next threshold}" toward the next unreached tier; a finished Hunt shows its count instead ("52 caught")
+  - the **tier ladder**: one diamond per tier in its trim colour, filled when reached, with its threshold, the short date and zone name (`C_Map.GetAreaInfo`; none when the zone was 0) of the Catch that reached it ("not yet" before), and an ink bar with "{count} / {next threshold}" toward the next unreached tier; a finished Hunt shows its count instead ("52 caught")
   - the effort counter in handwriting: "96 Casts under these conditions, 11 since my last one." then "Odds live in Stats."
   - the set line: "{set}: {done} of {current} · earns {title}", or "· earned {title}"
 - **HNT-R65** **Chips** on the entry, in this order, each shown only when it applies:
@@ -239,9 +239,9 @@ Hunts never cuts Sessions and doesn't read a record's `session` (LOG-R98).
 
 ### The tracker
 
-- **HNT-R75** Hunts docks one tracker with `M:RegisterTracker{ id = "hunts", order = 10, frame }` (CORE-R70): a native objective-tracker-style block with a collapsible "Hunts" header. It shows while its setting is on (default on), whether or not anything is pinned.
+- **HNT-R75** Hunts docks one tracker with `M:RegisterTracker{ id = "hunts", order = 10, frame }` (CORE-R70): an objective-tracker-style block in the books art kit's type, with a collapsible "Hunts" header. It shows while its setting is on (default on), whether or not anything is pinned.
 - **HNT-R76** It lists pinned current Hunts, sorted as on the board across groups (Now, Soon, Later, On demand), at most 6 Hunts (Tunables), then a "+N more" line. Each Hunt has two lines:
-  - first: a dot in its group's colour (Now green, Soon amber, Later grey, On demand blue), the Hunt's name and its tracker label (HNT-R51)
+  - first: a dot in its group's colour (Now green, Soon amber, Later grey, On demand blue), the Hunt's name and, at the right, its tracker label (HNT-R51)
   - second: the target line, "you're here" when the live zone is one of its zones, and its tier progress, "{count} / {next unreached threshold}" ("0 / 1" before completion), or "all tiers" once finished
   
   With nothing pinned it reads "Pin a Hunt to keep it here."
@@ -297,7 +297,7 @@ Hunts never cuts Sessions and doesn't read a record's `session` (LOG-R98).
   | `hunts.notebookcover` | `hunts.notebookcover.leather` (default), `hunts.notebookcover.oilcloth` (tier 1), `hunts.notebookcover.tooled` (tier 2), `hunts.notebookcover.verdigris` (tier 3) |
   | `hunts.trackerframe` | `hunts.trackerframe.none` (default: the plain native block, no frame), `hunts.trackerframe.inkwash` (tier 1), `hunts.trackerframe.waxseal` (tier 2) |
 
-  The tracker frames follow the Tackle Board's and Stats' (a free "No frame" and two for sale at tiers 1 and 2). Each good's name and description is lore (HNT-R130); the working names are Leather, Oilcloth, Tooled Leather, Verdigris, No frame, Ink Wash and Wax Seal. Its `preview` draws the closed notebook in that cover, or a sample tracker with two fixed lines ("Night Run · in 37m", "Rack Hour · on demand") in that frame. A good's icon is its swatch. The art is in-client textures, picked in the build ticket. IDs may still be renamed before 1.0.
+  The tracker frames follow the Tackle Board's and Stats' (a free "No frame" and two for sale at tiers 1 and 2). Each good's name and description is lore (HNT-R130); the working names are Leather, Oilcloth, Tooled Leather, Verdigris, No frame, Ink Wash and Wax Seal. Its `preview` draws the closed notebook in that cover, or a sample tracker with two fixed lines ("Night Run · in 37m", "Rack Hour · on demand") in that frame. A good's icon is its swatch. Leather is the books art kit's leather; the covers for sale keep their in-client grains over a tint, as the kit has no leather for them. The tracker frames are the kit's: No frame is the block in the kit's type over the world, Ink Wash a paper sheet written in blue ink, Wax Seal a parchment with a red-edged margin and a wax seal, each in its own type and inks, and the papers grow with the tracker's lines. IDs may still be renamed before 1.0.
 - **HNT-R122** Hunts registers its slots and goods in `OnInitialize`, right after `RegisterModule`. It has no earned goods.
 
 ### Lore
@@ -409,8 +409,8 @@ WoW APIs for its own presentation: `C_Calendar.OpenCalendar`, `C_Calendar.GetMon
 
 ## UI
 
-- **Hunts board:** HNT-R60–R70. Look reference: `prototypes/hunts-board/` variant E, whose `HuntsModel` script shows the grouping and labels (its skill numbers, zones and rates are placeholders). The text above wins where they differ. Art for 1.0 is in-client textures and sepia-tinted item icons, shared with the Journal; the set ribbons and the hatched ink bar are the only new pieces.
-- **Hunts tracker:** HNT-R75–R79, a native block in Core's tracker dock.
+- **Hunts board:** HNT-R60–R70. Look reference: the books art kit (`PagleArtBooks`, `/paglebooks hunts`), after `prototypes/hunts-board/` variant E, whose `HuntsModel` script shows the grouping and labels (its skill numbers, zones and rates are placeholders). The text above wins where they differ. Item icons are sepia-tinted, round in the kit's rings. The kit doesn't lay out a set's page: it is set in the entry's parts (seal, ink bar, tier marks, faces).
+- **Hunts tracker:** HNT-R75–R79, a block in Core's tracker dock, in the kit's three looks (`/paglebooks trackers`).
 - **Entry points:** the compartment menu's "Hunts", `/pagle hunts`, the Settings status button "Open Hunts", and the tracker's lines (HNT-R68, HNT-R77).
 - **Announcements:** drawn by Core from HNT-R86 and HNT-R88.
 

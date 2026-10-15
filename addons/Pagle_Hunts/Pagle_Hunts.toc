@@ -31,6 +31,8 @@ logic\Goods.lua
 logic\Entry.lua
 logic\Tracker.lua
 logic\Tour.lua
+adapter\BookAtlas.lua
+adapter\BookArt.lua
 adapter\BoardWidgets.lua
 adapter\Board.lua
 adapter\Sets.lua

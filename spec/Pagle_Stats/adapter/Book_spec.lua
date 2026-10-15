@@ -252,7 +252,7 @@ describe("the Stats book's breadcrumbs (STA-R74)", function()
 		for _, crumb in ipairs(book.frame.crumbButtons) do
 			if crumb.shown and crumb.fleuron and crumb.fleuron.shown then
 				marks = marks + 1
-				assert.are.equal(loaded.ns.BOOK_TEXTURES.fleuron, crumb.fleuron.texture)
+				assert.are.equal(loaded.ns.ATLASES.Book.file, crumb.fleuron.texture) -- the kit's fleuron
 			end
 		end
 		assert.are.equal(3, marks)
@@ -306,7 +306,7 @@ describe("the Stats book's breadcrumbs (STA-R74)", function()
 end)
 
 describe("the Stats book's ribbons (STA-R74, stats.md › UI › On the leather)", function()
-	it("hang Where I am (green), This Session, Lifetime and Sessions, top to bottom", function()
+	it("hang Where I am (green), This Session, Lifetime and Sessions, left to right under the leather", function()
 		local loaded, _, book = ready()
 
 		loaded.ns.ToggleBook()
@@ -316,7 +316,13 @@ describe("the Stats book's ribbons (STA-R74, stats.md › UI › On the leather)
 			ribbons[i] = ribbon.label.text:gsub("\n", "")
 		end
 		assert.are.same({ "Where I am", "This Session", "Lifetime", "Sessions" }, ribbons)
-		assert.are.same(loaded.ns.BOOK_LOOK.ribbonHere, { unpack(book.frame.ribbons[1].face.color, 1, 3) })
+		assert.are.same(loaded.ns.BOOK_LOOK.ribbons.here, { unpack(book.frame.ribbons[1].body.vertexColor, 1, 3) })
+		-- each a ribbon's width and gap further right, hanging from under the foot, its top tucked under the band
+		local sizes = loaded.ns.BOOK_RIBBON
+		for i, ribbon in ipairs(book.frame.ribbons) do
+			local x = 456 + (i - 1) * (sizes.width + sizes.gap)
+			assert.are.same({ "TOPLEFT", book.frame, "TOPLEFT", x, -(640 - sizes.tuck) }, ribbon.points[1])
+		end
 	end)
 
 	it("open This Session, Lifetime and Sessions, the one shown standing out", function()

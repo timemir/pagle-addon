@@ -6,30 +6,33 @@ end
 local ns = select(2, ...)
 
 -- The Stats book on the client (STA-R70–R75; stats.md › UI): a leather binding with two parchment pages, the gilt
--- breadcrumbs, the live line and the search box's anchor on the leather above them, the nameplate on its lower corner
--- and the ribbons hanging from its right edge, drawing on each page what logic/Book.lua's router says the page shown
--- puts there. The pages' contents are the page files' renderers (adapter/Home.lua to Lifetime.lua); this file draws
--- only the book. It makes no secure frames, so it opens and works in combat and while restricted (STA-R71, STA-R93).
--- The look follows prototypes/stats-window/ variant D, in adapter/BookWidgets.lua's art.
+-- breadcrumbs and the search box's anchor on the strip above them, the brass nameplate and the live line on the
+-- leather's foot band below them, brass corners, and the ribbons hanging from under its foot, drawing on each page what
+-- logic/Book.lua's router says the page shown puts there. The pages' contents are the page files' renderers
+-- (adapter/Home.lua to Lifetime.lua); this file draws only the book. It makes no secure frames, so it opens and works
+-- in combat and while restricted (STA-R71, STA-R93). The look is the books art kit's Stats book, in
+-- adapter/BookWidgets.lua's art.
 
 local L = ns.L
 local LOOK = ns.BOOK_LOOK
 
 -- The frame's global name: UISpecialFrames takes names, and Esc hides the frames it lists (STA-R70).
 local FRAME_NAME = "PagleStatsBook"
--- About 980 × 640 (Tunables), as variant D: the leather at the sides and foot, the strip above the pages for the
--- crumbs, the live line and the search box.
+-- About 980 × 640 (Tunables), as the kit's: the leather at the sides, the strip above the pages for the crumbs and the
+-- search box, and the foot band below them for the nameplate and the live line.
 local WIDTH, HEIGHT = 980, 640
-local SIDE, STRIP, FOOT = 18, 38, 16
+local SIDE, STRIP, FOOT = 18, 38, 36
 local PAGE_WIDTH = (WIDTH - 2 * SIDE) / 2
 local PAGE_HEIGHT = HEIGHT - STRIP - FOOT
--- A page body's padding inside the paper (variant D: 22px 28px 34px).
-local PAD_X, PAD_TOP, PAD_BOTTOM = 28, 22, 34
+-- A page body's padding inside the paper.
+local PAD_X, PAD_TOP, PAD_BOTTOM = 28, 22, 20
 local BODY_WIDTH, BODY_HEIGHT = PAGE_WIDTH - 2 * PAD_X, PAGE_HEIGHT - PAD_TOP - PAD_BOTTOM
--- The search box's room at the strip's right (variant D: 250px), and the gap before the live line.
-local SEARCH_WIDTH, LIVE_GAP = 250, 14
--- The ribbons' column outside the leather's right edge, from below the strip, and the gap between ribbons.
-local RIBBONS_TOP, RIBBON_GAP = 50, 6
+-- The search box's room at the strip's right (the kit's 250).
+local SEARCH_WIDTH = 250
+-- Where the ribbons hang from under the leather's foot, from its left.
+local RIBBONS_LEFT = 456
+-- The nameplate's place on the foot band, and the live line's right end and foot.
+local PLATE_X, PLATE_Y, LIVE_RIGHT, LIVE_FOOT = 30, 605, 30, 9
 -- How far a mouse wheel notch scrolls a page body.
 local WHEEL_STEP = 40
 
@@ -50,6 +53,7 @@ local LEATHER_PARTS = { "search" }
 
 ---@class StatsBookLiveView: Button
 ---@field dot Texture
+---@field glow Texture
 ---@field label FontString
 
 ---@class StatsBookRibbonButton: StatsBookRibbonView
@@ -57,8 +61,9 @@ local LEATHER_PARTS = { "search" }
 ---@field words string
 
 ---@class StatsBookFrame: Frame
----@field close Button
+---@field close StatsBookCloseButton
 ---@field leather StatsBookLeatherView
+---@field corners Texture[]
 ---@field papers table<StatsBookSide, StatsBookParchmentView>
 ---@field bodies table<StatsBookSide, Frame>          -- each page's body, inside its padding
 ---@field updating table<StatsBookSide, FontString>   -- "Updating my records…" on each body (STA-R72)
@@ -181,17 +186,21 @@ local function buildPage(frame, side)
 	frame.updating[side] = updating
 end
 
--- The live line (STA-R75): the gilt dot and its words, opening This Session.
+-- The live line (STA-R75): the glowing green dot and its gilt words at the foot band's right, opening This Session.
 ---@param book StatsBook
 ---@param frame StatsBookFrame
 local function buildLive(book, frame)
 	local live = CreateFrame("Button", nil, frame) --[[@as StatsBookLiveView]]
 	live:SetHeight(20)
-	live:SetPoint("RIGHT", frame.anchors.search, "LEFT", -LIVE_GAP, 0)
+	live:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -LIVE_RIGHT, LIVE_FOOT)
+	live:SetFrameLevel(frame:GetFrameLevel() + 10)
+	live.glow = ns.NewBookDot(live, 14)
+	live.glow:SetAlpha(0.35)
+	live.glow:SetPoint("LEFT", 0, 0)
 	live.dot = ns.NewBookDot(live, 8)
-	live.dot:SetPoint("LEFT", 0, 0)
-	live.label = ns.BookText(live, ns.BookFonts().crumb, LOOK.gilt)
-	live.label:SetPoint("LEFT", live.dot, "RIGHT", 5, 0)
+	live.dot:SetPoint("CENTER", live.glow, "CENTER")
+	live.label = ns.BookText(live, ns.BookFonts().crumb, LOOK.live)
+	live.label:SetPoint("LEFT", live.glow, "RIGHT", 4, 0)
 	live:SetScript("OnClick", function()
 		book:Open({ page = "session" })
 	end)
@@ -199,7 +208,8 @@ local function buildLive(book, frame)
 	frame.live = live
 end
 
--- The ribbons (STA-R74), top to bottom down the leather's right edge, each opening its page.
+-- The ribbons (STA-R74), left to right under the leather's foot, their tops tucked under its band, each opening its
+-- page.
 ---@param book StatsBook
 ---@param frame StatsBookFrame
 local function buildRibbons(book, frame)
@@ -209,14 +219,20 @@ local function buildRibbons(book, frame)
 		lifetime = L.BOOK_LIFETIME,
 		sessions = L.BOOK_SESSIONS,
 	}
+	local sizes = ns.BOOK_RIBBON
 	frame.ribbons = {}
-	local y = -RIBBONS_TOP
 	for i, data in ipairs(ns.BOOK_RIBBONS) do
 		local ribbon = ns.NewBookRibbon(frame) --[[@as StatsBookRibbonButton]]
+		ribbon:SetFrameLevel(frame:GetFrameLevel() + 1) -- under the band, 6 levels up: its tucked top hides
 		ribbon.id, ribbon.words = data.id, words[data.id]
-		ribbon:SetRibbon(ribbon.words, data.green, false)
-		ribbon:SetPoint("TOPLEFT", frame, "TOPRIGHT", -2, y)
-		y = y - ribbon:GetHeight() - RIBBON_GAP
+		ribbon:SetRibbon(ribbon.words, LOOK.ribbons[data.id], false)
+		ribbon:SetPoint(
+			"TOPLEFT",
+			frame,
+			"TOPLEFT",
+			RIBBONS_LEFT + (i - 1) * (sizes.width + sizes.gap),
+			-(HEIGHT - sizes.tuck)
+		)
 		ribbon:SetScript("OnClick", function()
 			if data.page then
 				book:Open({ page = data.page })
@@ -252,6 +268,7 @@ local function build(book)
 		end
 	end)
 	frame.leather = ns.NewBookLeather(frame)
+	frame.corners = ns.NewBookCorners(frame)
 	frame.papers, frame.bodies, frame.updating = {}, {}, {}
 	buildPage(frame, "left")
 	buildPage(frame, "right")
@@ -262,16 +279,18 @@ local function build(book)
 	frame.crumbButtons = {}
 	local search = CreateFrame("Frame", nil, frame)
 	search:SetSize(SEARCH_WIDTH, 22)
-	search:SetPoint("TOPRIGHT", -(SIDE + 16), -8)
+	search:SetPoint("TOPRIGHT", -(SIDE + 6), -8)
 	frame.anchors = { search = search }
 	buildLive(book, frame)
 
 	frame.plate = ns.NewBookPlate(frame)
-	frame.plate:SetPoint("BOTTOMLEFT", -12, -14)
+	frame.plate:SetPoint("TOPLEFT", frame, "TOPLEFT", PLATE_X, -PLATE_Y)
+	frame.plate:SetFrameLevel(frame:GetFrameLevel() + 10)
 	buildRibbons(book, frame)
 
-	frame.close = CreateFrame("Button", nil, frame, "UIPanelCloseButton") --[[@as Button]]
-	frame.close:SetPoint("TOPRIGHT", 6, 6)
+	frame.close = ns.NewBookClose(frame)
+	frame.close:SetPoint("CENTER", frame, "TOPRIGHT", -3, -3)
+	frame.close:SetFrameLevel(frame:GetFrameLevel() + 10)
 	frame.close:SetScript("OnClick", function()
 		book:Hide()
 	end)
@@ -466,11 +485,11 @@ local function crumbAt(frame, i)
 	if not crumb then
 		crumb = CreateFrame("Button", nil, frame.crumbs) --[[@as StatsBookCrumbView]]
 		if i > 1 then
-			crumb.fleuron = ns.NewBookMark(crumb, "fleuron", 12)
-			crumb.fleuron:SetPoint("LEFT", 4, 0)
+			crumb.fleuron = ns.NewBookMark(crumb, "fleuron", 16)
+			crumb.fleuron:SetPoint("LEFT", 8, 0)
 		end
 		crumb.label = ns.BookText(crumb, ns.BookFonts().crumb, LOOK.gilt)
-		crumb.label:SetPoint("LEFT", i > 1 and 22 or 0, 0)
+		crumb.label:SetPoint("LEFT", i > 1 and 32 or 0, 0)
 		crumb:SetScript("OnEnter", function(self)
 			if self:GetScript("OnClick") then
 				self.label:SetTextColor(LOOK.giltBright[1], LOOK.giltBright[2], LOOK.giltBright[3])
@@ -495,7 +514,7 @@ local function drawCrumbs(book)
 		local crumb = crumbAt(frame, i)
 		crumb.label:SetText(crumbWords(book, data))
 		crumb.label:SetTextColor(LOOK.gilt[1], LOOK.gilt[2], LOOK.gilt[3])
-		local width = crumb.label:GetStringWidth() + (i > 1 and 24 or 2)
+		local width = crumb.label:GetStringWidth() + (i > 1 and 34 or 2)
 		crumb:SetSize(width, 20)
 		crumb:ClearAllPoints()
 		crumb:SetPoint("LEFT", x, 0)
@@ -560,7 +579,7 @@ function Book:DrawLive()
 			ns.Duration(ns.TimeFished(session, GetServerTime()))
 		)
 	)
-	frame.live:SetWidth(frame.live.label:GetStringWidth() + 15)
+	frame.live:SetWidth(frame.live.label:GetStringWidth() + 18)
 	frame.live:Show()
 end
 
@@ -595,8 +614,8 @@ function Book:Draw()
 	end
 	drawCrumbs(self)
 	local chosen = ns.ChosenRibbon(place, ns.CurrentPlace(Pagle.GetConditions()))
-	for i, ribbon in ipairs(frame.ribbons) do
-		ribbon:SetRibbon(ribbon.words, ns.BOOK_RIBBONS[i].green, ribbon.id == chosen)
+	for _, ribbon in ipairs(frame.ribbons) do
+		ribbon:SetRibbon(ribbon.words, LOOK.ribbons[ribbon.id], ribbon.id == chosen)
 	end
 	drawPlate(frame, updating)
 	self:DrawLive()

@@ -147,6 +147,7 @@ end
 ---@field name string
 ---@field titleLine string      -- "Earns the title {title}", or "Earned: {title}"
 ---@field seal string?          -- the seal's words with the full date it was earned; nil until earned
+---@field sealLines string[]?   -- the pressed seal stacked: its word, the short date and the year; nil until earned
 ---@field progress { fill: number, label: string }   -- done current Hunts out of current Hunts
 ---@field line string           -- "The first tier of every Hunt earns the title."
 ---@field note string?          -- the set's note
@@ -169,6 +170,7 @@ function ns.BuildSetPage(input, setID, trackerLabel)
 		name = list:SetName(setID),
 		titleLine = (earned and L.SET_PAGE_EARNED or L.SET_PAGE_EARNS):format(list:SetTitle(setID)),
 		seal = earned and L.SET_SEAL:format(ns.FormatFullDate(earned.date)) or nil,
+		sealLines = earned and { L.SET_SEAL_WORD, ns.FormatShortDate(earned.date), tostring(earned.date.year) } or nil,
 		line = L.SET_RULE,
 		note = list:SetNote(setID),
 		hunts = {},

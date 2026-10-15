@@ -9,24 +9,26 @@ local ns = select(2, ...)
 -- leather's anchors above and beside the pages, drawing on each page what logic/Board.lua's router says the mode shown
 -- puts there. The pages' contents are the renderers adapter/Timeline.lua, Entry.lua and Sets.lua register; this file
 -- draws only the notebook. It makes no secure frames, so it opens and stays open while restricted (HNT-R68). The look
--- follows prototypes/hunts-board/ variant E, in adapter/BoardWidgets.lua's art.
+-- is the books art kit's Hunts board (adapter/BoardWidgets.lua): its sizes, the pages' margins, the wax close button
+-- on the corner and the set ribbons hanging from under the leather's foot.
 
 -- The frame's global name: UISpecialFrames takes names, and Esc hides the frames it lists (HNT-R60).
 local FRAME_NAME = "PagleHuntsBoard"
--- About 920 × 600 (Tunables): the leather round the pages, the strip above them for the crumbs, the clock and the
--- checkbox, and the leather below.
+-- About 920 × 600 (Tunables): the leather round the pages, the gilt strip above them for the crumbs, the clock and
+-- the checkbox, and the leather below.
 local WIDTH, HEIGHT = 920, 600
-local SIDE, STRIP, FOOT = 18, 36, 16
--- The pages share the width as variant E's do, the timeline's page wider (flex 1.45 to 1).
+local SIDE, STRIP, FOOT = 18, 38, 16
+-- The pages share the width as the kit's do, the timeline's page wider (1.45 to 1).
 local LEFT_WIDTH = math.floor((WIDTH - 2 * SIDE) * 1.45 / 2.45 + 0.5)
 local RIGHT_WIDTH = WIDTH - 2 * SIDE - LEFT_WIDTH
 local PAGE_HEIGHT = HEIGHT - STRIP - FOOT
--- A page body's padding inside the paper (variant E: 20px 24px 30px).
-local PAD_X, PAD_TOP, PAD_BOTTOM = 24, 20, 30
+-- A page body's padding inside the paper, left, top, right, bottom: the timeline leaves room at its right for the
+-- list's scroll rail, the entry hugs the outer edge.
+local PADS = { left = { 22, 20, 36, 16 }, right = { 28, 20, 12, 16 } }
 -- The "show completed" checkbox's room at the strip's right, the clock's before it.
 local COMPLETED_WIDTH, CLOCK_WIDTH = 150, 280
--- The ribbons' column outside the leather's right edge, from below the strip.
-local RIBBONS_WIDTH, RIBBONS_TOP = 30, 50
+-- Where the set ribbons hang from under the leather's foot, from its left.
+local RIBBONS_LEFT = 176
 
 --- The leather's anchors (HNT-R61), in drawing order: adapter/Timeline.lua fills the clock and the checkbox,
 --- adapter/Sets.lua the crumbs, the nameplate and the ribbons.
@@ -37,7 +39,7 @@ local LEATHER_PARTS = { "crumbs", "clock", "completed", "nameplate", "ribbons" }
 ---@alias BoardLeatherRenderer fun(anchor: Frame, place: BoardPlace)
 
 ---@class BoardFrame: Frame
----@field close Button
+---@field close BoardCloseButton
 ---@field cover BoardLeatherView               -- the leather, in the cover it wears (HNT-R70)
 ---@field papers table<BoardSide, BoardParchmentView>
 ---@field bodies table<BoardSide, Frame>       -- each page's body, inside its padding: the renderers' pages sit on it
@@ -92,13 +94,25 @@ function Board:Trail()
 	return self.router:Trail()
 end
 
+-- How much of a ribbon's top tucks under the leather's foot: under the kit's band, or none on an old cover, which
+-- has no band to hide it.
+---@param cover BoardCover
+---@return number
+local function tuckOf(cover)
+	return cover.kit and ns.BOARD_RIBBON.tuck or 0
+end
+
 -- The fields of `look` over the default cover's.
 ---@param look BoardCoverLook?
 ---@return BoardCover
 local function coverOf(look)
 	local merged = {}
 	for key, value in pairs(ns.BOARD_COVER) do
-		merged[key] = look and look[key] or value
+		if look and look[key] ~= nil then
+			merged[key] = look[key]
+		else
+			merged[key] = value
+		end
 	end
 	return merged --[[@as BoardCover]] -- every field, from ns.BOARD_COVER
 end
@@ -108,8 +122,11 @@ end
 ---@param look BoardCoverLook?
 function Board:SetCover(look)
 	self.cover = look
-	if self.frame then
-		self.frame.cover:SetCover(coverOf(look))
+	local frame = self.frame
+	if frame then
+		local cover = coverOf(look)
+		frame.cover:SetCover(cover)
+		frame.anchors.ribbons:SetPoint("TOPLEFT", frame, "TOPLEFT", RIBBONS_LEFT, -(HEIGHT - tuckOf(cover)))
 	end
 end
 
@@ -119,36 +136,49 @@ end
 ---@param side BoardSide
 local function buildPage(frame, side)
 	local width = side == "left" and LEFT_WIDTH or RIGHT_WIDTH
+	local pad = PADS[side]
 	local paper = CreateFrame("Frame", nil, frame)
 	paper:SetSize(width, PAGE_HEIGHT)
 	paper:SetPoint("BOTTOMLEFT", side == "left" and SIDE or SIDE + LEFT_WIDTH, FOOT)
 	paper:EnableMouse(true)
 	frame.papers[side] = ns.NewBoardParchment(paper, side == "left" and "RIGHT" or "LEFT")
 	local body = CreateFrame("Frame", nil, paper)
-	body:SetPoint("TOPLEFT", PAD_X, -PAD_TOP)
-	body:SetPoint("BOTTOMRIGHT", -PAD_X, PAD_BOTTOM)
-	body:SetSize(width - 2 * PAD_X, PAGE_HEIGHT - PAD_TOP - PAD_BOTTOM)
+	body:SetPoint("TOPLEFT", pad[1], -pad[2])
+	body:SetPoint("BOTTOMRIGHT", -pad[3], pad[4])
+	body:SetSize(width - pad[1] - pad[3], PAGE_HEIGHT - pad[2] - pad[4])
 	frame.bodies[side] = body
 end
 
--- The leather's anchors (HNT-R61): the crumbs at the strip's left, the clock and the checkbox at its right, the
--- nameplate hanging over the cover's lower corner, and the ribbons' column outside its right edge.
+-- The leather's anchors (HNT-R61): the crumbs at the strip's left, the clock and the checkbox at its right, the brass
+-- nameplate over the cover's lower corner, above the band, and the ribbons' row hanging from under the leather's foot,
+-- below the band, so their tops tuck under it.
 ---@param frame BoardFrame
-local function buildAnchors(frame)
+---@param cover BoardCover
+local function buildAnchors(frame, cover)
 	local function anchor(width, height, ...)
 		local made = CreateFrame("Frame", nil, frame)
 		made:SetSize(width, height)
 		made:SetPoint(...)
 		return made
 	end
-	local strip = STRIP - 14
+	local strip = STRIP - 16
 	frame.anchors = {
-		crumbs = anchor(WIDTH - 2 * SIDE - COMPLETED_WIDTH - CLOCK_WIDTH, strip, "TOPLEFT", SIDE + 6, -7),
-		clock = anchor(CLOCK_WIDTH, strip, "TOPRIGHT", -(SIDE + COMPLETED_WIDTH), -7),
-		completed = anchor(COMPLETED_WIDTH, strip, "TOPRIGHT", -SIDE, -7),
-		nameplate = anchor(200, 24, "BOTTOMLEFT", -12, -14),
-		ribbons = anchor(RIBBONS_WIDTH, HEIGHT - 2 * RIBBONS_TOP, "TOPLEFT", frame, "TOPRIGHT", -2, -RIBBONS_TOP),
+		crumbs = anchor(WIDTH - 2 * SIDE - COMPLETED_WIDTH - CLOCK_WIDTH, strip, "TOPLEFT", SIDE + 6, -8),
+		clock = anchor(CLOCK_WIDTH, strip, "TOPRIGHT", -(SIDE + COMPLETED_WIDTH), -8),
+		completed = anchor(COMPLETED_WIDTH, strip, "TOPRIGHT", -SIDE, -8),
+		nameplate = anchor(200, 32, "BOTTOMLEFT", -12, -14),
+		ribbons = anchor(
+			WIDTH - RIBBONS_LEFT,
+			ns.BOARD_RIBBON.lengthChosen,
+			"TOPLEFT",
+			frame,
+			"TOPLEFT",
+			RIBBONS_LEFT,
+			-(HEIGHT - tuckOf(cover))
+		),
 	}
+	frame.anchors.nameplate:SetFrameLevel(frame:GetFrameLevel() + 10)
+	frame.anchors.ribbons:SetFrameLevel(frame:GetFrameLevel() + 1)
 end
 
 -- Builds the notebook, hidden: the leather, two pages, the leather's anchors and the close button. It drags by the
@@ -171,15 +201,17 @@ local function build(board)
 		-- FloatingChatFrame.xml does the same "So that we don't save the position".
 		self:SetUserPlaced(false)
 	end)
+	local cover = coverOf(board.cover)
 	frame.cover = ns.NewBoardLeather(frame)
-	frame.cover:SetCover(coverOf(board.cover))
+	frame.cover:SetCover(cover)
 	frame.papers, frame.bodies = {}, {}
 	buildPage(frame, "left")
 	buildPage(frame, "right")
-	buildAnchors(frame)
+	buildAnchors(frame, cover)
 
-	frame.close = CreateFrame("Button", nil, frame, "UIPanelCloseButton") --[[@as Button]]
-	frame.close:SetPoint("TOPRIGHT", 6, 6)
+	frame.close = ns.NewBoardClose(frame)
+	frame.close:SetPoint("CENTER", frame, "TOPRIGHT", -3, -3)
+	frame.close:SetFrameLevel(frame:GetFrameLevel() + 10)
 	frame.close:SetScript("OnClick", function()
 		board:Hide()
 	end)

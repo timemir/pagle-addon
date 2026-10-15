@@ -190,11 +190,15 @@ describe("A tracker frame's preview", function()
 				assert.are.equal(1, #stage.children, id) -- one sample, drawn afresh
 				local block = stage.children[1]
 				assert.is_true(block:IsShown())
-				assert.are.same(SAMPLE, textsOf(block), id)
-				local look, dressed = ns.TRACKER_FRAMES[id], block.frame
-				assert.are.equal(look ~= nil, dressed.backing:IsShown(), id)
+				local look = ns.TRACKER_FRAMES[id]
+				local expected = { unpack(SAMPLE) }
+				if look and look.caps then
+					expected[1] = expected[1]:upper() -- "Stats" in small caps on the paper
+				end
+				assert.are.same(expected, textsOf(block), id)
+				assert.are.equal(look ~= nil, block.paper:IsShown(), id)
 				if look then
-					assert.are.equal(look.backing, dressed.backing.texture, id)
+					assert.are.equal(ns.ATLASES[look.frame].file, block.paper.top.texture, id)
 				end
 			end
 		end
@@ -239,20 +243,19 @@ describe("A tracker frame's preview", function()
 	)
 
 	it(
-		"dresses Logbook in parchment with a ruled border and dark ink, and Brass in a brass rim with riveted corners (STA-R88)",
+		"dresses Logbook in ruled paper with dark ink, its rulings repeated at their pitch, and Brass in its riveted plate with bright words (STA-R88)",
 		function()
 			local loaded = loggedIn()
 			local ns = loaded.ns
 			local logbook = ns.TRACKER_FRAMES["stats.trackerframe.logbook"]
 			local brass = ns.TRACKER_FRAMES["stats.trackerframe.brass"]
 
-			assert.are.equal(ns.BOOK_TEXTURES.paper, logbook.backing) -- parchment
-			assert.is_not_nil(logbook.inner) -- the ledger's second rule inside the border
-			assert.is_not_nil(logbook.ink) -- dark words on the pale page
-			assert.is_nil(logbook.rivets)
-			assert.is_not_nil(brass.rivets)
-			assert.is_nil(brass.ink) -- the native colours on a dark plate
-			assert.is_true(brass.borderSize <= 2) -- a thin rim
+			assert.are.same({ "TrackerLogbook", "TrackerBrass" }, { logbook.frame, brass.frame })
+			assert.are.equal(40, logbook.period) -- the ruled lines stay evenly spaced as it grows
+			assert.is_nil(brass.period)
+			assert.is_true(logbook.paper) -- band dots in ink on the page
+			assert.are_not.same(ns.TRACKER_INKS.header, logbook.ink.header) -- dark words on the pale page
+			assert.are.same(ns.TRACKER_INKS.text, brass.ink.text) -- bright words on the dark plate
 		end
 	)
 end)

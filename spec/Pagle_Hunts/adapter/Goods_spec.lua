@@ -177,9 +177,14 @@ describe("Hunts' goods", function()
 end)
 
 describe("the board's cover", function()
-	-- The open board's leather tint, as { r, g, b }.
+	-- The open board's leather: "kit" for the books kit's leather, else an old cover's tint, as { r, g, b }.
 	local function leatherOf(board)
-		local color = board.frame.cover.leather.color
+		local cover = board.frame.cover
+		if cover.kit then
+			assert.is_true(cover.fill:IsShown())
+			return "kit"
+		end
+		local color = cover.leather.color
 		return { color[1], color[2], color[3] }
 	end
 
@@ -187,7 +192,7 @@ describe("the board's cover", function()
 		local loaded, fake = loggedIn()
 		local ns = loaded.ns
 		ns.ToggleBoard()
-		assert.are.same(ns.BOARD_COVER.leather, leatherOf(ns.board))
+		assert.are.equal("kit", leatherOf(ns.board)) -- the default cover is the books kit's leather
 
 		fake.setPurchased({ ["hunts.notebookcover.oilcloth"] = true }) -- bought (SHOP-R11)
 		assert.is_true(fake.Pagle.SetEquipped(COVER, "hunts.notebookcover.oilcloth"))
@@ -197,7 +202,7 @@ describe("the board's cover", function()
 		assert.are.same(ns.COVERS["hunts.notebookcover.oilcloth"].rule, { rule[1], rule[2], rule[3] })
 
 		assert.is_true(fake.Pagle.SetEquipped(COVER, "hunts.notebookcover.leather"))
-		assert.are.same(ns.BOARD_COVER.leather, leatherOf(ns.board))
+		assert.are.equal("kit", leatherOf(ns.board)) -- the default cover is the books kit's leather
 	end)
 
 	it("opens in the cover equipped at an earlier login, bought then (HNT-R70, SHOP-R32)", function()
@@ -290,14 +295,23 @@ describe("a notebook cover's preview", function()
 			assert.are.equal(1, #stage.children, id) -- one notebook, drawn afresh
 			local notebook = stage.children[1]
 			assert.is_true(notebook:IsShown())
-			local leather = notebook.cover.leather.color
-			assert.are.same(ns.COVERS[id].leather, { leather[1], leather[2], leather[3] }, id)
-			leathers[#leathers + 1] = ("%.3f %.3f %.3f"):format(leather[1], leather[2], leather[3])
+			if ns.COVERS[id].kit then
+				-- the board's own: the books kit's leather and band
+				assert.is_true(notebook.cover.fill:IsShown())
+				assert.is_true(notebook.cover.band:IsShown())
+				leathers[#leathers + 1] = "kit"
+			else
+				local leather = notebook.cover.leather.color
+				assert.are.same(ns.COVERS[id].leather, { leather[1], leather[2], leather[3] }, id)
+				assert.is_false(notebook.cover.fill:IsShown())
+				leathers[#leathers + 1] = ("%.3f %.3f %.3f"):format(leather[1], leather[2], leather[3])
+			end
 			for _, widget in ipairs(descendants(notebook)) do
 				assert.are_not.equal(paper, widget.texture, id) -- closed: no parchment
+				assert.are_not.equal(ns.BOOK_FILES.parchment, widget.texture, id)
 			end
 		end
-		assert.are.equal(ns.BOARD_COVER.leather, ns.COVERS["hunts.notebookcover.leather"].leather) -- the board's own
+		assert.is_true(ns.COVERS["hunts.notebookcover.leather"].kit) -- the board's own
 		table.sort(leathers)
 		for i = 2, #leathers do
 			assert.are_not.equal(leathers[i - 1], leathers[i]) -- four different leathers
@@ -323,57 +337,55 @@ describe("a tracker frame's preview", function()
 				assert.are.equal(1, #stage.children, id)
 				local tracker = stage.children[1]
 				assert.is_true(tracker:IsShown())
-				assert.are.same({ "Hunts", "Night Run · in 37m", "Rack Hour · on demand" }, textsOf(tracker), id)
-				local look, dressed = ns.TRACKER_FRAMES[id], tracker.frame
+				local look, paper = ns.TRACKER_FRAMES[id], tracker.view.paper
+				-- each Hunt's name at the left and its label at the right; "Hunts" in small caps on a paper
+				assert.are.same(
+					{ look and "HUNTS" or "Hunts", "Night Run", "in 37m", "Rack Hour", "on demand" },
+					textsOf(tracker),
+					id
+				)
+				assert.are.equal(ns.TrackerLook(id), tracker.view.look, id)
 				if look then
-					assert.is_true(dressed.backdrop:IsShown())
-					assert.are.equal(look.backdrop, dressed.backdrop.texture, id)
-					local tinted = dressed.backdrop.vertexColor
-					assert.are.same(look.tint, { tinted[1], tinted[2], tinted[3] }, id)
-					for _, line in ipairs(dressed.border) do
-						assert.is_true(line:IsShown())
-						assert.are.same(look.border, { line.color[1], line.color[2], line.color[3] }, id)
-					end
+					assert.is_true(paper:IsShown())
+					assert.are.equal(ns.ATLASES[look.frame].file, paper.top.texture, id)
+					assert.are.equal(look.width, tracker.width, id)
 				else
-					assert.is_false(dressed.backdrop:IsShown())
-					for _, line in ipairs(dressed.border) do
-						assert.is_false(line:IsShown())
-					end
+					assert.is_false(paper:IsShown())
 				end
 			end
-			assert.are_not.same(
-				ns.TRACKER_FRAMES["hunts.trackerframe.inkwash"].tint,
-				ns.TRACKER_FRAMES["hunts.trackerframe.waxseal"].tint
+			assert.are_not.equal(
+				ns.TRACKER_FRAMES["hunts.trackerframe.inkwash"].frame,
+				ns.TRACKER_FRAMES["hunts.trackerframe.waxseal"].frame
 			)
 		end
 	)
 
-	it(
-		"sets the sample's words in a frame's own ink on a pale backdrop, and in the native colours otherwise",
-		function()
-			local loaded, fake = loggedIn()
-			local ns = loaded.ns
-			local waxseal = ns.TRACKER_FRAMES["hunts.trackerframe.waxseal"]
-			assert.is_not_nil(waxseal.ink) -- parchment (its lore): dark words
+	it("sets the sample's words in its look's inks: dark on the papers, gold and white over the world", function()
+		local loaded, fake = loggedIn()
+		local ns = loaded.ns
 
-			-- Each tracker frame drawn on one stage in turn, so the words are set afresh each time.
-			local stage = loaded.env.CreateFrame("Frame")
-			local colours = {}
-			for _, row in ipairs(GOODS[FRAME]) do
-				fake.ns.goods:Good(row[1]).preview(stage)
-				local tracker = stage.children[1]
-				local words = {}
-				for _, widget in ipairs(shownDescendants(tracker)) do
-					if widget.kind == "FontString" then
-						local color = widget.textColor
-						words[#words + 1] = color and { color[1], color[2], color[3] } or "native"
-					end
+		-- Each tracker frame drawn on one stage in turn, so the words are set afresh each time.
+		local stage = loaded.env.CreateFrame("Frame")
+		local colours = {}
+		for _, row in ipairs(GOODS[FRAME]) do
+			fake.ns.goods:Good(row[1]).preview(stage)
+			local tracker = stage.children[1]
+			local words = {}
+			for _, widget in ipairs(shownDescendants(tracker)) do
+				if widget.kind == "FontString" and widget.text ~= "" then
+					local color = widget.textColor
+					words[#words + 1] = { color[1], color[2], color[3] }
 				end
-				colours[row[1]] = words
 			end
-
-			assert.are.same({ "native", "native", "native" }, colours["hunts.trackerframe.none"])
-			assert.are.same({ waxseal.ink, waxseal.ink, waxseal.ink }, colours["hunts.trackerframe.waxseal"])
+			colours[row[1]] = words
 		end
-	)
+
+		for id, words in pairs(colours) do
+			local look = ns.TrackerLook(id)
+			-- the header, then each Hunt's name and label
+			assert.are.same({ look.header[3], look.name[3], look.label[3], look.name[3], look.label[3] }, words, id)
+		end
+		local wax = ns.TRACKER_FRAMES["hunts.trackerframe.waxseal"]
+		assert.are_not.same(ns.TRACKER_LOOKS.native.name[3], wax.name[3]) -- parchment (its lore): dark words
+	end)
 end)

@@ -19,8 +19,8 @@ ns.L = {
 	-- Hunts' slots (HNT-R120) and the sample tracker a tracker frame's preview draws (HNT-R121).
 	SLOT_NOTEBOOK_COVER = "Notebook cover",
 	SLOT_TRACKER_FRAME = "Hunts tracker frame",
-	PREVIEW_TRACKER_LINE_1 = "Night Run · in 37m",
-	PREVIEW_TRACKER_LINE_2 = "Rack Hour · on demand",
+	-- Its two Hunts ("Night Run · in 37m", "Rack Hour · on demand"), the name at the left and the label at the right.
+	PREVIEW_TRACKER_HUNTS = { { "Night Run", "in 37m" }, { "Rack Hour", "on demand" } },
 	-- Window moments (HNT-R88) and their row on the Announcements page (SET-R32): logic/WindowMoments.lua.
 	WINDOW_MOMENTS_SETTING = "Tell me when a pinned Hunt's window opens",
 	WINDOW_MOMENTS_TOOLTIP = "A quiet Nod when a pinned Hunt's window opens. It fades when the window closes.",
@@ -117,8 +117,26 @@ ns.L = {
 		later = "Later: opens after that, or needs more skill",
 		onDemand = "On demand: starts when you do",
 	},
+	-- The headings as the page sets them: the group's name in small caps, then its note in italic.
+	GROUP_NAMES = { now = "Now", soon = "Soon", later = "Later", onDemand = "On demand" },
+	GROUP_NOTES = {
+		now = "open right now",
+		soon = "opens within 3 hours",
+		later = "opens after that, or needs more skill",
+		onDemand = "starts when you do",
+	},
 	TIMELINE_LEGEND = "Hatched: open · Dashed: window unconfirmed · Pencil: needs more skill · Blue: your camp is up",
-	RULER_NOW = "now",
+	-- The legend as the page draws it: each bar style's own stroke, then its words.
+	LEGEND_ITEMS = {
+		hatched = "open",
+		dashed = "window unconfirmed",
+		pencil = "needs more skill",
+		camp = "your camp is up",
+	},
+	TIMELINE_KICKER = "The Board",
+	RULER_REALM_TIME = "Realm time", -- in small caps over the names, level with the ruler
+	RULER_NEXT = "next %dh", -- in the hand at the ruler's right: how far ahead it reaches
+	RULER_HOUR = "%02d", -- a labelled tick: the realm hour
 	OUT_OF_SEASON = "out of season",
 	-- A set's page, its left side (HNT-R66): "{set name}: earns {title}", or "{set name}: {title}" once earned.
 	SET_HEADING_EARNS = "%s: earns %s",
@@ -174,8 +192,14 @@ ns.L = {
 	-- The wax seal: the full date tier 1 was reached, or the dashed ring before it.
 	SEAL_HUNTED = "Hunted %s",
 	SEAL_NOT_YET = "not yet",
+	-- The pressed seal's words as it stacks them: the word in small caps over the short date, the year under it.
+	SEAL_HUNTED_WORD = "Hunted",
+	-- The pin toggle's words beside its pin.
+	ENTRY_PINNED = "Pinned",
+	ENTRY_PIN_WORD = "Pin",
+	-- A tier not yet reached, in italic beside its threshold.
+	LADDER_NOT_YET = "not yet",
 	-- The tier ladder: each tier's threshold, its Catch's short date and zone, and the ink bar's words.
-	LADDER_TIER = "Tier %d · %d",
 	LADDER_WHEN_ZONE = "%s, %s",
 	LADDER_PROGRESS = "%d / %d",
 	LADDER_CAUGHT = "%d caught",
@@ -213,6 +237,7 @@ ns.L = {
 	SET_PAGE_EARNS = "Earns the title %s",
 	SET_PAGE_EARNED = "Earned: %s",
 	SET_SEAL = "Title earned %s", -- the seal, with the full date
+	SET_SEAL_WORD = "Earned", -- the pressed seal's word over the short date and the year
 	SET_PROGRESS = "%d / %d", -- done current Hunts / current Hunts
 	SET_RULE = "The first tier of every Hunt earns the title.",
 	SET_RETIRED = "Retired",

@@ -110,6 +110,8 @@ ns.L = {
 	ODDS_UNSEEN = "not seen yet",
 	ODDS_KNOWN_SHORT = "1 in %s",
 	ODDS_KNOWN = "about 1 in %s",
+	-- ODDS_KNOWN's first word, which the entry sets in the hand before the odds in large ink (the books kit's look).
+	ODDS_ABOUT = "about",
 	-- What a reading rests on (STA-R46): where, then " {window}", then ", {side}".
 	ODDS_HERE = "here",
 	ODDS_ACROSS = "across %s",

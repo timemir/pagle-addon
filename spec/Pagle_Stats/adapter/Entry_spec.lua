@@ -87,7 +87,8 @@ describe("an item's entry (stats.md › UI › Place spread)", function()
 
 			local view = entry(ns, DARKSHORE, SMALLFISH)
 
-			assert.are.equal("about 1 in 30", shown(view.headline))
+			-- "about" in the hand before the odds in large handwriting
+			assert.are.same({ "about", "1 in 30" }, { shown(view.about), shown(view.headline) })
 			-- Wilson's range for 5 of 150 at z = 1.96: 0.0143 to 0.0757, so 1 in 70 to 1 in 13.
 			assert.are.equal("Likely between 1 in 13 and 1 in 70 (95%).", shown(view.range))
 			assert.are.equal("From 150 of my Casts here, at or above 170 skill; 5 caught.", shown(view.sentence))
@@ -237,7 +238,7 @@ describe("an item's entry (stats.md › UI › Place spread)", function()
 				-- each tick a sixth further along: P = 10^-(i − 1)
 				assert.are.near((i - 1) / 6 * width, xOf(tick), 0.001)
 			end
-			assert.are.same({ "normal", "unlucky", "very unlucky" }, labels(ruler.bandLabels))
+			assert.are.same({ "NORMAL", "UNLUCKY", "VERY UNLUCKY" }, labels(ruler.bandLabels)) -- in small caps
 			-- unlucky from 1 in 100 to 1 in 10k, very unlucky from there to the right end, both in faint red
 			assert.are.equal(2, #ruler.washes)
 			assert.are.near(width / 3, xOf(ruler.washes[1]), 0.001)
@@ -245,7 +246,7 @@ describe("an item's entry (stats.md › UI › Place spread)", function()
 			assert.are.near(2 * width / 3, xOf(ruler.washes[2]), 0.001)
 			assert.are.near(width / 3, ruler.washes[2].width, 0.001)
 			for _, wash in ipairs(ruler.washes) do
-				assert.are.same({ unpack(ns.BOOK_LOOK.red) }, { unpack(wash.color, 1, 3) })
+				assert.are.same({ unpack(ns.BOOK_LOOK.meRed) }, { unpack(wash.color, 1, 3) })
 				assert.is_true(wash.color[4] < 0.25)
 			end
 			assert.are.equal("Every Cast is its own roll; nothing is owed.", shown(ruler.owed))
@@ -265,7 +266,7 @@ describe("an item's entry (stats.md › UI › Place spread)", function()
 			assert.are.equal(width, xOf(ruler.mark))
 			ruler:SetRuler(1e-3)
 			assert.are.near(width / 2, xOf(ruler.mark), 0.001)
-			assert.are.same({ unpack(ns.BOOK_LOOK.red) }, { unpack(ruler.mark.color, 1, 3) })
+			assert.are.equal(ns.ATLASES.Parts.file, ruler.mark.texture) -- the kit's red "me" mark
 		end)
 
 		it("clamps a very unlucky wait past 1 in a million at the right end", function()
