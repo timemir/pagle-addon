@@ -39,11 +39,6 @@ local ns = select(2, ...)
 ---@field RefreshGoods fun()                            -- M:RefreshGoods (LED-R111)
 ---@field SizeText fun(size: PagleSize?): string?       -- ns.SizeText over Pagle.SIZE_BANDS and Pagle.FormatLength
 
---- A Ledger moment as Core keeps it: PagleMoment with a banner's wax seal (announcements.md › Contracts; LED-R97),
---- the level or the Catches pressed into it, or a mark. Core's own PagleMoment gains `seal` with the announce kit.
----@class LedgerMoment: PagleMoment
----@field seal? integer|"waves"|"book"|"quill"|"crest"
-
 -- In-client textures for the moments that have no item (LED-R97): the level's ledger book and Fishing's own icon.
 local LEVEL_ICON = ns.BINDING_ICON
 local SKILL_ICON = "Interface\\Icons\\Trade_Fishing"

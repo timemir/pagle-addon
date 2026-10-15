@@ -170,7 +170,7 @@ end
 
 -- Every moment of `announcements` by kind (the last of a kind wins).
 ---@param announcements PagleAnnouncement[]
----@return { [string]: LedgerMoment }
+---@return { [string]: PagleMoment }
 local function byKind(announcements)
 	local kinds = {}
 	for _, announcement in ipairs(announcements) do

@@ -174,7 +174,7 @@ end
 
 -- Each moment of an Announcement by kind.
 ---@param announcement PagleAnnouncement
----@return { [string]: LedgerMoment }
+---@return { [string]: PagleMoment }
 local function byKind(announcement)
 	local kinds = {}
 	for _, moment in ipairs(announcement.moments) do
