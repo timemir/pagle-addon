@@ -83,6 +83,77 @@ describe("board days and weeks", function()
 			assert.are.equal(MIDNIGHT, (ns.LiveBoundaries(later)))
 		end)
 
+		describe("while the realm clock can't be read", function()
+			-- 15:15 UTC: UTC's midnight is Sun 11 Oct 00:00 UTC, 15 h 15 min back.
+			local UTC_MIDNIGHT = NOW - (15 * 3600 + 15 * 60)
+			-- A secret value (CORE-R31): arithmetic on it raises an error, as the client's does.
+			local SECRET = setmetatable({}, {
+				__add = function()
+					error("arithmetic on a secret value")
+				end,
+				__mul = function()
+					error("arithmetic on a secret value")
+				end,
+			})
+			local UNREADABLE = {
+				{
+					"missing",
+					function(at)
+						at.GetGameTime = nil
+					end,
+				},
+				{
+					"answering nil",
+					function(at)
+						at.GetGameTime = function()
+							return nil, nil
+						end
+					end,
+				},
+				{
+					"secret",
+					function(at)
+						at.GetGameTime = function()
+							return SECRET, SECRET
+						end
+						at.issecretvalue = function(value)
+							return value == SECRET
+						end
+					end,
+				},
+			}
+
+			for _, case in ipairs(UNREADABLE) do
+				local name, unread = case[1], case[2]
+				it(
+					"falls the day back to UTC's midnight with the clock " .. name .. " (TKB-R11, TKB-R105, CORE-R31)",
+					function()
+						local at = api(NOW, { daily = false, weekly = false })
+						unread(at)
+
+						-- Region 1: the week from Tuesday 6 Oct, 5 days before the calendar's Sunday.
+						assert.are.same({ UTC_MIDNIGHT, UTC_MIDNIGHT - 5 * DAY }, { ns.LiveBoundaries(at) })
+						assert.is_nil(ns.RealmMinute(at))
+					end
+				)
+
+				it(
+					"arms the reset timer for UTC's next midnight with the clock " .. name .. " (TKB-R11, TKB-R13)",
+					function()
+						local at = api(NOW, { daily = false })
+						unread(at)
+
+						-- 15:15 UTC to midnight: 8 h 45 min, plus the 2 s delay.
+						assert.are.equal(31500 + 2, ns.SecondsToNextReset(at))
+					end
+				)
+			end
+
+			it("reads the realm minute once the clock is readable again (TKB-R11)", function()
+				assert.are.equal(8 * 60 + 15, ns.RealmMinute(api(NOW)))
+			end)
+		end)
+
 		describe("the fallback week", function()
 			-- The fallback reset weekday by region (tackle-board.md › Tunables), from Sunday 11 Oct (realm).
 			local regions = {

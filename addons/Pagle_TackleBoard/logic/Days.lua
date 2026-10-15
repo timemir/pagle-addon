@@ -19,14 +19,32 @@ ns.WEEK_SECONDS = 604800
 ns.FALLBACK_WEEKDAY = { [1] = 3, [2] = 5, [4] = 5, [5] = 5 }
 ns.FALLBACK_WEEKDAY_OTHER = 4
 
+--- The realm clock as a minute of the realm's day, 0–1439, from `api.GetGameTime` (TKB-R11, TKB-R105): nil while the
+--- client lacks the call, it answers nil, or either value is secret (LOG-R49, CORE-R31: `api.issecretvalue`).
+---@param api TackleResetAPI
+---@return integer?
+function ns.RealmMinute(api)
+	local getGameTime = api.GetGameTime
+	if not getGameTime then
+		return nil
+	end
+	local hour, minute = getGameTime()
+	local isSecret = api.issecretvalue
+	if hour == nil or minute == nil or (isSecret and (isSecret(hour) or isSecret(minute))) then
+		return nil
+	end
+	return hour * 60 + minute
+end
+
 --- The latest realm midnight before or at server time `now` (TKB-R11): `now − realm minute × 60 − now mod 60`, the
---- realm minute (minute of the realm's day) from GetGameTime.
+--- realm minute from ns.RealmMinute; UTC's midnight while the realm clock can't be read, as the realm dates fall back
+--- to UTC (TKB-R105).
 ---@param api TackleResetAPI
 ---@param now integer
 ---@return integer
 local function realmMidnight(api, now)
-	local hour, minute = api.GetGameTime()
-	return now - (hour * 60 + minute) * 60 - now % 60
+	local minute = ns.RealmMinute(api) or math.floor(now / 60) % (ns.DAY_SECONDS / 60)
+	return now - minute * 60 - now % 60
 end
 
 --- The week's fallback start (TKB-R11): realm midnight on the fallback reset weekday on or before the realm's today.
