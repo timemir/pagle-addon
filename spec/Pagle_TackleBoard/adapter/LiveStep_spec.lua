@@ -275,7 +275,7 @@ describe("the live step (TKB-R13)", function()
 	it("does nothing when the timer fires while updating; the next done runs it (TKB-R195, LOG-R74)", function()
 		local ns, loaded, fake = ready()
 		ns.Start()
-		fake.projections.options.syncLimit = 0 -- the rebuild runs over later frames
+		board.updating(fake, true) -- the rebuild runs over later frames
 		ns.projection:Rebuild()
 
 		pass(loaded, fake, DAY)

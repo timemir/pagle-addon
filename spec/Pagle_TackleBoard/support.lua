@@ -168,6 +168,14 @@ function support.live(fake, entry)
 	fake.live(fake.catchLog:Append(entry))
 end
 
+--- Makes `fake`'s projections catch up and rebuild over later frames while `on`, or at once again (LOG-R74), so a
+--- spec can watch the projection updating (TKB-R108).
+---@param fake table
+---@param on boolean
+function support.updating(fake, on)
+	fake.projections.options.syncLimit = on and 0 or math.huge
+end
+
 --- `seconds` pass on the server's clock (the fake's) and the addon's timers (`loaded`'s client).
 ---@param loaded LoadedAddon
 ---@param fake table

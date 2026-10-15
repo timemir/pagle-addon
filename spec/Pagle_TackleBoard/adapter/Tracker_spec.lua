@@ -178,7 +178,7 @@ describe("the Tackle Board's tracker in the dock (TKB-R120, TKB-R2, CORE-R70, CO
 	it("hides when its setting is turned off, so the dock reflows, and shows again when on (TKB-R120)", function()
 		local _, fake, ns = ready(startedLog(unpack(FULL)))
 		local checkbox
-		for _, row in ipairs(fake.settingsPage("trackers")) do
+		for _, row in ipairs(assert(fake.settingsPage("trackers"), "no Trackers page")) do
 			if row.label == "Show goals workable here" then
 				checkbox = row.setting
 			end
@@ -392,7 +392,7 @@ describe("its frame and updating state (TKB-R124)", function()
 
 	it('shows only its header and "Updating…" while the projection rebuilds, then its lines again', function()
 		local loaded, fake, ns = ready(startedLog(unpack(FULL)))
-		fake.projections.options.syncLimit = 0 -- the rebuild runs in chunks on later frames
+		board.updating(fake, true) -- the rebuild runs in chunks on later frames
 
 		ns.projection:Rebuild()
 		ns.Redraw("step")
@@ -401,7 +401,7 @@ describe("its frame and updating state (TKB-R124)", function()
 		assert.are.same({ "Tackle Board | ", "Updating…" }, read(ns))
 		assert.are.same({ "hunts", "stats", "tackleboard" }, docked(fake))
 
-		fake.projections.options.syncLimit = math.huge
+		board.updating(fake, false)
 		for _ = 1, 10 do
 			fake.nextFrame()
 		end

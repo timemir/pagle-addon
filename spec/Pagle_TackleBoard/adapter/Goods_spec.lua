@@ -26,22 +26,12 @@ local function kindOf(good)
 	return "tier " .. tostring(good.tier)
 end
 
--- Pagle_TackleBoard on a fake that has logged in.
----@param options { catalogue: table?, api: table?, random: function?, prepare: fun(loaded: LoadedAddon)? }?
+-- Pagle_TackleBoard on a fake that has logged in; support.load has left the shipped lore out of ns.L.
+---@param options table? support.load's
 local function loggedIn(options)
 	local loaded, fake = board.load(nil, options)
 	fake.login()
 	return loaded, fake
-end
-
--- Takes every boardgood lore key out of ns.L, as before the M7 lore batch (#237).
----@param loaded LoadedAddon
-local function withoutLore(loaded)
-	for key in pairs(loaded.ns.L) do
-		if type(key) == "string" and key:find("^boardgood%.") then
-			loaded.ns.L[key] = nil
-		end
-	end
 end
 
 describe("The Tackle Board's goods", function()
@@ -98,7 +88,7 @@ describe("The Tackle Board's goods", function()
 	it(
 		"are named by their IDs, with no description, while their boardgood lore keys have no text (TKB-R130)",
 		function()
-			local _, fake = loggedIn({ prepare = withoutLore })
+			local _, fake = loggedIn()
 
 			for _, row in ipairs(GOODS) do
 				local good = fake.Pagle.GetGood(row[1])
@@ -108,10 +98,9 @@ describe("The Tackle Board's goods", function()
 	)
 
 	it("are named and described from their boardgood lore keys (TKB-R130, SHOP-R26)", function()
-		-- Fixture lore in place of the M7 batch's (#237), as data/Lore.lua adds it to ns.L.
+		-- Fixture lore in place of the shipped batch's, as data/Lore.lua adds it to ns.L.
 		local _, fake = loggedIn({
 			prepare = function(loaded)
-				withoutLore(loaded)
 				loaded.ns.L["boardgood.tackleboard.trackerframe.corkboard.name"] = "Corkboard"
 				loaded.ns.L["boardgood.tackleboard.trackerframe.corkboard.description"] = "Pinned up like a Notice."
 				loaded.ns.L["boardgood.tackleboard.trackerframe.driftwood.name"] = "Driftwood Plank"

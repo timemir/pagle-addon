@@ -180,25 +180,21 @@ describe("a session-bound goal's progress (TKB-R104)", function()
 
 		assert.are.equal("1 of 2 this Session", notice(frame, 1).goal.progress:GetText())
 
-		fake.wait(901) -- the Session ends 15 minutes after its last Cast (LOG-R62)
+		fake.wait(fake.ns.SESSION_GAP + 1) -- the Session ends a gap after its last Cast (LOG-R62)
 
 		assert.are.equal("0 of 2 this Session", notice(frame, 1).goal.progress:GetText())
 	end)
 end)
 
 describe('"take it down", RE-POSTED and stranded goals (TKB-R44, TKB-R55, TKB-R108)', function()
-	-- The board with a re-posted goal and a stranded one, and a reroll seam that lets every goal not re-posted, and the
-	-- stranded one, be taken down, recording each goal taken down.
+	-- The board with a re-posted goal and a stranded one, the real ns.CanTakeDown (TKB-R55) and a ns.TakeDown that
+	-- records each goal taken down.
 	local function withSeams()
 		local records = startedLog(EXPEDITION, QUALITY, STRANDED)
 		records[#records + 1] = record("reroll", T + 10, idAt(T + 2) .. ";" .. LURE)
 		local taken = {}
 		local loaded, fake, frame = opened(records, {
 			prepare = function(l)
-				l.ns.CanTakeDown = function(goalID)
-					local goal = l.ns.State().goals[goalID]
-					return goal ~= nil and (not goal.reposted or goalID == idAt(T + 3))
-				end
 				l.ns.TakeDown = function(goalID)
 					taken[#taken + 1] = goalID
 				end
