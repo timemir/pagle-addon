@@ -34,32 +34,39 @@ def _weekday(day: date) -> int:
     return day.isoweekday() % 7 + 1
 
 
+def in_time_range(minute: int, time_range: object) -> bool:
+    """LOG-R48's time range: a realm minute of day in one { from, to }, from inclusive, to exclusive, crossing
+    midnight when to < from. Core's MatchesConditions reads a range with from == to (invalid, LOG-R48) as crossing
+    midnight, so does this."""
+    assert isinstance(time_range, list)
+    start, end = int(time_range[0]), int(time_range[1])
+    return start <= minute < end if start < end else minute >= start or minute < end
+
+
+def _month_day(value: object) -> tuple[int, int]:
+    assert isinstance(value, list)
+    return int(value[0]), int(value[1])
+
+
+def in_season(month_day: tuple[int, int], season: object) -> bool:
+    """LOG-R48's season range: a realm (month, day) in one { from, to }, both days inclusive, crossing the year's end
+    when to < from. Core's MatchesConditions reads a range with from == to (invalid, LOG-R48) as crossing the year's
+    end, the whole year, so does this."""
+    assert isinstance(season, Mapping)
+    start, end = _month_day(season["from"]), _month_day(season["to"])
+    return start <= month_day <= end if start < end else month_day >= start or month_day <= end
+
+
 def _time_holds(ranges: object, minute: int) -> bool:
-    """LOG-R48's time: a realm minute in any { from, to } range, from inclusive, to exclusive, crossing midnight when
-    to < from."""
+    """LOG-R48's time: a realm minute in any of the ranges."""
     assert isinstance(ranges, list)
-    for start, end in ranges:
-        if start < end:
-            if start <= minute < end:
-                return True
-        elif minute >= start or minute < end:
-            return True
-    return False
+    return any(in_time_range(minute, time_range) for time_range in ranges)
 
 
 def _season_holds(ranges: object, day: date) -> bool:
-    """LOG-R48's season: a realm date in any range, both days inclusive, crossing the year's end when to < from."""
+    """LOG-R48's season: a realm date in any of the ranges."""
     assert isinstance(ranges, list)
-    today = day.month * 100 + day.day
-    for season in ranges:
-        start = season["from"][0] * 100 + season["from"][1]
-        end = season["to"][0] * 100 + season["to"][1]
-        if start < end:
-            if start <= today <= end:
-                return True
-        elif today >= start or today <= end:
-            return True
-    return False
+    return any(in_season((day.month, day.day), season) for season in ranges)
 
 
 def _occurrences(rule: WeeklyRule, first: date, days: int) -> list[tuple[int, int]]:

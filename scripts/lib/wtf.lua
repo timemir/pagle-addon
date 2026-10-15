@@ -183,6 +183,16 @@ function wtf.loadCore(files)
 	return ns
 end
 
+-- Each line of addons/<addon>/<addon>.toc, in order, trimmed and with forward slashes: its files as paths under
+-- addons/<addon>/, among its metadata and blank lines, which match no file pattern.
+function wtf.tocEntries(addon)
+	local entries = {}
+	for _, line in ipairs(assert(wtf.readLines(ROOT .. "/addons/" .. addon .. "/" .. addon .. ".toc"))) do
+		entries[#entries + 1] = (line:match("^%s*(.-)%s*$"):gsub("\\", "/"))
+	end
+	return entries
+end
+
 -- The Ledger's namespace with its logic: each logic/ file Pagle_Ledger.toc lists, in TOC order, called with
 -- ("Pagle_Ledger", ns) as the client calls an addon's files (spec/support/addon.lua loads them the same way). Their
 -- CORE-R11 guard reads the Pagle global, so it's a table here; logic/ is plain Lua 5.1 (CORE-R7) and reads nothing
@@ -191,8 +201,7 @@ function wtf.loadLedgerLogic()
 	local ns = {}
 	local env = setmetatable({ Pagle = {} }, { __index = _G })
 	local dir = ROOT .. "/addons/Pagle_Ledger/"
-	for _, line in ipairs(assert(wtf.readLines(dir .. "Pagle_Ledger.toc"))) do
-		local file = line:match("^%s*(.-)%s*$"):gsub("\\", "/")
+	for _, file in ipairs(wtf.tocEntries("Pagle_Ledger")) do
 		if file:match("^logic/[^/]+%.lua$") then
 			assert(wtf.loadInto(ns, env, dir .. file, "Pagle_Ledger"))
 		end

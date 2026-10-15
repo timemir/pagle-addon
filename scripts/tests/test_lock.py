@@ -6,8 +6,9 @@ from pathlib import Path
 import pytest
 
 from cli_fixture import run
-from hunts_fixture import HUNT_LIST_LUA, HUNTS, ITEMS, NIGHT_RUN_HASH, ODDITY_HASH, write_hunts
+from hunts_fixture import HUNTS, ITEMS, NIGHT_RUN_HASH, ODDITY_HASH, write_hunts
 from pagle_data.generate import hunt_list_of, read_layers
+from pagle_data.hunts import HUNT_LIST_LUA
 from test_hunts import write_tree
 
 LOCK = "data/hunts/released.lock"

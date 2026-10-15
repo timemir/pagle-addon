@@ -8,8 +8,11 @@ from pathlib import Path
 
 import pytest
 
+from pagle_data.confirmed import side
+from pagle_data.errors import At
 from pagle_data.forever import WeeklyRule
-from pagle_data.realm_time import Openness, is_open, open_steps, openness
+from pagle_data.observed import CatchRow
+from pagle_data.realm_time import Openness, in_season, in_time_range, is_open, open_steps, openness
 
 # The shared fixture, read by spec/Pagle/logic/TimeSpecs_spec.lua too, so the two readings can't drift.
 FIXTURE = Path(__file__).parent / "fixtures" / "time_specs.json"
@@ -34,7 +37,7 @@ def test_the_shared_time_fixture(case: dict[str, object]) -> None:
 
 
 def test_a_one_hour_weekly_window_passes_the_cap_as_data_r92_words_it() -> None:
-    # DATA-R92 (graph.md open question 8): open 1 hour a week is under 1/7 of the steps, but its longest closed run is
+    # DATA-R92: open 1 hour a week is under 1/7 of the steps, but its longest closed run is
     # 6 days 23 hours, at most 7 days, so it passes. 2026 and 2027 have 52 Sundays each, 4 steps every one. The run
     # doesn't wrap round the span's ends: the 5 days 9 hours after the last Sunday (2027-12-26 15:00 on) and the 3
     # days 14 hours before the first (2026-01-04 14:00) would make 8 days 23 hours running.
@@ -91,3 +94,30 @@ def test_every_step_reads_as_is_open_does() -> None:
         assert [bool(step) for step in steps] == [
             is_open(spec, start + timedelta(minutes=15 * index), rules) for index in range(STEPS)
         ]
+
+
+def _row(t: int, m: int) -> CatchRow:
+    """A catch row (REP-R20) in bucket t of realm month m, for confirmed.side."""
+    return CatchRow(
+        item=6303, area=33, build=70338, count=1, auras=(), events=(), t=t, m=m, rejected=None, reporter="", at=At("x")
+    )
+
+
+def test_the_cap_and_confirmation_read_a_season_with_from_equal_to_to_as_core_does() -> None:
+    # LOG-R48, DATA-R51: a season with from == to is invalid (the generator rejects it), but read anyway, the rarity
+    # cap and gate confirmation (confirmed.side) read it as Core's MatchesConditions does: not from < to, so it
+    # crosses the year's end and holds every day. Confirmation used to read it as the one day.
+    season = {"from": [3, 1], "to": [3, 1]}
+    assert in_season((3, 1), season)
+    assert in_season((7, 15), season)
+    assert is_open({"season": [season]}, datetime(2026, 7, 15, 12, 0), RULES)
+    assert side(_row(720, 7), {"season": [season]}) == "inside"
+
+
+def test_confirmation_reads_ranges_as_the_shared_fixture_does() -> None:
+    # DATA-R51, LOG-R48: confirmed.side judges a row by realm_time's in_time_range and in_season, the reading the
+    # shared fixture holds to Core's: 23:00 to 02:00 crosses midnight, December to February crosses New Year.
+    assert in_time_range(60, [1380, 120])
+    assert not in_time_range(120, [1380, 120])
+    assert side(_row(60, 1), {"time": [[1380, 120]]}) == "inside"
+    assert side(_row(60, 1), {"season": [{"from": [12, 1], "to": [2, 28]}]}) == "inside"

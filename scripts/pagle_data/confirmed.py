@@ -18,6 +18,7 @@ from pagle_data.errors import At, Problems
 from pagle_data.forever import WeeklyRule
 from pagle_data.items import ItemEntry, Record
 from pagle_data.observed import DEV_REPORTER, FACT_IDS, CatchRow, DevFact, Observations
+from pagle_data.realm_time import in_season, in_time_range
 from pagle_data.windows import NAMED, Spec, event_window, window_of_event
 
 # Tunables: the required reporters for an ordinary fact and for a big one (DATA-R49).
@@ -195,25 +196,6 @@ def _all_or_none(holds: Iterable[bool]) -> str:
     return INSIDE if found == {True} else OUTSIDE if found == {False} else NEITHER
 
 
-def _in_time(minute: int, time_range: object) -> bool:
-    """minute in a LOG-R48 time range: from inclusive, to exclusive, wrapping past midnight when to < from."""
-    assert isinstance(time_range, list)
-    start, end = int(time_range[0]), int(time_range[1])
-    return start <= minute < end if start < end else minute >= start or minute < end
-
-
-def _month_day(value: object) -> tuple[int, int]:
-    assert isinstance(value, list)
-    return int(value[0]), int(value[1])
-
-
-def _in_season(day: tuple[int, int], season: object) -> bool:
-    """(month, day) in a LOG-R48 season range: both days inclusive, wrapping the year when to < from."""
-    assert isinstance(season, Mapping)
-    start, end = _month_day(season["from"]), _month_day(season["to"])
-    return start <= day <= end if start <= end else day >= start or day <= end
-
-
 def side(row: CatchRow, spec: Spec) -> str:
     """Whether row is inside spec, outside it or neither (DATA-R51): each time-based field judged over the row's
     span (its 15-minute bucket for time, its realm month for season, its event= list for events); a row without t
@@ -225,13 +207,13 @@ def side(row: CatchRow, spec: Spec) -> str:
             sides.append(NEITHER)
         else:
             minutes = ((row.t + offset) % MINUTES_PER_DAY for offset in range(BUCKET))
-            sides.append(_all_or_none(any(_in_time(minute, r) for r in times) for minute in minutes))
+            sides.append(_all_or_none(any(in_time_range(minute, r) for r in times) for minute in minutes))
     if isinstance(seasons, list):
         if row.m is None:
             sides.append(NEITHER)
         else:
             days = ((row.m, day) for day in range(1, _DAYS_IN_MONTH[row.m - 1] + 1))
-            sides.append(_all_or_none(any(_in_season(day, s) for s in seasons) for day in days))
+            sides.append(_all_or_none(any(in_season(day, s) for s in seasons) for day in days))
     if isinstance(events, list):
         sides.append(INSIDE if set(row.events) & set(events) else OUTSIDE)
     if OUTSIDE in sides:
@@ -244,7 +226,7 @@ def _outside_weekly(row: CatchRow, rule: WeeklyRule) -> bool:
     if row.t is None or rule.duration >= MINUTES_PER_DAY:
         return False
     span = (rule.start, (rule.start + rule.duration) % MINUTES_PER_DAY)
-    return not any(_in_time((row.t + offset) % MINUTES_PER_DAY, list(span)) for offset in range(BUCKET))
+    return not any(in_time_range((row.t + offset) % MINUTES_PER_DAY, list(span)) for offset in range(BUCKET))
 
 
 @dataclass(frozen=True)

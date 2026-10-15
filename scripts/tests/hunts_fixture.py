@@ -3,14 +3,13 @@ one; test_hunts.py covers the file, over the fixture list and items below."""
 
 from pathlib import Path
 
-HUNTS_TOML = "data/hunts/hunts.toml"
-HUNT_LIST_LUA = "addons/Pagle_Hunts/data/HuntList.lua"
+from pagle_data.universe import HUNTS_TOML
 
 
 def write_hunts(root: Path, text: str = "") -> None:
-    hunts = root / "data" / "hunts"
-    hunts.mkdir(parents=True, exist_ok=True)
-    (hunts / "hunts.toml").write_text(text, encoding="utf-8")
+    path = root / HUNTS_TOML
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text, encoding="utf-8")
 
 
 # The fixture's items over baseline_fixture's 6303, 13759, 19807 and reference-only 6358 (DATA-R15-R24): 6303 a

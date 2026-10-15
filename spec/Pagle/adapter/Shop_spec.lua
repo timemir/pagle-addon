@@ -81,27 +81,6 @@ local function rowOf(loaded, goodID)
 	error("no row for " .. goodID)
 end
 
--- Presses Esc as the client does: the focused edit box takes it first; with none focused, CloseSpecialWindows hides
--- every shown frame named in UISpecialFrames.
-local function escape(loaded)
-	local focus = loaded.client.focus
-	local onEscape = focus and focus:GetScript("OnEscapePressed")
-	if onEscape then
-		onEscape(focus)
-		return
-	end
-	local frame = shopFrame(loaded)
-	for _, name in ipairs(loaded.env.UISpecialFrames) do
-		if frame and name == frame.name and frame:IsShown() then
-			frame:Hide()
-			local onHide = frame:GetScript("OnHide")
-			if onHide then
-				onHide(frame)
-			end
-		end
-	end
-end
-
 describe("The Curio Shop's entry points", function()
 	it("opens with Pagle.OpenShop(), titled Curio Shop (SHOP-R40)", function()
 		local loaded = shopCore()
@@ -142,12 +121,12 @@ describe("The Curio Shop's entry points", function()
 
 		Pagle.OpenShop()
 		assert.is_true(loaded.ns.shopFrame.name ~= nil)
-		escape(loaded)
+		loaded.client.pressEscape()
 		assert.is_false(shopFrame(loaded):IsShown())
 
 		Pagle.OpenShop()
 		shopFrame(loaded).search:SetFocus()
-		escape(loaded)
+		loaded.client.pressEscape()
 		assert.is_false(shopFrame(loaded):IsShown())
 		assert.is_nil(loaded.client.focus) -- a closed shop keeps no keyboard focus
 

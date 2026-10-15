@@ -56,12 +56,10 @@ local function prestiges(fake)
 	return found
 end
 
--- Closes the Journal as the player does: the frame hides and its OnHide runs, as the client runs it.
+-- Closes the Journal as the player does: the frame hides, and its OnHide runs, as the client runs it.
 ---@param loaded LoadedAddon
 local function closeJournal(loaded)
-	local frame = loaded.ns.journal.frame
-	frame:Hide()
-	frame.scripts.OnHide(frame)
+	loaded.ns.journal.frame:Hide()
 end
 
 local CONFIRM = "Begin a new Ledger? Your Angler Level starts again at 1, and climbs at half the cost. Nothing "

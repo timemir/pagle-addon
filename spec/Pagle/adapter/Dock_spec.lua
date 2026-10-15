@@ -2,17 +2,8 @@
 -- CORE-R70–R72; core/README.md › Data, Settings, Tunables; settings.md SET-R1, SET-R40, SET-R93): M:RegisterTracker,
 -- the stack under the minimap, Shift-drag, dock.point and the Trackers page's Reset.
 
--- Core over a saved PagleDB (`saved`, if given) with the Ledger, Hunts, Stats and the Tackle Board installed, before
--- PLAYER_LOGIN.
----@param saved table?
----@return LoadedAddon
-local function session(saved)
-	local loaded = loadCore(nil, saved)
-	for _, name in ipairs({ "Stats", "TackleBoard" }) do
-		loaded.client.addons["Pagle_" .. name] = { metadata = { ["X-Pagle-API"] = "1" } }
-	end
-	return loaded
-end
+-- The roster beyond the Ledger and Hunts that the fixture Modules dock under (coreWithTrackers).
+local ROSTER = { "Stats", "TackleBoard" }
 
 -- Registers a fixture Module and docks a plain frame, `height` px tall and 200 wide, as tracker `id` at `order`.
 -- Returns the handle and the frame.
@@ -28,24 +19,6 @@ local function dockFixture(loaded, name, order, height, id)
 	frame:SetSize(200, height)
 	handle:RegisterTracker({ id = id or name:lower(), order = order, frame = frame })
 	return handle, frame
-end
-
--- Shows or hides a docked frame as the client does: the frame changes, then its OnShow or OnHide runs.
-local function setShown(frame, shown)
-	frame:SetShown(shown)
-	local script = frame:GetScript(shown and "OnShow" or "OnHide")
-	if script then
-		script(frame)
-	end
-end
-
--- Resizes a docked frame as the client does: the frame changes, then its OnSizeChanged runs.
-local function setHeight(frame, height)
-	frame:SetHeight(height)
-	local script = frame:GetScript("OnSizeChanged")
-	if script then
-		script(frame, frame:GetWidth(), height)
-	end
 end
 
 -- A frame's first anchor, as { point, relativeTo, relativePoint, x, y }.
@@ -74,7 +47,7 @@ describe("The tracker dock", function()
 	it(
 		"stacks orders 10 above 20 with 8 px between, 10 px under the minimap cluster at its right edge (CORE-R70)",
 		function()
-			local loaded = session()
+			local loaded = coreWithTrackers(nil, ROSTER)
 			local _, stats = dockFixture(loaded, "Stats", 20, 60)
 			local _, hunts = dockFixture(loaded, "Hunts", 10, 40)
 
@@ -91,37 +64,37 @@ describe("The tracker dock", function()
 	)
 
 	it("moves the next tracker up when one hides, and back down when it shows (CORE-R70, CORE-R72)", function()
-		local loaded = session()
+		local loaded = coreWithTrackers(nil, ROSTER)
 		local _, hunts = dockFixture(loaded, "Hunts", 10, 40)
 		local _, stats = dockFixture(loaded, "Stats", 20, 60)
 		loaded.client.fire("PLAYER_LOGIN")
 		local dock = loaded.ns.dockFrame
 
-		setShown(hunts, false)
+		hunts:SetShown(false)
 
 		assert.are.same({ "TOPRIGHT", dock, "TOPRIGHT", 0, 0 }, anchorOf(stats))
 		assert.is_false(hunts:IsShown()) -- the dock only stacks; the Module shows and hides its own (CORE-R72)
 
-		setShown(hunts, true)
+		hunts:SetShown(true)
 
 		assert.are.same({ "TOPRIGHT", dock, "TOPRIGHT", 0, -48 }, anchorOf(stats))
 	end)
 
 	it("reflows when a docked frame resizes (CORE-R70)", function()
-		local loaded = session()
+		local loaded = coreWithTrackers(nil, ROSTER)
 		local _, hunts = dockFixture(loaded, "Hunts", 10, 40)
 		local _, stats = dockFixture(loaded, "Stats", 20, 60)
 		loaded.client.fire("PLAYER_LOGIN")
 
-		setHeight(hunts, 90)
+		hunts:SetHeight(90)
 
 		assert.are.same({ "TOPRIGHT", loaded.ns.dockFrame, "TOPRIGHT", 0, -98 }, anchorOf(stats))
 	end)
 
 	it("shows nothing with no tracker visible, and shows no tracker itself (CORE-R72)", function()
-		local loaded = session()
+		local loaded = coreWithTrackers(nil, ROSTER)
 		local _, hunts = dockFixture(loaded, "Hunts", 10, 40)
-		setShown(hunts, false)
+		hunts:SetShown(false)
 
 		loaded.client.fire("PLAYER_LOGIN")
 
@@ -131,7 +104,7 @@ describe("The tracker dock", function()
 	end)
 
 	it("stacks a tie in order by Module name (CORE-R70)", function()
-		local loaded = session()
+		local loaded = coreWithTrackers(nil, ROSTER)
 		local _, board = dockFixture(loaded, "TackleBoard", 30, 50)
 		local _, stats = dockFixture(loaded, "Stats", 30, 20)
 		loaded.client.fire("PLAYER_LOGIN")
@@ -142,7 +115,7 @@ describe("The tracker dock", function()
 	end)
 
 	it("never holds a disabled Module's tracker: it registers nothing (CORE-R17, CORE-R70)", function()
-		local loaded = session()
+		local loaded = coreWithTrackers(nil, ROSTER)
 		loaded.client.addons.Pagle_Stats = { enabled = false, metadata = { ["X-Pagle-API"] = "1" } }
 		local _, hunts = dockFixture(loaded, "Hunts", 10, 40)
 
@@ -164,7 +137,7 @@ describe("M:RegisterTracker", function()
 	}
 	for _, case in ipairs(mistakes) do
 		it("raises an error at the Module's call for " .. case[1] .. ", docking nothing (CORE-R70)", function()
-			local loaded = session()
+			local loaded = coreWithTrackers(nil, ROSTER)
 			local env = loaded.env
 			local hunts = env.Pagle.RegisterModule({ name = "Hunts", title = "Hunts", order = 20 })
 			local tracker = { id = case[2].id, order = case[2].order }
@@ -186,7 +159,7 @@ describe("M:RegisterTracker", function()
 	end
 
 	it("raises an error for an id already docked by any Module, keeping the first (CORE-R70)", function()
-		local loaded = session()
+		local loaded = coreWithTrackers(nil, ROSTER)
 		local _, first = dockFixture(loaded, "Hunts", 10, 40, "pins")
 		local stats = loaded.env.Pagle.RegisterModule({ name = "Stats", title = "Stats", order = 30 })
 		local second = loaded.env.CreateFrame("Frame", nil, loaded.env.UIParent)
@@ -204,7 +177,7 @@ describe("M:RegisterTracker", function()
 	end)
 
 	it("is a handle method: called on anything else, it raises an error (CORE-R12)", function()
-		local loaded = session()
+		local loaded = coreWithTrackers(nil, ROSTER)
 		local hunts = loaded.env.Pagle.RegisterModule({ name = "Hunts", title = "Hunts", order = 20 })
 
 		assert.has_error(function()
@@ -215,7 +188,7 @@ end)
 
 describe("Moving the dock", function()
 	it("Shift-dragging any docked frame moves the whole stack and saves dock.point (CORE-R71)", function()
-		local loaded = session()
+		local loaded = coreWithTrackers(nil, ROSTER)
 		local _, hunts = dockFixture(loaded, "Hunts", 10, 40)
 		local _, stats = dockFixture(loaded, "Stats", 20, 60)
 		loaded.client.fire("PLAYER_LOGIN")
@@ -236,14 +209,14 @@ describe("Moving the dock", function()
 	end)
 
 	it("anchors the dock at dock.point at the next login (CORE-R71, core/README.md › Data)", function()
-		local first = session()
+		local first = coreWithTrackers(nil, ROSTER)
 		local _, stats = dockFixture(first, "Stats", 20, 60)
 		first.client.fire("PLAYER_LOGIN")
 		first.client.keysDown.SHIFT = true
 		startDrag(stats)
 		dropAt(first, stats, 812, 640)
 
-		local loaded = session(first.env.PagleDB)
+		local loaded = coreWithTrackers(first.env.PagleDB, ROSTER)
 		dockFixture(loaded, "Stats", 20, 60)
 		loaded.client.fire("PLAYER_LOGIN")
 
@@ -251,7 +224,7 @@ describe("Moving the dock", function()
 	end)
 
 	it("starts no move on a drag without Shift (CORE-R71)", function()
-		local loaded = session()
+		local loaded = coreWithTrackers(nil, ROSTER)
 		local _, hunts = dockFixture(loaded, "Hunts", 10, 40)
 		loaded.client.fire("PLAYER_LOGIN")
 
@@ -263,7 +236,7 @@ describe("Moving the dock", function()
 	end)
 
 	it("never moves while restricted: a Shift-drag does nothing (CORE-R71)", function()
-		local loaded = session()
+		local loaded = coreWithTrackers(nil, ROSTER)
 		local _, hunts = dockFixture(loaded, "Hunts", 10, 40)
 		loaded.client.fire("PLAYER_LOGIN")
 		setCombat(loaded, true)
@@ -277,8 +250,8 @@ describe("Moving the dock", function()
 		assert.are.same({ "TOPRIGHT", loaded.env.MinimapCluster, "BOTTOMRIGHT", 0, -10 }, anchorOf(loaded.ns.dockFrame))
 	end)
 
-	it("stops a drag where it is when restriction starts, and saves it (CORE-R71, drafted default)", function()
-		local loaded = session()
+	it("stops a drag where it is when restriction starts, and saves it (CORE-R71)", function()
+		local loaded = coreWithTrackers(nil, ROSTER)
 		local _, hunts = dockFixture(loaded, "Hunts", 10, 40)
 		loaded.client.fire("PLAYER_LOGIN")
 		loaded.client.keysDown.SHIFT = true
@@ -296,7 +269,7 @@ describe("Moving the dock", function()
 	end)
 
 	it("stops a drag where it is when the dragged tracker hides, and saves it (CORE-R71)", function()
-		local loaded = session()
+		local loaded = coreWithTrackers(nil, ROSTER)
 		local _, hunts = dockFixture(loaded, "Hunts", 10, 40)
 		loaded.client.fire("PLAYER_LOGIN")
 		loaded.client.keysDown.SHIFT = true
@@ -304,7 +277,7 @@ describe("Moving the dock", function()
 		local dock = loaded.ns.dockFrame
 		dock.screenRight, dock.screenTop = 700, 500
 
-		setShown(hunts, false)
+		hunts:SetShown(false)
 
 		assert.is_false(dock.moving)
 		assert.are.same(savedAt(700, 500), loaded.ns.db.profile.dock.point)
@@ -331,7 +304,7 @@ describe("The Trackers page", function()
 	it(
 		"isn't registered with no tracker Module's row: Core's row never registers it alone (SET-R1, SET-R40)",
 		function()
-			local loaded = session()
+			local loaded = coreWithTrackers(nil, ROSTER)
 			dockFixture(loaded, "Hunts", 10, 40)
 
 			loaded.client.fire("PLAYER_LOGIN")
@@ -341,7 +314,7 @@ describe("The Trackers page", function()
 	)
 
 	it("starts with Core's Tracker position row, then the Module's section (CORE-R42, SET-R1, SET-R40)", function()
-		local loaded = session()
+		local loaded = coreWithTrackers(nil, ROSTER)
 		local hunts = dockFixture(loaded, "Hunts", 10, 40)
 		hunts:AddSetting("trackers", {
 			kind = "checkbox",
@@ -374,7 +347,7 @@ describe("The Trackers page", function()
 
 	-- Core with Hunts docked and given a Trackers row, logged in, the dock Shift-dragged to (812, 640).
 	local function movedDock()
-		local loaded = session()
+		local loaded = coreWithTrackers(nil, ROSTER)
 		local hunts, frame = dockFixture(loaded, "Hunts", 10, 40)
 		hunts:AddSetting("trackers", { kind = "header", label = "Hunts" })
 		loaded.client.fire("PLAYER_LOGIN")

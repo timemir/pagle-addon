@@ -360,6 +360,8 @@ local helperGlobals = {
 	"forbiddenIn",
 	"shippedFiles",
 	"readFile",
+	"coreWithTrackers",
+	"daysFromCivil",
 	"drawnSymbols",
 	"itemRecord",
 	"fishRecord",
