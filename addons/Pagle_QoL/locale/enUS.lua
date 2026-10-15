@@ -81,7 +81,8 @@ ns.L = {
 	GEAR_NEEDS_SLOT = "Pagle: needs a free equipment set slot for %s.",
 	GEAR_NEEDS_TWO_SLOTS = "Pagle: needs two free equipment set slots for %s and %s.",
 	NUDGE_SWAP_BACK = "Still holding your pole. Press %s to swap back.",
-	NUDGE_SWAP_BACK_UNBOUND = "Still holding your pole. Bind Pagle: Swap gear to swap back in one press.",
+	-- Filled with BINDING_SWAP_GEAR, which the Nudge prints in red.
+	NUDGE_SWAP_BACK_UNBOUND = "Still holding your pole. Bind %s to swap back in one press.",
 	-- The next-action button: its one-word labels (QOL-R71), its tooltips (QOL-R74), and its rows in the Fishing
 	-- page's While you fish section (qol.md › Settings, QOL-R73).
 	BUTTON_CAST = "Cast",
@@ -99,6 +100,8 @@ ns.L = {
 	SETTINGS_SHOW_BUTTON_TOOLTIP = "Shows what your next press will do. Shift-drag to move.",
 	SETTINGS_BUTTON_POSITION = "Button position",
 	SETTINGS_BUTTON_RESET = "Reset",
-	-- QoL's tour stop's label, for `/pagle dev tour list` (CORE-R68): dev-only, never shown to players.
+	-- QoL's tour stops' labels, for `/pagle dev tour list` (CORE-R68): dev-only, never shown to players.
 	TOUR_SETTINGS = "QoL's rows on the Fishing page",
+	TOUR_NUDGE = "a sample swap-back Nudge",
+	TOUR_NOTES = "samples of the conflict note and the Reload now note",
 }

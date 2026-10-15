@@ -19,24 +19,78 @@ function ns.IsStandingDown()
 	return standingDown
 end
 
---- After either choice, offers the reload that finishes it (QOL-R83). Only a click on "Reload now" reloads (QOL-R6):
---- "Later" and Esc just close it, and the chat line still says /reload. Shown from the choice's callback, it takes
---- a second dialog frame, and StaticPopup_OnClick then hides only the conflict popup's. PAGLE_QOL_RELOAD is the
---- other StaticPopupDialogs field .luacheckrc lets QoL set, and this OnAccept is the one ReloadUI() the boundary
---- spec allows.
+-- The two notes' global names: UISpecialFrames takes names, and Esc hides the frames it lists.
+local CONFLICT_NOTE, RELOAD_NOTE = "PagleQoLConflictNote", "PagleQoLReloadNote"
+
+--- A note pinned with wax (qol.md › UI, the field art kit): its question, and two choices on one line, the first on
+--- leather, the second outlined.
+---@class PagleQoLNote: Frame
+---@field Title FontString
+---@field primary PagleQoLNoteButton
+---@field secondary PagleQoLNoteButton
+
+-- Shows a pinned note named `name`, asking `title` with the choices `primary` and `secondary`: a click on one hides
+-- the note, then runs its `onPrimary` or `onSecondary` (none for a choice that only closes it). It is a dialog QoL
+-- draws itself, at the top centre where the game's popups show, above the world; Esc hides it through
+-- UISpecialFrames (CloseSpecialWindows) and chooses nothing, as no script runs on its hiding. Enter does nothing, as
+-- on the game's popups with no edit box.
+---@param name string
+---@param title string
+---@param primary string
+---@param secondary string
+---@param onPrimary fun()
+---@param onSecondary fun()?
+---@return PagleQoLNote
+local function showNote(name, title, primary, secondary, onPrimary, onSecondary)
+	local note = CreateFrame("Frame", name, UIParent) --[[@as PagleQoLNote]]
+	note:SetSize(440, 200)
+	note:SetPoint("TOP", UIParent, "TOP", 0, -135)
+	note:SetFrameStrata("DIALOG")
+	note:SetClampedToScreen(true)
+	note:EnableMouse(true)
+	ns.PlaceSprite(ns.ArtSprite(note, "Field", "pin", "BACKGROUND"), note, 0, 0)
+	-- The wax on the note's top edge, half above it.
+	ns.PlaceSprite(ns.ArtSprite(note, "Field", "wax"), note, 220 - 29, -28)
+	note.Title = ns.ArtText(note, "NoteHead")
+	note.Title:SetWordWrap(true)
+	note.Title:SetJustifyH("CENTER")
+	note.Title:SetWidth(440 - 68)
+	note.Title:SetPoint("TOP", 0, -44)
+	note.Title:SetText(title)
+	local row = CreateFrame("Frame", nil, note)
+	note.primary = ns.NewNoteButton(row, primary, false)
+	note.secondary = ns.NewNoteButton(row, secondary, true)
+	local width = note.primary:GetWidth() + 12 + note.secondary:GetWidth()
+	row:SetSize(width, 44)
+	row:SetPoint("BOTTOM", 0, 22)
+	-- A long addon title still fits the note: the row shrinks to the paper inside its edges.
+	if width > 440 - 36 then
+		row:SetScale((440 - 36) / width)
+	end
+	note.primary:SetPoint("LEFT", row, "LEFT")
+	note.secondary:SetPoint("RIGHT", row, "RIGHT")
+	note.primary:SetScript("OnClick", function()
+		note:Hide()
+		onPrimary()
+	end)
+	note.secondary:SetScript("OnClick", function()
+		note:Hide()
+		if onSecondary then
+			onSecondary()
+		end
+	end)
+	table.insert(UISpecialFrames, name)
+	note:Show()
+	return note
+end
+
+--- After either choice, offers the reload that finishes it (QOL-R83): the Reload now note, in the conflict note's
+--- place. Only a click on "Reload now" reloads (QOL-R6): "Later" and Esc just close it, and the chat line still says
+--- /reload. This click is the one ReloadUI() the boundary spec allows.
 local function offerReload()
-	StaticPopupDialogs.PAGLE_QOL_RELOAD = {
-		text = ns.L.CONFLICT_RELOAD_TEXT,
-		button1 = ns.L.CONFLICT_RELOAD_NOW,
-		button2 = ns.L.CONFLICT_RELOAD_LATER,
-		OnAccept = function()
-			ReloadUI()
-		end,
-		timeout = 0,
-		whileDead = true,
-		hideOnEscape = true,
-	}
-	StaticPopup_Show("PAGLE_QOL_RELOAD")
+	showNote(RELOAD_NOTE, ns.L.CONFLICT_RELOAD_TEXT, ns.L.CONFLICT_RELOAD_NOW, ns.L.CONFLICT_RELOAD_LATER, function()
+		ReloadUI()
+	end)
 end
 
 ---@param found PagleQoLConflict[]
@@ -66,21 +120,44 @@ function ns.CheckConflicts()
 		return
 	end
 	standingDown = true
-	-- "Use {other}" is the alt button: StaticPopup_OnClick runs OnAlt only for a click on button 3, and Esc runs
-	-- OnEscape or OnCancel, which this dialog doesn't have, so Esc chooses nothing (QOL-R81, QOL-R84). Neither
-	-- choice reloads the UI; each offers the Reload now popup (QOL-R83). PAGLE_QOL_CONFLICT is one of the two
-	-- StaticPopupDialogs fields .luacheckrc lets QoL set.
-	StaticPopupDialogs.PAGLE_QOL_CONFLICT = {
-		text = ns.L.CONFLICT_TEXT,
-		button1 = ns.L.CONFLICT_USE_PAGLE,
-		button3 = ns.UseOtherLabel(found),
-		OnAccept = function()
-			usePagle(found)
-		end,
-		OnAlt = useOther,
-		timeout = 0,
-		whileDead = true,
-		hideOnEscape = true,
-	}
-	StaticPopup_Show("PAGLE_QOL_CONFLICT")
+	-- Each choice runs only from a click on its own button; Esc hides the note and runs neither, so it chooses nothing
+	-- (QOL-R81, QOL-R84). Neither choice reloads the UI; each offers the Reload now note (QOL-R83).
+	showNote(CONFLICT_NOTE, ns.L.CONFLICT_TEXT, ns.L.CONFLICT_USE_PAGLE, ns.UseOtherLabel(found), function()
+		usePagle(found)
+	end, useOther)
+end
+
+-- The two notes as `/pagle dev tour` shows them (CORE-R65): made the first time, inert (each choice only closes its
+-- note), the Reload now note under the conflict note.
+local previews ---@type PagleQoLNote[]?
+
+--- Shows or hides the tour's samples of the conflict note and the Reload now note: the same notes, whose buttons
+--- turn nothing off and reload nothing (CORE-R68).
+---@param shown boolean
+function ns.PreviewNotes(shown)
+	if not previews then
+		local nothing = function() end
+		previews = {
+			showNote(
+				CONFLICT_NOTE .. "Preview",
+				ns.L.CONFLICT_TEXT,
+				ns.L.CONFLICT_USE_PAGLE,
+				ns.UseOtherLabel({
+					{ name = "FishingBuddy", title = "Fishing Buddy" },
+				}),
+				nothing
+			),
+			showNote(
+				RELOAD_NOTE .. "Preview",
+				ns.L.CONFLICT_RELOAD_TEXT,
+				ns.L.CONFLICT_RELOAD_NOW,
+				ns.L.CONFLICT_RELOAD_LATER,
+				nothing
+			),
+		}
+		previews[2]:SetPoint("TOP", UIParent, "TOP", 0, -375)
+	end
+	for _, note in ipairs(previews) do
+		note:SetShown(shown)
+	end
 end

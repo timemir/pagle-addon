@@ -177,7 +177,7 @@ function ns.NudgeSwapBack()
 	-- The second argument asks for the short form, as the game's action buttons pass it (Gethe/wow-ui-source branch
 	-- forever, Blizzard_ActionBar/Shared/ActionButton.lua: `GetBindingText(key, 1)`; QOL-R70).
 	---@diagnostic disable-next-line: param-type-mismatch -- the annotations name it a prefix string
-	ns.ShowNudge(ns.SwapBackText(key and GetBindingText(key, true)))
+	ns.ShowNudge(ns.SwapBackNudge(key and GetBindingText(key, true)))
 end
 
 --- Whether the Fishing set and "Save what I'm wearing" rows can change anything: not while restricted (QOL-R41).

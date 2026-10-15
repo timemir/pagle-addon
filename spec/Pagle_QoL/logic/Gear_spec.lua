@@ -186,15 +186,24 @@ describe("QoL's gear logic", function()
 		end)
 	end)
 
-	describe("ns.SwapBackText", function()
-		it("names the key bound to Swap gear (QOL-R77)", function()
-			assert.are.equal("Still holding your pole. Press s-G to swap back.", ns.SwapBackText("s-G"))
+	describe("ns.SwapBackNudge", function()
+		it("names the key bound to Swap gear, on a key cap (QOL-R77)", function()
+			local parts = ns.SwapBackNudge("s-G")
+
+			assert.are.same({ "Still holding your pole. Press", { key = "s-G" }, "to swap back." }, parts)
+			assert.are.equal("Still holding your pole. Press s-G to swap back.", ns.NudgeText(parts))
 		end)
 
-		it("asks for a binding while Swap gear has none (QOL-R77)", function()
+		it("asks for a binding while Swap gear has none, its name in red (QOL-R77)", function()
+			local parts = ns.SwapBackNudge(nil)
+
+			assert.are.same(
+				{ "Still holding your pole. Bind", { em = "Pagle: Swap gear" }, "to swap back in one press." },
+				parts
+			)
 			assert.are.equal(
 				"Still holding your pole. Bind Pagle: Swap gear to swap back in one press.",
-				ns.SwapBackText(nil)
+				ns.NudgeText(parts)
 			)
 		end)
 	end)

@@ -12,6 +12,7 @@
 locale\enUS.lua
 data\lures.lua
 data\clams.lua
+data\FieldArt.lua
 logic\Data.lua
 logic\Module.lua
 logic\FishingKey.lua
@@ -25,6 +26,7 @@ logic\Gear.lua
 logic\Input.lua
 logic\DoubleClick.lua
 logic\NextActionButton.lua
+adapter\FieldArt.lua
 adapter\Bindings.lua
 adapter\Items.lua
 adapter\Input.lua
