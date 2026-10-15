@@ -145,8 +145,13 @@ local function clientStubs(client)
 		end,
 		-- The screen's root frame, which every addon frame hangs from, and the game's error text under it (both in the
 		-- forever dump's Frames.lua), and the yellow FrameXML's GlobalColors defines (CreateColor(1, 1, 0, 1)). UIParent
-		-- is a plain widget, so it gets no events.
-		UIParent = widgets.newWidget("Frame"),
+		-- is a plain widget, so it gets no events. It is 1366 x 768 units, a 16:9 screen at UI scale 1; a spec may resize it
+		-- (the smallest the client gives is 1188 x 668, at UI scale 1.15).
+		UIParent = (function()
+			local screen = widgets.newWidget("Frame")
+			screen:SetSize(1366, 768)
+			return screen
+		end)(),
 		-- FrameXML's colour (ColorMixin), as a texture's gradient takes it: its channels.
 		CreateColor = function(r, g, b, a)
 			return { r = r, g = g, b = b, a = a }
