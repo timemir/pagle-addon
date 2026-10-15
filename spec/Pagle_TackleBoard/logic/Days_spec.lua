@@ -10,10 +10,15 @@ local board = dofile("spec/Pagle_TackleBoard/support.lua")
 
 local DAY, WEEK = 86400, 604800
 
-local NOW = 1791731700 -- Sun 11 Oct 2026 15:15 UTC, realm 08:15 (SERVER_TIME)
+local NOW = SERVER_TIME -- Sun 11 Oct 2026 15:15 UTC, realm 08:15
 local DAILY = 1791730800 -- Sun 11 Oct 15:00 UTC: today's daily reset
 local WEEKLY = 1791298800 -- Tue 6 Oct 15:00 UTC: this week's weekly reset
 local MIDNIGHT = 1791702000 -- Sun 11 Oct 07:00 UTC: realm midnight today
+
+-- The hand-worked resets are the support's, so the two can't drift apart.
+assert(DAILY == board.DAILY_RESET, "DAILY is not support.DAILY_RESET")
+assert(WEEKLY == board.WEEKLY_RESET - WEEK, "WEEKLY is not a week before support.WEEKLY_RESET")
+assert(MIDNIGHT == NOW - (8 * 3600 + 15 * 60), "MIDNIGHT is not realm 00:00 at SERVER_TIME (realm 08:15)")
 
 -- Each way a reset call can fail (TKB-R11): missing (false in support.resetAPI), nil, 0 or negative.
 local FAILURES = {
