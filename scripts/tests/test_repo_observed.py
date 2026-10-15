@@ -14,7 +14,7 @@ from pagle_data.observed import ObservedLayer, read_observed, reporter_key
 
 REPO = Path(__file__).resolve().parents[2]
 
-# The dev's current log: Kukli-Vail's PagleLog.logId, read from the dev's SavedVariables on 2026-10-13 (#94).
+# The dev's current log: its PagleLog.logId, read from the dev's SavedVariables on 2026-10-13 (#94).
 DEV_LOG_ID = "314ca8bd2fb83d86"
 
 

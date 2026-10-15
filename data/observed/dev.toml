@@ -5,5 +5,5 @@
 # (window), weekly (event), skillBase (area).
 # Edit this, then run scripts/generate-data.py and commit the regenerated files with it (DATA-R61).
 
-# 38d9e978: Kukli-Vail's log 314ca8bd2fb83d86 (2026-10-13).
+# 38d9e978: the dev's log 314ca8bd2fb83d86 (2026-10-13).
 keys = ["38d9e978"]
