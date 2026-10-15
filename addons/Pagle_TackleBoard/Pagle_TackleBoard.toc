@@ -24,6 +24,7 @@ logic\Projection.lua
 logic\Pins.lua
 adapter\BoardWidgets.lua
 adapter\Board.lua
+adapter\Pins.lua
 adapter\TackleBoard.lua
 adapter\Generate.lua
 adapter\Words.lua

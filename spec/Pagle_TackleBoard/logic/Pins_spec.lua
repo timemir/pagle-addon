@@ -316,6 +316,13 @@ describe("the board's layout (TKB-R101)", function()
 		assert.are.same({ "N7", "E8", "N9" }, overflow)
 	end)
 
+	it("labels an overflow goal's chip with its kind and text, and counts what the strip can't show", function()
+		local ns = loadNamed()
+
+		assert.are.equal("Lure: 3 Catches with a lure on", view(ns, goal("n", "lure", { need = 3 })).chip)
+		assert.are.equal("+2 more waiting for a pin", ns.OverflowMore(2))
+	end)
+
 	it("leaves a completed goal off the board", function()
 		local ns = loadNamed()
 		local state = stateWith(ns, { goal("n", "lure", { id = "N1", pin = false, doneDay = 0 }) })
@@ -349,15 +356,18 @@ describe("the empty pins (TKB-R105)", function()
 		assert.are.equal("A fresh Notice at reset (in 25m)", notices[1])
 	end)
 
-	it("read the weekly reset's realm weekday on the first empty Expedition pin, the one after on the second", function()
-		local ns = loadNamed()
+	it(
+		"read the weekly reset's realm weekday on the first empty Expedition pin, the one after on the second",
+		function()
+			local ns = loadNamed()
 
-		-- The weekly reset is Tuesday 13 October 15:00 UTC: Tuesday 08:00 on the realm.
-		assert.are.same({
-			"Next Expedition at the weekly reset (Tue)",
-			"Another at the weekly reset after",
-		}, row(ns.PinLayout(stateWith(ns, {}), ns.api).expeditions))
-	end)
+			-- The weekly reset is Tuesday 13 October 15:00 UTC: Tuesday 08:00 on the realm.
+			assert.are.same({
+				"Next Expedition at the weekly reset (Tue)",
+				"Another at the weekly reset after",
+			}, row(ns.PinLayout(stateWith(ns, {}), ns.api).expeditions))
+		end
+	)
 
 	it("name the realm's weekday, not UTC's, where they differ", function()
 		-- A weekly reset at Tuesday 03:00 UTC is Monday 20:00 on the UTC-7 realm.

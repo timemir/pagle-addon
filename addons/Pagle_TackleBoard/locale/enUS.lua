@@ -101,4 +101,7 @@ ns.L = {
 	EMPTY_NOTICE_LATER = "More Notices at later resets",
 	EMPTY_EXPEDITION = "Next Expedition at the weekly reset ({weekday})",
 	EMPTY_EXPEDITION_LATER = "Another at the weekly reset after",
+	-- The overflow strip (TKB-R101): a goal's chip, its kind and text, and the last chip when more wait.
+	OVERFLOW_CHIP = "{kind}: {text}",
+	OVERFLOW_MORE = "+{n} more waiting for a pin",
 }

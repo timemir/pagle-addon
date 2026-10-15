@@ -38,6 +38,7 @@ local ns = select(2, ...)
 ---@field takeDown "hidden"|"enabled"|"disabled"  -- the "take it down" button (TKB-R55, TKB-R108)
 ---@field hover string[]                -- the posted time and the note
 ---@field species TackleHoverSpecies[]? -- a Variety Expedition's Species, in its items' order
+---@field chip string                   -- its chip in the overflow strip: "Lure: 25 Catches with a lure on"
 
 --- A template with `{name}` fields filled from `fields`.
 ---@param template string
@@ -94,9 +95,11 @@ function ns.PinView(goal, ctx)
 	local progress = ns.DisplayedProgress(goal, ctx.session)
 	local bound = ns.IsSessionBound(goal)
 	local isVarietyExpedition = goal.type == "e" and goal.kind == "variety"
+	local kicker, text = ns.KindLabel(goal.kind), ns.GoalText(goal)
 	return {
-		kicker = ns.KindLabel(goal.kind),
-		text = ns.GoalText(goal),
+		kicker = kicker,
+		text = text,
+		chip = fill(L.OVERFLOW_CHIP, { kind = kicker, text = text }),
 		progress = fill(bound and L.PROGRESS_SESSION or L.PROGRESS, { n = progress, need = need }),
 		fill = need > 0 and math.min(1, progress / need) or 0,
 		where = ns.GoalWhere(goal),
@@ -182,6 +185,13 @@ function ns.PinLayout(state, api)
 		notices = pinRow(state, state.pins.notices, notice, FRESH_NOTICE_PINS, L.EMPTY_NOTICE_LATER),
 		overflow = overflow,
 	}
+end
+
+--- The overflow strip's last chip when more goals wait than it has chips for (TKB-R101): "+N more waiting for a pin".
+---@param n integer the goals it stands for
+---@return string
+function ns.OverflowMore(n)
+	return fill(ns.L.OVERFLOW_MORE, { n = n })
 end
 
 --- The goal the board highlights when opened with `goalID` (TKB-R109): that goal while it is open, else none.
