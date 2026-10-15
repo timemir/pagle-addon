@@ -161,7 +161,8 @@ ns.KIND_ICONS = {
 ---@param goal TackleGoalDef
 ---@return string
 function ns.GoalText(goal)
-	local kind, target = goal.kind, goal.target
+	-- Every kind that reads its target has one (tackle-board.md › Data).
+	local kind, target = goal.kind, goal.target --[[@as integer]]
 	local fields = { n = goal.need }
 	if kind == "haul" or kind == "variety" then
 		fields.zone = ns.ZoneName(target)

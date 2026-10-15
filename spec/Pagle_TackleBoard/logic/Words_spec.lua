@@ -134,20 +134,20 @@ describe("the kind's label", function()
 		"is the kind's ID capitalised, with one in-client icon per kind (TKB-R102; M7 graph, open question 8)",
 		function()
 			local ns = board.load().ns
-			local labels, icons = {}, {}
+			local labels, icons, notIcons = {}, {}, {}
 
 			for _, kind in ipairs({ "haul", "variety", "wanderer", "quality", "size", "collector", "lure", "species" }) do
 				labels[#labels + 1] = ns.KindLabel(kind)
 				local icon = ns.KIND_ICONS[kind]
 				icons[icon] = true
-				assert.is_truthy(
-					icon and icon:match("^Interface\\Icons\\[%w_]+$"),
-					kind .. "'s icon is an in-client icon"
-				)
+				if not (icon and icon:match("^Interface\\Icons\\[%w_]+$")) then
+					notIcons[#notIcons + 1] = kind
+				end
 			end
 
 			local kinds = { "Haul", "Variety", "Wanderer", "Quality", "Size", "Collector", "Lure", "Species" }
 			assert.are.same(kinds, labels)
+			assert.are.same({}, notIcons, "every kind's icon is an in-client icon")
 			local distinct = 0
 			for _ in pairs(icons) do
 				distinct = distinct + 1
