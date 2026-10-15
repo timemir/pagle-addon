@@ -234,14 +234,17 @@ describe("the Tackle Board's projection", function()
 			assert.are.equal(2, state.fire.kindling)
 		end)
 
-		it("owes an Expedition at the first daily reset at or after a weekly reset, up to 2 (TKB-R14, TKB-R20)", function()
-			local ns = built(withHistory(join(STARTED, { day(D0 + 14 * DAY + 60, D0 + 14 * DAY, W + 2 * WEEK) })))
+		it(
+			"owes an Expedition at the first daily reset at or after a weekly reset, up to 2 (TKB-R14, TKB-R20)",
+			function()
+				local ns = built(withHistory(join(STARTED, { day(D0 + 14 * DAY + 60, D0 + 14 * DAY, W + 2 * WEEK) })))
 
-			local state = ns.State()
-			-- week 1 starts on day 6 (Tuesday 13 October), week 2 on day 13: min(1, 2 − 1 open − 0) = 1, then 0
-			assert.are.same({ notices = 3, expeditions = 1 }, state.owed)
-			assert.are.same({ 14, 2 }, { state.day, state.week })
-		end)
+				local state = ns.State()
+				-- week 1 starts on day 6 (Tuesday 13 October), week 2 on day 13: min(1, 2 − 1 open − 0) = 1, then 0
+				assert.are.same({ notices = 3, expeditions = 1 }, state.owed)
+				assert.are.same({ 14, 2 }, { state.day, state.week })
+			end
+		)
 
 		it("raises the week to a day record's own week, one weekly accrual per week risen (TKB-R14)", function()
 			-- a day record one day on whose week start is a week later (a switch to the fallback, TKB-R11)
@@ -274,48 +277,55 @@ describe("the Tackle Board's projection", function()
 			assert.are.equal(2, state.goals[idAt(D0 + DAY + 3600)].issuedDay)
 		end)
 
-		it("burns Kindling on unlit days of a burning fire, then puts it out (ns.AdvanceTo, TKB-R14, TKB-R72)", function()
-			local ns = built(withHistory(STARTED))
-			local state = ns.State()
-			local advanced = {}
-			ns.outlets.Advanced = function(result, mode)
-				advanced[#advanced + 1] = { result = copy(result), mode = mode }
+		it(
+			"burns Kindling on unlit days of a burning fire, then puts it out (ns.AdvanceTo, TKB-R14, TKB-R72)",
+			function()
+				local ns = built(withHistory(STARTED))
+				local state = ns.State()
+				local advanced = {}
+				ns.outlets.Advanced = function(result, mode)
+					advanced[#advanced + 1] = { result = copy(result), mode = mode }
+				end
+				state.fire.count, state.fire.longest, state.fire.log[0] = 5, 5, "lit"
+
+				ns.AdvanceTo(state, 3, "live")
+				ns.AdvanceTo(state, 5, "live")
+				ns.AdvanceTo(state, 4, "live") -- never backwards
+
+				assert.are.same({
+					{
+						mode = "live",
+						result = {
+							from = 0,
+							to = 3,
+							closed = {
+								{ day = 0, log = "lit" },
+								{ day = 1, log = "burned" },
+								{ day = 2, log = "burned" },
+							},
+							burned = 2,
+							wentOut = false,
+							count = 5,
+							longest = 5,
+						},
+					},
+					{
+						mode = "live",
+						result = {
+							from = 3,
+							to = 5,
+							closed = { { day = 3, log = "out" }, { day = 4, log = "unlit" } },
+							burned = 0,
+							wentOut = true,
+							count = 0,
+							longest = 5,
+						},
+					},
+				}, advanced)
+				assert.are.same({ 5, 2, 0 }, { state.day, state.fire.kindling, state.fire.count })
+				assert.are.same({ notices = 3, expeditions = 0 }, state.owed)
 			end
-			state.fire.count, state.fire.longest, state.fire.log[0] = 5, 5, "lit"
-
-			ns.AdvanceTo(state, 3, "live")
-			ns.AdvanceTo(state, 5, "live")
-			ns.AdvanceTo(state, 4, "live") -- never backwards
-
-			assert.are.same({
-				{
-					mode = "live",
-					result = {
-						from = 0,
-						to = 3,
-						closed = { { day = 0, log = "lit" }, { day = 1, log = "burned" }, { day = 2, log = "burned" } },
-						burned = 2,
-						wentOut = false,
-						count = 5,
-						longest = 5,
-					},
-				},
-				{
-					mode = "live",
-					result = {
-						from = 3,
-						to = 5,
-						closed = { { day = 3, log = "out" }, { day = 4, log = "unlit" } },
-						burned = 0,
-						wentOut = true,
-						count = 0,
-						longest = 5,
-					},
-				},
-			}, advanced)
-			assert.are.same({ 5, 2, 0 }, { state.day, state.fire.kindling, state.fire.count })
-			assert.are.same({ notices = 3, expeditions = 0 }, state.owed)
-		end)
+		)
 
 		it("hands an advance in apply to ns.outlets.Advanced with the apply's mode (TKB-R14)", function()
 			local modes = {}
@@ -453,6 +463,172 @@ describe("the Tackle Board's projection", function()
 			})))
 
 			assert.are.same(first, ns.State())
+		end)
+	end)
+
+	-- A history over three board weeks: Casts, a goal issued on day 1, a reroll on day 3, an Expedition on day 8.
+	local HISTORY = join(STARTED, {
+		cast(D0 + 7200, DUROTAR, { 6358 }),
+		day(D0 + DAY + 60, D0 + DAY, W),
+		issue(D0 + DAY + 61, N4),
+		cast(D0 + 3 * DAY, BARRENS),
+		reroll(D0 + 3 * DAY + 10, idAt(D0 + 3603), N5),
+		day(D0 + 8 * DAY + 60, D0 + 8 * DAY, W + WEEK),
+		issue(D0 + 8 * DAY + 61, E2),
+		cast(D0 + 8 * DAY + 100, 0, { 92011 }),
+		issue(D0 + 15 * DAY, N6), -- no day record since day 8: day 15, across another weekly reset
+	})
+
+	-- The next login on the same machine: a new FakePagle over `log` (a PagleLog table) and PagleTackleBoardDB's
+	-- global as saved, with Core's Session rules version `options.sessionRules` (default Core's own).
+	local function nextLogin(log, global, options)
+		options = options or {}
+		local fake = newFakePagle()
+		fake.catchLog.data = log
+		if options.sessionRules then
+			fake.Pagle.SESSION_RULES_VERSION = options.sessionRules
+		end
+		fake.globals.PagleTackleBoardDB = { global = global }
+		return (built(fake, options))
+	end
+
+	-- A first login over HISTORY, then the saved projection marked (its Coins set to 999), so the next login shows
+	-- whether it caught up on the saved state (the mark stays) or rebuilt from seq 0 (it's gone). Returns the PagleLog
+	-- data, the PagleTackleBoardDB global the next login loads, and the state the first built.
+	local function savedMarked()
+		local fake = withHistory(HISTORY)
+		local ns, loaded = built(fake)
+		local first = copy(ns.State())
+		local global = loaded.env.PagleTackleBoardDB.global
+		global.board.projection.coins = 999
+		return fake.catchLog.data, global, first
+	end
+
+	describe("purity and rebuilds (TKB-R81, TKB-R82)", function()
+		it("gives the same state rebuilt twice and applied live with the live step's advance between", function()
+			local ns = built(withHistory(HISTORY))
+			local rebuilt = copy(ns.State())
+			ns.projection:Rebuild()
+			local again = copy(ns.State())
+
+			local fake = withHistory({})
+			local live = built(fake)
+			for _, entry in ipairs(HISTORY) do
+				local state = live.State()
+				if state.started then
+					live.AdvanceTo(state, live.DayOf(state.boundary, entry.time), "live") -- the live step (TKB-R13)
+				end
+				fake.live(fake.catchLog:Append(entry))
+			end
+
+			-- by hand: day 0's close owes 3 Notices, N4 takes one (4 open, 2 owed: the cap); week 1 (day 6) owes an
+			-- Expedition, E2 takes it (2 open: the cap, so week 2 adds none); N6 on day 15 takes a Notice
+			assert.are.same({ 15, 2 }, { rebuilt.day, rebuilt.week })
+			assert.are.same({ notices = 1, expeditions = 0 }, rebuilt.owed)
+			assert.are.same(rebuilt, again)
+			assert.are.same(rebuilt, live.State())
+		end)
+
+		it("catches up on the saved state when nothing changed (LOG-R71)", function()
+			local log, global = savedMarked()
+
+			local ns = nextLogin(log, global)
+
+			assert.are.equal(999, ns.State().coins)
+			assert.are.equal(1001, global.board.rulesVersion) -- TKB_RULES_VERSION × 1000 + SESSION_RULES_VERSION
+		end)
+
+		it("rebuilds to the same state when TKB_RULES_VERSION changes", function()
+			local log, global, first = savedMarked()
+
+			local ns = nextLogin(log, global, {
+				prepare = function(loaded)
+					loaded.ns.TKB_RULES_VERSION = 2
+				end,
+			})
+
+			assert.are.same(first, ns.State())
+			assert.are.equal(2001, global.board.rulesVersion)
+		end)
+
+		it("rebuilds to the same state when Pagle.SESSION_RULES_VERSION changes (TKB-R41)", function()
+			local log, global, first = savedMarked()
+
+			local ns = nextLogin(log, global, { sessionRules = 2 })
+
+			assert.are.same(first, ns.State())
+			assert.are.equal(1002, global.board.rulesVersion)
+		end)
+
+		it(
+			"rebuilds an unstarted board over a new dev log: each log keeps its own board (TKB-R197, TKB-R198)",
+			function()
+				local _, global = savedMarked()
+				local fake = withHistory({ cast(D0 + 20 * DAY, BARRENS, { 6359 }) })
+				fake.globals.PagleTackleBoardDB = { global = global }
+
+				local ns = built(fake)
+
+				assert.are.same(unstarted({ [BARRENS] = D0 + 20 * DAY }, { [6359] = true }), ns.State())
+				assert.is_false(ns.IsStarted())
+			end
+		)
+	end)
+
+	describe("the seams (TKB-R81, M7 graph)", function()
+		it("ns.State, ns.IsUpdating and ns.IsStarted follow the projection", function()
+			local loaded, fake = board.load(withHistory(STARTED))
+			local ns = loaded.ns
+			fake.login()
+			local before = { ns.IsUpdating(), ns.IsStarted() }
+
+			fake.enterWorld()
+
+			assert.are.same({ true, false }, before)
+			assert.are.same({ false, true }, { ns.IsUpdating(), ns.IsStarted() })
+			assert.are.equal(ns.projection:GetState(), ns.State())
+		end)
+
+		it("done calls ns.outlets.Done, ns.ReportCoins, ns.ScheduleLiveStep, then redraws, in that order", function()
+			local calls = {}
+			local ns = built(withHistory(join(STARTED, { cast(D0 + 7200, DUROTAR, { 6358 }) })), {
+				prepare = function(loaded)
+					local seams = loaded.ns
+					seams.outlets.Done = function(state, info)
+						calls[#calls + 1] = ("Done %s %s"):format(
+							tostring(state.started ~= nil),
+							tostring(info.firstBuild)
+						)
+					end
+					seams.ReportCoins = function()
+						calls[#calls + 1] = "ReportCoins"
+					end
+					seams.ScheduleLiveStep = function()
+						calls[#calls + 1] = "ScheduleLiveStep"
+					end
+					seams.OnRedraw(function(reason)
+						calls[#calls + 1] = "Redraw " .. reason
+					end)
+				end,
+			})
+
+			assert.are.same({ "Done true true", "ReportCoins", "ScheduleLiveStep", "Redraw projection" }, calls)
+			assert.is_true(ns.IsStarted())
+		end)
+
+		it("redraws after a live apply that changes the state, and only then", function()
+			local ns = built(withHistory(STARTED))
+			local redraws = {}
+			ns.OnRedraw(function(reason)
+				redraws[#redraws + 1] = reason
+			end)
+
+			ns.Module:AppendRecord("start", D0 .. ";" .. W) -- ignored (TKB-R6)
+			ns.Module:AppendRecord("issue2", N4) -- skipped (TKB-R80)
+			ns.Module:AppendRecord("issue", N4)
+
+			assert.are.same({ "projection" }, redraws)
+			assert.are.equal(4, ns.State().goals[ns.State().pins.notices[4]].pin)
 		end)
 	end)
 end)

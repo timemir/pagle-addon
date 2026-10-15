@@ -337,7 +337,13 @@ function ns.ApplyEntry(state, record, mode)
 		if not state.started then
 			return false -- TKB-R2: before the start record, nothing else changes
 		end
-		return applyRecord(state, moduleRecord, decoded, math.max(state.day, ns.DayOf(state.boundary, record.time)), mode)
+		return applyRecord(
+			state,
+			moduleRecord,
+			decoded,
+			math.max(state.day, ns.DayOf(state.boundary, record.time)),
+			mode
+		)
 	end
 	if state.started then
 		-- TKB-R12, TKB-R14: every other entry advances to its day, never below the projection's day

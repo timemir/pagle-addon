@@ -47,18 +47,22 @@ describe("the board's records", function()
 			assert.are.equal("e;variety;0;60;4;148:6358,6359,13754,13893", payload)
 		end)
 
-		it("keeps the largest Variety Expedition, 12 Species with 6-digit items, under 200 bytes (Data, LOG-R40)", function()
-			local items = {}
-			for i = 1, 12 do
-				items[i] = 999999 - i
+		it(
+			"keeps the largest Variety Expedition, 12 Species with 6-digit items, under 200 bytes (Data, LOG-R40)",
+			function()
+				local items = {}
+				for i = 1, 12 do
+					items[i] = 999999 - i
+				end
+				local def =
+					{ type = "e", kind = "variety", tier = 0, pay = 60, need = 12, target = 999999, items = items }
+
+				local issue, reroll = ns.EncodeIssue(def), ns.EncodeReroll(OLD_ID, def)
+
+				assert.is_true(#issue < 200, "issue: " .. #issue)
+				assert.is_true(#reroll < 200, "reroll: " .. #reroll)
 			end
-			local def = { type = "e", kind = "variety", tier = 0, pay = 60, need = 12, target = 999999, items = items }
-
-			local issue, reroll = ns.EncodeIssue(def), ns.EncodeReroll(OLD_ID, def)
-
-			assert.is_true(#issue < 200, "issue: " .. #issue)
-			assert.is_true(#reroll < 200, "reroll: " .. #reroll)
-		end)
+		)
 	end)
 
 	describe("decoding", function()
@@ -125,16 +129,19 @@ describe("the board's records", function()
 			end
 		end)
 
-		it("skips values out of range: an unknown type or kind, a tier outside 0–3, a need below 1 (TKB-R80)", function()
-			for _, payload in ipairs({
-				"x;haul;2;15;30;33",
-				"n;fishing;2;15;30;33",
-				"n;haul;4;15;30;33",
-				"n;haul;2;15;0;33",
-			}) do
-				assert.is_nil(ns.DecodeRecord("issue", payload), payload)
-				assert.is_nil(ns.DecodeRecord("reroll", OLD_ID .. ";" .. payload), payload)
+		it(
+			"skips values out of range: an unknown type or kind, a tier outside 0–3, a need below 1 (TKB-R80)",
+			function()
+				for _, payload in ipairs({
+					"x;haul;2;15;30;33",
+					"n;fishing;2;15;30;33",
+					"n;haul;4;15;30;33",
+					"n;haul;2;15;0;33",
+				}) do
+					assert.is_nil(ns.DecodeRecord("issue", payload), payload)
+					assert.is_nil(ns.DecodeRecord("reroll", OLD_ID .. ";" .. payload), payload)
+				end
 			end
-		end)
+		)
 	end)
 end)
