@@ -28,14 +28,8 @@ local MARBLE = "Interface\\FrameGeneral\\UI-Background-Marble"
 --- lore (data/lore/hunts.toml).
 ---@type table<string, HuntsCoverLook>
 ns.COVERS = {
-	["hunts.notebookcover.leather"] = {
-		leather = ns.BOARD_COVER.leather,
-		edge = ns.BOARD_COVER.edge,
-		rule = ns.BOARD_COVER.rule,
-		grain = ns.BOARD_COVER.grain,
-		grainAlpha = ns.BOARD_COVER.grainAlpha,
-		strap = tint("a01818"),
-	},
+	-- The board's own leather (ns.BOARD_COVER), filled in below, with a red strap.
+	[ns.DEFAULT_COVER] = { strap = tint("a01818") },
 	-- Black-green waxed cloth, smooth, with a pale green rule and a mustard strap.
 	["hunts.notebookcover.oilcloth"] = {
 		leather = tint("1a2a1a"),
@@ -66,11 +60,15 @@ ns.COVERS = {
 	},
 }
 
+for key, value in pairs(ns.BOARD_COVER) do
+	ns.COVERS[ns.DEFAULT_COVER][key] = value
+end
+
 --- The look of cover good `goodID`, or Leather's for an ID that isn't a cover's.
 ---@param goodID string?
 ---@return HuntsCoverLook
 function ns.CoverLook(goodID)
-	return ns.COVERS[goodID] or ns.COVERS["hunts.notebookcover.leather"]
+	return ns.COVERS[goodID] or ns.COVERS[ns.DEFAULT_COVER]
 end
 
 -- The closed notebook on the stage, as prototypes/curio-shop/'s notebook swatch: its size, its spine's shadow, and the
@@ -135,7 +133,7 @@ end
 ---@field seal number[]?    -- a wax seal's tint, if it has one
 ---@field ink number[]?     -- the words' colour on a pale backdrop; nil keeps the native block's
 
---- Each tracker frame's look, by good ID (HNT-R121). No frame (`hunts.trackerframe.none`) has none: the plain native
+--- Each tracker frame's look, by good ID (HNT-R121). No frame (ns.NO_TRACKER_FRAME) has none: the plain native
 --- block.
 ---@type table<string, HuntsTrackerFrameLook>
 ns.TRACKER_FRAMES = {
@@ -163,7 +161,7 @@ ns.TRACKER_FRAMES = {
 local FRAME_PAD, SEAL_SIZE = 6, 18
 
 --- A tracker frame on a block (HNT-R79): the backdrop, the border's four lines and the seal, all hidden until a look
---- dresses it. The tracker (#197) and the previews make one each.
+--- dresses it. The tracker's block (ns.NewTrackerBlock) makes one.
 ---@class HuntsTrackerFrameView
 ---@field backdrop Texture
 ---@field border Texture[]

@@ -9,7 +9,7 @@ local ns = select(2, ...)
 -- logic/Timeline.lua's inputs from the grouping, the projection, the names and Core, and this file draws the result
 -- on the left page of every mode (the Board, a set's page, an entry opened from it), and the realm clock and the "show
 -- completed" checkbox on the leather. On the Board it selects the Hunt HNT-R67 picks before the right page draws; the
--- entry's renderer (adapter/Entry.lua, #194) draws that Hunt, or HNT-R67's line when none is. The look follows
+-- entry's renderer (adapter/Entry.lua) draws that Hunt, or HNT-R67's line when none is. The look follows
 -- prototypes/hunts-board/ variant E in adapter/BoardWidgets.lua's art.
 --
 -- The checkbox is FrameXML's UICheckButtonTemplate (Gethe/wow-ui-source branch forever,
@@ -350,8 +350,7 @@ local function drawRow(view, drawn, row, nowX, y)
 	drawn:ClearAllPoints()
 	drawn:SetPoint("TOPLEFT", 0, -y)
 	drawn.highlight:SetShown(row.selected)
-	local tint = row.tint and { row.tint.r, row.tint.g, row.tint.b }
-	drawn.icon:SetIcon(row.icon or "Interface\\Icons\\Trade_Fishing", tint)
+	drawn.icon:SetIcon(row.icon or ns.TRADE_FISHING, row.tint)
 	drawn.icon:SetTrim(row.trim)
 	drawn.pin:SetShown(row.pinned)
 	drawn.name:SetText(row.name)

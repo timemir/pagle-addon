@@ -182,12 +182,20 @@ end
 --- Why the Hunt is unconfirmed (HNT-R34), or nil when it isn't: "window" when its window or a weekly rule its
 --- forecast read is unconfirmed (the window is an estimate), "gating" when only its gating is (a natural Hunt none of
 --- whose waters' entries has gateConfirmed). `window` is the Hunt's NextWindow result now, nil when there is none.
---- A Hunt without a board spec is never unconfirmed (HNT-R7). Reads `ns.where`.
+--- A Hunt without a board spec is never unconfirmed (HNT-R7). ns.Unconfirmed reads the Hunt's in `ns.where`;
+--- ns.UnconfirmedWhere takes it.
 ---@param hunt HuntDef
 ---@param window Window?
 ---@return "window"|"gating"|nil
 function ns.Unconfirmed(hunt, window)
-	local where = ns.where[hunt.id]
+	return ns.UnconfirmedWhere(ns.where[hunt.id], window)
+end
+
+--- ns.Unconfirmed, from the Hunt's HuntWhere (HNT-R34).
+---@param where HuntWhere
+---@param window Window?
+---@return "window"|"gating"|nil
+function ns.UnconfirmedWhere(where, window)
 	if not where.boardSpec then
 		return nil
 	end

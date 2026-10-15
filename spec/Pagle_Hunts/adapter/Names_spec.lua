@@ -166,7 +166,8 @@ describe("Hunts' names", function()
 			local ns = loaded.ns
 			local _, tint = ns.HuntIcon(ns.hunts:Hunt("fixture_rack"), ns.hunts, ns.names)
 
-			assert.are.equal(loaded.env.ITEM_QUALITY_COLORS[2], tint)
+			local color = loaded.env.ITEM_QUALITY_COLORS[2]
+			assert.are.same({ color.r, color.g, color.b }, tint)
 		end)
 	end)
 

@@ -6,8 +6,8 @@ end
 local ns = select(2, ...)
 
 -- Which Catches qualify for a Hunt (HNT-R10–R14, HNT-R196), and what they do to its count, tiers and completion
--- (HNT-R15–R17), with the tier trims (HNT-R18). Pure logic: Core's calls and the Hunt list's classes come in as
--- lookups (CORE-R7). The projection's apply (#188) calls CountCatches for every Hunt that exists at each Cast.
+-- (HNT-R15–R17), with the tier trims (HNT-R18). Pure logic: Core's calls and the Hunt list's classes come in as lookups
+-- (CORE-R7). The projection's apply (logic/Projection.lua) calls CountCatches for every Hunt that exists at each Cast.
 
 --- What the rules read besides the Hunt and the Cast: Core's `Pagle.GetItem` (LOG-R55) and
 --- `Pagle.MatchesConditions` (LOG-R49), and the Hunt list's class members (`ns.hunts:Class`, HNT-R12), which is the

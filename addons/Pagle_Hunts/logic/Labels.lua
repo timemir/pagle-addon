@@ -8,7 +8,8 @@ local ns = select(2, ...)
 -- Labels in realm time (HNT-R50–R55): every piece of text Hunts derives for a Hunt. Pure logic (CORE-R7): each
 -- function takes its case's inputs (a row's group, aura up, NextWindow result and skill, the time now and one live
 -- snapshot), and the names it needs come from a HuntNameSources table, which adapter/Names.lua builds as ns.names.
--- Hunts shares no code with the Ledger (ADR 0001), so its date arithmetic is its own.
+-- Hunts shares no code with the Ledger (ADR 0001), so its date arithmetic is its own: ns.CivilFromDays
+-- (logic/Titles.lua) and daysFromCivil here.
 
 local MINUTES_PER_DAY = 1440
 local SECONDS_PER_DAY = 86400
@@ -40,29 +41,6 @@ local function daysFromCivil(year, month, day)
 	return era * 146097 + dayOfEra - 719468
 end
 
--- The date of a count of days since 1970-01-01 (Howard Hinnant's civil_from_days), with its weekday: 1970-01-01 was a
--- Thursday (5).
----@param days integer
----@return HuntRealmDate
-local function civilFromDays(days)
-	local z = days + 719468
-	local era = math.floor(z / 146097)
-	local dayOfEra = z - era * 146097
-	local yearOfEra = math.floor(
-		(dayOfEra - math.floor(dayOfEra / 1460) + math.floor(dayOfEra / 36524) - math.floor(dayOfEra / 146096)) / 365
-	)
-	local dayOfYear = dayOfEra - (365 * yearOfEra + math.floor(yearOfEra / 4) - math.floor(yearOfEra / 100))
-	local monthFromMarch = math.floor((5 * dayOfYear + 2) / 153)
-	local day = dayOfYear - math.floor((153 * monthFromMarch + 2) / 5) + 1
-	local month = monthFromMarch < 10 and monthFromMarch + 3 or monthFromMarch - 9
-	return {
-		year = yearOfEra + era * 400 + (month <= 2 and 1 or 0),
-		month = month,
-		day = day,
-		weekday = (days + 4) % 7 + 1,
-	}
-end
-
 --- The realm clock at server time `t`, from one live snapshot (HNT-R50): minute of day `(minute + floor((t - time)
 --- / 60)) mod 1440`, and the snapshot's date moved by the whole days that adds. With no realm minute or date (a
 --- secret clock), UTC's.
@@ -72,13 +50,16 @@ end
 function ns.RealmClockAt(t, snapshot)
 	local date = snapshot.date
 	if snapshot.minute == nil or date == nil then
-		return { minute = math.floor(t / 60) % MINUTES_PER_DAY, date = civilFromDays(math.floor(t / SECONDS_PER_DAY)) }
+		return {
+			minute = math.floor(t / 60) % MINUTES_PER_DAY,
+			date = ns.CivilFromDays(math.floor(t / SECONDS_PER_DAY)),
+		}
 	end
 	local total = snapshot.minute + math.floor((t - snapshot.time) / 60)
 	local days = math.floor(total / MINUTES_PER_DAY)
 	return {
 		minute = total % MINUTES_PER_DAY,
-		date = civilFromDays(daysFromCivil(date.year, date.month, date.day) + days),
+		date = ns.CivilFromDays(daysFromCivil(date.year, date.month, date.day) + days),
 	}
 end
 
@@ -225,7 +206,7 @@ end
 ---@field AuraName fun(spellID: integer): string?           -- C_Spell.GetSpellName (HNT-R52, HNT-R53)
 ---@field EventName fun(eventID: integer): string|false|nil -- the calendar's; false when not found, nil before (HNT-R53)
 ---@field BandName fun(band: integer): string?              -- Pagle.SIZE_BANDS[band].name (HNT-R54)
----@field QualityColor fun(quality: integer): table?        -- ITEM_QUALITY_COLORS[quality] (HNT-R55)
+---@field QualityColor fun(quality: integer): number[]?     -- ITEM_QUALITY_COLORS[quality] as { r, g, b } (HNT-R55)
 ---@field NextWindow fun(spec: table, fromTime: integer): Window? -- Pagle.NextWindow (HNT-R53)
 
 -- The group a short-of-skill row would have without its skill (HNT-R40's rules 2–6), for the window line, which
@@ -481,7 +462,9 @@ local GENERATED = {
 	["quality.rare"] = { text = "TARGET_RARE", quality = 3 },
 	["species.any"] = { text = "TARGET_ANY" },
 }
-local TRADE_FISHING = "Interface\\Icons\\Trade_Fishing"
+--- The generic fish icon (HNT-R55): a generated class's, and a Hunt moment's with no Catch.
+ns.TRADE_FISHING = "Interface\\Icons\\Trade_Fishing"
+local TRADE_FISHING = ns.TRADE_FISHING
 
 -- A fixed class's members in ascending item ID order: the list holds them as a set (DATA-R93), and the target line
 -- and the icon need one order ("first member", HNT-R55).
@@ -524,12 +507,12 @@ end
 
 --- A Hunt's icon and its tint (HNT-R55): a `species` target's item icon; a fixed class's first member's; a generated
 --- class's Trade_Fishing, tinted with ITEM_QUALITY_COLORS[2] for `quality.uncommon` and [3] for `quality.rare`.
---- The board's sepia tint on item icons is the board's (ticket #191).
+--- The board's sepia tint on item icons is the board's (adapter/BoardWidgets.lua).
 ---@param hunt HuntDef
 ---@param list HuntList for a fixed class's members
 ---@param sources HuntNameSources
 ---@return integer|string? icon
----@return table? tint a color with r, g and b; nil for none
+---@return number[]? tint { r, g, b }, as the board's tints; nil for none
 function ns.HuntIcon(hunt, list, sources)
 	if hunt.species then
 		return sources.ItemIcon(hunt.species)

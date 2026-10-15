@@ -397,7 +397,7 @@ end
 ---@field leather Texture
 ---@field grain Texture
 ---@field rules Texture[]
----@field SetCover fun(self: BoardLeatherView, look: BoardCoverLook)
+---@field SetCover fun(self: BoardLeatherView, look: BoardCover) -- every field given (adapter/Board.lua merges a look)
 
 ---@param frame Frame
 ---@return BoardLeatherView
@@ -419,15 +419,13 @@ function ns.NewBoardLeather(frame)
 	local rules = outline(frame, 5, "BORDER", 1)
 	view.rules = rules.edges
 	function view.SetCover(_, look)
-		local default = ns.BOARD_COVER
-		local leather, edge, rule =
-			look.leather or default.leather, look.edge or default.edge, look.rule or default.rule
+		local leather, edge = look.leather, look.edge
 		view.edge:SetColorTexture(edge[1], edge[2], edge[3], 1)
 		view.leather:SetColorTexture(leather[1], leather[2], leather[3], 1)
-		view.grain:SetTexture(look.grain or default.grain)
+		view.grain:SetTexture(look.grain)
 		view.grain:SetVertexColor(leather[1], leather[2], leather[3])
-		view.grain:SetAlpha(look.grainAlpha or default.grainAlpha)
-		rules:Solid(rule)
+		view.grain:SetAlpha(look.grainAlpha)
+		rules:Solid(look.rule)
 	end
 	view.SetCover(view, ns.BOARD_COVER)
 	return view
@@ -470,7 +468,7 @@ function ns.NewBoardParchment(frame, spine)
 end
 
 --- A set ribbon (HNT-R61): a cloth tab on the leather's right edge, its words in letters stacked down it, standing
---- out further when chosen. The ribbons' ticket (#195) anchors them down the leather's ribbons anchor.
+--- out further when chosen. adapter/Sets.lua anchors them down the leather's ribbons anchor.
 ---@class BoardRibbonView: Button
 ---@field face Texture
 ---@field label FontString
@@ -609,7 +607,7 @@ end
 ---   "dashed"   the window is unconfirmed: faint hatching in a dashed ink outline
 ---   "pencil"   short of skill: a dashed pencil outline, nothing inside
 ---   "camp"     the camp is up: solid blue
---- The timeline's ticket (#193) anchors it on the ruler and gives each its width.
+--- adapter/Timeline.lua anchors it on the ruler and gives each its width.
 ---@alias BoardBarStyle "hatched"|"dashed"|"pencil"|"camp"
 
 ---@class BoardTimelineBarView: Frame

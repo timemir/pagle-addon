@@ -65,9 +65,10 @@ ns.names = {
 		local entry = Pagle.SIZE_BANDS[band]
 		return entry and entry.name
 	end,
-	-- Read at each call: the client replaces the table when its colours change.
+	-- Read at each call: the client replaces the table when its colours change. As the board's tints: { r, g, b }.
 	QualityColor = function(quality)
-		return ITEM_QUALITY_COLORS[quality]
+		local color = ITEM_QUALITY_COLORS[quality]
+		return color and { color.r, color.g, color.b }
 	end,
 	NextWindow = function(spec, fromTime)
 		return Pagle.NextWindow(spec, fromTime)

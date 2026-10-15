@@ -33,7 +33,7 @@ end
 --- The breadcrumbs where the board is (HNT-R61), as data.
 ---@return BoardCrumbView[]
 function ns.BoardCrumbs()
-	return ns.BuildCrumbs(ns.board.router:Trail(), ns.hunts)
+	return ns.BuildCrumbs(ns.board:Trail(), ns.hunts)
 end
 
 -- A current Hunt's tracker label (HNT-R51) from its row in the grouping, at the grouping's time; nil before the first

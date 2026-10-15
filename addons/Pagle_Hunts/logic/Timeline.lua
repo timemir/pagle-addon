@@ -35,7 +35,7 @@ local MAX_SPANS = 48
 ---@field id string
 ---@field name string
 ---@field icon integer|string|nil    -- HNT-R55's icon; nil while the client hasn't it
----@field tint table?                -- the icon's tint (a generated class's quality colour), nil for the sepia
+---@field tint number[]?             -- the icon's tint (a generated class's quality colour), nil for the sepia
 ---@field trim ("bronze"|"silver"|"gold")?   -- the highest tier's trim; nil before tier 1 and while updating (HNT-R69)
 ---@field pinned boolean
 ---@field margin string              -- the margin label (HNT-R51)
@@ -212,7 +212,7 @@ local function barsOf(row, spec, ruler, input)
 	local style = "hatched"
 	if row.short then
 		style = "pencil"
-	elseif ns.Unconfirmed(row.hunt, row.window) then
+	elseif ns.UnconfirmedWhere(input.where[row.id], row.window) then
 		style = "dashed"
 	end
 	local bars, coversNow = {}, false

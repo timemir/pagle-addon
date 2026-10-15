@@ -168,12 +168,25 @@ function HuntList:Fingerprint()
 	return self.data.fingerprint
 end
 
--- A lore key's text, or nil while it has none (HNT-R130). rawget, so a missing key is never an error.
+--- A lore key's text in `L`, or nil while it has none (HNT-R130), as Core reads its own lore: rawget, so a missing
+--- key is never an error, and empty text counts as none (DATA-R107 refuses it at generation).
+---@param L table ns.L, or the table a HuntList names from
+---@param key string
+---@return string?
+function ns.Lore(L, key)
+	local text = rawget(L, key)
+	if text == "" then
+		return nil
+	end
+	return text
+end
+
+-- A lore key's text, or nil while it has none (HNT-R130).
 ---@param list HuntList
 ---@param key string
 ---@return string?
 local function lore(list, key)
-	return rawget(list.L, key)
+	return ns.Lore(list.L, key)
 end
 
 --- A Hunt's name, or its ID while the lore has none (HNT-R1).

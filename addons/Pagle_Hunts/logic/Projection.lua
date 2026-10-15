@@ -24,9 +24,9 @@ ns.COINS_COMPLETED, ns.COINS_TIER, ns.COINS_TITLE = 30, 15, 100
 ---@field tiers { hunt: string, tier: integer }[]
 ---@field sets string[]
 
---- Where the projection hands what it found to Hunts' moments (#196), which replaces each field; called through
---- `ns.outlets` at call time, so the replacement reaches the projection. Stand-ins: do nothing; logic/Moments.lua
---- replaces both when it loads.
+--- Where the projection hands what it found to Hunts' moments (logic/Moments.lua), which replaces each field; called
+--- through `ns.outlets` at call time, so the replacement reaches the projection. Stand-ins: do nothing;
+--- logic/Moments.lua replaces both when it loads.
 ---   Reached(cast, reached)  after a `"live"` Cast that newly reached a tier or a set title, before Coins are
 ---                           reported (HNT-R137 step 4)
 ---   Done(state, info)       from `done`, after the titles are checked and Coins reported (HNT-R111, HNT-R112)
