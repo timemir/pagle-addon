@@ -1185,7 +1185,8 @@ describe("scripts/read-wtf.lua", function()
 				-- TKB-R20: each reset owed what the pins could take, and the live steps issued it all. TKB-R101: seq 47 took
 				-- pin 1, freed on day 0; seq 48 found every Notice pin taken. TKB-R40: the Expedition counted day 6's two
 				-- Catches and day 8's junk in Elwynn; 6291 three times since seq 8. TKB-R44: item 999001 is Uncharted.
-				-- TKB-R41: the Collector counts only day 8's Session, its junk. TKB-R55: seq 34 re-posted pin 3.
+				-- TKB-R41: the Collector counts only day 8's Session, its junk. TKB-R55: seq 34 re-posted pin 3. TKB-R22:
+				-- each open goal's tier, pay and need are its record's.
 				assert.are.same({
 					"started: seq 5, realm 2026-10-14 08:10, server 2026-10-14 15:10:00 UTC (TKB-R6)",
 					"boundary: seq 46, day 8, week 1, dayStart 2026-10-22 15:00:00 UTC, weekStart 2026-10-20 15:00:00 UTC",
@@ -1194,22 +1195,37 @@ describe("scripts/read-wtf.lua", function()
 						.. " advances to it (TKB-R12, TKB-R13)",
 					"owed: 0 Notices, 0 Expeditions (TKB-R20)",
 					"Expedition pins:",
-					"  1. " .. GUID .. '1792508701-0: Expedition haul, "20 Catches in Area 12", 3 of 20',
+					"  1. "
+						.. GUID
+						.. '1792508701-0: Expedition haul, "20 Catches in Area 12", 3 of 20, tier 0, pays 60,'
+						.. " need 20",
 					"  2. empty",
 					"Notice pins:",
-					"  1. " .. GUID .. '1792681501-0: Notice haul, "3 Catches in Area 40", 0 of 3',
-					"  2. " .. GUID .. '1791990603-0: Notice species, "4 Item 6291", 3 of 4',
-					"  3. " .. GUID .. '1792336000-0: Notice haul, "5 Catches in Area 40", 0 of 5, re-posted (TKB-R55)',
-					"  4. " .. GUID .. '1792076703-0: Notice species, "2 Item 999001", 0 of 2, STRANDED (TKB-R44)',
+					"  1. "
+						.. GUID
+						.. '1792681501-0: Notice haul, "3 Catches in Area 40", 0 of 3, tier 1, pays 10, need 3',
+					"  2. " .. GUID .. '1791990603-0: Notice species, "4 Item 6291", 3 of 4, tier 2, pays 15, need 4',
+					"  3. "
+						.. GUID
+						.. '1792336000-0: Notice haul, "5 Catches in Area 40", 0 of 5, tier 2, pays 15, need 5, re-posted'
+						.. " (TKB-R55)",
+					"  4. "
+						.. GUID
+						.. '1792076703-0: Notice species, "2 Item 999001", 0 of 2, tier 2, pays 15, need 2, STRANDED'
+						.. " (TKB-R44)",
 					"  5. "
 						.. GUID
-						.. '1792163102-0: Notice collector, "A junk item and a container in one Session", 1 of 2,'
-						.. " session-bound, its Session "
+						.. '1792163102-0: Notice collector, "A junk item and a container in one Session", 1 of 2, tier 2,'
+						.. " pays 15, need 2, session-bound, its Session "
 						.. GUID
 						.. "1792684800-0 (TKB-R41)",
-					"  6. " .. GUID .. '1792163103-0: Notice lure, "3 Catches with a lure on", 1 of 3',
+					"  6. "
+						.. GUID
+						.. '1792163103-0: Notice lure, "3 Catches with a lure on", 1 of 3, tier 1, pays 10, need 3',
 					"overflow strip: 1 (TKB-R101)",
-					"  " .. GUID .. '1792681510-0: Notice haul, "2 Catches in Area 12", 1 of 2',
+					"  "
+						.. GUID
+						.. '1792681510-0: Notice haul, "2 Catches in Area 12", 1 of 2, tier 1, pays 10, need 2',
 				}, { unpack(lines, 20, 36) })
 			end
 		)
@@ -1275,9 +1291,16 @@ describe("scripts/read-wtf.lua", function()
 
 		it("prints the celebrated set, flags a completed goal missing from it, and the profile (TKB-R83)", function()
 			-- TKB-R83: day 5's Species Notice completed but isn't in the set, so a rebuild would raise its moment
-			-- (TKB-R84). tackle-board.md › Data: tracker is left out of the file at its default, true.
+			-- (TKB-R84). tackle-board.md › Data: tracker is left out of the file at its default, true. #242: the set's
+			-- goal IDs, sorted.
+			local ids = {}
+			for i, at in ipairs({ 1791990601, 1791990602, 1791990604, 1792076701, 1792163101, 1792249501 }) do
+				ids[i] = GUID .. at .. "-0"
+			end
+			ids[#ids + 1] = GUID .. "1792335901-0"
+			ids[#ids + 1] = GUID .. "1792508702-0"
 			assert.are.same({
-				"celebrated goals: 8, titles: 1 (campfire_7)",
+				"celebrated goals: 8 (" .. table.concat(ids, ", ") .. "), titles: 1 (campfire_7)",
 				"celebrated: MISSING 1 completed goal: " .. GUID .. "1792422301-0 (day 5) (TKB-R83)",
 				"celebrated: every earned title is in it",
 				"tracker: true (not saved: the default)",
@@ -1315,7 +1338,10 @@ describe("scripts/read-wtf.lua", function()
 				local prefix = "fingerprint: can't be checked: " .. missing .. " can't load: "
 				assert.are.equal(prefix, stored[19]:sub(1, #prefix))
 				assert.are.equal(
-					"  4. " .. GUID .. '1792076703-0: Notice species, "2 Item 999001", 0 of 2 (need from the record)',
+					"  4. "
+						.. GUID
+						.. '1792076703-0: Notice species, "2 Item 999001", 0 of 2 (need from the record), tier 2, pays 15,'
+						.. " need 2",
 					lineStarting(stored, "  4. ")
 				)
 			end

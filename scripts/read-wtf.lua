@@ -1773,6 +1773,11 @@ local function openGoalLine(board, goal, pagle)
 	if not pagle then
 		line = line .. " (need from the record)"
 	end
+	-- The record's definition (TKB-R22): what a rebuild must give back unchanged.
+	line = line .. (", tier %s, pays %s, need %s"):format(tostring(goal.tier), tostring(goal.pay), tostring(goal.need))
+	if pagle and need ~= goal.need then
+		line = line .. (", need now %s (TKB-R44)"):format(tostring(need))
+	end
 	if goal.reposted then
 		line = line .. ", re-posted (TKB-R55)"
 	end
@@ -1957,8 +1962,7 @@ end
 -- earned title is in it; one that isn't was never shown, and a rebuild raises its moment (TKB-R84).
 local function printBoardCelebrated(celebrated, state)
 	local goals, titles = tableOr(celebrated.goals), tableOr(celebrated.titles)
-	local goalCount = #sortedKeys(goals)
-	print(("celebrated goals: %s, titles: %s"):format(goalCount > 0 and goalCount or "none", listed(titles)))
+	print(("celebrated goals: %s, titles: %s"):format(listed(goals), listed(titles)))
 	if not state then
 		return
 	end
