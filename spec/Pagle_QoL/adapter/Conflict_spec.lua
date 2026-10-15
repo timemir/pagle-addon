@@ -45,11 +45,15 @@ local function note(loaded)
 	return shown and { text = shown.Title.text, buttons = { shown.primary.Text.text, shown.secondary.Text.text } }
 end
 
--- Clicks the showing note's first or second choice.
+-- Long enough for a note's fade out (0.15 s) to end and hide it.
+local FADE_OUT = 0.2
+
+-- Clicks the showing note's first or second choice, and lets the note fade out.
 ---@param loaded LoadedAddon
 ---@param which "primary"|"secondary"
 local function choose(loaded, which)
 	assert(shownNote(loaded))[which]:Click()
+	loaded.client.update(FADE_OUT)
 end
 
 describe("The conflict check", function()
@@ -216,6 +220,80 @@ describe("The Reload now note", function()
 		assert.is_nil(note(escapedLoaded))
 		assert.is_nil(escapedLoaded.env.PagleQoLReloadNote)
 		assert.are.equal(0, client.reloads + escaped.reloads)
+	end)
+end)
+
+describe("The notes' motion and sounds (qol.md › UI)", function()
+	-- The sound kits played so far, as "<id> <channel>".
+	local function soundKits(loaded)
+		local played = {}
+		for _, sound in ipairs(loaded.client.sounds) do
+			if sound:find("^%d+ ") then
+				played[#played + 1] = sound
+			end
+		end
+		return played
+	end
+
+	it("fades a note in over 0.2 s with IG_MAINMENU_OPEN, its wax pressed on from 1.8 times its size", function()
+		local _, client, loaded = start({ Angleur = ANGLEUR })
+		local shown = assert(shownNote(loaded))
+		local wax = shown.wax
+
+		assert.are.same({ "850 SFX" }, soundKits(loaded))
+		assert.are.equal(0, shown:GetAlpha())
+		assert.are.same({ 74 * 1.8, 0 }, { wax:GetWidth(), wax:GetAlpha() })
+		client.update(0.29)
+		assert.are.equal(1, shown:GetAlpha())
+		assert.is_true(math.abs(wax:GetWidth() - 74 * 0.95) < 0.5, "pressed just under its size")
+		client.update(0.1)
+		assert.are.same({ 74, 74, 1 }, { wax:GetWidth(), wax:GetHeight(), wax:GetAlpha() })
+	end)
+
+	it(
+		"plays IG_MAINMENU_OPTION, then IG_MAINMENU_CLOSE as the note fades out; a second click chooses nothing",
+		function()
+			local _, client, loaded = start({ Angleur = ANGLEUR })
+			client.update(0.4)
+			local conflictNote = loaded.env.PagleQoLConflictNote
+
+			conflictNote.secondary:Click()
+			conflictNote.secondary:Click()
+
+			assert.are.same({ { name = "Pagle_QoL" } }, client.disabledAddOns)
+			-- The Reload now note opens as the conflict note fades.
+			assert.are.same({ "850 SFX", "852 SFX", "851 SFX", "850 SFX" }, soundKits(loaded))
+			assert.is_true(conflictNote.shown)
+			client.update(0.1)
+			assert.is_true(conflictNote:GetAlpha() > 0 and conflictNote:GetAlpha() < 1)
+			client.update(0.1)
+			assert.is_false(conflictNote.shown)
+		end
+	)
+
+	it("hides at once on Esc, with IG_MAINMENU_CLOSE", function()
+		local _, client, loaded = start({ Angleur = ANGLEUR })
+
+		client.pressEscape()
+
+		assert.is_nil(note(loaded))
+		assert.are.same({ "850 SFX", "851 SFX" }, soundKits(loaded))
+	end)
+
+	it("shows settled and goes at once with Core's Animations setting off, its sounds still playing", function()
+		local fake = newFakePagle()
+		fake.profile.announcements.motion = false
+		local loaded = fake.load("Pagle_QoL")
+		loaded.client.addons.Angleur = ANGLEUR
+		fake.login()
+		fake.fireGameEvent("PLAYER_LOGIN")
+		local shown = assert(shownNote(loaded))
+
+		assert.are.same({ 1, 74, 1 }, { shown:GetAlpha(), shown.wax:GetWidth(), shown.wax:GetAlpha() })
+		shown.primary:Click()
+
+		assert.is_false(shown.shown)
+		assert.are.same({ "850 SFX", "852 SFX", "851 SFX", "850 SFX" }, soundKits(loaded))
 	end)
 end)
 
