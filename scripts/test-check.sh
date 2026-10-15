@@ -22,6 +22,8 @@ reported=0
 # The cases expect check.sh's coverage report, so a PAGLE_NO_COVERAGE from the caller (the agents' gate limiter
 # sets it) must not reach them; the one case that wants it sets its own.
 unset PAGLE_NO_COVERAGE
+# Cases run at once, so each gate runs its busted shards one at a time (#254); the case that wants more sets its own.
+export GATE_JOBS=1
 
 max_jobs=${TEST_CHECK_JOBS:-$(nproc)}
 [[ -n ${TEST_CHECK_JOBS:-} ]] || ((max_jobs <= 8)) || max_jobs=8
@@ -51,8 +53,8 @@ copy() {
 	ln -sfn "$case_tree" "$scratch/tree"
 }
 
-# expect <case> <stage|pass> [text]: runs the gate on the copy and checks where it stopped, and that its
-# output names the reason when text is given. The case starts in the background once a job slot is free.
+# expect <case> <stage|pass> [text...]: runs the gate on the copy and checks where it stopped, and that its
+# output names each text given. The case starts in the background once a job slot is free.
 expect() {
 	while (($(jobs -pr | wc -l) >= max_jobs)); do
 		wait -n || true
@@ -61,19 +63,22 @@ expect() {
 	run_case "$case_tree" "$scratch/results/$cases" "$@" &
 }
 
-# run_case <tree> <verdict file> <case> <stage|pass> [text]: the gate on one copy, as expect describes.
+# run_case <tree> <verdict file> <case> <stage|pass> [text...]: the gate on one copy, as expect describes.
 run_case() {
-	local tree=$1 verdict=$2 output status=0 ok=no
+	local tree=$1 verdict=$2 output status=0 ok=no text
 	shift 2
 	output=$(bash "$tree/scripts/check.sh" 2>&1) || status=$?
 	if [[ $2 == pass && $status -eq 0 ]] || [[ $2 != pass && $status -ne 0 && $output == *"FAILED at $2"* ]]; then
-		[[ $output == *"${3:-}"* ]] && ok=yes
+		ok=yes
+		for text in "${@:3}"; do
+			[[ $output == *"$text"* ]] || ok=no
+		done
 	fi
 	if [[ $ok == yes ]]; then
 		echo "ok   $1" >"$verdict.part"
 	else
 		{
-			echo "FAIL $1: expected $2${3:+ naming \"$3\"}, got exit $status"
+			echo "FAIL $1: expected $2${3:+ naming$(printf ' "%s"' "${@:3}")}, got exit $status"
 			sed 's/^/     | /' <<<"$output"
 		} >"$verdict.part"
 	fi
@@ -124,7 +129,8 @@ toc_move_after() {
 }
 
 copy
-expect "the tree as it is passes" pass
+# Each stage's wall time prints before the verdict (#254).
+expect "the tree as it is passes" pass "check: times: libs "
 
 copy
 echo "STYLUA_VERSION=0.0.0" >>"$scratch/tree/scripts/tools.env"
@@ -244,12 +250,23 @@ rm "$scratch/tree/.luacov"
 expect "a coverage report that can't be made doesn't gate" pass "no coverage report"
 
 copy
-PAGLE_NO_COVERAGE=1 expect "PAGLE_NO_COVERAGE=1 runs the specs without coverage and still passes" pass \
-	"PAGLE_NO_COVERAGE=1, so the specs run without coverage"
+# GATE_JOBS=1, as every case here has it: the shards run one after another (#254).
+PAGLE_NO_COVERAGE=1 expect "PAGLE_NO_COVERAGE=1 runs the specs without coverage, in shards one at a time, and passes" \
+	pass "PAGLE_NO_COVERAGE=1, so the specs run without coverage" "1 at a time" "tests: spec/Pagle passed"
 
 copy
 printf 'it("fails", function()\n\tassert.is_true(false)\nend)\n' >"$scratch/tree/spec/fails_spec.lua"
 PAGLE_NO_COVERAGE=1 expect "a failing spec fails tests without coverage too" tests "fails_spec.lua"
+
+copy
+printf 'it("fails", function()\n\tassert.is_true(false)\nend)\n' >"$scratch/tree/spec/Pagle_QoL/fails_spec.lua"
+PAGLE_NO_COVERAGE=1 GATE_JOBS=3 expect "a failing spec in one shard fails tests and names the spec" tests \
+	"spec/Pagle_QoL/fails_spec.lua" "tests: spec/Pagle_QoL failed" "tests: spec/Pagle passed"
+
+copy
+# The first pass leaves #slow specs out (--exclude-tags=slow); the second runs only them.
+printf 'it("fails #slow", function()\n\tassert.is_true(false)\nend)\n' >"$scratch/tree/spec/slow_fails_spec.lua"
+PAGLE_NO_COVERAGE=1 expect "a failing spec tagged #slow fails tests in the #slow pass" tests "slow_fails_spec.lua"
 
 # Plants a spec that kills the busted running it with SIGSEGV, as the coverage run has died on the dev's machine
 # (#149). With "coverage", only a busted running with luacov dies.
@@ -295,6 +312,18 @@ printf 'do\n\t---@diagnostic disable-next-line: assign-type-mismatch, cast-local
 printf '\tPagle.API_VERSION = "2"\nend\n' >>"$addon/adapter/Core.lua"
 # types lets it through; the stage after it, tests, still catches the string (CORE-R15).
 expect "an inline suppression with codes and a reason passes types" tests "API version 1 before 1.0 (CORE-R15)"
+
+# The stages after libs run at once, but the verdict is the first failing stage in their order (#254).
+copy
+uses_create_frame "$addon/logic/Global.lua"
+printf 'Pagle.API_VERSION = "2"\n' >>"$addon/adapter/Core.lua"
+expect "a lint error and a types error at once fail lint" lint "accessing undefined variable 'CreateFrame'"
+
+copy
+printf 'Pagle.API_VERSION = "2"\n' >>"$addon/adapter/Core.lua"
+sed -i '1i colour = "red"' "$scratch/tree/data/observed/dev.toml"
+# generator finishes long before types, and still doesn't give the verdict.
+expect "a types error and a generator error at once fail types" types "assign-type-mismatch"
 
 copy
 printf 'auras = [1]\nfishingSpells = [7620]\n' >"$scratch/tree/data/forever/lists.toml"

@@ -11,6 +11,18 @@ local ns = select(2, ...)
 --- Catch Milestones, ascending (LED-R42, Tunables); the Angler page names the next one (LED-R146).
 ns.CATCH_MILESTONES = { 1000, 5000, 10000, 25000, 50000 }
 
+--- The next Catch Milestone above `catches` lifetime Catches (LED-R42, LED-R146), or nil after the last.
+---@param catches integer
+---@return integer?
+function ns.NextCatchMilestone(catches)
+	for _, n in ipairs(ns.CATCH_MILESTONES) do
+		if catches < n then
+			return n
+		end
+	end
+	return nil
+end
+
 --- Credits each Catch Milestone the lifetime Catches have reached and that isn't credited yet (LED-R42), at the Catch
 --- just counted: its Cast's time in `state.milestones[n]`, and a `catchMilestone` achievement. One Catch reaches at
 --- most one, but each one reached is credited. They earn no XP and no Coins (LED-R20, LED-R88).

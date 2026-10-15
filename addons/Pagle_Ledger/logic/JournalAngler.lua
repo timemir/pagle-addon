@@ -19,12 +19,8 @@ local ns = select(2, ...)
 local function catchesLine(catches, format)
 	local L = ns.L
 	local text = ns.CountText(catches, L.ANGLER_CATCHES_ONE, L.ANGLER_CATCHES_OTHER, format)
-	for _, n in ipairs(ns.CATCH_MILESTONES) do
-		if catches < n then
-			return text .. L.ANGLER_NEXT_MILESTONE:format(format(n))
-		end
-	end
-	return text
+	local next = ns.NextCatchMilestone(catches)
+	return next and text .. L.ANGLER_NEXT_MILESTONE:format(format(next)) or text
 end
 
 -- The bookplate (LED-R146): the equipped crest (LED-R112), "Ex Libris", "The Angler's Ledger", "kept since
@@ -126,7 +122,7 @@ end
 ---@param blocks LedgerBlock[]
 local function signedAs(context, blocks)
 	local L = ns.L
-	local pick = context.pickTitle --[[@as fun(key: string?)]]
+	local pick = context.pickTitle
 	local stored = context.activeTitle
 	local titles, marked = {}, nil
 	local keys = ns.TitleKeys(context --[[@as LedgerTitleView]])
@@ -166,10 +162,8 @@ end
 ---@param blocks LedgerBlock[]
 local function bindings(context, blocks)
 	local L = ns.L
-	local isOwned = context.isOwned --[[@as fun(goodID: string): boolean]]
-	local setEquipped = context.setEquipped --[[@as fun(slot: string, goodID: string): boolean]]
-	local openShop = context.openShop --[[@as fun(goodID: string?)]]
-	local equipped = (context.getEquipped --[[@as fun(slot: string): string?]])(ns.BINDING_SLOT)
+	local goods = context.goods
+	local equipped = goods.getEquipped(ns.BINDING_SLOT)
 	blocks[#blocks + 1] = { kind = "title", text = L.ANGLER_BINDINGS }
 	for _, binding in ipairs(ns.BINDINGS) do
 		local id = ns.BindingID(binding)
@@ -177,17 +171,17 @@ local function bindings(context, blocks)
 		local line = { kind = "leader", text = ns.BindingName(binding) }
 		if id == equipped then
 			line.value = L.ANGLER_BINDING_IN_USE
-		elseif isOwned(id) then
+		elseif goods.isOwned(id) then
 			line.value = L.ANGLER_BINDING_USE
 			line.action = function()
-				setEquipped(ns.BINDING_SLOT, id)
+				goods.setEquipped(ns.BINDING_SLOT, id)
 			end
 		elseif binding.level then
 			line.value = L.BINDING_EARNED:format(binding.level)
 		else
 			line.value = L.ANGLER_BINDING_SHOP
 			line.action = function()
-				openShop(id)
+				goods.openShop(id)
 			end
 		end
 		blocks[#blocks + 1] = line

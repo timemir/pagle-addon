@@ -56,6 +56,8 @@ ns.L = {
 	SETTINGS_BUDGET_TOOLTIP = "When toasts come close together, the smaller ones step down to a quiet Nod. Records always keep their ruler. Greyed out in Cozy mode, which holds everything anyway.",
 	SETTINGS_BUDGET_COUNT = "Interruptions",
 	SETTINGS_BUDGET_WINDOW = "Per",
+	SETTINGS_EVERY_CATCH = "Show every catch",
+	SETTINGS_EVERY_CATCH_TOOLTIP = "A quiet line for each catch: its name, size band and length. A toast or banner for the same catch shows instead. Greyed out in Cozy mode, which shows nothing.",
 	-- Look and Feel (SET-R50, SET-R51): the paragraph, a slot dropdown's note with N, and the Curio Shop section's
 	-- header, row label and button caption. Its category headers are SHOP_CATEGORIES.
 	SETTINGS_LOOK_PARAGRAPH = "Looks you own. Pick one here or with Use in the Curio Shop; both change the same thing.",
@@ -75,6 +77,9 @@ ns.L = {
 	-- The toast listing the toast headlines held through combat (ANN-R36), and each line: a headline's title and text.
 	ANNOUNCEMENT_WHILE_FIGHTING = "While you were fighting",
 	ANNOUNCEMENT_FIGHTING_LINE = "%s: %s",
+	-- The catch Nod (ANN-R13): a Catch's name, its Size band and its length; an item the client hasn't named yet.
+	CATCH_NOD = "%s · %s · %s",
+	CATCH_NOD_ITEM = "Item %d",
 	-- The cards (announcements.md › UI): a Session summary's title, "Your last session" for one that ended while away
 	-- (ANN-R54), and the Write-up's (ANN-R61); Core's numbers (ANN-R53), time fished in MINUTES or hours and minutes;
 	-- the Coins line with its sum (ANN-R53); the close button (closing also takes Esc).

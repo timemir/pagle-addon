@@ -153,10 +153,12 @@ local function newRuler(parent, compact)
 	ruler.track:SetPoint("TOPLEFT")
 	ruler.track:SetPoint("TOPRIGHT")
 	ruler.track:SetHeight(compact and 7 or 12)
-	ruler.fill = ns.Painted(skin, ruler:CreateTexture(nil, "OVERLAY"), "fill") --[[@as Texture]]
+	-- Back to front (ANN-R22): the track, the fill over it, then the old record's mark over the fill, so the mark stays
+	-- in sight as the fill passes it; the labels are font strings in OVERLAY, over the fill too.
+	ruler.fill = ns.Painted(skin, ruler:CreateTexture(nil, "ARTWORK", nil, 1), "fill") --[[@as Texture]]
 	ruler.fill:SetPoint("TOPLEFT", ruler.track)
 	ruler.fill:SetPoint("BOTTOMLEFT", ruler.track)
-	ruler.mark = ns.Painted(skin, ruler:CreateTexture(nil, "OVERLAY"), "mark") --[[@as Texture]]
+	ruler.mark = ns.Painted(skin, ruler:CreateTexture(nil, "OVERLAY", nil, 1), "mark") --[[@as Texture]]
 	ruler.mark:SetSize(2, compact and 11 or 18)
 	-- The old record's number, over its mark; a compact ruler has no room for it.
 	ruler.old = text(skin, ruler, "GameFontDisableSmall", "label")
@@ -374,8 +376,7 @@ end
 ---@param display PagleDisplay
 function ns.DrawAnnouncement(frame, display)
 	draw(frame, display)
-	local style = display.announcement.style
-	ns.PaintSkin(frame.skin, style and ns.ToastStyleOf(style) or ns.EquippedToastStyle())
+	ns.PaintSkin(frame.skin, ns.DisplayStyle(display))
 end
 
 --- A toast frame on `parent`, for a sample toast (wallet-and-shop.md › UI, the preview stage).
@@ -432,7 +433,7 @@ ns.lanes = ns.NewLanes({
 	-- The equipped sound set (ANN-R70, ANN-R72), read as each sound is picked, so it follows AppearanceChanged
 	-- (SHOP-R33).
 	soundSet = function()
-		return ns.SoundSetOf(Pagle.GetEquipped("core.soundset"))
+		return ns.SoundSetOf(ns.goods:GetEquipped(ns.SOUND_SET_SLOT))
 	end,
 	show = show,
 	hide = hide,

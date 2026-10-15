@@ -30,7 +30,7 @@ describe("Core's slots and goods", function()
 		})
 	end)
 
-	it("register the three slots first, in the shop's categories, with every good's tier (SHOP-R25)", function()
+	it("register the three slots first, in the Curio Shop's categories, with every good's tier (SHOP-R25)", function()
 		local loaded = loadCore()
 		loaded.client.fire("PLAYER_LOGIN")
 		local goods = loaded.ns.goods
@@ -83,10 +83,44 @@ describe("Core's slots and goods", function()
 			Pagle.IsOwned("core.crest.crest3"),
 		})
 	end)
+
+	it(
+		"tell Pagle.GetGood's readers that Plain is the crest slot's default, a crest no one bought (SHOP-R25)",
+		function()
+			local loaded = loadCore()
+			loaded.client.fire("PLAYER_LOGIN")
+			local Pagle = loaded.env.Pagle
+
+			assert.are.same({ true, false }, {
+				Pagle.GetGood(Pagle.GetEquipped("core.crest")).isDefault,
+				Pagle.GetGood("core.crest.crest1").isDefault,
+			})
+		end
+	)
+
+	it("each have an in-client icon, the Curio Shop's swatch (SHOP-R25, wallet-and-shop.md › UI)", function()
+		local loaded = loadCore()
+		loaded.client.fire("PLAYER_LOGIN")
+		local Pagle = loaded.env.Pagle
+
+		local without = {}
+		local count = 0
+		for _, slot in ipairs(loaded.ns.goods:Slots()) do
+			for _, good in ipairs(loaded.ns.goods:GoodsOf(slot.id)) do
+				count = count + 1
+				local icon = Pagle.GetGood(good.id).icon
+				if type(icon) ~= "string" or not icon:find("^Interface\\Icons\\%S+$") then
+					without[#without + 1] = good.id
+				end
+			end
+		end
+
+		assert.are.same({ 9, {} }, { count, without })
+	end)
 end)
 
 describe("Core's goods' names", function()
-	it("are each good's ID, with no description, while its lore key has no text (graph.md question 3)", function()
+	it("are each good's ID, with no description, while its lore key has no text (SHOP-R25, DATA-R104)", function()
 		local loaded = loadCoreWithLore() -- the fixture has no key for crest2
 
 		assert.are.same({
@@ -94,6 +128,7 @@ describe("Core's goods' names", function()
 			slot = "core.crest",
 			icon = "Interface\\Icons\\INV_Misc_Gem_Pearl_04",
 			module = "Core",
+			isDefault = false,
 		}, loaded.env.Pagle.GetGood("core.crest.crest2"))
 	end)
 

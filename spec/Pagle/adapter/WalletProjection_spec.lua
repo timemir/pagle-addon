@@ -17,7 +17,7 @@ end
 
 -- Core over a saved log of `entries` and PagleDB `saved`, with Hunts registered and its notebook cover slot: Plain the
 -- default, Velvet and Silk for sale. Before PLAYER_LOGIN.
-local function huntsSession(entries, saved)
+local function huntsCore(entries, saved)
 	local loaded = loadCore(entries, saved)
 	local hunts = loaded.env.Pagle.RegisterModule({ name = "Hunts", title = "Hunts", order = 20 })
 	hunts:RegisterSlot({ id = "hunts.cover", label = "Notebook cover", category = "Hunts" })
@@ -64,10 +64,17 @@ describe("the wallet projection", function()
 		end
 	)
 
+	it("binds to a PagleDB saved before M4, which holds only the Field report's projection (LOG-R78)", function()
+		local saved = { global = { projections = { fieldReport = {} } } }
+		local loaded = enterWorld((huntsCore(purchases(2), saved)))
+
+		assert.are.same(BOTH, loaded.env.PagleDB.global.projections.wallet.projection)
+	end)
+
 	it(
 		"gives 550 spent and both goods owned after the catch-up, a second U1 for a good changing nothing (SHOP-R11)",
 		function()
-			local loaded = enterWorld((huntsSession(purchases(2))))
+			local loaded = enterWorld((huntsCore(purchases(2))))
 			local Pagle = loaded.env.Pagle
 
 			assert.are.same(BOTH, loaded.env.PagleDB.global.projections.wallet.projection)
@@ -79,7 +86,7 @@ describe("the wallet projection", function()
 		"shows 50 for 600 earned and 550 spent, then 0, held, when a Module's rebuild recounts it to 500, both goods"
 			.. " still owned (SHOP-R12, SHOP-R91)",
 		function()
-			local loaded = huntsSession(purchases(2))
+			local loaded = huntsCore(purchases(2))
 			local Pagle = loaded.env.Pagle
 			local ledger = Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
 			local earned = 600
@@ -109,7 +116,7 @@ describe("the wallet projection", function()
 	it(
 		"applies a purchase live: spent rises, BalanceChanged fires once, the good is owned (SHOP-R10, SHOP-R11)",
 		function()
-			local loaded = huntsSession(history(2), { global = { coins = { earned = { Ledger = 600 } } } })
+			local loaded = huntsCore(history(2), { global = { coins = { earned = { Ledger = 600 } } } })
 			enterWorld(loaded)
 			local Pagle = loaded.env.Pagle
 			local fired = listen(loaded)
@@ -131,7 +138,7 @@ describe("the wallet projection", function()
 			assert.are.same(BOTH, first.env.PagleDB.global.projections.wallet.projection)
 			local global = first.env.PagleDB.global
 			global.projections.wallet.fingerprint = "an older release" -- DATA-R71: a new content fingerprint rebuilds
-			local loaded = huntsSession(first.env.PagleLog, { global = global })
+			local loaded = huntsCore(first.env.PagleLog, { global = global })
 			local Pagle = loaded.env.Pagle
 			loaded.client.fire("PLAYER_LOGIN")
 			assert.is_true(Pagle.SetEquipped("hunts.cover", VELVET)) -- owned from the stored set before the rebuild

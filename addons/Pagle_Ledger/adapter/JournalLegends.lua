@@ -23,29 +23,12 @@ local LINE_GAP = 12
 ---@field lines FontString[]
 ---@field foot FontString
 
--- A rectangle of four thin rules, `inset` in from `frame`'s edges.
+-- A rectangle of four thin rules in the kicker's brown, `inset` in from `frame`'s edges.
 ---@param frame Frame
 ---@param inset number
 local function ruled(frame, inset)
-	for _, side in ipairs({
-		{ "TOPLEFT", "TOPRIGHT", false },
-		{ "BOTTOMLEFT", "BOTTOMRIGHT", false },
-		{ "TOPLEFT", "BOTTOMLEFT", true },
-		{ "TOPRIGHT", "BOTTOMRIGHT", true },
-	}) do
-		local line = frame:CreateTexture(nil, "BORDER")
+	for _, line in ipairs(ns.JournalRules(frame, inset)) do
 		ns.JournalPaint(line, LOOK.kicker)
-		local x = side[1]:find("RIGHT") and -inset or inset
-		local y = side[1]:find("BOTTOM") and inset or -inset
-		local toX = side[2]:find("RIGHT") and -inset or inset
-		local toY = side[2]:find("BOTTOM") and inset or -inset
-		line:SetPoint(side[1], x, y)
-		line:SetPoint(side[2], toX, toY)
-		if side[3] then
-			line:SetWidth(1)
-		else
-			line:SetHeight(1)
-		end
 	end
 end
 

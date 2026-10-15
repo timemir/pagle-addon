@@ -105,11 +105,10 @@ describe("the Journal's Angler page", function()
 			-- 4,510 XP is level 4 (steps 1,080 + 1,160 + 1,240 = 3,480), 1,030 into its 1,320 step (LED-R30).
 			-- Completion: 1 of 2 Species, 1 of 1 junk, 0 of 1 treasure, 0 of 1 weight, 0 of 1 zone mastered, so
 			-- 2 of 6 is 33% (LED-R70).
-			-- The crest first: Core's default, Plain (SHOP-R25); the active title under the level, automatic: the
-			-- highest level title, level 1's Minnow (LED-R77); no Prestige yet (LED-R34), and below 60 no button
-			-- (LED-R33); and the next Catch Milestone (LED-R42).
+			-- No crest: Core's default, Plain, is "No emblem, only the owner's name" (LED-R112, SHOP-R25); the active
+			-- title under the level, automatic: the highest level title, level 1's Minnow (LED-R77); no Prestige yet
+			-- (LED-R34), and below 60 no button (LED-R33); and the next Catch Milestone (LED-R42).
 			assert.are.same({
-				"[icon]",
 				"Ex Libris",
 				"The Angler's Ledger",
 				"kept since 11 Oct",
@@ -126,9 +125,9 @@ describe("the Journal's Angler page", function()
 				"3 Catches · next milestone 1,000",
 			}, blockTexts(loaded.ns.journal.pages.left))
 			local left = loaded.ns.journal.pages.left
-			assert.are.equal("Interface\\Icons\\INV_Misc_Note_01", left[1].icon)
-			assert.is_true(left[6].hand)
-			assert.are.equal("1,030 of 1,320.", left[7].bar.text)
+			assert.is_nil(blockOfKind(left, "icon"))
+			assert.is_true(left[5].hand)
+			assert.are.equal("1,030 of 1,320.", left[6].bar.text)
 		end
 	)
 
@@ -136,7 +135,7 @@ describe("the Journal's Angler page", function()
 		local _, loaded = anglerPage({ FIXTURE[1], FIXTURE[2] })
 		local left = blockTexts(loaded.ns.journal.pages.left)
 
-		assert.are.same({ "Ex Libris", "The Angler's Ledger", "Angler Level 2" }, { left[2], left[3], left[4] })
+		assert.are.same({ "Ex Libris", "The Angler's Ledger", "Angler Level 2" }, { left[1], left[2], left[3] })
 		assert.are.equal("0 Catches · next milestone 1,000", left[#left])
 		for _, text in ipairs(left) do
 			assert.is_nil(text:find("kept since", 1, true))
@@ -155,14 +154,14 @@ describe("the Journal's Angler page", function()
 		function()
 			local _, loaded = anglerPage({ secretCast(1, T0, MACKEREL), secretCast(1, T0 + 3 * 86400, BOOT) })
 
-			assert.are.equal("kept since 11 Oct", loaded.ns.journal.pages.left[4].text)
+			assert.are.equal("kept since 11 Oct", loaded.ns.journal.pages.left[3].text)
 		end
 	)
 
 	it("keeps since the first Catch with a realm date, past one without (LED-R146, ledger.md › Data)", function()
 		local _, loaded = anglerPage({ secretCast(1, T0, MACKEREL), cast(1, T0 + 3 * 86400, BOOT) })
 
-		assert.are.equal("kept since 14 Oct", loaded.ns.journal.pages.left[4].text)
+		assert.are.equal("kept since 14 Oct", loaded.ns.journal.pages.left[3].text)
 	end)
 
 	it(
@@ -213,7 +212,7 @@ local FIRST_FISH = 100001
 ---@param time integer
 ---@param count integer
 ---@param itemID integer?
-local function haul(time, count, itemID)
+local function bigCast(time, count, itemID)
 	local record = cast(1, time, MACKEREL)
 	record.items = {}
 	for i = 1, count do
@@ -230,20 +229,9 @@ local TO_60_SPECIES = 324
 local function sixtyCatalogue()
 	local items = {}
 	for i = 0, TO_60_SPECIES - 1 do
-		local id = FIRST_FISH + i
-		items[id] = { category = "fish", species = id, legend = false, noise = false, removed = false, pool = false }
+		items[FIRST_FISH + i] = fishRecord(FIRST_FISH + i)
 	end
-	return {
-		fingerprint = "0123456789abcdef",
-		items = items,
-		areas = {},
-		aliases = {},
-		pools = {},
-		windows = {},
-		events = {},
-		fishingSpells = {},
-		auras = {},
-	}
+	return catalogueWith({ items = items })
 end
 
 -- Character 1's Prestige to `rank` at `time` (LOG-R38).
@@ -254,7 +242,7 @@ end
 -- The fixture log, then `extra` records.
 ---@param extra table[]
 ---@return table[]
-local function fixtureAnd(extra)
+local function fixturePlus(extra)
 	local log = {}
 	for _, record in ipairs(FIXTURE) do
 		log[#log + 1] = record
@@ -320,11 +308,11 @@ describe("the Angler page's bookplate in M4", function()
 
 		assert.are.same({}, ofKind(left, "emblem"))
 		assert.are.same({}, ofKind(left, "button"))
-		assert.are.same({ "No Prestige seals yet" }, { left[8].text })
+		assert.are.same({ "No Prestige seals yet" }, { left[7].text })
 	end)
 
 	it("shows emblem II at rank 2, in place of No Prestige seals yet (LED-R146, LED-R34)", function()
-		local _, loaded = anglerPage(fixtureAnd({ prestige(T0 + 600, 1), prestige(T0 + 900, 2) }))
+		local _, loaded = anglerPage(fixturePlus({ prestige(T0 + 600, 1), prestige(T0 + 900, 2) }))
 		local left = loaded.ns.journal.pages.left
 
 		assert.are.same({ { kind = "emblem", mark = { emblem = "II", stars = 0 } } }, ofKind(left, "emblem"))
@@ -336,14 +324,14 @@ describe("the Angler page's bookplate in M4", function()
 	it(
 		"shows Begin a new Ledger (Prestige) at 60, under the emblems, and it opens the confirm (LED-R146, LED-R33)",
 		function()
-			local _, loaded = anglerPage({ haul(T0, TO_60_SPECIES) }, { catalogue = sixtyCatalogue() })
+			local _, loaded = anglerPage({ bigCast(T0, TO_60_SPECIES) }, { catalogue = sixtyCatalogue() })
 			local left = loaded.ns.journal.pages.left
 
 			local buttons = ofKind(left, "button")
 			assert.are.equal(1, #buttons)
 			assert.are.equal("Begin a new Ledger (Prestige)", buttons[1].text)
 			local shown = blockTexts(left)
-			assert.are.same({ "No Prestige seals yet", "Begin a new Ledger (Prestige)" }, { shown[8], shown[9] })
+			assert.are.same({ "No Prestige seals yet", "Begin a new Ledger (Prestige)" }, { shown[7], shown[8] })
 
 			click(loaded, "left", "Begin a new Ledger (Prestige)")
 
@@ -352,7 +340,10 @@ describe("the Angler page's bookplate in M4", function()
 	)
 
 	it("shows no Prestige button while the projection updates (LED-R33, LED-R122)", function()
-		local fake, loaded = anglerPage({ haul(T0, TO_60_SPECIES) }, { catalogue = sixtyCatalogue(), updating = true })
+		local fake, loaded = anglerPage(
+			{ bigCast(T0, TO_60_SPECIES) },
+			{ catalogue = sixtyCatalogue(), updating = true }
+		)
 
 		assert.is_true(loaded.ns.journal.pages.updating)
 		assert.are.same({}, ofKind(loaded.ns.journal.pages.left, "button"))
@@ -365,11 +356,11 @@ describe("the Angler page's bookplate in M4", function()
 	it(
 		"reads 1,200 Catches · next milestone 5,000, and after the last milestone just the count (LED-R146, LED-R42)",
 		function()
-			local _, at1200 = anglerPage(fixtureAnd({ haul(T0 + 600, 1197, MACKEREL) }))
+			local _, at1200 = anglerPage(fixturePlus({ bigCast(T0 + 600, 1197, MACKEREL) }))
 			local left = at1200.ns.journal.pages.left
 			assert.are.equal("1,200 Catches · next milestone 5,000", left[#left].text)
 
-			local _, at50000 = anglerPage(fixtureAnd({ haul(T0 + 600, 49997, MACKEREL) }))
+			local _, at50000 = anglerPage(fixturePlus({ bigCast(T0 + 600, 49997, MACKEREL) }))
 			left = at50000.ns.journal.pages.left
 			assert.are.equal("50,000 Catches", left[#left].text)
 		end
@@ -382,7 +373,7 @@ describe("the Angler page's bookplate in M4", function()
 		assert.are.equal("1 Catch · next milestone 1,000", left[#left].text)
 	end)
 
-	it("draws the equipped crest, and redraws when it changes (LED-R112, SHOP-R33)", function()
+	it("draws the equipped crest, and none again for the default (LED-R112, SHOP-R25, SHOP-R33)", function()
 		local fake, loaded = anglerPage()
 		fake.setPurchased({ ["core.crest.crest1"] = true })
 
@@ -392,6 +383,8 @@ describe("the Angler page's bookplate in M4", function()
 			{ kind = "icon", icon = "Interface\\Icons\\INV_Fishingpole_02" },
 			loaded.ns.journal.pages.left[1]
 		)
+		assert.is_true(fake.Pagle.SetEquipped("core.crest", "core.crest.plain"))
+		assert.are.equal("Ex Libris", loaded.ns.journal.pages.left[1].text)
 	end)
 end)
 
@@ -423,7 +416,7 @@ describe("the Angler page's Signed As", function()
 				assert.are.equal("link", block.kind)
 			end
 			-- Automatic: the highest level title earned (LED-R77).
-			assert.are.equal("Dabbler", loaded.ns.journal.pages.left[6].text)
+			assert.are.equal("Dabbler", loaded.ns.journal.pages.left[5].text)
 		end
 	)
 
@@ -436,7 +429,7 @@ describe("the Angler page's Signed As", function()
 			click(loaded, "right", "· Returning Tide")
 
 			assert.are.equal("title:prestige1", profile.activeTitle)
-			assert.are.equal("Returning Tide", loaded.ns.journal.pages.left[6].text)
+			assert.are.equal("Returning Tide", loaded.ns.journal.pages.left[5].text)
 			assert.are.same(
 				{ "· Automatic", "· Minnow", "· Dabbler", "» Returning Tide", "· Collector of Boots" },
 				blockTexts(section(loaded, "Signed As"))
@@ -445,7 +438,7 @@ describe("the Angler page's Signed As", function()
 			click(loaded, "right", "· Automatic")
 
 			assert.is_nil(profile.activeTitle)
-			assert.are.equal("Dabbler", loaded.ns.journal.pages.left[6].text)
+			assert.are.equal("Dabbler", loaded.ns.journal.pages.left[5].text)
 			assert.are.equal("» Automatic", section(loaded, "Signed As")[1].text)
 		end
 	)

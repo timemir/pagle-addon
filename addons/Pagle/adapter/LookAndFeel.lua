@@ -10,8 +10,8 @@ local Pagle = Pagle
 
 -- The Look and Feel page and the slot dropdowns (settings.md SET-R50–R53, SET-R30, SET-R5, SET-R6; CORE-R42;
 -- wallet-and-shop.md › UI). A slot dropdown is a row Core draws itself on its own template (adapter/Settings.xml,
--- PagleSettingsSlotRowTemplate): the slot's label, a dropdown of its owned goods that reads Pagle.GetEquipped and
--- writes Pagle.SetEquipped, and "{N} more in the Curio Shop" under it. Its frames are Core's, so Core redraws them at
+-- PagleSettingsSlotRowTemplate): the slot's label, a dropdown of its owned goods that reads ns.goods:GetEquipped and
+-- writes ns.goods:SetEquipped, and "{N} more in the Curio Shop" under it. Its frames are Core's, so Core redraws them at
 -- once on AppearanceChanged; it writes nothing onto Blizzard's initializers or settings (SET-R6). A proxy setting
 -- per page carries the slot's default good, so the page's Defaults button restores it (SET-R60). adapter/Settings.lua
 -- registers the page and calls ns.BuildLookAndFeel; adapter/AnnouncementSettings.lua ends Core's Announcements rows
@@ -66,10 +66,10 @@ end
 ---@return fun(owner: DropdownButton, root: RootMenuDescriptionProxy)
 local function menu(slotID)
 	local function isSelected(goodID)
-		return Pagle.GetEquipped(slotID) == goodID
+		return ns.goods:GetEquipped(slotID) == goodID
 	end
 	local function setSelected(goodID)
-		Pagle.SetEquipped(slotID, goodID)
+		ns.goods:SetEquipped(slotID, goodID)
 	end
 	return function(_, root)
 		for _, choice in ipairs(ns.SlotChoices(ns.goods, slotID)) do
@@ -126,10 +126,10 @@ local function defaultsSetting(page, slot, variable)
 		slot.label,
 		ns.goods:DefaultOf(slotID),
 		function()
-			return Pagle.GetEquipped(slotID)
+			return ns.goods:GetEquipped(slotID)
 		end,
 		function(goodID)
-			Pagle.SetEquipped(slotID, goodID)
+			ns.goods:SetEquipped(slotID, goodID)
 		end
 	)
 end

@@ -50,6 +50,27 @@ function ns.Ledger.OnInitialize()
 	end
 end
 
+--- The projection's state for what the Ledger shows now (LOG-R74): nil while it is updating, or while the Ledger is
+--- inert.
+---@return LedgerState?
+function ns.StateNow()
+	local projection = ns.projection
+	return projection and not projection:IsUpdating() and projection:GetState() --[[@as LedgerState?]] or nil
+end
+
+--- The celebrated set as saved (LED-R90): reading it makes none of its keys, as ns.CelebratedSet would.
+---@return LedgerCelebrated
+function ns.SavedCelebrated()
+	return ns.db.global.celebrated or {}
+end
+
+--- A Catch's or record's size text (LED-R81) in Core's band names and the Angler's length unit (LED-R85).
+---@param size { length: integer, band: integer }?
+---@return string?
+function ns.ClientSizeText(size)
+	return ns.SizeText(size, Pagle.SIZE_BANDS, Pagle.FormatLength)
+end
+
 --- Where the Ledger's moments, Write-up sections, Coins and summary line go, and what they read: the client's names
 --- and numbers, the Angler's logId, the goods' refresh and Core's size text (LED-R81, LED-R89, LED-R90, LED-R93–R95,
 --- LED-R97, LED-R111).
@@ -80,8 +101,6 @@ function ns.Outlets(module)
 		RefreshGoods = function()
 			module:RefreshGoods()
 		end,
-		SizeText = function(size)
-			return ns.SizeText(size, Pagle.SIZE_BANDS, Pagle.FormatLength)
-		end,
+		SizeText = ns.ClientSizeText,
 	}
 end

@@ -527,15 +527,14 @@ describe("FakePagle", function()
 				)
 				hunts:RefreshGoods()
 				assert.is_true(Pagle.IsOwned("hunts.cover.gold"))
-				assert.is_true(fake.goods["hunts.cover.gold"].earned)
+				assert.is_true(fake.global.goods["hunts.cover.gold"].earned)
 			end
 		)
 
-		it("caches each good in fake.goods, which is fake.global.goods (SHOP-R26)", function()
+		it("caches each good in fake.global.goods (SHOP-R26)", function()
 			local fake = newFakePagle()
 			huntsCovers(fake, { value = false })
 
-			assert.are.equal(fake.global.goods, fake.goods)
 			assert.are.same({
 				name = "Velvet",
 				slot = "hunts.cover",
@@ -544,7 +543,7 @@ describe("FakePagle", function()
 				module = "Hunts",
 				icon = 134939,
 				tier = 2,
-			}, fake.goods["hunts.cover.velvet"])
+			}, fake.global.goods["hunts.cover.velvet"])
 		end)
 
 		it("raises a SHOP-R23 mistake at the Module's call and reports a slot with no default at login", function()
@@ -587,9 +586,10 @@ describe("FakePagle", function()
 			"falls back to the cached default for a Module that isn't loaded, keeping its goods owned (SHOP-R90)",
 			function()
 				local fake = newFakePagle()
-				fake.goods["hunts.cover.plain"] =
+				fake.global.goods["hunts.cover.plain"] =
 					{ name = "Plain", slot = "hunts.cover", module = "Hunts", default = true }
-				fake.goods["hunts.cover.velvet"] = { name = "Velvet", slot = "hunts.cover", module = "Hunts", tier = 2 }
+				fake.global.goods["hunts.cover.velvet"] =
+					{ name = "Velvet", slot = "hunts.cover", module = "Hunts", tier = 2 }
 				fake.profile.appearance["hunts.cover"] = "hunts.cover.velvet"
 				fake.setPurchased({ ["hunts.cover.velvet"] = true })
 				fake.login()
@@ -601,7 +601,7 @@ describe("FakePagle", function()
 			end
 		)
 
-		it("reads a good's cached look with Pagle.GetGood, read-only (graph.md question 2, CORE-R18)", function()
+		it("reads a good's cached look with Pagle.GetGood, read-only (SHOP-R26, CORE-R18)", function()
 			local fake = newFakePagle()
 			huntsCovers(fake, { value = false })
 
@@ -654,7 +654,7 @@ describe("FakePagle", function()
 			assert.are.same({ "Water Spirit", "Interface\\Icons\\Spell_Frost_SummonWaterElemental", "Core" }, {
 				Pagle.GetGood("core.crest.crest3").name,
 				Pagle.GetGood("core.crest.crest3").icon,
-				fake.goods["core.crest.crest3"].module,
+				fake.global.goods["core.crest.crest3"].module,
 			})
 			assert.is_nil(fake.ns.goods:Good("core.crest.plain").preview)
 			fake.setPurchased({ ["core.crest.crest3"] = true })
@@ -663,7 +663,7 @@ describe("FakePagle", function()
 
 		it("selects an owned good of a Module off under Put away, from the cache (SHOP-R40, SHOP-R35)", function()
 			local fake = newFakePagle()
-			fake.goods["hunts.cover.velvet"] = {
+			fake.global.goods["hunts.cover.velvet"] = {
 				name = "Velvet",
 				slot = "hunts.cover",
 				slotLabel = "Notebook cover",
@@ -679,7 +679,7 @@ describe("FakePagle", function()
 			assert.are.same({ { goodID = "hunts.cover.velvet", selected = "hunts.cover.velvet" } }, fake.shopsOpened)
 		end)
 
-		it("toggles the shop with /pagle shop (CORE-R61, SHOP-R40)", function()
+		it("toggles the Curio Shop with /pagle shop (CORE-R61, SHOP-R40)", function()
 			local fake = newFakePagle()
 			fake.login()
 
@@ -690,23 +690,26 @@ describe("FakePagle", function()
 			assert.are.same({ {} }, fake.shopsOpened)
 		end)
 
-		it("prints SHOP-R41's line while restricted, and closes the shop when restriction starts (SHOP-R41)", function()
-			local fake = newFakePagle()
-			fake.login()
-			fake.Pagle.OpenShop()
+		it(
+			"prints SHOP-R41's line while restricted, and closes the Curio Shop when restriction starts (SHOP-R41)",
+			function()
+				local fake = newFakePagle()
+				fake.login()
+				fake.Pagle.OpenShop()
 
-			fake.setRestricted(true)
-			assert.is_false(fake.shopOpen)
-			fake.Pagle.OpenShop()
-			fake.slash("shop")
+				fake.setRestricted(true)
+				assert.is_false(fake.shopOpen)
+				fake.Pagle.OpenShop()
+				fake.slash("shop")
 
-			assert.are.same({ {} }, fake.shopsOpened)
-			assert.is_false(fake.shopOpen)
-			assert.are.same(
-				{ "Pagle: the Curio Shop opens after combat.", "Pagle: the Curio Shop opens after combat." },
-				fake.printed
-			)
-		end)
+				assert.are.same({ {} }, fake.shopsOpened)
+				assert.is_false(fake.shopOpen)
+				assert.are.same(
+					{ "Pagle: the Curio Shop opens after combat.", "Pagle: the Curio Shop opens after combat." },
+					fake.printed
+				)
+			end
+		)
 	end)
 
 	describe("moments", function()
@@ -855,6 +858,64 @@ describe("FakePagle", function()
 				{ fake.announcements[1].headline.title, fake.announcements[1].rung }
 			)
 		end)
+
+		it(
+			"show Core's catch Nod for a played caught Cast in fake.catchNods, apart from fake.announcements and"
+				.. " never summarized (ANN-R13, ANN-R25)",
+			function()
+				local fake = newFakePagle()
+				fake.itemNames[6358] = "Oily Blackmouth"
+				fake.login()
+				fake.enterWorld()
+
+				local cast = assert(fake.playCast("caught", { { itemID = 6358, quantity = 1 } }))
+				assert.are.same({}, fake.catchNods)
+				fake.nextFrame()
+
+				assert.are.equal(1, #fake.catchNods)
+				local nod = fake.catchNods[1]
+				assert.are.same({ "nod", cast.id, 6358 }, { nod.rung, nod.cast, nod.headline.icon })
+				assert.matches("^Oily Blackmouth · %a+ · %d+%.%d in$", nod.headline.title)
+				assert.are.same({}, fake.announcements)
+				assert.are.same({}, fake.summarized)
+			end
+		)
+
+		it("drop the catch Nod when a Module raises a moment for the Cast (ANN-R13)", function()
+			local fake = newFakePagle()
+			raising(fake, "Ledger", 10, function(record)
+				return { rung = "nod", kind = "newInZone", title = "New in this zone", cast = record.id }
+			end)
+			fake.login()
+			fake.enterWorld()
+
+			fake.playCast("caught", { { itemID = 6358, quantity = 1 } })
+			fake.nextFrame()
+
+			assert.are.same({}, fake.catchNods)
+			assert.are.same({ "New in this zone" }, { fake.announcements[1].headline.title })
+			assert.are.same({}, fake.announcements[1].stamps)
+		end)
+
+		it(
+			'raise no catch Nod for a got-away Cast, a replayed one, or with "Show every catch" off (ANN-R13, ANN-R4,'
+				.. " SET-R30)",
+			function()
+				local fake = newFakePagle()
+				withHistory(fake, 2)
+				fake.login()
+				fake.enterWorld()
+				fake.nextFrame()
+
+				fake.playCast("gotAway")
+				fake.nextFrame()
+				fake.profile.announcements.everyCatch = false
+				fake.playCast("caught", { { itemID = 6358, quantity = 1 } })
+				fake.nextFrame()
+
+				assert.are.same({}, fake.catchNods)
+			end
+		)
 	end)
 
 	describe("/pagle dev", function()
@@ -1137,7 +1198,10 @@ describe("FakePagle", function()
 				local first = M:RecordPrestige()
 				fake.prestige()
 
-				assert.are.same({ "P1|1|1791731700|0|1", "P1|1|1791731700|1|2" }, fake.catchLog.data.entries)
+				assert.are.same(
+					{ prestigeEntry(SERVER_TIME, 1), prestigeEntry(SERVER_TIME, 2, 1) },
+					fake.catchLog.data.entries
+				)
 				assert.are.same(
 					{ "1 prestige live", "Prestige 1, writable false", "2 prestige live", "Prestige 2, writable false" },
 					seen
@@ -1152,11 +1216,11 @@ describe("FakePagle", function()
 		it("count the Prestiges in a history, as Core does (LOG-R38)", function()
 			local fake = newFakePagle()
 			fake.catchLog.data.characters[1] = { guid = PLAYER_GUID }
-			fake.catchLog:Append({ kind = "prestige", char = 1, time = 1791731000, rank = 1 })
+			fake.catchLog:Append({ kind = "prestige", char = 1, time = SERVER_TIME - 700, rank = 1 })
 			fake.catchLog:Append({
 				kind = "purchase",
 				char = 1,
-				time = 1791731001,
+				time = SERVER_TIME - 699,
 				good = "core.crest.otter",
 				price = 300,
 			})
@@ -1184,7 +1248,7 @@ describe("FakePagle", function()
 
 			fake.ns.RecordPurchase("core.toaststyle.ripple", 150)
 
-			assert.are.same({ "U1|1|1791731700|0|core.toaststyle.ripple|150" }, fake.catchLog.data.entries)
+			assert.are.same({ purchaseEntry(SERVER_TIME, "core.toaststyle.ripple", 150) }, fake.catchLog.data.entries)
 			assert.are.same({ "1 purchase live" }, seen)
 			assert.is_nil(fake.Pagle.RecordPurchase)
 		end)
@@ -1309,6 +1373,15 @@ describe("FakePagle", function()
 
 			assert.are.same(Pagle.SIZE_BANDS, fake.Pagle.SIZE_BANDS)
 			assert.are.equal(Pagle.SIZE_RULES_VERSION, fake.Pagle.SIZE_RULES_VERSION)
+		end)
+
+		it("hands out Pagle.SIZE_BANDS read-only, leaving Core's own bands as they are (CORE-R18, LOG-R67)", function()
+			local fake = newFakePagle()
+
+			assert.has_error(function()
+				fake.Pagle.SIZE_BANDS[1].name = "Minnow"
+			end)
+			assert.are.equal("Tiddler", fake.ns.SIZE_BANDS[1].name)
 		end)
 
 		it(
@@ -1549,7 +1622,7 @@ describe("FakePagle", function()
 				fake.catchLog:Append({
 					kind = "purchase",
 					char = 1,
-					time = 1791731000 + i,
+					time = SERVER_TIME - 700 + i,
 					good = purchase[1],
 					price = purchase[2],
 				})
@@ -2072,6 +2145,13 @@ describe("FakePagle", function()
 			assert.are.equal(
 				loadAddon("Pagle", FOREVER_GLOBALS).env.Pagle.SESSION_RULES_VERSION,
 				newFakePagle().Pagle.SESSION_RULES_VERSION
+			)
+		end)
+
+		it("serve Pagle.SESSION_GAP as Core does (LOG-R60, LOG-R61)", function()
+			assert.are.same(
+				{ 300, loadAddon("Pagle", FOREVER_GLOBALS).env.Pagle.SESSION_GAP },
+				{ newFakePagle().Pagle.SESSION_GAP, 300 }
 			)
 		end)
 

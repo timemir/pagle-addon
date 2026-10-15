@@ -10,16 +10,8 @@ local ns = select(2, ...)
 -- In-client textures and fonts only; custom art comes after 1.0. Every texture sits on a solid tint, so a texture
 -- the client lacks leaves the tint showing.
 
--- A tint from its hex code, as the prototype's CSS writes it: { r, g, b }, 0 to 1.
----@param hex string "RRGGBB"
----@return number[]
-local function tint(hex)
-	return {
-		tonumber(hex:sub(1, 2), 16) / 255,
-		tonumber(hex:sub(3, 4), 16) / 255,
-		tonumber(hex:sub(5, 6), 16) / 255,
-	}
-end
+-- A tint from its hex code, as the prototype's CSS writes it (logic/Bindings.lua).
+local tint = ns.HexTint
 
 --- The Field Leather look (LED-R4, LED-R110's default binding), its tints picked against
 --- prototypes/fish-journal/ variant E (its book is variant C's): leather, gilt and page paper, and the inks drawn
@@ -127,6 +119,78 @@ function ns.JournalSolid(frame, color, layer, alpha)
 	ns.JournalPaint(texture, color, alpha)
 	texture:SetAllPoints()
 	return texture
+end
+
+--- Four thin rules boxing `frame`'s inside, `inset` in from its edges, untinted: the cover's and a binding swatch's
+--- gilt rules, a Legend plate's double rule and the shown rung's box. `options`, each optional: `left`, the inset from
+--- the left edge (more at a book's spine; `inset` by default), `thickness` (1) and `layer` ("BORDER"). Top, bottom,
+--- left, right.
+---@param frame Frame
+---@param inset number
+---@param options { left: number?, thickness: number?, layer: DrawLayer? }?
+---@return Texture[]
+function ns.JournalRules(frame, inset, options)
+	options = options or {}
+	local left, thickness = options.left or inset, options.thickness or 1
+	local rules = {}
+	for i, side in ipairs({
+		{ "TOPLEFT", left, -inset, "TOPRIGHT", -inset, -inset },
+		{ "BOTTOMLEFT", left, inset, "BOTTOMRIGHT", -inset, inset },
+		{ "TOPLEFT", left, -inset, "BOTTOMLEFT", left, inset },
+		{ "TOPRIGHT", -inset, -inset, "BOTTOMRIGHT", -inset, inset },
+	}) do
+		local rule = frame:CreateTexture(nil, options.layer or "BORDER")
+		rule:SetPoint(side[1], side[2], side[3])
+		rule:SetPoint(side[4], side[5], side[6])
+		if i <= 2 then
+			rule:SetHeight(thickness)
+		else
+			rule:SetWidth(thickness)
+		end
+		rules[i] = rule
+	end
+	return rules
+end
+
+--- A leather cover (LED-R110): the Journal's, and each binding's closed-book swatch in the Curio Shop.
+---@class LedgerJournalCover: Frame
+---@field leather Texture   -- the leather's tint, and its grain over it (LED-R112)
+---@field grain Texture
+---@field rules Texture[]   -- the gilt rules inside the leather's edge
+
+--- Covers `frame` in leather: the dark outline, the leather `border` in from the edges with its grain at half alpha
+--- over it, and the gilt rules (ns.JournalRules, `inset` and `left`), in the Field Leather tints until
+--- ns.TintJournalCover tints them in a binding's look.
+---@param frame LedgerJournalCover
+---@param border number
+---@param inset number
+---@param left number?
+function ns.DrawJournalCover(frame, border, inset, left)
+	ns.JournalSolid(frame, LOOK.leatherEdge, "BACKGROUND")
+	frame.leather = ns.JournalSolid(frame, LOOK.leather, "BACKGROUND")
+	frame.grain = frame:CreateTexture(nil, "BORDER")
+	frame.grain:SetTexture(ns.JOURNAL_TEXTURES.leather)
+	frame.grain:SetAlpha(0.5)
+	for _, texture in ipairs({ frame.leather, frame.grain }) do
+		texture:SetPoint("TOPLEFT", border, -border)
+		texture:SetPoint("BOTTOMRIGHT", -border, border)
+	end
+	-- A layer above the grain's, so the rules always draw over it.
+	frame.rules = ns.JournalRules(frame, inset, { left = left, layer = "ARTWORK" })
+end
+
+--- Tints a cover in binding `look` (LED-R110, LED-R112): the leather and its grain, and the rules in `rule` at
+--- `alpha` (1 when nil).
+---@param frame LedgerJournalCover
+---@param look LedgerBindingLook
+---@param rule number[]
+---@param alpha number?
+function ns.TintJournalCover(frame, look, rule, alpha)
+	ns.JournalPaint(frame.leather, look.leather)
+	frame.grain:SetVertexColor(unpack(look.leather))
+	for _, line in ipairs(frame.rules) do
+		ns.JournalPaint(line, rule, alpha)
+	end
 end
 
 --- A font string on `frame` in one of the Journal's fonts and tints.

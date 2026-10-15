@@ -6,9 +6,9 @@ if not Pagle then
 	return
 end
 
--- Core's rows on the Announcements page (SET-R30): Cozy mode, Interruption budget, and the budget's Interruptions
--- and Per. Native controls on proxy settings over `PagleDB.profile.announcements` (announcements.md › Data), built
--- when adapter/Settings.lua registers the page. Core's slots in the "Announcements" category, Toast style and Sound
+-- Core's rows on the Announcements page (SET-R30): Cozy mode, Interruption budget, the budget's Interruptions and
+-- Per, and Show every catch (the catch Nod, ANN-R13). Native controls on proxy settings over
+-- `PagleDB.profile.announcements` (announcements.md › Data), built when adapter/Settings.lua registers the page. Core's slots in the "Announcements" category, Toast style and Sound
 -- set, end them as slot dropdowns (CORE-R42, adapter/LookAndFeel.lua).
 local L = ns.L
 
@@ -23,14 +23,16 @@ local COZY = "Pagle_Core_cozy"
 local BUDGET = "Pagle_Core_budget"
 local COUNT = "Pagle_Core_budgetCount"
 local WINDOW = "Pagle_Core_budgetWindow"
+local EVERY_CATCH = "Pagle_Core_everyCatch"
 
----@return { cozy: boolean, budget: { on: boolean, count: integer, window: integer } }
+---@return { cozy: boolean, everyCatch: boolean, budget: { on: boolean, count: integer, window: integer } }
 local function stored()
 	return ns.db.profile.announcements
 end
 
--- Greying (SET-R31): the budget while Cozy mode is on; its two sliders also while the budget is off.
-local function budgetLive()
+-- Greying (SET-R31): the budget and Show every catch while Cozy mode is on; the budget's two sliders also while the
+-- budget is off.
+local function notCozy()
 	return not stored().cozy
 end
 local function slidersLive()
@@ -43,7 +45,7 @@ end
 ---@param isLive fun(): boolean
 local function greys(initializer, isLive)
 	initializer:AddModifyPredicate(isLive)
-	for _, variable in ipairs({ COZY, BUDGET, COUNT, WINDOW }) do
+	for _, variable in ipairs({ COZY, BUDGET, COUNT, WINDOW, EVERY_CATCH }) do
 		initializer:AddEvaluateStateCVar(variable)
 	end
 end
@@ -78,7 +80,7 @@ ns.CoreSettingsRows.announcements = function(page, layout)
 		stored().budget.on = value
 	end)
 	local budget = Settings.CreateCheckbox(page, budgetOn, L.SETTINGS_BUDGET_TOOLTIP)
-	greys(budget, budgetLive)
+	greys(budget, notCozy)
 
 	local countSetting = Settings.RegisterProxySetting(page, COUNT, Number, L.SETTINGS_BUDGET_COUNT, 4, function()
 		return stored().budget.count
@@ -104,6 +106,22 @@ ns.CoreSettingsRows.announcements = function(page, layout)
 	)
 	window:SetParentInitializer(budget)
 	greys(window, slidersLive)
+
+	-- The catch Nod (ANN-R13): greyed in Cozy mode, which drops it.
+	local everyCatch = Settings.RegisterProxySetting(
+		page,
+		EVERY_CATCH,
+		Boolean,
+		L.SETTINGS_EVERY_CATCH,
+		true,
+		function()
+			return stored().everyCatch
+		end,
+		function(value)
+			stored().everyCatch = value
+		end
+	)
+	greys(Settings.CreateCheckbox(page, everyCatch, L.SETTINGS_EVERY_CATCH_TOOLTIP), notCozy)
 
 	-- Toast style and Sound set: the same equipped looks as on Look and Feel, which this page's Defaults button
 	-- restores too (SET-R30, SET-R33, SET-R51).

@@ -161,8 +161,8 @@ stds.wow = {
 		-- The Fish Journal's serif and handwriting font objects (ledger.md › UI); its frame is drawn on CreateFrame and
 		-- UIParent above and hides with Esc through UISpecialFrames (below).
 		"CreateFont",
-		-- The Curio Shop's purse: each Module's segment shows its lifetime Coins in the tooltip (wallet-and-shop.md › UI),
-		-- GameTooltip above. The window is drawn on CreateFrame and UIParent above and hides with Esc through
+		-- The Curio Shop's purse: each Module's segment shows its lifetime Coins, the total Core stores for it (SHOP-R3),
+		-- in the tooltip (wallet-and-shop.md › UI), GameTooltip above. The window is drawn on CreateFrame and UIParent above and hides with Esc through
 		-- UISpecialFrames (below).
 		-- `/pagle dev tour` (CORE-R66): Screenshot() saves each stop to the client's Screenshots folder, and date() gives
 		-- the local time the files are named by. Both are in the forever dump's GlobalAPI.lua at BIR_COMMIT ("Screenshot"
@@ -217,7 +217,8 @@ stds.wow_variables = {
 		-- does. Gethe/wow-ui-source branch forever at 943764493e6b16d63ded3ab304150d1f05e58b57 ("1.60.1 (70338)"),
 		-- Interface/AddOns/Blizzard_StaticPopup/StaticPopup.lua: `StaticPopupDialogs = {}; -- Definitions`. QoL adds
 		-- its two dialogs to it: the conflict popup and its Reload now popup (QOL-R81, QOL-R83); the Ledger adds its
-		-- Prestige confirm (LED-R33); Core adds the Curio Shop's Buy popup (wallet-and-shop.md › UI: Buy).
+		-- Prestige confirm (LED-R33); Core adds the Curio Shop's Buy popup, one confirmation per purchase (SHOP-R13),
+		-- which closes while restricted (SHOP-R41).
 		StaticPopupDialogs = {
 			fields = {
 				PAGLE_QOL_CONFLICT = { read_only = false },

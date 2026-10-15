@@ -68,7 +68,7 @@ The Ledger is the `Pagle_Ledger` Module: the Angler's identity as an angler. It 
   - A **trophy family's weights** are its trophy items on any zone list (each item is one weight, shown by its `weight`); its **heaviest** is the one with the greatest `weight` (lowest item ID on a tie).
   - A zone's **junk requirement** exists when its list has a `junk` item; its **treasure requirement** when it has a `container` or `treasure` item.
 - **LED-R11** Each collection's **world** is what is listed plus what the Angler has caught: the Species on any zone list, together with every Species with a Catch in the projection; likewise every trophy and curio item, and every listed Legend plus every caught one. An item on no zone list (such as a fish only ever caught from pools, which reaches a list only through content data, DATA-R28) joins the world when first caught. Uncaught items that are on no list don't appear anywhere.
-- **LED-R12** A **removed** item (`removed` true) is never on a list (DATA-R26). Its earlier Catches keep their credit (XP, stars, records), its page still shows with "No longer found in Forever's waters.", and it is left out of both sides of every "x of N" count and of Ledger completion (LED-R70, LED-R71).
+- **LED-R12** A **removed** item (`removed` true) is never on a list (DATA-R26). Its earlier Catches keep their credit (XP, stars, records), its page still shows with "No longer found in Forever's waters." (an uncaught one has no page and is in no index: not the Legends' nor any collection's), and it is left out of both sides of every "x of N" count and of Ledger completion (LED-R70, LED-R71).
 
 ### XP and Fresh Water
 
@@ -175,7 +175,7 @@ The Ledger is the `Pagle_Ledger` Module: the Angler's identity as an angler. It 
 
 ### Simulated Size records
 
-- **LED-R80** For each Species, and for each Legend item (kept on its `items` entry, never as a Species; Core sizes Legend Catches too, LOG-R65), the projection keeps the **record**: the Catch with the greatest `size.length` in millimetres (LOG-R65), the earliest on a tie, with its length, band, Catch ID, time, character and zone; and `since`, the number of Catches of that Species after it.
+- **LED-R80** For each Species, and for each Legend item (kept on its `items` entry, never as a Species; Core sizes Legend Catches too, LOG-R65), the projection keeps the **record**: the Catch with the greatest `size.length` in millimetres (LOG-R65), the earliest on a tie, with its length, band, Catch ID, time, character and zone; and `since`, the number of Catches of that Species after it, sized or not (only setting or beating the record needs a size).
 - **LED-R81** The first sized Catch of a Species sets the record silently. Its New Species or Legend moment shows the size as text, "{band} · {length}" (band name from `Pagle.SIZE_BANDS`, length from `Pagle.FormatLength`), with no Record stamp and no ruler.
 - **LED-R82** A later Catch beats the record only when it is strictly longer in millimetres. Live, that raises a size record moment (LED-R97) with a ruler from the old length to the new. When the beaten record's `since` was 50 or more before this Catch, i.e. at least 50 Catches of the Species came between the two (the **rare-record flair**), the moment is raised at `toast` instead of `toast.low`, so the Interruption budget never steps it down (ANN-R31).
 - **LED-R83** Reaching a Size band, Monster included, raises nothing. Records earn no XP, stars, Zone Mastery, completion or Coins.
@@ -211,7 +211,7 @@ The Ledger is the `Pagle_Ledger` Module: the Angler's identity as an angler. It 
   - always: set `coins` in the celebrated set to the total, report Coins (LED-R89), call `M:RefreshGoods()` (LED-R111), set the summary line (LED-R95) and redraw the Journal if open.
 - **LED-R94** Write-up lines, each only if non-zero, in this order: "Angler Level {L}" (with " · Prestige {R}" when the rank is above 0; for a catch-up, "Angler Level {old} to {new}" and only if it rose), "{n} Species", "{n} zones ranked · {m} mastered" (zones with a shown rank, and those at Master), "{n} trophy weights", "{n} curios", "{n} Legends", "{n} Skill Milestones", "{n} Catches" (the highest Catch Milestone reached, if one is new), "Title: {title}" (one line per title in LED-R75 order, at most 3, then "+{k} more titles"), "Pagle Coins +{c}" (`c` = total minus the celebrated `coins` before this `done`). Stars and Uncharted items get no line. Every count anywhere in the Ledger has singular and plural forms in `ns.L`.
 - **LED-R95** The summary line is `M:SetSummaryLine("ledger", text)` with "Ledger: Angler Level {L} · {p}% complete" ("Ledger: Prestige {R} · Angler Level {L} · {p}% complete" when the rank is above 0; before M3, without the completion part). It uses the shown level (LED-R36) and is set in `done` and after each live entry that changes the shown level, the prestige rank or completion.
-- **LED-R96** All of a Cast's moments are raised while its `"live"` entry is applied, each with `cast` = the Cast's entry ID, so Core merges them into the Cast's Announcements (ANN-R10, ANN-R11): a level-up banner and a New Species toast show together, each with its own stamps. Moments of a Skill Reading or Prestige entry have no `cast`. An ordinary Catch raises nothing (ANN-R13).
+- **LED-R96** All of a Cast's moments are raised while its `"live"` entry is applied, each with `cast` = the Cast's entry ID, so Core merges them into the Cast's Announcements (ANN-R10, ANN-R11): a level-up banner and a New Species toast show together, each with its own stamps. Moments of a Skill Reading or Prestige entry have no `cast`. An ordinary Catch raises nothing from the Ledger; Core shows its catch Nod (ANN-R13).
 - **LED-R97** Moments (all text is `ns.L` interface text except names and titles; item names from `C_Item.GetItemNameByID`, zone names from `C_Map.GetAreaInfo`):
 
   | Achievement (`kind`) | Rung, `order` | `title` / `text` | `stamp` | `coins` | Also |
@@ -251,7 +251,7 @@ The Ledger is the `Pagle_Ledger` Module: the Angler's identity as an angler. It 
 
   A binding is a look only: a tint for the leather, one for the gilt (breadcrumbs, plate, rules) and one for the page paper, applied to in-client textures. The tint values are picked in the M4 build ticket against the prototype's swatches. Each good's `preview` draws a closed-book swatch: the leather rectangle in its tint with the gilt rules and brass plate (no pages).
 - **LED-R111** A level binding's `isEarned()` is true when the higher of the peak level (LED-R35) and the highest level in the celebrated set is at least its level. The Ledger calls `M:RefreshGoods()` after a live entry that raises the peak level past a multiple of 10, and from `done` (SHOP-R31).
-- **LED-R112** The Journal is drawn in `Pagle.GetEquipped("ledger.binding")`, and its bookplate shows `Pagle.GetEquipped("core.crest")` (SHOP-R25). It redraws on `AppearanceChanged` for either slot.
+- **LED-R112** The Journal is drawn in `Pagle.GetEquipped("ledger.binding")`, and its bookplate shows `Pagle.GetEquipped("core.crest")`'s icon (SHOP-R25), or no emblem while that is the slot's default, Plain ("No emblem, only the owner's name"). It redraws on `AppearanceChanged` for either slot.
 
 ### The Fish Journal
 
@@ -433,11 +433,11 @@ Pagle.RegisterModule{
 | `Pagle.GetAngler` | LED-R41, LED-R126 |
 | `M:RaiseMoment`, `M:RaiseWriteUp`, `M:SetSummaryLine` | LED-R93–R97 |
 | `M:ReportCoinsEarned` | LED-R89 |
-| `M:RegisterSlot`, `M:RegisterGood`, `M:RefreshGoods`, `Pagle.GetEquipped`, `Pagle.SetEquipped`, `Pagle.OpenShop`, event `AppearanceChanged` | LED-R110–R112, LED-R146 |
+| `M:RegisterSlot`, `M:RegisterGood`, `M:RefreshGoods`, `Pagle.GetEquipped`, `Pagle.SetEquipped`, `Pagle.IsOwned`, `Pagle.GetGood` (the crest's icon), `Pagle.OpenShop`, event `AppearanceChanged` | LED-R110–R112, LED-R146 |
 | `Pagle.OpenFieldReport` | LED-R135, LED-R138, LED-R144 (REP-R43) |
 | `Pagle.RegisterEvent` (for `GET_ITEM_INFO_RECEIVED`) | LED-R126 |
 
-WoW APIs for its own presentation: `C_Item.GetItemNameByID`, `C_Item.RequestLoadItemDataByID`, `C_Map.GetAreaInfo`, `C_Map.GetMapInfo`, `GetServerTime`, `GetGameTime`, `issecretvalue` (to leave out a secret realm clock, CORE-R31), `StaticPopup_Show`, `BreakUpLargeNumbers`.
+WoW APIs for its own presentation: `C_Item.GetItemNameByID`, `C_Item.RequestLoadItemDataByID`, `C_Item.GetItemInfoInstant` (item icons), `C_Map.GetAreaInfo`, `C_Map.GetMapInfo`, `GetServerTime`, `GetGameTime`, `issecretvalue` (to leave out a secret realm clock, CORE-R31), `StaticPopupDialogs`, `StaticPopup_Show`, `StaticPopup_Hide` (the Prestige confirm, LED-R33), `UISpecialFrames` (Esc, LED-R120), `C_Timer.After`, `BreakUpLargeNumbers`.
 
 ### Coins paid
 

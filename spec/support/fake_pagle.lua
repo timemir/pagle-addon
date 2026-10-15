@@ -12,8 +12,8 @@
 --   fake.nextFrame()                                        -- the frame after: the Cast's moments are one Announcement
 --   fake.announcements[1].headline.title                    -- what Core would show (also .stamps, .more, .coins)
 --
--- A Module raises moments only for what is worth one: an ordinary Catch raises nothing and never pops up (ANN-R13),
--- so a Module spec playing an ordinary Cast expects fake.announcements to stay empty.
+-- A Module raises moments only for what is worth one: an ordinary Catch gets Core's own catch Nod (ANN-R13), which
+-- lands in fake.catchNods, so a Module spec playing an ordinary Cast expects fake.announcements to stay empty.
 --
 -- It is built on Core's real logic/: each FakePagle loads Pagle.toc's data/, locale/ and logic/ files (and the
 -- CallbackHandler bus) afresh, so what it validates, computes and refuses is what Core does. Core's projections,
@@ -86,10 +86,6 @@
 ---@field setSpent fun(spent: integer) Sets the Coins spent, for a spec that doesn't care about the log: BalanceChanged
 --- fires if the balance or held changes (SHOP-R12). The wallet projection sets the log's own at enterWorld's done and
 --- on each live purchase (fake.global.projections.wallet, SHOP-R11), replacing it; set it after enterWorld to keep it.
----@field goods table<string, table> PagleDB.global.goods, the goods cache (SHOP-R26), the same table as
---- fake.global.goods: every good registered, by ID, with name, slot, slotLabel, category, module, icon, default, tier,
---- description and, for an earned good, `earned` (isEarned()'s result at registration or the last M:RefreshGoods).
---- A spec may fill it before login, as a saved PagleDB, for goods of a Module that isn't loaded (SHOP-R90).
 ---@field setPurchased fun(purchased: table<string, true>) Hands Core the purchased goods, `{ [goodID] = true }`, for a
 --- spec that doesn't care about the log; AppearanceChanged fires if a look changes (SHOP-R33). The wallet projection
 --- hands over the log's own set at enterWorld's done and on each live purchase (SHOP-R11), replacing it; a spec that
@@ -104,6 +100,12 @@
 ---@field announcements PagleAnnouncement[] Each Announcement Core would hand the display, in order (ANN-R11): its
 --- headline, rung, stamps (at most 4), more ("+N"), coins and every moment, ranked. One per Cast, made on the frame
 --- after its moments were raised, or after the last projection finishes (ANN-R10); one per moment without a Cast.
+--- Core's catch Nod is never here: it is in catchNods.
+---@field catchNods PagleAnnouncement[] Each catch Nod Core would hand the display (ANN-R13): one per played caught
+--- Cast for which no Module raised a moment, while `profile.announcements.everyCatch` is on, on the frame after.
+--- Its headline's title is "{item name} · {band} · {length}", the name from `itemNames`.
+---@field itemNames table<integer, string> The names the fake's client has cached, by item ID, for the catch Nod; a
+--- spec sets them. An item without one reads "Item {itemID}".
 ---@field summarized PagleRaisedMoment[] Each moment Core kept, as it was raised, shown or not (ANN-R25): a
 --- summaryOnly one is here and never in announcements. A moment Core dropped (ANN-R4) is in neither.
 ---@field global table PagleDB.global, the one the fake's Core keeps all its keys in, from Core's defaults
@@ -115,8 +117,8 @@
 --- (LOG-R81; empty, and playCast adds nothing, so a spec adds the entries for the P rows, REP-R22) and
 --- `projections.fieldReport` (REP-R25; bound at construction, so a spec fills that table, never replaces it). A spec
 --- may seed its keys before login, as a saved PagleDB.
----@field profile table PagleDB.profile, from Core's defaults: `announcements.cozy` is Cozy mode (ANN-R62), off; a
---- spec may set it. `appearance` holds each slot's pick, `{ [slot] = goodID }` (SHOP-R32), which Pagle.SetEquipped
+---@field profile table PagleDB.profile, from Core's defaults: `announcements.cozy` is Cozy mode (ANN-R62), off, and
+--- `announcements.everyCatch` is "Show every catch" (ANN-R13), on; a spec may set either. `appearance` holds each slot's pick, `{ [slot] = goodID }` (SHOP-R32), which Pagle.SetEquipped
 --- writes and a spec may seed. `lengthUnit` is the Angler's length unit Pagle.FormatLength reads in, "cm" or "in"
 --- (LOG-R69); nil, the default, follows `region`.
 ---@field region integer? GetCurrentRegion() as the fake's client answers it: 1 (Americas), so with no lengthUnit
@@ -461,7 +463,8 @@ part(function(fake, Pagle, ns, host)
 	end
 end)
 
--- Goods (SHOP-R20–R26, SHOP-R30–R33, SHOP-R90), on Core's wiring over fake.global.goods (fake.goods) and
+-- Goods (SHOP-R20–R26, SHOP-R30–R33, SHOP-R90), on Core's wiring over fake.global.goods (the goods cache: every
+-- good registered, by ID, which a spec may fill before login as a saved PagleDB, SHOP-R26, SHOP-R90) and
 -- fake.profile.appearance: M:RegisterSlot, M:RegisterGood and M:RefreshGoods on the handle, Pagle.IsOwned,
 -- GetEquipped, SetEquipped and GetGood (read-only), and AppearanceChanged from login on. The purchased set comes
 -- from the wallet projection part below (SHOP-R11), or from fake.setPurchased. Pagle.OpenShop runs Core's entry
@@ -472,19 +475,13 @@ end)
 part(function(fake, Pagle, ns, host)
 	ns.WireGoods(host)
 	ns.RegisterCoreGoods()
-	fake.goods = fake.global.goods
 	fake.shopsOpened = {}
 	fake.shopOpen = false
-	local asked -- the good the Pagle.OpenShop running asked for
-	ns.WireShop(host, {
-		isRestricted = function()
-			return Pagle.IsRestricted()
-		end,
-		print = fake.print,
+	Pagle.OpenShop = ns.WireShop(host, {
 		isShown = function()
 			return fake.shopOpen
 		end,
-		show = function(selection)
+		show = function(selection, asked)
 			fake.shopOpen = true
 			fake.shopsOpened[#fake.shopsOpened + 1] = { goodID = asked, selected = selection or nil }
 		end,
@@ -492,28 +489,7 @@ part(function(fake, Pagle, ns, host)
 			fake.shopOpen = false
 		end,
 	})
-
-	function Pagle.IsOwned(goodID)
-		return ns.goods:IsOwned(goodID)
-	end
-
-	function Pagle.GetEquipped(slot)
-		return ns.goods:GetEquipped(slot)
-	end
-
-	function Pagle.SetEquipped(slot, goodID)
-		return ns.goods:SetEquipped(slot, goodID)
-	end
-
-	function Pagle.GetGood(goodID)
-		return readOnly(ns.goods:GetGood(goodID))
-	end
-
-	function Pagle.OpenShop(goodID)
-		asked = goodID
-		ns.shop.Open(goodID)
-		asked = nil
-	end
+	ns.PublishGoods(Pagle, readOnly)
 
 	function fake.setPurchased(purchased)
 		ns.goods:SetPurchased(purchased)
@@ -522,12 +498,20 @@ end)
 
 -- Moments (ANN-R1–R4, ANN-R10–R12), on Core's wiring over fake.projections' seams: M:RaiseMoment validates and
 -- drops as Core does, and each Announcement Core would show lands in fake.announcements when fake.nextFrame runs the
--- frame after. A dropped moment's report is in fake.reported.
+-- frame after. A dropped moment's report is in fake.reported. Core's catch Nod (ANN-R13) runs on Core's wiring too,
+-- naming items from fake.itemNames, and lands in fake.catchNods.
 part(function(fake, _, ns, host)
 	fake.announcements = {}
+	fake.catchNods = {}
+	fake.itemNames = {}
 	local frame = {}
 	ns.WireMoments(host, function(announcement)
-		fake.announcements[#fake.announcements + 1] = announcement
+		-- Core's own catch Nod (ANN-R13) goes apart, so a Module spec sees only what Modules raise.
+		local list = announcement.headline.catchNod and fake.catchNods or fake.announcements
+		list[#list + 1] = announcement
+	end)
+	ns.WireCatchNods(host, function(itemID)
+		return fake.itemNames[itemID]
 	end)
 
 	function fake.nextFrame()
@@ -554,14 +538,8 @@ part(function(fake, Pagle, ns, host)
 	end)
 
 	local core = ns.CoreSubcommands(Pagle)
-	local settings = ns.SettingsMenuEntry(core.settings)
-	local function openShop()
-		Pagle.OpenShop()
-	end
 	function fake.menu()
-		local shop = ns.CurioShopMenuEntry(Pagle.GetBalance(), breakUpLargeNumbers, openShop)
-		local fieldReport = ns.FieldReportMenuEntry(Pagle.GetFieldReportCount(), core.report)
-		return ns.CompartmentMenu(fake.registry:Modules(), shop, fieldReport, settings, fake.securecall)
+		return ns.CoreCompartmentMenu(Pagle, core, fake.registry:Modules(), breakUpLargeNumbers, fake.securecall)
 	end
 
 	-- /pagle dev (#247), on Core's wiring: the same switch in fake.global, Sessions and fishing as Core's.
@@ -602,12 +580,9 @@ end)
 
 -- The Catch log (LOG-R10–R16, LOG-R42) on Core's real codec, over an empty in-memory PagleLog. A spec adds
 -- characters to fake.catchLog.data.characters and entries with fake.catchLog:Append(record). Every Cast it hands out
--- carries Core's Simulated Sizes over the catalogue served when it's read (LOG-R65), and the band list and size
--- rules version are Core's (LOG-R67, LOG-R68).
+-- carries Core's Simulated Sizes over the catalogue served when it's read (LOG-R65).
 part(function(fake, Pagle, ns)
 	fake.catchLog = ns.OpenCatchLog(nil, fake.global, SERVER_TIME, ns.CatalogueItem)
-	Pagle.SIZE_BANDS = ns.SIZE_BANDS
-	Pagle.SIZE_RULES_VERSION = ns.SIZE_RULES_VERSION
 	function Pagle.IterateCatches(afterSeq)
 		local iterate = fake.catchLog:Iterate(afterSeq)
 		return function()
@@ -616,10 +591,11 @@ part(function(fake, Pagle, ns)
 	end
 end)
 
--- The length unit (LOG-R69): Pagle.FormatLength on Core's wiring, in fake.profile.lengthUnit or fake.region's default.
+-- Simulated Size as Core publishes it (LOG-R67–R69): Pagle.SIZE_BANDS (read-only here, CORE-R18),
+-- Pagle.SIZE_RULES_VERSION and Pagle.FormatLength, in fake.profile.lengthUnit or fake.region's default.
 part(function(fake, Pagle, ns, host)
 	fake.region = 1
-	Pagle.FormatLength = ns.WireLength(host)
+	ns.PublishSize(Pagle, host, readOnly)
 end)
 
 -- Projections (LOG-R70–R77), on Core's wiring over fake.catchLog: M:NewProjection and M:IterateCatches on the
@@ -911,6 +887,7 @@ part(function(fake, Pagle, ns, host)
 	-- after its last Cast.
 	fake.serverTime = host.serverTime
 	Pagle.SESSION_RULES_VERSION = ns.SESSION_RULES_VERSION
+	Pagle.SESSION_GAP = ns.SESSION_GAP
 	ns.WireSessions(host)
 
 	local login = fake.login
@@ -1069,6 +1046,9 @@ function newFakePagle()
 			return fake.region
 		end,
 		print = fake.print,
+		isRestricted = function()
+			return Pagle.IsRestricted()
+		end,
 		syncLimit = math.huge, -- every catch-up and rebuild runs at once
 		timers = timers,
 	}

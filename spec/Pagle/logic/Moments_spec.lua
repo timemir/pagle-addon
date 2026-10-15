@@ -342,3 +342,134 @@ describe("ns.MomentProblem", function()
 		end
 	end)
 end)
+
+-- A caught Cast record (LOG-R65) holding `items`, each `{ itemID, size? }`, as the Catch log hands it out.
+local function caughtCast(items, outcome)
+	local cast = { id = CAST, kind = "cast", outcome = outcome or "caught", items = {} }
+	for n, item in ipairs(items) do
+		cast.items[n] = { n = n, itemID = item[1], quantity = 1, catchId = CAST .. ":" .. n, size = item[2] }
+	end
+	return cast
+end
+
+-- The client's names for the items these specs catch.
+local NAMES = { [6358] = "Oily Blackmouth", [6289] = "Raw Longjaw Mud Snapper", [6299] = "Sickly Looking Fish" }
+local function itemName(itemID)
+	return NAMES[itemID]
+end
+
+describe("ns.CatchNodMoment", function()
+	it('reads "{item name} · {band} · {length}" in the Angler\'s unit, a silent Nod of the Cast (ANN-R13)', function()
+		local cast = caughtCast({ { 6289, { length = 342, band = 2 } } })
+
+		local nod = ns.CatchNodMoment(cast, itemName, "cm") --[[@as PagleMoment]]
+
+		assert.are.same(
+			{ rung = "nod", kind = "catch", title = "Raw Longjaw Mud Snapper · Typical · 34.2 cm", icon = 6289 },
+			{ rung = nod.rung, kind = nod.kind, title = nod.title, icon = nod.icon }
+		)
+		assert.are.same({ CAST, false }, { nod.cast, nod.sound })
+		assert.is_nil(nod.text)
+		assert.is_nil(ns.MomentProblem(nod))
+		local monster = caughtCast({ { 6289, { length = 342, band = 5 } } })
+		assert.are.equal(
+			"Raw Longjaw Mud Snapper · Monster · 13.5 in",
+			(ns.CatchNodMoment(monster, itemName, "in") --[[@as PagleMoment]]).title
+		)
+	end)
+
+	it(
+		"names the first Catch with a Simulated Size, else the first that isn't item 0, by name alone (ANN-R13)",
+		function()
+			local sized = caughtCast({
+				{ 0 },
+				{ 6358 },
+				{ 6289, { length = 210, band = 1 } },
+				{ 6299, { length = 90, band = 3 } },
+			})
+			assert.are.equal(
+				"Raw Longjaw Mud Snapper · Tiddler · 21.0 cm",
+				(ns.CatchNodMoment(sized, itemName, "cm") --[[@as PagleMoment]]).title
+			)
+
+			local junk = ns.CatchNodMoment(caughtCast({ { 0 }, { 6358 } }), itemName, "cm") --[[@as PagleMoment]]
+			assert.are.same({ "Oily Blackmouth", 6358 }, { junk.title, junk.icon })
+		end
+	)
+
+	it('reads "Item {itemID}" for a name the client hasn\'t cached (ANN-R13)', function()
+		local nod = ns.CatchNodMoment(caughtCast({ { 99001 } }), itemName, "cm") --[[@as PagleMoment]]
+		assert.are.equal("Item 99001", nod.title)
+	end)
+
+	it("is nil for a got-away Cast and for one whose every item is item 0 (ANN-R13, LOG-R8)", function()
+		assert.is_nil(ns.CatchNodMoment(caughtCast({}, "gotAway"), itemName, "cm"))
+		assert.is_nil(ns.CatchNodMoment(caughtCast({ { 0 }, { 0 } }), itemName, "cm"))
+	end)
+end)
+
+describe("the catch Nod", function()
+	-- Core's catch Nod for CAST, as ns.CatchNodMoment makes it.
+	local function catchNod()
+		return ns.CatchNodMoment(caughtCast({ { 6358 } }), itemName, "cm") --[[@as PagleMoment]]
+	end
+
+	it(
+		"shows alone as a Nod of its Cast on the next frame, and never reaches the summary (ANN-R13, ANN-R25)",
+		function()
+			local world = newWorld()
+
+			world.moments:RaiseCatchNod(catchNod())
+			assert.are.same({}, world.shown)
+			world.frame()
+
+			assert.are.same({ "Oily Blackmouth" }, headlines(world))
+			assert.are.same({ "nod", CAST, {}, 0 }, {
+				world.shown[1].rung,
+				world.shown[1].cast,
+				world.shown[1].stamps,
+				world.shown[1].more,
+			})
+			assert.are.same({}, world.summarized)
+		end
+	)
+
+	it(
+		"is dropped when a Module raises any moment for the Cast, on either side, never riding as a stamp (ANN-R13,"
+			.. " ANN-R11)",
+		function()
+			for _, rung in ipairs({ "nod", "toast.low", "banner" }) do
+				local world = newWorld()
+
+				world.moments:RaiseCatchNod(catchNod())
+				world.moments:Raise(LEDGER, moment(rung, "New in this zone"))
+				world.frame()
+
+				assert.are.same({ "New in this zone" }, headlines(world))
+				assert.are.same({ {}, 0, { "New in this zone" } }, {
+					world.shown[1].stamps,
+					world.shown[1].more,
+					ranked(world.shown[1]),
+				})
+			end
+		end
+	)
+
+	it(
+		"is held with the Cast's other moments while a projection updates, and still replaced (ANN-R10, ANN-R13)",
+		function()
+			local world = newWorld()
+			world.updating = true
+
+			world.moments:RaiseCatchNod(catchNod())
+			world.frame()
+			assert.are.same({}, world.shown)
+			world.moments:Raise(LEDGER, moment("toast", "New Species"))
+			world.idle()
+			world.frame()
+
+			assert.are.same({ "New Species" }, headlines(world))
+			assert.are.same({ "New Species" }, ranked(world.shown[1]))
+		end
+	)
+end)

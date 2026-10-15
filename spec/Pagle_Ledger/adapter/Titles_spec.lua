@@ -1,15 +1,11 @@
 -- The active title on FakePagle (LED-R77; ledger.md › Data, `profile.activeTitle`): ns.SetActiveTitle stores only an
 -- earned key or nil, and the Journal's context carries the stored key, read as automatic while it isn't earned.
 
--- A Ledger on a fresh fake, logged in and in the world over an empty log.
+-- A Ledger on a fresh fake, logged in and in the world over an empty log, the Journal closed.
 ---@return FakePagle fake
 ---@return LoadedAddon loaded
 local function ledger()
-	local fake = newFakePagle()
-	local loaded = fake.load("Pagle_Ledger")
-	fake.login()
-	fake.enterWorld()
-	return fake, loaded
+	return openJournal({ id = false })
 end
 
 describe("the active title", function()

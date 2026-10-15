@@ -313,16 +313,17 @@ function widgets.newWidget(kind, parent)
 			onClick(self, "LeftButton", false)
 		end
 	end
-	function widget:CreateFontString(_, _, template)
+	function widget:CreateFontString(_, layer, template)
 		local fontString = widgets.newWidget("FontString", self)
 		fontString.fontObject = template
+		fontString.layer, fontString.sublevel = layer or "ARTWORK", 0
 		return fontString
 	end
-	-- A texture that keeps its layer and what it shows: `texture` (SetTexture's file ID or path) or `color`
-	-- ({ r, g, b, a }).
-	function widget:CreateTexture(_, layer)
+	-- A texture that keeps its draw layer and sublevel, and what it shows: `texture` (SetTexture's file ID or path)
+	-- or `color` ({ r, g, b, a }).
+	function widget:CreateTexture(_, layer, _, sublevel)
 		local texture = widgets.newWidget("Texture", self)
-		texture.layer = layer
+		texture.layer, texture.sublevel = layer or "ARTWORK", sublevel or 0
 		texture.SetTexture = function(region, file)
 			region.texture = file
 		end
@@ -330,6 +331,14 @@ function widgets.newWidget(kind, parent)
 			region.color = { r, g, b, a }
 		end
 		return texture
+	end
+	-- A texture's or font string's draw layer and sublevel, as the client's Region:GetDrawLayer/SetDrawLayer: later
+	-- layers draw over earlier ones, and in one layer a higher sublevel draws over a lower.
+	function widget:GetDrawLayer()
+		return self.layer, self.sublevel
+	end
+	function widget:SetDrawLayer(layer, sublevel)
+		self.layer, self.sublevel = layer, sublevel or 0
 	end
 	for _, method in ipairs(LAYOUT_METHODS) do
 		widget[method] = function() end

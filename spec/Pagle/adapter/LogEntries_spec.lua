@@ -48,10 +48,8 @@ describe("M:RecordPrestige", function()
 			local second = M:RecordPrestige()
 
 			local now = NOW
-			assert.are.same({
-				("P1|2|%d|0|1"):format(now),
-				("P1|2|%d|1|2"):format(now),
-			}, entriesAfter(loaded, before))
+			-- The client's character is the log's second; the second Prestige shares the second, so tie 1 (LOG-R12).
+			assert.are.same({ prestigeEntry(now, 1, 0, 2), prestigeEntry(now, 2, 1, 2) }, entriesAfter(loaded, before))
 			assert.are.same({
 				("%d prestige live"):format(before + 1),
 				"Prestige 1",
@@ -73,7 +71,8 @@ describe("M:RecordPrestige", function()
 		function()
 			local entries = history(1)
 			entries[#entries + 1] = prestigeEntry(SERVER_TIME - 3000, 1)
-			entries[#entries + 1] = "P1|1|1791700000|0|two" -- undecodable: readers skip it, so it is no Prestige
+			-- Undecodable: readers skip it, so it is no Prestige.
+			entries[#entries + 1] = ("P1|1|%d|0|two"):format(SERVER_TIME - 2500)
 			entries[#entries + 1] = prestigeEntry(SERVER_TIME - 2000, 2)
 			local _, M = coreWithLedger(entries) -- the logged-in character is the client's, not Ada
 
@@ -105,7 +104,8 @@ describe("M:RecordPrestige", function()
 			end,
 			apply = function(_, record, mode)
 				if record.kind == "cast" then
-					raised[#raised + 1] = mode .. " " .. tostring(not pcall(M.RecordPrestige, M))
+					local ok, err = pcall(M.RecordPrestige, M)
+					raised[#raised + 1] = { mode, ok, tostring(err):match("can't append from a projection's %a+") }
 				end
 			end,
 		})
@@ -113,7 +113,7 @@ describe("M:RecordPrestige", function()
 
 		enterWorld(loaded)
 
-		assert.are.same({ "rebuild true" }, raised)
+		assert.are.same({ { "rebuild", false, "can't append from a projection's rebuild" } }, raised)
 		for _, entry in ipairs(entriesAfter(loaded, logged)) do
 			assert.is_nil(entry:match("^P1"))
 		end
@@ -128,7 +128,7 @@ describe("a purchase entry", function()
 
 		local record = loaded.ns.RecordPurchase("core.toaststyle.ripple", 150)
 
-		assert.are.same({ ("U1|2|%d|0|core.toaststyle.ripple|150"):format(NOW) }, entriesAfter(loaded, before))
+		assert.are.same({ purchaseEntry(NOW, "core.toaststyle.ripple", 150, 0, 2) }, entriesAfter(loaded, before))
 		assert.are.same({ ("%d purchase live"):format(before + 1) }, { unpack(seen, count + 1) })
 		assert.are.same({ "purchase", "core.toaststyle.ripple", 150 }, { record.kind, record.good, record.price })
 	end)
@@ -169,17 +169,14 @@ end)
 
 describe("a dev log written before Prestige and purchase entries", function()
 	it("still loads with the same logId and entries, and silently (LOG-R14, LOG-R15, LOG-R18)", function()
-		local saved = savedLog({
-			"B1|1|1791731680|0|70338|1.60.1",
-			"S1|1|1791731681|0|86|150|0",
-			"C1|1|1791731747|0|c|494|1439|1|148|453|86|25|263|||6358x1",
-		})
+		local cast = castEntry(SERVER_TIME + 47)
+		local saved = savedLog({ BUILD_ENTRY, ("S1|1|%d|0|86|150|0"):format(SERVER_TIME - 4999), cast })
 		local loaded, M = coreWithLedger(saved)
 		M:RecordPrestige()
 
 		local log = loaded.env.PagleLog
 		assert.are.equal("3f9a2c1e7b0d4a65", log.logId)
-		assert.are.equal("C1|1|1791731747|0|c|494|1439|1|148|453|86|25|263|||6358x1", log.entries[3])
+		assert.are.equal(cast, log.entries[3])
 		assert.are.equal("P1", log.entries[#log.entries]:sub(1, 2))
 		assert.are.same({}, loaded.printed)
 	end)

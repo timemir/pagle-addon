@@ -7,7 +7,7 @@ local PARAGRAPH = "Looks you own. Pick one here or with Use in the Curio Shop; b
 -- Core logged in and in the world with its own goods and a fixture Ledger (order 10) whose "Fish Journal" slot has
 -- Oak (default), Lapis (tier 3) and Ivy (tier 1). `options.saved` is a PagleDB; `options.noLedger` leaves the Ledger
 -- unregistered (off); `options.hunts` registers Hunts (order 20) with a Trackers slot. Returns the loaded addon.
-local function session(options)
+local function coreWithModules(options)
 	options = options or {}
 	local loaded = loadCore(nil, options.saved)
 	local Pagle = loaded.env.Pagle
@@ -98,7 +98,7 @@ end
 
 describe("The Look and Feel page", function()
 	it("is registered after Announcements with no Module On (SET-R1, CORE-R40)", function()
-		local loaded = session({ noLedger = true })
+		local loaded = coreWithModules({ noLedger = true })
 
 		local names = {}
 		for i, category in ipairs(loaded.client.settings.categories) do
@@ -111,7 +111,7 @@ describe("The Look and Feel page", function()
 	it(
 		"shows the paragraph, Announcements, Bookplate and Fish Journal with their dropdowns, then the Curio Shop (SET-R50)",
 		function()
-			local loaded = session()
+			local loaded = coreWithModules()
 
 			assert.are.same({
 				PARAGRAPH,
@@ -135,7 +135,7 @@ describe("The Look and Feel page", function()
 	it(
 		"leaves out a Module's slots and header while it isn't On, and adds a Trackers one after (SET-R4, SET-R50)",
 		function()
-			local loaded = session({ noLedger = true, hunts = true })
+			local loaded = coreWithModules({ noLedger = true, hunts = true })
 
 			local shown = lines(showLook(loaded), loaded.client.settings)
 
@@ -148,7 +148,7 @@ describe("The Look and Feel page", function()
 	)
 
 	it('is opened by Pagle.OpenSettings("look") (CORE-R43)', function()
-		local loaded = session()
+		local loaded = coreWithModules()
 
 		loaded.env.Pagle.OpenSettings("look")
 
@@ -160,7 +160,7 @@ describe("A slot dropdown", function()
 	it(
 		"is Core's own row found by its slot's label, never greyed out, with no tooltip (SET-R5, SET-R6, SET-R51, SET-R2)",
 		function()
-			local loaded = session()
+			local loaded = coreWithModules()
 
 			local row = rowNamed(showLook(loaded), "Journal binding")
 
@@ -177,7 +177,7 @@ describe("A slot dropdown", function()
 	)
 
 	it("lists only the slot's owned goods, read each time it opens (SET-R51, SHOP-R30)", function()
-		local loaded = session()
+		local loaded = coreWithModules()
 		local row = rowNamed(showLook(loaded), "Journal binding")
 		assert.are.same({ "ledger.binding.oak=Oak" }, optionValues(row))
 
@@ -187,7 +187,7 @@ describe("A slot dropdown", function()
 	end)
 
 	it("equips the good picked, and shows the equipped one with its name (SET-R51, SHOP-R32)", function()
-		local loaded = session()
+		local loaded = coreWithModules()
 		loaded.ns.goods:SetPurchased({ ["ledger.binding.lapis"] = true })
 		local row = rowNamed(showLook(loaded), "Journal binding")
 
@@ -198,7 +198,7 @@ describe("A slot dropdown", function()
 	end)
 
 	it("redraws at once when SetEquipped is called elsewhere (SET-R51, SET-R62, SHOP-R33)", function()
-		local loaded = session()
+		local loaded = coreWithModules()
 		loaded.ns.goods:SetPurchased({ ["ledger.binding.ivy"] = true })
 		local row = rowNamed(showLook(loaded), "Journal binding")
 
@@ -208,7 +208,7 @@ describe("A slot dropdown", function()
 	end)
 
 	it("shows no note once every good for sale in the slot is owned (SET-R51)", function()
-		local loaded = session()
+		local loaded = coreWithModules()
 		loaded.ns.goods:SetPurchased({ ["ledger.binding.ivy"] = true, ["ledger.binding.lapis"] = true })
 
 		local row = rowNamed(showLook(loaded), "Journal binding")
@@ -218,22 +218,27 @@ describe("A slot dropdown", function()
 end)
 
 describe("The Announcements page's slot rows", function()
-	it("end Core's rows with Toast style and Sound set, after Per (SET-R30, CORE-R42)", function()
-		local loaded = session()
+	it("end Core's rows with Toast style and Sound set, after Show every catch (SET-R30, CORE-R42)", function()
+		local loaded = coreWithModules()
 
 		local names = {}
 		for i, row in ipairs(loaded.client.settings.show(page(loaded, "Announcements"))) do
 			names[i] = row.initializer:GetName()
 		end
 
-		assert.are.same(
-			{ "Cozy mode", "Interruption budget", "Interruptions", "Per", "Toast style", "Sound set" },
-			names
-		)
+		assert.are.same({
+			"Cozy mode",
+			"Interruption budget",
+			"Interruptions",
+			"Per",
+			"Show every catch",
+			"Toast style",
+			"Sound set",
+		}, names)
 	end)
 
 	it("pick the same look Look and Feel shows (SET-R30, SET-R51)", function()
-		local loaded = session()
+		local loaded = coreWithModules()
 		loaded.ns.goods:SetPurchased({ ["core.toaststyle.ripple"] = true })
 		local toast = rowNamed(loaded.client.settings.show(page(loaded, "Announcements")), "Toast style")
 
@@ -272,7 +277,7 @@ describe("Defaults", function()
 	it(
 		"on Look and Feel sets every slot shown to its default good, keeping what is owned (SET-R52, SET-R60)",
 		function()
-			local loaded = session({ saved = picked() })
+			local loaded = coreWithModules({ saved = picked() })
 			loaded.ns.goods:SetPurchased(BOUGHT)
 			local Pagle = loaded.env.Pagle
 			assert.are.equal("ledger.binding.lapis", Pagle.GetEquipped("ledger.binding"))
@@ -296,7 +301,7 @@ describe("Defaults", function()
 	)
 
 	it("on Look and Feel leaves the stored look of a Module that isn't On (SET-R52, SHOP-R32, SET-R90)", function()
-		local loaded = session({ saved = picked() })
+		local loaded = coreWithModules({ saved = picked() })
 		loaded.ns.goods:SetPurchased(BOUGHT)
 		showLook(loaded)
 
@@ -306,7 +311,7 @@ describe("Defaults", function()
 	end)
 
 	it("on Announcements restores its two slot rows and leaves the crest and binding (SET-R33, SET-R60)", function()
-		local loaded = session({ saved = picked() })
+		local loaded = coreWithModules({ saved = picked() })
 		loaded.ns.goods:SetPurchased(BOUGHT)
 		local Pagle = loaded.env.Pagle
 
@@ -333,7 +338,7 @@ describe("The Curio Shop button", function()
 	end
 
 	it("closes the Settings panel, then opens the Curio Shop (SET-R50, SET-R12, SHOP-R40)", function()
-		local loaded = session()
+		local loaded = coreWithModules()
 		local panelShownAtOpen
 		local open = loaded.env.Pagle.OpenShop
 		loaded.env.Pagle.OpenShop = function(...)
@@ -349,7 +354,7 @@ describe("The Curio Shop button", function()
 	end)
 
 	it("closes the panel and prints SHOP-R41's line while restricted (SET-R12, SET-R93, SHOP-R41)", function()
-		local loaded = session()
+		local loaded = coreWithModules()
 		local button = shopButton(loaded)
 		setCombat(loaded, true)
 

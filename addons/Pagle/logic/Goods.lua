@@ -9,7 +9,7 @@ local ns = select(2, ...)
 ---@class PagleSlot
 ---@field id string              -- "core.toaststyle", "hunts.notebookcover", "stats.trackerframe"
 ---@field label string           -- "Toast style"
----@field category "Announcements"|"Bookplate"|"Fish Journal"|"Hunts"|"Trackers"
+---@field category "Announcements"|"Bookplate"|"Fish Journal"|"Hunts"|"Trackers" -- ns.SLOT_CATEGORY_ORDER
 
 --- A good a Module or Core registers (wallet-and-shop.md › Contracts): exactly one of default, for sale (tier) or
 --- earned (isEarned).
@@ -77,7 +77,7 @@ end
 ---@param id any
 ---@return string?
 local function idProblem(call, module, id)
-	if type(id) ~= "string" or not id:match("^[%w_.]+$") then
+	if type(id) ~= "string" or not id:match(ns.GOOD_ID_PATTERN) then
 		return ("M:%s: the id must be a string of letters, digits, _ and ., got %s"):format(call, tostring(id))
 	end
 	local prefix = module:lower() .. "."
@@ -104,13 +104,17 @@ function Goods:SlotProblem(module, slot)
 	elseif type(slot.label) ~= "string" or slot.label == "" then
 		return ("M:RegisterSlot: %s has no label"):format(slot.id)
 	elseif not ns.SLOT_CATEGORIES[slot.category] then
-		return ("M:RegisterSlot: %s's category must be one of Announcements, Bookplate, Fish Journal, Hunts, Trackers; got %s"):format(
+		return ("M:RegisterSlot: %s's category must be one of %s; got %s"):format(
 			slot.id,
+			table.concat(ns.SLOT_CATEGORY_ORDER, ", "),
 			tostring(slot.category)
 		)
 	end
 	return nil
 end
+
+--- Who registered Core's own slots and goods, where a Module's def.name goes (SHOP-R21, SHOP-R25).
+ns.CORE_OWNER = "Core"
 
 --- The slot categories (wallet-and-shop.md › Contracts), in the order the shop's chips and Look and Feel list them.
 ns.SLOT_CATEGORY_ORDER = { "Announcements", "Bookplate", "Fish Journal", "Hunts", "Trackers" }
@@ -120,6 +124,31 @@ ns.SLOT_CATEGORY_ORDER = { "Announcements", "Bookplate", "Fish Journal", "Hunts"
 ns.SLOT_CATEGORIES = {}
 for _, category in ipairs(ns.SLOT_CATEGORY_ORDER) do
 	ns.SLOT_CATEGORIES[category] = true
+end
+
+--- One category's slots, in the order they were handed in.
+---@class PagleSlotSection
+---@field category string        -- the slot category, as registered ("Fish Journal")
+---@field slots PagleRegisteredSlot[]
+
+--- `slots` grouped by category, in ns.SLOT_CATEGORY_ORDER, each category's in the order given; a category with none
+--- isn't listed. The shop's chips and Look and Feel's headers (wallet-and-shop.md › UI, SET-R50).
+---@param slots PagleRegisteredSlot[]
+---@return PagleSlotSection[]
+function ns.SlotsByCategory(slots)
+	local byCategory = {}
+	for _, slot in ipairs(slots) do
+		local list = byCategory[slot.category] or {}
+		byCategory[slot.category] = list
+		list[#list + 1] = slot
+	end
+	local sections = {}
+	for _, category in ipairs(ns.SLOT_CATEGORY_ORDER) do
+		if byCategory[category] then
+			sections[#sections + 1] = { category = category, slots = byCategory[category] }
+		end
+	end
+	return sections
 end
 
 --- The price of each tier of goods for sale, in Pagle Coins (SHOP-R22, Tunables).
@@ -170,6 +199,9 @@ function Goods:GoodProblem(module, good)
 		return ("M:RegisterGood: %s's slot %s is %s's"):format(id, slot.id, slot.module)
 	elseif type(good.name) ~= "string" or good.name == "" then
 		return ("M:RegisterGood: %s has no name"):format(id)
+	end
+	if good.default ~= nil and type(good.default) ~= "boolean" then
+		return ("M:RegisterGood: %s's default must be true or false"):format(id)
 	end
 	local kinds = (good.default and 1 or 0) + (good.tier ~= nil and 1 or 0) + (good.isEarned ~= nil and 1 or 0)
 	if kinds ~= 1 then
@@ -278,7 +310,7 @@ end
 ---@private
 ---@return table<string, integer>
 function Goods:OrderOn()
-	local order = { Core = 0 }
+	local order = { [ns.CORE_OWNER] = 0 }
 	for i, module in ipairs(self.options.modules()) do
 		order[module.def.name] = i
 	end
@@ -373,6 +405,27 @@ function Goods:IsOwned(goodID)
 	return good ~= nil and self:IsLive(good.slot) and self:DefaultOf(good.slot) == goodID
 end
 
+--- A slot's owned goods (SHOP-R30), in registration order. Core's own; nothing in them may be changed.
+---@param slotID string
+---@return PagleRegisteredGood[]
+function Goods:OwnedOf(slotID)
+	local owned = {}
+	for _, good in ipairs(self:GoodsOf(slotID)) do
+		if self:IsOwned(good.id) then
+			owned[#owned + 1] = good
+		end
+	end
+	return owned
+end
+
+--- Whether a good registered this session is for sale (a tier, SHOP-R22) and not owned yet (SHOP-R30).
+---@param goodID any
+---@return boolean
+function Goods:IsForSale(goodID)
+	local good = self.goods[goodID]
+	return good ~= nil and good.tier ~= nil and not self:IsOwned(goodID)
+end
+
 --- The good equipped in a slot (SHOP-R32): the stored pick while it is owned and registered by a Module On, else the
 --- slot's default. Reading never clears the pick, so it comes back with its Module (SHOP-R90). Nil for a slot with
 --- no goods.
@@ -415,8 +468,10 @@ end
 ---@field icon? integer|string
 ---@field module string           -- def.name, or "Core"
 ---@field description? string
+---@field isDefault boolean        -- the slot's default (SHOP-R22), or the good standing in for one (SHOP-R23)
 
---- A good's name, slot, icon, Module and description, from the cache, as a fresh copy; nil for a good never cached.
+--- A good's name, slot, icon, Module and description, from the cache, and whether it is its slot's default, as a
+--- fresh copy; nil for a good never cached.
 ---@param goodID any
 ---@return PagleGoodInfo?
 function Goods:GetGood(goodID)
@@ -430,6 +485,7 @@ function Goods:GetGood(goodID)
 		icon = cached.icon,
 		module = cached.module,
 		description = cached.description,
+		isDefault = self:DefaultOf(cached.slot) == goodID,
 	}
 end
 
@@ -467,7 +523,7 @@ function Goods:Start()
 	for _, slot in ipairs(self:Slots()) do
 		local hasDefault = false
 		for _, good in ipairs(slot.goods) do
-			hasDefault = hasDefault or good.default ~= nil
+			hasDefault = hasDefault or good.default == true
 		end
 		if not hasDefault then
 			local first = slot.goods[1]

@@ -130,6 +130,7 @@ describe("ns.NewGoods", function()
 			{ "an isEarned that isn't a function", "Hunts", { good = cover({ tier = false, isEarned = true }) } },
 			{ "a good without a name", "Hunts", { good = cover({ name = "" }) } },
 			{ "a preview that isn't a function", "Hunts", { good = cover({ preview = "stage" }) } },
+			{ "a default that isn't true or false", "Hunts", { good = cover({ tier = false, default = "yes" }) } },
 		}
 		for _, case in ipairs(cases) do
 			it("refuses " .. case[1] .. ", registering and caching nothing (SHOP-R21, SHOP-R23)", function()
@@ -218,6 +219,26 @@ describe("ns.NewGoods", function()
 	end)
 
 	describe("owning", function()
+		it("lists a slot's owned goods, and which of its goods are still for sale (SHOP-R22, SHOP-R30)", function()
+			local env = newGoods()
+			huntsCovers(env, { value = true })
+			env.goods:RegisterGood("Hunts", { id = "hunts.cover.tide", slot = "hunts.cover", name = "Tide", tier = 1 })
+			env.goods:SetPurchased({ ["hunts.cover.tide"] = true })
+
+			local owned = {}
+			for _, good in ipairs(env.goods:OwnedOf("hunts.cover")) do
+				owned[#owned + 1] = good.id
+			end
+			assert.are.same({ "hunts.cover.plain", "hunts.cover.gold", "hunts.cover.tide" }, owned)
+			assert.are.same({ false, true, false, false, false }, {
+				env.goods:IsForSale("hunts.cover.plain"),
+				env.goods:IsForSale("hunts.cover.velvet"),
+				env.goods:IsForSale("hunts.cover.gold"),
+				env.goods:IsForSale("hunts.cover.tide"),
+				env.goods:IsForSale("hunts.cover.none"),
+			})
+		end)
+
 		it("owns a registered slot's default, not a good for sale (SHOP-R22, SHOP-R30)", function()
 			local env = newGoods()
 			huntsCovers(env, { value = false })
@@ -299,7 +320,7 @@ describe("ns.NewGoods", function()
 			end
 		)
 
-		it("owns nothing unknown, and answers false for an ID that isn't a string", function()
+		it("owns nothing unknown, and answers false for an ID that isn't a string (SHOP-R30)", function()
 			local env = newGoods()
 
 			assert.are.same({ false, false }, { env.goods:IsOwned("hunts.cover.none"), env.goods:IsOwned(nil) })
@@ -530,6 +551,25 @@ describe("ns.NewGoods", function()
 			assert.are.equal("hunts.cover.plain", env.goods:GetEquipped("hunts.cover"))
 		end)
 
+		it("reports a slot whose goods all say default = false, which marks no default (SHOP-R22, SHOP-R23)", function()
+			local env = newGoods()
+			env.goods:RegisterSlot("Hunts", { id = "hunts.frame", label = "Tracker frame", category = "Trackers" })
+			env.goods:RegisterGood("Hunts", {
+				id = "hunts.frame.oak",
+				slot = "hunts.frame",
+				name = "Oak",
+				default = false,
+				tier = 1,
+			})
+
+			env.goods:Start()
+
+			assert.are.same(
+				{ "Pagle: the slot hunts.frame has no default good; hunts.frame.oak stands in" },
+				env.reported
+			)
+		end)
+
 		it("reports nothing when every slot has a default (SHOP-R23)", function()
 			local env = newGoods()
 			huntsCovers(env, { value = false })
@@ -541,32 +581,53 @@ describe("ns.NewGoods", function()
 	end)
 
 	describe("GetGood", function()
-		it(
-			"reads a good's name, slot, icon, Module and description from the cache, as a copy (graph.md question 2)",
-			function()
-				local env = newGoods()
-				huntsCovers(env, { value = false })
-				env.goods:RegisterGood("Hunts", {
-					id = "hunts.cover.tide",
-					slot = "hunts.cover",
-					name = "Tide",
-					description = "Blue as the Long Wash.",
-					icon = 134939,
-					tier = 1,
-				})
+		it("reads a good's name, slot, icon, Module and description from the cache, as a copy (SHOP-R26)", function()
+			local env = newGoods()
+			huntsCovers(env, { value = false })
+			env.goods:RegisterGood("Hunts", {
+				id = "hunts.cover.tide",
+				slot = "hunts.cover",
+				name = "Tide",
+				description = "Blue as the Long Wash.",
+				icon = 134939,
+				tier = 1,
+			})
 
-				local good = env.goods:GetGood("hunts.cover.tide")
-				good.name = "Changed"
+			local good = env.goods:GetGood("hunts.cover.tide")
+			good.name = "Changed"
 
-				assert.are.same({
-					name = "Tide",
-					slot = "hunts.cover",
-					icon = 134939,
-					module = "Hunts",
-					description = "Blue as the Long Wash.",
-				}, env.goods:GetGood("hunts.cover.tide"))
-			end
-		)
+			assert.are.same({
+				name = "Tide",
+				slot = "hunts.cover",
+				icon = 134939,
+				module = "Hunts",
+				description = "Blue as the Long Wash.",
+				isDefault = false,
+			}, env.goods:GetGood("hunts.cover.tide"))
+		end)
+
+		it("tells the slot's default, the good a view may draw as no look at all (SHOP-R22, SHOP-R26)", function()
+			local env = newGoods()
+			huntsCovers(env, { value = true })
+
+			assert.are.same({ true, false, false }, {
+				env.goods:GetGood("hunts.cover.plain").isDefault,
+				env.goods:GetGood("hunts.cover.velvet").isDefault,
+				env.goods:GetGood("hunts.cover.gold").isDefault,
+			})
+		end)
+
+		it("tells the good standing in for a slot with no default as its default (SHOP-R23)", function()
+			local env = newGoods()
+			env.goods:RegisterSlot("Hunts", { id = "hunts.frame", label = "Tracker frame", category = "Trackers" })
+			env.goods:RegisterGood("Hunts", { id = "hunts.frame.oak", slot = "hunts.frame", name = "Oak", tier = 1 })
+			env.goods:RegisterGood("Hunts", { id = "hunts.frame.ash", slot = "hunts.frame", name = "Ash", tier = 2 })
+
+			assert.are.same(
+				{ true, false },
+				{ env.goods:GetGood("hunts.frame.oak").isDefault, env.goods:GetGood("hunts.frame.ash").isDefault }
+			)
+		end)
 
 		it("reads a cached good of a Module that is off, and nil for one never cached (SHOP-R26)", function()
 			local env = newGoods({
@@ -579,7 +640,7 @@ describe("ns.NewGoods", function()
 			})
 
 			assert.are.same(
-				{ name = "Gold", slot = "hunts.cover", module = "Hunts" },
+				{ name = "Gold", slot = "hunts.cover", module = "Hunts", isDefault = false },
 				env.goods:GetGood("hunts.cover.gold")
 			)
 			assert.is_nil(env.goods:GetGood("hunts.cover.none"))

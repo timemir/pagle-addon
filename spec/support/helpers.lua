@@ -122,21 +122,27 @@ function castEntry(time, itemID, subzone, char)
 	return ("C1|%d|%d|0|c|494|1439|1|148|%d|86|25|263|||%dx1"):format(char or 1, time, subzone or 453, itemID or 6358)
 end
 
---- Ada's Prestige to `rank` at server time `time`, as a PagleLog entry (LOG-R38).
+--- Ada's Prestige to `rank` at server time `time`, as a PagleLog entry (LOG-R38): tie `tie` (0) within its second
+--- (LOG-R12), and `char` another index into the log's characters.
 ---@param time integer
 ---@param rank integer
+---@param tie integer?
+---@param char integer?
 ---@return string
-function prestigeEntry(time, rank)
-	return ("P1|1|%d|0|%d"):format(time, rank)
+function prestigeEntry(time, rank, tie, char)
+	return ("P1|%d|%d|%d|%d"):format(char or 1, time, tie or 0, rank)
 end
 
---- Ada's purchase of `good` for `price` Coins at server time `time`, as a PagleLog entry (LOG-R39).
+--- Ada's purchase of `good` for `price` Coins at server time `time`, as a PagleLog entry (LOG-R39): tie `tie` (0)
+--- within its second (LOG-R12), and `char` another index into the log's characters.
 ---@param time integer
 ---@param good string
 ---@param price integer
+---@param tie integer?
+---@param char integer?
 ---@return string
-function purchaseEntry(time, good, price)
-	return ("U1|1|%d|0|%s|%d"):format(time, good, price)
+function purchaseEntry(time, good, price, tie, char)
+	return ("U1|%d|%d|%d|%s|%d"):format(char or 1, time, tie or 0, good, price)
 end
 
 --- `n` of Ada's Casts, at `first` + 1, + 2, … (default SERVER_TIME - 90000, long ended), then BUILD_ENTRY.
@@ -531,14 +537,15 @@ end
 
 --- The Ledger on FakePagle over a spec's catalogue and log, logged in and in the world, with the Fish Journal open.
 --- `options`, each optional: `catalogue` (fake.setCatalogue's; the generated one by default), `characters` (the
---- log's; the player's alone by default), `logId` (the log's), `log` (records appended in order), `globals` (set on
+--- log's; the player's alone by default), `logId` (the log's), `log` (records appended in order), `entries` (the
+--- log's entries as saved, in place of `log`), `globals` (set on
 --- the fake's globals before the Ledger loads, such as a saved PagleLedgerDB), `itemNames`, `areaNames` and `mapNames`
 --- (what the fake client's C_Item and C_Map know), `before` (run with loaded and fake before the book opens), and
 --- where it opens: `place`, one of the Ledger's own places as `{ constructor, args... }` (ns.JournalPlace, e.g.
 --- `{ "zone", 148 }`), or `id` and `args` for a spec's own spread, which must be registered; Home, at its first
 --- opening, by default; with `id` false the book stays closed. With `building`, it stops after login, before entering
 --- the world, so the projection is still being built (LOG-R74, LED-R122).
----@param options { catalogue: table?, characters: table[]?, logId: string?, log: table[]?, globals: table?, itemNames: table?, areaNames: table?, mapNames: table?, before: fun(loaded: LoadedAddon, fake: FakePagle)?, building: boolean?, place: table?, id: string|false|nil, args: table? }?
+---@param options { catalogue: table?, characters: table[]?, logId: string?, log: table[]?, entries: string[]?, globals: table?, itemNames: table?, areaNames: table?, mapNames: table?, before: fun(loaded: LoadedAddon, fake: FakePagle)?, building: boolean?, place: table?, id: string|false|nil, args: table? }?
 ---@return FakePagle fake
 ---@return LoadedAddon loaded
 function openJournal(options)
@@ -550,6 +557,9 @@ function openJournal(options)
 	fake.catchLog.data.characters = options.characters or { { guid = PLAYER_GUID } }
 	if options.logId then
 		fake.catchLog.data.logId = options.logId
+	end
+	if options.entries then
+		fake.catchLog.data.entries = options.entries
 	end
 	for _, record in ipairs(options.log or {}) do
 		fake.catchLog:Append(record)
