@@ -23,7 +23,6 @@ local LAYOUT_METHODS = {
 	"SetClampRectInsets",
 	"SetFrameStrata",
 	"EnableMouseWheel",
-	"SetRotation",
 	"SetAutoFocus",
 	"ClearFocus",
 	"SetTextInsets",
@@ -171,6 +170,10 @@ function widgets.newWidget(kind, parent)
 	end
 	function widget:GetTexture()
 		return self.texture
+	end
+	-- A texture's rotation, in radians (nil until set).
+	function widget:SetRotation(radians)
+		self.rotation = radians
 	end
 	-- Its scale (1 until set).
 	function widget:SetScale(scale)
@@ -367,6 +370,10 @@ function widgets.newWidget(kind, parent)
 	end
 	function widget:IsShown()
 		return self.shown
+	end
+	-- As the client's: shown, and every parent shown too.
+	function widget:IsVisible()
+		return self.shown and (parent == nil or parent:IsVisible())
 	end
 	function widget:SetScript(script, fn)
 		self.scripts[script] = fn

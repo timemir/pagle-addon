@@ -192,7 +192,7 @@ describe("A slot dropdown", function()
 end)
 
 describe("The Announcements page's slot rows", function()
-	it("end Core's rows with Toast style and Sound set, after Show every catch (SET-R30, CORE-R42)", function()
+	it("end Core's rows with Toast style and Sound set, after Animations (SET-R30, CORE-R42)", function()
 		local loaded = coreWithModules()
 
 		local names = {}
@@ -206,6 +206,7 @@ describe("The Announcements page's slot rows", function()
 			"Interruptions",
 			"Per",
 			"Show every catch",
+			"Animations",
 			"Toast style",
 			"Sound set",
 		}, names)

@@ -48,8 +48,8 @@ local LOG = {
 	castRecord({ time = 1791000300, zone = DARKSHORE, items = { CATFISH_17 } }),
 }
 
--- One stop's span on the tour's clock: shown, shot 1.5 s in, hidden 0.5 s later, the next 0.3 s after that.
-local STOP = 1.5 + 0.5 + 0.3
+-- One stop's span on the tour's clock: shown, shot 2.8 s in, hidden 0.5 s later, the next 0.3 s after that.
+local STOP = 2.8 + 0.5 + 0.3
 
 -- A Ledger on FakePagle with the log above, the book closed, and dev on.
 ---@param id string? the spread the book is open on, closed without

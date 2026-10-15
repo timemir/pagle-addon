@@ -328,6 +328,8 @@ describe("the sample toast", function()
 			)
 			assert.are.same({ {}, {}, nil }, { summarized, loaded.client.sounds, loaded.ns.announcementFrames.toast })
 			assert.are.equal(TIMBER, loaded.env.Pagle.GetEquipped("core.toaststyle"))
+			-- It stands still on the stage: no slide, no fade (announcements.md › Motion).
+			assert.are.same({ 1, 1 }, { sample.alpha, #sample.body.points[1] })
 		end
 	)
 

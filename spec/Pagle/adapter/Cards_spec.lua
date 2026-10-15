@@ -396,20 +396,21 @@ describe("the Session summary cards", function()
 		end
 	)
 
-	it("draw in the toast's one Timber style: the same planks and brass edge (ANN-R80)", function()
-		local loaded = loadCore(history(2), { global = { cards = { storedCard(1, "First") } } })
-		local M = loaded.env.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
-		enterWorld(loaded)
-		frames(loaded)
-		M:RaiseMoment({ rung = "toast", kind = "newSpecies", title = "New Species" })
-		loaded.client.advance(0)
+	it(
+		"draw on the art's ledger page: its ruled body under a leather head with the gilt title (announcements.md › UI)",
+		function()
+			local loaded = loadCore(history(2), { global = { cards = { storedCard(1, "First") } } })
+			loaded.env.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
+			enterWorld(loaded)
+			frames(loaded)
 
-		local toast, card = loaded.ns.announcementFrames.toast, loaded.ns.cardFrame
-		assert.are.same(
-			{ wood = toast.children[1].color, edge = toast.children[2].color },
-			{ wood = card.children[1].color, edge = card.children[2].color }
-		)
-	end)
+			local card = loaded.ns.cardFrame
+			assert.are.same(
+				{ loaded.ns.ATLASES.Announce.file, "PagleArtCardTitle" },
+				{ card.tiles[1].texture, card.title.fontObject }
+			)
+		end
+	)
 
 	it("wait while a toast shows when the Session ends, and show once it goes (ANN-R21)", function()
 		local loaded = loadCore(history(2))

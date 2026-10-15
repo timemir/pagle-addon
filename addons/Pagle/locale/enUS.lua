@@ -61,6 +61,8 @@ ns.L = {
 	SETTINGS_BUDGET_COUNT = "Interruptions",
 	SETTINGS_BUDGET_WINDOW = "Per",
 	SETTINGS_EVERY_CATCH = "Show every catch",
+	SETTINGS_MOTION = "Animations",
+	SETTINGS_MOTION_TOOLTIP = "Toasts slide in and stamp themselves, banners drop their seal, and the Legend's rays turn. Off, each appears as it settles.",
 	SETTINGS_EVERY_CATCH_TOOLTIP = "A quiet line for each catch: its name, size band and length. A toast or banner for the same catch shows instead. Greyed out in Cozy mode, which shows nothing.",
 	-- Look and Feel (SET-R50, SET-R51): the paragraph, a slot dropdown's note with N, and the Curio Shop section's
 	-- header, row label and button caption. Its category headers are SHOP_CATEGORIES.

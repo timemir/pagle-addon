@@ -9,8 +9,9 @@ local ns = select(2, ...)
 --- The name Core's own stops go under: what `/pagle dev tour core` names, and the first part of each one's name.
 ns.TOUR_CORE = "core"
 
---- Seconds a stop shows before its screenshot, so its frames draw and its animations settle (CORE-R66).
-ns.TOUR_SHOW_SECONDS = 1.5
+--- Seconds a stop shows before its screenshot, so its frames draw and its animations settle (CORE-R66): after a
+--- toast's motion settles at 2.66 s (announcements.md › Motion), before a Nod leaves at 3 s (ANN-R20).
+ns.TOUR_SHOW_SECONDS = 2.8
 --- Seconds from the screenshot to the hide: Screenshot() saves a frame drawn after the call.
 ns.TOUR_SHOT_SECONDS = 0.5
 --- Seconds the dev has to press Print Screen at each stop, on a client with no Screenshot() (CORE-R66).

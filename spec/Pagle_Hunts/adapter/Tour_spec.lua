@@ -13,8 +13,8 @@ local C = catalogue
 -- fixture_oddity's 18:00 open within 3 hours (Soon), fixture_hefty_blackmouth's 22:00 and the out-of-season ones are
 -- Later, and fixture_rack waits on its aura (On demand) (HNT-R40).
 local FROM = hunts.untilRealm(17, 30)
--- One stop's span on the tour's clock: shown, shot 1.5 s in, hidden 0.5 s later, the next 0.3 s after that.
-local STOP = 1.5 + 0.5 + 0.3
+-- One stop's span on the tour's clock: shown, shot 2.8 s in, hidden 0.5 s later, the next 0.3 s after that.
+local STOP = 2.8 + 0.5 + 0.3
 local STOPS = 14
 
 -- Hunts' Session summary line as Core holds it, or nil (HNT-R89).

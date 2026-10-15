@@ -166,6 +166,19 @@ describe("FakePagle", function()
 		assert.are.same({ true, false }, fired)
 	end)
 
+	it(
+		"answers Pagle.IsAnimationsOn from the profile's Animations setting, on by default (announcements.md"
+			.. " › Contracts)",
+		function()
+			local fake = newFakePagle()
+			local before = fake.Pagle.IsAnimationsOn()
+
+			fake.profile.announcements.motion = false
+
+			assert.are.same({ true, false }, { before, fake.Pagle.IsAnimationsOn() })
+		end
+	)
+
 	it("passes WoW events to the handlers Modules registered through Pagle (CORE-R23)", function()
 		local fake = newFakePagle()
 		local got = {}

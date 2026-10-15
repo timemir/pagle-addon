@@ -148,10 +148,11 @@ The rules below are authoritative; this sketch only summarises them.
   | ↳ Interruptions | slider | 1–10, step 1 · 4 | Cozy mode is on, or the budget is off | |
   | ↳ Per | slider, shown as "{n} min" | 1–15 min, step 1 min · 5 min (stored in seconds) | Cozy mode is on, or the budget is off | |
   | Show every catch | checkbox | on (ANN-R13, `everyCatch`) | Cozy mode is on | "A quiet line for each catch: its name, size band and length. A toast or banner for the same catch shows instead. Greyed out in Cozy mode, which shows nothing." |
+  | Animations | checkbox | on ([announcements.md › Motion](core/announcements.md#motion), `motion`) | | "Toasts slide in and stamp themselves, banners drop their seal, and the Legend's rays turn. Off, each appears as it settles." |
   | Toast style | slot dropdown, `core.toaststyle` (SET-R51) | owned styles · `core.toaststyle.timber` (ANN-R80) | | |
   | Sound set | slot dropdown, `core.soundset` (SET-R51) | owned sets · `core.soundset.driftwood` (ANN-R72) | | |
 
-  Values are stored in `PagleDB.profile.announcements` and the two looks in `PagleDB.profile.appearance` ([announcements.md](core/announcements.md#data)). The two slot rows exist from M4, when Core registers its slots (SHOP-R25); in M2 and M3 the page ends after Per. Show every catch arrives with the catch Nod ([#256](https://github.com/timemir/wow-fish/issues/256)). Every row here is a native checkbox, slider or Core's own slot dropdown row (SET-R5, SET-R51), so nothing is written onto Blizzard's rows (SET-R6).
+  Values are stored in `PagleDB.profile.announcements` and the two looks in `PagleDB.profile.appearance` ([announcements.md](core/announcements.md#data)). The two slot rows exist from M4, when Core registers its slots (SHOP-R25); in M2 and M3 the page ends after Per. Show every catch arrives with the catch Nod ([#256](https://github.com/timemir/wow-fish/issues/256)), Animations with the art kit's motion. Every row here is a native checkbox, slider or Core's own slot dropdown row (SET-R5, SET-R51), so nothing is written onto Blizzard's rows (SET-R6).
 - **SET-R31** A greyed-out row keeps its value. Each row's greying is re-evaluated on its own condition (SET-R61): turning Cozy mode off makes Interruption budget and Show every catch live again, and Interruptions and Per too unless the budget is off.
 - **SET-R32** Hunts adds one section (from M5):
 
