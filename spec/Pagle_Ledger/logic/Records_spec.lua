@@ -227,6 +227,17 @@ describe("Simulated Size records", function()
 			assert.are.equal(0, state.species[MACKEREL].since)
 		end)
 
+		it("counts unsized Catches toward the flair's 50 too (LED-R80, LED-R82)", function()
+			local records = { log.cast(T0, ELWYNN, { { MACKEREL, 342 } }) }
+			for i = 1, 50 do
+				records[#records + 1] = log.cast(T0 + i * 60, ELWYNN, { { MACKEREL } })
+			end
+			records[#records + 1] = log.cast(T0 + DAY, ELWYNN, { { MACKEREL, 400 } })
+			local _, earned = applyAll(records)
+
+			assert.is_true(ofKind(earned, "sizeRecord")[1].flair)
+		end)
+
 		it("carries no flair when 49 Catches came between the two (LED-R82)", function()
 			local records = { log.cast(T0, ELWYNN, { { MACKEREL, 342 } }) }
 			for _, record in ipairs(casts(49, T0, MACKEREL, 300)) do
@@ -311,14 +322,14 @@ describe("Simulated Size records", function()
 			assert.are.same({}, ofKind(earned, "sizeRecord"))
 		end)
 
-		it("lets a Catch without a size change neither the record nor since (LED-R80)", function()
+		it("counts a Catch without a size in since once a record exists, never setting one (LED-R80)", function()
 			local state = applyAll({
 				log.cast(T0, ELWYNN, { { MACKEREL } }),
 				log.cast(T0 + 60, ELWYNN, { { MACKEREL, 342 } }),
 				log.cast(T0 + 120, ELWYNN, { { MACKEREL } }),
 			})
 
-			assert.are.same({ 342, 0, 3 }, {
+			assert.are.same({ 342, 1, 3 }, {
 				state.species[MACKEREL].record.length,
 				state.species[MACKEREL].since,
 				state.species[MACKEREL].n,

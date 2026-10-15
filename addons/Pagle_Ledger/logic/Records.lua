@@ -42,9 +42,10 @@ function ns.CopySize(size)
 end
 
 --- Notes one Catch against its Species' or Legend item's record (LED-R80), after the fold has counted it: `class` is
---- its class (LED-R5) and `species` its Species ID when a Species. Only a Species or Legend Catch with a size counts
---- (LOG-R65): the first sets the record silently (LED-R81); a strictly longer one beats it and earns a `sizeRecord`,
---- with the rare-record flair when 50 or more Catches came between (LED-R82); any other counts in `since`. Records
+--- its class (LED-R5) and `species` its Species ID when a Species. Only a Species or Legend Catch with a size sets or
+--- beats a record (LOG-R65): the first sets it silently (LED-R81); a strictly longer one beats it and earns a
+--- `sizeRecord`, with the rare-record flair when 50 or more Catches came between (LED-R82); any other Catch after the
+--- record, sized or not, counts in `since` (LED-R80). Records
 --- earn nothing else (LED-R83). Appended in every mode like any achievement (LED-R3); the moments leave rebuilt ones
 --- out (LED-R84).
 ---@param state LedgerState
@@ -62,10 +63,17 @@ function ns.CreditSizeRecord(state, class, species, record, catch, earned)
 	elseif class == "species" and species then
 		entry = state.species[species]
 	end
-	if not (entry and size) then
+	if not entry then
 		return
 	end
 	local old = entry.record
+	if not size then
+		-- Every Catch of the Species after the record counts, sized or not; only setting or beating it needs a size.
+		if old then
+			entry.since = entry.since + 1
+		end
+		return
+	end
 	if old then
 		-- Strictly longer in millimetres, never in the shown unit (LED-R82, LED-R85); else the earlier one stands.
 		if size.length <= old.length then
