@@ -412,6 +412,28 @@ def check_lore(layer: LoreLayer, lore_ids: Collection[str], ids: CatalogueIds, p
                 problems.add(At(file, key), f"missing: {why}")
 
 
+def drawable(char: str) -> bool:
+    """Whether the client's fonts have char (CORE-R9): ASCII, Latin-1 (U+00A0-U+00FF) or the em dash."""
+    point = ord(char)
+    return point < 0x80 or 0xA0 <= point <= 0xFF or point == 0x2014
+
+
+def check_glyphs(layer: LoreLayer, problems: Problems) -> None:
+    """DATA-R107's glyph check over every lore file read, whether or not its check is on: each character outside
+    CORE-R9's set, named by its code point once per text, since the client's fonts draw it as a box."""
+    for lore_id, texts in sorted(layer.files.items()):
+        for key in sorted(texts, key=lambda key: key.encode("utf-8")):
+            seen: set[str] = set()
+            for char in texts[key].value:
+                if not drawable(char) and char not in seen:
+                    seen.add(char)
+                    set_ = "ASCII, Latin-1 and the em dash"
+                    problems.add(
+                        At(lore_file(lore_id), key),
+                        f"glyph: U+{ord(char):04X} outside CORE-R9's set: {set_} (CORE-R9, DATA-R107)",
+                    )
+
+
 # CORE-R11: every file of a Module starts with Core's guard, as the hand-written ones do, so a broken install without
 # Pagle loads none of it.
 CORE_GUARD = (
