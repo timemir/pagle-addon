@@ -308,6 +308,19 @@ function readFile(path)
 	return text
 end
 
+--- Core over a saved PagleDB (`saved`, if given) with the Ledger and Hunts installed (loadCore's) and each of `modules`
+--- too, as Pagle_<name>, before PLAYER_LOGIN: the roster a tracker spec's fixture Modules dock under (CORE-R17).
+---@param saved table?
+---@param modules string[] roster names beyond the Ledger and Hunts, e.g. { "Stats", "TackleBoard" }
+---@return LoadedAddon
+function coreWithTrackers(saved, modules)
+	local loaded = loadCore(nil, saved)
+	for _, name in ipairs(modules) do
+		loaded.client.addons["Pagle_" .. name] = { metadata = { ["X-Pagle-API"] = "1" } }
+	end
+	return loaded
+end
+
 --- Days from 1970-01-01 to a proleptic Gregorian date (Howard Hinnant's days_from_civil): a spec's expected server
 --- times, written as dates.
 ---@param year integer

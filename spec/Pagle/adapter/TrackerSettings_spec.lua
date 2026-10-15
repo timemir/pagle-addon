@@ -2,14 +2,8 @@
 -- Hunts that adds a "trackers" checkbox and registers a "Trackers" slot (settings.md SET-R3, SET-R40, SET-R41,
 -- SET-R44, SET-R45, SET-R51, SET-R60; CORE-R42's slot bullet; wallet-and-shop.md SHOP-R21, SHOP-R30, SHOP-R32).
 
--- Core with the Ledger, Hunts and Stats installed, over a saved PagleDB (`saved`, if given), before PLAYER_LOGIN.
----@param saved table?
----@return LoadedAddon
-local function session(saved)
-	local loaded = loadCore(nil, saved)
-	loaded.client.addons.Pagle_Stats = { metadata = { ["X-Pagle-API"] = "1" } }
-	return loaded
-end
+-- The roster beyond the Ledger and Hunts that the fixture Modules register under (coreWithTrackers).
+local ROSTER = { "Stats" }
 
 -- A fixture Module `name` at `order` with a "trackers" checkbox `label`, on by default, stored in the returned
 -- table's `shown`; and, unless `noSlot`, a "Trackers" slot `<name>.trackerframe` with None (default) and Ink wash
@@ -60,7 +54,7 @@ end
 
 describe("The Trackers page's frame row", function()
 	it("ends the Module's section, unindented, after its own rows (SET-R44, SET-R41, CORE-R42)", function()
-		local loaded = session()
+		local loaded = coreWithTrackers(nil, ROSTER)
 		trackerModule(loaded, "Hunts", 20)
 
 		enterWorld(loaded)
@@ -72,7 +66,7 @@ describe("The Trackers page's frame row", function()
 	end)
 
 	it("is the slot dropdown, listing only the slot's owned goods (SET-R44, SET-R51, SHOP-R30)", function()
-		local loaded = session()
+		local loaded = coreWithTrackers(nil, ROSTER)
 		trackerModule(loaded, "Hunts", 20)
 		enterWorld(loaded)
 
@@ -93,7 +87,7 @@ describe("The Trackers page's frame row", function()
 	end)
 
 	it("isn't greyed out or hung under the checkbox while the tracker is off (SET-R44, SET-R2)", function()
-		local loaded = session()
+		local loaded = coreWithTrackers(nil, ROSTER)
 		local _, state = trackerModule(loaded, "Hunts", 20)
 		state.shown = false
 		enterWorld(loaded)
@@ -110,7 +104,7 @@ describe("The Trackers page's frame row", function()
 	it(
 		"equips the frame picked, and Look and Feel's dropdown for the slot shows it (SET-R44, SET-R51, SHOP-R32)",
 		function()
-			local loaded = session()
+			local loaded = coreWithTrackers(nil, ROSTER)
 			trackerModule(loaded, "Hunts", 20)
 			enterWorld(loaded)
 			loaded.ns.goods:SetPurchased({ ["hunts.trackerframe.inkwash"] = true })
@@ -132,7 +126,7 @@ describe("The Trackers page's frame row", function()
 	)
 
 	it("redraws at once when the frame is picked elsewhere (SET-R51, SET-R62)", function()
-		local loaded = session()
+		local loaded = coreWithTrackers(nil, ROSTER)
 		trackerModule(loaded, "Hunts", 20)
 		enterWorld(loaded)
 		loaded.ns.goods:SetPurchased({ ["hunts.trackerframe.inkwash"] = true })
@@ -147,7 +141,7 @@ describe("The Trackers page's frame row", function()
 	end)
 
 	it("isn't added for a Module with no Trackers slot (SET-R44)", function()
-		local loaded = session()
+		local loaded = coreWithTrackers(nil, ROSTER)
 		trackerModule(loaded, "Hunts", 20)
 		trackerModule(loaded, "Stats", 30, { noSlot = true })
 		enterWorld(loaded)
@@ -165,7 +159,7 @@ describe("The Trackers page's frame row", function()
 	it(
 		"makes the section of a Module that added no Trackers row: its header, then its frame (SET-R44, SET-R3)",
 		function()
-			local loaded = session()
+			local loaded = coreWithTrackers(nil, ROSTER)
 			trackerModule(loaded, "Stats", 30, { noRows = true })
 			enterWorld(loaded)
 
@@ -178,9 +172,9 @@ describe("The Trackers page's Defaults", function()
 	-- Core with Hunts' checkbox off and Ink wash bought and equipped, logged in, the dock Shift-dragged to (812, 640).
 	-- Returns the loaded addon and Hunts' stored state.
 	local function changed()
-		local loaded = session({
+		local loaded = coreWithTrackers({
 			profiles = { Default = { appearance = { ["hunts.trackerframe"] = "hunts.trackerframe.inkwash" } } },
-		})
+		}, ROSTER)
 		local hunts, state = trackerModule(loaded, "Hunts", 20)
 		local frame = loaded.env.CreateFrame("Frame", nil, loaded.env.UIParent)
 		frame:SetSize(200, 40)
