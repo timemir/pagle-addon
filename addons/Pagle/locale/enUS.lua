@@ -225,7 +225,7 @@ ns.L = {
 	DEV_OFF = "Pagle dev: dev commands are off.",
 	DEV_IS_OFF = "Pagle dev: dev commands are off; /pagle dev on turns them on.",
 	DEV_USAGE = "Pagle dev: /pagle dev on | off | endsession | preview <kind> | catch <itemID> [areaID] | glyphs"
-		.. " | tour [module | list | stop]",
+		.. " | tour [module | list | stop] | probe",
 	-- The kinds, comma-separated.
 	DEV_PREVIEW_KINDS = "Pagle dev: /pagle dev preview <kind>, where kind is one of %s",
 	-- The kind.
@@ -255,6 +255,10 @@ ns.L = {
 		.. " lacks. Click it or press Esc to close.",
 	-- A probe row: the font (its object's name or its file), what uses it, the probe line.
 	DEV_GLYPHS_ROW = "%s (%s): %s",
+	-- /pagle dev probe (#261): one check's line ("probe 19: GetCurrentRegion() = 1"), built in logic/Probe.lua from
+	-- API names and values, then the last line.
+	DEV_PROBE_LINE = "Pagle dev: %s",
+	DEV_PROBE_SAVED = "Pagle dev: Probe saved; /reload to write it.",
 	-- /pagle dev tour (CORE-R65–R68): how many stops, as DEV_TOUR_START puts it.
 	DEV_TOUR_ONE_STOP = "1 stop",
 	-- The number of stops.

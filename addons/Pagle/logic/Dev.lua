@@ -16,6 +16,7 @@ local ns = select(2, ...)
 ---@field showCard fun(card: PagleCard): boolean -- puts a card on screen now; false while cards are held (ANN-R35)
 ---@field showGlyphs fun(fonts: PagleDevGlyphFont[], probe: string) -- shows `probe` once in each of `fonts`
 ---@field tour fun(args: string)        -- runs `/pagle dev tour <args>` (CORE-R66–R68, logic/Tour.lua)
+---@field probe fun()                   -- runs `/pagle dev probe` (#261, logic/Probe.lua)
 ---@field print fun(line: string)      -- prints a chat line
 
 --- The dev commands.
@@ -263,6 +264,8 @@ function Dev:Run(args)
 		options.print(L.DEV_GLYPHS_SHOWN)
 	elseif name == "tour" then
 		options.tour(rest)
+	elseif name == "probe" then
+		options.probe()
 	else
 		options.print(L.DEV_USAGE)
 	end

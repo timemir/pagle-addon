@@ -29,6 +29,8 @@
 --   - the tracker dock's saved place (PagleDB.profile.dock.point);
 --   - the cards: the Write-up waiting, the Session summary cards, the open summary and the pending moments;
 --   - the Field report projection (PagleDB.global.projections.fieldReport), its row count and the reporter key;
+--   - the probe `/pagle dev probe` saved (PagleDB.global.probe, #261): each launch re-verification check's facts and
+--     an ok or FAIL line, judged by Core's own logic/Probe.lua;
 --   - named CVars from Config.wtf and the account's and the character's config-cache.wtf;
 --   - named addons' enable state from the character's AddOns.txt.
 --
@@ -2318,6 +2320,89 @@ local function printFieldReport(pagle, log)
 	)
 end
 
+-- The addons whose TOCs check 12 compares the probe's interface number with (CORE-R2).
+local TOC_ADDONS = { "Pagle", "Pagle_Ledger", "Pagle_QoL", "Pagle_Hunts", "Pagle_Stats", "Pagle_TackleBoard" }
+
+-- Each `## Interface:` number the repo's TOCs list, deduplicated, as numbers.
+local function tocInterfaces()
+	local seen, list = {}, {}
+	for _, addon in ipairs(TOC_ADDONS) do
+		for _, line in ipairs(wtf.tocEntries(addon)) do
+			local numbers = line:match("^## Interface:%s*(.-)$")
+			for number in (numbers or ""):gmatch("%d+") do
+				if not seen[number] then
+					seen[number] = true
+					list[#list + 1] = tonumber(number)
+				end
+			end
+		end
+	end
+	table.sort(list)
+	return list
+end
+
+-- Prints the Probe section (#261): what `/pagle dev probe` saved in PagleDB.global.probe for launch re-verification
+-- (roadmap.md › Launch re-verification checklist), judged by Core's own logic/Probe.lua (ns.ProbeReport, the same
+-- judge the game's chat lines use): each check's facts, then an ok or FAIL line naming the rule a miss changes. Check
+-- 12 also compares the probe's interface number with every TOC's (CORE-R2).
+local function printProbe(pagle)
+	local global, why = pagleGlobal(pagle)
+	if why then
+		print("== Probe: " .. why)
+		return
+	end
+	local probe = global.probe
+	if type(probe) ~= "table" then
+		print("== Probe (PagleDB.global.probe)")
+		print("probe: none stored (/pagle dev probe, then /reload)")
+		return
+	end
+	local build = tableOr(probe.build)
+	print(
+		("== Probe (PagleDB.global.probe): %s, build %s %s (%s), interface %s, %s"):format(
+			type(probe.time) == "number" and utc(probe.time) or "no time",
+			tostring(build.version),
+			tostring(build.build),
+			tostring(build.date),
+			tostring(build.interface),
+			tostring(probe.locale)
+		)
+	)
+	local ns = wtf.loadCore({ "logic/Probe.lua" })
+	local failed = {}
+	for _, report in ipairs(ns.ProbeReport(probe)) do
+		if report.check == 12 then
+			for _, interface in ipairs(tocInterfaces()) do
+				if interface ~= build.interface then
+					report.verdicts[#report.verdicts + 1] = {
+						false,
+						("interface %s, but a TOC says %d: bump ## Interface in every TOC (CORE-R2)"):format(
+							tostring(build.interface),
+							interface
+						),
+					}
+				end
+			end
+		end
+		print(("check %d: %s"):format(report.check, report.summary))
+		for _, line in ipairs(report.details) do
+			print("    " .. line)
+		end
+		local ok = true
+		for _, verdict in ipairs(report.verdicts) do
+			print((verdict[1] and "  ok    " or "  FAIL  ") .. verdict[2])
+			ok = ok and verdict[1]
+		end
+		if not ok then
+			failed[#failed + 1] = report.check
+		end
+	end
+	print(
+		#failed == 0 and ("probe: every check of %d passes"):format(#ns.PROBE_CHECKS)
+			or ("probe: %d of %d checks FAIL: %s"):format(#failed, #ns.PROBE_CHECKS, table.concat(failed, ", "))
+	)
+end
+
 -- Prints the exit check's checks under one heading; true when every one passed.
 local function printChecks(checks)
 	local failed = 0
@@ -2429,6 +2514,7 @@ local function main(args)
 	printDock(pagle)
 	printCards(pagle)
 	printFieldReport(pagle, pagleLog(pagle.saved))
+	printProbe(pagle)
 	printCVars(options.account, options.character, options.cvars)
 	printAddons(options.account, options.character, options.addons)
 	-- Last, so the verdict is the output's last word.

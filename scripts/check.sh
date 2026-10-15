@@ -97,9 +97,11 @@ stage_lint() {
 	"$bin/luacheck" --quiet --no-color "${lua_dirs[@]}" || return 1
 }
 
-# --- 3. api (#47): every inventoried WoW API is in the pinned forever dump (BIR_COMMIT in scripts/tools.env).
+# --- 3. api (#47): every inventoried WoW API is in the pinned forever dump (BIR_COMMIT in scripts/tools.env), and
+# the inventory the addon ships for `/pagle dev probe` (addons/Pagle/data/ApiInventory.lua, #261) is .luacheckrc's.
 stage_api() {
 	"$bin/lua" scripts/api-presence.lua .luacheckrc .tools/bir/Resources || return 1
+	"$bin/lua" scripts/api-inventory.lua --check .luacheckrc addons/Pagle/data/ApiInventory.lua || return 1
 }
 
 # --- 4. types (#48): lua-language-server --check, zero warnings, against Ketho's vscode-wow-api annotations

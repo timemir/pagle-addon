@@ -602,7 +602,10 @@ part(function(fake, Pagle, ns, host)
 		clock = function()
 			return "12:00:00"
 		end,
-	})
+	}, function()
+		-- /pagle dev probe (#261) reads the client by name: FakePagle has no client, so every name is a miss.
+		return {}
+	end)
 	function fake.slash(line)
 		commands:Run(line, core, fake.securecall, fake.print)
 	end

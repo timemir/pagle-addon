@@ -88,8 +88,22 @@ local function escaped(message)
 	end
 end
 
+-- The spell Fishing's ranks share a name with (QOL-R24).
+local FISHING = 7620
+
 Pagle.RegisterUnitEvent(OWNER, "UNIT_SPELLCAST_CHANNEL_START", "player", function(_, _, _, spellID)
-	fishing:ChannelStarted(ns.UnlessSecret(issecretvalue, spellID), GetTime())
+	spellID = ns.UnlessSecret(issecretvalue, spellID)
+	-- `/pagle dev probe`'s check 21 (#261, LOG-R2): while dev mode is on, each channel named as Fishing is, listed or
+	-- not.
+	if spellID and ns.probeChannels and ns.db and ns.db.global.dev then
+		local name, fishingName = C_Spell.GetSpellName(spellID), C_Spell.GetSpellName(FISHING)
+		ns.probeChannels:Note(
+			spellID,
+			ns.UnlessSecret(issecretvalue, name),
+			ns.UnlessSecret(issecretvalue, fishingName)
+		)
+	end
+	fishing:ChannelStarted(spellID, GetTime())
 end)
 
 Pagle.RegisterUnitEvent(OWNER, "UNIT_SPELLCAST_CHANNEL_STOP", "player", function(_, _, _, spellID)
