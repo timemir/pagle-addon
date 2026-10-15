@@ -79,16 +79,17 @@ describe("taking a goal down", function()
 			assert.is_nil(loaded.client.popup)
 			local appended = rerolls(ns)
 			assert.are.equal(1, #appended)
-			local decoded = ns.DecodeRecord("reroll", appended[1].payload)
+			local decoded = assert(ns.DecodeRecord("reroll", appended[1].payload))
+			local def = assert(decoded.goal)
 			assert.are.equal(HAUL, decoded.old)
 			-- TKB-R55: a new goal of the same type, the old kind dropped
-			assert.are.equal("n", decoded.goal.type)
-			assert.are_not.equal("haul", decoded.goal.kind)
+			assert.are.equal("n", def.type)
+			assert.are_not.equal("haul", def.kind)
 			-- TKB-R57, TKB-R101: the projection re-posts it on the old goal's pin, and the old goal is gone
 			local state = ns.State()
 			local goal = state.goals[appended[1].id]
 			assert.are.same({ appended[1].id, true, 1 }, { state.pins.notices[1], goal.reposted, goal.pin })
-			assert.are.equal(decoded.goal.kind, goal.kind)
+			assert.are.equal(def.kind, goal.kind)
 			assert.is_nil(state.goals[HAUL])
 			-- TKB-R55: a re-posted goal can't be taken down
 			assert.is_false(ns.CanTakeDown(appended[1].id))
