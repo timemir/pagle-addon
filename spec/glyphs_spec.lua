@@ -1,15 +1,31 @@
 -- CORE-R9 (#248): every string the package draws uses only characters the client's fonts have. Build 1.60.1.70374
--- draws a box for →, ❧, ☚, ★, ☆, ☑, ☐, ✓, ▸ and curly quotes, and draws — and · . The allowed set is ASCII, Latin-1
--- (U+00A0–U+00FF) and the em dash (U+2014). Checked over every file the package ships outside libs/: each Lua string
--- literal (locale files, generated data such as Lore.lua, and code), decoded as Lua reads it, so a byte escape counts
--- as the character it spells; XML outside comments; TOC lines outside comments. Comments are never drawn, so they may
--- hold anything. The generator checks lore on the way in (DATA-R107).
+-- draws a box for ❧, ☚, ☆, ☑, ☐ and ▸. On 2026-10-15 `/pagle dev glyphs` showed every font Pagle uses
+-- (GameFontHighlight, ChatFontNormal, NumberFontNormalSmallGray, Fonts\MORPHEUS.TTF) drawing the en and em dashes, the
+-- ellipsis, curly single and double quotes, the bullet and the Latin-1 characters tried (· « » ×); a box for ★ and ✓
+-- in all four, and for → in GameFontHighlight and MORPHEUS. The allowed set is ASCII, Latin-1 (U+00A0–U+00FF) and
+-- – — ‘ ’ “ ” • … (U+2013, U+2014, U+2018, U+2019, U+201C, U+201D, U+2022, U+2026). Checked over every file the
+-- package ships outside libs/: each Lua string literal (locale files, generated data such as Lore.lua, and code),
+-- decoded as Lua reads it, so a byte escape counts as the character it spells; XML outside comments; TOC lines
+-- outside comments. Comments are never drawn, so they may hold anything. The generator checks lore on the way in
+-- (DATA-R107).
+
+-- The punctuation outside Latin-1 that CORE-R9 allows, by code point.
+local PUNCTUATION = {
+	[0x2013] = true,
+	[0x2014] = true,
+	[0x2018] = true,
+	[0x2019] = true,
+	[0x201C] = true,
+	[0x201D] = true,
+	[0x2022] = true,
+	[0x2026] = true,
+}
 
 -- Whether code point `cp` is in CORE-R9's set.
 ---@param cp integer
 ---@return boolean
 local function allowed(cp)
-	return cp < 0x80 or (cp >= 0xA0 and cp <= 0xFF) or cp == 0x2014
+	return cp < 0x80 or (cp >= 0xA0 and cp <= 0xFF) or PUNCTUATION[cp] == true
 end
 
 -- Each code point in `text` outside CORE-R9's set, as "U+XXXX". Bytes that spell no UTF-8 character are skipped: they
@@ -188,7 +204,7 @@ describe("Every string the package draws (CORE-R9)", function()
 	end)
 
 	for _, path in ipairs(files) do
-		it(path .. " uses only ASCII, Latin-1 and the em dash", function()
+		it(path .. " uses only ASCII, Latin-1 and the allowed punctuation", function()
 			assert.are.same({}, offences(path, readFile(path)))
 		end)
 	end
@@ -197,12 +213,12 @@ describe("Every string the package draws (CORE-R9)", function()
 		local planted = {
 			{ 'L.LEVEL = "Angler Level %d → %d"', "x.lua:1: U+2192" },
 			{ "local a = 1\nlocal STAR = '★'", "x.lua:2: U+2605" },
-			{ 'L.QUOTE = "\\226\\128\\156%s\\226\\128\\157"', "x.lua:1: U+201C" },
+			{ 'L.NEXT = "\\226\\134\\146 %s"', "x.lua:1: U+2192" },
 			{ "L.HINT = [[\nRead the plain hint ▸]]", "x.lua:1: U+25B8" },
 			{ "L.TICK = [==[caught ✓]==]", "x.lua:1: U+2713" },
 			{ 'L.BACK = "\\\n☚ back"', "x.lua:1: U+261A" },
-			{ 'L.MORE = "Updating… try again"', "x.lua:1: U+2026" },
-			{ 'L.RANGE = "06:00–24:00"', "x.lua:1: U+2013" },
+			{ 'L.STAR = "Bright ☆"', "x.lua:1: U+2606" },
+			{ 'L.LOW = "‚low‛ ‣ ‥"', "x.lua:1: U+201A" },
 		}
 		for _, case in ipairs(planted) do
 			it(case[1], function()
@@ -215,13 +231,15 @@ describe("Every string the package draws (CORE-R9)", function()
 			assert.are.same({ "x.toc:1: U+2605" }, offences("x.toc", "## Title: Pagle ★\n# a ★ comment\nfile.lua"))
 		end)
 
-		it("but not ASCII, Latin-1, the em dash, a comment or a texture escape", function()
+		it("but not ASCII, Latin-1, the allowed punctuation, a comment or a texture escape", function()
 			assert.are.same(
 				{},
 				offences(
 					"x.lua",
 					table.concat({
 						'local a = "Café × 3 · Pagle » back — unknown —"',
+						'local q = "06:00–24:00 • ‘one’ “two” Updating…"',
+						'local e = "\\226\\128\\156%s\\226\\128\\157"',
 						"-- a comment may say → ★ ✓",
 						"--[==[ or ☑ ☐ “quotes” ]==]",
 						'local b = "|TInterface\\\\TargetingFrame\\\\UI-RaidTargetingIcon_1:0|t" -- ★',

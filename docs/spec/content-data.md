@@ -236,7 +236,7 @@ Terms are used as `CONTEXT.md` defines them. "The catalogue" is what the generat
   - **newline:** any field containing a line break
   - **placeholder:** any `{` or `}` except `{zone}` in a key whose manifest entry allows it
 
-  Whether or not a lore ID's check is on, the generator also fails on a **glyph**: a character in any lore text outside CORE-R9's set (ASCII, Latin-1 and the em dash), named by its code point, since the client's fonts draw it as a box.
+  Whether or not a lore ID's check is on, the generator also fails on a **glyph**: a character in any lore text outside CORE-R9's set (ASCII, Latin-1, the en and em dashes, curly quotes, the bullet and the ellipsis), named by its code point, since the client's fonts draw it as a box.
   
   The checks turn on with the milestone that builds the screen: Ledger in M3, Core in M4, Hunts in M5, Stats in M6 (when it first registers its goods, STA-R88), Tackle Board in M7. The Ledger's title and binding IDs enter the manifest in M4 (LED-R162), so they are checked from then.
 - **DATA-R108** `{zone}` is filled at runtime with the game's localized zone name. It is the only placeholder in 1.0.
