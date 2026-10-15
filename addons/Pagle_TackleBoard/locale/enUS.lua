@@ -147,6 +147,10 @@ ns.L = {
 	SHOP_LINK = "Coins go to the Curio Shop",
 	-- The Campfire card's and the Fly Box drawer's headings.
 	CARD_TITLE = "The Campfire",
+	CARD_FIRE = "{fire}, {longest}",
+	CARD_NEED_COINS = "{need}, {coins}",
+	FLY_BOX = "Fly Box",
+	DRAWER_NOTE = "Gilt-edged patterns are tied only by Expeditions.",
 	CARD_MILESTONES = "Milestones",
 	CARD_TALLY = "The tally",
 	CARD_FLY_BOX = "The Fly Box",

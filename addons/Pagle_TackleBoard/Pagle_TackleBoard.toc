@@ -28,6 +28,7 @@ logic\Ledge.lua
 adapter\BoardWidgets.lua
 adapter\Board.lua
 adapter\Pins.lua
+adapter\Ledge.lua
 adapter\TackleBoard.lua
 adapter\Generate.lua
 adapter\Words.lua
