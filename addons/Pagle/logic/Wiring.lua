@@ -609,7 +609,6 @@ end
 
 --- Where the tracker dock is drawn: adapter/Dock.lua's anchor frame on the client, or FakePagle's record of it.
 ---@class PagleDockView
----@field isRestricted fun(): boolean            -- Pagle.IsRestricted()
 ---@field watch fun(tracker: PagleTracker)       -- a tracker docked: reflow as its frame shows, hides or resizes, and
 --- move the dock on a Shift-drag of it
 ---@field reflow fun()                           -- lays the stack out again (ns.dock:Layout)
@@ -625,15 +624,11 @@ end
 local DockWiring = {}
 DockWiring.__index = DockWiring
 
--- PagleDB.profile.dock, read at each call.
+-- PagleDB.profile.dock: its default is in PAGLEDB_DEFAULTS (logic/Migrations.lua).
 ---@param wiring PagleDockWiring
 ---@return { point: PagleDockPoint? }
 local function storedDock(wiring)
-	local profile = wiring.host.db().profile
-	if type(profile.dock) ~= "table" then
-		profile.dock = {}
-	end
-	return profile.dock
+	return wiring.host.db().profile.dock
 end
 
 --- The docked trackers, in stack order (CORE-R70).
@@ -642,12 +637,10 @@ function DockWiring:Trackers()
 	return self.trackers:Trackers()
 end
 
---- The stack now (CORE-R70, CORE-R72): see PagleDock:Layout.
----@param isShown fun(frame: table): boolean
----@param sizeOf PagleDockSizeOf
+--- The stack now (CORE-R70, CORE-R72), each docked frame read as it is now: see PagleDock:Layout.
 ---@return PagleDockLayout
-function DockWiring:Layout(isShown, sizeOf)
-	return self.trackers:Layout(isShown, sizeOf)
+function DockWiring:Layout()
+	return self.trackers:Layout()
 end
 
 --- Where the anchor goes now: dock.point, or under the minimap (CORE-R70, CORE-R71).
@@ -659,7 +652,7 @@ end
 --- Whether a Shift-drag may move the dock: never while restricted (CORE-R71).
 ---@return boolean
 function DockWiring:CanMove()
-	return not self.view.isRestricted()
+	return not self.host.isRestricted()
 end
 
 --- The player dropped the dock at `point`: saved to dock.point, relative to UIParent (core/README.md › Data).
@@ -674,11 +667,23 @@ function DockWiring:Moved(point)
 	}
 end
 
+--- A whole Shift-drag, dropped with the dock at `point` (CORE-R71): saved as Moved saves it, unless restricted. True
+--- when it moved.
+---@param point PagleDockPoint
+---@return boolean
+function DockWiring:Drop(point)
+	if not self:CanMove() then
+		return false
+	end
+	self:Moved(point)
+	return true
+end
+
 --- The Trackers page's Reset (SET-R40): clears dock.point and puts the dock back under the minimap. While restricted
 --- it does nothing (CORE-R71). True when it did.
 ---@return boolean
 function DockWiring:Reset()
-	if self.view.isRestricted() then
+	if self.host.isRestricted() then
 		return false
 	end
 	storedDock(self).point = nil
@@ -723,15 +728,11 @@ function ns.WireDock(host, view)
 	---@param tracker { id: string, order: number, frame: table }
 	function ModuleHandle:RegisterTracker(tracker)
 		local module = host.registry:ModuleCalling(self, "RegisterTracker", "{ id, order, frame }")
-		local problem = trackers:Add(module.def.name, tracker)
-		if problem then
+		local docked, problem = trackers:Add(module.def.name, tracker)
+		if not docked then
 			error(problem, 2)
 		end
-		for _, docked in ipairs(trackers:Trackers()) do
-			if docked.id == tracker.id then
-				view.watch(docked)
-			end
-		end
+		view.watch(docked)
 		view.reflow()
 	end
 end

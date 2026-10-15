@@ -35,7 +35,7 @@ local MAX_SPANS = 48
 ---@field id string
 ---@field name string
 ---@field icon integer|string|nil    -- HNT-R55's icon; nil while the client hasn't it
----@field tint table?                -- the icon's tint (a generated class's quality colour), nil for the sepia
+---@field tint number[]?             -- the icon's tint (a generated class's quality colour), nil for the sepia
 ---@field trim ("bronze"|"silver"|"gold")?   -- the highest tier's trim; nil before tier 1 and while updating (HNT-R69)
 ---@field pinned boolean
 ---@field margin string              -- the margin label (HNT-R51)
@@ -78,7 +78,6 @@ local MAX_SPANS = 48
 ---@field list HuntList
 ---@field sources HuntNameSources    -- ns.names: NextWindow, icons
 ---@field nightSpec table?           -- Pagle.GetWindowSpec("night"), for the night wash
----@field best integer               -- the Angler's bestBaseSkill (HNT-R33)
 ---@field progress table<string, HuntProgress>   -- ns.State().hunts
 ---@field updating boolean           -- ns.IsUpdating(): nothing is drawn from the state (HNT-R69)
 ---@field auraExpiry fun(spellID: integer): integer?   -- an aura's expiry in server time, nil when unknown (HNT-R63)
@@ -213,7 +212,7 @@ local function barsOf(row, spec, ruler, input)
 	local style = "hatched"
 	if row.short then
 		style = "pencil"
-	elseif ns.Unconfirmed(row.hunt, row.window) then
+	elseif ns.UnconfirmedWhere(input.where[row.id], row.window) then
 		style = "dashed"
 	end
 	local bars, coversNow = {}, false
@@ -240,16 +239,7 @@ local function rowOf(row, ruler, input)
 	local where = input.where[row.id]
 	local spec = where.boardSpec
 	local icon, tint = ns.HuntIcon(row.hunt, input.list, input.sources)
-	local margin = ns.HuntLabels({
-		group = row.group,
-		auraUp = row.auraUp,
-		window = row.window,
-		spec = spec,
-		need = where.skillNeed,
-		best = input.best,
-		now = input.now,
-		snapshot = input.snapshot,
-	})
+	local margin = ns.HuntLabels(ns.LabelCase(row, where, input.now, input.snapshot))
 	local bars, note = barsOf(row, spec, ruler, input)
 	return {
 		id = row.id,

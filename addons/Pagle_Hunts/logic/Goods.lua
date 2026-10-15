@@ -31,6 +31,10 @@ local ICONS = "Interface\\Icons\\"
 ---@field category "Hunts"|"Trackers"
 ---@field goods HuntsGoodData[]
 
+--- The slots' defaults (HNT-R121, SHOP-R22): the board's own leather, and no tracker frame (the plain native block).
+ns.DEFAULT_COVER = "hunts.notebookcover.leather"
+ns.NO_TRACKER_FRAME = "hunts.trackerframe.none"
+
 --- HNT-R120's slots and HNT-R121's goods, in the order they register.
 ---@type HuntsSlotData[]
 ns.HUNTS_GOODS = {
@@ -39,7 +43,7 @@ ns.HUNTS_GOODS = {
 		label = "SLOT_NOTEBOOK_COVER",
 		category = "Hunts",
 		goods = {
-			{ id = "hunts.notebookcover.leather", default = true, icon = ICONS .. "INV_Misc_LeatherScrap_05" },
+			{ id = ns.DEFAULT_COVER, default = true, icon = ICONS .. "INV_Misc_LeatherScrap_05" },
 			{ id = "hunts.notebookcover.oilcloth", tier = 1, icon = ICONS .. "INV_Fabric_Felcloth_Ebon" },
 			{ id = "hunts.notebookcover.tooled", tier = 2, icon = ICONS .. "Trade_LeatherWorking" },
 			{ id = "hunts.notebookcover.verdigris", tier = 3, icon = ICONS .. "INV_Ore_Copper_01" },
@@ -50,26 +54,25 @@ ns.HUNTS_GOODS = {
 		label = "SLOT_TRACKER_FRAME",
 		category = "Trackers",
 		goods = {
-			{ id = "hunts.trackerframe.none", default = true, icon = ICONS .. "INV_Misc_Note_02" },
+			{ id = ns.NO_TRACKER_FRAME, default = true, icon = ICONS .. "INV_Misc_Note_02" },
 			{ id = "hunts.trackerframe.inkwash", tier = 1, icon = ICONS .. "INV_Inscription_InkBlack01" },
 			{ id = "hunts.trackerframe.waxseal", tier = 2, icon = ICONS .. "INV_Letter_03" },
 		},
 	},
 }
 
---- A good's name (HNT-R121): its lore, `huntgood.<goodID>.name` (HNT-R130), or its ID while the key has no text
---- (graph.md open question 4).
+--- A good's name (HNT-R121): its lore, `huntgood.<goodID>.name` (HNT-R130), or its ID while the key has no text.
 ---@param goodID string
 ---@return string
 function ns.HuntsGoodName(goodID)
-	return rawget(ns.L, "huntgood." .. goodID .. ".name") or goodID
+	return ns.Lore(ns.L, "huntgood." .. goodID .. ".name") or goodID
 end
 
 --- A good's description (HNT-R121): its lore, `huntgood.<goodID>.description` (HNT-R130), or nil while it has none.
 ---@param goodID string
 ---@return string?
 function ns.HuntsGoodDescription(goodID)
-	return rawget(ns.L, "huntgood." .. goodID .. ".description")
+	return ns.Lore(ns.L, "huntgood." .. goodID .. ".description")
 end
 
 --- What a good's preview draws on the Curio Shop's stage: `goodID`'s look in slot `slotID`.

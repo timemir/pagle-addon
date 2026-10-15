@@ -2,8 +2,10 @@
 collected, so one run lists them all before the generator fails without writing anything.
 """
 
+import calendar
 import tomllib
 from collections.abc import Collection, Mapping
+from datetime import UTC, date, datetime
 from pathlib import Path
 
 from pagle_data.errors import At, Problems
@@ -78,6 +80,20 @@ def expect_int(
         problems.add(at, f"expected an integer {bounds}, got {value}")
         return None
     return value
+
+
+def expect_date(value: object, at: At, problems: Problems) -> int | None:
+    """value as a TOML date (YYYY-MM-DD, not a date-time), meaning 00:00 UTC on that day, as a server time (Unix
+    seconds), or None with a problem (DATA-R87)."""
+    if isinstance(value, datetime) or not isinstance(value, date):
+        problems.add(at, f"expected a date (YYYY-MM-DD), got {describe(value)}")
+        return None
+    return calendar.timegm(value.timetuple())
+
+
+def date_text(server_time: int) -> str:
+    """A server time's UTC date as TOML writes a date, YYYY-MM-DD: expect_date's inverse."""
+    return datetime.fromtimestamp(server_time, UTC).date().isoformat()
 
 
 def expect_ids(value: object, at: At, problems: Problems) -> list[int] | None:

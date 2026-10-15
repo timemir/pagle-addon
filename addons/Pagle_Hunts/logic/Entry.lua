@@ -122,7 +122,7 @@ end
 local function effortOf(progress)
 	local L = ns.L
 	local effort = progress and progress.effort or 0
-	local casts = (effort == 1 and L.EFFORT_CASTS_ONE or L.EFFORT_CASTS_OTHER):format(effort)
+	local casts = ns.CountText(effort, "EFFORT_CASTS")
 	local text
 	if progress and progress.caught then
 		text = L.EFFORT_SINCE:format(casts, progress.sinceLast)
@@ -140,16 +140,7 @@ local function windowOf(input)
 	if not row then
 		return nil
 	end
-	return ns.HuntWindowLine({
-		group = row.group,
-		auraUp = row.auraUp,
-		window = row.window,
-		spec = input.where.boardSpec,
-		need = input.where.skillNeed,
-		best = input.best,
-		now = input.now,
-		snapshot = input.snapshot,
-	}, input.sources)
+	return ns.HuntWindowLine(ns.LabelCase(row, input.where, input.now, input.snapshot, input.best), input.sources)
 end
 
 --- Tunables (hunts.md): how many zone chips show before "+N more" (HNT-R65).
@@ -198,7 +189,7 @@ local function chipsOf(input)
 	addZoneChips(input, chips)
 	local need = where.skillNeed
 	if need then
-		if need > input.best then
+		if ns.SkillShortfall(need, input.best) then
 			chips[#chips + 1] = { kind = "skill", text = L.CHIP_SHORT:format(need, input.best), short = true }
 		else
 			chips[#chips + 1] = { kind = "skill", text = L.CHIP_SKILL:format(need) }
@@ -226,15 +217,7 @@ end
 ---@return string
 local function setLineOf(input)
 	local L, list, setID = ns.L, input.list, input.hunt.set
-	local done, current = 0, 0
-	for _, hunt in ipairs(list:SetHunts(setID)) do
-		if ns.IsCurrent(hunt, input.now) then
-			current = current + 1
-			if ns.HuntDone(input.state.hunts[hunt.id]) then
-				done = done + 1
-			end
-		end
-	end
+	local done, current = ns.DoneOfCurrent(list, input.state, input.now, setID)
 	local title = list:SetTitle(setID)
 	local earned = input.state.sets[setID] and L.SET_EARNED:format(title) or L.SET_EARNS:format(title)
 	return L.SET_LINE:format(list:SetName(setID), done, current, earned)

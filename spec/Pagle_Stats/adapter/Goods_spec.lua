@@ -312,7 +312,7 @@ describe("Settings", function()
 			enterWorld(loaded)
 			local settings = loaded.client.settings
 
-			local rows = settings.show(assert(settings.category("Trackers")))
+			local rows = settings.show(settings.page("Trackers"))
 			local last = rows[#rows]
 
 			assert.are.equal("Stats tracker frame", last.initializer:GetName())
@@ -320,11 +320,7 @@ describe("Settings", function()
 			assert.is_true(last.frame.enabled)
 			-- Core's slot row (SET-R6): its own dropdown, the fake's DropdownButton, holds the equipped frame.
 			assert.are.equal("PagleSettingsSlotRowTemplate", last.initializer:GetTemplate())
-			local dropdown
-			for _, child in ipairs(last.frame.children) do
-				dropdown = child.kind == "DropdownButton" and child or dropdown
-			end
-			assert.are.equal("stats.trackerframe.none", assert(dropdown, "no dropdown on the frame row").selected)
+			assert.are.equal("stats.trackerframe.none", settings.dropdownOf(last).selected)
 		end
 	)
 

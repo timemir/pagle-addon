@@ -2,14 +2,8 @@
 -- Hunts that adds a "trackers" checkbox and registers a "Trackers" slot (settings.md SET-R3, SET-R40, SET-R41,
 -- SET-R44, SET-R45, SET-R51, SET-R60; CORE-R42's slot bullet; wallet-and-shop.md SHOP-R21, SHOP-R30, SHOP-R32).
 
--- Core with the Ledger, Hunts and Stats installed, over a saved PagleDB (`saved`, if given), before PLAYER_LOGIN.
----@param saved table?
----@return LoadedAddon
-local function session(saved)
-	local loaded = loadCore(nil, saved)
-	loaded.client.addons.Pagle_Stats = { metadata = { ["X-Pagle-API"] = "1" } }
-	return loaded
-end
+-- The roster beyond the Ledger and Hunts that the fixture Modules register under (coreWithTrackers).
+local ROSTER = { "Stats" }
 
 -- A fixture Module `name` at `order` with a "trackers" checkbox `label`, on by default, stored in the returned
 -- table's `shown`; and, unless `noSlot`, a "Trackers" slot `<name>.trackerframe` with None (default) and Ink wash
@@ -45,11 +39,6 @@ local function trackerModule(loaded, name, order, options)
 	return handle, state
 end
 
--- A registered Settings page by name.
-local function page(loaded, name)
-	return assert(loaded.client.settings.category(name), "no page " .. name)
-end
-
 -- Each shown row of a page as "<name>", with "  " before an indented one.
 local function names(rows)
 	local out = {}
@@ -59,43 +48,13 @@ local function names(rows)
 	return out
 end
 
--- The shown row whose label is `label`.
-local function rowNamed(rows, label)
-	for _, row in ipairs(rows) do
-		if row.initializer:GetName() == label then
-			return row
-		end
-	end
-	error("no row " .. label)
-end
-
--- A slot dropdown row's dropdown (the fake's DropdownButton, spec/support/widgets.lua).
-local function dropdownOf(row)
-	for _, child in ipairs(row.frame.children) do
-		if child.kind == "DropdownButton" then
-			return child
-		end
-	end
-	error("no dropdown on " .. row.initializer:GetName())
-end
-
--- The values of a slot dropdown's choices, read as the dropdown opens.
-local function optionValues(row)
-	return dropdownOf(row):choices()
-end
-
--- The texts a slot dropdown row shows under its label and dropdown: its note while shown.
-local function notes(row, settings)
-	return { select(3, unpack(settings.textsOf(row.frame))) }
-end
-
 local function showTrackers(loaded)
-	return loaded.client.settings.show(page(loaded, "Trackers"))
+	return loaded.client.settings.show(loaded.client.settings.page("Trackers"))
 end
 
 describe("The Trackers page's frame row", function()
 	it("ends the Module's section, unindented, after its own rows (SET-R44, SET-R41, CORE-R42)", function()
-		local loaded = session()
+		local loaded = coreWithTrackers(nil, ROSTER)
 		trackerModule(loaded, "Hunts", 20)
 
 		enterWorld(loaded)
@@ -107,76 +66,82 @@ describe("The Trackers page's frame row", function()
 	end)
 
 	it("is the slot dropdown, listing only the slot's owned goods (SET-R44, SET-R51, SHOP-R30)", function()
-		local loaded = session()
+		local loaded = coreWithTrackers(nil, ROSTER)
 		trackerModule(loaded, "Hunts", 20)
 		enterWorld(loaded)
 
-		local row = rowNamed(showTrackers(loaded), "Hunts tracker frame")
+		local row = loaded.client.settings.rowNamed(showTrackers(loaded), "Hunts tracker frame")
 
 		assert.are.equal("PagleSettingsSlotRowTemplate", row.initializer:GetTemplate())
-		assert.are.equal("hunts.trackerframe.none", dropdownOf(row).selected)
-		assert.are.same({ "hunts.trackerframe.none=None" }, optionValues(row))
-		assert.are.same({ "1 more in the Curio Shop" }, notes(row, loaded.client.settings))
+		assert.are.equal("hunts.trackerframe.none", loaded.client.settings.dropdownOf(row).selected)
+		assert.are.same({ "hunts.trackerframe.none=None" }, loaded.client.settings.optionValues(row))
+		assert.are.same({ "1 more in the Curio Shop" }, loaded.client.settings.notesOf(row))
 		-- Its Defaults setting (SET-R60): the slot's default good.
 		local setting = loaded.client.settings.variables["Pagle_Core_trackers_hunts.trackerframe"]
 		assert.are.equal("hunts.trackerframe.none", setting:GetDefaultValue())
 		loaded.ns.goods:SetPurchased({ ["hunts.trackerframe.inkwash"] = true })
-		assert.are.same({ "hunts.trackerframe.none=None", "hunts.trackerframe.inkwash=Ink wash" }, optionValues(row))
+		assert.are.same(
+			{ "hunts.trackerframe.none=None", "hunts.trackerframe.inkwash=Ink wash" },
+			loaded.client.settings.optionValues(row)
+		)
 	end)
 
 	it("isn't greyed out or hung under the checkbox while the tracker is off (SET-R44, SET-R2)", function()
-		local loaded = session()
+		local loaded = coreWithTrackers(nil, ROSTER)
 		local _, state = trackerModule(loaded, "Hunts", 20)
 		state.shown = false
 		enterWorld(loaded)
 
 		local rows = showTrackers(loaded)
-		local row = rowNamed(rows, "Hunts tracker frame")
+		local row = loaded.client.settings.rowNamed(rows, "Hunts tracker frame")
 
 		assert.is_true(row.frame.enabled)
 		assert.is_nil(row.initializer:GetParentInitializer())
-		rowNamed(rows, "Show the Hunts tracker").initializer:GetSetting():SetValue(true)
+		loaded.client.settings.rowNamed(rows, "Show the Hunts tracker").initializer:GetSetting():SetValue(true)
 		assert.is_true(row.frame.enabled)
 	end)
 
 	it(
 		"equips the frame picked, and Look and Feel's dropdown for the slot shows it (SET-R44, SET-R51, SHOP-R32)",
 		function()
-			local loaded = session()
+			local loaded = coreWithTrackers(nil, ROSTER)
 			trackerModule(loaded, "Hunts", 20)
 			enterWorld(loaded)
 			loaded.ns.goods:SetPurchased({ ["hunts.trackerframe.inkwash"] = true })
-			local row = rowNamed(showTrackers(loaded), "Hunts tracker frame")
+			local row = loaded.client.settings.rowNamed(showTrackers(loaded), "Hunts tracker frame")
 
-			dropdownOf(row):pick("Ink wash")
+			loaded.client.settings.dropdownOf(row):pick("Ink wash")
 
 			assert.are.equal("hunts.trackerframe.inkwash", loaded.env.Pagle.GetEquipped("hunts.trackerframe"))
-			assert.are.equal("Ink wash", dropdownOf(row).text)
-			local look = rowNamed(loaded.client.settings.show(page(loaded, "Look and Feel")), "Hunts tracker frame")
+			assert.are.equal("Ink wash", loaded.client.settings.dropdownOf(row).text)
+			local look = loaded.client.settings.rowNamed(
+				loaded.client.settings.show(loaded.client.settings.page("Look and Feel")),
+				"Hunts tracker frame"
+			)
 			assert.are.same(
 				{ "hunts.trackerframe.inkwash", "Ink wash" },
-				{ dropdownOf(look).selected, dropdownOf(look).text }
+				{ loaded.client.settings.dropdownOf(look).selected, loaded.client.settings.dropdownOf(look).text }
 			)
 		end
 	)
 
 	it("redraws at once when the frame is picked elsewhere (SET-R51, SET-R62)", function()
-		local loaded = session()
+		local loaded = coreWithTrackers(nil, ROSTER)
 		trackerModule(loaded, "Hunts", 20)
 		enterWorld(loaded)
 		loaded.ns.goods:SetPurchased({ ["hunts.trackerframe.inkwash"] = true })
-		local row = rowNamed(showTrackers(loaded), "Hunts tracker frame")
+		local row = loaded.client.settings.rowNamed(showTrackers(loaded), "Hunts tracker frame")
 
 		loaded.env.Pagle.SetEquipped("hunts.trackerframe", "hunts.trackerframe.inkwash")
 
 		assert.are.same(
 			{ "hunts.trackerframe.inkwash", "Ink wash" },
-			{ dropdownOf(row).selected, dropdownOf(row).text }
+			{ loaded.client.settings.dropdownOf(row).selected, loaded.client.settings.dropdownOf(row).text }
 		)
 	end)
 
 	it("isn't added for a Module with no Trackers slot (SET-R44)", function()
-		local loaded = session()
+		local loaded = coreWithTrackers(nil, ROSTER)
 		trackerModule(loaded, "Hunts", 20)
 		trackerModule(loaded, "Stats", 30, { noSlot = true })
 		enterWorld(loaded)
@@ -194,7 +159,7 @@ describe("The Trackers page's frame row", function()
 	it(
 		"makes the section of a Module that added no Trackers row: its header, then its frame (SET-R44, SET-R3)",
 		function()
-			local loaded = session()
+			local loaded = coreWithTrackers(nil, ROSTER)
 			trackerModule(loaded, "Stats", 30, { noRows = true })
 			enterWorld(loaded)
 
@@ -207,9 +172,9 @@ describe("The Trackers page's Defaults", function()
 	-- Core with Hunts' checkbox off and Ink wash bought and equipped, logged in, the dock Shift-dragged to (812, 640).
 	-- Returns the loaded addon and Hunts' stored state.
 	local function changed()
-		local loaded = session({
+		local loaded = coreWithTrackers({
 			profiles = { Default = { appearance = { ["hunts.trackerframe"] = "hunts.trackerframe.inkwash" } } },
-		})
+		}, ROSTER)
 		local hunts, state = trackerModule(loaded, "Hunts", 20)
 		local frame = loaded.env.CreateFrame("Frame", nil, loaded.env.UIParent)
 		frame:SetSize(200, 40)
@@ -234,7 +199,7 @@ describe("The Trackers page's Defaults", function()
 			assert.are.equal("hunts.trackerframe.inkwash", loaded.env.Pagle.GetEquipped("hunts.trackerframe"))
 			showTrackers(loaded)
 
-			loaded.client.settings.defaults(page(loaded, "Trackers"))
+			loaded.client.settings.defaults(loaded.client.settings.page("Trackers"))
 
 			assert.is_true(state.shown)
 			assert.are.equal("hunts.trackerframe.none", loaded.env.Pagle.GetEquipped("hunts.trackerframe"))
@@ -246,7 +211,7 @@ describe("The Trackers page's Defaults", function()
 	it("leaves the looks shown only on other pages alone (SET-R45, SET-R60)", function()
 		local loaded = changed()
 
-		loaded.client.settings.defaults(page(loaded, "Trackers"))
+		loaded.client.settings.defaults(loaded.client.settings.page("Trackers"))
 
 		assert.are.equal("core.crest.crest1", loaded.env.Pagle.GetEquipped("core.crest"))
 	end)

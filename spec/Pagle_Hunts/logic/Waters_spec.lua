@@ -3,11 +3,10 @@
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local hunts = dofile("spec/Pagle_Hunts/support.lua")
----@diagnostic disable-next-line: undefined-global -- as above
-local catalogue = dofile("spec/Pagle_Hunts/fixtures/Catalogue.lua")
 
+local catalogue = hunts.catalogue
 local C = catalogue
-local JAN_1 = 1767225600 -- 2026-01-01, the fixture Hunts' since
+local JAN_1 = hunts.JAN_1
 
 -- Pagle_Hunts on a FakePagle serving `data` (the fixture catalogue as first shipped by default).
 local function load(data)
@@ -20,16 +19,9 @@ end
 -- Hunts the fixture list lacks, as the list emits them (DATA-R93), each made from `fields` over an imposed Hunt of
 -- set fixture_extra: where they bite, worked out as at load, by Hunt ID.
 local function whereOf(loaded, fake, huntFields, classes)
-	local list = { fingerprint = "e", sets = { { id = "fixture_extra" } }, hunts = {}, classes = classes or {} }
-	for i, fields in ipairs(huntFields) do
-		local hunt = { id = "extra_" .. i, set = "fixture_extra", kind = "imposed", since = JAN_1, tiers = { 1 } }
-		for key, value in pairs(fields) do
-			hunt[key] = value
-		end
-		list.hunts[i] = hunt
-	end
 	local ns = loaded.ns
-	return ns.NewWhere(ns.NewHuntList(list, ns.L), fake.globals.Pagle), list.hunts
+	local list = ns.NewHuntList(hunts.extraList(huntFields, classes), ns.L)
+	return ns.NewWhere(list, ns.NewLookups(fake.globals.Pagle, list)), list:Hunts()
 end
 
 -- Runs `fn` with `where` as ns.where, which ns.InWaters, ns.ShortOfSkill and ns.Unconfirmed read, then puts the one

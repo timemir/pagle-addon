@@ -13,14 +13,6 @@ local function statesOf(core)
 	return states
 end
 
--- Clicks Pagle in the Addon Compartment and returns the menu Core opens on the next frame (CORE-R50).
-local function compartmentMenu(loaded)
-	local opened = #loaded.client.menus
-	loaded.client.clickCompartment("Pagle")
-	loaded.client.runTimers()
-	return loaded.client.menus[opened + 1]
-end
-
 -- Puts a counting stand-in at ns.ToggleBook, as adapter/Book.lua puts the real toggle there, and returns
 -- what it counted.
 local function countToggles(loaded)
@@ -90,9 +82,9 @@ describe("Pagle_Stats with Core", function()
 
 		loaded.env.SlashCmdList.PAGLE("help")
 
-		local texts = compartmentMenu(plain).texts()
+		local texts = plain.client.openCompartmentMenu("Pagle").texts()
 		table.insert(texts, 1, "Stats")
-		assert.are.same(texts, compartmentMenu(loaded).texts())
+		assert.are.same(texts, loaded.client.openCompartmentMenu("Pagle").texts())
 		assert.are.same({
 			"Pagle commands:",
 			"/pagle settings: open Pagle's settings (also /pagle on its own)",
@@ -114,7 +106,7 @@ describe("Pagle_Stats with Core", function()
 
 			loaded.env.SlashCmdList.PAGLE("stats")
 			loaded.env.SlashCmdList.PAGLE("Stats anything at all")
-			compartmentMenu(loaded).click("Stats")
+			loaded.client.openCompartmentMenu("Pagle").click("Stats")
 			local _, buttons = loaded.client.settings.statusList()
 			buttons[1]:Click()
 
@@ -143,7 +135,7 @@ describe("Pagle_Stats with Core", function()
 			seen[#seen + 1] = shown()
 			loaded.env.SlashCmdList.PAGLE("stats anything at all")
 			seen[#seen + 1] = shown()
-			compartmentMenu(loaded).click("Stats")
+			loaded.client.openCompartmentMenu("Pagle").click("Stats")
 			seen[#seen + 1] = shown()
 			local _, buttons = loaded.client.settings.statusList()
 			buttons[1]:Click()

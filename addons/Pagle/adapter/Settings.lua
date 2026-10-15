@@ -373,8 +373,8 @@ local function buildPage(topic, page, layout, entries)
 	for i, entry in ipairs(entries) do
 		local setting = entry.setting
 		if entry.slot then
-			ns.SlotDropdown(page, layout, entry.slot, ("Pagle_Core_%s_%s"):format(topic, entry.slot.id))
-		else
+			ns.SlotDropdown(page, layout, entry.slot, topic)
+		elseif setting then
 			local variable = ("Pagle_%s_%s_%d"):format(entry.module.def.name, topic, i)
 			local initializer = securecallfunction(nativeRow, page, layout, setting, variable)
 			if initializer then

@@ -11,16 +11,12 @@ local ns = select(2, ...)
 --- Tunables (hunts.md): the Hunts the tracker lists before its "+N more" line (HNT-R76).
 ns.TRACKER_SHOWN = 6
 
--- Each group's dot (HNT-R76), as the board's art kit names the group colours (adapter/BoardWidgets.lua's BoardGroup).
----@type table<HuntGroup, string>
-local DOTS = { now = "now", soon = "soon", later = "later", onDemand = "demand" }
-
 --- What the tracker's lines are made from, read by the adapter at each draw.
 ---@class HuntsTrackerInput
 ---@field rows HuntRow[]?      -- the pinned rows, sorted as on the board (ns.groups:Rows{ pinnedOnly = true }); nil
 --- before the first grouping
 ---@field anyPinned boolean    -- whether profile.pins holds any Hunt, for the empty line before the first grouping
----@field time integer         -- ns.TimelineNow(): labels count down from now, or from the grouping's time while it is
+---@field time integer         -- ns.ViewNow(): labels count down from now, or from the grouping's time while it is
 --- paused, so they freeze with it while restricted (HNT-R43, HNT-R78)
 ---@field snapshot table       -- one live `Pagle.GetConditions()` (HNT-R50)
 ---@field zone integer?        -- the live zone's areaID (the snapshot's `zone`)
@@ -33,7 +29,7 @@ local DOTS = { now = "now", soon = "soon", later = "later", onDemand = "demand" 
 --- One pinned Hunt's two lines (HNT-R76).
 ---@class HuntsTrackerHunt
 ---@field id string
----@field dot "now"|"soon"|"later"|"demand"   -- its group's dot
+---@field dot HuntGroup                      -- its group, for its dot
 ---@field first string         -- "{name} · {tracker label}"
 ---@field second string        -- "{target line} · you're here · {progress}", "you're here" only in its zones
 
@@ -80,18 +76,8 @@ end
 local function huntLines(row, input)
 	local L = ns.L
 	local hunt, where = row.hunt, input.where[row.id]
-	-- The tracker label (HNT-R51) of the row as grouped: short of skill as the grouping found it, counted down from
-	-- input.time.
-	local _, label = ns.HuntLabels({
-		group = row.group,
-		auraUp = row.auraUp,
-		window = row.window,
-		spec = where.boardSpec,
-		need = row.short and where.skillNeed or nil,
-		best = 0,
-		now = input.time,
-		snapshot = input.snapshot,
-	})
+	-- The tracker label (HNT-R51) of the row as grouped, counted down from input.time.
+	local _, label = ns.HuntLabels(ns.LabelCase(row, where, input.time, input.snapshot))
 	local second = { ns.HuntTargetLine(hunt, input.list, input.sources) }
 	if among(where.zones, input.zone) then
 		second[#second + 1] = L.TRACKER_HERE
@@ -99,7 +85,7 @@ local function huntLines(row, input)
 	second[#second + 1] = ns.TrackerProgress(hunt, input.state.hunts[row.id], input.updating)
 	return {
 		id = row.id,
-		dot = DOTS[row.group],
+		dot = row.group,
 		first = L.TRACKER_FIRST:format(input.list:HuntName(row.id), label),
 		second = table.concat(second, L.TRACKER_JOIN),
 	}

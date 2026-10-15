@@ -9,14 +9,17 @@ local ns = select(2, ...)
 -- a time, and the router decides which: the place (mode, set, Hunt), which renderer draws each page in it, and the
 -- breadcrumb trail back up. adapter/Board.lua draws what it decides on the notebook.
 --
--- The modes, and the renderers the board tickets register for them (`ns.board:RegisterPage(mode, side, renderer)`):
---   "board"    the Board ribbon (HNT-R62, HNT-R67): the timeline on the left (#193), the selected Hunt's entry on the
---              right (#194), or HNT-R67's lines when there is none (#193). `hunt` is the Hunt asked for or selected;
---              nil lets the timeline pick one (HNT-R67).
---   "set"      a set's page (HNT-R66): the set's timeline on the left (#193), the set's page on the right (#195).
---   "entry"    a Hunt's entry opened from a set's page (HNT-R66's last bullet): the set's timeline on the left (#193),
---              the entry with "back to {set}" on the right (#194).
---   "retired"  a done Retired Hunt's entry, opened from its set's page (HNT-R3): as "entry", the retired entry (#194).
+-- The modes, and the renderers registered for them (`ns.board:RegisterPage(mode, side, renderer)`):
+--   "board"    the Board ribbon (HNT-R62, HNT-R67): the timeline on the left (adapter/Timeline.lua), the selected
+--              Hunt's entry on the right (adapter/Entry.lua), or HNT-R67's lines when there is none
+--              (adapter/Timeline.lua). `hunt` is the Hunt asked for or selected; nil lets the timeline pick one
+--              (HNT-R67).
+--   "set"      a set's page (HNT-R66): the set's timeline on the left (adapter/Timeline.lua), the set's page on the
+--              right (adapter/Sets.lua).
+--   "entry"    a Hunt's entry opened from a set's page (HNT-R66's last bullet): the set's timeline on the left
+--              (adapter/Timeline.lua), the entry with "back to {set}" on the right (adapter/Entry.lua).
+--   "retired"  a done Retired Hunt's entry, opened from its set's page (HNT-R3): as "entry", the retired entry
+--              (adapter/Entry.lua).
 
 ---@alias BoardMode "board"|"set"|"entry"|"retired"
 ---@alias BoardSide "left"|"right"
@@ -27,7 +30,7 @@ local ns = select(2, ...)
 ---@field set string?   -- a set's ID: the set's page, or the set an entry was opened from
 ---@field hunt string?  -- a Hunt's ID: the Board's selection, or the entry shown
 
---- One breadcrumb (HNT-R61): what it names, and the place it goes back to. The board's sets ticket (#195) gives it
+--- One breadcrumb (HNT-R61): what it names, and the place it goes back to. adapter/Sets.lua gives it
 --- its words ("Hunts", the set's name, the Hunt's name).
 ---@class BoardCrumb
 ---@field kind "hunts"|"set"|"hunt"

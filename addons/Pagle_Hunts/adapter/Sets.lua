@@ -14,7 +14,7 @@ local ns = select(2, ...)
 -- is paused, so they freeze with it (HNT-R43).
 ---@return integer
 local function viewTime()
-	return ns.TimelineNow()
+	return ns.ViewNow()
 end
 
 -- logic/Sets.lua's inputs, read now.
@@ -33,7 +33,7 @@ end
 --- The breadcrumbs where the board is (HNT-R61), as data.
 ---@return BoardCrumbView[]
 function ns.BoardCrumbs()
-	return ns.BuildCrumbs(ns.board.router:Trail(), ns.hunts)
+	return ns.BuildCrumbs(ns.board:Trail(), ns.hunts)
 end
 
 -- A current Hunt's tracker label (HNT-R51) from its row in the grouping, at the grouping's time; nil before the first
@@ -45,17 +45,7 @@ local function trackerLabel(huntID)
 	if not row then
 		return nil
 	end
-	local where = ns.where[huntID]
-	local _, tracker = ns.HuntLabels({
-		group = row.group,
-		auraUp = row.auraUp,
-		window = row.window,
-		spec = where.boardSpec,
-		need = where.skillNeed,
-		best = Pagle.GetAngler().bestBaseSkill,
-		now = viewTime(),
-		snapshot = Pagle.GetConditions(),
-	})
+	local _, tracker = ns.HuntLabels(ns.LabelCase(row, ns.where[huntID], viewTime(), Pagle.GetConditions()))
 	return tracker
 end
 
@@ -79,39 +69,6 @@ local LOOK = ns.BOARD_LOOK
 -- The gap between ribbons, the fleuron's size and the room round it, and a crumb's colour under the mouse.
 local RIBBON_GAP, FLEURON, FLEURON_ROOM = 5, 10, 8
 
--- The `i`th widget of `pool`, made with `make()` the first time, shown.
----@param pool any[] Regions of one kind
----@param i integer
----@param make fun(): any
----@return any
-local function pooled(pool, i, make)
-	local widget = pool[i] or make()
-	pool[i] = widget
-	widget:Show()
-	return widget
-end
-
--- Hides the widgets of `pool` after the first `used`.
----@param pool Region[]
----@param used integer
-local function hideFrom(pool, used)
-	for i = used + 1, #pool do
-		pool[i]:Hide()
-	end
-end
-
--- Shows `lines` in GameTooltip, owned by `owner`: the first as its heading.
----@param owner Frame
----@param lines string[]
-local function showTooltip(owner, lines)
-	GameTooltip:SetOwner(owner, "ANCHOR_TOP")
-	GameTooltip:SetText(lines[1])
-	for i = 2, #lines do
-		GameTooltip:AddLine(lines[i])
-	end
-	GameTooltip:Show()
-end
-
 local function hideTooltip()
 	GameTooltip:Hide()
 end
@@ -128,7 +85,7 @@ local function drawRibbons(anchor, place)
 	local y = 0
 	local ribbons = ns.BoardRibbons(place)
 	for i, data in ipairs(ribbons) do
-		local ribbon = pooled(anchor.ribbons, i, function()
+		local ribbon = ns.BoardPooled(anchor.ribbons, i, function()
 			local made = ns.NewBoardRibbon(anchor)
 			made:SetScript("OnLeave", hideTooltip)
 			return made
@@ -142,10 +99,10 @@ local function drawRibbons(anchor, place)
 			ns.board:Open(data.place)
 		end)
 		ribbon:SetScript("OnEnter", function(self)
-			showTooltip(self, { data.name or data.text })
+			ns.BoardTooltip(self, { data.name or data.text })
 		end)
 	end
-	hideFrom(anchor.ribbons, #ribbons)
+	ns.BoardHideFrom(anchor.ribbons, #ribbons)
 end
 
 ---@class SetsCrumb: Button
@@ -163,14 +120,14 @@ local function drawCrumbs(anchor)
 	local crumbs = ns.BoardCrumbs()
 	for i, data in ipairs(crumbs) do
 		if i > 1 then
-			local fleuron = pooled(anchor.fleurons, i - 1, function()
+			local fleuron = ns.BoardPooled(anchor.fleurons, i - 1, function()
 				return ns.NewBoardMark(anchor, "fleuron", FLEURON)
 			end)
 			fleuron:ClearAllPoints()
 			fleuron:SetPoint("LEFT", x + FLEURON_ROOM, 0)
 			x = x + FLEURON + 2 * FLEURON_ROOM
 		end
-		local crumb = pooled(anchor.crumbs, i, function()
+		local crumb = ns.BoardPooled(anchor.crumbs, i, function()
 			local made = CreateFrame("Button", nil, anchor) --[[@as SetsCrumb]]
 			made.label = ns.BoardText(made, ns.BoardFonts().crumb, LOOK.gilt)
 			made.label:SetPoint("LEFT")
@@ -192,8 +149,8 @@ local function drawCrumbs(anchor)
 			ns.board:Open(data.place)
 		end)
 	end
-	hideFrom(anchor.crumbs, #crumbs)
-	hideFrom(anchor.fleurons, #crumbs - 1)
+	ns.BoardHideFrom(anchor.crumbs, #crumbs)
+	ns.BoardHideFrom(anchor.fleurons, #crumbs - 1)
 end
 
 ---@class SetsPlate: BoardPlateView
@@ -211,7 +168,7 @@ local function drawNameplate(anchor)
 		plate:EnableMouse(true)
 		plate:SetScript("OnEnter", function(self)
 			if #self.lines > 1 then
-				showTooltip(self, self.lines)
+				ns.BoardTooltip(self, self.lines)
 			end
 		end)
 		plate:SetScript("OnLeave", hideTooltip)
@@ -279,7 +236,7 @@ end
 ---@param greyed boolean
 local function fillLine(line, data, greyed)
 	local ink = greyed and LOOK.faded or LOOK.title
-	line.diamond:SetDiamond(1, data.done)
+	line.diamond:SetDiamond(ns.Trim(1), data.done)
 	line.name:SetText(data.name)
 	line.name:SetTextColor(ink[1], ink[2], ink[3])
 	line.when:SetText(data.when)
@@ -294,14 +251,14 @@ local function fillLine(line, data, greyed)
 	local to = line:GetWidth() - line.when:GetStringWidth() - DOT_STEP
 	local count = math.max(0, math.floor((to - from) / DOT_STEP))
 	for i = 1, count do
-		local dot = pooled(line.dots, i, function()
+		local dot = ns.BoardPooled(line.dots, i, function()
 			return ns.BoardSolid(line, LOOK.note, "ARTWORK")
 		end)
 		dot:ClearAllPoints()
 		dot:SetSize(DOT, DOT)
 		dot:SetPoint("BOTTOMLEFT", from + (i - 1) * DOT_STEP, 5)
 	end
-	hideFrom(line.dots, count)
+	ns.BoardHideFrom(line.dots, count)
 end
 
 -- The set page's widgets on `page`, made once.
@@ -353,7 +310,7 @@ local function drawSetPage(page, place)
 	local width = page:GetWidth()
 	local y = SEAL + 8 + BAR_HEIGHT + 8 + 2 * 18 + 12
 	for i, lineData in ipairs(data.hunts) do
-		local line = pooled(view.lines, i, function()
+		local line = ns.BoardPooled(view.lines, i, function()
 			return newLine(page, width)
 		end)
 		line:ClearAllPoints()
@@ -361,14 +318,14 @@ local function drawSetPage(page, place)
 		fillLine(line, lineData, false)
 		y = y + LINE_HEIGHT
 	end
-	hideFrom(view.lines, #data.hunts)
+	ns.BoardHideFrom(view.lines, #data.hunts)
 	view.heading:SetShown(#data.retired > 0)
 	view.heading:SetText(ns.BoardSmallCaps(data.retiredHeading))
 	view.heading:ClearAllPoints()
 	view.heading:SetPoint("TOPLEFT", 0, -(y + 10))
 	y = y + 10 + 16
 	for i, lineData in ipairs(data.retired) do
-		local line = pooled(view.retired, i, function()
+		local line = ns.BoardPooled(view.retired, i, function()
 			return newLine(page, width)
 		end)
 		line:ClearAllPoints()
@@ -376,7 +333,7 @@ local function drawSetPage(page, place)
 		fillLine(line, lineData, true)
 		y = y + LINE_HEIGHT
 	end
-	hideFrom(view.retired, #data.retired)
+	ns.BoardHideFrom(view.retired, #data.retired)
 end
 
 ns.board:RegisterPage("set", "right", drawSetPage)

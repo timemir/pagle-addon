@@ -9,7 +9,7 @@ local ns = select(2, ...)
 -- logic/Timeline.lua's inputs from the grouping, the projection, the names and Core, and this file draws the result
 -- on the left page of every mode (the Board, a set's page, an entry opened from it), and the realm clock and the "show
 -- completed" checkbox on the leather. On the Board it selects the Hunt HNT-R67 picks before the right page draws; the
--- entry's renderer (adapter/Entry.lua, #194) draws that Hunt, or HNT-R67's line when none is. The look follows
+-- entry's renderer (adapter/Entry.lua) draws that Hunt, or HNT-R67's line when none is. The look follows
 -- prototypes/hunts-board/ variant E in adapter/BoardWidgets.lua's art.
 --
 -- The checkbox is FrameXML's UICheckButtonTemplate (Gethe/wow-ui-source branch forever,
@@ -27,8 +27,6 @@ local NAME_WIDTH, MARGIN_WIDTH, GAP = 150, 74, 6
 local ROW_HEIGHT, HEADING_HEIGHT, BAR_HEIGHT, ICON_SIZE = 26, 22, 12, 18
 -- Bars made with each row before its now line, so the line draws over them.
 local BARS_AHEAD = 3
--- The trims' tiers on a board icon (HNT-R18).
-local TRIM_TIER = { bronze = 1, silver = 2, gold = 3 }
 
 -- An aura's expiry in server time (HNT-R63): `GetServerTime() + (expirationTime - GetTime())`, read for display only;
 -- nil when the call or the aura is missing, `expirationTime` is 0, or it is secret.
@@ -44,25 +42,13 @@ local function auraExpiry(spellID)
 	return GetServerTime() + math.floor(expires - GetTime())
 end
 
---- The time the timeline, the clock, the entry, a set's page and the tracker draw at: now, or while the grouping is
---- paused the grouping's time, so they freeze with it (HNT-R43). Between regroups a grouping's windows stand (it regroups at every edge, HNT-R42), so
---- now's countdowns and ruler read right from it however long ago it was made.
----@return integer
-function ns.TimelineNow()
-	local grouped = ns.groups:Time()
-	if grouped and ns.groups:IsPaused() then
-		return grouped
-	end
-	return GetServerTime()
-end
-
 --- The timeline the left page of `place` draws (logic/Timeline.lua): the Board's, or a set's when the place has one
---- and isn't the Board (HNT-R66), at ns.TimelineNow() (frozen while the grouping is paused, HNT-R43), with the saved
+--- and isn't the Board (HNT-R66), at ns.ViewNow() (frozen while the grouping is paused, HNT-R43), with the saved
 --- "show completed" filter (HNT-R82; while updating it hides nothing, HNT-R69).
 ---@param place BoardPlace
 ---@return HuntsTimeline
 function ns.BoardTimeline(place)
-	local now = ns.TimelineNow()
+	local now = ns.ViewNow()
 	local setID = place.mode ~= "board" and place.set or nil
 	local updating = ns.IsUpdating()
 	local state = ns.State()
@@ -87,7 +73,6 @@ function ns.BoardTimeline(place)
 		list = ns.hunts,
 		sources = ns.names,
 		nightSpec = Pagle.GetWindowSpec("night"),
-		best = Pagle.GetAngler().bestBaseSkill,
 		progress = state.hunts,
 		updating = updating,
 		auraExpiry = auraExpiry,
@@ -325,22 +310,17 @@ end
 local function drawWashes(view, washes)
 	local width = view.trackWidth
 	for i, wash in ipairs(washes) do
-		local texture = view.washes[i]
-		if not texture then
-			texture = view.column:CreateTexture(nil, "BACKGROUND")
-			view.washes[i] = texture
-		end
+		local texture = ns.BoardPooled(view.washes, i, function()
+			return view.column:CreateTexture(nil, "BACKGROUND")
+		end)
 		local color = wash.kind == "soon" and LOOK.soonWash or LOOK.nightWash
 		texture:SetColorTexture(color[1], color[2], color[3], LOOK.washAlpha)
 		texture:ClearAllPoints()
 		texture:SetPoint("TOPLEFT", wash.from * width, 0)
 		texture:SetPoint("BOTTOMLEFT", wash.from * width, 0)
 		texture:SetWidth(math.max(1, (wash.to - wash.from) * width))
-		texture:Show()
 	end
-	for i = #washes + 1, #view.washes do
-		view.washes[i]:Hide()
-	end
+	ns.BoardHideFrom(view.washes, #washes)
 end
 
 -- The margin label's ink by its case (variant E): red for Now, Soon and short of skill, faded for Later, blue for On
@@ -358,26 +338,20 @@ local function drawRow(view, drawn, row, nowX, y)
 	drawn:ClearAllPoints()
 	drawn:SetPoint("TOPLEFT", 0, -y)
 	drawn.highlight:SetShown(row.selected)
-	local tint = row.tint and { row.tint.r, row.tint.g, row.tint.b }
-	drawn.icon:SetIcon(row.icon or "Interface\\Icons\\Trade_Fishing", tint)
-	drawn.icon:SetTrim(row.trim and TRIM_TIER[row.trim])
+	drawn.icon:SetIcon(row.icon or ns.TRADE_FISHING, row.tint)
+	drawn.icon:SetTrim(row.trim)
 	drawn.pin:SetShown(row.pinned)
 	drawn.name:SetText(row.name)
 	local width = view.trackWidth
 	for i, bar in ipairs(row.bars) do
-		local barView = drawn.bars[i]
-		if not barView then
-			barView = ns.NewBoardTimelineBar(drawn.track, BAR_HEIGHT)
-			drawn.bars[i] = barView
-		end
+		local barView = ns.BoardPooled(drawn.bars, i, function()
+			return ns.NewBoardTimelineBar(drawn.track, BAR_HEIGHT)
+		end)
 		barView:ClearAllPoints()
 		barView:SetPoint("LEFT", bar.from * width, 0)
 		barView:SetBar(bar.style, math.max(2, (bar.to - bar.from) * width))
-		barView:Show()
 	end
-	for i = #row.bars + 1, #drawn.bars do
-		drawn.bars[i]:Hide()
-	end
+	ns.BoardHideFrom(drawn.bars, #row.bars)
 	drawn.note:SetText(row.note or "")
 	drawn.note:SetShown(row.note ~= nil)
 	drawn.nowLine:ClearAllPoints()
@@ -395,28 +369,25 @@ end
 local function drawList(view, timeline)
 	local y, rowsUsed = 0, 0
 	for i, group in ipairs(timeline.groups) do
-		local heading = view.headings[i] or newHeading(view)
-		view.headings[i] = heading
+		local heading = ns.BoardPooled(view.headings, i, function()
+			return newHeading(view)
+		end)
 		heading:ClearAllPoints()
 		heading:SetPoint("TOPLEFT", 0, -y)
 		heading.label:SetText(group.heading)
 		heading.count:SetText(tostring(group.count))
-		heading:Show()
 		y = y + HEADING_HEIGHT
 		for _, row in ipairs(group.rows) do
 			rowsUsed = rowsUsed + 1
-			local drawn = view.rows[rowsUsed] or newRow(view)
-			view.rows[rowsUsed] = drawn
+			local drawn = ns.BoardPooled(view.rows, rowsUsed, function()
+				return newRow(view)
+			end)
 			drawRow(view, drawn, row, timeline.ruler.now, y)
 			y = y + ROW_HEIGHT
 		end
 	end
-	for i = #timeline.groups + 1, #view.headings do
-		view.headings[i]:Hide()
-	end
-	for i = rowsUsed + 1, #view.rows do
-		view.rows[i]:Hide()
-	end
+	ns.BoardHideFrom(view.headings, #timeline.groups)
+	ns.BoardHideFrom(view.rows, rowsUsed)
 	view.content:SetHeight(math.max(1, y))
 end
 
@@ -473,7 +444,7 @@ ns.board:RegisterLeather("clock", function(anchor)
 	end
 	local snapshot = Pagle.GetConditions()
 	local season = ns.SeasonNow(snapshot, Pagle.GetWindowSpec, Pagle.MatchesConditions)
-	clockText:SetText(ns.TimelineClock(ns.TimelineNow(), snapshot, season, ns.groups:IsPaused()))
+	clockText:SetText(ns.TimelineClock(ns.ViewNow(), snapshot, season, ns.groups:IsPaused()))
 end)
 
 -- The leather's "show completed" checkbox (HNT-R61, HNT-R82): the saved filter, which a click saves and redraws.

@@ -5,8 +5,6 @@ local ns = select(2, ...)
 if not Pagle then
 	return
 end
----@class Pagle
-local Pagle = Pagle
 
 -- The tracker dock on the client (CORE-R70–R72): one invisible anchor frame on UIParent, under the minimap cluster
 -- or at dock.point, that each docked tracker frame is anchored to, top to bottom. Core reparents no tracker: it only
@@ -25,21 +23,9 @@ ns.dockFrame = anchor
 ---@type table? the docked frame whose Shift-drag is moving the dock, while one is
 local dragged
 
----@param frame table
----@return boolean
-local function isShown(frame)
-	return frame:IsShown()
-end
-
----@param frame table
----@return number, number
-local function sizeOf(frame)
-	return frame:GetWidth(), frame:GetHeight()
-end
-
 -- Anchors each shown tracker in its place in the stack, and sizes the anchor to the stack (1 px with nothing in it).
 local function reflow()
-	local layout = ns.dock:Layout(isShown, sizeOf)
+	local layout = ns.dock:Layout()
 	for _, placement in ipairs(layout.placements) do
 		local frame = placement.tracker.frame
 		frame:ClearAllPoints()
@@ -112,9 +98,6 @@ local function watch(tracker)
 end
 
 ns.WireDock(ns.host, {
-	isRestricted = function()
-		return Pagle.IsRestricted()
-	end,
 	watch = watch,
 	reflow = reflow,
 	place = place,

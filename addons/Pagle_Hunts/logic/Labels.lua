@@ -8,7 +8,8 @@ local ns = select(2, ...)
 -- Labels in realm time (HNT-R50–R55): every piece of text Hunts derives for a Hunt. Pure logic (CORE-R7): each
 -- function takes its case's inputs (a row's group, aura up, NextWindow result and skill, the time now and one live
 -- snapshot), and the names it needs come from a HuntNameSources table, which adapter/Names.lua builds as ns.names.
--- Hunts shares no code with the Ledger (ADR 0001), so its date arithmetic is its own.
+-- Hunts shares no code with the Ledger (ADR 0001), so its date arithmetic is its own: ns.CivilFromDays
+-- (logic/Titles.lua) and daysFromCivil here.
 
 local MINUTES_PER_DAY = 1440
 local SECONDS_PER_DAY = 86400
@@ -40,29 +41,6 @@ local function daysFromCivil(year, month, day)
 	return era * 146097 + dayOfEra - 719468
 end
 
--- The date of a count of days since 1970-01-01 (Howard Hinnant's civil_from_days), with its weekday: 1970-01-01 was a
--- Thursday (5).
----@param days integer
----@return HuntRealmDate
-local function civilFromDays(days)
-	local z = days + 719468
-	local era = math.floor(z / 146097)
-	local dayOfEra = z - era * 146097
-	local yearOfEra = math.floor(
-		(dayOfEra - math.floor(dayOfEra / 1460) + math.floor(dayOfEra / 36524) - math.floor(dayOfEra / 146096)) / 365
-	)
-	local dayOfYear = dayOfEra - (365 * yearOfEra + math.floor(yearOfEra / 4) - math.floor(yearOfEra / 100))
-	local monthFromMarch = math.floor((5 * dayOfYear + 2) / 153)
-	local day = dayOfYear - math.floor((153 * monthFromMarch + 2) / 5) + 1
-	local month = monthFromMarch < 10 and monthFromMarch + 3 or monthFromMarch - 9
-	return {
-		year = yearOfEra + era * 400 + (month <= 2 and 1 or 0),
-		month = month,
-		day = day,
-		weekday = (days + 4) % 7 + 1,
-	}
-end
-
 --- The realm clock at server time `t`, from one live snapshot (HNT-R50): minute of day `(minute + floor((t - time)
 --- / 60)) mod 1440`, and the snapshot's date moved by the whole days that adds. With no realm minute or date (a
 --- secret clock), UTC's.
@@ -72,13 +50,16 @@ end
 function ns.RealmClockAt(t, snapshot)
 	local date = snapshot.date
 	if snapshot.minute == nil or date == nil then
-		return { minute = math.floor(t / 60) % MINUTES_PER_DAY, date = civilFromDays(math.floor(t / SECONDS_PER_DAY)) }
+		return {
+			minute = math.floor(t / 60) % MINUTES_PER_DAY,
+			date = ns.CivilFromDays(math.floor(t / SECONDS_PER_DAY)),
+		}
 	end
 	local total = snapshot.minute + math.floor((t - snapshot.time) / 60)
 	local days = math.floor(total / MINUTES_PER_DAY)
 	return {
 		minute = total % MINUTES_PER_DAY,
-		date = civilFromDays(daysFromCivil(date.year, date.month, date.day) + days),
+		date = ns.CivilFromDays(daysFromCivil(date.year, date.month, date.day) + days),
 	}
 end
 
@@ -97,6 +78,16 @@ function ns.FormatDuration(seconds)
 	end
 	local days, hours = math.floor(minutes / MINUTES_PER_DAY), math.floor(minutes % MINUTES_PER_DAY / 60)
 	return hours == 0 and L.DURATION_DAYS:format(days) or L.DURATION_DAYS_HOURS:format(days, hours)
+end
+
+--- A count in its singular or plural string, `L[key .. "_ONE"]` or `L[key .. "_OTHER"]`, with its number written by
+--- `format` (tostring by default): "1 title", "3 Hunts completed".
+---@param n integer
+---@param key string
+---@param format (fun(n: integer): string)?
+---@return string
+function ns.CountText(n, key, format)
+	return ns.L[key .. (n == 1 and "_ONE" or "_OTHER")]:format((format or tostring)(n))
 end
 
 --- A minute of day as a 24-hour clock time, "06:00" (HNT-R50).
@@ -166,22 +157,46 @@ function ns.FormatRealmWhen(t, now, snapshot)
 	return ns.L.WEEKDAY_CLOCK:format(ns.FormatWeekday(clock.date), time)
 end
 
--- Tunables: the Soon horizon (HNT-R40), the month wording beyond (HNT-R51) and the lure reach (HNT-R33, HNT-R52).
-local SOON_HORIZON = 3 * 3600
+-- Tunables: the month wording beyond (HNT-R51). The Soon horizon (HNT-R40) and the lure reach (HNT-R33) are the
+-- grouping's (ns.SOON_HORIZON, ns.LURE_REACH): a row's case carries its verdicts.
 local MONTH_WORDING_BEYOND = 7 * SECONDS_PER_DAY
-local LURE_REACH = 100
 
---- A row's case, as the label functions take it: the inputs of HNT-R40's grouping and HNT-R33's skill, from ticket
---- #189's rows and ticket #187's skill need, so this file waits on neither.
+--- A row's case, as the label functions take it: the grouping's verdicts on the row (HNT-R40's group and aura up,
+--- HNT-R33's short of skill and lure reach), its window, and the skill numbers the window line says. Built by
+--- ns.LabelCase.
 ---@class HuntLabelCase
----@field group "now"|"soon"|"later"|"onDemand" HNT-R40's group
----@field auraUp boolean? Now through an aura (HNT-R40's "aura up")
+---@field group HuntGroup HNT-R40's group
+---@field auraUp boolean? Now through an aura (HNT-R40's "aura up"); short of skill, it would be (HNT-R52)
 ---@field window Window? `Pagle.NextWindow(boardSpec, now)`; nil with none or no board spec
 ---@field spec table? the board spec (HNT-R6), for its auras
+---@field short boolean? short of skill (HNT-R33), as the grouping found it
+---@field lureGetsThere boolean? short by at most the lure reach (HNT-R33)
 ---@field need integer? the skill need (HNT-R32), nil with none
----@field best integer? the Angler's `bestBaseSkill` (HNT-R33)
+---@field best integer? the Angler's `bestBaseSkill` (HNT-R33), for the window line's "my best is"
 ---@field now integer server time now
 ---@field snapshot table one live `Pagle.GetConditions()` (HNT-R50)
+
+--- A grouping row's label case (HNT-R51, HNT-R52): every view's labels read the row the same way.
+---@param row HuntRow
+---@param where HuntWhere the row's Hunt's (ns.where[row.id])
+---@param now integer server time the labels count from
+---@param snapshot table one live `Pagle.GetConditions()`
+---@param best integer? the Angler's `bestBaseSkill`, for the window line; the margin and tracker labels don't read it
+---@return HuntLabelCase
+function ns.LabelCase(row, where, now, snapshot, best)
+	return {
+		group = row.group,
+		auraUp = row.auraUp,
+		window = row.window,
+		spec = where.boardSpec,
+		short = row.short,
+		lureGetsThere = row.lureGetsThere,
+		need = where.skillNeed,
+		best = best,
+		now = now,
+		snapshot = snapshot,
+	}
+end
 
 --- The names the labels read, each nil while the client hasn't given it: adapter/Names.lua builds them (ns.names).
 ---@class HuntNameSources
@@ -191,35 +206,18 @@ local LURE_REACH = 100
 ---@field AuraName fun(spellID: integer): string?           -- C_Spell.GetSpellName (HNT-R52, HNT-R53)
 ---@field EventName fun(eventID: integer): string|false|nil -- the calendar's; false when not found, nil before (HNT-R53)
 ---@field BandName fun(band: integer): string?              -- Pagle.SIZE_BANDS[band].name (HNT-R54)
----@field QualityColor fun(quality: integer): table?        -- ITEM_QUALITY_COLORS[quality] (HNT-R55)
+---@field QualityColor fun(quality: integer): number[]?     -- ITEM_QUALITY_COLORS[quality] as { r, g, b } (HNT-R55)
 ---@field NextWindow fun(spec: table, fromTime: integer): Window? -- Pagle.NextWindow (HNT-R53)
-
--- Whether a case is short of skill (HNT-R33): a skill need above the best.
----@param c HuntLabelCase
----@return boolean
-local function isShort(c)
-	return c.need ~= nil and c.need > (c.best or 0)
-end
 
 -- The group a short-of-skill row would have without its skill (HNT-R40's rules 2–6), for the window line, which
 -- ignores skill (HNT-R52).
 ---@param c HuntLabelCase
----@return "now"|"soon"|"later"|"onDemand"
+---@return HuntGroup
 local function groupIgnoringSkill(c)
-	local window = c.window
-	if window == nil then
+	if c.window == nil then
 		return "later"
-	elseif window.onDemand then
-		return c.auraUp and "now" or "onDemand"
-	elseif window.always then
-		return "now"
-	elseif window.openNow then
-		local auras = c.spec and c.spec.auras
-		return (auras and not c.auraUp) and "onDemand" or "now"
-	elseif window.opensAt and window.opensAt - c.now <= SOON_HORIZON then
-		return "soon"
 	end
-	return "later"
+	return (ns.WindowGroup(c.spec or {}, c.window, c.auraUp == true, c.now))
 end
 
 -- A case's row of HNT-R51's table (HNT-R52's when `ignoreSkill`): "short", "auraUp", "onDemand", "always",
@@ -229,7 +227,7 @@ end
 ---@return string
 local function rowOf(c, ignoreSkill)
 	local group = c.group
-	if isShort(c) then
+	if c.short then
 		if not ignoreSkill then
 			return "short"
 		end
@@ -339,10 +337,9 @@ function ns.HuntWindowLine(c, sources)
 	else
 		line = L.LINE_NO_DATE
 	end
-	if isShort(c) then
-		local best = c.best or 0
-		line = line .. " " .. L.LINE_NEEDS:format(c.need, best)
-		if c.need - best <= LURE_REACH then
+	if c.short then
+		line = line .. " " .. L.LINE_NEEDS:format(c.need, c.best or 0)
+		if c.lureGetsThere then
 			line = line .. " " .. L.LINE_LURE
 		end
 	end
@@ -465,7 +462,9 @@ local GENERATED = {
 	["quality.rare"] = { text = "TARGET_RARE", quality = 3 },
 	["species.any"] = { text = "TARGET_ANY" },
 }
-local TRADE_FISHING = "Interface\\Icons\\Trade_Fishing"
+--- The generic fish icon (HNT-R55): a generated class's, and a Hunt moment's with no Catch.
+ns.TRADE_FISHING = "Interface\\Icons\\Trade_Fishing"
+local TRADE_FISHING = ns.TRADE_FISHING
 
 -- A fixed class's members in ascending item ID order: the list holds them as a set (DATA-R93), and the target line
 -- and the icon need one order ("first member", HNT-R55).
@@ -508,12 +507,12 @@ end
 
 --- A Hunt's icon and its tint (HNT-R55): a `species` target's item icon; a fixed class's first member's; a generated
 --- class's Trade_Fishing, tinted with ITEM_QUALITY_COLORS[2] for `quality.uncommon` and [3] for `quality.rare`.
---- The board's sepia tint on item icons is the board's (ticket #191).
+--- The board's sepia tint on item icons is the board's (adapter/BoardWidgets.lua).
 ---@param hunt HuntDef
 ---@param list HuntList for a fixed class's members
 ---@param sources HuntNameSources
 ---@return integer|string? icon
----@return table? tint a color with r, g and b; nil for none
+---@return number[]? tint { r, g, b }, as the board's tints; nil for none
 function ns.HuntIcon(hunt, list, sources)
 	if hunt.species then
 		return sources.ItemIcon(hunt.species)

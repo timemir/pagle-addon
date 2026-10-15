@@ -32,29 +32,9 @@ local function coreWithModules(options)
 	return loaded
 end
 
--- A registered Settings page by name.
-local function page(loaded, name)
-	return assert(loaded.client.settings.category(name), "no page " .. name)
-end
-
 -- Shows Look and Feel as the panel does, and returns its rows.
 local function showLook(loaded)
-	return loaded.client.settings.show(page(loaded, "Look and Feel"))
-end
-
--- A slot dropdown row's dropdown (the fake's DropdownButton, spec/support/widgets.lua).
-local function dropdownOf(row)
-	for _, child in ipairs(row.frame.children) do
-		if child.kind == "DropdownButton" then
-			return child
-		end
-	end
-	error("no dropdown on " .. row.initializer:GetName())
-end
-
--- The texts a slot dropdown row shows under its label and dropdown: its note while shown.
-local function notes(row, settings)
-	return { select(3, unpack(settings.textsOf(row.frame))) }
+	return loaded.client.settings.show(loaded.client.settings.page("Look and Feel"))
 end
 
 -- Each shown row as one line: a header "# <name>", a paragraph's text, a slot dropdown "<label> = <selected good>"
@@ -66,8 +46,8 @@ local function lines(rows, settings)
 		if initializer.template == "SettingsListSectionHeaderTemplate" then
 			out[#out + 1] = "# " .. initializer:GetName()
 		elseif initializer.template == "PagleSettingsSlotRowTemplate" then
-			out[#out + 1] = ("%s = %s"):format(initializer:GetName(), tostring(dropdownOf(row).selected))
-			for _, text in ipairs(notes(row, settings)) do
+			out[#out + 1] = ("%s = %s"):format(initializer:GetName(), tostring(settings.dropdownOf(row).selected))
+			for _, text in ipairs(settings.notesOf(row)) do
 				out[#out + 1] = "  " .. text
 			end
 		elseif initializer.template == "SettingButtonControlTemplate" then
@@ -81,21 +61,6 @@ local function lines(rows, settings)
 	return out
 end
 
--- The shown row whose label is `label`.
-local function rowNamed(rows, label)
-	for _, row in ipairs(rows) do
-		if row.initializer:GetName() == label then
-			return row
-		end
-	end
-	error("no row " .. label)
-end
-
--- The values of a slot dropdown's choices, read as the dropdown opens.
-local function optionValues(row)
-	return dropdownOf(row):choices()
-end
-
 describe("The Look and Feel page", function()
 	it("is registered after Announcements with no Module On (SET-R1, CORE-R40)", function()
 		local loaded = coreWithModules({ noLedger = true })
@@ -105,7 +70,7 @@ describe("The Look and Feel page", function()
 			names[i] = category.name
 		end
 		assert.are.same({ "Pagle", "Announcements", "Look and Feel" }, names)
-		assert.are.equal(page(loaded, "Pagle"), page(loaded, "Look and Feel").parent)
+		assert.are.equal(loaded.client.settings.page("Pagle"), loaded.client.settings.page("Look and Feel").parent)
 	end)
 
 	it(
@@ -162,7 +127,7 @@ describe("A slot dropdown", function()
 		function()
 			local loaded = coreWithModules()
 
-			local row = rowNamed(showLook(loaded), "Journal binding")
+			local row = loaded.client.settings.rowNamed(showLook(loaded), "Journal binding")
 
 			assert.are.equal("PagleSettingsSlotRowTemplate", row.initializer:GetTemplate())
 			assert.are.equal("PagleSettingsSlotRowMixin", loaded.client.templates.PagleSettingsSlotRowTemplate.mixin)
@@ -178,42 +143,48 @@ describe("A slot dropdown", function()
 
 	it("lists only the slot's owned goods, read each time it opens (SET-R51, SHOP-R30)", function()
 		local loaded = coreWithModules()
-		local row = rowNamed(showLook(loaded), "Journal binding")
-		assert.are.same({ "ledger.binding.oak=Oak" }, optionValues(row))
+		local row = loaded.client.settings.rowNamed(showLook(loaded), "Journal binding")
+		assert.are.same({ "ledger.binding.oak=Oak" }, loaded.client.settings.optionValues(row))
 
 		loaded.ns.goods:SetPurchased({ ["ledger.binding.ivy"] = true })
 
-		assert.are.same({ "ledger.binding.oak=Oak", "ledger.binding.ivy=Ivy" }, optionValues(row))
+		assert.are.same(
+			{ "ledger.binding.oak=Oak", "ledger.binding.ivy=Ivy" },
+			loaded.client.settings.optionValues(row)
+		)
 	end)
 
 	it("equips the good picked, and shows the equipped one with its name (SET-R51, SHOP-R32)", function()
 		local loaded = coreWithModules()
 		loaded.ns.goods:SetPurchased({ ["ledger.binding.lapis"] = true })
-		local row = rowNamed(showLook(loaded), "Journal binding")
+		local row = loaded.client.settings.rowNamed(showLook(loaded), "Journal binding")
 
-		dropdownOf(row):pick("Lapis")
+		loaded.client.settings.dropdownOf(row):pick("Lapis")
 
 		assert.are.equal("ledger.binding.lapis", loaded.env.Pagle.GetEquipped("ledger.binding"))
-		assert.are.equal("Lapis", dropdownOf(row).text)
+		assert.are.equal("Lapis", loaded.client.settings.dropdownOf(row).text)
 	end)
 
 	it("redraws at once when SetEquipped is called elsewhere (SET-R51, SET-R62, SHOP-R33)", function()
 		local loaded = coreWithModules()
 		loaded.ns.goods:SetPurchased({ ["ledger.binding.ivy"] = true })
-		local row = rowNamed(showLook(loaded), "Journal binding")
+		local row = loaded.client.settings.rowNamed(showLook(loaded), "Journal binding")
 
 		loaded.env.Pagle.SetEquipped("ledger.binding", "ledger.binding.ivy")
 
-		assert.are.same({ "ledger.binding.ivy", "Ivy" }, { dropdownOf(row).selected, dropdownOf(row).text })
+		assert.are.same(
+			{ "ledger.binding.ivy", "Ivy" },
+			{ loaded.client.settings.dropdownOf(row).selected, loaded.client.settings.dropdownOf(row).text }
+		)
 	end)
 
 	it("shows no note once every good for sale in the slot is owned (SET-R51)", function()
 		local loaded = coreWithModules()
 		loaded.ns.goods:SetPurchased({ ["ledger.binding.ivy"] = true, ["ledger.binding.lapis"] = true })
 
-		local row = rowNamed(showLook(loaded), "Journal binding")
+		local row = loaded.client.settings.rowNamed(showLook(loaded), "Journal binding")
 
-		assert.are.same({}, notes(row, loaded.client.settings))
+		assert.are.same({}, loaded.client.settings.notesOf(row))
 	end)
 end)
 
@@ -222,7 +193,7 @@ describe("The Announcements page's slot rows", function()
 		local loaded = coreWithModules()
 
 		local names = {}
-		for i, row in ipairs(loaded.client.settings.show(page(loaded, "Announcements"))) do
+		for i, row in ipairs(loaded.client.settings.show(loaded.client.settings.page("Announcements"))) do
 			names[i] = row.initializer:GetName()
 		end
 
@@ -240,11 +211,17 @@ describe("The Announcements page's slot rows", function()
 	it("pick the same look Look and Feel shows (SET-R30, SET-R51)", function()
 		local loaded = coreWithModules()
 		loaded.ns.goods:SetPurchased({ ["core.toaststyle.ripple"] = true })
-		local toast = rowNamed(loaded.client.settings.show(page(loaded, "Announcements")), "Toast style")
+		local toast = loaded.client.settings.rowNamed(
+			loaded.client.settings.show(loaded.client.settings.page("Announcements")),
+			"Toast style"
+		)
 
-		dropdownOf(toast):pick("core.toaststyle.ripple")
+		loaded.client.settings.dropdownOf(toast):pick("core.toaststyle.ripple")
 
-		assert.are.equal("core.toaststyle.ripple", dropdownOf(rowNamed(showLook(loaded), "Toast style")).selected)
+		assert.are.equal(
+			"core.toaststyle.ripple",
+			loaded.client.settings.dropdownOf(loaded.client.settings.rowNamed(showLook(loaded), "Toast style")).selected
+		)
 		assert.are.equal("core.toaststyle.ripple", loaded.env.Pagle.GetEquipped("core.toaststyle"))
 	end)
 end)
@@ -283,7 +260,7 @@ describe("Defaults", function()
 			assert.are.equal("ledger.binding.lapis", Pagle.GetEquipped("ledger.binding"))
 			showLook(loaded)
 
-			loaded.client.settings.defaults(page(loaded, "Look and Feel"))
+			loaded.client.settings.defaults(loaded.client.settings.page("Look and Feel"))
 
 			assert.are.same({
 				"core.toaststyle.timber",
@@ -305,7 +282,7 @@ describe("Defaults", function()
 		loaded.ns.goods:SetPurchased(BOUGHT)
 		showLook(loaded)
 
-		loaded.client.settings.defaults(page(loaded, "Look and Feel"))
+		loaded.client.settings.defaults(loaded.client.settings.page("Look and Feel"))
 
 		assert.are.equal("hunts.cover.velvet", loaded.ns.db.profile.appearance["hunts.cover"])
 	end)
@@ -315,7 +292,7 @@ describe("Defaults", function()
 		loaded.ns.goods:SetPurchased(BOUGHT)
 		local Pagle = loaded.env.Pagle
 
-		loaded.client.settings.defaults(page(loaded, "Announcements"))
+		loaded.client.settings.defaults(loaded.client.settings.page("Announcements"))
 
 		assert.are.same({
 			"core.toaststyle.timber",
@@ -334,7 +311,9 @@ end)
 describe("The Curio Shop button", function()
 	-- Look and Feel's button row, shown.
 	local function shopButton(loaded)
-		return loaded.client.settings.buttonsOf(rowNamed(showLook(loaded), "Buy more looks with Pagle Coins").frame)[1]
+		return loaded.client.settings.buttonsOf(
+			loaded.client.settings.rowNamed(showLook(loaded), "Buy more looks with Pagle Coins").frame
+		)[1]
 	end
 
 	it("closes the Settings panel, then opens the Curio Shop (SET-R50, SET-R12, SHOP-R40)", function()

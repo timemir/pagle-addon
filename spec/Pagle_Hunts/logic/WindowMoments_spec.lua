@@ -6,13 +6,13 @@
 local hunts = dofile("spec/Pagle_Hunts/support.lua")
 
 local ns = hunts.load().ns
-local HOUR = 3600
+local HOUR = hunts.HOUR
 
 -- Sunday 11 October 2026 at realm 08:15 (FakePagle's clock), as a live snapshot (LOG-R45).
-local NOW = 1791731700
-local SNAPSHOT = { time = NOW, minute = 8 * 60 + 15, date = { year = 2026, month = 10, day = 11, weekday = 1 } }
+local NOW = SERVER_TIME
+local SNAPSHOT = hunts.SUNDAY
 
--- A HuntRow as ticket #189's grouping makes it, with the fields the comparison reads.
+-- A HuntRow as ns.NewGroups' grouping makes it, with the fields the comparison reads.
 local function row(id, window, fields)
 	local r = { id = id, group = "later", window = window, auraUp = false, short = false, pinned = false }
 	for key, value in pairs(fields or {}) do

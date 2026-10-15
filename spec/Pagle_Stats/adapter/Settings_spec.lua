@@ -104,23 +104,9 @@ local function coreWithStats()
 	return loaded
 end
 
-local function trackersPage(loaded)
-	return assert(loaded.client.settings.category("Trackers"), "no Trackers page")
-end
-
 -- The Trackers page drawn in the panel.
 local function showTrackers(loaded)
-	return loaded.client.settings.show(trackersPage(loaded))
-end
-
--- The drawn row named `label`.
-local function rowNamed(rows, label)
-	for _, row in ipairs(rows) do
-		if row.initializer:GetName() == label then
-			return row
-		end
-	end
-	error("no row " .. label)
+	return loaded.client.settings.show(loaded.client.settings.page("Trackers"))
 end
 
 -- What a drawn row shows.
@@ -155,14 +141,14 @@ describe("Stats' section on the Trackers page, in the panel", function()
 				{ "Tracker position", "Stats", "Show the live tracker", "  Watched Dry spells", "Stats tracker frame" },
 				names
 			)
-			assert.is_false(rowNamed(rows, "Show the live tracker").frame.value)
+			assert.is_false(loaded.client.settings.rowNamed(rows, "Show the live tracker").frame.value)
 		end
 	)
 
 	it('reads "0 of 3" and the line for none, with no watches (SET-R42)', function()
 		local loaded = coreWithStats()
 
-		local row = rowNamed(showTrackers(loaded), "Watched Dry spells")
+		local row = loaded.client.settings.rowNamed(showTrackers(loaded), "Watched Dry spells")
 
 		assert.are.same({ "Watched Dry spells", "0 of 3", NONE }, texts(loaded, row))
 		assert.are.same({}, stopButtons(loaded, row))
@@ -173,7 +159,7 @@ describe("Stats' section on the Trackers page, in the panel", function()
 		loaded.ns.Watch(NIGHTFIN, DARKSHORE)
 		loaded.ns.Watch(FIREFIN, AUBERDINE)
 
-		local row = rowNamed(showTrackers(loaded), "Watched Dry spells")
+		local row = loaded.client.settings.rowNamed(showTrackers(loaded), "Watched Dry spells")
 
 		assert.are.same({
 			"Watched Dry spells",
@@ -190,7 +176,7 @@ describe("Stats' section on the Trackers page, in the panel", function()
 		"redraws at once, within its height, when a watch is added while it shows (SET-R6, SET-R62, stats.md › Settings)",
 		function()
 			local loaded = coreWithStats()
-			local row = rowNamed(showTrackers(loaded), "Watched Dry spells")
+			local row = loaded.client.settings.rowNamed(showTrackers(loaded), "Watched Dry spells")
 
 			loaded.ns.Watch(FIREFIN, AUBERDINE)
 
@@ -202,7 +188,7 @@ describe("Stats' section on the Trackers page, in the panel", function()
 		local loaded = coreWithStats()
 		loaded.ns.Watch(NIGHTFIN, DARKSHORE)
 		loaded.ns.Watch(FIREFIN, AUBERDINE)
-		local row = rowNamed(showTrackers(loaded), "Watched Dry spells")
+		local row = loaded.client.settings.rowNamed(showTrackers(loaded), "Watched Dry spells")
 
 		stopButtons(loaded, row)[1]:Click()
 
@@ -219,26 +205,26 @@ describe("Stats' section on the Trackers page, in the panel", function()
 		local loaded = coreWithStats()
 		loaded.ns.Watch(NIGHTFIN, DARKSHORE)
 		local rows = showTrackers(loaded)
-		local checkbox = rowNamed(rows, "Show the live tracker")
+		local checkbox = loaded.client.settings.rowNamed(rows, "Show the live tracker")
 
 		checkbox.initializer:GetSetting():SetValue(false)
 
-		local row = rowNamed(rows, "Watched Dry spells")
+		local row = loaded.client.settings.rowNamed(rows, "Watched Dry spells")
 		assert.is_true(row.frame.enabled)
-		assert.is_true(rowNamed(showTrackers(loaded), "Watched Dry spells").frame.enabled)
+		assert.is_true(loaded.client.settings.rowNamed(showTrackers(loaded), "Watched Dry spells").frame.enabled)
 	end)
 
 	it("is found by Blizzard's settings search by its label (SET-R5)", function()
 		local loaded = coreWithStats()
 
-		local row = rowNamed(showTrackers(loaded), "Watched Dry spells")
+		local row = loaded.client.settings.rowNamed(showTrackers(loaded), "Watched Dry spells")
 
 		assert.are.same({ "WATCHED DRY SPELLS" }, row.initializer.searchTags)
 	end)
 
 	it("shows its tooltip on hover (stats.md › Settings)", function()
 		local loaded = coreWithStats()
-		local row = rowNamed(showTrackers(loaded), "Watched Dry spells")
+		local row = loaded.client.settings.rowNamed(showTrackers(loaded), "Watched Dry spells")
 
 		row.frame:GetScript("OnEnter")(row.frame)
 
@@ -258,10 +244,10 @@ describe("Stats' section on the Trackers page, in the panel", function()
 		loaded.ns.Watch(FIREFIN, AUBERDINE)
 		local rows = showTrackers(loaded)
 
-		loaded.client.settings.defaults(trackersPage(loaded))
+		loaded.client.settings.defaults(loaded.client.settings.page("Trackers"))
 
 		assert.is_false(loaded.ns.db.profile.tracker)
-		assert.is_false(rowNamed(rows, "Show the live tracker").frame.value)
+		assert.is_false(loaded.client.settings.rowNamed(rows, "Show the live tracker").frame.value)
 		assert.are.same({
 			"Watched Dry spells",
 			"2 of 3",
@@ -269,6 +255,6 @@ describe("Stats' section on the Trackers page, in the panel", function()
 			STOP,
 			"Firefin Snapper, Auberdine",
 			STOP,
-		}, texts(loaded, rowNamed(showTrackers(loaded), "Watched Dry spells")))
+		}, texts(loaded, loaded.client.settings.rowNamed(showTrackers(loaded), "Watched Dry spells")))
 	end)
 end)

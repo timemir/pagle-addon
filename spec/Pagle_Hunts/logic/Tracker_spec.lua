@@ -54,13 +54,9 @@ describe("the Hunts tracker's lines", function()
 			return {
 				rows = rows,
 				time = SERVER_TIME,
-				snapshot = {
-					time = SERVER_TIME,
-					minute = 495,
-					date = { year = 2026, month = 10, day = 11, weekday = 1 },
-				},
+				snapshot = hunts.SUNDAY,
 				updating = false,
-				state = { casts = 0, coins = 0, hunts = {}, sets = {} },
+				state = ns.NewHuntsState(),
 				list = ns.hunts,
 				where = where,
 				sources = { ItemName = function() end, BandName = function() end },
@@ -102,13 +98,13 @@ describe("the Hunts tracker's lines", function()
 			assert.are.same({ hunts = {}, more = 0, empty = true }, ns.TrackerLines(input({}, {})))
 		end)
 
-		it('dots an On demand row in the board\'s blue "demand" colour', function()
+		it("dots a row by its group, On demand's in the board's blue (HNT-R76)", function()
 			local onDemand = row("fixture_rack", false)
 			onDemand.group = "onDemand"
 
 			local lines = ns.TrackerLines(input({ onDemand }, { fixture_rack = { zones = {} } }))
 
-			assert.are.same({ "demand", "fixture_rack · on demand" }, { lines.hunts[1].dot, lines.hunts[1].first })
+			assert.are.same({ "onDemand", "fixture_rack · on demand" }, { lines.hunts[1].dot, lines.hunts[1].first })
 		end)
 	end)
 end)

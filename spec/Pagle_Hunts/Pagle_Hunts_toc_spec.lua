@@ -34,7 +34,7 @@ describe("Pagle_Hunts.toc", function()
 		assert.are.equal("@project-version@", fields.Version)
 	end)
 
-	it("names the Module Hunts in its Notes, the glossary's word, not a variant on its Avoid list", function()
+	it("names the Module Hunts in its Notes, the glossary's word, not a variant on its Avoid list (CORE-R2)", function()
 		assert.matches("^Pagle's Hunts: ", fields.Notes)
 		for _, avoided in ipairs({ "Hunt board", "Hunt module" }) do
 			assert.is_nil(fields.Notes:find(avoided, 1, true))
@@ -51,7 +51,7 @@ describe("Pagle_Hunts.toc", function()
 		assert.is_nil(fields.LoadOnDemand)
 	end)
 
-	it("is titled Pagle Hunts, as the Ledger's is Pagle Ledger", function()
+	it("is titled Pagle Hunts, as the Ledger's is Pagle Ledger (CORE-R2)", function()
 		assert.are.equal("Pagle Hunts", fields.Title)
 	end)
 
@@ -67,22 +67,25 @@ describe("Pagle_Hunts.toc", function()
 		assert.are.same(filesIn({ "lua" }), listed)
 	end)
 
-	it("splits its code into logic/ and adapter/, its strings in locale/ and only generated files in data/", function()
-		-- CORE-R7, CORE-R8; DATA-R75: the generator writes data/HuntList.lua (and, from the lore batch, data/Lore.lua).
-		local generated = { ["data/HuntList.lua"] = true, ["data/Lore.lua"] = true }
-		local folders, handWrittenData = {}, {}
-		for _, file in ipairs(filesIn({ "lua" })) do
-			local folder = file:match("^([^/]+)/")
-			folders[folder] = true
-			if folder == "data" and not generated[file] then
-				handWrittenData[#handWrittenData + 1] = file
+	it(
+		"splits its code into logic/ and adapter/, its strings in locale/, generated files in data/ (CORE-R7, CORE-R8, DATA-R75)",
+		function()
+			-- The generator writes data/HuntList.lua (and, from the lore batch, data/Lore.lua).
+			local generated = { ["data/HuntList.lua"] = true, ["data/Lore.lua"] = true }
+			local folders, handWrittenData = {}, {}
+			for _, file in ipairs(filesIn({ "lua" })) do
+				local folder = file:match("^([^/]+)/")
+				folders[folder] = true
+				if folder == "data" and not generated[file] then
+					handWrittenData[#handWrittenData + 1] = file
+				end
 			end
-		end
-		folders.data = nil
+			folders.data = nil
 
-		assert.are.same({ adapter = true, locale = true, logic = true }, folders)
-		assert.are.same({}, handWrittenData)
-	end)
+			assert.are.same({ adapter = true, locale = true, logic = true }, folders)
+			assert.are.same({}, handWrittenData)
+		end
+	)
 
 	it("lists its generated Lore.lua right after locale/enUS.lua, the file that creates ns.L (DATA-R75)", function()
 		-- DATA-R104, HNT-R130: the lore extends ns.L, so it loads after the locale and before any code reads a name.

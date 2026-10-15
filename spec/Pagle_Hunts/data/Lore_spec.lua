@@ -3,16 +3,16 @@
 -- description of each of Hunts' goods, from data/lore/hunts.toml: the M5 batch (DATA-R111). Read from the shipped
 -- Hunt list, without the fixture.
 
--- HNT-R121: Hunts' seven goods.
-local GOODS = {
-	"hunts.notebookcover.leather",
-	"hunts.notebookcover.oilcloth",
-	"hunts.notebookcover.tooled",
-	"hunts.notebookcover.verdigris",
-	"hunts.trackerframe.none",
-	"hunts.trackerframe.inkwash",
-	"hunts.trackerframe.waxseal",
-}
+---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
+local hunts = dofile("spec/Pagle_Hunts/support.lua")
+
+-- HNT-R121: Hunts' seven goods (support.lua's GOODS, both slots).
+local GOODS = {}
+for _, slot in ipairs({ "hunts.notebookcover", "hunts.trackerframe" }) do
+	for _, row in ipairs(hunts.GOODS[slot]) do
+		GOODS[#GOODS + 1] = row[1]
+	end
+end
 
 describe("Hunts' committed lore (DATA-R111, its M5 batch)", function()
 	local ns

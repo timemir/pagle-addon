@@ -154,7 +154,7 @@ describe("the board's art kit", function()
 
 			assert.has_error(function()
 				ns.NewBoardTimelineBar(parent, 12):SetBar("dotted", 40)
-			end)
+			end, "a timeline bar has no style dotted")
 		end)
 	end)
 
@@ -164,15 +164,14 @@ describe("the board's art kit", function()
 			local trims = ns.BOARD_LOOK.trims
 
 			assert.is_nil(ns.BoardTrimColor(nil))
-			assert.is_nil(ns.BoardTrimColor(0))
-			assert.are.equal(trims[1], ns.BoardTrimColor(1))
-			assert.are.equal(trims[2], ns.BoardTrimColor(2))
-			assert.are.equal(trims[3], ns.BoardTrimColor(3))
-			assert.are.equal(trims[3], ns.BoardTrimColor(5))
+			assert.are.equal(trims.bronze, ns.BoardTrimColor(ns.Trim(1)))
+			assert.are.equal(trims.silver, ns.BoardTrimColor(ns.Trim(2)))
+			assert.are.equal(trims.gold, ns.BoardTrimColor(ns.Trim(3)))
+			assert.are.equal(trims.gold, ns.BoardTrimColor(ns.Trim(5)))
 			-- variant E's bronze, silver and gold
-			assert.are.same({ 0xa8 / 255, 0x65 / 255, 0x2a / 255 }, trims[1])
-			assert.are.same({ 0xc9 / 255, 0xcc / 255, 0xd3 / 255 }, trims[2])
-			assert.are.same({ 0xf2 / 255, 0xc2 / 255, 0x30 / 255 }, trims[3])
+			assert.are.same({ 0xa8 / 255, 0x65 / 255, 0x2a / 255 }, trims.bronze)
+			assert.are.same({ 0xc9 / 255, 0xcc / 255, 0xd3 / 255 }, trims.silver)
+			assert.are.same({ 0xf2 / 255, 0xc2 / 255, 0x30 / 255 }, trims.gold)
 		end)
 
 		it("ring an icon in its highest tier's trim, and nothing before the first", function()
@@ -181,9 +180,9 @@ describe("the board's art kit", function()
 			assert.is_false(icon.trim:IsShown())
 
 			for tier = 1, 3 do
-				icon:SetTrim(tier)
+				icon:SetTrim(ns.Trim(tier))
 				assert.is_true(icon.trim:IsShown())
-				assert.are.same(rgba(ns.BOARD_LOOK.trims[tier]), icon.trim.color)
+				assert.are.same(rgba(ns.BOARD_LOOK.trims[ns.Trim(tier)]), icon.trim.color)
 				assert.are.equal(2, #shown(icon.rings))
 			end
 			icon:SetTrim(nil)
@@ -196,9 +195,9 @@ describe("the board's art kit", function()
 			local ns, parent = kit()
 			local diamond = ns.NewBoardDiamond(parent, 14)
 
-			diamond:SetDiamond(2, true)
-			assert.are.same(rgba(ns.BOARD_LOOK.trims[2]), diamond.face.color)
-			diamond:SetDiamond(2, false)
+			diamond:SetDiamond("silver", true)
+			assert.are.same(rgba(ns.BOARD_LOOK.trims.silver), diamond.face.color)
+			diamond:SetDiamond("silver", false)
 			assert.are.same(rgba(ns.BOARD_LOOK.paper), diamond.face.color)
 		end)
 	end)
@@ -232,7 +231,7 @@ describe("the board's art kit", function()
 				now = { 0x4c, 0xc9, 0x4c },
 				soon = { 0xff, 0xb7, 0x33 },
 				later = { 0x9a, 0x9a, 0x9a },
-				demand = { 0x6f, 0xb6, 0xff },
+				onDemand = { 0x6f, 0xb6, 0xff },
 			}
 
 			for group, bytes in pairs(expected) do
@@ -252,7 +251,7 @@ describe("the board's art kit", function()
 
 			assert.has_error(function()
 				ns.NewBoardDot(parent, 8):SetGroup("never")
-			end)
+			end, "no group never")
 		end)
 	end)
 
@@ -277,7 +276,7 @@ describe("the board's art kit", function()
 
 			assert.has_error(function()
 				ns.NewBoardMark(parent, "leather", 12)
-			end)
+			end, "no mark leather")
 		end)
 
 		it("are never font glyphs: no Hunts file writes ❧ or ☚", function()

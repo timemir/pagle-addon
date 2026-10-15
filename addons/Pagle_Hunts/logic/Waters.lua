@@ -29,6 +29,7 @@ local ns = select(2, ...)
 
 ---@class PagleHuntsNS
 ---@field where table<string, HuntWhere>   -- by Hunt ID, built at OnInitialize (HNT-R137)
+---@field lookups HuntsCoreLookups        -- ns.NewLookups(Pagle, ns.hunts), built at OnInitialize
 
 -- The areaIDs of a set, ascending.
 ---@param set table<integer, true>
@@ -181,12 +182,20 @@ end
 --- Why the Hunt is unconfirmed (HNT-R34), or nil when it isn't: "window" when its window or a weekly rule its
 --- forecast read is unconfirmed (the window is an estimate), "gating" when only its gating is (a natural Hunt none of
 --- whose waters' entries has gateConfirmed). `window` is the Hunt's NextWindow result now, nil when there is none.
---- A Hunt without a board spec is never unconfirmed (HNT-R7). Reads `ns.where`.
+--- A Hunt without a board spec is never unconfirmed (HNT-R7). ns.Unconfirmed reads the Hunt's in `ns.where`;
+--- ns.UnconfirmedWhere takes it.
 ---@param hunt HuntDef
 ---@param window Window?
 ---@return "window"|"gating"|nil
 function ns.Unconfirmed(hunt, window)
-	local where = ns.where[hunt.id]
+	return ns.UnconfirmedWhere(ns.where[hunt.id], window)
+end
+
+--- ns.Unconfirmed, from the Hunt's HuntWhere (HNT-R34).
+---@param where HuntWhere
+---@param window Window?
+---@return "window"|"gating"|nil
+function ns.UnconfirmedWhere(where, window)
 	if not where.boardSpec then
 		return nil
 	end
@@ -199,6 +208,18 @@ end
 --- Tunables (hunts.md): how far a lure's skill bonus reaches, for "A lure gets me there." (HNT-R33, HNT-R52).
 ns.LURE_REACH = 100
 
+--- Whether a skill need is short of skill (HNT-R33): above the Angler's best, and whether by at most the lure reach.
+---@param need integer? the Hunt's skill need (HNT-R32); nil with none
+---@param best integer the Angler's bestBaseSkill
+---@return boolean short
+---@return boolean lureGetsThere -- short by at most the lure reach
+function ns.SkillShortfall(need, best)
+	if not need or need <= best then
+		return false, false
+	end
+	return true, need - best <= ns.LURE_REACH
+end
+
 --- Whether the Angler is short of skill for the Hunt (HNT-R33): it has a skill need above the Angler's
 --- bestBaseSkill. A function of the Angler, which changes at runtime (SkillChanged). Reads `ns.where`.
 ---@param hunt HuntDef
@@ -206,11 +227,7 @@ ns.LURE_REACH = 100
 ---@return boolean short
 ---@return boolean lureGetsThere -- short by at most the lure reach
 function ns.ShortOfSkill(hunt, angler)
-	local need = ns.where[hunt.id].skillNeed
-	if not need or need <= angler.bestBaseSkill then
-		return false, false
-	end
-	return true, need - angler.bestBaseSkill <= ns.LURE_REACH
+	return ns.SkillShortfall(ns.where[hunt.id].skillNeed, angler.bestBaseSkill)
 end
 
 --- Whether a Cast was fished in the Hunt's waters (HNT-R25, HNT-R30): its subzone or zone is one of them. A Hunt

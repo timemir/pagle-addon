@@ -5,34 +5,30 @@
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local hunts = dofile("spec/Pagle_Hunts/support.lua")
 
+local C = hunts.catalogue
+
 -- Server times (DATA-R87): 00:00 UTC on 2026-01-01 and 2026-06-01, the fixture's since and retired dates.
-local JAN_1, JUN_1 = 1767225600, 1780272000
+local JAN_1, JUN_1 = hunts.JAN_1, hunts.JUN_1
 -- 2026-03-10 00:00 UTC, a day both the fixture's Hunts that exist then and the retired one share.
 local MAR_10 = 1773100800
 
--- Catalogue items (FakePagle's generated catalogue, LOG-R55).
-local NIGHTFIN = 13759 -- Raw Nightfin Snapper, a Species
-local BLACKMOUTH = 6358 -- Oily Blackmouth, a Species
+-- Catalogue items (FakePagle's generated catalogue, LOG-R55): the fixture's Species and class members, and others.
+local NIGHTFIN, BLACKMOUTH = C.NIGHTFIN, C.BLACKMOUTH -- Raw Nightfin Snapper and Oily Blackmouth, Species
 local YELLOWTAIL, YELLOWTAIL_FOLDED = 4603, 6887 -- Raw Spotted Yellowtail, and an item folded into its Species (DATA-R19)
-local DEVIATE, WHIMSYFIN = 6522, 251524 -- the fixed.oddity members
-local SHINY = 6643 -- a container of quality 2, in the fixture's quality.uncommon
-local LEGEND_RACER = 19803 -- a Legend of quality 2, in the fixture's quality.uncommon
+local DEVIATE, WHIMSYFIN = C.DEVIATE, C.ODDITY_2 -- the fixed.oddity members
+local SHINY = C.UNCOMMON -- a container of quality 2, in the fixture's quality.uncommon
+local LEGEND_RACER = C.UNCOMMON_2 -- a Legend of quality 2, in the fixture's quality.uncommon
 local MALACHITE = 774 -- Noise of quality 2: in no generated class (DATA-R91)
 local UNCHARTED = 999999 -- no catalogue record: Uncharted (LOG-R55)
 
-local DARKSHORE = 148
+local DARKSHORE = C.DARKSHORE
 
 describe("Which Catches qualify, and a Hunt's count and tiers", function()
 	local loaded = hunts.load()
 	local ns = loaded.ns
 	local Pagle = loaded.env.Pagle
-	local lookups = {
-		GetItem = Pagle.GetItem,
-		MatchesConditions = Pagle.MatchesConditions,
-		Class = function(classID)
-			return ns.hunts:Class(classID)
-		end,
-	}
+	-- The lookups Hunts built at OnInitialize (ns.NewLookups): Core's GetItem and MatchesConditions, the list's classes.
+	local lookups = ns.lookups
 	local function hunt(id)
 		return assert(ns.hunts:Hunt(id))
 	end

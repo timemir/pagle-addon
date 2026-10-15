@@ -5,11 +5,11 @@ end
 ---@class PagleHuntsNS
 local ns = select(2, ...)
 
--- The Hunts board on the client (HNT-R60, HNT-R61, HNT-R67, HNT-R68, HNT-R70): a two-page notebook in leather, with
--- the leather's anchors above and beside the pages, drawing on each page what logic/Board.lua's router says the mode
--- shown puts there. The pages' contents are the board tickets' renderers (#193, #194, #195); this file draws only the
--- notebook. It makes no secure frames, so it opens and stays open while restricted (HNT-R68). The look follows
--- prototypes/hunts-board/ variant E, in adapter/BoardWidgets.lua's art.
+-- The Hunts board on the client (HNT-R60, HNT-R61, HNT-R67, HNT-R68, HNT-R70): a two-page notebook in leather, with the
+-- leather's anchors above and beside the pages, drawing on each page what logic/Board.lua's router says the mode shown
+-- puts there. The pages' contents are the renderers adapter/Timeline.lua, Entry.lua and Sets.lua register; this file
+-- draws only the notebook. It makes no secure frames, so it opens and stays open while restricted (HNT-R68). The look
+-- follows prototypes/hunts-board/ variant E, in adapter/BoardWidgets.lua's art.
 
 -- The frame's global name: UISpecialFrames takes names, and Esc hides the frames it lists (HNT-R60).
 local FRAME_NAME = "PagleHuntsBoard"
@@ -28,8 +28,8 @@ local COMPLETED_WIDTH, CLOCK_WIDTH = 150, 280
 -- The ribbons' column outside the leather's right edge, from below the strip.
 local RIBBONS_WIDTH, RIBBONS_TOP = 30, 50
 
---- The leather's anchors (HNT-R61), in drawing order: the timeline's ticket (#193) fills the clock and the checkbox,
---- the sets' ticket (#195) the crumbs, the nameplate and the ribbons.
+--- The leather's anchors (HNT-R61), in drawing order: adapter/Timeline.lua fills the clock and the checkbox,
+--- adapter/Sets.lua the crumbs, the nameplate and the ribbons.
 ---@alias BoardLeatherPart "crumbs"|"clock"|"completed"|"nameplate"|"ribbons"
 local LEATHER_PARTS = { "crumbs", "clock", "completed", "nameplate", "ribbons" }
 
@@ -58,7 +58,7 @@ Board.__index = Board
 ns.board = setmetatable({ router = ns.NewBoardRouter(), pages = {}, leather = {}, told = false }, Board)
 
 --- Registers `renderer` to draw page `side` of mode `mode` (logic/Board.lua lists the modes and who draws what); a later
---- registration replaces it. The board tickets call it when their files load.
+--- registration replaces it. The page renderers' files call it when they load.
 ---@param mode BoardMode
 ---@param side BoardSide
 ---@param renderer BoardRenderer
@@ -86,6 +86,12 @@ function Board:Select(huntID)
 	self.router:Select(huntID)
 end
 
+--- The breadcrumb trail where the board is (HNT-R61): logic/Board.lua's router's.
+---@return BoardCrumb[]
+function Board:Trail()
+	return self.router:Trail()
+end
+
 -- The fields of `look` over the default cover's.
 ---@param look BoardCoverLook?
 ---@return BoardCoverLook
@@ -97,7 +103,7 @@ local function coverOf(look)
 	return merged
 end
 
---- Dresses the leather in `look` (HNT-R70), or in the default leather with nil. The covers' ticket (#192) calls it
+--- Dresses the leather in `look` (HNT-R70), or in the default leather with nil. adapter/Goods.lua calls it
 --- with the equipped cover, at load and at `AppearanceChanged`.
 ---@param look BoardCoverLook?
 function Board:SetCover(look)

@@ -411,7 +411,7 @@ expect "a natural Hunt whose window gates none of its Species' catch entries fai
 
 copy
 # The M5 exit check's step 1: open one hour a year, a two-day season with half an hour a day (a one-day season can't
-# be written, LOG-R48). A one-hour weekly window passes the cap as DATA-R92 words it (graph.md open question 8).
+# be written, LOG-R48). A one-hour weekly window passes the cap as DATA-R92 words it.
 plant_hunt $'kind = "imposed"\nconditions = { season = [{ from = [6, 1], to = [6, 2] }], time = [[720, 750]] }'
 expect "an imposed Hunt open one hour a year fails generator" generator \
 	"hunt.planted: rarity cap: open at 8 of 70080 steps"

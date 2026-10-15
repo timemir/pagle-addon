@@ -5,19 +5,13 @@
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local hunts = dofile("spec/Pagle_Hunts/support.lua")
----@diagnostic disable-next-line: undefined-global -- as above
-local catalogue = dofile("spec/Pagle_Hunts/fixtures/Catalogue.lua")
 
-local JAN_1 = 1767225600 -- 2026-01-01
+local JAN_1 = hunts.JAN_1
 local OCT_12 = 1791763200 -- 2026-10-12 00:00 UTC: realm 17:00 on Sunday 11 October
-local AURA = 1280341 -- on the catalogue's aura list
+local AURA = hunts.catalogue.RACK_AURA -- on the catalogue's aura list
 local EXTRAVAGANZA = 301 -- the catalogue's event: Sundays 14:00 for 2h
-local REALM_START = 8 * 60 + 15 -- FakePagle's realm clock at SERVER_TIME: 08:15 on Sunday 11 October 2026
-
---- The server time at realm `hour`:`minute`, counted from Sunday (hour 29 is Monday 05:00).
-local function realm(hour, minute)
-	return SERVER_TIME + (hour * 60 + (minute or 0) - REALM_START) * 60
-end
+-- The server time at realm `hour`:`minute`, counted from Sunday (hour 29 is Monday 05:00).
+local realm = hunts.realm
 
 -- The spec's Hunts, by ID: imposed Hunts on the catalogue's Blackmouth (DATA-R86), each with its own conditions.
 local HUNTS = {
@@ -47,10 +41,7 @@ local function huntList()
 	return list
 end
 
----@class WindowRun
----@field loaded LoadedAddon
----@field fake table
----@field ns table
+---@class WindowRun: HuntsRun
 
 --- Hunts on a FakePagle with the spec's Hunt list, `options.pins` pinned and the setting `options.on` saved, logged
 --- in with Fishing at 300, through its first PLAYER_ENTERING_WORLD at realm 08:15; in combat with `options.restricted`
@@ -59,37 +50,24 @@ end
 ---@return WindowRun
 local function start(options)
 	options = options or {}
-	local fake = newFakePagle()
-	fake.setCatalogue(catalogue.base())
-	local clock
-	fake.globals.GetServerTime = function()
-		return SERVER_TIME + math.floor(clock and clock() or 0)
-	end
 	local pins = {}
 	for _, id in ipairs(options.pins or {}) do
 		pins[id] = true
 	end
-	fake.globals.PagleHuntsDB = {
-		profileKeys = { ["Angler - Testrealm"] = "Default" },
-		profiles = { Default = { pins = pins, windowMoments = options.on } },
-	}
-	local loaded = hunts.load(fake, {
+	return hunts.start({
+		saved = {
+			profileKeys = { ["Angler - Testrealm"] = "Default" },
+			profiles = { Default = { pins = pins, windowMoments = options.on } },
+		},
+		list = huntList(),
 		prepare = function(l)
-			l.ns.huntList = huntList()
 			for id, name in pairs(NAMES) do
 				l.ns.L["hunt." .. id .. ".name"] = name
 			end
 		end,
-	})
-	clock = loaded.client.time
-	fake.login()
-	fake.readSkill(300, 300, 0)
-	fake.enterWorld()
-	if options.restricted then
-		fake.setRestricted(true)
-	end
-	fake.fireGameEvent("PLAYER_ENTERING_WORLD", true, false)
-	return { loaded = loaded, fake = fake, ns = loaded.ns }
+		skill = 300,
+		restricted = options.restricted,
+	}) --[[@as WindowRun]]
 end
 
 --- Moves the clock on to server time `t`, running each regroup timer that comes due.
@@ -100,18 +78,6 @@ end
 --- A regroup now, as a SkillChanged makes one (HNT-R42).
 local function regroup(run)
 	run.fake.fire("SkillChanged")
-end
-
---- The live conditions with `changes` made, as the next snapshot: setConditions fires ConditionsChanged.
-local function setConditions(run, changes)
-	local conditions = {}
-	for key, value in pairs(run.fake.conditions) do
-		conditions[key] = value
-	end
-	for key, value in pairs(changes) do
-		conditions[key] = value
-	end
-	run.fake.setConditions(conditions)
 end
 
 --- The window moments Core kept (fake.summarized: every moment kept, shown or not, ANN-R25).
@@ -157,7 +123,7 @@ describe("A pinned Hunt's window opening (HNT-R88)", function()
 		local run = start({ pins = { "fair" }, on = true })
 		waitUntil(run, realm(8, 20))
 		-- The calendar shows the Extravaganza on before its weekly 14:00: open, with no end in sight (LOG-R50).
-		setConditions(run, { events = { EXTRAVAGANZA } })
+		hunts.setConditions(run.fake, { events = { EXTRAVAGANZA } })
 
 		local moments = windowMoments(run)
 		assert.are.equal(1, #moments)
@@ -197,7 +163,7 @@ describe("No window moment (HNT-R88)", function()
 		-- Extravaganza, live all along, looks closed in it.
 		local run = start({ pins = { "fair" }, on = true, restricted = true })
 		assert.is_true(run.ns.groups:IsPaused())
-		setConditions(run, { events = { EXTRAVAGANZA } })
+		hunts.setConditions(run.fake, { events = { EXTRAVAGANZA } })
 
 		run.fake.setRestricted(false) -- the redo is the first grouping that counts
 
@@ -220,7 +186,7 @@ describe("No window moment (HNT-R88)", function()
 
 	it("for an aura starting (HNT-R40)", function()
 		local run = start({ pins = { "rack" }, on = true })
-		setConditions(run, { auras = { AURA } })
+		hunts.setConditions(run.fake, { auras = { AURA } })
 		assert.are.equal("now", run.ns.groups:Row("rack").group)
 		assert.are.same({}, windowMoments(run))
 	end)

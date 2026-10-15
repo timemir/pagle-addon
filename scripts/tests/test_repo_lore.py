@@ -376,13 +376,13 @@ def test_every_set_title_is_a_bare_epithet(hunt_set: str) -> None:
 def test_the_glyph_check_covers_a_hunt_s_name(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     # CORE-R9, DATA-R107's glyph: hunts.toml's text is Pagle_Hunts' lore (DATA-R105), so a character the fonts draw
     # as a box fails the generator there too.
-    shutil.copytree(REPO / "data", tmp_path / "data")
-    hunts = tmp_path / "data" / "hunts" / "hunts.toml"
-    text = hunts.read_text(encoding="utf-8")
-    hunts.write_text(text.replace('name = "Night Run"\n', 'name = "Night Run ★"\n'), encoding="utf-8")
-    code, output = run(tmp_path, capsys)
-    assert code == 1
-    assert "data/hunts/hunts.toml: hunt.night_run.name: glyph: U+2605 outside CORE-R9's set" in output
+    _generator_fails_on(
+        tmp_path,
+        capsys,
+        "data/hunts/hunts.toml",
+        _replacing('name = "Night Run"\n', 'name = "Night Run ★"\n'),
+        "data/hunts/hunts.toml: hunt.night_run.name: glyph: U+2605 outside CORE-R9's set",
+    )
 
 
 def test_the_generator_fails_on_a_29_code_point_hunt_name_and_names_the_key(

@@ -341,12 +341,8 @@ local function clientStubs(client)
 		end
 		for _, name in ipairs(stubs.UISpecialFrames) do
 			for _, frame in ipairs(client.frames) do
-				if frame.name == name and frame.shown then
+				if frame.name == name then
 					frame:Hide()
-					local onHide = frame.scripts.OnHide
-					if onHide then
-						onHide(frame)
-					end
 				end
 			end
 		end

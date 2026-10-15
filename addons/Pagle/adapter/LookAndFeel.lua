@@ -113,7 +113,7 @@ end
 -- which the page's Defaults button restores, is the slot's default good (SET-R60), and restoring it equips that.
 ---@param page SettingsCategory
 ---@param slot PagleRegisteredSlot
----@param variable string
+---@param topic string
 local function defaultsSetting(page, slot, variable)
 	if registered[variable] then
 		return
@@ -135,13 +135,15 @@ local function defaultsSetting(page, slot, variable)
 end
 
 --- Adds a slot dropdown (SET-R51) to `page`'s `layout`, the same row on every page: labelled and found in the
---- settings search by the slot's label, never greyed out. `variable` names the setting its page's Defaults restores.
+--- settings search by the slot's label, never greyed out. Its setting, which its page's Defaults restores, is
+--- Pagle_Core_<topic>_<slotID>: `topic` is the page's, "look", "announcements" or a topic page's (SET-R60).
 ---@param page SettingsCategory
 ---@param layout SettingsLayout
 ---@param slot PagleRegisteredSlot
----@param variable string
+---@param topic string
 ---@return SettingsInitializer
-function ns.SlotDropdown(page, layout, slot, variable)
+function ns.SlotDropdown(page, layout, slot, topic)
+	local variable = ("Pagle_Core_%s_%s"):format(topic, slot.id)
 	defaultsSetting(page, slot, variable)
 	local initializer = Settings.CreateElementInitializer(SLOT_ROW_TEMPLATE, { name = slot.label, slot = slot })
 	initializer:AddSearchTags(slot.label)
@@ -179,7 +181,7 @@ function ns.BuildLookAndFeel(page, layout)
 	for _, section in ipairs(ns.LookAndFeelSections(ns.goods)) do
 		layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L.SHOP_CATEGORIES[section.category]))
 		for _, slot in ipairs(section.slots) do
-			ns.SlotDropdown(page, layout, slot, "Pagle_Core_look_" .. slot.id)
+			ns.SlotDropdown(page, layout, slot, "look")
 		end
 	end
 	layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L.SETTINGS_SHOP))

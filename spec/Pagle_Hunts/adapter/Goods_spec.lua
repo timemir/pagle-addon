@@ -8,19 +8,7 @@ local hunts = dofile("spec/Pagle_Hunts/support.lua")
 local COVER, FRAME = "hunts.notebookcover", "hunts.trackerframe"
 
 -- HNT-R121's goods, in its order, with their kinds.
-local GOODS = {
-	[COVER] = {
-		{ "hunts.notebookcover.leather", "default" },
-		{ "hunts.notebookcover.oilcloth", "tier 1" },
-		{ "hunts.notebookcover.tooled", "tier 2" },
-		{ "hunts.notebookcover.verdigris", "tier 3" },
-	},
-	[FRAME] = {
-		{ "hunts.trackerframe.none", "default" },
-		{ "hunts.trackerframe.inkwash", "tier 1" },
-		{ "hunts.trackerframe.waxseal", "tier 2" },
-	},
-}
+local GOODS = hunts.GOODS
 
 -- A good's kind as HNT-R121's table writes it; "earned" for one with isEarned (Hunts has none, HNT-R122).
 ---@param good PagleRegisteredGood
@@ -40,6 +28,18 @@ local function descendants(widget, list)
 	for _, child in ipairs(widget.children) do
 		list[#list + 1] = child
 		descendants(child, list)
+	end
+	return list
+end
+
+-- Every widget under `widget` that shows, depth first: shown, under shown parents.
+local function shownDescendants(widget, list)
+	list = list or {}
+	for _, child in ipairs(widget.children) do
+		if child.shown then
+			list[#list + 1] = child
+			shownDescendants(child, list)
+		end
 	end
 	return list
 end
@@ -118,7 +118,7 @@ describe("Hunts' goods", function()
 	it(
 		"are named by their IDs, with no description, while their lore keys have no text (HNT-R121, HNT-R130)",
 		function()
-			-- No fixture lore, and the shipped data/Lore.lua's goods keys taken out, as before the M5 batch (#183).
+			-- No fixture lore, and the shipped data/Lore.lua's goods keys taken out, as before the lore batch gave the goods their names.
 			local _, fake = loggedIn({
 				lore = false,
 				prepare = function(loaded)
@@ -157,7 +157,7 @@ describe("Hunts' goods", function()
 		})
 	end)
 
-	it("show each good's icon as its swatch in the shop's list (HNT-R121, SHOP-R26)", function()
+	it("show each good's icon as its swatch in the Curio Shop's list (HNT-R121, SHOP-R26)", function()
 		local _, fake = loggedIn()
 
 		local icons = {}
@@ -200,7 +200,7 @@ describe("the board's cover", function()
 		assert.are.same(ns.BOARD_COVER.leather, leatherOf(ns.board))
 	end)
 
-	it("opens in the cover equipped in an earlier session, bought then (HNT-R70, SHOP-R32)", function()
+	it("opens in the cover equipped at an earlier login, bought then (HNT-R70, SHOP-R32)", function()
 		local fake = newFakePagle()
 		fake.setPurchased({ ["hunts.notebookcover.tooled"] = true })
 		fake.profile.appearance[COVER] = "hunts.notebookcover.tooled"
@@ -363,7 +363,7 @@ describe("a tracker frame's preview", function()
 				fake.ns.goods:Good(row[1]).preview(stage)
 				local tracker = stage.children[1]
 				local words = {}
-				for _, widget in ipairs(descendants(tracker)) do
+				for _, widget in ipairs(shownDescendants(tracker)) do
 					if widget.kind == "FontString" then
 						local color = widget.textColor
 						words[#words + 1] = color and { color[1], color[2], color[3] } or "native"

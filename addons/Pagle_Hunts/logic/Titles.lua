@@ -6,9 +6,9 @@ end
 local ns = select(2, ...)
 
 -- Set titles (HNT-R20–R23, HNT-R197): when a set's title is earned, from a Catch or from a retirement. Pure logic over
--- the projection state (hunts.md › Projection state) and the Hunt list (`ns.hunts`, read at call time). The
--- projection (#188) calls ns.CheckTitles in `apply` after each Cast and in `done` after each catch-up or rebuild; it
--- is the only writer of `state.sets`. Titles stay inside Hunts' own views (HNT-R22): nothing here hands them on.
+-- the projection state (hunts.md › Projection state) and the Hunt list (`ns.hunts`, read at call time). The projection
+-- (logic/Projection.lua) calls ns.CheckTitles in `apply` after each Cast and in `done` after each catch-up or rebuild;
+-- it is the only writer of `state.sets`. Titles stay inside Hunts' own views (HNT-R22): nothing here hands them on.
 
 local SECONDS_PER_DAY = 86400
 
@@ -17,10 +17,12 @@ local SECONDS_PER_DAY = 86400
 ---@field date { year: integer, month: integer, day: integer }   -- the earning tier's realm date, or the retired date's UTC day
 ---@field fromRetirement boolean   -- a retirement completed it, not the Cast just applied (HNT-R23)
 
---- The proleptic Gregorian date of a count of days since 1970-01-01 (Howard Hinnant's civil_from_days).
+--- The proleptic Gregorian date of a count of days since 1970-01-01 (Howard Hinnant's civil_from_days), with its
+--- weekday: 1970-01-01 was a Thursday (5), and weekday 1 is Sunday, as a snapshot's `date` (LOG-R45). Hunts' one copy:
+--- the UTC days here and the realm clock (logic/Labels.lua) both use it.
 ---@param days integer
----@return { year: integer, month: integer, day: integer }
-local function civilFromDays(days)
+---@return HuntRealmDate
+function ns.CivilFromDays(days)
 	local z = days + 719468
 	local era = math.floor(z / 146097)
 	local dayOfEra = z - era * 146097
@@ -31,14 +33,21 @@ local function civilFromDays(days)
 	local monthFromMarch = math.floor((5 * dayOfYear + 2) / 153)
 	local day = dayOfYear - math.floor((153 * monthFromMarch + 2) / 5) + 1
 	local month = monthFromMarch < 10 and monthFromMarch + 3 or monthFromMarch - 9
-	return { year = yearOfEra + era * 400 + (month <= 2 and 1 or 0), month = month, day = day }
+	return {
+		year = yearOfEra + era * 400 + (month <= 2 and 1 or 0),
+		month = month,
+		day = day,
+		weekday = (days + 4) % 7 + 1,
+	}
 end
 
---- The UTC day of server time `t` (DATA-R87): a retired date's, or the date of a Cast with no realm minute.
+--- The UTC day of server time `t` (DATA-R87): a retired date's, or the date of a Cast with no realm minute; stored as
+--- a date alone, with no weekday.
 ---@param t integer
 ---@return { year: integer, month: integer, day: integer }
 function ns.UtcDate(t)
-	return civilFromDays(math.floor(t / SECONDS_PER_DAY))
+	local date = ns.CivilFromDays(math.floor(t / SECONDS_PER_DAY))
+	return { year = date.year, month = date.month, day = date.day }
 end
 
 -- A Hunt's tier 1 in `state`, or nil while it isn't done (HNT-R17). Later tiers never count (HNT-R21).

@@ -6,26 +6,13 @@
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local hunts = dofile("spec/Pagle_Hunts/support.lua")
----@diagnostic disable-next-line: undefined-global -- as above
-local catalogue = dofile("spec/Pagle_Hunts/fixtures/Catalogue.lua")
 
-local C = catalogue
+local C = hunts.catalogue
 local FRAME_SLOT = "hunts.trackerframe"
 local INKWASH = "hunts.trackerframe.inkwash"
-local REALM_START = 8 * 60 + 15 -- FakePagle's realm clock at SERVER_TIME: 08:15 on Sunday 11 October 2026
+local REALM_START, untilRealm, wait = hunts.REALM_START, hunts.untilRealm, hunts.wait
 
---- Seconds from FakePagle's start (realm 08:15) to realm `hour`:`minute` the same day.
----@param hour integer
----@param minute integer?
----@return integer
-local function untilRealm(hour, minute)
-	return (hour * 60 + (minute or 0) - REALM_START) * 60
-end
-
----@class TrackerRun
----@field loaded LoadedAddon
----@field fake table
----@field ns table
+---@class TrackerRun: HuntsRun
 
 --- Hunts on a FakePagle through its first PLAYER_ENTERING_WORLD, so the first grouping has run (HNT-R42): the fixture
 --- catalogue with the fixture items' names loaded, `options.saved` as PagleHuntsDB, `options.history(fake)` appended
@@ -37,45 +24,14 @@ end
 ---@return TrackerRun
 local function start(options)
 	options = options or {}
-	local fake = newFakePagle()
-	fake.setCatalogue(catalogue.base())
-	local clock
-	fake.globals.GetServerTime = function()
-		return SERVER_TIME + (options.from or 0) + math.floor(clock and clock() or 0)
-	end
-	fake.globals.PagleHuntsDB = options.saved
-	if options.history then
-		options.history(fake)
-	end
-	local loaded = hunts.load(fake)
-	clock = loaded.client.time
-	for itemID, name in pairs({
-		[C.NIGHTFIN] = "Raw Nightfin Snapper",
-		[C.BLACKMOUTH] = "Oily Blackmouth",
-		[C.DEVIATE] = "Deviate Fish",
-		[C.ODDITY_2] = "Odd Fish",
-		[13757] = "Lightning Eel",
-		[13756] = "Raw Summer Bass",
-		[13755] = "Winter Squid",
-	}) do
-		loaded.client.loadItem(itemID, name)
-	end
-	fake.login()
-	fake.readSkill(150, 300, 0)
-	if options.caughtUp ~= false then
-		fake.enterWorld()
-	end
-	if options.grouped ~= false then
-		fake.fireGameEvent("PLAYER_ENTERING_WORLD", true, false)
-	end
-	return { loaded = loaded, fake = fake, ns = loaded.ns }
-end
-
---- Moves the client's clock (and so the server time) on, running each C_Timer that comes due.
----@param run TrackerRun
----@param seconds integer
-local function wait(run, seconds)
-	run.loaded.client.advance(seconds)
+	return hunts.start({
+		saved = options.saved,
+		history = options.history,
+		from = options.from,
+		names = true,
+		caughtUp = options.caughtUp,
+		world = options.grouped,
+	}) --[[@as TrackerRun]]
 end
 
 --- The tracker as the player reads it: the header, then each shown Hunt's two lines with its dot's group, then the
@@ -117,9 +73,9 @@ describe("the Hunts tracker", function()
 			local run = start()
 
 			assert.are.same({ "hunts" }, docked(run))
-			local trackers = run.fake.ns.dock:Trackers()
-			assert.are.same({ { "hunts", 10, "Hunts" } }, { { trackers[1].id, trackers[1].order, trackers[1].module } })
-			assert.are.equal(run.ns.tracker.frame, run.fake.dock.stack()[1].frame)
+			local docked1 = run.fake.dock.stack()[1]
+			assert.are.same({ "hunts", 10, "Hunts" }, { docked1.id, docked1.order, docked1.module })
+			assert.are.equal(run.ns.tracker.frame, docked1.frame)
 			assert.are.same({ header = "Hunts", hunts = {}, empty = "Pin a Hunt to keep it here." }, read(run))
 		end)
 
@@ -149,7 +105,7 @@ describe("the Hunts tracker", function()
 			end
 		)
 
-		it("stays off at login when an earlier session turned it off (hunts.md › Data)", function()
+		it("stays off at login when it was turned off at an earlier login (hunts.md › Data)", function()
 			local run = start({
 				saved = {
 					profileKeys = { ["Angler - Testrealm"] = "Default" },
@@ -332,7 +288,7 @@ describe("the Hunts tracker", function()
 			board:Hide()
 			run.ns.tracker.more:Click()
 
-			-- On the Board, with no Hunt asked for: the timeline selects HNT-R67's own (#193).
+			-- On the Board, with no Hunt asked for: the timeline selects HNT-R67's own (adapter/Timeline.lua).
 			assert.is_true(board:IsShown())
 			assert.are.equal("board", board.router:Place().mode)
 		end)
@@ -433,7 +389,7 @@ describe("the Hunts tracker", function()
 			end
 		end)
 
-		it("wears the frame equipped in an earlier session from login (HNT-R79, SHOP-R32)", function()
+		it("wears the frame equipped at an earlier login from login (HNT-R79, SHOP-R32)", function()
 			local fake = newFakePagle()
 			fake.setPurchased({ ["hunts.trackerframe.waxseal"] = true })
 			fake.profile.appearance[FRAME_SLOT] = "hunts.trackerframe.waxseal"

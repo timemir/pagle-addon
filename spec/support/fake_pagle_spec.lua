@@ -321,53 +321,25 @@ describe("FakePagle", function()
 			return list
 		end
 
-		it("stacks shown trackers by order, 8 px apart, ties by Module name, reflowing as read (CORE-R70)", function()
+		-- Core's stacking rules and RegisterTracker's checks are Core's specs' (spec/Pagle/logic/Dock_spec.lua,
+		-- spec/Pagle/adapter/Dock_spec.lua), on the same ns.WireDock; these test the fake's own surface.
+		it("reads the stack as Core lays it out, each frame as it is when read (CORE-R70, CORE-R72)", function()
 			local fake = newFakePagle()
 			dock(fake, "Stats", 20, 60)
 			local hunts = dock(fake, "Hunts", 10, 40)
-			dock(fake, "TackleBoard", 20, 30, "board")
 			fake.login()
 
-			assert.are.same({ { "hunts", 0 }, { "stats", -48 }, { "board", -116 } }, stack(fake))
+			assert.are.same({ { "hunts", 0 }, { "stats", -48 } }, stack(fake))
 			local top = fake.dock.stack()[1]
 			assert.are.same(
 				{ "Hunts", hunts, "TOPRIGHT", "dock", "TOPRIGHT", 0 },
 				{ top.module, top.frame, top.point, top.relativeTo, top.relativePoint, top.x }
 			)
 
-			hunts:Hide()
-			assert.are.same({ { "stats", 0 }, { "board", -68 } }, stack(fake))
-			hunts:Show()
 			hunts:SetHeight(10)
-			assert.are.same({ { "hunts", 0 }, { "stats", -18 }, { "board", -86 } }, stack(fake))
-		end)
-
-		it("is empty with no tracker shown (CORE-R72)", function()
-			local fake = newFakePagle()
-			dock(fake, "Hunts", 10, 40):Hide()
-
-			assert.are.same({}, fake.dock.stack())
-		end)
-
-		it("raises an error at the caller for each RegisterTracker mistake, docking nothing (CORE-R70)", function()
-			local fake = newFakePagle()
-			local hunts = fake.Pagle.RegisterModule({ name = "Hunts", title = "Hunts", order = 20 })
-			hunts:RegisterTracker({ id = "hunts", order = 10, frame = newWidget("Frame") })
-
-			for _, tracker in ipairs({
-				{ order = 10, frame = newWidget("Frame") },
-				{ id = 4, order = 10, frame = newWidget("Frame") },
-				{ id = "pins", order = "10", frame = newWidget("Frame") },
-				{ id = "pins", order = 10 },
-				{ id = "hunts", order = 10, frame = newWidget("Frame") },
-			}) do
-				local ok, err = pcall(function()
-					hunts:RegisterTracker(tracker)
-				end)
-				assert.is_false(ok)
-				assert.matches("fake_pagle_spec%.lua:%d+: M:RegisterTracker: ", tostring(err))
-			end
-			assert.are.same({ { "hunts", 0 } }, stack(fake))
+			assert.are.same({ { "hunts", 0 }, { "stats", -18 } }, stack(fake))
+			hunts:Hide()
+			assert.are.same({ { "stats", 0 } }, stack(fake))
 		end)
 
 		it(

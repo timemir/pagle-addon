@@ -1,24 +1,11 @@
--- The seams later Hunts tickets meet at (M5 graph, open question 5): the board's entry points, the projection's state
--- and updating flag, and the redraw bus (HNT-R42's redraws), as they stand before those tickets fill them in (the
--- projection's before its first build).
+-- Hunts' seams (logic/Seams.lua): the projection's state and updating flag before its first build (HNT-R136, LOG-R74),
+-- and the redraw bus (HNT-R42). The board's entry points (HNT-R68) are adapter/Board_spec's and adapter/Hunts_spec's.
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local hunts = dofile("spec/Pagle_Hunts/support.lua")
 
 describe("Hunts' seams", function()
-	describe("the board's entry points (HNT-R68)", function()
-		it("are the board's own once its file loads: each opens the notebook (adapter/Board_spec)", function()
-			local ns = hunts.load().ns
-
-			ns.ToggleBoard()
-			assert.is_true(ns.board:IsShown())
-			ns.ToggleBoard()
-			ns.OpenBoard("fixture_snapper")
-			assert.is_true(ns.board:IsShown())
-		end)
-	end)
-
-	-- The projection (#188) binds both; adapter/Projection_spec.lua follows them through its builds.
+	-- The projection (logic/Projection.lua) binds both; adapter/Projection_spec.lua follows them through its builds.
 	describe("the projection's state before its first build (HNT-R136, LOG-R74)", function()
 		it(
 			"is an empty HuntsState: no Casts, no Coins, no Hunt progress and no set titles (hunts.md › Data)",

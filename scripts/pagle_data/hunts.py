@@ -7,11 +7,9 @@ the fingerprint. Admission and the rarity cap (DATA-R92) and the release lock (D
 on the layer, the classes and hunt_hash here.
 """
 
-import calendar
 import re
 from collections.abc import Collection, Mapping
 from dataclasses import dataclass, field
-from datetime import date, datetime
 from pathlib import Path
 from typing import TypedDict
 
@@ -21,14 +19,22 @@ from pagle_data.errors import At, Problems
 from pagle_data.items import Record
 from pagle_data.lore import CORE_GUARD, Text
 from pagle_data.lua import to_lua
-from pagle_data.toml_reader import check_keys, describe, expect_ids, expect_table, read_toml
+from pagle_data.toml_reader import (
+    check_keys,
+    describe,
+    expect_date,
+    expect_ids,
+    expect_int,
+    expect_table,
+    read_toml,
+)
 from pagle_data.universe import HUNTS_TOML
 
 HUNT_LIST_LUA = "addons/Pagle_Hunts/data/HuntList.lua"
 
 # DATA-R92: a Hunt or set ID matches Lua's [%w_]+; DATA-R90: a fixed class ID is fixed.<name>, <name> the same.
 _ID = re.compile(r"[A-Za-z0-9_]+")
-_FIXED_CLASS = re.compile(r"fixed\.[A-Za-z0-9_]+")
+FIXED_CLASS = re.compile(r"fixed\.[A-Za-z0-9_]+")
 # DATA-R91: the generated classes, in DATA-R91's order.
 QUALITY_UNCOMMON = "quality.uncommon"
 QUALITY_RARE = "quality.rare"
@@ -122,7 +128,7 @@ def _at(kind: str, table: Mapping[str, object], index: int) -> At:
     if not isinstance(entry_id, str):
         return At(HUNTS_TOML, f"{kind}[{index}]")
     if kind == "class":
-        return At(HUNTS_TOML, f'class."{entry_id}"')
+        return At(HUNTS_TOML, class_key(entry_id))
     return At(HUNTS_TOML, f"{kind}.{entry_id}")
 
 
@@ -137,25 +143,18 @@ def _string(table: Mapping[str, object], key: str, at: At, problems: Problems) -
     return None
 
 
+def class_key(class_id: str) -> str:
+    """A class's key path in hunts.toml and the lock, class."<classID>" (DATA-R90, DATA-R95)."""
+    return f'class."{class_id}"'
+
+
 def _date(table: Mapping[str, object], key: str, at: At, problems: Problems) -> int | None:
     """DATA-R87: a TOML date (YYYY-MM-DD), meaning 00:00 UTC on that day, as a server time (Unix seconds)."""
-    if key not in table:
-        return None
-    value = table[key]
-    if isinstance(value, datetime) or not isinstance(value, date):
-        problems.add(at / key, f"expected a date (YYYY-MM-DD), got {describe(value)}")
-        return None
-    return calendar.timegm(value.timetuple())
+    return expect_date(table[key], at / key, problems) if key in table else None
 
 
 def _integer(table: Mapping[str, object], key: str, at: At, problems: Problems) -> int | None:
-    if key not in table:
-        return None
-    value = table[key]
-    if isinstance(value, bool) or not isinstance(value, int):
-        problems.add(at / key, f"expected an integer, got {describe(value)}")
-        return None
-    return value
+    return expect_int(table[key], at / key, problems, minimum=None) if key in table else None
 
 
 def _entries(document: Mapping[str, object], kind: str, problems: Problems) -> list[tuple[Mapping[str, object], At]]:
@@ -214,7 +213,7 @@ def _read_set(table: Mapping[str, object], at: At, problems: Problems) -> HuntSe
 
 def _read_class(table: Mapping[str, object], at: At, problems: Problems) -> FixedClass | None:
     check_keys(table, at, problems, required=_CLASS_REQUIRED, optional=())
-    class_id = _id(table, at, _FIXED_CLASS, "fixed.<name>, <name> matching [%w_]+ (DATA-R90)", problems)
+    class_id = _id(table, at, FIXED_CLASS, "fixed.<name>, <name> matching [%w_]+ (DATA-R90)", problems)
     members = expect_ids(table["members"], at / "members", problems) if "members" in table else None
     if class_id is None or members is None:
         return None

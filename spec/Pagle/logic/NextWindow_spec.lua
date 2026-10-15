@@ -5,16 +5,6 @@ local ns = loadAddon("Pagle", FOREVER_GLOBALS).ns
 
 local OFFSET = 120 -- the realm runs at UTC+2 (minutes east of UTC)
 
--- Days from 1970-01-01 to a proleptic Gregorian date (Howard Hinnant's days_from_civil), for the expected values.
-local function daysFromCivil(year, month, day)
-	year = month <= 2 and year - 1 or year
-	local era = math.floor(year / 400)
-	local yearOfEra = year - era * 400
-	local dayOfYear = math.floor((153 * (month > 2 and month - 3 or month + 9) + 2) / 5) + day - 1
-	local dayOfEra = yearOfEra * 365 + math.floor(yearOfEra / 4) - math.floor(yearOfEra / 100) + dayOfYear
-	return era * 146097 + dayOfEra - 719468
-end
-
 -- The server time (UTC epoch seconds) of a realm date and clock time on the UTC+2 realm.
 local function realm(year, month, day, hour, minute)
 	return daysFromCivil(year, month, day) * 86400 + (hour * 60 + minute - OFFSET) * 60

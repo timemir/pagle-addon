@@ -14,7 +14,7 @@ local function renderer()
 	return function() end
 end
 
-describe("the board's page router", function()
+describe("the board's page router (HNT-R61, HNT-R66)", function()
 	it("starts on the Board mode with nothing asked for (HNT-R67)", function()
 		assert.are.same({ mode = "board" }, newRouter():Place())
 	end)
@@ -52,13 +52,13 @@ describe("the board's page router", function()
 
 		assert.has_error(function()
 			router:Register("timeline", "left", renderer())
-		end)
+		end, "the Hunts board has no mode timeline")
 		assert.has_error(function()
 			router:Register("board", "middle", renderer())
-		end)
+		end, "a Hunts board page is left or right, not middle")
 		assert.has_error(function()
 			router:Register("board", "left", nil)
-		end)
+		end, "a Hunts board page's renderer is a function")
 	end)
 
 	it("opens each of the four modes: the Board, a set's page, a Hunt's entry and a retired entry", function()
@@ -77,15 +77,15 @@ describe("the board's page router", function()
 	it("refuses a place its mode can't show: a set's page with no set, an entry with no Hunt", function()
 		local router = newRouter()
 
-		for _, place in ipairs({
-			{ mode = "timeline" },
-			{ mode = "set" },
-			{ mode = "entry", set = "fixture_dusk" },
-			{ mode = "retired" },
+		for _, case in ipairs({
+			{ { mode = "timeline" }, "the Hunts board has no mode timeline" },
+			{ { mode = "set" }, "a set's page needs its set" },
+			{ { mode = "entry", set = "fixture_dusk" }, "an entry needs its Hunt" },
+			{ { mode = "retired" }, "an entry needs its Hunt" },
 		}) do
 			assert.has_error(function()
-				router:Open(place)
-			end)
+				router:Open(case[1])
+			end, case[2])
 		end
 		assert.are.same({ mode = "board" }, router:Place())
 	end)

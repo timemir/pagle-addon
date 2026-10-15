@@ -26,16 +26,7 @@ local itemIDs = {
 ---@return PagleMoment
 local function nodFor(row, current, snapshot)
 	local hunt = row.hunt
-	local _, label = ns.HuntLabels({
-		group = row.group,
-		auraUp = row.auraUp,
-		window = row.window,
-		spec = ns.where[hunt.id].boardSpec,
-		need = ns.where[hunt.id].skillNeed,
-		best = Pagle.GetAngler().bestBaseSkill,
-		now = current.time,
-		snapshot = snapshot,
-	})
+	local _, label = ns.HuntLabels(ns.LabelCase(row, ns.where[hunt.id], current.time, snapshot))
 	return ns.WindowNod({
 		name = ns.hunts:HuntName(hunt.id),
 		label = label,

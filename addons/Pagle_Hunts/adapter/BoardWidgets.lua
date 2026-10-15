@@ -13,19 +13,20 @@ local ns = select(2, ...)
 -- the Fish Journal (ADR 0001), though some textures are the same client files. Every texture sits on a solid tint or
 -- carries a vertex tint, so a texture the client lacks leaves the tint showing.
 --
--- Later tickets add makers here: the covers (#192), the timeline (#193), an entry (#194), sets (#195), the tracker
--- (#197).
+-- The kit's shared pieces every board adapter uses: ns.BoardTint, ns.BoardOutline, ns.BoardTooltip and the pools
+-- (ns.BoardPooled, ns.BoardHideFrom).
 
--- A tint from its hex code, as the prototype's CSS writes it: { r, g, b }, 0 to 1.
+--- A tint from its hex code, as the prototype's CSS writes it: { r, g, b }, 0 to 1.
 ---@param hex string "RRGGBB"
 ---@return number[]
-local function tint(hex)
+function ns.BoardTint(hex)
 	return {
 		tonumber(hex:sub(1, 2), 16) / 255,
 		tonumber(hex:sub(3, 4), 16) / 255,
 		tonumber(hex:sub(5, 6), 16) / 255,
 	}
 end
+local tint = ns.BoardTint
 
 --- The board's tints, from variant E's CSS (`.vE`). Where the prototype shades a gradient, the tint lies between its
 --- ends.
@@ -59,10 +60,16 @@ ns.BOARD_LOOK = {
 	plateEdge = tint("4a3008"),
 	plateText = tint("2a1a04"),
 	shadow = tint("000000"), -- the black rings round a trim
-	--- Tier trims (HNT-R18): bronze, silver, gold.
-	trims = { tint("a8652a"), tint("c9ccd3"), tint("f2c230") },
-	--- Group dots (HNT-R76): Now green, Soon amber, Later grey, On demand blue.
-	groups = { now = tint("4cc94c"), soon = tint("ffb733"), later = tint("9a9a9a"), demand = tint("6fb6ff") },
+	chipFace = tint("fffaeb"), -- rgba(255,250,235,.35): a chip's face (`.vE .chip`)
+	chipFaceAlpha = 0.35,
+	chipEdge = tint("6a4a20"), -- rgba(106,74,32,.45): a chip's edge
+	chipEdgeAlpha = 0.45,
+	here = tint("2a6a2a"), -- "you're here"
+	unconfirmed = tint("6a3a8a"), -- the unconfirmed chip
+	--- Tier trims (HNT-R18), by ns.Trim's names: bronze, silver, gold.
+	trims = { bronze = tint("a8652a"), silver = tint("c9ccd3"), gold = tint("f2c230") },
+	--- Group dots (HNT-R76), by HuntGroup: Now green, Soon amber, Later grey, On demand blue.
+	groups = { now = tint("4cc94c"), soon = tint("ffb733"), later = tint("9a9a9a"), onDemand = tint("6fb6ff") },
 	--- Ribbons: the Board's, then set colours in turn, in Hunt list order.
 	boardRibbon = tint("5a4735"), -- between #4a3a2a and #6a5440
 	ribbons = { tint("2f5a8a"), tint("2f7a4a"), tint("8a5a1a"), tint("6a3a7a"), tint("8a2a1a") },
@@ -191,14 +198,11 @@ function ns.BoardText(frame, font, color)
 	return text
 end
 
---- A tier's trim colour (HNT-R18): tier 1 bronze, tier 2 silver, tier 3 and any later tier gold; nil before tier 1.
----@param tier integer?
+--- A trim's colour (HNT-R18), by ns.Trim's name; nil for none (before tier 1).
+---@param trim ("bronze"|"silver"|"gold")?
 ---@return number[]?
-function ns.BoardTrimColor(tier)
-	if not tier or tier < 1 then
-		return nil
-	end
-	return LOOK.trims[math.min(tier, #LOOK.trims)]
+function ns.BoardTrimColor(trim)
+	return trim and LOOK.trims[trim]
 end
 
 --- A set ribbon's colour: the `i`th set in Hunt list order takes the `i`th, round again after the last.
@@ -208,9 +212,10 @@ function ns.BoardRibbonColor(i)
 	return LOOK.ribbons[(i - 1) % #LOOK.ribbons + 1]
 end
 
--- An outline round a frame: four solid edges, or dashes along them, in one tint.
+--- An outline round a frame: four solid edges (top, bottom, left, right), or dashes along the frame's edges, in one
+--- tint. `Solid` sets the edges' tint, and their thickness when `size` is given (1 pixel at first).
 ---@class BoardOutline
----@field Solid fun(self: BoardOutline, color: number[], alpha: number?)
+---@field Solid fun(self: BoardOutline, color: number[], alpha: number?, size: number?)
 ---@field Dashed fun(self: BoardOutline, color: number[], width: number, height: number)
 ---@field Hide fun(self: BoardOutline)
 ---@field edges Texture[]
@@ -219,9 +224,25 @@ end
 -- A dash's length and the gap after it.
 local DASH, GAP = 4, 3
 
+-- An outline's corner offset: `inset` pixels in from `point` (out, when negative).
+---@param point string
+---@param inset number
+---@return number x
+---@return number y
+local function insetAt(point, inset)
+	return point:find("RIGHT") and -inset or inset, point:find("TOP") and -inset or inset
+end
+
+--- The outline round `frame`, `inset` pixels inside its edges (outside, when negative; on them by default), its
+--- edges on `layer` (BORDER by default) at `sublevel`. The board's bars, the leather's gilt rule, the entry's chips and
+--- the tracker frames each draw one.
 ---@param frame Frame
+---@param inset number?
+---@param layer DrawLayer?
+---@param sublevel integer?
 ---@return BoardOutline
-local function outline(frame)
+function ns.BoardOutline(frame, inset, layer, sublevel)
+	inset, layer = inset or 0, layer or "BORDER"
 	local edges = {}
 	for i, points in ipairs({
 		{ "TOPLEFT", "TOPRIGHT" },
@@ -229,9 +250,14 @@ local function outline(frame)
 		{ "TOPLEFT", "BOTTOMLEFT" },
 		{ "TOPRIGHT", "BOTTOMRIGHT" },
 	}) do
-		local edge = frame:CreateTexture(nil, "BORDER")
-		edge:SetPoint(points[1])
-		edge:SetPoint(points[2])
+		local edge = frame:CreateTexture(nil, layer, nil, sublevel)
+		if inset == 0 then
+			edge:SetPoint(points[1])
+			edge:SetPoint(points[2])
+		else
+			edge:SetPoint(points[1], insetAt(points[1], inset))
+			edge:SetPoint(points[2], insetAt(points[2], inset))
+		end
 		if i <= 2 then
 			edge:SetHeight(1)
 		else
@@ -242,13 +268,18 @@ local function outline(frame)
 	local view = { edges = edges, dashes = {} }
 	local function dashAt(i)
 		if not view.dashes[i] then
-			view.dashes[i] = frame:CreateTexture(nil, "BORDER")
+			view.dashes[i] = frame:CreateTexture(nil, layer, nil, sublevel)
 		end
 		return view.dashes[i]
 	end
-	function view.Solid(_, color, alpha)
-		for _, edge in ipairs(edges) do
+	function view.Solid(_, color, alpha, size)
+		for i, edge in ipairs(edges) do
 			edge:SetColorTexture(color[1], color[2], color[3], alpha or 1)
+			if size and i <= 2 then
+				edge:SetHeight(size)
+			elseif size then
+				edge:SetWidth(size)
+			end
 			edge:Show()
 		end
 		for _, dash in ipairs(view.dashes) do
@@ -303,6 +334,42 @@ local function outline(frame)
 	end
 	return view
 end
+local outline = ns.BoardOutline
+
+--- Shows `lines` in GameTooltip, owned by `owner`: the first as its heading, one line each.
+---@param owner Frame
+---@param lines string[]
+function ns.BoardTooltip(owner, lines)
+	GameTooltip:SetOwner(owner, "ANCHOR_TOP")
+	GameTooltip:SetText(lines[1])
+	for i = 2, #lines do
+		GameTooltip:AddLine(lines[i])
+	end
+	GameTooltip:Show()
+end
+
+--- The `i`th widget of `pool`, made with `make` the first time, shown: the board's views reuse their widgets from one
+--- draw to the next, and hide what is left over with ns.BoardHideFrom.
+---@generic T
+---@param pool T[]
+---@param i integer
+---@param make fun(): T
+---@return T
+function ns.BoardPooled(pool, i, make)
+	local widget = pool[i] or make()
+	pool[i] = widget
+	widget:Show()
+	return widget
+end
+
+--- Hides the widgets of `pool` after the first `used`.
+---@param pool Region[]
+---@param used integer
+function ns.BoardHideFrom(pool, used)
+	for i = used + 1, #pool do
+		pool[i]:Hide()
+	end
+end
 
 -- The hatching over `frame`: the shield overlay's stripes, tiled, in a vertex tint.
 ---@param frame Frame
@@ -330,7 +397,7 @@ end
 ---@field leather Texture
 ---@field grain Texture
 ---@field rules Texture[]
----@field SetCover fun(self: BoardLeatherView, look: BoardCoverLook)
+---@field SetCover fun(self: BoardLeatherView, look: BoardCover) -- every field given (adapter/Board.lua merges a look)
 
 ---@param frame Frame
 ---@return BoardLeatherView
@@ -349,36 +416,16 @@ function ns.NewBoardLeather(frame)
 		rules = {},
 		SetCover = function() end, -- below
 	}
-	for i, points in ipairs({
-		{ "TOPLEFT", "TOPRIGHT", 5, -5 },
-		{ "BOTTOMLEFT", "BOTTOMRIGHT", 5, 5 },
-		{ "TOPLEFT", "BOTTOMLEFT", 5, -5 },
-		{ "TOPRIGHT", "BOTTOMRIGHT", -5, -5 },
-	}) do
-		local rule = frame:CreateTexture(nil, "BORDER", nil, 1)
-		local x, y = points[3], points[4]
-		rule:SetPoint(points[1], x, y)
-		if i <= 2 then
-			rule:SetPoint(points[2], -x, y)
-			rule:SetHeight(1)
-		else
-			rule:SetPoint(points[2], x, -y)
-			rule:SetWidth(1)
-		end
-		view.rules[i] = rule
-	end
+	local rules = outline(frame, 5, "BORDER", 1)
+	view.rules = rules.edges
 	function view.SetCover(_, look)
-		local default = ns.BOARD_COVER
-		local leather, edge, rule =
-			look.leather or default.leather, look.edge or default.edge, look.rule or default.rule
+		local leather, edge = look.leather, look.edge
 		view.edge:SetColorTexture(edge[1], edge[2], edge[3], 1)
 		view.leather:SetColorTexture(leather[1], leather[2], leather[3], 1)
-		view.grain:SetTexture(look.grain or default.grain)
+		view.grain:SetTexture(look.grain)
 		view.grain:SetVertexColor(leather[1], leather[2], leather[3])
-		view.grain:SetAlpha(look.grainAlpha or default.grainAlpha)
-		for _, line in ipairs(view.rules) do
-			line:SetColorTexture(rule[1], rule[2], rule[3], 1)
-		end
+		view.grain:SetAlpha(look.grainAlpha)
+		rules:Solid(look.rule)
 	end
 	view.SetCover(view, ns.BOARD_COVER)
 	return view
@@ -421,7 +468,7 @@ function ns.NewBoardParchment(frame, spine)
 end
 
 --- A set ribbon (HNT-R61): a cloth tab on the leather's right edge, its words in letters stacked down it, standing
---- out further when chosen. The ribbons' ticket (#195) anchors them down the leather's ribbons anchor.
+--- out further when chosen. adapter/Sets.lua anchors them down the leather's ribbons anchor.
 ---@class BoardRibbonView: Button
 ---@field face Texture
 ---@field label FontString
@@ -560,7 +607,7 @@ end
 ---   "dashed"   the window is unconfirmed: faint hatching in a dashed ink outline
 ---   "pencil"   short of skill: a dashed pencil outline, nothing inside
 ---   "camp"     the camp is up: solid blue
---- The timeline's ticket (#193) anchors it on the ruler and gives each its width.
+--- adapter/Timeline.lua anchors it on the ruler and gives each its width.
 ---@alias BoardBarStyle "hatched"|"dashed"|"pencil"|"camp"
 
 ---@class BoardTimelineBarView: Frame
@@ -623,9 +670,9 @@ end
 ---@field icon Texture
 ---@field trim Texture       -- the trim's colour, between two black rings
 ---@field rings Texture[]
----@field tier integer?
+---@field trimName ("bronze"|"silver"|"gold")?
 ---@field SetIcon fun(self: BoardIconView, texture: string|integer, tintColor: number[]?)
----@field SetTrim fun(self: BoardIconView, tier: integer?)
+---@field SetTrim fun(self: BoardIconView, trim: ("bronze"|"silver"|"gold")?)
 
 ---@param parent Frame
 ---@param size number
@@ -651,8 +698,8 @@ function ns.NewBoardIcon(parent, size)
 		self.icon:SetDesaturated(true)
 		self.icon:SetVertexColor(color[1], color[2], color[3])
 	end
-	function view.SetTrim(self, tier)
-		local color = ns.BoardTrimColor(tier)
+	function view.SetTrim(self, trim)
+		local color = ns.BoardTrimColor(trim)
 		if color then
 			self.trim:SetColorTexture(color[1], color[2], color[3], 1)
 		end
@@ -660,17 +707,17 @@ function ns.NewBoardIcon(parent, size)
 		for _, ring in ipairs(self.rings) do
 			ring:SetShown(color ~= nil)
 		end
-		self.tier = color and tier or nil
+		self.trimName = color and trim or nil
 	end
 	view:SetTrim(nil)
 	return view
 end
 
---- A tier's diamond on the ladder (HNT-R64): an ink outline, filled in its trim colour once reached.
+--- A tier's diamond on the ladder (HNT-R64): an ink outline, filled in its trim's colour (ns.Trim) once reached.
 ---@class BoardDiamondView: Frame
 ---@field edge Texture
 ---@field face Texture
----@field SetDiamond fun(self: BoardDiamondView, tier: integer, reached: boolean)
+---@field SetDiamond fun(self: BoardDiamondView, trim: "bronze"|"silver"|"gold", reached: boolean)
 
 ---@param parent Frame
 ---@param size number
@@ -687,19 +734,17 @@ function ns.NewBoardDiamond(parent, size)
 	view.face:SetSize(size * 0.72 - 3, size * 0.72 - 3)
 	view.face:SetPoint("CENTER")
 	view.face:SetRotation(math.rad(45))
-	function view.SetDiamond(self, tier, reached)
-		local color = reached and ns.BoardTrimColor(tier) or LOOK.paper
+	function view.SetDiamond(self, trim, reached)
+		local color = reached and ns.BoardTrimColor(trim) or LOOK.paper
 		self.face:SetColorTexture(color[1], color[2], color[3], 1)
 	end
 	return view
 end
 
 --- A group's dot (HNT-R76): a small disc in the group's colour.
----@alias BoardGroup "now"|"soon"|"later"|"demand"
-
 ---@class BoardDotView: Texture
----@field group BoardGroup?
----@field SetGroup fun(self: BoardDotView, group: BoardGroup)
+---@field group HuntGroup?
+---@field SetGroup fun(self: BoardDotView, group: HuntGroup)
 
 ---@param parent Frame
 ---@param size number

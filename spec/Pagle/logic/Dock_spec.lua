@@ -4,15 +4,22 @@
 describe("ns.NewDock", function()
 	local ns = loadAddon("Pagle", FOREVER_GLOBALS).ns
 
-	-- A plain stand-in for a tracker frame: its height, width and whether it is shown.
+	-- A plain stand-in for a tracker frame: its height, width and whether it is shown, read as a frame's.
 	local function frame(height, shown, width)
-		return { height = height, width = width or 200, shown = shown ~= false }
-	end
-	local function isShown(f)
-		return f.shown
-	end
-	local function sizeOf(f)
-		return f.width, f.height
+		return {
+			height = height,
+			width = width or 200,
+			shown = shown ~= false,
+			IsShown = function(self)
+				return self.shown
+			end,
+			GetWidth = function(self)
+				return self.width
+			end,
+			GetHeight = function(self)
+				return self.height
+			end,
+		}
 	end
 
 	-- The ids of a layout's placements, top to bottom.
@@ -27,10 +34,10 @@ describe("ns.NewDock", function()
 	it("stacks trackers top to bottom by order, 8 px apart, right-aligned to the anchor (CORE-R70)", function()
 		local dock = ns.NewDock()
 		local stats, hunts = frame(60), frame(40)
-		assert.is_nil(dock:Add("Stats", { id = "stats", order = 20, frame = stats }))
-		assert.is_nil(dock:Add("Hunts", { id = "hunts", order = 10, frame = hunts }))
+		assert.are.equal(stats, dock:Add("Stats", { id = "stats", order = 20, frame = stats }).frame)
+		assert.are.equal(hunts, dock:Add("Hunts", { id = "hunts", order = 10, frame = hunts }).frame)
 
-		local layout = dock:Layout(isShown, sizeOf)
+		local layout = dock:Layout()
 
 		assert.are.same({ "hunts", "stats" }, ids(layout))
 		assert.are.same({ point = "TOPRIGHT", relativePoint = "TOPRIGHT", x = 0, y = 0 }, {
@@ -51,7 +58,7 @@ describe("ns.NewDock", function()
 		dock:Add("Hunts", { id = "hunts", order = 10, frame = hunts })
 		dock:Add("Stats", { id = "stats", order = 20, frame = stats })
 
-		local layout = dock:Layout(isShown, sizeOf)
+		local layout = dock:Layout()
 
 		assert.are.same({ "stats" }, ids(layout))
 		assert.are.equal(0, layout.placements[1].y)
@@ -62,7 +69,7 @@ describe("ns.NewDock", function()
 		local dock = ns.NewDock()
 		dock:Add("Hunts", { id = "hunts", order = 10, frame = frame(40, false) })
 
-		local layout = dock:Layout(isShown, sizeOf)
+		local layout = dock:Layout()
 
 		assert.are.same({}, layout.placements)
 		assert.are.same({ 0, 0 }, { layout.width, layout.height })
@@ -73,7 +80,7 @@ describe("ns.NewDock", function()
 		dock:Add("TackleBoard", { id = "board", order = 30, frame = frame(10) })
 		dock:Add("Stats", { id = "live", order = 30, frame = frame(10) })
 
-		assert.are.same({ "live", "board" }, ids(dock:Layout(isShown, sizeOf)))
+		assert.are.same({ "live", "board" }, ids(dock:Layout()))
 	end)
 
 	it("follows a frame's new height at the next layout (CORE-R70: it reflows when one resizes)", function()
@@ -84,7 +91,7 @@ describe("ns.NewDock", function()
 
 		hunts.height = 100
 
-		local layout = dock:Layout(isShown, sizeOf)
+		local layout = dock:Layout()
 		assert.are.equal(-108, layout.placements[2].y)
 		assert.are.equal(260, layout.width)
 	end)
@@ -104,7 +111,10 @@ describe("ns.NewDock", function()
 		it("refuses " .. case[1] .. ", docking nothing (CORE-R70)", function()
 			local dock = ns.NewDock()
 
-			assert.are.equal("M:RegisterTracker: " .. case[3], dock:Add("Hunts", case[2]))
+			local docked, problem = dock:Add("Hunts", case[2])
+
+			assert.is_nil(docked)
+			assert.are.equal("M:RegisterTracker: " .. case[3], problem)
 			assert.are.same({}, dock:Trackers())
 		end)
 	end
@@ -116,7 +126,7 @@ describe("ns.NewDock", function()
 
 		assert.are.equal(
 			"M:RegisterTracker: hunts is already docked",
-			dock:Add("Stats", { id = "hunts", order = 20, frame = frame(10) })
+			select(2, dock:Add("Stats", { id = "hunts", order = 20, frame = frame(10) }))
 		)
 		local trackers = dock:Trackers()
 		assert.are.equal(1, #trackers)

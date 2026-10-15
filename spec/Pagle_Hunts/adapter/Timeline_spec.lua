@@ -4,81 +4,42 @@
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local hunts = dofile("spec/Pagle_Hunts/support.lua")
----@diagnostic disable-next-line: undefined-global -- as above
-local catalogue = dofile("spec/Pagle_Hunts/fixtures/Catalogue.lua")
 
+local catalogue = hunts.catalogue
 local C = catalogue
-local JAN_1 = 1767225600 -- 2026-01-01, the fixture Hunts' since
-local RACK_AURA = 1280341 -- fixture_rack's aura
-local REALM_START = 8 * 60 + 15 -- FakePagle's realm clock at SERVER_TIME: 08:15 on Sunday 11 October 2026
-local HOUR = 3600
+local JAN_1, RACK_AURA, HOUR = hunts.JAN_1, C.RACK_AURA, hunts.HOUR
+local untilRealm, realm, wait, has = hunts.untilRealm, hunts.realm, hunts.wait, hunts.has
+local useState, setConditions = hunts.useState, hunts.setConditions
 local RULER = 24 * HOUR -- 2 h before now to 22 h after (Tunables)
 
---- Seconds from FakePagle's start (realm 08:15) to realm `hour`:`minute` that day (hours past 24 run into the next).
-local function untilRealm(hour, minute)
-	return (hour * 60 + (minute or 0) - REALM_START) * 60
-end
-
---- The server time at realm `hour`:`minute` that day.
-local function realm(hour, minute)
-	return SERVER_TIME + untilRealm(hour, minute)
-end
-
---- Server time `t` on a ruler whose now is `now`: 0 at its start, 1 at its end (HNT-R62).
-local function at(t, now)
-	return (t - (now - 2 * HOUR)) / RULER
-end
-
---- Hunts the fixture list lacks, over imposed Hunts of set fixture_extra (DATA-R93), with the fixture's classes.
+-- Hunts the fixture list lacks, over imposed Hunts of set fixture_extra (DATA-R93), with the fixture's oddity class.
 local function extraList(huntFields)
-	local list = {
-		fingerprint = "e",
-		sets = { { id = "fixture_extra" } },
-		hunts = {},
-		classes = { ["fixed.oddity"] = { [6522] = true, [251524] = true } },
-	}
-	for i, fields in ipairs(huntFields) do
-		local hunt = { id = "extra_" .. i, set = "fixture_extra", kind = "imposed", since = JAN_1, tiers = { 1 } }
-		for key, value in pairs(fields) do
-			hunt[key] = value
-		end
-		list.hunts[i] = hunt
-	end
-	return list
+	return hunts.extraList(huntFields, { ["fixed.oddity"] = { [6522] = true, [251524] = true } })
 end
 
 --- Hunts on a FakePagle after the first PLAYER_ENTERING_WORLD, its server time on the client's clock: loaded with
 --- `options.list` (if given) as the Hunt list, `options.catalogue` (the fixture's by default), Fishing at
 --- `options.skill` (150; false for none).
+---@param options { list: HuntListData?, catalogue: table?, skill: integer|false|nil, saved: table? }?
+---@return HuntsRun
 local function start(options)
 	options = options or {}
-	local fake = newFakePagle()
-	fake.setCatalogue(options.catalogue or catalogue.base())
-	local clock
-	fake.globals.GetServerTime = function()
-		return SERVER_TIME + math.floor(clock and clock() or 0)
-	end
-	fake.globals.PagleHuntsDB = options.saved
-	local loaded = hunts.load(fake, {
-		prepare = function(l)
-			if options.list then
-				l.ns.huntList = options.list
-			end
-		end,
+	return hunts.start({
+		list = options.list,
+		catalogue = options.catalogue,
+		skill = options.skill,
+		saved = options.saved,
 	})
-	clock = loaded.client.time
-	fake.login()
-	if options.skill ~= false then
-		fake.readSkill(options.skill or 150, 300, 0)
-	end
-	fake.enterWorld()
-	fake.fireGameEvent("PLAYER_ENTERING_WORLD", true, false)
-	return { loaded = loaded, fake = fake, ns = loaded.ns }
 end
 
---- Moves the client's clock (and the server time) on, running each C_Timer that comes due.
-local function wait(run, seconds)
-	run.loaded.client.advance(seconds)
+--- A Hunt's progress with its first `tiers` tiers reached (hunts.md › Projection state), by Deviate Fish in Elwynn.
+local function reached(tiers)
+	return hunts.progress({ tiers = tiers, itemID = C.DEVIATE, zone = C.ELWYNN })
+end
+
+--- Server time `t` on a ruler whose now is `now`: 0 at its start, 1 at its end (HNT-R62).
+local function at(t, now)
+	return (t - (now - 2 * HOUR)) / RULER
 end
 
 --- The timeline's row for a Hunt, or nil when no group shows it.
@@ -120,65 +81,6 @@ describe("the timeline's bars (HNT-R63)", function()
 	end)
 end)
 
---- Serves `hunts` (progress by Hunt ID) and `sets` (titles by set ID) as the projection's state, updating or not:
---- the hand-made state views read through ns.State() and ns.IsUpdating() (logic/Seams.lua).
-local function useState(run, huntsProgress, sets, updating)
-	run.ns.projection = {
-		GetState = function()
-			return { casts = 0, coins = 0, hunts = huntsProgress or {}, sets = sets or {} }
-		end,
-		IsUpdating = function()
-			return updating == true
-		end,
-	}
-end
-
---- A Hunt's progress with its first `tiers` tiers reached (hunts.md › Projection state).
-local function reached(tiers)
-	local progress = { count = tiers, effort = 0, sinceLast = 0, caught = true, reached = {} }
-	for k = 1, tiers do
-		progress.reached[k] = {
-			time = JAN_1,
-			catchId = "c" .. k,
-			itemID = C.DEVIATE,
-			zone = C.ELWYNN,
-			date = { year = 2026, month = 1, day = 1 },
-		}
-	end
-	return progress
-end
-
---- The live conditions with `changes` made, through fake.setConditions (ConditionsChanged).
-local function setConditions(run, changes)
-	local conditions = {}
-	for key, value in pairs(run.fake.conditions) do
-		conditions[key] = value
-	end
-	for key, value in pairs(changes) do
-		conditions[key] = value
-	end
-	run.fake.setConditions(conditions)
-end
-
---- The IDs of a timeline group's rows.
-local function idsOf(group)
-	local out = {}
-	for i, row in ipairs(group.rows) do
-		out[i] = row.id
-	end
-	return out
-end
-
---- Whether `list` holds `value`.
-local function has(list, value)
-	for _, item in ipairs(list) do
-		if item == value then
-			return true
-		end
-	end
-	return false
-end
-
 local ALWAYS = { class = "fixed.oddity", conditions = { areas = { C.ELWYNN } } }
 
 describe("the timeline's rows (HNT-R63)", function()
@@ -197,7 +99,7 @@ describe("the timeline's rows (HNT-R63)", function()
 				later = group
 			end
 		end
-		assert.is_true(has(idsOf(later), "fixture_snapper"))
+		assert.is_true(has(hunts.ids(later.rows), "fixture_snapper"))
 	end)
 
 	it("dashes an unconfirmed Hunt's bars (HNT-R34)", function()
@@ -244,7 +146,7 @@ describe("the timeline's rows (HNT-R63)", function()
 		}
 		assert.are.same({}, bars(rowIn(run.ns.BoardTimeline({ mode = "board" }), "fixture_rack")))
 
-		setConditions(run, { auras = { RACK_AURA } }) -- the camp is up
+		setConditions(run.fake, { auras = { RACK_AURA } }) -- the camp is up
 		expires = run.loaded.env.GetTime() + 1800 -- for half an hour more
 
 		local row = rowIn(run.ns.BoardTimeline({ mode = "board" }), "fixture_rack")
@@ -260,7 +162,7 @@ describe("the timeline's rows (HNT-R63)", function()
 				return { spellId = spellID, expirationTime = 0 } -- an aura without a duration
 			end,
 		}
-		setConditions(run, { auras = { RACK_AURA } })
+		setConditions(run.fake, { auras = { RACK_AURA } })
 
 		assert.are.same(
 			{ bar(at(now, now), 1, "camp") },
@@ -293,7 +195,7 @@ describe("the timeline's rows (HNT-R63)", function()
 	it("draws an event the live calendar shows open across the now line to the ruler's end (HNT-R41)", function()
 		local run = start({ list = extraList({ { class = "fixed.oddity", conditions = { events = { 301 } } } }) })
 		local now = SERVER_TIME
-		setConditions(run, { events = { 301 } }) -- on now, says the calendar
+		setConditions(run.fake, { events = { 301 } }) -- on now, says the calendar
 
 		local drawn = bars(rowIn(run.ns.BoardTimeline({ mode = "board" }), "extra_1"))
 
@@ -307,7 +209,7 @@ describe("the timeline's rows (HNT-R63)", function()
 		-- before (LOG-R46, LOG-R50).
 		local run = start({ list = extraList({ { class = "fixed.oddity", conditions = { events = { 302 } } } }) })
 		local now = SERVER_TIME
-		setConditions(run, { events = { 302 } })
+		setConditions(run.fake, { events = { 302 } })
 
 		local row = rowIn(run.ns.BoardTimeline({ mode = "board" }), "extra_1")
 
@@ -319,7 +221,7 @@ describe("the timeline's rows (HNT-R63)", function()
 		-- Sunday 15:00, the Extravaganza live in its 14:00–16:00 occurrence: the ruler starts at 13:00, before it.
 		local run = start({ list = extraList({ { class = "fixed.oddity", conditions = { events = { 301 } } } }) })
 		run.loaded.client.advance(untilRealm(15))
-		setConditions(run, { events = { 301 } })
+		setConditions(run.fake, { events = { 301 } })
 		local now = realm(15)
 
 		local row = rowIn(run.ns.BoardTimeline({ mode = "board" }), "extra_1")
@@ -335,7 +237,7 @@ describe("an event's conditions line while it runs (HNT-R53)", function()
 		local spec = { events = { 301 } }
 		local run = start({ list = extraList({ { class = "fixed.oddity", conditions = spec } }) })
 		run.loaded.client.advance(untilRealm(15))
-		setConditions(run, { events = { 301 } })
+		setConditions(run.fake, { events = { 301 } })
 
 		local line = run.ns.HuntConditionsLine(spec, nil, realm(15), run.fake.conditions, run.ns.names)
 
@@ -425,7 +327,7 @@ describe("the timeline's groups (HNT-R62, HNT-R44, HNT-R82)", function()
 
 		local now = run.ns.BoardTimeline({ mode = "board" }).groups[1]
 
-		assert.are.same({ "extra_4", "extra_1" }, idsOf(now))
+		assert.are.same({ "extra_4", "extra_1" }, hunts.ids(now.rows))
 		assert.are.same({ true, false }, { now.rows[1].pinned, now.rows[2].pinned })
 	end)
 
@@ -433,11 +335,11 @@ describe("the timeline's groups (HNT-R62, HNT-R44, HNT-R82)", function()
 		local run = start({ list = extraList({ ALWAYS, ALWAYS }) })
 		useState(run, { extra_1 = reached(1) })
 
-		assert.are.same({ "extra_2" }, idsOf(run.ns.BoardTimeline({ mode = "board" }).groups[1]))
+		assert.are.same({ "extra_2" }, hunts.ids(run.ns.BoardTimeline({ mode = "board" }).groups[1].rows))
 
 		run.ns.SetShowCompleted(true)
 		local now = run.ns.BoardTimeline({ mode = "board" }).groups[1]
-		assert.are.same({ "extra_1", "extra_2" }, idsOf(now))
+		assert.are.same({ "extra_1", "extra_2" }, hunts.ids(now.rows))
 		assert.are.same({ "bronze" }, { now.rows[1].trim, now.rows[2].trim }) -- HNT-R18's trim, none for extra_2
 	end)
 
@@ -447,7 +349,7 @@ describe("the timeline's groups (HNT-R62, HNT-R44, HNT-R82)", function()
 
 		local now = run.ns.BoardTimeline({ mode = "board" }).groups[1]
 
-		assert.are.same({ "extra_1", "extra_2" }, idsOf(now))
+		assert.are.same({ "extra_1", "extra_2" }, hunts.ids(now.rows))
 		assert.is_nil(now.rows[1].trim)
 	end)
 end)
@@ -460,7 +362,7 @@ describe("a set's page, its left side (HNT-R66)", function()
 
 		local shown = {}
 		for _, group in ipairs(timeline.groups) do
-			for _, id in ipairs(idsOf(group)) do
+			for _, id in ipairs(hunts.ids(group.rows)) do
 				shown[#shown + 1] = id
 			end
 		end
@@ -491,20 +393,6 @@ describe("a set's page, its left side (HNT-R66)", function()
 	end)
 end)
 
---- The texts of every shown widget under `widget`, depth first.
-local function textsOf(widget, texts)
-	texts = texts or {}
-	for _, child in ipairs(widget.children) do
-		if child.shown then
-			if child.text ~= nil and child.text ~= "" then
-				texts[#texts + 1] = child.text
-			end
-			textsOf(child, texts)
-		end
-	end
-	return texts
-end
-
 --- The board's place now.
 local function place(run)
 	return run.ns.board.router:Place()
@@ -512,7 +400,7 @@ end
 
 --- The texts shown on a page of the board: "left" or "right", as the mode shown draws them.
 local function pageTexts(run, side)
-	return textsOf(run.ns.board.frame.bodies[side])
+	return shownTexts(run.ns.board.frame.bodies[side])
 end
 
 --- The drawn rows of the Board's left page that show, top to bottom, as { huntID, name, margin }.
@@ -670,7 +558,7 @@ describe("the leather's clock and checkbox (HNT-R61)", function()
 
 		run.ns.ToggleBoard()
 
-		assert.are.same({ "08:15 · Sun 11 Oct · Autumn" }, textsOf(run.ns.board.frame.anchors.clock))
+		assert.are.same({ "08:15 · Sun 11 Oct · Autumn" }, shownTexts(run.ns.board.frame.anchors.clock))
 	end)
 
 	it("shows no season when no season window matches", function()
@@ -679,7 +567,7 @@ describe("the leather's clock and checkbox (HNT-R61)", function()
 
 		run.ns.ToggleBoard()
 
-		assert.are.same({ "14:05 · Sun 11 Oct" }, textsOf(run.ns.board.frame.anchors.clock))
+		assert.are.same({ "14:05 · Sun 11 Oct" }, shownTexts(run.ns.board.frame.anchors.clock))
 	end)
 
 	it('adds "(paused in combat)" while restricted, and freezes with the grouping (HNT-R43)', function()
@@ -692,11 +580,11 @@ describe("the leather's clock and checkbox (HNT-R61)", function()
 
 		assert.are.same(
 			{ "08:15 · Sun 11 Oct · Autumn (paused in combat)" },
-			textsOf(run.ns.board.frame.anchors.clock)
+			shownTexts(run.ns.board.frame.anchors.clock)
 		)
 
 		run.fake.setRestricted(false)
-		assert.are.same({ "08:25 · Sun 11 Oct · Autumn" }, textsOf(run.ns.board.frame.anchors.clock))
+		assert.are.same({ "08:25 · Sun 11 Oct · Autumn" }, shownTexts(run.ns.board.frame.anchors.clock))
 	end)
 
 	it('saves "show completed" from its checkbox and redraws (HNT-R82)', function()
@@ -704,7 +592,7 @@ describe("the leather's clock and checkbox (HNT-R61)", function()
 		useState(run, { extra_1 = reached(1) })
 		run.ns.ToggleBoard()
 		local box = run.ns.board.frame.anchors.completed.children[1]
-		assert.are.same({ "show completed" }, textsOf(run.ns.board.frame.anchors.completed))
+		assert.are.same({ "show completed" }, shownTexts(run.ns.board.frame.anchors.completed))
 		assert.is_false(box:GetChecked())
 
 		box:Click()

@@ -126,6 +126,6 @@ ns.CoreSettingsRows.announcements = function(page, layout)
 	-- Toast style and Sound set: the same equipped looks as on Look and Feel, which this page's Defaults button
 	-- restores too (SET-R30, SET-R33, SET-R51).
 	for _, slot in ipairs(ns.CoreAnnouncementSlots(ns.goods)) do
-		ns.SlotDropdown(page, layout, slot, "Pagle_Core_announcements_" .. slot.id)
+		ns.SlotDropdown(page, layout, slot, "announcements")
 	end
 end

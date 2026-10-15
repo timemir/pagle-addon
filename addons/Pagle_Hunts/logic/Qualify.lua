@@ -6,8 +6,8 @@ end
 local ns = select(2, ...)
 
 -- Which Catches qualify for a Hunt (HNT-R10–R14, HNT-R196), and what they do to its count, tiers and completion
--- (HNT-R15–R17), with the tier trims (HNT-R18). Pure logic: Core's calls and the Hunt list's classes come in as
--- lookups (CORE-R7). The projection's apply (#188) calls CountCatches for every Hunt that exists at each Cast.
+-- (HNT-R15–R17), with the tier trims (HNT-R18). Pure logic: Core's calls and the Hunt list's classes come in as lookups
+-- (CORE-R7). The projection's apply (logic/Projection.lua) calls CountCatches for every Hunt that exists at each Cast.
 
 --- What the rules read besides the Hunt and the Cast: Core's `Pagle.GetItem` (LOG-R55) and
 --- `Pagle.MatchesConditions` (LOG-R49), and the Hunt list's class members (`ns.hunts:Class`, HNT-R12), which is the
@@ -16,6 +16,30 @@ local ns = select(2, ...)
 ---@field GetItem fun(itemID: integer): PagleItem?
 ---@field MatchesConditions fun(spec: table, snapshot: table): boolean
 ---@field Class fun(classID: string): table<integer, true>?
+
+--- Every read Hunts makes of Core's catalogue and rules, as one table (ADR 0001: through Pagle.* only): Where's
+--- (HuntsWaterLookups, HNT-R30–R34) and the rules' (HuntsLookups), the class members from the Hunt list.
+---@class HuntsCoreLookups: HuntsLookups, HuntsWaterLookups
+
+--- Hunts' lookups over `core` (Pagle) and `list`: adapter/Hunts.lua builds them once at OnInitialize, and the specs
+--- the same way.
+---@param core table Pagle
+---@param list HuntList
+---@return HuntsCoreLookups
+function ns.NewLookups(core, list)
+	return {
+		GetItem = core.GetItem,
+		GetZones = core.GetZones,
+		GetZoneCatches = core.GetZoneCatches,
+		GetZoneOf = core.GetZoneOf,
+		GetArea = core.GetArea,
+		GetWindowSpec = core.GetWindowSpec,
+		MatchesConditions = core.MatchesConditions,
+		Class = function(classID)
+			return list:Class(classID)
+		end,
+	}
+end
 
 -- Whether a Catch's item is the Hunt's target (HNT-R10 step 2): its Species for a `species` target (every item of
 -- the Species, DATA-R19), or a member of its class for a `class` target (HNT-R12). Item 0 and an Uncharted item
@@ -110,6 +134,27 @@ end
 ---@return boolean
 function ns.HuntDone(progress)
 	return progress ~= nil and progress.reached[1] ~= nil
+end
+
+--- How many of the Hunts current at `now` are done in `state`, and how many are current (HNT-R2, HNT-R17): every
+--- current Hunt's, or set `setID`'s alone. The summary line, an entry's set line and a set's page count with it.
+---@param list HuntList
+---@param state HuntsState
+---@param now integer
+---@param setID string?
+---@return integer done
+---@return integer current
+function ns.DoneOfCurrent(list, state, now, setID)
+	local done, current = 0, 0
+	for _, hunt in ipairs(setID and list:SetHunts(setID) or list:Hunts()) do
+		if ns.IsCurrent(hunt, now) then
+			current = current + 1
+			if ns.HuntDone(state.hunts[hunt.id]) then
+				done = done + 1
+			end
+		end
+	end
+	return done, current
 end
 
 --- Whether a Hunt is finished: every one of its tiers is reached (HNT-R17).

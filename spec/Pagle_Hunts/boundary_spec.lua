@@ -31,6 +31,8 @@ for _, name in ipairs(newFakePagle().ns.MODULE_ROSTER) do
 			{ "%f[%w_]Pagle" .. name .. "DB%f[^%w_]", "ADR 0001: Hunts never reads another Module's DB" }
 	end
 end
+-- Any AceAddon lookup, Core's addon object included: Hunts reaches Core only through Pagle.* and its handle.
+FORBIDDEN[#FORBIDDEN + 1] = { "[:.]GetAddon%s*%(", "ADR 0001: Hunts reaches Core only through Pagle.*" }
 
 -- Each forbidden thing the code says, as "<why>: <match>".
 ---@param text string
@@ -39,14 +41,19 @@ local function offences(text)
 	return forbiddenIn(withoutComments(text), FORBIDDEN)
 end
 
-describe("Hunts' boundary", function()
-	it("covers every file Hunts ships", function()
-		assert.are.equal(#addonFiles("Pagle_Hunts"), #shippedFiles(DIR))
+describe("Hunts' boundary (ADR 0001, HNT-R12)", function()
+	it("covers every file Hunts ships: the TOC's, and no other", function()
+		local listed = {}
+		for i, file in ipairs(addonFiles("Pagle_Hunts")) do
+			listed[i] = DIR .. file
+		end
+		table.sort(listed)
+
+		assert.are.same(listed, shippedFiles(DIR))
 	end)
 
 	for _, path in ipairs(shippedFiles(DIR)) do
 		it(path .. " reads no other addon's data, calls no other Module and reads no item quality or class", function()
-			-- ADR 0001, HNT-R12
 			assert.are.same({}, offences(readFile(path)))
 		end)
 	end
@@ -71,6 +78,7 @@ describe("Hunts' boundary", function()
 			{ "local name = C_Item.GetItemClassInfo(classID)", QUALITY_OR_CLASS },
 			{ "local name = GetItemSubClassInfo(classID, subClassID)", QUALITY_OR_CLASS },
 			{ "SetCurrentTitle(titleID)", "HNT-R22: set titles stay in Hunts' own views" },
+			{ 'LibStub("AceAddon-3.0"):GetAddon("Pagle")', "ADR 0001: Hunts reaches Core only through Pagle.*" },
 		}
 		for _, case in ipairs(planted) do
 			it(case[1], function()

@@ -17,8 +17,9 @@
 --
 -- It is built on Core's real logic/: each FakePagle loads Pagle.toc's data/, locale/ and logic/ files (and the
 -- CallbackHandler bus) afresh, so what it validates, computes and refuses is what Core does. Core's projections,
--- Sessions, moments, Session summary, cards, wallet, goods, wallet projection and tracker dock are built and connected by logic/Wiring.lua, which Core's
--- adapter runs too: the fake hands it a host over its fakes where Core's adapter hands it the client (adapter/Host.lua).
+-- Sessions, moments, Session summary, cards, wallet, goods, wallet projection and tracker dock are built and connected
+-- by logic/Wiring.lua, which Core's adapter runs too: the fake hands it a host over its fakes where Core's adapter
+-- hands it the client (adapter/Host.lua).
 -- Only the client is faked.
 --
 -- Records Core hands to Modules are shared and immutable (CORE-R18). FakePagle hands out read-only proxies
@@ -66,11 +67,11 @@
 --- ConditionsChanged({"skill"}) if either changed. Does nothing before login.
 ---@field readOnly fun(value: any): any The read-only proxy of a table (the same one each time); other values as is.
 ---@field moduleState fun(name: string): PagleModuleState A roster Module's state (CORE-R41).
----@field settingsPage fun(topic: string): { module: string, kind: string, label: string, caption: string?, indented: boolean, setting: PagleSetting, slot: string? }[]?
+---@field settingsPage fun(topic: string): { module: string, kind: string, label: string, caption: string?, indented: boolean, setting: PagleSetting?, slot: string? }[]?
 --- The rows Core would put on a topic page, in order, its header rows included; nil before login or with no rows,
 --- when Core registers no page (CORE-R42). A button row's caption is nil when its label is on the button (SET-R2).
 --- On Trackers, each Module's section ends with Core's slot dropdown for each of its "Trackers"-category slots: kind
---- "slot", labelled with the slot's label, `slot` its ID (SET-R44).
+--- "slot", labelled with the slot's label, `slot` its ID, and no `setting` (SET-R44).
 ---@field reported string[] Each error Core reported through geterrorhandler(), e.g. a late M:AddSetting, a
 --- Module function that raised under securecallfunction, or a moment dropped in a replay or rebuild (ANN-R4). A
 --- spec that gets one must read this list (assert it), or it fails at its end (spec/support/errors.lua).
@@ -180,7 +181,7 @@
 
 --- FakePagle's tracker dock, read through Core's own stacking rules (logic/Dock.lua).
 ---@class FakeDock
----@field stack fun(): { id: string, module: string, frame: table, point: string, relativeTo: "dock", relativePoint: string, x: number, y: number }[]
+---@field stack fun(): { id: string, order: number, module: string, frame: table, point: string, relativeTo: "dock", relativePoint: string, x: number, y: number }[]
 --- The shown docked trackers now, top to bottom (by order, ties by Module name), each with its frame's anchor on the
 --- dock: its TOPRIGHT at the dock's TOPRIGHT, `y` below it, 8 px between frames. A hidden one takes no room; empty
 --- with none shown. Read from each frame's IsShown, GetWidth and GetHeight now, so a shown, hidden or resized frame
@@ -435,16 +436,25 @@ part(function(fake, Pagle, ns)
 		end
 		local page = {}
 		for i, entry in ipairs(entries) do
-			local setting = entry.setting
-			page[i] = {
-				module = entry.module.def.name,
-				kind = setting.kind,
-				label = setting.label,
-				caption = setting.caption,
-				indented = entry.parent ~= nil,
-				setting = setting,
-				slot = entry.slot and entry.slot.id,
-			}
+			local setting, slot = entry.setting, entry.slot
+			if slot then
+				page[i] = {
+					module = entry.module.def.name,
+					kind = "slot",
+					label = slot.label,
+					indented = false,
+					slot = slot.id,
+				}
+			elseif setting then
+				page[i] = {
+					module = entry.module.def.name,
+					kind = setting.kind,
+					label = setting.label,
+					caption = setting.caption,
+					indented = entry.parent ~= nil,
+					setting = setting,
+				}
+			end
 		end
 		return page
 	end
@@ -1004,11 +1014,8 @@ end)
 -- validates and orders as Core does, and fake.dock, which lays the stack out from each docked frame's IsShown,
 -- GetWidth and GetHeight at the time it's read, as Core's dock reflows on the client. A Shift-drag (fake.dock.drag)
 -- and Reset (fake.dock.reset) do nothing while restricted (CORE-R71, SET-R40).
-part(function(fake, Pagle, ns, host)
+part(function(fake, _, ns, host)
 	ns.WireDock(host, {
-		isRestricted = function()
-			return Pagle.IsRestricted()
-		end,
 		watch = function() end,
 		reflow = function() end,
 		place = function() end,
@@ -1017,19 +1024,14 @@ part(function(fake, Pagle, ns, host)
 			return nil
 		end,
 	})
-	local function isShown(frame)
-		return frame:IsShown()
-	end
-	local function sizeOf(frame)
-		return frame:GetWidth(), frame:GetHeight()
-	end
 
 	local function stack()
 		local list = {}
-		for i, placement in ipairs(ns.dock:Layout(isShown, sizeOf).placements) do
+		for i, placement in ipairs(ns.dock:Layout().placements) do
 			local tracker = placement.tracker
 			list[i] = {
 				id = tracker.id,
+				order = tracker.order,
 				module = tracker.module,
 				frame = tracker.frame,
 				point = placement.point,
@@ -1047,11 +1049,7 @@ part(function(fake, Pagle, ns, host)
 			return ns.dock:Anchor()
 		end,
 		drag = function(point)
-			if not ns.dock:CanMove() then
-				return false
-			end
-			ns.dock:Moved(point)
-			return true
+			return ns.dock:Drop(point)
 		end,
 		reset = function()
 			return ns.dock:Reset()
