@@ -6,7 +6,7 @@ local COIN = " |TInterface\\MoneyFrame\\UI-GoldIcon:0|t"
 -- A FakePagle with the Ledger (order 10) and Hunts (order 20) On, unless `off` names one to leave unregistered, and
 -- Core's own slots and goods, as Core registers them (SHOP-R25), named by their IDs until their lore lands; nothing
 -- logged in yet. Returns the fake and the handles, by def.name.
-local function session(off)
+local function coreWithModules(off)
 	local fake = newFakePagle()
 	local handles = {}
 	for _, def in ipairs({ { name = "Ledger", order = 10 }, { name = "Hunts", order = 20 } }) do
@@ -83,12 +83,12 @@ local function model(fake)
 	return fake.ns.ShopModel(breakUpLargeNumbers)
 end
 
-describe("The shop's purse", function()
+describe("The Curio Shop's purse", function()
 	it(
 		"shows the balance, a segment per Module that reported Coins in roster order with its share, and who pays"
 			.. " none (wallet-and-shop.md › UI)",
 		function()
-			local fake, handles = session()
+			local fake, handles = coreWithModules()
 			handles.Hunts:ReportCoinsEarned(500)
 			handles.Ledger:ReportCoinsEarned(1500)
 			fake.setSpent(150)
@@ -120,7 +120,7 @@ describe("The shop's purse", function()
 	it(
 		"marks an off Module's segment, whose total still counts, and names it by its title (SHOP-R3, CORE-R41)",
 		function()
-			local fake = session("Hunts")
+			local fake = coreWithModules("Hunts")
 			fake.global.coins.earned.TackleBoard = 300
 			fake.global.coins.earned.Ledger = 100
 
@@ -141,7 +141,7 @@ describe("The shop's purse", function()
 	)
 
 	it("has no segment before any Module reports, and never says Spent (wallet-and-shop.md › UI)", function()
-		local fake = session()
+		local fake = coreWithModules()
 		fake.setSpent(50)
 
 		local purse = model(fake):Purse()
@@ -167,11 +167,11 @@ local function outline(groups)
 	return lines
 end
 
-describe("The shop's list", function()
-	-- The session the list specs share: Core's toast styles, Hunts' covers (Gold not yet earned) and the Ledger's
+describe("The Curio Shop's list", function()
+	-- The Core the list specs share: Core's toast styles, Hunts' covers (Gold not yet earned) and the Ledger's
 	-- bindings, logged in, with a balance of 300 and Ripple bought and in use.
 	local function shopping()
-		local fake, handles = session()
+		local fake, handles = coreWithModules()
 		huntsCovers(handles.Hunts, { value = false })
 		ledgerBindings(handles.Ledger)
 		fake.login()
@@ -306,7 +306,7 @@ describe("The shop's list", function()
 	)
 
 	it("counts an earned good owned once its Module says so (SHOP-R22, SHOP-R30)", function()
-		local fake, handles = session()
+		local fake, handles = coreWithModules()
 		huntsCovers(handles.Hunts, { value = true })
 		fake.login()
 
@@ -326,9 +326,9 @@ end)
 -- Ledger On with its bindings. Logged in.
 local huntsOff
 
-describe("The shop's Put away group", function()
+describe("The Curio Shop's Put away group", function()
 	function huntsOff()
-		local fake, handles = session("Hunts")
+		local fake, handles = coreWithModules("Hunts")
 		ledgerBindings(handles.Ledger)
 		local function cached(id, name, fields)
 			local row = {
@@ -341,7 +341,7 @@ describe("The shop's Put away group", function()
 			for key, value in pairs(fields) do
 				row[key] = value
 			end
-			fake.goods[id] = row
+			fake.global.goods[id] = row
 		end
 		cached("hunts.cover.plain", "Plain", { default = true })
 		cached("hunts.cover.velvet", "Velvet", { tier = 2, icon = 134939, description = "Soft." })
@@ -420,11 +420,11 @@ describe("Selecting a good", function()
 	end)
 end)
 
-describe("The shop's stage", function()
+describe("The Curio Shop's stage", function()
 	-- Core's own goods, Hunts' covers (Gold earned while `earned.value`) and the Ledger's bindings, logged in, with a
 	-- balance of `balance`.
-	local function staged(balance, earned)
-		local fake, handles = session()
+	local function stageReady(balance, earned)
+		local fake, handles = coreWithModules()
 		huntsCovers(handles.Hunts, earned or { value = false })
 		ledgerBindings(handles.Ledger)
 		fake.login()
@@ -435,7 +435,7 @@ describe("The shop's stage", function()
 	it(
 		"shows a good for sale with its name, slot, owner, description, price and Buy (wallet-and-shop.md › UI)",
 		function()
-			local fake = staged(1000)
+			local fake = stageReady(1000)
 
 			local stage = assert(model(fake):Stage("hunts.cover.velvet"))
 
@@ -455,7 +455,7 @@ describe("The shop's stage", function()
 	)
 
 	it("shows what more a good the balance can't cover needs, its price in red (wallet-and-shop.md › UI)", function()
-		local fake = staged(650)
+		local fake = stageReady(650)
 
 		local stage = assert(model(fake):Stage("ledger.binding.lapis"))
 
@@ -463,13 +463,13 @@ describe("The shop's stage", function()
 			{ "Journal binding · Ledger", "short", "900" .. COIN, true, "Buy for 900" .. COIN, "250 more needed" },
 			{ stage.slotLine, stage.state, stage.price, stage.short, stage.buy, stage.needed }
 		)
-		assert.are.equal("350 more needed", assert(model(staged(50)):Stage("hunts.cover.velvet")).needed)
+		assert.are.equal("350 more needed", assert(model(stageReady(50)):Stage("hunts.cover.velvet")).needed)
 	end)
 
 	it(
 		"shows Owned and Use for an owned good, In use for the equipped one, and default (wallet-and-shop.md › UI)",
 		function()
-			local fake = staged(0)
+			local fake = stageReady(0)
 			local shop = model(fake)
 
 			local timber, plain = assert(shop:Stage("core.toaststyle.timber")), assert(shop:Stage("hunts.cover.plain"))
@@ -501,7 +501,7 @@ describe("The shop's stage", function()
 		"shows an earned good's earnedText and that it isn't for sale, earned or not (wallet-and-shop.md › UI)",
 		function()
 			local earned = { value = false }
-			local fake, handles = staged(5000, earned)
+			local fake, handles = stageReady(5000, earned)
 
 			local gold = assert(model(fake):Stage("hunts.cover.gold"))
 			assert.are.same(
@@ -522,7 +522,7 @@ describe("The shop's stage", function()
 	)
 
 	it("hands over the good's preview and icon (wallet-and-shop.md › UI)", function()
-		local fake, handles = session()
+		local fake, handles = coreWithModules()
 		local function preview() end
 		handles.Hunts:RegisterSlot({ id = "hunts.cover", label = "Notebook cover", category = "Hunts" })
 		handles.Hunts:RegisterGood({
@@ -562,7 +562,7 @@ describe("The shop's stage", function()
 		end
 	)
 
-	it("is nil for a good the shop doesn't show (SHOP-R40)", function()
+	it("is nil for a good the Curio Shop doesn't show (SHOP-R40)", function()
 		local fake = huntsOff()
 
 		assert.is_nil(model(fake):Stage("hunts.cover.tide"))
@@ -573,8 +573,8 @@ end)
 describe("Buy on the stage", function()
 	-- The Ledger's bindings and Hunts' covers (Gold earned while `earned.value`), logged in and in the world, every
 	-- projection caught up, with the Ledger's `balance` Coins.
-	local function ready(balance, earned)
-		local fake, handles = session()
+	local function buyReady(balance, earned)
+		local fake, handles = coreWithModules()
 		huntsCovers(handles.Hunts, earned or { value = false })
 		ledgerBindings(handles.Ledger)
 		fake.login()
@@ -587,7 +587,7 @@ describe("Buy on the stage", function()
 		"is enabled for a good for sale, not owned, of a Module On, that the balance covers, with no projection"
 			.. " updating (SHOP-R13)",
 		function()
-			local shop = model(ready(400))
+			local shop = model(buyReady(400))
 
 			assert.is_true(assert(shop:Stage("hunts.cover.velvet")).canBuy) -- 400 covers 400
 			assert.is_true(assert(shop:Stage("core.toaststyle.ripple")).canBuy)
@@ -598,7 +598,7 @@ describe("Buy on the stage", function()
 		"is disabled for an owned good, a default, an earned good, and a good the balance doesn't cover (SHOP-R13)",
 		function()
 			local earned = { value = false }
-			local fake, handles = ready(899, earned)
+			local fake, handles = buyReady(899, earned)
 			fake.setPurchased({ ["core.toaststyle.ripple"] = true })
 			local shop = model(fake)
 
@@ -632,7 +632,7 @@ describe("Buy on the stage", function()
 	it(
 		"is disabled while any projection updates: at login, and while a Module's catches up (SHOP-R13, SHOP-R91)",
 		function()
-			local fake, handles = session()
+			local fake, handles = coreWithModules()
 			huntsCovers(handles.Hunts, { value = false })
 			handles.Ledger:ReportCoinsEarned(1000)
 			local during
@@ -663,7 +663,7 @@ describe("A purchase", function()
 		"is the good's ID, slot, name, swatch and price now, and the Coins left after (SHOP-R10, wallet-and-shop.md"
 			.. " › UI: Buy)",
 		function()
-			local fake, handles = session()
+			local fake, handles = coreWithModules()
 			huntsCovers(handles.Hunts, { value = false })
 			fake.login()
 			fake.enterWorld()
@@ -687,8 +687,8 @@ end)
 describe("Buying", function()
 	-- Hunts' covers, logged in and in the world, with the Ledger's `balance` Coins, and a Session open (one Cast), so a
 	-- moment or a summary line would land in it.
-	local function ready(balance)
-		local fake, handles = session()
+	local function readyToBuy(balance)
+		local fake, handles = coreWithModules()
 		huntsCovers(handles.Hunts, { value = false })
 		fake.login()
 		fake.enterWorld()
@@ -711,7 +711,7 @@ describe("Buying", function()
 		"appends one U1 with the good and its price, the balance drops and it's owned; Use it now equips it (SHOP-R10,"
 			.. " SHOP-R13, LOG-R39, wallet-and-shop.md › UI: Buy)",
 		function()
-			local fake = ready(200)
+			local fake = readyToBuy(200)
 			local Pagle = fake.Pagle
 			local before = #fake.catchLog.data.entries
 			local changed = looks(fake)
@@ -730,7 +730,7 @@ describe("Buying", function()
 	)
 
 	it("leaves the look as it was without Use it now: owned, not equipped (wallet-and-shop.md › UI: Buy)", function()
-		local fake = ready(200)
+		local fake = readyToBuy(200)
 		local changed = looks(fake)
 
 		assert.is_true(fake.ns.shop.Buy("core.toaststyle.ripple", false))
@@ -741,7 +741,7 @@ describe("Buying", function()
 	end)
 
 	it("equips an owned good with Use, and nothing for a good not owned or not known (SHOP-R32)", function()
-		local fake = ready(200)
+		local fake = readyToBuy(200)
 		local changed = looks(fake)
 		fake.ns.shop.Buy("core.toaststyle.ripple", false)
 
@@ -755,7 +755,7 @@ describe("Buying", function()
 	end)
 
 	it("raises no Announcement and no Session summary line (ANN-R23, SHOP-R5)", function()
-		local fake = ready(200)
+		local fake = readyToBuy(200)
 		local announced, summarized = #fake.announcements, #fake.summarized
 
 		fake.ns.shop.Buy("core.toaststyle.ripple", true)
@@ -771,7 +771,7 @@ describe("Buying", function()
 		"does nothing once Buy isn't enabled any more: the balance short, the good owned, a projection updating"
 			.. " (SHOP-R13)",
 		function()
-			local fake, handles = ready(200)
+			local fake, handles = readyToBuy(200)
 			local before = #fake.catchLog.data.entries
 
 			assert.is_false(fake.ns.shop.Buy("hunts.cover.velvet", true)) -- 400, with 200

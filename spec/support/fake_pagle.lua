@@ -86,10 +86,6 @@
 ---@field setSpent fun(spent: integer) Sets the Coins spent, for a spec that doesn't care about the log: BalanceChanged
 --- fires if the balance or held changes (SHOP-R12). The wallet projection sets the log's own at enterWorld's done and
 --- on each live purchase (fake.global.projections.wallet, SHOP-R11), replacing it; set it after enterWorld to keep it.
----@field goods table<string, table> PagleDB.global.goods, the goods cache (SHOP-R26), the same table as
---- fake.global.goods: every good registered, by ID, with name, slot, slotLabel, category, module, icon, default, tier,
---- description and, for an earned good, `earned` (isEarned()'s result at registration or the last M:RefreshGoods).
---- A spec may fill it before login, as a saved PagleDB, for goods of a Module that isn't loaded (SHOP-R90).
 ---@field setPurchased fun(purchased: table<string, true>) Hands Core the purchased goods, `{ [goodID] = true }`, for a
 --- spec that doesn't care about the log; AppearanceChanged fires if a look changes (SHOP-R33). The wallet projection
 --- hands over the log's own set at enterWorld's done and on each live purchase (SHOP-R11), replacing it; a spec that
@@ -457,7 +453,8 @@ part(function(fake, Pagle, ns, host)
 	end
 end)
 
--- Goods (SHOP-R20–R26, SHOP-R30–R33, SHOP-R90), on Core's wiring over fake.global.goods (fake.goods) and
+-- Goods (SHOP-R20–R26, SHOP-R30–R33, SHOP-R90), on Core's wiring over fake.global.goods (the goods cache: every
+-- good registered, by ID, which a spec may fill before login as a saved PagleDB, SHOP-R26, SHOP-R90) and
 -- fake.profile.appearance: M:RegisterSlot, M:RegisterGood and M:RefreshGoods on the handle, Pagle.IsOwned,
 -- GetEquipped, SetEquipped and GetGood (read-only), and AppearanceChanged from login on. The purchased set comes
 -- from the wallet projection part below (SHOP-R11), or from fake.setPurchased. Pagle.OpenShop runs Core's entry
@@ -468,7 +465,6 @@ end)
 part(function(fake, Pagle, ns, host)
 	ns.WireGoods(host)
 	ns.RegisterCoreGoods()
-	fake.goods = fake.global.goods
 	fake.shopsOpened = {}
 	fake.shopOpen = false
 	Pagle.OpenShop = ns.WireShop(host, {

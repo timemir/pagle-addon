@@ -527,15 +527,14 @@ describe("FakePagle", function()
 				)
 				hunts:RefreshGoods()
 				assert.is_true(Pagle.IsOwned("hunts.cover.gold"))
-				assert.is_true(fake.goods["hunts.cover.gold"].earned)
+				assert.is_true(fake.global.goods["hunts.cover.gold"].earned)
 			end
 		)
 
-		it("caches each good in fake.goods, which is fake.global.goods (SHOP-R26)", function()
+		it("caches each good in fake.global.goods (SHOP-R26)", function()
 			local fake = newFakePagle()
 			huntsCovers(fake, { value = false })
 
-			assert.are.equal(fake.global.goods, fake.goods)
 			assert.are.same({
 				name = "Velvet",
 				slot = "hunts.cover",
@@ -544,7 +543,7 @@ describe("FakePagle", function()
 				module = "Hunts",
 				icon = 134939,
 				tier = 2,
-			}, fake.goods["hunts.cover.velvet"])
+			}, fake.global.goods["hunts.cover.velvet"])
 		end)
 
 		it("raises a SHOP-R23 mistake at the Module's call and reports a slot with no default at login", function()
@@ -587,9 +586,10 @@ describe("FakePagle", function()
 			"falls back to the cached default for a Module that isn't loaded, keeping its goods owned (SHOP-R90)",
 			function()
 				local fake = newFakePagle()
-				fake.goods["hunts.cover.plain"] =
+				fake.global.goods["hunts.cover.plain"] =
 					{ name = "Plain", slot = "hunts.cover", module = "Hunts", default = true }
-				fake.goods["hunts.cover.velvet"] = { name = "Velvet", slot = "hunts.cover", module = "Hunts", tier = 2 }
+				fake.global.goods["hunts.cover.velvet"] =
+					{ name = "Velvet", slot = "hunts.cover", module = "Hunts", tier = 2 }
 				fake.profile.appearance["hunts.cover"] = "hunts.cover.velvet"
 				fake.setPurchased({ ["hunts.cover.velvet"] = true })
 				fake.login()
@@ -654,7 +654,7 @@ describe("FakePagle", function()
 			assert.are.same({ "Water Spirit", "Interface\\Icons\\Spell_Frost_SummonWaterElemental", "Core" }, {
 				Pagle.GetGood("core.crest.crest3").name,
 				Pagle.GetGood("core.crest.crest3").icon,
-				fake.goods["core.crest.crest3"].module,
+				fake.global.goods["core.crest.crest3"].module,
 			})
 			assert.is_nil(fake.ns.goods:Good("core.crest.plain").preview)
 			fake.setPurchased({ ["core.crest.crest3"] = true })
@@ -663,7 +663,7 @@ describe("FakePagle", function()
 
 		it("selects an owned good of a Module off under Put away, from the cache (SHOP-R40, SHOP-R35)", function()
 			local fake = newFakePagle()
-			fake.goods["hunts.cover.velvet"] = {
+			fake.global.goods["hunts.cover.velvet"] = {
 				name = "Velvet",
 				slot = "hunts.cover",
 				slotLabel = "Notebook cover",
@@ -679,7 +679,7 @@ describe("FakePagle", function()
 			assert.are.same({ { goodID = "hunts.cover.velvet", selected = "hunts.cover.velvet" } }, fake.shopsOpened)
 		end)
 
-		it("toggles the shop with /pagle shop (CORE-R61, SHOP-R40)", function()
+		it("toggles the Curio Shop with /pagle shop (CORE-R61, SHOP-R40)", function()
 			local fake = newFakePagle()
 			fake.login()
 
@@ -690,23 +690,26 @@ describe("FakePagle", function()
 			assert.are.same({ {} }, fake.shopsOpened)
 		end)
 
-		it("prints SHOP-R41's line while restricted, and closes the shop when restriction starts (SHOP-R41)", function()
-			local fake = newFakePagle()
-			fake.login()
-			fake.Pagle.OpenShop()
+		it(
+			"prints SHOP-R41's line while restricted, and closes the Curio Shop when restriction starts (SHOP-R41)",
+			function()
+				local fake = newFakePagle()
+				fake.login()
+				fake.Pagle.OpenShop()
 
-			fake.setRestricted(true)
-			assert.is_false(fake.shopOpen)
-			fake.Pagle.OpenShop()
-			fake.slash("shop")
+				fake.setRestricted(true)
+				assert.is_false(fake.shopOpen)
+				fake.Pagle.OpenShop()
+				fake.slash("shop")
 
-			assert.are.same({ {} }, fake.shopsOpened)
-			assert.is_false(fake.shopOpen)
-			assert.are.same(
-				{ "Pagle: the Curio Shop opens after combat.", "Pagle: the Curio Shop opens after combat." },
-				fake.printed
-			)
-		end)
+				assert.are.same({ {} }, fake.shopsOpened)
+				assert.is_false(fake.shopOpen)
+				assert.are.same(
+					{ "Pagle: the Curio Shop opens after combat.", "Pagle: the Curio Shop opens after combat." },
+					fake.printed
+				)
+			end
+		)
 	end)
 
 	describe("moments", function()

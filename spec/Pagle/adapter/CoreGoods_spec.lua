@@ -30,7 +30,7 @@ describe("Core's slots and goods", function()
 		})
 	end)
 
-	it("register the three slots first, in the shop's categories, with every good's tier (SHOP-R25)", function()
+	it("register the three slots first, in the Curio Shop's categories, with every good's tier (SHOP-R25)", function()
 		local loaded = loadCore()
 		loaded.client.fire("PLAYER_LOGIN")
 		local goods = loaded.ns.goods
@@ -98,7 +98,7 @@ describe("Core's slots and goods", function()
 		end
 	)
 
-	it("each have an in-client icon, the shop's swatch (SHOP-R25, wallet-and-shop.md › UI)", function()
+	it("each have an in-client icon, the Curio Shop's swatch (SHOP-R25, wallet-and-shop.md › UI)", function()
 		local loaded = loadCore()
 		loaded.client.fire("PLAYER_LOGIN")
 		local Pagle = loaded.env.Pagle

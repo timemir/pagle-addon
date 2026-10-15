@@ -28,7 +28,7 @@ end
 ---@param noCovers boolean?
 ---@return LoadedAddon loaded
 ---@return table hunts
-local function huntsSession(saved, earned, noCovers)
+local function huntsCore(saved, earned, noCovers)
 	local loaded = loadCore(nil, saved)
 	local hunts = loaded.env.Pagle.RegisterModule({ name = "Hunts", title = "Hunts", order = 20 })
 	if not noCovers then
@@ -50,7 +50,7 @@ end
 
 describe("M:RegisterSlot and M:RegisterGood", function()
 	it("register a Module's slot and goods, cached in PagleDB.global.goods (SHOP-R21, SHOP-R22, SHOP-R26)", function()
-		local loaded = huntsSession(nil, { value = true })
+		local loaded = huntsCore(nil, { value = true })
 		loaded.client.fire("PLAYER_LOGIN")
 
 		local Pagle = loaded.env.Pagle
@@ -91,7 +91,7 @@ describe("M:RegisterSlot and M:RegisterGood", function()
 		},
 	}) do
 		it("raise an error at the Module's call for " .. case[1] .. ", registering nothing (SHOP-R23)", function()
-			local loaded, hunts = huntsSession()
+			local loaded, hunts = huntsCore()
 			local goods = {}
 			for id in pairs(loaded.env.PagleDB.global.goods) do
 				goods[#goods + 1] = id
@@ -113,7 +113,7 @@ describe("M:RegisterSlot and M:RegisterGood", function()
 	end
 
 	it("refuse a good in another Module's slot (SHOP-R23)", function()
-		local loaded, hunts = huntsSession()
+		local loaded, hunts = huntsCore()
 		local ledger = loaded.env.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
 
 		assert.has_error(function()
@@ -123,7 +123,7 @@ describe("M:RegisterSlot and M:RegisterGood", function()
 	end)
 
 	it("are handle methods: called on anything else, they raise an error (CORE-R12)", function()
-		local loaded, hunts = huntsSession()
+		local loaded, hunts = huntsCore()
 
 		assert.has_error(function()
 			hunts.RegisterSlot({}, { id = "hunts.frame", label = "Frame", category = "Trackers" })
@@ -135,7 +135,7 @@ describe("M:RegisterSlot and M:RegisterGood", function()
 	end)
 
 	it("report a slot with no default at ModulesChanged; its first good stands in (SHOP-R23, CORE-R19)", function()
-		local loaded, hunts = huntsSession()
+		local loaded, hunts = huntsCore()
 		hunts:RegisterSlot({ id = "hunts.frame", label = "Tracker frame", category = "Trackers" })
 		hunts:RegisterGood({ id = "hunts.frame.oak", slot = "hunts.frame", name = "Oak", tier = 1 })
 
@@ -154,7 +154,7 @@ describe("M:RefreshGoods", function()
 		"re-reads isEarned() for the Module's earned goods only then, and the look follows (SHOP-R31, SHOP-R33)",
 		function()
 			local earned = { value = true }
-			local loaded, hunts = huntsSession(nil, earned)
+			local loaded, hunts = huntsCore(nil, earned)
 			loaded.client.fire("PLAYER_LOGIN")
 			local Pagle = loaded.env.Pagle
 			assert.is_true(Pagle.SetEquipped("hunts.cover", "hunts.cover.gold"))
@@ -172,7 +172,7 @@ describe("M:RefreshGoods", function()
 
 	it("reports an isEarned() that raises and keeps the cached result (SHOP-R26, CORE-R21)", function()
 		local earned = { value = true }
-		local loaded, hunts = huntsSession(nil, earned)
+		local loaded, hunts = huntsCore(nil, earned)
 		setmetatable(earned, {
 			__index = function()
 				error("Hunts broke")
@@ -192,7 +192,7 @@ describe("Pagle.SetEquipped and Pagle.GetEquipped", function()
 	it(
 		"store an owned pick in PagleDB.profile.appearance and fire AppearanceChanged once (SHOP-R32, SHOP-R33)",
 		function()
-			local loaded = huntsSession(nil, { value = true })
+			local loaded = huntsCore(nil, { value = true })
 			loaded.client.fire("PLAYER_LOGIN")
 			local fired = listen(loaded)
 			local Pagle = loaded.env.Pagle
@@ -207,7 +207,7 @@ describe("Pagle.SetEquipped and Pagle.GetEquipped", function()
 	)
 
 	it("refuse a good that isn't owned or is of another slot (SHOP-R32)", function()
-		local loaded = huntsSession(nil, { value = false })
+		local loaded = huntsCore(nil, { value = false })
 		loaded.client.fire("PLAYER_LOGIN")
 		local fired = listen(loaded)
 		local Pagle = loaded.env.Pagle
@@ -221,7 +221,7 @@ describe("Pagle.SetEquipped and Pagle.GetEquipped", function()
 
 	it("fire AppearanceChanged when a purchase brings the stored pick back (SHOP-R33)", function()
 		local loaded =
-			huntsSession({ profiles = { Default = { appearance = { ["hunts.cover"] = "hunts.cover.velvet" } } } })
+			huntsCore({ profiles = { Default = { appearance = { ["hunts.cover"] = "hunts.cover.velvet" } } } })
 		loaded.client.fire("PLAYER_LOGIN")
 		local fired = listen(loaded)
 		assert.are.equal("hunts.cover.plain", loaded.env.Pagle.GetEquipped("hunts.cover"))
@@ -235,7 +235,7 @@ describe("Pagle.SetEquipped and Pagle.GetEquipped", function()
 	it(
 		"fall back to the default while the Module is disabled, keeping the pick, which comes back (SHOP-R90)",
 		function()
-			local first = huntsSession(nil, { value = true })
+			local first = huntsCore(nil, { value = true })
 			first.client.fire("PLAYER_LOGIN")
 			assert.is_true(first.env.Pagle.SetEquipped("hunts.cover", "hunts.cover.gold"))
 
@@ -249,7 +249,7 @@ describe("Pagle.SetEquipped and Pagle.GetEquipped", function()
 			assert.are.equal("hunts.cover.gold", off.env.PagleDB.profiles.Default.appearance["hunts.cover"])
 
 			-- Enabled again: the look is back with no SetEquipped.
-			local on = huntsSession(off.env.PagleDB, { value = true })
+			local on = huntsCore(off.env.PagleDB, { value = true })
 			on.client.fire("PLAYER_LOGIN")
 			assert.are.equal("hunts.cover.gold", on.env.Pagle.GetEquipped("hunts.cover"))
 		end
@@ -258,7 +258,7 @@ end)
 
 describe("Pagle.GetGood", function()
 	it("reads a good's cached name, slot, icon, Module and description (SHOP-R26, LED-R112)", function()
-		local loaded = huntsSession()
+		local loaded = huntsCore()
 
 		assert.are.same(
 			{ name = "Velvet", slot = "hunts.cover", icon = 134939, module = "Hunts", isDefault = false },
@@ -270,7 +270,7 @@ end)
 
 describe("Core's own goods", function()
 	it("register with the core. prefix, listed before every Module's, and raise at Core's call (SHOP-R21)", function()
-		local loaded = huntsSession()
+		local loaded = huntsCore()
 		local ns = loaded.ns
 
 		-- Core's three slots (SHOP-R25) are in already, from login step 1 (spec/Pagle/adapter/CoreGoods_spec.lua).
