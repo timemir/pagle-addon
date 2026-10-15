@@ -5,9 +5,11 @@
 -- (#103, #104). M3#1 holds an M3 Ledger and a Field report projection, for what the M3 exit check reads (#145,
 -- #146). M4#1 holds what the M4 exit check reads (#173, #174). M5#1 and M5-Stale#1 hold a Pagle_Hunts.lua, for what
 -- the M5 exit check reads (#199, #200). M6#1, M6-Stale#1 and M6-New#1 hold a Pagle_Stats.lua, for what the M6 exit
--- check reads (#219, #221). The Ledger and Stats runs read their catalogue from spec/scripts/fixtures/Catalogue.lua
--- (--catalogue) and the Hunts runs their Hunt list from spec/scripts/fixtures/HuntList.lua (--huntlist), so the lines
--- the Modules' logic computes are counted by hand, and don't move with the generated data.
+-- check reads (#219, #221). M7#1, M7-Stale#1 and M7-New#1 hold a Pagle_TackleBoard.lua, for what the M7 exit check
+-- reads (#242, #245). The Ledger, Stats and Tackle Board runs read their catalogue from
+-- spec/scripts/fixtures/Catalogue.lua (--catalogue) and the Hunts runs their Hunt list from
+-- spec/scripts/fixtures/HuntList.lua (--huntlist), so the lines the Modules' logic computes are counted by hand, and
+-- don't move with the generated data.
 
 local ACCOUNTS = "spec/scripts/fixtures/WTF/Account/"
 local CATALOGUE = "spec/scripts/fixtures/Catalogue.lua"
@@ -734,6 +736,7 @@ describe("scripts/read-wtf.lua", function()
 				"Pagle_QoL: disabled",
 				"Pagle_Hunts: enabled",
 				"Pagle_Stats: not listed (its TOC's default state applies)",
+				"Pagle_TackleBoard: not listed (its TOC's default state applies)",
 			}, lines)
 		end)
 	end)
@@ -983,6 +986,7 @@ describe("scripts/read-wtf.lua", function()
 				"Pagle_QoL: disabled",
 				"Pagle_Hunts: enabled",
 				"Pagle_Stats: enabled",
+				"Pagle_TackleBoard: not listed (its TOC's default state applies)",
 			}, lines)
 		end)
 	end)
@@ -1099,6 +1103,242 @@ describe("scripts/read-wtf.lua", function()
 		)
 	end)
 
+	describe("on an account after the M7 exit check's steps", function()
+		-- M7#1: Ada started her board on Wednesday 14 October 2026 (day 0, realm UTC−7, daily reset 15:00 UTC, weekly
+		-- Tuesday) and played days 0–6 and 8; on day 9 she fished with the board disabled. The projection is its log
+		-- folded by the Tackle Board's own logic over spec/scripts/fixtures/Catalogue.lua, so every count is real.
+		-- --now is Saturday 24 October 17:00 UTC, board day 10.
+		local NOW = "1792861200"
+		local out, err, code = run(ACCOUNTS .. "M7#1", "--catalogue", CATALOGUE, "--now", NOW)
+		local lines = section(out, "== Tackle Board")
+		local GUID = "Player-4618-0A1B2C3D-"
+
+		it("exits 0 and writes nothing to stderr", function()
+			assert.are.equal(0, code)
+			assert.are.equal("", err)
+		end)
+
+		it("counts the board's records by kind and decodes the last 10, flagging those it skips (TKB-R80)", function()
+			-- LOG-R40: 28 A1 entries name TackleBoard; seq 51 is Hunts', never the board's. TKB-R80: seq 49's tier 7 is
+			-- out of range and issue2 is a kind the board doesn't know. LOG-R49: the latest Cast, 16:00 UTC at realm
+			-- 09:00, puts the realm at UTC−7. Data: payloads decoded with the board's own codec, the goal text from
+			-- TKB-R36's templates with area and item IDs for the client's names.
+			assert.are.same({
+				"== Tackle Board (PagleTackleBoardDB)",
+				"records: 28 TackleBoard A1 entries in PagleLog: start 1, day 7, issue 18, reroll 1, issue2 1",
+				"records the board skips: 2 (seq 49, 50) (TKB-R80)",
+				"the last 10, oldest first, realm time at the log's realm clock (UTC-07:00):",
+				"  seq 37, realm 2026-10-19 08:05, server 2026-10-19 15:05:00 UTC: day, dayStart 2026-10-19 15:00:00 UTC,"
+					.. " weekStart 2026-10-13 15:00:00 UTC",
+				"  seq 38, realm 2026-10-19 08:05, server 2026-10-19 15:05:01 UTC: issue, Notice species tier 2, pays 15,"
+					.. ' need 2, target 6303 ("2 Item 6303")',
+				"  seq 41, realm 2026-10-20 08:05, server 2026-10-20 15:05:00 UTC: day, dayStart 2026-10-20 15:00:00 UTC,"
+					.. " weekStart 2026-10-20 15:00:00 UTC",
+				"  seq 42, realm 2026-10-20 08:05, server 2026-10-20 15:05:01 UTC: issue, Expedition haul tier 0, pays 60,"
+					.. ' need 20, target 12 ("20 Catches in Area 12")',
+				"  seq 43, realm 2026-10-20 08:05, server 2026-10-20 15:05:02 UTC: issue, Notice haul tier 1, pays 10,"
+					.. ' need 2, target 12 ("2 Catches in Area 12")',
+				"  seq 46, realm 2026-10-22 08:05, server 2026-10-22 15:05:00 UTC: day, dayStart 2026-10-22 15:00:00 UTC,"
+					.. " weekStart 2026-10-20 15:00:00 UTC",
+				"  seq 47, realm 2026-10-22 08:05, server 2026-10-22 15:05:01 UTC: issue, Notice haul tier 1, pays 10,"
+					.. ' need 3, target 40 ("3 Catches in Area 40")',
+				"  seq 48, realm 2026-10-22 08:05, server 2026-10-22 15:05:10 UTC: issue, Notice haul tier 1, pays 10,"
+					.. ' need 2, target 12 ("2 Catches in Area 12")',
+				"  seq 49, realm 2026-10-22 08:05, server 2026-10-22 15:05:11 UTC: issue, SKIPPED: the board can't decode"
+					.. ' "n;haul;7;10;3;12" (TKB-R80)',
+				"  seq 50, realm 2026-10-22 08:05, server 2026-10-22 15:05:12 UTC: issue2, SKIPPED: the board can't decode"
+					.. ' "n;haul;1;10;3;12" (TKB-R80)',
+			}, { unpack(lines, 1, 14) })
+		end)
+
+		it(
+			"prints the projection's bookkeeping, current against the log, its rules version and the catalogue",
+			function()
+				-- LOG-R70's stored values. TKB-R81: 1000 × TKB_RULES_VERSION 1 + Core's SESSION_RULES_VERSION 1 = 1001; the
+				-- fingerprint is the catalogue's content fingerprint, with no extra.
+				assert.are.same({
+					"projection: lastSeq 54, logId 3c9e1a7f5b2d8046, fingerprint 0123456789abcdef, rulesVersion 1001",
+					"logId: matches PagleLog's",
+					"lastSeq: equals PagleLog's length (54 entries)",
+					"rulesVersion: the Tackle Board's, 1001 (TKB-R81)",
+					"fingerprint: the catalogue's, " .. CATALOGUE .. " (LOG-R70)",
+				}, { unpack(lines, 15, 19) })
+			end
+		)
+
+		it("prints the days, the owed goals, the pins and the overflow strip with each goal's progress", function()
+			-- TKB-R12: seq 46 numbered day 8 (8 resets after the start's), week 1 (the weekly reset of the 20th); the
+			-- Cast of the 23rd advanced the projection to day 9 (TKB-R14), and --now is 2 resets after day 8's.
+			-- TKB-R20: each reset owed what the pins could take, and the live steps issued it all. TKB-R101: seq 47 took
+			-- pin 1, freed on day 0; seq 48 found every Notice pin taken. TKB-R40: the Expedition counted day 6's two
+			-- Catches and day 8's junk in Elwynn; 6291 three times since seq 8. TKB-R44: item 999001 is Uncharted.
+			-- TKB-R41: the Collector counts only day 8's Session, its junk. TKB-R55: seq 34 re-posted pin 3.
+			assert.are.same({
+				"started: seq 5, realm 2026-10-14 08:10, server 2026-10-14 15:10:00 UTC (TKB-R6)",
+				"boundary: seq 46, day 8, week 1, dayStart 2026-10-22 15:00:00 UTC, weekStart 2026-10-20 15:00:00 UTC",
+				"processed: day 9, week 1 (TKB-R14)",
+				"today: day 10 at 2026-10-24 17:00:00 UTC (--now), 1 day after the processed day: the next live step"
+					.. " advances to it (TKB-R12, TKB-R13)",
+				"owed: 0 Notices, 0 Expeditions (TKB-R20)",
+				"Expedition pins:",
+				"  1. " .. GUID .. '1792508701-0: Expedition haul, "20 Catches in Area 12", 3 of 20',
+				"  2. empty",
+				"Notice pins:",
+				"  1. " .. GUID .. '1792681501-0: Notice haul, "3 Catches in Area 40", 0 of 3',
+				"  2. " .. GUID .. '1791990603-0: Notice species, "4 Item 6291", 3 of 4',
+				"  3. " .. GUID .. '1792336000-0: Notice haul, "5 Catches in Area 40", 0 of 5, re-posted (TKB-R55)',
+				"  4. " .. GUID .. '1792076703-0: Notice species, "2 Item 999001", 0 of 2, STRANDED (TKB-R44)',
+				"  5. "
+					.. GUID
+					.. '1792163102-0: Notice collector, "A junk item and a container in one Session", 1 of 2,'
+					.. " session-bound, its Session "
+					.. GUID
+					.. "1792684800-0 (TKB-R41)",
+				"  6. " .. GUID .. '1792163103-0: Notice lure, "3 Catches with a lure on", 1 of 3',
+				"overflow strip: 1 (TKB-R101)",
+				"  " .. GUID .. '1792681510-0: Notice haul, "2 Catches in Area 12", 1 of 2',
+			}, { unpack(lines, 20, 36) })
+		end)
+
+		it("prints the completed goals, tally, Coins, flies, titles, Campfire, zones and caught items", function()
+			-- TKB-R60: each completion's day and fly; TKB-R61: 8 Notices and the Expedition; TKB-R63: 10 + 20 + 10 + 10
+			-- + 10 + 60 + 10 + 15 + 10 pay and the 7-day milestone's 25 = 180. TKB-R62: the flies in pattern order (Data),
+			-- the Expedition's rare. TKB-R70–R73: days 0–6 lit, the seventh earning a Kindling (2 + 1) and campfire_7;
+			-- days 7 and 8 unlit, each burning one. TKB-R30, TKB-R46: every Cast's zone and caught item, from the first.
+			assert.are.same({
+				"completed: 9 in the last 28 board days, by doneDay",
+				"  day 0: "
+					.. GUID
+					.. '1791990602-0, Notice haul, "3 Catches in Area 12", pays 10, fly duskwood_shadow',
+				"  day 0: "
+					.. GUID
+					.. '1791990604-0, Notice wanderer, "Catches in 2 zones in one Session", pays 20, fly kodo_hair_caddis',
+				"  day 1: " .. GUID .. '1792076701-0, Notice haul, "2 Catches in Area 40", pays 10, fly feralas_fern',
+				"  day 2: " .. GUID .. '1792163101-0, Notice haul, "2 Catches in Area 12", pays 10, fly swamp_midge',
+				"  day 3: " .. GUID .. '1792249501-0, Notice haul, "2 Catches in Area 40", pays 10, fly redridge_ember',
+				"  day 3: "
+					.. GUID
+					.. '1791990601-0, Expedition variety, "Every Species of Area 40", pays 60, fly nats_golden_doctor',
+				"  day 4: "
+					.. GUID
+					.. '1792335901-0, Notice haul, "2 Catches in Area 12", pays 10, fly bloodsail_streamer',
+				"  day 5: " .. GUID .. '1792422301-0, Notice species, "2 Item 6303", pays 15, fly goldshire_gnat',
+				"  day 6: " .. GUID .. '1792508702-0, Notice haul, "2 Catches in Area 12", pays 10, fly elwynn_royal',
+				"tally: 8 Notices, 1 Expedition (TKB-R61)",
+				"coins: 180 (TKB-R63)",
+				"flies: 9 of 30 tied, in pattern order (TKB-R62):",
+				"  goldshire_gnat: day 5, goal " .. GUID .. "1792422301-0",
+				"  duskwood_shadow: day 0, goal " .. GUID .. "1791990602-0",
+				"  redridge_ember: day 3, goal " .. GUID .. "1792249501-0",
+				"  kodo_hair_caddis: day 0, goal " .. GUID .. "1791990604-0",
+				"  elwynn_royal: day 6, goal " .. GUID .. "1792508702-0",
+				"  swamp_midge: day 2, goal " .. GUID .. "1792163101-0",
+				"  bloodsail_streamer: day 4, goal " .. GUID .. "1792335901-0",
+				"  feralas_fern: day 1, goal " .. GUID .. "1792076701-0",
+				"  nats_golden_doctor: day 3, goal " .. GUID .. "1791990601-0",
+				"titles: 1 (TKB-R64)",
+				"  campfire_7: day 6, Cast " .. GUID .. "1792512030-0",
+				"fire: count 7, Kindling 1, longest 7 (TKB-R70–R72)",
+				"fire milestones: 7 days on day 6, Cast " .. GUID .. "1792512030-0 (TKB-R73)",
+				"fire log: day 0 lit, day 1 lit, day 2 lit, day 3 lit, day 4 lit, day 5 lit, day 6 lit, day 7 burned,"
+					.. " day 8 burned",
+				"zones: 2 (12 last at 2026-10-22 16:00:30 UTC, 40 last at 2026-10-23 16:00:00 UTC)",
+				"caught: 4 (6291, 6299, 6303, 6309)",
+			}, { unpack(lines, 37, 65) })
+		end)
+
+		it("prints the celebrated set, flags a completed goal missing from it, and the profile (TKB-R83)", function()
+			-- TKB-R83: day 5's Species Notice completed but isn't in the set, so a rebuild would raise its moment
+			-- (TKB-R84). tackle-board.md › Data: tracker is left out of the file at its default, true.
+			assert.are.same({
+				"celebrated goals: 8, titles: 1 (campfire_7)",
+				"celebrated: MISSING 1 completed goal: " .. GUID .. "1792422301-0 (day 5) (TKB-R83)",
+				"celebrated: every earned title is in it",
+				"tracker: true (not saved: the default)",
+				"trackerCollapsed: true",
+			}, { unpack(lines, 66) })
+		end)
+
+		it("prints the Tackle Board's frame pick, Coins, Write-up and card naming it", function()
+			-- SHOP-R32: the slot's stored pick; SHOP-R3: the Module's last report; ANN-R60, ANN-R53: Core's stored title.
+			assert.are.same(
+				{ "tackleboard.trackerframe: tackleboard.trackerframe.corkboard" },
+				{ section(out, "== Looks")[2] }
+			)
+			assert.are.equal("TackleBoard: 180", lineStarting(section(out, "== Wallet"), "TackleBoard:"))
+			local cards = section(out, "== Cards")
+			assert.are.equal("  Tackle Board: While Tackle Board was off", cards[3])
+			assert.are.equal("    line: Tackle Board: 1 done today, Campfire 7 days", cards[7])
+			assert.are.equal("    Tackle Board moments: Notice complete, Campfire 7 days", cards[8])
+		end)
+
+		it("reads today at the file's write time without --now (TKB-R12)", function()
+			local today =
+				lineStarting(section(run(ACCOUNTS .. "M7#1", "--catalogue", CATALOGUE), "== Tackle Board"), "today:")
+			assert.truthy(today:match("^today: day %d+ at %d+%-%d+%-%d+ %d+:%d+:%d+ UTC %(the file's write time%)"))
+		end)
+
+		it(
+			"prints each goal's need from its record, without stranded flags, when the catalogue can't be loaded",
+			function()
+				local missing = "spec/scripts/fixtures/no-such-Catalogue.lua"
+				local stored = section(run(ACCOUNTS .. "M7#1", "--catalogue", missing, "--now", NOW), "== Tackle Board")
+				local prefix = "fingerprint: can't be checked: " .. missing .. " can't load: "
+				assert.are.equal(prefix, stored[19]:sub(1, #prefix))
+				assert.are.equal(
+					"  4. " .. GUID .. '1792076703-0: Notice species, "2 Item 999001", 0 of 2 (need from the record)',
+					lineStarting(stored, "  4. ")
+				)
+			end
+		)
+	end)
+
+	-- M7-Stale#1: an unstarted board's projection built under another rules version and catalogue, one Cast behind
+	-- its log; AceDB left the celebrated set and trackerCollapsed out of the file.
+	it("flags a stale Tackle Board projection, and reads an unstarted board and the left-out defaults", function()
+		local out, _, code = run(ACCOUNTS .. "M7-Stale#1", "--catalogue", CATALOGUE)
+		assert.are.equal(0, code)
+		assert.are.same({
+			"== Tackle Board (PagleTackleBoardDB)",
+			"records: no TackleBoard A1 entries in PagleLog",
+			"projection: lastSeq 3, logId 6f2a9c4e1b7d3580, fingerprint fedcba9876543210, rulesVersion 1000",
+			"logId: matches PagleLog's",
+			"lastSeq: differs from PagleLog's length (4 entries)",
+			"rulesVersion: 1000 DIFFERS from the Tackle Board's 1001 (1000 × TKB_RULES_VERSION 1 + Core's"
+				.. " SESSION_RULES_VERSION 1), so Core rebuilds it at login (TKB-R81, LOG-R72)",
+			"fingerprint: DIFFERS from the catalogue's 0123456789abcdef, "
+				.. CATALOGUE
+				.. ", so Core rebuilds it at login (LOG-R70, LOG-R72)",
+			-- TKB-R2, TKB-R81: unstarted, it still learns zones and items from every Cast.
+			"started: no, the board isn't started (TKB-R2)",
+			"zones: 1 (12 last at 2026-10-14 16:00:00 UTC)",
+			"caught: 1 (6303)",
+			"celebrated goals: none, titles: none",
+			"celebrated: every completed goal is in it",
+			"celebrated: every earned title is in it",
+			"tracker: false",
+			"trackerCollapsed: false (not saved: the default)",
+		}, section(out, "== Tackle Board"))
+	end)
+
+	it("says no Tackle Board projection is stored before the first build (LOG-R72)", function()
+		assert.are.same({
+			"== Tackle Board (PagleTackleBoardDB)",
+			"records: no PagleLog to read",
+			"projection: none stored (no build has finished, LOG-R72)",
+			"celebrated goals: none, titles: none",
+			"tracker: true (not saved: the default)",
+			"trackerCollapsed: false (not saved: the default)",
+		}, section(run(ACCOUNTS .. "M7-New#1"), "== Tackle Board"))
+	end)
+
+	it("says in one line that Pagle_TackleBoard.lua is missing", function()
+		assert.are.same(
+			{ "== Tackle Board: can't read " .. ACCOUNTS .. "M6#1/SavedVariables/Pagle_TackleBoard.lua: missing" },
+			section(run(ACCOUNTS .. "M6#1", "--catalogue", CATALOGUE), "== Tackle Board")
+		)
+	end)
+
 	describe("with only an account folder", function()
 		local out, _, code = run(ACCOUNTS .. "M0#1/")
 
@@ -1129,17 +1369,23 @@ describe("scripts/read-wtf.lua", function()
 		end)
 	end)
 
-	it("reads Pagle, Pagle_Ledger, Pagle_QoL, Pagle_Hunts and Pagle_Stats' enable state by default", function()
-		local out = run(ACCOUNTS .. "M2#1", "--character", "70/Ada-Brook/")
-		assert.are.same({
-			"== Addons (70/Ada-Brook/AddOns.txt)",
-			"Pagle: enabled",
-			"Pagle_Ledger: enabled",
-			"Pagle_QoL: disabled",
-			"Pagle_Hunts: not listed (its TOC's default state applies)",
-			"Pagle_Stats: not listed (its TOC's default state applies)",
-		}, section(out, "== Addons"))
-	end)
+	it(
+		"reads Pagle, Pagle_Ledger, Pagle_QoL, Pagle_Hunts, Pagle_Stats and Pagle_TackleBoard's state by default",
+		function()
+			local out = run(ACCOUNTS .. "M2#1", "--character", "70/Ada-Brook/")
+			assert.are.same({
+				"== Addons (70/Ada-Brook/AddOns.txt)",
+				"Pagle: enabled",
+				"Pagle_Ledger: enabled",
+				"Pagle_QoL: disabled",
+				"Pagle_Hunts: not listed (its TOC's default state applies)",
+				"Pagle_Stats: not listed (its TOC's default state applies)",
+				"Pagle_TackleBoard: not listed (its TOC's default state applies)",
+			}, section(out, "== Addons"))
+			local m7 = run(ACCOUNTS .. "M7#1", "--character", "70/Ada-Brook")
+			assert.are.equal("Pagle_TackleBoard: enabled", section(m7, "== Addons")[7])
+		end
+	)
 
 	describe("on SavedVariables files that hold code", function()
 		local out, _, code = run(ACCOUNTS .. "Code#1")
