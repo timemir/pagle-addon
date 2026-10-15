@@ -15,6 +15,7 @@ local ns = select(2, ...)
 ---@field announce fun(announcement: PagleAnnouncement) -- hands an Announcement to the display (the lanes, ANN-R20)
 ---@field showCard fun(card: PagleCard): boolean -- puts a card on screen now; false while cards are held (ANN-R35)
 ---@field showGlyphs fun(fonts: PagleDevGlyphFont[], probe: string) -- shows `probe` once in each of `fonts`
+---@field tour fun(args: string)        -- runs `/pagle dev tour <args>` (CORE-R66–R68, logic/Tour.lua)
 ---@field print fun(line: string)      -- prints a chat line
 
 --- The dev commands.
@@ -130,6 +131,26 @@ function ns.DevPreviewCard()
 	}
 end
 
+--- A sample Write-up card (ANN-R61), for `/pagle dev tour` (CORE-R68): one section of Core's. Marked `preview`, so
+--- closing it removes no stored section.
+---@return PagleCard
+function ns.DevPreviewWriteUp()
+	local L = ns.L
+	return {
+		title = L.CARD_WRITE_UP,
+		preview = true,
+		writeUp = {
+			{
+				module = "Pagle",
+				order = 0,
+				title = "Pagle",
+				heading = L.DEV_SAMPLE_WRITE_UP,
+				lines = { L.DEV_SAMPLE_LINE, L.DEV_SAMPLE_TEXT },
+			},
+		},
+	}
+end
+
 -- `/pagle dev preview [kind]`: a sample of the kind, through the real display, changing no saved state; the kinds
 -- with none or an unknown one.
 ---@param dev PagleDevCommands
@@ -232,6 +253,8 @@ function Dev:Run(args)
 		options.print(L.DEV_GLYPHS_CHAT:format(probe))
 		options.showGlyphs(ns.DEV_GLYPH_FONTS, probe)
 		options.print(L.DEV_GLYPHS_SHOWN)
+	elseif name == "tour" then
+		options.tour(rest)
 	else
 		options.print(L.DEV_USAGE)
 	end

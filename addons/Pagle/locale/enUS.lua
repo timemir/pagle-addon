@@ -208,7 +208,8 @@ ns.L = {
 	DEV_ON = "Pagle dev: dev commands are on.",
 	DEV_OFF = "Pagle dev: dev commands are off.",
 	DEV_IS_OFF = "Pagle dev: dev commands are off; /pagle dev on turns them on.",
-	DEV_USAGE = "Pagle dev: /pagle dev on | off | endsession | preview <kind> | catch <itemID> [areaID] | glyphs",
+	DEV_USAGE = "Pagle dev: /pagle dev on | off | endsession | preview <kind> | catch <itemID> [areaID] | glyphs"
+		.. " | tour [module | list | stop]",
 	-- The kinds, comma-separated.
 	DEV_PREVIEW_KINDS = "Pagle dev: /pagle dev preview <kind>, where kind is one of %s",
 	-- The kind.
@@ -221,6 +222,7 @@ ns.L = {
 	DEV_SAMPLE_SPLASH = "A Legend",
 	DEV_SAMPLE_TEXT = "Oily Blackmouth (a /pagle dev preview)",
 	DEV_SAMPLE_LINE = "A sample summary line",
+	DEV_SAMPLE_WRITE_UP = "Your Ledger was written up from 2,340 Casts",
 	DEV_SESSION_ENDED = "Pagle dev: the Session ended, as if its gap had passed.",
 	DEV_NO_SESSION = "Pagle dev: no Session is open.",
 	DEV_CATCH_USAGE = "Pagle dev: /pagle dev catch <itemID> [areaID]",
@@ -237,6 +239,42 @@ ns.L = {
 		.. " lacks. Click it or press Esc to close.",
 	-- A probe row: the font (its object's name or its file), what uses it, the probe line.
 	DEV_GLYPHS_ROW = "%s (%s): %s",
+	-- /pagle dev tour (CORE-R65–R68): how many stops, as DEV_TOUR_START puts it.
+	DEV_TOUR_ONE_STOP = "1 stop",
+	-- The number of stops.
+	DEV_TOUR_STOPS = "%d stops",
+	-- How many stops (DEV_TOUR_STOPS), the local time screenshot files are named by.
+	DEV_TOUR_START = "Pagle dev: touring %s from %s; a screenshot of each goes to the Screenshots folder.",
+	DEV_TOUR_START_MANUAL = "Pagle dev: touring %s from %s; this client can't take screenshots, so press Print Screen"
+		.. " as each stop's line appears.",
+	-- The stop's number, how many stops, its name ("ledger.journal.home"): one line per stop, as it shows.
+	DEV_TOUR_STOP = "Pagle dev: tour %d/%d: %s",
+	-- The local time.
+	DEV_TOUR_DONE = "Pagle dev: the tour is done at %s.",
+	-- The stop on screen's number, how many stops.
+	DEV_TOUR_STOPPED = "Pagle dev: the tour stopped at %d/%d.",
+	DEV_TOUR_RESTRICTED_STOPPED = "Pagle dev: the tour stopped at %d/%d: combat started.",
+	DEV_TOUR_STOPPING = "Pagle dev: the tour stops once this stop hides.",
+	DEV_TOUR_NOT_RUNNING = "Pagle dev: no tour is running.",
+	DEV_TOUR_RUNNING = "Pagle dev: a tour is running; /pagle dev tour stop ends it.",
+	DEV_TOUR_RESTRICTED = "Pagle dev: the tour waits until combat ends; try again then.",
+	DEV_TOUR_NO_STOPS = "Pagle dev: no tour stops are registered.",
+	-- The name typed, the names with stops, comma-separated.
+	DEV_TOUR_NO_STOPS_FOR = "Pagle dev: no tour stops for %s; stops are registered for %s.",
+	-- How many stops.
+	DEV_TOUR_LIST = "Pagle dev: %d tour stops:",
+	DEV_TOUR_LIST_ONE = "Pagle dev: 1 tour stop:",
+	-- Core's own stops' labels (CORE-R68). The Announcement form: toast, nod, banner or splash.
+	DEV_TOUR_ANNOUNCE = "a sample %s",
+	-- The card: session or writeup.
+	DEV_TOUR_CARD = "a sample %s card",
+	DEV_TOUR_SHOP = "the Curio Shop",
+	DEV_TOUR_FIELD_REPORT = "the Field report box",
+	DEV_TOUR_GLYPHS = "the glyph probe panel",
+	-- The Settings page's name.
+	DEV_TOUR_SETTINGS = "Settings: %s",
+	-- A stop's name and label.
+	DEV_TOUR_LIST_LINE = "  %s: %s",
 	SLASH_CORE_HELP = {
 		{ name = "settings", help = "open Pagle's settings (also /pagle on its own)" },
 		{ name = "shop", help = "open or close the Curio Shop" },

@@ -136,8 +136,12 @@
 --- with `fake.catchLog.data.test = true` (a test log) `"dev catch 6358 [areaID]"` records a caught Cast through the
 --- fishing part's real append path, with its events and live projections, as playCast would without the signals.
 --- `"dev preview <kind>"` adds a sample to fake.announcements, or for "card" to fake.cardsShown. `"dev glyphs"`
---- (#248) adds { fonts, probe } to fake.glyphProbes.
+--- (#248) adds { fonts, probe } to fake.glyphProbes. `"dev tour"` (CORE-R66) tours the stops registered with
+--- M:RegisterTourStop and ns.tourStops on the fake's clock, so fake.wait moves it on; shots go to fake.tourShots.
 ---@field glyphProbes { fonts: PagleDevGlyphFont[], probe: string }[] Each `/pagle dev glyphs` probe shown, in order.
+---@field tourShots string[]? `/pagle dev tour`'s screenshots (CORE-R66): "shot" for each, in order; a spec may set it
+--- to its own list, to read shots in order with what its stops do. Nil: the client has no Screenshot(). Empty at
+--- first. The tour's clock reads 12:00:00.
 ---@field load fun(name: string, options: table?): LoadedAddon Loads a Module with `loadAddon` against this fake:
 --- `globals`, and of Pagle.toc only the vendored libs/ the Module reaches through LibStub (CORE-R6). Options as
 --- loadAddon's. WoW events its client raises on its own (`client.fireGameEvent`) go to `fake.fireGameEvent`.
@@ -562,11 +566,27 @@ part(function(fake, Pagle, ns, host)
 
 	-- /pagle dev (#247), on Core's wiring: the same switch in fake.global, Sessions and fishing as Core's.
 	fake.glyphProbes = {}
+	fake.tourShots = {}
 	ns.WireDev(host, function(announcement)
 		fake.announcements[#fake.announcements + 1] = announcement
 	end, function(fonts, probe)
 		fake.glyphProbes[#fake.glyphProbes + 1] = { fonts = fonts, probe = probe }
-	end)
+	end, {
+		isRestricted = function()
+			return Pagle.IsRestricted()
+		end,
+		-- /pagle dev tour (CORE-R66): each screenshot is "shot" in fake.tourShots; with none, the client has no
+		-- Screenshot().
+		canScreenshot = function()
+			return fake.tourShots ~= nil
+		end,
+		screenshot = function()
+			fake.tourShots[#fake.tourShots + 1] = "shot"
+		end,
+		clock = function()
+			return "12:00:00"
+		end,
+	})
 	function fake.slash(line)
 		commands:Run(line, core, fake.securecall, fake.print)
 	end
