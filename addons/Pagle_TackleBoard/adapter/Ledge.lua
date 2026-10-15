@@ -49,6 +49,9 @@ local DAY_ICONS = { lit = "d-flame", burned = "d-burn", out = "d-out", unlit = "
 ---@field label FontString
 ---@field note FontString
 ---@field view TackleSpikeGoal?
+---@field hangX number      -- where it hangs on the spike (its top left) and its swing, in degrees
+---@field hangY number
+---@field swing number
 
 ---@class TackleSpikeFrame: Frame
 ---@field head FontString
@@ -56,6 +59,8 @@ local DAY_ICONS = { lit = "d-flame", burned = "d-burn", out = "d-out", unlit = "
 ---@field nail TackleSprite
 ---@field slips TackleSpikedSlip[]
 ---@field label FontString
+---@field at { x: number, y: number }   -- where it hangs on the cork (adapter/Board.lua)
+---@field held string?                 -- its label as it was, held while a goal done flies to it (adapter/BoardChanges.lua)
 
 ---@class TackleCampfireButton: Button
 ---@field glow TackleSprite
@@ -65,14 +70,23 @@ local DAY_ICONS = { lit = "d-flame", burned = "d-burn", out = "d-out", unlit = "
 ---@field text FontString            -- "Gone out" or "Not lit yet"
 ---@field sticks TackleSprite[]
 ---@field longest FontString
+---@field glowAt number[]            -- where its glow sits
+---@field view TackleCampfireView?   -- what it shows now
+---@field ghost TackleBoardFire?     -- the fire as it was, while it crosses to the fire as it is (adapter/BoardChanges.lua)
+---@field ghostMotion Frame?
+---@field held boolean?             -- its words held as they were while it goes out
 
 ---@class TackleFlyBoxButton: Button
 ---@field title FontString
 ---@field count FontString
+---@field at number[]     -- its top left on the ledge
+---@field tied integer?   -- the flies tied, as its count shows
+---@field held string?    -- its count as it was, held until it hops
 
 ---@class TackleTallyPlate: Button
 ---@field counts FontString
 ---@field latest FontString
+---@field held string?    -- its counts as they were, held until a goal done lands on the spike
 
 ---@class TackleShopLink: Button
 ---@field card TackleSprite
@@ -110,6 +124,8 @@ local DAY_ICONS = { lit = "d-flame", burned = "d-burn", out = "d-out", unlit = "
 ---@field label FontString
 ---@field edge Texture[]
 ---@field cell TackleFlyCell?
+---@field flyAt number[]          -- where its fly sits
+---@field glow TackleSprite?      -- its ring glowing as a fly is tied (adapter/BoardChanges.lua)
 
 ---@class TackleDrawerFrame: Frame
 ---@field title FontString
@@ -167,6 +183,7 @@ end
 ---@param swing number
 local function hang(spike, slip, y, swing)
 	local px, py = SLIP_X + HOLE_X, y + HOLE_Y
+	slip.hangX, slip.hangY, slip.swing = SLIP_X, y, swing
 	slip:ClearAllPoints()
 	slip:SetPoint("TOPLEFT", spike, "TOPLEFT", SLIP_X, -y)
 	local box = slip.paper.box
@@ -223,7 +240,7 @@ local function drawSpike(spike)
 	local below = n > 0 and SLIP_Y + SLIP_HEIGHT + (n - 1) * step + 20 or SLIP_Y + 22
 	spike.label:ClearAllPoints()
 	spike.label:SetPoint("TOP", spike, "TOP", 0, -below)
-	spike.label:SetText(view.label)
+	spike.label:SetText(spike.held or view.label)
 end
 
 -- The veil over the cork while the card or the drawer is open: the cork darkened, and the clicks under it caught.
@@ -520,7 +537,8 @@ local function newFlyCell(drawer, i)
 		ns.PlaceSprite(cell.rare, cell, 0, 0)
 	end
 	cell.fly = ns.ArtSprite(cell, "Flies", "fly-" .. ns.FLY_PATTERNS[i].id, "ARTWORK")
-	ns.PlaceSprite(cell.fly, cell, (CELL_WIDTH - 80) / 2, 4)
+	cell.flyAt = { (CELL_WIDTH - 80) / 2, 4 }
+	ns.PlaceSprite(cell.fly, cell, cell.flyAt[1], cell.flyAt[2])
 	cell.label = ns.ArtText(cell, "FlyName")
 	cell.label:SetJustifyH("CENTER")
 	cell.label:SetWidth(CELL_WIDTH - 4)
@@ -573,6 +591,9 @@ local function buildDrawer(ledge)
 	drawer.count:SetPoint("BOTTOMLEFT", drawer.title, "BOTTOMRIGHT", 12, -2)
 	drawer.close = ns.NewBoardCloseMark(drawer, drawer, "DrawerClose")
 	drawer.close:SetPoint("TOPLEFT", 723, -8)
+	drawer.close:HookScript("OnClick", function()
+		ns.BoardSound("drawerClose")
+	end)
 	drawer.cells = {}
 	for i = 1, #ns.FLY_PATTERNS do
 		drawer.cells[i] = newFlyCell(drawer, i)
@@ -611,6 +632,9 @@ local function toggle(ledge, name)
 	local shown = ledge[name]
 	if shown and shown:IsShown() then
 		shown:Hide()
+		if name == "drawer" then
+			ns.BoardSound("drawerClose")
+		end
 		return
 	end
 	if name == "card" then
@@ -621,6 +645,7 @@ local function toggle(ledge, name)
 		local drawer = ledge.drawer or buildDrawer(ledge)
 		drawer:Show()
 		drawDrawer(drawer)
+		ns.BoardSound("drawerOpen")
 	end
 end
 
@@ -643,7 +668,8 @@ local function buildFire(ledge)
 	fire:SetSize(FIRE_WIDTH, FIRE_HEIGHT)
 	fire:SetPoint("TOPLEFT", FIRE_X, -FIRE_Y)
 	fire.glow = ns.ArtSprite(fire, "Fire", "fire-glow", "BACKGROUND")
-	ns.PlaceSprite(fire.glow, fire, 20 - FIRE_X, 54 - FIRE_Y)
+	fire.glowAt = { 20 - FIRE_X, 54 - FIRE_Y }
+	ns.PlaceSprite(fire.glow, fire, fire.glowAt[1], fire.glowAt[2])
 	fire.burning = ns.NewBoardFire(fire, 30 - FIRE_X, 14 - FIRE_Y)
 	fire.days = ns.ArtText(fire, "FireDays")
 	fire.days:SetPoint("TOPLEFT", 176 - FIRE_X, -(48 - FIRE_Y))
@@ -672,6 +698,7 @@ end
 ---@param count integer the Campfire's days
 local function drawFire(fire, view, count)
 	local lit = view.state == "lit"
+	fire.view = view
 	local stage = lit and FIRE_STEPS[view.step] or FIRE_STATES[view.state]
 	if fire.burning.stage ~= stage then
 		ns.SetBoardFire(fire.burning, stage)
@@ -685,9 +712,11 @@ local function drawFire(fire, view, count)
 	end
 	fire.glow:SetShown(lit)
 	fire.glow:SetAlpha(lit and 0.6 + 0.4 * view.bright or 0)
-	fire.days:SetShown(lit)
-	fire.word:SetShown(lit)
-	fire.text:SetShown(not lit)
+	if not fire.held then
+		fire.days:SetShown(lit)
+		fire.word:SetShown(lit)
+		fire.text:SetShown(not lit)
+	end
 	if lit then
 		fire.days:SetText(tostring(count))
 		fire.word:SetText(ns.Plural(count, "DAYS_WORD"))
@@ -704,7 +733,8 @@ end
 local function buildBox(ledge)
 	local box = CreateFrame("Button", nil, ledge) --[[@as TackleFlyBoxButton]]
 	box:SetSize(214, 100)
-	box:SetPoint("TOPLEFT", 322, -30)
+	box.at = { 322, 30 }
+	box:SetPoint("TOPLEFT", box.at[1], -box.at[2])
 	ns.PlaceSprite(ns.ArtSprite(box, "Board", "flybox", "ARTWORK"), box, 0, 0)
 	box.title = ns.ArtText(box, "BoxLabel")
 	box.title:SetJustifyH("CENTER")
@@ -780,10 +810,15 @@ local function drawLedge(ledge, draw)
 	end
 	local state = ns.State()
 	drawFire(ledge.fire, ns.CampfireView(state.fire), state.fire.count)
-	ledge.box.count:SetText(ns.FlyBoxView(state.flies).label)
+	local flies = ns.FlyBoxView(state.flies)
+	ledge.box.count:SetText(ledge.box.held or flies.label)
+	ledge.box.tied = 0
+	for _, cell in ipairs(flies.cells) do
+		ledge.box.tied = ledge.box.tied + (cell.tied and 1 or 0)
+	end
 	local tally = ns.TallyView(state)
 	local plate = ledge.plate
-	plate.counts:SetText(tally.counts)
+	plate.counts:SetText(plate.held or tally.counts)
 	plate.latest:SetText(tally.latest or ns.L.TALLY_NO_TITLE)
 	ns.SetArtFont(plate.latest, tally.latest and "TallyTitle" or "TallyNone")
 	ns.LeanSprite(ledge.shop.card, ledge.shop, 0, 0, 2.5)
