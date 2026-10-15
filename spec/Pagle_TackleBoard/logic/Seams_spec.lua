@@ -9,28 +9,31 @@ local board = dofile("spec/Pagle_TackleBoard/support.lua")
 local GOAL = "Player-4618-0A1B2C3D-1791731747-0"
 
 describe("the Tackle Board's seams", function()
-	describe("the board's entry points and actions (until the reroll's and completions' tickets)", function()
-		it("toggle and open the board, and take down and report nothing yet, with no error", function()
-			local loaded, fake = board.load()
-			local ns = loaded.ns
-			fake.login()
-			fake.enterWorld()
+	describe("the board's entry points and actions (until the completions' ticket)", function()
+		it(
+			"toggle and open the board, take down no goal the board doesn't know, and report nothing yet, with no error",
+			function()
+				local loaded, fake = board.load()
+				local ns = loaded.ns
+				fake.login()
+				fake.enterWorld()
 
-			assert.has_no_error(function()
-				ns.ToggleBoard()
-				ns.OpenBoard()
-				ns.OpenBoard(GOAL)
-				ns.TakeDown(GOAL)
-				ns.ReportCoins()
-			end)
-			fake.nextFrame()
-			for _ in fake.Pagle.IterateCatches(0) do
-				error("a stand-in appended a record (TKB-R80)")
+				assert.has_no_error(function()
+					ns.ToggleBoard()
+					ns.OpenBoard()
+					ns.OpenBoard(GOAL)
+					ns.TakeDown(GOAL)
+					ns.ReportCoins()
+				end)
+				fake.nextFrame()
+				for _ in fake.Pagle.IterateCatches(0) do
+					error("a stand-in appended a record (TKB-R80)")
+				end
+				assert.are.same({}, fake.coinReports)
 			end
-			assert.are.same({}, fake.coinReports)
-		end)
+		)
 
-		it("let no goal be taken down (TKB-R55)", function()
+		it("let no goal the board doesn't know be taken down (TKB-R55)", function()
 			assert.is_false(board.load().ns.CanTakeDown(GOAL))
 		end)
 	end)

@@ -184,12 +184,13 @@ stds.wow_variables = {
 		-- does. Gethe/wow-ui-source branch forever at 943764493e6b16d63ded3ab304150d1f05e58b57 ("1.60.1 (70338)"),
 		-- Interface/AddOns/Blizzard_StaticPopup/StaticPopup.lua: `StaticPopupDialogs = {}; -- Definitions`. QoL adds
 		-- its two dialogs to it: the conflict popup and its Reload now popup (QOL-R81, QOL-R83); the Ledger adds its
-		-- Prestige confirm (LED-R33).
+		-- Prestige confirm (LED-R33), and the Tackle Board its reroll confirm (TKB-R56).
 		StaticPopupDialogs = {
 			fields = {
 				PAGLE_QOL_CONFLICT = { read_only = false },
 				PAGLE_QOL_RELOAD = { read_only = false },
 				PAGLE_LEDGER_PRESTIGE = { read_only = false },
+				PAGLE_TACKLEBOARD_REROLL = { read_only = false },
 			},
 		},
 		-- A FrameXML table the dump doesn't list (CORE-R60). probes/fishing-signals/results/

@@ -28,9 +28,10 @@ local ns = select(2, ...)
 --                             and the empty board's Start button (adapter/Board.lua). Defined in logic/LiveStep.lua
 --                             (#233), not here.
 --   ns.TakeDown(goalID)       Takes a goal down (TKB-R55, TKB-R56): its confirm, then the `reroll` record. The pins
---                             (#239) call it. Stand-in: does nothing. The reroll's ticket (#234) assigns it.
---   ns.CanTakeDown(goalID)    Whether a goal's "take it down" shows and works now (TKB-R55). Stand-in: false. #234
---                             assigns it.
+--                             (#239) call it. Defined in adapter/Reroll.lua (#234), not here.
+--   ns.CanTakeDown(goalID)    Whether a goal's "take it down" shows (TKB-R55), whatever the projection's updating: the
+--                             pins grey it while ns.IsUpdating() (TKB-R108), and ns.TakeDown refuses then. Defined in
+--                             adapter/Reroll.lua (#234), not here.
 --   ns.ScheduleLiveStep()     Schedules the live step for the next frame (TKB-R13, TKB-R84). The projection's `done`
 --                             calls it last (#231). Defined in adapter/LiveStep.lua (#233), not here.
 --   ns.ReportCoins()          Reports lifetime Coins with M:ReportCoinsEarned (TKB-R63). `done` calls it before
@@ -144,17 +145,6 @@ end
 ---@return boolean
 function ns.IsStarted()
 	return ns.State().started ~= nil
-end
-
---- Takes a goal down (TKB-R55). A stand-in until the reroll's ticket assigns the real one.
----@param goalID string
-function ns.TakeDown(goalID) end -- luacheck: no unused args
-
---- Whether a goal can be taken down now (TKB-R55): false until the reroll's ticket assigns the real one.
----@param goalID string
----@return boolean
-function ns.CanTakeDown(goalID) -- luacheck: no unused args
-	return false
 end
 
 --- Reports lifetime Coins to Core (TKB-R63, SHOP-R2): the projection's `coins` with M:ReportCoinsEarned. Nothing

@@ -78,6 +78,13 @@ ns.L = {
 	-- A countdown to a reset (TKB-R105): whole hours from one hour up, whole minutes below.
 	HOURS_LEFT = "{n}h",
 	MINUTES_LEFT = "{n}m",
+	-- The reroll confirm (TKB-R56): a goal's displayed progress and its need, then the two buttons.
+	TAKE_DOWN_CONFIRM = {
+		n = "Take down this Notice? Its progress (%d/%d) is lost, and the new one can't be taken down.",
+		e = "Take down this Expedition? Its progress (%d/%d) is lost, and the new one can't be taken down.",
+	},
+	TAKE_DOWN_YES = "Take it down",
+	TAKE_DOWN_NO = "Keep it",
 	-- Counts (ns.Plural).
 	CATCHES = { one = "{n} Catch", other = "{n} Catches" },
 	COINS = { one = "{n} Coin", other = "{n} Coins" },
