@@ -117,9 +117,13 @@ local T = D0 + 3600 -- the start record's time; every record of a spec follows i
 describe("completing a goal", function()
 	describe("progress in the fold (TKB-R40, TKB-R45)", function()
 		-- The start record, Catches in Durotar before the Haul Notice's record, then its record at T + 10.
-		local BEFORE = join({ start(T) }, times(5, function(i)
-			return cast(T + i, DUROTAR, { BLACKMOUTH })
-		end), { issue(T + 10, HAUL_20) })
+		local BEFORE = join(
+			{ start(T) },
+			times(5, function(i)
+				return cast(T + i, DUROTAR, { BLACKMOUTH })
+			end),
+			{ issue(T + 10, HAUL_20) }
+		)
 		local HAUL = idAt(T + 10)
 
 		it("counts only Catches in its zone after its record, and completes on the 20th, not before", function()
@@ -143,33 +147,36 @@ describe("completing a goal", function()
 			)
 		end)
 
-		it("frees its pin, which a goal waiting in the overflow strip takes before a newly issued one (TKB-R101)", function()
-			-- the Haul Notice on Notice pin 1, five fillers on pins 2–6, a seventh Notice in the strip
-			local fake = withHistory(join(
-				BEFORE,
-				times(6, function(i)
-					return issue(T + 10 + i, FILLER)
-				end),
-				times(20, function(i)
-					return cast(T + 20 + i, DUROTAR, { BLACKMOUTH })
-				end)
-			))
-			local ns = built(fake)
+		it(
+			"frees its pin, which a goal waiting in the overflow strip takes before a newly issued one (TKB-R101)",
+			function()
+				-- the Haul Notice on Notice pin 1, five fillers on pins 2–6, a seventh Notice in the strip
+				local fake = withHistory(join(
+					BEFORE,
+					times(6, function(i)
+						return issue(T + 10 + i, FILLER)
+					end),
+					times(20, function(i)
+						return cast(T + 20 + i, DUROTAR, { BLACKMOUTH })
+					end)
+				))
+				local ns = built(fake)
 
-			live(fake, issue(T + 50, FILLER))
+				live(fake, issue(T + 50, FILLER))
 
-			local state = ns.State()
-			assert.is_nil(state.goals[HAUL].pin)
-			assert.are.same({ 1, nil }, { state.goals[idAt(T + 16)].pin, state.goals[idAt(T + 50)].pin })
-			assert.are.same({
-				idAt(T + 16),
-				idAt(T + 11),
-				idAt(T + 12),
-				idAt(T + 13),
-				idAt(T + 14),
-				idAt(T + 15),
-			}, state.pins.notices)
-		end)
+				local state = ns.State()
+				assert.is_nil(state.goals[HAUL].pin)
+				assert.are.same({ 1, nil }, { state.goals[idAt(T + 16)].pin, state.goals[idAt(T + 50)].pin })
+				assert.are.same({
+					idAt(T + 16),
+					idAt(T + 11),
+					idAt(T + 12),
+					idAt(T + 13),
+					idAt(T + 14),
+					idAt(T + 15),
+				}, state.pins.notices)
+			end
+		)
 	end)
 
 	describe("the ever-caught set (TKB-R46)", function()
@@ -209,43 +216,57 @@ describe("completing a goal", function()
 	}
 
 	describe("rewards, in TKB-R60's order", function()
-		it("add 1 to the tally and the pay to the Coins, tie a common fly and light the day (TKB-R60–R63, TKB-R70)", function()
-			local calls = {}
-			local ns = built(
-				withHistory({ start(T), issue(T + 1, ONE), cast(T + 2, DUROTAR, { BLACKMOUTH }) }),
-				{ prepare = recordCompleted(calls) }
-			)
+		it(
+			"add 1 to the tally and the pay to the Coins, tie a common fly and light the day (TKB-R60–R63, TKB-R70)",
+			function()
+				local calls = {}
+				local ns = built(
+					withHistory({ start(T), issue(T + 1, ONE), cast(T + 2, DUROTAR, { BLACKMOUTH }) }),
+					{ prepare = recordCompleted(calls) }
+				)
 
-			local state = ns.State()
-			local goal = state.goals[idAt(T + 1)]
-			assert.are.same({ notices = 1, expeditions = 0 }, state.tally)
-			assert.are.equal(10, state.coins)
-			assert.is_string(goal.fly)
-			assert.is_nil(RARE[goal.fly])
-			local fly = state.flies[goal.fly]
-			assert.are.same({ 0, T + 2, idAt(T + 1), {} }, { fly.day, fly.time, fly.goal.id, fly.goal.seen })
-			assert.are.same({ count = 1, kindling = 2, longest = 1, milestones = {}, log = { [0] = "lit" } }, state.fire)
-			assert.are.same({}, state.titles)
-			assert.are.same({
-				{ idAt(T + 1), { pay = 10, coins = 10, fly = goal.fly, titles = {}, lit = true }, "rebuild" },
-			}, calls)
-		end)
+				local state = ns.State()
+				local goal = state.goals[idAt(T + 1)]
+				assert.are.same({ notices = 1, expeditions = 0 }, state.tally)
+				assert.are.equal(10, state.coins)
+				assert.is_string(goal.fly)
+				assert.is_nil(RARE[goal.fly])
+				local fly = state.flies[goal.fly]
+				assert.are.same({ 0, T + 2, idAt(T + 1), {} }, { fly.day, fly.time, fly.goal.id, fly.goal.seen })
+				assert.are.same(
+					{ count = 1, kindling = 2, longest = 1, milestones = {}, log = { [0] = "lit" } },
+					state.fire
+				)
+				assert.are.same({}, state.titles)
+				assert.are.same({
+					{ idAt(T + 1), { pay = 10, coins = 10, fly = goal.fly, titles = {}, lit = true }, "rebuild" },
+				}, calls)
+			end
+		)
 
-		it("complete the goals one Catch brings to their need in board order; the first lights the day (TKB-R45, TKB-R70)", function()
-			local calls = {}
-			-- the Notice is issued first, but the Expedition pins come first in board order (TKB-R101)
-			local ns = built(
-				withHistory({ start(T), issue(T + 1, ONE), issue(T + 2, ONE_E), cast(T + 3, DUROTAR, { BLACKMOUTH }) }),
-				{ prepare = recordCompleted(calls) }
-			)
+		it(
+			"complete the goals one Catch brings to their need in board order; the first lights the day (TKB-R45, TKB-R70)",
+			function()
+				local calls = {}
+				-- the Notice is issued first, but the Expedition pins come first in board order (TKB-R101)
+				local ns = built(
+					withHistory({
+						start(T),
+						issue(T + 1, ONE),
+						issue(T + 2, ONE_E),
+						cast(T + 3, DUROTAR, { BLACKMOUTH }),
+					}),
+					{ prepare = recordCompleted(calls) }
+				)
 
-			local state = ns.State()
-			assert.are.same({ idAt(T + 2), idAt(T + 1) }, { calls[1][1], calls[2][1] })
-			assert.are.same({ true, false }, { calls[1][2].lit, calls[2][2].lit })
-			assert.is_true(RARE[state.goals[idAt(T + 2)].fly])
-			assert.are.same({ 1, 70 }, { state.fire.count, state.coins })
-			assert.are.same({ notices = 1, expeditions = 1 }, state.tally)
-		end)
+				local state = ns.State()
+				assert.are.same({ idAt(T + 2), idAt(T + 1) }, { calls[1][1], calls[2][1] })
+				assert.are.same({ true, false }, { calls[1][2].lit, calls[2][2].lit })
+				assert.is_true(RARE[state.goals[idAt(T + 2)].fly])
+				assert.are.same({ 1, 70 }, { state.fire.count, state.coins })
+				assert.are.same({ notices = 1, expeditions = 1 }, state.tally)
+			end
+		)
 
 		it("grant tally_25 at the 25th goal done, on its board day and Cast (TKB-R60, TKB-R61)", function()
 			local calls = {}
@@ -262,7 +283,10 @@ describe("completing a goal", function()
 
 			local state = ns.State()
 			assert.are.equal(26, #calls)
-			assert.are.same({ {}, { "tally_25" }, {} }, { calls[24][2].titles, calls[25][2].titles, calls[26][2].titles })
+			assert.are.same(
+				{ {}, { "tally_25" }, {} },
+				{ calls[24][2].titles, calls[25][2].titles, calls[26][2].titles }
+			)
 			assert.are.same({ tally_25 = { day = 0, cast = idAt(T + 100) } }, state.titles)
 			assert.are.same({ 26, 260 }, { state.tally.notices, state.coins })
 		end)
@@ -328,16 +352,24 @@ describe("completing a goal", function()
 		end)
 
 		it("tie no fly once its pool is empty, and grant flybox only once (TKB-R62)", function()
-			local ns = built(withHistory(join(
-				{ start(T) },
-				times(31, function(i)
-					return issue(T + i, ONE) -- 31 Notices: 24 commons, then nothing to tie
-				end),
-				times(6, function(i)
-					return issue(T + 40 + i, ONE_E)
-				end),
-				{ cast(T + 100, DUROTAR, { BLACKMOUTH }), issue(T + 101, ONE_E), cast(T + 102, DUROTAR, { BLACKMOUTH }) }
-			)))
+			local ns = built(
+				withHistory(
+					join(
+						{ start(T) },
+						times(31, function(i)
+							return issue(T + i, ONE) -- 31 Notices: 24 commons, then nothing to tie
+						end),
+						times(6, function(i)
+							return issue(T + 40 + i, ONE_E)
+						end),
+						{
+							cast(T + 100, DUROTAR, { BLACKMOUTH }),
+							issue(T + 101, ONE_E),
+							cast(T + 102, DUROTAR, { BLACKMOUTH }),
+						}
+					)
+				)
+			)
 
 			local state = ns.State()
 			assert.is_nil(state.goals[idAt(T + 31)].fly)
