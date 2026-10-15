@@ -9,14 +9,22 @@ local function statesOf(core)
 	return states
 end
 
--- Shows the Settings root and returns the texts and the shown buttons of its status list (SET-R11).
+-- Shows the Settings root and returns the texts and the shown buttons of its status list, a row per roster Module,
+-- in order (SET-R11).
 local function statusList(loaded)
 	local settings = loaded.client.settings
-	for _, row in ipairs(settings.show(settings.category("Pagle"))) do
+	local texts, buttons = {}, {}
+	for _, row in ipairs(settings.show(assert(settings.category("Pagle")))) do
 		if row.initializer.searchTags[1] == "MODULES" then
-			return settings.textsOf(row.frame), settings.buttonsOf(row.frame)
+			for _, text in ipairs(settings.textsOf(row.frame)) do
+				texts[#texts + 1] = text
+			end
+			for _, button in ipairs(settings.buttonsOf(row.frame)) do
+				buttons[#buttons + 1] = button
+			end
 		end
 	end
+	return texts, buttons
 end
 
 -- Clicks Pagle in the Addon Compartment and returns the menu Core opens on the next frame (CORE-R50).
@@ -69,7 +77,7 @@ describe("Pagle_Hunts with Core", function()
 		-- The roster in CORE-R1 order: the Ledger's row (not installed here, with no button) comes first.
 		local at = 1
 		while texts[at] ~= "Hunts" do
-			at = at + 1
+			at = assert(texts[at + 1] and at + 1, "no Hunts row in the status list")
 		end
 		assert.are.same({ "Hunts", "@project-version@", "On", "Open Hunts" }, { unpack(texts, at, at + 3) })
 		assert.are.equal(1, #buttons)

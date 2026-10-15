@@ -153,12 +153,12 @@ describe("Hunts' moments", function()
 				coins = 100,
 				cast = live.id,
 			}, moments[2])
-			-- The banner heads the Cast's one Announcement, the completion riding on it (ANN-R10, ANN-R11).
-			assert.are.equal(1, #fake.announcements)
-			assert.are.same(
-				{ "Title earned", { "Hunt" }, 130 },
-				{ fake.announcements[1].headline.title, fake.announcements[1].stamps, fake.announcements[1].coins }
-			)
+			-- The Cast's two Announcements, the big side first: the banner, then the completion's toast (ANN-R10,
+			-- ANN-R11), each with its own Coins.
+			assert.are.equal(2, #fake.announcements)
+			local banner, toast = fake.announcements[1], fake.announcements[2]
+			assert.are.same({ "Title earned", {}, 100 }, { banner.headline.title, banner.stamps, banner.coins })
+			assert.are.same({ "Hunt complete", {}, 30 }, { toast.headline.title, toast.stamps, toast.coins })
 			assert.are.same({ fixture_wagers = true }, loaded.env.PagleHuntsDB.global.celebrated.sets)
 		end)
 

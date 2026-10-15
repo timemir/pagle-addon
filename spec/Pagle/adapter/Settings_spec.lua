@@ -710,7 +710,8 @@ describe("A Module's button row", function()
 		local loaded = loadWithQoL()
 		registerQoL(loaded):AddSetting("trackers", button)
 		loaded.client.fire("PLAYER_LOGIN")
-		local row = loaded.client.settings.show(assert(loaded.client.settings.category("Trackers")))[2] -- after the QoL header
+		-- After Core's "Tracker position" row (SET-R40) and the QoL header.
+		local row = loaded.client.settings.show(assert(loaded.client.settings.category("Trackers")))[3]
 		return row.initializer, row.frame, loaded.client.settings
 	end
 
