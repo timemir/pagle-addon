@@ -44,8 +44,8 @@ local function auraExpiry(spellID)
 	return GetServerTime() + math.floor(expires - GetTime())
 end
 
---- The time the timeline and the clock draw at: now, or while the grouping is paused the grouping's time, so they
---- freeze with it (HNT-R43). Between regroups a grouping's windows stand (it regroups at every edge, HNT-R42), so
+--- The time the timeline, the clock, the entry, a set's page and the tracker draw at: now, or while the grouping is
+--- paused the grouping's time, so they freeze with it (HNT-R43). Between regroups a grouping's windows stand (it regroups at every edge, HNT-R42), so
 --- now's countdowns and ruler read right from it however long ago it was made.
 ---@return integer
 function ns.TimelineNow()

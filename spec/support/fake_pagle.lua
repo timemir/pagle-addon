@@ -819,10 +819,24 @@ end)
 -- realm's UTC offset comes from fake.conditions' time and minute (a nil minute is a secret clock), and the events
 -- open now from fake.conditions.events, so setConditions moves the clock and the calendar. Each Window is read-only.
 -- A spec Pagle.GetWindowSpec handed out goes in as its record, as Core takes its own (`#` sees nothing in a proxy).
+-- Core reads its snapshot at the call, so "now" (the time the calendar's events hold at, LOG-R46) is the server time
+-- the Module reads: fake.globals.GetServerTime when a spec runs it on a clock, with the realm minute moved along.
 part(function(fake, Pagle, ns)
+	---@return ConditionsSnapshot
+	local function snapshotNow()
+		local conditions, getTime = fake.conditions, fake.globals.GetServerTime
+		if not getTime or conditions.time == nil or conditions.minute == nil or getTime() == conditions.time then
+			return conditions
+		end
+		local now = copyConditions(conditions)
+		now.time = getTime()
+		now.minute = (conditions.minute + math.floor((now.time - conditions.time) / 60)) % 1440
+		return now
+	end
+
 	function Pagle.NextWindow(spec, fromTime)
 		spec = originalOf[spec] or spec
-		return readOnly(ns.ForecastWindow(spec, fromTime, fake.conditions, ns.Catalogue.GetEventRule))
+		return readOnly(ns.ForecastWindow(spec, fromTime, snapshotNow(), ns.Catalogue.GetEventRule))
 	end
 end)
 

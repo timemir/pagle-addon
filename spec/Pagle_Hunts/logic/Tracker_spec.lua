@@ -79,8 +79,14 @@ describe("the Hunts tracker's lines", function()
 			assert.matches(" · no date known$", lines.hunts[2].first)
 		end)
 
-		it("keeps none before the first grouping, not even the empty line", function()
-			assert.are.same({ hunts = {}, more = 0, empty = false }, ns.TrackerLines(input(nil, {})))
+		it("lists none before the first grouping, and with nothing pinned reads the empty line (HNT-R76)", function()
+			local nothing = input(nil, {})
+			nothing.anyPinned = false
+			assert.are.same({ hunts = {}, more = 0, empty = true }, ns.TrackerLines(nothing))
+
+			local pinned = input(nil, {})
+			pinned.anyPinned = true -- its rows come with the first grouping
+			assert.are.same({ hunts = {}, more = 0, empty = false }, ns.TrackerLines(pinned))
 		end)
 
 		it('counts the pinned rows past six for "+N more", and the empty line with none (Tunables)', function()

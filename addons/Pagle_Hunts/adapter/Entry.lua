@@ -450,7 +450,7 @@ local function render(page, place)
 		unconfirmed = ns.Unconfirmed(hunt, row and row.window),
 		pinned = ns.IsPinned(hunt.id),
 		fromSet = place.mode ~= "board" and place.set or nil,
-		now = ns.groups:Time() or now,
+		now = ns.TimelineNow(), -- the countdowns count from now, frozen while the grouping is paused (HNT-R43)
 		snapshot = Pagle.GetConditions(),
 		best = Pagle.GetAngler().bestBaseSkill,
 		sources = ns.names,

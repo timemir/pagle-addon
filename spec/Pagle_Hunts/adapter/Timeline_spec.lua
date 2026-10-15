@@ -303,24 +303,43 @@ describe("the timeline's rows (HNT-R63)", function()
 	end)
 
 	it("draws it from the now line when the weekly forecast gives no span at now", function()
-		-- Event 302 has no weekly rule: forecast from the ruler's start alone, it has no span (LOG-R50), while the
-		-- calendar shows it open now. FakePagle's forecast counts the calendar at any start time, so the names'
-		-- NextWindow here answers from the weekly rules alone before now, as LOG-R50's forecast says.
+		-- Event 302 has no weekly rule: forecast from the ruler's start, the calendar opens it at now and never
+		-- before (LOG-R46, LOG-R50).
 		local run = start({ list = extraList({ { class = "fixed.oddity", conditions = { events = { 302 } } } }) })
 		local now = SERVER_TIME
 		setConditions(run, { events = { 302 } })
-		local forecast = run.ns.names.NextWindow
-		run.ns.names.NextWindow = function(spec, fromTime)
-			if fromTime < now then
-				return nil
-			end
-			return forecast(spec, fromTime)
-		end
 
 		local row = rowIn(run.ns.BoardTimeline({ mode = "board" }), "extra_1")
 
 		assert.are.same({ bar(at(now, now), 1, "hatched") }, bars(row))
 		assert.are.equal("while the event runs", row.margin)
+	end)
+
+	it("draws a live occurrence from its weekly opening to its end (HNT-R63, LOG-R50)", function()
+		-- Sunday 15:00, the Extravaganza live in its 14:00–16:00 occurrence: the ruler starts at 13:00, before it.
+		local run = start({ list = extraList({ { class = "fixed.oddity", conditions = { events = { 301 } } } }) })
+		run.loaded.client.advance(untilRealm(15))
+		setConditions(run, { events = { 301 } })
+		local now = realm(15)
+
+		local row = rowIn(run.ns.BoardTimeline({ mode = "board" }), "extra_1")
+
+		-- The fixture's weekly rule is unconfirmed (HNT-R34).
+		assert.are.same({ bar(at(realm(14), now), at(realm(16), now), "dashed") }, bars(row))
+		assert.are.equal("until 16:00", row.margin)
+	end)
+end)
+
+describe("an event's conditions line while it runs (HNT-R53)", function()
+	it("keeps its weekly wording, from its next forecast opening after closesAt", function()
+		local spec = { events = { 301 } }
+		local run = start({ list = extraList({ { class = "fixed.oddity", conditions = spec } }) })
+		run.loaded.client.advance(untilRealm(15))
+		setConditions(run, { events = { 301 } })
+
+		local line = run.ns.HuntConditionsLine(spec, nil, realm(15), run.fake.conditions, run.ns.names)
+
+		assert.are.equal("Sundays 14:00 for 2h", line:match("Sundays .*$"))
 	end)
 end)
 
@@ -605,6 +624,35 @@ describe("opening the board (HNT-R67)", function()
 		assert.are.same({ "What's biting, and when", "No Hunts yet." }, pageTexts(run, "left"))
 		assert.are.same({}, pageTexts(run, "right"))
 		assert.is_nil(place(run).hunt)
+	end)
+end)
+
+describe("countdowns on the right page, an hour after the last regroup (HNT-R42, HNT-R43, HNT-R52)", function()
+	-- At 08:15 the day window (06:00–20:00) is open: fixture_eel closes at 20:00. The tracker is collapsed and the
+	-- board shut, so nothing refreshes the grouping for an hour; the countdowns still count from now.
+	local function anHourLater()
+		local run = start()
+		run.ns.tracker.header:Click() -- collapsed: no 60 s refresh (HNT-R42)
+		local grouped = run.ns.groups:Time()
+		wait(run, HOUR)
+		assert.are.equal(grouped, run.ns.groups:Time())
+		return run
+	end
+
+	it("counts the entry's window line down from now (HNT-R52)", function()
+		local run = anHourLater()
+
+		run.ns.OpenBoard("fixture_eel")
+
+		assert.is_true(has(pageTexts(run, "right"), "Open now. Closes in 10h 45m, at 20:00."))
+	end)
+
+	it("counts a set page's tracker labels down from now (HNT-R51, HNT-R66)", function()
+		local run = anHourLater()
+
+		local eel = run.ns.BoardSetPage("fixture_pair").hunts[1] -- fixture_eel, first in Hunt list order
+
+		assert.are.equal("ends in 10h 45m", eel.when)
 	end)
 end)
 

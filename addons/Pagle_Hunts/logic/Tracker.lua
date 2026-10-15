@@ -19,8 +19,9 @@ local DOTS = { now = "now", soon = "soon", later = "later", onDemand = "demand" 
 ---@class HuntsTrackerInput
 ---@field rows HuntRow[]?      -- the pinned rows, sorted as on the board (ns.groups:Rows{ pinnedOnly = true }); nil
 --- before the first grouping
----@field time integer?        -- the grouping's time (ns.groups:Time()): labels count down from it, so they freeze
---- with it while restricted (HNT-R43, HNT-R78)
+---@field anyPinned boolean    -- whether profile.pins holds any Hunt, for the empty line before the first grouping
+---@field time integer         -- ns.TimelineNow(): labels count down from now, or from the grouping's time while it is
+--- paused, so they freeze with it while restricted (HNT-R43, HNT-R78)
 ---@field snapshot table       -- one live `Pagle.GetConditions()` (HNT-R50)
 ---@field zone integer?        -- the live zone's areaID (the snapshot's `zone`)
 ---@field updating boolean     -- ns.IsUpdating() (HNT-R78)
@@ -80,7 +81,7 @@ local function huntLines(row, input)
 	local L = ns.L
 	local hunt, where = row.hunt, input.where[row.id]
 	-- The tracker label (HNT-R51) of the row as grouped: short of skill as the grouping found it, counted down from
-	-- the grouping's time.
+	-- input.time.
 	local _, label = ns.HuntLabels({
 		group = row.group,
 		auraUp = row.auraUp,
@@ -105,13 +106,15 @@ local function huntLines(row, input)
 end
 
 --- The tracker's lines (HNT-R76, HNT-R78): the pinned current Hunts as the board sorts them, at most
---- ns.TRACKER_SHOWN, then how many more are pinned; with nothing pinned, the empty line.
+--- ns.TRACKER_SHOWN, then how many more are pinned; with nothing pinned, the empty line. Before the first grouping
+--- there are no rows yet: the empty line alone when nothing is pinned.
 ---@param input HuntsTrackerInput
 ---@return HuntsTrackerLines
 function ns.TrackerLines(input)
 	local lines = { hunts = {}, more = 0, empty = false }
 	local rows = input.rows
 	if not rows then
+		lines.empty = not input.anyPinned
 		return lines
 	end
 	for i, row in ipairs(rows) do

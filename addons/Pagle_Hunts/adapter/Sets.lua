@@ -10,11 +10,11 @@ local ns = select(2, ...)
 -- on the leather's anchors, and the right side of a set's page (the set mode's right page). The look follows
 -- prototypes/hunts-board/ variant E, in adapter/BoardWidgets.lua's art.
 
--- The time the sets' views judge "current" at: the grouping's, so they freeze with it (HNT-R43), or now before the
--- first grouping.
+-- The time the sets' views judge "current" and count the checklist's labels down at: now, or the grouping's while it
+-- is paused, so they freeze with it (HNT-R43).
 ---@return integer
 local function viewTime()
-	return ns.groups:Time() or GetServerTime()
+	return ns.TimelineNow()
 end
 
 -- logic/Sets.lua's inputs, read now.

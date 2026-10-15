@@ -181,7 +181,8 @@ local function draw(view)
 	local conditions = Pagle.GetConditions()
 	local lines = ns.TrackerLines({
 		rows = ns.groups:Grouping() and ns.groups:Rows({ pinnedOnly = true }) or nil,
-		time = ns.groups:Time(),
+		anyPinned = next(ns.db.profile.pins) ~= nil,
+		time = ns.TimelineNow(),
 		snapshot = conditions,
 		zone = conditions.zone,
 		updating = ns.IsUpdating(),

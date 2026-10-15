@@ -38,13 +38,15 @@ end
 ---@field updating boolean
 
 --- Hunts on a FakePagle, logged in at Fishing `skill` (150 by default) and grouped, its projection a stand-in that
---- hands out `run.state` and `run.updating`; names for the fixture's areas and items.
+--- hands out `run.state` and `run.updating`; names for the fixture's areas and items. `prepare` runs before Hunts'
+--- ADDON_LOADED, e.g. to change the fixture's Hunt list.
 ---@param skill integer?
+---@param prepare fun(loaded: LoadedAddon)?
 ---@return EntryRun
-local function start(skill)
+local function start(skill, prepare)
 	local fake = newFakePagle()
 	fake.setCatalogue(catalogue.base())
-	local loaded = hunts.load(fake)
+	local loaded = hunts.load(fake, { prepare = prepare })
 	local client = loaded.client
 	client.areaNames[148], client.areaNames[331] = "Darkshore", "Ashenvale"
 	client.areaNames[12], client.areaNames[40], client.areaNames[10] = "Elwynn Forest", "Westfall", "Duskwood"
@@ -203,6 +205,37 @@ describe("a Hunt's entry on the board", function()
 			chipOf(view, "skill 75")
 			chipOf(view, "Keeps late hours.")
 			chipOf(view, "After the lamps are lit.")
+		end)
+
+		it("reads 'Up now.' for a Hunt short of skill while its aura is up (HNT-R52)", function()
+			local rack = 1280341 -- fixture_rack's aura
+			local run = start(150, function(l)
+				for _, hunt in ipairs(l.ns.huntList.hunts) do
+					if hunt.id == "fixture_rack" then
+						hunt.conditions = { auras = { rack }, skill = { min = 400 } }
+					end
+				end
+			end)
+			local conditions = {}
+			for key, value in pairs(run.fake.conditions) do
+				conditions[key] = value
+			end
+			conditions.auras = { rack }
+			run.fake.setConditions(conditions) -- ConditionsChanged regroups (HNT-R42)
+
+			local page = open(run, { mode = "board", hunt = "fixture_rack" })
+
+			assert.is_true(has(textsOf(page), "Up now. Needs 400; my best is 150."))
+			-- Its row stays as short of skill draws it: Later, "need 400", no blue camp bar (HNT-R51, HNT-R63).
+			assert.are.equal("later", run.ns.groups:Row("fixture_rack").group)
+			local drawn
+			for _, group in ipairs(run.ns.BoardTimeline({ mode = "board" }).groups) do
+				for _, row in ipairs(group.rows) do
+					drawn = row.id == "fixture_rack" and row or drawn
+				end
+			end
+			assert.are.same({}, drawn.bars)
+			assert.are.equal("need 400", drawn.margin)
 		end)
 
 		it("shows '+N more' past 3 zones, its tooltip listing the rest", function()
