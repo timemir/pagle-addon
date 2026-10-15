@@ -23,6 +23,7 @@ local ns = select(2, ...)
 ---@field ItemName fun(itemID: integer): string?
 ---@field RequestItem fun(itemID: integer)
 ---@field RealmMinute fun(): integer?
+---@field FormatNumber fun(n: integer): string   -- BreakUpLargeNumbers: "2,340" (the Write-up's heading, TKB-R84)
 ---@field pagle table
 
 -- Templates and counts.

@@ -62,5 +62,9 @@ ns.reads = {
 		end
 		return hour * 60 + minute
 	end,
+	-- The client's number format, read at each call (TKB-R84: "written up from 2,340 Casts").
+	FormatNumber = function(n)
+		return BreakUpLargeNumbers(n)
+	end,
 	pagle = Pagle,
 }
