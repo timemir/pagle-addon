@@ -243,27 +243,41 @@ describe("the Hunts board's leather (HNT-R61)", function()
 end)
 
 describe("the Hunts board's cover (HNT-R70)", function()
-	it("wears the default leather until a cover is set, then that cover, then the default again", function()
-		local loaded, _, board = loggedIn()
+	it("wears the kit's leather until a cover is set, then that cover, then the kit's again", function()
+		local _, _, board = loggedIn()
 		board:Toggle()
-		local leather = board.frame.cover.leather
-		local default = loaded.ns.BOARD_COVER.leather
-		assert.are.same({ default[1], default[2], default[3], 1 }, leather.color)
+		local cover = board.frame.cover
+		assert.is_true(cover.kit)
+		assert.is_true(cover.fill:IsShown())
 
-		board:SetCover({ leather = { 0.1, 0.3, 0.2 } })
-		assert.are.same({ 0.1, 0.3, 0.2, 1 }, leather.color)
+		board:SetCover({ kit = false, leather = { 0.1, 0.3, 0.2 } })
+		assert.is_false(cover.fill:IsShown())
+		assert.are.same({ 0.1, 0.3, 0.2, 1 }, cover.leather.color)
 		board:SetCover(nil)
 
-		assert.are.same({ default[1], default[2], default[3], 1 }, leather.color)
+		assert.is_true(cover.kit)
+		assert.is_true(cover.fill:IsShown())
 	end)
 
 	it("keeps a cover set before the board was first opened", function()
 		local _, _, board = loggedIn()
 
-		board:SetCover({ leather = { 0.1, 0.3, 0.2 } })
+		board:SetCover({ kit = false, leather = { 0.1, 0.3, 0.2 } })
 		board:Toggle()
 
 		assert.are.same({ 0.1, 0.3, 0.2, 1 }, board.frame.cover.leather.color)
+	end)
+
+	it("hangs the ribbons' tops under the kit's band, and from the leather's foot on an old cover", function()
+		local loaded, _, board = loggedIn()
+		board:Toggle()
+		local ribbons = board.frame.anchors.ribbons
+		local tuck = loaded.ns.BOARD_RIBBON.tuck
+		assert.are.same({ "TOPLEFT", board.frame, "TOPLEFT", 176, -(600 - tuck) }, ribbons.points[1])
+
+		board:SetCover({ kit = false })
+
+		assert.are.same({ "TOPLEFT", board.frame, "TOPLEFT", 176, -600 }, ribbons.points[1])
 	end)
 end)
 

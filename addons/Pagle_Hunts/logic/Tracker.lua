@@ -31,6 +31,8 @@ ns.TRACKER_SHOWN = 6
 ---@field id string
 ---@field dot HuntGroup                      -- its group, for its dot
 ---@field first string         -- "{name} · {tracker label}"
+---@field name string          -- the two parts as the tracker sets them: the name at the left…
+---@field label string         -- …and the tracker label at the right
 ---@field second string        -- "{target line} · you're here · {progress}", "you're here" only in its zones
 
 --- The tracker's lines: before the first grouping none, not even the empty line.
@@ -87,6 +89,8 @@ local function huntLines(row, input)
 		id = row.id,
 		dot = row.group,
 		first = L.TRACKER_FIRST:format(input.list:HuntName(row.id), label),
+		name = input.list:HuntName(row.id),
+		label = label,
 		second = table.concat(second, L.TRACKER_JOIN),
 	}
 end

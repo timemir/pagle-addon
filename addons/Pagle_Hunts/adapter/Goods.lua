@@ -5,14 +5,16 @@ end
 ---@class PagleHuntsNS
 local ns = select(2, ...)
 
--- Hunts' goods on the client (HNT-R120–R122, HNT-R70): registered with Core, previewed on the Curio Shop's stage, and
--- the looks the board's leather and the tracker's frame wear. Every texture is an in-client file, in build 70338's
--- ManifestInterfaceData, laid over a tint as adapter/BoardWidgets.lua's are.
+-- Hunts' goods on the client (HNT-R120–R122, HNT-R70, HNT-R79): registered with Core, previewed on the Curio Shop's
+-- stage, and the looks the board's leather and the tracker wear. The default cover is the books art kit's leather
+-- (adapter/BoardWidgets.lua); the covers for sale keep their in-client grains over a tint, the kit having no leather
+-- for them. The tracker's three looks are the kit's: the native block restyled, Ink Wash's paper and Wax Seal's
+-- parchment (adapter/BookAtlas.lua's TrackerInk and TrackerWax), each with its own fonts and inks.
 
 -- A tint from its hex code, as the prototypes' CSS writes it: { r, g, b }, 0 to 1 (ns.BoardTint).
 local tint = ns.BoardTint
 
--- The grains: the board's rock backdrop (the default leather's) and FrameGeneral's smoother marble, for a waxed cloth.
+-- The old covers' grains: the rock backdrop and FrameGeneral's smoother marble, for a waxed cloth.
 local ROCK = ns.BOARD_TEXTURES.leather
 local MARBLE = "Interface\\FrameGeneral\\UI-Background-Marble"
 
@@ -24,15 +26,16 @@ local MARBLE = "Interface\\FrameGeneral\\UI-Background-Marble"
 -- The default cover's strap; its leather is filled in from ns.BOARD_COVER below.
 local defaultCover = { strap = tint("a01818") }
 
---- Each notebook cover's look, by good ID (HNT-R121). Leather is the board's own (ns.BOARD_COVER); Oilcloth takes
---- prototypes/curio-shop/'s swatch (#1a2a1a, #8aa07a, #d0a020); Tooled Leather and Verdigris are picked from their
---- lore (data/lore/hunts.toml).
+--- Each notebook cover's look, by good ID (HNT-R121). Leather is the board's own (ns.BOARD_COVER, the kit's); Oilcloth
+--- takes prototypes/curio-shop/'s swatch (#1a2a1a, #8aa07a, #d0a020); Tooled Leather and Verdigris are picked from
+--- their lore (data/lore/hunts.toml).
 ---@type table<string, HuntsCoverLook>
 ns.COVERS = {
 	-- The board's own leather (ns.BOARD_COVER), filled in below, with a red strap.
 	[ns.DEFAULT_COVER] = defaultCover --[[@as HuntsCoverLook]],
 	-- Black-green waxed cloth, smooth, with a pale green rule and a mustard strap.
 	["hunts.notebookcover.oilcloth"] = {
+		kit = false,
 		leather = tint("1a2a1a"),
 		edge = tint("080e08"),
 		rule = tint("8aa07a"),
@@ -42,6 +45,7 @@ ns.COVERS = {
 	},
 	-- Dark hide, deeply grained as if worked with a tool (its lore: tooled with reeds and leaping fish), gilt rule.
 	["hunts.notebookcover.tooled"] = {
+		kit = false,
 		leather = tint("3a2212"),
 		edge = tint("120a04"),
 		rule = tint("c9a46a"),
@@ -52,6 +56,7 @@ ns.COVERS = {
 	-- Copper gone green (its lore: copper corners and clasp, green in the sea air): dark leather, a verdigris rule and
 	-- clasp.
 	["hunts.notebookcover.verdigris"] = {
+		kit = false,
 		leather = tint("24302a"),
 		edge = tint("0c120e"),
 		rule = tint("5aa08a"),
@@ -96,7 +101,11 @@ local function buildNotebook(stage)
 	spine:SetPoint("TOPLEFT", 2, -2)
 	spine:SetPoint("BOTTOMLEFT", 2, 2)
 	spine:SetWidth(SPINE_WIDTH)
-	notebook.strap = notebook:CreateTexture(nil, "ARTWORK")
+	-- The strap rides over the kit's band.
+	local over = CreateFrame("Frame", nil, notebook)
+	over:SetAllPoints()
+	over:SetFrameLevel(notebook:GetFrameLevel() + 8)
+	notebook.strap = over:CreateTexture(nil, "ARTWORK")
 	notebook.strap:SetPoint("TOPRIGHT", -STRAP_INSET, STRAP_OVER)
 	notebook.strap:SetPoint("BOTTOMRIGHT", -STRAP_INSET, -STRAP_OVER)
 	notebook.strap:SetWidth(STRAP_WIDTH)
@@ -123,126 +132,148 @@ local function previewCover(stage, goodID)
 	notebook:Show()
 end
 
---- A tracker frame's look (HNT-R79, CORE-R73): a backdrop laid behind the native block, in a tint, and a border round
---- it; Wax Seal also presses a seal on the header's corner.
----@class HuntsTrackerFrameLook
----@field backdrop string   -- the backdrop's texture
----@field tint number[]     -- its vertex tint
----@field alpha number      -- its opacity
----@field border number[]   -- the border's colour
----@field borderSize number -- its width, in pixels
----@field seal number[]?    -- a wax seal's tint, if it has one
----@field ink number[]?     -- the words' colour on a pale backdrop; nil keeps the native block's
+--- A font as a tracker look sets it: its face, size, ink and whether it has a shadow (words over the world have one).
+---@class HuntsTrackerFont
+---@field [1] HuntsArtFace
+---@field [2] number
+---@field [3] number[]
+---@field [4] boolean?
 
---- Each tracker frame's look, by good ID (HNT-R121). No frame (ns.NO_TRACKER_FRAME) has none: the plain native
---- block.
----@type table<string, HuntsTrackerFrameLook>
-ns.TRACKER_FRAMES = {
-	-- A thin grey wash of ink behind the lines (its lore), in a fine ink line.
-	["hunts.trackerframe.inkwash"] = {
-		backdrop = MARBLE,
-		tint = tint("3a3e44"),
-		alpha = 0.55,
-		border = tint("22262c"),
-		borderSize = 1,
+--- A tracker look (HNT-R79): the books kit's geometry and type for one of the three. The block is `width` wide; the
+--- words sit from `x` to `right`; the first Hunt's lines start `first` down and each Hunt takes `step`, its second line
+--- `second` below its first. `frame` is its paper's atlas (adapter/BookAtlas.lua), sliced down so it grows with its lines.
+---@class HuntsTrackerLook
+---@field frame string?        -- nil: no frame, the native look
+---@field width number
+---@field x number
+---@field right number
+---@field first number
+---@field step number
+---@field second number
+---@field foot number          -- the room under the last line
+---@field shade boolean        -- the native look's fading shade behind each line
+---@field paper boolean        -- dots in ink on paper, not bright over the world
+---@field caps boolean         -- "Hunts" in small caps
+---@field header HuntsTrackerFont
+---@field chevron number[]
+---@field name HuntsTrackerFont
+---@field label HuntsTrackerFont
+---@field sub HuntsTrackerFont
+
+local GOLD, WHITE, GREY = tint("ffd100"), tint("ffffff"), tint("c8c0a8")
+local PAPER_INK, PAPER_SMALL = tint("2e1c0c"), tint("5a4028")
+
+--- The tracker's looks: "native" for No frame (the plain block, restyled in the kit's type), and the two frames for
+--- sale.
+---@type table<string, HuntsTrackerLook>
+ns.TRACKER_LOOKS = {
+	native = {
+		width = 260,
+		x = 8,
+		right = 252,
+		first = 26,
+		step = 41,
+		second = 20,
+		foot = 4,
+		shade = true,
+		paper = false,
+		caps = false,
+		header = { "gilt", 14, GOLD, true },
+		chevron = GOLD,
+		name = { "print", 13, WHITE, true },
+		label = { "print", 13, GOLD, true },
+		sub = { "print", 13, GREY, true },
 	},
-	-- Parchment edged in brown, with a red seal pressed in the corner (its lore): the words in the board's ink.
-	["hunts.trackerframe.waxseal"] = {
-		backdrop = ns.BOARD_TEXTURES.paper,
-		tint = ns.BOARD_LOOK.paper,
-		alpha = 0.95,
-		border = tint("5a3a1a"),
-		borderSize = 2,
-		seal = ns.BOARD_LOOK.seal,
-		ink = ns.BOARD_LOOK.ink,
+	inkwash = {
+		frame = "TrackerInk",
+		width = 268,
+		x = 12,
+		right = 256,
+		first = 32,
+		step = 44,
+		second = 23,
+		foot = 8,
+		shade = false,
+		paper = true,
+		caps = true,
+		header = { "print", 12, tint("23407a") },
+		chevron = tint("23407a"),
+		name = { "handSemi", 18, PAPER_INK },
+		label = { "hand", 17, tint("9a2a1a") },
+		sub = { "print", 13, PAPER_SMALL },
+	},
+	waxseal = {
+		frame = "TrackerWax",
+		width = 272,
+		x = 16,
+		right = 260,
+		first = 32,
+		step = 42,
+		second = 21,
+		foot = 8,
+		shade = false,
+		paper = true,
+		caps = true,
+		header = { "print", 12, tint("7a1a0e") },
+		chevron = tint("7a1a0e"),
+		name = { "gilt", 15, PAPER_INK },
+		label = { "hand", 17, tint("7a1a0e") },
+		sub = { "print", 13, PAPER_SMALL },
 	},
 }
+local LOOKS = ns.TRACKER_LOOKS
 
--- How far a frame reaches out round the block it dresses, and the seal's size.
-local FRAME_PAD, SEAL_SIZE = 6, 18
+--- Each tracker frame's look, by good ID (HNT-R121). No frame (ns.NO_TRACKER_FRAME) has none: the native look.
+---@type table<string, HuntsTrackerLook>
+ns.TRACKER_FRAMES = {
+	["hunts.trackerframe.inkwash"] = LOOKS.inkwash,
+	["hunts.trackerframe.waxseal"] = LOOKS.waxseal,
+}
 
---- A tracker frame on a block (HNT-R79): the backdrop, the border's four lines and the seal, all hidden until a look
---- dresses it. The tracker's block (ns.NewTrackerBlock) makes one.
----@class HuntsTrackerFrameView
----@field backdrop Texture
----@field border Texture[]
----@field seal Texture
----@field SetFrame fun(self: HuntsTrackerFrameView, look: HuntsTrackerFrameLook?) -- nil: no frame
-
----@param block Frame
----@return HuntsTrackerFrameView
-function ns.NewTrackerFrame(block)
-	local backdrop = block:CreateTexture(nil, "BACKGROUND")
-	backdrop:SetPoint("TOPLEFT", -FRAME_PAD, FRAME_PAD)
-	backdrop:SetPoint("BOTTOMRIGHT", FRAME_PAD, -FRAME_PAD)
-	local outline = ns.BoardOutline(block, -FRAME_PAD)
-	local border = outline.edges
-	local seal = block:CreateTexture(nil, "OVERLAY")
-	seal:SetTexture(ns.BOARD_TEXTURES.disc)
-	seal:SetSize(SEAL_SIZE, SEAL_SIZE)
-	seal:SetPoint("CENTER", block, "TOPLEFT", -FRAME_PAD + 2, FRAME_PAD - 2)
-	---@type HuntsTrackerFrameView
-	local view = { backdrop = backdrop, border = border, seal = seal, SetFrame = function() end }
-	function view.SetFrame(_, look)
-		backdrop:SetShown(look ~= nil)
-		if look then
-			outline:Solid(look.border, 1, look.borderSize)
-		else
-			outline:Hide()
-		end
-		seal:SetShown(look ~= nil and look.seal ~= nil)
-		if look then
-			backdrop:SetTexture(look.backdrop)
-			backdrop:SetVertexColor(look.tint[1], look.tint[2], look.tint[3])
-			backdrop:SetAlpha(look.alpha)
-			if look.seal then
-				seal:SetVertexColor(look.seal[1], look.seal[2], look.seal[3])
-			end
-		end
-	end
-	view:SetFrame(nil)
-	return view
+--- The look the tracker wears for tracker frame `goodID`: its own, or the native look for none.
+---@param goodID string?
+---@return HuntsTrackerLook
+function ns.TrackerLook(goodID)
+	return ns.TRACKER_FRAMES[goodID] or LOOKS.native
 end
 
---- The tracker block's sizes (HNT-R76): the native block's width, its header, each Hunt's two lines and the room
---- below the last; and the header's collapse marks, minus while expanded and plus while collapsed, as the client's own
---- collapsible lists.
-ns.TRACKER_BLOCK = {
-	width = 220,
-	headerHeight = 18,
-	lineHeight = 14,
-	huntHeight = 2 * 14 + 2,
-	dotSize = 8,
-	pad = 4,
-	expandedMark = "Interface\\Buttons\\UI-MinusButton-Up",
-	collapsedMark = "Interface\\Buttons\\UI-PlusButton-Up",
-}
-local BLOCK = ns.TRACKER_BLOCK
-local WIDTH, HEADER_HEIGHT, LINE_HEIGHT, DOT_SIZE = BLOCK.width, BLOCK.headerHeight, BLOCK.lineHeight, BLOCK.dotSize
-local HUNT_HEIGHT = BLOCK.huntHeight
+-- The frame's paper keeps this much of its top and its foot when it slices down.
+local FRAME_TOP, FRAME_FOOT = 30, 20
+-- A dot's size; an extra line's height ("+N more", the empty line).
+local DOT_SIZE, EXTRA_LINE = 8, 20
 
 --- The tracker's widgets, for its draws (and specs that read them).
 ---@class HuntsTrackerView
 ---@field frame Frame            -- the block Core docks
----@field look HuntsTrackerFrameView   -- the tracker frame it wears (HNT-R79)
+---@field paper HuntsVSlice      -- the frame's paper, sliced to the block's height
 ---@field header Button          -- collapses and expands it (HNT-R77)
 ---@field title FontString       -- "Hunts"
----@field mark Texture           -- the collapse mark
+---@field chevron Texture[]      -- the collapse mark: two strokes, down while expanded, right while collapsed
 ---@field lines HuntsTrackerLineButton[]   -- one per shown Hunt, ns.TRACKER_SHOWN of them
 ---@field more HuntsTrackerMoreButton   -- "+N more", opens the board (HNT-R77)
 ---@field empty FontString       -- "Pin a Hunt to keep it here."
----@field words { text: FontString, font: string }[]   -- every word, for the frame's ink
----@field wearing string?      -- a tracker frame's good ID the dev tour dresses it in (adapter/Tour.lua); nil: the
+---@field look HuntsTrackerLook  -- the look it last drew in
+---@field wearing string?        -- a tracker frame's good ID the dev tour dresses it in (adapter/Tour.lua); nil: the
 --- equipped one
 
 ---@class HuntsTrackerLineButton: Button
+---@field shade Texture
 ---@field dot BoardDotView
----@field first FontString
+---@field first FontString       -- the Hunt's name
+---@field label FontString       -- its tracker label, at the right
 ---@field second FontString
 ---@field huntID string?
 
 ---@class HuntsTrackerMoreButton: Button
 ---@field text FontString
+
+--- What a tracker block shows (HNT-R76): each Hunt's dot, name, label and second line (none in the shop's sample),
+--- "+N more", the empty line, and whether it is collapsed to its header.
+---@class HuntsTrackerContent
+---@field hunts { dot: HuntGroup, name: string, label: string, second: string? }[]
+---@field more string?
+---@field empty boolean
+---@field collapsed boolean
 
 -- Lets a Shift-drag that starts on `child` move the dock: a mouse-enabled child takes the drag, so it hands it to the
 -- docked block, whose drag scripts Core hooked (CORE-R71).
@@ -260,63 +291,41 @@ local function passDrags(child, block)
 	end
 end
 
--- A font string on `parent` in the native font object `font`, listed in `words` for the frame's ink.
+-- Sets a font string in a look's font.
+---@param text FontString
+---@param font HuntsTrackerFont
+local function setFont(text, font)
+	text:SetFontObject(ns.ArtFont(font[1], font[2], font[4]))
+	text:SetTextColor(font[3][1], font[3][2], font[3][3])
+end
+
+-- A fading shade behind a line in the native look, as the client's objective tracker lays its lines on the world.
 ---@param parent Frame
----@param font string
----@param words { text: FontString, font: string }[]
----@return FontString
-local function word(parent, font, words)
-	local text = parent:CreateFontString(nil, "OVERLAY", font)
-	text:SetJustifyH("LEFT")
-	text:SetWordWrap(false)
-	words[#words + 1] = { text = text, font = font }
-	return text
+---@return Texture
+local function newShade(parent)
+	local shade = parent:CreateTexture(nil, "BACKGROUND")
+	shade:SetColorTexture(1, 1, 1, 1)
+	shade:SetGradient("HORIZONTAL", CreateColor(0, 0, 0, 0.45), CreateColor(0, 0, 0, 0))
+	return shade
 end
 
--- The header: "Hunts" in the native header font over a faint gold rule, with the collapse mark at its right.
+-- Hunt `i`'s lines, a button (the tracker opens the board on its Hunt, HNT-R77): its dot, its name and label, then
+-- the target line and progress under them.
 ---@param block Frame
----@param words { text: FontString, font: string }[]
----@return Button header
----@return FontString title
----@return Texture mark
-local function buildHeader(block, words)
-	local header = CreateFrame("Button", nil, block)
-	header:SetPoint("TOPLEFT")
-	header:SetPoint("TOPRIGHT")
-	header:SetHeight(HEADER_HEIGHT)
-	local title = word(header, "GameFontNormal", words)
-	title:SetPoint("LEFT", 2, 0)
-	title:SetText(ns.L.TITLE)
-	local mark = header:CreateTexture(nil, "ARTWORK")
-	mark:SetSize(14, 14)
-	mark:SetPoint("RIGHT", -2, 0)
-	local rule = header:CreateTexture(nil, "ARTWORK")
-	rule:SetColorTexture(1, 0.82, 0, 0.35) -- the native header's faint gold rule
-	rule:SetPoint("BOTTOMLEFT", 0, 1)
-	rule:SetPoint("BOTTOMRIGHT", 0, 1)
-	rule:SetHeight(1)
-	passDrags(header, block)
-	return header, title, mark
-end
-
--- Hunt `i`'s two lines, a button (the tracker opens the board on its Hunt, HNT-R77): its dot, then the name and
--- label, then the target line and progress under them.
----@param block Frame
----@param i integer
----@param words { text: FontString, font: string }[]
 ---@return HuntsTrackerLineButton
-local function buildLine(block, i, words)
+local function buildLine(block)
 	local line = CreateFrame("Button", nil, block) --[[@as HuntsTrackerLineButton]]
-	line:SetPoint("TOPLEFT", 0, -HEADER_HEIGHT - (i - 1) * HUNT_HEIGHT)
-	line:SetSize(WIDTH, HUNT_HEIGHT)
+	line.shade = newShade(line)
+	line.shade:SetPoint("TOPLEFT")
+	line.shade:SetPoint("BOTTOMRIGHT", 0, 3)
 	line.dot = ns.NewBoardDot(line, DOT_SIZE)
-	line.dot:SetPoint("TOPLEFT", 2, -3)
-	line.first = word(line, "GameFontHighlightSmall", words)
-	line.first:SetPoint("TOPLEFT", DOT_SIZE + 6, 0)
-	line.first:SetPoint("TOPRIGHT", 0, 0)
-	line.second = word(line, "GameFontDisableSmall", words)
-	line.second:SetPoint("TOPLEFT", DOT_SIZE + 12, -LINE_HEIGHT)
-	line.second:SetPoint("TOPRIGHT", 0, -LINE_HEIGHT)
+	local function text(justify)
+		local made = line:CreateFontString(nil, "OVERLAY")
+		made:SetJustifyH(justify)
+		made:SetWordWrap(false)
+		return made
+	end
+	line.first, line.label, line.second = text("LEFT"), text("RIGHT"), text("LEFT")
 	line:SetScript("OnClick", function(self)
 		ns.OpenBoard(self.huntID)
 	end)
@@ -325,91 +334,178 @@ local function buildLine(block, i, words)
 	return line
 end
 
+-- The header: "Hunts" with the collapse mark before it.
+---@param block Frame
+---@return Button header
+---@return FontString title
+---@return Texture[] chevron
+local function buildHeader(block)
+	local header = CreateFrame("Button", nil, block)
+	header:SetPoint("TOPLEFT")
+	header:SetPoint("TOPRIGHT")
+	local title = header:CreateFontString(nil, "OVERLAY")
+	title:SetJustifyH("LEFT")
+	local chevron = {}
+	for i = 1, 2 do
+		chevron[i] = header:CreateTexture(nil, "OVERLAY")
+		chevron[i]:SetSize(6, 1.6)
+	end
+	passDrags(header, block)
+	return header, title, chevron
+end
+
 --- The tracker's block on `parent` (HNT-R76): the header, the Hunts' line buttons, "+N more" and the empty line, all
---- hidden until drawn, in a tracker frame. The tracker (adapter/Tracker.lua) wires its clicks; the Curio Shop's sample
+--- hidden until drawn, on its look's paper. The tracker (adapter/Tracker.lua) wires its clicks; the Curio Shop's sample
 --- (HNT-R121) draws two fixed Hunts in one.
 ---@param parent Frame
 ---@return HuntsTrackerView
 function ns.NewTrackerBlock(parent)
 	local block = CreateFrame("Frame", nil, parent)
-	block:SetSize(WIDTH, HEADER_HEIGHT)
-	local words = {}
-	local look = ns.NewTrackerFrame(block)
-	local header, title, mark = buildHeader(block, words)
+	block:SetSize(LOOKS.native.width, LOOKS.native.first)
+	local paper = CreateFrame("Frame", nil, block) --[[@as HuntsVSlice]]
+	paper:SetPoint("TOPLEFT")
+	paper:SetFrameLevel(block:GetFrameLevel())
+	paper:Hide()
+	local header, title, chevron = buildHeader(block)
 	local lines = {}
 	for i = 1, ns.TRACKER_SHOWN do
-		lines[i] = buildLine(block, i, words)
+		lines[i] = buildLine(block)
 	end
-
 	local more = CreateFrame("Button", nil, block) --[[@as HuntsTrackerMoreButton]]
-	more:SetSize(WIDTH, LINE_HEIGHT)
-	more.text = word(more, "GameFontNormalSmall", words)
-	more.text:SetPoint("LEFT", DOT_SIZE + 6, 0)
+	more.text = more:CreateFontString(nil, "OVERLAY")
+	more.text:SetJustifyH("LEFT")
 	more:SetScript("OnClick", function()
 		ns.OpenBoard()
 	end)
 	passDrags(more, block)
 	more:Hide()
-
-	local empty = word(block, "GameFontDisableSmall", words)
+	local empty = block:CreateFontString(nil, "OVERLAY")
+	empty:SetJustifyH("LEFT")
 	empty:SetText(ns.L.TRACKER_EMPTY)
 	empty:Hide()
 	---@type HuntsTrackerView
 	return {
 		frame = block,
-		look = look,
+		paper = paper,
 		header = header,
 		title = title,
-		mark = mark,
+		chevron = chevron,
 		lines = lines,
 		more = more,
 		empty = empty,
-		words = words,
+		look = LOOKS.native,
 	}
 end
 
---- A sample Hunts tracker on a stage (HNT-R121): the tracker's own block, its "Hunts" header and two fixed Hunts, in
---- a tracker frame.
----@class HuntsSampleTracker: Frame
----@field frame HuntsTrackerFrameView
----@field words { text: FontString, font: string }[] -- every word, with its native font object
+-- Draws the collapse mark at `x`, `y` in `color`: "v" while expanded, ">" while collapsed.
+---@param chevron Texture[]
+---@param header Frame
+---@param x number
+---@param y number
+---@param color number[]
+---@param collapsed boolean
+local function drawChevron(chevron, header, x, y, color, collapsed)
+	local places = collapsed and { { 5, 2.5, -45 }, { 5, 7.5, 45 } } or { { 3, 5, -45 }, { 7, 5, 45 } }
+	for i, stroke in ipairs(chevron) do
+		local place = places[i]
+		stroke:SetColorTexture(color[1], color[2], color[3], 1)
+		stroke:ClearAllPoints()
+		stroke:SetPoint("CENTER", header, "TOPLEFT", x + place[1], -(y + place[2]))
+		stroke:SetRotation(math.rad(place[3]))
+	end
+end
 
--- Builds a stage's sample tracker: the tracker's block, expanded, with a Hunt Now and a Hunt On demand.
+--- Draws `content` on a tracker block in `look` (HNT-R76, HNT-R79): the paper, the header with its mark, each Hunt's
+--- dot, name and label with its second line, "+N more" or the empty line; sizes the block to what shows.
+---@param view HuntsTrackerView
+---@param look HuntsTrackerLook
+---@param content HuntsTrackerContent
+function ns.DrawTrackerBlock(view, look, content)
+	view.look = look
+	local block = view.frame
+	local x, right = look.x, look.right
+	-- the header
+	view.header:SetHeight(look.first)
+	setFont(view.title, look.header)
+	view.title:SetText(look.caps and ns.BoardSmallCaps(ns.L.TITLE) or ns.L.TITLE)
+	view.title:ClearAllPoints()
+	view.title:SetPoint("TOPLEFT", view.header, "TOPLEFT", x + 16, -(look.caps and 12 or 10))
+	drawChevron(view.chevron, view.header, x, 14, look.chevron, content.collapsed)
+	-- each Hunt
+	local y = look.first
+	for i, line in ipairs(view.lines) do
+		local hunt = content.hunts[i]
+		line:SetShown(hunt ~= nil)
+		if hunt then
+			line:ClearAllPoints()
+			line:SetPoint("TOPLEFT", 0, -y)
+			line:SetSize(look.width, look.step)
+			line.shade:SetShown(look.shade)
+			line.dot:SetGroup(hunt.dot, look.paper)
+			line.dot:ClearAllPoints()
+			line.dot:SetPoint("TOPLEFT", x, -8)
+			setFont(line.label, look.label)
+			line.label:SetText(hunt.label)
+			line.label:ClearAllPoints()
+			line.label:SetPoint("TOPRIGHT", line, "TOPLEFT", right, -4)
+			setFont(line.first, look.name)
+			line.first:SetText(hunt.name)
+			line.first:ClearAllPoints()
+			line.first:SetPoint("TOPLEFT", x + 14, -3)
+			line.first:SetWidth(math.max(1, right - x - 14 - line.label:GetStringWidth() - 6))
+			setFont(line.second, look.sub)
+			line.second:SetText(hunt.second or "")
+			line.second:SetShown(hunt.second ~= nil)
+			line.second:ClearAllPoints()
+			line.second:SetPoint("TOPLEFT", x + 14, -look.second)
+			line.second:SetWidth(right - x - 14)
+			y = y + look.step
+		end
+	end
+	view.more:SetShown(content.more ~= nil)
+	if content.more then
+		setFont(view.more.text, look.label)
+		view.more.text:SetText(content.more)
+		view.more.text:ClearAllPoints()
+		view.more.text:SetPoint("LEFT", x + 14, 0)
+		view.more:ClearAllPoints()
+		view.more:SetPoint("TOPLEFT", 0, -y)
+		view.more:SetSize(look.width, EXTRA_LINE)
+		y = y + EXTRA_LINE
+	end
+	view.empty:SetShown(content.empty)
+	if content.empty then
+		setFont(view.empty, look.sub)
+		view.empty:ClearAllPoints()
+		view.empty:SetPoint("TOPLEFT", x + 14, -(y + 2))
+		y = y + EXTRA_LINE
+	end
+	local height = y == look.first and (look.frame and look.first + look.foot or look.first) or y + look.foot
+	block:SetSize(look.width, height)
+	view.paper:SetShown(look.frame ~= nil)
+	if look.frame then
+		ns.SetVSlice(view.paper, look.frame, "frame", height, FRAME_TOP, FRAME_FOOT)
+	end
+end
+
+--- A sample Hunts tracker on a stage (HNT-R121): the tracker's own block, its "Hunts" header and two fixed Hunts, in
+--- a tracker frame's look.
+---@class HuntsSampleTracker: Frame
+---@field view HuntsTrackerView
+
+-- Builds a stage's sample tracker: the tracker's block, at the stage's top.
 ---@param stage Frame
 ---@return HuntsSampleTracker
 local function buildSampleTracker(stage)
-	local L = ns.L
 	local view = ns.NewTrackerBlock(stage)
 	local tracker = view.frame --[[@as HuntsSampleTracker]]
-	tracker.frame, tracker.words = view.look, view.words
+	tracker.view = view
 	tracker:SetPoint("TOP", 0, -24)
-	view.mark:SetTexture(BLOCK.expandedMark)
-	for i, line in ipairs({ { L.PREVIEW_TRACKER_LINE_1, "now" }, { L.PREVIEW_TRACKER_LINE_2, "onDemand" } }) do
-		local hunt = view.lines[i]
-		hunt.dot:SetGroup(line[2])
-		hunt.first:SetText(line[1])
-		hunt.second:Hide()
-		hunt:Show()
-	end
-	tracker:SetHeight(HEADER_HEIGHT + 2 * HUNT_HEIGHT + BLOCK.pad)
 	return tracker
 end
 
---- Sets the words of a tracker on `look`'s backdrop: in its ink, or back in their native font objects' colours.
----@param words { text: FontString, font: string }[]
----@param look HuntsTrackerFrameLook?
-function ns.InkTrackerWords(words, look)
-	local ink = look and look.ink
-	for _, entry in ipairs(words) do
-		if ink then
-			entry.text:SetTextColor(ink[1], ink[2], ink[3])
-		else
-			entry.text:SetFontObject(entry.font)
-		end
-	end
-end
-
---- Draws tracker frame `goodID`'s sample tracker on `stage` (HNT-R121), in that frame.
+--- Draws tracker frame `goodID`'s sample tracker on `stage` (HNT-R121), in that frame's look: a Hunt Now and a Hunt
+--- On demand, a line each.
 ---@param stage Frame
 ---@param goodID string
 local function previewTrackerFrame(stage, goodID)
@@ -418,9 +514,11 @@ local function previewTrackerFrame(stage, goodID)
 		tracker = buildSampleTracker(stage)
 		drawn[stage] = tracker
 	end
-	local look = ns.TRACKER_FRAMES[goodID]
-	tracker.frame:SetFrame(look)
-	ns.InkTrackerWords(tracker.words, look)
+	local hunts = {}
+	for i, sample in ipairs(ns.L.PREVIEW_TRACKER_HUNTS) do
+		hunts[i] = { dot = i == 1 and "now" or "onDemand", name = sample[1], label = sample[2] }
+	end
+	ns.DrawTrackerBlock(tracker.view, ns.TrackerLook(goodID), { hunts = hunts, empty = false, collapsed = false })
 	tracker:Show()
 end
 

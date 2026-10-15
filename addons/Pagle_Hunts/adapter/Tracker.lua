@@ -10,11 +10,6 @@ local ns = select(2, ...)
 -- tracker frame (adapter/Goods.lua's looks). Core only stacks it (CORE-R72): Hunts shows it while its setting is on,
 -- and sizes it to its lines with SetHeight, so the dock reflows. It makes no secure frames (HNT-R193).
 
--- The block (ns.NewTrackerBlock, adapter/Goods.lua, which the Curio Shop's sample shares) and its sizes.
-local BLOCK = ns.TRACKER_BLOCK
-local HEADER_HEIGHT, LINE_HEIGHT, DOT_SIZE, PAD = BLOCK.headerHeight, BLOCK.lineHeight, BLOCK.dotSize, BLOCK.pad
-local HUNT_HEIGHT = BLOCK.huntHeight
-
 -- The owner of the tracker's bus registrations.
 local OWNER = "Pagle_Hunts tracker"
 
@@ -27,13 +22,12 @@ local function saved()
 	return ns.db.profile.tracker
 end
 
--- Draws the block from the grouping, the projection and the equipped frame, and sizes it to what shows.
+-- Draws the block from the grouping, the projection and the equipped frame's look (adapter/Goods.lua's
+-- ns.DrawTrackerBlock sizes it to what shows).
 ---@param view HuntsTrackerView
 local function draw(view)
-	local look = ns.TRACKER_FRAMES[view.wearing or Pagle.GetEquipped(ns.TRACKER_FRAME_SLOT)]
-	view.look:SetFrame(look)
+	local look = ns.TrackerLook(view.wearing or Pagle.GetEquipped(ns.TRACKER_FRAME_SLOT))
 	local collapsed = saved().collapsed
-	view.mark:SetTexture(collapsed and BLOCK.collapsedMark or BLOCK.expandedMark)
 	local conditions = Pagle.GetConditions()
 	local lines = ns.TrackerLines({
 		rows = ns.groups:Grouping() and ns.groups:Rows({ pinnedOnly = true }) or nil,
@@ -47,35 +41,17 @@ local function draw(view)
 		where = ns.where,
 		sources = ns.names,
 	})
-	local height = HEADER_HEIGHT
-	for i, line in ipairs(view.lines) do
-		local hunt = not collapsed and lines.hunts[i] or nil
-		line:SetShown(hunt ~= nil)
-		if hunt then
-			line.huntID = hunt.id
-			line.dot:SetGroup(hunt.dot)
-			line.first:SetText(hunt.first)
-			line.second:SetText(hunt.second)
-			height = height + HUNT_HEIGHT
-		end
+	local hunts = {}
+	for i, hunt in ipairs(collapsed and {} or lines.hunts) do
+		hunts[i] = { dot = hunt.dot, name = hunt.name, label = hunt.label, second = hunt.second }
+		view.lines[i].huntID = hunt.id
 	end
-	local more = not collapsed and lines.more > 0
-	view.more:SetShown(more)
-	if more then
-		view.more.text:SetText(ns.L.TRACKER_MORE:format(lines.more))
-		view.more:ClearAllPoints()
-		view.more:SetPoint("TOPLEFT", 0, -height)
-		height = height + LINE_HEIGHT
-	end
-	local empty = not collapsed and lines.empty
-	view.empty:SetShown(empty)
-	if empty then
-		view.empty:ClearAllPoints()
-		view.empty:SetPoint("TOPLEFT", DOT_SIZE + 6, -height)
-		height = height + LINE_HEIGHT
-	end
-	ns.InkTrackerWords(view.words, look)
-	view.frame:SetHeight(height == HEADER_HEIGHT and height or height + PAD)
+	ns.DrawTrackerBlock(view, look, {
+		hunts = hunts,
+		more = not collapsed and lines.more > 0 and ns.L.TRACKER_MORE:format(lines.more) or nil,
+		empty = not collapsed and lines.empty,
+		collapsed = collapsed,
+	})
 end
 
 -- Shows the block while its setting is on, drawn, and tells the grouping whether its lines show, for the refresh of

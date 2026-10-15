@@ -102,7 +102,10 @@ describe("a Hunt's entry", function()
 
 			local e = entry("fixture_snapper", { state = state })
 
-			assert.are.same({ text = "Hunted 12 Oct 2026", filled = true }, e.seal)
+			assert.are.same(
+				{ text = "Hunted 12 Oct 2026", filled = true, lines = { "Hunted", "12 Oct", "2026" } },
+				e.seal
+			)
 			assert.are.same({
 				{ tier = 1, threshold = 1, reached = true, when = "12 Oct, Darkshore" },
 				{ tier = 2, threshold = 10, reached = false },
@@ -349,7 +352,10 @@ describe("a Hunt's entry", function()
 
 			assert.are.equal("Old Sunscale", e.name)
 			assert.are.equal("Retired 1 Jun 2026", e.retiredLine)
-			assert.are.same({ text = "Hunted 2 Oct 2026", filled = true }, e.seal)
+			assert.are.same(
+				{ text = "Hunted 2 Oct 2026", filled = true, lines = { "Hunted", "2 Oct", "2026" } },
+				e.seal
+			)
 			assert.are.same({ fill = 1, label = "3 caught" }, e.ladder.bar)
 			assert.are.equal("40 Casts under these conditions, 7 since my last one.", e.effort.text)
 		end)

@@ -54,7 +54,7 @@ local ns = select(2, ...)
 ---@field name string
 ---@field target string
 ---@field retiredLine string?   -- "Retired {date}" (HNT-R3)
----@field seal { text: string, filled: boolean }
+---@field seal HuntEntrySeal
 ---@field pin { pinned: boolean }?
 ---@field window string?
 ---@field conditions string?
@@ -63,14 +63,26 @@ local ns = select(2, ...)
 ---@field effort { text: string, odds: string }
 ---@field setLine string?
 
+--- The seal (HNT-R64): its words, whether it is pressed, and the pressed seal's words stacked as it sets them (the
+--- word, the short date and the year), nil when it isn't pressed.
+---@class HuntEntrySeal
+---@field text string
+---@field filled boolean
+---@field lines string[]?
+
 -- The seal (HNT-R64): "Hunted {full date of tier 1}" once done, a dashed "not yet" before.
 ---@param progress HuntProgress?
----@return { text: string, filled: boolean }
+---@return HuntEntrySeal
 local function sealOf(progress)
 	local L = ns.L
 	if ns.HuntDone(progress) then
 		local first = (progress --[[@as HuntProgress]]).reached[1]
-		return { text = L.SEAL_HUNTED:format(ns.FormatFullDate(first.date)), filled = true }
+		local date = first.date
+		return {
+			text = L.SEAL_HUNTED:format(ns.FormatFullDate(date)),
+			filled = true,
+			lines = { L.SEAL_HUNTED_WORD, ns.FormatShortDate(date), tostring(date.year) },
+		}
 	end
 	return { text = L.SEAL_NOT_YET, filled = false }
 end
@@ -226,7 +238,7 @@ end
 -- What is drawn from the projection's state (HNT-R69): the seal, the tier ladder, the effort counter and the set's
 -- progress; while it is updating, each reads "Updating from your Catch log…".
 ---@param input HuntEntryInput
----@return { text: string, filled: boolean } seal
+---@return HuntEntrySeal seal
 ---@return HuntEntryLadder ladder
 ---@return { text: string, odds: string } effort
 ---@return string setLine

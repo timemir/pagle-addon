@@ -5,18 +5,19 @@ end
 ---@class PagleHuntsNS
 local ns = select(2, ...)
 
--- The Hunts board's art kit (HNT-R60's second paragraph): its tints, fonts and in-client textures, and a widget maker
--- for each piece the board, its pages, the covers and the tracker draw: leather, parchment, set ribbons, the wax seal
--- (filled, or the dashed "not yet"), the ink bar with its label, the timeline's bar styles, the tier trims (HNT-R18),
--- the group dots, sepia item icons (HNT-R55), and the fleuron and pointing-hand marks, drawn as textures, never as
--- font glyphs. The look follows prototypes/hunts-board/ variant E. Hunts picks its own art and shares no code with
--- the Fish Journal (ADR 0001), though some textures are the same client files. Every texture sits on a solid tint or
--- carries a vertex tint, so a texture the client lacks leaves the tint showing.
+-- The Hunts board's art (HNT-R60's second paragraph): its tints and fonts, and a widget maker for each piece the board,
+-- its pages, the covers and the tracker draw, in the books art kit (the dev's PagleArtBooks probe, a fork of the Fish
+-- Journal's book shell): the leather binding with its band, parchment pages with their gutter, the wax close button,
+-- the brass nameplate, grosgrain set ribbons, the wax seal (pressed, or the dashed "not yet"), the ink bar, the
+-- timeline's bars, item medallions in their tier's ring (HNT-R18), tier marks, group dots, and the fleuron and
+-- pointing-hand marks, drawn as textures, never as font glyphs. The sprites are adapter/BookAtlas.lua's, drawn with
+-- adapter/BookArt.lua's helpers. Hunts shares no code with the Fish Journal or Stats (ADR 0001); the shell's textures
+-- are Core's media, which both books read.
 --
 -- The kit's shared pieces every board adapter uses: ns.BoardTint, ns.BoardOutline, ns.BoardTooltip and the pools
 -- (ns.BoardPooled, ns.BoardHideFrom).
 
---- A tint from its hex code, as the prototype's CSS writes it: { r, g, b }, 0 to 1.
+--- A tint from its hex code, as the kit's canvas writes it: { r, g, b }, 0 to 1.
 ---@param hex string "RRGGBB"
 ---@return number[]
 function ns.BoardTint(hex)
@@ -28,84 +29,85 @@ function ns.BoardTint(hex)
 end
 local tint = ns.BoardTint
 
---- The board's tints, from variant E's CSS (`.vE`). Where the prototype shades a gradient, the tint lies between its
---- ends.
+--- The board's tints, the books kit's design-system colours.
 ns.BOARD_LOOK = {
-	gilt = tint("e8c96a"), -- the breadcrumbs and the realm clock on the leather
-	giltBright = tint("fff4c8"), -- the clock's time, a crumb under the mouse
-	fleuron = tint("a8803a"), -- the fleuron between crumbs
-	paper = tint("ead6ac"), -- between the page's #f3e5c3 and #dfc89a
-	spine = tint("46280a"), -- rgba(70,40,10,.65): the shadow at the spine
+	gilt = tint("e8c96a"), -- the breadcrumbs on the leather
+	giltBright = tint("fff4c8"), -- a crumb under the mouse
+	clock = tint("f6e3a8"), -- the realm clock
+	clockJoin = tint("c9b27a"), -- the clock's dots
+	checkLabel = tint("e8d6a8"), -- "show completed"
+	paper = tint("ead6ac"), -- the page's mid tone: a tracker frame's words sit on it
 	ink = tint("3a2614"), -- printed text
 	title = tint("3e220c"), -- headings and names
-	kicker = tint("8a5a2a"), -- small-caps kickers and group headings
+	kicker = tint("8a5a2a"), -- small-caps kickers
+	group = tint("5a3a14"), -- group names, the ruler's ink
 	small = tint("5a4028"), -- target lines, conditions
-	note = tint("8a6a40"), -- italic notes, ruler ticks
-	faded = tint("9a8060"), -- "out of season", what is greyed
+	note = tint("8a6a40"), -- italic notes
+	faded = tint("9a8060"), -- what is greyed
+	count = tint("7a5a30"), -- a group's count, in the margin
+	legend = tint("6a4a28"), -- the legend's words
 	hand = tint("23407a"), -- handwriting
-	red = tint("9a2a1a"), -- margin labels, the now line, the back link
-	barInk = tint("5a3a14"), -- an ink bar's outline and hatching
-	barFill = tint("7a5224"), -- between the hatching's lines
-	pencil = tint("a89070"), -- a pencil outline: short of skill
-	camp = tint("23407a"), -- the blue camp bar
-	campEdge = tint("162a50"),
-	soonWash = tint("9a2a1a"), -- rgba(154,42,26,.08): the Soon wash on the timeline
-	nightWash = tint("23407a"), -- rgba(35,64,122,.08): the night wash
-	washAlpha = 0.08,
-	seal = tint("a82a1a"), -- between the seal's #d0402a and #7a1810
-	sealText = tint("f4dfa8"), -- a seal's words, a ribbon's
+	red = tint("9a2a1a"), -- margin labels, "Pinned", the back link
+	setName = tint("7a2a14"), -- the set line
+	rule = tint("c4a874"), -- the rule over the set line
+	nowLine = tint("b4281a"), -- the now line
+	soonWash = tint("d6a028"), -- the next 3 hours, faintly amber
+	soonAlpha = 0.16,
+	nightWash = tint("23407a"), -- the night, faintly blue
+	nightAlpha = 0.08,
+	shade = tint("784614"), -- the selected row's shade
+	shadeAlpha = 0.12,
+	rail = tint("6a4a20"), -- the list's scroll rail
+	thumb = tint("8a5a2a"),
+	sealText = tint("f4dfa8"), -- a pressed seal's words
 	sealOff = tint("b8a080"), -- the dashed "not yet"
 	sepia = tint("dcb37a"), -- an item icon's tint over its greys (CSS sepia(.75))
-	plate = tint("c19e45"), -- the gold nameplate: between its #e8c96a and #9a7420
-	plateEdge = tint("4a3008"),
-	plateText = tint("2a1a04"),
-	shadow = tint("000000"), -- the black rings round a trim
-	chipFace = tint("fffaeb"), -- rgba(255,250,235,.35): a chip's face (`.vE .chip`)
-	chipFaceAlpha = 0.35,
-	chipEdge = tint("6a4a20"), -- rgba(106,74,32,.45): a chip's edge
-	chipEdgeAlpha = 0.45,
+	plateText = tint("2a1a04"), -- the brass nameplate's words
+	chipText = tint("3a2614"),
 	here = tint("2a6a2a"), -- "you're here"
-	unconfirmed = tint("6a3a8a"), -- the unconfirmed chip
-	--- Tier trims (HNT-R18), by ns.Trim's names: bronze, silver, gold.
+	unconfirmed = tint("6a3a8a"), -- the unconfirmed chip's words
+	ribbonLabel = tint("efd286"), -- a ribbon's words
+	ribbonLabelOn = tint("fff0bc"), -- the chosen ribbon's
+	--- Tier trims (HNT-R18), by ns.Trim's names: the medallions' rings and the trims' other uses.
 	trims = { bronze = tint("a8652a"), silver = tint("c9ccd3"), gold = tint("f2c230") },
-	--- Group dots (HNT-R76), by HuntGroup: Now green, Soon amber, Later grey, On demand blue.
-	groups = { now = tint("4cc94c"), soon = tint("ffb733"), later = tint("9a9a9a"), onDemand = tint("6fb6ff") },
+	--- The tier marks' inks on the ladder, by trim.
+	tierInks = { bronze = tint("c0844a"), silver = tint("b8bec6"), gold = tint("d8a93a") },
+	--- Group dots (HNT-R76), by HuntGroup: Now green, Soon amber, Later grey, On demand blue; bright over the world, in
+	--- the tracker's native look, and in ink on paper.
+	groups = { now = tint("4aa84a"), soon = tint("e0a030"), later = tint("8a8a8a"), onDemand = tint("4a8ad0") },
+	paperGroups = { now = tint("3a8a3a"), soon = tint("c89030"), later = tint("8a8070"), onDemand = tint("3a6aa0") },
 	--- Ribbons: the Board's, then set colours in turn, in Hunt list order.
-	boardRibbon = tint("5a4735"), -- between #4a3a2a and #6a5440
+	boardRibbon = tint("2e4a3a"),
 	ribbons = { tint("2f5a8a"), tint("2f7a4a"), tint("8a5a1a"), tint("6a3a7a"), tint("8a2a1a") },
 }
 local LOOK = ns.BOARD_LOOK
 
---- In-client textures. Each is a file the forever client's FrameXML names (Gethe/wow-ui-source branch forever at
+--- In-client textures the board still draws: the old covers' grains and the white disc, and the pointing hand, which
+--- the kit leaves out. Each is a file the forever client's FrameXML names (Gethe/wow-ui-source branch forever at
 --- 943764493e6b16d63ded3ab304150d1f05e58b57).
 ns.BOARD_TEXTURES = {
-	-- The leather's grain (FrameGeneral's rock backdrop) and the page paper (the achievement parchment).
+	-- The old covers' grain (FrameGeneral's rock backdrop) and the achievement parchment.
 	leather = "Interface\\FrameGeneral\\UI-Background-Rock",
 	paper = "Interface\\AchievementFrame\\UI-Achievement-Parchment-Horizontal",
-	-- A white disc: the wax seal and the group dots (CharacterFrame's portrait mask).
+	-- A white disc (CharacterFrame's portrait mask): dots, and the round mask over an item's icon.
 	disc = "Interface\\CharacterFrame\\TempPortraitAlphaMask",
-	-- Diagonal stripes that tile (the absorb shield's overlay, Blizzard_UnitFrame/Shared/UnitFrame.xml): the hatching.
-	hatch = "Interface\\RaidFrame\\Shield-Overlay",
-	-- The fleuron between crumbs (the quest log's bullet) and the pointing hand (the gauntlet cursor).
-	fleuron = "Interface\\QuestFrame\\UI-Quest-BulletPoint",
+	-- The pointing hand (the gauntlet cursor).
 	hand = "Interface\\Cursor\\Point",
 }
 local TEXTURES = ns.BOARD_TEXTURES
 
--- The hatching's tile, in pixels: one repeat of its stripes.
-local HATCH_TILE = 16
-
---- The default cover, the board's own leather (HNT-R70's `hunts.notebookcover.leather`): its tint, its dark outline,
---- the gilt rule inside its edge, and its grain. A cover look (`ns.board:SetCover`) gives any of these fields; the rest
---- come from here.
+--- A cover's look (HNT-R70): the kit's leather (`kit`, the default cover's), or the old covers' tint, outline, gilt rule
+--- and grain. A cover look (`ns.board:SetCover`) gives any of these fields; the rest come from ns.BOARD_COVER.
 ---@class BoardCoverLook
----@field leather number[]?   -- the leather's tint (between variant E's #6a3e20 and #3a2010)
----@field edge number[]?      -- the outline (#120a04)
----@field rule number[]?      -- the gilt rule inside the edge (#8a5a2a)
+---@field kit boolean?        -- the books kit's leather and band (the default cover)
+---@field leather number[]?   -- the leather's tint
+---@field edge number[]?      -- the outline
+---@field rule number[]?      -- the gilt rule inside the edge
 ---@field grain string?       -- the grain's texture
 ---@field grainAlpha number?
 
 ---@class BoardCover: BoardCoverLook -- a cover look with every field
+---@field kit boolean
 ---@field leather number[]
 ---@field edge number[]
 ---@field rule number[]
@@ -114,6 +116,7 @@ local HATCH_TILE = 16
 
 ---@type BoardCover
 ns.BOARD_COVER = {
+	kit = true,
 	leather = tint("4e2c16"),
 	edge = tint("120a04"),
 	rule = tint("8a5a2a"),
@@ -121,51 +124,65 @@ ns.BOARD_COVER = {
 	grainAlpha = 0.5,
 }
 
--- The serif text face and the handwriting face: in-client fonts.
-local SERIF = "Fonts\\FRIZQT__.TTF"
-local HAND = "Fonts\\MORPHEUS.TTF"
-
---- The board's font objects, made on first use.
+--- The board's font objects (adapter/BookArt.lua's faces), made on first use.
 ---@class BoardFonts
----@field text Font     -- printed text (serif)
----@field small Font    -- target lines, notes, bar labels
----@field kicker Font   -- small-caps headings (ns.BoardSmallCaps)
----@field title Font    -- names and page titles (handwriting face, large)
----@field hand Font     -- handwriting
----@field margin Font   -- the timeline's margin labels (handwriting)
----@field crumb Font    -- the leather's breadcrumbs
----@field clock Font    -- the leather's realm clock
----@field seal Font     -- a seal's words
----@field ribbon Font   -- a ribbon's letters
----@field plate Font    -- the nameplate
+---@field text Font      -- printed text: names (IM Fell, 14)
+---@field small Font     -- target lines, conditions, the set line (13.5)
+---@field note Font      -- italic notes (13)
+---@field kicker Font    -- small-caps kickers and group names (12)
+---@field title Font     -- an entry's or a set's name (29)
+---@field heading Font   -- the timeline's title (25)
+---@field hand Font      -- handwriting: effort, the set's title line (Caveat, 20)
+---@field handLarge Font -- the window line (22)
+---@field margin Font    -- the timeline's margin labels (15.5)
+---@field count Font     -- a group's count, "next 22h" (17)
+---@field inkCount Font  -- the ink bar's words (19)
+---@field pin Font       -- "Pinned" (18)
+---@field crumb Font     -- the leather's breadcrumbs (Marcellus, 14, shadowed)
+---@field clock Font     -- the realm clock (14, shadowed)
+---@field check Font     -- "show completed" (italic 13.5, shadowed)
+---@field tier Font      -- a tier's threshold (Marcellus, 15)
+---@field seal Font      -- a seal's date (13.5)
+---@field sealSmall Font -- a seal's word and year (IM Fell, 9.5)
+---@field ribbon Font    -- a ribbon's words (Marcellus 12, shadowed)
+---@field plate Font     -- the nameplate (12)
+---@field legend Font    -- the legend (italic 12.5)
+---@field tick Font      -- the ruler's hours (12)
 local fonts
 
 ---@return BoardFonts
 function ns.BoardFonts()
 	if not fonts then
-		local function font(name, file, size)
-			local object = CreateFont("PagleHuntsBoard" .. name)
-			object:SetFont(file, size, "")
-			return object
-		end
+		local font = ns.ArtFont
 		fonts = {
-			text = font("Text", SERIF, 13),
-			small = font("Small", SERIF, 11),
-			kicker = font("Kicker", SERIF, 10),
-			title = font("Title", HAND, 24),
-			hand = font("Hand", HAND, 16),
-			margin = font("Margin", HAND, 15),
-			crumb = font("Crumb", SERIF, 13),
-			clock = font("Clock", SERIF, 12),
-			seal = font("Seal", SERIF, 10),
-			ribbon = font("Ribbon", SERIF, 10),
-			plate = font("Plate", SERIF, 12),
+			text = font("print", 14),
+			small = font("print", 13.5),
+			note = font("italic", 13),
+			kicker = font("print", 12),
+			title = font("print", 29),
+			heading = font("print", 25),
+			hand = font("hand", 20),
+			handLarge = font("hand", 22),
+			margin = font("hand", 15.5),
+			count = font("hand", 17),
+			inkCount = font("hand", 19),
+			pin = font("hand", 18),
+			crumb = font("gilt", 14, true),
+			clock = font("gilt", 14, true),
+			check = font("italic", 13.5, true),
+			tier = font("gilt", 15),
+			seal = font("gilt", 13.5),
+			sealSmall = font("print", 9.5),
+			ribbon = font("gilt", 12, true),
+			plate = font("gilt", 12),
+			legend = font("italic", 12.5),
+			tick = font("print", 12),
 		}
 	end
 	return fonts
 end
 
---- A heading in small caps: the client's fonts have none, so it is set in capitals in the small kicker face.
+--- A heading in small caps: the client has none, so it is set in capitals a size down (the kicker face).
 ---@param text string
 ---@return string
 function ns.BoardSmallCaps(text)
@@ -198,6 +215,17 @@ function ns.BoardText(frame, font, color)
 	return text
 end
 
+--- Lets `text` wrap at `width`, its lines spaced as the kit's canvas sets them (handwriting close, print a third of
+--- its size apart).
+---@param text FontString
+---@param width number
+---@param spacing number
+function ns.BoardWrap(text, width, spacing)
+	text:SetWidth(width)
+	text:SetWordWrap(true)
+	text:SetSpacing(spacing)
+end
+
 --- A trim's colour (HNT-R18), by ns.Trim's name; nil for none (before tier 1).
 ---@param trim ("bronze"|"silver"|"gold")?
 ---@return number[]?
@@ -221,8 +249,8 @@ end
 ---@field edges Texture[]
 ---@field dashes Texture[]
 
--- A dash's length and the gap after it.
-local DASH, GAP = 4, 3
+-- A dash's length and the gap after it (the kit's `outline: 1px dashed`).
+local DASH, GAP = 3, 2
 
 -- An outline's corner offset: `inset` pixels in from `point` (out, when negative).
 ---@param point string
@@ -234,8 +262,8 @@ local function insetAt(point, inset)
 end
 
 --- The outline round `frame`, `inset` pixels inside its edges (outside, when negative; on them by default), its
---- edges on `layer` (BORDER by default) at `sublevel`. The board's bars, the leather's gilt rule, the entry's chips and
---- the tracker frames each draw one.
+--- edges on `layer` (BORDER by default) at `sublevel`. The selected row's dashes, the old covers' gilt rule and the
+--- old covers' notebook each draw one.
 ---@param frame Frame
 ---@param inset number?
 ---@param layer DrawLayer?
@@ -372,33 +400,58 @@ function ns.BoardHideFrom(pool, used)
 	end
 end
 
--- The hatching over `frame`: the shield overlay's stripes, tiled, in a vertex tint.
----@param frame Frame
----@param layer DrawLayer
----@return Texture
-local function hatching(frame, layer)
-	local texture = frame:CreateTexture(nil, layer)
-	texture:SetTexture(TEXTURES.hatch, "REPEAT", "REPEAT")
-	texture:SetAllPoints()
-	return texture
-end
+-- The leather's measures: the band's corner (16 units, 32 texels), how far in the tiled grain starts (under the
+-- band's opaque lines), and one repeat of the grain (Leather.blp is 256 texels, 128 units).
+local BAND, FILL_INSET, LEATHER_TILE = 16, 7, 128
 
--- Tiles `hatch` across `width` × `height`, as the client's absorb bars tile it.
----@param hatch Texture
----@param width number
----@param height number
-local function tile(hatch, width, height)
-	hatch:SetTexCoord(0, width / HATCH_TILE, 0, height / HATCH_TILE)
-end
-
---- The leather on `frame`, filling it: the outline, the leather's tint, its grain and the gilt rule inside the edge.
---- `SetCover` dresses it in a cover look (HNT-R70).
+--- The leather on `frame`, filling it, in a cover (HNT-R70): the kit's (the grain tiled under a vignette, the binding
+--- band round it on its own frame, above the ribbons so their tucked tops hide under it), or an old cover's (its
+--- outline, tint, grain and gilt rule).
 ---@class BoardLeatherView
 ---@field edge Texture
 ---@field leather Texture
 ---@field grain Texture
 ---@field rules Texture[]
+---@field fill Texture         -- the kit's tiled grain
+---@field vignette Texture
+---@field band Frame           -- the kit's band, 6 levels over the frame
+---@field bandPieces table<string, Texture>
+---@field kit boolean          -- whether it wears the kit's leather
 ---@field SetCover fun(self: BoardLeatherView, look: BoardCover) -- every field given (adapter/Board.lua merges a look)
+
+-- The band's nine slices from the 96-texel binding sprite: 32-texel corners, the edges stretched from a 2-texel slice.
+---@param bandFrame Frame
+---@return table<string, Texture>
+local function bandOf(bandFrame)
+	local atlas, sprite = ns.ArtSpriteOf("Book", "binding")
+	local pieces = {}
+	local function piece(key, sx, sy, sw, sh)
+		local texture = ns.ArtCrisp(bandFrame:CreateTexture(nil, "BORDER"))
+		ns.ArtCut(texture, atlas, sprite.x + sx, sprite.y + sy, sw, sh)
+		pieces[key] = texture
+		return texture
+	end
+	local tl, tr = piece("TL", 0, 0, 32, 32), piece("TR", 64, 0, 32, 32)
+	local bl, br = piece("BL", 0, 64, 32, 32), piece("BR", 64, 64, 32, 32)
+	for _, corner in ipairs({ tl, tr, bl, br }) do
+		corner:SetSize(BAND, BAND)
+	end
+	tl:SetPoint("TOPLEFT")
+	tr:SetPoint("TOPRIGHT")
+	bl:SetPoint("BOTTOMLEFT")
+	br:SetPoint("BOTTOMRIGHT")
+	local top, bottom = piece("T", 47, 0, 2, 32), piece("B", 47, 64, 2, 32)
+	local left, right = piece("L", 0, 47, 32, 2), piece("R", 64, 47, 32, 2)
+	top:SetPoint("TOPLEFT", tl, "TOPRIGHT")
+	top:SetPoint("BOTTOMRIGHT", tr, "BOTTOMLEFT")
+	bottom:SetPoint("TOPLEFT", bl, "TOPRIGHT")
+	bottom:SetPoint("BOTTOMRIGHT", br, "BOTTOMLEFT")
+	left:SetPoint("TOPLEFT", tl, "BOTTOMLEFT")
+	left:SetPoint("BOTTOMRIGHT", bl, "TOPRIGHT")
+	right:SetPoint("TOPLEFT", tr, "BOTTOMLEFT")
+	right:SetPoint("BOTTOMRIGHT", br, "TOPRIGHT")
+	return pieces
+end
 
 ---@param frame Frame
 ---@return BoardLeatherView
@@ -409,17 +462,53 @@ function ns.NewBoardLeather(frame)
 	local grain = frame:CreateTexture(nil, "BORDER")
 	grain:SetPoint("TOPLEFT", 2, -2)
 	grain:SetPoint("BOTTOMRIGHT", -2, 2)
+	local fill = ns.ArtCrisp(frame:CreateTexture(nil, "BACKGROUND", nil, 2))
+	fill:SetTexture(ns.BOOK_FILES.leather, "REPEAT", "REPEAT")
+	fill:SetPoint("TOPLEFT", FILL_INSET, -FILL_INSET)
+	fill:SetPoint("BOTTOMRIGHT", -FILL_INSET, FILL_INSET)
+	-- darker toward the foot, as the canvas shades it (the gradient's first colour is the bottom's)
+	fill:SetGradient("VERTICAL", CreateColor(0.8, 0.8, 0.8, 1), CreateColor(1, 1, 1, 1))
+	local vignette = ns.ArtCrisp(frame:CreateTexture(nil, "BACKGROUND", nil, 3))
+	local atlas, sprite = ns.ArtSpriteOf("Book", "vignette")
+	ns.ArtCut(vignette, atlas, sprite.x + 1, sprite.y + 1, sprite.w - 2, sprite.h - 2)
+	vignette:SetAllPoints(fill)
+	local band = CreateFrame("Frame", nil, frame)
+	band:SetAllPoints()
+	band:SetFrameLevel(frame:GetFrameLevel() + 6)
 	---@type BoardLeatherView
 	local view = {
 		edge = ns.BoardSolid(frame, ns.BOARD_COVER.edge, "BACKGROUND"),
 		leather = leatherTexture,
 		grain = grain,
 		rules = {},
+		fill = fill,
+		vignette = vignette,
+		band = band,
+		bandPieces = bandOf(band),
+		kit = true,
 		SetCover = function() end, -- below
 	}
 	local rules = outline(frame, 5, "BORDER", 1)
 	view.rules = rules.edges
 	function view.SetCover(_, look)
+		local kit = look.kit
+		view.kit = kit
+		for _, texture in ipairs({ view.fill, view.vignette }) do
+			texture:SetShown(kit)
+		end
+		view.band:SetShown(kit)
+		for _, texture in ipairs({ view.edge, view.leather, view.grain }) do
+			texture:SetShown(not kit)
+		end
+		if kit then
+			rules:Hide()
+			-- the grain tiles at its authored density
+			local width, height = frame:GetSize()
+			local across = math.max(1, width - 2 * FILL_INSET) / LEATHER_TILE
+			local down = math.max(1, height - 2 * FILL_INSET) / LEATHER_TILE
+			view.fill:SetTexCoord(0, across, 0, down)
+			return
+		end
 		local leather, edge = look.leather, look.edge
 		view.edge:SetColorTexture(edge[1], edge[2], edge[3], 1)
 		view.leather:SetColorTexture(leather[1], leather[2], leather[3], 1)
@@ -432,92 +521,166 @@ function ns.NewBoardLeather(frame)
 	return view
 end
 
---- A parchment page on `frame`, filling it: the paper's tint and texture and, on the side `spine` names, the spine's
---- shadow fading into the page.
+--- A parchment page on `frame`, filling it: the kit's parchment (mirrored on a right page, so the two don't match) and
+--- the gutter's shade along the side `spine` names.
 ---@class BoardParchmentView
 ---@field paper Texture
----@field grain Texture
----@field spine Texture[]
+---@field gutter Texture?
 
--- The spine's shadow: strips of fading shade at a page's inner edge.
-local SPINE_STRIPS, SPINE_STRIP_WIDTH = 6, 5
+-- The gutter's width at the spine.
+local GUTTER_WIDTH = 40
 
 ---@param frame Frame
 ---@param spine "LEFT"|"RIGHT"|nil
 ---@return BoardParchmentView
 function ns.NewBoardParchment(frame, spine)
-	local view = { spine = {} }
-	view.paper = ns.BoardSolid(frame, LOOK.paper, "BACKGROUND")
-	view.grain = frame:CreateTexture(nil, "BORDER")
-	view.grain:SetTexture(TEXTURES.paper)
-	view.grain:SetVertexColor(LOOK.paper[1], LOOK.paper[2], LOOK.paper[3])
-	view.grain:SetAlpha(0.35)
-	view.grain:SetAllPoints()
+	local view = {}
+	view.paper = ns.ArtCrisp(frame:CreateTexture(nil, "BACKGROUND"))
+	view.paper:SetTexture(ns.BOOK_FILES.parchment)
+	view.paper:SetAllPoints()
+	if spine == "LEFT" then
+		view.paper:SetTexCoord(1, 0, 0, 1)
+	end
 	if spine then
-		for i = 1, SPINE_STRIPS do
-			local strip = frame:CreateTexture(nil, "BORDER", nil, 1)
-			local alpha = 0.4 * (SPINE_STRIPS - i + 1) / SPINE_STRIPS
-			strip:SetColorTexture(LOOK.spine[1], LOOK.spine[2], LOOK.spine[3], alpha)
-			strip:SetWidth(SPINE_STRIP_WIDTH)
-			local x = (i - 1) * SPINE_STRIP_WIDTH * (spine == "RIGHT" and -1 or 1)
-			strip:SetPoint("TOP" .. spine, x, 0)
-			strip:SetPoint("BOTTOM" .. spine, x, 0)
-			view.spine[i] = strip
+		local atlas, sprite = ns.ArtSpriteOf("Book", "gutter")
+		local gutter = ns.ArtCrisp(frame:CreateTexture(nil, "BORDER"))
+		ns.ArtCut(gutter, atlas, sprite.x + 1, sprite.y + 1, sprite.w - 2, sprite.h - 2)
+		gutter:SetWidth(GUTTER_WIDTH)
+		gutter:SetPoint("TOP" .. spine)
+		gutter:SetPoint("BOTTOM" .. spine)
+		if spine == "LEFT" then
+			local left, right, top, bottom =
+				(sprite.x + 1) / atlas.width,
+				(sprite.x + sprite.w - 1) / atlas.width,
+				(sprite.y + 1) / atlas.height,
+				(sprite.y + sprite.h - 1) / atlas.height
+			gutter:SetTexCoord(right, left, top, bottom)
 		end
+		view.gutter = gutter
 	end
 	return view
 end
 
---- A set ribbon (HNT-R61): a cloth tab on the leather's right edge, its words in letters stacked down it, standing
---- out further when chosen. adapter/Sets.lua anchors them down the leather's ribbons anchor.
+--- The wax close button (HNT-R60): a round seal of red wax with a cross, pressed when clicked, glowing under the mouse.
+---@class BoardCloseButton: Button
+---@field normal Texture
+---@field pushed Texture
+---@field glow Texture
+
+---@param parent Frame
+---@return BoardCloseButton
+function ns.NewBoardClose(parent)
+	local close = CreateFrame("Button", nil, parent) --[[@as BoardCloseButton]]
+	close:SetSize(26, 26)
+	close.normal = ns.ArtSprite(close, "Book", "close", "ARTWORK", 0, 26)
+	close.normal:SetAllPoints()
+	close.pushed = ns.ArtSprite(close, "Book", "close-pushed", "ARTWORK", 1, 26)
+	close.pushed:SetAllPoints()
+	close.pushed:Hide()
+	close.glow = ns.ArtSprite(close, "Book", "close-highlight", "HIGHLIGHT", 0, 26)
+	close.glow:SetAllPoints()
+	close.glow:SetBlendMode("ADD")
+	close:SetScript("OnMouseDown", function(self)
+		self.pushed:Show()
+	end)
+	close:SetScript("OnMouseUp", function(self)
+		self.pushed:Hide()
+	end)
+	return close
+end
+
+--- A grosgrain set ribbon (HNT-R61): one white ribbon tinted to its colour, with a gold running stitch over it, hanging
+--- from under the leather's foot, its words in gilt near its swallowtail end. The chosen one hangs longer and brighter;
+--- one under the mouse brightens. adapter/Sets.lua lays them along the leather's ribbons anchor.
 ---@class BoardRibbonView: Button
----@field face Texture
+---@field body Texture
+---@field stitch Texture
 ---@field label FontString
 ---@field chosen boolean
+---@field hover boolean
+---@field color number[]
+---@field tooltip string[]?
 ---@field SetRibbon fun(self: BoardRibbonView, text: string, color: number[], chosen: boolean)
 
--- A ribbon's width, its padding at each end, a letter's height, and how far a chosen one stands out.
-local RIBBON_WIDTH, RIBBON_PAD, LETTER_HEIGHT, RIBBON_OUT = 22, 10, 12, 6
+--- The ribbons' measures (the kit's Hunts board): each one's width and the gap between, how long it hangs (longer
+--- chosen), how much of its top tucks under the leather's band, its words' inset, and how much brighter it turns.
+ns.BOARD_RIBBON = { width = 104, gap = 10, length = 104, lengthChosen = 120, tuck = 10, pad = 13, lift = 1.13 }
+local RIBBON = ns.BOARD_RIBBON
+
+-- Shows the bottom `length` units of ribbon sprite `name` (its swallowtail end always shows) in `texture`, the
+-- ribbon's width across, from `ribbon`'s top left.
+---@param texture Texture
+---@param ribbon Frame
+---@param name string
+---@param length number
+local function hang(texture, ribbon, name, length)
+	local atlas, sprite = ns.ArtSpriteOf("Parts", name)
+	local box = sprite.box
+	local k = RIBBON.width / box[3]
+	local dropped = (box[4] - length) * atlas.scale
+	ns.ArtCut(texture, atlas, sprite.x, sprite.y + dropped, sprite.w, sprite.h - dropped)
+	texture:SetSize(sprite.w / atlas.scale * k, sprite.h / atlas.scale - box[4] + length)
+	texture:ClearAllPoints()
+	texture:SetPoint("TOPLEFT", ribbon, "TOPLEFT", -box[1] * k, 0)
+end
+
+-- Paints a ribbon as it is now: its length, its tint (brighter chosen or under the mouse) and its words' ink.
+---@param ribbon BoardRibbonView
+local function paintRibbon(ribbon)
+	local length = ribbon.chosen and RIBBON.lengthChosen or RIBBON.length
+	ribbon:SetSize(RIBBON.width, length)
+	hang(ribbon.body, ribbon, "ribbon", length)
+	hang(ribbon.stitch, ribbon, "ribbon-stitch", length)
+	local lift = (ribbon.chosen or ribbon.hover) and RIBBON.lift or 1
+	local color = ribbon.color
+	ribbon.body:SetVertexColor(math.min(1, color[1] * lift), math.min(1, color[2] * lift), math.min(1, color[3] * lift))
+	local ink = ribbon.chosen and LOOK.ribbonLabelOn or LOOK.ribbonLabel
+	ribbon.label:SetTextColor(ink[1], ink[2], ink[3])
+end
 
 ---@param parent Frame
 ---@return BoardRibbonView
 function ns.NewBoardRibbon(parent)
 	local ribbon = CreateFrame("Button", nil, parent) --[[@as BoardRibbonView]]
-	ribbon.face = ribbon:CreateTexture(nil, "BACKGROUND")
-	ribbon.label = ns.BoardText(ribbon, ns.BoardFonts().ribbon, LOOK.sealText)
+	ribbon.body = ns.ArtCrisp(ribbon:CreateTexture(nil, "ARTWORK", nil, 0))
+	ribbon.stitch = ns.ArtCrisp(ribbon:CreateTexture(nil, "ARTWORK", nil, 1))
+	ribbon.label = ns.BoardText(ribbon, ns.BoardFonts().ribbon, LOOK.ribbonLabel)
 	ribbon.label:SetJustifyH("CENTER")
-	ribbon.chosen = false
-	function ribbon.SetRibbon(self, text, color, chosen)
-		local letters = {}
-		for letter in text:gmatch("[%z\1-\127\194-\244][\128-\191]*") do
-			letters[#letters + 1] = letter
+	ns.BoardWrap(ribbon.label, RIBBON.width - 2 * RIBBON.pad, 1)
+	ribbon.label:SetPoint("BOTTOM", ribbon, "BOTTOM", 0, 31)
+	ribbon.chosen, ribbon.hover, ribbon.color = false, false, LOOK.boardRibbon
+	ribbon:SetScript("OnEnter", function(self)
+		self.hover = true
+		paintRibbon(self)
+		if self.tooltip then
+			ns.BoardTooltip(self, self.tooltip)
 		end
-		self.label:SetText(table.concat(letters, "\n"))
-		local height = #letters * LETTER_HEIGHT + 2 * RIBBON_PAD
-		self:SetSize(RIBBON_WIDTH + RIBBON_OUT, height)
-		self.face:SetColorTexture(color[1], color[2], color[3], 1)
-		local x = chosen and RIBBON_OUT or 0
-		self.face:ClearAllPoints()
-		self.face:SetPoint("TOPLEFT", x, 0)
-		self.face:SetSize(RIBBON_WIDTH, height)
-		self.label:ClearAllPoints()
-		self.label:SetPoint("TOP", self.face, "TOP", 0, -RIBBON_PAD)
-		self:SetAlpha(chosen and 1 or 0.85)
-		self.chosen = chosen
+	end)
+	ribbon:SetScript("OnLeave", function(self)
+		self.hover = false
+		paintRibbon(self)
+		GameTooltip:Hide()
+	end)
+	function ribbon.SetRibbon(self, text, color, chosen)
+		self.label:SetText(text)
+		self.color, self.chosen = color, chosen
+		paintRibbon(self)
 	end
 	return ribbon
 end
 
---- A wax seal (HNT-R64): a red wax disc with its words, tilted, or the dashed ring of "not yet" with faded words.
+--- A wax seal (HNT-R64, HNT-R66): pressed red wax, tilted, with its words (a word, a date and a year, one above the
+--- other, or one wrapped line), or the dashed ring of "not yet" with faded words.
 ---@class BoardSealView: Frame
 ---@field wax Texture
----@field ring Texture[]
+---@field empty Texture
 ---@field label FontString
+---@field lines FontString[]
 ---@field filled boolean
----@field SetSeal fun(self: BoardSealView, text: string, filled: boolean)
+---@field SetSeal fun(self: BoardSealView, text: string, filled: boolean, lines: string[]?)
 
--- The dashed ring's dashes.
-local RING_DASHES = 18
+-- The seal's tilt, and the kit's size the words' places are measured at.
+local SEAL_TILT, SEAL_DESIGN = -8, 88
 
 ---@param parent Frame
 ---@param size number
@@ -525,174 +688,168 @@ local RING_DASHES = 18
 function ns.NewBoardSeal(parent, size)
 	local seal = CreateFrame("Frame", nil, parent) --[[@as BoardSealView]]
 	seal:SetSize(size, size)
-	seal.wax = seal:CreateTexture(nil, "ARTWORK")
-	seal.wax:SetTexture(TEXTURES.disc)
-	seal.wax:SetVertexColor(LOOK.seal[1], LOOK.seal[2], LOOK.seal[3])
-	seal.wax:SetSize(size, size)
-	seal.wax:SetPoint("CENTER")
-	seal.wax:SetRotation(math.rad(-8))
-	seal.ring = {}
-	local radius = size / 2 - 1
-	for i = 1, RING_DASHES do
-		local angle = 2 * math.pi * i / RING_DASHES
-		local dash = seal:CreateTexture(nil, "ARTWORK")
-		dash:SetColorTexture(LOOK.sealOff[1], LOOK.sealOff[2], LOOK.sealOff[3], 1)
-		dash:SetSize(2, 5)
-		dash:SetPoint("CENTER", radius * math.cos(angle), radius * math.sin(angle))
-		dash:SetRotation(angle)
-		seal.ring[i] = dash
+	seal.wax = ns.ArtSprite(seal, "Book", "seal", "ARTWORK", 0, size)
+	seal.wax:SetAllPoints()
+	seal.empty = ns.ArtSprite(seal, "Book", "seal-empty", "ARTWORK", 0, size)
+	seal.empty:SetAllPoints()
+	for _, texture in ipairs({ seal.wax, seal.empty }) do
+		texture:SetRotation(math.rad(SEAL_TILT))
 	end
-	seal.label = ns.BoardText(seal, ns.BoardFonts().seal, LOOK.sealText)
-	seal.label:SetPoint("CENTER")
+	local faces, k = ns.BoardFonts(), size / SEAL_DESIGN
+	seal.label = ns.BoardText(seal, faces.seal, LOOK.sealText)
+	seal.label:SetPoint("CENTER", 0, 1)
 	seal.label:SetJustifyH("CENTER")
-	seal.label:SetWidth(size - 12)
+	ns.BoardWrap(seal.label, size - 24 * k, 0)
+	seal.lines = {}
+	for i, place in ipairs({ { faces.sealSmall, 11 }, { faces.seal, -1 }, { faces.sealSmall, -13 } }) do
+		local line = ns.BoardText(seal, place[1], LOOK.sealText)
+		line:SetJustifyH("CENTER")
+		line:SetPoint("CENTER", 0, place[2] * k)
+		seal.lines[i] = line
+	end
 	seal.filled = false
-	function seal.SetSeal(self, text, filled)
-		self.label:SetText(text)
+	function seal.SetSeal(self, text, filled, lines)
 		local ink = filled and LOOK.sealText or LOOK.sealOff
+		local stacked = lines ~= nil and #lines == 3
+		self.label:SetText(text)
+		self.label:SetShown(not stacked)
 		self.label:SetTextColor(ink[1], ink[2], ink[3])
-		self.wax:SetShown(filled)
-		for _, dash in ipairs(self.ring) do
-			dash:SetShown(not filled)
+		for i, line in ipairs(self.lines) do
+			line:SetText(stacked and (i == 2 and lines[i] or ns.BoardSmallCaps(lines[i])) or "")
+			line:SetShown(stacked)
+			line:SetTextColor(ink[1], ink[2], ink[3])
 		end
+		self.wax:SetShown(filled)
+		self.empty:SetShown(not filled)
 		self.filled = filled
 	end
 	return seal
 end
 
---- An ink bar (HNT-R64, HNT-R66): an ink outline filled with hatching from the left, and its label to its right
---- ("1 / 10").
+--- An ink bar (HNT-R64, HNT-R66): the kit's empty ink stroke, sliced to its width, the full stroke cut to its share
+--- over it (stretched only past the sprite's own length), and its words to its right in handwriting ("12 / 40").
 ---@class BoardInkBarView: Frame
----@field outline BoardOutline
----@field fill Texture
----@field hatch Texture
+---@field empty HuntsThreeSlice
+---@field fill Texture         -- the full stroke cut to length
+---@field fillSlice HuntsThreeSlice -- the full stroke, sliced, when its share is longer than the sprite
 ---@field label FontString
 ---@field value number
 ---@field SetBar fun(self: BoardInkBarView, fill: number, label: string?)
 
+-- The bar's height, and the ink's end caps.
+local INK_HEIGHT, INK_CAP = 10, 6
+
 ---@param parent Frame
 ---@param width number
----@param height number
 ---@return BoardInkBarView
-function ns.NewBoardInkBar(parent, width, height)
+function ns.NewBoardInkBar(parent, width)
 	local bar = CreateFrame("Frame", nil, parent) --[[@as BoardInkBarView]]
-	bar:SetSize(width, height)
-	bar.outline = outline(bar)
-	bar.outline:Solid(LOOK.barInk)
-	bar.fill = bar:CreateTexture(nil, "ARTWORK")
-	bar.fill:SetColorTexture(LOOK.barFill[1], LOOK.barFill[2], LOOK.barFill[3], 1)
-	bar.fill:SetPoint("TOPLEFT", 1, -1)
-	bar.fill:SetHeight(height - 2)
-	bar.hatch = bar:CreateTexture(nil, "ARTWORK", nil, 1)
-	bar.hatch:SetTexture(TEXTURES.hatch, "REPEAT", "REPEAT")
-	bar.hatch:SetVertexColor(LOOK.barInk[1], LOOK.barInk[2], LOOK.barInk[3])
-	bar.hatch:SetAllPoints(bar.fill)
-	bar.label = ns.BoardText(bar, ns.BoardFonts().small, LOOK.note)
-	bar.label:SetPoint("LEFT", bar, "RIGHT", 6, 0)
+	bar:SetSize(width, INK_HEIGHT)
+	bar.empty = CreateFrame("Frame", nil, bar) --[[@as HuntsThreeSlice]]
+	bar.empty:SetPoint("TOPLEFT")
+	ns.SetThreeSlice(bar.empty, "Parts", "ink-empty", width, INK_CAP, "ARTWORK", 0)
+	bar.fill = ns.ArtCrisp(bar:CreateTexture(nil, "ARTWORK", nil, 1))
+	bar.fillSlice = CreateFrame("Frame", nil, bar) --[[@as HuntsThreeSlice]]
+	bar.fillSlice:SetPoint("TOPLEFT")
+	bar.fillSlice:SetFrameLevel(bar.empty:GetFrameLevel() + 1)
+	bar.label = ns.BoardText(bar, ns.BoardFonts().inkCount, LOOK.ink)
+	bar.label:SetPoint("LEFT", bar, "RIGHT", 10, 1)
 	bar.value = 0
+	local _, sprite = ns.ArtSpriteOf("Parts", "ink-full")
+	local spriteLength = sprite.box[3]
 	function bar.SetBar(self, fill, label)
 		fill = math.max(0, math.min(1, fill))
-		local inner = (width - 2) * fill
-		self.fill:SetWidth(math.max(1, inner))
-		tile(self.hatch, math.max(1, inner), height - 2)
-		self.fill:SetShown(fill > 0)
-		self.hatch:SetShown(fill > 0)
+		local length = width * fill
+		local cut = length > 0 and length <= spriteLength
+		local slice = length > spriteLength
+		if cut then
+			local shown = ns.SetCrop(self.fill, "Parts", "ink-full", length)
+			ns.PlaceSprite(shown, self, 0, 0)
+		elseif slice then
+			ns.SetThreeSlice(self.fillSlice, "Parts", "ink-full", length, INK_CAP, "ARTWORK", 0)
+		end
+		self.fill:SetShown(cut)
+		self.fillSlice:SetShown(slice)
 		self.label:SetText(label or "")
 		self.value = fill
 	end
 	return bar
 end
 
---- A bar on the timeline (HNT-R63), in one of its styles:
----   "hatched"  open: hatched ink in a solid ink outline, its words in paper
----   "dashed"   the window is unconfirmed: faint hatching in a dashed ink outline
----   "pencil"   short of skill: a dashed pencil outline, nothing inside
+--- A bar on the timeline (HNT-R63), in one of its styles, each the kit's own stroke:
+---   "hatched"  open: hatched ink
+---   "dashed"   the window is unconfirmed: faint hatching in a dashed outline
+---   "pencil"   short of skill: a pencil outline, nothing inside
 ---   "camp"     the camp is up: solid blue
---- adapter/Timeline.lua anchors it on the ruler and gives each its width.
+--- A bar is cut to length, never squeezed, and keeps its own right end, so both ends stay square-on. adapter/Timeline.lua
+--- anchors it on the ruler and gives each its width.
 ---@alias BoardBarStyle "hatched"|"dashed"|"pencil"|"camp"
 
 ---@class BoardTimelineBarView: Frame
----@field outline BoardOutline
----@field fill Texture
----@field hatch Texture
----@field label FontString
+---@field body Texture
+---@field tip Texture
 ---@field style BoardBarStyle
----@field SetBar fun(self: BoardTimelineBarView, style: BoardBarStyle, width: number, label: string?)
+---@field SetBar fun(self: BoardTimelineBarView, style: BoardBarStyle, width: number)
 
----@type table<BoardBarStyle, { fill: number[]?, hatch: number[]?, hatchAlpha: number?, edge: number[], dashed: boolean, text: number[] }>
-local BAR_STYLES = {
-	hatched = { fill = LOOK.barFill, hatch = LOOK.barInk, edge = LOOK.barInk, dashed = false, text = LOOK.paper },
-	dashed = { hatch = LOOK.barInk, hatchAlpha = 0.45, edge = LOOK.barInk, dashed = true, text = LOOK.barInk },
-	pencil = { edge = LOOK.pencil, dashed = true, text = LOOK.pencil },
-	camp = { fill = LOOK.camp, edge = LOOK.campEdge, dashed = false, text = LOOK.paper },
-}
+--- Each bar style's sprite.
+---@type table<BoardBarStyle, string>
+ns.BOARD_BAR_SPRITES = { hatched = "bar-hatch", dashed = "bar-dash", pencil = "bar-pencil", camp = "bar-blue" }
+
+-- A bar's height, its right end's length, and the shortest bar that keeps it.
+local BAR_HEIGHT, BAR_TIP = 12, 4
 
 ---@param parent Frame
----@param height number
 ---@return BoardTimelineBarView
-function ns.NewBoardTimelineBar(parent, height)
+function ns.NewBoardTimelineBar(parent)
 	local bar = CreateFrame("Frame", nil, parent) --[[@as BoardTimelineBarView]]
-	bar:SetHeight(height)
-	bar.fill = bar:CreateTexture(nil, "ARTWORK")
-	bar.fill:SetAllPoints()
-	bar.hatch = hatching(bar, "ARTWORK")
-	bar.outline = outline(bar)
-	bar.label = ns.BoardText(bar, ns.BoardFonts().small, LOOK.paper)
-	bar.label:SetPoint("LEFT", 4, 0)
-	function bar.SetBar(self, style, width, label)
-		local look = assert(BAR_STYLES[style], "a timeline bar has no style " .. tostring(style))
+	bar:SetHeight(BAR_HEIGHT)
+	bar.body = ns.ArtCrisp(bar:CreateTexture(nil, "ARTWORK"))
+	bar.body:SetPoint("TOPLEFT")
+	bar.tip = ns.ArtCrisp(bar:CreateTexture(nil, "ARTWORK"))
+	bar.tip:SetPoint("TOPRIGHT")
+	function bar.SetBar(self, style, width)
+		local name = assert(ns.BOARD_BAR_SPRITES[style], "a timeline bar has no style " .. tostring(style))
 		self:SetWidth(width)
-		local fill = look.fill
-		if fill then
-			self.fill:SetColorTexture(fill[1], fill[2], fill[3], 1)
+		local tipped = width > 2 * BAR_TIP
+		ns.SetCrop(self.body, "Parts", name, tipped and width - BAR_TIP or width)
+		if tipped then
+			local atlas, sprite = ns.ArtSpriteOf("Parts", name)
+			local right = sprite.x + (sprite.box[1] + sprite.box[3]) * atlas.scale
+			ns.ArtCut(self.tip, atlas, right - BAR_TIP * atlas.scale, sprite.y, BAR_TIP * atlas.scale, sprite.h)
+			self.tip:SetSize(BAR_TIP, sprite.h / atlas.scale)
 		end
-		self.fill:SetShown(fill ~= nil)
-		local hatch = look.hatch
-		if hatch then
-			self.hatch:SetVertexColor(hatch[1], hatch[2], hatch[3], look.hatchAlpha or 1)
-			tile(self.hatch, width, height)
-		end
-		self.hatch:SetShown(hatch ~= nil)
-		if look.dashed then
-			self.outline:Dashed(look.edge, width, height)
-		else
-			self.outline:Solid(look.edge)
-		end
-		self.label:SetText(label or "")
-		self.label:SetTextColor(look.text[1], look.text[2], look.text[3])
+		self.tip:SetShown(tipped)
 		self.style = style
 	end
 	return bar
 end
 
---- A Hunt's icon on the board (HNT-R55, HNT-R18): the icon in sepia, or in the tint given (a generated class's
---- quality colour), and the trim of its highest tier as a ring round it.
+--- A Hunt's icon on the board (HNT-R55, HNT-R18): the icon round, in sepia (or in the tint given: a generated class's
+--- quality colour), inside a ring in the trim of its highest tier, or a plain ring before the first.
 ---@class BoardIconView: Frame
 ---@field icon Texture
----@field trim Texture       -- the trim's colour, between two black rings
----@field rings Texture[]
+---@field ring HuntsSpriteTexture
 ---@field trimName ("bronze"|"silver"|"gold")?
 ---@field SetIcon fun(self: BoardIconView, texture: string|integer, tintColor: number[]?)
 ---@field SetTrim fun(self: BoardIconView, trim: ("bronze"|"silver"|"gold")?)
 
 ---@param parent Frame
----@param size number
+---@param size number the icon's size
+---@param ringSize number? the ring's drawn size (the icon's plus 3 by default)
 ---@return BoardIconView
-function ns.NewBoardIcon(parent, size)
+function ns.NewBoardIcon(parent, size, ringSize)
+	ringSize = ringSize or size + 3
 	local view = CreateFrame("Frame", nil, parent) --[[@as BoardIconView]]
 	view:SetSize(size, size)
-	local function square(layer, sublevel, grow, color)
-		local texture = view:CreateTexture(nil, layer, nil, sublevel)
-		texture:SetSize(size + grow, size + grow)
-		texture:SetPoint("CENTER")
-		if color then
-			texture:SetColorTexture(color[1], color[2], color[3], 1)
-		end
-		return texture
-	end
-	view.rings = { square("BACKGROUND", 0, 8, LOOK.shadow), square("BACKGROUND", 2, 2, LOOK.shadow) }
-	view.trim = square("BACKGROUND", 1, 6)
-	view.icon = square("ARTWORK", 0, 0)
+	view.icon = ns.ArtCrisp(view:CreateTexture(nil, "ARTWORK", nil, 0))
+	view.icon:SetSize(size - 2, size - 2)
+	view.icon:SetPoint("CENTER")
+	local mask = view:CreateMaskTexture()
+	mask:SetTexture(TEXTURES.disc, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+	mask:SetAllPoints(view.icon)
+	view.icon:AddMaskTexture(mask)
+	view.ring = ns.ArtSprite(view, "Parts", "ic-ring", "ARTWORK", 1, ringSize)
+	ns.CenterSprite(view.ring, view)
 	function view.SetIcon(self, texture, tintColor)
 		local color = tintColor or LOOK.sepia
 		self.icon:SetTexture(texture)
@@ -700,24 +857,18 @@ function ns.NewBoardIcon(parent, size)
 		self.icon:SetVertexColor(color[1], color[2], color[3])
 	end
 	function view.SetTrim(self, trim)
-		local color = ns.BoardTrimColor(trim)
-		if color then
-			self.trim:SetColorTexture(color[1], color[2], color[3], 1)
-		end
-		self.trim:SetShown(color ~= nil)
-		for _, ring in ipairs(self.rings) do
-			ring:SetShown(color ~= nil)
-		end
-		self.trimName = color and trim or nil
+		local named = ns.BoardTrimColor(trim) and trim or nil
+		ns.SetSprite(self.ring, "Parts", named and "ic-ring-" .. named or "ic-ring", ringSize)
+		ns.CenterSprite(self.ring, self)
+		self.trimName = named
 	end
 	view:SetTrim(nil)
 	return view
 end
 
---- A tier's diamond on the ladder (HNT-R64): an ink outline, filled in its trim's colour (ns.Trim) once reached.
+--- A tier's mark on the ladder (HNT-R64): the kit's diamond in its trim's ink, filled once reached, an outline before.
 ---@class BoardDiamondView: Frame
----@field edge Texture
----@field face Texture
+---@field mark HuntsSpriteTexture
 ---@field SetDiamond fun(self: BoardDiamondView, trim: "bronze"|"silver"|"gold", reached: boolean)
 
 ---@param parent Frame
@@ -726,83 +877,108 @@ end
 function ns.NewBoardDiamond(parent, size)
 	local view = CreateFrame("Frame", nil, parent) --[[@as BoardDiamondView]]
 	view:SetSize(size, size)
-	view.edge = view:CreateTexture(nil, "ARTWORK")
-	view.edge:SetColorTexture(LOOK.kicker[1], LOOK.kicker[2], LOOK.kicker[3], 1)
-	view.edge:SetSize(size * 0.72, size * 0.72)
-	view.edge:SetPoint("CENTER")
-	view.edge:SetRotation(math.rad(45))
-	view.face = view:CreateTexture(nil, "ARTWORK", nil, 1)
-	view.face:SetSize(size * 0.72 - 3, size * 0.72 - 3)
-	view.face:SetPoint("CENTER")
-	view.face:SetRotation(math.rad(45))
+	view.mark = ns.ArtSprite(view, "Parts", "tier-off", "ARTWORK", 0, size)
 	function view.SetDiamond(self, trim, reached)
-		local color = reached and ns.BoardTrimColor(trim) or LOOK.paper
-		self.face:SetColorTexture(color[1], color[2], color[3], 1)
+		ns.SetSprite(self.mark, "Parts", reached and "tier-on" or "tier-off", size)
+		ns.PlaceSprite(self.mark, self, 0, 0)
+		local color = LOOK.tierInks[trim] or LOOK.tierInks.bronze
+		self.mark:SetVertexColor(color[1], color[2], color[3])
 	end
 	return view
 end
 
---- A group's dot (HNT-R76): a small disc in the group's colour.
----@class BoardDotView: Texture
+--- A group's dot (HNT-R76): a round dot in the group's colour, bright over the world or in ink on paper.
+---@class BoardDotView: HuntsArtDot
 ---@field group HuntGroup?
----@field SetGroup fun(self: BoardDotView, group: HuntGroup)
+---@field SetGroup fun(self: BoardDotView, group: HuntGroup, paper: boolean?)
 
 ---@param parent Frame
 ---@param size number
 ---@return BoardDotView
 function ns.NewBoardDot(parent, size)
-	local dot = parent:CreateTexture(nil, "ARTWORK") --[[@as BoardDotView]]
-	dot:SetTexture(TEXTURES.disc)
-	dot:SetSize(size, size)
-	function dot.SetGroup(self, group)
-		local color = assert(LOOK.groups[group], "no group " .. tostring(group))
-		self:SetVertexColor(color[1], color[2], color[3])
+	local dot = ns.NewArtDot(parent, size) --[[@as BoardDotView]]
+	function dot.SetGroup(self, group, paper)
+		local color = assert((paper and LOOK.paperGroups or LOOK.groups)[group], "no group " .. tostring(group))
+		ns.SetDotColor(self, color)
 		self.group = group
 	end
 	return dot
 end
 
---- A mark drawn as a texture (HNT-R60): the fleuron between crumbs (HNT-R61) in the gilt's tint, or the pointing hand
---- before "back to {set}" (HNT-R66) in red ink.
+--- A mark drawn as a texture (HNT-R60): the kit's gilt fleuron between crumbs (HNT-R61), or the pointing hand before
+--- "back to {set}" (HNT-R66) in red ink.
 ---@alias BoardMark "fleuron"|"hand"
-
----@type table<BoardMark, number[]>
-local MARK_COLORS = { fleuron = LOOK.fleuron, hand = LOOK.red }
 
 ---@param parent Frame
 ---@param mark BoardMark
 ---@param size number
 ---@return Texture
 function ns.NewBoardMark(parent, mark, size)
-	local color = assert(MARK_COLORS[mark], "no mark " .. tostring(mark))
+	if mark == "fleuron" then
+		return ns.ArtSprite(parent, "Book", "fleuron", "ARTWORK", 0, size)
+	end
+	assert(mark == "hand", "no mark " .. tostring(mark))
 	local texture = parent:CreateTexture(nil, "ARTWORK")
-	texture:SetTexture(TEXTURES[mark])
+	texture:SetTexture(TEXTURES.hand)
 	texture:SetSize(size, size)
 	texture:SetDesaturated(true)
-	texture:SetVertexColor(color[1], color[2], color[3])
+	texture:SetVertexColor(LOOK.red[1], LOOK.red[2], LOOK.red[3])
 	return texture
 end
 
---- The gold nameplate (HNT-R61): a gold face with an outline, sized to its words, hidden with none.
+--- The brass nameplate (HNT-R61): the kit's brass plate, three-sliced to its words, hidden with none.
 ---@class BoardPlateView: Frame
----@field face Texture
+---@field brass HuntsThreeSlice
 ---@field label FontString
 ---@field SetPlate fun(self: BoardPlateView, text: string?)
+
+-- The plate's end caps, and the room its words leave.
+local PLATE_CAP, PLATE_ROOM = 8, 22
 
 ---@param parent Frame
 ---@return BoardPlateView
 function ns.NewBoardPlate(parent)
 	local plate = CreateFrame("Frame", nil, parent) --[[@as BoardPlateView]]
-	ns.BoardSolid(plate, LOOK.plateEdge, "BACKGROUND")
-	plate.face = ns.BoardSolid(plate, LOOK.plate, "BORDER")
-	plate.face:SetPoint("TOPLEFT", 1, -1)
-	plate.face:SetPoint("BOTTOMRIGHT", -1, 1)
+	plate.brass = CreateFrame("Frame", nil, plate) --[[@as HuntsThreeSlice]]
+	plate.brass:SetPoint("TOPLEFT")
 	plate.label = ns.BoardText(plate, ns.BoardFonts().plate, LOOK.plateText)
-	plate.label:SetPoint("CENTER")
+	plate.label:SetPoint("CENTER", 0, 1)
 	function plate.SetPlate(self, text)
 		self.label:SetText(text or "")
-		self:SetSize(self.label:GetStringWidth() + 20, 22)
+		local width = math.ceil(self.label:GetStringWidth()) + PLATE_ROOM
+		ns.SetThreeSlice(self.brass, "Book", "plate", width, PLATE_CAP, "ARTWORK")
+		self:SetSize(width, self.brass:GetHeight())
 		self:SetShown(text ~= nil)
 	end
 	return plate
+end
+
+--- The "show completed" box on the leather (HNT-R61, HNT-R82): a small gilt-edged box, filled with gilt when ticked,
+--- and its words in italic. `Sync` shows the tick as the box's state.
+---@class BoardCheckButton: CheckButton
+---@field Text FontString
+---@field tick Texture
+---@field Sync fun(self: BoardCheckButton)
+
+-- The box's size, and the tick's inset.
+local CHECK_SIZE, TICK_INSET = 14, 3.5
+
+---@param parent Frame
+---@return BoardCheckButton
+function ns.NewBoardCheck(parent)
+	local check = CreateFrame("CheckButton", nil, parent) --[[@as BoardCheckButton]]
+	check:SetSize(CHECK_SIZE, CHECK_SIZE)
+	ns.BoardSolid(check, LOOK.gilt, "BACKGROUND")
+	local well = ns.BoardSolid(check, tint("1a1008"), "BORDER")
+	well:SetPoint("TOPLEFT", 1.5, -1.5)
+	well:SetPoint("BOTTOMRIGHT", -1.5, 1.5)
+	check.tick = ns.BoardSolid(check, LOOK.gilt, "ARTWORK")
+	check.tick:SetPoint("TOPLEFT", TICK_INSET, -TICK_INSET)
+	check.tick:SetPoint("BOTTOMRIGHT", -TICK_INSET, TICK_INSET)
+	check.Text = ns.BoardText(check, ns.BoardFonts().check, LOOK.checkLabel)
+	check.Text:SetPoint("LEFT", check, "RIGHT", 7, 0)
+	function check.Sync(self)
+		self.tick:SetShown(self:GetChecked() == true)
+	end
+	return check
 end

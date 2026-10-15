@@ -76,10 +76,16 @@ describe("a Hunt's entry on the board", function()
 			local texts = shownTexts(page)
 
 			assert.are.same({ "Hunted 12 Oct 2026", true }, { view.seal.label.text, view.seal.filled })
+			-- the pressed seal stacks its word, the short date and the year
+			assert.are.same({ "HUNTED", "12 Oct", "2026" }, {
+				view.seal.lines[1]:GetText(),
+				view.seal.lines[2]:GetText(),
+				view.seal.lines[3]:GetText(),
+			})
+			-- each tier: its threshold, then its Catch's date and zone, or "not yet"
+			assert.are.same({ "1", "10" }, { view.thresholds[1]:GetText(), view.thresholds[2]:GetText() })
+			assert.are.same({ "12 Oct, Darkshore", "not yet" }, { view.whens[1]:GetText(), view.whens[2]:GetText() })
 			for _, text in ipairs({
-				"Tier 1 · 1",
-				"12 Oct, Darkshore",
-				"Tier 2 · 10",
 				"96 Casts under these conditions, 11 since my last one.",
 				"Odds live in Stats.",
 			}) do
@@ -108,19 +114,20 @@ describe("a Hunt's entry on the board", function()
 
 			assert.are.equal("52 caught", view.bar.label.text)
 			for k = 1, 3 do
-				local face = view.diamonds[k].face.color
-				assert.are.same(look.trims[run.ns.Trim(k)], { face[1], face[2], face[3] })
+				local mark = view.diamonds[k].mark
+				assert.are.same(look.tierInks[run.ns.Trim(k)], { unpack(mark.vertexColor, 1, 3) })
+				assert.are.equal(run.ns.ATLASES.Parts.sprites["tier-on"].y / 1024, mark.texCoord[3])
 			end
 		end)
 
-		it("leaves an unreached tier's diamond unfilled", function()
+		it("leaves an unreached tier's mark an outline", function()
 			local run = start()
 			run.state.hunts.fixture_snapper = progress(1, 5, 0, 1)
 
 			local _, view = open(run, { mode = "board", hunt = "fixture_snapper" })
 
-			local face = view.diamonds[2].face.color
-			assert.are.same(run.ns.BOARD_LOOK.paper, { face[1], face[2], face[3] })
+			local mark = view.diamonds[2].mark
+			assert.are.equal(run.ns.ATLASES.Parts.sprites["tier-off"].y / 1024, mark.texCoord[3])
 		end)
 	end)
 

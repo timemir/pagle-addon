@@ -130,6 +130,10 @@ local function clientStubs(client)
 		-- forever dump's Frames.lua), and the yellow FrameXML's GlobalColors defines (CreateColor(1, 1, 0, 1)). UIParent
 		-- is a plain widget, so it gets no events.
 		UIParent = widgets.newWidget("Frame"),
+		-- FrameXML's colour (ColorMixin), as a texture's gradient takes it: its channels.
+		CreateColor = function(r, g, b, a)
+			return { r = r, g = g, b = b, a = a }
+		end,
 		-- The game world's frame, which the mouse is over when it's over no UI (Frames.lua in the forever dump).
 		WorldFrame = widgets.newWidget("Frame"),
 		YELLOW_FONT_COLOR = {

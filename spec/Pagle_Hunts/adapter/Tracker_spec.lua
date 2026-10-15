@@ -44,7 +44,12 @@ local function read(run)
 	for _, line in ipairs(view.lines) do
 		if line:IsShown() then
 			out.hunts[#out.hunts + 1] =
-				{ dot = line.dot.group, first = line.first:GetText(), second = line.second:GetText() }
+				-- the name at the left and the label at the right, read as the line HNT-R76 gives
+				{
+					dot = line.dot.group,
+					first = line.first:GetText() .. " · " .. line.label:GetText(),
+					second = line.second:GetText(),
+				}
 		end
 	end
 	if view.more:IsShown() then
@@ -371,22 +376,21 @@ describe("the Hunts tracker", function()
 	end)
 
 	describe("its frame (HNT-R79, CORE-R73)", function()
-		it("is the plain native block with no frame equipped, and redraws in Ink Wash when it is equipped", function()
+		it("is the native block with no frame equipped, and redraws on Ink Wash's paper when it is equipped", function()
 			local run = start()
-			local look = run.ns.tracker.look
-			assert.is_false(look.backdrop:IsShown())
+			local view = run.ns.tracker
+			assert.is_false(view.paper:IsShown())
+			assert.are.equal(run.ns.TRACKER_LOOKS.native, view.look)
+			assert.are.equal(260, view.frame.width)
 
 			run.fake.setPurchased({ [INKWASH] = true }) -- bought (SHOP-R11)
 			assert.is_true(run.fake.Pagle.SetEquipped(FRAME_SLOT, INKWASH))
 
-			local inkwash = run.ns.TRACKER_FRAMES[INKWASH]
-			assert.is_true(look.backdrop:IsShown())
-			assert.are.equal(inkwash.backdrop, look.backdrop.texture)
-			local tint = look.backdrop.vertexColor
-			assert.are.same(inkwash.tint, { tint[1], tint[2], tint[3] })
-			for _, line in ipairs(look.border) do
-				assert.is_true(line:IsShown())
-			end
+			assert.are.equal(run.ns.TRACKER_FRAMES[INKWASH], view.look)
+			assert.is_true(view.paper:IsShown())
+			assert.are.equal(run.ns.ATLASES.TrackerInk.file, view.paper.top.texture)
+			assert.are.equal(268, view.frame.width)
+			assert.are.same({ 268, view.frame.height }, { view.paper.width, view.paper.height })
 		end)
 
 		it("wears the frame equipped at an earlier login from login (HNT-R79, SHOP-R32)", function()
@@ -398,10 +402,10 @@ describe("the Hunts tracker", function()
 
 			local view = loaded.ns.tracker
 			local waxseal = loaded.ns.TRACKER_FRAMES["hunts.trackerframe.waxseal"]
-			assert.are.equal(waxseal.backdrop, view.look.backdrop.texture)
-			assert.is_true(view.look.seal:IsShown())
+			assert.are.equal(loaded.ns.ATLASES.TrackerWax.file, view.paper.top.texture)
+			assert.are.equal("HUNTS", view.title:GetText()) -- in small caps on the parchment
 			local ink = view.title.textColor
-			assert.are.same(waxseal.ink, { ink[1], ink[2], ink[3] }) -- dark words on the parchment
+			assert.are.same(waxseal.header[3], { ink[1], ink[2], ink[3] }) -- dark words on the parchment
 		end)
 	end)
 end)

@@ -15,9 +15,9 @@ local ns = select(2, ...)
 ns.RULER_BEFORE = 2 * 60 * 60
 ns.RULER_AFTER = 22 * 60 * 60
 
--- An hour, and the hours whose ticks carry their time: every 6 realm hours, as variant E labels its axis.
+-- An hour, and the hours whose ticks carry their hour: every 3 realm hours, as the books kit labels its axis.
 local HOUR = 3600
-local LABEL_EVERY = 6
+local LABEL_EVERY = 3
 -- How many windows one row may draw before the forecast walk stops: a guard, far more than a day holds.
 local MAX_SPANS = 48
 
@@ -48,10 +48,12 @@ local MAX_SPANS = 48
 ---@class TimelineGroup
 ---@field group HuntGroup
 ---@field heading string
+---@field name string                -- the heading's two parts, as the page sets them: "Now" in small caps…
+---@field note string                -- …then "open right now" in italic
 ---@field count integer
 ---@field rows TimelineRow[]
 
---- The ruler (HNT-R62): its ends in server time, the now line, and its hour ticks, every 6 realm hours labelled.
+--- The ruler (HNT-R62): its ends in server time, the now line, and its hour ticks, every 3 realm hours labelled with the hour.
 ---@class TimelineRuler
 ---@field from integer
 ---@field to integer
@@ -65,6 +67,8 @@ local MAX_SPANS = 48
 ---@field washes { kind: "soon"|"night", from: number, to: number }[]
 ---@field groups TimelineGroup[]     -- the groups with rows, in board order
 ---@field legend string
+---@field legendItems { style: BoardBarStyle, text: string }[]   -- the legend as the page draws it: each bar style's
+--- own stroke with its words
 ---@field empty "noHunts"|"allDone"|nil   -- no Hunt is current at all, or no row is shown (HNT-R67)
 ---@field selected string?           -- the Hunt selected (HNT-R67), nil for none
 
@@ -138,7 +142,7 @@ local function realmSeconds(t, snapshot)
 	return snapshot.minute * 60 + (t - snapshot.time)
 end
 
--- The ruler around `now` (HNT-R62): a tick at every whole realm hour, labelled every 6 hours except where the now
+-- The ruler around `now` (HNT-R62): a tick at every whole realm hour, labelled with its hour every 3 hours except where the now
 -- line's "now" stands.
 ---@param now integer
 ---@param snapshot table
@@ -151,7 +155,7 @@ local function rulerAt(now, snapshot)
 		local clock = ns.RealmClockAt(t, snapshot)
 		local label
 		if math.floor(clock.minute / 60) % LABEL_EVERY == 0 and math.abs(t - now) >= HOUR then
-			label = ns.FormatClock(clock.minute)
+			label = ns.L.RULER_HOUR:format(math.floor(clock.minute / 60))
 		end
 		ruler.ticks[#ruler.ticks + 1] = { x = x(ruler, t), label = label }
 	end
@@ -292,7 +296,14 @@ function ns.BuildTimeline(input)
 	for _, group in ipairs(ns.GROUP_ORDER) do
 		local rows = byGroup[group]
 		if rows then
-			groups[#groups + 1] = { group = group, heading = L.GROUP_HEADINGS[group], count = #rows, rows = rows }
+			groups[#groups + 1] = {
+				group = group,
+				heading = L.GROUP_HEADINGS[group],
+				name = L.GROUP_NAMES[group],
+				note = L.GROUP_NOTES[group],
+				count = #rows,
+				rows = rows,
+			}
 		end
 	end
 	local title = L.TIMELINE_TITLE
@@ -312,6 +323,12 @@ function ns.BuildTimeline(input)
 		washes = washesOf(ruler, input),
 		groups = groups,
 		legend = L.TIMELINE_LEGEND,
+		legendItems = {
+			{ style = "hatched", text = L.LEGEND_ITEMS.hatched },
+			{ style = "dashed", text = L.LEGEND_ITEMS.dashed },
+			{ style = "pencil", text = L.LEGEND_ITEMS.pencil },
+			{ style = "camp", text = L.LEGEND_ITEMS.camp },
+		},
 		empty = empty,
 		selected = selected,
 	}

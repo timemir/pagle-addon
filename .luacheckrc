@@ -172,6 +172,9 @@ stds.wow = {
 		-- The Fish Journal's serif and handwriting font objects (ledger.md › UI); its frame is drawn on CreateFrame and
 		-- UIParent above and hides with Esc through UISpecialFrames (below).
 		"CreateFont",
+		-- The books kit's leather shades toward its foot, and the native tracker's lines fade across (hunts.md, stats.md
+		-- › UI): a texture's gradient takes FrameXML's colours.
+		"CreateColor",
 		-- Stats' words (STA-R59): times and dates in the player's local clock (date, below), and the game's quality names
 		-- (GlobalStrings); their colours are ITEM_QUALITY_COLORS, in stds.wow_variables.
 		"ITEM_QUALITY0_DESC",

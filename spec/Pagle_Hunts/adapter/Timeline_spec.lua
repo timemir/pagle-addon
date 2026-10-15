@@ -246,21 +246,24 @@ describe("an event's conditions line while it runs (HNT-R53)", function()
 end)
 
 describe("the timeline's ruler and washes (HNT-R62)", function()
-	it("runs from 2 h before now to 22 h after, a tick each realm hour, every 6 hours labelled", function()
-		local run = start()
-		local ruler = run.ns.BoardTimeline({ mode = "board" }).ruler
+	it(
+		"runs from 2 h before now to 22 h after, a tick each realm hour, every 3 hours labelled with its hour",
+		function()
+			local run = start()
+			local ruler = run.ns.BoardTimeline({ mode = "board" }).ruler
 
-		assert.are.same({ SERVER_TIME - 2 * HOUR, SERVER_TIME + 22 * HOUR }, { ruler.from, ruler.to })
-		assert.are.equal(bar(at(SERVER_TIME, SERVER_TIME), 1)[1], bar(ruler.now, 1)[1])
-		-- 06:15 to 06:15 tomorrow: whole hours 07:00 … 06:00, 24 of them; 12:00, 18:00, 00:00 and 06:00 labelled.
-		assert.are.equal(24, #ruler.ticks)
-		local labels = {}
-		for _, tick in ipairs(ruler.ticks) do
-			labels[#labels + 1] = tick.label
+			assert.are.same({ SERVER_TIME - 2 * HOUR, SERVER_TIME + 22 * HOUR }, { ruler.from, ruler.to })
+			assert.are.equal(bar(at(SERVER_TIME, SERVER_TIME), 1)[1], bar(ruler.now, 1)[1])
+			-- 06:15 to 06:15 tomorrow: whole hours 07:00 … 06:00, 24 of them; every third hour labelled.
+			assert.are.equal(24, #ruler.ticks)
+			local labels = {}
+			for _, tick in ipairs(ruler.ticks) do
+				labels[#labels + 1] = tick.label
+			end
+			assert.are.same({ "12", "15", "18", "21", "00", "03", "06" }, labels) -- 09 is within the hour of now
+			assert.are.equal(bar(at(realm(7), SERVER_TIME), 1)[1], bar(ruler.ticks[1].x, 1)[1])
 		end
-		assert.are.same({ "12:00", "18:00", "00:00", "06:00" }, labels)
-		assert.are.equal(bar(at(realm(7), SERVER_TIME), 1)[1], bar(ruler.ticks[1].x, 1)[1])
-	end)
+	)
 
 	it("leaves a tick within the hour of now unlabelled, where the now line says now", function()
 		local run = start()
@@ -271,7 +274,7 @@ describe("the timeline's ruler and washes (HNT-R62)", function()
 			labels[#labels + 1] = tick.label
 		end
 
-		assert.are.same({ "18:00", "00:00", "06:00" }, labels) -- 12:00 is half an hour off
+		assert.are.same({ "15", "18", "21", "00", "03", "06", "09" }, labels) -- 12 is half an hour off
 	end)
 
 	it("washes the next 3 hours (Soon) and the spans the night window holds", function()
@@ -314,11 +317,24 @@ describe("the timeline's groups (HNT-R62, HNT-R44, HNT-R82)", function()
 			{ "Soon: opens within 3 hours", 1, 1 },
 			{ "On demand: starts when you do", 1, 1 },
 		}, headings)
+		-- the page sets each heading's name in small caps and its note in italic
+		assert.are.same({ "Now", "open right now" }, { timeline.groups[1].name, timeline.groups[1].note })
 		assert.are.equal("What's biting, and when", timeline.title)
 		assert.are.equal(
 			"Hatched: open · Dashed: window unconfirmed · Pencil: needs more skill · Blue: your camp is up",
 			timeline.legend
 		)
+		-- the legend as the page draws it: each style's own stroke with its words
+		local legend = {}
+		for i, item in ipairs(timeline.legendItems) do
+			legend[i] = item.style .. "=" .. item.text
+		end
+		assert.are.same({
+			"hatched=open",
+			"dashed=window unconfirmed",
+			"pencil=needs more skill",
+			"camp=your camp is up",
+		}, legend)
 	end)
 
 	it("put a pinned row first in its group, with its pin mark (HNT-R80)", function()
@@ -489,7 +505,8 @@ describe("opening the board (HNT-R67)", function()
 		assert.are.same({ "Snapper Run", "20:00" }, { snapper.name.text, snapper.margin.text })
 		local texts = pageTexts(run, "left")
 		assert.is_true(has(texts, "What's biting, and when"))
-		assert.is_true(has(texts, "Later: opens after that, or needs more skill"))
+		assert.is_true(has(texts, "LATER"))
+		assert.is_true(has(texts, "opens after that, or needs more skill"))
 	end)
 
 	it("reads HNT-R67's line on the right page when every Hunt is hidden, and selects none", function()
@@ -512,8 +529,8 @@ describe("opening the board (HNT-R67)", function()
 
 		run.ns.ToggleBoard()
 
-		-- Under the page's title, and nothing else: no ruler, groups or legend.
-		assert.are.same({ "What's biting, and when", "No Hunts yet." }, pageTexts(run, "left"))
+		-- Under the page's kicker and title, and nothing else: no ruler, groups or legend.
+		assert.are.same({ "THE BOARD", "What's biting, and when", "No Hunts yet." }, pageTexts(run, "left"))
 		assert.are.same({}, pageTexts(run, "right"))
 		assert.is_nil(place(run).hunt)
 	end)
