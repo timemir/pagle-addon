@@ -5,6 +5,9 @@
 --   loaded.client.settings.show(category)               -- its rows, drawn as the panel draws them
 --   loaded.client.settings.textsOf(row.frame)           -- the texts a drawn row shows
 --   loaded.client.settings.defaults(category)           -- presses the page's Defaults button
+--   loaded.client.settings.page("Trackers")             -- category(name), or an error
+--   loaded.client.settings.rowNamed(rows, "Toast style") -- a shown row by label; dropdownOf(row), optionValues(row)
+--                                                          and notesOf(row) read a slot dropdown row
 
 ---@class FakeClient
 ---@field settings FakeSettings The Settings panel.
@@ -35,6 +38,15 @@
 ---@field valueChanged fun(setting: table) What the panel does when a setting's value changes.
 ---@field textsOf fun(frame: table): string[] The text of every shown widget in a row's frame, depth first.
 ---@field buttonsOf fun(frame: table): table[] The shown buttons in a row's frame, depth first.
+---@field page fun(name: string): table The registered category named `name`, as category reads it; an error if none.
+---@field rowNamed fun(rows: { initializer: table, frame: table }[], label: string): { initializer: table, frame: table }
+--- The shown row whose label is `label`; an error if none.
+---@field dropdownOf fun(row: { initializer: table, frame: table }): table A slot dropdown row's dropdown (the fake's
+--- DropdownButton, spec/support/widgets.lua); an error if it has none.
+---@field optionValues fun(row: { initializer: table, frame: table }): string[] A slot dropdown's choices as
+--- "<value>=<label>", read as the dropdown opens.
+---@field notesOf fun(row: { initializer: table, frame: table }): string[] The texts a slot dropdown row shows under its
+--- label and dropdown: its note while shown.
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local newWidget = dofile("spec/support/widgets.lua").newWidget
@@ -450,5 +462,31 @@ return function(client, stubs)
 			end
 		end)
 		return buttons
+	end
+
+	function settings.page(name)
+		return assert(settings.category(name), "no page " .. name)
+	end
+	function settings.rowNamed(rows, label)
+		for _, row in ipairs(rows) do
+			if row.initializer:GetName() == label then
+				return row
+			end
+		end
+		error("no row " .. label)
+	end
+	function settings.dropdownOf(row)
+		for _, child in ipairs(row.frame.children) do
+			if child.kind == "DropdownButton" then
+				return child
+			end
+		end
+		error("no dropdown on " .. row.initializer:GetName())
+	end
+	function settings.optionValues(row)
+		return settings.dropdownOf(row):choices()
+	end
+	function settings.notesOf(row)
+		return { select(3, unpack(settings.textsOf(row.frame))) }
 	end
 end

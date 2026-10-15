@@ -637,11 +637,11 @@ describe("A Module's value rows", function()
 		value = true -- changed outside Settings
 
 		local rows = loaded.client.settings.show(page)
-		assert.is_true(rows[3].frame.value)
-		rows[3].initializer:GetSetting():SetValue(false)
+		assert.is_true(loaded.client.settings.rowNamed(rows, "Show").frame.value)
+		loaded.client.settings.rowNamed(rows, "Show").initializer:GetSetting():SetValue(false)
 
 		assert.is_false(value)
-		assert.is_false(loaded.client.settings.show(page)[3].frame.value)
+		assert.is_false(loaded.client.settings.rowNamed(loaded.client.settings.show(page), "Show").frame.value)
 	end)
 
 	it("re-evaluate isEnabled each time the page is shown (SET-R61)", function()
@@ -664,7 +664,7 @@ describe("A Module's value rows", function()
 
 	it("offer a dropdown's options read each time it opens (SET-R62)", function()
 		local options = { { value = 1, label = "One" } }
-		local _, page = trackersWith({
+		local loaded, page = trackersWith({
 			{
 				kind = "dropdown",
 				label = "Lure",
@@ -677,11 +677,12 @@ describe("A Module's value rows", function()
 				end,
 			},
 		})
-		local read = page.layout.initializers[3].data.options
+		local lure = loaded.client.settings.rowNamed(loaded.client.settings.show(page), "Lure").initializer
+		local read = lure.data.options
 
 		options = { { value = 1, label = "One" }, { value = 2, label = "Two" } }
 
-		assert.are.same({ "number", 2 }, { page.layout.initializers[3]:GetSetting():GetVariableType(), #read() })
+		assert.are.same({ "number", 2 }, { lure:GetSetting():GetVariableType(), #read() })
 	end)
 
 	it("build without one that fails, reporting it through geterrorhandler() (SET-R5)", function()
@@ -710,8 +711,9 @@ describe("A Module's button row", function()
 		local loaded = loadWithQoL()
 		registerQoL(loaded):AddSetting("trackers", button)
 		loaded.client.fire("PLAYER_LOGIN")
-		-- After Core's "Tracker position" row (SET-R40) and the QoL header.
-		local row = loaded.client.settings.show(assert(loaded.client.settings.category("Trackers")))[3]
+		-- After Core's "Tracker position" row (SET-R40) and the QoL header; a button with no caption has no row label.
+		local rows = loaded.client.settings.show(loaded.client.settings.page("Trackers"))
+		local row = rows[3]
 		return row.initializer, row.frame, loaded.client.settings
 	end
 
