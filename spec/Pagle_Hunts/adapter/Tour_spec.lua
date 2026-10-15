@@ -57,7 +57,7 @@ local function seen(run)
 		out.place = place
 		local row = place.hunt and ns.groups:Row(place.hunt)
 		out.group = row and row.group
-		local right = board.pages[place.mode .. ":right"]
+		local right = board:Page(place, "right")
 		if right and right.entry then
 			out.name = right.entry.name:IsShown() and right.entry.name:GetText() or nil
 		end

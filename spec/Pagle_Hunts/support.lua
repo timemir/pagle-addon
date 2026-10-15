@@ -37,6 +37,8 @@ end
 --- of the fixture's (or what it makes of the fixture's), as data\HuntList.lua sets it
 ---@field prepare fun(loaded: LoadedAddon)?   -- runs after the fixtures, before ADDON_LOADED, e.g. to change the rules
 --- version OnInitialize reads
+---@field motion boolean?   -- true leaves Core's Animations setting on; by default it is off, so the board draws settled
+--- at once and the specs of what it shows need not wait for its fades, turns and slides (BoardMotion_spec turns it on)
 
 --- Loads Pagle_Hunts on `fake` (a new FakePagle if nil) with the fixture Hunt list, which replaces a shipped
 --- data/HuntList.lua if the TOC lists one, then fires its ADDON_LOADED, so OnInitialize reads the fixture.
@@ -47,6 +49,9 @@ end
 function support.load(fake, options)
 	fake = fake or newFakePagle()
 	options = options or {}
+	if not options.motion then
+		fake.profile.announcements.motion = false
+	end
 	-- The client's number formatting, which the Write-up's numbers go through (HNT-R111).
 	fake.globals.BreakUpLargeNumbers = fake.globals.BreakUpLargeNumbers or breakUpLargeNumbers
 	local loaded = fake.load("Pagle_Hunts", { holdAddonLoaded = true })
@@ -139,7 +144,7 @@ end
 --- Hunts on a FakePagle (`options.fake`, or a new one) over `options.catalogue` (the fixture's by default), through
 --- its first PLAYER_ENTERING_WORLD, so the first grouping has run (HNT-R42):
 --- - `saved` is PagleHuntsDB, and `history(fake)` is appended to the Catch log before login;
---- - `list` and `prepare` go to support.load, and `names` (default false) loads catalogue.NAMES;
+--- - `list`, `prepare` and `motion` go to support.load, and `names` (default false) loads catalogue.NAMES;
 --- - the server time runs on the client's clock, from `from` seconds after SERVER_TIME (realm 08:15), so the client's
 ---   C_Timer and the grouping's "now" move together;
 --- - `beforeLogin(run)` runs once loaded (e.g. to listen to regroups), `afterLogin(run)` once logged in;
@@ -147,7 +152,7 @@ end
 --- - `caughtUp` false stays before enterWorld, so the projection stays updating (HNT-R69);
 --- - `restricted` puts the player in combat before the world (a `/reload` in combat);
 --- - `beforeGrouping(run)` runs just before the first PLAYER_ENTERING_WORLD, and `world` false stops there.
----@param options { fake: table?, catalogue: table?, saved: table?, history: fun(fake: table)?, list: any, prepare: fun(loaded: LoadedAddon)?, names: boolean?, from: integer?, beforeLogin: fun(run: HuntsRun)?, afterLogin: fun(run: HuntsRun)?, beforeGrouping: fun(run: HuntsRun)?, skill: integer|false|nil, caughtUp: boolean?, restricted: boolean?, world: boolean? }?
+---@param options { fake: table?, catalogue: table?, saved: table?, history: fun(fake: table)?, list: any, prepare: fun(loaded: LoadedAddon)?, motion: boolean?, names: boolean?, from: integer?, beforeLogin: fun(run: HuntsRun)?, afterLogin: fun(run: HuntsRun)?, beforeGrouping: fun(run: HuntsRun)?, skill: integer|false|nil, caughtUp: boolean?, restricted: boolean?, world: boolean? }?
 ---@return HuntsRun
 function support.start(options)
 	options = options or {}
@@ -161,7 +166,7 @@ function support.start(options)
 	if options.history then
 		options.history(fake)
 	end
-	local loaded = support.load(fake, { list = options.list, prepare = options.prepare })
+	local loaded = support.load(fake, { list = options.list, prepare = options.prepare, motion = options.motion })
 	clock = loaded.client.time
 	if options.names then
 		support.loadNames(loaded)

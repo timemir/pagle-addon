@@ -77,10 +77,11 @@ describe("the Hunts board's frame (HNT-R60)", function()
 	end)
 
 	it("opens centred each time, wherever it was dragged to", function()
-		local _, _, board = loggedIn()
+		local loaded, _, board = loggedIn()
+		local centred = { { "CENTER", loaded.env.UIParent, "CENTER", 0, 40 } } -- 40 up, fitted to the screen
 		board:Toggle()
 		local frame = board.frame
-		assert.are.same({ { "CENTER", 0, 40 } }, frame.points)
+		assert.are.same(centred, frame.points)
 
 		-- Where a drag leaves it: the client re-anchors a moved frame by its top left.
 		frame:GetScript("OnDragStart")(frame)
@@ -90,7 +91,7 @@ describe("the Hunts board's frame (HNT-R60)", function()
 		board:Toggle()
 		board:Toggle()
 
-		assert.are.same({ { "CENTER", 0, 40 } }, frame.points)
+		assert.are.same(centred, frame.points)
 	end)
 
 	it("opens and stays open while restricted (HNT-R68)", function()
@@ -132,6 +133,20 @@ describe("the Hunts board's pages, by the page router (HNT-R61, HNT-R66, HNT-R67
 		assert.are.same({ "set page set fixture_dusk -" }, shownTexts(board.frame))
 		board:Open({ mode = "retired", set = "fixture_dusk", hunt = "fixture_sunscale" })
 		assert.are.same({}, shownTexts(board.frame))
+	end)
+
+	it("gives each set's page its own frames, so a page can turn from one to the next", function()
+		local _, _, board = loggedIn()
+		local draws = {}
+		board:RegisterPage("set", "right", writer("set page", draws))
+
+		board:Open({ mode = "set", set = "fixture_dusk" })
+		board:Open({ mode = "set", set = "fixture_wagers" })
+		board:Open({ mode = "set", set = "fixture_dusk" })
+
+		assert.are_not.equal(draws[1].page, draws[2].page)
+		assert.are.equal(draws[1].page, draws[3].page)
+		assert.are.same({ "set page set fixture_dusk -" }, shownTexts(board.frame))
 	end)
 
 	it("gives a renderer registered on two modes a frame for each", function()
@@ -244,40 +259,41 @@ end)
 
 describe("the Hunts board's cover (HNT-R70)", function()
 	it("wears the kit's leather until a cover is set, then that cover, then the kit's again", function()
-		local _, _, board = loggedIn()
+		local loaded, _, board = loggedIn()
 		board:Toggle()
 		local cover = board.frame.cover
-		assert.is_true(cover.kit)
-		assert.is_true(cover.fill:IsShown())
+		local leather = loaded.ns.BOOK_FILES.leather
+		assert.are.equal(leather, cover.fill.texture)
 
-		board:SetCover({ kit = false, leather = { 0.1, 0.3, 0.2 } })
-		assert.is_false(cover.fill:IsShown())
-		assert.are.same({ 0.1, 0.3, 0.2, 1 }, cover.leather.color)
+		board:SetCover({ fill = "Cloth", corner = true })
+		assert.are.equal("Cloth", cover.fill.texture)
+		assert.is_true(cover.corner:IsShown())
 		board:SetCover(nil)
 
-		assert.is_true(cover.kit)
-		assert.is_true(cover.fill:IsShown())
+		assert.are.equal(leather, cover.fill.texture)
+		assert.is_false(cover.corner:IsShown())
+		assert.is_true(cover.band:IsShown()) -- every cover keeps the kit's band
 	end)
 
 	it("keeps a cover set before the board was first opened", function()
 		local _, _, board = loggedIn()
 
-		board:SetCover({ kit = false, leather = { 0.1, 0.3, 0.2 } })
+		board:SetCover({ fill = "Cloth" })
 		board:Toggle()
 
-		assert.are.same({ 0.1, 0.3, 0.2, 1 }, board.frame.cover.leather.color)
+		assert.are.equal("Cloth", board.frame.cover.fill.texture)
 	end)
 
-	it("hangs the ribbons' tops under the kit's band, and from the leather's foot on an old cover", function()
+	it("hangs the ribbons' tops under the kit's band, whatever the cover", function()
 		local loaded, _, board = loggedIn()
 		board:Toggle()
 		local ribbons = board.frame.anchors.ribbons
 		local tuck = loaded.ns.BOARD_RIBBON.tuck
 		assert.are.same({ "TOPLEFT", board.frame, "TOPLEFT", 176, -(600 - tuck) }, ribbons.points[1])
 
-		board:SetCover({ kit = false })
+		board:SetCover({ fill = "Cloth" })
 
-		assert.are.same({ "TOPLEFT", board.frame, "TOPLEFT", 176, -600 }, ribbons.points[1])
+		assert.are.same({ "TOPLEFT", board.frame, "TOPLEFT", 176, -(600 - tuck) }, ribbons.points[1])
 	end)
 end)
 

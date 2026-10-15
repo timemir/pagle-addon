@@ -171,7 +171,8 @@ stds.wow = {
 		-- The art kits' UI foley (opening and closing a window, a click), by the client's own sound kit ids on the SFX
 		-- channel, never through the SOUNDKIT table: the Field report box, QoL's pinned notes, the Curio Shop's (its Buy,
 		-- the seal landing, the purse paying out), the Tackle Board's opening, closing and moments of change
-		-- (tackle-board.md › UI), and a toast's beats (announcements.md › Sounds).
+		-- (tackle-board.md › UI), the Hunts board's and the Stats book's (opening, closing, a page turn, a Hunt opening,
+		-- a catch written in), and a toast's beats (announcements.md › Sounds).
 		"PlaySound",
 		-- The Prestige banner's crest shows the Angler's portrait (announcements.md › UI).
 		"SetPortraitTexture",

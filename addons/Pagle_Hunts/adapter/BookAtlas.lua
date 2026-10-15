@@ -19,6 +19,10 @@ local OWN = "Interface\\AddOns\\Pagle_Hunts\\media\\books\\"
 --- The leather's grain (tiled, 128 UI units a repeat) and the page paper, whole textures.
 ns.BOOK_FILES = { leather = CORE .. "Leather", parchment = CORE .. "Parchment" }
 
+--- The notebook covers that swap the leather's grain for a fill drawn at the board's size (HNT-R70, HNT-R121): the kit
+--- v2's Oilcloth and Verdigris, Hunts' own media, loaded only when worn.
+ns.COVER_FILES = { oilcloth = OWN .. "Cover-oil", verdigris = OWN .. "Cover-verd" }
+
 ---@type table<string, HuntsArtAtlas>
 ns.ATLASES = {
 	-- The book shell: the binding band (a nine-slice), the leather's vignette, the wax seal and its "not yet" ring,
@@ -76,6 +80,19 @@ ns.ATLASES = {
 			["tier-off"] = { x = 430, y = 46, w = 40, h = 40, box = { 4, 4, 12, 12 } },
 			["tier-on"] = { x = 430, y = 2, w = 40, h = 40, box = { 4, 4, 12, 12 } },
 			["watch"] = { x = 218, y = 290, w = 220, h = 60, box = { 0, 0, 110, 30 } },
+		},
+	},
+	-- The kit v2's parts only the board draws, Hunts' own: Verdigris's gilt corner, the checklist's tick and the pen
+	-- mark of a Hunt that waits on the player. Repacked from the kit's BookParts.tga, with mips.
+	Hunts = {
+		file = OWN .. "HuntsParts",
+		width = 128,
+		height = 128,
+		scale = 2,
+		sprites = {
+			["verd-corner"] = { x = 0, y = 0, w = 80, h = 80, box = { 0, 0, 40, 40 } },
+			["tick"] = { x = 88, y = 0, w = 36, h = 44, box = { 2, 2, 14, 18 } },
+			["pen"] = { x = 88, y = 48, w = 30, h = 30, box = { 0, 0, 15, 15 } },
 		},
 	},
 	-- The tracker frames for sale (HNT-R121): Ink Wash's paper with its wash, Wax Seal's parchment with the seal.

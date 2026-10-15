@@ -202,6 +202,15 @@ describe("the Stats book's art (STA-R70, stats.md › UI)", function()
 			assert.is_true(ledger.rows[2].shade.shown)
 			assert.is_true(height > 0)
 
+			-- the kit v2's rules: faint blue under each row, faint red between the columns down the whole ledger
+			local look = ns.BOOK_LOOK
+			assert.are.same(
+				{ look.ledgerBlue[1], look.ledgerBlue[2], look.ledgerBlue[3], look.ledgerBlueAlpha },
+				ledger.rows[1].rule.color
+			)
+			assert.are.equal(#ledger.heads - 1, #ledger.columnRules)
+			assert.are.equal(height, ledger.columnRules[1].height)
+
 			ledger:SetRows({ { cells = { "5 Oct 2026 18:02", "Darkshore", "51" } } })
 			assert.is_false(ledger.rows[2].shown)
 		end
@@ -211,7 +220,7 @@ describe("the Stats book's art (STA-R70, stats.md › UI)", function()
 		local ns, parent = kit()
 		local clicks = 0
 
-		local tile = ns.NewBookTile(parent, 200, 84)
+		local tile = ns.NewBookTile(parent, 200, 66)
 		tile:SetTile({
 			name = "Darkshore",
 			line = "1,840 Casts · 3 waters",
@@ -223,10 +232,37 @@ describe("the Stats book's art (STA-R70, stats.md › UI)", function()
 		})
 		tile:Click()
 		assert.are.same({ "Darkshore", "1,840 Casts · 3 waters", "I'm here", "watching 2" }, textsOf(tile))
+		-- the kit v2's green-edged tile for the place I'm in, from Stats' own atlas
+		local atlas, here = ns.ATLASES.Stats, ns.ATLASES.Stats.sprites["tile-here"]
+		assert.are.equal(atlas.file, tile.paper.texture)
+		assert.are.equal(here.y / atlas.height, tile.paper.texCoord[3])
 		tile:SetTile({ name = "Elwynn Forest", line = "not fished yet" })
 
 		assert.are.same({ "Elwynn Forest", "not fished yet" }, textsOf(tile))
+		assert.are.equal(ns.ATLASES.Stats.sprites.tile.y / atlas.height, tile.paper.texCoord[3])
 		assert.are.equal(1, clicks)
+	end)
+
+	it("warms a tile slightly under the mouse, as the kit's home tiles", function()
+		local ns, parent = kit()
+		local tile = ns.NewBookTile(parent, 200, 66)
+		tile:SetTile({ name = "Darkshore" })
+
+		tile:GetScript("OnEnter")(tile)
+		assert.are.same(ns.BOOK_LOOK.tileWarm, { unpack(tile.paper.vertexColor, 1, 3) })
+		tile:GetScript("OnLeave")(tile)
+
+		assert.are.same({ 1, 1, 1 }, { unpack(tile.paper.vertexColor, 1, 3) })
+	end)
+
+	it("keeps a tile's words on the tile: a long name stops before \"I'm here\"", function()
+		local ns, parent = kit()
+		local tile = ns.NewBookTile(parent, 200, 66)
+
+		tile:SetTile({ name = "The Very Long Name of Some Distant Water", here = "I'm here" })
+
+		-- 6 px a character in the fake; 11 in from each edge
+		assert.are.equal(200 - 22 - (#"I'm here" * 6 + 1) - 6, tile.name.width)
 	end)
 
 	it("hangs a grosgrain ribbon in its colour, its words in gilt, longer and brighter when chosen", function()
@@ -245,6 +281,25 @@ describe("the Stats book's art (STA-R70, stats.md › UI)", function()
 		assert.are.equal(86, ribbon.height)
 		assert.is_true(ribbon.chosen)
 		assert.is_nil(ribbon.stitch.vertexColor) -- the gold stitch keeps its own colour
+	end)
+
+	it("eases a ribbon's length to its choice over 0.2 s when asked, at once with Animations off", function()
+		local loaded, fake = stats.load(nil, { motion = true })
+		local ns = loaded.ns
+		local colors = ns.BOOK_LOOK.ribbons
+		local ribbon = ns.NewBookRibbon(loaded.env.CreateFrame("Frame", nil, loaded.env.UIParent))
+		ribbon:SetRibbon("Lifetime", colors.lifetime, false)
+
+		ribbon:SetRibbon("Lifetime", colors.lifetime, true, true)
+		assert.are.equal(75, ribbon.height) -- it starts where it was
+		loaded.client.update(0.1)
+		assert.is_true(ribbon.height > 75 and ribbon.height < 86)
+		loaded.client.update(0.15)
+		assert.are.equal(86, ribbon.height)
+
+		stats.animations(fake, false)
+		ribbon:SetRibbon("Lifetime", colors.lifetime, false, true)
+		assert.are.equal(75, ribbon.height)
 	end)
 
 	it("sizes the brass nameplate to its words", function()
@@ -350,9 +405,10 @@ describe("the Stats book's art (STA-R70, stats.md › UI)", function()
 		end
 
 		local grid = ns.NewBookTileGrid(parent)
-		assert.are.equal(84 * 2 + 9, grid:SetTiles(tiles(3), 10))
-		assert.are.same({ "TOPLEFT", parent, "TOPLEFT", 200 + 9, -10 }, grid.tiles[2].points[1])
-		assert.are.same({ "TOPLEFT", parent, "TOPLEFT", 0, -(10 + 84 + 9) }, grid.tiles[3].points[1])
+		-- the kit v2's tiles: 66 high, 8 apart
+		assert.are.equal(66 * 2 + 8, grid:SetTiles(tiles(3), 10))
+		assert.are.same({ "TOPLEFT", parent, "TOPLEFT", 200.5 + 8, -10 }, grid.tiles[2].points[1])
+		assert.are.same({ "TOPLEFT", parent, "TOPLEFT", 0, -(10 + 66 + 8) }, grid.tiles[3].points[1])
 		grid.tiles[3]:Click()
 		assert.are.equal(0, grid:SetTiles({}, 10))
 

@@ -10,7 +10,9 @@ local ns = select(2, ...)
 -- puts there. The pages' contents are the renderers adapter/Timeline.lua, Entry.lua and Sets.lua register; this file
 -- draws only the notebook. It makes no secure frames, so it opens and stays open while restricted (HNT-R68). The look
 -- is the books art kit's Hunts board (adapter/BoardWidgets.lua): its sizes, the pages' margins, the wax close button
--- on the corner and the set ribbons hanging from under the leather's foot.
+-- on the corner and the set ribbons hanging from under the leather's foot. Its motion is the kit v2's
+-- (adapter/BoardMotion.lua): it fades in and out with the book's sounds, shrinks to fit the screen, and turns the page
+-- between spreads (the Board, each set's page, an entry opened from a set), each spread on its own page frames.
 
 -- The frame's global name: UISpecialFrames takes names, and Esc hides the frames it lists (HNT-R60).
 local FRAME_NAME = "PagleHuntsBoard"
@@ -34,6 +36,10 @@ local COMPLETED_WIDTH, CLOCK_WIDTH = 150, 280
 local RIBBONS_LEFT = 176
 -- How far above the screen's centre the board opens: half the ribbons' hang under it.
 local RIBBONS_LIFT = 40
+-- The board's whole extent, for fitting it to the screen: the wax close button over its corner and the nameplate past
+-- its edge, and the chosen ribbon hanging under it.
+local EXTENT_WIDTH = WIDTH + 26
+local EXTENT_HEIGHT = HEIGHT + 10 + ns.BOARD_RIBBON.lengthChosen - ns.BOARD_RIBBON.tuck
 
 --- The leather's anchors (HNT-R61), in drawing order: adapter/Timeline.lua fills the clock and the checkbox,
 --- adapter/Sets.lua the crumbs, the nameplate and the ribbons.
@@ -47,22 +53,43 @@ local LEATHER_PARTS = { "crumbs", "clock", "completed", "nameplate", "ribbons" }
 ---@field close BoardCloseButton
 ---@field cover BoardLeatherView               -- the leather, in the cover it wears (HNT-R70)
 ---@field papers table<BoardSide, BoardParchmentView>
----@field bodies table<BoardSide, Frame>       -- each page's body, inside its padding: the renderers' pages sit on it
+---@field paperFrames table<BoardSide, Frame>  -- each page's paper: the spreads' clip frames sit on it
+---@field bodies table<BoardSide, Frame>       -- each page's body, inside its padding: the renderers' pages fill it
 ---@field anchors table<BoardLeatherPart, Frame>
+---@field fold BoardFold                       -- the page turn's shade and shadow, over both papers
 
---- The Hunts board: its router, its frame once made, and each mode's page frames.
+--- The Hunts board: its router, its frame once made, and each spread's page frames.
 ---@class HuntsBoard
 ---@field router BoardRouter
 ---@field frame BoardFrame?
 ---@field cover BoardCoverLook?              -- the cover set, nil for the default leather
----@field pages table<string, Frame>           -- each renderer's page, by "mode:side", made at its first draw
----@field private leather table<BoardLeatherPart, BoardLeatherRenderer>
+---@field pages table<string, BoardTurnPage> -- each spread's page, by "mode:set:side", made at its first draw
+---@field shown string?                       -- the spread shown, "mode:set"
+---@field turnFrom string?                    -- the spread shown when it was opened elsewhere: the next draw turns from it
+---@field turning boolean                     -- a page turn is under way
+---@field turnOwner table                     -- the page turn's motion runs on it
+---@field closeOwner table                    -- the closing fade runs on it
+---@field closing boolean                     -- the closing fade runs: the board counts as closed
+---@field closeSounded boolean                -- this close's sound has played
+---@field serial integer                      -- how many times it has drawn
+---@field leather table<BoardLeatherPart, BoardLeatherRenderer>
 ---@field private told boolean               -- whether the grouping was last told it shows
 local Board = {}
 Board.__index = Board
 
 --- The board, on the Board mode until it is opened (HNT-R67).
-ns.board = setmetatable({ router = ns.NewBoardRouter(), pages = {}, leather = {}, told = false }, Board)
+ns.board = setmetatable({
+	router = ns.NewBoardRouter(),
+	pages = {},
+	leather = {},
+	told = false,
+	turning = false,
+	turnOwner = {},
+	closeOwner = {},
+	closing = false,
+	closeSounded = false,
+	serial = 0,
+}, Board)
 
 --- Registers `renderer` to draw page `side` of mode `mode` (logic/Board.lua lists the modes and who draws what); a later
 --- registration replaces it. The page renderers' files call it when they load.
@@ -99,39 +126,30 @@ function Board:Trail()
 	return self.router:Trail()
 end
 
--- How much of a ribbon's top tucks under the leather's foot: under the kit's band, or none on an old cover, which
--- has no band to hide it.
----@param cover BoardCover
----@return number
-local function tuckOf(cover)
-	return cover.kit and ns.BOARD_RIBBON.tuck or 0
-end
-
 -- The fields of `look` over the default cover's.
 ---@param look BoardCoverLook?
 ---@return BoardCover
 local function coverOf(look)
 	local merged = {}
 	for key, value in pairs(ns.BOARD_COVER) do
-		if look and look[key] ~= nil then
-			merged[key] = look[key]
-		else
-			merged[key] = value
-		end
+		merged[key] = value
+	end
+	for key, value in pairs(look or {}) do
+		merged[key] = value
 	end
 	return merged --[[@as BoardCover]] -- every field, from ns.BOARD_COVER
 end
 
---- Dresses the leather in `look` (HNT-R70), or in the default leather with nil. adapter/Goods.lua calls it
---- with the equipped cover, at load and at `AppearanceChanged`.
+--- Dresses the leather in `look` (HNT-R70), or in the default leather with nil. adapter/Goods.lua calls it with the
+--- equipped cover, at load and at `AppearanceChanged`; with `animate`, an open board's binding dips while the cover
+--- changes underneath (MOTION.md › Controls).
 ---@param look BoardCoverLook?
-function Board:SetCover(look)
+---@param animate boolean?
+function Board:SetCover(look, animate)
 	self.cover = look
 	local frame = self.frame
 	if frame then
-		local cover = coverOf(look)
-		frame.cover:SetCover(cover)
-		frame.anchors.ribbons:SetPoint("TOPLEFT", frame, "TOPLEFT", RIBBONS_LEFT, -(HEIGHT - tuckOf(cover)))
+		frame.cover:SetCover(coverOf(look), animate)
 	end
 end
 
@@ -146,6 +164,7 @@ local function buildPage(frame, side)
 	paper:SetSize(width, PAGE_HEIGHT)
 	paper:SetPoint("BOTTOMLEFT", side == "left" and SIDE or SIDE + LEFT_WIDTH, FOOT)
 	paper:EnableMouse(true)
+	frame.paperFrames[side] = paper
 	frame.papers[side] = ns.NewBoardParchment(paper, side == "left" and "RIGHT" or "LEFT")
 	local body = CreateFrame("Frame", nil, paper)
 	body:SetPoint("TOPLEFT", pad[1], -pad[2])
@@ -158,8 +177,7 @@ end
 -- nameplate over the cover's lower corner, above the band, and the ribbons' row hanging from under the leather's foot,
 -- below the band, so their tops tuck under it.
 ---@param frame BoardFrame
----@param cover BoardCover
-local function buildAnchors(frame, cover)
+local function buildAnchors(frame)
 	local function anchor(width, height, ...)
 		local made = CreateFrame("Frame", nil, frame)
 		made:SetSize(width, height)
@@ -185,16 +203,16 @@ local function buildAnchors(frame, cover)
 			frame,
 			"TOPLEFT",
 			RIBBONS_LEFT,
-			-(HEIGHT - tuckOf(cover))
+			-(HEIGHT - ns.BOARD_RIBBON.tuck)
 		),
 	}
 	frame.anchors.nameplate:SetFrameLevel(frame:GetFrameLevel() + 10)
 	frame.anchors.ribbons:SetFrameLevel(frame:GetFrameLevel() + 1)
 end
 
--- Builds the notebook, hidden: the leather, two pages, the leather's anchors and the close button. It drags by the
--- leather and the client saves no position, so it opens centred each time (HNT-R60); Esc hides it through
--- UISpecialFrames.
+-- Builds the notebook, hidden: the leather, two pages, the leather's anchors, the page turn's fold and the close
+-- button. It drags by the leather and the client saves no position, so it opens centred each time (HNT-R60); Esc hides
+-- it through UISpecialFrames.
 ---@param board HuntsBoard
 ---@return BoardFrame
 local function build(board)
@@ -214,13 +232,17 @@ local function build(board)
 		-- FloatingChatFrame.xml does the same "So that we don't save the position".
 		self:SetUserPlaced(false)
 	end)
-	local cover = coverOf(board.cover)
 	frame.cover = ns.NewBoardLeather(frame)
-	frame.cover:SetCover(cover)
-	frame.papers, frame.bodies = {}, {}
+	frame.cover:SetCover(coverOf(board.cover))
+	frame.papers, frame.paperFrames, frame.bodies = {}, {}, {}
 	buildPage(frame, "left")
 	buildPage(frame, "right")
-	buildAnchors(frame, cover)
+	buildAnchors(frame)
+	-- the fold over both papers, above every spread's page, while a page turns
+	local pages = CreateFrame("Frame", nil, frame)
+	pages:SetPoint("TOPLEFT", SIDE, -STRIP)
+	pages:SetPoint("BOTTOMRIGHT", -SIDE, FOOT)
+	frame.fold = ns.NewBoardFold(pages)
 
 	frame.close = ns.NewBoardClose(frame)
 	frame.close:SetPoint("CENTER", frame, "TOPRIGHT", -3, -3)
@@ -236,10 +258,17 @@ local function build(board)
 	return frame
 end
 
---- Whether the board is open.
+--- Whether the board is open: shown, and not fading out.
 ---@return boolean
 function Board:IsShown()
-	return self.frame ~= nil and self.frame:IsShown()
+	return self.frame ~= nil and self.frame:IsShown() and not self.closing
+end
+
+--- How many times the board has drawn. A page whose last draw was the draw before this one has been on show since, so
+--- what changed on it may move into place (adapter/Timeline.lua's rows sliding to a new group).
+---@return integer
+function Board:Serial()
+	return self.serial
 end
 
 --- Opens the board on the Board mode (HNT-R67), or closes it: every entry point calls it (HNT-R68).
@@ -251,17 +280,31 @@ function Board:Toggle()
 	end
 end
 
---- Shows `place` (logic/Board.lua's BoardPlace), opening the board, centred, if it is closed; open, it turns there in
---- place.
+--- Shows `place` (logic/Board.lua's BoardPlace), opening the board, centred and fitted to the screen, if it is closed;
+--- open, it turns the page there.
 ---@param place BoardPlace
 function Board:Open(place)
-	self.router:Open(place)
 	local frame = self.frame or build(self)
 	self.frame = frame
+	if self:IsShown() then
+		self.turnFrom = self.turnFrom or self.shown
+	else
+		self.turnFrom = nil
+	end
+	self.router:Open(place)
+	if self.closing then
+		-- opened again while it fades out: it stays
+		self.closing = false
+		ns.StopMotion(self.closeOwner)
+		frame:SetAlpha(1)
+	end
 	if not frame:IsShown() then
-		frame:ClearAllPoints()
-		frame:SetPoint("CENTER", 0, RIBBONS_LIFT) -- up a little, so the ribbons hanging under it stay on screen
+		-- up a little, so the ribbons hanging under it stay on screen, and no larger than the screen
+		ns.FitBoard(frame, EXTENT_WIDTH, EXTENT_HEIGHT, RIBBONS_LIFT)
+		self.closeSounded = false
 		frame:Show()
+		ns.BoardSound("bookOpen")
+		ns.FadeIn(frame)
 	end
 	if not self.told then
 		self.told = true
@@ -270,65 +313,204 @@ function Board:Open(place)
 	self:Draw()
 end
 
---- Closes the board.
+--- Ends a page turn under way at once, on the spread it turns to.
+function Board:SettleTurn()
+	if not self.turning then
+		return
+	end
+	self.turning = false
+	ns.StopMotion(self.turnOwner)
+	if self.shown then
+		self:ShowOnly(self.shown)
+	end
+end
+
+--- Closes the board: it fades out (0.12 s) with the book's closing sound, then hides; at once with the motion off.
 function Board:Hide()
-	if self.frame then
-		self.frame:Hide()
+	local frame = self.frame
+	if frame and frame:IsShown() and not self.closing then
+		self:SettleTurn()
+		self.closeSounded = true
+		ns.BoardSound("bookClose")
+		if ns.SyncMotion() then
+			self.closing = true
+			ns.FadeOut(frame, self.closeOwner, function()
+				self.closing = false
+				frame:Hide()
+				frame:SetAlpha(1)
+			end)
+		else
+			frame:Hide()
+		end
 	end
 	self:Hidden()
 end
 
---- The board has closed, however it closed (its close button, Esc, a toggle): tells the grouping, once.
+--- The board has closed, however it closed (its close button, Esc, a toggle): tells the grouping, once, and plays the
+--- book's closing sound if its close didn't (Esc hides it at once).
 function Board:Hidden()
+	local frame = self.frame
+	if frame and not frame:IsShown() then
+		self:SettleTurn()
+		self.closing = false
+		if not self.closeSounded then
+			self.closeSounded = true
+			ns.BoardSound("bookClose")
+		end
+	end
 	if self.told then
 		self.told = false
 		ns.SetViewShown("board", false)
 	end
 end
 
--- Page `side` of mode `mode`'s own frame on its page body, made at its first draw.
+-- The spread a place shows: its mode, and its set (a set's page and an entry opened from it have their own pages).
+---@param place BoardPlace
+---@return string
+local function spreadOf(place)
+	return place.mode .. ":" .. (place.mode ~= "board" and place.set or "")
+end
+
+-- Where a spread stands among the ribbons, for which way the page turns: the Board first, then each set in Hunt list
+-- order, an entry opened from a set just after its set's page.
+---@param spread string
+---@return number
+local function orderOf(spread)
+	local mode, set = spread:match("^([^:]*):(.*)$")
+	if mode == "board" or set == "" then
+		return 0
+	end
+	for i, data in ipairs(ns.hunts:Sets()) do
+		if data.id == set then
+			return i + (mode == "set" and 0 or 0.5)
+		end
+	end
+	return 0
+end
+
+-- Page `side` of `spread`'s own frame, in its clip frame on the paper, made at its first draw.
 ---@param board HuntsBoard
----@param mode BoardMode
+---@param spread string
 ---@param side BoardSide
----@return Frame
-local function pageOf(board, mode, side)
-	local key = mode .. ":" .. side
+---@return BoardTurnPage
+local function pageOf(board, spread, side)
+	local key = spread .. ":" .. side
 	local page = board.pages[key]
 	if not page then
-		local body = (board.frame --[[@as BoardFrame]]).bodies[side]
-		page = CreateFrame("Frame", nil, body)
-		page:SetAllPoints()
-		page:SetSize(body:GetWidth(), body:GetHeight())
+		local frame = board.frame --[[@as BoardFrame]]
+		page = ns.NewTurnPage(frame.paperFrames[side], frame.bodies[side])
 		board.pages[key] = page
 	end
 	return page
 end
 
---- Draws the mode shown, if the board is open: each page with its renderer, on its own frame, a page with none left
---- blank; then the leather's anchors, which so see what the pages selected.
+--- The page frame `side` of the spread `place` shows, nil before its first draw: for a dev tool or a spec to read.
+---@param place BoardPlace
+---@param side BoardSide
+---@return BoardTurnPage?
+function Board:Page(place, side)
+	return self.pages[spreadOf(place) .. ":" .. side]
+end
+
+-- Whether page `key` ("mode:set:side") belongs to `spread`; its side when it does.
+---@param key string
+---@param spread string
+---@return BoardSide?
+local function sideIn(key, spread)
+	if key:sub(1, #spread + 1) == spread .. ":" then
+		local side = key:sub(#spread + 2)
+		if side == "left" or side == "right" then
+			return side
+		end
+	end
+	return nil
+end
+
+--- Shows only `spread`'s pages, whole, and no fold.
+---@param spread string
+function Board:ShowOnly(spread)
+	local frame = self.frame --[[@as BoardFrame]]
+	for key, page in pairs(self.pages) do
+		local side = sideIn(key, spread)
+		if side then
+			ns.RevealPage(page, side == "left" and LEFT_WIDTH or RIGHT_WIDTH, 0, 1)
+		else
+			page.clip:Hide()
+		end
+	end
+	frame.fold:Hide()
+end
+
+-- Draws the leather's anchors at `place`: all of them, or only those `only` names.
+---@param board HuntsBoard
+---@param place BoardPlace
+---@param only table<string, boolean>?
+local function drawLeather(board, place, only)
+	local anchors = (board.frame --[[@as BoardFrame]]).anchors
+	for _, part in ipairs(LEATHER_PARTS) do
+		local renderer = board.leather[part]
+		if renderer and (not only or only[part]) then
+			renderer(anchors[part], place)
+		end
+	end
+end
+
+-- Every anchor but the crumbs, which change as the leaf passes the spine.
+local NOT_CRUMBS = { clock = true, completed = true, nameplate = true, ribbons = true }
+
+--- Draws the spread shown, if the board is open: each page with its mode's renderer, on the spread's own frames, a
+--- page with none left blank; then the leather's anchors, which so see what the pages selected. Opened elsewhere while
+--- open, it turns the page from the spread it showed (half a second, while things move), the crumbs changing halfway.
 function Board:Draw()
 	if not self:IsShown() then
 		return
 	end
-	local mode = self.router:Place().mode
-	for _, page in pairs(self.pages) do
-		page:Hide()
-	end
+	ns.SyncMotion()
+	self.serial = self.serial + 1
+	local place = self.router:Place()
+	local spread = spreadOf(place)
+	local from = self.turnFrom
+	self.turnFrom = nil
+	self:SettleTurn()
 	for _, side in ipairs(ns.BOARD_SIDES) do
-		local renderer = self.router:Renderer(mode, side)
+		local page = pageOf(self, spread, side)
+		local renderer = self.router:Renderer(place.mode, side)
 		if renderer then
-			local page = pageOf(self, mode, side)
-			page:Show()
-			renderer(page, self.router:Place())
+			renderer(page, self.router:Place()) -- the left page may select the Hunt the right one draws
 		end
 	end
-	local anchors = (self.frame --[[@as BoardFrame]]).anchors
-	for _, part in ipairs(LEATHER_PARTS) do
-		local renderer = self.leather[part]
-		if renderer then
-			renderer(anchors[part], self.router:Place())
+	self.shown = spread
+	if not (from and from ~= spread and self.pages[from .. ":left"] and ns.motion) then
+		self:ShowOnly(spread)
+		drawLeather(self, self.router:Place())
+		return
+	end
+	-- the turn: forward to a later ribbon, back to an earlier one
+	ns.BoardSound("pageTurn")
+	for key, page in pairs(self.pages) do
+		if not (sideIn(key, spread) or sideIn(key, from)) then
+			page.clip:Hide()
 		end
 	end
+	drawLeather(self, self.router:Place(), NOT_CRUMBS)
+	self.turning = true
+	local frame = self.frame --[[@as BoardFrame]]
+	ns.TurnPages(
+		self.turnOwner,
+		frame.fold,
+		{ left = pageOf(self, from, "left"), right = pageOf(self, from, "right") },
+		{ left = pageOf(self, spread, "left"), right = pageOf(self, spread, "right") },
+		orderOf(spread) > orderOf(from),
+		LEFT_WIDTH,
+		RIGHT_WIDTH,
+		function()
+			drawLeather(self, self.router:Place(), { crumbs = true })
+		end,
+		function()
+			self.turning = false
+			self:ShowOnly(spread)
+		end
+	)
 end
 
 -- The board's entry points (logic/Seams.lua lists them); every caller calls them through ns at call time.

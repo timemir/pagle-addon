@@ -82,15 +82,18 @@ end
 --- Loads Pagle_Stats on `fake` (a new FakePagle if nil), serving `options.catalogue` or else the fixture catalogue
 --- through fake.setCatalogue first, so Stats reads it from OnInitialize on. Stats' GetServerTime is the fake's clock
 --- (fake.serverTime), so fake.wait moves it; a spec may still pin it. `options.prepare(loaded)` runs after Stats'
---- files load and before its ADDON_LOADED (OnInitialize), e.g. to change `loaded.ns.STATS_RULES_VERSION`.
+--- files load and before its ADDON_LOADED (OnInitialize), e.g. to change `loaded.ns.STATS_RULES_VERSION`. Core's
+--- Animations setting is off unless `options.motion`, so the book draws settled at once (a page turn, a fade) and a
+--- spec reads it without running frames; the motion's own specs turn it on.
 ---@param fake table? a FakePagle (newFakePagle()), for a spec that set it up first
----@param options { catalogue: table?, prepare: fun(loaded: LoadedAddon)? }? catalogue: a catalogue in the shape of
---- ns.catalogue to serve instead
+---@param options { catalogue: table?, prepare: fun(loaded: LoadedAddon)?, motion: boolean? }? catalogue: a catalogue
+--- in the shape of ns.catalogue to serve instead
 ---@return LoadedAddon loaded
 ---@return table fake
 function support.load(fake, options)
 	fake = fake or newFakePagle()
 	options = options or {}
+	fake.profile.announcements.motion = options.motion == true
 	fake.setCatalogue(options.catalogue or support.catalogue())
 	local loaded = fake.load("Pagle_Stats", { holdAddonLoaded = true })
 	loaded.env.GetServerTime = function()
@@ -150,6 +153,7 @@ end
 ---@field prepare fun(loaded: LoadedAddon)? -- support.load's
 ---@field updating boolean?               -- stop at login: the projection's first build waits for fake.enterWorld
 ---@field at table?                       -- where the player is then (support.move's fields)
+---@field motion boolean?                 -- Core's Animations setting on (off by default: support.load)
 
 --- Pagle_Stats on a fake that has logged in with its projection built (STA-R20), the fixture's areas and items named
 --- on the client, and the player moved as `options.at` says.
@@ -168,7 +172,8 @@ function support.start(options)
 			fake.catchLog:Append(record)
 		end
 	end
-	local loaded = support.load(fake, { catalogue = options.catalogue, prepare = options.prepare })
+	local loaded =
+		support.load(fake, { catalogue = options.catalogue, prepare = options.prepare, motion = options.motion })
 	support.nameAll(loaded, options.items)
 	fake.login()
 	if not options.updating then
@@ -178,6 +183,13 @@ function support.start(options)
 		support.move(fake, options.at)
 	end
 	return loaded, fake, loaded.ns.book
+end
+
+--- Turns Core's Animations setting on or off for `fake` (Pagle.IsAnimationsOn), as the player does in Settings.
+---@param fake table
+---@param on boolean
+function support.animations(fake, on)
+	fake.profile.announcements.motion = on
 end
 
 --- What support.cast builds a Cast record from: each field but `time` has its default there.
