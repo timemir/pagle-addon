@@ -6,25 +6,8 @@ end
 local ns = select(2, ...)
 
 -- The board's words (TKB-R36, TKB-R102, TKB-R105, TKB-R121, TKB-R122): everything the board, the tracker and the
--- moments say about a goal, built at display time from its record. Pure logic: the client's and Core's reads come
--- through ns.reads, which adapter/Words.lua sets at file load and specs may replace; like every seam it is read
--- through ns at call time, never cached (logic/Seams.lua).
---
---   ns.reads.AreaName(areaID)    a zone's name, C_Map.GetAreaInfo; nil if the client has none
---   ns.reads.MapName(uiMapID)    a uiMap's name, C_Map.GetMapInfo(uiMapID).name; nil if none
---   ns.reads.ItemName(itemID)    an item's name, C_Item.GetItemNameByID; nil until the client has it cached
---   ns.reads.RequestItem(itemID) asks the client to load an item; its GET_ITEM_INFO_RECEIVED comes to ns.ItemArrived
---   ns.reads.RealmMinute()       the realm clock (ns.api.GetGameTime) as a minute of day; nil while secret or missing
---   ns.reads.pagle               Core: GetArea, GetZoneCatches, GetItem, GetConditions and SIZE_BANDS
-
----@class TackleWordsReads
----@field AreaName fun(areaID: integer): string?
----@field MapName fun(uiMapID: integer): string?
----@field ItemName fun(itemID: integer): string?
----@field RequestItem fun(itemID: integer)
----@field RealmMinute fun(): integer?
----@field FormatNumber fun(n: integer): string   -- BreakUpLargeNumbers: "2,340" (the Write-up's heading, TKB-R84)
----@field pagle table
+-- moments say about a goal, built at display time from its record. Pure logic: the client's names, the realm clock
+-- and Core come through ns.api (logic/Seams.lua › TackleClientAPI), read through ns at call time, never cached.
 
 -- Templates and counts.
 
@@ -75,7 +58,7 @@ local requested = {} -- items asked of the client and not yet arrived: { [itemID
 ---@param areaID integer
 ---@return string
 function ns.ZoneName(areaID)
-	return ns.reads.AreaName(areaID) or ns.L.NAME_UNKNOWN
+	return ns.api.AreaName(areaID) or ns.L.NAME_UNKNOWN
 end
 
 --- A continent's name (TKB-R36): C_Map.GetMapInfo on its uiMapID (ns.CONTINENT_MAPS), or "…".
@@ -83,7 +66,7 @@ end
 ---@return string
 function ns.ContinentName(continent)
 	local uiMapID = ns.CONTINENT_MAPS[continent]
-	return uiMapID and ns.reads.MapName(uiMapID) or ns.L.NAME_UNKNOWN
+	return uiMapID and ns.api.MapName(uiMapID) or ns.L.NAME_UNKNOWN
 end
 
 --- A Species' name: its representative item's, from C_Item.GetItemNameByID (TKB-R31, TKB-R36). Until the client has
@@ -91,13 +74,13 @@ end
 ---@param itemID integer the representative item
 ---@return string
 function ns.SpeciesName(itemID)
-	local name = ns.reads.ItemName(itemID)
+	local name = ns.api.ItemName(itemID)
 	if name then
 		return name
 	end
 	if not requested[itemID] then
 		requested[itemID] = true
-		ns.reads.RequestItem(itemID)
+		ns.api.RequestItem(itemID)
 	end
 	return ns.L.NAME_UNKNOWN
 end
@@ -120,7 +103,7 @@ end
 ---@param band integer
 ---@return string
 function ns.BandName(band)
-	local entry = ns.reads.pagle.SIZE_BANDS[band]
+	local entry = ns.api.pagle.SIZE_BANDS[band]
 	return entry and entry.name or ns.L.NAME_UNKNOWN
 end
 
@@ -228,7 +211,7 @@ end
 --- secret one, CORE-R31). Callers read it again on ConditionsChanged with "area".
 ---@return integer zoneAreaID
 function ns.CurrentZone()
-	local conditions = ns.reads.pagle.GetConditions()
+	local conditions = ns.api.pagle.GetConditions()
 	return conditions and conditions.zone or 0
 end
 
@@ -266,7 +249,7 @@ function ns.IsWorkableHere(goal, zone)
 	if zone == 0 then
 		return false
 	end
-	local kind, pagle = goal.kind, ns.reads.pagle
+	local kind, pagle = goal.kind, ns.api.pagle
 	if kind == "haul" or kind == "variety" then
 		return goal.target == zone
 	elseif kind == "wanderer" then
@@ -332,7 +315,7 @@ end
 ---@param serverTime integer
 ---@return TackleRealmDate
 function ns.RealmDate(serverTime)
-	local minute = ns.reads.RealmMinute()
+	local minute = ns.RealmMinute(ns.api)
 	local offset = minute and ns.RealmOffset(ns.api.GetServerTime(), minute) or 0
 	local realmTime = serverTime + offset * 60
 	local days = math.floor(realmTime / SECONDS_PER_DAY)

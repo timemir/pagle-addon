@@ -377,7 +377,7 @@ describe("scripts/make-test-log.lua", function()
 
 	-- The Tackle Board's own logic/ (TKB-R81) as the game loads it, its catalogue calls over the fixture catalogue.
 	local boardNs = loadAddon("Pagle_TackleBoard", FOREVER_GLOBALS).ns
-	boardNs.reads.pagle = catalogue
+	boardNs.api.pagle = catalogue
 
 	-- A PagleLog folded with the Tackle Board's projection from nothing, as a first build does (TKB-R81, TKB-R82):
 	-- the state and how many entries didn't decode.

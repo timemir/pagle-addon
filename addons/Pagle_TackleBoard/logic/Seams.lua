@@ -5,73 +5,99 @@ end
 ---@class PagleTackleBoardNS
 local ns = select(2, ...)
 
--- The seams later Tackle Board tickets meet at, so none waits on another's wiring (M7 graph, conventions). Each is a
--- field of ns with a stand-in here; the ticket that owns it replaces the field, and every caller calls it through ns
--- at call time (`ns.IsStarted()`, never a copy made at load), so the replacement reaches them all.
+-- The seams the Tackle Board's files meet at. Each is a field of ns, defined once (here, or in the file named), and
+-- every caller calls it through ns at call time (`ns.IsStarted()`, never a copy made at load), so a spec that replaces
+-- one reaches every caller. logic/ reaches Core and the client only through these: ns.api and ns.random for the
+-- client's calls, Core and the draws, and the adapter's seams below for what needs the Module handle, the DB or a timer.
 --
 --   ns.ToggleBoard()          Opens the board, or closes it if shown (TKB-R1). Registration's view, the compartment
---                             entry and `/pagle board` call it. Defined in adapter/Board.lua (#238), not here: a stand-in
---                             here too would be a duplicate field for LuaLS.
+--                             entry and `/pagle board` call it. Defined in adapter/Board.lua.
 --   ns.OpenBoard(goalID?)     Opens the board (never closes it); with a goal ID, highlights that goal's pin for 2 s
---                             (TKB-R109; the pins' ticket #239 draws the highlight). The Settings status button calls
---                             it, and the tracker's lines with their goal (#241). Defined in adapter/Board.lua (#238).
+--                             (TKB-R109, drawn by adapter/Pins.lua). The Settings status button calls it, and the
+--                             tracker's lines with their goal. Defined in adapter/Board.lua.
 --   ns.State()                The projection's TackleBoardState (below), read-only for views but the live step's
 --                             AdvanceTo (TKB-R14). `ns.projection:GetState()` once the adapter's OnInitialize has made
---                             the projection (#231); a new empty state before its first build, or with no projection.
+--                             the projection; a new empty state before its first build, or with no projection.
 --   ns.IsUpdating()           Whether the projection is catching up or rebuilding (LOG-R74): Start and "take it down"
---                             are disabled and views draw "Updating…" (TKB-R108, TKB-R124). `ns.projection:IsUpdating()`
---                             (#231): true from load until the first build ends; false with no projection.
+--                             are disabled and views draw "Updating…" (TKB-R108, TKB-R124). `ns.projection:IsUpdating()`:
+--                             true from load until the first build ends; false with no projection.
 --   ns.IsStarted()            Whether the board is started: the projection has applied a `start` record (TKB-R6).
---                             Registration's status button reads it (TKB-R1). Follows ns.State() (#231).
+--                             Registration's status button reads it (TKB-R1). Follows ns.State().
 --   ns.Start()                Starts the board (TKB-R5): appends the `start` record and runs the live step. Called by
 --                             the "Start my board" status button (registration, only when not started and not updating)
---                             and the empty board's Start button (adapter/Board.lua). Defined in logic/LiveStep.lua
---                             (#233), not here.
---   ns.TakeDown(goalID)       Takes a goal down (TKB-R55, TKB-R56): its confirm, then the `reroll` record. The pins
---                             (#239) call it. Defined in adapter/Reroll.lua (#234), not here.
+--                             and the empty board's Start button (adapter/Board.lua). Defined in adapter/LiveStep.lua.
+--   ns.TakeDown(goalID)       Takes a goal down (TKB-R55, TKB-R56): its confirm, then the `reroll` record. adapter/Pins.lua
+--                             calls it. Defined in adapter/Reroll.lua.
 --   ns.CanTakeDown(goalID)    Whether a goal's "take it down" shows (TKB-R55), whatever the projection's updating: the
 --                             pins grey it while ns.IsUpdating() (TKB-R108), and ns.TakeDown refuses then. Defined in
---                             adapter/Reroll.lua (#234), not here.
+--                             adapter/Reroll.lua.
 --   ns.ScheduleLiveStep()     Schedules the live step for the next frame (TKB-R13, TKB-R84). The projection's `done`
---                             calls it last (#231). Defined in adapter/LiveStep.lua (#233), not here.
---   ns.ReportCoins()          Reports lifetime Coins with M:ReportCoinsEarned (TKB-R63). `done` calls it before
---                             ns.ScheduleLiveStep (#231), and the projection's apply after a live entry that changes the
---                             Coins (#232). Reports ns.State().coins once started.
+--                             calls it last. Defined in adapter/LiveStep.lua.
 --   ns.InLoginWindow()        Whether an advance now is "at login": from login until the login's first live step has
---                             finished (TKB-R86's Campfire nods). The moments (#235) read it. Defined in
---                             logic/LiveStep.lua (#233), not here.
+--                             finished (TKB-R86's Campfire nods). logic/Moments.lua reads it. Defined in
+--                             adapter/LiveStep.lua.
+--   ns.ReportCoins()          Reports lifetime Coins with M:ReportCoinsEarned (TKB-R63). `done` calls it before
+--                             ns.ScheduleLiveStep, and the projection's apply after a live entry that changes the Coins.
+--                             Reports ns.State().coins once started. Defined in adapter/Moments.lua.
+--   ns.RaiseMoment(moment), ns.RaiseWriteUp(section), ns.SetSummaryLine(line)
+--                             What logic/Moments.lua tells Core (TKB-R84–R87), through the Module handle; nothing while
+--                             the Module is inert (CORE-R13). Defined in adapter/Moments.lua.
+--   ns.Celebrated()           The celebrated set in PagleTackleBoardDB (TKB-R83), nil while the Module is inert.
+--                             logic/Moments.lua marks it; adapter/Ledge.lua reads it. Defined in adapter/Moments.lua.
+--   ns.ClearScratch(), ns.CountForWriteUp(state, record, mode)
+--                             The scratch tally of a build (TKB-R84): the projection's reset clears it and its apply
+--                             counts each entry. Defined in logic/Moments.lua.
 --   ns.OnRedraw(fn)           Subscribes a view (the board, the tracker) to redraws: fn(reason, detail) is called at
 --                             every ns.Redraw, in subscription order. Subscribe once, when the view is made.
 --   ns.Redraw(reason, detail) Asks every subscribed view to redraw. Callers and their reasons: "projection" after each
---                             live apply that changes the state and after each done (#231); "completed" with the goal ID
---                             as detail when a goal completes live (#232; the tracker flashes it, TKB-R123); "names"
---                             when an item name arrives (#228, GET_ITEM_INFO_RECEIVED); "step" after each live step
---                             (#233). A view that is hidden may ignore it.
+--                             live apply that changes the state and after each done; "completed" with the goal ID as
+--                             detail when a goal completes live (the tracker flashes it, TKB-R123); "names" when an item
+--                             name arrives (GET_ITEM_INFO_RECEIVED, adapter/Client.lua); "step" after each live step;
+--                             "tracker" when the tracker's setting changes (adapter/Settings.lua). A view that is
+--                             hidden may ignore it.
 --   ns.outlets                What the Tackle Board celebrates, called from the projection and the live step and filled
---                             by the moments' ticket (#235) in logic/Moments.lua, not here (a stand-in here too would
---                             be a duplicate field for LuaLS):
---     .Completed(goal, cast, earned, mode)  a goal completed in apply (#232): the TackleGoal, the completing Cast, what
---                             it earned (TackleEarned) and the apply's mode ("live", "replay" or "rebuild", LOG-R72)
---     .Advanced(result, mode) the projection advanced across board days (#231): the Campfire's outcome
---                             (TackleAdvance) and the mode, "live" for the live step's own advance (#233)
---     .Done(state, info)      the projection's done (#231), first in it (TKB-R84): the state and Core's done info
---     .Stepped()              a live step finished (#233): the summary line (TKB-R87)
---   ns.api                    The WoW calls board days read (TKB-R10, TKB-R11, TKB-R13): `GetServerTime`, `C_DateAndTime`,
---                             `GetGameTime` and `GetCurrentRegion`, as the client has them (a missing one is nil). The
---                             adapter sets it at file load; specs replace it (spec/Pagle_TackleBoard/support.lua). Days
---                             (#226) take it as `api`.
---   ns.random(m, n)           The random source generation draws from, like math.random (TKB-R30–R34). The adapter sets
---                             math.random at file load; specs replace it. Generation (#227) takes it in its context.
+--                             in logic/Moments.lua, not here (a stand-in here too would be a duplicate field for LuaLS):
+--     .Completed(goal, cast, earned, mode)  a goal completed in apply: the TackleGoal, the completing Cast, what it
+--                             earned (TackleEarned) and the apply's mode ("live", "replay" or "rebuild", LOG-R72)
+--     .Advanced(result, mode) the projection advanced across board days: the Campfire's outcome (TackleAdvance) and
+--                             the mode, "live" for the live step's own advance
+--     .Done(state, info)      the projection's done, first in it (TKB-R84): the state and Core's done info
+--     .Stepped()              a live step finished: the summary line (TKB-R87)
+--   ns.api                    The client's calls and Core, as logic/ reads them (TackleClientAPI, below): the WoW calls
+--                             board days read (TKB-R10, TKB-R11, TKB-R13), the realm clock's secrecy (CORE-R31), the
+--                             names (TKB-R36), the number format and `pagle`, Core (ADR 0001: its API only). A missing
+--                             WoW call is nil. adapter/Client.lua sets it at file load; specs replace its calls
+--                             (spec/Pagle_TackleBoard/support.lua). Days take it as `api`.
+--   ns.random(m, n)           The random source generation draws from, like math.random (TKB-R30–R34).
+--                             adapter/Client.lua sets math.random at file load; specs replace it. Generation takes it
+--                             in its context.
 --
 -- The goal ID handed to OpenBoard, TakeDown and CanTakeDown is the entry ID of the record that issued the goal (TKB-R23).
+
+--- The WoW calls board days read (TKB-R10, TKB-R11, TKB-R13; logic/Days.lua), each nil where the client lacks it.
+---@class TackleResetAPI
+---@field GetServerTime fun(): integer
+---@field C_DateAndTime table               -- GetSecondsUntilDailyReset, GetSecondsUntilWeeklyReset, GetCurrentCalendarTime
+---@field GetGameTime? fun(): integer?, integer?   -- the realm clock: hour, minute
+---@field GetCurrentRegion? fun(): integer
+---@field issecretvalue? fun(value: any): boolean   -- whether a value is secret (CORE-R31): the realm clock may be
+
+--- ns.api: the client's calls and Core, as logic/ reads them (adapter/Client.lua).
+---@class TackleClientAPI : TackleResetAPI
+---@field AreaName fun(areaID: integer): string?         -- a zone's name, C_Map.GetAreaInfo; nil if the client has none
+---@field MapName fun(uiMapID: integer): string?         -- a uiMap's name, C_Map.GetMapInfo(uiMapID).name; nil if none
+---@field ItemName fun(itemID: integer): string?         -- C_Item.GetItemNameByID; nil until the client has it cached
+---@field RequestItem fun(itemID: integer)               -- asks the client to load an item (ns.ItemArrived on arrival)
+---@field FormatNumber fun(n: integer): string           -- BreakUpLargeNumbers: "2,340" (the Write-up's heading, TKB-R84)
+---@field pagle table                                    -- Core: GetArea, GetZones, GetZoneCatches, GetItem, GetAngler, GetConditions, SIZE_BANDS
 
 ---@alias TackleGoalType "n"|"e"                  -- Notice, Expedition
 ---@alias TackleGoalKind "haul"|"variety"|"wanderer"|"quality"|"size"|"collector"|"lure"|"species"
 ---@alias TackleDayLog "lit"|"burned"|"out"|"unlit"
 ---@alias TackleApplyMode "live"|"replay"|"rebuild"
 
---- A goal's definition (M7 graph, shapes): what generation (#227) returns, the `issue` and `reroll` records carry
---- (tackle-board.md › Data) and the projection (#231) decodes. A Variety Expedition has `target` = its zone and `items`
+--- A goal's definition: what generation (logic/Generate.lua) returns, the `issue` and `reroll` records carry
+--- (tackle-board.md › Data) and the projection (logic/Projection.lua) decodes. A Variety Expedition has `target` = its zone and `items`
 --- = its representative items, ascending; a Notice of a kind with an empty target (`wanderer`, `collector`, `lure`) has
 --- no `target`.
 ---@class TackleGoalDef
@@ -116,7 +142,7 @@ local ns = select(2, ...)
 ---@field zones { [integer]: integer }   -- zone areaID -> time of the Angler's last Cast there
 ---@field caught { [integer]: true }     -- every item ID ever caught (TKB-R46)
 
---- What one completion earned (TKB-R60), handed to ns.outlets.Completed (logic/Completions.lua, #232).
+--- What one completion earned (TKB-R60), handed to ns.outlets.Completed (logic/Completions.lua).
 ---@class TackleEarned
 ---@field pay integer                 -- the goal's pay (TKB-R34)
 ---@field coins integer               -- the goal's pay plus any Campfire milestone's Coins
@@ -125,7 +151,7 @@ local ns = select(2, ...)
 ---@field milestone? { days: integer, coins: integer, title: string }  -- Campfire milestone reached (TKB-R73)
 ---@field lit boolean                 -- this completion lit its day (TKB-R70)
 
---- The projection's state (`ns.projection:GetState()`, bound by the adapter's OnInitialize, #231): a new empty
+--- The projection's state (`ns.projection:GetState()`, bound by the adapter's OnInitialize): a new empty
 --- TackleBoardState (ns.NewBoardState) before its first build, or with no projection.
 ---@return TackleBoardState
 function ns.State()
@@ -147,15 +173,6 @@ function ns.IsStarted()
 	return ns.State().started ~= nil
 end
 
---- Reports lifetime Coins to Core (TKB-R63, SHOP-R2): the projection's `coins` with M:ReportCoinsEarned. Nothing
---- before Start (TKB-R2: silent until started) or without a Module handle (an inert Module, CORE-R13).
-function ns.ReportCoins()
-	local module = ns.Module
-	if module and ns.IsStarted() then
-		module:ReportCoinsEarned(ns.State().coins)
-	end
-end
-
 local redrawn = {} -- the subscribed views' redraws, in subscription order
 
 --- Subscribes a view to redraws: `fn(reason, detail)` runs at every ns.Redraw.
@@ -173,7 +190,7 @@ function ns.Redraw(reason, detail)
 	end
 end
 
---- What the Tackle Board celebrates (TKB-R83–R87), defined in logic/Moments.lua (#235).
+--- What the Tackle Board celebrates (TKB-R83–R87), defined in logic/Moments.lua.
 ---@class TackleOutlets
 ---@field Completed fun(goal: TackleGoal, cast: PagleCast, earned: TackleEarned, mode: TackleApplyMode)
 ---@field Advanced fun(result: TackleAdvance, mode: TackleApplyMode)

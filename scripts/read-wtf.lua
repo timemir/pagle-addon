@@ -1668,9 +1668,9 @@ local GOAL_TYPES = { n = "Notice", e = "Expedition" }
 -- Pagle_TackleBoard.toc lists, in TOC order, called with ("Pagle_TackleBoard", ns) as the client calls an addon's files
 -- (spec/Pagle_TackleBoard/support.lua loads them the same way over FakePagle). Their CORE-R11 guard reads the Pagle
 -- global, so it's a table here; logic/Rewards.lua takes LuaBitOp's functions at load, but nothing here ties a fly, so
--- an empty `bit` serves. Its words (logic/Words.lua) get the reader's stand-ins for the client's reads: "Area {id}",
--- "Map {id}" and "Item {id}" for the names, and Core's catalogue calls over `catalogue` (nil when it can't load) with
--- Core's Size bands.
+-- an empty `bit` serves. Its ns.api (logic/Seams.lua) gets the reader's stand-ins for the client's calls: "Area {id}",
+-- "Map {id}" and "Item {id}" for the names, no realm clock (so realm dates read as UTC), and Core's catalogue calls
+-- over `catalogue` (nil when it can't load) with Core's Size bands.
 local function loadBoardLogic(catalogue)
 	local ns = {}
 	local env = setmetatable({ Pagle = {}, bit = {} }, { __index = _G })
@@ -1692,12 +1692,11 @@ local function loadBoardLogic(catalogue)
 			return prefix .. " " .. tostring(id)
 		end
 	end
-	ns.reads = {
+	ns.api = {
 		AreaName = named("Area"),
 		MapName = named("Map"),
 		ItemName = named("Item"),
 		RequestItem = function() end,
-		RealmMinute = function() end,
 		FormatNumber = thousands,
 		pagle = pagle,
 	}
@@ -2133,7 +2132,7 @@ local function printBoard(account, log, facts, options)
 		if not now then
 			now, source = os.time(), "the reader's clock"
 		end
-		local pagle = context.catalogue and board.reads.pagle or nil
+		local pagle = context.catalogue and board.api.pagle or nil
 		printBoardState(board, state, { pagle = pagle, offset = offset, now = now, source = source })
 	end
 	printBoardCelebrated(tableOr(global.celebrated), state)

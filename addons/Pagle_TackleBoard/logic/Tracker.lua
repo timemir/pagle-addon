@@ -8,7 +8,7 @@ local ns = select(2, ...)
 -- The tracker's lines (TKB-R2, TKB-R104, TKB-R120–R124; tackle-board.md › UI, the tracker): whether it shows, its
 -- header, the goals workable here in board order, the "+N more" or "All done" line, the collapsed and updating states
 -- and the "Complete" flash, as data for the tracker block (adapter/TrackerBlock.lua). Pure logic over the projection's
--- state and the board's words (logic/Words.lua, whose ns.reads it reads too) and progress (logic/Progress.lua);
+-- state and the board's words (logic/Words.lua), Core through ns.api.pagle, and progress (logic/Progress.lua);
 -- adapter/Tracker.lua docks the block, reads what comes in and draws what this returns.
 
 --- How long a goal completed live flashes "Complete" on the tracker before its line leaves, in seconds (TKB-R123;
@@ -65,7 +65,7 @@ local function goalLine(goal, input)
 	return {
 		kind = "goal",
 		text = goalText(goal),
-		count = ns.TrackerCount(ns.DisplayedProgress(goal, input.session), ns.GoalNeed(goal, ns.reads.pagle)),
+		count = ns.TrackerCount(ns.DisplayedProgress(goal, input.session), ns.GoalNeed(goal, ns.api.pagle)),
 		where = ns.TrackerWhere(goal, true),
 		expedition = goal.type == "e" or nil,
 		goalID = goal.id,

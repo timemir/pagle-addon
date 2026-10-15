@@ -23,13 +23,13 @@ logic\Board.lua
 logic\Records.lua
 logic\Projection.lua
 logic\Completions.lua
-logic\LiveStep.lua
 logic\Pins.lua
 logic\Reroll.lua
 logic\Ledge.lua
 logic\Moments.lua
 logic\Goods.lua
 logic\Tracker.lua
+adapter\Client.lua
 adapter\BoardWidgets.lua
 adapter\TrackerBlock.lua
 adapter\Goods.lua
@@ -41,5 +41,5 @@ adapter\Ledge.lua
 adapter\TackleBoard.lua
 adapter\Generate.lua
 adapter\Reroll.lua
-adapter\Words.lua
+adapter\Moments.lua
 adapter\LiveStep.lua

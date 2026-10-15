@@ -8,8 +8,7 @@ local ns = select(2, ...)
 -- Goals moving and completing inside the projection's fold (tackle-board.md › Progress, Completion and rewards):
 -- each caught Cast runs logic/Progress.lua over the open goals in board order (TKB-R45) and keeps the ever-caught set
 -- current one Catch at a time (TKB-R46); a goal that completes pays out in TKB-R60's order through logic/Rewards.lua.
--- Pure logic (CORE-R7): Core's catalogue calls come through ns.reads.pagle (logic/Words.lua's seam, set by the
--- adapter), read at call time. logic/Projection.lua's ApplyEntry calls ns.CountCast for every Cast and AdvanceTo calls
+-- Pure logic (CORE-R7): Core's catalogue calls come through ns.api.pagle (logic/Seams.lua), read at call time. logic/Projection.lua's ApplyEntry calls ns.CountCast for every Cast and AdvanceTo calls
 -- ns.PruneDone on each new day.
 
 -- The Fly Box title's ID (ns.TITLES, source "flybox").
@@ -99,7 +98,7 @@ function ns.CountCast(state, cast, mode)
 	for _, goal in ipairs(order) do
 		ns.EnterCast(goal, cast)
 	end
-	local pagle = ns.reads.pagle
+	local pagle = ns.api.pagle
 	---@type TackleProgressContext
 	local ctx = {
 		pagle = pagle,

@@ -23,7 +23,7 @@ function ns.GenerationContext(state, now, random)
 		return a.seq < b.seq
 	end)
 	return {
-		pagle = Pagle,
+		pagle = ns.api.pagle,
 		bestBaseSkill = Pagle.GetAngler().bestBaseSkill,
 		now = now,
 		zones = state.zones,

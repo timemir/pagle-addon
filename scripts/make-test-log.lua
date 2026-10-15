@@ -377,7 +377,7 @@ local function loadGame(cataloguePath)
 end
 
 -- The Tackle Board's logic/ in Pagle_TackleBoard.toc order (TKB-R81), on the client's `bit` library (LuaBitOp,
--- which its FNV-1a hash reads), its catalogue calls over the game's catalogue (logic/Words.lua's ns.reads.pagle).
+-- which its FNV-1a hash reads), its catalogue calls over the game's catalogue (logic/Seams.lua's ns.api.pagle).
 local function loadBoard(game)
 	local ok, bit = pcall(require, "bit")
 	if not ok then
@@ -394,7 +394,7 @@ local function loadBoard(game)
 		end
 	end
 	local board = assert(loadFiles("Pagle_TackleBoard", {}, files, { bit = bit }))
-	board.reads = { pagle = game.catalogue }
+	board.api = { pagle = game.catalogue }
 	return board
 end
 

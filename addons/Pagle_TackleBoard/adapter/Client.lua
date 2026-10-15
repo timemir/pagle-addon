@@ -5,10 +5,11 @@ end
 ---@class PagleTackleBoardNS
 local ns = select(2, ...)
 
--- The board's words on the client (TKB-R36, TKB-R105, TKB-R121): logic/Words.lua over the client's maps, item cache
--- and realm clock and Core's catalogue and conditions, each read when a view asks. An item the client hasn't cached is
--- asked for, and its GET_ITEM_INFO_RECEIVED asks every view to redraw (`ns.Redraw("names")`) on the next frame, once
--- however many arrive in it.
+-- The client and Core as logic/ reads them (logic/Seams.lua): ns.api, the one table of the client's calls and Core
+-- that logic/ reads, and ns.random, the draws. Both are set here at file load and read through ns at call time, so a
+-- spec that replaces a call (spec/Pagle_TackleBoard/support.lua) reaches every reader. An item a name asks for that
+-- the client hasn't cached is requested, and its GET_ITEM_INFO_RECEIVED asks every view to redraw
+-- (`ns.Redraw("names")`) on the next frame, once however many arrive in it (TKB-R36).
 
 -- The owner of the GET_ITEM_INFO_RECEIVED registration.
 local OWNER = "Pagle_TackleBoard names"
@@ -28,9 +29,17 @@ local function itemArrived(_, itemID, success)
 	end
 end
 
---- The reads the board's words take (logic/Words.lua).
----@type TackleWordsReads
-ns.reads = {
+--- The client's calls and Core, as logic/ reads them (logic/Seams.lua › TackleClientAPI).
+---@type TackleClientAPI
+ns.api = {
+	-- Board days (TKB-R10, TKB-R11, TKB-R13): each the client's own, nil where the client lacks it, so the days'
+	-- rules fall back on their own (TKB-R11).
+	GetServerTime = GetServerTime,
+	C_DateAndTime = C_DateAndTime,
+	GetGameTime = GetGameTime,
+	GetCurrentRegion = GetCurrentRegion,
+	-- The realm clock is secret while the client says so (LOG-R49, CORE-R31): ns.RealmMinute reads it as missing.
+	issecretvalue = issecretvalue,
 	AreaName = function(areaID)
 		return (C_Map.GetAreaInfo(areaID))
 	end,
@@ -49,22 +58,13 @@ ns.reads = {
 		end
 		C_Item.RequestLoadItemDataByID(itemID)
 	end,
-	-- The realm clock through ns.api, read at each call (specs replace ns.api); nil while it is secret (LOG-R49,
-	-- CORE-R31) or the client lacks it.
-	RealmMinute = function()
-		local getGameTime = ns.api.GetGameTime
-		if not getGameTime then
-			return nil
-		end
-		local hour, minute = getGameTime()
-		if hour == nil or minute == nil or issecretvalue(hour) or issecretvalue(minute) then
-			return nil
-		end
-		return hour * 60 + minute
-	end,
 	-- The client's number format, read at each call (TKB-R84: "written up from 2,340 Casts").
 	FormatNumber = function(n)
 		return BreakUpLargeNumbers(n)
 	end,
+	-- Core, through its API only (ADR 0001).
 	pagle = Pagle,
 }
+
+--- The random source generation draws from (TKB-R30–R34; logic/Seams.lua).
+ns.random = math.random

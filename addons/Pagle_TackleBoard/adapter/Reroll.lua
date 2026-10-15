@@ -5,8 +5,9 @@ end
 ---@class PagleTackleBoardNS
 local ns = select(2, ...)
 
--- "Take it down" on the client (TKB-R55, TKB-R56): ns.CanTakeDown and ns.TakeDown (logic/Seams.lua; the pins, #239,
--- show the button and call them), and the native confirm. The rules are logic/Reroll.lua's. The popup is a plain
+-- "Take it down" on the client (TKB-R55, TKB-R56): ns.CanTakeDown and ns.TakeDown (logic/Seams.lua; adapter/Pins.lua
+-- shows the button and calls them), the native confirm and the `reroll` record, which only this file and
+-- adapter/LiveStep.lua's live step append (TKB-R80). The rules are logic/Reroll.lua's. The popup is a plain
 -- StaticPopup, not secure, so it works in combat (TKB-R193).
 
 -- The confirm's StaticPopupDialogs key, the one field .luacheckrc lets the Tackle Board set.
@@ -20,7 +21,7 @@ local function takeable(goalID)
 	if ns.IsUpdating() then
 		return nil
 	end
-	return ns.TakeDownGoal(ns.State(), goalID, Pagle)
+	return ns.TakeDownGoal(ns.State(), goalID, ns.api.pagle)
 end
 
 --- Whether a goal's "take it down" shows (TKB-R55): an open goal from an `issue` record, or a stranded re-posted
@@ -29,15 +30,19 @@ end
 ---@param goalID string the entry ID of the record that issued it (TKB-R23)
 ---@return boolean
 function ns.CanTakeDown(goalID)
-	return ns.TakeDownGoal(ns.State(), goalID, Pagle) ~= nil
+	return ns.TakeDownGoal(ns.State(), goalID, ns.api.pagle) ~= nil
 end
 
--- Appends the `reroll` record for `goalID` if it can still be taken down (TKB-R55: checked again on confirm).
+-- Takes the goal `goalID` names down if it can still be (TKB-R55: checked again on confirm): appends one `reroll`
+-- record naming it, with a new goal of its type generated with its kind dropped (TKB-R30–R36). The projection applies
+-- it live (TKB-R57): the new goal takes the old one's pin and is re-posted.
 ---@param goalID string
 local function reroll(goalID)
 	local goal = takeable(goalID)
 	if goal then
-		ns.Reroll(goal, ns.GenerationContext(ns.State(), ns.api.GetServerTime(), ns.random))
+		local ctx = ns.GenerationContext(ns.State(), ns.api.GetServerTime(), ns.random)
+		local def = ns.GenerateGoal(ctx, goal.type, goal.kind)
+		ns.Module:AppendRecord("reroll", ns.EncodeReroll(goal.id, def))
 	end
 end
 
@@ -49,7 +54,7 @@ function ns.TakeDown(goalID)
 	if not goal then
 		return
 	end
-	local question = ns.TakeDownQuestion(goal, Pagle.GetSession(), Pagle)
+	local question = ns.TakeDownQuestion(goal, Pagle.GetSession(), ns.api.pagle)
 	if not question then
 		reroll(goalID)
 		return

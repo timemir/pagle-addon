@@ -80,21 +80,35 @@ describe("the Tackle Board's spec support", function()
 	end)
 
 	it(
-		"puts the reset API and the random source at ns.api and ns.random before OnInitialize (TKB-R10, TKB-R30)",
+		"puts the reset API's calls on ns.api and the random source at ns.random before OnInitialize (TKB-R10, TKB-R30)",
 		function()
-			local api, random = board.resetAPI(), board.random(3)
+			local api, random = board.resetAPI(nil, { region = false }), board.random(3)
+			-- The reset calls on ns.api, by name: GetCurrentRegion is nil, as the reset API lacks it.
+			local function resetCalls(at)
+				return {
+					at.GetServerTime,
+					at.C_DateAndTime,
+					at.GetGameTime,
+					at.GetCurrentRegion or "none",
+					at.issecretvalue or "none",
+				}
+			end
 			local seen
 			local loaded = board.load(nil, {
 				api = api,
 				random = random,
 				prepare = function(at)
-					seen = { at.ns.api, at.ns.random, at.ns.Module }
+					seen = { resetCalls(at.ns.api), at.ns.random, at.ns.Module }
 				end,
 			})
 
-			assert.are.same({ api, random }, { seen[1], seen[2] })
+			assert.are.same({ resetCalls(api), random }, { seen[1], seen[2] })
 			assert.is_nil(seen[3]) -- OnInitialize hadn't run yet
-			assert.are.same({ api, random }, { loaded.ns.api, loaded.ns.random })
+			assert.are.equal(api.GetServerTime, loaded.ns.api.GetServerTime)
+			assert.are.equal(random, loaded.ns.random)
+			-- The client's names and Core stay on ns.api.
+			assert.are.equal(loaded.env.Pagle, loaded.ns.api.pagle)
+			assert.are.equal("function", type(loaded.ns.api.AreaName))
 		end
 	)
 

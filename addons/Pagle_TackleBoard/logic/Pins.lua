@@ -7,7 +7,7 @@ local ns = select(2, ...)
 
 -- What the board's pins show (TKB-R44, TKB-R55, TKB-R101, TKB-R102, TKB-R104, TKB-R105, TKB-R108, TKB-R109): each
 -- pinned goal's lines, the empty pins' texts and where each open goal hangs. Pure logic over the projection's state,
--- the board's words (logic/Words.lua, whose ns.reads it reads too) and progress (logic/Progress.lua); adapter/Pins.lua
+-- the board's words (logic/Words.lua), Core through ns.api.pagle and progress (logic/Progress.lua); adapter/Pins.lua
 -- draws what it decides on the board's "pins" and "overflow" parts.
 
 --- What a view knows besides the goal: the current Session, the current zone, whether the projection is updating and
@@ -90,7 +90,7 @@ end
 ---@param ctx TacklePinContext
 ---@return TacklePinView
 function ns.PinView(goal, ctx)
-	local L, pagle = ns.L, ns.reads.pagle
+	local L, pagle = ns.L, ns.api.pagle
 	local need = ns.GoalNeed(goal, pagle)
 	local progress = ns.DisplayedProgress(goal, ctx.session)
 	local bound = ns.IsSessionBound(goal)

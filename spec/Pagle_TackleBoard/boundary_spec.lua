@@ -1,9 +1,10 @@
 -- What the Tackle Board never does (ADR 0001, tackle-board.md › Purpose and boundary). It reads only Core: never the
 -- Catch log's SavedVariables or Core's, never another Module's DB, and it names no other Module, so it pays no Ledger XP
--- and never references a Hunt. And it appends its Module records only from live code (TKB-R80): only
--- logic/LiveStep.lua (the start, day and issue records, #233) and logic/Reroll.lua (the reroll record, #234) may call
--- AppendRecord. Checked over every file the Tackle Board ships: each name below fails the spec wherever its code says
--- it.
+-- and never references a Hunt. It appends its Module records only from live code (TKB-R80): only
+-- adapter/LiveStep.lua (the start, day and issue records) and adapter/Reroll.lua (the reroll record) may call
+-- AppendRecord. And its logic/ reaches Core and the client only through ns.api and the seams (CORE-R7,
+-- logic/Seams.lua): never Core's API, the Module handle, the DB or a timer itself. Checked over every file the Tackle
+-- Board ships: each name below fails the spec wherever its code says it.
 
 local DIR = "addons/Pagle_TackleBoard/"
 
@@ -11,10 +12,11 @@ local READS_ONLY_CORE = "ADR 0001: the Tackle Board reads Catches only through i
 local NO_CORE_DB = "ADR 0001: the Tackle Board never reads Core's SavedVariables"
 local NO_MODULE = "ADR 0001: the Tackle Board names no other Module"
 local NO_MODULE_DB = "ADR 0001: the Tackle Board never reads another Module's DB"
-local LIVE_RECORDS = "TKB-R80: only logic/LiveStep.lua and logic/Reroll.lua append records"
+local LIVE_RECORDS = "TKB-R80: only adapter/LiveStep.lua and adapter/Reroll.lua append records"
+local LOGIC_SEAMS = "CORE-R7: logic/ reaches Core and the client only through ns.api and the seams"
 
 -- The files that may append the Tackle Board's records (TKB-R80), relative to the addon folder.
-local APPENDS = { ["logic/LiveStep.lua"] = true, ["logic/Reroll.lua"] = true }
+local APPENDS = { ["adapter/LiveStep.lua"] = true, ["adapter/Reroll.lua"] = true }
 
 -- Each forbidden thing: a Lua pattern over code with comments removed, and the rule it breaks.
 local FORBIDDEN = {
@@ -32,6 +34,15 @@ end
 -- A Module record, however it's reached: M:AppendRecord, M.AppendRecord(M, …), M["AppendRecord"] or a local copy.
 local APPEND = { "%f[%w_]AppendRecord%f[^%w_]", LIVE_RECORDS }
 
+-- What logic/ never reaches itself (logic/Seams.lua): Core's API (ns.api.pagle instead; the CORE-R11 guard is a bare
+-- `Pagle`), the Module handle, the DB and the client's timers.
+local LOGIC_FORBIDDEN = {
+	{ "%f[%w_]Pagle%s*[%.:%[]", LOGIC_SEAMS },
+	{ "%f[%w_]ns%.Module%f[^%w_]", LOGIC_SEAMS },
+	{ "%f[%w_]ns%.db%f[^%w_]", LOGIC_SEAMS },
+	{ "%f[%w_]C_Timer%f[^%w_]", LOGIC_SEAMS },
+}
+
 -- Each forbidden thing the code of `file` (relative to the addon folder) says, as "<why>: <match>".
 ---@param file string
 ---@param text string
@@ -40,6 +51,11 @@ local function offences(file, text)
 	local forbidden = { unpack(FORBIDDEN) }
 	if not APPENDS[file] then
 		forbidden[#forbidden + 1] = APPEND
+	end
+	if file:match("^logic/") then
+		for _, rule in ipairs(LOGIC_FORBIDDEN) do
+			forbidden[#forbidden + 1] = rule
+		end
 	end
 	return forbiddenIn(withoutComments(text), forbidden)
 end
@@ -73,6 +89,12 @@ describe("the Tackle Board's boundary (ADR 0001, TKB-R80)", function()
 			{ "logic/Projection.lua", 'M.AppendRecord(M, "day", payload)', LIVE_RECORDS },
 			{ "logic/Seams.lua", 'M["AppendRecord"](M, "start", payload)', LIVE_RECORDS },
 			{ "adapter/TackleBoard.lua", "local append = M.AppendRecord", LIVE_RECORDS },
+			{ "logic/LiveStep.lua", 'ns.Module:AppendRecord("start", payload)', LIVE_RECORDS },
+			{ "logic/Words.lua", "local conditions = Pagle.GetConditions()", LOGIC_SEAMS },
+			{ "logic/Pins.lua", "Pagle:GetSession()", LOGIC_SEAMS },
+			{ "logic/Moments.lua", "ns.Module:RaiseMoment(moment)", LOGIC_SEAMS },
+			{ "logic/Moments.lua", "local set = ns.db.global.celebrated", LOGIC_SEAMS },
+			{ "logic/Tracker.lua", "C_Timer.After(3, done)", LOGIC_SEAMS },
 		}
 		for _, case in ipairs(planted) do
 			it(case[2] .. " in " .. case[1], function()
@@ -83,9 +105,33 @@ describe("the Tackle Board's boundary (ADR 0001, TKB-R80)", function()
 			end)
 		end
 
-		it("but not an AppendRecord in logic/LiveStep.lua or logic/Reroll.lua (TKB-R80)", function()
-			assert.are.same({}, offences("logic/LiveStep.lua", 'ns.Module:AppendRecord("start", payload)'))
-			assert.are.same({}, offences("logic/Reroll.lua", 'ns.Module:AppendRecord("reroll", payload)'))
+		it("but not an AppendRecord in adapter/LiveStep.lua or adapter/Reroll.lua (TKB-R80)", function()
+			assert.are.same({}, offences("adapter/LiveStep.lua", 'ns.Module:AppendRecord("start", payload)'))
+			assert.are.same({}, offences("adapter/Reroll.lua", 'ns.Module:AppendRecord("reroll", payload)'))
+		end)
+
+		it(
+			"nor in logic/ the CORE-R11 guard, ns.api.pagle, ns.ModuleDef or ns.DB_DEFAULTS (CORE-R7, CORE-R11)",
+			function()
+				assert.are.same(
+					{},
+					offences(
+						"logic/Words.lua",
+						"if not Pagle then return end\nlocal z = ns.api.pagle.GetConditions()\n"
+							.. "local def = ns.ModuleDef()\nlocal d = ns.DB_DEFAULTS"
+					)
+				)
+			end
+		)
+
+		it("nor Core's API, the Module handle, the DB or a timer in adapter/ (CORE-R7 is logic/'s)", function()
+			assert.are.same(
+				{},
+				offences(
+					"adapter/Moments.lua",
+					"Pagle.GetSession()\nns.Module:RaiseMoment(m)\nlocal db = ns.db\nC_Timer.After(0, step)"
+				)
+			)
 		end)
 
 		it(
@@ -106,7 +152,7 @@ describe("the Tackle Board's boundary (ADR 0001, TKB-R80)", function()
 			assert.are.same(
 				{},
 				offences(
-					"logic/Moments.lua",
+					"adapter/Moments.lua",
 					'M:RaiseMoment(moment)\nM:SetSummaryLine("board", text)\nM:RaiseWriteUp(section)\n'
 						.. "M:ReportCoinsEarned(60)\nlocal p = M:NewProjection(def)\nlocal a = Pagle.GetAngler()"
 				)

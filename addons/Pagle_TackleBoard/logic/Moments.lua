@@ -9,8 +9,9 @@ local ns = select(2, ...)
 -- completion and its titles, the Campfire nods of a live advance, the Write-up after a first build or a catch-up, the
 -- summary-only moments after any other rebuild, and the board's line on the Session summary, each guarded by the
 -- celebrated set. It fills logic/Seams.lua's outlets, which the projection (#231), the completions (#232) and the
--- live step (#233) call. Pure logic (CORE-R7): Core through ns.Module (RaiseMoment, RaiseWriteUp, SetSummaryLine),
--- the celebrated set through ns.db, the client's number format through ns.reads.FormatNumber. Every string is ns.L's,
+-- live step (#233) call. Pure logic (CORE-R7): what it tells Core goes through adapter/Moments.lua's seams
+-- (ns.RaiseMoment, ns.RaiseWriteUp, ns.SetSummaryLine), which hold the Module handle, the celebrated set comes from
+-- ns.Celebrated (PagleTackleBoardDB) and the client's number format from ns.api.FormatNumber. Every string is ns.L's,
 -- plain ASCII (#248); fly and title names are lore (TKB-R130) and fall back to their IDs while a key has no text
 -- (M7 graph, open question 7).
 
@@ -63,10 +64,11 @@ local function titleName(id)
 	return ns.L["boardtitle." .. id .. ".text"] or id
 end
 
--- The celebrated set (TKB-R83): PagleTackleBoardDB.global.celebrated, which only grows.
+-- The celebrated set (TKB-R83, ns.Celebrated), which only grows: there whenever the projection runs, which an inert
+-- Module never makes (CORE-R13).
 ---@return { goals: table<string, true>, titles: table<string, true> }
 local function celebrated()
-	return ns.db.global.celebrated
+	return ns.Celebrated() --[[@as { goals: table<string, true>, titles: table<string, true> }]]
 end
 
 -- A done goal's moment (TKB-R86): Notice or Expedition complete, its pay, the fly it tied in the text and as its
@@ -121,36 +123,28 @@ local function titleMoment(titleID, castID)
 	}
 end
 
--- Raises `moment` for the Tackle Board, as a summary-only one if asked (ANN-R63). Nothing without a Module handle
--- (an inert Module, CORE-R13).
+-- Raises `moment` for the Tackle Board, as a summary-only one if asked (ANN-R63).
 ---@param moment PagleMoment
 ---@param summaryOnly boolean?
 local function raise(moment, summaryOnly)
 	if summaryOnly then
 		moment.summaryOnly = true
 	end
-	local module = ns.Module
-	if module then
-		module:RaiseMoment(moment)
-	end
+	ns.RaiseMoment(moment)
 end
 
--- Raises a Write-up section (ANN-R60), with a Module handle.
+-- Raises a Write-up section (ANN-R60).
 ---@param heading string
 ---@param lines string[]
 local function raiseWriteUp(heading, lines)
-	local module = ns.Module
-	if module then
-		module:RaiseWriteUp({ heading = heading, lines = lines })
-	end
+	ns.RaiseWriteUp({ heading = heading, lines = lines })
 end
 
 --- The board's line on the Session summary (TKB-R87): "Tackle Board: {n} done today, Campfire {d} days", with
 --- "Campfire not lit" at a count of 0 and the first part left out when nothing is done today. Never before Start
 --- (TKB-R2).
 local function setSummaryLine()
-	local module = ns.Module
-	if not module or not ns.IsStarted() then
+	if not ns.IsStarted() then
 		return
 	end
 	local state = ns.State()
@@ -164,7 +158,7 @@ local function setSummaryLine()
 	local campfire = count > 0 and ns.Plural(count, "CAMPFIRE_DAYS") or ns.L.CAMPFIRE_NOT_LIT
 	local line = done > 0 and say("SUMMARY_LINE", { done = ns.Plural(done, "DONE_TODAY"), campfire = campfire })
 		or say("SUMMARY_LINE_NOTHING_DONE", { campfire = campfire })
-	module:SetSummaryLine("board", line)
+	ns.SetSummaryLine(line)
 end
 
 -- The scratch tally (TKB-R84): what the entries applied in "replay" or "rebuild" mode earned, outside the stored
@@ -232,7 +226,7 @@ local function writeUpLines(state)
 		lines[#lines + 1] = say("GOALS_DONE", { goals = goals })
 	end
 	if scratch.coins > 0 then
-		lines[#lines + 1] = say("COINS_LINE", { coins = ns.reads.FormatNumber(scratch.coins) })
+		lines[#lines + 1] = say("COINS_LINE", { coins = ns.api.FormatNumber(scratch.coins) })
 	end
 	if scratch.flies > 0 then
 		lines[#lines + 1] = ns.Plural(scratch.flies, "FLIES_TIED")
@@ -288,10 +282,10 @@ function ns.outlets.Completed(goal, cast, earned, mode)
 		end
 		return
 	end
-	if not ns.Module then
+	local set = ns.Celebrated()
+	if not set then
 		return -- an inert Module tells nothing (CORE-R13)
 	end
-	local set = celebrated()
 	if not set.goals[goal.id] then
 		set.goals[goal.id] = true
 		raise(goalMoment(goal, cast.id))
@@ -352,7 +346,7 @@ function ns.outlets.Done(state, info)
 		celebrateScratch()
 		if #scratch.goals > 0 then
 			raiseWriteUp(
-				ns.Plural(scratch.casts, "WRITE_UP_FIRST", { n = ns.reads.FormatNumber(scratch.casts) }),
+				ns.Plural(scratch.casts, "WRITE_UP_FIRST", { n = ns.api.FormatNumber(scratch.casts) }),
 				writeUpLines(state)
 			)
 		end

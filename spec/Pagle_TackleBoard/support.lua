@@ -48,7 +48,10 @@ local function untilReset(anchor, period, now)
 	return left == 0 and period or left
 end
 
---- A reset API in the shape of ns.api (logic/Seams.lua): GetServerTime, C_DateAndTime (GetSecondsUntilDailyReset,
+-- The calls of ns.api a reset API stands in for (logic/Seams.lua › TackleResetAPI); the client's names and Core stay.
+local RESET_CALLS = { "GetServerTime", "C_DateAndTime", "GetGameTime", "GetCurrentRegion", "issecretvalue" }
+
+--- A reset API in the shape of TackleResetAPI (logic/Seams.lua): GetServerTime, C_DateAndTime (GetSecondsUntilDailyReset,
 --- GetSecondsUntilWeeklyReset, GetCurrentCalendarTime), GetGameTime and GetCurrentRegion, on `now` (default: the
 --- fake's server time, or SERVER_TIME with no fake). `overrides` changes it: `now` (a function), `region` (a number,
 --- or false for a client without GetCurrentRegion), `daily` / `weekly` (functions returning the seconds to the reset,
@@ -153,9 +156,9 @@ local function withoutLore(L)
 end
 
 --- Loads Pagle_TackleBoard on `fake` (a new FakePagle if nil), serving `options.catalogue` or else the fixture
---- catalogue through fake.setCatalogue first, so the board reads it from OnInitialize on, and putting
---- `options.api` (default support.resetAPI(fake)) and `options.random` (default support.random(1)) at ns.api and
---- ns.random before its ADDON_LOADED. The shipped lore batch (data/Lore.lua) is left out of ns.L, as the shipped
+--- catalogue through fake.setCatalogue first, so the board reads it from OnInitialize on, and putting the reset calls
+--- of `options.api` (default support.resetAPI(fake)) on ns.api, a call it lacks as nil, and `options.random` (default
+--- support.random(1)) at ns.random before its ADDON_LOADED. The shipped lore batch (data/Lore.lua) is left out of ns.L, as the shipped
 --- catalogue is, unless `options.lore` is true; a spec sets the lore keys it needs itself. `options.prepare(loaded)`
 --- runs after that, still before OnInitialize.
 ---@param fake table? a FakePagle (newFakePagle()), for a spec that set it up first
@@ -169,7 +172,10 @@ function support.load(fake, options)
 	local loaded = fake.load("Pagle_TackleBoard", { holdAddonLoaded = true })
 	-- An inert load (no Pagle) leaves ns empty: nothing to inject into.
 	if loaded.ns.TackleBoard then
-		loaded.ns.api = options.api or support.resetAPI(fake)
+		local api = options.api or support.resetAPI(fake)
+		for _, name in ipairs(RESET_CALLS) do
+			loaded.ns.api[name] = api[name]
+		end
 		loaded.ns.random = options.random or support.random(1)
 		if not options.lore then
 			withoutLore(loaded.ns.L)

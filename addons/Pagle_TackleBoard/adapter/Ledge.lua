@@ -122,8 +122,8 @@ end
 -- The celebrated set's titles (TKB-R64, TKB-R83): those already shown, which the card keeps shown as earned.
 ---@return { [string]: true }
 local function celebratedTitles()
-	local db = ns.db
-	return db and db.global.celebrated.titles or {}
+	local set = ns.Celebrated()
+	return set and set.titles or {}
 end
 
 -- The spike (TKB-R103).
