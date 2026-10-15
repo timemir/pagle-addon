@@ -104,4 +104,51 @@ ns.L = {
 	-- The overflow strip (TKB-R101): a goal's chip, its kind and text, and the last chip when more wait.
 	OVERFLOW_CHIP = "{kind}: {text}",
 	OVERFLOW_MORE = "+{n} more waiting for a pin",
+
+	-- The spike (TKB-R103; logic/Ledge.lua). Plain ASCII only (#248).
+	SPIKE_DONE = "{n} done today. The fire's lit.",
+	SPIKE_EMPTY = "Done ones go on the spike.",
+	-- A done goal's hover: its Coins and the fly it tied.
+	SPIKE_COINS = { one = "Paid {n} Coin", other = "Paid {n} Coins" },
+	SPIKE_FLY = "Tied for your Fly Box: {fly}",
+
+	-- The Campfire on the ledge (TKB-R106): its count, or a fire gone out, or none yet; and its longest.
+	CAMPFIRE_DAYS = { one = "{n} day", other = "{n} days" },
+	CAMPFIRE_OUT = "Gone out",
+	CAMPFIRE_UNLIT = "Not lit yet",
+	CAMPFIRE_LONGEST = "longest {n}",
+	-- The Campfire card (TKB-R106): each day of its four-week log, dated in realm time, and what it was.
+	CARD_DATE = "{weekday} {day} {month}",
+	CARD_DAYS = {
+		lit = "lit",
+		burned = "Kindling burned",
+		out = "went out",
+		unlit = "not lit",
+		before = "before the board",
+		today = "today",
+	},
+	-- What a title needs, by what earns it ({n} its count).
+	CARD_NEEDS = {
+		campfire = "a Campfire of {n} days",
+		tally = "{n} goals done",
+		flybox = "every Fly Box pattern tied",
+	},
+	-- The Fly Box (TKB-R106): the box, and its drawer's compartments and their hovers ({date} a realm date, CARD_DATE).
+	FLY_BOX_TIED = "{n} of {total} tied",
+	FLY_UNTIED = "not tied yet",
+	FLY_TIED = "Tied {date}",
+	FLY_GOAL = "by: {goal}",
+	FLY_RARE = "tied only by Expeditions",
+	-- The brass tally plate (TKB-R106): the goals done for life, joined by a comma (plain ASCII, #248).
+	TALLY_PLATE = "{notices}, {expeditions}",
+	NOTICES = { one = "{n} Notice", other = "{n} Notices" },
+	EXPEDITIONS = { one = "{n} Expedition", other = "{n} Expeditions" },
+	-- The shop link (TKB-R106, SHOP-R41): a pointing hand is drawn after it, as a texture.
+	SHOP_LINK = "Coins go to the Curio Shop",
+	-- The Campfire card's and the Fly Box drawer's headings.
+	CARD_TITLE = "The Campfire",
+	CARD_MILESTONES = "Milestones",
+	CARD_TALLY = "The tally",
+	CARD_FLY_BOX = "The Fly Box",
+	DRAWER_TITLE = "The Fly Box: {label}",
 }
