@@ -14,6 +14,7 @@ local ns = select(2, ...)
 ---@field catch fun(itemID: integer, zone: integer?, subzone: integer?): PagleCast? -- records a synthetic caught Cast
 ---@field announce fun(announcement: PagleAnnouncement) -- hands an Announcement to the display (the lanes, ANN-R20)
 ---@field showCard fun(card: PagleCard): boolean -- puts a card on screen now; false while cards are held (ANN-R35)
+---@field showGlyphs fun(fonts: PagleDevGlyphFont[], probe: string) -- shows `probe` once in each of `fonts`
 ---@field print fun(line: string)      -- prints a chat line
 
 --- The dev commands.
@@ -146,6 +147,68 @@ local function preview(dev, kind)
 	end
 end
 
+-- `/pagle dev glyphs` (#248): CORE-R9 allows only the characters the client's fonts have. These are the candidates
+-- whose rendering is in question, by code point: en dash, em dash, ellipsis, curly single and double quotes,
+-- bullet, middle dot, guillemets, multiplication sign, right arrow, star and tick. They're built from their code
+-- points here, so no string literal in the package holds one (spec/glyphs_spec.lua).
+local GLYPH_CODE_POINTS = {
+	0x2013,
+	0x2014,
+	0x2026,
+	0x2018,
+	0x2019,
+	0x201C,
+	0x201D,
+	0x2022,
+	0x00B7,
+	0x00AB,
+	0x00BB,
+	0x00D7,
+	0x2192,
+	0x2605,
+	0x2713,
+}
+
+-- The UTF-8 bytes of code point `point`, below U+10000.
+---@param point integer
+---@return string
+local function utf8(point)
+	if point < 0x80 then
+		return string.char(point)
+	elseif point < 0x800 then
+		return string.char(0xC0 + math.floor(point / 0x40), 0x80 + point % 0x40)
+	end
+	return string.char(0xE0 + math.floor(point / 0x1000), 0x80 + math.floor(point / 0x40) % 0x40, 0x80 + point % 0x40)
+end
+
+--- The glyph probe line: each candidate character after its code point in hex ("2013 –  2014 —  …"), so a box can
+--- be told apart from its neighbours.
+---@return string
+function ns.DevGlyphProbe()
+	local items = {}
+	for i, point in ipairs(GLYPH_CODE_POINTS) do
+		items[i] = ("%04X %s"):format(point, utf8(point))
+	end
+	return table.concat(items, "  ")
+end
+
+--- A font Pagle draws text in: a font object by name (`object`), or a font file (`file`), with what uses it.
+---@class PagleDevGlyphFont
+---@field object string?  -- a font object's name, such as "GameFontHighlight"
+---@field file string?    -- a font file, such as "Fonts\\MORPHEUS.TTF", for a face no font object has
+---@field usedBy string   -- what draws with it, for the probe's label
+
+--- Every font Pagle draws text in (#248), for `/pagle dev glyphs`: Core's frames, toasts, cards and Settings rows
+--- (GameFont*, all FRIZQT__ in enUS, like the Journal's print), chat and the Field report's text, QoL's key label,
+--- and the Journal's handwriting face.
+---@type PagleDevGlyphFont[]
+ns.DEV_GLYPH_FONTS = {
+	{ object = "GameFontHighlight", usedBy = "Core's frames, the Journal's print" },
+	{ object = "ChatFontNormal", usedBy = "chat, the Field report's text" },
+	{ object = "NumberFontNormalSmallGray", usedBy = "QoL's key label" },
+	{ file = "Fonts\\MORPHEUS.TTF", usedBy = "the Journal's hand" },
+}
+
 --- Runs `/pagle dev <args>`. `on` and `off` set `PagleDB.global.dev`; while it's off every other dev command prints
 --- one line saying how to turn it on, and does nothing.
 ---@param args string what follows `/pagle dev`
@@ -164,6 +227,11 @@ function Dev:Run(args)
 		catch(self, rest)
 	elseif name == "preview" then
 		preview(self, rest:lower())
+	elseif name == "glyphs" then
+		local probe = ns.DevGlyphProbe()
+		options.print(L.DEV_GLYPHS_CHAT:format(probe))
+		options.showGlyphs(ns.DEV_GLYPH_FONTS, probe)
+		options.print(L.DEV_GLYPHS_SHOWN)
 	else
 		options.print(L.DEV_USAGE)
 	end

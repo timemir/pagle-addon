@@ -136,7 +136,7 @@ ns.L = {
 	DEV_ON = "Pagle dev: dev commands are on.",
 	DEV_OFF = "Pagle dev: dev commands are off.",
 	DEV_IS_OFF = "Pagle dev: dev commands are off; /pagle dev on turns them on.",
-	DEV_USAGE = "Pagle dev: /pagle dev on | off | endsession | preview <kind> | catch <itemID> [areaID]",
+	DEV_USAGE = "Pagle dev: /pagle dev on | off | endsession | preview <kind> | catch <itemID> [areaID] | glyphs",
 	-- The kinds, comma-separated.
 	DEV_PREVIEW_KINDS = "Pagle dev: /pagle dev preview <kind>, where kind is one of %s",
 	-- The kind.
@@ -159,6 +159,12 @@ ns.L = {
 	DEV_NO_CHARACTER = "Pagle dev: no character is logged in yet.",
 	-- The item ID, the zone areaID and the entry's seq.
 	DEV_CAUGHT = "Pagle dev: caught item %d in zone %d (entry %d).",
+	-- /pagle dev glyphs (#248, CORE-R9): the probe line, then where the rest of it is.
+	DEV_GLYPHS_CHAT = "Pagle dev: the glyph probe in the chat font: %s",
+	DEV_GLYPHS_SHOWN = "Pagle dev: the same line in each font Pagle uses is on screen; a box is a character that font"
+		.. " lacks. Click it or press Esc to close.",
+	-- A probe row: the font (its object's name or its file), what uses it, the probe line.
+	DEV_GLYPHS_ROW = "%s (%s): %s",
 	SLASH_CORE_HELP = {
 		{ name = "settings", help = "open Pagle's settings (also /pagle on its own)" },
 		{ name = "report", help = "open the Field report, to help chart the waters" },
