@@ -28,9 +28,14 @@ local PAGE_HEIGHT = HEIGHT - STRIP - FOOT
 local PAD_X, PAD_TOP, PAD_BOTTOM = 28, 22, 20
 local BODY_WIDTH, BODY_HEIGHT = PAGE_WIDTH - 2 * PAD_X, PAGE_HEIGHT - PAD_TOP - PAD_BOTTOM
 -- The search box's room at the strip's right (the kit's 250).
-local SEARCH_WIDTH = 250
+local SEARCH_WIDTH, SEARCH_HEIGHT = 250, 26
+-- The strip's middle: halfway between the band's inner edge (the tiled leather starts 7 in) and the pages, where the
+-- crumbs and the search slip sit with even room above and below.
+local STRIP_MIDDLE = (7 + STRIP) / 2
 -- Where the ribbons hang from under the leather's foot, from its left.
 local RIBBONS_LEFT = 456
+-- How far above the screen's centre the book opens: half the ribbons' hang under it.
+local RIBBONS_LIFT = 40
 -- The nameplate's place on the foot band, and the live line's right end and foot.
 local PLATE_X, PLATE_Y, LIVE_RIGHT, LIVE_FOOT = 30, 605, 30, 9
 -- How far a mouse wheel notch scrolls a page body.
@@ -159,7 +164,7 @@ local function position(frame)
 	if window then
 		frame:SetPoint(window[1], UIParent, window[2], window[3], window[4])
 	else
-		frame:SetPoint("CENTER")
+		frame:SetPoint("CENTER", 0, RIBBONS_LIFT) -- up a little, so the ribbons hanging under it stay on screen
 	end
 end
 
@@ -254,6 +259,8 @@ local function build(book)
 	frame:SetSize(WIDTH, HEIGHT)
 	frame:SetFrameStrata("HIGH")
 	frame:SetClampedToScreen(true)
+	-- the ribbons hang under the leather: the clamp keeps them on screen too
+	frame:SetClampRectInsets(0, 0, 0, -(ns.BOOK_RIBBON.lengthChosen - ns.BOOK_RIBBON.tuck))
 	frame:EnableMouse(true)
 	frame:SetMovable(true)
 	frame:RegisterForDrag("LeftButton")
@@ -274,12 +281,12 @@ local function build(book)
 	buildPage(frame, "right")
 
 	frame.crumbs = CreateFrame("Frame", nil, frame)
-	frame.crumbs:SetPoint("TOPLEFT", SIDE + 6, -9)
+	frame.crumbs:SetPoint("TOPLEFT", SIDE + 6, -(STRIP_MIDDLE - 10))
 	frame.crumbs:SetSize(WIDTH - 2 * SIDE - SEARCH_WIDTH - 40, 20)
 	frame.crumbButtons = {}
 	local search = CreateFrame("Frame", nil, frame)
-	search:SetSize(SEARCH_WIDTH, 22)
-	search:SetPoint("TOPRIGHT", -(SIDE + 6), -8)
+	search:SetSize(SEARCH_WIDTH, SEARCH_HEIGHT)
+	search:SetPoint("TOPRIGHT", -(SIDE + 6), -(STRIP_MIDDLE - SEARCH_HEIGHT / 2))
 	frame.anchors = { search = search }
 	buildLive(book, frame)
 
@@ -514,7 +521,10 @@ local function drawCrumbs(book)
 		local crumb = crumbAt(frame, i)
 		crumb.label:SetText(crumbWords(book, data))
 		crumb.label:SetTextColor(LOOK.gilt[1], LOOK.gilt[2], LOOK.gilt[3])
-		local width = crumb.label:GetStringWidth() + (i > 1 and 34 or 2)
+		-- the last crumbs are cut short, never past the strip's room before the search slip
+		local lead = i > 1 and 34 or 2
+		ns.BookBound(crumb.label, frame.crumbs:GetWidth() - x - lead)
+		local width = crumb.label:GetWidth() + lead
 		crumb:SetSize(width, 20)
 		crumb:ClearAllPoints()
 		crumb:SetPoint("LEFT", x, 0)

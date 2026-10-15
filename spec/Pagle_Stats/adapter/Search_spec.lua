@@ -51,6 +51,37 @@ describe("search on the leather (STA-R76)", function()
 		assert.is_true(view.box:IsEnabled())
 	end)
 
+	it(
+		"is the Curio Shop's paper slip with its magnifier, centred on the strip, its gilt edge lit while typing",
+		function()
+			local loaded, _, book = ready()
+			loaded.ns.ToggleBook()
+			local view = search(book)
+			local ns = loaded.ns
+
+			-- centred between the band's inner edge (7) and the pages (38): 9.5 above and below its 26
+			assert.are.same({ "TOPRIGHT", -24, -9.5 }, view.points[1])
+			assert.are.equal(26, view:GetHeight())
+			local slip
+			for _, child in ipairs(view.children) do
+				if child.left and child.left.texture == ns.ATLASES.Slip.file then
+					slip = child
+				end
+			end
+			assert.is_table(slip)
+			assert.are.equal(26 / 36, slip:GetScale()) -- the slip at the strip's height, its magnifier whole
+			local resting = view.edge[1].color[4]
+
+			view.box:SetFocus()
+			assert.are.same({ unpack(ns.BOOK_LOOK.giltBright) }, { unpack(view.edge[1].color, 1, 3) })
+			assert.is_true(view.edge[1].color[4] > resting)
+			view.box:GetScript("OnEditFocusLost")(view.box)
+
+			assert.are.same({ unpack(ns.BOOK_LOOK.gilt) }, { unpack(view.edge[1].color, 1, 3) })
+			assert.are.equal(loaded.ns.ArtFontFile("italic"), view.hint.fontObject.font[1]) -- the italic placeholder
+		end
+	)
+
 	it("lists matches from the first character in a dropdown, fish then places, and hides it when emptied", function()
 		local loaded, _, book = ready()
 		loaded.ns.ToggleBook()

@@ -49,7 +49,7 @@ ns.BAND_DOT_INKS = {
 ns.TRACKER_INKS = {
 	header = tint("ffd100"),
 	text = tint("ffffff"),
-	dim = tint("c8c0a8"),
+	dim = tint("e4dcc6"), -- a little lighter than the kit's grey, to read over bright ground
 	right = tint("e8d8a8"),
 	count = tint("ffd100"),
 }
@@ -90,7 +90,7 @@ local PAPER_INKS = {
 local BRASS_INKS = {
 	header = tint("f0cd6a"),
 	text = tint("ffffff"),
-	dim = tint("c8c0a8"),
+	dim = tint("e4dcc6"),
 	right = tint("e8d8a8"),
 	count = tint("ffd100"),
 }
@@ -198,7 +198,7 @@ local function newRow(block)
 	local row = CreateFrame("Button", nil, block) --[[@as StatsTrackerRow]]
 	row.shade = row:CreateTexture(nil, "BACKGROUND")
 	row.shade:SetColorTexture(1, 1, 1, 1)
-	row.shade:SetGradient("HORIZONTAL", CreateColor(0, 0, 0, 0.45), CreateColor(0, 0, 0, 0))
+	row.shade:SetGradient("HORIZONTAL", CreateColor(0, 0, 0, 0.6), CreateColor(0, 0, 0, 0))
 	row.shade:SetAllPoints()
 	row.dot = row:CreateTexture(nil, "ARTWORK")
 	row.dot:SetTexture(ns.BOOK_TEXTURES.disc)
@@ -261,8 +261,10 @@ local function layOut(row, line, look)
 		setFont(row.sub, look.text, ink.dim)
 		row.sub:ClearAllPoints()
 		row.sub:SetPoint("TOPLEFT", x + NAME_INDENT, -SUB_Y)
-		row.sub:SetWidth(right - x - NAME_INDENT)
 		row.sub:SetText(line.sub)
+		-- a long sub-line shrinks a little, then is cut short, within the block
+		local font = look.text
+		ns.FitText(row.sub, font[1], font[2], right - x - NAME_INDENT, font[2] - 2, font[3], ink.dim)
 		return WATCH_HEIGHT
 	end
 	setFont(text, look.text, line.dim and ink.dim or ink.text)

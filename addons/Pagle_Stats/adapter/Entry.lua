@@ -93,9 +93,9 @@ local function newToggle(frame)
 	toggle.pill = CreateFrame("Frame", nil, toggle) --[[@as StatsThreeSlice]]
 	toggle.pill:SetPoint("TOPLEFT")
 	toggle.pill:SetFrameLevel(toggle:GetFrameLevel())
-	toggle.star = ns.NewBookMark(toggle, "star", 15)
+	toggle.star = ns.NewBookMark(toggle.pill, "star", 15)
 	toggle.star:SetPoint("TOPLEFT", STAR_X, -STAR_Y)
-	toggle.label = ns.BookText(toggle, ns.ArtFont("hand", 18), LOOK.note)
+	toggle.label = ns.BookText(toggle.pill, ns.ArtFont("hand", 18), LOOK.note)
 	toggle.label:SetPoint("TOPLEFT", WORD_X, -6)
 	return toggle
 end
@@ -148,7 +148,7 @@ local function viewOf(frame)
 	local recordWidth = (width - RECORD_GAP * (RECORD_COLUMNS - 1)) / RECORD_COLUMNS
 	local view = {
 		toggle = newToggle(frame),
-		kicker = ns.NewBookKicker(frame),
+		kicker = ns.NewBookKicker(frame, width - KICKER_ROOM), -- leaving the toggle its room at the top right
 		name = ns.NewBookItemTitle(frame, width),
 		about = ns.BookText(frame, faces.about, LOOK.small),
 		headline = text(faces.big, LOOK.big, 0),
@@ -168,9 +168,6 @@ local function viewOf(frame)
 		view.records[i] = ns.NewBookLine(frame, recordWidth)
 	end
 	view.about:SetText(L.ODDS_ABOUT)
-	-- the kicker leaves the toggle its room at the top right
-	view.kicker:SetWidth(width - KICKER_ROOM)
-	view.kicker:SetWordWrap(false)
 	frame.entryView = view
 	return view
 end

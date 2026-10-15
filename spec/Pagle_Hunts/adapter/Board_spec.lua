@@ -23,7 +23,7 @@ end
 local function writer(label, draws)
 	return function(page, place)
 		draws[#draws + 1] = { label = label, page = page, place = place }
-		page.note = page.note or page:CreateFontString()
+		page.note = page.note or page:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 		page.note:SetText(("%s %s %s %s"):format(label, place.mode, place.set or "-", place.hunt or "-"))
 	end
 end
@@ -80,7 +80,7 @@ describe("the Hunts board's frame (HNT-R60)", function()
 		local _, _, board = loggedIn()
 		board:Toggle()
 		local frame = board.frame
-		assert.are.same({ { "CENTER" } }, frame.points)
+		assert.are.same({ { "CENTER", 0, 40 } }, frame.points)
 
 		-- Where a drag leaves it: the client re-anchors a moved frame by its top left.
 		frame:GetScript("OnDragStart")(frame)
@@ -90,7 +90,7 @@ describe("the Hunts board's frame (HNT-R60)", function()
 		board:Toggle()
 		board:Toggle()
 
-		assert.are.same({ { "CENTER" } }, frame.points)
+		assert.are.same({ { "CENTER", 0, 40 } }, frame.points)
 	end)
 
 	it("opens and stays open while restricted (HNT-R68)", function()

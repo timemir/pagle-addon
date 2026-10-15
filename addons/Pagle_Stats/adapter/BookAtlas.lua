@@ -79,6 +79,16 @@ ns.ATLASES = {
 		},
 	},
 	-- The tracker frames for sale (STA-R88): the Logbook's ruled paper, the Brass plate with its rivets.
+	-- The search slip: the Curio Shop's paper slip with its magnifier, from Core's shop atlas (Pagle/media/shop/Shop,
+	-- data/ShopArt.lua's "find"), so the book's search and the shop's match. Stats reads Core's file, not Core's table
+	-- (ADR 0001), so its rectangle is copied here.
+	Slip = {
+		file = "Interface\\AddOns\\Pagle\\media\\shop\\Shop",
+		width = 1024,
+		height = 1024,
+		scale = 2,
+		sprites = { ["find"] = { x = 2, y = 102, w = 900, h = 96, box = { 6, 6, 438, 36 } } },
+	},
 	TrackerLogbook = {
 		file = OWN .. "TrackerLogbook",
 		width = 1024,

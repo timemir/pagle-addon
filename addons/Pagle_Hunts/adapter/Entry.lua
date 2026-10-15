@@ -68,31 +68,50 @@ local function newChip(parent)
 	chip.face = CreateFrame("Frame", nil, chip) --[[@as HuntsThreeSlice]]
 	chip.face:SetPoint("TOPLEFT")
 	chip.face:SetFrameLevel(chip:GetFrameLevel())
-	chip.label = ns.BoardText(chip, fonts.small, LOOK.chipText)
+	chip.label = ns.BoardText(chip.face, fonts.small, LOOK.chipText)
 	chip.label:SetPoint("LEFT", CHIP_PAD, 0)
-	chip.badge = ns.BoardText(chip, ns.ArtFont("hand", 16), LOOK.here)
+	chip.label:SetWordWrap(false)
+	chip.badge = ns.BoardText(chip.face, ns.ArtFont("hand", 16), LOOK.here)
 	chip.badge:SetPoint("LEFT", chip.label, "RIGHT", 6, 0)
 	withTooltip(chip)
 	return chip
 end
 
--- Dresses `chip` as `data` says, and sizes it to its words; returns its width.
+-- The smallest a chip's words shrink to before they are cut short.
+local CHIP_FLOOR = 11
+
+-- Dresses `chip` as `data` says, and sizes it to its words, no wider than `room` (the page's width): longer words
+-- shrink, then are cut short with an ellipsis, with the full words in its tooltip. Returns its width.
 ---@param chip EntryChipView
 ---@param data HuntEntryChip
+---@param room number
 ---@return number
-local function setChip(chip, data)
-	local fonts = ns.BoardFonts()
+local function setChip(chip, data, room)
 	local unconfirmed = data.kind == "unconfirmed"
-	chip.label:SetFontObject(unconfirmed and fonts.note or fonts.small)
+	local ink = data.short and LOOK.red or unconfirmed and LOOK.unconfirmed or LOOK.chipText
+	chip.label:SetFontObject(unconfirmed and ns.BoardFonts().note or ns.BoardFonts().small)
 	chip.label:SetText(data.text)
-	inkText(chip.label, data.short and LOOK.red or unconfirmed and LOOK.unconfirmed or LOOK.chipText)
+	inkText(chip.label, ink)
 	chip.badge:SetText(data.badge or "")
 	chip.badge:SetShown(data.badge ~= nil)
-	chip.tooltip = data.tooltip
-	local width = math.ceil(chip.label:GetStringWidth()) + 2 * CHIP_PAD
-	if data.badge then
-		width = width + math.ceil(chip.badge:GetStringWidth()) + 6
+	local badge = data.badge and math.ceil(chip.badge:GetStringWidth()) + 6 or 0
+	local words = room - 2 * CHIP_PAD - badge
+	local fitted = math.ceil(chip.label:GetStringWidth()) > words
+	if fitted then
+		ns.FitText(
+			chip.label,
+			unconfirmed and "italic" or "print",
+			unconfirmed and 13 or 13.5,
+			words,
+			CHIP_FLOOR,
+			false,
+			ink
+		)
+	else
+		chip.label:SetWidth(0)
 	end
+	chip.tooltip = data.tooltip or (fitted and { data.text } or nil)
+	local width = math.min(math.ceil(chip.label:GetStringWidth()), words) + 2 * CHIP_PAD + badge
 	local face = data.badge and "chip-here" or data.short and "chip-red" or unconfirmed and "chip-unc" or "chip"
 	ns.SetThreeSlice(chip.face, "Parts", face, width, 11, "BACKGROUND")
 	chip:SetWidth(width)
@@ -117,9 +136,9 @@ local function newPin(parent)
 	pin.pill = CreateFrame("Frame", nil, pin) --[[@as HuntsThreeSlice]]
 	pin.pill:SetPoint("TOPLEFT")
 	pin.pill:SetFrameLevel(pin:GetFrameLevel())
-	pin.head = ns.ArtSprite(pin, "Parts", "pin-glyph", "OVERLAY")
+	pin.head = ns.ArtSprite(pin.pill, "Parts", "pin-glyph", "OVERLAY")
 	ns.PlaceSprite(pin.head, pin, PIN_X, PIN_Y)
-	pin.label = ns.BoardText(pin, ns.BoardFonts().pin, LOOK.red)
+	pin.label = ns.BoardText(pin.pill, ns.BoardFonts().pin, LOOK.red)
 	pin.label:SetPoint("TOPLEFT", PIN_WORDS_X, -6)
 	pin.pinned = false
 	pin:SetScript("OnClick", function(self)
@@ -198,6 +217,8 @@ local function newView(page)
 	view.hand:SetPoint("LEFT")
 	view.back.label = ns.BoardText(view.back, fonts.pin, LOOK.red)
 	view.back.label:SetPoint("LEFT", view.hand, "RIGHT", 4, 0)
+	view.back.label:SetWidth(width - HAND_SIZE - 4)
+	view.back.label:SetWordWrap(false)
 	view.back:SetScript("OnClick", function(self)
 		if self.set then
 			ns.board:Open({ mode = "set", set = self.set })
@@ -205,6 +226,8 @@ local function newView(page)
 	end)
 	local heading = width - HEADING_ROOM
 	view.kicker = text(fonts.kicker, LOOK.kicker)
+	view.kicker:SetWidth(heading)
+	view.kicker:SetWordWrap(false)
 	view.name = text(fonts.title, LOOK.title, heading, 2)
 	view.target = text(fonts.small, LOOK.small, heading, 4)
 	view.retired = text(fonts.hand, LOOK.red, heading, 2)
@@ -213,6 +236,8 @@ local function newView(page)
 	view.window = text(fonts.handLarge, LOOK.hand, width, 2)
 	view.conditions = text(fonts.small, LOOK.small, width, 4)
 	view.bar = ns.NewBoardInkBar(page, BAR_WIDTH)
+	view.bar.label:SetWidth(width - BAR_WIDTH - 10)
+	view.bar.label:SetWordWrap(false)
 	view.ladderUpdating = text(fonts.hand, LOOK.note, width, 2)
 	view.effort = text(fonts.hand, LOOK.ink, width, 2)
 	view.odds = text(fonts.note, ns.BoardTint("7a5a30"), width, 4)
@@ -286,7 +311,7 @@ local function layChips(view, chips, y, width)
 		local chip = ns.BoardPooled(view.chips, i, function()
 			return newChip(view.page)
 		end)
-		local chipWidth = setChip(chip, data)
+		local chipWidth = setChip(chip, data, width)
 		if x > 0 and x + chipWidth > width then
 			x, y = 0, y + CHIP_STEP
 		end
@@ -324,7 +349,10 @@ local function layLadder(view, ladder, y)
 		threshold:ClearAllPoints()
 		threshold:SetPoint("TOPLEFT", THRESHOLD_X, -(y + 1))
 		local when = ns.BoardPooled(view.whens, k, function()
-			return ns.BoardText(page, fonts.small, LOOK.small)
+			local made = ns.BoardText(page, fonts.small, LOOK.small)
+			made:SetWidth(page:GetWidth() - WHEN_X)
+			made:SetWordWrap(false)
+			return made
 		end)
 		when:SetFontObject(step.when and fonts.small or fonts.note)
 		when:SetText(step.when or ns.L.LADDER_NOT_YET)

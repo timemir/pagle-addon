@@ -17,10 +17,10 @@ local widgets = {}
 
 -- Widget methods that only lay out or colour: nothing for a spec to read back.
 local LAYOUT_METHODS = {
-	"SetJustifyH",
 	"SetJustifyV",
 	"SetWordWrap",
 	"SetClampedToScreen",
+	"SetClampRectInsets",
 	"SetFrameStrata",
 	"EnableMouseWheel",
 	"SetRotation",
@@ -245,6 +245,10 @@ function widgets.newWidget(kind, parent)
 	function widget:GetAlpha()
 		return self.alpha or 1
 	end
+	-- A font string's justification across its width (`justifyH`, "LEFT" until set, as the client's).
+	function widget:SetJustifyH(justify)
+		self.justifyH = justify
+	end
 	function widget:SetTextColor(r, g, b, a)
 		self.textColor = { r, g, b, a }
 	end
@@ -406,10 +410,25 @@ function widgets.newWidget(kind, parent)
 	function widget:SetPropagateKeyboardInput(propagates)
 		self.propagatesKeys = not not propagates
 	end
+	-- As the client's: a font string's SetText and SetFormattedText raise "Font not set" until it has a font, from its
+	-- template, SetFontObject or SetFont.
 	function widget:CreateFontString(_, layer, template)
 		local fontString = widgets.newWidget("FontString", self)
 		fontString.fontObject = template
 		fontString.layer, fontString.sublevel = layer or "ARTWORK", 0
+		local function fontSet(region, method)
+			if region.fontObject == nil and region.font == nil then
+				error(("FontString:%s(): Font not set"):format(method), 3)
+			end
+		end
+		fontString.SetText = function(region, text)
+			fontSet(region, "SetText")
+			region.text = text
+		end
+		fontString.SetFormattedText = function(region, format, ...)
+			fontSet(region, "SetFormattedText")
+			region.text = format:format(...)
+		end
 		return fontString
 	end
 	-- A texture that keeps its draw layer and sublevel, and what it shows: `texture` (SetTexture's file ID or path)

@@ -37,7 +37,7 @@ local textsOf = stats.textsOf
 local function writer(label, draws, height)
 	return function(content, place)
 		draws[#draws + 1] = { label = label, content = content, place = place }
-		content.note = content.note or content:CreateFontString()
+		content.note = content.note or content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 		content.note:SetText(("%s %s %s"):format(label, place.page, tostring(place.area or place.item or "-")))
 		return height
 	end
@@ -111,7 +111,7 @@ describe("the Stats book's frame (STA-R70, STA-R71)", function()
 		loaded.ns.ToggleBook()
 
 		assert.is_nil(loaded.ns.db.profile.window)
-		assert.are.same({ { "CENTER" } }, book.frame.points)
+		assert.are.same({ { "CENTER", 0, 40 } }, book.frame.points)
 	end)
 
 	it("moves by dragging the leather, saves where it was left in profile.window, and opens there next", function()

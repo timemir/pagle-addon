@@ -237,12 +237,12 @@ describe("the Stats book's art (STA-R70, stats.md › UI)", function()
 		ribbon:SetRibbon("Lifetime", colors.lifetime, false)
 		assert.are.equal("Lifetime", ribbon.label.text)
 		assert.are.same(colors.lifetime, { unpack(ribbon.body.vertexColor, 1, 3) })
-		assert.are.equal(94, ribbon.height)
+		assert.are.equal(75, ribbon.height)
 		ribbon:SetRibbon("Where I am", colors.here, true)
 
 		local lifted = { colors.here[1] * 1.13, colors.here[2] * 1.13, colors.here[3] * 1.13 }
 		assert.are.same(lifted, { unpack(ribbon.body.vertexColor, 1, 3) })
-		assert.are.equal(108, ribbon.height)
+		assert.are.equal(86, ribbon.height)
 		assert.is_true(ribbon.chosen)
 		assert.is_nil(ribbon.stitch.vertexColor) -- the gold stitch keeps its own colour
 	end)
@@ -256,6 +256,33 @@ describe("the Stats book's art (STA-R70, stats.md › UI)", function()
 		assert.are.equal("No Casts yet", plate.label.text)
 		assert.are.equal(#"No Casts yet" * 6 + 22, plate.width)
 		assert.are.equal(ns.ATLASES.Book.file, plate.brass.left.texture)
+	end)
+
+	it("sets a learning row's odds at its right edge, and stops a long name before them", function()
+		local ns, parent = kit()
+		local row = ns.NewBookRow(parent, 416)
+		local name = "Raw Spotted Yellowtail of the Very Long Uncharted Name"
+		local data = { icon = 133890, name = name, ink = ns.BOOK_LOOK.ink, watched = false, chosen = false }
+		data.odds, data.oddsState = "learning 27/100", "learning"
+
+		row:SetRow(data)
+
+		-- at the row's right edge, past the odds' column; the name ends 8 before them (6 px a character in the fake)
+		assert.are.same({ "TOPRIGHT", -12, -3 }, row.odds.points[1])
+		local oddsLeft = 416 - 12 - #"learning 27/100" * 6
+		assert.are.equal(oddsLeft - 8 - 32, row.name.width)
+		assert.is_true(row.name.width < #name * 6) -- cut short, the client's ellipsis at its end
+
+		data.watched = true -- the star takes its room from the name
+		row:SetRow(data)
+		assert.are.equal(oddsLeft - 8 - 32 - 12 - 5, row.name.width)
+
+		data.odds, data.oddsState, data.watched = "1 in 30", "known", false
+		row:SetRow(data) -- a known reading keeps its column, and a short name its own width
+		assert.are.same({ "TOPRIGHT", -140, -5 }, row.odds.points[1])
+		data.name = "Smallfish"
+		row:SetRow(data)
+		assert.are.equal(#"Smallfish" * 6 + 1, row.name.width)
 	end)
 
 	it("puts the brass corners on the book's four corners, one sprite mirrored", function()

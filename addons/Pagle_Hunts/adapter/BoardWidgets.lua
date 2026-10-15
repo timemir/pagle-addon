@@ -526,6 +526,7 @@ end
 ---@class BoardParchmentView
 ---@field paper Texture
 ---@field gutter Texture?
+---@field corners MaskTexture[]   -- the rounded outer corners
 
 -- The gutter's width at the spine.
 local GUTTER_WIDTH = 40
@@ -541,6 +542,11 @@ function ns.NewBoardParchment(frame, spine)
 	if spine == "LEFT" then
 		view.paper:SetTexCoord(1, 0, 0, 1)
 	end
+	-- its outer corners slightly rounded, the corners at the spine square, as a bound page is
+	local outer = spine == "RIGHT" and { "TOPLEFT", "BOTTOMLEFT" }
+		or spine == "LEFT" and { "TOPRIGHT", "BOTTOMRIGHT" }
+		or { "TOPLEFT", "TOPRIGHT", "BOTTOMLEFT", "BOTTOMRIGHT" }
+	view.corners = ns.RoundCorners(view.paper, frame, outer)
 	if spine then
 		local atlas, sprite = ns.ArtSpriteOf("Book", "gutter")
 		local gutter = ns.ArtCrisp(frame:CreateTexture(nil, "BORDER"))
@@ -602,9 +608,10 @@ end
 ---@field tooltip string[]?
 ---@field SetRibbon fun(self: BoardRibbonView, text: string, color: number[], chosen: boolean)
 
---- The ribbons' measures (the kit's Hunts board): each one's width and the gap between, how long it hangs (longer
---- chosen), how much of its top tucks under the leather's band, its words' inset, and how much brighter it turns.
-ns.BOARD_RIBBON = { width = 104, gap = 10, length = 104, lengthChosen = 120, tuck = 10, pad = 13, lift = 1.13 }
+--- The ribbons' measures (the kit's Hunts board, hanging a fifth shorter, as the dev asked): each one's width and the
+--- gap between, how long it hangs (longer chosen), how much of its top tucks under the leather's band, its words'
+--- inset, and how much brighter it turns.
+ns.BOARD_RIBBON = { width = 104, gap = 10, length = 83, lengthChosen = 96, tuck = 10, pad = 13, lift = 1.13 }
 local RIBBON = ns.BOARD_RIBBON
 
 -- Shows the bottom `length` units of ribbon sprite `name` (its swallowtail end always shows) in `texture`, the
@@ -732,6 +739,7 @@ end
 ---@field empty HuntsThreeSlice
 ---@field fill Texture         -- the full stroke cut to length
 ---@field fillSlice HuntsThreeSlice -- the full stroke, sliced, when its share is longer than the sprite
+---@field fillFrame Frame        -- holds the cut stroke, over the empty one
 ---@field label FontString
 ---@field value number
 ---@field SetBar fun(self: BoardInkBarView, fill: number, label: string?)
@@ -748,7 +756,11 @@ function ns.NewBoardInkBar(parent, width)
 	bar.empty = CreateFrame("Frame", nil, bar) --[[@as HuntsThreeSlice]]
 	bar.empty:SetPoint("TOPLEFT")
 	ns.SetThreeSlice(bar.empty, "Parts", "ink-empty", width, INK_CAP, "ARTWORK", 0)
-	bar.fill = ns.ArtCrisp(bar:CreateTexture(nil, "ARTWORK", nil, 1))
+	-- the full stroke on its own frame over the empty one's, which a child frame would otherwise draw over
+	bar.fillFrame = CreateFrame("Frame", nil, bar)
+	bar.fillFrame:SetAllPoints()
+	bar.fillFrame:SetFrameLevel(bar.empty:GetFrameLevel() + 1)
+	bar.fill = ns.ArtCrisp(bar.fillFrame:CreateTexture(nil, "ARTWORK"))
 	bar.fillSlice = CreateFrame("Frame", nil, bar) --[[@as HuntsThreeSlice]]
 	bar.fillSlice:SetPoint("TOPLEFT")
 	bar.fillSlice:SetFrameLevel(bar.empty:GetFrameLevel() + 1)
@@ -941,8 +953,9 @@ function ns.NewBoardPlate(parent)
 	local plate = CreateFrame("Frame", nil, parent) --[[@as BoardPlateView]]
 	plate.brass = CreateFrame("Frame", nil, plate) --[[@as HuntsThreeSlice]]
 	plate.brass:SetPoint("TOPLEFT")
-	plate.label = ns.BoardText(plate, ns.BoardFonts().plate, LOOK.plateText)
-	plate.label:SetPoint("CENTER", 0, 1)
+	-- on the brass's own frame, which draws over the plate's: its words over its slices
+	plate.label = ns.BoardText(plate.brass, ns.BoardFonts().plate, LOOK.plateText)
+	plate.label:SetPoint("CENTER", plate, "CENTER", 0, 1)
 	function plate.SetPlate(self, text)
 		self.label:SetText(text or "")
 		local width = math.ceil(self.label:GetStringWidth()) + PLATE_ROOM

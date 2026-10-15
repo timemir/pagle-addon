@@ -224,7 +224,7 @@ Terms are used as `CONTEXT.md` defines them. Core rules are cited by ID (`LOG-R6
 |---|---|---|
 | `profile.tracker` | "Show the live tracker" | `false` |
 | `profile.watched` | `{ { item = itemID, area = areaID } }`, at most 3, oldest first (STA-R60) | `{}` |
-| `profile.window` | the book's position `{ point, relativePoint, x, y }` | `nil` (centred) |
+| `profile.window` | the book's position `{ point, relativePoint, x, y }` | `nil` (centred, 40 px above the middle so the ribbons under it stay on screen) |
 | `global.projection` | the projection table Core manages (LOG-R70): `projection`, `lastSeq`, `logId`, `fingerprint`, `rulesVersion` | |
 | `global.schemaVersion` | integer for `if version < N` migrations of this DB | 1 |
 
@@ -320,7 +320,7 @@ Every string below is mechanical interface text in `ns.L` (STA-R58, STA-R59), no
 
 ### On the leather
 
-- On the strip above the pages: gilt breadcrumbs (STA-R74) and the search box (STA-R76).
+- On the strip above the pages, centred between its band and the pages: gilt breadcrumbs (STA-R74) and the search box (STA-R76), the Curio Shop's paper slip with its magnifier, edged in gilt that brightens while typing.
 - On the foot band below them: the nameplate, "{lifetime Casts} Casts · {Sessions} Sessions · since {first Cast's date}", or "No Casts yet"; and, during a current Session, the live line at the right (STA-R75), its dot glowing green.
 - Ribbons, left to right under the foot band, each in its own colour: *Where I am* (green), *This Session*, *Lifetime*, *Sessions*; the chosen one hangs longer and brighter.
 
@@ -341,7 +341,7 @@ Every string below is mechanical interface text in `ns.L` (STA-R58, STA-R59), no
   - "{Casts} of my Casts here." Then, when the zone has a line: "No junk from {line}; at {skill} I'm past it, so only those Casts count." for side `hi`, "No junk from {line}; at {skill} I'm below it, so only my Casts below it count." for `lo`, and just "No junk from {line}." when the live skill is unknown.
   - when `Pagle.GetArea(area)` is `nil` or has `hasData = false`: "Pagle has no chart of these waters yet."
   - on a zone page, heading *Its waters* (small: "my Casts"): every subzone of the zone that has its own catch list in `Pagle.GetZoneCatches(zone)` or a `places` record whose `zone` is this zone, alphabetical, each with my Casts there ("—" for none) and "I'm here"; each opens its place page
-  - the row groups (STA-R18), each under its heading with its small note ("Your odds · Dry spell" for *Any time*, STA-R18's notes for *Pools* and *In their window*, "not on Pagle's chart for these waters" for *Also caught here*). Each row: an ink icon, the name in its quality colour, ★ when watched, Your odds in short (STA-R43; "learning {n}/100" in handwriting), and in the margin, in handwriting, the Dry spell when the item has been caught in the scope: "{since} since", with ", unlucky" or ", very unlucky" in red when it applies, or "just now" for 0. Nothing shows in the margin when it has never been caught there.
+  - the row groups (STA-R18), each under its heading with its small note ("Your odds · Dry spell" for *Any time*, STA-R18's notes for *Pools* and *In their window*, "not on Pagle's chart for these waters" for *Also caught here*). Each row: an ink icon, the name in its quality colour, ★ when watched, Your odds in short (STA-R43; "learning {n}/100" in handwriting, at the row's right edge when its margin is empty; a name too long for the room before the odds is cut short with an ellipsis), and in the margin, in handwriting, the Dry spell when the item has been caught in the scope: "{since} since", with ", unlucky" or ", very unlucky" in red when it applies, or "just now" for 0. Nothing shows in the margin when it has never been caught there.
   - under a subzone's rows, when any row uses its zone (STA-R42): "Fish with fewer than 100 Casts in {subzone} use all of {zone} until then."
 - **Right page, no item chosen:** kicker "About these waters", the place's name, then "Casts", "Catches", and "Got away" as "{n} ({rate}%)", or "—" while the place has no Casts (no rate to give); then in handwriting "Pick a fish on the left for its odds and its Dry spell."
 - **Right page, an item's entry:**

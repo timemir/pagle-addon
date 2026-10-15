@@ -59,8 +59,6 @@ ns.BOOK_LOOK = {
 	tileWashAlpha = 0.22,
 	sepia = tint("dcb37a"), -- an item icon's tint over its greys (CSS sepia(.75))
 	plateText = tint("2a1a04"), -- the brass nameplate's words
-	searchPaper = tint("efe0bb"), -- the search box (adapter/Search.lua)
-	searchEdge = tint("8a5a2a"),
 	margin = tint("5a4028"), -- a row's margin: its Dry spell in handwriting
 	ribbonLabel = tint("efd286"), -- a ribbon's words
 	ribbonLabelOn = tint("fff0bc"), -- the chosen ribbon's
@@ -169,23 +167,43 @@ function ns.BookText(frame, font, color)
 	return text
 end
 
---- A kicker: the small-caps line above a page's title ("THE WATERS"). Its SetText sets the words in small caps.
+--- Holds a single line within `room`: as wide as its words, or `room`, past which the client cuts it short with an
+--- ellipsis. Every line on a page is bound so, so no words draw past the page's edge.
+---@param text FontString
+---@param room number
+function ns.BookBound(text, room)
+	text:SetWordWrap(false)
+	text:SetWidth(0) -- measured unbounded
+	text:SetWidth(math.max(1, math.min(text:GetStringWidth() + 1, room)))
+end
+local bound = ns.BookBound
+
+--- A kicker: the small-caps line above a page's title ("THE WATERS"). Its SetText sets the words in small caps, held
+--- within its page's width.
 ---@param parent Frame
+---@param room number? its width, the page's by default
 ---@return FontString
-function ns.NewBookKicker(parent)
+function ns.NewBookKicker(parent, room)
 	local kicker = ns.BookText(parent, ns.BookFonts().kicker, LOOK.kicker)
 	local setText = kicker.SetText
 	kicker.SetText = function(self, text)
 		setText(self, text and ns.BookSmallCaps(text))
+		bound(self, room or parent:GetWidth())
 	end
 	return kicker
 end
 
---- A page's title, in the print face's large size and the title ink.
+--- A page's title, in the print face's large size and the title ink, held within its page's width.
 ---@param parent Frame
 ---@return FontString
 function ns.NewBookTitle(parent)
-	return ns.BookText(parent, ns.BookFonts().title, LOOK.title)
+	local title = ns.BookText(parent, ns.BookFonts().title, LOOK.title)
+	local setText = title.SetText
+	title.SetText = function(self, text)
+		setText(self, text)
+		bound(self, parent:GetWidth())
+	end
+	return title
 end
 
 --- A line of handwriting: first-person notes (STA-R59), in the hand's blue ink, wrapping at its width, its lines
@@ -225,8 +243,10 @@ function ns.NewBookHeading(parent, width)
 	heading.rule:SetHeight(1)
 	function heading.SetHeading(self, text, note)
 		self.label:SetText(ns.BookSmallCaps(text))
+		bound(self.label, width)
 		self.note:SetText(note or "")
 		self.note:SetShown(note ~= nil)
+		bound(self.note, width - self.label:GetWidth() - 8)
 	end
 	return heading
 end
@@ -293,7 +313,8 @@ function ns.NewBookLink(parent)
 	link.dots = {}
 	function link.SetLink(self, text, onClick)
 		self.label:SetText(text)
-		local width = self.label:GetStringWidth()
+		bound(self.label, parent:GetWidth() - 22)
+		local width = self.label:GetWidth()
 		self:SetSize(width + 22, 20)
 		local count = math.floor(width / LINK_DOT_STEP) + 1
 		for i = 1, count do
@@ -355,6 +376,7 @@ end
 ---@field empty StatsThreeSlice
 ---@field fill Texture
 ---@field fillSlice StatsThreeSlice
+---@field fillFrame Frame
 ---@field value number
 ---@field SetBar fun(self: StatsBookInkBarView, fill: number)
 
@@ -370,7 +392,11 @@ function ns.NewBookInkBar(parent, width)
 	bar.empty = CreateFrame("Frame", nil, bar) --[[@as StatsThreeSlice]]
 	bar.empty:SetPoint("TOPLEFT")
 	ns.SetThreeSlice(bar.empty, "Parts", "ink-empty", width, INK_CAP, "ARTWORK", 0)
-	bar.fill = ns.ArtCrisp(bar:CreateTexture(nil, "ARTWORK", nil, 1))
+	-- the full stroke on its own frame over the empty one's, which a child frame would otherwise draw over
+	bar.fillFrame = CreateFrame("Frame", nil, bar)
+	bar.fillFrame:SetAllPoints()
+	bar.fillFrame:SetFrameLevel(bar.empty:GetFrameLevel() + 1)
+	bar.fill = ns.ArtCrisp(bar.fillFrame:CreateTexture(nil, "ARTWORK"))
 	bar.fillSlice = CreateFrame("Frame", nil, bar) --[[@as StatsThreeSlice]]
 	bar.fillSlice:SetPoint("TOPLEFT")
 	bar.fillSlice:SetFrameLevel(bar.empty:GetFrameLevel() + 1)
@@ -731,9 +757,11 @@ end
 ---@field band FontString
 ---@field SetRow fun(self: StatsBookRowView, row: StatsBookRowData)
 
--- A row's height, its medallion's size and place, its name's place, where the odds end (from the row's right), the
--- margin's right inset, and the star's size.
+-- A row's height, its medallion's size and place, its name's place, where the odds' column ends (from the row's
+-- right), the margin's right inset, and the star's size.
 local ROW_HEIGHT, ROW_ICON, ROW_ICON_X, ROW_NAME_X, ROW_ODDS_END, ROW_MARGIN_END, ROW_STAR = 25, 16, 5, 32, 140, 12, 12
+-- The least room between the name (or its star) and the odds.
+local ROW_NAME_GAP = 8
 -- The dashed outline's dash and gap.
 local DASH, DASH_GAP = 3, 2
 
@@ -783,20 +811,14 @@ function ns.NewBookRow(parent, width)
 	row.star = ns.NewBookMark(row, "star", ROW_STAR)
 	row.star:SetPoint("LEFT", row.name, "RIGHT", 5, 0)
 	row.odds = ns.BookText(row, faces.small, LOOK.title)
-	row.odds:SetPoint("TOPRIGHT", -ROW_ODDS_END, -5)
 	row.odds:SetJustifyH("RIGHT")
 	row.margin = ns.BookText(row, faces.margin, LOOK.margin)
 	row.margin:SetJustifyH("RIGHT")
 	row.band = ns.BookText(row, faces.margin, LOOK.red)
 	row.band:SetPoint("TOPRIGHT", -ROW_MARGIN_END, -3)
 	row.band:SetJustifyH("RIGHT")
-	-- The name's room: from its place to the odds' column, less the star.
-	local nameRoom = width - ROW_NAME_X - ROW_ODDS_END - 60 - (ROW_STAR + 6)
 	function row.SetRow(self, data)
 		self.icon:SetIcon(data.icon)
-		self.name:SetText(data.name)
-		self.name:SetTextColor(data.ink[1], data.ink[2], data.ink[3])
-		self.name:SetWidth(math.min(self.name:GetStringWidth() + 1, nameRoom))
 		self.star:SetShown(data.watched)
 		self.odds:SetText(data.odds)
 		if data.oddsState == "learning" then
@@ -809,10 +831,27 @@ function ns.NewBookRow(parent, width)
 			self.odds:SetFontObject(faces.small)
 			self.odds:SetTextColor(LOOK.title[1], LOOK.title[2], LOOK.title[3])
 		end
+		-- "learning n/100" is long: with nothing in the margin it sits at the row's right edge, clear of the name
+		local oddsEnd = (data.oddsState == "learning" and data.margin == nil) and ROW_MARGIN_END or ROW_ODDS_END
+		self.odds:ClearAllPoints()
+		self.odds:SetPoint("TOPRIGHT", -oddsEnd, data.oddsState == "learning" and -3 or -5)
+		-- The name stops before the odds, less the star when it shows: a longer one is cut short with an ellipsis, as
+		-- the client cuts a font string that doesn't wrap.
+		local room = width - oddsEnd - self.odds:GetStringWidth() - ROW_NAME_GAP - ROW_NAME_X
+		if data.watched then
+			room = room - ROW_STAR - 5
+		end
+		self.name:SetText(data.name)
+		self.name:SetTextColor(data.ink[1], data.ink[2], data.ink[3])
+		self.name:SetWidth(math.max(1, math.min(self.name:GetStringWidth() + 1, room)))
 		self.margin:SetText(data.margin or "")
 		self.margin:SetShown(data.margin ~= nil)
 		self.band:SetText(data.band or "")
 		self.band:SetShown(data.band ~= nil)
+		-- the Dry spell keeps to the margin, right of the odds' column
+		local margin = ROW_ODDS_END - ROW_MARGIN_END - ROW_NAME_GAP
+		bound(self.band, margin)
+		bound(self.margin, margin - (data.band and self.band:GetWidth() or 0))
 		self.margin:ClearAllPoints()
 		if data.band then
 			self.margin:SetPoint("TOPRIGHT", self.band, "TOPLEFT", 0, 0)
@@ -874,6 +913,11 @@ function ns.NewBookLine(parent, width)
 		self.here:SetText(data.here or "")
 		self.here:SetShown(data.here ~= nil)
 		self.value:SetText(data.value)
+		-- the label, and "I'm here" after it, stop before the value
+		bound(self.value, width)
+		local room = width - self.value:GetWidth() - 8
+		bound(self.here, data.here and room / 2 or 1)
+		bound(self.label, room - (data.here and self.here:GetWidth() + 8 or 0))
 		local onClick = data.onClick
 		self:SetScript("OnClick", onClick and function()
 			onClick()
@@ -937,6 +981,9 @@ function ns.NewBookFigure(parent, width, height)
 		self.value:SetText(data.value or "")
 		self.value:SetTextColor(valueInk[1], valueInk[2], valueInk[3])
 		self.leader:SetShown(data.value ~= nil)
+		-- the label stops before the value
+		bound(self.value, width)
+		bound(self.label, width - (data.value and self.value:GetWidth() + 12 or 0))
 		local onClick = data.onClick
 		self:SetScript("OnClick", onClick and function()
 			onClick()
@@ -1135,6 +1182,7 @@ end
 ---@class StatsBookParchmentView
 ---@field paper Texture
 ---@field gutter Texture?
+---@field corners MaskTexture[]   -- the rounded outer corners
 
 -- The gutter's width at the spine.
 local GUTTER_WIDTH = 40
@@ -1150,6 +1198,11 @@ function ns.NewBookParchment(frame, spine)
 	if spine == "LEFT" then
 		view.paper:SetTexCoord(1, 0, 0, 1)
 	end
+	-- its outer corners slightly rounded, the corners at the spine square, as a bound page is
+	local outer = spine == "RIGHT" and { "TOPLEFT", "BOTTOMLEFT" }
+		or spine == "LEFT" and { "TOPRIGHT", "BOTTOMRIGHT" }
+		or { "TOPLEFT", "TOPRIGHT", "BOTTOMLEFT", "BOTTOMRIGHT" }
+	view.corners = ns.RoundCorners(view.paper, frame, outer)
 	if spine then
 		local atlas, sprite = ns.ArtSpriteOf("Book", "gutter")
 		local gutter = ns.ArtCrisp(frame:CreateTexture(nil, "BORDER"))
@@ -1209,9 +1262,10 @@ end
 ---@field color number[]
 ---@field SetRibbon fun(self: StatsBookRibbonView, text: string, color: number[], chosen: boolean)
 
---- The ribbons' measures (the kit's Stats book): each one's width and the gap between, how long it hangs (longer
---- chosen), how much of its top tucks under the leather's band, and how much brighter it turns.
-ns.BOOK_RIBBON = { width = 96, gap = 12, length = 94, lengthChosen = 108, tuck = 2, lift = 1.13 }
+--- The ribbons' measures (the kit's Stats book, hanging a fifth shorter, as the dev asked): each one's width and the
+--- gap between, how long it hangs (longer chosen), how much of its top tucks under the leather's band, and how much
+--- brighter it turns.
+ns.BOOK_RIBBON = { width = 96, gap = 12, length = 75, lengthChosen = 86, tuck = 2, lift = 1.13 }
 local RIBBON = ns.BOOK_RIBBON
 
 -- Shows the bottom `length` units of ribbon sprite `name` (its swallowtail end always shows) in `texture`, the
@@ -1288,8 +1342,9 @@ function ns.NewBookPlate(parent)
 	local plate = CreateFrame("Frame", nil, parent) --[[@as StatsBookPlateView]]
 	plate.brass = CreateFrame("Frame", nil, plate) --[[@as StatsThreeSlice]]
 	plate.brass:SetPoint("TOPLEFT")
-	plate.label = ns.BookText(plate, ns.BookFonts().plate, LOOK.plateText)
-	plate.label:SetPoint("CENTER", 0, 1)
+	-- on the brass's own frame, which draws over the plate's: its words over its slices
+	plate.label = ns.BookText(plate.brass, ns.BookFonts().plate, LOOK.plateText)
+	plate.label:SetPoint("CENTER", plate, "CENTER", 0, 1)
 	function plate.SetPlate(self, text)
 		self.label:SetText(text)
 		local width = math.ceil(self.label:GetStringWidth()) + PLATE_ROOM

@@ -160,7 +160,8 @@ end
 ---@field label HuntsTrackerFont
 ---@field sub HuntsTrackerFont
 
-local GOLD, WHITE, GREY = tint("ffd100"), tint("ffffff"), tint("c8c0a8")
+-- The native look's inks; its grey a little lighter than the kit's, to read over bright ground.
+local GOLD, WHITE, GREY = tint("ffd100"), tint("ffffff"), tint("e4dcc6")
 local PAPER_INK, PAPER_SMALL = tint("2e1c0c"), tint("5a4028")
 
 --- The tracker's looks: "native" for No frame (the plain block, restyled in the kit's type), and the two frames for
@@ -305,7 +306,7 @@ end
 local function newShade(parent)
 	local shade = parent:CreateTexture(nil, "BACKGROUND")
 	shade:SetColorTexture(1, 1, 1, 1)
-	shade:SetGradient("HORIZONTAL", CreateColor(0, 0, 0, 0.45), CreateColor(0, 0, 0, 0))
+	shade:SetGradient("HORIZONTAL", CreateColor(0, 0, 0, 0.6), CreateColor(0, 0, 0, 0))
 	return shade
 end
 
@@ -381,8 +382,7 @@ function ns.NewTrackerBlock(parent)
 	more:Hide()
 	local empty = block:CreateFontString(nil, "OVERLAY")
 	empty:SetJustifyH("LEFT")
-	empty:SetText(ns.L.TRACKER_EMPTY)
-	empty:Hide()
+	empty:Hide() -- its words come with its look's font, at its draw
 	---@type HuntsTrackerView
 	return {
 		frame = block,
@@ -458,7 +458,9 @@ function ns.DrawTrackerBlock(view, look, content)
 			line.second:SetShown(hunt.second ~= nil)
 			line.second:ClearAllPoints()
 			line.second:SetPoint("TOPLEFT", x + 14, -look.second)
-			line.second:SetWidth(right - x - 14)
+			-- a long target line shrinks a little, then is cut short, within the block
+			local sub = look.sub
+			ns.FitText(line.second, sub[1], sub[2], right - x - 14, sub[2] - 2, sub[4], sub[3])
 			y = y + look.step
 		end
 	end
@@ -476,6 +478,7 @@ function ns.DrawTrackerBlock(view, look, content)
 	view.empty:SetShown(content.empty)
 	if content.empty then
 		setFont(view.empty, look.sub)
+		view.empty:SetText(ns.L.TRACKER_EMPTY)
 		view.empty:ClearAllPoints()
 		view.empty:SetPoint("TOPLEFT", x + 14, -(y + 2))
 		y = y + EXTRA_LINE

@@ -372,7 +372,7 @@ describe("the board's art kit", function()
 
 			ribbon:SetRibbon("Board", color, true)
 			assert.are.equal("Board", ribbon.label:GetText())
-			assert.are.same({ 104, 120 }, { ribbon.width, ribbon.height })
+			assert.are.same({ 104, 96 }, { ribbon.width, ribbon.height })
 			assert.are.equal(PARTS, ribbon.body.texture)
 			assert.are.same(
 				{ color[1] * 1.13, color[2] * 1.13, color[3] * 1.13 },
@@ -381,9 +381,10 @@ describe("the board's art kit", function()
 			assert.are.same({ unpack(ns.BOARD_LOOK.ribbonLabelOn) }, { unpack(ribbon.label.textColor, 1, 3) })
 
 			ribbon:SetRibbon("Round the Clock", ns.BoardRibbonColor(1), false)
-			assert.are.same({ 104, 104 }, { ribbon.width, ribbon.height })
-			-- its bottom 104 of 140 units: the top 36 units (72 texels) dropped, the swallowtail end kept
-			assert.are.equal((474 + 72) / 1024, ribbon.body.texCoord[3])
+			assert.are.same({ 104, 83 }, { ribbon.width, ribbon.height })
+			-- its bottom 83 of 140 units: the top 57 units (114 texels) dropped, the swallowtail end kept, not squashed
+			assert.are.equal((474 + 114) / 1024, ribbon.body.texCoord[3])
+			assert.are.equal(284 / 2 - 140 + 83, ribbon.body.height) -- the sprite's own scale: cut, never squashed
 			assert.are.equal((474 + 284) / 1024, ribbon.body.texCoord[4])
 			assert.are.same({ unpack(ns.BoardRibbonColor(1)) }, { unpack(ribbon.body.vertexColor, 1, 3) })
 			assert.is_nil(ribbon.stitch.vertexColor) -- the gold stitch keeps its own colour

@@ -517,7 +517,7 @@ describe("a place's page (stats.md › UI › Place spread)", function()
 			local drawn = {}
 			ns.RegisterPlaceEntry(function(frame, place)
 				drawn[#drawn + 1] = place
-				frame.words = frame.words or frame:CreateFontString()
+				frame.words = frame.words or frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 				frame.words:SetText("entry " .. place.item)
 				return 300
 			end)

@@ -336,3 +336,58 @@ end
 function ns.SetDotColor(dot, color)
 	dot.face:SetVertexColor(color[1], color[2], color[3])
 end
+
+-- The rounded corner's radius, in UI units, and the mask drawn on each corner: white, its alpha a quarter disc.
+local CORNER_RADIUS = 6
+local CORNER_MASKS = {
+	TOPLEFT = "InterfaceAddOnsPaglemedia\booksCornerTL",
+	TOPRIGHT = "InterfaceAddOnsPaglemedia\booksCornerTR",
+	BOTTOMLEFT = "InterfaceAddOnsPaglemedia\booksCornerBL",
+	BOTTOMRIGHT = "InterfaceAddOnsPaglemedia\booksCornerBR",
+}
+
+--- Rounds `texture`'s corners named in `corners` (e.g. { "TOPLEFT", "BOTTOMLEFT" }), a few units across: a small mask
+--- on each, clamped to white past its edge, so the rest of the texture shows as it is and the leather behind shows
+--- through the cut.
+---@param texture Texture
+---@param frame Frame the frame the masks are made on, which `texture` fills
+---@param corners string[]
+---@return MaskTexture[]
+function ns.RoundCorners(texture, frame, corners)
+	local masks = {}
+	for i, corner in ipairs(corners) do
+		local mask = frame:CreateMaskTexture()
+		mask:SetTexture(CORNER_MASKS[corner], "CLAMPTOWHITE", "CLAMPTOWHITE")
+		mask:SetSize(CORNER_RADIUS, CORNER_RADIUS)
+		mask:SetPoint(corner, texture, corner)
+		texture:AddMaskTexture(mask)
+		masks[i] = mask
+	end
+	return masks
+end
+
+--- Lays `text` in `face` at `size`, or a half point smaller at a time down to `floor`, until it fits `width`; past
+--- the floor the client cuts it short with an ellipsis; in `color` (a font object brings its own, so it is set again).
+--- Returns the size it took. As Core's ns.ShrinkToFit does for the announcements, here for the Module's own fonts.
+---@param text FontString
+---@param face StatsArtFace
+---@param size number
+---@param width number
+---@param floor number
+---@param shadow boolean?
+---@param color number[]?
+---@return number
+function ns.FitText(text, face, size, width, floor, shadow, color)
+	text:SetWidth(0) -- measured unbounded
+	local at = size
+	text:SetFontObject(ns.ArtFont(face, at, shadow))
+	while at > floor and text:GetStringWidth() > width do
+		at = math.max(floor, at - 0.5)
+		text:SetFontObject(ns.ArtFont(face, at, shadow))
+	end
+	text:SetWidth(width)
+	if color then
+		text:SetTextColor(color[1], color[2], color[3])
+	end
+	return at
+end

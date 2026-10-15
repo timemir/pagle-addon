@@ -18,6 +18,9 @@ local FRAME_NAME = "PagleHuntsBoard"
 -- the checkbox, and the leather below.
 local WIDTH, HEIGHT = 920, 600
 local SIDE, STRIP, FOOT = 18, 38, 16
+-- The strip's middle: halfway between the band's inner edge (the tiled leather starts 7 in) and the pages, where the
+-- crumbs, the clock and the checkbox sit with even room above and below, as the Stats book's crumbs and search do.
+local STRIP_MIDDLE = (7 + STRIP) / 2
 -- The pages share the width as the kit's do, the timeline's page wider (1.45 to 1).
 local LEFT_WIDTH = math.floor((WIDTH - 2 * SIDE) * 1.45 / 2.45 + 0.5)
 local RIGHT_WIDTH = WIDTH - 2 * SIDE - LEFT_WIDTH
@@ -29,6 +32,8 @@ local PADS = { left = { 22, 20, 36, 16 }, right = { 28, 20, 12, 16 } }
 local COMPLETED_WIDTH, CLOCK_WIDTH = 150, 280
 -- Where the set ribbons hang from under the leather's foot, from its left.
 local RIBBONS_LEFT = 176
+-- How far above the screen's centre the board opens: half the ribbons' hang under it.
+local RIBBONS_LIFT = 40
 
 --- The leather's anchors (HNT-R61), in drawing order: adapter/Timeline.lua fills the clock and the checkbox,
 --- adapter/Sets.lua the crumbs, the nameplate and the ribbons.
@@ -163,9 +168,15 @@ local function buildAnchors(frame, cover)
 	end
 	local strip = STRIP - 16
 	frame.anchors = {
-		crumbs = anchor(WIDTH - 2 * SIDE - COMPLETED_WIDTH - CLOCK_WIDTH, strip, "TOPLEFT", SIDE + 6, -8),
-		clock = anchor(CLOCK_WIDTH, strip, "TOPRIGHT", -(SIDE + COMPLETED_WIDTH), -8),
-		completed = anchor(COMPLETED_WIDTH, strip, "TOPRIGHT", -SIDE, -8),
+		crumbs = anchor(
+			WIDTH - 2 * SIDE - COMPLETED_WIDTH - CLOCK_WIDTH,
+			strip,
+			"TOPLEFT",
+			SIDE + 6,
+			-(STRIP_MIDDLE - strip / 2)
+		),
+		clock = anchor(CLOCK_WIDTH, strip, "TOPRIGHT", -(SIDE + COMPLETED_WIDTH), -(STRIP_MIDDLE - strip / 2)),
+		completed = anchor(COMPLETED_WIDTH, strip, "TOPRIGHT", -SIDE, -(STRIP_MIDDLE - strip / 2)),
 		nameplate = anchor(200, 32, "BOTTOMLEFT", -12, -14),
 		ribbons = anchor(
 			WIDTH - RIBBONS_LEFT,
@@ -191,6 +202,8 @@ local function build(board)
 	frame:SetSize(WIDTH, HEIGHT)
 	frame:SetFrameStrata("HIGH")
 	frame:SetClampedToScreen(true)
+	-- the ribbons hang under the leather: the clamp keeps them on screen too
+	frame:SetClampRectInsets(0, 0, 0, -(ns.BOARD_RIBBON.lengthChosen - ns.BOARD_RIBBON.tuck))
 	frame:EnableMouse(true)
 	frame:SetMovable(true)
 	frame:RegisterForDrag("LeftButton")
@@ -247,7 +260,7 @@ function Board:Open(place)
 	self.frame = frame
 	if not frame:IsShown() then
 		frame:ClearAllPoints()
-		frame:SetPoint("CENTER")
+		frame:SetPoint("CENTER", 0, RIBBONS_LIFT) -- up a little, so the ribbons hanging under it stay on screen
 		frame:Show()
 	end
 	if not self.told then

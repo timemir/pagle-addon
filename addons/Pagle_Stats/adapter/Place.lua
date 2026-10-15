@@ -250,6 +250,7 @@ local function drawLeft(content, place)
 	view.kicker:SetText(isZone and L.PLACE_ZONE_KICKER or ns.AreaName(zone))
 	put(view.kicker, 0)
 	view.title:SetText(ns.AreaName(area))
+	ns.BookBound(view.title, content:GetWidth() - view.here:GetStringWidth() - 10) -- "I'm here" after it
 	view.here:SetShown((isZone and conditions.zone or conditions.subzone) == area)
 	put(view.titleLine, KICKER)
 	local y = KICKER + TITLE

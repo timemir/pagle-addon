@@ -169,6 +169,8 @@ local function newRow(view)
 	row.note:SetPoint("TOPLEFT", 4, -4)
 	row.margin = ns.BoardText(row, fonts.margin, LOOK.red)
 	row.margin:SetPoint("TOPRIGHT", -MARGIN_INSET, -4)
+	row.margin:SetWidth(view.width - TRACK_X - TRACK_WIDTH - 4 - MARGIN_INSET) -- from the track's end to the edge
+	row.margin:SetWordWrap(false)
 	row.margin:SetJustifyH("RIGHT")
 	row:SetScript("OnClick", function(self)
 		clicked(view.place, self.huntID)
@@ -188,6 +190,7 @@ local function newHeading(view)
 	heading.label = ns.BoardText(heading, fonts.kicker, LOOK.group)
 	heading.label:SetPoint("TOPLEFT", 17, -(HEADING_GAP + 4))
 	heading.note = ns.BoardText(heading, fonts.note, LOOK.note)
+	heading.note:SetWordWrap(false)
 	heading.note:SetPoint("LEFT", heading.label, "RIGHT", 8, 0)
 	heading.count = ns.BoardText(heading, fonts.count, LOOK.count)
 	heading.count:SetPoint("TOPRIGHT", 0, -HEADING_GAP)
@@ -431,6 +434,10 @@ local function drawList(view, timeline)
 		heading.label:SetText(ns.BoardSmallCaps(group.name))
 		heading.note:SetText(group.note)
 		heading.count:SetText(tostring(group.count))
+		-- the note stops before the count (measured unbounded)
+		heading.note:SetWidth(0)
+		local room = view.width - 17 - heading.label:GetStringWidth() - 8 - heading.count:GetStringWidth() - 8
+		heading.note:SetWidth(math.max(1, math.min(heading.note:GetStringWidth() + 1, room)))
 		y = y + HEADING_GAP + HEADING_HEIGHT
 		for _, row in ipairs(group.rows) do
 			rowsUsed = rowsUsed + 1
