@@ -240,9 +240,10 @@ function Projections:begin(projection, target, force)
 	local rebuild = force or mustRebuild(self, def)
 	local from = rebuild and 0 or db.lastSeq
 	local timings = self.options.timings and self.options.timings()
-	local started = timings and self.options.clock()
+	local started = timings and self.options.clock() or 0
 	projection.updating = true
-	projection.run = {
+	---@type PagleProjectionRun
+	local run = {
 		mode = rebuild and "rebuild" or "replay",
 		target = target,
 		-- Never built, or the Module's DB lost (LOG-R76, LOG-R77). A rebuild cut short leaves this as it was.
@@ -253,8 +254,8 @@ function Projections:begin(projection, target, force)
 		phase = "apply",
 		liveTo = 0,
 	}
+	projection.run = run
 	if timings then
-		local run = projection.run
 		run.timings = timings
 		run.timing = {
 			name = projection.name,
@@ -272,7 +273,6 @@ function Projections:begin(projection, target, force)
 		self.chunked[#self.chunked + 1] = projection
 		self:schedule()
 	else
-		local run = projection.run
 		while projection.run == run and self:timedAdvance(projection) do
 		end
 	end

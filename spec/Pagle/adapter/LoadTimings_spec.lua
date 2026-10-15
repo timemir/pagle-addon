@@ -62,23 +62,26 @@ describe("load timings (#262)", function()
 			)
 		end)
 
-		it("marks Core's login steps in order: files, ADDON_LOADED, the log opened, login, entering world, idle", function()
-			local marks = timings.marks
-			local order = {}
-			for _, mark in ipairs(loaded.ns.LOAD_MARKS) do
-				order[#order + 1] = mark[1]
-				assert.is_number(marks[mark[1]], mark[1])
+		it(
+			"marks Core's login steps in order: files, ADDON_LOADED, the log opened, login, entering world, idle",
+			function()
+				local marks = timings.marks
+				local order = {}
+				for _, mark in ipairs(loaded.ns.LOAD_MARKS) do
+					order[#order + 1] = mark[1]
+					assert.is_number(marks[mark[1]])
+				end
+				assert.are.same(
+					{ "filesLoaded", "addonLoaded", "logOpened", "playerLogin", "enteringWorld", "idle" },
+					order
+				)
+				for i = 2, #order do
+					assert.is_true(marks[order[i]] >= marks[order[i - 1]])
+				end
+				assert.is_true(marks.logOpened > marks.addonLoaded)
+				assert.is_true(marks.idle > marks.enteringWorld)
 			end
-			assert.are.same(
-				{ "filesLoaded", "addonLoaded", "logOpened", "playerLogin", "enteringWorld", "idle" },
-				order
-			)
-			for i = 2, #order do
-				assert.is_true(marks[order[i]] >= marks[order[i - 1]], order[i])
-			end
-			assert.is_true(marks.logOpened > marks.addonLoaded)
-			assert.is_true(marks.idle > marks.enteringWorld)
-		end)
+		)
 
 		it(
 			"times each projection's rebuild, Core's own first: the entries applied, the frames, the longest frame",
@@ -90,10 +93,11 @@ describe("load timings (#262)", function()
 					assert.are.equal(601, timing.applied)
 					assert.is_true(timing.started >= timings.marks.enteringWorld)
 					assert.is_true(timing.finished > timing.started)
-					assert.is_true(timing.frames > 1, timing.name .. " ran in chunks across frames")
+					-- It ran in chunks across frames (LOG-R71).
+					assert.is_true(timing.frames > 1)
 					assert.is_true(timing.longest > 0 and timing.longest <= timing.finished - timing.started)
 					-- Each frame's chunk stops within the budget (LOG-R71), so no projection's share of one is over it.
-					assert.is_true(timing.longest <= timings.budget, timing.name)
+					assert.is_true(timing.longest <= timings.budget)
 				end
 				assert.are.same({ "fieldReport", "wallet", "Ledger" }, names)
 			end
@@ -120,7 +124,10 @@ describe("load timings (#262)", function()
 		local loaded = logIn(devCore(history(10), true, { global = { probe = { time = 1, checks = { [19] = {} } } } }))
 		local global = loaded.env.PagleDB.global
 		local timings = global.probe.timings
-		assert.are.same({ time = 1, checks = { [19] = {} } }, { time = global.probe.time, checks = global.probe.checks })
+		assert.are.same(
+			{ time = 1, checks = { [19] = {} } },
+			{ time = global.probe.time, checks = global.probe.checks }
+		)
 
 		loaded.env.SlashCmdList.PAGLE("dev probe")
 
