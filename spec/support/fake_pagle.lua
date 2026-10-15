@@ -701,17 +701,27 @@ part(function(fake, Pagle, ns)
 	end
 end)
 
--- Prestige and purchase entries (LOG-R38, LOG-R39), on Core's wiring over fake.catchLog, for the logged-in character
--- at the fake's server time: M:RecordPrestige appends a real P1, applies it live and fires Prestige, as
--- fake.prestige() does without a handle. A purchase has no Pagle or Module call; fake.ns.RecordPurchase is Core's own.
+-- Prestige and purchase entries and Module records (LOG-R38–R40), on Core's wiring over fake.catchLog, for the
+-- logged-in character at the fake's server time: M:RecordPrestige appends a real P1, applies it live and fires
+-- Prestige, as fake.prestige() does without a handle. M:AppendRecord appends a real A1 and applies it live to its
+-- Module's projections, which alone get it back through M:IterateCatches. A purchase has no Pagle or Module call;
+-- fake.ns.RecordPurchase is Core's own.
 part(function(fake, _, ns, host)
 	ns.WireLogEntries(host)
-	-- The record it returns is read-only, as every record a Module gets here (CORE-R18).
+	-- The records they return are read-only, as every record a Module gets here (CORE-R18). An error Core raises at
+	-- the Module's call is raised again there, past the wrapper, as on the client.
 	local ModuleHandle = ns.ModuleHandle
-	local recordPrestige = ModuleHandle.RecordPrestige
-	function ModuleHandle:RecordPrestige()
-		return readOnly(recordPrestige(self))
+	local function readOnlyAtCaller(method)
+		return function(...)
+			local ok, result = pcall(method, ...)
+			if not ok then
+				error((tostring(result):gsub("^[^:\n]+:%d+: ", "")), 2)
+			end
+			return readOnly(result)
+		end
 	end
+	ModuleHandle.RecordPrestige = readOnlyAtCaller(ModuleHandle.RecordPrestige)
+	ModuleHandle.AppendRecord = readOnlyAtCaller(ModuleHandle.AppendRecord)
 	function fake.prestige()
 		return readOnly(ns.RecordPrestige())
 	end
@@ -1115,8 +1125,8 @@ function newFakePagle()
 		fingerprint = function()
 			return Pagle.CONTENT_FINGERPRINT
 		end,
-		iterate = function(afterSeq)
-			local records = fake.catchLog:Iterate(afterSeq)
+		iterate = function(afterSeq, module)
+			local records = fake.catchLog:Iterate(afterSeq, module)
 			return function()
 				return readOnly(records())
 			end

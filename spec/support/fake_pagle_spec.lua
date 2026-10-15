@@ -1373,6 +1373,116 @@ describe("FakePagle", function()
 		end)
 	end)
 
+	describe("Module records", function()
+		-- `name` registered on `fake`, its projection over `db` noting each apply ("<seq> <kind> <mode>", a Module
+		-- record's kind as its recordKind) and each done ("done") in `seen`. `onApply(record, mode)` runs after the note.
+		local function module(fake, name, db, onApply)
+			local seen = {}
+			local M = fake.Pagle.RegisterModule({ name = name, title = name, order = 10 })
+			M:NewProjection({
+				db = db,
+				rulesVersion = 1,
+				reset = function()
+					return {}
+				end,
+				apply = function(_, record, mode)
+					seen[#seen + 1] = ("%d %s %s"):format(record.seq, record.recordKind or record.kind, mode)
+					if onApply then
+						onApply(record, mode)
+					end
+				end,
+				done = function()
+					seen[#seen + 1] = "done"
+				end,
+			})
+			return M, seen
+		end
+
+		it(
+			"append a real A1 for M:AppendRecord, read-only, live to its own Module only, every other projection"
+				.. " still reaching the log's end (LOG-R40, LOG-R41, LOG-R73, CORE-R18)",
+			function()
+				local fake = newFakePagle()
+				local ledgerDb = {}
+				local board, boardSeen = module(fake, "TackleBoard", {})
+				local _, ledgerSeen = module(fake, "Ledger", ledgerDb)
+				fake.login()
+				fake.enterWorld()
+
+				local record = board:AppendRecord("issue", "n|haul;30")
+
+				assert.are.same({ "A1|1|1791731700|0|TackleBoard|issue|n|haul;30" }, fake.catchLog.data.entries)
+				assert.are.same({ "done", "1 issue live" }, boardSeen)
+				assert.are.same({ "done" }, ledgerSeen)
+				assert.are.equal(1, ledgerDb.lastSeq)
+				assert.are.same(
+					{ 1, PLAYER_GUID .. "-1791731700-0", "module", "TackleBoard", "issue", "n|haul;30" },
+					{ record.seq, record.id, record.kind, record.module, record.recordKind, record.payload }
+				)
+				assert.has_error(function()
+					record.payload = "x"
+				end)
+			end
+		)
+
+		it("replay through M:IterateCatches to the Module that wrote them only (LOG-R41, LOG-R42)", function()
+			local fake = newFakePagle()
+			local board = module(fake, "TackleBoard", {})
+			local ledger = module(fake, "Ledger", {})
+			fake.login()
+			fake.enterWorld()
+			board:AppendRecord("start", "")
+			ledger:AppendRecord("note", "x")
+
+			local function walk(iterate)
+				local seqs = {}
+				for record in iterate do
+					seqs[#seqs + 1] = record.seq .. " " .. (record.module or record.kind)
+				end
+				return seqs
+			end
+			assert.are.same({ "1 TackleBoard" }, walk(board:IterateCatches(0)))
+			assert.are.same({ "2 Ledger" }, walk(ledger:IterateCatches(0)))
+			assert.are.same({}, walk(fake.Pagle.IterateCatches(0)))
+		end)
+
+		it("from login code reach the projection as live, never replay (LOG-R1, LOG-R74)", function()
+			local fake = newFakePagle()
+			local board, seen = module(fake, "TackleBoard", {})
+			fake.login()
+
+			board:AppendRecord("start", "")
+			fake.enterWorld()
+
+			assert.are.same({ "done", "1 start live" }, seen)
+		end)
+
+		it(
+			"raise an error at the caller, appending nothing, for a bad payload or from a rebuild apply (LOG-R40)",
+			function()
+				local fake = newFakePagle()
+				fake.catchLog.data.characters[1] = { guid = PLAYER_GUID }
+				fake.catchLog:Append({ kind = "prestige", char = 1, time = 1791731000, rank = 1 })
+				local raised = {}
+				local board
+				board = module(fake, "TackleBoard", {}, function(_, mode)
+					raised[#raised + 1] = mode .. " " .. tostring(not pcall(board.AppendRecord, board, "day", ""))
+				end)
+				fake.login()
+				fake.enterWorld()
+
+				local ok, err = pcall(function()
+					board:AppendRecord("day", ("x"):rep(201))
+				end)
+
+				assert.is_false(ok)
+				assert.matches("fake_pagle_spec.lua:%d+:", tostring(err))
+				assert.are.same({ "rebuild true" }, raised)
+				assert.are.equal(1, #fake.catchLog.data.entries)
+			end
+		)
+	end)
+
 	describe("the Angler", function()
 		it("has the logged-in character current from login, before ModulesChanged (LOG-R1, LOG-R27)", function()
 			local fake = newFakePagle()

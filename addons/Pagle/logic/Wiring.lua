@@ -16,7 +16,8 @@ local ns = select(2, ...)
 ---@field fire fun(event: PagleEvent, ...: any)  -- fires a Core event on the bus (CORE-R22)
 ---@field listen fun(owner: string, event: PagleEvent, fn: fun(event: string, ...: any)) -- Pagle.RegisterCallback
 ---@field fingerprint fun(): string?             -- Pagle.CONTENT_FINGERPRINT
----@field iterate fun(afterSeq: integer?): fun(): PagleRecord? -- the log's records after a seq (Pagle.IterateCatches)
+---@field iterate fun(afterSeq: integer?, module: string?): fun(): PagleRecord? -- the log's records after a seq: what
+--- Pagle.IterateCatches yields, plus the Module records of `module` if given (M:IterateCatches, LOG-R41, LOG-R42)
 ---@field serverTime fun(): integer              -- GetServerTime()
 ---@field after fun(seconds: number, fn: fun())  -- runs fn `seconds` from now (C_Timer.After)
 ---@field nextFrame fun(step: fun())             -- runs step on the next frame
@@ -47,7 +48,7 @@ local ns = select(2, ...)
 ---@field tour PagleTour Core's `/pagle dev tour` (ns.WireDev, CORE-R66).
 
 --- Core's projection machinery (LOG-R70–R78) as ns.projections, and `M:NewProjection` and `M:IterateCatches` on every
---- Module handle. Until Module records (M7), a Module's records are the ones Pagle.IterateCatches yields.
+--- Module handle. A Module's records are the ones Pagle.IterateCatches yields plus its own Module records (LOG-R42).
 ---@param host PagleHost
 function ns.WireProjections(host)
 	ns.projections = ns.NewProjections({
@@ -332,16 +333,17 @@ function ns.WireWallet(host)
 	end
 end
 
---- Prestige and purchase entries (LOG-R38, LOG-R39) as Core appends them: `M:RecordPrestige()` on every Module
---- handle, and Core's own `ns.RecordPrestige()` and `ns.RecordPurchase(goodID, price)`. Each appends for the
---- logged-in character at the server time and hands the record to the projections live (LOG-R73). A purchase has no
---- Pagle or Module call: the Curio Shop's buy flow is its only caller.
+--- Prestige and purchase entries and Module records (LOG-R38–R40) as Core appends them: `M:RecordPrestige()` and
+--- `M:AppendRecord(kind, payload)` on every Module handle, and Core's own `ns.RecordPrestige()` and
+--- `ns.RecordPurchase(goodID, price)`. Each appends for the logged-in character at the server time and hands the
+--- record to the projections live (LOG-R73). A purchase has no Pagle or Module call: the Curio Shop's buy flow is its
+--- only caller.
 ---@param host PagleHost
 function ns.WireLogEntries(host)
 	-- Appends `record` (its kind and fields) for the logged-in character now, and hands it over live. Raises an error
 	-- at the caller of `what`, appending nothing, before login or from a replay, rebuild or done: an entry appended
 	-- while a projection updates would be appended again at its next rebuild, and the log is never rewritten
-	-- (LOG-R14, LOG-R75).
+	-- (LOG-R14, LOG-R40, LOG-R75).
 	---@param record table
 	---@param what string the call, for its error
 	---@return PagleRecord
@@ -392,6 +394,31 @@ function ns.WireLogEntries(host)
 	function ModuleHandle:RecordPrestige()
 		host.registry:ModuleCalling(self, "RecordPrestige", "")
 		return ns.RecordPrestige()
+	end
+
+	--- Appends a Module record (`A1`, LOG-R40, ADR 0008) of the Module's own `kind` ([%w_.]+) with `payload` (a
+	--- string with no newline, at most 200 bytes, which Core never reads), for the logged-in character now, and
+	--- returns it. Its Module's projections get it as live (LOG-R73, LOG-R74): at once when up to date, after the
+	--- current apply returns when called from one, or behind the catch-up or rebuild in progress. Only this Module's
+	--- `M:IterateCatches` and projections ever see it (LOG-R41). Raises an error at the caller, appending nothing, for
+	--- a bad kind or payload, before PLAYER_LOGIN, or from a replay or rebuild apply or a done, so a rebuild never
+	--- writes a record twice.
+	---@param kind string
+	---@param payload string
+	---@return PagleModuleRecord
+	function ModuleHandle:AppendRecord(kind, payload)
+		local module = host.registry:ModuleCalling(self, "AppendRecord", "kind, payload")
+		local problem = ns.ModuleRecordProblem(kind, payload)
+		if problem then
+			error(problem, 2)
+		end
+		-- Not a tail call, so append's error is this method's caller's.
+		local record = append(
+			{ kind = "module", module = module.def.name, recordKind = kind, payload = payload },
+			"M:AppendRecord"
+		)
+		---@cast record PagleModuleRecord
+		return record
 	end
 end
 

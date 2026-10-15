@@ -346,6 +346,8 @@ Pagle.RegisterModule{
 | `M:IterateCatches`, `M:NewProjection` | TKB-R81 |
 | `M:AppendRecord` | TKB-R80 |
 | `Pagle.RegisterCallback` (for `ConditionsChanged`, `AppearanceChanged`), `Pagle.RegisterEvent` (for `GET_ITEM_INFO_RECEIVED`) | TKB-R36, TKB-R121, TKB-R124 |
+| events `SessionStarted`, `SessionEnded` | TKB-R104 (the displayed progress of a session-bound goal) |
+| event `ModulesChanged` | TKB-R120 (the tracker redraws in its equipped frame) |
 | `Pagle.GetZones`, `GetArea`, `GetZoneCatches`, `GetItem`, `GetAngler` | generation (TKB-R30–R33), progress (TKB-R42) |
 | `Pagle.SIZE_BANDS`, Catch `size` | TKB-R36, TKB-R42 |
 | Cast `session` tag (LOG-R98), `Pagle.SESSION_RULES_VERSION`, `Pagle.GetSession` | TKB-R41, TKB-R81, TKB-R104 |
@@ -356,7 +358,7 @@ Pagle.RegisterModule{
 | `M:RegisterTracker` | TKB-R120 |
 | `M:AddSetting` | [Settings](#settings) |
 
-WoW APIs for its own logic and presentation: `C_DateAndTime.GetSecondsUntilDailyReset`, `GetSecondsUntilWeeklyReset`, `GetCurrentCalendarTime`, `GetGameTime`, `GetServerTime`, `C_Timer.After`, `C_Map.GetAreaInfo`, `C_Map.GetMapInfo`, `C_Item.GetItemNameByID`, `GetCurrentRegion`, `StaticPopup_Show`, `BreakUpLargeNumbers`.
+WoW APIs for its own logic and presentation: `C_DateAndTime.GetSecondsUntilDailyReset`, `GetSecondsUntilWeeklyReset`, `GetCurrentCalendarTime`, `GetGameTime`, `GetServerTime`, `issecretvalue` (the realm clock while it is secret), `C_Timer.After`, `C_Timer.NewTicker`, `C_Map.GetAreaInfo`, `C_Map.GetMapInfo`, `C_Item.GetItemNameByID`, `C_Item.RequestLoadItemDataByID`, `GetCurrentRegion`, `bit.bxor` (the Fly Box's hash, TKB-R62), `CreateFrame` (with the `UIPanelCloseButton` template), `CreateFont`, `UIParent`, `UISpecialFrames`, `GameTooltip`, `StaticPopupDialogs`, `StaticPopup_Show`, `BreakUpLargeNumbers`.
 
 ### Coins paid
 

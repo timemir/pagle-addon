@@ -1,0 +1,147 @@
+# The Tackle Board's lore (DATA-R100, TKB-R130), emitted into addons/Pagle_TackleBoard/data/Lore.lua as ns.L entries
+# (DATA-R104): the names of the Fly Box's patterns ([fly.<patternID>], TKB-R62), the text of the board's titles
+# ([boardtitle.<titleID>], TKB-R61, TKB-R73) and the names and descriptions of its goods ([boardgood."<goodID>"],
+# TKB-R125), every ID manifest.toml lists under [tackleboard.*] (DATA-R106). The Ledger owns title and Core owns good
+# (DATA-R102), so the board's kinds have their own names. Lore changes no count (DATA-R109).
+# The M7 batch, drafted from VOICE.md, came with the Tackle Board's lore check (DATA-R111, #237), for the dev's review
+# (#244). The comment after each table says what it is, and the working name it replaces, for review only.
+#
+# A fly is named in its Notice's or Expedition's toast ("Tied for your Fly Box: {fly}") and in the Fly Box drawer, so
+# a name is in-world tackle, the kind an angler ties and swaps: never a real-world brand or a joke. No name holds a
+# whole area name from the game (DATA-R3), so the working names' zones gave way to what their land is like. A title
+# reads bare after "Title: " and on the Campfire card, so it is an epithet with no "the" in front, like the Ledger's.
+# A frame's description is about how it looks around the tracker's lines, never the shop, the board or the addon.
+
+# The Fly Box, in pattern order: 24 common patterns, tied by Notices.
+
+[fly.murloc_nymph] # common 1
+name = "Murloc Nymph"
+
+[fly.westfall_wheatwing] # common 2, was "Westfall Wheatwing"
+name = "Harvest Wheatwing"
+
+[fly.goldshire_gnat] # common 3, was "Goldshire Gnat"
+name = "Tirisfal Gnat"
+
+[fly.duskwood_shadow] # common 4, was "Duskwood Shadow"
+name = "Gloaming Shadow"
+
+[fly.redridge_ember] # common 5
+name = "Redridge Ember"
+
+[fly.barrens_dun] # common 6
+name = "Barrens Dun"
+
+[fly.mudsnout_woolly] # common 7
+name = "Mudsnout Woolly"
+
+[fly.gnomish_whirligig] # common 8
+name = "Gnomish Whirligig"
+
+[fly.tarnished_spoon] # common 9
+name = "Tarnished Spoon"
+
+[fly.ashenvale_olive] # common 10, was "Ashenvale Olive"
+name = "Old-Growth Olive"
+
+[fly.kodo_hair_caddis] # common 11, was "Kodo-hair Caddis"
+name = "Kodo-Hair Caddis"
+
+[fly.elwynn_royal] # common 12
+name = "Elwynn Royal"
+
+[fly.swamp_midge] # common 13
+name = "Swamp Midge"
+
+[fly.raptor_quill] # common 14
+name = "Raptor Quill"
+
+[fly.silverpine_spinner] # common 15
+name = "Silverpine Spinner"
+
+[fly.lakeshire_coachman] # common 16, was "Lakeshire Coachman"
+name = "Caravan Coachman"
+
+[fly.bloodsail_streamer] # common 17
+name = "Bloodsail Streamer"
+
+[fly.booty_bay_bucktail] # common 18, was "Booty Bay Bucktail"
+name = "Buccaneer Bucktail"
+
+[fly.desolace_drifter] # common 19, was "Desolace Drifter"
+name = "Bone-Dry Drifter"
+
+[fly.grimtotem_hackle] # common 20
+name = "Grimtotem Hackle"
+
+[fly.needles_ant] # common 21
+name = "Needles Ant"
+
+[fly.feralas_fern] # common 22, was "Feralas Fern"
+name = "Thicket Fern"
+
+[fly.tanaris_sandfly] # common 23, was "Tanaris Sandfly"
+name = "Steamwheedle Sandfly"
+
+[fly.darkshore_dun] # common 24, was "Darkshore Dun"
+name = "Sea-Mist Dun"
+
+# Then 6 rare patterns, tied by Expeditions.
+
+[fly.nats_golden_doctor] # rare 1
+name = "Nat's Golden Doctor"
+
+[fly.kraken_ink_streamer] # rare 2
+name = "Kraken Ink Streamer"
+
+[fly.phoenix_hackle] # rare 3
+name = "Phoenix Hackle"
+
+[fly.moonwell_silverwing] # rare 4, was "Moonwell Silverwing"
+name = "Moonlight Silverwing"
+
+[fly.thunderhead_tiger] # rare 5
+name = "Thunderhead Tiger"
+
+[fly.deepwater_duchess] # rare 6
+name = "Deepwater Duchess"
+
+# The titles: three for goals done, four for the Campfire's milestones, one for a full Fly Box.
+
+[boardtitle.tally_25] # 25 goals done, was "the Dependable"
+text = "Odd-Jobber"
+
+[boardtitle.tally_100] # 100 goals done, was "the Tireless"
+text = "Steady Hand"
+
+[boardtitle.tally_500] # 500 goals done, was "Pillar of the Board"
+text = "Pillar of the Pier"
+
+[boardtitle.campfire_7] # a Campfire of 7 days
+text = "Kindler"
+
+[boardtitle.campfire_30] # a Campfire of 30 days
+text = "Firekeeper"
+
+[boardtitle.campfire_100] # a Campfire of 100 days
+text = "Hearthwarden"
+
+[boardtitle.campfire_365] # a Campfire of 365 days
+text = "Keeper of the Long Fire"
+
+[boardtitle.flybox] # every Fly Box pattern tied, was "the Fly-Tier"
+text = "Fly-Tier"
+
+# The tracker frames, the default and then tiers 1 and 2.
+
+[boardgood."tackleboard.trackerframe.none"] # Tracker frame, the default, was "No frame"
+name = "No Frame"
+description = "The list on its own, with nothing pinned behind it. It never warps in the damp."
+
+[boardgood."tackleboard.trackerframe.corkboard"] # Tracker frame, tier 1
+name = "Corkboard"
+description = "A slab of cork, pocked with pinholes from jobs long finished. There is always room for one more."
+
+[boardgood."tackleboard.trackerframe.driftwood"] # Tracker frame, tier 2
+name = "Driftwood Plank"
+description = "A sea-grey plank, worn smooth by the tide and nailed up by the dock. It has travelled further than most boats."

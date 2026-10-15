@@ -320,8 +320,9 @@ def _catalogue_id(id_: str) -> int | None:
 # Tunables › Lore limits (DATA-R107), in Unicode code points. By field name, in whatever kind: "title" here is a
 # Legend's title field (DATA-R103), and "name" every kind's name field.
 FIELD_LIMITS = {"riddle": 80, "blurb": 200, "plaque": 100, "name": 28, "title": 32}
-# By (kind, field), for one kind's field only: the text of a title, the Ledger's Module-defined title kind (DATA-R106).
-KIND_FIELD_LIMITS = {("title", "text"): 32}
+# By (kind, field), for one kind's field only: the text of a title, the Ledger's Module-defined title kind and the
+# Tackle Board's boardtitle (DATA-R106, TKB-R130).
+KIND_FIELD_LIMITS = {("title", "text"): 32, ("boardtitle", "text"): 32}
 
 
 def limit(kind: str, name: str) -> int | None:

@@ -12,6 +12,8 @@ local QUALITY_OR_CLASS = "HNT-R12: Hunts never reads item quality or class from 
 local FORBIDDEN = {
 	{ "%f[%w_]PagleLog%f[^%w_]", "ADR 0001: Hunts reads Catches only through its projection" },
 	{ "%f[%w_]PagleDB%f[^%w_]", "ADR 0001: Hunts never reads Core's SavedVariables" },
+	-- Its state is rebuilt from Catches alone; only the Tackle Board appends Module records (ADR 0008, LOG-R41).
+	{ "%f[%w_]AppendRecord%f[^%w_]", "ADR 0008: Hunts appends no Module records" },
 	-- C_Item.GetItemInfo and GetItemInfoInstant, global or not, return the quality, class and subclass.
 	{ "%f[%w_]GetItemInfo", QUALITY_OR_CLASS },
 	{ "%f[%w_]GetItemQualityByID%f[^%w_]", QUALITY_OR_CLASS },
@@ -71,6 +73,7 @@ describe("Hunts' boundary (ADR 0001, HNT-R12)", function()
 			{ 'C_AddOns.IsAddOnLoaded("Pagle_Stats")', "ADR 0001: Hunts calls no other Module" },
 			{ 'local qol = _G["Pagle_QoL"]', "ADR 0001: Hunts calls no other Module" },
 			{ "Pagle_TackleBoard_Open()", "ADR 0001: Hunts calls no other Module" },
+			{ 'M:AppendRecord("completed", "trout")', "ADR 0008: Hunts appends no Module records" },
 			{ "local _, _, quality = C_Item.GetItemInfo(itemID)", QUALITY_OR_CLASS },
 			{ "local _, _, _, _, _, classID = GetItemInfoInstant(itemID)", QUALITY_OR_CLASS },
 			{ "local quality = C_Item.GetItemQualityByID(itemID)", QUALITY_OR_CLASS },

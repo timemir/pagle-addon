@@ -243,13 +243,14 @@ stds.wow_variables = {
 		-- Interface/AddOns/Blizzard_StaticPopup/StaticPopup.lua: `StaticPopupDialogs = {}; -- Definitions`. QoL adds
 		-- its two dialogs to it: the conflict popup and its Reload now popup (QOL-R81, QOL-R83); the Ledger adds its
 		-- Prestige confirm (LED-R33); Core adds the Curio Shop's Buy popup, one confirmation per purchase (SHOP-R13),
-		-- which closes while restricted (SHOP-R41).
+		-- which closes while restricted (SHOP-R41); and the Tackle Board adds its reroll confirm (TKB-R56).
 		StaticPopupDialogs = {
 			fields = {
 				PAGLE_QOL_CONFLICT = { read_only = false },
 				PAGLE_QOL_RELOAD = { read_only = false },
 				PAGLE_LEDGER_PRESTIGE = { read_only = false },
 				PAGLE_CURIO_BUY = { read_only = false },
+				PAGLE_TACKLEBOARD_REROLL = { read_only = false },
 			},
 		},
 		-- A FrameXML colour the dump doesn't list (QOL-R75: a Nudge's colour). No probe has drawn a Nudge yet; Track Q's

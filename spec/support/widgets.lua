@@ -217,8 +217,9 @@ function widgets.newWidget(kind, parent)
 	function widget:SetAlpha(alpha)
 		self.alpha = alpha
 	end
+	-- A region's opacity (1 until set, as the client).
 	function widget:GetAlpha()
-		return self.alpha
+		return self.alpha or 1
 	end
 	function widget:SetTextColor(r, g, b, a)
 		self.textColor = { r, g, b, a }
@@ -288,6 +289,14 @@ function widgets.newWidget(kind, parent)
 	end
 	function widget:SetTexCoord(left, right, top, bottom)
 		self.texCoord = { left, right, top, bottom }
+	end
+	-- Its frame level: one above its parent's (0 for a frame with none) until SetFrameLevel sets it, as the client
+	-- stacks children over their parent.
+	function widget:SetFrameLevel(level)
+		self.frameLevel = level
+	end
+	function widget:GetFrameLevel()
+		return self.frameLevel or (parent and parent:GetFrameLevel() + 1 or 0)
 	end
 	-- A button's text width, 6 pixels a character as GetStringWidth; and whether its highlight is locked on.
 	function widget:GetTextWidth()
