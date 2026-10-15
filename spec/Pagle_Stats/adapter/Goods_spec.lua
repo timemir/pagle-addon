@@ -87,9 +87,14 @@ describe("Stats' goods", function()
 	end)
 
 	it("are named and described from their statsgood lore keys (STA-R88, SHOP-R26)", function()
-		-- Fixture lore, as the M6 batch's data/Lore.lua adds it to ns.L (#210).
+		-- Fixture lore in place of the shipped M6 batch's (#210), as data/Lore.lua adds it to ns.L.
 		local _, fake = loggedIn({
 			prepare = function(loaded)
+				for key in pairs(loaded.ns.L) do
+					if type(key) == "string" and key:find("^statsgood%.") then
+						loaded.ns.L[key] = nil
+					end
+				end
 				loaded.ns.L["statsgood.stats.trackerframe.logbook.name"] = "Logbook"
 				loaded.ns.L["statsgood.stats.trackerframe.logbook.description"] = "Ruled like a ledger."
 				loaded.ns.L["statsgood.stats.trackerframe.brass.name"] = "Brass"
@@ -101,6 +106,19 @@ describe("Stats' goods", function()
 		assert.are.same({ "Logbook", "Ruled like a ledger." }, { logbook.name, logbook.description })
 		assert.are.same({ "Brass" }, { brass.name, brass.description })
 		assert.are.equal("stats.trackerframe.none", fake.Pagle.GetGood("stats.trackerframe.none").name)
+	end)
+
+	it("are named and described by the shipped M6 lore batch, never by their IDs (STA-R88, DATA-R111)", function()
+		local loaded, fake = loggedIn()
+
+		for _, row in ipairs(GOODS) do
+			local good = fake.Pagle.GetGood(row[1])
+			assert.are.same({
+				loaded.ns.L["statsgood." .. row[1] .. ".name"],
+				loaded.ns.L["statsgood." .. row[1] .. ".description"],
+			}, { good.name, good.description })
+			assert.are_not.equal(row[1], good.name)
+		end
 	end)
 
 	it("show each good's own icon as its swatch in the shop's list (STA-R88, SHOP-R26)", function()
