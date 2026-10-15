@@ -235,18 +235,19 @@ describe("the Ledger's live moments", function()
 
 			local record = assert(fake.playCast("caught", loot(unpack(FOUR))))
 
+			-- The level banner, then the four New Species as the Cast's catch Announcement (ANN-R11).
 			local announcements = shown(fake)
-			assert.are.equal(1, #announcements)
+			assert.are.equal(2, #announcements)
 			local announcement = announcements[1]
-			assert.are.same({ "levelUp Angler Level 3 / +2 levels 40" }, { momentsOf(announcement)[1] })
-			assert.are.equal(5, #announcement.moments) -- and four New Species
+			assert.are.same({ "levelUp Angler Level 3 / +2 levels 40" }, momentsOf(announcement))
+			assert.are.equal(4, #announcements[2].moments)
 			local headline = announcement.headline
 			assert.are.same(
 				{ "banner", 100, "Level 3", record.id },
 				{ headline.rung, headline.order, headline.stamp, headline.cast }
 			)
 			assert.are.equal("string", type(headline.icon))
-			assert.are.equal(80, announcement.coins)
+			assert.are.same({ 40, 40 }, { announcement.coins, announcements[2].coins })
 			assert.are.same({ { module = "Ledger", total = 0 }, { module = "Ledger", total = 80 } }, fake.coinReports)
 		end
 	)
@@ -358,16 +359,18 @@ describe("the Ledger's live moments", function()
 		local fake, loaded = session(history)
 		local lastSaved = copy(loaded.env.PagleLedgerDB)
 		fake.playCast("caught", loot(MACKEREL))
-		local celebrated = momentsOf(shown(fake)[1])
+		local announcements = shown(fake)
+		local celebrated = { momentsOf(announcements[1]), momentsOf(announcements[2]) }
 		assert.are.same({
-			"levelUp Angler Level 2 / nil 20",
-			"newSpecies New Species / Raw Spotted Yellowtail · Typical · 9.5 in 10",
+			{ "levelUp Angler Level 2 / nil 20" },
+			{ "newSpecies New Species / Raw Spotted Yellowtail · Typical · 9.5 in 10" },
 		}, celebrated)
 
 		-- The crash: neither that Cast nor the celebrated set's growth was saved.
 		local after = session(history, lastSaved)
 		after.playCast("caught", loot(MACKEREL))
+		local again = shown(after)
 
-		assert.are.same(celebrated, momentsOf(shown(after)[1]))
+		assert.are.same(celebrated, { momentsOf(again[1]), momentsOf(again[2]) })
 	end)
 end)

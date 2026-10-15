@@ -153,7 +153,7 @@ _Avoid_: Skill Milestone (which is about fishing skill), catch achievement
 ### Feedback
 
 **Announcement**:
-Pagle telling the player, in the moment, about something they just earned. One Cast produces at most one Announcement; every moment it earned rides on it as a stamp. By weight it is a nod, a toast, a banner (level and rank news) or a splash (a Legend).
+Pagle telling the player, in the moment, about something they just earned. One Cast produces at most two Announcements, shown at the same time: a big one for its banners and splash, and a catch one for its toasts and nods; the other moments on each side ride on it as stamps. By weight it is a nod, a toast, a banner (level and rank news) or a splash (a Legend).
 _Avoid_: notification, alert, popup
 
 **Nod**:

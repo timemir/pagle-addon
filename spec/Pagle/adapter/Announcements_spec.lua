@@ -95,7 +95,7 @@ describe("Announcement frames", function()
 	)
 
 	it(
-		"show a banner in the centre for 4 s, then the toasts that waited, the next reading +1 more (ANN-R20)",
+		"show a banner in the centre for 4 s while the toasts keep their turn, the next reading +1 more (ANN-R20)",
 		function()
 			local loaded, M = loadCore()
 			raise(
@@ -106,20 +106,43 @@ describe("Announcement frames", function()
 				moment("toast", "Toast 3"),
 				moment("toast", "Toast 4")
 			)
+			loaded.client.advance(1)
 			raise(loaded, M, moment("banner", "Level 12", { text = "Angler Level" }))
 
-			loaded.client.advance(6)
-			local banner = frameOf(loaded, "banner")
-			assert.are.same({ true, false }, { banner.shown, showing(loaded, "toast") })
+			local banner, toast = frameOf(loaded, "banner"), frameOf(loaded, "toast")
+			assert.are.same({ true, true }, { banner.shown, toast.shown })
 			assert.are.same({ "Level 12", "Angler Level" }, { banner.title:GetText(), banner.text:GetText() })
 			loaded.client.advance(4)
-
-			local toast = frameOf(loaded, "toast")
 			assert.are.same({ false, true }, { banner.shown, toast.shown })
+			loaded.client.advance(1)
+
 			assert.are.same(
 				{ "Toast 2", true, "+1 more" },
 				{ toast.title:GetText(), toast.more.shown, toast.more:GetText() }
 			)
+		end
+	)
+
+	it(
+		"show a Cast's level-up banner and its New Species toast at the same time, each with its own stamps and"
+			.. " Coins, playing only the banner's sound (ANN-R11, ANN-R20, ANN-R23, ANN-R24)",
+		function()
+			local loaded, M = loadCore()
+
+			raise(
+				loaded,
+				M,
+				moment("toast", "New Species", { text = "Nightfin Snapper", cast = CAST, coins = 10 }),
+				moment("banner", "Level 12", { text = "Angler Level", cast = CAST, coins = 20 }),
+				moment("nod", "New in this zone", { cast = CAST, coins = 2 })
+			)
+
+			local banner, toast = frameOf(loaded, "banner"), frameOf(loaded, "toast")
+			assert.are.same({ true, true }, { banner.shown, toast.shown })
+			assert.are.same({ "Level 12", "New Species" }, { banner.title:GetText(), toast.title:GetText() })
+			assert.are.same({ "+20 " .. COIN }, stampsOf(banner))
+			assert.are.same({ "New in this zone", "+12 " .. COIN }, stampsOf(toast))
+			assert.are.same({ DRIFTWOOD .. "banner.ogg SFX" }, loaded.client.sounds)
 		end
 	)
 

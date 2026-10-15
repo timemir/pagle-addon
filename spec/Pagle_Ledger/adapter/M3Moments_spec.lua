@@ -183,6 +183,20 @@ local function byKind(announcement)
 	return kinds
 end
 
+-- Each moment of a Cast's Announcements by its kind: its big one and its catch one (ANN-R11). M4's completion titles
+-- ride a banner of their own (LED-R97), so a curio or a weight that completes a collection comes second.
+---@param announcements PagleAnnouncement[]
+---@return table<string, PagleMoment>
+local function castKinds(announcements)
+	local kinds = {}
+	for _, announcement in ipairs(announcements) do
+		for kind, moment in pairs(byKind(announcement)) do
+			kinds[kind] = moment
+		end
+	end
+	return kinds
+end
+
 describe("the Ledger's M3 live moments", function()
 	it(
 		"raise New Species and Zone rank: Visitor in one Announcement for a first Catch in a new zone, 10 + 2 Coins (LED-R96, LED-R97)",
@@ -222,10 +236,12 @@ describe("the Ledger's M3 live moments", function()
 
 			local record = assert(fake.playCast("caught", loot(LIGHT)))
 
+			-- The banner, then the Cast's catch Announcement of its own (ANN-R11).
 			local announcements = shown(fake)
-			assert.are.equal(1, #announcements)
+			assert.are.equal(2, #announcements)
 			local moments = byKind(announcements[1])
 			assert.is_nil(moments.zoneRank)
+			assert.is_nil(byKind(announcements[2]).zoneRank)
 			local master = moments.zoneMaster
 			assert.are.same(
 				-- M4: the Zone Master's title rides in it (LED-R97).
@@ -247,7 +263,7 @@ describe("the Ledger's M3 live moments", function()
 
 			local record = assert(fake.playCast("caught", loot(HEAVY)))
 
-			local moments = byKind(shown(fake)[1])
+			local moments = castKinds(shown(fake))
 			local weight = moments.trophyWeight
 			assert.are.same({ "toast", 110, "Trophy weight", "60 Pound Snapper", "Trophy", 5, HEAVY, record.id }, {
 				weight.rung,
@@ -291,7 +307,7 @@ describe("the Ledger's M3 live moments", function()
 			local fake, loaded = session()
 			local record = assert(fake.playCast("caught", loot(JUNK)))
 
-			local curio = byKind(shown(fake)[1]).newCurio
+			local curio = castKinds(shown(fake)).newCurio
 			assert.are.same(
 				{ "toast.low", 110, "New curio", "Soggy Boot", "New!", 5, JUNK, record.id },
 				{ curio.rung, curio.order, curio.title, curio.text, curio.stamp, curio.coins, curio.icon, curio.cast }

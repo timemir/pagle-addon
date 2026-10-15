@@ -6,7 +6,7 @@ Part of [Core](README.md). Core presents every Announcement (ADR 0007): Modules 
 
 ## Purpose and boundary
 
-**Owns:** the moment API, the rung ladder, merging one Cast's moments into one Announcement, the display queue, the Interruption budget, the combat hold, Cozy mode, expiry, the toast, Nod, banner and splash frames, the record ruler, Announcement sounds and sound sets, toast styles, the Session summary, and the Write-up card.
+**Owns:** the moment API, the rung ladder, merging a Cast's moments into its Announcements, the display queue, the Interruption budget, the combat hold, Cozy mode, expiry, the toast, Nod, banner and splash frames, the record ruler, Announcement sounds and sound sets, toast styles, the Session summary, and the Write-up card.
 
 **Doesn't own:** deciding what is worth a moment or which rung it gets (each Module), QoL's Nudges (QoL draws them itself; they aren't Announcements), or any Module's own bar, tracker or view.
 
@@ -19,12 +19,16 @@ Part of [Core](README.md). Core presents every Announcement (ADR 0007): Modules 
 - **ANN-R3** Moments are display data. Core never tells one Module about another's moments (ADR 0001).
 - **ANN-R4** Moments may be raised only while handling a `"live"` entry (LOG-R73), from a Core event handler, or from a Module's own timer or UI. Core drops a moment raised while it is applying a `"replay"` or `"rebuild"` entry, and reports it once per Module per login through `geterrorhandler()`. In a projection's `done`, only `summaryOnly` moments and Write-ups are allowed (LOG-R76); others are dropped the same way.
 
-### One Announcement per Cast
+### A Cast's Announcements
 
-- **ANN-R10** Moments with a `cast` (a Cast's entry ID) are merged by that ID. Core collects them and flushes each Cast's moments together on the next frame after the last one arrived, but while any projection is updating (LOG-R74) it holds every Cast's moments and flushes them, one Announcement per Cast in Cast order, on the frame after the last projection finishes. Live entries reach every projection and the Cast events in one frame (LOG-R9), so a Cast's moments merge whatever order the Modules raised them in.
-- **ANN-R11** A Cast's moments become **one Announcement**. Its **headline** is the highest-ranked moment (ANN-R2). Every other moment rides on it as a **stamp** in the corner: the moment's `stamp`, or its `title` if it has none. At most 4 stamps show, highest ranked first; identical stamp texts merge into one; any beyond 4 show as "+N". The Coins stamp (ANN-R23) is separate and never counts toward the 4. The Announcement's weight is the headline's rung:
-  - `splash`: a full-screen splash (a Legend), carrying every other moment as stamps
-  - `banner`: a centre banner (level-up, Zone Master, Prestige ready, Prestige, Catch Milestone, set titles, Tackle Board milestones)
+- **ANN-R10** Moments with a `cast` (a Cast's entry ID) are merged by that ID. Core collects them and flushes each Cast's moments together on the next frame after the last one arrived, but while any projection is updating (LOG-R74) it holds every Cast's moments and flushes them, Cast by Cast in Cast order, on the frame after the last projection finishes. Live entries reach every projection and the Cast events in one frame (LOG-R9), so a Cast's moments merge whatever order the Modules raised them in.
+- **ANN-R11** A Cast's moments become at most **two Announcements**, split by lane (ANN-R20):
+  - **big:** its `banner` and `splash` moments
+  - **catch:** its `toast.*` and `nod` moments
+
+  A Cast with moments on one side only makes one Announcement. Core hands the big one to the display first, so the two appear together when their lanes are free (a level-up banner and a "New Species" toast). In each, the **headline** is its highest-ranked moment (ANN-R2). Every other moment of that side rides on it as a **stamp** in the corner: the moment's `stamp`, or its `title` if it has none. At most 4 stamps show, highest ranked first; identical stamp texts merge into one; any beyond 4 show as "+N". The Coins stamp (ANN-R23) is separate and never counts toward the 4. The Announcement's weight is the headline's rung:
+  - `splash`: a full-screen splash (a Legend), carrying the Cast's other banner and splash moments as stamps
+  - `banner`: a centre banner (level-up, Zone Master, Prestige ready, Prestige, Catch Milestone, set titles, Tackle Board milestones), carrying the Cast's other banners as stamps
   - `toast.*`: a toast above the action bar
   - `nod`: one silent line
 - **ANN-R12** A moment without a `cast` (a Skill Milestone from a Skill Reading, a Hunt window opening, a login Nod) is an Announcement of its own, flushed on the next frame.
@@ -32,24 +36,24 @@ Part of [Core](README.md). Core presents every Announcement (ADR 0007): Modules 
 
 ### The display queue
 
-- **ANN-R20** Core shows Announcements through three lanes. The toast and big lanes share **one on-screen slot**: only one toast, banner or splash is on screen at a time.
+- **ANN-R20** Core shows Announcements through three lanes, each with its own place on screen: a banner or splash in the centre, a toast above the action bar, a Nod under it. A banner and a toast can be on screen together. A splash is full-screen, so it holds the toast and Nod lanes: it waits until no toast is on screen, and while it waits or shows, no toast starts and no Nod shows.
 
   | Lane | Shows | Duration | Waiting | When another arrives |
   |---|---|---|---|---|
-  | Toast | `toast.*` headlines | 6 s | up to 2, first in first out | beyond 2 waiting: it isn't shown, and the overflow count grows; the next toast to appear shows "+N more" and the count resets |
-  | Big | `banner` and `splash` headlines | banner 4 s; splash until clicked or 8 s | unlimited, splashes before banners, otherwise in order raised | waits for the slot to free, then goes before any waiting toast |
-  | Nod | `nod` headlines | 3 s | none | if the shared slot or a Nod is showing, it isn't shown |
+  | Toast | `toast.*` headlines | 6 s | up to 2, first in first out | waits while a toast is on screen, or a splash shows or waits; beyond 2 waiting: it isn't shown, and the overflow count grows; the next toast to appear shows "+N more" and the count resets |
+  | Big | `banner` and `splash` headlines | banner 4 s; splash until clicked or 8 s | unlimited, splashes before banners, otherwise in order raised | waits for the banner or splash on screen to end; a splash also waits for the toast on screen to end, then goes before any waiting toast |
+  | Nod | `nod` headlines | 3 s | none | if a toast, a splash or a Nod is showing, it isn't shown |
 
   Whatever isn't shown still goes to the Session summary (ANN-R25).
-- **ANN-R21** **Cards** (the Session summary and the Write-up) show only when the toast and big lanes are empty. They don't count as interruptions and play no sound. At login, held Announcements show first, then the Write-up, then "Your last session".
+- **ANN-R21** **Cards** (the Session summary and the Write-up) show only when the toast and big lanes are empty: nothing on screen in either and nothing waiting. They don't count as interruptions and play no sound. At login, held Announcements show first, then the Write-up, then "Your last session".
 - **ANN-R22** A moment may carry a **record ruler** (`ruler = { old, new, unit, label }`). On a toast headline, the ruler fills past the old record's mark while the number counts up, shows the "+x" margin, then the "New record" stamp lands. On a Nod headline, a compact ruler with the margin shows instead. A ruler shows only for the headline; a record riding as a stamp shows only its stamp. `label` says whose number it is ("Pagle size" for a Simulated Size, "weight" for a real trophy weight). For a Simulated Size, `unit` is `"length"` and `old` and `new` are millimetres: Core shows them and the margin with `Pagle.FormatLength` in the Angler's length unit ([catch-log.md](catch-log.md#simulated-size), LOG-R69), and a margin that rounds to zero in that unit shows as "+<0.1 cm" or "+<0.1 in". Any other `unit` is shown as given ("lb"). A Module never leaves the ruler off a size record.
-- **ANN-R23** A moment may carry `coins = N`. Core sums the `coins` of every moment in an Announcement into one "+N" Pagle Coins stamp, always shown (outside the 4-stamp limit and the merging of identical stamps), Nods included. Coins never make an Announcement of their own, and a purchase makes none ([wallet-and-shop.md](wallet-and-shop.md)).
-- **ANN-R24** Ordinary display picks the headline's sound (ANN-R71) when the Announcement appears on screen, never when it is queued.
+- **ANN-R23** A moment may carry `coins = N`. Core sums the `coins` of the moments in each Announcement into its own "+N" Pagle Coins stamp, always shown (outside the 4-stamp limit and the merging of identical stamps), Nods included. A Cast's two Announcements each sum only their own moments, so no Coins show twice. Coins never make an Announcement of their own, and a purchase makes none ([wallet-and-shop.md](wallet-and-shop.md)).
+- **ANN-R24** Ordinary display picks the headline's sound (ANN-R71) when the Announcement appears on screen, never when it is queued. When a toast appears in the same frame as a banner or splash that played its sound (a Cast's two Announcements, or the release after combat, ANN-R36), only the higher rung's sound plays: the toast is silent, and the next toast plays the variant this one would have.
 - **ANN-R25** Every moment also goes to the Session summary (ANN-R50), whether or not it popped up.
 
 ### Interruption budget
 
-- **ANN-R30** An **interruption** is an Announcement shown as a toast, banner or splash. Nods and cards aren't interruptions.
+- **ANN-R30** An **interruption** is an Announcement shown as a toast, banner or splash. Each one shown counts on its own: a Cast's banner and its toast are 2. Nods and cards aren't interruptions.
 - **ANN-R31** With the budget on (the default), when an Announcement with a `toast.low` headline reaches the front of the toast lane, Core counts the interruptions shown in the last 5 minutes. If there are already 4, it steps down to a Nod (with a compact ruler if it has one) and follows the Nod lane's rules. Every other rung always gets through and always counts.
 - **ANN-R32** With the budget off, nothing steps down. The count and window are player settings.
 
@@ -58,8 +62,8 @@ Part of [Core](README.md). Core presents every Announcement (ADR 0007): Modules 
 - **ANN-R35** While `Pagle.IsRestricted()` is true, Core hides whatever is on screen and holds it, together with everything waiting in the lanes and every new Announcement and card, sounds included. Announcements raised during the 2 s wait after combat (ANN-R36) are held too.
 - **ANN-R36** 2 s after `RestrictionChanged(false)` (restarting the wait if a new restriction starts first), Core shows what it held, dropping expired moments (ANN-R45):
   1. each held splash and banner, as itself, through the big lane (splashes first, then in the order raised)
-  2. one "While you were fighting" toast listing every held toast headline, if there is at least one. It plays the toast sound once, counts as one interruption, and never steps down.
-  3. held cards (ANN-R21)
+  2. one "While you were fighting" toast listing every held toast headline, if there is at least one, through the toast lane at the same time as the first held banner (a held splash still holds it back, ANN-R20), so a held Cast's big and catch Announcements show together, as they would have live. It plays the toast sound once unless it appears with a banner (ANN-R24), counts as one interruption, and never steps down.
+  3. held cards (ANN-R21), once both lanes are empty
 
   Held Nods don't show again; they are already in the Session summary.
 - **ANN-R37** Held Announcements count toward the budget only when they actually show.
@@ -104,7 +108,7 @@ Part of [Core](README.md). Core presents every Announcement (ADR 0007): Modules 
 ### Sounds
 
 - **ANN-R70** Core ships and plays every Announcement sound. Each rung has one sound in the equipped **sound set**: `toast.low`, `toast` and `toast.high` play the toast sound, `banner` the banner sound, `splash` the **Legend sting**, and `nod` nothing.
-- **ANN-R71** An Announcement plays its headline's sound once, when it appears (ANN-R24). A headline moment with `sound = false` makes it silent.
+- **ANN-R71** An Announcement plays its headline's sound once, when it appears (ANN-R24), unless it is a toast appearing with a banner or splash that played its own (ANN-R24). A headline moment with `sound = false` makes it silent.
 - **ANN-R72** Sound sets:
   - **Driftwood** (default, free): toast = two rising wooden notes, rotating through 3 variants in order so back-to-back toasts never sound the same; banner = a wooden run up the scale with a bell on top.
   - **Gilded** (a Curio Shop good from M4): toast = two bell notes, one variant; banner = three rising bells.
