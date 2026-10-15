@@ -189,6 +189,25 @@ ns.L = {
 	PLACE_GOT_AWAY_LABEL = "Got away",
 	PLACE_GOT_AWAY = "%s (%d%%)",
 	PLACE_PICK = "Pick a fish on the left for its odds and its Dry spell.",
+	-- The right page with an item chosen: its entry (adapter/Entry.lua, logic/Entry.lua). The kicker ("Your odds ·
+	-- Auberdine", then ", by night" from WINDOW_NAMES).
+	ENTRY_KICKER = "Your odds · %s",
+	ENTRY_KICKER_WINDOW = "%s, %s",
+	-- The watch toggle at the top right (STA-R61), after a star drawn as a texture.
+	ENTRY_WATCH = "watch",
+	ENTRY_WATCHING = "watching",
+	-- The Dry spell's heading and its small note; then the luck ruler's ticks, left to right (logic/Entry.lua's
+	-- ns.LUCK_RULER_TICKS), and its mark. Its bands are named by BANDS, and its fixed line is NOTHING_IS_OWED.
+	ENTRY_DRY = "Dry spell",
+	ENTRY_DRY_NOTE = "counted like the odds above",
+	RULER_TICKS = { "all", "1 in 10", "1 in 100", "1 in 1k", "1 in 10k", "1 in 100k", "1 in 1M" },
+	RULER_ME = "me",
+	-- *In my records* (its First caught and Last caught lines are ITEM_FIRST_CAUGHT, ITEM_LAST_CAUGHT and ITEM_NEVER),
+	-- then the link to the item page, before a pointing hand drawn as a texture.
+	ENTRY_RECORDS = "In my records",
+	ENTRY_CAUGHT_HERE = "Caught in this count",
+	ENTRY_CAUGHT_ANYWHERE = "Caught anywhere",
+	ENTRY_ITEM_PAGE = "Every water it bites in",
 	-- The home spread (stats.md › UI › Home spread). The left page: its kicker, title and line, a zone's tile ("1,840
 	-- Casts · 6 waters", the Casts and waters counts by ns.Count), and the line with no Casts (STA-R97).
 	HOME_KICKER = "The waters",

@@ -29,12 +29,14 @@ logic\Goods.lua
 logic\Item.lua
 logic\Search.lua
 logic\Watches.lua
+logic\Entry.lua
 adapter\Text.lua
 adapter\BookWidgets.lua
 adapter\TrackerBlock.lua
 adapter\Goods.lua
 adapter\Book.lua
 adapter\Place.lua
+adapter\Entry.lua
 adapter\Home.lua
 adapter\Lifetime.lua
 adapter\Sessions.lua

@@ -13,7 +13,7 @@ local ns = select(2, ...)
 -- with the Ledger's Fish Journal (ADR 0001), though some textures and fonts are the same client files. Every texture
 -- sits on a solid tint or carries a vertex tint, so a texture the client lacks leaves the tint showing.
 --
--- The page tickets add their own makers here (the luck ruler, #214).
+-- The page tickets add their own makers here (the luck ruler, #214: ns.NewBookRuler).
 
 -- A tint from its hex code, as the prototype's CSS writes it: { r, g, b }, 0 to 1.
 ---@param hex string "RRGGBB"
@@ -380,6 +380,106 @@ function ns.NewBookInkBar(parent, width, height)
 		self.value = fill
 	end
 	return bar
+end
+
+--- The luck ruler (stats.md › UI › Place spread; #214): where my wait sits among anglers with my odds, never a bar
+--- filling toward "due". A horizontal log scale of `P` from 1 at the left ("all") to 10⁻⁶ at the right ("1 in 1M"),
+--- ticked at each power of ten with its label above; the unlucky and very unlucky ranges as two faint red washes on it,
+--- the three bands named underneath; a red "me" mark at the reading's `P` (ns.RulerPosition, clamped at both ends);
+--- then the fixed line "Every Cast is its own roll; nothing is owed." (STA-R58). Drawn in solid tints (SetColorTexture)
+--- and the book's fonts, no texture file. Its width is the scale's: its labels at the ends reach past it by half their
+--- width, so a page sets it in from both sides.
+---@class StatsBookRulerView: Frame
+---@field rule Texture            -- the scale's base line
+---@field ticks Texture[]         -- left to right, one per ns.LUCK_RULER_TICKS
+---@field tickLabels FontString[]
+---@field washes Texture[]        -- unlucky, very unlucky
+---@field bandLabels FontString[] -- normal, unlucky, very unlucky
+---@field mark Texture            -- the red "me" mark
+---@field me FontString
+---@field owed FontString
+---@field position number         -- where the mark is, 0 (left) to 1 (right)
+---@field SetRuler fun(self: StatsBookRulerView, P: number)
+
+-- The ruler's measures down from its top: the mark's top, the tick labels' top, the washes' top, the ticks' top, the
+-- base line, the band labels' top, the fixed line's top, and its whole height.
+local RULER_MARK, RULER_TICK_LABEL, RULER_WASH, RULER_TICK, RULER_BASE = 24, 32, 40, 48, 56
+local RULER_BANDS, RULER_OWED, RULER_HEIGHT = 61, 80, 96
+-- The washes' opacity: unlucky fainter than very unlucky (variant D's rgba(154,42,26,.08) and .18).
+local RULER_WASH_ALPHA = { 0.08, 0.18 }
+
+---@param parent Frame
+---@param width number the scale's width
+---@return StatsBookRulerView
+function ns.NewBookRuler(parent, width)
+	local ruler = CreateFrame("Frame", nil, parent) --[[@as StatsBookRulerView]]
+	ruler:SetSize(width, RULER_HEIGHT)
+	local faces, L = ns.BookFonts(), ns.L
+	-- Shows `region` centred on `x` across the scale, `y` down.
+	local function centre(region, x, y)
+		region:ClearAllPoints()
+		region:SetPoint("TOP", ruler, "TOPLEFT", x, -y)
+	end
+	local function solid(color, alpha, layer)
+		local texture = ruler:CreateTexture(nil, layer or "ARTWORK")
+		texture:SetColorTexture(color[1], color[2], color[3], alpha or 1)
+		return texture
+	end
+	-- The bands' edges along the scale: the left end, unlucky's, very unlucky's and the right end.
+	local edges = { 0, ns.RulerPosition(ns.UNLUCKY_BELOW), ns.RulerPosition(ns.VERY_UNLUCKY_BELOW), 1 }
+
+	ruler.washes = {}
+	for i = 1, 2 do
+		local from, to = edges[i + 1] * width, edges[i + 2] * width
+		local wash = solid(LOOK.red, RULER_WASH_ALPHA[i], "BACKGROUND")
+		wash:SetPoint("TOPLEFT", from, -RULER_WASH)
+		wash:SetSize(to - from, RULER_BASE - RULER_WASH)
+		ruler.washes[i] = wash
+	end
+	ruler.rule = solid(LOOK.ledgerRule)
+	ruler.rule:SetPoint("TOPLEFT", 0, -RULER_BASE)
+	ruler.rule:SetSize(width, 2)
+	ruler.ticks, ruler.tickLabels = {}, {}
+	for i, P in ipairs(ns.LUCK_RULER_TICKS) do
+		local x = ns.RulerPosition(P) * width
+		local tick = solid(LOOK.note)
+		tick:SetSize(1, RULER_BASE - RULER_TICK)
+		centre(tick, x, RULER_TICK)
+		local label = ns.BookText(ruler, faces.note, LOOK.note)
+		label:SetJustifyH("CENTER")
+		label:SetText(L.RULER_TICKS[i])
+		centre(label, x, RULER_TICK_LABEL)
+		ruler.ticks[i], ruler.tickLabels[i] = tick, label
+	end
+	ruler.bandLabels = {}
+	---@type StatsBand[]
+	local bands = { "normal", "unlucky", "veryUnlucky" }
+	for i, band in ipairs(bands) do
+		local label = ns.BookText(ruler, faces.note, LOOK.note)
+		label:SetJustifyH("CENTER")
+		label:SetText(ns.BandWord(band))
+		label:SetPoint("TOPLEFT", edges[i] * width, -RULER_BANDS)
+		label:SetWidth((edges[i + 1] - edges[i]) * width)
+		ruler.bandLabels[i] = label
+	end
+	ruler.mark = solid(LOOK.red, 1, "OVERLAY")
+	ruler.mark:SetSize(2, RULER_BASE - RULER_MARK)
+	ruler.me = ns.BookText(ruler, faces.hand, LOOK.red)
+	ruler.me:SetJustifyH("CENTER")
+	ruler.me:SetText(L.RULER_ME)
+	ruler.me:SetPoint("BOTTOM", ruler.mark, "TOP", 0, 1)
+	ruler.owed = ns.BookText(ruler, faces.note, LOOK.note)
+	ruler.owed:SetPoint("TOPLEFT", 0, -RULER_OWED)
+	ruler.owed:SetWidth(width)
+	ruler.owed:SetWordWrap(true)
+	ruler.owed:SetText(L.NOTHING_IS_OWED)
+	ruler.position = 0
+	function ruler.SetRuler(self, P)
+		self.position = ns.RulerPosition(P)
+		centre(self.mark, self.position * width, RULER_MARK)
+	end
+	ruler:SetRuler(1)
+	return ruler
 end
 
 --- A small disc in a tint: the live line's "●".
