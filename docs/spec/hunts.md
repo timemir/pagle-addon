@@ -29,7 +29,7 @@ Terms are used as `CONTEXT.md` defines them. "The Hunt list" is `ns.huntList`, w
 - the typed Cast records with `conditions` and per-item `size` (LOG-R65)
 - the catalogue: `Pagle.GetItem`, `GetArea`, `GetZones`, `GetZoneOf`, `GetZoneCatches` (with each catch entry's `window`, LOG-R55), `GetWindowSpec`
 - conditions and the Angler: `MatchesConditions`, `NextWindow`, `GetConditions`, `GetAngler`, `SIZE_BANDS`
-- events through `Pagle.RegisterCallback`: `ConditionsChanged`, `SkillChanged`, `RestrictionChanged`, `AppearanceChanged`; and `Pagle.IsRestricted`
+- events through `Pagle.RegisterCallback`: `ConditionsChanged`, `SkillChanged`, `RestrictionChanged`, `AppearanceChanged`, `ModulesChanged`; game events through `Pagle.RegisterEvent` and `Pagle.UnregisterEvent` (`PLAYER_ENTERING_WORLD`, `CALENDAR_UPDATE_EVENT_LIST`); and `Pagle.IsRestricted`
 - moments: `M:RaiseMoment`, `M:RaiseWriteUp`, `M:SetSummaryLine`
 - the wallet: `M:ReportCoinsEarned`, `M:RegisterSlot`, `M:RegisterGood`, `Pagle.GetEquipped`
 - surfaces: `M:RegisterTracker`, `M:AddSetting`
@@ -395,7 +395,9 @@ Seal and ladder dates are the stored realm `date`, never a conversion through to
 
 **Core API used:** listed under Purpose and boundary.
 
-**Events consumed:** `ConditionsChanged`, `SkillChanged`, `RestrictionChanged` (HNT-R42, HNT-R43), `AppearanceChanged` (HNT-R70, HNT-R79).
+**Events consumed:** `ConditionsChanged`, `SkillChanged`, `RestrictionChanged` (HNT-R42, HNT-R43), `AppearanceChanged` (HNT-R70, HNT-R79), `ModulesChanged` (the equipped cover and tracker frame are Core's by then, SHOP-R33); and, through `Pagle.RegisterEvent`, the first `PLAYER_ENTERING_WORLD` (HNT-R42, HNT-R53) and `CALENDAR_UPDATE_EVENT_LIST` (HNT-R53).
+
+WoW APIs for its own presentation: `C_Calendar.OpenCalendar`, `C_Calendar.GetMonthInfo`, `C_Calendar.GetNumDayEvents`, `C_Calendar.GetDayEvent` and `C_DateAndTime.GetCurrentCalendarTime` (event names, HNT-R53), `C_UnitAuras.GetPlayerAuraBySpellID` with `GetTime` (the camp bar's expiry, read for display only, HNT-R63; ADR 0001's live game state for a Module's own presentation), `C_Item.GetItemNameByID`, `C_Item.GetItemIconByID` and `Item:CreateFromItemID` (HNT-R54, HNT-R55), `C_Map.GetAreaInfo` (HNT-R53), `C_Spell.GetSpellName` (HNT-R52, HNT-R53), `ITEM_QUALITY_COLORS` (HNT-R55), `issecretvalue`, `GetServerTime`, `C_Timer` (HNT-R42), `BreakUpLargeNumbers` (HNT-R111), `GameTooltip`, `UISpecialFrames` (Esc, HNT-R60), `CreateFrame` and `CreateFont`.
 
 **Moments raised:** HNT-R86 and HNT-R88. These match the Hunts rows of Core's rung table (announcements.md): completion and further tier `toast.high`, set title `banner`, window opened `nod` with `expiresAt`.
 
