@@ -221,7 +221,7 @@ local function rightPage(context)
 	}
 	right[#right + 1] = {
 		kind = "leader",
-		text = L.HOME_LEGENDS,
+		text = L.LEGENDS_TITLE,
 		value = countText(context.formatNumber, completion.legends),
 		place = ns.JournalPlace.legends(),
 	}

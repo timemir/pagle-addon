@@ -31,7 +31,7 @@ end
 ---@return string?
 local function titleLine(context, itemID)
 	local title = legendLore(context, itemID, "title")
-	return title and ns.L.LEGENDS_TITLE_LINE:format(title)
+	return title and ns.L.TITLE_LINE:format(title)
 end
 
 -- A first Catch as "{date}, {zone}, {character}" (LED-R147), the zone left out for zone 0 (LED-R6).
@@ -84,7 +84,7 @@ local function legendPage(context, itemID)
 	if not entry then
 		---@type LedgerBlock[]
 		local blocks = {
-			{ kind = "kicker", text = L.LEGENDS_KICKER },
+			{ kind = "kicker", text = L.LEGEND_TITLE },
 			{ kind = "icon", icon = PLAIN_FISH, look = "silhouette", large = true },
 			{ kind = "title", text = L.LEGENDS_UNWRITTEN_TITLE },
 		}
@@ -96,7 +96,7 @@ local function legendPage(context, itemID)
 	end
 	---@type LedgerBlock[]
 	local blocks = {
-		{ kind = "kicker", text = L.LEGENDS_KICKER },
+		{ kind = "kicker", text = L.LEGEND_TITLE },
 		{ kind = "icon", icon = itemID, look = "sepia", large = true },
 		{ kind = "title", text = context.text:Item(itemID) },
 		{ kind = "text", hand = true, text = firstCatch(context, entry) },
