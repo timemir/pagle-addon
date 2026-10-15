@@ -27,7 +27,7 @@ local LOOK, TEXTURES = ns.BOARD_LOOK, ns.BOARD_TEXTURES
 ---@type table<string, TackleTrackerFrameLook>
 ns.TRACKER_FRAMES = {
 	-- Tracker K2's `.fr-cork`: the board's cork (#a7773f with darker flecks) in a 3 px #5a3a1a wooden border, its words
-	-- in dark ink: near-black goals, a deep red count, brown small print.
+	-- in dark ink: near-black goals, a deep red count, brown small print, and its `.here` green for "Complete".
 	["tackleboard.trackerframe.corkboard"] = {
 		base = LOOK.cork,
 		texture = TEXTURES.fleck,
@@ -43,6 +43,7 @@ ns.TRACKER_FRAMES = {
 			count = tint("6a1a0a"),
 			where = tint("3a2814"),
 			more = tint("3a2814"),
+			complete = tint("1a5a1a"),
 		},
 	},
 	-- Tracker K2's `.fr-plank`: a weathered plank (#7d6244 with #6a5238 grain) in a 2 px #3a2a18 border; the words keep
