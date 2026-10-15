@@ -81,4 +81,27 @@ ns.L = {
 	-- Counts (ns.Plural).
 	CATCHES = { one = "{n} Catch", other = "{n} Catches" },
 	COINS = { one = "{n} Coin", other = "{n} Coins" },
+
+	-- The pins (TKB-R44, TKB-R55, TKB-R102, TKB-R105; logic/Pins.lua). Plain ASCII only: the client's fonts lack
+	-- many symbols (#248).
+	-- A pinned goal: its handwritten progress over its need (TKB-R104), its pay, "I'm here", a stranded goal's mark,
+	-- the button and the stamp.
+	PROGRESS = "{n} of {need}",
+	PROGRESS_SESSION = "{n} of {need} this Session",
+	PAYS = { one = "pays {n} Coin", other = "pays {n} Coins" },
+	IM_HERE = "I'm here",
+	NO_LONGER_CATCHABLE = "no longer catchable",
+	TAKE_IT_DOWN = "take it down",
+	REPOSTED = "RE-POSTED",
+	-- Its hover, under the posted time (POSTED).
+	ONLY_SINCE = "Only my Catches since then count",
+	ONLY_SINCE_SESSION = "Only my Catches since then count, all within one Session",
+	-- Empty pins (TKB-R105): {time} is the countdown to the daily reset, {weekday} the weekly reset's realm weekday.
+	EMPTY_NOTICE = "A fresh Notice at reset (in {time})",
+	EMPTY_NOTICE_LATER = "More Notices at later resets",
+	EMPTY_EXPEDITION = "Next Expedition at the weekly reset ({weekday})",
+	EMPTY_EXPEDITION_LATER = "Another at the weekly reset after",
+	-- The overflow strip (TKB-R101): a goal's chip, its kind and text, and the last chip when more wait.
+	OVERFLOW_CHIP = "{kind}: {text}",
+	OVERFLOW_MORE = "+{n} more waiting for a pin",
 }

@@ -30,7 +30,34 @@ describe("the board's art kit", function()
 			paper = "Interface\\AchievementFrame\\UI-Achievement-Parchment-Horizontal",
 			disc = "Interface\\CharacterFrame\\TempPortraitAlphaMask",
 			hatch = "Interface\\RaidFrame\\Shield-Overlay",
+			tick = "Interface\\Buttons\\UI-CheckBox-Check",
+			box = "Interface\\Buttons\\UI-CheckBox-Up",
 		}, ns.BOARD_TEXTURES)
+	end)
+
+	it("outlines an empty pin in dashes with a lone tack and its words by hand (TKB-R105)", function()
+		local ns, parent = kit()
+
+		local pin = ns.NewBoardEmptyPin(parent, 150, 96)
+		pin:SetEmpty("A fresh Notice at reset (in 13h)")
+
+		assert.are.same({ 150, 96 }, { pin.width, pin.height })
+		-- 10-pixel steps (a 6-pixel dash and its gap): 15 along each long side, 9 along each short one.
+		assert.are.equal(48, #pin.dashes)
+		assert.are.same(rgba(ns.BOARD_LOOK.corkFleck, 0.35), pin.dashes[1].color)
+		assert.are.equal(pin, pin.tack:GetParent())
+		assert.are.equal("A fresh Notice at reset (in 13h)", pin.label:GetText())
+		assert.are.equal(ns.BoardFonts().hand, pin.label.fontObject)
+	end)
+
+	it("rings a highlighted pin in brass, hidden until shown (TKB-R109)", function()
+		local ns, parent = kit()
+
+		local ring = ns.NewBoardHighlight(parent)
+
+		assert.is_false(ring:IsShown())
+		assert.are.equal(4, #ring.edges)
+		assert.are.same(rgba(ns.BOARD_LOOK.tackShine), ring.edges[1].color)
 	end)
 
 	it("sets printed text in the client's serif face and notes in its handwriting face (TKB-R100)", function()
