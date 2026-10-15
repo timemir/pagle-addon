@@ -2,7 +2,7 @@
 -- the climb's step costs and carried XP, applying a Prestige entry, Prestige ready, the emblems and when Prestige is
 -- allowed. Hand-made records with no catalogue: every Catch here is Uncharted (LED-R5), worth its Catch XP only.
 
-local T0 = 1791731000
+local T0 = SERVER_TIME - 700
 local ELWYNN = 12
 
 -- What reaching level 60 costs at prestige rank 0: the steps from 1 to 59, at 1,000 + 80 × L each (LED-R30).
@@ -17,23 +17,12 @@ local function newLog()
 
 	local function header(time)
 		seq = seq + 1
-		return seq, "Player-4618-0A1B2C3D-" .. time .. "-" .. seq
+		return seq, ("%s-%d-%d"):format(PLAYER_GUID, time, seq)
 	end
 
 	--- A caught Cast of one Uncharted item at `time` in Elwynn.
 	function log.cast(time)
-		local s, id = header(time)
-		return {
-			seq = s,
-			id = id,
-			kind = "cast",
-			char = 1,
-			time = time,
-			outcome = "caught",
-			session = "s",
-			conditions = { time = time, zone = ELWYNN, subzone = 0, minute = 0, events = {}, auras = {} },
-			items = { { n = 1, itemID = 99999, quantity = 1, catchId = id .. ":1" } },
-		}
+		return castRecord({ seq = header(time), time = time, zone = ELWYNN, minute = 0, items = { 99999 } })
 	end
 
 	--- A Skill Reading at `rank` (LOG-R31).
@@ -79,12 +68,7 @@ describe("Prestige", function()
 	-- `state` (a fresh one by default) with every record applied in `mode` ("live" by default); returns it and every
 	-- achievement, in order.
 	local function applyAll(records, mode, state)
-		state = state or fold.reset()
-		local earned = {}
-		for _, record in ipairs(records) do
-			fold.apply(state, record, mode or "live", earned)
-		end
-		return state, earned
+		return applyLive(fold, records, state, mode)
 	end
 
 	-- A fresh state at prestige rank `rank` with the climb's XP at `xp`.

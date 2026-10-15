@@ -5,48 +5,20 @@
 -- The fixture catalogue (LOG-R55). Spotted Yellowtail's two items share one Species (4603), as the catalogue folds them.
 local MACKEREL, YELLOWTAIL, YELLOWTAIL_2, LEGEND = 6303, 4603, 6887, 19803
 local TROPHY, JUNK = 13901, 6309
-local ITEMS = {
-	[MACKEREL] = { category = "fish", species = MACKEREL, legend = false, noise = false, removed = false, pool = false },
-	[YELLOWTAIL] = {
-		category = "fish",
-		species = YELLOWTAIL,
-		legend = false,
-		noise = false,
-		removed = false,
-		pool = false,
-	},
-	[YELLOWTAIL_2] = {
-		category = "fish",
-		species = YELLOWTAIL,
-		legend = false,
-		noise = false,
-		removed = false,
-		pool = false,
-	},
-	[LEGEND] = { category = "fish", species = LEGEND, legend = true, noise = false, removed = false, pool = false },
-	[TROPHY] = {
-		category = "trophy",
-		family = 1,
-		weight = 19,
-		legend = false,
-		noise = false,
-		removed = false,
-		pool = false,
-	},
-	[JUNK] = { category = "junk", legend = false, noise = false, removed = false, pool = false },
-}
+local getItem = itemLookup({
+	[MACKEREL] = fishRecord(MACKEREL),
+	[YELLOWTAIL] = fishRecord(YELLOWTAIL),
+	[YELLOWTAIL_2] = fishRecord(YELLOWTAIL),
+	[LEGEND] = fishRecord(LEGEND, { legend = true }),
+	[TROPHY] = itemRecord("trophy", { family = 1, weight = 19 }),
+	[JUNK] = itemRecord("junk"),
+})
 
 local ELWYNN, WESTFALL = 12, 40
-local T0 = 1791731000
+local T0 = SERVER_TIME - 700
 local DAY = 86400
 -- The Size bands (LOG-R67): 3 Hefty, 5 Monster.
 local HEFTY, MONSTER = 3, 5
-
----@param itemID integer
----@return PagleItem?
-local function getItem(itemID)
-	return ITEMS[itemID]
-end
 
 -- Records the way the Catch log hands them out (LOG-R42), with seq, entry IDs and Catch IDs in order (LOG-R13).
 local function newLog()
@@ -62,33 +34,17 @@ local function newLog()
 	---@return PagleCast
 	function log.cast(time, zone, catches, char)
 		seq = seq + 1
-		local id = "Player-4618-0A1B2C3D-" .. time .. "-" .. seq
-		local items = {}
+		local itemIDs = {}
 		for n, catch in ipairs(catches) do
-			items[n] = { n = n, itemID = catch[1], quantity = 1, catchId = id .. ":" .. n }
+			itemIDs[n] = catch[1]
+		end
+		local record = castRecord({ seq = seq, time = time, zone = zone, items = itemIDs, char = char, minute = 0 })
+		for n, catch in ipairs(catches) do
 			if catch[2] then
-				items[n].size = { length = catch[2], band = catch[3] or HEFTY }
+				record.items[n].size = { length = catch[2], band = catch[3] or HEFTY }
 			end
 		end
-		return {
-			seq = seq,
-			id = id,
-			kind = "cast",
-			char = char or 1,
-			time = time,
-			outcome = "caught",
-			session = "s",
-			conditions = {
-				time = time,
-				zone = zone,
-				subzone = 0,
-				minute = 0,
-				date = { year = 2026, month = 10, day = 1, weekday = 5 },
-				events = {},
-				auras = {},
-			},
-			items = items,
-		}
+		return record
 	end
 
 	return log
@@ -123,12 +79,7 @@ describe("Simulated Size records", function()
 
 	-- A fresh state (or `state`) with every record applied live; returns it and every achievement, in order.
 	local function applyAll(records, state)
-		state = state or fold.reset()
-		local earned = {}
-		for _, record in ipairs(records) do
-			fold.apply(state, record, "live", earned)
-		end
-		return state, earned
+		return applyLive(fold, records, state)
 	end
 
 	-- The achievements of `kind` in `earned`, in order.
