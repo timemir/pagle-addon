@@ -189,6 +189,61 @@ describe("Pagle_TackleBoard with Core", function()
 		end
 	)
 
+	it(
+		"toggles PagleTackleBoard from /pagle board, /pagle board with any text and the compartment, and the status "
+			.. "button opens it",
+		function()
+			-- TKB-R1, CORE-R44, CORE-R50, CORE-R62, SET-R12: each entry point reaches the board; the status button, Start
+			-- my board or Open Tackle Board, only ever opens it.
+			local loaded = loadAddon("Pagle_TackleBoard", FOREVER_GLOBALS)
+			loaded.client.fire("PLAYER_LOGIN")
+			local function shown()
+				for _, frame in ipairs(loaded.client.frames) do
+					if frame.name == "PagleTackleBoard" then
+						return frame:IsShown()
+					end
+				end
+				return false
+			end
+			local function statusButton()
+				local _, buttons = statusList(loaded)
+				buttons[1]:Click()
+			end
+
+			local seen = {}
+			loaded.env.SlashCmdList.PAGLE("board")
+			seen[#seen + 1] = shown()
+			loaded.env.SlashCmdList.PAGLE("board anything at all")
+			seen[#seen + 1] = shown()
+			compartmentMenu(loaded).click("Tackle Board")
+			seen[#seen + 1] = shown()
+			statusButton()
+			seen[#seen + 1] = shown()
+			compartmentMenu(loaded).click("Tackle Board")
+			seen[#seen + 1] = shown()
+			statusButton()
+			seen[#seen + 1] = shown()
+
+			assert.are.same({ true, false, true, true, false, true }, seen)
+		end
+	)
+
+	it("opens the board and starts it from its Start button in combat, while restricted (TKB-R193, TKB-R5)", function()
+		local loaded = loadAddon("Pagle_TackleBoard", FOREVER_GLOBALS)
+		enterWorld(loaded, 1) -- the projection's first build has ended: not updating (LOG-R74)
+		local starts = 0
+		loaded.ns.Start = function()
+			starts = starts + 1
+		end
+		setCombat(loaded, true)
+
+		loaded.env.SlashCmdList.PAGLE("board")
+		loaded.ns.board.frame.start:Click()
+
+		assert.is_true(loaded.ns.board:IsShown())
+		assert.are.equal(1, starts)
+	end)
+
 	it("sets no global but PagleTackleBoardDB: its AceAddon is reached through LibStub alone (ADR 0001)", function()
 		-- tackle-board.md › Exposed: nothing; no other Module can see the Tackle Board.
 		local loaded = loadAddon("Pagle_TackleBoard", FOREVER_GLOBALS)

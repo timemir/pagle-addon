@@ -13,10 +13,16 @@ locale\enUS.lua
 logic\Data.lua
 logic\Days.lua
 logic\Module.lua
+logic\Progress.lua
 logic\Rewards.lua
 logic\Seams.lua
 logic\Generate.lua
+logic\Words.lua
+logic\Board.lua
 logic\Records.lua
 logic\Projection.lua
+adapter\BoardWidgets.lua
+adapter\Board.lua
 adapter\TackleBoard.lua
 adapter\Generate.lua
+adapter\Words.lua

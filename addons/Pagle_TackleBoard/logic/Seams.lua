@@ -10,11 +10,11 @@ local ns = select(2, ...)
 -- at call time (`ns.IsStarted()`, never a copy made at load), so the replacement reaches them all.
 --
 --   ns.ToggleBoard()          Opens the board, or closes it if shown (TKB-R1). Registration's view, the compartment
---                             entry and `/pagle board` call it. Stand-in: does nothing. The board frame's ticket (#238)
---                             assigns the real one when its file loads.
+--                             entry and `/pagle board` call it. Defined in adapter/Board.lua (#238), not here: a stand-in
+--                             here too would be a duplicate field for LuaLS.
 --   ns.OpenBoard(goalID?)     Opens the board (never closes it); with a goal ID, highlights that goal's pin for 2 s
 --                             (TKB-R109; the pins' ticket #239 draws the highlight). The Settings status button calls
---                             it, and the tracker's lines with their goal (#241). Stand-in: does nothing. #238 assigns it.
+--                             it, and the tracker's lines with their goal (#241). Defined in adapter/Board.lua (#238).
 --   ns.State()                The projection's TackleBoardState (below), read-only for views but the live step's
 --                             AdvanceTo (TKB-R14). `ns.projection:GetState()` once the adapter's OnInitialize has made
 --                             the projection (#231); a new empty state before its first build, or with no projection.
@@ -25,7 +25,7 @@ local ns = select(2, ...)
 --                             Registration's status button reads it (TKB-R1). Follows ns.State() (#231).
 --   ns.Start()                Starts the board (TKB-R5): appends the `start` record and runs the live step. Called by
 --                             the "Start my board" status button (registration, only when not started and not updating)
---                             and the empty board's Start button (#238). Stand-in: does nothing. The live step's
+--                             and the empty board's Start button (adapter/Board.lua). Stand-in: does nothing. The live step's
 --                             ticket (#233) assigns it.
 --   ns.TakeDown(goalID)       Takes a goal down (TKB-R55, TKB-R56): its confirm, then the `reroll` record. The pins
 --                             (#239) call it. Stand-in: does nothing. The reroll's ticket (#234) assigns it.
@@ -122,14 +122,6 @@ local ns = select(2, ...)
 ---@field titles string[]             -- title IDs earned, in TKB-R60's order
 ---@field milestone? integer          -- Campfire milestone reached, in days (TKB-R73)
 ---@field lit boolean                 -- this completion lit its day (TKB-R70)
-
---- Opens or closes the board (TKB-R1). A stand-in until the board frame's ticket assigns the real one.
-function ns.ToggleBoard() end
-
---- Opens the board, highlighting `goalID`'s pin if given (TKB-R109). A stand-in until the board frame's ticket
---- assigns the real one.
----@param goalID string?
-function ns.OpenBoard(goalID) end -- luacheck: no unused args
 
 --- The projection's state (`ns.projection:GetState()`, bound by the adapter's OnInitialize, #231): a new empty
 --- TackleBoardState (ns.NewBoardState) before its first build, or with no projection.
