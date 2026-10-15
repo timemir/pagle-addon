@@ -67,8 +67,7 @@ ns.journal = setmetatable({ router = ns.NewJournalRouter(ns.journalSpreads), red
 --- projection is updating.
 ---@return LedgerJournalContext
 function Journal:Context() -- luacheck: no self
-	local projection = ns.projection
-	local state = projection and not projection:IsUpdating() and projection:GetState() --[[@as LedgerState?]]
+	local state = ns.StateNow()
 	if not state then
 		return { updating = true, now = GetServerTime(), formatNumber = BreakUpLargeNumbers, text = ns.journalText }
 	end
@@ -85,9 +84,7 @@ function Journal:Context() -- luacheck: no self
 		getArea = Pagle.GetArea,
 		angler = Pagle.GetAngler(),
 		openFieldReport = Pagle.OpenFieldReport,
-		sizeText = function(size)
-			return ns.SizeText(size, Pagle.SIZE_BANDS, Pagle.FormatLength)
-		end,
+		sizeText = ns.ClientSizeText,
 		-- The Angler page's M4 parts (LED-R146): the crest, Prestige, the title pick and the bindings.
 		crest = ns.CrestIcon(),
 		canPrestige = ns.CanPrestige(),

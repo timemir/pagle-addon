@@ -98,10 +98,11 @@ function ns.RegisterBindings(module)
 	module:RegisterSlot(ns.BindingSlot())
 	local goods = ns.BindingGoods({
 		earned = function(level)
+			-- The state even mid-update: Core asks only at registration, before any update, and after a live entry
+			-- or a done (SHOP-R31).
 			local projection = ns.projection
 			local state = projection and projection:GetState() --[[@as LedgerState?]]
-			-- Read as saved: asking makes none of the celebrated set's keys (LED-R90).
-			return ns.LevelBindingEarned(level, state, ns.db.global.celebrated or {})
+			return ns.LevelBindingEarned(level, state, ns.SavedCelebrated())
 		end,
 		preview = ns.DrawBindingSwatch,
 	})
