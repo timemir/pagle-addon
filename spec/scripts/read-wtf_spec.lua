@@ -841,6 +841,8 @@ describe("scripts/read-wtf.lua", function()
 				"  6. Player-4618-0A1B2C3D-1791990000-0: realm 2026-10-14 08:00 to 2026-10-14 08:05,"
 					.. " server 2026-10-14 15:00:00 UTC to 2026-10-14 15:05:00 UTC",
 				"     3 Casts, 2 Catches, 1 got away, zones 12 ×2, 40 ×1, skill +1; the log tags 3 Casts with it (matches)",
+				-- #221 step 2: the latest Cast's areaIDs and rank + mod (STA-R11), for --area and --skill
+				"latest Cast: zone 40, no subzone, skill 151 + 25 = 176 (for --area and --skill)",
 				"tracker: true",
 				"watched: 3, oldest first, read at --skill 175",
 				-- STA-R64: each watch read as any reading. Nightfin: 3 of 122 by night, last caught at 3, so 119 since,
@@ -1005,6 +1007,7 @@ describe("scripts/read-wtf.lua", function()
 			"  1. Player-4618-0A1B2C3D-1791954000-0: realm 2026-10-13 22:00 to 2026-10-13 22:00,"
 				.. " server 2026-10-14 05:00:00 UTC to 2026-10-14 05:00:30 UTC",
 			"     2 Casts, 2 Catches, 0 got away, zones 12 ×2, skill +0; the log tags 3 Casts with it (DIFFERS)",
+			"latest Cast: zone 12, no subzone, skill 150 + 25 = 175 (for --area and --skill)",
 			"tracker: false (not saved: the default)",
 			"watched: none (not saved: the default)",
 			"window: not saved, so centred (the default, STA-R71)",
@@ -1016,20 +1019,25 @@ describe("scripts/read-wtf.lua", function()
 		)
 	end)
 
-	it("says no Stats projection is stored before the first build, and none is read (LOG-R72)", function()
-		local out = run(ACCOUNTS .. "M6-New#1", "--stats-item", "13759", "--area", "12")
-		assert.are.same({
-			"== Stats (PagleStatsDB)",
-			"projection: none stored (no build has finished, LOG-R72)",
-			"tracker: false (not saved: the default)",
-			"watched: none (not saved: the default)",
-			"window: not saved, so centred (the default, STA-R71)",
-		}, section(out, "== Stats (PagleStatsDB)"))
-		assert.are.same(
-			{ "== Stats item 13759 in area 12 (--stats-item, --area): no projection stored to read" },
-			section(out, "== Stats item")
-		)
-	end)
+	it(
+		"says no Stats projection is stored before the first build, none is read, and names the latest Cast's place (LOG-R72, #221)",
+		function()
+			local out = run(ACCOUNTS .. "M6-New#1", "--stats-item", "13759", "--area", "12")
+			assert.are.same({
+				"== Stats (PagleStatsDB)",
+				"projection: none stored (no build has finished, LOG-R72)",
+				-- its log's one Cast, in The Long Wash (148/453) at 86 + 25 (#221 step 2)
+				"latest Cast: zone 148, subzone 453, skill 86 + 25 = 111 (for --area and --skill)",
+				"tracker: false (not saved: the default)",
+				"watched: none (not saved: the default)",
+				"window: not saved, so centred (the default, STA-R71)",
+			}, section(out, "== Stats (PagleStatsDB)"))
+			assert.are.same(
+				{ "== Stats item 13759 in area 12 (--stats-item, --area): no projection stored to read" },
+				section(out, "== Stats item")
+			)
+		end
+	)
 
 	it("says in one line that Pagle_Stats.lua is missing (#219, in-game-verification.md › Stats)", function()
 		local out = run(ACCOUNTS .. "M5#1", "--catalogue", CATALOGUE, "--huntlist", HUNTLIST)

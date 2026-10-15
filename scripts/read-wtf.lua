@@ -215,6 +215,7 @@ local function readLog(ns, log, since)
 		ids[record.id] = true
 		if record.kind == "cast" then
 			facts.allCasts = facts.allCasts + 1
+			facts.lastCast = record -- the latest Cast, in log order (LOG-R15), whatever `since`
 			if record.session then
 				local session = facts.sessions[record.session] or { casts = 0, first = record }
 				session.casts = session.casts + 1
@@ -1511,6 +1512,23 @@ local function printStatsProfile(stats, state, places, profile, live)
 	end
 end
 
+-- The latest Cast's place and skill (#221 step 2): its zone and subzone areaIDs and its effective skill, rank + mod
+-- (STA-R11), which --area and --skill take to read an item as the book read it there. One line, none with no Cast.
+---@param cast table? the latest Cast record, decoded
+local function printLatestPlace(cast)
+	if not cast then
+		return
+	end
+	local c = cast.conditions
+	local subzone = (c.subzone or 0) ~= 0 and ("subzone " .. c.subzone) or "no subzone"
+	local skill = "skill unknown" -- not read, as in combat (STA-R93)
+	if c.skillRank then
+		local mod = c.skillMod or 0
+		skill = ("skill %d + %d = %d"):format(c.skillRank, mod, c.skillRank + mod)
+	end
+	print(("latest Cast: zone %s, %s, %s (for --area and --skill)"):format(tostring(c.zone), subzone, skill))
+end
+
 -- Prints the Stats section from SavedVariables/Pagle_Stats.lua (stats.md › Data): the projection Core stores (LOG-R70)
 -- with its checks, the state's counts and last Sessions, cross-checked with the log's Session IDs (`facts`, the Catch
 -- log section's, nil without a log), and the profile; then --stats-item's reading in its own section.
@@ -1546,6 +1564,7 @@ local function printStats(account, log, facts, options)
 		printStatsCounts(state, log)
 		printStatsSessions(core, tableOr(state.sessions), facts)
 	end
+	printLatestPlace(facts and facts.lastCast)
 	printStatsProfile(stats, state, context.places, tableOr(tableOr(db.profiles).Default), options.skill)
 	if options.statsItem then
 		printStatsItem(stats, state, context.places, options)
