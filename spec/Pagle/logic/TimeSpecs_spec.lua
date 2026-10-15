@@ -7,17 +7,12 @@ local ns = loadAddon("Pagle", FOREVER_GLOBALS).ns
 
 local FIXTURE = "scripts/tests/fixtures/time_specs.json"
 
--- busted runs on stock Lua 5.1, which has the io and require the WoW client lacks; dkjson comes with busted.
----@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io
-local io = io
+-- busted runs on stock Lua 5.1, which has the require the WoW client lacks; dkjson comes with busted.
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no require
 local require = require
 
 local function readFixture()
-	local file = assert(io.open(FIXTURE, "rb"))
-	local text = file:read("*a")
-	file:close()
-	local document = assert(require("dkjson").decode(text))
+	local document = assert(require("dkjson").decode(readFile(FIXTURE)))
 	-- JSON keys are strings; the event list's are event IDs (DATA-R38).
 	local rules = {}
 	for eventID, rule in pairs(document.rules) do
@@ -32,16 +27,6 @@ local cases, rules = readFixture()
 -- A weekly-rule lookup (ns.Catalogue.GetEventRule's shape) over the fixture's rules; 303 has none.
 local function getEventRule(eventID)
 	return rules[eventID]
-end
-
--- Days from 1970-01-01 to a proleptic Gregorian date (Howard Hinnant's days_from_civil).
-local function daysFromCivil(year, month, day)
-	year = month <= 2 and year - 1 or year
-	local era = math.floor(year / 400)
-	local yearOfEra = year - era * 400
-	local dayOfYear = math.floor((153 * (month > 2 and month - 3 or month + 9) + 2) / 5) + day - 1
-	local dayOfEra = yearOfEra * 365 + math.floor(yearOfEra / 4) - math.floor(yearOfEra / 100) + dayOfYear
-	return era * 146097 + dayOfEra - 719468
 end
 
 -- The server time and realm minute of a fixture's "YYYY-MM-DD HH:MM" on the UTC+0 realm.
