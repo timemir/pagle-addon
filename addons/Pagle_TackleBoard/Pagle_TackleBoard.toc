@@ -15,6 +15,8 @@ logic\Days.lua
 logic\Module.lua
 logic\Rewards.lua
 logic\Seams.lua
+logic\Generate.lua
 logic\Words.lua
 adapter\TackleBoard.lua
+adapter\Generate.lua
 adapter\Words.lua
