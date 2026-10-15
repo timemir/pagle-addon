@@ -226,18 +226,15 @@ describe("The Announcements page's slot rows", function()
 			names[i] = row.initializer:GetName()
 		end
 
-		assert.are.same(
-			{
-				"Cozy mode",
-				"Interruption budget",
-				"Interruptions",
-				"Per",
-				"Show every catch",
-				"Toast style",
-				"Sound set",
-			},
-			names
-		)
+		assert.are.same({
+			"Cozy mode",
+			"Interruption budget",
+			"Interruptions",
+			"Per",
+			"Show every catch",
+			"Toast style",
+			"Sound set",
+		}, names)
 	end)
 
 	it("pick the same look Look and Feel shows (SET-R30, SET-R51)", function()
