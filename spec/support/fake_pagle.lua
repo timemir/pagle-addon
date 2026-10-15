@@ -17,8 +17,9 @@
 --
 -- It is built on Core's real logic/: each FakePagle loads Pagle.toc's data/, locale/ and logic/ files (and the
 -- CallbackHandler bus) afresh, so what it validates, computes and refuses is what Core does. Core's projections,
--- Sessions, moments, Session summary, cards, wallet, goods, wallet projection and tracker dock are built and connected by logic/Wiring.lua, which Core's
--- adapter runs too: the fake hands it a host over its fakes where Core's adapter hands it the client (adapter/Host.lua).
+-- Sessions, moments, Session summary, cards, wallet, goods, wallet projection and tracker dock are built and connected
+-- by logic/Wiring.lua, which Core's adapter runs too: the fake hands it a host over its fakes where Core's adapter
+-- hands it the client (adapter/Host.lua).
 -- Only the client is faked.
 --
 -- Records Core hands to Modules are shared and immutable (CORE-R18). FakePagle hands out read-only proxies
