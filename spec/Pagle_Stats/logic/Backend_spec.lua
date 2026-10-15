@@ -81,5 +81,76 @@ describe("Stats' Journal values for the backend (#223)", function()
 
 		assert.are.same({ time = 0, gotAwayRate = 0 }, journal.stats)
 		assert.are.same({}, journal.sessions)
+		assert.are.same({}, journal.odds)
+	end)
+end)
+
+describe("Stats' Your odds and Dry spells for the backend (#223, STA-R40–R54)", function()
+	---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
+	local stats = dofile("spec/Pagle_Stats/support.lua")
+	local I = stats.IDS
+
+	it("gives each zone fished, with its place spread's rows in group and odds order, worked by hand", function()
+		-- support.darkshore: 150 Casts in Darkshore at 175 skill, above its line of 170, so with the live skill
+		-- unknown the reading side is `hi`, where every Cast is (STA-R41). Darkshore's rows (STA-R17): Mackerel,
+		-- Firefin and Smallfish any time, Blackmouth in the pools, Nightfin in its night window, which holds no Cast.
+		local loaded = stats.start({ records = stats.darkshore() })
+		local ns = loaded.ns
+
+		local odds = ns.JournalValues(ns.State(), 20).odds
+
+		assert.are.same({
+			{
+				zone = I.DARKSHORE,
+				casts = 150,
+				rows = {
+					-- 5 of 150: 1 in 30, Wilson 1 in 13.2 to 1 in 69.8; 145 Casts since, P ≈ 0.0073
+					{
+						item = I.SMALLFISH,
+						group = "anytime",
+						state = "known",
+						n = 150,
+						k = 5,
+						threshold = 100,
+						oneIn = 30,
+						lo = 13,
+						hi = 70,
+						since = 145,
+						band = "unlucky",
+					},
+					-- 1 of 150, on the last Cast: Wilson 1 in 27.2 to 1 in 849; a Dry spell of 0 reads normal (STA-R54)
+					{
+						item = I.FIREFIN,
+						group = "anytime",
+						state = "known",
+						n = 150,
+						k = 1,
+						threshold = 100,
+						oneIn = 150,
+						lo = 27,
+						hi = 850,
+						since = 0,
+						band = "normal",
+					},
+					-- never caught: rarer than 1 in 150 / 3, and no Dry spell count to read luck from
+					{ item = I.MACKEREL, group = "anytime", state = "unseen", n = 150, threshold = 100, oneIn = 50 },
+					-- 2 of 150: Wilson 1 in 21.1 to 1 in 273; 130 since, P ≈ 0.17
+					{
+						item = I.BLACKMOUTH,
+						group = "pools",
+						state = "known",
+						n = 150,
+						k = 2,
+						threshold = 100,
+						oneIn = 75,
+						lo = 21,
+						hi = 270,
+						since = 130,
+						band = "normal",
+					},
+					{ item = I.NIGHTFIN, group = "window", state = "learning", n = 0, threshold = 100 },
+				},
+			},
+		}, odds)
 	end)
 end)

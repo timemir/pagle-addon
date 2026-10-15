@@ -322,6 +322,7 @@ describe("logic/ alone, as the backend's driver loads it (#223)", function()
 				trophies = "Ledger",
 				stats = "Stats",
 				sessions = "Stats",
+				odds = "Stats",
 				hunts = "Hunts",
 				sets = "Hunts",
 				flies = "TackleBoard",
