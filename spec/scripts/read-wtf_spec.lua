@@ -13,6 +13,13 @@ local ACCOUNTS = "spec/scripts/fixtures/WTF/Account/"
 local CATALOGUE = "spec/scripts/fixtures/Catalogue.lua"
 local HUNTLIST = "spec/scripts/fixtures/HuntList.lua"
 
+--- The content fingerprint a generated data file in the repo carries (DATA-R70, DATA-R72): its `fingerprint = "…"`.
+---@param path string
+---@return string
+local function repoFingerprint(path)
+	return (assert(readFile(path):match('fingerprint = "(%x+)"'), path .. " carries no fingerprint"))
+end
+
 --- Runs the script as `lua scripts/read-wtf.lua <args>` would, and returns its output lines, what it wrote to
 --- stderr, and its exit code.
 ---@return string[] out, string err, integer code
@@ -354,9 +361,7 @@ describe("scripts/read-wtf.lua", function()
 
 		it("reads the repo's catalogue by default, and flags one that isn't the projection's", function()
 			-- DATA-R70: the generated file carries the content fingerprint the client's projections are built against.
-			local file = assert(io.open("addons/Pagle/data/Catalogue.lua", "rb"))
-			local fingerprint = file:read("*a"):match('fingerprint = "(%x+)"')
-			file:close()
+			local fingerprint = repoFingerprint("addons/Pagle/data/Catalogue.lua")
 			local world = section(run(ACCOUNTS .. "M3#1"), "== Ledger")[6]
 			local prefix = "world: the repo's addons/Pagle/data/Catalogue.lua, fingerprint "
 				.. fingerprint
@@ -656,9 +661,7 @@ describe("scripts/read-wtf.lua", function()
 
 		it("reads the repo's Hunt list by default, and flags a fingerprint that isn't the expected one", function()
 			-- DATA-R72: the generated list carries its own fingerprint; LOG-R72: a different one rebuilds Hunts.
-			local file = assert(io.open("addons/Pagle_Hunts/data/HuntList.lua", "rb"))
-			local fingerprint = file:read("*a"):match('fingerprint = "(%x+)"')
-			file:close()
+			local fingerprint = repoFingerprint("addons/Pagle_Hunts/data/HuntList.lua")
 			local lines = section(run(ACCOUNTS .. "M5#1", "--catalogue", CATALOGUE, "--now", NOW), "== Hunts")
 			local prefix = "Hunt list: the repo's addons/Pagle_Hunts/data/HuntList.lua, fingerprint " .. fingerprint
 			assert.are.equal(prefix, lines[6]:sub(1, #prefix))
@@ -790,7 +793,7 @@ describe("scripts/read-wtf.lua", function()
 	-- line is 25 + 95 = 120 and Westfall's 55 + 95 = 150 (STA-R12), and Nightfin keeps the `night` window (21:00–06:00)
 	-- in Elwynn (STA-R14). Its profile has the tracker on, three watches and a moved book; PagleDB caches Stats' three
 	-- tracker frames with Logbook picked. Read at --now 1792000000, 2026-10-14 17:46:40 UTC.
-	describe("on an account after the M6 exit check's steps", function()
+	describe("on an account after the M6 exit check's steps (#219, in-game-verification.md › Stats)", function()
 		local NOW = "1792000000"
 		local out, err, code = run(
 			ACCOUNTS .. "M6#1",
@@ -806,12 +809,12 @@ describe("scripts/read-wtf.lua", function()
 			"175"
 		)
 
-		it("exits 0 and writes nothing to stderr", function()
+		it("exits 0 and writes nothing to stderr (#219, in-game-verification.md › Stats)", function()
 			assert.are.equal(0, code)
 			assert.are.equal("", err)
 		end)
 
-		it("prints the projection, the totals, the margins, the characters and the last Sessions", function()
+		it("prints the projection, totals, margins, characters, last Sessions (STA-R20–R31, LOG-R70/R98)", function()
 			-- LOG-R70's stored values; STA-R20: 100 × STATS_RULES_VERSION 1 + Core's SESSION_RULES_VERSION 1 = 101, and
 			-- the stored fingerprint is the catalogue's content fingerprint (no extra). STA-R22: 120 + 1 + 1 + 1 + 3 of
 			-- Ada's Casts and Bram's 2; 12 + 1 + 1 of Ada's and 1 of Bram's got away; Elwynn and Westfall are zones.
@@ -930,9 +933,7 @@ describe("scripts/read-wtf.lua", function()
 		end)
 
 		it("reads the repo's catalogue by default, and flags a fingerprint that isn't it (LOG-R70, LOG-R72)", function()
-			local file = assert(io.open("addons/Pagle/data/Catalogue.lua", "rb"))
-			local fingerprint = file:read("*a"):match('fingerprint = "(%x+)"')
-			file:close()
+			local fingerprint = repoFingerprint("addons/Pagle/data/Catalogue.lua")
 			local lines = section(run(ACCOUNTS .. "M6#1", "--now", NOW), "== Stats (PagleStatsDB)")
 			assert.are.equal(
 				"fingerprint: DIFFERS from the catalogue's "
@@ -954,7 +955,7 @@ describe("scripts/read-wtf.lua", function()
 			}, { lines[2], lines[3] })
 		end)
 
-		it("prints the stored lines alone when the catalogue can't be loaded", function()
+		it("prints the stored lines alone when the catalogue can't be loaded (STA-R12, STA-R14)", function()
 			-- Without the catalogue there are no lines or windows (STA-R12, STA-R14), so no reading is computed.
 			local missing = "spec/scripts/fixtures/no-such-Catalogue.lua"
 			local out2 = run(ACCOUNTS .. "M6#1", "--catalogue", missing, "--stats-item", "13759", "--area", "12")
@@ -972,19 +973,22 @@ describe("scripts/read-wtf.lua", function()
 			}, section(out2, "== Stats item"))
 		end)
 
-		it("prints the Stats tracker frame's pick, and Pagle_Stats' enable state by default", function()
-			-- SHOP-R32: the slot's stored pick; STA-R88: Stats' one slot.
-			assert.are.same({ "stats.trackerframe: stats.trackerframe.logbook" }, { section(out, "== Looks")[2] })
-			local lines = section(run(ACCOUNTS .. "M6#1", "--character", "70/Ada-Brook"), "== Addons")
-			assert.are.same({
-				"== Addons (70/Ada-Brook/AddOns.txt)",
-				"Pagle: enabled",
-				"Pagle_Ledger: enabled",
-				"Pagle_QoL: disabled",
-				"Pagle_Hunts: enabled",
-				"Pagle_Stats: enabled",
-			}, lines)
-		end)
+		it(
+			"prints the Stats tracker frame's pick, and Pagle_Stats' enable state by default (SHOP-R32, STA-R88)",
+			function()
+				-- SHOP-R32: the slot's stored pick; STA-R88: Stats' one slot.
+				assert.are.same({ "stats.trackerframe: stats.trackerframe.logbook" }, { section(out, "== Looks")[2] })
+				local lines = section(run(ACCOUNTS .. "M6#1", "--character", "70/Ada-Brook"), "== Addons")
+				assert.are.same({
+					"== Addons (70/Ada-Brook/AddOns.txt)",
+					"Pagle: enabled",
+					"Pagle_Ledger: enabled",
+					"Pagle_QoL: disabled",
+					"Pagle_Hunts: enabled",
+					"Pagle_Stats: enabled",
+				}, lines)
+			end
+		)
 	end)
 
 	-- M6-Stale#1: a Stats projection built under another rules version and catalogue, one Cast behind its log, and
@@ -1038,7 +1042,7 @@ describe("scripts/read-wtf.lua", function()
 		)
 	end)
 
-	it("says in one line that Pagle_Stats.lua is missing", function()
+	it("says in one line that Pagle_Stats.lua is missing (#219, in-game-verification.md › Stats)", function()
 		local out = run(ACCOUNTS .. "M5#1", "--catalogue", CATALOGUE, "--huntlist", HUNTLIST)
 		assert.are.same(
 			{ "== Stats: can't read " .. ACCOUNTS .. "M5#1/SavedVariables/Pagle_Stats.lua: missing" },
