@@ -326,10 +326,8 @@ describe("Standing down", function()
 			client.update(0.5)
 
 			assert.are.same({}, client.bindingCalls)
-			-- Nothing ticks: the notes' motion driver (adapter/Motion.lua) keeps its OnUpdate, but hides once they settle,
-			-- and a hidden frame's OnUpdate doesn't run.
 			for _, frame in ipairs(client.frames) do
-				assert.is_true(frame.scripts.OnUpdate == nil or not frame:IsShown())
+				assert.is_nil(frame.scripts.OnUpdate)
 			end
 		end)
 	end

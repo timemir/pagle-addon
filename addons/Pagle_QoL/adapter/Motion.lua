@@ -18,10 +18,11 @@ end
 -- done: called once when that animation finishes.
 -- The first frame is applied at once, so nothing flashes in its final state. P.motion = false jumps to the end.
 --
--- The field art kit's Motion.lua (PagleArtField, v2), copied as it is but for the Core guard above and P's
--- annotation: a Module can't reach Core's adapter/Motion.lua (ADR 0001), so QoL keeps its own copy of the driver, as
--- the Tackle Board does. QoL sets P.motion from Core's Animations setting, Pagle.IsAnimationsOn(), before it starts
--- anything (adapter/Conflict.lua).
+-- The field art kit's Motion.lua (PagleArtField, v2), copied as it is but for the Core guard above, P's annotation and
+-- one change: the driver holds its OnUpdate only while something animates, set as it shows and cleared as it hides,
+-- so QoL runs no tick while nothing moves (QOL-R25). A Module can't reach Core's adapter/Motion.lua (ADR 0001), so QoL
+-- keeps its own copy of the driver, as the Tackle Board does. QoL sets P.motion from Core's Animations setting,
+-- Pagle.IsAnimationsOn(), before it starts anything (adapter/Conflict.lua).
 
 ---@class PagleQoLNS
 local P = select(2, ...)
@@ -104,7 +105,14 @@ end
 local running = {}
 local driver = CreateFrame("Frame")
 driver:Hide()
-driver:SetScript("OnUpdate", function(self, elapsed)
+
+-- the driver stops: hidden, with no OnUpdate
+local function idle()
+	driver:Hide()
+	driver:SetScript("OnUpdate", nil)
+end
+
+local function step(_, elapsed)
 	-- callbacks may start or stop animations, so walk a snapshot of the owners
 	local owners = {}
 	for owner in pairs(running) do
@@ -135,9 +143,9 @@ driver:SetScript("OnUpdate", function(self, elapsed)
 		end
 	end
 	if not next(running) then
-		self:Hide()
+		idle()
 	end
-end)
+end
 
 function P.Animate(owner, anims, onDone)
 	if not P.motion then
@@ -167,11 +175,15 @@ function P.Animate(owner, anims, onDone)
 	for _, a in ipairs(anims) do
 		a.apply((sample(a, 0)))
 	end
+	driver:SetScript("OnUpdate", step)
 	driver:Show()
 end
 
 function P.StopMotion(owner)
 	running[owner] = nil
+	if not next(running) then
+		idle()
+	end
 end
 
 -- call fn after t seconds (a sound on a beat, the next step of a sequence); skipped when motion is off
