@@ -33,6 +33,11 @@ local USAGE = "usage: lua scripts/make-test-log.lua --account <WTF/Account/<ACCT
 -- The repo root, from this script's path: Core's and the Ledger's logic/ and the catalogue are read from addons/.
 local ROOT = ((arg and arg[0] or ""):match("^(.*)[/\\]") or ".") .. "/.."
 
+-- The helpers this script shares with scripts/read-wtf.lua, in this script's environment.
+local wtf = setfenv(assert(loadfile(ROOT .. "/scripts/lib/wtf.lua")), getfenv(1))(ROOT)
+local count, quote, readFile, listFolder = wtf.count, wtf.quote, wtf.readFile, wtf.listFolder
+local loadData, characterName = wtf.loadSavedVariables, wtf.characterName
+
 -- The SavedVariables files backed up and restored, in this order: every Pagle addon's file and its .bak, Core's,
 -- the Ledger's and QoL's, and the Modules' that ship later, so a test play leaves none of them changed.
 local SV_FILES = {}
@@ -68,14 +73,6 @@ local PRESET_NAMES = { "level10", "level60", "catches1000" }
 -- Refuses: main prints `reason` and exits 1. Nothing has been changed when this is raised.
 local function refuse(reason)
 	error({ refused = reason }, 0)
-end
-
-local function count(n, noun, plural)
-	return n .. " " .. (n == 1 and noun or plural or noun .. "s")
-end
-
-local function quote(path)
-	return "'" .. path:gsub("'", "'\\''") .. "'"
 end
 
 -- The arguments as options, or nil and what's wrong with them.
@@ -119,16 +116,6 @@ end
 
 -- Files ------------------------------------------------------------------------------------------------------------
 
-local function readFile(path)
-	local file = io.open(path, "rb")
-	if not file then
-		return nil
-	end
-	local text = file:read("*a")
-	file:close()
-	return text
-end
-
 -- Writes `text` to `path` and reads it back: raises if the file doesn't hold exactly `text`.
 local function writeFile(path, text)
 	local file = assert(io.open(path, "wb"))
@@ -143,36 +130,6 @@ local function makeFolder(path)
 	if os.execute("mkdir -p " .. quote(path)) ~= 0 then
 		error("can't make the folder " .. path)
 	end
-end
-
--- The names in a folder, sorted; none when it doesn't exist.
-local function listFolder(path)
-	local names = {}
-	local ls = io.popen("ls -1 " .. quote(path) .. " 2>/dev/null")
-	for name in ls:lines() do
-		names[#names + 1] = name
-	end
-	ls:close()
-	table.sort(names)
-	return names
-end
-
--- Loads a SavedVariables text as data and returns the globals it assigned, or nil and why not.
-local function loadData(text, name)
-	if text:sub(1, 1) == "\27" then
-		return nil, "a precompiled chunk, not data"
-	end
-	local chunk, loadErr = loadstring(text, "=" .. name)
-	if not chunk then
-		return nil, loadErr
-	end
-	local globals = {}
-	setfenv(chunk, globals)
-	local ok, runErr = pcall(chunk)
-	if not ok then
-		return nil, runErr
-	end
-	return globals
 end
 
 -- Tables ------------------------------------------------------------------------------------------------------------
@@ -284,50 +241,16 @@ end
 
 -- Core and the Ledger -------------------------------------------------------------------------------------------
 
--- Calls each file with (addon, ns), as the client calls an addon's files, in an environment over the standard
--- globals (logic/ is plain Lua 5.1, CORE-R7) with a Pagle table for the Ledger's CORE-R11 guard.
-local function loadFiles(addon, ns, files)
-	local env = setmetatable({ Pagle = {} }, { __index = _G })
-	for _, file in ipairs(files) do
-		local chunk, loadErr = loadfile(file)
-		if not chunk then
-			return nil, loadErr
-		end
-		setfenv(chunk, env)
-		local ok, runErr = pcall(chunk, addon, ns)
-		if not ok then
-			return nil, runErr
-		end
-	end
-	return ns
-end
-
 -- Core's codec and MatchesConditions, the catalogue's accessors (Core's logic/Catalogue.lua over the catalogue
 -- file), and the Ledger's logic/ in Pagle_Ledger.toc order with its world index over that catalogue (LED-R10).
 local function loadGame(cataloguePath)
-	local core = assert(loadFiles("Pagle", {}, {
-		ROOT .. "/addons/Pagle/logic/Conditions.lua",
-		ROOT .. "/addons/Pagle/logic/Sessions.lua",
-		ROOT .. "/addons/Pagle/logic/CatchLog.lua",
-	}))
+	local core = wtf.loadCore({ "logic/Conditions.lua", "logic/Sessions.lua", "logic/CatchLog.lua" })
 	local label = cataloguePath or "the repo's addons/Pagle/data/Catalogue.lua"
-	local data, err = loadFiles("Pagle", {}, {
-		cataloguePath or ROOT .. "/addons/Pagle/data/Catalogue.lua",
-		ROOT .. "/addons/Pagle/logic/Catalogue.lua",
-	})
-	if not data or type(data.catalogue) ~= "table" then
-		refuse(("can't load the catalogue %s: %s"):format(label, tostring(err or "it sets no catalogue")))
+	local catalogue, err = wtf.loadCatalogue(cataloguePath)
+	if not catalogue then
+		refuse(("can't load the catalogue %s: %s"):format(label, tostring(err)))
 	end
-	local catalogue = data.NewCatalogue(data.catalogue)
-	local dir = ROOT .. "/addons/Pagle_Ledger/"
-	local files = {}
-	for line in assert(io.open(dir .. "Pagle_Ledger.toc")):lines() do
-		local file = line:gsub("\r$", ""):match("^%s*(.-)%s*$"):gsub("\\", "/")
-		if file:match("^logic/[^/]+%.lua$") then
-			files[#files + 1] = dir .. file
-		end
-	end
-	local ledger = assert(loadFiles("Pagle_Ledger", {}, files))
+	local ledger = wtf.loadLedgerLogic()
 	local world = ledger.NewWorld(catalogue)
 	local lookups = { GetItem = catalogue.GetItem, MatchesConditions = core.MatchesConditions, world = world }
 	return { core = core, catalogue = catalogue, label = label, ledger = ledger, world = world, lookups = lookups }
@@ -679,11 +602,6 @@ local function restoreNote(options)
 	print("  " .. command(options, "--restore"))
 	print("  It puts every Pagle SavedVariables file and .bak back byte for byte, so the real log, Ledger and settings")
 	print("  return with their own logId and celebrated set, and nothing is written up again.")
-end
-
-local function characterName(log, char)
-	local c = log.characters[char] or {}
-	return table.concat({ tostring(c.name or "?"), c.surname and tostring(c.surname) or nil }, " ")
 end
 
 -- Modes ----------------------------------------------------------------------------------------------------------
