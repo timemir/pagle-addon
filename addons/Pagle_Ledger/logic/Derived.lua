@@ -66,3 +66,28 @@ end
 function ns.LifetimeCatches(state)
 	return state.catches
 end
+
+--- The release's Legends (PRJ-R15): the item IDs of every Legend LED-R63's "x of N" counts for an Angler with no
+--- Catches, so listed and not removed (LED-R11, LED-R12), ascending. Empty when the release lists none.
+---@return integer[]
+function ns.LegendList()
+	return ns.CollectionWorlds(ns.world, {}).legends
+end
+
+--- The record kind of the Ledger's title record (#76 item 2): its payload is the picked title key, or "" for
+--- automatic (LED-R77).
+ns.TITLE_RECORD = "title"
+
+--- The title a Ledger Module record picks (#76 item 2): nil when it isn't a title record, false when it picks
+--- automatic, else the picked title key. The Ledger doesn't append it yet; the backend reads it from the log.
+---@param record PagleModuleRecord
+---@return (string|false)?
+function ns.PickedTitle(record)
+	if record.recordKind ~= ns.TITLE_RECORD then
+		return nil
+	end
+	if record.payload == "" then
+		return false
+	end
+	return record.payload
+end

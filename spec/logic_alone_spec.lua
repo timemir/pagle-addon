@@ -288,6 +288,13 @@ describe("logic/ alone, as the backend's driver loads it (#223)", function()
 			assert.are.equal(6, ledger.LifetimeCatches(state)) -- two on each of three Casts
 		end)
 
+		it("lists the release's Legends as the client's Ledger does (PRJ-R15)", function()
+			local list = hosted.modules.Ledger.LegendList()
+
+			assert.are.same(loaded.Ledger.ns.LegendList(), list)
+			assert.is_true(#list > 0)
+		end)
+
 		for _, name in ipairs({ "Ledger", "Hunts", "Stats", "TackleBoard" }) do
 			it("folds " .. name .. "'s projection to the state the client's holds", function()
 				assert.are.same(loaded[name].ns.projection:GetState(), hosted.byKey[name].state)

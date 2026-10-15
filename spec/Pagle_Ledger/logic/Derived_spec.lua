@@ -31,11 +31,12 @@ end
 -- PagleLedgerDB.
 ---@param records table[]
 ---@param saved table?
+---@param catalogue table? another catalogue than the fixture's
 ---@return PagleLedgerNS ns
 ---@return LedgerState state the projection's, built
-local function ledgerOver(records, saved)
+local function ledgerOver(records, saved, catalogue)
 	local fake = newFakePagle()
-	fake.setCatalogue(fixture())
+	fake.setCatalogue(catalogue or fixture())
 	fake.catchLog.data.characters[1] = { guid = PLAYER_GUID }
 	for _, record in ipairs(records) do
 		fake.catchLog:Append(record)
@@ -136,5 +137,64 @@ describe("the Ledger's values for the backend (#223)", function()
 
 		assert.are.same({ prestige = 1, level = 1, xp = state.xp }, ns.Measures(state).anglerLevel)
 		assert.are.equal("title:level60", ns.AutomaticTitle(state))
+	end)
+
+	describe("the Legend list (LED-R63, PRJ-R15)", function()
+		local LISTED, GONE, UNLISTED = 19803, 19806, 19808
+
+		-- Elwynn lists two Legends, one of them removed; a third Legend is on no list.
+		local function legends()
+			return catalogueWith({
+				items = {
+					[MACKEREL] = fishRecord(MACKEREL),
+					[LISTED] = fishRecord(LISTED, { legend = true }),
+					[GONE] = fishRecord(GONE, { legend = true, removed = true }),
+					[UNLISTED] = fishRecord(UNLISTED, { legend = true }),
+				},
+				areas = {
+					[ELWYNN] = areaRecord(0, {
+						catches = { catchEntry(MACKEREL), catchEntry(LISTED), catchEntry(GONE) },
+					}),
+				},
+			})
+		end
+
+		it("lists every Legend an Angler with no Catches counts: listed and not removed (LED-R11, LED-R12)", function()
+			local ns = ledgerOver({}, nil, legends())
+
+			assert.are.same({ LISTED }, ns.LegendList())
+		end)
+
+		it("is the release's, whatever the Angler caught", function()
+			local caught = { castRecord({ time = T0, zone = ELWYNN, items = { UNLISTED, GONE } }) }
+			local ns = ledgerOver(caught, nil, legends())
+
+			assert.are.same({ LISTED }, ns.LegendList())
+		end)
+
+		it("is empty when the release lists no Legend", function()
+			local ns = ledgerOver({})
+
+			assert.are.same({}, ns.LegendList())
+		end)
+	end)
+
+	describe("the title record (#76 item 2)", function()
+		-- A Ledger Module record as the Catch log hands it to the Ledger (LOG-R41).
+		local function record(kind, payload)
+			return { kind = "module", module = "Ledger", recordKind = kind, payload = payload, char = 1, time = T0 }
+		end
+
+		it("is a picked title key in a `title` record's payload", function()
+			assert.are.equal("legend:19803", ledgerOver({}).PickedTitle(record("title", "legend:19803")))
+		end)
+
+		it("picks automatic with an empty payload (LED-R77)", function()
+			assert.is_false(ledgerOver({}).PickedTitle(record("title", "")))
+		end)
+
+		it("is nil for any other record", function()
+			assert.is_nil(ledgerOver({}).PickedTitle(record("celebrated", "title:level1")))
+		end)
 	end)
 end)
