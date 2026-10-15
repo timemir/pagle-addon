@@ -7,7 +7,7 @@ local ns = select(2, ...)
 
 -- The field art kit on the client (qol.md › UI): its inks and fonts, the sprite helpers QoL's frames are drawn with,
 -- and the pieces they share: the brass key cap and the two note buttons. Sprites come from the Field atlas
--- (data/FieldArt.lua). The helpers have the shape and names of Core's (Pagle/adapter/ArtSprites.lua), which QoL can't
+-- (data/FieldArt.lua). The helpers have the shape and names of Core's (Pagle/adapter/Art.lua), which QoL can't
 -- reach: a Module sees Core only through the Pagle API. Every size is the kit's canvas pixel, a UI unit. Nothing here
 -- draws until a frame that uses it is first made, so the fonts and the texture load only then.
 
@@ -181,10 +181,10 @@ end
 ---@param layer DrawLayer?
 function ns.SetThreeSlice(frame, atlasName, name, width, cap, layer)
 	local slice = frame --[[@as PagleThreeSlice]]
-	if not slice.Left then
-		slice.Left = crisp(frame:CreateTexture(nil, layer or "BACKGROUND"))
-		slice.Middle = crisp(frame:CreateTexture(nil, layer or "BACKGROUND"))
-		slice.Right = crisp(frame:CreateTexture(nil, layer or "BACKGROUND"))
+	if not slice.left then
+		slice.left = crisp(frame:CreateTexture(nil, layer or "BACKGROUND"))
+		slice.middle = crisp(frame:CreateTexture(nil, layer or "BACKGROUND"))
+		slice.right = crisp(frame:CreateTexture(nil, layer or "BACKGROUND"))
 	end
 	local atlas, sprite = spriteOf(atlasName, name)
 	local scale, box = atlas.scale, sprite.box
@@ -204,18 +204,18 @@ function ns.SetThreeSlice(frame, atlasName, name, width, cap, layer)
 		)
 		texture:SetHeight(sprite.h / scale)
 	end
-	cut(slice.Left, 0, leftWidth)
-	slice.Left:SetWidth(leftWidth)
-	cut(slice.Right, spriteWidth - rightWidth, rightWidth)
-	slice.Right:SetWidth(rightWidth)
-	cut(slice.Middle, leftWidth, spriteWidth - leftWidth - rightWidth)
-	slice.Left:ClearAllPoints()
-	slice.Left:SetPoint("TOPLEFT", frame, "TOPLEFT", -marginLeft, box[2])
-	slice.Right:ClearAllPoints()
-	slice.Right:SetPoint("TOPRIGHT", frame, "TOPRIGHT", marginRight, box[2])
-	slice.Middle:ClearAllPoints()
-	slice.Middle:SetPoint("TOPLEFT", slice.Left, "TOPRIGHT")
-	slice.Middle:SetPoint("BOTTOMRIGHT", slice.Right, "BOTTOMLEFT")
+	cut(slice.left, 0, leftWidth)
+	slice.left:SetWidth(leftWidth)
+	cut(slice.right, spriteWidth - rightWidth, rightWidth)
+	slice.right:SetWidth(rightWidth)
+	cut(slice.middle, leftWidth, spriteWidth - leftWidth - rightWidth)
+	slice.left:ClearAllPoints()
+	slice.left:SetPoint("TOPLEFT", frame, "TOPLEFT", -marginLeft, box[2])
+	slice.right:ClearAllPoints()
+	slice.right:SetPoint("TOPRIGHT", frame, "TOPRIGHT", marginRight, box[2])
+	slice.middle:ClearAllPoints()
+	slice.middle:SetPoint("TOPLEFT", slice.left, "TOPRIGHT")
+	slice.middle:SetPoint("BOTTOMRIGHT", slice.right, "BOTTOMLEFT")
 end
 
 --- A key on a brass cap: the Nudge's key, or the next-action button's hotkey.
@@ -252,8 +252,8 @@ function ns.SetKeyCap(keyCap, text, width, height)
 	keyCap:SetSize(width, height)
 	ns.SetThreeSlice(keyCap.cap, "Field", "key", width, 6, "ARTWORK")
 	-- All three slices are the sprite's height; the end caps carry it, as the middle is anchored between them.
-	local squashed = keyCap.cap.Left:GetHeight() * height / 24
-	for _, slice in ipairs({ keyCap.cap.Left, keyCap.cap.Middle, keyCap.cap.Right }) do
+	local squashed = keyCap.cap.left:GetHeight() * height / 24
+	for _, slice in ipairs({ keyCap.cap.left, keyCap.cap.middle, keyCap.cap.right }) do
 		slice:SetHeight(squashed)
 	end
 end

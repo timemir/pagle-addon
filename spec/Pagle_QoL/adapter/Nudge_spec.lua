@@ -72,7 +72,7 @@ describe("A Nudge", function()
 		assert.are.equal("Your lure is gone and there are none left in your bags.", line.text)
 		assert.are.same({ "Your lure is gone and there are none left in your bags." }, pieces(frame))
 		-- The kit's paper strip, Core's field art, three-sliced to the line: 30 px of paper either side.
-		assert.are.equal("Interface\\AddOns\\Pagle\\media\\field\\Field", frame.Middle.texture)
+		assert.are.equal("Interface\\AddOns\\Pagle\\media\\field\\Field", frame.middle.texture)
 		assert.are.equal(#"Your lure is gone and there are none left in your bags." * 6 + 60, frame.width)
 		assert.is_true(frame.shown)
 		assert.are.equal(1, frame.alpha)

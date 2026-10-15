@@ -90,8 +90,8 @@ describe("The conflict check", function()
 		assert.are.same({ 440, 200 }, { shown.width, shown.height })
 		assert.are.same({ { "TOP", loaded.env.UIParent, "TOP", 0, -135 } }, shown.points)
 		local field = "Interface\\AddOns\\Pagle\\media\\field\\Field"
-		assert.are.equal(field, shown.primary.children[1].Middle.texture)
-		assert.are.equal(field, shown.secondary.children[1].Middle.texture)
+		assert.are.equal(field, shown.primary.children[1].middle.texture)
+		assert.are.equal(field, shown.secondary.children[1].middle.texture)
 		-- Esc hides it through UISpecialFrames.
 		assert.truthy(table.concat(loaded.env.UISpecialFrames, " "):find("PagleQoLConflictNote", 1, true))
 	end)
