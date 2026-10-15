@@ -44,6 +44,18 @@ local function descendants(widget, list)
 	return list
 end
 
+-- Every widget under `widget` that shows, depth first: shown, under shown parents.
+local function shownDescendants(widget, list)
+	list = list or {}
+	for _, child in ipairs(widget.children) do
+		if child.shown then
+			list[#list + 1] = child
+			shownDescendants(child, list)
+		end
+	end
+	return list
+end
+
 -- The texts of every shown font string under `widget`, depth first.
 local function textsOf(widget)
 	local texts = {}
@@ -363,7 +375,7 @@ describe("a tracker frame's preview", function()
 				fake.ns.goods:Good(row[1]).preview(stage)
 				local tracker = stage.children[1]
 				local words = {}
-				for _, widget in ipairs(descendants(tracker)) do
+				for _, widget in ipairs(shownDescendants(tracker)) do
 					if widget.kind == "FontString" then
 						local color = widget.textColor
 						words[#words + 1] = color and { color[1], color[2], color[3] } or "native"

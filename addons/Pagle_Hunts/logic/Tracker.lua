@@ -11,10 +11,6 @@ local ns = select(2, ...)
 --- Tunables (hunts.md): the Hunts the tracker lists before its "+N more" line (HNT-R76).
 ns.TRACKER_SHOWN = 6
 
--- Each group's dot (HNT-R76), as the board's art kit names the group colours (adapter/BoardWidgets.lua's BoardGroup).
----@type table<HuntGroup, string>
-local DOTS = { now = "now", soon = "soon", later = "later", onDemand = "demand" }
-
 --- What the tracker's lines are made from, read by the adapter at each draw.
 ---@class HuntsTrackerInput
 ---@field rows HuntRow[]?      -- the pinned rows, sorted as on the board (ns.groups:Rows{ pinnedOnly = true }); nil
@@ -33,7 +29,7 @@ local DOTS = { now = "now", soon = "soon", later = "later", onDemand = "demand" 
 --- One pinned Hunt's two lines (HNT-R76).
 ---@class HuntsTrackerHunt
 ---@field id string
----@field dot "now"|"soon"|"later"|"demand"   -- its group's dot
+---@field dot HuntGroup                      -- its group, for its dot
 ---@field first string         -- "{name} · {tracker label}"
 ---@field second string        -- "{target line} · you're here · {progress}", "you're here" only in its zones
 
@@ -89,7 +85,7 @@ local function huntLines(row, input)
 	second[#second + 1] = ns.TrackerProgress(hunt, input.state.hunts[row.id], input.updating)
 	return {
 		id = row.id,
-		dot = DOTS[row.group],
+		dot = row.group,
 		first = L.TRACKER_FIRST:format(input.list:HuntName(row.id), label),
 		second = table.concat(second, L.TRACKER_JOIN),
 	}

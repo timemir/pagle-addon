@@ -21,32 +21,13 @@ local BAR_WIDTH, BAR_HEIGHT = 160, 10
 -- The pointing hand before "back to {set}".
 local HAND_SIZE = 16
 
--- Variant E's chip tints (`.vE .chip`): the face rgba(255,250,235,.35), the edge rgba(106,74,32,.45), "you're here"
--- #2a6a2a, the unconfirmed chip's #6a3a8a.
-local CHIP_FACE, CHIP_FACE_ALPHA = { 1, 250 / 255, 235 / 255 }, 0.35
-local CHIP_EDGE, CHIP_EDGE_ALPHA = { 106 / 255, 74 / 255, 32 / 255 }, 0.45
-local HERE = { 42 / 255, 106 / 255, 42 / 255 }
-local UNCONFIRMED = { 106 / 255, 58 / 255, 138 / 255 }
-
--- Shows `lines` in the game tooltip over `owner`, one per line.
----@param owner Frame
----@param lines string[]
-local function showTooltip(owner, lines)
-	GameTooltip:SetOwner(owner, "ANCHOR_TOP")
-	GameTooltip:SetText(lines[1])
-	for i = 2, #lines do
-		GameTooltip:AddLine(lines[i])
-	end
-	GameTooltip:Show()
-end
-
 -- Gives `frame` a tooltip of `frame.tooltip`'s lines, when it has some.
 ---@param frame Frame
 local function withTooltip(frame)
 	frame:EnableMouse(true)
 	frame:SetScript("OnEnter", function(self)
 		if self.tooltip then
-			showTooltip(self, self.tooltip)
+			ns.BoardTooltip(self, self.tooltip)
 		end
 	end)
 	frame:SetScript("OnLeave", function()
@@ -57,13 +38,13 @@ end
 -- Sets a font string's colour from a tint.
 ---@param text FontString
 ---@param color number[]
-local function tint(text, color)
+local function inkText(text, color)
 	text:SetTextColor(color[1], color[2], color[3])
 end
 
 --- A chip (HNT-R65): its words on a faint face in a thin edge, and the "you're here" badge after them.
 ---@class EntryChipView: Frame
----@field edges Texture[]
+---@field outline BoardOutline
 ---@field label FontString
 ---@field badge FontString
 ---@field tooltip string[]?
@@ -73,27 +54,11 @@ end
 local function newChip(parent)
 	local chip = CreateFrame("Frame", nil, parent) --[[@as EntryChipView]]
 	chip:SetHeight(CHIP_HEIGHT)
-	ns.BoardSolid(chip, CHIP_FACE, "BACKGROUND", CHIP_FACE_ALPHA)
-	chip.edges = {}
-	for i, points in ipairs({
-		{ "TOPLEFT", "TOPRIGHT" },
-		{ "BOTTOMLEFT", "BOTTOMRIGHT" },
-		{ "TOPLEFT", "BOTTOMLEFT" },
-		{ "TOPRIGHT", "BOTTOMRIGHT" },
-	}) do
-		local edge = chip:CreateTexture(nil, "BORDER")
-		edge:SetPoint(points[1])
-		edge:SetPoint(points[2])
-		if i <= 2 then
-			edge:SetHeight(1)
-		else
-			edge:SetWidth(1)
-		end
-		chip.edges[i] = edge
-	end
+	ns.BoardSolid(chip, LOOK.chipFace, "BACKGROUND", LOOK.chipFaceAlpha)
+	chip.outline = ns.BoardOutline(chip)
 	chip.label = ns.BoardText(chip, ns.BoardFonts().small, LOOK.small)
 	chip.label:SetPoint("LEFT", CHIP_PAD, 0)
-	chip.badge = ns.BoardText(chip, ns.BoardFonts().small, HERE)
+	chip.badge = ns.BoardText(chip, ns.BoardFonts().small, LOOK.here)
 	chip.badge:SetPoint("LEFT", chip.label, "RIGHT", CHIP_PAD, 0)
 	withTooltip(chip)
 	return chip
@@ -105,12 +70,10 @@ end
 ---@return number
 local function setChip(chip, data)
 	chip.label:SetText(data.text)
-	local color = data.short and LOOK.red or data.kind == "unconfirmed" and UNCONFIRMED or LOOK.small
-	tint(chip.label, color)
-	local edge = (data.short and LOOK.red) or (data.kind == "unconfirmed" and UNCONFIRMED) or CHIP_EDGE
-	for _, line in ipairs(chip.edges) do
-		line:SetColorTexture(edge[1], edge[2], edge[3], CHIP_EDGE_ALPHA)
-	end
+	local color = data.short and LOOK.red or data.kind == "unconfirmed" and LOOK.unconfirmed or LOOK.small
+	inkText(chip.label, color)
+	local edge = (data.short and LOOK.red) or (data.kind == "unconfirmed" and LOOK.unconfirmed) or LOOK.chipEdge
+	chip.outline:Solid(edge, LOOK.chipEdgeAlpha)
 	chip.badge:SetText(data.badge or "")
 	chip.badge:SetShown(data.badge ~= nil)
 	chip.tooltip = data.tooltip
@@ -252,19 +215,6 @@ local function hideAll(view)
 	end
 end
 
--- The `i`th of a pool, made with `make` the first time.
----@generic T
----@param pool T[]
----@param i integer
----@param make fun(): T
----@return T
-local function pooled(pool, i, make)
-	if not pool[i] then
-		pool[i] = make()
-	end
-	return pool[i]
-end
-
 -- Lays out a text at the page's left `y` pixels down, `width` wide, if it has words; returns the y below it.
 ---@param text FontString
 ---@param words string?
@@ -295,7 +245,7 @@ local function layChips(view, chips, y, width)
 	end
 	local x = 0
 	for i, data in ipairs(chips) do
-		local chip = pooled(view.chips, i, function()
+		local chip = ns.BoardPooled(view.chips, i, function()
 			return newChip(view.page)
 		end)
 		local chipWidth = setChip(chip, data)
@@ -304,7 +254,6 @@ local function layChips(view, chips, y, width)
 		end
 		chip:ClearAllPoints()
 		chip:SetPoint("TOPLEFT", x, -y)
-		chip:Show()
 		x = x + chipWidth + CHIP_GAP
 	end
 	return y + CHIP_HEIGHT + CHIP_GAP
@@ -323,21 +272,19 @@ local function layLadder(view, ladder, y, width)
 	end
 	local page, fonts = view.page, ns.BoardFonts()
 	for k, step in ipairs(ladder.tiers or {}) do
-		local diamond = pooled(view.diamonds, k, function()
+		local diamond = ns.BoardPooled(view.diamonds, k, function()
 			return ns.NewBoardDiamond(page, DIAMOND_SIZE)
 		end)
-		diamond:SetDiamond(step.tier, step.reached)
+		diamond:SetDiamond(ns.Trim(step.tier), step.reached)
 		diamond:ClearAllPoints()
 		diamond:SetPoint("TOPLEFT", 0, -y)
-		diamond:Show()
-		local threshold = pooled(view.thresholds, k, function()
+		local threshold = ns.BoardPooled(view.thresholds, k, function()
 			return ns.BoardText(page, fonts.text, LOOK.ink)
 		end)
 		threshold:SetText(ns.L.LADDER_TIER:format(step.tier, step.threshold))
 		threshold:ClearAllPoints()
 		threshold:SetPoint("LEFT", diamond, "RIGHT", 6, 0)
-		threshold:Show()
-		local when = pooled(view.whens, k, function()
+		local when = ns.BoardPooled(view.whens, k, function()
 			return ns.BoardText(page, fonts.small, LOOK.note)
 		end)
 		when:SetText(step.when or "")

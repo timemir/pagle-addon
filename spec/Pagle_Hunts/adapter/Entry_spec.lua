@@ -154,7 +154,7 @@ describe("a Hunt's entry on the board", function()
 			assert.are.equal("52 caught", view.bar.label.text)
 			for k = 1, 3 do
 				local face = view.diamonds[k].face.color
-				assert.are.same(look.trims[k], { face[1], face[2], face[3] })
+				assert.are.same(look.trims[run.ns.Trim(k)], { face[1], face[2], face[3] })
 			end
 		end)
 

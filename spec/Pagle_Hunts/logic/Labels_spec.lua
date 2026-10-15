@@ -115,23 +115,26 @@ describe("Labels in realm time", function()
 			}, labels(c))
 		end)
 
-		it("short of skill beyond the lure reach: no lure sentence, as the grouping found it (HNT-R33, HNT-R52)", function()
-			local c = case({
-				group = "later",
-				window = { opensAt = NOW + 37 * MINUTE },
-				short = true,
-				lureGetsThere = false,
-				need = 225,
-				best = 124,
-			})
+		it(
+			"short of skill beyond the lure reach: no lure sentence, as the grouping found it (HNT-R33, HNT-R52)",
+			function()
+				local c = case({
+					group = "later",
+					window = { opensAt = NOW + 37 * MINUTE },
+					short = true,
+					lureGetsThere = false,
+					need = 225,
+					best = 124,
+				})
 
-			assert.are.equal("Opens in 37m, at 08:52. Needs 225; my best is 124.", ns.HuntWindowLine(c, auraNames))
-			c.best, c.lureGetsThere = 125, true
-			assert.are.equal(
-				"Opens in 37m, at 08:52. Needs 225; my best is 125. A lure gets me there.",
-				ns.HuntWindowLine(c, auraNames)
-			)
-		end)
+				assert.are.equal("Opens in 37m, at 08:52. Needs 225; my best is 124.", ns.HuntWindowLine(c, auraNames))
+				c.best, c.lureGetsThere = 125, true
+				assert.are.equal(
+					"Opens in 37m, at 08:52. Needs 225; my best is 125. A lure gets me there.",
+					ns.HuntWindowLine(c, auraNames)
+				)
+			end
+		)
 
 		it("short of skill while open: the line ignores skill, by the window as if not short (HNT-R52)", function()
 			local c = case({ group = "later", window = { openNow = true, closesAt = NOW + 3 * HOUR + 45 * MINUTE } })
@@ -145,7 +148,13 @@ describe("Labels in realm time", function()
 		end)
 
 		it("a row the grouping didn't find short reads by its group, whatever its skill need (HNT-R33)", function()
-			local c = case({ group = "soon", window = { opensAt = NOW + 37 * MINUTE }, short = false, need = 180, best = 180 })
+			local c = case({
+				group = "soon",
+				window = { opensAt = NOW + 37 * MINUTE },
+				short = false,
+				need = 180,
+				best = 180,
+			})
 
 			assert.are.same({ "in 37m", "in 37m", "Opens in 37m, at 08:52." }, labels(c))
 		end)

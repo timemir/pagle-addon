@@ -27,8 +27,6 @@ local NAME_WIDTH, MARGIN_WIDTH, GAP = 150, 74, 6
 local ROW_HEIGHT, HEADING_HEIGHT, BAR_HEIGHT, ICON_SIZE = 26, 22, 12, 18
 -- Bars made with each row before its now line, so the line draws over them.
 local BARS_AHEAD = 3
--- The trims' tiers on a board icon (HNT-R18).
-local TRIM_TIER = { bronze = 1, silver = 2, gold = 3 }
 
 -- An aura's expiry in server time (HNT-R63): `GetServerTime() + (expirationTime - GetTime())`, read for display only;
 -- nil when the call or the aura is missing, `expirationTime` is 0, or it is secret.
@@ -324,22 +322,17 @@ end
 local function drawWashes(view, washes)
 	local width = view.trackWidth
 	for i, wash in ipairs(washes) do
-		local texture = view.washes[i]
-		if not texture then
-			texture = view.column:CreateTexture(nil, "BACKGROUND")
-			view.washes[i] = texture
-		end
+		local texture = ns.BoardPooled(view.washes, i, function()
+			return view.column:CreateTexture(nil, "BACKGROUND")
+		end)
 		local color = wash.kind == "soon" and LOOK.soonWash or LOOK.nightWash
 		texture:SetColorTexture(color[1], color[2], color[3], LOOK.washAlpha)
 		texture:ClearAllPoints()
 		texture:SetPoint("TOPLEFT", wash.from * width, 0)
 		texture:SetPoint("BOTTOMLEFT", wash.from * width, 0)
 		texture:SetWidth(math.max(1, (wash.to - wash.from) * width))
-		texture:Show()
 	end
-	for i = #washes + 1, #view.washes do
-		view.washes[i]:Hide()
-	end
+	ns.BoardHideFrom(view.washes, #washes)
 end
 
 -- The margin label's ink by its case (variant E): red for Now, Soon and short of skill, faded for Later, blue for On
@@ -359,24 +352,19 @@ local function drawRow(view, drawn, row, nowX, y)
 	drawn.highlight:SetShown(row.selected)
 	local tint = row.tint and { row.tint.r, row.tint.g, row.tint.b }
 	drawn.icon:SetIcon(row.icon or "Interface\\Icons\\Trade_Fishing", tint)
-	drawn.icon:SetTrim(row.trim and TRIM_TIER[row.trim])
+	drawn.icon:SetTrim(row.trim)
 	drawn.pin:SetShown(row.pinned)
 	drawn.name:SetText(row.name)
 	local width = view.trackWidth
 	for i, bar in ipairs(row.bars) do
-		local barView = drawn.bars[i]
-		if not barView then
-			barView = ns.NewBoardTimelineBar(drawn.track, BAR_HEIGHT)
-			drawn.bars[i] = barView
-		end
+		local barView = ns.BoardPooled(drawn.bars, i, function()
+			return ns.NewBoardTimelineBar(drawn.track, BAR_HEIGHT)
+		end)
 		barView:ClearAllPoints()
 		barView:SetPoint("LEFT", bar.from * width, 0)
 		barView:SetBar(bar.style, math.max(2, (bar.to - bar.from) * width))
-		barView:Show()
 	end
-	for i = #row.bars + 1, #drawn.bars do
-		drawn.bars[i]:Hide()
-	end
+	ns.BoardHideFrom(drawn.bars, #row.bars)
 	drawn.note:SetText(row.note or "")
 	drawn.note:SetShown(row.note ~= nil)
 	drawn.nowLine:ClearAllPoints()
@@ -394,28 +382,25 @@ end
 local function drawList(view, timeline)
 	local y, rowsUsed = 0, 0
 	for i, group in ipairs(timeline.groups) do
-		local heading = view.headings[i] or newHeading(view)
-		view.headings[i] = heading
+		local heading = ns.BoardPooled(view.headings, i, function()
+			return newHeading(view)
+		end)
 		heading:ClearAllPoints()
 		heading:SetPoint("TOPLEFT", 0, -y)
 		heading.label:SetText(group.heading)
 		heading.count:SetText(tostring(group.count))
-		heading:Show()
 		y = y + HEADING_HEIGHT
 		for _, row in ipairs(group.rows) do
 			rowsUsed = rowsUsed + 1
-			local drawn = view.rows[rowsUsed] or newRow(view)
-			view.rows[rowsUsed] = drawn
+			local drawn = ns.BoardPooled(view.rows, rowsUsed, function()
+				return newRow(view)
+			end)
 			drawRow(view, drawn, row, timeline.ruler.now, y)
 			y = y + ROW_HEIGHT
 		end
 	end
-	for i = #timeline.groups + 1, #view.headings do
-		view.headings[i]:Hide()
-	end
-	for i = rowsUsed + 1, #view.rows do
-		view.rows[i]:Hide()
-	end
+	ns.BoardHideFrom(view.headings, #timeline.groups)
+	ns.BoardHideFrom(view.rows, rowsUsed)
 	view.content:SetHeight(math.max(1, y))
 end
 
