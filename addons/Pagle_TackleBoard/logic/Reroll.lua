@@ -28,16 +28,29 @@ function ns.TakeDownGoal(state, goalID, pagle)
 	return goal
 end
 
+--- The confirm's question (TKB-R56): its title, what is lost, and the progress inside that, which the confirm inks
+--- apart.
+---@class TackleTakeDownQuestion
+---@field title string      -- "Take down this Notice?"
+---@field text string       -- "Its progress (12/30) is lost, and the new one can't be taken down."
+---@field progress string   -- "12/30", as it reads in `text`
+
 --- The confirm's question before a goal comes down (TKB-R56), or nil when it comes down at once: it asks only for a
 --- goal whose displayed progress (TKB-R104) is above 0, showing that progress against its need (TKB-R44).
 ---@param goal TackleGoal
 ---@param today integer the board day now, the projection's day (TKB-R104)
 ---@param pagle table Core's catalogue calls (LOG-R55), for ns.GoalNeed
----@return string?
+---@return TackleTakeDownQuestion?
 function ns.TakeDownQuestion(goal, today, pagle)
+	local L = ns.L
 	local progress = ns.DisplayedProgress(goal, today)
 	if progress <= 0 then
 		return nil
 	end
-	return string.format(ns.L.TAKE_DOWN_CONFIRM[goal.type], progress, ns.GoalNeed(goal, pagle))
+	local shown = ns.Fill(L.TAKE_DOWN_PROGRESS, { n = progress, need = ns.GoalNeed(goal, pagle) })
+	return {
+		title = L.TAKE_DOWN_TITLE[goal.type],
+		text = ns.Fill(L.TAKE_DOWN_TEXT, { progress = shown }),
+		progress = shown,
+	}
 end

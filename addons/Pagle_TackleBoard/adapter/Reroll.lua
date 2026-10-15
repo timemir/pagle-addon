@@ -6,12 +6,29 @@ end
 local ns = select(2, ...)
 
 -- "Take it down" on the client (TKB-R55, TKB-R56): ns.CanTakeDown and ns.TakeDown (logic/Seams.lua; adapter/Pins.lua
--- shows the button and calls them), the native confirm and the `reroll` record, which only this file and
--- adapter/LiveStep.lua's live step append (TKB-R80). The rules are logic/Reroll.lua's. The popup is a plain
--- StaticPopup, not secure, so it works in combat (TKB-R193).
+-- shows the button and calls them), the confirm and the `reroll` record, which only this file and adapter/LiveStep.lua's
+-- live step append (TKB-R80). The rules are logic/Reroll.lua's. The confirm is the board art kit's (PagleArtBoard's
+-- Overlays.lua, P.Confirm): a paper pinned over the screen's middle with the question, what is lost (the progress in
+-- red), a leather "Take it down" and a pencilled "Keep it". It is a plain frame, not secure, so it works in combat
+-- (TKB-R193), and Esc keeps the goal (UISpecialFrames).
 
--- The confirm's StaticPopupDialogs key, the one field .luacheckrc lets the Tackle Board set.
-local DIALOG = "PAGLE_TACKLEBOARD_REROLL"
+-- The confirm's global name, for UISpecialFrames; its paper, 360 × 166, leaning a little; its red ink.
+local CONFIRM_NAME = "PagleTackleBoardConfirm"
+local CONFIRM_WIDTH, CONFIRM_HEIGHT, CONFIRM_LEAN, RED = 360, 166, -0.8, "9A2A1A"
+
+---@class TackleConfirmKeep: Button
+---@field label FontString
+
+---@class TackleConfirmFrame: Frame
+---@field paper TackleSprite
+---@field title FontString
+---@field text FontString
+---@field accept TackleButtonView
+---@field keep TackleConfirmKeep
+---@field goalID string?
+
+---@type TackleConfirmFrame?
+local confirm
 
 --- The goal `goalID` names if it can be taken down now (TKB-R55, TKB-R108): one ns.CanTakeDown allows, while the
 --- projection isn't updating.
@@ -46,8 +63,63 @@ local function reroll(goalID)
 	end
 end
 
+-- The confirm, made at its first showing: its paper and tack, the question, what is lost, and its two answers. "Take
+-- it down" takes down the goal it was shown for, if it still can be; "Keep it" and Esc only close it.
+---@return TackleConfirmFrame
+local function confirmFrame()
+	if confirm then
+		return confirm
+	end
+	local L = ns.L
+	local frame = CreateFrame("Frame", CONFIRM_NAME, UIParent) --[[@as TackleConfirmFrame]]
+	frame:SetSize(CONFIRM_WIDTH, CONFIRM_HEIGHT)
+	frame:SetPoint("CENTER")
+	frame:SetFrameStrata("DIALOG")
+	frame:EnableMouse(true)
+	frame.paper = ns.ArtSprite(frame, "Board", "confirm", "BACKGROUND")
+	ns.PlaceSprite(ns.NewBoardTack(frame), frame, 173, -5)
+	frame.title = ns.ArtText(frame, "ConfirmTitle")
+	frame.title:SetJustifyH("CENTER")
+	frame.title:SetPoint("TOP", 0, -28)
+	frame.text = ns.ArtWrap(frame, "ConfirmText", 308, 4)
+	frame.text:SetJustifyH("CENTER")
+	frame.text:SetPoint("TOP", 0, -60)
+	frame.accept = ns.NewBoardButton(frame, L.TAKE_DOWN_YES, 134, "ButtonSmall", function()
+		local goalID = frame.goalID
+		frame:Hide()
+		if goalID then
+			reroll(goalID)
+		end
+	end)
+	frame.accept:SetPoint("TOPLEFT", 47, -112)
+	frame.keep = CreateFrame("Button", nil, frame) --[[@as TackleConfirmKeep]]
+	local keep = ns.ArtText(frame.keep, "ConfirmKeep")
+	keep:SetPoint("TOPLEFT")
+	keep:SetText(L.TAKE_DOWN_NO)
+	frame.keep:SetSize(keep:GetStringWidth() + 4, 26)
+	frame.keep:SetPoint("TOPLEFT", 203, -121)
+	frame.keep.label = keep
+	ns.BoardDots(frame.keep, keep, keep:GetStringWidth(), ns.BOARD_FONTS.ConfirmKeep[3])
+	frame.keep:SetScript("OnClick", function()
+		frame:Hide()
+	end)
+	frame:SetScript("OnHide", function(self)
+		self.goalID = nil
+	end)
+	table.insert(UISpecialFrames, CONFIRM_NAME)
+	frame:Hide()
+	confirm = frame
+	return frame
+end
+
+--- The confirm, if it was ever shown (for its specs).
+---@return TackleConfirmFrame?
+function ns.TakeDownConfirm()
+	return confirm
+end
+
 --- Takes a goal down (TKB-R55, TKB-R56), if it can be now: at once with no displayed progress, else after "Take it
---- down" in a native confirm, checking the conditions again then. "Keep it" and Esc append nothing.
+--- down" in the confirm, checking the conditions again then. "Keep it" and Esc append nothing.
 ---@param goalID string the entry ID of the record that issued it (TKB-R23)
 function ns.TakeDown(goalID)
 	local goal = takeable(goalID)
@@ -59,17 +131,20 @@ function ns.TakeDown(goalID)
 		reroll(goalID)
 		return
 	end
-	local L = ns.L
-	StaticPopupDialogs.PAGLE_TACKLEBOARD_REROLL = {
-		text = question,
-		button1 = L.TAKE_DOWN_YES,
-		button2 = L.TAKE_DOWN_NO,
-		OnAccept = function(_, data)
-			reroll(data)
-		end,
-		timeout = 0,
-		whileDead = true,
-		hideOnEscape = true,
-	}
-	StaticPopup_Show(DIALOG, nil, nil, goalID)
+	local frame = confirmFrame()
+	frame.title:SetText(question.title)
+	local at = question.text:find(question.progress, 1, true)
+	local text = question.text
+	if at then
+		text = question.text:sub(1, at - 1)
+			.. "|cff"
+			.. RED
+			.. question.progress
+			.. "|r"
+			.. question.text:sub(at + #question.progress)
+	end
+	frame.text:SetText(text)
+	ns.LeanSprite(frame.paper, frame, 0, 0, CONFIRM_LEAN)
+	frame:Show()
+	frame.goalID = goalID
 end

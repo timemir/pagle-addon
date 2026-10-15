@@ -16,7 +16,10 @@ local ns = select(2, ...)
 --- One goal on the spike.
 ---@class TackleSpikeGoal
 ---@field id string
+---@field kicker string      -- "Notice done" or "Expedition done", over its text in small caps
 ---@field text string        -- the goal text, on its slip
+---@field note string        -- by hand under it: its Coins and the fly it tied, "+10 · Swamp Midge"
+---@field fly string?        -- the pattern it tied, drawn on its hover
 ---@field hover string[]     -- the goal text, its Coins and the fly it tied
 
 --- What the spike shows (TKB-R103).
@@ -61,15 +64,41 @@ function ns.SpikeView(state)
 	for i, goal in ipairs(done) do
 		local text = ns.GoalText(goal)
 		local hover = { text, ns.Plural(goal.pay, "SPIKE_COINS") }
+		local note = ns.Fill(L.SPIKE_NOTE_PLAIN, { coins = goal.pay })
 		if goal.fly then
 			hover[#hover + 1] = ns.Fill(L.SPIKE_FLY, { fly = ns.FlyName(goal.fly) })
+			note = ns.Fill(L.SPIKE_NOTE, { coins = goal.pay, fly = ns.FlyName(goal.fly) })
 		end
-		goals[i] = { id = goal.id, text = text, hover = hover }
+		goals[i] = {
+			id = goal.id,
+			kicker = goal.type == "e" and L.EXPEDITION_DONE or L.NOTICE_DONE,
+			text = text,
+			note = note,
+			fly = goal.fly,
+			hover = hover,
+		}
 	end
 	return {
 		goals = goals,
 		label = #goals > 0 and ns.Fill(L.SPIKE_DONE, { n = #goals }) or L.SPIKE_EMPTY,
 	}
+end
+
+--- How today's done slips hang on the spike's nail (TKB-R103, tackle-board.md › UI): each swung by its angle, in
+--- degrees clockwise, the board art kit's 14° and -7° and on from there; each `step` units below the last, closer as
+--- more hang so the stack stays within `room` units.
+---@param n integer the slips
+---@param room number how far down the last may hang below the first
+---@return number[] swings
+---@return number step
+function ns.SpikeHang(n, room)
+	local SWINGS = { 14, -7, 9, -12, 5, -10, 11, -4 }
+	local swings = {}
+	for i = 1, n do
+		swings[i] = SWINGS[(i - 1) % #SWINGS + 1]
+	end
+	local step = n > 1 and math.min(12, room / (n - 1)) or 0
+	return swings, step
 end
 
 -- The Campfire (TKB-R70–R74, TKB-R106).
@@ -161,6 +190,14 @@ local FIRST_DAY = 0
 ---@field milestones TackleCardTitle[]  -- the Campfire milestones in order, with their Coins
 ---@field tally TackleCardTitle[]       -- the tally titles
 ---@field flybox TackleCardTitle[]      -- the Fly Box title
+---@field weeks string[]                -- each week's first day, "14 Sep", by its row
+---@field marks table<string, TackleCardMark>   -- by title ID: its threshold, and what is still to go
+
+--- A title's threshold on the card and what is still to go to it (TKB-R106, the board art kit's card).
+---@class TackleCardMark
+---@field label string     -- "7 days", "25 goals" or "Fly Box"
+---@field more string?     -- not earned: "17 more days", "74 more goals", "4 more patterns"
+---@field paid integer?    -- a milestone's Coins
 
 -- A day's status on the card: before the board's first day, "before"; today, "lit" once lit, else "today"; any other
 -- day, its Campfire log ("unlit" if it has none).
@@ -187,16 +224,32 @@ end
 ---@return TackleCampfireCard
 function ns.CampfireCard(state, celebrated)
 	local L = ns.L
-	local card = { days = {}, heads = {}, milestones = {}, tally = {}, flybox = {} }
+	local card = { days = {}, heads = {}, milestones = {}, tally = {}, flybox = {}, weeks = {}, marks = {} }
 	for i = 1, ns.KEPT_DAYS do
 		local day = state.day - ns.KEPT_DAYS + i
 		local status = dayStatus(state, day)
-		local date, number, weekday = realmDay(ns.DayStartOf(state.boundary --[[@as TackleBoundary]], day))
+		local start = ns.DayStartOf(state.boundary --[[@as TackleBoundary]], day)
+		local date, number, weekday = realmDay(start)
 		card.days[i] = { day = day, status = status, text = L.CARD_DAYS[status], date = date, number = number }
 		if i <= 7 then
 			card.heads[i] = weekday
 		end
+		if i % 7 == 1 then
+			local realm = ns.RealmDate(start)
+			card.weeks[#card.weeks + 1] = ns.Fill(L.CARD_SHORT_DATE, { day = realm.day, month = L.MONTHS[realm.month] })
+		end
 	end
+	-- How far each kind of title has come: the current fire, the goals done for life, the patterns tied.
+	local tied = 0
+	for _ in pairs(state.flies) do
+		tied = tied + 1
+	end
+	local reached = {
+		campfire = state.fire.count,
+		tally = state.tally.notices + state.tally.expeditions,
+		flybox = tied,
+	}
+	local more = { campfire = "CARD_MORE_CAMPFIRE", tally = "CARD_MORE_TALLY", flybox = "CARD_MORE_FLYBOX" }
 	local coins = {}
 	for _, milestone in ipairs(ns.CAMPFIRE_MILESTONES) do
 		coins[milestone.title] = milestone.coins
@@ -207,6 +260,12 @@ function ns.CampfireCard(state, celebrated)
 			name = ns.TitleName(title.id),
 			need = ns.Fill(L.CARD_NEEDS[title.source], { n = title.need }),
 			earned = state.titles[title.id] ~= nil or celebrated[title.id] == true,
+		}
+		card.marks[title.id] = {
+			label = ns.Fill(L.CARD_LABELS[title.source], { n = title.need }),
+			more = not row.earned and ns.Plural(math.max(1, title.need - reached[title.source]), more[title.source])
+				or nil,
+			paid = coins[title.id],
 		}
 		local list = card.tally
 		if title.source == "campfire" then

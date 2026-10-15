@@ -11,6 +11,7 @@
 
 locale\enUS.lua
 data\Lore.lua
+data\BoardArt.lua
 logic\Data.lua
 logic\Days.lua
 logic\Module.lua
@@ -30,6 +31,7 @@ logic\Moments.lua
 logic\Goods.lua
 logic\Tracker.lua
 adapter\Client.lua
+adapter\BoardArt.lua
 adapter\BoardWidgets.lua
 adapter\TrackerBlock.lua
 adapter\Goods.lua

@@ -68,10 +68,12 @@ describe("A tracker block", function()
 				"12 · 4 open",
 				"Expedition: Catches in 5 zones of Kalimdor",
 				"2/5",
-				"Kalimdor · here",
+				"Kalimdor",
+				" · here",
 				"30 Catches in Durotar",
 				"12/30",
-				"Durotar · here",
+				"Durotar",
+				" · here",
 				"+2 more on the board (elsewhere)",
 			}, textsOf(block))
 		end
@@ -88,66 +90,48 @@ describe("A tracker block", function()
 		assert.is_true(short < tall)
 		assert.are.equal(short, block:GetHeight())
 		assert.are.same(
-			{ "Tackle Board", "12 · 4 open", "30 Catches in Durotar", "12/30", "Durotar · here" },
+			{ "Tackle Board", "12 · 4 open", "30 Catches in Durotar", "12/30", "Durotar", " · here" },
 			textsOf(block)
 		)
 	end)
 
-	it(
-		"shows the flame only by a lit fire's days, and the collapse mark as minus or plus (TKB-R122, TKB-R106)",
-		function()
-			local block, ns = newBlock()
+	it("shows the flame only by a lit fire's days, and its chevron down, or up while collapsed (TKB-R122)", function()
+		local block, ns = newBlock()
+		local marks = ns.BOARD_ATLASES.Marks
 
-			block:SetLines({ LINES[1] })
-			local header = block.rows[1]
-			assert.is_true(header.flame:IsShown())
-			assert.are.equal(ns.BOARD_TEXTURES.flame, header.flame.texture)
-			assert.are.equal("Interface\\Buttons\\UI-MinusButton-Up", header.mark.texture)
+		block:SetLines({ LINES[1] })
+		local header = block.rows[1]
+		assert.is_true(header.flame:IsShown())
+		assert.are.equal(marks.file, header.flame.texture)
+		assert.is_true(header.chevron.texCoord[3] < header.chevron.texCoord[4])
 
-			block:SetLines({ { kind = "header", text = "Tackle Board", right = "4 open", collapsed = true } })
-			assert.is_false(header.flame:IsShown())
-			assert.are.equal("Interface\\Buttons\\UI-PlusButton-Up", header.mark.texture)
-			assert.are.same({ "Tackle Board", "4 open" }, textsOf(block))
-		end
-	)
+		block:SetLines({ { kind = "header", text = "Tackle Board", right = "4 open", collapsed = true } })
+		assert.is_false(header.flame:IsShown())
+		assert.is_true(header.chevron.texCoord[3] > header.chevron.texCoord[4])
+		assert.are.same({ "Tackle Board", "4 open" }, textsOf(block))
+	end)
 
-	it("inks an Expedition's line apart from a Notice's, as the prototype's tracker (TKB-R122)", function()
+	it('inks " · here" green apart from where the goal is (TKB-R122)', function()
 		local block, ns = newBlock()
 
 		block:SetLines(LINES)
 
-		local inks = ns.TRACKER_INKS
-		assert.are.same(inks.expedition, rgb(block.rows[2].text.textColor))
-		assert.are.same(inks.goal, rgb(block.rows[3].text.textColor))
-		assert.are_not.same(inks.goal, inks.expedition)
-		assert.are.same(inks.count, rgb(block.rows[3].right.textColor))
-		assert.are.same(inks.where, rgb(block.rows[3].sub.textColor))
-		assert.are.same(inks.more, rgb(block.rows[4].text.textColor))
+		local goal = block.rows[3]
+		assert.are.same(ns.BoardHex("8FD18F"), rgb(goal.here.textColor))
+		assert.are.same(ns.BoardHex("C8C0A8"), rgb(goal.sub.textColor))
 	end)
 
 	it('draws a goal flashing "Complete" as one green line with no where line (TKB-R123)', function()
 		local block, ns = newBlock()
 		local flashing = { kind = "goal", text = "30 Catches in Durotar", count = "Complete", complete = true }
 
-		local pair = block:SetLines({ LINES[3] })
-		local single = block:SetLines({ flashing })
+		block:SetLines({ flashing })
 
-		assert.is_true(single < pair)
 		assert.are.same({ "30 Catches in Durotar", "Complete" }, textsOf(block))
-		local green = ns.TRACKER_INKS.complete
-		assert.are.same({ 0x7d / 255, 1, 0x7d / 255 }, green) -- tracker K2's `.ln.fin`
-		assert.are.same(green, rgb(block.rows[1].text.textColor))
-		assert.are.same(green, rgb(block.rows[1].right.textColor))
-
-		-- A look's inks without a green of their own keep the native one; Corkboard has its own darker green.
-		local plain = { base = { 1, 1, 1 }, texture = "x", tint = { 1, 1, 1 }, alpha = 1, border = { 0, 0, 0 } }
-		plain.borderSize, plain.ink = 1, {}
-		block:SetFrame(plain)
-		assert.are.same(green, rgb(block.rows[1].right.textColor))
-		local cork = ns.TRACKER_FRAMES["tackleboard.trackerframe.corkboard"]
-		block:SetFrame(cork)
-		assert.are.same(cork.ink.complete, rgb(block.rows[1].right.textColor))
-		assert.are_not.same(green, cork.ink.complete)
+		assert.are.same(ns.BoardHex("9CF09C"), rgb(block.rows[1].text.textColor))
+		assert.are.same(ns.BoardHex("9CF09C"), rgb(block.rows[1].right.textColor))
+		block:SetFrame(ns.TRACKER_STYLES.cork)
+		assert.are.same(ns.BoardHex("1E6A1E"), rgb(block.rows[1].right.textColor))
 	end)
 
 	it("gives each row the line it shows, for the live tracker's clicks (TKB-R123)", function()
@@ -160,82 +144,53 @@ describe("A tracker block", function()
 end)
 
 describe("A tracker block's frame", function()
-	it("is nothing with no look: the plain native block (TKB-R124, TKB-R125)", function()
+	it("is nothing with No frame: each line on a shade, the native look (TKB-R124, TKB-R125)", function()
 		local block = newBlock()
 		block:SetLines(LINES)
 
 		block:SetFrame(nil)
 
-		assert.is_false(block.frame.backing:IsShown())
-		assert.is_false(block.frame.grain:IsShown())
-		for _, line in ipairs(block.frame.border) do
-			assert.is_false(line:IsShown())
-		end
+		assert.is_nil(block.frame)
+		assert.is_true(block.rows[3].shade:IsShown())
 	end)
 
-	it("lays a look's backing, its grain in its tint, and its border round the block (TKB-R124)", function()
-		local block = newBlock()
-		block:SetLines(LINES)
-		local look = {
-			base = { 0.6, 0.45, 0.25 },
-			texture = "Interface\\FrameGeneral\\UI-Background-Marble",
-			tint = { 0.1, 0.2, 0.3 },
-			alpha = 0.4,
-			border = { 0.35, 0.23, 0.1 },
-			borderSize = 3,
-		}
+	it(
+		"slices the Corkboard round its lines, each goal on a slip with a tack, and only then loads its atlas",
+		function()
+			local block, ns = newBlock()
+			block:SetLines(LINES)
+			assert.is_nil(block.rows[3].slip)
 
-		block:SetFrame(look)
+			block:SetFrame(ns.TRACKER_STYLES.cork)
 
-		local frame = block.frame
-		assert.is_true(frame.backing:IsShown())
-		assert.are.same(look.base, rgb(frame.backing.color))
-		assert.is_true(frame.grain:IsShown())
-		assert.are.equal(look.texture, frame.grain.texture)
-		assert.are.same(look.tint, rgb(frame.grain.vertexColor))
-		assert.are.equal(0.4, frame.grain:GetAlpha())
-		for _, line in ipairs(frame.border) do
-			assert.is_true(line:IsShown())
-			assert.are.same(look.border, rgb(line.color))
+			local tracker = ns.BOARD_ATLASES.Tracker
+			assert.is_true(block.frame:IsShown())
+			assert.are.equal(tracker.file, block.frame.top.texture)
+			assert.are.same({ 250 + 38, block:GetHeight() }, { block.frame.width, block.frame.height })
+			assert.are.same({ "TOPLEFT", -19, 0 }, block.frame.points[1])
+			assert.is_true(block.rows[3].slip:IsShown())
+			assert.are.equal(tracker.file, block.rows[3].slip.texture)
+			assert.is_true(block.rows[3].tack:IsShown())
+			assert.is_false(block.rows[3].shade:IsShown())
+			assert.are.same(ns.BoardHex("2A180A"), rgb(block.rows[3].text.textColor))
 		end
-	end)
+	)
 
-	it("sets the words in a look's inks on a pale backing, and back in the native colours after (TKB-R124)", function()
+	it("rules the Driftwood Plank's lines apart, and hides a frame's slips back in No frame (TKB-R124)", function()
 		local block, ns = newBlock()
-		local ink = {
-			header = { 0.16, 0.1, 0.03 },
-			dim = { 0.23, 0.16, 0.08 },
-			goal = { 0.1, 0.06, 0.02 },
-			expedition = { 0.1, 0.06, 0.03 },
-			count = { 0.42, 0.1, 0.04 },
-			where = { 0.23, 0.16, 0.08 },
-			more = { 0.22, 0.15, 0.07 },
-		}
-		local look = {
-			base = { 1, 1, 1 },
-			texture = "x",
-			tint = { 1, 1, 1 },
-			alpha = 1,
-			border = { 0, 0, 0 },
-			borderSize = 1,
-			ink = ink,
-		}
-
-		-- The look first, then the lines: lines drawn later still take its inks.
-		block:SetFrame(look)
 		block:SetLines(LINES)
 
-		local header, goal = block.rows[1], block.rows[3]
-		assert.are.same(ink.header, rgb(header.text.textColor))
-		assert.are.same(ink.dim, rgb(header.right.textColor))
-		assert.are.same(ink.goal, rgb(goal.text.textColor))
-		assert.are.same(ink.count, rgb(goal.right.textColor))
-		assert.are.same(ink.where, rgb(goal.sub.textColor))
+		block:SetFrame(ns.TRACKER_STYLES.cork)
+		block:SetFrame(ns.TRACKER_STYLES.drift)
+
+		assert.is_true(block.frame:IsShown())
+		assert.is_true(block.rows[3].rule:IsShown()) -- the second goal line, under the first
+		assert.is_false(block.rows[2].rule:IsShown())
+		assert.is_false(block.rows[3].slip:IsShown())
+		assert.are.equal("TACKLE BOARD", block.rows[1].text:GetText())
 
 		block:SetFrame(nil)
-
-		local native = ns.TRACKER_INKS
-		assert.are.same(native.header, rgb(header.text.textColor))
-		assert.are.same(native.goal, rgb(goal.text.textColor))
+		assert.is_false(block.frame:IsShown())
+		assert.are.equal("Tackle Board", block.rows[1].text:GetText())
 	end)
 end)

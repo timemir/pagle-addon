@@ -164,7 +164,8 @@ local SAMPLE = {
 	"5 · 2 open",
 	"30 Catches in Elwynn Forest",
 	"12/30",
-	"Elwynn Forest · here",
+	"Elwynn Forest",
+	" · here",
 	"5 uncommon-or-better Catches",
 	"2/5",
 	"anywhere",
@@ -222,11 +223,15 @@ describe("A tracker frame's preview", function()
 				assert.are.equal(1, #stage.children, id) -- one sample, drawn afresh
 				local block = stage.children[1]
 				assert.is_true(block:IsShown())
-				assert.are.same(SAMPLE, textsOf(block), id)
-				local look, dressed = ns.TRACKER_FRAMES[id], block.frame
-				assert.are.equal(look ~= nil, dressed.backing:IsShown(), id)
-				if look then
-					assert.are.equal(look.texture, dressed.grain.texture, id)
+				local expected = { unpack(SAMPLE) }
+				if id == "tackleboard.trackerframe.driftwood" then
+					expected[1] = "TACKLE BOARD" -- the plank's title in capitals
+				end
+				assert.are.same(expected, textsOf(block), id)
+				local style, dressed = ns.TRACKER_FRAMES[id], block.frame
+				assert.are.equal(style ~= nil, dressed ~= nil and dressed:IsShown(), id)
+				if style then
+					assert.are.equal(ns.BOARD_ATLASES.Tracker.file, dressed.top.texture, id)
 				end
 			end
 		end
@@ -239,10 +244,10 @@ describe("A tracker frame's preview", function()
 		fake.ns.goods:Good("tackleboard.trackerframe.corkboard").preview(stage)
 
 		local texts = textsOf(stage.children[1])
-		assert.are.same({ "30 Catches in Wald von Elwynn", "Wald von Elwynn · here" }, { texts[3], texts[5] })
+		assert.are.same({ "30 Catches in Wald von Elwynn", "Wald von Elwynn" }, { texts[3], texts[5] })
 	end)
 
-	it("shows a small flame by the Campfire's days, and the header's expanded mark (TKB-R122)", function()
+	it("shows the small flame by the Campfire's days, and the header's chevron (TKB-R122)", function()
 		local loaded, fake = withNames()
 		local stage = loaded.env.CreateFrame("Frame")
 
@@ -250,24 +255,20 @@ describe("A tracker frame's preview", function()
 
 		local header = stage.children[1].rows[1]
 		assert.is_true(header.flame:IsShown())
-		assert.are.equal(loaded.ns.BOARD_TEXTURES.flame, header.flame.texture)
-		assert.is_true(header.mark:IsShown())
-		assert.are.equal("Interface\\Buttons\\UI-MinusButton-Up", header.mark.texture)
+		assert.are.equal(loaded.ns.BOARD_ATLASES.Marks.file, header.flame.texture)
+		assert.is_true(header.chevron:IsShown())
 	end)
 
 	it(
-		"dresses Corkboard in cork with a thin wooden border and dark ink, and Driftwood Plank in weathered wood with the native words (TKB-R125)",
+		"dresses Corkboard as the kit's cork panel with its goals on slips, and Driftwood Plank as its ruled grey plank (TKB-R125)",
 		function()
 			local loaded = loggedIn()
 			local ns = loaded.ns
 			local cork = ns.TRACKER_FRAMES["tackleboard.trackerframe.corkboard"]
 			local plank = ns.TRACKER_FRAMES["tackleboard.trackerframe.driftwood"]
 
-			assert.are.equal(ns.BOARD_TEXTURES.fleck, cork.texture) -- the board's cork flecks
-			assert.is_true(cork.borderSize <= 3) -- a thin border
-			assert.is_not_nil(cork.ink) -- dark words on the pale cork
-			assert.are.equal(ns.BOARD_TEXTURES.grain, plank.texture) -- the board's wood grain
-			assert.is_nil(plank.ink) -- the native colours on dark wood
+			assert.are.same({ "trk-cork", true }, { cork.frame, cork.slips })
+			assert.are.same({ "trk-drift", true }, { plank.frame, plank.rules })
 		end
 	)
 end)

@@ -101,18 +101,34 @@ describe("the spike (TKB-R103)", function()
 		assert.is_true(visible(spike, frame))
 		assert.are.same({ "1 Catch in Durotar", "1 Catch in The Barrens" }, spiked(spike))
 		assert.are.equal("2 done today. The fire's lit.", spike.label:GetText())
+		assert.are.equal("NOTICE DONE", spike.slips[1].kicker:GetText())
+		assert.is_true(spike.slips[2]:GetFrameLevel() > spike.slips[1]:GetFrameLevel()) -- the later over the earlier
 	end)
 
-	it("shows a done goal's Coins and fly on its hover", function()
+	it("notes each slip's Coins and the fly it tied by hand, and shows them with the fly on its hover", function()
 		local loaded, _, spike = opened(TWO_DONE_TODAY)
 		local fly = loaded.ns.State().goals[PLAYER_GUID .. "-" .. (S + 2) .. "-0"].fly
 
 		hover(spike.slips[1])
 
+		assert.are.equal("+10 · " .. fly, spike.slips[1].note:GetText())
 		assert.are.same(
 			{ "1 Catch in Durotar", "Paid 10 Coins", "Tied for your Fly Box: " .. fly },
-			loaded.client.tooltipLines()
+			loaded.ns.BoardHoverLines()
 		)
+	end)
+
+	it("swings its slips on the nail while the papers lean, and hangs them straight with the lean off", function()
+		local loaded, _, spike = opened(TWO_DONE_TODAY)
+		local paper = spike.slips[1].paper
+		paper.SetRotation = function(self, radians)
+			self.rotation = radians
+		end
+
+		loaded.ns.Redraw("projection")
+		assert.are.equal(-math.rad(14), paper.rotation)
+		loaded.ns.ToggleLean()
+		assert.are.equal(0, paper.rotation)
 	end)
 
 	it('is empty after the reset and reads "Done ones go on the spike."', function()
@@ -125,87 +141,121 @@ describe("the spike (TKB-R103)", function()
 	end)
 end)
 
+-- The Fire atlas's sprite a texture shows, by its texture coordinates.
+local function fireSprite(ns, texture)
+	local atlas = ns.BOARD_ATLASES.Fire
+	for name, sprite in pairs(atlas.sprites) do
+		if texture.texture == atlas.file and texture.texCoord[1] == sprite.x / atlas.width then
+			if texture.texCoord[3] == sprite.y / atlas.height then
+				return name
+			end
+		end
+	end
+	return nil
+end
+
 describe("the Campfire on the ledge (TKB-R106)", function()
-	it('reads "Not lit yet" over bare logs on a fresh board', function()
-		local _, _, _, ledge = opened(FRESH)
+	it('reads "Not lit yet" by bare logs on a fresh board, with no glow', function()
+		local loaded, _, _, ledge, frame = opened(FRESH)
 		local fire = ledge.fire
 
 		assert.are.equal("Not lit yet", fire.text:GetText())
-		assert.is_false(fire.flame.flame:IsShown())
-		assert.is_false(fire.flame.embers[1]:IsShown())
-		assert.is_true(fire.flame.logs[1]:IsShown())
+		assert.is_false(fire.days:IsShown())
+		assert.are.equal("fire-none", fireSprite(loaded.ns, fire.flame))
+		assert.is_false(fire.glow:IsShown())
+		assert.is_false(frame.glow:IsShown())
 	end)
 
-	it('reads "1 day" with 2 of 3 sticks of Kindling and "longest 1" while lit, the flame a texture', function()
-		local _, _, _, ledge = opened(ONE_DONE_TODAY)
+	it('reads "1 day" with 2 of 3 sticks of Kindling and "longest 1" while lit, its glow over the cork', function()
+		local loaded, _, _, ledge, frame = opened(ONE_DONE_TODAY)
 		local fire = ledge.fire
 
-		assert.are.equal("1 day", fire.text:GetText())
+		assert.are.same({ "1", "day" }, { fire.days:GetText(), fire.word:GetText() })
 		assert.are.equal("longest 1", fire.longest:GetText())
-		assert.are.same({ 1, 1, 0.45 }, {
-			fire.sticks.sticks[1]:GetAlpha(),
-			fire.sticks.sticks[2]:GetAlpha(),
-			fire.sticks.sticks[3]:GetAlpha(),
+		assert.are.same({ 1, 1, 0.28 }, {
+			fire.sticks[1]:GetAlpha(),
+			fire.sticks[2]:GetAlpha(),
+			fire.sticks[3]:GetAlpha(),
 		})
-		assert.is_true(fire.flame.flame:IsShown())
-		assert.are.equal("Interface\\Icons\\Spell_Fire_Fire", fire.flame.flame.texture)
+		assert.are.equal("fire-3", fireSprite(loaded.ns, fire.flame))
+		assert.is_true(fire.glow:IsShown())
+		assert.is_true(frame.glow:IsShown())
 	end)
 
 	it('reads "Gone out" over embers after a fire went out', function()
-		local _, _, _, ledge = opened(WENT_OUT)
+		local loaded, _, _, ledge = opened(WENT_OUT)
 		local fire = ledge.fire
 
 		assert.are.equal("Gone out", fire.text:GetText())
-		assert.is_false(fire.flame.flame:IsShown())
-		assert.is_true(fire.flame.embers[1]:IsShown())
-		assert.is_true(fire.flame.ash:IsShown())
+		assert.are.equal("fire-out", fireSprite(loaded.ns, fire.flame))
+		assert.is_false(fire.glow:IsShown())
 	end)
 
-	it("draws a larger flame at 7 days than at 6", function()
+	it("steps the fire up at 7, 30, 100 and 365 days", function()
 		local loaded, _, _, ledge = opened(ONE_DONE_TODAY)
 		local state = loaded.ns.State()
 
-		state.fire.count = 6
-		loaded.ns.Redraw("projection")
-		local six = ledge.fire.flame.flame:GetWidth()
-		state.fire.count = 7
-		loaded.ns.Redraw("projection")
-		local seven = ledge.fire.flame.flame:GetWidth()
+		local stages = {}
+		for _, count in ipairs({ 6, 7, 30, 100, 365 }) do
+			state.fire.count = count
+			loaded.ns.Redraw("projection")
+			stages[#stages + 1] = fireSprite(loaded.ns, ledge.fire.flame)
+		end
 
-		assert.is_true(seven > six)
+		assert.are.same({ "fire-3", "fire-7", "fire-30", "fire-100", "fire-365" }, stages)
 	end)
 end)
 
 describe("the Campfire card (TKB-R106, TKB-R64)", function()
-	it("opens on a click on the Campfire, with 28 days, today last", function()
+	it("is made at its first opening, on a click on the Campfire, with 28 days, today last and ringed", function()
 		local loaded, _, _, ledge, frame = opened(WENT_OUT)
+		assert.is_nil(ledge.card)
 
 		ledge.fire:Click()
 
 		local card = ledge.card
 		assert.is_true(visible(card, frame))
+		assert.is_true(ledge.veil:IsShown())
+		assert.are.equal(loaded.ns.BOARD_ATLASES.Card.file, card.paper.texture)
 		assert.are.equal(28, #card.days)
-		assert.are.equal("11", card.days[28].number:GetText())
+		assert.is_true(card.days[28].today:IsShown())
+		assert.is_false(card.days[27].today:IsShown())
+		assert.are.same({ "14 Sep", "21 Sep", "28 Sep", "5 Oct" }, {
+			card.weeks[1]:GetText(),
+			card.weeks[2]:GetText(),
+			card.weeks[3]:GetText(),
+			card.weeks[4]:GetText(),
+		})
 		hover(card.days[28])
-		assert.are.same({ "Sun 11 Oct", "today" }, loaded.client.tooltipLines())
+		assert.are.same({ "Sun 11 Oct", "today" }, loaded.ns.BoardHoverLines())
 		hover(card.days[26])
-		assert.are.same({ "Fri 9 Oct", "Kindling burned" }, loaded.client.tooltipLines())
+		assert.are.same({ "Fri 9 Oct", "Kindling burned" }, loaded.ns.BoardHoverLines())
 		hover(card.days[23])
-		assert.are.same({ "Tue 6 Oct", "before the board" }, loaded.client.tooltipLines())
+		assert.are.same({ "Tue 6 Oct", "before the board" }, loaded.ns.BoardHoverLines())
+		assert.is_false(card.days[23].icon:IsShown())
+		assert.is_true(card.days[26].icon:IsShown())
 	end)
 
-	it("lists the milestones with their Coins, and greys the titles not earned with what they need", function()
+	it("lists the milestones with their Coins and what is still to go, the titles not earned greyed", function()
 		local _, _, _, ledge = opened(WENT_OUT)
 
 		ledge.fire:Click()
 
 		local row = ledge.card.rows.milestones[1]
-		assert.are.equal("campfire_7", row.name:GetText())
-		assert.are.equal("a Campfire of 7 days, 25 Coins", row.need:GetText())
-		assert.is_true(row:GetAlpha() < 1)
-		assert.is_false(row.tick:IsShown())
-		assert.are.equal("25 goals done", ledge.card.rows.tally[1].need:GetText())
-		assert.are.equal("every Fly Box pattern tied", ledge.card.rows.flybox[1].need:GetText())
+		assert.are.same(
+			{ "7 days", "campfire_7", "7 more days", "25" },
+			{ row.label:GetText(), row.name:GetText(), row.more:GetText(), row.coins:GetText() }
+		)
+		assert.are.equal("PagleTackleBoardCardNotEarned", row.name.fontObject.name)
+		assert.are.same(
+			{ "25 goals", "24 more goals" },
+			{ ledge.card.rows.tally[1].label:GetText(), ledge.card.rows.tally[1].more:GetText() }
+		)
+		assert.is_false(ledge.card.rows.tally[1].coins:IsShown())
+		assert.are.same(
+			{ "Fly Box", "29 more patterns" },
+			{ ledge.card.rows.flybox[1].label:GetText(), ledge.card.rows.flybox[1].more:GetText() }
+		)
 	end)
 
 	it("shows a celebrated title as earned (TKB-R64)", function()
@@ -215,16 +265,17 @@ describe("the Campfire card (TKB-R106, TKB-R64)", function()
 		ledge.fire:Click()
 
 		local row = ledge.card.rows.tally[1]
-		assert.are.equal(1, row:GetAlpha())
-		assert.is_true(row.tick:IsShown())
+		assert.are.equal("PagleTackleBoardCardEarned", row.name.fontObject.name)
+		assert.is_false(row.more:IsShown())
 	end)
 
-	it("closes with its close button, and is closed when the board opens again", function()
+	it("closes with its close mark, and is closed when the board opens again", function()
 		local loaded, _, _, ledge = opened(WENT_OUT)
 		ledge.fire:Click()
 
 		ledge.card.close:Click()
 		assert.is_false(ledge.card:IsShown())
+		assert.is_false(ledge.veil:IsShown())
 
 		ledge.fire:Click()
 		loaded.ns.board:Hide()
@@ -238,38 +289,44 @@ describe("the Fly Box (TKB-R106)", function()
 		local _, _, _, ledge = opened(ONE_DONE_TODAY)
 
 		assert.are.equal("1 of 30 tied", ledge.box.count:GetText())
+		assert.are.equal("F L Y   B O X", ledge.box.title:GetText())
 	end)
 
-	it("opens its drawer: the tied pattern's icon with its hover, 29 not tied yet, the rare row gilt", function()
+	it("opens its drawer: the tied fly in full with its hover, the rest faint, the rare row gilt", function()
 		local loaded, _, _, ledge, frame = opened(ONE_DONE_TODAY)
 		local tied = loaded.ns.State().goals[PLAYER_GUID .. "-" .. (S + 2) .. "-0"].fly
+		assert.is_nil(ledge.drawer)
 
 		ledge.box:Click()
 
 		local drawer = ledge.drawer
 		assert.is_true(visible(drawer, frame))
-		assert.is_false(ledge.card:IsShown())
-		local untied, tiedCell = 0, nil
+		assert.is_true(ledge.card == nil or not ledge.card:IsShown())
+		assert.are.equal("1 of 30 tied", drawer.count:GetText())
+		local untied, rare, tiedCell = 0, 0, nil
 		for _, cell in ipairs(drawer.cells) do
 			if cell.label:GetText() == "not tied yet" then
 				untied = untied + 1
-				assert.is_false(cell.icon:IsShown())
+				assert.are.equal(0.22, cell.fly:GetAlpha())
+				assert.is_true(cell.fly:IsDesaturated())
+			elseif cell.label:GetText() == "tied only by Expeditions" then
+				rare = rare + 1
 			end
 			if cell.cell.id == tied then
 				tiedCell = cell
 			end
 		end
-		assert.are.equal(29, untied)
+		assert.are.same({ 23, 6 }, { untied, rare })
 		assert(tiedCell, "the tied pattern's compartment")
-		assert.is_true(tiedCell.icon:IsShown())
+		assert.are.equal(1, tiedCell.fly:GetAlpha())
+		assert.are.equal(loaded.ns.BOARD_ATLASES.Flies.file, tiedCell.fly.texture)
 		assert.are.equal(tied, tiedCell.label:GetText())
 		hover(tiedCell)
-		assert.are.same({ tied, "Tied Sun 11 Oct", "by: 1 Catch in Durotar" }, loaded.client.tooltipLines())
-		local gilt = loaded.ns.BOARD_LOOK.gilt
+		assert.are.same({ tied, "Tied Sun 11 Oct", "by: 1 Catch in Durotar" }, loaded.ns.BoardHoverLines())
 		for i = 25, 30 do
-			assert.are.same({ gilt[1], gilt[2], gilt[3], 1 }, drawer.cells[i].edges[1].color)
+			assert.is_not_nil(drawer.cells[i].rare)
 		end
-		assert.are_not.same({ gilt[1], gilt[2], gilt[3], 1 }, drawer.cells[24].edges[1].color)
+		assert.is_nil(drawer.cells[24].rare)
 	end)
 
 	it("closes its drawer on a second click", function()
@@ -279,6 +336,7 @@ describe("the Fly Box (TKB-R106)", function()
 		ledge.box:Click()
 
 		assert.is_false(ledge.drawer:IsShown())
+		assert.is_false(ledge.veil:IsShown())
 	end)
 end)
 
@@ -292,25 +350,25 @@ describe("the tally plate (TKB-R106, TKB-R64)", function()
 
 		assert.are.equal("2 Notices · 0 Expeditions", ledge.plate.counts:GetText())
 		assert.are.equal("the Dependable", ledge.plate.latest:GetText())
-		assert.is_true(ledge.plate.latest:IsShown())
 	end)
 
-	it("never shows a title earned only in the celebrated set as the latest (TKB-R64)", function()
+	it('never shows a title earned only in the celebrated set as the latest: "no title yet" (TKB-R64)', function()
 		local loaded, _, _, ledge = opened(TWO_DONE_TODAY)
 		loaded.ns.db.global.celebrated.titles.campfire_7 = true
 
 		loaded.ns.Redraw("projection")
 
-		assert.is_false(ledge.plate.latest:IsShown())
+		assert.are.equal("no title yet", ledge.plate.latest:GetText())
+		assert.are.equal("PagleTackleBoardTallyNone", ledge.plate.latest.fontObject.name)
 	end)
 end)
 
-describe("the shop link (TKB-R106, SHOP-R41, TKB-R193)", function()
+describe("the shop card (TKB-R106, SHOP-R41, TKB-R193)", function()
 	it("reads its words with a pointing hand drawn as a texture, and opens the Curio Shop", function()
-		local _, fake, _, ledge = opened(FRESH)
+		local loaded, fake, _, ledge = opened(FRESH)
 
 		assert.are.equal("Coins go to the Curio Shop", ledge.shop.label:GetText())
-		assert.are.equal("Interface\\CURSOR\\Point", ledge.shop.pointer.texture)
+		assert.are.equal(loaded.ns.BOARD_ATLASES.Board.file, ledge.shop.pointer.texture)
 
 		ledge.shop:Click()
 

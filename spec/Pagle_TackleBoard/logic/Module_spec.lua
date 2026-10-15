@@ -44,6 +44,24 @@ describe("the Tackle Board's entries (TKB-R3)", function()
 		assert.are.equal(4, toggles)
 	end)
 
+	it(
+		"turns the papers' lean off or on with `/pagle board lean`, and toggles nothing then (tackle-board.md › UI)",
+		function()
+			local toggles, leans = 0, 0
+			loaded.ns.ToggleBoard = function()
+				toggles = toggles + 1
+			end
+			loaded.ns.ToggleLean = function()
+				leans = leans + 1
+			end
+
+			fake.slash("board lean")
+			fake.slash("board LEAN")
+
+			assert.are.same({ 0, 2 }, { toggles, leans })
+		end
+	)
+
 	it("offers nothing that stops or resets a started board: slash entries, views, menu, button, settings", function()
 		local texts = {}
 		for _, entry in ipairs(def.slash or {}) do

@@ -6,41 +6,58 @@ end
 local ns = select(2, ...)
 
 -- The spike and the ledge on the client (TKB-R64, TKB-R103, TKB-R106, TKB-R193; SHOP-R41; ADR 0009): the "spike" and
--- "ledge" parts of adapter/Board.lua, drawing what logic/Ledge.lua decides in adapter/BoardWidgets.lua's art. The
--- spike hangs today's done goals on a nail down the right of the cork. The ledge holds, left to right, the Campfire
--- (clicking it opens the Campfire card), the Fly Box (clicking it opens its drawer), the brass tally plate (it opens
--- the card too) and the shop link, which calls Pagle.OpenShop() and so prints Core's line while restricted. The card
--- and the drawer lie over the cork, one at a time; each closes with its button, and both are closed when the board
--- opens. The board never shows the Coins balance (ADR 0009). Every symbol is a texture, never a glyph (CORE-R9).
+-- "ledge" parts of adapter/Board.lua, drawing what logic/Ledge.lua decides in the board art kit's look (PagleArtBoard's
+-- Board.lua and Overlays.lua). The spike hangs today's done slips on one nail down the right of the cork, each swung
+-- its own way, the later over the earlier. The ledge holds, left to right, the Campfire (clicking it opens the Campfire
+-- card), the Fly Box (clicking it opens its drawer), the brass tally plate (it opens the card too) and the shop card,
+-- which calls Pagle.OpenShop() and so prints Core's line while restricted. The card and the drawer lie over the
+-- darkened cork, one at a time; each is made at its first opening, so their textures (Card, Flies) load then; each
+-- closes with its mark, and both are closed when the board opens. The board never shows the Coins balance (ADR 0009).
+-- Every symbol is a texture, never a glyph (CORE-R9).
 
--- The spike (variant C's `.spike`): the nail 26 high, done slips 104 × 64 stacked down it, each 24 below the last, or
--- closer to keep the stack inside 400 pixels; the label under the stack.
-local NAIL, SPIKED_WIDTH, SPIKED_HEIGHT, SPIKED_STEP, STACK = 26, 104, 64, 24, 400
--- The ledge's pieces (variant C's `.ledge .fire`, `.box`, `.brass`, `.shop`): the Campfire's box 76 square, the Fly
--- Box 200 × 62, the plate 24 in from the right and the link under it.
-local FLAME, BOX_WIDTH, BOX_HEIGHT, POINTER = 76, 200, 62, 16
--- The Campfire card (variant C's `.card2`) and the Fly Box drawer (`.drawer`, `.felt`): their sizes, the card's day
--- cells (7 across, 4 weeks) and the drawer's compartments (6 × 5).
-local CARD_WIDTH, CARD_HEIGHT, DAY_WIDTH, DAY_HEIGHT, DAY_GAP = 520, 480, 40, 24, 4
-local TITLE_ROW, TITLE_INDENT = 18, 40
-local DRAWER_WIDTH, DRAWER_HEIGHT, CELL_WIDTH, CELL_HEIGHT, CELL_GAP = 630, 470, 94, 70, 6
--- How far over the cork the card and the drawer lie: above the parts and the "Updating…" cover (adapter/Board.lua).
-local OVERLAY_LEVEL = 40
+-- The spike (the kit's): its slips hang from the nail's hole at 68, 12 of a slip whose top left is 7, 38; the label sits
+-- 20 under the stack, which reaches at most 250 below the first slip.
+local SLIP_X, SLIP_Y, SLIP_WIDTH, SLIP_HEIGHT, HOLE_X, HOLE_Y, STACK_ROOM = 7, 38, 136, 92, 68, 12, 250
+-- The Campfire card and the Fly Box drawer: their top left on the cork and their size, how far over the cork they lie
+-- (above the parts and the "Updating…" cover), and how dark the cork goes under them.
+local CARD_X, CARD_Y, CARD_WIDTH, CARD_HEIGHT, CARD_LEAN = 76, 16, 800, 434, -0.5
+local DRAWER_X, DRAWER_Y, DRAWER_WIDTH, DRAWER_HEIGHT = 92, 6, 768, 474
+local OVERLAY_LEVEL, VEIL_ALPHA = 40, 0.45
+-- The card's day cells: 38 square, 42 apart, from 84, 138; its weeks' rows 42 apart.
+local DAY_X, DAY_Y, DAY_STEP, DAY_SIZE = 84, 138, 42, 38
+-- The drawer's compartments: 6 across its 700 units, 74 high, 78 apart.
+local CELL_COLUMNS, CELL_X, CELL_Y, CELL_HEIGHT, CELL_ROW = 6, 24, 44, 74, 78
+local CELL_WIDTH = (728 - 8 - 20) / CELL_COLUMNS
+-- The Campfire on the ledge: its clickable box from the ledge's top left, holding the fire, its words and its sticks.
+local FIRE_X, FIRE_Y, FIRE_WIDTH, FIRE_HEIGHT = 20, 10, 290, 120
+-- The Campfire's sprite by its flame's step (logic/Ledge.lua's CampfireView: 1 below 7 days, then one more at 7, 30,
+-- 100 and 365), or by its state with no flame.
+local FIRE_STEPS = { "fire-3", "fire-7", "fire-30", "fire-100", "fire-365" }
+local FIRE_STATES = { out = "fire-out", unlit = "fire-none" }
+-- A day cell's sprite and icon by the day's status.
+local DAY_CELLS = { lit = "day-lit", before = "day-pre", burned = "day", out = "day", unlit = "day", today = "day" }
+local DAY_ICONS = { lit = "d-flame", burned = "d-burn", out = "d-out", unlit = "d-unlit" }
 
----@class TackleSpikedSlip: TackleSlipView
+---@class TackleSpikedSlip: Frame
+---@field paper TackleSprite
+---@field kicker FontString
 ---@field label FontString
+---@field note FontString
 ---@field view TackleSpikeGoal?
 
 ---@class TackleSpikeFrame: Frame
----@field nail Texture
----@field head TackleTackView
+---@field head FontString
+---@field nail TackleSprite
 ---@field slips TackleSpikedSlip[]
 ---@field label FontString
 
 ---@class TackleCampfireButton: Button
----@field flame TackleFlameView
----@field text FontString
----@field sticks TackleSticksView
+---@field glow TackleSprite
+---@field flame TackleSprite
+---@field days FontString
+---@field word FontString
+---@field text FontString            -- "Gone out" or "Not lit yet"
+---@field sticks TackleSprite[]
 ---@field longest FontString
 
 ---@class TackleFlyBoxButton: Button
@@ -48,38 +65,50 @@ local OVERLAY_LEVEL = 40
 ---@field count FontString
 
 ---@class TackleTallyPlate: Button
----@field face Texture
 ---@field counts FontString
 ---@field latest FontString
 
 ---@class TackleShopLink: Button
+---@field card TackleSprite
 ---@field label FontString
----@field pointer Texture
+---@field pointer TackleSprite
 
 ---@class TackleCardDayCell: Frame
----@field edges Texture[]
----@field glow Texture
----@field shade Texture
----@field number FontString
+---@field cell TackleSprite
+---@field icon TackleSprite
+---@field ring Texture[]
+---@field today FontString
 ---@field view TackleCardDay?
 
 ---@class TackleCardTitleRow: Frame
----@field tick Texture
+---@field mark TackleSprite
+---@field label FontString
 ---@field name FontString
----@field need FontString
+---@field more FontString
+---@field coin TackleSprite
+---@field coins FontString
 
----@class TackleCampfireCardFrame: TackleSlipView
+---@class TackleCampfireCardFrame: Frame
+---@field paper TackleSprite
 ---@field heading FontString
 ---@field fire FontString
 ---@field heads FontString[]
+---@field weeks FontString[]
 ---@field days TackleCardDayCell[]
 ---@field rows { milestones: TackleCardTitleRow[], tally: TackleCardTitleRow[], flybox: TackleCardTitleRow[] }
 ---@field close Button
 
+---@class TackleFlyCellView: Frame
+---@field rare TackleSprite?
+---@field fly TackleSprite
+---@field label FontString
+---@field edge Texture[]
+---@field cell TackleFlyCell?
+
 ---@class TackleDrawerFrame: Frame
 ---@field title FontString
----@field cells TackleFeltCellView[]
----@field note FontString
+---@field count FontString
+---@field cells TackleFlyCellView[]
 ---@field close Button
 
 ---@class TackleLedgeFrame: Frame
@@ -87,8 +116,9 @@ local OVERLAY_LEVEL = 40
 ---@field box TackleFlyBoxButton
 ---@field plate TackleTallyPlate
 ---@field shop TackleShopLink
----@field card TackleCampfireCardFrame
----@field drawer TackleDrawerFrame
+---@field veil Frame?
+---@field card TackleCampfireCardFrame?
+---@field drawer TackleDrawerFrame?
 
 -- The celebrated set's titles (TKB-R64, TKB-R83): those already shown, which the card keeps shown as earned.
 ---@return { [string]: true }
@@ -99,46 +129,68 @@ end
 
 -- The spike (TKB-R103).
 
--- A done goal's slip on the spike: paper pierced by the nail, its text, its hover.
+-- A done goal's slip on the spike: its paper, "NOTICE DONE", its text and its note by hand, all swung together about
+-- the nail; its hover. Each slip is its own frame, above the one before, so the later covers the earlier.
 ---@param spike TackleSpikeFrame
 ---@param i integer
 ---@return TackleSpikedSlip
 local function newSpikedSlip(spike, i)
-	local look = ns.BOARD_LOOK
-	local slip = ns.NewBoardSlip(spike, SPIKED_WIDTH, SPIKED_HEIGHT) --[[@as TackleSpikedSlip]]
-	slip.paper:SetColorTexture(look.spiked[1], look.spiked[2], look.spiked[3], 1)
-	slip:SetFrameLevel(spike:GetFrameLevel() + 2 * i)
-	slip.label = ns.BoardText(slip, ns.BoardFonts().small, look.ink)
-	slip.label:SetWordWrap(true)
-	slip.label:SetWidth(SPIKED_WIDTH - 12)
-	slip.label:SetPoint("TOPLEFT", 6, -18)
+	local slip = CreateFrame("Frame", nil, spike) --[[@as TackleSpikedSlip]]
+	slip:SetSize(SLIP_WIDTH, SLIP_HEIGHT)
+	slip:SetFrameLevel(spike:GetFrameLevel() + i)
+	slip:EnableMouse(true)
+	slip.paper = ns.ArtSprite(slip, "Board", "done", "ARTWORK")
+	slip.kicker = ns.ArtText(slip, "DoneKind")
+	slip.kicker:SetWidth(114)
+	slip.label = ns.ArtWrap(slip, "DoneGoal", 114, 1.3)
+	slip.note = ns.ArtText(slip, "DoneNote")
+	slip.note:SetWidth(114)
 	slip:SetScript("OnEnter", function(self)
 		if self.view then
-			ns.BoardHover(self, self.view.hover)
+			ns.BoardHover(self, self.view.hover, { fly = self.view.fly })
 		end
 	end)
 	slip:SetScript("OnLeave", ns.BoardHoverHide)
 	return slip
 end
 
--- The spike's nail and its label, made on its first draw.
+-- Hangs `slip` at `y` on the spike, swung by `swing` degrees about the nail's hole.
 ---@param spike TackleSpikeFrame
-local function buildSpike(spike)
-	local look = ns.BOARD_LOOK
-	spike.slips = {}
-	spike.nail = ns.BoardSolid(spike, look.nail, "ARTWORK")
-	spike.nail:ClearAllPoints()
-	spike.nail:SetSize(4, NAIL)
-	spike.nail:SetPoint("TOP", 0, 0)
-	spike.head = ns.NewBoardTack(spike, 10)
-	spike.head:SetPoint("TOP", 0, 4)
-	spike.label = ns.NewBoardHand(spike, look.title)
-	spike.label:SetJustifyH("CENTER")
-	spike.label:SetWordWrap(true)
-	spike.label:SetWidth(spike:GetWidth() - 6)
+---@param slip TackleSpikedSlip
+---@param y number
+---@param swing number
+local function hang(spike, slip, y, swing)
+	local px, py = SLIP_X + HOLE_X, y + HOLE_Y
+	slip:ClearAllPoints()
+	slip:SetPoint("TOPLEFT", spike, "TOPLEFT", SLIP_X, -y)
+	local box = slip.paper.box
+	local width, height = slip.paper:GetSize()
+	ns.Swing(slip.paper, spike, SLIP_X - box[1], y - box[2], width, height, swing, px, py)
+	for _, line in ipairs({ { slip.kicker, 22 }, { slip.label, 36 }, { slip.note, 68 } }) do
+		local fontString, down = line[1], line[2]
+		ns.Swing(fontString, spike, SLIP_X + 11, y + down, 114, fontString:GetStringHeight(), swing, px, py)
+	end
 end
 
--- The "spike" part (TKB-R103): today's done goals stacked down the nail in completion order, the label under them.
+-- The spike's heading, nail and label, made on its first draw.
+---@param spike TackleSpikeFrame
+local function buildSpike(spike)
+	spike.slips = {}
+	spike.head = ns.ArtText(spike, "SpikeHead")
+	spike.head:SetJustifyH("CENTER")
+	spike.head:SetPoint("TOP", 0, 0)
+	spike.head:SetText((ns.Spaced(ns.L.SPIKE_HEAD):gsub("   ", "  ")))
+	-- The nail on its own frame, above every slip.
+	local top = CreateFrame("Frame", nil, spike)
+	top:SetAllPoints()
+	top:SetFrameLevel(spike:GetFrameLevel() + 50)
+	spike.nail = ns.ArtSprite(top, "Board", "nail", "OVERLAY", 5)
+	ns.PlaceSprite(spike.nail, top, 60, 32)
+	spike.label = ns.ArtWrap(spike, "SpikeLabel", 162, 1)
+	spike.label:SetJustifyH("CENTER")
+end
+
+-- The "spike" part (TKB-R103): today's done goals hung on the nail in completion order, the label under them.
 ---@param spike TackleSpikeFrame
 local function drawSpike(spike)
 	if not spike.slips then
@@ -146,7 +198,7 @@ local function drawSpike(spike)
 	end
 	local view = ns.SpikeView(ns.State())
 	local n = #view.goals
-	local step = n > 1 and math.min(SPIKED_STEP, math.floor((STACK - SPIKED_HEIGHT) / (n - 1))) or 0
+	local swings, step = ns.SpikeHang(n, STACK_ROOM)
 	for i = 1, math.max(n, #spike.slips) do
 		local slip = spike.slips[i] or newSpikedSlip(spike, i)
 		spike.slips[i] = slip
@@ -154,38 +206,114 @@ local function drawSpike(spike)
 		slip:SetShown(goal ~= nil)
 		slip.view = goal
 		if goal then
-			slip:ClearAllPoints()
-			slip:SetPoint("TOP", 0, -(NAIL - 6 + (i - 1) * step))
+			slip.kicker:SetText(goal.kicker:upper())
 			slip.label:SetText(goal.text)
+			slip.note:SetText(goal.note)
+			hang(spike, slip, SLIP_Y + (i - 1) * step, swings[i])
 		end
 	end
-	local stack = n > 0 and SPIKED_HEIGHT + (n - 1) * step - 6 or 0
+	local below = n > 0 and SLIP_Y + SLIP_HEIGHT + (n - 1) * step + 20 or SLIP_Y + 22
 	spike.label:ClearAllPoints()
-	spike.label:SetPoint("TOP", 0, -(NAIL + stack + 8))
+	spike.label:SetPoint("TOP", spike, "TOP", 0, -below)
 	spike.label:SetText(view.label)
+end
+
+-- The veil over the cork while the card or the drawer is open: the cork darkened, and the clicks under it caught.
+---@param ledge TackleLedgeFrame
+---@return Frame
+local function veil(ledge)
+	if not ledge.veil then
+		local board = ns.board.frame --[[@as TackleBoardFrame]]
+		local frame = CreateFrame("Frame", nil, board.cork)
+		frame:SetAllPoints()
+		frame:SetFrameLevel(board.cork:GetFrameLevel() + OVERLAY_LEVEL - 2)
+		frame:EnableMouse(true)
+		ns.BoardSolid(frame, "140902", VEIL_ALPHA, "BACKGROUND")
+		frame:Hide()
+		ledge.veil = frame
+	end
+	return ledge.veil --[[@as Frame]]
+end
+
+-- Shows the veil while the card or the drawer shows.
+---@param ledge TackleLedgeFrame
+local function updateVeil(ledge)
+	local open = (ledge.card and ledge.card:IsShown()) or (ledge.drawer and ledge.drawer:IsShown())
+	veil(ledge):SetShown(open == true)
+end
+
+-- An overlay's frame on the board, over the cork at `x`, `y` (y down), `width` × `height`, hidden, and the veil kept with
+-- it.
+---@param ledge TackleLedgeFrame
+---@return Frame
+local function overlay(ledge, x, y, width, height)
+	local board = ns.board.frame --[[@as TackleBoardFrame]]
+	local frame = CreateFrame("Frame", nil, board)
+	frame:SetSize(width, height)
+	frame:SetPoint("TOPLEFT", board.cork, "TOPLEFT", x, -y)
+	frame:SetFrameLevel(board.cork:GetFrameLevel() + OVERLAY_LEVEL)
+	frame:EnableMouse(true)
+	frame:SetScript("OnShow", function()
+		updateVeil(ledge)
+	end)
+	frame:SetScript("OnHide", function()
+		updateVeil(ledge)
+	end)
+	frame:Hide()
+	return frame
 end
 
 -- The Campfire card (TKB-R106, TKB-R64).
 
--- A day of the card's four-week log: its box, its day of the month, a glow when lit, a shade when Kindling burned;
--- its hover reads its realm date and what it was.
+-- A section's heading on the card: its words in small caps, a note at its right in italics, and a rule under both.
+---@param card Frame
+local function cardHeading(card, x, y, width, title, note)
+	local head = ns.ArtText(card, "CardHead")
+	head:SetPoint("TOPLEFT", x, -(y + 3))
+	head:SetText(title:upper())
+	local small = ns.ArtText(card, "CardNote")
+	small:SetJustifyH("RIGHT")
+	small:SetPoint("TOPRIGHT", card, "TOPLEFT", x + width, -(y + 2))
+	small:SetText(note)
+	local rule = ns.BoardSolid(card, "C4A874", 1, "ARTWORK")
+	rule:ClearAllPoints()
+	rule:SetSize(width, 1)
+	rule:SetPoint("TOPLEFT", x, -(y + 20))
+end
+
+-- A day of the card's four-week log: its cell and its icon; today ringed in ink and named under it; its hover reads
+-- its realm date and what it was.
 ---@param card TackleCampfireCardFrame
+---@param x number
+---@param y number
 ---@return TackleCardDayCell
-local function newDayCell(card)
-	local look = ns.BOARD_LOOK
+local function newDayCell(card, x, y)
 	local cell = CreateFrame("Frame", nil, card) --[[@as TackleCardDayCell]]
-	cell:SetSize(DAY_WIDTH, DAY_HEIGHT)
+	cell:SetSize(DAY_SIZE, DAY_SIZE)
+	cell:SetPoint("TOPLEFT", x, -y)
 	cell:EnableMouse(true)
-	cell.shade = ns.BoardSolid(cell, look.burned, "BACKGROUND", 0.3, 2)
-	cell.glow = cell:CreateTexture(nil, "BORDER")
-	cell.glow:SetTexture(ns.BOARD_TEXTURES.disc)
-	cell.glow:SetVertexColor(look.lit[1], look.lit[2], look.lit[3])
-	cell.glow:SetSize(DAY_HEIGHT - 2, DAY_HEIGHT - 2)
-	cell.glow:SetPoint("CENTER")
-	cell.edges = ns.BoardOutline(cell, look.cardLine, 1, "BORDER")
-	cell.number = ns.BoardText(cell, ns.BoardFonts().small, look.kicker)
-	cell.number:SetJustifyH("CENTER")
-	cell.number:SetPoint("CENTER")
+	cell.cell = ns.ArtSprite(cell, "Board", "day", "ARTWORK")
+	ns.PlaceSprite(cell.cell, cell, 0, 0)
+	cell.icon = ns.ArtSprite(cell, "Board", "d-flame", "ARTWORK", 1)
+	ns.PlaceSprite(cell.icon, cell, 6, 6)
+	cell.ring = {}
+	local edges = {
+		{ 0, 0, DAY_SIZE, 2 },
+		{ 0, DAY_SIZE - 2, DAY_SIZE, 2 },
+		{ 0, 0, 2, DAY_SIZE },
+		{ DAY_SIZE - 2, 0, 2, DAY_SIZE },
+	}
+	for i, edge in ipairs(edges) do
+		local line = ns.BoardSolid(cell, "23407A", 1, "ARTWORK", 2)
+		line:ClearAllPoints()
+		line:SetSize(edge[3], edge[4])
+		line:SetPoint("TOPLEFT", edge[1], -edge[2])
+		cell.ring[i] = line
+	end
+	cell.today = ns.ArtText(cell, "CardToday")
+	cell.today:SetJustifyH("CENTER")
+	cell.today:SetPoint("TOP", cell, "BOTTOM", 0, -1)
+	cell.today:SetText(ns.L.CARD_DAYS.today)
 	cell:SetScript("OnEnter", function(self)
 		if self.view then
 			ns.BoardHover(self, { self.view.date, self.view.text })
@@ -195,117 +323,145 @@ local function newDayCell(card)
 	return cell
 end
 
--- A title's row on the card: a tick once earned, its name, and what it needs at the right.
+-- A title's row on the card: its mark (won or not), its threshold, its name in italics, what is still to go by hand,
+-- and a milestone's Coins at the right.
 ---@param card TackleCampfireCardFrame
+---@param x number
+---@param y number
 ---@return TackleCardTitleRow
-local function newTitleRow(card)
-	local look, fonts = ns.BOARD_LOOK, ns.BoardFonts()
+local function newTitleRow(card, x, y)
 	local row = CreateFrame("Frame", nil, card) --[[@as TackleCardTitleRow]]
-	row:SetSize(CARD_WIDTH - 2 * TITLE_INDENT, TITLE_ROW)
-	row.tick = row:CreateTexture(nil, "ARTWORK")
-	row.tick:SetTexture(ns.BOARD_TEXTURES.tick)
-	row.tick:SetSize(16, 16)
-	row.tick:SetPoint("LEFT", 0, 0)
-	row.name = ns.BoardText(row, fonts.text, look.ink)
-	row.name:SetPoint("LEFT", 20, 0)
-	row.need = ns.BoardText(row, fonts.small, look.where)
-	row.need:SetJustifyH("RIGHT")
-	row.need:SetPoint("RIGHT", 0, 0)
+	row:SetSize(364, 28)
+	row:SetPoint("TOPLEFT", x, -y)
+	row.mark = ns.ArtSprite(row, "Board", "mile-no", "ARTWORK")
+	ns.PlaceSprite(row.mark, row, 0, 3)
+	row.label = ns.ArtText(row, "CardLabel")
+	row.label:SetPoint("TOPLEFT", 30, -6)
+	row.name = ns.ArtText(row, "CardEarned")
+	row.name:SetPoint("TOPLEFT", 104, -4)
+	row.more = ns.ArtText(row, "CardMore")
+	row.more:SetPoint("LEFT", row.name, "RIGHT", 7, 0)
+	row.coin = ns.ArtSprite(row, "Board", "coin", "ARTWORK")
+	ns.PlaceSprite(row.coin, row, 364 - 17, 5)
+	row.coins = ns.ArtText(row, "CardCoins")
+	row.coins:SetJustifyH("RIGHT")
+	row.coins:SetPoint("RIGHT", row.coin, "LEFT", 2, 0)
+	for i = 0, 362, 3 do
+		local dot = ns.BoardSolid(row, "8C6432", 0.4, "ARTWORK")
+		dot:ClearAllPoints()
+		dot:SetSize(1, 1)
+		dot:SetPoint("TOPLEFT", i, -28)
+	end
 	return row
 end
 
--- The card's frame, over the cork, made on its first opening: its heading, the fire's line, the weekdays, the 28 day
--- cells, the title sections and its close button.
+-- The card, over the cork, made on its first opening: its paper and tacks, its heading and the fire's line, the
+-- four-week log with its weekdays, week dates and key, the milestones and the titles, and its close mark.
 ---@param ledge TackleLedgeFrame
 ---@return TackleCampfireCardFrame
 local function buildCard(ledge)
-	local board = ns.board.frame --[[@as TackleBoardFrame]]
-	local look, fonts = ns.BOARD_LOOK, ns.BoardFonts()
-	local card = ns.NewBoardSlip(board, CARD_WIDTH, CARD_HEIGHT) --[[@as TackleCampfireCardFrame]]
-	card:SetPoint("CENTER", board.cork, "CENTER", 0, 0)
-	card:SetFrameLevel(board.cork:GetFrameLevel() + OVERLAY_LEVEL)
-	card.heading = ns.NewBoardPrinted(card, true)
-	card.heading:SetJustifyH("CENTER")
-	card.heading:SetPoint("TOP", 0, -22)
-	card.heading:SetText(ns.L.CARD_TITLE)
-	card.fire = ns.NewBoardHand(card)
-	card.fire:SetPoint("TOP", 0, -46)
-	local left = (CARD_WIDTH - 7 * DAY_WIDTH - 6 * DAY_GAP) / 2
-	card.heads, card.days = {}, {}
+	local L = ns.L
+	local card = overlay(ledge, CARD_X, CARD_Y, CARD_WIDTH, CARD_HEIGHT) --[[@as TackleCampfireCardFrame]]
+	card.paper = ns.ArtSprite(card, "Card", "card", "BACKGROUND")
+	for _, x in ipairs({ 16, 769 }) do
+		ns.PlaceSprite(ns.NewBoardTack(card), card, x, 8)
+	end
+	card.close = ns.NewBoardCloseMark(card, card, "CardClose")
+	card.close:SetPoint("TOPLEFT", 740, -10)
+	card.heading = ns.ArtText(card, "CardTitle")
+	card.heading:SetPoint("TOPLEFT", 30, -26)
+	card.heading:SetText(L.CARD_TITLE)
+	card.fire = ns.ArtText(card, "CardFire")
+	card.fire:SetPoint("TOPLEFT", 30, -61)
+
+	cardHeading(card, 30, 96, 344, L.CARD_WEEKS, L.CARD_WEEKS_NOTE)
+	card.heads, card.weeks, card.days = {}, {}, {}
 	for column = 1, 7 do
-		local head = ns.BoardText(card, fonts.kicker, look.kicker)
+		local head = ns.ArtText(card, "CardWeekday")
 		head:SetJustifyH("CENTER")
-		head:SetWidth(DAY_WIDTH)
-		head:SetPoint("TOPLEFT", left + (column - 1) * (DAY_WIDTH + DAY_GAP), -78)
+		head:SetPoint("TOP", card, "TOPLEFT", DAY_X + (column - 1) * DAY_STEP + DAY_SIZE / 2, -123)
 		card.heads[column] = head
 	end
-	for i = 1, ns.KEPT_DAYS do
-		local cell = newDayCell(card)
-		local column, week = (i - 1) % 7, math.floor((i - 1) / 7)
-		cell:SetPoint("TOPLEFT", left + column * (DAY_WIDTH + DAY_GAP), -94 - week * (DAY_HEIGHT + DAY_GAP))
-		card.days[i] = cell
-	end
-	card.rows = { milestones = {}, tally = {}, flybox = {} }
-	local y = -94 - 4 * (DAY_HEIGHT + DAY_GAP) - 10
-	for _, section in ipairs({
-		{ "milestones", ns.L.CARD_MILESTONES, #ns.CAMPFIRE_MILESTONES },
-		{ "tally", ns.L.CARD_TALLY, 3 },
-		{ "flybox", ns.L.CARD_FLY_BOX, 1 },
-	}) do
-		local kicker = ns.NewBoardKicker(card)
-		kicker:SetPoint("TOPLEFT", TITLE_INDENT, y)
-		kicker:SetKicker(section[2])
-		y = y - 16
-		for i = 1, section[3] do
-			local row = newTitleRow(card)
-			row:SetPoint("TOPLEFT", TITLE_INDENT, y)
-			card.rows[section[1]][i] = row
-			y = y - TITLE_ROW
+	for row = 0, 3 do
+		local week = ns.ArtText(card, "CardWeek")
+		week:SetPoint("TOPLEFT", 30, -(151 + row * DAY_STEP))
+		card.weeks[row + 1] = week
+		for column = 0, 6 do
+			local x, y = DAY_X + column * DAY_STEP, DAY_Y + row * DAY_STEP
+			card.days[#card.days + 1] = newDayCell(card, x, y)
 		end
-		y = y - 6
 	end
-	card.close = CreateFrame("Button", nil, card, "UIPanelCloseButton") --[[@as Button]]
-	card.close:SetPoint("TOPRIGHT", 4, 4)
-	card.close:SetScript("OnClick", function()
-		card:Hide()
-	end)
-	card:Hide()
+	-- The key under the log.
+	for _, key in ipairs({ { "d-flame", "lit", 30 }, { "d-burn", "burned", 77 }, { "d-out", "out", 202 } }) do
+		local icon = ns.ArtSprite(card, "Board", key[1], "ARTWORK")
+		ns.SizeSprite(icon, 18)
+		ns.PlaceSprite(icon, card, key[3], 322)
+		local words = ns.ArtText(card, "CardLegend")
+		words:SetPoint("TOPLEFT", key[3] + 22, -324)
+		words:SetText(L.CARD_DAYS[key[2]])
+	end
+	local unlit = ns.ArtSprite(card, "Board", "d-unlit", "ARTWORK")
+	ns.SizeSprite(unlit, 18)
+	ns.PlaceSprite(unlit, card, 285, 322)
+	local unlitWords = ns.ArtText(card, "CardLegend")
+	unlitWords:SetPoint("TOPLEFT", 307, -324)
+	unlitWords:SetText(L.CARD_DAYS.unlit)
+	local before = ns.ArtSprite(card, "Board", "day-pre", "ARTWORK")
+	ns.SizeSprite(before, 16, 14)
+	ns.PlaceSprite(before, card, 30, 344)
+	local beforeWords = ns.ArtText(card, "CardLegend")
+	beforeWords:SetPoint("TOPLEFT", 50, -345)
+	beforeWords:SetText(L.CARD_DAYS.before)
+
+	card.rows = { milestones = {}, tally = {}, flybox = {} }
+	cardHeading(card, 406, 42, 364, L.CARD_MILESTONES, L.CARD_MILESTONES_NOTE)
+	for i = 1, #ns.CAMPFIRE_MILESTONES do
+		card.rows.milestones[i] = newTitleRow(card, 406, 68 + (i - 1) * 28)
+	end
+	cardHeading(card, 406, 196, 364, L.CARD_TITLES, L.CARD_TITLES_NOTE)
+	for i = 1, 3 do
+		card.rows.tally[i] = newTitleRow(card, 406, 222 + (i - 1) * 28)
+	end
+	card.rows.flybox[1] = newTitleRow(card, 406, 306)
 	ledge.card = card
 	return card
 end
 
--- Draws a day of the log: lit days glow, a day that burned Kindling is shaded, the day it went out is red, the days
--- before the board are faint, and today is ringed in ink.
+-- Draws a day of the log: its cell and icon by what it was, today ringed and named.
 ---@param cell TackleCardDayCell
 ---@param day TackleCardDay
-local function drawDay(cell, day)
-	local look = ns.BOARD_LOOK
+---@param today boolean
+local function drawDay(cell, day, today)
 	cell.view = day
-	cell.number:SetText(tostring(day.number))
-	cell.glow:SetShown(day.status == "lit")
-	cell.shade:SetShown(day.status == "burned")
-	local ink = day.status == "out" and look.red or look.kicker
-	cell.number:SetTextColor(ink[1], ink[2], ink[3])
-	local edge = (day.status == "today" or day.day == ns.State().day) and look.hand or look.cardLine
-	for _, texture in ipairs(cell.edges) do
-		texture:SetColorTexture(edge[1], edge[2], edge[3], 1)
+	ns.SetSprite(cell.cell, "Board", DAY_CELLS[day.status])
+	ns.PlaceSprite(cell.cell, cell, 0, 0)
+	local icon = DAY_ICONS[day.status]
+	cell.icon:SetShown(icon ~= nil)
+	if icon then
+		ns.SetSprite(cell.icon, "Board", icon)
+		ns.PlaceSprite(cell.icon, cell, 6, 6)
 	end
-	cell:SetAlpha(day.status == "before" and 0.4 or 1)
+	for _, line in ipairs(cell.ring) do
+		line:SetShown(today)
+	end
+	cell.today:SetShown(today)
 end
 
--- Draws a title's row: earned, ticked and in ink; not yet, greyed with what it needs.
+-- Draws a title's row: won or not, its threshold, its name, what is still to go, and a milestone's Coins.
 ---@param row TackleCardTitleRow
 ---@param title TackleCardTitle
-local function drawTitle(row, title)
-	local look = ns.BOARD_LOOK
+---@param mark TackleCardMark
+local function drawTitle(row, title, mark)
+	ns.SetSprite(row.mark, "Board", title.earned and "mile-won" or "mile-no")
+	ns.PlaceSprite(row.mark, row, 0, 3)
+	row.label:SetText(mark.label)
 	row.name:SetText(title.name)
-	row.need:SetText(
-		title.coins and ns.Fill(ns.L.CARD_NEED_COINS, { need = title.need, coins = title.coins }) or title.need
-	)
-	row.tick:SetShown(title.earned)
-	local ink = title.earned and look.ink or look.cardMuted
-	row.name:SetTextColor(ink[1], ink[2], ink[3])
-	row:SetAlpha(title.earned and 1 or 0.6)
+	ns.SetArtFont(row.name, title.earned and "CardEarned" or "CardNotEarned")
+	row.more:SetText(mark.more or "")
+	row.more:SetShown(mark.more ~= nil)
+	row.coin:SetShown(mark.paid ~= nil)
+	row.coins:SetShown(mark.paid ~= nil)
+	row.coins:SetText(mark.paid and tostring(mark.paid) or "")
 end
 
 -- Draws the card's contents (TKB-R106).
@@ -313,183 +469,283 @@ end
 local function drawCard(card)
 	local state = ns.State()
 	local fire = ns.CampfireView(state.fire)
-	card.fire:SetText(ns.Fill(ns.L.CARD_FIRE, { fire = fire.text, longest = fire.longest }))
+	ns.LeanSprite(card.paper, card, 0, 0, CARD_LEAN)
+	card.fire:SetText(ns.Fill(ns.L.CARD_FIRE, {
+		fire = fire.text,
+		longest = fire.longest,
+		kindling = ns.Plural(fire.kindling, "KINDLING"),
+	}))
 	local view = ns.CampfireCard(state, celebratedTitles())
 	for i, head in ipairs(card.heads) do
-		head:SetText(view.heads[i])
+		head:SetText(view.heads[i]:upper())
+	end
+	for i, week in ipairs(card.weeks) do
+		week:SetText(view.weeks[i])
 	end
 	for i, cell in ipairs(card.days) do
-		drawDay(cell, view.days[i])
+		drawDay(cell, view.days[i], view.days[i].day == state.day)
 	end
 	for section, rows in pairs(card.rows) do
 		for i, row in ipairs(rows) do
-			drawTitle(row, view[section][i])
+			local title = view[section][i]
+			drawTitle(row, title, view.marks[title.id])
 		end
 	end
 end
 
 -- The Fly Box drawer (TKB-R106).
 
--- The drawer's frame, over the cork, made on its first opening: a wooden box, its heading, 30 felt compartments
--- (6 × 5), its note and its close button.
+-- A felt compartment of the drawer: a gilt edge for a rare pattern, the fly (faint and grey until tied), its name or
+-- "not tied yet" under it, and a gilt outline under the mouse with its hover.
+---@param drawer TackleDrawerFrame
+---@param i integer
+---@return TackleFlyCellView
+local function newFlyCell(drawer, i)
+	local column, row = (i - 1) % CELL_COLUMNS, math.floor((i - 1) / CELL_COLUMNS)
+	local cell = CreateFrame("Frame", nil, drawer) --[[@as TackleFlyCellView]]
+	cell:SetSize(CELL_WIDTH, CELL_HEIGHT)
+	cell:SetPoint("TOPLEFT", CELL_X + column * (CELL_WIDTH + 4), -(CELL_Y + row * CELL_ROW))
+	cell:EnableMouse(true)
+	if ns.FLY_PATTERNS[i].rare then
+		cell.rare = ns.ArtSprite(cell, "Board", "cell-rare", "BORDER")
+		ns.SizeSprite(cell.rare, CELL_WIDTH, CELL_HEIGHT)
+		ns.PlaceSprite(cell.rare, cell, 0, 0)
+	end
+	cell.fly = ns.ArtSprite(cell, "Flies", "fly-" .. ns.FLY_PATTERNS[i].id, "ARTWORK")
+	ns.PlaceSprite(cell.fly, cell, (CELL_WIDTH - 80) / 2, 4)
+	cell.label = ns.ArtText(cell, "FlyName")
+	cell.label:SetJustifyH("CENTER")
+	cell.label:SetWidth(CELL_WIDTH - 4)
+	cell.label:SetPoint("TOP", 0, -51)
+	cell.edge = {}
+	for _, edge in ipairs({ "TOP", "BOTTOM", "LEFT", "RIGHT" }) do
+		local line = ns.BoardSolid(cell, "F0D27A", 1, "OVERLAY")
+		line:ClearAllPoints()
+		if edge == "TOP" or edge == "BOTTOM" then
+			line:SetPoint(edge .. "LEFT")
+			line:SetPoint(edge .. "RIGHT")
+			line:SetHeight(2)
+		else
+			line:SetPoint("TOP" .. edge)
+			line:SetPoint("BOTTOM" .. edge)
+			line:SetWidth(2)
+		end
+		line:Hide()
+		cell.edge[#cell.edge + 1] = line
+	end
+	local function outline(shown)
+		for _, line in ipairs(cell.edge) do
+			line:SetShown(shown)
+		end
+	end
+	cell:SetScript("OnEnter", function(self)
+		outline(true)
+		if self.cell then
+			ns.BoardHover(self, self.cell.hover)
+		end
+	end)
+	cell:SetScript("OnLeave", function()
+		outline(false)
+		ns.BoardHoverHide()
+	end)
+	return cell
+end
+
+-- The drawer, over the cork, made on its first opening: its wooden box with its heading and count, its close mark and
+-- 30 compartments (6 × 5).
 ---@param ledge TackleLedgeFrame
 ---@return TackleDrawerFrame
 local function buildDrawer(ledge)
-	local board = ns.board.frame --[[@as TackleBoardFrame]]
-	local look, fonts = ns.BOARD_LOOK, ns.BoardFonts()
-	local drawer = CreateFrame("Frame", nil, board) --[[@as TackleDrawerFrame]]
-	drawer:SetSize(DRAWER_WIDTH, DRAWER_HEIGHT)
-	drawer:SetPoint("CENTER", board.cork, "CENTER", 0, 0)
-	drawer:SetFrameLevel(board.cork:GetFrameLevel() + OVERLAY_LEVEL)
-	drawer:EnableMouse(true)
-	ns.NewBoardWood(drawer, DRAWER_WIDTH, DRAWER_HEIGHT)
-	drawer.title = ns.BoardText(drawer, fonts.title, look.sealText)
-	drawer.title:SetJustifyH("CENTER")
-	drawer.title:SetPoint("TOP", 0, -16)
+	local drawer = overlay(ledge, DRAWER_X, DRAWER_Y, DRAWER_WIDTH, DRAWER_HEIGHT) --[[@as TackleDrawerFrame]]
+	ns.PlaceSprite(ns.ArtSprite(drawer, "Card", "drawer", "BACKGROUND"), drawer, 0, 0)
+	drawer.title = ns.ArtText(drawer, "DrawerTitle")
+	drawer.title:SetPoint("TOPLEFT", 22, -13)
+	drawer.title:SetText(ns.Spaced(ns.L.FLY_BOX))
+	drawer.count = ns.ArtText(drawer, "DrawerCount")
+	drawer.count:SetPoint("BOTTOMLEFT", drawer.title, "BOTTOMRIGHT", 12, -2)
+	drawer.close = ns.NewBoardCloseMark(drawer, drawer, "DrawerClose")
+	drawer.close:SetPoint("TOPLEFT", 723, -8)
 	drawer.cells = {}
 	for i = 1, #ns.FLY_PATTERNS do
-		local cell = ns.NewBoardFeltCell(drawer, CELL_WIDTH, CELL_HEIGHT)
-		cell:SetScript("OnEnter", function(self)
-			if self.cell then
-				ns.BoardHover(self, self.cell.hover)
-			end
-		end)
-		cell:SetScript("OnLeave", ns.BoardHoverHide)
-		drawer.cells[i] = cell
+		drawer.cells[i] = newFlyCell(drawer, i)
 	end
-	drawer.note = ns.NewBoardHand(drawer, look.boxSmall)
-	drawer.note:SetJustifyH("CENTER")
-	drawer.note:SetPoint("BOTTOM", 0, 12)
-	drawer.note:SetText(ns.L.DRAWER_NOTE)
-	drawer.close = CreateFrame("Button", nil, drawer, "UIPanelCloseButton") --[[@as Button]]
-	drawer.close:SetPoint("TOPRIGHT", 4, 4)
-	drawer.close:SetScript("OnClick", function()
-		drawer:Hide()
-	end)
-	drawer:Hide()
 	ledge.drawer = drawer
 	return drawer
 end
 
--- Draws the drawer's compartments, each in its row and column (logic/Ledge.lua fills them in pattern order).
+-- Draws the drawer's compartments, in pattern order (logic/Ledge.lua): a tied fly in full with its name, an untied one
+-- faint and grey over "not tied yet", or "tied only by Expeditions" for a rare one.
 ---@param drawer TackleDrawerFrame
 local function drawDrawer(drawer)
 	local view = ns.FlyBoxView(ns.State().flies)
-	drawer.title:SetText(ns.Fill(ns.L.DRAWER_TITLE, { label = view.label }))
-	local left = (DRAWER_WIDTH - 6 * CELL_WIDTH - 5 * CELL_GAP) / 2
+	drawer.count:SetText(view.label)
 	for i, cell in ipairs(drawer.cells) do
 		local felt = view.cells[i]
-		cell:ClearAllPoints()
-		cell:SetPoint(
-			"TOPLEFT",
-			left + (felt.column - 1) * (CELL_WIDTH + CELL_GAP),
-			-48 - (felt.row - 1) * (CELL_HEIGHT + CELL_GAP)
-		)
-		cell:SetCell(felt)
+		cell.cell = felt
+		cell.fly:SetAlpha(felt.tied and 1 or 0.22)
+		cell.fly:SetDesaturated(not felt.tied)
+		local untied = felt.rare and "FlyUntiedRare" or "FlyUntied"
+		ns.SetArtFont(cell.label, felt.tied and (felt.rare and "FlyNameRare" or "FlyName") or untied)
+		cell.label:SetText(felt.tied and felt.text or (felt.rare and ns.L.FLY_RARE or felt.text))
 	end
 end
 
 -- The ledge (TKB-R106).
 
--- Opens `overlay` ("card" or "drawer") and closes the other, or closes `overlay` if it is open.
+-- Opens `name` ("card" or "drawer"), made at its first opening, and closes the other, or closes `name` if it is open.
 ---@param ledge TackleLedgeFrame
----@param overlay "card"|"drawer"
-local function toggle(ledge, overlay)
-	local other = overlay == "card" and ledge.drawer or ledge.card
-	local shown = ledge[overlay]
-	other:Hide()
-	if shown:IsShown() then
+---@param name "card"|"drawer"
+local function toggle(ledge, name)
+	local other = name == "card" and ledge.drawer or ledge.card
+	if other then
+		other:Hide()
+	end
+	local shown = ledge[name]
+	if shown and shown:IsShown() then
 		shown:Hide()
 		return
 	end
-	shown:Show()
-	if overlay == "card" then
-		drawCard(ledge.card)
+	if name == "card" then
+		local card = ledge.card or buildCard(ledge)
+		card:Show()
+		drawCard(card)
 	else
-		drawDrawer(ledge.drawer)
+		local drawer = ledge.drawer or buildDrawer(ledge)
+		drawer:Show()
+		drawDrawer(drawer)
 	end
 end
 
--- The Campfire on the ledge: the flame, its words, the Kindling as sticks and the longest; a click opens the card.
+-- Closes the card and the drawer, if made.
+---@param ledge TackleLedgeFrame
+local function closeOverlays(ledge)
+	if ledge.card then
+		ledge.card:Hide()
+	end
+	if ledge.drawer then
+		ledge.drawer:Hide()
+	end
+end
+
+-- The Campfire on the ledge: its glow, the fire by its step, its days (or "Gone out", "Not lit yet"), three sticks of
+-- Kindling and the longest; a click opens the card.
 ---@param ledge TackleLedgeFrame
 local function buildFire(ledge)
-	local look, fonts = ns.BOARD_LOOK, ns.BoardFonts()
 	local fire = CreateFrame("Button", nil, ledge) --[[@as TackleCampfireButton]]
-	fire:SetSize(260, 80)
-	fire:SetPoint("BOTTOMLEFT", 24, 4)
-	fire.flame = ns.NewBoardFlame(fire, FLAME)
-	fire.flame:SetPoint("BOTTOMLEFT", 0, 0)
-	fire.text = ns.BoardText(fire, fonts.updating, look.fireText)
-	fire.text:SetPoint("BOTTOMLEFT", fire.flame, "BOTTOMRIGHT", 8, 30)
-	fire.sticks = ns.NewBoardSticks(fire, ns.KINDLING_CAP)
-	fire.sticks:SetPoint("BOTTOMLEFT", fire.flame, "BOTTOMRIGHT", 8, 12)
-	fire.longest = ns.BoardText(fire, fonts.hand, look.fireSmall)
-	fire.longest:SetPoint("LEFT", fire.sticks, "RIGHT", 6, 0)
+	fire:SetSize(FIRE_WIDTH, FIRE_HEIGHT)
+	fire:SetPoint("TOPLEFT", FIRE_X, -FIRE_Y)
+	fire.glow = ns.ArtSprite(fire, "Fire", "fire-glow", "BACKGROUND")
+	ns.PlaceSprite(fire.glow, fire, 20 - FIRE_X, 54 - FIRE_Y)
+	fire.flame = ns.ArtSprite(fire, "Fire", "fire-none", "ARTWORK")
+	fire.days = ns.ArtText(fire, "FireDays")
+	fire.days:SetPoint("TOPLEFT", 176 - FIRE_X, -(48 - FIRE_Y))
+	fire.word = ns.ArtText(fire, "FireWord")
+	fire.word:SetPoint("BOTTOMLEFT", fire.days, "BOTTOMRIGHT", 5, 2)
+	fire.text = ns.ArtText(fire, "FireState")
+	fire.text:SetPoint("TOPLEFT", 176 - FIRE_X, -(51 - FIRE_Y))
+	fire.sticks = {}
+	for i = 1, ns.KINDLING_CAP do
+		local stick = ns.ArtSprite(fire, "Board", "kindling", "ARTWORK")
+		ns.PlaceSprite(stick, fire, 176 - FIRE_X + (i - 1) * 44, 79 - FIRE_Y)
+		fire.sticks[i] = stick
+	end
+	fire.longest = ns.ArtText(fire, "Longest")
+	fire.longest:SetPoint("TOPLEFT", 176 - FIRE_X, -(98 - FIRE_Y))
 	fire:SetScript("OnClick", function()
 		toggle(ledge, "card")
 	end)
 	ledge.fire = fire
 end
 
--- The Fly Box on the ledge: a wooden box with its count; a click opens its drawer.
+-- Draws the Campfire (TKB-R106): the fire's sprite by its step (or embers, or bare logs), brighter within its step, its
+-- glow while it burns, its days, its Kindling and its longest.
+---@param fire TackleCampfireButton
+---@param view TackleCampfireView
+---@param count integer the Campfire's days
+local function drawFire(fire, view, count)
+	local lit = view.state == "lit"
+	ns.SetSprite(fire.flame, "Fire", lit and FIRE_STEPS[view.step] or FIRE_STATES[view.state])
+	ns.PlaceSprite(fire.flame, fire, 30 - FIRE_X, 14 - FIRE_Y)
+	local light = lit and math.min(1, 0.8 + 0.4 * view.bright) or 1
+	fire.flame:SetVertexColor(light, light, light)
+	fire.glow:SetShown(lit)
+	fire.glow:SetAlpha(lit and 0.6 + 0.4 * view.bright or 0)
+	fire.days:SetShown(lit)
+	fire.word:SetShown(lit)
+	fire.text:SetShown(not lit)
+	if lit then
+		fire.days:SetText(tostring(count))
+		fire.word:SetText(ns.Plural(count, "DAYS_WORD"))
+	end
+	fire.text:SetText(view.text)
+	for i, stick in ipairs(fire.sticks) do
+		stick:SetAlpha(i <= view.kindling and 1 or 0.28)
+	end
+	fire.longest:SetText(view.longest)
+end
+
+-- The Fly Box on the ledge: the kit's box, its name in gilt and its count by hand; a click opens its drawer.
 ---@param ledge TackleLedgeFrame
 local function buildBox(ledge)
-	local look, fonts = ns.BOARD_LOOK, ns.BoardFonts()
 	local box = CreateFrame("Button", nil, ledge) --[[@as TackleFlyBoxButton]]
-	box:SetSize(BOX_WIDTH, BOX_HEIGHT)
-	box:SetPoint("BOTTOM", 0, 10)
-	ns.NewBoardFace(box, look.woodInner, look.button, 2)
-	box.title = ns.BoardText(box, fonts.button, look.sealText)
-	box.title:SetPoint("TOP", 0, -10)
-	box.title:SetText(ns.L.FLY_BOX)
-	box.count = ns.BoardText(box, fonts.hand, look.boxSmall)
-	box.count:SetPoint("BOTTOM", 0, 8)
+	box:SetSize(214, 100)
+	box:SetPoint("TOPLEFT", 322, -30)
+	ns.PlaceSprite(ns.ArtSprite(box, "Board", "flybox", "ARTWORK"), box, 0, 0)
+	box.title = ns.ArtText(box, "BoxLabel")
+	box.title:SetJustifyH("CENTER")
+	box.title:SetPoint("TOP", box, "TOPLEFT", 107, -35)
+	box.title:SetText(ns.Spaced(ns.L.FLY_BOX))
+	box.count = ns.ArtText(box, "BoxCount")
+	box.count:SetJustifyH("CENTER")
+	box.count:SetPoint("TOP", box, "TOPLEFT", 107, -50)
 	box:SetScript("OnClick", function()
 		toggle(ledge, "drawer")
 	end)
 	ledge.box = box
 end
 
--- The brass tally plate: the counts and the latest title; a click opens the card, where the titles are.
+-- The brass tally plate: the counts in gilt and the latest title in italics, or "no title yet"; a click opens the card,
+-- where the titles are.
 ---@param ledge TackleLedgeFrame
 local function buildPlate(ledge)
-	local look, fonts = ns.BOARD_LOOK, ns.BoardFonts()
 	local plate = CreateFrame("Button", nil, ledge) --[[@as TackleTallyPlate]]
-	plate:SetPoint("BOTTOMRIGHT", -24, 24)
-	plate.face = ns.NewBoardFace(plate, look.brassEdge, look.brass, 1)
-	plate.counts = ns.BoardText(plate, fonts.small, look.brassText)
+	plate:SetSize(232, 70)
+	plate:SetPoint("TOPLEFT", 576, -46)
+	ns.PlaceSprite(ns.ArtSprite(plate, "Board", "tally", "ARTWORK"), plate, 0, 0)
+	plate.counts = ns.ArtText(plate, "Tally")
 	plate.counts:SetJustifyH("CENTER")
-	plate.counts:SetPoint("TOP", 0, -5)
-	plate.latest = ns.BoardText(plate, fonts.small, look.brassText)
+	plate.counts:SetPoint("TOP", plate, "TOPLEFT", 116, -20)
+	plate.latest = ns.ArtText(plate, "TallyTitle")
 	plate.latest:SetJustifyH("CENTER")
-	plate.latest:SetPoint("TOP", plate.counts, "BOTTOM", 0, -2)
+	plate.latest:SetPoint("TOP", plate, "TOPLEFT", 116, -43)
 	plate:SetScript("OnClick", function()
 		toggle(ledge, "card")
 	end)
 	ledge.plate = plate
 end
 
--- The shop link: its words and a pointing hand; a click calls Pagle.OpenShop(), which prints Core's line instead while
--- restricted (SHOP-R41, TKB-R193).
+-- The shop card: a card pinned to the ledge with its words and a pointing hand; a click calls Pagle.OpenShop(), which
+-- prints Core's line instead while restricted (SHOP-R41, TKB-R193).
 ---@param ledge TackleLedgeFrame
 local function buildShop(ledge)
-	local look = ns.BOARD_LOOK
 	local shop = CreateFrame("Button", nil, ledge) --[[@as TackleShopLink]]
-	shop.label = ns.BoardText(shop, ns.BoardFonts().small, look.boxSmall)
-	shop.label:SetPoint("LEFT", 0, 0)
+	shop:SetSize(128, 66)
+	shop:SetPoint("TOPLEFT", 836, -48)
+	shop.card = ns.ArtSprite(shop, "Board", "shopcard", "ARTWORK")
+	shop.label = ns.ArtWrap(shop, "Shop", 112, 2)
+	shop.label:SetJustifyH("CENTER")
+	shop.label:SetPoint("TOP", 0, -9)
 	shop.label:SetText(ns.L.SHOP_LINK)
-	shop.pointer = ns.NewBoardPointer(shop, POINTER)
-	shop.pointer:SetPoint("LEFT", shop.label, "RIGHT", 4, 0)
-	shop:SetSize(shop.label:GetStringWidth() + 4 + POINTER, POINTER)
-	shop:SetPoint("BOTTOMRIGHT", -28, 4)
+	shop.pointer = ns.ArtSprite(shop, "Board", "hand", "ARTWORK", 2)
+	ns.PlaceSprite(ns.NewBoardTack(shop), shop, 58, -6)
 	shop:SetScript("OnClick", function()
 		Pagle.OpenShop()
 	end)
 	ledge.shop = shop
 end
 
--- The "ledge" part (TKB-R106): the Campfire, the Fly Box, the tally plate and the shop link, and the card or the
--- drawer while one is open. The board's opening closes them.
+-- The "ledge" part (TKB-R106): the Campfire, the Fly Box, the tally plate and the shop card, and the card or the drawer
+-- while one is open. The board's opening closes them.
 ---@param ledge TackleLedgeFrame
 ---@param draw TackleBoardDraw
 local function drawLedge(ledge, draw)
@@ -498,37 +754,29 @@ local function drawLedge(ledge, draw)
 		buildBox(ledge)
 		buildPlate(ledge)
 		buildShop(ledge)
-		buildCard(ledge)
-		buildDrawer(ledge)
 		-- The card and the drawer lie on the board, not the ledge: they close with it, as when a rebuild leaves the
 		-- cork bare (TKB-R108).
 		ledge:SetScript("OnHide", function()
-			ledge.card:Hide()
-			ledge.drawer:Hide()
+			closeOverlays(ledge)
 		end)
 	end
 	if draw.reason == "open" or draw.updating then
-		ledge.card:Hide()
-		ledge.drawer:Hide()
+		closeOverlays(ledge)
 	end
 	local state = ns.State()
-	local fire = ns.CampfireView(state.fire)
-	ledge.fire.flame:SetFire(fire)
-	ledge.fire.text:SetText(fire.text)
-	ledge.fire.sticks:SetSticks(fire.kindling)
-	ledge.fire.longest:SetText(fire.longest)
+	drawFire(ledge.fire, ns.CampfireView(state.fire), state.fire.count)
 	ledge.box.count:SetText(ns.FlyBoxView(state.flies).label)
 	local tally = ns.TallyView(state)
 	local plate = ledge.plate
 	plate.counts:SetText(tally.counts)
-	plate.latest:SetText(tally.latest or "")
-	plate.latest:SetShown(tally.latest ~= nil)
-	local width = math.max(plate.counts:GetStringWidth(), tally.latest and plate.latest:GetStringWidth() or 0)
-	plate:SetSize(width + 24, tally.latest and 34 or 20)
-	if ledge.card:IsShown() then
+	plate.latest:SetText(tally.latest or ns.L.TALLY_NO_TITLE)
+	ns.SetArtFont(plate.latest, tally.latest and "TallyTitle" or "TallyNone")
+	ns.LeanSprite(ledge.shop.card, ledge.shop, 0, 0, 2.5)
+	ns.LeanSprite(ledge.shop.pointer, ledge.shop, 77, 27, 2.5)
+	if ledge.card and ledge.card:IsShown() then
 		drawCard(ledge.card)
 	end
-	if ledge.drawer:IsShown() then
+	if ledge.drawer and ledge.drawer:IsShown() then
 		drawDrawer(ledge.drawer)
 	end
 end

@@ -482,3 +482,50 @@ describe("the tally plate (TKB-R106, TKB-R61)", function()
 		assert.are.equal("campfire_7", ns.TallyView(state).latest)
 	end)
 end)
+
+describe("the spike's slips (TKB-R103, tackle-board.md › UI)", function()
+	it("say what each goal was and note its Coins and the fly it tied", function()
+		local ns = built(join(TWO_DONE_TODAY))
+
+		local goal = ns.SpikeView(ns.State()).goals[1]
+
+		assert.are.equal("Notice done", goal.kicker)
+		assert.is_string(goal.fly)
+		assert.are.equal("+10 · " .. goal.fly, goal.note)
+	end)
+
+	it("swing 14° and -7° and on, closer as more hang so the stack keeps within its room", function()
+		local ns = board.load().ns
+
+		local swings, step = ns.SpikeHang(2, 250)
+		local many, close = ns.SpikeHang(30, 250)
+
+		assert.are.same({ 14, -7 }, swings)
+		assert.are.equal(12, step)
+		assert.are.equal(30, #many)
+		assert.are.equal(14, many[9])
+		assert.is_true(close * 29 <= 250.001)
+		assert.are.same({ {}, 0 }, { ns.SpikeHang(0, 250) })
+	end)
+end)
+
+describe("the Campfire card's weeks and marks (TKB-R106, tackle-board.md › UI)", function()
+	it("dates each week by its first day, and gives each title its threshold and what is still to go", function()
+		local ns = built(WENT_OUT)
+
+		local card = ns.CampfireCard(ns.State(), NONE_CELEBRATED)
+
+		assert.are.same({ "14 Sep", "21 Sep", "28 Sep", "5 Oct" }, card.weeks)
+		assert.are.same({ label = "7 days", more = "7 more days", paid = 25 }, card.marks.campfire_7)
+		assert.are.same({ label = "25 goals", more = "24 more goals" }, card.marks.tally_25)
+		assert.are.same({ label = "Fly Box", more = "29 more patterns" }, card.marks.flybox)
+	end)
+
+	it("leaves an earned title nothing still to go", function()
+		local ns = built(WENT_OUT)
+
+		local card = ns.CampfireCard(ns.State(), { tally_25 = true })
+
+		assert.are.same({ label = "25 goals" }, card.marks.tally_25)
+	end)
+end)

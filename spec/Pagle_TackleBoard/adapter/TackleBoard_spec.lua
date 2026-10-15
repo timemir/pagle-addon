@@ -241,11 +241,11 @@ describe("Pagle_TackleBoard with Core", function()
 	end)
 
 	it(
-		"sets no global but PagleTackleBoardDB, its board's frame and its reroll confirm's dialog: its AceAddon is"
+		"sets no global but PagleTackleBoardDB, its board's frame and its reroll confirm's frame: its AceAddon is"
 			.. " reached through LibStub alone (ADR 0001)",
 		function()
-			-- tackle-board.md › Exposed: nothing; no other Module can see the Tackle Board. The board's frame is named
-			-- for UISpecialFrames (Esc, TKB-R100), and the confirm is a StaticPopupDialogs entry (TKB-R56).
+			-- tackle-board.md › Exposed: nothing; no other Module can see the Tackle Board. The board's frame and the
+			-- confirm's are named for UISpecialFrames (Esc, TKB-R100, TKB-R56).
 			local loaded = loadAddon("Pagle_TackleBoard", FOREVER_GLOBALS)
 			local plain = loadAddon("Pagle", FOREVER_GLOBALS)
 			enterWorld(loaded, 1)
@@ -258,7 +258,7 @@ describe("Pagle_TackleBoard with Core", function()
 				goalIDs[#goalIDs + 1] = id
 			end
 			loaded.ns.TakeDownQuestion = function() -- as when the goal shows progress (TKB-R56)
-				return "Take it down?"
+				return { title = "Take it down?", text = "It goes.", progress = "1/2" }
 			end
 			loaded.ns.TakeDown(goalIDs[1])
 
@@ -276,8 +276,8 @@ describe("Pagle_TackleBoard with Core", function()
 			end
 			table.sort(added)
 
-			assert.are.same({ "PagleTackleBoard", "PagleTackleBoardDB" }, added)
-			assert.are.same({ "PAGLE_TACKLEBOARD_REROLL" }, addedDialogs)
+			assert.are.same({ "PagleTackleBoard", "PagleTackleBoardConfirm", "PagleTackleBoardDB" }, added)
+			assert.are.same({}, addedDialogs)
 			assert.are.equal(loaded.ns.TackleBoard, loaded.env.LibStub("AceAddon-3.0"):GetAddon("Pagle_TackleBoard"))
 		end
 	)

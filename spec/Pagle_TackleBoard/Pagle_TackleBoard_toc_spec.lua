@@ -76,7 +76,8 @@ describe("Pagle_TackleBoard.toc", function()
 		"splits its code into logic/ and adapter/, its strings in locale/ and only generated files in data/ (CORE-R7, CORE-R8, DATA-R107)",
 		function()
 			-- CORE-R7, CORE-R8; DATA-R107: the generator writes data/Lore.lua from the M7 lore batch on (TKB-R130).
-			local generated = { ["data/Lore.lua"] = true }
+			-- data/BoardArt.lua is generated from the board art kit's atlases (tackle-board.md › UI).
+			local generated = { ["data/Lore.lua"] = true, ["data/BoardArt.lua"] = true }
 			local folders, handWrittenData = {}, {}
 			for _, file in ipairs(filesIn({ "lua" })) do
 				local folder = file:match("^([^/]+)/")

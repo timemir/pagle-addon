@@ -1,4 +1,4 @@
--- The Tackle Board's frame on FakePagle (TKB-R100, TKB-R101, TKB-R107, TKB-R108, TKB-R109, TKB-R193): the wooden frame,
+-- The Tackle Board's frame on FakePagle (TKB-R100, TKB-R101, TKB-R107, TKB-R108, TKB-R109, TKB-R193): the leather frame,
 -- how it opens, moves and closes, the empty board with Start, the updating state, the parts and their redraws. Its
 -- entry points through Core's real logic are in TackleBoard_spec.
 
@@ -90,7 +90,7 @@ local EMPTY_SLIP = "Three Notices go up each day and an Expedition each week. Fi
 	.. "Nothing is ever taken down for being late."
 
 describe("the Tackle Board's frame (TKB-R100)", function()
-	it("is PagleTackleBoard, 1000 × 660 as variant C, and closed until opened", function()
+	it("is PagleTackleBoard, 1000 × 660 as the board art kit's, and closed until opened", function()
 		local _, _, tackle = loggedIn()
 
 		assert.is_false(tackle:IsShown())
@@ -102,16 +102,35 @@ describe("the Tackle Board's frame (TKB-R100)", function()
 		assert.is_true(frame:IsShown())
 	end)
 
-	it('wears a brass plaque reading "Tackle Board" on its wood, around the cork, with a ledge below', function()
-		local _, _, tackle = loggedIn()
+	it('wears the kit frame with a brass plaque reading "Tackle Board", round the cork, with a ledge below', function()
+		local loaded, _, tackle = loggedIn()
 		tackle:Toggle()
 		local frame = tackle.frame
 
-		assert.are.equal("TACKLE BOARD", frame.plaque.label:GetText())
-		assert.are.same({ 948, 534 }, { frame.cork.width, frame.cork.height })
-		assert.are.same({ "TOPLEFT", frame, "TOPLEFT", 26, -34 }, frame.cork.points[1])
-		assert.are.same({ 1000, 86 }, { frame.ledge.width, frame.ledge.height })
-		assert.are.same({ "BOTTOMLEFT", frame, "BOTTOMLEFT", 0, 0 }, frame.ledge.points[1])
+		assert.are.equal("T A C K L E   B O A R D", frame.plaque.label:GetText())
+		assert.are.equal(loaded.ns.BOARD_ATLASES.Frame.file, frame.art.texture)
+		assert.are.same({ 952, 466 }, { frame.cork.width, frame.cork.height })
+		assert.are.same({ "TOPLEFT", frame, "TOPLEFT", 24, -34 }, frame.cork.points[1])
+		assert.are.same({ 1000, 160 }, { frame.ledge.width, frame.ledge.height })
+		assert.are.same({ "TOPLEFT", frame, "TOPLEFT", 0, -500 }, frame.ledge.points[1])
+	end)
+
+	it("lays one cork tile across the cork, and the Campfire's glow faintly over it before Start", function()
+		local loaded, _, tackle = loggedIn()
+		tackle:Toggle()
+		local frame = tackle.frame
+
+		assert.are.equal("ADD", frame.glow.blendMode)
+		assert.is_true(frame.glow:IsShown())
+		assert.are.equal(0.25, frame.glow:GetAlpha())
+		local tiles = 0
+		for _, region in ipairs(frame.cork.children) do
+			if region.texture == loaded.ns.CORK_TEXTURE then
+				tiles = tiles + 1
+				assert.are.same({ 0, 952 / 384, 0, 466 / 384 }, region.texCoord)
+			end
+		end
+		assert.are.equal(1, tiles)
 	end)
 
 	it("toggles open and closed through ns.ToggleBoard, Registration's view (TKB-R1)", function()
@@ -302,7 +321,8 @@ describe("a started board while its projection rebuilds in chunks (TKB-R6, TKB-R
 		local ns, loaded = board.built(fake)
 		ns.OpenBoard()
 		local ledge = (ns.board.frame --[[@as TackleBoardFrame]]).parts.ledge --[[@as TackleLedgeFrame]]
-		ledge.card:Show()
+		ledge.fire:Click()
+		assert.is_true(ledge.card:IsShown())
 		board.updating(fake, true)
 		ns.projection:Rebuild()
 		ns.Redraw("projection")
@@ -384,16 +404,16 @@ describe("the started board's parts (TKB-R101, TKB-R103, TKB-R106)", function()
 			assert.are.equal(parts[draw.label], draw.frame)
 		end
 		assert.are.same({ "pins", "overflow", "spike", "ledge" }, order)
-		-- Variant C's places: the pins at the cork's top left, the strip under the Notice rows, the spike on the right
+		-- The kit's places: the pins at the cork's top left, the strip under the Notice rows, the spike on the right
 		-- and the ledge's contents on the ledge.
 		assert.are.same({ "TOPLEFT", frame.cork, "TOPLEFT", 0, 0 }, parts.pins.points[1])
-		assert.are.same({ "TOPLEFT", frame.cork, "TOPLEFT", 16, -496 }, parts.overflow.points[1])
-		assert.are.same({ "TOPRIGHT", frame.cork, "TOPRIGHT", -14, -26 }, parts.spike.points[1])
+		assert.are.same({ "TOPLEFT", frame.cork, "TOPLEFT", 24, -424 }, parts.overflow.points[1])
+		assert.are.same({ "TOPLEFT", frame.cork, "TOPLEFT", 792, -14 }, parts.spike.points[1])
 		assert.are.equal(frame.ledge, parts.ledge:GetParent())
 		assert.are.same({ "pins", "overflow", "spike", "ledge" }, boardTexts(frame))
 	end)
 
-	it("gives the pins part a slot per pin, as variant C pins them: 2 Expedition posters, 6 Notice slips", function()
+	it("gives the pins part a slot per pin, as the kit pins them: 2 Expedition posters, 6 Notice papers", function()
 		local _, _, tackle, flags = loggedIn()
 		flags.started = true
 		tackle:Toggle()
@@ -407,14 +427,14 @@ describe("the started board's parts (TKB-R101, TKB-R103, TKB-R106)", function()
 			end
 			return out
 		end
-		assert.are.same({ { 16, -12, 250, 150 }, { 306, -8, 250, 150 } }, places(slots.expeditions))
+		assert.are.same({ { 26, -22, 360, 156 }, { 412, -26, 360, 156 } }, places(slots.expeditions))
 		assert.are.same({
-			{ 16, -198, 196, 118 },
-			{ 228, -192, 196, 118 },
-			{ 440, -200, 196, 118 },
-			{ 16, -368, 196, 118 },
-			{ 228, -372, 196, 118 },
-			{ 440, -366, 196, 118 },
+			{ 26, -208, 236, 116 },
+			{ 284, -212, 236, 116 },
+			{ 542, -206, 236, 116 },
+			{ 26, -334, 236, 116 },
+			{ 286, -338, 236, 116 },
+			{ 544, -336, 236, 116 },
 		}, places(slots.notices))
 	end)
 
