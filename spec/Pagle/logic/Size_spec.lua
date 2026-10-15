@@ -30,7 +30,7 @@ describe("the Simulated Size percentile, frozen at 1.0 (ADR 0010)", function()
 				ns.SizePercentile(catchId),
 				FROZEN .. "The percentile of " .. catchId .. " moved."
 			)
-			assert.is_true(math.abs(ns.SizePercentile(catchId) - u) < 0.0000005, FROZEN .. "u moved.")
+			assert(math.abs(ns.SizePercentile(catchId) - u) < 0.0000005, FROZEN .. "u moved.")
 			assert.are.equal(
 				band,
 				ns.SimulatedSize(catchId, 300).band,
