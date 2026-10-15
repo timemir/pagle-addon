@@ -38,6 +38,16 @@ def test_the_form_has_data_r115_s_title_labels_and_description() -> None:
     assert "A report posted anywhere else reaches Pagle only when the dev pastes it into an issue." in description
 
 
+def test_the_forms_description_fits_githubs_limit() -> None:
+    # DATA-R115's form must load: GitHub refuses an issue form whose top-level description isn't 3 to 200 characters
+    # ("There is a problem with this template"), and the form falls back to a blank issue (#146's round trip).
+    text = FORM.read_text(encoding="utf-8")
+    folded = re.search(r"^description: >-\n((?:  .*\n)+)", text, re.MULTILINE)
+    assert folded is not None
+    description = " ".join(line.strip() for line in folded[1].splitlines())
+    assert 3 <= len(description) <= 200, len(description)
+
+
 def test_the_form_has_the_report_notes_and_public_fields() -> None:
     # DATA-R115: report, a required textarea rendered as a code block (labelled as report_field() looks for it);
     # notes, "Anything you noticed?", optional; public, a required checkbox "I understand this is posted publicly".

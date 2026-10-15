@@ -19,6 +19,9 @@ trap 'wait; rm -rf "$scratch"' EXIT
 failures=0
 cases=0
 reported=0
+# The cases expect check.sh's coverage report, so a PAGLE_NO_COVERAGE from the caller (the agents' gate limiter
+# sets it) must not reach them; the one case that wants it sets its own.
+unset PAGLE_NO_COVERAGE
 
 max_jobs=${TEST_CHECK_JOBS:-$(nproc)}
 [[ -n ${TEST_CHECK_JOBS:-} ]] || ((max_jobs <= 8)) || max_jobs=8
@@ -239,6 +242,14 @@ expect "code no spec runs passes; coverage doesn't gate" pass "addons/Pagle/logi
 copy
 rm "$scratch/tree/.luacov"
 expect "a coverage report that can't be made doesn't gate" pass "no coverage report"
+
+copy
+PAGLE_NO_COVERAGE=1 expect "PAGLE_NO_COVERAGE=1 runs the specs without coverage and still passes" pass \
+	"PAGLE_NO_COVERAGE=1, so the specs run without coverage"
+
+copy
+printf 'it("fails", function()\n\tassert.is_true(false)\nend)\n' >"$scratch/tree/spec/fails_spec.lua"
+PAGLE_NO_COVERAGE=1 expect "a failing spec fails tests without coverage too" tests "fails_spec.lua"
 
 # Plants a spec that kills the busted running it with SIGSEGV, as the coverage run has died on the dev's machine
 # (#149). With "coverage", only a busted running with luacov dies.
