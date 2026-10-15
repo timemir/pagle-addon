@@ -113,7 +113,7 @@ describe("the home spread's right page, Right now (stats.md › UI › Home spre
 		local loaded, fake, book = ready()
 		fish(fake, 2, BLACKMOUTH)
 		fish(fake, 1)
-		fake.wait(300)
+		fake.wait(fake.Pagle.SESSION_GAP - 60) -- a minute inside Core's Session gap (300 s, LOG-R60): 4m
 
 		loaded.ns.ToggleBook()
 
@@ -124,7 +124,7 @@ describe("the home spread's right page, Right now (stats.md › UI › Home spre
 			"Fishing Auberdine, Darkshore, by day. Skill 111, below the no-junk line (170).",
 			view.where.text
 		)
-		assert.are.equal("This Session: 3 Casts, 2 Catches, 1 got away, 5m so far.", view.session.text)
+		assert.are.equal("This Session: 3 Casts, 2 Catches, 1 got away, 4m so far.", view.session.text)
 		assert.are.same(loaded.ns.BOOK_LOOK.hand, { unpack(view.session.textColor, 1, 3) })
 	end)
 
@@ -140,13 +140,13 @@ describe("the home spread's right page, Right now (stats.md › UI › Home spre
 		)
 
 		move(fake, { minute = 1200 }) -- realm 20:00: not an area or skill change, so the tick redraws it
-		fake.wait(600)
+		fake.wait(fake.Pagle.SESSION_GAP - 90) -- inside Core's Session gap (300 s, LOG-R60), with the tick: 4m
 		loaded.client.advance(30)
 		assert.are.equal(
 			"Fishing Auberdine, Darkshore, by night. Skill 225, past the no-junk line (170).",
 			rightNow(book).where.text
 		)
-		assert.are.equal("This Session: 1 Cast, 1 Catch, 0 got away, 10m so far.", rightNow(book).session.text)
+		assert.are.equal("This Session: 1 Cast, 1 Catch, 0 got away, 4m so far.", rightNow(book).session.text)
 
 		fake.wait(3 * 3600)
 		loaded.client.runTimers()

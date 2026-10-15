@@ -804,7 +804,7 @@ describe("scripts/read-wtf.lua", function()
 		end)
 
 		it("prints the projection, totals, margins, characters, last Sessions (STA-R20–R31, LOG-R70/R98)", function()
-			-- LOG-R70's stored values; STA-R20: 100 × STATS_RULES_VERSION 1 + Core's SESSION_RULES_VERSION 1 = 101, and
+			-- LOG-R70's stored values; STA-R20: 100 × STATS_RULES_VERSION 1 + Core's SESSION_RULES_VERSION 2 = 102, and
 			-- the stored fingerprint is the catalogue's content fingerprint (no extra). STA-R22: 120 + 1 + 1 + 1 + 3 of
 			-- Ada's Casts and Bram's 2; 12 + 1 + 1 of Ada's and 1 of Bram's got away; Elwynn and Westfall are zones.
 			-- STA-R23: 12:hi (124), 12:hi:night (122: the realm 08:00 Casts are by day), 40:hi and 40:lo (2 each).
@@ -814,10 +814,10 @@ describe("scripts/read-wtf.lua", function()
 			-- (LOG-R49); Session 6 gained 1 skill (STA-R27, STA-R31). LOG-R98: every Cast carries its Session's ID.
 			assert.are.same({
 				"== Stats (PagleStatsDB)",
-				"projection: lastSeq 132, logId 7a3e5c1b9d0f2468, fingerprint 0123456789abcdef, rulesVersion 101",
+				"projection: lastSeq 132, logId 7a3e5c1b9d0f2468, fingerprint 0123456789abcdef, rulesVersion 102",
 				"logId: matches PagleLog's",
 				"lastSeq: equals PagleLog's length (132 entries)",
-				"rulesVersion: Stats', 101 (STA-R20)",
+				"rulesVersion: Stats', 102 (STA-R20)",
 				"fingerprint: the catalogue's, " .. CATALOGUE .. " (LOG-R70)",
 				"totals: 128 Casts, 113 Catches, 15 got away",
 				"places: 2 (2 zones, 0 subzones), 4 scopes, 5 hits",
@@ -838,8 +838,8 @@ describe("scripts/read-wtf.lua", function()
 				"  5. Player-4618-0A1B2C3D-1791978000-0: realm 2026-10-14 04:40 to 2026-10-14 04:40,"
 					.. " server 2026-10-14 11:40:00 UTC to 2026-10-14 11:40:00 UTC",
 				"     1 Cast, 1 Catch, 0 got away, zones 40 ×1, skill +0; the log tags 1 Cast with it (matches)",
-				"  6. Player-4618-0A1B2C3D-1791990000-0: realm 2026-10-14 08:00 to 2026-10-14 08:10,"
-					.. " server 2026-10-14 15:00:00 UTC to 2026-10-14 15:10:00 UTC",
+				"  6. Player-4618-0A1B2C3D-1791990000-0: realm 2026-10-14 08:00 to 2026-10-14 08:05,"
+					.. " server 2026-10-14 15:00:00 UTC to 2026-10-14 15:05:00 UTC",
 				"     3 Casts, 2 Catches, 1 got away, zones 12 ×2, 40 ×1, skill +1; the log tags 3 Casts with it (matches)",
 				"tracker: true",
 				"watched: 3, oldest first, read at --skill 175",
@@ -991,7 +991,7 @@ describe("scripts/read-wtf.lua", function()
 			"projection: lastSeq 4, logId 4b1d7e9a2c6f3058, fingerprint fedcba9876543210, rulesVersion 100",
 			"logId: matches PagleLog's",
 			"lastSeq: differs from PagleLog's length (5 entries)",
-			"rulesVersion: 100 DIFFERS from Stats' 101 (100 × 1 + Core's SESSION_RULES_VERSION 1), so Core rebuilds it"
+			"rulesVersion: 100 DIFFERS from Stats' 102 (100 × 1 + Core's SESSION_RULES_VERSION 2), so Core rebuilds it"
 				.. " at login (STA-R20, LOG-R72)",
 			"fingerprint: DIFFERS from the catalogue's 0123456789abcdef, "
 				.. CATALOGUE

@@ -203,7 +203,7 @@ describe("Stats' projection", function()
 	describe("Skill Readings and Session records (STA-R27, STA-R30, STA-R31)", function()
 		local B = SERVER_TIME - 90000 -- long ended before login
 
-		-- Two Sessions, more than 900 s apart (LOG-R60), with the readings STA-R27 and STA-R31 tell apart.
+		-- Two Sessions, more than Core's 300 s gap apart (LOG-R60), with the readings STA-R27 and STA-R31 tell apart.
 		local TWO = {
 			-- Session 1
 			cast({ time = B, subzone = AUBERDINE, rank = 150, mod = 25, items = { MACKEREL } }), -- 1
@@ -272,12 +272,12 @@ describe("Stats' projection", function()
 		it(
 			"credits an open Session with skill gained elsewhere when login reads it (STA-R27's second accepted inaccuracy)",
 			function()
-				-- A Session open at login (its last Cast 300 s ago) whose character read 100; skill rose to 130 away
-				-- from the log (another computer, say), and login reads 130 inside the Session.
+				-- A Session open at login (its last Cast 100 s ago, inside Core's 300 s gap) whose character read 100;
+				-- skill rose to 130 away from the log (another computer, say), and login reads 130 inside the Session.
 				local fake = withHistory({
-					cast({ time = SERVER_TIME - 400, items = { MACKEREL } }),
-					skill(SERVER_TIME - 390, 100),
-					cast({ time = SERVER_TIME - 300, items = { MACKEREL } }),
+					cast({ time = SERVER_TIME - 200, items = { MACKEREL } }),
+					skill(SERVER_TIME - 190, 100),
+					cast({ time = SERVER_TIME - 100, items = { MACKEREL } }),
 				})
 				local ns = built(fake)
 
@@ -290,19 +290,20 @@ describe("Stats' projection", function()
 
 		it("keeps a Session that crosses midnight as one record, dated by its start (STA-R95)", function()
 			local ns = built(withHistory({
-				cast({ time = B, minute = 23 * 60 + 55, items = { MACKEREL } }), -- realm 23:55
-				cast({ time = B + 600, minute = 5, items = { MACKEREL } }), -- realm 00:05 the next day
+				cast({ time = B, minute = 23 * 60 + 58, items = { MACKEREL } }), -- realm 23:58
+				cast({ time = B + 240, minute = 2, items = { MACKEREL } }), -- realm 00:02 the next day, inside the gap
 			}))
 
 			local sessions = ns.State().sessions
 			assert.are.equal(1, #sessions)
-			assert.are.same({ B, B + 600, 2 }, { sessions[1].startTime, sessions[1].endTime, sessions[1].casts })
+			assert.are.same({ B, B + 240, 2 }, { sessions[1].startTime, sessions[1].endTime, sessions[1].casts })
 		end)
 	end)
 
 	describe("live (LOG-R73)", function()
 		it("folds a live Cast and Skill Reading into the open Session's record and redraws for each", function()
-			local fake = withHistory({ cast({ time = SERVER_TIME - 300, rank = 86, mod = 25, items = { MACKEREL } }) })
+			-- Its last Cast 100 s before login, inside Core's 300 s gap: the Session is still open.
+			local fake = withHistory({ cast({ time = SERVER_TIME - 100, rank = 86, mod = 25, items = { MACKEREL } }) })
 			local ns = stats.load(fake).ns
 			local redraws = {}
 			ns.OnRedraw(function(reason)
@@ -412,16 +413,16 @@ describe("Stats' projection", function()
 			})
 
 			assert.are.same(first, ns.State())
-			assert.are.equal(201, global.projection.rulesVersion)
+			assert.are.equal(202, global.projection.rulesVersion) -- 100 × 2 + Core's SESSION_RULES_VERSION, 2
 		end)
 
 		it("rebuilds to the same state when Pagle.SESSION_RULES_VERSION changes (STA-R20, STA-R91)", function()
 			local log, global, first = savedMarked()
 
-			local ns = nextLogin(log, global, { sessionRules = 2 })
+			local ns = nextLogin(log, global, { sessionRules = 3 }) -- one past Core's 2
 
 			assert.are.same(first, ns.State())
-			assert.are.equal(102, global.projection.rulesVersion)
+			assert.are.equal(103, global.projection.rulesVersion)
 		end)
 
 		it("rebuilds to the same state when the content fingerprint changes (STA-R91)", function()
@@ -466,7 +467,7 @@ describe("Stats' projection", function()
 			fake.readSkill(90, 150, 25)
 			loaded.ns.projection:Rebuild()
 			fake.nextFrame()
-			fake.wait(900) -- the Session ends: its card would carry anything Stats had raised
+			fake.wait(fake.Pagle.SESSION_GAP) -- the Session ends: its card would carry anything Stats had raised
 			fake.nextFrame()
 
 			assert.are.same({}, fake.announcements)

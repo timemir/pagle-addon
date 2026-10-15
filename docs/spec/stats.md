@@ -269,6 +269,7 @@ Sides in keys are `hi`, `lo` and `na` (STA-R13). Odds, ranges, the Cast threshol
 | `PagleCast.session`, `PagleSkillReading.session` (LOG-R98); `PagleItem.pool` (LOG-R55) | STA-R18, STA-R30, STA-R31 |
 | `Pagle.GetSession()`, events `SessionStarted`, `SessionEnded` | STA-R32, STA-R73, STA-R85 |
 | `Pagle.SESSION_RULES_VERSION` | STA-R20 |
+| `Pagle.SESSION_GAP` | the Sessions page's note (UI › Sessions) |
 | `Pagle.GetConditions()`, event `ConditionsChanged` | STA-R11, STA-R41, STA-R73 |
 | `Pagle.MatchesConditions(spec, snapshot)` | STA-R23, STA-R24, the home spread's day or night |
 | `Pagle.GetWindowSpec(id)`, catch entries' `window` (LOG-R55) | STA-R14–R16, STA-R47 |
@@ -377,7 +378,7 @@ Every string below is mechanical interface text in `ns.L` (STA-R58, STA-R59), no
 
 ### Sessions
 
-- **Left page:** kicker "Sessions", title "{N} Sessions", the note "A Session ends after 5 minutes without a Cast." (Core's gap, LOG-R60), then the ledger (columns as on This Session), 16 per page, newest first, the chosen one highlighted, with "☚ later", "page X of Y" and "earlier ☛" (each arrow hidden at its end).
+- **Left page:** kicker "Sessions", title "{N} Sessions", the note "A Session ends after 5 minutes without a Cast." (Core's gap, `Pagle.SESSION_GAP / 60`, LOG-R60, LOG-R61), then the ledger (columns as on This Session), 16 per page, newest first, the chosen one highlighted, with "☚ later", "page X of Y" and "earlier ☛" (each arrow hidden at its end).
 - **Right page:** the chosen Session's entry, as on This Session's left page; the newest by default.
 
 ### Live tracker

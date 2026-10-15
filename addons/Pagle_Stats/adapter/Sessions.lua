@@ -313,7 +313,8 @@ end
 local function newSessionsLedger(frame, width)
 	local view = newLedgerPage(frame, width, true)
 	view.kicker:SetText(L.BOOK_SESSIONS)
-	view.note:SetText(L.SESSIONS_NOTE:format(math.floor(ns.SESSION_GAP / 60)))
+	-- Core's Session gap (LOG-R60, LOG-R61), read from Core so the note follows it.
+	view.note:SetText(L.SESSIONS_NOTE:format(math.floor(Pagle.SESSION_GAP / 60)))
 	local pager = CreateFrame("Frame", nil, frame) --[[@as StatsSessionPagerView]]
 	pager:SetSize(width, PAGER)
 	pager.later = CreateFrame("Button", nil, pager) --[[@as Button]]

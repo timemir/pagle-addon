@@ -27,18 +27,18 @@ local skill, concat = stats.skill, stats.concat
 -- Session 1: one Cast in Darkshore on Thursday 1 October at 10:00, a Mackerel.
 local OLD = { cast({ time = OCT1_1000, items = { MACKEREL } }) }
 
--- Session 2, on Monday 5 October from 21:04 to 21:44 (40m): 5 Casts, 3 by the Angler (char 1) in Darkshore and 2 by
--- Aaron (char 2) in Elwynn; 5 Catches (the last Cast holds two items), 1 got away (20%); 5 × 3600 / 2400 = 7.5, so 8
--- Catches per hour; the Angler's skill 150 → 153, +3 (the first reading adds nothing, STA-R27). By quality: Rare 1,
+-- Session 2, on Monday 5 October from 21:04 to 21:20 (16m): 5 Casts 4 minutes apart, inside Core's Session gap (300 s,
+-- LOG-R60), 3 by the Angler (char 1) in Darkshore and 2 by Aaron (char 2) in Elwynn; 5 Catches (the last Cast holds
+-- two items), 1 got away (20%); 5 × 3600 / 960 = 18.75, so 19 Catches per hour; the Angler's skill 150 → 153, +3 (the first reading adds nothing, STA-R27). By quality: Rare 1,
 -- Common 2 (Mackerel, Blackmouth), Poor 1, and LATE, whose quality the client hasn't loaded yet.
 local RICH = {
 	cast({ time = OCT5_2104, subzone = AUBERDINE, items = { MACKEREL } }),
 	skill(OCT5_2104 + 100, 150),
-	cast({ time = OCT5_2104 + 600, char = 2, zone = ELWYNN, items = { RARE } }),
-	cast({ time = OCT5_2104 + 1200 }),
-	cast({ time = OCT5_2104 + 1800, items = { BLACKMOUTH } }),
-	skill(OCT5_2104 + 1900, 153),
-	cast({ time = OCT5_2104 + 2400, char = 2, zone = ELWYNN, items = { POOR, LATE } }),
+	cast({ time = OCT5_2104 + 240, char = 2, zone = ELWYNN, items = { RARE } }),
+	cast({ time = OCT5_2104 + 480 }),
+	cast({ time = OCT5_2104 + 720, items = { BLACKMOUTH } }),
+	skill(OCT5_2104 + 820, 153),
+	cast({ time = OCT5_2104 + 960, char = 2, zone = ELWYNN, items = { POOR, LATE } }),
 }
 
 -- `count` Sessions of one caught Cast in Darkshore, an hour apart from Saturday 10 October 00:00, so the newest
@@ -191,7 +191,7 @@ describe("the Session pages", function()
 				assert.are.same({
 					"MY LAST SESSION", -- STA-R32: no Session open
 					"Monday 5 October", -- STA-R59, STA-R95: by its start
-					"21:04 to 21:44, 40m at the water.",
+					"21:04 to 21:20, 16m at the water.",
 					"Casts",
 					"5",
 					"Catches",
@@ -199,7 +199,7 @@ describe("the Session pages", function()
 					"Got away",
 					"1 (20%)",
 					"Catches per hour",
-					"8",
+					"19",
 					"Skill gained",
 					"+3",
 					"BY QUALITY", -- highest first; LATE isn't loaded yet
@@ -267,13 +267,13 @@ describe("the Session pages", function()
 	describe("This Session (stats.md › UI › This Session; STA-R32, STA-R33)", function()
 		it("shows the current Session's entry to now, with its figures so far", function()
 			local loaded, fake, book = withHistory(concat(OLD, RICH))
-			-- Two live Casts by the Angler in Darkshore at 15:15 and 15:25; the server time is 15:40, 25m so far:
-			-- 1 Catch × 3600 / 1500 = 2.4, so 2 per hour (STA-R33).
+			-- Two live Casts by the Angler in Darkshore at 15:15 and 15:19, inside Core's Session gap (300 s, LOG-R60);
+			-- the server time is 15:20, 5m so far: 1 Catch × 3600 / 300 = 12 per hour (STA-R33).
 			fake.playCast("caught", { { itemID = BLACKMOUTH, quantity = 1 } })
-			fake.wait(600)
+			fake.wait(240)
 			fake.playCast("gotAway")
 			loaded.env.GetServerTime = function()
-				return SERVER_TIME + 1500
+				return SERVER_TIME + 300
 			end
 
 			loaded.ns.OpenBook({ page = "session" })
@@ -281,7 +281,7 @@ describe("the Session pages", function()
 			assert.are.same({
 				"THIS SESSION",
 				"Sunday 11 October",
-				"15:15 to now, 25m at the water.",
+				"15:15 to now, 5m at the water.",
 				"Casts",
 				"2",
 				"Catches",
@@ -289,7 +289,7 @@ describe("the Session pages", function()
 				"Got away",
 				"1 (50%)",
 				"Catches per hour",
-				"2",
+				"12",
 				"Skill gained",
 				"+0",
 				"BY QUALITY",
@@ -319,7 +319,7 @@ describe("the Session pages", function()
 				"CATCHES",
 				"5 Oct 2026 21:04",
 				"Darkshore, Elwynn Forest", -- zones by Casts: 3 and 2
-				"40m",
+				"16m",
 				"5",
 				"5",
 				"1 Oct 2026 10:00",
@@ -373,7 +373,8 @@ describe("the Session pages", function()
 			loaded.ns.OpenBook({ page = "sessions" })
 			local lines = page(book, "left")
 			assert.are.same(
-				{ "SESSIONS", "20 Sessions", "A Session ends after 15 minutes without a Cast." },
+				-- Core's gap, Pagle.SESSION_GAP: 300 s (LOG-R60)
+				{ "SESSIONS", "20 Sessions", "A Session ends after 5 minutes without a Cast." },
 				{ unpack(lines, 1, 3) }
 			)
 			local first = started(book, "left")
@@ -437,22 +438,23 @@ describe("the Session pages", function()
 		end)
 
 		it("dates a Session that crosses midnight by its start, as one row (STA-R95)", function()
-			-- Friday 9 October 23:50 to Saturday 10 October 00:20: four Casts 10 minutes apart, one Session.
-			local start = DAY0 - 2 * 86400 + 23 * 3600 + 50 * 60
+			-- Friday 9 October 23:54 to Saturday 10 October 00:06: four Casts 4 minutes apart, inside Core's Session gap
+			-- (300 s, LOG-R60), one Session.
+			local start = DAY0 - 2 * 86400 + 23 * 3600 + 54 * 60
 			local records = {}
 			for i = 1, 4 do
-				records[i] = cast({ time = start + (i - 1) * 600, items = { MACKEREL } })
+				records[i] = cast({ time = start + (i - 1) * 240, items = { MACKEREL } })
 			end
 			local loaded, _, book = withHistory(records)
 
 			loaded.ns.OpenBook({ page = "sessions" })
 
-			assert.are.same({ "9 Oct 2026 23:50" }, started(book, "left"))
+			assert.are.same({ "9 Oct 2026 23:54" }, started(book, "left"))
 			assert.are.same({ "1 Session" }, { page(book, "left")[2] })
 			assert.are.same({
 				"SESSION 1",
 				"Friday 9 October",
-				"23:50 to 00:20, 30m at the water.",
+				"23:54 to 00:06, 12m at the water.",
 			}, { unpack(page(book, "right"), 1, 3) })
 		end)
 	end)

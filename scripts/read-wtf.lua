@@ -1232,9 +1232,7 @@ local function loadStatsLogic(log, now)
 	for _, line in ipairs(assert(readLines(dir .. "Pagle_Stats.toc"))) do
 		local file = line:match("^%s*(.-)%s*$"):gsub("\\", "/")
 		if file:match("^locale/[^/]+%.lua$") or file:match("^data/[^/]+%.lua$") or file:match("^logic/[^/]+%.lua$") then
-			local chunk = assert(loadfile(dir .. file))
-			setfenv(chunk, env)
-			chunk("Pagle_Stats", ns)
+			assert(wtf.loadInto(ns, env, dir .. file, "Pagle_Stats"))
 		end
 	end
 	local none = function() end
@@ -1260,7 +1258,7 @@ end
 -- Core's MatchesConditions (logic/Conditions.lua), as the adapter passes `Pagle` itself. Returns the tables and the
 -- catalogue's content fingerprint, or nil and why the catalogue can't be loaded.
 local function statsPlaces(stats, core, path)
-	local catalogue, err = loadCatalogue(path)
+	local catalogue, err = wtf.loadCatalogue(path)
 	if not catalogue then
 		return nil, err
 	end
@@ -1529,7 +1527,7 @@ local function printStats(account, log, facts, options)
 		return
 	end
 	print("== Stats (PagleStatsDB)")
-	local core = loadCodec()
+	local core = loadCoreLogic()
 	local stats = loadStatsLogic(log, options.now or os.time())
 	local context = { label = options.catalogue or "the repo's addons/Pagle/data/Catalogue.lua" }
 	context.places, context.fingerprint =

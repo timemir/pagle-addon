@@ -32,7 +32,7 @@ PagleStatsDB = {
 },
 ["40:hi#13902"] = {
 ["at"] = 2,
-["last"] = 1791990600,
+["last"] = 1791990300,
 ["n"] = 1,
 },
 ["40:hi#6299"] = {
@@ -68,8 +68,8 @@ PagleStatsDB = {
 ["n"] = 3,
 },
 [13902] = {
-["first"] = 1791990600,
-["last"] = 1791990600,
+["first"] = 1791990300,
+["last"] = 1791990300,
 ["n"] = 1,
 },
 },
@@ -221,7 +221,7 @@ PagleStatsDB = {
 ["chars"] = {
 3, -- [1]
 },
-["endTime"] = 1791990600,
+["endTime"] = 1791990300,
 ["gotAway"] = 1,
 ["id"] = "Player-4618-0A1B2C3D-1791990000-0",
 ["items"] = {
@@ -242,7 +242,7 @@ PagleStatsDB = {
 ["gotAway"] = 15,
 },
 },
-["rulesVersion"] = 101,
+["rulesVersion"] = 102,
 },
 },
 ["profileKeys"] = {

@@ -130,7 +130,7 @@ describe("the live tracker", function()
 			assert.are.equal(loaded.ns.tracker.block, stack[2].frame)
 			assert.are.equal(-48, stack[2].y) -- the 40 px tracker above, then 8 px (CORE-R70)
 
-			fake.wait(900) -- 15 minutes without a Cast end the Session (LOG-R62)
+			fake.wait(fake.Pagle.SESSION_GAP) -- Core's Session gap without a Cast ends the Session (LOG-R60, LOG-R62)
 
 			assert.are.same({ "hunts" }, docked(fake))
 		end)
@@ -164,12 +164,12 @@ describe("the live tracker", function()
 			ns.db.profile.tracker = true
 			fish(fake, 2, MACKEREL)
 			fish(fake, 1)
-			fake.wait(300)
+			fake.wait(fake.Pagle.SESSION_GAP - 60) -- a minute inside Core's Session gap (300 s, LOG-R60)
 			fish(fake, 1, MACKEREL)
 
-			-- 3 Catches over 300 s: 36 per hour (STA-R33)
+			-- 3 Catches over 240 s: 45 per hour (STA-R33)
 			assert.are.same(
-				{ "Stats | Session · 5m", "4 Casts · 3 Catches · 1 got away", "36 per hour · skill +0" },
+				{ "Stats | Session · 4m", "4 Casts · 3 Catches · 1 got away", "45 per hour · skill +0" },
 				read(ns)
 			)
 		end)
@@ -177,7 +177,7 @@ describe("the live tracker", function()
 		it('reads "no Session" with none open, then each watch with its dot, count and sub-line', function()
 			local _, fake, ns = ready()
 			fish(fake, 3, MACKEREL)
-			fake.wait(900)
+			fake.wait(fake.Pagle.SESSION_GAP)
 
 			ns.Watch(MACKEREL, AUBERDINE)
 			ns.Watch(BLACKMOUTH, DARKSHORE)

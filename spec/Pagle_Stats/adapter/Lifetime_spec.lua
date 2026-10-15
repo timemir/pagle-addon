@@ -18,30 +18,32 @@ local T1, T2 = T0 + 86400, T0 + 2 * 86400
 -- (STA-R12): the margin is `rank` − 170 (STA-R26); Elwynn has no line, so no margin.
 local cast = stats.cast
 
--- Session 1, 8 Oct: the player ("Angler Tester", 1) in Darkshore at 100 skill (70 below: lo50), 4 Casts over 30m, the
--- first got away: 3 Catches, 6 per hour. The longest Session.
-local SESSION_1 = {
-	cast({ time = T0, rank = 100 }),
-	cast({ time = T0 + 600, rank = 100, items = { MACKEREL } }),
-	cast({ time = T0 + 1200, rank = 100, items = { MACKEREL } }),
-	cast({ time = T0 + 1800, rank = 100, items = { MACKEREL } }),
-}
--- Session 2, 9 Oct: the other character ("Ada Brook", 2) in Auberdine, 10m: two Casts at 175 (5 over: hi0), the second
+-- Every Session's Casts are less than Core's Session gap apart (300 s, LOG-R60), so each is one Session.
+
+-- Session 1, 8 Oct: the player ("Angler Tester", 1) in Darkshore at 100 skill (70 below: lo50), 7 Casts 250 s apart,
+-- 25m, the first got away: 6 Catches, 14.4 per hour. The longest Session.
+local SESSION_1 = { cast({ time = T0, rank = 100 }) }
+for i = 1, 6 do
+	SESSION_1[i + 1] = cast({ time = T0 + 250 * i, rank = 100, items = { MACKEREL } })
+end
+-- Session 2, 9 Oct: the other character ("Ada Brook", 2) in Auberdine, 4m: two Casts at 175 (5 over: hi0), the second
 -- with item 0 beside a Blackmouth (a Catch, never an index entry, STA-R96), then one at 200 (30 over: hi25) got away.
--- 3 Catches in 10m is 18 per hour, but under the bests minimum of 20m (STA-R33).
+-- 3 Catches in 4m is 45 per hour, but under the bests minimum of 20m (STA-R33).
 local SESSION_2 = {
 	cast({ time = T1, char = 2, subzone = AUBERDINE, rank = 175, items = { BLACKMOUTH } }),
-	cast({ time = T1 + 300, char = 2, subzone = AUBERDINE, rank = 175, items = { BLACKMOUTH, 0 } }),
-	cast({ time = T1 + 600, char = 2, subzone = AUBERDINE, rank = 200 }),
+	cast({ time = T1 + 120, char = 2, subzone = AUBERDINE, rank = 175, items = { BLACKMOUTH, 0 } }),
+	cast({ time = T1 + 240, char = 2, subzone = AUBERDINE, rank = 200 }),
 }
--- Session 3, 10 Oct: the player in Elwynn (no line: no margin), 25m (Casts 12m 30s apart, inside Core's 15-minute gap):
--- a Noise item, a Mackerel, then an Uncharted item (one the catalogue lacks). 3 Catches in 25m is 7.2 per hour, the
--- best.
+-- Session 3, 10 Oct: the player in Elwynn (no line: no margin), 6 Casts 240 s apart, 20m: a Noise item, a Mackerel,
+-- an Uncharted item (one the catalogue lacks), then three more Mackerel. 6 Catches in 20m is 18 per hour, the best.
 local SESSION_3 = {
 	cast({ time = T2, zone = ELWYNN, rank = 150, items = { MANA_POTION } }),
-	cast({ time = T2 + 750, zone = ELWYNN, rank = 150, items = { MACKEREL } }),
-	cast({ time = T2 + 1500, zone = ELWYNN, rank = 150, items = { UNCHARTED } }),
+	cast({ time = T2 + 240, zone = ELWYNN, rank = 150, items = { MACKEREL } }),
+	cast({ time = T2 + 480, zone = ELWYNN, rank = 150, items = { UNCHARTED } }),
 }
+for i = 3, 5 do
+	SESSION_3[i + 1] = cast({ time = T2 + 240 * i, zone = ELWYNN, rank = 150, items = { MACKEREL } })
+end
 
 -- Pagle_Stats on a FakePagle whose log holds the player (1), "Ada Brook" (2) and `records`, logged in with its
 -- projection built, and three of the four items named (the Uncharted one isn't loaded).
@@ -131,11 +133,11 @@ describe("the Lifetime spread (stats.md › UI › Lifetime)", function()
 			assert.are.same({
 				"LIFETIME",
 				"Every Cast I've made",
-				"Casts | 10", -- 4 + 3 + 3
-				"Catches | 9", -- 3 + 3 (item 0 counts, STA-R22) + 3
-				"Got away | 2 (20%)", -- 1 in Session 1, 1 in Session 2
+				"Casts | 16", -- 7 + 3 + 6
+				"Catches | 15", -- 6 + 3 (item 0 counts, STA-R22) + 6
+				"Got away | 2 (13%)", -- 1 in Session 1, 1 in Session 2: 12.5%, half up (STA-R44)
 				"Sessions | 3",
-				"Time at the water | 1h 05m", -- 30m + 10m + 25m
+				"Time at the water | 49m", -- 25m + 4m + 20m
 			}, { unpack(lines, 1, 7) })
 		end)
 
@@ -146,8 +148,8 @@ describe("the Lifetime spread (stats.md › UI › Lifetime)", function()
 
 			assert.are.same({
 				"BESTS",
-				"Longest Session, 8 Oct 2026 | 30m", -- Session 1's 30m beats Session 3's 25m
-				"Most Catches per hour, 10 Oct 2026 | 7", -- Session 3's 7.2 beats Session 1's 6; Session 2 is under 20m
+				"Longest Session, 8 Oct 2026 | 25m", -- Session 1's 25m beats Session 3's 20m
+				"Most Catches per hour, 10 Oct 2026 | 18", -- Session 3's 18 beats Session 1's 14.4; Session 2 is under 20m
 			}, section(lines, "BESTS", 2))
 		end)
 
@@ -156,7 +158,7 @@ describe("the Lifetime spread (stats.md › UI › Lifetime)", function()
 
 			local lines = read((lifetime(loaded)))
 
-			assert.are.same({ "BESTS", "Longest Session, 9 Oct 2026 | 10m" }, section(lines, "BESTS", 1))
+			assert.are.same({ "BESTS", "Longest Session, 9 Oct 2026 | 4m" }, section(lines, "BESTS", 1))
 			for _, line in ipairs(lines) do
 				assert.is_nil(line:find("Most Catches per hour", 1, true))
 			end
@@ -170,7 +172,7 @@ describe("the Lifetime spread (stats.md › UI › Lifetime)", function()
 			-- No Cast was 1–49 below the line, and Elwynn's Casts have no line: neither has a line here.
 			assert.are.same({
 				"GOT AWAY, BY SKILL | against each water's no-junk line",
-				"below by 50+ | 25% of 4 Casts", -- Session 1: 1 of 4 got away
+				"below by 50+ | 14% of 7 Casts", -- Session 1: 1 of 7 got away
 				"0–24 over | 0% of 2 Casts", -- Session 2's first two Casts
 				"25+ over | 100% of 1 Cast", -- Session 2's last Cast got away
 				"CHARACTERS",
@@ -186,9 +188,9 @@ describe("the Lifetime spread (stats.md › UI › Lifetime)", function()
 			assert.are.same({
 				"CHARACTERS",
 				"Ada Brook | 3 Casts · 3 Catches · 1 got away",
-				"Angler Tester | 7 Casts · 6 Catches · 1 got away", -- Sessions 1 and 3
+				"Angler Tester | 13 Casts · 12 Catches · 1 got away", -- Sessions 1 and 3
 			}, section(lines, "CHARACTERS", 2))
-			assert.are.equal("Angler Tester | 7 Casts · 6 Catches · 1 got away", lines[#lines])
+			assert.are.equal("Angler Tester | 13 Casts · 12 Catches · 1 got away", lines[#lines])
 		end)
 
 		it("reads one Cast, Catch and character's Casts in the singular (STA-R59)", function()
@@ -222,7 +224,7 @@ describe("the Lifetime spread (stats.md › UI › Lifetime)", function()
 					"THE CATCH",
 					"Every fish",
 					"How many I've caught. Hover for first and last; click for its waters.",
-					"Raw Mackerel | 4", -- 3 in Session 1, 1 in Session 3
+					"Raw Mackerel | 10", -- 6 in Session 1, 4 in Session 3
 					"Oily Blackmouth | 2",
 					"Minor Mana Potion | 1", -- Noise
 					"Item 77777 | 1", -- Uncharted
@@ -240,7 +242,7 @@ describe("the Lifetime spread (stats.md › UI › Lifetime)", function()
 		it('shows "First {date}, last {date}" on hovering an item (STA-R25, STA-R59)', function()
 			local loaded = built(stats.concat(SESSION_1, SESSION_2, SESSION_3))
 			local _, right = lifetime(loaded)
-			local entry = pieceReading(right, "Raw Mackerel | 4")
+			local entry = pieceReading(right, "Raw Mackerel | 10")
 
 			entry:GetScript("OnEnter")(entry)
 			local tooltip = loaded.env.GameTooltip
@@ -293,10 +295,10 @@ describe("the Lifetime spread (stats.md › UI › Lifetime)", function()
 
 		local lines = read(left)
 		assert.are.equal(before, #lines)
-		assert.are.equal("Casts | 11", lines[3])
+		assert.are.equal("Casts | 17", lines[3])
 		assert.are.same(
 			-- The Mana Potion ties the Blackmouth at 2 and has the lower item ID.
-			{ "Raw Mackerel | 4", "Minor Mana Potion | 2", "Oily Blackmouth | 2", "Item 77777 | 1" },
+			{ "Raw Mackerel | 10", "Minor Mana Potion | 2", "Oily Blackmouth | 2", "Item 77777 | 1" },
 			{ unpack(read(right), 4) }
 		)
 	end)

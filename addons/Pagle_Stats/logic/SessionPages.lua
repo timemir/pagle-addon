@@ -16,10 +16,6 @@ ns.EARLIER_SESSIONS = 10
 --- The Sessions on one page of the Sessions ledger (Tunables: Sessions per ledger page).
 ns.SESSIONS_PER_LEDGER_PAGE = 16
 
---- Core's Session gap in seconds (LOG-R60, catch-log.md › Tunables), for the Sessions page's note. Core keeps it in
---- its own namespace and offers no constant on `Pagle`, so Stats repeats it here; it changes with Core's.
-ns.SESSION_GAP = 900
-
 --- One page of the Sessions ledger: its number and the count of pages (at least 1), the Sessions on it (indices into
 --- the records, newest first), and whether "☚ later" and "earlier ☛" show (each hidden at its end).
 ---@class StatsSessionLedger
