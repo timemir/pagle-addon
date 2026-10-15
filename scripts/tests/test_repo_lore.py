@@ -7,13 +7,14 @@ import csv
 import re
 import shutil
 import tomllib
+from collections.abc import Callable
 from dataclasses import replace
 from functools import cache
 from pathlib import Path
 
 import pytest
+from cli_fixture import run
 
-from pagle_data.cli import main
 from pagle_data.errors import Problems
 from pagle_data.generate import Layers, hunt_list_of, read_layers
 from pagle_data.hunts import hunt_hash
@@ -50,6 +51,30 @@ TITLES = [
 # DATA-R107: every lore check built and on by M6.
 ALL_CHECKS = ["ledger", "core", "hunts", "stats"]
 BINDINGS = ["field", "level10", "level20", "level30", "level40", "level50", "level60", "birch", "buckram", "sharkskin"]
+
+
+def _replacing(old: str, new: str) -> Callable[[str], str]:
+    """An edit that replaces `old`, which the text must hold exactly once, with `new`."""
+
+    def edit(text: str) -> str:
+        assert text.count(old) == 1, old
+        return text.replace(old, new)
+
+    return edit
+
+
+def _generator_fails_on(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], path: str, edit: Callable[[str], str], problem: str
+) -> None:
+    """DATA-R63: the generator run on a copy of data/ whose file `path` (from the repo's root) `edit` changed exits 1,
+    names `problem` and writes nothing."""
+    shutil.copytree(REPO / "data", tmp_path / "data")
+    changed = tmp_path / path
+    changed.write_text(edit(changed.read_text(encoding="utf-8")), encoding="utf-8")
+    code, output = run(tmp_path, capsys)
+    assert code == 1
+    assert problem in output
+    assert not (tmp_path / "addons").exists()
 
 
 @cache
@@ -154,17 +179,14 @@ def test_the_generator_fails_on_a_deleted_riddle_and_names_the_key(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
     # DATA-R107 through the generator itself (DATA-R63): a copy of data/ with one riddle deleted writes nothing.
-    shutil.copytree(REPO / "data", tmp_path / "data")
-    ledger = tmp_path / "data" / "lore" / "ledger.toml"
-    text = ledger.read_text(encoding="utf-8")
-    riddle = re.search(r"^\[species\.6289\].*\n(?:.*\n)*?(riddle = .*\n)", text, flags=re.MULTILINE)
-    assert riddle is not None
-    ledger.write_text(text[: riddle.start(1)] + text[riddle.end(1) :], encoding="utf-8")
-    code = main([], tmp_path)
-    out, err = capsys.readouterr()
-    assert code == 1
-    assert "data/lore/ledger.toml: species.6289.riddle: missing" in out + err
-    assert not (tmp_path / "addons").exists()
+    def without_riddle(text: str) -> str:
+        riddle = re.search(r"^\[species\.6289\].*\n(?:.*\n)*?(riddle = .*\n)", text, flags=re.MULTILINE)
+        assert riddle is not None
+        return text[: riddle.start(1)] + text[riddle.end(1) :]
+
+    _generator_fails_on(
+        tmp_path, capsys, "data/lore/ledger.toml", without_riddle, "data/lore/ledger.toml: species.6289.riddle: missing"
+    )
 
 
 @pytest.mark.parametrize("species", sorted(_riddles()))
@@ -181,17 +203,13 @@ def test_the_generator_fails_on_a_deleted_good_name_and_names_the_key(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
     # DATA-R107 for the core lore ID, through the generator itself (DATA-R63): nothing is written.
-    shutil.copytree(REPO / "data", tmp_path / "data")
-    core = tmp_path / "data" / "lore" / "core.toml"
-    text = core.read_text(encoding="utf-8")
-    name = 'name = "Ripple"\n'
-    assert name in text
-    core.write_text(text.replace(name, ""), encoding="utf-8")
-    code = main([], tmp_path)
-    out, err = capsys.readouterr()
-    assert code == 1
-    assert "data/lore/core.toml: good.core.toaststyle.ripple.name: missing" in out + err
-    assert not (tmp_path / "addons").exists()
+    _generator_fails_on(
+        tmp_path,
+        capsys,
+        "data/lore/core.toml",
+        _replacing('name = "Ripple"\n', ""),
+        "data/lore/core.toml: good.core.toaststyle.ripple.name: missing",
+    )
 
 
 def test_the_manifest_lists_the_ledger_s_titles_and_bindings() -> None:
@@ -360,16 +378,13 @@ def test_the_generator_fails_on_a_29_code_point_hunt_name_and_names_the_key(
 ) -> None:
     # DATA-R105, DATA-R107 through the generator itself (DATA-R63): a copy of data/ with Night Run's name one code
     # point over the 28 writes nothing.
-    shutil.copytree(REPO / "data", tmp_path / "data")
-    hunts = tmp_path / "data" / "hunts" / "hunts.toml"
-    text = hunts.read_text(encoding="utf-8")
-    assert text.count('name = "Night Run"\n') == 1
-    hunts.write_text(text.replace('name = "Night Run"\n', f'name = "{"N" * 29}"\n'), encoding="utf-8")
-    code = main([], tmp_path)
-    out, err = capsys.readouterr()
-    assert code == 1
-    assert "data/hunts/hunts.toml: hunt.night_run.name: length: 29 code points" in out + err
-    assert not (tmp_path / "addons").exists()
+    _generator_fails_on(
+        tmp_path,
+        capsys,
+        "data/hunts/hunts.toml",
+        _replacing('name = "Night Run"\n', f'name = "{"N" * 29}"\n'),
+        "data/hunts/hunts.toml: hunt.night_run.name: length: 29 code points",
+    )
 
 
 def test_renaming_a_hunt_changes_neither_its_hash_nor_the_hunt_list_fingerprint(tmp_path: Path) -> None:
@@ -441,14 +456,11 @@ def test_the_generator_fails_on_a_29_code_point_frame_name_and_names_the_key(
 ) -> None:
     # DATA-R107 for the stats lore ID, through the generator itself (DATA-R63): a copy of data/ with the Logbook's
     # name one code point over the 28 (Tunables › Lore limits) writes nothing.
-    shutil.copytree(REPO / "data", tmp_path / "data")
-    stats = tmp_path / "data" / "lore" / "stats.toml"
-    text = stats.read_text(encoding="utf-8")
-    name = f'name = "{_stats_text()["statsgood.stats.trackerframe.logbook.name"]}"\n'
-    assert text.count(name) == 1
-    stats.write_text(text.replace(name, f'name = "{"L" * 29}"\n'), encoding="utf-8")
-    code = main([], tmp_path)
-    out, err = capsys.readouterr()
-    assert code == 1
-    assert "data/lore/stats.toml: statsgood.stats.trackerframe.logbook.name: length: 29 code points" in out + err
-    assert not (tmp_path / "addons").exists()
+    name = _stats_text()["statsgood.stats.trackerframe.logbook.name"]
+    _generator_fails_on(
+        tmp_path,
+        capsys,
+        "data/lore/stats.toml",
+        _replacing(f'name = "{name}"\n', f'name = "{"L" * 29}"\n'),
+        "data/lore/stats.toml: statsgood.stats.trackerframe.logbook.name: length: 29 code points",
+    )
