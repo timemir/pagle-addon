@@ -10,8 +10,9 @@
 -- --preset only reads the account folder. It writes a dated stage folder under <out>/<ACCT>/ (--out defaults to
 -- ~/pagle-test-logs): original/, a byte-for-byte backup of Pagle.lua, Pagle_Ledger.lua and their .bak, written
 -- first, then Pagle.lua, the test log. That Pagle.lua is the backed-up one with only PagleLog replaced: a new logId
--- (LOG-R15), the same characters, the last build entry, each character's last Skill Reading, and Casts of ordinary
--- Species, junk and trophies on the charted zones' lists, one item each, for the character of the dev's last Cast.
+-- (LOG-R15), `test = true` (a test log, catch-log.md › Data, so /pagle dev catch appends on it), the same characters,
+-- the last build entry, each character's last Skill Reading, and Casts of ordinary Species, junk and trophies on the
+-- charted zones' lists, one item each, for the character of the dev's last Cast.
 -- The entries are written by Core's own codec (addons/Pagle/logic/CatchLog.lua), and the log is folded with the
 -- Ledger's own logic/ (listed in Pagle_Ledger.toc) over the catalogue (the repo's generated one, or --catalogue):
 -- nothing is written unless the fold lands where the preset says. When a test log is installed, the backup is the
@@ -425,9 +426,10 @@ local function castTime(i)
 	return math.floor(i / CASTS_PER_SESSION) * SESSION_GAP + (i % CASTS_PER_SESSION) * CAST_GAP
 end
 
--- A new log with the dev's characters, its build entry and each character's last Skill Reading at `time`.
+-- A new test log (`test = true`, catch-log.md › Data: /pagle dev catch appends only on one) with the dev's
+-- characters, its build entry and each character's last Skill Reading at `time`.
 local function newLog(game, log, facts, time)
-	local data = { format = game.core.LOG_FORMAT, characters = deepCopy(log.characters), entries = {} }
+	local data = { format = game.core.LOG_FORMAT, characters = deepCopy(log.characters), entries = {}, test = true }
 	local catchLog = game.core.OpenCatchLog(data, {}, time)
 	local header = {}
 	if facts.build then
@@ -575,6 +577,9 @@ local function check(game, facts, preset, data, probePair, now)
 		fail("the logId isn't 16 lowercase hex digits")
 	elseif data.logId == facts.log.logId then
 		fail("the logId is the real log's")
+	end
+	if data.test ~= true then
+		fail("PagleLog.test isn't true, so /pagle dev catch would refuse it")
 	end
 	found.level, found.toNext = climb(game, state)
 	found.state = state

@@ -209,6 +209,14 @@ describe("scripts/make-test-log.lua", function()
 		)
 
 		it(
+			"marks it a test log, PagleLog.test = true, so /pagle dev catch appends on it (catch-log.md › Data)",
+			function()
+				assert.is_true(log.test)
+				assert.is_nil(globalsOf(readFile(FIXTURE .. "/SavedVariables/Pagle.lua")).PagleLog.test)
+			end
+		)
+
+		it(
 			"copies the last build entry and each character's last Skill Reading, so Core appends neither at login (LOG-R31, LOG-R36)",
 			function()
 				local records = decoded(log)
@@ -329,6 +337,10 @@ describe("scripts/make-test-log.lua", function()
 			assert.is_true(ledger.FreshWaterShown(state, NOW) >= 3)
 		end)
 
+		it("marks it a test log, PagleLog.test = true (catch-log.md › Data)", function()
+			assert.is_true(log.test)
+		end)
+
 		it("holds no Legend, Noise or Uncharted item (LED-R5)", function()
 			local caught = {}
 			for _, record in ipairs(records) do
@@ -356,6 +368,10 @@ describe("scripts/make-test-log.lua", function()
 			local state = folded((decoded(log)))
 			assert.are.equal(995, state.catches)
 			assert.matches("; 995 lifetime Catches$", made.lines[4])
+		end)
+
+		it("marks it a test log, PagleLog.test = true (catch-log.md › Data)", function()
+			assert.is_true(log.test)
 		end)
 	end)
 
