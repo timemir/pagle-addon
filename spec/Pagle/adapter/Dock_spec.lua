@@ -277,7 +277,7 @@ describe("Moving the dock", function()
 		assert.are.same({ "TOPRIGHT", loaded.env.MinimapCluster, "BOTTOMRIGHT", 0, -10 }, anchorOf(loaded.ns.dockFrame))
 	end)
 
-	it("stops a drag where it is when restriction starts, and saves it (CORE-R71, drafted default)", function()
+	it("stops a drag where it is when restriction starts, and saves it (CORE-R71)", function()
 		local loaded = session()
 		local _, hunts = dockFixture(loaded, "Hunts", 10, 40)
 		loaded.client.fire("PLAYER_LOGIN")

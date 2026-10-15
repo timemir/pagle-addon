@@ -37,7 +37,7 @@ def test_the_shared_time_fixture(case: dict[str, object]) -> None:
 
 
 def test_a_one_hour_weekly_window_passes_the_cap_as_data_r92_words_it() -> None:
-    # DATA-R92 (graph.md open question 8): open 1 hour a week is under 1/7 of the steps, but its longest closed run is
+    # DATA-R92: open 1 hour a week is under 1/7 of the steps, but its longest closed run is
     # 6 days 23 hours, at most 7 days, so it passes. 2026 and 2027 have 52 Sundays each, 4 steps every one. The run
     # doesn't wrap round the span's ends: the 5 days 9 hours after the last Sunday (2027-12-26 15:00 on) and the 3
     # days 14 hours before the first (2026-01-04 14:00) would make 8 days 23 hours running.
