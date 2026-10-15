@@ -85,8 +85,9 @@ end
 ---@field crest Texture
 ---@field name FontString
 
--- A crest's bookplate's size, as the prototype's, and its parchment, edge and ink, each { r, g, b[, a] }.
-local PLATE_WIDTH, PLATE_HEIGHT = 150, 170
+-- A crest's bookplate's size, as the prototype's, and its parchment, edge and ink, each { r, g, b[, a] }. It is drawn
+-- at PLATE_SCALE so it and the note under it fit the Curio Shop's 190-high stage (wallet-and-shop.md › UI).
+local PLATE_WIDTH, PLATE_HEIGHT, PLATE_SCALE = 150, 170, 0.85
 local PLATE = { parchment = { 0.93, 0.87, 0.72, 1 }, edge = { 0.54, 0.35, 0.10, 1 }, ink = { 0.23, 0.15, 0.06 } }
 
 -- A crest's panel: a small bookplate, "Ex Libris", the crest, the Angler's name, then where it shows (LED-R112).
@@ -94,6 +95,7 @@ local PLATE = { parchment = { 0.93, 0.87, 0.72, 1 }, edge = { 0.54, 0.35, 0.10, 
 local function buildCrest(panel)
 	local plate = CreateFrame("Frame", nil, panel)
 	plate:SetSize(PLATE_WIDTH, PLATE_HEIGHT)
+	plate:SetScale(PLATE_SCALE)
 	plate:SetPoint("TOP", 0, -16)
 	ns.Framed(plate, PLATE.parchment, PLATE.edge, 2)
 	local exLibris = ns.Text(plate, "GameFontNormalSmall", PLATE.ink)

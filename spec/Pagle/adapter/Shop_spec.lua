@@ -636,7 +636,7 @@ describe("The Curio Shop's stage", function()
 			assert.are.equal(1, #drawn)
 			assert.is_true(drawn[1]:IsShown())
 			assert.are.equal(stage.area, drawn[1]:GetParent())
-			assert.are.same({ 370, 190 }, { drawn[1]:GetSize() }, "the showcase card's well and the paper under it")
+			assert.are.same({ 390, 190 }, { drawn[1]:GetSize() }, "the showcase card's well and the paper round it")
 			assert.is_false(stage.swatch:IsShown())
 
 			Pagle.OpenShop("hunts.cover.plain")

@@ -28,10 +28,11 @@ local TRAY_X, TRAY_Y, TRAY_W, TRAY_H = 22, 98, 470, 520
 local FIND_Y, FILTER_Y, CHIP_Y, CONTROLS_W = 14, 59, 98, 438
 -- The goods: their inset in the tray, a row's width and height, a slot's header's height.
 local LIST_X, ROW_W, ROW_H, HEADER_H = 16, 432, 44, 31
--- The cards on the lid: the showcase card's top left; the stage inside it (a dark well 132 high at its top, the
--- paper under it); the description card under the showcase card, stretched to INFO_H.
+-- The cards on the lid: the showcase card's top left; the stage inside it (the card's dark well, 370 x 132, centred
+-- at its top, the paper round and under it; as wide as the toast styles' sample toast, 464 at 0.8, needs); the
+-- description card under the showcase card, stretched to INFO_H.
 local CARD_X, CARD_Y = 534, 159
-local STAGE_X, STAGE_Y, STAGE_W, STAGE_H, WELL_H = 16, 16, 370, 190, 132
+local STAGE_X, STAGE_Y, STAGE_W, STAGE_H, WELL_H = 6, 16, 390, 190, 132
 local INFO_Y, INFO_H, INFO_PAD = 385, 220, 20
 -- The purse: the coin, then the label over the balance; the bar's right end, and its top with and without the held
 -- line under it.

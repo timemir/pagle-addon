@@ -265,6 +265,11 @@ describe("Core's goods' previews", function()
 			shown[#shown + 1] = withText(stage, text) ~= nil
 		end
 		assert.are.same({ true, true, true, false }, shown)
+		-- The plate is scaled so its top inset, the plate and the note under it (10 below, one 14-high line) fit the
+		-- Curio Shop's 190-high stage.
+		local plate = withText(stage, "Ex Libris").parent
+		assert.are.equal(0.85, plate:GetScale())
+		assert.is_true((16 + 170) * plate:GetScale() + 10 + 14 <= 190)
 	end)
 
 	it("draw a toast style with the drawer its slot has when it is drawn, added after login (ANN-R80)", function()
