@@ -48,6 +48,7 @@ function ns.Entry(state, item, area, live, places)
 		kicker = L.ENTRY_KICKER_WINDOW:format(kicker, reading.windowName)
 	end
 	local dryFirst, dryAfter = ns.DrySpellText(reading)
+	local dry = ns.DrySpell(reading)
 	local total = state.items[item]
 	return {
 		reading = reading,
@@ -59,7 +60,8 @@ function ns.Entry(state, item, area, live, places)
 		notes = #notes > 0 and table.concat(notes, ns.L.SENTENCE_JOIN) or nil,
 		dryFirst = dryFirst,
 		dryAfter = dryAfter,
-		luck = ns.DrySpell(reading).P,
+		-- the luck ruler's reading: none at a Dry spell of 0, which has no ruler (STA-R54)
+		luck = dry.since > 0 and dry.P or nil,
 		records = {
 			{ label = L.ENTRY_CAUGHT_HERE, value = ns.Number(reading.k) },
 			{ label = L.ENTRY_CAUGHT_ANYWHERE, value = ns.Number(total and total.n or 0) },

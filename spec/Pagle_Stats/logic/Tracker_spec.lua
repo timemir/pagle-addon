@@ -194,8 +194,8 @@ describe("the live tracker's lines", function()
 				"watch normal Raw Mackerel | 20 | Darkshore · normal",
 				"watch unlucky Oily Blackmouth | 20 | Darkshore · unlucky",
 				"watch veryUnlucky Raw Nightfin Snapper | 20 | Darkshore · by night · very unlucky",
-				-- a Dry spell of 0 has no luck reading: the short odds instead (STA-R54)
-				"watch grey Raw Brilliant Smallfish | just now | Darkshore · 1 in 100",
+				-- a known Dry spell of 0: P = 1, a green dot and "normal" (STA-R51, STA-R52, STA-R82)
+				"watch normal Raw Brilliant Smallfish | just now | Darkshore · normal",
 				-- never caught in its scope: the bare count; Auberdine has under 100 Casts, so it reads across
 				-- Darkshore, under the place's own name (STA-R42)
 				"watch grey Firefin Snapper | 400 | Auberdine · not seen yet",

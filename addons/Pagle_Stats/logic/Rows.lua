@@ -26,21 +26,32 @@ local function listable(itemID, lookups)
 	return not (record and (record.noise or record.removed))
 end
 
---- The catalogue's list for a place (STA-R17): a subzone's own `catches` if non-empty, else its zone's own; a zone's
---- every entry in `GetZoneCatches`. None for an area outside the catalogue. Your odds reads it for the entries behind
---- a row (STA-R46).
----@param area integer
+-- A zone's own `catches` in the catalogue, none when it lacks the zone.
+---@param zone integer?
 ---@param lookups StatsLookups
 ---@return PagleCatchEntry[]
-function ns.PlaceList(area, lookups)
+local function zoneOwn(zone, lookups)
+	local zoneRecord = zone and lookups.GetArea(zone)
+	return zoneRecord and zoneRecord.catches or {}
+end
+
+--- The catalogue's list for a place (STA-R17): a subzone's own `catches` if non-empty, else its zone's own; a zone's
+--- every entry in `GetZoneCatches`. A subzone the catalogue lacks still has its zone's own list, through `zone`, the
+--- zone the projection's place record holds (STA-R22: Stats never needs the catalogue to tell them apart). None for a
+--- zone outside the catalogue. Your odds reads it for the entries behind a row (STA-R46).
+---@param area integer
+---@param lookups StatsLookups
+---@param zone integer? the place's zone, `state.places[area].zone`, when the projection has the place
+---@return PagleCatchEntry[]
+function ns.PlaceList(area, lookups, zone)
 	local record = lookups.GetArea(area)
 	if record and record.parent ~= 0 then
 		if next(record.catches) ~= nil then
 			return record.catches
 		end
-		local zone = lookups.GetZoneOf(area)
-		local zoneRecord = zone and lookups.GetArea(zone)
-		return zoneRecord and zoneRecord.catches or {}
+		return zoneOwn(lookups.GetZoneOf(area), lookups)
+	elseif not record and zone and zone ~= area then
+		return zoneOwn(zone, lookups)
 	end
 	return lookups.GetZoneCatches(area) or {}
 end
@@ -55,14 +66,14 @@ end
 ---@return StatsRow[]
 function ns.Rows(state, area, lookups)
 	local rows, listed = {}, {}
-	for _, entry in ipairs(ns.PlaceList(area, lookups)) do
+	local place = state.places[area]
+	for _, entry in ipairs(ns.PlaceList(area, lookups, place and place.zone)) do
 		local itemID = entry.itemID
 		if not listed[itemID] and listable(itemID, lookups) then
 			listed[itemID] = true
 			rows[#rows + 1] = { item = itemID, added = false }
 		end
 	end
-	local place = state.places[area]
 	local caught = {}
 	for itemID in pairs(place and place.items or {}) do
 		if not listed[itemID] and listable(itemID, lookups) then

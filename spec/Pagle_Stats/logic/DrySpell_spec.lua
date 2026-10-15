@@ -193,22 +193,33 @@ describe("Dry spells", function()
 	end)
 
 	describe("zero and learning (STA-R54)", function()
-		it("reads 0 as Caught one on my last Cast here., with no luck reading, in every state", function()
+		it("reads 0 as Caught one on my last Cast here., with no luck wording, in every state", function()
 			local ns = stats.load().ns
 
 			for _, state in ipairs({ "learning", "unseen", "known" }) do
 				local zero = reading({ n = 412, k = 9, at = 412, state = state })
 				local first, after = ns.DrySpellText(zero)
-				local dry = ns.DrySpell(zero)
 
 				assert.are.equal("Caught one on my last Cast here.", first, state)
 				assert.are.equal(nil, after, state)
-				assert.are.equal(0, dry.since, state)
-				assert.are.equal(nil, dry.P, state) -- no luck wording, no ruler
-				assert.are.equal(nil, dry.band, state)
+				assert.are.equal(0, ns.DrySpell(zero).since, state)
 				assert.are.equal("Caught one on my last Cast here.", (ns.DrySpellText(zero, "Nightfin Snapper")), state)
 			end
 		end)
+
+		it(
+			"gives a known Dry spell of 0 the luck reading P = 1, normal; learning or unseen has none (STA-R51, STA-R52)",
+			function()
+				local ns = stats.load().ns
+
+				local known = ns.DrySpell(reading({ n = 412, k = 9, at = 412, state = "known" }))
+				assert.are.same({ 0, 1, "normal" }, { known.since, known.P, known.band })
+				for _, state in ipairs({ "learning", "unseen" }) do
+					local dry = ns.DrySpell(reading({ n = 412, k = 9, at = 412, state = state }))
+					assert.are.same({ 0 }, { dry.since, dry.P, dry.band }, state)
+				end
+			end
+		)
 
 		it("says where for a Dry spell of 0 as the odds do", function()
 			local ns = stats.load().ns

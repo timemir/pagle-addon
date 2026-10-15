@@ -107,6 +107,17 @@ describe("a place's rows (STA-R17)", function()
 		)
 	end)
 
+	it("are the zone's own list, then its extras, for a subzone the catalogue lacks (STA-R17, STA-R22)", function()
+		-- 77001 isn't in the fixture catalogue; the projection folded it under Darkshore (its place record's zone)
+		local state = stateWith(77001, DARKSHORE, { [SMALLFISH] = 1 })
+
+		assert.are.same(
+			{ { MACKEREL, false }, { BLACKMOUTH, false }, { FIREFIN, false }, { NIGHTFIN, false }, { SMALLFISH, true } },
+			pairsOf(ns.Rows(state, 77001, lookups))
+		)
+		assert.are.same(ns.PlaceList(BASHAL_ARAN, lookups), ns.PlaceList(77001, lookups, DARKSHORE))
+	end)
+
 	it("read only the place's own record, not another place's catches", function()
 		local state = stateWith(DARKSHORE, DARKSHORE, { [BASS] = 1 })
 

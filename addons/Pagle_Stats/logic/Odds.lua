@@ -221,15 +221,16 @@ function ns.OddsRange(reading)
 end
 
 --- Whether every catch entry behind an item's row in a place is unconfirmed (STA-R46): on a subzone, its entries in
---- the list its rows come from (its own, or its zone's own, STA-R17); on a zone, every entry for it in
---- `GetZoneCatches`. False with no entry: an *Also caught here* item gets no such sentence.
+--- the list its rows come from (its own, or its zone's own, STA-R17, a subzone the catalogue lacks included); on a
+--- zone, every entry for it in `GetZoneCatches`. False with no entry: an *Also caught here* item gets no such sentence.
 ---@param item integer
 ---@param area integer
+---@param zone integer the place's zone (ns.ZoneOf)
 ---@param lookups StatsLookups
 ---@return boolean
-local function unconfirmedEntry(item, area, lookups)
+local function unconfirmedEntry(item, area, zone, lookups)
 	local any = false
-	for _, entry in ipairs(ns.PlaceList(area, lookups)) do
+	for _, entry in ipairs(ns.PlaceList(area, lookups, zone)) do
 		if entry.itemID == item then
 			if entry.confirmed ~= false then
 				return false
@@ -249,7 +250,7 @@ end
 function ns.OddsNotes(reading, places)
 	places = places or ns.places
 	local L, lookups, notes = ns.L, places.lookups, {}
-	if unconfirmedEntry(reading.item, reading.area, lookups) then
+	if unconfirmedEntry(reading.item, reading.area, reading.zone, lookups) then
 		notes[#notes + 1] = L.ODDS_NOTE_ENTRY
 	end
 	local window, gateUnconfirmed = places:ItemWindow(reading.zone, reading.item)

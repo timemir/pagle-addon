@@ -50,7 +50,7 @@ Terms are used as `CONTEXT.md` defines them. Core rules are cited by ID (`LOG-R6
 - **STA-R15** A window is tested against a Cast with `Pagle.MatchesConditions(Pagle.GetWindowSpec(windowID), cast.conditions)`. Window IDs (`day`, `night`, `spring`, `summer`, `autumn`, `winter`, `event.<eventID>`) contain no `:` or `#`, so they go into scope keys as they are.
 - **STA-R16** A zone's **windows** are the distinct window IDs on the entries of `Pagle.GetZoneCatches(zone)`, Noise and removed items included.
 - **STA-R17** The **rows** of a place are the items its page lists:
-  - a subzone: its own `catches` if non-empty, otherwise its zone's own `catches` (`Pagle.GetArea(zone).catches`)
+  - a subzone: its own `catches` if non-empty, otherwise its zone's own `catches` (`Pagle.GetArea(zone).catches`); for a subzone the catalogue lacks, the zone is the one its `places[area].zone` holds (STA-R22)
   - a zone: every item in `Pagle.GetZoneCatches(zone)`, once each
 
   From that list, items whose `Pagle.GetItem` record has `noise` or `removed` set are dropped (Core already leaves removed items out, LOG-R55; the filter is kept as a guard). Then every item in the place's `places[area].items` (STA-R22) that the list lacks is added, except Noise and removed items. This covers Uncharted items and items the content data doesn't list there.
@@ -148,7 +148,7 @@ Terms are used as `CONTEXT.md` defines them. Core rules are cited by ID (`LOG-R6
   - normal, below that: "Roughly 1 angler in {nice(1/P)} waits this long. A long wait, but well within normal luck."
   - unlucky: "Roughly 1 angler in {nice(1/P)} waits this long. Unlucky, not broken."
   - very unlucky: "Only about 1 angler in {nice(1/P)} waits this long. Very unlucky, and every Cast is still its own roll." Below one in a million, the first sentence reads "Fewer than 1 angler in a million waits this long."
-- **STA-R54** A Dry spell of 0 reads "Caught one on my last Cast {where}." (short form "just now"), with no luck wording and no ruler, whatever the odds state. Otherwise, while Your odds is learning (and the item has been caught in the scope), the Dry spell's first sentence shows with "A luck reading comes once Your odds have a number." and no ruler.
+- **STA-R54** A Dry spell of 0 reads "Caught one on my last Cast {where}." (short form "just now"), with no luck wording and no ruler, whatever the odds state; when Your odds is known its luck reading is still `P = 1`, normal (STA-R51, STA-R52), so the tracker dots it green and reads "normal" (STA-R82). Otherwise, while Your odds is learning (and the item has been caught in the scope), the Dry spell's first sentence shows with "A luck reading comes once Your odds have a number." and no ruler.
 - **STA-R55** A Dry spell earns nothing, never pops up, and never ends with a message (STA-R2).
 
 ### Copy

@@ -23,8 +23,9 @@ ns.VERY_UNLUCKY_BELOW = 0.0001
 ---@class StatsDrySpell
 ---@field since integer       -- Casts since the last catch in the scope, `n − hit.at`; `n` when never caught there
 ---@field caught boolean      -- whether the item has been caught in the scope
----@field P number?           -- the luck reading `(1 − k/n)^since`, only when Your odds is known, the item has been
----                              caught in the scope and the Dry spell isn't 0 (STA-R51, STA-R54)
+---@field P number?           -- the luck reading `(1 − k/n)^since`, only when Your odds is known and the item has been
+---                              caught in the scope (STA-R51); a Dry spell of 0 gives P = 1, normal (STA-R52), and
+---                              only its luck wording and ruler are left out (STA-R54)
 ---@field band StatsBand?     -- the luck reading's band, with P only
 
 --- The band of a luck reading (STA-R52): normal at `P ≥ 0.01`, unlucky below, very unlucky below `0.0001`.
@@ -48,7 +49,7 @@ function ns.DrySpell(reading)
 		return { since = n, caught = false }
 	end
 	local dry = { since = n - hit.at, caught = true }
-	if reading.state == "known" and reading.k > 0 and dry.since > 0 then
+	if reading.state == "known" and reading.k > 0 then
 		dry.P = (1 - reading.k / n) ^ dry.since
 		dry.band = ns.Band(dry.P)
 	end
