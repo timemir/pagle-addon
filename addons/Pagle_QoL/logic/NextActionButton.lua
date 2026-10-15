@@ -8,10 +8,26 @@ local ns = select(2, ...)
 -- The next-action button (QOL-R70–R74): when it shows, its icon and label, its hotkey text, its tooltip and its
 -- saved place. Pure logic, everything passed in (CORE-R7); adapter/NextActionButton.lua draws it.
 
---- The button's size in pixels, and how far above the bottom centre of the screen it sits by default, over the main
---- action bar (qol.md › Tunables).
+--- The button's icon's size in pixels, the brass bezel round it (the button's own size), and how far above the bottom
+--- centre of the screen it sits by default, over the main action bar (qol.md › Tunables).
 ns.BUTTON_SIZE = 36
+ns.BUTTON_BEZEL = 52
 ns.BUTTON_DEFAULT_Y = 230
+
+--- The brass key cap's width for a hotkey whose text is `textWidth` wide (QOL-R70): 4 px either side of the key, and
+--- never narrower than it is high, 18 px.
+---@param textWidth number
+---@return number
+function ns.KeyCapWidth(textWidth)
+	return math.max(18, textWidth + 8)
+end
+
+--- The paper label's width under the bezel for a label whose text is `textWidth` wide (QOL-R70): 10 px either side.
+---@param textWidth number
+---@return number
+function ns.LabelWidth(textWidth)
+	return textWidth + 20
+end
 
 --- What decides whether the button shows (QOL-R72).
 ---@class PagleQoLButtonShownInput

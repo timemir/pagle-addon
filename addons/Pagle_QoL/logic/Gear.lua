@@ -147,14 +147,15 @@ function GearState:Settling(now)
 	return self.due ~= nil
 end
 
---- The swap-back Nudge's text (QOL-R77), naming the key bound to Swap gear in its short form.
+--- The swap-back Nudge's line (QOL-R77), as the pieces its strip draws (ns.NudgeParts): the key bound to Swap gear, in
+--- its short form, on a key cap; or, while it is unbound, the binding's name in printed red.
 ---@param keyText string? the first key bound to Swap gear, as `GetBindingText` abbreviates it; nil while unbound
----@return string
-function ns.SwapBackText(keyText)
+---@return PagleQoLNudgePart[]
+function ns.SwapBackNudge(keyText)
 	if keyText then
-		return ns.L.NUDGE_SWAP_BACK:format(keyText)
+		return ns.NudgeParts(ns.L.NUDGE_SWAP_BACK, keyText, "key")
 	end
-	return ns.L.NUDGE_SWAP_BACK_UNBOUND
+	return ns.NudgeParts(ns.L.NUDGE_SWAP_BACK_UNBOUND, ns.L.BINDING_SWAP_GEAR, "em")
 end
 
 --- The icon *Pagle Fishing* is created with (QOL-R41): the main-hand item's if it is a fishing pole, else the Fishing

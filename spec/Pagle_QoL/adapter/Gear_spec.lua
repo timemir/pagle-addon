@@ -53,15 +53,13 @@ local function pressSwapGear(loaded)
 	loaded.env.PagleQoL_SwapGear()
 end
 
--- The Nudge showing now, or nil: the text of a shown GameFontNormalLarge line in a shown frame.
+-- The Nudge showing now, or nil: what its shown strip says.
 ---@param client FakeClient
 ---@return string?
 local function nudge(client)
 	for _, frame in ipairs(client.frames) do
-		for _, child in ipairs(frame.children) do
-			if child.fontObject == "GameFontNormalLarge" and frame.shown then
-				return child.text
-			end
+		if frame.message and frame.shown then
+			return frame.message
 		end
 	end
 	return nil

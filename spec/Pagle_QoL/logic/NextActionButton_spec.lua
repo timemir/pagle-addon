@@ -111,8 +111,17 @@ describe("QoL's next-action button logic", function()
 	end)
 
 	describe("the button's place", function()
-		it("is 36 px, by default at the bottom centre 230 px up (QOL-R70, QOL-R73, qol.md › Tunables)", function()
+		it("is a 36 px icon in a 52 px bezel, its key cap and label sized to their text (QOL-R70)", function()
 			assert.are.equal(36, ns.BUTTON_SIZE)
+			assert.are.equal(52, ns.BUTTON_BEZEL)
+			-- 4 px either side of the key, at least as wide as the 18 px cap is high.
+			assert.are.equal(18, ns.KeyCapWidth(6))
+			assert.are.equal(26, ns.KeyCapWidth(18))
+			-- 10 px of paper either side of the label.
+			assert.are.equal(44, ns.LabelWidth(24))
+		end)
+
+		it("is by default at the bottom centre 230 px up (QOL-R73, qol.md › Tunables)", function()
 			assert.are.same(
 				{ point = "BOTTOM", relativeTo = "UIParent", relativePoint = "BOTTOM", x = 0, y = 230 },
 				ns.ButtonPoint(nil)
