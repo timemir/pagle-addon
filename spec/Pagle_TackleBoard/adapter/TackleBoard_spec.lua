@@ -240,24 +240,47 @@ describe("Pagle_TackleBoard with Core", function()
 		assert.are.equal(1, starts)
 	end)
 
-	it("sets no global but PagleTackleBoardDB: its AceAddon is reached through LibStub alone (ADR 0001)", function()
-		-- tackle-board.md › Exposed: nothing; no other Module can see the Tackle Board.
-		local loaded = loadAddon("Pagle_TackleBoard", FOREVER_GLOBALS)
-		local plain = loadAddon("Pagle", FOREVER_GLOBALS)
-		loaded.client.fire("PLAYER_LOGIN")
-		plain.client.fire("PLAYER_LOGIN")
-
-		local added = {}
-		local before = globalNames(plain.env)
-		for name in pairs(globalNames(loaded.env)) do
-			if not before[name] then
-				added[#added + 1] = name
+	it(
+		"sets no global but PagleTackleBoardDB, its board's frame and its reroll confirm's dialog: its AceAddon is"
+			.. " reached through LibStub alone (ADR 0001)",
+		function()
+			-- tackle-board.md › Exposed: nothing; no other Module can see the Tackle Board. The board's frame is named
+			-- for UISpecialFrames (Esc, TKB-R100), and the confirm is a StaticPopupDialogs entry (TKB-R56).
+			local loaded = loadAddon("Pagle_TackleBoard", FOREVER_GLOBALS)
+			local plain = loadAddon("Pagle", FOREVER_GLOBALS)
+			enterWorld(loaded, 1)
+			enterWorld(plain, 1)
+			local dialogs = globalNames(loaded.env.StaticPopupDialogs)
+			loaded.ns.Start()
+			loaded.ns.ToggleBoard()
+			local goalIDs = {}
+			for id in pairs(loaded.ns.State().goals) do
+				goalIDs[#goalIDs + 1] = id
 			end
-		end
+			loaded.ns.TakeDownQuestion = function() -- as when the goal shows progress (TKB-R56)
+				return "Take it down?"
+			end
+			loaded.ns.TakeDown(goalIDs[1])
 
-		assert.are.same({ "PagleTackleBoardDB" }, added)
-		assert.are.equal(loaded.ns.TackleBoard, loaded.env.LibStub("AceAddon-3.0"):GetAddon("Pagle_TackleBoard"))
-	end)
+			local added, addedDialogs = {}, {}
+			local before = globalNames(plain.env)
+			for name in pairs(globalNames(loaded.env)) do
+				if not before[name] then
+					added[#added + 1] = name
+				end
+			end
+			for name in pairs(loaded.env.StaticPopupDialogs) do
+				if not dialogs[name] then
+					addedDialogs[#addedDialogs + 1] = name
+				end
+			end
+			table.sort(added)
+
+			assert.are.same({ "PagleTackleBoard", "PagleTackleBoardDB" }, added)
+			assert.are.same({ "PAGLE_TACKLEBOARD_REROLL" }, addedDialogs)
+			assert.are.equal(loaded.ns.TackleBoard, loaded.env.LibStub("AceAddon-3.0"):GetAddon("Pagle_TackleBoard"))
+		end
+	)
 
 	it("keeps PagleTackleBoardDB account-wide in one shared profile, at schema 1 (tackle-board.md › Data)", function()
 		local loaded = loadAddon("Pagle_TackleBoard", FOREVER_GLOBALS)
