@@ -126,6 +126,27 @@ function ns.ArtText(frame, key, layer)
 	return fontString
 end
 
+-- How far a line in the hand may shrink to fit: the art's pages are a fixed size, so a longer one ends in "...".
+local SHRINK_FLOOR = 0.7
+
+--- Holds a font string in the art's font `key`, its text already set, to `width`: a text too wide shrinks to fit,
+--- down to SHRINK_FLOOR of the font's size, and one still too wide ends in "...".
+---@param fontString FontString
+---@param key string
+---@param width number
+function ns.ShrinkToFit(fontString, key, width)
+	fontString:SetWidth(0)
+	local natural = fontString:GetStringWidth()
+	if natural > width then
+		local def = FONTS[key]
+		local size = math.max(math.ceil(def[2] * SHRINK_FLOOR), math.floor(def[2] * width / natural))
+		if fontString:SetFont(FONT_DIR .. FACES[def[1]], size, "") == false then
+			fontString:SetFont(FALLBACK, size, "")
+		end
+	end
+	fontString:SetWidth(math.min(fontString:GetStringWidth(), width))
+end
+
 -- Draws texels as they are, unsnapped, so a sprite scaled by the UI doesn't shimmer.
 ---@param texture Texture
 ---@return Texture

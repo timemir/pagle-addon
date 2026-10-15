@@ -330,8 +330,8 @@ local function startRuler(view, ruler)
 end
 
 -- The headline's words at `x`, `y` from the frame's top left: its title printed in capitals, its text under it in the
--- Angler's hand; or, with no text, the title alone in the hand. Each is held to `width`. `fonts` and `inks` give the
--- printed and handwritten fonts and inks.
+-- Angler's hand; or, with no text, the title alone in the hand. Each is held to `width`, the hand shrinking to fit
+-- first. `fonts` and `inks` give the printed and handwritten fonts and inks.
 ---@param frame PagleAnnouncementFrame
 ---@param headline { title: string, text: string? }
 ---@param fonts { what: string, name: string }
@@ -347,13 +347,13 @@ local function writeHeadline(frame, headline, fonts, inks, width)
 		ns.SetArtFont(text, fonts.name)
 		ns.Ink(text, inks.name)
 		text:SetText(headline.text)
-		fit(text, width)
+		ns.ShrinkToFit(text, fonts.name, width)
 		text:Show()
 	else
 		ns.SetArtFont(title, fonts.name)
 		ns.Ink(title, inks.name)
 		title:SetText(headline.title)
-		fit(title, width)
+		ns.ShrinkToFit(title, fonts.name, width)
 		text:SetText("")
 		text:Hide()
 	end
@@ -404,6 +404,7 @@ local function drawDigest(frame, held, style, width)
 		ns.SetBezel(row.bezel, 22, style.trim, textureOf(moment.icon))
 		row.bezel:SetShown(rest <= 1)
 		ns.Ink(row.what, style.what)
+		ns.SetArtFont(row.name, "DigestName")
 		ns.Ink(row.name, style.name)
 		if rest > 1 then
 			row.what:SetText("")
@@ -412,7 +413,7 @@ local function drawDigest(frame, held, style, width)
 			row.what:SetText(ns.Capitals(moment.title))
 			row.name:SetText(moment.text or "")
 		end
-		fit(row.name, width - 150)
+		ns.ShrinkToFit(row.name, "DigestName", width - 150)
 		row:Show()
 	end
 	for i = shown + 1, #frame.rows do
@@ -644,8 +645,9 @@ local function drawSplash(frame, display)
 	local headline = announcement.headline
 	frame.icon:SetTexture(textureOf(headline.icon))
 	frame.title:SetText(ns.Capitals(headline.title))
+	ns.SetArtFont(frame.text, "SplashName")
 	frame.text:SetText(headline.text or "")
-	fit(frame.text, 820)
+	ns.ShrinkToFit(frame.text, "SplashName", 820)
 	frame.text:SetShown(headline.text ~= nil)
 	frame.extras:ClearAllPoints()
 	frame.extras:SetPoint("TOP", headline.text and frame.text or frame.title, "BOTTOM", 0, -12)
@@ -749,8 +751,10 @@ local BUILD = {
 		crest:SetPoint("TOP", frame, "TOP", 0, -70)
 		ns.PlaceSprite(ns.ArtSprite(crest, "Splash", "crest-legend", "ARTWORK", 0), crest, 0, 0)
 		frame.icon = crest:CreateTexture(nil, "ARTWORK", nil, 1)
-		frame.icon:SetSize(150, 150)
-		frame.icon:SetPoint("TOP", crest, "TOP", 0, -50)
+		-- A little over the crest's window, centred on it, so the ring covers the icon's edge; its own border cut off.
+		frame.icon:SetSize(160, 160)
+		frame.icon:SetPoint("TOP", crest, "TOP", 0, -45)
+		frame.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
 		local mask = crest:CreateMaskTexture()
 		mask:SetTexture(
 			"Interface\\CharacterFrame\\TempPortraitAlphaMask",

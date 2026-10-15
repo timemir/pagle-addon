@@ -343,6 +343,30 @@ describe("the announcements art", function()
 		end
 	)
 
+	it(
+		"shrinks a handwritten line too wide for its page to fit, down to 70% of its size, and draws the next at full"
+			.. " size",
+		function()
+			local loaded, M = loadCore()
+			local hand = "Interface\\AddOns\\Pagle\\media\\fonts\\Caveat-SemiBold.ttf"
+
+			-- The fake measures 6 pixels a character: 49 characters are 294, over the toast's 292 for words.
+			raise(loaded, M, moment("toast", "New Species", { text = ("x"):rep(49) }))
+			local text = frameOf(loaded, "toast").text
+			local shrunk = { text.font, text:GetWidth() }
+			loaded.client.advance(6)
+			-- 100 characters are 600: half the size would fit, but the line stops at 70% and ends in "...".
+			raise(loaded, M, moment("toast", "New Species", { text = ("x"):rep(100) }))
+			local floored = { text.font, text:GetWidth() }
+			loaded.client.advance(6)
+			raise(loaded, M, moment("toast", "New Species", { text = "Oily Blackmouth" }))
+
+			assert.are.same({ { hand, 30, "" }, 292 }, shrunk)
+			assert.are.same({ { hand, 22, "" }, 292 }, floored)
+			assert.are.same({ "PagleArtName", nil }, { text.fontObject, text.font })
+		end
+	)
+
 	it("writes a headline with no text as its title alone in the Angler's hand, as a catch Nod's line", function()
 		local loaded, M = loadCore()
 
