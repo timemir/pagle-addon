@@ -211,8 +211,8 @@ Terms are used as `CONTEXT.md` defines them. Core rules are cited by ID (`LOG-R6
   | Good | Kind |
   |---|---|
   | `stats.trackerframe.none` | default: the plain native tracker look, no frame |
-  | `stats.trackerframe.logbook` | tier 1 (150): a parchment backing with a ruled-ledger border |
-  | `stats.trackerframe.brass` | tier 2 (400): a thin brass rim with riveted corners |
+  | `stats.trackerframe.logbook` | tier 1 (150): ruled paper with a red margin line, its rulings repeated as it grows with its lines |
+  | `stats.trackerframe.brass` | tier 2 (400): a dark plate in a thin brass rim with riveted corners |
 
   This follows the Tackle Board's frames (a free "No frame" and two for sale at tiers 1 and 2). Each good's name and description are lore in `data/lore/stats.toml`, as `statsgood.<goodID>.name` and `.description`, Stats' own kind (working names: No frame, Logbook, Brass), listed under `stats` in `data/lore/manifest.toml` (DATA-R106) and drafted and reviewed through the lore pipeline (DATA-R100–R107), whose lore check turns on for Stats when it first registers a good, in M6 (DATA-R107). A good's icon is its frame's swatch; "No frame"'s swatch is the plain native tracker. Each `preview` draws a sample tracker with the good's frame: "Session · 21m", "38 Casts · 31 Catches · 7 got away", "62 per hour · skill +3", then a normal watch (item 4603, area 35, count 40) and an unlucky one (item 13759, area 357, by night, count 212). The item and area names resolve at runtime (STA-R59), so no game text ships.
 
@@ -300,14 +300,14 @@ Nothing. Stats fires no events and offers no calls (STA-R1).
 
 ## UI
 
-The **Stats book** is the third Pagle book, in the book language (below), with in-client textures and sepia-tinted item icons for 1.0. The ink **luck ruler** is its one new piece of art. It is about 980 × 640 px. Look reference: `prototypes/stats-window/` (variant D); the text here wins where they differ.
+The **Stats book** is the third Pagle book, in the book language (below), drawn in the books art kit (the dev's `PagleArtBooks` probe, `/paglebooks stats`, a fork of the Fish Journal's book shell, which also draws the Hunts board): bundled fonts in Core's media (IM Fell English and its italic for print, Caveat for handwriting, Marcellus for gilt, ribbons and brass) and BLP textures for the leather with its binding band and brass corners, the parchment, the wax close button, the brass nameplate, grosgrain ribbons, the "watching" pill, ink strokes, item rings, the star, the fleuron and the luck ruler's "me" mark; item icons are sepia-tinted, round in the kit's rings. The book shell's textures are Core's media, which Hunts reads too; each tracker frame is Stats' own. The pointing hands and the pencil, which the kit leaves out, stay in-client textures. The kit lays out the place spread (and the item's entry on it); the home, item, Session and Lifetime spreads are set in its parts. It is about 980 × 640 px. Look reference: the books kit, after `prototypes/stats-window/` (variant D); the text here wins where they differ.
 
 Words used below for its parts:
 - **book language**: the look the Stats book shares with the Ledger Module's book view (the Fish Journal): a leather binding, parchment pages, ink, a serif text face, handwriting, small-caps headings and ribbons
-- **leather**: the binding around the pages, holding the breadcrumbs, search, live line, nameplate and ribbons
+- **leather**: the binding around the pages, holding the breadcrumbs and search on its strip above them, the nameplate and live line on its foot band below them, and the ribbons
 - **spread**: the two facing parchment pages shown at once; **left page** and **right page**
-- **ribbons**: the bookmark tabs hanging from the right edge
-- **nameplate**: the gold plate on the leather above the pages
+- **ribbons**: the grosgrain bookmarks hanging from under the leather's foot
+- **nameplate**: the brass plate on the leather's foot band, below the pages
 - **kicker**: the small-caps line above a page's title
 - **handwriting**: a script face for first-person notes; everything else is the printed serif face
 - **fish** (player-facing copy only): any item with a row, junk and treasure included; rules call it an **item**
@@ -320,9 +320,9 @@ Every string below is mechanical interface text in `ns.L` (STA-R58, STA-R59), no
 
 ### On the leather
 
-- Gilt breadcrumbs (STA-R74), the search box (STA-R76) and, during a current Session, the live line (STA-R75).
-- The nameplate: "{lifetime Casts} Casts · {Sessions} Sessions · since {first Cast's date}", or "No Casts yet".
-- Ribbons, top to bottom: *Where I am* (green), *This Session*, *Lifetime*, *Sessions*.
+- On the strip above the pages: gilt breadcrumbs (STA-R74) and the search box (STA-R76).
+- On the foot band below them: the nameplate, "{lifetime Casts} Casts · {Sessions} Sessions · since {first Cast's date}", or "No Casts yet"; and, during a current Session, the live line at the right (STA-R75), its dot glowing green.
+- Ribbons, left to right under the foot band, each in its own colour: *Where I am* (green), *This Session*, *Lifetime*, *Sessions*; the chosen one hangs longer and brighter.
 
 ### Home spread
 
@@ -347,7 +347,7 @@ Every string below is mechanical interface text in `ns.L` (STA-R58, STA-R59), no
 - **Right page, an item's entry:**
   - the **watch** toggle at the top right, reading "watch" or "watching" (STA-R61)
   - kicker "Your odds · {place}" plus ", {window name}" when it has a window; title: the icon and name
-  - known: "about 1 in {N}" in large ink; below it the range (STA-R45), then the scope line (STA-R46)
+  - known: "about 1 in {N}" in large ink ("about" in the hand before the odds in large handwriting); below it the range (STA-R45), then the scope line (STA-R46)
   - learning: "Learning…" in large ink, an ink bar filled to `n / 100`, and "{n} of the 100 Casts I need {where}{ window}{, side} before Your odds show a number."
   - unseen: "not seen yet" in large ink, and "In {n} Casts {where}{ window}{, side}: rarer than about 1 in {nice(n / 3)}, if it bites here at all."
   - then, in every state, STA-R46's extra sentences
@@ -383,7 +383,7 @@ Every string below is mechanical interface text in `ns.L` (STA-R58, STA-R59), no
 
 ### Live tracker
 
-A native objective-tracker-style block in Core's dock (CORE-R70, R73), about 250 px wide, laid out as STA-R82. Look reference: tracker T1 in `prototypes/stats-window/`.
+An objective-tracker-style block in Core's dock (CORE-R70, R73), about 250 px wide (the papers a little wider round the same words), laid out as STA-R82 in the books art kit's type and its three looks (`/paglebooks trackers`: No frame, Logbook, Brass). Look reference: the books kit, after tracker T1 in `prototypes/stats-window/`.
 
 ## Settings
 
