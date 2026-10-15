@@ -30,7 +30,7 @@ end
 -- Draws the block from the grouping, the projection and the equipped frame, and sizes it to what shows.
 ---@param view HuntsTrackerView
 local function draw(view)
-	local look = ns.TRACKER_FRAMES[Pagle.GetEquipped(ns.TRACKER_FRAME_SLOT)]
+	local look = ns.TRACKER_FRAMES[view.wearing or Pagle.GetEquipped(ns.TRACKER_FRAME_SLOT)]
 	view.look:SetFrame(look)
 	local collapsed = saved().collapsed
 	view.mark:SetTexture(collapsed and BLOCK.collapsedMark or BLOCK.expandedMark)

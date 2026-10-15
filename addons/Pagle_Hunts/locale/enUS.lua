@@ -216,4 +216,17 @@ ns.L = {
 	SET_PROGRESS = "%d / %d", -- done current Hunts / current Hunts
 	SET_RULE = "The first tier of every Hunt earns the title.",
 	SET_RETIRED = "Retired",
+
+	-- Hunts' tour stops' labels, for `/pagle dev tour list` (CORE-R68): dev-only, never shown to players.
+	TOUR_BOARD = "the Hunts board: the Board, on the Hunt it picks",
+	TOUR_BOARD_NOW = "the Hunts board: a Hunt in Now",
+	TOUR_BOARD_SOON = "the Hunts board: a Hunt in Soon",
+	TOUR_BOARD_LATER = "the Hunts board: a Hunt in Later",
+	TOUR_BOARD_ON_DEMAND = "the Hunts board: a Hunt in On demand",
+	TOUR_SET = "the Hunts board: a set's page, its title earned",
+	TOUR_SET_ENTRY = "the Hunts board: an entry opened from its set's page",
+	TOUR_RETIRED = "the Hunts board: a Retired Hunt's entry",
+	TOUR_TRACKER = "the Hunts tracker in the dock, with three pins",
+	TOUR_COVER = "the Hunts board in the %s cover",
+	TOUR_TRACKER_FRAME = "the Hunts tracker in the %s frame",
 }

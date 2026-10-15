@@ -19,6 +19,9 @@ local ns = select(2, ...)
 --   ns.SetShowCompleted(on)       Saves the board's "show completed" filter (HNT-R82).
 --   ns.SetViewShown(view, shown)  The board ("board") and the tracker ("tracker") say when they show and hide; while
 --                                 either is shown the groups refresh every 60 s (HNT-R42).
+--   ns.HoldSampleGrouping()       The dev tour (adapter/Tour.lua, CORE-R65): groups the Hunt list in ns.hunts now and
+--   ns.EndSampleGrouping()        keeps that grouping, holding every regroup, until EndSampleGrouping puts back the
+--                                 grouping it replaced, or regroups if one was asked for meanwhile.
 --
 -- Each of these, a regroup included, ends with ns.Redraw("groups").
 
@@ -161,6 +164,8 @@ local function group(now)
 end
 
 local started = false -- the first grouping has run (HNT-R42)
+---@type { grouping: HuntsGrouping?, paused: boolean, missed: boolean, first: boolean? }?
+local held -- while the dev tour shows its sample grouping: the grouping it replaced, and whether a regroup waited
 
 --- Regroups now (HNT-R42): drops the pins of Hunts gone (HNT-R81), groups, re-sets the timers, tells the regroup
 --- listeners and redraws. While restricted it doesn't (HNT-R43): the grouping stands, paused, until
@@ -168,6 +173,10 @@ local started = false -- the first grouping has run (HNT-R42)
 ---@param first boolean?
 function regroup(first)
 	if not started and not first then
+		return
+	end
+	if held then
+		held.missed, held.first = true, held.first or first
 		return
 	end
 	local restricted = Pagle.IsRestricted()
@@ -186,6 +195,30 @@ function regroup(first)
 		fn(previous, current)
 	end
 	ns.Redraw("groups")
+end
+
+--- Groups the Hunt list in ns.hunts now and keeps that grouping, unpaused, in place of the one shown: the dev tour's
+--- sample (adapter/Tour.lua, CORE-R65). Until ns.EndSampleGrouping every regroup waits, so no timer, event or window
+--- moment acts on the sample (HNT-R88); nothing is redrawn here.
+function ns.HoldSampleGrouping()
+	if not held then
+		held = { grouping = ns.groups:Grouping(), paused = ns.groups:IsPaused(), missed = false }
+	end
+	ns.groups:Set(group(GetServerTime()), false)
+end
+
+--- Ends the dev tour's sample grouping: puts back the grouping it replaced, paused if it was or restriction began
+--- meanwhile (HNT-R43), or regroups now if a regroup waited. Nothing is redrawn here unless it regroups.
+function ns.EndSampleGrouping()
+	local saved = held
+	held = nil
+	if not saved then
+		return
+	end
+	ns.groups:Set(saved.grouping, saved.paused or (started and Pagle.IsRestricted()))
+	if saved.missed then
+		regroup(saved.first)
+	end
 end
 
 --- Pins or unpins a Hunt (HNT-R80, HNT-R81): only a current Hunt, with no limit. Saved in profile.pins, then a

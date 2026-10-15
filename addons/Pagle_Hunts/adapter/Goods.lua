@@ -231,6 +231,8 @@ local HUNT_HEIGHT = BLOCK.huntHeight
 ---@field more HuntsTrackerMoreButton   -- "+N more", opens the board (HNT-R77)
 ---@field empty FontString       -- "Pin a Hunt to keep it here."
 ---@field words { text: FontString, font: string }[]   -- every word, for the frame's ink
+---@field wearing string?      -- a tracker frame's good ID the dev tour dresses it in (adapter/Tour.lua); nil: the
+--- equipped one
 
 ---@class HuntsTrackerLineButton: Button
 ---@field dot BoardDotView
