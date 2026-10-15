@@ -45,7 +45,7 @@ end
 ---@param run HuntsRun
 ---@return string[]
 local function heard(run)
-	local sounds = run.loaded.client.soundKits
+	local sounds = run.loaded.client.sounds
 	local out = { unpack(sounds) }
 	for i = #sounds, 1, -1 do
 		sounds[i] = nil

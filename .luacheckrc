@@ -168,8 +168,10 @@ stds.wow = {
 		-- lanes run on GetTime and C_Timer.After, and an item icon comes from C_Item.GetItemInfoInstant (above).
 		"UIParent",
 		"PlaySoundFile",
-		-- The art kits' UI foley (open, close, page turn, check...), by the client's numeric sound kit ids on the SFX
-		-- channel; never part of a sound set.
+		-- The art kits' UI foley (opening and closing a window, a click), by the client's own sound kit ids on the SFX
+		-- channel, never through the SOUNDKIT table: the Field report box and QoL's pinned notes, and the Curio Shop's
+		-- (its Buy, the seal landing, the purse paying out), and the Hunts board's and the Stats book's (opening, closing,
+		-- a page turn, a Hunt opening, a catch written in).
 		"PlaySound",
 		-- The Prestige banner's crest shows the Angler's portrait (announcements.md › UI).
 		"SetPortraitTexture",

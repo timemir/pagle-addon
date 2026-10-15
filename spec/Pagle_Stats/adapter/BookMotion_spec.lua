@@ -108,7 +108,7 @@ describe("the Stats book opening and closing", function()
 		local loaded, _, book = ready()
 
 		loaded.ns.ToggleBook()
-		assert.are.same({ "829 SFX" }, loaded.client.soundKits)
+		assert.are.same({ "829 SFX" }, loaded.client.sounds)
 		assert.are.equal(0, book.frame:GetAlpha())
 		run(loaded, 0.2)
 
@@ -126,7 +126,7 @@ describe("the Stats book opening and closing", function()
 
 		assert.is_false(book.frame.shown)
 		assert.are.equal(1, book.frame:GetAlpha())
-		assert.are.same({ "829 SFX", "830 SFX" }, loaded.client.soundKits)
+		assert.are.same({ "829 SFX", "830 SFX" }, loaded.client.sounds)
 	end)
 
 	it("hides at once with the motion off, its sounds still playing", function()
@@ -137,7 +137,7 @@ describe("the Stats book opening and closing", function()
 		book.frame.close:Click()
 
 		assert.is_false(book.frame.shown)
-		assert.are.same({ "829 SFX", "830 SFX" }, loaded.client.soundKits)
+		assert.are.same({ "829 SFX", "830 SFX" }, loaded.client.sounds)
 	end)
 
 	it("shrinks to fit a small screen, never grows, and re-fits when the UI scale changes", function()
@@ -166,7 +166,7 @@ describe("the Stats book's page turn", function()
 
 			book.frame.ribbons[3]:Click() -- Lifetime
 			local life = { left = book.pages["lifetime:left"], right = book.pages["lifetime:right"] }
-			assert.are.equal("836 SFX", loaded.client.soundKits[#loaded.client.soundKits])
+			assert.are.equal("836 SFX", loaded.client.sounds[#loaded.client.sounds])
 			assert.are.same({ "Stats" }, crumbsOf(book))
 			run(loaded, 0.1)
 			-- the old right page narrows from its outer edge, the new one shows beside it; the left page is still home's
@@ -247,7 +247,7 @@ describe("the Stats book's page turn", function()
 
 		book.frame.ribbons[3]:Click()
 
-		assert.are.same({ "829 SFX" }, loaded.client.soundKits)
+		assert.are.same({ "829 SFX" }, loaded.client.sounds)
 		assert.are.same({ "Stats", "Lifetime" }, crumbsOf(book))
 		assert.are.same({ true, 0, PAGE_WIDTH }, strip(book.pages["lifetime:left"]))
 		assert.is_false(book.pages["home:left"].clip.shown)
@@ -291,7 +291,7 @@ describe("the Stats book's readings moving (the kit's MOTION.md)", function()
 
 		stats.fish(fake, 1, SMALLFISH)
 		loaded.client.runTimers()
-		assert.are.equal("3093 SFX", loaded.client.soundKits[#loaded.client.soundKits])
+		assert.are.equal("3093 SFX", loaded.client.sounds[#loaded.client.sounds])
 		run(loaded, 0.1)
 		assert.is_true(view.ruler.shown and view.ruler:GetAlpha() < 1)
 		run(loaded, 0.3)

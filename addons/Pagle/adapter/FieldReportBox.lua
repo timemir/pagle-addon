@@ -13,7 +13,8 @@ local Pagle = Pagle
 -- (REP-R45). What it shows is logic/FieldReportBox.lua's view, built when it opens and kept while it stays open
 -- (REP-R40). The art is the field art kit's (data/FieldArt.lua): the chart, the compass, the brass arrows and close
 -- button, the leather Close and the slip's scroll thumb. Every position is the kit's canvas pixel, a UI unit, from the
--- box's top left.
+-- box's top left. It fades in as it opens and out as it closes, on Core's motion driver (adapter/Motion.lua), and plays
+-- the kit's open, close and click sounds (the kit's MOTION.md and SOUND.md).
 local L = ns.L
 
 -- The frame's global name: UISpecialFrames takes names, and Esc hides the frames it lists.
@@ -114,17 +115,71 @@ end
 ---@field url EditBox the issue form's URL, read-only
 ---@field closeCorner PagleFieldBrassButton the brass X
 ---@field close Button
+---@field closing boolean? fading out after Close or the X, so it takes no more clicks
 
 --- The box, made the first time it opens.
 ---@type PagleFieldReportBox?
 ns.fieldReportBox = nil
 
--- Closes the box, giving back the keyboard: a hidden edit box would keep it.
+-- The box's sounds (the field art kit's SOUND.md): the client's own sound kits, by id, on the SFX channel, so the
+-- player's SFX volume and mute rule them. UI foley, the same in every sound set (announcements.md › Sounds owns only
+-- an Announcement's): IG_MAINMENU_OPEN as the box opens, IG_MAINMENU_CLOSE as it closes, IG_MAINMENU_OPTION for a
+-- click on Close or an arrow.
+local SOUND_OPEN, SOUND_CLOSE, SOUND_CLICK = 850, 851, 852
+
+-- The box opening (the kit's MOTION.md): the open sound, and the box fading in over 0.2 s (ease-out), from `from`
+-- (0, or where a fade out had got to). With the Animations setting off it shows at once (adapter/Motion.lua).
+---@param frame PagleFieldReportBox
+---@param from number
+local function open(frame, from)
+	frame.closing = false
+	PlaySound(SOUND_OPEN, "SFX")
+	ns.StopMotion(frame)
+	ns.Animate(frame, {
+		{
+			dur = 0.2,
+			ease = ns.EASE.out,
+			keys = { { 0, { from } }, { 1, { 1 } } },
+			apply = function(values)
+				frame:SetAlpha(values[1])
+			end,
+		},
+	})
+end
+
+-- Closes the box at once, giving back the keyboard: a hidden edit box would keep it.
 ---@param frame PagleFieldReportBox
 local function close(frame)
 	frame.text:ClearFocus()
 	frame.url:ClearFocus()
 	frame:Hide()
+end
+
+-- Closes the box from Close or the X (the kit's MOTION.md): the keyboard given back at once, the close sound, and the
+-- box fading out over 0.15 s (ease-in) from where it is, then hiding. Esc hides it at once, from an edit box or through
+-- UISpecialFrames, with the close sound (its OnHide).
+---@param frame PagleFieldReportBox
+local function fadeClose(frame)
+	if frame.closing then
+		return
+	end
+	frame.closing = true
+	frame.text:ClearFocus()
+	frame.url:ClearFocus()
+	PlaySound(SOUND_CLOSE, "SFX")
+	ns.StopMotion(frame)
+	ns.Animate(frame, {
+		{
+			dur = 0.15,
+			ease = ns.Bezier(0.42, 0, 1, 1),
+			keys = { { 0, { frame:GetAlpha() } }, { 1, { 0 } } },
+			apply = function(values)
+				frame:SetAlpha(values[1])
+			end,
+		},
+	}, function()
+		close(frame)
+	end)
 end
 
 -- Keeps `box` showing `read()`: whatever the player types is put back, selected again, so the report stays as
@@ -316,7 +371,7 @@ local function build()
 	frame.closeCorner = brassButton(frame, "close")
 	frame.closeCorner:SetPoint("TOPRIGHT", -12, -10)
 	frame.closeCorner:SetScript("OnClick", function()
-		close(frame)
+		fadeClose(frame)
 	end)
 	frame.privacy = text(frame, "Privacy")
 	frame.privacy:SetPoint("TOPLEFT", 22, -58)
@@ -344,6 +399,7 @@ local function build()
 	frame.previous = brassButton(frame, "arrow-prev")
 	frame.previous:SetPoint("LEFT", frame, "TOPLEFT", 22, -FOOT_Y)
 	frame.previous:SetScript("OnClick", function()
+		PlaySound(SOUND_CLICK, "SFX")
 		showPart(frame, frame.part - 1)
 	end)
 	frame.partLabel = text(frame, "Part")
@@ -351,6 +407,7 @@ local function build()
 	frame.next = brassButton(frame, "arrow-next")
 	frame.next:SetPoint("LEFT", frame.partLabel, "RIGHT", 4, 0)
 	frame.next:SetScript("OnClick", function()
+		PlaySound(SOUND_CLICK, "SFX")
 		showPart(frame, frame.part + 1)
 	end)
 
@@ -358,14 +415,25 @@ local function build()
 	frame.close = leatherButton(frame)
 	frame.close:SetPoint("CENTER", frame, "TOP", 0, -FOOT_Y)
 	frame.close:SetScript("OnClick", function()
-		close(frame)
+		if not frame.closing then
+			PlaySound(SOUND_CLICK, "SFX")
+			fadeClose(frame)
+		end
 	end)
-	-- Esc with no edit box focused hides it through UISpecialFrames (CloseSpecialWindows).
+	-- Hidden until it first opens, before its OnHide is set, so building it plays nothing.
+	frame:Hide()
+	-- Esc with no edit box focused hides it through UISpecialFrames (CloseSpecialWindows), as the tour does: at once,
+	-- with the close sound unless a fade already played it. It is left at rest for its next opening.
 	frame:SetScript("OnHide", function()
+		if not frame.closing then
+			PlaySound(SOUND_CLOSE, "SFX")
+		end
+		frame.closing = false
+		ns.StopMotion(frame)
+		frame:SetAlpha(1)
 		close(frame)
 	end)
 	table.insert(UISpecialFrames, FRAME_NAME)
-	frame:Hide()
 	return frame
 end
 
@@ -405,7 +473,17 @@ local function show(view)
 	frame.postAt:SetShown(view.url ~= nil)
 	frame.url:SetShown(view.url ~= nil)
 	frame.url:SetText(view.url or "")
+	-- Opening, or opened again while it fades out: it fades in. Already open, it stays as it is.
+	local from ---@type number?
+	if frame.closing then
+		from = frame:GetAlpha()
+	elseif not frame:IsShown() then
+		from = 0
+	end
 	frame:Show()
+	if from then
+		open(frame, from)
+	end
 	layOutUrlLine(frame)
 	if hasText then
 		showPart(frame, 1)

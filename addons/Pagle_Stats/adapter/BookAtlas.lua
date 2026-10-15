@@ -99,7 +99,7 @@ ns.ATLASES = {
 	Slip = {
 		file = "Interface\\AddOns\\Pagle\\media\\shop\\Shop",
 		width = 1024,
-		height = 1024,
+		height = 512,
 		scale = 2,
 		sprites = { ["find"] = { x = 2, y = 102, w = 900, h = 96, box = { 6, 6, 438, 36 } } },
 	},

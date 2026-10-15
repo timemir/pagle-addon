@@ -417,6 +417,23 @@ describe("Selecting a good", function()
 	end)
 end)
 
+describe("One good's row", function()
+	it("is the row the list shows for it, whatever narrows the list; nothing for a good not shown", function()
+		local fake = huntsOff()
+		local shop = model(fake)
+
+		local timber = assert(shop:Row("core.toaststyle.timber"))
+		assert.are.same({ "equipped", "In use" }, { timber.state, timber.tag })
+		assert.are.same(
+			{ id = "ledger.binding.lapis", name = "Lapis", state = "short", price = "900", short = true },
+			shop:Row("ledger.binding.lapis")
+		)
+		assert.are.equal("putAway", assert(shop:Row("hunts.cover.velvet")).state)
+		assert.is_nil(shop:Row("hunts.cover.tide"))
+		assert.is_nil(shop:Row(42))
+	end)
+end)
+
 describe("The Curio Shop's stage", function()
 	-- Core's own goods, Hunts' covers (Gold earned while `earned.value`) and the Ledger's bindings, logged in, with a
 	-- balance of `balance`.

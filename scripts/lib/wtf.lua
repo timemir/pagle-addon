@@ -23,6 +23,17 @@ function wtf.readFile(path)
 	return text
 end
 
+-- A file's size in bytes, or nil when it can't be opened.
+function wtf.fileSize(path)
+	local file = io.open(path, "rb")
+	if not file then
+		return nil
+	end
+	local size = file:seek("end")
+	file:close()
+	return size
+end
+
 -- Writes `text` to `path` and reads it back: raises if the file doesn't hold exactly `text`.
 function wtf.writeFile(path, text)
 	local file = assert(io.open(path, "wb"))
@@ -67,24 +78,157 @@ function wtf.listFolder(path)
 	return names
 end
 
+-- Runs a data chunk's text in the environment `env` and returns `env`, or nil, why not and whether it compiled.
+local function runData(text, name, env)
+	local chunk, loadErr = loadstring(text, "=" .. name)
+	if not chunk then
+		return nil, loadErr, false
+	end
+	setfenv(chunk, env)
+	local ok, runErr = pcall(chunk)
+	if not ok then
+		return nil, runErr, true
+	end
+	return env
+end
+
+-- Lua 5.1 keeps at most 262,143 distinct constants in one function ("constant table overflow"), so a file whose one
+-- table holds more strings, such as a PagleLog of 300,000 entries, can't load in one piece. A run of more than
+-- SPLIT_RUN string items, one per line as the client writes an array of strings, is loaded apart, SPLIT_PART lines
+-- a chunk. A text of more than SPLIT_LINES string items is loaded that way from the start.
+local SPLIT_RUN, SPLIT_PART, SPLIT_LINES = 1000, 100000, 200000
+
+-- Whether a line is one string item of an array as the client writes it: `"…", -- [n]` (or without the comment).
+local function stringItem(line)
+	return line:sub(1, 1) == '"' and (line:match('",%s*%-%-%s*%[%d+%]\r?$') or line:match('",\r?$')) ~= nil
+end
+
+-- loadSavedVariables for a text too large to load in one piece: each run of more than SPLIT_RUN string items is cut
+-- out and loaded apart (each line still a data item in an empty environment), and a placeholder in its place is
+-- replaced by its items once the rest has loaded. Returns the globals and how many runs were split, or nil and why.
+local function loadSplit(text, name)
+	local lines = {}
+	for line in (text:sub(-1) == "\n" and text or text .. "\n"):gmatch("([^\n]*)\n") do
+		lines[#lines + 1] = line
+	end
+	local kept, runs = {}, {}
+	local i = 1
+	while i <= #lines do
+		local j = i
+		while j <= #lines and stringItem(lines[j]) do
+			j = j + 1
+		end
+		if j - i > SPLIT_RUN then
+			runs[#runs + 1] = { from = i, to = j - 1 }
+			kept[#kept + 1] = ("__split(%d),"):format(#runs)
+			i = j
+		else
+			kept[#kept + 1] = lines[i]
+			i = i + 1
+		end
+	end
+	if #runs == 0 then
+		return nil, "constant table overflow, with no long run of strings to load apart"
+	end
+	-- The placeholders: a table each, found again by identity once the rest has loaded.
+	local placeholders = {}
+	local env = {
+		__split = function(n)
+			local placeholder = {}
+			placeholders[placeholder] = n
+			return placeholder
+		end,
+	}
+	local globals, err = runData(table.concat(kept, "\n"), name, env)
+	if not globals then
+		return nil, err
+	end
+	env.__split = nil
+	local items = {}
+	for n, run in ipairs(runs) do
+		local list = {}
+		for from = run.from, run.to, SPLIT_PART do
+			local part = { "__part = {" }
+			for line = from, math.min(from + SPLIT_PART - 1, run.to) do
+				part[#part + 1] = lines[line]
+			end
+			part[#part + 1] = "}"
+			local values, partErr = runData(table.concat(part, "\n"), name, {})
+			if not values then
+				return nil, partErr
+			end
+			for _, value in ipairs(values.__part) do
+				list[#list + 1] = value
+			end
+		end
+		items[n] = list
+	end
+	-- Puts each run's items where its placeholder is, in every table reachable from the globals.
+	local seen = {}
+	local function splice(t)
+		if seen[t] then
+			return
+		end
+		seen[t] = true
+		local array, changed = {}, false
+		for k = 1, #t do
+			local n = placeholders[t[k]]
+			if n then
+				changed = true
+				for _, value in ipairs(items[n]) do
+					array[#array + 1] = value
+				end
+			else
+				array[#array + 1] = t[k]
+			end
+		end
+		if changed then
+			for k = 1, math.max(#t, #array) do
+				t[k] = array[k]
+			end
+		end
+		for _, value in pairs(t) do
+			if type(value) == "table" then
+				splice(value)
+			end
+		end
+	end
+	splice(globals)
+	return globals, #runs
+end
+
 -- Loads a SavedVariables text as data and returns the globals it assigned, or nil and why not: it runs in an empty
--- environment, so it can only assign values, and a precompiled chunk is refused. `name` names it in errors.
+-- environment, so it can only assign values, and a precompiled chunk is refused. `name` names it in errors. A text
+-- too large for Lua 5.1 to load in one piece ("constant table overflow") is loaded in parts (loadSplit); then the
+-- third value is how many runs of strings were loaded apart.
 function wtf.loadSavedVariables(text, name)
 	if text:sub(1, 1) == "\27" then
 		return nil, "a precompiled chunk, not data"
 	end
-	local chunk, loadErr = loadstring(text, "=" .. name)
-	if not chunk then
-		return nil, loadErr
+	-- A text with more string items than SPLIT_LINES goes to loadSplit at once: Lua 5.1 raises the overflow through
+	-- the enclosing xpcall's handler (busted's, which loses the message), so it's better not to raise it at all.
+	local _, items = text:gsub('\n"', "")
+	if items > SPLIT_LINES then
+		local split, runs = loadSplit(text, name)
+		if split then
+			return split, nil, runs
+		end
+		return nil, runs
 	end
-	local globals = {}
-	setfenv(chunk, globals)
-	local ok, runErr = pcall(chunk)
-	if not ok then
-		return nil, runErr
+	local globals, err, loaded = runData(text, name, {})
+	-- Any other text too large to compile is tried in parts too; one that still fails keeps its own error.
+	if not globals and not loaded and (err == nil or tostring(err):find("constant table overflow", 1, true)) then
+		local split, runs = loadSplit(text, name)
+		if split then
+			return split, nil, runs
+		end
+		return nil, err or runs
 	end
-	return globals
+	return globals, err
 end
+
+-- loadSplit, for its spec: loads `text` in parts whatever its size.
+wtf.loadSplit = loadSplit
 
 -- Loads the SavedVariables file at `path` as data (loadSavedVariables): its globals, or nil and why not, "missing"
 -- when there's no file.
