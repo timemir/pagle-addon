@@ -17,6 +17,7 @@
 ---@field areaNames table<integer, string> Each area's name, as `C_Map.GetAreaInfo` returns it. Default none.
 ---@field mapNames table<integer, string> Each uiMap's name, for `C_Map.GetMapInfo`. Default none.
 ---@field sounds string[] Each PlaySoundFile call, in order, as "<path> <channel>".
+---@field soundKits string[] Each PlaySound call (a sound kit id, the art kits' UI foley), in order, as "<id> <channel>".
 ---@field screenshots integer How many times Screenshot() was called. A spec may wrap the stub to see the screen then.
 ---@field errors string[] Each error the default geterrorhandler() got, in order. A spec that gets one must read
 --- this list (assert it), or it fails at its end (spec/support/errors.lua).
@@ -63,6 +64,7 @@ local function newClient()
 		bindings = {},
 		loot = { fishing = false, slots = {} },
 		sounds = {},
+		soundKits = {},
 		screenshots = 0,
 		templates = {},
 		areaNames = {},
@@ -136,6 +138,11 @@ local function clientStubs(client)
 		PlaySoundFile = function(path, channel)
 			client.sounds[#client.sounds + 1] = ("%s %s"):format(path, tostring(channel))
 			return true, #client.sounds
+		end,
+		-- Records the call in client.soundKits and reports it played, as willPlay, soundHandle.
+		PlaySound = function(id, channel)
+			client.soundKits[#client.soundKits + 1] = ("%s %s"):format(tostring(id), tostring(channel))
+			return true, #client.soundKits
 		end,
 		-- The screen's root frame, which every addon frame hangs from, and the game's error text under it (both in the
 		-- forever dump's Frames.lua), and the yellow FrameXML's GlobalColors defines (CreateColor(1, 1, 0, 1)). UIParent
