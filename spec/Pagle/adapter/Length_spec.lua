@@ -20,15 +20,6 @@ local function lastRows(loaded)
 	return initializers[n - 2], initializers[n - 1], initializers[n], root
 end
 
--- Presses a page's Defaults button: every setting registered on it goes back to its default (SET-R60).
-local function pressDefaults(loaded, category)
-	for _, setting in pairs(loaded.client.settings.variables) do
-		if setting.category == category then
-			setting:SetValue(setting:GetDefaultValue())
-		end
-	end
-end
-
 describe("Pagle.FormatLength", function()
 	it("reads 342 mm in the stored unit: 34.2 cm in centimetres, 13.5 in in inches (LOG-R69)", function()
 		local loaded = core(1)
@@ -105,7 +96,7 @@ describe("The root's Units section", function()
 		local _, _, row, root = lastRows(loaded)
 		row:GetSetting():SetValue("cm")
 
-		pressDefaults(loaded, root)
+		loaded.client.settings.defaults(root) -- the page's Defaults button (SET-R60)
 
 		assert.is_nil(loaded.env.PagleDB.profiles.Default.lengthUnit)
 		assert.are.same({ "in", "13.5 in" }, { row:GetSetting():GetValue(), loaded.env.Pagle.FormatLength(342) })

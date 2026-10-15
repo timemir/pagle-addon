@@ -122,21 +122,27 @@ function castEntry(time, itemID, subzone, char)
 	return ("C1|%d|%d|0|c|494|1439|1|148|%d|86|25|263|||%dx1"):format(char or 1, time, subzone or 453, itemID or 6358)
 end
 
---- Ada's Prestige to `rank` at server time `time`, as a PagleLog entry (LOG-R38).
+--- Ada's Prestige to `rank` at server time `time`, as a PagleLog entry (LOG-R38): tie `tie` (0) within its second
+--- (LOG-R12), and `char` another index into the log's characters.
 ---@param time integer
 ---@param rank integer
+---@param tie integer?
+---@param char integer?
 ---@return string
-function prestigeEntry(time, rank)
-	return ("P1|1|%d|0|%d"):format(time, rank)
+function prestigeEntry(time, rank, tie, char)
+	return ("P1|%d|%d|%d|%d"):format(char or 1, time, tie or 0, rank)
 end
 
---- Ada's purchase of `good` for `price` Coins at server time `time`, as a PagleLog entry (LOG-R39).
+--- Ada's purchase of `good` for `price` Coins at server time `time`, as a PagleLog entry (LOG-R39): tie `tie` (0)
+--- within its second (LOG-R12), and `char` another index into the log's characters.
 ---@param time integer
 ---@param good string
 ---@param price integer
+---@param tie integer?
+---@param char integer?
 ---@return string
-function purchaseEntry(time, good, price)
-	return ("U1|1|%d|0|%s|%d"):format(time, good, price)
+function purchaseEntry(time, good, price, tie, char)
+	return ("U1|%d|%d|%d|%s|%d"):format(char or 1, time, tie or 0, good, price)
 end
 
 --- `n` of Ada's Casts, at `first` + 1, + 2, … (default SERVER_TIME - 90000, long ended), then BUILD_ENTRY.

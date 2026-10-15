@@ -721,7 +721,7 @@ describe("Buying", function()
 			local entries = fake.catchLog.data.entries
 			assert.are.equal(before + 1, #entries)
 			-- Ada at the fake's server time, tie 1 after the Cast in the same second (LOG-R12).
-			assert.are.equal("U1|1|1791731700|1|core.toaststyle.ripple|150", entries[#entries])
+			assert.are.equal(purchaseEntry(SERVER_TIME, "core.toaststyle.ripple", 150, 1), entries[#entries])
 			assert.are.equal(50, Pagle.GetBalance().balance)
 			assert.is_true(Pagle.IsOwned("core.toaststyle.ripple"))
 			assert.are.equal("core.toaststyle.ripple", Pagle.GetEquipped("core.toaststyle"))

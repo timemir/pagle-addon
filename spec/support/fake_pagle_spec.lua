@@ -1137,7 +1137,10 @@ describe("FakePagle", function()
 				local first = M:RecordPrestige()
 				fake.prestige()
 
-				assert.are.same({ "P1|1|1791731700|0|1", "P1|1|1791731700|1|2" }, fake.catchLog.data.entries)
+				assert.are.same(
+					{ prestigeEntry(SERVER_TIME, 1), prestigeEntry(SERVER_TIME, 2, 1) },
+					fake.catchLog.data.entries
+				)
 				assert.are.same(
 					{ "1 prestige live", "Prestige 1, writable false", "2 prestige live", "Prestige 2, writable false" },
 					seen
@@ -1152,11 +1155,11 @@ describe("FakePagle", function()
 		it("count the Prestiges in a history, as Core does (LOG-R38)", function()
 			local fake = newFakePagle()
 			fake.catchLog.data.characters[1] = { guid = PLAYER_GUID }
-			fake.catchLog:Append({ kind = "prestige", char = 1, time = 1791731000, rank = 1 })
+			fake.catchLog:Append({ kind = "prestige", char = 1, time = SERVER_TIME - 700, rank = 1 })
 			fake.catchLog:Append({
 				kind = "purchase",
 				char = 1,
-				time = 1791731001,
+				time = SERVER_TIME - 699,
 				good = "core.crest.otter",
 				price = 300,
 			})
@@ -1184,7 +1187,7 @@ describe("FakePagle", function()
 
 			fake.ns.RecordPurchase("core.toaststyle.ripple", 150)
 
-			assert.are.same({ "U1|1|1791731700|0|core.toaststyle.ripple|150" }, fake.catchLog.data.entries)
+			assert.are.same({ purchaseEntry(SERVER_TIME, "core.toaststyle.ripple", 150) }, fake.catchLog.data.entries)
 			assert.are.same({ "1 purchase live" }, seen)
 			assert.is_nil(fake.Pagle.RecordPurchase)
 		end)
@@ -1558,7 +1561,7 @@ describe("FakePagle", function()
 				fake.catchLog:Append({
 					kind = "purchase",
 					char = 1,
-					time = 1791731000 + i,
+					time = SERVER_TIME - 700 + i,
 					good = purchase[1],
 					price = purchase[2],
 				})
