@@ -153,10 +153,12 @@ local function newRuler(parent, compact)
 	ruler.track:SetPoint("TOPLEFT")
 	ruler.track:SetPoint("TOPRIGHT")
 	ruler.track:SetHeight(compact and 7 or 12)
-	ruler.fill = ns.Painted(skin, ruler:CreateTexture(nil, "OVERLAY"), "fill") --[[@as Texture]]
+	-- Back to front (ANN-R22): the track, the fill over it, then the old record's mark over the fill, so the mark stays
+	-- in sight as the fill passes it; the labels are font strings in OVERLAY, over the fill too.
+	ruler.fill = ns.Painted(skin, ruler:CreateTexture(nil, "ARTWORK", nil, 1), "fill") --[[@as Texture]]
 	ruler.fill:SetPoint("TOPLEFT", ruler.track)
 	ruler.fill:SetPoint("BOTTOMLEFT", ruler.track)
-	ruler.mark = ns.Painted(skin, ruler:CreateTexture(nil, "OVERLAY"), "mark") --[[@as Texture]]
+	ruler.mark = ns.Painted(skin, ruler:CreateTexture(nil, "OVERLAY", nil, 1), "mark") --[[@as Texture]]
 	ruler.mark:SetSize(2, compact and 11 or 18)
 	-- The old record's number, over its mark; a compact ruler has no room for it.
 	ruler.old = text(skin, ruler, "GameFontDisableSmall", "label")
