@@ -17,6 +17,10 @@ local STAR = "|T" .. STAR_TEXTURE .. ":0|t"
 local STAR_OFF = "|T" .. STAR_TEXTURE .. ":0:0:0:0:64:64:0:64:0:64:110:100:85|t"
 local TICK = "|TInterface\\Buttons\\UI-CheckBox-Check:0|t"
 local CHECK_ON, CHECK_OFF = TICK, "|TInterface\\Buttons\\UI-CheckBox-Up:0|t"
+-- Words two keys share, each built from them (LED-R33, LED-R135, LED-R147).
+local BEGIN_A_NEW_LEDGER = "Begin a new Ledger"
+local ZONE_REWARD = "Reward for mastery: each new seal earns XP."
+local UNWRITTEN_LEGEND = "unwritten legend"
 
 ---@class PagleLedgerStrings
 ns.L = {
@@ -73,6 +77,7 @@ ns.L = {
 	UNCHARTED_STAMP = "Logged",
 	-- A Catch moment's item and its size text (LED-R81, LED-R97).
 	ITEM_SIZE = "%s · %s",
+	-- Also the Legends spread's kicker (LED-R147).
 	LEGEND_TITLE = "Legend",
 	LEGEND_STAMP = "Legend!",
 	PRESTIGE_READY_TITLE = "Prestige ready",
@@ -86,7 +91,8 @@ ns.L = {
 	CATCHES_OTHER = "%s Catches",
 	SIZE_RECORD_TITLE = "Size record",
 	SIZE_RECORD_STAMP = "Record",
-	-- A title (lore, LED-R75) riding in a moment's text, after the text it has (LED-R97), and a completion title's own.
+	-- A title (lore, LED-R75) riding in a moment's text, after the text it has (LED-R97), and a completion title's own;
+	-- also a Legend's page and plate (LED-R147).
 	TITLE_LINE = "Title: %s",
 	TEXT_WITH_TITLE = "%s. %s",
 	TITLE_EARNED = "Title earned",
@@ -175,7 +181,6 @@ ns.L = {
 	HOME_PERCENT = "%d%%",
 	HOME_CONTENTS = "In this Ledger",
 	HOME_CURIOS = "Curios: junk, treasure, uncharted",
-	HOME_LEGENDS = "Legends",
 	HOME_ANGLER = "The Angler: hands, titles, bindings",
 	BRASS_PLATE = "Lv %d · Ledger %d%%",
 	BRASS_PLATE_TITLE = "Lv %d · %s · Ledger %d%%",
@@ -295,7 +300,7 @@ ns.L = {
 	-- each binding's state (LED-R110; "Angler Level {L}" is BINDING_EARNED).
 	ANGLER_NEXT_MILESTONE = " · next milestone %s",
 	ANGLER_NO_PRESTIGE = "No Prestige seals yet",
-	ANGLER_PRESTIGE = "Begin a new Ledger (Prestige)",
+	ANGLER_PRESTIGE = BEGIN_A_NEW_LEDGER .. " (Prestige)",
 	ANGLER_SIGNED_AS = "Signed As",
 	ANGLER_AUTOMATIC = "Automatic",
 	ANGLER_SIGNED_ON = "» %s",
@@ -340,8 +345,8 @@ ns.L = {
 	ZONE_ANY_SKILL = "Any skill", -- a skill base of 0 or below (DATA-R30)
 	ZONE_KNOWN = "%d%% of these waters known: %d of %d fish, %d of %d trophy families",
 	ZONE_TROPHIES_HERE = "Trophies landed here",
-	ZONE_REWARD = "Reward for mastery: each new seal earns XP.",
-	ZONE_REWARD_TITLE = "Reward for mastery: each new seal earns XP. The Master seal earns the title %s.",
+	ZONE_REWARD = ZONE_REWARD,
+	ZONE_REWARD_TITLE = ZONE_REWARD .. " The Master seal earns the title %s.",
 	ZONE_PICK = "Pick a fish on the left to read its page.",
 	-- A zone that isn't charted (LED-R138).
 	ZONE_UNCHARTED_NOTE = "Every catch here is still written down, and counted once Pagle's data catches up.",
@@ -374,18 +379,17 @@ ns.L = {
 	-- Legends (LED-R147). Numbers in %s are BreakUpLargeNumbers'; the first Catch is "{date}, {zone}, {character}".
 	LEGENDS_TITLE = "Legends",
 	LEGENDS_COUNT = "%s of %s. These sit outside the Ledger's hundred.",
-	LEGENDS_UNWRITTEN = "an unwritten legend",
-	LEGENDS_UNWRITTEN_TITLE = "An unwritten legend",
+	LEGENDS_UNWRITTEN = "an " .. UNWRITTEN_LEGEND,
+	LEGENDS_UNWRITTEN_TITLE = "An " .. UNWRITTEN_LEGEND,
 	-- A caught Legend's mark in the index: the star texture, as the client's fonts have no ✦ (CORE-R9, #248).
 	LEGENDS_CAUGHT_MARK = STAR,
-	LEGENDS_KICKER = "Legend",
 	LEGENDS_FIRST = "%s, %s, %s",
 	LEGENDS_FIRST_NO_ZONE = "%s, %s",
-	LEGENDS_TITLE_LINE = "Title: %s",
 	LEGENDS_OPEN_PLATE = "Open the plate",
 	LEGENDS_PLATE_RETURN = "Click anywhere to return.",
 	-- The Prestige confirm (LED-R33); a Master Prestige's stars beside emblem X are STAR stamps (LED-R34).
-	PRESTIGE_CONFIRM = "Begin a new Ledger? Your Angler Level starts again at 1, and climbs at half the cost. Nothing you've earned is taken away.",
+	PRESTIGE_CONFIRM = BEGIN_A_NEW_LEDGER
+		.. "? Your Angler Level starts again at 1, and climbs at half the cost. Nothing you've earned is taken away.",
 	PRESTIGE_CONFIRM_YES = "Prestige",
 	PRESTIGE_CONFIRM_NO = "Not yet",
 }

@@ -1,5 +1,5 @@
--- The Journal bindings' rules and tints (LED-R110, LED-R111, LED-R35, LED-R92) through ns.LevelBindingEarned and
--- ns.BindingLook, with no Core.
+-- The Journal bindings' rules, names and tints (LED-R110, LED-R111, LED-R35, LED-R92, LED-R161) through
+-- ns.LevelBindingEarned, ns.LevelBindingCrossed, ns.BindingName and ns.BindingLook, with no Core.
 
 describe("the Journal bindings", function()
 	local ns = loadAddon("Pagle_Ledger", FOREVER_GLOBALS).ns
@@ -47,6 +47,31 @@ describe("the Journal bindings", function()
 				assert.is_false(ns.LevelBindingEarned(10, nil, {}))
 			end
 		)
+
+		it(
+			"is crossed when the peak level reaches a level binding's level, the moment to refresh (LED-R111)",
+			function()
+				assert.is_true(ns.LevelBindingCrossed(9, 10))
+				assert.is_true(ns.LevelBindingCrossed(18, 31))
+				assert.is_false(ns.LevelBindingCrossed(10, 19))
+				assert.is_false(ns.LevelBindingCrossed(60, 60))
+			end
+		)
+	end)
+
+	describe("a binding's name", function()
+		it("is its lore, or its good's ID while the lore has no text, empty included (LED-R110, LED-R161)", function()
+			local birch = ns.BINDINGS[8]
+			local key = "binding.birch.name"
+			local lore = ns.L[key]
+			assert.are.equal(lore, ns.BindingName(birch))
+
+			ns.L[key] = ""
+			local empty = ns.BindingName(birch)
+			ns.L[key] = lore
+
+			assert.are.equal("ledger.binding.birch", empty)
+		end)
 	end)
 
 	describe("a binding's look", function()
@@ -61,12 +86,15 @@ describe("the Journal bindings", function()
 			assert.are.same(field, ns.BindingLook(nil))
 		end)
 
-		it("is the prototype swatch's leather and gilt (prototypes/curio-shop/ › Tidewater Blue)", function()
-			local look = ns.BindingLook("ledger.binding.level20")
+		it(
+			"is the prototype swatch's leather and gilt (LED-R110, prototypes/curio-shop/ › Tidewater Blue)",
+			function()
+				local look = ns.BindingLook("ledger.binding.level20")
 
-			assert.are.same({ 0x1f / 255, 0x3a / 255, 0x5a / 255 }, look.leather)
-			assert.are.same({ 0xc9 / 255, 0xd6 / 255, 0xe0 / 255 }, look.gilt)
-		end)
+				assert.are.same({ 0x1f / 255, 0x3a / 255, 0x5a / 255 }, look.leather)
+				assert.are.same({ 0xc9 / 255, 0xd6 / 255, 0xe0 / 255 }, look.gilt)
+			end
+		)
 
 		it("puts dark ink on a light brass plate and the paper's tint on a dark one (LED-R110)", function()
 			local field = ns.BindingLook("ledger.binding.field")

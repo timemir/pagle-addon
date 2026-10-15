@@ -66,7 +66,7 @@ function ns.ProjectionDef(global, lookups, outlets, sizeRulesVersion)
 			outlets.ReportCoinsEarned(state.coins)
 		end
 		-- A level binding may be earned now (LED-R111, SHOP-R31).
-		if math.floor(ns.PeakLevel(state) / 10) > math.floor(peak / 10) then
+		if ns.LevelBindingCrossed(peak, ns.PeakLevel(state)) then
 			outlets.RefreshGoods()
 		end
 		-- The shown level and completion change only with an achievement (a level-up, a first Catch, a rank), so an

@@ -19,23 +19,9 @@ local RUNG_PAD = 6
 ---@param frame Frame
 ---@return Texture[]
 local function redBox(frame)
-	local edges = {}
-	for _, points in ipairs({
-		{ "TOPLEFT", "TOPRIGHT", true },
-		{ "BOTTOMLEFT", "BOTTOMRIGHT", true },
-		{ "TOPLEFT", "BOTTOMLEFT", false },
-		{ "TOPRIGHT", "BOTTOMRIGHT", false },
-	}) do
-		local edge = frame:CreateTexture(nil, "BORDER")
-		edge:SetPoint(points[1])
-		edge:SetPoint(points[2])
-		if points[3] then
-			edge:SetHeight(1.5)
-		else
-			edge:SetWidth(1.5)
-		end
+	local edges = ns.JournalRules(frame, 0, { thickness = 1.5 })
+	for _, edge in ipairs(edges) do
 		ns.JournalPaint(edge, LOOK.red)
-		edges[#edges + 1] = edge
 	end
 	return edges
 end

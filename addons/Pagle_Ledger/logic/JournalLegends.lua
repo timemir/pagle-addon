@@ -31,7 +31,7 @@ end
 ---@return string?
 local function titleLine(context, itemID)
 	local title = legendLore(context, itemID, "title")
-	return title and ns.L.LEGENDS_TITLE_LINE:format(title)
+	return title and ns.L.TITLE_LINE:format(title)
 end
 
 -- A first Catch as "{date}, {zone}, {character}" (LED-R147), the zone left out for zone 0 (LED-R6).
@@ -39,12 +39,7 @@ end
 ---@param entry LedgerFirst
 ---@return string
 local function firstCatch(context, entry)
-	local L, text = ns.L, context.text
-	local date, who = text:Date(entry.date), text:Character(entry.char)
-	if entry.zone ~= 0 then
-		return L.LEGENDS_FIRST:format(date, text:Zone(entry.zone), who)
-	end
-	return L.LEGENDS_FIRST_NO_ZONE:format(date, who)
+	return context.text:FirstCatch(entry, ns.L.LEGENDS_FIRST, ns.L.LEGENDS_FIRST_NO_ZONE)
 end
 
 -- The left page (LED-R147): its title, the Legends caught of the world's (removed ones out of both sides, LED-R12),
@@ -89,7 +84,7 @@ local function legendPage(context, itemID)
 	if not entry then
 		---@type LedgerBlock[]
 		local blocks = {
-			{ kind = "kicker", text = L.LEGENDS_KICKER },
+			{ kind = "kicker", text = L.LEGEND_TITLE },
 			{ kind = "icon", icon = PLAIN_FISH, look = "silhouette", large = true },
 			{ kind = "title", text = L.LEGENDS_UNWRITTEN_TITLE },
 		}
@@ -101,7 +96,7 @@ local function legendPage(context, itemID)
 	end
 	---@type LedgerBlock[]
 	local blocks = {
-		{ kind = "kicker", text = L.LEGENDS_KICKER },
+		{ kind = "kicker", text = L.LEGEND_TITLE },
 		{ kind = "icon", icon = itemID, look = "sepia", large = true },
 		{ kind = "title", text = context.text:Item(itemID) },
 		{ kind = "text", hand = true, text = firstCatch(context, entry) },
@@ -119,11 +114,7 @@ local function legendPage(context, itemID)
 		text = L.LEGENDS_OPEN_PLATE,
 		place = ns.JournalPlace.legends(itemID, true),
 	}
-	local item = context.getItem(itemID)
-	if item and item.removed then
-		blocks[#blocks + 1] = { kind = "text", text = L.ENTRY_REMOVED }
-	end
-	return blocks
+	return ns.AddJournalRemovedLine(blocks, context, itemID)
 end
 
 -- A caught Legend's plate (LED-R147), filling both pages: on the left its icon and name, on the right its first
@@ -136,7 +127,7 @@ local function plate(context, itemID)
 	local entry = context.state.items[itemID]
 	local back = ns.JournalPlace.legends(itemID)
 	local lines = { firstCatch(context, entry) }
-	local size = context.sizeText and context.sizeText(entry.record)
+	local size = context.sizeText(entry.record)
 	if size then
 		lines[#lines + 1] = size
 	end

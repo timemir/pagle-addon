@@ -139,6 +139,21 @@ function ns.LevelBindingEarned(level, state, celebrated)
 	return math.max(peak, ns.HighestCelebratedLevel(celebrated)) >= level
 end
 
+--- Whether the peak level going from `before` to `after` reaches a level binding's level (LED-R111): the moment the
+--- Ledger calls `M:RefreshGoods()` after a live entry (SHOP-R31).
+---@param before integer
+---@param after integer
+---@return boolean
+function ns.LevelBindingCrossed(before, after)
+	for _, binding in ipairs(ns.BINDINGS) do
+		local level = binding.level
+		if level and before < level and level <= after then
+			return true
+		end
+	end
+	return false
+end
+
 --- What the Ledger needs to make its goods.
 ---@class LedgerBindingHooks
 ---@field earned fun(level: integer): boolean       -- whether that level binding is earned now (LED-R111)
@@ -151,11 +166,11 @@ function ns.BindingSlot()
 end
 
 --- A binding's name (LED-R110): its lore, `binding.<name>.name` (LED-R160), or its good's ID while the key has no
---- text (graph.md open question 3).
+--- text (LED-R161).
 ---@param binding LedgerBinding
 ---@return string
 function ns.BindingName(binding)
-	return ns.L["binding." .. binding.name .. ".name"] or ns.BindingID(binding)
+	return ns.Lore("binding." .. binding.name .. ".name") or ns.BindingID(binding)
 end
 
 --- The goods to register, in LED-R110's order: named from lore (ns.BindingName, and `binding.<name>.description`,
@@ -173,7 +188,7 @@ function ns.BindingGoods(hooks)
 			id = id,
 			slot = ns.BINDING_SLOT,
 			name = ns.BindingName(binding),
-			description = L["binding." .. binding.name .. ".description"],
+			description = ns.Lore("binding." .. binding.name .. ".description"),
 			icon = ns.BINDING_ICON,
 			default = binding.default,
 			tier = binding.tier,

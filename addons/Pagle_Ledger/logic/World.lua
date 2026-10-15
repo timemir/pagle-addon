@@ -63,9 +63,6 @@ local ns = select(2, ...)
 ---@param item PagleItem?
 ---@return boolean
 local function onList(itemID, item)
-	if itemID == 0 or item == nil or item.legend then
-		return false
-	end
 	local class = ns.ClassifyCatch(itemID, item)
 	return class == "species" or class == "trophy" or class == "curio"
 end
@@ -238,8 +235,8 @@ function ns.NewWorld(lookups)
 	return world
 end
 
---- Each collection's world (LED-R11), each list ascending by ID (LED-R123). Removed items stay in, for their pages
---- (LED-R12); counts leave them out.
+--- Each collection's world (LED-R11), each list ascending by ID (LED-R123). A removed item stays in only when caught,
+--- for its page (LED-R12); counts leave it out.
 ---@class LedgerCollectionWorlds
 ---@field species integer[]  -- Species IDs
 ---@field junk integer[]     -- the Junk Museum: `junk` items
@@ -261,26 +258,42 @@ end
 
 --- Each collection's world (LED-R11): what is listed plus what was caught. The Species on any zone list and every
 --- Species with a Catch; the trophy and curio items on any list and every one caught; the listed Legends and every
---- one caught. An uncaught item on no list appears nowhere.
+--- one caught. An uncaught item on no list appears nowhere, and neither does an uncaught removed one (LED-R12): a
+--- caught one keeps its page.
 ---@param world LedgerWorld
 ---@param state LedgerState its `species` and `items`
 ---@return LedgerCollectionWorlds
 function ns.CollectionWorlds(world, state)
 	local getItem = world.getItem
+	local caughtSpecies, caughtItems = state.species or {}, state.items or {}
 	local sets = { species = {}, junk = {}, treasure = {}, trophy = {}, legends = {} }
-	for _, held in ipairs({ world.species, state.species or {} }) do
-		for id in pairs(held) do
+	-- Whether a listed `id` stays: anything caught, or anything not removed. A Species' ID is its representative
+	-- item's, so a Species counts as removed when that item is (LED-R5).
+	local function kept(id, caught)
+		if caught[id] then
+			return true
+		end
+		local item = getItem(id)
+		return not (item and item.removed)
+	end
+	for id in pairs(world.species) do
+		if kept(id, caughtSpecies) then
 			sets.species[id] = true
 		end
 	end
+	for id in pairs(caughtSpecies) do
+		sets.species[id] = true
+	end
 	for itemID in pairs(world.legends) do
-		sets.legends[itemID] = true
+		if kept(itemID, caughtItems) then
+			sets.legends[itemID] = true
+		end
 	end
 	-- Listed trophy and curio items, then every item the state holds (trophy, curio and Legend items, ledger.md › Data).
-	for _, held in ipairs({ world.items, state.items or {} }) do
+	for _, held in ipairs({ world.items, caughtItems }) do
 		for itemID in pairs(held) do
 			local collection = ns.CollectionOf(getItem(itemID))
-			if collection then
+			if collection and kept(itemID, caughtItems) then
 				sets[collection][itemID] = true
 			end
 		end

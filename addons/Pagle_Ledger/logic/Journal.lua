@@ -34,15 +34,19 @@ local ns = select(2, ...)
 ---@field getArea? fun(areaID: integer): PagleArea? -- Pagle.GetArea; nil while updating
 ---@field angler? Angler                 -- Pagle.GetAngler(), read at each draw (LED-R41); nil while updating
 ---@field openFieldReport? fun()         -- Pagle.OpenFieldReport (REP-R43); nil while updating
----@field sizeText? fun(size: { length: integer, band: integer }?): string? -- ns.SizeText on Core's bands and unit (LED-R81)
----@field crest? integer|string          -- the equipped crest's icon (LED-R112, ns.CrestIcon); nil while updating
+---@field sizeText? fun(size: { length: integer, band: integer }?): string? -- ns.ClientSizeText (LED-R81)
+---@field crest? integer|string          -- the equipped crest's icon (LED-R112, ns.CrestIcon); nil for none
 ---@field canPrestige? boolean           -- whether LED-R33 allows Prestige now (ns.CanPrestige)
 ---@field askPrestige? fun()             -- asks before Prestiging (ns.AskPrestige, LED-R33)
 ---@field pickTitle? fun(key: string?)   -- sets the active title and redraws (ns.PickActiveTitle, LED-R77)
----@field isOwned? fun(goodID: string): boolean  -- Pagle.IsOwned (SHOP-R30)
----@field getEquipped? fun(slot: string): string? -- Pagle.GetEquipped (SHOP-R32)
----@field setEquipped? fun(slot: string, goodID: string): boolean -- Pagle.SetEquipped (SHOP-R32)
----@field openShop? fun(goodID: string?)  -- Pagle.OpenShop (SHOP-R40)
+---@field goods? LedgerJournalGoods      -- Core's goods calls, for the Angler page's Bindings (LED-R146)
+
+--- Core's goods calls the Angler page's Bindings make (LED-R146, SHOP-R30–R34, SHOP-R40).
+---@class LedgerJournalGoods
+---@field isOwned fun(goodID: string): boolean           -- Pagle.IsOwned
+---@field getEquipped fun(slot: string): string?         -- Pagle.GetEquipped
+---@field setEquipped fun(slot: string, goodID: string): boolean -- Pagle.SetEquipped
+---@field openShop fun(goodID: string?)                  -- Pagle.OpenShop
 
 --- What a spread draws from: the Journal's context while the projection isn't updating, when every field is set (the
 --- router draws no spread while it updates, LED-R122). The router casts once; spreads and their parts take this.
@@ -54,6 +58,11 @@ local ns = select(2, ...)
 ---@field getArea fun(areaID: integer): PagleArea?
 ---@field angler Angler
 ---@field openFieldReport fun()
+---@field sizeText fun(size: { length: integer, band: integer }?): string?
+---@field canPrestige boolean
+---@field askPrestige fun()
+---@field pickTitle fun(key: string?)
+---@field goods LedgerJournalGoods
 
 --- One thing drawn on a page, top to bottom, as data; adapter/JournalWidgets.lua draws each kind:
 --- - `kicker`, `title`, `text` (`text`, in the serif face; `hand` for the handwriting face, `color` "faded", "red" or
@@ -219,6 +228,20 @@ end
 ---@return LedgerJournalPlace
 function ns.JournalPlace.legends(legend, plate)
 	return { id = ns.JOURNAL_LEGENDS, args = legend and { legend = legend, plate = plate } or nil }
+end
+
+--- Adds the removed line to a caught item's entry `blocks` (LED-R12): "No longer found in Forever's waters." while
+--- the catalogue marks item `itemID` removed, else nothing. Returns `blocks`.
+---@param blocks LedgerBlock[]
+---@param context LedgerSpreadContext
+---@param itemID integer
+---@return LedgerBlock[]
+function ns.AddJournalRemovedLine(blocks, context, itemID)
+	local item = context.getItem(itemID)
+	if item and item.removed then
+		blocks[#blocks + 1] = { kind = "text", text = ns.L.ENTRY_REMOVED }
+	end
+	return blocks
 end
 
 --- The spreads, by ID. Each spread's ticket registers it with ns.RegisterJournalSpread when its file loads.

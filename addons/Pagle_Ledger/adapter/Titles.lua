@@ -12,11 +12,10 @@ local ns = select(2, ...)
 --- titles count then; the celebrated set as saved (asking makes none of its keys, LED-R90).
 ---@return LedgerTitleView
 local function titleView()
-	local projection = ns.projection
 	return {
 		world = ns.world,
-		state = projection and not projection:IsUpdating() and projection:GetState() --[[@as LedgerState?]] or nil,
-		celebrated = ns.db.global.celebrated or {},
+		state = ns.StateNow(),
+		celebrated = ns.SavedCelebrated(),
 		getItem = Pagle.GetItem,
 	}
 end

@@ -126,9 +126,7 @@ function ns.JournalSpeciesEntry(id, context, hint)
 		end
 		return blocks
 	end
-	local date, who, count = text:Date(species.date), text:Character(species.char), context.formatNumber(species.n)
-	local first = species.zone ~= 0 and L.ENTRY_FIRST:format(date, text:Zone(species.zone), who, count)
-		or L.ENTRY_FIRST_NO_ZONE:format(date, who, count)
+	local first = text:FirstCatch(species, L.ENTRY_FIRST, L.ENTRY_FIRST_NO_ZONE, context.formatNumber(species.n))
 	---@type LedgerBlock[]
 	local blocks = {
 		{ kind = "icon", icon = id, look = "sepia", large = true },
@@ -147,15 +145,11 @@ function ns.JournalSpeciesEntry(id, context, hint)
 	if found then
 		blocks[#blocks + 1] = { kind = "text", text = found }
 	end
-	local size = context.sizeText and context.sizeText(species.record)
+	local size = context.sizeText(species.record)
 	if size then
 		blocks[#blocks + 1] = { kind = "text", text = L.ENTRY_LARGEST:format(size) }
 	end
-	local item = context.getItem(id)
-	if item and item.removed then
-		blocks[#blocks + 1] = { kind = "text", text = L.ENTRY_REMOVED }
-	end
-	return blocks
+	return ns.AddJournalRemovedLine(blocks, context, id)
 end
 
 --- A Species' label in the crumbs (LED-R125), on the fish and the zone spread: its name once caught, never before
@@ -224,8 +218,7 @@ function ns.JournalSearch(query, context)
 	-- Caught Legends, kept in `items` and never as Species (LED-R5), so their IDs never meet a Species'.
 	local legends = {}
 	for itemID in pairs(context.state.items) do
-		local item = context.getItem(itemID)
-		if item and item.legend then
+		if ns.ClassifyCatch(itemID, context.getItem(itemID)) == "legend" then
 			legends[itemID] = true
 			fish[itemID] = text:Item(itemID)
 		end
