@@ -51,6 +51,7 @@ local function kept(fake)
 				coins = moment.coins,
 				cast = moment.cast,
 				summaryOnly = moment.summaryOnly,
+				seal = moment.seal,
 			}
 		end
 	end
@@ -147,13 +148,18 @@ describe("Hunts' moments", function()
 				stamp = "Title",
 				icon = TRADE_FISHING,
 				coins = 100,
+				seal = "quill",
 				cast = live.id,
 			}, moments[2])
 			-- The Cast's two Announcements, the big side first: the banner, then the completion's toast (ANN-R10,
 			-- ANN-R11), each with its own Coins.
 			assert.are.equal(2, #fake.announcements)
 			local banner, toast = fake.announcements[1], fake.announcements[2]
-			assert.are.same({ "Title earned", {}, 100 }, { banner.headline.title, banner.stamps, banner.coins })
+			-- The banner's seal is the quill (announcements.md › Contracts).
+			assert.are.same(
+				{ "Title earned", {}, 100, "quill" },
+				{ banner.headline.title, banner.stamps, banner.coins, banner.headline.seal }
+			)
 			assert.are.same({ "Hunt complete", {}, 30 }, { toast.headline.title, toast.stamps, toast.coins })
 			assert.are.same({ fixture_wagers = true }, loaded.env.PagleHuntsDB.global.celebrated.sets)
 		end)
@@ -185,6 +191,7 @@ describe("Hunts' moments", function()
 						stamp = "Title",
 						icon = TRADE_FISHING,
 						coins = 100,
+						seal = "quill",
 						summaryOnly = true,
 					},
 				}, kept(fake))
@@ -317,6 +324,7 @@ describe("Hunts' moments", function()
 					stamp = "Title",
 					icon = TRADE_FISHING,
 					coins = 100,
+					seal = "quill",
 					summaryOnly = true,
 				},
 			}, kept(fake))
@@ -391,6 +399,7 @@ describe("Hunts' moments", function()
 					stamp = "Title",
 					icon = TRADE_FISHING,
 					coins = 100,
+					seal = "quill",
 					summaryOnly = true,
 				},
 			}, kept(fake))
