@@ -45,11 +45,12 @@ describe("the generated catalogue's areas on Pagle", function()
 		assert.is_false(area.skillBaseConfirmed)
 	end)
 
-	it("list each item once per area, by item ID, every entry unconfirmed (DATA-R26, DATA-R56)", function()
+	-- Which entries are confirmed is the observed data's (DATA-R48), checked by the generator's tests.
+	it("list each item once per area, by item ID, each entry confirmed or not (DATA-R26, DATA-R48)", function()
 		for areaID, area in pairs(data.areas) do
 			for i, entry in ipairs(area.catches) do
 				assert(i == 1 or area.catches[i - 1].itemID < entry.itemID, ("area %d's list"):format(areaID))
-				assert.is_false(entry.confirmed)
+				assert.is_boolean(entry.confirmed)
 			end
 		end
 	end)

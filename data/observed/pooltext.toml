@@ -12,3 +12,8 @@
 # locale = "deDE"
 # text = "Schwarm öliger Schwarzmaulfische"
 # pool = "oilyBlackmouthSchool"
+
+[[text]]
+locale = "enUS"
+text = "Fishing Bobber"
+pool = "bobber"
