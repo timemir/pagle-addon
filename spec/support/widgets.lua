@@ -87,7 +87,9 @@ end
 --- { r, g, b[, a] }), blend mode (`blendMode`) and coordinates (`texCoord`), a button's attributes (`attributes`),
 --- click registration (`clicks`, RegisterForClicks's arguments) and locked highlight (`highlightLocked`), and a
 --- frame's mouse and moving state: `mouseEnabled`, `movable`, `dragButtons` (RegisterForDrag's arguments) and
---- `moving`, and `userPlaced` (SetUserPlaced's, or true from StartMoving); also whether it takes clicks (`enabled`), and a scroll frame's `verticalScroll` and `scrollChild`.
+--- `moving`, and `userPlaced` (SetUserPlaced's, or true from StartMoving); also whether it takes clicks (`enabled`),
+--- and a scroll frame's `verticalScroll` and `scrollChild`. As the client's, Show, Hide and SetShown run OnShow or
+--- OnHide when the shown state changes, and SetSize, SetWidth and SetHeight run OnSizeChanged when the size does.
 ---@param kind string "Frame", "Button", "FontString", "Texture", …
 ---@param parent table?
 ---@return table
@@ -113,8 +115,17 @@ function widgets.newWidget(kind, parent)
 		end
 		self.points[#self.points + 1] = { point, ... }
 	end
-	function widget:SetSize(width, height)
+	-- As the client's: a change of size runs OnSizeChanged(width, height), after the change.
+	local function resized(self, width, height)
+		local before = { self.width, self.height }
 		self.width, self.height = width, height
+		local script = self.scripts.OnSizeChanged
+		if script and (before[1] ~= width or before[2] ~= height) then
+			script(self, width, height)
+		end
+	end
+	function widget:SetSize(width, height)
+		resized(self, width, height)
 	end
 	function widget:ClearAllPoints()
 		self.points = {}
@@ -125,10 +136,10 @@ function widgets.newWidget(kind, parent)
 		self.points = { { "TOPLEFT", relativeTo, "TOPLEFT", 0, 0 }, { "BOTTOMRIGHT", relativeTo, "BOTTOMRIGHT", 0, 0 } }
 	end
 	function widget:SetWidth(width)
-		self.width = width
+		resized(self, width, self.height)
 	end
 	function widget:SetHeight(height)
-		self.height = height
+		resized(self, self.width, height)
 	end
 	-- Its laid-out size: stretched between anchors on opposite edges when it has them, else as set (see extent), 0
 	-- with neither, as the client's for a frame with no size.
@@ -297,14 +308,23 @@ function widgets.newWidget(kind, parent)
 	function widget.GetVerticalScrollRange()
 		return 0
 	end
+	-- As the client's: a change of shown state runs OnShow or OnHide, after the change; no change runs neither.
+	function widget:SetShown(shown)
+		shown = not not shown
+		if self.shown == shown then
+			return
+		end
+		self.shown = shown
+		local script = self.scripts[shown and "OnShow" or "OnHide"]
+		if script then
+			script(self)
+		end
+	end
 	function widget:Show()
-		self.shown = true
+		self:SetShown(true)
 	end
 	function widget:Hide()
-		self.shown = false
-	end
-	function widget:SetShown(shown)
-		self.shown = not not shown
+		self:SetShown(false)
 	end
 	function widget:IsShown()
 		return self.shown
@@ -500,13 +520,7 @@ function widgets.applyTemplate(client, frame, template)
 		frame.Inset = widgets.newFrame(client, "Frame", frame)
 		frame.CloseButton = widgets.newFrame(client, "Button", frame)
 		frame.CloseButton:SetScript("OnClick", function()
-			if frame:IsShown() then
-				frame:Hide()
-				local onHide = frame:GetScript("OnHide")
-				if onHide then
-					onHide(frame)
-				end
-			end
+			frame:Hide()
 		end)
 		function frame:SetTitle(title)
 			self.title = title

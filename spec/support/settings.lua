@@ -174,16 +174,6 @@ return function(client, stubs)
 	client.settings = settings
 	settings.panel = newWidget("Frame")
 	settings.panel.shown = false
-	-- As the client's Show: OnShow runs when a hidden frame shows.
-	local showPanel = settings.panel.Show
-	function settings.panel:Show()
-		local wasShown = self.shown
-		showPanel(self)
-		local onShow = self.scripts.OnShow
-		if not wasShown and onShow then
-			onShow(self)
-		end
-	end
 
 	local function register(name, parent)
 		local category = { name = name, parent = parent, id = #settings.categories + 1 }
