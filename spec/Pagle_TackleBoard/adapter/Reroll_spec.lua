@@ -117,23 +117,25 @@ describe("taking a goal down", function()
 			assert.are_not.equal("haul", ns.DecodeRecord("reroll", appended[1].payload).goal.kind)
 		end)
 
-		it("comes down at once for a session-bound goal whose Session has ended, displayed 0 (TKB-R104)", function()
-			local ns, loaded, fake = started()
+		it(
+			"comes down at once for a day-bound goal whose progress is an earlier board day's, displayed 0 (TKB-R104)",
+			function()
+				local ns, loaded = started()
+				local wanderer = ns.State().goals[WANDERER]
+				wanderer.progress, wanderer.progressDay = 2, ns.State().day - 1
+
+				assert.are.equal(0, ns.DisplayedProgress(wanderer, ns.State().day))
+				ns.TakeDown(WANDERER)
+
+				assert.is_nil(loaded.client.popup)
+				assert.are.equal(1, #rerolls(ns))
+			end
+		)
+
+		it("asks for a day-bound goal with progress today (TKB-R104)", function()
+			local ns, loaded = started()
 			local wanderer = ns.State().goals[WANDERER]
-			wanderer.progress, wanderer.session = 2, "an ended Session"
-
-			assert.is_nil(fake.Pagle.GetSession())
-			ns.TakeDown(WANDERER)
-
-			assert.is_nil(loaded.client.popup)
-			assert.are.equal(1, #rerolls(ns))
-		end)
-
-		it("asks for a session-bound goal with progress in the current Session (TKB-R104)", function()
-			local ns, loaded, fake = started()
-			fake.playCast("caught", { { itemID = 6358, quantity = 1 } })
-			local wanderer = ns.State().goals[WANDERER]
-			wanderer.progress, wanderer.session = 2, fake.Pagle.GetSession().id
+			wanderer.progress, wanderer.progressDay = 2, ns.State().day
 
 			ns.TakeDown(WANDERER)
 

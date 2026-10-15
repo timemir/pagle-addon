@@ -36,10 +36,10 @@ ns.L = {
 		n = {
 			haul = { one = "{n} Catch in {zone}", other = "{n} Catches in {zone}" },
 			variety = { one = "{n} Species in {zone}", other = "{n} different Species in {zone}" },
-			wanderer = { one = "Catches in {n} zone in one Session", other = "Catches in {n} zones in one Session" },
+			wanderer = { one = "Catches in {n} zone today", other = "Catches in {n} zones today" },
 			quality = { one = "A {quality}-or-better Catch", other = "{n} {quality}-or-better Catches" },
 			size = { one = "A {band}-or-better Catch", other = "{n} {band}-or-better Catches" },
-			collector = "A junk item and a container in one Session",
+			collector = "A junk item and a container today",
 			lure = { one = "A Catch with a lure on", other = "{n} Catches with a lure on" },
 			species = "{n} {species}",
 		},
@@ -71,7 +71,7 @@ ns.L = {
 	-- Where a goal is worked (TKB-R102), and the tracker's where line around it (TKB-R122).
 	WHEREVER_IT_BITES = "wherever it bites",
 	ANYWHERE = "anywhere",
-	WHERE_THIS_SESSION = "this Session · {where}",
+	WHERE_TODAY = "today · {where}",
 	WHERE_HERE = "{where} · here",
 	-- Realm dates and times (TKB-R102, TKB-R105): the posted time, 24-hour; weekdays from Sunday, as the client's
 	-- calendar counts them; months from January.
@@ -96,7 +96,7 @@ ns.L = {
 	-- A pinned goal: its handwritten progress over its need (TKB-R104), its pay, "I'm here", a stranded goal's mark,
 	-- the button and the stamp.
 	PROGRESS = "{n} of {need}",
-	PROGRESS_SESSION = "{n} of {need} this Session",
+	PROGRESS_TODAY = "{n} of {need} today",
 	PAYS = { one = "pays {n} Coin", other = "pays {n} Coins" },
 	IM_HERE = "I'm here",
 	NO_LONGER_CATCHABLE = "no longer catchable",
@@ -104,7 +104,7 @@ ns.L = {
 	REPOSTED = "RE-POSTED",
 	-- Its hover, under the posted time (POSTED).
 	ONLY_SINCE = "Only my Catches since then count",
-	ONLY_SINCE_SESSION = "Only my Catches since then count, all within one Session",
+	ONLY_SINCE_TODAY = "Only my Catches since then count, all on one board day",
 	-- Empty pins (TKB-R105): {time} is the countdown to the daily reset, {weekday} the weekly reset's realm weekday.
 	EMPTY_NOTICE = "A fresh Notice at reset (in {time})",
 	EMPTY_NOTICE_LATER = "More Notices at later resets",

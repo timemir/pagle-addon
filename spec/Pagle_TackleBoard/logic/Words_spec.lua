@@ -39,13 +39,13 @@ describe("the goal text", function()
 			{ "30 Catches in Stranglethorn Vale", goal("n", "haul", 30, STRANGLETHORN) },
 			{ "4 different Species in Feralas", goal("n", "variety", 4, FERALAS) },
 			{ "Every Species of Feralas", goal("e", "variety", 3, FERALAS, { 4603, 13754, 13760 }) },
-			{ "Catches in 3 zones in one Session", goal("n", "wanderer", 3) },
+			{ "Catches in 3 zones today", goal("n", "wanderer", 3) },
 			{ "Catches in 5 zones of Kalimdor", goal("e", "wanderer", 5, 1) },
 			{ "5 uncommon-or-better Catches", goal("n", "quality", 5, 2) },
 			{ "3 rare-or-better Catches", goal("e", "quality", 3, 3) },
 			{ "3 Hefty-or-better Catches", goal("n", "size", 3, 3) },
 			{ "A Whopper-or-better Catch", goal("e", "size", 1, 4) },
-			{ "A junk item and a container in one Session", goal("n", "collector", 2) },
+			{ "A junk item and a container today", goal("n", "collector", 2) },
 			{ "3 Sub-collection items you don't have", goal("e", "collector", 3) },
 			{ "20 Catches with a lure on", goal("n", "lure", 20) },
 			{ "10 Oily Blackmouth", goal("n", "species", 10, BLACKMOUTH) },
@@ -253,10 +253,10 @@ describe("where a goal is worked", function()
 		}, each(ns.IsPlaceGoal))
 	end)
 
-	it("binds only the Wanderer and Collector Notices to one Session (TKB-R41)", function()
+	it("binds only the Wanderer and Collector Notices to one board day (TKB-R41)", function()
 		local ns = loadPlaces()
 		local bound = {}
-		for name, isBound in pairs(each(ns.IsSessionBound)) do
+		for name, isBound in pairs(each(ns.IsDayBound)) do
 			if isBound then
 				bound[#bound + 1] = name
 			end
@@ -267,11 +267,11 @@ describe("where a goal is worked", function()
 	end)
 
 	describe("on the tracker", function()
-		it('starts with "this Session · " for a session-bound goal (TKB-R122)', function()
+		it('starts with "today · " for a day-bound goal (TKB-R122)', function()
 			local ns = loadPlaces()
 
 			assert.are.same(
-				{ "this Session · anywhere", "this Session · anywhere" },
+				{ "today · anywhere", "today · anywhere" },
 				{ ns.TrackerWhere(goal("n", "wanderer", 3), true), ns.TrackerWhere(goal("n", "collector", 2), true) }
 			)
 		end)

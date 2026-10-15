@@ -10,10 +10,10 @@ local ns = select(2, ...)
 -- the board's words (logic/Words.lua), Core through ns.api.pagle and progress (logic/Progress.lua); adapter/Pins.lua
 -- draws what it decides on the board's "pins" and "overflow" parts.
 
---- What a view knows besides the goal: the current Session, the current zone, whether the projection is updating and
+--- What a view knows besides the goal: the board day now, the current zone, whether the projection is updating and
 --- whether the goal can be taken down now.
 ---@class TacklePinContext
----@field session { id: string }?   -- Pagle.GetSession(), nil when no Session is open (TKB-R104)
+---@field today integer             -- the board day now, ns.State().day (TKB-R104)
 ---@field zone integer              -- the current zone, ns.CurrentZone() (TKB-R121)
 ---@field updating boolean          -- ns.IsUpdating() (TKB-R108)
 ---@field canTakeDown boolean       -- ns.CanTakeDown(goal.id) (TKB-R55)
@@ -27,7 +27,7 @@ local ns = select(2, ...)
 ---@class TacklePinView
 ---@field kicker string                 -- its kind, set in small caps
 ---@field text string                   -- the goal text, printed
----@field progress string               -- "12 of 30", or "1 of 2 this Session" (TKB-R104)
+---@field progress string               -- "12 of 30", or "1 of 2 today" (TKB-R104)
 ---@field fill number                   -- the ink bar, 0 to 1
 ---@field where string                  -- where it can be worked
 ---@field here boolean                  -- a goal tied to a place, workable here: "I'm here" replaces where (TKB-R121)
@@ -69,8 +69,8 @@ local function takeDown(ctx)
 	return ctx.updating and "disabled" or "enabled"
 end
 
---- What a pinned goal shows (TKB-R102): its kind; its text; its displayed progress over its need (TKB-R104), "this
---- Session" for a session-bound goal; where it can be worked, or "I'm here" for a goal tied to a place that is
+--- What a pinned goal shows (TKB-R102): its kind; its text; its displayed progress over its need (TKB-R104), "today"
+--- for a day-bound goal; where it can be worked, or "I'm here" for a goal tied to a place that is
 --- workable here (TKB-R121); its pay, on a seal too for an Expedition; RE-POSTED for a re-posted goal; "no longer
 --- catchable" for a stranded one (TKB-R44); "take it down" (TKB-R55, TKB-R108); and its hover.
 ---@param goal TackleGoal
@@ -79,15 +79,15 @@ end
 function ns.PinView(goal, ctx)
 	local L, pagle = ns.L, ns.api.pagle
 	local need = ns.GoalNeed(goal, pagle)
-	local progress = ns.DisplayedProgress(goal, ctx.session)
-	local bound = ns.IsSessionBound(goal)
+	local progress = ns.DisplayedProgress(goal, ctx.today)
+	local bound = ns.IsDayBound(goal)
 	local isVarietyExpedition = goal.type == "e" and goal.kind == "variety"
 	local kicker, text = ns.KindLabel(goal.kind), ns.GoalText(goal)
 	return {
 		kicker = kicker,
 		text = text,
 		chip = ns.Fill(L.OVERFLOW_CHIP, { kind = kicker, text = text }),
-		progress = ns.Fill(bound and L.PROGRESS_SESSION or L.PROGRESS, { n = progress, need = need }),
+		progress = ns.Fill(bound and L.PROGRESS_TODAY or L.PROGRESS, { n = progress, need = need }),
 		fill = need > 0 and math.min(1, progress / need) or 0,
 		where = ns.GoalWhere(goal),
 		here = ns.IsPlaceGoal(goal) and ns.IsWorkableHere(goal, ctx.zone),
@@ -96,7 +96,7 @@ function ns.PinView(goal, ctx)
 		stamp = goal.reposted,
 		stranded = ns.IsStranded(goal, pagle) and L.NO_LONGER_CATCHABLE or nil,
 		takeDown = takeDown(ctx),
-		hover = { ns.PostedTime(goal.time), bound and L.ONLY_SINCE_SESSION or L.ONLY_SINCE },
+		hover = { ns.PostedTime(goal.time), bound and L.ONLY_SINCE_TODAY or L.ONLY_SINCE },
 		species = isVarietyExpedition and hoverSpecies(goal, pagle) or nil,
 	}
 end

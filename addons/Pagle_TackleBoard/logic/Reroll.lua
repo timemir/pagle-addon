@@ -6,7 +6,7 @@ end
 local ns = select(2, ...)
 
 -- Taking a goal down (TKB-R55, TKB-R56): whether a goal may be taken down, whether the player is asked first and
--- what. Pure logic (CORE-R7): Core's catalogue calls and the current Session come in from adapter/Reroll.lua, which
+-- what. Pure logic (CORE-R7): Core's catalogue calls and the board day now come in from adapter/Reroll.lua, which
 -- appends the `reroll` record that takes the goal down (TKB-R80).
 
 --- The goal `goalID` names, if it is one that can be taken down (TKB-R55): an open goal (not completed) issued by an
@@ -31,11 +31,11 @@ end
 --- The confirm's question before a goal comes down (TKB-R56), or nil when it comes down at once: it asks only for a
 --- goal whose displayed progress (TKB-R104) is above 0, showing that progress against its need (TKB-R44).
 ---@param goal TackleGoal
----@param session table? Pagle.GetSession()'s table, or nil with no current Session
+---@param today integer the board day now, the projection's day (TKB-R104)
 ---@param pagle table Core's catalogue calls (LOG-R55), for ns.GoalNeed
 ---@return string?
-function ns.TakeDownQuestion(goal, session, pagle)
-	local progress = ns.DisplayedProgress(goal, session)
+function ns.TakeDownQuestion(goal, today, pagle)
+	local progress = ns.DisplayedProgress(goal, today)
 	if progress <= 0 then
 		return nil
 	end

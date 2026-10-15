@@ -40,7 +40,6 @@ local function input(tracker)
 		collapsed = ns.db.profile.trackerCollapsed,
 		state = ns.State(),
 		zone = ns.CurrentZone(),
-		session = Pagle.GetSession(),
 		flashing = tracker.flashing,
 	}
 end
@@ -125,8 +124,9 @@ end
 
 --- Makes the tracker and docks it (TKB-R120), from OnInitialize after the projection is made: Core's dock stacks it at
 --- order 30, below Hunts' and Stats' (CORE-R70). It redraws at every ns.Redraw (the projection, names, completed goals,
---- which it flashes, live steps and its setting), on ConditionsChanged with "area" (TKB-R121), at SessionStarted and
---- SessionEnded (TKB-R104), at ModulesChanged (the equipped frame is Core's by then, SHOP-R33) and at
+--- which it flashes, live steps, whose advance at each reset moves a day-bound goal's count, TKB-R104, and its
+--- setting), on ConditionsChanged with "area" (TKB-R121), at ModulesChanged (the equipped frame is Core's by then,
+--- SHOP-R33) and at
 --- AppearanceChanged for its frame slot (TKB-R124).
 ---@param module PagleModuleHandle
 function ns.StartTracker(module)
@@ -146,8 +146,6 @@ function ns.StartTracker(module)
 		draw()
 	end)
 	Pagle.RegisterCallback(OWNER, "ModulesChanged", draw)
-	Pagle.RegisterCallback(OWNER, "SessionStarted", draw)
-	Pagle.RegisterCallback(OWNER, "SessionEnded", draw)
 	Pagle.RegisterCallback(OWNER, "ConditionsChanged", function(_, changedKeys)
 		for _, key in ipairs(changedKeys) do
 			if key == "area" then

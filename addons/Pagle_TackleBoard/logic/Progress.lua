@@ -7,7 +7,7 @@ local ns = select(2, ...)
 
 -- How a goal's progress moves, one Catch at a time (tackle-board.md › Progress, TKB-R40–R46, TKB-R104, TKB-R196).
 -- Pure logic over a TackleGoal (logic/Seams.lua) and Core's catalogue calls, handed in as `pagle` (CORE-R7). Of the
--- goal it writes only `progress`, `seen` and `session`. logic/Completions.lua runs it inside the fold: for
+-- goal it writes only `progress`, `seen` and `progressDay`. logic/Completions.lua runs it inside the fold: for
 -- each caught Cast, ns.EnterCast on every open goal, then for each Catch in item order ns.CountCatch on the open goals
 -- in board order, completing a goal when ns.IsComplete turns true (TKB-R45).
 
@@ -15,6 +15,7 @@ local ns = select(2, ...)
 ---@class TackleProgressContext
 ---@field pagle table Core's calls: GetItem, GetArea and GetZones (LOG-R55)
 ---@field caughtBefore fun(itemID: integer): boolean whether an earlier Catch in the whole log has the item (TKB-R46)
+---@field day integer the Cast's board day: the projection's day once advanced to it (TKB-R12, TKB-R14)
 
 -- Progress that counts every Catch: +1.
 ---@param goal TackleGoal
@@ -128,11 +129,11 @@ function COUNT.species(goal, _, _, item, ctx)
 		and addOne(goal)
 end
 
---- Whether a goal is session-bound (TKB-R41): the `wanderer` and `collector` Notices count only Catches from Casts
---- of one Session, and display 0 outside it (TKB-R104).
+--- Whether a goal is day-bound (TKB-R41): the `wanderer` and `collector` Notices count only Catches from Casts of one
+--- board day, and display 0 on any other (TKB-R104).
 ---@param goal TackleGoalDef
 ---@return boolean
-function ns.IsSessionBound(goal)
+function ns.IsDayBound(goal)
 	return goal.type == "n" and (goal.kind == "wanderer" or goal.kind == "collector")
 end
 
@@ -208,20 +209,21 @@ function ns.IsComplete(goal, pagle)
 	return goal.progress >= ns.GoalNeed(goal, pagle) and not stranded(goal, pagle, true)
 end
 
---- Starts a caught Cast for a goal (TKB-R41): a session-bound goal whose progress belongs to another Session than
---- the Cast's (Core's `session` tag, LOG-R98) resets its progress and `seen` and belongs to the Cast's Session. Call
---- it once per caught Cast, before the Cast's Catches; it ignores a got-away Cast, one from before the goal (TKB-R40)
---- and a goal already complete (TKB-R45).
+--- Starts a caught Cast for a goal (TKB-R41): a day-bound goal whose progress belongs to another board day than the
+--- Cast's `day` (the projection's day once advanced to the Cast, TKB-R12, TKB-R14) resets its progress and `seen` and
+--- belongs to the Cast's day. Call it once per caught Cast, before the Cast's Catches; it ignores a got-away Cast, one
+--- from before the goal (TKB-R40) and a goal already complete (TKB-R45).
 ---@param goal TackleGoal
 ---@param cast table the Cast record (LOG-R42)
-function ns.EnterCast(goal, cast)
-	if not ns.IsSessionBound(goal) or not after(goal, cast) or goal.session == cast.session then
+---@param day integer the Cast's board day
+function ns.EnterCast(goal, cast, day)
+	if not ns.IsDayBound(goal) or not after(goal, cast) or goal.progressDay == day then
 		return
 	end
 	if goal.progress >= goal.need then
-		return -- complete: its progress stays (a session-bound need never depends on the catalogue)
+		return -- complete: its progress stays (a day-bound need never depends on the catalogue)
 	end
-	goal.progress, goal.seen, goal.session = 0, {}, cast.session
+	goal.progress, goal.seen, goal.progressDay = 0, {}, day
 end
 
 --- Counts one Catch for a goal (TKB-R40–R46): true when the goal's progress counted it.
@@ -234,8 +236,8 @@ function ns.CountCatch(goal, cast, slot, ctx)
 	if not after(goal, cast) then
 		return false
 	end
-	if ns.IsSessionBound(goal) and goal.session ~= cast.session then
-		return false -- not entered (EnterCast): its progress belongs to another Session (TKB-R41)
+	if ns.IsDayBound(goal) and goal.progressDay ~= ctx.day then
+		return false -- not entered (EnterCast): its progress belongs to another board day (TKB-R41)
 	end
 	if stranded(goal, ctx.pagle, false) or goal.progress >= ns.GoalNeed(goal, ctx.pagle) then
 		return false -- stranded (TKB-R44), or complete: later Catches don't count for it (TKB-R45)
@@ -244,14 +246,14 @@ function ns.CountCatch(goal, cast, slot, ctx)
 	return COUNT[goal.kind](goal, cast, slot, item, ctx)
 end
 
---- The progress the board shows for a goal (TKB-R104): its progress, except that a session-bound goal (TKB-R41)
---- shows 0 when there is no current Session or the current one isn't the Session its progress belongs to. The pins
---- (logic/Pins.lua), the tracker (logic/Tracker.lua) and the reroll's confirm (logic/Reroll.lua) read it.
+--- The progress the board shows for a goal (TKB-R104): its progress, except that a day-bound goal (TKB-R41) shows 0
+--- on any board day but the one its progress belongs to. The pins (logic/Pins.lua), the tracker (logic/Tracker.lua)
+--- and the reroll's confirm (logic/Reroll.lua) read it.
 ---@param goal TackleGoal
----@param session { id: string }? the current Session: `Pagle.GetSession()`, nil when none is open (LOG-R64)
+---@param today integer the board day now: the projection's day, which the live step advances at each reset (TKB-R13)
 ---@return integer
-function ns.DisplayedProgress(goal, session)
-	if ns.IsSessionBound(goal) and (session == nil or session.id ~= goal.session) then
+function ns.DisplayedProgress(goal, today)
+	if ns.IsDayBound(goal) and goal.progressDay ~= today then
 		return 0
 	end
 	return goal.progress

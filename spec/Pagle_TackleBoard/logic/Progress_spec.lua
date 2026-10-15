@@ -1,5 +1,5 @@
 -- How a goal's progress moves, one Catch at a time (tackle-board.md › Progress, TKB-R40–R46, TKB-R104, TKB-R196):
--- which Catches each kind counts, the session-bound reset, the need and stranded goals, completion and the displayed
+-- which Catches each kind counts, the day-bound reset, the need and stranded goals, completion and the displayed
 -- progress. Over the fixture catalogue (spec/Pagle_TackleBoard/fixtures/Catalogue.lua) through FakePagle's catalogue
 -- calls, with hand-built goals (tackle-board.md › Projection: TackleGoal) and Cast records (LOG-R42, LOG-R98).
 
@@ -56,13 +56,14 @@ local function goal(fields)
 	return made
 end
 
--- A caught Cast record (LOG-R42) after the goal, in `zone`, in Session "S1", with one Catch per entry of `catches`:
+-- A caught Cast record (LOG-R42) after the goal, in `zone`, on board day 0, with one Catch per entry of `catches`:
 -- an item ID, or `{ itemID, band }` for a Catch with a Simulated Size of that band (LOG-R65). Every Catch is a stack
--- of 3, to show quantity never matters (TKB-R40). `options` sets `seq`, `outcome`, `session` and `lure`.
+-- of 3, to show quantity never matters (TKB-R40). `options` sets `seq`, `outcome`, `day` and `lure`. Its board day
+-- isn't a field of a Cast: the runner hands it over as the projection does, its day once advanced to the Cast.
 local seq = GOAL_SEQ
 ---@param zone integer
 ---@param catches (integer|integer[])[]
----@param options { seq: integer?, outcome: string?, session: string?, lure: integer? }?
+---@param options { seq: integer?, outcome: string?, day: integer?, lure: integer? }?
 ---@return table
 local function cast(zone, catches, options)
 	options = options or {}
@@ -89,15 +90,15 @@ local function cast(zone, catches, options)
 		char = 1,
 		time = 1791732000 + seq,
 		outcome = options.outcome or "caught",
-		session = options.session or "S1",
+		day = options.day or 0,
 		conditions = { time = 1791732000 + seq, minute = 500, zone = zone, subzone = 0, lure = options.lure },
 		items = items, -- kept on a got-away Cast too (Core's has none), so the spec sees CountCatch refuse them
 	}
 end
 
 -- A runner over the loaded board's `ns` and catalogue calls `Pagle`: run(goal, casts, caught) runs `casts` through
--- the goal as logic/Completions.lua does (TKB-R41, TKB-R45, TKB-R46): EnterCast once per Cast, then CountCatch for
--- each Catch in item order, adding each Catch's item to the ever-caught set after counting it. `caught` is the
+-- the goal as logic/Completions.lua does (TKB-R41, TKB-R45, TKB-R46): EnterCast once per Cast on its board day, then
+-- CountCatch for each Catch in item order, adding each Catch's item to the ever-caught set after counting it. `caught` is the
 -- ever-caught set before the first Cast. It returns the goal's progress and, per Catch, whether it counted.
 ---@param ns table
 ---@param Pagle table
@@ -113,7 +114,8 @@ local function runner(ns, Pagle)
 		}
 		local counted = {}
 		for _, record in ipairs(casts) do
-			ns.EnterCast(subject, record)
+			ns.EnterCast(subject, record, record.day)
+			ctx.day = record.day
 			for _, slot in ipairs(record.items) do
 				counted[#counted + 1] = ns.CountCatch(subject, record, slot, ctx)
 				caught[slot.itemID] = true
@@ -203,7 +205,7 @@ describe("Goal progress", function()
 	end)
 
 	describe("wanderer", function()
-		it("as a Notice counts distinct non-0 zones in the Session, Uncharted too (TKB-R42, TKB-R43)", function()
+		it("as a Notice counts distinct non-0 zones on its board day, Uncharted too (TKB-R42, TKB-R43)", function()
 			local wanderer = goal({ kind = "wanderer", tier = 3, need = 3 })
 
 			local progress, counted = run(wanderer, {
@@ -216,26 +218,29 @@ describe("Goal progress", function()
 			assert.are.same({ true, false, false, true }, counted)
 		end)
 
-		it("as a Notice at 2 of 3 resets to 0 on a Cast from a new Session, then counts its zone (TKB-R41)", function()
+		it(
+			"as a Notice at 2 of 3 resets to 0 on a Cast of the next board day, then counts its zone (TKB-R41)",
+			function()
+				local wanderer = goal({ kind = "wanderer", tier = 3, need = 3 })
+				run(wanderer, { cast(DUROTAR, { SMALLFISH }), cast(BARRENS, { SMALLFISH }) })
+				assert.are.equal(2, wanderer.progress)
+
+				local progress = run(wanderer, { cast(DUROTAR, { SMALLFISH }, { day = 1 }) })
+
+				assert.are.equal(1, progress)
+				assert.are.equal(1, wanderer.progressDay)
+				assert.are.same({ [DUROTAR] = true }, wanderer.seen)
+			end
+		)
+
+		it("as a Notice resets on a later board day's Cast even when none of its Catches counts (TKB-R41)", function()
 			local wanderer = goal({ kind = "wanderer", tier = 3, need = 3 })
 			run(wanderer, { cast(DUROTAR, { SMALLFISH }), cast(BARRENS, { SMALLFISH }) })
-			assert.are.equal(2, wanderer.progress)
 
-			local progress = run(wanderer, { cast(DUROTAR, { SMALLFISH }, { session = "S2" }) })
-
-			assert.are.equal(1, progress)
-			assert.are.equal("S2", wanderer.session)
-			assert.are.same({ [DUROTAR] = true }, wanderer.seen)
-		end)
-
-		it("as a Notice resets on a new Session's Cast even when none of its Catches counts (TKB-R41)", function()
-			local wanderer = goal({ kind = "wanderer", tier = 3, need = 3 })
-			run(wanderer, { cast(DUROTAR, { SMALLFISH }), cast(BARRENS, { SMALLFISH }) })
-
-			local progress = run(wanderer, { cast(0, { SMALLFISH }, { session = "S2" }) })
+			local progress = run(wanderer, { cast(0, { SMALLFISH }, { day = 1 }) })
 
 			assert.are.equal(0, progress)
-			assert.are.equal("S2", wanderer.session)
+			assert.are.equal(1, wanderer.progressDay)
 		end)
 
 		it("as a Notice isn't reset by a got-away Cast or one from before the goal (TKB-R40, TKB-R41)", function()
@@ -243,23 +248,23 @@ describe("Goal progress", function()
 			run(wanderer, { cast(DUROTAR, { SMALLFISH }), cast(BARRENS, { SMALLFISH }) })
 
 			local progress = run(wanderer, {
-				cast(DARKSHORE, {}, { session = "S2", outcome = "gotAway" }),
-				cast(DARKSHORE, { SMALLFISH }, { session = "S0", seq = GOAL_SEQ - 1 }),
+				cast(DARKSHORE, {}, { day = 1, outcome = "gotAway" }),
+				cast(DARKSHORE, { SMALLFISH }, { day = 1, seq = GOAL_SEQ - 1 }),
 			})
 
 			assert.are.equal(2, progress)
-			assert.are.equal("S1", wanderer.session)
+			assert.are.equal(0, wanderer.progressDay)
 		end)
 
-		it("as an Expedition counts distinct zones on the continent, across Sessions (TKB-R42)", function()
+		it("as an Expedition counts distinct zones on the continent, across board days (TKB-R42)", function()
 			local wanderer = goal({ type = "e", kind = "wanderer", tier = 0, need = 5, target = KALIMDOR })
 
 			local progress, counted = run(wanderer, {
 				cast(DUROTAR, { UNCHARTED, SMALLFISH }),
-				cast(BARRENS, { 0 }, { session = "S2" }),
+				cast(BARRENS, { 0 }, { day = 1 }),
 				cast(ELWYNN, { SMALLFISH }),
 				cast(0, { SMALLFISH }),
-				cast(DARKSHORE, { MANA_POTION }, { session = "S3" }),
+				cast(DARKSHORE, { MANA_POTION }, { day = 2 }),
 			})
 
 			assert.are.equal(3, progress)
@@ -357,12 +362,12 @@ describe("Goal progress", function()
 			assert.are.same({ false, false, false, false, true, false, true }, counted)
 		end)
 
-		it("as a Notice needs its junk item and container in one Session (TKB-R41)", function()
+		it("as a Notice needs its junk item and container on one board day (TKB-R41)", function()
 			local collector = goal({ kind = "collector", tier = 2, need = 2 })
 
 			local progress = run(collector, {
 				cast(DUROTAR, { JUNK_A }),
-				cast(ELWYNN, { CONTAINER_A }, { session = "S2" }),
+				cast(ELWYNN, { CONTAINER_A }, { day = 1 }),
 			})
 
 			assert.are.equal(1, progress)
@@ -430,17 +435,17 @@ describe("Goal progress", function()
 			assert.are.same({ "haul@1", "lure@1" }, completed)
 		end)
 
-		it("keeps a complete session-bound goal's progress through a new Session (TKB-R41, TKB-R45)", function()
+		it("keeps a complete day-bound goal's progress through a later board day (TKB-R41, TKB-R45)", function()
 			local wanderer = goal({ kind = "wanderer", tier = 3, need = 3 })
 			run(
 				wanderer,
 				{ cast(DUROTAR, { SMALLFISH }), cast(BARRENS, { SMALLFISH }), cast(ASHENVALE, { SMALLFISH }) }
 			)
 
-			local progress = run(wanderer, { cast(DARKSHORE, { SMALLFISH }, { session = "S2" }) })
+			local progress = run(wanderer, { cast(DARKSHORE, { SMALLFISH }, { day = 1 }) })
 
 			assert.are.equal(3, progress)
-			assert.are.equal("S1", wanderer.session)
+			assert.are.equal(0, wanderer.progressDay)
 			assert.is_true(ns.IsComplete(wanderer, Pagle))
 		end)
 
@@ -453,50 +458,38 @@ describe("Goal progress", function()
 end)
 
 describe("Displayed progress", function()
-	local loaded, fake = board.load()
+	local loaded = board.load()
 	local ns, Pagle = loaded.ns, loaded.env.Pagle
 	local run = runner(ns, Pagle)
-	fake.login()
-	fake.enterWorld()
 
-	-- A Wanderer Notice at 2 of 3 and a Haul Notice at 2 of 20, both counted from a Cast of `session`.
-	local function counted(session)
+	-- A Wanderer Notice at 2 of 3 and a Haul Notice at 2 of 20, both counted from Casts of board day `day`.
+	local function counted(day)
 		local wanderer = goal({ kind = "wanderer", tier = 3, need = 3 })
 		local haul = goal({ kind = "haul", need = 20, target = DUROTAR })
 		run(wanderer, {
-			cast(DUROTAR, { SMALLFISH }, { session = session }),
-			cast(BARRENS, { SMALLFISH }, { session = session }),
+			cast(DUROTAR, { SMALLFISH }, { day = day }),
+			cast(BARRENS, { SMALLFISH }, { day = day }),
 		})
-		run(haul, { cast(DUROTAR, { SMALLFISH, SMALLFISH }) })
+		run(haul, { cast(DUROTAR, { SMALLFISH, SMALLFISH }, { day = day }) })
 		return wanderer, haul
 	end
 
-	it("is a session-bound goal's progress while its Session is Pagle.GetSession()'s (TKB-R104)", function()
-		local record = fake.playCast("caught", { { itemID = SMALLFISH, quantity = 1 } })
-		local wanderer = counted(record.session)
+	it("is a day-bound goal's progress on the board day it belongs to (TKB-R104)", function()
+		local wanderer = counted(3)
 
-		assert.are.equal(record.session, Pagle.GetSession().id)
-		assert.are.equal(2, ns.DisplayedProgress(wanderer, Pagle.GetSession()))
+		assert.are.equal(2, ns.DisplayedProgress(wanderer, 3))
 	end)
 
-	it("is 0 for a session-bound goal with no current Session, or another one (TKB-R104)", function()
-		local first = fake.playCast("caught", { { itemID = SMALLFISH, quantity = 1 } })
-		local wanderer = counted(first.session)
-		fake.wait(fake.ns.SESSION_GAP)
-		local none = Pagle.GetSession()
-		fake.playCast("caught", { { itemID = SMALLFISH, quantity = 1 } })
-		local another = Pagle.GetSession()
+	it("is 0 for a day-bound goal on any other board day, once the live step advances past it (TKB-R104)", function()
+		local wanderer = counted(3)
 
-		assert.is_nil(none)
-		assert.are_not.equal(first.session, another.id)
-		assert.are.same({ 0, 0 }, { ns.DisplayedProgress(wanderer, none), ns.DisplayedProgress(wanderer, another) })
+		assert.are.same({ 0, 0 }, { ns.DisplayedProgress(wanderer, 4), ns.DisplayedProgress(wanderer, 2) })
 	end)
 
-	it("is the progress of any other goal, whatever the Session (TKB-R104)", function()
-		local _, haul = counted("S1")
-		fake.wait(fake.ns.SESSION_GAP)
+	it("is the progress of any other goal, whatever the board day (TKB-R104)", function()
+		local _, haul = counted(3)
 
-		assert.are.equal(2, ns.DisplayedProgress(haul, Pagle.GetSession()))
+		assert.are.equal(2, ns.DisplayedProgress(haul, 4))
 	end)
 end)
 

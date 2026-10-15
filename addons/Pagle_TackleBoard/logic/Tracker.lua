@@ -24,7 +24,6 @@ ns.TRACKER_FLASH = 3
 ---@field collapsed boolean         -- PagleTackleBoardDB.profile.trackerCollapsed (TKB-R122)
 ---@field state TackleBoardState    -- ns.State()
 ---@field zone integer              -- the current zone, ns.CurrentZone() (TKB-R121)
----@field session { id: string }?   -- Pagle.GetSession(), nil when no Session is open (TKB-R104)
 ---@field flashing string[]         -- the IDs of goals completed live still flashing "Complete", oldest first (TKB-R123)
 
 --- The tracker as drawn now.
@@ -52,7 +51,7 @@ local function goalLine(goal, input)
 	return {
 		kind = "goal",
 		text = goalText(goal),
-		count = ns.TrackerCount(ns.DisplayedProgress(goal, input.session), ns.GoalNeed(goal, ns.api.pagle)),
+		count = ns.TrackerCount(ns.DisplayedProgress(goal, input.state.day), ns.GoalNeed(goal, ns.api.pagle)),
 		where = ns.TrackerWhere(goal, true),
 		expedition = goal.type == "e" or nil,
 		goalID = goal.id,

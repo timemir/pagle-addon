@@ -46,10 +46,10 @@ local function loadNamed()
 	return loaded.ns, loaded, fake
 end
 
--- What a pin shows for `g`, with the view's context: no Session, in The Barrens, not updating, can't be taken down,
+-- What a pin shows for `g`, with the view's context: board day 0, in The Barrens, not updating, can't be taken down,
 -- unless `ctx` says otherwise.
 local function view(ns, g, ctx)
-	local context = { session = nil, zone = BARRENS, updating = false, canTakeDown = false }
+	local context = { today = 0, zone = BARRENS, updating = false, canTakeDown = false }
 	for key, value in pairs(ctx or {}) do
 		context[key] = value
 	end
@@ -138,26 +138,25 @@ describe('"I\'m here" (TKB-R102, TKB-R121)', function()
 	end)
 end)
 
-describe("a session-bound goal's progress (TKB-R104, TKB-R41)", function()
+describe("a day-bound goal's progress (TKB-R104, TKB-R41)", function()
 	local function wanderer()
-		return goal("n", "wanderer", { need = 2, progress = 1, session = "S1" })
+		return goal("n", "wanderer", { need = 2, progress = 1, progressDay = 3 })
 	end
 
-	it('reads "1 of 2 this Session" while its Session is the current one', function()
+	it('reads "1 of 2 today" on the board day its progress belongs to', function()
 		local ns = loadNamed()
 
-		local shown = view(ns, wanderer(), { session = { id = "S1" } })
+		local shown = view(ns, wanderer(), { today = 3 })
 
-		assert.are.equal("1 of 2 this Session", shown.progress)
+		assert.are.equal("1 of 2 today", shown.progress)
 		assert.are.equal(0.5, shown.fill)
 	end)
 
-	it('reads "0 of 2 this Session" once its Session has ended, or another is open', function()
+	it('reads "0 of 2 today" on any other board day', function()
 		local ns = loadNamed()
 
-		assert.are.equal("0 of 2 this Session", view(ns, wanderer(), { session = nil }).progress)
-		assert.are.equal("0 of 2 this Session", view(ns, wanderer(), { session = { id = "S2" } }).progress)
-		assert.are.equal(0, view(ns, wanderer()).fill)
+		assert.are.equal("0 of 2 today", view(ns, wanderer(), { today = 4 }).progress)
+		assert.are.equal(0, view(ns, wanderer(), { today = 4 }).fill)
 	end)
 end)
 
@@ -224,12 +223,12 @@ describe("a pinned goal's hover (TKB-R102)", function()
 		assert.is_nil(shown.species)
 	end)
 
-	it("adds that they all fall within one Session for a session-bound goal", function()
+	it("adds that they all fall on one board day for a day-bound goal", function()
 		local ns = loadNamed()
 
 		local shown = view(ns, goal("n", "collector", { need = 2 }))
 
-		assert.are.equal("Only my Catches since then count, all within one Session", shown.hover[2])
+		assert.are.equal("Only my Catches since then count, all on one board day", shown.hover[2])
 	end)
 
 	it("lists a Variety Expedition's Species, caught ones ticked, leaving out a removed one (TKB-R44)", function()

@@ -94,9 +94,9 @@ function ns.CountCast(state, cast, mode)
 	end
 	local caught = state.caught
 	local order = state.started and ns.BoardOrder(state) or {}
-	local changed = #order > 0 -- EnterCast may reset a session-bound goal (TKB-R41)
+	local changed = #order > 0 -- EnterCast may reset a day-bound goal (TKB-R41)
 	for _, goal in ipairs(order) do
-		ns.EnterCast(goal, cast)
+		ns.EnterCast(goal, cast, state.day)
 	end
 	local pagle = ns.api.pagle
 	---@type TackleProgressContext
@@ -105,6 +105,7 @@ function ns.CountCast(state, cast, mode)
 		caughtBefore = function(itemID)
 			return caught[itemID] == true
 		end,
+		day = state.day,
 	}
 	for _, slot in ipairs(cast.items) do
 		local completed = false

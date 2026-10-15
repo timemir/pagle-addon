@@ -495,6 +495,23 @@ describe("scripts/make-test-log.lua (#172, in-game-verification.md › Test logs
 			end
 		)
 
+		it(
+			"leaves the Wanderer Notice day 0's one zone, which reads 0 once advanced to today (TKB-R41, TKB-R104)",
+			function()
+				local state = boardFolded(log)
+				local wanderer
+				for _, goal in pairs(state.goals) do
+					if goal.kind == "wanderer" then
+						wanderer = goal
+					end
+				end
+
+				assert.are.same({ 1, 0 }, { wanderer.progress, wanderer.progressDay })
+				boardNs.AdvanceTo(state, boardNs.DayOf(state.boundary, NOW), "rebuild")
+				assert.are.equal(0, boardNs.DisplayedProgress(wanderer, state.day))
+			end
+		)
+
 		it("prints what the fold found, and when to play it (TKB-R13, TKB-R86)", function()
 			assert.are.equal(
 				"== Test log boardday: a started board, day 0 lit and day 1 not, two board days old (M7 exit check step 5)",

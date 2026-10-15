@@ -16,7 +16,7 @@ local MACKEREL, BLACKMOUTH, MIGHTFISH, REMOVED_FISH = 6303, 6358, 13754, 92003
 -- Goal payloads (tackle-board.md › Data).
 local HAUL_HERE = "n;haul;2;15;30;148" -- 30 Catches in Darkshore, the fake's zone
 local QUALITY = "n;quality;1;10;3;2"
-local COLLECTOR = "n;collector;2;15;2;" -- session-bound: 2 in one Session
+local COLLECTOR = "n;collector;2;15;2;" -- day-bound: 2 on one board day
 local LURE = "n;lure;3;20;25;"
 local STRANDED = "n;species;2;15;10;" .. REMOVED_FISH
 local EXPEDITION = "e;size;0;60;1;4"
@@ -169,20 +169,23 @@ describe('"I\'m here" (TKB-R121)', function()
 	end)
 end)
 
-describe("a session-bound goal's progress (TKB-R104)", function()
-	it('reads "1 of 2 this Session" during its Session and "0 of 2 this Session" after it ends', function()
-		local loaded, fake, frame = opened(startedLog(EXPEDITION, COLLECTOR))
-		fake.playCast("caught", { { itemID = MACKEREL, quantity = 1 } })
-		-- ns.CountCatch (logic/Progress.lua) counts the Catch; here its outcome is set: 1, in this Session.
-		local collector = loaded.ns.State().goals[idAt(T + 2)]
-		collector.progress, collector.session = 1, fake.Pagle.GetSession().id
-		loaded.ns.Redraw("projection")
+describe("a day-bound goal's progress (TKB-R104)", function()
+	it('reads "1 of 2 today" on its board day and "0 of 2 today" once the live step has moved to the next', function()
+		local loaded, _, frame = opened(startedLog(EXPEDITION, COLLECTOR))
+		local ns = loaded.ns
+		-- ns.CountCatch (logic/Progress.lua) counts the Catch; here its outcome is set: 1, today.
+		local state = ns.State()
+		local collector = state.goals[idAt(T + 2)]
+		collector.progress, collector.progressDay = 1, state.day
+		ns.Redraw("projection")
 
-		assert.are.equal("1 of 2 this Session", notice(frame, 1).goal.progress:GetText())
+		assert.are.equal("1 of 2 today", notice(frame, 1).goal.progress:GetText())
 
-		fake.wait(fake.ns.SESSION_GAP + 1) -- the Session ends a gap after its last Cast (LOG-R62)
+		-- The live step at the next daily reset (TKB-R13): it advances the projection, then redraws.
+		ns.AdvanceTo(state, state.day + 1, "live")
+		ns.Redraw("step")
 
-		assert.are.equal("0 of 2 this Session", notice(frame, 1).goal.progress:GetText())
+		assert.are.equal("0 of 2 today", notice(frame, 1).goal.progress:GetText())
 	end)
 end)
 

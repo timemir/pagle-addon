@@ -125,7 +125,7 @@ local ns = select(2, ...)
 ---@field time integer               -- server time of its record
 ---@field progress integer
 ---@field seen { [any]: true }       -- distinct keys for distinct-count kinds
----@field session? string            -- session-bound: the Session its progress belongs to (TKB-R41)
+---@field progressDay? integer       -- day-bound: the board day its progress belongs to (TKB-R41)
 ---@field doneDay? integer
 ---@field doneTime? integer
 ---@field doneCast? string           -- entry ID of the completing Cast (for TKB-R84's summary-only moments)

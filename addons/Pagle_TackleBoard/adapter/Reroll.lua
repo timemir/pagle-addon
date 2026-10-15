@@ -54,7 +54,7 @@ function ns.TakeDown(goalID)
 	if not goal then
 		return
 	end
-	local question = ns.TakeDownQuestion(goal, Pagle.GetSession(), ns.api.pagle)
+	local question = ns.TakeDownQuestion(goal, ns.State().day, ns.api.pagle)
 	if not question then
 		reroll(goalID)
 		return

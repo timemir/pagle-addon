@@ -9,8 +9,8 @@ local ns = select(2, ...)
 -- TKB-R108, TKB-R109, TKB-R121): the "pins" and "overflow" parts of adapter/Board.lua, drawing what logic/Pins.lua
 -- decides in adapter/BoardWidgets.lua's art. Each pin's slot holds a slip (a Notice's) or a poster (an Expedition's),
 -- an empty pin and a highlight ring, made once and shown as the layout says. While the board is open its pins redraw
--- on the redraw bus (adapter/Board.lua), on ConditionsChanged with "area" (TKB-R121), on SessionStarted and
--- SessionEnded (TKB-R104), and every 60 s for the empty pins' countdown (TKB-R105).
+-- on the redraw bus (adapter/Board.lua: the live step's at each reset moves a day-bound goal's displayed progress,
+-- TKB-R104), on ConditionsChanged with "area" (TKB-R121), and every 60 s for the empty pins' countdown (TKB-R105).
 
 -- The owner of the Core callbacks the pins listen to.
 local OWNER = "Pagle_TackleBoard pins"
@@ -216,10 +216,10 @@ end
 ---@param draw TackleBoardDraw
 ---@return fun(goal: TackleGoal): TacklePinView
 local function viewer(draw)
-	local session, zone = Pagle.GetSession(), ns.CurrentZone()
+	local today, zone = ns.State().day, ns.CurrentZone()
 	return function(goal)
 		return ns.PinView(goal, {
-			session = session,
+			today = today,
 			zone = zone,
 			updating = draw.updating,
 			canTakeDown = ns.CanTakeDown(goal.id),
@@ -241,12 +241,6 @@ local function listen()
 				return
 			end
 		end
-	end)
-	Pagle.RegisterCallback(OWNER, "SessionStarted", function()
-		ns.board:Draw("session")
-	end)
-	Pagle.RegisterCallback(OWNER, "SessionEnded", function()
-		ns.board:Draw("session")
 	end)
 end
 

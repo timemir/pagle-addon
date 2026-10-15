@@ -746,6 +746,16 @@ local function checkBoard(game, board, facts, data, layout, now)
 	elseif #done > 1 or done[1].kind ~= haul.kind or done[1].type ~= haul.type or done[1].doneDay ~= 0 then
 		fail("another goal than the Haul Notice is done")
 	end
+	-- TKB-R41: the Wanderer Notice holds day 0's one zone, and shows 0 on any later day (TKB-R104).
+	local wanderer
+	for _, goal in pairs(state.goals) do
+		if goal.kind == "wanderer" then
+			wanderer = goal
+		end
+	end
+	if not wanderer or wanderer.progress ~= 1 or wanderer.progressDay ~= 0 then
+		fail("the Wanderer Notice doesn't hold day 0's one zone (TKB-R41)")
+	end
 	local fire, tally = state.fire, state.tally
 	found.flies = countOf(state.flies)
 	if fire.count ~= 1 or fire.kindling ~= 2 or tally.notices ~= 1 or tally.expeditions ~= 0 or found.flies ~= 1 then
@@ -871,6 +881,7 @@ local function boardNote(found)
 	print("  The Tackle Board writes itself up from the test log (a first build, TKB-R84), then its live step closes")
 	print('  day 1 (TKB-R13, TKB-R86): the "kept burning while you were away" nod (1 Kindling used, Campfire still')
 	print("  1 day), Campfire 1 day on the board, and 4 new Notices fill the 6 Notice pins" .. expedition .. ".")
+	print('  The Wanderer Notice reads "0 of 3 today": its zone from day 0 counts on day 0 only (TKB-R41, TKB-R104).')
 end
 
 local function restoreNote(options)

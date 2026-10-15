@@ -1766,7 +1766,7 @@ end
 
 -- An open goal's line (TKB-R101–R104): its ID, its text, its progress of its need (the board's own GoalNeed over the
 -- catalogue, TKB-R44, or the record's without it), and whether it is re-posted (TKB-R55), stranded (TKB-R44) or
--- session-bound, with the Session its progress belongs to (TKB-R41).
+-- day-bound, with the board day its progress belongs to (TKB-R41).
 local function openGoalLine(board, goal, pagle)
 	local need = pagle and board.GoalNeed(goal, pagle) or goal.need
 	local line = ("%s: %s, %s of %s"):format(goal.id, goalHead(board, goal), tostring(goal.progress), tostring(need))
@@ -1784,9 +1784,9 @@ local function openGoalLine(board, goal, pagle)
 	if pagle and board.IsStranded(goal, pagle) then
 		line = line .. ", STRANDED (TKB-R44)"
 	end
-	if board.IsSessionBound(goal) then
-		local session = goal.session and "its Session " .. goal.session or "no Session yet"
-		line = line .. ", session-bound, " .. session .. " (TKB-R41)"
+	if board.IsDayBound(goal) then
+		local day = goal.progressDay and "its board day " .. goal.progressDay or "no board day yet"
+		line = line .. ", day-bound, " .. day .. " (TKB-R41)"
 	end
 	return line
 end

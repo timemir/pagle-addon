@@ -67,8 +67,8 @@ local function started(ns, goals, fire)
 	return state
 end
 
--- The tracker's view for `state` in Darkshore with no Session: on, built, started, expanded, not updating, no flash,
--- unless `fields` says otherwise.
+-- The tracker's view for `state` in Darkshore: on, built, started, expanded, not updating, no flash, unless `fields`
+-- says otherwise.
 local function view(ns, state, fields)
 	local input = {
 		on = true,
@@ -78,7 +78,6 @@ local function view(ns, state, fields)
 		collapsed = false,
 		state = state,
 		zone = DARKSHORE,
-		session = nil,
 		flashing = {},
 	}
 	for key, value in pairs(fields or {}) do
@@ -219,25 +218,17 @@ describe("its goal lines (TKB-R121, TKB-R122, TKB-R104)", function()
 	end)
 
 	it(
-		'shows a session-bound goal\'s progress only in its own Session, and "this Session · " first (TKB-R104)',
+		'shows a day-bound goal\'s progress only on its own board day, and "today · " first (TKB-R104, TKB-R122)',
 		function()
 			local ns = loadNamed()
 			local state = started(ns, {
-				goal("collector", "n", "collector", { need = 2, progress = 1, session = "S-1" }),
+				goal("collector", "n", "collector", { need = 2, progress = 1, progressDay = 5 }),
 			})
 
-			assert.are.equal(
-				"A junk item and a container in one Session | 0/2 | this Session · anywhere",
-				read(view(ns, state))[2]
-			)
-			assert.are.equal(
-				"A junk item and a container in one Session | 1/2 | this Session · anywhere",
-				read(view(ns, state, { session = { id = "S-1" } }))[2]
-			)
-			assert.are.equal(
-				"A junk item and a container in one Session | 0/2 | this Session · anywhere",
-				read(view(ns, state, { session = { id = "S-2" } }))[2]
-			)
+			state.day = 5
+			assert.are.equal("A junk item and a container today | 1/2 | today · anywhere", read(view(ns, state))[2])
+			state.day = 6 -- the live step at the next reset advanced the projection (TKB-R13)
+			assert.are.equal("A junk item and a container today | 0/2 | today · anywhere", read(view(ns, state))[2])
 		end
 	)
 

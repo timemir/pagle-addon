@@ -1185,7 +1185,7 @@ describe("scripts/read-wtf.lua", function()
 				-- TKB-R20: each reset owed what the pins could take, and the live steps issued it all. TKB-R101: seq 47 took
 				-- pin 1, freed on day 0; seq 48 found every Notice pin taken. TKB-R40: the Expedition counted day 6's two
 				-- Catches and day 8's junk in Elwynn; 6291 three times since seq 8. TKB-R44: item 999001 is Uncharted.
-				-- TKB-R41: the Collector counts only day 8's Session, its junk. TKB-R55: seq 34 re-posted pin 3. TKB-R22:
+				-- TKB-R41: the Collector counts only day 8's Catches, its junk. TKB-R55: seq 34 re-posted pin 3. TKB-R22:
 				-- each open goal's tier, pay and need are its record's.
 				assert.are.same({
 					"started: seq 5, realm 2026-10-14 08:10, server 2026-10-14 15:10:00 UTC (TKB-R6)",
@@ -1215,10 +1215,8 @@ describe("scripts/read-wtf.lua", function()
 						.. " (TKB-R44)",
 					"  5. "
 						.. GUID
-						.. '1792163102-0: Notice collector, "A junk item and a container in one Session", 1 of 2, tier 2,'
-						.. " pays 15, need 2, session-bound, its Session "
-						.. GUID
-						.. "1792684800-0 (TKB-R41)",
+						.. '1792163102-0: Notice collector, "A junk item and a container today", 1 of 2, tier 2,'
+						.. " pays 15, need 2, day-bound, its board day 8 (TKB-R41)",
 					"  6. "
 						.. GUID
 						.. '1792163103-0: Notice lure, "3 Catches with a lure on", 1 of 3, tier 1, pays 10, need 3',
@@ -1245,7 +1243,7 @@ describe("scripts/read-wtf.lua", function()
 						.. '1791990602-0, Notice haul, "3 Catches in Area 12", pays 10, fly duskwood_shadow',
 					"  day 0: "
 						.. GUID
-						.. '1791990604-0, Notice wanderer, "Catches in 2 zones in one Session", pays 20, fly kodo_hair_caddis',
+						.. '1791990604-0, Notice wanderer, "Catches in 2 zones today", pays 20, fly kodo_hair_caddis',
 					"  day 1: "
 						.. GUID
 						.. '1792076701-0, Notice haul, "2 Catches in Area 40", pays 10, fly feralas_fern',

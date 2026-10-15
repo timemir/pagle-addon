@@ -220,15 +220,15 @@ function ns.GoalWhere(goal)
 	return ns.L.ANYWHERE
 end
 
---- The tracker's where line (TKB-R122): "this Session · " first for a session-bound goal, then where it is worked
+--- The tracker's where line (TKB-R122): "today · " first for a day-bound goal, then where it is worked
 --- (ns.GoalWhere), then " · here" for a goal tied to a place when `here`.
 ---@param goal TackleGoalDef
 ---@param here boolean whether the goal is workable here (ns.IsWorkableHere)
 ---@return string
 function ns.TrackerWhere(goal, here)
 	local where = ns.GoalWhere(goal)
-	if ns.IsSessionBound(goal) then
-		where = ns.Fill(ns.L.WHERE_THIS_SESSION, { where = where })
+	if ns.IsDayBound(goal) then
+		where = ns.Fill(ns.L.WHERE_TODAY, { where = where })
 	end
 	if here and ns.IsPlaceGoal(goal) then
 		where = ns.Fill(ns.L.WHERE_HERE, { where = where })
