@@ -798,17 +798,17 @@ describe("the record ruler", function()
 	end)
 
 	it("shows a Simulated Size's millimetres and margin in the Angler's length unit (ANN-R22, LOG-R69)", function()
-		local size = { old = 300, new = 342, unit = "length", label = "Pagle size" }
+		local size = { old = 300, new = 342, unit = "length", label = "length" }
 
 		local cm, inches = ns.RulerAt(size, 2, "cm"), ns.RulerAt(size, 2, "in")
 
-		assert.are.same({ "30.0 cm", "34.2 cm", "+4.2 cm", "Pagle size" }, { cm.old, cm.value, cm.margin, cm.label })
+		assert.are.same({ "30.0 cm", "34.2 cm", "+4.2 cm", "length" }, { cm.old, cm.value, cm.margin, cm.label })
 		assert.are.same({ "11.8 in", "13.5 in", "+1.7 in" }, { inches.old, inches.value, inches.margin })
 		assert.are.equal("0.0 cm", ns.RulerAt(size, 0, "cm").value)
 	end)
 
 	it("shows a size margin that rounds to zero in the unit as +<0.1 (ANN-R22)", function()
-		local size = { old = 300, new = 300.2, unit = "length", label = "Pagle size" }
+		local size = { old = 300, new = 300.2, unit = "length", label = "length" }
 
 		assert.are.same(
 			{ "+<0.1 in", "+<0.1 cm" },
