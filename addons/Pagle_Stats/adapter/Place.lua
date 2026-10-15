@@ -72,19 +72,6 @@ local function zoneOf(state, area)
 	return record and record.zone or Pagle.GetZoneOf(area) or area
 end
 
--- Whether the Angler watches `item` from `area`'s page (STA-R60).
----@param item integer
----@param area integer
----@return boolean
-local function watched(item, area)
-	for _, watch in ipairs(ns.db.profile.watched) do
-		if watch.item == item and watch.area == area then
-			return true
-		end
-	end
-	return false
-end
-
 -- An item's quality: Core's record's, else the client's for an Uncharted item it has described; nil for none known.
 ---@param item integer
 ---@return integer?
@@ -233,7 +220,7 @@ local function drawRow(row, reading, area, chosen)
 		icon = icon,
 		name = name,
 		ink = ns.BookQualityInk(qualityOf(item)),
-		watched = watched(item, area),
+		watched = ns.IsWatched(item, area),
 		odds = ns.OddsShort(reading),
 		oddsState = reading.state,
 		margin = margin,

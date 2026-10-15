@@ -26,7 +26,8 @@
 --- registered under AddOns, as the panel lists it.
 ---@field show fun(category: table): { initializer: table, frame: table }[] Shows a page as the panel does: the panel
 --- first, then the rows its layout's GetInitializers returns, a fresh frame per row, through its initializer's
---- InitFrame, so a row reads its value or label then. A value row's frame has `value`, a slider's `valueLabel` (its
+--- InitFrame, so a row reads its value or label then. A frame of a template an addon's XML defines gets its mixin, and
+--- draws itself through its Init (SET-R5). A value row's frame has `value`, a slider's `valueLabel` (its
 --- Right label formatter's text, nil with none), a dropdown's `valueLabel` (the label of the option holding its value)
 --- and `Control.Dropdown` (SettingsDropdownControlMixin:OnLoad), and every frame `enabled`.
 --- Until the next show, a setting's SetValue or NotifyUpdate updates these frames as the panel's controls do
@@ -137,8 +138,21 @@ local function newInitializer(template, data)
 			self:FormatValue(frame)
 		end
 		frame.enabled = self:EvaluateModifyPredicates()
+		-- As ScrollBoxFactoryInitializerMixin:InitFrame, a frame of a template with an Init (a Module's own row, made
+		-- on its XML template, SET-R5) draws itself with frame:Init(initializer).
+		if frame.Init then
+			frame:Init(self)
+		end
 	end
-	initializer.Resetter = function() end
+	-- As ScrollBoxFactoryInitializerMixin:Resetter: the panel gives the frame back, and its own Release clears it.
+	initializer.Resetter = function(_, frame)
+		if frame.Release then
+			frame:Release(initializer)
+		end
+	end
+	function initializer:GetTemplate()
+		return self.template
+	end
 	initializer.GetExtent = function()
 		return nil
 	end
@@ -342,11 +356,24 @@ return function(client, stubs)
 		return nil
 	end
 
+	-- A fresh list frame for `initializer`: one of a template a loaded addon's XML defines gets that template's mixin,
+	-- as the client's CreateFrame applies it.
+	local function newFrame(initializer)
+		local frame = newWidget("Frame")
+		local template = client.templates[initializer:GetTemplate()]
+		if template and template.mixin then
+			for key, value in pairs(assert(stubs[template.mixin], "no mixin " .. template.mixin)) do
+				frame[key] = value
+			end
+		end
+		return frame
+	end
+
 	function settings.show(category)
 		settings.panel:Show()
 		local rows = {}
 		for _, initializer in ipairs(category.layout:GetInitializers()) do
-			local frame = newWidget("Frame")
+			local frame = newFrame(initializer)
 			initializer:InitFrame(frame)
 			rows[#rows + 1] = { initializer = initializer, frame = frame }
 		end

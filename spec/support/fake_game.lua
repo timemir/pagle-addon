@@ -42,6 +42,8 @@
 --- CVar not listed is one the client doesn't know (`GetCVar` returns nil).
 ---@field cvarCalls string[] Each `SetCVar` call, in order: "set <name> <value>".
 ---@field mounted boolean? Whether the player is mounted, as `IsMounted()` reads it.
+---@field uiErrors { text: string, r: number?, g: number?, b: number? }[] Each `UIErrorsFrame:AddMessage` call, in
+--- order: the game's error text at the top of the screen.
 
 -- The spells named Fishing: the generated catalogue's fishing-spell list (LOG-R2, data/forever/lists.toml), since
 -- every rank of Fishing has this name (probe B2).
@@ -237,6 +239,13 @@ return function(client, stubs)
 	stubs.IsMounted = function()
 		return client.mounted == true
 	end
+	-- The game's error text at the top of the screen (FrameXML UIErrorsFrame, a ScrollingMessageFrame).
+	client.uiErrors = {}
+	stubs.UIErrorsFrame = {
+		AddMessage = function(_, text, r, g, b)
+			client.uiErrors[#client.uiErrors + 1] = { text = text, r = r, g = g, b = b }
+		end,
+	}
 	stubs.C_Spell = stubs.C_Spell or {}
 	stubs.C_Spell.GetSpellName = function(spellID)
 		return FISHING_SPELLS[spellID] and "Fishing" or nil

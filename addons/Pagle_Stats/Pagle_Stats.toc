@@ -28,6 +28,7 @@ logic\Lifetime.lua
 logic\Goods.lua
 logic\Item.lua
 logic\Search.lua
+logic\Watches.lua
 adapter\Text.lua
 adapter\BookWidgets.lua
 adapter\TrackerBlock.lua
@@ -39,4 +40,6 @@ adapter\Lifetime.lua
 adapter\Sessions.lua
 adapter\Item.lua
 adapter\Search.lua
+adapter\Settings.lua
+adapter\Settings.xml
 adapter\Stats.lua
