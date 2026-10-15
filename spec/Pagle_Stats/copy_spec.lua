@@ -148,7 +148,7 @@ describe("the copy test (STA-R58)", function()
 	end)
 
 	it("passes every string in data/lore/stats.toml, the M6 lore batch (#210)", function()
-		assert.is_true(exists(LORE), LORE .. " is missing")
+		assert(exists(LORE), LORE .. " is missing")
 		assert.are.same({}, problemsIn(loreStrings(LORE)))
 	end)
 
