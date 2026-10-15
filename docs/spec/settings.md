@@ -36,7 +36,7 @@ Fishing                                                    (QoL only)
   [While you fish]          Fishing audio mix  ↳ Keep sound when the game is in the background;
                             Auto-loot while fishing;  Show the next-action button  ↳ Button position
 Announcements
-                            Cozy mode;  Interruption budget  ↳ Interruptions  ↳ Per;  Show every catch;  Toast style;  Sound set
+                            Cozy mode;  Interruption budget  ↳ Interruptions  ↳ Per;  Show every catch;  Animations;  Toast style;  Sound set
   [Hunts]                   Tell me when a pinned Hunt's window opens
 Trackers
                             Tracker position  [Reset]
@@ -117,8 +117,8 @@ The rules below are authoritative; this sketch only summarises them.
   |---|---|---|---|---|
   | Casting | Cast with | dropdown | | Track Q step 3 |
   | | ↳ Fishing key | keybinding `PAGLE_FISHING_KEY` | Cast with is Double right-click | M1, with its header |
-  | Gear | Fishing set | dropdown (this character's choice) | | Track Q step 2 |
-  | | ↳ "Save what I'm wearing as my fishing set" | button (QOL-R41) | | Track Q step 2 |
+  | Gear | Fishing set | dropdown (this character's choice) | restricted (QOL-R41) | Track Q step 2 |
+  | | ↳ "Save what I'm wearing as my fishing set" | button (QOL-R41) | restricted (QOL-R41) | Track Q step 2 |
   | | ↳ Swap gear | keybinding `PAGLE_SWAP_GEAR` | no fishing set is chosen | Track Q step 2 |
   | Lures and clams | Lures | dropdown | | Track Q step 1 |
   | | ↳ Lure | dropdown | Lures isn't Only this one | Track Q step 1 |
@@ -245,7 +245,7 @@ This file adds no data. Each row's value lives with its owner:
 | Rows | Stored in |
 |---|---|
 | Saving, Units | `PagleDB.profile.reloadReminder`, `PagleDB.profile.lengthUnit` ([catch-log.md](core/catch-log.md#data)) |
-| Cozy mode, the budget, Show every catch | `PagleDB.profile.announcements` |
+| Cozy mode, the budget, Show every catch, Animations | `PagleDB.profile.announcements` |
 | Every slot dropdown | `PagleDB.profile.appearance[slot]` (SHOP-R32) |
 | Tracker position | `PagleDB.profile.dock.point` (Core README Data) |
 | Fishing | `PagleQoLDB` (qol.md Data), the fishing set per character in `global.gear[guid]` |
