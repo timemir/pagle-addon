@@ -6,7 +6,7 @@
 -- #146). M4#1 holds what the M4 exit check reads (#173, #174). M5#1 and M5-Stale#1 hold a Pagle_Hunts.lua, for what
 -- the M5 exit check reads (#199, #200). M6#1, M6-Stale#1 and M6-New#1 hold a Pagle_Stats.lua, for what the M6 exit
 -- check reads (#219, #221), and M6-Break#1 a Session break (#258). M7#1, M7-Stale#1 and M7-New#1 hold a Pagle_TackleBoard.lua, for what the M7 exit check
--- reads (#242, #245). The Ledger, Stats and Tackle Board runs read their catalogue from
+-- reads (#242, #245). M8#1 holds a test log for the Simulated Size gate (#267), and M8-Probe#1 a `/pagle dev probe` with a miss in most checks, for the Probe section (#261). The Ledger, Stats and Tackle Board runs read their catalogue from
 -- spec/scripts/fixtures/Catalogue.lua (--catalogue) and the Hunts runs their Hunt list from
 -- spec/scripts/fixtures/HuntList.lua (--huntlist), so the lines the Modules' logic computes are counted by hand, and
 -- don't move with the generated data.
@@ -467,6 +467,8 @@ describe("scripts/read-wtf.lua", function()
 				"celebrated titles: 8 (title:level10, title:level20, title:level30, title:level40, title:level50,"
 					.. " title:level60, title:prestige1, legend:19803)",
 				"celebrated Legend items: 1 (19803)",
+				-- LOG-R65: the fixture catalogue gives no Species a typical length, so nothing is sized.
+				"sizes: no Catch has a Simulated Size (LOG-R65), from PagleLog over " .. CATALOGUE,
 			}, section(out, "== Ledger M4"))
 		end)
 
@@ -523,7 +525,70 @@ describe("scripts/read-wtf.lua", function()
 				"celebrated Catch Milestones: 1 (1000)",
 				"celebrated titles: " .. celebratedTitles,
 				"celebrated Legend items: can't be told from the other items without the world (see world: above)",
+				("sizes: can't load %s: cannot open %s: No such file or directory"):format(missing, missing),
 			}, lines)
+		end)
+	end)
+
+	-- M8#1 holds a test log for the Simulated Size gate (#267): make-test-log's catches1000 preset over M4#1 and
+	-- spec/scripts/fixtures/TestLogCatalogue.lua, whose Species carry typical lengths, beside a Ledger that has never
+	-- built. Its 995 Casts catch three Species, 569 times in all.
+	describe("on a test log's account, for the Simulated Size gate (#267)", function()
+		local TEST_CATALOGUE = "spec/scripts/fixtures/TestLogCatalogue.lua"
+
+		it("prints the sized Catches by band and per Species, from Core's Size.lua (LOG-R65–R67)", function()
+			-- Counted by an independent reading of LOG-R66 and LOG-R67 over the log's C1 entries (FNV-1a, fmix32, the
+			-- cut points, the multipliers); the 95% range is the central 95% of a binomial of 569 draws at LOG-R67's
+			-- share, summed exactly. The hash is frozen (ADR 0010), so these counts never move. This log's Hefty and
+			-- Monster counts fall above their ranges by chance: five bands, each with a 5% chance of falling outside.
+			local out, err, code = run(ACCOUNTS .. "M8#1", "--catalogue", TEST_CATALOGUE)
+			assert.are.equal(0, code)
+			assert.are.equal("", err)
+			local m4 = section(out, "== Ledger M4")
+			local first
+			for i, line in ipairs(m4) do
+				first = first or (line:sub(1, 6) == "sizes:" and i or nil)
+			end
+			assert.are.same({
+				"sizes: 569 Catches with a Simulated Size, of 3 Species (LOG-R65), from PagleLog over "
+					.. TEST_CATALOGUE,
+				"sizes by band: Catches (their share; LOG-R67's share, the 95% range of the Catches at it)",
+				"  1 Tiddler: 75 (13.2%; 15%, 69–102)",
+				"  2 Typical: 295 (51.8%; 55%, 290–336)",
+				"  3 Hefty: 155 (27.2%; 23%, 111–151), OUTSIDE its 95% range",
+				"  4 Whopper: 35 (6.2%; 6.5%, 26–49)",
+				"  5 Monster: 9 (1.6%; 0.5%, 0–7), OUTSIDE its 95% range",
+				"sizes per Species: Catches, shortest–longest, typical length (DATA-R20)",
+				"  6291: 142 Catches, 172–538 mm, typical 300 mm",
+				"  6299: 142 Catches, 138–409 mm, typical 250 mm",
+				"  6303: 285 Catches, 193–627 mm, typical 350 mm",
+			}, { unpack(m4, first) })
+		end)
+
+		it("says in one line when no LuaBitOp is there to hash the Catch IDs with (LOG-R66)", function()
+			local function noBit(name)
+				if name == "bit" then
+					error("module 'bit' not found")
+				end
+				return require(name)
+			end
+			local out = script.run(
+				"scripts/read-wtf.lua",
+				{ ACCOUNTS .. "M8#1", "--catalogue", TEST_CATALOGUE },
+				{ globals = { require = noBit } }
+			)
+			local m4 = section(out, "== Ledger M4")
+			assert.are.equal(
+				"sizes: no LuaBitOp to hash the Catch IDs with (LOG-R66): run scripts/setup.sh, then this through"
+					.. " scripts/read-wtf.sh",
+				m4[#m4]
+			)
+		end)
+
+		it("says in one line when the catalogue can't be loaded", function()
+			local missing = "spec/scripts/fixtures/no-such-Catalogue.lua"
+			local m4 = section(run(ACCOUNTS .. "M8#1", "--catalogue", missing), "== Ledger M4")
+			assert.matches("^sizes: can't load " .. missing:gsub("%p", "%%%0") .. ": ", m4[#m4])
 		end)
 	end)
 
@@ -1108,6 +1173,7 @@ describe("scripts/read-wtf.lua", function()
 			"celebrated Catch Milestones: none",
 			"celebrated titles: none",
 			"celebrated Legend items: none",
+			"sizes: no Catch has a Simulated Size (LOG-R65), from PagleLog over " .. CATALOGUE,
 		}, section(out, "== Ledger M4"))
 	end)
 
@@ -1408,6 +1474,62 @@ describe("scripts/read-wtf.lua", function()
 			{ "== Tackle Board: can't read " .. ACCOUNTS .. "M6#1/SavedVariables/Pagle_TackleBoard.lua: missing" },
 			section(run(ACCOUNTS .. "M6#1", "--catalogue", CATALOGUE), "== Tackle Board")
 		)
+	end)
+
+	describe("on an account after a /pagle dev probe (#261, in-game-verification.md › Probe)", function()
+		local out, err, code = run(ACCOUNTS .. "M8-Probe#1")
+
+		it("prints each check's facts and an ok or FAIL line naming the rule a miss changes", function()
+			assert.are.equal("", err)
+			assert.are.equal(0, code)
+			assert.are.same({
+				"== Probe (PagleDB.global.probe): 2026-11-04 11:00:00 UTC, build 1.61.0 71002 (Nov  3 2026),"
+					.. " interface 16100, enUS",
+				"check 3: C_Weather keys GetCurrentWeather; GetCurrentWeather() = 0, 0 in Darkshore",
+				"    zone Darkshore, map 1439",
+				"  FAIL  only zeros or nothing: probe again while it rains; LOG-R21 keeps weather unrecorded",
+				'check 8: quest 6607 by C_QuestLog.GetTitleForQuestID: none at once, "Nat Pagle, Angler Extreme" 2 s'
+					.. " later",
+				"  ok    quest 6607 exists: DATA-R22 may make Nat Pagle's quest fish Legends",
+				"check 11: 173 inventory names checked, 2 missing: C_GameRules.IsHardcoreActive, GetCurrentRegion",
+				"  FAIL  C_GameRules.IsHardcoreActive, GetCurrentRegion missing: each rule that uses them changes"
+					.. " (CORE-R23)",
+				"check 12: GetBuildInfo() = 1.61.0, 71002, Nov  3 2026, 16100; WOW_PROJECT_ID 18, WOW_PROJECT_CAMELOT 18",
+				"  ok    CORE-R4's check passes",
+				"  FAIL  interface 16100, but a TOC says 16001: bump ## Interface in every TOC (CORE-R2)",
+				"check 16: MAX_EQUIPMENT_SETS_PER_PLAYER = 10; 2 sets: Pagle Fishing, Pagle Previous",
+				"  ok    8 free of 10: QOL-R42 needs 2, for Pagle Fishing and Pagle Previous (QOL-R103)",
+				"check 18: GetSecondsUntilDailyReset() = 3600, GetSecondsUntilWeeklyReset is missing;"
+					.. " GetServerTime() = 1793790000, GetGameTime() = 11:00; TKB-R11's fallback day starts at"
+					.. " 1793750400",
+				"  FAIL  GetSecondsUntilWeeklyReset is missing: TKB-R11's fallback runs (TKB-R10, TKB-R11)",
+				"check 19: GetCurrentRegion is missing",
+				"  FAIL  no GetCurrentRegion: LOG-R69's default length unit is always cm",
+				"check 20: bit is missing; 4 of 4 LOG-R66 vectors match",
+				"    Player-4395-0A1B2C3D-1791731747-0:1: h 2657620567 band 2, LOG-R66 says h 2657620567 band 2",
+				"    Player-4395-0A1B2C3D-1791731747-0:2: h 4227872046 band 4, LOG-R66 says h 4227872046 band 4",
+				"    Player-4395-0A1B2C3D-1791731762-1:1: h 1190098033 band 2, LOG-R66 says h 1190098033 band 2",
+				"    Player-1-00000001-1700000000-0:1: h 3063819173 band 3, LOG-R66 says h 3063819173 band 3",
+				"  FAIL  no bit library: LOG-R66's Simulated Size hash can't run",
+				'check 21: 7620 is "Fishing", icon 136245; 2 listed spells, known 7620 (by C_SpellBook.IsSpellKnown);'
+					.. " channels seen 7620 x3",
+				"    spell 7620: Fishing, icon 136245, known true",
+				"    spell 1240948: Fishing Rank 5, icon 136245, known false",
+				"  FAIL  1240948's name isn't 7620's (DATA-R39, QOL-R24)",
+				"check 22: C_GameRules has 2 keys; Is*SelfFound* calls: IsSelfFoundAllowed() = true",
+				"    keys: IsHardcoreActive (function), IsSelfFoundAllowed (function)",
+				"  ok    C_GameRules.IsSelfFoundAllowed answers: a call LOG-R26 may name for selfFound",
+				"probe: 7 of 10 checks FAIL: 3, 11, 12, 18, 19, 20, 21",
+			}, section(out, "== Probe"))
+		end)
+	end)
+
+	it("says so when no probe is stored, or Pagle.lua can't be read (#261)", function()
+		assert.are.same(
+			{ "== Probe (PagleDB.global.probe)", "probe: none stored (/pagle dev probe, then /reload)" },
+			section(run(ACCOUNTS .. "M1#1"), "== Probe")
+		)
+		assert.are.same({ "== Probe: can't read Pagle.lua: missing" }, section(run(ACCOUNTS .. "M0#1"), "== Probe"))
 	end)
 
 	describe("with only an account folder", function()

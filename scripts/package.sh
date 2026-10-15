@@ -12,9 +12,10 @@
 # The check: the zip's top-level folders are exactly the addons/<Addon>/ folders (Pagle and Pagle_QoL
 # from M1, Pagle_Ledger from M2, Pagle_Hunts from M5, Pagle_Stats from M6, Pagle_TackleBoard from M7; each
 # Module adds its own with its .pkgmeta move-folders line), each holding exactly that folder's tracked files
-# (Pagle_QoL's Bindings.xml among them), plus the packager's Pagle/CHANGELOG.md and the repo's LICENSE and
-# NOTICE in Pagle/. Nothing else: no docs/, spec/, scripts/, probes/, prototypes/, no stray addons/ path and
-# no empty folder.
+# (Pagle_QoL's Bindings.xml among them) but any .tga art source, plus the repo's LICENSE, NOTICE and
+# CHANGELOG.md in Pagle/. Pagle/CHANGELOG.md must be the hand-written one (.pkgmeta's manual-changelog), not
+# one the packager generated from the commits. Nothing else: no docs/, spec/, scripts/, probes/, prototypes/,
+# data/, no stray addons/ path and no empty folder.
 #
 # Run it in WSL. Needs bash >= 4.3, git, curl, unzip, zip and jq (sudo apt-get install zip jq);
 # the packager builds the zip with zip and reads upload APIs with jq.
@@ -86,7 +87,7 @@ zipfile=${zips[0]}
 expected="$work/expected.txt"
 actual="$work/actual.txt"
 {
-	git -C "$src" ls-files -- 'addons/*' | sed 's#^addons/##'
+	git -C "$src" ls-files -- 'addons/*' | { grep -v '\.tga$' || true; } | sed 's#^addons/##'
 	printf '%s\n' Pagle/CHANGELOG.md Pagle/LICENSE Pagle/NOTICE
 } | LC_ALL=C sort >"$expected"
 unzip -Z1 "$zipfile" | grep -v '/$' | LC_ALL=C sort >"$actual"
@@ -112,6 +113,14 @@ stray=$(unzip -Z1 "$zipfile" | { grep '/$' || true; } | LC_ALL=C sort -u | LC_AL
 if [[ -n $stray ]]; then
 	echo "FAIL: the zip has folders that no file from addons/ is in (fix .pkgmeta):" >&2
 	echo "$stray" >&2
+	exit 1
+fi
+
+# The packager falls back to a generated changelog when the manual one is missing, under the same name.
+# It writes text files with CRLF line endings, so compare without them.
+if ! diff -u --label CHANGELOG.md --label "$(basename "$zipfile"):Pagle/CHANGELOG.md" \
+	<(tr -d '\r' <"$src/CHANGELOG.md") <(unzip -p "$zipfile" Pagle/CHANGELOG.md | tr -d '\r'); then
+	echo "FAIL: the zip's Pagle/CHANGELOG.md isn't the repo's CHANGELOG.md (see .pkgmeta's manual-changelog)." >&2
 	exit 1
 fi
 

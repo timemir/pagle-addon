@@ -51,7 +51,11 @@ ns.WireDev(
 		clock = function()
 			return date("%H:%M:%S") --[[@as string]]
 		end,
-	}
+	},
+	-- `/pagle dev probe` (#261) looks up every API it tests by name, so only what Pagle uses is inventoried.
+	function()
+		return _G
+	end
 )
 
 SLASH_PAGLE1 = "/pagle"

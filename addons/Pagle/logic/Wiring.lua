@@ -844,12 +844,18 @@ end
 --- catalogue's areas and the Cast state machine (ns.fishing). `catch` runs only on a test log (`PagleLog.test`).
 --- `preview` hands its samples to `show`, the display (as ns.WireMoments' is), and its card to ns.cards; `glyphs`
 --- hands its probe line to `showGlyphs` (#248). `tour` runs ns.tour over ns.tourStops, Core's one registry of tour
---- stops, which `M:RegisterTourStop` on every Module handle adds to (CORE-R65–R68).
+--- stops, which `M:RegisterTourStop` on every Module handle adds to (CORE-R65–R68). `probe` saves the client facts
+--- launch re-verification needs in PagleDB.global.probe (#261, logic/Probe.lua), reading each API it tests from
+--- `globals`.
 ---@param host PagleHost
 ---@param show fun(announcement: PagleAnnouncement) hands an Announcement to the display (ANN-R20)
 ---@param showGlyphs fun(fonts: PagleDevGlyphFont[], probe: string) shows the probe line in each font
 ---@param tour PagleTourSeams what the tour reads from where Core runs
-function ns.WireDev(host, show, showGlyphs, tour)
+---@param globals fun(): table the client's globals (_G), where `/pagle dev probe` looks up each API it tests (#261)
+function ns.WireDev(host, show, showGlyphs, tour, globals)
+	--- The Fishing channels seen while dev mode is on, for `/pagle dev probe`'s check 21 (LOG-R2): Core's fishing
+	--- adapter notes each player channel here.
+	ns.probeChannels = ns.NewProbeChannels()
 	ns.tourStops = ns.NewTourStops()
 	ns.tour = ns.NewTour({
 		stops = ns.tourStops,
@@ -898,6 +904,28 @@ function ns.WireDev(host, show, showGlyphs, tour)
 		showGlyphs = showGlyphs,
 		tour = function(args)
 			ns.tour:Run(args)
+		end,
+		probe = function()
+			ns.RunProbe({
+				globals = globals,
+				global = function()
+					return host.db().global
+				end,
+				facts = function()
+					return {
+						inventory = ns.API_INVENTORY,
+						fishingSpells = ns.Catalogue.GetFishingSpells(),
+						channels = ns.probeChannels:List(ns.IsFishingChannel),
+						sizeHash = ns.SizeHash,
+						sizeBand = function(catchId)
+							return ns.SimulatedSize(catchId, 300).band
+						end,
+						isForever = ns.IsForever,
+					}
+				end,
+				after = host.after,
+				print = host.print,
+			})
 		end,
 		print = host.print,
 	})

@@ -3,7 +3,14 @@
 
 local ns = loadAddon("Pagle", FOREVER_GLOBALS).ns
 
-describe("the Simulated Size percentile", function()
+-- THE 1.0 FREEZE (#267, LOG-R68, ADR 0010). From the 1.0 tag, a Catch's Size band never changes: Hunts and Notices
+-- that target a minimum band are rebuilt from the Catch log, and a moved band could revoke a completed one. So this
+-- spec pins the hash (every `h` below) and the cut points (the Catch IDs either side of each). If it fails, don't
+-- edit these numbers: a change to how bands are drawn ships as new bands with new IDs (ADR 0010).
+local FROZEN = "the Simulated Size hash and cut points are frozen at 1.0 (ADR 0010, LOG-R68): a change to how bands"
+	.. " are drawn ships as new bands with new IDs, never by editing these. "
+
+describe("the Simulated Size percentile, frozen at 1.0 (ADR 0010)", function()
 	-- LOG-R66's test vectors: the Catch ID, `h` after step 2, `u` to six places, the band and the length at a typical
 	-- length of 300 mm.
 	local VECTORS = {
@@ -17,12 +24,54 @@ describe("the Simulated Size percentile", function()
 		local catchId, h, u, band, length = unpack(vector)
 
 		it(("gives %s LOG-R66's h, u, band and length (LOG-R66, LOG-R67)"):format(catchId), function()
-			assert.are.equal(h, ns.SizeHash(catchId))
-			assert.are.equal(h / 2 ^ 32, ns.SizePercentile(catchId))
-			assert.is_true(math.abs(ns.SizePercentile(catchId) - u) < 0.0000005)
-			assert.are.same({ length = length, band = band }, ns.SimulatedSize(catchId, 300))
+			assert.are.equal(h, ns.SizeHash(catchId), FROZEN .. "The hash of " .. catchId .. " moved.")
+			assert.are.equal(
+				h / 2 ^ 32,
+				ns.SizePercentile(catchId),
+				FROZEN .. "The percentile of " .. catchId .. " moved."
+			)
+			assert.is_true(math.abs(ns.SizePercentile(catchId) - u) < 0.0000005, FROZEN .. "u moved.")
+			assert.are.equal(
+				band,
+				ns.SimulatedSize(catchId, 300).band,
+				FROZEN .. "The band of " .. catchId .. " moved."
+			)
+			-- The length follows the multipliers, which stay tunable after 1.0 (LOG-R68): a retune updates LOG-R66's
+			-- table and this column, and bumps SIZE_RULES_VERSION.
+			assert.are.equal(
+				length,
+				ns.SimulatedSize(catchId, 300).length,
+				"the length at a typical 300 mm moved: if the multipliers were retuned (LOG-R68), update LOG-R66's"
+					.. " table and this vector, and bump SIZE_RULES_VERSION; the band must not move (ADR 0010)"
+			)
 		end)
 	end
+
+	-- The Catch IDs whose percentiles lie closest below and at-or-above each cut point (0.15, 0.70, 0.93, 0.995) among
+	-- 30,000,000 synthetic ones (sequential times, items 1–3), found once by search: each `u` is within 0.00000005 of
+	-- its cut, so moving a cut point by more than that moves one of these Catches between bands (LOG-R67). Each row:
+	-- the Catch ID, its `h` and its band.
+	local CUT_VECTORS = {
+		{ "Player-4618-0A1B2C3D-1799314201-0:1", 644245050, 1 }, -- u 0.149999989662
+		{ "Player-4618-0A1B2C3D-1795694143-0:2", 644245166, 2 }, -- u 0.150000016671
+		{ "Player-4618-0A1B2C3D-1792991317-0:1", 3006476924, 2 }, -- u 0.699999957345
+		{ "Player-4618-0A1B2C3D-1801127160-0:1", 3006477711, 3 }, -- u 0.700000140583
+		{ "Player-4618-0A1B2C3D-1795545976-0:3", 3994319574, 3 }, -- u 0.929999997374
+		{ "Player-4618-0A1B2C3D-1794590578-0:2", 3994319676, 4 }, -- u 0.930000021122
+		{ "Player-4618-0A1B2C3D-1801458363-0:3", 4273492334, 4 }, -- u 0.994999970775
+		{ "Player-4618-0A1B2C3D-1801712766-0:1", 4273492493, 5 }, -- u 0.995000007795
+	}
+
+	it("puts the Catch IDs either side of each cut point in the bands LOG-R67 gives (LOG-R67, LOG-R68)", function()
+		for _, vector in ipairs(CUT_VECTORS) do
+			local catchId, h, band = unpack(vector)
+			assert.are.equal(h, ns.SizeHash(catchId), FROZEN .. "The hash of " .. catchId .. " moved.")
+			for _, typicalLength in ipairs({ 100, 300, 2200 }) do
+				local got = ns.SimulatedSize(catchId, typicalLength).band
+				assert.are.equal(band, got, FROZEN .. "A cut point moved: " .. catchId .. " left band " .. band .. ".")
+			end
+		end
+	end)
 
 	-- #slow: 500,000 hashes take 2 s, and ten times that under luacov's line hook, so scripts/check.sh runs it once,
 	-- in a pass without coverage.

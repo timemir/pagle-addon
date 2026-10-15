@@ -184,6 +184,12 @@ function ns.NewCatalogue(data)
 		return fishingSpells[spellID] == true
 	end
 
+	--- The fishing-spell list (DATA-R39), in the catalogue's order, for `/pagle dev probe` (#261). Core-internal.
+	---@return integer[]
+	function catalogue.GetFishingSpells()
+		return data.fishingSpells
+	end
+
 	--- The fishing-aura list (LOG-R20), ascending.
 	---@return integer[]
 	function catalogue.GetFishingAuras()

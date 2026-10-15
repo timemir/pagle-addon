@@ -1,0 +1,5 @@
+
+PagleLedgerDB = {
+["global"] = {
+},
+}

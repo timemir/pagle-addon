@@ -17,6 +17,7 @@ data\Catalogue.lua
 data\AnnounceArt.lua
 data\ShopArt.lua
 data\FieldArt.lua
+data\ApiInventory.lua
 
 locale\enUS.lua
 data\Lore.lua
@@ -44,6 +45,7 @@ logic\FieldReport.lua
 logic\Settings.lua
 logic\Slash.lua
 logic\Dev.lua
+logic\Probe.lua
 logic\Tour.lua
 logic\Wallet.lua
 logic\Goods.lua
