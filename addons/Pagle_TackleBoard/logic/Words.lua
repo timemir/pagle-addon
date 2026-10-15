@@ -189,13 +189,6 @@ function ns.IsPlaceGoal(goal)
 	return kind == "haul" or kind == "variety" or kind == "species" or (kind == "wanderer" and goal.type == "e")
 end
 
---- Whether a goal is session-bound (TKB-R41): the `wanderer` and `collector` Notices.
----@param goal TackleGoalDef
----@return boolean
-function ns.IsSessionBound(goal)
-	return goal.type == "n" and (goal.kind == "wanderer" or goal.kind == "collector")
-end
-
 --- Where a goal can be worked (TKB-R102): its zone (`haul`, `variety`), its continent (`wanderer` Expedition),
 --- "wherever it bites" (`species`) or "anywhere" (every other).
 ---@param goal TackleGoalDef
