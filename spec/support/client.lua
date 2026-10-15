@@ -119,6 +119,10 @@ local function clientStubs(client)
 		issecretvalue = function()
 			return false
 		end,
+		-- The enUS client's number format (helpers.lua's breakUpLargeNumbers): "2,340".
+		BreakUpLargeNumbers = function(value)
+			return breakUpLargeNumbers(value)
+		end,
 		-- The client's string extension: a UTF-8 string's length in code points, counting every byte that doesn't
 		-- continue a sequence (10xxxxxx). AceDB reads it to check a saved profile key.
 		strlenutf8 = function(s)
