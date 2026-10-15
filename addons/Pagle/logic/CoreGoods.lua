@@ -24,6 +24,8 @@ local ns = select(2, ...)
 ---@field goods PagleCoreGood[]
 
 local ICONS = "Interface\\Icons\\"
+-- The slots' labels. logic/ also loads without locale/, in the backend's driver (#223), and then they have none.
+local L = ns.L or {}
 
 --- Core's toast style slot (SHOP-R25, ANN-R80).
 ns.TOAST_STYLE_SLOT = "core.toaststyle"
@@ -43,7 +45,7 @@ ns.CREST_SLOT = "core.crest"
 ns.CORE_GOODS = {
 	{
 		id = ns.TOAST_STYLE_SLOT,
-		label = ns.L.SLOT_TOAST_STYLE,
+		label = L.SLOT_TOAST_STYLE,
 		category = "Announcements",
 		goods = {
 			{ id = ns.TOAST_STYLE_DEFAULT, default = true, icon = ICONS .. "INV_Crate_01" },
@@ -53,7 +55,7 @@ ns.CORE_GOODS = {
 	},
 	{
 		id = ns.SOUND_SET_SLOT,
-		label = ns.L.SLOT_SOUND_SET,
+		label = L.SLOT_SOUND_SET,
 		category = "Announcements",
 		goods = {
 			{
@@ -67,7 +69,7 @@ ns.CORE_GOODS = {
 	},
 	{
 		id = ns.CREST_SLOT,
-		label = ns.L.SLOT_CREST,
+		label = L.SLOT_CREST,
 		category = "Bookplate",
 		goods = {
 			{ id = "core.crest.plain", default = true, icon = ICONS .. "INV_Misc_Note_01" },

@@ -17,6 +17,53 @@ function ns.RulesVersion(sizeRulesVersion)
 	return ns.LEDGER_RULES_VERSION * 100 + (sizeRulesVersion or 0)
 end
 
+--- Core's lookups the Ledger reads (LOG-R55, LOG-R49), from the Pagle API, with the world index built over them
+--- (LED-R10) as `world`. Build it where the catalogue is ready (CORE-R10).
+---@param pagle table the Pagle API
+---@return LedgerLookups
+function ns.LedgerLookups(pagle)
+	local lookups = {
+		GetItem = pagle.GetItem,
+		GetZones = pagle.GetZones,
+		GetArea = pagle.GetArea,
+		GetZoneCatches = pagle.GetZoneCatches,
+		MatchesConditions = pagle.MatchesConditions,
+	}
+	lookups.world = ns.NewWorld(lookups)
+	return lookups
+end
+
+--- The Ledger's projection for Pagle's backend (#223, #76 item 5), whose projection driver folds the Catch log through
+--- logic/ alone, without adapter/ or locale/ (CORE-R7). Binds it with `M:NewProjection` over a table of its own
+--- making: the fold of ns.ProjectionDef with the same rules version, so the same state, and none of what the client
+--- does besides (moments, Write-ups, Coins reports, the summary line, goods; LED-R89–R98), which the driver drops.
+--- The client's adapter never calls it. It also sets ns.world, which the derived values read (logic/Derived.lua).
+---@param M PagleModuleHandle
+---@return PagleProjection
+function ns.BindProjections(M)
+	-- The driver hands over only M, so Core's lookups come from the Pagle API it hosts.
+	local pagle = Pagle -- luacheck: read globals Pagle (#223: the backend's driver passes no Core)
+	local lookups = ns.LedgerLookups(pagle)
+	ns.world = lookups.world
+	local fold = ns.NewLedgerFold(lookups)
+	return M:NewProjection({
+		db = {},
+		rulesVersion = ns.RulesVersion(pagle.SIZE_RULES_VERSION),
+		reset = fold.reset,
+		apply = function(state, record, mode)
+			fold.apply(state, record, mode)
+		end,
+	})
+end
+
+--- A Ledger state's lifetime Coins earned (SHOP-R2, LED-R2), as the Ledger reports them with M:ReportCoinsEarned:
+--- for Pagle's backend (#223), read after done.
+---@param state LedgerState
+---@return integer
+function ns.CoinsEarned(state)
+	return state.coins
+end
+
 --- The Ledger's projection def (LED-R2, LOG-R70), bound to `global.projection`, which it makes if missing: Core
 --- owns it from here on. `apply` is the fold's, the same in every mode (LED-R3); it ignores every kind but Casts,
 --- Skill Readings and Prestiges. No `extraFingerprint`, and no Sessions read.

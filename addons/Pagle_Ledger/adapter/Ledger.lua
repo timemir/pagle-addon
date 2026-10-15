@@ -22,17 +22,10 @@ function ns.Ledger.OnInitialize()
 	ns.db = LibStub("AceDB-3.0"):New("PagleLedgerDB", ns.DB_DEFAULTS, true)
 	ns.MigrateDB(ns.db.global)
 
-	-- Core's lookups the Ledger reads (LOG-R55, LOG-R49): the world index's, and the fold's with the world added.
-	local lookups = {
-		GetItem = Pagle.GetItem,
-		GetZones = Pagle.GetZones,
-		GetArea = Pagle.GetArea,
-		GetZoneCatches = Pagle.GetZoneCatches,
-		MatchesConditions = Pagle.MatchesConditions,
-	}
+	-- Core's lookups the Ledger reads (LOG-R55, LOG-R49), the world index's and the fold's.
+	local lookups = ns.LedgerLookups(Pagle)
 	--- The world index (LED-R10): built here, where the catalogue is ready (CORE-R10), held in memory, never stored.
-	ns.world = ns.NewWorld(lookups)
-	lookups.world = ns.world
+	ns.world = lookups.world
 
 	local sizeRulesVersion = Pagle.SIZE_RULES_VERSION -- the Ledger stores lengths (LED-R2, LOG-R68)
 	--- The Ledger's projection (LED-R2): Core catches it up or rebuilds it after login and hands it each new entry

@@ -206,6 +206,7 @@ Core runs every Module's stored projection the same way (ADR 0004).
   In `done`, a Module may only raise a Write-up and `summaryOnly` moments ([announcements.md](announcements.md#write-up)).
 - **LOG-R77** The Module's **celebrated set** (the high-water mark of what was already shown) lives in its DB outside `projection`, so a rebuild never clears it. Core never touches it. If the whole Module DB is lost, the celebrated set is lost with it, and the next build counts as a first build (LOG-R76).
 - **LOG-R78** Core runs its own projections (the Field report's, the wallet's spent total and owned goods) with the same machinery.
+- **LOG-R79** Pagle's backend folds the Catch log through `logic/` alone ([#223](https://github.com/timemir/wow-fish/issues/223), [#76](https://github.com/timemir/wow-fish/issues/76) item 5). Its projection driver loads each addon's `logic/` files, Core's `data/Catalogue.lua` and Hunts' `data/HuntList.lua`, never `adapter/` or `locale/`, and computes no value itself. So every `logic/` file loads without `ns.L`, each projection can be bound from `logic/`, and every value the backend shows is a function of projection state in `logic/`. The driver reads the log with Core's `ns.OpenCatchLog(log, global, now, getItem)`, `getItem` being the catalogue's `GetItem`: without that fourth argument no Catch has a Simulated Size (LOG-R65). The functions it calls are in [Contracts › The backend's hooks](#the-backends-hooks); a binding hook folds to the same state as the client's projection, with none of its moments, Coins reports or other effects.
 
 ### The diagnostics buffer
 
@@ -397,6 +398,24 @@ Each Module keeps one AceDB SavedVariable, `Pagle<Module>DB`, account-wide with 
 ```
 
 `M:NewProjection(def)` returns a projection with `:GetState()`, `:IsUpdating()` and `:Rebuild()` (a manual full rebuild, for a debug command).
+
+### The backend's hooks
+
+What the backend's projection driver calls in `logic/` (LOG-R79), by the names agreed on [#223](https://github.com/timemir/wow-fish/issues/223). The driver looks each one up and leaves out a value whose function is missing. Each `state` is that projection's state after `done`, except `Measures`, which the driver reads after every record the Ledger applies. Only Core's adapter and FakePagle reach a Module through `Pagle`, so a binding hook reads the `Pagle` API (and Hunts the server time) from the globals the driver hosts. The client never calls these hooks.
+
+| Where (`ns` of) | Function | Returns |
+|---|---|---|
+| `Pagle` | `BindCoreProjections(newProjection)` | nothing: calls `newProjection(name, def)` for each of Core's projections by its `PagleDB.global.projections` key: `"wallet"`, whose state has `spent` (SHOP-R11). The Field report's is left out, as its input never leaves the client (LOG-R82). |
+| `Pagle_Ledger`, `Pagle_Hunts`, `Pagle_Stats`, `Pagle_TackleBoard` | `BindProjections(M)` | the projection `M:NewProjection(def)` bound over a table of the hook's own making. QoL has no projection, so it has no hook. |
+| `Pagle_Ledger`, `Pagle_Hunts`, `Pagle_TackleBoard` | `CoinsEarned(state)` | the lifetime Coins earned, as the Module reports them (SHOP-R2) |
+| `Pagle_Ledger` | `Measures(state)` | `{ anglerLevel = { prestige, level, xp }, ledgerCompletion = { percent, done, total }, speciesCaught, legendsCaught }`: the climb's level and XP (LED-R30–R32), LED-R70's completion, and the Species and distinct Legends caught, removed ones left out (LED-R71, LED-R63) |
+| `Pagle_Ledger` | `EarnedTitles(state)` | the title keys the state earns, in LED-R75's order, without the celebrated set's (LED-R76, LOG-R77) |
+| `Pagle_Ledger` | `AutomaticTitle(state)` | the automatic title's key (LED-R77), or nil with none earned |
+| `Pagle_Ledger` | `ZonesMastered(state)` | the charted zones at computed rank Master (LED-R50, LED-R71) |
+| `Pagle_Ledger` | `LifetimeCatches(state)` | lifetime Catches (LED-R42) |
+| `Pagle_Ledger` | `LegendList()` | the release's Legends for Region firsts (PRJ-R15): the item IDs LED-R63's "x of N" counts for an Angler with no Catches, listed and not removed (LED-R11, LED-R12), ascending. The driver calls it after `BindProjections`. |
+| `Pagle_Ledger` | `PickedTitle(record)` | for a Ledger Module record: nil when it isn't the title record, false when it picks automatic, else the picked title key. The title record (#76 item 2) has kind `title` and the key as its payload, `""` for automatic (LED-R77); the Ledger doesn't append it yet. |
+| `Pagle_Ledger`, `Pagle_Stats`, `Pagle_Hunts`, `Pagle_TackleBoard` | `JournalValues(state, sessionRows)` | the Angler page's Journal values the Module holds, keyed as pagle-backend's angler-page.md › Journal values; no key comes from two Modules. The Ledger: `level`, `parts`, `titles`, `nextCatchMilestone`, `skillMilestones`, `characters` (from `Pagle.GetAngler().skill`), `zones`, `species`, `legends`, `trophies`. Stats: `stats`, `sessions` (newest first, at most `sessionRows` of them) and `odds` (every zone fished, most Casts first, its place spread's rows read on STA-R41's side with the live skill unknown, numbers as `nice()` rounds them, STA-R44). Hunts: `hunts` and `sets` at `GetServerTime()`, the fold's time. The Tackle Board: `flies`. A nullable field is nil. |
 
 ## UI
 

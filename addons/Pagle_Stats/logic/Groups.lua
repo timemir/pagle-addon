@@ -28,8 +28,8 @@ local RANK = { known = 1, unseen = 2, learning = 3 }
 
 --- Whether reading `a` comes before reading `b` in a group (STA-R18): known odds by `k/n` descending, then unseen,
 --- then learning; ties by item ID ascending (names may not be loaded yet).
----@param a StatsReading
----@param b StatsReading
+---@param a StatsReadingCounts
+---@param b StatsReadingCounts
 ---@return boolean
 local function before(a, b)
 	local rankA, rankB = RANK[a.state], RANK[b.state]
@@ -56,14 +56,31 @@ end
 ---@param places StatsPlaceTables? `ns.places` if nil
 ---@return StatsGroup[]
 function ns.Groups(state, area, live, places)
+	local groups = ns.GroupReadings(state, area, live, places, ns.Reading) --[[@as StatsGroup[] ]]
+	local words = ns.L.GROUPS
+	for _, group in ipairs(groups) do
+		group.heading, group.note = words[group.id].heading, words[group.id].note
+	end
+	return groups
+end
+
+--- ns.Groups without its words: a place's rows grouped and sorted (STA-R18), each group `{ id, readings }`, every
+--- reading made by `read` (ns.Reading, or ns.ReadingCounts for Pagle's backend, which reads no ns.L, #223).
+---@param state StatsState
+---@param area integer
+---@param live integer?
+---@param places StatsPlaceTables? `ns.places` if nil
+---@param read fun(state: StatsState, item: integer, area: integer, live: integer?, places: StatsPlaceTables): StatsReadingCounts
+---@return { id: StatsGroupID, readings: StatsReadingCounts[] }[]
+function ns.GroupReadings(state, area, live, places, read)
 	places = places or ns.places
 	local lookups = places.lookups
-	local byID = {} ---@type table<StatsGroupID, StatsReading[]>
+	local byID = {} ---@type table<StatsGroupID, StatsReadingCounts[]>
 	for _, id in ipairs(ORDER) do
 		byID[id] = {}
 	end
 	for _, row in ipairs(places:Rows(state, area)) do
-		local reading = ns.Reading(state, row.item, area, live, places)
+		local reading = read(state, row.item, area, live, places)
 		local id ---@type StatsGroupID
 		if row.added then
 			id = "added"
@@ -76,12 +93,12 @@ function ns.Groups(state, area, live, places)
 		local readings = byID[id]
 		readings[#readings + 1] = reading
 	end
-	local groups, words = {}, ns.L.GROUPS
+	local groups = {}
 	for _, id in ipairs(ORDER) do
 		local readings = byID[id]
 		if #readings > 0 then
 			table.sort(readings, before)
-			groups[#groups + 1] = { id = id, heading = words[id].heading, note = words[id].note, readings = readings }
+			groups[#groups + 1] = { id = id, readings = readings }
 		end
 	end
 	return groups

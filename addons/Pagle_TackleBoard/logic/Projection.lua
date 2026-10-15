@@ -410,3 +410,45 @@ function ns.ProjectionDef(global, sessionRulesVersion)
 		end,
 	}
 end
+
+--- The Tackle Board's projection for Pagle's backend (#223, #76 item 5), whose projection driver folds the Catch log
+--- through logic/ alone, without adapter/ or locale/ (CORE-R7). Binds ns.ProjectionDef with `M:NewProjection` over a
+--- table of its own making, without its `done`, which only celebrates, reports Coins and schedules the live step
+--- (TKB-R84, TKB-R63, TKB-R13): none of them changes the state, and the driver drops them all. The projection reads
+--- Core's catalogue through ns.api.pagle, which the adapter sets; without one, it gets ns.api with only `pagle`.
+--- The client's adapter never calls it.
+---@param M PagleModuleHandle
+---@return PagleProjection
+function ns.BindProjections(M)
+	-- The driver hands over only M, so Core comes from the Pagle API it hosts.
+	local pagle = Pagle -- luacheck: read globals Pagle (#223: the backend's driver passes no Core)
+	if ns.api == nil then
+		local api = { pagle = pagle }
+		ns.api = api --[[@as TackleClientAPI]]
+	end
+	local def = ns.ProjectionDef({}, pagle.SESSION_RULES_VERSION)
+	def.done = nil
+	return M:NewProjection(def)
+end
+
+--- A Tackle Board state's lifetime Coins earned (SHOP-R2, TKB-R63), as the Tackle Board reports them with
+--- M:ReportCoinsEarned: for Pagle's backend (#223), read after done.
+---@param state TackleBoardState
+---@return integer
+function ns.CoinsEarned(state)
+	return state.coins
+end
+
+--- The Tackle Board's Journal values for Pagle's backend (#223, the Angler page's Journal values): `flies`, the 30
+--- Fly Box patterns in pattern order, each its ID and whether it is one of the rare six (TKB-R62). The tied ones are
+--- in the state itself.
+---@param state TackleBoardState
+---@param sessionRows integer
+---@return { flies: { id: string, rare: boolean }[] }
+function ns.JournalValues(state, sessionRows) -- luacheck: no unused args (the driver's one shape for every Module)
+	local flies = {}
+	for i, pattern in ipairs(ns.FLY_PATTERNS) do
+		flies[i] = { id = pattern.id, rare = pattern.rare }
+	end
+	return { flies = flies }
+end
