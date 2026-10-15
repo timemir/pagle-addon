@@ -156,26 +156,7 @@ local function fitted(made)
 	return made:GetTextWidth() + 20
 end
 
--- A button with the native look reading `label`, `width` wide (or as wide as its text).
----@param parent Frame
----@param label string
----@param width number?
----@param height number?
----@return Button
-local function button(parent, label, width, height)
-	local made = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate") --[[@as Button]]
-	made:SetText(label)
-	made:SetSize(width or fitted(made), height or 22)
-	return made
-end
-
--- A font string on `parent` in `font`.
----@param parent Frame
----@param font string
----@return FontString
-local function text(parent, font)
-	return parent:CreateFontString(nil, "OVERLAY", font)
-end
+local button, text = ns.PanelButton, ns.Text
 
 -- Shows GameTooltip at `owner` with `lines`, the first as its title.
 ---@param owner Frame

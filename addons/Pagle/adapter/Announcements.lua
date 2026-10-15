@@ -376,8 +376,7 @@ end
 ---@param display PagleDisplay
 function ns.DrawAnnouncement(frame, display)
 	draw(frame, display)
-	local style = display.announcement.style
-	ns.PaintSkin(frame.skin, style and ns.ToastStyleOf(style) or ns.EquippedToastStyle())
+	ns.PaintSkin(frame.skin, ns.DisplayStyle(display))
 end
 
 --- A toast frame on `parent`, for a sample toast (wallet-and-shop.md › UI, the preview stage).

@@ -34,6 +34,14 @@ function ns.EquippedToastStyle()
 	return ns.ToastStyleOf(ns.goods:GetEquipped(ns.TOAST_STYLE_SLOT))
 end
 
+--- The toast style a display is drawn in (ANN-R80): the one it carries (a sample's), else the equipped one.
+---@param display PagleDisplay?
+---@return PagleToastStyle
+function ns.DisplayStyle(display)
+	local style = display and display.announcement.style
+	return style and ns.ToastStyleOf(style) or ns.EquippedToastStyle()
+end
+
 --- A new skin for a frame, in the equipped style, as `frame.skin`.
 ---@param frame Frame
 ---@return PagleSkin
@@ -277,4 +285,22 @@ function ns.Text(frame, template, color)
 		fontString:SetTextColor(color[1], color[2], color[3])
 	end
 	return fontString
+end
+
+--- A button with the native look (UIPanelButtonTemplate) on `parent` reading `label`, `width` wide (or as wide as its
+--- text and 10 pixels each side) and `height` high (22), running `onClick` when clicked, if given.
+---@param parent Frame
+---@param label string
+---@param width number?
+---@param height number?
+---@param onClick fun()?
+---@return Button
+function ns.PanelButton(parent, label, width, height, onClick)
+	local button = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate") --[[@as Button]]
+	button:SetText(label)
+	button:SetSize(width or button:GetTextWidth() + 20, height or 22)
+	if onClick then
+		button:SetScript("OnClick", onClick)
+	end
+	return button
 end

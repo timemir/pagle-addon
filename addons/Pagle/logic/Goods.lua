@@ -9,7 +9,7 @@ local ns = select(2, ...)
 ---@class PagleSlot
 ---@field id string              -- "core.toaststyle", "hunts.notebookcover", "stats.trackerframe"
 ---@field label string           -- "Toast style"
----@field category "Announcements"|"Bookplate"|"Fish Journal"|"Hunts"|"Trackers"
+---@field category "Announcements"|"Bookplate"|"Fish Journal"|"Hunts"|"Trackers" -- ns.SLOT_CATEGORY_ORDER
 
 --- A good a Module or Core registers (wallet-and-shop.md › Contracts): exactly one of default, for sale (tier) or
 --- earned (isEarned).
@@ -77,7 +77,7 @@ end
 ---@param id any
 ---@return string?
 local function idProblem(call, module, id)
-	if type(id) ~= "string" or not id:match("^[%w_.]+$") then
+	if type(id) ~= "string" or not id:match(ns.GOOD_ID_PATTERN) then
 		return ("M:%s: the id must be a string of letters, digits, _ and ., got %s"):format(call, tostring(id))
 	end
 	local prefix = module:lower() .. "."
@@ -104,8 +104,9 @@ function Goods:SlotProblem(module, slot)
 	elseif type(slot.label) ~= "string" or slot.label == "" then
 		return ("M:RegisterSlot: %s has no label"):format(slot.id)
 	elseif not ns.SLOT_CATEGORIES[slot.category] then
-		return ("M:RegisterSlot: %s's category must be one of Announcements, Bookplate, Fish Journal, Hunts, Trackers; got %s"):format(
+		return ("M:RegisterSlot: %s's category must be one of %s; got %s"):format(
 			slot.id,
+			table.concat(ns.SLOT_CATEGORY_ORDER, ", "),
 			tostring(slot.category)
 		)
 	end

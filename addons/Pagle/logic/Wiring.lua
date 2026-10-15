@@ -391,6 +391,13 @@ function ns.WireGoods(host)
 		report = host.report,
 	})
 	ns.goods = goods
+	-- Raises `problem`, if any, at the call of the function that called this one (SHOP-R23).
+	---@param problem string?
+	local function raise(problem)
+		if problem then
+			error(problem, 3)
+		end
+	end
 	-- CORE-R19: every enabled Module has registered its goods, or failed to. Its own owner on the bus.
 	host.listen("Pagle goods", "ModulesChanged", function()
 		goods:Start()
@@ -400,15 +407,11 @@ function ns.WireGoods(host)
 	local ModuleHandle = ns.ModuleHandle
 	--- Registers one of the Module's slots (SHOP-R21), any time after RegisterModule. Raises an error at the Module's
 	--- call, registering nothing, for each mistake SHOP-R23 lists: an ID that isn't `<name lowercased>.<name>` of
-	--- [%w_.], a duplicate, no label, or a category other than "Announcements", "Bookplate", "Fish Journal", "Hunts"
-	--- and "Trackers".
+	--- [%w_.], a duplicate, no label, or a category not in ns.SLOT_CATEGORY_ORDER.
 	---@param slot PagleSlot
 	function ModuleHandle:RegisterSlot(slot)
 		local module = host.registry:ModuleCalling(self, "RegisterSlot", "slot")
-		local problem = goods:RegisterSlot(module.def.name, slot)
-		if problem then
-			error(problem, 2)
-		end
+		raise(goods:RegisterSlot(module.def.name, slot))
 	end
 	--- Registers one of the Module's goods in one of its slots (SHOP-R21, SHOP-R22), calling its isEarned() now if
 	--- it is earned (SHOP-R31). Raises an error at the Module's call, registering nothing, for each mistake SHOP-R23
@@ -417,10 +420,7 @@ function ns.WireGoods(host)
 	---@param good PagleGood
 	function ModuleHandle:RegisterGood(good)
 		local module = host.registry:ModuleCalling(self, "RegisterGood", "good")
-		local problem = goods:RegisterGood(module.def.name, good)
-		if problem then
-			error(problem, 2)
-		end
+		raise(goods:RegisterGood(module.def.name, good))
 	end
 	--- Calls each of the Module's earned goods' isEarned() and caches the results (SHOP-R31); looks follow. Call it
 	--- after a live entry that could change one, and from the projection's done, never mid-catch-up or mid-rebuild.
@@ -433,19 +433,13 @@ function ns.WireGoods(host)
 	--- registering nothing, for a SHOP-R23 mistake.
 	---@param slot PagleSlot
 	function ns.RegisterCoreSlot(slot)
-		local problem = goods:RegisterSlot(ns.CORE_OWNER, slot)
-		if problem then
-			error(problem, 2)
-		end
+		raise(goods:RegisterSlot(ns.CORE_OWNER, slot))
 	end
 	--- Registers one of Core's goods in one of its slots (SHOP-R21, SHOP-R25). Raises an error at Core's call,
 	--- registering nothing, for a SHOP-R23 mistake.
 	---@param good PagleGood
 	function ns.RegisterCoreGood(good)
-		local problem = goods:RegisterGood(ns.CORE_OWNER, good)
-		if problem then
-			error(problem, 2)
-		end
+		raise(goods:RegisterGood(ns.CORE_OWNER, good))
 	end
 end
 

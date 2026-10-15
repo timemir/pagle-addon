@@ -20,8 +20,7 @@ local OWNER = "Pagle toast styles"
 --- else the equipped one (ANN-R80). One on screen stays there, repainted.
 function ns.RepaintToastFrames()
 	for _, frame in pairs(ns.announcementFrames) do
-		local style = frame.display and frame.display.announcement.style
-		ns.PaintSkin(frame.skin, style and ns.ToastStyleOf(style) or ns.EquippedToastStyle())
+		ns.PaintSkin(frame.skin, ns.DisplayStyle(frame.display))
 	end
 	if ns.cardFrame then
 		ns.PaintSkin(ns.cardFrame.skin, ns.EquippedToastStyle())
@@ -74,10 +73,8 @@ function ns.ToastStylePreview(styleID)
 	return function(stage)
 		local panel = ns.CorePreviewPanel(stage, ns.TOAST_STYLE_SLOT, function(panel)
 			local sample = ns.DrawSampleToast(panel, styleID)
-			local button = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate") --[[@as Button]]
-			button:SetSize(140, 22)
+			local button = ns.PanelButton(panel, L.TOAST_SHOW_ON_SCREEN, 140)
 			button:SetPoint("TOP", sample, "BOTTOM", 0, -16)
-			button:SetText(L.TOAST_SHOW_ON_SCREEN)
 			buttons[panel] = button
 		end)
 		ns.DrawSampleToast(panel, styleID)

@@ -53,11 +53,7 @@ end
 ---@param onClick fun()
 ---@return Button
 local function soundButton(panel, label, onClick)
-	local button = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate") --[[@as Button]]
-	button:SetSize(90, 22)
-	button:SetText(label)
-	button:SetScript("OnClick", onClick)
-	return button
+	return ns.PanelButton(panel, label, 90, nil, onClick)
 end
 
 -- A sound set's panel: its swatch, a button per sound, and a note that the Legend sting is shared (ANN-R72).
