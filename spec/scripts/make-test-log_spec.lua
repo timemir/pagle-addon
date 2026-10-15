@@ -415,7 +415,7 @@ describe("scripts/make-test-log.lua", function()
 	-- The fixture's latest boundary is its `day` record: Tuesday 13 October 15:00 UTC, the daily and weekly reset. At
 	-- NOW (Wednesday 17:46) the board day began at 15:00 today, so day 0 of the test board is Monday 12 October 15:00
 	-- (1791817200), two board days back, in the week that began Tuesday 6 October 15:00 (1791298800).
-	describe("--preset boardday on an account with a started board", function()
+	describe("--preset boardday on an account with a started board (in-game-verification.md › Test logs)", function()
 		local made = make("boardday", NOW, BOARD_FIXTURE)
 		local text = made.stage and readFile(made.stage .. "/Pagle.lua")
 		local log = text and globalsOf(text).PagleLog
@@ -497,7 +497,7 @@ describe("scripts/make-test-log.lua", function()
 			end
 		)
 
-		it("prints what the fold found, and when to play it", function()
+		it("prints what the fold found, and when to play it (TKB-R13, TKB-R86)", function()
 			assert.are.equal(
 				"== Test log boardday: a started board, day 0 lit and day 1 not, two board days old (M7 exit check step 5)",
 				made.lines[1]
@@ -709,7 +709,7 @@ describe("scripts/make-test-log.lua", function()
 		end)
 	end)
 
-	describe("--install and --restore of a boardday test log", function()
+	describe("--install and --restore of a boardday test log (in-game-verification.md › Test logs)", function()
 		local made = make("boardday", NOW, BOARD_FIXTURE)
 		local test = readFile(made.stage .. "/Pagle.lua")
 		local installErr, installCode = modeRun(made, "--install", NOW + 10)
@@ -814,12 +814,15 @@ describe("scripts/make-test-log.lua", function()
 			assert.are.same({}, made.stages)
 		end)
 
-		it("boardday refuses, writing nothing, when the board's latest boundary is older than a week", function()
-			local made = make("boardday", NOW + 8 * 86400, BOARD_FIXTURE)
-			assert.are.equal(1, made.code)
-			assert.matches("older than a week", made.err, 1, true)
-			assert.are.same({}, made.stages)
-		end)
+		it(
+			"boardday refuses, writing nothing, when the board's latest boundary is older than a week (TKB-R12)",
+			function()
+				local made = make("boardday", NOW + 8 * 86400, BOARD_FIXTURE)
+				assert.are.equal(1, made.code)
+				assert.matches("older than a week", made.err, 1, true)
+				assert.are.same({}, made.stages)
+			end
+		)
 
 		it("boardday refuses to write when the Casts fall short of the Haul Notice's need (TKB-R45)", function()
 			-- A record encoder that writes the Haul Notice's need one higher than the Casts the script plans for it.
@@ -850,13 +853,16 @@ describe("scripts/make-test-log.lua", function()
 			assert.are.same({}, made.stages)
 		end)
 
-		it("--install refuses a boardday test log once its board day has ended, changing nothing", function()
-			local made = make("boardday", NOW, BOARD_FIXTURE)
-			local err, code = modeRun(made, "--install", 1792076400)
-			assert.are.equal(1, code)
-			assert.matches("its board day ended at 2026-10-15 15:00 UTC", err, 1, true)
-			assert.are.same(savedFiles(BOARD_FIXTURE), savedFiles(made.account))
-		end)
+		it(
+			"--install refuses a boardday test log once its board day has ended, changing nothing (TKB-R12, TKB-R13)",
+			function()
+				local made = make("boardday", NOW, BOARD_FIXTURE)
+				local err, code = modeRun(made, "--install", 1792076400)
+				assert.are.equal(1, code)
+				assert.matches("its board day ended at 2026-10-15 15:00 UTC", err, 1, true)
+				assert.are.same(savedFiles(BOARD_FIXTURE), savedFiles(made.account))
+			end
+		)
 
 		it("exits 2 on a usage error", function()
 			local _, err, code = run({ "--account", "x", "--preset", "level99" })
