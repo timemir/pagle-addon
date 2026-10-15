@@ -496,12 +496,14 @@ end
 ---@param degrees number?
 ---@return number
 local function turn(region, degrees)
+	-- A texture turns; a font string turns where the client lets it, and stays straight where it doesn't.
+	local turning = region --[[@as Texture]]
 	local angle = 0
-	if degrees and degrees ~= 0 and ns.Leans() and region.SetRotation then
+	if degrees and degrees ~= 0 and ns.Leans() and turning.SetRotation then
 		angle = math.rad(degrees)
 	end
-	if region.SetRotation then
-		region:SetRotation(-angle)
+	if turning.SetRotation then
+		turning:SetRotation(-angle)
 	end
 	return angle
 end

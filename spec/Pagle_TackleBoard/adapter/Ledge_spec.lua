@@ -141,33 +141,32 @@ describe("the spike (TKB-R103)", function()
 	end)
 end)
 
--- The Fire atlas's sprite a texture shows, by its texture coordinates.
-local function fireSprite(ns, texture)
-	local atlas = ns.BOARD_ATLASES.Fire
-	for name, sprite in pairs(atlas.sprites) do
-		if texture.texture == atlas.file and texture.texCoord[1] == sprite.x / atlas.width then
-			if texture.texCoord[3] == sprite.y / atlas.height then
-				return name
-			end
+-- The Campfire's stage on the ledge, and its layers shown, sorted.
+local function fireLayers(fire)
+	local layers = {}
+	for suffix, texture in pairs(fire.burning.layers) do
+		if texture:IsShown() then
+			layers[#layers + 1] = suffix
 		end
 	end
-	return nil
+	table.sort(layers)
+	return fire.burning.stage, layers
 end
 
 describe("the Campfire on the ledge (TKB-R106)", function()
 	it('reads "Not lit yet" by bare logs on a fresh board, with no glow', function()
-		local loaded, _, _, ledge, frame = opened(FRESH)
+		local _, _, _, ledge, frame = opened(FRESH)
 		local fire = ledge.fire
 
 		assert.are.equal("Not lit yet", fire.text:GetText())
 		assert.is_false(fire.days:IsShown())
-		assert.are.equal("fire-none", fireSprite(loaded.ns, fire.flame))
+		assert.are.same({ "none", { "" } }, { fireLayers(fire) })
 		assert.is_false(fire.glow:IsShown())
 		assert.is_false(frame.glow:IsShown())
 	end)
 
 	it('reads "1 day" with 2 of 3 sticks of Kindling and "longest 1" while lit, its glow over the cork', function()
-		local loaded, _, _, ledge, frame = opened(ONE_DONE_TODAY)
+		local _, _, _, ledge, frame = opened(ONE_DONE_TODAY)
 		local fire = ledge.fire
 
 		assert.are.same({ "1", "day" }, { fire.days:GetText(), fire.word:GetText() })
@@ -177,17 +176,17 @@ describe("the Campfire on the ledge (TKB-R106)", function()
 			fire.sticks[2]:GetAlpha(),
 			fire.sticks[3]:GetAlpha(),
 		})
-		assert.are.equal("fire-3", fireSprite(loaded.ns, fire.flame))
+		assert.are.same({ "3", { "-base", "-fl1", "-fl2", "-fl3", "-front" } }, { fireLayers(fire) })
 		assert.is_true(fire.glow:IsShown())
 		assert.is_true(frame.glow:IsShown())
 	end)
 
 	it('reads "Gone out" over embers after a fire went out', function()
-		local loaded, _, _, ledge = opened(WENT_OUT)
+		local _, _, _, ledge = opened(WENT_OUT)
 		local fire = ledge.fire
 
 		assert.are.equal("Gone out", fire.text:GetText())
-		assert.are.equal("fire-out", fireSprite(loaded.ns, fire.flame))
+		assert.are.same({ "out", { "-base", "-embers", "-front" } }, { fireLayers(fire) })
 		assert.is_false(fire.glow:IsShown())
 	end)
 
@@ -199,10 +198,12 @@ describe("the Campfire on the ledge (TKB-R106)", function()
 		for _, count in ipairs({ 6, 7, 30, 100, 365 }) do
 			state.fire.count = count
 			loaded.ns.Redraw("projection")
-			stages[#stages + 1] = fireSprite(loaded.ns, ledge.fire.flame)
+			stages[#stages + 1] = ledge.fire.burning.stage
 		end
 
-		assert.are.same({ "fire-3", "fire-7", "fire-30", "fire-100", "fire-365" }, stages)
+		assert.are.same({ "3", "7", "30", "100", "365" }, stages)
+		assert.is_true(ledge.fire.burning.layers["-rays"]:IsShown()) -- the 365-day rays
+		assert.is_nil(ledge.fire.burning.layers["-embers"])
 	end)
 end)
 

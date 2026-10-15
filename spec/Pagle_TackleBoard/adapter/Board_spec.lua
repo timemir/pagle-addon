@@ -122,7 +122,7 @@ describe("the Tackle Board's frame (TKB-R100)", function()
 
 		assert.are.equal("ADD", frame.glow.blendMode)
 		assert.is_true(frame.glow:IsShown())
-		assert.are.equal(0.25, frame.glow:GetAlpha())
+		assert.is_true(math.abs(frame.glow:GetAlpha() - 0.25 * 0.9) < 1e-6) -- its breath starts at 0.9
 		local tiles = 0
 		for _, region in ipairs(frame.cork.children) do
 			if region.texture == loaded.ns.CORK_TEXTURE then

@@ -30,10 +30,12 @@ local CELL_COLUMNS, CELL_X, CELL_Y, CELL_HEIGHT, CELL_ROW = 6, 24, 44, 74, 78
 local CELL_WIDTH = (728 - 8 - 20) / CELL_COLUMNS
 -- The Campfire on the ledge: its clickable box from the ledge's top left, holding the fire, its words and its sticks.
 local FIRE_X, FIRE_Y, FIRE_WIDTH, FIRE_HEIGHT = 20, 10, 290, 120
--- The Campfire's sprite by its flame's step (logic/Ledge.lua's CampfireView: 1 below 7 days, then one more at 7, 30,
--- 100 and 365), or by its state with no flame.
-local FIRE_STEPS = { "fire-3", "fire-7", "fire-30", "fire-100", "fire-365" }
-local FIRE_STATES = { out = "fire-out", unlit = "fire-none" }
+-- The Campfire's stage (adapter/BoardMotion.lua's layers) by its flame's step (logic/Ledge.lua's CampfireView: 1 below
+-- 7 days, then one more at 7, 30, 100 and 365), or by its state with no flame.
+local FIRE_STEPS = { "3", "7", "30", "100", "365" }
+local FIRE_STATES = { out = "out", unlit = "none" }
+-- The flame layers, brightened within their step.
+local FLAME_LAYERS = { "-fl1", "-fl2", "-fl3" }
 -- A day cell's sprite and icon by the day's status.
 local DAY_CELLS = { lit = "day-lit", before = "day-pre", burned = "day", out = "day", unlit = "day", today = "day" }
 local DAY_ICONS = { lit = "d-flame", burned = "d-burn", out = "d-out", unlit = "d-unlit" }
@@ -53,7 +55,7 @@ local DAY_ICONS = { lit = "d-flame", burned = "d-burn", out = "d-out", unlit = "
 
 ---@class TackleCampfireButton: Button
 ---@field glow TackleSprite
----@field flame TackleSprite
+---@field burning TackleBoardFire   -- the fire in its layers (adapter/BoardMotion.lua)
 ---@field days FontString
 ---@field word FontString
 ---@field text FontString            -- "Gone out" or "Not lit yet"
@@ -636,7 +638,7 @@ local function buildFire(ledge)
 	fire:SetPoint("TOPLEFT", FIRE_X, -FIRE_Y)
 	fire.glow = ns.ArtSprite(fire, "Fire", "fire-glow", "BACKGROUND")
 	ns.PlaceSprite(fire.glow, fire, 20 - FIRE_X, 54 - FIRE_Y)
-	fire.flame = ns.ArtSprite(fire, "Fire", "fire-none", "ARTWORK")
+	fire.burning = ns.NewBoardFire(fire, 30 - FIRE_X, 14 - FIRE_Y)
 	fire.days = ns.ArtText(fire, "FireDays")
 	fire.days:SetPoint("TOPLEFT", 176 - FIRE_X, -(48 - FIRE_Y))
 	fire.word = ns.ArtText(fire, "FireWord")
@@ -657,17 +659,24 @@ local function buildFire(ledge)
 	ledge.fire = fire
 end
 
--- Draws the Campfire (TKB-R106): the fire's sprite by its step (or embers, or bare logs), brighter within its step, its
--- glow while it burns, its days, its Kindling and its longest.
+-- Draws the Campfire (TKB-R106): the fire's layers by its step (or embers, or bare logs), its flames brighter within
+-- their step, its glow while it burns, its days, its Kindling and its longest. The board moves it (adapter/Board.lua).
 ---@param fire TackleCampfireButton
 ---@param view TackleCampfireView
 ---@param count integer the Campfire's days
 local function drawFire(fire, view, count)
 	local lit = view.state == "lit"
-	ns.SetSprite(fire.flame, "Fire", lit and FIRE_STEPS[view.step] or FIRE_STATES[view.state])
-	ns.PlaceSprite(fire.flame, fire, 30 - FIRE_X, 14 - FIRE_Y)
+	local stage = lit and FIRE_STEPS[view.step] or FIRE_STATES[view.state]
+	if fire.burning.stage ~= stage then
+		ns.SetBoardFire(fire.burning, stage)
+	end
 	local light = lit and math.min(1, 0.8 + 0.4 * view.bright) or 1
-	fire.flame:SetVertexColor(light, light, light)
+	for _, suffix in ipairs(FLAME_LAYERS) do
+		local flame = fire.burning.layers[suffix]
+		if flame then
+			flame:SetVertexColor(light, light, light)
+		end
+	end
 	fire.glow:SetShown(lit)
 	fire.glow:SetAlpha(lit and 0.6 + 0.4 * view.bright or 0)
 	fire.days:SetShown(lit)

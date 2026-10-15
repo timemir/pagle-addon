@@ -236,9 +236,9 @@ function ns.NewBoardEmptyPin(parent, width, height)
 	return pin
 end
 
---- The glowing ring round a pin the board opened on (TKB-R109), hidden until shown, 9 units outside its parent. Its
---- sprite is the tracker atlas's, set at its first showing, so that atlas loads only when the tracker opens the board
---- on a goal.
+--- The glowing ring round a pin the board opened on (TKB-R109), hidden until shown, 9 units outside its parent; it
+--- pulses twice as it shows (adapter/BoardMotion.lua). Its sprite is the tracker atlas's, set at its first showing, so
+--- that atlas loads only when the tracker opens the board on a goal.
 ---@class TackleHighlightView: Frame
 ---@field ring TackleSprite?
 
@@ -259,6 +259,7 @@ function ns.NewBoardHighlight(parent, poster)
 		local width, height = parent:GetSize()
 		ns.SizeSprite(ring, width + 2 * RING_OUT, height + 2 * RING_OUT)
 		ns.PlaceSprite(ring, self, -RING_OUT, -RING_OUT)
+		ns.RingMotion(self, ring)
 	end)
 	highlight:Hide()
 	return highlight

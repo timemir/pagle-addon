@@ -312,6 +312,10 @@ function Board:Draw(reason, detail, highlight)
 			renderer(partFrame, draw)
 		end
 	end
+	-- The Campfire's flames and its light on the cork move while the board shows (adapter/BoardMotion.lua).
+	local ledge = frame.parts.ledge --[[@as TackleLedgeFrame]]
+	local fire = drawn.ledge and ledge.fire and ledge.fire.burning or nil
+	ns.BoardMotion(frame, fire, glow, reason == "open" or reason == "lean")
 end
 
 -- The board's entry points (logic/Seams.lua lists them); every caller calls them through ns at call time.

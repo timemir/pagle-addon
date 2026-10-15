@@ -48,6 +48,8 @@ local CHIPS, CHIP_GAP, CHIP_ICON = 4, 22, 13
 ---@field stamp TackleStampView    -- RE-POSTED (TKB-R55)
 ---@field seal { wax: TackleSprite, label: FontString }?   -- an Expedition's wax seal: its pay
 ---@field lean number              -- its paper's lean on its pin
+---@field leanNow number?          -- its lean now, moving to or from straight under the mouse
+---@field lift number?             -- how far it is lifted now
 ---@field view TacklePinView?      -- what it shows now, for its hover
 
 ---@class TacklePinSlot: Frame
@@ -93,6 +95,7 @@ end
 ---@param slip TackleGoalSlipView
 ---@param lean number
 local function layPaper(slip, lean)
+	slip.leanNow = lean
 	ns.LeanSprite(slip.paper, slip, 0, 0, lean)
 end
 
@@ -173,18 +176,18 @@ local function newGoalSlip(slot, poster)
 		ns.PlaceSprite(ns.NewBoardTack(slip), slip, 110.5, -5)
 	end
 
-	-- Under the mouse it straightens (TKB-R102) and lifts above its neighbours.
+	-- Under the mouse it straightens (TKB-R102) and lifts, above its neighbours (adapter/BoardMotion.lua).
 	local level = slip:GetFrameLevel()
 	slip:SetScript("OnEnter", function(self)
 		self:SetFrameLevel(level + 10)
-		layPaper(self, 0)
+		ns.PinHover(self, self.paper, 0, 2)
 		if self.view then
 			showHover(self, self.view)
 		end
 	end)
 	slip:SetScript("OnLeave", function(self)
 		self:SetFrameLevel(level)
-		layPaper(self, self.lean)
+		ns.PinHover(self, self.paper, self.lean, 0)
 		ns.BoardHoverHide()
 	end)
 	return slip

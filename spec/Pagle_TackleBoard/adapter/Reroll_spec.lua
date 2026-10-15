@@ -173,7 +173,7 @@ describe("taking a goal down", function()
 
 			ns.TakeDown(HAUL)
 
-			local confirm = ns.TakeDownConfirm()
+			local confirm = assert(ns.TakeDownConfirm())
 			assert.are.same({ NOTICE_TEXT, "Take it down", "Keep it" }, {
 				asked(ns),
 				confirm.accept.label:GetText(),
@@ -183,8 +183,9 @@ describe("taking a goal down", function()
 				"Its progress (|cff9A2A1A12/30|r) is lost, and the new one can't be taken down.",
 				confirm.text:GetText()
 			)
-			assert.are.equal("PagleTackleBoardConfirm", confirm.name)
-			assert.are.equal(loaded.ns.BOARD_ATLASES.Board.file, confirm.paper.texture)
+			local drawn = confirm --[[@as table]] -- the fake client's frame keeps its name and its paper's texture
+			assert.are.equal("PagleTackleBoardConfirm", drawn.name)
+			assert.are.equal(loaded.ns.BOARD_ATLASES.Board.file, drawn.paper.texture)
 			assert.are.equal(0, #rerolls(ns))
 		end)
 

@@ -433,7 +433,7 @@ describe("where the pins hang (TKB-R101, tackle-board.md › UI)", function()
 
 		assert.are.same({ x = 24, y = 424 }, places.overflow)
 		for i, place in ipairs(places.notices) do
-			assert.is_true(place.y + NOTICE_HEIGHT <= places.overflow.y, "Notice pin " .. i)
+			assert(place.y + NOTICE_HEIGHT <= places.overflow.y, "Notice pin " .. i)
 			assert.are.equal(ns.PinPlaces(false).notices[i].x, place.x)
 		end
 		for i = 1, 3 do

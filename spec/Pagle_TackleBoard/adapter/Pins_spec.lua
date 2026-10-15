@@ -137,9 +137,13 @@ describe("a started board's pins (TKB-R101, TKB-R102)", function()
 
 		assert.are.equal(math.rad(1.6), paper.rotation) -- the first Notice pin leans -1.6°
 		hover(notice(frame, 1).goal)
+		loaded.client.update(0.2) -- 0.18 s, eased out
 		assert.are.equal(0, paper.rotation)
+		assert.are.same({ "TOPLEFT", notice(frame, 1), "TOPLEFT", 0, 2 }, notice(frame, 1).goal.points[1]) -- lifted
 		notice(frame, 1).goal:GetScript("OnLeave")(notice(frame, 1).goal)
+		loaded.client.update(0.2)
 		assert.are.equal(math.rad(1.6), paper.rotation)
+		assert.are.same({ "TOPLEFT", notice(frame, 1), "TOPLEFT", 0, 0 }, notice(frame, 1).goal.points[1])
 	end)
 
 	it("closes up its Notice rows while the overflow strip shows (TKB-R101)", function()

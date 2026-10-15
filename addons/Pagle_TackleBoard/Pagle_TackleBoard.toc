@@ -31,7 +31,9 @@ logic\Moments.lua
 logic\Goods.lua
 logic\Tracker.lua
 adapter\Client.lua
+adapter\Motion.lua
 adapter\BoardArt.lua
+adapter\BoardMotion.lua
 adapter\BoardWidgets.lua
 adapter\TrackerBlock.lua
 adapter\Goods.lua

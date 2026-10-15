@@ -35,24 +35,27 @@ describe("the board art kit's atlases (tackle-board.md › UI)", function()
 		local ns = kit()
 
 		for name, atlas in pairs(ns.BOARD_ATLASES) do
-			assert.is_true(shipped(atlas.file .. ".blp"), name)
+			assert(shipped(atlas.file .. ".blp"), name)
 		end
 		assert.is_true(shipped(ns.CORK_TEXTURE .. ".blp"))
 		for face, path in pairs(ns.BOARD_FONT_FACES) do
-			assert.is_true(shipped(path), face)
+			assert(shipped(path), face)
 		end
 	end)
 
-	it("keep every sprite inside its texture, its drawn element inside the sprite", function()
+	it("keep every sprite inside its texture, its drawn element inside the sprite but the fire's shared box", function()
 		local ns = kit()
 
 		for name, atlas in pairs(ns.BOARD_ATLASES) do
 			for sprite, at in pairs(atlas.sprites) do
 				local where = name .. " " .. sprite
-				assert.is_true(at.x >= 0 and at.x + at.w <= atlas.width, where)
-				assert.is_true(at.y >= 0 and at.y + at.h <= atlas.height, where)
-				assert.is_true(at.box[1] + at.box[3] <= at.w / atlas.scale + 0.01, where)
-				assert.is_true(at.box[2] + at.box[4] <= at.h / atlas.scale + 0.01, where)
+				assert(at.x >= 0 and at.x + at.w <= atlas.width, where)
+				assert(at.y >= 0 and at.y + at.h <= atlas.height, where)
+				-- The fire's layers share the fire's 138 × 130 box, which reaches past each layer's own texels.
+				if at.box[1] >= 0 and at.box[2] >= 0 then
+					assert(at.box[1] + at.box[3] <= at.w / atlas.scale + 0.01, where)
+					assert(at.box[2] + at.box[4] <= at.h / atlas.scale + 0.01, where)
+				end
 			end
 		end
 	end)
@@ -89,7 +92,7 @@ describe("the board's fonts", function()
 		local ns = kit()
 
 		for key, def in pairs(ns.BOARD_FONTS) do
-			assert.is_string(ns.BOARD_FONT_FACES[def[1]], key)
+			assert(type(ns.BOARD_FONT_FACES[def[1]]) == "string", key)
 		end
 	end)
 
