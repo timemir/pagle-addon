@@ -178,7 +178,7 @@ end)
 
 -- A leather view's look (adapter/BoardWidgets.lua's NewBoardLeather): its fill's file, then "tooled" and "corner" when
 -- Tooled Leather's gilt rule and Verdigris's corner show, joined by "+".
----@param view BoardLeatherView
+---@param view table a BoardLeatherView on the fake client, read by the fields it keeps
 ---@return string
 local function lookOf(view)
 	local parts = { tostring(view.fill.texture) }

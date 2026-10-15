@@ -100,7 +100,7 @@ end
 ---@field edge Texture
 
 --- The fold over `book`'s pages: a shade over the turning strip and a cast shadow beside its edge, made once.
----@param book Frame
+---@param book StatsBookFrame
 ---@return StatsBookFold
 local function foldOf(book)
 	local fold = book.turnFold --[[@as StatsBookFold?]]
@@ -167,7 +167,7 @@ end
 
 --- Plays `turn` on `book` (the book's frame), the kit's two halves; settled at once with the motion off. Returns the
 --- owner it plays on, which ns.StopMotion cuts short (the caller then settles it with turn.done).
----@param book Frame
+---@param book StatsBookFrame
 ---@param turn StatsTurn
 ---@return table owner
 function ns.PlayTurn(book, turn)

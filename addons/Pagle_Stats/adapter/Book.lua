@@ -111,8 +111,8 @@ local LEATHER_PARTS = { "search" }
 ---@field private leatherRenderers table<StatsBookLeatherPart, StatsBookLeatherRenderer>
 ---@field private drawnKey string?                 -- the place last drawn, to keep its scroll on a redraw
 ---@field private drawnPage StatsBookPage?          -- the page last drawn, which a turn turns from
----@field private drawnSides table<StatsBookSide, StatsBookPageView> -- its sides
----@field private turning StatsBookTurning?          -- the page turn under way
+---@field drawnSides table<StatsBookSide, StatsBookPageView> -- its sides
+---@field turning StatsBookTurning?          -- the page turn under way
 ---@field closing boolean                            -- the book is fading out to close
 ---@field private breathing boolean                  -- the live dot breathes
 ---@field private liveCasts integer?                 -- the live line's Casts when last drawn

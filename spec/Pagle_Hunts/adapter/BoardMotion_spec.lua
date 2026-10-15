@@ -71,7 +71,11 @@ local function rowOf(run, huntID)
 end
 
 local function near(expected, actual, slack)
-	assert.is_true(math.abs(expected - actual) <= (slack or 0.02), ("%s, not about %s"):format(actual, expected))
+	assert.are.equal(
+		true,
+		math.abs(expected - actual) <= (slack or 0.02),
+		("%s, not about %s"):format(actual, expected)
+	)
 end
 
 describe("the board opening and closing", function()

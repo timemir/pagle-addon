@@ -314,9 +314,10 @@ local function drawEntry(frame, place)
 	local key = item .. ":" .. area
 	local last = view.last
 	local same = last ~= nil and last.key == key
+	local before = same and last or nil -- the same entry's last draw
 	local since = ns.DrySpell(data.reading).since
 	-- a catch of it here: the Dry spell resets
-	local caught = same and last.since > 0 and since == 0
+	local caught = before ~= nil and before.since > 0 and since == 0
 	if not same then
 		view.rulerResting = false
 	end
@@ -378,9 +379,9 @@ local function drawEntry(frame, place)
 	for _, line in ipairs(view.records) do
 		texts[line.value] = line.value:GetText() or ""
 	end
-	if same then
+	if before then
 		for line, text in pairs(texts) do
-			if text ~= "" and text ~= last.texts[line] then
+			if text ~= "" and text ~= before.texts[line] then
 				ns.InkIn(line)
 			end
 		end

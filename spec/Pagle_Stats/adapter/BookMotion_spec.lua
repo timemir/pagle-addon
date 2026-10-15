@@ -17,11 +17,12 @@ local PAGE_WIDTH = (980 - 2 * 18) / 2
 -- Stats logged in over `records` with Core's Animations setting `motion` (on by default), the player in Darkshore's
 -- Auberdine at skill 200 (side hi, as the worked history's Casts).
 local function ready(records, motion)
-	return stats.start({
+	local loaded, fake, book = stats.start({
 		records = records,
 		motion = motion ~= false,
 		at = { zone = DARKSHORE, subzone = AUBERDINE, skillRank = 200, skillMod = 0 },
 	})
+	return loaded, fake, book --[[@as table]] -- the fake client's frames, read by the fields it keeps
 end
 
 -- What the breadcrumbs read now.

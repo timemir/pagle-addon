@@ -201,7 +201,7 @@ end
 ---@param entry StatsLifetimeEntryView
 local function enter(entry)
 	entry.label:SetTextColor(LOOK.red[1], LOOK.red[2], LOOK.red[3])
-	local content = entry:GetParent()
+	local content = entry:GetParent() --[[@as Frame]]
 	local view = views[content]
 	if not view then
 		return

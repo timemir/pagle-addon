@@ -72,7 +72,7 @@ local LEATHER_PARTS = { "crumbs", "clock", "completed", "nameplate", "ribbons" }
 ---@field closing boolean                     -- the closing fade runs: the board counts as closed
 ---@field closeSounded boolean                -- this close's sound has played
 ---@field serial integer                      -- how many times it has drawn
----@field private leather table<BoardLeatherPart, BoardLeatherRenderer>
+---@field leather table<BoardLeatherPart, BoardLeatherRenderer>
 ---@field private told boolean               -- whether the grouping was last told it shows
 local Board = {}
 Board.__index = Board
