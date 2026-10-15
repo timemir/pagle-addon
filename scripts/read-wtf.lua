@@ -3,7 +3,7 @@
 --   - the latest !BugGrabber session's Lua errors, with their stacks;
 --   - the Catch log, decoded with Core's own codec (addons/Pagle/logic/CatchLog.lua): the logId, the entries by
 --     tag, the C1 Casts by outcome, per character and per zone areaID, those in zone areaID 0, their time span, the
---     B1 and S1 entries, each P1 (Prestige) and U1 (purchase) entry, and PagleDB.global.decodeErrors (0 when AceDB
+--     realm's UTC offset from the latest Cast's realm minute (LOG-R49), the B1 and S1 entries, each P1 (Prestige) and U1 (purchase) entry, and PagleDB.global.decodeErrors (0 when AceDB
 --     left that default out of the file);
 --   - the Ledger (PagleLedgerDB in Pagle_Ledger.lua): the projection Core stores and whether its logId, lastSeq and
 --     rulesVersion are current, its state (items, the Uncharted list, zone ranks) with what the Ledger's own logic/
@@ -146,6 +146,12 @@ local function utc(time)
 	return os.date("!%Y-%m-%d %H:%M:%S UTC", time)
 end
 
+-- A UTC offset in minutes as "UTC+02:00" or "UTC-07:30".
+local function utcOffset(minutes)
+	local size = math.abs(minutes)
+	return ("UTC%s%02d:%02d"):format(minutes < 0 and "-" or "+", math.floor(size / 60), size % 60)
+end
+
 -- "1 Cast", "2 Casts"; plural defaults to noun .. "s".
 local function count(n, noun, plural)
 	return n .. " " .. (n == 1 and noun or plural or noun .. "s")
@@ -247,6 +253,14 @@ local function readLog(ns, log, since)
 		end
 	end
 	facts.undecodable = global.decodeErrors
+	-- The realm's UTC offset (LOG-R49), from the latest Cast counted that read the realm minute; nil with none.
+	local latest
+	for _, cast in ipairs(facts.casts) do
+		if cast.conditions.minute and (not latest or cast.time >= latest.time) then
+			latest = cast
+		end
+	end
+	facts.realmOffset = latest and ns.RealmUtcOffset(latest.time, latest.conditions.minute)
 	return facts
 end
 
@@ -255,6 +269,8 @@ local function characterName(log, char)
 	local name = table.concat({ tostring(c.name or "?"), c.surname and tostring(c.surname) or nil }, " ")
 	return ("%d %s (%s)"):format(char, name, tostring(c.guid))
 end
+
+local NO_REALM_MINUTE = "unknown (no Cast read the realm minute)"
 
 local function printCasts(log, facts, since)
 	local casts = facts.casts
@@ -290,6 +306,8 @@ local function printCasts(log, facts, since)
 	end
 	local zero = #zeroZone > 0 and count(#zeroZone, "Cast") .. ", seq " .. table.concat(zeroZone, ", ")
 	print("zone areaID 0: " .. (zero or "none"))
+	local offset = facts.realmOffset
+	print("realm clock: " .. (offset and utcOffset(offset) .. " (from the latest Cast)" or NO_REALM_MINUTE))
 end
 
 -- The Prestige (P1, LOG-R38) and purchase (U1, LOG-R39) entries: a count each, then one line per entry, P1 with

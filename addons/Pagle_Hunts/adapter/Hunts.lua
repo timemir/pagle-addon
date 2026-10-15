@@ -19,6 +19,8 @@ function ns.Hunts.OnInitialize()
 	if not ns.Module then
 		return
 	end
+	-- Hunts' slots and goods, right after RegisterModule (HNT-R122).
+	ns.RegisterGoods(ns.Module)
 
 	-- Account-wide, one shared profile, with the defaults in hunts.md › Data.
 	ns.db = LibStub("AceDB-3.0"):New("PagleHuntsDB", ns.DB_DEFAULTS, true)
@@ -72,6 +74,12 @@ function ns.Hunts.OnInitialize()
 	-- Grouping (HNT-R40–R44): pins of Hunts gone are dropped now; the first grouping waits for the world.
 	ns.StartGroups()
 
+	-- The Hunts tracker in Core's dock, and its setting on the Trackers page (HNT-R75, SET-R41).
+	ns.StartTracker(ns.Module)
+
 	-- Calendar event names for the conditions line, looked up once this login (HNT-R53).
 	ns.StartNames()
+
+	-- Window moments (HNT-R88): their Announcements row (SET-R32) and the regroup baseline.
+	ns.StartWindowMoments()
 end

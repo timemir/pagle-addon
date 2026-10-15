@@ -31,7 +31,9 @@ local function auraUp(spec, auras)
 	return false
 end
 
---- The group of one current Hunt (HNT-R40), in the rule's order, and whether it is Now with its aura up.
+--- The group of one current Hunt (HNT-R40), in the rule's order, and whether it is Now with its aura up. A Hunt short
+--- of skill is Later, and says whether its aura is up as it would without the skill need, for the window line, which
+--- ignores skill (HNT-R52).
 ---@param spec table? its board spec (HNT-R6); nil when it has none (HNT-R7)
 ---@param window Window? Pagle.NextWindow(spec, now); nil for none
 ---@param short boolean short of skill (HNT-R33)
@@ -40,8 +42,12 @@ end
 ---@return HuntGroup group
 ---@return boolean auraUp
 function ns.GroupOf(spec, window, short, auras, now)
-	if not spec or short or not window then
+	if not spec or not window then
 		return "later", false
+	end
+	if short then
+		local byAura = window.onDemand or (window.openNow and spec.auras ~= nil)
+		return "later", byAura and auraUp(spec, auras) or false
 	end
 	if window.onDemand then
 		if auraUp(spec, auras) then
@@ -206,7 +212,7 @@ end
 ---@field hunt HuntDef
 ---@field group HuntGroup
 ---@field window Window?      -- Pagle.NextWindow(boardSpec, time); nil with no board spec or no forecast
----@field auraUp boolean      -- Now through one of its auras (HNT-R40)
+---@field auraUp boolean      -- Now through one of its auras (HNT-R40); short of skill, it would be (HNT-R52)
 ---@field short boolean       -- short of skill (HNT-R33)
 ---@field lureGetsThere boolean   -- short by at most the lure reach (HNT-R33)
 ---@field pinned boolean
