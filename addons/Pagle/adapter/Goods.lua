@@ -41,8 +41,9 @@ function Pagle.SetEquipped(slot, goodID)
 	return ns.goods:SetEquipped(slot, goodID)
 end
 
---- A good's name, slot, icon, Module and description as cached (SHOP-R26), whether or not its Module is enabled; nil
---- for a good never registered. A fresh copy each call.
+--- A good's name, slot, icon, Module and description as cached (SHOP-R26), and whether it is its slot's default
+--- (`isDefault`, SHOP-R22), whether or not its Module is enabled; nil for a good never registered. A fresh copy each
+--- call.
 ---@param goodID string
 ---@return PagleGoodInfo?
 function Pagle.GetGood(goodID)

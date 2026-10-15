@@ -171,6 +171,9 @@ function Goods:GoodProblem(module, good)
 	elseif type(good.name) ~= "string" or good.name == "" then
 		return ("M:RegisterGood: %s has no name"):format(id)
 	end
+	if good.default ~= nil and type(good.default) ~= "boolean" then
+		return ("M:RegisterGood: %s's default must be true or false"):format(id)
+	end
 	local kinds = (good.default and 1 or 0) + (good.tier ~= nil and 1 or 0) + (good.isEarned ~= nil and 1 or 0)
 	if kinds ~= 1 then
 		return ("M:RegisterGood: %s must be exactly one of default, for sale (tier) or earned (isEarned)"):format(id)
@@ -415,8 +418,10 @@ end
 ---@field icon? integer|string
 ---@field module string           -- def.name, or "Core"
 ---@field description? string
+---@field isDefault boolean        -- the slot's default (SHOP-R22), or the good standing in for one (SHOP-R23)
 
---- A good's name, slot, icon, Module and description, from the cache, as a fresh copy; nil for a good never cached.
+--- A good's name, slot, icon, Module and description, from the cache, and whether it is its slot's default, as a
+--- fresh copy; nil for a good never cached.
 ---@param goodID any
 ---@return PagleGoodInfo?
 function Goods:GetGood(goodID)
@@ -430,6 +435,7 @@ function Goods:GetGood(goodID)
 		icon = cached.icon,
 		module = cached.module,
 		description = cached.description,
+		isDefault = self:DefaultOf(cached.slot) == goodID,
 	}
 end
 
@@ -467,7 +473,7 @@ function Goods:Start()
 	for _, slot in ipairs(self:Slots()) do
 		local hasDefault = false
 		for _, good in ipairs(slot.goods) do
-			hasDefault = hasDefault or good.default ~= nil
+			hasDefault = hasDefault or good.default == true
 		end
 		if not hasDefault then
 			local first = slot.goods[1]

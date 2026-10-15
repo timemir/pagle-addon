@@ -601,7 +601,7 @@ describe("FakePagle", function()
 			end
 		)
 
-		it("reads a good's cached look with Pagle.GetGood, read-only (graph.md question 2, CORE-R18)", function()
+		it("reads a good's cached look with Pagle.GetGood, read-only (SHOP-R26, CORE-R18)", function()
 			local fake = newFakePagle()
 			huntsCovers(fake, { value = false })
 

@@ -257,11 +257,11 @@ describe("Pagle.SetEquipped and Pagle.GetEquipped", function()
 end)
 
 describe("Pagle.GetGood", function()
-	it("reads a good's cached name, slot, icon, Module and description (graph.md question 2, LED-R112)", function()
+	it("reads a good's cached name, slot, icon, Module and description (SHOP-R26, LED-R112)", function()
 		local loaded = huntsSession()
 
 		assert.are.same(
-			{ name = "Velvet", slot = "hunts.cover", icon = 134939, module = "Hunts" },
+			{ name = "Velvet", slot = "hunts.cover", icon = 134939, module = "Hunts", isDefault = false },
 			loaded.env.Pagle.GetGood("hunts.cover.velvet")
 		)
 		assert.is_nil(loaded.env.Pagle.GetGood("hunts.cover.none"))
