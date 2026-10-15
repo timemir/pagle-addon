@@ -81,6 +81,10 @@ ns.BOARD_TEXTURES = {
 	disc = "Interface\\CharacterFrame\\TempPortraitAlphaMask",
 	-- Diagonal stripes that tile (the absorb shield's overlay, 798065): an ink bar's hatching.
 	hatch = "Interface\\RaidFrame\\Shield-Overlay",
+	-- A Variety Expedition's Species on its hover (TKB-R102): a tick for a caught one, an empty box for the rest (the
+	-- check button's art, Blizzard_SharedXML/Shared/Button/CheckButtonTemplates.xml).
+	tick = "Interface\\Buttons\\UI-CheckBox-Check",
+	box = "Interface\\Buttons\\UI-CheckBox-Up",
 }
 local TEXTURES = ns.BOARD_TEXTURES
 
@@ -570,4 +574,70 @@ function ns.NewBoardButton(parent, text, onClick)
 		end
 	end
 	return button
+end
+
+-- The pins' makers (#239).
+
+--- An empty pin (TKB-R105): a dashed outline on the cork, a lone brass tack and its words by hand at the bottom.
+--- `SetEmpty` sets its words. It takes no mouse, so the board drags by it.
+---@class TackleEmptyPinView: Frame
+---@field dashes Texture[]
+---@field tack TackleTackView
+---@field label FontString
+---@field SetEmpty fun(self: TackleEmptyPinView, text: string)
+
+-- An empty pin's dashes: 6 pixels of ink, then 4 of cork (the CSS's 1.5px dashed rgba(60,30,10,.35)).
+local DASH, DASH_GAP, DASH_ALPHA = 6, 4, 0.35
+
+---@param parent Frame
+---@param width number
+---@param height number
+---@return TackleEmptyPinView
+function ns.NewBoardEmptyPin(parent, width, height)
+	local pin = CreateFrame("Frame", nil, parent) --[[@as TackleEmptyPinView]]
+	pin:SetSize(width, height)
+	pin.dashes = {}
+	local color = LOOK.corkFleck
+	local function dash(point, x, y, w, h)
+		local texture = pin:CreateTexture(nil, "BORDER")
+		texture:SetColorTexture(color[1], color[2], color[3], DASH_ALPHA)
+		texture:SetSize(w, h)
+		texture:SetPoint(point, x, y)
+		pin.dashes[#pin.dashes + 1] = texture
+	end
+	local step = DASH + DASH_GAP
+	for i = 0, math.floor(width / step) - 1 do
+		dash("TOPLEFT", i * step, 0, DASH, 2)
+		dash("BOTTOMLEFT", i * step, 0, DASH, 2)
+	end
+	for i = 0, math.floor(height / step) - 1 do
+		dash("TOPLEFT", 0, -i * step, 2, DASH)
+		dash("TOPRIGHT", 0, -i * step, 2, DASH)
+	end
+	pin.tack = ns.NewBoardTack(pin, 10)
+	pin.tack:SetPoint("TOP", 0, -5)
+	pin.label = ns.BoardText(pin, ns.BoardFonts().hand, LOOK.corkFleck)
+	pin.label:SetAlpha(0.8)
+	pin.label:SetJustifyH("CENTER")
+	pin.label:SetWordWrap(true)
+	pin.label:SetWidth(width - 16)
+	pin.label:SetPoint("BOTTOM", 0, 8)
+	function pin.SetEmpty(self, text)
+		self.label:SetText(text)
+	end
+	return pin
+end
+
+--- A brass ring round a pin (TKB-R109: the highlight when the board opens on a goal), hidden until shown. Set its
+--- points round the pin.
+---@class TackleHighlightView: Frame
+---@field edges Texture[]
+
+---@param parent Frame
+---@return TackleHighlightView
+function ns.NewBoardHighlight(parent)
+	local ring = CreateFrame("Frame", nil, parent) --[[@as TackleHighlightView]]
+	ring.edges = outline(ring, LOOK.tackShine, 1, 3, 0, "OVERLAY")
+	ring:Hide()
+	return ring
 end

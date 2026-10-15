@@ -29,13 +29,14 @@ local ns = select(2, ...)
 --                             (#233), not here.
 --   ns.TakeDown(goalID)       Takes a goal down (TKB-R55, TKB-R56): its confirm, then the `reroll` record. The pins
 --                             (#239) call it. Defined in adapter/Reroll.lua (#234), not here.
---   ns.CanTakeDown(goalID)    Whether a goal's "take it down" shows and works now (TKB-R55). Defined in
+--   ns.CanTakeDown(goalID)    Whether a goal's "take it down" shows (TKB-R55), whatever the projection's updating: the
+--                             pins grey it while ns.IsUpdating() (TKB-R108), and ns.TakeDown refuses then. Defined in
 --                             adapter/Reroll.lua (#234), not here.
 --   ns.ScheduleLiveStep()     Schedules the live step for the next frame (TKB-R13, TKB-R84). The projection's `done`
 --                             calls it last (#231). Defined in adapter/LiveStep.lua (#233), not here.
 --   ns.ReportCoins()          Reports lifetime Coins with M:ReportCoinsEarned (TKB-R63). `done` calls it before
---                             ns.ScheduleLiveStep (#231), and a live entry that changes the Coins (#232). Stand-in: does
---                             nothing. The completions' ticket (#232) assigns it.
+--                             ns.ScheduleLiveStep (#231), and the projection's apply after a live entry that changes the
+--                             Coins (#232). Reports ns.State().coins once started.
 --   ns.InLoginWindow()        Whether an advance now is "at login": from login until the login's first live step has
 --                             finished (TKB-R86's Campfire nods). The moments (#235) read it. Defined in
 --                             logic/LiveStep.lua (#233), not here.
@@ -114,13 +115,13 @@ local ns = select(2, ...)
 ---@field zones { [integer]: integer }   -- zone areaID -> time of the Angler's last Cast there
 ---@field caught { [integer]: true }     -- every item ID ever caught (TKB-R46)
 
---- What one completion earned (TKB-R60), handed to ns.outlets.Completed. A first draft: the completions' ticket (#232)
---- owns it and may change it.
+--- What one completion earned (TKB-R60), handed to ns.outlets.Completed (logic/Completions.lua, #232).
 ---@class TackleEarned
+---@field pay integer                 -- the goal's pay (TKB-R34)
 ---@field coins integer               -- the goal's pay plus any Campfire milestone's Coins
----@field fly? string                 -- pattern ID tied (TKB-R62)
----@field titles string[]             -- title IDs earned, in TKB-R60's order
----@field milestone? integer          -- Campfire milestone reached, in days (TKB-R73)
+---@field fly? string                 -- pattern ID tied (TKB-R62); nil when its pool was empty
+---@field titles string[]             -- title IDs earned, in TKB-R60's order: tally, Campfire, Fly Box
+---@field milestone? { days: integer, coins: integer, title: string }  -- Campfire milestone reached (TKB-R73)
 ---@field lit boolean                 -- this completion lit its day (TKB-R70)
 
 --- The projection's state (`ns.projection:GetState()`, bound by the adapter's OnInitialize, #231): a new empty
@@ -145,8 +146,14 @@ function ns.IsStarted()
 	return ns.State().started ~= nil
 end
 
---- Reports lifetime Coins to Core (TKB-R63). A stand-in until the completions' ticket assigns it.
-function ns.ReportCoins() end
+--- Reports lifetime Coins to Core (TKB-R63, SHOP-R2): the projection's `coins` with M:ReportCoinsEarned. Nothing
+--- before Start (TKB-R2: silent until started) or without a Module handle (an inert Module, CORE-R13).
+function ns.ReportCoins()
+	local module = ns.Module
+	if module and ns.IsStarted() then
+		module:ReportCoinsEarned(ns.State().coins)
+	end
+end
 
 local redrawn = {} -- the subscribed views' redraws, in subscription order
 

@@ -9,7 +9,7 @@ local ns = select(2, ...)
 -- records and every Cast. Pure logic (CORE-R7): the state is a function of the entries applied, the catalogue and
 -- the day it has been advanced to (TKB-R82). It numbers board days from the records (TKB-R12, through logic/Days.lua),
 -- advances through them with their Campfire closes and refills (TKB-R14, TKB-R20), and puts issued and re-posted
--- goals on their pins (TKB-R21–R23, TKB-R57, TKB-R101). Completions are #232's: they slot in where marked below.
+-- goals on their pins (TKB-R21–R23, TKB-R57, TKB-R101). Each Cast runs the completions (logic/Completions.lua).
 
 --- The Tackle Board's rules version (Tunables, TKB-R81): rises whenever a progress, Campfire, Fly Box or
 --- pattern-order rule changes. Generation changes don't need it (TKB-R22). Not bumped within M7.
@@ -153,6 +153,7 @@ function ns.AdvanceTo(state, q, mode)
 		raiseWeek(state, ns.WeekOfDay(state.boundary, k + 1))
 		state.day = k + 1
 	end
+	ns.PruneDone(state) -- Data: completed goals older than 28 board days (logic/Completions.lua)
 	result.count, result.longest = fire.count, fire.longest
 	ns.outlets.Advanced(result, mode)
 	return result
@@ -354,21 +355,16 @@ function ns.ApplyEntry(state, record, mode)
 	end
 	if record.kind == "cast" then
 		local cast = record --[[@as PagleCast]]
-		-- (#232: each open goal counts the Cast's Catches here, before `caught` learns them, TKB-R46.)
 		-- TKB-R2, TKB-R30: zone recency, from every Cast, caught or not
 		local zone = cast.conditions.zone
 		if zone ~= 0 then
 			state.zones[zone] = cast.time
 			changed = true
 		end
-		-- TKB-R2, TKB-R46: every item ever caught
-		if cast.outcome == "caught" then
-			for _, slot in ipairs(cast.items) do
-				if slot.itemID ~= 0 and not state.caught[slot.itemID] then
-					state.caught[slot.itemID] = true
-					changed = true
-				end
-			end
+		-- TKB-R45, TKB-R46, TKB-R60: the open goals count its Catches and may complete (logic/Completions.lua); every
+		-- item ever caught joins `caught` after its Catch is counted
+		if ns.CountCast(state, cast, mode) then
+			changed = true
 		end
 	end
 	return changed
@@ -390,7 +386,12 @@ function ns.ProjectionDef(global, sessionRulesVersion)
 		rulesVersion = ns.TKB_RULES_VERSION * 1000 + sessionRulesVersion,
 		reset = ns.NewBoardState,
 		apply = function(state, record, mode)
+			local coins = state.coins
 			if ns.ApplyEntry(state, record, mode) and mode == "live" then
+				-- TKB-R63, SHOP-R2: after each live entry that changes the Coins, never mid-rebuild
+				if state.coins ~= coins then
+					ns.ReportCoins()
+				end
 				ns.Redraw("projection")
 			end
 		end,

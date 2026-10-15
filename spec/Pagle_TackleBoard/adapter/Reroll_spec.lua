@@ -298,15 +298,31 @@ describe("taking a goal down", function()
 			assert.are.equal(appended[3].id, ns.State().pins.notices[2])
 		end)
 
-		it("isn't allowed for any goal while the projection is updating", function()
-			local ns = started()
+		it("takes nothing down while the projection is updating; the pins grey the button meanwhile", function()
+			local ns, loaded = started()
+			ns.IsUpdating = function()
+				return true
+			end
+
+			ns.TakeDown(HAUL)
+			ns.TakeDown(EXPEDITION)
+
+			assert.is_nil(loaded.client.popup)
+			assert.are.equal(0, #rerolls(ns))
+			-- TKB-R108: the pins (#239) disable the shown button while ns.IsUpdating(); CanTakeDown doesn't hide it
+			assert.are.same({ true, true }, { ns.CanTakeDown(HAUL), ns.CanTakeDown(EXPEDITION) })
+		end)
+
+		it("asks nothing while the projection is updating, even for a goal with progress", function()
+			local ns, loaded = started()
+			ns.State().goals[HAUL].progress = 12
 			ns.IsUpdating = function()
 				return true
 			end
 
 			ns.TakeDown(HAUL)
 
-			assert.are.same({ false, false }, { ns.CanTakeDown(HAUL), ns.CanTakeDown(EXPEDITION) })
+			assert.is_nil(loaded.client.popup)
 			assert.are.equal(0, #rerolls(ns))
 		end)
 	end)

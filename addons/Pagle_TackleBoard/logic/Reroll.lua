@@ -5,23 +5,20 @@ end
 ---@class PagleTackleBoardNS
 local ns = select(2, ...)
 
--- Taking a goal down (TKB-R55, TKB-R56): whether a goal may be taken down now, whether the player is asked first and
+-- Taking a goal down (TKB-R55, TKB-R56): whether a goal may be taken down, whether the player is asked first and
 -- what, and the `reroll` record that takes it down. Pure logic (CORE-R7): Core's catalogue calls, the current Session
 -- and the generation context come in from adapter/Reroll.lua. This file and logic/LiveStep.lua are the only ones that
 -- append records (TKB-R80; the boundary spec checks it).
 
---- The goal `goalID` names, if it can be taken down now (TKB-R55, TKB-R108): an open goal (not completed) issued by
---- an `issue` record, or a re-posted one only while it is stranded (TKB-R44), and only while the projection isn't
---- updating. Nil otherwise, also for an ID the board doesn't know.
+--- The goal `goalID` names, if it is one that can be taken down (TKB-R55): an open goal (not completed) issued by an
+--- `issue` record, or a re-posted one only while it is stranded (TKB-R44). Nil otherwise, also for an ID the board
+--- doesn't know. Whether the projection is updating (TKB-R108) is the caller's: the button shows greyed then, and
+--- nothing is taken down.
 ---@param state TackleBoardState
 ---@param goalID string
----@param updating boolean whether the projection is updating (LOG-R74)
 ---@param pagle table Core's catalogue calls (LOG-R55), for ns.IsStranded
 ---@return TackleGoal?
-function ns.TakeDownGoal(state, goalID, updating, pagle)
-	if updating then
-		return nil
-	end
+function ns.TakeDownGoal(state, goalID, pagle)
 	local goal = state.goals[goalID]
 	if not goal or goal.doneDay ~= nil then
 		return nil

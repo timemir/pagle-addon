@@ -12,19 +12,24 @@ local ns = select(2, ...)
 -- The confirm's StaticPopupDialogs key, the one field .luacheckrc lets the Tackle Board set.
 local DIALOG = "PAGLE_TACKLEBOARD_REROLL"
 
---- The goal `goalID` names if it can be taken down now (TKB-R55, TKB-R108), from the projection's state.
+--- The goal `goalID` names if it can be taken down now (TKB-R55, TKB-R108): one ns.CanTakeDown allows, while the
+--- projection isn't updating.
 ---@param goalID string
 ---@return TackleGoal?
 local function takeable(goalID)
-	return ns.TakeDownGoal(ns.State(), goalID, ns.IsUpdating(), Pagle)
+	if ns.IsUpdating() then
+		return nil
+	end
+	return ns.TakeDownGoal(ns.State(), goalID, Pagle)
 end
 
---- Whether a goal's "take it down" shows and works now (TKB-R55): an open goal from an `issue` record, or a stranded
---- re-posted one, while the projection isn't updating.
+--- Whether a goal's "take it down" shows (TKB-R55): an open goal from an `issue` record, or a stranded re-posted
+--- one. It doesn't read ns.IsUpdating(): the pins grey the button while the projection is updating (TKB-R108), and
+--- ns.TakeDown refuses then.
 ---@param goalID string the entry ID of the record that issued it (TKB-R23)
 ---@return boolean
 function ns.CanTakeDown(goalID)
-	return takeable(goalID) ~= nil
+	return ns.TakeDownGoal(ns.State(), goalID, Pagle) ~= nil
 end
 
 -- Appends the `reroll` record for `goalID` if it can still be taken down (TKB-R55: checked again on confirm).
