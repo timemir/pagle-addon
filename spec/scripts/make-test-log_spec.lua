@@ -1,7 +1,7 @@
 -- scripts/make-test-log.lua: the test logs the M4 exit check plays (#172, #174). It runs over a copy of the fixture
 -- account spec/scripts/fixtures/WTF/Account/M4-Test#1/, written the way the client writes it (CRLF, no indent, a
--- leading blank line): Ada and Bram, the dev's real PagleLog with Bram's Casts last, a PagleDB, Pagle.lua.bak and
--- Pagle_Ledger.lua (and no Pagle_Ledger.lua.bak). The world is spec/scripts/fixtures/TestLogCatalogue.lua
+-- leading blank line): Ada and Bram, the dev's real PagleLog with Bram's Casts last, a PagleDB, Pagle.lua.bak,
+-- Pagle_Ledger.lua and Pagle_QoL.lua (and no Pagle_Ledger.lua.bak or Pagle_QoL.lua.bak). The world is spec/scripts/fixtures/TestLogCatalogue.lua
 -- (--catalogue), which lists a Legend, Noise, a gated Species and a container beside ordinary Species, junk and
 -- trophies. What a test log holds is read back here with Core's own codec and folded with the Ledger's own logic/,
 -- the same oracle the game uses (catch-log.md › Entry formats, LED-R3).
@@ -10,7 +10,13 @@ local FIXTURE = "spec/scripts/fixtures/WTF/Account/M4-Test#1"
 local CATALOGUE = "spec/scripts/fixtures/TestLogCatalogue.lua"
 local NOW = 1792000000 -- 2026-10-14 17:46:40 UTC, the server time the script runs at
 local ORIGINAL_LOG_ID = "5d2e8a0c4b1f7e93"
-local SV_FILES = { "Pagle.lua", "Pagle.lua.bak", "Pagle_Ledger.lua", "Pagle_Ledger.lua.bak" }
+-- Every Pagle addon's SavedVariables file and its .bak: Core, the Ledger and QoL now, Hunts, Stats and the Tackle
+-- Board once they ship.
+local SV_FILES = {}
+for _, addon in ipairs({ "Pagle", "Pagle_Ledger", "Pagle_QoL", "Pagle_Hunts", "Pagle_Stats", "Pagle_TackleBoard" }) do
+	SV_FILES[#SV_FILES + 1] = addon .. ".lua"
+	SV_FILES[#SV_FILES + 1] = addon .. ".lua.bak"
+end
 
 local core = loadAddon("Pagle", FOREVER_GLOBALS).ns
 
@@ -148,10 +154,14 @@ local function folded(records)
 	return state
 end
 
--- Makes a test log on a new copy of the fixture account; returns the account, the test logs' folder, the one stage
--- folder the run made (nil if none) and the run's output.
-local function make(preset, now)
+-- Makes a test log on a new copy of the fixture account, with the files in `planted` (name to text) added to its
+-- SavedVariables first; returns the account, the test logs' folder, the one stage folder the run made (nil if none)
+-- and the run's output.
+local function make(preset, now, planted)
 	local account, out = newAccount()
+	for name, text in pairs(planted or {}) do
+		writeFile(account .. "/SavedVariables/" .. name, text)
+	end
 	local lines, err, code =
 		run({ "--account", account, "--preset", preset, "--out", out, "--catalogue", CATALOGUE }, now)
 	local stages = folders(out .. "/" .. account:match("[^/]*$"))
@@ -285,13 +295,11 @@ describe("scripts/make-test-log.lua", function()
 		end)
 
 		it(
-			"backs up Pagle.lua, Pagle_Ledger.lua and their .bak byte for byte, leaving out the one that's missing",
+			"backs up every Pagle SavedVariables file and .bak there is byte for byte, leaving out the missing ones",
 			function()
-				assert.are.same(
-					{ "Pagle.lua", "Pagle.lua.bak", "Pagle_Ledger.lua" },
-					folders(made.stage .. "/original")
-				)
-				for _, name in ipairs({ "Pagle.lua", "Pagle.lua.bak", "Pagle_Ledger.lua" }) do
+				local present = { "Pagle.lua", "Pagle.lua.bak", "Pagle_Ledger.lua", "Pagle_QoL.lua" }
+				assert.are.same(present, folders(made.stage .. "/original"))
+				for _, name in ipairs(present) do
 					assert.are.equal(
 						readFile(FIXTURE .. "/SavedVariables/" .. name),
 						readFile(made.stage .. "/original/" .. name)
@@ -465,6 +473,68 @@ describe("scripts/make-test-log.lua", function()
 			assert.are.equal(readFile(second .. "/Pagle.lua"), switched)
 			assert.are.equal(0, restoreCode)
 			assert.are.same(fixtureFiles(), savedFiles(made.account))
+		end)
+	end)
+
+	describe("every Pagle addon's SavedVariables file, through --preset, a game played and --restore", function()
+		-- A SavedVariables file holding one table, as the client writes it.
+		local function svFile(name, key)
+			return "\r\n" .. name .. ' = {\r\n["' .. key .. '"] = true,\r\n}\r\n'
+		end
+		-- An account that has Hunts, Stats and the Tackle Board too, and another addon's file beside them.
+		local made = make("level10", nil, {
+			["Pagle_Hunts.lua"] = svFile("PagleHuntsDB", "real"),
+			["Pagle_Hunts.lua.bak"] = svFile("PagleHuntsDB", "older"),
+			["Pagle_Stats.lua"] = svFile("PagleStatsDB", "real"),
+			["Pagle_TackleBoard.lua.bak"] = svFile("PagleTackleBoardDB", "older"),
+			["Angleur.lua"] = svFile("AngleurDB", "real"),
+		})
+		local before = savedFiles(made.account)
+		local backedUp = folders(made.stage .. "/original")
+		modeRun(made, "--install", NOW + 10)
+		-- The logout after the play rewrites every Pagle file but the test log, adding the ones that weren't there, and
+		-- Angleur's file too.
+		local played = {}
+		for _, name in ipairs(SV_FILES) do
+			if name ~= "Pagle.lua" then
+				played[name] = svFile("Played", name)
+				writeFile(made.account .. "/SavedVariables/" .. name, played[name])
+			end
+		end
+		writeFile(made.account .. "/SavedVariables/Angleur.lua", svFile("AngleurDB", "played"))
+		local restoreErr, restoreCode = modeRun(made, "--restore", NOW + 20)
+
+		it("--preset backs up each one there is, and no other addon's file", function()
+			assert.are.same({
+				"Pagle.lua",
+				"Pagle.lua.bak",
+				"Pagle_Hunts.lua",
+				"Pagle_Hunts.lua.bak",
+				"Pagle_Ledger.lua",
+				"Pagle_QoL.lua",
+				"Pagle_Stats.lua",
+				"Pagle_TackleBoard.lua.bak",
+			}, backedUp)
+			for _, name in ipairs(backedUp) do
+				assert.are.equal(before[name], readFile(made.stage .. "/original/" .. name))
+			end
+		end)
+
+		it("--restore puts each one back byte for byte and removes the ones the play added", function()
+			assert.are.equal("", restoreErr)
+			assert.are.equal(0, restoreCode)
+			assert.are.same(before, savedFiles(made.account))
+			assert.is_nil(readFile(made.account .. "/SavedVariables/Pagle_TackleBoard.lua"))
+			assert.is_nil(readFile(made.account .. "/SavedVariables/Pagle_QoL.lua.bak"))
+		end)
+
+		it("--restore keeps every file it replaced, and leaves another addon's file as the play left it", function()
+			local kept = made.stage .. "/replaced-20261014-174700/"
+			for name, text in pairs(played) do
+				assert.are.equal(text, readFile(kept .. name))
+			end
+			assert.is_nil(readFile(kept .. "Angleur.lua"))
+			assert.are.equal(svFile("AngleurDB", "played"), readFile(made.account .. "/SavedVariables/Angleur.lua"))
 		end)
 	end)
 

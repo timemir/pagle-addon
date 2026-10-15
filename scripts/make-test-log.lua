@@ -8,8 +8,8 @@
 --   lua scripts/make-test-log.lua --account <folder> --restore [--out <folder>]
 --
 -- --preset only reads the account folder. It writes a dated stage folder under <out>/<ACCT>/ (--out defaults to
--- ~/pagle-test-logs): original/, a byte-for-byte backup of Pagle.lua, Pagle_Ledger.lua and their .bak, written
--- first, then Pagle.lua, the test log. That Pagle.lua is the backed-up one with only PagleLog replaced: a new logId
+-- ~/pagle-test-logs): original/, a byte-for-byte backup of every Pagle addon's SavedVariables file and .bak there is
+-- (SV_FILES), written first, then Pagle.lua, the test log. That Pagle.lua is the backed-up one with only PagleLog replaced: a new logId
 -- (LOG-R15), `test = true` (a test log, catch-log.md › Data, so /pagle dev catch appends on it), the same characters,
 -- the last build entry, each character's last Skill Reading, and Casts of ordinary Species, junk and trophies on the
 -- charted zones' lists, one item each, for the character of the dev's last Cast.
@@ -33,8 +33,13 @@ local USAGE = "usage: lua scripts/make-test-log.lua --account <WTF/Account/<ACCT
 -- The repo root, from this script's path: Core's and the Ledger's logic/ and the catalogue are read from addons/.
 local ROOT = ((arg and arg[0] or ""):match("^(.*)[/\\]") or ".") .. "/.."
 
--- The SavedVariables files backed up and restored, in this order.
-local SV_FILES = { "Pagle.lua", "Pagle.lua.bak", "Pagle_Ledger.lua", "Pagle_Ledger.lua.bak" }
+-- The SavedVariables files backed up and restored, in this order: every Pagle addon's file and its .bak, Core's,
+-- the Ledger's and QoL's, and the Modules' that ship later, so a test play leaves none of them changed.
+local SV_FILES = {}
+for _, addon in ipairs({ "Pagle", "Pagle_Ledger", "Pagle_QoL", "Pagle_Hunts", "Pagle_Stats", "Pagle_TackleBoard" }) do
+	SV_FILES[#SV_FILES + 1] = addon .. ".lua"
+	SV_FILES[#SV_FILES + 1] = addon .. ".lua.bak"
+end
 
 -- The test Casts' times: sessions of CASTS_PER_SESSION Casts CAST_GAP seconds apart, starting SESSION_GAP apart,
 -- the last one END_GAP before the script runs. Fresh Water refills 10 an hour (LED-R22), so each session starts with
@@ -672,8 +677,8 @@ end
 local function restoreNote(options)
 	print("To put the real files back, with the game fully closed:")
 	print("  " .. command(options, "--restore"))
-	print("  It puts Pagle.lua, Pagle_Ledger.lua and their .bak back byte for byte, so the real log and Ledger return")
-	print("  with their own logId and celebrated set, and nothing is written up again.")
+	print("  It puts every Pagle SavedVariables file and .bak back byte for byte, so the real log, Ledger and settings")
+	print("  return with their own logId and celebrated set, and nothing is written up again.")
 end
 
 local function characterName(log, char)
@@ -749,13 +754,11 @@ local function makeTestLog(options, now)
 	end
 	-- The backup first, then the test log, then stage.txt, which makes it a stage --install and --restore see.
 	makeFolder(stage .. "/original")
-	local backedUp, missing = {}, {}
+	local backedUp = {}
 	for _, name in ipairs(SV_FILES) do
 		if originals[name] then
 			writeFile(stage .. "/original/" .. name, originals[name])
 			backedUp[#backedUp + 1] = name
-		else
-			missing[#missing + 1] = name
 		end
 	end
 	writeFile(stage .. "/Pagle.lua", text)
@@ -826,8 +829,12 @@ local function makeTestLog(options, now)
 			game.label
 		)
 	)
-	local none = #missing > 0 and " (there was no " .. table.concat(missing, ", ") .. ")" or ""
-	print(("backup: %s/original/ holds %s as they were%s"):format(stage, table.concat(backedUp, ", "), none))
+	print(
+		("backup: %s/original/ holds %s as they were, every Pagle SavedVariables file there is"):format(
+			stage,
+			table.concat(backedUp, ", ")
+		)
+	)
 	print(("test log: %s/Pagle.lua, PagleDB and the rest of Pagle.lua as they were"):format(stage))
 	print("Nothing under " .. options.account .. " was changed. To play it, with the game fully closed:")
 	print("  " .. command(options, "--install"))
