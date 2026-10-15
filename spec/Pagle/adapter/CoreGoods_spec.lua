@@ -83,6 +83,26 @@ describe("Core's slots and goods", function()
 			Pagle.IsOwned("core.crest.crest3"),
 		})
 	end)
+
+	it("each have an in-client icon, the shop's swatch (SHOP-R25, wallet-and-shop.md › UI)", function()
+		local loaded = loadCore()
+		loaded.client.fire("PLAYER_LOGIN")
+		local Pagle = loaded.env.Pagle
+
+		local without = {}
+		local count = 0
+		for _, slot in ipairs(loaded.ns.goods:Slots()) do
+			for _, good in ipairs(loaded.ns.goods:GoodsOf(slot.id)) do
+				count = count + 1
+				local icon = Pagle.GetGood(good.id).icon
+				if type(icon) ~= "string" or not icon:find("^Interface\\Icons\\%S+$") then
+					without[#without + 1] = good.id
+				end
+			end
+		end
+
+		assert.are.same({ 9, {} }, { count, without })
+	end)
 end)
 
 describe("Core's goods' names", function()

@@ -27,8 +27,9 @@ local ICONS = "Interface\\Icons\\"
 
 --- Core's slots and goods at M4 (SHOP-R25), in the order they register and the shop lists them. A toast style's
 --- look is the toast styles' (ANN-R80); a sound set's sounds are ns.SOUND_SETS[soundSet]; a crest's look is its
---- icon, which the Ledger draws on the Journal's bookplate through Pagle.GetGood (LED-R112). Each icon is an
---- in-client texture, standing in until Pagle has its own art.
+--- icon, which the Ledger draws on the Journal's bookplate through Pagle.GetGood (LED-R112). Every good has an icon,
+--- the shop's swatch (wallet-and-shop.md › UI). Each is an in-client texture listed in build 70338's
+--- ManifestInterfaceData, standing in until Pagle has its own art.
 ---@type PagleCoreSlot[]
 ns.CORE_GOODS = {
 	{
@@ -36,9 +37,9 @@ ns.CORE_GOODS = {
 		label = ns.L.SLOT_TOAST_STYLE,
 		category = "Announcements",
 		goods = {
-			{ id = "core.toaststyle.timber", default = true },
-			{ id = "core.toaststyle.ripple", tier = 1 },
-			{ id = "core.toaststyle.lanternglow", tier = 2 },
+			{ id = "core.toaststyle.timber", default = true, icon = ICONS .. "INV_Crate_01" },
+			{ id = "core.toaststyle.ripple", tier = 1, icon = ICONS .. "Ability_Shaman_WaterShield" },
+			{ id = "core.toaststyle.lanternglow", tier = 2, icon = ICONS .. "INV_Misc_Lantern_01" },
 		},
 	},
 	{
