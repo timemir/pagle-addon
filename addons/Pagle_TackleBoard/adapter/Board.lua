@@ -8,8 +8,8 @@ local ns = select(2, ...)
 -- The Tackle Board on the client (TKB-R100, TKB-R107, TKB-R108, TKB-R193): a wooden frame with a brass plaque round a
 -- cork board, with a ledge below, drawing what logic/Board.lua decides: the empty slip and its Start button before
 -- Start, "Updating…" while the projection updates, and each part's renderer once started. The parts' contents are the
--- pins' and the ledge's tickets (#239, #240); this file draws only the board. It makes no secure frames, so it opens
--- and works while restricted (TKB-R193). The look follows prototypes/tackle-board/ variant C, in
+-- pins' and the ledge's (adapter/Pins.lua, adapter/Ledge.lua); this file draws only the board. It makes no secure
+-- frames, so it opens and works while restricted (TKB-R193). The look follows prototypes/tackle-board/ variant C, in
 -- adapter/BoardWidgets.lua's art.
 
 -- The frame's global name: UISpecialFrames takes names, and Esc hides the frames it lists (TKB-R100).

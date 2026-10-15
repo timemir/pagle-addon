@@ -11,16 +11,7 @@ local ns = select(2, ...)
 -- gives its rows clicks and docks it. Look reference: prototypes/tackle-board/'s tracker mode K2 (`.tb`), whose CSS
 -- gives the colours below.
 
--- A tint from its hex code, as the prototype's CSS writes it: { r, g, b }, 0 to 1.
----@param hex string "RRGGBB"
----@return number[]
-local function tint(hex)
-	return {
-		tonumber(hex:sub(1, 2), 16) / 255,
-		tonumber(hex:sub(3, 4), 16) / 255,
-		tonumber(hex:sub(5, 6), 16) / 255,
-	}
-end
+local tint = ns.BoardTint
 
 --- The tracker's width in pixels, as the Stats tracker's, so the dock's blocks line up (CORE-R70).
 ns.TRACKER_WIDTH = 250
@@ -94,8 +85,6 @@ local FRAME_PAD, GRAIN_TILE = 7, 128
 -- The header's collapse mark: minus while expanded, plus while collapsed, as the client's own collapsible lists.
 local EXPANDED_MARK = "Interface\\Buttons\\UI-MinusButton-Up"
 local COLLAPSED_MARK = "Interface\\Buttons\\UI-PlusButton-Up"
--- How far the fire icon's square is cropped to its flame, each side (an icon's edge is a frame), as on the ledge.
-local ICON_CROP = 0.08
 
 --- One row of the block: every widget a line kind may use, shown as its line needs. A button, so the live tracker can
 --- give it clicks (TKB-R122, TKB-R123).
@@ -249,9 +238,7 @@ local function newRow(block)
 	row.sub = fontString(row, "GameFontHighlightSmall")
 	row.sub:SetPoint("TOPLEFT", WHERE_INDENT, -(GOAL_PAD + TEXT_HEIGHT))
 	row.sub:SetPoint("TOPRIGHT", 0, -(GOAL_PAD + TEXT_HEIGHT))
-	row.flame = row:CreateTexture(nil, "ARTWORK")
-	row.flame:SetTexture(ns.BOARD_TEXTURES.flame)
-	row.flame:SetTexCoord(ICON_CROP, 1 - ICON_CROP, ICON_CROP, 1 - ICON_CROP)
+	row.flame = ns.BoardFlameIcon(row:CreateTexture(nil, "ARTWORK"))
 	row.flame:SetSize(FLAME_SIZE, FLAME_SIZE)
 	row.flame:SetPoint("RIGHT", row.right, "LEFT", -2, 0)
 	row.rule = row:CreateTexture(nil, "ARTWORK")

@@ -11,7 +11,7 @@ local ns = select(2, ...)
 -- (clicking it opens the Campfire card), the Fly Box (clicking it opens its drawer), the brass tally plate (it opens
 -- the card too) and the shop link, which calls Pagle.OpenShop() and so prints Core's line while restricted. The card
 -- and the drawer lie over the cork, one at a time; each closes with its button, and both are closed when the board
--- opens. The board never shows the Coins balance (ADR 0009). Every symbol is a texture, never a glyph (#248).
+-- opens. The board never shows the Coins balance (ADR 0009). Every symbol is a texture, never a glyph (CORE-R9).
 
 -- The spike (variant C's `.spike`): the nail 26 high, done slips 104 × 64 stacked down it, each 24 below the last, or
 -- closer to keep the stack inside 400 pixels; the label under the stack.
@@ -90,22 +90,6 @@ local OVERLAY_LEVEL = 40
 ---@field card TackleCampfireCardFrame
 ---@field drawer TackleDrawerFrame
 
--- A hover of `lines` on `owner`.
----@param owner Frame
----@param lines string[]
-local function showHover(owner, lines)
-	GameTooltip:SetOwner(owner, "ANCHOR_RIGHT")
-	GameTooltip:SetText(lines[1])
-	for i = 2, #lines do
-		GameTooltip:AddLine(lines[i])
-	end
-	GameTooltip:Show()
-end
-
-local function hideHover()
-	GameTooltip:Hide()
-end
-
 -- The celebrated set's titles (TKB-R64, TKB-R83): those already shown, which the card keeps shown as earned.
 ---@return { [string]: true }
 local function celebratedTitles()
@@ -130,10 +114,10 @@ local function newSpikedSlip(spike, i)
 	slip.label:SetPoint("TOPLEFT", 6, -18)
 	slip:SetScript("OnEnter", function(self)
 		if self.view then
-			showHover(self, self.view.hover)
+			ns.BoardHover(self, self.view.hover)
 		end
 	end)
-	slip:SetScript("OnLeave", hideHover)
+	slip:SetScript("OnLeave", ns.BoardHoverHide)
 	return slip
 end
 
@@ -204,10 +188,10 @@ local function newDayCell(card)
 	cell.number:SetPoint("CENTER")
 	cell:SetScript("OnEnter", function(self)
 		if self.view then
-			showHover(self, { self.view.date, self.view.text })
+			ns.BoardHover(self, { self.view.date, self.view.text })
 		end
 	end)
-	cell:SetScript("OnLeave", hideHover)
+	cell:SetScript("OnLeave", ns.BoardHoverHide)
 	return cell
 end
 
@@ -367,10 +351,10 @@ local function buildDrawer(ledge)
 		local cell = ns.NewBoardFeltCell(drawer, CELL_WIDTH, CELL_HEIGHT)
 		cell:SetScript("OnEnter", function(self)
 			if self.cell then
-				showHover(self, self.cell.hover)
+				ns.BoardHover(self, self.cell.hover)
 			end
 		end)
-		cell:SetScript("OnLeave", hideHover)
+		cell:SetScript("OnLeave", ns.BoardHoverHide)
 		drawer.cells[i] = cell
 	end
 	drawer.note = ns.NewBoardHand(drawer, look.boxSmall)
@@ -454,10 +438,7 @@ local function buildBox(ledge)
 	local box = CreateFrame("Button", nil, ledge) --[[@as TackleFlyBoxButton]]
 	box:SetSize(BOX_WIDTH, BOX_HEIGHT)
 	box:SetPoint("BOTTOM", 0, 10)
-	ns.BoardSolid(box, look.woodInner, "BACKGROUND")
-	local face = ns.BoardSolid(box, look.button, "BORDER")
-	face:SetPoint("TOPLEFT", 2, -2)
-	face:SetPoint("BOTTOMRIGHT", -2, 2)
+	ns.NewBoardFace(box, look.woodInner, look.button, 2)
 	box.title = ns.BoardText(box, fonts.button, look.sealText)
 	box.title:SetPoint("TOP", 0, -10)
 	box.title:SetText(ns.L.FLY_BOX)
@@ -475,10 +456,7 @@ local function buildPlate(ledge)
 	local look, fonts = ns.BOARD_LOOK, ns.BoardFonts()
 	local plate = CreateFrame("Button", nil, ledge) --[[@as TackleTallyPlate]]
 	plate:SetPoint("BOTTOMRIGHT", -24, 24)
-	ns.BoardSolid(plate, look.brassEdge, "BACKGROUND")
-	plate.face = ns.BoardSolid(plate, look.brass, "BORDER")
-	plate.face:SetPoint("TOPLEFT", 1, -1)
-	plate.face:SetPoint("BOTTOMRIGHT", -1, 1)
+	plate.face = ns.NewBoardFace(plate, look.brassEdge, look.brass, 1)
 	plate.counts = ns.BoardText(plate, fonts.small, look.brassText)
 	plate.counts:SetJustifyH("CENTER")
 	plate.counts:SetPoint("TOP", 0, -5)

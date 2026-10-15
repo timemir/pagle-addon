@@ -12,20 +12,21 @@ local ns = select(2, ...)
 -- Journal, the Hunts board and the Stats book (parchment, ink, a serif face for printed text, a handwriting face for
 -- notes, brass and wax), but not a book. The Tackle Board shares no code with them (ADR 0001), though some textures
 -- are the same client files. Every texture sits on a solid tint or carries a vertex tint, so a texture the client
--- lacks leaves the tint showing.
---
--- Later tickets add makers here: the pins (#239), the spike and the ledge (#240).
+-- lacks leaves the tint showing. The pins (adapter/Pins.lua), the ledge (adapter/Ledge.lua), the tracker
+-- (adapter/TrackerBlock.lua) and the Curio Shop's previews (adapter/Goods.lua) draw with these makers.
 
--- A tint from its hex code, as the prototype's CSS writes it: { r, g, b }, 0 to 1.
+--- A tint from its hex code, as the prototype's CSS writes it: { r, g, b }, 0 to 1. The board, the tracker and the
+--- tracker frames all tint with it.
 ---@param hex string "RRGGBB"
 ---@return number[]
-local function tint(hex)
+function ns.BoardTint(hex)
 	return {
 		tonumber(hex:sub(1, 2), 16) / 255,
 		tonumber(hex:sub(3, 4), 16) / 255,
 		tonumber(hex:sub(5, 6), 16) / 255,
 	}
 end
+local tint = ns.BoardTint
 
 --- The board's tints, from variant C's CSS (`.vC`, `.slip`, `.ledge`, `.woodbtn`). Where the prototype shades a
 --- gradient, the tint lies between its ends.
@@ -65,7 +66,7 @@ ns.BOARD_LOOK = {
 	button = tint("724724"), -- a wooden button: between #8a5a2a and #5a3414
 	buttonShine = tint("b07a40"), -- its top edge
 	buttonOff = tint("8a7a60"), -- a disabled button's words
-	-- The spike and the ledge (#240): variant C's `.spike`, `.ledge .fire`, `.box`, `.brass`, `.drawer`, `.felt`,
+	-- The spike and the ledge (adapter/Ledge.lua): variant C's `.spike`, `.ledge .fire`, `.box`, `.brass`, `.drawer`, `.felt`,
 	-- `.card2` and the flame's SVG.
 	nail = tint("9a9a9a"), -- the spike's nail: between #666 and #ddd
 	spiked = tint("e8d8b0"), -- a done slip on the spike
@@ -181,6 +182,39 @@ function ns.BoardSolid(frame, color, layer, alpha, sublevel)
 	texture:SetColorTexture(color[1], color[2], color[3], alpha or 1)
 	texture:SetAllPoints()
 	return texture
+end
+
+--- A face framed by an edge (TKB-R100): an `edgeColor` solid filling `frame` and a `faceColor` solid `inset` pixels
+--- inside it, as the wooden button and the Fly Box (wood), and the brass plaque and the tally plate (brass) draw theirs.
+---@param frame Frame
+---@param edgeColor number[]
+---@param faceColor number[]
+---@param inset number
+---@return Texture face
+---@return Texture edge
+function ns.NewBoardFace(frame, edgeColor, faceColor, inset)
+	local edge = ns.BoardSolid(frame, edgeColor, "BACKGROUND")
+	local face = ns.BoardSolid(frame, faceColor, "BORDER")
+	face:SetPoint("TOPLEFT", inset, -inset)
+	face:SetPoint("BOTTOMRIGHT", -inset, inset)
+	return face, edge
+end
+
+--- A hover on `owner` (TKB-R102, TKB-R106): GameTooltip with `lines[1]` as its title and the rest under it.
+---@param owner Frame
+---@param lines string[]
+function ns.BoardHover(owner, lines)
+	GameTooltip:SetOwner(owner, "ANCHOR_RIGHT")
+	GameTooltip:SetText(lines[1])
+	for i = 2, #lines do
+		GameTooltip:AddLine(lines[i])
+	end
+	GameTooltip:Show()
+end
+
+--- Hides the board's hover.
+function ns.BoardHoverHide()
+	GameTooltip:Hide()
 end
 
 --- A font string on `frame` in one of the board's fonts and tints.
@@ -344,10 +378,7 @@ end
 ---@return TacklePlaqueView
 function ns.NewBoardPlaque(parent)
 	local plaque = CreateFrame("Frame", nil, parent) --[[@as TacklePlaqueView]]
-	ns.BoardSolid(plaque, LOOK.brassEdge, "BACKGROUND")
-	plaque.face = ns.BoardSolid(plaque, LOOK.brass, "BORDER")
-	plaque.face:SetPoint("TOPLEFT", 1, -1)
-	plaque.face:SetPoint("BOTTOMRIGHT", -1, 1)
+	plaque.face = ns.NewBoardFace(plaque, LOOK.brassEdge, LOOK.brass, 1)
 	plaque.label = ns.BoardText(plaque, ns.BoardFonts().plaque, LOOK.brassText)
 	plaque.label:SetPoint("CENTER")
 	function plaque.SetPlaque(self, text)
@@ -544,6 +575,18 @@ function ns.NewBoardSlip(parent, width, height, poster)
 	return slip
 end
 
+--- A scrap of paper on the cork (TKB-R101: an overflow chip): a slip's shadow filling `frame` and its paper 1 px in
+--- from the right and 2 px up from the bottom, so the shadow shows there.
+---@param frame Frame
+---@return Texture paper
+function ns.BoardScrap(frame)
+	ns.BoardSolid(frame, LOOK.shadow, "BACKGROUND", 0.55)
+	local paper = ns.BoardSolid(frame, LOOK.paper, "BACKGROUND", 1, 1)
+	paper:SetPoint("TOPLEFT", 0, 0)
+	paper:SetPoint("BOTTOMRIGHT", -1, 2)
+	return paper
+end
+
 --- A wooden button (TKB-R107: Start my board): its dark edge, the wood, the light along its top and its words.
 --- `SetUsable` enables or disables it, greying its words while disabled; the mouse over it brightens the wood.
 ---@class TackleButtonView: Button
@@ -562,10 +605,7 @@ local HOVER = 1.15
 ---@return TackleButtonView
 function ns.NewBoardButton(parent, text, onClick)
 	local button = CreateFrame("Button", nil, parent) --[[@as TackleButtonView]]
-	button.edge = ns.BoardSolid(button, LOOK.woodInner, "BACKGROUND")
-	button.face = ns.BoardSolid(button, LOOK.button, "BORDER")
-	button.face:SetPoint("TOPLEFT", 2, -2)
-	button.face:SetPoint("BOTTOMRIGHT", -2, 2)
+	button.face, button.edge = ns.NewBoardFace(button, LOOK.woodInner, LOOK.button, 2)
 	button.shine = edge(button, "TOP", LOOK.buttonShine, 1, 2, 2, "ARTWORK")
 	button.label = ns.BoardText(button, ns.BoardFonts().button, LOOK.sealText)
 	button.label:SetPoint("CENTER")
@@ -603,7 +643,7 @@ function ns.NewBoardButton(parent, text, onClick)
 	return button
 end
 
--- The pins' makers (#239).
+-- The pins' makers (adapter/Pins.lua).
 
 --- An empty pin (TKB-R105): a dashed outline on the cork, a lone brass tack and its words by hand at the bottom.
 --- `SetEmpty` sets its words. It takes no mouse, so the board drags by it.
@@ -669,7 +709,7 @@ function ns.NewBoardHighlight(parent)
 	return ring
 end
 
--- The spike's and the ledge's makers (#240).
+-- The spike's and the ledge's makers (adapter/Ledge.lua).
 
 --- An outline of `thickness` round `frame` in `color`: a day's box on the Campfire card.
 ---@param frame Frame
@@ -716,6 +756,16 @@ local FLAME_SCALES = { 0.5, 0.66, 0.8, 0.92, 1.04 }
 -- How far the fire icon's square is cropped to its flame, each side (an icon's edge is a frame).
 local ICON_CROP = 0.08
 
+--- Sets `texture` to the fire icon (ns.BOARD_TEXTURES.flame) cropped to its flame: the Campfire's flame and the
+--- tracker header's small one (TKB-R106, TKB-R122).
+---@param texture Texture
+---@return Texture texture
+function ns.BoardFlameIcon(texture)
+	texture:SetTexture(TEXTURES.flame)
+	texture:SetTexCoord(ICON_CROP, 1 - ICON_CROP, ICON_CROP, 1 - ICON_CROP)
+	return texture
+end
+
 ---@param parent Frame
 ---@param size number the Campfire's box, square
 ---@return TackleFlameView
@@ -743,9 +793,7 @@ function ns.NewBoardFlame(parent, size)
 		ember:SetPoint("BOTTOM", size * at[1], base + size * at[2])
 		fire.embers[i] = ember
 	end
-	fire.flame = fire:CreateTexture(nil, "OVERLAY", nil, 1)
-	fire.flame:SetTexture(TEXTURES.flame)
-	fire.flame:SetTexCoord(ICON_CROP, 1 - ICON_CROP, ICON_CROP, 1 - ICON_CROP)
+	fire.flame = ns.BoardFlameIcon(fire:CreateTexture(nil, "OVERLAY", nil, 1))
 	fire.flame:SetBlendMode("ADD")
 	fire.flame:SetPoint("BOTTOM", 0, base)
 	function fire.SetFire(self, view)
@@ -850,7 +898,7 @@ function ns.NewBoardFeltCell(parent, width, height)
 end
 
 --- The shop link's pointing hand (TKB-R106): the client's pointing gauntlet, mirrored to point right, as a texture,
---- never a glyph (#248).
+--- never a glyph (CORE-R9).
 ---@param parent Frame
 ---@param size number
 ---@return Texture

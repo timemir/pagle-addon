@@ -69,7 +69,6 @@ local ticker, listening = nil, false
 ---@param view TacklePinView
 ---@param lines string[]?
 local function showHover(owner, view, lines)
-	GameTooltip:SetOwner(owner, "ANCHOR_RIGHT")
 	local all = {}
 	for _, line in ipairs(lines or {}) do
 		all[#all + 1] = line
@@ -81,15 +80,7 @@ local function showHover(owner, view, lines)
 		local icon = species.caught and ns.BOARD_TEXTURES.tick or ns.BOARD_TEXTURES.box
 		all[#all + 1] = "|T" .. icon .. ":0|t " .. species.name
 	end
-	GameTooltip:SetText(all[1])
-	for i = 2, #all do
-		GameTooltip:AddLine(all[i])
-	end
-	GameTooltip:Show()
-end
-
-local function hideHover()
-	GameTooltip:Hide()
+	ns.BoardHover(owner, all)
 end
 
 -- Places `line` under `above`, `gap` pixels down, `width` wide (a slip's inside).
@@ -175,7 +166,7 @@ local function newGoalSlip(slot, width, height, poster)
 		self:SetFrameLevel(level)
 		self:ClearAllPoints()
 		self:SetPoint("TOPLEFT", slot, "TOPLEFT", 0, 0)
-		hideHover()
+		ns.BoardHoverHide()
 	end)
 	return slip
 end
@@ -338,10 +329,7 @@ local function newChip(strip, i)
 	chip:SetSize(CHIP_WIDTH, strip:GetHeight() - 4)
 	chip:SetPoint("TOPLEFT", (i - 1) * (CHIP_WIDTH + CHIP_GAP), -2)
 	chip:EnableMouse(true)
-	ns.BoardSolid(chip, look.shadow, "BACKGROUND", 0.55)
-	local paper = ns.BoardSolid(chip, look.paper, "BACKGROUND", 1, 1)
-	paper:SetPoint("TOPLEFT", 0, 0)
-	paper:SetPoint("BOTTOMRIGHT", -1, 2)
+	ns.BoardScrap(chip)
 	chip.label = ns.BoardText(chip, ns.BoardFonts().small, look.ink)
 	chip.label:SetWordWrap(false)
 	chip.label:SetWidth(CHIP_WIDTH - 12)
@@ -353,7 +341,7 @@ local function newChip(strip, i)
 			showHover(self, view, { view.text, view.progress, where, view.pay })
 		end
 	end)
-	chip:SetScript("OnLeave", hideHover)
+	chip:SetScript("OnLeave", ns.BoardHoverHide)
 	local ring = ns.NewBoardHighlight(strip)
 	ring:SetPoint("TOPLEFT", chip, "TOPLEFT", -3, 3)
 	ring:SetPoint("BOTTOMRIGHT", chip, "BOTTOMRIGHT", 3, -3)

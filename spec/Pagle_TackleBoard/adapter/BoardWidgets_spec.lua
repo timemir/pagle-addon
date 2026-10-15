@@ -246,6 +246,51 @@ describe("the board's art kit", function()
 		assert.are.same(ns.BOARD_LOOK.sealText, rgb(button.label.textColor))
 	end)
 
+	it("frames a face by its edge, inset, for the wooden and brass pieces (TKB-R100)", function()
+		local ns, parent = kit()
+		local look = ns.BOARD_LOOK
+
+		local face, edge = ns.NewBoardFace(parent, look.brassEdge, look.brass, 1)
+		local button = ns.NewBoardButton(parent, "Start my board", function() end)
+
+		assert.are.same(rgba(look.brassEdge), edge.color)
+		assert.are.same(rgba(look.brass), face.color)
+		assert.are.same({ { "TOPLEFT", 1, -1 }, { "BOTTOMRIGHT", -1, 1 } }, face.points)
+		assert.are.same(rgba(look.woodInner), button.edge.color)
+		assert.are.same({ { "TOPLEFT", 2, -2 }, { "BOTTOMRIGHT", -2, 2 } }, button.face.points)
+	end)
+
+	it("lays a scrap of paper over its shadow, the shadow showing right and below (TKB-R101)", function()
+		local ns, parent = kit()
+
+		local paper = ns.BoardScrap(parent)
+
+		assert.are.same(rgba(ns.BOARD_LOOK.paper), paper.color)
+		assert.are.same({ { "TOPLEFT", 0, 0 }, { "BOTTOMRIGHT", -1, 2 } }, paper.points)
+	end)
+
+	it("shows a hover's first line as its title and the rest under it, and hides it (TKB-R102)", function()
+		local ns, parent, loaded = kit()
+
+		ns.BoardHover(parent, { "Posted Sun 11 Oct, 08:15", "a note" })
+		local shown =
+			{ loaded.client.gameTooltip.owner, loaded.client.gameTooltip.anchor, loaded.client.gameTooltip.shown }
+		ns.BoardHoverHide()
+
+		assert.are.same({ parent, "ANCHOR_RIGHT", true }, shown)
+		assert.are.same({ "Posted Sun 11 Oct, 08:15", "a note" }, loaded.client.gameTooltip.lines)
+		assert.is_false(loaded.client.gameTooltip.shown)
+	end)
+
+	it("crops the fire icon to its flame, wherever a flame is drawn (TKB-R106, TKB-R122)", function()
+		local ns, parent = kit()
+
+		local flame = ns.BoardFlameIcon(parent:CreateTexture())
+
+		assert.are.equal(ns.BOARD_TEXTURES.flame, flame.texture)
+		assert.are.same({ 0.08, 1 - 0.08, 0.08, 1 - 0.08 }, flame.texCoord)
+	end)
+
 	it("brightens a wooden button's wood under the mouse, only while enabled (TKB-R107)", function()
 		local ns, parent = kit()
 		local button = ns.NewBoardButton(parent, "Start my board", function() end)
