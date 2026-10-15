@@ -6,23 +6,9 @@
 
 local ns = select(2, ...)
 
-local night = { time = { { 1260, 360 } } }
-
-local function item(category, fields)
-	local record = { category = category, legend = false, noise = false, removed = false, pool = false }
-	for key, value in pairs(fields) do
-		record[key] = value
-	end
-	return record
-end
-
-local function area(parent, fields)
-	local record = { parent = parent, continent = 0, hasData = true, skillBaseConfirmed = false, catches = {} }
-	for key, value in pairs(fields) do
-		record[key] = value
-	end
-	return record
-end
+-- The builders both fixture catalogues share, from this file's own folder.
+local build = dofile(debug.getinfo(1, "S").source:match("^@(.-)[^/\\]*$") .. "catalogue_builders.lua")
+local night, item, area = build.night, build.item, build.area
 
 ns.catalogue = {
 	fingerprint = "0123456789abcdef",
