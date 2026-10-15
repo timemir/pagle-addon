@@ -1004,11 +1004,8 @@ end)
 -- validates and orders as Core does, and fake.dock, which lays the stack out from each docked frame's IsShown,
 -- GetWidth and GetHeight at the time it's read, as Core's dock reflows on the client. A Shift-drag (fake.dock.drag)
 -- and Reset (fake.dock.reset) do nothing while restricted (CORE-R71, SET-R40).
-part(function(fake, Pagle, ns, host)
+part(function(fake, _, ns, host)
 	ns.WireDock(host, {
-		isRestricted = function()
-			return Pagle.IsRestricted()
-		end,
 		watch = function() end,
 		reflow = function() end,
 		place = function() end,
@@ -1017,16 +1014,10 @@ part(function(fake, Pagle, ns, host)
 			return nil
 		end,
 	})
-	local function isShown(frame)
-		return frame:IsShown()
-	end
-	local function sizeOf(frame)
-		return frame:GetWidth(), frame:GetHeight()
-	end
 
 	local function stack()
 		local list = {}
-		for i, placement in ipairs(ns.dock:Layout(isShown, sizeOf).placements) do
+		for i, placement in ipairs(ns.dock:Layout().placements) do
 			local tracker = placement.tracker
 			list[i] = {
 				id = tracker.id,
@@ -1047,11 +1038,7 @@ part(function(fake, Pagle, ns, host)
 			return ns.dock:Anchor()
 		end,
 		drag = function(point)
-			if not ns.dock:CanMove() then
-				return false
-			end
-			ns.dock:Moved(point)
-			return true
+			return ns.dock:Drop(point)
 		end,
 		reset = function()
 			return ns.dock:Reset()

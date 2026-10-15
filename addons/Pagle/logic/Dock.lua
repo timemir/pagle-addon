@@ -21,7 +21,7 @@ ns.DOCK_SPACING = 8
 ---@class PagleTracker
 ---@field id string
 ---@field order number
----@field frame table
+---@field frame table a frame: the dock reads its IsShown, GetWidth and GetHeight
 ---@field module string the docking Module's def.name, for ties
 
 --- Where one visible tracker goes: its frame's TOPRIGHT at the anchor's TOPRIGHT, `y` below it.
@@ -37,9 +37,6 @@ ns.DOCK_SPACING = 8
 ---@field placements PagleDockPlacement[]
 ---@field width number
 ---@field height number
-
---- Reads a frame's width and height now.
----@alias PagleDockSizeOf fun(frame: table): number, number
 
 --- The trackers docked so far.
 ---@class PagleDock
@@ -78,19 +75,21 @@ local function problem(trackers, tracker)
 	return nil
 end
 
---- Docks a Module's tracker (CORE-R70). Returns why it can't, docking nothing: a tracker that isn't a table, an id
---- that isn't a string, an order that isn't a number, no frame, or an id already docked by any Module.
+--- Docks a Module's tracker (CORE-R70), returning the docked record. Returns nil and why it can't, docking nothing:
+--- a tracker that isn't a table, an id that isn't a string, an order that isn't a number, no frame, or an id already
+--- docked by any Module.
 ---@param module string the Module's def.name
 ---@param tracker any `{ id, order, frame }`
+---@return PagleTracker? docked
 ---@return string? problem
 function Dock:Add(module, tracker)
 	local why = problem(self.trackers, tracker)
 	if why then
-		return "M:RegisterTracker: " .. why
+		return nil, "M:RegisterTracker: " .. why
 	end
-	self.trackers[#self.trackers + 1] =
-		{ id = tracker.id, order = tracker.order, frame = tracker.frame, module = module }
-	return nil
+	local docked = { id = tracker.id, order = tracker.order, frame = tracker.frame, module = module }
+	self.trackers[#self.trackers + 1] = docked
+	return docked, nil
 end
 
 --- The docked trackers in stack order: by `order`, ties by Module name, then by id (CORE-R70). A fresh list.
@@ -111,15 +110,15 @@ end
 
 --- The stack now (CORE-R70, CORE-R72): each shown tracker, in stack order, right-aligned to the anchor's top right
 --- and below the ones above it with DOCK_SPACING between; a hidden one takes no room. With none shown it is empty,
---- 0 by 0. `sizeOf` reads a frame's width and height now, so a resized frame moves the ones below it.
----@param isShown fun(frame: table): boolean
----@param sizeOf PagleDockSizeOf
+--- 0 by 0. Each frame is read now (IsShown, GetWidth, GetHeight; the only calls logic makes on the frames it was
+--- handed), so a resized frame moves the ones below it.
 ---@return PagleDockLayout
-function Dock:Layout(isShown, sizeOf)
+function Dock:Layout()
 	local placements, width, offset = {}, 0, 0
 	for _, tracker in ipairs(self:Trackers()) do
-		if isShown(tracker.frame) then
-			local frameWidth, frameHeight = sizeOf(tracker.frame)
+		local frame = tracker.frame
+		if frame:IsShown() then
+			local frameWidth, frameHeight = frame:GetWidth(), frame:GetHeight()
 			if #placements > 0 then
 				offset = offset + ns.DOCK_SPACING
 			end
