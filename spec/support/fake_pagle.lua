@@ -891,6 +891,7 @@ part(function(fake, Pagle, ns, host)
 	-- after its last Cast.
 	fake.serverTime = host.serverTime
 	Pagle.SESSION_RULES_VERSION = ns.SESSION_RULES_VERSION
+	Pagle.SESSION_GAP = ns.SESSION_GAP
 	ns.WireSessions(host)
 
 	local login = fake.login

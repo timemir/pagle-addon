@@ -163,6 +163,7 @@ Grouped by topic; the rules live in the linked file.
 | `Pagle.NextWindow(spec, fromTime)` | `Window` or `nil` | catch-log.md |
 | `Pagle.GetSession()` | `Session` or `nil` | catch-log.md |
 | `Pagle.SESSION_RULES_VERSION` | integer | catch-log.md |
+| `Pagle.SESSION_GAP` | integer, the Session gap in seconds (300) | catch-log.md |
 | `Pagle.CONTENT_FINGERPRINT` | string | catch-log.md |
 | `Pagle.GetItem(itemID)`, `GetArea(areaID)`, `GetZones()`, `GetZoneOf(areaID)`, `GetZoneCatches(zoneAreaID)`, `GetWindowSpec(windowID)` | catalogue records | catch-log.md |
 | `Pagle.SIZE_BANDS`, `Pagle.SIZE_RULES_VERSION`, `Pagle.FormatLength(mm)` | band list, integer, string | catch-log.md |

@@ -21,6 +21,10 @@ local Pagle = Pagle
 --- Changes whenever the Session rule changes; a Module that stores Sessions folds it into its rules version (LOG-R61).
 Pagle.SESSION_RULES_VERSION = ns.SESSION_RULES_VERSION
 
+--- The Session gap in seconds (LOG-R60): two Casts this far apart or more are in different Sessions. Modules that
+--- need it read this one rather than keep a copy (LOG-R61).
+Pagle.SESSION_GAP = ns.SESSION_GAP
+
 --- Core's Sessions, as ns.sessions: logic/Wiring.lua's, over adapter/Host.lua's host. Login step 1 opens them
 --- (ns.sessions:Open, LOG-R63); adapter/Fishing.lua calls ns.sessions:Cast right after each Cast's append, before
 --- the projections get it (LOG-R9 step 3).

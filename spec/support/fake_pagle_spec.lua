@@ -2075,6 +2075,13 @@ describe("FakePagle", function()
 			)
 		end)
 
+		it("serve Pagle.SESSION_GAP as Core does (LOG-R60, LOG-R61)", function()
+			assert.are.same(
+				{ 300, loadAddon("Pagle", FOREVER_GLOBALS).env.Pagle.SESSION_GAP },
+				{ newFakePagle().Pagle.SESSION_GAP, 300 }
+			)
+		end)
+
 		it(
 			"start with a played Cast, after its append and before its live apply, tagging it (LOG-R9, LOG-R62,"
 				.. " LOG-R98)",

@@ -70,6 +70,10 @@ describe("Sessions on the client", function()
 		assert.are.equal(2, loadAddon("Pagle", FOREVER_GLOBALS).env.Pagle.SESSION_RULES_VERSION)
 	end)
 
+	it("publishes Pagle.SESSION_GAP, the Session gap of 300 s, for Modules to read (LOG-R60, LOG-R61)", function()
+		assert.are.equal(300, loadAddon("Pagle", FOREVER_GLOBALS).env.Pagle.SESSION_GAP)
+	end)
+
 	it(
 		"for a Cast that opens a Session: appends, ends the previous Session, starts this one, applies it live, then"
 			.. " Catch and CastEnded (LOG-R9, LOG-R62, LOG-R73)",
