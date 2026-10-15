@@ -88,15 +88,17 @@ local BOARD_DAYS, BOARD_START_OFFSET = 2, 3600
 local BOARD_BOUNDARY_MAX_AGE = 7 * 86400
 
 -- boardday's goals, in issuing order (TKB-R21: the Expedition, then the Notices), as generation would stamp them
--- (TKB-R34's needs and pays, tackle-board.md › Tunables): `zone` is the Haul Notice's charted zone. Only the Haul
--- Notice can complete from Casts in one zone without a lure: the Haul Expedition needs 150 Catches, the Lure Notice
--- a lure and the Wanderer Notice three zones.
+-- (TKB-R34's needs and pays, read from the board's own logic/Generate.lua and logic/Rewards.lua): `zone` is the Haul
+-- Notice's charted zone. Only the Haul Notice can complete from Casts in one zone without a lure: the Haul Expedition
+-- needs 150 Catches, the Lure Notice a lure and the Wanderer Notice three zones.
 local function boardGoals(board, zone)
+	local notice, expedition = board.NOTICE_NEEDS, board.EXPEDITION_NEEDS
+	local pay = board.NOTICE_PAY
 	return {
-		{ type = "e", kind = "haul", tier = 0, pay = board.EXPEDITION_PAY, need = 150, target = zone },
-		{ type = "n", kind = "haul", tier = 1, pay = board.NOTICE_PAY[1], need = 20, target = zone },
-		{ type = "n", kind = "lure", tier = 1, pay = board.NOTICE_PAY[1], need = 15 },
-		{ type = "n", kind = "wanderer", tier = 3, pay = board.NOTICE_PAY[3], need = 3 },
+		{ type = "e", kind = "haul", tier = 0, pay = board.EXPEDITION_PAY, need = expedition.haul, target = zone },
+		{ type = "n", kind = "haul", tier = 1, pay = pay[1], need = notice.haul[1], target = zone },
+		{ type = "n", kind = "lure", tier = 1, pay = pay[1], need = notice.lure[1] },
+		{ type = "n", kind = "wanderer", tier = 3, pay = pay[3], need = notice.wanderer[3] },
 	}
 end
 
@@ -324,6 +326,23 @@ end
 
 -- Core and the Ledger -------------------------------------------------------------------------------------------
 
+-- The files `addon`'s TOC lists that match one of `patterns` (a path under the addon folder, the TOC's backslashes as
+-- slashes), in TOC order, as paths under the repo.
+local function tocFiles(addon, patterns)
+	local dir = ROOT .. "/addons/" .. addon .. "/"
+	local files = {}
+	for line in assert(readFile(dir .. addon .. ".toc")):gmatch("[^\n]+") do
+		local file = line:gsub("\r$", ""):match("^%s*(.-)%s*$"):gsub("\\", "/")
+		for _, pattern in ipairs(patterns) do
+			if file:match(pattern) then
+				files[#files + 1] = dir .. file
+				break
+			end
+		end
+	end
+	return files
+end
+
 -- Calls each file with (addon, ns), as the client calls an addon's files, in an environment over the standard
 -- globals (logic/ is plain Lua 5.1, CORE-R7) with a Pagle table for a Module's CORE-R11 guard, and `globals`.
 local function loadFiles(addon, ns, files, globals)
@@ -362,22 +381,16 @@ local function loadGame(cataloguePath)
 		refuse(("can't load the catalogue %s: %s"):format(label, tostring(err or "it sets no catalogue")))
 	end
 	local catalogue = data.NewCatalogue(data.catalogue)
-	local dir = ROOT .. "/addons/Pagle_Ledger/"
-	local files = {}
-	for line in assert(io.open(dir .. "Pagle_Ledger.toc")):lines() do
-		local file = line:gsub("\r$", ""):match("^%s*(.-)%s*$"):gsub("\\", "/")
-		if file:match("^logic/[^/]+%.lua$") then
-			files[#files + 1] = dir .. file
-		end
-	end
-	local ledger = assert(loadFiles("Pagle_Ledger", {}, files))
+	local ledger = assert(loadFiles("Pagle_Ledger", {}, tocFiles("Pagle_Ledger", { "^logic/[^/]+%.lua$" })))
 	local world = ledger.NewWorld(catalogue)
 	local lookups = { GetItem = catalogue.GetItem, MatchesConditions = core.MatchesConditions, world = world }
 	return { core = core, catalogue = catalogue, label = label, ledger = ledger, world = world, lookups = lookups }
 end
 
--- The Tackle Board's logic/ in Pagle_TackleBoard.toc order (TKB-R81), on the client's `bit` library (LuaBitOp,
--- which its FNV-1a hash reads), its catalogue calls over the game's catalogue (logic/Seams.lua's ns.api.pagle).
+-- The Tackle Board as read-wtf.lua loads it: each locale/, data/ and logic/ file Pagle_TackleBoard.toc lists, in TOC
+-- order (TKB-R81), on the client's `bit` library (LuaBitOp, which its FNV-1a hash reads), with the script's stand-ins
+-- for the client's calls in its ns.api (logic/Seams.lua): "Area {id}", "Map {id}" and "Item {id}" for the names, no
+-- realm clock, and Core's catalogue calls over the game's catalogue.
 local function loadBoard(game)
 	local ok, bit = pcall(require, "bit")
 	if not ok then
@@ -385,16 +398,21 @@ local function loadBoard(game)
 			"no LuaBitOp (`bit`), which the Tackle Board's logic/ needs: run scripts/make-test-log.sh; nothing written"
 		)
 	end
-	local dir = ROOT .. "/addons/Pagle_TackleBoard/"
-	local files = {}
-	for line in assert(io.open(dir .. "Pagle_TackleBoard.toc")):lines() do
-		local file = line:gsub("\r$", ""):match("^%s*(.-)%s*$"):gsub("\\", "/")
-		if file:match("^logic/[^/]+%.lua$") then
-			files[#files + 1] = dir .. file
+	local files = tocFiles("Pagle_TackleBoard", { "^locale/[^/]+%.lua$", "^data/[^/]+%.lua$", "^logic/[^/]+%.lua$" })
+	local board = assert(loadFiles("Pagle_TackleBoard", {}, files, { bit = bit }))
+	local function named(prefix)
+		return function(id)
+			return prefix .. " " .. tostring(id)
 		end
 	end
-	local board = assert(loadFiles("Pagle_TackleBoard", {}, files, { bit = bit }))
-	board.api = { pagle = game.catalogue }
+	board.api = {
+		AreaName = named("Area"),
+		MapName = named("Map"),
+		ItemName = named("Item"),
+		RequestItem = function() end,
+		FormatNumber = tostring,
+		pagle = game.catalogue,
+	}
 	return board
 end
 
@@ -684,7 +702,8 @@ end
 -- (TKB-R80): { kind, seq, dayStart, weekStart }, or nil when the log has none.
 local function latestBoundary(game, board, log)
 	local latest
-	for record in game.core.OpenCatchLog(deepCopy(log), { decodeErrors = 0 }, 0):Iterate(0, "TackleBoard") do
+	local module = board.ModuleDef().name
+	for record in game.core.OpenCatchLog(deepCopy(log), { decodeErrors = 0 }, 0):Iterate(0, module) do
 		local decoded = record.kind == "module" and board.DecodeRecord(record.recordKind, record.payload)
 		if decoded and (decoded.kind == "start" or decoded.kind == "day") then
 			latest =
@@ -694,9 +713,9 @@ local function latestBoundary(game, board, log)
 	return latest
 end
 
--- Plans boardday's board at server time `now` (TKB-R10–R12): today's board day starts at the latest boundary's reset
--- time of day, day 0 BOARD_DAYS days before it, and day 0's week is the one of the latest boundary's weekly reset
--- (moved by whole weeks) that day 0's start falls in, with the WEEK_SLACK board days count weeks with.
+-- Plans boardday's board at server time `now` (TKB-R10–R12), numbered by the board's own logic/Days.lua from the
+-- latest boundary: today's board day starts at its reset time of day, day 0 BOARD_DAYS days before it, and day 0's
+-- week is the one of its weekly reset (moved by whole weeks) that day 0's start falls in (ns.WeekOfDay).
 local function planBoard(game, board, facts, log, now)
 	local latest = latestBoundary(game, board, log)
 	if not latest then
@@ -705,7 +724,6 @@ local function planBoard(game, board, facts, log, now)
 				.. " then run this again; nothing written"
 		)
 	end
-	local day, week = board.DAY_SECONDS, board.WEEK_SECONDS
 	if now - latest.dayStart > BOARD_BOUNDARY_MAX_AGE then
 		refuse(
 			("the board's latest boundary, the %s record at seq %d (day began %s), is older than a week: log in once"):format(
@@ -715,9 +733,11 @@ local function planBoard(game, board, facts, log, now)
 			) .. " with the board started, so its live step writes a day record, then quit; nothing written"
 		)
 	end
-	local today = latest.dayStart + day * math.floor((now - latest.dayStart) / day)
-	local dayStart = today - BOARD_DAYS * day
-	local weekStart = latest.weekStart + week * math.floor((dayStart - latest.weekStart + board.WEEK_SLACK) / week)
+	-- The latest boundary as day 0 of week 0, so the board's numbers count from it.
+	local from = { day = 0, week = 0, dayStart = latest.dayStart, weekStart = latest.weekStart }
+	local today = board.DayOf(from, now) --[[@as integer]]
+	local dayStart = board.DayStartOf(from, today - BOARD_DAYS)
+	local weekStart = latest.weekStart + board.WeekOfDay(from, today - BOARD_DAYS) * board.WEEK_SECONDS
 	local catches = catchable(game, facts)
 	if #catches == 0 then
 		refuse("no charted zone lists an ordinary Species, junk or trophy item to catch; nothing written")
@@ -733,7 +753,7 @@ local function planBoard(game, board, facts, log, now)
 		latest = latest,
 		dayStart = dayStart,
 		weekStart = weekStart,
-		nextReset = today + day,
+		nextReset = board.DayStartOf(from, today + 1),
 		zone = zone,
 		pairs = inZone,
 		goals = boardGoals(board, zone),
@@ -741,12 +761,12 @@ local function planBoard(game, board, facts, log, now)
 end
 
 -- A Tackle Board Module record for Core's Append (LOG-R40), by the fishing character.
-local function boardRecord(facts, time, recordKind, payload)
+local function boardRecord(board, facts, time, recordKind, payload)
 	return {
 		kind = "module",
 		char = facts.char,
 		time = time,
-		module = "TackleBoard",
+		module = board.ModuleDef().name,
 		recordKind = recordKind,
 		payload = payload,
 	}
@@ -757,9 +777,9 @@ end
 local function writeBoard(game, board, facts, log, layout)
 	local start = layout.dayStart + BOARD_START_OFFSET
 	local data, catchLog = newLog(game, log, facts, start - 60)
-	catchLog:Append(boardRecord(facts, start, "start", board.EncodeBoundary(layout.dayStart, layout.weekStart)))
+	catchLog:Append(boardRecord(board, facts, start, "start", board.EncodeBoundary(layout.dayStart, layout.weekStart)))
 	for _, goal in ipairs(layout.goals) do
-		catchLog:Append(boardRecord(facts, start, "issue", board.EncodeIssue(goal)))
+		catchLog:Append(boardRecord(board, facts, start, "issue", board.EncodeIssue(goal)))
 	end
 	for i = 1, layout.goals[2].need do
 		local pair = layout.pairs[(i - 1) % #layout.pairs + 1]
@@ -789,7 +809,7 @@ local function checkBoard(game, board, facts, data, layout, now)
 	local global = { decodeErrors = 0 }
 	local state = board.NewBoardState()
 	-- Read without Simulated Sizes (LOG-R65): none of boardday's goals is a Size goal.
-	for record in game.core.OpenCatchLog(deepCopy(data), global, now):Iterate(0, "TackleBoard") do
+	for record in game.core.OpenCatchLog(deepCopy(data), global, now):Iterate(0, board.ModuleDef().name) do
 		found.tags[record.kind] = (found.tags[record.kind] or 0) + 1
 		board.ApplyEntry(state, record, "rebuild")
 	end

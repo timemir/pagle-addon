@@ -34,8 +34,8 @@ local COLLECTOR_EXPEDITION_ITEMS = 6 -- never-caught Sub-collection items in can
 local NOTICE_TIERS = 3 -- a Notice's tier is drawn from 1 to this, unless its kind fixes it (TKB-R34)
 local EXPEDITION_TIER = 0 -- TKB-R34; the pay by tier and the Expedition pay are ns.NOTICE_PAY and ns.EXPEDITION_PAY
 
--- A Notice's need by tier (TKB-R34). The kinds that fix their tier list only that tier.
-local NOTICE_NEEDS = {
+--- A Notice's need by kind and tier (TKB-R34). The kinds that fix their tier list only that tier.
+ns.NOTICE_NEEDS = {
 	haul = { 20, 30, 40 },
 	variety = { 3, 4, 5 }, -- capped at the zone's eligible Species; the tier follows the need
 	wanderer = { [3] = 3 },
@@ -45,10 +45,12 @@ local NOTICE_NEEDS = {
 	lure = { 15, 20, 25 },
 	species = { 5, 10, 15 },
 }
+local NOTICE_NEEDS = ns.NOTICE_NEEDS
 local FIXED_TIERS = { wanderer = 3, collector = 2 } -- the Notice kinds whose tier the table fixes (TKB-R34)
 
--- An Expedition's need (TKB-R34); a Variety Expedition's is its stored Species.
-local EXPEDITION_NEEDS = { haul = 150, wanderer = 5, quality = 3, size = 1, collector = 3 }
+--- An Expedition's need by kind (TKB-R34); a Variety Expedition's is its stored Species.
+ns.EXPEDITION_NEEDS = { haul = 150, wanderer = 5, quality = 3, size = 1, collector = 3 }
+local EXPEDITION_NEEDS = ns.EXPEDITION_NEEDS
 
 local QUALITY_TARGETS = { n = 2, e = 3 } -- uncommon for Notices, rare for Expeditions (TKB-R34)
 local SIZE_TARGETS = { n = 3, e = 4 } -- Hefty for Notices, Whopper for Expeditions; never Monster (TKB-R34, TKB-R35)

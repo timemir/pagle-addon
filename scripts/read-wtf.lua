@@ -1667,13 +1667,15 @@ local GOAL_TYPES = { n = "Notice", e = "Expedition" }
 -- The Tackle Board's namespace with its strings and its logic: each locale/, data/ and logic/ file
 -- Pagle_TackleBoard.toc lists, in TOC order, called with ("Pagle_TackleBoard", ns) as the client calls an addon's files
 -- (spec/Pagle_TackleBoard/support.lua loads them the same way over FakePagle). Their CORE-R11 guard reads the Pagle
--- global, so it's a table here; logic/Rewards.lua takes LuaBitOp's functions at load, but nothing here ties a fly, so
--- an empty `bit` serves. Its ns.api (logic/Seams.lua) gets the reader's stand-ins for the client's calls: "Area {id}",
+-- global, so it's a table here; logic/Rewards.lua takes LuaBitOp's functions at load: the client's `bit` library, as
+-- make-test-log.lua loads it (read-wtf.sh puts it on the path), or an empty one without it, since nothing here ties a
+-- fly. Its ns.api (logic/Seams.lua) gets the reader's stand-ins for the client's calls: "Area {id}",
 -- "Map {id}" and "Item {id}" for the names, no realm clock (so realm dates read as UTC), and Core's catalogue calls
 -- over `catalogue` (nil when it can't load) with Core's Size bands.
 local function loadBoardLogic(catalogue)
 	local ns = {}
-	local env = setmetatable({ Pagle = {}, bit = {} }, { __index = _G })
+	local found, bit = pcall(require, "bit")
+	local env = setmetatable({ Pagle = {}, bit = found and bit or {} }, { __index = _G })
 	local dir = ROOT .. "/addons/Pagle_TackleBoard/"
 	for _, line in ipairs(assert(readLines(dir .. "Pagle_TackleBoard.toc"))) do
 		local file = line:match("^%s*(.-)%s*$"):gsub("\\", "/")

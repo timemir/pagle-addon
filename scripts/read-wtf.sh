@@ -14,4 +14,6 @@ if [[ ! -x $root/.tools/bin/lua ]]; then
 	echo "read-wtf: no $root/.tools/bin/lua; run scripts/setup.sh" >&2
 	exit 2
 fi
+# The Tackle Board's logic/ takes LuaBitOp, the `bit` library setup.sh installs beside that Lua (as make-test-log.sh).
+export LUA_CPATH="$root/.tools/lua/lib/lua/5.1/?.so;;"
 exec "$root/.tools/bin/lua" "$root/scripts/read-wtf.lua" "$@"
