@@ -410,9 +410,7 @@ def test_text_for_something_that_isn_t_there_is_an_orphan(
     fails(write_lore_tree(tmp_path, LEDGER + "\n" + extra, checks=ON), capsys, f"{FILE}: {problem}")
 
 
-def test_a_kind_another_addon_owns_is_an_orphan_and_the_tackle_board_s_check_is_still_not_built(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str]
-) -> None:
+def test_a_kind_another_addon_owns_is_an_orphan(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     # DATA-R102: each kind belongs to one addon, and a lore file holds only its own addon's kinds.
     manifest = MANIFEST + '\n[core.good]\nfields = ["name"]\nids = ["core.toaststyle.timber"]\n'
     ledger = LEDGER + '\n[good."core.toaststyle.timber"]\nname = "Timber"\n'
@@ -420,12 +418,6 @@ def test_a_kind_another_addon_owns_is_an_orphan_and_the_tackle_board_s_check_is_
         write_lore_tree(tmp_path / "ledger", ledger, manifest, checks=ON),
         capsys,
         f"{FILE}: good.core.toaststyle.timber.name: orphan: the kind good is core's (DATA-R102, DATA-R107)",
-    )
-    # Only the Ledger's, Core's, Hunts' and Stats' checks are built by M6 (DATA-R107): tackleboard waits for M7.
-    fails(
-        write_lore_tree(tmp_path / "tackleboard", checks='typicalLength = false\nlore = ["tackleboard"]\n'),
-        capsys,
-        "data/checks.toml: lore[0]: the tackleboard lore check isn't built yet (DATA-R107); leave it off",
     )
 
 
