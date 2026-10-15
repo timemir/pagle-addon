@@ -546,6 +546,33 @@ describe("the Ledger's M4 done", function()
 		end
 	)
 
+	it(
+		"fills the celebrated prestige rank, Catch Milestones and titles a rebuild newly earns, with no pop-up (LED-R90, LED-R93)",
+		function()
+			local history = {
+				cast(T0, fishes(1, TO_60)),
+				prestige(T0 + 60, 1),
+				cast(T0 + 120, times(FIRST_FISH, 1000 - TO_60), 0),
+			}
+			local last, lastLoaded = session({ history = history })
+			-- As M3 stored it: an older rules version, and no M4 key in the celebrated set.
+			local global = lastLoaded.env.PagleLedgerDB.global
+			global.projection.rulesVersion = 201
+			global.celebrated.milestones, global.celebrated.titles, global.celebrated.prestige = nil, nil, nil
+
+			local fake, loaded = nextSession(last, lastLoaded)
+
+			local celebrated = loaded.ns.db.global.celebrated
+			assert.are.same({ 1, true, true }, {
+				celebrated.prestige,
+				celebrated.milestones[1000],
+				celebrated.titles["title:prestige1"],
+			})
+			assert.are.same({}, fake.announcements)
+			assert.are.same({}, fake.writeUps)
+		end
+	)
+
 	it("raises no size record when a rebuild changes the records (LED-R84)", function()
 		local last, lastLoaded = session({ history = { cast(T0, { PIKE }, 0), cast(T0 + 60, { BIG_PIKE }, 0) } })
 
