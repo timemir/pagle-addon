@@ -36,7 +36,7 @@ local ROOT = ((arg and arg[0] or ""):match("^(.*)[/\\]") or ".") .. "/.."
 
 -- The helpers this script shares with scripts/read-wtf.lua, in this script's environment.
 local wtf = setfenv(assert(loadfile(ROOT .. "/scripts/lib/wtf.lua")), getfenv(1))(ROOT)
-local count, quote, readFile, listFolder = wtf.count, wtf.quote, wtf.readFile, wtf.listFolder
+local count, quote, readFile, writeFile, listFolder = wtf.count, wtf.quote, wtf.readFile, wtf.writeFile, wtf.listFolder
 local loadData, characterName = wtf.loadSavedVariables, wtf.characterName
 
 -- The SavedVariables files backed up and restored, in this order: every Pagle addon's file and its .bak, Core's,
@@ -122,16 +122,6 @@ end
 
 -- Files ------------------------------------------------------------------------------------------------------------
 
--- Writes `text` to `path` and reads it back: raises if the file doesn't hold exactly `text`.
-local function writeFile(path, text)
-	local file = assert(io.open(path, "wb"))
-	file:write(text)
-	file:close()
-	if readFile(path) ~= text then
-		error("wrote " .. path .. " but it doesn't read back the same")
-	end
-end
-
 local function makeFolder(path)
 	if os.execute("mkdir -p " .. quote(path)) ~= 0 then
 		error("can't make the folder " .. path)
@@ -168,43 +158,6 @@ local function deepEqual(a, b)
 	return true
 end
 
--- The client's SavedVariables layout for one value: no indent, `["key"] = value,` per field, array items followed
--- by `-- [n]`.
-local function serialize(value, lines, prefix, suffix)
-	local kind = type(value)
-	if kind == "table" then
-		lines[#lines + 1] = prefix .. "{"
-		for i, item in ipairs(value) do
-			serialize(item, lines, "", ", -- [" .. i .. "]")
-		end
-		local keys = {}
-		for key in pairs(value) do
-			if type(key) ~= "number" or key < 1 or key > #value or key % 1 ~= 0 then
-				keys[#keys + 1] = key
-			end
-		end
-		table.sort(keys, function(a, b)
-			if type(a) ~= type(b) then
-				return type(a) == "number"
-			end
-			return a < b
-		end)
-		for _, key in ipairs(keys) do
-			local name = type(key) == "string" and ("[%q]"):format(key) or ("[%s]"):format(tostring(key))
-			serialize(value[key], lines, name .. " = ", ",")
-		end
-		lines[#lines + 1] = "}" .. suffix
-	elseif kind == "string" then
-		lines[#lines + 1] = prefix .. ("%q"):format(value):gsub("\\\n", "\\n"):gsub("\r", "\\r") .. suffix
-	elseif kind == "number" and value % 1 == 0 and math.abs(value) < 2 ^ 53 then
-		lines[#lines + 1] = prefix .. ("%d"):format(value) .. suffix
-	elseif kind == "number" then
-		lines[#lines + 1] = prefix .. ("%.17g"):format(value) .. suffix
-	else
-		lines[#lines + 1] = prefix .. tostring(value) .. suffix
-	end
-end
-
 -- `text`, a SavedVariables file, with the global `name` assigned `value` instead, every other line as it was.
 -- Raises a refusal when the file doesn't assign `name` once at the top level.
 local function replaceGlobal(text, name, value)
@@ -238,7 +191,7 @@ local function replaceGlobal(text, name, value)
 	for i = 1, first - 1 do
 		replaced[#replaced + 1] = lines[i]
 	end
-	serialize(value, replaced, name .. " = ", "")
+	wtf.serialize(value, replaced, name .. " = ", "")
 	for i = last + 1, #lines do
 		replaced[#replaced + 1] = lines[i]
 	end

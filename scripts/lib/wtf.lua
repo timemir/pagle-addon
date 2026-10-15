@@ -23,6 +23,16 @@ function wtf.readFile(path)
 	return text
 end
 
+-- Writes `text` to `path` and reads it back: raises if the file doesn't hold exactly `text`.
+function wtf.writeFile(path, text)
+	local file = assert(io.open(path, "wb"))
+	file:write(text)
+	file:close()
+	if wtf.readFile(path) ~= text then
+		error("wrote " .. path .. " but it doesn't read back the same")
+	end
+end
+
 -- A file's lines without their line ends (the client writes CRLF), or nil when it can't be opened.
 function wtf.readLines(path)
 	local text = wtf.readFile(path)
@@ -84,6 +94,44 @@ function wtf.readSavedVariables(path)
 		return nil, "missing"
 	end
 	return wtf.loadSavedVariables(text, path:match("[^/\\]*$"))
+end
+
+-- The client's SavedVariables layout for one value, as lines added to `lines`: no indent, `["key"] = value,` per
+-- field (numbers first, then strings, each in order), array items followed by `-- [n]`. `prefix` starts the first
+-- line ("PagleLog = "), `suffix` ends the last.
+function wtf.serialize(value, lines, prefix, suffix)
+	local kind = type(value)
+	if kind == "table" then
+		lines[#lines + 1] = prefix .. "{"
+		for i, item in ipairs(value) do
+			wtf.serialize(item, lines, "", ", -- [" .. i .. "]")
+		end
+		local keys = {}
+		for key in pairs(value) do
+			if type(key) ~= "number" or key < 1 or key > #value or key % 1 ~= 0 then
+				keys[#keys + 1] = key
+			end
+		end
+		table.sort(keys, function(a, b)
+			if type(a) ~= type(b) then
+				return type(a) == "number"
+			end
+			return a < b
+		end)
+		for _, key in ipairs(keys) do
+			local name = type(key) == "string" and ("[%q]"):format(key) or ("[%s]"):format(tostring(key))
+			wtf.serialize(value[key], lines, name .. " = ", ",")
+		end
+		lines[#lines + 1] = "}" .. suffix
+	elseif kind == "string" then
+		lines[#lines + 1] = prefix .. ("%q"):format(value):gsub("\\\n", "\\n"):gsub("\r", "\\r") .. suffix
+	elseif kind == "number" and value % 1 == 0 and math.abs(value) < 2 ^ 53 then
+		lines[#lines + 1] = prefix .. ("%d"):format(value) .. suffix
+	elseif kind == "number" then
+		lines[#lines + 1] = prefix .. ("%.17g"):format(value) .. suffix
+	else
+		lines[#lines + 1] = prefix .. tostring(value) .. suffix
+	end
 end
 
 -- "1 Cast", "2 Casts"; plural defaults to noun .. "s".
