@@ -158,10 +158,10 @@ stage_tests() {
 
 # Without coverage, busted runs once per directory in spec/ that holds specs, and once for the specs at the top of
 # spec/, GATE_JOBS at a time (#254). Every shard's output prints after they all finish, in that order, then whether
-# it passed; any shard that doesn't pass fails tests. A coverage run stays one busted: luacov's stats file isn't
-# shard-safe.
+# it passed and its wall time; any shard that doesn't pass fails tests. A coverage run stays one busted: luacov's
+# stats file isn't shard-safe.
 busted_shards() {
-	local jobs=${GATE_JOBS:-4} shards=() dir i running=0 status failed=0
+	local jobs=${GATE_JOBS:-4} shards=() dir i running=0 status took failed=0
 	[[ $jobs =~ ^[1-9][0-9]*$ ]] || {
 		echo "tests: GATE_JOBS must be a whole number from 1, not '$jobs'" >&2
 		return 1
@@ -183,28 +183,28 @@ busted_shards() {
 		fi
 		# spec itself is the specs at its top: busted's own --no-recursive picks them, as its pattern would.
 		{
-			status=0
+			status=0 from=$SECONDS
 			if [[ ${shards[i]} == spec ]]; then
 				"$bin/busted" --no-recursive spec || status=$?
 			else
 				"$bin/busted" "${shards[i]}" || status=$?
 			fi
-			echo "$status" >"$logs/shards/$i.status"
+			echo "$status $((SECONDS - from))" >"$logs/shards/$i.status"
 		} >"$logs/shards/$i.log" 2>&1 &
 		running=$((running + 1))
 	done
 	wait
 	for i in "${!shards[@]}"; do
 		cat "$logs/shards/$i.log"
-		status=$(cat "$logs/shards/$i.status" 2>/dev/null) || status=none
+		read -r status took 2>/dev/null <"$logs/shards/$i.status" || status=none took=0
 		if [[ $status == 0 ]]; then
-			echo "tests: ${shards[i]} passed"
+			echo "tests: ${shards[i]} passed in ${took}s"
 		else
 			failed=1
 			if [[ $status =~ ^[0-9]+$ ]] && ((status > 128)); then
-				echo "tests: ${shards[i]} failed: busted was killed by signal $((status - 128))" >&2
+				echo "tests: ${shards[i]} failed in ${took}s: busted was killed by signal $((status - 128))" >&2
 			else
-				echo "tests: ${shards[i]} failed" >&2
+				echo "tests: ${shards[i]} failed in ${took}s" >&2
 			fi
 		fi
 	done
