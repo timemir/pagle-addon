@@ -848,7 +848,7 @@ end
 ---@field SetLine fun(self: StatsBookLineView, line: StatsBookLineData)
 
 -- A line's height.
-local LINE_HEIGHT = 22
+local LINE_HEIGHT = 20
 
 ---@param parent Frame
 ---@param width number

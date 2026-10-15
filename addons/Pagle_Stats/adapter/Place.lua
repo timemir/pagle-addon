@@ -19,7 +19,7 @@ local LOOK = ns.BOOK_LOOK
 
 -- Heights and gaps down a page, in pixels: a kicker's line, a title's line, the gap before a heading, a heading, a
 -- row, a short list's line, and the gap after a paragraph.
-local KICKER, TITLE, HEADING_GAP, HEADING, ROW, LINE, PARAGRAPH = 16, 36, 12, 24, 25, 22, 6
+local KICKER, TITLE, HEADING_GAP, HEADING, ROW, LINE, PARAGRAPH = 16, 36, 12, 24, 25, 20, 6
 
 -- A pool of one kind of block on a page, made on first use and reused at each draw.
 ---@class StatsPlacePool
