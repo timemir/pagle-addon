@@ -293,10 +293,16 @@ describe("a place's page (stats.md › UI › Place spread)", function()
 			assert.is_false(rowNamed(left, "Raw Brilliant Smallfish").star.shown)
 		end)
 
-		it("names each row in an ink of its quality", function()
-			local ns = ready(darkshore())
+		it("names each row in its quality's colour on the paper, as a Session's By quality does (STA-R59)", function()
+			local ns, loaded = ready(darkshore())
 
 			local left = open(ns, DARKSHORE)
+
+			-- One rule (ns.BookQualityInk): the game's colour, the paper's ink for Common's white or no quality.
+			local uncommon = loaded.env.ITEM_QUALITY_COLORS[2]
+			assert.are.same({ uncommon.r, uncommon.g, uncommon.b }, ns.BookQualityInk(2))
+			assert.are.same(ns.BOOK_LOOK.ink, ns.BookQualityInk(1))
+			assert.are.same(ns.BOOK_LOOK.ink, ns.BookQualityInk(nil))
 
 			assert.are.same(
 				ns.BookQualityInk(1),

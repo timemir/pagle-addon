@@ -103,7 +103,8 @@ ns.L = {
 	CHARACTER_FALLBACK = "Character %d",
 	QUALITY_FALLBACK = "Quality %d",
 
-	-- Your odds (logic/Odds.lua, STA-R43, STA-R45–R47). Every odds view carries the heading (STA-R46).
+	-- Your odds (logic/Odds.lua, STA-R43, STA-R45–R47). The entry and the tracker's hover carry the heading (STA-R46).
+	ODDS_HEADING = "Your odds",
 	ODDS_LEARNING_SHORT = "learning %d/%d",
 	ODDS_LEARNING = "Learning…",
 	ODDS_UNSEEN = "not seen yet",

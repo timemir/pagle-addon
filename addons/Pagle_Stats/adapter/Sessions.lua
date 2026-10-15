@@ -22,10 +22,6 @@ local KICKER, TITLE, SPAN, LINE = 18, 32, 22, 20
 local HEADING, HEADING_GAP = 20, 10
 local NOTE, LEDGER_GAP, PAGER, LINK = 18, 6, 22, 24
 
--- A figure's label in the paper's ink when its quality colour is this light or lighter (Common's white): the game's
--- colours are made for dark frames.
-local PALE = 0.75
-
 -- The ruled ledgers' columns (stats.md › UI › This Session), "Where" taking what the others leave.
 local STARTED_WIDTH, LENGTH_WIDTH, COUNT_WIDTH = 120, 60, 56
 
@@ -136,17 +132,6 @@ local function lineAt(view, i, y, label, value, color, onClick)
 	line:Show()
 end
 
--- An item quality's colour on the paper: the game's own (STA-R59), or the ink for one too pale to read on it.
----@param quality integer
----@return number[]
-local function qualityInk(quality)
-	local r, g, b = ns.QualityColor(quality)
-	if 0.299 * r + 0.587 * g + 0.114 * b >= PALE then
-		return LOOK.ink
-	end
-	return { r, g, b }
-end
-
 -- Where Catches by quality reads an item's quality (STA-R33): Core's catalogue, else the client.
 ---@type StatsQualityLookups
 local QUALITY_LOOKUPS = {
@@ -204,7 +189,7 @@ local function drawEntry(view, record, kicker, live)
 		ns.book:RequestItem(itemID)
 	end
 	for _, count in ipairs(qualities) do
-		line(ns.QualityName(count.quality), ns.Number(count.catches), qualityInk(count.quality))
+		line(ns.QualityName(count.quality), ns.Number(count.catches), ns.BookQualityInk(count.quality))
 	end
 
 	heading(view.where, L.SESSION_WHERE_AND_WHO)

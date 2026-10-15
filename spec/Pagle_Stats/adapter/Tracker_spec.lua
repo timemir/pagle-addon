@@ -216,27 +216,39 @@ describe("the live tracker", function()
 	end)
 
 	describe("its hover and clicks (STA-R83, CORE-R71)", function()
-		it("shows a watch's Dry spell and Your odds text on hover, and hides it after", function()
-			local loaded, fake, ns = ready()
-			fish(fake, 2, MACKEREL)
-			fish(fake, 1)
-			ns.Watch(MACKEREL, AUBERDINE)
-			local row = rowReading(ns, "Raw Mackerel")
+		it(
+			"shows a watch's Dry spell and Your odds text on hover, under a gold heading, and hides it after (STA-R46)",
+			function()
+				local loaded, fake, ns = ready()
+				fish(fake, 2, MACKEREL)
+				fish(fake, 1)
+				ns.Watch(MACKEREL, AUBERDINE)
+				local row = rowReading(ns, "Raw Mackerel")
+				local tooltip = loaded.env.GameTooltip
+				-- Each AddLine's colour, by its text.
+				local colours, addLine = {}, tooltip.AddLine
+				tooltip.AddLine = function(self, text, r, g, b, ...)
+					colours[text] = { r, g, b }
+					return addLine(self, text, r, g, b, ...)
+				end
 
-			row:GetScript("OnEnter")(row)
+				row:GetScript("OnEnter")(row)
 
-			local tooltip = loaded.env.GameTooltip
-			assert.is_true(tooltip.shown)
-			assert.are.equal(row, tooltip.owner)
-			assert.are.same({
-				"Raw Mackerel",
-				"1 Cast since my last Raw Mackerel.",
-				"A luck reading comes once Your odds have a number.",
-				"3 of the 100 Casts I need across Darkshore, below 170 skill before Your odds show a number.",
-			}, loaded.client.tooltipLines())
-			row:GetScript("OnLeave")(row)
-			assert.is_false(tooltip.shown)
-		end)
+				assert.are.same({ 1, 0.82, 0 }, colours["Your odds"])
+				assert.are.same({ 1, 1, 1 }, colours["1 Cast since my last Raw Mackerel."])
+				assert.is_true(tooltip.shown)
+				assert.are.equal(row, tooltip.owner)
+				assert.are.same({
+					"Raw Mackerel",
+					"1 Cast since my last Raw Mackerel.",
+					"A luck reading comes once Your odds have a number.",
+					"Your odds",
+					"3 of the 100 Casts I need across Darkshore, below 170 skill before Your odds show a number.",
+				}, loaded.client.tooltipLines())
+				row:GetScript("OnLeave")(row)
+				assert.is_false(tooltip.shown)
+			end
+		)
 
 		it("opens a watch's entry on the watched place's page, opening the book if closed", function()
 			local _, _, ns = ready()

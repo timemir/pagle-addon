@@ -61,11 +61,15 @@ local function hover(row)
 		item = line.item --[[@as integer]],
 		area = line.area --[[@as integer]],
 	}
-	local title, lines = ns.TrackerHover(input(), watch)
+	local title, lines, heading = ns.TrackerHover(input(), watch)
 	GameTooltip:SetOwner(row, "ANCHOR_LEFT")
 	GameTooltip:SetText(title)
-	for _, text in ipairs(lines) do
-		GameTooltip:AddLine(text, 1, 1, 1, true)
+	for i, text in ipairs(lines) do
+		if i == heading then
+			GameTooltip:AddLine(text, 1, 0.82, 0) -- the "Your odds" heading in the tooltip's gold (STA-R46)
+		else
+			GameTooltip:AddLine(text, 1, 1, 1, true)
+		end
 	end
 	GameTooltip:Show()
 end

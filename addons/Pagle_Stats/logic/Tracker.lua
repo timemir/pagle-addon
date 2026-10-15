@@ -88,17 +88,19 @@ local function watchLine(input, watch, pending)
 end
 
 --- A watch's hover (STA-R83): the item's name for its title, then its Dry spell text (STA-R53's first sentence, "{since}
---- Casts since my last {item}.", and the luck wording, or STA-R50's or STA-R54's text), then its Your odds sentence
---- for its state (the scope line when known, the learning or unseen sentence otherwise) and STA-R46's extra sentences.
---- While the projection is updating, only "Updating my records…" (STA-R85).
+--- Casts since my last {item}.", and the luck wording, or STA-R50's or STA-R54's text), then the heading "Your odds"
+--- (STA-R46) over its Your odds sentence for its state (the scope line when known, the learning or unseen sentence
+--- otherwise) and STA-R46's extra sentences. While the projection is updating, only "Updating my records…"
+--- (STA-R85), with no heading.
 ---@param input StatsTrackerInput the same as the tracker's (`on`, `live` and `watched` aren't read)
 ---@param watch StatsWatch
 ---@return string title
 ---@return string[] lines
+---@return integer? heading the index in `lines` of the "Your odds" heading, which the hover draws as a heading
 function ns.TrackerHover(input, watch)
 	local name = ns.Item(watch.item)
 	if input.updating then
-		return name, { ns.L.BOOK_UPDATING }
+		return name, { ns.L.BOOK_UPDATING }, nil
 	end
 	local reading = ns.Reading(input.state, watch.item, watch.area, input.skill, input.places)
 	local first, after = ns.DrySpellText(reading, name)
@@ -106,11 +108,13 @@ function ns.TrackerHover(input, watch)
 	if after then
 		lines[2] = after
 	end
+	lines[#lines + 1] = ns.L.ODDS_HEADING
+	local heading = #lines
 	lines[#lines + 1] = ns.OddsSentence(reading)
 	for _, note in ipairs(ns.OddsNotes(reading, input.places)) do
 		lines[#lines + 1] = note
 	end
-	return name, lines
+	return name, lines, heading
 end
 
 --- The tracker's lines now (STA-R81, STA-R82, STA-R85): shown while on with a current Session or a watch; the header

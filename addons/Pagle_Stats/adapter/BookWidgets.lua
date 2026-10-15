@@ -71,16 +71,6 @@ ns.BOOK_LOOK = {
 	plateText = tint("2a1a04"),
 	searchPaper = tint("efe0bb"), -- the search box (adapter/Search.lua)
 	margin = tint("7a6a50"), -- a row's margin: its Dry spell in handwriting
-	-- Item names by quality, in inks that read on the paper (variant D's `.vD .qn.q<n>`; the game's own white and
-	-- yellows don't): poor, common, uncommon, rare, epic, then legendary in a dark orange of our own.
-	quality = {
-		[0] = tint("7a7060"),
-		tint("3a2614"),
-		tint("2a7a1a"),
-		tint("1a4a9a"),
-		tint("6a2a9a"),
-		tint("9a5a10"),
-	},
 }
 local LOOK = ns.BOOK_LOOK
 
@@ -663,12 +653,24 @@ function ns.NewBookTile(parent, width, height)
 	return tile
 end
 
---- An item name's ink on the paper by its quality (variant D): `ns.BOOK_LOOK.quality`, or plain ink for a quality it
---- has none for or none known (an Uncharted item the client hasn't described).
+-- A quality colour this light or lighter (by its luminance; Common's white) is drawn in the paper's ink: the game's
+-- colours are made for dark frames (STA-R59).
+local PALE = 0.75
+
+--- An item quality's colour on the paper (STA-R59), for a place's rows and a Session's Catches by quality alike: the
+--- game's own (`ITEM_QUALITY_COLORS`), or the paper's ink for one too pale to read on it, or for no quality known
+--- (an Uncharted item the client hasn't described).
 ---@param quality integer?
 ---@return number[]
 function ns.BookQualityInk(quality)
-	return quality and LOOK.quality[quality] or LOOK.ink
+	if quality == nil then
+		return LOOK.ink
+	end
+	local r, g, b = ns.QualityColor(quality)
+	if 0.299 * r + 0.587 * g + 0.114 * b >= PALE then
+		return LOOK.ink
+	end
+	return { r, g, b }
 end
 
 --- A row on a place's page (stats.md › UI › Place spread): an ink icon, the name in its quality's ink, ★ when watched,

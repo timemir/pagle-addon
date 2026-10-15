@@ -118,7 +118,7 @@ Terms are used as `CONTEXT.md` defines them. Core rules are cited by ID (`LOG-R6
   Short forms, used in rows, tiles, the tracker and the item page: "learning {n}/100", "not seen yet", "1 in {nice(n / k)}". The long forms are on the entry (UI, place spread).
 - **STA-R44** Rounding. All rounding is half up (`floor(x + 0.5)`). `nice(x)` rounds for display: below 1.5 gives "1"; below 20, the nearest whole number; otherwise two significant figures, with thousands separators (`BreakUpLargeNumbers`). So 39.6 → "40", 212 → "210", 1,447 → "1,400".
 - **STA-R45** The range is Wilson's score interval at z = 1.96 for `k` of `n`: with `p = k/n`, `d = 1 + z²/n`, `c = p + z²/(2n)`, `r = z·√(p(1−p)/n + z²/(4n²))`, the bounds are `lo = (c − r)/d` and `hi = (c + r)/d`. It reads "Likely between 1 in {nice(1/hi)} and 1 in {nice(1/lo)} (95%)." When both round to the same text, it reads "Within rounding of 1 in {nice(n/k)} (95%)."
-- **STA-R46** Labelling. Every odds view carries the heading **Your odds**, and every number says what it rests on, in this **scope line**:
+- **STA-R46** Labelling. The item's entry and the tracker's hover carry the heading **Your odds**; the short forms in rows, tiles and lines sit under their page's own headings. Every number says what it rests on, in this **scope line**:
 
   "From {n} of my Casts {where}{ window}{, side}; {k} caught."
 
@@ -159,7 +159,7 @@ Terms are used as `CONTEXT.md` defines them. Core rules are cited by ID (`LOG-R6
   - Times and dates show in the player's local clock, like the game's own timestamps: a time as `date("%H:%M")`, a date as "{day} {%b} {%Y}" ("5 Oct 2026"), a Session's heading as "{%A} {day} {%B}" ("Monday 5 October"), where `{day}` is the day of the month without a leading zero. Windows show in realm time, as "HH:MM".
   - Counts use `BreakUpLargeNumbers`. Every "{n} Casts", "{n} Catches", "{n} Sessions", "{n} waters" and "{n} anglers … wait" uses the singular when n is 1.
   - A character shows as its name and surname, as Core stores them ("Ada Brook"). An item shows its `C_Item` name and icon; until they load, "Item {id}" with a question-mark icon. An area shows its `C_Map.GetAreaInfo` name, or "Area {id}" if it has none.
-  - Item qualities use the game's own names and colours (`ITEM_QUALITY<n>_DESC`, `ITEM_QUALITY_COLORS`).
+  - Item qualities use the game's own names and colours (`ITEM_QUALITY<n>_DESC`, `ITEM_QUALITY_COLORS`). On the book's paper a colour too pale to read on it (Common's white) is drawn in the paper's ink, by one rule wherever a quality is coloured: a place's rows and a Session's *By quality*.
   - A duration under a minute reads "under 1m", under an hour "21m", otherwise "1h 05m" (hours unbounded).
   - Time ago: under a minute "just now", under an hour "21m ago", under a day "3h ago", otherwise "4d ago".
 
@@ -199,7 +199,7 @@ Terms are used as `CONTEXT.md` defines them. Core rules are cited by ID (`LOG-R6
   - each watch, oldest first: a band dot (green normal, amber unlucky, red very unlucky, grey with no luck reading), the item's name and, on the right, its Dry spell count (the bare `n` when never caught in its scope, "just now" for 0); below it, the watched place's name (the subzone's or the zone's alone), the window name if any, and the band word, "normal" included (or the short odds text, "learning 37/100" or "not seen yet", when there is no band), joined by " · "
 
   The per-hour line always shows skill gained, "+0" included.
-- **STA-R83** Clicking the header toggles the book. Hovering a watch shows a tooltip: its Dry spell text (STA-R53's first sentence and luck wording, or STA-R50's or STA-R54's text), then its Your odds sentence for its state (the scope line when known; the learning or unseen sentence from the entry otherwise) with STA-R46's extra sentences. Clicking a watch opens the book if it is closed and shows that item's entry on the watched place's page.
+- **STA-R83** Clicking the header toggles the book. Hovering a watch shows a tooltip titled with the item's name: its Dry spell text (STA-R53's first sentence and luck wording, or STA-R50's or STA-R54's text), then the heading "Your odds" in gold over its Your odds sentence for its state (the scope line when known; the learning or unseen sentence from the entry otherwise) with STA-R46's extra sentences. While Stats is updating (STA-R85) it reads only "Updating my records…". Clicking a watch opens the book if it is closed and shows that item's entry on the watched place's page.
 - **STA-R84** The tracker draws its frame from `Pagle.GetEquipped("stats.trackerframe")` and redraws on `AppearanceChanged` for that slot (CORE-R73, SHOP-R33).
 - **STA-R85** While the projection is updating, the Session lines come from `Pagle.GetSession()` alone (Casts, Catches, got away; no per-hour or skill line), and each watch shows its name with "updating".
 - **STA-R86** The tracker redraws on the events in STA-R73, on `AppearanceChanged` for `stats.trackerframe`, and on the live-line tick while a Session is current. It keeps working in combat; only the dock's movement waits (CORE-R71).
@@ -343,7 +343,7 @@ Every string below is mechanical interface text in `ns.L` (STA-R58, STA-R59), no
   - on a zone page, heading *Its waters* (small: "my Casts"): every subzone of the zone that has its own catch list in `Pagle.GetZoneCatches(zone)` or a `places` record whose `zone` is this zone, alphabetical, each with my Casts there ("—" for none) and "I'm here"; each opens its place page
   - the row groups (STA-R18), each under its heading with its small note ("Your odds · Dry spell" for *Any time*, STA-R18's notes for *Pools* and *In their window*, "not on Pagle's chart for these waters" for *Also caught here*). Each row: an ink icon, the name in its quality colour, ★ when watched, Your odds in short (STA-R43; "learning {n}/100" in handwriting), and in the margin, in handwriting, the Dry spell when the item has been caught in the scope: "{since} since", with ", unlucky" or ", very unlucky" in red when it applies, or "just now" for 0. Nothing shows in the margin when it has never been caught there.
   - under a subzone's rows, when any row uses its zone (STA-R42): "Fish with fewer than 100 Casts in {subzone} use all of {zone} until then."
-- **Right page, no item chosen:** kicker "About these waters", the place's name, then "Casts", "Catches", and "Got away" as "{n} ({rate}%)"; then in handwriting "Pick a fish on the left for its odds and its Dry spell."
+- **Right page, no item chosen:** kicker "About these waters", the place's name, then "Casts", "Catches", and "Got away" as "{n} ({rate}%)", or "—" while the place has no Casts (no rate to give); then in handwriting "Pick a fish on the left for its odds and its Dry spell."
 - **Right page, an item's entry:**
   - the **watch** toggle at the top right, reading "watch" or "watching" (STA-R61)
   - kicker "Your odds · {place}" plus ", {window name}" when it has a window; title: the icon and name

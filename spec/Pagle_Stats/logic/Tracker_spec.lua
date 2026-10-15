@@ -272,16 +272,21 @@ describe("the live tracker's lines", function()
 			return ns.TrackerHover(input, watch)
 		end
 
-		it("titles it with the item, then its Dry spell, its luck wording and its Your odds sentence", function()
-			local title, lines_ = hover({ item = MACKEREL, area = DARKSHORE })
+		it(
+			"titles it with the item, then its Dry spell, its luck wording and its Your odds sentence under the heading (STA-R46)",
+			function()
+				local title, lines_, heading = hover({ item = MACKEREL, area = DARKSHORE })
 
-			assert.are.equal("Raw Mackerel", title)
-			assert.are.same({
-				"20 Casts since my last Raw Mackerel.",
-				"About 12 anglers in 100 wait this long. Nothing unusual.",
-				"From 400 of my Casts here, at or above 170 skill; 40 caught.",
-			}, lines_)
-		end)
+				assert.are.equal("Raw Mackerel", title)
+				assert.are.equal(3, heading)
+				assert.are.same({
+					"20 Casts since my last Raw Mackerel.",
+					"About 12 anglers in 100 wait this long. Nothing unusual.",
+					"Your odds",
+					"From 400 of my Casts here, at or above 170 skill; 40 caught.",
+				}, lines_)
+			end
+		)
 
 		it("adds STA-R46's sentences that apply: the entry, the window and the pool (STA-R46)", function()
 			local _, nightfin = hover({ item = NIGHTFIN, area = DARKSHORE })
@@ -290,6 +295,7 @@ describe("the live tracker's lines", function()
 			assert.are.same({
 				"20 Casts since my last Raw Nightfin Snapper.",
 				"Fewer than 1 angler in a million waits this long. Very unlucky, and every Cast is still its own roll.",
+				"Your odds",
 				"From 150 of my Casts here by night, at or above 170 skill; 75 caught.",
 				"Pagle hasn't confirmed it bites here yet.",
 				"The window isn't confirmed yet.",
@@ -297,6 +303,7 @@ describe("the live tracker's lines", function()
 			assert.are.same({
 				"20 Casts since my last Oily Blackmouth.",
 				"Roughly 1 angler in 320 waits this long. Unlucky, not broken.",
+				"Your odds",
 				"From 400 of my Casts here, at or above 170 skill; 100 caught.",
 				"Pagle hasn't confirmed it bites here yet.",
 				"Open water and pools combined: there is no pool data.",
@@ -314,26 +321,30 @@ describe("the live tracker's lines", function()
 
 			assert.are.same({
 				"Caught one on my last Cast here.",
+				"Your odds",
 				"From 400 of my Casts here, at or above 170 skill; 4 caught.",
 				"Pagle hasn't confirmed it bites here yet.",
 			}, smallfish)
 			assert.are.same({
 				"400 Casts across Darkshore, none yet.",
+				"Your odds",
 				"In 400 Casts across Darkshore, at or above 170 skill: rarer than about 1 in 130, if it bites here at all.",
 				"Pagle hasn't confirmed it bites here yet.",
 			}, firefin)
 			assert.are.same({
 				"37 Casts here, none yet.",
+				"Your odds",
 				"37 of the 100 Casts I need here, at or above 300 skill before Your odds show a number.",
 				"The no-junk line isn't confirmed yet.", -- Feralas' skillBase isn't confirmed in the fixture
 			}, learning)
 		end)
 
 		it("reads only the updating line while the projection is updating (STA-R85)", function()
-			local title, lines_ = hover({ item = MACKEREL, area = DARKSHORE }, { updating = true })
+			local title, lines_, heading = hover({ item = MACKEREL, area = DARKSHORE }, { updating = true })
 
 			assert.are.equal("Raw Mackerel", title)
 			assert.are.same({ "Updating my records…" }, lines_)
+			assert.is_nil(heading)
 		end)
 	end)
 end)
