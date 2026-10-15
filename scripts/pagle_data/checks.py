@@ -9,11 +9,9 @@ from pagle_data.toml_reader import check_keys, describe, read_toml
 
 CHECKS = "data/checks.toml"
 
-# The lore IDs (DATA-R100), one per addon with lore.
+# The lore IDs (DATA-R100), one per addon with lore. Each one's lore check is built (DATA-R107): the Ledger's from M3,
+# Core's from M4, Hunts' from M5, Stats' from M6 and the Tackle Board's from M7.
 LORE_IDS = ("core", "ledger", "hunts", "stats", "tackleboard")
-# The lore checks built so far (DATA-R107): the Ledger's from M3, Core's from M4, Hunts' from M5 and Stats' from M6;
-# the Tackle Board's comes in M7.
-BUILT_LORE_CHECKS = ("ledger", "core", "hunts", "stats")
 
 
 @dataclass(frozen=True)
@@ -26,10 +24,7 @@ class Checks:
 
 
 def read_checks(root: Path, problems: Problems) -> Checks:
-    """root/data/checks.toml. Each problem found goes into problems; the switches read are returned either way.
-
-    A lore ID whose check isn't built yet (BUILT_LORE_CHECKS) switched on is a problem rather than a check that
-    silently passes."""
+    """root/data/checks.toml. Each problem found goes into problems; the switches read are returned either way."""
     document = read_toml(root, CHECKS, problems)
     if document is None:
         return Checks()
@@ -55,8 +50,6 @@ def read_checks(root: Path, problems: Problems) -> Checks:
                 problems.add(item_at, f"expected a lore ID ({', '.join(LORE_IDS)}), got {shown}")
             elif item in lore:
                 problems.add(item_at, f"'{item}' is listed twice")
-            elif item not in BUILT_LORE_CHECKS:
-                problems.add(item_at, f"the {item} lore check isn't built yet (DATA-R107); leave it off")
             else:
                 lore.append(item)
     return Checks(typical_length, tuple(lore))

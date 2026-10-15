@@ -10,6 +10,7 @@
 ## SavedVariables: PagleTackleBoardDB
 
 locale\enUS.lua
+data\Lore.lua
 logic\Data.lua
 logic\Days.lua
 logic\Module.lua
