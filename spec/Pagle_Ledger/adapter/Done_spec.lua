@@ -172,7 +172,7 @@ describe("the Ledger's done", function()
 			})
 
 			assert.are.same(
-				{ { "While the Ledger was off", "Angler Level 2 → 3", "1 Species", "Pagle Coins +30" } },
+				{ { "While the Ledger was off", "Angler Level 2 to 3", "1 Species", "Pagle Coins +30" } },
 				writeUps(fake)
 			)
 			assert.are.same({}, fake.summarized)

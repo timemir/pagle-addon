@@ -11,7 +11,7 @@ local ns = select(2, ...)
 ns.L = {
 	-- QoL in the Settings status list, and its button there (QOL-R2, CORE-R44).
 	TITLE = "QoL",
-	SETTINGS_ACTION = "Fishing settings ›",
+	SETTINGS_ACTION = "Fishing settings »",
 	-- Key Bindings › AddOns (QOL-R1, QOL-R10).
 	BINDING_HEADER = "Pagle",
 	BINDING_FISHING_KEY = "Pagle: Fishing key",

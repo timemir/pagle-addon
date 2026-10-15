@@ -79,6 +79,7 @@ adapter\Settings.lua
 adapter\Settings.xml
 adapter\AnnouncementSettings.lua
 adapter\LookAndFeel.lua
+adapter\DevGlyphs.lua
 adapter\Slash.lua
 adapter\Wallet.lua
 adapter\Goods.lua

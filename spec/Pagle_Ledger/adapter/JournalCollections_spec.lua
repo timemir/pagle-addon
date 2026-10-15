@@ -107,8 +107,8 @@ describe("the Journal's Trophy Room", function()
 			assert.are.same({
 				"The Trophy Room",
 				"2 of 5 weights. Real weights, from the game's own trophy fish.",
-				"Mud Snapper ☆☆☆",
-				"Catfish ★★☆",
+				drawnSymbols("Mud Snapper ☆☆☆"),
+				drawnSymbols("Catfish ★★☆"),
 			}, blockTexts(left))
 			assert.are.same({ "0 / 1", "2 / 4" }, { left[3].value, left[4].value })
 			assert.are.same({ id = "trophy", args = { family = 2 } }, left[4].place)
@@ -170,7 +170,7 @@ describe("the Journal's Trophy Room", function()
 		assert.are.same({
 			"The Trophy Room",
 			"2 of 5 weights. Real weights, from the game's own trophy fish.",
-			"Catfish ★★☆",
+			drawnSymbols("Catfish ★★☆"),
 		}, blockTexts(pages.left))
 		assert.are.same({
 			"[stamps]",
@@ -239,7 +239,7 @@ describe("the Journal's Trophy Room", function()
 
 		local board = loaded.ns.journal.frame.right.drawn.board[1]
 
-		assert.are.same({ "✓", "17", "19", "✓", "22", "26" }, shownTexts(board))
+		assert.are.same({ drawnSymbols("✓"), "17", "19", drawnSymbols("✓"), "22", "26" }, shownTexts(board))
 	end)
 end)
 

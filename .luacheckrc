@@ -341,6 +341,7 @@ local helperGlobals = {
 	"forbiddenIn",
 	"shippedFiles",
 	"readFile",
+	"drawnSymbols",
 	"itemRecord",
 	"fishRecord",
 	"areaRecord",

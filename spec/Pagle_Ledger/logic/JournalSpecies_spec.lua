@@ -11,7 +11,7 @@ describe("the plain hint", function()
 	-- The Journal's words, as far as the hint reads them: zone names and window labels.
 	local text = {
 		Zone = function(_, zone)
-			return NAMES[zone] or "…"
+			return NAMES[zone] or "..."
 		end,
 		WindowLabel = function(_, window)
 			return ns.WindowLabel(window)
@@ -105,10 +105,10 @@ describe("the Journal's search", function()
 	-- The Journal's words, as far as search reads them: zone and item names, "…" while unknown.
 	local names = {}
 	function names.Zone(_, zone)
-		return zoneNames[zone] or "…"
+		return zoneNames[zone] or "..."
 	end
 	function names.Item(_, id)
-		return itemNames[id] or "…"
+		return itemNames[id] or "..."
 	end
 	-- No item is a Legend here: none is in the catalogue (LED-R63).
 	local function getItem()
@@ -157,7 +157,7 @@ describe("the Journal's search", function()
 	end)
 
 	it("finds nothing for a name not loaded yet, nor for an empty box (LED-R148, LED-R126)", function()
-		assert.are.same({}, ns.JournalSearch("…", context))
+		assert.are.same({}, ns.JournalSearch("...", context))
 		assert.is_nil(ns.JournalSearch("", context))
 	end)
 end)

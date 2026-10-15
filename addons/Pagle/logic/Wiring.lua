@@ -591,10 +591,12 @@ end
 
 --- Core's `/pagle dev` commands as ns.dev (#247), over PagleDB.global's `dev` switch, Core's Sessions, the
 --- catalogue's areas and the Cast state machine (ns.fishing). `catch` runs only on a test log (`PagleLog.test`).
---- `preview` hands its samples to `show`, the display (as ns.WireMoments' is), and its card to ns.cards.
+--- `preview` hands its samples to `show`, the display (as ns.WireMoments' is), and its card to ns.cards; `glyphs`
+--- hands its probe line to `showGlyphs` (#248).
 ---@param host PagleHost
 ---@param show fun(announcement: PagleAnnouncement) hands an Announcement to the display (ANN-R20)
-function ns.WireDev(host, show)
+---@param showGlyphs fun(fonts: PagleDevGlyphFont[], probe: string) shows the probe line in each font
+function ns.WireDev(host, show, showGlyphs)
 	ns.dev = ns.NewDevCommands({
 		global = function()
 			return host.db().global
@@ -618,6 +620,7 @@ function ns.WireDev(host, show)
 		showCard = function(card)
 			return ns.cards:Preview(card)
 		end,
+		showGlyphs = showGlyphs,
 		print = host.print,
 	})
 end

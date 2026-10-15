@@ -39,7 +39,7 @@ Terms are used as `CONTEXT.md` defines them. A **game action** is the character 
   ```lua
   {
     name = "QoL", title = "QoL", order = 50,
-    settingsAction = { label = "Fishing settings ›", onClick = function() Pagle.OpenSettings("fishing") end },
+    settingsAction = { label = "Fishing settings »", onClick = function() Pagle.OpenSettings("fishing") end },
     menu = { { label = function() return "Input: " .. inputLabel() end, onClick = cycleInput } },   -- QOL-R16
     slash = { { name = "qol", fn = qolSlash, help = "input key|click|both: choose how you cast" } }, -- QOL-R17
   }

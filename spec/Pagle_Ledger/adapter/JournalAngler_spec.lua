@@ -193,7 +193,7 @@ describe("the Journal's Angler page", function()
 		local right = loaded.ns.journal.pages.right
 
 		-- Bea's 160 credits 75 and 150.
-		assert.are.equal("☑ 75   ☑ 150   ☐ 225   ☐ 300", right[5].text)
+		assert.are.equal(drawnSymbols("☑ 75   ☑ 150   ☐ 225   ☐ 300"), right[5].text)
 	end)
 
 	it("ticks a Skill Milestone the celebrated set holds, though the state doesn't (LED-R146, LED-R92)", function()
@@ -203,7 +203,7 @@ describe("the Journal's Angler page", function()
 		loaded.ns.journal:Draw()
 
 		local right = loaded.ns.journal.pages.right
-		assert.are.equal("☑ 75   ☑ 150   ☑ 225   ☐ 300", right[5].text)
+		assert.are.equal(drawnSymbols("☑ 75   ☑ 150   ☑ 225   ☐ 300"), right[5].text)
 	end)
 end)
 

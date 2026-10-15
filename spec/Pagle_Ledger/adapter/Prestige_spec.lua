@@ -250,7 +250,7 @@ describe("the Prestige emblem block (LED-R34)", function()
 		})
 
 		assert.are.same({ "I" }, shown(widgets[1]))
-		assert.are.same({ "X", "★", "★" }, shown(widgets[2]))
+		assert.are.same({ "X", drawnSymbols("★"), drawnSymbols("★") }, shown(widgets[2]))
 	end)
 
 	it("draws nothing before the first Prestige", function()

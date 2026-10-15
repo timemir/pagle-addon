@@ -1,6 +1,7 @@
 -- /pagle dev (#247): Core's hidden dev commands for fast exit checks, through the real TOC and the fake client. The
 -- switch is PagleDB.global.dev; `endsession` ends the open Session as if its gap had passed (LOG-R62); `catch`
--- records a synthetic caught Cast through Core's real append path, on a test log only (PagleLog.test).
+-- records a synthetic caught Cast through Core's real append path, on a test log only (PagleLog.test); `glyphs`
+-- shows a probe line in each font Pagle uses (#248, CORE-R9).
 
 -- Types `/pagle <msg>` in chat.
 local function pagle(loaded, msg)
@@ -89,12 +90,13 @@ describe("/pagle dev", function()
 		catchOne(loaded)
 		local entries = #loaded.env.PagleLog.entries
 
-		for _, line in ipairs({ "dev", "dev endsession", "dev catch 6358", "dev preview banner" }) do
+		for _, line in ipairs({ "dev", "dev endsession", "dev catch 6358", "dev preview banner", "dev glyphs" }) do
 			pagle(loaded, line)
 		end
 
 		local off = "Pagle dev: dev commands are off; /pagle dev on turns them on."
-		assert.are.same({ off, off, off, off }, loaded.printed)
+		assert.are.same({ off, off, off, off, off }, loaded.printed)
+		assert.is_nil(loaded.ns.glyphProbeFrame)
 		assert.is_not_nil(loaded.env.Pagle.GetSession())
 		assert.are.equal(entries, #loaded.env.PagleLog.entries)
 	end)
@@ -326,4 +328,54 @@ describe("/pagle dev preview", function()
 			assert.are.equal("Pagle dev: cards wait until combat ends; try again then.", loaded.printed[3])
 		end
 	)
+end)
+
+describe("/pagle dev glyphs", function()
+	-- The probe line (#248, CORE-R9): each candidate character after its code point, so a box can be told apart.
+	local PROBE = "2013 –  2014 —  2026 …  2018 ‘  2019 ’  201C “  201D ”  2022 •  00B7 ·  00AB «  00BB »  "
+		.. "00D7 ×  2192 →  2605 ★  2713 ✓"
+
+	it("prints the probe line in the chat font, and shows it in each font Pagle uses (#248, CORE-R9)", function()
+		local loaded = enterWorld(loadCore({ BUILD_ENTRY }), 2)
+		pagle(loaded, "dev on")
+
+		pagle(loaded, "dev glyphs")
+
+		assert.are.same({
+			"Pagle dev: the glyph probe in the chat font: " .. PROBE,
+			"Pagle dev: the same line in each font Pagle uses is on screen; a box is a character that font lacks."
+				.. " Click it or press Esc to close.",
+		}, { loaded.printed[2], loaded.printed[3] })
+		local frame = loaded.ns.glyphProbeFrame
+		assert.is_true(frame:IsShown())
+		local rows = {}
+		for _, row in ipairs(frame.rows) do
+			rows[#rows + 1] = { row:GetText(), row.fontObject }
+		end
+		assert.are.same({
+			{ "GameFontHighlight (Core's frames, the Journal's print): " .. PROBE, "GameFontHighlight" },
+			{ "ChatFontNormal (chat, the Field report's text): " .. PROBE, "ChatFontNormal" },
+			{ "NumberFontNormalSmallGray (QoL's key label): " .. PROBE, "NumberFontNormalSmallGray" },
+			{ "Fonts\\MORPHEUS.TTF (the Journal's hand): " .. PROBE, "PagleDevGlyphsFont4" },
+		}, rows)
+
+		frame:Click()
+		assert.is_false(frame:IsShown())
+	end)
+
+	it("shows the same frame again, changing no saved state (#248)", function()
+		local loaded = enterWorld(loadCore({ BUILD_ENTRY }), 2)
+		pagle(loaded, "dev on")
+		local saved = copy(loaded.env.PagleDB.global)
+
+		pagle(loaded, "dev glyphs")
+		local frame = loaded.ns.glyphProbeFrame
+		frame:Click()
+		pagle(loaded, "dev glyphs")
+
+		assert.are.equal(frame, loaded.ns.glyphProbeFrame)
+		assert.is_true(frame:IsShown())
+		assert.are.equal(4, #frame.rows)
+		assert.are.same(saved, copy(loaded.env.PagleDB.global))
+	end)
 end)

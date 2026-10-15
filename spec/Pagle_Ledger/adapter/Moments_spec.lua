@@ -171,7 +171,7 @@ describe("the Ledger's live moments", function()
 
 		fake.playCast("caught", loot(TROUT))
 
-		assert.are.same({ "newInZone New here / Item 6308 in … nil" }, momentsOf(shown(fake)[1]))
+		assert.are.same({ "newInZone New here / Item 6308 in ... nil" }, momentsOf(shown(fake)[1]))
 	end)
 
 	it("raise nothing and report no Coins for an ordinary Catch or a got-away Cast (LED-R89, LED-R96)", function()

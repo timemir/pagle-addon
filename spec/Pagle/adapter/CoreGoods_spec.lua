@@ -185,7 +185,7 @@ describe("Core's goods' previews", function()
 		local GILDED = "Interface\\AddOns\\Pagle\\media\\sounds\\gilded\\"
 
 		loaded.ns.goods:Good("core.soundset.gilded").preview(stage)
-		for _, label in ipairs({ "▶ Toast", "▶ Banner", "▶ Legend" }) do
+		for _, label in ipairs({ "» Toast", "» Banner", "» Legend" }) do
 			withText(stage, label):Click()
 		end
 
@@ -205,7 +205,7 @@ describe("Core's goods' previews", function()
 		goods:Good("core.soundset.gilded").preview(stage)
 		goods:Good("core.soundset.driftwood").preview(stage)
 		for _ = 1, 4 do
-			withText(stage, "▶ Toast"):Click()
+			withText(stage, "» Toast"):Click()
 		end
 
 		assert.are.same({
@@ -226,7 +226,7 @@ describe("Core's goods' previews", function()
 
 		assert.are.same({ "Interface\\Icons\\INV_Misc_Gem_Pearl_04" }, texturesOn(stage))
 		local shown = {}
-		for _, text in ipairs({ "Ex Libris", "Angler", "On the Fish Journal's bookplate.", "▶ Toast" }) do
+		for _, text in ipairs({ "Ex Libris", "Angler", "On the Fish Journal's bookplate.", "» Toast" }) do
 			shown[#shown + 1] = withText(stage, text) ~= nil
 		end
 		assert.are.same({ true, true, true, false }, shown)

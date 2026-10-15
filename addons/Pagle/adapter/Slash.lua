@@ -33,7 +33,7 @@ end
 --- `/pagle dev …` (#247): hidden dev commands, as ns.dev (logic/Wiring.lua).
 ns.WireDev(ns.host, function(announcement)
 	ns.lanes:Push(announcement)
-end)
+end, ns.ShowGlyphProbe)
 
 SLASH_PAGLE1 = "/pagle"
 SlashCmdList.PAGLE = run

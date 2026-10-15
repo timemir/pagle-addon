@@ -290,7 +290,7 @@ describe("the Journal's Home, right page", function()
 		assert.are.same({ kind = "kicker", text = "Notes to self" }, right[3])
 		assert.are.same({
 			kind = "link",
-			text = "Raw Slitherskin Mackerel: 49 to ★★★",
+			text = drawnSymbols("Raw Slitherskin Mackerel: 49 to ★★★"),
 			hand = true,
 			place = { id = "fish", args = { species = MACKEREL } },
 		}, right[4])
@@ -440,7 +440,8 @@ describe("the Journal's Home, the bookplate's title and Prestige (LED-R132, LED-
 		local bookplate = pages(loaded).right[1]
 		assert.are.same({ emblem = "X", stars = 2 }, bookplate.mark)
 		local texts = shownTexts(drawnBookplate(loaded))
-		assert.are.same({ bookplate.text, "Angler Level", "X", "★", "★", "Nat's Peer", "14%" }, texts)
+		local star = drawnSymbols("★")
+		assert.are.same({ bookplate.text, "Angler Level", "X", star, star, "Nat's Peer", "14%" }, texts)
 	end)
 
 	it("signs with the stored active title once it is earned (LED-R77)", function()

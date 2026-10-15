@@ -409,7 +409,7 @@ end
 describe("The status list with a Module On", function()
 	it("shows no paragraph, and each Module's name, TOC version and state (SET-R10, SET-R11, CORE-R41)", function()
 		local loaded = loadWith({ QoL = {}, Stats = { enabled = false, loaded = false } })
-		registerQoL(loaded, { settingsAction = { label = "Fishing settings ›", onClick = function() end } })
+		registerQoL(loaded, { settingsAction = { label = "Fishing settings »", onClick = function() end } })
 		loaded.client.fire("PLAYER_LOGIN")
 
 		local texts = pageTexts(loaded, loaded.client.settings.category("Pagle"))
@@ -432,7 +432,7 @@ describe("The status list with a Module On", function()
 			"QoL",
 			"1.2.3",
 			"On",
-			"Fishing settings ›",
+			"Fishing settings »",
 		}, list)
 	end)
 
@@ -498,7 +498,7 @@ describe("The status list with a Module On", function()
 		local Pagle = loaded.env.Pagle
 		local M = registerQoL(loaded, {
 			settingsAction = {
-				label = "Fishing settings ›",
+				label = "Fishing settings »",
 				onClick = function()
 					Pagle.OpenSettings("fishing")
 				end,
@@ -519,7 +519,7 @@ describe("The status list with a Module On", function()
 		local Pagle = loaded.env.Pagle
 		addFishingRows(registerQoL(loaded, {
 			settingsAction = {
-				label = "Fishing settings ›",
+				label = "Fishing settings »",
 				onClick = function()
 					Pagle.OpenSettings("fishing")
 				end,

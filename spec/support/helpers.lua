@@ -275,6 +275,24 @@ function readFile(path)
 	return text
 end
 
+-- The in-client textures the Ledger draws for the symbols its fonts lack (CORE-R9, #248), by the glyph ledger.md
+-- writes each as: a star, a blank star, a ticked and an empty box, a tick.
+local SYMBOLS = {
+	["★"] = "|TInterface\\TargetingFrame\\UI-RaidTargetingIcon_1:0|t",
+	["☆"] = "|TInterface\\TargetingFrame\\UI-RaidTargetingIcon_1:0:0:0:0:64:64:0:64:0:64:110:100:85|t",
+	["☑"] = "|TInterface\\Buttons\\UI-CheckBox-Check:0|t",
+	["☐"] = "|TInterface\\Buttons\\UI-CheckBox-Up:0|t",
+	["✓"] = "|TInterface\\Buttons\\UI-CheckBox-Check:0|t",
+}
+
+--- `text` as the Ledger draws it: each ★, ☆, ☑, ☐ and ✓ in it as the texture escape the Ledger draws instead
+--- (CORE-R9), so a spec can say "Catfish ★★☆" as ledger.md does.
+---@param text string
+---@return string
+function drawnSymbols(text)
+	return (text:gsub("\226[\152-\157][\128-\191]", SYMBOLS))
+end
+
 -- `fields` over `record`, key by key; returns `record`.
 ---@param record table
 ---@param fields table?

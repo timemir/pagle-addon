@@ -55,7 +55,7 @@ describe("the Journal's words", function()
 		end)
 
 		it('read "…" for a Cast with no realm date (LED-R126)', function()
-			assert.are.equal("…", ns.FormatJournalDate(nil, 2026))
+			assert.are.equal("...", ns.FormatJournalDate(nil, 2026))
 		end)
 	end)
 
@@ -75,7 +75,7 @@ describe("the Journal's words", function()
 		end)
 
 		it('read "…" for an ID that is no window (LED-R126)', function()
-			assert.are.equal("…", ns.WindowLabel("dusk"))
+			assert.are.equal("...", ns.WindowLabel("dusk"))
 		end)
 	end)
 
@@ -182,8 +182,8 @@ describe("the Journal's words", function()
 			it('read "…" for an uncached item and request it, once until it arrives (LED-R126)', function()
 				local client, text = newClient()
 
-				assert.are.equal("…", text:Item(6358))
-				assert.are.equal("…", text:Item(6358))
+				assert.are.equal("...", text:Item(6358))
+				assert.are.equal("...", text:Item(6358))
 				assert.are.same({ 6358 }, client.requested)
 			end)
 
@@ -218,7 +218,7 @@ describe("the Journal's words", function()
 			local _, text = newClient()
 
 			assert.are.equal("Darkshore", text:Zone(148))
-			assert.are.equal("…", text:Zone(0))
+			assert.are.equal("...", text:Zone(0))
 		end)
 
 		it(
@@ -237,7 +237,7 @@ describe("the Journal's words", function()
 			local _, text = newClient()
 
 			assert.are.equal("Bo", text:Character(2))
-			assert.are.equal("…", text:Character(3))
+			assert.are.equal("...", text:Character(3))
 		end)
 
 		it("print dates against the current realm year, worked out live (LED-R126)", function()
@@ -311,7 +311,7 @@ describe("the Journal's words", function()
 				ns.L["title.zonemaster.text"] = "Master of {zone}"
 
 				assert.are.equal("Master of Darkshore", text:Lore("title.zonemaster.text", 148))
-				assert.are.equal("Master of …", text:Lore("title.zonemaster.text", 0))
+				assert.are.equal("Master of ...", text:Lore("title.zonemaster.text", 0))
 				ns.L["title.zonemaster.text"] = nil
 			end)
 		end)

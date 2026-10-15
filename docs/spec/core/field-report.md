@@ -102,7 +102,7 @@ Part of [Core](README.md). A **Field report** is the text an Angler copies out o
   - Close (Esc closes it too)
   The text is built when the box opens and isn't refreshed while it stays open.
 - **REP-R41** If no row qualifies, the box says "Nothing to report. Thanks for checking!" and shows no text or URL.
-- **REP-R42** While the projection is updating, the box says "Updating… try again in a moment." and shows no text.
+- **REP-R42** While the projection is updating, the box says "Updating... try again in a moment." and shows no text.
 - **REP-R43** The box is also reached from the compartment menu entry "Help chart the waters" (with the row count when above 0, CORE-R50) and the button in Core's Settings root (CORE-R40). The Ledger's Journal calls `Pagle.OpenFieldReport()` from an Uncharted fish or a zone with no data.
 - **REP-R44** While `Pagle.IsRestricted()` is true, no entry point opens the box; each prints one chat line ("Pagle: the Field report opens after combat."). A box already open stays open.
 - **REP-R45** Nothing about the Field report ever pops up on its own: it isn't an Announcement (nothing was earned) and it isn't a Nudge.

@@ -16,7 +16,7 @@ ns.FIELD_REPORT_URL = "https://github.com/timemir/wow-fish/issues/new?template=f
 ---@field url string?       -- the issue form (REP-R46); nil with a message
 
 --- What the box shows for `rows` (ns.FieldReportRows(): nil while the projection is updating):
---- "Updating… try again in a moment." while it updates (REP-R42), "Nothing to report. Thanks for checking!" with
+--- "Updating... try again in a moment." while it updates (REP-R42), "Nothing to report. Thanks for checking!" with
 --- no row (REP-R41), and otherwise the report's parts from `text` (ns.FieldReportText) with the issue form's URL. The
 --- URL goes with the text: with a message there's nothing to paste.
 ---@param rows PagleReportRow[]?

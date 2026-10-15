@@ -881,6 +881,21 @@ describe("FakePagle", function()
 			}, fake.printed)
 		end)
 
+		it("hands the glyph probe and Core's fonts to fake.glyphProbes, as Core shows them (#248, CORE-R9)", function()
+			local fake = newFakePagle()
+			fake.login()
+			fake.enterWorld()
+
+			fake.slash("dev on")
+			fake.slash("dev glyphs")
+
+			assert.are.equal(1, #fake.glyphProbes)
+			local shown = fake.glyphProbes[1]
+			assert.are.equal(fake.ns.DEV_GLYPH_FONTS, shown.fonts)
+			assert.are.equal("2013 –", shown.probe:sub(1, #"2013 –"))
+			assert.are.equal("Pagle dev: the glyph probe in the chat font: " .. shown.probe, fake.printed[2])
+		end)
+
 		it(
 			"records a caught Cast in the area given on a test log, with Catch, CastEnded and live projections; on a"
 				.. " real log refuses (#247, LOG-R9)",
@@ -1483,7 +1498,7 @@ describe("FakePagle", function()
 					fake.Pagle.OpenFieldReport()
 
 					assert.are.same({
-						{ message = "Updating… try again in a moment.", parts = {} },
+						{ message = "Updating... try again in a moment.", parts = {} },
 						{ message = "Nothing to report. Thanks for checking!", parts = {} },
 					}, fake.fieldReportsOpened)
 				end

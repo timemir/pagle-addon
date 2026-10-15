@@ -35,14 +35,14 @@ describe("Pagle_QoL with Core", function()
 		assert.is_nil(def.views)
 	end)
 
-	it("has a settingsAction, Fishing settings ›, that opens Core's Fishing page (QOL-R2)", function()
+	it("has a settingsAction, Fishing settings », that opens Core's Fishing page (QOL-R2)", function()
 		local loaded = loadAddon("Pagle_QoL", FOREVER_GLOBALS)
 		loaded.client.fire("PLAYER_LOGIN")
 
 		local action = loaded.namespaces.Pagle.Modules:Modules()[1].def.settingsAction
 		action.onClick()
 
-		assert.are.equal("Fishing settings ›", action.label)
+		assert.are.equal("Fishing settings »", action.label)
 		local opened = loaded.client.settings.opened
 		assert.are.equal(1, #opened)
 		assert.are.equal(loaded.client.settings.category("Fishing"), opened[1])

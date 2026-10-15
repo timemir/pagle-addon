@@ -8,7 +8,7 @@ end
 
 -- The previews of Core's own goods on the Curio Shop's stage (wallet-and-shop.md › UI, the preview stage), by slot:
 -- logic/CoreGoods.lua's goods draw with these, looked up when the shop draws one. A sound set shows its swatch and
--- ▶ Toast / ▶ Banner / ▶ Legend buttons playing its sounds on the SFX channel (ANN-R73); a crest, a small bookplate
+-- » Toast / » Banner / » Legend buttons playing its sounds on the SFX channel (ANN-R73); a crest, a small bookplate
 -- with the crest on it, as prototypes/curio-shop/ (variant B) draws them. The toast styles add the toast style's.
 local L = ns.L
 

@@ -246,10 +246,10 @@ describe("an uncaught Species' entry (LED-R141)", function()
 		assert.are.same({
 			{ kind = "icon", icon = SECRET, look = "silhouette", large = true },
 			{ kind = "title", text = "An unknown fish" },
-			{ kind = "text", text = "“Strange schools out on the dry plains.”" },
+			{ kind = "text", text = '"Strange schools out on the dry plains."' },
 			{
 				kind = "link",
-				text = "Read the plain hint ▸",
+				text = "Read the plain hint »",
 				place = { id = "fish", args = { species = SECRET, hint = true } },
 			},
 		}, left)
@@ -335,14 +335,14 @@ describe("the fish spread (LED-R142)", function()
 						{
 							name = "Elwynn Forest",
 							line = "Local · 50%",
-							line2 = "caught ✓",
+							line2 = drawnSymbols("caught ✓"),
 							bar = 0.5,
 							place = zonePlace(ELWYNN, MACKEREL),
 						},
 						{
 							name = "Westfall",
 							line = "Local · 50%",
-							line2 = "caught ✓",
+							line2 = drawnSymbols("caught ✓"),
 							bar = 0.5,
 							place = zonePlace(WESTFALL, MACKEREL),
 						},
@@ -354,8 +354,8 @@ describe("the fish spread (LED-R142)", function()
 						},
 					},
 				},
-				{ kind = "text", text = "☐ In its element (2/3)" },
-				{ kind = "text", text = "☐ Regular (2/50)" },
+				{ kind = "text", text = drawnSymbols("☐ In its element (2/3)") },
+				{ kind = "text", text = drawnSymbols("☐ Regular (2/50)") },
 			}, right)
 		end
 	)
@@ -368,8 +368,8 @@ describe("the fish spread (LED-R142)", function()
 			local right = openFish(loaded, NIGHTFISH).right
 
 			assert.are.same({ kind = "kicker", text = "When" }, right[4])
-			assert.are.same({ kind = "text", text = "☑ In its element (1/1)" }, right[6])
-			assert.are.same({ kind = "text", text = "☐ Regular (1/50)" }, right[7])
+			assert.are.same({ kind = "text", text = drawnSymbols("☑ In its element (1/1)") }, right[6])
+			assert.are.same({ kind = "text", text = drawnSymbols("☐ Regular (1/50)") }, right[7])
 		end
 	)
 
