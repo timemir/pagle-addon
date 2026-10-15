@@ -34,7 +34,8 @@
 --- keybinding row, a header or a custom row gets none: it never greys by its modify predicates). Until the next show, a
 --- setting's change through its own row updates these frames as the panel's controls do (valueChanged).
 ---@field defaults fun(category: table) The page's Defaults button (SettingsPanelMixin:
---- SetCurrentCategorySettingsToDefaults): sets each setting registered on that page to its default value.
+--- SetCurrentCategorySettingsToDefaults): sets each setting registered on that page to its default value, skipping
+--- one with no default.
 ---@field shown { initializer: table, frame: table }[]? The rows show returned last.
 ---@field valueChanged fun(setting: table) What the panel does when a setting's value changes.
 ---@field textsOf fun(frame: table): string[] The text of every shown widget in a row's frame, depth first.
@@ -414,9 +415,13 @@ return function(client, stubs)
 			end
 		end
 		table.sort(variables)
+		-- SettingMixin:SetValueToDefault skips a setting whose default is nil, as QoL's fishing set (SET-R21)
+		-- (Blizzard_Settings_Shared/Blizzard_Setting.lua at the forever 1.60.1 commit).
 		for _, variable in ipairs(variables) do
 			local setting = settings.variables[variable]
-			setting:SetValue(setting:GetDefaultValue())
+			if setting:GetDefaultValue() ~= nil then
+				setting:SetValue(setting:GetDefaultValue())
+			end
 		end
 	end
 

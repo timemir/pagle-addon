@@ -411,6 +411,7 @@ local helperGlobals = {
 	"pageScroll",
 	"scrollPage",
 	"openJournal",
+	"glyphsOutside",
 }
 files["spec/**"] = { std = "lua51+busted", read_globals = helperGlobals }
 files["spec/support/*.lua"] = { globals = helperGlobals }

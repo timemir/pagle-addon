@@ -629,3 +629,61 @@ function openJournal(options)
 	end
 	return fake, loaded
 end
+
+-- The punctuation outside Latin-1 that CORE-R9 allows, by code point.
+local GLYPH_PUNCTUATION = {
+	[0x2013] = true,
+	[0x2014] = true,
+	[0x2018] = true,
+	[0x2019] = true,
+	[0x201C] = true,
+	[0x201D] = true,
+	[0x2022] = true,
+	[0x2026] = true,
+}
+
+-- Whether code point `cp` is in CORE-R9's set.
+---@param cp integer
+---@return boolean
+local function glyphAllowed(cp)
+	return cp < 0x80 or (cp >= 0xA0 and cp <= 0xFF) or GLYPH_PUNCTUATION[cp] == true
+end
+
+--- Each code point in `text` outside CORE-R9's set, as "U+XXXX": what spec/glyphs_spec.lua checks every shipped
+--- string with, and spec/settings_tree_spec.lua every Settings string. Bytes that spell no UTF-8 character are skipped:
+--- they are byte patterns such as FieldReportText's "[^\128-\191]", never drawn.
+---@param text string
+---@return string[]
+function glyphsOutside(text)
+	local found, i = {}, 1
+	while i <= #text do
+		local byte = text:byte(i)
+		local size, cp
+		if byte < 0x80 then
+			size, cp = 1, byte
+		elseif byte >= 0xC2 and byte <= 0xDF then
+			size, cp = 2, byte % 0x20
+		elseif byte >= 0xE0 and byte <= 0xEF then
+			size, cp = 3, byte % 0x10
+		elseif byte >= 0xF0 and byte <= 0xF4 then
+			size, cp = 4, byte % 0x08
+		end
+		for k = 1, (size or 1) - 1 do
+			local next = text:byte(i + k)
+			if not next or next < 0x80 or next > 0xBF then
+				size = nil
+				break
+			end
+			cp = cp * 0x40 + next % 0x40
+		end
+		if not size then
+			i = i + 1
+		else
+			if not glyphAllowed(cp) then
+				found[#found + 1] = ("U+%04X"):format(cp)
+			end
+			i = i + size
+		end
+	end
+	return found
+end
