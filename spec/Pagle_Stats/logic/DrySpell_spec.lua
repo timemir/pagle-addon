@@ -1,13 +1,13 @@
 -- Dry spells (STA-R50–R55): the count, the luck reading, its band and its wording, computed when shown from a reading
--- in the shape the M6 graph fixes for Your odds (#206): `n`, `k`, `hit = { n, at, last }` or nil, `state` and `where`.
--- The readings here are made by hand in that shape, so these specs don't wait on #206.
+-- in Your odds' StatsReading shape (logic/Odds.lua): `n`, `k`, `hit = { n, at, last }` or nil, `state` and `where`.
+-- The readings here are made by hand in that shape, so these specs test the Dry spell alone.
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local stats = dofile("spec/Pagle_Stats/support.lua")
 
 local HOUR = 3600
 
---- A reading in the fixed shape (M6 graph, conventions): `n` Casts in the scope, `k` of them caught the item, the last
+--- A reading in StatsReading's shape: `n` Casts in the scope, `k` of them caught the item, the last
 --- at the scope's count `at`, `ago` seconds before FakePagle's SERVER_TIME. No `at` means never caught in the scope.
 ---@param fields { n: integer, k: integer?, at: integer?, ago: integer?, state: string?, where: string?, item: integer? }
 ---@return table

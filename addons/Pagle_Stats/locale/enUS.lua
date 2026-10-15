@@ -14,6 +14,8 @@ ns.L = {
 	TITLE = "Stats",
 	BOOK = "Stats",
 	BOOK_SLASH_HELP = "Open or close the Stats book.",
+	-- What sets two sentences side by side on one line, or a place and its skill.
+	SENTENCE_JOIN = " ",
 
 	-- The book's leather (STA-R72, STA-R74, STA-R75; stats.md › UI › On the leather): the breadcrumbs' root, the ribbons
 	-- and the ribbon pages' kickers, the nameplate, the live line, and what the nameplate and every page body read while
@@ -102,7 +104,6 @@ ns.L = {
 	QUALITY_FALLBACK = "Quality %d",
 
 	-- Your odds (logic/Odds.lua, STA-R43, STA-R45–R47). Every odds view carries the heading (STA-R46).
-	ODDS_HEADING = "Your odds",
 	ODDS_LEARNING_SHORT = "learning %d/%d",
 	ODDS_LEARNING = "Learning…",
 	ODDS_UNSEEN = "not seen yet",
@@ -322,7 +323,7 @@ ns.L = {
 	-- Stats' Curio Shop slot (STA-R88). Its goods' names and descriptions are lore (`statsgood.<goodID>.*`).
 	SLOT_TRACKER_FRAME = "Stats tracker frame",
 
-	-- The live tracker's words (STA-R82), as the shop's sample (STA-R88) and the tracker (#218) write them: the header's
+	-- The live tracker's words (STA-R82), as the Curio Shop's sample (STA-R88) and the tracker write them: the header's
 	-- right text ("Session · 21m"), the Session's lines ("38 Casts · 31 Catches · 7 got away", "62 per hour · skill
 	-- +3"), and what joins a watch's sub-line ("Feralas · by night · unlucky").
 	TRACKER_SESSION = "Session · %s",

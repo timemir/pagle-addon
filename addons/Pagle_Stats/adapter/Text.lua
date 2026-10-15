@@ -73,6 +73,29 @@ function ns.OncePerFrame(fn)
 	end
 end
 
+--- Calls `fn` whenever a reading may have moved (STA-R73): a Cast ends (not an interrupted one), a Session ends, or
+--- the area or the skill changes. The book and the tracker each register it under their own `owner` (CORE-R20).
+---@param owner string
+---@param fn fun()
+function ns.OnReadingsMove(owner, fn)
+	Pagle.RegisterCallback(owner, "CastEnded", function(_, outcome)
+		if outcome ~= "interrupted" then
+			fn()
+		end
+	end)
+	Pagle.RegisterCallback(owner, "SessionEnded", function()
+		fn()
+	end)
+	Pagle.RegisterCallback(owner, "ConditionsChanged", function(_, changedKeys)
+		for _, key in ipairs(changedKeys) do
+			if key == "area" or key == "skill" then
+				fn()
+				return
+			end
+		end
+	end)
+end
+
 --- An item loader for one view (STA-R59, STA-R73): the returned `request(itemID)` asks the client for an item
 --- ns.Item reports not loaded (C_Item.RequestLoadItemDataByID), once while it is on its way. When it loads
 --- (ITEM_DATA_LOAD_RESULT, registered under `owner` at the first request, CORE-R23), `onLoaded(itemID)` runs; a load

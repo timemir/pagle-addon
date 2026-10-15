@@ -89,8 +89,8 @@ local function newToggle(frame)
 end
 
 -- Draws the toggle for `item` watched from `area` at the top right of a page `width` wide: "watching" in red when
--- watched, "watch" faded when not; pressing it watches or stops (ticket #208's rules: the cap's UI error and the
--- tracker's chat line are ns.Watch's). Never pressed while the projection is updating (STA-R72).
+-- watched, "watch" faded when not; pressing it watches or stops (logic/Watches.lua's rules: the cap's UI error and
+-- the tracker's chat line are ns.Watch's). Never pressed while the projection is updating (STA-R72).
 ---@param toggle StatsEntryToggleView
 ---@param item integer
 ---@param area integer
@@ -101,13 +101,13 @@ local function drawToggle(toggle, item, area, width)
 	toggle.label:SetText(watched and L.ENTRY_WATCHING or L.ENTRY_WATCH)
 	toggle.label:SetTextColor(ink[1], ink[2], ink[3])
 	toggle.star:SetVertexColor(ink[1], ink[2], ink[3])
-	local enabled = not ns.book:IsUpdating()
+	local enabled = not ns.IsUpdating()
 	toggle:SetEnabled(enabled)
 	toggle:SetAlpha(not enabled and TOGGLE_DISABLED or watched and 1 or TOGGLE_FADED)
 	local toggleWidth = TOGGLE_STAR + 4 + toggle.label:GetStringWidth()
 	toggle:SetSize(toggleWidth, TOGGLE_HEIGHT)
 	toggle:SetScript("OnClick", function()
-		if ns.book:IsUpdating() then
+		if ns.IsUpdating() then
 			return
 		elseif ns.IsWatched(item, area) then
 			ns.StopWatching(item, area)

@@ -71,7 +71,7 @@ describe("the Stats book's art (STA-R70, stats.md › UI)", function()
 			local fleuron = ns.NewBookMark(parent, "fleuron", 12)
 			local right = ns.NewBookMark(parent, "hand", 16)
 			local left = ns.NewBookMark(parent, "handLeft", 16)
-			local star = ns.NewBookMark(parent, "star", 12) -- a watched row's ★ (#213)
+			local star = ns.NewBookMark(parent, "star", 12) -- a watched row's ★ (adapter/Place.lua)
 
 			assert.are.equal("Texture", fleuron.kind)
 			assert.are.equal(ns.BOOK_TEXTURES.fleuron, fleuron.texture)

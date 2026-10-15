@@ -16,8 +16,7 @@ ns.ODDS_THRESHOLD = 100
 --- The never-caught bound (Tunables): the rule of three, so an unseen item is rarer than about 1 in n / 3.
 ns.NEVER_CAUGHT_BOUND = 3
 
---- One item's reading in one place (STA-R40): the reading shape every view and the Dry spell read (M6 graph,
---- conventions).
+--- One item's reading in one place (STA-R40): the reading shape every view and the Dry spell read.
 ---@class StatsReading
 ---@field item integer
 ---@field area integer          -- the reading's own place, a zone or subzone

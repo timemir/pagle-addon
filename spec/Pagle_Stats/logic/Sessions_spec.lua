@@ -1,7 +1,7 @@
 -- The figures Stats works out from its Session records when shown, never stored (STA-R32, STA-R33, STA-R95): which
 -- record is the current Session or "My last Session", time fished, Catches per hour, got-away rates, Catches by
 -- quality, lifetime time at the water, the bests and the first Cast's date. Hand-written Session records in
--- stats.md › Projection state's shape (#203 builds the same shape from the log); `live` stands for
+-- stats.md › Projection state's shape (logic/Fold.lua builds the same shape from the log); `live` stands for
 -- `Pagle.GetSession()` (LOG-R64).
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile

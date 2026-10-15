@@ -126,7 +126,7 @@ describe("Stats' goods", function()
 		end
 	end)
 
-	it("show each good's own icon as its swatch in the shop's list (STA-R88, SHOP-R26)", function()
+	it("show each good's own icon as its swatch in the Curio Shop's list (STA-R88, SHOP-R26)", function()
 		local _, fake = loggedIn()
 
 		local icons = {}
@@ -300,7 +300,7 @@ describe("Settings", function()
 				{ last.kind, last.label, last.slot, last.indented }
 			)
 			for i = 1, #section - 1 do
-				assert.are_not.equal("slot", section[i].kind) -- Stats' own rows (#208) come first
+				assert.are_not.equal("slot", section[i].kind) -- Stats' own rows (adapter/Settings.lua) come first
 			end
 		end
 	)

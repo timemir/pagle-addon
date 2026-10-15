@@ -5,29 +5,30 @@ end
 ---@class PagleStatsNS
 local ns = select(2, ...)
 
--- The seams later Stats tickets meet at, so none waits on another's wiring (M6 graph, open question 3). Each is a
--- field of ns with a stand-in here; the ticket that owns it replaces the field, and every caller calls it through
+-- The seams Stats' files meet at, so none needs another's wiring to load. Each is a field of ns with a stand-in
+-- here; the file that owns it replaces the field, and every caller calls it through
 -- ns at call time (`ns.State()`, never a copy made at load), so the replacement reaches them all.
 --
 --   ns.ToggleBook()           Opens the Stats book, or closes it if shown (STA-R70). Registration's view, the
 --                             compartment entry, the "Open Stats" button and `/pagle stats` call it (STA-R4); so does
---                             the tracker header. Defined in adapter/Book.lua (#211), which every caller loads before
+--                             the tracker header. Defined in adapter/Book.lua, which every caller loads before
 --                             it calls: no stand-in here (a second definition would be a duplicate field to LuaLS).
 --   ns.OpenBook(target?)      Opens the book (never closes it) on `target`, a StatsBookTarget, or where it was left
 --                             (STA-R70) with none. The place page's rows, the item page, search, Lifetime and the
---                             tracker's lines call it. Defined in adapter/Book.lua (#211), as ns.ToggleBook.
+--                             tracker's lines call it. Defined in adapter/Book.lua, as ns.ToggleBook.
 --   ns.State()                The projection's StatsState (stats.md › Projection state). Read-only for views.
 --                             `ns.projection:GetState()` once the adapter's OnInitialize has made the projection
---                             (#203); a new empty state before its first build, or with no projection.
+--                             (logic/Fold.lua's def); a new empty state before its first build, or with no projection.
 --   ns.IsUpdating()           Whether the projection is catching up or rebuilding (LOG-R74): views then draw nothing
---                             from ns.State() (STA-R72, STA-R85). `ns.projection:IsUpdating()` (#203): true from load
+--                             from ns.State() (STA-R72, STA-R85). `ns.projection:IsUpdating()`: true from load
 --                             until the first build ends; false with no projection.
 --   ns.OnRedraw(fn)           Subscribes a view (the book, the tracker) to redraws: fn(reason) is called at every
 --                             ns.Redraw, in subscription order. Subscribe once, when the view is made.
 --   ns.Redraw(reason)         Asks every subscribed view to redraw (STA-R73, STA-R91). Callers and their reasons:
---                             "projection" after each live apply that changes the state and after each done (#203),
---                             "watches" when a watch is added or stopped (#208), "tracker" when "Show the live tracker"
---                             is turned on or off (#218). A view that is hidden may ignore it.
+--                             "projection" after each live apply that changes the state and after each done
+--                             (Fold.lua), "watches" when a watch is added or stopped (Watches.lua), "tracker" when
+--                             "Show the live tracker" is turned on or off (adapter/Settings.lua). A view that is hidden
+--                             may ignore it.
 
 ---@alias StatsBookPage "home"|"place"|"item"|"session"|"lifetime"|"sessions"
 

@@ -31,7 +31,7 @@ local function compartmentMenu(loaded)
 	return loaded.client.menus[opened + 1]
 end
 
--- Puts a counting stand-in at ns.ToggleBook, as the book's ticket (#211) puts the real toggle there, and returns
+-- Puts a counting stand-in at ns.ToggleBook, as adapter/Book.lua puts the real toggle there, and returns
 -- what it counted.
 local function countToggles(loaded)
 	local toggles = { n = 0 }
@@ -243,7 +243,7 @@ describe("Pagle_Stats with Core", function()
 		end
 	)
 
-	it("keeps what an earlier session saved (stats.md › Data)", function()
+	it("keeps what an earlier login saved (stats.md › Data)", function()
 		local saved = {
 			global = { schemaVersion = 1 },
 			profileKeys = { ["Angler - Testrealm"] = "Default" },

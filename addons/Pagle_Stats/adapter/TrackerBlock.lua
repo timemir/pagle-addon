@@ -7,8 +7,8 @@ local ns = select(2, ...)
 
 -- The tracker block maker (STA-R82, STA-R84; stats.md › UI › Live tracker): a native objective-tracker-style block,
 -- about 250 px wide, drawn from a list of line descriptions in a frame look. The Curio Shop's previews draw a sample
--- with it (STA-R88, adapter/Goods.lua); the live tracker (#218) fills it with live lines and docks it. Look reference:
--- tracker T1 in prototypes/stats-window/, whose CSS gives the colours below.
+-- with it (STA-R88, adapter/Goods.lua); the live tracker (adapter/Tracker.lua) fills it with live lines and docks it.
+-- Look reference: tracker T1 in prototypes/stats-window/, whose CSS gives the colours below.
 
 -- A tint from its hex code (adapter/BookWidgets.lua).
 local tint = ns.BookTint

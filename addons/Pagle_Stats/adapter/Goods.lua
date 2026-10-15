@@ -43,8 +43,8 @@ ns.TRACKER_FRAMES = {
 	},
 }
 
--- Each stage's sample tracker, made at its first drawing: the shop gives every good its own stage (#157), so one
--- each. Weak, so a stage the shop drops goes.
+-- Each stage's sample tracker, made at its first drawing: the Curio Shop gives every good its own stage, so one
+-- each. Weak, so a stage the Curio Shop drops goes.
 ---@type table<Frame, StatsTrackerBlock>
 local drawn = setmetatable({}, { __mode = "k" })
 -- The good each sample shows, by sample.

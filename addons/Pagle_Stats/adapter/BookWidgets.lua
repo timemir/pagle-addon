@@ -69,7 +69,7 @@ ns.BOOK_LOOK = {
 	plate = tint("c19e45"), -- the gold nameplate: between its #e8c96a and #9a7420
 	plateEdge = tint("4a3008"),
 	plateText = tint("2a1a04"),
-	searchPaper = tint("efe0bb"), -- the search box (#215)
+	searchPaper = tint("efe0bb"), -- the search box (adapter/Search.lua)
 	margin = tint("7a6a50"), -- a row's margin: its Dry spell in handwriting
 	-- Item names by quality, in inks that read on the paper (variant D's `.vD .qn.q<n>`; the game's own white and
 	-- yellows don't): poor, common, uncommon, rare, epic, then legendary in a dark orange of our own.
@@ -101,7 +101,7 @@ ns.BOOK_TEXTURES = {
 	-- The star raid target (Blizzard_ChatFrameBase/Shared/ChatFrameConstants.lua's {rt1}): a watched row's ★.
 	star = "Interface\\TargetingFrame\\UI-RaidTargetingIcon_1",
 	-- A pencil on a note (the friends list's note icon, Blizzard_FriendsFrame/Camelot/FriendsFrame.xml): the "✎" before
-	-- a watched Dry spell on the home spread (#212).
+	-- a watched Dry spell on the home spread (adapter/Home.lua).
 	pencil = "Interface\\FriendsFrame\\UI-FriendsFrame-Note",
 }
 local TEXTURES = ns.BOOK_TEXTURES
@@ -386,13 +386,13 @@ function ns.NewBookInkBar(parent, width, height)
 	return bar
 end
 
---- The luck ruler (stats.md › UI › Place spread; #214): where my wait sits among anglers with my odds, never a bar
---- filling toward "due". A horizontal log scale of `P` from 1 at the left ("all") to 10⁻⁶ at the right ("1 in 1M"),
---- ticked at each power of ten with its label above; the unlucky and very unlucky ranges as two faint red washes on it,
---- the three bands named underneath; a red "me" mark at the reading's `P` (ns.RulerPosition, clamped at both ends);
---- then the fixed line "Every Cast is its own roll; nothing is owed." (STA-R58). Drawn in solid tints (SetColorTexture)
---- and the book's fonts, no texture file. Its width is the scale's: its labels at the ends reach past it by half their
---- width, so a page sets it in from both sides.
+--- The luck ruler (stats.md › UI › Place spread; an entry's, adapter/Entry.lua): where my wait sits among anglers with
+--- my odds, never a bar filling toward "due". A horizontal log scale of `P` from 1 at the left ("all") to 10⁻⁶ at the
+--- right ("1 in 1M"), ticked at each power of ten with its label above; the unlucky and very unlucky ranges as two
+--- faint red washes on it, the three bands named underneath; a red "me" mark at the reading's `P` (ns.RulerPosition,
+--- clamped at both ends); then the fixed line "Every Cast is its own roll; nothing is owed." (STA-R58). Drawn in solid
+--- tints (SetColorTexture) and the book's fonts, no texture file. Its width is the scale's: its labels at the ends
+--- reach past it by half their width, so a page sets it in from both sides.
 ---@class StatsBookRulerView: Frame
 ---@field rule Texture            -- the scale's base line
 ---@field ticks Texture[]         -- left to right, one per ns.LUCK_RULER_TICKS

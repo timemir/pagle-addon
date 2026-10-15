@@ -87,7 +87,7 @@ local function drawFacts(content, place)
 	local lines = {}
 	lines[#lines + 1] = data.bites
 	lines[#lines + 1] = data.pool
-	view.bites:SetText(table.concat(lines, " "))
+	view.bites:SetText(table.concat(lines, L.SENTENCE_JOIN))
 	view.bites:SetShown(#lines > 0)
 	if #lines > 0 then
 		at(view.bites, content, y)

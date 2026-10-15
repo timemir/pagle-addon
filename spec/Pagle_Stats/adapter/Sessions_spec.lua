@@ -236,7 +236,8 @@ describe("the Session pages", function()
 		it("asks for an item whose quality isn't loaded, and counts it once it loads (STA-R33)", function()
 			local loaded, _, book = withHistory(concat(OLD, RICH))
 			loaded.ns.OpenBook({ page = "session" })
-			-- search (#215) also asks, as the book opens, for the unnamed fish of my records and fished zones' rows
+			-- search (adapter/Search.lua) also asks, as the book opens, for the unnamed fish of my records and fished
+			-- zones' rows
 			assert.are.equal(LATE, loaded.client.itemRequests[1])
 
 			stats.loadItem(loaded, LATE, { quality = 2 })

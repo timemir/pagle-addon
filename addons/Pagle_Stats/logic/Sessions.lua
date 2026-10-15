@@ -10,7 +10,7 @@ local ns = select(2, ...)
 -- quality, lifetime time at the water, the bests and the first Cast's date. Pure logic over StatsSession records
 -- (stats.md › Projection state); Core's Session, the server time and the item lookups come in (CORE-R7). A Session
 -- that crosses midnight is one record, dated by its start: nothing here reads the daily reset (STA-R95). The book's
--- leather (#211), the home spread (#212), the Session pages (#216), Lifetime (#217) and the tracker (#218) read them.
+-- leather, the home spread, the Session pages, Lifetime and the tracker read them.
 
 --- The least time fished Catches per hour divides by, in seconds (Tunables: Minimum time for Catches per hour).
 ns.CATCHES_PER_HOUR_MIN_SECONDS = 60
@@ -18,6 +18,10 @@ ns.CATCHES_PER_HOUR_MIN_SECONDS = 60
 --- The least `endTime − startTime` a record needs for the most Catches per hour, in seconds (Tunables: Bests minimum
 --- for Catches per hour).
 ns.BESTS_MIN_SECONDS = 1200
+
+--- The live-line tick, in seconds (Tunables: Live-line tick): the book's live line and the tracker refresh on it
+--- (STA-R73, STA-R86).
+ns.LIVE_LINE_TICK = 30
 
 --- Which Session the book and the tracker show (STA-R32): `kind` is
 ---   "current"     Core's Session is open and is the last record, `record` (its `index` in `sessions`);

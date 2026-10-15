@@ -1,6 +1,6 @@
 -- The seams Stats' views meet at (STA-R20, STA-R72, STA-R73, STA-R92, LOG-R74): the projection's state and updating
--- flag, and the redraw bus the book and the tracker subscribe to, as they stand on a Stats with no view drawn. The book's entry
--- points are adapter/Book.lua's own (spec/Pagle_Stats/adapter/Book_spec.lua).
+-- flag, and the redraw bus the book and the tracker subscribe to, as they stand on a Stats with no view drawn. The
+-- book's entry points are adapter/Book.lua's own (spec/Pagle_Stats/adapter/Book_spec.lua).
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local stats = dofile("spec/Pagle_Stats/support.lua")

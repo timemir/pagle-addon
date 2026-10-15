@@ -56,7 +56,7 @@ function ns.Entry(state, item, area, live, places)
 		bar = reading.state == "learning" and reading.n / ns.ODDS_THRESHOLD or nil,
 		range = ns.OddsRange(reading),
 		sentence = ns.OddsSentence(reading),
-		notes = #notes > 0 and table.concat(notes, " ") or nil,
+		notes = #notes > 0 and table.concat(notes, ns.L.SENTENCE_JOIN) or nil,
 		dryFirst = dryFirst,
 		dryAfter = dryAfter,
 		luck = ns.DrySpell(reading).P,

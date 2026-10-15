@@ -10,15 +10,15 @@ local ns = select(2, ...)
 -- on it), which renderer draws each side of it, the breadcrumb trail back up, and where the ribbons go.
 -- adapter/Book.lua draws what it decides on the book.
 --
--- The pages, and the tickets whose renderers draw them (`ns.book:RegisterPage(page, side, renderer)`):
---   "home"      the home spread (#212): where I've fished on the left, right now on the right
---   "place"     a place's page (`area`, a zone or subzone): its rows on the left (#213); on the right, its numbers, or
---               the entry of the item chosen on it (`item`, #214)
---   "item"      an item's page (`item`; `area` when it was opened from a place): its waters (#215)
---   "session"   This Session, the ribbon (#216): the current Session, or My last Session
---   "lifetime"  Lifetime, the ribbon (#217)
---   "sessions"  Sessions, the ribbon (#216): the ruled ledger at page `ledgerPage` (1 when nil, the newest), and the
---               chosen Session's entry (`session`, Core's Session ID; the newest when nil)
+-- The pages, and the files whose renderers draw them (`ns.book:RegisterPage(page, side, renderer)`):
+--   "home"      the home spread (adapter/Home.lua): where I've fished on the left, right now on the right
+--   "place"     a place's page (`area`, a zone or subzone): its rows on the left (adapter/Place.lua); on the right,
+--               its numbers, or the entry of the item chosen on it (`item`, adapter/Entry.lua)
+--   "item"      an item's page (`item`; `area` when it was opened from a place): its waters (adapter/Item.lua)
+--   "session"   This Session, the ribbon (adapter/Sessions.lua): the current Session, or My last Session
+--   "lifetime"  Lifetime, the ribbon (adapter/Lifetime.lua)
+--   "sessions"  Sessions, the ribbon (adapter/Sessions.lua): the ruled ledger at page `ledgerPage` (1 when nil, the
+--               newest), and the chosen Session's entry (`session`, Core's Session ID; the newest when nil)
 -- A page with no renderer for a side leaves that side blank.
 
 ---@alias StatsBookSide "left"|"right"

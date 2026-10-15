@@ -6,10 +6,10 @@ end
 local ns = select(2, ...)
 
 -- Dry spells (STA-R50–R55): how many Casts since the item was last caught, in the same scope as its odds, and how
--- unusual that wait is, computed when shown from a reading (#206's `ns.Reading`, in the shape the M6 graph fixes) and
+-- unusual that wait is, computed when shown from a reading (logic/Odds.lua's `ns.Reading`, a StatsReading) and
 -- never stored (STA-R20). Pure logic: the words go through ns.L and Stats' words (logic/Text.lua). A Dry spell earns
 -- nothing, never pops up and never ends with a message (STA-R55, STA-R2): nothing here raises anything. The item's
--- entry (#214), the place rows (#213), the item page (#215), the home spread (#212) and the tracker (#218) read it.
+-- entry, the place rows, the item page, the home spread and the tracker read it.
 
 --- A luck reading's band (STA-R52).
 ---@alias StatsBand "normal"|"unlucky"|"veryUnlucky"
@@ -67,7 +67,7 @@ ns.RULER_RIGHT = 1e-6
 
 --- Where the luck ruler's "me" mark sits for a luck reading (stats.md › UI, Place spread): 0 at the left end (P = 1,
 --- "all") to 1 at the right (P = 10⁻⁶, "1 in 1M"), on a log scale, so each tick ("1 in 10", "1 in 100", …) is a
---- sixth further along. Clamped at both ends. The item's entry (#214) only draws it.
+--- sixth further along. Clamped at both ends. The item's entry (adapter/Entry.lua) only draws it.
 ---@param P number
 ---@return number
 function ns.RulerPosition(P)

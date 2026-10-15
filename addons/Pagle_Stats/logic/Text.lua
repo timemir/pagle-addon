@@ -9,7 +9,7 @@ local ns = select(2, ...)
 -- times ago, dates and Session headings, and the names of items, areas, characters and qualities. Pure logic: the
 -- client's reads are passed in once through ns.WireText (CORE-R7), and each is called when a word is written, never
 -- kept, so a name that loads or a clock that moves shows at the next draw. No view formats a count, duration or name
--- on its own (M6 graph, conventions), and every string is in ns.L, held to STA-R58's copy test.
+-- on its own, and every string is in ns.L, held to STA-R58's copy test.
 
 -- The question-mark icon an item shows until the client has its data (STA-R59).
 ns.QUESTION_MARK_ICON = "Interface\\Icons\\INV_Misc_QuestionMark"

@@ -301,7 +301,7 @@ describe("the live tracker", function()
 			assert.are.same(logbook.ink.header, { ink[1], ink[2], ink[3] })
 		end)
 
-		it("wears the frame equipped in an earlier session from login (SHOP-R32)", function()
+		it("wears the frame equipped at an earlier login from this login on (SHOP-R32)", function()
 			local fake = newFakePagle()
 			fake.setPurchased({ [LOGBOOK] = true })
 			fake.profile.appearance[SLOT] = LOGBOOK

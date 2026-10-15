@@ -7,8 +7,8 @@ local ns = select(2, ...)
 
 -- Watched Dry spells (STA-R60–R63): the Angler's watches, `{ item, area }` in PagleStatsDB.profile.watched, oldest
 -- first. Pure logic, everything passed in (CORE-R7): the profile, the UI error and the chat line come through
--- ns.WireWatches, which adapter/Settings.lua calls when it loads. The entry's watch toggle (#214), the Settings row
--- and the tracker (#218) all go through ns.Watch and ns.StopWatching, and every view reads ns.IsWatched.
+-- ns.WireWatches, which adapter/Settings.lua calls when it loads. The entry's watch toggle, the Settings row and the
+-- tracker all go through ns.Watch and ns.StopWatching, and every view reads ns.IsWatched.
 
 --- The most watches the Angler keeps (stats.md › Tunables › Watches; STA-R60, STA-R61).
 ns.MAX_WATCHES = 3

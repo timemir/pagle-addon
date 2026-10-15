@@ -7,9 +7,9 @@ local ns = select(2, ...)
 
 -- The Lifetime ribbon's spread on the Stats book (stats.md › UI › Lifetime), as logic/Lifetime.lua words it: on the
 -- left, the totals, the bests, got away by skill and the characters; on the right, the two-column index of every fish,
--- each item's first and last Catch on hover and its item page (adapter/Item.lua) on a click. With no Casts both pages read "No
--- Sessions yet." (STA-R97). Each side draws on its own content frame (adapter/Book.lua), reusing the pieces it made
--- at earlier draws; every piece sits by its top left on the page.
+-- each item's first and last Catch on hover and its item page (adapter/Item.lua) on a click. With no Casts both pages
+-- read "No Sessions yet." (STA-R97). Each side draws on its own content frame (adapter/Book.lua), reusing the pieces it
+-- made at earlier draws; every piece sits by its top left on the page.
 
 local L = ns.L
 local LOOK = ns.BOOK_LOOK

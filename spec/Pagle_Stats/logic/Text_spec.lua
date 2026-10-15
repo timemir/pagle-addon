@@ -244,7 +244,7 @@ describe("Stats' words", function()
 			assert.are.equal("Interface\\Icons\\INV_Misc_QuestionMark", icon)
 		end)
 
-		it("doesn't ask the client to load an item: the book asks and redraws (#211)", function()
+		it("doesn't ask the client to load an item: the book asks and redraws (STA-R73)", function()
 			local loaded = stats.load()
 
 			loaded.ns.Item(13759)

@@ -204,7 +204,7 @@ local function drawRightNow(content)
 		ns.book:RequestItem(itemID)
 	end
 	at(view.kicker, content, 0)
-	view.where:SetText(data.skill and (data.where .. " " .. data.skill) or data.where)
+	view.where:SetText(data.skill and (data.where .. L.SENTENCE_JOIN .. data.skill) or data.where)
 	at(view.where, content, KICKER_GAP)
 	local y = KICKER_GAP + view.where:GetStringHeight() + PARA_GAP
 	view.session:SetText(data.session)

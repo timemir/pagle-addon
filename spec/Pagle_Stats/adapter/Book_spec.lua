@@ -420,7 +420,7 @@ describe("the Stats book while the projection is updating (STA-R72)", function()
 
 		loaded.ns.ToggleBook()
 
-		assert.is_true(book:IsUpdating())
+		assert.is_true(loaded.ns.IsUpdating())
 		assert.are.equal("Updating my records…", book.frame.plate.label.text)
 		assert.are.same({ "Updating my records…" }, textsOf(book.frame.bodies.left))
 		assert.are.same({ "Updating my records…" }, textsOf(book.frame.bodies.right))
@@ -446,7 +446,7 @@ describe("the Stats book while the projection is updating (STA-R72)", function()
 		loaded.client.runTimers()
 
 		assert.is_false(told[#told].updating)
-		assert.is_false(book:IsUpdating())
+		assert.is_false(loaded.ns.IsUpdating())
 	end)
 
 	it("shows the live line from Pagle.GetSession() alone", function()

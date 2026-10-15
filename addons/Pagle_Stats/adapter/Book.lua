@@ -8,9 +8,9 @@ local ns = select(2, ...)
 -- The Stats book on the client (STA-R70–R75; stats.md › UI): a leather binding with two parchment pages, the gilt
 -- breadcrumbs, the live line and the search box's anchor on the leather above them, the nameplate on its lower corner
 -- and the ribbons hanging from its right edge, drawing on each page what logic/Book.lua's router says the page shown
--- puts there. The pages' contents are the page tickets' renderers (#212–#217); this file draws only the book. It makes
--- no secure frames, so it opens and works in combat and while restricted (STA-R71, STA-R93). The look follows
--- prototypes/stats-window/ variant D, in adapter/BookWidgets.lua's art.
+-- puts there. The pages' contents are the page files' renderers (adapter/Home.lua to Lifetime.lua); this file draws
+-- only the book. It makes no secure frames, so it opens and works in combat and while restricted (STA-R71, STA-R93).
+-- The look follows prototypes/stats-window/ variant D, in adapter/BookWidgets.lua's art.
 
 local L = ns.L
 local LOOK = ns.BOOK_LOOK
@@ -32,13 +32,11 @@ local SEARCH_WIDTH, LIVE_GAP = 250, 14
 local RIBBONS_TOP, RIBBON_GAP = 50, 6
 -- How far a mouse wheel notch scrolls a page body.
 local WHEEL_STEP = 40
--- The live-line tick, in seconds (Tunables: Live-line tick).
-ns.LIVE_LINE_TICK = 30
 
 -- The owner of the book's Core callbacks and WoW event registrations (CORE-R23).
 local OWNER = "Pagle_Stats book"
 
---- The leather's anchors the page tickets draw into: the search box (#215).
+--- The leather's anchors the page files draw into: the search box (adapter/Search.lua).
 ---@alias StatsBookLeatherPart "search"
 local LEATHER_PARTS = { "search" }
 
@@ -125,13 +123,6 @@ function Book:RegisterLeather(part, renderer)
 	assert(known, "the Stats book's leather has no anchor " .. tostring(part))
 	assert(type(renderer) == "function", "a leather anchor's renderer is a function")
 	self.leatherRenderers[part] = renderer
-end
-
---- Whether the projection is updating (STA-R72): the page bodies then read "Updating my records…", and search (#215)
---- and the watch toggle (#214) are disabled.
----@return boolean
-function Book.IsUpdating()
-	return ns.IsUpdating()
 end
 
 --- Asks the client for `itemID`'s data through the book's item loader (ns.NewItemLoader), once while it is on its way;
@@ -300,22 +291,8 @@ local function listen(book)
 		return
 	end
 	book.listening = true
-	local function queue()
+	ns.OnReadingsMove(OWNER, function()
 		book:QueueDraw()
-	end
-	Pagle.RegisterCallback(OWNER, "CastEnded", function(_, outcome)
-		if outcome ~= "interrupted" then
-			queue()
-		end
-	end)
-	Pagle.RegisterCallback(OWNER, "SessionEnded", queue)
-	Pagle.RegisterCallback(OWNER, "ConditionsChanged", function(_, changedKeys)
-		for _, key in ipairs(changedKeys) do
-			if key == "area" or key == "skill" then
-				queue()
-				return
-			end
-		end
 	end)
 end
 
@@ -634,7 +611,7 @@ end
 -- The book's entry points (logic/Seams.lua lists them); every caller calls them through ns at call time.
 
 --- Opens or closes the Stats book (STA-R70): Registration's view and `/pagle stats`, so the compartment's "Stats" and
---- the status button's "Open Stats" too (STA-R4), and the tracker header (#218).
+--- the status button's "Open Stats" too (STA-R4), and the tracker header (adapter/Tracker.lua).
 function ns.ToggleBook()
 	ns.book:Toggle()
 end

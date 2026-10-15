@@ -7,9 +7,9 @@ local ns = select(2, ...)
 
 -- A place's page in the Stats book (stats.md › UI › Place spread; STA-R17, STA-R18, STA-R42, STA-R96): the left page
 -- with the place's name, my Casts there and its no-junk sentence, a zone's waters, and its rows in their groups, each
--- row with ★ when watched, its short odds and its Dry spell in the margin; and the right page before an item is
--- chosen, the place's own numbers. Clicking a row chooses its item (STA-R74), and the right page then shows the item's
--- entry, drawn by the renderer registered with ns.RegisterPlaceEntry (#214). The rules are logic/Groups.lua's.
+-- row with ★ when watched, its short odds and its Dry spell in the margin; and the right page before an item is chosen,
+-- the place's own numbers. Clicking a row chooses its item (STA-R74), and the right page then shows the item's entry,
+-- drawn by the renderer registered with ns.RegisterPlaceEntry (adapter/Entry.lua). The rules are logic/Groups.lua's.
 --
 -- Every line of a page is anchored by its top left at its depth down the page, so the page lays out top to bottom.
 
@@ -255,7 +255,7 @@ local function drawLeft(content, place)
 	local record = state.places[area]
 	local text = L.PLACE_CASTS:format(ns.Number(record and record.casts or 0))
 	local sentence = ns.NoJunkSentence(area, live)
-	view.casts:SetText(sentence and (text .. " " .. sentence) or text)
+	view.casts:SetText(sentence and (text .. ns.L.SENTENCE_JOIN .. sentence) or text)
 	put(view.casts, y)
 	y = y + view.casts:GetStringHeight() + PARAGRAPH
 	local chart = Pagle.GetArea(area)
@@ -328,11 +328,11 @@ local function rightView(content)
 	return view
 end
 
--- The renderer of a chosen item's entry on the place page's right side (#214), if registered.
+-- The renderer of a chosen item's entry on the place page's right side (adapter/Entry.lua's), if registered.
 ---@type StatsBookRenderer?
 local entryRenderer
 
---- Registers `renderer` to draw the entry of the item chosen on a place's page (UI › Place spread, #214) on the right
+--- Registers `renderer` to draw the entry of the item chosen on a place's page (UI › Place spread) on the right
 --- page: it is given its own frame there, as wide as the page, and the place (`area`, `item`), and returns the height
 --- it drew. A later registration replaces it. Until one is registered, the right page keeps the place's numbers.
 ---@param renderer StatsBookRenderer

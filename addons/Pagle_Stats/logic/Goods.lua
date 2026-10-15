@@ -15,7 +15,7 @@ ns.TRACKER_FRAME_SLOT = "stats.trackerframe"
 local ICONS = "Interface\\Icons\\"
 
 --- One of Stats' goods, as data: exactly one of `default` or `tier` (SHOP-R22; Stats has no earned goods), and its
---- icon, the shop's swatch for it (STA-R88): an in-client texture.
+--- icon, the Curio Shop's swatch for it (STA-R88): an in-client texture.
 ---@class StatsGoodData
 ---@field id string
 ---@field default? true
@@ -38,8 +38,7 @@ ns.STATS_GOODS = {
 	},
 }
 
---- A good's name (STA-R88): its lore, `statsgood.<goodID>.name`, or its ID while the key has no text (M6 graph, open
---- question 7).
+--- A good's name (STA-R88): its lore, `statsgood.<goodID>.name`, or its ID while the key has no text.
 ---@param goodID string
 ---@return string
 function ns.StatsGoodName(goodID)

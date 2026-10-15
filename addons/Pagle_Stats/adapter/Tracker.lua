@@ -138,18 +138,6 @@ function ns.DrawTracker()
 	block:Show()
 end
 
--- Whether ConditionsChanged's keys move a reading: the area or the skill (STA-R73).
----@param changedKeys string[]
----@return boolean
-local function movesReadings(changedKeys)
-	for _, key in ipairs(changedKeys) do
-		if key == "area" or key == "skill" then
-			return true
-		end
-	end
-	return false
-end
-
 --- Makes the live tracker and docks it (STA-R80), from OnInitialize after RegisterModule: Core's dock stacks it at
 --- order 20, below Hunts' (CORE-R70). It redraws on STA-R73's events, at every ns.Redraw, at SessionStarted, at
 --- ModulesChanged (the equipped frame is Core's by then, SHOP-R33), at AppearanceChanged for its frame slot (STA-R84)
@@ -172,17 +160,7 @@ function ns.StartTracker(module)
 	ns.OnRedraw(draw)
 	Pagle.RegisterCallback(OWNER, "ModulesChanged", draw)
 	Pagle.RegisterCallback(OWNER, "SessionStarted", draw)
-	Pagle.RegisterCallback(OWNER, "SessionEnded", draw)
-	Pagle.RegisterCallback(OWNER, "CastEnded", function(_, outcome)
-		if outcome ~= "interrupted" then
-			draw()
-		end
-	end)
-	Pagle.RegisterCallback(OWNER, "ConditionsChanged", function(_, changedKeys)
-		if movesReadings(changedKeys) then
-			draw()
-		end
-	end)
+	ns.OnReadingsMove(OWNER, draw)
 	Pagle.RegisterCallback(OWNER, "AppearanceChanged", function(_, slot)
 		if slot == ns.TRACKER_FRAME_SLOT then
 			draw()
