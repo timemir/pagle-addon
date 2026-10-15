@@ -38,4 +38,5 @@ adapter\Lures.lua
 adapter\Clams.lua
 adapter\Gear.lua
 adapter\NextActionButton.lua
+adapter\Tour.lua
 adapter\QoL.lua

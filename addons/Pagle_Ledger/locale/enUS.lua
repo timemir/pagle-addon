@@ -388,4 +388,13 @@ ns.L = {
 	PRESTIGE_CONFIRM = "Begin a new Ledger? Your Angler Level starts again at 1, and climbs at half the cost. Nothing you've earned is taken away.",
 	PRESTIGE_CONFIRM_YES = "Prestige",
 	PRESTIGE_CONFIRM_NO = "Not yet",
+	-- The Journal's tour stops' labels, for `/pagle dev tour list` (CORE-R68): dev-only, never shown to players.
+	TOUR_HOME = "the Fish Journal: Home",
+	TOUR_ZONE = "the Fish Journal: the most-fished zone, its most-caught Species open",
+	TOUR_FISH = "the Fish Journal: the most-caught Species",
+	TOUR_TROPHY = "the Fish Journal: the Trophy Room, on a landed family",
+	TOUR_CURIOS = "the Fish Journal: Curios",
+	TOUR_LEGENDS = "the Fish Journal: Legends, on a caught one",
+	TOUR_ANGLER = "the Fish Journal: the Angler page",
+	TOUR_SEARCH = "the Fish Journal: search results for the most-caught Species' name",
 }

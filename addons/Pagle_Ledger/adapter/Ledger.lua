@@ -44,6 +44,10 @@ function ns.Ledger.OnInitialize()
 	)
 	-- The Journal bindings (LED-R110): after the projection, which their isEarned reads (LED-R111).
 	ns.RegisterBindings(ns.Module)
+	-- The Journal's stops for `/pagle dev tour` (CORE-R65), on a Core that has the call.
+	if ns.Module.RegisterTourStop then
+		ns.RegisterTourStops(ns.Module)
+	end
 end
 
 --- Where the Ledger's moments, Write-up sections, Coins and summary line go, and what they read: the client's names
