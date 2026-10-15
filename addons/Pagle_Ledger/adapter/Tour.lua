@@ -27,6 +27,8 @@ function ns.RegisterTourStops(M)
 			local context = journal:Context()
 			local ready = not context.updating and context --[[@as LedgerSpreadContext]]
 			journal:OpenPlace(ready and stop.place(ready) or ns.JournalPlace.home())
+			-- the screenshot shows the spread settled, never mid-turn
+			journal:Settle()
 			local frame = journal.frame
 			if ready and stop.search and frame then
 				frame.search:SetText(stop.search(ready))

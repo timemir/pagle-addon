@@ -42,10 +42,13 @@ logic\JournalLegends.lua
 logic\JournalZone.lua
 logic\Tour.lua
 adapter\Motion.lua
+adapter\JournalArt.lua
+adapter\JournalBook.lua
 adapter\JournalWidgets.lua
 adapter\JournalText.lua
 adapter\JournalCollections.lua
 adapter\JournalLegends.lua
+adapter\JournalAngler.lua
 adapter\JournalZone.lua
 adapter\JournalSearch.lua
 adapter\Journal.lua

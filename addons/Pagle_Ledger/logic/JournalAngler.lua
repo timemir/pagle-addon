@@ -35,41 +35,45 @@ local function bookplate(context)
 	local state = context.state
 	local celebrated = context.celebrated
 	local format = context.formatNumber
-	local blocks = {}
-	if context.crest then
-		blocks[1] = { kind = "icon", icon = context.crest }
-	end
+	-- the Prestige crest for the rank, holding the likeness, with the bookplate crest pinned on it (LED-R112)
+	local blocks = { { kind = "crest", rank = state.prestige, icon = context.crest } }
 	blocks[#blocks + 1] = { kind = "kicker", text = L.ANGLER_EX_LIBRIS }
 	blocks[#blocks + 1] = { kind = "title", text = L.ANGLER_LEDGER }
 	-- The first Catch with a realm date; with none, the first Catch's server time at the realm's offset now.
 	local since = state.firstDate and context.text:Date(state.firstDate)
 		or state.firstTime and context.text:DateAt(state.firstTime)
 	if since then
-		blocks[#blocks + 1] = { kind = "text", text = L.ANGLER_KEPT_SINCE:format(since) }
+		blocks[#blocks + 1] = { kind = "text", color = "faded", text = L.ANGLER_KEPT_SINCE:format(since) }
 	end
-	blocks[#blocks + 1] = { kind = "title", text = L.ANGLER_LEVEL:format(ns.ShownLevel(state, celebrated)) }
+	-- the shown level with "Angler Level" and the active title beside it, and the Prestige emblem and its words
 	local _, title = ns.ActiveTitle(context --[[@as LedgerTitleView]])
-	if title then
-		blocks[#blocks + 1] = { kind = "text", hand = true, text = title }
-	end
+	local mark = ns.PrestigeMark(state.prestige)
+	blocks[#blocks + 1] = {
+		kind = "bookplate",
+		text = tostring(ns.ShownLevel(state, celebrated)),
+		value = L.HOME_LEVEL,
+		signature = title,
+		mark = mark.emblem and mark or nil,
+		note = ns.PrestigeName(state.prestige) or L.ANGLER_NO_PRESTIGE,
+	}
 	blocks[#blocks + 1] = { kind = "xpBar", bar = ns.InkXpBar(state, celebrated, context.now, format) }
-	if state.prestige > 0 then
-		blocks[#blocks + 1] = { kind = "emblem", mark = ns.PrestigeMark(state.prestige) }
-	else
-		blocks[#blocks + 1] = { kind = "text", color = "faded", text = L.ANGLER_NO_PRESTIGE }
-	end
 	if context.canPrestige then
 		blocks[#blocks + 1] = { kind = "button", text = L.ANGLER_PRESTIGE, action = context.askPrestige }
 	end
 	local completion = ns.LedgerCompletion(context.world, state)
 	blocks[#blocks + 1] = {
-		kind = "text",
-		text = L.ANGLER_COMPLETE:format(completion.percent, format(completion.done), format(completion.total)),
+		kind = "kicker",
+		text = L.ANGLER_TALLY,
+		value = L.ANGLER_COMPLETE:format(completion.percent, format(completion.done), format(completion.total)),
 	}
 	for _, part in ipairs(ns.COMPLETION_PARTS) do
 		local count = completion[part]
-		blocks[#blocks + 1] =
-			{ kind = "text", text = L.ANGLER_PARTS[part]:format(format(count.done), format(count.total)) }
+		blocks[#blocks + 1] = {
+			kind = "leader",
+			style = "pair",
+			text = L.ANGLER_PARTS[part],
+			value = L.ANGLER_PART_COUNT:format(format(count.done), format(count.total)),
+		}
 	end
 	blocks[#blocks + 1] = { kind = "text", text = catchesLine(state.catches, format) }
 	return blocks
@@ -87,13 +91,14 @@ local function hands(context, blocks)
 		indices[#indices + 1] = index
 	end
 	table.sort(indices)
-	blocks[#blocks + 1] = { kind = "title", text = L.ANGLER_HANDS }
+	blocks[#blocks + 1] = { kind = "kicker", text = L.ANGLER_HANDS }
 	for _, index in ipairs(indices) do
 		local reading = skill[index]
 		blocks[#blocks + 1] = {
-			kind = "text",
-			hand = true,
-			text = L.ANGLER_HAND:format(context.text:Character(index), reading.rank, reading.max),
+			kind = "leader",
+			style = "pair",
+			text = context.text:Character(index),
+			value = L.ANGLER_HAND:format(reading.rank, reading.max),
 		}
 	end
 end
@@ -135,14 +140,15 @@ local function signedAs(context, blocks)
 			end
 		end
 	end
-	blocks[#blocks + 1] = { kind = "title", text = L.ANGLER_SIGNED_AS }
+	blocks[#blocks + 1] = { kind = "kicker", text = L.ANGLER_SIGNED_AS }
 	---@param key string?
 	---@param name string
 	local function line(key, name)
-		local mark = key == marked and L.ANGLER_SIGNED_ON or L.ANGLER_SIGNED_OFF
 		blocks[#blocks + 1] = {
 			kind = "link",
-			text = mark:format(name),
+			style = "radio",
+			on = key == marked,
+			text = name,
 			action = function()
 				pick(key)
 			end,
@@ -164,22 +170,22 @@ local function bindings(context, blocks)
 	local L = ns.L
 	local goods = context.goods
 	local equipped = goods.getEquipped(ns.BINDING_SLOT)
-	blocks[#blocks + 1] = { kind = "title", text = L.ANGLER_BINDINGS }
+	blocks[#blocks + 1] = { kind = "kicker", text = L.ANGLER_BINDINGS }
 	for _, binding in ipairs(ns.BINDINGS) do
 		local id = ns.BindingID(binding)
 		---@type LedgerBlock
-		local line = { kind = "leader", text = ns.BindingName(binding) }
+		local line = { kind = "leader", text = ns.BindingName(binding), binding = binding.swatch }
 		if id == equipped then
-			line.value = L.ANGLER_BINDING_IN_USE
+			line.value, line.state = L.ANGLER_BINDING_IN_USE, "inUse"
 		elseif goods.isOwned(id) then
-			line.value = L.ANGLER_BINDING_USE
+			line.value, line.state = L.ANGLER_BINDING_USE, "use"
 			line.action = function()
 				goods.setEquipped(ns.BINDING_SLOT, id)
 			end
 		elseif binding.level then
-			line.value = L.BINDING_EARNED:format(binding.level)
+			line.value, line.state = L.BINDING_EARNED:format(binding.level), "level"
 		else
-			line.value = L.ANGLER_BINDING_SHOP
+			line.value, line.state = L.ANGLER_BINDING_SHOP, "shop"
 			line.action = function()
 				goods.openShop(id)
 			end

@@ -6,151 +6,276 @@ end
 local ns = select(2, ...)
 
 -- The zone spread's own widgets (LED-R135–R137; ledger.md › UI): Zone Mastery's rank ladder and the list rows of
--- Species and trophy families, drawn from the blocks logic/JournalZone.lua makes. The look follows
--- prototypes/fish-journal/ variant E.
+-- Species, trophy families and Legends, drawn from the blocks logic/JournalZone.lua makes, in the Ledger art kit's
+-- look (its LedgerKit.lua: P.Ladder, P.Row), with the kit's moments of change (MOTION.md): the ladder's circle moving
+-- to a new rank, a fish logged on its row.
 
-local LOOK = ns.JOURNAL_LOOK
+local INK = ns.JOURNAL_INK
+local rgb = ns.JournalRGB
 
--- The rank ladder's rung height, and the room each side of a rung's word.
-local RUNG_HEIGHT = 18
-local RUNG_PAD = 6
+-- The ladder's rung words and dots, and its height.
+local RUNG_SIZE, LADDER_HEIGHT = 15, 24
 
--- A box of four 1.5 px red edges around `frame`, as variant E circles the shown rung.
----@param frame Frame
----@return Texture[]
-local function redBox(frame)
-	local edges = ns.JournalRules(frame, 0, { thickness = 1.5 })
-	for _, edge in ipairs(edges) do
-		ns.JournalPaint(edge, LOOK.red)
-	end
-	return edges
+-- The kit's circle for a rank's words, by the words lowercased.
+---@param words string
+---@return string?
+local function ringOf(words)
+	local name = "rank-" .. words:lower():gsub("[^a-z0-9]+", "-")
+	return ns.JOURNAL_ATLASES.Parts.sprites[name] and name or nil
 end
 
 ---@class LedgerLadderRungView
----@field frame Frame
 ---@field text FontString
----@field box Texture[]
----@field separator FontString?
+---@field ring LedgerSpriteTexture?
+---@field dot FontString?
 
--- Zone Mastery's ladder (LED-R135): the ranks side by side, those reached inked, the shown one red in a red box.
+---@class LedgerLadderWidget: LedgerJournalWidget
+---@field rungs LedgerLadderRungView[]
+
+-- Zone Mastery's ladder (LED-R135): the ranks side by side in small capitals between dots, those reached inked, the
+-- shown one red in the kit's drawn circle, the rest in ghost ink. Drawn again on the same page with a new rank, the
+-- new circle settles from 130% (MOTION.md › A zone's rank goes up).
 ns.RegisterJournalWidget("ladder", function(parent)
-	local widget = CreateFrame("Button", nil, parent) --[[@as LedgerJournalWidget]]
-	---@type LedgerLadderRungView[]
-	local rungs = {}
+	local widget = ns.NewJournalWidget(parent) --[[@as LedgerLadderWidget]]
+	widget.rungs = {}
 	local function rungAt(i)
-		if not rungs[i] then
-			local frame = CreateFrame("Frame", nil, widget)
-			local text = ns.JournalText(frame, ns.JournalFonts().text, LOOK.stampOff)
-			text:SetPoint("CENTER")
-			local separator
+		local rung = widget.rungs[i]
+		if not rung then
+			rung = { text = ns.JournalLabel(widget, "sc", RUNG_SIZE, INK.ghost, "", { justify = "CENTER" }) }
 			if i > 1 then
-				separator = ns.JournalText(widget, ns.JournalFonts().text, LOOK.stampOff)
-				separator:SetText(ns.L.ZONE_LADDER_SEPARATOR)
+				rung.dot = ns.JournalLabel(widget, "sc", RUNG_SIZE, INK.rule, ns.L.ZONE_LADDER_SEPARATOR)
 			end
-			rungs[i] = { frame = frame, text = text, box = redBox(frame), separator = separator }
+			widget.rungs[i] = rung
 		end
-		return rungs[i]
+		return rung
 	end
-	function widget.Fill(_, block)
+	function widget.Fill(self, block, width, _, draw)
 		local list = block.rungs or {}
+		local circled
+		for i, data in ipairs(list) do
+			if data.circled then
+				circled = i
+			end
+		end
+		local same, before = ns.JournalRemember(self, draw, "ladder", circled)
 		local x = 0
 		for i, data in ipairs(list) do
 			local rung = rungAt(i)
-			if rung.separator then
-				rung.separator:ClearAllPoints()
-				rung.separator:SetPoint("LEFT", widget, "TOPLEFT", x, -RUNG_HEIGHT / 2)
-				rung.separator:Show()
-				x = x + rung.separator:GetStringWidth()
+			if rung.dot then
+				rung.dot:ClearAllPoints()
+				rung.dot:SetPoint("TOPLEFT", x + 6, -2)
+				rung.dot:Show()
+				x = x + 6 + 3.4 + 6
 			end
-			local color = data.circled and LOOK.red or data.inked and LOOK.title or LOOK.stampOff
 			rung.text:SetText(data.text)
-			rung.text:SetTextColor(unpack(color))
-			for _, edge in ipairs(rung.box) do
-				edge:SetShown(data.circled)
+			local ringName = data.circled and ringOf(data.text)
+			if ringName then
+				if not rung.ring then
+					rung.ring = ns.JournalSprite(self, "Parts", ringName, "ARTWORK")
+				end
+				local sprite = ns.JOURNAL_ATLASES.Parts.sprites[ringName]
+				local atlas = ns.JOURNAL_ATLASES.Parts
+				ns.JournalSetSprite(rung.ring, "Parts", ringName)
+				rung.ring:SetSize(sprite.w / atlas.scale, sprite.h / atlas.scale)
+				rung.ring.box = sprite.box
+				ns.JournalPlace(rung.ring, self, x, 0)
+				rung.ring:Show()
+				rung.text:SetTextColor(rgb(INK.red))
+				rung.text:SetWidth(sprite.box[3])
+				rung.text:ClearAllPoints()
+				rung.text:SetPoint("TOPLEFT", x, -2)
+				local ring = rung.ring
+				ns.StopMotion(ring)
+				if same and before ~= nil and before ~= i and ns.Moving() then
+					-- the new circle settles from 130% (0.35 s from 0.2 s)
+					local w0, h0 = ring:GetSize()
+					local cx, cy = x + sprite.box[3] / 2, sprite.box[4] / 2
+					ns.Animate(ring, {
+						{
+							dur = 0.35,
+							delay = 0.2,
+							ease = ns.Bezier(0.3, 1.4, 0.5, 1),
+							keys = { { 0, { 1.3, 0 } }, { 0.3, { 1.15, 1 } }, { 1, { 1, 1 } } },
+							apply = function(v)
+								ring:SetSize(w0 * v[1], h0 * v[1])
+								ring:SetAlpha(v[2])
+								ring:ClearAllPoints()
+								ring:SetPoint("CENTER", self, "TOPLEFT", cx, -cy)
+							end,
+						},
+					})
+				end
+				x = x + sprite.box[3]
+			else
+				if rung.ring then
+					rung.ring:Hide()
+				end
+				rung.text:SetTextColor(rgb(data.circled and INK.red or data.inked and INK.title or INK.ghost))
+				rung.text:SetWidth(0)
+				rung.text:ClearAllPoints()
+				rung.text:SetPoint("TOPLEFT", x, -2)
+				x = x + rung.text:GetStringWidth()
 			end
-			local width = rung.text:GetStringWidth() + 2 * RUNG_PAD
-			rung.frame:SetSize(width, RUNG_HEIGHT)
-			rung.frame:ClearAllPoints()
-			rung.frame:SetPoint("TOPLEFT", x, 0)
-			rung.frame:Show()
-			x = x + width
+			rung.text:Show()
 		end
-		for i = #list + 1, #rungs do
-			rungs[i].frame:Hide()
-			if rungs[i].separator then
-				rungs[i].separator:Hide()
+		for i = #list + 1, #self.rungs do
+			self.rungs[i].text:Hide()
+			if self.rungs[i].dot then
+				self.rungs[i].dot:Hide()
+			end
+			if self.rungs[i].ring then
+				self.rungs[i].ring:Hide()
 			end
 		end
-		return RUNG_HEIGHT
+		self:SetWidth(math.max(1, math.min(width, x)))
+		return LADDER_HEIGHT
 	end
 	return widget
 end)
 
--- A row's icon size, and the gap after the icon and before the stars and value.
-local ROW_ICON_SIZE = 22
-local ROW_GAP = 6
-
 ---@class LedgerJournalRowView: LedgerJournalWidget
----@field icon Texture
+---@field medal LedgerMedal
 ---@field name FontString
 ---@field margin FontString
----@field stars FontString
+---@field stars LedgerStarsView
 ---@field value FontString
----@field highlight Texture
+---@field wash Texture
+---@field hover Texture
+---@field dashes Frame?
+---@field dashW number?
+---@field dashH number?
+---@field glow Texture
 
--- A list row (LED-R136, LED-R137): a small item icon in sepia or as a black silhouette (LED-R124), the text (faded for
--- what is unknown), its margin notes in handwriting under it, its stars ("★★☆", ns.JournalStars) and a value at the
--- right, a faint wash when selected; a click opens its place.
+-- A row's height with a medallion and without (the kit's 32 and 25).
+local ROW_H, ROW_H_PLAIN = 32, 25
+
+-- A list row (LED-R136, LED-R137, LED-R143, LED-R147): the kit's P.Row. Its medallion (the item's icon round in
+-- sepia, or the unknown fish's for what isn't caught, LED-R124), its words (in italic, faded, for what is unknown), its
+-- margin notes in the hand at the right, its stars as textures and a value at the right; a faint wash under the
+-- mouse; selected, a deeper wash in a dashed outline. A click opens its place. A fish caught since the page was last
+-- drawn is logged on its row: the unknown medallion gives way to the fish's own, a green wash swells and fades, and
+-- its name is written in with the write sound (MOTION.md › A new fish logged).
 ns.RegisterJournalWidget("row", function(parent)
-	local widget = CreateFrame("Button", nil, parent) --[[@as LedgerJournalRowView]]
-	local fonts = ns.JournalFonts()
-	widget.highlight = ns.JournalSolid(widget, LOOK.kicker, "BACKGROUND", 0.15)
-	widget.icon = widget:CreateTexture(nil, "ARTWORK")
-	widget.icon:SetSize(ROW_ICON_SIZE, ROW_ICON_SIZE)
-	widget.icon:SetPoint("TOPLEFT")
-	widget.value = ns.JournalText(widget, fonts.text, LOOK.ink)
-	widget.value:SetPoint("TOPRIGHT")
-	widget.value:SetJustifyH("RIGHT")
-	widget.stars = ns.JournalText(widget, fonts.text, LOOK.red)
-	widget.stars:SetJustifyH("RIGHT")
-	widget.name = ns.JournalText(widget, fonts.text, LOOK.ink)
-	widget.name:SetWordWrap(true)
-	widget.label = widget.name
-	widget.margin = ns.JournalText(widget, fonts.hand, LOOK.blue)
-	widget.margin:SetWordWrap(true)
+	local widget = ns.NewJournalWidget(parent) --[[@as LedgerJournalRowView]]
 	ns.JournalClickable(widget)
-	function widget.Fill(_, block, width, open)
-		widget.place, widget.open = block.place, open
-		widget.highlight:SetShown(block.selected == true)
-		local icon = block.icon
-		widget.icon:SetShown(icon ~= nil)
-		ns.JournalItemIcon(widget.icon, icon, block.look)
-		local left = icon and ROW_ICON_SIZE + ROW_GAP or 0
-		widget.value:SetText(block.value or "")
-		widget.value:SetShown(block.value ~= nil)
-		local right = block.value and widget.value:GetStringWidth() + ROW_GAP or 0
-		widget.stars:ClearAllPoints()
-		widget.stars:SetPoint("TOPRIGHT", -right, 0)
-		widget.stars:SetText(block.stars and ns.JournalStars(block.stars) or "")
-		widget.stars:SetShown(block.stars ~= nil)
-		right = right + (block.stars and widget.stars:GetStringWidth() + ROW_GAP or 0)
-		local ink = block.color == "faded" and LOOK.faded or LOOK.ink
-		widget.name:SetTextColor(unpack(ink))
-		widget.name:ClearAllPoints()
-		widget.name:SetPoint("TOPLEFT", left, 0)
-		widget.name:SetWidth(width - left - right)
-		widget.name:SetText(block.text)
-		local height = widget.name:GetStringHeight()
-		local margin = block.margin
-		widget.margin:SetShown(margin ~= nil)
-		if margin then
-			widget.margin:ClearAllPoints()
-			widget.margin:SetPoint("TOPLEFT", left, -height)
-			widget.margin:SetWidth(width - left)
-			widget.margin:SetText(table.concat(margin, ns.L.ZONE_MARGIN_SEPARATOR))
-			height = height + widget.margin:GetStringHeight()
+	widget.wash = ns.JournalTint(widget, "784614", 0.13, "BACKGROUND", 1)
+	widget.wash:SetAllPoints()
+	widget.hover = ns.JournalTint(widget, "784614", 0.08, "BACKGROUND", 0)
+	widget.hover:SetAllPoints()
+	widget.hover:Hide()
+	widget.glow = ns.JournalTint(widget, "2a6a2a", 1, "BACKGROUND", 2)
+	widget.glow:SetAllPoints()
+	widget.glow:SetAlpha(0)
+	widget.medal = ns.JournalMedal(widget, 26)
+	widget.name = ns.JournalLabel(widget, "print", 15, INK.body)
+	widget.label = widget.name
+	widget.margin = ns.JournalLabel(widget, "hand", 17, INK.note, "", { justify = "RIGHT" })
+	widget.stars = ns.JournalStars(widget, 12)
+	widget.value = ns.JournalLabel(widget, "print", 13.5, INK.small, "", { justify = "RIGHT" })
+	widget:SetScript("OnEnter", function(self)
+		if self.place then
+			self.hover:Show()
 		end
-		return math.max(height, icon and ROW_ICON_SIZE or 0)
+	end)
+	widget:SetScript("OnLeave", function(self)
+		self.hover:Hide()
+	end)
+	function widget.Fill(self, block, width, open, draw)
+		self.place, self.open = block.place, open
+		local icon = block.icon ~= nil
+		local h = icon and ROW_H or ROW_H_PLAIN
+		local unknown = block.look == "silhouette"
+		-- the selection's wash and dashed outline
+		self.wash:SetShown(block.selected == true)
+		if self.dashes and (self.dashW ~= width or self.dashH ~= h) then
+			self.dashes:Hide()
+			self.dashes = nil
+		end
+		if block.selected and not self.dashes then
+			self.dashes = ns.JournalDashes(self, 0, 0, width, h, INK.kicker, 1)
+			self.dashW, self.dashH = width, h
+		end
+		if self.dashes then
+			self.dashes:SetShown(block.selected == true)
+		end
+		self.medal:SetShown(icon)
+		local left = 5
+		if icon then
+			ns.JournalSetMedal(self.medal, block.icon, block.look)
+			ns.JournalAt(self.medal, self, 5, (h - 26) / 2)
+			left = 40
+		end
+		-- the right: the value, then the stars before it, then the margin before them
+		local right = width - 5
+		self.value:SetShown(block.value ~= nil)
+		if block.value then
+			self.value:SetText(block.value)
+			ns.JournalBound(self.value, 80)
+			self.value:ClearAllPoints()
+			self.value:SetPoint("TOPRIGHT", self, "TOPLEFT", right, -(h - 18) / 2)
+			right = right - self.value:GetWidth() - 9
+		end
+		self.stars:SetShown(block.stars ~= nil)
+		if block.stars then
+			ns.JournalSetStars(self.stars, block.stars)
+			ns.JournalAt(self.stars, self, right - 37.6, (h - 16) / 2)
+			right = right - 37.6 - 9
+		end
+		local margin = block.margin and table.concat(block.margin, ns.L.ZONE_MARGIN_SEPARATOR) or nil
+		self.margin:SetShown(margin ~= nil)
+		if margin then
+			self.margin:SetText(margin)
+			ns.JournalBound(self.margin, (right - left) * 0.55)
+			self.margin:ClearAllPoints()
+			self.margin:SetPoint("TOPRIGHT", self, "TOPLEFT", right, -(h - 22) / 2)
+			right = right - self.margin:GetWidth() - 8
+		end
+		local faded = block.color == "faded"
+		ns.JournalRestyle(self.name, faded and "italic" or "print", 15, faded and INK.noteLight or INK.body)
+		self.name:SetText(block.text)
+		ns.JournalBound(self.name, math.max(10, right - left))
+		self.name:ClearAllPoints()
+		self.name:SetPoint("TOPLEFT", left, -(h - 19) / 2)
+		-- a fish logged since the page was last drawn
+		local key = block.place and (block.place.id .. ":" .. tostring(block.place.args and block.place.args.species))
+			or block.text
+		local same, wasUnknown = ns.JournalRemember(self, draw, key, unknown)
+		ns.StopMotion(self)
+		self.glow:SetAlpha(0)
+		self.name:SetAlpha(1)
+		if same and wasUnknown and not unknown and icon and ns.Moving() then
+			ns.JournalSound("write")
+			local medal = self.medal
+			ns.Animate(self, {
+				{
+					dur = 0.35,
+					delay = 0.1,
+					ease = ns.Bezier(0.3, 1.5, 0.5, 1),
+					keys = { { 0, { 1.4, 0 } }, { 0.6, { 0.95, 1 } }, { 1, { 1, 1 } } },
+					apply = function(v)
+						medal:SetAlpha(v[2])
+						medal:SetScale(v[1])
+						medal:ClearAllPoints()
+						medal:SetPoint("CENTER", self, "TOPLEFT", 18 / v[1], -(h / 2) / v[1])
+					end,
+				},
+				{
+					dur = 1.2,
+					delay = 0.1,
+					ease = ns.Ease.inOut,
+					keys = { { 0, { 0 } }, { 0.3, { 0.16 } }, { 1, { 0 } } },
+					apply = function(v)
+						self.glow:SetAlpha(v[1])
+					end,
+				},
+			}, function()
+				medal:SetScale(1)
+				ns.JournalAt(medal, self, 5, (h - 26) / 2)
+			end)
+			self.name:SetAlpha(0)
+			ns.JournalInk(self.name, 0.3)
+		end
+		return h
 	end
 	return widget
 end)

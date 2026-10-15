@@ -31,6 +31,19 @@ function ns.PrestigeMark(rank)
 	return { emblem = EMBLEMS[math.min(rank, #EMBLEMS)], stars = math.max(0, rank - #EMBLEMS) }
 end
 
+--- Prestige rank `rank`'s name (LED-R34), as its moment titles it: "Prestige {I…X}", or "Master Prestige {rank − 10}"
+--- from rank 11; nil before the first Prestige.
+---@param rank integer
+---@return string?
+function ns.PrestigeName(rank)
+	local mark = ns.PrestigeMark(rank)
+	if not mark.emblem then
+		return nil
+	end
+	local L = ns.L
+	return mark.stars > 0 and L.MASTER_PRESTIGE_TITLE:format(mark.stars) or L.PRESTIGE_TITLE:format(mark.emblem)
+end
+
 --- Applies a Prestige entry (LED-R32), in any mode: the climb's XP becomes the carried XP (0 if the climb hadn't
 --- reached 60), the prestige rank the entry's, and it earns a `prestige` achievement with its 100 Coins (LED-R88),
 --- no `cast`. Nothing else in the state changes: nothing unlocked is taken away (LED-R92). The fold adds the new

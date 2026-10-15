@@ -201,6 +201,7 @@ local function rightPage(context)
 			signature = title,
 		},
 		{ kind = "xpBar", bar = ns.InkXpBar(state, celebrated, context.now, context.formatNumber) },
+		{ kind = "rule" },
 		{ kind = "kicker", text = L.HOME_NOTES },
 	}
 	for _, note in ipairs(ns.NotesToSelf(context)) do
@@ -209,23 +210,32 @@ local function rightPage(context)
 	right[#right + 1] = { kind = "kicker", text = L.HOME_CONTENTS }
 	right[#right + 1] = {
 		kind = "leader",
+		numeral = L.HOME_NUMERALS[1],
 		text = L.TROPHY_TITLE,
 		value = countText(context.formatNumber, completion.trophy),
 		place = ns.JournalPlace.trophyRoom(),
 	}
 	right[#right + 1] = {
 		kind = "leader",
+		numeral = L.HOME_NUMERALS[2],
 		text = L.HOME_CURIOS,
 		value = countText(context.formatNumber, completion.junk, completion.treasure),
 		place = ns.JournalPlace.curios(),
 	}
 	right[#right + 1] = {
 		kind = "leader",
+		numeral = L.HOME_NUMERALS[3],
 		text = L.LEGENDS_TITLE,
 		value = countText(context.formatNumber, completion.legends),
 		place = ns.JournalPlace.legends(),
 	}
-	right[#right + 1] = { kind = "leader", text = L.HOME_ANGLER, place = ns.JournalPlace.angler() }
+	right[#right + 1] = {
+		kind = "leader",
+		numeral = L.HOME_NUMERALS[4],
+		text = L.HOME_ANGLER,
+		value = L.HOME_ANGLER_MARK,
+		place = ns.JournalPlace.angler(),
+	}
 	return right
 end
 

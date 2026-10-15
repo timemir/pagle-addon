@@ -255,7 +255,7 @@ local function waters(id, context)
 		tiles[i] = tile
 	end
 	if #tiles > 0 then
-		blocks[#blocks + 1] = { kind = "tiles", tiles = tiles }
+		blocks[#blocks + 1] = { kind = "tiles", tiles = tiles, columns = 2 }
 	end
 	local windows = elementWindows(listing)
 	if #windows > 0 then

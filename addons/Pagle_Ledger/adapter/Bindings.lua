@@ -9,8 +9,6 @@ local ns = select(2, ...)
 -- each good draws on the Curio Shop's preview stage, the equipped crest's icon for the bookplate, and the Journal's
 -- redraw when either look changes.
 
-local LOOK = ns.JOURNAL_LOOK
-
 -- The bus owner of the Journal's look (CORE-R23).
 local OWNER = "Pagle_Ledger Journal look"
 
@@ -20,48 +18,33 @@ local CREST_SLOT = "core.crest"
 -- the Ledger names it, as it names the slot.
 local DEFAULT_CREST = "core.crest.plain"
 
--- The closed book on the stage, as the prototype's swatch: its size, the spine's shadow, the gilt rules' inset from
--- the edges (more at the spine), and the brass plate's size and place up from its foot.
-local SWATCH_WIDTH, SWATCH_HEIGHT = 110, 140
-local SWATCH_SPINE = 8
-local RULE_INSET, RULE_SPINE_INSET = 10, 18
-local PLATE_WIDTH, PLATE_HEIGHT, PLATE_FOOT = 46, 14, 24
+-- The closed book's place on the stage: down from its top, as Core's crest bookplate sits (adapter/CoreGoods.lua).
+local SWATCH_TOP = 16
 
---- A closed-book swatch (LED-R110): the leather in its tint and grain, the gilt rules and the brass plate, no pages.
----@class LedgerBindingSwatch: LedgerJournalCover
----@field plateEdge Texture
----@field plate Texture
+--- A closed-book swatch (LED-R110): the kit's swatch of the binding, a closed book with its gilt rules and brass
+--- plate, no pages.
+---@class LedgerBindingSwatch: Frame
+---@field book LedgerSpriteTexture
 
 -- One swatch per stage, made on its first preview: the shop shows one good at a time.
 ---@type table<Frame, LedgerBindingSwatch>
 local swatches = setmetatable({}, { __mode = "k" })
 
--- Builds a stage's swatch, at its top as Core's crest bookplate sits (adapter/CoreGoods.lua).
+-- Builds a stage's swatch, the book's box centred at the stage's top.
 ---@param stage Frame
 ---@return LedgerBindingSwatch
 local function buildSwatch(stage)
 	local swatch = CreateFrame("Frame", nil, stage) --[[@as LedgerBindingSwatch]]
-	swatch:SetSize(SWATCH_WIDTH, SWATCH_HEIGHT)
-	swatch:SetPoint("TOP", 0, -16)
-	-- The leather and its grain, and the gilt rules: a rectangle inset from the edges, further in at the spine.
-	ns.DrawJournalCover(swatch, 1, RULE_INSET, RULE_SPINE_INSET)
-	local spine = swatch:CreateTexture(nil, "BORDER")
-	spine:SetColorTexture(0, 0, 0, 0.35)
-	spine:SetPoint("TOPLEFT", 1, -1)
-	spine:SetPoint("BOTTOMLEFT", 1, 1)
-	spine:SetWidth(SWATCH_SPINE)
-	swatch.plateEdge = swatch:CreateTexture(nil, "ARTWORK")
-	ns.JournalPaint(swatch.plateEdge, LOOK.leatherEdge)
-	swatch.plateEdge:SetSize(PLATE_WIDTH, PLATE_HEIGHT)
-	swatch.plateEdge:SetPoint("BOTTOM", (RULE_SPINE_INSET - RULE_INSET) / 2, PLATE_FOOT)
-	swatch.plate = swatch:CreateTexture(nil, "OVERLAY")
-	swatch.plate:SetPoint("TOPLEFT", swatch.plateEdge, "TOPLEFT", 1, -1)
-	swatch.plate:SetPoint("BOTTOMRIGHT", swatch.plateEdge, "BOTTOMRIGHT", -1, 1)
+	local sprite = ns.JOURNAL_ATLASES.Bindings.sprites["binding-field-leather"]
+	swatch:SetSize(sprite.box[3], sprite.box[4])
+	swatch:SetPoint("TOP", 0, -SWATCH_TOP)
+	swatch.book = ns.JournalSprite(swatch, "Bindings", "binding-field-leather", "ARTWORK")
+	ns.JournalPlace(swatch.book, swatch, 0, 0)
 	return swatch
 end
 
---- Draws binding `look`'s closed book on the Curio Shop's preview stage (LED-R110): one swatch per stage, tinted
---- afresh and shown at each call. The shop hides what another good drew there.
+--- Draws binding `look`'s closed book on the Curio Shop's preview stage (LED-R110): one swatch per stage, re-pointed
+--- at the binding's and shown at each call. The shop hides what another good drew there.
 ---@param stage Frame
 ---@param look LedgerBindingLook
 ---@return LedgerBindingSwatch
@@ -71,8 +54,7 @@ function ns.DrawBindingSwatch(stage, look)
 		swatch = buildSwatch(stage)
 		swatches[stage] = swatch
 	end
-	ns.TintJournalCover(swatch, look, look.gilt, 0.85)
-	ns.JournalPaint(swatch.plate, look.plate)
+	ns.JournalSetSprite(swatch.book, "Bindings", look.swatch)
 	swatch:Show()
 	return swatch
 end

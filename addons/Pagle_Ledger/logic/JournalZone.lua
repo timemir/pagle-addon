@@ -90,13 +90,20 @@ local function speciesRow(context, zone, id, listing, selected)
 	return row
 end
 
--- A group's header (LED-R135): "{group} · {caught here} / {total}".
+-- A group's header (LED-R135): the group, and "{caught here} / {total}" at its right, after the group's note
+-- ("open water and pools combined" for Pools) when it has one.
 ---@param group string
 ---@param done integer
 ---@param total integer
+---@param note string?
 ---@return LedgerBlock
-local function header(group, done, total)
-	return { kind = "kicker", text = ns.L.ZONE_GROUP_HEADER:format(ns.L.ZONE_GROUPS[group], done, total) }
+local function header(group, done, total, note)
+	local count = ns.L.ZONE_GROUP_COUNT:format(done, total)
+	return {
+		kind = "kicker",
+		text = ns.L.ZONE_GROUPS[group],
+		value = note and ns.L.ZONE_GROUP_NOTE:format(note, count) or count,
+	}
 end
 
 -- A requirement's line, ticked when met (LED-R135).
@@ -116,7 +123,7 @@ local function standing(context, zone, blocks)
 	local L = ns.L
 	local world, state, celebrated = context.world, context.state, context.celebrated
 	local shown = ns.ShownZoneRank(world, state, celebrated, zone)
-	blocks[#blocks + 1] = { kind = "seal", text = L.ZONE_RANKS[shown] or L.UNFISHED }
+	blocks[#blocks + 1] = { kind = "seal", text = L.ZONE_RANKS[shown] or L.UNFISHED, inked = shown >= 1 }
 	local rungs = {}
 	for rank, name in ipairs(L.ZONE_RANKS) do
 		rungs[rank] = { text = name, inked = rank <= shown, circled = rank == shown }
@@ -158,10 +165,7 @@ local function catches(context, zone, selected, blocks)
 			for _, id in ipairs(ids) do
 				done = done + (zoneState.species[id] and 1 or 0)
 			end
-			blocks[#blocks + 1] = header(group, done, #ids)
-			if group == "pools" then
-				blocks[#blocks + 1] = { kind = "text", color = "faded", text = L.ZONE_POOLS_NOTE }
-			end
+			blocks[#blocks + 1] = header(group, done, #ids, group == "pools" and L.ZONE_POOLS_NOTE or nil)
 			for _, id in ipairs(ids) do
 				blocks[#blocks + 1] = speciesRow(context, zone, id, zoneIndex.species[id], selected)
 			end
@@ -206,7 +210,7 @@ local function catches(context, zone, selected, blocks)
 		end
 	end
 	if #also > 0 then
-		blocks[#blocks + 1] = { kind = "kicker", text = L.ZONE_ALSO_CAUGHT:format(#also) }
+		blocks[#blocks + 1] = { kind = "kicker", text = L.ZONE_ALSO_CAUGHT_TITLE, value = tostring(#also) }
 		for _, id in ipairs(also) do
 			blocks[#blocks + 1] = speciesRow(context, zone, id, nil, selected)
 		end
@@ -252,7 +256,10 @@ end
 local function about(context, zone)
 	local L = ns.L
 	local world, state = context.world, context.state
-	local blocks = { { kind = "kicker", text = L.ZONE_ABOUT } }
+	local blocks = {
+		{ kind = "kicker", text = context.text:Zone(zone) },
+		{ kind = "title", text = L.ZONE_ABOUT },
+	}
 	local skill = world.skillBase[zone]
 	if skill then
 		blocks[#blocks + 1] = { kind = "text", text = skill > 0 and L.ZONE_SKILL:format(skill) or L.ZONE_ANY_SKILL }
@@ -292,12 +299,17 @@ end
 ---@param zone integer
 ---@return LedgerBlock[]
 local function unchartedLeft(context, zone)
-	local blocks = { { kind = "title", text = context.text:Zone(zone) } }
+	local blocks = {
+		{ kind = "kicker", text = tabLabel(context, zone) },
+		{ kind = "title", text = context.text:Zone(zone) },
+		{ kind = "seal", text = ns.L.ZONE_UNCHARTED_SEAL, inked = false },
+	}
 	local lore = context.text:Lore("line.unchartedwaters.text", zone)
 	if lore then
 		blocks[#blocks + 1] = { kind = "text", hand = true, text = lore }
 	end
 	blocks[#blocks + 1] = { kind = "text", text = ns.L.ZONE_UNCHARTED_NOTE }
+	blocks[#blocks + 1] = { kind = "map" }
 	return blocks
 end
 
@@ -310,12 +322,22 @@ end
 local function loosePages(context, zone)
 	local L = ns.L
 	local state = context.state
-	local blocks = { { kind = "kicker", text = L.ZONE_LOOSE_PAGES } }
+	local blocks = {
+		{ kind = "kicker", text = L.ZONE_LOOSE_PAGES },
+		{ kind = "title", text = L.ZONE_LOOSE_TITLE },
+	}
+	local loose = {}
 	for _, itemID in ipairs(ns.SortedKeys(state.uncharted)) do
 		local count = state.uncharted[itemID].zones and state.uncharted[itemID].zones[zone]
 		if count then
-			blocks[#blocks + 1] =
+			loose[#loose + 1] =
 				{ kind = "text", hand = true, text = L.ZONE_LOOSE_ITEM:format(context.text:Item(itemID, true), count) }
+		end
+	end
+	if #loose > 0 then
+		blocks[#blocks + 1] = { kind = "kicker", text = L.ZONE_UNCHARTED_GROUP }
+		for _, line in ipairs(loose) do
+			blocks[#blocks + 1] = line
 		end
 	end
 	blocks[#blocks + 1] = { kind = "kicker", text = L.ZONE_ALSO_CAUGHT_TITLE }

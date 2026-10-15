@@ -55,13 +55,18 @@ local function index(context, legends, chosen)
 	local count = ns.LedgerCompletion(context.world, context.state).legends
 	local caught = context.state.items
 	local blocks = {
+		{ kind = "kicker", text = L.LEGENDS_KICKER },
 		{ kind = "title", text = L.LEGENDS_TITLE },
 		{ kind = "text", text = L.LEGENDS_COUNT:format(format(count.done), format(count.total)) },
+		{ kind = "kicker", text = L.LEGENDS_INDEX },
 	}
 	for _, itemID in ipairs(legends) do
 		local got = caught[itemID] ~= nil
 		blocks[#blocks + 1] = {
 			kind = "row",
+			-- an uncaught Legend's medallion is the unknown fish's, never its icon (LED-R124)
+			icon = itemID,
+			look = got and "sepia" or "silhouette",
 			text = got and context.text:Item(itemID) or L.LEGENDS_UNWRITTEN,
 			color = not got and "faded" or nil,
 			value = got and L.LEGENDS_CAUGHT_MARK or nil,
@@ -85,7 +90,7 @@ local function legendPage(context, itemID)
 		---@type LedgerBlock[]
 		local blocks = {
 			{ kind = "kicker", text = L.LEGEND_TITLE },
-			{ kind = "icon", icon = PLAIN_FISH, look = "silhouette", large = true },
+			{ kind = "icon", icon = PLAIN_FISH, look = "silhouette", large = true, style = "legend" },
 			{ kind = "title", text = L.LEGENDS_UNWRITTEN_TITLE },
 		}
 		local line = context.text:Lore("line.uncaughtlegend.text")
@@ -97,7 +102,7 @@ local function legendPage(context, itemID)
 	---@type LedgerBlock[]
 	local blocks = {
 		{ kind = "kicker", text = L.LEGEND_TITLE },
-		{ kind = "icon", icon = itemID, look = "sepia", large = true },
+		{ kind = "icon", icon = itemID, look = "sepia", large = true, style = "legend" },
 		{ kind = "title", text = context.text:Item(itemID) },
 		{ kind = "text", hand = true, text = firstCatch(context, entry) },
 	}
@@ -111,15 +116,16 @@ local function legendPage(context, itemID)
 	end
 	blocks[#blocks + 1] = {
 		kind = "link",
+		style = "button",
 		text = L.LEGENDS_OPEN_PLATE,
 		place = ns.JournalPlace.legends(itemID, true),
 	}
 	return ns.AddJournalRemovedLine(blocks, context, itemID)
 end
 
--- A caught Legend's plate (LED-R147), filling both pages: on the left its icon and name, on the right its first
--- Catch, its record's size text (left out without a size, LED-R80) and its title (left out without text, LED-R161).
--- A click anywhere on it returns to the Legend's page.
+-- A caught Legend's plate (LED-R147), one page across the spread: its icon and name, its first Catch, its record's
+-- size text (left out without a size, LED-R80) and its title by the Title seal (left out without text, LED-R161). A
+-- click anywhere on it returns to the Legend's page.
 ---@param context LedgerSpreadContext
 ---@param itemID integer
 ---@return LedgerSpreadPages
@@ -131,10 +137,19 @@ local function plate(context, itemID)
 	if size then
 		lines[#lines + 1] = size
 	end
-	lines[#lines + 1] = titleLine(context, itemID)
 	return {
-		left = { { kind = "plate", icon = itemID, text = context.text:Item(itemID), place = back } },
-		right = { { kind = "plate", lines = lines, value = ns.L.LEGENDS_PLATE_RETURN, place = back } },
+		left = {
+			{
+				kind = "plate",
+				icon = itemID,
+				text = context.text:Item(itemID),
+				lines = lines,
+				seal = legendLore(context, itemID, "title"),
+				value = ns.L.LEGENDS_PLATE_RETURN,
+				place = back,
+			},
+		},
+		right = {},
 	}
 end
 

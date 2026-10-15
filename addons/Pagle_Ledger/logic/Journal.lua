@@ -85,10 +85,14 @@ local ns = select(2, ...)
 --- - `ladder` (`rungs` side by side, each `{ text, inked, circled }`: Zone Mastery's ranks, LED-R135) and `row` (a list
 ---   row: a small `icon` drawn `look`, `text` in `color`, its `margin` notes in handwriting, its `stars`, a `value` at
 ---   the right, `selected` marked, opening `place`; LED-R136, LED-R137), drawn by adapter/JournalZone.lua
---- - `plate` (a Legend's plate filling its page: an `icon` over its `text`, or its `lines`, with `value` at its foot;
----   a click anywhere opens `place`; LED-R147), drawn by adapter/JournalLegends.lua
+--- - `plate` (a Legend's plate across the spread: its `icon`, `text` the name, `lines` its first Catch and its size
+---   text, `seal` its title, `value` at its foot; a click anywhere opens `place`; LED-R147), drawn by
+---   adapter/JournalLegends.lua over both pages
+--- - `crest` (the Angler page's Prestige crest for prestige `rank` holding the Angler's likeness, with the bookplate
+---   crest's `icon` pinned on it, LED-R146), drawn by adapter/JournalAngler.lua; `rule` (the fleuron rule); `map`
+---   (uncharted waters' blank chart, LED-R138)
 ---@class LedgerBlock
----@field kind "kicker"|"title"|"text"|"link"|"leader"|"seal"|"stamps"|"tiles"|"icon"|"xpBar"|"tabs"|"bookplate"|"board"|"plinth"|"ladder"|"row"|"emblem"|"plate"|"button"
+---@field kind "kicker"|"title"|"text"|"link"|"leader"|"seal"|"stamps"|"tiles"|"icon"|"xpBar"|"tabs"|"bookplate"|"board"|"plinth"|"ladder"|"row"|"emblem"|"plate"|"button"|"crest"|"rule"|"map"
 ---@field text? string
 ---@field hand? boolean
 ---@field color? "faded"|"red"|"blue"
@@ -111,6 +115,15 @@ local ns = select(2, ...)
 ---@field stars? LedgerStars
 ---@field selected? boolean
 ---@field lines? string[]
+---@field style? "chart"|"button"|"radio"|"legend"|"pair" -- a link's or icon's look (adapter/JournalWidgets.lua)
+---@field on? boolean            -- a radio's pick
+---@field inked? boolean         -- a seal pressed (false: the empty ring)
+---@field numeral? string        -- a contents line's numeral
+---@field binding? string        -- a binding line's closed book (the Bindings atlas)
+---@field state? "inUse"|"use"|"level"|"shop" -- a binding line's state
+---@field columns? integer       -- tiles across
+---@field rank? integer          -- a crest's prestige rank
+---@field note? string           -- the bookplate's Prestige words
 
 --- One weight's tick on a measuring board (LED-R143): its pounds, where it sits from the lightest weight (0) to the
 --- heaviest (1), and whether it is landed.
@@ -255,12 +268,13 @@ function ns.RegisterJournalSpread(id, spread)
 	ns.journalSpreads[id] = spread
 end
 
---- The "Help chart the waters" link, on uncharted waters and Curios' loose pages (LED-R138, LED-R144): it calls
+--- The "Help chart the waters" link, on uncharted waters, a zone's "Also caught here" and Curios' loose pages
+--- (LED-R135, LED-R138, LED-R144), drawn as the chart bar (its prompt and the button): it calls
 --- Pagle.OpenFieldReport(), which prints Core's line while restricted (LED-R121, REP-R43, REP-R44).
 ---@param context LedgerSpreadContext
 ---@return LedgerBlock
 function ns.JournalHelpChartLink(context)
-	return { kind = "link", text = ns.L.JOURNAL_HELP_CHART, action = context.openFieldReport }
+	return { kind = "link", style = "chart", text = ns.L.JOURNAL_HELP_CHART, action = context.openFieldReport }
 end
 
 -- Every arg's name in `args`, sorted: a spread's subject when it names none (LED-R129).

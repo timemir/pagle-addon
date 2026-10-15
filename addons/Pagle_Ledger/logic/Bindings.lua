@@ -17,31 +17,90 @@ ns.BINDING_SLOT = "ledger.binding"
 ns.BINDING_ICON = "Interface\\Icons\\INV_Misc_Book_09"
 
 --- A binding: its good's last ID part (`ledger.binding.<name>`, and its lore keys `binding.<name>.*`, LED-R160),
---- its kind (exactly one of `default`, `level` for an earned one, `tier` for one for sale), and its three tints as
---- the prototype's CSS writes them: the leather, the gilt (breadcrumbs, plate, rules) and the page paper.
+--- its kind (exactly one of `default`, `level` for an earned one, `tier` for one for sale), and its look as the Ledger
+--- art kit's Bindings.lua measured it from the canvas's swatches: the leather's texture (`leather`, Core's own Field
+--- Leather; `leatherGrey` under a vertex `tint`; or Birch Bark's `bark` and Buckram's `cloth`), the gilt of the
+--- crumbs, fleurons and plate ("RRGGBB"), the band's tone for a cloth or bark binding, and its closed-book swatch.
 ---@class LedgerBinding
 ---@field name string
 ---@field default? true
 ---@field level? integer -- earned at this peak or celebrated level (LED-R111)
 ---@field tier? 1|2|3
----@field leather string "RRGGBB"
+---@field texture "leather"|"leatherGrey"|"bark"|"cloth"
+---@field tint? number[]  -- the grey leather's vertex tint, { r, g, b }
 ---@field gilt string
----@field paper string
+---@field band? string    -- the band's tone over a bark or cloth binding, "RRGGBB"
+---@field swatch string   -- its closed book in the Bindings atlas
 
---- LED-R110's bindings, in its order. Field Leather keeps the Journal's first look (#138's ns.JOURNAL_LOOK); the rest
---- take the leather and gilt of prototypes/curio-shop/'s swatches, with a page paper picked to sit with each.
+--- LED-R110's bindings, in its order: the kit's ten, one to one with the goods (its Bindings.lua, `bindings.json`).
 ---@type LedgerBinding[]
 ns.BINDINGS = {
-	{ name = "field", default = true, leather = "4e2c16", gilt = "e8c96a", paper = "ead6ac" },
-	{ name = "level10", level = 10, leather = "7a4a26", gilt = "e0b870", paper = "eedcb4" }, -- Tanned Hide
-	{ name = "level20", level = 20, leather = "1f3a5a", gilt = "c9d6e0", paper = "e6e0cc" }, -- Tidewater Blue
-	{ name = "level30", level = 30, leather = "2e4a2a", gilt = "d6c88a", paper = "e6dcb2" }, -- Reed Green
-	{ name = "level40", level = 40, leather = "5a1414", gilt = "e0b84a", paper = "ecd6ac" }, -- Oxblood
-	{ name = "level50", level = 50, leather = "3a3e44", gilt = "d0d4da", paper = "e4dfd2" }, -- Storm Grey
-	{ name = "level60", level = 60, leather = "2a1a0e", gilt = "ffd100", paper = "f0dcaa" }, -- Nat's Own
-	{ name = "birch", tier = 1, leather = "d8d0bc", gilt = "3a3026", paper = "f2ead8" }, -- Birch Bark
-	{ name = "buckram", tier = 2, leather = "2a6a62", gilt = "e8e0c0", paper = "e8e2c8" }, -- Sea-green Buckram
-	{ name = "sharkskin", tier = 3, leather = "59636a", gilt = "f0f0f0", paper = "e6e2d8" }, -- Sharkskin
+	{ name = "field", default = true, texture = "leather", gilt = "e8c96a", swatch = "binding-field-leather" },
+	{
+		name = "level10", -- Tanned Hide
+		level = 10,
+		texture = "leatherGrey",
+		tint = { 0.736, 0.386, 0.008 },
+		gilt = "f0d890",
+		swatch = "binding-tanned-hide",
+	},
+	{
+		name = "level20", -- Tidewater Blue
+		level = 20,
+		texture = "leatherGrey",
+		tint = { 0.188, 0.363, 0.563 },
+		gilt = "c9ccd3",
+		swatch = "binding-tidewater-blue",
+	},
+	{
+		name = "level30", -- Reed Green
+		level = 30,
+		texture = "leatherGrey",
+		tint = { 0.207, 0.422, 0.192 },
+		gilt = "d8c47a",
+		swatch = "binding-reed-green",
+	},
+	{
+		name = "level40", -- Oxblood
+		level = 40,
+		texture = "leatherGrey",
+		tint = { 0.689, 0.179, 0.179 },
+		gilt = "f2c230",
+		swatch = "binding-oxblood",
+	},
+	{
+		name = "level50", -- Storm Grey
+		level = 50,
+		texture = "leatherGrey",
+		tint = { 0.296, 0.341, 0.381 },
+		gilt = "c9ccd3",
+		swatch = "binding-storm-grey",
+	},
+	{
+		name = "level60", -- Nat's Own
+		level = 60,
+		texture = "leatherGrey",
+		tint = { 0.213, 0.174, 0.147 },
+		gilt = "ffd100",
+		swatch = "binding-nats-own",
+	},
+	{ name = "birch", tier = 1, texture = "bark", gilt = "6a4a20", band = "b8a888", swatch = "binding-birch-bark" },
+	{
+		name = "buckram", -- Sea-green Buckram
+		tier = 2,
+		texture = "cloth",
+		gilt = "efe0bb",
+		band = "6a9a8c",
+		swatch = "binding-sea-green-buckram",
+	},
+	{
+		name = "sharkskin",
+		tier = 3,
+		texture = "leatherGrey",
+		tint = { 0.235, 0.282, 0.306 },
+		gilt = "dfe2e8",
+		swatch = "binding-sharkskin",
+	},
 }
 
 --- A binding's good ID (LED-R110).
@@ -62,36 +121,24 @@ function ns.HexTint(hex)
 	}
 end
 
--- `from` moved `share` of the way to `to`, channel by channel.
----@param from number[]
----@param to number[]
----@param share number
----@return number[]
-local function mix(from, to, share)
-	return {
-		from[1] + (to[1] - from[1]) * share,
-		from[2] + (to[2] - from[2]) * share,
-		from[3] + (to[3] - from[3]) * share,
-	}
-end
+-- How near a gilt's red and blue are for it to read as silver, which turns the brass plate silver (the kit's).
+local SILVER = 0.12
+-- How much of the binding's hue the page paper takes ("the page paper cools slightly").
+local PAPER_SHARE = 0.1
+-- A bark or cloth leather's tile, in UI units (its texture is 512 texels at 2 a unit); a leather's is 128.
+local CLOTH_TILE = 256
 
--- How far the gilt shows through in a rule on the leather (#138's Field Leather rule, #8a5a2a, is about this much of
--- its gilt), and in the brass plate's face (Field Leather's comes near #138's brass, #c19e45).
-local RULE_SHARE, PLATE_SHARE = 0.3, 0.8
-
--- Below this luminance a plate's face takes words in the page paper's tint, above it in dark ink.
-local LIGHT_PLATE = 0.45
-local PLATE_INK = ns.HexTint("2a1a04")
-
---- What a binding draws (LED-R110): its three tints, and from them the rules on the leather, the brass plate's face
---- and the words on it.
+--- What a binding draws (LED-R110): the leather's texture, its tile and tint, the band's tone, the gilt, whether the
+--- plate turns silver, the page paper's tint and the closed book's swatch.
 ---@class LedgerBindingLook
----@field leather number[]
----@field gilt number[]       -- the breadcrumbs (LED-R125)
----@field paper number[]
----@field rule number[]       -- the gilt rules and the crumbs' ❧, the gilt toned into the leather
----@field plate number[]      -- the brass plate's face (LED-R149)
----@field plateText number[]  -- its words
+---@field texture "leather"|"leatherGrey"|"bark"|"cloth"
+---@field tile integer           -- UI units a repeat
+---@field tint? number[]         -- the leather's vertex tint; nil for a texture drawn as it is
+---@field band? number[]         -- the band's tone (desaturated, then tinted); nil for the band as it is
+---@field gilt number[]          -- the crumbs and fleurons (LED-R125)
+---@field silver boolean         -- a silver gilt: the brass plate turns silver (LED-R149)
+---@field paperTint number[]     -- the page paper's vertex tint
+---@field swatch string          -- the closed book in the Bindings atlas (the shop's preview)
 
 --- The look of binding good `goodID` (LED-R112): Field Leather's for an ID that isn't a binding's.
 ---@param goodID string?
@@ -103,16 +150,28 @@ function ns.BindingLook(goodID)
 			found = binding
 		end
 	end
-	local leather, gilt, paper = ns.HexTint(found.leather), ns.HexTint(found.gilt), ns.HexTint(found.paper)
-	local plate = mix(leather, gilt, PLATE_SHARE)
-	local luminance = 0.299 * plate[1] + 0.587 * plate[2] + 0.114 * plate[3]
+	local gilt = ns.HexTint(found.gilt)
+	local tint, band, paper = found.tint, nil, { 1, 1, 1 }
+	if tint then
+		local top = math.max(tint[1], tint[2], tint[3])
+		band = { tint[1] / top, tint[2] / top, tint[3] / top }
+		paper = {
+			1 - PAPER_SHARE + PAPER_SHARE * band[1],
+			1 - PAPER_SHARE + PAPER_SHARE * band[2],
+			1 - PAPER_SHARE + PAPER_SHARE * band[3],
+		}
+	elseif found.band then
+		band = ns.HexTint(found.band)
+	end
 	return {
-		leather = leather,
+		texture = found.texture,
+		tile = (found.texture == "bark" or found.texture == "cloth") and CLOTH_TILE or 128,
+		tint = tint,
+		band = band,
 		gilt = gilt,
-		paper = paper,
-		rule = mix(leather, gilt, RULE_SHARE),
-		plate = plate,
-		plateText = luminance < LIGHT_PLATE and paper or PLATE_INK,
+		silver = math.abs(gilt[1] - gilt[3]) < SILVER,
+		paperTint = paper,
+		swatch = found.swatch,
 	}
 end
 

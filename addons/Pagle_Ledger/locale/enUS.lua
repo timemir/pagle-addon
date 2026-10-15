@@ -9,14 +9,17 @@ local ns = select(2, ...)
 
 -- Words more than one key reads: Species Mastery's ★★ and ★★★ (LED-R45), a check box (LED-R40, LED-R135, LED-R142).
 local IN_ITS_ELEMENT, REGULAR = "In its element", "Regular"
--- The symbols the Ledger draws, as in-client textures sized to the line's text: the client's fonts have no ★, ☆, ✓,
--- ☑ or ☐ (CORE-R9, #248). A star is the raid-target star; a blank one is the same star dimmed by its vertex colour. A
--- tick is the check box's check, so a ticked box is a tick and an empty one the empty check box.
-local STAR_TEXTURE = "Interface\\TargetingFrame\\UI-RaidTargetingIcon_1"
-local STAR = "|T" .. STAR_TEXTURE .. ":0|t"
-local STAR_OFF = "|T" .. STAR_TEXTURE .. ":0:0:0:0:64:64:0:64:0:64:110:100:85|t"
-local TICK = "|TInterface\\Buttons\\UI-CheckBox-Check:0|t"
-local CHECK_ON, CHECK_OFF = TICK, "|TInterface\\Buttons\\UI-CheckBox-Up:0|t"
+-- The symbols the Ledger draws, as textures sized to the line's text: the client's fonts have no ★, ☆, ✓, ☑ or ☐
+-- (CORE-R9, #248). Each is the Ledger art kit's sprite in its parts atlas (data/JournalArt.lua): the inked star and
+-- the blank one, the tick, and the ticked and empty check boxes.
+local PARTS = "Interface\\AddOns\\Pagle_Ledger\\media\\journal\\LedgerParts"
+local function sprite(x, y, w, h, size)
+	return ("|T%s:%s:0:0:1024:2048:%d:%d:%d:%d|t"):format(PARTS, size or "0:0", x, x + w, y, y + h)
+end
+local STAR = sprite(650, 1126, 23, 23)
+local STAR_OFF = sprite(677, 1126, 23, 23)
+local TICK = sprite(486, 1586, 27, 20, "11:15")
+local CHECK_ON, CHECK_OFF = sprite(468, 1836, 34, 34), sprite(430, 1836, 34, 34)
 -- Words two keys share, each built from them (LED-R33, LED-R135, LED-R147).
 local BEGIN_A_NEW_LEDGER = "Begin a new Ledger"
 local ZONE_REWARD = "Reward for mastery: each new seal earns XP."
@@ -160,12 +163,14 @@ ns.L = {
 	JOURNAL = "Fish Journal",
 	JOURNAL_SLASH_HELP = "Open or close the Fish Journal",
 	JOURNAL_UPDATING = "The Ledger is being written up from your Catch log.",
-	-- Navigation (LED-R125): the first crumb, the separator between crumbs and the back link.
+	-- Navigation (LED-R125): the first crumb and the back link; the search slip's placeholder (LED-R148).
 	JOURNAL_HOME = "Home",
-	JOURNAL_CRUMB_SEPARATOR = "»",
 	JOURNAL_BACK = "« back",
-	-- The link to the Field report box on uncharted waters and Curios' loose pages (LED-R138, LED-R144, REP-R43).
+	JOURNAL_SEARCH_HINT = "Find a fish or a water…",
+	-- The link to the Field report box on uncharted waters and Curios' loose pages (LED-R138, LED-R144, REP-R43), and
+	-- the prompt beside it.
 	JOURNAL_HELP_CHART = "Help chart the waters",
+	JOURNAL_CHART_PROMPT = "Seen something Pagle doesn't know?",
 	-- Home (LED-R130–R133, LED-R149). Its left page's kicker and title; its tiles are TILE_*'s.
 	HOME_KICKER = "The Waters",
 	HOME_TITLE = "Where I've Fished",
@@ -180,6 +185,10 @@ ns.L = {
 	HOME_LEVEL = "Angler Level",
 	HOME_PERCENT = "%d%%",
 	HOME_CONTENTS = "In this Ledger",
+	-- The contents' numerals, the Angler line's mark, and the word over the completion on Home's seal.
+	HOME_NUMERALS = { "i.", "ii.", "iii.", "iv." },
+	HOME_ANGLER_MARK = "»",
+	HOME_SEAL_WORD = "Ledger",
 	HOME_CURIOS = "Curios: junk, treasure, uncharted",
 	HOME_ANGLER = "The Angler: hands, titles, bindings",
 	BRASS_PLATE = "Lv %d · Ledger %d%%",
@@ -270,6 +279,9 @@ ns.L = {
 	CHECK_OFF = CHECK_OFF,
 	-- Search with no match (LED-R148).
 	SEARCH_NONE = "Nothing by that name in the Ledger yet.",
+	-- The search drop-down's two parts (LED-R148).
+	SEARCH_WATERS = "Waters",
+	SEARCH_FISH = "Fish",
 
 	-- The Angler page (LED-R146), M3's part (LED-R4): its crumb, the bookplate and the hands on the rod. Numbers in
 	-- %s are BreakUpLargeNumbers'.
@@ -277,20 +289,22 @@ ns.L = {
 	ANGLER_EX_LIBRIS = "Ex Libris",
 	ANGLER_LEDGER = "The Angler's Ledger",
 	ANGLER_KEPT_SINCE = "kept since %s",
-	ANGLER_LEVEL = "Angler Level %d",
+	-- The Ledger's tally: its heading, its completion beside it, and each part of Ledger completion (LED-R71) by part,
+	-- with its "x of N".
+	ANGLER_TALLY = "The Ledger",
 	ANGLER_COMPLETE = "%d%% of the Ledger complete (%s of %s)",
-	-- The parts of Ledger completion (LED-R71), by part.
 	ANGLER_PARTS = {
-		species = "Species %s of %s",
-		junk = "Junk Museum %s of %s",
-		treasure = "Treasures %s of %s",
-		trophy = "Trophy Room weights %s of %s",
-		zones = "Zones mastered %s of %s",
+		species = "Species",
+		junk = "Junk Museum",
+		treasure = "Treasures",
+		trophy = "Trophy Room weights",
+		zones = "Zones mastered",
 	},
+	ANGLER_PART_COUNT = "%s of %s",
 	ANGLER_CATCHES_ONE = "%s Catch",
 	ANGLER_CATCHES_OTHER = "%s Catches",
 	ANGLER_HANDS = "Hands on the Rod",
-	ANGLER_HAND = "%s: skill %d / %d",
+	ANGLER_HAND = "skill %d / %d",
 	-- The Skill Milestones (LED-R40): CHECK_ON credited, CHECK_OFF not yet, then the threshold: "☑ 75".
 	ANGLER_MILESTONES = "Milestones",
 	ANGLER_MILESTONE = "%s %d",
@@ -303,8 +317,6 @@ ns.L = {
 	ANGLER_PRESTIGE = BEGIN_A_NEW_LEDGER .. " (Prestige)",
 	ANGLER_SIGNED_AS = "Signed As",
 	ANGLER_AUTOMATIC = "Automatic",
-	ANGLER_SIGNED_ON = "» %s",
-	ANGLER_SIGNED_OFF = "· %s",
 	ANGLER_BINDINGS = "Bindings",
 	ANGLER_BINDING_IN_USE = "In use",
 	ANGLER_BINDING_USE = "Use",
@@ -326,13 +338,13 @@ ns.L = {
 		trophies = "Trophies",
 		curios = "Curios",
 	},
-	ZONE_GROUP_HEADER = "%s · %d / %d",
+	ZONE_GROUP_COUNT = "%d / %d",
+	ZONE_GROUP_NOTE = "%s · %s",
 	ZONE_POOLS_NOTE = "open water and pools combined",
 	-- A requirement's line, CHECK_ON or CHECK_OFF before it: "☑ a piece of junk" (the junk and treasure lines are
 	-- ZONE_NEXT_JUNK and ZONE_NEXT_TREASURE).
 	ZONE_REQUIREMENT = "%s %s",
 	ZONE_TROPHY = "a %s trophy, any weight",
-	ZONE_ALSO_CAUGHT = "Also caught here · %d",
 	ZONE_ALSO_NOTE = "Not in Pagle's list for these waters yet.",
 	-- A Species row (LED-R136): never named until caught (LED-R124).
 	ZONE_UNKNOWN_FISH = "— unknown —",
@@ -351,6 +363,9 @@ ns.L = {
 	-- A zone that isn't charted (LED-R138).
 	ZONE_UNCHARTED_NOTE = "Every catch here is still written down, and counted once Pagle's data catches up.",
 	ZONE_LOOSE_PAGES = "Loose pages",
+	ZONE_LOOSE_TITLE = "What came up here",
+	ZONE_UNCHARTED_GROUP = "Uncharted",
+	ZONE_UNCHARTED_SEAL = "uncharted",
 	ZONE_LOOSE_ITEM = "%s: %d×",
 	ZONE_ALSO_CAUGHT_TITLE = "Also caught here",
 	ZONE_NOTHING_YET = "Nothing caught here yet.",
@@ -359,15 +374,20 @@ ns.L = {
 	STAR_OFF = STAR_OFF,
 	-- The Trophy Room (LED-R143, LED-R62), titled TROPHY_TITLE. Numbers in %s are BreakUpLargeNumbers'.
 	TROPHY_WEIGHTS = "%s of %s weights.",
-	TROPHY_INDEX_LINE = "%s %s",
+	TROPHY_KICKER = "A collection",
+	TROPHY_FAMILIES = "Families",
+	TROPHY_FAMILIES_NOTE = "weights",
+	TROPHY_FAMILY_KICKER = "A trophy family",
+	TROPHY_HEAVIEST = "heaviest",
 	TROPHY_STAMPS = { "Any weight", "Half the weights", "The heaviest" },
 	TROPHY_POUNDS = "pounds",
 	TROPHY_LANDED = "Landed %s of %s. Heaviest so far: %s lb.",
 	TROPHY_NONE_LANDED = "Not one of this family yet.",
-	TROPHY_TICK_MARK = TICK,
 	-- Curios (LED-R144): the Junk Museum, Treasures and the loose pages. "{item}: {n}× at {zones}, first {date}. …"
 	CURIOS_CRUMB = "Curios",
+	CURIOS_JUNK_KICKER = "Junk",
 	CURIOS_JUNK_TITLE = "The Junk Museum",
+	CURIOS_TREASURES_KICKER = "Containers and treasure",
 	CURIOS_EXHIBITS = "%s of %s exhibits",
 	CURIOS_EMPTY_PLINTH = "An empty plinth",
 	CURIOS_TREASURES_TITLE = "Treasures",
@@ -378,6 +398,8 @@ ns.L = {
 	CURIOS_NONE_UNCHARTED = "None. Every catch is in the Ledger.",
 	-- Legends (LED-R147). Numbers in %s are BreakUpLargeNumbers'; the first Catch is "{date}, {zone}, {character}".
 	LEGENDS_TITLE = "Legends",
+	LEGENDS_KICKER = "Outside the hundred",
+	LEGENDS_INDEX = "The index",
 	LEGENDS_COUNT = "%s of %s. These sit outside the Ledger's hundred.",
 	LEGENDS_UNWRITTEN = "an " .. UNWRITTEN_LEGEND,
 	LEGENDS_UNWRITTEN_TITLE = "An " .. UNWRITTEN_LEGEND,
@@ -387,9 +409,13 @@ ns.L = {
 	LEGENDS_FIRST_NO_ZONE = "%s, %s",
 	LEGENDS_OPEN_PLATE = "Open the plate",
 	LEGENDS_PLATE_RETURN = "Click anywhere to return.",
+	LEGENDS_PLATE_KICKER = "A Legend of these waters",
+	LEGENDS_PLATE_SEAL = "Title",
 	-- The Prestige confirm (LED-R33); a Master Prestige's stars beside emblem X are STAR stamps (LED-R34).
-	PRESTIGE_CONFIRM = BEGIN_A_NEW_LEDGER
-		.. "? Your Angler Level starts again at 1, and climbs at half the cost. Nothing you've earned is taken away.",
+	PRESTIGE_CONFIRM_KICKER = "Prestige",
+	PRESTIGE_CONFIRM_TITLE = BEGIN_A_NEW_LEDGER .. "?",
+	PRESTIGE_CONFIRM_TEXT = "Your Angler Level starts again at 1, and climbs at half the cost. Nothing you've earned is "
+		.. "taken away.",
 	PRESTIGE_CONFIRM_YES = "Prestige",
 	PRESTIGE_CONFIRM_NO = "Not yet",
 	-- The Journal's tour stops' labels, for `/pagle dev tour list` (CORE-R68): dev-only, never shown to players.

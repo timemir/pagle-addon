@@ -51,27 +51,30 @@ function ns.TrophyFamilies(world, state)
 end
 
 -- The Trophy Room's left page (LED-R143): its title, the weights landed of the room's, and the family index, each
--- line the family's lore name and shown stars (LED-R48), its "x / N", opening it on the right page; a family whose
--- name has no text has no line (LED-R161).
+-- row the family's lore name, its shown stars (LED-R48) and its "x / N", the chosen one marked, opening it on the
+-- right page; a family whose name has no text has no row (LED-R161).
 ---@param context LedgerSpreadContext
 ---@param families LedgerTrophyFamily[]
 ---@return LedgerBlock[]
-local function trophyIndex(context, families)
+local function trophyIndex(context, families, chosen)
 	local L = ns.L
 	local format = context.formatNumber
 	local count = ns.LedgerCompletion(context.world, context.state).trophy
 	local blocks = {
+		{ kind = "kicker", text = L.TROPHY_KICKER },
 		{ kind = "title", text = L.TROPHY_TITLE },
 		{ kind = "text", text = L.TROPHY_WEIGHTS:format(format(count.done), format(count.total)) },
+		{ kind = "kicker", text = L.TROPHY_FAMILIES, value = L.TROPHY_FAMILIES_NOTE },
 	}
 	for _, family in ipairs(families) do
 		local name = context.text:FamilyName(family.id)
 		if name then
-			local stars = ns.ShownFamilyStars(context.world, context.state, context.celebrated, family.id)
 			blocks[#blocks + 1] = {
-				kind = "leader",
-				text = L.TROPHY_INDEX_LINE:format(name, ns.JournalStars(stars)),
+				kind = "row",
+				text = name,
+				stars = ns.ShownFamilyStars(context.world, context.state, context.celebrated, family.id),
 				value = L.COUNT_OF:format(format(family.count.done), format(family.count.total)),
+				selected = family.id == chosen or nil,
 				place = ns.JournalPlace.trophyRoom(family.id),
 			}
 		end
@@ -148,10 +151,10 @@ local function familyPage(context, family)
 			and L.TROPHY_LANDED:format(format(family.count.done), format(family.count.total), format(heaviest))
 		or L.TROPHY_NONE_LANDED
 	---@type LedgerBlock[]
-	local blocks = {}
+	local blocks = { { kind = "kicker", text = L.TROPHY_FAMILY_KICKER } }
 	local name = context.text:FamilyName(family.id)
 	if name then
-		blocks[1] = { kind = "title", text = name }
+		blocks[2] = { kind = "title", text = name }
 	end
 	blocks[#blocks + 1] = { kind = "stamps", stamps = ns.JournalStamps(stars, L.TROPHY_STAMPS) }
 	blocks[#blocks + 1] = { kind = "board", ticks = board(context, family) }
@@ -183,7 +186,10 @@ ns.RegisterJournalSpread(ns.JOURNAL_TROPHY_ROOM, {
 				chosen = family
 			end
 		end
-		return { left = trophyIndex(context, families), right = chosen and familyPage(context, chosen) or {} }
+		return {
+			left = trophyIndex(context, families, chosen and chosen.id),
+			right = chosen and familyPage(context, chosen) or {},
+		}
 	end,
 	-- The index is the room's; the right page, the family's: opening a family keeps the index's scroll (LED-R129).
 	subjects = { left = {}, right = { "family" } },
@@ -209,6 +215,7 @@ local function junkMuseum(context, worlds, completion)
 	local format = context.formatNumber
 	local caught = context.state.items
 	local blocks = {
+		{ kind = "kicker", text = L.CURIOS_JUNK_KICKER },
 		{ kind = "title", text = L.CURIOS_JUNK_TITLE },
 		{ kind = "text", text = L.CURIOS_EXHIBITS:format(format(completion.junk.done), format(completion.junk.total)) },
 	}
@@ -245,6 +252,7 @@ local function treasures(context, worlds, completion, blocks)
 	local format = context.formatNumber
 	local caught = context.state.items
 	local count = completion.treasure
+	blocks[#blocks + 1] = { kind = "kicker", text = L.CURIOS_TREASURES_KICKER }
 	blocks[#blocks + 1] = { kind = "title", text = L.CURIOS_TREASURES_TITLE }
 	blocks[#blocks + 1] = { kind = "text", text = L.CURIOS_OPENED:format(format(count.done), format(count.total)) }
 	for _, itemID in ipairs(worlds.treasure) do
