@@ -16,6 +16,7 @@ libs\AceDB-3.0\AceDB-3.0.lua
 data\Catalogue.lua
 data\AnnounceArt.lua
 data\ShopArt.lua
+data\FieldArt.lua
 
 locale\enUS.lua
 data\Lore.lua
