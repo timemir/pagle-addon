@@ -373,6 +373,104 @@ describe("scripts/make-test-log.lua (#172, in-game-verification.md › Test logs
 		end)
 	end)
 
+	-- The big presets (#262): a Pagle.lua of about 5 or 20 MiB for launch re-verification checks 2 and 10. Each builds
+	-- its log in full, so they're #slow, out of the default run.
+	-- big20's log holds more distinct strings than Lua 5.1 loads in one piece (`split`), so it's read back in parts.
+	local bigPresets = { { preset = "big5", mib = 5, split = false }, { preset = "big20", mib = 20, split = true } }
+	for _, big in ipairs(bigPresets) do
+		describe(("--preset %s on the fixture account (#262, the presets table) #slow"):format(big.preset), function()
+			local made = make(big.preset)
+			local text = made.stage and readFileOrNil(made.stage .. "/Pagle.lua")
+			local log = text and globalsOf(text).PagleLog
+			-- The log read back with Core's codec in one walk, keeping only what the tests ask, as a 20 MiB log's
+			-- records would take a lot of memory.
+			local seen = { records = 0, chars = {}, zones = {}, away = 0, first = math.huge, last = 0, ordered = true }
+			seen.minutes, seen.items = true, true
+			local global = { decodeErrors = 0 }
+			for record in core.OpenCatchLog(log, global, NOW, catalogue.GetItem):Iterate() do
+				seen.records = seen.records + 1
+				if record.kind == "cast" then
+					seen.chars[record.char] = true
+					seen.zones[record.conditions.zone] = true
+					seen.away = seen.away + (record.outcome == "gotAway" and 1 or 0)
+					seen.ordered = seen.ordered and record.time >= seen.last
+					seen.first, seen.last = math.min(seen.first, record.time), math.max(seen.last, record.time)
+					seen.minutes = seen.minutes and type(record.conditions.minute) == "number"
+					seen.items = seen.items and #record.items == (record.outcome == "caught" and 1 or 0)
+				end
+			end
+			collectgarbage()
+
+			it(("exits 0 and writes a Pagle.lua within 10%% of %d MiB"):format(big.mib), function()
+				assert.are.equal("", made.err)
+				assert.are.equal(0, made.code)
+				assert.are.same({ "20261014-174640-" .. big.preset }, made.stages)
+				local bytes = big.mib * 1024 * 1024
+				assert.is_true(math.abs(#text - bytes) <= 0.1 * bytes)
+				local size = "^size: Pagle.lua [%d,]+ bytes %(%d+%.%d+ MiB%), [-+]%d+%.%d%% of the preset's "
+				assert.matches(size .. big.mib .. " MiB$", made.lines[4])
+			end)
+
+			it("writes a test log Core's codec decodes whole, with a new logId (LOG-R15, LOG-R16)", function()
+				assert.are.equal(0, global.decodeErrors)
+				assert.are.equal(#log.entries, seen.records)
+				assert.is_true(log.test)
+				assert.are.equal(16, #log.logId)
+				assert.are_not.equal(ORIGINAL_LOG_ID, log.logId)
+			end)
+
+			it(
+				"fishes on every character, in both charted zones, over several months, some Casts got away (LOG-R20)",
+				function()
+					assert.are.same({ true, true }, seen.chars)
+					assert.are.same({ [12] = true, [40] = true }, seen.zones)
+					assert.is_true(seen.away > 0)
+					assert.is_true(seen.ordered, "in time order")
+					assert.is_true(seen.minutes, "every Cast has its realm minute")
+					assert.is_true(seen.items, "one item a caught Cast, none a got-away one")
+					assert.is_true(seen.last - seen.first > 90 * 86400)
+					assert.is_true(seen.last < NOW - 3600)
+				end
+			)
+
+			it("says when Lua 5.1 can load it only in parts: more distinct strings than 262,143", function()
+				local note
+				for _, line in ipairs(made.lines) do
+					note = note or (line:sub(1, 10) == "note: its " and line or nil)
+				end
+				assert.are.equal(big.split, #log.entries > 262143)
+				if big.split then
+					local says = 'more distinct strings than Lua 5.1 loads in one piece (262,143: "constant'
+					assert.matches(says, note, 1, true)
+				else
+					assert.is_nil(note)
+				end
+			end)
+
+			it("keeps PagleDB and the rest of Pagle.lua byte for byte (the intro)", function()
+				local fixture = readFileOrNil(FIXTURE .. "/SavedVariables/Pagle.lua")
+				local fixtureDB = fixture:sub((fixture:find("\r\nPagleDB = {\r\n", 1, true)))
+				assert.are.equal(fixtureDB, text:sub(-#fixtureDB))
+			end)
+
+			it("--install and --restore round-trip byte for byte (the --install and --restore bullets)", function()
+				local _, installErr, installCode =
+					run({ "--account", made.account, "--install", "--out", made.out }, NOW + 10)
+				assert.are.equal(text, readFileOrNil(made.account .. "/SavedVariables/Pagle.lua"))
+				local _, restoreErr, restoreCode =
+					run({ "--account", made.account, "--restore", "--out", made.out }, NOW + 20)
+				assert.are.same({ "", 0, "", 0 }, { installErr, installCode, restoreErr, restoreCode })
+				for _, name in ipairs(SV_FILES) do
+					assert.are.equal(
+						readFileOrNil(FIXTURE .. "/SavedVariables/" .. name),
+						readFileOrNil(made.account .. "/SavedVariables/" .. name),
+						name
+					)
+				end
+			end)
+		end)
+	end
+
 	-- The Tackle Board's own logic/ (TKB-R81) as the game loads it, its catalogue calls over the fixture catalogue.
 	local boardNs = loadAddon("Pagle_TackleBoard", FOREVER_GLOBALS).ns
 	boardNs.api.pagle = catalogue
@@ -960,6 +1058,7 @@ describe("scripts/make-test-log.lua (#172, in-game-verification.md › Test logs
 			local _, err, code = run({ "--account", "x", "--preset", "level99" })
 			assert.are.equal(2, code)
 			assert.matches("no preset level99", err, 1, true)
+			assert.matches("the presets are level10, level60, catches1000, boardday, big5, big20", err, 1, true)
 			_, err, code = run({ "--account", "x", "--install", "--restore" })
 			assert.are.equal(2, code)
 			assert.matches("name one of --preset, --install and --restore", err, 1, true)

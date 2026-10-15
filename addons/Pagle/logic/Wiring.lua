@@ -63,6 +63,10 @@ function ns.WireProjections(host)
 		nextFrame = host.nextFrame,
 		call = host.call,
 		syncLimit = host.syncLimit,
+		-- #262: while this login's load timings are kept (dev mode at ADDON_LOADED, logic/LoadTimings.lua).
+		timings = function()
+			return ns.loadTimings and ns.loadTimings.projections
+		end,
 	})
 	ns.AddProjectionMethods(host.registry, ns.projections, host.iterate)
 end

@@ -10,6 +10,9 @@ local function box(loaded)
 	return loaded.ns.fieldReportBox
 end
 
+-- Long enough for the box's fade out (0.15 s) to end and hide it.
+local FADE_OUT = 0.2
+
 describe("Pagle.OpenFieldReport (REP-R40)", function()
 	it(
 		"opens the box titled Help chart the waters, the privacy line above the report text, selected, and the issue"
@@ -86,6 +89,7 @@ describe("The Field report box (REP-R40–R42)", function()
 
 		Pagle.OpenFieldReport()
 		box(loaded).close:Click()
+		loaded.client.update(FADE_OUT)
 		assert.is_false(box(loaded):IsShown())
 	end)
 
@@ -312,6 +316,7 @@ describe("The Field report box's look (field-report.md › UI)", function()
 		loaded.env.Pagle.OpenFieldReport()
 
 		box(loaded).closeCorner:Click()
+		loaded.client.update(FADE_OUT)
 
 		assert.is_false(box(loaded):IsShown())
 		assert.is_nil(loaded.client.focus)
@@ -331,6 +336,104 @@ describe("The Field report box's look (field-report.md › UI)", function()
 
 		frame.scroll.scripts.OnScrollRangeChanged(frame.scroll, 0, 0)
 		assert.is_false(frame.thumb:IsShown())
+	end)
+end)
+
+describe("The Field report box's motion and sounds (field-report.md › UI)", function()
+	-- The sound kits played since `from` (an index into client.sounds), as "<id> <channel>": the box's own, never a
+	-- sound set's files.
+	local function soundKits(loaded, from)
+		local played = {}
+		for i = (from or 0) + 1, #loaded.client.sounds do
+			local sound = loaded.client.sounds[i]
+			if sound:find("^%d+ ") then
+				played[#played + 1] = sound
+			end
+		end
+		return played
+	end
+
+	-- The box open on a two-part report, and how many sounds had played before it opened.
+	local function opened()
+		local loaded = enterWorld(loadCore(unchartedHistory(4, FIRST)), 2)
+		loaded.ns.FIELD_REPORT_PART_BYTES = 200
+		local before = #loaded.client.sounds
+		loaded.env.Pagle.OpenFieldReport()
+		return loaded, assert(box(loaded)), before
+	end
+
+	it("fades in over 0.2 s as it opens, with IG_MAINMENU_OPEN on the SFX channel", function()
+		local loaded, frame, before = opened()
+
+		assert.are.equal(0, frame:GetAlpha())
+		assert.are.same({ "850 SFX" }, soundKits(loaded, before))
+		loaded.client.update(0.1)
+		assert.is_true(frame:GetAlpha() > 0.5 and frame:GetAlpha() < 1)
+		loaded.client.update(0.15)
+		assert.are.equal(1, frame:GetAlpha())
+	end)
+
+	it("plays IG_MAINMENU_OPTION for Close and the arrows, and fades out over 0.15 s with IG_MAINMENU_CLOSE", function()
+		local loaded, frame, before = opened()
+		loaded.client.update(0.25)
+
+		frame.next:Click()
+		frame.close:Click()
+		frame.close:Click()
+
+		assert.are.same({ "850 SFX", "852 SFX", "852 SFX", "851 SFX" }, soundKits(loaded, before))
+		-- The keyboard given back at once.
+		assert.is_nil(loaded.client.focus)
+		assert.is_true(frame:IsShown())
+		loaded.client.update(0.1)
+		assert.is_true(frame:GetAlpha() > 0 and frame:GetAlpha() < 1)
+		loaded.client.update(0.1)
+		assert.is_false(frame:IsShown())
+		assert.are.equal(1, frame:GetAlpha(), "left at rest for its next opening")
+		assert.are.same({ "850 SFX", "852 SFX", "852 SFX", "851 SFX" }, soundKits(loaded, before))
+	end)
+
+	it("closes from the brass X with IG_MAINMENU_CLOSE alone, and from Esc at once with it", function()
+		local loaded, frame, before = opened()
+		frame.closeCorner:Click()
+		loaded.client.update(FADE_OUT)
+		loaded.env.Pagle.OpenFieldReport()
+		frame.text:ClearFocus()
+
+		loaded.client.pressEscape()
+
+		assert.is_false(frame:IsShown())
+		assert.are.same({ "850 SFX", "851 SFX", "850 SFX", "851 SFX" }, soundKits(loaded, before))
+	end)
+
+	it("fades back in, at part 1, when opened again while it fades out", function()
+		local loaded, frame = opened()
+		loaded.client.update(0.25)
+		frame.next:Click()
+		frame.close:Click()
+		loaded.client.update(0.05)
+
+		loaded.env.Pagle.OpenFieldReport()
+		loaded.client.update(0.25)
+
+		assert.is_true(frame:IsShown())
+		assert.are.equal(1, frame:GetAlpha())
+		assert.are.equal("Part 1 of 2", frame.partLabel:GetText())
+		assert.are.equal(frame.text, loaded.client.focus)
+	end)
+
+	it("shows and hides at once with the Animations setting off, its sounds still playing", function()
+		local loaded = enterWorld(loadCore(unchartedHistory(2, FIRST)), 2)
+		loaded.ns.db.profile.announcements.motion = false
+		local before = #loaded.client.sounds
+
+		loaded.env.Pagle.OpenFieldReport()
+		local frame = assert(box(loaded))
+		assert.are.equal(1, frame:GetAlpha())
+		frame.close:Click()
+
+		assert.is_false(frame:IsShown())
+		assert.are.same({ "850 SFX", "852 SFX", "851 SFX" }, soundKits(loaded, before))
 	end)
 end)
 

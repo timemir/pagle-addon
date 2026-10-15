@@ -270,6 +270,7 @@ The ADR 0003 and ADR 0008 notes sketch `B1`, `U1` and `A1` without the shared he
 | `global.decodeErrors` | count of entries the codec couldn't decode (LOG-R16) |
 | `global.dev` | boolean, the `/pagle dev` switch (#247); default `false`. Never shown to players. |
 | `global.diagnostics` | ring buffer of up to 500 entries (LOG-R81) |
+| `global.probe` | what `/pagle dev probe` saved for launch re-verification (#261): `time`, `build`, `locale`, `checks`; and `timings`, the load timings of the last login made with dev mode on (#262): `time`, `entries`, `budget`, `syncLimit`, `marks` (debugprofilestop ms at each login step) and `projections` (each catch-up or rebuild: `name`, `mode`, `started`, `finished`, `applied`, `frames`, `longest`). Absent until either is first saved; tooling only, never shown to players. |
 | `global.summary`, `global.pending`, `global.cards`, `global.writeUp` | Announcement data ([announcements.md](announcements.md#data)) |
 | `global.coins`, `global.goods` | the wallet ([wallet-and-shop.md](wallet-and-shop.md#data)) |
 | `global.projections.*` | Core's own projections (LOG-R78) |
