@@ -27,7 +27,11 @@ logic\Pins.lua
 logic\Reroll.lua
 logic\Ledge.lua
 logic\Moments.lua
+logic\Goods.lua
 adapter\BoardWidgets.lua
+adapter\TrackerBlock.lua
+adapter\Goods.lua
+adapter\Settings.lua
 adapter\Board.lua
 adapter\Pins.lua
 adapter\Ledge.lua
