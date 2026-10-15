@@ -27,11 +27,12 @@ for _, pattern in ipairs(ns.FLY_PATTERNS) do
 	FLY_ICONS[pattern.id] = pattern.icon
 end
 
--- Each title source's moment (TKB-R86): its kind, its `order` on the banner rung and its icon key (ns.REWARD_ICONS).
+-- Each title source's moment (TKB-R86): its kind, its `order` on the banner rung, its icon key (ns.REWARD_ICONS) and
+-- its banner's wax seal (announcements.md › Contracts): a Campfire milestone's is its day count, set in titleMoment.
 local TITLE_MOMENTS = {
 	campfire = { kind = "campfireMilestone", order = 10, icon = "campfire" },
-	tally = { kind = "tallyTitle", order = 20, icon = "tally" },
-	flybox = { kind = "flyBoxComplete", order = 30, icon = "flyBox" },
+	tally = { kind = "tallyTitle", order = 20, icon = "tally", seal = "quill" },
+	flybox = { kind = "flyBoxComplete", order = 30, icon = "flyBox", seal = "book" },
 }
 
 -- ns.L's template at `key`, its `{name}` fields filled from `fields` (a count in `fields.n` picks its form).
@@ -79,8 +80,8 @@ local function goalMoment(goal, castID)
 	}
 end
 
--- A title's banner (TKB-R86): a Campfire milestone with its Coins, a tally title or the Fly Box, on the Cast that
--- earned it.
+-- A title's banner (TKB-R86): a Campfire milestone with its Coins and its day count on the seal, a tally title with
+-- the quill or the Fly Box with the book, on the Cast that earned it.
 ---@param titleID string
 ---@param castID string?
 ---@return PagleMoment
@@ -88,9 +89,10 @@ local function titleMoment(titleID, castID)
 	local title = TITLES[titleID]
 	local shape = TITLE_MOMENTS[title.source]
 	local heading
+	local seal = shape.seal
 	local milestone = MILESTONES[titleID]
 	if title.source == "campfire" then
-		heading = say("CAMPFIRE_MILESTONE", { n = title.need })
+		heading, seal = say("CAMPFIRE_MILESTONE", { n = title.need }), title.need
 	elseif title.source == "tally" then
 		heading = say("TALLY_TITLE", { n = title.need })
 	else
@@ -105,6 +107,7 @@ local function titleMoment(titleID, castID)
 		icon = ns.REWARD_ICONS[shape.icon],
 		cast = castID,
 		coins = milestone and milestone.coins or nil,
+		seal = seal,
 	}
 end
 
