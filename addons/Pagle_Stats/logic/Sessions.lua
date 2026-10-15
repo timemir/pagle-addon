@@ -69,13 +69,6 @@ function ns.SessionDate(session)
 	return session.startTime
 end
 
--- Rounds half up (STA-R44).
----@param x number
----@return integer
-local function round(x)
-	return math.floor(x + 0.5)
-end
-
 -- Catches per hour, unrounded (STA-R33): catches × 3600 / max(time fished, 60).
 ---@param catches integer
 ---@param seconds integer
@@ -90,7 +83,7 @@ end
 ---@param now integer? the server time, for the current Session only
 ---@return integer
 function ns.CatchesPerHour(session, now)
-	return round(rate(session.catches, ns.TimeFished(session, now)))
+	return ns.Round(rate(session.catches, ns.TimeFished(session, now)))
 end
 
 --- The share of Casts that got away, a whole percentage rounded half up (STA-R33, STA-R44); nil with 0 Casts.
@@ -100,7 +93,7 @@ function ns.GotAwayRate(counts)
 	if counts.casts == 0 then
 		return nil
 	end
-	return round(counts.gotAway * 100 / counts.casts)
+	return ns.Round(counts.gotAway * 100 / counts.casts)
 end
 
 --- Where Catches by quality reads an item's quality (STA-R33): Core's `Pagle.GetItem` (LOG-R55) and, for an item Core
@@ -193,7 +186,7 @@ function ns.BestCatchesPerHour(sessions)
 	if best == nil then
 		return nil, nil
 	end
-	return best, round(bestRate)
+	return best, ns.Round(bestRate)
 end
 
 --- The server time of the first Cast Stats has a record of (STA-R33): `sessions[1].startTime`; nil with no records.

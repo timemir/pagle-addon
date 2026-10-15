@@ -13,6 +13,8 @@ local ns = select(2, ...)
 --- The Cast threshold (stats.md › Tunables): Your odds is learning below it, and a subzone reading uses its zone's
 --- scope until its own holds it (STA-R42, STA-R43).
 ns.ODDS_THRESHOLD = 100
+--- The never-caught bound (Tunables): the rule of three, so an unseen item is rarer than about 1 in n / 3.
+ns.NEVER_CAUGHT_BOUND = 3
 
 --- One item's reading in one place (STA-R40): the reading shape every view and the Dry spell read (M6 graph,
 --- conventions).
@@ -36,12 +38,12 @@ ns.ODDS_THRESHOLD = 100
 local SIDES = { "hi", "lo", "na" }
 
 --- A place's zone: its projection record's `zone` (STA-R22, which needs no catalogue), else the catalogue's, else the
---- place itself (a zone the catalogue lacks, never fished).
+--- place itself (a zone the catalogue lacks, never fished). Your odds and the home spread's watches read it.
 ---@param state StatsState
 ---@param area integer
 ---@param lookups StatsLookups
 ---@return integer
-local function zoneOf(state, area, lookups)
+function ns.ZoneOf(state, area, lookups)
 	local place = state.places[area]
 	return place and place.zone or lookups.GetZoneOf(area) or area
 end
@@ -59,7 +61,7 @@ local function readingSide(state, area, live, line)
 	end
 	local best, most = "hi", -1
 	for _, side in ipairs(SIDES) do
-		local casts = state.scopes[area .. ":" .. side] or 0
+		local casts = state.scopes[ns.ScopeKey(area, side)] or 0
 		if casts > most then
 			best, most = side, casts
 		end
@@ -77,19 +79,18 @@ end
 ---@return StatsReading
 function ns.Reading(state, item, area, live, places)
 	places = places or ns.places
-	local zone = zoneOf(state, area, places.lookups)
+	local zone = ns.ZoneOf(state, area, places.lookups)
 	local line = places:NoJunkLine(zone)
 	local side = readingSide(state, area, live, line)
 	local window = places:ItemWindow(zone, item)
-	local suffix = ":" .. side .. (window and (":" .. window) or "")
-	local scope = area .. suffix
+	local scope = ns.ScopeKey(area, side, window)
 	-- STA-R42: a subzone uses its zone's scope, same side and window, until its own holds the threshold.
 	local viaZone = area ~= zone and (state.scopes[scope] or 0) < ns.ODDS_THRESHOLD
 	if viaZone then
-		scope = zone .. suffix
+		scope = ns.ScopeKey(zone, side, window)
 	end
 	local n = state.scopes[scope] or 0
-	local hit = state.hits[scope .. "#" .. item]
+	local hit = state.hits[ns.HitKey(scope, item)]
 	local k = hit and hit.n or 0
 	local odds = n < ns.ODDS_THRESHOLD and "learning" or k == 0 and "unseen" or "known"
 	local L = ns.L
@@ -180,7 +181,7 @@ function ns.OddsSentence(reading)
 	if reading.state == "learning" then
 		return L.ODDS_LEARNING_SENTENCE:format(ns.Number(n), ns.ODDS_THRESHOLD, restsOn(reading))
 	elseif reading.state == "unseen" then
-		return L.ODDS_UNSEEN_SENTENCE:format(ns.Number(n), restsOn(reading), ns.Nice(n / 3))
+		return L.ODDS_UNSEEN_SENTENCE:format(ns.Number(n), restsOn(reading), ns.Nice(n / ns.NEVER_CAUGHT_BOUND))
 	end
 	return L.ODDS_SCOPE_LINE:format(ns.Number(n), restsOn(reading), ns.Number(reading.k))
 end

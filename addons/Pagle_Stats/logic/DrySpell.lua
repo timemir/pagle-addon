@@ -139,11 +139,18 @@ function ns.BandWord(band)
 	return ns.L.BANDS[band]
 end
 
+--- Whether a band is unlucky or very unlucky (STA-R52): the views write those in red.
+---@param band StatsBand?
+---@return boolean
+function ns.IsUnlucky(band)
+	return band == "unlucky" or band == "veryUnlucky"
+end
+
 -- ", unlucky" or ", very unlucky" when the Dry spell's band is one of them, else nil.
 ---@param dry StatsDrySpell
 ---@return string?
 local function unluckySuffix(dry)
-	if dry.band == "unlucky" or dry.band == "veryUnlucky" then
+	if ns.IsUnlucky(dry.band) then
 		return ns.L.DRY_SHORT_BAND:format(ns.BandWord(dry.band))
 	end
 	return nil

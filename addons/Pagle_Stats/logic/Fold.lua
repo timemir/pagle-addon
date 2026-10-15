@@ -23,6 +23,12 @@ function ns.RulesVersion(sessionRulesVersion)
 	return 100 * ns.STATS_RULES_VERSION + sessionRulesVersion
 end
 
+-- New counts (StatsCounts): no Casts, Catches or got away.
+---@return StatsCounts
+local function newCounts()
+	return { casts = 0, catches = 0, gotAway = 0 }
+end
+
 --- A new, empty projection state (stats.md › Projection state): no Casts, the four margin buckets at 0.
 ---@return StatsState
 function ns.NewStatsState()
@@ -30,7 +36,7 @@ function ns.NewStatsState()
 		return { casts = 0, gotAway = 0 }
 	end
 	return {
-		totals = { casts = 0, catches = 0, gotAway = 0 },
+		totals = newCounts(),
 		places = {},
 		chars = {},
 		scopes = {},
@@ -40,6 +46,24 @@ function ns.NewStatsState()
 		lastRank = {},
 		sessions = {},
 	}
+end
+
+--- A scope's key in the state's `scopes` (STA-R23): "<area>:<side>", or "<area>:<side>:<window>" for a window scope.
+---@param area integer
+---@param side StatsSide
+---@param window string?
+---@return string
+function ns.ScopeKey(area, side, window)
+	local scope = area .. ":" .. side
+	return window and (scope .. ":" .. window) or scope
+end
+
+--- A hit's key in the state's `hits` (STA-R24): "<scope>#<itemID>".
+---@param scope string a ns.ScopeKey
+---@param itemID integer
+---@return string
+function ns.HitKey(scope, itemID)
+	return scope .. "#" .. itemID
 end
 
 --- A skill margin's bucket (STA-R26, Tunables): `lo50` 50 or more below the line, `lo1` 1–49 below, `hi0` 0–24 above,
@@ -138,7 +162,7 @@ local function foldCast(state, cast, places)
 	count(state.totals, entries, gotAway)
 	local char = state.chars[cast.char]
 	if not char then
-		char = { casts = 0, catches = 0, gotAway = 0 }
+		char = newCounts()
 		state.chars[cast.char] = char
 	end
 	count(char, entries, gotAway)
@@ -185,10 +209,9 @@ local function foldCast(state, cast, places)
 		end
 		-- STA-R23: each place's side scope, and its window scopes for the zone's windows that match the Cast.
 		for _, area in ipairs(areas) do
-			local scope = area .. ":" .. side
-			add(state.scopes, scope)
+			add(state.scopes, ns.ScopeKey(area, side))
 			for _, window in ipairs(matched) do
-				add(state.scopes, scope .. ":" .. window)
+				add(state.scopes, ns.ScopeKey(area, side, window))
 			end
 		end
 		-- STA-R24: after the scope counts, one hit per distinct item and place, in the item's scope there.
@@ -196,8 +219,8 @@ local function foldCast(state, cast, places)
 			local window = places:ItemWindow(zone, itemID)
 			if window == nil or isMatched[window] then
 				for _, area in ipairs(areas) do
-					local scope = area .. ":" .. side .. (window and (":" .. window) or "")
-					local key = scope .. "#" .. itemID
+					local scope = ns.ScopeKey(area, side, window)
+					local key = ns.HitKey(scope, itemID)
 					local hit = state.hits[key]
 					if not hit then
 						hit = { n = 0, at = 0, last = 0 }

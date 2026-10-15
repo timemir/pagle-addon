@@ -51,16 +51,6 @@ local ns = select(2, ...)
 
 ---@alias StatsWatch { item: integer, area: integer }
 
--- The zone an area is in (as Your odds finds it): my records' own, else Core's catalogue, else the area itself.
----@param state StatsState
----@param area integer
----@param lookups StatsLookups
----@return integer
-local function zoneOf(state, area, lookups)
-	local record = state.places[area]
-	return record and record.zone or lookups.GetZoneOf(area) or area
-end
-
 --- The left page's tiles (stats.md › UI › Home spread): one per zone in `places` (a record whose `zone` is its own
 --- areaID) plus the current zone, most Casts first, the current zone first when it has none, ties by areaID. A tile
 --- reads its Casts and its waters (subzones in `places` in it), or "not fished yet"; "I'm here" on the current zone;
@@ -86,7 +76,7 @@ function ns.HomeWaters(state, conditions, watched, places)
 		end
 	end
 	for _, watch in ipairs(watched) do
-		local zone = zoneOf(state, watch.area, lookups)
+		local zone = ns.ZoneOf(state, watch.area, lookups)
 		watching[zone] = (watching[zone] or 0) + 1
 	end
 	---@param zone integer
@@ -197,7 +187,7 @@ local function watchLine(state, watch, live, places, pending)
 	end
 	local dry = ns.DrySpell(reading)
 	local red
-	if dry.caught and dry.since > 0 and (dry.band == "unlucky" or dry.band == "veryUnlucky") then
+	if dry.caught and dry.since > 0 and ns.IsUnlucky(dry.band) then
 		red = ns.L.DRY_SHORT_BAND:format(ns.BandWord(dry.band))
 	end
 	return {

@@ -182,7 +182,7 @@ local function tileOf(state, item, area, conditions, places)
 	local zone = state.places[area].zone
 	local dry = ns.DrySpell(reading)
 	local note
-	if dry.band == "unlucky" or dry.band == "veryUnlucky" then
+	if ns.IsUnlucky(dry.band) then
 		note = L.DRY_SHORT_SINCE:format(ns.Number(dry.since))
 	end
 	return {
