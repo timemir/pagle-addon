@@ -67,11 +67,11 @@
 --- ConditionsChanged({"skill"}) if either changed. Does nothing before login.
 ---@field readOnly fun(value: any): any The read-only proxy of a table (the same one each time); other values as is.
 ---@field moduleState fun(name: string): PagleModuleState A roster Module's state (CORE-R41).
----@field settingsPage fun(topic: string): { module: string, kind: string, label: string, caption: string?, indented: boolean, setting: PagleSetting, slot: string? }[]?
+---@field settingsPage fun(topic: string): { module: string, kind: string, label: string, caption: string?, indented: boolean, setting: PagleSetting?, slot: string? }[]?
 --- The rows Core would put on a topic page, in order, its header rows included; nil before login or with no rows,
 --- when Core registers no page (CORE-R42). A button row's caption is nil when its label is on the button (SET-R2).
 --- On Trackers, each Module's section ends with Core's slot dropdown for each of its "Trackers"-category slots: kind
---- "slot", labelled with the slot's label, `slot` its ID (SET-R44).
+--- "slot", labelled with the slot's label, `slot` its ID, and no `setting` (SET-R44).
 ---@field reported string[] Each error Core reported through geterrorhandler(), e.g. a late M:AddSetting, a
 --- Module function that raised under securecallfunction, or a moment dropped in a replay or rebuild (ANN-R4). A
 --- spec that gets one must read this list (assert it), or it fails at its end (spec/support/errors.lua).
@@ -436,16 +436,25 @@ part(function(fake, Pagle, ns)
 		end
 		local page = {}
 		for i, entry in ipairs(entries) do
-			local setting = entry.setting
-			page[i] = {
-				module = entry.module.def.name,
-				kind = setting.kind,
-				label = setting.label,
-				caption = setting.caption,
-				indented = entry.parent ~= nil,
-				setting = setting,
-				slot = entry.slot and entry.slot.id,
-			}
+			local setting, slot = entry.setting, entry.slot
+			if slot then
+				page[i] = {
+					module = entry.module.def.name,
+					kind = "slot",
+					label = slot.label,
+					indented = false,
+					slot = slot.id,
+				}
+			elseif setting then
+				page[i] = {
+					module = entry.module.def.name,
+					kind = setting.kind,
+					label = setting.label,
+					caption = setting.caption,
+					indented = entry.parent ~= nil,
+					setting = setting,
+				}
+			end
 		end
 		return page
 	end

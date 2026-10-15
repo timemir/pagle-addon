@@ -9,7 +9,7 @@ ns.SETTINGS_TOPICS = { "fishing", "announcements", "trackers" }
 
 --- One row a Module adds to a topic page (core/README.md › Contracts, CORE-R42).
 ---@class PagleSetting
----@field kind "header"|"checkbox"|"slider"|"dropdown"|"button"|"keybinding"|"custom"|"slot"   -- "slot": Core's slot dropdown (SET-R44), never a Module's
+---@field kind "header"|"checkbox"|"slider"|"dropdown"|"button"|"keybinding"|"custom"
 ---@field id? string               -- needed if another row names it as parent; unique among this Module's rows on this page
 ---@field label string
 ---@field tooltip? string
@@ -47,8 +47,8 @@ local OPTIONAL = {
 --- dropdown Core ends a Module's section with.
 ---@class PagleSettingsEntry
 ---@field module PagleModule
----@field setting PagleSetting   for Core's header, `{ kind = "header", label = def.title }`; for a slot dropdown,
---- `{ kind = "slot", label = slot.label }`
+---@field setting PagleSetting?   for Core's header, `{ kind = "header", label = def.title }`; nil for a slot dropdown,
+--- which `slot` alone marks
 ---@field parent PagleSettingsEntry?   the row it hangs under (indented)
 ---@field slot PagleRegisteredSlot?   the slot whose dropdown (SET-R51) this row is, never indented (SET-R44)
 
@@ -180,8 +180,7 @@ function Rows:Page(topic, modules, slots)
 				end
 			end
 			for _, slot in ipairs(ending) do
-				entries[#entries + 1] =
-					{ module = module, setting = { kind = "slot", label = slot.label }, slot = slot }
+				entries[#entries + 1] = { module = module, slot = slot }
 			end
 		end
 	end
