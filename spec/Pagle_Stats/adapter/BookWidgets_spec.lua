@@ -79,9 +79,9 @@ describe("the Stats book's art (STA-R70, stats.md › UI)", function()
 			assert.are_not.same(right.texCoord, left.texCoord) -- ☛ is ☚ mirrored
 			assert.are.equal(ns.BOOK_TEXTURES.star, star.texture)
 			assert.are.same(ns.BOOK_LOOK.red, { unpack(star.vertexColor, 1, 3) })
-			assert.has_error(function()
+			assert.error_matches(function()
 				ns.NewBookMark(parent, "asterisk", 12)
-			end)
+			end, "the Stats book has no mark asterisk", nil, true)
 		end
 	)
 
