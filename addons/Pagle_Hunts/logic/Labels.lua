@@ -99,6 +99,16 @@ function ns.FormatDuration(seconds)
 	return hours == 0 and L.DURATION_DAYS:format(days) or L.DURATION_DAYS_HOURS:format(days, hours)
 end
 
+--- A count in its singular or plural string, `L[key .. "_ONE"]` or `L[key .. "_OTHER"]`, with its number written by
+--- `format` (tostring by default): "1 title", "3 Hunts completed".
+---@param n integer
+---@param key string
+---@param format (fun(n: integer): string)?
+---@return string
+function ns.CountText(n, key, format)
+	return ns.L[key .. (n == 1 and "_ONE" or "_OTHER")]:format((format or tostring)(n))
+end
+
 --- A minute of day as a 24-hour clock time, "06:00" (HNT-R50).
 ---@param minute integer
 ---@return string

@@ -24,19 +24,12 @@ local ns = select(2, ...)
 ---@field tiers table<string, integer>
 ---@field sets table<string, true>
 
---- PagleHuntsDB.global.celebrated (HNT-R90, LOG-R77), made if missing. Core never touches it; nothing here clears or
---- lowers it.
+--- PagleHuntsDB.global.celebrated (HNT-R90, LOG-R77), its default from ns.DB_DEFAULTS (logic/Data.lua, the one place
+--- each key gets one). Core never touches it; nothing here clears or lowers it.
 ---@param global table PagleHuntsDB's global section
 ---@return HuntsCelebrated
 function ns.HuntsCelebrated(global)
-	local celebrated = global.celebrated
-	if type(celebrated) ~= "table" then
-		celebrated = {}
-		global.celebrated = celebrated
-	end
-	celebrated.tiers = celebrated.tiers or {}
-	celebrated.sets = celebrated.sets or {}
-	return celebrated
+	return global.celebrated
 end
 
 --- The moment for tier `k` of `hunt` (HNT-R86): its completion at tier 1, a further tier after; `huntTier` is the
@@ -122,16 +115,6 @@ function ns.CelebrateReached(celebrated, state, cast, reached)
 	return moments
 end
 
--- `n` with the singular or plural form of its noun (`one`, `other`: "%s Casts").
----@param n integer
----@param one string
----@param other string
----@param format fun(n: integer): string
----@return string
-local function countText(n, one, other, format)
-	return (n == 1 and one or other):format(format(n))
-end
-
 --- What a Write-up section lists (HNT-R111): Hunts completed (tier 1), further tiers, the set titles in file order.
 ---@class HuntsWriteUpCounts
 ---@field completed integer
@@ -155,10 +138,10 @@ local function writeUpLines(counts, coins, format)
 	local L = ns.L
 	local lines = {}
 	if counts.completed > 0 then
-		lines[#lines + 1] = countText(counts.completed, L.WRITE_UP_COMPLETED_ONE, L.WRITE_UP_COMPLETED_OTHER, format)
+		lines[#lines + 1] = ns.CountText(counts.completed, "WRITE_UP_COMPLETED", format)
 	end
 	if counts.further > 0 then
-		lines[#lines + 1] = countText(counts.further, L.WRITE_UP_FURTHER_ONE, L.WRITE_UP_FURTHER_OTHER, format)
+		lines[#lines + 1] = ns.CountText(counts.further, "WRITE_UP_FURTHER", format)
 	end
 	for _, setID in ipairs(counts.titles) do
 		lines[#lines + 1] = L.WRITE_UP_TITLE:format(ns.hunts:SetTitle(setID))
@@ -256,22 +239,11 @@ function ns.CelebrateHuntsDone(celebrated, state, info, client)
 	local tiers, sets = uncelebrated(celebrated, state)
 	if info.firstBuild then
 		-- Everything the state holds is written up, not only what is above a celebrated set kept from before.
-		local all, titles = {}, {}
-		for _, hunt in ipairs(ns.hunts:Hunts()) do
-			local progress = state.hunts[hunt.id]
-			for k = 1, progress and #progress.reached or 0 do
-				all[#all + 1] = { hunt = hunt, k = k }
-			end
-		end
-		for _, set in ipairs(ns.hunts:Sets()) do
-			if state.sets[set.id] then
-				titles[#titles + 1] = set.id
-			end
-		end
+		local all, titles = uncelebrated({ tiers = {}, sets = {} }, state)
 		celebrate(celebrated, all, titles)
 		if #all > 0 or #titles > 0 then
 			client.RaiseWriteUp({
-				heading = countText(state.casts, L.WRITE_UP_FIRST_BUILD_ONE, L.WRITE_UP_FIRST_BUILD_OTHER, format),
+				heading = ns.CountText(state.casts, "WRITE_UP_FIRST_BUILD", format),
 				lines = writeUpLines(countsOf(all, titles), state.coins, format),
 			})
 		end
@@ -305,22 +277,12 @@ end
 ---@return string
 function ns.HuntsSummaryLine(state, now, format)
 	local L = ns.L
-	local current, done = 0, 0
-	for _, hunt in ipairs(ns.hunts:Current(now)) do
-		current = current + 1
-		if ns.HuntDone(state.hunts[hunt.id]) then
-			done = done + 1
-		end
-	end
+	local done, current = ns.DoneOfCurrent(ns.hunts, state, now)
 	local titles = 0
 	for _ in pairs(state.sets) do
 		titles = titles + 1
 	end
-	return L.SUMMARY_LINE:format(
-		format(done),
-		format(current),
-		countText(titles, L.SUMMARY_TITLES_ONE, L.SUMMARY_TITLES_OTHER, format)
-	)
+	return L.SUMMARY_LINE:format(format(done), format(current), ns.CountText(titles, "SUMMARY_TITLES", format))
 end
 
 ---@class HuntsMoments

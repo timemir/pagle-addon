@@ -26,15 +26,6 @@ local ns = select(2, ...)
 ---@field chosen boolean        -- the ribbon of the mode shown
 ---@field place BoardPlace      -- where clicking it goes
 
--- Whether `hunt` is done in `state`: tier 1 reached (HNT-R17).
----@param state HuntsState
----@param huntID string
----@return boolean
-local function isDone(state, huntID)
-	local progress = state.hunts[huntID]
-	return progress ~= nil and progress.reached[1] ~= nil
-end
-
 -- Whether a set has a ribbon (HNT-R61): it has a current Hunt, an earned title, or a done Retired Hunt. While the
 -- projection is updating only current Hunts count, as nothing is drawn from its state (HNT-R69).
 ---@param input HuntsSetsInput
@@ -48,7 +39,7 @@ local function hasRibbon(input, setID)
 		if ns.IsCurrent(hunt, input.now) then
 			return true
 		end
-		if not input.updating and ns.IsRetired(hunt, input.now) and isDone(input.state, hunt.id) then
+		if not input.updating and ns.IsRetired(hunt, input.now) and ns.HuntDone(input.state.hunts[hunt.id]) then
 			return true
 		end
 	end
@@ -111,14 +102,6 @@ function ns.BuildCrumbs(trail, list)
 	return crumbs
 end
 
--- A count in its singular or plural string (`key_ONE`, `key_OTHER`).
----@param key string
----@param n integer
----@return string
-local function counted(key, n)
-	return ns.L[key .. (n == 1 and "_ONE" or "_OTHER")]:format(tostring(n))
-end
-
 --- The gold nameplate (HNT-R61): its words, and its tooltip's lines.
 ---@class BoardNameplate
 ---@field text string
@@ -143,11 +126,11 @@ function ns.BuildNameplate(input)
 	end
 	local done = 0
 	for _, hunt in ipairs(input.list:Hunts()) do
-		if isDone(input.state, hunt.id) then
+		if ns.HuntDone(input.state.hunts[hunt.id]) then
 			done = done + 1
 		end
 	end
-	local text = ns.L.NAMEPLATE:format(counted("SUMMARY_TITLES", #titles), counted("NAMEPLATE_DONE", done))
+	local text = ns.L.NAMEPLATE:format(ns.CountText(#titles, "SUMMARY_TITLES"), ns.CountText(done, "NAMEPLATE_DONE"))
 	return { text = text, titles = titles }
 end
 
@@ -192,7 +175,6 @@ function ns.BuildSetPage(input, setID, trackerLabel)
 		retiredHeading = L.SET_RETIRED,
 		retired = {},
 	}
-	local done = 0
 	for _, hunt in ipairs(list:SetHunts(setID)) do
 		local tier = not input.updating and state.hunts[hunt.id] and state.hunts[hunt.id].reached[1] or nil
 		local line = { id = hunt.id, name = list:HuntName(hunt.id), done = tier ~= nil }
@@ -200,14 +182,13 @@ function ns.BuildSetPage(input, setID, trackerLabel)
 			line.when = tier and ns.FormatShortDate(tier.date) or trackerLabel(hunt.id) or ""
 			line.place = { mode = "entry", set = setID, hunt = hunt.id }
 			page.hunts[#page.hunts + 1] = line
-			done = done + (tier and 1 or 0)
 		elseif tier and ns.IsRetired(hunt, input.now) then
 			line.when = ns.FormatShortDate(tier.date)
 			line.place = { mode = "retired", set = setID, hunt = hunt.id }
 			page.retired[#page.retired + 1] = line
 		end
 	end
-	local current = #page.hunts
+	local done, current = ns.DoneOfCurrent(list, state, input.now, setID)
 	if input.updating then
 		page.progress = { fill = 0, label = L.UPDATING }
 	else

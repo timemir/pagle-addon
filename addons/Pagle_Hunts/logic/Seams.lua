@@ -34,7 +34,7 @@ local ns = select(2, ...)
 ---@field casts integer       -- Casts applied, for the Write-up heading
 ---@field coins integer       -- lifetime Pagle Coins earned (HNT-R110)
 ---@field hunts table<string, HuntProgress>   -- by Hunt ID; absent until the Hunt has effort or a Catch
----@field sets table<string, { earnedAt: integer, date: { year: integer, month: integer, day: integer }, fromRetirement: boolean }>   -- by set ID, only once earned (HNT-R23, HNT-R87)
+---@field sets table<string, HuntsSetTitle>   -- by set ID, only once earned (HNT-R23, HNT-R87; logic/Titles.lua)
 
 ---@class HuntProgress
 ---@field count integer       -- qualifying Catches (HNT-R11)
@@ -58,7 +58,7 @@ local ns = select(2, ...)
 ---@return HuntsState
 function ns.State()
 	local projection = ns.projection
-	return projection and projection:GetState() or { casts = 0, coins = 0, hunts = {}, sets = {} }
+	return projection and projection:GetState() or ns.NewHuntsState()
 end
 
 --- Whether the projection is catching up or rebuilding, or waiting for login to start it (LOG-R74,

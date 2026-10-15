@@ -136,6 +136,27 @@ function ns.HuntDone(progress)
 	return progress ~= nil and progress.reached[1] ~= nil
 end
 
+--- How many of the Hunts current at `now` are done in `state`, and how many are current (HNT-R2, HNT-R17): every
+--- current Hunt's, or set `setID`'s alone. The summary line, an entry's set line and a set's page count with it.
+---@param list HuntList
+---@param state HuntsState
+---@param now integer
+---@param setID string?
+---@return integer done
+---@return integer current
+function ns.DoneOfCurrent(list, state, now, setID)
+	local done, current = 0, 0
+	for _, hunt in ipairs(setID and list:SetHunts(setID) or list:Hunts()) do
+		if ns.IsCurrent(hunt, now) then
+			current = current + 1
+			if ns.HuntDone(state.hunts[hunt.id]) then
+				done = done + 1
+			end
+		end
+	end
+	return done, current
+end
+
 --- Whether a Hunt is finished: every one of its tiers is reached (HNT-R17).
 ---@param progress HuntProgress?
 ---@param hunt HuntDef

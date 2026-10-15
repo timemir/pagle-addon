@@ -122,7 +122,7 @@ end
 local function effortOf(progress)
 	local L = ns.L
 	local effort = progress and progress.effort or 0
-	local casts = (effort == 1 and L.EFFORT_CASTS_ONE or L.EFFORT_CASTS_OTHER):format(effort)
+	local casts = ns.CountText(effort, "EFFORT_CASTS")
 	local text
 	if progress and progress.caught then
 		text = L.EFFORT_SINCE:format(casts, progress.sinceLast)
@@ -217,15 +217,7 @@ end
 ---@return string
 local function setLineOf(input)
 	local L, list, setID = ns.L, input.list, input.hunt.set
-	local done, current = 0, 0
-	for _, hunt in ipairs(list:SetHunts(setID)) do
-		if ns.IsCurrent(hunt, input.now) then
-			current = current + 1
-			if ns.HuntDone(input.state.hunts[hunt.id]) then
-				done = done + 1
-			end
-		end
-	end
+	local done, current = ns.DoneOfCurrent(list, input.state, input.now, setID)
 	local title = list:SetTitle(setID)
 	local earned = input.state.sets[setID] and L.SET_EARNED:format(title) or L.SET_EARNS:format(title)
 	return L.SET_LINE:format(list:SetName(setID), done, current, earned)
