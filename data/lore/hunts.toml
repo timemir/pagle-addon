@@ -13,7 +13,7 @@
 
 [huntgood."hunts.notebookcover.leather"] # Notebook cover, the default
 name = "Saddle Leather"
-description = "Worn tan leather, gone soft at the corners from a season in a coat pocket."
+description = "Worn brown leather, gone soft at the corners from a season in a coat pocket."
 
 [huntgood."hunts.notebookcover.oilcloth"] # Notebook cover, tier 1
 name = "Oilcloth"

@@ -322,20 +322,22 @@ def test_sunday_showdown_s_note_says_it_is_the_extravaganza_and_needs_level_60()
     assert re.search(r"\blevel 60\b", note), note
 
 
-def test_the_wagers_set_s_note_calls_them_the_house_s_own_without_naming_pagle_or_nat() -> None:
-    # hunts.md › Data: the wagers set's note says these are its own wagers. DATA-R110: no words in Nat Pagle's mouth;
-    # VOICE.md choice 12 (approved in #130): no lore names the addon, so "the house" stands in for Pagle.
+def test_the_wagers_set_s_note_calls_them_pagle_s_own_without_quoting_him() -> None:
+    # hunts.md › Data: the set note says these are Pagle's own wagers (#183, restored in #184: Nat Pagle the angler,
+    # VOICE.md's one exception to choice 12). DATA-R110: no words in Nat Pagle's mouth, so nothing is quoted.
     note = _hunts_text()["set.pagles_wagers.note"]
-    assert "own wagers" in note
-    assert not re.search(r"\b(Pagle|Nat)\b", note), note
+    assert "Pagle's own wagers" in note
+    assert '"' not in note, note
 
 
 @pytest.mark.parametrize("key", sorted(_hunts_text()))
 def test_no_line_of_hunts_lore_names_the_addon_its_terms_or_shouts(key: str) -> None:
     # VOICE.md: "Not the addon talking" (choice 12): no Pagle and none of its capitalised terms; no "I" (choice 3);
-    # no exclamation marks (choice 13); no | (WoW's escape codes).
+    # no exclamation marks (choice 13); no | (WoW's escape codes). VOICE.md's one exception (#184): the wagers set's
+    # note names Nat Pagle the angler, so Pagle is allowed there and nowhere else.
     text = _hunts_text()[key]
-    terms = r"\b(Pagle|Pagle's|Hunts?|Ledger|Coins?|Sessions?|Notices?|Catch(es)?|Casts?|Angler|XP|I)\b"
+    pagle = "" if key == "set.pagles_wagers.note" else "Pagle|Pagle's|"
+    terms = rf"\b({pagle}Hunts?|Ledger|Coins?|Sessions?|Notices?|Catch(es)?|Casts?|Angler|XP|I)\b"
     assert not re.search(terms, text), text
     assert "!" not in text and "|" not in text, text
 
