@@ -94,12 +94,14 @@ local readToc = dofile("spec/support/toc.lua")
 ---@param name string The addon's folder under addons/, which is also its TOC's name.
 ---@param globals table<string, any>? Globals the client defines for this load, e.g. WOW_PROJECT_ID. They replace
 --- the fake client's stubs of the same name, e.g. InCombatLockdown for a load in combat.
----@param options { holdAddonLoaded: boolean?, dependencyLibsOnly: boolean?, replace: table<string, string>? }?
+---@param options { holdAddonLoaded: boolean?, dependencyLibsOnly: boolean?, replace: table<string, string>?, also: string[]? }?
 --- holdAddonLoaded: don't fire ADDON_LOADED(name); the spec fires it with loaded.client.fire, e.g. after adding a
 --- listener that must be there before it. dependencyLibsOnly: load only the libs/ files of each dependency, for a
 --- stand-in that provides the rest (FakePagle's fake.load). replace: files of the named addon to load from another
 --- path, in their TOC place, by the path the TOC lists (`{ ["data/Lore.lua"] = "spec/…/Lore.lua" }`), e.g. a
---- generated fixture in place of the committed generated file.
+--- generated fixture in place of the committed generated file. also: more addons to load after the named one, in
+--- order, into the same globals and client, each after its dependencies and with its own ADDON_LOADED, as the client
+--- loads every enabled addon (`{ "Pagle_Hunts", "Pagle_QoL" }`): a spec of the whole package, every Module loaded.
 ---@return LoadedAddon
 function loadAddon(name, globals, options)
 	options = options or {}
@@ -185,6 +187,15 @@ function loadAddon(name, globals, options)
 	local err = load(name, false)
 	if err then
 		error(err, 2)
+	end
+	assert(not (options.also and options.dependencyLibsOnly), "also loads whole addons, not libs only")
+	for _, addon in ipairs(options.also or {}) do
+		if not namespaces[addon] then
+			err = load(addon, true)
+			if err then
+				error(err, 2)
+			end
+		end
 	end
 
 	return { ns = namespaces[name], namespaces = namespaces, env = env, printed = printed, client = client }
