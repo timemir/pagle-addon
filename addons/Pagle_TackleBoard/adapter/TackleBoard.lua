@@ -32,3 +32,17 @@ function ns.TackleBoard.OnInitialize()
 	-- Its tracker, docked third (TKB-R120, CORE-R70).
 	ns.StartTracker(ns.Module)
 end
+
+--- Whether the board is known to be started (TKB-R6, logic/Seams.lua): started now, or, while the projection updates,
+--- in the projection stored in PagleTackleBoardDB, which a rebuild leaves in place until its done (LOG-R72).
+---@return boolean
+function ns.KnownStarted()
+	if ns.IsStarted() then
+		return true
+	end
+	if not ns.IsUpdating() or ns.db == nil then
+		return false
+	end
+	local stored = ns.db.global.board and ns.db.global.board.projection
+	return type(stored) == "table" and stored.started ~= nil
+end

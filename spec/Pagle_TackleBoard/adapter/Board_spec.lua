@@ -289,6 +289,73 @@ describe("the updating board (TKB-R108)", function()
 	end)
 end)
 
+describe("a started board while its projection rebuilds in chunks (TKB-R6, TKB-R108, LOG-R72)", function()
+	-- A board started an hour ago with its four goals, built; then a rebuild that runs over later frames, whose state
+	-- hasn't applied the `start` record yet; the Campfire card was open.
+	local function rebuilding()
+		local fake = board.withHistory({
+			board.skill(SERVER_TIME - 3600),
+			board.start(SERVER_TIME - 600),
+			board.issue(SERVER_TIME - 599, "e;size;0;60;1;4"),
+			board.issue(SERVER_TIME - 598, "n;haul;2;15;30;14"),
+		})
+		local ns, loaded = board.built(fake)
+		ns.OpenBoard()
+		local ledge = ns.board.frame.parts.ledge
+		ledge.card:Show()
+		board.updating(fake, true)
+		ns.projection:Rebuild()
+		ns.Redraw("projection")
+		return ns, loaded, fake
+	end
+
+	it('shows "Updating…" over the bare cork, with no slip, no Start and the card closed', function()
+		local ns = rebuilding()
+		local frame = ns.board.frame
+
+		assert.is_true(ns.IsUpdating())
+		assert.is_false(ns.IsStarted()) -- the rebuild's state, not yet past the start record
+		assert.is_true(ns.KnownStarted())
+		assert.is_true(visible(frame.updating, frame))
+		assert.is_false(visible(frame.empty, frame))
+		assert.is_false(visible(frame.start, frame))
+		for _, part in ipairs(ns.BOARD_PARTS) do
+			assert.is_false(frame.parts[part]:IsShown(), part)
+		end
+		assert.is_false(frame.parts.ledge.card:IsShown())
+	end)
+
+	it("draws its parts again once the rebuild is done", function()
+		local ns, _, fake = rebuilding()
+		local frames = 0
+		while ns.IsUpdating() and frames < 50 do
+			fake.nextFrame()
+			frames = frames + 1
+		end
+		local frame = ns.board.frame
+
+		assert.is_false(ns.IsUpdating())
+		assert.is_false(visible(frame.updating, frame))
+		assert.is_false(visible(frame.empty, frame))
+		for _, part in ipairs(ns.BOARD_PARTS) do
+			assert.is_true(frame.parts[part]:IsShown(), part)
+		end
+	end)
+
+	it('keeps "Open Tackle Board" on the Settings root and the Trackers checkbox live (TKB-R1, SET-R43)', function()
+		local ns, _, fake = rebuilding()
+
+		assert.are.equal("Open Tackle Board", ns.ModuleDef().settingsAction.label())
+		local enabled = {}
+		for _, row in ipairs(fake.settingsPage("trackers")) do
+			if row.label == "Show goals workable here" then
+				enabled[#enabled + 1] = row.setting.isEnabled()
+			end
+		end
+		assert.are.same({ true }, enabled)
+	end)
+end)
+
 describe("the started board's parts (TKB-R101, TKB-R103, TKB-R106)", function()
 	it("has no Start button and no slip once started (TKB-R5)", function()
 		local _, _, tackle, flags = loggedIn()

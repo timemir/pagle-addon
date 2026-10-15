@@ -35,6 +35,17 @@ describe("what the board shows", function()
 			parts = { "pins", "overflow", "spike", "ledge" },
 		}, ns.BoardShows(true, true))
 	end)
+
+	it(
+		'known started while a rebuild\'s state isn\'t yet: no slip and no Start, "Updating…" over the bare cork'
+			.. " (TKB-R5, TKB-R6, TKB-R108)",
+		function()
+			assert.are.same(
+				{ empty = false, startEnabled = false, updating = true, parts = {} },
+				ns.BoardShows(true, true, false)
+			)
+		end
+	)
 end)
 
 describe("the board's parts (TKB-R101, TKB-R103, TKB-R106)", function()

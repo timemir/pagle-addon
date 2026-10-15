@@ -41,14 +41,20 @@ ns.BOARD_PARTS = { "pins", "overflow", "spike", "ledge" }
 ---@field updating boolean            -- "Updating…" over the cork (TKB-R108)
 ---@field parts TackleBoardPart[]     -- the parts drawn, in drawing order: all once started, none before (TKB-R107)
 
---- What the board shows, from whether it is started (TKB-R6) and whether the projection is updating (LOG-R74). A
---- started board has no Start button (TKB-R5).
+--- What the board shows, from whether it is known to be started (TKB-R6, ns.KnownStarted) and whether the projection
+--- is updating (LOG-R74). A started board has no Start button (TKB-R5), even while a rebuild's state hasn't applied
+--- its `start` record yet (`drawable` false): then no part is drawn from that state, only "Updating…" over the bare
+--- cork (TKB-R108).
 ---@param started boolean
 ---@param updating boolean
+---@param drawable boolean? whether the state itself is started (ns.IsStarted); `started` when nil
 ---@return TackleBoardShows
-function ns.BoardShows(started, updating)
+function ns.BoardShows(started, updating, drawable)
 	local parts = {}
-	if started then
+	if drawable == nil then
+		drawable = started
+	end
+	if started and drawable then
 		for i, part in ipairs(ns.BOARD_PARTS) do
 			parts[i] = part
 		end

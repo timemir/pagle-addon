@@ -22,7 +22,12 @@ local ns = select(2, ...)
 --                             are disabled and views draw "Updating…" (TKB-R108, TKB-R124). `ns.projection:IsUpdating()`:
 --                             true from load until the first build ends; false with no projection.
 --   ns.IsStarted()            Whether the board is started: the projection has applied a `start` record (TKB-R6).
---                             Registration's status button reads it (TKB-R1). Follows ns.State().
+--                             Follows ns.State(), so a rebuild reads false until it applies the `start` record again.
+--   ns.KnownStarted()         Whether the board is known to be started (TKB-R6) across an update: while the projection
+--                             updates, also when the stored projection, which a rebuild replaces only at its done
+--                             (LOG-R72), is started. The status button's label (TKB-R1), the board's empty slip and
+--                             Start (TKB-R5), the Trackers checkbox (SET-R43) and the tracker (TKB-R120) read it.
+--                             Defined in adapter/TackleBoard.lua.
 --   ns.Start()                Starts the board (TKB-R5): appends the `start` record and runs the live step. Called by
 --                             the "Start my board" status button (registration, only when not started and not updating)
 --                             and the empty board's Start button (adapter/Board.lua). Defined in adapter/LiveStep.lua.

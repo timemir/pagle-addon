@@ -24,7 +24,7 @@ local FLAME, BOX_WIDTH, BOX_HEIGHT, POINTER = 76, 200, 62, 16
 local CARD_WIDTH, CARD_HEIGHT, DAY_WIDTH, DAY_HEIGHT, DAY_GAP = 520, 480, 40, 24, 4
 local TITLE_ROW, TITLE_INDENT = 18, 40
 local DRAWER_WIDTH, DRAWER_HEIGHT, CELL_WIDTH, CELL_HEIGHT, CELL_GAP = 630, 470, 94, 70, 6
--- How far over the cork the card and the drawer lie: above the parts and the "Updating..." cover (adapter/Board.lua).
+-- How far over the cork the card and the drawer lie: above the parts and the "Updating…" cover (adapter/Board.lua).
 local OVERLAY_LEVEL = 40
 
 ---@class TackleSpikedSlip: TackleSlipView
@@ -500,8 +500,14 @@ local function drawLedge(ledge, draw)
 		buildShop(ledge)
 		buildCard(ledge)
 		buildDrawer(ledge)
+		-- The card and the drawer lie on the board, not the ledge: they close with it, as when a rebuild leaves the
+		-- cork bare (TKB-R108).
+		ledge:SetScript("OnHide", function()
+			ledge.card:Hide()
+			ledge.drawer:Hide()
+		end)
 	end
-	if draw.reason == "open" then
+	if draw.reason == "open" or draw.updating then
 		ledge.card:Hide()
 		ledge.drawer:Hide()
 	end

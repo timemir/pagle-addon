@@ -18,26 +18,24 @@ local OWNER = "Pagle_TackleBoard tracker"
 ---@class TackleTracker
 ---@field block TackleTrackerBlock
 ---@field built boolean          -- the projection has finished its first update this login (TKB-R120)
----@field started boolean        -- the board is started, as last read while the projection wasn't updating
 ---@field flashing string[]      -- goals completed live still flashing "Complete", oldest first (TKB-R123)
 
 ---@class PagleTackleBoardNS
 ---@field tracker TackleTracker?  -- made by ns.StartTracker
 
 -- What the tracker is drawn from now (logic/Tracker.lua). A rebuild empties the projection's state while it runs
--- (LOG-R72), so whether the board is started is kept from the last read outside an update.
+-- (LOG-R72), so whether the board is started is ns.KnownStarted.
 ---@param tracker TackleTracker
 ---@return TackleTrackerInput
 local function input(tracker)
 	local updating = ns.IsUpdating()
 	if not updating then
 		tracker.built = true
-		tracker.started = ns.IsStarted()
 	end
 	return {
 		on = ns.db.profile.tracker,
 		built = tracker.built,
-		started = tracker.started,
+		started = ns.KnownStarted(),
 		updating = updating,
 		collapsed = ns.db.profile.trackerCollapsed,
 		state = ns.State(),
@@ -134,7 +132,7 @@ end
 function ns.StartTracker(module)
 	local block = ns.NewTrackerBlock(UIParent)
 	block:Hide()
-	local tracker = { block = block, built = false, started = false, flashing = {} }
+	local tracker = { block = block, built = false, flashing = {} }
 	ns.tracker = tracker
 	module:RegisterTracker({ id = "tackleboard", order = 30, frame = block })
 

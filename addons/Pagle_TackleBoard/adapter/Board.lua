@@ -230,7 +230,7 @@ end
 
 --- Start my board (TKB-R5): starts the board through ns.Start(), unless the projection is updating, then redraws.
 function Board:Start()
-	if ns.BoardShows(ns.IsStarted(), ns.IsUpdating()).startEnabled then
+	if ns.BoardShows(ns.KnownStarted(), ns.IsUpdating(), ns.IsStarted()).startEnabled then
 		ns.Start()
 	end
 	self:Draw("start")
@@ -246,7 +246,7 @@ function Board:Draw(reason, detail, highlight)
 		return
 	end
 	local frame = self.frame --[[@as TackleBoardFrame]]
-	local shows = ns.BoardShows(ns.IsStarted(), ns.IsUpdating())
+	local shows = ns.BoardShows(ns.KnownStarted(), ns.IsUpdating(), ns.IsStarted())
 	frame.empty:SetShown(shows.empty)
 	frame.start:SetUsable(shows.startEnabled)
 	frame.updating:SetShown(shows.updating)

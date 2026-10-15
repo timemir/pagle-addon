@@ -27,9 +27,9 @@ function ns.AddSettings(M)
 			ns.Redraw("tracker") -- the live tracker shows or hides at once (TKB-R120)
 		end,
 		-- Greyed out until the board is started (TKB-R5); Core asks again each time the page shows (SET-R61). While the
-		-- projection updates it reads whether the board is started all the same (SET-R91).
+		-- projection updates it reads whether the board is known to be started (ns.KnownStarted, SET-R91).
 		isEnabled = function()
-			return ns.IsStarted()
+			return ns.KnownStarted()
 		end,
 	})
 end

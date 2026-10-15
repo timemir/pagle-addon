@@ -23,7 +23,7 @@ function ns.ModuleDef()
 		order = 40,
 		settingsAction = {
 			label = function()
-				return ns.IsStarted() and ns.L.OPEN_BOARD or ns.L.START_MY_BOARD
+				return ns.KnownStarted() and ns.L.OPEN_BOARD or ns.L.START_MY_BOARD
 			end,
 			-- "Start my board" also starts the board (TKB-R5), unless the projection is updating; either one opens it.
 			onClick = function()
