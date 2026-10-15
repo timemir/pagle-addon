@@ -55,19 +55,21 @@ end
 
 local requested = {} -- items asked of the client and not yet arrived: { [itemID] = true }
 
---- A zone's name from C_Map.GetAreaInfo, or "…" (TKB-R36).
+--- A zone's name from C_Map.GetAreaInfo, or "Area {id}" when the client has none (TKB-R36): the call is synchronous,
+--- so no name arrives later.
 ---@param areaID integer
 ---@return string
 function ns.ZoneName(areaID)
-	return ns.api.AreaName(areaID) or ns.L.NAME_UNKNOWN
+	return ns.api.AreaName(areaID) or ns.Fill(ns.L.AREA_UNKNOWN, { id = areaID })
 end
 
---- A continent's name (TKB-R36): C_Map.GetMapInfo on its uiMapID (ns.CONTINENT_MAPS), or "…".
+--- A continent's name (TKB-R36): C_Map.GetMapInfo on its uiMapID (ns.CONTINENT_MAPS), or "Continent {id}" when the
+--- client has none.
 ---@param continent integer the continent's ID, `GetArea().continent`
 ---@return string
 function ns.ContinentName(continent)
 	local uiMapID = ns.CONTINENT_MAPS[continent]
-	return uiMapID and ns.api.MapName(uiMapID) or ns.L.NAME_UNKNOWN
+	return uiMapID and ns.api.MapName(uiMapID) or ns.Fill(ns.L.CONTINENT_UNKNOWN, { id = continent })
 end
 
 --- A Species' name: its representative item's, from C_Item.GetItemNameByID (TKB-R31, TKB-R36). Until the client has
@@ -84,6 +86,17 @@ function ns.SpeciesName(itemID)
 		ns.api.RequestItem(itemID)
 	end
 	return ns.L.NAME_UNKNOWN
+end
+
+--- Asks the client for the name of every open Species goal's representative item (TKB-R36), so the moment of a
+--- completion carries it: the projection's done and each live step call it (logic/Moments.lua).
+---@param state TackleBoardState
+function ns.RequestGoalNames(state)
+	for _, goal in pairs(state.goals) do
+		if goal.doneDay == nil and goal.kind == "species" then
+			ns.SpeciesName(goal.target)
+		end
+	end
 end
 
 --- GET_ITEM_INFO_RECEIVED's `itemID` and `success` (TKB-R36): true when an item a name asked for has arrived, so the

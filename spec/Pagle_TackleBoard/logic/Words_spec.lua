@@ -64,13 +64,14 @@ describe("the goal text", function()
 		assert.are.equal("150 Catches in Stranglethorn Vale", ns.GoalText(goal("e", "haul", 150, STRANGLETHORN)))
 	end)
 
-	it('shows a zone or continent the client has no name for as "…" (TKB-R36)', function()
+	it('shows a zone or continent the client has no name for by its ID, "Area {id}" (TKB-R36)', function()
 		local ns = board.load().ns
 
-		assert.are.same(
-			{ "20 Catches in …", "Catches in 5 zones of …" },
-			{ ns.GoalText(goal("n", "haul", 20, DUROTAR)), ns.GoalText(goal("e", "wanderer", 5, 0)) }
-		)
+		assert.are.same({ "20 Catches in Area 14", "Catches in 5 zones of Continent 0", "Area 99999" }, {
+			ns.GoalText(goal("n", "haul", 20, DUROTAR)),
+			ns.GoalText(goal("e", "wanderer", 5, 0)),
+			ns.ZoneName(99999),
+		})
 	end)
 
 	describe("of a Species goal", function()

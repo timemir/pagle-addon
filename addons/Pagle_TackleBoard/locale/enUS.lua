@@ -28,6 +28,9 @@ ns.L = {
 	-- `{ one, other }` pair is a count's singular and plural (ns.Plural).
 	-- A name the client doesn't have yet (TKB-R36).
 	NAME_UNKNOWN = "…",
+	-- A zone or continent the client has no name for (TKB-R36): its area ID, or the continent's ID (GetArea().continent).
+	AREA_UNKNOWN = "Area {id}",
+	CONTINENT_UNKNOWN = "Continent {id}",
 	-- A goal's text by type ("n" Notice, "e" Expedition) and kind (TKB-R36): {n} is its need.
 	GOAL_TEXT = {
 		n = {
