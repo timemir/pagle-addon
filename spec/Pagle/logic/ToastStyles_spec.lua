@@ -70,7 +70,7 @@ describe("the toast styles", function()
 	end)
 end)
 
-describe("a glow cropped to its frame", function()
+describe("a toast style's glow cropped to its frame (ANN-R80)", function()
 	it("is the whole square when it fits", function()
 		assert.are.same(
 			{ x = 10, y = 20, width = 40, height = 40, left = 0, right = 1, top = 0, bottom = 1 },

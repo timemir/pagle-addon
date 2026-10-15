@@ -14,15 +14,6 @@ local function loadCore(globals)
 	return loaded
 end
 
--- Clicks Pagle in the Addon Compartment, which then closes its own menu, and returns the menu Core opens on the next
--- frame, or nil.
-local function clickCompartment(loaded)
-	local opened = #loaded.client.menus
-	loaded.client.clickCompartment("Pagle")
-	loaded.client.runTimers()
-	return loaded.client.menus[opened + 1]
-end
-
 describe("The compartment entry", function()
 	it("is registered once at login, reading Pagle, with no TOC compartment field (CORE-R50, CORE-R51)", function()
 		local loaded = loadCore()
@@ -69,7 +60,7 @@ describe("The compartment entry", function()
 			local loaded = loadCore()
 			loaded.client.fire("PLAYER_LOGIN")
 
-			local menu = clickCompartment(loaded)
+			local menu = loaded.client.openCompartmentMenu("Pagle")
 			assert.are.same({ curioShop(0), "Help chart the waters", "Settings" }, menu.texts())
 			menu.click("Settings")
 
@@ -123,7 +114,7 @@ describe("The compartment menu with Modules", function()
 			local loaded = loadCore()
 			registerBoth(loaded)
 
-			local menu = clickCompartment(loaded)
+			local menu = loaded.client.openCompartmentMenu("Pagle")
 
 			assert.are.same({
 				"Hunts",
@@ -142,8 +133,8 @@ describe("The compartment menu with Modules", function()
 		local _, reads = registerBoth(loaded)
 
 		assert.are.equal(0, reads.count)
-		clickCompartment(loaded)
-		local menu = clickCompartment(loaded)
+		loaded.client.openCompartmentMenu("Pagle")
+		local menu = loaded.client.openCompartmentMenu("Pagle")
 
 		assert.are.equal(2, reads.count)
 		assert.are.equal("Input: Both 2", menu.texts()[4])
@@ -153,9 +144,9 @@ describe("The compartment menu with Modules", function()
 		local loaded = loadCore()
 		local clicked = registerBoth(loaded)
 
-		clickCompartment(loaded).click("Hunt map")
-		clickCompartment(loaded).click("Pin a Hunt")
-		clickCompartment(loaded).click("Input: Both 3")
+		loaded.client.openCompartmentMenu("Pagle").click("Hunt map")
+		loaded.client.openCompartmentMenu("Pagle").click("Pin a Hunt")
+		loaded.client.openCompartmentMenu("Pagle").click("Input: Both 3")
 
 		assert.are.same({ "map", "pin", "input" }, clicked)
 		assert.are.same({}, openedNames(loaded))
@@ -184,7 +175,10 @@ describe("The compartment menu with Modules", function()
 		})
 		loaded.client.fire("PLAYER_LOGIN")
 
-		assert.are.same({ curioShop(0), "Help chart the waters", "Settings" }, clickCompartment(loaded).texts())
+		assert.are.same(
+			{ curioShop(0), "Help chart the waters", "Settings" },
+			loaded.client.openCompartmentMenu("Pagle").texts()
+		)
 		assert.are.equal(1, #reported)
 		assert.matches("no input yet", reported[1], 1, true)
 	end)
@@ -208,18 +202,24 @@ describe("The compartment menu's Curio Shop entry", function()
 		local ledger, board = withPayers(loaded)
 		ledger:ReportCoinsEarned(1200)
 		board:ReportCoinsEarned(150)
-		assert.are.same({ curioShop("1,350"), "Help chart the waters", "Settings" }, clickCompartment(loaded).texts())
+		assert.are.same(
+			{ curioShop("1,350"), "Help chart the waters", "Settings" },
+			loaded.client.openCompartmentMenu("Pagle").texts()
+		)
 
 		board:ReportCoinsEarned(750)
 
-		assert.are.same({ curioShop("1,950"), "Help chart the waters", "Settings" }, clickCompartment(loaded).texts())
+		assert.are.same(
+			{ curioShop("1,950"), "Help chart the waters", "Settings" },
+			loaded.client.openCompartmentMenu("Pagle").texts()
+		)
 	end)
 
 	it("is enabled and opens the Curio Shop (CORE-R50, SHOP-R40)", function()
 		local loaded = loadCore()
 		withPayers(loaded)
 
-		local menu = clickCompartment(loaded)
+		local menu = loaded.client.openCompartmentMenu("Pagle")
 		menu.click(curioShop(0))
 
 		assert.is_true(menu.enabled(curioShop(0)))
@@ -234,7 +234,10 @@ describe("The compartment menu's Curio Shop entry", function()
 		ledger:ReportCoinsEarned(400)
 		loaded.ns.wallet:SetSpent(900)
 
-		assert.are.same({ curioShop(0), "Help chart the waters", "Settings" }, clickCompartment(loaded).texts())
+		assert.are.same(
+			{ curioShop(0), "Help chart the waters", "Settings" },
+			loaded.client.openCompartmentMenu("Pagle").texts()
+		)
 	end)
 end)
 
@@ -244,7 +247,7 @@ describe("The compartment menu while restricted", function()
 		loaded.client.fire("PLAYER_LOGIN")
 		setCombat(loaded, true)
 
-		local menu = clickCompartment(loaded)
+		local menu = loaded.client.openCompartmentMenu("Pagle")
 		assert.are.same({ curioShop(0), "Help chart the waters", "Settings" }, menu.texts())
 		menu.click("Settings")
 

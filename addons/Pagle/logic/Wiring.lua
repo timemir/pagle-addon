@@ -25,6 +25,7 @@ local ns = select(2, ...)
 ---@field report fun(message: string)            -- reports an error and carries on (geterrorhandler())
 ---@field region fun(): integer?                 -- GetCurrentRegion(), nil where the call doesn't exist (LOG-R69)
 ---@field print fun(line: string)                -- prints a chat line
+---@field isRestricted fun(): boolean            -- Pagle.IsRestricted() (CORE-R33)
 ---@field syncLimit? integer                     -- the projections' sync limit; default PROJECTION_SYNC_LIMIT
 
 ---@class PagleNS
@@ -144,6 +145,33 @@ function ns.WireLength(host)
 	return function(mm)
 		return ns.FormatLength(mm, ns.LengthUnit())
 	end
+end
+
+--- Publishes Simulated Size on `Pagle` (LOG-R67–R69): `Pagle.SIZE_BANDS`, the bands in order as `{ key, name }`, a
+--- copy of Core's own so a Module can't change Core's; `Pagle.SIZE_RULES_VERSION`; and `Pagle.FormatLength(mm)` on
+--- ns.WireLength. `wrap` turns the band list into what Modules get: Core's adapter passes none, FakePagle its
+--- read-only proxy (CORE-R18).
+---@param Pagle table
+---@param host PagleHost
+---@param wrap (fun(value: any): any)?
+function ns.PublishSize(Pagle, host, wrap)
+	---@class Pagle
+	local api = Pagle
+	local bands = {}
+	for band, entry in ipairs(ns.SIZE_BANDS) do
+		bands[band] = { key = entry.key, name = entry.name }
+	end
+	--- The Size bands in order, `{ key, name }`, Tiddler to Monster (LOG-R67). The names are drafts for the lore pass.
+	---@type { key: string, name: string }[]
+	api.SIZE_BANDS = wrap and wrap(bands) or bands
+	--- Changes whenever the size multipliers change; a Module that stores sizes folds it into its rules version
+	--- (LOG-R68).
+	api.SIZE_RULES_VERSION = ns.SIZE_RULES_VERSION
+	--- A length of `mm` millimetres in the Angler's length unit, to 0.1 of it: "34.2 cm" or "13.5 in" (LOG-R69). The
+	--- unit is PagleDB.profile.lengthUnit, or inches on region 1 and centimetres elsewhere. It changes only what a
+	--- length reads: compare lengths in millimetres.
+	---@type fun(mm: number): string
+	api.FormatLength = ns.WireLength(host)
 end
 
 --- Core's moment collector as ns.moments (ANN-R1–R4, ANN-R10–R12), and `M:RaiseMoment` on every Module handle. Each
@@ -349,7 +377,7 @@ end
 --- Core's goods registry as ns.goods (SHOP-R20–R26, SHOP-R30–R33) over PagleDB.global.goods and
 --- PagleDB.profile.appearance, firing AppearanceChanged on the bus from ModulesChanged on, and `M:RegisterSlot`,
 --- `M:RegisterGood` and `M:RefreshGoods` on every Module handle. Core registers its own goods with
---- ns.RegisterCoreSlot and ns.RegisterCoreGood, and refreshes them with ns.goods:Refresh("Core"). The wallet
+--- ns.RegisterCoreSlot and ns.RegisterCoreGood, and refreshes them with ns.goods:Refresh(ns.CORE_OWNER). The wallet
 --- projection hands it the purchased set with ns.goods:SetPurchased (SHOP-R11).
 ---@param host PagleHost
 function ns.WireGoods(host)
@@ -363,6 +391,13 @@ function ns.WireGoods(host)
 		report = host.report,
 	})
 	ns.goods = goods
+	-- Raises `problem`, if any, at the call of the function that called this one (SHOP-R23).
+	---@param problem string?
+	local function raise(problem)
+		if problem then
+			error(problem, 3)
+		end
+	end
 	-- CORE-R19: every enabled Module has registered its goods, or failed to. Its own owner on the bus.
 	host.listen("Pagle goods", "ModulesChanged", function()
 		goods:Start()
@@ -372,15 +407,11 @@ function ns.WireGoods(host)
 	local ModuleHandle = ns.ModuleHandle
 	--- Registers one of the Module's slots (SHOP-R21), any time after RegisterModule. Raises an error at the Module's
 	--- call, registering nothing, for each mistake SHOP-R23 lists: an ID that isn't `<name lowercased>.<name>` of
-	--- [%w_.], a duplicate, no label, or a category other than "Announcements", "Bookplate", "Fish Journal", "Hunts"
-	--- and "Trackers".
+	--- [%w_.], a duplicate, no label, or a category not in ns.SLOT_CATEGORY_ORDER.
 	---@param slot PagleSlot
 	function ModuleHandle:RegisterSlot(slot)
 		local module = host.registry:ModuleCalling(self, "RegisterSlot", "slot")
-		local problem = goods:RegisterSlot(module.def.name, slot)
-		if problem then
-			error(problem, 2)
-		end
+		raise(goods:RegisterSlot(module.def.name, slot))
 	end
 	--- Registers one of the Module's goods in one of its slots (SHOP-R21, SHOP-R22), calling its isEarned() now if
 	--- it is earned (SHOP-R31). Raises an error at the Module's call, registering nothing, for each mistake SHOP-R23
@@ -389,10 +420,7 @@ function ns.WireGoods(host)
 	---@param good PagleGood
 	function ModuleHandle:RegisterGood(good)
 		local module = host.registry:ModuleCalling(self, "RegisterGood", "good")
-		local problem = goods:RegisterGood(module.def.name, good)
-		if problem then
-			error(problem, 2)
-		end
+		raise(goods:RegisterGood(module.def.name, good))
 	end
 	--- Calls each of the Module's earned goods' isEarned() and caches the results (SHOP-R31); looks follow. Call it
 	--- after a live entry that could change one, and from the projection's done, never mid-catch-up or mid-rebuild.
@@ -405,29 +433,68 @@ function ns.WireGoods(host)
 	--- registering nothing, for a SHOP-R23 mistake.
 	---@param slot PagleSlot
 	function ns.RegisterCoreSlot(slot)
-		local problem = goods:RegisterSlot("Core", slot)
-		if problem then
-			error(problem, 2)
-		end
+		raise(goods:RegisterSlot(ns.CORE_OWNER, slot))
 	end
 	--- Registers one of Core's goods in one of its slots (SHOP-R21, SHOP-R25). Raises an error at Core's call,
 	--- registering nothing, for a SHOP-R23 mistake.
 	---@param good PagleGood
 	function ns.RegisterCoreGood(good)
-		local problem = goods:RegisterGood("Core", good)
-		if problem then
-			error(problem, 2)
-		end
+		raise(goods:RegisterGood(ns.CORE_OWNER, good))
+	end
+end
+
+--- Publishes the goods registry's reads and its one write on `Pagle` (wallet-and-shop.md › Contracts):
+--- `Pagle.IsOwned`, `GetEquipped`, `SetEquipped` and `GetGood`, over ns.goods (ns.WireGoods). `wrap` turns what
+--- GetGood returns into what Modules get: Core's adapter passes none, FakePagle its read-only proxy (CORE-R18).
+---@param Pagle table
+---@param wrap (fun(value: any): any)?
+function ns.PublishGoods(Pagle, wrap)
+	---@class Pagle
+	local api = Pagle
+	wrap = wrap or function(value)
+		return value
+	end
+
+	--- Whether the Angler owns a good (SHOP-R30): a registered slot's default, a purchased good, or an earned good
+	--- whose cached isEarned() result is true. It reads the cache, whether or not the good's Module is enabled.
+	---@param goodID string
+	---@return boolean
+	function api.IsOwned(goodID)
+		return ns.goods:IsOwned(goodID)
+	end
+
+	--- The good equipped in a slot (SHOP-R32): the stored pick while it is owned and its Module enabled, else the
+	--- slot's default. Nil for a slot with no goods.
+	---@param slot string
+	---@return string? goodID
+	function api.GetEquipped(slot)
+		return ns.goods:GetEquipped(slot)
+	end
+
+	--- Equips an owned good of that slot (SHOP-R32), and returns true; returns false, changing nothing, for any
+	--- other. AppearanceChanged follows if the look changed (SHOP-R33).
+	---@param slot string
+	---@param goodID string
+	---@return boolean
+	function api.SetEquipped(slot, goodID)
+		return ns.goods:SetEquipped(slot, goodID)
+	end
+
+	--- A good's name, slot, icon, Module and description as cached (SHOP-R26), and whether it is its slot's default
+	--- (`isDefault`, SHOP-R22), whether or not its Module is enabled; nil for a good never registered. A fresh copy
+	--- each call.
+	---@param goodID string
+	---@return PagleGoodInfo?
+	function api.GetGood(goodID)
+		return wrap(ns.goods:GetGood(goodID))
 	end
 end
 
 --- Where the Curio Shop shows: the window (adapter/Shop.lua), or FakePagle's record of it.
 ---@class PagleShopSeams
----@field isRestricted fun(): boolean -- Pagle.IsRestricted()
----@field print fun(line: string)     -- prints a chat line
 ---@field isShown fun(): boolean      -- the shop is open
----@field show fun(selection: string|false|nil) -- opens it, or keeps it open: selecting that good, nothing (false), or
---- keeping the selection it has (nil)
+---@field show fun(selection: string|false|nil, asked: string?) -- opens it, or keeps it open: selecting that good,
+--- nothing (false), or keeping the selection it has (nil); `asked` is the good Pagle.OpenShop asked for, if any
 ---@field hide fun()                  -- closes it
 
 --- The Curio Shop's entry points (SHOP-R40, SHOP-R41), which Pagle.OpenShop, /pagle shop and the compartment entry call,
@@ -436,13 +503,16 @@ end
 ---@field Open fun(goodID: string?) -- Pagle.OpenShop
 ---@field Toggle fun()              -- /pagle shop
 ---@field Buy fun(goodID: string, useNow: boolean): boolean -- the Buy popup's Buy: true if it bought
+---@field Use fun(goodID: string): boolean -- the stage's Use: true if it equipped the good
 
 --- The Curio Shop's entry points as ns.shop (SHOP-R40, SHOP-R41), its buying (ns.shop.Buy), and ns.ShopModel, the
 --- shop's data now: Core's goods, their cache, the Modules On, the balance and whether a projection is updating
 --- (logic/Shop.lua). Opening while restricted prints "Pagle: the Curio Shop opens after combat." and opens nothing; at
---- RestrictionChanged(true) an open shop closes, its Buy popup with it, and nothing is queued.
+--- RestrictionChanged(true) an open shop closes, its Buy popup with it, and nothing is queued. Returns
+--- Pagle.OpenShop.
 ---@param host PagleHost
 ---@param seams PagleShopSeams
+---@return fun(goodID: string?) openShop
 function ns.WireShop(host, seams)
 	--- The shop's model now; `format` writes a number of Coins (BreakUpLargeNumbers).
 	---@param format (fun(value: number): string)?
@@ -478,17 +548,26 @@ function ns.WireShop(host, seams)
 		return true
 	end
 
+	--- Equips `goodID` in its slot, if it is an owned good registered this session (SHOP-R32): the stage's Use.
+	--- Returns whether it did; AppearanceChanged follows if the look changed (SHOP-R33).
+	---@param goodID string
+	---@return boolean
+	local function use(goodID)
+		local good = ns.goods:Good(goodID)
+		return good ~= nil and ns.goods:SetEquipped(good.slot, good.id)
+	end
+
 	---@param goodID string?
 	local function open(goodID)
-		if seams.isRestricted() then
-			seams.print(ns.L.SHOP_AFTER_COMBAT)
+		if host.isRestricted() then
+			host.print(ns.L.SHOP_AFTER_COMBAT)
 			return
 		end
 		local selection
 		if goodID ~= nil then
 			selection = ns.ShopModel():Select(goodID) or false
 		end
-		seams.show(selection)
+		seams.show(selection, goodID)
 	end
 	local function toggle()
 		if seams.isShown() then
@@ -497,13 +576,14 @@ function ns.WireShop(host, seams)
 			open()
 		end
 	end
-	ns.shop = { Open = open, Toggle = toggle, Buy = buy }
+	ns.shop = { Open = open, Toggle = toggle, Buy = buy, Use = use }
 	-- CORE-R33's row, SHOP-R41: an open shop closes as restriction starts. Its own owner on the bus.
 	host.listen("Pagle shop", "RestrictionChanged", function(_, isRestricted)
 		if isRestricted and seams.isShown() then
 			seams.hide()
 		end
 	end)
+	return open
 end
 
 --- The Field report's two readers (field-report.md › The projection).
@@ -541,23 +621,16 @@ function ns.WireFieldReport(host)
 end
 
 --- Core's wallet projection (LOG-R78, SHOP-R11, SHOP-R34): `ns.StartWalletProjection()` binds it at login step 1,
---- after the Field report's and ahead of every Module's, to PagleDB.global.projections.wallet (created if missing),
+--- after the Field report's and ahead of every Module's, to PagleDB.global.projections.wallet (ns.PAGLEDB_DEFAULTS),
 --- over the log's records. It hands ns.wallet the Coins spent and ns.goods the purchased set: what it stored at
 --- once, its new totals in its done, and each live purchase as it counts.
 ---@param host PagleHost
 function ns.WireWalletProjection(host)
 	--- Login step 1, once PagleDB is open and ns.wallet and ns.goods are wired.
 	function ns.StartWalletProjection()
-		local global = host.db().global
-		if type(global.projections) ~= "table" then
-			global.projections = {}
-		end
-		if type(global.projections.wallet) ~= "table" then
-			global.projections.wallet = {}
-		end
 		ns.walletProjection = ns.AddWalletProjection({
 			projections = ns.projections,
-			db = global.projections.wallet,
+			db = host.db().global.projections.wallet,
 			iterate = host.iterate,
 			wallet = ns.wallet,
 			goods = ns.goods,

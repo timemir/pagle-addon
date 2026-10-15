@@ -4,6 +4,10 @@ local ns = select(2, ...)
 -- The Catch log (LOG-R10–R16, LOG-R18) and its codec: pure logic over the PagleLog table, everything passed in
 -- (CORE-R7). Each entry is one tagged string (ADR 0003); catch-log.md › Entry formats is the canonical layout.
 
+--- A slot or good ID's shape (SHOP-R21): letters, digits, _ and . only. A purchase entry's good ID has it (LOG-R39),
+--- and the goods registry refuses any other (logic/Goods.lua).
+ns.GOOD_ID_PATTERN = "^[%w_.]+$"
+
 --- A record Core hands out for one Catch log entry (LOG-R42). Records are shared and immutable (CORE-R18).
 ---@class PagleRecord
 ---@field seq integer            -- index in PagleLog.entries (LOG-R14)
@@ -271,7 +275,7 @@ local kinds = {
 		end,
 		decode = function(record, f)
 			record.good, record.price = f[1], wholeNumber(f[2])
-			return string.find(f[1], "^[%w_.]+$") ~= nil and record.price ~= nil
+			return string.find(f[1], ns.GOOD_ID_PATTERN) ~= nil and record.price ~= nil
 		end,
 	},
 }

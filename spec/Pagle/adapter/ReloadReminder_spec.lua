@@ -28,15 +28,6 @@ local function turnOn(loaded)
 	reminderRow(loaded):GetSetting():SetValue(true)
 end
 
--- Presses a page's Defaults button: every setting registered on it goes back to its default (SET-R60).
-local function pressDefaults(loaded, category)
-	for _, setting in pairs(loaded.client.settings.variables) do
-		if setting.category == category then
-			setting:SetValue(setting:GetDefaultValue())
-		end
-	end
-end
-
 local function channel(loaded)
 	loaded.client.fire("UNIT_SPELLCAST_CHANNEL_START", "player", "Cast-3-4618-1-1-7731-000000AAAA", FISHING)
 end
@@ -120,7 +111,7 @@ describe("The root's Saving section", function()
 		turnOn(loaded)
 		local row, root = reminderRow(loaded)
 
-		pressDefaults(loaded, root)
+		loaded.client.settings.defaults(root) -- the page's Defaults button (SET-R60)
 
 		assert.is_false(row:GetSetting():GetValue())
 	end)

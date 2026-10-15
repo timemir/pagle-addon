@@ -155,7 +155,7 @@ Part of [Core](README.md). This file covers what Core observes, how it is stored
 ### Sessions
 
 - **LOG-R60** A **Session** is a run of the Angler's Casts (caught and got away) in which no two consecutive Casts are 300 seconds (5 minutes) or more apart, by entry `time`. Character switches, zone changes, logouts and reloads don't split it; only the gap does.
-- **LOG-R61** Sessions are cut from the log by a pure function in Core `logic/`; they are never stored in `PagleLog`. `Pagle.SESSION_RULES_VERSION` changes whenever the rule changes (Tunables; it went from 1 to 2 when the gap went from 900 s to 300 s), and Modules that store Sessions fold it into their rules version.
+- **LOG-R61** Sessions are cut from the log by a pure function in Core `logic/`; they are never stored in `PagleLog`. `Pagle.SESSION_RULES_VERSION` changes whenever the rule changes (Tunables; it went from 1 to 2 when the gap went from 900 s to 300 s), and Modules that store Sessions fold it into their rules version. `Pagle.SESSION_GAP` is the Session gap in seconds (300, LOG-R60): a Module that needs the gap reads Core's, never a copy of its own.
 - **LOG-R62** Live: `SessionStarted(session)` fires right after the entry of a Cast that starts a new Session is appended (LOG-R9); its payload already counts that Cast. `SessionEnded(session)` fires when 300 seconds pass with no Cast while logged in. A Session's `endTime` is its last Cast's `time`.
 - **LOG-R63** At login, if the latest Session's last Cast is 300 seconds or more ago and its ID isn't `PagleDB.global.lastEndedSession`, Core fires `SessionEnded(session)` once, with `whileAway = true`, as soon as no projection is updating (catching up or rebuilding, LOG-R74), or earlier if a new Cast is recorded first (LOG-R9), so a `SessionEnded` always comes before the next `SessionStarted`. `lastEndedSession` is set whenever `SessionEnded` fires.
 - **LOG-R64** `Pagle.GetSession()` returns the current Session while one is open (last Cast under 300 seconds ago), else `nil`. A Session's `catches` counts Catches (items), not quantities; `zones` lists zone areaIDs (not subzones), without `0`.
@@ -415,7 +415,7 @@ Both sit on the Settings root, in its Saving and Units sections (CORE-R40, SET-R
 |---|---|---|
 | Grace after the channel stops | 2 s | LOG-R6, LOG-R7 |
 | Module record payload limit | 200 bytes | LOG-R40 |
-| Session gap | 300 s | LOG-R60–R64, LOG-R98 |
+| Session gap (`Pagle.SESSION_GAP`) | 300 s | LOG-R60–R64, LOG-R98 |
 | `Pagle.SESSION_RULES_VERSION` | 2 | LOG-R61 |
 | Synchronous catch-up limit | 500 entries | LOG-R71 |
 | Catch-up and rebuild time budget per frame | 4 ms | LOG-R71, LOG-R72 |

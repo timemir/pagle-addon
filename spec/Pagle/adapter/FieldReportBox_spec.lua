@@ -217,14 +217,6 @@ describe("The Field report box (REP-R40–R42)", function()
 	end)
 end)
 
--- Clicks Pagle in the Addon Compartment and returns the menu Core opens on the next frame.
-local function compartmentMenu(loaded)
-	local opened = #loaded.client.menus
-	loaded.client.clickCompartment("Pagle")
-	loaded.client.runTimers()
-	return assert(loaded.client.menus[opened + 1])
-end
-
 describe("The Field report box's size (REP-R47)", function()
 	-- The box opened over `rows` Casts in Darkshore, each of an Uncharted item no catalogue will have, so it shows one
 	-- I row each (REP-R10, REP-R20).
@@ -259,7 +251,7 @@ describe("The compartment menu's Help chart the waters entry (CORE-R50, REP-R43)
 		local loaded = enterWorld(loadCore(unchartedHistory(2, FIRST)), 2)
 		assert.are.equal(3, loaded.env.Pagle.GetFieldReportCount())
 
-		local texts = compartmentMenu(loaded).texts()
+		local texts = loaded.client.openCompartmentMenu("Pagle").texts()
 
 		assert.are.same({ "Help chart the waters (3)", "Settings" }, { texts[#texts - 1], texts[#texts] })
 		assert.truthy(texts[#texts - 2]:find("^Curio Shop"))
@@ -269,7 +261,7 @@ describe("The compartment menu's Help chart the waters entry (CORE-R50, REP-R43)
 		local loaded = enterWorld(loadCore({ BUILD_ENTRY }), 2)
 		assert.are.equal(0, loaded.env.Pagle.GetFieldReportCount())
 
-		local texts = compartmentMenu(loaded).texts()
+		local texts = loaded.client.openCompartmentMenu("Pagle").texts()
 
 		assert.are.equal("Help chart the waters", texts[#texts - 1])
 	end)
@@ -277,7 +269,7 @@ describe("The compartment menu's Help chart the waters entry (CORE-R50, REP-R43)
 	it("opens the box at part 1 with the text selected and the URL below it (REP-R40, REP-R43)", function()
 		local loaded = enterWorld(loadCore(unchartedHistory(2, FIRST)), 2)
 
-		compartmentMenu(loaded).click("Help chart the waters (3)")
+		loaded.client.openCompartmentMenu("Pagle").click("Help chart the waters (3)")
 
 		local frame = assert(box(loaded))
 		assert.is_true(frame:IsShown())
@@ -290,7 +282,7 @@ describe("The compartment menu's Help chart the waters entry (CORE-R50, REP-R43)
 		local loaded = enterWorld(loadCore(unchartedHistory(2, FIRST)), 2)
 		setCombat(loaded, true)
 
-		compartmentMenu(loaded).click("Help chart the waters (3)")
+		loaded.client.openCompartmentMenu("Pagle").click("Help chart the waters (3)")
 
 		assert.is_nil(box(loaded))
 		assert.are.same({ "Pagle: the Field report opens after combat." }, loaded.printed)

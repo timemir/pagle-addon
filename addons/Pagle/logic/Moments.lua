@@ -51,6 +51,8 @@ ns.MOMENT_RUNGS = { "nod", "toast.low", "toast", "toast.high", "banner", "splash
 ns.MOMENT_STAMPS = 4
 --- A moment's `order` when it gives none (ANN-R2).
 ns.MOMENT_ORDER = 100
+--- Trade_Fishing, the icon of a moment that gives none.
+ns.DEFAULT_ICON = 136245
 
 --- Each rung's height on the ladder (ANN-R1): 1 for a Nod up to 6 for a splash.
 ---@type table<PagleRung, integer>

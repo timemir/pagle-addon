@@ -248,6 +248,41 @@ describe("Announcement frames", function()
 		end
 	)
 
+	it(
+		"draw the old record's mark and the ruler's labels above the fill, on the toast and the Nod (ANN-R22)",
+		function()
+			-- The client's draw layers, back to front; regions in one layer draw by sublevel.
+			local LAYERS = { BACKGROUND = 1, BORDER = 2, ARTWORK = 3, OVERLAY = 4, HIGHLIGHT = 5 }
+			local function above(region, fill)
+				local layer, sublevel = region:GetDrawLayer()
+				local fillLayer, fillSublevel = fill:GetDrawLayer()
+				return LAYERS[layer] > LAYERS[fillLayer] or (layer == fillLayer and sublevel > fillSublevel)
+			end
+			local loaded, M = loadCore()
+			local ruler = { old = 1, new = 2, unit = "lb", label = "w" }
+			raise(loaded, M, moment("toast", "Size record", { ruler = ruler }))
+			loaded.client.advance(6)
+			for _ = 1, 4 do
+				raise(loaded, M, moment("toast", "Interruption"))
+				loaded.client.advance(6)
+			end
+			raise(loaded, M, moment("toast.low", "Size record", { ruler = ruler })) -- the 5th: a Nod (ANN-R31)
+
+			local drawn = {}
+			for _, form in ipairs({ "toast", "nod" }) do
+				local view = frameOf(loaded, form).ruler
+				drawn[form] = {
+					mark = above(view.mark, view.fill),
+					old = above(view.old, view.fill),
+					margin = above(view.margin, view.fill),
+					fillOverTrack = above(view.fill, view.track),
+				}
+			end
+			local all = { mark = true, old = true, margin = true, fillOverTrack = true }
+			assert.are.same({ toast = all, nod = all }, drawn)
+		end
+	)
+
 	it("show a size margin that rounds to zero in inches as +<0.1 in (ANN-R22)", function()
 		local loaded, M = loadCore()
 		loaded.ns.db.profile.lengthUnit = "in"

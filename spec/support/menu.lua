@@ -8,6 +8,7 @@
 --   loaded.client.menus[1].enabled("Settings")  -- false once the addon called SetEnabled(false) on it
 --   loaded.client.compartment[1].text           -- an Addon Compartment entry's label as it reads now
 --   loaded.client.clickCompartment("Pagle")     -- opens the compartment and clicks the entry reading "Pagle"
+--   loaded.client.openCompartmentMenu("Pagle")  -- clicks it, runs the timers, and returns the menu it opened
 
 ---@class FakeClient
 ---@field menus table[] Every context menu MenuUtil.CreateContextMenu opened, in order. Each has `buttons`
@@ -16,6 +17,8 @@
 ---@field clickCompartment fun(text: string) Opens the Addon Compartment and clicks the entry whose text reads `text`
 --- now, as Blizzard_Minimap's AddonCompartment does: its menu lists each entry by its current text, and a click calls
 --- the entry's func(nil, { buttonName = "LeftButton" }, menu). An error when no entry reads `text`.
+---@field openCompartmentMenu fun(text: string): table Clicks the entry reading `text`, runs the timers (Core opens its
+--- menu on the next frame, CORE-R50) and returns the context menu that opened; an error when none did.
 
 ---@param client FakeClient
 ---@param stubs table<string, any> The fake client's stubs, which this adds to.
@@ -38,6 +41,12 @@ return function(client, stubs)
 			end
 		end
 		error("no compartment entry reads " .. tostring(text))
+	end
+	function client.openCompartmentMenu(text)
+		local opened = #client.menus
+		client.clickCompartment(text)
+		client.runTimers()
+		return assert(client.menus[opened + 1], "no menu opened")
 	end
 	-- FrameXML's number formatting, for the Curio Shop entry's balance.
 	stubs.BreakUpLargeNumbers = breakUpLargeNumbers

@@ -7,11 +7,6 @@ local ns = select(2, ...)
 -- .ts-ripple and .ts-lantern. A style changes only the look, never timing, lanes, the Interruption budget, sounds or
 -- which moments show. adapter/Skins.lua paints the frames in one, and adapter/ToastStyles.lua follows the pick.
 
---- Core's toast style slot (SHOP-R25), registered with its goods by Core's own goods.
-ns.TOAST_STYLE_SLOT = "core.toaststyle"
---- Timber's good ID: the slot's default, and the style for any ID that isn't one.
-ns.TOAST_STYLE_DEFAULT = "core.toaststyle.timber"
-
 --- A texture over a frame's background, tinted.
 ---@class PagleStyleBackdrop
 ---@field file string
@@ -198,14 +193,15 @@ end
 function ns.SampleAnnouncement(styleID)
 	local L = ns.L
 	local function sample(fields)
-		local moment = { module = "Core", moduleTitle = "Pagle", moduleOrder = 0, raised = 0, kind = "sample" }
+		local moment =
+			{ module = ns.CORE_OWNER, moduleTitle = L.SHOP_CORE, moduleOrder = 0, raised = 0, kind = "sample" }
 		for key, value in pairs(fields) do
 			moment[key] = value
 		end
 		return moment
 	end
 	local announcement = ns.MakeAnnouncement({
-		sample({ rung = "toast", title = L.TOAST_SAMPLE_TITLE, text = L.TOAST_SAMPLE_TEXT, icon = 136245 }),
+		sample({ rung = "toast", title = L.TOAST_SAMPLE_TITLE, text = L.TOAST_SAMPLE_TEXT, icon = ns.DEFAULT_ICON }),
 		sample({ rung = "nod", title = L.TOAST_SAMPLE_STAMP, coins = 5 }),
 	}) --[[@as PagleAnnouncement]]
 	announcement.style = styleID
