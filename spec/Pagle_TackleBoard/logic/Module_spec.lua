@@ -44,7 +44,6 @@ describe("the Tackle Board's entries (TKB-R3)", function()
 		assert.are.equal(4, toggles)
 	end)
 
-
 	it("offers nothing that stops or resets a started board: slash entries, views, menu, button, settings", function()
 		local texts = {}
 		for _, entry in ipairs(def.slash or {}) do
