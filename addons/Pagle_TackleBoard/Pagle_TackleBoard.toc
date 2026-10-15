@@ -25,10 +25,12 @@ logic\Completions.lua
 logic\LiveStep.lua
 logic\Pins.lua
 logic\Reroll.lua
+logic\Ledge.lua
 logic\Moments.lua
 adapter\BoardWidgets.lua
 adapter\Board.lua
 adapter\Pins.lua
+adapter\Ledge.lua
 adapter\TackleBoard.lua
 adapter\Generate.lua
 adapter\Reroll.lua

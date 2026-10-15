@@ -65,6 +65,28 @@ ns.BOARD_LOOK = {
 	button = tint("724724"), -- a wooden button: between #8a5a2a and #5a3414
 	buttonShine = tint("b07a40"), -- its top edge
 	buttonOff = tint("8a7a60"), -- a disabled button's words
+	-- The spike and the ledge (#240): variant C's `.spike`, `.ledge .fire`, `.box`, `.brass`, `.drawer`, `.felt`,
+	-- `.card2` and the flame's SVG.
+	nail = tint("9a9a9a"), -- the spike's nail: between #666 and #ddd
+	spiked = tint("e8d8b0"), -- a done slip on the spike
+	log = tint("5a3a1c"), -- the Campfire's logs and a stick of Kindling's outline
+	logLight = tint("a0703a"), -- a stick of Kindling
+	stickOff = tint("777777"), -- a stick of Kindling not held
+	flame = tint("e8501a"), -- the flame's outer colour, its glow and the embers
+	ember = tint("ff8a2a"),
+	ash = tint("3a3a3a"), -- the ash under a fire gone out
+	fireText = tint("f4dfa8"), -- the Campfire's words on the ledge
+	fireSmall = tint("d8c08a"),
+	boxSmall = tint("e8d0a0"), -- the Fly Box's count, the shop link
+	felt = tint("24392d"), -- a drawer's compartment: between #2e4a3a and #1a2a20
+	feltEdge = tint("3a2410"),
+	gilt = tint("c8901a"), -- a rare pattern's gilt edge
+	feltText = tint("d8e8c8"),
+	feltMiss = tint("6a7a6a"), -- "not tied yet"
+	lit = tint("e8701a"), -- a lit day on the Campfire card
+	burned = tint("78501e"), -- a day that burned Kindling
+	cardLine = tint("c4a874"), -- a day's outline on the card
+	cardMuted = tint("9a8060"), -- a title not yet earned
 }
 local LOOK = ns.BOARD_LOOK
 
@@ -85,6 +107,11 @@ ns.BOARD_TEXTURES = {
 	-- check button's art, Blizzard_SharedXML/Shared/Button/CheckButtonTemplates.xml).
 	tick = "Interface\\Buttons\\UI-CheckBox-Check",
 	box = "Interface\\Buttons\\UI-CheckBox-Up",
+	-- The Campfire's flame (TKB-R106): the fire icon (ns.REWARD_ICONS.campfire, 135805), added onto the ledge so its
+	-- dark ground drops out.
+	flame = ns.REWARD_ICONS.campfire,
+	-- The shop link's pointing hand (TKB-R106): the client's pointing-gauntlet cursor (131028), mirrored to point right.
+	pointer = "Interface\\CURSOR\\Point",
 }
 local TEXTURES = ns.BOARD_TEXTURES
 
@@ -640,4 +667,197 @@ function ns.NewBoardHighlight(parent)
 	ring.edges = outline(ring, LOOK.tackShine, 1, 3, 0, "OVERLAY")
 	ring:Hide()
 	return ring
+end
+
+-- The spike's and the ledge's makers (#240).
+
+--- An outline of `thickness` round `frame` in `color`: a day's box on the Campfire card.
+---@param frame Frame
+---@param color number[]
+---@param thickness number
+---@param layer DrawLayer
+---@return Texture[]
+function ns.BoardOutline(frame, color, thickness, layer)
+	return outline(frame, color, 1, thickness, 0, layer)
+end
+
+--- A solid bar of `width` × `height` tinted `color`, turned `angle` radians about its centre: a log, a stick of
+--- Kindling, the spike's nail.
+---@param frame Frame
+---@param color number[]
+---@param width number
+---@param height number
+---@param angle number
+---@param layer DrawLayer
+---@param sublevel integer?
+---@return Texture
+local function bar(frame, color, width, height, angle, layer, sublevel)
+	local texture = frame:CreateTexture(nil, layer, nil, sublevel)
+	texture:SetColorTexture(color[1], color[2], color[3], 1)
+	texture:SetSize(width, height)
+	texture:SetRotation(angle)
+	return texture
+end
+
+--- The Campfire (TKB-R106): two crossed logs; over them a fire's glow and its flame (the fire icon added onto the
+--- ledge, so its dark ground drops out), sized by the flame's step and brightened within it; or, for a fire gone out,
+--- ash and two embers; or bare logs. `SetFire(view)` draws a TackleCampfireView (logic/Ledge.lua). Every piece is a
+--- texture, never a glyph.
+---@class TackleFlameView: Frame
+---@field logs Texture[]
+---@field glow Texture
+---@field flame Texture
+---@field ash Texture
+---@field embers Texture[]
+---@field SetFire fun(self: TackleFlameView, view: TackleCampfireView)
+
+-- The flame's size at each step, as a share of the Campfire's box (variant C's flame scales 0.5 to 1.04).
+local FLAME_SCALES = { 0.5, 0.66, 0.8, 0.92, 1.04 }
+-- How far the fire icon's square is cropped to its flame, each side (an icon's edge is a frame).
+local ICON_CROP = 0.08
+
+---@param parent Frame
+---@param size number the Campfire's box, square
+---@return TackleFlameView
+function ns.NewBoardFlame(parent, size)
+	local fire = CreateFrame("Frame", nil, parent) --[[@as TackleFlameView]]
+	fire:SetSize(size, size)
+	local base = size * 0.12 -- the logs' height above the box's bottom
+	fire.glow = disc(fire, "BACKGROUND", 0, size, LOOK.flame)
+	fire.glow:ClearAllPoints()
+	fire.glow:SetPoint("BOTTOM", 0, base - size * 0.08)
+	fire.logs = {}
+	for i, angle in ipairs({ 0.16, -0.16 }) do
+		local color = i == 1 and LOOK.log or LOOK.ledgeDark
+		local log = bar(fire, color, size * 0.66, size * 0.08, angle, "ARTWORK", i)
+		log:SetPoint("BOTTOM", 0, base)
+		fire.logs[i] = log
+	end
+	fire.ash = bar(fire, LOOK.ash, size * 0.42, size * 0.06, 0, "ARTWORK", 3)
+	fire.ash:SetAlpha(0.7)
+	fire.ash:SetPoint("BOTTOM", 0, base + size * 0.08)
+	fire.embers = {}
+	for i, at in ipairs({ { -0.06, 0.16, 0.05, LOOK.flame }, { 0.06, 0.14, 0.04, LOOK.ember } }) do
+		local ember = disc(fire, "OVERLAY", 0, size * at[3], at[4])
+		ember:ClearAllPoints()
+		ember:SetPoint("BOTTOM", size * at[1], base + size * at[2])
+		fire.embers[i] = ember
+	end
+	fire.flame = fire:CreateTexture(nil, "OVERLAY", nil, 1)
+	fire.flame:SetTexture(TEXTURES.flame)
+	fire.flame:SetTexCoord(ICON_CROP, 1 - ICON_CROP, ICON_CROP, 1 - ICON_CROP)
+	fire.flame:SetBlendMode("ADD")
+	fire.flame:SetPoint("BOTTOM", 0, base)
+	function fire.SetFire(self, view)
+		local lit = view.step > 0
+		self.flame:SetShown(lit)
+		self.glow:SetShown(lit)
+		if lit then
+			local scale = FLAME_SCALES[view.step]
+			self.flame:SetSize(size * scale, size * scale)
+			local light = math.min(1, 0.7 + 0.5 * view.bright)
+			self.flame:SetVertexColor(light, light, light)
+			self.glow:SetSize(size * (0.32 + 0.52 * scale), size * 0.18)
+			self.glow:SetAlpha(0.15 + 0.3 * view.bright)
+		end
+		local out = view.state == "out"
+		self.ash:SetShown(out)
+		for _, ember in ipairs(self.embers) do
+			ember:SetShown(out)
+		end
+	end
+	return fire
+end
+
+--- Kindling as sticks (TKB-R106): one stick per Kindling the cap allows, the held ones in wood and the rest faint.
+--- `SetSticks(held)` draws them.
+---@class TackleSticksView: Frame
+---@field sticks Texture[]
+---@field SetSticks fun(self: TackleSticksView, held: integer)
+
+-- A stick: 18 × 4 pixels, slanted, 4 pixels apart.
+local STICK_WIDTH, STICK_HEIGHT, STICK_GAP, STICK_ANGLE = 18, 4, 4, 0.18
+
+---@param parent Frame
+---@param cap integer the sticks drawn
+---@return TackleSticksView
+function ns.NewBoardSticks(parent, cap)
+	local frame = CreateFrame("Frame", nil, parent) --[[@as TackleSticksView]]
+	frame:SetSize(cap * (STICK_WIDTH + STICK_GAP), 10)
+	frame.sticks = {}
+	for i = 1, cap do
+		local stick = bar(frame, LOOK.logLight, STICK_WIDTH, STICK_HEIGHT, STICK_ANGLE, "ARTWORK")
+		stick:SetPoint("LEFT", (i - 1) * (STICK_WIDTH + STICK_GAP), 0)
+		frame.sticks[i] = stick
+	end
+	function frame.SetSticks(self, held)
+		for i, stick in ipairs(self.sticks) do
+			local color = i <= held and LOOK.logLight or LOOK.stickOff
+			stick:SetColorTexture(color[1], color[2], color[3], 1)
+			stick:SetAlpha(i <= held and 1 or 0.45)
+		end
+	end
+	return frame
+end
+
+--- A felt compartment of the Fly Box drawer (TKB-R106): green felt in a wooden edge, gilt for a rare pattern, the
+--- pattern's icon once tied and its words below. `SetCell(cell)` draws a TackleFlyCell (logic/Ledge.lua). It takes the
+--- mouse, for its hover.
+---@class TackleFeltCellView: Frame
+---@field felt Texture
+---@field edges Texture[]
+---@field icon Texture
+---@field label FontString
+---@field cell TackleFlyCell?
+---@field SetCell fun(self: TackleFeltCellView, cell: TackleFlyCell)
+
+-- A compartment's icon, square, and its edge's thickness.
+local FELT_ICON, FELT_EDGE = 30, 2
+
+---@param parent Frame
+---@param width number
+---@param height number
+---@return TackleFeltCellView
+function ns.NewBoardFeltCell(parent, width, height)
+	local cell = CreateFrame("Frame", nil, parent) --[[@as TackleFeltCellView]]
+	cell:SetSize(width, height)
+	cell:EnableMouse(true)
+	cell.felt = ns.BoardSolid(cell, LOOK.felt, "BACKGROUND")
+	cell.edges = outline(cell, LOOK.feltEdge, 1, FELT_EDGE, 0, "BORDER")
+	cell.icon = cell:CreateTexture(nil, "ARTWORK")
+	cell.icon:SetSize(FELT_ICON, FELT_ICON)
+	cell.icon:SetPoint("TOP", 0, -6)
+	cell.label = ns.BoardText(cell, ns.BoardFonts().small, LOOK.feltText)
+	cell.label:SetJustifyH("CENTER")
+	cell.label:SetWordWrap(true)
+	cell.label:SetWidth(width - 8)
+	cell.label:SetPoint("BOTTOM", 0, 6)
+	function cell.SetCell(self, view)
+		self.cell = view
+		local rim = view.rare and LOOK.gilt or LOOK.feltEdge
+		for _, texture in ipairs(self.edges) do
+			texture:SetColorTexture(rim[1], rim[2], rim[3], 1)
+		end
+		self.icon:SetShown(view.tied)
+		if view.icon then
+			self.icon:SetTexture(view.icon)
+		end
+		local ink = view.tied and LOOK.feltText or LOOK.feltMiss
+		self.label:SetTextColor(ink[1], ink[2], ink[3])
+		self.label:SetText(view.text)
+	end
+	return cell
+end
+
+--- The shop link's pointing hand (TKB-R106): the client's pointing gauntlet, mirrored to point right, as a texture,
+--- never a glyph (#248).
+---@param parent Frame
+---@param size number
+---@return Texture
+function ns.NewBoardPointer(parent, size)
+	local hand = parent:CreateTexture(nil, "ARTWORK")
+	hand:SetTexture(TEXTURES.pointer)
+	hand:SetTexCoord(1, 0, 0, 1)
+	hand:SetSize(size, size)
+	return hand
 end

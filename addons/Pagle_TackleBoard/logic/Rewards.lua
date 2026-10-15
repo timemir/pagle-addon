@@ -215,8 +215,9 @@ ns.CAMPFIRE_MILESTONES = {
 
 --- Kindling at Start and after a fire goes out (TKB-R71, TKB-R72).
 local KINDLING_START = 2
---- The Kindling cap (TKB-R70).
-local KINDLING_CAP = 3
+--- The Kindling cap (TKB-R70); the ledge draws this many sticks (TKB-R106).
+ns.KINDLING_CAP = 3
+local KINDLING_CAP = ns.KINDLING_CAP
 --- Lit days of the current fire per Kindling earned (TKB-R70).
 local KINDLING_EVERY = 7
 
