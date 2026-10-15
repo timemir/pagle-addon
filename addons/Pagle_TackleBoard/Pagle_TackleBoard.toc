@@ -21,6 +21,7 @@ logic\Words.lua
 logic\Board.lua
 logic\Records.lua
 logic\Projection.lua
+logic\Completions.lua
 logic\LiveStep.lua
 logic\Pins.lua
 adapter\BoardWidgets.lua
