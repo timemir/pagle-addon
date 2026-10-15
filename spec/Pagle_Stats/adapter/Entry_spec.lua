@@ -7,52 +7,25 @@
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local stats = dofile("spec/Pagle_Stats/support.lua")
 
-local DARKSHORE, AUBERDINE, ELWYNN = 148, 442, 12
-local MACKEREL, BLACKMOUTH, FIREFIN, NIGHTFIN, SMALLFISH = 6303, 6358, 6359, 13759, 6291
-local T0 = 1791731000 -- 11 October 2026: not summer
-local DAY = 600 -- realm 10:00: the fixture's day is 06:00–18:00
+local I = stats.IDS
+local DARKSHORE, AUBERDINE, ELWYNN = I.DARKSHORE, I.AUBERDINE, I.ELWYNN
+local MACKEREL, BLACKMOUTH, FIREFIN, NIGHTFIN, SMALLFISH = I.MACKEREL, I.BLACKMOUTH, I.FIREFIN, I.NIGHTFIN, I.SMALLFISH
+local T0 = stats.T0
 local HOUR, DAYS = 3600, 86400
 
-local NAMES = {
-	[MACKEREL] = "Mackerel",
-	[BLACKMOUTH] = "Blackmouth",
-	[FIREFIN] = "Firefin",
-	[NIGHTFIN] = "Nightfin",
-	[SMALLFISH] = "Smallfish",
-}
-
--- A Cast record for fake.catchLog:Append in `zone` (Darkshore if nil) by day at skill 175 (Darkshore's line is 170:
--- side hi). `items` are item IDs (none: got away).
+-- A Cast record in `zone` (Darkshore if nil) by day at skill 150 + 25 = 175 (Darkshore's line is 170: side hi), as the
+-- worked history's. `items` are item IDs (none: got away).
 ---@param time integer
 ---@param items integer[]?
 ---@param zone integer?
 local function cast(time, items, zone)
-	local caught = {}
-	for i, itemID in ipairs(items or {}) do
-		caught[i] = { itemID = itemID, quantity = 1 }
-	end
-	return {
-		kind = "cast",
-		char = 1,
-		time = time,
-		outcome = items and "caught" or "gotAway",
-		conditions = {
-			minute = DAY,
-			zone = zone or DARKSHORE,
-			subzone = 0,
-			skillRank = 150,
-			skillMod = 25,
-			events = {},
-			auras = {},
-		},
-		items = caught,
-	}
+	return stats.cast({ time = time, zone = zone, rank = 150, mod = 25, items = items })
 end
 
 -- `n` Casts in Darkshore by day, 10 s apart from T0, catching `catches[i]` on Cast i.
 ---@param n integer
 ---@param catches table<integer, integer>
-local function history(n, catches)
+local function castsInDarkshore(n, catches)
 	local records = {}
 	for i = 1, n do
 		records[i] = cast(T0 + 10 * i, catches[i] and { catches[i] })
@@ -60,18 +33,10 @@ local function history(n, catches)
 	return records
 end
 
--- 150 Casts in Darkshore (as Place_spec's, worked by hand with STA-R43–R45 and STA-R50–R53):
---   Smallfish on Casts 1–5: known, about 1 in 30, 145 since, P = (1 − 5/150)^145 ≈ 0.0073: unlucky
---   Blackmouth on Casts 10 and 20: known, about 1 in 75, 130 since, P ≈ 0.17: normal, "About 17 anglers in 100"
---   Firefin on Cast 150, the last: a Dry spell of 0
---   Mackerel never caught: unseen; Nightfin's `night` window holds no Cast: learning 0/100
-local function darkshore()
-	local catches = { [10] = BLACKMOUTH, [20] = BLACKMOUTH, [150] = FIREFIN }
-	for i = 1, 5 do
-		catches[i] = SMALLFISH
-	end
-	return history(150, catches)
-end
+-- The worked Darkshore history (stats.darkshore, worked by hand there with STA-R43–R45 and STA-R50–R53): Smallfish
+-- known and unlucky, Blackmouth known and normal ("About 17 anglers in 100"), Firefin a Dry spell of 0, Mackerel
+-- unseen, Nightfin learning 0/100.
+local darkshore = stats.darkshore
 
 -- The server time the specs read: 3 hours after Blackmouth's last catch (Cast 20).
 local NOW = T0 + 200 + 3 * HOUR
@@ -79,26 +44,13 @@ local NOW = T0 + 200 + 3 * HOUR
 -- Stats over a FakePagle whose log holds `records`, logged in with its projection built, the areas and items named,
 -- the player in Darkshore's Auberdine at skill 200 (side hi), Stats' server time at NOW. `options` go to stats.load.
 local function ready(records, options)
-	local fake = newFakePagle()
-	fake.catchLog.data.characters[1] = { guid = PLAYER_GUID }
-	for _, record in ipairs(records) do
-		fake.catchLog:Append(record)
-	end
-	local loaded = stats.load(fake, options)
-	local client = loaded.client
-	client.areaNames[DARKSHORE] = "Darkshore"
-	client.areaNames[AUBERDINE] = "Auberdine"
-	for itemID, name in pairs(NAMES) do
-		client.itemNames[itemID] = name
-	end
-	fake.login()
-	fake.enterWorld()
-	local conditions = {}
-	for key, value in pairs(fake.conditions) do
-		conditions[key] = value
-	end
-	conditions.zone, conditions.subzone, conditions.skillRank, conditions.skillMod = DARKSHORE, AUBERDINE, 200, 0
-	fake.setConditions(conditions)
+	options = options or {}
+	local loaded, fake = stats.start({
+		records = records,
+		catalogue = options.catalogue,
+		prepare = options.prepare,
+		at = { zone = DARKSHORE, subzone = AUBERDINE, skillRank = 200, skillMod = 0 },
+	})
 	loaded.env.GetServerTime = function()
 		return NOW
 	end
@@ -172,7 +124,7 @@ describe("an item's entry (stats.md › UI › Place spread)", function()
 
 		it("reads a learning reading as Learning… in handwriting over an ink bar at n / 100", function()
 			-- 40 Casts, Smallfish on the 10th.
-			local ns = ready(history(40, { [10] = SMALLFISH }))
+			local ns = ready(castsInDarkshore(40, { [10] = SMALLFISH }))
 
 			local view = entry(ns, DARKSHORE, SMALLFISH)
 
@@ -194,7 +146,7 @@ describe("an item's entry (stats.md › UI › Place spread)", function()
 			local view = entry(ns, DARKSHORE, NIGHTFIN)
 
 			assert.are.equal("YOUR ODDS · DARKSHORE, BY NIGHT", shown(view.kicker))
-			assert.are.equal("Nightfin", shown(view.name.title))
+			assert.are.equal("Raw Nightfin Snapper", shown(view.name.title))
 			assert.are.equal(133890, view.name.icon.icon.texture)
 			assert.are.equal("YOUR ODDS · DARKSHORE", shown(entry(ns, DARKSHORE, SMALLFISH).kicker))
 		end)
@@ -240,7 +192,7 @@ describe("an item's entry (stats.md › UI › Place spread)", function()
 
 		it("reads a learning Dry spell with its first sentence, the learning line and no ruler (STA-R54)", function()
 			-- 40 Casts, Smallfish on the 10th, at T0 + 100: 3 hours and 100 s before NOW.
-			local ns = ready(history(40, { [10] = SMALLFISH }))
+			local ns = ready(castsInDarkshore(40, { [10] = SMALLFISH }))
 
 			local view = entry(ns, DARKSHORE, SMALLFISH)
 
@@ -322,7 +274,7 @@ describe("an item's entry (stats.md › UI › Place spread)", function()
 			for i = 1, 100 do
 				catches[i] = SMALLFISH
 			end
-			local ns = ready(history(200, catches))
+			local ns = ready(castsInDarkshore(200, catches))
 
 			local view = entry(ns, DARKSHORE, SMALLFISH)
 
@@ -391,7 +343,7 @@ describe("an item's entry (stats.md › UI › Place spread)", function()
 		-- The row of `item` on `area`'s left page, or nil.
 		local function rowOf(ns, item)
 			for _, child in ipairs(ns.book.pages["place:left"].content.children) do
-				if child.isBookRow and child.shown and child.name.text == NAMES[item] then
+				if child.isBookRow and child.shown and child.name.text == stats.NAMES.items[item] then
 					return child
 				end
 			end

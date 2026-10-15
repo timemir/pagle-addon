@@ -26,11 +26,16 @@ local function kindOf(good)
 	return "tier " .. tostring(good.tier)
 end
 
--- Pagle_Stats on a fake that has logged in.
+-- Pagle_Stats on a fake that has logged in (its projection's first build still to come), no item named.
 ---@param options { catalogue: table?, prepare: fun(loaded: LoadedAddon)? }?
 local function loggedIn(options)
-	local loaded, fake = stats.load(nil, options)
-	fake.login()
+	options = options or {}
+	local loaded, fake = stats.start({
+		items = {},
+		updating = true,
+		catalogue = options.catalogue,
+		prepare = options.prepare,
+	})
 	return loaded, fake
 end
 
@@ -138,28 +143,7 @@ describe("Stats' goods", function()
 	end)
 end)
 
--- Every shown widget under `widget`, depth first, skipping hidden ones and what they hold.
-local function shownDescendants(widget, list)
-	list = list or {}
-	for _, child in ipairs(widget.children) do
-		if child.shown then
-			list[#list + 1] = child
-			shownDescendants(child, list)
-		end
-	end
-	return list
-end
-
--- The texts of every shown font string under `widget`, depth first.
-local function textsOf(widget)
-	local texts = {}
-	for _, child in ipairs(shownDescendants(widget)) do
-		if child.kind == "FontString" and child.text then
-			texts[#texts + 1] = child.text
-		end
-	end
-	return texts
-end
+local textsOf = stats.fontTexts
 
 -- STA-R88's sample items and areas: a normal watch (item 4603 in area 35) and an unlucky one (13759 in 357).
 local YELLOWTAIL, NIGHTFIN, BOOTY_BAY, FERALAS = 4603, 13759, 35, 357
@@ -247,8 +231,7 @@ describe("A tracker frame's preview", function()
 			assert.are.same({ "Item 4603", "Item 13759" }, { texts[5], texts[8] })
 			assert.are.same({ YELLOWTAIL, NIGHTFIN }, loaded.client.itemRequests)
 
-			loaded.client.itemNames[NIGHTFIN] = "Raw Nightfin Snapper"
-			fake.fireGameEvent("ITEM_DATA_LOAD_RESULT", NIGHTFIN, true)
+			stats.loadItem(loaded, NIGHTFIN)
 
 			texts = textsOf(stage.children[1])
 			assert.are.same({ "Item 4603", "Raw Nightfin Snapper" }, { texts[5], texts[8] })

@@ -1,6 +1,6 @@
 -- A catalogue for Stats' specs, in the shape of Core's generated ns.catalogue (DATA-R76), served to Stats through
--- FakePagle's fake.setCatalogue: Stats' specs run on it, never on the shipped catalogue (M6 graph, conventions).
--- spec/Pagle_Stats/support.lua serves it; a spec reads it with
+-- FakePagle's fake.setCatalogue: Stats' specs run on it, never on the shipped catalogue. spec/Pagle_Stats/support.lua
+-- serves it, and holds its IDs (stats.IDS) and the client's names for them (stats.NAMES); a spec reads it with
 --
 --   local catalogue = dofile("spec/Pagle_Stats/fixtures/Catalogue.lua")
 --
@@ -25,6 +25,7 @@
 --   Minor Mana Potion (2455)  a Noise item, on Stranglethorn's list (STA-R16, STA-R17)
 --   Rusted Lure (90001)   a removed item, still on Darkshore's list as STA-R17's guard sees it; no quality
 --   Mackerel (6303)       an entry with confirmed = true; most entries have confirmed = false
+--   Smallfish (6291)      on Auberdine's and Elwynn's lists
 --   gateConfirmed         Nightfin's gate in Darkshore is unconfirmed (false), Summer Bass's in Elwynn confirmed
 --
 -- Windows (LOG-R48, DATA-R35): day is 06:00–18:00 and night 18:00–06:00 realm time, so every minute is in exactly one

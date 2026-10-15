@@ -1,32 +1,11 @@
 -- The tracker block maker (STA-R82, STA-R84; stats.md › UI › Live tracker): a native objective-tracker-style block
--- drawn from line descriptions, in a frame look. The shop's previews draw it now (STA-R88); the live tracker (#218)
--- fills it with live lines.
+-- drawn from line descriptions, in a frame look. The Curio Shop's previews draw it (STA-R88), and the live tracker
+-- (adapter/Tracker.lua) fills it with live lines.
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local stats = dofile("spec/Pagle_Stats/support.lua")
 
--- Every shown widget under `widget`, depth first, skipping hidden ones and what they hold.
-local function shownDescendants(widget, list)
-	list = list or {}
-	for _, child in ipairs(widget.children) do
-		if child.shown then
-			list[#list + 1] = child
-			shownDescendants(child, list)
-		end
-	end
-	return list
-end
-
--- The texts of every shown font string under `widget`, depth first.
-local function textsOf(widget)
-	local texts = {}
-	for _, child in ipairs(shownDescendants(widget)) do
-		if child.kind == "FontString" and child.text then
-			texts[#texts + 1] = child.text
-		end
-	end
-	return texts
-end
+local textsOf = stats.fontTexts
 
 -- A block on a fresh frame, with Stats loaded.
 local function newBlock()

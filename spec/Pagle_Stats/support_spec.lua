@@ -5,9 +5,11 @@
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local stats = dofile("spec/Pagle_Stats/support.lua")
 
-local DARKSHORE, AUBERDINE, BASHAL_ARAN, ELWYNN, STRANGLETHORN, STORMWIND = 148, 442, 446, 12, 33, 1519
-local MACKEREL, BLACKMOUTH, FIREFIN, NIGHTFIN, BASS, MUD_SNAPPER = 6303, 6358, 6359, 13759, 13756, 6289
-local MANA_POTION, RUSTED_LURE = 2455, 90001
+local I = stats.IDS
+local DARKSHORE, AUBERDINE, BASHAL_ARAN, ELWYNN = I.DARKSHORE, I.AUBERDINE, I.BASHAL_ARAN, I.ELWYNN
+local STRANGLETHORN, STORMWIND = I.STRANGLETHORN, I.STORMWIND
+local MACKEREL, BLACKMOUTH, FIREFIN, NIGHTFIN, BASS = I.MACKEREL, I.BLACKMOUTH, I.FIREFIN, I.NIGHTFIN, I.BASS
+local MUD_SNAPPER, MANA_POTION, RUSTED_LURE = I.MUD_SNAPPER, I.MANA_POTION, I.RUSTED_LURE
 
 -- The window IDs of `itemID`'s entries in `zone`'s catches, in order, "-" for an ungated one. Core's records reach
 -- specs as FakePagle's read-only proxies, so this walks them with its proxy-aware ipairs.
@@ -42,6 +44,46 @@ describe("Stats' spec support", function()
 		stats.catalogue().areas[DARKSHORE].skillBase = 1
 
 		assert.are.equal(75, stats.catalogue().areas[DARKSHORE].skillBase)
+	end)
+
+	it("names every area and item of the fixture once, and keeps its Uncharted IDs out of it (DATA-R76)", function()
+		local catalogue = stats.catalogue()
+		local function keys(map)
+			local out = {}
+			for id in pairs(map) do
+				out[#out + 1] = id
+			end
+			table.sort(out)
+			return out
+		end
+
+		assert.are.same(keys(catalogue.areas), keys(stats.NAMES.areas))
+		assert.are.same(keys(catalogue.items), keys(stats.NAMES.items))
+		for name, id in pairs(stats.IDS) do
+			local uncharted = name:match("^UNCHARTED") ~= nil
+			assert.are.equal(not uncharted, catalogue.areas[id] ~= nil or catalogue.items[id] ~= nil, name)
+		end
+	end)
+
+	it("starts Stats logged in and built, the fixture named, the player moved (STA-R20)", function()
+		local loaded, fake, book = stats.start({
+			records = { stats.cast({ time = stats.T0, items = { NIGHTFIN } }) },
+			items = { NIGHTFIN },
+			at = { zone = ELWYNN, subzone = 0, skillRank = false },
+		})
+
+		assert.are.equal(loaded.ns.book, book)
+		assert.is_false(loaded.ns.IsUpdating())
+		assert.are.equal(1, loaded.ns.State().totals.casts)
+		assert.are.same({ "Elwynn Forest", "Raw Nightfin Snapper" }, {
+			loaded.client.areaNames[ELWYNN],
+			loaded.client.itemNames[NIGHTFIN],
+		})
+		assert.is_nil(loaded.client.itemNames[MACKEREL])
+		assert.are.same({ ELWYNN, 0 }, { fake.conditions.zone, fake.conditions.subzone })
+		assert.is_nil(fake.conditions.skillRank)
+		fake.wait(60)
+		assert.are.equal(SERVER_TIME + 60, loaded.env.GetServerTime())
 	end)
 
 	describe("the fixture", function()

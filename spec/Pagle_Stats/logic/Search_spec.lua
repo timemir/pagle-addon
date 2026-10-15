@@ -7,29 +7,12 @@ local stats = dofile("spec/Pagle_Stats/support.lua")
 
 local DARKSHORE, AUBERDINE, BASHAL_ARAN, ELWYNN, STRANGLETHORN = 148, 442, 446, 12, 33
 local FERALAS, FEATHERMOON = 357, 1116
-local MACKEREL, BLACKMOUTH, FIREFIN, NIGHTFIN = 6303, 6358, 6359, 13759
-local BASS, MUD_SNAPPER, SMALLFISH, MANA_POTION, UNCHARTED = 13756, 6289, 6291, 2455, 77777
+local MACKEREL, FIREFIN, MANA_POTION = 6303, 6359, 2455
+local UNCHARTED = stats.IDS.UNCHARTED
 
-local ITEM_NAMES = {
-	[MACKEREL] = "Raw Mackerel",
-	[BLACKMOUTH] = "Oily Blackmouth",
-	[FIREFIN] = "Firefin Snapper",
-	[NIGHTFIN] = "Raw Nightfin Snapper",
-	[BASS] = "Large Raw Mightfish",
-	[MUD_SNAPPER] = "Raw Mud Snapper",
-	[SMALLFISH] = "Raw Brilliant Smallfish",
-	[MANA_POTION] = "Minor Mana Potion",
-	[UNCHARTED] = "Strange Old Boot",
-}
-local AREA_NAMES = {
-	[DARKSHORE] = "Darkshore",
-	[AUBERDINE] = "Auberdine",
-	[BASHAL_ARAN] = "Bashal'Aran",
-	[ELWYNN] = "Elwynn Forest",
-	[STRANGLETHORN] = "Stranglethorn Vale",
-	[FERALAS] = "Feralas",
-	[FEATHERMOON] = "Feathermoon Stronghold",
-}
+-- The fixture's names (stats.NAMES), and the Uncharted item's.
+local ITEM_NAMES = setmetatable({ [UNCHARTED] = "Strange Old Boot" }, { __index = stats.NAMES.items })
+local AREA_NAMES = stats.NAMES.areas
 
 -- A place record (StatsPlace) in `zone`, with catches by item.
 local function place(zone, items)
@@ -107,16 +90,16 @@ describe("search (STA-R76)", function()
 		local state = fished()
 		state.places[STRANGLETHORN] = place(STRANGLETHORN)
 
-		-- seven fish and six places have an "a"; Raw Nightfin Snapper and Stranglethorn Vale come last
+		-- seven fish and six places have an "a"; Raw Summer Bass and Stranglethorn Vale come last
 		local found = ns.Search("a", state, NAMES)
 
 		assert.are.same({
 			"Firefin Snapper (fish)",
-			"Large Raw Mightfish (fish)",
 			"Oily Blackmouth (fish)",
 			"Raw Brilliant Smallfish (fish)",
 			"Raw Mackerel (fish)",
 			"Raw Mud Snapper (fish)",
+			"Raw Nightfin Snapper (fish)",
 			"Auberdine (Darkshore)",
 			"Bashal'Aran (Darkshore)",
 			"Darkshore (zone)",
@@ -144,10 +127,7 @@ describe("search (STA-R76)", function()
 		local partly = namesFrom({ [MACKEREL] = "Raw Mackerel" }, AREA_NAMES)
 
 		assert.are.same({ "Raw Mackerel (fish)" }, lines(ns.Search("raw", fished(), partly)))
-		assert.are.same(
-			{ "Large Raw Mightfish (fish)", "Raw Mackerel (fish)", "Raw Mud Snapper (fish)" },
-			lines(ns.Search("raw m", fished(), NAMES))
-		)
+		assert.are.same({ "Raw Mackerel (fish)", "Raw Mud Snapper (fish)" }, lines(ns.Search("raw m", fished(), NAMES)))
 	end)
 
 	it('reads "Nothing by that name in my records." with no results, and takes the query as plain text', function()

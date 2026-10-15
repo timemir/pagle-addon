@@ -7,9 +7,9 @@ local stats = dofile("spec/Pagle_Stats/support.lua")
 
 local DARKSHORE, AUBERDINE, BASHAL_ARAN, ELWYNN, STRANGLETHORN = 148, 442, 446, 12, 33
 local FERALAS, FEATHERMOON = 357, 1116
-local UNCHARTED_SUBZONE = 9999 -- a subzone the catalogue lacks
+local UNCHARTED_SUBZONE = stats.IDS.UNCHARTED_SUBZONE -- a subzone the catalogue lacks
 local MACKEREL, BLACKMOUTH, FIREFIN, NIGHTFIN, BASS, MUD_SNAPPER = 6303, 6358, 6359, 13759, 13756, 6289
-local UNCHARTED = 77777 -- an item the catalogue lacks
+local UNCHARTED = stats.IDS.UNCHARTED -- an item the catalogue lacks
 
 -- A state in stats.md's Projection state shape with only what a reading reads: `scopes`, `hits` and `places`.
 ---@param scopes table<string, integer>

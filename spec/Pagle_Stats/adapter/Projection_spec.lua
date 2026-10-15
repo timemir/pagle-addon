@@ -6,44 +6,13 @@
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local stats = dofile("spec/Pagle_Stats/support.lua")
 
-local DARKSHORE, AUBERDINE, ELWYNN = 148, 442, 12
-local MACKEREL, BLACKMOUTH, FIREFIN, NIGHTFIN, SMALLFISH = 6303, 6358, 6359, 13759, 6291
-local T0 = 1791731000 -- 11 October 2026: not summer
-local DAY, NIGHT = 600, 1200 -- realm 10:00 and 20:00: the fixture's day is 06:00–18:00, night 18:00–06:00
-local OTHER_GUID = "Player-4618-0B0B0B0B"
-
--- A Cast record for fake.catchLog:Append. `c.items` are item IDs (none: got away); `c.rank` nil is an unknown skill.
----@param c { time: integer, char: integer?, minute: integer?, zone: integer?, subzone: integer?, rank: integer?, mod: integer?, items: integer[]? }
-local function cast(c)
-	local items = {}
-	for i, itemID in ipairs(c.items or {}) do
-		items[i] = { itemID = itemID, quantity = 1 }
-	end
-	return {
-		kind = "cast",
-		char = c.char or 1,
-		time = c.time,
-		outcome = c.items and "caught" or "gotAway",
-		conditions = {
-			minute = c.minute or DAY,
-			zone = c.zone or DARKSHORE,
-			subzone = c.subzone or 0,
-			skillRank = c.rank,
-			skillMod = c.mod or 0,
-			events = {},
-			auras = {},
-		},
-		items = items,
-	}
-end
-
--- A Skill Reading record for fake.catchLog:Append.
----@param time integer
----@param rank integer
----@param char integer?
-local function skill(time, rank, char)
-	return { kind = "skill", char = char or 1, time = time, rank = rank, max = 300, mod = 0 }
-end
+local I = stats.IDS
+local DARKSHORE, AUBERDINE, ELWYNN = I.DARKSHORE, I.AUBERDINE, I.ELWYNN
+local MACKEREL, BLACKMOUTH, FIREFIN, NIGHTFIN, SMALLFISH = I.MACKEREL, I.BLACKMOUTH, I.FIREFIN, I.NIGHTFIN, I.SMALLFISH
+local T0, NIGHT = stats.T0, stats.NIGHT
+-- Cast and Skill Reading records (stats.cast: by day in Darkshore, no subzone, no modifier; `rank` nil is an unknown
+-- skill).
+local cast, skill = stats.cast, stats.skill
 
 -- A new FakePagle whose log has the player's character (1) and another (2), then `records`, appended in order.
 -- Returns the fake and each record as the log returned it.
@@ -53,7 +22,7 @@ end
 local function withHistory(records)
 	local fake = newFakePagle()
 	fake.catchLog.data.characters[1] = { guid = PLAYER_GUID }
-	fake.catchLog.data.characters[2] = { guid = OTHER_GUID }
+	fake.catchLog.data.characters[2] = { guid = stats.OTHER_GUID }
 	local appended = {}
 	for i, record in ipairs(records) do
 		appended[i] = fake.catchLog:Append(record)
@@ -63,13 +32,12 @@ end
 
 -- Stats loaded on `fake`, then login and its first PLAYER_ENTERING_WORLD: the projection's first build.
 ---@param fake FakePagle
----@param options table? stats.load's options
+---@param options { catalogue: table?, prepare: fun(loaded: LoadedAddon)? }? stats.load's options
 ---@return PagleStatsNS ns
 ---@return LoadedAddon loaded
 local function built(fake, options)
-	local loaded = stats.load(fake, options)
-	fake.login()
-	fake.enterWorld()
+	options = options or {}
+	local loaded = stats.start({ fake = fake, catalogue = options.catalogue, prepare = options.prepare })
 	return loaded.ns, loaded
 end
 

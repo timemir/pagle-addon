@@ -5,35 +5,14 @@
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local stats = dofile("spec/Pagle_Stats/support.lua")
 
-local DARKSHORE, AUBERDINE, ELWYNN = 148, 442, 12
-local NIGHTFIN, BLACKMOUTH = 13759, 6358
+local I = stats.IDS
+local DARKSHORE, AUBERDINE, ELWYNN = I.DARKSHORE, I.AUBERDINE, I.ELWYNN
+local NIGHTFIN, BLACKMOUTH = I.NIGHTFIN, I.BLACKMOUTH
 
--- Pagle_Stats on a fake that has logged in, its projection built (not updating), and its book. Darkshore and Auberdine
--- have their names, the player fishes Auberdine.
+-- Pagle_Stats on a fake that has logged in, its projection built (not updating), and its book. The areas have their
+-- names and the items don't; the player fishes Auberdine.
 local function ready()
-	local loaded, fake = stats.load()
-	loaded.client.areaNames[DARKSHORE] = "Darkshore"
-	loaded.client.areaNames[AUBERDINE] = "Auberdine"
-	loaded.client.areaNames[ELWYNN] = "Elwynn Forest"
-	fake.login()
-	fake.enterWorld()
-	local conditions = {}
-	for key, value in pairs(fake.conditions) do
-		conditions[key] = value
-	end
-	conditions.zone, conditions.subzone = DARKSHORE, AUBERDINE
-	fake.setConditions(conditions)
-	return loaded, fake, loaded.ns.book
-end
-
--- Moves the player to `zone` and `subzone`.
-local function moveTo(fake, zone, subzone)
-	local conditions = {}
-	for key, value in pairs(fake.conditions) do
-		conditions[key] = value
-	end
-	conditions.zone, conditions.subzone = zone, subzone
-	fake.setConditions(conditions)
+	return stats.start({ items = {}, at = { zone = DARKSHORE, subzone = AUBERDINE } })
 end
 
 -- Hides `frame` as the client does, running its OnHide (the fake's Hide runs no script).
@@ -58,19 +37,7 @@ local function escape(loaded)
 	end
 end
 
--- The texts of every shown widget under `widget`, depth first.
-local function textsOf(widget, texts)
-	texts = texts or {}
-	for _, child in ipairs(widget.children) do
-		if child.shown then
-			if child.text ~= nil and child.text ~= "" then
-				texts[#texts + 1] = child.text
-			end
-			textsOf(child, texts)
-		end
-	end
-	return texts
-end
+local textsOf = stats.textsOf
 
 -- A renderer that writes `label` and the place it was given on its content frame, and counts its draws.
 local function writer(label, draws, height)
@@ -101,13 +68,6 @@ local function crumbNamed(book, text)
 		end
 	end
 	error("no crumb " .. text)
-end
-
--- Plays `n` caught Casts of a Blackmouth.
-local function fish(fake, n)
-	for _ = 1, n do
-		fake.playCast("caught", { { itemID = BLACKMOUTH, quantity = 1 } })
-	end
 end
 
 describe("the Stats book's frame (STA-R70, STA-R71)", function()
@@ -287,13 +247,13 @@ end)
 describe("the Stats book's breadcrumbs (STA-R74)", function()
 	it('read "Stats" on the home spread, and "Stats ❧ {zone} ❧ {subzone} ❧ {item}" on a place page', function()
 		local loaded, _, book = ready()
-		loaded.client.itemNames[NIGHTFIN] = "Nightfin Snapper"
+		stats.nameAll(loaded, { NIGHTFIN })
 
 		loaded.ns.ToggleBook()
 		assert.are.same({ "Stats" }, crumbsOf(book))
 		loaded.ns.OpenBook({ page = "place", area = AUBERDINE, item = NIGHTFIN })
 
-		assert.are.same({ "Stats", "Darkshore", "Auberdine", "Nightfin Snapper" }, crumbsOf(book))
+		assert.are.same({ "Stats", "Darkshore", "Auberdine", "Raw Nightfin Snapper" }, crumbsOf(book))
 		local marks = 0
 		for _, crumb in ipairs(book.frame.crumbButtons) do
 			if crumb.shown and crumb.fleuron and crumb.fleuron.shown then
@@ -330,7 +290,7 @@ describe("the Stats book's breadcrumbs (STA-R74)", function()
 		assert.are.same({ "Stats", "Sessions" }, crumbsOf(book))
 		loaded.ns.OpenBook({ page = "session" })
 		assert.are.same({ "Stats", "This Session" }, crumbsOf(book)) -- no Sessions yet
-		fish(fake, 1)
+		stats.fish(fake, 1, BLACKMOUTH)
 		loaded.client.runTimers()
 		assert.are.same({ "Stats", "This Session" }, crumbsOf(book))
 		fake.wait(3600)
@@ -340,15 +300,14 @@ describe("the Stats book's breadcrumbs (STA-R74)", function()
 	end)
 
 	it("ask for an item not loaded yet, and redraw with its name once it loads", function()
-		local loaded, fake, book = ready()
+		local loaded, _, book = ready()
 
 		loaded.ns.OpenBook({ page = "item", item = NIGHTFIN })
 		assert.are.same({ NIGHTFIN }, loaded.client.itemRequests)
-		loaded.client.itemNames[NIGHTFIN] = "Nightfin Snapper"
-		fake.fireGameEvent("ITEM_DATA_LOAD_RESULT", NIGHTFIN, true)
+		stats.loadItem(loaded, NIGHTFIN)
 		loaded.client.runTimers()
 
-		assert.are.same({ "Stats", "Nightfin Snapper" }, crumbsOf(book))
+		assert.are.same({ "Stats", "Raw Nightfin Snapper" }, crumbsOf(book))
 	end)
 end)
 
@@ -394,10 +353,10 @@ describe("the Stats book's ribbons (STA-R74, stats.md › UI › On the leather)
 		here:Click()
 		assert.are.same({ page = "place", area = AUBERDINE }, book.router:Place())
 		assert.is_true(here.chosen)
-		moveTo(fake, ELWYNN, 0)
+		stats.move(fake, { zone = ELWYNN, subzone = 0 })
 		here:Click()
 		assert.are.same({ page = "place", area = ELWYNN }, book.router:Place())
-		moveTo(fake, 0, 0)
+		stats.move(fake, { zone = 0, subzone = 0 })
 		here:Click()
 
 		assert.are.same({ page = "home" }, book.router:Place())
@@ -415,13 +374,13 @@ describe("the Stats book's nameplate and live line (stats.md › UI › On the l
 
 	it('reads "{Casts} Casts · {Sessions} Sessions · since {first Cast\'s date}" from the state', function()
 		local loaded, fake, book = ready()
-		fish(fake, 1)
+		stats.fish(fake, 1, BLACKMOUTH)
 		loaded.ns.ToggleBook()
 		assert.are.equal("1 Cast · 1 Session · since 11 Oct 2026", book.frame.plate.label.text)
 
-		fish(fake, 1)
+		stats.fish(fake, 1, BLACKMOUTH)
 		fake.wait(3600)
-		fish(fake, 1)
+		stats.fish(fake, 1, BLACKMOUTH)
 		loaded.client.runTimers()
 
 		assert.are.equal("3 Casts · 2 Sessions · since 11 Oct 2026", book.frame.plate.label.text)
@@ -433,7 +392,7 @@ describe("the Stats book's nameplate and live line (stats.md › UI › On the l
 		local live = book.frame.live
 		assert.is_false(live.shown)
 
-		fish(fake, 2)
+		stats.fish(fake, 2, BLACKMOUTH)
 		fake.playCast("gotAway")
 		loaded.client.runTimers()
 		assert.is_true(live.shown)
@@ -451,9 +410,7 @@ end)
 describe("the Stats book while the projection is updating (STA-R72)", function()
 	-- Logged in, but the projection waits for the first PLAYER_ENTERING_WORLD to build: it reads as updating.
 	local function updating()
-		local loaded, fake = stats.load()
-		fake.login()
-		return loaded, fake, loaded.ns.book
+		return stats.start({ items = {}, updating = true })
 	end
 
 	it('writes "Updating my records…" on the nameplate and both pages instead of their contents', function()
@@ -519,7 +476,7 @@ describe("the Stats book's redraws (STA-R73)", function()
 	it("redraws the open page on the next frame after a Cast ends, once however many ask in that frame", function()
 		local loaded, fake, _, draws = counting({ page = "lifetime" })
 
-		fish(fake, 1)
+		stats.fish(fake, 1, BLACKMOUTH)
 		fake.playCast("gotAway")
 		assert.are.equal(1, #draws)
 		loaded.client.runTimers()
@@ -570,7 +527,7 @@ describe("the Stats book's redraws (STA-R73)", function()
 		local loaded, fake, book, draws = counting({ page = "lifetime" })
 		book.frame.close:Click()
 
-		fish(fake, 1)
+		stats.fish(fake, 1, BLACKMOUTH)
 		loaded.ns.Redraw("watches")
 		loaded.client.runTimers()
 
@@ -599,7 +556,7 @@ describe("the Stats book's redraws (STA-R73)", function()
 		"ticks every 30 s while open: the live line refreshes on any page, the whole home spread when it shows",
 		function()
 			local loaded, fake, book, draws = counting({ page = "lifetime" })
-			fish(fake, 1)
+			stats.fish(fake, 1, BLACKMOUTH)
 			loaded.client.runTimers()
 			local homeDraws = {}
 			book:RegisterPage("home", "right", writer("right now", homeDraws))

@@ -25,19 +25,7 @@ local function texturesOf(widget, found)
 	return found
 end
 
--- The texts of every shown widget under `widget`, depth first.
-local function textsOf(widget, texts)
-	texts = texts or {}
-	for _, child in ipairs(widget.children) do
-		if child.shown then
-			if child.text ~= nil and child.text ~= "" then
-				texts[#texts + 1] = child.text
-			end
-			textsOf(child, texts)
-		end
-	end
-	return texts
-end
+local textsOf = stats.textsOf
 
 describe("the Stats book's art (STA-R70, stats.md › UI)", function()
 	it("uses in-client textures only, each listed in ns.BOOK_TEXTURES for the dev to judge", function()

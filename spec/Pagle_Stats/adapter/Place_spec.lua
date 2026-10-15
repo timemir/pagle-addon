@@ -6,103 +6,41 @@
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local stats = dofile("spec/Pagle_Stats/support.lua")
 
-local DARKSHORE, AUBERDINE, BASHAL_ARAN, STRANGLETHORN, STORMWIND = 148, 442, 446, 33, 1519
-local UNCHARTED_SUBZONE = 9999
-local MACKEREL, BLACKMOUTH, FIREFIN, NIGHTFIN, SMALLFISH = 6303, 6358, 6359, 13759, 6291
-local UNCHARTED = 77777 -- an item the catalogue lacks
-local T0 = 1791731000 -- 11 October 2026: not summer
-local DAY = 600 -- realm 10:00: the fixture's day is 06:00–18:00
+local I = stats.IDS
+local DARKSHORE, AUBERDINE, BASHAL_ARAN, STRANGLETHORN, STORMWIND =
+	I.DARKSHORE, I.AUBERDINE, I.BASHAL_ARAN, I.STRANGLETHORN, I.STORMWIND
+local BLACKMOUTH, FIREFIN, SMALLFISH = I.BLACKMOUTH, I.FIREFIN, I.SMALLFISH
+local UNCHARTED = I.UNCHARTED -- an item the catalogue lacks; the client names it "Odd Fish"
+local UNCHARTED_SUBZONE = I.UNCHARTED_SUBZONE
+local T0 = stats.T0
 
-local NAMES = {
-	[MACKEREL] = "Mackerel",
-	[BLACKMOUTH] = "Blackmouth",
-	[FIREFIN] = "Firefin",
-	[NIGHTFIN] = "Nightfin",
-	[SMALLFISH] = "Smallfish",
-	[UNCHARTED] = "Odd Fish",
-}
-
--- A Cast record for fake.catchLog:Append, by day at skill 175 (Darkshore's line is 170: side hi) unless `c` says
--- otherwise. `c.items` are item IDs (none: got away).
----@param c { time: integer, zone: integer?, subzone: integer?, items: integer[]? }
+-- A Cast record by day at skill 150 + 25 = 175 (Darkshore's line is 170: side hi), as the worked history's.
+---@param c { time: integer, subzone: integer?, items: integer[]? }
 local function cast(c)
-	local items = {}
-	for i, itemID in ipairs(c.items or {}) do
-		items[i] = { itemID = itemID, quantity = 1 }
-	end
-	return {
-		kind = "cast",
-		char = 1,
-		time = c.time,
-		outcome = c.items and "caught" or "gotAway",
-		conditions = {
-			minute = DAY,
-			zone = c.zone or DARKSHORE,
-			subzone = c.subzone or 0,
-			skillRank = 150,
-			skillMod = 25,
-			events = {},
-			auras = {},
-		},
-		items = items,
-	}
+	c.rank, c.mod = 150, 25
+	return stats.cast(c)
 end
 
--- 150 Casts in Darkshore by day, at skill 175, 10 s apart, catching (STA-R43, STA-R50–R52 worked by hand):
---   Smallfish on Casts 1–5: 1 in 30, 145 since, P = (1 − 5/150)^145 ≈ 0.0073: unlucky
---   Blackmouth on Casts 10 and 20: 1 in 75, 130 since, P ≈ 0.17: normal
---   the Uncharted item on Cast 100: 1 in 150, 50 since
---   Firefin on Cast 150, the last: 1 in 150, just now
--- Mackerel is never caught (not seen yet); Nightfin's `night` window holds no Cast (learning 0/100). 141 got away.
+-- The worked Darkshore history (stats.darkshore, worked by hand there) with the Uncharted item on Cast 100: 1 in 150,
+-- 50 since. 141 Casts got away.
 local function darkshore()
-	local catches = { [10] = BLACKMOUTH, [20] = BLACKMOUTH, [100] = UNCHARTED, [150] = FIREFIN }
-	for i = 1, 5 do
-		catches[i] = SMALLFISH
-	end
-	local records = {}
-	for i = 1, 150 do
-		records[i] = cast({ time = T0 + 10 * i, items = catches[i] and { catches[i] } })
-	end
-	return records
-end
-
--- A new FakePagle whose log has the player's character and `records`.
-local function withHistory(records)
-	local fake = newFakePagle()
-	fake.catchLog.data.characters[1] = { guid = PLAYER_GUID }
-	for _, record in ipairs(records) do
-		fake.catchLog:Append(record)
-	end
-	return fake
-end
-
--- Moves the player to `zone` and `subzone` with Fishing `rank` (no modifier; nil: secret).
-local function moveTo(fake, zone, subzone, rank)
-	local conditions = {}
-	for key, value in pairs(fake.conditions) do
-		conditions[key] = value
-	end
-	conditions.zone, conditions.subzone, conditions.skillRank, conditions.skillMod = zone, subzone, rank, 0
-	fake.setConditions(conditions)
+	return stats.darkshore({ uncharted = true })
 end
 
 -- Stats on `fake` (a new one over `records` if a table of records), logged in with its projection built, the areas
 -- and items named, the player in Darkshore's Auberdine at skill 200 (side hi). `options` go to stats.load.
 local function ready(records, options)
-	local fake = records and records.catchLog and records or withHistory(records or {})
-	local loaded = stats.load(fake, options)
-	local client = loaded.client
-	client.areaNames[DARKSHORE] = "Darkshore"
-	client.areaNames[AUBERDINE] = "Auberdine"
-	client.areaNames[BASHAL_ARAN] = "Bashal'Aran"
-	client.areaNames[STRANGLETHORN] = "Stranglethorn Vale"
-	client.areaNames[STORMWIND] = "Stormwind City"
-	for itemID, name in pairs(NAMES) do
-		client.itemNames[itemID] = name
-	end
-	fake.login()
-	fake.enterWorld()
-	moveTo(fake, DARKSHORE, AUBERDINE, 200)
+	options = options or {}
+	local fake = records and records.catchLog and records or nil
+	local loaded
+	loaded, fake = stats.start({
+		fake = fake,
+		records = not fake and (records or {}) or nil,
+		catalogue = options.catalogue,
+		prepare = options.prepare,
+		at = { zone = DARKSHORE, subzone = AUBERDINE, skillRank = 200, skillMod = 0 },
+	})
+	loaded.client.itemNames[UNCHARTED] = "Odd Fish"
 	return loaded.ns, loaded, fake
 end
 
@@ -110,20 +48,6 @@ end
 local function open(ns, area, item)
 	ns.OpenBook({ page = "place", area = area, item = item })
 	return ns.book.pages["place:left"].content, ns.book.pages["place:right"].content
-end
-
--- Every text under `widget`, shown, depth first in the order the widgets were made.
-local function allTexts(widget, texts)
-	texts = texts or {}
-	for _, child in ipairs(widget.children) do
-		if child.shown then
-			if child.text ~= nil and child.text ~= "" then
-				texts[#texts + 1] = child.text
-			end
-			allTexts(child, texts)
-		end
-	end
-	return texts
 end
 
 -- How far down its parent a block sits: every line of a page is anchored by its top left, SetPoint("TOPLEFT", x, -y).
@@ -163,7 +87,7 @@ local function textsOf(frame)
 		if block.text ~= nil and block.text ~= "" then
 			texts[#texts + 1] = block.text
 		end
-		allTexts(block, texts)
+		stats.textsOf(block, texts)
 	end
 	return texts
 end
@@ -239,17 +163,27 @@ describe("a place's page (stats.md › UI › Place spread)", function()
 			local left = open(ns, DARKSHORE)
 
 			-- Rusted Lure (removed) is on Darkshore's list but never a row.
-			assert.are.same({ "Smallfish", "Firefin", "Mackerel", "Blackmouth", "Nightfin", "Odd Fish" }, namesOf(left))
+			assert.are.same({
+				"Raw Brilliant Smallfish",
+				"Firefin Snapper",
+				"Raw Mackerel",
+				"Oily Blackmouth",
+				"Raw Nightfin Snapper",
+				"Odd Fish",
+			}, namesOf(left))
 			left = open(ns, STRANGLETHORN)
-			assert.are.same({ "Mackerel" }, namesOf(left)) -- not the Noise Minor Mana Potion
+			assert.are.same({ "Raw Mackerel" }, namesOf(left)) -- not the Noise Minor Mana Potion
 		end)
 
 		it("lists a subzone's own list, or its zone's own when it has none", function()
 			local ns = ready()
 
-			assert.are.same({ "Smallfish", "Firefin" }, namesOf((open(ns, AUBERDINE))))
+			assert.are.same({ "Raw Brilliant Smallfish", "Firefin Snapper" }, namesOf((open(ns, AUBERDINE))))
 			-- Darkshore's own list: Mackerel, Blackmouth, Firefin, Nightfin (all learning: by item ID in each group)
-			assert.are.same({ "Mackerel", "Firefin", "Blackmouth", "Nightfin" }, namesOf((open(ns, BASHAL_ARAN))))
+			assert.are.same(
+				{ "Raw Mackerel", "Firefin Snapper", "Oily Blackmouth", "Raw Nightfin Snapper" },
+				namesOf((open(ns, BASHAL_ARAN)))
+			)
 		end)
 
 		it("asks the client for an item whose name isn't loaded and shows it as Item {id} meanwhile", function()
@@ -258,7 +192,7 @@ describe("a place's page (stats.md › UI › Place spread)", function()
 
 			local left = open(ns, AUBERDINE)
 
-			assert.are.same({ "Item 6291", "Firefin" }, namesOf(left))
+			assert.are.same({ "Item 6291", "Firefin Snapper" }, namesOf(left))
 			assert.is_true(has(loaded.client.itemRequests, SMALLFISH))
 		end)
 	end)
@@ -269,17 +203,20 @@ describe("a place's page (stats.md › UI › Place spread)", function()
 
 			assert.are.same({
 				"ANY TIME",
-				"Smallfish", -- 1 in 30
-				"Firefin", -- 1 in 150
-				"Mackerel", -- not seen yet
+				"Raw Brilliant Smallfish", -- 1 in 30
+				"Firefin Snapper", -- 1 in 150
+				"Raw Mackerel", -- not seen yet
 				"POOLS",
-				"Blackmouth",
+				"Oily Blackmouth",
 				"IN THEIR WINDOW",
-				"Nightfin",
+				"Raw Nightfin Snapper",
 				"ALSO CAUGHT HERE",
 				"Odd Fish",
 			}, layoutOf((open(ns, DARKSHORE))))
-			assert.are.same({ "ANY TIME", "Smallfish", "Firefin" }, layoutOf((open(ns, AUBERDINE))))
+			assert.are.same(
+				{ "ANY TIME", "Raw Brilliant Smallfish", "Firefin Snapper" },
+				layoutOf((open(ns, AUBERDINE)))
+			)
 		end)
 
 		it("writes each group's small note", function()
@@ -300,25 +237,25 @@ describe("a place's page (stats.md › UI › Place spread)", function()
 			local left = open(ns, DARKSHORE)
 			local hand = ns.BookFonts().hand
 
-			local smallfish = rowNamed(left, "Smallfish")
+			local smallfish = rowNamed(left, "Raw Brilliant Smallfish")
 			assert.are.equal("1 in 30", smallfish.odds.text)
 			assert.are.equal("145 since", smallfish.margin.text)
 			assert.are.equal(", unlucky", smallfish.band.text)
 			assert.is_true(smallfish.band.shown)
 			assert.are.same(ns.BOOK_LOOK.red, { unpack(smallfish.band.textColor, 1, 3) })
 
-			local blackmouth = rowNamed(left, "Blackmouth")
+			local blackmouth = rowNamed(left, "Oily Blackmouth")
 			assert.are.same({ "1 in 75", "130 since" }, { blackmouth.odds.text, blackmouth.margin.text })
 			assert.is_false(blackmouth.band.shown) -- normal: no band word
 
-			local firefin = rowNamed(left, "Firefin")
+			local firefin = rowNamed(left, "Firefin Snapper")
 			assert.are.same({ "1 in 150", "just now" }, { firefin.odds.text, firefin.margin.text })
 
-			local mackerel = rowNamed(left, "Mackerel")
+			local mackerel = rowNamed(left, "Raw Mackerel")
 			assert.are.equal("not seen yet", mackerel.odds.text)
 			assert.is_false(mackerel.margin.shown) -- never caught here: nothing in the margin
 
-			local nightfin = rowNamed(left, "Nightfin")
+			local nightfin = rowNamed(left, "Raw Nightfin Snapper")
 			assert.are.equal("learning 0/100", nightfin.odds.text)
 			assert.are.equal(hand, nightfin.odds.fontObject)
 			assert.are_not.equal(hand, smallfish.odds.fontObject)
@@ -335,25 +272,25 @@ describe("a place's page (stats.md › UI › Place spread)", function()
 
 			local left = open(ns, DARKSHORE)
 
-			assert.is_true(rowNamed(left, "Smallfish").star.shown)
-			assert.is_false(rowNamed(left, "Firefin").star.shown)
+			assert.is_true(rowNamed(left, "Raw Brilliant Smallfish").star.shown)
+			assert.is_false(rowNamed(left, "Firefin Snapper").star.shown)
 			left = open(ns, AUBERDINE)
-			assert.is_true(rowNamed(left, "Firefin").star.shown)
-			assert.is_false(rowNamed(left, "Smallfish").star.shown)
+			assert.is_true(rowNamed(left, "Firefin Snapper").star.shown)
+			assert.is_false(rowNamed(left, "Raw Brilliant Smallfish").star.shown)
 		end)
 
 		it("stars a row as ns.Watch adds it and unstars it as ns.StopWatching stops it (STA-R60, STA-R63)", function()
 			local ns, loaded = ready(darkshore())
 			local left = open(ns, DARKSHORE)
-			assert.is_false(rowNamed(left, "Smallfish").star.shown)
+			assert.is_false(rowNamed(left, "Raw Brilliant Smallfish").star.shown)
 
 			ns.Watch(SMALLFISH, DARKSHORE)
 			loaded.client.runTimers()
 
-			assert.is_true(rowNamed(left, "Smallfish").star.shown)
+			assert.is_true(rowNamed(left, "Raw Brilliant Smallfish").star.shown)
 			ns.StopWatching(SMALLFISH, DARKSHORE)
 			loaded.client.runTimers()
-			assert.is_false(rowNamed(left, "Smallfish").star.shown)
+			assert.is_false(rowNamed(left, "Raw Brilliant Smallfish").star.shown)
 		end)
 
 		it("names each row in an ink of its quality", function()
@@ -361,7 +298,10 @@ describe("a place's page (stats.md › UI › Place spread)", function()
 
 			local left = open(ns, DARKSHORE)
 
-			assert.are.same(ns.BookQualityInk(1), { unpack(rowNamed(left, "Smallfish").name.textColor, 1, 3) })
+			assert.are.same(
+				ns.BookQualityInk(1),
+				{ unpack(rowNamed(left, "Raw Brilliant Smallfish").name.textColor, 1, 3) }
+			)
 			-- The Uncharted item has no catalogue quality and the client gives none: plain ink.
 			assert.are.same(ns.BOOK_LOOK.ink, { unpack(rowNamed(left, "Odd Fish").name.textColor, 1, 3) })
 		end)
@@ -374,7 +314,7 @@ describe("a place's page (stats.md › UI › Place spread)", function()
 			local ns = ready(records)
 
 			assert.are.same(
-				{ "ANY TIME", "Smallfish", "Firefin", "ALSO CAUGHT HERE", "Odd Fish" },
+				{ "ANY TIME", "Raw Brilliant Smallfish", "Firefin Snapper", "ALSO CAUGHT HERE", "Odd Fish" },
 				layoutOf((open(ns, AUBERDINE)))
 			)
 			assert.is_nil(ns.State().places[BASHAL_ARAN])
@@ -382,8 +322,7 @@ describe("a place's page (stats.md › UI › Place spread)", function()
 		end)
 
 		it("moves to its group once a catalogue change classifies it and the projection rebuilds (STA-R91)", function()
-			local fake = withHistory(darkshore())
-			local ns, loaded = ready(fake)
+			local ns, loaded, fake = ready(darkshore())
 			local log, global = fake.catchLog.data, loaded.env.PagleStatsDB.global
 			local before = layoutOf((open(ns, DARKSHORE)))
 			assert.are.same({ "ALSO CAUGHT HERE", "Odd Fish" }, { before[9], before[10] })
@@ -414,7 +353,10 @@ describe("a place's page (stats.md › UI › Place spread)", function()
 			ns = ready(later, { catalogue = catalogue })
 
 			local layout = layoutOf((open(ns, DARKSHORE)))
-			assert.are.same({ "IN THEIR WINDOW", "Nightfin", "Odd Fish" }, { layout[7], layout[8], layout[9] })
+			assert.are.same(
+				{ "IN THEIR WINDOW", "Raw Nightfin Snapper", "Odd Fish" },
+				{ layout[7], layout[8], layout[9] }
+			)
 			assert.are.equal(9, #layout) -- no Also caught here
 			assert.are.equal("learning 0/100", rowNamed((open(ns, DARKSHORE)), "Odd Fish").odds.text)
 		end)
@@ -446,21 +388,21 @@ describe("a place's page (stats.md › UI › Place spread)", function()
 				texts[3]
 			)
 
-			moveTo(fake, STRANGLETHORN, 0, 200)
+			stats.move(fake, { zone = STRANGLETHORN, subzone = 0, skillRank = 200 })
 			assert.is_false(has(textsOf((open(ns, DARKSHORE))), "I'm here"))
 		end)
 
 		it("writes the no-junk sentence below the line, with an unknown skill, and none without a line", function()
 			local ns, _, fake = ready(darkshore())
 
-			moveTo(fake, DARKSHORE, AUBERDINE, 120)
+			stats.move(fake, { zone = DARKSHORE, subzone = AUBERDINE, skillRank = 120 })
 			assert.is_true(
 				has(
 					textsOf((open(ns, DARKSHORE))),
 					"150 of my Casts here. No junk from 170; at 120 I'm below it, so only my Casts below it count."
 				)
 			)
-			moveTo(fake, DARKSHORE, AUBERDINE, nil)
+			stats.move(fake, { zone = DARKSHORE, subzone = AUBERDINE, skillRank = false })
 			assert.is_true(has(textsOf((open(ns, DARKSHORE))), "150 of my Casts here. No junk from 170."))
 			assert.is_true(has(textsOf((open(ns, STORMWIND))), "0 of my Casts here."))
 		end)
@@ -549,19 +491,19 @@ describe("a place's page (stats.md › UI › Place spread)", function()
 			local ns = ready(darkshore())
 			local left = open(ns, DARKSHORE)
 
-			rowNamed(left, "Blackmouth"):Click()
+			rowNamed(left, "Oily Blackmouth"):Click()
 
 			assert.are.same({ page = "place", area = DARKSHORE, item = BLACKMOUTH }, ns.book.router:Place())
 			left = ns.book.pages["place:left"].content
-			assert.is_true(rowNamed(left, "Blackmouth").shade.shown)
-			assert.is_false(rowNamed(left, "Smallfish").shade.shown)
+			assert.is_true(rowNamed(left, "Oily Blackmouth").shade.shown)
+			assert.is_false(rowNamed(left, "Raw Brilliant Smallfish").shade.shown)
 			local crumbs = {}
 			for _, crumb in ipairs(ns.book.frame.crumbButtons) do
 				if crumb.shown then
 					crumbs[#crumbs + 1] = crumb.label.text
 				end
 			end
-			assert.are.same({ "Stats", "Darkshore", "Blackmouth" }, crumbs)
+			assert.are.same({ "Stats", "Darkshore", "Oily Blackmouth" }, crumbs)
 		end)
 
 		it("fills the right page with the item's entry from its registered renderer", function()
@@ -577,7 +519,7 @@ describe("a place's page (stats.md › UI › Place spread)", function()
 			local _, right = open(ns, DARKSHORE, SMALLFISH)
 
 			assert.are.same({ { page = "place", area = DARKSHORE, item = SMALLFISH } }, drawn)
-			assert.are.same({ "entry 6291" }, allTexts(right))
+			assert.are.same({ "entry 6291" }, stats.textsOf(right))
 			_, right = open(ns, DARKSHORE)
 			assert.are.equal("ABOUT THESE WATERS", textsOf(right)[1])
 		end)

@@ -6,40 +6,17 @@
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local stats = dofile("spec/Pagle_Stats/support.lua")
 
-local DARKSHORE, AUBERDINE, ELWYNN = 148, 442, 12
-local MACKEREL, BLACKMOUTH, MANA_POTION, UNCHARTED = 6303, 6358, 2455, 99999
-local OTHER_GUID = "Player-4618-0B0B0B0B"
-local DAY = 600 -- realm 10:00
+local I = stats.IDS
+local AUBERDINE, ELWYNN = I.AUBERDINE, I.ELWYNN
+local MACKEREL, BLACKMOUTH, MANA_POTION, UNCHARTED = I.MACKEREL, I.BLACKMOUTH, I.MANA_POTION, I.UNCHARTED
 -- Thursday 8 October 2026, 12:55 UTC (the fake player's local clock is UTC), and the next two days: three Sessions,
 -- each a day apart and over a day before the fake's server time, so none is open.
 local T0 = 1791464100
 local T1, T2 = T0 + 86400, T0 + 2 * 86400
 
--- A Cast record for fake.catchLog:Append. `c.items` are item IDs (none: got away). Darkshore's line is 75 + 95 = 170
+-- Cast records (stats.cast: by day in Darkshore, no subzone, no modifier). Darkshore's line is 75 + 95 = 170
 -- (STA-R12): the margin is `rank` − 170 (STA-R26); Elwynn has no line, so no margin.
----@param c { time: integer, char: integer?, zone: integer?, subzone: integer?, rank: integer?, items: integer[]? }
-local function cast(c)
-	local items = {}
-	for i, itemID in ipairs(c.items or {}) do
-		items[i] = { itemID = itemID, quantity = 1 }
-	end
-	return {
-		kind = "cast",
-		char = c.char or 1,
-		time = c.time,
-		outcome = c.items and "caught" or "gotAway",
-		conditions = {
-			minute = DAY,
-			zone = c.zone or DARKSHORE,
-			subzone = c.subzone or 0,
-			skillRank = c.rank,
-			skillMod = 0,
-			events = {},
-			auras = {},
-		},
-		items = items,
-	}
-end
+local cast = stats.cast
 
 -- Session 1, 8 Oct: the player ("Angler Tester", 1) in Darkshore at 100 skill (70 below: lo50), 4 Casts over 30m, the
 -- first got away: 3 Catches, 6 per hour. The longest Session.
@@ -66,35 +43,15 @@ local SESSION_3 = {
 	cast({ time = T2 + 1500, zone = ELWYNN, rank = 150, items = { UNCHARTED } }),
 }
 
--- `lists`' records, in order.
----@param ... table[]
----@return table[]
-local function history(...)
-	local records = {}
-	for _, list in ipairs({ ... }) do
-		for _, record in ipairs(list) do
-			records[#records + 1] = record
-		end
-	end
-	return records
-end
-
 -- Pagle_Stats on a FakePagle whose log holds the player (1), "Ada Brook" (2) and `records`, logged in with its
 -- projection built, and three of the four items named (the Uncharted one isn't loaded).
 ---@param records table[]
 local function built(records)
-	local fake = newFakePagle()
-	fake.catchLog.data.characters[1] = { guid = PLAYER_GUID }
-	fake.catchLog.data.characters[2] = { guid = OTHER_GUID, name = "Ada", surname = "Brook" }
-	for _, record in ipairs(records) do
-		fake.catchLog:Append(record)
-	end
-	local loaded = stats.load(fake)
-	loaded.client.itemNames[MACKEREL] = "Raw Slitherskin Mackerel"
-	loaded.client.itemNames[BLACKMOUTH] = "Oily Blackmouth"
-	loaded.client.itemNames[MANA_POTION] = "Minor Mana Potion"
-	fake.login()
-	fake.enterWorld()
+	local loaded, fake = stats.start({
+		records = records,
+		characters = { { guid = PLAYER_GUID }, { guid = stats.OTHER_GUID, name = "Ada", surname = "Brook" } },
+		items = { MACKEREL, BLACKMOUTH, MANA_POTION },
+	})
 	return loaded, fake
 end
 
@@ -104,20 +61,6 @@ local function lifetime(loaded)
 	local pages = loaded.ns.book.pages
 	local left, right = pages["lifetime:left"], pages["lifetime:right"]
 	return left and left.content, right and right.content
-end
-
--- The texts of every shown widget under `widget`, depth first.
-local function textsOf(widget, texts)
-	texts = texts or {}
-	for _, child in ipairs(widget.children) do
-		if child.shown then
-			if child.text ~= nil and child.text ~= "" then
-				texts[#texts + 1] = child.text
-			end
-			textsOf(child, texts)
-		end
-	end
-	return texts
 end
 
 -- Where a shown child of a page sits: its TOPLEFT offset from the page.
@@ -135,7 +78,7 @@ local function read(content)
 		if child.shown then
 			local words = child.text
 			if words == nil or words == "" then
-				words = table.concat(textsOf(child), " | ")
+				words = table.concat(stats.textsOf(child), " | ")
 			end
 			if words ~= "" then
 				local x, y = offset(child)
@@ -180,7 +123,7 @@ end
 describe("the Lifetime spread (stats.md › UI › Lifetime)", function()
 	describe("the left page", function()
 		it("reads the lifetime totals, the Sessions and the time at the water (STA-R22, STA-R33, STA-R59)", function()
-			local loaded = built(history(SESSION_1, SESSION_2, SESSION_3))
+			local loaded = built(stats.concat(SESSION_1, SESSION_2, SESSION_3))
 
 			local left = lifetime(loaded)
 
@@ -197,7 +140,7 @@ describe("the Lifetime spread (stats.md › UI › Lifetime)", function()
 		end)
 
 		it("names the longest Session and the most Catches per hour with their dates (STA-R33, STA-R59)", function()
-			local loaded = built(history(SESSION_1, SESSION_2, SESSION_3))
+			local loaded = built(stats.concat(SESSION_1, SESSION_2, SESSION_3))
 
 			local lines = read((lifetime(loaded)))
 
@@ -220,7 +163,7 @@ describe("the Lifetime spread (stats.md › UI › Lifetime)", function()
 		end)
 
 		it("gives the got-away rate of each skill margin bucket with Casts, in STA-R26's order (STA-R26)", function()
-			local loaded = built(history(SESSION_1, SESSION_2, SESSION_3))
+			local loaded = built(stats.concat(SESSION_1, SESSION_2, SESSION_3))
 
 			local lines = read((lifetime(loaded)))
 
@@ -235,7 +178,7 @@ describe("the Lifetime spread (stats.md › UI › Lifetime)", function()
 		end)
 
 		it("lists each character with Casts, alphabetically by name, with their numbers (STA-R22, STA-R59)", function()
-			local loaded = built(history(SESSION_1, SESSION_2, SESSION_3))
+			local loaded = built(stats.concat(SESSION_1, SESSION_2, SESSION_3))
 
 			local lines = read((lifetime(loaded)))
 
@@ -269,7 +212,7 @@ describe("the Lifetime spread (stats.md › UI › Lifetime)", function()
 			"indexes every item caught in two columns, most caught first, Noise and Uncharted included, never item 0 "
 				.. "(STA-R25, STA-R96)",
 			function()
-				local loaded = built(history(SESSION_1, SESSION_2, SESSION_3))
+				local loaded = built(stats.concat(SESSION_1, SESSION_2, SESSION_3))
 
 				local _, right = lifetime(loaded)
 
@@ -279,10 +222,10 @@ describe("the Lifetime spread (stats.md › UI › Lifetime)", function()
 					"THE CATCH",
 					"Every fish",
 					"How many I've caught. Hover for first and last; click for its waters.",
-					"Raw Slitherskin Mackerel | 4", -- 3 in Session 1, 1 in Session 3
+					"Raw Mackerel | 4", -- 3 in Session 1, 1 in Session 3
 					"Oily Blackmouth | 2",
 					"Minor Mana Potion | 1", -- Noise
-					"Item 99999 | 1", -- Uncharted
+					"Item 77777 | 1", -- Uncharted
 				}, read(right))
 				local _, pieces = read(right)
 				assert.are.equal(pieces[4].x, pieces[5].x)
@@ -294,9 +237,9 @@ describe("the Lifetime spread (stats.md › UI › Lifetime)", function()
 		)
 
 		it('shows "First {date}, last {date}" on hovering an item (STA-R25, STA-R59)', function()
-			local loaded = built(history(SESSION_1, SESSION_2, SESSION_3))
+			local loaded = built(stats.concat(SESSION_1, SESSION_2, SESSION_3))
 			local _, right = lifetime(loaded)
-			local entry = pieceReading(right, "Raw Slitherskin Mackerel | 4")
+			local entry = pieceReading(right, "Raw Mackerel | 4")
 
 			entry:GetScript("OnEnter")(entry)
 			local tooltip = loaded.client.gameTooltip
@@ -311,7 +254,7 @@ describe("the Lifetime spread (stats.md › UI › Lifetime)", function()
 		end)
 
 		it("opens an item's page on clicking it (STA-R74)", function()
-			local loaded = built(history(SESSION_1, SESSION_2, SESSION_3))
+			local loaded = built(stats.concat(SESSION_1, SESSION_2, SESSION_3))
 			local _, right = lifetime(loaded)
 
 			pieceReading(right, "Oily Blackmouth | 2"):Click()
@@ -320,7 +263,7 @@ describe("the Lifetime spread (stats.md › UI › Lifetime)", function()
 		end)
 
 		it("returns the index's height, so a long index scrolls (STA-R70)", function()
-			local loaded = built(history(SESSION_1, SESSION_2, SESSION_3))
+			local loaded = built(stats.concat(SESSION_1, SESSION_2, SESSION_3))
 			local _, right = lifetime(loaded)
 			local _, pieces = read(right)
 
@@ -340,7 +283,7 @@ describe("the Lifetime spread (stats.md › UI › Lifetime)", function()
 	end)
 
 	it("redraws in place: a Cast later, each line once with the new numbers (STA-R73)", function()
-		local loaded, fake = built(history(SESSION_1, SESSION_2, SESSION_3))
+		local loaded, fake = built(stats.concat(SESSION_1, SESSION_2, SESSION_3))
 		local left, right = lifetime(loaded)
 		local before = #read(left)
 
@@ -352,7 +295,7 @@ describe("the Lifetime spread (stats.md › UI › Lifetime)", function()
 		assert.are.equal("Casts | 11", lines[3])
 		assert.are.same(
 			-- The Mana Potion ties the Blackmouth at 2 and has the lower item ID.
-			{ "Raw Slitherskin Mackerel | 4", "Minor Mana Potion | 2", "Oily Blackmouth | 2", "Item 99999 | 1" },
+			{ "Raw Mackerel | 4", "Minor Mana Potion | 2", "Oily Blackmouth | 2", "Item 77777 | 1" },
 			{ unpack(read(right), 4) }
 		)
 	end)

@@ -5,14 +5,14 @@
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local stats = dofile("spec/Pagle_Stats/support.lua")
 
-local DARKSHORE, AUBERDINE = 148, 442
-local NIGHTFIN, FIREFIN = 13759, 6359
+local I = stats.IDS
+local DARKSHORE, AUBERDINE, NIGHTFIN, FIREFIN = I.DARKSHORE, I.AUBERDINE, I.NIGHTFIN, I.FIREFIN
 
 local NONE = "Watch a Dry spell from any fish's page in the Stats book."
 local STOP = "Stop watching"
 
 -- The Trackers page's rows from Modules, as Core builds it, without Core's slot rows (SET-R44: Stats' frame dropdown
--- comes with its slot, #209): "<kind> <label>", with "  " before an indented one.
+-- comes with its slot, adapter/Goods.lua): "<kind> <label>", with "  " before an indented one.
 local function section(fake)
 	local out = {}
 	for _, row in ipairs(assert(fake.settingsPage("trackers"), "no Trackers page")) do
@@ -96,13 +96,10 @@ describe("Stats' section on Trackers, as Core gets it", function()
 	end)
 end)
 
--- Core with Stats, logged in, with the names the rows read: Nightfin and Firefin, Darkshore and Auberdine.
-local function session()
+-- Core with Stats, logged in, with the names the rows read: Nightfin and Firefin, and the fixture's areas.
+local function coreWithStats()
 	local loaded = loadAddon("Pagle_Stats", FOREVER_GLOBALS)
-	loaded.client.itemNames[NIGHTFIN] = "Nightfin"
-	loaded.client.itemNames[FIREFIN] = "Firefin"
-	loaded.client.areaNames[DARKSHORE] = "Darkshore"
-	loaded.client.areaNames[AUBERDINE] = "Auberdine"
+	stats.nameAll(loaded, { NIGHTFIN, FIREFIN })
 	loaded.client.fire("PLAYER_LOGIN")
 	return loaded
 end
@@ -146,7 +143,7 @@ describe("Stats' section on the Trackers page, in the panel", function()
 	it(
 		"follows Core's row: a Stats header, the checkbox off, the indented row, the frame (SET-R40, SET-R42, SET-R44)",
 		function()
-			local loaded = session()
+			local loaded = coreWithStats()
 			local rows = showTrackers(loaded)
 
 			local names = {}
@@ -163,7 +160,7 @@ describe("Stats' section on the Trackers page, in the panel", function()
 	)
 
 	it('reads "0 of 3" and the line for none, with no watches (SET-R42)', function()
-		local loaded = session()
+		local loaded = coreWithStats()
 
 		local row = rowNamed(showTrackers(loaded), "Watched Dry spells")
 
@@ -172,37 +169,41 @@ describe("Stats' section on the Trackers page, in the panel", function()
 	end)
 
 	it("lists each watch oldest first, by the watched area's own name, with its button (SET-R42, STA-R60)", function()
-		local loaded = session()
+		local loaded = coreWithStats()
 		loaded.ns.Watch(NIGHTFIN, DARKSHORE)
 		loaded.ns.Watch(FIREFIN, AUBERDINE)
 
 		local row = rowNamed(showTrackers(loaded), "Watched Dry spells")
 
-		assert.are.same(
-			{ "Watched Dry spells", "2 of 3", "Nightfin, Darkshore", STOP, "Firefin, Auberdine", STOP },
-			texts(loaded, row)
-		)
+		assert.are.same({
+			"Watched Dry spells",
+			"2 of 3",
+			"Raw Nightfin Snapper, Darkshore",
+			STOP,
+			"Firefin Snapper, Auberdine",
+			STOP,
+		}, texts(loaded, row))
 		assert.are.equal(2, #stopButtons(loaded, row))
 	end)
 
 	it("redraws at once, growing, when a watch is added while it shows (SET-R62, stats.md › Settings)", function()
-		local loaded = session()
+		local loaded = coreWithStats()
 		local row = rowNamed(showTrackers(loaded), "Watched Dry spells")
 
 		loaded.ns.Watch(FIREFIN, AUBERDINE)
 
-		assert.are.same({ "Watched Dry spells", "1 of 3", "Firefin, Auberdine", STOP }, texts(loaded, row))
+		assert.are.same({ "Watched Dry spells", "1 of 3", "Firefin Snapper, Auberdine", STOP }, texts(loaded, row))
 	end)
 
 	it('"Stop watching" removes that watch and shrinks the row, leaving the tracker on (STA-R63)', function()
-		local loaded = session()
+		local loaded = coreWithStats()
 		loaded.ns.Watch(NIGHTFIN, DARKSHORE)
 		loaded.ns.Watch(FIREFIN, AUBERDINE)
 		local row = rowNamed(showTrackers(loaded), "Watched Dry spells")
 
 		stopButtons(loaded, row)[1]:Click()
 
-		assert.are.same({ "Watched Dry spells", "1 of 3", "Firefin, Auberdine", STOP }, texts(loaded, row))
+		assert.are.same({ "Watched Dry spells", "1 of 3", "Firefin Snapper, Auberdine", STOP }, texts(loaded, row))
 		assert.are.equal(1, #stopButtons(loaded, row))
 		assert.is_false(loaded.ns.IsWatched(NIGHTFIN, DARKSHORE))
 		assert.is_true(loaded.ns.db.profile.tracker)
@@ -212,7 +213,7 @@ describe("Stats' section on the Trackers page, in the panel", function()
 	end)
 
 	it("is never greyed out while the checkbox is off (SET-R42, stats.md › Settings)", function()
-		local loaded = session()
+		local loaded = coreWithStats()
 		loaded.ns.Watch(NIGHTFIN, DARKSHORE)
 		local rows = showTrackers(loaded)
 		local checkbox = rowNamed(rows, "Show the live tracker")
@@ -225,7 +226,7 @@ describe("Stats' section on the Trackers page, in the panel", function()
 	end)
 
 	it("is found by Blizzard's settings search by its label (SET-R5)", function()
-		local loaded = session()
+		local loaded = coreWithStats()
 
 		local row = rowNamed(showTrackers(loaded), "Watched Dry spells")
 
@@ -233,7 +234,7 @@ describe("Stats' section on the Trackers page, in the panel", function()
 	end)
 
 	it("shows its tooltip on hover (stats.md › Settings)", function()
-		local loaded = session()
+		local loaded = coreWithStats()
 		local row = rowNamed(showTrackers(loaded), "Watched Dry spells")
 
 		row.frame:GetScript("OnEnter")(row.frame)
@@ -249,7 +250,7 @@ describe("Stats' section on the Trackers page, in the panel", function()
 	end)
 
 	it("the page's Defaults turns the checkbox off and keeps the watches (SET-R45, SET-R60)", function()
-		local loaded = session()
+		local loaded = coreWithStats()
 		loaded.ns.Watch(NIGHTFIN, DARKSHORE)
 		loaded.ns.Watch(FIREFIN, AUBERDINE)
 		local rows = showTrackers(loaded)
@@ -258,9 +259,13 @@ describe("Stats' section on the Trackers page, in the panel", function()
 
 		assert.is_false(loaded.ns.db.profile.tracker)
 		assert.is_false(rowNamed(rows, "Show the live tracker").frame.value)
-		assert.are.same(
-			{ "Watched Dry spells", "2 of 3", "Nightfin, Darkshore", STOP, "Firefin, Auberdine", STOP },
-			texts(loaded, rowNamed(showTrackers(loaded), "Watched Dry spells"))
-		)
+		assert.are.same({
+			"Watched Dry spells",
+			"2 of 3",
+			"Raw Nightfin Snapper, Darkshore",
+			STOP,
+			"Firefin Snapper, Auberdine",
+			STOP,
+		}, texts(loaded, rowNamed(showTrackers(loaded), "Watched Dry spells")))
 	end)
 end)

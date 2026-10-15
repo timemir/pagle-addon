@@ -6,48 +6,16 @@
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local stats = dofile("spec/Pagle_Stats/support.lua")
 
-local DARKSHORE, AUBERDINE, BASHAL_ARAN, ELWYNN = 148, 442, 446, 12
-local FERALAS, FEATHERMOON = 357, 1116
-local MACKEREL, BLACKMOUTH = 6303, 6358
+local I = stats.IDS
+local DARKSHORE, AUBERDINE, BASHAL_ARAN, ELWYNN = I.DARKSHORE, I.AUBERDINE, I.BASHAL_ARAN, I.ELWYNN
+local FERALAS, FEATHERMOON = I.FERALAS, I.FEATHERMOON
+local MACKEREL, BLACKMOUTH = I.MACKEREL, I.BLACKMOUTH
+local move, fish = stats.move, stats.fish
 
--- Moves the player: `fields` replace those of the live snapshot (zone, subzone, minute, skillRank, ...).
-local function move(fake, fields)
-	local conditions = {}
-	for key, value in pairs(fake.conditions) do
-		conditions[key] = value
-	end
-	for key, value in pairs(fields) do
-		conditions[key] = value ~= false and value or nil
-	end
-	fake.setConditions(conditions)
-end
-
--- Pagle_Stats on a fake that has logged in, its projection built, every area named, fishing Auberdine at realm 08:15
--- (day) with skill 86 + 25 = 111 (FakePagle's), and Stats' server time where the fake's clock is.
+-- Pagle_Stats on a fake that has logged in, its projection built, every area named and Blackmouth (not Mackerel),
+-- fishing Auberdine at realm 08:15 (day) with skill 86 + 25 = 111 (FakePagle's).
 local function ready()
-	local loaded, fake = stats.load()
-	local names = loaded.client.areaNames
-	names[DARKSHORE], names[AUBERDINE], names[BASHAL_ARAN] = "Darkshore", "Auberdine", "Bashal'Aran"
-	names[ELWYNN], names[FERALAS], names[FEATHERMOON] = "Elwynn Forest", "Feralas", "Feathermoon Stronghold"
-	loaded.client.itemNames[BLACKMOUTH] = "Oily Blackmouth"
-	fake.login()
-	fake.enterWorld()
-	move(fake, { zone = DARKSHORE, subzone = AUBERDINE })
-	loaded.env.GetServerTime = function()
-		return fake.serverTime()
-	end
-	return loaded, fake, loaded.ns.book
-end
-
--- Plays `n` Casts: caught `itemID`, or got away with none.
-local function fish(fake, n, itemID)
-	for _ = 1, n do
-		if itemID then
-			fake.playCast("caught", { { itemID = itemID, quantity = 1 } })
-		else
-			fake.playCast("gotAway")
-		end
-	end
+	return stats.start({ items = { BLACKMOUTH }, at = { zone = DARKSHORE, subzone = AUBERDINE } })
 end
 
 -- The home spread's two views, as adapter/Home.lua keeps them on each side's content.
@@ -56,20 +24,6 @@ local function waters(book)
 end
 local function rightNow(book)
 	return book.pages["home:right"].content.rightNow
-end
-
--- Each shown tile's name, line, "I'm here" and note ("-" for one not shown).
-local function tilesOf(book)
-	local out = {}
-	for _, tile in ipairs(waters(book).grid.tiles) do
-		if tile.shown then
-			local function read(text)
-				return text.shown and text.text or "-"
-			end
-			out[#out + 1] = table.concat({ tile.name.text, read(tile.line), read(tile.here), read(tile.note) }, " | ")
-		end
-	end
-	return out
 end
 
 -- The words of each shown watch line, and of each shown In this book link with its number.
@@ -110,7 +64,7 @@ describe("the home spread's left page, Where I've fished (stats.md › UI › Ho
 		assert.are.same({
 			"Darkshore | 3 Casts · 2 waters | - | -",
 			"Elwynn Forest | 1 Cast · 0 waters | I'm here | -",
-		}, tilesOf(book))
+		}, stats.tilesOf(waters(book).grid))
 	end)
 
 	it(
@@ -129,7 +83,7 @@ describe("the home spread's left page, Where I've fished (stats.md › UI › Ho
 				"Feralas | not fished yet | I'm here | -",
 				"Elwynn Forest | 3 Casts · 0 waters | - | -",
 				"Darkshore | 2 Casts · 1 water | - | watching 1",
-			}, tilesOf(book))
+			}, stats.tilesOf(waters(book).grid))
 		end
 	)
 
@@ -150,7 +104,7 @@ describe("the home spread's left page, Where I've fished (stats.md › UI › Ho
 
 		assert.is_true(waters(book).empty.shown)
 		assert.are.equal("Not fished anywhere yet.", waters(book).empty.text)
-		assert.are.same({}, tilesOf(book))
+		assert.are.same({}, stats.tilesOf(waters(book).grid))
 	end)
 end)
 
@@ -252,7 +206,7 @@ describe("the home spread's right page, Right now (stats.md › UI › Home spre
 				{ item = BLACKMOUTH, area = DARKSHORE },
 				{ item = MACKEREL, area = AUBERDINE },
 			}
-			loaded.client.itemNames[MACKEREL] = "Raw Mackerel"
+			stats.nameAll(loaded, { MACKEREL })
 
 			loaded.ns.ToggleBook()
 
@@ -270,14 +224,13 @@ describe("the home spread's right page, Right now (stats.md › UI › Home spre
 		end)
 
 		it("asks for a watched item's name, and redraws with it once it loads (STA-R73)", function()
-			local loaded, fake, book = ready()
+			local loaded, _, book = ready()
 			loaded.ns.db.profile.watched = { { item = MACKEREL, area = DARKSHORE } }
 
 			loaded.ns.ToggleBook()
 			assert.are.same({ "Item 6303, Darkshore: 0 Casts, none yet." }, watchLines(book))
 			assert.are.same({ MACKEREL }, loaded.client.itemRequests)
-			loaded.client.itemNames[MACKEREL] = "Raw Mackerel"
-			fake.fireGameEvent("ITEM_DATA_LOAD_RESULT", MACKEREL, true)
+			stats.loadItem(loaded, MACKEREL)
 			loaded.client.runTimers()
 
 			assert.are.same({ "Raw Mackerel, Darkshore: 0 Casts, none yet." }, watchLines(book))

@@ -7,7 +7,8 @@ local stats = dofile("spec/Pagle_Stats/support.lua")
 local DARKSHORE, AUBERDINE, BASHAL_ARAN, ELWYNN, STRANGLETHORN, STORMWIND = 148, 442, 446, 12, 33, 1519
 local FERALAS, FEATHERMOON = 357, 1116
 local MACKEREL, BLACKMOUTH, FIREFIN, NIGHTFIN, BASS, MUD_SNAPPER, SMALLFISH = 6303, 6358, 6359, 13759, 13756, 6289, 6291
-local MANA_POTION, RUSTED_LURE, UNCHARTED = 2455, 90001, 77777
+local MANA_POTION, RUSTED_LURE = 2455, 90001
+local UNCHARTED = stats.IDS.UNCHARTED
 
 -- A state with only `places[area]`, in stats.md's Projection state shape (all the rows read), whose items are
 -- caught there.

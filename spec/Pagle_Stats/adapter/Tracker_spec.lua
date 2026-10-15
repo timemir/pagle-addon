@@ -8,8 +8,10 @@ local stats = dofile("spec/Pagle_Stats/support.lua")
 ---@diagnostic disable-next-line: undefined-global -- as above
 local newWidget = dofile("spec/support/widgets.lua").newWidget
 
-local DARKSHORE, AUBERDINE = 148, 442
-local MACKEREL, BLACKMOUTH, NIGHTFIN = 6303, 6358, 13759
+local I = stats.IDS
+local DARKSHORE, AUBERDINE = I.DARKSHORE, I.AUBERDINE
+local MACKEREL, BLACKMOUTH, NIGHTFIN = I.MACKEREL, I.BLACKMOUTH, I.NIGHTFIN
+local fish = stats.fish
 local SLOT, LOGBOOK = "stats.trackerframe", "stats.trackerframe.logbook"
 
 -- Docks a fixture tracker as Hunts would: a plain frame, 220 × 40, at order 10 (CORE-R70).
@@ -23,51 +25,21 @@ local function dockHunts(fake)
 	return frame
 end
 
--- Moves the player: `fields` replace those of the live snapshot.
-local function move(fake, fields)
-	local conditions = {}
-	for key, value in pairs(fake.conditions) do
-		conditions[key] = value
-	end
-	for key, value in pairs(fields) do
-		conditions[key] = value
-	end
-	fake.setConditions(conditions)
-end
-
 -- Pagle_Stats on a fake with the fixture tracker docked, logged in and its projection built (unless `options.updating`),
--- fishing Auberdine with Fishing 86 + 25 = 111 (below Darkshore's line, 170), Stats' server time where the fake's clock
--- is, and the fixture items and areas named. `options.fake` is a fake set up first.
+-- fishing Auberdine with Fishing 86 + 25 = 111 (below Darkshore's line, 170), the areas, Mackerel and Blackmouth
+-- named. `options.fake` is a fake set up first.
 ---@param options { updating: boolean?, fake: table? }?
 local function ready(options)
 	options = options or {}
 	local fake = options.fake or newFakePagle()
 	dockHunts(fake)
-	local loaded = stats.load(fake)
-	local names = loaded.client.areaNames
-	names[DARKSHORE], names[AUBERDINE] = "Darkshore", "Auberdine"
-	loaded.client.itemNames[MACKEREL] = "Raw Mackerel"
-	loaded.client.itemNames[BLACKMOUTH] = "Oily Blackmouth"
-	loaded.env.GetServerTime = function()
-		return fake.serverTime()
-	end
-	fake.login()
-	if not options.updating then
-		fake.enterWorld()
-	end
-	move(fake, { zone = DARKSHORE, subzone = AUBERDINE })
+	local loaded = stats.start({
+		fake = fake,
+		items = { MACKEREL, BLACKMOUTH },
+		updating = options.updating,
+		at = { zone = DARKSHORE, subzone = AUBERDINE },
+	})
 	return loaded, fake, loaded.ns
-end
-
--- Plays `n` Casts: caught `itemID`, or got away with none.
-local function fish(fake, n, itemID)
-	for _ = 1, n do
-		if itemID then
-			fake.playCast("caught", { { itemID = itemID, quantity = 1 } })
-		else
-			fake.playCast("gotAway")
-		end
-	end
 end
 
 -- The ids of the trackers the dock shows, top to bottom (CORE-R70, CORE-R72).
@@ -230,14 +202,13 @@ describe("the live tracker", function()
 		end)
 
 		it("names an item the client hasn't loaded by its ID, asks for it and redraws when it loads", function()
-			local loaded, fake, ns = ready()
+			local loaded, _, ns = ready()
 
 			ns.Watch(NIGHTFIN, DARKSHORE)
 			assert.are.equal("grey Item 13759 | 0 | Darkshore · by night · learning 0/100", read(ns)[2])
 			assert.are.same({ NIGHTFIN }, loaded.client.itemRequests)
 
-			loaded.client.itemNames[NIGHTFIN] = "Raw Nightfin Snapper"
-			fake.fireGameEvent("ITEM_DATA_LOAD_RESULT", NIGHTFIN, true)
+			stats.loadItem(loaded, NIGHTFIN)
 			loaded.client.runTimers()
 
 			assert.are.equal("grey Raw Nightfin Snapper | 0 | Darkshore · by night · learning 0/100", read(ns)[2])

@@ -6,44 +6,23 @@
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local stats = dofile("spec/Pagle_Stats/support.lua")
 
-local DARKSHORE, AUBERDINE, ELWYNN = 148, 442, 12
-local MACKEREL, BLACKMOUTH = 6303, 6358 -- both Common in the fixture catalogue
+local I = stats.IDS
+local AUBERDINE, ELWYNN = I.AUBERDINE, I.ELWYNN
+local MACKEREL, BLACKMOUTH = I.MACKEREL, I.BLACKMOUTH -- both Common in the fixture catalogue
 -- Uncharted items (not in the catalogue): their qualities come from the client (STA-R33).
 local RARE, POOR, LATE = 7080, 7070, 7090
-local OTHER_GUID = "Player-4618-0B0B0B0B"
+local OTHER_GUID = stats.OTHER_GUID
 local DAY0 = 1791676800 -- Sunday 11 October 2026 00:00 UTC; the fake's clock is 15:15 that day (SERVER_TIME)
 local OCT1_1000 = DAY0 - 10 * 86400 + 10 * 3600 -- Thursday 1 October 2026 10:00
 local OCT5_2104 = DAY0 - 6 * 86400 + 21 * 3600 + 4 * 60 -- Monday 5 October 2026 21:04
 
--- A Cast record for fake.catchLog:Append: `c.items` are item IDs (none: got away).
+-- A Cast record (stats.cast: by day in Darkshore, no subzone) at skill 150. `c.items` are item IDs (none: got away).
 ---@param c { time: integer, char: integer?, zone: integer?, subzone: integer?, items: integer[]? }
 local function cast(c)
-	local items = {}
-	for i, itemID in ipairs(c.items or {}) do
-		items[i] = { itemID = itemID, quantity = 1 }
-	end
-	return {
-		kind = "cast",
-		char = c.char or 1,
-		time = c.time,
-		outcome = c.items and "caught" or "gotAway",
-		conditions = {
-			minute = 600,
-			zone = c.zone or DARKSHORE,
-			subzone = c.subzone or 0,
-			skillRank = 150,
-			skillMod = 0,
-			events = {},
-			auras = {},
-		},
-		items = items,
-	}
+	c.rank = 150
+	return stats.cast(c)
 end
-
--- A Skill Reading record for fake.catchLog:Append.
-local function skill(time, rank, char)
-	return { kind = "skill", char = char or 1, time = time, rank = rank, max = 300, mod = 0 }
-end
+local skill, concat = stats.skill, stats.concat
 
 -- Session 1: one Cast in Darkshore on Thursday 1 October at 10:00, a Mackerel.
 local OLD = { cast({ time = OCT1_1000, items = { MACKEREL } }) }
@@ -62,17 +41,6 @@ local RICH = {
 	cast({ time = OCT5_2104 + 2400, char = 2, zone = ELWYNN, items = { POOR, LATE } }),
 }
 
--- `lists` of records, one after the other.
-local function concat(...)
-	local out = {}
-	for _, list in ipairs({ ... }) do
-		for _, record in ipairs(list) do
-			out[#out + 1] = record
-		end
-	end
-	return out
-end
-
 -- `count` Sessions of one caught Cast in Darkshore, an hour apart from Saturday 10 October 00:00, so the newest
 -- starts at {count − 1}:00.
 local function hourly(count)
@@ -87,21 +55,19 @@ end
 -- with its projection built, its book ready. The client knows the areas' names and the Uncharted items' qualities but
 -- LATE's.
 local function withHistory(records)
-	local fake = newFakePagle()
-	fake.catchLog.data.characters[1] = { guid = PLAYER_GUID, name = "Angler", surname = "Tester" }
-	fake.catchLog.data.characters[2] = { guid = OTHER_GUID, name = "Aaron", surname = "Brook" }
-	for _, record in ipairs(records) do
-		fake.catchLog:Append(record)
-	end
-	local loaded = stats.load(fake)
-	loaded.client.areaNames[DARKSHORE] = "Darkshore"
-	loaded.client.areaNames[AUBERDINE] = "Auberdine"
-	loaded.client.areaNames[ELWYNN] = "Elwynn Forest"
-	loaded.client.itemQualities[RARE] = 3
-	loaded.client.itemQualities[POOR] = 0
-	fake.login()
-	fake.enterWorld()
-	return loaded, fake, loaded.ns.book
+	local loaded, fake, book = stats.start({
+		records = records,
+		characters = {
+			{ guid = PLAYER_GUID, name = "Angler", surname = "Tester" },
+			{ guid = OTHER_GUID, name = "Aaron", surname = "Brook" },
+		},
+		items = {},
+		prepare = function(loaded)
+			loaded.client.itemQualities[RARE] = 3
+			loaded.client.itemQualities[POOR] = 0
+		end,
+	})
+	return loaded, fake, book
 end
 
 -- The vertical offset a widget's first anchor gives it (its last number), 0 with none.
@@ -268,13 +234,12 @@ describe("the Session pages", function()
 		end)
 
 		it("asks for an item whose quality isn't loaded, and counts it once it loads (STA-R33)", function()
-			local loaded, fake, book = withHistory(concat(OLD, RICH))
+			local loaded, _, book = withHistory(concat(OLD, RICH))
 			loaded.ns.OpenBook({ page = "session" })
 			-- search (#215) also asks, as the book opens, for the unnamed fish of my records and fished zones' rows
 			assert.are.equal(LATE, loaded.client.itemRequests[1])
 
-			loaded.client.itemQualities[LATE] = 2
-			fake.fireGameEvent("ITEM_DATA_LOAD_RESULT", LATE, true)
+			stats.loadItem(loaded, LATE, { quality = 2 })
 			loaded.client.runTimers()
 
 			local lines = page(book, "left")
@@ -493,15 +458,13 @@ describe("the Session pages", function()
 
 	describe("while the projection is updating (STA-R72)", function()
 		it("leave both pages to the book's updating line", function()
-			local fake = newFakePagle()
-			fake.catchLog.data.characters[1] = { guid = PLAYER_GUID }
-			fake.catchLog.data.characters[2] = { guid = OTHER_GUID }
-			for _, record in ipairs(RICH) do
-				fake.catchLog:Append(record)
-			end
-			local loaded = stats.load(fake)
-			fake.login() -- no first PLAYER_ENTERING_WORLD yet: the first build hasn't run
-			local book = loaded.ns.book
+			-- no first PLAYER_ENTERING_WORLD yet: the first build hasn't run
+			local loaded, _, book = stats.start({
+				records = RICH,
+				characters = { { guid = PLAYER_GUID }, { guid = OTHER_GUID } },
+				items = {},
+				updating = true,
+			})
 
 			loaded.ns.OpenBook({ page = "sessions" })
 

@@ -9,7 +9,8 @@ local stats = dofile("spec/Pagle_Stats/support.lua")
 local DARKSHORE, AUBERDINE, BASHAL_ARAN, ELWYNN, STRANGLETHORN = 148, 442, 446, 12, 33
 local FERALAS, FEATHERMOON = 357, 1116
 local MACKEREL, BLACKMOUTH, FIREFIN, NIGHTFIN = 6303, 6358, 6359, 13759
-local BASS, SMALLFISH, MANA_POTION, UNCHARTED = 13756, 6291, 2455, 77777
+local BASS, SMALLFISH, MANA_POTION = 13756, 6291, 2455
+local UNCHARTED = stats.IDS.UNCHARTED
 local NOW = 1791740000
 
 -- A place record (StatsPlace) with `casts` Casts in `zone`, and catches by item.
