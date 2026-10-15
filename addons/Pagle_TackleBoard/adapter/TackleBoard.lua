@@ -30,10 +30,14 @@ function ns.TackleBoard.OnInitialize()
 	if not ns.Module then
 		return
 	end
+	-- Its tracker frame slot and goods (TKB-R125, SHOP-R21).
+	ns.RegisterGoods(ns.Module)
 
 	-- Account-wide, one shared profile, with the defaults in tackle-board.md › Data.
 	ns.db = LibStub("AceDB-3.0"):New("PagleTackleBoardDB", ns.DB_DEFAULTS, true)
 	ns.MigrateDB(ns.db.global)
+	-- Its section on the Trackers page (SET-R43), before ModulesChanged (CORE-R42).
+	ns.AddSettings(ns.Module)
 
 	--- The Tackle Board's one projection (TKB-R81): Core catches it up or rebuilds it after login and hands it each new
 	--- entry (LOG-R71–R73). ns.State, ns.IsUpdating and ns.IsStarted follow it from here on.

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Runs scripts/make-test-log.lua on the pinned Lua 5.1 from scripts/setup.sh, from any directory: makes, installs
-# and restores the M4 exit check's test logs (docs/agents/in-game-verification.md).
+# and restores the M4 and M7 exit checks' test logs (docs/agents/in-game-verification.md).
 #
-#   scripts/make-test-log.sh --account <WTF/Account/<ACCT> folder> --preset <level10|level60|catches1000>
+#   scripts/make-test-log.sh --account <WTF/Account/<ACCT> folder> --preset <level10|level60|catches1000|boardday>
 #       [--out <folder>] [--catalogue <Catalogue.lua>]
 #   scripts/make-test-log.sh --account <folder> --install [--out <folder>]
 #   scripts/make-test-log.sh --account <folder> --restore [--out <folder>]
@@ -25,4 +25,6 @@ for word in "$@"; do
 		fi
 	fi
 done
+# The Tackle Board's logic/ (boardday) needs LuaBitOp, the `bit` library setup.sh installs beside that Lua.
+export LUA_CPATH="$root/.tools/lua/lib/lua/5.1/?.so;;"
 exec "$root/.tools/bin/lua" "$root/scripts/make-test-log.lua" "$@"
