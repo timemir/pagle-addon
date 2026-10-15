@@ -5,59 +5,152 @@ end
 ---@class PagleStatsNS
 local ns = select(2, ...)
 
--- The tracker block maker (STA-R82, STA-R84; stats.md › UI › Live tracker): a native objective-tracker-style block,
--- about 250 px wide, drawn from a list of line descriptions in a frame look. The Curio Shop's previews draw a sample
--- with it (STA-R88, adapter/Goods.lua); the live tracker (adapter/Tracker.lua) fills it with live lines and docks it.
--- Look reference: tracker T1 in prototypes/stats-window/, whose CSS gives the colours below.
+-- The tracker block maker (STA-R82, STA-R84; stats.md › UI › Live tracker): an objective-tracker-style block, about
+-- 250 px wide, drawn from a list of line descriptions in a look. The Curio Shop's previews draw a sample with it
+-- (STA-R88, adapter/Goods.lua); the live tracker (adapter/Tracker.lua) fills it with live lines and docks it. The three
+-- looks are the books art kit's: the native block in the kit's type over the world, the Logbook's ruled paper and the
+-- Brass plate (adapter/BookAtlas.lua's TrackerLogbook and TrackerBrass), each sliced down so it grows with its lines.
 
 -- A tint from its hex code (adapter/BookWidgets.lua).
 local tint = ns.BookTint
 
---- The tracker's width in pixels (Tunables: Tracker width, about 250 px).
+--- The tracker's width in pixels in its native look (Tunables: Tracker width, about 250 px); the papers are a little
+--- wider, round the same words.
 ns.TRACKER_WIDTH = 250
 
 --- A watch's band dot by band (STA-R82): green normal, amber unlucky, red very unlucky, and `none`, grey, with no
---- luck reading. Tracker T1's `--normal`, `--unlucky`, `--very` and `.dot.none`.
+--- luck reading; bright over the world.
 ns.BAND_DOT_COLORS = {
-	normal = tint("7fbf6a"),
-	unlucky = tint("e8b04a"),
+	normal = tint("4aa84a"),
+	unlucky = tint("e0a030"),
 	veryUnlucky = tint("e0603c"),
-	none = tint("777777"),
+	none = tint("8a8a8a"),
 }
 
---- The words' colours by role, a frame's `ink`: the header ("Stats"), plain text (a Session line, a watch's count),
---- dim text (the header's right text, a dim line, a watch's sub-line) and a watch's name.
+--- The same in ink, on the Logbook's paper.
+ns.BAND_DOT_INKS = {
+	normal = tint("3a8a3a"),
+	unlucky = tint("c89030"),
+	veryUnlucky = tint("b4281a"),
+	none = tint("8a8070"),
+}
+
+--- The words' colours by role, a look's `ink`: the header ("Stats"), plain text (a Session line, a watch's name),
+--- dim text (a dim line, a watch's sub-line), the header's right text, and a watch's count.
 ---@class StatsTrackerInks
 ---@field header number[]
 ---@field text number[]
 ---@field dim number[]
----@field name number[]
+---@field right number[]
+---@field count number[]
 
---- The native block's colours (tracker T1): the gold header, white lines, grey small print, pale gold watch names.
+--- The native look's colours: the gold header, white lines, grey small print, a pale right text, gold counts.
 ---@type StatsTrackerInks
 ns.TRACKER_INKS = {
 	header = tint("ffd100"),
 	text = tint("ffffff"),
-	dim = tint("cfc8b8"),
-	name = tint("ffd27a"),
+	dim = tint("c8c0a8"),
+	right = tint("e8d8a8"),
+	count = tint("ffd100"),
 }
 
---- A tracker frame's look (STA-R84, STA-R88): a backing laid behind the block in a tint, a border round it, and
---- optionally an inner rule inside the border, rivets on its corners, and inks for words on a pale backing (nil keeps
---- the native colours, ns.TRACKER_INKS).
+--- A font as a look sets it: its face, size and whether it has a shadow (words over the world have one).
+---@class StatsTrackerFont
+---@field [1] StatsArtFace
+---@field [2] number
+---@field [3] boolean?
+
+--- A tracker look (STA-R84): the books kit's geometry and type for one of the three. The block is `width` wide; the
+--- words sit from `x` to `right`, the header `top` down; `frame` is its paper's atlas, sliced down to the block's
+--- height, its middle repeated every `period` units when it keeps a ruling's pitch.
 ---@class StatsTrackerFrameLook
----@field backing string      -- the backing's texture
----@field tint number[]       -- its vertex tint
----@field alpha number        -- its opacity
----@field border number[]     -- the border's colour
----@field borderSize number   -- its width, in pixels
----@field inner number[]?     -- a hairline inside the border, if any
----@field innerAlpha number?  -- its opacity (1 if nil)
----@field rivets number[]?    -- a rivet's tint on each corner, if any
----@field ink StatsTrackerInks?
+---@field frame string?        -- nil: no frame, the native look
+---@field period number?
+---@field width number
+---@field x number
+---@field right number
+---@field top number
+---@field foot number          -- the room under the last line
+---@field caps boolean         -- "Stats" in small caps
+---@field shade boolean        -- the native look's fading shade behind each line
+---@field paper boolean        -- band dots in ink on paper
+---@field ink StatsTrackerInks
+---@field header StatsTrackerFont
+---@field em StatsTrackerFont      -- the header's right text
+---@field text StatsTrackerFont
+---@field count StatsTrackerFont
+
+local PAPER_INKS = {
+	header = tint("3e220c"),
+	text = tint("2e1c0c"),
+	dim = tint("5a4028"),
+	right = tint("8a5a2a"),
+	count = tint("9a2a1a"),
+}
+local BRASS_INKS = {
+	header = tint("f0cd6a"),
+	text = tint("ffffff"),
+	dim = tint("c8c0a8"),
+	right = tint("e8d8a8"),
+	count = tint("ffd100"),
+}
+
+--- The tracker's looks: "native" for No frame, and the two frames for sale.
+---@type table<string, StatsTrackerFrameLook>
+ns.TRACKER_LOOKS = {
+	native = {
+		width = 250,
+		x = 8,
+		right = 242,
+		top = 0,
+		foot = 4,
+		caps = false,
+		shade = true,
+		paper = false,
+		ink = ns.TRACKER_INKS,
+		header = { "gilt", 14, true },
+		em = { "italic", 12.5, true },
+		text = { "print", 13, true },
+		count = { "print", 13, true },
+	},
+	logbook = {
+		frame = "TrackerLogbook",
+		period = 40,
+		width = 274,
+		x = 28,
+		right = 262,
+		top = 6,
+		foot = 8,
+		caps = true,
+		shade = false,
+		paper = true,
+		ink = PAPER_INKS,
+		header = { "print", 12 },
+		em = { "italic", 12.5 },
+		text = { "print", 13 },
+		count = { "hand", 17 },
+	},
+	brass = {
+		frame = "TrackerBrass",
+		width = 262,
+		x = 14,
+		right = 248,
+		top = 8,
+		foot = 8,
+		caps = false,
+		shade = false,
+		paper = false,
+		ink = BRASS_INKS,
+		header = { "gilt", 14 },
+		em = { "italic", 12.5 },
+		text = { "print", 13, true },
+		count = { "print", 13, true },
+	},
+}
+local LOOKS = ns.TRACKER_LOOKS
 
 --- One line of the tracker, top to bottom (STA-R82):
---- - `header`: `text` ("Stats") with `right` on the right ("Session · 21m"), over a faint rule;
+--- - `header`: `text` ("Stats") with `right` on the right ("Session · 21m");
 --- - `line`: a plain line, `dim` for small grey print;
 --- - `watch`: a band dot (`band`, nil for grey), `name`, the right-hand `count`, and below them the `sub` line.
 ---@class StatsTrackerLine
@@ -72,291 +165,164 @@ ns.TRACKER_INKS = {
 ---@field item integer?    -- a watch's item, for its hover and click (STA-R83)
 ---@field area integer?    -- a watch's place
 
--- Heights in pixels: the header, a plain line, a watch's top padding, its name line and its sub-line.
-local HEADER_HEIGHT, LINE_HEIGHT, WATCH_PAD, NAME_HEIGHT, SUB_HEIGHT = 18, 15, 4, 14, 13
--- A band dot's size, the name's indent after it, and the room kept on the right for the count.
-local DOT_SIZE, NAME_INDENT, COUNT_ROOM = 8, 14, 48
--- How far a frame reaches out round the block, the inner rule's inset from that edge, and a rivet's size.
-local FRAME_PAD, INNER_INSET, RIVET_SIZE = 6, 3, 6
+-- Heights in pixels: the header, a plain line, a watch; where a watch's sub-line sits; the name's indent after its dot;
+-- a dot's size.
+local HEADER_HEIGHT, LINE_HEIGHT, WATCH_HEIGHT, SUB_Y, NAME_INDENT, DOT_SIZE = 26, 20, 42, 24, 14, 8
+-- The paper keeps this much of its top and its foot when it slices down.
+local FRAME_TOP, FRAME_FOOT = 30, 20
 
 --- One row of the block: every widget a line kind may use, shown as its line needs. A button, so the live tracker can
 --- give it clicks and hovers (STA-R83).
 ---@class StatsTrackerRow: Button
 ---@field line StatsTrackerLine
+---@field shade Texture
 ---@field dot Texture
 ---@field text FontString  -- the header's title, a plain line, a watch's name
 ---@field right FontString -- the header's right text, a watch's count
 ---@field sub FontString   -- a watch's sub-line
----@field rule Texture     -- the rule under the header
 
---- A tracker frame on a block (STA-R84): the backing, the border's lines, the inner rule's lines and the four rivets,
---- all hidden until a look dresses it.
----@class StatsTrackerFrameView
----@field backing Texture
----@field border Texture[]
----@field inner Texture[]
----@field rivets Texture[]
-
---- A tracker block (STA-R82): `SetLines` draws its lines and returns its height; `SetFrame` dresses it in a frame
---- look (nil: the plain native block). Either may come first.
+--- A tracker block (STA-R82): `SetLines` draws its lines and returns its height; `SetFrame` dresses it in a look (nil:
+--- the native look). Either may come first.
 ---@class StatsTrackerBlock: Frame
 ---@field rows StatsTrackerRow[]
----@field frame StatsTrackerFrameView
----@field look StatsTrackerFrameLook?
+---@field paper StatsVSlice           -- the look's paper, sliced to the block's height
+---@field look StatsTrackerFrameLook  -- the look it draws in
+---@field lines StatsTrackerLine[]
 ---@field SetLines fun(self: StatsTrackerBlock, lines: StatsTrackerLine[]): number
 ---@field SetFrame fun(self: StatsTrackerBlock, look: StatsTrackerFrameLook?)
 
--- Four lines round `frame`'s edge, `out` pixels outside it (a negative `out` is inside), in `layer`: top, bottom,
--- left, right.
----@param frame Frame
----@param out number
----@param layer DrawLayer
----@return Texture[]
-local function edgeLines(frame, out, layer)
-	local lines = {}
-	for i, points in ipairs({
-		{ "TOPLEFT", "TOPRIGHT" },
-		{ "BOTTOMLEFT", "BOTTOMRIGHT" },
-		{ "TOPLEFT", "BOTTOMLEFT" },
-		{ "TOPRIGHT", "BOTTOMRIGHT" },
-	}) do
-		local line = frame:CreateTexture(nil, layer)
-		for _, point in ipairs(points) do
-			line:SetPoint(point, point:find("RIGHT") and out or -out, point:find("TOP") and out or -out)
-		end
-		lines[i] = line
-	end
-	return lines
-end
-
--- Sets edge lines' colour, opacity and width (the top and bottom lines' height, the sides' width), and shows them.
----@param lines Texture[]
----@param color number[]
----@param alpha number
----@param size number
-local function paintLines(lines, color, alpha, size)
-	for i, line in ipairs(lines) do
-		line:SetColorTexture(color[1], color[2], color[3], alpha)
-		if i <= 2 then
-			line:SetHeight(size)
-		else
-			line:SetWidth(size)
-		end
-		line:Show()
-	end
-end
-
----@param lines Texture[]
-local function hideAll(lines)
-	for _, line in ipairs(lines) do
-		line:Hide()
-	end
-end
-
--- Builds a block's frame view, hidden.
----@param block Frame
----@return StatsTrackerFrameView
-local function newFrameView(block)
-	local backing = block:CreateTexture(nil, "BACKGROUND")
-	backing:SetPoint("TOPLEFT", -FRAME_PAD, FRAME_PAD)
-	backing:SetPoint("BOTTOMRIGHT", FRAME_PAD, -FRAME_PAD)
-	local rivets = {}
-	for i, corner in ipairs({ "TOPLEFT", "TOPRIGHT", "BOTTOMLEFT", "BOTTOMRIGHT" }) do
-		local rivet = block:CreateTexture(nil, "OVERLAY")
-		rivet:SetTexture(ns.BOOK_TEXTURES.disc)
-		rivet:SetSize(RIVET_SIZE, RIVET_SIZE)
-		local inset = FRAME_PAD - INNER_INSET
-		rivet:SetPoint(
-			"CENTER",
-			block,
-			corner,
-			corner:find("RIGHT") and inset or -inset,
-			corner:find("TOP") and inset or -inset
-		)
-		rivets[i] = rivet
-	end
-	---@type StatsTrackerFrameView
-	local view = {
-		backing = backing,
-		border = edgeLines(block, FRAME_PAD, "BORDER"),
-		inner = edgeLines(block, FRAME_PAD - INNER_INSET, "BORDER"),
-		rivets = rivets,
-	}
-	backing:Hide()
-	hideAll(view.border)
-	hideAll(view.inner)
-	hideAll(rivets)
-	return view
-end
-
--- Dresses a frame view in `look`, or hides it all for nil.
----@param view StatsTrackerFrameView
----@param look StatsTrackerFrameLook?
-local function dress(view, look)
-	if not look then
-		view.backing:Hide()
-		hideAll(view.border)
-		hideAll(view.inner)
-		hideAll(view.rivets)
-		return
-	end
-	view.backing:SetTexture(look.backing)
-	view.backing:SetVertexColor(look.tint[1], look.tint[2], look.tint[3])
-	view.backing:SetAlpha(look.alpha)
-	view.backing:Show()
-	paintLines(view.border, look.border, 1, look.borderSize)
-	if look.inner then
-		paintLines(view.inner, look.inner, look.innerAlpha or 1, 1)
-	else
-		hideAll(view.inner)
-	end
-	for _, rivet in ipairs(view.rivets) do
-		if look.rivets then
-			rivet:SetVertexColor(look.rivets[1], look.rivets[2], look.rivets[3])
-			rivet:Show()
-		else
-			rivet:Hide()
-		end
-	end
-end
-
--- Builds one row of `block`: the dot, the main text, the right-hand text, the sub-line and the header's rule.
+-- Builds one row of `block`: the shade, the dot, the main text, the right-hand text and the sub-line.
 ---@param block Frame
 ---@return StatsTrackerRow
 local function newRow(block)
 	local row = CreateFrame("Button", nil, block) --[[@as StatsTrackerRow]]
+	row.shade = row:CreateTexture(nil, "BACKGROUND")
+	row.shade:SetColorTexture(1, 1, 1, 1)
+	row.shade:SetGradient("HORIZONTAL", CreateColor(0, 0, 0, 0.45), CreateColor(0, 0, 0, 0))
+	row.shade:SetAllPoints()
 	row.dot = row:CreateTexture(nil, "ARTWORK")
 	row.dot:SetTexture(ns.BOOK_TEXTURES.disc)
 	row.dot:SetSize(DOT_SIZE, DOT_SIZE)
-	row.dot:SetPoint("TOPLEFT", 1, -(WATCH_PAD + 3))
-	row.text = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-	row.text:SetJustifyH("LEFT")
-	row.text:SetWordWrap(false)
-	row.right = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-	row.right:SetJustifyH("RIGHT")
-	row.sub = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-	row.sub:SetJustifyH("LEFT")
-	row.sub:SetWordWrap(false)
-	row.sub:SetPoint("TOPLEFT", NAME_INDENT, -(WATCH_PAD + NAME_HEIGHT))
-	row.sub:SetPoint("TOPRIGHT", 0, -(WATCH_PAD + NAME_HEIGHT))
-	row.rule = row:CreateTexture(nil, "ARTWORK")
-	row.rule:SetPoint("BOTTOMLEFT", 0, 1)
-	row.rule:SetPoint("BOTTOMRIGHT", 0, 1)
-	row.rule:SetHeight(1)
+	local function text(justify)
+		local made = row:CreateFontString(nil, "OVERLAY")
+		made:SetJustifyH(justify)
+		made:SetWordWrap(false)
+		return made
+	end
+	row.text, row.right, row.sub = text("LEFT"), text("RIGHT"), text("LEFT")
 	return row
 end
 
--- Lays out `row` for `line` and returns its height.
+-- Sets a font string in a look's font and ink.
+---@param fontString FontString
+---@param font StatsTrackerFont
+---@param color number[]
+local function setFont(fontString, font, color)
+	fontString:SetFontObject(ns.ArtFont(font[1], font[2], font[3]))
+	fontString:SetTextColor(color[1], color[2], color[3])
+end
+
+-- Lays out `row` for `line` in `look` and returns its height.
 ---@param row StatsTrackerRow
 ---@param line StatsTrackerLine
+---@param look StatsTrackerFrameLook
 ---@return number
-local function layOut(row, line)
+local function layOut(row, line, look)
 	row.line = line
-	local text, right = row.text, row.right
+	local ink, x, right = look.ink, look.x, look.right
+	local text, count = row.text, row.right
 	text:ClearAllPoints()
-	right:ClearAllPoints()
+	count:ClearAllPoints()
 	row.dot:SetShown(line.kind == "watch")
 	row.sub:SetShown(line.kind == "watch")
-	row.rule:SetShown(line.kind == "header")
 	if line.kind == "header" then
-		text:SetFontObject("GameFontNormal")
-		text:SetPoint("TOPLEFT")
-		text:SetText(line.text)
-		right:SetFontObject("GameFontHighlightSmall")
-		right:SetPoint("TOPRIGHT", 0, -2)
-		right:SetText(line.right)
-		right:SetShown(line.right ~= nil)
+		setFont(text, look.header, ink.header)
+		text:SetPoint("TOPLEFT", x, -(look.caps and 7 or 5))
+		text:SetText(look.caps and ns.BookSmallCaps(line.text) or line.text)
+		setFont(count, look.em, ink.right)
+		count:SetPoint("TOPRIGHT", row, "TOPLEFT", right, -6)
+		count:SetText(line.right)
+		count:SetShown(line.right ~= nil)
 		return HEADER_HEIGHT
 	elseif line.kind == "watch" then
-		local color = ns.BAND_DOT_COLORS[line.band or "none"]
+		local colors = look.paper and ns.BAND_DOT_INKS or ns.BAND_DOT_COLORS
+		local color = colors[line.band or "none"]
 		row.dot:SetVertexColor(color[1], color[2], color[3])
-		text:SetFontObject("GameFontNormalSmall")
-		text:SetPoint("TOPLEFT", NAME_INDENT, -WATCH_PAD)
-		text:SetPoint("TOPRIGHT", -COUNT_ROOM, -WATCH_PAD)
+		row.dot:ClearAllPoints()
+		row.dot:SetPoint("TOPLEFT", x, -9)
+		setFont(count, look.count, ink.count)
+		count:SetPoint("TOPRIGHT", row, "TOPLEFT", right, -4)
+		count:SetText(line.count)
+		count:Show()
+		setFont(text, look.text, ink.text)
+		text:SetPoint("TOPLEFT", x + NAME_INDENT, -4)
 		text:SetText(line.name)
-		right:SetFontObject("GameFontHighlightSmall")
-		right:SetPoint("TOPRIGHT", 0, -WATCH_PAD)
-		right:SetText(line.count)
-		right:Show()
-		row.sub:SetFontObject("GameFontHighlightSmall")
+		text:SetWidth(math.max(1, right - x - NAME_INDENT - count:GetStringWidth() - 6))
+		setFont(row.sub, look.text, ink.dim)
+		row.sub:ClearAllPoints()
+		row.sub:SetPoint("TOPLEFT", x + NAME_INDENT, -SUB_Y)
+		row.sub:SetWidth(right - x - NAME_INDENT)
 		row.sub:SetText(line.sub)
-		return WATCH_PAD + NAME_HEIGHT + SUB_HEIGHT
+		return WATCH_HEIGHT
 	end
-	text:SetFontObject("GameFontHighlightSmall")
-	text:SetPoint("TOPLEFT", 0, -2)
-	text:SetPoint("TOPRIGHT", 0, -2)
+	setFont(text, look.text, line.dim and ink.dim or ink.text)
+	text:SetPoint("TOPLEFT", x, -3)
+	text:SetWidth(right - x)
 	text:SetText(line.text)
-	right:Hide()
+	count:Hide()
 	return LINE_HEIGHT
 end
 
--- Sets `row`'s words in `inks` by their roles.
----@param row StatsTrackerRow
----@param inks StatsTrackerInks
-local function ink(row, inks)
-	local kind = row.line.kind
-	local function paint(fontString, color)
-		fontString:SetTextColor(color[1], color[2], color[3])
-	end
-	if kind == "header" then
-		paint(row.text, inks.header)
-		paint(row.right, inks.dim)
-		row.rule:SetColorTexture(inks.header[1], inks.header[2], inks.header[3], 0.35)
-	elseif kind == "watch" then
-		paint(row.text, inks.name)
-		paint(row.right, inks.text)
-		paint(row.sub, inks.dim)
-	else
-		paint(row.text, row.line.dim and inks.dim or inks.text)
-	end
-end
-
---- A new, empty tracker block on `parent`, ns.TRACKER_WIDTH wide, with no frame.
+--- A new, empty tracker block on `parent`, in the native look.
 ---@param parent Frame
 ---@return StatsTrackerBlock
 function ns.NewTrackerBlock(parent)
 	local block = CreateFrame("Frame", nil, parent) --[[@as StatsTrackerBlock]]
 	block:SetSize(ns.TRACKER_WIDTH, 1)
-	block.rows = {}
-	block.frame = newFrameView(block)
+	block.rows, block.lines, block.look = {}, {}, LOOKS.native
+	block.paper = CreateFrame("Frame", nil, block) --[[@as StatsVSlice]]
+	block.paper:SetPoint("TOPLEFT")
+	block.paper:SetFrameLevel(block:GetFrameLevel())
+	block.paper:Hide()
 
-	local function inkAll()
-		local inks = block.look and block.look.ink or ns.TRACKER_INKS
-		for _, row in ipairs(block.rows) do
-			if row:IsShown() then
-				ink(row, inks)
-			end
-		end
-	end
-
-	function block.SetLines(_, lines)
-		local top = 0
-		for i, line in ipairs(lines) do
+	-- Lays every line out in the look, and sizes the block and its paper to them; returns the lines' height.
+	local function draw()
+		local look = block.look
+		local top = look.top
+		for i, line in ipairs(block.lines) do
 			local row = block.rows[i]
 			if not row then
 				row = newRow(block)
 				block.rows[i] = row
 			end
-			local height = layOut(row, line)
+			local height = layOut(row, line, look)
 			row:ClearAllPoints()
 			row:SetPoint("TOPLEFT", 0, -top)
-			row:SetPoint("TOPRIGHT", 0, -top)
-			row:SetHeight(height)
+			row:SetSize(look.width, height)
+			row.shade:SetShown(look.shade)
 			row:Show()
 			top = top + height
 		end
-		for i = #lines + 1, #block.rows do
+		for i = #block.lines + 1, #block.rows do
 			block.rows[i]:Hide()
 		end
-		block:SetHeight(math.max(top, 1))
-		inkAll()
-		return top
+		local height = math.max(top + look.foot, 1)
+		block:SetSize(look.width, height)
+		block.paper:SetShown(look.frame ~= nil)
+		if look.frame then
+			ns.SetVSlice(block.paper, look.frame, "frame", height, FRAME_TOP, FRAME_FOOT, look.period)
+		end
+		return height
+	end
+
+	function block.SetLines(_, lines)
+		block.lines = lines
+		return draw()
 	end
 
 	function block.SetFrame(_, look)
-		block.look = look
-		dress(block.frame, look)
-		inkAll()
+		block.look = look or LOOKS.native
+		draw()
 	end
 
 	return block

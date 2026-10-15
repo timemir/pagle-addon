@@ -75,7 +75,7 @@ local function read(ns)
 					row.right:GetText(),
 					row.sub:GetText()
 				)
-			elseif row.rule:IsShown() then
+			elseif row.line.kind == "header" then
 				out[#out + 1] = row.text:GetText() .. " | " .. row.right:GetText()
 			else
 				out[#out + 1] = row.text:GetText()
@@ -297,19 +297,21 @@ describe("the live tracker", function()
 	end)
 
 	describe("its frame (STA-R84, CORE-R73)", function()
-		it("is the plain native block with no frame, and redraws in Logbook when it is equipped", function()
+		it("is the native block with no frame, and redraws on the Logbook's paper when it is equipped", function()
 			local _, fake, ns = ready()
 			ns.Watch(MACKEREL, AUBERDINE)
-			local view = ns.tracker.block.frame
-			assert.is_false(view.backing:IsShown())
+			local block = ns.tracker.block
+			assert.is_false(block.paper:IsShown())
+			assert.are.equal(ns.TRACKER_LOOKS.native, block.look)
 
 			fake.setPurchased({ [LOGBOOK] = true })
 			assert.is_true(fake.Pagle.SetEquipped(SLOT, LOGBOOK))
 
 			local logbook = ns.TRACKER_FRAMES[LOGBOOK]
-			assert.is_true(view.backing:IsShown())
-			assert.are.equal(logbook.backing, view.backing.texture)
-			local ink = rowReading(ns, "Stats").text.textColor
+			assert.is_true(block.paper:IsShown())
+			assert.are.equal(ns.ATLASES.TrackerLogbook.file, block.paper.top.texture)
+			assert.are.equal(logbook.width, block:GetWidth())
+			local ink = rowReading(ns, "STATS").text.textColor -- in small caps on the paper
 			assert.are.same(logbook.ink.header, { ink[1], ink[2], ink[3] })
 		end)
 
@@ -322,8 +324,8 @@ describe("the live tracker", function()
 			local _, _, ns = ready({ fake = fake, updating = true })
 			ns.Watch(MACKEREL, AUBERDINE)
 
-			assert.are.equal(ns.TRACKER_FRAMES[LOGBOOK].backing, ns.tracker.block.frame.backing.texture)
-			assert.is_true(ns.tracker.block.frame.backing:IsShown())
+			assert.are.equal(ns.TRACKER_FRAMES[LOGBOOK], ns.tracker.block.look)
+			assert.is_true(ns.tracker.block.paper:IsShown())
 		end)
 	end)
 

@@ -297,13 +297,13 @@ describe("a notebook cover's preview", function()
 			assert.is_true(notebook:IsShown())
 			if ns.COVERS[id].kit then
 				-- the board's own: the books kit's leather and band
-				assert.is_true(notebook.cover.fill:IsShown(), id)
-				assert.is_true(notebook.cover.band:IsShown(), id)
+				assert.is_true(notebook.cover.fill:IsShown())
+				assert.is_true(notebook.cover.band:IsShown())
 				leathers[#leathers + 1] = "kit"
 			else
 				local leather = notebook.cover.leather.color
 				assert.are.same(ns.COVERS[id].leather, { leather[1], leather[2], leather[3] }, id)
-				assert.is_false(notebook.cover.fill:IsShown(), id)
+				assert.is_false(notebook.cover.fill:IsShown())
 				leathers[#leathers + 1] = ("%.3f %.3f %.3f"):format(leather[1], leather[2], leather[3])
 			end
 			for _, widget in ipairs(descendants(notebook)) do
@@ -346,11 +346,11 @@ describe("a tracker frame's preview", function()
 				)
 				assert.are.equal(ns.TrackerLook(id), tracker.view.look, id)
 				if look then
-					assert.is_true(paper:IsShown(), id)
+					assert.is_true(paper:IsShown())
 					assert.are.equal(ns.ATLASES[look.frame].file, paper.top.texture, id)
 					assert.are.equal(look.width, tracker.width, id)
 				else
-					assert.is_false(paper:IsShown(), id)
+					assert.is_false(paper:IsShown())
 				end
 			end
 			assert.are_not.equal(

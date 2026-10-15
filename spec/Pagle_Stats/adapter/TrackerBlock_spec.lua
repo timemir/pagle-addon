@@ -95,71 +95,65 @@ describe("A tracker block", function()
 end)
 
 describe("A tracker block's frame", function()
-	it("is nothing with no look: the plain native block (STA-R84, STA-R88)", function()
-		local block = newBlock()
+	it("is no paper with no look: the native block, its lines over a fading shade (STA-R84, STA-R88)", function()
+		local block, ns = newBlock()
 		block:SetLines(LINES)
 
 		block:SetFrame(nil)
 
-		assert.is_false(block.frame.backing:IsShown())
-		for _, line in ipairs(block.frame.border) do
-			assert.is_false(line:IsShown())
-		end
-		for _, rivet in ipairs(block.frame.rivets) do
-			assert.is_false(rivet:IsShown())
-		end
+		assert.are.equal(ns.TRACKER_LOOKS.native, block.look)
+		assert.is_false(block.paper:IsShown())
+		assert.is_true(block.rows[2].shade:IsShown())
 	end)
 
-	it("lays a look's backing, in its tint, and its border round the block (STA-R84)", function()
-		local block = newBlock()
-		block:SetLines(LINES)
-		local look = {
-			backing = "Interface\\FrameGeneral\\UI-Background-Rock",
-			tint = { 0.1, 0.2, 0.3 },
-			alpha = 0.8,
-			border = { 0.7, 0.5, 0.2 },
-			borderSize = 2,
-			rivets = { 0.9, 0.8, 0.4 },
-		}
+	it(
+		"lays a look's paper behind the block, sliced down to its height, its ruling repeated at its pitch (STA-R84)",
+		function()
+			local block, ns = newBlock()
+			block:SetLines(LINES)
+			local logbook = ns.TRACKER_LOOKS.logbook
 
-		block:SetFrame(look)
+			block:SetFrame(logbook)
 
-		local backing = block.frame.backing
-		assert.is_true(backing:IsShown())
-		assert.are.equal(look.backing, backing.texture)
-		assert.are.same(look.tint, { backing.vertexColor[1], backing.vertexColor[2], backing.vertexColor[3] })
-		assert.are.equal(0.8, backing:GetAlpha())
-		for _, line in ipairs(block.frame.border) do
-			assert.is_true(line:IsShown())
-			assert.are.same(look.border, { line.color[1], line.color[2], line.color[3] })
+			assert.is_true(block.paper:IsShown())
+			assert.are.equal(ns.ATLASES.TrackerLogbook.file, block.paper.top.texture)
+			assert.are.same({ logbook.width, block:GetHeight() }, { block:GetWidth(), block.paper.height })
+			assert.is_false(block.rows[2].shade:IsShown())
+			-- the middle repeats every 40 units, never stretched past it
+			for _, middle in ipairs(block.paper.middles) do
+				if middle:IsShown() then
+					assert.is_true(middle.height <= 40)
+				end
+			end
 		end
-		assert.are.equal(4, #block.frame.rivets)
-		for _, rivet in ipairs(block.frame.rivets) do
-			assert.is_true(rivet:IsShown())
-			assert.are.same(look.rivets, { rivet.vertexColor[1], rivet.vertexColor[2], rivet.vertexColor[3] })
-		end
-	end)
+	)
 
-	it("sets the words in a look's inks on a pale backing, and back in the native colours after (STA-R84)", function()
+	it("sets the words in a look's inks and type, and back in the native ones after (STA-R84)", function()
 		local block, ns = newBlock()
-		local ink =
-			{ header = { 0.2, 0.1, 0 }, text = { 0.3, 0.2, 0.1 }, dim = { 0.4, 0.3, 0.2 }, name = { 0.5, 0.3, 0.1 } }
-		local look = { backing = "x", tint = { 1, 1, 1 }, alpha = 1, border = { 0, 0, 0 }, borderSize = 1, ink = ink }
+		local logbook = ns.TRACKER_LOOKS.logbook
 
 		-- The look first, then the lines: lines drawn later still take its inks.
-		block:SetFrame(look)
+		block:SetFrame(logbook)
 		block:SetLines(LINES)
 
 		local header = block.rows[1].text
 		local watch = block.rows[4]
-		assert.are.same(ink.header, { header.textColor[1], header.textColor[2], header.textColor[3] })
-		assert.are.same(ink.name, { watch.text.textColor[1], watch.text.textColor[2], watch.text.textColor[3] })
-		assert.are.same(ink.dim, { watch.sub.textColor[1], watch.sub.textColor[2], watch.sub.textColor[3] })
+		assert.are.equal("STATS", header:GetText()) -- small caps on the paper
+		assert.are.same(logbook.ink.header, { header.textColor[1], header.textColor[2], header.textColor[3] })
+		assert.are.same(logbook.ink.text, { watch.text.textColor[1], watch.text.textColor[2], watch.text.textColor[3] })
+		assert.are.same(logbook.ink.dim, { watch.sub.textColor[1], watch.sub.textColor[2], watch.sub.textColor[3] })
+		assert.are.same(
+			logbook.ink.count,
+			{ watch.right.textColor[1], watch.right.textColor[2], watch.right.textColor[3] }
+		)
+		-- the band dot in ink on the paper
+		assert.are.same(ns.BAND_DOT_INKS.normal, { unpack(watch.dot.vertexColor, 1, 3) })
 
 		block:SetFrame(nil)
 
 		local native = ns.TRACKER_INKS
+		assert.are.equal("Stats", header:GetText())
 		assert.are.same(native.header, { header.textColor[1], header.textColor[2], header.textColor[3] })
-		assert.are.same(native.name, { watch.text.textColor[1], watch.text.textColor[2], watch.text.textColor[3] })
+		assert.are.same(native.text, { watch.text.textColor[1], watch.text.textColor[2], watch.text.textColor[3] })
 	end)
 end)

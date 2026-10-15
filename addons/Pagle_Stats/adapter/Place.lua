@@ -11,14 +11,15 @@ local ns = select(2, ...)
 -- the place's own numbers. Clicking a row chooses its item (STA-R74), and the right page then shows the item's entry,
 -- drawn by the renderer registered with ns.RegisterPlaceEntry (adapter/Entry.lua). The rules are logic/Groups.lua's.
 --
--- Every line of a page is anchored by its top left at its depth down the page, so the page lays out top to bottom.
+-- Every line of a page is anchored by its top left at its depth down the page, so the page lays out top to bottom. The
+-- measures are the books art kit's place page; its rows and headings are adapter/BookWidgets.lua's.
 
 local L = ns.L
 local LOOK = ns.BOOK_LOOK
 
 -- Heights and gaps down a page, in pixels: a kicker's line, a title's line, the gap before a heading, a heading, a
 -- row, a short list's line, and the gap after a paragraph.
-local KICKER, TITLE, HEADING_GAP, HEADING, ROW, LINE, PARAGRAPH = 16, 32, 12, 22, 24, 20, 6
+local KICKER, TITLE, HEADING_GAP, HEADING, ROW, LINE, PARAGRAPH = 16, 36, 12, 24, 25, 22, 6
 
 -- A pool of one kind of block on a page, made on first use and reused at each draw.
 ---@class StatsPlacePool
@@ -124,6 +125,7 @@ local function leftView(content)
 		local text = ns.BookText(content, font, color)
 		text:SetWidth(width)
 		text:SetWordWrap(true)
+		text:SetSpacing(4)
 		return text
 	end
 	local kicker = ns.NewBookKicker(content)

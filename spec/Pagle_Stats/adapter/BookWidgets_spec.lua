@@ -28,13 +28,15 @@ end
 local textsOf = stats.textsOf
 
 describe("the Stats book's art (STA-R70, stats.md › UI)", function()
-	it("uses in-client textures only, each listed in ns.BOOK_TEXTURES for the dev to judge", function()
+	it("draws the books kit's textures from Core's media, and in-client ones only where the kit has none", function()
 		local ns, parent = kit()
+		parent:SetSize(980, 640)
 		ns.NewBookLeather(parent)
+		ns.NewBookCorners(parent)
 		ns.NewBookParchment(parent, "RIGHT")
-		ns.NewBookMark(parent, "fleuron", 12)
+		ns.NewBookMark(parent, "fleuron", 16)
 		ns.NewBookMark(parent, "hand", 16)
-		ns.NewBookInkBar(parent, 200, 10):SetBar(0.5)
+		ns.NewBookInkBar(parent, 200):SetBar(0.5)
 		ns.NewBookDot(parent, 8)
 
 		local listed = {}
@@ -42,43 +44,49 @@ describe("the Stats book's art (STA-R70, stats.md › UI)", function()
 			assert.matches("^Interface\\", path)
 			listed[path] = true
 		end
-		local drawn, unlisted = texturesOf(parent), {}
+		local drawn, stray = texturesOf(parent), {}
 		for _, path in ipairs(drawn) do
-			if not listed[path] then
-				unlisted[#unlisted + 1] = path
+			if not listed[path] and not path:find("^Interface\\AddOns\\Pagle\\media\\books\\") then
+				stray[#stray + 1] = path
 			end
 		end
-		assert.are.same({}, unlisted)
+		assert.are.same({}, stray)
 		assert.is_true(#drawn >= 6)
+		assert.are.equal("Interface\\AddOns\\Pagle\\media\\books\\Leather", ns.BOOK_FILES.leather)
 	end)
 
-	it("sets its text in the client's serif face and its handwriting in another, both listed", function()
-		local ns = kit()
-		local fonts = ns.BookFonts()
+	it(
+		"sets its print in IM Fell English, its handwriting in Caveat and its gilt in Marcellus, Core's fonts",
+		function()
+			local ns = kit()
+			local fonts = ns.BookFonts()
+			local dir = "Interface\\AddOns\\Pagle\\media\\fonts\\"
 
-		assert.are.equal(ns.BOOK_FONT_FILES.serif, fonts.text.font[1])
-		assert.are.equal(ns.BOOK_FONT_FILES.hand, fonts.hand.font[1])
-		assert.are.equal(ns.BOOK_FONT_FILES.hand, fonts.title.font[1])
-		assert.are_not.equal(ns.BOOK_FONT_FILES.serif, ns.BOOK_FONT_FILES.hand)
-		assert.matches("^Fonts\\", ns.BOOK_FONT_FILES.serif)
-	end)
+			assert.are.equal(dir .. "IMFeENrm28P.ttf", fonts.text.font[1])
+			assert.are.equal(dir .. "IMFeENrm28P.ttf", fonts.title.font[1])
+			assert.are.equal(dir .. "IMFeENit28P.ttf", fonts.note.font[1])
+			assert.are.equal(dir .. "Caveat-Medium.ttf", fonts.hand.font[1])
+			assert.are.equal(dir .. "Caveat-Bold.ttf", fonts.big.font[1])
+			assert.are.equal(dir .. "Marcellus-Regular.ttf", fonts.crumb.font[1])
+		end
+	)
 
 	it(
 		"draws the fleuron, the pointing hands and the star as textures, never as font glyphs, and no other mark",
 		function()
 			local ns, parent = kit()
 
-			local fleuron = ns.NewBookMark(parent, "fleuron", 12)
+			local fleuron = ns.NewBookMark(parent, "fleuron", 16)
 			local right = ns.NewBookMark(parent, "hand", 16)
 			local left = ns.NewBookMark(parent, "handLeft", 16)
 			local star = ns.NewBookMark(parent, "star", 12) -- a watched row's ★ (adapter/Place.lua)
 
 			assert.are.equal("Texture", fleuron.kind)
-			assert.are.equal(ns.BOOK_TEXTURES.fleuron, fleuron.texture)
+			assert.are.equal(ns.ATLASES.Book.file, fleuron.texture) -- the kit's gilt fleuron
 			assert.are.same({ ns.BOOK_TEXTURES.hand, ns.BOOK_TEXTURES.hand }, { right.texture, left.texture })
 			assert.are_not.same(right.texCoord, left.texCoord) -- ☛ is ☚ mirrored
-			assert.are.equal(ns.BOOK_TEXTURES.star, star.texture)
-			assert.are.same(ns.BOOK_LOOK.red, { unpack(star.vertexColor, 1, 3) })
+			assert.are.equal(ns.ATLASES.Parts.file, star.texture) -- the kit's red star
+			assert.are.same({ 12 * 30 / 2 / 15, 12 * 30 / 2 / 15 }, { star.width, star.height })
 			assert.error_matches(function()
 				ns.NewBookMark(parent, "asterisk", 12)
 			end, "the Stats book has no mark asterisk", nil, true)
@@ -140,18 +148,19 @@ describe("the Stats book's art (STA-R70, stats.md › UI)", function()
 		assert.are.same(ns.BOOK_LOOK.sepia, { unpack(icon.icon.vertexColor, 1, 3) })
 	end)
 
-	it("fills an ink bar with hatching from the left, to its share, clamped", function()
+	it("fills an ink bar with the kit's full stroke from the left, cut to its share, clamped", function()
 		local ns, parent = kit()
 
-		local bar = ns.NewBookInkBar(parent, 202, 10)
+		local bar = ns.NewBookInkBar(parent, 240)
 		bar:SetBar(0.25)
-		assert.are.same({ 50, true }, { bar.fill.width, bar.fill.shown })
-		assert.are.equal(ns.BOOK_TEXTURES.hatch, bar.hatch.texture)
-		bar:SetBar(1.4)
-		assert.are.equal(200, bar.fill.width)
+		assert.are.same({ 60, true }, { bar.fill.width, bar.fill.shown })
+		assert.are.equal(ns.ATLASES.Parts.file, bar.fill.texture)
+		assert.are.equal(240, bar.empty.width)
+		bar:SetBar(1.4) -- past the stroke's own 200 units: sliced, not cut
+		assert.are.same({ false, true, 240 }, { bar.fill.shown, bar.fillSlice.shown, bar.fillSlice.width })
 		bar:SetBar(0)
 
-		assert.is_false(bar.fill.shown)
+		assert.are.same({ false, false }, { bar.fill.shown, bar.fillSlice.shown })
 	end)
 
 	it(
@@ -220,27 +229,51 @@ describe("the Stats book's art (STA-R70, stats.md › UI)", function()
 		assert.are.equal(1, clicks)
 	end)
 
-	it("hangs a ribbon in its letters, green or red, standing out when chosen", function()
+	it("hangs a grosgrain ribbon in its colour, its words in gilt, longer and brighter when chosen", function()
 		local ns, parent = kit()
+		local colors = ns.BOOK_LOOK.ribbons
 
 		local ribbon = ns.NewBookRibbon(parent)
-		ribbon:SetRibbon("Lifetime", false, false)
-		assert.are.equal("L\ni\nf\ne\nt\ni\nm\ne", ribbon.label.text)
-		assert.are.same(ns.BOOK_LOOK.ribbon, { unpack(ribbon.face.color, 1, 3) })
-		ribbon:SetRibbon("Where I am", true, true)
+		ribbon:SetRibbon("Lifetime", colors.lifetime, false)
+		assert.are.equal("Lifetime", ribbon.label.text)
+		assert.are.same(colors.lifetime, { unpack(ribbon.body.vertexColor, 1, 3) })
+		assert.are.equal(94, ribbon.height)
+		ribbon:SetRibbon("Where I am", colors.here, true)
 
-		assert.are.same(ns.BOOK_LOOK.ribbonHereChosen, { unpack(ribbon.face.color, 1, 3) })
+		local lifted = { colors.here[1] * 1.13, colors.here[2] * 1.13, colors.here[3] * 1.13 }
+		assert.are.same(lifted, { unpack(ribbon.body.vertexColor, 1, 3) })
+		assert.are.equal(108, ribbon.height)
 		assert.is_true(ribbon.chosen)
+		assert.is_nil(ribbon.stitch.vertexColor) -- the gold stitch keeps its own colour
 	end)
 
-	it("sizes the gold nameplate to its words", function()
+	it("sizes the brass nameplate to its words", function()
 		local ns, parent = kit()
 
 		local plate = ns.NewBookPlate(parent)
 		plate:SetPlate("No Casts yet")
 
 		assert.are.equal("No Casts yet", plate.label.text)
-		assert.are.equal(#"No Casts yet" * 6 + 20, plate.width)
+		assert.are.equal(#"No Casts yet" * 6 + 22, plate.width)
+		assert.are.equal(ns.ATLASES.Book.file, plate.brass.left.texture)
+	end)
+
+	it("puts the brass corners on the book's four corners, one sprite mirrored", function()
+		local ns, parent = kit()
+		parent:SetSize(980, 640)
+
+		local corners = ns.NewBookCorners(parent)
+
+		local left, right = corners[1].texCoord, corners[2].texCoord
+		assert.are.same({ left[2], left[1] }, { right[1], right[2] }) -- mirrored across
+		assert.are.same(
+			{ corners[1].texCoord[4], corners[1].texCoord[3] },
+			{ corners[3].texCoord[3], corners[3].texCoord[4] }
+		)
+		assert.are.same(
+			{ "TOPLEFT", "TOPRIGHT", "BOTTOMLEFT", "BOTTOMRIGHT" },
+			{ corners[1].points[1][1], corners[2].points[1][1], corners[3].points[1][1], corners[4].points[1][1] }
+		)
 	end)
 
 	it(

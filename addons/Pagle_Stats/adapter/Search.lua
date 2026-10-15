@@ -132,7 +132,7 @@ end
 ---@param anchor StatsSearchAnchor
 local function build(anchor)
 	local fonts = ns.BookFonts()
-	ns.BookSolid(anchor, LOOK.ledgerRule, "BACKGROUND")
+	ns.BookSolid(anchor, LOOK.searchEdge, "BACKGROUND")
 	local box = CreateFrame("EditBox", nil, anchor) --[[@as EditBox]]
 	box:SetPoint("TOPLEFT", 1, -1)
 	box:SetPoint("BOTTOMRIGHT", -1, 1)
@@ -142,7 +142,7 @@ local function build(anchor)
 	box:SetTextInsets(8, 8, 0, 0)
 	ns.BookSolid(box, LOOK.searchPaper, "BACKGROUND")
 	anchor.box = box
-	anchor.hint = ns.BookText(box, fonts.text, LOOK.faded)
+	anchor.hint = ns.BookText(box, fonts.note, LOOK.note) -- the kit's italic placeholder
 	anchor.hint:SetPoint("LEFT", 8, 0)
 	anchor.hint:SetText(L.SEARCH_HINT)
 

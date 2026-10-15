@@ -33,6 +33,8 @@ logic\Watches.lua
 logic\Entry.lua
 logic\Tracker.lua
 adapter\Text.lua
+adapter\BookAtlas.lua
+adapter\BookArt.lua
 adapter\BookWidgets.lua
 adapter\TrackerBlock.lua
 adapter\Goods.lua

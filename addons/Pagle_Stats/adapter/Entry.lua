@@ -8,26 +8,34 @@ local ns = select(2, ...)
 -- An item's entry on a place's right page (stats.md › UI › Place spread, the item's entry): the watch toggle, Your
 -- odds in large ink with its range and scope line (or the learning bar, or the unseen bound) and the extra sentences,
 -- the Dry spell with its luck wording and luck ruler, *In my records*, and the link to the item page. The words are
--- logic/Entry.lua's; this file lays them out in adapter/BookWidgets.lua's art, after prototypes/stats-window/ variant
--- D, on the frame adapter/Place.lua gives it (ns.RegisterPlaceEntry). Every line is anchored by its top left at its
--- depth down the page.
+-- logic/Entry.lua's; this file lays them out as the books art kit's Stats book does (adapter/BookWidgets.lua's art),
+-- on the frame adapter/Place.lua gives it (ns.RegisterPlaceEntry): the "watching" pill at the top right, the item's
+-- medallion by its name, "about" in the hand before the odds in large handwriting, the ruler with the kit's "me" mark,
+-- and the records two to a line. Every line is anchored by its top left at its depth down the page.
 
 local L = ns.L
 local LOOK = ns.BOOK_LOOK
 
--- Variant D's measures: the large ink's line, the learning bar, and the gaps down the page.
-local KICKER_GAP, TITLE_HEIGHT, BIG_HEIGHT, BAR_HEIGHT = 18, 34, 36, 10
-local PARA_GAP, GROUP_GAP, HEADING_HEIGHT, LINE_HEIGHT = 6, 14, 20, 20
--- The luck ruler's inset from each side, room for the half of its end labels that reaches past its scale.
-local RULER_INSET = 22
+-- The kit's measures: the title's line under the kicker, the large ink's line, the learning bar, and the gaps down the
+-- page.
+local KICKER_GAP, TITLE_HEIGHT, BIG_HEIGHT, BAR_HEIGHT = 20, 44, 50, 10
+local PARA_GAP, GROUP_GAP, HEADING_HEIGHT, LINE_HEIGHT = 6, 14, 21, 23
+-- "about" before the odds: how far across the odds start, and how far down "about" sits by them.
+local ABOUT_ROOM, ABOUT_DROP = 53, 17
+-- The luck ruler's inset from each side.
+local RULER_INSET = 4
+-- The records two to a line, and the gap between the two.
+local RECORD_COLUMNS, RECORD_GAP = 2, 18
 
--- The watch toggle: the star and its word, faded until it watches, faded further while it can't be pressed.
-local TOGGLE_HEIGHT, TOGGLE_STAR = 20, 16
+-- The watch toggle: the kit's paper pill, its star and its word, faded until it watches, faded further while it can't
+-- be pressed.
+local TOGGLE_HEIGHT, TOGGLE_CAP, STAR_X, STAR_Y, WORD_X = 30, 15, 8, 8, 29
 local TOGGLE_FADED, TOGGLE_DISABLED = 0.6, 0.35
 -- What the kicker leaves at its right for the toggle ("watching" and its star).
-local KICKER_ROOM = 100
+local KICKER_ROOM = 110
 
 ---@class StatsEntryToggleView: Button
+---@field pill StatsThreeSlice
 ---@field star Texture
 ---@field label FontString
 
@@ -35,6 +43,7 @@ local KICKER_ROOM = 100
 ---@field toggle StatsEntryToggleView
 ---@field kicker FontString
 ---@field name StatsBookItemTitleView
+---@field about FontString
 ---@field headline FontString
 ---@field bar StatsBookInkBarView
 ---@field range FontString
@@ -76,15 +85,18 @@ local function paragraph(line, text, y)
 	return y + line:GetStringHeight() + PARA_GAP
 end
 
--- The watch toggle (STA-R61): the red star and "watch" in the hand's large size.
+-- The watch toggle (STA-R61): the paper pill with the red star and "watch" in the hand.
 ---@param frame Frame
 ---@return StatsEntryToggleView
 local function newToggle(frame)
 	local toggle = CreateFrame("Button", nil, frame) --[[@as StatsEntryToggleView]]
-	toggle.star = ns.NewBookMark(toggle, "star", TOGGLE_STAR)
-	toggle.star:SetPoint("LEFT", 0, 0)
-	toggle.label = ns.BookText(toggle, ns.BookFonts().hand, LOOK.note)
-	toggle.label:SetPoint("LEFT", toggle.star, "RIGHT", 4, 0)
+	toggle.pill = CreateFrame("Frame", nil, toggle) --[[@as StatsThreeSlice]]
+	toggle.pill:SetPoint("TOPLEFT")
+	toggle.pill:SetFrameLevel(toggle:GetFrameLevel())
+	toggle.star = ns.NewBookMark(toggle, "star", 15)
+	toggle.star:SetPoint("TOPLEFT", STAR_X, -STAR_Y)
+	toggle.label = ns.BookText(toggle, ns.ArtFont("hand", 18), LOOK.note)
+	toggle.label:SetPoint("TOPLEFT", WORD_X, -6)
 	return toggle
 end
 
@@ -100,11 +112,11 @@ local function drawToggle(toggle, item, area, width)
 	local ink = watched and LOOK.red or LOOK.note
 	toggle.label:SetText(watched and L.ENTRY_WATCHING or L.ENTRY_WATCH)
 	toggle.label:SetTextColor(ink[1], ink[2], ink[3])
-	toggle.star:SetVertexColor(ink[1], ink[2], ink[3])
 	local enabled = not ns.IsUpdating()
 	toggle:SetEnabled(enabled)
 	toggle:SetAlpha(not enabled and TOGGLE_DISABLED or watched and 1 or TOGGLE_FADED)
-	local toggleWidth = TOGGLE_STAR + 4 + toggle.label:GetStringWidth()
+	local toggleWidth = WORD_X + math.ceil(toggle.label:GetStringWidth()) + 12
+	ns.SetThreeSlice(toggle.pill, "Parts", "watch", toggleWidth, TOGGLE_CAP, "BACKGROUND")
 	toggle:SetSize(toggleWidth, TOGGLE_HEIGHT)
 	toggle:SetScript("OnClick", function()
 		if ns.IsUpdating() then
@@ -115,7 +127,7 @@ local function drawToggle(toggle, item, area, width)
 			ns.Watch(item, area)
 		end
 	end)
-	put(toggle, 0, width - toggleWidth)
+	put(toggle, -4, width - toggleWidth)
 end
 
 -- The entry's widgets on `frame`, made at its first draw.
@@ -126,37 +138,72 @@ local function viewOf(frame)
 		return frame.entryView
 	end
 	local width, faces = frame:GetWidth(), ns.BookFonts()
-	local function text(font, color)
+	local function text(font, color, spacing)
 		local line = ns.BookText(frame, font, color)
 		line:SetWidth(width)
 		line:SetWordWrap(true)
+		line:SetSpacing(spacing or 4)
 		return line
 	end
+	local recordWidth = (width - RECORD_GAP * (RECORD_COLUMNS - 1)) / RECORD_COLUMNS
 	local view = {
 		toggle = newToggle(frame),
 		kicker = ns.NewBookKicker(frame),
 		name = ns.NewBookItemTitle(frame, width),
-		headline = text(faces.big, LOOK.title),
-		bar = ns.NewBookInkBar(frame, width, BAR_HEIGHT),
-		range = text(faces.small, LOOK.small),
-		sentence = text(faces.small, LOOK.small),
+		about = ns.BookText(frame, faces.about, LOOK.small),
+		headline = text(faces.big, LOOK.big, 0),
+		bar = ns.NewBookInkBar(frame, width),
+		range = text(faces.note, LOOK.small),
+		sentence = text(faces.text, LOOK.ink),
 		notes = text(faces.note, LOOK.note),
 		dryHeading = ns.NewBookHeading(frame, width),
-		dryFirst = text(faces.hand, LOOK.hand),
-		dryAfter = text(faces.small, LOOK.small),
+		dryFirst = text(faces.hand, LOOK.ink, 2),
+		dryAfter = text(faces.hand, LOOK.red, 2),
 		ruler = ns.NewBookRuler(frame, width - 2 * RULER_INSET),
 		recordsHeading = ns.NewBookHeading(frame, width),
 		records = {},
 		link = ns.NewBookLink(frame),
 	}
 	for i = 1, 4 do
-		view.records[i] = ns.NewBookLine(frame, width)
+		view.records[i] = ns.NewBookLine(frame, recordWidth)
 	end
+	view.about:SetText(L.ODDS_ABOUT)
 	-- the kicker leaves the toggle its room at the top right
 	view.kicker:SetWidth(width - KICKER_ROOM)
 	view.kicker:SetWordWrap(false)
 	frame.entryView = view
 	return view
+end
+
+-- Your odds in large ink (UI › Place spread): a known reading as "about" in the hand before "1 in N" in large
+-- handwriting, as the kit sets it; learning and unseen whole, learning in the hand's blue. Returns the depth under it.
+---@param view StatsEntryView
+---@param data StatsEntry
+---@param y number
+---@return number
+local function drawHeadline(view, data, y)
+	local learning = data.bar ~= nil
+	local headline = data.headline
+	local lead = L.ODDS_ABOUT .. " "
+	local about = not learning and headline:sub(1, #lead) == lead
+	view.about:SetShown(about)
+	if about then
+		headline = headline:sub(#lead + 1)
+		put(view.about, y + ABOUT_DROP)
+	end
+	local ink = learning and LOOK.hand or LOOK.big
+	view.headline:SetTextColor(ink[1], ink[2], ink[3])
+	view.headline:SetText(headline)
+	put(view.headline, y, about and ABOUT_ROOM or 0)
+	y = y + BIG_HEIGHT
+	if learning then
+		view.bar:SetBar(data.bar)
+		put(view.bar, y + 2)
+		y = y + BAR_HEIGHT + 2 + PARA_GAP
+	else
+		view.bar:Hide()
+	end
+	return y
 end
 
 --- Draws the entry of `place.item` on `place.area`'s page into `frame` (UI › Place spread).
@@ -168,43 +215,34 @@ local function drawEntry(frame, place)
 	local area = place.area --[[@as integer]]
 	local view = viewOf(frame)
 	local data = ns.Entry(ns.State(), item, area, ns.EffectiveSkill(Pagle.GetConditions()))
-	local faces = ns.BookFonts()
+	local width = frame:GetWidth()
 
-	drawToggle(view.toggle, item, area, frame:GetWidth())
+	drawToggle(view.toggle, item, area, width)
 	view.kicker:SetText(data.kicker)
-	put(view.kicker, 0)
+	put(view.kicker, 3)
 	view.name:SetItem(item, KICKER_GAP)
 	local y = KICKER_GAP + TITLE_HEIGHT + PARA_GAP
 
-	-- Your odds: learning in the hand's large ink, the others in printed large ink.
-	local learning = data.bar ~= nil
-	view.headline:SetFontObject(learning and faces.title or faces.big)
-	local ink = learning and LOOK.hand or LOOK.title
-	view.headline:SetTextColor(ink[1], ink[2], ink[3])
-	view.headline:SetText(data.headline)
-	put(view.headline, y)
-	y = y + BIG_HEIGHT
-	if learning then
-		view.bar:SetBar(data.bar)
-		put(view.bar, y + 2)
-		y = y + BAR_HEIGHT + 2 + PARA_GAP
-	else
-		view.bar:Hide()
-	end
+	-- Your odds, then its range, scope line and extra sentences.
+	y = drawHeadline(view, data, y)
 	y = paragraph(view.range, data.range, y)
 	y = paragraph(view.sentence, data.sentence, y)
 	y = paragraph(view.notes, data.notes, y)
 
-	-- The Dry spell: its first sentence in handwriting, then the luck wording and the ruler with a luck reading, or
-	-- the learning line as a note.
+	-- The Dry spell: its first sentence in the hand, then the luck wording in red when it is unlucky, and the ruler with
+	-- a luck reading; the learning line as a note.
 	y = y + GROUP_GAP
 	view.dryHeading:SetHeading(L.ENTRY_DRY, L.ENTRY_DRY_NOTE)
 	put(view.dryHeading, y)
 	y = y + HEADING_HEIGHT + PARA_GAP
 	y = paragraph(view.dryFirst, data.dryFirst, y)
 	local luck = data.luck
-	view.dryAfter:SetFontObject(luck and faces.small or faces.note)
-	local after = luck and LOOK.small or LOOK.note
+	local faces = ns.BookFonts()
+	view.dryAfter:SetFontObject(luck and faces.hand or faces.note)
+	local after = LOOK.note
+	if luck then
+		after = ns.Band(luck) == "normal" and LOOK.hand or LOOK.red
+	end
 	view.dryAfter:SetTextColor(after[1], after[2], after[3])
 	y = paragraph(view.dryAfter, data.dryAfter, y)
 	if luck then
@@ -215,18 +253,19 @@ local function drawEntry(frame, place)
 		view.ruler:Hide()
 	end
 
-	-- In my records, then the link to the item's page.
+	-- In my records two to a line, then the link to the item's page.
 	y = y + GROUP_GAP
 	view.recordsHeading:SetHeading(L.ENTRY_RECORDS)
 	put(view.recordsHeading, y)
 	y = y + HEADING_HEIGHT + PARA_GAP
+	local recordWidth = (width - RECORD_GAP * (RECORD_COLUMNS - 1)) / RECORD_COLUMNS
 	for i, record in ipairs(data.records) do
 		local line = view.records[i]
 		line:SetLine(record)
-		put(line, y)
-		y = y + LINE_HEIGHT
+		local column, row = (i - 1) % RECORD_COLUMNS, math.floor((i - 1) / RECORD_COLUMNS)
+		put(line, y + row * LINE_HEIGHT, column * (recordWidth + RECORD_GAP))
 	end
-	y = y + GROUP_GAP
+	y = y + math.ceil(#data.records / RECORD_COLUMNS) * LINE_HEIGHT + GROUP_GAP
 	local target = data.link
 	view.link:SetLink(L.ENTRY_ITEM_PAGE, function()
 		ns.OpenBook(target)

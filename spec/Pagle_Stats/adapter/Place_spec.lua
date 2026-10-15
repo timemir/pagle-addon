@@ -235,7 +235,7 @@ describe("a place's page (stats.md › UI › Place spread)", function()
 		it("show the short odds, learning in handwriting, and the Dry spell in the margin", function()
 			local ns = ready(darkshore())
 			local left = open(ns, DARKSHORE)
-			local hand = ns.BookFonts().hand
+			local hand = ns.BookFonts().margin -- learning odds in the hand, at the margin's size
 
 			local smallfish = rowNamed(left, "Raw Brilliant Smallfish")
 			assert.are.equal("1 in 30", smallfish.odds.text)
