@@ -18,6 +18,11 @@
 --     rulesVersion and fingerprint are current, its totals, places, scopes, hits, skill margins and characters, its
 --     last Sessions checked against the log's Session IDs, the live tracker setting, the watches with their readings
 --     and the book's position; with --stats-item and --area, one reading in full, from Stats' own logic/;
+--   - the Tackle Board: its Module records in PagleLog (A1, by kind, the last 10 decoded with its own codec), and from
+--     PagleTackleBoardDB in Pagle_TackleBoard.lua the projection Core stores and whether its logId, lastSeq,
+--     rulesVersion and fingerprint are current, its state (started, the days, today, owed, the pins and overflow strip
+--     with each goal's text and progress, the completed goals, tally, Coins, flies, titles and Campfire, from its own
+--     logic/), the celebrated set checked against the completed goals and titles, and the tracker settings;
 --   - the wallet: each Module's reported Coins (PagleDB.global.coins.earned), the balance (held while negative) and
 --     the wallet projection (PagleDB.global.projections.wallet): spent and purchased;
 --   - the looks: each slot's equipped good (PagleDB.profile.appearance), the goods cache and the length unit;
@@ -32,17 +37,18 @@
 --       [--huntlist <HuntList.lua>] [--hunt <id>]... [--stats-item <id> --area <areaID>] [--skill N] [--now T]
 --       [--expect-casts N] [--since T]
 --
--- --cvar defaults to SoftTargetInteract and --addon to Pagle, Pagle_Ledger, Pagle_QoL, Pagle_Hunts and Pagle_Stats;
--- naming one replaces its defaults.
+-- --cvar defaults to SoftTargetInteract and --addon to Pagle, Pagle_Ledger, Pagle_QoL, Pagle_Hunts, Pagle_Stats and
+-- Pagle_TackleBoard; naming one replaces its defaults.
 -- The character's CVars and addons need --character, e.g. --character 70/Ada-Brook.
 -- --catalogue builds the Ledger's world from another Catalogue.lua than the repo's addons/Pagle/data/Catalogue.lua,
--- such as the installed addon's; Hunts' and Stats' fingerprint checks read its content fingerprint too, and Stats'
--- readings its lines and windows.
+-- such as the installed addon's; Hunts', Stats' and the Tackle Board's fingerprint checks read its content fingerprint
+-- too, Stats' readings its lines and windows, and the Tackle Board its goals' need and stranded ones.
 -- --item <id> prints the Simulated Size record (LED-R80) the Ledger keeps for that Species or Legend item ID.
 -- --huntlist reads the Hunt list from another HuntList.lua than the repo's addons/Pagle_Hunts/data/HuntList.lua, such
 -- as a local-only build's. --hunt <id> prints that Hunt's full progress. --now T computes what depends on the time
 -- (current and retired Hunts, the summary line, the pins Hunts drops, how long ago a Dry spell's last Catch was) at
--- server time T instead of the reader's clock.
+-- server time T instead of the reader's clock, and the Tackle Board's today at T instead of Pagle_TackleBoard.lua's
+-- write time.
 -- --stats-item <id> --area <areaID> prints Stats' reading of that item in that place (STA-R40–R54): its side, scope,
 -- Your odds and Dry spell. --skill N is the live effective skill (rank + modifier) it and the watches are read at;
 -- without it, each place's side with the most Casts (STA-R41).
@@ -113,7 +119,7 @@ local function parseArgs(args)
 		options.cvars = { "SoftTargetInteract" }
 	end
 	if #options.addons == 0 then
-		options.addons = { "Pagle", "Pagle_Ledger", "Pagle_QoL", "Pagle_Hunts", "Pagle_Stats" }
+		options.addons = { "Pagle", "Pagle_Ledger", "Pagle_QoL", "Pagle_Hunts", "Pagle_Stats", "Pagle_TackleBoard" }
 	end
 	return options
 end
@@ -1650,6 +1656,490 @@ local function printStats(account, log, facts, options)
 	end
 end
 
+-- The Tackle Board section's lines (#242): its Module records in PagleLog and what PagleTackleBoardDB holds
+-- (tackle-board.md › Data), with what the Tackle Board's own logic/ computes from them over the catalogue (the repo's
+-- or --catalogue's): the records decoded, the goals' text and need, stranded goals and today's board day.
+
+local BOARD_MODULE = "TackleBoard"
+local BOARD_RECORD_KINDS = { "start", "day", "issue", "reroll" }
+local GOAL_TYPES = { n = "Notice", e = "Expedition" }
+
+-- The Tackle Board's namespace with its strings and its logic: each locale/, data/ and logic/ file
+-- Pagle_TackleBoard.toc lists, in TOC order, called with ("Pagle_TackleBoard", ns) as the client calls an addon's files
+-- (spec/Pagle_TackleBoard/support.lua loads them the same way over FakePagle). Their CORE-R11 guard reads the Pagle
+-- global, so it's a table here; logic/Rewards.lua takes LuaBitOp's functions at load, but nothing here ties a fly, so
+-- an empty `bit` serves. Its words (logic/Words.lua) get the reader's stand-ins for the client's reads: "Area {id}",
+-- "Map {id}" and "Item {id}" for the names, and Core's catalogue calls over `catalogue` (nil when it can't load) with
+-- Core's Size bands.
+local function loadBoardLogic(catalogue)
+	local ns = {}
+	local env = setmetatable({ Pagle = {}, bit = {} }, { __index = _G })
+	local dir = ROOT .. "/addons/Pagle_TackleBoard/"
+	for _, line in ipairs(assert(readLines(dir .. "Pagle_TackleBoard.toc"))) do
+		local file = line:match("^%s*(.-)%s*$"):gsub("\\", "/")
+		if file:match("^locale/[^/]+%.lua$") or file:match("^data/[^/]+%.lua$") or file:match("^logic/[^/]+%.lua$") then
+			local chunk = assert(loadfile(dir .. file))
+			setfenv(chunk, env)
+			chunk("Pagle_TackleBoard", ns)
+		end
+	end
+	local pagle = { SIZE_BANDS = loadCoreRules().SIZE_BANDS }
+	for _, name in ipairs({ "GetItem", "GetArea", "GetZones", "GetZoneCatches" }) do
+		pagle[name] = catalogue and catalogue[name]
+	end
+	local function named(prefix)
+		return function(id)
+			return prefix .. " " .. tostring(id)
+		end
+	end
+	ns.reads = {
+		AreaName = named("Area"),
+		MapName = named("Map"),
+		ItemName = named("Item"),
+		RequestItem = function() end,
+		RealmMinute = function() end,
+		FormatNumber = thousands,
+		pagle = pagle,
+	}
+	return ns
+end
+
+-- A server time as "realm 2026-10-14 08:10, server 2026-10-14 15:10:00 UTC", at the realm's UTC offset in minutes
+-- (LOG-R49), or "realm unknown" without one.
+local function realmAndServer(time, offset)
+	local realm = offset and os.date("!%Y-%m-%d %H:%M", time + offset * 60) or "unknown"
+	return ("realm %s, server %s"):format(realm, utc(time))
+end
+
+-- A goal definition (tackle-board.md › Data) as "Notice haul tier 1, pays 10, need 3, target 12 ("3 Catches in
+-- Area 12")", its text from the board's own GoalText (TKB-R36).
+local function goalDefinition(board, def)
+	local target = def.target and tostring(def.target) or "none"
+	if def.items then
+		target = target .. ":" .. table.concat(def.items, ",")
+	end
+	return ('%s %s tier %d, pays %d, need %d, target %s ("%s")'):format(
+		GOAL_TYPES[def.type],
+		def.kind,
+		def.tier,
+		def.pay,
+		def.need,
+		target,
+		board.GoalText(def)
+	)
+end
+
+-- One of the board's records (TKB-R80): its seq and time, its kind and its payload decoded with the board's own codec
+-- (logic/Records.lua), or flagged when the board skips it.
+local function boardRecordLine(board, record, offset)
+	local head = ("  seq %d, %s: %s"):format(record.seq, realmAndServer(record.time, offset), record.recordKind)
+	local decoded = board.DecodeRecord(record.recordKind, record.payload)
+	if not decoded then
+		return head .. (', SKIPPED: the board can\'t decode "%s" (TKB-R80)'):format(record.payload)
+	elseif decoded.goal then
+		return head .. (decoded.old and " of " .. decoded.old or "") .. ", " .. goalDefinition(board, decoded.goal)
+	end
+	return head .. (", dayStart %s, weekStart %s"):format(utc(decoded.dayStart), utc(decoded.weekStart))
+end
+
+-- How many records the board kept, by kind (TKB-R80's four first, then any other), as "start 1, day 7, issue2 1".
+local function recordKindCounts(counts)
+	local parts, known = {}, {}
+	for _, kind in ipairs(BOARD_RECORD_KINDS) do
+		known[kind] = true
+		if counts[kind] then
+			parts[#parts + 1] = kind .. " " .. counts[kind]
+		end
+	end
+	for _, kind in ipairs(sortedKeys(counts)) do
+		if not known[kind] then
+			parts[#parts + 1] = kind .. " " .. counts[kind]
+		end
+	end
+	return table.concat(parts, ", ")
+end
+
+-- The board's Module records in PagleLog (LOG-R40, TKB-R80), read as M:IterateCatches reads them with Core's codec:
+-- the count by kind, those the board's codec skips, and the last 10 decoded, at the realm's UTC offset (`offset`,
+-- minutes, from the log's latest Cast; nil when none read the realm minute).
+local function printBoardRecords(board, core, log, offset)
+	if not log then
+		print("records: no PagleLog to read")
+		return
+	elseif log.format ~= core.LOG_FORMAT then
+		print(
+			("records: PagleLog is format %s, the codec reads format %d"):format(tostring(log.format), core.LOG_FORMAT)
+		)
+		return
+	end
+	local records, counts, skipped = {}, {}, {}
+	for record in core.OpenCatchLog(log, { decodeErrors = 0 }, 0):Iterate(0, BOARD_MODULE) do
+		if record.kind == "module" then
+			records[#records + 1] = record
+			counts[record.recordKind] = (counts[record.recordKind] or 0) + 1
+			if not board.DecodeRecord(record.recordKind, record.payload) then
+				skipped[#skipped + 1] = record.seq
+			end
+		end
+	end
+	if #records == 0 then
+		print("records: no TackleBoard A1 entries in PagleLog")
+		return
+	end
+	print(("records: %d TackleBoard A1 entries in PagleLog: %s"):format(#records, recordKindCounts(counts)))
+	local skips = #skipped > 0 and ("%d (seq %s) (TKB-R80)"):format(#skipped, table.concat(skipped, ", ")) or "none"
+	print("records the board skips: " .. skips)
+	local first = math.max(1, #records - 9)
+	local clock = offset and ("realm time at the log's realm clock (%s)"):format(utcOffset(offset))
+		or "realm time unknown (no Cast read the realm minute)"
+	print(("the last %d, oldest first, %s:"):format(#records - first + 1, clock))
+	for i = first, #records do
+		print(boardRecordLine(board, records[i], offset))
+	end
+end
+
+-- The projection Core stores for the Tackle Board (LOG-R70), checked against PagleLog (LOG-R72), its rules version
+-- (TKB-R81: the board's own ProjectionDef over Core's SESSION_RULES_VERSION, logic/Sessions.lua) and the catalogue's
+-- content fingerprint, the board having no extra one. `context` holds the catalogue's label, and its fingerprint or why
+-- it can't load.
+local function printBoardStored(board, core, stored, log, context)
+	printStored(stored, log)
+	local rulesVersion = board.ProjectionDef({}, core.SESSION_RULES_VERSION).rulesVersion
+	if stored.rulesVersion == rulesVersion then
+		print(("rulesVersion: the Tackle Board's, %d (TKB-R81)"):format(rulesVersion))
+	else
+		local text = "rulesVersion: %s DIFFERS from the Tackle Board's %d (1000 × TKB_RULES_VERSION %d + Core's"
+			.. " SESSION_RULES_VERSION %d), so Core rebuilds it at login (TKB-R81, LOG-R72)"
+		print(
+			text:format(
+				tostring(stored.rulesVersion),
+				rulesVersion,
+				board.TKB_RULES_VERSION,
+				core.SESSION_RULES_VERSION
+			)
+		)
+	end
+	if not context.catalogue then
+		print(("fingerprint: can't be checked: %s can't load: %s"):format(context.label, tostring(context.err)))
+	elseif stored.fingerprint == context.catalogue.CONTENT_FINGERPRINT then
+		print(("fingerprint: the catalogue's, %s (LOG-R70)"):format(context.label))
+	else
+		local text = "fingerprint: DIFFERS from the catalogue's %s, %s, so Core rebuilds it at login (LOG-R70, LOG-R72)"
+		print(text:format(tostring(context.catalogue.CONTENT_FINGERPRINT), context.label))
+	end
+end
+
+-- The seconds since the epoch the file at `path` was last written (`stat`, in WSL), or nil when it can't be read.
+local function fileWriteTime(path)
+	local ok, pipe = pcall(io.popen, "stat -c %Y -- '" .. path:gsub("'", "'\\''") .. "' 2>/dev/null")
+	if not ok or not pipe then
+		return nil
+	end
+	local text = pipe:read("*a") or ""
+	pipe:close()
+	return tonumber(text:match("^%s*(%d+)%s*$"))
+end
+
+-- A goal as "Notice haul, "3 Catches in Area 12"" (TKB-R36).
+local function goalHead(board, goal)
+	return ('%s %s, "%s"'):format(
+		GOAL_TYPES[goal.type] or tostring(goal.type),
+		tostring(goal.kind),
+		board.GoalText(goal)
+	)
+end
+
+-- An open goal's line (TKB-R101–R104): its ID, its text, its progress of its need (the board's own GoalNeed over the
+-- catalogue, TKB-R44, or the record's without it), and whether it is re-posted (TKB-R55), stranded (TKB-R44) or
+-- session-bound, with the Session its progress belongs to (TKB-R41).
+local function openGoalLine(board, goal, pagle)
+	local need = pagle and board.GoalNeed(goal, pagle) or goal.need
+	local line = ("%s: %s, %s of %s"):format(goal.id, goalHead(board, goal), tostring(goal.progress), tostring(need))
+	if not pagle then
+		line = line .. " (need from the record)"
+	end
+	if goal.reposted then
+		line = line .. ", re-posted (TKB-R55)"
+	end
+	if pagle and board.IsStranded(goal, pagle) then
+		line = line .. ", STRANDED (TKB-R44)"
+	end
+	if board.IsSessionBound(goal) then
+		local session = goal.session and "its Session " .. goal.session or "no Session yet"
+		line = line .. ", session-bound, " .. session .. " (TKB-R41)"
+	end
+	return line
+end
+
+-- The pins of one type (TKB-R101), each with its goal or "empty".
+local function printPins(board, label, pins, goals, pagle)
+	print(label .. " pins:")
+	for i, id in ipairs(pins) do
+		local goal = id and goals[id]
+		if not id then
+			print(("  %d. empty"):format(i))
+		elseif not goal then
+			print(("  %d. %s: not in goals"):format(i, tostring(id)))
+		else
+			print(("  %d. %s"):format(i, openGoalLine(board, goal, pagle)))
+		end
+	end
+end
+
+-- The completed goals kept (tackle-board.md › Projection: the last 28 board days), by the day each was done (TKB-R60).
+local function printCompletedGoals(board, goals)
+	local done = {}
+	for _, goal in pairs(goals) do
+		if goal.doneDay then
+			done[#done + 1] = goal
+		end
+	end
+	table.sort(done, function(a, b)
+		if a.doneDay ~= b.doneDay then
+			return a.doneDay < b.doneDay
+		elseif (a.doneTime or 0) ~= (b.doneTime or 0) then
+			return (a.doneTime or 0) < (b.doneTime or 0)
+		end
+		return a.id < b.id
+	end)
+	local kept = ("in the last %d board days"):format(board.KEPT_DAYS)
+	print(#done > 0 and ("completed: %d %s, by doneDay"):format(#done, kept) or "completed: none " .. kept)
+	for _, goal in ipairs(done) do
+		local line = "  day %d: %s, %s, pays %s, %s"
+		local fly = goal.fly and "fly " .. goal.fly or "no fly"
+		print(line:format(goal.doneDay, goal.id, goalHead(board, goal), tostring(goal.pay), fly))
+	end
+end
+
+-- The Fly Box (TKB-R62) in pattern order (Data), each tied pattern with its day and the goal that tied it, then any
+-- tied ID that isn't a pattern now; and the titles (TKB-R64) in the board's title order, each with its day and Cast.
+local function printFliesAndTitles(board, flies, titles)
+	local ids, known = {}, {}
+	for _, pattern in ipairs(board.FLY_PATTERNS) do
+		known[pattern.id] = true
+		if flies[pattern.id] then
+			ids[#ids + 1] = pattern.id
+		end
+	end
+	for _, id in ipairs(sortedKeys(flies)) do
+		if not known[id] then
+			ids[#ids + 1] = id
+		end
+	end
+	local tied = #ids > 0 and ("%d of %d tied, in pattern order (TKB-R62):"):format(#ids, #board.FLY_PATTERNS)
+		or ("none of %d tied (TKB-R62)"):format(#board.FLY_PATTERNS)
+	print("flies: " .. tied)
+	for _, id in ipairs(ids) do
+		local fly = tableOr(flies[id])
+		local what = known[id] and "" or " (not a pattern now)"
+		print(("  %s%s: day %s, goal %s"):format(id, what, tostring(fly.day), tostring(tableOr(fly.goal).id)))
+	end
+	local earned = {}
+	for _, title in ipairs(board.TITLES) do
+		if titles[title.id] then
+			earned[#earned + 1] = title.id
+		end
+	end
+	print("titles: " .. (#earned > 0 and #earned or "none") .. " (TKB-R64)")
+	for _, id in ipairs(earned) do
+		local title = tableOr(titles[id])
+		print(("  %s: day %s, Cast %s"):format(id, tostring(title.day), tostring(title.cast)))
+	end
+end
+
+-- The Campfire (TKB-R70–R73): its count, Kindling and longest, the milestones reached and the day log kept.
+local function printFire(fire)
+	print(
+		("fire: count %s, Kindling %s, longest %s (TKB-R70–R72)"):format(
+			tostring(fire.count),
+			tostring(fire.kindling),
+			tostring(fire.longest)
+		)
+	)
+	local milestones = {}
+	for i, days in ipairs(sortedKeys(tableOr(fire.milestones))) do
+		local reached = tableOr(fire.milestones[days])
+		milestones[i] = ("%s days on day %s, Cast %s"):format(days, tostring(reached.day), tostring(reached.cast))
+	end
+	print("fire milestones: " .. (#milestones > 0 and table.concat(milestones, ", ") or "none") .. " (TKB-R73)")
+	local days = {}
+	for i, day in ipairs(sortedKeys(tableOr(fire.log))) do
+		days[i] = ("day %s %s"):format(day, tostring(fire.log[day]))
+	end
+	print("fire log: " .. (#days > 0 and table.concat(days, ", ") or "none"))
+end
+
+-- The state's lines (tackle-board.md › Projection): started, the latest boundary, the processed day and week, today at
+-- `now` (TKB-R12, the board's own DayOf from the latest boundary), the goals owed, the pins and the overflow strip, the
+-- completed goals, tally, Coins, flies, titles and Campfire; and, started or not, the zones fished and items caught
+-- (TKB-R81). `context` holds Core's catalogue calls (nil without the catalogue), the realm offset, and now and its
+-- source.
+local function printBoardState(board, state, context)
+	local started = state.started
+	if type(started) ~= "table" then
+		print("started: no, the board isn't started (TKB-R2)")
+	else
+		local offset = context.offset
+		print(("started: seq %s, %s (TKB-R6)"):format(tostring(started.seq), realmAndServer(started.time, offset)))
+		local boundary = tableOr(state.boundary)
+		print(
+			("boundary: seq %s, day %s, week %s, dayStart %s, weekStart %s"):format(
+				tostring(boundary.seq),
+				tostring(boundary.day),
+				tostring(boundary.week),
+				utc(boundary.dayStart),
+				utc(boundary.weekStart)
+			)
+		)
+		print(("processed: day %s, week %s (TKB-R14)"):format(tostring(state.day), tostring(state.week)))
+		local today = board.DayOf(boundary, context.now)
+		local after = today - state.day
+		local ahead
+		if after > 0 then
+			ahead = count(after, "day") .. " after the processed day: the next live step advances to it"
+		elseif after == 0 then
+			ahead = "the processed day"
+		else
+			ahead = "before the processed day (a clock step back)"
+		end
+		local when = ("%s (%s)"):format(utc(context.now), context.source)
+		print(("today: day %d at %s, %s (TKB-R12, TKB-R13)"):format(today, when, ahead))
+		local owed = tableOr(state.owed)
+		local notices, expeditions = tonumber(owed.notices) or 0, tonumber(owed.expeditions) or 0
+		print(("owed: %s, %s (TKB-R20)"):format(count(notices, "Notice"), count(expeditions, "Expedition")))
+		local pins, goals = tableOr(state.pins), state.goals
+		printPins(board, "Expedition", tableOr(pins.expeditions), goals, context.pagle)
+		printPins(board, "Notice", tableOr(pins.notices), goals, context.pagle)
+		local strip = {}
+		for _, goal in ipairs(board.BoardOrder(state)) do
+			if goal.pin == nil then
+				strip[#strip + 1] = goal
+			end
+		end
+		print("overflow strip: " .. (#strip > 0 and #strip .. " (TKB-R101)" or "none"))
+		for _, goal in ipairs(strip) do
+			print("  " .. openGoalLine(board, goal, context.pagle))
+		end
+		printCompletedGoals(board, goals)
+		local tally = tableOr(state.tally)
+		print(
+			("tally: %s, %s (TKB-R61)"):format(
+				count(tonumber(tally.notices) or 0, "Notice"),
+				count(tonumber(tally.expeditions) or 0, "Expedition")
+			)
+		)
+		print(("coins: %s (TKB-R63)"):format(tostring(state.coins)))
+		printFliesAndTitles(board, tableOr(state.flies), tableOr(state.titles))
+		printFire(tableOr(state.fire))
+	end
+	print("zones: " .. listed(tableOr(state.zones), function(zone, time)
+		return ("%s last at %s"):format(zone, utc(tonumber(time) or 0))
+	end))
+	print("caught: " .. listed(tableOr(state.caught)))
+end
+
+-- The celebrated set (TKB-R83): its goal and title IDs, then, with a state, whether every completed goal kept and every
+-- earned title is in it; one that isn't was never shown, and a rebuild raises its moment (TKB-R84).
+local function printBoardCelebrated(celebrated, state)
+	local goals, titles = tableOr(celebrated.goals), tableOr(celebrated.titles)
+	local goalCount = #sortedKeys(goals)
+	print(("celebrated goals: %s, titles: %s"):format(goalCount > 0 and goalCount or "none", listed(titles)))
+	if not state then
+		return
+	end
+	local missing = {}
+	for _, id in ipairs(sortedKeys(tableOr(state.goals))) do
+		local goal = state.goals[id]
+		if goal.doneDay and not goals[id] then
+			missing[#missing + 1] = ("%s (day %s)"):format(id, tostring(goal.doneDay))
+		end
+	end
+	if #missing == 0 then
+		print("celebrated: every completed goal is in it")
+	else
+		print(
+			("celebrated: MISSING %s: %s (TKB-R83)"):format(
+				count(#missing, "completed goal"),
+				table.concat(missing, ", ")
+			)
+		)
+	end
+	local unshown = {}
+	for _, id in ipairs(sortedKeys(tableOr(state.titles))) do
+		if not titles[id] then
+			unshown[#unshown + 1] = id
+		end
+	end
+	if #unshown == 0 then
+		print("celebrated: every earned title is in it")
+	else
+		print(
+			("celebrated: MISSING %s: %s (TKB-R83)"):format(
+				count(#unshown, "earned title"),
+				table.concat(unshown, ", ")
+			)
+		)
+	end
+end
+
+-- The profile (tackle-board.md › PagleTackleBoardDB, one shared "Default" profile): the tracker's two settings, each
+-- marked when AceDB left its default out of the file.
+local function printBoardProfile(board, profile)
+	local defaults = board.DB_DEFAULTS.profile
+	for _, name in ipairs({ "tracker", "trackerCollapsed" }) do
+		if profile[name] == nil then
+			print(("%s: %s (not saved: the default)"):format(name, tostring(defaults[name])))
+		else
+			print(("%s: %s"):format(name, tostring(profile[name])))
+		end
+	end
+end
+
+-- Prints the Tackle Board section (tackle-board.md › Data): the board's records in PagleLog (`facts`, the Catch log
+-- section's, give the realm offset), then from SavedVariables/Pagle_TackleBoard.lua the projection Core stores
+-- (LOG-R70) with its checks, its state, the celebrated set and the profile. Today is read at --now, else at the file's
+-- write time, else at the reader's clock.
+local function printBoard(account, log, facts, options)
+	local path = account .. "/SavedVariables/Pagle_TackleBoard.lua"
+	local saved, err = loadSavedVariables(path)
+	if not saved then
+		print("== Tackle Board: can't read " .. path .. ": " .. err)
+		return
+	end
+	local db = saved.PagleTackleBoardDB
+	if type(db) ~= "table" then
+		print("== Tackle Board: Pagle_TackleBoard.lua holds no PagleTackleBoardDB")
+		return
+	end
+	print("== Tackle Board (PagleTackleBoardDB)")
+	local core = loadCodec()
+	local context = { label = options.catalogue or "the repo's addons/Pagle/data/Catalogue.lua" }
+	context.catalogue, context.err = loadCatalogue(options.catalogue or ROOT .. "/addons/Pagle/data/Catalogue.lua")
+	local board = loadBoardLogic(context.catalogue)
+	local offset = facts and facts.realmOffset
+	printBoardRecords(board, core, log, offset)
+	local global = tableOr(db.global)
+	local stored, state = global.board, nil
+	if type(stored) ~= "table" or type(stored.projection) ~= "table" then
+		print("projection: none stored (no build has finished, LOG-R72)")
+	else
+		printBoardStored(board, core, stored, log, context)
+		state = stored.projection
+		state.goals = tableOr(state.goals)
+		local now, source = options.now, "--now"
+		if not now then
+			now, source = fileWriteTime(path), "the file's write time"
+		end
+		if not now then
+			now, source = os.time(), "the reader's clock"
+		end
+		local pagle = context.catalogue and board.reads.pagle or nil
+		printBoardState(board, state, { pagle = pagle, offset = offset, now = now, source = source })
+	end
+	printBoardCelebrated(tableOr(global.celebrated), state)
+	printBoardProfile(board, tableOr(tableOr(db.profiles).Default))
+end
+
 -- PagleDB.global from Pagle.lua's globals, or nil and why there's none.
 local function pagleGlobal(pagle)
 	if not pagle.saved then
@@ -2005,6 +2495,7 @@ local function main(args)
 	printLedger(options.account, pagleLog(pagle.saved), options.catalogue, options.items)
 	printHunts(options.account, pagleLog(pagle.saved), options)
 	printStats(options.account, pagleLog(pagle.saved), facts, options)
+	printBoard(options.account, pagleLog(pagle.saved), facts, options)
 	printWallet(pagle, pagleLog(pagle.saved))
 	printLooks(pagle)
 	printDock(pagle)
