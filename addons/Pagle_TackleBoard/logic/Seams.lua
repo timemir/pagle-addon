@@ -12,8 +12,6 @@ local ns = select(2, ...)
 --
 --   ns.ToggleBoard()          Opens the board, or closes it if shown (TKB-R1). Registration's view, the compartment
 --                             entry and `/pagle board` call it. Defined in adapter/Board.lua.
---   ns.ToggleLean()           Turns the papers' lean off, or on again, saved (tackle-board.md › UI). `/pagle board
---                             lean` calls it. Defined in adapter/BoardArt.lua.
 --   ns.OpenBoard(goalID?)     Opens the board (never closes it); with a goal ID, highlights that goal's pin for 2 s
 --                             (TKB-R109, drawn by adapter/Pins.lua). The Settings status button calls it, and the
 --                             tracker's lines with their goal. Defined in adapter/Board.lua.

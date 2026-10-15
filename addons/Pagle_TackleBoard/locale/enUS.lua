@@ -24,9 +24,6 @@ ns.L = {
 		.. "Nothing is ever taken down for being late.",
 	UPDATING = "Updating…",
 	UPDATING_NOTE = "Reading back every Cast since the board went up. Taking goals down waits until it's done.",
-	-- `/pagle board lean` (tackle-board.md › UI): the papers' lean turned on, or off.
-	LEAN_ON = "Tackle Board: the papers lean again.",
-	LEAN_OFF = "Tackle Board: the papers hang straight. Type /pagle board lean to lean them again.",
 
 	-- The board's words (TKB-R36, TKB-R102, TKB-R105, TKB-R122; logic/Words.lua). Templates fill `{name}` fields; a
 	-- `{ one, other }` pair is a count's singular and plural (ns.Plural).

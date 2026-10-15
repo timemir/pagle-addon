@@ -470,24 +470,12 @@ end
 
 -- The papers' lean (TKB-R102: a Notice "at a slight tilt that straightens on hover").
 
---- Whether the papers lean: PagleTackleBoardDB.profile.lean (on by default), which `/pagle board lean` turns off and
---- on again. Off, every paper hangs straight, for a client whose SetRotation shows the wrong part of a texture.
+--- Whether the papers lean: PagleTackleBoardDB.profile.lean (on by default; no command sets it, only the saved
+--- variable). Off, every paper hangs straight and nothing turns, for a client whose SetRotation shows the wrong part
+--- of a texture.
 ---@return boolean
 function ns.Leans()
 	return not (ns.db and ns.db.profile.lean == false)
-end
-
---- Turns the papers' lean off, or on again (`/pagle board lean`), redraws the board if it is open and says which in
---- chat. The setting is saved, so a client that draws leaning papers wrong stays straight after a reload.
-function ns.ToggleLean()
-	if not ns.db then
-		return
-	end
-	ns.db.profile.lean = not ns.Leans()
-	print(ns.Leans() and ns.L.LEAN_ON or ns.L.LEAN_OFF)
-	if ns.board and ns.board:IsShown() then
-		ns.board:Draw("lean")
-	end
 end
 
 -- Turns `region` by `degrees` (clockwise, as the kit's CSS rotate), if it can turn and the papers lean; straight

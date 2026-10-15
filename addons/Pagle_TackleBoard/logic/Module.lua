@@ -9,8 +9,7 @@ local ns = select(2, ...)
 -- point reaches the seams through ns at call time (logic/Seams.lua), so the tickets that fill them never touch this.
 
 --- The Tackle Board's def for `Pagle.RegisterModule` (TKB-R1): its one view and `/pagle board`, both toggling the
---- board (any text after the command is ignored, but `lean`, which turns the papers' lean off or on, tackle-board.md ›
---- UI), and its Settings status button (CORE-R44, SET-R11), "Start my
+--- board (any text after the command is ignored), and its Settings status button (CORE-R44, SET-R11), "Start my
 --- board" until the board is started, then "Open Tackle Board", read afresh at each showing (SET-R12). Its compartment
 --- entry is the view, "Tackle Board" (CORE-R50). Nothing in it stops or resets a started board (TKB-R3).
 ---@return PagleModuleDef
@@ -35,18 +34,6 @@ function ns.ModuleDef()
 			end,
 		},
 		views = { { id = "board", label = ns.L.BOARD, open = toggleBoard } },
-		slash = {
-			{
-				name = "board",
-				fn = function(args)
-					if type(args) == "string" and args:lower() == "lean" then
-						ns.ToggleLean()
-					else
-						ns.ToggleBoard()
-					end
-				end,
-				help = ns.L.BOARD_SLASH_HELP,
-			},
-		},
+		slash = { { name = "board", fn = toggleBoard, help = ns.L.BOARD_SLASH_HELP } },
 	}
 end

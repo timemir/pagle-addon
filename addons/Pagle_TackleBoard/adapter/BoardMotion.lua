@@ -89,7 +89,7 @@ function ns.SetBoardFire(fire, stage)
 end
 
 -- Scale (sx, sy) and turn (deg, CCW as SetRotation) a placed sprite about the point (ox, oy) of its design box.
--- The turn waits on the papers' lean switch, which is the board's one SetRotation switch (adapter/BoardArt.lua).
+-- The turn waits on the papers' lean (profile.lean), the board's one SetRotation switch (adapter/BoardArt.lua).
 local function transform(t, rel, x, y, ox, oy, sx, sy, deg)
 	local b = t.box
 	t.w0 = t.w0 or t:GetWidth()

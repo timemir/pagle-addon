@@ -176,27 +176,32 @@ describe("the sprite helpers", function()
 end)
 
 describe("the papers' lean (TKB-R102)", function()
-	it("leans a paper by its angle while on, and hangs it straight with `/pagle board lean` off, saved", function()
+	it("leans a paper by its angle by default, and hangs it straight with profile.lean off", function()
 		local loaded, fake = board.load()
 		fake.login()
 		local ns = loaded.ns
 		local paper = turning(ns.ArtSprite(loaded.env.CreateFrame("Frame"), "Board", "notice"))
 
+		assert.is_true(ns.db.profile.lean)
 		assert.is_true(ns.Leans())
 		ns.LeanSprite(paper, paper:GetParent(), 0, 0, -1.6)
 		assert.are.equal(math.rad(1.6), paper.rotation)
 
-		fake.slash("board lean")
+		ns.db.profile.lean = false
 		ns.LeanSprite(paper, paper:GetParent(), 0, 0, -1.6)
 
 		assert.is_false(ns.Leans())
-		assert.is_false(ns.db.profile.lean)
 		assert.are.equal(0, paper.rotation)
-		assert.are.equal(loaded.ns.L.LEAN_OFF, loaded.printed[#loaded.printed])
+	end)
+
+	it("offers no command for it: /pagle board lean opens the board as any /pagle board does", function()
+		local loaded, fake = board.load()
+		fake.login()
 
 		fake.slash("board lean")
-		assert.is_true(ns.Leans())
-		assert.are.equal(loaded.ns.L.LEAN_ON, loaded.printed[#loaded.printed])
+
+		assert.is_true(loaded.ns.Leans())
+		assert.is_true(loaded.ns.board:IsShown())
 	end)
 
 	it("centres a leaning paper where it would hang straight", function()

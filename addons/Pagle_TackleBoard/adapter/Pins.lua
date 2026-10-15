@@ -10,7 +10,7 @@ local ns = select(2, ...)
 -- decides in the board art kit's look (PagleArtBoard's Board.lua: P.Notice, P.Poster, P.EmptyPin; Parts.lua's
 -- overflow strip). Each pin's slot holds a Notice's paper or an Expedition's poster, an empty pin and a highlight ring,
 -- made once and shown as the layout says; each slot hangs where logic/Pins.lua places it, its paper leaning (straight
--- under the mouse, or always with `/pagle board lean` off). While the board is open its pins redraw on the redraw bus
+-- under the mouse, or always with the lean off, adapter/BoardArt.lua). While the board is open its pins redraw on the redraw bus
 -- (adapter/Board.lua: the live step's at each reset moves a day-bound goal's displayed progress, TKB-R104), on
 -- ConditionsChanged with "area" (TKB-R121), and every 60 s for the empty pins' countdown (TKB-R105).
 

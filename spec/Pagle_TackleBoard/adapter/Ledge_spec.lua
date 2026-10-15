@@ -127,7 +127,8 @@ describe("the spike (TKB-R103)", function()
 
 		loaded.ns.Redraw("projection")
 		assert.are.equal(-math.rad(14), paper.rotation)
-		loaded.ns.ToggleLean()
+		loaded.ns.db.profile.lean = false
+		loaded.ns.board:Draw("open")
 		assert.are.equal(0, paper.rotation)
 	end)
 

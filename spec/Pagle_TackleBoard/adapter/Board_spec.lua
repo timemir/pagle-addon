@@ -76,7 +76,7 @@ end
 local function writer(label, draws)
 	return function(frame, draw)
 		draws[#draws + 1] = { label = label, frame = frame, draw = draw }
-		frame.note = frame.note or frame:CreateFontString()
+		frame.note = frame.note or frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 		frame.note:SetText(label)
 	end
 end
