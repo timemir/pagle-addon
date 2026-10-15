@@ -11,8 +11,8 @@ local ns = select(2, ...)
 -- celebrated set. It fills logic/Seams.lua's outlets, which the projection (logic/Projection.lua), the completions
 -- (logic/Completions.lua) and the live step (adapter/LiveStep.lua) call. Pure logic (CORE-R7): what it tells Core goes through adapter/Moments.lua's seams
 -- (ns.RaiseMoment, ns.RaiseWriteUp, ns.SetSummaryLine), which hold the Module handle, the celebrated set comes from
--- ns.Celebrated (PagleTackleBoardDB) and the client's number format from ns.api.FormatNumber. Every string is ns.L's,
--- plain ASCII (#248); fly and title names are lore (TKB-R130): ns.FlyName and ns.TitleName (logic/Words.lua).
+-- ns.Celebrated (PagleTackleBoardDB) and the client's number format from ns.api.FormatNumber. Every string is ns.L's;
+-- fly and title names are lore (TKB-R130): ns.FlyName and ns.TitleName (logic/Words.lua).
 
 -- The titles (ns.TITLES) and the milestone of each Campfire title (ns.CAMPFIRE_MILESTONES), by title ID; the icon
 -- of each fly pattern (ns.FLY_PATTERNS), by pattern ID.

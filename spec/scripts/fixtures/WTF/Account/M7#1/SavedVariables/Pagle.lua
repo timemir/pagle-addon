@@ -109,7 +109,7 @@ PagleDB = {
 ["title"] = "Tackle Board",
 ["heading"] = "While Tackle Board was off",
 ["lines"] = {
-"Campfire 7 days, 1 Kindling burned", -- [1]
+"Campfire 7 days · 1 Kindling burned", -- [1]
 },
 }, -- [1]
 },
@@ -127,7 +127,7 @@ PagleDB = {
 ["module"] = "TackleBoard",
 ["title"] = "Tackle Board",
 ["lines"] = {
-"Tackle Board: 1 done today, Campfire 7 days", -- [1]
+"Tackle Board: 1 done today · Campfire 7 days", -- [1]
 },
 }, -- [1]
 },

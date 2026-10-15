@@ -1296,7 +1296,7 @@ describe("scripts/read-wtf.lua", function()
 				assert.are.equal("TackleBoard: 180", lineStarting(section(out, "== Wallet"), "TackleBoard:"))
 				local cards = section(out, "== Cards")
 				assert.are.equal("  Tackle Board: While Tackle Board was off", cards[3])
-				assert.are.equal("    line: Tackle Board: 1 done today, Campfire 7 days", cards[7])
+				assert.are.equal("    line: Tackle Board: 1 done today · Campfire 7 days", cards[7])
 				assert.are.equal("    Tackle Board moments: Notice complete, Campfire 7 days", cards[8])
 			end
 		)

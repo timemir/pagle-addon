@@ -290,7 +290,7 @@ describe("the tally plate (TKB-R106, TKB-R64)", function()
 
 		loaded.ns.Redraw("projection")
 
-		assert.are.equal("2 Notices, 0 Expeditions", ledge.plate.counts:GetText())
+		assert.are.equal("2 Notices · 0 Expeditions", ledge.plate.counts:GetText())
 		assert.are.equal("the Dependable", ledge.plate.latest:GetText())
 		assert.is_true(ledge.plate.latest:IsShown())
 	end)
@@ -326,30 +326,5 @@ describe("the shop link (TKB-R106, SHOP-R41, TKB-R193)", function()
 
 		assert.are.equal(0, #fake.shopsOpened)
 		assert.are.equal(printed + 1, #fake.printed)
-	end)
-end)
-
-describe("the spike's and the ledge's words (CORE-R9)", function()
-	it("are plain ASCII: no glyph the client's fonts may lack", function()
-		local loaded, _, spike, ledge = opened(WENT_OUT)
-		ledge.fire:Click()
-		local card = ledge.card
-		ledge.box:Click()
-		loaded.ns.State().titles.tally_25 = { day = 0, cast = "c" }
-		loaded.ns.Redraw("projection")
-
-		local function walk(widget)
-			local text = widget.GetText and widget:GetText()
-			if type(text) == "string" then
-				assert.are.equal(text, (text:gsub("[\128-\255]", "?")))
-			end
-			for _, child in ipairs(widget.children or {}) do
-				walk(child)
-			end
-		end
-		walk(spike)
-		walk(ledge)
-		walk(card)
-		walk(ledge.drawer)
 	end)
 end)

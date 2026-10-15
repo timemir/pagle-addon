@@ -447,7 +447,7 @@ describe("the tally plate (TKB-R106, TKB-R61)", function()
 
 		local plate = ns.TallyView(ns.State())
 
-		assert.are.equal("2 Notices, 0 Expeditions", plate.counts)
+		assert.are.equal("2 Notices · 0 Expeditions", plate.counts)
 		assert.is_nil(plate.latest)
 	end)
 
@@ -456,7 +456,7 @@ describe("the tally plate (TKB-R106, TKB-R61)", function()
 		local state = ns.NewBoardState()
 		state.tally = { notices = 1, expeditions = 1 }
 
-		assert.are.equal("1 Notice, 1 Expedition", ns.TallyView(state).counts)
+		assert.are.equal("1 Notice · 1 Expedition", ns.TallyView(state).counts)
 	end)
 
 	it("shows the latest title: the one earned on the highest board day", function()

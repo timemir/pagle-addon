@@ -89,8 +89,7 @@ ns.L = {
 	CATCHES = { one = "{n} Catch", other = "{n} Catches" },
 	COINS = { one = "{n} Coin", other = "{n} Coins" },
 
-	-- The pins (TKB-R44, TKB-R55, TKB-R102, TKB-R105; logic/Pins.lua). Plain ASCII only: the client's fonts lack
-	-- many symbols (#248).
+	-- The pins (TKB-R44, TKB-R55, TKB-R102, TKB-R105; logic/Pins.lua).
 	-- A pinned goal: its handwritten progress over its need (TKB-R104), its pay, "I'm here", a stranded goal's mark,
 	-- the button and the stamp.
 	PROGRESS = "{n} of {need}",
@@ -112,7 +111,7 @@ ns.L = {
 	OVERFLOW_CHIP = "{kind}: {text}",
 	OVERFLOW_MORE = "+{n} more waiting for a pin",
 
-	-- The spike (TKB-R103; logic/Ledge.lua). Plain ASCII only (#248).
+	-- The spike (TKB-R103; logic/Ledge.lua).
 	SPIKE_DONE = "{n} done today. The fire's lit.",
 	SPIKE_EMPTY = "Done ones go on the spike.",
 	-- A done goal's hover: its Coins and the fly it tied.
@@ -146,14 +145,13 @@ ns.L = {
 	FLY_TIED = "Tied {date}",
 	FLY_GOAL = "by: {goal}",
 	FLY_RARE = "tied only by Expeditions",
-	-- The brass tally plate (TKB-R106): the goals done for life (NOTICES, EXPEDITIONS, with the moments' below),
-	-- joined by a comma (plain ASCII, #248).
-	TALLY_PLATE = "{notices}, {expeditions}",
+	-- The brass tally plate (TKB-R106): the goals done for life (NOTICES, EXPEDITIONS, with the moments' below).
+	TALLY_PLATE = "{notices} · {expeditions}",
 	-- The shop link (TKB-R106, SHOP-R41): a pointing hand is drawn after it, as a texture.
 	SHOP_LINK = "Coins go to the Curio Shop",
 	-- The Campfire card's and the Fly Box drawer's headings.
 	CARD_TITLE = "The Campfire",
-	CARD_FIRE = "{fire}, {longest}",
+	CARD_FIRE = "{fire} · {longest}",
 	CARD_NEED_COINS = "{need}, {coins}",
 	FLY_BOX = "Fly Box",
 	DRAWER_NOTE = "Gilt-edged patterns are tied only by Expeditions.",
@@ -162,8 +160,8 @@ ns.L = {
 	CARD_FLY_BOX = "The Fly Box",
 	DRAWER_TITLE = "The Fly Box: {label}",
 
-	-- The moments, the Write-up and the summary line (TKB-R85–R87; logic/Moments.lua). Plain ASCII only (#248): ", "
-	-- stands for the spec's middle dot. {fly} and {title} are lore names (TKB-R130).
+	-- The moments, the Write-up and the summary line (TKB-R85–R87; logic/Moments.lua). {fly} and {title} are lore
+	-- names (TKB-R130).
 	DAYS = { one = "{n} day", other = "{n} days" },
 	-- A done goal's toast: its title, its text with the fly it tied, and its stamp when it rides on a banner.
 	NOTICE_COMPLETE = "Notice complete",
@@ -197,16 +195,15 @@ ns.L = {
 	COINS_LINE = "Pagle Coins +{coins}",
 	FLIES_TIED = { one = "{n} fly tied for your Fly Box", other = "{n} flies tied for your Fly Box" },
 	CAMPFIRE_DAYS = { one = "Campfire {n} day", other = "Campfire {n} days" },
-	CAMPFIRE_BURNED = "{campfire}, {k} Kindling burned",
+	CAMPFIRE_BURNED = "{campfire} · {k} Kindling burned",
 	CAMPFIRE_WENT_OUT = "Your Campfire went out; your longest, {longest}, is kept",
 	-- The summary line: {done} the goals done today, {campfire} the Campfire's days or CAMPFIRE_NOT_LIT.
-	SUMMARY_LINE = "Tackle Board: {done}, {campfire}",
+	SUMMARY_LINE = "Tackle Board: {done} · {campfire}",
 	SUMMARY_LINE_NOTHING_DONE = "Tackle Board: {campfire}",
 	DONE_TODAY = "{n} done today",
 	CAMPFIRE_NOT_LIT = "Campfire not lit",
 
-	-- The goods and the tracker block (TKB-R122, TKB-R125; logic/Goods.lua, adapter/TrackerBlock.lua). Plain ASCII and
-	-- Latin-1 only (#248).
+	-- The goods and the tracker block (TKB-R122, TKB-R125; logic/Goods.lua, adapter/TrackerBlock.lua).
 	-- The tracker frame slot's label, in the Curio Shop and on Settings (TKB-R125, SET-R43).
 	SLOT_TRACKER_FRAME = "Tackle Board tracker frame",
 	-- The tracker's header, right of the title: the Campfire's days by the flame, then the open goals; or the open

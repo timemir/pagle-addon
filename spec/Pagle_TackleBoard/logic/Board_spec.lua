@@ -37,7 +37,7 @@ describe("what the board shows", function()
 	end)
 
 	it(
-		'known started while a rebuild\'s state isn\'t yet: no slip and no Start, "Updating…" over the bare cork'
+		"known started while a rebuild's state isn't yet: no slip and no Start, \"Updating…\" over the bare cork"
 			.. " (TKB-R5, TKB-R6, TKB-R108)",
 		function()
 			assert.are.same(

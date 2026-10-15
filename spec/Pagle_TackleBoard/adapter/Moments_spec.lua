@@ -434,7 +434,7 @@ describe("the Tackle Board's moments", function()
 						"1 Notice done",
 						"Pagle Coins +10",
 						"1 fly tied for your Fly Box",
-						"Campfire 1 day, 1 Kindling burned",
+						"Campfire 1 day · 1 Kindling burned",
 					},
 				}, writeUps(fake))
 				assert.are.same({}, fake.announcements)
@@ -507,7 +507,7 @@ describe("the Tackle Board's moments", function()
 			live(fake, catch(NOW + 10))
 
 			assert.are.equal("Tackle Board: Campfire not lit", afterStep)
-			assert.are.equal("Tackle Board: 1 done today, Campfire 1 day", line(fake))
+			assert.are.equal("Tackle Board: 1 done today · Campfire 1 day", line(fake))
 		end)
 
 		it("leaves out the goals done when none was done today, after each step", function()
