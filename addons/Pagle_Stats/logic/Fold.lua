@@ -280,6 +280,19 @@ function ns.Fold(state, record, places)
 	return false
 end
 
+--- Stats' projection for Pagle's backend (#223, #76 item 5), whose projection driver folds the Catch log through
+--- logic/ alone, without adapter/ or locale/ (CORE-R7). Makes the places rules (ns.places) and binds ns.ProjectionDef
+--- with `M:NewProjection` over a table of its own making, as the adapter's OnInitialize does. Stats pays no Coins, so
+--- it has no ns.CoinsEarned. The client's adapter never calls it.
+---@param M PagleModuleHandle
+---@return PagleProjection
+function ns.BindProjections(M)
+	-- The driver hands over only M, so Core comes from the Pagle API it hosts.
+	local pagle = Pagle -- luacheck: read globals Pagle (#223: the backend's driver passes no Core)
+	ns.places = ns.NewPlaceTables(pagle --[[@as StatsLookups]])
+	return M:NewProjection(ns.ProjectionDef({}, ns.places, pagle.SESSION_RULES_VERSION))
+end
+
 --- Stats' projection def (STA-R20, LOG-R70), bound to `global.projection`, which it makes if missing: Core owns it
 --- from here on. No `extraFingerprint`: a content change rebuilds through Core's fingerprint alone. Nothing is raised
 --- in any mode (STA-R2): a live Cast or Skill Reading, and every done, only asks the views to redraw (ns.Redraw).

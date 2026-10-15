@@ -115,6 +115,36 @@ function ns.HuntsExtraFingerprint(list)
 	return list:Fingerprint()
 end
 
+--- Hunts' projection for Pagle's backend (#223, #76 item 5), whose projection driver folds the Catch log through
+--- logic/ alone, without adapter/ or locale/ (CORE-R7). Makes the Hunt list, Qualify's lookups and where each Hunt
+--- bites as the adapter's OnInitialize does (ns.hunts, ns.lookups, ns.where), then binds ns.ProjectionDef with
+--- `M:NewProjection` over a table of its own making. Coins aren't reported (the driver reads ns.CoinsEarned instead),
+--- and `done` checks the set titles at GetServerTime(), which the driver answers with its fold's time. Without
+--- locale/, the Hunt list has no text, which the fold never reads. The client's adapter never calls it.
+---@param M PagleModuleHandle
+---@return PagleProjection
+function ns.BindProjections(M)
+	-- The driver hands over only M, so Core comes from the Pagle API it hosts, and the time from its GetServerTime.
+	local pagle = Pagle -- luacheck: read globals Pagle (#223: the backend's driver passes no Core)
+	ns.hunts = ns.NewHuntList(ns.huntList, ns.L)
+	ns.lookups = ns.NewLookups(pagle, ns.hunts)
+	ns.where = ns.NewWhere(ns.hunts, ns.lookups)
+	return M:NewProjection(ns.ProjectionDef({}, ns.lookups, {
+		ReportCoinsEarned = function() end,
+		ServerTime = function()
+			return GetServerTime() -- luacheck: read globals GetServerTime (#223: the driver's fold time)
+		end,
+	}))
+end
+
+--- A Hunts state's lifetime Coins earned (SHOP-R2, HNT-R110), as Hunts reports them with M:ReportCoinsEarned: for
+--- Pagle's backend (#223), read after done.
+---@param state HuntsState
+---@return integer
+function ns.CoinsEarned(state)
+	return state.coins
+end
+
 --- Hunts' projection def (HNT-R136, LOG-R70), bound to `global.projection`, which it makes if missing: Core owns it
 --- from here on. `apply` reads only Casts (Hunts appends no records). A `"live"` Cast hands what it newly reached to
 --- `ns.outlets.Reached`, reports Coins if they changed (HNT-R110) and redraws the views (HNT-R42); a `"replay"` or
