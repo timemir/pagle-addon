@@ -125,7 +125,7 @@ local EXTENT_W, EXTENT_H, CENTRE_DY, FIT_MARGIN = 1000, 680, -20, 24
 ---@field label PagleShopFontString
 
 --- The bill of sale (wallet-and-shop.md › UI: Buy): over the dimmed case, it asks "Buy {name}?".
----@class PagleShopBill: Frame
+---@class PagleShopBill: PagleShopBillMotion
 ---@field slip Frame
 ---@field shade Texture                the case's dimming
 ---@field seal PagleSprite             the wax seal a purchase presses on
@@ -226,21 +226,25 @@ local function closeBill(frame, lift)
 	bill:Hide()
 end
 
--- Settles a purchase's motion where it stopped (adapter/ShopMotion.lua): what only the motion showed goes, and the
--- next redraw draws the rest.
+-- Settles a purchase's motion (adapter/ShopMotion.lua), where it stopped or, `finished`, once it has played out: what
+-- only the motion showed goes, and the next redraw draws the rest. Played out, nothing is stopped: the driver is
+-- still walking what plays, and stopping an owner it no longer plays would add a key to the table it walks.
 ---@param frame PagleShopFrame
-local function settlePurchase(frame)
+---@param finished boolean?
+local function settlePurchase(frame, finished)
 	if not playing then
 		return
 	end
 	playing = nil
-	ns.StopMotion(frame)
+	if not finished then
+		ns.StopMotion(frame)
+	end
 	local bill = frame.bill
 	bill.seal:Hide()
 	bill.bezel:Show()
 	bill.buy:SetAlpha(1)
 	frame.flyer:Hide()
-	if not bill.goodID then
+	if not bill.goodID and bill:IsShown() then
 		closeBill(frame)
 	end
 	local coin = frame.purse.coin
@@ -1224,7 +1228,7 @@ local function playPurchase(frame, goodID, was)
 			return { stage.buy }, into
 		end,
 	}, function()
-		settlePurchase(frame)
+		settlePurchase(frame, true)
 		redraw(false)
 	end)
 end

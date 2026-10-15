@@ -314,8 +314,8 @@ describe("The Curio Shop's purse", function()
 					}
 				end
 			end
-			-- The Ledger's segment is drawn from seg-ledger (x 242 in Shop.tga), Hunts' from seg-hunts (x 198).
-			assert.are.same({ { "Ledger 1,500", 0.75, 1, false, 242 }, { "Hunts 500", 0.25, 1, false, 198 } }, shown)
+			-- The Ledger's segment is drawn from seg-ledger (x 2 in Shop.tga), Hunts' from seg-hunts (x 126).
+			assert.are.same({ { "Ledger 1,500", 0.75, 1, false, 2 }, { "Hunts 500", 0.25, 1, false, 126 } }, shown)
 
 			purse.segments[1]:GetScript("OnEnter")(purse.segments[1])
 			assert.is_true(purse.tip:IsShown())

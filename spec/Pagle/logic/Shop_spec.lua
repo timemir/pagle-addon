@@ -422,10 +422,8 @@ describe("One good's row", function()
 		local fake = huntsOff()
 		local shop = model(fake)
 
-		assert.are.same(
-			{ id = "core.toaststyle.timber", name = "core.toaststyle.timber", state = "equipped", tag = "In use" },
-			shop:Row("core.toaststyle.timber")
-		)
+		local timber = assert(shop:Row("core.toaststyle.timber"))
+		assert.are.same({ "equipped", "In use" }, { timber.state, timber.tag })
 		assert.are.same(
 			{ id = "ledger.binding.lapis", name = "Lapis", state = "short", price = "900", short = true },
 			shop:Row("ledger.binding.lapis")

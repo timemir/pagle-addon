@@ -7,7 +7,7 @@ local ns = select(2, ...)
 -- the texture paths moved to Pagle's; don't edit by hand. Rectangles are in texels, `scale` texels per UI unit; `box`
 -- is the drawn element inside its sprite in UI units (x, y from the sprite's top left, then w, h), the rest being its
 -- shadow or glow. The textures are the kit's own BLPs (BLP2, DXT5, each with its full mip chain, made from its TGAs by
--- the kit's art/lib/blp.py): 6.1 MB loaded in all.
+-- the kit's art/lib/blp.py): 6 MB loaded in all.
 --   Case (2048 x 1024, 1.35 texels a unit): the whole static case: leather, stitching, brass corners and handle, the
 --     velvet tray, the hinge, the quilted lid and its "Curio Shop" trade label.
 --   Shop (1024 x 512, 2 texels a unit): everything that moves or stretches, and the wax seal a purchase presses on.
