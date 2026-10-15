@@ -25,20 +25,20 @@ local ns = select(2, ...)
 --                             Registration's status button reads it (TKB-R1). Follows ns.State() (#231).
 --   ns.Start()                Starts the board (TKB-R5): appends the `start` record and runs the live step. Called by
 --                             the "Start my board" status button (registration, only when not started and not updating)
---                             and the empty board's Start button (adapter/Board.lua). Stand-in: does nothing. The live step's
---                             ticket (#233) assigns it.
+--                             and the empty board's Start button (adapter/Board.lua). Defined in logic/LiveStep.lua
+--                             (#233), not here.
 --   ns.TakeDown(goalID)       Takes a goal down (TKB-R55, TKB-R56): its confirm, then the `reroll` record. The pins
 --                             (#239) call it. Defined in adapter/Reroll.lua (#234), not here.
 --   ns.CanTakeDown(goalID)    Whether a goal's "take it down" shows and works now (TKB-R55). Defined in
 --                             adapter/Reroll.lua (#234), not here.
 --   ns.ScheduleLiveStep()     Schedules the live step for the next frame (TKB-R13, TKB-R84). The projection's `done`
---                             calls it last (#231). Stand-in: does nothing. #233 assigns it.
+--                             calls it last (#231). Defined in adapter/LiveStep.lua (#233), not here.
 --   ns.ReportCoins()          Reports lifetime Coins with M:ReportCoinsEarned (TKB-R63). `done` calls it before
 --                             ns.ScheduleLiveStep (#231), and a live entry that changes the Coins (#232). Stand-in: does
 --                             nothing. The completions' ticket (#232) assigns it.
 --   ns.InLoginWindow()        Whether an advance now is "at login": from login until the login's first live step has
---                             finished (TKB-R86's Campfire nods). The moments (#235) read it. Stand-in: false. #233
---                             assigns it.
+--                             finished (TKB-R86's Campfire nods). The moments (#235) read it. Defined in
+--                             logic/LiveStep.lua (#233), not here.
 --   ns.OnRedraw(fn)           Subscribes a view (the board, the tracker) to redraws: fn(reason, detail) is called at
 --                             every ns.Redraw, in subscription order. Subscribe once, when the view is made.
 --   ns.Redraw(reason, detail) Asks every subscribed view to redraw. Callers and their reasons: "projection" after each
@@ -145,20 +145,8 @@ function ns.IsStarted()
 	return ns.State().started ~= nil
 end
 
---- Starts the board (TKB-R5). A stand-in until the live step's ticket assigns the real one.
-function ns.Start() end
-
---- Schedules the live step for the next frame (TKB-R13). A stand-in until the live step's ticket assigns it.
-function ns.ScheduleLiveStep() end
-
 --- Reports lifetime Coins to Core (TKB-R63). A stand-in until the completions' ticket assigns it.
 function ns.ReportCoins() end
-
---- Whether an advance now is at login (TKB-R86): false until the live step's ticket assigns it.
----@return boolean
-function ns.InLoginWindow()
-	return false
-end
 
 local redrawn = {} -- the subscribed views' redraws, in subscription order
 
