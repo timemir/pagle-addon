@@ -27,7 +27,7 @@ local function kindOf(good)
 end
 
 -- Pagle_TackleBoard on a fake that has logged in.
----@param options { prepare: fun(loaded: LoadedAddon)? }?
+---@param options { catalogue: table?, api: table?, random: function?, prepare: fun(loaded: LoadedAddon)? }?
 local function loggedIn(options)
 	local loaded, fake = board.load(nil, options)
 	fake.login()
