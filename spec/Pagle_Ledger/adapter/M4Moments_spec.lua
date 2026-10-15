@@ -170,7 +170,7 @@ end
 
 -- Every moment of `announcements` by kind (the last of a kind wins).
 ---@param announcements PagleAnnouncement[]
----@return { [string]: PagleMoment }
+---@return { [string]: LedgerMoment }
 local function byKind(announcements)
 	local kinds = {}
 	for _, announcement in ipairs(announcements) do
@@ -398,6 +398,33 @@ describe("the Ledger's M4 live moments", function()
 		assert.are.equal("string", type(title.icon))
 		assert.is_true(loaded.ns.db.global.celebrated.titles["title:complete.junk"])
 	end)
+
+	it(
+		"seal each banner: the level, the Catches, the book for Prestige ready, the crest and the quill (announcements.md › Contracts)",
+		function()
+			local climb = session({ history = { cast(T0, fishes(1, TO_60 - 1)) } })
+			climb.playCast("caught", loot(fishes(TO_60, 1)))
+			local reached = byKind(shown(climb))
+			local seen = #climb.announcements
+			climb.prestige()
+			local prestiged = byKind(shown(climb, seen))
+
+			local catches = session({ history = { cast(T0, times(FIRST_FISH, 999), 0) } })
+			catches.playCast("caught", loot({ FIRST_FISH }))
+
+			local titled = session()
+			titled.conditions.zone = COVE
+			titled.playCast("caught", loot({ JUNK }))
+
+			assert.are.same({ 60, "book", "crest", 1000, "quill" }, {
+				reached.levelUp.seal,
+				reached.prestigeReady.seal,
+				prestiged.prestige.seal,
+				byKind(shown(catches)).catchMilestone.seal,
+				byKind(shown(titled)).completeTitle.seal,
+			})
+		end
+	)
 
 	it("set the summary line with the prestige rank above 0 (LED-R95)", function()
 		local fake = session({ history = { cast(T0, fishes(1, TO_60)) } })

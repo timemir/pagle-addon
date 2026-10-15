@@ -217,12 +217,12 @@ The Ledger is the `Pagle_Ledger` Module: the Angler's identity as an angler. It 
   | Achievement (`kind`) | Rung, `order` | `title` / `text` | `stamp` | `coins` | Also |
   |---|---|---|---|---|---|
   | Legend (`legend`) | `splash`, 100 | "Legend" / "{item} · {size text}. Title: {title}" | "Legend!" | 100 | `icon` the item |
-  | Level-up (`levelUp`), one per entry however many levels, for levels above the celebrated one | `banner`, 100 | "Angler Level {L}" / "Title: {title}" for each title earned with it, else "+{n} levels" when more than one, else empty | "Level {L}" | 20 × levels raised by the moment | |
-  | Prestige ready (`prestigeReady`), when a climb reaches 60 | `banner`, 110 | "Prestige ready" / "Open the Fish Journal to begin a new Ledger." | "Prestige ready" | | |
-  | Prestige (`prestige`) | `banner`, 90 | "Prestige {I…X}" or "Master Prestige {rank − 10}" / "Title: {title}" when one is earned | | 100 | no `cast` |
-  | Zone Master (`zoneMaster`) | `banner`, 120 | "Zone Master" / "{zone}. Title: {zonemaster title}" | "Master" | 2 × each rank passed above the celebrated rank | replaces the zone's `zoneRank` moment |
-  | Catch Milestone (`catchMilestone`) | `banner`, 130 | "{N} Catches" / "" | "{N} Catches" | | |
-  | Completion title (`completeTitle`) | `banner`, 140 | "Title earned" / "{title}" | "Title: {title}" | | one per `complete.*` title |
+  | Level-up (`levelUp`), one per entry however many levels, for levels above the celebrated one | `banner`, 100 | "Angler Level {L}" / "Title: {title}" for each title earned with it, else "+{n} levels" when more than one, else empty | "Level {L}" | 20 × levels raised by the moment | `seal` {L} |
+  | Prestige ready (`prestigeReady`), when a climb reaches 60 | `banner`, 110 | "Prestige ready" / "Open the Fish Journal to begin a new Ledger." | "Prestige ready" | | `seal` `"book"` |
+  | Prestige (`prestige`) | `banner`, 90 | "Prestige {I…X}" or "Master Prestige {rank − 10}" / "Title: {title}" when one is earned | | 100 | no `cast`; `seal` `"crest"` |
+  | Zone Master (`zoneMaster`) | `banner`, 120 | "Zone Master" / "{zone}. Title: {zonemaster title}" | "Master" | 2 × each rank passed above the celebrated rank | replaces the zone's `zoneRank` moment; `seal` `"waves"` |
+  | Catch Milestone (`catchMilestone`) | `banner`, 130 | "{N} Catches" / "" | "{N} Catches" | | `seal` {N} |
+  | Completion title (`completeTitle`) | `banner`, 140 | "Title earned" / "{title}" | "Title: {title}" | | one per `complete.*` title; `seal` `"quill"` |
   | New Species (`newSpecies`) | `toast`, 100 | "New Species" / "{item} · {size text}" | "New!" | 10 | `icon` the item |
   | New trophy weight (`trophyWeight`) | `toast`, 110 | "Trophy weight" / "{item}" | "Trophy" | 5 | ruler `{ old, new, unit = "lb", label = "weight" }` when LED-R61 says |
   | Zone rank (`zoneRank`), Visitor to Expert, one per zone per entry | `toast`, 120 | "Zone rank: {rank}" / "{zone}" | "Rank up" | 2 × each rank passed above the celebrated rank | |
@@ -235,7 +235,7 @@ The Ledger is the `Pagle_Ledger` Module: the Angler's identity as an angler. It 
   | Family ★★ or ★★★ (`familyStar`) | `nod`, 130 | "Trophy family" / "{family} {stars}" | the stars | | |
   | Uncharted (`uncharted`), first Catch of each item ID | `nod`, 140 | "Unknown catch, logged" / "{item}" | "Logged" | | |
 
-  `{item}` is the item's name, or "Item {id}" when the client doesn't have it yet. `{size text}` is LED-R81's, left out (with its separator) when the Catch has no size. `icon` is the item for every Catch moment; every other moment (level, Prestige, rank, Skill and Catch Milestone, completion title, family star) uses an in-client texture picked in the build ticket. Coins a live entry earns with no moment raised (an achievement already celebrated) count only in the total. A first Catch in a zone and a ★ have no moment of their own: the New Species and Zone rank moments cover them. A title earned with a level-up, Prestige, Zone Master or Legend rides in that moment, never on its own.
+  `{item}` is the item's name, or "Item {id}" when the client doesn't have it yet. `{size text}` is LED-R81's, left out (with its separator) when the Catch has no size. `icon` is the item for every Catch moment; every other moment (level, Prestige, rank, Skill and Catch Milestone, completion title, family star) uses an in-client texture picked in the build ticket. Coins a live entry earns with no moment raised (an achievement already celebrated) count only in the total. A first Catch in a zone and a ★ have no moment of their own: the New Species and Zone rank moments cover them. A title earned with a level-up, Prestige, Zone Master or Legend rides in that moment, never on its own. `seal` is what a banner's wax seal shows ([core/announcements.md › Contracts](core/announcements.md#contracts)): a number pressed into it, a pressed mark or the Prestige crest. Only the banners set one.
 
 ### Journal bindings
 

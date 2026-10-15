@@ -39,6 +39,11 @@ local ns = select(2, ...)
 ---@field RefreshGoods fun()                            -- M:RefreshGoods (LED-R111)
 ---@field SizeText fun(size: PagleSize?): string?       -- ns.SizeText over Pagle.SIZE_BANDS and Pagle.FormatLength
 
+--- A Ledger moment as Core keeps it: PagleMoment with a banner's wax seal (announcements.md › Contracts; LED-R97),
+--- the level or the Catches pressed into it, or a mark. Core's own PagleMoment gains `seal` with the announce kit.
+---@class LedgerMoment: PagleMoment
+---@field seal? integer|"waves"|"book"|"quill"|"crest"
+
 -- In-client textures for the moments that have no item (LED-R97): the level's ledger book and Fishing's own icon.
 local LEVEL_ICON = ns.BINDING_ICON
 local SKILL_ICON = "Interface\\Icons\\Trade_Fishing"
@@ -382,6 +387,7 @@ function celebrate.levelUp(celebrated, state, earned)
 		icon = LEVEL_ICON,
 		cast = earned.cast,
 		coins = ns.LEVEL_UP_COINS * raised,
+		seal = top,
 	}
 end
 
@@ -416,6 +422,7 @@ function celebrate.zoneRank(celebrated, _, earned, outlets)
 			icon = ZONE_MASTER_ICON,
 			cast = earned.cast,
 			coins = coins,
+			seal = "waves",
 		}
 	end
 	return {
@@ -471,6 +478,7 @@ function celebrate.prestigeReady(celebrated, _, earned, _, before)
 		stamp = L.PRESTIGE_READY_STAMP,
 		icon = PRESTIGE_READY_ICON,
 		cast = earned.cast,
+		seal = "book",
 	}
 end
 
@@ -492,6 +500,7 @@ function celebrate.prestige(celebrated, _, earned)
 		title = mark.stars > 0 and L.MASTER_PRESTIGE_TITLE:format(mark.stars) or L.PRESTIGE_TITLE:format(mark.emblem),
 		icon = PRESTIGE_ICON,
 		coins = earned.coins,
+		seal = "crest",
 	}
 end
 
@@ -512,6 +521,7 @@ function celebrate.catchMilestone(celebrated, _, earned, outlets)
 		stamp = catches,
 		icon = CATCH_MILESTONE_ICON,
 		cast = earned.cast,
+		seal = n,
 	}
 end
 
@@ -611,6 +621,7 @@ local function celebrateTitles(celebrated, state, moments, achievements, outlets
 				stamp = L.TITLE_LINE:format(name),
 				icon = TITLE_ICON,
 				cast = cast,
+				seal = "quill",
 			}
 			achievements[#achievements + 1] = { kind = "completeTitle", cast = cast, coins = 0 }
 		elseif name and kind then
