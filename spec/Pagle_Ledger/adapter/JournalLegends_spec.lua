@@ -197,6 +197,32 @@ describe("the Journal's Legends spread (LED-R147)", function()
 		assert.are.equal("Keefer's Angelfish", first(journal.pages.right, "title").text)
 	end)
 
+	it("keeps the index's scroll as another Legend opens, starting its page at the top (LED-R129, LED-R147)", function()
+		local _, loaded = spread("legends")
+		local journal = loaded.ns.journal
+		scrollPage(loaded, "left", 120)
+		scrollPage(loaded, "right", 80)
+
+		journal.frame.left.drawn.row[2]:Click()
+
+		assert.are.equal("Keefer's Angelfish", first(journal.pages.right, "title").text)
+		assert.are.same({ 120, 0 }, { pageScroll(loaded, "left"), pageScroll(loaded, "right") })
+		scrollPage(loaded, "right", 40)
+		journal:Draw()
+		assert.are.same({ 120, 40 }, { pageScroll(loaded, "left"), pageScroll(loaded, "right") })
+	end)
+
+	it("starts both pages at the top as the plate opens, which fills both (LED-R129, LED-R147)", function()
+		local _, loaded = spread("legends", { legend = ANGELFISH })
+		scrollPage(loaded, "left", 120)
+		scrollPage(loaded, "right", 80)
+
+		loaded.ns.journal.frame.right.drawn.link[1]:Click()
+
+		assert.are.equal("plate", loaded.ns.journal.pages.left[1].kind)
+		assert.are.same({ 0, 0 }, { pageScroll(loaded, "left"), pageScroll(loaded, "right") })
+	end)
+
 	it("shows a caught Legend's sepia icon, name, first Catch, blurb, title and the plate button (LED-R147)", function()
 		local _, loaded = spread("legends", { legend = ANGELFISH })
 		local right = loaded.ns.journal.pages.right

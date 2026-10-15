@@ -167,4 +167,7 @@ ns.RegisterJournalSpread(ns.JOURNAL_LEGENDS, {
 		end
 		return { left = index(context, legends, chosen), right = chosen and legendPage(context, chosen) or {} }
 	end,
+	-- The index is the spread's; the right page, the Legend chosen. Choosing another Legend keeps the index's scroll;
+	-- the plate fills both pages, so opening or leaving it starts both at the top (LED-R129).
+	subjects = { left = { "plate" }, right = { "legend", "plate" } },
 })
