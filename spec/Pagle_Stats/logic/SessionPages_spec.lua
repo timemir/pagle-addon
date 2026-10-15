@@ -60,7 +60,7 @@ describe("the Session pages' order and paging", function()
 		end)
 	end)
 
-	describe("a Session by its ID", function()
+	describe("a Session by its ID (stats.md › UI › Sessions)", function()
 		it("is found by Core's Session ID, or nil when no record has it", function()
 			local sessions = { { id = "A" }, { id = "B" }, { id = "C" } }
 

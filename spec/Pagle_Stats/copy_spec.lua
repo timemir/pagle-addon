@@ -73,10 +73,7 @@ local ESCAPES = { b = "\b", t = "\t", n = "\n", f = "\f", r = "\r", ['"'] = '"',
 ---@param path string
 ---@return table<string, string>
 local function loreStrings(path)
-	---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io
-	local file = assert(io.open(path, "r"))
-	local text = file:read("*a")
-	file:close()
+	local text = readFile(path)
 	local strings = {}
 	local at, line = 1, 1
 	local function advance(to)

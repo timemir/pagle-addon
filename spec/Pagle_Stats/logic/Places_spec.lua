@@ -269,23 +269,26 @@ describe("Stats' places", function()
 			end
 		end)
 
-		it("are dropped when the content fingerprint changes, so a content update is read afresh", function()
-			local loaded, fake = stats.load()
-			local tables = loaded.ns.NewPlaceTables(fake.Pagle)
-			assert.are.equal("night", (tables:ItemWindow(148, 13759)))
-			assert.are.same({ 170, true }, { tables:NoJunkLine(442) })
-			assert.are.same({ "night" }, tables:ZoneWindows(148))
+		it(
+			"are dropped when the content fingerprint changes, so a content update is read afresh (DATA-R70, LOG-R72)",
+			function()
+				local loaded, fake = stats.load()
+				local tables = loaded.ns.NewPlaceTables(fake.Pagle)
+				assert.are.equal("night", (tables:ItemWindow(148, 13759)))
+				assert.are.same({ 170, true }, { tables:NoJunkLine(442) })
+				assert.are.same({ "night" }, tables:ZoneWindows(148))
 
-			local updated = stats.catalogue()
-			updated.fingerprint = "0000000000000002"
-			updated.areas[148].skillBase = 100
-			updated.areas[148].catches[4] = { itemID = 13759, confirmed = false }
-			updated.areas[148].catches[3] = { itemID = 6359, confirmed = false }
-			fake.setCatalogue(updated)
+				local updated = stats.catalogue()
+				updated.fingerprint = "0000000000000002"
+				updated.areas[148].skillBase = 100
+				updated.areas[148].catches[4] = { itemID = 13759, confirmed = false }
+				updated.areas[148].catches[3] = { itemID = 6359, confirmed = false }
+				fake.setCatalogue(updated)
 
-			assert.is_nil(tables:ItemWindow(148, 13759))
-			assert.are.same({ 195, true }, { tables:NoJunkLine(442) })
-			assert.are.same({}, tables:ZoneWindows(148))
-		end)
+				assert.is_nil(tables:ItemWindow(148, 13759))
+				assert.are.same({ 195, true }, { tables:NoJunkLine(442) })
+				assert.are.same({}, tables:ZoneWindows(148))
+			end
+		)
 	end)
 end)

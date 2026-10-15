@@ -114,9 +114,10 @@ describe("Pagle_Stats with Core", function()
 	end)
 
 	it(
-		"reaches ns.ToggleBook as it is when called, from /pagle stats, the compartment and the status button",
+		"reaches ns.ToggleBook as it is when called, from /pagle stats, the compartment and the status button"
+			.. " (STA-R4, CORE-R44, CORE-R50, CORE-R62)",
 		function()
-			-- STA-R4: every entry point toggles the book; the book's ticket (#211) fills ns.ToggleBook in.
+			-- Every entry point toggles the book; adapter/Book.lua fills ns.ToggleBook in.
 			local loaded = loadAddon("Pagle_Stats", FOREVER_GLOBALS)
 			loaded.client.fire("PLAYER_LOGIN")
 			local toggles = countToggles(loaded)
@@ -132,9 +133,10 @@ describe("Pagle_Stats with Core", function()
 	)
 
 	it(
-		"toggles PagleStatsBook from /pagle stats, /pagle stats with any text, the compartment and the status button",
+		"toggles PagleStatsBook from /pagle stats, /pagle stats with any text, the compartment and the status button"
+			.. " (STA-R70, STA-R4, CORE-R44, CORE-R50, CORE-R62, SET-R12)",
 		function()
-			-- STA-R70, STA-R4, CORE-R44, CORE-R50, CORE-R62, SET-R12: each entry point toggles the book.
+			-- Each entry point toggles the book.
 			local loaded = loadAddon("Pagle_Stats", FOREVER_GLOBALS)
 			loaded.client.fire("PLAYER_LOGIN")
 			local function shown()

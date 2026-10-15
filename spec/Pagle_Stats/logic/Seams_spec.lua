@@ -1,5 +1,5 @@
--- The seams later Stats tickets meet at (M6 graph, open question 3): the projection's state and updating flag, and the
--- redraw bus the book and the tracker subscribe to, as they stand before those tickets fill them in. The book's entry
+-- The seams Stats' views meet at (STA-R20, STA-R72, STA-R73, STA-R92, LOG-R74): the projection's state and updating
+-- flag, and the redraw bus the book and the tracker subscribe to, as they stand on a Stats with no view drawn. The book's entry
 -- points are adapter/Book.lua's own (spec/Pagle_Stats/adapter/Book_spec.lua).
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
@@ -46,7 +46,7 @@ describe("Stats' seams", function()
 		end)
 	end)
 
-	describe("the redraw bus", function()
+	describe("the redraw bus (STA-R73)", function()
 		it("calls every view that subscribed, in the order they did, with the reason", function()
 			local ns = stats.load().ns
 			local calls = {}

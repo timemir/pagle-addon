@@ -38,7 +38,7 @@ local function textsOf(widget, texts)
 	return texts
 end
 
-describe("the Stats book's art (STA-R70, graph.md open question 4)", function()
+describe("the Stats book's art (STA-R70, stats.md › UI)", function()
 	it("uses in-client textures only, each listed in ns.BOOK_TEXTURES for the dev to judge", function()
 		local ns, parent = kit()
 		ns.NewBookLeather(parent)

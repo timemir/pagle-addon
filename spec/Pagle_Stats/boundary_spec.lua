@@ -40,7 +40,7 @@ local function offences(text)
 	return forbiddenIn(withoutComments(text), FORBIDDEN)
 end
 
-describe("Stats' boundary", function()
+describe("Stats' boundary (ADR 0001, STA-R1, STA-R2)", function()
 	it("covers every file Stats ships", function()
 		assert.are.equal(#addonFiles("Pagle_Stats"), #shippedFiles(DIR))
 	end)

@@ -1,5 +1,5 @@
--- spec/Pagle_Stats/support.lua: Stats' specs run on FakePagle over the fixture catalogue, never the shipped one (M6
--- graph, conventions), and the fixture holds each case its header promises, read through Core's own accessors
+-- spec/Pagle_Stats/support.lua: Stats' specs run on FakePagle over the fixture catalogue, never the shipped one, and
+-- the fixture holds each case its header promises, read through Core's own accessors
 -- (LOG-R55) as Stats reads it (STA-R12–R17).
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
@@ -22,14 +22,14 @@ local function windowsOf(fake, zone, itemID)
 end
 
 describe("Stats' spec support", function()
-	it("serves the fixture catalogue to Core's accessors before Stats loads, and Stats registers", function()
+	it("serves the fixture catalogue to Core's accessors before Stats loads, and Stats registers (DATA-R76)", function()
 		local loaded, fake = stats.load()
 
 		assert.are.equal("57a757a757a757a7", fake.Pagle.CONTENT_FINGERPRINT)
 		assert.is_not_nil(loaded.ns.Module)
 	end)
 
-	it("serves a spec's own catalogue instead when given one", function()
+	it("serves a spec's own catalogue instead when given one (DATA-R76)", function()
 		local catalogue = stats.catalogue()
 		catalogue.fingerprint = "0000000000000001"
 
@@ -38,7 +38,7 @@ describe("Stats' spec support", function()
 		assert.are.equal("0000000000000001", fake.Pagle.CONTENT_FINGERPRINT)
 	end)
 
-	it("hands out a new fixture each time, so a spec's change stays its own", function()
+	it("hands out a new fixture each time, so a spec's change stays its own (DATA-R76)", function()
 		stats.catalogue().areas[DARKSHORE].skillBase = 1
 
 		assert.are.equal(75, stats.catalogue().areas[DARKSHORE].skillBase)
