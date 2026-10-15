@@ -135,11 +135,12 @@ end
 
 local ledger, fold, catalogue = ledgerOver(CATALOGUE)
 
--- A PagleLog read back with Core's codec (LOG-R16): its records, and how many entries didn't decode.
+-- A PagleLog read back with Core's codec (LOG-R16), each Species Catch sized as the game sizes it (LOG-R65): its
+-- records, and how many entries didn't decode.
 local function decoded(log)
 	local global = { decodeErrors = 0 }
 	local records = {}
-	for record in core.OpenCatchLog(log, global, NOW):Iterate() do
+	for record in core.OpenCatchLog(log, global, NOW, catalogue.GetItem):Iterate() do
 		records[#records + 1] = record
 	end
 	return records, global.decodeErrors
@@ -152,6 +153,15 @@ local function folded(records)
 		fold.apply(state, record, "rebuild")
 	end
 	return state
+end
+
+-- How many Species hold a Simulated Size record in a state (LED-R80).
+local function sizeRecords(state)
+	local n = 0
+	for _, entry in pairs(state.species) do
+		n = n + (entry.record and 1 or 0)
+	end
+	return n
 end
 
 -- Makes a test log on a new copy of the fixture account, with the files in `planted` (name to text) added to its
@@ -211,10 +221,38 @@ describe("scripts/make-test-log.lua", function()
 				assert.are.equal(
 					(
 						"fold: Angler Level 9, %d XP, %d XP to level 10; one more Catch gives 20 XP, %d Catches reach level 10;"
-						.. " %d lifetime Catches"
-					):format(state.xp, cost - into, math.ceil((cost - into) / 20), state.catches),
+						.. " %d lifetime Catches, %d Simulated Size records"
+					):format(
+						state.xp,
+						cost - into,
+						math.ceil((cost - into) / 20),
+						state.catches,
+						sizeRecords(state)
+					),
 					made.lines[4]
 				)
+			end
+		)
+
+		it(
+			"folds the Casts sized, as the game reads them, so the fixture's Species set records (LOG-R65, LED-R80)",
+			function()
+				local state = folded((decoded(log)))
+				assert.is_true(sizeRecords(state) > 0)
+				assert.matches((", %d Simulated Size records$"):format(sizeRecords(state)), made.lines[4])
+			end
+		)
+
+		it(
+			"prints each entry tag's count, as Core's codec tagged the entries (catch-log.md › Entry formats)",
+			function()
+				local tags = {}
+				for _, entry in ipairs(log.entries) do
+					local tag = entry:match("^(%u%d)|")
+					tags[tag] = (tags[tag] or 0) + 1
+				end
+				assert.are.same({ B1 = 1, C1 = tags.C1, S1 = 2 }, tags)
+				assert.matches(("(B1 1, C1 %d, S1 2)"):format(tags.C1), made.lines[3], 1, true)
 			end
 		)
 
@@ -371,11 +409,11 @@ describe("scripts/make-test-log.lua", function()
 		local made = make("catches1000")
 		local log = globalsOf(readFile(made.stage .. "/Pagle.lua")).PagleLog
 
-		it("folds to 995 lifetime Catches, five short of the 1,000 Catches milestone (LED-R42)", function()
+		it("folds to 995 lifetime Catches, five short of the 1,000-Catch Catch Milestone (LED-R42)", function()
 			assert.are.equal(0, made.code)
 			local state = folded((decoded(log)))
 			assert.are.equal(995, state.catches)
-			assert.matches("; 995 lifetime Catches$", made.lines[4])
+			assert.matches("; 995 lifetime Catches, %d+ Simulated Size records$", made.lines[4])
 		end)
 
 		it("marks it a test log, PagleLog.test = true (catch-log.md › Data)", function()

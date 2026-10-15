@@ -27,10 +27,10 @@ end
 ns.catalogue = {
 	fingerprint = "0123456789abcdef",
 	items = {
-		[6291] = item("fish", { species = 6291 }),
-		[6299] = item("fish", { species = 6299 }),
-		[6303] = item("fish", { species = 6303 }),
-		[13759] = item("fish", { species = 13759 }),
+		[6291] = item("fish", { species = 6291, typicalLength = 300 }),
+		[6299] = item("fish", { species = 6299, typicalLength = 250 }),
+		[6303] = item("fish", { species = 6303, typicalLength = 350 }),
+		[13759] = item("fish", { species = 13759, typicalLength = 400 }),
 		[19803] = item("fish", { species = 19803, legend = true }),
 		[6358] = item("other", { noise = true }),
 		[13901] = item("trophy", { family = 1, weight = 19 }),

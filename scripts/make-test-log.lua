@@ -1,6 +1,6 @@
 -- Makes the test logs the M4 exit check plays (#172, #174; docs/agents/in-game-verification.md): a copy of the
--- dev's SavedVariables/Pagle.lua with PagleLog replaced by a synthetic one a few Catches short of a milestone, so the
--- milestone is reached live in the game. Run it in WSL with the game fully closed.
+-- dev's SavedVariables/Pagle.lua with PagleLog replaced by a synthetic one a few Catches short of a level or a Catch
+-- Milestone, so it is reached live in the game. Run it in WSL with the game fully closed.
 --
 --   lua scripts/make-test-log.lua --account <WTF/Account/<ACCT> folder> --preset <level10|level60|catches1000>
 --       [--out <folder>] [--catalogue <Catalogue.lua>]
@@ -9,13 +9,14 @@
 --
 -- --preset only reads the account folder. It writes a dated stage folder under <out>/<ACCT>/ (--out defaults to
 -- ~/pagle-test-logs): original/, a byte-for-byte backup of every Pagle addon's SavedVariables file and .bak there is
--- (SV_FILES), written first, then Pagle.lua, the test log. That Pagle.lua is the backed-up one with only PagleLog replaced: a new logId
--- (LOG-R15), `test = true` (a test log, catch-log.md › Data, so /pagle dev catch appends on it), the same characters,
--- the last build entry, each character's last Skill Reading, and Casts of ordinary Species, junk and trophies on the
--- charted zones' lists, one item each, for the character of the dev's last Cast.
--- The entries are written by Core's own codec (addons/Pagle/logic/CatchLog.lua), and the log is folded with the
--- Ledger's own logic/ (listed in Pagle_Ledger.toc) over the catalogue (the repo's generated one, or --catalogue):
--- nothing is written unless the fold lands where the preset says. When a test log is installed, the backup is the
+-- (SV_FILES), written first, then Pagle.lua, the test log. That Pagle.lua is the backed-up one with only PagleLog
+-- replaced: a new logId (LOG-R15), `test = true` (a test log, catch-log.md › Data, so /pagle dev catch appends on
+-- it), the same characters, the last build entry, each character's last Skill Reading, and Casts of ordinary Species,
+-- junk and trophies on the charted zones' lists, one item each, for the character of the dev's last Cast.
+-- The entries are written by Core's own codec (addons/Pagle/logic/CatchLog.lua), which sizes each Species Catch with
+-- Core's logic/Size.lua (LOG-R65), and the log is folded with the Ledger's own logic/ (listed in Pagle_Ledger.toc)
+-- over the catalogue (the repo's generated one, or --catalogue): nothing is written unless the fold lands where the
+-- preset says. When a test log is installed, the backup is the
 -- one its stage holds, so the real files are never lost between presets.
 --
 -- --install copies the newest stage's Pagle.lua into the account's SavedVariables, only when the account's Pagle.lua
@@ -57,12 +58,14 @@ local PROBE_CATCHES = 3
 -- At most this many Casts in a test log, so a preset that can't land stops.
 local MAX_CASTS = 100000
 
--- The item categories a test Cast may catch: ordinary Species, junk and trophies (LED-R5).
-local CATEGORIES = { fish = true, junk = true, trophy = true }
+-- What a test Cast may catch, by the kind the Ledger's own ClassifyCatch gives it (a curio by its category): an
+-- ordinary Species, junk or trophy (LED-R5), never a Legend, Noise, an Uncharted item, a container or treasure.
+local ORDINARY = { species = true, junk = true, trophy = true }
 
--- The presets: a level preset stops a few Catches short of `level`, a Catches preset at `catches` lifetime Catches.
--- The first Casts discover what the lists hold (each new item and zone earns XP, LED-R20) until the XP reaches
--- `discovery` × the level's cost (or `discoveryXP`); the rest catch those items again for Catch XP only.
+-- The presets: a level preset stops a few Catches short of `level`, a Catches preset at `catches` lifetime Catches,
+-- `short` of the `milestone`-Catch Catch Milestone (LED-R42). The first Casts discover what the lists hold (each new
+-- item and zone earns XP, LED-R20) until the XP reaches `discovery` × the level's cost (or `discoveryXP`); the rest
+-- catch those items again for Catch XP only.
 local PRESETS = {
 	level10 = { level = 10, discovery = 0.5, step = "2" },
 	level60 = { level = 60, discovery = 0.3, step = "3" },
@@ -111,6 +114,9 @@ local function parseArgs(args)
 		end
 		options.out = home .. "/pagle-test-logs"
 	end
+	-- The account's SavedVariables folder, and the folder its stages go in, named after the account's folder.
+	options.sv = options.account .. "/SavedVariables"
+	options.stages = options.out .. "/" .. options.account:match("[^/\\]+$")
 	return options
 end
 
@@ -241,10 +247,21 @@ end
 
 -- Core and the Ledger -------------------------------------------------------------------------------------------
 
--- Core's codec and MatchesConditions, the catalogue's accessors (Core's logic/Catalogue.lua over the catalogue
--- file), and the Ledger's logic/ in Pagle_Ledger.toc order with its world index over that catalogue (LED-R10).
+-- Core's codec, sizes (logic/Size.lua on LuaBitOp, LOG-R65, LOG-R66) and MatchesConditions, the catalogue's
+-- accessors (Core's logic/Catalogue.lua over the catalogue file), and the Ledger's logic/ in Pagle_Ledger.toc order
+-- with its world index over that catalogue (LED-R10). `open` opens a Catch log as Core does in the game: every Cast
+-- it hands out sized through the catalogue (LOG-R65).
 local function loadGame(cataloguePath)
-	local core = wtf.loadCore({ "logic/Conditions.lua", "logic/Sessions.lua", "logic/CatchLog.lua" })
+	if not wtf.luaBitOp() then
+		refuse("no LuaBitOp to size the Catches with: run scripts/setup.sh, then this through scripts/make-test-log.sh")
+	end
+	local core = wtf.loadCore({
+		"locale/enUS.lua",
+		"logic/Size.lua",
+		"logic/Conditions.lua",
+		"logic/Sessions.lua",
+		"logic/CatchLog.lua",
+	})
 	local label = cataloguePath or "the repo's addons/Pagle/data/Catalogue.lua"
 	local catalogue, err = wtf.loadCatalogue(cataloguePath)
 	if not catalogue then
@@ -253,7 +270,26 @@ local function loadGame(cataloguePath)
 	local ledger = wtf.loadLedgerLogic()
 	local world = ledger.NewWorld(catalogue)
 	local lookups = { GetItem = catalogue.GetItem, MatchesConditions = core.MatchesConditions, world = world }
-	return { core = core, catalogue = catalogue, label = label, ledger = ledger, world = world, lookups = lookups }
+	local game =
+		{ core = core, catalogue = catalogue, label = label, ledger = ledger, world = world, lookups = lookups }
+	function game.open(data, global, now)
+		return core.OpenCatchLog(data, global, now, catalogue.GetItem)
+	end
+	return game
+end
+
+-- What an item is to a test log: the class the Ledger's own ClassifyCatch gives it (LED-R5), a curio by its
+-- category, "Uncharted" when the catalogue doesn't know it.
+local function kindOf(game, itemID)
+	local item = game.catalogue.GetItem(itemID)
+	local class = game.ledger.ClassifyCatch(itemID, item)
+	return item and (class == "curio" and item.category or class) or "Uncharted"
+end
+
+-- Whether a test Cast may catch the item: an ordinary Species, junk or trophy (ORDINARY) that isn't removed.
+local function ordinary(game, itemID)
+	local item = game.catalogue.GetItem(itemID)
+	return ORDINARY[kindOf(game, itemID)] == true and not item.removed
 end
 
 -- The real log -------------------------------------------------------------------------------------------------
@@ -265,7 +301,7 @@ local function readRealLog(game, log)
 	local global = { decodeErrors = 0 }
 	local facts = { skills = {}, uiMaps = {}, fished = {}, offset = 0 }
 	local casts = {}
-	for record in game.core.OpenCatchLog(deepCopy(log), global, 0):Iterate() do
+	for record in game.open(deepCopy(log), global, 0):Iterate() do
 		if record.kind == "cast" then
 			casts[#casts + 1] = record
 		elseif record.kind == "build" then
@@ -298,8 +334,8 @@ local function readRealLog(game, log)
 	return facts
 end
 
--- The (zone, item) pairs a test Cast may catch: each charted zone's list entries without a window whose item is an
--- ordinary Species, junk or trophy, never a Legend, Noise, a removed or an Uncharted item; the zones fished first.
+-- The (zone, item) pairs a test Cast may catch: each charted zone's list entries without a window whose item is
+-- `ordinary`; the zones fished first.
 local function catchable(game, facts)
 	local zones, seen = {}, {}
 	for _, zone in ipairs(facts.fished) do
@@ -313,10 +349,8 @@ local function catchable(game, facts)
 	local list, taken = {}, {}
 	for _, zone in ipairs(zones) do
 		for _, entry in ipairs(game.world.zones[zone].list) do
-			local item = game.catalogue.GetItem(entry.itemID)
 			local key = zone .. ":" .. entry.itemID
-			local ordinary = item and CATEGORIES[item.category] and not (item.legend or item.noise or item.removed)
-			if ordinary and not entry.window and not taken[key] then
+			if ordinary(game, entry.itemID) and not entry.window and not taken[key] then
 				taken[key] = true
 				local subzone = entry.areaID ~= zone and entry.areaID or 0
 				list[#list + 1] = { zone = zone, subzone = subzone, itemID = entry.itemID }
@@ -358,7 +392,7 @@ end
 -- characters, its build entry and each character's last Skill Reading at `time`.
 local function newLog(game, log, facts, time)
 	local data = { format = game.core.LOG_FORMAT, characters = deepCopy(log.characters), entries = {}, test = true }
-	local catchLog = game.core.OpenCatchLog(data, {}, time)
+	local catchLog = game.open(data, {}, time)
 	local header = {}
 	if facts.build then
 		local build = { kind = "build", char = facts.char, time = time }
@@ -390,11 +424,7 @@ end
 local function probe(game, facts, state, pair, time, level)
 	local fold = game.ledger.NewLedgerFold(game.lookups)
 	local copy = deepCopy(state)
-	local scratch = game.core.OpenCatchLog(
-		{ format = game.core.LOG_FORMAT, characters = facts.characters, entries = {} },
-		{},
-		time
-	)
+	local scratch = game.open({ format = game.core.LOG_FORMAT, characters = facts.characters, entries = {} }, {}, time)
 	local firstXP
 	for n = 1, PROBE_CATCHES do
 		local before = copy.xp
@@ -465,8 +495,9 @@ local function plan(game, facts, preset, pairs)
 	return casts, used[1]
 end
 
--- Checks the written log as the game will read it: decoded with Core's codec and folded with the Ledger's own
--- logic/ from nothing (LED-R3). Returns what it found and the failures (none when the preset landed).
+-- Checks the written log as the game will read it: decoded with Core's codec, each Species Catch sized (LOG-R65),
+-- and folded with the Ledger's own logic/ from nothing (LED-R3). Returns what it found and the failures (none when
+-- the preset landed).
 local function check(game, facts, preset, data, probePair, now)
 	local global = { decodeErrors = 0 }
 	local fold = game.ledger.NewLedgerFold(game.lookups)
@@ -475,8 +506,12 @@ local function check(game, facts, preset, data, probePair, now)
 	local function fail(line)
 		found.failures[#found.failures + 1] = line
 	end
-	for record in game.core.OpenCatchLog(deepCopy(data), global, now):Iterate() do
-		found.tags[record.kind] = (found.tags[record.kind] or 0) + 1
+	-- Each entry's tag as Core's codec wrote it (catch-log.md › Entry formats).
+	for _, entry in ipairs(data.entries) do
+		local tag = entry:match("^(%u%d+)|") or "(no tag)"
+		found.tags[tag] = (found.tags[tag] or 0) + 1
+	end
+	for record in game.open(deepCopy(data), global, now):Iterate() do
 		fold.apply(state, record, "rebuild")
 		if record.kind == "cast" then
 			found.zones[record.conditions.zone] = true
@@ -484,10 +519,8 @@ local function check(game, facts, preset, data, probePair, now)
 				fail("a Cast is on another character")
 			end
 			for _, catch in ipairs(record.items) do
-				local item = game.catalogue.GetItem(catch.itemID)
-				local class = game.ledger.ClassifyCatch(catch.itemID, item)
-				local kind = item and (class == "curio" and item.category or class) or "Uncharted"
-				if not item or item.legend or item.noise or not CATEGORIES[item.category] then
+				local kind = kindOf(game, catch.itemID)
+				if not ordinary(game, catch.itemID) then
 					found.kept[#found.kept + 1] = catch.itemID
 				end
 				found.classes[kind] = found.classes[kind] or {}
@@ -499,7 +532,7 @@ local function check(game, facts, preset, data, probePair, now)
 		fail(count(global.decodeErrors, "entry", "entries") .. " Core's codec can't decode")
 	end
 	if #found.kept > 0 then
-		fail("a Legend, Noise or Uncharted item is caught: " .. table.concat(found.kept, ", "))
+		fail("an item no test Cast may catch (LED-R5) is caught: " .. table.concat(found.kept, ", "))
 	end
 	if not (type(data.logId) == "string" and data.logId:match("^[0-9a-f]+$") and #data.logId == 16) then
 		fail("the logId isn't 16 lowercase hex digits")
@@ -512,6 +545,10 @@ local function check(game, facts, preset, data, probePair, now)
 	found.level, found.toNext = climb(game, state)
 	found.state = state
 	found.catches, found.xp = state.catches, state.xp
+	found.records = 0
+	for _, entry in pairs(state.species) do
+		found.records = found.records + (entry.record and 1 or 0)
+	end
 	found.needed, found.nextXP = probe(game, facts, state, probePair, now, preset.level or math.huge)
 	if preset.level then
 		if found.level ~= preset.level - 1 or not found.needed then
@@ -608,8 +645,7 @@ end
 
 local function makeTestLog(options, now)
 	local preset = PRESETS[options.preset]
-	local sv = options.account .. "/SavedVariables"
-	local root = options.out .. "/" .. options.account:match("[^/\\]+$")
+	local sv, root = options.sv, options.stages
 	local current = readFile(sv .. "/Pagle.lua")
 	if not current then
 		refuse("no " .. sv .. "/Pagle.lua: log in once with Pagle enabled, then quit the game; nothing written")
@@ -691,11 +727,12 @@ local function makeTestLog(options, now)
 	)
 
 	local tags = {}
-	for _, kind in ipairs({ { "build", "B1" }, { "skill", "S1" }, { "cast", "C1" } }) do
-		tags[#tags + 1] = kind[2] .. " " .. (found.tags[kind[1]] or 0)
+	for tag, n in pairs(found.tags) do
+		tags[#tags + 1] = tag .. " " .. n
 	end
+	table.sort(tags)
 	local aim = preset.level and ("within %d Catches of level %d"):format(PROBE_CATCHES, preset.level)
-		or ("%d Catches short of the %s Catches milestone"):format(preset.short, preset.milestone)
+		or ("%d Catches short of the %s-Catch Catch Milestone"):format(preset.short, preset.milestone)
 	print(("== Test log %s: %s (M4 exit check step %s)"):format(options.preset, aim, preset.step))
 	print(
 		("real log: %s/Pagle.lua, logId %s, %s"):format(
@@ -718,13 +755,14 @@ local function makeTestLog(options, now)
 	local reach = found.needed and (", %s reach level %d"):format(count(found.needed, "Catch", "Catches"), preset.level)
 		or ""
 	print(
-		("fold: Angler Level %d, %d XP%s; one more Catch gives %d XP%s; %d lifetime Catches"):format(
+		("fold: Angler Level %d, %d XP%s; one more Catch gives %d XP%s; %d lifetime Catches, %d Simulated Size records"):format(
 			found.level,
 			found.xp,
 			toNext,
 			found.nextXP,
 			reach,
-			found.catches
+			found.catches,
+			found.records
 		)
 	)
 	local function items(kind, noun, plural)
@@ -763,8 +801,8 @@ local function makeTestLog(options, now)
 end
 
 local function install(options, now)
-	local sv = options.account .. "/SavedVariables"
-	local stages = readStages(options.out .. "/" .. options.account:match("[^/\\]+$"))
+	local sv = options.sv
+	local stages = readStages(options.stages)
 	local stage = stages[#stages]
 	if not stage then
 		refuse("no test log made for " .. options.account .. " in " .. options.out .. "; run --preset first")
@@ -797,8 +835,8 @@ local function install(options, now)
 end
 
 local function restore(options, now)
-	local sv = options.account .. "/SavedVariables"
-	local stages = readStages(options.out .. "/" .. options.account:match("[^/\\]+$"))
+	local sv = options.sv
+	local stages = readStages(options.stages)
 	local current = readFile(sv .. "/Pagle.lua")
 	local currentLogId = logIdOf(current)
 	local stage = stageOfLog(stages, currentLogId)
