@@ -365,6 +365,7 @@ describe("/pagle dev glyphs", function()
 				ART .. "Marcellus-Regular.ttf (the announcements' gilt and stamps): " .. PROBE,
 				"PagleDevGlyphsFont7",
 			},
+			{ ART .. "IMFeENit28P.ttf (the Curio Shop's italic): " .. PROBE, "PagleDevGlyphsFont8" },
 		}, rows)
 
 		frame:Click()
@@ -383,7 +384,7 @@ describe("/pagle dev glyphs", function()
 
 		assert.are.equal(frame, loaded.ns.glyphProbeFrame)
 		assert.is_true(frame:IsShown())
-		assert.are.equal(7, #frame.rows)
+		assert.are.equal(8, #frame.rows)
 		assert.are.same(saved, copy(loaded.env.PagleDB.global))
 	end)
 end)

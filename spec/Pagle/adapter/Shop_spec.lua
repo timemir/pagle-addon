@@ -1,24 +1,27 @@
 -- The Curio Shop window and its entry points, as Core runs it through the real TOC (wallet-and-shop.md › Entry points,
--- › UI; SHOP-R35, SHOP-R40, SHOP-R41, SHOP-R93; CORE-R33, CORE-R50, CORE-R61).
+-- › UI; SHOP-R35, SHOP-R40, SHOP-R41, SHOP-R93; CORE-R33, CORE-R50, CORE-R61). The window is the shop art kit's
+-- sample case: its words in the kit's fonts, capitals where the kit sets them so.
 
 local COIN = " |TInterface\\MoneyFrame\\UI-GoldIcon:0|t"
 local AFTER_COMBAT = "Pagle: the Curio Shop opens after combat."
+-- Where the shop's textures are.
+local SHOP_ART = "Interface\\AddOns\\Pagle\\media\\shop\\"
 
 -- Core's own slots (SHOP-R25) as the list shows them while nothing of Core's is bought and the balance is under 150,
 -- each good named by its ID until its lore lands.
 local CORE_UNBOUGHT = {
-	"Toast style 1/3",
-	"Timber | In use",
-	"Ripple | 150" .. COIN,
-	"Lantern Glow | 400" .. COIN,
-	"Sound set 1/2",
-	"Driftwood | In use",
-	"Gilded | 400" .. COIN,
-	"Bookplate crest 1/4",
-	"Plain | In use",
-	"Rod and Line | 150" .. COIN,
-	"Pearl | 400" .. COIN,
-	"Water Spirit | 900" .. COIN,
+	"TOAST STYLE 1 of 3",
+	"Timber | IN USE",
+	"Ripple | 150",
+	"Lantern Glow | 400",
+	"SOUND SET 1 of 2",
+	"Driftwood | IN USE",
+	"Gilded | 400",
+	"BOOKPLATE CREST 1 of 4",
+	"Plain | IN USE",
+	"Rod and Line | 150",
+	"Pearl | 400",
+	"Water Spirit | 900",
 }
 
 -- Core with the Ledger and Hunts registered, Core's own goods, Hunts' covers and the Ledger's bindings, logged in and
@@ -63,6 +66,8 @@ local function listed(loaded)
 		if line:IsShown() then
 			if line.header then
 				lines[#lines + 1] = ("%s %s"):format(line.label:GetText(), line.count:GetText())
+			elseif line.price:IsShown() then
+				lines[#lines + 1] = ("%s | %s"):format(line.label:GetText(), line.price.amount:GetText())
 			else
 				lines[#lines + 1] = ("%s | %s"):format(line.label:GetText(), line.tag:GetText())
 			end
@@ -81,15 +86,38 @@ local function rowOf(loaded, goodID)
 	error("no row for " .. goodID)
 end
 
+-- The words on each shown pill of `pills`, in order.
+local function pillLabels(pills)
+	local labels = {}
+	for _, pill in ipairs(pills) do
+		if pill:IsShown() then
+			labels[#labels + 1] = pill.label:GetText()
+		end
+	end
+	return labels
+end
+
+-- The shown lines of the purse's tooltip: its head, then each line.
+local function tipLines(tip)
+	local lines = { tip.head:GetText() }
+	for _, line in ipairs(tip.lines) do
+		if line:IsShown() then
+			lines[#lines + 1] = line:GetText()
+		end
+	end
+	return lines
+end
+
 describe("The Curio Shop's entry points", function()
-	it("opens with Pagle.OpenShop(), titled Curio Shop (SHOP-R40)", function()
+	it("opens with Pagle.OpenShop(), drawn as the sample case (SHOP-R40, wallet-and-shop.md › UI)", function()
 		local loaded = shopCore()
 
 		loaded.env.Pagle.OpenShop()
 
 		local frame = assert(shopFrame(loaded))
 		assert.is_true(frame:IsShown())
-		assert.are.equal("Curio Shop", frame.title)
+		assert.are.equal(SHOP_ART .. "Case", frame.case.texture)
+		assert.are.same({ 2 / 2048, 1406 / 2048, 2 / 1024, 1015 / 1024 }, frame.case.texCoord)
 		assert.are.same({}, loaded.printed)
 	end)
 
@@ -115,7 +143,7 @@ describe("The Curio Shop's entry points", function()
 		assert.is_true(shopFrame(loaded):IsShown())
 	end)
 
-	it("closes with Esc, from the search box or with nothing focused, and with its close button (SHOP-R40)", function()
+	it("closes with Esc, from the search slip or with nothing focused, and with its close button (SHOP-R40)", function()
 		local loaded = shopCore()
 		local Pagle = loaded.env.Pagle
 
@@ -153,7 +181,7 @@ describe("Pagle.OpenShop(goodID)", function()
 
 		local frame = shopFrame(loaded)
 		assert.are.equal("Velvet", frame.stage.name:GetText())
-		assert.are.equal("Notebook cover · Hunts", frame.stage.slotLine:GetText())
+		assert.are.equal("NOTEBOOK COVER · HUNTS", frame.stage.slotLine:GetText())
 		assert.is_true(rowOf(loaded, "hunts.cover.velvet").selectedMark:IsShown())
 		assert.is_false(rowOf(loaded, "hunts.cover.plain").selectedMark:IsShown())
 	end)
@@ -195,7 +223,8 @@ describe("Pagle.OpenShop(goodID)", function()
 		Pagle.OpenShop("hunts.cover.velvet")
 
 		assert.are.equal("", frame.search:GetText())
-		assert.is_true(frame.filters.all.highlightLocked)
+		assert.is_true(frame.search.Instructions:IsShown())
+		assert.is_true(frame.filters.all.pressed)
 		assert.is_true(rowOf(loaded, "hunts.cover.velvet").selectedMark:IsShown())
 	end)
 
@@ -213,17 +242,20 @@ describe("Pagle.OpenShop(goodID)", function()
 			local frame = shopFrame(loaded)
 			local stage = frame.stage
 			assert.are.equal("Velvet", stage.name:GetText())
-			assert.are.equal("Hunts is off", stage.tags:GetText())
+			assert.are.equal("HUNTS IS OFF", stage.tags:GetText())
 			assert.are.equal("Yours to keep", stage.notes:GetText())
-			assert.are.equal(134939, stage.swatch.texture)
+			assert.are.equal(134939, stage.swatch.Icon.texture)
+			assert.is_true(stage.swatch.Icon:IsDesaturated())
 			assert.is_true(stage.swatch:IsShown())
 			assert.is_false(stage.use:IsShown())
 			local lines = listed(loaded)
 			assert.are.same(
-				{ "Put away: Module off Yours to keep", "Velvet | Hunts is off" },
+				{ "PUT AWAY: MODULE OFF Yours to keep", "Velvet | Hunts is off" },
 				{ lines[#lines - 1], lines[#lines] }
 			)
-			assert.are.equal(0.55, rowOf(loaded, "hunts.cover.velvet"):GetAlpha())
+			local row = rowOf(loaded, "hunts.cover.velvet")
+			assert.are.equal(0.55, row:GetAlpha())
+			assert.is_true(row.bezel.Icon:IsDesaturated())
 
 			loaded.env.Pagle.OpenShop("hunts.cover.plain")
 			assert.is_true(stage.hint:IsShown()) -- a Module off's default isn't listed
@@ -269,22 +301,29 @@ describe("The Curio Shop's purse", function()
 
 			local purse = shopFrame(loaded).purse
 			assert.are.equal("2,000", purse.balance:GetText())
-			assert.are.equal("Pagle Coins", purse.label:GetText())
+			assert.are.equal("PAGLE COINS", purse.label:GetText())
 			assert.are.equal("Stats and QoL pay none", purse.payNone:GetText())
 			local shown = {}
 			for _, segment in ipairs(purse.segments) do
 				if segment:IsShown() then
-					shown[#shown + 1] =
-						{ segment.legend:GetText(), segment.share, segment:GetAlpha(), segment.strike:IsShown() }
+					shown[#shown + 1] = {
+						segment.legend:GetText(),
+						segment.share,
+						segment:GetAlpha(),
+						segment.strike:IsShown(),
+						segment.bar.texCoord[1] * 1024,
+					}
 				end
 			end
-			assert.are.same({ { "Ledger 1,500", 0.75, 1, false }, { "Hunts 500", 0.25, 1, false } }, shown)
+			-- The Ledger's segment is drawn from seg-ledger (x 242 in Shop.tga), Hunts' from seg-hunts (x 198).
+			assert.are.same({ { "Ledger 1,500", 0.75, 1, false, 242 }, { "Hunts 500", 0.25, 1, false, 198 } }, shown)
 
 			purse.segments[1]:GetScript("OnEnter")(purse.segments[1])
-			assert.are.same({ "Ledger", "1,500 Coins all time" }, loaded.client.tooltipLines())
-			assert.are.equal(purse.segments[1], loaded.env.GameTooltip.owner)
+			assert.is_true(purse.tip:IsShown())
+			assert.are.same({ "Ledger", "1,500 Coins all time" }, tipLines(purse.tip))
+			assert.are.equal(purse.segments[1], select(2, purse.tip:GetPoint()))
 			purse.segments[1]:GetScript("OnLeave")(purse.segments[1])
-			assert.are.same({}, loaded.client.tooltipLines())
+			assert.is_false(purse.tip:IsShown())
 		end
 	)
 
@@ -301,9 +340,17 @@ describe("The Curio Shop's purse", function()
 			local hunts = purse.segments[2]
 			assert.are.equal("400", purse.balance:GetText())
 			assert.are.equal("Hunts 300", hunts.legend:GetText())
-			assert.are.equal(0.35, hunts:GetAlpha())
+			assert.are.equal("PagleShopLegendOff", hunts.legend.fontObject)
+			assert.are.equal(0.45, hunts:GetAlpha())
+			assert.is_true(hunts.bar:IsDesaturated())
 			assert.is_true(hunts.strike:IsShown())
 			assert.is_false(purse.segments[1].strike:IsShown())
+
+			hunts:GetScript("OnEnter")(hunts)
+			assert.are.same(
+				{ "Hunts", "300 Coins all time", "Off: pays nothing new, keeps what it paid." },
+				tipLines(purse.tip)
+			)
 		end
 	)
 
@@ -315,7 +362,7 @@ describe("The Curio Shop's purse", function()
 
 		local frame = shopFrame(loaded)
 		assert.are.equal("200", frame.purse.balance:GetText())
-		assert.are.equal("Ripple | 150" .. COIN, listed(loaded)[3])
+		assert.are.equal("Ripple | 150", listed(loaded)[3])
 		for _, region in ipairs(loaded.client.frames) do
 			assert.falsy(tostring(region.text):find("Spent", 1, true))
 			for _, child in ipairs(region.children) do
@@ -335,30 +382,42 @@ describe("The Curio Shop's list", function()
 
 			local expected = { unpack(CORE_UNBOUGHT) }
 			for _, line in ipairs({
-				"Journal binding 1/2",
-				"Oak | In use",
-				"Lapis | 900" .. COIN,
-				"Notebook cover 1/2",
-				"Plain | In use",
-				"Velvet | 400" .. COIN,
+				"JOURNAL BINDING 1 of 2",
+				"Oak | IN USE",
+				"Lapis | 900",
+				"NOTEBOOK COVER 1 of 2",
+				"Plain | IN USE",
+				"Velvet | 400",
 			}) do
 				expected[#expected + 1] = line
 			end
 			assert.are.same(expected, listed(loaded))
 			local velvet = rowOf(loaded, "hunts.cover.velvet")
-			assert.are.equal(134939, velvet.swatch.texture)
-			assert.are.same({ 1, 0.25, 0.25 }, velvet.tag.textColor, "a price the balance can't cover is red")
+			assert.are.equal(134939, velvet.bezel.Icon.texture)
+			assert.are.equal(1, #velvet.bezel.Icon.masks, "the icon is drawn round, through the portrait mask")
+			assert.are.same(
+				loaded.ns.SHOP_INKS.stamp,
+				{ unpack(velvet.price.amount.textColor, 1, 3) },
+				"a price the balance can't cover is in the stamp's red"
+			)
+			assert.is_true(velvet.price.coin:IsShown())
+			local timber = rowOf(loaded, "core.toaststyle.timber")
+			assert.is_true(timber.wax:IsShown()) -- In use has its wax dot
+			assert.is_false(timber.price:IsShown())
 		end
 	)
 
-	it("narrows with the search box (wallet-and-shop.md › UI)", function()
+	it("narrows with the search slip (wallet-and-shop.md › UI)", function()
 		local loaded = shopCore()
 		loaded.env.Pagle.OpenShop()
+		local search = shopFrame(loaded).search
+		assert.are.equal("Find a look…", search.Instructions:GetText())
 
-		shopFrame(loaded).search:Type("RIP")
+		search:Type("RIP")
 
-		assert.are.same({ "Toast style 1/3", "Ripple | 150" .. COIN }, listed(loaded))
-		shopFrame(loaded).search:Type("nothing like it")
+		assert.is_false(search.Instructions:IsShown())
+		assert.are.same({ "TOAST STYLE 1 of 3", "Ripple | 150" }, listed(loaded))
+		search:Type("nothing like it")
 		assert.are.same({}, listed(loaded))
 		assert.is_true(shopFrame(loaded).empty:IsShown())
 		assert.are.equal("No looks match.", shopFrame(loaded).empty:GetText())
@@ -372,35 +431,37 @@ describe("The Curio Shop's list", function()
 
 		assert.are.same(
 			{ "All", "Owned", "Not owned", "Can afford" },
-			{ filters.all:GetText(), filters.owned:GetText(), filters.notOwned:GetText(), filters.canAfford:GetText() }
+			pillLabels({ filters.all, filters.owned, filters.notOwned, filters.canAfford })
 		)
 		filters.canAfford:Click()
 		assert.are.same({
-			"Toast style 1/3",
-			"Ripple | 150" .. COIN,
-			"Lantern Glow | 400" .. COIN,
-			"Sound set 1/2",
-			"Gilded | 400" .. COIN,
-			"Bookplate crest 1/4",
-			"Rod and Line | 150" .. COIN,
-			"Pearl | 400" .. COIN,
-			"Notebook cover 1/2",
-			"Velvet | 400" .. COIN,
+			"TOAST STYLE 1 of 3",
+			"Ripple | 150",
+			"Lantern Glow | 400",
+			"SOUND SET 1 of 2",
+			"Gilded | 400",
+			"BOOKPLATE CREST 1 of 4",
+			"Rod and Line | 150",
+			"Pearl | 400",
+			"NOTEBOOK COVER 1 of 2",
+			"Velvet | 400",
 		}, listed(loaded))
-		assert.is_true(filters.canAfford.highlightLocked)
-		assert.is_false(filters.all.highlightLocked)
+		assert.is_true(filters.canAfford.pressed)
+		assert.are.equal("PagleShopPillOn", filters.canAfford.label.fontObject)
+		assert.is_false(filters.all.pressed)
+		assert.are.equal("PagleShopPill", filters.all.label.fontObject)
 		filters.owned:Click()
 		assert.are.same({
-			"Toast style 1/3",
-			"Timber | In use",
-			"Sound set 1/2",
-			"Driftwood | In use",
-			"Bookplate crest 1/4",
-			"Plain | In use",
-			"Journal binding 1/2",
-			"Oak | In use",
-			"Notebook cover 1/2",
-			"Plain | In use",
+			"TOAST STYLE 1 of 3",
+			"Timber | IN USE",
+			"SOUND SET 1 of 2",
+			"Driftwood | IN USE",
+			"BOOKPLATE CREST 1 of 4",
+			"Plain | IN USE",
+			"JOURNAL BINDING 1 of 2",
+			"Oak | IN USE",
+			"NOTEBOOK COVER 1 of 2",
+			"Plain | IN USE",
 		}, listed(loaded))
 		filters.notOwned:Click()
 		assert.are.equal(13, #listed(loaded))
@@ -415,17 +476,13 @@ describe("The Curio Shop's list", function()
 			loaded.env.Pagle.OpenShop()
 			local frame = shopFrame(loaded)
 
-			local labels = {}
-			for _, chip in ipairs(frame.chips) do
-				if chip:IsShown() then
-					labels[#labels + 1] = chip:GetText()
-				end
-			end
-			assert.are.same({ "All", "Announcements", "Bookplate", "Fish Journal", "Hunts" }, labels)
+			assert.are.same({ "ALL", "ANNOUNCEMENTS", "BOOKPLATE", "FISH JOURNAL", "HUNTS" }, pillLabels(frame.chips))
+			assert.is_true(frame.chips[1].pressed)
 
 			frame.chips[4]:Click()
-			assert.are.same({ "Journal binding 1/2", "Oak | In use", "Lapis | 900" .. COIN }, listed(loaded))
-			assert.is_true(frame.chips[4].highlightLocked)
+			assert.are.same({ "JOURNAL BINDING 1 of 2", "Oak | IN USE", "Lapis | 900" }, listed(loaded))
+			assert.is_true(frame.chips[4].pressed)
+			assert.is_false(frame.chips[1].pressed)
 			frame.chips[1]:Click()
 			assert.are.equal(18, #listed(loaded))
 		end
@@ -440,11 +497,33 @@ describe("The Curio Shop's list", function()
 		assert.are.equal("Lapis", shopFrame(loaded).stage.name:GetText())
 		assert.is_true(rowOf(loaded, "ledger.binding.lapis").selectedMark:IsShown())
 	end)
+
+	it("scrolls with the wheel and the brass scroll bar, shown only while the list overflows the tray", function()
+		local loaded = shopCore()
+		loaded.env.Pagle.OpenShop()
+		local frame = shopFrame(loaded)
+		local scroll, bar = frame.scroll, frame.scrollBar
+		assert.is_false(bar:IsShown()) -- nothing overflows in the fake client
+
+		-- The client lays the list out 200 taller than the tray shows.
+		scroll.GetVerticalScrollRange = function()
+			return 200
+		end
+		scroll:GetScript("OnScrollRangeChanged")(scroll, 0, 200)
+		assert.is_true(bar:IsShown())
+		assert.are.same({ 0, 200 }, { bar:GetMinMaxValues() })
+		scroll:GetScript("OnMouseWheel")(scroll, -1)
+		assert.are.same({ 66, 66 }, { scroll:GetVerticalScroll(), bar:GetValue() })
+		bar:SetValue(200)
+		assert.are.equal(200, scroll:GetVerticalScroll())
+		scroll:GetScript("OnMouseWheel")(scroll, -1)
+		assert.are.equal(200, scroll:GetVerticalScroll(), "it stops at the list's foot")
+	end)
 end)
 
 describe("The Curio Shop's stage", function()
 	it(
-		"shows a good for sale's price and Buy for N, enabled, with its description (wallet-and-shop.md › UI,"
+		"shows a good for sale's description and Buy for N with the coin, enabled (wallet-and-shop.md › UI,"
 			.. " SHOP-R13)",
 		function()
 			local loaded, handles = shopCore()
@@ -454,27 +533,28 @@ describe("The Curio Shop's stage", function()
 
 			local stage = shopFrame(loaded).stage
 			assert.are.equal("Soft to the touch.", stage.description:GetText())
-			assert.are.equal("400" .. COIN, stage.price:GetText())
-			assert.are.same({ 1, 1, 1 }, stage.price.textColor)
 			assert.is_true(stage.buy:IsShown())
-			assert.are.equal("Buy for 400" .. COIN, stage.buy:GetText())
+			assert.are.equal("Buy for 400", stage.buy.label:GetText())
+			assert.is_true(stage.buy.coin:IsShown())
 			assert.is_true(stage.buy:IsEnabled())
+			assert.are.equal(1, stage.buy:GetAlpha())
 			assert.is_false(stage.needed:IsShown())
 			assert.is_false(stage.use:IsShown())
+			assert.is_false(stage.tags:IsShown())
 		end
 	)
 
-	it("shows a price the balance can't cover in red, with N more needed (wallet-and-shop.md › UI)", function()
+	it("dims Buy for a price the balance can't cover, with N more Coins (wallet-and-shop.md › UI)", function()
 		local loaded, handles = shopCore()
 		handles.Ledger:ReportCoinsEarned(100)
 
 		loaded.env.Pagle.OpenShop("hunts.cover.velvet")
 
 		local stage = shopFrame(loaded).stage
-		assert.are.same({ 1, 0.25, 0.25 }, stage.price.textColor)
 		assert.is_false(stage.buy:IsEnabled())
+		assert.are.equal(0.6, stage.buy:GetAlpha())
 		assert.is_true(stage.needed:IsShown())
-		assert.are.equal("300 more needed", stage.needed:GetText())
+		assert.are.equal("300 more Coins", stage.needed:GetText())
 	end)
 
 	it(
@@ -485,18 +565,19 @@ describe("The Curio Shop's stage", function()
 			loaded.ns.goods:SetPurchased({ ["core.toaststyle.ripple"] = true })
 			Pagle.OpenShop("core.toaststyle.ripple")
 			local stage = shopFrame(loaded).stage
-			assert.are.equal("Owned", stage.tags:GetText())
+			assert.are.equal("OWNED", stage.tags:GetText())
 			assert.is_false(stage.buy:IsShown())
 			assert.is_true(stage.use:IsShown())
-			assert.are.equal("Use", stage.use:GetText())
+			assert.are.equal("Use", stage.use.label:GetText())
+			assert.is_false(stage.use.coin:IsShown())
 
 			stage.use:Click()
 
 			assert.are.equal("core.toaststyle.ripple", Pagle.GetEquipped("core.toaststyle"))
-			assert.are.equal("In use", stage.tags:GetText())
+			assert.are.equal("IN USE", stage.tags:GetText())
 			assert.is_false(stage.use:IsShown())
 			assert.are.same(
-				{ "Toast style 2/3", "Timber | default", "Ripple | In use" },
+				{ "TOAST STYLE 2 of 3", "Timber | default", "Ripple | IN USE" },
 				{ listed(loaded)[1], listed(loaded)[2], listed(loaded)[3] }
 			)
 		end
@@ -507,11 +588,11 @@ describe("The Curio Shop's stage", function()
 		local Pagle = loaded.env.Pagle
 		loaded.ns.goods:SetPurchased({ ["core.toaststyle.ripple"] = true })
 		Pagle.OpenShop("core.toaststyle.timber")
-		assert.are.equal("In use · default", shopFrame(loaded).stage.tags:GetText())
+		assert.are.equal("IN USE · DEFAULT", shopFrame(loaded).stage.tags:GetText())
 
 		Pagle.SetEquipped("core.toaststyle", "core.toaststyle.ripple")
 
-		assert.are.equal("default", shopFrame(loaded).stage.tags:GetText())
+		assert.are.equal("DEFAULT", shopFrame(loaded).stage.tags:GetText())
 		assert.is_true(shopFrame(loaded).stage.use:IsShown())
 	end)
 
@@ -536,7 +617,6 @@ describe("The Curio Shop's stage", function()
 		local stage = shopFrame(loaded).stage
 		assert.are.equal("Angler Level 30\nA Ledger reward, not for sale", stage.notes:GetText())
 		assert.is_false(stage.buy:IsShown())
-		assert.is_false(stage.price:IsShown())
 		assert.are.equal("Angler Level 30", rowOf(loaded, "ledger.binding.level30").tag:GetText())
 	end)
 
@@ -555,6 +635,8 @@ describe("The Curio Shop's stage", function()
 			local stage = shopFrame(loaded).stage
 			assert.are.equal(1, #drawn)
 			assert.is_true(drawn[1]:IsShown())
+			assert.are.equal(stage.area, drawn[1]:GetParent())
+			assert.are.same({ 370, 190 }, { drawn[1]:GetSize() }, "the showcase card's well and the paper under it")
 			assert.is_false(stage.swatch:IsShown())
 
 			Pagle.OpenShop("hunts.cover.plain")
@@ -589,23 +671,25 @@ local function settle(loaded)
 	end
 end
 
--- Opens the shop on `goodID` and clicks Buy; returns the popup.
+-- Opens the shop on `goodID` and clicks Buy; returns the bill of sale.
 local function askToBuy(loaded, goodID)
 	loaded.env.Pagle.OpenShop(goodID)
 	shopFrame(loaded).stage.buy:Click()
-	return loaded.client.popup
+	return shopFrame(loaded).bill
 end
 
--- The Buy popup's inserted frame, as shown: its swatch, price, Coins left after, and "Use it now".
-local function confirmShown(loaded)
-	local inserted = assert(loaded.client.popup).inserted
+-- The bill of sale as shown.
+local function billShown(bill)
 	return {
-		swatch = inserted.swatch.texture,
-		price = inserted.price:GetText(),
-		leftAfter = inserted.leftAfter:GetText(),
-		useNow = inserted.useNow.Text:GetText(),
-		checked = inserted.useNow:GetChecked(),
-		shown = inserted:IsShown(),
+		head = bill.head:GetText(),
+		question = bill.question:GetText(),
+		icon = bill.bezel.Icon.texture,
+		price = { bill.priceLabel:GetText(), bill.price:GetText(), bill.coin:IsShown() },
+		left = { bill.leftLabel:GetText(), bill.left:GetText() },
+		fine = bill.fine:GetText(),
+		useNow = { bill.useNow.label:GetText(), bill.useNow:GetChecked(), bill.useNow.tick:IsShown() },
+		buttons = { bill.buy.label:GetText(), bill.cancelLabel:GetText() },
+		shown = bill:IsShown(),
 	}
 end
 
@@ -621,9 +705,9 @@ describe("Buy on the stage", function()
 			Pagle.OpenShop("hunts.cover.velvet")
 			local stage = shopFrame(loaded).stage
 			assert.is_false(stage.buy:IsEnabled())
-			assert.are.equal("1 more needed", stage.needed:GetText())
+			assert.are.equal("1 more Coins", stage.needed:GetText())
 			stage.buy:Click()
-			assert.is_nil(loaded.client.popup)
+			assert.is_false(shopFrame(loaded).bill:IsShown())
 			Pagle.OpenShop("core.toaststyle.ripple")
 			assert.is_false(stage.buy:IsShown())
 			Pagle.OpenShop("hunts.cover.plain")
@@ -656,26 +740,29 @@ describe("Buy on the stage", function()
 	)
 end)
 
-describe("The Buy popup", function()
+describe("The bill of sale", function()
 	it(
-		"asks Buy {name}? with the swatch, the price, the Coins left after, Use it now ticked, and Buy / Cancel"
-			.. " (wallet-and-shop.md › UI: Buy)",
+		"asks Buy {name}? over the dimmed case, with the medallion, the price, the Coins left after, Use it now"
+			.. " ticked, and Buy / Cancel (wallet-and-shop.md › UI: Buy)",
 		function()
 			local loaded, handles = shopCore()
 			handles.Ledger:ReportCoinsEarned(1450)
 
-			local popup = assert(askToBuy(loaded, "hunts.cover.velvet"))
+			local bill = askToBuy(loaded, "hunts.cover.velvet")
 
-			assert.are.equal("Buy Velvet?", popup.text)
-			assert.are.same({ "Buy", "Cancel" }, popup.buttons)
 			assert.are.same({
-				swatch = 134939,
-				price = "400" .. COIN,
-				leftAfter = "Pagle Coins left after: 1,050. Looks are yours for good.",
-				useNow = "Use it now",
-				checked = true,
+				head = "C U R I O   S H O P",
+				question = "Buy Velvet?",
+				icon = 134939,
+				price = { "Price", "400", true },
+				left = { "Pagle Coins left after", "1,050" },
+				fine = "Looks are yours for good.",
+				useNow = { "Use it now", true, true },
+				buttons = { "Buy", "CANCEL" },
 				shown = true,
-			}, confirmShown(loaded))
+			}, billShown(bill))
+			assert.are.equal(shopFrame(loaded), bill:GetParent())
+			assert.are.equal(SHOP_ART .. "Papers", bill.slip.children[1].texture)
 		end
 	)
 
@@ -687,9 +774,9 @@ describe("The Buy popup", function()
 			handles.Ledger:ReportCoinsEarned(200)
 			local entries = loaded.env.PagleLog.entries
 			local before = #entries
-			askToBuy(loaded, "core.toaststyle.ripple")
+			local bill = askToBuy(loaded, "core.toaststyle.ripple")
 
-			loaded.client.clickPopup(1)
+			bill.buy:Click()
 
 			assert.are.equal(before + 1, #entries)
 			-- The logged-in character is the saved log's second (LOG-R25).
@@ -698,40 +785,48 @@ describe("The Buy popup", function()
 			assert.are.equal("core.toaststyle.ripple", loaded.env.Pagle.GetEquipped("core.toaststyle"))
 			local frame = shopFrame(loaded)
 			assert.are.equal("50", frame.purse.balance:GetText())
-			assert.are.equal("In use", frame.stage.tags:GetText())
+			assert.are.equal("IN USE", frame.stage.tags:GetText())
 			assert.is_false(frame.stage.buy:IsShown())
-			assert.is_nil(loaded.client.popup)
+			assert.is_false(bill:IsShown())
 		end
 	)
 
 	it("with Use it now unticked, buys the good owned but not in use (wallet-and-shop.md › UI: Buy)", function()
 		local loaded, handles = shopCore()
 		handles.Ledger:ReportCoinsEarned(300)
-		askToBuy(loaded, "core.toaststyle.ripple")
+		local bill = askToBuy(loaded, "core.toaststyle.ripple")
 
-		loaded.client.popup.inserted.useNow:Click()
-		loaded.client.clickPopup(1)
+		bill.useNow:Click()
+		assert.is_false(bill.useNow.tick:IsShown())
+		bill.buy:Click()
 
 		assert.is_true(loaded.env.Pagle.IsOwned("core.toaststyle.ripple"))
 		assert.are.equal("core.toaststyle.timber", loaded.env.Pagle.GetEquipped("core.toaststyle"))
 		local stage = shopFrame(loaded).stage
-		assert.are.equal("Owned", stage.tags:GetText())
+		assert.are.equal("OWNED", stage.tags:GetText())
 		assert.is_true(stage.use:IsShown())
 		-- The next Buy asks with Use it now ticked again.
 		askToBuy(loaded, "core.crest.crest1")
-		assert.is_true(confirmShown(loaded).checked)
+		assert.are.same({ "Use it now", true, true }, billShown(bill).useNow)
 	end)
 
-	it("buys nothing on Cancel or Esc (wallet-and-shop.md › UI: Buy)", function()
+	it("buys nothing on Cancel or Esc; Esc closes only the bill, and other keys go on to the game", function()
 		local loaded, handles = shopCore()
 		handles.Ledger:ReportCoinsEarned(200)
 		local before = #loaded.env.PagleLog.entries
 
+		local bill = askToBuy(loaded, "core.toaststyle.ripple")
+		bill.cancel:Click()
+		assert.is_false(bill:IsShown())
 		askToBuy(loaded, "core.toaststyle.ripple")
-		loaded.client.clickPopup(2)
-		askToBuy(loaded, "core.toaststyle.ripple")
-		loaded.client.pressEscape()
+		bill:GetScript("OnKeyDown")(bill, "W")
+		assert.is_true(bill.propagatesKeys)
+		assert.is_true(bill:IsShown())
+		loaded.client.pressKey("ESCAPE")
 
+		assert.is_false(bill:IsShown())
+		assert.is_false(bill.propagatesKeys)
+		assert.is_true(shopFrame(loaded):IsShown())
 		assert.are.equal(before, #loaded.env.PagleLog.entries)
 		assert.is_false(loaded.env.Pagle.IsOwned("core.toaststyle.ripple"))
 		assert.are.equal(200, loaded.env.Pagle.GetBalance().balance)
@@ -742,12 +837,13 @@ describe("The Buy popup", function()
 		settle(loaded)
 		handles.Ledger:ReportCoinsEarned(200)
 		local before = #loaded.env.PagleLog.entries
-		askToBuy(loaded, "core.toaststyle.ripple")
+		local bill = askToBuy(loaded, "core.toaststyle.ripple")
 
 		loaded.ns.walletProjection:Rebuild()
-		loaded.client.clickPopup(1)
+		bill.buy:Click()
 		settle(loaded)
 
+		assert.is_false(bill:IsShown())
 		assert.are.equal(before, #loaded.env.PagleLog.entries)
 		assert.is_false(loaded.env.Pagle.IsOwned("core.toaststyle.ripple"))
 		assert.are.equal(200, loaded.env.Pagle.GetBalance().balance)
@@ -756,9 +852,9 @@ describe("The Buy popup", function()
 	it("raises no Announcement (ANN-R23)", function()
 		local loaded, handles = shopCore()
 		handles.Ledger:ReportCoinsEarned(200)
-		askToBuy(loaded, "core.toaststyle.ripple")
+		local bill = askToBuy(loaded, "core.toaststyle.ripple")
 
-		loaded.client.clickPopup(1)
+		bill.buy:Click()
 		loaded.client.runTimers()
 
 		assert.is_true(loaded.env.Pagle.IsOwned("core.toaststyle.ripple"))
@@ -768,16 +864,18 @@ describe("The Buy popup", function()
 	it("closes with the shop: in combat, and when the shop closes (SHOP-R41, CORE-R33)", function()
 		local loaded, handles = shopCore()
 		handles.Ledger:ReportCoinsEarned(200)
-		askToBuy(loaded, "core.toaststyle.ripple")
+		local bill = askToBuy(loaded, "core.toaststyle.ripple")
 
 		setCombat(loaded, true)
 
-		assert.is_nil(loaded.client.popup)
+		assert.is_false(bill:IsShown())
 		assert.is_false(shopFrame(loaded):IsShown())
 		setCombat(loaded, false)
 		askToBuy(loaded, "core.toaststyle.ripple")
 		shopFrame(loaded).CloseButton:Click()
-		assert.is_nil(loaded.client.popup)
+		assert.is_false(bill:IsShown())
+		loaded.env.Pagle.OpenShop()
+		assert.is_false(bill:IsShown()) -- it doesn't come back with the shop
 		assert.is_false(loaded.env.Pagle.IsOwned("core.toaststyle.ripple"))
 	end)
 end)
@@ -819,5 +917,65 @@ describe("The purse's held line", function()
 		local purse = shopFrame(loaded).purse
 		assert.are.equal("100", purse.balance:GetText())
 		assert.is_false(purse.held:IsShown())
+	end)
+end)
+
+describe("The Curio Shop's art", function()
+	it("draws every word in a font object of the kit's bundled faces", function()
+		local loaded = shopCore()
+		loaded.env.Pagle.OpenShop("hunts.cover.velvet")
+		local frame = shopFrame(loaded)
+
+		for _, fontString in ipairs({
+			frame.purse.balance,
+			frame.purse.label,
+			frame.search.Instructions,
+			frame.stage.name,
+			frame.stage.description,
+			frame.bill.question,
+		}) do
+			assert.matches("^PagleShop%a+$", fontString.fontObject)
+		end
+		assert.are.equal("PagleShopBalance", frame.purse.balance.fontObject)
+		assert.are.equal("PagleShopGoodName", frame.stage.name.fontObject)
+		for key, name in pairs(loaded.ns.SHOP_FONTS) do
+			assert.are.equal("PagleShop" .. key, name)
+		end
+	end)
+
+	it("ships each atlas as a BLP of its size, and each sprite inside its texture", function()
+		local loaded = shopCore()
+		for _, name in ipairs({ "Case", "Shop", "Papers" }) do
+			local atlas = loaded.ns.ATLASES[name]
+			assert.are.equal(SHOP_ART .. name, atlas.file)
+			local blp = readFile("addons/Pagle/media/shop/" .. name .. ".blp")
+			assert.are.equal("BLP2", blp:sub(1, 4))
+			local width = blp:byte(13) + blp:byte(14) * 256 + blp:byte(15) * 65536
+			local height = blp:byte(17) + blp:byte(18) * 256 + blp:byte(19) * 65536
+			assert.are.same({ atlas.width, atlas.height }, { width, height }, name)
+			for sprite, rect in pairs(atlas.sprites) do
+				local inside = rect.x >= 0
+					and rect.x + rect.w <= atlas.width
+					and rect.y >= 0
+					and rect.y + rect.h <= atlas.height
+				assert.are.equal(sprite, inside and sprite)
+			end
+		end
+	end)
+
+	it("ships the fonts it draws in, each with its licence", function()
+		for _, file in ipairs({
+			"IMFeENrm28P.ttf",
+			"IMFeENit28P.ttf",
+			"Marcellus-Regular.ttf",
+			"Caveat-Medium.ttf",
+			"Caveat-SemiBold.ttf",
+			"Caveat-Bold.ttf",
+			"OFL-IMFellEnglish.txt",
+			"OFL-Marcellus.txt",
+			"OFL-Caveat.txt",
+		}) do
+			assert.are.equal(file, #readFile("addons/Pagle/media/fonts/" .. file) > 0 and file)
+		end
 	end)
 end)

@@ -546,17 +546,17 @@ end
 ---@field hide fun()                  -- closes it
 
 --- The Curio Shop's entry points (SHOP-R40, SHOP-R41), which Pagle.OpenShop, /pagle shop and the compartment entry call,
---- and its one way to spend Coins, which the Buy popup's confirm calls (SHOP-R13, LOG-R39).
+--- and its one way to spend Coins, which the bill of sale's Buy calls (SHOP-R13, LOG-R39).
 ---@class PagleShop
 ---@field Open fun(goodID: string?) -- Pagle.OpenShop
 ---@field Toggle fun()              -- /pagle shop
----@field Buy fun(goodID: string, useNow: boolean): boolean -- the Buy popup's Buy: true if it bought
+---@field Buy fun(goodID: string, useNow: boolean): boolean -- the bill of sale's Buy: true if it bought
 ---@field Use fun(goodID: string): boolean -- the stage's Use: true if it equipped the good
 
 --- The Curio Shop's entry points as ns.shop (SHOP-R40, SHOP-R41), its buying (ns.shop.Buy), and ns.ShopModel, the
 --- shop's data now: Core's goods, their cache, the Modules On, the balance and whether a projection is updating
 --- (logic/Shop.lua). Opening while restricted prints "Pagle: the Curio Shop opens after combat." and opens nothing; at
---- RestrictionChanged(true) an open shop closes, its Buy popup with it, and nothing is queued. Returns
+--- RestrictionChanged(true) an open shop closes, its bill of sale with it, and nothing is queued. Returns
 --- Pagle.OpenShop.
 ---@param host PagleHost
 ---@param seams PagleShopSeams

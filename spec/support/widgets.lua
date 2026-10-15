@@ -399,6 +399,11 @@ function widgets.newWidget(kind, parent)
 	function widget:IsKeyboardEnabled()
 		return self.keyboardEnabled == true
 	end
+	-- Whether the key press its OnKeyDown is taking goes on to the bindings too (`propagatesKeys`), as
+	-- Frame:SetPropagateKeyboardInput sets it.
+	function widget:SetPropagateKeyboardInput(propagates)
+		self.propagatesKeys = not not propagates
+	end
 	function widget:CreateFontString(_, layer, template)
 		local fontString = widgets.newWidget("FontString", self)
 		fontString.fontObject = template
@@ -473,6 +478,8 @@ function widgets.newFrame(client, kind, parent)
 		widgets.editBox(client, frame)
 	elseif frame.kind == "CheckButton" then
 		widgets.checkButton(frame)
+	elseif frame.kind == "Slider" then
+		widgets.slider(frame)
 	end
 	client.frames[#client.frames + 1] = frame
 	return frame
@@ -539,6 +546,43 @@ function widgets.checkButton(button)
 		end
 		click(self)
 	end
+end
+
+--- Makes `slider` a Slider, as the client's behaves for what Pagle calls: its range (`minValue`, `maxValue`), its
+--- value, clamped to the range, with SetValue running OnValueChanged(value, userInput false) when the value changes,
+--- its orientation and its thumb texture (`thumb`).
+---@param slider table
+function widgets.slider(slider)
+	slider.minValue, slider.maxValue, slider.value = 0, 0, 0
+	function slider:SetMinMaxValues(min, max)
+		self.minValue, self.maxValue = min, max
+		self:SetValue(self.value)
+	end
+	function slider:GetMinMaxValues()
+		return self.minValue, self.maxValue
+	end
+	function slider:SetValue(value)
+		value = math.max(self.minValue, math.min(self.maxValue, value))
+		if value == self.value then
+			return
+		end
+		self.value = value
+		local script = self.scripts.OnValueChanged
+		if script then
+			script(self, value, false)
+		end
+	end
+	function slider:GetValue()
+		return self.value
+	end
+	function slider:SetOrientation(orientation)
+		self.orientation = orientation
+	end
+	function slider:SetThumbTexture(texture)
+		self.thumb = texture
+	end
+	slider.SetValueStep = function() end
+	slider.SetObeyStepOnDrag = function() end
 end
 
 --- Adds the children and methods a FrameXML template gives a frame, as far as Pagle reads them. Gethe/wow-ui-source

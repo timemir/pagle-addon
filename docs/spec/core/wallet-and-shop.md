@@ -61,7 +61,7 @@ Part of [Core](README.md). Core holds the Angler's **Pagle Coins** and runs the 
 ### Entry points
 
 - **SHOP-R40** The Curio Shop opens from the compartment menu entry "Curio Shop" (CORE-R50), from `/pagle shop` (a toggle), from `Pagle.OpenShop(goodID?)`, and from the Look and Feel page's "Open the Curio Shop" button. `OpenShop` selects that good; an unknown ID selects nothing; a good of a disabled Module selects it in "Put away" if owned, otherwise nothing. Esc closes it.
-- **SHOP-R41** While restricted, every entry point prints "Pagle: the Curio Shop opens after combat." instead. At `RestrictionChanged(true)`, an open shop and its Buy popup close; nothing is queued.
+- **SHOP-R41** While restricted, every entry point prints "Pagle: the Curio Shop opens after combat." instead. At `RestrictionChanged(true)`, an open shop and its bill of sale (the Buy confirmation) close; nothing is queued.
 
 ## Data
 
@@ -127,19 +127,19 @@ Goods by Module: Ledger registers extra Journal bindings (for sale) and the six 
 
 ## UI
 
-One native Collections-style window, "Curio Shop" (variant B of the prototype):
+One window, "Curio Shop" (the layout of the prototype's variant B), drawn with the shop art kit as a travelling merchant's sample case: brown leather with stitching, brass corners and a handle, the "Curio Shop" trade label on its lid. It is 980 × 640 at UI scale 1, centred, movable by its leather, with a brass close button at the top right. Its art is three textures under `media/shop/` (BLP, DXT5; 5 MB loaded in all), their sprites listed in `data/ShopArt.lua`. Its words are set in the bundled OFL fonts (IM Fell English and its italic for print, Caveat for handwriting, Marcellus for gilt, in `media/fonts/`), in capitals where the kit sets small caps, since the client has none. They pass CORE-R9, and `/pagle dev glyphs` shows each face.
 
-- **Header (the purse):** the balance, then income by source as a stacked bar (Tackle Board / Ledger / Hunts), with each Module's lifetime total in a legend and tooltip, and "Stats and QoL pay none". A Module that is off (CORE-R41) has its segment faded and its legend entry struck through, but its total still counts. There is no "Spent" anywhere. The held line (SHOP-R12) shows here.
-- **Left, the list:** a search box (matches names); a filter (All / Owned / Not owned / Can afford); category chips in the order Announcements, Bookplate, Fish Journal, Hunts, Trackers, each shown only if a registered slot uses it. Goods are grouped by slot (Core's slots first, then by Module order), with an owned count per slot; each row shows a swatch, the name and its state. "Put away: Module off" is the last group, greyed, saying "Yours to keep".
-- **Right, the preview stage:** the selected good's `preview` (a sample toast with "Show on screen" for a toast style; ▶ Toast / ▶ Banner / ▶ Legend for a sound set; the bookplate for a crest; the closed book for a binding or cover; a sample tracker for a tracker frame), then its name, slot, owning Module, description and actions. A "Put away" good shows its cached icon as a swatch.
+- **The purse, on the case's top band:** the brass coin, "PAGLE COINS" over the balance in gilt, then income by source as a stacked bar (Tackle Board / Ledger / Hunts, each in its own colour), with each Module's lifetime total in a handwritten legend under it, and "Stats and QoL pay none" at the right. Hovering a segment shows a dark tooltip edged in gilt, in the book's voice. A Module that is off (CORE-R41) has its segment faded and greyed and its legend entry greyed and struck through in red ink, but its total still counts. There is no "Spent" anywhere. The held line (SHOP-R12) shows under the legend, the bar moving up to make room.
+- **Left, the green velvet tray, the list:** a paper search slip, "Find a look…" (matches names); the filter as pills (All / Owned / Not owned / Can afford), the one on in gilt; category chips as leather tabs in the order Announcements, Bookplate, Fish Journal, Hunts, Trackers, each shown only if a registered slot uses it. Goods are grouped by slot (Core's slots first, then by Module order), each slot's name in capitals with a gilt rule and its owned count ("1 of 3"). Each row shows the good's icon round in a brass medallion, its name and its state. The selected row sits on a gilt band. "Put away: Module off" is the last group, greyed, saying "Yours to keep". The list scrolls with the wheel and a slim brass scroll bar, shown only while the list overflows.
+- **Right, the quilted lid, the stage:** a showcase card, whose dark well and the paper under it (370 × 190 in all, the well its top 132) are the selected good's `preview` stage: a sample toast with "Show on screen" for a toast style; ▶ Toast / ▶ Banner / ▶ Legend for a sound set; the bookplate for a crest; the closed book for a binding or cover; a sample tracker for a tracker frame. A preview is clipped to the card. A good with no preview, or put away, shows its icon in a medallion in the well, greyed if put away. Under it, the description card holds the good's name in handwriting, its slot and owning Module in red capitals, its description in italic, its notes, then Buy or Use with its tags at the foot.
 - **States on a row and the stage:**
-  - for sale: price in white, "Buy for N"
-  - can't afford: price in red, Buy disabled, "N more needed"
-  - owned: "Owned" tag and a **Use** button
-  - equipped: "In use" tag
+  - for sale: a paper price tag on a string, the price with a coin; "Buy for N" with a coin on a leather button
+  - can't afford: the price in red on its tag, Buy dimmed and disabled, "N more Coins" in red beside it
+  - owned: "Owned" on the row; "OWNED" and a **Use** button on the stage
+  - equipped: "IN USE" after a wax dot on the row, and on the stage
   - default: "default"
   - earned and not yet earned: its `earnedText`, "a Ledger reward, not for sale"
-- **Buy:** a StaticPopup "Buy {name}?" with the swatch, the price, "Pagle Coins left after: N. Looks are yours for good.", a **"Use it now"** checkbox (on by default) and Buy / Cancel. No Announcement follows.
+- **Buy:** a bill of sale over the case, which dims: a sheet of paper with a torn top, "CURIO SHOP", "Buy {name}?" in handwriting, the good's medallion, a dashed rule, "Price" with the price and a coin, "Pagle Coins left after" with N, "Looks are yours for good.", a hand-ticked **"Use it now"** checkbox (on by default), and Buy / Cancel. Esc is Cancel there and leaves the shop open; any other key goes on to the game. No Announcement follows.
 
 **Look and Feel page** (a Settings topic page under Core's root, CORE-R40, built when first opened so late registrations appear): one dropdown per registered slot of an enabled Module (and Core's), grouped by slot category, listing owned looks; under each, "N more in the Curio Shop", where N counts that slot's for-sale goods not owned; and one "Open the Curio Shop" button. It edits the same equipped setting as the shop's Use button.
 

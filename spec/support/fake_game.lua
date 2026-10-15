@@ -59,7 +59,8 @@
 ---@field itemUses string[] Each item use PagleQoLActionButton's press made, in order: "use <itemID>", or
 --- "use <itemID> on <slot>" for one applied to an equipped slot.
 ---@field pressKey fun(key: string) A press of `key`: a shown keyboard-enabled frame takes it first (its OnKeyDown,
---- the frame made last on top), and then no binding sees it. Otherwise it reaches its override: for a click override
+--- the frame made last on top), and then no binding sees it unless that OnKeyDown let it through
+--- (SetPropagateKeyboardInput(true)). Otherwise it reaches its override: for a click override
 --- ("CLICK name:…"), the named button's click, with the secure item action of FrameXML's SecureActionButtonTemplate
 --- for a secure one. No other override is faked.
 ---@field savedBindings integer[] Each SaveBindings call's binding set, in order. SetBinding changes `boundKeys`.
@@ -502,7 +503,7 @@ return function(client, stubs)
 
 	function client.pressKey(key)
 		-- A shown keyboard-enabled frame takes the press first, the one made last on top, and keeps it from the
-		-- bindings (Frame:EnableKeyboard; Pagle never lets one propagate).
+		-- bindings (Frame:EnableKeyboard) unless its OnKeyDown lets it through (SetPropagateKeyboardInput(true)).
 		for i = #client.frames, 1, -1 do
 			local frame = client.frames[i]
 			if frame.keyboardEnabled and visible(frame) then
@@ -510,7 +511,10 @@ return function(client, stubs)
 				if onKeyDown then
 					onKeyDown(frame, key)
 				end
-				return
+				if not frame.propagatesKeys then
+					return
+				end
+				break
 			end
 		end
 		local action = client.overrideAction(key)

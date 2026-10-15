@@ -121,8 +121,7 @@ stds.wow = {
 		-- (QOL-R83): ReloadUI is unprotected on build 70338 (QOL-R102), and the QoL boundary spec allows that one call.
 		"StaticPopup_Show",
 		"ReloadUI",
-		-- The Ledger's Prestige confirm (LED-R33), hidden when the Fish Journal closes; the Curio Shop's Buy popup,
-		-- shown with StaticPopup_Show above and hidden when the shop closes (SHOP-R41).
+		-- The Ledger's Prestige confirm (LED-R33), hidden when the Fish Journal closes.
 		"StaticPopup_Hide",
 		-- QoL's Nudges: a frame on the screen (UIParent, below), below the game's error text (QOL-R75); its colour is in
 		-- stds.wow_variables. Stats refuses a 4th watched Dry spell in that red error text (STA-R61).
@@ -184,9 +183,9 @@ stds.wow = {
 		"ITEM_QUALITY5_DESC",
 		"ITEM_QUALITY6_DESC",
 		"ITEM_QUALITY7_DESC",
-		-- The Curio Shop's purse: each Module's segment shows its lifetime Coins, the total Core stores for it (SHOP-R3),
-		-- in the tooltip (wallet-and-shop.md › UI), GameTooltip above. The window is drawn on CreateFrame and UIParent above and hides with Esc through
-		-- UISpecialFrames (below).
+		-- The Curio Shop (wallet-and-shop.md › UI) is drawn on CreateFrame and UIParent above, in its bundled fonts'
+		-- font objects (CreateFont, above), and hides with Esc through UISpecialFrames (below); its bill of sale takes
+		-- Esc first, outside combat (InCombatLockdown, above).
 		-- `/pagle dev tour` (CORE-R66): Screenshot() saves each stop to the client's Screenshots folder, and date() gives
 		-- the local time the files are named by. Both are in the forever dump's GlobalAPI.lua at BIR_COMMIT ("Screenshot"
 		-- with the C API, "date" with the Lua extras); vscode-wow-api at WOW_API_COMMIT has
@@ -244,14 +243,12 @@ stds.wow_variables = {
 		-- does. Gethe/wow-ui-source branch forever at 943764493e6b16d63ded3ab304150d1f05e58b57 ("1.60.1 (70338)"),
 		-- Interface/AddOns/Blizzard_StaticPopup/StaticPopup.lua: `StaticPopupDialogs = {}; -- Definitions`. QoL adds
 		-- its two dialogs to it: the conflict popup and its Reload now popup (QOL-R81, QOL-R83); the Ledger adds its
-		-- Prestige confirm (LED-R33); Core adds the Curio Shop's Buy popup, one confirmation per purchase (SHOP-R13),
-		-- which closes while restricted (SHOP-R41); and the Tackle Board adds its reroll confirm (TKB-R56).
+		-- Prestige confirm (LED-R33); and the Tackle Board adds its reroll confirm (TKB-R56).
 		StaticPopupDialogs = {
 			fields = {
 				PAGLE_QOL_CONFLICT = { read_only = false },
 				PAGLE_QOL_RELOAD = { read_only = false },
 				PAGLE_LEDGER_PRESTIGE = { read_only = false },
-				PAGLE_CURIO_BUY = { read_only = false },
 				PAGLE_TACKLEBOARD_REROLL = { read_only = false },
 			},
 		},

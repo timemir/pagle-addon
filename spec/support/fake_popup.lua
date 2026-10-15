@@ -1,5 +1,5 @@
--- The fake client's popups and addon switches, for QoL's conflict popup and its Reload now popup (QOL-R81–R84), the
--- Ledger's Prestige confirm (LED-R33) and the Curio Shop's Buy popup (wallet-and-shop.md › UI: Buy).
+-- The fake client's popups and addon switches, for QoL's conflict popup and its Reload now popup (QOL-R81–R84) and the
+-- Ledger's Prestige confirm (LED-R33).
 -- spec/support/addon.lua adds these stubs to every load.
 --
 --   loaded.client.popup                  -- the popup shown last: { which, text, buttons = { [index] = label },

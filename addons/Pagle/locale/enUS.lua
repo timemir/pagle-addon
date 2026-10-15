@@ -154,20 +154,19 @@ ns.L = {
 	SETTINGS_FIELD_REPORT_BUTTON = "Open Field report",
 	SETTINGS_FIELD_REPORT_BUTTON_COUNT = "Open Field report (%d)",
 	SETTINGS_FIELD_REPORT_TOOLTIP = "Copy what you've caught that Pagle's data doesn't know yet, and paste it into the issue form.",
-	-- The Curio Shop (wallet-and-shop.md › UI): its title, the chat line its entry points print while restricted
-	-- (SHOP-R41); the purse (its label, a Module's legend entry with its total, the segment's tooltip lines, who pays
-	-- nothing); the list (the search box's hint, the filters, the category chips, a slot's owned count, the Put away
-	-- group and its note, a list with no row); a row's and the stage's tags; the stage (the line under the name, with
-	-- the slot and its owner, Core's owner name, a price, Buy, the Coins still needed, an earned good's line, a Module
-	-- off, the hint with nothing selected, Use).
-	SHOP_TITLE = "Curio Shop",
+	-- The Curio Shop (wallet-and-shop.md › UI; its "Curio Shop" trade label is drawn in the case's art): the chat line
+	-- its entry points print while restricted (SHOP-R41); the purse (its label, a Module's legend entry with its total,
+	-- the segment's tooltip lines, who pays nothing); the list (the search slip's hint, the filters, the category
+	-- chips, a slot's owned count, the Put away group and its note, a list with no row); a row's and the stage's tags;
+	-- the stage (the line under the name, with the slot and its owner, Core's owner name, Buy with the price, the Coins
+	-- still needed, an earned good's line, a Module off, the hint with nothing selected, Use).
 	SHOP_AFTER_COMBAT = "Pagle: the Curio Shop opens after combat.",
 	SHOP_COINS = "Pagle Coins",
 	SHOP_LEGEND = "%s %s",
 	SHOP_ALL_TIME = "%s Coins all time",
 	SHOP_OFF_NOTE = "Off: pays nothing new, keeps what it paid.",
 	SHOP_PAY_NONE = "Stats and QoL pay none",
-	SHOP_SEARCH = "Search looks",
+	SHOP_SEARCH = "Find a look…",
 	SHOP_FILTERS = { all = "All", owned = "Owned", notOwned = "Not owned", canAfford = "Can afford" },
 	SHOP_ALL_CATEGORIES = "All",
 	SHOP_CATEGORIES = {
@@ -177,7 +176,7 @@ ns.L = {
 		Hunts = "Hunts",
 		Trackers = "Trackers",
 	},
-	SHOP_OWNED_COUNT = "%d/%d",
+	SHOP_OWNED_COUNT = "%d of %d",
 	SHOP_PUT_AWAY = "Put away: Module off",
 	SHOP_KEEP = "Yours to keep",
 	SHOP_NO_MATCH = "No looks match.",
@@ -186,17 +185,20 @@ ns.L = {
 	SHOP_DEFAULT = "default",
 	SHOP_SLOT_LINE = "%s · %s",
 	SHOP_CORE = "Pagle",
-	SHOP_PRICE = "%s " .. COIN,
-	SHOP_BUY = "Buy for %s " .. COIN,
-	SHOP_MORE_NEEDED = "%s more needed",
+	SHOP_BUY = "Buy for %s",
+	SHOP_MORE_NEEDED = "%s more Coins",
 	SHOP_REWARD = "A %s reward, not for sale",
 	SHOP_MODULE_OFF = "%s is off",
 	SHOP_PICK = "Pick a look to see it here.",
 	SHOP_USE = "Use",
-	-- Buying (wallet-and-shop.md › UI: Buy): the popup's question with the good's name, the Coins left after, its
-	-- checkbox and buttons; and SHOP-R12's held line under the purse, which never mentions debt or a negative number.
+	-- Buying (wallet-and-shop.md › UI: Buy): the bill of sale's head (spaced out: the client has no letter spacing),
+	-- its question with the good's name, its two lines, its fine print, its checkbox and buttons; and SHOP-R12's held
+	-- line under the purse, which never mentions debt or a negative number.
+	SHOP_BILL_HEAD = "C U R I O   S H O P",
 	SHOP_BUY_CONFIRM = "Buy %s?",
-	SHOP_LEFT_AFTER = "Pagle Coins left after: %s. Looks are yours for good.",
+	SHOP_PRICE_LINE = "Price",
+	SHOP_LEFT_AFTER = "Pagle Coins left after",
+	SHOP_FOR_GOOD = "Looks are yours for good.",
 	SHOP_USE_NOW = "Use it now",
 	SHOP_BUY_ACCEPT = "Buy",
 	SHOP_BUY_CANCEL = "Cancel",

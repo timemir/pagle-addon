@@ -1,8 +1,6 @@
 -- The Curio Shop as data (wallet-and-shop.md › UI, SHOP-R22, SHOP-R30, SHOP-R35, SHOP-R40): the purse, the list
 -- and the stage, built by ns.NewShopModel over Core's real goods registry and wallet, here FakePagle's.
 
-local COIN = " |TInterface\\MoneyFrame\\UI-GoldIcon:0|t"
-
 -- A FakePagle with the Ledger (order 10) and Hunts (order 20) On, unless `off` names one to leave unregistered, and
 -- Core's own slots and goods, as Core registers them (SHOP-R25), named by their IDs until their lore lands; nothing
 -- logged in yet. Returns the fake and the handles, by def.name.
@@ -20,18 +18,18 @@ end
 -- Core's own slots (SHOP-R25) as the list outlines them while nothing of Core's is bought and the balance is under
 -- 150: each default in use, everything else priced in red.
 local CORE_UNBOUGHT = {
-	"Toast style (1/3)",
+	"Toast style (1 of 3)",
 	"  core.toaststyle.timber In use",
-	"  core.toaststyle.ripple 150" .. COIN .. " [red]",
-	"  core.toaststyle.lanternglow 400" .. COIN .. " [red]",
-	"Sound set (1/2)",
+	"  core.toaststyle.ripple 150" .. " [red]",
+	"  core.toaststyle.lanternglow 400" .. " [red]",
+	"Sound set (1 of 2)",
 	"  core.soundset.driftwood In use",
-	"  core.soundset.gilded 400" .. COIN .. " [red]",
-	"Bookplate crest (1/4)",
+	"  core.soundset.gilded 400" .. " [red]",
+	"Bookplate crest (1 of 4)",
 	"  core.crest.plain In use",
-	"  core.crest.crest1 150" .. COIN .. " [red]",
-	"  core.crest.crest2 400" .. COIN .. " [red]",
-	"  core.crest.crest3 900" .. COIN .. " [red]",
+	"  core.crest.crest1 150" .. " [red]",
+	"  core.crest.crest2 400" .. " [red]",
+	"  core.crest.crest3 900" .. " [red]",
 }
 
 -- CORE_UNBOUGHT, then `lines`.
@@ -189,24 +187,24 @@ describe("The Curio Shop's list", function()
 			local fake = shopping()
 
 			assert.are.same({
-				"Toast style (2/3)",
+				"Toast style (2 of 3)",
 				"  core.toaststyle.timber default",
 				"  core.toaststyle.ripple In use",
-				"  core.toaststyle.lanternglow 400" .. COIN .. " [red]",
-				"Sound set (1/2)",
+				"  core.toaststyle.lanternglow 400" .. " [red]",
+				"Sound set (1 of 2)",
 				"  core.soundset.driftwood In use",
-				"  core.soundset.gilded 400" .. COIN .. " [red]",
-				"Bookplate crest (1/4)",
+				"  core.soundset.gilded 400" .. " [red]",
+				"Bookplate crest (1 of 4)",
 				"  core.crest.plain In use",
-				"  core.crest.crest1 150" .. COIN,
-				"  core.crest.crest2 400" .. COIN .. " [red]",
-				"  core.crest.crest3 900" .. COIN .. " [red]",
-				"Journal binding (1/2)",
+				"  core.crest.crest1 150",
+				"  core.crest.crest2 400" .. " [red]",
+				"  core.crest.crest3 900" .. " [red]",
+				"Journal binding (1 of 2)",
 				"  ledger.binding.oak In use",
-				"  ledger.binding.lapis 900" .. COIN .. " [red]",
-				"Notebook cover (1/3)",
+				"  ledger.binding.lapis 900" .. " [red]",
+				"Notebook cover (1 of 3)",
 				"  hunts.cover.plain In use",
-				"  hunts.cover.velvet 400" .. COIN .. " [red]",
+				"  hunts.cover.velvet 400" .. " [red]",
 				"  hunts.cover.gold Every Hunt done",
 			}, outline(model(fake):List({})))
 		end
@@ -221,7 +219,7 @@ describe("The Curio Shop's list", function()
 			local rows = model(fake):List({ category = "Hunts" })[1].rows
 
 			assert.are.same(
-				{ id = "hunts.cover.velvet", name = "Velvet", icon = 134939, state = "forSale", price = "400" .. COIN },
+				{ id = "hunts.cover.velvet", name = "Velvet", icon = 134939, state = "forSale", price = "400" },
 				rows[2]
 			)
 		end
@@ -231,13 +229,13 @@ describe("The Curio Shop's list", function()
 		local fake = shopping()
 
 		assert.are.same({
-			"Journal binding (1/2)",
-			"  ledger.binding.lapis 900" .. COIN .. " [red]",
+			"Journal binding (1 of 2)",
+			"  ledger.binding.lapis 900" .. " [red]",
 		}, outline(model(fake):List({ search = "LaPi" })))
 		assert.are.same({
-			"Bookplate crest (1/4)",
+			"Bookplate crest (1 of 4)",
 			"  core.crest.plain In use",
-			"Notebook cover (1/3)",
+			"Notebook cover (1 of 3)",
 			"  hunts.cover.plain In use",
 		}, outline(model(fake):List({ search = "plain" })))
 		assert.are.same({}, model(fake):List({ search = "binding" }), "names only, not the slot's label")
@@ -298,9 +296,9 @@ describe("The Curio Shop's list", function()
 				{ category = "Hunts", label = "Hunts" },
 			}, shop:Chips())
 			assert.are.same({
-				"Journal binding (1/2)",
+				"Journal binding (1 of 2)",
 				"  ledger.binding.oak In use",
-				"  ledger.binding.lapis 900" .. COIN .. " [red]",
+				"  ledger.binding.lapis 900" .. " [red]",
 			}, outline(shop:List({ category = "Fish Journal" })))
 		end
 	)
@@ -312,9 +310,9 @@ describe("The Curio Shop's list", function()
 
 		assert.are.same(
 			afterCore({
-				"Notebook cover (2/3)",
+				"Notebook cover (2 of 3)",
 				"  hunts.cover.plain In use",
-				"  hunts.cover.velvet 400" .. COIN .. " [red]",
+				"  hunts.cover.velvet 400" .. " [red]",
 				"  hunts.cover.gold Owned",
 			}),
 			outline(model(fake):List({}))
@@ -362,9 +360,9 @@ describe("The Curio Shop's Put away group", function()
 
 			assert.are.same(
 				afterCore({
-					"Journal binding (1/2)",
+					"Journal binding (1 of 2)",
 					"  ledger.binding.oak In use",
-					"  ledger.binding.lapis 900" .. COIN .. " [red]",
+					"  ledger.binding.lapis 900" .. " [red]",
 					"Put away: Module off (Yours to keep)",
 					"  hunts.cover.gold Hunts is off",
 					"  hunts.cover.velvet Hunts is off",
@@ -446,8 +444,7 @@ describe("The Curio Shop's stage", function()
 				slotLine = "Notebook cover · Hunts",
 				description = "Soft to the touch.",
 				state = "forSale",
-				price = "400" .. COIN,
-				buy = "Buy for 400" .. COIN,
+				buy = "Buy for 400",
 				tags = {},
 				notes = {},
 			}, stage)
@@ -460,10 +457,10 @@ describe("The Curio Shop's stage", function()
 		local stage = assert(model(fake):Stage("ledger.binding.lapis"))
 
 		assert.are.same(
-			{ "Journal binding · Ledger", "short", "900" .. COIN, true, "Buy for 900" .. COIN, "250 more needed" },
-			{ stage.slotLine, stage.state, stage.price, stage.short, stage.buy, stage.needed }
+			{ "Journal binding · Ledger", "short", true, "Buy for 900", "250 more Coins" },
+			{ stage.slotLine, stage.state, stage.short, stage.buy, stage.needed }
 		)
-		assert.are.equal("350 more needed", assert(model(stageReady(50)):Stage("hunts.cover.velvet")).needed)
+		assert.are.equal("350 more Coins", assert(model(stageReady(50)):Stage("hunts.cover.velvet")).needed)
 	end)
 
 	it(
@@ -493,7 +490,7 @@ describe("The Curio Shop's stage", function()
 			fake.setPurchased({ ["core.toaststyle.ripple"] = true, ["core.toaststyle.lanternglow"] = true })
 			local lantern = assert(model(fake):Stage("core.toaststyle.lanternglow"))
 			assert.are.same({ "owned", { "Owned" }, true }, { lantern.state, lantern.tags, lantern.use })
-			assert.is_nil(lantern.price)
+			assert.is_nil(lantern.buy)
 		end
 	)
 
@@ -509,7 +506,6 @@ describe("The Curio Shop's stage", function()
 				{ gold.state, gold.tags, gold.notes }
 			)
 			assert.is_nil(gold.buy)
-			assert.is_nil(gold.price)
 
 			earned.value = true
 			handles.Hunts:RefreshGoods()
@@ -675,8 +671,8 @@ describe("A purchase", function()
 				name = "Velvet",
 				icon = 134939,
 				price = 400,
-				priceText = "400" .. COIN,
-				leftAfter = "Pagle Coins left after: 1,050. Looks are yours for good.",
+				amount = "400",
+				left = "1,050",
 			}, model(fake):Purchase("hunts.cover.velvet"))
 			assert.is_nil(model(fake):Purchase("hunts.cover.none"))
 			assert.is_nil(model(fake):Purchase(nil))

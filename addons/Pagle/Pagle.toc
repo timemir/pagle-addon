@@ -15,6 +15,7 @@ libs\AceDB-3.0\AceDB-3.0.lua
 
 data\Catalogue.lua
 data\AnnounceArt.lua
+data\ShopArt.lua
 
 locale\enUS.lua
 data\Lore.lua
@@ -101,6 +102,7 @@ adapter\Menu.lua
 adapter\ReloadReminder.lua
 adapter\FieldReportText.lua
 adapter\FieldReportBox.lua
+adapter\ShopArt.lua
 adapter\Shop.lua
 adapter\Tour.lua
 adapter\Login.lua

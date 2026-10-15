@@ -234,6 +234,8 @@ ns.DEV_GLYPH_FONTS = {
 	{ file = ART_FONTS .. "IMFeENrm28P.ttf", usedBy = "the announcements' print" },
 	{ file = ART_FONTS .. "Caveat-SemiBold.ttf", usedBy = "the announcements' hand" },
 	{ file = ART_FONTS .. "Marcellus-Regular.ttf", usedBy = "the announcements' gilt and stamps" },
+	-- The Curio Shop's own face beside those three, which it shares (adapter/ShopArt.lua).
+	{ file = ART_FONTS .. "IMFeENit28P.ttf", usedBy = "the Curio Shop's italic" },
 }
 
 --- Runs `/pagle dev <args>`. `on` and `off` set `PagleDB.global.dev`; while it's off every other dev command prints

@@ -232,7 +232,7 @@ end
 ---@field name string
 ---@field icon? integer|string
 ---@field state PagleShopState
----@field price? string   -- a good for sale's price, with the coin
+---@field price? string   -- a good for sale's price, written: the window draws the coin after it
 ---@field short? true     -- the balance doesn't cover the price: it shows in red
 ---@field tag? string     -- otherwise: "In use", "default", "Owned", its earnedText, or "Hunts is off"
 
@@ -245,7 +245,7 @@ function Model:RowOf(entry)
 	local row = { id = entry.id, name = entry.name, icon = entry.icon, state = entry.state }
 	local state = entry.state
 	if state == "forSale" or state == "short" then
-		row.price = L.SHOP_PRICE:format(self.format(entry.price))
+		row.price = self.format(entry.price)
 		row.short = state == "short" or nil
 	elseif state == "equipped" then
 		row.tag = L.SHOP_IN_USE
@@ -284,7 +284,7 @@ end
 --- A group on the list: a slot's goods with its owned count, or the Put away group.
 ---@class PagleShopGroup
 ---@field label string          -- the slot's label, or "Put away: Module off"
----@field count? string         -- a slot's owned count, "2/3", over all its goods
+---@field count? string         -- a slot's owned count, "2 of 3", over all its goods
 ---@field putAway? true         -- the Put away group: greyed
 ---@field note? string          -- the Put away group's "Yours to keep"
 ---@field rows PagleShopRow[]
@@ -358,11 +358,10 @@ end
 ---@field slotLine string           -- "Toast style · Pagle": the slot's label and its owner
 ---@field description? string
 ---@field state PagleShopState
----@field price? string             -- a good for sale's price, with the coin
----@field short? true               -- the balance doesn't cover it: the price shows in red
----@field buy? string               -- "Buy for 400" for a good for sale not owned
+---@field short? true               -- the balance doesn't cover its price
+---@field buy? string               -- "Buy for 400" for a good for sale not owned: the window draws the coin after it
 ---@field canBuy? true              -- Buy is enabled (SHOP-R13): the balance covers it and no projection is updating
----@field needed? string            -- "250 more needed" when the balance doesn't cover it
+---@field needed? string            -- "250 more Coins" when the balance doesn't cover it
 ---@field use? true                 -- Use shows: owned, not in use, its Module On
 ---@field greyed? true              -- put away
 ---@field tags string[]             -- "Owned", "In use", "default", "Hunts is off"
@@ -393,7 +392,6 @@ function Model:Stage(goodID)
 	}
 	if state == "forSale" or state == "short" then
 		local price = assert(entry.price)
-		stage.price = L.SHOP_PRICE:format(self.format(price))
 		stage.buy = L.SHOP_BUY:format(self.format(price))
 		stage.canBuy = self:CanBuy(entry) or nil
 		if state == "short" then
@@ -438,8 +436,8 @@ end
 ---@field name string
 ---@field icon? integer|string -- the swatch
 ---@field price integer      -- the price now, which the purchase entry records (SHOP-R10)
----@field priceText string   -- the price, with the coin
----@field leftAfter string   -- "Pagle Coins left after: 250. Looks are yours for good."
+---@field amount string      -- the price, written: the bill of sale draws the coin after it
+---@field left string        -- the Pagle Coins left after, written
 
 --- The purchase of `goodID` as it would be now, or nil unless Buy is enabled for it (SHOP-R13): a good for sale of a
 --- live slot, not owned, that the balance covers, with no projection updating.
@@ -451,15 +449,14 @@ function Model:Purchase(goodID)
 		return nil
 	end
 	local price = assert(entry.price)
-	local L = ns.L
 	return {
 		id = entry.id,
 		slot = assert(self.sources.goods:Good(entry.id)).slot,
 		name = entry.name,
 		icon = entry.icon,
 		price = price,
-		priceText = L.SHOP_PRICE:format(self.format(price)),
-		leftAfter = L.SHOP_LEFT_AFTER:format(self.format(self.sources.balance.balance - price)),
+		amount = self.format(price),
+		left = self.format(self.sources.balance.balance - price),
 	}
 end
 

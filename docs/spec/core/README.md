@@ -74,7 +74,7 @@ Terms are used as `CONTEXT.md` defines them. Numbers live in each file's Tunable
   |---|---|---|
   | Compartment menu | opens; entries for the surfaces below print their chat line instead | |
   | Settings (`Pagle.OpenSettings`) | chat line "Pagle: settings open after combat." | Blizzard's panel handles it |
-  | Curio Shop | chat line | closes, with its Buy popup |
+  | Curio Shop | chat line | closes, with its bill of sale |
   | Field report box | chat line | stays open |
   | Session summary, Write-up | held ([announcements.md](announcements.md)) | hidden and held |
 
