@@ -77,4 +77,74 @@ describe("Hunts' projection for the backend (#223)", function()
 		assert.are.same(client.ns.State(), bound:GetState())
 		assert.is_true(bound:GetState().sets.fixture_dusk.fromRetirement)
 	end)
+
+	describe("Journal values at the server time, 11 October 2026 (ANG Journal values)", function()
+		local journal
+		setup(function()
+			local bound, ns = boundByBackend()
+			journal = ns.JournalValues(bound:GetState() --[[@as HuntsState]], 20)
+		end)
+
+		-- The `hunts` entry of `id`.
+		local function hunt(id)
+			for _, entry in ipairs(journal.hunts) do
+				if entry.id == id then
+					return entry
+				end
+			end
+		end
+
+		it("lists every Hunt that exists now, in list order: not the retired or unborn ones nothing reached", function()
+			local ids = {}
+			for i, entry in ipairs(journal.hunts) do
+				ids[i] = entry.id
+			end
+
+			assert.are.same({
+				"fixture_snapper",
+				"fixture_oddity",
+				"fixture_rack",
+				"fixture_hefty_blackmouth",
+				"fixture_eel",
+				"fixture_bass",
+				"fixture_squid",
+				"fixture_tide_late",
+			}, ids)
+		end)
+
+		it("gives a Species Hunt its set, state, tiers, trim and target (HNT-R2, HNT-R3, HNT-R18)", function()
+			assert.are.same({
+				id = "fixture_snapper",
+				set = "fixture_dusk",
+				current = true,
+				retired = false,
+				tiers = { 1, 10, 40 },
+				trim = 1,
+				target = { kind = "species", items = { C.NIGHTFIN } },
+			}, hunt("fixture_snapper"))
+		end)
+
+		it("names a fixed class's members, ascending, and none for a generated class; silver for tier 2", function()
+			assert.are.same({ kind = "fixed", items = { 6522, 251524 } }, hunt("fixture_oddity").target)
+			assert.are.same({ kind = "quality.uncommon", items = {} }, hunt("fixture_rack").target)
+			assert.are.equal(2, hunt("fixture_rack").trim)
+		end)
+
+		it("gives a Hunt's minBand and 0 for a Hunt with no tier reached", function()
+			assert.are.same(
+				{ kind = "species", items = { 6358 }, minBand = 3 },
+				hunt("fixture_hefty_blackmouth").target
+			)
+			assert.are.equal(0, hunt("fixture_hefty_blackmouth").trim)
+		end)
+
+		it("counts each set's current Hunts and those done (HNT-R17, HNT-R20)", function()
+			assert.are.same({
+				{ id = "fixture_dusk", hunts = 2, done = 1 },
+				{ id = "fixture_wagers", hunts = 2, done = 2 },
+				{ id = "fixture_pair", hunts = 2, done = 0 },
+				{ id = "fixture_tide", hunts = 2, done = 0 },
+			}, journal.sets)
+		end)
+	end)
 end)

@@ -90,6 +90,7 @@ end
 ---@field modules table<string, table>        -- each roster Module's ns, by roster name
 ---@field projections LogicAloneProjection[]  -- in the order they were bound
 ---@field byKey table<string, LogicAloneProjection>
+---@field see fun(record: PagleRecord)          -- keeps each character's latest Skill Reading for Pagle.GetAngler
 
 -- Hosts the tree as the driver does, at server time `now`, with the log's `characters`, and binds every projection.
 ---@param now integer
@@ -104,6 +105,8 @@ local function host(now, characters)
 	end)
 	local catalogue = core.NewCatalogue(core.catalogue)
 	core.Catalogue = catalogue
+	-- The Angler's latest Skill Reading per character, as the driver keeps them while it folds (fold's `see`).
+	local skill = {}
 	local Pagle = {
 		API_VERSION = 1,
 		CONTENT_FINGERPRINT = catalogue.CONTENT_FINGERPRINT,
@@ -111,7 +114,7 @@ local function host(now, characters)
 		SIZE_RULES_VERSION = core.SIZE_RULES_VERSION,
 		MatchesConditions = core.MatchesConditions,
 		GetAngler = function()
-			return { logId = "0000000000000000", characters = characters, current = 1, skill = {}, bestBaseSkill = 0 }
+			return { logId = "0000000000000000", characters = characters, current = 1, skill = skill, bestBaseSkill = 0 }
 		end,
 	}
 	for _, name in ipairs({ "GetItem", "GetZones", "GetArea", "GetZoneOf", "GetZoneCatches", "GetWindowSpec" }) do
@@ -120,6 +123,11 @@ local function host(now, characters)
 	rawset(globals, "Pagle", Pagle)
 
 	local hosted = { core = core, modules = {}, projections = {}, byKey = {} }
+	function hosted.see(record)
+		if record.kind == "skill" then
+			skill[record.char] = record
+		end
+	end
 	local function add(key, module, def)
 		assert(hosted.byKey[key] == nil, key .. " binds a second projection")
 		local projection = { key = key, module = module, def = def }
@@ -182,6 +190,7 @@ local function fold(hosted, saved, now)
 		casts[projection] = 0
 	end
 	for record in catchLog:Iterate(0) do
+		hosted.see(record)
 		for _, projection in ipairs(hosted.projections) do
 			if record.kind ~= "module" or record.module == projection.module then
 				projection.def.apply(projection.state, record, "rebuild")
@@ -286,6 +295,37 @@ describe("logic/ alone, as the backend's driver loads it (#223)", function()
 				assert.are.same(client[read](clientState), ledger[read](state), read)
 			end
 			assert.are.equal(6, ledger.LifetimeCatches(state)) -- two on each of three Casts
+		end)
+
+		it("gives each Module's Journal values as the client's logic/ gives them, no key from two Modules", function()
+			local from = {}
+			for name, module in pairs(loaded) do
+				local values = hosted.modules[name].JournalValues(hosted.byKey[name].state, 20)
+				local clientState = name == "Ledger" and module.ns.StateNow() or module.ns.projection:GetState()
+
+				assert.are.same(module.ns.JournalValues(clientState, 20), values, name)
+				for key in pairs(values) do
+					assert(from[key] == nil, key .. " comes from two Modules")
+					from[key] = name
+				end
+			end
+			assert.are.same({
+				level = "Ledger",
+				parts = "Ledger",
+				titles = "Ledger",
+				nextCatchMilestone = "Ledger",
+				skillMilestones = "Ledger",
+				characters = "Ledger",
+				zones = "Ledger",
+				species = "Ledger",
+				legends = "Ledger",
+				trophies = "Ledger",
+				stats = "Stats",
+				sessions = "Stats",
+				hunts = "Hunts",
+				sets = "Hunts",
+				flies = "TackleBoard",
+			}, from)
 		end)
 
 		it("lists the release's Legends as the client's Ledger does (PRJ-R15)", function()

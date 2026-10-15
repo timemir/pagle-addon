@@ -462,6 +462,9 @@ local GENERATED = {
 	["quality.rare"] = { text = "TARGET_RARE", quality = 3 },
 	["species.any"] = { text = "TARGET_ANY" },
 }
+--- The generated classes (DATA-R93), by class ID: their members are made by the data build, never named by a Hunt.
+---@type table<string, table>
+ns.GENERATED_CLASSES = GENERATED
 --- The generic fish icon (HNT-R55): a generated class's, and a Hunt moment's with no Catch.
 ns.TRADE_FISHING = "Interface\\Icons\\Trade_Fishing"
 local TRADE_FISHING = ns.TRADE_FISHING
@@ -479,6 +482,7 @@ local function membersOf(hunt, list)
 	table.sort(members)
 	return members
 end
+ns.HuntClassMembers = membersOf
 
 --- A Hunt's target line (HNT-R54): a `species` target's item name; a fixed class's member names joined with " or ";
 --- a generated class's words. A name not loaded yet reads "…". A `minBand` adds ", {band name} or better".

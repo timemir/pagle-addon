@@ -56,4 +56,16 @@ describe("the Tackle Board's projection for the backend (#223)", function()
 
 		assert.are.equal(70, ns.CoinsEarned(bound:GetState() --[[@as TackleBoardState]]))
 	end)
+
+	it("gives the Journal the 30 Fly Box patterns in pattern order, the last six rare (ANG Journal values)", function()
+		local bound, ns = boundByBackend()
+
+		local flies = ns.JournalValues(bound:GetState() --[[@as TackleBoardState]], 20).flies
+
+		assert.are.equal(30, #flies)
+		assert.are.same({ id = "murloc_nymph", rare = false }, flies[1])
+		assert.are.same({ id = "darkshore_dun", rare = false }, flies[24])
+		assert.are.same({ id = "nats_golden_doctor", rare = true }, flies[25])
+		assert.are.same({ id = "deepwater_duchess", rare = true }, flies[30])
+	end)
 end)

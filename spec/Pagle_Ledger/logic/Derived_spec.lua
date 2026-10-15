@@ -197,4 +197,131 @@ describe("the Ledger's values for the backend (#223)", function()
 			assert.is_nil(ledgerOver({}).PickedTitle(record("celebrated", "title:level1")))
 		end)
 	end)
+
+	describe("Journal values (ANG Journal values)", function()
+		local LISTED_LEGEND, GONE_LEGEND, TROPHY_A, TROPHY_B, JUNK = 19803, 19806, 13901, 13902, 6309
+		local DUSKWOOD = 10
+
+		-- Elwynn (skill base 1) lists Mackerel; Westfall (skill base 10) lists Smallfish, a night fish, a Legend, two
+		-- weights of trophy family 1 (19 and 22) and a junk item. Duskwood has no data, so it isn't charted. A removed
+		-- Legend is on no list.
+		local function journalFixture()
+			return catalogueWith({
+				items = {
+					[MACKEREL] = fishRecord(MACKEREL),
+					[SMALLFISH] = fishRecord(SMALLFISH),
+					[NIGHTFISH] = fishRecord(NIGHTFISH),
+					[LISTED_LEGEND] = fishRecord(LISTED_LEGEND, { legend = true }),
+					[GONE_LEGEND] = fishRecord(GONE_LEGEND, { legend = true, removed = true }),
+					[TROPHY_A] = itemRecord("trophy", { family = 1, weight = 19 }),
+					[TROPHY_B] = itemRecord("trophy", { family = 1, weight = 22 }),
+					[JUNK] = itemRecord("junk"),
+				},
+				areas = {
+					[ELWYNN] = areaRecord(0, { skillBase = 1, catches = { catchEntry(MACKEREL) } }),
+					[WESTFALL] = areaRecord(0, {
+						skillBase = 10,
+						catches = {
+							catchEntry(SMALLFISH),
+							catchEntry(NIGHTFISH, "night", NIGHT_WINDOW),
+							catchEntry(LISTED_LEGEND),
+							catchEntry(TROPHY_B),
+							catchEntry(TROPHY_A),
+							catchEntry(JUNK),
+						},
+					}),
+					[DUSKWOOD] = areaRecord(0, { hasData = false }),
+				},
+				windows = { night = { spec = NIGHT_WINDOW, confirmed = true } },
+			})
+		end
+
+		-- A Skill Reading of 150 of 225, Mackerel in Elwynn, Smallfish and the lighter trophy in Westfall, the removed
+		-- Legend, and Mackerel in Duskwood.
+		local JOURNAL_HISTORY = {
+			{ kind = "skill", char = 1, time = T0 - 10, rank = 150, max = 225, mod = 0 },
+			castRecord({ time = T0, zone = ELWYNN, items = { MACKEREL } }),
+			castRecord({ time = T0 + 60, zone = WESTFALL, items = { SMALLFISH, TROPHY_A } }),
+			castRecord({ time = T0 + 120, zone = WESTFALL, items = { GONE_LEGEND } }),
+			castRecord({ time = T0 + 180, zone = DUSKWOOD, items = { MACKEREL } }),
+		}
+
+		local ns, state, journal
+		setup(function()
+			ns, state = ledgerOver(JOURNAL_HISTORY, nil, journalFixture())
+			journal = ns.JournalValues(state, 20)
+		end)
+
+		it("gives each part of Ledger completion as { done, total } (LED-R71)", function()
+			assert.are.same({
+				species = { 2, 3 },
+				junk = { 0, 1 },
+				treasure = { 0, 0 },
+				trophy = { 1, 2 },
+				zones = { 1, 2 },
+			}, journal.parts)
+		end)
+
+		it("gives the titles, the next Catch Milestone and the Skill Milestones (LED-R40, LED-R42)", function()
+			assert.are.same(ns.EarnedTitles(state), journal.titles)
+			assert.are.equal(1000, journal.nextCatchMilestone)
+			assert.are.same({
+				{ skill = 75, reached = true },
+				{ skill = 150, reached = true },
+				{ skill = 225, reached = false },
+				{ skill = 300, reached = false },
+			}, journal.skillMilestones)
+		end)
+
+		it("gives each character's latest Skill Reading (LED-R41)", function()
+			assert.are.same({ { index = 1, skill = 150, max = 225 } }, journal.characters)
+		end)
+
+		it("gives a tile per charted zone and per fished uncharted one, by skill base (LED-R131)", function()
+			assert.are.same({
+				{ area = ELWYNN, continent = 0, charted = true, rank = 5, completion = 100 },
+				{ area = WESTFALL, continent = 0, charted = true, rank = 3, completion = 50 },
+				{ area = DUSKWOOD, continent = 0, charted = false, rank = 0 },
+			}, journal.zones)
+		end)
+
+		it("gives every Species of the world by ID, caught or not, with its computed stars (LED-R45)", function()
+			assert.are.same({
+				{ id = SMALLFISH, caught = true, stars = { true, true, false }, removed = false },
+				{ id = MACKEREL, caught = true, stars = { true, true, false }, removed = false },
+				{ id = NIGHTFISH, caught = false, stars = { false, false, false }, removed = false },
+			}, journal.species)
+		end)
+
+		it("gives N without removed Legends, and every caught Legend with whether it is removed (LED-R63)", function()
+			assert.are.same({ total = 1, caught = { { item = GONE_LEGEND, removed = true } } }, journal.legends)
+		end)
+
+		it("gives each trophy family's stars and its weights, lightest first (LED-R47, LED-R61)", function()
+			assert.are.same({
+				{
+					family = 1,
+					stars = { true, true, false },
+					weights = {
+						{ item = TROPHY_A, weight = 19, landed = true },
+						{ item = TROPHY_B, weight = 22, landed = false },
+					},
+				},
+			}, journal.trophies)
+		end)
+
+		it("gives the XP into the level and the next step's cost below 60, with nothing carried (LED-R30)", function()
+			local climbing = setmetatable({ xp = 1500, prestige = 0 }, { __index = state })
+
+			-- Level 1 to 2 costs 1,080; level 2 to 3 costs 1,160.
+			assert.are.same({ into = 420, cost = 1160, carried = 0 }, ns.JournalValues(climbing, 20).level)
+		end)
+
+		it("gives the carried XP at 60, and no cost (LED-R30, LED-R145)", function()
+			-- Levels 1 to 60 cost 59 × 1,000 + 80 × (1 + … + 59) = 200,600.
+			local capped = setmetatable({ xp = 200600 + 500, prestige = 0 }, { __index = state })
+
+			assert.are.same({ into = 500, carried = 500 }, ns.JournalValues(capped, 20).level)
+		end)
+	end)
 end)

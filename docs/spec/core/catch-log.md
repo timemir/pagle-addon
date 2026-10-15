@@ -413,7 +413,7 @@ What the backend's projection driver calls in `logic/` (LOG-R79), by the names a
 | `Pagle_Ledger` | `LifetimeCatches(state)` | lifetime Catches (LED-R42) |
 | `Pagle_Ledger` | `LegendList()` | the release's Legends for Region firsts (PRJ-R15): the item IDs LED-R63's "x of N" counts for an Angler with no Catches, listed and not removed (LED-R11, LED-R12), ascending. The driver calls it after `BindProjections`. |
 | `Pagle_Ledger` | `PickedTitle(record)` | for a Ledger Module record: nil when it isn't the title record, false when it picks automatic, else the picked title key. The title record (#76 item 2) has kind `title` and the key as its payload, `""` for automatic (LED-R77); the Ledger doesn't append it yet. |
-| each roster Module | `JournalValues(state, sessionRows)` | the Fish Journal values the Module holds, for the Angler page. Named, not yet built. |
+| `Pagle_Ledger`, `Pagle_Stats`, `Pagle_Hunts`, `Pagle_TackleBoard` | `JournalValues(state, sessionRows)` | the Angler page's Journal values the Module holds, keyed as pagle-backend's angler-page.md › Journal values; no key comes from two Modules. The Ledger: `level`, `parts`, `titles`, `nextCatchMilestone`, `skillMilestones`, `characters` (from `Pagle.GetAngler().skill`), `zones`, `species`, `legends`, `trophies`. Stats: `stats` and `sessions`, newest first and at most `sessionRows` of them; not yet `odds`. Hunts: `hunts` and `sets` at `GetServerTime()`, the fold's time. The Tackle Board: `flies`. A nullable field is nil. |
 
 ## UI
 

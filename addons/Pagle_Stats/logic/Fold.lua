@@ -293,6 +293,52 @@ function ns.BindProjections(M)
 	return M:NewProjection(ns.ProjectionDef({}, ns.places, pagle.SESSION_RULES_VERSION))
 end
 
+---@class StatsJournalSession
+---@field start integer       -- its first Cast's server time
+---@field length integer      -- endTime − startTime, in seconds
+---@field casts integer
+---@field catches integer
+---@field gotAway integer
+---@field zones integer[]     -- its zones' areaIDs by Casts, most first (ns.ZonesByCasts)
+
+--- Stats' Journal values for Pagle's backend (#223, the Angler page's Journal values), from a state alone:
+--- - `stats`: lifetime time at the water in seconds, the got-away rate (0 with no Casts), the longest Session's start
+---   and length and the best Catches per hour's Session start and rate, each nil with no such Session (STA-R33);
+--- - `sessions`: the latest Sessions, newest first, at most `sessionRows` of them (STA-R30, STA-R33).
+--- Not yet `odds`, Your odds and Dry spells per zone (STA-R40–R54).
+---@param state StatsState
+---@param sessionRows integer
+---@return { stats: table, sessions: StatsJournalSession[] }
+function ns.JournalValues(state, sessionRows)
+	local sessions = state.sessions
+	local stats = { time = ns.TimeAtTheWater(sessions), gotAwayRate = ns.GotAwayRate(state.totals) or 0 }
+	local longest = ns.LongestSession(sessions)
+	if longest then
+		stats.longest = { start = longest.startTime, length = ns.TimeFished(longest) }
+	end
+	local best, rate = ns.BestCatchesPerHour(sessions)
+	if best then
+		stats.bestRate = { start = best.startTime, rate = rate }
+	end
+	local latest = {}
+	for i = #sessions, math.max(1, #sessions - sessionRows + 1), -1 do
+		local session = sessions[i]
+		local zones = {}
+		for n, zone in ipairs(ns.ZonesByCasts(session.zones)) do
+			zones[n] = zone.zone
+		end
+		latest[#latest + 1] = {
+			start = session.startTime,
+			length = ns.TimeFished(session),
+			casts = session.casts,
+			catches = session.catches,
+			gotAway = session.gotAway,
+			zones = zones,
+		}
+	end
+	return { stats = stats, sessions = latest }
+end
+
 --- Stats' projection def (STA-R20, LOG-R70), bound to `global.projection`, which it makes if missing: Core owns it
 --- from here on. No `extraFingerprint`: a content change rebuilds through Core's fingerprint alone. Nothing is raised
 --- in any mode (STA-R2): a live Cast or Skill Reading, and every done, only asks the views to redraw (ns.Redraw).

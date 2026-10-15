@@ -145,6 +145,64 @@ function ns.CoinsEarned(state)
 	return state.coins
 end
 
+---@class HuntsJournalHunt
+---@field id string
+---@field set string
+---@field current boolean    -- it exists now (HNT-R2)
+---@field retired boolean    -- its retired date has come (HNT-R3)
+---@field tiers integer[]
+---@field trim integer       -- its highest reached tier's trim: 0 none, 1 bronze, 2 silver, 3 gold (HNT-R18)
+---@field target { kind: string, items: integer[], minBand: integer? } -- "species", "fixed" or a generated class's ID
+
+--- Hunts' Journal values for Pagle's backend (#223, the Angler page's Journal values) at GetServerTime(), the driver's
+--- fold time:
+--- - `hunts`: every Hunt of the list that exists now or has a reached tier, in list order (HNT-R2, HNT-R3, HNT-R15,
+---   HNT-R17, HNT-R18, HNT-R54);
+--- - `sets`: every set in list order, with its Hunts current now and how many of those are done (HNT-R17, HNT-R20).
+--- Reads the Hunt list ns.BindProjections (or the adapter) made.
+---@param state HuntsState
+---@param sessionRows integer
+---@return { hunts: HuntsJournalHunt[], sets: { id: string, hunts: integer, done: integer }[] }
+function ns.JournalValues(state, sessionRows) -- luacheck: no unused args (the driver's one shape for every Module)
+	local now = GetServerTime() -- luacheck: read globals GetServerTime (#223: the driver's fold time)
+	local list = ns.hunts
+	local hunts = {}
+	for _, hunt in ipairs(list:Hunts()) do
+		local progress = state.hunts[hunt.id]
+		local reached = progress and #progress.reached or 0
+		if ns.Exists(hunt, now) or reached > 0 then
+			local target
+			if hunt.species then
+				target = { kind = "species", items = { hunt.species } }
+			elseif ns.GENERATED_CLASSES[hunt.class] then
+				target = { kind = hunt.class, items = {} }
+			else
+				target = { kind = "fixed", items = ns.HuntClassMembers(hunt, list) }
+			end
+			target.minBand = hunt.minBand
+			local tiers = {}
+			for i, tier in ipairs(hunt.tiers) do
+				tiers[i] = tier
+			end
+			hunts[#hunts + 1] = {
+				id = hunt.id,
+				set = hunt.set,
+				current = ns.IsCurrent(hunt, now),
+				retired = ns.IsRetired(hunt, now),
+				tiers = tiers,
+				trim = math.min(reached, 3),
+				target = target,
+			}
+		end
+	end
+	local sets = {}
+	for _, set in ipairs(list:Sets()) do
+		local done, current = ns.DoneOfCurrent(list, state, now, set.id)
+		sets[#sets + 1] = { id = set.id, hunts = current, done = done }
+	end
+	return { hunts = hunts, sets = sets }
+end
+
 --- Hunts' projection def (HNT-R136, LOG-R70), bound to `global.projection`, which it makes if missing: Core owns it
 --- from here on. `apply` reads only Casts (Hunts appends no records). A `"live"` Cast hands what it newly reached to
 --- `ns.outlets.Reached`, reports Coins if they changed (HNT-R110) and redraws the views (HNT-R42); a `"replay"` or

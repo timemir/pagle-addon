@@ -438,3 +438,17 @@ end
 function ns.CoinsEarned(state)
 	return state.coins
 end
+
+--- The Tackle Board's Journal values for Pagle's backend (#223, the Angler page's Journal values): `flies`, the 30
+--- Fly Box patterns in pattern order, each its ID and whether it is one of the rare six (TKB-R62). The tied ones are
+--- in the state itself.
+---@param state TackleBoardState
+---@param sessionRows integer
+---@return { flies: { id: string, rare: boolean }[] }
+function ns.JournalValues(state, sessionRows) -- luacheck: no unused args (the driver's one shape for every Module)
+	local flies = {}
+	for i, pattern in ipairs(ns.FLY_PATTERNS) do
+		flies[i] = { id = pattern.id, rare = pattern.rare }
+	end
+	return { flies = flies }
+end
