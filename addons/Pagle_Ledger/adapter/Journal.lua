@@ -31,7 +31,7 @@ local SPINE_STRIPS, SPINE_STRIP_WIDTH = 6, 5
 ---@field label FontString
 ---@field separator FontString?
 
----@class LedgerJournalFrame: Frame
+---@class LedgerJournalFrame: LedgerJournalCover
 ---@field close Button
 ---@field crumbs Frame                 -- the breadcrumbs' strip (LED-R125)
 ---@field crumbButtons LedgerJournalCrumbView[]
@@ -41,9 +41,6 @@ local SPINE_STRIPS, SPINE_STRIP_WIDTH = 6, 5
 ---@field left LedgerJournalPage
 ---@field right LedgerJournalPage
 ---@field plate LedgerJournalPlate     -- the brass plate on the cover (LED-R149)
----@field leather Texture             -- the cover's tint, and its grain over it (LED-R112)
----@field grain Texture
----@field rules Texture[]             -- the gilt rules inside the leather's edge
 ---@field papers Texture[]            -- each page's paper tint, then each page's paper texture, and the search box's
 ---@field paperGrains Texture[]
 
@@ -103,45 +100,11 @@ function Journal:Context() -- luacheck: no self
 	}
 end
 
--- A thin rule along one edge of `frame`, `inset` in from it, in the tint the binding gives it at each draw.
----@param frame Frame
----@param from FramePoint
----@param to FramePoint
----@param x number
----@param y number
----@param vertical boolean
----@return Texture
-local function rule(frame, from, to, x, y, vertical)
-	local line = frame:CreateTexture(nil, "BORDER")
-	line:SetPoint(from, x, y)
-	line:SetPoint(to, vertical and x or -x, vertical and -y or y)
-	if vertical then
-		line:SetWidth(1)
-	else
-		line:SetHeight(1)
-	end
-	return line
-end
-
 -- The leather cover: its tint and grain, the dark outline and the gilt rule inside its edge. The binding tints them
 -- at each draw (tint).
 ---@param frame LedgerJournalFrame
 local function drawLeather(frame)
-	ns.JournalSolid(frame, LOOK.leatherEdge, "BACKGROUND")
-	frame.leather = ns.JournalSolid(frame, LOOK.leather, "BACKGROUND")
-	frame.leather:SetPoint("TOPLEFT", 2, -2)
-	frame.leather:SetPoint("BOTTOMRIGHT", -2, 2)
-	frame.grain = frame:CreateTexture(nil, "BORDER")
-	frame.grain:SetTexture(ns.JOURNAL_TEXTURES.leather)
-	frame.grain:SetAlpha(0.5)
-	frame.grain:SetPoint("TOPLEFT", 2, -2)
-	frame.grain:SetPoint("BOTTOMRIGHT", -2, 2)
-	frame.rules = {
-		rule(frame, "TOPLEFT", "TOPRIGHT", 5, -5, false),
-		rule(frame, "BOTTOMLEFT", "BOTTOMRIGHT", 5, 5, false),
-		rule(frame, "TOPLEFT", "BOTTOMLEFT", 5, -5, true),
-		rule(frame, "TOPRIGHT", "BOTTOMRIGHT", -5, -5, true),
-	}
+	ns.DrawJournalCover(frame, 2, 5)
 	frame.papers, frame.paperGrains = {}, {}
 end
 
@@ -302,11 +265,7 @@ end
 ---@param frame LedgerJournalFrame
 ---@param look LedgerBindingLook
 local function tint(frame, look)
-	ns.JournalPaint(frame.leather, look.leather)
-	frame.grain:SetVertexColor(unpack(look.leather))
-	for _, line in ipairs(frame.rules) do
-		ns.JournalPaint(line, look.rule)
-	end
+	ns.TintJournalCover(frame, look, look.rule)
 	for _, texture in ipairs(frame.papers) do
 		ns.JournalPaint(texture, look.paper)
 	end
