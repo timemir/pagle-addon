@@ -204,4 +204,20 @@ ns.L = {
 	SUMMARY_LINE_NOTHING_DONE = "Tackle Board: {campfire}",
 	DONE_TODAY = "{n} done today",
 	CAMPFIRE_NOT_LIT = "Campfire not lit",
+
+	-- The goods and the tracker block (TKB-R122, TKB-R125; logic/Goods.lua, adapter/TrackerBlock.lua). Plain ASCII and
+	-- Latin-1 only (#248).
+	-- The tracker frame slot's label, in the Curio Shop and on Settings (TKB-R125, SET-R43).
+	SLOT_TRACKER_FRAME = "Tackle Board tracker frame",
+	-- The tracker's header, right of the title: the Campfire's days by the flame, then the open goals; or the open
+	-- goals alone with no fire lit.
+	TRACKER_OPEN = "{n} open",
+	TRACKER_FIRE_OPEN = "{fire} · {open}",
+	-- A goal line's count (TKB-R122): its displayed progress over its need.
+	TRACKER_COUNT = "{n}/{need}",
+
+	-- The Tackle Board's section on the Trackers page (SET-R43, tackle-board.md › Settings).
+	SETTINGS_TRACKER = "Show goals workable here",
+	SETTINGS_TRACKER_TOOLTIP = "Lists the goals you can work on where you are. Before your board is started, use "
+		.. "Start my board on the Pagle page.",
 }
