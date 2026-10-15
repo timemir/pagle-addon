@@ -417,6 +417,16 @@ describe("QoL's Fishing page with Core", function()
 		return loaded, assert(loaded.client.settings.category("Fishing"))
 	end
 
+	-- The frame the panel drew last for `initializer`.
+	local function drawn(loaded, initializer)
+		for _, row in ipairs(loaded.client.settings.shown) do
+			if row.initializer == initializer then
+				return row.frame
+			end
+		end
+		error("the row isn't shown")
+	end
+
 	it(
 		"registers under Pagle as a native header, Cast with and the Fishing key's binding row under it (SET-R5, SET-R20)",
 		function()
@@ -429,17 +439,31 @@ describe("QoL's Fishing page with Core", function()
 			assert.are.equal("SettingsDropdownControlTemplate", castWith.template)
 			assert.are.equal("Cast with", castWith:GetSetting():GetName())
 			assert.are.equal("Also on the compartment menu and /pagle qol input.", castWith:GetTooltip())
-			assert.are.equal("KeyBindingFrameBindingTemplate", key.template)
-			assert.are.equal(2, key:GetData().bindingIndex)
+			-- Core's own keybinding row (SET-R5): the native one never greys out (#120).
+			assert.are.equal("PagleSettingsKeyRowTemplate", key.template)
+			assert.are.equal("PAGLE_FISHING_KEY", key:GetData().binding)
 			assert.are.same({ "FISHING KEY" }, key.searchTags)
 			assert.are.equal(castWith, key:GetParentInitializer())
+		end
+	)
 
-			-- Greyed out under Double right-click only (SET-R20).
-			assert.is_true(key:EvaluateModifyPredicates())
+	it(
+		"draws the Fishing key greyed out under Double right-click only, at once as Cast with changes (SET-R20)",
+		function()
+			local loaded, fishing = fishingPage()
+			local _, castWith, key = unpack(fishing.layout.initializers)
+			loaded.client.settings.show(fishing)
+			local frame = drawn(loaded, key)
+			assert.is_true(keyRowDrawn(loaded, frame).live)
+
 			castWith:GetSetting():SetValue("click")
-			assert.is_false(key:EvaluateModifyPredicates())
+
+			assert.is_false(keyRowDrawn(loaded, frame).live)
 			castWith:GetSetting():SetValue("key")
-			assert.is_true(key:EvaluateModifyPredicates())
+			assert.is_true(keyRowDrawn(loaded, frame).live)
+			castWith:GetSetting():SetValue("click")
+			loaded.client.settings.show(fishing)
+			assert.is_false(keyRowDrawn(loaded, drawn(loaded, key)).live)
 		end
 	)
 
@@ -478,7 +502,7 @@ describe("QoL's Fishing page with Core", function()
 			assert.are.equal("both", loaded.env.PagleQoLDB.profiles.Default.input)
 			-- The key row under it carries no setting, only its binding index, so Defaults has nothing of it to restore.
 			local key = fishing.layout.initializers[3]
-			assert.are.equal("KeyBindingFrameBindingTemplate", key.template)
+			assert.are.equal("PagleSettingsKeyRowTemplate", key.template)
 			assert.is_nil(key:GetSetting())
 		end
 	)
@@ -505,15 +529,36 @@ describe("QoL's Fishing page with Core", function()
 		local save, swap = initializers[at + 1], initializers[at + 2]
 		assert.are.equal("SettingButtonControlTemplate", save.template)
 		assert.are.equal(set, save:GetParentInitializer())
-		assert.are.equal("KeyBindingFrameBindingTemplate", swap.template)
-		assert.are.equal(3, swap:GetData().bindingIndex)
+		assert.are.equal("PagleSettingsKeyRowTemplate", swap.template)
+		assert.are.equal("PAGLE_SWAP_GEAR", swap:GetData().binding)
 		assert.are.same({ "SWAP GEAR" }, swap.searchTags)
 		assert.are.equal(set, swap:GetParentInitializer())
-		-- Greyed out while no set is chosen.
-		assert.is_false(swap:EvaluateModifyPredicates())
+		-- Drawn greyed out while no set is chosen, and live at once when one is (SET-R20, #120).
+		loaded.client.settings.show(fishing)
+		local frame = drawn(loaded, swap)
+		assert.is_false(keyRowDrawn(loaded, frame).live)
 		loaded.client.equipmentSets[0] = { name = "Fishing", items = { [16] = 6256 } }
 		set:GetSetting():SetValue(0)
-		assert.is_true(swap:EvaluateModifyPredicates())
+		assert.is_true(keyRowDrawn(loaded, frame).live)
+	end)
+
+	it("draws Swap gear live at once after Save what I'm wearing chooses a set (SET-R20, QOL-R41)", function()
+		local loaded, fishing = fishingPage()
+		loaded.client.mainHand = 6256
+		local save = initializerOf(fishing, "")
+		local swap
+		for i, initializer in ipairs(fishing.layout.initializers) do
+			if initializer == save then
+				swap = fishing.layout.initializers[i + 1]
+			end
+		end
+		loaded.client.settings.show(fishing)
+		local frame = drawn(loaded, swap)
+		assert.is_false(keyRowDrawn(loaded, frame).live)
+
+		loaded.client.settings.buttonsOf(drawn(loaded, save))[1]:Click()
+
+		assert.is_true(keyRowDrawn(loaded, frame).live)
 	end)
 
 	it("leaves the fishing set alone with Defaults (SET-R21, SET-R60)", function()
@@ -623,7 +668,7 @@ describe("QoL's Fishing page with Core", function()
 		assert.is_true(autoLoot:GetValue())
 		-- The key row carries no setting, only its binding index, so Defaults has nothing of it to restore.
 		for _, initializer in ipairs(fishing.layout.initializers) do
-			if initializer.template == "KeyBindingFrameBindingTemplate" then
+			if initializer.template == "PagleSettingsKeyRowTemplate" then
 				assert.is_nil(initializer:GetSetting())
 			end
 		end

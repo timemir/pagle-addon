@@ -277,6 +277,17 @@ local function dropdownOptions(setting)
 	end
 end
 
+-- A Module's `set` or `onClick` that then redraws the keybinding rows shown, Core's own frames, so a row greyed out
+-- by what changed shows it at once (SET-R61, adapter/KeyBindingRow.lua). Blizzard's native rows re-read on their own.
+---@param fn fun(...)
+---@return fun(...)
+local function thenRedrawKeys(fn)
+	return function(...)
+		fn(...)
+		ns.RedrawKeyRows()
+	end
+end
+
 -- A value row's native setting: Blizzard's Defaults button restores `default`, and the panel reads `get` each time
 -- the row is drawn and after each change through the row (SET-R60, SET-R62).
 ---@param page SettingsCategory
@@ -292,17 +303,18 @@ local function valueSetting(page, variable, varType, setting)
 		setting.label,
 		setting.default,
 		setting.get,
-		setting.set
+		thenRedrawKeys(setting.set)
 	)
 end
 
--- One Module row as a native initializer on `page` (SET-R5).
+-- One Module row as an initializer on `page`: a native one (SET-R5), or Core's own for a keybinding (SET-R20).
 ---@param page SettingsCategory
 ---@param layout SettingsLayout
 ---@param setting PagleSetting
 ---@param variable string a variable name no other row uses
+---@param indented boolean whether it hangs under a parent row
 ---@return SettingsInitializer
-local function nativeRow(page, layout, setting, variable)
+local function moduleRow(page, layout, setting, variable, indented)
 	local kind = setting.kind
 	if kind == "checkbox" then
 		return Settings.CreateCheckbox(
@@ -336,22 +348,19 @@ local function nativeRow(page, layout, setting, variable)
 	elseif kind == "button" then
 		-- A button row's label sits beside the button and its caption is on it. Without a caption, the label is the
 		-- caption and the row has no label (SET-R2).
+		local onClick = thenRedrawKeys(setting.onClick)
 		if setting.caption then
 			initializer =
-				CreateSettingsButtonInitializer(setting.label, setting.caption, setting.onClick, setting.tooltip, true)
+				CreateSettingsButtonInitializer(setting.label, setting.caption, onClick, setting.tooltip, true)
 		else
-			initializer = CreateSettingsButtonInitializer("", setting.label, setting.onClick, setting.tooltip, true)
+			initializer = CreateSettingsButtonInitializer("", setting.label, onClick, setting.tooltip, true)
 		end
 	elseif kind == "keybinding" then
-		local index = C_KeyBindings.GetBindingIndex(setting.binding)
-		if not index then
+		if not C_KeyBindings.GetBindingIndex(setting.binding) then
 			error(("Pagle: no key binding %s for the setting %s"):format(setting.binding, setting.label))
 		end
-		-- The native row takes only the binding index and a search flag, and shows the binding's own name
-		-- (GetBindingName) with no tooltip: Blizzard_Keybindings.lua at the forever 1.60.1 commit (types/settings.lua).
-		-- So `setting.label` serves as a search tag only, and `setting.tooltip` isn't shown (SET-R20).
-		initializer = CreateKeybindingEntryInitializer(index, true)
-		initializer:AddSearchTags(setting.label)
+		-- Core's own row: Blizzard's KeyBindingFrameBindingTemplate never greys out (SET-R20, #120).
+		initializer = ns.KeyBindingRow(setting, indented)
 	else
 		initializer = setting.init()
 	end
@@ -371,14 +380,15 @@ local function buildPage(topic, page, layout, entries)
 	for i, entry in ipairs(entries) do
 		local setting = entry.setting
 		local variable = ("Pagle_%s_%s_%d"):format(entry.module.def.name, topic, i)
-		local initializer = securecallfunction(nativeRow, page, layout, setting, variable)
+		local parent = entry.parent and built[entry.parent]
+		local initializer = securecallfunction(moduleRow, page, layout, setting, variable, parent ~= nil)
 		if initializer then
 			built[entry] = initializer
-			local parent = entry.parent and built[entry.parent]
 			if parent then
 				initializer:SetParentInitializer(parent)
 			end
-			if setting.isEnabled then
+			-- A keybinding row reads its isEnabled as it draws (adapter/KeyBindingRow.lua).
+			if setting.isEnabled and setting.kind ~= "keybinding" then
 				initializer:AddModifyPredicate(setting.isEnabled)
 			end
 		end

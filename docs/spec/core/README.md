@@ -232,7 +232,7 @@ ADR 0008 names the record call `Pagle.AppendRecord`; it lives on the handle so C
 ---@field init? fun(): table       -- custom: returns a Settings initializer (e.g. Stats' watched Dry spells)
 ```
 
-Rows map onto the native Settings initializers; `AddSetting` raises a Lua error for an unknown `topic` or `kind`.
+Rows map onto the native Settings initializers, except a keybinding row, which Core draws itself so that it can grey out (SET-R20); `AddSetting` raises a Lua error for an unknown `topic` or `kind`.
 
 ### `M:RegisterTourStop(id, label, show, hide)`
 

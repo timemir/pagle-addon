@@ -88,7 +88,8 @@ end
 --- { r, g, b[, a] }), blend mode (`blendMode`) and coordinates (`texCoord`), a button's attributes (`attributes`),
 --- click registration (`clicks`, RegisterForClicks's arguments) and locked highlight (`highlightLocked`), and a
 --- frame's mouse and moving state: `mouseEnabled`, `movable`, `dragButtons` (RegisterForDrag's arguments) and
---- `moving`; also whether it takes clicks (`enabled`), and a scroll frame's `verticalScroll` and `scrollChild`.
+--- `moving`; also whether it takes clicks (`enabled`) and key presses (`keyboardEnabled`), and a scroll frame's
+--- `verticalScroll` and `scrollChild`.
 ---@param kind string "Frame", "Button", "FontString", "Texture", …
 ---@param parent table?
 ---@return table
@@ -306,12 +307,20 @@ function widgets.newWidget(kind, parent)
 	function widget:IsEnabled()
 		return self.enabled ~= false
 	end
-	-- As a mouse click does: OnClick with the button, not down. A disabled button ignores it.
-	function widget:Click()
+	-- As a mouse click does: OnClick with the mouse button (default "LeftButton", as Button:Click's), not down. A
+	-- disabled button ignores it.
+	function widget:Click(button)
 		local onClick = self.scripts.OnClick
 		if onClick and self.enabled ~= false then
-			onClick(self, "LeftButton", false)
+			onClick(self, button or "LeftButton", false)
 		end
+	end
+	-- Whether it takes key presses: client.pressKey gives a press to a shown keyboard-enabled frame first.
+	function widget:EnableKeyboard(enabled)
+		self.keyboardEnabled = not not enabled
+	end
+	function widget:IsKeyboardEnabled()
+		return self.keyboardEnabled == true
 	end
 	function widget:CreateFontString(_, layer, template)
 		local fontString = widgets.newWidget("FontString", self)

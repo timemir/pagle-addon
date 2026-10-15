@@ -33,6 +33,10 @@ local FORBIDDEN = {
 	{ "%f[%w_]SettingsPanel%s*[%.:%[]", "SET-R6: Pagle never reaches into SettingsPanel" },
 	{ "%f[%w_]hooksecurefunc%s*%(%s*[\"']?Settings", "SET-R6: Pagle hooks nothing of Settings" },
 	{ "%f[%w_]hooksecurefunc%s*%(%s*SettingsPanel", "SET-R6: Pagle hooks nothing of Settings" },
+	-- Blizzard's key-binding listener keeps its pending action in a field the panel's key and wheel handlers read
+	-- (Blizzard_Keybindings.lua, Blizzard_SettingsPanel.lua); started from Pagle's code, it would hold Pagle's taint. A
+	-- Module's keybinding row binds through the client's SetBinding instead (adapter/KeyBindingRow.lua, SET-R20).
+	{ "%f[%w_]KeybindListener%f[^%w_]", "SET-R6: Pagle never drives Blizzard's key-binding listener" },
 }
 
 -- Each forbidden thing the code says, as "<why>: <match>".
@@ -73,6 +77,7 @@ describe("Pagle and Blizzard's Settings list (SET-R6, #246)", function()
 			{ "local list = SettingsPanel.Container.SettingsList", "SET-R6: Pagle never reaches into SettingsPanel" },
 			{ 'hooksecurefunc(SettingsPanel, "Open", f)', "SET-R6: Pagle hooks nothing of Settings" },
 			{ 'hooksecurefunc("SettingsPanel_EscapePressed", f)', "SET-R6: Pagle hooks nothing of Settings" },
+			{ "KeybindListener:StartListening(action, 1)", "SET-R6: Pagle never drives Blizzard's key-binding" },
 		}
 		for _, case in ipairs(planted) do
 			it(case[1], function()
