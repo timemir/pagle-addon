@@ -870,8 +870,7 @@ local function loadHuntsLogic(huntListPath)
 	local env = setmetatable({ Pagle = {} }, { __index = _G })
 	local dir = ROOT .. "/addons/Pagle_Hunts/"
 	local listErr
-	for _, line in ipairs(assert(readLines(dir .. "Pagle_Hunts.toc"))) do
-		local file = line:match("^%s*(.-)%s*$"):gsub("\\", "/")
+	for _, file in ipairs(wtf.tocEntries("Pagle_Hunts")) do
 		if file == "data/HuntList.lua" then
 			local _, err = wtf.loadInto(ns, env, huntListPath or dir .. file, "Pagle_Hunts")
 			listErr = err
@@ -897,6 +896,15 @@ end
 local function dateText(date)
 	date = tableOr(date)
 	return ("%04d-%02d-%02d"):format(tonumber(date.year) or 0, tonumber(date.month) or 0, tonumber(date.day) or 0)
+end
+
+-- A Hunt's stored progress counters (hunts.md › Projection state) as "count 12, effort 80, sinceLast 3".
+local function progressText(progress)
+	return ("count %s, effort %s, sinceLast %s"):format(
+		tostring(progress.count),
+		tostring(progress.effort),
+		tostring(progress.sinceLast)
+	)
 end
 
 -- A Hunt's thresholds (HNT-R15) as "1 / 10 / 40".
@@ -956,11 +964,7 @@ end
 -- stands at `now` and its thresholds when it's in the Hunt list.
 local function printHuntProgress(hunts, id, hunt, progress, now)
 	local reached = tableOr(progress.reached)
-	local stats = ("count %s, effort %s, sinceLast %s"):format(
-		tostring(progress.count),
-		tostring(progress.effort),
-		tostring(progress.sinceLast)
-	)
+	local stats = progressText(progress)
 	if hunt then
 		local tiers = ("tiers %d of %d (%s)"):format(#reached, #hunt.tiers, tiersText(hunt))
 		print(("  %s: %s, %s, %s"):format(id, huntStatus(hunts, hunt, now), stats, tiers))
@@ -1107,10 +1111,8 @@ local function printHuntDetail(hunts, list, id, state, db, now)
 	local done = hunts.HuntDone(progress) and "done" or "not done"
 	local finished = hunt and (hunts.HuntFinished(progress, hunt) and "finished" or "not finished")
 	print(
-		("progress: count %s, effort %s, sinceLast %s, caught %s, %s%s"):format(
-			tostring(progress.count),
-			tostring(progress.effort),
-			tostring(progress.sinceLast),
+		("progress: %s, caught %s, %s%s"):format(
+			progressText(progress),
 			tostring(progress.caught),
 			done,
 			finished and ", " .. finished or ""
