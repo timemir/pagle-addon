@@ -45,11 +45,12 @@ function ns.Celebrated()
 	return ns.Module and db and db.global.celebrated or nil
 end
 
---- Reports lifetime Coins to Core (TKB-R63, SHOP-R2): the projection's `coins` with M:ReportCoinsEarned. Nothing
---- before Start (TKB-R2: silent until started) or without a Module handle (an inert Module, CORE-R13).
+--- Reports lifetime Coins to Core (TKB-R63, SHOP-R2): the projection's `coins` with M:ReportCoinsEarned, 0 before
+--- Start, so a new dev log's unstarted board (TKB-R197) replaces the last log's total; that shows nowhere (TKB-R2).
+--- Nothing without a Module handle (an inert Module, CORE-R13).
 function ns.ReportCoins()
 	local module = ns.Module
-	if module and ns.IsStarted() then
+	if module then
 		module:ReportCoinsEarned(ns.State().coins)
 	end
 end

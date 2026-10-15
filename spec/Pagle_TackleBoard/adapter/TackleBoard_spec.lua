@@ -373,7 +373,8 @@ describe("Pagle_TackleBoard with FakePagle", function()
 			assert.are.same({}, fake.announcements)
 			assert.are.same({}, fake.summarized)
 			assert.are.same({}, fake.writeUps)
-			assert.are.same({}, fake.coinReports)
+			-- SHOP-R2: done reports 0 Coins, which changes no balance and shows nowhere
+			assert.are.same({ { module = "TackleBoard", total = 0 } }, fake.coinReports)
 			assert.are.same({}, fake.global.summary.lines)
 		end
 	)

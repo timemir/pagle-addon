@@ -28,7 +28,11 @@ describe("the Tackle Board's seams", function()
 				for _ in fake.Pagle.IterateCatches(0) do
 					error("an entry point appended a record (TKB-R80)")
 				end
-				assert.are.same({}, fake.coinReports)
+				-- done's report and ReportCoins': 0 Coins before Start (SHOP-R2)
+				assert.are.same(
+					{ { module = "TackleBoard", total = 0 }, { module = "TackleBoard", total = 0 } },
+					fake.coinReports
+				)
 			end
 		)
 

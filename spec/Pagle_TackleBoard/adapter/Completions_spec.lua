@@ -363,16 +363,25 @@ describe("completing a goal", function()
 			assert.are.equal(10, ns.State().coins)
 		end)
 
-		it("report nothing on a board not started, and 0 Coins once it is (TKB-R2, SHOP-R2)", function()
+		it("report 0 from done before Start, which shows nowhere (SHOP-R2, TKB-R2)", function()
 			local fake = withHistory({ cast(T, DUROTAR, { BLACKMOUTH }) })
+
 			local ns = built(fake)
-			ns.ReportCoins()
-			local before = copy(fake.coinReports)
 
-			live(fake, start(T + 1))
-			ns.ReportCoins() -- as the next done does
+			assert.is_false(ns.IsStarted())
+			assert.are.same({ { module = "TackleBoard", total = 0 } }, fake.coinReports)
+		end)
 
-			assert.are.same({}, before)
+		it("report 0 from a new dev log's rebuild after a started board earned Coins (SHOP-R2, TKB-R197)", function()
+			local first = withHistory({ start(T), issue(T + 1, ONE), cast(T + 2, DUROTAR, { BLACKMOUTH }) })
+			local _, loaded = built(first)
+			local fake = withHistory({ cast(T + DAY, DUROTAR, { BLACKMOUTH }) }) -- another logId (LOG-R72)
+			fake.globals.PagleTackleBoardDB = { global = loaded.env.PagleTackleBoardDB.global }
+
+			local ns = built(fake)
+
+			assert.are.same({ { module = "TackleBoard", total = 10 } }, first.coinReports)
+			assert.is_false(ns.IsStarted())
 			assert.are.same({ { module = "TackleBoard", total = 0 } }, fake.coinReports)
 		end)
 	end)

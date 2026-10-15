@@ -43,7 +43,7 @@ local ns = select(2, ...)
 --                             adapter/LiveStep.lua.
 --   ns.ReportCoins()          Reports lifetime Coins with M:ReportCoinsEarned (TKB-R63). `done` calls it before
 --                             ns.ScheduleLiveStep, and the projection's apply after a live entry that changes the Coins.
---                             Reports ns.State().coins once started. Defined in adapter/Moments.lua.
+--                             Reports ns.State().coins, 0 before Start (SHOP-R2). Defined in adapter/Moments.lua.
 --   ns.RaiseMoment(moment), ns.RaiseWriteUp(section), ns.SetSummaryLine(line)
 --                             What logic/Moments.lua tells Core (TKB-R84–R87), through the Module handle; nothing while
 --                             the Module is inert (CORE-R13). Defined in adapter/Moments.lua.
