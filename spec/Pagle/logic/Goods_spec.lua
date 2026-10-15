@@ -219,6 +219,26 @@ describe("ns.NewGoods", function()
 	end)
 
 	describe("owning", function()
+		it("lists a slot's owned goods, and which of its goods are still for sale (SHOP-R22, SHOP-R30)", function()
+			local env = newGoods()
+			huntsCovers(env, { value = true })
+			env.goods:RegisterGood("Hunts", { id = "hunts.cover.tide", slot = "hunts.cover", name = "Tide", tier = 1 })
+			env.goods:SetPurchased({ ["hunts.cover.tide"] = true })
+
+			local owned = {}
+			for _, good in ipairs(env.goods:OwnedOf("hunts.cover")) do
+				owned[#owned + 1] = good.id
+			end
+			assert.are.same({ "hunts.cover.plain", "hunts.cover.gold", "hunts.cover.tide" }, owned)
+			assert.are.same({ false, true, false, false, false }, {
+				env.goods:IsForSale("hunts.cover.plain"),
+				env.goods:IsForSale("hunts.cover.velvet"),
+				env.goods:IsForSale("hunts.cover.gold"),
+				env.goods:IsForSale("hunts.cover.tide"),
+				env.goods:IsForSale("hunts.cover.none"),
+			})
+		end)
+
 		it("owns a registered slot's default, not a good for sale (SHOP-R22, SHOP-R30)", function()
 			local env = newGoods()
 			huntsCovers(env, { value = false })

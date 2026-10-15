@@ -126,6 +126,31 @@ for _, category in ipairs(ns.SLOT_CATEGORY_ORDER) do
 	ns.SLOT_CATEGORIES[category] = true
 end
 
+--- One category's slots, in the order they were handed in.
+---@class PagleSlotSection
+---@field category string        -- the slot category, as registered ("Fish Journal")
+---@field slots PagleRegisteredSlot[]
+
+--- `slots` grouped by category, in ns.SLOT_CATEGORY_ORDER, each category's in the order given; a category with none
+--- isn't listed. The shop's chips and Look and Feel's headers (wallet-and-shop.md › UI, SET-R50).
+---@param slots PagleRegisteredSlot[]
+---@return PagleSlotSection[]
+function ns.SlotsByCategory(slots)
+	local byCategory = {}
+	for _, slot in ipairs(slots) do
+		local list = byCategory[slot.category] or {}
+		byCategory[slot.category] = list
+		list[#list + 1] = slot
+	end
+	local sections = {}
+	for _, category in ipairs(ns.SLOT_CATEGORY_ORDER) do
+		if byCategory[category] then
+			sections[#sections + 1] = { category = category, slots = byCategory[category] }
+		end
+	end
+	return sections
+end
+
 --- The price of each tier of goods for sale, in Pagle Coins (SHOP-R22, Tunables).
 ns.TIER_PRICES = { 150, 400, 900 }
 
@@ -378,6 +403,27 @@ function Goods:IsOwned(goodID)
 	end
 	local good = self.goods[goodID]
 	return good ~= nil and self:IsLive(good.slot) and self:DefaultOf(good.slot) == goodID
+end
+
+--- A slot's owned goods (SHOP-R30), in registration order. Core's own; nothing in them may be changed.
+---@param slotID string
+---@return PagleRegisteredGood[]
+function Goods:OwnedOf(slotID)
+	local owned = {}
+	for _, good in ipairs(self:GoodsOf(slotID)) do
+		if self:IsOwned(good.id) then
+			owned[#owned + 1] = good
+		end
+	end
+	return owned
+end
+
+--- Whether a good registered this session is for sale (a tier, SHOP-R22) and not owned yet (SHOP-R30).
+---@param goodID any
+---@return boolean
+function Goods:IsForSale(goodID)
+	local good = self.goods[goodID]
+	return good ~= nil and good.tier ~= nil and not self:IsOwned(goodID)
 end
 
 --- The good equipped in a slot (SHOP-R32): the stored pick while it is owned and registered by a Module On, else the

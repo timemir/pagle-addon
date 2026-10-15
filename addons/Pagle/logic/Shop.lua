@@ -472,15 +472,9 @@ end
 --- only if a live slot uses it.
 ---@return PagleShopChip[]
 function Model:Chips()
-	local used = {}
-	for _, slot in ipairs(self.slotList) do
-		used[slot.category] = true
-	end
 	local chips = {}
-	for _, category in ipairs(ns.SLOT_CATEGORY_ORDER) do
-		if used[category] then
-			chips[#chips + 1] = { category = category, label = ns.L.SHOP_CATEGORIES[category] }
-		end
+	for _, section in ipairs(ns.SlotsByCategory(self.slotList)) do
+		chips[#chips + 1] = { category = section.category, label = ns.L.SHOP_CATEGORIES[section.category] }
 	end
 	return chips
 end
