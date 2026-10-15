@@ -268,7 +268,7 @@ end
 ---@param rel Region
 ---@param x number
 ---@param y number
-function ns.JournalPlace(texture, rel, x, y)
+function ns.JournalPut(texture, rel, x, y)
 	texture:ClearAllPoints()
 	texture:SetPoint("TOPLEFT", rel, "TOPLEFT", x - texture.box[1], -(y - texture.box[2]))
 end
@@ -515,7 +515,7 @@ function ns.JournalRule(parent, x, y, w)
 	local cx = w / 2
 	local fleuron = ns.JournalSprite(frame, "Book", "fleuron", "ARTWORK", 0, 14)
 	fleuron:SetAlpha(0.8)
-	ns.JournalPlace(fleuron, frame, cx - 7, 0)
+	ns.JournalPut(fleuron, frame, cx - 7, 0)
 	local clear, solid = CreateColor(0.77, 0.66, 0.45, 0), CreateColor(0.77, 0.66, 0.45, 1)
 	local left = ns.JournalTint(frame, "ffffff")
 	left:SetSize(math.max(1, cx - 17), 1)
@@ -584,9 +584,9 @@ function ns.JournalMedal(parent, size)
 	mask:SetAllPoints(medal.icon)
 	medal.icon:AddMaskTexture(mask)
 	medal.ring = ns.JournalSprite(medal, "Parts", RINGS[size] or "medal-lg", "ARTWORK", 1, size)
-	ns.JournalPlace(medal.ring, medal, 0, 0)
+	ns.JournalPut(medal.ring, medal, 0, 0)
 	medal.unknown = ns.JournalSprite(medal, "Parts", UNKNOWN[size] or "medal-unk", "ARTWORK", 0, size)
-	ns.JournalPlace(medal.unknown, medal, 0, 0)
+	ns.JournalPut(medal.unknown, medal, 0, 0)
 	return medal
 end
 
@@ -599,7 +599,9 @@ function ns.JournalSetMedal(medal, icon, look)
 	medal.unknown:SetShown(unknown)
 	medal.icon:SetShown(not unknown)
 	medal.ring:SetShown(not unknown)
-	if not unknown then
+	if unknown then
+		medal.icon:SetTexture(nil) -- never left holding an uncaught item's icon (LED-R124)
+	else
 		ns.JournalItemIcon(medal.icon, icon, "sepia")
 	end
 end

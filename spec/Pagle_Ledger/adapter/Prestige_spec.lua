@@ -1,5 +1,6 @@
--- Prestiging on FakePagle (LED-R33, LED-R194, LOG-R38): ns.CanPrestige, the confirm ns.AskPrestige shows, the P1 it
--- appends through M:RecordPrestige, the Journal hiding it, and the emblem block (LED-R34) the Journal's widgets draw.
+-- Prestiging on FakePagle (LED-R33, LED-R194, LOG-R38): ns.CanPrestige, the Journal's confirm card ns.AskPrestige
+-- shows, the P1 it appends through M:RecordPrestige, the Journal hiding it, and the emblem block (LED-R34) the
+-- Journal's widgets draw.
 
 local T0 = SERVER_TIME - 700
 local ZONE = 12 -- uncharted in the catalogue below: no Zone Mastery rank adds to the numbers (LED-R54)
@@ -28,19 +29,35 @@ local function cast(time, count)
 end
 
 -- A Ledger on a fake over the catalogue, its log holding `records` (a Cast reaching 60 by default) or the saved
--- entries `entries`, logged in and, unless `updating`, in the world (the projection built); the Journal closed.
----@param options { records: table[]?, entries: string[]?, updating: boolean? }?
+-- entries `entries`, logged in and, unless `updating`, in the world (the projection built); the Journal open on the
+-- Angler page, or closed with `closed`.
+---@param options { records: table[]?, entries: string[]?, updating: boolean?, closed: boolean?, motion: boolean? }?
 ---@return FakePagle fake
 ---@return LoadedAddon loaded
 local function ledger(options)
 	options = options or {}
+	local id ---@type false?
+	if options.closed then
+		id = false
+	end
 	return openJournal({
 		catalogue = catalogue(),
 		log = not options.entries and (options.records or { cast(T0, TO_60_SPECIES) }) or nil,
 		entries = options.entries,
 		building = options.updating,
-		id = false,
+		id = id,
+		place = not options.closed and { "angler" } or nil,
+		motion = options.motion,
 	})
+end
+
+-- Clicks the confirm card's "Prestige" (1) or "Not yet" (2), as the player does.
+---@param loaded LoadedAddon
+---@param button 1|2
+local function clickCard(loaded, button)
+	local card = assert(loaded.ns.journal.prestigeCard, "no confirm card")
+	local target = button == 1 and card.yes or card.no
+	target.scripts.OnClick(target)
 end
 
 -- The log's P1 entries (LOG-R38).
@@ -62,8 +79,11 @@ local function closeJournal(loaded)
 	loaded.ns.journal.frame:Hide()
 end
 
-local CONFIRM = "Begin a new Ledger? Your Angler Level starts again at 1, and climbs at half the cost. Nothing "
-	.. "you've earned is taken away."
+local CONFIRM = {
+	"Prestige",
+	"Begin a new Ledger?",
+	"Your Angler Level starts again at 1, and climbs at half the cost. Nothing you've earned is taken away.",
+}
 
 describe("Prestiging (LED-R33)", function()
 	it("is allowed at level 60 once the projection is built (LED-R33)", function()
@@ -84,15 +104,28 @@ describe("Prestiging (LED-R33)", function()
 		assert.is_false(below.ns.CanPrestige())
 	end)
 
-	it("asks with a native popup, Prestige or Not yet (LED-R33)", function()
+	it("asks on the Journal's own card, Prestige or Not yet, its seal the rank to come (LED-R33)", function()
 		local _, loaded = ledger()
 
 		loaded.ns.AskPrestige()
 
-		assert.are.same(
-			{ which = "PAGLE_LEDGER_PRESTIGE", text = CONFIRM, buttons = { "Prestige", "Not yet" } },
-			loaded.client.popup
-		)
+		local card = loaded.ns.journal.prestigeCard
+		assert.is_true(loaded.ns.IsPrestigeConfirmShown())
+		assert.are.same({ "I", CONFIRM[1], CONFIRM[2], CONFIRM[3], "Prestige", "Not yet" }, shownTexts(card))
+		assert.is_nil(loaded.client.popup)
+	end)
+
+	it("drops the card in over the darkened book with the open sound and the stamp as the seal lands (LED-R33)", function()
+		local _, loaded = ledger({ motion = true })
+		local sounds = #loaded.client.sounds
+
+		loaded.ns.AskPrestige()
+		local card = loaded.ns.journal.prestigeCard
+		assert.are.equal(0, card.shade.alpha)
+		loaded.client.update(0.5)
+
+		assert.are.equal(0.55, card.shade.alpha)
+		assert.are.same({ "kit:850 SFX", "kit:1204 SFX" }, { unpack(loaded.client.sounds, sounds + 1) })
 	end)
 
 	it(
@@ -105,11 +138,11 @@ describe("Prestiging (LED-R33)", function()
 			end)
 
 			loaded.ns.AskPrestige()
-			loaded.client.clickPopup(1)
+			clickCard(loaded, 1)
 
 			assert.are.same({ prestigeEntry(SERVER_TIME, 1) }, prestiges(fake))
 			assert.are.same({ 1 }, announced)
-			assert.is_nil(loaded.client.popup)
+			assert.is_false(loaded.ns.IsPrestigeConfirmShown())
 			-- Applied live: rank 1, a new climb from the 240 carried XP, so Prestige isn't allowed again yet (LED-R32).
 			local state = loaded.ns.projection:GetState()
 			assert.are.same({ 1, 240, 1 }, { state.prestige, state.xp, loaded.ns.Level(state) })
@@ -121,21 +154,21 @@ describe("Prestiging (LED-R33)", function()
 		local fake, loaded = ledger()
 
 		loaded.ns.AskPrestige()
-		loaded.client.clickPopup(2)
+		clickCard(loaded, 2)
 
 		assert.are.same({}, prestiges(fake))
-		assert.is_nil(loaded.client.popup)
+		assert.is_false(loaded.ns.IsPrestigeConfirmShown())
 	end)
 
 	it("checks again when confirmed: once the projection is updating, confirming appends nothing (LED-R33)", function()
 		local fake, loaded = ledger()
 		loaded.ns.AskPrestige()
 
-		-- The projection starts updating while the popup is up (LOG-R74).
+		-- The projection starts updating while the card is up (LOG-R74).
 		loaded.ns.projection.IsUpdating = function()
 			return true
 		end
-		loaded.client.clickPopup(1)
+		clickCard(loaded, 1)
 
 		assert.are.same({}, prestiges(fake))
 		assert.are.equal(0, loaded.ns.projection:GetState().prestige)
@@ -146,17 +179,24 @@ describe("Prestiging (LED-R33)", function()
 
 		loaded.ns.AskPrestige()
 
-		assert.is_nil(loaded.client.popup)
+		assert.is_false(loaded.ns.IsPrestigeConfirmShown())
 	end)
 
-	it("hides the popup when the Journal closes (LED-R33)", function()
+	it("doesn't ask with the Journal closed (LED-R33)", function()
+		local _, loaded = ledger({ closed = true })
+
+		loaded.ns.AskPrestige()
+
+		assert.is_false(loaded.ns.IsPrestigeConfirmShown())
+	end)
+
+	it("hides the card when the Journal closes (LED-R33)", function()
 		local fake, loaded = ledger()
-		loaded.ns.journal:Toggle()
 		loaded.ns.AskPrestige()
 
 		closeJournal(loaded)
 
-		assert.is_nil(loaded.client.popup)
+		assert.is_false(loaded.ns.journal.prestigeCard:IsShown())
 		assert.are.same({}, prestiges(fake))
 	end)
 
@@ -168,7 +208,7 @@ describe("Prestiging (LED-R33)", function()
 		end
 		local _, crashed = ledger()
 		crashed.ns.AskPrestige()
-		crashed.client.clickPopup(1)
+		clickCard(crashed, 1)
 
 		-- The client stopped before the save: the log on disk is the one before the P1 (LOG-R85).
 		local _, loaded = ledger({ entries = saved })
@@ -197,17 +237,26 @@ describe("the Prestige emblem block (LED-R34)", function()
 		return loaded.ns.journal.frame.left.drawn.emblem
 	end
 
-	-- The texts an emblem widget shows: its numeral, then each star stamp's.
+	-- The texts an emblem widget shows: its numeral.
 	local shown = shownTexts
+	-- Its stars shown.
+	local function stars(widget)
+		local count = 0
+		for _, star in ipairs(widget.stars) do
+			count = count + (star:IsShown() and 1 or 0)
+		end
+		return count
+	end
 
-	it("draws the emblem's roman numeral, and a Master Prestige's stars as ink stamps", function()
+	it("draws the emblem's roman numeral on the gilt shield, and a Master Prestige's stars", function()
 		local widgets = drawn({
 			{ kind = "emblem", mark = { emblem = "I", stars = 0 } },
 			{ kind = "emblem", mark = { emblem = "X", stars = 2 } },
 		})
 
-		assert.are.same({ "I" }, shown(widgets[1]))
-		assert.are.same({ "X", drawnSymbols("★"), drawnSymbols("★") }, shown(widgets[2]))
+		assert.are.same({ "I", 0 }, { shown(widgets[1])[1], stars(widgets[1]) })
+		assert.are.same({ "X", 2 }, { shown(widgets[2])[1], stars(widgets[2]) })
+		assert.is_true(widgets[1].shield:IsShown())
 	end)
 
 	it("draws nothing before the first Prestige", function()

@@ -122,7 +122,7 @@ describe("the Fish Journal's frame (LED-R120, LED-R121)", function()
 end)
 
 describe("the Fish Journal while the projection updates (LED-R122)", function()
-	it("shows only LED-R122's line on both pages, with the crumbs and search hidden (LED-R122)", function()
+	it("shows only LED-R122's line under the swaying quill, with the crumbs and search hidden (LED-R122)", function()
 		local _, loaded = loggedIn(true)
 		local journal = loaded.ns.journal
 
@@ -132,7 +132,8 @@ describe("the Fish Journal while the projection updates (LED-R122)", function()
 		assert.is_true(journal.pages.updating)
 		assert.are.same({ { kind = "text", text = line } }, journal.pages.left)
 		assert.are.same({ { kind = "text", text = line } }, journal.pages.right)
-		assert.are.same({ line, line }, shownTexts(journal.frame))
+		assert.are.same({ line }, shownTexts(journal.frame))
+		assert.is_true(journal.frame.updatingView:IsShown())
 		assert.is_false(journal.frame.crumbs:IsShown())
 		assert.is_false(journal.frame.search:IsShown())
 		assert.is_false(journal.frame.back:IsShown())
@@ -235,8 +236,14 @@ describe("the Fish Journal's navigation (LED-R125)", function()
 		})
 		journal:Open("deep", { fish = MACKEREL })
 
+		-- the crumbs' words, a fleuron before each but the first
 		local texts = shownTexts(journal.frame.crumbs)
-		assert.are.same({ "Home", "»", "Waters", "»", "Zone", "»", "Fish 6303" }, texts)
+		assert.are.same({ "Home", "Waters", "Zone", "Fish 6303" }, texts)
+		local fleurons = {}
+		for i = 1, 4 do
+			fleurons[i] = journal.frame.crumbButtons[i].fleuron ~= nil
+		end
+		assert.are.same({ false, true, true, true }, fleurons)
 		assert.is_true(journal.frame.back:IsShown())
 
 		journal.frame.back:Click()
@@ -286,9 +293,11 @@ describe("the Fish Journal's widgets (ledger.md › UI)", function()
 	it("draws the ink XP bar's words, Fresh Water's in blue (LED-R145)", function()
 		local bar = { fill = 0.5, fresh = { from = 0.5, to = 0.6 }, text = "500 of 1,160.", freshText = " Fresh." }
 
-		local _, texts = drawn({ { kind = "xpBar", bar = bar } })
+		local loaded, texts = drawn({ { kind = "xpBar", bar = bar } })
 
-		assert.are.same({ "500 of 1,160.|cff23407a Fresh.|r" }, texts)
+		assert.are.same({ "500 of 1,160.", " Fresh." }, texts)
+		local widget = loaded.ns.journal.frame.left.drawn.xpBar[1]
+		assert.are.same({ 0x23 / 255, 0x40 / 255, 0x7a / 255 }, { unpack(widget.fresh.textColor, 1, 3) })
 	end)
 
 	it("draws each kind of block with its words (ledger.md › UI)", function()
@@ -318,35 +327,28 @@ describe("the Fish Journal's widgets (ledger.md › UI)", function()
 			"The Trophy Room",
 			"3 / 40",
 			"Local",
-			"Caught",
-			"Regular",
 			"Elwynn Forest",
 			"Local · 63%",
-			"M",
 			"2 new!",
 			"Duskwood",
 			"unfished · skill ~150",
 		}, texts)
-		assert.is_not_nil(loaded.ns.journal.frame)
+		-- the stamps are the kit's, inked or in ghost ink
+		local stamps = loaded.ns.journal.frame.left.drawn.stamps[1].stamps
+		assert.are.same({ "stamp-caught", "stamp-regular-off" }, { stamps[1].sprite, stamps[2].sprite })
 	end)
 
-	it(
-		"draws a silhouette icon black and desaturated, and a sepia one desaturated (LED-R124, ledger.md › UI)",
-		function()
-			local loaded = drawn({
-				{ kind = "icon", icon = 136245, look = "silhouette" },
-				{ kind = "icon", icon = 136245, look = "sepia" },
-			})
+	it("draws a sepia icon round in its ring, warmed toward sepia (ledger.md › UI)", function()
+		local loaded = drawn({ { kind = "icon", icon = 136245, look = "sepia" } })
 
-			local icons = loaded.ns.journal.frame.left.drawn.icon
-			assert.is_true(icons[1].texture.desaturated)
-			assert.are.same({ 0, 0, 0 }, icons[1].texture.vertexColor)
-			assert.is_true(icons[2].texture.desaturated)
-			assert.are_not.same({ 0, 0, 0 }, icons[2].texture.vertexColor)
-		end
-	)
+		local medal = loaded.ns.journal.frame.left.drawn.icon[1].medal
+		assert.is_true(medal.icon:IsShown())
+		assert.are.equal(136245, medal.icon.texture)
+		assert.are.same({ 1, 0.94, 0.82 }, medal.icon.vertexColor)
+		assert.is_false(medal.unknown:IsShown())
+	end)
 
-	it("draws every silhouette solid black, on an entry, a list row and a plinth alike (LED-R124)", function()
+	it("draws the one unknown-fish medallion for what isn't caught, never its icon, on an entry, a row and a plinth (LED-R124)", function()
 		local loaded = drawn({
 			{ kind = "icon", icon = MACKEREL, look = "silhouette" },
 			{ kind = "row", icon = MACKEREL, look = "silhouette", text = "— unknown —" },
@@ -354,12 +356,13 @@ describe("the Fish Journal's widgets (ledger.md › UI)", function()
 		})
 
 		local drawnWidgets = loaded.ns.journal.frame.left.drawn
-		for _, texture in ipairs({
-			drawnWidgets.icon[1].texture,
-			drawnWidgets.row[1].icon,
-			drawnWidgets.plinth[1].texture,
+		for _, medal in ipairs({
+			drawnWidgets.icon[1].medalLarge,
+			drawnWidgets.row[1].medal,
+			drawnWidgets.plinth[1].medal,
 		}) do
-			assert.are.same({ { 0, 0, 0 }, 1, true }, { texture.vertexColor, texture.alpha, texture.desaturated })
+			assert.are.same({ true, false }, { medal.unknown:IsShown(), medal.icon:IsShown() })
+			assert.is_nil(medal.icon.texture)
 		end
 	end)
 

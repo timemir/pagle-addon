@@ -232,7 +232,7 @@ describe("the Journal's Home, left page", function()
 
 		-- Clicking the Other waters tab, then a tile's zone and back Home by the Home crumb.
 		local frame = loaded.ns.journal.frame
-		frame.left.drawn.tabs[1].children[2]:Click()
+		frame.left.drawn.tabs[1].tabs[2]:Click()
 		assert.are.same({ "Isle of Dread" }, tileNames(loaded))
 		loaded.ns.RegisterJournalSpread("zone", {
 			crumbs = function()
@@ -258,7 +258,7 @@ describe("the Journal's Home, left page", function()
 			scrollPage(loaded, "right", 80)
 
 			-- The Other waters tab.
-			loaded.ns.journal.frame.left.drawn.tabs[1].children[2]:Click()
+			loaded.ns.journal.frame.left.drawn.tabs[1].tabs[2]:Click()
 
 			assert.are.same({ "Isle of Dread" }, tileNames(loaded))
 			assert.are.same({ 0, 80 }, { pageScroll(loaded, "left"), pageScroll(loaded, "right") })
@@ -287,21 +287,34 @@ describe("the Journal's Home, right page", function()
 		}, right[1])
 		assert.are.equal("xpBar", right[2].kind)
 		assert.are.equal("0 of 1,960.", right[2].bar.text)
-		assert.are.same({ kind = "kicker", text = "Notes to self" }, right[3])
+		assert.are.same({ kind = "rule" }, right[3])
+		assert.are.same({ kind = "kicker", text = "Notes to self" }, right[4])
 		assert.are.same({
 			kind = "link",
 			text = drawnSymbols("Raw Slitherskin Mackerel: 49 to ★★★"),
 			hand = true,
 			place = { id = "fish", args = { species = MACKEREL } },
-		}, right[4])
-		assert.are.same({ kind = "kicker", text = "In this Ledger" }, right[5])
+		}, right[5])
+		assert.are.same({ kind = "kicker", text = "In this Ledger" }, right[6])
 		assert.are.same({
-			{ kind = "leader", text = "The Trophy Room", value = "0 / 1", place = { id = "trophy" } },
-			{ kind = "leader", text = "Curios: junk, treasure, uncharted", value = "0 / 2", place = { id = "curios" } },
-			{ kind = "leader", text = "Legends", value = "0 / 0", place = { id = "legends" } },
-			{ kind = "leader", text = "The Angler: hands, titles, bindings", place = { id = "angler" } },
-		}, { right[6], right[7], right[8], right[9] })
-		assert.are.equal(9, #right)
+			{ kind = "leader", numeral = "i.", text = "The Trophy Room", value = "0 / 1", place = { id = "trophy" } },
+			{
+				kind = "leader",
+				numeral = "ii.",
+				text = "Curios: junk, treasure, uncharted",
+				value = "0 / 2",
+				place = { id = "curios" },
+			},
+			{ kind = "leader", numeral = "iii.", text = "Legends", value = "0 / 0", place = { id = "legends" } },
+			{
+				kind = "leader",
+				numeral = "iv.",
+				text = "The Angler: hands, titles, bindings",
+				value = "»",
+				place = { id = "angler" },
+			},
+		}, { right[7], right[8], right[9], right[10] })
+		assert.are.equal(10, #right)
 	end)
 
 	it(
@@ -311,8 +324,8 @@ describe("the Journal's Home, right page", function()
 			local _, loaded = openHome({ cast(NOWHERE, SKULL), cast(DARKSHORE, CHEST), cast(ASHENVALE, TROPHY) })
 
 			local right = pages(loaded).right
-			assert.are.equal("1 / 1", right[6].value)
-			assert.are.equal("2 / 2", right[7].value)
+			assert.are.equal("1 / 1", right[7].value)
+			assert.are.equal("2 / 2", right[8].value)
 		end
 	)
 
@@ -320,9 +333,9 @@ describe("the Journal's Home, right page", function()
 		local _, loaded = openHome()
 
 		local right = pages(loaded).right
-		assert.are.same({ kind = "kicker", text = "Notes to self" }, right[3])
-		assert.are.same({ kind = "text", text = "Go fishing!", hand = true }, right[4])
-		assert.are.same({ kind = "kicker", text = "In this Ledger" }, right[5])
+		assert.are.same({ kind = "kicker", text = "Notes to self" }, right[4])
+		assert.are.same({ kind = "text", text = "Go fishing!", hand = true }, right[5])
+		assert.are.same({ kind = "kicker", text = "In this Ledger" }, right[6])
 	end)
 
 	it(
@@ -418,8 +431,9 @@ describe("the Journal's Home, the bookplate's title and Prestige (LED-R132, LED-
 			mark = { stars = 0 },
 			signature = "Minnow",
 		}, pages(loaded).right[1])
+		-- the seal reads the Ledger's completion under its word
 		local texts = shownTexts(drawnBookplate(loaded))
-		assert.are.same({ "12", "Angler Level", "Minnow", "14%" }, texts)
+		assert.are.same({ "12", "Angler Level", "Minnow", "Ledger\n14%" }, texts)
 	end)
 
 	it("shows emblem III beside the level at rank 3, and the active title under it (LED-R132, LED-R34)", function()
@@ -430,7 +444,8 @@ describe("the Journal's Home, the bookplate's title and Prestige (LED-R132, LED-
 		assert.are.same({ emblem = "III", stars = 0 }, bookplate.mark)
 		assert.are.equal("Nat's Peer", bookplate.signature)
 		local texts = shownTexts(drawnBookplate(loaded))
-		assert.are.same({ bookplate.text, "Angler Level", "III", "Nat's Peer", "14%" }, texts)
+		assert.are.same({ bookplate.text, "Angler Level", "Nat's Peer", "Ledger\n14%", "III" }, texts)
+		assert.is_true(drawnBookplate(loaded).emblem:IsShown())
 	end)
 
 	it("shows a Master Prestige's stars beside emblem X (LED-R34)", function()
@@ -438,9 +453,14 @@ describe("the Journal's Home, the bookplate's title and Prestige (LED-R132, LED-
 
 		local bookplate = pages(loaded).right[1]
 		assert.are.same({ emblem = "X", stars = 2 }, bookplate.mark)
-		local texts = shownTexts(drawnBookplate(loaded))
-		local star = drawnSymbols("★")
-		assert.are.same({ bookplate.text, "Angler Level", "X", star, star, "Nat's Peer", "14%" }, texts)
+		local widget = drawnBookplate(loaded)
+		assert.are.same({ bookplate.text, "Angler Level", "Nat's Peer", "Ledger\n14%", "X" }, shownTexts(widget))
+		-- two stars, as the kit's star sprite
+		local shown = 0
+		for _, star in ipairs(widget.stars) do
+			shown = shown + (star:IsShown() and 1 or 0)
+		end
+		assert.are.equal(2, shown)
 	end)
 
 	it("signs with the stored active title once it is earned (LED-R77)", function()
@@ -459,7 +479,7 @@ describe("the Journal's Home, the bookplate's title and Prestige (LED-R132, LED-
 		end)
 
 		assert.is_nil(pages(loaded).right[1].signature)
-		assert.are.same({ "12", "Angler Level", "14%" }, shownTexts(drawnBookplate(loaded)))
+		assert.are.same({ "12", "Angler Level", "Ledger\n14%" }, shownTexts(drawnBookplate(loaded)))
 	end)
 end)
 

@@ -331,6 +331,7 @@ describe("the fish spread (LED-R142)", function()
 				{ kind = "title", text = "Its waters" },
 				{
 					kind = "tiles",
+					columns = 2,
 					tiles = {
 						{
 							name = "Elwynn Forest",

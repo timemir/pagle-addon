@@ -171,33 +171,42 @@ describe("the Ledger's Journal bindings", function()
 		end
 	)
 
-	-- The leather, the two pages' paper, the leather's rules and the brass plate's face of the open Journal, as
-	-- { r, g, b } each.
+	-- The open Journal's leather (its texture and tint), its band's tone, each page's paper tint and the plate's
+	-- silver.
 	---@param frame LedgerJournalFrame
 	local function bookTints(frame)
 		local function rgb(texture)
-			return { texture.color[1], texture.color[2], texture.color[3] }
+			local color = texture.vertexColor or { 1, 1, 1 }
+			return { color[1], color[2], color[3] }
 		end
 		return {
-			leather = rgb(frame.leather),
-			paper = rgb(frame.papers[1]),
-			rule = rgb(frame.rules[1]),
-			plate = rgb(frame.plate.brass),
+			leather = frame.leatherFill.texture,
+			tint = frame.leatherTint,
+			band = rgb(frame.band[1]),
+			paper = { rgb(frame.papers.left.parchment), rgb(frame.papers.right.parchment) },
+			silver = frame.plate.slices[1].desaturated == true,
 		}
 	end
 
-	-- What binding `goodID` tints those three in (logic/Bindings.lua).
+	-- What binding `goodID` draws those in (logic/Bindings.lua).
 	---@param ns PagleLedgerNS
 	---@param goodID string
 	local function lookOf(ns, goodID)
 		local look = ns.BindingLook(goodID)
-		return { leather = look.leather, paper = look.paper, rule = look.rule, plate = look.plate }
+		return {
+			leather = ns.JOURNAL_FILES[look.texture],
+			tint = look.tint or { 1, 1, 1 },
+			band = look.band or { 1, 1, 1 },
+			paper = { look.paperTint, look.paperTint },
+			silver = look.silver,
+		}
 	end
 
 	it(
 		"draw the open Journal in the equipped binding, and redraw it when the binding or the crest changes (LED-R112, SHOP-R33)",
 		function()
 			local fake = newFakePagle()
+			fake.profile.announcements.motion = false -- the binding changes at once, without the kit's dip
 			fake.catchLog.data.logId = "log"
 			-- Celebrated at level 10 before (LED-R90): Tanned Hide is earned (LED-R111).
 			fake.globals.PagleLedgerDB =
@@ -226,35 +235,23 @@ describe("the Ledger's Journal bindings", function()
 		end
 	)
 
-	it(
-		"preview each binding as a closed book on the shop's stage: its leather, gilt rules and brass plate, no pages (LED-R110)",
-		function()
-			local fake, loaded = ledger()
-			local ns = loaded.ns
-			local stage = loaded.env.CreateFrame("Frame")
-			local paperTexture = ns.JOURNAL_TEXTURES.paper
+	it("preview each binding as the kit's closed book of it on the shop's stage, no pages (LED-R110)", function()
+		local fake, loaded = ledger()
+		local ns = loaded.ns
+		local stage = loaded.env.CreateFrame("Frame")
+		local atlas = ns.JOURNAL_ATLASES.Bindings
 
-			for _, row in ipairs(GOODS) do
-				local id = row[1]
-				local look = ns.BindingLook(id)
-				local function same(color, tint)
-					return color ~= nil and color[1] == tint[1] and color[2] == tint[2] and color[3] == tint[3]
-				end
+		for _, row in ipairs(GOODS) do
+			local id = row[1]
+			local look = ns.BindingLook(id)
 
-				fake.ns.goods:Good(id).preview(stage)
+			fake.ns.goods:Good(id).preview(stage)
 
-				assert.are.equal(1, #stage.children) -- one swatch, drawn afresh for each good
-				local swatch = stage.children[1]
-				assert.is_true(swatch:IsShown())
-				local leather, rules, plate, pages = 0, 0, 0, 0
-				for _, texture in ipairs(swatch.children) do
-					leather = leather + (same(texture.color, look.leather) and 1 or 0)
-					rules = rules + (same(texture.color, look.gilt) and 1 or 0)
-					plate = plate + (same(texture.color, look.plate) and 1 or 0)
-					pages = pages + ((same(texture.color, look.paper) or texture.texture == paperTexture) and 1 or 0)
-				end
-				assert.are.same({ 1, 4, 1, 0 }, { leather, rules, plate, pages }, id)
-			end
+			assert.are.equal(1, #stage.children) -- one swatch, drawn afresh for each good
+			local swatch = stage.children[1]
+			assert.is_true(swatch:IsShown())
+			assert.are.equal(atlas.file, swatch.book.texture)
+			assert.are.same({ ns.JournalCoords("Bindings", look.swatch) }, swatch.book.texCoord, id)
 		end
-	)
+	end)
 end)

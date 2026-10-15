@@ -349,14 +349,15 @@ function daysFromCivil(year, month, day)
 	return era * 146097 + dayOfEra - 719468
 end
 
--- The in-client textures the Ledger draws for the symbols its fonts lack (CORE-R9, #248), by the glyph ledger.md
+-- The Ledger art kit's sprites the Ledger draws for the symbols its fonts lack (CORE-R9, #248), by the glyph ledger.md
 -- writes each as: a star, a blank star, a ticked and an empty box, a tick.
+local PARTS = "|TInterface\\AddOns\\Pagle_Ledger\\media\\journal\\LedgerParts:"
 local SYMBOLS = {
-	["★"] = "|TInterface\\TargetingFrame\\UI-RaidTargetingIcon_1:0|t",
-	["☆"] = "|TInterface\\TargetingFrame\\UI-RaidTargetingIcon_1:0:0:0:0:64:64:0:64:0:64:110:100:85|t",
-	["☑"] = "|TInterface\\Buttons\\UI-CheckBox-Check:0|t",
-	["☐"] = "|TInterface\\Buttons\\UI-CheckBox-Up:0|t",
-	["✓"] = "|TInterface\\Buttons\\UI-CheckBox-Check:0|t",
+	["★"] = PARTS .. "0:0:0:0:1024:2048:650:673:1126:1149|t",
+	["☆"] = PARTS .. "0:0:0:0:1024:2048:677:700:1126:1149|t",
+	["☑"] = PARTS .. "0:0:0:0:1024:2048:468:502:1836:1870|t",
+	["☐"] = PARTS .. "0:0:0:0:1024:2048:430:464:1836:1870|t",
+	["✓"] = PARTS .. "11:15:0:0:1024:2048:486:513:1586:1606|t",
 }
 
 --- `text` as the Ledger draws it: each ★, ☆, ☑, ☐ and ✓ in it as the texture escape the Ledger draws instead

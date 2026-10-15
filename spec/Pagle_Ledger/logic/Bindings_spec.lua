@@ -78,30 +78,56 @@ describe("the Journal bindings", function()
 		it("is Field Leather's for the default and for an ID that isn't a binding (LED-R110, LED-R112)", function()
 			local field = ns.BindingLook("ledger.binding.field")
 
-			assert.are.same(
-				{ ns.JOURNAL_LOOK.leather, ns.JOURNAL_LOOK.gilt, ns.JOURNAL_LOOK.paper },
-				{ field.leather, field.gilt, field.paper }
-			)
+			-- Core's own leather as it is, its band untoned, the kit's gilt, the paper untinted
+			assert.are.same({
+				texture = "leather",
+				tile = 128,
+				gilt = { 0xe8 / 255, 0xc9 / 255, 0x6a / 255 },
+				silver = false,
+				paperTint = { 1, 1, 1 },
+				swatch = "binding-field-leather",
+			}, field)
 			assert.are.same(field, ns.BindingLook("core.crest.plain"))
 			assert.are.same(field, ns.BindingLook(nil))
 		end)
 
-		it(
-			"is the prototype swatch's leather and gilt (LED-R110, prototypes/curio-shop/ › Tidewater Blue)",
-			function()
-				local look = ns.BindingLook("ledger.binding.level20")
+		it("tints the grey leather a level binding's tint, the band toward it and the paper by a tenth (LED-R110)", function()
+			local look = ns.BindingLook("ledger.binding.level20") -- Tidewater Blue, the kit's measured tint
 
-				assert.are.same({ 0x1f / 255, 0x3a / 255, 0x5a / 255 }, look.leather)
-				assert.are.same({ 0xc9 / 255, 0xd6 / 255, 0xe0 / 255 }, look.gilt)
+			assert.are.same({ "leatherGrey", 128 }, { look.texture, look.tile })
+			assert.are.same({ 0.188, 0.363, 0.563 }, look.tint)
+			assert.are.same({ 0.188 / 0.563, 0.363 / 0.563, 1 }, look.band)
+			assert.are.same({ 0.9 + 0.1 * 0.188 / 0.563, 0.9 + 0.1 * 0.363 / 0.563, 1 }, look.paperTint)
+			assert.are.equal("binding-tidewater-blue", look.swatch)
+		end)
+
+		it("turns the brass plate silver under a silver gilt only (LED-R110, LED-R149)", function()
+			local silver = {}
+			for _, binding in ipairs(ns.BINDINGS) do
+				silver[binding.name] = ns.BindingLook(ns.BindingID(binding)).silver
 			end
-		)
 
-		it("puts dark ink on a light brass plate and the paper's tint on a dark one (LED-R110)", function()
-			local field = ns.BindingLook("ledger.binding.field")
-			local birch = ns.BindingLook("ledger.binding.birch") -- pale bark, dark gilt
+			assert.are.same({
+				field = false,
+				level10 = false,
+				level20 = true,
+				level30 = false,
+				level40 = false,
+				level50 = true,
+				level60 = false,
+				birch = false,
+				buckram = false,
+				sharkskin = true,
+			}, silver)
+		end)
 
-			assert.are.same({ 0x2a / 255, 0x1a / 255, 0x04 / 255 }, field.plateText)
-			assert.are.same(birch.paper, birch.plateText)
+		it("draws Birch Bark and Buckram in their own grain, its band toned, untinted (LED-R110)", function()
+			local birch, buckram = ns.BindingLook("ledger.binding.birch"), ns.BindingLook("ledger.binding.buckram")
+
+			assert.are.same({ "bark", 256, nil }, { birch.texture, birch.tile, birch.tint })
+			assert.are.same({ "cloth", 256, nil }, { buckram.texture, buckram.tile, buckram.tint })
+			assert.are.same({ 0xb8 / 255, 0xa8 / 255, 0x88 / 255 }, birch.band)
+			assert.are.same({ 0x6a / 255, 0x9a / 255, 0x8c / 255 }, buckram.band)
 		end)
 	end)
 end)

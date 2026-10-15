@@ -29,7 +29,6 @@ local INSET = 15
 ---@field rows LedgerSearchRowView[]
 ---@field heads FontString[]
 ---@field rule Texture
----@field none FontString
 
 --- Makes `box` the Journal's search box (LED-R148), its drop-down on the book `frame`, filled on every text change.
 ---@param journal LedgerJournal
@@ -45,8 +44,6 @@ function ns.AttachJournalSearch(journal, box, frame)
 	drop.heads[2] = ns.JournalLabel(drop, "sc", 13, INK.kicker, ns.L.SEARCH_FISH)
 	drop.rule = ns.JournalTint(drop, INK.rule, 1)
 	drop.rule:SetSize(DROP_W - 14, 1)
-	drop.none =
-		ns.JournalLabel(drop, "italic", 14, INK.noteLight, ns.L.SEARCH_NONE, { wrap = true, width = DROP_W - 30 })
 	drop:Hide()
 
 	-- Picking a result empties the box, which hides the drop-down, and opens the result's place.
@@ -147,6 +144,7 @@ function ns.AttachJournalSearch(journal, box, frame)
 				local isZone = result.place.id == ns.JOURNAL_ZONE
 				row:SetSize(DROP_W - 14, height)
 				ns.JournalAt(row, drop, 7, y)
+				ns.JournalRestyle(row.label, "print", 15, INK.body)
 				row.label:SetText(result.label)
 				row.label:ClearAllPoints()
 				row.label:SetPoint("LEFT", isZone and INSET - 7 or 42, 0)
@@ -176,9 +174,21 @@ function ns.AttachJournalSearch(journal, box, frame)
 			y = y + 8
 		end
 		section(drop.heads[2], fish, FISH_H)
-		drop.none:SetShown(#results == 0)
 		if #results == 0 then
-			ns.JournalAt(drop.none, drop, INSET, y)
+			-- the no-match line, opening nothing
+			used = 1
+			local row = rowAt(1)
+			row:SetSize(DROP_W - 14, NONE_H)
+			ns.JournalAt(row, drop, 7, y)
+			ns.JournalRestyle(row.label, "italic", 14, INK.noteLight)
+			row.label:SetText(ns.L.SEARCH_NONE)
+			row.label:ClearAllPoints()
+			row.label:SetPoint("LEFT", INSET - 7, 0)
+			ns.JournalBound(row.label, DROP_W - 30)
+			row.medal:Hide()
+			row.note:Hide()
+			row.place = nil
+			row:Show()
 			y = y + NONE_H
 		end
 		for i = used + 1, #drop.rows do

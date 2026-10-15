@@ -52,7 +52,7 @@ ns.RegisterJournalWidget("crest", function(parent)
 		ns.JournalSetSprite(self.frameArt, "Crests", name)
 		self.frameArt:SetSize(sprite.w / atlas.scale * kx, sprite.h / atlas.scale * ky)
 		self.frameArt.box = { sprite.box[1] * kx, sprite.box[2] * ky, w, h }
-		ns.JournalPlace(self.frameArt, self, 0, 0)
+		ns.JournalPut(self.frameArt, self, 0, 0)
 		-- the likeness over the frame's dark well, as the canvas stacks them
 		local size = w * 0.58
 		self.portrait:SetSize(size, size)

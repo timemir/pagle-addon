@@ -94,27 +94,31 @@ describe("the Journal's Legends spread (LED-R147)", function()
 			local left = loaded.ns.journal.pages.left
 
 			assert.are.same({
+				"Outside the hundred",
 				"Legends",
 				"1 of 3. These sit outside the Ledger's hundred.",
+				"The index",
 				"an unwritten legend",
 				"Keefer's Angelfish",
 				"an unwritten legend",
 			}, blockTexts(left))
-			assert.are.same({ id = "legends", args = { legend = ANGELFISH } }, left[4].place)
-			assert.are.same({ id = "legends", args = { legend = QUEENFISH } }, left[5].place)
+			assert.are.same({ id = "legends", args = { legend = ANGELFISH } }, left[6].place)
+			assert.are.same({ id = "legends", args = { legend = QUEENFISH } }, left[7].place)
+			-- a caught Legend's row shows its icon; an uncaught one's the unknown medallion, never its icon (LED-R124)
+			assert.are.same({ "silhouette", "sepia", "silhouette" }, { left[5].look, left[6].look, left[7].look })
 		end
 	)
 
 	it("chooses the first Legend by default, and the one its args name (LED-R147)", function()
 		local _, loaded = spread("legends")
 		local journal = loaded.ns.journal
-		assert.is_true(journal.pages.left[3].selected)
-		assert.is_falsy(journal.pages.left[4].selected)
+		assert.is_true(journal.pages.left[5].selected)
+		assert.is_falsy(journal.pages.left[6].selected)
 
 		journal:Open("legends", { legend = ANGELFISH })
 
-		assert.is_falsy(journal.pages.left[3].selected)
-		assert.is_true(journal.pages.left[4].selected)
+		assert.is_falsy(journal.pages.left[5].selected)
+		assert.is_true(journal.pages.left[6].selected)
 		assert.are.equal("Keefer's Angelfish", blockOfKind(journal.pages.right, "title").text)
 	end)
 
@@ -133,7 +137,7 @@ describe("the Journal's Legends spread (LED-R147)", function()
 		assert.are.same({ 120, 40 }, { pageScroll(loaded, "left"), pageScroll(loaded, "right") })
 	end)
 
-	it("starts both pages at the top as the plate opens, which fills both (LED-R129, LED-R147)", function()
+	it("starts both pages at the top as the plate opens over both (LED-R129, LED-R147)", function()
 		local _, loaded = spread("legends", { legend = ANGELFISH })
 		scrollPage(loaded, "left", 120)
 		scrollPage(loaded, "right", 80)
@@ -157,8 +161,12 @@ describe("the Journal's Legends spread (LED-R147)", function()
 			"Title: Keefer's Rival",
 			"Open the plate",
 		}, blockTexts(right))
-		assert.are.same({ kind = "icon", icon = ANGELFISH, look = "sepia", large = true }, right[2])
-		assert.are.same({ id = "legends", args = { legend = ANGELFISH, plate = true } }, right[7].place)
+		-- the Legend's crest with its icon in sepia, and the plate's button
+		assert.are.same({ kind = "icon", icon = ANGELFISH, look = "sepia", large = true, style = "legend" }, right[2])
+		assert.are.same({ "button", { id = "legends", args = { legend = ANGELFISH, plate = true } } }, {
+			right[7].style,
+			right[7].place,
+		})
 	end)
 
 	it("leaves out a caught Legend's blurb and title while they have no text (LED-R161)", function()
@@ -221,8 +229,10 @@ describe("the Journal's Legends spread (LED-R147)", function()
 			local pages = loaded.ns.journal.pages
 
 			assert.are.same({
+				"Outside the hundred",
 				"Legends",
 				"1 of 3. These sit outside the Ledger's hundred.",
+				"The index",
 				"an unwritten legend",
 				"Keefer's Angelfish",
 				"an unwritten legend",
@@ -258,7 +268,7 @@ end)
 
 describe("a Legend's plate (LED-R147)", function()
 	it(
-		"fills both pages with the icon, name, first Catch, record size and title (LED-R147, LED-R80, LED-R81)",
+		"is one page across the spread with the icon, name, first Catch, record size and title (LED-R147, LED-R80, LED-R81)",
 		function()
 			local fake, loaded = spread("legends", { legend = ANGELFISH, plate = true })
 			local pages = loaded.ns.journal.pages
@@ -267,20 +277,29 @@ describe("a Legend's plate (LED-R147)", function()
 			local size = fake.Pagle.SIZE_BANDS[record.band].name .. " · " .. fake.Pagle.FormatLength(record.length)
 
 			assert.are.equal(1, #pages.left)
-			assert.are.equal(1, #pages.right)
+			assert.are.equal(0, #pages.right)
 			assert.are.same({
 				kind = "plate",
 				icon = ANGELFISH,
 				text = "Keefer's Angelfish",
-				place = { id = "legends", args = { legend = ANGELFISH } },
-			}, pages.left[1])
-			assert.are.same({
-				kind = "plate",
-				lines = { "11 Oct, Stranglethorn Vale, Angler", size, "Title: Keefer's Rival" },
+				lines = { "11 Oct, Stranglethorn Vale, Angler", size },
+				seal = "Keefer's Rival",
 				value = "Click anywhere to return.",
 				place = { id = "legends", args = { legend = ANGELFISH } },
-			}, pages.right[1])
+			}, pages.left[1])
 			assert.is_truthy(size:find("^%a+ · [%d.]+ %a+$"))
+			-- drawn over both pages: the crest with the icon, the words, and the title by the Title seal
+			local plate = loaded.ns.journal.frame.legendPlate
+			assert.is_true(plate:IsShown())
+			assert.are.same({
+				"A Legend of these waters",
+				"Keefer's Angelfish",
+				"11 Oct, Stranglethorn Vale, Angler",
+				size,
+				"Title",
+				"Keefer's Rival",
+				"Click anywhere to return.",
+			}, shownTexts(plate))
 		end
 	)
 
@@ -289,22 +308,18 @@ describe("a Legend's plate (LED-R147)", function()
 		local _, loaded = spread("legends", { legend = GONE, plate = true }, log)
 
 		assert.is_nil(loaded.ns.projection:GetState().items[GONE].record)
-		assert.are.same({ "11 Oct, Angler" }, loaded.ns.journal.pages.right[1].lines)
+		assert.are.same({ "11 Oct, Angler" }, loaded.ns.journal.pages.left[1].lines)
 	end)
 
-	it("returns to the Legend's page at a click anywhere on either page (LED-R147)", function()
+	it("returns to the Legend's page at a click anywhere on it (LED-R147)", function()
 		local _, loaded = spread("legends", { legend = ANGELFISH, plate = true })
 		local journal = loaded.ns.journal
 		local frame = journal.frame
-		assert.is_truthy(table.concat(shownTexts(frame.left), "\n"):find("Keefer's Angelfish", 1, true))
-		assert.is_truthy(table.concat(shownTexts(frame.right), "\n"):find("Title: Keefer's Rival", 1, true))
+		assert.is_truthy(table.concat(shownTexts(frame.legendPlate), "\n"):find("Keefer's Angelfish", 1, true))
 
-		frame.left.drawn.plate[1]:Click()
+		frame.legendPlate:Click()
 		assert.are.same({ id = "legends", args = { legend = ANGELFISH } }, journal.router:Place())
-
-		journal:Open("legends", { legend = ANGELFISH, plate = true })
-		frame.right.drawn.plate[1]:Click()
-		assert.are.same({ id = "legends", args = { legend = ANGELFISH } }, journal.router:Place())
+		assert.is_false(frame.legendPlate:IsShown())
 		assert.are.equal("Open the plate", blockOfKind(journal.pages.right, "link").text)
 	end)
 end)
@@ -387,7 +402,7 @@ describe("Home's Legends line (LED-R132)", function()
 		}, leaders)
 
 		local line = journal.frame.right.drawn.leader[3]
-		assert.are.same({ "Legends", "1 / 3" }, shownTexts(line))
+		assert.are.same({ "iii.", "Legends", "1 / 3" }, shownTexts(line))
 		line:Click()
 
 		assert.are.same({ id = "legends" }, journal.router:Place())

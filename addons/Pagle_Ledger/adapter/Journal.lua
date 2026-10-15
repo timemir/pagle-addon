@@ -223,7 +223,7 @@ local function buildUpdating(frame)
 	view:SetFrameLevel(frame.pagesFrame:GetFrameLevel() + 20)
 	local left = frame.papers.left
 	view.quill = ns.JournalSprite(view, "Parts", "quill", "ARTWORK")
-	ns.JournalPlace(view.quill, left, 189, 192.2)
+	ns.JournalPut(view.quill, left, 189, 192.2)
 	local words = ns.JournalLabel(view, "print", 18, INK.body, L.JOURNAL_UPDATING, {
 		justify = "CENTER",
 		wrap = true,
@@ -426,10 +426,10 @@ local function drawCrumbs(journal, crumbs, look)
 	end
 end
 
---- Whether the book is open.
+--- Whether the book is open: shown, and not fading out as it closes.
 ---@return boolean
 function Journal:IsShown()
-	return self.frame ~= nil and self.frame:IsShown()
+	return self.frame ~= nil and self.frame:IsShown() and not self.frame.closing
 end
 
 --- Opens the book at the spread it was left on (Home at the first opening after a login or `/reload`), or closes it
@@ -755,6 +755,10 @@ function Journal:Draw()
 		ns.FillLegendPlate(plate, plateBlock, open)
 		if not self.drawnPlate then
 			ns.OpenLegendPlate(plate)
+			-- it covers both pages: under it, each starts again at the top (LED-R129)
+			for _, side in ipairs({ "left", "right" }) do
+				frame[side].scroll:SetVerticalScroll(0)
+			end
 		end
 		self.drawnPlate = true
 		frame.search:Hide()

@@ -295,13 +295,13 @@ makers.link = function(parent)
 		end
 		local left = 0
 		if style == "note" then
-			ns.JournalPlace(self.pen, self, 0, 5)
+			ns.JournalPut(self.pen, self, 0, 5)
 			ns.JournalRestyle(self.label, "hand", 21, INK.hand)
 			self.ink = INK.hand
 			left = 24
 		elseif style == "radio" then
 			ns.JournalSetSprite(self.radio, "Parts", block.on and "radio-on" or "radio-off")
-			ns.JournalPlace(self.radio, self, 0, 4.5)
+			ns.JournalPut(self.radio, self, 0, 4.5)
 			ns.JournalRestyle(self.label, "print", 15, block.on and INK.title or INK.body)
 			self.ink = block.on and INK.title or INK.body
 			left = 18
@@ -392,7 +392,7 @@ makers.leader = function(parent)
 		local face, valueSize, hex = "print", size, INK.small
 		if binding then
 			ns.JournalSetSprite(self.swatch, "Bindings", block.binding)
-			ns.JournalPlace(self.swatch, self, 1, 1)
+			ns.JournalPut(self.swatch, self, 1, 1)
 			if block.state == "inUse" then
 				face, valueSize, hex = "hand", 17, INK.green
 			elseif block.state == "level" then
@@ -490,10 +490,10 @@ makers.bookplate = function(parent)
 			local star = self.stars[i] or ns.JournalSprite(self, "Parts", "star", "ARTWORK", 0, 10)
 			self.stars[i] = star
 			star:SetShown(i <= stars)
-			ns.JournalPlace(star, self, right - noteW - 4 - i * 11, 44)
+			ns.JournalPut(star, self, right - noteW - 4 - i * 11, 44)
 		end
 		if emblem then
-			ns.JournalPlace(self.emblem, self, right - noteW - 30, 4)
+			ns.JournalPut(self.emblem, self, right - noteW - 30, 4)
 			right = right - noteW - 34
 		else
 			right = right - noteW
@@ -650,9 +650,10 @@ makers.stamps = function(parent)
 				local sprite = ns.JOURNAL_ATLASES.Parts.sprites[name]
 				local atlas = ns.JOURNAL_ATLASES.Parts
 				ns.JournalSetSprite(stamp, "Parts", name)
+				stamp.sprite = name
 				stamp:SetSize(sprite.w / atlas.scale, sprite.h / atlas.scale)
 				stamp.box = sprite.box
-				ns.JournalPlace(stamp, self, x, 0)
+				ns.JournalPut(stamp, self, x, 0)
 				w = sprite.box[3]
 				ns.StopMotion(stamp)
 				stamp:SetAlpha(1)
@@ -673,7 +674,7 @@ makers.stamps = function(parent)
 							end,
 						},
 					}, function()
-						ns.JournalPlace(stamp, self, cx - sprite.box[3] / 2, 0)
+						ns.JournalPut(stamp, self, cx - sprite.box[3] / 2, 0)
 					end)
 					ns.Cue(stamp, 0.45, function()
 						ns.JournalSound("stamp")
@@ -706,7 +707,7 @@ end
 makers.emblem = function(parent)
 	local widget = newWidget(parent) --[[@as LedgerEmblemWidget]]
 	widget.shield = ns.JournalSprite(widget, "Parts", "emblem", "ARTWORK", 0, 34)
-	ns.JournalPlace(widget.shield, widget, 0, 0)
+	ns.JournalPut(widget.shield, widget, 0, 0)
 	widget.label = ns.JournalLabel(widget, "sc", 15, INK.brass, "", { justify = "CENTER" })
 	widget.label:SetPoint("CENTER", widget.shield, "CENTER", 0, 1)
 	widget.stars = {}
@@ -720,7 +721,7 @@ makers.emblem = function(parent)
 		for i = 1, math.max(stars, #self.stars) do
 			local star = self.stars[i] or ns.JournalSprite(self, "Parts", "star", "ARTWORK", 0, 12)
 			self.stars[i] = star
-			ns.JournalPlace(star, self, 40 + (i - 1) * 14, 14)
+			ns.JournalPut(star, self, 40 + (i - 1) * 14, 14)
 			star:SetShown(i <= stars)
 		end
 		return shown and 40 or 0
@@ -755,7 +756,7 @@ makers.map = function(parent)
 		local k = w / sprite.box[3]
 		self.texture:SetSize(sprite.w / atlas.scale * k, sprite.h / atlas.scale * k)
 		self.texture.box = { sprite.box[1] * k, sprite.box[2] * k, w, sprite.box[4] * k }
-		ns.JournalPlace(self.texture, self, 0, 4)
+		ns.JournalPut(self.texture, self, 0, 4)
 		return sprite.box[4] * k + 8
 	end
 	return widget
@@ -852,7 +853,10 @@ local function fillTile(tile, data, open)
 	tile.barFill:SetShown(not dashed and (data.bar or 0) > 0)
 	tile.barFill:SetWidth(math.max(0.01, (w - 22) * (data.bar or 0)))
 	tile.seal:SetShown(data.seal ~= nil)
-	tile.note:SetShown(data.seal == nil and data.note ~= nil)
+	-- the red note at the top right, or under the seal at Master
+	tile.note:SetShown(data.note ~= nil)
+	tile.note:ClearAllPoints()
+	tile.note:SetPoint("TOPRIGHT", -7, data.seal and -36 or -4)
 	tile.note:SetText(data.note or "")
 	tile.line2:SetShown(data.line2 ~= nil and data.seal == nil and data.note == nil)
 	tile.line2:SetText(data.line2 or "")
@@ -980,7 +984,7 @@ makers.icon = function(parent)
 		self.floatW, self.floatH = nil, nil
 		if legend then
 			-- the crest centred, 150 wide; its well, where the icon sits, a little above its middle
-			ns.JournalPlace(self.crest, self, (width - 150) / 2, 2)
+			ns.JournalPut(self.crest, self, (width - 150) / 2, 2)
 			local well = 92
 			self.crestIcon:SetSize(well, well)
 			self.crestIcon:ClearAllPoints()

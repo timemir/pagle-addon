@@ -133,7 +133,8 @@ describe("the Journal's zone spread", function()
 			"lists the catches in groups, in order, each headed with its counts, the Pools note, a gated pool-associated Species in its window's group, and no empty group (LED-R135)",
 			function()
 				local _, loaded = zoneSpread(DARKSHORE)
-				local left = blockTexts(loaded.ns.journal.pages.left)
+				local blocks = loaded.ns.journal.pages.left
+				local left = blockTexts(blocks)
 
 				assert.are.same({
 					"Kalimdor",
@@ -141,29 +142,45 @@ describe("the Journal's zone spread", function()
 					"Local",
 					"[ladder]",
 					"Next: Expert: 4 more day, night, seasonal or event catches, a treasure",
-					"Any time · 1 / 1",
+					"Any time",
 					"Raw Slitherskin Mackerel",
-					"Pools · 1 / 1",
-					"open water and pools combined",
+					"Pools",
 					"Oily Blackmouth",
-					"Day and night · 0 / 2",
+					"Day and night",
 					"— unknown —",
 					"Raw Nightfin Snapper (caught elsewhere)",
-					"Seasonal · 0 / 1",
+					"Seasonal",
 					"— unknown —",
-					"Events · 0 / 1",
+					"Events",
 					"— unknown —",
-					"Trophies · 1 / 2",
+					"Trophies",
 					drawnSymbols("☑ a Catfish trophy, any weight"),
 					drawnSymbols("☐ a Redgill trophy, any weight"),
-					"Curios · 1 / 2",
+					"Curios",
 					drawnSymbols("☑ a piece of junk"),
 					drawnSymbols("☐ a treasure"),
-					"Also caught here · 1",
+					"Also caught here",
 					"Raw Brilliant Smallfish",
 					"Not in Pagle's list for these waters yet.",
 					"Help chart the waters",
 				}, left)
+				-- each group's counts at its right, the Pools note before its own
+				local counts = {}
+				for _, block in ipairs(blocks) do
+					if block.kind == "kicker" and block.value then
+						counts[#counts + 1] = block.value
+					end
+				end
+				assert.are.same({
+					"1 / 1",
+					"open water and pools combined · 1 / 1",
+					"0 / 2",
+					"0 / 1",
+					"0 / 1",
+					"1 / 2",
+					"1 / 2",
+					"1",
+				}, counts)
 			end
 		)
 
@@ -171,7 +188,7 @@ describe("the Journal's zone spread", function()
 			'draws an uncaught Species as a silhouette reading "— unknown —", never its name (LED-R136, LED-R124)',
 			function()
 				local _, loaded = zoneSpread(DARKSHORE)
-				local firefin = loaded.ns.journal.pages.left[12]
+				local firefin = loaded.ns.journal.pages.left[11]
 
 				assert.are.same({ "row", FIREFIN, "silhouette", "— unknown —" }, {
 					firefin.kind,
@@ -211,10 +228,10 @@ describe("the Journal's zone spread", function()
 
 				-- Realm 08:15 on 11 October: night opens at 20:00, 11 h 45 min away; summer is back in March; the
 				-- Extravaganza has no weekly rule in this catalogue, so no state (LED-R127).
-				assert.are.same({ "night, back in 12 h", "pools" }, left[12].margin)
-				assert.are.same({ "night, back in 12 h" }, left[13].margin)
-				assert.are.same({ "summer, back in March" }, left[15].margin)
-				assert.are.same({ "Extravaganza" }, left[17].margin)
+				assert.are.same({ "night, back in 12 h", "pools" }, left[11].margin)
+				assert.are.same({ "night, back in 12 h" }, left[12].margin)
+				assert.are.same({ "summer, back in March" }, left[14].margin)
+				assert.are.same({ "Extravaganza" }, left[16].margin)
 				assert.are.same({ "pools" }, blockWithText(left, "Oily Blackmouth").margin)
 			end
 		)
@@ -295,12 +312,14 @@ describe("the Journal's zone spread", function()
 				"unfished",
 				"[ladder]",
 				"Next: Catch anything here to become a Visitor",
-				"Any time · 0 / 2",
+				"Any time",
 				"— unknown —",
 				"— unknown —",
-				"Trophies · 0 / 1",
+				"Trophies",
 				drawnSymbols("☐ a Catfish trophy, any weight"),
 			}, blockTexts(left))
+			-- the seal not yet pressed: its empty ring
+			assert.is_false(left[3].inked)
 			for _, rung in ipairs(left[4].rungs) do
 				assert.is_false(rung.inked or rung.circled)
 			end
@@ -314,38 +333,41 @@ describe("the Journal's zone spread", function()
 				local _, loaded = zoneSpread(DARKSHORE)
 				local rows = loaded.ns.journal.frame.left.drawn.row
 
-				-- Blackmouth: pools, ★★ of three.
-				assert.are.same(
-					{ "Oily Blackmouth", "pools", drawnSymbols("★★☆") },
-					{ rows[2].name.text, rows[2].margin.text, rows[2].stars.text }
-				)
+				-- Blackmouth: pools, ★★ of three, as the kit's stars inked and in ghost ink.
+				local parts = loaded.ns.JOURNAL_ATLASES.Parts
+				local function sprite(texture)
+					for name in pairs(parts.sprites) do
+						local coords = { loaded.ns.JournalCoords("Parts", name) }
+						if coords[1] == texture.texCoord[1] and coords[3] == texture.texCoord[3] then
+							return name
+						end
+					end
+				end
+				assert.are.same({ "Oily Blackmouth", "pools" }, { rows[2].name.text, rows[2].margin.text })
+				assert.are.same({ "star", "star", "star-off" }, {
+					sprite(rows[2].stars.stars[1]),
+					sprite(rows[2].stars.stars[2]),
+					sprite(rows[2].stars.stars[3]),
+				})
+				-- an uncaught one: its margin, no stars, the unknown medallion and never its icon (LED-R124)
 				assert.are.same({ "night, back in 12 h · pools", false }, { rows[3].margin.text, rows[3].stars.shown })
-				assert.is_true(rows[3].icon.desaturated)
-				assert.are.same({ 0, 0, 0 }, rows[3].icon.vertexColor)
+				assert.are.same({ true, false }, { rows[3].medal.unknown:IsShown(), rows[3].medal.icon:IsShown() })
 			end
 		)
 
-		it("draws the ladder's ranks with the shown one boxed in red (LED-R135)", function()
+		it("draws the ladder's ranks with the shown one circled in red (LED-R135)", function()
 			local _, loaded = zoneSpread(DARKSHORE)
 			local ladder = loaded.ns.journal.frame.left.drawn.ladder[1]
 
-			-- Each rung is a frame holding its word and the four edges of its box.
-			local words, boxed = {}, {}
-			for _, rung in ipairs(ladder.children) do
-				if rung.kind == "Frame" then
-					local edges = 0
-					for _, part in ipairs(rung.children) do
-						if part.kind == "FontString" then
-							words[#words + 1] = part.text
-						elseif part.shown then
-							edges = edges + 1
-						end
-					end
-					boxed[#boxed + 1] = edges
-				end
+			local words, circled = {}, {}
+			for i, rung in ipairs(ladder.rungs) do
+				words[i] = rung.text.text
+				circled[i] = rung.ring ~= nil and rung.ring.shown
 			end
 			assert.are.same({ "Visitor", "Regular", "Local", "Expert", "Master" }, words)
-			assert.are.same({ 0, 0, 4, 0, 0 }, boxed)
+			assert.are.same({ false, false, true, false, false }, circled)
+			-- the kit's circle drawn for Local
+			assert.are.same({ loaded.ns.JournalCoords("Parts", "rank-local") }, ladder.rungs[3].ring.texCoord)
 		end)
 	end)
 
@@ -358,13 +380,18 @@ describe("the Journal's zone spread", function()
 
 				assert.are.same({ "Home", "Eastern Kingdoms", "Stormwind City" }, crumbLabels(loaded))
 				assert.are.same({
+					"Eastern Kingdoms",
 					"Stormwind City",
+					"uncharted",
 					"Uncharted waters. No map of these yet.",
 					"Every catch here is still written down, and counted once Pagle's data catches up.",
+					"[map]",
 				}, blockTexts(pages.left))
 				-- The unknown item's name isn't loaded: "Item {id}" (LED-R126).
 				assert.are.same({
 					"Loose pages",
+					"What came up here",
+					"Uncharted",
 					"Item 99999: 2×",
 					"Also caught here",
 					"Raw Slitherskin Mackerel",
@@ -386,10 +413,13 @@ describe("the Journal's zone spread", function()
 		it('reads "Nothing caught here yet." with nothing caught there (LED-R138)', function()
 			local _, loaded = zoneSpread(STORMWIND, { FIXTURE[1] })
 
-			assert.are.same(
-				{ "Loose pages", "Also caught here", "Nothing caught here yet.", "Help chart the waters" },
-				blockTexts(loaded.ns.journal.pages.right)
-			)
+			assert.are.same({
+				"Loose pages",
+				"What came up here",
+				"Also caught here",
+				"Nothing caught here yet.",
+				"Help chart the waters",
+			}, blockTexts(loaded.ns.journal.pages.right))
 		end)
 
 		it("leaves the lore line out while it has no text (LED-R138, LED-R161)", function()
@@ -399,8 +429,11 @@ describe("the Journal's zone spread", function()
 			loaded.ns.journal:Draw()
 
 			assert.are.same({
+				"Eastern Kingdoms",
 				"Stormwind City",
+				"uncharted",
 				"Every catch here is still written down, and counted once Pagle's data catches up.",
+				"[map]",
 			}, blockTexts(loaded.ns.journal.pages.left))
 		end)
 
@@ -508,7 +541,7 @@ describe("the Journal's zone spread", function()
 
 			assert.are.same({ id = "zone", args = { zone = DARKSHORE } }, journal.router:Place())
 			assert.are.same({ "Home", "Kalimdor", "Darkshore" }, crumbLabels(loaded))
-			assert.are.equal("About these waters", journal.pages.right[1].text)
+			assert.are.equal("About these waters", journal.pages.right[2].text)
 
 			journal.frame.back:Click()
 
@@ -526,8 +559,8 @@ describe("the Journal's zone spread", function()
 
 			local pages = loaded.ns.journal.pages
 			assert.are.same({ "Home", "Kalimdor", "Darkshore", "Firefin Snapper" }, crumbLabels(loaded))
-			assert.are.equal("Day and night · 1 / 2", pages.left[11].text)
-			assert.are.same({ "Firefin Snapper", true }, { pages.left[12].text, pages.left[12].selected })
+			assert.are.same({ "Day and night", "1 / 2" }, { pages.left[10].text, pages.left[10].value })
+			assert.are.same({ "Firefin Snapper", true }, { pages.left[11].text, pages.left[11].selected })
 			assert.are.equal("Firefin Snapper", pages.right[2].text)
 		end)
 
@@ -536,8 +569,8 @@ describe("the Journal's zone spread", function()
 			local journal = loaded.ns.journal
 			journal:OpenPlace(loaded.ns.JournalPlace.fish(BLACKMOUTH))
 
-			-- Its one tile, Darkshore's: the tiles widget's first child.
-			local tile = journal.frame.right.drawn.tiles[1].children[1]
+			-- Its one tile, Darkshore's.
+			local tile = journal.frame.right.drawn.tiles[1].tiles[1]
 			assert.are.equal("Darkshore", tile.name.text)
 			tile:Click()
 
@@ -556,6 +589,7 @@ describe("the Journal's zone spread", function()
 
 				-- Completion: 2 of 6 Species, 1 of 2 families, the junk but not the treasure: 4 of 10 (LED-R53).
 				assert.are.same({
+					"Darkshore",
 					"About these waters",
 					"Skill ~75",
 					"40% of these waters known: 2 of 6 fish, 1 of 2 trophy families",
@@ -611,7 +645,7 @@ describe("the Journal's zone spread", function()
 
 			assert.are.same({ id = "trophy", args = { family = 4 } }, journal.router:Place())
 			assert.are.same({ "Home", "The Trophy Room" }, crumbLabels(loaded))
-			assert.are.equal("Redgill", journal.pages.right[1].text)
+			assert.are.equal("Redgill", journal.pages.right[2].text)
 		end)
 
 		it(
@@ -635,9 +669,9 @@ describe("the Journal's zone spread", function()
 					"Catfish",
 					"Reward for mastery: each new seal earns XP. The Master seal earns the title Warden of Darkshore Waters.",
 				}, {
-					pages.right[4].text,
 					pages.right[5].text,
 					pages.right[6].text,
+					pages.right[7].text,
 				})
 			end
 		)
@@ -649,7 +683,7 @@ describe("the Journal's zone spread", function()
 
 			assert.are.same(
 				{ "About these waters", "Any skill" },
-				{ unpack(blockTexts(loaded.ns.journal.pages.right), 1, 2) }
+				{ unpack(blockTexts(loaded.ns.journal.pages.right), 2, 3) }
 			)
 		end)
 
@@ -661,7 +695,7 @@ describe("the Journal's zone spread", function()
 			local right = blockTexts(loaded.ns.journal.pages.right)
 			assert.are.same(
 				{ "About these waters", "0% of these waters known: 0 of 6 fish, 0 of 2 trophy families" },
-				{ right[1], right[2] }
+				{ right[2], right[3] }
 			)
 		end)
 	end)
@@ -703,7 +737,10 @@ describe("the Journal's zone spread", function()
 			fake.playCast("caught", { { itemID = FIREFIN, quantity = 1 } })
 			loaded.client.runTimers()
 
-			assert.are.equal("Day and night · 1 / 2", loaded.ns.journal.pages.left[11].text)
+			assert.are.same({ "Day and night", "1 / 2" }, {
+				loaded.ns.journal.pages.left[10].text,
+				loaded.ns.journal.pages.left[10].value,
+			})
 			assert.are.same({ 120, 80 }, { pageScroll(loaded, "left"), pageScroll(loaded, "right") })
 		end)
 
@@ -731,7 +768,7 @@ describe("the Journal's zone spread", function()
 
 				journal.frame.back:Click()
 
-				assert.are.equal("About these waters", journal.pages.right[1].text)
+				assert.are.equal("About these waters", journal.pages.right[2].text)
 				assert.are.same({ 120, 0 }, { pageScroll(loaded, "left"), pageScroll(loaded, "right") })
 			end
 		)

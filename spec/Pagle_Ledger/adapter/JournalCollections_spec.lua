@@ -105,13 +105,17 @@ describe("the Journal's Trophy Room", function()
 			local left = loaded.ns.journal.pages.left
 
 			assert.are.same({
+				"A collection",
 				"The Trophy Room",
 				"2 of 5 weights.",
-				drawnSymbols("Mud Snapper ☆☆☆"),
-				drawnSymbols("Catfish ★★☆"),
+				"Families",
+				"Mud Snapper",
+				"Catfish",
 			}, blockTexts(left))
-			assert.are.same({ "0 / 1", "2 / 4" }, { left[3].value, left[4].value })
-			assert.are.same({ id = "trophy", args = { family = 2 } }, left[4].place)
+			assert.are.same({ "0 / 1", "2 / 4" }, { left[5].value, left[6].value })
+			-- the family open on the right, the first by default, is marked
+			assert.are.same({ true, nil }, { left[5].selected, left[6].selected })
+			assert.are.same({ id = "trophy", args = { family = 2 } }, left[6].place)
 		end
 	)
 
@@ -122,6 +126,7 @@ describe("the Journal's Trophy Room", function()
 			local right = loaded.ns.journal.pages.right
 
 			assert.are.same({
+				"A trophy family",
 				"Catfish",
 				"[stamps]",
 				"[board]",
@@ -133,15 +138,15 @@ describe("the Journal's Trophy Room", function()
 				{ text = "Any weight", inked = true },
 				{ text = "Half the weights", inked = true },
 				{ text = "The heaviest", inked = false },
-			}, right[2].stamps)
+			}, right[3].stamps)
 			-- A tick per weight, placed along the board by its pounds (17 to 26), inked where landed.
 			assert.are.same({
 				{ text = "17", at = 0, inked = true },
 				{ text = "19", at = 2 / 9, inked = false },
 				{ text = "22", at = 5 / 9, inked = true },
 				{ text = "26", at = 1, inked = false },
-			}, right[3].ticks)
-			assert.is_true(right[5].hand)
+			}, right[4].ticks)
+			assert.is_true(right[6].hand)
 		end
 	)
 
@@ -150,6 +155,7 @@ describe("the Journal's Trophy Room", function()
 		local right = loaded.ns.journal.pages.right
 
 		assert.are.same({
+			"A trophy family",
 			"Mud Snapper",
 			"[stamps]",
 			"[board]",
@@ -157,7 +163,7 @@ describe("the Journal's Trophy Room", function()
 			"Not one of this family yet.",
 			"Found in Duskwood.",
 		}, blockTexts(right))
-		assert.are.same({ { text = "10", at = 0.5, inked = false } }, right[3].ticks)
+		assert.are.same({ { text = "10", at = 0.5, inked = false } }, right[4].ticks)
 	end)
 
 	it("leaves out the index line and the title of a family whose lore name has no text (LED-R161)", function()
@@ -168,11 +174,14 @@ describe("the Journal's Trophy Room", function()
 		local pages = loaded.ns.journal.pages
 
 		assert.are.same({
+			"A collection",
 			"The Trophy Room",
 			"2 of 5 weights.",
-			drawnSymbols("Catfish ★★☆"),
+			"Families",
+			"Catfish",
 		}, blockTexts(pages.left))
 		assert.are.same({
+			"A trophy family",
 			"[stamps]",
 			"[board]",
 			"pounds",
@@ -194,9 +203,9 @@ describe("the Journal's Trophy Room", function()
 		local _, loaded = spread({ "trophyRoom" })
 		local journal = loaded.ns.journal
 
-		journal.frame.left.drawn.leader[2]:Click()
+		journal.frame.left.drawn.row[2]:Click()
 
-		assert.are.equal("Catfish", journal.pages.right[1].text)
+		assert.are.equal("Catfish", journal.pages.right[2].text)
 	end)
 
 	it(
@@ -206,9 +215,9 @@ describe("the Journal's Trophy Room", function()
 			scrollPage(loaded, "left", 120)
 			scrollPage(loaded, "right", 80)
 
-			loaded.ns.journal.frame.left.drawn.leader[2]:Click()
+			loaded.ns.journal.frame.left.drawn.row[2]:Click()
 
-			assert.are.equal("Catfish", loaded.ns.journal.pages.right[1].text)
+			assert.are.equal("Catfish", loaded.ns.journal.pages.right[2].text)
 			assert.are.same({ 120, 0 }, { pageScroll(loaded, "left"), pageScroll(loaded, "right") })
 		end
 	)
@@ -221,25 +230,32 @@ describe("the Journal's Trophy Room", function()
 			local _, loaded = spread({ "trophyRoom", 2 }, log)
 			local pages = loaded.ns.journal.pages
 
-			assert.are.equal("2 of 5 weights.", pages.left[2].text)
-			assert.are.equal("2 / 4", pages.left[4].value)
-			assert.are.equal(4, #pages.right[3].ticks)
-			assert.are.equal("Landed 2 of 4. Heaviest so far: 22 lb.", pages.right[5].text)
+			assert.are.equal("2 of 5 weights.", pages.left[3].text)
+			assert.are.equal("2 / 4", pages.left[6].value)
+			assert.are.equal(4, #pages.right[4].ticks)
+			assert.are.equal("Landed 2 of 4. Heaviest so far: 22 lb.", pages.right[6].text)
 		end
 	)
 
 	it("reads Not one of this family yet when only a removed weight of it is landed (LED-R12, LED-R143)", function()
 		local _, loaded = spread({ "trophyRoom", 2 }, { cast(T0, ELWYNN, CAT30) })
 
-		assert.are.equal("Not one of this family yet.", loaded.ns.journal.pages.right[5].text)
+		assert.are.equal("Not one of this family yet.", loaded.ns.journal.pages.right[6].text)
 	end)
 
-	it("draws the measuring board: each weight in pounds, a ✓ over those landed (LED-R143, LED-R62)", function()
+	it("draws the weights ruler: each weight in pounds, landed ones inked red, heaviest marked (LED-R143, LED-R62)", function()
 		local _, loaded = spread({ "trophyRoom", 2 })
 
 		local board = loaded.ns.journal.frame.right.drawn.board[1]
 
-		assert.are.same({ drawnSymbols("✓"), "17", "19", drawnSymbols("✓"), "22", "26" }, shownTexts(board))
+		assert.are.same({ "heaviest", "17", "19", "22", "26" }, shownTexts(board))
+		-- a landed mark is red and tall, one not landed grey and short
+		local red = { 0x9a / 255, 0x2a / 255, 0x1a / 255 }
+		local marks = {}
+		for i, mark in ipairs(board.marks) do
+			marks[i] = { mark.line.height, mark.line.color[1] == red[1] }
+		end
+		assert.are.same({ { 36, true }, { 22, false }, { 36, true }, { 22, false } }, marks)
 	end)
 end)
 
@@ -260,7 +276,7 @@ describe("the Journal's Curios", function()
 			local left = loaded.ns.journal.pages.left
 
 			-- The removed wagonwheel keeps its plinth but is out of both sides of the count.
-			assert.are.same({ "The Junk Museum", "1 of 2 exhibits" }, { left[1].text, left[2].text })
+			assert.are.same({ "Junk", "The Junk Museum", "1 of 2 exhibits" }, { left[1].text, left[2].text, left[3].text })
 			assert.are.same({
 				{
 					kind = "plinth",
@@ -283,8 +299,8 @@ describe("the Journal's Curios", function()
 					text = "Old Wagonwheel",
 					value = "Where the wagon went is still under investigation.",
 				},
-			}, { left[3], left[4], left[5] })
-			assert.are.equal(5, #left)
+			}, { left[4], left[5], left[6] })
+			assert.are.equal(6, #left)
 		end
 	)
 
@@ -294,12 +310,12 @@ describe("the Journal's Curios", function()
 		loaded.ns.L["line.uncaughtjunk.text"] = nil
 		loaded.ns.journal:Draw()
 
-		local plinth = loaded.ns.journal.pages.left[4]
+		local plinth = loaded.ns.journal.pages.left[5]
 		assert.are.same({ "silhouette", "An empty plinth" }, { plinth.look, plinth.text })
 		assert.is_nil(plinth.value)
 	end)
 
-	it("draws an empty plinth's icon as a silhouette, with its words (LED-R144, LED-R124)", function()
+	it("draws an empty plinth with the unknown medallion, never the item's icon, with its words (LED-R144, LED-R124)", function()
 		local _, loaded = spread({ "curios" })
 
 		local plinths = loaded.ns.journal.frame.left.drawn.plinth
@@ -308,8 +324,8 @@ describe("the Journal's Curios", function()
 			{ "An empty plinth", "The plinth is dusted and ready. The exhibit is late." },
 			shownTexts(plinths[2])
 		)
-		assert.are.same({ 0, 0, 0 }, plinths[2].texture.vertexColor)
-		assert.are_not.same({ 0, 0, 0 }, plinths[1].texture.vertexColor)
+		assert.are.same({ true, false }, { plinths[2].medal.unknown:IsShown(), plinths[2].medal.icon:IsShown() })
+		assert.are.same({ false, true }, { plinths[1].medal.unknown:IsShown(), plinths[1].medal.icon:IsShown() })
 	end)
 
 	it(
@@ -319,6 +335,7 @@ describe("the Journal's Curios", function()
 			local right = loaded.ns.journal.pages.right
 
 			assert.are.same({
+				"Containers and treasure",
 				"Treasures",
 				"1 of 2 opened",
 				"Dented Crate",
@@ -402,7 +419,7 @@ describe("the Journal's ways into the collections", function()
 	-- Clicks the drawn leader on Home's right page whose words begin with `label`.
 	local function clickContents(loaded, label)
 		for _, leader in ipairs(loaded.ns.journal.frame.right.drawn.leader) do
-			if shownTexts(leader)[1] == label then
+			if leader.label.text == label then
 				leader:Click()
 				return
 			end
