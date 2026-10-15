@@ -12,8 +12,9 @@
 # The check: the zip's top-level folders are exactly the addons/<Addon>/ folders (Pagle and Pagle_QoL
 # from M1, Pagle_Ledger from M2, Pagle_Hunts from M5, Pagle_Stats from M6, Pagle_TackleBoard from M7; each
 # Module adds its own with its .pkgmeta move-folders line), each holding exactly that folder's tracked files
-# (Pagle_QoL's Bindings.xml among them), plus the packager's Pagle/CHANGELOG.md and the repo's LICENSE and NOTICE in Pagle/. Nothing else: no docs/, spec/,
-# scripts/, probes/, prototypes/, no stray addons/ path and no empty folder.
+# (Pagle_QoL's Bindings.xml among them), plus the packager's Pagle/CHANGELOG.md and the repo's LICENSE and
+# NOTICE in Pagle/. Nothing else: no docs/, spec/, scripts/, probes/, prototypes/, no stray addons/ path and
+# no empty folder.
 #
 # Run it in WSL. Needs bash >= 4.3, git, curl, unzip, zip and jq (sudo apt-get install zip jq);
 # the packager builds the zip with zip and reads upload APIs with jq.
