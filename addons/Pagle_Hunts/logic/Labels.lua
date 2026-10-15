@@ -166,22 +166,46 @@ function ns.FormatRealmWhen(t, now, snapshot)
 	return ns.L.WEEKDAY_CLOCK:format(ns.FormatWeekday(clock.date), time)
 end
 
--- Tunables: the Soon horizon (HNT-R40), the month wording beyond (HNT-R51) and the lure reach (HNT-R33, HNT-R52).
-local SOON_HORIZON = 3 * 3600
+-- Tunables: the month wording beyond (HNT-R51). The Soon horizon (HNT-R40) and the lure reach (HNT-R33) are the
+-- grouping's (ns.SOON_HORIZON, ns.LURE_REACH): a row's case carries its verdicts.
 local MONTH_WORDING_BEYOND = 7 * SECONDS_PER_DAY
-local LURE_REACH = 100
 
---- A row's case, as the label functions take it: the inputs of HNT-R40's grouping and HNT-R33's skill, from ticket
---- #189's rows and ticket #187's skill need, so this file waits on neither.
+--- A row's case, as the label functions take it: the grouping's verdicts on the row (HNT-R40's group and aura up,
+--- HNT-R33's short of skill and lure reach), its window, and the skill numbers the window line says. Built by
+--- ns.LabelCase.
 ---@class HuntLabelCase
----@field group "now"|"soon"|"later"|"onDemand" HNT-R40's group
----@field auraUp boolean? Now through an aura (HNT-R40's "aura up")
+---@field group HuntGroup HNT-R40's group
+---@field auraUp boolean? Now through an aura (HNT-R40's "aura up"); short of skill, it would be (HNT-R52)
 ---@field window Window? `Pagle.NextWindow(boardSpec, now)`; nil with none or no board spec
 ---@field spec table? the board spec (HNT-R6), for its auras
+---@field short boolean? short of skill (HNT-R33), as the grouping found it
+---@field lureGetsThere boolean? short by at most the lure reach (HNT-R33)
 ---@field need integer? the skill need (HNT-R32), nil with none
----@field best integer? the Angler's `bestBaseSkill` (HNT-R33)
+---@field best integer? the Angler's `bestBaseSkill` (HNT-R33), for the window line's "my best is"
 ---@field now integer server time now
 ---@field snapshot table one live `Pagle.GetConditions()` (HNT-R50)
+
+--- A grouping row's label case (HNT-R51, HNT-R52): every view's labels read the row the same way.
+---@param row HuntRow
+---@param where HuntWhere the row's Hunt's (ns.where[row.id])
+---@param now integer server time the labels count from
+---@param snapshot table one live `Pagle.GetConditions()`
+---@param best integer? the Angler's `bestBaseSkill`, for the window line; the margin and tracker labels don't read it
+---@return HuntLabelCase
+function ns.LabelCase(row, where, now, snapshot, best)
+	return {
+		group = row.group,
+		auraUp = row.auraUp,
+		window = row.window,
+		spec = where.boardSpec,
+		short = row.short,
+		lureGetsThere = row.lureGetsThere,
+		need = where.skillNeed,
+		best = best,
+		now = now,
+		snapshot = snapshot,
+	}
+end
 
 --- The names the labels read, each nil while the client hasn't given it: adapter/Names.lua builds them (ns.names).
 ---@class HuntNameSources
@@ -194,32 +218,15 @@ local LURE_REACH = 100
 ---@field QualityColor fun(quality: integer): table?        -- ITEM_QUALITY_COLORS[quality] (HNT-R55)
 ---@field NextWindow fun(spec: table, fromTime: integer): Window? -- Pagle.NextWindow (HNT-R53)
 
--- Whether a case is short of skill (HNT-R33): a skill need above the best.
----@param c HuntLabelCase
----@return boolean
-local function isShort(c)
-	return c.need ~= nil and c.need > (c.best or 0)
-end
-
 -- The group a short-of-skill row would have without its skill (HNT-R40's rules 2–6), for the window line, which
 -- ignores skill (HNT-R52).
 ---@param c HuntLabelCase
----@return "now"|"soon"|"later"|"onDemand"
+---@return HuntGroup
 local function groupIgnoringSkill(c)
-	local window = c.window
-	if window == nil then
+	if c.window == nil then
 		return "later"
-	elseif window.onDemand then
-		return c.auraUp and "now" or "onDemand"
-	elseif window.always then
-		return "now"
-	elseif window.openNow then
-		local auras = c.spec and c.spec.auras
-		return (auras and not c.auraUp) and "onDemand" or "now"
-	elseif window.opensAt and window.opensAt - c.now <= SOON_HORIZON then
-		return "soon"
 	end
-	return "later"
+	return (ns.WindowGroup(c.spec or {}, c.window, c.auraUp == true, c.now))
 end
 
 -- A case's row of HNT-R51's table (HNT-R52's when `ignoreSkill`): "short", "auraUp", "onDemand", "always",
@@ -229,7 +236,7 @@ end
 ---@return string
 local function rowOf(c, ignoreSkill)
 	local group = c.group
-	if isShort(c) then
+	if c.short then
 		if not ignoreSkill then
 			return "short"
 		end
@@ -339,10 +346,9 @@ function ns.HuntWindowLine(c, sources)
 	else
 		line = L.LINE_NO_DATE
 	end
-	if isShort(c) then
-		local best = c.best or 0
-		line = line .. " " .. L.LINE_NEEDS:format(c.need, best)
-		if c.need - best <= LURE_REACH then
+	if c.short then
+		line = line .. " " .. L.LINE_NEEDS:format(c.need, c.best or 0)
+		if c.lureGetsThere then
 			line = line .. " " .. L.LINE_LURE
 		end
 	end

@@ -45,17 +45,7 @@ local function trackerLabel(huntID)
 	if not row then
 		return nil
 	end
-	local where = ns.where[huntID]
-	local _, tracker = ns.HuntLabels({
-		group = row.group,
-		auraUp = row.auraUp,
-		window = row.window,
-		spec = where.boardSpec,
-		need = where.skillNeed,
-		best = Pagle.GetAngler().bestBaseSkill,
-		now = viewTime(),
-		snapshot = Pagle.GetConditions(),
-	})
+	local _, tracker = ns.HuntLabels(ns.LabelCase(row, ns.where[huntID], viewTime(), Pagle.GetConditions()))
 	return tracker
 end
 

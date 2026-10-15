@@ -189,8 +189,14 @@ describe("a Hunt's entry", function()
 		end)
 
 		it("adds the skill need to the window line when short of skill, and the lure within its reach", function()
-			local row =
-				{ group = "later", auraUp = false, window = { opensAt = NOW + 37 * 60, closesAt = NOW + 10 * HOUR } }
+			-- The row as the grouping makes it: short, and the lure reaches (HNT-R33).
+			local row = {
+				group = "later",
+				auraUp = false,
+				short = true,
+				lureGetsThere = true,
+				window = { opensAt = NOW + 37 * 60, closesAt = NOW + 10 * HOUR },
+			}
 
 			local e = entry(
 				"fixture_snapper",

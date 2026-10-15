@@ -199,6 +199,18 @@ end
 --- Tunables (hunts.md): how far a lure's skill bonus reaches, for "A lure gets me there." (HNT-R33, HNT-R52).
 ns.LURE_REACH = 100
 
+--- Whether a skill need is short of skill (HNT-R33): above the Angler's best, and whether by at most the lure reach.
+---@param need integer? the Hunt's skill need (HNT-R32); nil with none
+---@param best integer the Angler's bestBaseSkill
+---@return boolean short
+---@return boolean lureGetsThere -- short by at most the lure reach
+function ns.SkillShortfall(need, best)
+	if not need or need <= best then
+		return false, false
+	end
+	return true, need - best <= ns.LURE_REACH
+end
+
 --- Whether the Angler is short of skill for the Hunt (HNT-R33): it has a skill need above the Angler's
 --- bestBaseSkill. A function of the Angler, which changes at runtime (SkillChanged). Reads `ns.where`.
 ---@param hunt HuntDef
@@ -206,11 +218,7 @@ ns.LURE_REACH = 100
 ---@return boolean short
 ---@return boolean lureGetsThere -- short by at most the lure reach
 function ns.ShortOfSkill(hunt, angler)
-	local need = ns.where[hunt.id].skillNeed
-	if not need or need <= angler.bestBaseSkill then
-		return false, false
-	end
-	return true, need - angler.bestBaseSkill <= ns.LURE_REACH
+	return ns.SkillShortfall(ns.where[hunt.id].skillNeed, angler.bestBaseSkill)
 end
 
 --- Whether a Cast was fished in the Hunt's waters (HNT-R25, HNT-R30): its subzone or zone is one of them. A Hunt

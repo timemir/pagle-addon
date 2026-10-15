@@ -78,7 +78,6 @@ local MAX_SPANS = 48
 ---@field list HuntList
 ---@field sources HuntNameSources    -- ns.names: NextWindow, icons
 ---@field nightSpec table?           -- Pagle.GetWindowSpec("night"), for the night wash
----@field best integer               -- the Angler's bestBaseSkill (HNT-R33)
 ---@field progress table<string, HuntProgress>   -- ns.State().hunts
 ---@field updating boolean           -- ns.IsUpdating(): nothing is drawn from the state (HNT-R69)
 ---@field auraExpiry fun(spellID: integer): integer?   -- an aura's expiry in server time, nil when unknown (HNT-R63)
@@ -240,16 +239,7 @@ local function rowOf(row, ruler, input)
 	local where = input.where[row.id]
 	local spec = where.boardSpec
 	local icon, tint = ns.HuntIcon(row.hunt, input.list, input.sources)
-	local margin = ns.HuntLabels({
-		group = row.group,
-		auraUp = row.auraUp,
-		window = row.window,
-		spec = spec,
-		need = where.skillNeed,
-		best = input.best,
-		now = input.now,
-		snapshot = input.snapshot,
-	})
+	local margin = ns.HuntLabels(ns.LabelCase(row, where, input.now, input.snapshot))
 	local bars, note = barsOf(row, spec, ruler, input)
 	return {
 		id = row.id,

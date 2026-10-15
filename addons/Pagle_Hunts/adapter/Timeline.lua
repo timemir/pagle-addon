@@ -87,7 +87,6 @@ function ns.BoardTimeline(place)
 		list = ns.hunts,
 		sources = ns.names,
 		nightSpec = Pagle.GetWindowSpec("night"),
-		best = Pagle.GetAngler().bestBaseSkill,
 		progress = state.hunts,
 		updating = updating,
 		auraExpiry = auraExpiry,

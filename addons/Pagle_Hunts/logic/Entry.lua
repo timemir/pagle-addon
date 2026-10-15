@@ -140,16 +140,7 @@ local function windowOf(input)
 	if not row then
 		return nil
 	end
-	return ns.HuntWindowLine({
-		group = row.group,
-		auraUp = row.auraUp,
-		window = row.window,
-		spec = input.where.boardSpec,
-		need = input.where.skillNeed,
-		best = input.best,
-		now = input.now,
-		snapshot = input.snapshot,
-	}, input.sources)
+	return ns.HuntWindowLine(ns.LabelCase(row, input.where, input.now, input.snapshot, input.best), input.sources)
 end
 
 --- Tunables (hunts.md): how many zone chips show before "+N more" (HNT-R65).
@@ -198,7 +189,7 @@ local function chipsOf(input)
 	addZoneChips(input, chips)
 	local need = where.skillNeed
 	if need then
-		if need > input.best then
+		if ns.SkillShortfall(need, input.best) then
 			chips[#chips + 1] = { kind = "skill", text = L.CHIP_SHORT:format(need, input.best), short = true }
 		else
 			chips[#chips + 1] = { kind = "skill", text = L.CHIP_SKILL:format(need) }

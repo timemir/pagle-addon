@@ -31,6 +31,34 @@ local function auraUp(spec, auras)
 	return false
 end
 
+--- The group a Hunt's window alone gives (HNT-R40's rules 2–6), with whether one of its auras is up given as `up`,
+--- and whether it is Now (or would be) through that aura. ns.GroupOf's, and the window line's for a Hunt short of
+--- skill, which ignores skill (HNT-R52).
+---@param spec { auras: integer[]? } its board spec (HNT-R6)
+---@param window Window Pagle.NextWindow(spec, now)
+---@param up boolean one of the spec's auras is up
+---@param now integer server time
+---@return HuntGroup group
+---@return boolean auraUp
+function ns.WindowGroup(spec, window, up, now)
+	if window.onDemand then
+		return up and "now" or "onDemand", up
+	end
+	if window.always then
+		return "now", false
+	end
+	if window.openNow then
+		if not spec.auras then
+			return "now", false
+		end
+		return up and "now" or "onDemand", up
+	end
+	if window.opensAt and window.opensAt - now <= ns.SOON_HORIZON then
+		return "soon", false
+	end
+	return "later", false
+end
+
 --- The group of one current Hunt (HNT-R40), in the rule's order, and whether it is Now with its aura up. A Hunt short
 --- of skill is Later, and says whether its aura is up as it would without the skill need, for the window line, which
 --- ignores skill (HNT-R52).
@@ -45,32 +73,11 @@ function ns.GroupOf(spec, window, short, auras, now)
 	if not spec or not window then
 		return "later", false
 	end
+	local group, byAura = ns.WindowGroup(spec, window, auraUp(spec, auras), now)
 	if short then
-		local byAura = window.onDemand or (window.openNow and spec.auras ~= nil)
-		return "later", byAura and auraUp(spec, auras) or false
+		return "later", byAura
 	end
-	if window.onDemand then
-		if auraUp(spec, auras) then
-			return "now", true
-		end
-		return "onDemand", false
-	end
-	if window.always then
-		return "now", false
-	end
-	if window.openNow then
-		if not spec.auras then
-			return "now", false
-		end
-		if auraUp(spec, auras) then
-			return "now", true
-		end
-		return "onDemand", false
-	end
-	if window.opensAt and window.opensAt - now <= ns.SOON_HORIZON then
-		return "soon", false
-	end
-	return "later", false
+	return group, byAura
 end
 
 --- The groups in board order (HNT-R62, HNT-R76).

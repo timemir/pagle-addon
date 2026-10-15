@@ -80,18 +80,8 @@ end
 local function huntLines(row, input)
 	local L = ns.L
 	local hunt, where = row.hunt, input.where[row.id]
-	-- The tracker label (HNT-R51) of the row as grouped: short of skill as the grouping found it, counted down from
-	-- input.time.
-	local _, label = ns.HuntLabels({
-		group = row.group,
-		auraUp = row.auraUp,
-		window = row.window,
-		spec = where.boardSpec,
-		need = row.short and where.skillNeed or nil,
-		best = 0,
-		now = input.time,
-		snapshot = input.snapshot,
-	})
+	-- The tracker label (HNT-R51) of the row as grouped, counted down from input.time.
+	local _, label = ns.HuntLabels(ns.LabelCase(row, where, input.time, input.snapshot))
 	local second = { ns.HuntTargetLine(hunt, input.list, input.sources) }
 	if among(where.zones, input.zone) then
 		second[#second + 1] = L.TRACKER_HERE

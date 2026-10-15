@@ -79,7 +79,8 @@ describe("Labels in realm time", function()
 		end)
 	end)
 
-	-- A row's case at Sunday 08:15: its group, aura up, NextWindow result, board spec and skill (HNT-R40, HNT-R33).
+	-- A row's case at Sunday 08:15: its group, aura up, NextWindow result, board spec, and the grouping's skill
+	-- verdicts with the numbers the window line says (HNT-R40, HNT-R33).
 	local function case(fields)
 		fields.now, fields.snapshot = NOW, SUNDAY
 		return fields
@@ -98,7 +99,14 @@ describe("Labels in realm time", function()
 
 	describe("the margin and tracker labels (HNT-R51) and the window line (HNT-R52), row by row", function()
 		it("short of skill: need 225 / needs 225, and the line adds the need and the best", function()
-			local c = case({ group = "later", window = { opensAt = NOW + 37 * MINUTE }, need = 225, best = 180 })
+			local c = case({
+				group = "later",
+				window = { opensAt = NOW + 37 * MINUTE },
+				short = true,
+				lureGetsThere = true,
+				need = 225,
+				best = 180,
+			})
 
 			assert.are.same({
 				"need 225",
@@ -107,11 +115,18 @@ describe("Labels in realm time", function()
 			}, labels(c))
 		end)
 
-		it("short of skill beyond the lure reach of 100: no lure sentence (HNT-R33, Tunables)", function()
-			local c = case({ group = "later", window = { opensAt = NOW + 37 * MINUTE }, need = 225, best = 124 })
+		it("short of skill beyond the lure reach: no lure sentence, as the grouping found it (HNT-R33, HNT-R52)", function()
+			local c = case({
+				group = "later",
+				window = { opensAt = NOW + 37 * MINUTE },
+				short = true,
+				lureGetsThere = false,
+				need = 225,
+				best = 124,
+			})
 
 			assert.are.equal("Opens in 37m, at 08:52. Needs 225; my best is 124.", ns.HuntWindowLine(c, auraNames))
-			c.best = 125
+			c.best, c.lureGetsThere = 125, true
 			assert.are.equal(
 				"Opens in 37m, at 08:52. Needs 225; my best is 125. A lure gets me there.",
 				ns.HuntWindowLine(c, auraNames)
@@ -120,7 +135,7 @@ describe("Labels in realm time", function()
 
 		it("short of skill while open: the line ignores skill, by the window as if not short (HNT-R52)", function()
 			local c = case({ group = "later", window = { openNow = true, closesAt = NOW + 3 * HOUR + 45 * MINUTE } })
-			c.need, c.best = 225, 180
+			c.short, c.lureGetsThere, c.need, c.best = true, true, 225, 180
 
 			assert.are.same({
 				"need 225",
@@ -129,8 +144,8 @@ describe("Labels in realm time", function()
 			}, labels(c))
 		end)
 
-		it("a skill need at or under the best isn't short", function()
-			local c = case({ group = "soon", window = { opensAt = NOW + 37 * MINUTE }, need = 180, best = 180 })
+		it("a row the grouping didn't find short reads by its group, whatever its skill need (HNT-R33)", function()
+			local c = case({ group = "soon", window = { opensAt = NOW + 37 * MINUTE }, short = false, need = 180, best = 180 })
 
 			assert.are.same({ "in 37m", "in 37m", "Opens in 37m, at 08:52." }, labels(c))
 		end)
