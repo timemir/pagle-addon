@@ -151,7 +151,7 @@ local function buildRightNow(content)
 	return view
 end
 
--- Watch line `i`, made on first use: the pencil mark, then its words in handwriting, red under the mouse.
+-- Watch line `i`, made on first use: the kit v2's pen, then its words in handwriting, red under the mouse.
 ---@param content StatsHomeContent
 ---@param view StatsHomeRightNowView
 ---@param i integer
@@ -161,7 +161,7 @@ local function watchAt(content, view, i)
 	if not line then
 		line = CreateFrame("Button", nil, content) --[[@as StatsHomeWatchView]]
 		line:SetWidth(content:GetWidth())
-		line.mark = ns.NewBookMark(line, "pencil", MARK_SIZE)
+		line.mark = ns.NewBookMark(line, "pen", MARK_SIZE)
 		line.mark:SetPoint("TOPLEFT", 0, -2)
 		line.label = ns.NewBookHand(line)
 		line.label:SetPoint("TOPLEFT", MARK_INDENT, 0)

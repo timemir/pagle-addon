@@ -61,7 +61,7 @@ describe("the Stats book's words stay on its pages", function()
 			local function collect(label, page)
 				for _, side in ipairs({ "left", "right" }) do
 					local view = book.pages[page .. ":" .. side]
-					if view and view.scroll:IsShown() then
+					if view and view.clip:IsShown() then
 						for _, overflow in ipairs(bounds.overflows(view.content)) do
 							found[#found + 1] = ("%s %s: %s"):format(label, side, overflow)
 						end

@@ -55,8 +55,14 @@ ns.BOOK_LOOK = {
 	rowRuleAlpha = 0.3,
 	shade = tint("784614"), -- the chosen row
 	shadeAlpha = 0.12,
-	tileWash = tint("fffaeb"), -- rgba(255,250,235,.22): a tile's face
-	tileWashAlpha = 0.22,
+	tileLine = tint("6a4a20"), -- a tile's italic line
+	tileWarm = { 1.06, 1.03, 0.95 }, -- a tile under the mouse warms slightly
+	tipText = tint("e6d8b8"), -- the dark tooltip slip's words
+	indexDots = tint("b8a080"), -- an index entry's dotted leader
+	ledgerBlue = tint("466ea0"), -- a ruled ledger's row rules, faint blue
+	ledgerBlueAlpha = 0.28,
+	ledgerRed = tint("b4281a"), -- its column rules, faint red
+	ledgerRedAlpha = 0.35,
 	sepia = tint("dcb37a"), -- an item icon's tint over its greys (CSS sepia(.75))
 	plateText = tint("2a1a04"), -- the brass nameplate's words
 	margin = tint("5a4028"), -- a row's margin: its Dry spell in handwriting
@@ -74,9 +80,6 @@ ns.BOOK_TEXTURES = {
 	disc = "Interface\\CharacterFrame\\TempPortraitAlphaMask",
 	-- The pointing hand (the gauntlet cursor): "☛" and "☚".
 	hand = "Interface\\Cursor\\Point",
-	-- A pencil on a note (the friends list's note icon, Blizzard_FriendsFrame/Camelot/FriendsFrame.xml): the "✎" before
-	-- a watched Dry spell on the home spread (adapter/Home.lua).
-	pencil = "Interface\\FriendsFrame\\UI-FriendsFrame-Note",
 }
 local TEXTURES = ns.BOOK_TEXTURES
 
@@ -102,6 +105,10 @@ local TEXTURES = ns.BOOK_TEXTURES
 ---@field tick Font     -- the ruler's ticks (11.5)
 ---@field band Font     -- the ruler's bands (10.5)
 ---@field me Font       -- the ruler's "me" (Caveat Bold, 18)
+---@field tileName Font -- a tile's name (IM Fell, 16)
+---@field tileLine Font -- a tile's line (italic 13)
+---@field tip Font      -- the dark tooltip slip's words (13.5)
+---@field count Font    -- an index entry's count, in the hand (Caveat, 17)
 local fonts
 
 ---@return StatsBookFonts
@@ -129,6 +136,10 @@ function ns.BookFonts()
 			tick = font("print", 11.5),
 			band = font("print", 10.5),
 			me = font("handBold", 18),
+			tileName = font("print", 16),
+			tileLine = font("italic", 13),
+			tip = font("print", 13.5),
+			count = font("hand", 17),
 		}
 	end
 	return fonts
@@ -254,14 +265,13 @@ end
 --- A mark drawn as a texture (STA-R70's art, never a font glyph): the kit's gilt fleuron between crumbs, the kit's red
 --- star "★" on a watched row; the pointing hand "☛" after a link, or "☚" before one, in red ink (the gauntlet cursor
 --- points up and to the left: mirrored and turned it points right, turned the other way it points left), and the
---- pencil "✎" in the hand's ink, which the kit leaves out.
----@alias StatsBookMark "fleuron"|"hand"|"handLeft"|"pencil"|"star"
+--- kit v2's pen "✎" before a watched Dry spell, tinted to its line's ink.
+---@alias StatsBookMark "fleuron"|"hand"|"handLeft"|"pen"|"star"
 
 ---@type table<StatsBookMark, { texture: string, color: number[], mirror: boolean, turn: number }>
 local MARKS = {
 	hand = { texture = TEXTURES.hand, color = LOOK.red, mirror = true, turn = -math.pi / 4 },
 	handLeft = { texture = TEXTURES.hand, color = LOOK.red, mirror = false, turn = math.pi / 4 },
-	pencil = { texture = TEXTURES.pencil, color = LOOK.hand, mirror = false, turn = 0 },
 }
 
 ---@param parent Frame
@@ -273,6 +283,10 @@ function ns.NewBookMark(parent, mark, size)
 		return ns.ArtSprite(parent, "Book", "fleuron", "ARTWORK", 0, size)
 	elseif mark == "star" then
 		return ns.ArtSprite(parent, "Parts", "star", "ARTWORK", 0, size)
+	elseif mark == "pen" then
+		local pen = ns.ArtSprite(parent, "Stats", "pen", "ARTWORK", 0, size)
+		pen:SetVertexColor(LOOK.hand[1], LOOK.hand[2], LOOK.hand[3])
+		return pen
 	end
 	local look = assert(MARKS[mark], "the Stats book has no mark " .. tostring(mark))
 	local texture = parent:CreateTexture(nil, "ARTWORK")
@@ -439,6 +453,7 @@ end
 ---@field owed FontString
 ---@field position number         -- where the mark is, 0 (left) to 1 (right)
 ---@field SetRuler fun(self: StatsBookRulerView, P: number)
+---@field SetMark fun(self: StatsBookRulerView, position: number) -- the mark at `position` along the scale, 0 to 1
 
 -- The ruler's measures down from its top: the scale's top (the washes'), the ticks' top, the scale's line, the tick
 -- labels' top, the band labels' top, the fixed line's top, and its whole height; and the washes' height.
@@ -519,7 +534,10 @@ function ns.NewBookRuler(parent, width)
 	ruler.owed:SetText(L.NOTHING_IS_OWED)
 	ruler.position = 0
 	function ruler.SetRuler(self, P)
-		self.position = ns.RulerPosition(P)
+		self:SetMark(ns.RulerPosition(P))
+	end
+	function ruler.SetMark(self, position)
+		self.position = position
 		local x = self.position * width
 		-- the mark's point sits on the scale's line, its tail up through the washes
 		centre(self.mark, x, RULER_LINE + 3 - self.mark:GetHeight())
@@ -544,8 +562,9 @@ function ns.NewBookDot(parent, size, color)
 	return dot
 end
 
---- A ruled ledger (stats.md › UI: This Session, Sessions): column heads in small caps over a heavy rule, then one row
---- per line with a faint rule under it. A row with `onClick` opens what it names; the chosen row is shaded.
+--- A ruled ledger (stats.md › UI: This Session, Sessions), as the kit v2's: column heads in small caps over a heavy
+--- rule, then one row per line ruled in faint blue, its columns parted by faint red rules down the whole ledger. A row
+--- with `onClick` opens what it names; the chosen row is shaded.
 ---@class StatsBookLedgerColumn
 ---@field label string
 ---@field width number
@@ -562,11 +581,12 @@ end
 
 ---@class StatsBookLedgerView: Frame
 ---@field heads FontString[]
+---@field columnRules Texture[]
 ---@field rows StatsBookLedgerRowView[]
 ---@field SetRows fun(self: StatsBookLedgerView, rows: StatsBookLedgerRow[], chosen: integer?): number
 
 -- A ledger's head and row heights.
-local LEDGER_HEAD, LEDGER_ROW = 20, 20
+local LEDGER_HEAD, LEDGER_ROW = 20, 24
 
 ---@param parent Frame
 ---@param width number
@@ -602,7 +622,20 @@ function ns.NewBookLedger(parent, width, columns)
 	headRule:SetColorTexture(LOOK.ledgerRule[1], LOOK.ledgerRule[2], LOOK.ledgerRule[3], 1)
 	headRule:SetPoint("BOTTOMLEFT")
 	headRule:SetPoint("BOTTOMRIGHT")
-	headRule:SetHeight(2)
+	headRule:SetHeight(1.5)
+	-- the red rules between the columns, down the head and every row
+	ledger.columnRules = {}
+	local x = 0
+	for i, column in ipairs(columns) do
+		if i > 1 then
+			local rule = ledger:CreateTexture(nil, "BORDER")
+			rule:SetColorTexture(LOOK.ledgerRed[1], LOOK.ledgerRed[2], LOOK.ledgerRed[3], LOOK.ledgerRedAlpha)
+			rule:SetWidth(1)
+			rule:SetPoint("TOPLEFT", x, 0)
+			ledger.columnRules[#ledger.columnRules + 1] = rule
+		end
+		x = x + column.width
+	end
 
 	-- Row `i`, made on first use.
 	local function rowAt(i)
@@ -613,7 +646,7 @@ function ns.NewBookLedger(parent, width, columns)
 			row:SetPoint("TOPLEFT", 0, -(LEDGER_HEAD + (i - 1) * LEDGER_ROW))
 			row.shade = ns.BookSolid(row, LOOK.shade, "BACKGROUND", LOOK.shadeAlpha)
 			row.rule = row:CreateTexture(nil, "BORDER")
-			row.rule:SetColorTexture(LOOK.rowRule[1], LOOK.rowRule[2], LOOK.rowRule[3], LOOK.rowRuleAlpha)
+			row.rule:SetColorTexture(LOOK.ledgerBlue[1], LOOK.ledgerBlue[2], LOOK.ledgerBlue[3], LOOK.ledgerBlueAlpha)
 			row.rule:SetPoint("BOTTOMLEFT")
 			row.rule:SetPoint("BOTTOMRIGHT")
 			row.rule:SetHeight(1)
@@ -645,14 +678,18 @@ function ns.NewBookLedger(parent, width, columns)
 		end
 		local height = LEDGER_HEAD + #rows * LEDGER_ROW
 		self:SetHeight(height)
+		for _, rule in ipairs(self.columnRules) do
+			rule:SetHeight(height)
+		end
 		return height
 	end
 	return ledger
 end
 
---- A tile (stats.md › UI: the home spread's zones, an item's waters): an ink outline round a pale wash, the name at its
---- top left, its line in italic at its foot, "I'm here" in green handwriting at its right, and a red handwritten note
---- under it ("watching 2", "212 since"). Clicking it opens what it names.
+--- A tile (stats.md › UI: the home spread's zones, an item's waters): the kit v2's paper tile (its green-edged "here"
+--- tile for the place I'm in), the name at its top left, its line in italic at its foot, "I'm here" in green
+--- handwriting at its top right, and a red handwritten note at its foot's right ("watching 2", "212 since"). It warms
+--- slightly under the mouse; clicking it opens what it names.
 ---@class StatsBookTileData
 ---@field name string
 ---@field line string?
@@ -661,11 +698,15 @@ end
 ---@field onClick fun()?
 
 ---@class StatsBookTileView: Button
+---@field paper StatsSpriteTexture
 ---@field name FontString
 ---@field line FontString
 ---@field here FontString
 ---@field note FontString
 ---@field SetTile fun(self: StatsBookTileView, tile: StatsBookTileData)
+
+-- The words' inset from a tile's edges.
+local TILE_PAD = 11
 
 ---@param parent Frame
 ---@param width number
@@ -674,33 +715,45 @@ end
 function ns.NewBookTile(parent, width, height)
 	local tile = CreateFrame("Button", nil, parent) --[[@as StatsBookTileView]]
 	tile:SetSize(width, height)
-	ns.BookSolid(tile, LOOK.ledgerRule, "BACKGROUND")
-	local face = ns.BookSolid(tile, LOOK.paper, "BORDER")
-	face:SetPoint("TOPLEFT", 1, -1)
-	face:SetPoint("BOTTOMRIGHT", -1, 1)
-	local wash = ns.BookSolid(tile, LOOK.tileWash, "BORDER", LOOK.tileWashAlpha)
-	wash:SetPoint("TOPLEFT", 1, -1)
-	wash:SetPoint("BOTTOMRIGHT", -1, 1)
+	tile.paper = ns.ArtSprite(tile, "Stats", "tile", "BACKGROUND", 2)
 	local faces = ns.BookFonts()
-	tile.name = ns.BookText(tile, faces.text, LOOK.title)
-	tile.name:SetPoint("TOPLEFT", 8, -6)
-	tile.name:SetPoint("TOPRIGHT", -8, -6)
-	tile.line = ns.BookText(tile, faces.note, LOOK.small)
-	tile.line:SetPoint("BOTTOMLEFT", 8, 7)
-	tile.line:SetPoint("BOTTOMRIGHT", -8, 7)
+	tile.name = ns.BookText(tile, faces.tileName, LOOK.title)
+	tile.name:SetPoint("TOPLEFT", TILE_PAD, -8)
+	tile.line = ns.BookText(tile, faces.tileLine, LOOK.tileLine)
+	tile.line:SetPoint("BOTTOMLEFT", TILE_PAD, 10)
 	tile.here = ns.BookText(tile, faces.margin, LOOK.green)
-	tile.here:SetPoint("TOPRIGHT", -7, -22)
+	tile.here:SetPoint("TOPRIGHT", -TILE_PAD, -6)
 	tile.here:SetJustifyH("RIGHT")
 	tile.note = ns.BookText(tile, faces.margin, LOOK.red)
-	tile.note:SetPoint("BOTTOMRIGHT", -7, 22)
+	tile.note:SetPoint("BOTTOMRIGHT", -TILE_PAD, 8)
 	tile.note:SetJustifyH("RIGHT")
+	tile:SetScript("OnEnter", function(self)
+		self.paper:SetVertexColor(LOOK.tileWarm[1], LOOK.tileWarm[2], LOOK.tileWarm[3])
+	end)
+	tile:SetScript("OnLeave", function(self)
+		self.paper:SetVertexColor(1, 1, 1)
+	end)
 	function tile.SetTile(self, data)
+		-- the kit's tile, its green-edged face for the place I'm in, stretched to the tile
+		ns.SetSprite(self.paper, "Stats", data.here and "tile-here" or "tile")
+		local atlas, sprite = ns.ArtSpriteOf("Stats", "tile")
+		local box = sprite.box
+		local kx, ky = width / box[3], height / box[4]
+		self.paper:SetSize(sprite.w / atlas.scale * kx, sprite.h / atlas.scale * ky)
+		self.paper:ClearAllPoints()
+		self.paper:SetPoint("TOPLEFT", self, "TOPLEFT", -box[1] * kx, box[2] * ky)
 		self.name:SetText(data.name)
 		for _, field in ipairs({ "line", "here", "note" }) do
 			local text = data[field]
 			self[field]:SetText(text or "")
 			self[field]:SetShown(text ~= nil)
 		end
+		-- every word stays on the tile: "I'm here" and the note keep their room, the name and line stop before them
+		local room = width - 2 * TILE_PAD
+		bound(self.here, room / 2)
+		bound(self.note, room / 2)
+		bound(self.name, room - (data.here and self.here:GetWidth() + 6 or 0))
+		bound(self.line, room - (data.note and self.note:GetWidth() + 6 or 0))
 		local onClick = data.onClick
 		self:SetScript("OnClick", onClick and function()
 			onClick()
@@ -927,8 +980,8 @@ function ns.NewBookLine(parent, width)
 end
 
 --- A figure line (stats.md › UI: In this book, the Lifetime figures, a Session's figures): its label at the left, its
---- value at the right and a faint leader between them, as variant D's dotted table of contents. With `onClick` it
---- opens what it names, and its label reddens under the mouse.
+--- value at the right and a dotted leader between them, as the kit v2's table of contents. With `onClick` it opens
+--- what it names, and its label reddens under the mouse.
 ---@class StatsBookFigureData
 ---@field label string
 ---@field value string?        -- none: no value and no leader
@@ -939,12 +992,51 @@ end
 ---@class StatsBookFigureView: Button
 ---@field label FontString
 ---@field value FontString
----@field leader Texture
+---@field leader StatsBookDotsView
 ---@field ink number[]         -- the label's ink when the mouse leaves
 ---@field SetFigure fun(self: StatsBookFigureView, figure: StatsBookFigureData)
 
--- The leader's opacity, and how far above the line's foot it runs.
-local LEADER_ALPHA, LEADER_RISE = 0.5, 3
+-- The leader's opacity, how far above the line's foot it runs, and its dots' pitch.
+local LEADER_ALPHA, LEADER_RISE, LEADER_STEP = 0.8, 4, 3
+
+--- A dotted leader: 1-unit dots a few units apart along a line, as the kit draws its tables of contents and index.
+---@class StatsBookDotsView: Frame
+---@field dots Texture[]
+---@field SetDots fun(self: StatsBookDotsView, from: number, to: number, y: number)
+
+--- A dotted leader on `parent` in `color` at `alpha`: SetDots lays its dots from `from` to `to` across `parent`, `y`
+--- above its foot.
+---@param parent Frame
+---@param color number[]
+---@param alpha number
+---@return StatsBookDotsView
+function ns.NewBookDots(parent, color, alpha)
+	local leader = CreateFrame("Frame", nil, parent) --[[@as StatsBookDotsView]]
+	leader:SetAllPoints()
+	leader.dots = {}
+	function leader.SetDots(self, from, to, y)
+		local count = math.max(0, math.floor((to - from) / LEADER_STEP) + 1)
+		if to - from < LEADER_STEP then
+			count = 0
+		end
+		for i = 1, count do
+			local dot = self.dots[i]
+			if not dot then
+				dot = self:CreateTexture(nil, "ARTWORK")
+				dot:SetColorTexture(color[1], color[2], color[3], alpha)
+				dot:SetSize(1, 1)
+				self.dots[i] = dot
+			end
+			dot:ClearAllPoints()
+			dot:SetPoint("BOTTOMLEFT", from + (i - 1) * LEADER_STEP, y)
+			dot:Show()
+		end
+		for i = count + 1, #self.dots do
+			self.dots[i]:Hide()
+		end
+	end
+	return leader
+end
 
 ---@param parent Frame
 ---@param width number
@@ -959,11 +1051,7 @@ function ns.NewBookFigure(parent, width, height)
 	figure.value = ns.BookText(figure, faces.text, LOOK.ink)
 	figure.value:SetPoint("RIGHT")
 	figure.value:SetJustifyH("RIGHT")
-	figure.leader = figure:CreateTexture(nil, "ARTWORK")
-	figure.leader:SetColorTexture(LOOK.note[1], LOOK.note[2], LOOK.note[3], LEADER_ALPHA)
-	figure.leader:SetHeight(1)
-	figure.leader:SetPoint("BOTTOMLEFT", figure.label, "BOTTOMRIGHT", 4, LEADER_RISE)
-	figure.leader:SetPoint("BOTTOMRIGHT", figure.value, "BOTTOMLEFT", -4, LEADER_RISE)
+	figure.leader = ns.NewBookDots(figure, LOOK.note, LEADER_ALPHA)
 	figure.ink = LOOK.ink
 	figure:SetScript("OnEnter", function(self)
 		if self:GetScript("OnClick") then
@@ -981,9 +1069,14 @@ function ns.NewBookFigure(parent, width, height)
 		self.value:SetText(data.value or "")
 		self.value:SetTextColor(valueInk[1], valueInk[2], valueInk[3])
 		self.leader:SetShown(data.value ~= nil)
-		-- the label stops before the value
+		-- the label stops before the value, the dots running between them
 		bound(self.value, width)
 		bound(self.label, width - (data.value and self.value:GetWidth() + 12 or 0))
+		self.leader:SetDots(
+			self.label:GetWidth() + 6,
+			width - self.value:GetWidth() - 6,
+			math.floor((height - 14) / 2) + LEADER_RISE - 2
+		)
 		local onClick = data.onClick
 		self:SetScript("OnClick", onClick and function()
 			onClick()
@@ -1026,13 +1119,13 @@ function ns.NewBookItemTitle(parent, width)
 end
 
 --- Tiles two a row (stats.md › UI: the home spread's zones, an item's waters), each opening its target: ns.NewBookTile
---- with variant D's height and gap, made as the rows need them, the ones left over hidden.
+--- with the kit v2's height and gap, made as the rows need them, the ones left over hidden.
 ---@class StatsBookTileGridView
 ---@field tiles StatsBookTileView[]
 ---@field SetTiles fun(self: StatsBookTileGridView, tiles: StatsTile[], y: number): number
 
--- A tile's height and the gap between tiles, across and down.
-local TILE_HEIGHT, TILE_GAP = 84, 9
+-- A tile's height and the gap between tiles, across and down: the kit v2's 66, on a 74 pitch.
+local TILE_HEIGHT, TILE_GAP = 66, 8
 
 ---@param parent Frame
 ---@return StatsBookTileGridView
@@ -1260,12 +1353,13 @@ end
 ---@field chosen boolean
 ---@field hover boolean
 ---@field color number[]
----@field SetRibbon fun(self: StatsBookRibbonView, text: string, color: number[], chosen: boolean)
+---@field length number           -- how long it hangs now: eased toward its choice's length
+---@field SetRibbon fun(self: StatsBookRibbonView, text: string, color: number[], chosen: boolean, animate: boolean?)
 
 --- The ribbons' measures (the kit's Stats book, hanging a fifth shorter, as the dev asked): each one's width and the
---- gap between, how long it hangs (longer chosen), how much of its top tucks under the leather's band, and how much
---- brighter it turns.
-ns.BOOK_RIBBON = { width = 96, gap = 12, length = 75, lengthChosen = 86, tuck = 2, lift = 1.13 }
+--- gap between, how long it hangs (longer chosen), how much of its top tucks under the leather's band, how much
+--- brighter it turns, and how long a change of choice takes to run its lengths (the kit v2's 0.2 s).
+ns.BOOK_RIBBON = { width = 96, gap = 12, length = 75, lengthChosen = 86, tuck = 2, lift = 1.13, ease = 0.2 }
 local RIBBON = ns.BOOK_RIBBON
 
 -- Shows the bottom `length` units of ribbon sprite `name` (its swallowtail end always shows) in `texture`, the
@@ -1285,13 +1379,19 @@ local function hang(texture, ribbon, name, length)
 	texture:SetPoint("TOPLEFT", ribbon, "TOPLEFT", -box[1] * k, 0)
 end
 
--- Paints a ribbon as it is now: its length, its tint (brighter chosen or under the mouse) and its words' ink.
+-- Hangs a ribbon `length` long.
 ---@param ribbon StatsBookRibbonView
-local function paintRibbon(ribbon)
-	local length = ribbon.chosen and RIBBON.lengthChosen or RIBBON.length
+---@param length number
+local function hangRibbon(ribbon, length)
+	ribbon.length = length
 	ribbon:SetSize(RIBBON.width, length)
 	hang(ribbon.body, ribbon, "ribbon", length)
 	hang(ribbon.stitch, ribbon, "ribbon-stitch", length)
+end
+
+-- Paints a ribbon as it is now: its tint (brighter chosen or under the mouse) and its words' ink.
+---@param ribbon StatsBookRibbonView
+local function paintRibbon(ribbon)
 	local lift = (ribbon.chosen or ribbon.hover) and RIBBON.lift or 1
 	local color = ribbon.color
 	ribbon.body:SetVertexColor(math.min(1, color[1] * lift), math.min(1, color[2] * lift), math.min(1, color[3] * lift))
@@ -1318,10 +1418,29 @@ function ns.NewBookRibbon(parent)
 		self.hover = false
 		paintRibbon(self)
 	end)
-	function ribbon.SetRibbon(self, text, color, chosen)
+	hangRibbon(ribbon, RIBBON.length)
+	function ribbon.SetRibbon(self, text, color, chosen, animate)
 		self.label:SetText(text)
 		self.color, self.chosen = color, chosen
 		paintRibbon(self)
+		-- the kit's Ribbons.lua: a change of choice runs the lengths over 0.2 s (ease-out), so the old one draws up as
+		-- the new one drops; settled at once with the motion off
+		local to = chosen and RIBBON.lengthChosen or RIBBON.length
+		ns.StopMotion(self)
+		if animate and to ~= self.length and ns.SyncMotion() then
+			ns.Animate(self, {
+				{
+					dur = RIBBON.ease,
+					ease = ns.Ease.out,
+					keys = { { 0, { self.length } }, { 1, { to } } },
+					apply = function(v)
+						hangRibbon(self, v[1])
+					end,
+				},
+			})
+		else
+			hangRibbon(self, to)
+		end
 	end
 	return ribbon
 end

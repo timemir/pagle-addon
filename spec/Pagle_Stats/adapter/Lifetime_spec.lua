@@ -239,21 +239,43 @@ describe("the Lifetime spread (stats.md › UI › Lifetime)", function()
 			end
 		)
 
-		it('shows "First {date}, last {date}" on hovering an item (STA-R25, STA-R59)', function()
+		it(
+			'shows "First {date}, last {date}" on the kit\'s dark slip on hovering an item (STA-R25, STA-R59)',
+			function()
+				local loaded = built(stats.concat(SESSION_1, SESSION_2, SESSION_3))
+				local _, right = lifetime(loaded)
+				local entry = pieceReading(right, "Raw Mackerel | 10")
+				local tip
+				for _, child in ipairs(right.children) do
+					tip = tip or (child.slip and child)
+				end
+
+				entry:GetScript("OnEnter")(entry)
+				assert.are.same({ true, "First 8 Oct 2026, last 10 Oct 2026" }, { tip.shown, tip.text.text })
+				-- under the entry, its slip the kit's brass-ruled paper, Stats' own, within the page
+				assert.are.same({ "TOPLEFT", entry, "BOTTOMLEFT", 30, 2 }, tip.points[1])
+				assert.are.equal(loaded.ns.ATLASES.Stats.file, tip.slip.left.texture)
+				assert.is_true(30 + tip.width <= right:GetWidth())
+				assert.are.same(loaded.ns.BOOK_LOOK.red, { unpack(entry.label.textColor, 1, 3) })
+				entry:GetScript("OnLeave")(entry)
+
+				assert.is_false(tip.shown)
+				assert.are.same(loaded.ns.BOOK_LOOK.ink, { unpack(entry.label.textColor, 1, 3) })
+			end
+		)
+
+		it("sets each fish in its medallion, its count in the hand after a dotted leader", function()
 			local loaded = built(stats.concat(SESSION_1, SESSION_2, SESSION_3))
 			local _, right = lifetime(loaded)
 			local entry = pieceReading(right, "Raw Mackerel | 10")
 
-			entry:GetScript("OnEnter")(entry)
-			local tooltip = loaded.env.GameTooltip
-			assert.are.same({ entry, { "First 8 Oct 2026, last 10 Oct 2026" }, true }, {
-				tooltip.owner,
-				loaded.client.tooltipLines(),
-				tooltip.shown,
-			})
-			entry:GetScript("OnLeave")(entry)
-
-			assert.is_false(tooltip.shown)
+			assert.is_true(entry.icon.shown)
+			assert.are.equal(loaded.ns.BookFonts().count, entry.count.fontObject)
+			local dots = 0
+			for _, dot in ipairs(entry.dots.dots) do
+				dots = dots + (dot.shown and 1 or 0)
+			end
+			assert.is_true(dots > 0)
 		end)
 
 		it("opens an item's page on clicking it (STA-R74)", function()

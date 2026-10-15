@@ -95,6 +95,8 @@ end
 ---@field headings StatsPlacePool
 ---@field rows StatsPlacePool
 ---@field lines StatsPlacePool
+---@field marginsArea integer?             -- the place its rows last showed
+---@field margins table<integer, string>?  -- each row's margin then, by item
 
 ---@class StatsPlaceRightView
 ---@field numbers Frame
@@ -211,10 +213,14 @@ end
 ---@param reading StatsReading
 ---@param area integer
 ---@param chosen boolean
-local function drawRow(row, reading, area, chosen)
+---@param before string? the row's margin at the page's last draw, when it showed this place: a Cast that rewrote
+--- it fades its ink up (the books kit v2's MOTION.md)
+---@return string margin what its margin reads now
+local function drawRow(row, reading, area, chosen, before)
 	local item = reading.item
 	local name, icon = ns.book:Item(item)
 	local margin, band = ns.DrySpellShort(reading)
+	local now = (margin or "") .. (band or "")
 	row:SetRow({
 		icon = icon,
 		name = name,
@@ -229,6 +235,11 @@ local function drawRow(row, reading, area, chosen)
 			ns.OpenBook({ page = "place", area = area, item = item })
 		end,
 	})
+	if before and before ~= now and now ~= "" then
+		ns.InkIn(row.margin)
+		ns.InkIn(row.band)
+	end
+	return now
 end
 
 --- Draws a place's left page (UI › Place spread) on `content`.
@@ -273,15 +284,19 @@ local function drawLeft(content, place)
 		y = drawWaters(view, y, state, zone, conditions)
 	end
 	local groups = ns.Groups(state, area, live)
+	-- each row's margin at the last draw of this place, by item
+	local before = view.marginsArea == area and view.margins or {}
+	local margins = {}
 	for _, group in ipairs(groups) do
 		y = heading(view, y, group.heading, group.note)
 		for _, reading in ipairs(group.readings) do
 			local row = take(view.rows) --[[@as StatsBookRowView]]
-			drawRow(row, reading, area, reading.item == place.item)
+			margins[reading.item] = drawRow(row, reading, area, reading.item == place.item, before[reading.item])
 			put(row, y)
 			y = y + ROW
 		end
 	end
+	view.marginsArea, view.margins = area, margins
 
 	if not isZone and ns.ReadsAcrossZone(groups) then
 		view.across:SetText(L.PLACE_ACROSS_ZONE:format(ns.ODDS_THRESHOLD, ns.AreaName(area), ns.AreaName(zone)))

@@ -12,6 +12,11 @@ local ns = select(2, ...)
 -- on the frame adapter/Place.lua gives it (ns.RegisterPlaceEntry): the "watching" pill at the top right, the item's
 -- medallion by its name, "about" in the hand before the odds in large handwriting, the ruler with the kit's "me" mark,
 -- and the records two to a line. Every line is anchored by its top left at its depth down the page.
+--
+-- Its readings move as the books kit v2's MOTION.md has them, when a Cast changes the entry shown (the same item on the
+-- same place): each rewritten line's ink fades up from 30% (0.3 s); the "me" mark slides along the luck ruler to the
+-- new reading (0.6 s, ease-out); a catch that resets the Dry spell fades the ruler out (0.3 s, easing in), keeping
+-- its room until the next Cast brings it back, fading in, and writes itself in with the "write" sound.
 
 local L = ns.L
 local LOOK = ns.BOOK_LOOK
@@ -33,6 +38,8 @@ local TOGGLE_HEIGHT, TOGGLE_CAP, STAR_X, STAR_Y, WORD_X = 30, 15, 8, 8, 29
 local TOGGLE_FADED, TOGGLE_DISABLED = 0.6, 0.35
 -- What the kicker leaves at its right for the toggle ("watching" and its star).
 local KICKER_ROOM = 110
+-- The readings' motion (the kit's MOTION.md): the mark's slide, and the ruler's fade out and back in.
+local MARK_SLIDE, RULER_FADE = 0.6, 0.3
 
 ---@class StatsEntryToggleView: Button
 ---@field pill StatsThreeSlice
@@ -56,6 +63,15 @@ local KICKER_ROOM = 110
 ---@field recordsHeading StatsBookHeadingView
 ---@field records StatsBookLineView[]
 ---@field link StatsBookLinkView
+---@field last StatsEntryShown?      -- what the entry last showed, to move its readings when a Cast changes them
+---@field rulerResting boolean       -- the ruler faded out at a catch, keeping its room until the next Cast
+
+--- What an entry showed at its last draw: its item and place, its lines' words, its Dry spell and its luck reading.
+---@class StatsEntryShown
+---@field key string
+---@field texts table<FontString, string>
+---@field since integer
+---@field luck number?
 
 ---@class StatsEntryFrame: Frame
 ---@field entryView StatsEntryView?
@@ -203,6 +219,88 @@ local function drawHeadline(view, data, y)
 	return y
 end
 
+-- The luck ruler at depth `y` with a luck reading `luck`, or none: when a Cast moved the reading on the entry shown,
+-- the "me" mark slides there from the last one; when it comes back after a catch, it fades in; at a catch it fades
+-- out where it was, its room kept until the next Cast. Returns the depth under it.
+---@param view StatsEntryView
+---@param luck number?
+---@param last StatsEntryShown? what the same entry showed last, nil for another entry
+---@param caught boolean
+---@param since integer the Dry spell now
+---@param y number
+---@return number
+local function drawRuler(view, luck, last, caught, since, y)
+	local ruler = view.ruler
+	ns.SyncMotion()
+	if luck then
+		local resting = view.rulerResting
+		view.rulerResting = false
+		put(ruler, y, RULER_INSET)
+		ns.StopMotion(ruler)
+		local to = ns.RulerPosition(luck)
+		if last and last.luck then
+			local from = ruler.position
+			ruler:SetAlpha(1)
+			ns.Animate(ruler, {
+				{
+					dur = MARK_SLIDE,
+					ease = ns.Ease.out,
+					keys = { { 0, { from } }, { 1, { to } } },
+					apply = function(v)
+						ruler:SetMark(v[1])
+					end,
+				},
+			})
+		else
+			ruler:SetMark(to)
+			if last and resting then
+				ns.Animate(ruler, {
+					{
+						dur = RULER_FADE,
+						ease = ns.Ease.out,
+						keys = { { 0, { 0 } }, { 1, { 1 } } },
+						apply = function(v)
+							ruler:SetAlpha(v[1])
+						end,
+					},
+				})
+			else
+				ruler:SetAlpha(1)
+			end
+		end
+		return y + ruler:GetHeight() + PARA_GAP
+	end
+	if caught and last and last.luck and ns.motion then
+		-- it fades out where it was, keeping its room
+		view.rulerResting = true
+		ns.StopMotion(ruler)
+		put(ruler, y, RULER_INSET)
+		ns.Animate(ruler, {
+			{
+				dur = RULER_FADE,
+				ease = ns.Bezier(0.42, 0, 1, 1),
+				keys = { { 0, { 1 } }, { 1, { 0 } } },
+				apply = function(v)
+					ruler:SetAlpha(v[1])
+				end,
+			},
+		}, function()
+			ruler:Hide()
+			ruler:SetAlpha(1)
+		end)
+		return y + ruler:GetHeight() + PARA_GAP
+	end
+	if view.rulerResting and last and since == 0 then
+		-- still resting since the catch: its room stays until the next Cast
+		return y + ruler:GetHeight() + PARA_GAP
+	end
+	view.rulerResting = false
+	ns.StopMotion(ruler)
+	ruler:Hide()
+	ruler:SetAlpha(1)
+	return y
+end
+
 --- Draws the entry of `place.item` on `place.area`'s page into `frame` (UI › Place spread).
 ---@param frame StatsEntryFrame
 ---@param place StatsBookTarget
@@ -213,6 +311,15 @@ local function drawEntry(frame, place)
 	local view = viewOf(frame)
 	local data = ns.Entry(ns.State(), item, area, ns.EffectiveSkill(Pagle.GetConditions()))
 	local width = frame:GetWidth()
+	local key = item .. ":" .. area
+	local last = view.last
+	local same = last ~= nil and last.key == key
+	local since = ns.DrySpell(data.reading).since
+	-- a catch of it here: the Dry spell resets
+	local caught = same and last.since > 0 and since == 0
+	if not same then
+		view.rulerResting = false
+	end
 
 	drawToggle(view.toggle, item, area, width)
 	view.kicker:SetText(data.kicker)
@@ -242,13 +349,7 @@ local function drawEntry(frame, place)
 	end
 	view.dryAfter:SetTextColor(after[1], after[2], after[3])
 	y = paragraph(view.dryAfter, data.dryAfter, y)
-	if luck then
-		view.ruler:SetRuler(luck)
-		put(view.ruler, y, RULER_INSET)
-		y = y + view.ruler:GetHeight() + PARA_GAP
-	else
-		view.ruler:Hide()
-	end
+	y = drawRuler(view, luck, same and last --[[@as StatsEntryShown]] or nil, caught, since, y)
 
 	-- In my records two to a line, then the link to the item's page.
 	y = y + GROUP_GAP
@@ -268,6 +369,26 @@ local function drawEntry(frame, place)
 		ns.OpenBook(target)
 	end)
 	put(view.link, y)
+
+	-- the lines a Cast rewrote fade up; a catch writes itself in
+	local texts = {}
+	for _, line in ipairs({ view.headline, view.range, view.sentence, view.notes, view.dryFirst, view.dryAfter }) do
+		texts[line] = line:IsShown() and line:GetText() or ""
+	end
+	for _, line in ipairs(view.records) do
+		texts[line.value] = line.value:GetText() or ""
+	end
+	if same then
+		for line, text in pairs(texts) do
+			if text ~= "" and text ~= last.texts[line] then
+				ns.InkIn(line)
+			end
+		end
+	end
+	if caught then
+		ns.BookSound("write")
+	end
+	view.last = { key = key, texts = texts, since = since, luck = luck }
 	return y + view.link:GetHeight() + PARA_GAP
 end
 
