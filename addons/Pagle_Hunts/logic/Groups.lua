@@ -254,8 +254,8 @@ function ns.NewGroups(reads)
 	return setmetatable({ reads = reads, grouping = nil, paused = false }, Groups)
 end
 
---- Keeps a new grouping, paused or not (HNT-R43).
----@param grouping HuntsGrouping
+--- Keeps a new grouping, paused or not (HNT-R43); nil only when the dev tour puts back the none it replaced.
+---@param grouping HuntsGrouping?
 ---@param paused boolean
 function Groups:Set(grouping, paused)
 	self.grouping, self.paused = grouping, paused

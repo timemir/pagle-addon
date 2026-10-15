@@ -82,4 +82,9 @@ function ns.Hunts.OnInitialize()
 
 	-- Window moments (HNT-R88): their Announcements row (SET-R32) and the regroup baseline.
 	ns.StartWindowMoments()
+
+	-- Hunts' stops for `/pagle dev tour` (CORE-R65), on a Core that has the call.
+	if ns.Module.RegisterTourStop then
+		ns.RegisterTourStops(ns.Module)
+	end
 end

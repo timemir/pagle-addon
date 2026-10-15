@@ -30,6 +30,7 @@ logic\Sets.lua
 logic\Goods.lua
 logic\Entry.lua
 logic\Tracker.lua
+logic\Tour.lua
 adapter\BoardWidgets.lua
 adapter\Board.lua
 adapter\Sets.lua
@@ -41,3 +42,4 @@ adapter\Timeline.lua
 adapter\WindowMoments.lua
 adapter\Entry.lua
 adapter\Tracker.lua
+adapter\Tour.lua

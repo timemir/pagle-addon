@@ -31,6 +31,8 @@ local OWNER = "Pagle_Hunts tracker"
 ---@field more HuntsTrackerMoreButton   -- "+N more", opens the board (HNT-R77)
 ---@field empty FontString       -- "Pin a Hunt to keep it here."
 ---@field words { text: FontString, font: string }[]   -- every word, for the frame's ink
+---@field wearing string?      -- a tracker frame's good ID the dev tour dresses it in (adapter/Tour.lua); nil: the
+--- equipped one
 
 ---@class HuntsTrackerLineButton: Button
 ---@field dot BoardDotView
@@ -174,7 +176,7 @@ end
 -- Draws the block from the grouping, the projection and the equipped frame, and sizes it to what shows.
 ---@param view HuntsTrackerView
 local function draw(view)
-	local look = ns.TRACKER_FRAMES[Pagle.GetEquipped(ns.TRACKER_FRAME_SLOT)]
+	local look = ns.TRACKER_FRAMES[view.wearing or Pagle.GetEquipped(ns.TRACKER_FRAME_SLOT)]
 	view.look:SetFrame(look)
 	local collapsed = saved().collapsed
 	view.mark:SetTexture(collapsed and COLLAPSED_MARK or EXPANDED_MARK)
