@@ -3,8 +3,16 @@
 package-as: Pagle
 enable-nolib-creation: no
 
-# The packager copies the whole repo (minus dotfiles) into Pagle/, so every top-level path that
-# isn't addon code is listed here. LICENSE and NOTICE stay: they ship inside Pagle/.
+# The hand-written CHANGELOG.md at the repo root, not one generated from the commits since the
+# last tag (the first would list every pre-1.0 commit). It ships as Pagle/CHANGELOG.md and is the
+# upload's changelog on CurseForge and Wago.
+manual-changelog:
+  filename: CHANGELOG.md
+  markup-type: markdown
+
+# The packager copies the whole repo (minus dotfiles, so .github/ and .tools/ stay out) into Pagle/,
+# so every top-level path that isn't addon code is listed here. LICENSE, NOTICE and CHANGELOG.md
+# stay: they ship inside Pagle/.
 ignore:
   - AGENTS.md
   - CONTEXT.md
@@ -17,6 +25,8 @@ ignore:
   - scripts
   - spec
   - types
+  # TGA art sources, wherever one lands: Pagle's textures ship as .blp (scripts/encode-blp.py).
+  - "*.tga"
 
 # Keys are paths under the package-as folder. Each Module adds its own line in its first
 # milestone, as Pagle_QoL did in M1, Pagle_Ledger in M2, Pagle_Hunts in M5, Pagle_Stats in M6 and
