@@ -43,6 +43,10 @@ local USAGE = "usage: lua scripts/read-wtf.lua <WTF/Account/<ACCT> folder> [--ch
 -- The repo root, from this script's path: Core's and the Ledger's logic/ and the catalogue are read from addons/.
 local ROOT = ((arg and arg[0] or ""):match("^(.*)[/\\]") or ".") .. "/.."
 
+-- The helpers this script shares with scripts/make-test-log.lua, in this script's environment.
+local wtf = setfenv(assert(loadfile(ROOT .. "/scripts/lib/wtf.lua")), getfenv(1))(ROOT)
+local count, readLines, loadSavedVariables = wtf.count, wtf.readLines, wtf.readSavedVariables
+
 -- The arguments as options, or nil and what's wrong with them.
 local function parseArgs(args)
 	local options = { cvars = {}, addons = {}, items = {} }
@@ -93,52 +97,8 @@ local function parseArgs(args)
 	return options
 end
 
--- A file's lines without their line ends (the client writes CRLF), or nil when it can't be opened.
-local function readLines(path)
-	local file = io.open(path, "rb")
-	if not file then
-		return nil
-	end
-	local lines = {}
-	for line in file:lines() do
-		lines[#lines + 1] = (line:gsub("\r$", ""))
-	end
-	file:close()
-	return lines
-end
-
--- Loads a SavedVariables file as data and returns the globals it assigned. Returns nil and a reason when the file
--- is missing or isn't plain Lua source that runs with no globals at all.
-local function loadSavedVariables(path)
-	local file = io.open(path, "rb")
-	if not file then
-		return nil, "missing"
-	end
-	local source = file:read("*a")
-	file:close()
-	if source:sub(1, 1) == "\27" then
-		return nil, "a precompiled chunk, not data"
-	end
-	local chunk, loadErr = loadstring(source, "=" .. path:match("[^/\\]*$"))
-	if not chunk then
-		return nil, loadErr
-	end
-	local globals = {}
-	setfenv(chunk, globals)
-	local ok, runErr = pcall(chunk)
-	if not ok then
-		return nil, runErr
-	end
-	return globals
-end
-
 local function utc(time)
 	return os.date("!%Y-%m-%d %H:%M:%S UTC", time)
-end
-
--- "1 Cast", "2 Casts"; plural defaults to noun .. "s".
-local function count(n, noun, plural)
-	return n .. " " .. (n == 1 and noun or plural or noun .. "s")
 end
 
 local function printErrors(account)
@@ -166,30 +126,16 @@ local function printErrors(account)
 	end
 end
 
--- Runs the addon file at `path` as the client runs an addon's files, as chunk(addonName, ns), with `env` as its
--- globals. Returns true, or nil and why when the file can't be loaded or raises.
-local function loadInto(ns, env, path, addonName)
-	local chunk, loadErr = loadfile(path)
-	if not chunk then
-		return nil, loadErr
-	end
-	setfenv(chunk, env)
-	local ok, runErr = pcall(chunk, addonName, ns)
-	if not ok then
-		return nil, runErr
-	end
-	return true
-end
-
 -- Core's namespace with the logic/ files the reader uses: the Catch log codec, the Field report's P rows and the
--- reporter key (REP-R22, REP-R36). logic/ is plain Lua 5.1 (CORE-R7), so the standard globals are all it gets.
+-- reporter key (REP-R22, REP-R36).
 local function loadCoreLogic()
-	local ns = {}
-	local env = setmetatable({}, { __index = _G })
-	for _, file in ipairs({ "Conditions.lua", "Sessions.lua", "CatchLog.lua", "FieldReport.lua", "FieldReportText.lua" }) do
-		assert(loadInto(ns, env, ROOT .. "/addons/Pagle/logic/" .. file, "Pagle"))
-	end
-	return ns
+	return wtf.loadCore({
+		"logic/Conditions.lua",
+		"logic/Sessions.lua",
+		"logic/CatchLog.lua",
+		"logic/FieldReport.lua",
+		"logic/FieldReportText.lua",
+	})
 end
 
 local OUTCOMES = { "caught", "gotAway" }
@@ -253,10 +199,10 @@ local function readLog(ns, log, since)
 	return facts
 end
 
+-- A character as "1 Ada Brook (Player-4618-0A1B2C3D)": its index, name and GUID.
 local function characterName(log, char)
-	local c = log.characters[char] or {}
-	local name = table.concat({ tostring(c.name or "?"), c.surname and tostring(c.surname) or nil }, " ")
-	return ("%d %s (%s)"):format(char, name, tostring(c.guid))
+	local guid = (log.characters[char] or {}).guid
+	return ("%d %s (%s)"):format(char, wtf.characterName(log, char), tostring(guid))
 end
 
 local function printCasts(log, facts, since)
@@ -415,23 +361,6 @@ local function printCatchLog(pagle, expectCasts, since)
 	return expectCasts and exitChecks(facts, decodeErrors, expectCasts) or {}
 end
 
--- The Ledger's namespace with its logic: each logic/ file Pagle_Ledger.toc lists, in TOC order, called with
--- ("Pagle_Ledger", ns) as the client calls an addon's files (spec/support/addon.lua loads them the same way), so the
--- level shown is the Ledger's own (logic/Progress.lua). Their CORE-R11 guard reads the Pagle global, so it's a table
--- here; logic/ is plain Lua 5.1 (CORE-R7) and reads nothing else of Core's at load.
-local function loadLedgerLogic()
-	local ns = {}
-	local env = setmetatable({ Pagle = {} }, { __index = _G })
-	local dir = ROOT .. "/addons/Pagle_Ledger/"
-	for _, line in ipairs(assert(readLines(dir .. "Pagle_Ledger.toc"))) do
-		local file = line:match("^%s*(.-)%s*$"):gsub("\\", "/")
-		if file:match("^logic/[^/]+%.lua$") then
-			assert(loadInto(ns, env, dir .. file, "Pagle_Ledger"))
-		end
-	end
-	return ns
-end
-
 -- A table's value, or an empty table when it isn't one (AceDB leaves an empty default out of the file).
 local function tableOr(value)
 	return type(value) == "table" and value or {}
@@ -468,35 +397,13 @@ local function bySpeciesThenZone(a, b)
 	return tonumber(zoneA) < tonumber(zoneB)
 end
 
--- Core's catalogue accessors (LOG-R55) over a Catalogue.lua in the generated file's shape (DATA-R76): the file and
--- Core's logic/Catalogue.lua, each called with ("Pagle", ns) as the client calls them, as FakePagle builds its
--- catalogue. Returns nil and why when the file can't be loaded.
-local function loadCatalogue(path)
-	local ns = {}
-	local env = setmetatable({}, { __index = _G })
-	for _, file in ipairs({ path, ROOT .. "/addons/Pagle/logic/Catalogue.lua" }) do
-		local ok, err = loadInto(ns, env, file, "Pagle")
-		if not ok then
-			return nil, err
-		end
-	end
-	if type(ns.catalogue) ~= "table" then
-		return nil, "it sets no catalogue"
-	end
-	local ok, catalogue = pcall(ns.NewCatalogue, ns.catalogue)
-	if not ok then
-		return nil, catalogue
-	end
-	return catalogue
-end
-
 -- The Ledger's world index (LED-R10), built by its own logic/World.lua over the catalogue at `path` (the repo's
 -- generated one unless --catalogue names another), as the Ledger builds it at OnInitialize. Prints which catalogue
 -- it is and whether its fingerprint is the one the projection was built against (DATA-R70). Returns the world and
 -- GetItem, or nothing when the catalogue can't be loaded.
 local function loadWorld(ledger, path, stored)
 	local label = path or "the repo's addons/Pagle/data/Catalogue.lua"
-	local catalogue, err = loadCatalogue(path or ROOT .. "/addons/Pagle/data/Catalogue.lua")
+	local catalogue, err = wtf.loadCatalogue(path)
 	if not catalogue then
 		print(("world: can't load %s: %s; nothing below is computed"):format(label, tostring(err)))
 		return nil
@@ -700,15 +607,9 @@ end
 
 -- Core's namespace with what M4's lines read of it: its strings (locale/enUS.lua), the size rules and bands
 -- (logic/Size.lua, LOG-R65–R68), the wallet (logic/Wallet.lua, SHOP-R12) and the wallet projection's rules version
--- (logic/WalletProjection.lua), each called with ("Pagle", ns) as the client calls them. logic/ is plain Lua 5.1
--- (CORE-R7). Size.lua takes LuaBitOp's functions at load; nothing here hashes a Catch ID, so an empty `bit` serves.
+-- (logic/WalletProjection.lua). Nothing here hashes a Catch ID, so it reads the same without LuaBitOp.
 local function loadCoreRules()
-	local ns = {}
-	local env = setmetatable({ bit = {} }, { __index = _G })
-	for _, file in ipairs({ "locale/enUS.lua", "logic/Size.lua", "logic/Wallet.lua", "logic/WalletProjection.lua" }) do
-		assert(loadInto(ns, env, ROOT .. "/addons/Pagle/" .. file, "Pagle"))
-	end
-	return ns
+	return wtf.loadCore({ "locale/enUS.lua", "logic/Size.lua", "logic/Wallet.lua", "logic/WalletProjection.lua" })
 end
 
 -- The Ledger M4 section's lines (#173): what M4 adds to the Ledger (ledger.md › Data), with the climb, the earned
@@ -900,7 +801,7 @@ local function printLedger(account, log, catalogue, items)
 	print("== Ledger (PagleLedgerDB)")
 	local global = tableOr(db.global)
 	local stored = global.projection
-	local ledger, state, world, getItem = loadLedgerLogic(), nil, nil, nil
+	local ledger, state, world, getItem = wtf.loadLedgerLogic(), nil, nil, nil
 	if type(stored) ~= "table" or type(stored.projection) ~= "table" then
 		print("projection: none stored (no build has finished, LOG-R72)")
 	else

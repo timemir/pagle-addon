@@ -128,8 +128,9 @@ stage_types() {
 
 # --- 5. tests (#49): busted on Lua 5.1, every spec/**/*_spec.lua. spec/support/addon.lua loads each addon from its
 # real .toc, in order, so TOC and load-order mistakes fail specs. luacov then reports coverage of addons/ (.luacov);
-# the report never gates. A spec tagged #slow (LOG-R66's 300,000-ID draw) runs once, in a second pass without
-# coverage, where it takes a tenth of the time luacov's line hook gives it.
+# the report never gates. The specs tagged #slow (LOG-R66's 300,000-ID draw, make-test-log's level60 preset) run
+# once, in a second pass without coverage, where they take a tenth of the time luacov's line hook gives them; a
+# failing one fails the stage as any spec does.
 # busted itself only ever exits 0 or 1, so a status over 128 means a signal killed it before the specs finished: it
 # says nothing about them. On the dev's machine the coverage run has died of SIGSEGV that way, at instructions that
 # can't fault (#149). Such a run gets one rerun, without coverage, which gates instead, and no report is made.

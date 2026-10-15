@@ -263,6 +263,11 @@ printf 'it("fails", function()\n\tassert.is_true(false)\nend)\n' >"$scratch/tree
 PAGLE_NO_COVERAGE=1 GATE_JOBS=3 expect "a failing spec in one shard fails tests and names the spec" tests \
 	"spec/Pagle_QoL/fails_spec.lua" "tests: spec/Pagle_QoL failed" "tests: spec/Pagle passed"
 
+copy
+# The first pass leaves #slow specs out (--exclude-tags=slow); the second runs only them.
+printf 'it("fails #slow", function()\n\tassert.is_true(false)\nend)\n' >"$scratch/tree/spec/slow_fails_spec.lua"
+PAGLE_NO_COVERAGE=1 expect "a failing spec tagged #slow fails tests in the #slow pass" tests "slow_fails_spec.lua"
+
 # Plants a spec that kills the busted running it with SIGSEGV, as the coverage run has died on the dev's machine
 # (#149). With "coverage", only a busted running with luacov dies.
 kills_busted() {

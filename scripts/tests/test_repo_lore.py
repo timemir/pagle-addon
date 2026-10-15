@@ -5,16 +5,18 @@ import csv
 import re
 import shutil
 import tomllib
+from collections.abc import Callable
 from dataclasses import replace
 from functools import cache
 from pathlib import Path
 
 import pytest
 
-from pagle_data.cli import main
+from cli_fixture import run
+from pagle_data.checks import BUILT_LORE_CHECKS
 from pagle_data.errors import Problems
 from pagle_data.generate import Layers, read_layers
-from pagle_data.lore import catalogue_ids, check_lore
+from pagle_data.lore import Text, catalogue_ids, check_lore
 
 REPO = Path(__file__).resolve().parents[2]
 LEDGER_TOML = REPO / "data" / "lore" / "ledger.toml"
@@ -66,20 +68,28 @@ def _zone_names() -> list[str]:
 
 def test_the_ledger_s_and_core_s_lore_checks_are_on() -> None:
     # DATA-R66, LED-R162: the Ledger's lore check turns on in M3 with its first batch (DATA-R111); DATA-R107: Core's
-    # in M4, with its goods.
+    # in M4, with its goods. Every check built so far is on.
     with (REPO / "data" / "checks.toml").open("rb") as handle:
-        assert tomllib.load(handle)["lore"] == ["ledger", "core"]
+        assert tomllib.load(handle)["lore"] == list(BUILT_LORE_CHECKS) == ["ledger", "core"]
 
 
-def _without(lore_id: str, key: str) -> list[str]:
-    """What check_lore finds over the repo's lore, with both checks on, once key is deleted from lore_id's file."""
+def _problems_with(
+    lore_id: str, edit: Callable[[dict[str, Text]], dict[str, Text]], checks: tuple[str, ...] = BUILT_LORE_CHECKS
+) -> list[str]:
+    """What check_lore finds over the repo's lore, with `checks` on (every built one by default), once `edit` has
+    changed lore_id's texts."""
     layers = _layers()
     files = dict(layers.lore.files)
-    files[lore_id] = {name: text for name, text in files[lore_id].items() if name != key}
+    files[lore_id] = edit(files[lore_id])
     ids = catalogue_ids(layers.items, layers.item_layer.families)
     problems = Problems()
-    check_lore(replace(layers.lore, files=files), ["ledger", "core"], ids, problems)
+    check_lore(replace(layers.lore, files=files), list(checks), ids, problems)
     return problems.found
+
+
+def _without(lore_id: str, key: str, checks: tuple[str, ...] = BUILT_LORE_CHECKS) -> list[str]:
+    """_problems_with key deleted from lore_id's texts."""
+    return _problems_with(lore_id, lambda texts: {name: text for name, text in texts.items() if name != key}, checks)
 
 
 def test_the_manifest_lists_core_s_nine_goods() -> None:
@@ -132,33 +142,37 @@ def test_the_manifest_lists_the_ledger_s_four_shared_lines() -> None:
 @pytest.mark.parametrize("species", sorted(_riddles()))
 def test_deleting_any_one_riddle_fails_the_lore_check_naming_its_key(species: int) -> None:
     # DATA-R107's missing: with the Ledger's check on, every Species needs a riddle (DATA-R103).
-    layers = _layers()
     key = f"species.{species}.riddle"
-    files = dict(layers.lore.files)
-    files["ledger"] = {name: text for name, text in files["ledger"].items() if name != key}
-    ids = catalogue_ids(layers.items, layers.item_layer.families)
-    problems = Problems()
-    check_lore(replace(layers.lore, files=files), ["ledger"], ids, problems)
-    assert problems.found == [
+    assert _without("ledger", key, ("ledger",)) == [
         f"data/lore/ledger.toml: {key}: missing: every Species needs it (DATA-R103, DATA-R107)"
     ]
+
+
+def _generator_fails_without(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], lore_file: str, cut: Callable[[str], str], expected: str
+) -> None:
+    """DATA-R107 through the generator itself (DATA-R63): over a copy of data/ whose data/lore/<lore_file> has
+    `cut` applied, the generator exits 1, names `expected`, and writes nothing."""
+    shutil.copytree(REPO / "data", tmp_path / "data")
+    path = tmp_path / "data" / "lore" / lore_file
+    path.write_text(cut(path.read_text(encoding="utf-8")), encoding="utf-8")
+    code, output = run(tmp_path, capsys)
+    assert code == 1
+    assert expected in output
+    assert not (tmp_path / "addons").exists()
 
 
 def test_the_generator_fails_on_a_deleted_riddle_and_names_the_key(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
     # DATA-R107 through the generator itself (DATA-R63): a copy of data/ with one riddle deleted writes nothing.
-    shutil.copytree(REPO / "data", tmp_path / "data")
-    ledger = tmp_path / "data" / "lore" / "ledger.toml"
-    text = ledger.read_text(encoding="utf-8")
-    riddle = re.search(r"^\[species\.6289\].*\n(?:.*\n)*?(riddle = .*\n)", text, flags=re.MULTILINE)
-    assert riddle is not None
-    ledger.write_text(text[: riddle.start(1)] + text[riddle.end(1) :], encoding="utf-8")
-    code = main([], tmp_path)
-    out, err = capsys.readouterr()
-    assert code == 1
-    assert "data/lore/ledger.toml: species.6289.riddle: missing" in out + err
-    assert not (tmp_path / "addons").exists()
+    def cut(text: str) -> str:
+        riddle = re.search(r"^\[species\.6289\].*\n(?:.*\n)*?(riddle = .*\n)", text, flags=re.MULTILINE)
+        assert riddle is not None
+        return text[: riddle.start(1)] + text[riddle.end(1) :]
+
+    expected = "data/lore/ledger.toml: species.6289.riddle: missing"
+    _generator_fails_without(tmp_path, capsys, "ledger.toml", cut, expected)
 
 
 @pytest.mark.parametrize("species", sorted(_riddles()))
@@ -175,17 +189,13 @@ def test_the_generator_fails_on_a_deleted_good_name_and_names_the_key(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
     # DATA-R107 for the core lore ID, through the generator itself (DATA-R63): nothing is written.
-    shutil.copytree(REPO / "data", tmp_path / "data")
-    core = tmp_path / "data" / "lore" / "core.toml"
-    text = core.read_text(encoding="utf-8")
-    name = 'name = "Ripple"\n'
-    assert name in text
-    core.write_text(text.replace(name, ""), encoding="utf-8")
-    code = main([], tmp_path)
-    out, err = capsys.readouterr()
-    assert code == 1
-    assert "data/lore/core.toml: good.core.toaststyle.ripple.name: missing" in out + err
-    assert not (tmp_path / "addons").exists()
+    def cut(text: str) -> str:
+        name = 'name = "Ripple"\n'
+        assert name in text
+        return text.replace(name, "")
+
+    expected = "data/lore/core.toml: good.core.toaststyle.ripple.name: missing"
+    _generator_fails_without(tmp_path, capsys, "core.toml", cut, expected)
 
 
 def test_the_manifest_lists_the_ledger_s_titles_and_bindings() -> None:
@@ -225,14 +235,11 @@ def test_deleting_any_one_title_s_text_fails_the_lore_check_naming_its_key(title
 
 def test_zone_in_a_title_other_than_zonemaster_is_a_placeholder_problem() -> None:
     # DATA-R107's placeholder, DATA-R108: only zonemaster's manifest entry allows {zone}.
-    layers = _layers()
-    ledger = layers.lore.files["ledger"]
-    level10 = ledger["title.level10.text"]
-    files = layers.lore.files | {"ledger": ledger | {level10.key: replace(level10, value="Warden of {zone}")}}
-    ids = catalogue_ids(layers.items, layers.item_layer.families)
-    problems = Problems()
-    check_lore(replace(layers.lore, files=files), ["ledger", "core"], ids, problems)
-    assert problems.found == [
+    def zoned(texts: dict[str, Text]) -> dict[str, Text]:
+        level10 = texts["title.level10.text"]
+        return texts | {level10.key: replace(level10, value="Warden of {zone}")}
+
+    assert _problems_with("ledger", zoned) == [
         "data/lore/ledger.toml: title.level10.text: placeholder: { or } outside an allowed placeholder"
         " (manifest.toml allows none here) (DATA-R107, DATA-R108)"
     ]

@@ -10,35 +10,14 @@
 local ACCOUNTS = "spec/scripts/fixtures/WTF/Account/"
 local CATALOGUE = "spec/scripts/fixtures/Catalogue.lua"
 
+---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
+local script = dofile("spec/support/script.lua")
+
 --- Runs the script as `lua scripts/read-wtf.lua <args>` would, and returns its output lines, what it wrote to
 --- stderr, and its exit code.
 ---@return string[] out, string err, integer code
 local function run(...)
-	local out, err, code = {}, {}, nil
-	---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no loadfile
-	local chunk = assert(loadfile("scripts/read-wtf.lua"))
-	local env = setmetatable({
-		arg = { [0] = "scripts/read-wtf.lua", ... },
-		print = function(line)
-			out[#out + 1] = line
-		end,
-		io = setmetatable({
-			stderr = {
-				write = function(_, text)
-					err[#err + 1] = text
-				end,
-			},
-			---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io
-		}, { __index = io }),
-		os = setmetatable({
-			exit = function(status)
-				code = status
-			end,
-		}, { __index = os }),
-	}, { __index = _G })
-	setfenv(chunk, env)
-	chunk(...)
-	return out, table.concat(err), code
+	return script.run("scripts/read-wtf.lua", { ... })
 end
 
 --- The output lines from the one that starts with `heading` up to the next `==` heading.
@@ -306,9 +285,9 @@ describe("scripts/read-wtf.lua", function()
 				.. " LED-R50, LED-R52, LED-R54, LED-R63, LED-R70, LED-R71, LED-R92)",
 			function()
 				-- ledger.md › Data for the state and the celebrated set; LED-R4: M3's rules version, 200, isn't M4's 301.
-				-- LED-R30: 4,560 XP = 1,080 + 1,160 + 1,240 to level 4, 1,080 into it, whose step costs 1,000 + 80 × 4 = 1,320. LED-R5: 6309
-				-- is junk, a curio; 13901 a trophy; 999001 is in no catalogue. LED-R50, LED-R54: Duskwood (10) has no data,
-				-- so it isn't charted and shows rank 0; Elwynn (12) is computed Local (3) but celebrated Expert (4), and the
+				-- LED-R30: 4,560 XP = 1,080 + 1,160 + 1,240 to level 4, 1,080 into it, whose step costs
+				-- 1,000 + 80 × 4 = 1,320. LED-R5: 6309 is junk, a curio; 13901 a trophy; 999001 is in no catalogue.
+				-- LED-R50, LED-R54: Duskwood (10) has no data, so it isn't charted and shows rank 0; Elwynn (12) is computed Local (3) but celebrated Expert (4), and the
 				-- shown rank is the higher (LED-R52, LED-R92). LED-R70, LED-R71: Species 6291 and 6303 of 6291, 6299, 6303
 				-- and 13759; junk 6309 of 6309; treasure none of 6351; trophy 13901 of 13901 and 13902; no zone at Master
 				-- of 12 and 40; 4 of 10 is 40%; Legend 19803 beside it (LED-R63).
