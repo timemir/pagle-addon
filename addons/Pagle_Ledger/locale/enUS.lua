@@ -254,7 +254,7 @@ ns.L = {
 	ENTRY_FOUND_IN = "Found in %s.",
 	ENTRY_ONLY_BY = " Only by %s.",
 	-- The size line (LED-R140): the record's size text, "{band} · {length}" (LED-R81).
-	ENTRY_LARGEST = "Largest by my own measure: %s (Pagle's measure, not the game's)",
+	ENTRY_LARGEST = "Largest I've landed: %s",
 	ENTRY_REMOVED = "No longer found in Forever's waters.",
 	ENTRY_UNKNOWN = "An unknown fish",
 	ENTRY_RIDDLE = '"%s"',
@@ -358,10 +358,10 @@ ns.L = {
 	-- A blank star as the Journal prints it (LED-R48); a shown one is STAR.
 	STAR_OFF = STAR_OFF,
 	-- The Trophy Room (LED-R143, LED-R62), titled TROPHY_TITLE. Numbers in %s are BreakUpLargeNumbers'.
-	TROPHY_WEIGHTS = "%s of %s weights. Real weights, from the game's own trophy fish.",
+	TROPHY_WEIGHTS = "%s of %s weights.",
 	TROPHY_INDEX_LINE = "%s %s",
 	TROPHY_STAMPS = { "Any weight", "Half the weights", "The heaviest" },
-	TROPHY_POUNDS = "pounds, as the game weighs them",
+	TROPHY_POUNDS = "pounds",
 	TROPHY_LANDED = "Landed %s of %s. Heaviest so far: %s lb.",
 	TROPHY_NONE_LANDED = "Not one of this family yet.",
 	TROPHY_TICK_MARK = TICK,

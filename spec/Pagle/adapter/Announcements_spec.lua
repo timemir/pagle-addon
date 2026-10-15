@@ -235,14 +235,14 @@ describe("Announcement frames", function()
 		function()
 			local loaded, M = loadCore()
 			loaded.ns.db.profile.lengthUnit = "cm"
-			local size = { old = 300, new = 342, unit = "length", label = "Pagle size" }
+			local size = { old = 300, new = 342, unit = "length", label = "length" }
 
 			raise(loaded, M, moment("toast", "Size record", { ruler = size }))
 			loaded.client.update(1.5)
 
 			local view = frameOf(loaded, "toast").ruler
 			assert.are.same(
-				{ "30.0 cm", "34.2 cm", "+4.2 cm", "Pagle size" },
+				{ "30.0 cm", "34.2 cm", "+4.2 cm", "length" },
 				{ view.old:GetText(), view.value:GetText(), view.margin:GetText(), view.label:GetText() }
 			)
 		end
@@ -286,7 +286,7 @@ describe("Announcement frames", function()
 	it("show a size margin that rounds to zero in inches as +<0.1 in (ANN-R22)", function()
 		local loaded, M = loadCore()
 		loaded.ns.db.profile.lengthUnit = "in"
-		local size = { old = 300, new = 300.2, unit = "length", label = "Pagle size" }
+		local size = { old = 300, new = 300.2, unit = "length", label = "length" }
 
 		raise(loaded, M, moment("toast", "Size record", { ruler = size }))
 		loaded.client.update(1.5)

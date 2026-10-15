@@ -165,7 +165,7 @@ describe("a caught Species' entry (LED-R140)", function()
 end)
 
 -- The size line's form (LED-R140), with the size text's "{band} · {length}" (LED-R81).
-local SIZE_LINE = "^Largest by my own measure: %a+ · %d+%.%d cm %(Pagle's measure, not the game's%)$"
+local SIZE_LINE = "^Largest I've landed: %a+ · %d+%.%d cm$"
 
 -- Gives Species `id` the record `record` on the projection's state (LED-R80), as a sized Catch leaves it.
 local function seedRecord(loaded, id, length, band)
@@ -175,7 +175,7 @@ local function seedRecord(loaded, id, length, band)
 end
 
 describe("a caught Species' size line (LED-R140, LED-R80, LED-R85)", function()
-	it("reads its record by Pagle's measure, in centimetres when set, after Found in (LED-R140, LOG-R69)", function()
+	it("reads its record, in centimetres when set, after Found in (LED-R140, LOG-R69)", function()
 		local fake, loaded = loggedIn()
 		fake.profile.lengthUnit = "cm"
 		seedRecord(loaded, MACKEREL, 342, 3)
@@ -184,7 +184,7 @@ describe("a caught Species' size line (LED-R140, LED-R80, LED-R85)", function()
 			"First landed 3 Oct in Westfall, by Angler. 2 caught.",
 			"Slippery enough to earn the name.",
 			"Found in Duskwood, Elwynn Forest and Westfall.",
-			"Largest by my own measure: Hefty · 34.2 cm (Pagle's measure, not the game's)",
+			"Largest I've landed: Hefty · 34.2 cm",
 		}, textBlockTexts(openFish(loaded, MACKEREL).left))
 	end)
 
@@ -193,7 +193,7 @@ describe("a caught Species' size line (LED-R140, LED-R80, LED-R85)", function()
 		seedRecord(loaded, MACKEREL, 342, 3)
 
 		local texts = textBlockTexts(openFish(loaded, MACKEREL).left)
-		assert.are.equal("Largest by my own measure: Hefty · 13.5 in (Pagle's measure, not the game's)", texts[4])
+		assert.are.equal("Largest I've landed: Hefty · 13.5 in", texts[4])
 	end)
 
 	it("comes before the removed line (LED-R140, LED-R12)", function()
@@ -203,7 +203,7 @@ describe("a caught Species' size line (LED-R140, LED-R80, LED-R85)", function()
 
 		assert.are.same({
 			"First landed 3 Oct in Elwynn Forest, by Angler. 1 caught.",
-			"Largest by my own measure: Monster · 120.5 cm (Pagle's measure, not the game's)",
+			"Largest I've landed: Monster · 120.5 cm",
 			"No longer found in Forever's waters.",
 		}, textBlockTexts(openFish(loaded, GONE).left))
 	end)
@@ -233,7 +233,7 @@ describe("a caught Species' size line (LED-R140, LED-R80, LED-R85)", function()
 
 		assert.is_true(loaded.ns.journal:OpenPlace(loaded.ns.JournalPlace.zone(ELWYNN, MACKEREL)))
 		local texts = textBlockTexts(loaded.ns.journal.pages.right)
-		assert.are.equal("Largest by my own measure: Hefty · 34.2 cm (Pagle's measure, not the game's)", texts[#texts])
+		assert.are.equal("Largest I've landed: Hefty · 34.2 cm", texts[#texts])
 	end)
 end)
 

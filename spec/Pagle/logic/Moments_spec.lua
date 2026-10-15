@@ -217,7 +217,7 @@ describe("a Cast's Announcements", function()
 	it("keeps Core's own copy, so a Module changing its table afterwards changes nothing (ANN-R3)", function()
 		local world = newWorld()
 		local mine =
-			moment("toast", "Size record", { ruler = { old = 300, new = 312, unit = "length", label = "Pagle size" } })
+			moment("toast", "Size record", { ruler = { old = 300, new = 312, unit = "length", label = "length" } })
 
 		world.moments:Raise(LEDGER, mine)
 		mine.title = "Changed"

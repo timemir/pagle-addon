@@ -528,7 +528,7 @@ function celebrate.sizeRecord(_, _, earned, outlets)
 		stamp = L.SIZE_RECORD_STAMP,
 		icon = earned.itemID,
 		cast = earned.cast,
-		ruler = { old = earned.old, new = earned.new, unit = "length", label = "Pagle size" },
+		ruler = { old = earned.old, new = earned.new, unit = "length", label = "length" },
 	}
 end
 
