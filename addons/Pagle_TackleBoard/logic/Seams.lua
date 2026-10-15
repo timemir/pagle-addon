@@ -183,7 +183,10 @@ function ns.Redraw(reason, detail)
 	end
 end
 
---- What the Tackle Board celebrates (TKB-R83–R87): Completed, Advanced, Done and Stepped, defined in
---- logic/Moments.lua (#235).
+--- What the Tackle Board celebrates (TKB-R83–R87), defined in logic/Moments.lua (#235).
 ---@class TackleOutlets
+---@field Completed fun(goal: TackleGoal, cast: PagleCast, earned: TackleEarned, mode: TackleApplyMode)
+---@field Advanced fun(result: TackleAdvance, mode: TackleApplyMode)
+---@field Done fun(state: TackleBoardState, info: { firstBuild: boolean?, rebuilt: boolean?, replayed: integer? })
+---@field Stepped fun()
 ns.outlets = {}
