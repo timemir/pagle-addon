@@ -5,7 +5,7 @@
 -- (#103, #104). M3#1 holds an M3 Ledger and a Field report projection, for what the M3 exit check reads (#145,
 -- #146). M4#1 holds what the M4 exit check reads (#173, #174). M5#1 and M5-Stale#1 hold a Pagle_Hunts.lua, for what
 -- the M5 exit check reads (#199, #200). M6#1, M6-Stale#1 and M6-New#1 hold a Pagle_Stats.lua, for what the M6 exit
--- check reads (#219, #221). M7#1, M7-Stale#1 and M7-New#1 hold a Pagle_TackleBoard.lua, for what the M7 exit check
+-- check reads (#219, #221), and M6-Break#1 a Session break (#258). M7#1, M7-Stale#1 and M7-New#1 hold a Pagle_TackleBoard.lua, for what the M7 exit check
 -- reads (#242, #245). The Ledger, Stats and Tackle Board runs read their catalogue from
 -- spec/scripts/fixtures/Catalogue.lua (--catalogue) and the Hunts runs their Hunt list from
 -- spec/scripts/fixtures/HuntList.lua (--huntlist), so the lines the Modules' logic computes are counted by hand, and
@@ -1029,6 +1029,21 @@ describe("scripts/read-wtf.lua", function()
 		assert.are.equal(
 			"Dry spell: 1 Cast since the last, at 1, last caught 2026-10-14 05:00:00 UTC (STA-R50)",
 			lineStarting(section(out, "== Stats item"), "Dry spell:")
+		)
+	end)
+
+	-- M6-Break#1: M6-Stale#1's files, with `/pagle dev endsession` noted after the second Cast (LOG-R99).
+	it("tags the log's Casts with the Session breaks PagleDB.global keeps, as Core does (#258, LOG-R99)", function()
+		local out = run(ACCOUNTS .. "M6-Break#1", "--catalogue", CATALOGUE)
+		local lines = section(out, "== Stats (PagleStatsDB)")
+
+		assert.are.equal(
+			"Sessions: 1 stored, the log's Casts carry 2 Session IDs; the last 1, oldest first:",
+			lineStarting(lines, "Sessions:")
+		)
+		assert.are.equal(
+			"     2 Casts, 2 Catches, 0 got away, zones 12 ×2, skill +0; the log tags 2 Casts with it (matches)",
+			lineStarting(lines, "     2 Casts")
 		)
 	end)
 

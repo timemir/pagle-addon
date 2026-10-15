@@ -154,7 +154,7 @@ Part of [Core](README.md). This file covers what Core observes, how it is stored
 
 ### Sessions
 
-- **LOG-R60** A **Session** is a run of the Angler's Casts (caught and got away) in which no two consecutive Casts are 300 seconds (5 minutes) or more apart, by entry `time`. Character switches, zone changes, logouts and reloads don't split it; only the gap does.
+- **LOG-R60** A **Session** is a run of the Angler's Casts (caught and got away) in which no two consecutive Casts are 300 seconds (5 minutes) or more apart, by entry `time`. Character switches, zone changes, logouts and reloads don't split it; only the gap does, or in dev mode a Session break (LOG-R99).
 - **LOG-R61** Sessions are cut from the log by a pure function in Core `logic/`; they are never stored in `PagleLog`. `Pagle.SESSION_RULES_VERSION` changes whenever the rule changes (Tunables; it went from 1 to 2 when the gap went from 900 s to 300 s), and Modules that store Sessions fold it into their rules version. `Pagle.SESSION_GAP` is the Session gap in seconds (300, LOG-R60): a Module that needs the gap reads Core's, never a copy of its own.
 - **LOG-R62** Live: `SessionStarted(session)` fires right after the entry of a Cast that starts a new Session is appended (LOG-R9); its payload already counts that Cast. `SessionEnded(session)` fires when 300 seconds pass with no Cast while logged in. A Session's `endTime` is its last Cast's `time`.
 - **LOG-R63** At login, if the latest Session's last Cast is 300 seconds or more ago and its ID isn't `PagleDB.global.lastEndedSession`, Core fires `SessionEnded(session)` once, with `whileAway = true`, as soon as no projection is updating (catching up or rebuilding, LOG-R74), or earlier if a new Cast is recorded first (LOG-R9), so a `SessionEnded` always comes before the next `SessionStarted`. `lastEndedSession` is set whenever `SessionEnded` fires.
@@ -164,6 +164,7 @@ Part of [Core](README.md). This file covers what Core observes, how it is stored
   - a Skill Reading: the ID of the Session open when it was appended, meaning the latest earlier Cast is less than 300 seconds before it; otherwise `nil`. A Skill Reading appended before a new Session's first Cast belongs to no Session.
 
   The tag is computed by the same `logic/` function that cuts Sessions and is never stored in the entry. When an iteration starts after `seq` 0, Core looks back from `afterSeq` to the Casts that open the Session in progress, so the tags are the same whether the log is read whole or in parts.
+- **LOG-R99** A **Session break** ends a Session early, for testing. `/pagle dev endsession` (dev mode only, [in-game-verification.md](../../agents/in-game-verification.md#dev-commands)) ends the open Session as if its gap had passed: `SessionEnded` fires (LOG-R62), and the entry ID of the Session's last Cast goes into `PagleDB.global.sessionBreaks`. The next Cast then starts a new Session, however soon it comes: the cutter splits after a break as it splits at the gap, live and in every later read, so the projections that fold Sessions see two. A break splits Casts only. A Skill Reading still takes the Session whose last Cast is under 300 seconds before it (LOG-R98). The log is untouched. In real play no break is ever written, so the rule changes nothing there and `SESSION_RULES_VERSION` stays as it is.
 
 ### Simulated Size
 
@@ -262,6 +263,7 @@ The ADR 0003 and ADR 0008 notes sketch `B1`, `U1` and `A1` without the shared he
 | `global.schemaVersion` | integer; ordered `if version < N` migration steps run on load. Migrations exist only here and in each `Pagle<Module>DB`, never for `PagleLog`. |
 | `global.lastBuild` | `{ logId, build }`, the last logged build number (LOG-R36) |
 | `global.lastEndedSession` | the ID of the last Session `SessionEnded` fired for (LOG-R63) |
+| `global.sessionBreaks` | `{ [castEntryID] = true }`, the Casts after which `/pagle dev endsession` ended a Session (LOG-R99); absent until it's first used |
 | `global.decodeErrors` | count of entries the codec couldn't decode (LOG-R16) |
 | `global.dev` | boolean, the `/pagle dev` switch (#247); default `false`. Never shown to players. |
 | `global.diagnostics` | ring buffer of up to 500 entries (LOG-R81) |
