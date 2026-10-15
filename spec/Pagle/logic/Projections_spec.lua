@@ -88,6 +88,19 @@ local function machinery(entries)
 		world.projections:Live(record)
 		return record
 	end
+	-- Appends a Module record of `module` and hands it to the machinery live, as M:AppendRecord does (LOG-R40).
+	function world.appendRecord(module, kind)
+		local record = catchLog:Append({
+			kind = "module",
+			char = 1,
+			time = 1791750000,
+			module = module,
+			recordKind = kind,
+			payload = "",
+		})
+		world.projections:Live(record)
+		return record
+	end
 	return world
 end
 
@@ -127,11 +140,11 @@ local function costly(world, def)
 	return def
 end
 
--- Binds `def` to the machinery, iterating its Catch log.
-local function bind(world, def)
+-- Binds `def` to the machinery, iterating its Catch log as `module` does (M:IterateCatches), or as Core does without.
+local function bind(world, def, module)
 	local projection, problem = world.projections:Add(def, function(afterSeq)
-		return world.catchLog:Iterate(afterSeq)
-	end)
+		return world.catchLog:Iterate(afterSeq, module)
+	end, module)
 	assert(projection, problem)
 	return projection
 end
@@ -504,6 +517,78 @@ describe("live entries", function()
 
 		assert.are.same({ "2 replay", "3 live" }, seen.applied)
 	end)
+end)
+
+describe("Module records", function()
+	-- The Tackle Board's projection, the Ledger's and Core's own (no Module), each up to date over 2 Casts.
+	local function threeProjections(world)
+		local board, boardSeen = recorder(builtDb(2))
+		local ledger, ledgerSeen = recorder(builtDb(2))
+		local core, coreSeen = recorder(builtDb(2))
+		bind(world, board, "TackleBoard")
+		bind(world, ledger, "Ledger")
+		bind(world, core)
+		return { board = board.db, ledger = ledger.db, core = core.db }, {
+			board = boardSeen.applied,
+			ledger = ledgerSeen.applied,
+			core = coreSeen.applied,
+		}
+	end
+
+	it(
+		"reach only their Module's projections live; the others still reach the log's length in lastSeq"
+			.. " (LOG-R41, LOG-R73)",
+		function()
+			local world = machinery(casts(2))
+			local dbs, applied = threeProjections(world)
+			world.projections:Start(2)
+
+			world.appendRecord("TackleBoard", "day")
+
+			assert.are.same({ "3 live" }, applied.board)
+			assert.are.same({}, applied.ledger)
+			assert.are.same({}, applied.core)
+			assert.are.same({ 3, 3, 3 }, { dbs.board.lastSeq, dbs.ledger.lastSeq, dbs.core.lastSeq })
+		end
+	)
+
+	it(
+		"appended during an update reach their Module after done, in order with the other queued entries, and the"
+			.. " others' lastSeq still ends at the log's length (LOG-R41, LOG-R74)",
+		function()
+			local world = machinery(casts(2))
+			local dbs, applied = threeProjections(world)
+
+			world.appendRecord("TackleBoard", "start") -- from the Module's login code (LOG-R1)
+			world.append(1)
+			world.appendRecord("TackleBoard", "day")
+			world.appendRecord("Ledger", "note")
+			world.projections:Start(2)
+
+			assert.are.same({ "3 live", "4 live", "5 live" }, applied.board)
+			assert.are.same({ "4 live", "6 live" }, applied.ledger)
+			assert.are.same({ "4 live" }, applied.core)
+			assert.are.same({ 6, 6, 6 }, { dbs.board.lastSeq, dbs.ledger.lastSeq, dbs.core.lastSeq })
+		end
+	)
+
+	it(
+		"are skipped by a catch-up and rebuild of another's projection, which still ends at the target (LOG-R41)",
+		function()
+			local world = machinery(casts(2))
+			world.appendRecord("TackleBoard", "start")
+			local caughtUp, caughtUpSeen = recorder(builtDb(1))
+			local rebuilt, rebuiltSeen = recorder({})
+			bind(world, caughtUp, "Ledger")
+			bind(world, rebuilt)
+
+			world.projections:Start(3)
+
+			assert.are.same({ "2 replay" }, caughtUpSeen.applied)
+			assert.are.same({ "1 rebuild", "2 rebuild" }, rebuiltSeen.applied)
+			assert.are.same({ 3, 3 }, { caughtUp.db.lastSeq, rebuilt.db.lastSeq })
+		end
+	)
 end)
 
 describe("the machinery's seams", function()

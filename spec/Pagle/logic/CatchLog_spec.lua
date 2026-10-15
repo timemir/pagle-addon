@@ -236,10 +236,82 @@ describe("the Catch log codec", function()
 		}, records(catchLog, 0))
 	end)
 
+	it(
+		"round-trips a Module record whose payload holds | and ; verbatim, to the Module that wrote it"
+			.. " (LOG-R11, LOG-R16, LOG-R40, LOG-R42, Entry formats)",
+		function()
+			local catchLog = ns.OpenCatchLog(adaAndBramLog(), {})
+			local payload = "n|haul;1;30|1429;e|x" -- everything after the 6th |, verbatim
+
+			catchLog:Append({
+				kind = "module",
+				char = 2,
+				time = 1791731684,
+				module = "TackleBoard",
+				recordKind = "issue.v1",
+				payload = payload,
+			})
+
+			assert.are.same({ "A1|2|1791731684|0|TackleBoard|issue.v1|n|haul;1;30|1429;e|x" }, catchLog.data.entries)
+			local read = {}
+			for record in catchLog:Iterate(0, "TackleBoard") do
+				read[#read + 1] = record
+			end
+			assert.are.same({
+				{
+					seq = 1,
+					id = BRAM .. "-1791731684-0",
+					kind = "module",
+					char = 2,
+					time = 1791731684,
+					module = "TackleBoard",
+					recordKind = "issue.v1",
+					payload = payload,
+				},
+			}, read)
+		end
+	)
+
+	it("round-trips a Module record with an empty payload (LOG-R40, Entry formats)", function()
+		local catchLog = ns.OpenCatchLog(adaAndBramLog(), {})
+
+		local record = catchLog:Append({
+			kind = "module",
+			char = 1,
+			time = 1791731685,
+			module = "TackleBoard",
+			recordKind = "start",
+			payload = "",
+		})
+
+		assert.are.same({ "A1|1|1791731685|0|TackleBoard|start|" }, catchLog.data.entries)
+		assert.are.same({ "module", "TackleBoard", "start", "" }, {
+			record.kind,
+			record.module,
+			record.recordKind,
+			record.payload,
+		})
+	end)
+
 	it("raises an error in the caller and appends nothing for a record it can't write (LOG-R16)", function()
 		local catchLog = ns.OpenCatchLog(adaAndBramLog(), {})
+		local function moduleRecord(module, recordKind, payload)
+			local record = { kind = "module", char = 1, time = 1791731680 }
+			record.module, record.recordKind, record.payload = module, recordKind, payload
+			return record
+		end
 		local unwritable = {
-			{ kind = "module", char = 1, time = 1791731680 }, -- not a kind M4 writes (M7, LOG-R40)
+			moduleRecord("TackleBoard", "bad kind", "x"), -- a kind outside [%w_.]+ (LOG-R40)
+			moduleRecord("TackleBoard", "", "x"),
+			moduleRecord("TackleBoard", "re|roll", "x"),
+			moduleRecord("TackleBoard", nil, "x"),
+			moduleRecord("TackleBoard", "day", "two\nlines"), -- a newline (LOG-R40)
+			moduleRecord("TackleBoard", "day", ("x"):rep(201)), -- over 200 bytes (LOG-R40, Tunables)
+			moduleRecord("TackleBoard", "day", 7), -- not a string
+			moduleRecord("TackleBoard", "day", nil),
+			moduleRecord("", "day", "x"), -- no Module
+			moduleRecord("Tackle|Board", "day", "x"),
+			moduleRecord(nil, "day", "x"),
 			{ kind = "prestige", char = 1, time = 1791731680, rank = 0 }, -- ranks start at 1
 			{ kind = "prestige", char = 1, time = 1791731680, rank = 1.5 },
 			{ kind = "purchase", char = 1, time = 1791731680, good = "core.toast style", price = 150 },
@@ -271,7 +343,12 @@ end)
 
 describe("an entry the codec can't decode", function()
 	local undecodable = {
-		"A1|1|1791731700|0|Ledger|note|x", -- a tag M4 doesn't read (M7, LOG-R40)
+		"A1|1|1791731700|0|TackleBoard|bad kind|x", -- a Module record's kind outside [%w_.]+ (LOG-R40)
+		"A1|1|1791731700|0|TackleBoard||x", -- no kind
+		"A1|1|1791731700|0|TackleBoard|day", -- no payload field
+		"A1|1|1791731700|0|TackleBoard", -- no kind or payload
+		"A1|1|1791731700|0||day|x", -- no Module
+		"A1|9|1791731700|0|TackleBoard|day|x", -- no character 9
 		"C1|1|1791731700|0|c|494|1439|1|148|453|86|25|263|||6358x1|extra", -- one field too many
 		"P1|1|1791731700|0|", -- no rank
 		"P1|1|1791731700|0|0", -- ranks start at 1
@@ -351,6 +428,63 @@ describe("iterating the log", function()
 			seen[#seen + 1] = record.seq .. " " .. record.kind
 		end
 		assert.are.same({ "1 build", "2 cast", "3 prestige", "4 skill", "5 purchase", "6 cast" }, seen)
+	end)
+
+	describe("with Module records", function()
+		local function withRecords()
+			return ns.OpenCatchLog(
+				adaAndBramLog({
+					"C1|1|1791731747|0|c|494|1439|1|148|453|86|25|263|||6358x1",
+					"A1|1|1791731748|0|TackleBoard|start|",
+					"A1|1|1791731749|0|Ledger|note|x", -- another Module's
+					"A1|1|1791731750|0|TackleBoard|issue|n|haul",
+					"C1|1|1791731760|0|g|494|1439|1|148|453|87|25|263|||",
+				}),
+				{ decodeErrors = 0 }
+			)
+		end
+
+		local function seen(iterate)
+			local list = {}
+			for record in iterate do
+				list[#list + 1] = record.seq .. " " .. record.kind .. (record.module and (" " .. record.module) or "")
+			end
+			return list
+		end
+
+		it("yields none to a reader that names no Module: Pagle.IterateCatches (LOG-R42)", function()
+			local catchLog = withRecords()
+
+			assert.are.same({ "1 cast", "5 cast" }, seen(catchLog:Iterate(0)))
+			assert.are.equal(0, catchLog.global.decodeErrors) -- skipped, not undecodable (LOG-R41)
+		end)
+
+		it("yields a Module its own records in seq order, never another Module's (LOG-R41, LOG-R42)", function()
+			local catchLog = withRecords()
+
+			assert.are.same(
+				{ "1 cast", "2 module TackleBoard", "4 module TackleBoard", "5 cast" },
+				seen(catchLog:Iterate(0, "TackleBoard"))
+			)
+			assert.are.same({ "4 module TackleBoard", "5 cast" }, seen(catchLog:Iterate(3, "TackleBoard")))
+			assert.are.same({ "1 cast", "3 module Ledger", "5 cast" }, seen(catchLog:Iterate(0, "Ledger")))
+			assert.are.same({ "1 cast", "5 cast" }, seen(catchLog:Iterate(0, "Stats")))
+			assert.are.equal(0, catchLog.global.decodeErrors)
+		end)
+
+		it("leaves Casts' Sessions as they are without the records (LOG-R98)", function()
+			local catchLog = withRecords()
+			local sessions = {}
+			for record in catchLog:Iterate(2, "TackleBoard") do
+				sessions[#sessions + 1] = record.session or "-"
+			end
+
+			local first
+			for record in catchLog:Iterate(0) do
+				first = first or record.session
+			end
+			assert.are.same({ "-", first }, sessions)
+		end)
 	end)
 
 	it("stops at the log's length when called, never at entries appended meanwhile (LOG-R42)", function()
