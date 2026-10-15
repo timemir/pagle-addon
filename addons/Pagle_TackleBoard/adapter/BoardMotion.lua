@@ -42,6 +42,7 @@ SUBLEVELS["-front"] = 6
 ---@field stage string?
 ---@field layers table<string, TackleSprite>   -- by suffix, the stage's own only
 ---@field textures table<string, TackleSprite> -- every layer made so far, by suffix
+---@field pop number?                          -- the flames' scale over their flicker, while the fire steps up or dies
 
 ---@class TackleFireLayer: TackleSprite
 ---@field w0 number?   -- its size at rest, for the flicker
@@ -123,7 +124,8 @@ function ns.FireMotion(owner, fire)
 				dir = spec[2],
 				keys = { { 0, { 1, 1, -2 } }, { 1, { 0.94, 1.06, 2.5 } } },
 				apply = function(v)
-					transform(t, fire.parent, fire.x, fire.y, 69, 100.4, v[1], v[2], v[3])
+					local k = fire.pop or 1 -- the flames rising as the fire steps up, sinking as it goes out
+					transform(t, fire.parent, fire.x, fire.y, 69, 100.4, v[1] * k, v[2] * k, v[3])
 				end,
 			}
 		end
@@ -243,7 +245,8 @@ function ns.BoardMotion(frame, fire, base, restart)
 				iter = "infinite",
 				keys = GLOW_KEYS,
 				apply = function(v)
-					frame.glow:SetAlpha(v[1] * base)
+					-- glowBoost: the light flaring as the fire steps up (adapter/BoardChanges.lua)
+					frame.glow:SetAlpha(v[1] * base * (frame.glowBoost or 1))
 				end,
 			},
 		})

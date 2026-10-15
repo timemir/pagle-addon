@@ -17,6 +17,9 @@ local ns = select(2, ...)
 local FRAME_NAME = "PagleTackleBoard"
 -- The kit's board: 1000 × 660, the cork 952 × 466 inside the frame's leather, the ledge under it from 500 down.
 local WIDTH, HEIGHT = 1000, 660
+-- What the board fits to the screen (the kit's): its whole extent with the plaque over its top edge, and how far its
+-- centre sits under the screen's.
+local FIT_WIDTH, FIT_HEIGHT, FIT_DOWN = 1010, 690, -10
 local CORK_X, CORK_Y, CORK_WIDTH, CORK_HEIGHT = 24, 34, 952, 466
 local LEDGE_Y = 500
 local LEDGE_HEIGHT = HEIGHT - LEDGE_Y
@@ -64,6 +67,9 @@ local GLOW_EMPTY = 0.25
 ---@field start TackleButtonView                   -- Start my board (TKB-R5)
 ---@field updating TackleUpdatingFrame             -- "Updating…" over the cork (TKB-R108)
 ---@field parts table<TackleBoardPart, Frame>      -- each part's frame, in its place
+---@field glowBase number?                         -- the light on the cork's alpha at rest, nil while it is hidden
+---@field glowBoost number?                        -- how much brighter it flares as the fire steps up
+---@field settled boolean?                         -- its last draw drew a started board that wasn't updating
 
 --- The Tackle Board: its parts' renderers, and its frame once made.
 ---@class TackleBoard
@@ -123,6 +129,9 @@ local function buildParts(frame)
 		spike = placed(cork, SPIKE_WIDTH, SPIKE_HEIGHT, SPIKE_X, SPIKE_Y, frame, "spike"),
 		ledge = placed(frame.ledge, WIDTH, LEDGE_HEIGHT, 0, 0, frame, "ledge"),
 	}
+	-- Where the spike hangs on the cork, for a goal done flying to it (adapter/BoardChanges.lua).
+	local spike = frame.parts.spike --[[@as TackleSpikeFrame]]
+	spike.at = { x = SPIKE_X, y = SPIKE_Y }
 end
 
 -- The cork (TKB-R100): one tile repeated across it, shaded at its edges, and the Campfire's glow added over it.
@@ -231,6 +240,15 @@ local function build(board)
 	end)
 	table.insert(UISpecialFrames, FRAME_NAME)
 	frame:Hide()
+	-- Closed by its mark, Esc or a toggle, never by its parent hiding (the UI hidden): it sounds its closing, and every
+	-- moment of change playing settles (adapter/BoardChanges.lua).
+	frame:SetScript("OnHide", function(self)
+		self.settled = false
+		ns.SettleBoardChanges()
+		if not self:IsShown() then
+			ns.BoardSound("boardClose")
+		end
+	end)
 	return frame
 end
 
@@ -249,16 +267,20 @@ function Board:Toggle()
 	end
 end
 
---- Opens the board, centred if it was closed (TKB-R100), and draws it, handing `goalID` to the parts for the pins'
---- highlight (TKB-R109). Open, it stays where it is and never closes.
+--- Opens the board, centred and shrunk to fit the screen if it was closed (TKB-R100), with its opening sound, and draws
+--- it, handing `goalID` to the parts for the pins' highlight (TKB-R109). Open, it stays where it is, silent, and never
+--- closes.
 ---@param goalID string?
 function Board:Open(goalID)
 	local frame = self.frame or build(self)
 	self.frame = frame
 	if not frame:IsShown() then
-		frame:ClearAllPoints()
-		frame:SetPoint("CENTER")
+		-- The kit's fit (adapter/Fit.lua): the board and the plaque over its top edge, its centre 10 under the screen's;
+		-- it fits again when the UI scale or the window changes.
+		ns.FitToScreen(frame, FIT_WIDTH, FIT_HEIGHT, FIT_DOWN)
 		frame:Show()
+		-- Sounded here, once per opening: the kit's probe sounded it at every start of the motion, so twice.
+		ns.BoardSound("boardOpen")
 	end
 	self:Draw("open", nil, goalID)
 end
@@ -288,6 +310,12 @@ function Board:Draw(reason, detail, highlight)
 		return
 	end
 	local frame = self.frame --[[@as TackleBoardFrame]]
+	-- What it showed, to play what this draw changes (adapter/BoardChanges.lua): over a started board drawn before while
+	-- open, never at its opening, which also settles any moment still playing.
+	local before = frame.settled and reason ~= "open" and ns.BoardSnapshot(frame) or nil
+	if reason == "open" then
+		ns.SettleBoardChanges()
+	end
 	local shows = ns.BoardShows(ns.KnownStarted(), ns.IsUpdating(), ns.IsStarted())
 	frame.empty:SetShown(shows.empty)
 	frame.start:SetUsable(shows.startEnabled)
@@ -302,6 +330,7 @@ function Board:Draw(reason, detail, highlight)
 	end
 	frame.glow:SetShown(glow ~= nil)
 	frame.glow:SetAlpha(glow or 0)
+	frame.glowBase = glow
 	local drawn = {}
 	for _, part in ipairs(shows.parts) do
 		drawn[part] = true
@@ -320,6 +349,10 @@ function Board:Draw(reason, detail, highlight)
 	local ledge = frame.parts.ledge --[[@as TackleLedgeFrame]]
 	local fire = drawn.ledge and ledge.fire and ledge.fire.burning or nil
 	ns.BoardMotion(frame, fire, glow, reason == "open")
+	frame.settled = #shows.parts > 0 and not shows.updating
+	if before and frame.settled then
+		ns.PlayBoardChanges(frame, before)
+	end
 end
 
 -- The board's entry points (logic/Seams.lua lists them); every caller calls them through ns at call time.

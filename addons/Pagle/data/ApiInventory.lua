@@ -128,6 +128,7 @@ ns.API_INVENTORY = {
 	"MinimalSliderWithSteppersMixin.Label",
 	"MinimalSliderWithSteppersMixin.Label.Right",
 	"MinimapCluster",
+	"PlaySound",
 	"PlaySoundFile",
 	"ReloadUI",
 	"SaveBindings",

@@ -55,12 +55,17 @@ local CHIPS, CHIP_GAP, CHIP_ICON = 4, 22, 13
 ---@field leanNow number?          -- its lean now, moving to or from straight under the mouse
 ---@field lift number?             -- how far it is lifted now
 ---@field view TacklePinView?      -- what it shows now, for its hover
+---@field tackAt number[][]        -- where each tack sits (its top left)
+---@field restLevel integer        -- its frame level, not hovered
+---@field doneStamp TackleSprite?  -- the DONE stamp landing as it is done (adapter/BoardChanges.lua)
 
 ---@class TacklePinSlot: Frame
 ---@field goal TackleGoalSlipView
 ---@field empty TackleEmptyPinView
 ---@field highlight TackleHighlightView
 ---@field goalID string?             -- the goal on it now, if any
+---@field at { x: number, y: number } -- where it hangs on the cork (logic/Pins.lua's place)
+---@field busy boolean?              -- its paper is flying to the spike (adapter/BoardChanges.lua): draws leave it shown
 
 ---@class TackleOverflowChip: Frame
 ---@field face TackleThreeSlice
@@ -189,13 +194,15 @@ local function newGoalSlip(slot, poster)
 	end
 
 	slip.tacks = {}
-	for i, at in ipairs(poster and POSTER_TACKS or NOTICE_TACKS) do
+	slip.tackAt = poster and POSTER_TACKS or NOTICE_TACKS
+	for i, at in ipairs(slip.tackAt) do
 		slip.tacks[i] = ns.NewBoardTack(slip)
 		ns.PlaceSprite(slip.tacks[i], slip, at[1], at[2])
 	end
 
 	-- Under the mouse it straightens (TKB-R102) and lifts, above its neighbours (adapter/BoardMotion.lua).
 	local level = slip:GetFrameLevel()
+	slip.restLevel = level
 	slip:SetScript("OnEnter", function(self)
 		self:SetFrameLevel(level + 10)
 		ns.PinHover(self, self.paper, 0, 2)
@@ -365,10 +372,13 @@ local function drawPins(frame, draw)
 			local place = places[name][i]
 			slot:ClearAllPoints()
 			slot:SetPoint("TOPLEFT", frame, "TOPLEFT", place.x, -place.y)
+			slot.at = place
 			local pin = layout[name][i]
 			local goal = pin.goal
 			slot.goalID = goal and goal.id
-			slot.goal:SetShown(goal ~= nil)
+			if not slot.busy then
+				slot.goal:SetShown(goal ~= nil)
+			end
 			slot.empty:SetShown(goal == nil)
 			if goal then
 				drawGoal(slot.goal, goal, view(goal), place.lean)
