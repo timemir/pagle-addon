@@ -180,7 +180,7 @@ describe("Every string the package draws (CORE-R9)", function()
 			"addons/Pagle_Ledger/data/Lore.lua",
 			"addons/Pagle_QoL/Bindings.xml",
 		}) do
-			assert.is_true(listed[path], path)
+			assert.are.equal(path, listed[path] and path)
 		end
 		for path in pairs(listed) do
 			assert.is_nil(path:find("/libs/", 1, true))
