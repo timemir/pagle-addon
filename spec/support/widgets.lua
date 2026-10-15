@@ -169,13 +169,7 @@ function widgets.newWidget(kind, parent)
 	function widget:GetTexture()
 		return self.texture
 	end
-	-- A frame's level among its strata's frames, and its scale (1 until set).
-	function widget:SetFrameLevel(level)
-		self.frameLevel = level
-	end
-	function widget:GetFrameLevel()
-		return self.frameLevel or 0
-	end
+	-- Its scale (1 until set).
 	function widget:SetScale(scale)
 		self.scale = scale
 	end
