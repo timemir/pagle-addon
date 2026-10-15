@@ -392,13 +392,12 @@ describe("the Journal's Home, right page", function()
 	end)
 end)
 
--- Seeds prestige rank `rank` on the projection's state, as a Prestige entry (LED-R32) leaves it.
+-- The fixture's Mackerel in Elwynn, then character 1's Prestige to `rank` (LOG-R38): rank `rank` from the entry
+-- (LED-R32).
 ---@param rank integer
-local function prestige(rank)
-	return function(loaded)
-		level12(loaded)
-		loaded.ns.projection:GetState().prestige = rank
-	end
+---@return table[]
+local function prestiged(rank)
+	return { cast(ELWYNN, MACKEREL), { kind = "prestige", char = 1, time = T0 + 60, rank = rank } }
 end
 
 -- The drawn bookplate row's widget (LED-R132).
@@ -424,7 +423,7 @@ describe("the Journal's Home, the bookplate's title and Prestige (LED-R132, LED-
 	end)
 
 	it("shows emblem III beside the level at rank 3, and the active title under it (LED-R132, LED-R34)", function()
-		local _, loaded = openHome({ cast(ELWYNN, MACKEREL) }, prestige(3))
+		local _, loaded = openHome(prestiged(3), level12)
 
 		-- A Prestige means a climb reached 60, so the peak level is 60 and automatic signs with level60 (LED-R35).
 		local bookplate = pages(loaded).right[1]
@@ -435,7 +434,7 @@ describe("the Journal's Home, the bookplate's title and Prestige (LED-R132, LED-
 	end)
 
 	it("shows a Master Prestige's stars beside emblem X (LED-R34)", function()
-		local _, loaded = openHome({ cast(ELWYNN, MACKEREL) }, prestige(12))
+		local _, loaded = openHome(prestiged(12), level12)
 
 		local bookplate = pages(loaded).right[1]
 		assert.are.same({ emblem = "X", stars = 2 }, bookplate.mark)
@@ -445,8 +444,8 @@ describe("the Journal's Home, the bookplate's title and Prestige (LED-R132, LED-
 	end)
 
 	it("signs with the stored active title once it is earned (LED-R77)", function()
-		local _, loaded = openHome({ cast(ELWYNN, MACKEREL) }, function(ledger)
-			prestige(1)(ledger)
+		local _, loaded = openHome(prestiged(1), function(ledger)
+			level12(ledger)
 			ledger.ns.db.profile.activeTitle = "title:prestige1"
 		end)
 
@@ -503,8 +502,8 @@ describe("the brass plate (LED-R149)", function()
 	end)
 
 	it("names the stored active title once earned (LED-R149, LED-R77)", function()
-		local _, loaded = openHome({ cast(ELWYNN, MACKEREL) }, function(ledger)
-			prestige(1)(ledger)
+		local _, loaded = openHome(prestiged(1), function(ledger)
+			level12(ledger)
 			ledger.ns.db.profile.activeTitle = "title:prestige1"
 		end)
 

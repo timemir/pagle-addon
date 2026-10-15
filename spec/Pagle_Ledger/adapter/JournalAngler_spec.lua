@@ -212,7 +212,7 @@ local FIRST_FISH = 100001
 ---@param time integer
 ---@param count integer
 ---@param itemID integer?
-local function haul(time, count, itemID)
+local function bigCast(time, count, itemID)
 	local record = cast(1, time, MACKEREL)
 	record.items = {}
 	for i = 1, count do
@@ -229,20 +229,9 @@ local TO_60_SPECIES = 324
 local function sixtyCatalogue()
 	local items = {}
 	for i = 0, TO_60_SPECIES - 1 do
-		local id = FIRST_FISH + i
-		items[id] = { category = "fish", species = id, legend = false, noise = false, removed = false, pool = false }
+		items[FIRST_FISH + i] = fishRecord(FIRST_FISH + i)
 	end
-	return {
-		fingerprint = "0123456789abcdef",
-		items = items,
-		areas = {},
-		aliases = {},
-		pools = {},
-		windows = {},
-		events = {},
-		fishingSpells = {},
-		auras = {},
-	}
+	return catalogueWith({ items = items })
 end
 
 -- Character 1's Prestige to `rank` at `time` (LOG-R38).
@@ -253,7 +242,7 @@ end
 -- The fixture log, then `extra` records.
 ---@param extra table[]
 ---@return table[]
-local function fixtureAnd(extra)
+local function fixturePlus(extra)
 	local log = {}
 	for _, record in ipairs(FIXTURE) do
 		log[#log + 1] = record
@@ -323,7 +312,7 @@ describe("the Angler page's bookplate in M4", function()
 	end)
 
 	it("shows emblem II at rank 2, in place of No Prestige seals yet (LED-R146, LED-R34)", function()
-		local _, loaded = anglerPage(fixtureAnd({ prestige(T0 + 600, 1), prestige(T0 + 900, 2) }))
+		local _, loaded = anglerPage(fixturePlus({ prestige(T0 + 600, 1), prestige(T0 + 900, 2) }))
 		local left = loaded.ns.journal.pages.left
 
 		assert.are.same({ { kind = "emblem", mark = { emblem = "II", stars = 0 } } }, ofKind(left, "emblem"))
@@ -335,7 +324,7 @@ describe("the Angler page's bookplate in M4", function()
 	it(
 		"shows Begin a new Ledger (Prestige) at 60, under the emblems, and it opens the confirm (LED-R146, LED-R33)",
 		function()
-			local _, loaded = anglerPage({ haul(T0, TO_60_SPECIES) }, { catalogue = sixtyCatalogue() })
+			local _, loaded = anglerPage({ bigCast(T0, TO_60_SPECIES) }, { catalogue = sixtyCatalogue() })
 			local left = loaded.ns.journal.pages.left
 
 			local buttons = ofKind(left, "button")
@@ -351,7 +340,10 @@ describe("the Angler page's bookplate in M4", function()
 	)
 
 	it("shows no Prestige button while the projection updates (LED-R33, LED-R122)", function()
-		local fake, loaded = anglerPage({ haul(T0, TO_60_SPECIES) }, { catalogue = sixtyCatalogue(), updating = true })
+		local fake, loaded = anglerPage(
+			{ bigCast(T0, TO_60_SPECIES) },
+			{ catalogue = sixtyCatalogue(), updating = true }
+		)
 
 		assert.is_true(loaded.ns.journal.pages.updating)
 		assert.are.same({}, ofKind(loaded.ns.journal.pages.left, "button"))
@@ -364,11 +356,11 @@ describe("the Angler page's bookplate in M4", function()
 	it(
 		"reads 1,200 Catches · next milestone 5,000, and after the last milestone just the count (LED-R146, LED-R42)",
 		function()
-			local _, at1200 = anglerPage(fixtureAnd({ haul(T0 + 600, 1197, MACKEREL) }))
+			local _, at1200 = anglerPage(fixturePlus({ bigCast(T0 + 600, 1197, MACKEREL) }))
 			local left = at1200.ns.journal.pages.left
 			assert.are.equal("1,200 Catches · next milestone 5,000", left[#left].text)
 
-			local _, at50000 = anglerPage(fixtureAnd({ haul(T0 + 600, 49997, MACKEREL) }))
+			local _, at50000 = anglerPage(fixturePlus({ bigCast(T0 + 600, 49997, MACKEREL) }))
 			left = at50000.ns.journal.pages.left
 			assert.are.equal("50,000 Catches", left[#left].text)
 		end

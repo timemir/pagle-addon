@@ -504,14 +504,15 @@ end
 
 --- The Ledger on FakePagle over a spec's catalogue and log, logged in and in the world, with the Fish Journal open.
 --- `options`, each optional: `catalogue` (fake.setCatalogue's; the generated one by default), `characters` (the
---- log's; the player's alone by default), `logId` (the log's), `log` (records appended in order), `globals` (set on
+--- log's; the player's alone by default), `logId` (the log's), `log` (records appended in order), `entries` (the
+--- log's entries as saved, in place of `log`), `globals` (set on
 --- the fake's globals before the Ledger loads, such as a saved PagleLedgerDB), `itemNames`, `areaNames` and `mapNames`
 --- (what the fake client's C_Item and C_Map know), `before` (run with loaded and fake before the book opens), and
 --- where it opens: `place`, one of the Ledger's own places as `{ constructor, args... }` (ns.JournalPlace, e.g.
 --- `{ "zone", 148 }`), or `id` and `args` for a spec's own spread, which must be registered; Home, at its first
 --- opening, by default; with `id` false the book stays closed. With `building`, it stops after login, before entering
 --- the world, so the projection is still being built (LOG-R74, LED-R122).
----@param options { catalogue: table?, characters: table[]?, logId: string?, log: table[]?, globals: table?, itemNames: table?, areaNames: table?, mapNames: table?, before: fun(loaded: LoadedAddon, fake: FakePagle)?, building: boolean?, place: table?, id: string|false|nil, args: table? }?
+---@param options { catalogue: table?, characters: table[]?, logId: string?, log: table[]?, entries: string[]?, globals: table?, itemNames: table?, areaNames: table?, mapNames: table?, before: fun(loaded: LoadedAddon, fake: FakePagle)?, building: boolean?, place: table?, id: string|false|nil, args: table? }?
 ---@return FakePagle fake
 ---@return LoadedAddon loaded
 function openJournal(options)
@@ -523,6 +524,9 @@ function openJournal(options)
 	fake.catchLog.data.characters = options.characters or { { guid = PLAYER_GUID } }
 	if options.logId then
 		fake.catchLog.data.logId = options.logId
+	end
+	if options.entries then
+		fake.catchLog.data.entries = options.entries
 	end
 	for _, record in ipairs(options.log or {}) do
 		fake.catchLog:Append(record)

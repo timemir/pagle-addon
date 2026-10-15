@@ -1,7 +1,7 @@
 -- Prestiging on FakePagle (LED-R33, LED-R194, LOG-R38): ns.CanPrestige, the confirm ns.AskPrestige shows, the P1 it
 -- appends through M:RecordPrestige, the Journal hiding it, and the emblem block (LED-R34) the Journal's widgets draw.
 
-local T0 = 1791731000
+local T0 = SERVER_TIME - 700
 local ZONE = 12 -- uncharted in the catalogue below: no Zone Mastery rank adds to the numbers (LED-R54)
 local FIRST_FISH = 100001
 -- One Cast landing this many new Species in a new zone reaches level 60 at prestige rank 0: 200 for the zone's first
@@ -13,61 +13,34 @@ local TO_60_SPECIES = 324
 local function catalogue()
 	local items = {}
 	for i = 0, TO_60_SPECIES - 1 do
-		local id = FIRST_FISH + i
-		items[id] = { category = "fish", species = id, legend = false, noise = false, removed = false, pool = false }
+		items[FIRST_FISH + i] = fishRecord(FIRST_FISH + i)
 	end
-	return {
-		fingerprint = "0123456789abcdef",
-		items = items,
-		areas = {},
-		aliases = {},
-		pools = {},
-		windows = {},
-		events = {},
-		fishingSpells = {},
-		auras = {},
-	}
+	return catalogueWith({ items = items })
 end
 
 -- A caught Cast by the player's character (char 1) at `time`, of `count` of the fish from the first.
 local function cast(time, count)
 	local items = {}
 	for i = 1, count do
-		items[i] = { itemID = FIRST_FISH + i - 1, quantity = 1 }
+		items[i] = FIRST_FISH + i - 1
 	end
-	return {
-		kind = "cast",
-		char = 1,
-		time = time,
-		outcome = "caught",
-		conditions = { minute = 494, zone = ZONE, subzone = 0, events = {}, auras = {} },
-		items = items,
-	}
+	return castRecord({ time = time, zone = ZONE, items = items })
 end
 
 -- A Ledger on a fake over the catalogue, its log holding `records` (a Cast reaching 60 by default) or the saved
--- entries `entries`, logged in and, unless `updating`, in the world (the projection built).
+-- entries `entries`, logged in and, unless `updating`, in the world (the projection built); the Journal closed.
 ---@param options { records: table[]?, entries: string[]?, updating: boolean? }?
 ---@return FakePagle fake
 ---@return LoadedAddon loaded
 local function ledger(options)
 	options = options or {}
-	local fake = newFakePagle()
-	fake.setCatalogue(catalogue())
-	fake.catchLog.data.characters[1] = { guid = PLAYER_GUID }
-	if options.entries then
-		fake.catchLog.data.entries = options.entries
-	else
-		for _, record in ipairs(options.records or { cast(T0, TO_60_SPECIES) }) do
-			fake.catchLog:Append(record)
-		end
-	end
-	local loaded = fake.load("Pagle_Ledger")
-	fake.login()
-	if not options.updating then
-		fake.enterWorld()
-	end
-	return fake, loaded
+	return openJournal({
+		catalogue = catalogue(),
+		log = not options.entries and (options.records or { cast(T0, TO_60_SPECIES) }) or nil,
+		entries = options.entries,
+		building = options.updating,
+		id = false,
+	})
 end
 
 -- The log's P1 entries (LOG-R38).
@@ -136,7 +109,7 @@ describe("Prestiging (LED-R33)", function()
 			loaded.ns.AskPrestige()
 			loaded.client.clickPopup(1)
 
-			assert.are.same({ ("P1|1|%d|0|1"):format(SERVER_TIME) }, prestiges(fake))
+			assert.are.same({ prestigeEntry(SERVER_TIME, 1) }, prestiges(fake))
 			assert.are.same({ 1 }, announced)
 			assert.is_nil(loaded.client.popup)
 			-- Applied live: rank 1, a new climb from the 240 carried XP, so Prestige isn't allowed again yet (LED-R32).
@@ -227,21 +200,7 @@ describe("the Prestige emblem block (LED-R34)", function()
 	end
 
 	-- The texts an emblem widget shows: its numeral, then each star stamp's.
-	local function shown(widget)
-		local texts = {}
-		local function walk(node)
-			for _, child in ipairs(node.children) do
-				if child.shown then
-					if child.text ~= nil and child.text ~= "" then
-						texts[#texts + 1] = child.text
-					end
-					walk(child)
-				end
-			end
-		end
-		walk(widget)
-		return texts
-	end
+	local shown = shownTexts
 
 	it("draws the emblem's roman numeral, and a Master Prestige's stars as ink stamps", function()
 		local widgets = drawn({
