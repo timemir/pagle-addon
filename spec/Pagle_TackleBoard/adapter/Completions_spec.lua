@@ -6,12 +6,14 @@
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local board = dofile("spec/Pagle_TackleBoard/support.lua")
+local start, issue, idAt, cast, join, copy, withHistory, built, live =
+	board.start, board.issue, board.idAt, board.cast, board.join, board.copy, board.withHistory, board.built, board.live
 
-local DAY, WEEK = 86400, 604800
-local W = board.WEEKLY_RESET - WEEK -- Tuesday 6 October 2026 15:00 UTC: the weekly reset week 0 starts at
-local D0 = W + DAY -- Wednesday 7 October 15:00 UTC: board day 0, the start record's day
+local DAY = board.DAY
+local D0 = board.DAY0 -- Wednesday 7 October 15:00 UTC: board day 0, the start record's day
 local DUROTAR, BARRENS = 14, 17
-local BLACKMOUTH = 6358 -- a Durotar fish of the fixture
+local BLACKMOUTH = 6358 -- Oily Blackmouth; the fixture lists it in Darkshore, The Barrens and Westfall, but a Haul goal
+-- counts a Catch of any item in its zone
 
 -- Goal payloads (Data): a Haul Notice for 20 Catches in Durotar paying 10, Notices and an Expedition done by one
 -- Catch in Durotar, and fillers no Durotar Catch counts toward.
@@ -20,94 +22,11 @@ local ONE = "n;haul;1;10;1;14"
 local ONE_E = "e;haul;0;60;1;14"
 local FILLER = "n;haul;2;15;30;17"
 
--- A Tackle Board Module record for fake.catchLog:Append, by the player's character (1).
-local function record(kind, time, payload)
-	return { kind = "module", char = 1, time = time, module = "TackleBoard", recordKind = kind, payload = payload }
-end
-
--- A `start` record at `time` on day 0 of week 0.
-local function start(time)
-	return record("start", time, D0 .. ";" .. W)
-end
-
-local function issue(time, payload)
-	return record("issue", time, payload)
-end
-
--- The entry ID of the player's entry at `time`, the first at that second (LOG-R13): a goal's ID (TKB-R23), a Cast's.
-local function idAt(time)
-	return PLAYER_GUID .. "-" .. time .. "-0"
-end
-
--- A Cast record for fake.catchLog:Append: `items` are item IDs (none: got away).
-local function cast(time, zone, items)
-	local slots = {}
-	for i, itemID in ipairs(items or {}) do
-		slots[i] = { itemID = itemID, quantity = 1 }
-	end
-	return {
-		kind = "cast",
-		char = 1,
-		time = time,
-		outcome = items and "caught" or "gotAway",
-		conditions = { minute = 600, zone = zone, subzone = 0, skillRank = 150, skillMod = 0, events = {}, auras = {} },
-		items = slots,
-	}
-end
-
--- `lists` concatenated, in order.
-local function join(...)
-	local out = {}
-	for _, list in ipairs({ ... }) do
-		for _, value in ipairs(list) do
-			out[#out + 1] = value
-		end
-	end
-	return out
-end
-
 -- `n` records made by `make(i)`, i = 1..n.
 local function times(n, make)
 	local out = {}
 	for i = 1, n do
 		out[i] = make(i)
-	end
-	return out
-end
-
--- A new FakePagle whose log has the player's character, then `records`, appended in order.
-local function withHistory(records)
-	local fake = newFakePagle()
-	fake.catchLog.data.characters[1] = { guid = PLAYER_GUID }
-	for _, entry in ipairs(records) do
-		fake.catchLog:Append(entry)
-	end
-	return fake
-end
-
--- The Tackle Board loaded on `fake`, then login and its first PLAYER_ENTERING_WORLD: the projection's first build.
----@return PagleTackleBoardNS ns
----@return LoadedAddon loaded
-local function built(fake, options)
-	local loaded = board.load(fake, options)
-	fake.login()
-	fake.enterWorld()
-	return loaded.ns, loaded
-end
-
--- Appends `entry` to `fake`'s log and hands it to the projections live (LOG-R73).
-local function live(fake, entry)
-	fake.live(fake.catchLog:Append(entry))
-end
-
--- A deep copy of a plain table.
-local function copy(value)
-	if type(value) ~= "table" then
-		return value
-	end
-	local out = {}
-	for key, inner in pairs(value) do
-		out[key] = copy(inner)
 	end
 	return out
 end

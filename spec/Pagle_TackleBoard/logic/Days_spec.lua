@@ -8,7 +8,7 @@
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local board = dofile("spec/Pagle_TackleBoard/support.lua")
 
-local DAY, WEEK = 86400, 604800
+local DAY, WEEK = board.DAY, board.WEEK
 
 local NOW = SERVER_TIME -- Sun 11 Oct 2026 15:15 UTC, realm 08:15
 local DAILY = 1791730800 -- Sun 11 Oct 15:00 UTC: today's daily reset

@@ -40,7 +40,7 @@ local function loadNamed()
 	loaded.client.areaNames[DUROTAR] = "Durotar"
 	loaded.client.areaNames[DARKSHORE] = "Darkshore"
 	loaded.client.mapNames[1414] = "Kalimdor"
-	loaded.client.itemNames[MACKEREL] = "Longjaw Mud Snapper"
+	loaded.client.itemNames[MACKEREL] = "Raw Slitherskin Mackerel"
 	loaded.client.itemNames[BLACKMOUTH] = "Oily Blackmouth"
 	loaded.client.itemNames[MIGHTFISH] = "Mightfish"
 	return loaded.ns, loaded, fake
@@ -245,7 +245,7 @@ describe("a pinned goal's hover (TKB-R102)", function()
 		local shown = view(ns, variety)
 
 		assert.are.same({
-			{ name = "Longjaw Mud Snapper", caught = false },
+			{ name = "Raw Slitherskin Mackerel", caught = false },
 			{ name = "Oily Blackmouth", caught = false },
 			{ name = "Mightfish", caught = true },
 		}, shown.species)

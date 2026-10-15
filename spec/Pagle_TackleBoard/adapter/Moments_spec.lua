@@ -7,14 +7,16 @@
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local board = dofile("spec/Pagle_TackleBoard/support.lua")
+local record, idAt, join, withHistory = board.record, board.idAt, board.join, board.withHistory
 
-local DAY, WEEK = 86400, 604800
+local DAY, WEEK = board.DAY, board.WEEK
 local NOW = SERVER_TIME -- Sunday 11 October 2026 15:15 UTC: board day 6 below began at board.DAILY_RESET
 local TODAY = board.DAILY_RESET -- Sunday 11 October 15:00 UTC: the board day NOW is in
 local D0 = TODAY - 6 * DAY -- Monday 5 October 15:00 UTC: board day 0 of a board started 6 days ago
 local W0 = board.WEEKLY_RESET - 2 * WEEK -- Tuesday 29 September 15:00 UTC: the week day 0 is in
 local DUROTAR = 14
-local BLACKMOUTH = 6358 -- a Durotar fish of the fixture
+local BLACKMOUTH = 6358 -- Oily Blackmouth; the fixture lists it in Darkshore, The Barrens and Westfall, but a Haul goal
+-- counts a Catch of any item in its zone
 
 -- Goal payloads (Data): a Notice and an Expedition done by one Catch in Durotar, and fillers for every pin that no
 -- Durotar Catch counts toward, so nothing is ever owed and the live step issues nothing.
@@ -22,16 +24,6 @@ local ONE = "n;haul;1;10;1;14"
 local ONE_E = "e;haul;0;60;1;14"
 local N_FILLER = "n;haul;2;15;30;17"
 local E_FILLER = "e;haul;0;60;100;17"
-
--- A Tackle Board Module record for fake.catchLog:Append, by the player's character (1).
-local function record(kind, time, payload)
-	return { kind = "module", char = 1, time = time, module = "TackleBoard", recordKind = kind, payload = payload }
-end
-
--- The entry ID of the player's entry at `time`, the first at that second (LOG-R13): a goal's ID, a Cast's.
-local function idAt(time)
-	return PLAYER_GUID .. "-" .. time .. "-0"
-end
 
 -- A Cast record in Durotar: `items` are item IDs (none: got away).
 local function cast(time, items)
@@ -78,17 +70,6 @@ local function started(dayStart, start)
 	return out
 end
 
--- `lists` concatenated, in order.
-local function join(...)
-	local out = {}
-	for _, list in ipairs({ ... }) do
-		for _, value in ipairs(list) do
-			out[#out + 1] = value
-		end
-	end
-	return out
-end
-
 -- A Notice done on each of board days `first`..`last`: its issue record half an hour into the day, its Catch an hour
 -- in.
 local function doneEachDay(first, last)
@@ -98,16 +79,6 @@ local function doneEachDay(first, last)
 		out[#out + 1] = catch(D0 + k * DAY + 3600)
 	end
 	return out
-end
-
--- A new FakePagle whose log has the player's character, then `records`, appended in order.
-local function withHistory(records)
-	local fake = newFakePagle()
-	fake.catchLog.data.characters[1] = { guid = PLAYER_GUID }
-	for _, entry in ipairs(records) do
-		fake.catchLog:Append(entry)
-	end
-	return fake
 end
 
 -- The Tackle Board loaded on `fake` (Durotar named in the client), logged in, its first build over, then the live

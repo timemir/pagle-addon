@@ -1,13 +1,15 @@
 -- Loading Pagle_TackleBoard for its specs: over FakePagle (its catalogue, clock, Sessions and Module registry) with
--- the fixture catalogue served in place of the shipped one, and the board's reset API and random source injected (M7
--- graph, conventions: the Tackle Board's specs never run on the shipped catalogue, and they choose the clock, the
--- resets and the draws). Specs load this file with dofile (and the undefined-global suppression every dofile in spec/
--- carries), then call it:
+-- the fixture catalogue served in place of the shipped one, and the board's reset API and random source injected: the
+-- Tackle Board's specs never run on the shipped catalogue, and they choose the clock, the resets and the draws. It
+-- also makes the history a spec appends (the board's records and Casts) and loads the board over it. Specs load this
+-- file with dofile (and the undefined-global suppression every dofile in spec/ carries), then call it:
 --
 --   local board = dofile("spec/Pagle_TackleBoard/support.lua")
 --   local loaded, fake = board.load()
 --   board.readSkill(fake)                          -- after fake.login(): the fixture Angler's skill (board.SKILL)
 --   local loaded, fake = board.load(nil, { api = board.resetAPI(nil, { region = 3 }), random = board.random(7) })
+--   local fake = board.withHistory({ board.start(T), board.issue(T + 1, payload), board.cast(T + 2, zone, { item }) })
+--   local ns, loaded = board.built(fake)          -- loaded, logged in and the projection's first build done
 --
 -- The default reset API follows the fake's clock (fake.serverTime, which fake.wait moves): a US realm, UTC−7, whose
 -- daily reset is 15:00 UTC and weekly reset Tuesday 15:00 UTC. FakePagle's clock starts at SERVER_TIME, Sunday 11
@@ -30,6 +32,143 @@ support.WEEKLY_RESET = support.DAILY_RESET + 2 * DAY
 
 --- The realm's UTC offset in seconds: UTC−7, US Pacific in summer time, as the fake client's GetGameTime (08:15).
 support.REALM_OFFSET = -7 * 3600
+
+--- A day and a week in seconds.
+support.DAY, support.WEEK = DAY, WEEK
+
+--- The weekly reset week 0 of a spec's board starts at: Tuesday 6 October 2026 15:00 UTC, the week SERVER_TIME is in.
+support.WEEK0 = support.WEEKLY_RESET - WEEK
+
+--- Board day 0 of a spec's board, its `start` record's day: Wednesday 7 October 2026 15:00 UTC, four board days
+--- before SERVER_TIME's.
+support.DAY0 = support.WEEK0 + DAY
+
+-- A history for fake.catchLog:Append: the board's own records and Casts, by the player's character (1).
+
+--- A Tackle Board Module record (LOG-R40, TKB-R80) of `kind` at `time`, its payload as written.
+---@param kind string
+---@param time integer
+---@param payload string
+---@return table
+function support.record(kind, time, payload)
+	return { kind = "module", char = 1, time = time, module = "TackleBoard", recordKind = kind, payload = payload }
+end
+
+--- A `start` record at `time` on board day 0 of week 0 (support.DAY0, support.WEEK0).
+---@param time integer
+---@return table
+function support.start(time)
+	return support.record("start", time, support.DAY0 .. ";" .. support.WEEK0)
+end
+
+--- A `day` record at `time` with its own day and week starts.
+---@param time integer
+---@param dayStart integer
+---@param weekStart integer
+---@return table
+function support.day(time, dayStart, weekStart)
+	return support.record("day", time, dayStart .. ";" .. weekStart)
+end
+
+--- An `issue` record at `time` with a goal's payload (tackle-board.md › Data).
+---@param time integer
+---@param payload string
+---@return table
+function support.issue(time, payload)
+	return support.record("issue", time, payload)
+end
+
+--- A `reroll` record at `time` taking goal `oldID` down for a goal of `payload`.
+---@param time integer
+---@param oldID string
+---@param payload string
+---@return table
+function support.reroll(time, oldID, payload)
+	return support.record("reroll", time, oldID .. ";" .. payload)
+end
+
+--- The entry ID of the player's entry at `time`, the first at that second (LOG-R13): a goal's ID (TKB-R23), a Cast's.
+---@param time integer
+---@return string
+function support.idAt(time)
+	return PLAYER_GUID .. "-" .. time .. "-0"
+end
+
+--- A Cast record at `time` in `zone`: `items` are item IDs, one Catch each (none: got away).
+---@param time integer
+---@param zone integer
+---@param items integer[]?
+---@return table
+function support.cast(time, zone, items)
+	local slots = {}
+	for i, itemID in ipairs(items or {}) do
+		slots[i] = { itemID = itemID, quantity = 1 }
+	end
+	return {
+		kind = "cast",
+		char = 1,
+		time = time,
+		outcome = items and "caught" or "gotAway",
+		conditions = { minute = 600, zone = zone, subzone = 0, skillRank = 150, skillMod = 0, events = {}, auras = {} },
+		items = slots,
+	}
+end
+
+--- Lists concatenated, in order.
+---@param ... table[]
+---@return table
+function support.join(...)
+	local out = {}
+	for _, list in ipairs({ ... }) do
+		for _, value in ipairs(list) do
+			out[#out + 1] = value
+		end
+	end
+	return out
+end
+
+--- A deep copy of a plain table.
+---@generic T
+---@param value T
+---@return T
+function support.copy(value)
+	if type(value) ~= "table" then
+		return value
+	end
+	local out = {}
+	for key, inner in pairs(value) do
+		out[key] = support.copy(inner)
+	end
+	return out
+end
+
+--- A new FakePagle whose log has the player's character, then `records`, appended in order.
+---@param records table[]
+---@return table fake
+function support.withHistory(records)
+	local fake = newFakePagle()
+	fake.catchLog.data.characters[1] = { guid = PLAYER_GUID }
+	for _, entry in ipairs(records) do
+		fake.catchLog:Append(entry)
+	end
+	return fake
+end
+
+--- Appends `entry` to `fake`'s log and hands it to the projections live (LOG-R73).
+---@param fake table
+---@param entry table
+function support.live(fake, entry)
+	fake.live(fake.catchLog:Append(entry))
+end
+
+--- `seconds` pass on the server's clock (the fake's) and the addon's timers (`loaded`'s client).
+---@param loaded LoadedAddon
+---@param fake table
+---@param seconds number
+function support.pass(loaded, fake, seconds)
+	fake.wait(seconds)
+	loaded.client.advance(seconds)
+end
 
 --- The fixture catalogue (spec/Pagle_TackleBoard/fixtures/Catalogue.lua), a new table each call.
 ---@return table
@@ -138,8 +277,8 @@ end
 -- The lore kinds the generated data/Lore.lua adds to ns.L (TKB-R130): `fly.`, `boardtitle.` and `boardgood.` keys.
 local LORE_KINDS = { "fly", "boardtitle", "boardgood" }
 
--- Removes the shipped lore batch's keys from ns.L, so names fall back to their IDs (M7 graph, open question 7) and no
--- spec depends on text the dev's review may change (#244).
+-- Removes the shipped lore batch's keys from ns.L, so names fall back to their IDs (TKB-R130) and no spec depends on
+-- text the dev's review may change.
 ---@param L table ns.L
 local function withoutLore(L)
 	local keys = {}
@@ -186,6 +325,19 @@ function support.load(fake, options)
 	end
 	loaded.client.fire("ADDON_LOADED", "Pagle_TackleBoard")
 	return loaded, fake
+end
+
+--- Pagle_TackleBoard loaded on `fake` (support.load with `options`), then login and its first PLAYER_ENTERING_WORLD:
+--- the projection's first build.
+---@param fake table
+---@param options table?
+---@return PagleTackleBoardNS ns
+---@return LoadedAddon loaded
+function support.built(fake, options)
+	local loaded = support.load(fake, options)
+	fake.login()
+	fake.enterWorld()
+	return loaded.ns, loaded
 end
 
 return support

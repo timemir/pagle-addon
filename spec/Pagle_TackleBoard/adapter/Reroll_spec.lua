@@ -6,23 +6,13 @@
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local board = dofile("spec/Pagle_TackleBoard/support.lua")
+local record, idAt = board.record, board.idAt
 
-local DAY, WEEK = 86400, 604800
-local W = board.WEEKLY_RESET - WEEK -- Tuesday 6 October 2026 15:00 UTC: week 0's weekly reset
-local D0 = W + DAY -- Wednesday 7 October 15:00 UTC: board day 0, the start record's day
+local W = board.WEEK0 -- Tuesday 6 October 2026 15:00 UTC: week 0's weekly reset
+local D0 = board.DAY0 -- Wednesday 7 October 15:00 UTC: board day 0, the start record's day
 local UNKNOWN_AREA = 9999 -- an area the fixture catalogue doesn't know (GetArea nil): its goals are stranded
 
 local SEED = 11
-
--- A Tackle Board Module record for fake.catchLog:Append, by the player's character (1).
-local function record(kind, time, payload)
-	return { kind = "module", char = 1, time = time, module = "TackleBoard", recordKind = kind, payload = payload }
-end
-
--- The entry ID of the player's entry at `time`, the first at that second (LOG-R13): a goal's ID (TKB-R23).
-local function idAt(time)
-	return PLAYER_GUID .. "-" .. time .. "-0"
-end
 
 -- Goals (tackle-board.md › Data), issued right after the start record: an Expedition on Expedition pin 1, then
 -- Notices on Notice pins 1, 2 and 3.
@@ -43,11 +33,7 @@ local STARTED = {
 ---@return LoadedAddon loaded
 ---@return table fake
 local function started(extra, random)
-	local fake = newFakePagle()
-	fake.catchLog.data.characters[1] = { guid = PLAYER_GUID }
-	for _, entry in ipairs(STARTED) do
-		fake.catchLog:Append(entry)
-	end
+	local fake = board.withHistory(STARTED)
 	for _, entry in ipairs(extra or {}) do
 		fake.catchLog:Append(entry)
 	end

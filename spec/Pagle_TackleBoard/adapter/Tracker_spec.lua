@@ -6,11 +6,11 @@
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local board = dofile("spec/Pagle_TackleBoard/support.lua")
+local record, idAt = board.record, board.idAt
 ---@diagnostic disable-next-line: undefined-global -- as above
 local newWidget = dofile("spec/support/widgets.lua").newWidget
 
-local WEEK = 604800
-local W = board.WEEKLY_RESET - WEEK -- Tuesday 6 October 2026 15:00 UTC: this week's weekly reset
+local W = board.WEEK0 -- Tuesday 6 October 2026 15:00 UTC: this week's weekly reset
 local D = board.DAILY_RESET -- Sunday 11 October 15:00 UTC: today's daily reset, 15 minutes before the fake's clock
 local DUROTAR, DARKSHORE = 14, 148
 local BLACKMOUTH = 6358 -- a Darkshore fish of the fixture
@@ -23,16 +23,6 @@ local HAUL_DUROTAR = "n;haul;2;15;30;14"
 local LURE = "n;lure;3;20;25;"
 local ONE_HERE = "n;haul;1;10;1;148" -- done by one Catch in Darkshore
 local EXPEDITION = "e;size;0;60;1;4"
-
--- A Tackle Board Module record by the player's character (1).
-local function record(kind, time, payload)
-	return { kind = "module", char = 1, time = time, module = "TackleBoard", recordKind = kind, payload = payload }
-end
-
--- The entry ID of the player's entry at `time`, the first at that second (LOG-R13): a goal's ID (TKB-R23).
-local function idAt(time)
-	return PLAYER_GUID .. "-" .. time .. "-0"
-end
 
 -- The start record's time, today; its goals follow one second apart.
 local T = D + 60

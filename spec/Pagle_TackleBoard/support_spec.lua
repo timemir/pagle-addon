@@ -1,5 +1,5 @@
 -- spec/Pagle_TackleBoard/support.lua: the Tackle Board's specs run on FakePagle over the fixture catalogue, never the
--- shipped one, with the reset API and random source injected (M7 graph, conventions), and the fixture holds each case
+-- shipped one, with the reset API and random source injected, and the fixture holds each case
 -- its header promises, read through Core's own accessors (LOG-R55) as the board reads them (TKB-R30, TKB-R31,
 -- TKB-R46).
 
@@ -113,7 +113,7 @@ describe("the Tackle Board's spec support", function()
 	)
 
 	it("leaves the shipped lore out of ns.L unless asked for it, so names read as IDs (TKB-R130)", function()
-		-- M7 graph, open question 7: a name with no lore reads as its ID; the batch's text is the dev's to change (#244).
+		-- TKB-R130: a name with no lore reads as its ID; the batch's text is the dev's to change.
 		local without = board.load().ns.L
 		local with = board.load(nil, { lore = true }).ns.L
 
@@ -132,6 +132,33 @@ describe("the Tackle Board's spec support", function()
 
 		assert.are.equal(150, fake.Pagle.GetAngler().bestBaseSkill)
 	end)
+
+	it(
+		"builds a board from a history: the start record on board day 0 of week 0, a goal named by its record (TKB-R12, TKB-R23)",
+		function()
+			local T = board.DAY0 + 3600
+			local fake = board.withHistory({
+				board.start(T),
+				board.issue(T + 1, "n;haul;1;10;3;14"),
+				board.cast(T + 2, 14, { 6303 }),
+			})
+
+			local ns = board.built(fake)
+			local state = ns.State()
+
+			assert.are.same({ day = 0, week = 0, dayStart = board.DAY0, weekStart = board.WEEK0 }, {
+				day = state.boundary.day,
+				week = state.boundary.week,
+				dayStart = state.boundary.dayStart,
+				weekStart = state.boundary.weekStart,
+			})
+			assert.are.equal(1, state.goals[board.idAt(T + 1)].progress)
+			assert.are.same(
+				{ board.DAY0 - board.DAY, board.WEEK0 + board.WEEK },
+				{ board.DAY0 - 86400, board.WEEKLY_RESET }
+			)
+		end
+	)
 
 	describe("the reset API (TKB-R10, TKB-R11)", function()
 		it("puts the daily reset 15 minutes back and the weekly one on Tuesday 15:00 UTC, on a US realm", function()

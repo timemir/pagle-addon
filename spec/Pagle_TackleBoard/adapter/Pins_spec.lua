@@ -6,10 +6,10 @@
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local board = dofile("spec/Pagle_TackleBoard/support.lua")
+local record, idAt = board.record, board.idAt
 
-local DAY, WEEK = 86400, 604800
-local W = board.WEEKLY_RESET - WEEK -- Tuesday 6 October 2026 15:00 UTC: week 0's weekly reset
-local D0 = W + DAY -- Wednesday 7 October 15:00 UTC: board day 0
+local W = board.WEEK0 -- Tuesday 6 October 2026 15:00 UTC: week 0's weekly reset
+local D0 = board.DAY0 -- Wednesday 7 October 15:00 UTC: board day 0
 local DUROTAR, DARKSHORE = 14, 148
 local MACKEREL, BLACKMOUTH, MIGHTFISH, REMOVED_FISH = 6303, 6358, 13754, 92003
 
@@ -21,16 +21,6 @@ local LURE = "n;lure;3;20;25;"
 local STRANDED = "n;species;2;15;10;" .. REMOVED_FISH
 local EXPEDITION = "e;size;0;60;1;4"
 local VARIETY = "e;variety;0;60;3;148:" .. MACKEREL .. "," .. BLACKMOUTH .. "," .. MIGHTFISH
-
--- A Tackle Board Module record by the player's character (1).
-local function record(kind, time, payload)
-	return { kind = "module", char = 1, time = time, module = "TackleBoard", recordKind = kind, payload = payload }
-end
-
--- The entry ID of the player's entry at `time`, the first at that second (LOG-R13): a goal's ID (TKB-R23).
-local function idAt(time)
-	return PLAYER_GUID .. "-" .. time .. "-0"
-end
 
 -- Each goal record's time: the start is at T, its goals one second apart after it.
 local T = D0 + 3600
@@ -47,15 +37,11 @@ end
 -- Pagle_TackleBoard on a fake whose log holds `records`, its client knowing the fixture's names, logged in, its
 -- projection built, and its board open.
 local function opened(records, options)
-	local fake = newFakePagle()
-	fake.catchLog.data.characters[1] = { guid = PLAYER_GUID }
-	for _, entry in ipairs(records) do
-		fake.catchLog:Append(entry)
-	end
+	local fake = board.withHistory(records)
 	local loaded = board.load(fake, options)
 	loaded.client.areaNames[DUROTAR] = "Durotar"
 	loaded.client.areaNames[DARKSHORE] = "Darkshore"
-	loaded.client.itemNames[MACKEREL] = "Longjaw Mud Snapper"
+	loaded.client.itemNames[MACKEREL] = "Raw Slitherskin Mackerel"
 	loaded.client.itemNames[BLACKMOUTH] = "Oily Blackmouth"
 	loaded.client.itemNames[MIGHTFISH] = "Mightfish"
 	fake.login()
@@ -325,7 +311,7 @@ describe("a pinned goal's hover (TKB-R102)", function()
 		assert.are.same({
 			"Posted Wed 7 Oct, 09:00",
 			"Only my Catches since then count",
-			box .. "Longjaw Mud Snapper",
+			box .. "Raw Slitherskin Mackerel",
 			box .. "Oily Blackmouth",
 			tick .. "Mightfish",
 		}, loaded.client.gameTooltip.lines)

@@ -7,11 +7,12 @@
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local board = dofile("spec/Pagle_TackleBoard/support.lua")
+local record, idAt, pass = board.record, board.idAt, board.pass
 
-local DAY, WEEK = 86400, 604800
-local W = board.WEEKLY_RESET - WEEK -- Tuesday 6 October 2026 15:00 UTC: the weekly reset week 0 starts at
+local DAY = board.DAY
+local W = board.WEEK0 -- Tuesday 6 October 2026 15:00 UTC: the weekly reset week 0 starts at
 local TODAY = board.DAILY_RESET -- Sunday 11 October 15:00 UTC: the board day the fake's clock is in
-local D0 = W + DAY -- Wednesday 7 October 15:00 UTC: four board days before TODAY
+local D0 = board.DAY0 -- Wednesday 7 October 15:00 UTC: four board days before TODAY
 local DUROTAR, BARRENS = 14, 17
 local BLACKMOUTH = 6358
 
@@ -22,26 +23,9 @@ local ONE_BARRENS = "n;haul;2;15;1;17"
 local FILLER = "n;haul;2;15;30;12"
 local EXPEDITION = "e;haul;0;60;150;12"
 
--- A Tackle Board Module record for fake.catchLog:Append, by the player's character (1).
-local function record(kind, time, payload)
-	return { kind = "module", char = 1, time = time, module = "TackleBoard", recordKind = kind, payload = payload }
-end
-
--- The entry ID of the player's entry at `time`, the first at that second (LOG-R13): a goal's ID (TKB-R23).
-local function idAt(time)
-	return PLAYER_GUID .. "-" .. time .. "-0"
-end
-
 -- A caught Cast of one `itemID` in `zone`, for fake.catchLog:Append.
 local function cast(time, zone, itemID)
-	return {
-		kind = "cast",
-		char = 1,
-		time = time,
-		outcome = "caught",
-		conditions = { minute = 600, zone = zone, subzone = 0, skillRank = 150, skillMod = 0, events = {}, auras = {} },
-		items = { { itemID = itemID, quantity = 1 } },
-	}
+	return board.cast(time, zone, { itemID })
 end
 
 -- A board started at `at` on the board day starting `dayStart`, after the Angler's skill was read (generation's,
@@ -64,11 +48,7 @@ end
 ---@return LoadedAddon loaded
 ---@return table fake
 local function built(records)
-	local fake = newFakePagle()
-	fake.catchLog.data.characters[1] = { guid = PLAYER_GUID }
-	for _, entry in ipairs(records) do
-		fake.catchLog:Append(entry)
-	end
+	local fake = board.withHistory(records)
 	local loaded = board.load(fake)
 	loaded.client.areaNames[DUROTAR] = "Durotar"
 	loaded.client.areaNames[BARRENS] = "The Barrens"
@@ -76,12 +56,6 @@ local function built(records)
 	fake.enterWorld()
 	loaded.client.runTimers() -- the frame after done: the login's live step (TKB-R13)
 	return loaded.ns, loaded, fake
-end
-
--- `seconds` pass on the server's clock and the addon's timers: the reset timer's live step runs (TKB-R13).
-local function pass(loaded, fake, seconds)
-	fake.wait(seconds)
-	loaded.client.advance(seconds)
 end
 
 -- Today's board: started at 15:01 UTC, two Notices done today, Durotar's at 15:01:10 and The Barrens' at 15:01:20.

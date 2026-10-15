@@ -5,17 +5,18 @@
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local board = dofile("spec/Pagle_TackleBoard/support.lua")
+local record, pass = board.record, board.pass
 
-local DAY = 86400
+local DAY = board.DAY
 local NOW = SERVER_TIME -- Sunday 11 October 2026 15:15 UTC: board day began at board.DAILY_RESET, 15 minutes ago
-local WEEK_START = board.WEEKLY_RESET - 7 * DAY -- Tuesday 6 October 15:00 UTC: the week NOW is in
+local WEEK_START = board.WEEK0 -- Tuesday 6 October 15:00 UTC: the week NOW is in
 
 -- The Tackle Board's own records in the Catch log, in order, as "kind payload".
 local function boardRecords(fake)
 	local out = {}
-	for record in fake.catchLog:Iterate(0, "TackleBoard") do
-		if record.kind == "module" then
-			out[#out + 1] = record.recordKind .. " " .. record.payload
+	for entry in fake.catchLog:Iterate(0, "TackleBoard") do
+		if entry.kind == "module" then
+			out[#out + 1] = entry.recordKind .. " " .. entry.payload
 		end
 	end
 	return out
@@ -63,18 +64,6 @@ local function ready(fake, options)
 	end
 	loaded.client.runTimers()
 	return loaded.ns, loaded, fake, armed
-end
-
--- `seconds` go by: the fake's server time (the reset API's clock) moves on, then the client's timers that come due
--- run.
-local function pass(loaded, fake, seconds)
-	fake.wait(seconds)
-	loaded.client.advance(seconds)
-end
-
--- A Tackle Board Module record for fake.catchLog:Append, by the player's character (1).
-local function record(kind, time, payload)
-	return { kind = "module", char = 1, time = time, module = "TackleBoard", recordKind = kind, payload = payload }
 end
 
 -- A new FakePagle whose log has the player's character, the Angler's skill (board.SKILL, read an hour before NOW),

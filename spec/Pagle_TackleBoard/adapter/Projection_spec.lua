@@ -5,10 +5,22 @@
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local board = dofile("spec/Pagle_TackleBoard/support.lua")
+local record, start, day, issue, reroll, idAt, cast, join, copy, withHistory, built =
+	board.record,
+	board.start,
+	board.day,
+	board.issue,
+	board.reroll,
+	board.idAt,
+	board.cast,
+	board.join,
+	board.copy,
+	board.withHistory,
+	board.built
 
-local DAY, WEEK = 86400, 604800
-local W = board.WEEKLY_RESET - WEEK -- Tuesday 6 October 2026 15:00 UTC: the weekly reset week 0 starts at
-local D0 = W + DAY -- Wednesday 7 October 15:00 UTC: board day 0, the start record's day
+local DAY, WEEK = board.DAY, board.WEEK
+local W = board.WEEK0 -- Tuesday 6 October 2026 15:00 UTC: the weekly reset week 0 starts at
+local D0 = board.DAY0 -- Wednesday 7 October 15:00 UTC: board day 0, the start record's day
 local DUROTAR, BARRENS = 14, 17
 
 -- Goal payloads (Data): three Notices and an Expedition, then spares.
@@ -16,50 +28,6 @@ local N1, N2, N3 = "n;haul;2;15;30;14", "n;quality;1;10;3;2", "n;lure;3;20;25;"
 local N4, N5, N6 = "n;size;1;10;3;3", "n;haul;1;10;20;17", "n;species;2;15;10;6358"
 local N7, N8 = "n;wanderer;3;20;3;", "n;collector;2;15;2;"
 local E1, E2 = "e;size;0;60;1;4", "e;haul;0;60;150;17"
-
--- A Tackle Board Module record for fake.catchLog:Append, by the player's character (1).
-local function record(kind, time, payload)
-	return { kind = "module", char = 1, time = time, module = "TackleBoard", recordKind = kind, payload = payload }
-end
-
--- A `start` record at `time` on day 0 of week 0.
-local function start(time)
-	return record("start", time, D0 .. ";" .. W)
-end
-
--- A `day` record at `time` with its own day and week starts.
-local function day(time, dayStart, weekStart)
-	return record("day", time, dayStart .. ";" .. weekStart)
-end
-
-local function issue(time, payload)
-	return record("issue", time, payload)
-end
-
-local function reroll(time, oldID, payload)
-	return record("reroll", time, oldID .. ";" .. payload)
-end
-
--- The entry ID of the player's entry at `time`, the first at that second (LOG-R13): a goal's ID (TKB-R23).
-local function idAt(time)
-	return PLAYER_GUID .. "-" .. time .. "-0"
-end
-
--- A Cast record for fake.catchLog:Append: `items` are item IDs (none: got away).
-local function cast(time, zone, items)
-	local slots = {}
-	for i, itemID in ipairs(items or {}) do
-		slots[i] = { itemID = itemID, quantity = 1 }
-	end
-	return {
-		kind = "cast",
-		char = 1,
-		time = time,
-		outcome = items and "caught" or "gotAway",
-		conditions = { minute = 600, zone = zone, subzone = 0, skillRank = 150, skillMod = 0, events = {}, auras = {} },
-		items = slots,
-	}
-end
 
 -- The board after day 0's start: three Notices and an Expedition issued.
 local STARTED = {
@@ -69,49 +37,6 @@ local STARTED = {
 	issue(D0 + 3603, N2),
 	issue(D0 + 3604, N3),
 }
-
--- `lists` concatenated, in order.
-local function join(...)
-	local out = {}
-	for _, list in ipairs({ ... }) do
-		for _, value in ipairs(list) do
-			out[#out + 1] = value
-		end
-	end
-	return out
-end
-
--- A new FakePagle whose log has the player's character, then `records`, appended in order.
-local function withHistory(records)
-	local fake = newFakePagle()
-	fake.catchLog.data.characters[1] = { guid = PLAYER_GUID }
-	for _, entry in ipairs(records) do
-		fake.catchLog:Append(entry)
-	end
-	return fake
-end
-
--- The Tackle Board loaded on `fake`, then login and its first PLAYER_ENTERING_WORLD: the projection's first build.
----@return PagleTackleBoardNS ns
----@return LoadedAddon loaded
-local function built(fake, options)
-	local loaded = board.load(fake, options)
-	fake.login()
-	fake.enterWorld()
-	return loaded.ns, loaded
-end
-
--- A deep copy of a plain table.
-local function copy(value)
-	if type(value) ~= "table" then
-		return value
-	end
-	local out = {}
-	for key, inner in pairs(value) do
-		out[key] = copy(inner)
-	end
-	return out
-end
 
 -- An unstarted board's state, with `zones` and `caught` (tackle-board.md › Projection).
 local function unstarted(zones, caught)
