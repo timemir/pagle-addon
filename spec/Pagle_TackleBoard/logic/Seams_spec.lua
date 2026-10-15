@@ -1,6 +1,6 @@
 -- The seams later Tackle Board tickets meet at (M7 graph, conventions): the board's entry points, the projection's
--- state and flags, Start, taking down, the live step and Coins hooks, the redraw bus and the outlets, as they stand
--- before those tickets fill them in.
+-- state and flags, taking down, the Coins hook, the redraw bus and the outlets, as they stand before those tickets
+-- fill them in. Start, the live step and the login window are in adapter/LiveStep_spec.
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local board = dofile("spec/Pagle_TackleBoard/support.lua")
@@ -8,8 +8,8 @@ local board = dofile("spec/Pagle_TackleBoard/support.lua")
 local GOAL = "Player-4618-0A1B2C3D-1791731747-0"
 
 describe("the Tackle Board's seams", function()
-	describe("the board's entry points and actions (until the live step's and reroll's tickets)", function()
-		it("toggle and open the board, and start, take down, schedule and report nothing yet, with no error", function()
+	describe("the board's entry points and actions (until the reroll's and completions' tickets)", function()
+		it("toggle and open the board, and take down and report nothing yet, with no error", function()
 			local loaded, fake = board.load()
 			local ns = loaded.ns
 			fake.login()
@@ -19,9 +19,7 @@ describe("the Tackle Board's seams", function()
 				ns.ToggleBoard()
 				ns.OpenBoard()
 				ns.OpenBoard(GOAL)
-				ns.Start()
 				ns.TakeDown(GOAL)
-				ns.ScheduleLiveStep()
 				ns.ReportCoins()
 			end)
 			fake.nextFrame()
@@ -77,10 +75,6 @@ describe("the Tackle Board's seams", function()
 
 			assert.are.same({ true, false }, before)
 			assert.are.same({ false, false }, { ns.IsUpdating(), ns.IsStarted() })
-		end)
-
-		it("is never in the login window (TKB-R86)", function()
-			assert.is_false(board.load().ns.InLoginWindow())
 		end)
 	end)
 
