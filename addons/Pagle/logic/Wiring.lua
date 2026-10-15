@@ -125,8 +125,8 @@ function Sessions:Get()
 	return self.tracker and self.tracker:Get(self.host.serverTime())
 end
 
---- `/pagle dev endsession` (#247): ends the Session open now as if its gap had passed (LOG-R62), and stops its
---- timer. Returns false when none is open.
+--- `/pagle dev endsession` (#247, #258): ends the Session open now as if its gap had passed (LOG-R62), notes a
+--- Session break so the next Cast starts a new one (LOG-R99), and stops its timer. Returns false when none is open.
 ---@return boolean ended
 function Sessions:EndNow()
 	local tracker = self.tracker

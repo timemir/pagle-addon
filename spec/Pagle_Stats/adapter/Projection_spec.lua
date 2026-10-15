@@ -339,6 +339,20 @@ describe("Stats' projection", function()
 
 			assert.are.same({ casts = 2, catches = 1, gotAway = 1 }, ns.State().totals)
 		end)
+
+		it("folds a Cast 10 s after /pagle dev endsession into a second Session (#258, LOG-R99)", function()
+			local fake = newFakePagle()
+			local ns = built(fake)
+			fake.playCast("caught", { { itemID = MACKEREL, quantity = 1 } })
+			fake.slash("dev on")
+			fake.slash("dev endsession")
+
+			fake.wait(10)
+			fake.playCast("caught", { { itemID = MACKEREL, quantity = 1 } })
+
+			local sessions = ns.State().sessions
+			assert.are.same({ 2, 1, 1 }, { #sessions, sessions[1].casts, sessions[2].casts })
+		end)
 	end)
 
 	describe("rebuilds and catch-ups (STA-R20, STA-R90–R92, STA-R94, LOG-R71, LOG-R72)", function()
