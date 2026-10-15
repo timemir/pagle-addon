@@ -28,12 +28,11 @@ local OWNER = "Pagle_Stats tracker"
 -- What the tracker is drawn from now (logic/Tracker.lua).
 ---@return StatsTrackerInput
 local function input()
-	local profile = ns.db.profile
 	return {
-		on = profile.tracker,
+		on = ns.db.profile.tracker,
 		state = ns.State(),
 		live = Pagle.GetSession(),
-		watched = profile.watched,
+		watched = ns.Watches(),
 		updating = ns.IsUpdating(),
 		skill = ns.EffectiveSkill(Pagle.GetConditions()),
 		now = GetServerTime(),
