@@ -52,7 +52,7 @@ local SPINE_STRIPS, SPINE_STRIP_WIDTH = 6, 5
 ---@field pages LedgerJournalPages?
 ---@field plate string?                -- the brass plate's words as last read; nil until first read (LED-R149)
 ---@field private redrawQueued boolean
----@field private drawnPlace LedgerJournalPlace?
+---@field private drawnSubjects { left: string?, right: string? }? -- each page's subject as last drawn (LED-R129)
 local Journal = {}
 Journal.__index = Journal
 
@@ -361,9 +361,10 @@ function Journal:Draw()
 	frame.plate.label:SetText(self.plate or "")
 	frame.plate:SetSize(frame.plate.label:GetStringWidth() + 20, 22)
 	frame.plate:SetShown(self.plate ~= nil)
-	local place = self.router:Place()
-	local moved = place ~= self.drawnPlace
-	self.drawnPlace = place
+	-- A page goes back to the top only when its subject changes (LED-R129); while updating it keeps its scroll.
+	local drawn = self.drawnSubjects or {}
+	local subjects = pages.subjects or drawn
+	self.drawnSubjects = subjects
 	frame.crumbs:SetShown(not pages.updating)
 	frame.search:SetShown(not pages.updating)
 	frame.back.place = pages.back
@@ -372,8 +373,8 @@ function Journal:Draw()
 	local function open(target)
 		self:OpenPlace(target)
 	end
-	ns.DrawJournalPage(frame.left, pages.left, open, moved)
-	ns.DrawJournalPage(frame.right, pages.right, open, moved)
+	ns.DrawJournalPage(frame.left, pages.left, open, subjects.left ~= drawn.left)
+	ns.DrawJournalPage(frame.right, pages.right, open, subjects.right ~= drawn.right)
 end
 
 --- A live entry was applied (LED-R123): the open spread redraws on the next frame, once however many arrive in it,

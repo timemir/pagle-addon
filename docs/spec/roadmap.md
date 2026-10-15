@@ -206,7 +206,7 @@ Ledger slice 2: the Journal book (Species, Zone Mastery, Sub-collections, Trophy
 - LED-R88 for curio items, trophy weights and Zone Mastery ranks
 - LED-R95's completion part
 - LED-R97 for `zoneMaster`, `trophyWeight`, `zoneRank`, `newCurio`, `elementStar`, `regularStar`, `familyStar` and `uncharted`
-- LED-R120–R128, LED-R130–R136, LED-R137 without its zonemaster line, LED-R138, LED-R140 without its size line, LED-R141–R145
+- LED-R120–R136, LED-R137 without its zonemaster line, LED-R138, LED-R140 without its size line, LED-R141–R145
 - LED-R146 for the bookplate without title, Prestige and the Catch Milestone part, and for "Hands on the Rod" and "Milestones"
 - LED-R148 for zones and Species, LED-R149 without the title
 - LED-R160 for the `species`, `legend`, `sub`, `family` and `line` keys (the M3 lore batch), LED-R161, LED-R162 (its M3 part)

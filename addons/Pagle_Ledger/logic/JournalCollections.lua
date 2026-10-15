@@ -185,6 +185,8 @@ ns.RegisterJournalSpread(ns.JOURNAL_TROPHY_ROOM, {
 		end
 		return { left = trophyIndex(context, families), right = chosen and familyPage(context, chosen) or {} }
 	end,
+	-- The index is the room's; the right page, the family's: opening a family keeps the index's scroll (LED-R129).
+	subjects = { left = {}, right = { "family" } },
 })
 
 -- A curio's plaque (lore, `sub.<itemID>.plaque`, LED-R160); nil without text, so its line is left out (LED-R161).

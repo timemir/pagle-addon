@@ -1,5 +1,5 @@
--- The Fish Journal's router (LED-R120, LED-R122, LED-R125) through ns.NewJournalRouter, with no Core and no frame:
--- which spread is open, its breadcrumbs and back link, and what both pages show, as data.
+-- The Fish Journal's router (LED-R120, LED-R122, LED-R125, LED-R129) through ns.NewJournalRouter, with no Core and no
+-- frame: which spread is open, its breadcrumbs and back link, and what both pages show and are about, as data.
 
 describe("the Fish Journal's router", function()
 	local ns = loadAddon("Pagle_Ledger", FOREVER_GLOBALS).ns
@@ -162,6 +162,51 @@ describe("the Fish Journal's router", function()
 		assert.is_nil(pages.back)
 		-- and the spread it was on stays open for when the update finishes
 		assert.are.same({ id = "deep", args = { zone = 12, fish = 6303 } }, router:Place())
+	end)
+
+	-- Each page's subject (LED-R129) with the open spread at `id` and `args`, in a router over `spreads`.
+	local function subjectsAt(spreads, id, args)
+		local router = ns.NewJournalRouter(spreads)
+		router:Open(id, args)
+		return router:Pages(context).subjects
+	end
+
+	it(
+		"gives each page the subject its spread names, so the other page's args leave it as it was (LED-R129)",
+		function()
+			local named =
+				{ crumbs = deep.crumbs, draw = deep.draw, subjects = { left = { "zone" }, right = { "zone", "fish" } } }
+			local spreads = { home = home, deep = named }
+
+			local before = subjectsAt(spreads, "deep", { zone = 12, fish = 6303 })
+			local otherFish = subjectsAt(spreads, "deep", { zone = 12, fish = 6291 })
+			local otherZone = subjectsAt(spreads, "deep", { zone = 148, fish = 6303 })
+
+			assert.are.equal(before.left, otherFish.left)
+			assert.are_not.equal(before.right, otherFish.right)
+			assert.are_not.equal(before.left, otherZone.left)
+			assert.are_not.equal(before.right, otherZone.right)
+		end
+	)
+
+	it("makes every arg both pages' subject for a spread that names none, equal for equal args (LED-R129)", function()
+		local spreads = { home = home, zone = zone, deep = deep }
+
+		local before = subjectsAt(spreads, "deep", { zone = 12, fish = 6303 })
+		local same = subjectsAt(spreads, "deep", { fish = 6303, zone = 12 })
+		local otherFish = subjectsAt(spreads, "deep", { zone = 12, fish = 6291 })
+		local otherSpread = subjectsAt(spreads, "zone", { zone = 12, fish = 6303 })
+
+		assert.are.same(before, same)
+		assert.are_not.equal(before.left, otherFish.left)
+		assert.are_not.equal(before.right, otherFish.right)
+		assert.are_not.equal(before.left, otherSpread.left)
+	end)
+
+	it("gives no subjects while the projection updates (LED-R129, LED-R122)", function()
+		local pages = newRouter():Pages({ updating = true, now = context.now, formatNumber = breakUpLargeNumbers })
+
+		assert.is_nil(pages.subjects)
 	end)
 
 	it("registers spreads by ID through ns.RegisterJournalSpread (LED-R125)", function()

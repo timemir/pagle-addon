@@ -649,4 +649,75 @@ describe("the Journal's zone spread", function()
 			)
 		end)
 	end)
+
+	describe("scrolling", function()
+		it("keeps the left page's scroll when the right page opens a fish's plain hint (LED-R129, LED-R141)", function()
+			local _, loaded = zoneSpread(DARKSHORE)
+			loaded.ns.journal.frame.left.drawn.row[3]:Click()
+			scrollPage(loaded, "left", 120)
+
+			-- The right page's "Read the plain hint ▸".
+			loaded.ns.journal.frame.right.drawn.link[1]:Click()
+
+			local right = loaded.ns.journal.pages.right
+			assert.are.equal("night · pools · Darkshore · skill ~75", right[#right].text)
+			assert.are.equal(120, pageScroll(loaded, "left"))
+		end)
+
+		it(
+			"keeps the left page's scroll when a fish is selected on it, and starts the right page's new entry at the top (LED-R129, LED-R136)",
+			function()
+				local _, loaded = zoneSpread(DARKSHORE)
+				loaded.ns.journal.frame.left.drawn.row[1]:Click()
+				scrollPage(loaded, "left", 120)
+				scrollPage(loaded, "right", 80)
+
+				loaded.ns.journal.frame.left.drawn.row[3]:Click()
+
+				assert.are.equal("An unknown fish", loaded.ns.journal.pages.crumbs[4].label)
+				assert.are.same({ 120, 0 }, { pageScroll(loaded, "left"), pageScroll(loaded, "right") })
+			end
+		)
+
+		it("keeps both pages' scroll through a live redraw (LED-R129, LED-R123)", function()
+			local fake, loaded = zoneSpread(DARKSHORE)
+			scrollPage(loaded, "left", 120)
+			scrollPage(loaded, "right", 80)
+
+			fake.playCast("caught", { { itemID = FIREFIN, quantity = 1 } })
+			loaded.client.runTimers()
+
+			assert.are.equal("Day and night · 1 / 2", loaded.ns.journal.pages.left[11].text)
+			assert.are.same({ 120, 80 }, { pageScroll(loaded, "left"), pageScroll(loaded, "right") })
+		end)
+
+		it("starts both pages at the top when another zone opens (LED-R129)", function()
+			local _, loaded = zoneSpread(DARKSHORE)
+			local journal = loaded.ns.journal
+			journal.frame.left.drawn.row[1]:Click()
+			scrollPage(loaded, "left", 120)
+			scrollPage(loaded, "right", 80)
+
+			journal:OpenPlace(loaded.ns.JournalPlace.zone(ELWYNN))
+
+			assert.are.equal("Elwynn Forest", journal.pages.left[2].text)
+			assert.are.same({ 0, 0 }, { pageScroll(loaded, "left"), pageScroll(loaded, "right") })
+		end)
+
+		it(
+			"keeps the left page's scroll going back to the zone from its fish, starting the right page at the top (LED-R129, LED-R125)",
+			function()
+				local _, loaded = zoneSpread(DARKSHORE)
+				local journal = loaded.ns.journal
+				journal.frame.left.drawn.row[1]:Click()
+				scrollPage(loaded, "left", 120)
+				scrollPage(loaded, "right", 80)
+
+				journal.frame.back:Click()
+
+				assert.are.equal("About these waters", journal.pages.right[1].text)
+				assert.are.same({ 120, 0 }, { pageScroll(loaded, "left"), pageScroll(loaded, "right") })
+			end
+		)
+	end)
 end)

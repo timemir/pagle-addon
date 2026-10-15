@@ -200,6 +200,20 @@ describe("the Journal's Trophy Room", function()
 	end)
 
 	it(
+		"keeps the index's scroll as a family opens, starting the family's page at the top (LED-R129, LED-R143)",
+		function()
+			local _, loaded = spread({ "trophyRoom" })
+			scrollPage(loaded, "left", 120)
+			scrollPage(loaded, "right", 80)
+
+			loaded.ns.journal.frame.left.drawn.leader[2]:Click()
+
+			assert.are.equal("Catfish", loaded.ns.journal.pages.right[1].text)
+			assert.are.same({ 120, 0 }, { pageScroll(loaded, "left"), pageScroll(loaded, "right") })
+		end
+	)
+
+	it(
 		"leaves a removed weight out of both sides of every x of N, off the board and out of the heaviest so far (LED-R12, LED-R143)",
 		function()
 			local log = { unpack(FIXTURE) }

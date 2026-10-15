@@ -331,6 +331,8 @@ local helperGlobals = {
 	"blockTexts",
 	"blockOfKind",
 	"blockWithText",
+	"pageScroll",
+	"scrollPage",
 	"openJournal",
 }
 files["spec/**"] = { std = "lua51+busted", read_globals = helperGlobals }

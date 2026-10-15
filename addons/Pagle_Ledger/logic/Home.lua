@@ -245,6 +245,8 @@ function ns.NewHomeSpread()
 			lastTab = tab
 			return { left = left, right = rightPage(context) }
 		end,
+		-- The left page is the tab's; the right page is Home's alone, so another tab keeps its scroll (LED-R129).
+		subjects = { left = { "tab" }, right = {} },
 	}
 end
 

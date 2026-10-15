@@ -448,6 +448,22 @@ function blockWithText(blocks, text)
 	error("no block reads " .. text)
 end
 
+--- The vertical scroll of the open Fish Journal's `side` page ("left" or "right"), as last left (LED-R129).
+---@param loaded LoadedAddon
+---@param side "left"|"right"
+---@return number
+function pageScroll(loaded, side)
+	return loaded.ns.journal.frame[side].scroll:GetVerticalScroll()
+end
+
+--- Scrolls the open Fish Journal's `side` page ("left" or "right") down to `offset`, as the mouse wheel does.
+---@param loaded LoadedAddon
+---@param side "left"|"right"
+---@param offset number
+function scrollPage(loaded, side, offset)
+	loaded.ns.journal.frame[side].scroll:SetVerticalScroll(offset)
+end
+
 --- The Ledger on FakePagle over a spec's catalogue and log, logged in and in the world, with the Fish Journal open.
 --- `options`, each optional: `catalogue` (fake.setCatalogue's; the generated one by default), `characters` (the
 --- log's; the player's alone by default), `log` (records appended in order), `itemNames`, `areaNames` and `mapNames`

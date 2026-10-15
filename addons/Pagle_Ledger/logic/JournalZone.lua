@@ -370,4 +370,7 @@ ns.RegisterJournalSpread(ns.JOURNAL_ZONE, {
 		end
 		return { left = chartedLeft(context, zone, species), right = selected or about(context, zone) }
 	end,
+	-- The left page is the zone's; the right page, the Species selected there. Selecting a fish or opening its hint
+	-- keeps the left page's scroll (LED-R129).
+	subjects = { left = { "zone" }, right = { "zone", "species" } },
 })
