@@ -242,12 +242,12 @@ function ns.NewMoments(options)
 	}, Moments)
 end
 
--- Core's copy of a moment, with who raised it (PagleRaisedMoment).
----@param module PagleModule
+-- Core's copy of a moment, with who raised it (PagleRaisedMoment): the raiser's def, a Module's or Core's own.
+---@param def PagleModuleDef
 ---@param moment PagleMoment
 ---@param raised integer
 ---@return PagleRaisedMoment
-local function copyOf(module, moment, raised)
+local function copyOf(def, moment, raised)
 	local copy = {}
 	for key, value in pairs(moment) do
 		copy[key] = value
@@ -258,7 +258,7 @@ local function copyOf(module, moment, raised)
 			copy.ruler[key] = value
 		end
 	end
-	copy.module, copy.moduleTitle, copy.moduleOrder = module.def.name, module.def.title, module.def.order
+	copy.module, copy.moduleTitle, copy.moduleOrder = def.name, def.title, def.order
 	copy.raised = raised
 	return copy
 end
@@ -283,7 +283,7 @@ function Moments:Raise(module, moment)
 		return
 	end
 	self.raised = self.raised + 1
-	local copy = copyOf(module, moment, self.raised)
+	local copy = copyOf(module.def, moment, self.raised)
 	self.options.summarize(copy)
 	if copy.summaryOnly then
 		return
@@ -292,8 +292,8 @@ function Moments:Raise(module, moment)
 end
 
 -- Core itself, as the raiser of its catch Nod (ANN-R13): ahead of every Module, like "While you were fighting".
----@type PagleModule
-local CORE = { def = { name = "Pagle", title = "Pagle", order = 0 } } --[[@as PagleModule]]
+---@type PagleModuleDef
+local CORE = { name = "Pagle", title = "Pagle", order = 0 }
 
 --- Takes Core's catch Nod for a live caught Cast (ANN-R13), made by ns.CatchNodMoment: it waits for the next frame's
 --- flush with the Cast's other moments, as theirs do (ANN-R10), never reaches the Session summary (ANN-R25), and is
