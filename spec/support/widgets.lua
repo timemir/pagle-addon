@@ -35,6 +35,7 @@ local LAYOUT_METHODS = {
 	"SetShadowOffset",
 	"SetSpacing",
 	"SetGradient",
+	"SetHighlightColor",
 }
 
 -- One anchor of `widget` as relativeTo, relativePoint, x, y: SetPoint(point, x, y) and SetPoint(point) are relative

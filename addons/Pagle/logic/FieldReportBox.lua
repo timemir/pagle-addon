@@ -31,6 +31,18 @@ function ns.FieldReportView(rows, text)
 	return { parts = text(rows), url = ns.FIELD_REPORT_URL }
 end
 
+--- Where the URL line's pieces go (field-report.md › UI), in UI units from the box's left: the "POST IT AT" label
+--- starts at 22 and must end 4 before the chart's URL field, drawn from 90, so it is set smaller (down to 0.75 of its
+--- size) when the client draws it wider than that; the URL edit box starts 6 after the label, and never before 98.
+---@param labelWidth number the label's width at its font's size, as drawn
+---@return number scale what the label's font size is multiplied by
+---@return number urlX where the URL edit box starts
+function ns.FieldReportUrlLine(labelWidth)
+	local labelX, room = 22, 90 - 4 - 22
+	local scale = labelWidth > room and math.max(0.75, room / labelWidth) or 1
+	return scale, math.max(98, labelX + labelWidth * scale + 6)
+end
+
 --- "Part N of M" for part `n` of `m`, or nil when there is one part, so the part controls hide (REP-R40).
 ---@param n integer
 ---@param m integer

@@ -217,6 +217,123 @@ describe("The Field report box (REP-R40–R42)", function()
 	end)
 end)
 
+describe("The Field report box's look (field-report.md › UI)", function()
+	-- The atlas sprite a texture shows, by its texture coordinates.
+	local function spriteName(loaded, texture)
+		for atlasName, atlas in pairs(loaded.ns.ATLASES) do
+			for name, sprite in pairs(atlas.sprites) do
+				if
+					texture.texture == atlas.file
+					and texture.texCoord[1] == sprite.x / atlas.width
+					and texture.texCoord[3] == sprite.y / atlas.height
+				then
+					return atlasName .. "/" .. name
+				end
+			end
+		end
+		return nil
+	end
+
+	it("is the sea chart with the typed slip, Ctrl+C to copy and Post it at beside the URL", function()
+		local loaded = enterWorld(loadCore(unchartedHistory(2, FIRST)), 2)
+
+		loaded.env.Pagle.OpenFieldReport()
+
+		local frame = assert(box(loaded))
+		assert.are.equal("Chart/chart", spriteName(loaded, frame.chart))
+		assert.are.equal("Interface\\AddOns\\Pagle\\media\\field\\Chart", frame.chart.texture)
+		assert.are.equal("Ctrl+C to copy", frame.copyHint:GetText())
+		assert.is_true(frame.copyHint:IsShown())
+		assert.are.equal("POST IT AT", frame.postAt:GetText())
+		assert.is_true(frame.postAt:IsShown())
+		-- Typed in Cutive Mono, bundled in Core's fonts.
+		assert.are.same(
+			{ "Interface\\AddOns\\Pagle\\media\\fonts\\CutiveMono-Regular.ttf", 12, "" },
+			frame.text.fontObject.font
+		)
+	end)
+
+	it("is the bare chart for a message, with no slip, hint or URL label (REP-R41)", function()
+		local loaded = enterWorld(loadCore({ BUILD_ENTRY }), 2)
+
+		loaded.env.Pagle.OpenFieldReport()
+
+		local frame = assert(box(loaded))
+		assert.are.equal("Chart/chart-empty", spriteName(loaded, frame.chart))
+		assert.is_false(frame.copyHint:IsShown())
+		assert.is_false(frame.postAt:IsShown())
+		assert.is_false(frame.thumb:IsShown())
+	end)
+
+	it("greys the arrow that can't page further", function()
+		local loaded = enterWorld(loadCore(unchartedHistory(4, FIRST)), 2)
+		loaded.ns.FIELD_REPORT_PART_BYTES = 200
+
+		loaded.env.Pagle.OpenFieldReport()
+
+		local frame = assert(box(loaded))
+		assert.is_true(frame.previous.art.desaturated)
+		assert.is_false(frame.next.art.desaturated)
+		frame.next:Click()
+		assert.is_false(frame.previous.art.desaturated)
+		assert.is_true(frame.next.art.desaturated)
+	end)
+
+	it("never lets POST IT AT run under the URL: a wide label is set smaller, and the URL starts after it", function()
+		local ns = enterWorld(loadCore({ BUILD_ENTRY }), 2).ns
+
+		-- It fits before the chart's URL field (from 90, 4 short): as drawn, the URL at 98.
+		assert.are.same({ 1, 98 }, { ns.FieldReportUrlLine(60) })
+		assert.are.same({ 1, 98 }, { ns.FieldReportUrlLine(64) })
+		-- Too wide: smaller, to end at 86, the URL still at 98.
+		local scale, urlX = ns.FieldReportUrlLine(80)
+		assert.are.equal(0.8, scale)
+		assert.are.equal(98, urlX)
+		-- Wider than it can shrink: three quarters of its size, and the URL starts 6 after it.
+		assert.are.same({ 0.75, 22 + 150 * 0.75 + 6 }, { ns.FieldReportUrlLine(150) })
+	end)
+
+	it("puts the URL box after the label and Close at the bottom centre, with or without parts", function()
+		for _, history in ipairs({ unchartedHistory(4, FIRST), { BUILD_ENTRY } }) do
+			local loaded = enterWorld(loadCore(history), 2)
+			loaded.ns.FIELD_REPORT_PART_BYTES = 200
+
+			loaded.env.Pagle.OpenFieldReport()
+
+			local frame = assert(box(loaded))
+			assert.are.same({ { "CENTER", frame, "TOP", 0, -324 } }, frame.close.points)
+			assert.are.same({ { "LEFT", frame, "TOPLEFT", 98, -279 } }, frame.url.points)
+			assert.are.same({ { "LEFT", frame, "TOPLEFT", 22, -324 } }, frame.previous.points)
+		end
+	end)
+
+	it("closes with the brass X too, giving back the keyboard (REP-R40)", function()
+		local loaded = enterWorld(loadCore(unchartedHistory(2, FIRST)), 2)
+		loaded.env.Pagle.OpenFieldReport()
+
+		box(loaded).closeCorner:Click()
+
+		assert.is_false(box(loaded):IsShown())
+		assert.is_nil(loaded.client.focus)
+	end)
+
+	it("scrolls the slip with the thumb and the mouse wheel, within its range (REP-R47)", function()
+		local loaded = enterWorld(loadCore(unchartedHistory(2, FIRST)), 2)
+		loaded.env.Pagle.OpenFieldReport()
+		local frame = assert(box(loaded))
+
+		frame.scroll.scripts.OnScrollRangeChanged(frame.scroll, 0, 100)
+		assert.is_true(frame.thumb:IsShown())
+		frame.scroll.scripts.OnMouseWheel(frame.scroll, -1)
+		assert.are.equal(36, frame.scroll:GetVerticalScroll())
+		frame.thumb:SetValue(500)
+		assert.are.equal(100, frame.scroll:GetVerticalScroll())
+
+		frame.scroll.scripts.OnScrollRangeChanged(frame.scroll, 0, 0)
+		assert.is_false(frame.thumb:IsShown())
+	end)
+end)
+
 describe("The Field report box's size (REP-R47)", function()
 	-- The box opened over `rows` Casts in Darkshore, each of an Uncharted item no catalogue will have, so it shows one
 	-- I row each (REP-R10, REP-R20).
@@ -240,8 +357,8 @@ describe("The Field report box's size (REP-R47)", function()
 			assert.are.same({ 520, 360 }, { frame:GetSize() }, rows .. " rows")
 			assert.are.same({ { "CENTER" } }, frame.points, "anchored only at its centre, never over the screen")
 			assert.are.equal(frame.text, frame.scroll.scrollChild, "the text scrolls in the scroll frame")
-			-- The scroll frame sits inside the box, between the privacy line and the part controls.
-			assert.are.same({ 452, 180 }, { frame.scroll:GetSize() })
+			-- The slip sits inside the box, between the privacy line and the URL.
+			assert.are.same({ 426, 156 }, { frame.scroll:GetSize() })
 		end
 	end)
 end)
