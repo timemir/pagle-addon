@@ -245,7 +245,8 @@ describe("The notes' motion and sounds (qol.md › UI)", function()
 		assert.are.same({ 74 * 1.8, 0 }, { wax:GetWidth(), wax:GetAlpha() })
 		client.update(0.29)
 		assert.are.equal(1, shown:GetAlpha())
-		assert.is_true(math.abs(wax:GetWidth() - 74 * 0.95) < 0.5, "pressed just under its size")
+		-- Pressed just under its size.
+		assert.is_true(math.abs(wax:GetWidth() - 74 * 0.95) < 0.5)
 		client.update(0.1)
 		assert.are.same({ 74, 74, 1 }, { wax:GetWidth(), wax:GetHeight(), wax:GetAlpha() })
 	end)
@@ -325,8 +326,10 @@ describe("Standing down", function()
 			client.update(0.5)
 
 			assert.are.same({}, client.bindingCalls)
+			-- Nothing ticks: the notes' motion driver (adapter/Motion.lua) keeps its OnUpdate, but hides once they settle,
+			-- and a hidden frame's OnUpdate doesn't run.
 			for _, frame in ipairs(client.frames) do
-				assert.is_nil(frame.scripts.OnUpdate)
+				assert.is_true(frame.scripts.OnUpdate == nil or not frame:IsShown())
 			end
 		end)
 	end

@@ -382,7 +382,8 @@ describe("The Field report box's motion and sounds (field-report.md › UI)", fu
 		frame.close:Click()
 
 		assert.are.same({ "850 SFX", "852 SFX", "852 SFX", "851 SFX" }, soundKits(loaded, before))
-		assert.is_nil(loaded.client.focus, "the keyboard given back at once")
+		-- The keyboard given back at once.
+		assert.is_nil(loaded.client.focus)
 		assert.is_true(frame:IsShown())
 		loaded.client.update(0.1)
 		assert.is_true(frame:GetAlpha() > 0 and frame:GetAlpha() < 1)

@@ -155,9 +155,9 @@ local function close(frame)
 	frame:Hide()
 end
 
--- Closes the box from Close, the X or Esc in an edit box (the kit's MOTION.md): the keyboard given back at once, the
--- close sound, and the box fading out over 0.15 s (ease-in) from where it is, then hiding. Esc with no edit box focused
--- hides it at once through UISpecialFrames.
+-- Closes the box from Close or the X (the kit's MOTION.md): the keyboard given back at once, the close sound, and the
+-- box fading out over 0.15 s (ease-in) from where it is, then hiding. Esc hides it at once, from an edit box or through
+-- UISpecialFrames, with the close sound (its OnHide).
 ---@param frame PagleFieldReportBox
 local function fadeClose(frame)
 	if frame.closing then
@@ -200,7 +200,7 @@ local function keepText(frame, box, read)
 		self:HighlightText()
 	end)
 	box:SetScript("OnEscapePressed", function()
-		fadeClose(frame)
+		close(frame)
 	end)
 end
 
