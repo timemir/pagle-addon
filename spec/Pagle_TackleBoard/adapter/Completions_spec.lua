@@ -352,24 +352,20 @@ describe("completing a goal", function()
 		end)
 
 		it("tie no fly once its pool is empty, and grant flybox only once (TKB-R62)", function()
-			local ns = built(
-				withHistory(
-					join(
-						{ start(T) },
-						times(31, function(i)
-							return issue(T + i, ONE) -- 31 Notices: 24 commons, then nothing to tie
-						end),
-						times(6, function(i)
-							return issue(T + 40 + i, ONE_E)
-						end),
-						{
-							cast(T + 100, DUROTAR, { BLACKMOUTH }),
-							issue(T + 101, ONE_E),
-							cast(T + 102, DUROTAR, { BLACKMOUTH }),
-						}
-					)
-				)
-			)
+			local ns = built(withHistory(join(
+				{ start(T) },
+				times(31, function(i)
+					return issue(T + i, ONE) -- 31 Notices: 24 commons, then nothing to tie
+				end),
+				times(6, function(i)
+					return issue(T + 40 + i, ONE_E)
+				end),
+				{
+					cast(T + 100, DUROTAR, { BLACKMOUTH }),
+					issue(T + 101, ONE_E),
+					cast(T + 102, DUROTAR, { BLACKMOUTH }),
+				}
+			)))
 
 			local state = ns.State()
 			assert.is_nil(state.goals[idAt(T + 31)].fly)
