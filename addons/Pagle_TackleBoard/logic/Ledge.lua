@@ -9,28 +9,7 @@ local ns = select(2, ...)
 -- goals on the spike, the Campfire and its flame's step, the Campfire card's 28 days and titles, the Fly Box drawer's
 -- cells and the tally plate with the latest title. Pure logic over the projection's state, the board's words
 -- (logic/Words.lua) and the rewards' data (logic/Rewards.lua); adapter/Ledge.lua draws what it decides on the board's
--- "spike" and "ledge" parts. Fly and title names are lore (TKB-R130): `ns.L`'s keys, falling back to their IDs until
--- the lore batch gives them text (M7 graph, open question 7).
-
---- A template with `{name}` fields filled from `fields`.
----@param template string
----@param fields table<string, any>
----@return string
-local function fill(template, fields)
-	return (
-		template:gsub("{(%w+)}", function(name)
-			local value = fields[name]
-			return value ~= nil and tostring(value) or nil
-		end)
-	)
-end
-
---- A fly pattern's name (TKB-R130): `fly.<id>.name`, or its ID.
----@param patternID string
----@return string
-local function flyName(patternID)
-	return ns.L["fly." .. patternID .. ".name"] or patternID
-end
+-- "spike" and "ledge" parts. Fly and title names are lore (TKB-R130): ns.FlyName and ns.TitleName (logic/Words.lua).
 
 -- The spike (TKB-R103).
 
@@ -83,13 +62,13 @@ function ns.SpikeView(state)
 		local text = ns.GoalText(goal)
 		local hover = { text, ns.Plural(goal.pay, "SPIKE_COINS") }
 		if goal.fly then
-			hover[#hover + 1] = fill(L.SPIKE_FLY, { fly = flyName(goal.fly) })
+			hover[#hover + 1] = ns.Fill(L.SPIKE_FLY, { fly = ns.FlyName(goal.fly) })
 		end
 		goals[i] = { id = goal.id, text = text, hover = hover }
 	end
 	return {
 		goals = goals,
-		label = #goals > 0 and fill(L.SPIKE_DONE, { n = #goals }) or L.SPIKE_EMPTY,
+		label = #goals > 0 and ns.Fill(L.SPIKE_DONE, { n = #goals }) or L.SPIKE_EMPTY,
 	}
 end
 
@@ -117,7 +96,7 @@ function ns.CampfireView(fire)
 	local view = {
 		kindling = fire.kindling,
 		kindlingCap = ns.KINDLING_CAP,
-		longest = fill(L.CAMPFIRE_LONGEST, { n = fire.longest }),
+		longest = ns.Fill(L.CAMPFIRE_LONGEST, { n = fire.longest }),
 		step = 0,
 		bright = 0,
 	}
@@ -143,13 +122,6 @@ end
 
 -- The Campfire card (TKB-R106, TKB-R64).
 
---- A title's name (TKB-R130): `boardtitle.<id>.text`, or its ID.
----@param titleID string
----@return string
-local function titleName(titleID)
-	return ns.L["boardtitle." .. titleID .. ".text"] or titleID
-end
-
 --- A server time's realm date (TKB-R105): "Sun 11 Oct", its day of the month and its weekday ("Sun").
 ---@param serverTime integer
 ---@return string date
@@ -159,7 +131,7 @@ local function realmDay(serverTime)
 	local L = ns.L
 	local date = ns.RealmDate(serverTime)
 	local weekday = L.WEEKDAYS[date.weekday]
-	return fill(L.CARD_DATE, { weekday = weekday, day = date.day, month = L.MONTHS[date.month] }), date.day, weekday
+	return ns.Fill(L.CARD_DATE, { weekday = weekday, day = date.day, month = L.MONTHS[date.month] }), date.day, weekday
 end
 
 --- The board day the `start` record numbers 0 (TKB-R12, ns.NumberBoundary): the board's first day. Earlier days are
@@ -232,8 +204,8 @@ function ns.CampfireCard(state, celebrated)
 	for _, title in ipairs(ns.TITLES) do
 		local row = {
 			id = title.id,
-			name = titleName(title.id),
-			need = fill(L.CARD_NEEDS[title.source], { n = title.need }),
+			name = ns.TitleName(title.id),
+			need = ns.Fill(L.CARD_NEEDS[title.source], { n = title.need }),
 			earned = state.titles[title.id] ~= nil or celebrated[title.id] == true,
 		}
 		local list = card.tally
@@ -279,7 +251,7 @@ function ns.FlyBoxView(flies)
 	local L = ns.L
 	local cells, tied = {}, 0
 	for i, pattern in ipairs(ns.FLY_PATTERNS) do
-		local name, fly = flyName(pattern.id), flies[pattern.id]
+		local name, fly = ns.FlyName(pattern.id), flies[pattern.id]
 		local cell = {
 			id = pattern.id,
 			row = math.floor((i - 1) / DRAWER_COLUMNS) + 1,
@@ -293,8 +265,8 @@ function ns.FlyBoxView(flies)
 			cell.icon = pattern.icon
 			cell.hover = {
 				name,
-				fill(L.FLY_TIED, { date = (realmDay(fly.time)) }),
-				fill(L.FLY_GOAL, { goal = ns.GoalText(fly.goal) }),
+				ns.Fill(L.FLY_TIED, { date = (realmDay(fly.time)) }),
+				ns.Fill(L.FLY_GOAL, { goal = ns.GoalText(fly.goal) }),
 			}
 		else
 			cell.hover = { name, L.FLY_UNTIED }
@@ -304,7 +276,7 @@ function ns.FlyBoxView(flies)
 		end
 		cells[i] = cell
 	end
-	return { label = fill(L.FLY_BOX_TIED, { n = tied, total = #ns.FLY_PATTERNS }), cells = cells }
+	return { label = ns.Fill(L.FLY_BOX_TIED, { n = tied, total = #ns.FLY_PATTERNS }), cells = cells }
 end
 
 -- The tally plate (TKB-R61, TKB-R64, TKB-R106).
@@ -337,10 +309,10 @@ end
 function ns.TallyView(state)
 	local latest = latestTitle(state.titles)
 	return {
-		counts = fill(ns.L.TALLY_PLATE, {
+		counts = ns.Fill(ns.L.TALLY_PLATE, {
 			notices = ns.Plural(state.tally.notices, "NOTICES"),
 			expeditions = ns.Plural(state.tally.expeditions, "EXPEDITIONS"),
 		}),
-		latest = latest and titleName(latest),
+		latest = latest and ns.TitleName(latest),
 	}
 end

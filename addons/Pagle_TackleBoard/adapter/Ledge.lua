@@ -90,19 +90,6 @@ local OVERLAY_LEVEL = 40
 ---@field card TackleCampfireCardFrame
 ---@field drawer TackleDrawerFrame
 
---- A template with `{name}` fields filled from `fields`.
----@param template string
----@param fields table<string, any>
----@return string
-local function fill(template, fields)
-	return (
-		template:gsub("{(%w+)}", function(name)
-			local value = fields[name]
-			return value ~= nil and tostring(value) or nil
-		end)
-	)
-end
-
 -- A hover of `lines` on `owner`.
 ---@param owner Frame
 ---@param lines string[]
@@ -329,7 +316,7 @@ local function drawTitle(row, title)
 	local look = ns.BOARD_LOOK
 	row.name:SetText(title.name)
 	row.need:SetText(
-		title.coins and fill(ns.L.CARD_NEED_COINS, { need = title.need, coins = title.coins }) or title.need
+		title.coins and ns.Fill(ns.L.CARD_NEED_COINS, { need = title.need, coins = title.coins }) or title.need
 	)
 	row.tick:SetShown(title.earned)
 	local ink = title.earned and look.ink or look.cardMuted
@@ -342,7 +329,7 @@ end
 local function drawCard(card)
 	local state = ns.State()
 	local fire = ns.CampfireView(state.fire)
-	card.fire:SetText(fill(ns.L.CARD_FIRE, { fire = fire.text, longest = fire.longest }))
+	card.fire:SetText(ns.Fill(ns.L.CARD_FIRE, { fire = fire.text, longest = fire.longest }))
 	local view = ns.CampfireCard(state, celebratedTitles())
 	for i, head in ipairs(card.heads) do
 		head:SetText(view.heads[i])
@@ -404,7 +391,7 @@ end
 ---@param drawer TackleDrawerFrame
 local function drawDrawer(drawer)
 	local view = ns.FlyBoxView(ns.State().flies)
-	drawer.title:SetText(fill(ns.L.DRAWER_TITLE, { label = view.label }))
+	drawer.title:SetText(ns.Fill(ns.L.DRAWER_TITLE, { label = view.label }))
 	local left = (DRAWER_WIDTH - 6 * CELL_WIDTH - 5 * CELL_GAP) / 2
 	for i, cell in ipairs(drawer.cells) do
 		local felt = view.cells[i]

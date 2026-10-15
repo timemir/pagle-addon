@@ -40,19 +40,6 @@ local ns = select(2, ...)
 ---@field species TackleHoverSpecies[]? -- a Variety Expedition's Species, in its items' order
 ---@field chip string                   -- its chip in the overflow strip: "Lure: 25 Catches with a lure on"
 
---- A template with `{name}` fields filled from `fields`.
----@param template string
----@param fields table<string, any>
----@return string
-local function fill(template, fields)
-	return (
-		template:gsub("{(%w+)}", function(name)
-			local value = fields[name]
-			return value ~= nil and tostring(value) or nil
-		end)
-	)
-end
-
 -- A Variety Expedition's Species for its hover (TKB-R102): each stored representative item the catalogue still has
 -- with a `species` and not `removed` (TKB-R44, as its need counts them), named by the item, ticked when its Species is
 -- among those counted (`seen`, TKB-R42).
@@ -99,8 +86,8 @@ function ns.PinView(goal, ctx)
 	return {
 		kicker = kicker,
 		text = text,
-		chip = fill(L.OVERFLOW_CHIP, { kind = kicker, text = text }),
-		progress = fill(bound and L.PROGRESS_SESSION or L.PROGRESS, { n = progress, need = need }),
+		chip = ns.Fill(L.OVERFLOW_CHIP, { kind = kicker, text = text }),
+		progress = ns.Fill(bound and L.PROGRESS_SESSION or L.PROGRESS, { n = progress, need = need }),
 		fill = need > 0 and math.min(1, progress / need) or 0,
 		where = ns.GoalWhere(goal),
 		here = ns.IsPlaceGoal(goal) and ns.IsWorkableHere(goal, ctx.zone),
@@ -140,7 +127,7 @@ local function emptyTexts(api)
 	local dayStart, weekStart = ns.LiveBoundaries(api)
 	local countdown = ns.Countdown(dayStart + ns.DAY_SECONDS - api.GetServerTime())
 	local weekday = ns.WeekdayName(weekStart + ns.WEEK_SECONDS)
-	return fill(L.EMPTY_NOTICE, { time = countdown }), fill(L.EMPTY_EXPEDITION, { weekday = weekday })
+	return ns.Fill(L.EMPTY_NOTICE, { time = countdown }), ns.Fill(L.EMPTY_EXPEDITION, { weekday = weekday })
 end
 
 -- A row of pins: each pin's open goal, or the empty pin's text, `first` for the first `firstCount` empty pins and
@@ -191,7 +178,7 @@ end
 ---@param n integer the goals it stands for
 ---@return string
 function ns.OverflowMore(n)
-	return fill(ns.L.OVERFLOW_MORE, { n = n })
+	return ns.Fill(ns.L.OVERFLOW_MORE, { n = n })
 end
 
 --- The goal the board highlights when opened with `goalID` (TKB-R109): that goal while it is open, else none.

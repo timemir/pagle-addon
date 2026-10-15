@@ -11,11 +11,12 @@ local ns = select(2, ...)
 
 -- Templates and counts.
 
---- A template with `{name}` fields filled from `fields`; a field with no value stays as written.
+--- A template with `{name}` fields filled from `fields`; a field with no value stays as written. The board's one
+--- filler: every `{name}` template of ns.L is filled through it (ns.Plural for a count).
 ---@param template string
 ---@param fields table<string, any>
 ---@return string
-local function fill(template, fields)
+function ns.Fill(template, fields)
 	return (
 		template:gsub("{(%w+)}", function(name)
 			local value = fields[name]
@@ -47,7 +48,7 @@ function ns.Plural(n, key, fields)
 	for name, value in pairs(fields or {}) do
 		values[name] = value
 	end
-	return fill(pick(ns.L[key], n), values)
+	return ns.Fill(pick(ns.L[key], n), values)
 end
 
 -- Names (TKB-R36).
@@ -107,6 +108,23 @@ function ns.BandName(band)
 	return entry and entry.name or ns.L.NAME_UNKNOWN
 end
 
+-- Lore names (TKB-R130): fly patterns and titles read their names from the generated lore (data/Lore.lua), falling
+-- back to their IDs while a key has no text.
+
+--- A fly pattern's name (TKB-R130): ns.L's `fly.<id>.name`, or the ID while the lore has none.
+---@param id string
+---@return string
+function ns.FlyName(id)
+	return ns.L["fly." .. id .. ".name"] or id
+end
+
+--- A title's text (TKB-R130): ns.L's `boardtitle.<id>.text`, or the ID while the lore has none.
+---@param id string
+---@return string
+function ns.TitleName(id)
+	return ns.L["boardtitle." .. id .. ".text"] or id
+end
+
 -- The kind's label and icon (TKB-R102).
 
 --- A goal kind's label, in small caps on a slip (TKB-R102): its ID capitalised, through ns.L (M7 graph, open
@@ -159,7 +177,7 @@ function ns.GoalText(goal)
 	elseif kind == "species" then
 		fields.species = ns.SpeciesName(target)
 	end
-	return fill(pick(ns.L.GOAL_TEXT[goal.type][kind], goal.need), fields)
+	return ns.Fill(pick(ns.L.GOAL_TEXT[goal.type][kind], goal.need), fields)
 end
 
 -- Where a goal is worked (TKB-R41, TKB-R102, TKB-R122).
@@ -197,10 +215,10 @@ end
 function ns.TrackerWhere(goal, here)
 	local where = ns.GoalWhere(goal)
 	if ns.IsSessionBound(goal) then
-		where = fill(ns.L.WHERE_THIS_SESSION, { where = where })
+		where = ns.Fill(ns.L.WHERE_THIS_SESSION, { where = where })
 	end
 	if here and ns.IsPlaceGoal(goal) then
-		where = fill(ns.L.WHERE_HERE, { where = where })
+		where = ns.Fill(ns.L.WHERE_HERE, { where = where })
 	end
 	return where
 end
@@ -345,7 +363,7 @@ end
 ---@return string
 function ns.PostedTime(serverTime)
 	local date = ns.RealmDate(serverTime)
-	return fill(ns.L.POSTED, {
+	return ns.Fill(ns.L.POSTED, {
 		weekday = ns.L.WEEKDAYS[date.weekday],
 		day = date.day,
 		month = ns.L.MONTHS[date.month],
@@ -359,7 +377,7 @@ end
 ---@return string
 function ns.Countdown(seconds)
 	if seconds >= 3600 then
-		return fill(ns.L.HOURS_LEFT, { n = math.floor(seconds / 3600) })
+		return ns.Fill(ns.L.HOURS_LEFT, { n = math.floor(seconds / 3600) })
 	end
-	return fill(ns.L.MINUTES_LEFT, { n = math.floor(math.max(seconds, 0) / 60) })
+	return ns.Fill(ns.L.MINUTES_LEFT, { n = math.floor(math.max(seconds, 0) / 60) })
 end

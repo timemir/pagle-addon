@@ -32,26 +32,13 @@ ns.TRACKER_FLASH = 3
 ---@field shown boolean             -- TKB-R120
 ---@field lines TackleTrackerLine[] -- top to bottom (TKB-R122)
 
---- A template with `{name}` fields filled from `fields`.
----@param template string
----@param fields table<string, any>
----@return string
-local function fill(template, fields)
-	return (
-		template:gsub("{(%w+)}", function(name)
-			local value = fields[name]
-			return value ~= nil and tostring(value) or nil
-		end)
-	)
-end
-
 -- A goal's text on the tracker (TKB-R122): "Expedition: " first for an Expedition.
 ---@param goal TackleGoal
 ---@return string
 local function goalText(goal)
 	local text = ns.GoalText(goal)
 	if goal.type == "e" then
-		return fill(ns.L.TRACKER_EXPEDITION, { text = text })
+		return ns.Fill(ns.L.TRACKER_EXPEDITION, { text = text })
 	end
 	return text
 end
@@ -134,7 +121,7 @@ function ns.TrackerView(input)
 	if #open == 0 then
 		lines[#lines + 1] = { kind = "line", text = L.TRACKER_ALL_DONE }
 	elseif elsewhere > 0 then
-		lines[#lines + 1] = { kind = "line", text = fill(L.TRACKER_MORE, { n = elsewhere }), board = true }
+		lines[#lines + 1] = { kind = "line", text = ns.Fill(L.TRACKER_MORE, { n = elsewhere }), board = true }
 	end
 	return view
 end

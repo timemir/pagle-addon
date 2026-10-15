@@ -8,12 +8,11 @@ local ns = select(2, ...)
 -- What the Angler is told about the board (tackle-board.md › Announcements, TKB-R83–R87): the moments of a live
 -- completion and its titles, the Campfire nods of a live advance, the Write-up after a first build or a catch-up, the
 -- summary-only moments after any other rebuild, and the board's line on the Session summary, each guarded by the
--- celebrated set. It fills logic/Seams.lua's outlets, which the projection (#231), the completions (#232) and the
--- live step (#233) call. Pure logic (CORE-R7): what it tells Core goes through adapter/Moments.lua's seams
+-- celebrated set. It fills logic/Seams.lua's outlets, which the projection (logic/Projection.lua), the completions
+-- (logic/Completions.lua) and the live step (adapter/LiveStep.lua) call. Pure logic (CORE-R7): what it tells Core goes through adapter/Moments.lua's seams
 -- (ns.RaiseMoment, ns.RaiseWriteUp, ns.SetSummaryLine), which hold the Module handle, the celebrated set comes from
 -- ns.Celebrated (PagleTackleBoardDB) and the client's number format from ns.api.FormatNumber. Every string is ns.L's,
--- plain ASCII (#248); fly and title names are lore (TKB-R130) and fall back to their IDs while a key has no text
--- (M7 graph, open question 7).
+-- plain ASCII (#248); fly and title names are lore (TKB-R130): ns.FlyName and ns.TitleName (logic/Words.lua).
 
 -- The titles (ns.TITLES) and the milestone of each Campfire title (ns.CAMPFIRE_MILESTONES), by title ID; the icon
 -- of each fly pattern (ns.FLY_PATTERNS), by pattern ID.
@@ -50,20 +49,6 @@ local function days(n)
 	return ns.Plural(n, "DAYS")
 end
 
---- A fly pattern's name (TKB-R130): `ns.L`'s `fly.<id>.name`, or the ID while the lore has none.
----@param id string
----@return string
-local function flyName(id)
-	return ns.L["fly." .. id .. ".name"] or id
-end
-
---- A title's text (TKB-R130): `ns.L`'s `boardtitle.<id>.text`, or the ID while the lore has none.
----@param id string
----@return string
-local function titleName(id)
-	return ns.L["boardtitle." .. id .. ".text"] or id
-end
-
 -- The celebrated set (TKB-R83, ns.Celebrated), which only grows: there whenever the projection runs, which an inert
 -- Module never makes (CORE-R13).
 ---@return { goals: table<string, true>, titles: table<string, true> }
@@ -80,7 +65,7 @@ local function goalMoment(goal, castID)
 	local expedition = goal.type == "e"
 	local text = ns.GoalText(goal)
 	if goal.fly then
-		text = say("TIED_FOR_FLY_BOX", { goal = text, fly = flyName(goal.fly) })
+		text = say("TIED_FOR_FLY_BOX", { goal = text, fly = ns.FlyName(goal.fly) })
 	end
 	return {
 		kind = expedition and "expeditionDone" or "noticeDone",
@@ -116,7 +101,7 @@ local function titleMoment(titleID, castID)
 		rung = "banner",
 		order = shape.order,
 		title = heading,
-		text = say("TITLE_LINE", { title = titleName(titleID) }),
+		text = say("TITLE_LINE", { title = ns.TitleName(titleID) }),
 		icon = ns.REWARD_ICONS[shape.icon],
 		cast = castID,
 		coins = milestone and milestone.coins or nil,
@@ -232,7 +217,7 @@ local function writeUpLines(state)
 		lines[#lines + 1] = ns.Plural(scratch.flies, "FLIES_TIED")
 	end
 	for _, titleID in ipairs(scratch.titles) do
-		lines[#lines + 1] = say("TITLE_LINE", { title = titleName(titleID) })
+		lines[#lines + 1] = say("TITLE_LINE", { title = ns.TitleName(titleID) })
 	end
 	local fire = state.fire
 	if fire.count == 0 and scratch.wentOut then
