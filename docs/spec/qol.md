@@ -101,6 +101,8 @@ Terms are used as `CONTEXT.md` defines them. A **game action** is the character 
   - every 0.5 s while armed, which catches a lure expiring between events
 
   It re-points its overrides (the Fishing key's and an open double-click window's) only when the pair (bound keys, target) differs from what is set now, so the `UPDATE_BINDINGS` its own override calls may fire never loops. It reads the Fishing key's bound keys with `GetBindingKey("PAGLE_FISHING_KEY")` and caches them, refreshing the cache only on `UPDATE_BINDINGS`.
+
+  Beyond this tick and the per-frame key checks (QOL-R26, QOL-R35), QoL runs no tick at rest: the motion of its frames (the conflict note's and the Nudge's fades) holds a per-frame update only while something animates, and drops it when the last one settles.
 - **QOL-R26** When a re-point is due while a Fishing key is held down (`IsKeyDown` on the key's last part, the key without its modifiers), QoL checks again every frame and re-points on the first frame it is up, so a held key never fires two actions.
 - **QOL-R27** `PagleQoLActionButton` and `PagleQoLGearButton` fire once per press: they register for clicks on key-down when the `ActionButtonUseKeyDown` CVar is `1`, otherwise on key-up (`RegisterForClicks("AnyDown")` or `("AnyUp")`), re-read whenever QoL arms (sets overrides, QOL-R11) and on `CVAR_UPDATE` for `ActionButtonUseKeyDown`.
 - **QOL-R28** **Loot guard:** a loot window is open from `LOOT_READY` until `LOOT_CLOSED`, for fishing loot or any other loot (a clam's, a mob's). While it is open the next action is *nothing*, so a press can't close it with a recast.

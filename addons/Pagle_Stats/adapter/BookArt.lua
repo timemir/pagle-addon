@@ -9,7 +9,7 @@ local ns = select(2, ...)
 -- so its files are always there), and the sprite helpers the book, its pages and the tracker draw with, over the
 -- atlases in adapter/BookAtlas.lua. They have the shape and names of Core's art helpers (the announcements kit's
 -- adapter/Art.lua): every size is the canvas's CSS pixel, a UI unit, and a sprite's `box` is where its drawn element
--- sits in it. Hunts keeps its own copy (ADR 0001: Modules share no code).
+-- sits in it. Hunts keeps its own copy (ADR 0001: no Module depends on another).
 
 --- A sprite's texel rectangle in its atlas, and its drawn element's box in UI units ({ x, y, w, h }).
 ---@class StatsArtSprite

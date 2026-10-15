@@ -15,7 +15,7 @@ ns.L = {
 	-- LOG-R18: PagleLog was in another format, so Core started a new log.
 	LOG_FORMAT_CHANGED = "Pagle: dev log format changed; started a new log.",
 	NOT_FOREVER = "Pagle: this isn't World of Warcraft: Forever, so Pagle stays off.",
-	-- LOG-R67: the Size band names, Tiddler to Monster, in band order (Pagle.SIZE_BANDS). Drafts for the lore pass.
+	-- LOG-R67: the Size band names, Tiddler to Monster, in band order (Pagle.SIZE_BANDS). Awaiting sign-off in #264.
 	SIZE_BANDS = { "Tiddler", "Typical", "Hefty", "Whopper", "Monster" },
 	-- LOG-R69: a length in each length unit, to 0.1 of it; ANN-R22: a size record's margin that rounds to zero.
 	LENGTH = { cm = "%.1f cm", ["in"] = "%.1f in" },
