@@ -61,7 +61,7 @@ end
 -- Each shown tile's name, line, "I'm here" and note ("-" for one not shown).
 local function tilesOf(book)
 	local out = {}
-	for _, tile in ipairs(waters(book).tiles) do
+	for _, tile in ipairs(waters(book).grid.tiles) do
 		if tile.shown then
 			local function read(text)
 				return text.shown and text.text or "-"
@@ -138,7 +138,7 @@ describe("the home spread's left page, Where I've fished (stats.md › UI › Ho
 		fish(fake, 1)
 		loaded.ns.ToggleBook()
 
-		waters(book).tiles[1]:Click()
+		waters(book).grid.tiles[1]:Click()
 
 		assert.are.same({ page = "place", area = DARKSHORE }, book.router:Place())
 	end)

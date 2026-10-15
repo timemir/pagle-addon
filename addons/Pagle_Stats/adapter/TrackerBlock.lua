@@ -10,16 +10,8 @@ local ns = select(2, ...)
 -- with it (STA-R88, adapter/Goods.lua); the live tracker (#218) fills it with live lines and docks it. Look reference:
 -- tracker T1 in prototypes/stats-window/, whose CSS gives the colours below.
 
--- A tint from its hex code, as the prototype's CSS writes it: { r, g, b }, 0 to 1.
----@param hex string "RRGGBB"
----@return number[]
-local function tint(hex)
-	return {
-		tonumber(hex:sub(1, 2), 16) / 255,
-		tonumber(hex:sub(3, 4), 16) / 255,
-		tonumber(hex:sub(5, 6), 16) / 255,
-	}
-end
+-- A tint from its hex code (adapter/BookWidgets.lua).
+local tint = ns.BookTint
 
 --- The tracker's width in pixels (Tunables: Tracker width, about 250 px).
 ns.TRACKER_WIDTH = 250

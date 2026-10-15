@@ -7,24 +7,28 @@ local ns = select(2, ...)
 
 -- The Stats book's art kit (STA-R70, stats.md › UI): the book language's tints, fonts and in-client textures, and a
 -- widget maker for each piece the book and its pages draw: the leather, parchment, ribbons and the nameplate for the
--- shell (adapter/Book.lua); a kicker, a title, a handwriting line, a heading with its small note, a "☛" link, sepia
--- ink icons, an ink bar, a ruled ledger, a tile, a place's row and a short list's line for the pages (#212–#217); and
--- the fleuron, pointing hands and star, drawn as textures, never as font glyphs. The look follows prototypes/stats-window/ variant D. Stats shares no code
--- with the Ledger's Fish Journal (ADR 0001), though some textures and fonts are the same client files. Every texture
--- sits on a solid tint or carries a vertex tint, so a texture the client lacks leaves the tint showing.
+-- shell (adapter/Book.lua); for the pages, a kicker, a title, a handwriting line, a heading with its small note, a "☛"
+-- link, sepia ink icons, an item's icon and name, an ink bar, the luck ruler, a ruled ledger, a tile and the tile
+-- grid, a place's row, a short list's line, a figure line with its leader and "No Sessions yet."; and the fleuron,
+-- pointing hands and star, drawn as textures, never as font glyphs. The look follows prototypes/stats-window/ variant
+-- D. Stats shares no code with the Ledger's Fish Journal (ADR 0001), though some textures and fonts are the same
+-- client files. Every texture sits on a solid tint or carries a vertex tint, so a texture the client lacks leaves the
+-- tint showing.
 --
--- The page tickets add their own makers here (the luck ruler, #214: ns.NewBookRuler).
+-- A piece two pages draw has its one maker here, so the pages draw it alike.
 
--- A tint from its hex code, as the prototype's CSS writes it: { r, g, b }, 0 to 1.
+--- A tint from its hex code, as the prototypes' CSS writes it: { r, g, b }, 0 to 1. The tracker block and the goods'
+--- frame looks (adapter/TrackerBlock.lua, adapter/Goods.lua) mix theirs with it too.
 ---@param hex string "RRGGBB"
 ---@return number[]
-local function tint(hex)
+function ns.BookTint(hex)
 	return {
 		tonumber(hex:sub(1, 2), 16) / 255,
 		tonumber(hex:sub(3, 4), 16) / 255,
 		tonumber(hex:sub(5, 6), 16) / 255,
 	}
 end
+local tint = ns.BookTint
 
 --- The book's tints, from variant D's CSS (`.vD`). Where the prototype shades a gradient, the tint lies between its
 --- ends.
@@ -810,6 +814,166 @@ function ns.NewBookLine(parent, width)
 		end or nil)
 	end
 	return line
+end
+
+--- A figure line (stats.md › UI: In this book, the Lifetime figures, a Session's figures): its label at the left, its
+--- value at the right and a faint leader between them, as variant D's dotted table of contents. With `onClick` it
+--- opens what it names, and its label reddens under the mouse.
+---@class StatsBookFigureData
+---@field label string
+---@field value string?        -- none: no value and no leader
+---@field ink number[]?        -- the label's ink, ns.BOOK_LOOK.ink by default
+---@field valueInk number[]?   -- the value's ink, ns.BOOK_LOOK.ink by default
+---@field onClick fun()?
+
+---@class StatsBookFigureView: Button
+---@field label FontString
+---@field value FontString
+---@field leader Texture
+---@field ink number[]         -- the label's ink when the mouse leaves
+---@field SetFigure fun(self: StatsBookFigureView, figure: StatsBookFigureData)
+
+-- The leader's opacity, and how far above the line's foot it runs.
+local LEADER_ALPHA, LEADER_RISE = 0.5, 3
+
+---@param parent Frame
+---@param width number
+---@param height number
+---@return StatsBookFigureView
+function ns.NewBookFigure(parent, width, height)
+	local faces = ns.BookFonts()
+	local figure = CreateFrame("Button", nil, parent) --[[@as StatsBookFigureView]]
+	figure:SetSize(width, height)
+	figure.label = ns.BookText(figure, faces.text, LOOK.ink)
+	figure.label:SetPoint("LEFT")
+	figure.value = ns.BookText(figure, faces.text, LOOK.ink)
+	figure.value:SetPoint("RIGHT")
+	figure.value:SetJustifyH("RIGHT")
+	figure.leader = figure:CreateTexture(nil, "ARTWORK")
+	figure.leader:SetColorTexture(LOOK.note[1], LOOK.note[2], LOOK.note[3], LEADER_ALPHA)
+	figure.leader:SetHeight(1)
+	figure.leader:SetPoint("BOTTOMLEFT", figure.label, "BOTTOMRIGHT", 4, LEADER_RISE)
+	figure.leader:SetPoint("BOTTOMRIGHT", figure.value, "BOTTOMLEFT", -4, LEADER_RISE)
+	figure.ink = LOOK.ink
+	figure:SetScript("OnEnter", function(self)
+		if self:GetScript("OnClick") then
+			self.label:SetTextColor(LOOK.red[1], LOOK.red[2], LOOK.red[3])
+		end
+	end)
+	figure:SetScript("OnLeave", function(self)
+		self.label:SetTextColor(self.ink[1], self.ink[2], self.ink[3])
+	end)
+	function figure.SetFigure(self, data)
+		self.ink = data.ink or LOOK.ink
+		local valueInk = data.valueInk or LOOK.ink
+		self.label:SetText(data.label)
+		self.label:SetTextColor(self.ink[1], self.ink[2], self.ink[3])
+		self.value:SetText(data.value or "")
+		self.value:SetTextColor(valueInk[1], valueInk[2], valueInk[3])
+		self.leader:SetShown(data.value ~= nil)
+		local onClick = data.onClick
+		self:SetScript("OnClick", onClick and function()
+			onClick()
+		end or nil)
+	end
+	return figure
+end
+
+--- An item's name under a kicker (stats.md › UI: an entry, the item page): its ink icon, then its name as the page's
+--- title beside it. The name is "Item {id}" until the client has it; the book asks for it and redraws when it arrives
+--- (adapter/Book.lua's Book:Item, STA-R73).
+---@class StatsBookItemTitleView
+---@field icon StatsBookIconView
+---@field title FontString
+---@field SetItem fun(self: StatsBookItemTitleView, itemID: integer, y: number)
+
+-- The icon's size and the gap between it and the name.
+local ITEM_ICON, ITEM_ICON_GAP = 28, 8
+
+---@param parent Frame
+---@param width number
+---@return StatsBookItemTitleView
+function ns.NewBookItemTitle(parent, width)
+	local view = { icon = ns.NewBookIcon(parent, ITEM_ICON), title = ns.NewBookTitle(parent) }
+	view.title:SetWidth(width - ITEM_ICON - ITEM_ICON_GAP)
+	function view.SetItem(self, itemID, y)
+		local name, icon = ns.book:Item(itemID)
+		self.icon:SetIcon(icon)
+		self.icon:ClearAllPoints()
+		self.icon:SetPoint("TOPLEFT", 0, -y)
+		self.icon:Show()
+		self.title:SetText(name)
+		self.title:ClearAllPoints()
+		self.title:SetPoint("TOPLEFT", ITEM_ICON + ITEM_ICON_GAP, -(y + 2))
+		self.title:Show()
+	end
+	return view
+end
+
+--- Tiles two a row (stats.md › UI: the home spread's zones, an item's waters), each opening its target: ns.NewBookTile
+--- with variant D's height and gap, made as the rows need them, the ones left over hidden.
+---@class StatsBookTileTarget: StatsBookTileData
+---@field target StatsBookTarget
+
+---@class StatsBookTileGridView
+---@field tiles StatsBookTileView[]
+---@field SetTiles fun(self: StatsBookTileGridView, tiles: StatsBookTileTarget[], y: number): number
+
+-- A tile's height and the gap between tiles, across and down.
+local TILE_HEIGHT, TILE_GAP = 84, 9
+
+---@param parent Frame
+---@return StatsBookTileGridView
+function ns.NewBookTileGrid(parent)
+	local grid = { tiles = {} }
+	--- Lays `tiles` out from `y` down `parent`, across its width; returns their height, 0 for none.
+	function grid.SetTiles(self, tiles, y)
+		local tileWidth = (parent:GetWidth() - TILE_GAP) / 2
+		for i, tile in ipairs(tiles) do
+			local view = self.tiles[i]
+			if not view then
+				view = ns.NewBookTile(parent, tileWidth, TILE_HEIGHT)
+				self.tiles[i] = view
+			end
+			local target = tile.target
+			view:SetTile({
+				name = tile.name,
+				line = tile.line,
+				here = tile.here,
+				note = tile.note,
+				onClick = function()
+					ns.OpenBook(target)
+				end,
+			})
+			local row, column = math.floor((i - 1) / 2), (i - 1) % 2
+			view:ClearAllPoints()
+			view:SetPoint(
+				"TOPLEFT",
+				parent,
+				"TOPLEFT",
+				column * (tileWidth + TILE_GAP),
+				-(y + row * (TILE_HEIGHT + TILE_GAP))
+			)
+			view:Show()
+		end
+		for i = #tiles + 1, #self.tiles do
+			self.tiles[i]:Hide()
+		end
+		local rows = math.ceil(#tiles / 2)
+		return rows > 0 and rows * TILE_HEIGHT + (rows - 1) * TILE_GAP or 0
+	end
+	return grid
+end
+
+--- A page side's "No Sessions yet." in handwriting across `parent` (STA-R97): This Session, Sessions and Lifetime all
+--- read it with no Casts.
+---@param parent Frame
+---@return FontString
+function ns.NewBookNoSessions(parent)
+	local text = ns.NewBookHand(parent)
+	text:SetWidth(parent:GetWidth())
+	text:SetText(ns.L.NO_SESSIONS)
+	return text
 end
 
 --- The leather on `frame`, filling it: the outline, the leather's tint, its grain and the gilt rule inside its edge.

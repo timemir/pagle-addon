@@ -1,5 +1,6 @@
 -- The Stats book's art kit (STA-R70, stats.md › UI): its tints, fonts and in-client textures, and the widget makers
--- the shell and the page tickets (#212–#217) draw with. The fake client lays nothing out, so these check what each
+-- the shell and its pages draw with; then adapter/Text.lua's item loader, which the book, the tracker, the Curio Shop's
+-- samples and the Settings row ask the client through. The fake client lays nothing out, so these check what each
 -- maker puts on screen: its texts, textures, tints and clicks.
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
@@ -252,5 +253,106 @@ describe("the Stats book's art (STA-R70, stats.md › UI)", function()
 
 		assert.are.equal("No Casts yet", plate.label.text)
 		assert.are.equal(#"No Casts yet" * 6 + 20, plate.width)
+	end)
+
+	it(
+		"draws a figure line with a leader to its value, reddening under the mouse only when it opens something",
+		function()
+			local ns, parent = kit()
+			local look, clicks = ns.BOOK_LOOK, 0
+
+			local figure = ns.NewBookFigure(parent, 300, 20)
+			figure:SetFigure({ label = "Casts", value = "9", valueInk = look.title })
+			figure:GetScript("OnEnter")(figure)
+			assert.are.same({ "Casts", "9" }, textsOf(figure))
+			assert.is_true(figure.leader.shown)
+			assert.are.same(look.ink, { unpack(figure.label.textColor, 1, 3) })
+			assert.are.same(look.title, { unpack(figure.value.textColor, 1, 3) })
+			figure:SetFigure({
+				label = "Darkshore",
+				onClick = function()
+					clicks = clicks + 1
+				end,
+			})
+			figure:GetScript("OnEnter")(figure)
+			assert.are.same(look.red, { unpack(figure.label.textColor, 1, 3) })
+			figure:GetScript("OnLeave")(figure)
+			figure:Click()
+
+			assert.are.same({ "Darkshore" }, textsOf(figure))
+			assert.is_false(figure.leader.shown)
+			assert.are.same(look.ink, { unpack(figure.label.textColor, 1, 3) })
+			assert.are.equal(1, clicks)
+		end
+	)
+
+	it("lays tiles two a row, each opening its target, hiding the ones left over", function()
+		local ns, parent, loaded = kit()
+		parent:SetWidth(409)
+		local opened = {}
+		loaded.ns.OpenBook = function(target)
+			opened[#opened + 1] = target.area
+		end
+		local function tiles(n)
+			local out = {}
+			for i = 1, n do
+				out[i] = { name = "Zone " .. i, target = { page = "place", area = i } }
+			end
+			return out
+		end
+
+		local grid = ns.NewBookTileGrid(parent)
+		assert.are.equal(84 * 2 + 9, grid:SetTiles(tiles(3), 10))
+		assert.are.same({ "TOPLEFT", parent, "TOPLEFT", 200 + 9, -10 }, grid.tiles[2].points[1])
+		assert.are.same({ "TOPLEFT", parent, "TOPLEFT", 0, -(10 + 84 + 9) }, grid.tiles[3].points[1])
+		grid.tiles[3]:Click()
+		assert.are.equal(0, grid:SetTiles({}, 10))
+
+		assert.are.same({ 3 }, opened)
+		assert.are.same({ false, false, false }, { grid.tiles[1].shown, grid.tiles[2].shown, grid.tiles[3].shown })
+	end)
+
+	it('reads "No Sessions yet." in handwriting across its page (STA-R97)', function()
+		local ns, parent = kit()
+		parent:SetWidth(320)
+
+		local empty = ns.NewBookNoSessions(parent)
+
+		assert.are.equal("No Sessions yet.", empty.text)
+		assert.are.equal(320, empty.width)
+		assert.are.same(ns.BOOK_LOOK.hand, { unpack(empty.textColor, 1, 3) })
+	end)
+end)
+
+describe("the item loader every Stats view asks the client through (STA-R59, STA-R73)", function()
+	it("asks once while an item is on its way, and runs its redraw when it loads", function()
+		local loaded, fake = stats.load()
+		local redrawn = {}
+		local request = loaded.ns.NewItemLoader("spec", function(itemID)
+			redrawn[#redrawn + 1] = itemID
+		end)
+
+		request(13759)
+		request(13759)
+		fake.fireGameEvent("ITEM_DATA_LOAD_RESULT", 6358, true)
+		fake.fireGameEvent("ITEM_DATA_LOAD_RESULT", 13759, true)
+
+		assert.are.same({ 13759 }, loaded.client.itemRequests)
+		assert.are.same({ 13759 }, redrawn)
+	end)
+
+	it("runs nothing when a load fails, and asks again at the next request", function()
+		local loaded, fake = stats.load()
+		local redrawn = 0
+		local request = loaded.ns.NewItemLoader("spec", function()
+			redrawn = redrawn + 1
+		end)
+
+		request(13759)
+		fake.fireGameEvent("ITEM_DATA_LOAD_RESULT", 13759, false)
+		request(13759)
+
+		assert.are.equal(0, redrawn)
+		assert.are.same({ 13759, 13759 }, loaded.client.itemRequests)
 	end)
 end)

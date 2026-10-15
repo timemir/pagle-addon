@@ -14,21 +14,15 @@ local ns = select(2, ...)
 local L = ns.L
 local LOOK = ns.BOOK_LOOK
 
--- Variant D's measures: the title's icon, the facts' rows, two tiles a row as on the home spread, and the gaps.
-local ICON_SIZE, ICON_GAP = 28, 8
-local FACT_HEIGHT, TILE_HEIGHT, TILE_GAP = 20, 84, 9
+-- Variant D's measures: the facts' rows and the gaps.
+local FACT_HEIGHT = 20
 local KICKER_GAP, TITLE_HEIGHT, PARA_GAP, GROUP_GAP = 18, 32, 8, 14
-
----@class StatsItemFactView: Frame
----@field label FontString
----@field value FontString
 
 ---@class StatsItemFactsView
 ---@field kicker FontString
----@field icon StatsBookIconView
----@field title FontString
+---@field name StatsBookItemTitleView
 ---@field bites FontString
----@field facts StatsItemFactView[]
+---@field facts StatsBookLineView[]
 ---@field here StatsBookHeadingView
 ---@field hereText FontString
 ---@field open StatsBookLinkView
@@ -37,7 +31,7 @@ local KICKER_GAP, TITLE_HEIGHT, PARA_GAP, GROUP_GAP = 18, 32, 8, 14
 ---@field kicker FontString
 ---@field title FontString
 ---@field empty FontString
----@field tiles StatsBookTileView[]
+---@field grid StatsBookTileGridView
 
 ---@class StatsItemContent: Frame
 ---@field facts StatsItemFactsView?
@@ -53,42 +47,24 @@ local function at(region, content, y, x)
 	region:SetPoint("TOPLEFT", content, "TOPLEFT", x or 0, -y)
 end
 
--- A row of my records: its words at the left, its value at the right.
----@param content Frame
----@param label string
----@return StatsItemFactView
-local function newFact(content, label)
-	local fact = CreateFrame("Frame", nil, content) --[[@as StatsItemFactView]]
-	fact:SetSize(content:GetWidth(), FACT_HEIGHT)
-	fact.label = ns.BookText(fact, ns.BookFonts().text, LOOK.ink)
-	fact.label:SetPoint("LEFT")
-	fact.label:SetText(label)
-	fact.value = ns.BookText(fact, ns.BookFonts().text, LOOK.ink)
-	fact.value:SetPoint("RIGHT")
-	fact.value:SetJustifyH("RIGHT")
-	return fact
-end
-
 ---@param content StatsItemContent
 ---@return StatsItemFactsView
 local function buildFacts(content)
 	local width = content:GetWidth()
 	local view = {
 		kicker = ns.NewBookKicker(content),
-		icon = ns.NewBookIcon(content, ICON_SIZE),
-		title = ns.NewBookTitle(content),
+		name = ns.NewBookItemTitle(content, width),
 		bites = ns.BookText(content, ns.BookFonts().small, LOOK.small),
 		facts = {
-			newFact(content, L.ITEM_CAUGHT),
-			newFact(content, L.ITEM_FIRST_CAUGHT),
-			newFact(content, L.ITEM_LAST_CAUGHT),
+			ns.NewBookLine(content, width),
+			ns.NewBookLine(content, width),
+			ns.NewBookLine(content, width),
 		},
 		here = ns.NewBookHeading(content, width),
 		hereText = ns.NewBookHand(content),
 		open = ns.NewBookLink(content),
 	}
 	view.kicker:SetText(L.ITEM_KICKER)
-	view.title:SetWidth(width - ICON_SIZE - ICON_GAP)
 	view.bites:SetWordWrap(true)
 	view.bites:SetWidth(width)
 	view.hereText:SetWidth(width)
@@ -104,16 +80,9 @@ end
 local function drawFacts(content, place)
 	local view = content.facts or buildFacts(content)
 	local item = place.item --[[@as integer]]
-	local name, icon, loaded = ns.Item(item)
-	if not loaded then
-		ns.book:RequestItem(item)
-	end
 	local data = ns.ItemFacts(ns.State(), item, Pagle.GetConditions(), GetServerTime(), ns.places)
 	at(view.kicker, content, 0)
-	view.icon:SetIcon(icon)
-	at(view.icon, content, KICKER_GAP)
-	view.title:SetText(name)
-	at(view.title, content, KICKER_GAP + 2, ICON_SIZE + ICON_GAP)
+	view.name:SetItem(item, KICKER_GAP)
 	local y = KICKER_GAP + TITLE_HEIGHT + PARA_GAP
 	local lines = {}
 	lines[#lines + 1] = data.bites
@@ -124,10 +93,13 @@ local function drawFacts(content, place)
 		at(view.bites, content, y)
 		y = y + view.bites:GetStringHeight() + PARA_GAP
 	end
-	for i, value in ipairs({ data.caught, data.first, data.last }) do
-		local fact = view.facts[i]
-		fact.value:SetText(value)
-		at(fact, content, y)
+	for i, fact in ipairs({
+		{ label = L.ITEM_CAUGHT, value = data.caught },
+		{ label = L.ITEM_FIRST_CAUGHT, value = data.first },
+		{ label = L.ITEM_LAST_CAUGHT, value = data.last },
+	}) do
+		view.facts[i]:SetLine(fact)
+		at(view.facts[i], content, y)
 		y = y + FACT_HEIGHT
 	end
 	local here = data.here
@@ -160,7 +132,7 @@ local function buildWaters(content)
 		kicker = ns.NewBookKicker(content),
 		title = ns.NewBookTitle(content),
 		empty = ns.NewBookHand(content),
-		tiles = {},
+		grid = ns.NewBookTileGrid(content),
 	}
 	view.kicker:SetText(L.ITEM_WATERS_KICKER)
 	view.title:SetText(L.ITEM_WATERS_TITLE)
@@ -179,42 +151,14 @@ end
 local function drawWaters(content, place)
 	local view = content.waters or buildWaters(content)
 	local data = ns.ItemWaters(ns.State(), place.item --[[@as integer]], Pagle.GetConditions(), ns.places)
-	local width = content:GetWidth()
-	local tileWidth = (width - TILE_GAP) / 2
 	at(view.kicker, content, 0)
 	at(view.title, content, KICKER_GAP)
 	local y = KICKER_GAP + TITLE_HEIGHT + GROUP_GAP
 	view.empty:SetText(data.empty or "")
 	view.empty:SetShown(data.empty ~= nil)
 	at(view.empty, content, y)
-	for i, tile in ipairs(data.tiles) do
-		local tileView = view.tiles[i]
-		if not tileView then
-			tileView = ns.NewBookTile(content, tileWidth, TILE_HEIGHT)
-			view.tiles[i] = tileView
-		end
-		local target = tile.target
-		tileView:SetTile({
-			name = tile.name,
-			line = tile.line,
-			here = tile.here,
-			note = tile.note,
-			onClick = function()
-				ns.OpenBook(target)
-			end,
-		})
-		local row, column = math.floor((i - 1) / 2), (i - 1) % 2
-		at(tileView, content, y + row * (TILE_HEIGHT + TILE_GAP), column * (tileWidth + TILE_GAP))
-		tileView:Show()
-	end
-	for i = #data.tiles + 1, #view.tiles do
-		view.tiles[i]:Hide()
-	end
-	local rows = math.ceil(#data.tiles / 2)
-	if rows == 0 then
-		return y + view.empty:GetStringHeight()
-	end
-	return y + rows * TILE_HEIGHT + (rows - 1) * TILE_GAP
+	local height = view.grid:SetTiles(data.tiles, y)
+	return y + (height > 0 and height or view.empty:GetStringHeight())
 end
 
 ns.book:RegisterPage("item", "left", drawFacts)

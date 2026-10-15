@@ -65,6 +65,7 @@ ns.L = {
 	SESSIONS_LATER = "later",
 	SESSIONS_EARLIER_PAGE = "earlier",
 	SESSIONS_PAGE = "page %d of %d",
+	-- Every Session page side and both Lifetime pages with no Casts (STA-R97; ns.NewBookNoSessions).
 	NO_SESSIONS = "No Sessions yet.",
 
 	-- STA-R58's one allowed line: no other Stats string says or implies a Catch is owed (spec/Pagle_Stats/copy_spec.lua).
@@ -299,8 +300,6 @@ ns.L = {
 	LIFETIME_EVERY_FISH = "Every fish",
 	LIFETIME_INDEX_NOTE = "How many I've caught. Hover for first and last; click for its waters.",
 	LIFETIME_FIRST_LAST = "First %s, last %s",
-	-- Both pages with no Casts (STA-R97).
-	LIFETIME_NO_SESSIONS = "No Sessions yet.",
 
 	-- Watched Dry spells (STA-R61, STA-R62): the UI error for a 4th, by the cap (ns.MAX_WATCHES), and the chat line
 	-- when a watch turns the live tracker on.

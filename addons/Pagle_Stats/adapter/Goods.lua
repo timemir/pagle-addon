@@ -9,16 +9,8 @@ local ns = select(2, ...)
 -- sample tracker drawn by the tracker block maker (adapter/TrackerBlock.lua), and the frame looks the live tracker
 -- wears. Every texture is one the book already draws (ns.BOOK_TEXTURES, in-client files), laid under a tint.
 
--- A tint from its hex code, as the prototypes' CSS writes it: { r, g, b }, 0 to 1.
----@param hex string "RRGGBB"
----@return number[]
-local function tint(hex)
-	return {
-		tonumber(hex:sub(1, 2), 16) / 255,
-		tonumber(hex:sub(3, 4), 16) / 255,
-		tonumber(hex:sub(5, 6), 16) / 255,
-	}
-end
+-- A tint from its hex code (adapter/BookWidgets.lua).
+local tint = ns.BookTint
 
 local BOOK = ns.BOOK_LOOK
 
@@ -58,11 +50,6 @@ local drawn = setmetatable({}, { __mode = "k" })
 -- The good each sample shows, by sample.
 ---@type table<StatsTrackerBlock, string>
 local shows = setmetatable({}, { __mode = "k" })
--- The sample's items asked of the client and not loaded yet.
----@type table<integer, true>
-local asked = {}
--- Whether ITEM_DATA_LOAD_RESULT is registered.
-local listening = false
 local OWNER = "Pagle_Stats goods"
 
 -- Draws the sample tracker on `block` in `goodID`'s frame.
@@ -79,28 +66,11 @@ end
 
 -- Asks the client for an item the sample names (STA-R59), once while it is on its way; when it loads, every sample
 -- drawn redraws with its name.
----@param itemID integer
-local function ask(itemID)
-	if asked[itemID] then
-		return
+local ask = ns.NewItemLoader(OWNER, function()
+	for _, block in pairs(drawn) do
+		drawSample(block, shows[block])
 	end
-	if not listening then
-		listening = true
-		Pagle.RegisterEvent(OWNER, "ITEM_DATA_LOAD_RESULT", function(_, loadedID, success)
-			if not asked[loadedID] then
-				return
-			end
-			asked[loadedID] = nil
-			if success ~= false then
-				for _, block in pairs(drawn) do
-					drawSample(block, shows[block])
-				end
-			end
-		end)
-	end
-	asked[itemID] = true
-	C_Item.RequestLoadItemDataByID(itemID)
-end
+end)
 
 --- Draws tracker frame `goodID`'s sample tracker on `stage` (STA-R88): the header, the Session's two lines and the
 --- two watches, in that frame.

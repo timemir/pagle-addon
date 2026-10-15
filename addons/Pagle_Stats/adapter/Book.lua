@@ -83,11 +83,10 @@ local LEATHER_PARTS = { "search" }
 ---@field pages table<string, StatsBookPageView>   -- by "page:side", made at their first draw
 ---@field private leatherRenderers table<StatsBookLeatherPart, StatsBookLeatherRenderer>
 ---@field private drawnKey string?                 -- the place last drawn, to keep its scroll on a redraw
----@field private queued boolean                   -- a redraw waits for the next frame
+---@field private drawNextFrame fun()              -- QueueDraw's redraw, once per frame (ns.OncePerFrame)
 ---@field private ticker table?                    -- the live-line tick, while open
 ---@field listening boolean                        -- Core's events are subscribed
----@field private asked table<integer, true>       -- items asked of the client and not loaded yet
----@field private askedEvent boolean               -- ITEM_DATA_LOAD_RESULT is registered
+---@field private requestItem fun(itemID: integer) -- the book's item loader (ns.NewItemLoader)
 local Book = {}
 Book.__index = Book
 
@@ -96,11 +95,14 @@ ns.book = setmetatable({
 	router = ns.NewBookRouter(),
 	pages = {},
 	leatherRenderers = {},
-	queued = false,
 	listening = false,
-	asked = {},
-	askedEvent = false,
 }, Book)
+ns.book.drawNextFrame = ns.OncePerFrame(function()
+	ns.book:Draw()
+end)
+ns.book.requestItem = ns.NewItemLoader(OWNER, function()
+	ns.book:QueueDraw()
+end)
 
 --- Registers `renderer` to draw side `side` of page `page` (logic/Book.lua lists the pages and who draws them); a
 --- later registration replaces it. The page tickets call it when their files load (after this one in the TOC).
@@ -132,27 +134,25 @@ function Book.IsUpdating()
 	return ns.IsUpdating()
 end
 
---- Asks the client for `itemID`'s data (C_Item.RequestLoadItemDataByID), once while it is on its way; when it loads
---- (ITEM_DATA_LOAD_RESULT), the open page redraws on the next frame, once however many load in that frame (STA-R73).
---- Call it for an item ns.Item reports not loaded.
+--- Asks the client for `itemID`'s data through the book's item loader (ns.NewItemLoader), once while it is on its way;
+--- when it loads, the open page redraws on the next frame, once however many load in that frame (STA-R73). Call it for
+--- an item ns.Item reports not loaded.
 ---@param itemID integer
 function Book:RequestItem(itemID)
-	if self.asked[itemID] then
-		return
+	self.requestItem(itemID)
+end
+
+--- An item's name and icon for a page (ns.Item: "Item {id}" and the question mark until the client has it), asking
+--- the client for one it hasn't loaded, so the page redraws when it arrives (STA-R59, STA-R73).
+---@param itemID integer
+---@return string name
+---@return integer|string icon
+function Book:Item(itemID)
+	local name, icon, loaded = ns.Item(itemID)
+	if not loaded then
+		self:RequestItem(itemID)
 	end
-	self.asked[itemID] = true
-	if not self.askedEvent then
-		self.askedEvent = true
-		Pagle.RegisterEvent(OWNER, "ITEM_DATA_LOAD_RESULT", function(_, loadedID, success)
-			if self.asked[loadedID] then
-				self.asked[loadedID] = nil
-				if success ~= false then
-					self:QueueDraw()
-				end
-			end
-		end)
-	end
-	C_Item.RequestLoadItemDataByID(itemID)
+	return name, icon
 end
 
 -- Places the frame where profile.window says, or centred while it is nil (STA-R71).
@@ -374,14 +374,9 @@ end
 --- The open page redraws on the next frame, once however many ask in this one (STA-R73), keeping its place, choice and
 --- scroll; nothing while the book is closed.
 function Book:QueueDraw()
-	if self.queued or not self:IsShown() then
-		return
+	if self:IsShown() then
+		self.drawNextFrame()
 	end
-	self.queued = true
-	C_Timer.After(0, function()
-		self.queued = false
-		self:Draw()
-	end)
 end
 
 --- The live-line tick (STA-R73): the live line refreshes, and the whole home spread when it shows.
@@ -476,11 +471,9 @@ local function crumbWords(book, crumb)
 	elseif kind == "zone" or kind == "subzone" then
 		return ns.AreaName(crumb.id --[[@as integer]])
 	elseif kind == "item" then
-		local name, _, loaded = ns.Item(crumb.id --[[@as integer]])
-		if not loaded then
-			book:RequestItem(crumb.id --[[@as integer]])
-		end
-		return name
+		return (
+			book:Item(crumb.id --[[@as integer]])
+		)
 	elseif crumb.id == "session" then
 		return sessionKicker()
 	end

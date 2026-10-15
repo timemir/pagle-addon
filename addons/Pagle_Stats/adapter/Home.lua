@@ -14,8 +14,7 @@ local ns = select(2, ...)
 local L = ns.L
 local LOOK = ns.BOOK_LOOK
 
--- Variant D's measures: two tiles a row, 84 px high, 9 px apart; the gaps between the right page's parts.
-local TILE_HEIGHT, TILE_GAP = 84, 9
+-- Variant D's measures: the gaps between a page's parts, a link's height and the watches' pencil mark.
 local KICKER_GAP, TITLE_GAP, PARA_GAP, GROUP_GAP = 18, 30, 8, 14
 local LINK_HEIGHT, MARK_SIZE, MARK_INDENT = 20, 14, 20
 
@@ -24,16 +23,11 @@ local LINK_HEIGHT, MARK_SIZE, MARK_INDENT = 20, 14, 20
 ---@field title FontString
 ---@field intro FontString
 ---@field empty FontString
----@field tiles StatsBookTileView[]
+---@field grid StatsBookTileGridView
 
 ---@class StatsHomeWatchView: Button
 ---@field mark Texture
 ---@field label FontString
-
----@class StatsHomeLinkView: Button
----@field label FontString
----@field value FontString
----@field leader Texture
 
 ---@class StatsHomeRightNowView
 ---@field kicker FontString
@@ -43,7 +37,7 @@ local LINK_HEIGHT, MARK_SIZE, MARK_INDENT = 20, 14, 20
 ---@field watches StatsHomeWatchView[]
 ---@field noWatches FontString
 ---@field contents StatsBookHeadingView
----@field links StatsHomeLinkView[]
+---@field links StatsBookFigureView[]
 
 ---@class StatsHomeContent: Frame
 ---@field waters StatsHomeWatersView?
@@ -101,7 +95,7 @@ local function buildWaters(content)
 		title = ns.NewBookTitle(content),
 		intro = ns.BookText(content, ns.BookFonts().small, LOOK.small),
 		empty = ns.NewBookHand(content),
-		tiles = {},
+		grid = ns.NewBookTileGrid(content),
 	}
 	view.kicker:SetText(L.HOME_KICKER)
 	view.title:SetText(L.HOME_TITLE)
@@ -121,8 +115,6 @@ end
 local function drawWaters(content)
 	local view = content.waters or buildWaters(content)
 	local data = ns.HomeWaters(ns.State(), Pagle.GetConditions(), watched(), ns.places)
-	local width = content:GetWidth()
-	local tileWidth = (width - TILE_GAP) / 2
 	at(view.kicker, content, 0)
 	at(view.title, content, KICKER_GAP)
 	at(view.intro, content, KICKER_GAP + TITLE_GAP)
@@ -130,41 +122,8 @@ local function drawWaters(content)
 	view.empty:SetText(data.empty or "")
 	view.empty:SetShown(data.empty ~= nil)
 	at(view.empty, content, y)
-	for i, tile in ipairs(data.tiles) do
-		local tileView = view.tiles[i]
-		if not tileView then
-			tileView = ns.NewBookTile(content, tileWidth, TILE_HEIGHT)
-			view.tiles[i] = tileView
-		end
-		local target = tile.target
-		tileView:SetTile({
-			name = tile.name,
-			line = tile.line,
-			here = tile.here,
-			note = tile.note,
-			onClick = function()
-				ns.OpenBook(target)
-			end,
-		})
-		local row, column = math.floor((i - 1) / 2), (i - 1) % 2
-		tileView:ClearAllPoints()
-		tileView:SetPoint(
-			"TOPLEFT",
-			content,
-			"TOPLEFT",
-			column * (tileWidth + TILE_GAP),
-			-(y + row * (TILE_HEIGHT + TILE_GAP))
-		)
-		tileView:Show()
-	end
-	for i = #data.tiles + 1, #view.tiles do
-		view.tiles[i]:Hide()
-	end
-	local rows = math.ceil(#data.tiles / 2)
-	if rows == 0 then
-		return y + view.empty:GetStringHeight()
-	end
-	return y + rows * TILE_HEIGHT + (rows - 1) * TILE_GAP
+	local height = view.grid:SetTiles(data.tiles, y)
+	return y + (height > 0 and height or view.empty:GetStringHeight())
 end
 
 ---@param content StatsHomeContent
@@ -218,33 +177,15 @@ local function watchAt(content, view, i)
 	return line
 end
 
--- In this book's link `i`, made on first use: its words at the left, its number at the right and a faint leader
--- between them, as a table of contents; red under the mouse.
+-- In this book's link `i`, made on first use: a figure line (ns.NewBookFigure), as a table of contents.
 ---@param content StatsHomeContent
 ---@param view StatsHomeRightNowView
 ---@param i integer
----@return StatsHomeLinkView
+---@return StatsBookFigureView
 local function linkAt(content, view, i)
 	local link = view.links[i]
 	if not link then
-		link = CreateFrame("Button", nil, content) --[[@as StatsHomeLinkView]]
-		link:SetSize(content:GetWidth(), LINK_HEIGHT)
-		link.label = ns.BookText(link, ns.BookFonts().text, LOOK.ink)
-		link.label:SetPoint("LEFT")
-		link.value = ns.BookText(link, ns.BookFonts().text, LOOK.ink)
-		link.value:SetPoint("RIGHT")
-		link.value:SetJustifyH("RIGHT")
-		link.leader = link:CreateTexture(nil, "ARTWORK")
-		link.leader:SetColorTexture(LOOK.note[1], LOOK.note[2], LOOK.note[3], 0.6)
-		link.leader:SetHeight(1)
-		link.leader:SetPoint("BOTTOMLEFT", link.label, "BOTTOMRIGHT", 4, 2)
-		link.leader:SetPoint("BOTTOMRIGHT", link.value, "BOTTOMLEFT", -4, 2)
-		link:SetScript("OnEnter", function(self)
-			tintText(self.label, LOOK.red)
-		end)
-		link:SetScript("OnLeave", function(self)
-			tintText(self.label, LOOK.ink)
-		end)
+		link = ns.NewBookFigure(content, content:GetWidth(), LINK_HEIGHT)
 		view.links[i] = link
 	end
 	return link
@@ -301,14 +242,14 @@ local function drawRightNow(content)
 	y = y + view.contents:GetHeight() + 2
 	for i, entry in ipairs(data.contents) do
 		local link = linkAt(content, view, i)
-		link.label:SetText(entry.label)
-		tintText(link.label, LOOK.ink)
-		link.value:SetText(entry.value or "")
-		link.leader:SetShown(entry.value ~= nil)
 		local target = entry.target
-		link:SetScript("OnClick", function()
-			ns.OpenBook(target)
-		end)
+		link:SetFigure({
+			label = entry.label,
+			value = entry.value,
+			onClick = function()
+				ns.OpenBook(target)
+			end,
+		})
 		at(link, content, y)
 		link:Show()
 		y = y + LINK_HEIGHT

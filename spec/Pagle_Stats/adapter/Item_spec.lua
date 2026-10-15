@@ -61,7 +61,7 @@ end
 -- Each shown tile's name, line, "I'm here" and note ("-" for one not shown).
 local function tilesOf(book)
 	local out = {}
-	for _, tile in ipairs(waters(book).tiles) do
+	for _, tile in ipairs(waters(book).grid.tiles) do
 		if tile.shown then
 			local function read(text)
 				return text.shown and text.text or "-"
@@ -81,8 +81,8 @@ describe("the item page's left page (stats.md › UI › Item page)", function()
 		loaded.ns.OpenBook({ page = "item", item = MACKEREL })
 
 		local view = facts(book)
-		assert.are.same({ "A FISH", "Raw Mackerel" }, { view.kicker.text, view.title.text })
-		assert.are.equal(MACKEREL_ICON, view.icon.icon.texture)
+		assert.are.same({ "A FISH", "Raw Mackerel" }, { view.kicker.text, view.name.title.text })
+		assert.are.equal(MACKEREL_ICON, view.name.icon.icon.texture)
 		assert.are.equal("Bites at any hour.", view.bites.text)
 		assert.are.same(
 			{ "Caught", "First caught", "Last caught" },
@@ -132,13 +132,13 @@ describe("the item page's left page (stats.md › UI › Item page)", function()
 		loaded.client.itemNames[MACKEREL] = nil
 
 		loaded.ns.OpenBook({ page = "item", item = MACKEREL })
-		assert.are.equal("Item 6303", facts(book).title.text)
+		assert.are.equal("Item 6303", facts(book).name.title.text)
 		assert.are.same({ MACKEREL }, loaded.client.itemRequests)
 		loaded.client.itemNames[MACKEREL] = "Raw Mackerel"
 		fake.fireGameEvent("ITEM_DATA_LOAD_RESULT", MACKEREL, true)
 		loaded.client.runTimers()
 
-		assert.are.equal("Raw Mackerel", facts(book).title.text)
+		assert.are.equal("Raw Mackerel", facts(book).name.title.text)
 	end)
 end)
 
@@ -158,7 +158,7 @@ describe("the item page's right page, Where I've fished for it (stats.md › UI 
 			"Darkshore | learning 3/100 | - | -",
 			"Auberdine | Darkshore · learning 3/100 | I'm here | -",
 		}, tilesOf(book))
-		view.tiles[2]:Click()
+		view.grid.tiles[2]:Click()
 		assert.are.same({ page = "place", area = AUBERDINE, item = MACKEREL }, book.router:Place())
 	end)
 

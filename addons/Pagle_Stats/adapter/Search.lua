@@ -196,9 +196,7 @@ local function draw(anchor, _, updating)
 	elseif anchor.opened then
 		anchor.opened = false
 		for _, item in ipairs(ns.SearchItems(ns.State(), ns.places)) do
-			if not select(3, ns.Item(item)) then
-				ns.book:RequestItem(item)
-			end
+			ns.book:Item(item)
 		end
 	end
 	refresh(anchor)

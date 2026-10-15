@@ -15,8 +15,7 @@ local ns = select(2, ...)
 local L = ns.L
 local LOOK = ns.BOOK_LOOK
 
--- Variant D's measures: the title's icon, the large ink's line, the learning bar, and the gaps down the page.
-local ICON_SIZE, ICON_GAP = 28, 8
+-- Variant D's measures: the large ink's line, the learning bar, and the gaps down the page.
 local KICKER_GAP, TITLE_HEIGHT, BIG_HEIGHT, BAR_HEIGHT = 18, 34, 36, 10
 local PARA_GAP, GROUP_GAP, HEADING_HEIGHT, LINE_HEIGHT = 6, 14, 20, 20
 -- The luck ruler's inset from each side, room for the half of its end labels that reaches past its scale.
@@ -35,8 +34,7 @@ local KICKER_ROOM = 100
 ---@class StatsEntryView
 ---@field toggle StatsEntryToggleView
 ---@field kicker FontString
----@field icon StatsBookIconView
----@field title FontString
+---@field name StatsBookItemTitleView
 ---@field headline FontString
 ---@field bar StatsBookInkBarView
 ---@field range FontString
@@ -137,8 +135,7 @@ local function viewOf(frame)
 	local view = {
 		toggle = newToggle(frame),
 		kicker = ns.NewBookKicker(frame),
-		icon = ns.NewBookIcon(frame, ICON_SIZE),
-		title = ns.NewBookTitle(frame),
+		name = ns.NewBookItemTitle(frame, width),
 		headline = text(faces.big, LOOK.title),
 		bar = ns.NewBookInkBar(frame, width, BAR_HEIGHT),
 		range = text(faces.small, LOOK.small),
@@ -155,7 +152,6 @@ local function viewOf(frame)
 	for i = 1, 4 do
 		view.records[i] = ns.NewBookLine(frame, width)
 	end
-	view.title:SetWidth(width - ICON_SIZE - ICON_GAP)
 	-- the kicker leaves the toggle its room at the top right
 	view.kicker:SetWidth(width - KICKER_ROOM)
 	view.kicker:SetWordWrap(false)
@@ -177,14 +173,7 @@ local function drawEntry(frame, place)
 	drawToggle(view.toggle, item, area, frame:GetWidth())
 	view.kicker:SetText(data.kicker)
 	put(view.kicker, 0)
-	local name, icon, loaded = ns.Item(item)
-	if not loaded then
-		ns.book:RequestItem(item)
-	end
-	view.icon:SetIcon(icon)
-	put(view.icon, KICKER_GAP)
-	view.title:SetText(name)
-	put(view.title, KICKER_GAP + 2, ICON_SIZE + ICON_GAP)
+	view.name:SetItem(item, KICKER_GAP)
 	local y = KICKER_GAP + TITLE_HEIGHT + PARA_GAP
 
 	-- Your odds: learning in the hand's large ink, the others in printed large ink.

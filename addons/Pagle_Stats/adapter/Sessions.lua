@@ -29,12 +29,6 @@ local PALE = 0.75
 -- The ruled ledgers' columns (stats.md › UI › This Session), "Where" taking what the others leave.
 local STARTED_WIDTH, LENGTH_WIDTH, COUNT_WIDTH = 120, 60, 56
 
----@class StatsSessionLineView: Button
----@field label FontString
----@field value FontString
----@field leader Texture
----@field hover boolean
-
 ---@class StatsSessionEntryView
 ---@field frame Frame
 ---@field kicker FontString
@@ -42,7 +36,7 @@ local STARTED_WIDTH, LENGTH_WIDTH, COUNT_WIDTH = 120, 60, 56
 ---@field span FontString
 ---@field quality StatsBookHeadingView
 ---@field where StatsBookHeadingView
----@field lines StatsSessionLineView[]
+---@field lines StatsBookFigureView[]
 ---@field width number
 
 ---@class StatsSessionPagerView: Frame
@@ -80,10 +74,8 @@ end
 local function sideOf(content, make, empty)
 	local side = drawn[content]
 	if not side then
-		local text = ns.NewBookHand(content)
+		local text = ns.NewBookNoSessions(content)
 		at(text, 0)
-		text:SetWidth(content:GetWidth())
-		text:SetText(L.NO_SESSIONS)
 		local frame = CreateFrame("Frame", nil, content)
 		frame:SetAllPoints()
 		side = { empty = text, view = make(frame, content:GetWidth()) }
@@ -105,39 +97,6 @@ local function heads(frame)
 	return kicker, title
 end
 
--- A figure line: its label at the left, its value at the right, a faint leader between them (variant D's dotted
--- table of contents). A zone's line opens its place page and reddens under the mouse.
----@param parent Frame
----@param width number
----@return StatsSessionLineView
-local function newLine(parent, width)
-	local fonts = ns.BookFonts()
-	local line = CreateFrame("Button", nil, parent) --[[@as StatsSessionLineView]]
-	line:SetSize(width, LINE)
-	line.label = ns.BookText(line, fonts.text, LOOK.ink)
-	line.label:SetPoint("LEFT")
-	line.value = ns.BookText(line, fonts.text, LOOK.ink)
-	line.value:SetPoint("RIGHT")
-	line.value:SetJustifyH("RIGHT")
-	line.leader = line:CreateTexture(nil, "BORDER")
-	line.leader:SetColorTexture(LOOK.note[1], LOOK.note[2], LOOK.note[3], 0.5)
-	line.leader:SetHeight(1)
-	line.leader:SetPoint("BOTTOMLEFT", line.label, "BOTTOMRIGHT", 4, 3)
-	line.leader:SetPoint("BOTTOMRIGHT", line.value, "BOTTOMLEFT", -4, 3)
-	line.hover = false
-	line:SetScript("OnEnter", function(self)
-		if self.hover then
-			self.label:SetTextColor(LOOK.red[1], LOOK.red[2], LOOK.red[3])
-		end
-	end)
-	line:SetScript("OnLeave", function(self)
-		if self.hover then
-			self.label:SetTextColor(LOOK.ink[1], LOOK.ink[2], LOOK.ink[3])
-		end
-	end)
-	return line
-end
-
 ---@param frame Frame
 ---@param width number
 ---@return StatsSessionEntryView
@@ -157,8 +116,8 @@ local function newEntry(frame, width)
 	}
 end
 
--- The `i`th figure line of `view`, made on first use, at `y` with its words, coloured `color` (ink by default) and
--- opening `onClick` if given.
+-- The `i`th figure line of `view` (ns.NewBookFigure), made on first use, at `y` with its words, its label coloured
+-- `color` (ink by default) and opening `onClick` if given: a zone's line opens its place page.
 ---@param view StatsSessionEntryView
 ---@param i integer
 ---@param y number
@@ -169,18 +128,11 @@ end
 local function lineAt(view, i, y, label, value, color, onClick)
 	local line = view.lines[i]
 	if not line then
-		line = newLine(view.frame, view.width)
+		line = ns.NewBookFigure(view.frame, view.width, LINE)
 		view.lines[i] = line
 	end
 	at(line, y)
-	color = color or LOOK.ink
-	line.label:SetText(label)
-	line.label:SetTextColor(color[1], color[2], color[3])
-	line.value:SetText(value)
-	line.hover = onClick ~= nil
-	line:SetScript("OnClick", onClick and function()
-		onClick()
-	end or nil)
+	line:SetFigure({ label = label, value = value, ink = color, onClick = onClick })
 	line:Show()
 end
 

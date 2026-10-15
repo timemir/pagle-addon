@@ -155,7 +155,7 @@ end
 
 --- An item's name and icon (STA-R59): its C_Item name and icon, or "Item {id}" and the question-mark icon until the
 --- client has its name, and whether it has. Nothing is asked of the client here: a view that draws an unloaded item
---- asks for it and redraws when it arrives (the book, #211).
+--- asks for it and redraws when it arrives (adapter/Book.lua's Book:Item, adapter/Text.lua's ns.NewItemLoader).
 ---@param itemID integer
 ---@return string name
 ---@return integer|string icon

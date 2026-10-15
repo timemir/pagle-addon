@@ -18,9 +18,7 @@ local OWNER = "Pagle_Stats tracker"
 ---@class StatsTracker
 ---@field block StatsTrackerBlock
 ---@field ticker table?                  -- the live-line tick (STA-R86), while shown with a Session current
----@field asked table<integer, true>     -- items asked of the client and not loaded yet
----@field askedEvent boolean             -- ITEM_DATA_LOAD_RESULT is registered
----@field queued boolean                 -- a redraw for a loaded name waits for the next frame
+---@field requestItem fun(itemID: integer) -- asks for a watched item's name (ns.NewItemLoader); it redraws on load
 
 ---@class PagleStatsNS
 ---@field tracker StatsTracker?          -- made by ns.StartTracker
@@ -99,41 +97,6 @@ local function wire(row, block)
 	end)
 end
 
--- The tracker redraws on the next frame, once however many ask in this one (STA-R73's item loads).
----@param tracker StatsTracker
-local function queue(tracker)
-	if tracker.queued then
-		return
-	end
-	tracker.queued = true
-	C_Timer.After(0, function()
-		tracker.queued = false
-		ns.DrawTracker()
-	end)
-end
-
--- Asks the client for a watched item's name, once while it is on its way; it redraws when it loads (STA-R59).
----@param tracker StatsTracker
----@param itemID integer
-local function ask(tracker, itemID)
-	if tracker.asked[itemID] then
-		return
-	end
-	tracker.asked[itemID] = true
-	if not tracker.askedEvent then
-		tracker.askedEvent = true
-		Pagle.RegisterEvent(OWNER, "ITEM_DATA_LOAD_RESULT", function(_, loadedID, success)
-			if tracker.asked[loadedID] then
-				tracker.asked[loadedID] = nil
-				if success ~= false then
-					queue(tracker)
-				end
-			end
-		end)
-	end
-	C_Item.RequestLoadItemDataByID(itemID)
-end
-
 -- Starts or stops the live-line tick: it runs while the tracker shows with a Session current (STA-R86).
 ---@param tracker StatsTracker
 ---@param ticking boolean
@@ -163,7 +126,7 @@ function ns.DrawTracker()
 		return
 	end
 	for _, itemID in ipairs(view.pending) do
-		ask(tracker, itemID)
+		tracker.requestItem(itemID)
 	end
 	block:SetLines(view.lines)
 	for _, row in ipairs(block.rows) do
@@ -195,7 +158,12 @@ end
 function ns.StartTracker(module)
 	local block = ns.NewTrackerBlock(UIParent)
 	block:Hide()
-	ns.tracker = { block = block, asked = {}, askedEvent = false, queued = false }
+	-- A watched item's name loading redraws the tracker on the next frame, once however many load in it (STA-R59,
+	-- STA-R73).
+	local redraw = ns.OncePerFrame(function()
+		ns.DrawTracker()
+	end)
+	ns.tracker = { block = block, requestItem = ns.NewItemLoader(OWNER, redraw) }
 	module:RegisterTracker({ id = "stats", order = 20, frame = block })
 
 	local function draw()

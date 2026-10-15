@@ -211,10 +211,7 @@ end
 ---@param chosen boolean
 local function drawRow(row, reading, area, chosen)
 	local item = reading.item
-	local name, icon, loaded = ns.Item(item)
-	if not loaded then
-		ns.book:RequestItem(item)
-	end
+	local name, icon = ns.book:Item(item)
 	local margin, band = ns.DrySpellShort(reading)
 	row:SetRow({
 		icon = icon,

@@ -7,7 +7,7 @@ local ns = select(2, ...)
 
 -- The Lifetime ribbon's spread on the Stats book (stats.md › UI › Lifetime), as logic/Lifetime.lua words it: on the
 -- left, the totals, the bests, got away by skill and the characters; on the right, the two-column index of every fish,
--- each item's first and last Catch on hover and its item page on a click (#215). With no Casts both pages read "No
+-- each item's first and last Catch on hover and its item page (adapter/Item.lua) on a click. With no Casts both pages read "No
 -- Sessions yet." (STA-R97). Each side draws on its own content frame (adapter/Book.lua), reusing the pieces it made
 -- at earlier draws; every piece sits by its top left on the page.
 
@@ -21,11 +21,6 @@ local AFTER_TITLE, BEFORE_HEADING, AFTER_NOTE, COLUMN_GAP = 8, 10, 6, 20
 -- An index entry's room for its count.
 local COUNT_WIDTH = 44
 
----@class StatsLifetimeFigureView: Frame
----@field label FontString
----@field value FontString
----@field leader Texture
-
 ---@class StatsLifetimeEntryView: Button
 ---@field label FontString
 ---@field count FontString
@@ -38,7 +33,7 @@ local COUNT_WIDTH = 44
 ---@field title FontString
 ---@field hand FontString         -- "No Sessions yet."
 ---@field note FontString         -- the right page's note
----@field figures StatsLifetimeFigureView[]
+---@field figures StatsBookFigureView[]
 ---@field headings StatsBookHeadingView[]
 ---@field entries StatsLifetimeEntryView[]
 ---@field used { figures: integer, headings: integer, entries: integer }
@@ -55,7 +50,7 @@ local function viewOf(content)
 		view = {
 			kicker = ns.NewBookKicker(content),
 			title = ns.NewBookTitle(content),
-			hand = ns.NewBookHand(content),
+			hand = ns.NewBookNoSessions(content),
 			note = ns.BookText(content, ns.BookFonts().note, LOOK.note),
 			figures = {},
 			headings = {},
@@ -64,8 +59,6 @@ local function viewOf(content)
 		}
 		view.kicker:SetPoint("TOPLEFT", 0, 0)
 		view.title:SetPoint("TOPLEFT", 0, -KICKER)
-		view.hand:SetWidth(content:GetWidth())
-		view.hand:SetText(L.LIFETIME_NO_SESSIONS)
 		view.note:SetWidth(content:GetWidth())
 		view.note:SetWordWrap(true)
 		view.note:SetText(L.LIFETIME_INDEX_NOTE)
@@ -118,8 +111,7 @@ local function nextPiece(view, kind, make)
 	return pieces[used]
 end
 
--- A figure line at `y`: its words at the left, its number at the right, a faint leader between them, as variant D's
--- dotted leaders.
+-- A figure line at `y` (ns.NewBookFigure), its number in the title's ink.
 ---@param content Frame
 ---@param view StatsLifetimePageView
 ---@param figure StatsFigure
@@ -127,23 +119,9 @@ end
 ---@return number y below it
 local function drawFigure(content, view, figure, y)
 	local line = nextPiece(view, "figures", function()
-		local line = CreateFrame("Frame", nil, content) --[[@as StatsLifetimeFigureView]]
-		line:SetSize(content:GetWidth(), LINE)
-		local faces = ns.BookFonts()
-		line.label = ns.BookText(line, faces.text, LOOK.ink)
-		line.label:SetPoint("LEFT")
-		line.value = ns.BookText(line, faces.text, LOOK.title)
-		line.value:SetPoint("RIGHT")
-		line.value:SetJustifyH("RIGHT")
-		line.leader = line:CreateTexture(nil, "ARTWORK")
-		line.leader:SetColorTexture(LOOK.note[1], LOOK.note[2], LOOK.note[3], 0.5)
-		line.leader:SetHeight(1)
-		line.leader:SetPoint("BOTTOMLEFT", line.label, "BOTTOMRIGHT", 4, 4)
-		line.leader:SetPoint("BOTTOMRIGHT", line.value, "BOTTOMLEFT", -4, 4)
-		return line
-	end) --[[@as StatsLifetimeFigureView]]
-	line.label:SetText(figure.label)
-	line.value:SetText(figure.value)
+		return ns.NewBookFigure(content, content:GetWidth(), LINE)
+	end) --[[@as StatsBookFigureView]]
+	line:SetFigure({ label = figure.label, value = figure.value, valueInk = LOOK.title })
 	line:SetPoint("TOPLEFT", 0, -y)
 	return y + LINE
 end
@@ -230,12 +208,8 @@ local function drawEntry(content, view, data, x, y, width)
 		end)
 		return entry
 	end) --[[@as StatsLifetimeEntryView]]
-	local name, _, loaded = ns.Item(data.item)
-	if not loaded then
-		ns.book:RequestItem(data.item)
-	end
 	entry.item, entry.hover = data.item, data.hover
-	entry.label:SetText(name)
+	entry.label:SetText((ns.book:Item(data.item)))
 	entry.count:SetText(data.count)
 	entry:SetPoint("TOPLEFT", x, -y)
 end

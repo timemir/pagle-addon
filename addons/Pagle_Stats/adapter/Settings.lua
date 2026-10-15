@@ -47,10 +47,6 @@ local widgetsOf = setmetatable({}, { __mode = "k" })
 -- The frames showing the row now: Init adds one, Release drops it.
 ---@type table<Frame, true>
 local drawn = setmetatable({}, { __mode = "k" })
--- The items asked of the client while their names load, and whether ITEM_DATA_LOAD_RESULT is registered.
----@type table<integer, true>
-local asked = {}
-local askedEvent = false
 
 ---@param frame Frame
 ---@param template string
@@ -98,16 +94,12 @@ local function widgets(frame)
 	return own
 end
 
--- Redraws every shown row, once an item's name has loaded.
----@param itemID integer
-local function nameLoaded(itemID)
-	if asked[itemID] then
-		asked[itemID] = nil
-		for frame in pairs(drawn) do
-			frame--[[@as PagleStatsWatchedRowMixin]]:Draw()
-		end
+-- Asks the client for a watched item's name; every shown row redraws once it has loaded.
+local requestItem = ns.NewItemLoader(OWNER, function()
+	for frame in pairs(drawn) do
+		frame--[[@as PagleStatsWatchedRowMixin]]:Draw()
 	end
-end
+end)
 
 -- A watched item's name; an item the client hasn't loaded reads "Item {id}" and is asked for, and the row redraws
 -- when it loads (STA-R59).
@@ -115,15 +107,8 @@ end
 ---@return string
 local function itemName(itemID)
 	local name, _, loaded = ns.Item(itemID)
-	if not loaded and not asked[itemID] then
-		if not askedEvent then
-			askedEvent = true
-			Pagle.RegisterEvent(OWNER, "ITEM_DATA_LOAD_RESULT", function(_, loadedID)
-				nameLoaded(loadedID)
-			end)
-		end
-		asked[itemID] = true
-		C_Item.RequestLoadItemDataByID(itemID)
+	if not loaded then
+		requestItem(itemID)
 	end
 	return name
 end
