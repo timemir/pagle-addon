@@ -43,7 +43,7 @@ local function buildSwatch(stage)
 	local swatch = CreateFrame("Frame", nil, stage) --[[@as LedgerBindingSwatch]]
 	swatch:SetSize(SWATCH_WIDTH, SWATCH_HEIGHT)
 	swatch:SetPoint("TOP", 0, -16)
-	-- The gilt rules: a rectangle inset from the edges, further in at the spine.
+	-- The leather and its grain, and the gilt rules: a rectangle inset from the edges, further in at the spine.
 	ns.DrawJournalCover(swatch, 1, RULE_INSET, RULE_SPINE_INSET)
 	local spine = swatch:CreateTexture(nil, "BORDER")
 	spine:SetColorTexture(0, 0, 0, 0.35)

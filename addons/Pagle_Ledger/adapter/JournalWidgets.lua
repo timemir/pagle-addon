@@ -175,7 +175,7 @@ function ns.DrawJournalCover(frame, border, inset, left)
 		texture:SetPoint("TOPLEFT", border, -border)
 		texture:SetPoint("BOTTOMRIGHT", -border, border)
 	end
-	-- Over the grain, which shares its layer.
+	-- A layer above the grain's, so the rules always draw over it.
 	frame.rules = ns.JournalRules(frame, inset, { left = left, layer = "ARTWORK" })
 end
 
