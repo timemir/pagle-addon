@@ -770,9 +770,10 @@ function ns.PlayBoardChanges(frame, before)
 		if inDrawer or not moving then
 			ns.BoardSound("flyTied")
 		end
-		if moving and inDrawer then
+		local cells = before.cells
+		if moving and inDrawer and drawer and cells then
 			for i, cell in ipairs(drawer.cells) do
-				if cell.cell and cell.cell.tied and not before.cells[i] then
+				if cell.cell and cell.cell.tied and not cells[i] then
 					flySettles(cell)
 				end
 			end

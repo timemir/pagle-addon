@@ -46,7 +46,8 @@ local function kits(loaded)
 	return out
 end
 
--- The pin slot showing `goalID`, or nil.
+-- The pin slot showing `goalID`; an error when none does.
+---@return TacklePinSlot
 local function slotOf(frame, goalID)
 	for _, row in ipairs({ frame.parts.pins.slots.expeditions, frame.parts.pins.slots.notices }) do
 		for _, slot in ipairs(row) do
@@ -55,7 +56,7 @@ local function slotOf(frame, goalID)
 			end
 		end
 	end
-	return nil
+	error("no pin shows " .. tostring(goalID))
 end
 
 -- `seconds` of frames, a tenth of a second each.
