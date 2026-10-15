@@ -329,9 +329,7 @@ describe("scripts/read-wtf.lua", function()
 
 		it("reads the repo's catalogue by default, and flags one that isn't the projection's (DATA-R70)", function()
 			-- DATA-R70: the generated file carries the content fingerprint the client's projections are built against.
-			local file = assert(io.open("addons/Pagle/data/Catalogue.lua", "rb"))
-			local fingerprint = file:read("*a"):match('fingerprint = "(%x+)"')
-			file:close()
+			local fingerprint = readFile("addons/Pagle/data/Catalogue.lua"):match('fingerprint = "(%x+)"')
 			local world = section(run(ACCOUNTS .. "M3#1"), "== Ledger")[6]
 			local prefix = "world: the repo's addons/Pagle/data/Catalogue.lua, fingerprint "
 				.. fingerprint
@@ -514,7 +512,7 @@ describe("scripts/read-wtf.lua", function()
 	-- a moved tracker dock, the Hunts slots' goods and Hunts' lines in the wallet and the cards. Read against
 	-- spec/scripts/fixtures/HuntList.lua (--huntlist) and spec/scripts/fixtures/Catalogue.lua at --now 1792000000,
 	-- 2026-10-14 17:46:40 UTC.
-	describe("on an account after the M5 exit check's steps", function()
+	describe("on an account after the M5 exit check's steps (#199, in-game-verification.md › Hunts)", function()
 		local NOW = "1792000000"
 		local out, err, code = run(
 			ACCOUNTS .. "M5#1",
@@ -528,53 +526,56 @@ describe("scripts/read-wtf.lua", function()
 			"night_run"
 		)
 
-		it("exits 0 and writes nothing to stderr", function()
+		it("exits 0 and writes nothing to stderr (#199, in-game-verification.md › Hunts)", function()
 			assert.are.equal(0, code)
 			assert.are.equal("", err)
 		end)
 
-		it("prints the projection, the state, the titles, the celebrated set, the pins and the profile", function()
-			-- LOG-R70's stored values; HNT-R136: Hunts' rules version is 1 in M5 (Tunables); DATA-R72: the stored
-			-- fingerprint is the catalogue's plus the Hunt list's. hunts.md › Projection state for the state.
-			-- HNT-R2, HNT-R3: at --now night_run, first_light, rack_hour and dawn_trout are current, grouper_by_moonlight
-			-- is retired, witching_hour isn't out (so it has no line). HNT-R89: 3 of the 4 current Hunts are done
-			-- (HNT-R17), 2 titles earned. HNT-R18: tier 1 bronze, tier 2 silver. HNT-R23: camp_hours came from a Catch,
-			-- pagles_wagers from grouper_by_moonlight's retirement (dated its UTC day). HNT-R90: night_run's tier 2 and
-			-- pagles_wagers aren't celebrated yet. HNT-R81: the pin on the Retired Hunt is dropped at load. hunts.md ›
-			-- PagleHuntsDB: tracker.shown and showCompleted are left out at their defaults (AceDB).
-			assert.are.same({
-				"== Hunts (PagleHuntsDB)",
-				"projection: lastSeq 6, logId 6c2f9e0a1b3d5e77, fingerprint 0123456789abcdef+5eed5eed5eed5eed,"
-					.. " rulesVersion 1",
-				"logId: matches PagleLog's",
-				"lastSeq: equals PagleLog's length (6 entries)",
-				"rulesVersion: Hunts', 1 (HNT-R136)",
-				"Hunt list: " .. HUNTLIST .. ", fingerprint 5eed5eed5eed5eed, 6 Hunts in 3 sets",
-				"fingerprint: the catalogue's plus the Hunt list's (DATA-R72)",
-				"summary line: Hunts: 3 of 4 done · 2 titles, at 2026-10-14 17:46:40 UTC (--now) (HNT-R89)",
-				"state: 120 Casts, 305 Coins, 5 Hunts with progress, 2 titles",
-				"  night_run: current, count 12, effort 80, sinceLast 3, tiers 2 of 3 (1 / 10 / 40)",
-				"    tier 1 bronze: 2026-10-12 (realm date), zone 12, item 13759",
-				"    tier 2 silver: 2026-10-13 (realm date), zone 12, item 13759",
-				"  first_light: current, count 0, effort 5, sinceLast 5, tiers 0 of 3 (1 / 10 / 40)",
-				"  rack_hour: current, count 1, effort 7, sinceLast 2, tiers 1 of 3 (1 / 10 / 25)",
-				"    tier 1 bronze: 2026-10-12 (realm date), zone 40, item 6643",
-				"  dawn_trout: current, count 1, effort 4, sinceLast 0, tiers 1 of 3 (1 / 10 / 25)",
-				"    tier 1 bronze: 2026-08-29 (realm date), zone 1519, item 8365",
-				"  grouper_by_moonlight: retired 2026-09-01, count 0, effort 2, sinceLast 2, tiers 0 of 3 (1 / 5 / 20)",
-				"titles earned: 2",
-				"  camp_hours: 2026-10-12, earned at 2026-10-12 13:00:00 UTC, from a Catch",
-				"  pagles_wagers: 2026-09-01, earned at 2026-09-01 00:00:00 UTC, from a retirement",
-				"celebrated tiers: 3 (dawn_trout 1, night_run 1, rack_hour 1)",
-				"celebrated titles: 1 (camp_hours)",
-				"pins: 2 (grouper_by_moonlight, night_run); not current, so Hunts drops the pin at load (HNT-R81):"
-					.. " grouper_by_moonlight",
-				"tracker.shown: true (not saved: the default)",
-				"tracker.collapsed: true",
-				"windowMoments: true",
-				"showCompleted: false (not saved: the default)",
-			}, section(out, "== Hunts"))
-		end)
+		it(
+			"prints the projection, state, titles, celebrated set, pins and profile (LOG-R70, HNT-R89, HNT-R136, DATA-R72)",
+			function()
+				-- LOG-R70's stored values; HNT-R136: Hunts' rules version is 1 in M5 (Tunables); DATA-R72: the stored
+				-- fingerprint is the catalogue's plus the Hunt list's. hunts.md › Projection state for the state.
+				-- HNT-R2, HNT-R3: at --now night_run, first_light, rack_hour and dawn_trout are current, grouper_by_moonlight
+				-- is retired, witching_hour isn't out (so it has no line). HNT-R89: 3 of the 4 current Hunts are done
+				-- (HNT-R17), 2 titles earned. HNT-R18: tier 1 bronze, tier 2 silver. HNT-R23: camp_hours came from a Catch,
+				-- pagles_wagers from grouper_by_moonlight's retirement (dated its UTC day). HNT-R90: night_run's tier 2 and
+				-- pagles_wagers aren't celebrated yet. HNT-R81: the pin on the Retired Hunt is dropped at load. hunts.md ›
+				-- PagleHuntsDB: tracker.shown and showCompleted are left out at their defaults (AceDB).
+				assert.are.same({
+					"== Hunts (PagleHuntsDB)",
+					"projection: lastSeq 6, logId 6c2f9e0a1b3d5e77, fingerprint 0123456789abcdef+5eed5eed5eed5eed,"
+						.. " rulesVersion 1",
+					"logId: matches PagleLog's",
+					"lastSeq: equals PagleLog's length (6 entries)",
+					"rulesVersion: Hunts', 1 (HNT-R136)",
+					"Hunt list: " .. HUNTLIST .. ", fingerprint 5eed5eed5eed5eed, 6 Hunts in 3 sets",
+					"fingerprint: the catalogue's plus the Hunt list's (DATA-R72)",
+					"summary line: Hunts: 3 of 4 done · 2 titles, at 2026-10-14 17:46:40 UTC (--now) (HNT-R89)",
+					"state: 120 Casts, 305 Coins, 5 Hunts with progress, 2 titles",
+					"  night_run: current, count 12, effort 80, sinceLast 3, tiers 2 of 3 (1 / 10 / 40)",
+					"    tier 1 bronze: 2026-10-12 (realm date), zone 12, item 13759",
+					"    tier 2 silver: 2026-10-13 (realm date), zone 12, item 13759",
+					"  first_light: current, count 0, effort 5, sinceLast 5, tiers 0 of 3 (1 / 10 / 40)",
+					"  rack_hour: current, count 1, effort 7, sinceLast 2, tiers 1 of 3 (1 / 10 / 25)",
+					"    tier 1 bronze: 2026-10-12 (realm date), zone 40, item 6643",
+					"  dawn_trout: current, count 1, effort 4, sinceLast 0, tiers 1 of 3 (1 / 10 / 25)",
+					"    tier 1 bronze: 2026-08-29 (realm date), zone 1519, item 8365",
+					"  grouper_by_moonlight: retired 2026-09-01, count 0, effort 2, sinceLast 2, tiers 0 of 3 (1 / 5 / 20)",
+					"titles earned: 2",
+					"  camp_hours: 2026-10-12, earned at 2026-10-12 13:00:00 UTC, from a Catch",
+					"  pagles_wagers: 2026-09-01, earned at 2026-09-01 00:00:00 UTC, from a retirement",
+					"celebrated tiers: 3 (dawn_trout 1, night_run 1, rack_hour 1)",
+					"celebrated titles: 1 (camp_hours)",
+					"pins: 2 (grouper_by_moonlight, night_run); not current, so Hunts drops the pin at load (HNT-R81):"
+						.. " grouper_by_moonlight",
+					"tracker.shown: true (not saved: the default)",
+					"tracker.collapsed: true",
+					"windowMoments: true",
+					"showCompleted: false (not saved: the default)",
+				}, section(out, "== Hunts"))
+			end
+		)
 
 		it("prints one Hunt's full progress with --hunt (HNT-R15–R18, HNT-R26)", function()
 			-- HNT-R15: each reached tier's Catch, item, zone, realm date and time; HNT-R17: done, not finished; the next
@@ -593,62 +594,66 @@ describe("scripts/read-wtf.lua", function()
 			}, section(out, "== Hunt night_run"))
 		end)
 
-		it("prints a Retired Hunt, an imposed one with no progress, and an unknown ID with --hunt", function()
-			-- HNT-R3: retired from its date; HNT-R5: an imposed Hunt's conditions; hunts.md › Projection state: a Hunt
-			-- has no entry until it has effort or a Catch; witching_hour's since is still ahead (HNT-R2).
-			local lines = run(
-				ACCOUNTS .. "M5#1",
-				"--catalogue",
-				CATALOGUE,
-				"--huntlist",
-				HUNTLIST,
-				"--now",
-				NOW,
-				"--hunt",
-				"grouper_by_moonlight",
-				"--hunt",
-				"witching_hour",
-				"--hunt",
-				"no_such_hunt"
-			)
-			assert.are.same({
-				"== Hunt grouper_by_moonlight (--hunt)",
-				"set pagles_wagers, imposed, species 12238, conditions areas, time, tiers 1 / 5 / 20,"
-					.. " since 2026-01-01 00:00:00 UTC, retired 2026-09-01 00:00:00 UTC",
-				"retired, pinned, nothing celebrated",
-				"progress: count 0, effort 2, sinceLast 2, caught false, not done, not finished",
-				"next: tier 1 at 1, 1 to go",
-			}, section(lines, "== Hunt grouper_by_moonlight"))
-			assert.are.same({
-				"== Hunt witching_hour (--hunt)",
-				"set pagles_wagers, imposed, class species.any, conditions areas, time, tiers 1 / 10 / 30,"
-					.. " since 2026-11-04 00:00:00 UTC",
-				"not out yet, not pinned, nothing celebrated",
-				"progress: none stored (no effort Cast or qualifying Catch yet)",
-			}, section(lines, "== Hunt witching_hour"))
-			assert.are.same(
-				{ "== Hunt no_such_hunt (--hunt): not in the Hunt list, and no progress stored" },
-				section(lines, "== Hunt no_such_hunt")
-			)
-		end)
+		it(
+			"prints a Retired Hunt, an imposed one with no progress, and an unknown ID with --hunt (HNT-R2, HNT-R3, HNT-R5)",
+			function()
+				-- HNT-R3: retired from its date; HNT-R5: an imposed Hunt's conditions; hunts.md › Projection state: a Hunt
+				-- has no entry until it has effort or a Catch; witching_hour's since is still ahead (HNT-R2).
+				local lines = run(
+					ACCOUNTS .. "M5#1",
+					"--catalogue",
+					CATALOGUE,
+					"--huntlist",
+					HUNTLIST,
+					"--now",
+					NOW,
+					"--hunt",
+					"grouper_by_moonlight",
+					"--hunt",
+					"witching_hour",
+					"--hunt",
+					"no_such_hunt"
+				)
+				assert.are.same({
+					"== Hunt grouper_by_moonlight (--hunt)",
+					"set pagles_wagers, imposed, species 12238, conditions areas, time, tiers 1 / 5 / 20,"
+						.. " since 2026-01-01 00:00:00 UTC, retired 2026-09-01 00:00:00 UTC",
+					"retired, pinned, nothing celebrated",
+					"progress: count 0, effort 2, sinceLast 2, caught false, not done, not finished",
+					"next: tier 1 at 1, 1 to go",
+				}, section(lines, "== Hunt grouper_by_moonlight"))
+				assert.are.same({
+					"== Hunt witching_hour (--hunt)",
+					"set pagles_wagers, imposed, class species.any, conditions areas, time, tiers 1 / 10 / 30,"
+						.. " since 2026-11-04 00:00:00 UTC",
+					"not out yet, not pinned, nothing celebrated",
+					"progress: none stored (no effort Cast or qualifying Catch yet)",
+				}, section(lines, "== Hunt witching_hour"))
+				assert.are.same(
+					{ "== Hunt no_such_hunt (--hunt): not in the Hunt list, and no progress stored" },
+					section(lines, "== Hunt no_such_hunt")
+				)
+			end
+		)
 
-		it("reads the repo's Hunt list by default, and flags a fingerprint that isn't the expected one", function()
-			-- DATA-R72: the generated list carries its own fingerprint; LOG-R72: a different one rebuilds Hunts.
-			local file = assert(io.open("addons/Pagle_Hunts/data/HuntList.lua", "rb"))
-			local fingerprint = file:read("*a"):match('fingerprint = "(%x+)"')
-			file:close()
-			local lines = section(run(ACCOUNTS .. "M5#1", "--catalogue", CATALOGUE, "--now", NOW), "== Hunts")
-			local prefix = "Hunt list: the repo's addons/Pagle_Hunts/data/HuntList.lua, fingerprint " .. fingerprint
-			assert.are.equal(prefix, lines[6]:sub(1, #prefix))
-			assert.are.equal(
-				"fingerprint: DIFFERS from the catalogue's plus the Hunt list's, 0123456789abcdef+"
-					.. fingerprint
-					.. ", so Core rebuilds it at login (DATA-R72, LOG-R72)",
-				lines[7]
-			)
-		end)
+		it(
+			"reads the repo's Hunt list by default, and flags a fingerprint that isn't the expected one (DATA-R72, LOG-R72)",
+			function()
+				-- DATA-R72: the generated list carries its own fingerprint; LOG-R72: a different one rebuilds Hunts.
+				local fingerprint = readFile("addons/Pagle_Hunts/data/HuntList.lua"):match('fingerprint = "(%x+)"')
+				local lines = section(run(ACCOUNTS .. "M5#1", "--catalogue", CATALOGUE, "--now", NOW), "== Hunts")
+				local prefix = "Hunt list: the repo's addons/Pagle_Hunts/data/HuntList.lua, fingerprint " .. fingerprint
+				assert.are.equal(prefix, lines[6]:sub(1, #prefix))
+				assert.are.equal(
+					"fingerprint: DIFFERS from the catalogue's plus the Hunt list's, 0123456789abcdef+"
+						.. fingerprint
+						.. ", so Core rebuilds it at login (DATA-R72, LOG-R72)",
+					lines[7]
+				)
+			end
+		)
 
-		it("prints the stored lines alone when the Hunt list can't be loaded", function()
+		it("prints the stored lines alone when the Hunt list can't be loaded (HNT-R2, HNT-R15)", function()
 			-- Without the Hunt list nothing tells current from retired (HNT-R2) or the thresholds (HNT-R15), and no
 			-- summary line or stale pin is computed; the stored values are all still there.
 			local missing = "spec/scripts/fixtures/no-such-HuntList.lua"
@@ -703,7 +708,7 @@ describe("scripts/read-wtf.lua", function()
 			}, section(out, "== Cards"))
 		end)
 
-		it("reads Pagle_Hunts' enable state by default", function()
+		it("reads Pagle_Hunts' enable state by default (#199, in-game-verification.md › Hunts)", function()
 			local lines = section(run(ACCOUNTS .. "M5#1", "--character", "70/Ada-Brook"), "== Addons")
 			assert.are.same({
 				"== Addons (70/Ada-Brook/AddOns.txt)",
@@ -717,7 +722,7 @@ describe("scripts/read-wtf.lua", function()
 
 	-- M5-Stale#1: a Hunts projection built under another rules version and Hunt list, and AceDB left every default out
 	-- (no celebrated set, no profile settings); the dock point saved isn't one Core can read.
-	describe("on an account whose Hunts projection is stale", function()
+	describe("on an account whose Hunts projection is stale (#199, in-game-verification.md › Hunts)", function()
 		local out, _, code =
 			run(ACCOUNTS .. "M5-Stale#1", "--catalogue", CATALOGUE, "--huntlist", HUNTLIST, "--now", "1792000000")
 
@@ -758,7 +763,7 @@ describe("scripts/read-wtf.lua", function()
 		end)
 	end)
 
-	it("says in one line that Pagle_Hunts.lua is missing, and reads no dock point as the default", function()
+	it("says in one line that Pagle_Hunts.lua is missing, and reads no dock point as the default (CORE-R70)", function()
 		local out = run(ACCOUNTS .. "M4#1", "--catalogue", CATALOGUE)
 		assert.are.same(
 			{ "== Hunts: can't read " .. ACCOUNTS .. "M4#1/SavedVariables/Pagle_Hunts.lua: missing" },
