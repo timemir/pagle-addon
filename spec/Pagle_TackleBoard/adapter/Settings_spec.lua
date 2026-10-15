@@ -105,7 +105,6 @@ describe("The Tackle Board's section on Trackers, as Core gets it", function()
 			-- The next session, the Tackle Board disabled: it runs no code, so it registers nothing (CORE-R17).
 			local off = newFakePagle()
 			off.global.goods = first.global.goods
-			off.goods = off.global.goods
 			off.profile.appearance = first.profile.appearance
 			off.setPurchased({ ["tackleboard.trackerframe.corkboard"] = true })
 			off.login()
@@ -117,7 +116,6 @@ describe("The Tackle Board's section on Trackers, as Core gets it", function()
 			-- Enabled again: Corkboard is equipped with no SetEquipped.
 			local on = newFakePagle()
 			on.global.goods = first.global.goods
-			on.goods = on.global.goods
 			on.profile.appearance = off.profile.appearance
 			on.setPurchased({ ["tackleboard.trackerframe.corkboard"] = true })
 			board.load(on)

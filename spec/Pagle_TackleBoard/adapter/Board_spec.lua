@@ -301,7 +301,7 @@ describe("a started board while its projection rebuilds in chunks (TKB-R6, TKB-R
 		})
 		local ns, loaded = board.built(fake)
 		ns.OpenBoard()
-		local ledge = ns.board.frame.parts.ledge
+		local ledge = (ns.board.frame --[[@as TackleBoardFrame]]).parts.ledge --[[@as TackleLedgeFrame]]
 		ledge.card:Show()
 		board.updating(fake, true)
 		ns.projection:Rebuild()
@@ -311,7 +311,7 @@ describe("a started board while its projection rebuilds in chunks (TKB-R6, TKB-R
 
 	it('shows "Updating…" over the bare cork, with no slip, no Start and the card closed', function()
 		local ns = rebuilding()
-		local frame = ns.board.frame
+		local frame = ns.board.frame --[[@as TackleBoardFrame]]
 
 		assert.is_true(ns.IsUpdating())
 		assert.is_false(ns.IsStarted()) -- the rebuild's state, not yet past the start record
@@ -320,9 +320,9 @@ describe("a started board while its projection rebuilds in chunks (TKB-R6, TKB-R
 		assert.is_false(visible(frame.empty, frame))
 		assert.is_false(visible(frame.start, frame))
 		for _, part in ipairs(ns.BOARD_PARTS) do
-			assert.is_false(frame.parts[part]:IsShown(), part)
+			assert.is_false(frame.parts[part]:IsShown())
 		end
-		assert.is_false(frame.parts.ledge.card:IsShown())
+		assert.is_false((frame.parts.ledge --[[@as TackleLedgeFrame]]).card:IsShown())
 	end)
 
 	it("draws its parts again once the rebuild is done", function()
@@ -332,13 +332,13 @@ describe("a started board while its projection rebuilds in chunks (TKB-R6, TKB-R
 			fake.nextFrame()
 			frames = frames + 1
 		end
-		local frame = ns.board.frame
+		local frame = ns.board.frame --[[@as TackleBoardFrame]]
 
 		assert.is_false(ns.IsUpdating())
 		assert.is_false(visible(frame.updating, frame))
 		assert.is_false(visible(frame.empty, frame))
 		for _, part in ipairs(ns.BOARD_PARTS) do
-			assert.is_true(frame.parts[part]:IsShown(), part)
+			assert.is_true(frame.parts[part]:IsShown())
 		end
 	end)
 

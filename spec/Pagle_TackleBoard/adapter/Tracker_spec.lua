@@ -177,12 +177,13 @@ describe("the Tackle Board's tracker in the dock (TKB-R120, TKB-R2, CORE-R70, CO
 
 	it("hides when its setting is turned off, so the dock reflows, and shows again when on (TKB-R120)", function()
 		local _, fake, ns = ready(startedLog(unpack(FULL)))
-		local checkbox
+		local found
 		for _, row in ipairs(assert(fake.settingsPage("trackers"), "no Trackers page")) do
 			if row.label == "Show goals workable here" then
-				checkbox = row.setting
+				found = row.setting
 			end
 		end
+		local checkbox = assert(found, "no Show goals workable here row")
 
 		checkbox.set(false)
 
