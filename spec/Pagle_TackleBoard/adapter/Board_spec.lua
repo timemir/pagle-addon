@@ -169,10 +169,12 @@ describe("the Tackle Board's frame (TKB-R100)", function()
 	end)
 
 	it("opens centred each time, wherever it was dragged to", function()
-		local _, _, tackle = loggedIn()
+		local loaded, _, tackle = loggedIn()
 		tackle:Toggle()
 		local frame = tackle.frame
-		assert.are.same({ { "CENTER" } }, frame.points)
+		-- The kit's fit (adapter/Fit.lua): its centre 10 under the screen's, with the plaque over its top edge.
+		local centred = { { "CENTER", loaded.env.UIParent, "CENTER", 0, -10 } }
+		assert.are.same(centred, frame.points)
 
 		-- Where a drag leaves it: the client re-anchors a moved frame by its top left.
 		frame:GetScript("OnDragStart")(frame)
@@ -182,7 +184,7 @@ describe("the Tackle Board's frame (TKB-R100)", function()
 		tackle:Toggle()
 		tackle:Toggle()
 
-		assert.are.same({ { "CENTER" } }, frame.points)
+		assert.are.same(centred, frame.points)
 	end)
 
 	it("never closes from ns.OpenBoard, and stays where it was dragged while open", function()

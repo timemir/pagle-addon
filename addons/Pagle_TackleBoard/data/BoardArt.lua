@@ -9,8 +9,8 @@ end
 local ns = select(2, ...)
 
 -- The Tackle Board's art atlases (tackle-board.md › UI): where each sprite sits in its texture, from the board art
--- kit (PagleArtBoard's Atlases/*.lua, written by its art/lib/sprites.py), with the textures shipped as BLP (DXT5) in
--- media/board/. A sprite's `x`, `y`, `w`, `h` are texels; `box` is where its drawn element sits inside it, in UI units
+-- kit (PagleArtBoard's Atlases/*.lua, written by its art/lib/sprites.py), with the textures shipped as BLP (DXT5, with
+-- mipmaps, from its art/lib/blp.py) in media/board/. A sprite's `x`, `y`, `w`, `h` are texels; `box` is where its drawn element sits inside it, in UI units
 -- from the sprite's top left (x, y, then width and height), so code places the element, not its shadow or glow.
 -- `scale` is texels per UI unit. Marks is cut from Board for the tracker, so the tracker never loads Board: its
 -- header's flame and chevron, and the small tack of a Corkboard slip. Cork.blp is the cork's tile, repeated every
@@ -72,13 +72,13 @@ ns.BOARD_ATLASES = {
 			chev = { x = 1004, y = 1196, w = 18, h = 18, box = { 0, 0, 9, 9 } },
 			chip = { x = 350, y = 1882, w = 344, h = 84, box = { 6, 2, 160, 30 } },
 			["chip-clip"] = { x = 1004, y = 1162, w = 18, h = 30, box = { 1, 0, 7, 13 } },
-			close = { x = 954, y = 294, w = 52, h = 52, box = { 0, 0, 26, 26 } },
+			close = { x = 890, y = 1346, w = 52, h = 52, box = { 0, 0, 26, 26 } },
 			coin = { x = 974, y = 54, w = 42, h = 42, box = { 2, 2, 17, 17 } },
-			["coin-l"] = { x = 946, y = 1346, w = 52, h = 52, box = { 2, 2, 22, 22 } },
+			["coin-l"] = { x = 970, y = 350, w = 52, h = 52, box = { 2, 2, 22, 22 } },
 			confirm = { x = 2, y = 2, w = 768, h = 404, box = { 12, 6, 360, 166 } },
 			["cover-note"] = { x = 2, y = 1118, w = 728, h = 292, box = { 12, 6, 340, 112 } },
 			["d-burn"] = { x = 954, y = 406, w = 52, h = 52, box = { 0, 0, 26, 26 } },
-			["d-flame"] = { x = 954, y = 350, w = 52, h = 52, box = { 0, 0, 26, 26 } },
+			["d-flame"] = { x = 946, y = 1346, w = 52, h = 52, box = { 0, 0, 26, 26 } },
 			["d-out"] = { x = 954, y = 462, w = 52, h = 52, box = { 0, 0, 26, 26 } },
 			["d-unlit"] = { x = 954, y = 518, w = 52, h = 52, box = { 0, 0, 26, 26 } },
 			day = { x = 406, y = 1970, w = 76, h = 76, box = { 0, 0, 38, 38 } },
@@ -88,7 +88,7 @@ ns.BOARD_ATLASES = {
 			fl = { x = 998, y = 1694, w = 24, h = 30, box = { 0, 0, 12, 15 } },
 			flybox = { x = 2, y = 1414, w = 492, h = 292, box = { 6, 30, 214, 100 } },
 			hand = { x = 350, y = 1970, w = 44, h = 24, box = { 0, 0, 22, 12 } },
-			here = { x = 894, y = 294, w = 26, h = 26, box = { 0, 0, 13, 13 } },
+			here = { x = 894, y = 394, w = 26, h = 26, box = { 0, 0, 13, 13 } },
 			["k-collector"] = { x = 798, y = 702, w = 28, h = 28, box = { 0, 0, 14, 14 } },
 			["k-haul"] = { x = 954, y = 574, w = 28, h = 28, box = { 0, 0, 14, 14 } },
 			["k-lure"] = { x = 830, y = 702, w = 28, h = 28, box = { 0, 0, 14, 14 } },
@@ -107,7 +107,8 @@ ns.BOARD_ATLASES = {
 			seal = { x = 774, y = 2, w = 196, h = 196, box = { 12, 12, 74, 74 } },
 			shopcard = { x = 734, y = 986, w = 288, h = 172, box = { 8, 4, 128, 66 } },
 			stamp = { x = 774, y = 202, w = 248, h = 88, box = { 0, 0, 124, 44 } },
-			tack = { x = 890, y = 1346, w = 52, h = 52, box = { 3, 2, 15, 15 } },
+			["stamp-done"] = { x = 774, y = 294, w = 192, h = 96, box = { 0, 0, 96, 48 } },
+			tack = { x = 970, y = 294, w = 52, h = 52, box = { 3, 2, 15, 15 } },
 			["tack-s"] = { x = 974, y = 144, w = 28, h = 30, box = { 1, 1, 9, 9 } },
 			tally = { x = 498, y = 1694, w = 496, h = 184, box = { 8, 4, 232, 70 } },
 			tick = { x = 798, y = 1386, w = 22, h = 22, box = { 0, 0, 11, 11 } },

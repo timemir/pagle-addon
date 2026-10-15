@@ -129,7 +129,7 @@ describe("the sprite helpers", function()
 		local atlas = ns.BOARD_ATLASES.Board
 
 		assert.are.equal(atlas.file, tack.texture)
-		assert.are.same({ 890 / 1024, 942 / 1024, 1346 / 2048, 1398 / 2048 }, tack.texCoord)
+		assert.are.same({ 970 / 1024, 1022 / 1024, 294 / 2048, 346 / 2048 }, tack.texCoord)
 		assert.are.same({ 26, 26 }, { tack.width, tack.height })
 		assert.are.same({ 3, 2, 15, 15 }, tack.box)
 	end)

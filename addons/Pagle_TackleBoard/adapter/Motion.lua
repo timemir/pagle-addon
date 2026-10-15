@@ -14,10 +14,11 @@ end
 --   }, onDone)
 --
 -- keys: { progress 0..1, { values } }, as the CSS percentages; a key's ease applies to the segment after it.
--- iter: a count or "infinite"; dir: "normal", "alternate" or "alternate-reverse"; delay in seconds.
+-- iter: a count or "infinite"; dir: "normal", "alternate" or "alternate-reverse"; delay in seconds;
+-- done: called once when that animation finishes.
 -- The first frame is applied at once, so nothing flashes in its final state. P.motion = false jumps to the end.
 --
--- The board art kit's Motion.lua (PagleArtBoard), copied as it is but for the Core guard above and P's
+-- The board art kit's v2 Motion.lua (PagleArtBoard), copied as it is but for the Core guard above and P's
 -- annotation, so it merges into the one copy Core's adapter/ will hold (the announcements art adds it there). The
 -- Tackle Board sets P.motion from Core's Animations setting (adapter/BoardMotion.lua) before it starts anything.
 
@@ -103,27 +104,36 @@ local running = {}
 local driver = CreateFrame("Frame")
 driver:Hide()
 driver:SetScript("OnUpdate", function(self, elapsed)
-	local any = false
-	for owner, set in pairs(running) do
-		set.t = set.t + elapsed
-		local done = true
-		for _, a in ipairs(set.anims) do
-			local v, fin = sample(a, set.t - (a._t0 or 0))
-			a.apply(v)
-			if not fin then
-				done = false
+	-- callbacks may start or stop animations, so walk a snapshot of the owners
+	local owners = {}
+	for owner in pairs(running) do
+		owners[#owners + 1] = owner
+	end
+	for _, owner in ipairs(owners) do
+		local set = running[owner]
+		if set then
+			set.t = set.t + elapsed
+			local done = true
+			for _, a in ipairs(set.anims) do
+				local v, fin = sample(a, set.t - (a._t0 or 0))
+				a.apply(v)
+				if fin and a.done and not a._fired then
+					a._fired = true
+					a.done()
+				end
+				if not fin then
+					done = false
+				end
 			end
-		end
-		if done or (owner.IsVisible and not owner:IsVisible()) then
-			running[owner] = nil
-			if done and set.onDone then
-				set.onDone()
+			if running[owner] == set and (done or (owner.IsVisible and not owner:IsVisible())) then
+				running[owner] = nil
+				if done and set.onDone then
+					set.onDone()
+				end
 			end
-		else
-			any = true
 		end
 	end
-	if not any then
+	if not next(running) then
 		self:Hide()
 	end
 end)
@@ -161,4 +171,21 @@ end
 
 function P.StopMotion(owner)
 	running[owner] = nil
+end
+
+-- call fn after t seconds (a sound on a beat, the next step of a sequence); skipped when motion is off
+local function noop() end
+function P.Cue(owner, t, fn)
+	if not P.motion then
+		return
+	end
+	P.Animate(owner, {
+		{
+			dur = math.max(0.001, t),
+			ease = P.Ease.linear,
+			keys = { { 0, { 0 } }, { 1, { 1 } } },
+			apply = noop,
+			done = fn,
+		},
+	})
 end
