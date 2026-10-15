@@ -26,7 +26,8 @@ local ns = select(2, ...)
 --                             ns.Redraw, in subscription order. Subscribe once, when the view is made.
 --   ns.Redraw(reason)         Asks every subscribed view to redraw (STA-R73, STA-R91). Callers and their reasons:
 --                             "projection" after each live apply that changes the state and after each done (#203),
---                             "watches" when a watch is added or stopped (#208). A view that is hidden may ignore it.
+--                             "watches" when a watch is added or stopped (#208), "tracker" when "Show the live tracker"
+--                             is turned on or off (#218). A view that is hidden may ignore it.
 
 ---@alias StatsBookPage "home"|"place"|"item"|"session"|"lifetime"|"sessions"
 
@@ -112,7 +113,8 @@ function ns.OnRedraw(fn)
 end
 
 --- Asks every subscribed view to redraw, in subscription order (STA-R73).
----@param reason "projection"|"watches"|string why: a projection change, a watch added or stopped
+---@param reason "projection"|"watches"|"tracker"|string why: a projection change, a watch added or stopped, the
+--- tracker setting changed
 function ns.Redraw(reason)
 	for _, fn in ipairs(redrawn) do
 		fn(reason)

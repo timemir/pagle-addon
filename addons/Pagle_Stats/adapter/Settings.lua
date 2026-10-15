@@ -210,6 +210,7 @@ function ns.AddSettings(M)
 		end,
 		set = function(value)
 			ns.db.profile.tracker = value
+			ns.Redraw("tracker") -- the live tracker shows or hides at once (STA-R81)
 		end,
 	})
 	M:AddSetting("trackers", {

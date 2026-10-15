@@ -31,6 +31,7 @@ logic\Item.lua
 logic\Search.lua
 logic\Watches.lua
 logic\Entry.lua
+logic\Tracker.lua
 adapter\Text.lua
 adapter\BookWidgets.lua
 adapter\TrackerBlock.lua
@@ -45,4 +46,5 @@ adapter\Item.lua
 adapter\Search.lua
 adapter\Settings.lua
 adapter\Settings.xml
+adapter\Tracker.lua
 adapter\Stats.lua

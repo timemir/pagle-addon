@@ -39,4 +39,8 @@ function ns.Stats.OnInitialize()
 
 	--- Stats' section on the Trackers page (SET-R42), before ModulesChanged (CORE-R42).
 	ns.AddSettings(ns.Module)
+
+	--- The live tracker, docked once at order 20 (STA-R80). An inert or disabled Stats never gets here, so it docks
+	--- nothing (STA-R90, CORE-R17).
+	ns.StartTracker(ns.Module)
 end

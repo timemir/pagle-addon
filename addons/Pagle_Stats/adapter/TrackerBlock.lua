@@ -77,6 +77,8 @@ ns.TRACKER_INKS = {
 ---@field name string?
 ---@field count string?
 ---@field sub string?
+---@field item integer?    -- a watch's item, for its hover and click (STA-R83)
+---@field area integer?    -- a watch's place
 
 -- Heights in pixels: the header, a plain line, a watch's top padding, its name line and its sub-line.
 local HEADER_HEIGHT, LINE_HEIGHT, WATCH_PAD, NAME_HEIGHT, SUB_HEIGHT = 18, 15, 4, 14, 13
@@ -85,8 +87,9 @@ local DOT_SIZE, NAME_INDENT, COUNT_ROOM = 8, 14, 48
 -- How far a frame reaches out round the block, the inner rule's inset from that edge, and a rivet's size.
 local FRAME_PAD, INNER_INSET, RIVET_SIZE = 6, 3, 6
 
---- One row of the block: every widget a line kind may use, shown as its line needs.
----@class StatsTrackerRow: Frame
+--- One row of the block: every widget a line kind may use, shown as its line needs. A button, so the live tracker can
+--- give it clicks and hovers (STA-R83).
+---@class StatsTrackerRow: Button
 ---@field line StatsTrackerLine
 ---@field dot Texture
 ---@field text FontString  -- the header's title, a plain line, a watch's name
@@ -229,7 +232,7 @@ end
 ---@param block Frame
 ---@return StatsTrackerRow
 local function newRow(block)
-	local row = CreateFrame("Frame", nil, block) --[[@as StatsTrackerRow]]
+	local row = CreateFrame("Button", nil, block) --[[@as StatsTrackerRow]]
 	row.dot = row:CreateTexture(nil, "ARTWORK")
 	row.dot:SetTexture(ns.BOOK_TEXTURES.disc)
 	row.dot:SetSize(DOT_SIZE, DOT_SIZE)
