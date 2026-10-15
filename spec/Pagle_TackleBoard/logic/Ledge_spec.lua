@@ -33,7 +33,7 @@ end
 -- Start, TKB-R20), the first Notices `notices`, then fillers.
 local function started(at, dayStart, notices)
 	local records = {
-		{ kind = "skill", char = 1, time = at - 30, rank = board.SKILL, max = 225, mod = 0 },
+		board.skill(at - 30),
 		record("start", at, dayStart .. ";" .. W),
 		record("issue", at + 1, EXPEDITION),
 	}
@@ -129,7 +129,7 @@ local WENT_OUT = join({
 
 -- A board started today with nothing done: the login's live step issues its first goals (TKB-R20).
 local FRESH = {
-	{ kind = "skill", char = 1, time = S - 30, rank = board.SKILL, max = 225, mod = 0 },
+	board.skill(S - 30),
 	record("start", S, TODAY .. ";" .. W),
 }
 
@@ -241,7 +241,7 @@ describe("the Campfire card's four-week log (TKB-R106, TKB-R105)", function()
 
 	it('logs "not lit" for a day closed with no fire, and today as lit once a goal is done on it', function()
 		local unlit = built({
-			{ kind = "skill", char = 1, time = D0 + 3570, rank = board.SKILL, max = 225, mod = 0 },
+			board.skill(D0 + 3570),
 			record("start", D0 + 3600, D0 .. ";" .. W),
 		})
 		local lit = built(join(TWO_DONE_TODAY))

@@ -69,19 +69,14 @@ end
 -- A new FakePagle whose log has the player's character, the Angler's skill (board.SKILL, read an hour before NOW),
 -- then a board started at NOW with its first four goals, as Start leaves it; then `days` days go by.
 local function startedDaysAgo(days)
-	local fake = newFakePagle()
-	fake.catchLog.data.characters[1] = { guid = PLAYER_GUID }
-	local history = {
-		{ kind = "skill", char = 1, time = NOW - 3600, rank = board.SKILL, max = 225, mod = 0 },
+	local fake = board.withHistory({
+		board.skill(NOW - 3600),
 		record("start", NOW, board.DAILY_RESET .. ";" .. WEEK_START),
 		record("issue", NOW + 1, "e;size;0;60;1;4"),
 		record("issue", NOW + 2, "n;haul;2;15;30;14"),
 		record("issue", NOW + 3, "n;quality;1;10;3;2"),
 		record("issue", NOW + 4, "n;lure;3;20;25;"),
-	}
-	for _, entry in ipairs(history) do
-		fake.catchLog:Append(entry)
-	end
+	})
 	fake.wait(days * DAY)
 	return fake
 end

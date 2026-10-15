@@ -28,7 +28,7 @@ end
 -- three Notices, the first Notices `notices`, then fillers; then `casts`.
 local function started(at, dayStart, notices, casts)
 	local records = {
-		{ kind = "skill", char = 1, time = at - 30, rank = board.SKILL, max = 225, mod = 0 },
+		board.skill(at - 30),
 		record("start", at, dayStart .. ";" .. W),
 		record("issue", at + 1, EXPEDITION),
 	}
@@ -59,15 +59,8 @@ local WENT_OUT = started(D0 + 3600, D0, { ONE_DUROTAR }, { cast(D0 + 3610, DUROT
 -- Pagle_TackleBoard on a fake whose log holds `records`, logged in, its projection built and the login's live step
 -- run, and its board open.
 local function opened(records)
-	local fake = board.withHistory(records)
-	local loaded = board.load(fake)
-	loaded.client.areaNames[DUROTAR] = "Durotar"
-	loaded.client.areaNames[BARRENS] = "The Barrens"
-	fake.login()
-	fake.enterWorld()
-	loaded.client.runTimers()
-	loaded.ns.OpenBoard()
-	local frame = loaded.ns.board.frame
+	local names = { areas = { [DUROTAR] = "Durotar", [BARRENS] = "The Barrens" } }
+	local loaded, fake, frame = board.opened(records, { names = names, step = true })
 	return loaded, fake, frame.parts.spike, frame.parts.ledge, frame
 end
 

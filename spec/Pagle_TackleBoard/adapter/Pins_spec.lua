@@ -37,17 +37,17 @@ end
 -- Pagle_TackleBoard on a fake whose log holds `records`, its client knowing the fixture's names, logged in, its
 -- projection built, and its board open.
 local function opened(records, options)
-	local fake = board.withHistory(records)
-	local loaded = board.load(fake, options)
-	loaded.client.areaNames[DUROTAR] = "Durotar"
-	loaded.client.areaNames[DARKSHORE] = "Darkshore"
-	loaded.client.itemNames[MACKEREL] = "Raw Slitherskin Mackerel"
-	loaded.client.itemNames[BLACKMOUTH] = "Oily Blackmouth"
-	loaded.client.itemNames[MIGHTFISH] = "Mightfish"
-	fake.login()
-	fake.enterWorld()
-	loaded.ns.OpenBoard()
-	return loaded, fake, loaded.ns.board.frame
+	return board.opened(records, {
+		names = {
+			areas = { [DUROTAR] = "Durotar", [DARKSHORE] = "Darkshore" },
+			items = {
+				[MACKEREL] = "Raw Slitherskin Mackerel",
+				[BLACKMOUTH] = "Oily Blackmouth",
+				[MIGHTFISH] = "Mightfish",
+			},
+		},
+		load = options,
+	})
 end
 
 -- The `i`th Notice pin's or Expedition pin's slot.

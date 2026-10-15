@@ -58,7 +58,7 @@ end
 -- Angler's skill, the start record, two Expedition and six Notice fillers.
 local function started(dayStart, start)
 	local out = {
-		{ kind = "skill", char = 1, time = start - 3600, rank = board.SKILL, max = 225, mod = 0 },
+		board.skill(start - 3600),
 		record("start", start, dayStart .. ";" .. W0),
 	}
 	for i = 1, 2 do

@@ -87,6 +87,13 @@ function support.reroll(time, oldID, payload)
 	return support.record("reroll", time, oldID .. ";" .. payload)
 end
 
+--- The fixture Angler's Skill Reading at `time` (LOG-R27): Fishing support.SKILL of 225, no modifier.
+---@param time integer
+---@return table
+function support.skill(time)
+	return { kind = "skill", char = 1, time = time, rank = support.SKILL, max = 225, mod = 0 }
+end
+
 --- The entry ID of the player's entry at `time`, the first at that second (LOG-R13): a goal's ID (TKB-R23), a Cast's.
 ---@param time integer
 ---@return string
@@ -338,6 +345,34 @@ function support.built(fake, options)
 	fake.login()
 	fake.enterWorld()
 	return loaded.ns, loaded
+end
+
+--- Pagle_TackleBoard on a fake whose log holds `records`, its client knowing `options.names` (`areas` and `items`, by
+--- ID), logged in, its projection built and, with `options.step`, the login's live step run; then its board open.
+--- `options.load` goes to support.load.
+---@param records table[]
+---@param options { names: { areas: table<integer, string>?, items: table<integer, string>? }?, step: boolean?, load: table? }?
+---@return LoadedAddon loaded
+---@return table fake
+---@return table frame the board's frame (ns.board.frame)
+function support.opened(records, options)
+	options = options or {}
+	local fake = support.withHistory(records)
+	local loaded = support.load(fake, options.load)
+	local names = options.names or {}
+	for id, name in pairs(names.areas or {}) do
+		loaded.client.areaNames[id] = name
+	end
+	for id, name in pairs(names.items or {}) do
+		loaded.client.itemNames[id] = name
+	end
+	fake.login()
+	fake.enterWorld()
+	if options.step then
+		loaded.client.runTimers()
+	end
+	loaded.ns.OpenBoard()
+	return loaded, fake, loaded.ns.board.frame
 end
 
 return support
