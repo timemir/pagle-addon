@@ -329,7 +329,7 @@ describe("a Hunt's entry on the board", function()
 
 		it("is empty with rows to pick from, and shows no Retired Hunt on the Board", function()
 			local run = start()
-			-- The entry alone: the timeline (#193) would pick a Hunt from the rows (HNT-R67) before the right page.
+			-- The entry alone: the timeline (adapter/Timeline.lua) would pick a Hunt from the rows (HNT-R67) before the right page.
 			run.ns.board:RegisterPage("board", "left", function() end)
 
 			assert.are.same({}, shownTexts((open(run, { mode = "board" }))))
@@ -337,7 +337,7 @@ describe("a Hunt's entry on the board", function()
 		end)
 	end)
 
-	it("redraws at every redraw while shown, so a Catch that completes the Hunt seals it", function()
+	it("redraws at every redraw while shown, so a Catch that completes the Hunt seals it (HNT-R64, HNT-R42)", function()
 		local run = start()
 		local _, view = open(run, { mode = "board", hunt = "fixture_snapper" })
 

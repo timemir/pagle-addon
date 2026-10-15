@@ -154,7 +154,7 @@ describe("the board's art kit", function()
 
 			assert.has_error(function()
 				ns.NewBoardTimelineBar(parent, 12):SetBar("dotted", 40)
-			end)
+			end, "a timeline bar has no style dotted")
 		end)
 	end)
 
@@ -251,7 +251,7 @@ describe("the board's art kit", function()
 
 			assert.has_error(function()
 				ns.NewBoardDot(parent, 8):SetGroup("never")
-			end)
+			end, "no group never")
 		end)
 	end)
 
@@ -276,7 +276,7 @@ describe("the board's art kit", function()
 
 			assert.has_error(function()
 				ns.NewBoardMark(parent, "leather", 12)
-			end)
+			end, "no mark leather")
 		end)
 
 		it("are never font glyphs: no Hunts file writes ❧ or ☚", function()

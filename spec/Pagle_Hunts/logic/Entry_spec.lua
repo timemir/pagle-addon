@@ -294,7 +294,7 @@ describe("a Hunt's entry", function()
 		it(
 			"marks it unconfirmed with the window's tooltip, or the gating's when only the gating is (HNT-R34)",
 			function()
-				-- ns.Unconfirmed's reason (#187): "window" when the window or a weekly rule is, "gating" when only that is.
+				-- ns.Unconfirmed's reason (logic/Waters.lua): "window" when the window or a weekly rule is, "gating" when only that is.
 				local estimate = entry("fixture_oddity", { unconfirmed = "window" })
 				local gating = entry("fixture_oddity", { unconfirmed = "gating" })
 

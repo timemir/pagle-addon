@@ -256,7 +256,7 @@ describe("Hunts' projection", function()
 		end)
 	end)
 
-	describe("the outlets and redraws (HNT-R137, #196)", function()
+	describe("the outlets and redraws (HNT-R137, logic/Seams.lua)", function()
 		it("hand a live Cast's newly reached tiers to Reached, and redraw after done and each live Cast", function()
 			local calls, redraws = {}, {}
 			local _, fake = login(withHistory, {

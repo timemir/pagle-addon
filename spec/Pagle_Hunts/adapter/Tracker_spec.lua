@@ -105,7 +105,7 @@ describe("the Hunts tracker", function()
 			end
 		)
 
-		it("stays off at login when an earlier session turned it off (hunts.md › Data)", function()
+		it("stays off at login when it was turned off at an earlier login (hunts.md › Data)", function()
 			local run = start({
 				saved = {
 					profileKeys = { ["Angler - Testrealm"] = "Default" },
@@ -288,7 +288,7 @@ describe("the Hunts tracker", function()
 			board:Hide()
 			run.ns.tracker.more:Click()
 
-			-- On the Board, with no Hunt asked for: the timeline selects HNT-R67's own (#193).
+			-- On the Board, with no Hunt asked for: the timeline selects HNT-R67's own (adapter/Timeline.lua).
 			assert.is_true(board:IsShown())
 			assert.are.equal("board", board.router:Place().mode)
 		end)
@@ -389,7 +389,7 @@ describe("the Hunts tracker", function()
 			end
 		end)
 
-		it("wears the frame equipped in an earlier session from login (HNT-R79, SHOP-R32)", function()
+		it("wears the frame equipped at an earlier login from login (HNT-R79, SHOP-R32)", function()
 			local fake = newFakePagle()
 			fake.setPurchased({ ["hunts.trackerframe.waxseal"] = true })
 			fake.profile.appearance[FRAME_SLOT] = "hunts.trackerframe.waxseal"

@@ -130,7 +130,7 @@ describe("Hunts' goods", function()
 	it(
 		"are named by their IDs, with no description, while their lore keys have no text (HNT-R121, HNT-R130)",
 		function()
-			-- No fixture lore, and the shipped data/Lore.lua's goods keys taken out, as before the M5 batch (#183).
+			-- No fixture lore, and the shipped data/Lore.lua's goods keys taken out, as before the lore batch gave the goods their names.
 			local _, fake = loggedIn({
 				lore = false,
 				prepare = function(loaded)
@@ -169,7 +169,7 @@ describe("Hunts' goods", function()
 		})
 	end)
 
-	it("show each good's icon as its swatch in the shop's list (HNT-R121, SHOP-R26)", function()
+	it("show each good's icon as its swatch in the Curio Shop's list (HNT-R121, SHOP-R26)", function()
 		local _, fake = loggedIn()
 
 		local icons = {}
@@ -212,7 +212,7 @@ describe("the board's cover", function()
 		assert.are.same(ns.BOARD_COVER.leather, leatherOf(ns.board))
 	end)
 
-	it("opens in the cover equipped in an earlier session, bought then (HNT-R70, SHOP-R32)", function()
+	it("opens in the cover equipped at an earlier login, bought then (HNT-R70, SHOP-R32)", function()
 		local fake = newFakePagle()
 		fake.setPurchased({ ["hunts.notebookcover.tooled"] = true })
 		fake.profile.appearance[COVER] = "hunts.notebookcover.tooled"

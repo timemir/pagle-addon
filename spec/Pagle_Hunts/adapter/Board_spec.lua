@@ -106,7 +106,7 @@ describe("the Hunts board's frame (HNT-R60)", function()
 	end)
 end)
 
-describe("the Hunts board's pages (the page router)", function()
+describe("the Hunts board's pages, by the page router (HNT-R61, HNT-R66, HNT-R67)", function()
 	it("draws each page of the mode shown with the renderer registered for it, on that page's own frame", function()
 		local loaded, _, board = loggedIn()
 		local draws = {}
@@ -238,7 +238,7 @@ describe("the Hunts board's leather (HNT-R61)", function()
 
 		assert.has_error(function()
 			board:RegisterLeather("bookmark", function() end)
-		end)
+		end, "the Hunts board's leather has no anchor bookmark")
 	end)
 end)
 

@@ -27,7 +27,7 @@ local function statusList(loaded)
 	return texts, buttons
 end
 
--- Puts a counting stand-in at ns.ToggleBoard, as the board's ticket (#191) puts the real toggle there, and returns
+-- Puts a counting stand-in at ns.ToggleBoard, where adapter/Board.lua puts the real toggle, and returns
 -- what it counted.
 local function countToggles(loaded)
 	local toggles = { n = 0 }
@@ -100,7 +100,7 @@ describe("Pagle_Hunts with Core", function()
 	it(
 		"reaches ns.ToggleBoard as it is when called, from /pagle hunts, the compartment and the status button",
 		function()
-			-- HNT-R135, HNT-R68: every entry point toggles the board; the board's ticket fills ns.ToggleBoard in.
+			-- HNT-R135, HNT-R68: every entry point toggles the board through ns.ToggleBoard.
 			local loaded = loadAddon("Pagle_Hunts", FOREVER_GLOBALS)
 			loaded.client.fire("PLAYER_LOGIN")
 			local toggles = countToggles(loaded)
@@ -217,7 +217,7 @@ describe("Pagle_Hunts with Core", function()
 		assert.are.same({ tiers = {}, sets = {} }, db.global.celebrated) -- HNT-R90
 	end)
 
-	it("keeps what an earlier session saved (hunts.md › Data)", function()
+	it("keeps what an earlier login saved (hunts.md › Data)", function()
 		local saved = {
 			global = { schemaVersion = 1, celebrated = { tiers = { night_run = 2 }, sets = { camp_hours = true } } },
 			profileKeys = { ["Angler - Testrealm"] = "Default" },
