@@ -412,10 +412,16 @@ def check_lore(layer: LoreLayer, lore_ids: Collection[str], ids: CatalogueIds, p
                 problems.add(At(file, key), f"missing: {why}")
 
 
+# CORE-R9's punctuation outside Latin-1, which every font Pagle uses drew in game on 2026-10-15 (#248): the en and em
+# dashes, curly single and double quotes, the bullet and the ellipsis.
+PUNCTUATION = frozenset("–—‘’“”•…")
+GLYPHS = "ASCII, Latin-1, the en and em dashes, curly quotes, the bullet and the ellipsis"
+
+
 def drawable(char: str) -> bool:
-    """Whether the client's fonts have char (CORE-R9): ASCII, Latin-1 (U+00A0-U+00FF) or the em dash."""
+    """Whether the client's fonts have char (CORE-R9): ASCII, Latin-1 (U+00A0-U+00FF) or PUNCTUATION."""
     point = ord(char)
-    return point < 0x80 or 0xA0 <= point <= 0xFF or point == 0x2014
+    return point < 0x80 or 0xA0 <= point <= 0xFF or char in PUNCTUATION
 
 
 def check_glyphs(layer: LoreLayer, problems: Problems) -> None:
@@ -427,10 +433,9 @@ def check_glyphs(layer: LoreLayer, problems: Problems) -> None:
             for char in texts[key].value:
                 if not drawable(char) and char not in seen:
                     seen.add(char)
-                    set_ = "ASCII, Latin-1 and the em dash"
                     problems.add(
                         At(lore_file(lore_id), key),
-                        f"glyph: U+{ord(char):04X} outside CORE-R9's set: {set_} (CORE-R9, DATA-R107)",
+                        f"glyph: U+{ord(char):04X} outside CORE-R9's set: {GLYPHS} (CORE-R9, DATA-R107)",
                     )
 
 
