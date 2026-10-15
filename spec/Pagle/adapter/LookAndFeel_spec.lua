@@ -218,7 +218,7 @@ describe("A slot dropdown", function()
 end)
 
 describe("The Announcements page's slot rows", function()
-	it("end Core's rows with Toast style and Sound set, after Per (SET-R30, CORE-R42)", function()
+	it("end Core's rows with Toast style and Sound set, after Show every catch (SET-R30, CORE-R42)", function()
 		local loaded = session()
 
 		local names = {}
@@ -227,7 +227,15 @@ describe("The Announcements page's slot rows", function()
 		end
 
 		assert.are.same(
-			{ "Cozy mode", "Interruption budget", "Interruptions", "Per", "Toast style", "Sound set" },
+			{
+				"Cozy mode",
+				"Interruption budget",
+				"Interruptions",
+				"Per",
+				"Show every catch",
+				"Toast style",
+				"Sound set",
+			},
 			names
 		)
 	end)

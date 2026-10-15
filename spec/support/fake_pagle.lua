@@ -12,8 +12,8 @@
 --   fake.nextFrame()                                        -- the frame after: the Cast's moments are one Announcement
 --   fake.announcements[1].headline.title                    -- what Core would show (also .stamps, .more, .coins)
 --
--- A Module raises moments only for what is worth one: an ordinary Catch raises nothing and never pops up (ANN-R13),
--- so a Module spec playing an ordinary Cast expects fake.announcements to stay empty.
+-- A Module raises moments only for what is worth one: an ordinary Catch gets Core's own catch Nod (ANN-R13), which
+-- lands in fake.catchNods, so a Module spec playing an ordinary Cast expects fake.announcements to stay empty.
 --
 -- It is built on Core's real logic/: each FakePagle loads Pagle.toc's data/, locale/ and logic/ files (and the
 -- CallbackHandler bus) afresh, so what it validates, computes and refuses is what Core does. Core's projections,
@@ -104,6 +104,12 @@
 ---@field announcements PagleAnnouncement[] Each Announcement Core would hand the display, in order (ANN-R11): its
 --- headline, rung, stamps (at most 4), more ("+N"), coins and every moment, ranked. One per Cast, made on the frame
 --- after its moments were raised, or after the last projection finishes (ANN-R10); one per moment without a Cast.
+--- Core's catch Nod is never here: it is in catchNods.
+---@field catchNods PagleAnnouncement[] Each catch Nod Core would hand the display (ANN-R13): one per played caught
+--- Cast for which no Module raised a moment, while `profile.announcements.everyCatch` is on, on the frame after.
+--- Its headline's title is "{item name} · {band} · {length}", the name from `itemNames`.
+---@field itemNames table<integer, string> The names the fake's client has cached, by item ID, for the catch Nod; a
+--- spec sets them. An item without one reads "Item {itemID}".
 ---@field summarized PagleRaisedMoment[] Each moment Core kept, as it was raised, shown or not (ANN-R25): a
 --- summaryOnly one is here and never in announcements. A moment Core dropped (ANN-R4) is in neither.
 ---@field global table PagleDB.global, the one the fake's Core keeps all its keys in, from Core's defaults
@@ -115,8 +121,8 @@
 --- (LOG-R81; empty, and playCast adds nothing, so a spec adds the entries for the P rows, REP-R22) and
 --- `projections.fieldReport` (REP-R25; bound at construction, so a spec fills that table, never replaces it). A spec
 --- may seed its keys before login, as a saved PagleDB.
----@field profile table PagleDB.profile, from Core's defaults: `announcements.cozy` is Cozy mode (ANN-R62), off; a
---- spec may set it. `appearance` holds each slot's pick, `{ [slot] = goodID }` (SHOP-R32), which Pagle.SetEquipped
+---@field profile table PagleDB.profile, from Core's defaults: `announcements.cozy` is Cozy mode (ANN-R62), off, and
+--- `announcements.everyCatch` is "Show every catch" (ANN-R13), on; a spec may set either. `appearance` holds each slot's pick, `{ [slot] = goodID }` (SHOP-R32), which Pagle.SetEquipped
 --- writes and a spec may seed. `lengthUnit` is the Angler's length unit Pagle.FormatLength reads in, "cm" or "in"
 --- (LOG-R69); nil, the default, follows `region`.
 ---@field region integer? GetCurrentRegion() as the fake's client answers it: 1 (Americas), so with no lengthUnit
@@ -518,12 +524,20 @@ end)
 
 -- Moments (ANN-R1–R4, ANN-R10–R12), on Core's wiring over fake.projections' seams: M:RaiseMoment validates and
 -- drops as Core does, and each Announcement Core would show lands in fake.announcements when fake.nextFrame runs the
--- frame after. A dropped moment's report is in fake.reported.
+-- frame after. A dropped moment's report is in fake.reported. Core's catch Nod (ANN-R13) runs on Core's wiring too,
+-- naming items from fake.itemNames, and lands in fake.catchNods.
 part(function(fake, _, ns, host)
 	fake.announcements = {}
+	fake.catchNods = {}
+	fake.itemNames = {}
 	local frame = {}
 	ns.WireMoments(host, function(announcement)
-		fake.announcements[#fake.announcements + 1] = announcement
+		-- Core's own catch Nod (ANN-R13) goes apart, so a Module spec sees only what Modules raise.
+		local list = announcement.headline.catchNod and fake.catchNods or fake.announcements
+		list[#list + 1] = announcement
+	end)
+	ns.WireCatchNods(host, function(itemID)
+		return fake.itemNames[itemID]
 	end)
 
 	function fake.nextFrame()

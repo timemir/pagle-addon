@@ -855,6 +855,64 @@ describe("FakePagle", function()
 				{ fake.announcements[1].headline.title, fake.announcements[1].rung }
 			)
 		end)
+
+		it(
+			"show Core's catch Nod for a played caught Cast in fake.catchNods, apart from fake.announcements and"
+				.. " never summarized (ANN-R13, ANN-R25)",
+			function()
+				local fake = newFakePagle()
+				fake.itemNames[6358] = "Oily Blackmouth"
+				fake.login()
+				fake.enterWorld()
+
+				local cast = assert(fake.playCast("caught", { { itemID = 6358, quantity = 1 } }))
+				assert.are.same({}, fake.catchNods)
+				fake.nextFrame()
+
+				assert.are.equal(1, #fake.catchNods)
+				local nod = fake.catchNods[1]
+				assert.are.same({ "nod", cast.id, 6358 }, { nod.rung, nod.cast, nod.headline.icon })
+				assert.matches("^Oily Blackmouth · %a+ · %d+%.%d in$", nod.headline.title)
+				assert.are.same({}, fake.announcements)
+				assert.are.same({}, fake.summarized)
+			end
+		)
+
+		it("drop the catch Nod when a Module raises a moment for the Cast (ANN-R13)", function()
+			local fake = newFakePagle()
+			raising(fake, "Ledger", 10, function(record)
+				return { rung = "nod", kind = "newInZone", title = "New in this zone", cast = record.id }
+			end)
+			fake.login()
+			fake.enterWorld()
+
+			fake.playCast("caught", { { itemID = 6358, quantity = 1 } })
+			fake.nextFrame()
+
+			assert.are.same({}, fake.catchNods)
+			assert.are.same({ "New in this zone" }, { fake.announcements[1].headline.title })
+			assert.are.same({}, fake.announcements[1].stamps)
+		end)
+
+		it(
+			'raise no catch Nod for a got-away Cast, a replayed one, or with "Show every catch" off (ANN-R13, ANN-R4,'
+				.. " SET-R30)",
+			function()
+				local fake = newFakePagle()
+				withHistory(fake, 2)
+				fake.login()
+				fake.enterWorld()
+				fake.nextFrame()
+
+				fake.playCast("gotAway")
+				fake.nextFrame()
+				fake.profile.announcements.everyCatch = false
+				fake.playCast("caught", { { itemID = 6358, quantity = 1 } })
+				fake.nextFrame()
+
+				assert.are.same({}, fake.catchNods)
+			end
+		)
 	end)
 
 	describe("/pagle dev", function()

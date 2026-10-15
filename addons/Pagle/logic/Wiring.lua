@@ -173,8 +173,26 @@ function ns.WireMoments(host, show)
 	---@class PagleModuleHandle
 	local ModuleHandle = ns.ModuleHandle
 	--- Raises a moment (ANN-R1): see ns.RaiseMomentMethod. Raises an error for an unknown rung, or no kind or title.
-	--- Ordinary Catches raise nothing (ANN-R13): that is each Module's choice, not Core's.
+	--- A Module raises nothing for an ordinary Catch: Core's catch Nod is its (ANN-R13, ns.WireCatchNods).
 	ModuleHandle.RaiseMoment = ns.RaiseMomentMethod(host.registry, ns.moments)
+end
+
+--- Core's catch Nod (ANN-R13) on ns.moments: at each live `CastEnded("caught", cast)` (LOG-R9), while
+--- PagleDB.profile.announcements.everyCatch ("Show every catch") is on, the Cast's catch Nod (ns.CatchNodMoment) in
+--- the Angler's length unit. Replays and rebuilds fire no CastEnded, so only live Casts get one (ANN-R4).
+---@param host PagleHost
+---@param itemName fun(itemID: integer): string? the client's name for an item, nil until it has cached it
+function ns.WireCatchNods(host, itemName)
+	-- Its own owner on the bus, so no other registration replaces it.
+	host.listen("Pagle catch nod", "CastEnded", function(_, outcome, cast)
+		if outcome ~= "caught" or not cast or not host.db().profile.announcements.everyCatch then
+			return
+		end
+		local moment = ns.CatchNodMoment(cast, itemName, ns.LengthUnit())
+		if moment then
+			ns.moments:RaiseCatchNod(moment)
+		end
+	end)
 end
 
 --- Core's Session summary as ns.summary (ANN-R50–R54), fed the Session events on the bus, and `M:SetSummaryLine` on
