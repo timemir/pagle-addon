@@ -402,10 +402,10 @@ describe("/pagle dev glyphs", function()
 			rows[#rows + 1] = { row:GetText(), row.fontObject }
 		end
 		assert.are.same({
-			{ "GameFontHighlight (Core's frames, the Journal's print): " .. PROBE, "GameFontHighlight" },
+			{ "GameFontHighlight (Core's frames): " .. PROBE, "GameFontHighlight" },
 			{ "ChatFontNormal (chat, the Field report's text): " .. PROBE, "ChatFontNormal" },
 			{ "NumberFontNormalSmallGray (QoL's key label): " .. PROBE, "NumberFontNormalSmallGray" },
-			{ "Fonts\\MORPHEUS.TTF (the Journal's hand): " .. PROBE, "PagleDevGlyphsFont4" },
+			{ ART .. "IMFeENsc28P.ttf (the Fish Journal's small capitals): " .. PROBE, "PagleDevGlyphsFont4" },
 			{ ART .. "IMFeENrm28P.ttf (the announcements' print): " .. PROBE, "PagleDevGlyphsFont5" },
 			{ ART .. "Caveat-SemiBold.ttf (the announcements' hand): " .. PROBE, "PagleDevGlyphsFont6" },
 			{

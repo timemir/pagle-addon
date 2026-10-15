@@ -243,20 +243,23 @@ describe("the Journal's Trophy Room", function()
 		assert.are.equal("Not one of this family yet.", loaded.ns.journal.pages.right[6].text)
 	end)
 
-	it("draws the weights ruler: each weight in pounds, landed ones inked red, heaviest marked (LED-R143, LED-R62)", function()
-		local _, loaded = spread({ "trophyRoom", 2 })
+	it(
+		"draws the weights ruler: each weight in pounds, landed ones inked red, heaviest marked (LED-R143, LED-R62)",
+		function()
+			local _, loaded = spread({ "trophyRoom", 2 })
 
-		local board = loaded.ns.journal.frame.right.drawn.board[1]
+			local board = loaded.ns.journal.frame.right.drawn.board[1]
 
-		assert.are.same({ "heaviest", "17", "19", "22", "26" }, shownTexts(board))
-		-- a landed mark is red and tall, one not landed grey and short
-		local red = { 0x9a / 255, 0x2a / 255, 0x1a / 255 }
-		local marks = {}
-		for i, mark in ipairs(board.marks) do
-			marks[i] = { mark.line.height, mark.line.color[1] == red[1] }
+			assert.are.same({ "heaviest", "17", "19", "22", "26" }, shownTexts(board))
+			-- a landed mark is red and tall, one not landed grey and short
+			local red = { 0x9a / 255, 0x2a / 255, 0x1a / 255 }
+			local marks = {}
+			for i, mark in ipairs(board.marks) do
+				marks[i] = { mark.line.height, mark.line.color[1] == red[1] }
+			end
+			assert.are.same({ { 36, true }, { 22, false }, { 36, true }, { 22, false } }, marks)
 		end
-		assert.are.same({ { 36, true }, { 22, false }, { 36, true }, { 22, false } }, marks)
-	end)
+	)
 end)
 
 describe("the Journal's Curios", function()
@@ -276,7 +279,10 @@ describe("the Journal's Curios", function()
 			local left = loaded.ns.journal.pages.left
 
 			-- The removed wagonwheel keeps its plinth but is out of both sides of the count.
-			assert.are.same({ "Junk", "The Junk Museum", "1 of 2 exhibits" }, { left[1].text, left[2].text, left[3].text })
+			assert.are.same(
+				{ "Junk", "The Junk Museum", "1 of 2 exhibits" },
+				{ left[1].text, left[2].text, left[3].text }
+			)
 			assert.are.same({
 				{
 					kind = "plinth",
@@ -315,18 +321,21 @@ describe("the Journal's Curios", function()
 		assert.is_nil(plinth.value)
 	end)
 
-	it("draws an empty plinth with the unknown medallion, never the item's icon, with its words (LED-R144, LED-R124)", function()
-		local _, loaded = spread({ "curios" })
+	it(
+		"draws an empty plinth with the unknown medallion, never the item's icon, with its words (LED-R144, LED-R124)",
+		function()
+			local _, loaded = spread({ "curios" })
 
-		local plinths = loaded.ns.journal.frame.left.drawn.plinth
+			local plinths = loaded.ns.journal.frame.left.drawn.plinth
 
-		assert.are.same(
-			{ "An empty plinth", "The plinth is dusted and ready. The exhibit is late." },
-			shownTexts(plinths[2])
-		)
-		assert.are.same({ true, false }, { plinths[2].medal.unknown:IsShown(), plinths[2].medal.icon:IsShown() })
-		assert.are.same({ false, true }, { plinths[1].medal.unknown:IsShown(), plinths[1].medal.icon:IsShown() })
-	end)
+			assert.are.same(
+				{ "An empty plinth", "The plinth is dusted and ready. The exhibit is late." },
+				shownTexts(plinths[2])
+			)
+			assert.are.same({ true, false }, { plinths[2].medal.unknown:IsShown(), plinths[2].medal.icon:IsShown() })
+			assert.are.same({ false, true }, { plinths[1].medal.unknown:IsShown(), plinths[1].medal.icon:IsShown() })
+		end
+	)
 
 	it(
 		"shows Treasures: each container or treasure item, caught by name and plaque, uncaught by the lore line (LED-R144)",

@@ -221,7 +221,7 @@ end
 
 ---@class LedgerLinkWidget: LedgerJournalWidget
 ---@field pen LedgerSpriteTexture
----@field dots Frame?
+---@field dots LedgerDotLine
 ---@field radio LedgerSpriteTexture
 ---@field button LedgerButton
 ---@field prompt FontString
@@ -242,6 +242,7 @@ makers.link = function(parent)
 	widget.rule = ns.JournalTint(widget, INK.rule, 1)
 	widget.rule:SetHeight(1)
 	widget.prompt = ns.JournalLabel(widget, "print", 13.5, INK.small, ns.L.JOURNAL_CHART_PROMPT, { wrap = true })
+	widget.dots = ns.JournalDotLine(widget, INK.link, 0.5, 2)
 	widget:SetScript("OnEnter", function(self)
 		if self.style ~= "button" and self.style ~= "chart" then
 			self.label:SetTextColor(rgb(INK.red))
@@ -260,9 +261,7 @@ makers.link = function(parent)
 		self.rule:SetShown(style == "chart")
 		self.prompt:SetShown(style == "chart")
 		self.label:SetShown(style ~= "button" and style ~= "chart")
-		if self.dots then
-			self.dots:Hide()
-		end
+		self.dots:Hide()
 		self.label:ClearAllPoints()
 		if style == "button" or style == "chart" then
 			-- the button calls the block's own action, or opens its place
@@ -316,10 +315,7 @@ makers.link = function(parent)
 		if style == "ink" then
 			-- the dotted underline under a one-line link
 			bound(self.label, width)
-			if self.dots then
-				self.dots:Hide()
-			end
-			self.dots = ns.JournalDots(self, 0, height + 1, self.label:GetWidth(), INK.link, 0.5, 2)
+			self.dots:Lay(0, height + 1, self.label:GetWidth())
 			return height + 4
 		end
 		return math.max(style == "note" and 23 or 19, height + 2)
@@ -351,7 +347,7 @@ end
 ---@field value FontString
 ---@field state FontString
 ---@field swatch LedgerSpriteTexture
----@field dots Frame?
+---@field dots LedgerDotLine
 
 -- A contents line (LED-R132): its numeral in small capitals, its words, a dotted leader and its value, the words
 -- turning red under the mouse; or a binding's line (LED-R146): its closed book, its name and its state at the right
@@ -367,6 +363,7 @@ makers.leader = function(parent)
 	widget.value = ns.JournalLabel(widget, "print", 16, INK.small, "", { justify = "RIGHT" })
 	widget.value:SetPoint("TOPRIGHT", 0, -3)
 	widget.swatch = ns.JournalSprite(widget, "Bindings", "binding-field-leather", "ARTWORK", 0, 11)
+	widget.dots = ns.JournalDotLine(widget, INK.noteLight, 1)
 	widget:SetScript("OnEnter", function(self)
 		if self.place or self.action then
 			self.label:SetTextColor(rgb(INK.hover))
@@ -406,15 +403,12 @@ makers.leader = function(parent)
 		bound(self.value, width * 0.5)
 		local valueW = block.value and self.value:GetWidth() or 0
 		bound(self.label, width - left - valueW - 12)
-		if self.dots then
-			self.dots:Hide()
-			self.dots = nil
-		end
+		self.dots:Hide()
 		if not binding and not pair then
 			local from = left + self.label:GetWidth() + 6
 			local to = width - valueW - 6
 			if to > from then
-				self.dots = ns.JournalDots(self, from, 15, to - from, INK.noteLight, 1)
+				self.dots:Lay(from, 15, to - from)
 			end
 		end
 		return (binding or pair) and 22 or 26

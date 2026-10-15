@@ -91,15 +91,18 @@ describe("the Journal bindings", function()
 			assert.are.same(field, ns.BindingLook(nil))
 		end)
 
-		it("tints the grey leather a level binding's tint, the band toward it and the paper by a tenth (LED-R110)", function()
-			local look = ns.BindingLook("ledger.binding.level20") -- Tidewater Blue, the kit's measured tint
+		it(
+			"tints the grey leather a level binding's tint, the band toward it and the paper by a tenth (LED-R110)",
+			function()
+				local look = ns.BindingLook("ledger.binding.level20") -- Tidewater Blue, the kit's measured tint
 
-			assert.are.same({ "leatherGrey", 128 }, { look.texture, look.tile })
-			assert.are.same({ 0.188, 0.363, 0.563 }, look.tint)
-			assert.are.same({ 0.188 / 0.563, 0.363 / 0.563, 1 }, look.band)
-			assert.are.same({ 0.9 + 0.1 * 0.188 / 0.563, 0.9 + 0.1 * 0.363 / 0.563, 1 }, look.paperTint)
-			assert.are.equal("binding-tidewater-blue", look.swatch)
-		end)
+				assert.are.same({ "leatherGrey", 128 }, { look.texture, look.tile })
+				assert.are.same({ 0.188, 0.363, 0.563 }, look.tint)
+				assert.are.same({ 0.188 / 0.563, 0.363 / 0.563, 1 }, look.band)
+				assert.are.same({ 0.9 + 0.1 * 0.188 / 0.563, 0.9 + 0.1 * 0.363 / 0.563, 1 }, look.paperTint)
+				assert.are.equal("binding-tidewater-blue", look.swatch)
+			end
+		)
 
 		it("turns the brass plate silver under a silver gilt only (LED-R110, LED-R149)", function()
 			local silver = {}

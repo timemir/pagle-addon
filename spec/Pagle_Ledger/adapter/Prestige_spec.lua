@@ -115,18 +115,21 @@ describe("Prestiging (LED-R33)", function()
 		assert.is_nil(loaded.client.popup)
 	end)
 
-	it("drops the card in over the darkened book with the open sound and the stamp as the seal lands (LED-R33)", function()
-		local _, loaded = ledger({ motion = true })
-		local sounds = #loaded.client.sounds
+	it(
+		"drops the card in over the darkened book with the open sound and the stamp as the seal lands (LED-R33)",
+		function()
+			local _, loaded = ledger({ motion = true })
+			local sounds = #loaded.client.sounds
 
-		loaded.ns.AskPrestige()
-		local card = loaded.ns.journal.prestigeCard
-		assert.are.equal(0, card.shade.alpha)
-		loaded.client.update(0.5)
+			loaded.ns.AskPrestige()
+			local card = loaded.ns.journal.prestigeCard
+			assert.are.equal(0, card.shade.alpha)
+			loaded.client.update(0.5)
 
-		assert.are.equal(0.55, card.shade.alpha)
-		assert.are.same({ "kit:850 SFX", "kit:1204 SFX" }, { unpack(loaded.client.sounds, sounds + 1) })
-	end)
+			assert.are.equal(0.55, card.shade.alpha)
+			assert.are.same({ "kit:850 SFX", "kit:1204 SFX" }, { unpack(loaded.client.sounds, sounds + 1) })
+		end
+	)
 
 	it(
 		"appends one P1 through M:RecordPrestige when confirmed at 60, starting the next climb (LED-R33, LOG-R38)",

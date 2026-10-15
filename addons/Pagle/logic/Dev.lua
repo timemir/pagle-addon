@@ -217,21 +217,21 @@ end
 --- A font Pagle draws text in: a font object by name (`object`), or a font file (`file`), with what uses it.
 ---@class PagleDevGlyphFont
 ---@field object string?  -- a font object's name, such as "GameFontHighlight"
----@field file string?    -- a font file, such as "Fonts\\MORPHEUS.TTF", for a face no font object has
+---@field file string?    -- a font file, such as Core's bundled faces, for a face no font object has
 ---@field usedBy string   -- what draws with it, for the probe's label
 
 -- Where Core's bundled fonts are (adapter/Art.lua).
 local ART_FONTS = "Interface\\AddOns\\Pagle\\media\\fonts\\"
 
 --- Every font Pagle draws text in (#248), for `/pagle dev glyphs`: Core's frames and Settings rows (GameFont*, all
---- FRIZQT__ in enUS, like the Journal's print), chat and the Field report's text, QoL's key label, the Journal's
---- handwriting face, and the announcements' bundled faces (Caveat's other cuts have the same characters).
+--- FRIZQT__ in enUS), chat and the Field report's text, QoL's key label, the Fish Journal's small capitals, and the
+--- announcements' bundled faces (Caveat's other cuts have the same characters), which the art kits share.
 ---@type PagleDevGlyphFont[]
 ns.DEV_GLYPH_FONTS = {
-	{ object = "GameFontHighlight", usedBy = "Core's frames, the Journal's print" },
+	{ object = "GameFontHighlight", usedBy = "Core's frames" },
 	{ object = "ChatFontNormal", usedBy = "chat, the Field report's text" },
 	{ object = "NumberFontNormalSmallGray", usedBy = "QoL's key label" },
-	{ file = "Fonts\\MORPHEUS.TTF", usedBy = "the Journal's hand" },
+	{ file = ART_FONTS .. "IMFeENsc28P.ttf", usedBy = "the Fish Journal's small capitals" },
 	{ file = ART_FONTS .. "IMFeENrm28P.ttf", usedBy = "the announcements' print" },
 	{ file = ART_FONTS .. "Caveat-SemiBold.ttf", usedBy = "the announcements' hand" },
 	{ file = ART_FONTS .. "Marcellus-Regular.ttf", usedBy = "the announcements' gilt and stamps" },

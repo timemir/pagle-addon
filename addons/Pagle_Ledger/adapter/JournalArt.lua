@@ -480,26 +480,43 @@ function ns.JournalDashes(parent, x, y, w, h, hex, alpha, layer)
 	return frame
 end
 
---- A dotted leader (the canvas's `1px dotted`): 1-unit dots every `step` units across `w`, on a frame of its own.
+--- A dotted line kept on a widget and laid anew at each draw (a contents line's leader, a link's underline), its dots
+--- pooled.
+---@class LedgerDotLine: Frame
+---@field dots Texture[]
+---@field Lay fun(self: LedgerDotLine, x: number, y: number, w: number)
+
 ---@param parent Frame
----@param x number
----@param y number
----@param w number
 ---@param hex string
 ---@param alpha number?
 ---@param step number?
----@return Frame
-function ns.JournalDots(parent, x, y, w, hex, alpha, step)
-	local frame = CreateFrame("Frame", nil, parent)
-	frame:SetSize(math.max(1, w), 1)
-	ns.JournalAt(frame, parent, x, y)
+---@return LedgerDotLine
+function ns.JournalDotLine(parent, hex, alpha, step)
+	local line = CreateFrame("Frame", nil, parent) --[[@as LedgerDotLine]]
+	line.dots = {}
 	step = step or 3
-	for i = 0, math.floor((w - 1) / step) do
-		local dot = ns.JournalTint(frame, hex, alpha)
-		dot:SetSize(1, 1)
-		ns.JournalAt(dot, frame, i * step, 0)
+	function line.Lay(self, x, y, w)
+		self:SetSize(math.max(1, w), 1)
+		ns.JournalAt(self, parent, x, y)
+		local count = w >= 1 and math.floor((w - 1) / step) + 1 or 0
+		for i = 1, math.max(count, #self.dots) do
+			local dot = self.dots[i]
+			if i <= count then
+				if not dot then
+					dot = ns.JournalTint(self, hex, alpha)
+					dot:SetSize(1, 1)
+					self.dots[i] = dot
+				end
+				ns.JournalAt(dot, self, (i - 1) * step, 0)
+				dot:Show()
+			elseif dot then
+				dot:Hide()
+			end
+		end
+		self:Show()
 	end
-	return frame
+	line:Hide()
+	return line
 end
 
 --- The fleuron rule: the fleuron between two lines that fade toward the edges, `w` wide at (x, y).

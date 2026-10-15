@@ -348,23 +348,26 @@ describe("the Fish Journal's widgets (ledger.md › UI)", function()
 		assert.is_false(medal.unknown:IsShown())
 	end)
 
-	it("draws the one unknown-fish medallion for what isn't caught, never its icon, on an entry, a row and a plinth (LED-R124)", function()
-		local loaded = drawn({
-			{ kind = "icon", icon = MACKEREL, look = "silhouette" },
-			{ kind = "row", icon = MACKEREL, look = "silhouette", text = "— unknown —" },
-			{ kind = "plinth", icon = MACKEREL, look = "silhouette", text = "An empty plinth" },
-		})
+	it(
+		"draws the one unknown-fish medallion for what isn't caught, never its icon, on an entry, a row and a plinth (LED-R124)",
+		function()
+			local loaded = drawn({
+				{ kind = "icon", icon = MACKEREL, look = "silhouette" },
+				{ kind = "row", icon = MACKEREL, look = "silhouette", text = "— unknown —" },
+				{ kind = "plinth", icon = MACKEREL, look = "silhouette", text = "An empty plinth" },
+			})
 
-		local drawnWidgets = loaded.ns.journal.frame.left.drawn
-		for _, medal in ipairs({
-			drawnWidgets.icon[1].medalLarge,
-			drawnWidgets.row[1].medal,
-			drawnWidgets.plinth[1].medal,
-		}) do
-			assert.are.same({ true, false }, { medal.unknown:IsShown(), medal.icon:IsShown() })
-			assert.is_nil(medal.icon.texture)
+			local drawnWidgets = loaded.ns.journal.frame.left.drawn
+			for _, medal in ipairs({
+				drawnWidgets.icon[1].medalLarge,
+				drawnWidgets.row[1].medal,
+				drawnWidgets.plinth[1].medal,
+			}) do
+				assert.are.same({ true, false }, { medal.unknown:IsShown(), medal.icon:IsShown() })
+				assert.is_nil(medal.icon.texture)
+			end
 		end
-	end)
+	)
 
 	it("opens a link's place when it is clicked (LED-R125)", function()
 		local loaded = drawn({ { kind = "link", text = "Home", place = { id = "home" } } })

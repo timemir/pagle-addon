@@ -1,0 +1,263 @@
+-- The Fish Journal in the Ledger art kit (ledger.md › UI): its textures and fonts, its sounds, its fit to the screen,
+-- the page turn and the moments of change, each played only while Core's Animations setting is on.
+
+local MACKEREL = 6303 -- Raw Slitherskin Mackerel, a Species in the generated catalogue
+
+-- A test spread whose left page is what `pages.left` holds when drawn, and whose right page names it.
+---@param pages { left: LedgerBlock[] }
+---@return LedgerSpread
+local function spreadOf(pages)
+	return {
+		crumbs = function()
+			return { { label = "Test", place = { id = "test" } } }
+		end,
+		draw = function()
+			return { left = pages.left, right = { { kind = "text", text = "the test spread" } } }
+		end,
+	}
+end
+
+-- The sounds played since `from` (an index into client.sounds), as "kit:<id> SFX".
+---@param loaded LoadedAddon
+---@param from integer
+---@return string[]
+local function soundsSince(loaded, from)
+	return { unpack(loaded.client.sounds, from + 1) }
+end
+
+-- Whether `list` has `text`.
+local function has(list, text)
+	for _, item in ipairs(list) do
+		if item == text then
+			return true
+		end
+	end
+	return false
+end
+
+describe("the Fish Journal's art (ledger.md › UI)", function()
+	it("draws its own parts, crests and bindings from Pagle_Ledger/media/journal, as BLP files that ship", function()
+		local _, loaded = openJournal()
+		local atlases = loaded.ns.JOURNAL_ATLASES
+
+		for _, name in ipairs({ "Parts", "Crests", "Bindings" }) do
+			local file = atlases[name].file
+			assert.matches("^Interface\\AddOns\\Pagle_Ledger\\media\\journal\\", file)
+			local path = file:gsub("^Interface\\AddOns\\", "addons/"):gsub("\\", "/") .. ".blp"
+			assert.is_true(#readFile(path) > 0, path)
+		end
+		for _, key in ipairs({ "leatherGrey", "bark", "cloth" }) do
+			local path = loaded.ns.JOURNAL_FILES[key]:gsub("^Interface\\AddOns\\", "addons/"):gsub("\\", "/") .. ".blp"
+			assert.is_true(#readFile(path) > 0, path)
+		end
+	end)
+
+	it("draws its book shell from Core's media/books, which the Hunts board and the Stats book share", function()
+		local _, loaded = openJournal()
+
+		assert.are.equal("Interface\\AddOns\\Pagle\\media\\books\\BookAtlas", loaded.ns.JOURNAL_ATLASES.Book.file)
+		assert.are.equal("Interface\\AddOns\\Pagle\\media\\books\\Parchment", loaded.ns.JOURNAL_FILES.parchment)
+		assert.are.equal(loaded.ns.JOURNAL_FILES.parchment, loaded.ns.journal.frame.papers.left.parchment.texture)
+	end)
+
+	it("sets its small capitals in IM Fell English SC, bundled in Core's fonts with its licence", function()
+		local _, loaded = openJournal()
+
+		assert.are.equal("Interface\\AddOns\\Pagle\\media\\fonts\\IMFeENsc28P.ttf", loaded.ns.JournalFontFile("sc"))
+		assert.is_true(#readFile("addons/Pagle/media/fonts/IMFeENsc28P.ttf") > 0)
+		assert.matches("SIL OPEN FONT LICENSE", readFile("addons/Pagle/media/fonts/OFL-IMFellEnglishSC.txt"))
+		-- Home's kicker is drawn in it
+		local kicker = loaded.ns.journal.frame.left.drawn.kicker[1].label
+		assert.are.same({ loaded.ns.JournalFontFile("sc"), 14, "" }, kicker.fontObject.font)
+	end)
+
+	it("shrinks to fit a small screen, centred, and never grows past its size", function()
+		local _, loaded = openJournal({ id = false })
+		local journal = loaded.ns.journal
+		loaded.env.UIParent:SetSize(800, 600)
+
+		journal:Toggle()
+
+		-- 950 × 640 with the wax close and the brass plate, 24 free each side
+		assert.are.equal(math.min((600 - 48) / 640, (800 - 48) / 950), journal.frame:GetScale())
+		journal:Toggle()
+		loaded.env.UIParent:SetSize(1920, 1080)
+		journal:Toggle()
+		assert.are.equal(1, journal.frame:GetScale())
+	end)
+end)
+
+describe("the Fish Journal's sounds (ledger.md › UI)", function()
+	it("plays the book's own sounds as it opens and closes, by sound kit id on the SFX channel", function()
+		local _, loaded = openJournal({ id = false })
+		local from = #loaded.client.sounds
+
+		loaded.ns.journal:Toggle()
+		loaded.ns.journal:Toggle()
+		loaded.ns.journal:Toggle()
+		loaded.client.pressEscape()
+
+		assert.are.same({ "kit:829 SFX", "kit:830 SFX", "kit:829 SFX", "kit:830 SFX" }, soundsSince(loaded, from))
+	end)
+
+	it("turns the page silently while things don't move: the page turn's sound is tied to its motion", function()
+		local _, loaded = openJournal()
+		local from = #loaded.client.sounds
+
+		loaded.ns.journal.frame.right.drawn.leader[1]:Click()
+
+		assert.are.same({}, soundsSince(loaded, from))
+		assert.are.same({ "Home", "The Trophy Room" }, {
+			loaded.ns.journal.pages.crumbs[1].label,
+			loaded.ns.journal.pages.crumbs[2].label,
+		})
+	end)
+end)
+
+describe("the Fish Journal's motion (ledger.md › UI, the kit's MOTION.md)", function()
+	it("fades the book in as it opens", function()
+		local _, loaded = openJournal({ id = false, motion = true })
+
+		loaded.ns.journal:Toggle()
+		assert.are.equal(0, loaded.ns.journal.frame.alpha)
+		loaded.client.update(0.2)
+
+		assert.are.equal(1, loaded.ns.journal.frame.alpha)
+	end)
+
+	it("turns the page to another spread with its sound, the old pages gone once it lands", function()
+		local _, loaded = openJournal({ motion = true })
+		local journal = loaded.ns.journal
+		loaded.client.update(0.2)
+		local from = #loaded.client.sounds
+		local home = journal.frame.left
+
+		journal.frame.right.drawn.leader[1]:Click()
+
+		assert.are.same({ "kit:836 SFX" }, soundsSince(loaded, from))
+		assert.are_not.equal(home, journal.frame.left)
+		-- mid-turn, Home's left page still shows beside the lifting leaf
+		assert.is_true(has(shownTexts(journal.frame), "Where I've Fished"))
+		loaded.client.update(0.3)
+		loaded.client.update(0.3)
+
+		assert.is_false(has(shownTexts(journal.frame), "Where I've Fished"))
+		assert.is_true(has(shownTexts(journal.frame), "The Trophy Room"))
+		assert.is_false(journal.frame.fold:IsShown())
+	end)
+
+	it("logs a fish caught since the page was drawn: its medallion, a green wash and the write sound", function()
+		local _, loaded = openJournal({ motion = true })
+		local journal = loaded.ns.journal
+		local pages = {
+			left = {
+				{
+					kind = "row",
+					icon = MACKEREL,
+					look = "silhouette",
+					text = "— unknown —",
+					place = { id = "test" },
+				},
+			},
+		}
+		loaded.ns.RegisterJournalSpread("test", spreadOf(pages))
+		journal:Open("test")
+		loaded.client.update(1)
+		local from = #loaded.client.sounds
+
+		pages.left = {
+			{
+				kind = "row",
+				icon = MACKEREL,
+				look = "sepia",
+				text = "Raw Slitherskin Mackerel",
+				place = { id = "test" },
+			},
+		}
+		journal:Draw()
+
+		assert.are.same({ "kit:3093 SFX" }, soundsSince(loaded, from))
+		local row = journal.frame.left.drawn.row[1]
+		loaded.client.update(0.4)
+		assert.is_true(row.glow.alpha > 0)
+		loaded.client.update(1.2)
+		assert.are.same({ 0, 1 }, { row.glow.alpha, row.name.alpha })
+		assert.is_true(row.medal.icon:IsShown())
+	end)
+
+	it("presses a new seal on as a zone's rank rises, the stamp sounding as it lands", function()
+		local _, loaded = openJournal({ motion = true })
+		local journal = loaded.ns.journal
+		local pages = { left = { { kind = "seal", text = "Visitor", inked = true } } }
+		loaded.ns.RegisterJournalSpread("test", spreadOf(pages))
+		journal:Open("test")
+		loaded.client.update(1)
+		local from = #loaded.client.sounds
+
+		pages.left = { { kind = "seal", text = "Regular", inked = true } }
+		journal:Draw()
+		local seal = journal.frame.left.drawn.seal[1].seal
+		assert.are.equal("Visitor", seal.label.text)
+		loaded.client.update(0.2)
+		assert.are.equal("Regular", seal.label.text)
+		loaded.client.update(0.3)
+
+		assert.are.same({ "kit:1204 SFX" }, soundsSince(loaded, from))
+		assert.are.same({ 64, 1 }, { seal.width, seal.alpha })
+	end)
+
+	it("runs the ink on as the XP bar fills, settling at its new length", function()
+		local _, loaded = openJournal({ motion = true })
+		local journal = loaded.ns.journal
+		local pages = { left = { { kind = "xpBar", bar = { fill = 0.2, text = "200 of 1,000." } } } }
+		loaded.ns.RegisterJournalSpread("test", spreadOf(pages))
+		journal:Open("test")
+		loaded.client.update(1)
+
+		pages.left = { { kind = "xpBar", bar = { fill = 0.6, text = "600 of 1,000." } } }
+		journal:Draw()
+		local bar = journal.frame.left.drawn.xpBar[1].bar
+		assert.are.equal(0.2, bar.pct)
+		loaded.client.update(0.3)
+		assert.is_true(bar.pct > 0.2 and bar.pct < 0.6)
+		loaded.client.update(0.4)
+
+		assert.are.equal(0.6, bar.pct)
+	end)
+
+	it("draws everything settled while Core's Animations setting is off", function()
+		local _, loaded = openJournal()
+		local journal = loaded.ns.journal
+		local pages = { left = { { kind = "xpBar", bar = { fill = 0.2, text = "200 of 1,000." } } } }
+		loaded.ns.RegisterJournalSpread("test", spreadOf(pages))
+		journal:Open("test")
+
+		pages.left = { { kind = "xpBar", bar = { fill = 0.6, text = "600 of 1,000." } } }
+		journal:Draw()
+
+		assert.are.equal(0.6, journal.frame.left.drawn.xpBar[1].bar.pct)
+		assert.are.equal(1, journal.frame.alpha)
+	end)
+
+	it("changes binding under a dip of the leather, with the page-turn sound (LED-R112)", function()
+		local fake, loaded = openJournal({
+			motion = true,
+			globals = {
+				PagleLedgerDB = { global = { celebrated = { coins = 0, levels = { [0] = 10 }, logId = "log" } } },
+			},
+			logId = "log",
+		})
+		local journal = loaded.ns.journal
+		loaded.client.update(1)
+		local from = #loaded.client.sounds
+
+		assert.is_true(fake.Pagle.SetEquipped("ledger.binding", "ledger.binding.level10"))
+
+		assert.are.same({ "kit:836 SFX" }, soundsSince(loaded, from))
+		assert.are.same({ 1, 1, 1 }, journal.frame.leatherTint)
+		loaded.client.update(0.25)
+		assert.are.same(loaded.ns.BindingLook("ledger.binding.level10").tint, journal.frame.leatherTint)
+		loaded.client.update(0.25)
+		assert.are.equal(1, journal.frame.leatherFill.alpha)
+	end)
+end)

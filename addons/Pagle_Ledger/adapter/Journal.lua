@@ -292,6 +292,7 @@ end
 ---@return LedgerJournalFrame
 local function build(journal)
 	local frame = CreateFrame("Frame", FRAME_NAME, UIParent) --[[@as LedgerJournalFrame]]
+	frame:Hide() -- hidden before its scripts are set: being made isn't closing
 	frame:SetPoint("CENTER")
 	frame:SetFrameStrata("HIGH")
 	frame:EnableMouse(true)
@@ -352,7 +353,6 @@ local function build(journal)
 	end
 	Pagle.RegisterEvent(OWNER, "UI_SCALE_CHANGED", refit)
 	Pagle.RegisterEvent(OWNER, "DISPLAY_SIZE_CHANGED", refit)
-	frame:Hide()
 	return frame
 end
 
