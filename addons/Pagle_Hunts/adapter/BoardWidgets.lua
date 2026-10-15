@@ -358,7 +358,8 @@ end
 function ns.BoardPooled(pool, i, make)
 	local widget = pool[i] or make()
 	pool[i] = widget
-	widget:Show()
+	local region = widget --[[@as ScriptRegion]] -- each pool holds widgets (or views with their own Show)
+	region:Show()
 	return widget
 end
 

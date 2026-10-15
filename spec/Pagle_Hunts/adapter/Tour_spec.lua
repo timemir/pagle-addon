@@ -131,7 +131,7 @@ describe("Hunts' tour stops (CORE-R65, CORE-R68)", function()
 			local stop = shown[1 + i]
 			assert.are.equal("board", stop.place.mode, group)
 			assert.are.equal(group, stop.group)
-			assert.is_string(stop.name, group)
+			assert.are.equal("string", type(stop.name), group)
 		end
 		-- fixture_grouper isn't out until 2026-11-04 (HNT-R2): only the sample groups it.
 		assert.is_nil(run.ns.groups:Row("fixture_grouper"))

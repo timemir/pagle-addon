@@ -33,7 +33,12 @@ end
 local function realmTime(at)
 	local year, month, day, hour, minute = at:match("^(%d+)-(%d+)-(%d+) (%d+):(%d+)$")
 	local minuteOfDay = tonumber(hour) * 60 + tonumber(minute)
-	return daysFromCivil(tonumber(year), tonumber(month), tonumber(day)) * 86400 + minuteOfDay * 60, minuteOfDay
+	local days = daysFromCivil(
+		tonumber(year) --[[@as integer]],
+		tonumber(month) --[[@as integer]],
+		tonumber(day) --[[@as integer]]
+	)
+	return days * 86400 + minuteOfDay * 60, minuteOfDay
 end
 
 local SECONDS_PER_DAY = 86400

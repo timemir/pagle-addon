@@ -30,13 +30,18 @@ local function runAsHunts(path, loaded)
 	chunk("Pagle_Hunts", loaded.ns)
 end
 
+--- support.load's options.
+---@class HuntsLoadOptions
+---@field lore boolean?   -- false loads no fixture lore, so names fall back to IDs (HNT-R1)
+---@field list (HuntListData|fun(fixture: HuntListData): HuntListData)?   -- the Hunt list OnInitialize reads in place
+--- of the fixture's (or what it makes of the fixture's), as data\HuntList.lua sets it
+---@field prepare fun(loaded: LoadedAddon)?   -- runs after the fixtures, before ADDON_LOADED, e.g. to change the rules
+--- version OnInitialize reads
+
 --- Loads Pagle_Hunts on `fake` (a new FakePagle if nil) with the fixture Hunt list, which replaces a shipped
 --- data/HuntList.lua if the TOC lists one, then fires its ADDON_LOADED, so OnInitialize reads the fixture.
 ---@param fake table? a FakePagle (newFakePagle()), for a spec that set it up first
----@param options { lore: boolean?, list: (HuntListData|fun(fixture: HuntListData): HuntListData)?, prepare: fun(loaded: LoadedAddon)? }?
---- lore = false loads no fixture lore, so names fall back to IDs (HNT-R1); `list` is the Hunt list OnInitialize reads
---- in place of the fixture's (or what it makes of the fixture's), as data\HuntList.lua sets it; prepare(loaded) runs
---- after the fixtures, before ADDON_LOADED, e.g. to change the rules version OnInitialize reads
+---@param options HuntsLoadOptions?
 ---@return LoadedAddon loaded
 ---@return table fake
 function support.load(fake, options)

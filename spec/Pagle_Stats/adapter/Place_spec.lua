@@ -15,7 +15,7 @@ local UNCHARTED_SUBZONE = I.UNCHARTED_SUBZONE
 local T0 = stats.T0
 
 -- A Cast record by day at skill 150 + 25 = 175 (Darkshore's line is 170: side hi), as the worked history's.
----@param c { time: integer, subzone: integer?, items: integer[]? }
+---@param c StatsSpecCast
 local function cast(c)
 	c.rank, c.mod = 150, 25
 	return stats.cast(c)

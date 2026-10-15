@@ -10,10 +10,8 @@ local RACK_AURA = C.RACK_AURA
 local untilRealm, realm, wait, ids = hunts.untilRealm, hunts.realm, hunts.wait, hunts.ids
 local extraList = hunts.extraList
 
----@class GroupsRun
----@field loaded LoadedAddon
----@field fake table
----@field ns table
+--- A HuntsRun (support.start) that counts its regroups and redraws.
+---@class GroupsRun: HuntsRun
 ---@field regroups { previous: HuntsGrouping?, current: HuntsGrouping }[]   -- each regroup, in order
 ---@field redraws string[]   -- each ns.Redraw's reason, in order
 
@@ -30,7 +28,8 @@ local function start(options)
 		skill = options.skill,
 		restricted = options.restricted,
 		world = options.world,
-		beforeLogin = function(run)
+		beforeLogin = function(started)
+			local run = started --[[@as GroupsRun]]
 			run.regroups, run.redraws = {}, {}
 			run.ns.OnRegroup(function(previous, current)
 				run.regroups[#run.regroups + 1] = { previous = previous, current = current }
@@ -46,7 +45,8 @@ local function start(options)
 		end,
 		-- The projection's first build redraws at its done (adapter/Projection_spec.lua); these specs count the
 		-- grouping's redraws from here.
-		beforeGrouping = function(run)
+		beforeGrouping = function(started)
+			local run = started --[[@as GroupsRun]]
 			run.redraws = {}
 		end,
 	}) --[[@as GroupsRun]]

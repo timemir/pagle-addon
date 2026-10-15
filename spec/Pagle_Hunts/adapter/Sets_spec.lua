@@ -88,7 +88,11 @@ describe("the set ribbons (HNT-R61)", function()
 
 	it("give a set with an earned title its ribbon, though none of its Hunts is current (HNT-R20)", function()
 		local run = start({ list = bygoneAndAhead })
-		useState(run, {}, { fixture_ahead = { earnedAt = JAN_1, date = { year = 2026, month = 1, day = 1 } } })
+		useState(
+			run,
+			{},
+			{ fixture_ahead = { earnedAt = JAN_1, date = { year = 2026, month = 1, day = 1 }, fromRetirement = false } }
+		)
 
 		local sets = setsOf(run.ns.BoardRibbons({ mode = "board" }))
 
@@ -98,7 +102,7 @@ describe("the set ribbons (HNT-R61)", function()
 	it("show only the sets with a current Hunt while the projection is updating (HNT-R69)", function()
 		local run = start({ list = bygoneAndAhead })
 		useState(run, { fixture_bygone_trout = reached(1) }, {
-			fixture_ahead = { earnedAt = JAN_1, date = { year = 2026, month = 1, day = 1 } },
+			fixture_ahead = { earnedAt = JAN_1, date = { year = 2026, month = 1, day = 1 }, fromRetirement = false },
 		}, true)
 
 		local sets = setsOf(run.ns.BoardRibbons({ mode = "board" }))

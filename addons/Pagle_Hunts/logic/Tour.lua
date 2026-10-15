@@ -138,7 +138,7 @@ function ns.HuntsTourSample(data, now)
 	for i, hunt in ipairs(data.hunts) do
 		hunts[i] = outCopy(hunt, now)
 	end
-	local earnedSet = data.sets[1] and data.sets[1].id
+	local earnedSet = data.sets[1] and data.sets[1].id ---@type string?
 	local retired = pickRetired(hunts, earnedSet, now)
 
 	local state = { casts = 0, coins = 0, hunts = {}, sets = {} }

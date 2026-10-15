@@ -178,6 +178,7 @@ describe("Clams on the Fishing key", function()
 					row = entry.setting
 				end
 			end
+			assert(row, "no Open clams between Casts row")
 
 			row.set(false)
 			assert.are.equal(CAST, client.overrideAction("F"))

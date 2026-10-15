@@ -17,7 +17,7 @@ local OCT1_1000 = DAY0 - 10 * 86400 + 10 * 3600 -- Thursday 1 October 2026 10:00
 local OCT5_2104 = DAY0 - 6 * 86400 + 21 * 3600 + 4 * 60 -- Monday 5 October 2026 21:04
 
 -- A Cast record (stats.cast: by day in Darkshore, no subzone) at skill 150. `c.items` are item IDs (none: got away).
----@param c { time: integer, char: integer?, zone: integer?, subzone: integer?, items: integer[]? }
+---@param c StatsSpecCast
 local function cast(c)
 	c.rank = 150
 	return stats.cast(c)

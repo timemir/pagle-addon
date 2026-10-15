@@ -34,6 +34,8 @@
 ---@field casting string? The spell the player is casting with a cast time; `UnitCastingInfo("player")` returns it.
 ---@field mainHand integer? The item ID in the main hand (slot 16).
 ---@field items table<integer, integer[]> `{ classID, subclassID }` per item ID, for `C_Item.GetItemInfoInstant`.
+---@field itemQualities table<integer, integer> Each loaded item's quality (Enum.ItemQuality), as
+--- `C_Item.GetItemQualityByID` reads it; nil for one not loaded yet.
 ---@field itemLoads table<integer, function[]> The `Item:CreateFromItemID(id):ContinueOnItemLoad` callbacks waiting
 --- for each item not in `itemNames`, in order, until `loadItem` runs them.
 ---@field bindingCalls string[] Each override call, in order: "set <key> <action>" or "clear".

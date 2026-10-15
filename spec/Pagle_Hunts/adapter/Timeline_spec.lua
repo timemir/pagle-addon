@@ -374,7 +374,11 @@ describe("a set's page, its left side (HNT-R66)", function()
 
 	it("heads it with the title alone once earned, and so does an entry opened from it", function()
 		local run = start()
-		useState(run, {}, { fixture_dusk = { earnedAt = JAN_1, date = { year = 2026, month = 1, day = 1 } } })
+		useState(
+			run,
+			{},
+			{ fixture_dusk = { earnedAt = JAN_1, date = { year = 2026, month = 1, day = 1 }, fromRetirement = false } }
+		)
 
 		assert.are.equal("Dusk: the Duskwatcher", run.ns.BoardTimeline({ mode = "set", set = "fixture_dusk" }).title)
 		local entry = run.ns.BoardTimeline({ mode = "entry", set = "fixture_dusk", hunt = "fixture_snapper" })

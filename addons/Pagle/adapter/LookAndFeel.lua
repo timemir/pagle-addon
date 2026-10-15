@@ -113,7 +113,7 @@ end
 -- which the page's Defaults button restores, is the slot's default good (SET-R60), and restoring it equips that.
 ---@param page SettingsCategory
 ---@param slot PagleRegisteredSlot
----@param topic string
+---@param variable string
 local function defaultsSetting(page, slot, variable)
 	if registered[variable] then
 		return

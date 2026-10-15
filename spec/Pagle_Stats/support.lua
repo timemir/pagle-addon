@@ -180,10 +180,21 @@ function support.start(options)
 	return loaded, fake, loaded.ns.book
 end
 
+--- What support.cast builds a Cast record from: each field but `time` has its default there.
+---@class StatsSpecCast
+---@field time integer
+---@field char integer?      -- the character's index in the log (the player, 1)
+---@field minute integer?    -- the realm minute (support.DAY)
+---@field zone integer?      -- Darkshore
+---@field subzone integer?   -- none
+---@field rank integer?      -- Fishing's rank (unknown)
+---@field mod integer?       -- its modifier
+---@field items integer[]?   -- item IDs, one of each (none: got away)
+
 --- A Cast record for fake.catchLog:Append (PagleCast): by the player (1) by day (support.DAY) in Darkshore, no
 --- subzone, at an unknown skill (side `na`, STA-R93) unless `c` says otherwise. `c.items` are item IDs, one of each
 --- (none: got away).
----@param c { time: integer, char: integer?, minute: integer?, zone: integer?, subzone: integer?, rank: integer?, mod: integer?, items: integer[]? }
+---@param c StatsSpecCast
 ---@return table
 function support.cast(c)
 	local items = {}
@@ -338,7 +349,8 @@ end
 ---@return string[]
 function support.tilesOf(grid)
 	local out = {}
-	for _, tile in ipairs(grid.tiles) do
+	for _, view in ipairs(grid.tiles) do
+		local tile = view --[[@as table]] -- read through the fake's widget fields (spec/support/widgets.lua)
 		if tile.shown then
 			local function read(text)
 				return text.shown and text.text or "-"

@@ -94,13 +94,13 @@ end
 
 -- The fields of `look` over the default cover's.
 ---@param look BoardCoverLook?
----@return BoardCoverLook
+---@return BoardCover
 local function coverOf(look)
 	local merged = {}
 	for key, value in pairs(ns.BOARD_COVER) do
 		merged[key] = look and look[key] or value
 	end
-	return merged
+	return merged --[[@as BoardCover]] -- every field, from ns.BOARD_COVER
 end
 
 --- Dresses the leather in `look` (HNT-R70), or in the default leather with nil. adapter/Goods.lua calls it

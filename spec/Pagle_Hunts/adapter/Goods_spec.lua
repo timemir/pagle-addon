@@ -56,7 +56,7 @@ local function textsOf(widget)
 end
 
 -- Pagle_Hunts on a fake that has logged in.
----@param options { lore: boolean?, prepare: fun(loaded: LoadedAddon)? }?
+---@param options HuntsLoadOptions?
 local function loggedIn(options)
 	local loaded, fake = hunts.load(nil, options)
 	fake.login()

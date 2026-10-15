@@ -41,6 +41,15 @@ end
 ---@return fun() out
 local function swapIn()
 	local sample = ns.HuntsTourSample(ns.huntList, GetServerTime())
+	-- What the views read of a projection (logic/Seams.lua): the sample's state, never updating.
+	local sampleProjection = {
+		GetState = function()
+			return sample.state
+		end,
+		IsUpdating = function()
+			return false
+		end,
+	}
 	---@type HuntsTourValues
 	local real = {
 		hunts = ns.hunts,
@@ -51,14 +60,7 @@ local function swapIn()
 	---@type HuntsTourValues
 	local tour = {
 		hunts = ns.NewHuntList(sample.data, ns.L),
-		projection = {
-			GetState = function()
-				return sample.state
-			end,
-			IsUpdating = function()
-				return false
-			end,
-		} --[[@as PagleProjection]],
+		projection = sampleProjection --[[@as PagleProjection]],
 		pins = sample.pins,
 		summary = function() end,
 	}

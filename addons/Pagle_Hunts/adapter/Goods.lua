@@ -9,9 +9,7 @@ local ns = select(2, ...)
 -- the looks the board's leather and the tracker's frame wear. Every texture is an in-client file, in build 70338's
 -- ManifestInterfaceData, laid over a tint as adapter/BoardWidgets.lua's are.
 
--- A tint from its hex code, as the prototypes' CSS writes it: { r, g, b }, 0 to 1.
----@param hex string "RRGGBB"
----@return number[]
+-- A tint from its hex code, as the prototypes' CSS writes it: { r, g, b }, 0 to 1 (ns.BoardTint).
 local tint = ns.BoardTint
 
 -- The grains: the board's rock backdrop (the default leather's) and FrameGeneral's smoother marble, for a waxed cloth.
@@ -23,13 +21,16 @@ local MARBLE = "Interface\\FrameGeneral\\UI-Background-Marble"
 ---@class HuntsCoverLook: BoardCover
 ---@field strap number[]
 
+-- The default cover's strap; its leather is filled in from ns.BOARD_COVER below.
+local defaultCover = { strap = tint("a01818") }
+
 --- Each notebook cover's look, by good ID (HNT-R121). Leather is the board's own (ns.BOARD_COVER); Oilcloth takes
 --- prototypes/curio-shop/'s swatch (#1a2a1a, #8aa07a, #d0a020); Tooled Leather and Verdigris are picked from their
 --- lore (data/lore/hunts.toml).
 ---@type table<string, HuntsCoverLook>
 ns.COVERS = {
 	-- The board's own leather (ns.BOARD_COVER), filled in below, with a red strap.
-	[ns.DEFAULT_COVER] = { strap = tint("a01818") },
+	[ns.DEFAULT_COVER] = defaultCover --[[@as HuntsCoverLook]],
 	-- Black-green waxed cloth, smooth, with a pale green rule and a mustard strap.
 	["hunts.notebookcover.oilcloth"] = {
 		leather = tint("1a2a1a"),
