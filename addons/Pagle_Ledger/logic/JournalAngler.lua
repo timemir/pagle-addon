@@ -19,12 +19,8 @@ local ns = select(2, ...)
 local function catchesLine(catches, format)
 	local L = ns.L
 	local text = ns.CountText(catches, L.ANGLER_CATCHES_ONE, L.ANGLER_CATCHES_OTHER, format)
-	for _, n in ipairs(ns.CATCH_MILESTONES) do
-		if catches < n then
-			return text .. L.ANGLER_NEXT_MILESTONE:format(format(n))
-		end
-	end
-	return text
+	local next = ns.NextCatchMilestone(catches)
+	return next and text .. L.ANGLER_NEXT_MILESTONE:format(format(next)) or text
 end
 
 -- The bookplate (LED-R146): the equipped crest (LED-R112), "Ex Libris", "The Angler's Ledger", "kept since

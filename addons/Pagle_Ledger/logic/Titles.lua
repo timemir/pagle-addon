@@ -26,9 +26,9 @@ local ns = select(2, ...)
 -- `prestige<R>` once the prestige rank reaches R.
 local LEVELS = { 1, 10, 20, 30, 40, 50, 60 }
 local PRESTIGES = { 1, 5, 10 }
--- The completion parts with a title each (LED-R75), in its order: `complete.<part>` once that part's count (LED-R71)
--- reaches a total above 0.
-local PARTS = { "junk", "treasure", "trophy" }
+-- The completion parts (ns.COMPLETION_PARTS) with a title each (LED-R75), in its order: `complete.<part>` once that
+-- part's count (LED-R71) is done, at a total above 0. Species and zones have none.
+local TITLED_PARTS = { "junk", "treasure", "trophy" }
 
 -- Each title's place in LED-R75's table, by title key; `zonemaster:` and `legend:` keys by their prefix, then by
 -- their number.
@@ -42,7 +42,7 @@ end
 PLACE[#PLACE + 1] = "zonemaster"
 PLACE[#PLACE + 1] = "legend"
 PLACE[#PLACE + 1] = "title:complete.ledger"
-for _, part in ipairs(PARTS) do
+for _, part in ipairs(TITLED_PARTS) do
 	PLACE[#PLACE + 1] = "title:complete." .. part
 end
 local PLACE_OF = {}
@@ -109,7 +109,7 @@ local function computed(view, made)
 	if completion.percent == 100 then
 		keys["title:complete.ledger"] = true
 	end
-	for _, part in ipairs(PARTS) do
+	for _, part in ipairs(TITLED_PARTS) do
 		local count = completion[part]
 		if count.total > 0 and count.done >= count.total then
 			keys["title:complete." .. part] = true
