@@ -87,7 +87,7 @@ zipfile=${zips[0]}
 expected="$work/expected.txt"
 actual="$work/actual.txt"
 {
-	git -C "$src" ls-files -- 'addons/*' ':!:*.tga' | sed 's#^addons/##'
+	git -C "$src" ls-files -- 'addons/*' | { grep -v '\.tga$' || true; } | sed 's#^addons/##'
 	printf '%s\n' Pagle/CHANGELOG.md Pagle/LICENSE Pagle/NOTICE
 } | LC_ALL=C sort >"$expected"
 unzip -Z1 "$zipfile" | grep -v '/$' | LC_ALL=C sort >"$actual"
