@@ -6,7 +6,7 @@ local board = dofile("spec/Pagle_TackleBoard/support.lua")
 
 local OLD_ID = "Player-4618-0A1B2C3D-1791731747-0"
 
-describe("the board's records", function()
+describe("the board's records (TKB-R80, tackle-board.md › Data)", function()
 	local ns = board.load().ns
 
 	describe("encoding", function()
@@ -77,7 +77,7 @@ describe("the board's records", function()
 			)
 		end)
 
-		it("reads every goal definition back as it was encoded (Data, M7 graph shapes)", function()
+		it("reads every goal definition back as it was encoded (Data, TKB-R80)", function()
 			local defs = {
 				{ type = "n", kind = "haul", tier = 2, pay = 15, need = 30, target = 33 },
 				{ type = "e", kind = "haul", tier = 0, pay = 60, need = 150, target = 14 },

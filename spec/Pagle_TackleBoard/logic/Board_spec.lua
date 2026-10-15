@@ -37,7 +37,7 @@ describe("what the board shows", function()
 	end)
 end)
 
-describe("the board's parts", function()
+describe("the board's parts (TKB-R101, TKB-R103, TKB-R106)", function()
 	local ns = board.load().ns
 
 	it(

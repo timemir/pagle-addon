@@ -403,7 +403,7 @@ describe("opening on a goal (TKB-R109)", function()
 	end)
 end)
 
-describe("the board's redraws (ns.OnRedraw)", function()
+describe("the board's redraws (ns.OnRedraw; TKB-R101, TKB-R107)", function()
 	it("redraws every part at each ns.Redraw while open, with its reason and detail, and not while closed", function()
 		local loaded, _, tackle, flags = loggedIn()
 		flags.started = true

@@ -130,35 +130,32 @@ describe("the goal text", function()
 end)
 
 describe("the kind's label", function()
-	it(
-		"is the kind's ID capitalised, with one in-client icon per kind (TKB-R102; M7 graph, open question 8)",
-		function()
-			local ns = board.load().ns
-			local labels, icons, notIcons = {}, {}, {}
+	it("is the kind's ID capitalised, with one in-client icon per kind (TKB-R102, tackle-board.md › UI)", function()
+		local ns = board.load().ns
+		local labels, icons, notIcons = {}, {}, {}
 
-			for _, kind in ipairs({ "haul", "variety", "wanderer", "quality", "size", "collector", "lure", "species" }) do
-				labels[#labels + 1] = ns.KindLabel(kind)
-				local icon = ns.KIND_ICONS[kind]
-				icons[icon] = true
-				if not (icon and icon:match("^Interface\\Icons\\[%w_]+$")) then
-					notIcons[#notIcons + 1] = kind
-				end
+		for _, kind in ipairs({ "haul", "variety", "wanderer", "quality", "size", "collector", "lure", "species" }) do
+			labels[#labels + 1] = ns.KindLabel(kind)
+			local icon = ns.KIND_ICONS[kind]
+			icons[icon] = true
+			if not (icon and icon:match("^Interface\\Icons\\[%w_]+$")) then
+				notIcons[#notIcons + 1] = kind
 			end
-
-			local kinds = { "Haul", "Variety", "Wanderer", "Quality", "Size", "Collector", "Lure", "Species" }
-			assert.are.same(kinds, labels)
-			assert.are.same({}, notIcons, "every kind's icon is an in-client icon")
-			local distinct = 0
-			for _ in pairs(icons) do
-				distinct = distinct + 1
-			end
-			assert.are.equal(8, distinct, "each kind has its own icon")
 		end
-	)
+
+		local kinds = { "Haul", "Variety", "Wanderer", "Quality", "Size", "Collector", "Lure", "Species" }
+		assert.are.same(kinds, labels)
+		assert.are.same({}, notIcons, "every kind's icon is an in-client icon")
+		local distinct = 0
+		for _ in pairs(icons) do
+			distinct = distinct + 1
+		end
+		assert.are.equal(8, distinct, "each kind has its own icon")
+	end)
 end)
 
 describe("ns.Plural", function()
-	it("takes the singular form for 1 and the plural otherwise, with {n} filled (M7 graph, conventions)", function()
+	it("takes the singular form for 1 and the plural otherwise, with {n} filled (CORE-R8)", function()
 		local ns = board.load().ns
 
 		assert.are.same({ "1 Catch", "0 Catches", "30 Catches", "1 Coin", "60 Coins" }, {
@@ -170,7 +167,7 @@ describe("ns.Plural", function()
 		})
 	end)
 
-	it("fills any other field it is given (M7 graph, conventions)", function()
+	it("fills any other field it is given (CORE-R8)", function()
 		local ns = board.load().ns
 		ns.L.TEST_COUNT = { one = "{n} Catch in {zone}", other = "{n} Catches in {zone}" }
 

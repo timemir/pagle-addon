@@ -576,7 +576,7 @@ describe("the Tackle Board's projection", function()
 		)
 	end)
 
-	describe("the seams (TKB-R81, M7 graph)", function()
+	describe("the seams (TKB-R81, logic/Seams.lua)", function()
 		it("ns.State, ns.IsUpdating and ns.IsStarted follow the projection", function()
 			local loaded, fake = board.load(withHistory(STARTED))
 			local ns = loaded.ns

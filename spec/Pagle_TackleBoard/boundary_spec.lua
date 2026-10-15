@@ -44,7 +44,7 @@ local function offences(file, text)
 	return forbiddenIn(withoutComments(text), forbidden)
 end
 
-describe("the Tackle Board's boundary", function()
+describe("the Tackle Board's boundary (ADR 0001, TKB-R80)", function()
 	it("covers every file the Tackle Board ships", function()
 		assert.are.equal(#addonFiles("Pagle_TackleBoard"), #shippedFiles(DIR))
 	end)

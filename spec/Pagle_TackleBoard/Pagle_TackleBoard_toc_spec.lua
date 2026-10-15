@@ -34,7 +34,7 @@ describe("Pagle_TackleBoard.toc", function()
 		assert.are.equal("@project-version@", fields.Version)
 	end)
 
-	it("names the Module in its Notes, in the glossary's words, none on an Avoid list", function()
+	it("names the Module in its Notes, in the glossary's words, none on an Avoid list (CORE-R2, CONTEXT.md)", function()
 		-- CONTEXT.md › Tackle Board: Notice, Expedition, Campfire, Fly Box.
 		assert.matches("^Pagle's Tackle Board: ", fields.Notes)
 		for _, term in ipairs({ "Notices", "Expeditions", "Campfire", "Fly Box" }) do
@@ -56,7 +56,7 @@ describe("Pagle_TackleBoard.toc", function()
 		assert.is_nil(fields.LoadOnDemand)
 	end)
 
-	it("is titled Pagle Tackle Board, as the other Modules' are Pagle <Module>", function()
+	it("is titled Pagle Tackle Board, as the other Modules' are Pagle <Module> (CORE-R2)", function()
 		assert.are.equal("Pagle Tackle Board", fields.Title)
 	end)
 
@@ -72,22 +72,25 @@ describe("Pagle_TackleBoard.toc", function()
 		assert.are.same(filesIn({ "lua" }), listed)
 	end)
 
-	it("splits its code into logic/ and adapter/, its strings in locale/ and only generated files in data/", function()
-		-- CORE-R7, CORE-R8; DATA-R107: the generator writes data/Lore.lua from the M7 lore batch on (TKB-R130).
-		local generated = { ["data/Lore.lua"] = true }
-		local folders, handWrittenData = {}, {}
-		for _, file in ipairs(filesIn({ "lua" })) do
-			local folder = file:match("^([^/]+)/")
-			folders[folder] = true
-			if folder == "data" and not generated[file] then
-				handWrittenData[#handWrittenData + 1] = file
+	it(
+		"splits its code into logic/ and adapter/, its strings in locale/ and only generated files in data/ (CORE-R7, CORE-R8, DATA-R107)",
+		function()
+			-- CORE-R7, CORE-R8; DATA-R107: the generator writes data/Lore.lua from the M7 lore batch on (TKB-R130).
+			local generated = { ["data/Lore.lua"] = true }
+			local folders, handWrittenData = {}, {}
+			for _, file in ipairs(filesIn({ "lua" })) do
+				local folder = file:match("^([^/]+)/")
+				folders[folder] = true
+				if folder == "data" and not generated[file] then
+					handWrittenData[#handWrittenData + 1] = file
+				end
 			end
-		end
-		folders.data = nil
+			folders.data = nil
 
-		assert.are.same({ adapter = true, locale = true, logic = true }, folders)
-		assert.are.same({}, handWrittenData)
-	end)
+			assert.are.same({ adapter = true, locale = true, logic = true }, folders)
+			assert.are.same({}, handWrittenData)
+		end
+	)
 
 	it("loads locale/enUS.lua first, so every file after it has ns.L (CORE-R8)", function()
 		assert.are.equal("locale/enUS.lua", addonFiles("Pagle_TackleBoard")[1])

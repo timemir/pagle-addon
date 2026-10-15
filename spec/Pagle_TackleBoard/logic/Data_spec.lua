@@ -18,7 +18,7 @@ describe("the Tackle Board's data", function()
 		assert.are.same({ [0] = 1415, [1] = 1414 }, ns.CONTINENT_MAPS)
 	end)
 
-	describe("ns.MigrateDB", function()
+	describe("ns.MigrateDB (tackle-board.md › Data)", function()
 		it("stamps a new DB with schema 1", function()
 			local global = {}
 

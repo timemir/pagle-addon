@@ -54,14 +54,17 @@ local function count(map)
 end
 
 describe("the Tackle Board's spec support", function()
-	it("serves the fixture catalogue to Core's accessors before the board loads, and the board registers", function()
-		local loaded, fake = board.load()
+	it(
+		"serves the fixture catalogue to Core's accessors before the board loads, and the board registers (DATA-R76, LOG-R55)",
+		function()
+			local loaded, fake = board.load()
 
-		assert.are.equal("7ac7b0a47ac7b0a4", fake.Pagle.CONTENT_FINGERPRINT)
-		assert.is_not_nil(loaded.ns.Module)
-	end)
+			assert.are.equal("7ac7b0a47ac7b0a4", fake.Pagle.CONTENT_FINGERPRINT)
+			assert.is_not_nil(loaded.ns.Module)
+		end
+	)
 
-	it("serves a spec's own catalogue instead when given one", function()
+	it("serves a spec's own catalogue instead when given one (DATA-R76)", function()
 		local catalogue = board.catalogue()
 		catalogue.fingerprint = "0000000000000001"
 
@@ -70,27 +73,30 @@ describe("the Tackle Board's spec support", function()
 		assert.are.equal("0000000000000001", fake.Pagle.CONTENT_FINGERPRINT)
 	end)
 
-	it("hands out a new fixture each time, so a spec's change stays its own", function()
+	it("hands out a new fixture each time, so a spec's change stays its own (DATA-R76)", function()
 		board.catalogue().areas[DUROTAR].skillBase = 300
 
 		assert.are.equal(25, board.catalogue().areas[DUROTAR].skillBase)
 	end)
 
-	it("puts the reset API and the random source at ns.api and ns.random before OnInitialize", function()
-		local api, random = board.resetAPI(), board.random(3)
-		local seen
-		local loaded = board.load(nil, {
-			api = api,
-			random = random,
-			prepare = function(at)
-				seen = { at.ns.api, at.ns.random, at.ns.Module }
-			end,
-		})
+	it(
+		"puts the reset API and the random source at ns.api and ns.random before OnInitialize (TKB-R10, TKB-R30)",
+		function()
+			local api, random = board.resetAPI(), board.random(3)
+			local seen
+			local loaded = board.load(nil, {
+				api = api,
+				random = random,
+				prepare = function(at)
+					seen = { at.ns.api, at.ns.random, at.ns.Module }
+				end,
+			})
 
-		assert.are.same({ api, random }, { seen[1], seen[2] })
-		assert.is_nil(seen[3]) -- OnInitialize hadn't run yet
-		assert.are.same({ api, random }, { loaded.ns.api, loaded.ns.random })
-	end)
+			assert.are.same({ api, random }, { seen[1], seen[2] })
+			assert.is_nil(seen[3]) -- OnInitialize hadn't run yet
+			assert.are.same({ api, random }, { loaded.ns.api, loaded.ns.random })
+		end
+	)
 
 	it("leaves the shipped lore out of ns.L unless asked for it, so names read as IDs (TKB-R130)", function()
 		-- M7 graph, open question 7: a name with no lore reads as its ID; the batch's text is the dev's to change (#244).
@@ -157,7 +163,7 @@ describe("the Tackle Board's spec support", function()
 		end)
 	end)
 
-	describe("the random source", function()
+	describe("the random source (TKB-R30)", function()
 		it("draws like math.random, in range", function()
 			local random = board.random(42)
 			for _ = 1, 200 do

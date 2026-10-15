@@ -4,7 +4,7 @@
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local board = dofile("spec/Pagle_TackleBoard/support.lua")
 
-describe("ns.GenerationContext", function()
+describe("ns.GenerationContext (TKB-R30–R33)", function()
 	local loaded, fake, ns
 
 	before_each(function()

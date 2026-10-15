@@ -191,10 +191,10 @@ describe("Pagle_TackleBoard with Core", function()
 
 	it(
 		"toggles PagleTackleBoard from /pagle board, /pagle board with any text and the compartment, and the status "
-			.. "button opens it",
+			.. "button opens it (TKB-R1, CORE-R44, CORE-R50, CORE-R62, SET-R12)",
 		function()
-			-- TKB-R1, CORE-R44, CORE-R50, CORE-R62, SET-R12: each entry point reaches the board; the status button, Start
-			-- my board or Open Tackle Board, only ever opens it.
+			-- Each entry point reaches the board; the status button, Start my board or Open Tackle Board, only ever opens
+			-- it.
 			local loaded = loadAddon("Pagle_TackleBoard", FOREVER_GLOBALS)
 			loaded.client.fire("PLAYER_LOGIN")
 			local function shown()

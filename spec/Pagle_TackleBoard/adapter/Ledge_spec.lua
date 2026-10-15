@@ -357,7 +357,7 @@ describe("the shop link (TKB-R106, SHOP-R41, TKB-R193)", function()
 	end)
 end)
 
-describe("the spike's and the ledge's words (#248)", function()
+describe("the spike's and the ledge's words (CORE-R9)", function()
 	it("are plain ASCII: no glyph the client's fonts may lack", function()
 		local loaded, _, spike, ledge = opened(WENT_OUT)
 		ledge.fire:Click()

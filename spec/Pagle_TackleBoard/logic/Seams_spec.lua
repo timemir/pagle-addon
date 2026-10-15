@@ -1,7 +1,6 @@
--- The seams later Tackle Board tickets meet at (M7 graph, conventions): the board's entry points, the projection's
--- state and flags, taking down, the Coins hook and the redraw bus, as they stand before those tickets
--- fill them in. Start, the live step and the login window are in adapter/LiveStep_spec, the outlets in
--- adapter/Moments_spec.
+-- The seams the Tackle Board's files meet at (logic/Seams.lua): the board's entry points, the projection's state and
+-- flags, taking down, the Coins hook and the redraw bus, on a board that hasn't started. Start, the live step and
+-- the login window are in adapter/LiveStep_spec, the outlets in adapter/Moments_spec.
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local board = dofile("spec/Pagle_TackleBoard/support.lua")
@@ -9,9 +8,9 @@ local board = dofile("spec/Pagle_TackleBoard/support.lua")
 local GOAL = "Player-4618-0A1B2C3D-1791731747-0"
 
 describe("the Tackle Board's seams", function()
-	describe("the board's entry points and actions (until the completions' ticket)", function()
+	describe("the board's entry points and actions (TKB-R1, TKB-R2, TKB-R55)", function()
 		it(
-			"toggle and open the board, take down no goal the board doesn't know, and report nothing yet, with no error",
+			"toggle and open the board, take down no goal the board doesn't know, and report no Coins before Start, with no error",
 			function()
 				local loaded, fake = board.load()
 				local ns = loaded.ns
@@ -27,7 +26,7 @@ describe("the Tackle Board's seams", function()
 				end)
 				fake.nextFrame()
 				for _ in fake.Pagle.IterateCatches(0) do
-					error("a stand-in appended a record (TKB-R80)")
+					error("an entry point appended a record (TKB-R80)")
 				end
 				assert.are.same({}, fake.coinReports)
 			end
@@ -82,7 +81,7 @@ describe("the Tackle Board's seams", function()
 		end)
 	end)
 
-	describe("the redraw bus", function()
+	describe("the redraw bus (TKB-R101, TKB-R123)", function()
 		it("calls every view that subscribed, in the order they did, with the reason and detail", function()
 			local ns = board.load().ns
 			local calls = {}
@@ -123,7 +122,7 @@ describe("the Tackle Board's seams", function()
 		end)
 	end)
 
-	describe("the reset API and random source the adapter hands logic/", function()
+	describe("the reset API and random source the adapter hands logic/ (TKB-R10, TKB-R11, TKB-R30)", function()
 		it("are the client's own calls and math.random, until a spec injects others", function()
 			local loaded = loadAddon("Pagle_TackleBoard", FOREVER_GLOBALS)
 			local env, api = loaded.env, loaded.ns.api
