@@ -707,17 +707,9 @@ local function makeTestLog(options, now)
 	local toNext = found.toNext and (", %d XP to level %d"):format(found.toNext, found.level + 1) or ""
 	local reach = found.needed and (", %s reach level %d"):format(count(found.needed, "Catch", "Catches"), preset.level)
 		or ""
-	print(
-		("fold: Angler Level %d, %d XP%s; one more Catch gives %d XP%s; %d lifetime Catches, %d Simulated Size records"):format(
-			found.level,
-			found.xp,
-			toNext,
-			found.nextXP,
-			reach,
-			found.catches,
-			found.records
-		)
-	)
+	local fold = "fold: Angler Level %d, %d XP%s; one more Catch gives %d XP%s; %d lifetime Catches, %d Simulated Size"
+		.. " records"
+	print(fold:format(found.level, found.xp, toNext, found.nextXP, reach, found.catches, found.records))
 	local function items(kind, noun, plural)
 		local n = 0
 		for _ in pairs(found.classes[kind] or {}) do

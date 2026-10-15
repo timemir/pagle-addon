@@ -3,8 +3,9 @@
 -- leading blank line): Ada and Bram, the dev's real PagleLog with Bram's Casts last, a PagleDB, Pagle.lua.bak,
 -- Pagle_Ledger.lua and Pagle_QoL.lua (and no Pagle_Ledger.lua.bak or Pagle_QoL.lua.bak). The world is
 -- spec/scripts/fixtures/TestLogCatalogue.lua (--catalogue), which lists a Legend, Noise, a gated Species and a
--- container beside ordinary Species, junk and trophies. What a test log holds is read back here with Core's own codec and folded with the Ledger's own logic/,
--- the same oracle the game uses (catch-log.md › Entry formats, LED-R3).
+-- container beside ordinary Species, junk and trophies. What a test log holds is read back here with Core's own
+-- codec and folded with the Ledger's own logic/, the same oracle the game uses (catch-log.md › Entry formats, LED-R3).
+-- Each test cites #172's doc, in-game-verification.md › Test logs, by its bullet, or the rule it checks.
 
 local FIXTURE = "spec/scripts/fixtures/WTF/Account/M4-Test#1"
 local CATALOGUE = "spec/scripts/fixtures/TestLogCatalogue.lua"
@@ -117,13 +118,13 @@ local function make(preset, now, planted)
 	return { account = account, out = out, stage = stage, stages = stages, lines = lines, err = err, code = code }
 end
 
-describe("scripts/make-test-log.lua", function()
-	describe("--preset level10 on the fixture account", function()
+describe("scripts/make-test-log.lua (#172, in-game-verification.md › Test logs)", function()
+	describe("--preset level10 on the fixture account (the --preset bullet)", function()
 		local made = make("level10")
 		local text = made.stage and readFileOrNil(made.stage .. "/Pagle.lua")
 		local log = text and globalsOf(text).PagleLog
 
-		it("exits 0 and makes one dated test log for the account", function()
+		it("exits 0 and makes one stage folder, <UTC time>-<preset>, under the account's name (--preset)", function()
 			assert.are.equal("", made.err)
 			assert.are.equal(0, made.code)
 			assert.are.same({ "20261014-174640-level10" }, made.stages)
@@ -203,7 +204,7 @@ describe("scripts/make-test-log.lua", function()
 		)
 
 		it(
-			"copies the last build entry and each character's last Skill Reading, so Core appends neither at login (LOG-R31, LOG-R36)",
+			"copies the last build entry and each character's last Skill Reading: Core appends neither (LOG-R31, LOG-R36)",
 			function()
 				local records = decoded(log)
 				local build, skills = {}, {}
@@ -261,14 +262,17 @@ describe("scripts/make-test-log.lua", function()
 			end
 		)
 
-		it("keeps every other line of Pagle.lua, PagleDB's included, byte for byte, in the client's layout", function()
-			local fixture = readFileOrNil(FIXTURE .. "/SavedVariables/Pagle.lua")
-			local fixtureDB = fixture:sub((fixture:find("\r\nPagleDB = {\r\n", 1, true)))
-			assert.are.equal("\r\nPagleLog = {\r\n", text:sub(1, #"\r\nPagleLog = {\r\n"))
-			assert.are.equal(fixtureDB, text:sub(-#fixtureDB))
-			assert.is_nil(text:gsub("\r\n", ""):find("[\r\n]"))
-			assert.are.same(globalsOf(fixture).PagleDB, globalsOf(text).PagleDB)
-		end)
+		it(
+			"keeps every other line of Pagle.lua, PagleDB's included, byte for byte, in the client's layout (the intro)",
+			function()
+				local fixture = readFileOrNil(FIXTURE .. "/SavedVariables/Pagle.lua")
+				local fixtureDB = fixture:sub((fixture:find("\r\nPagleDB = {\r\n", 1, true)))
+				assert.are.equal("\r\nPagleLog = {\r\n", text:sub(1, #"\r\nPagleLog = {\r\n"))
+				assert.are.equal(fixtureDB, text:sub(-#fixtureDB))
+				assert.is_nil(text:gsub("\r\n", ""):find("[\r\n]"))
+				assert.are.same(globalsOf(fixture).PagleDB, globalsOf(text).PagleDB)
+			end
+		)
 
 		it(
 			"backs up every Pagle SavedVariables file and .bak there is byte for byte, leaving out the missing ones",
@@ -284,7 +288,7 @@ describe("scripts/make-test-log.lua", function()
 			end
 		)
 
-		it("changes nothing in the account folder", function()
+		it("changes nothing in the account folder: --preset only reads it", function()
 			assert.are.same(folders(FIXTURE .. "/SavedVariables"), folders(made.account .. "/SavedVariables"))
 			for _, name in ipairs(folders(FIXTURE .. "/SavedVariables")) do
 				local path = "/SavedVariables/" .. name
@@ -306,7 +310,7 @@ describe("scripts/make-test-log.lua", function()
 		)
 	end)
 
-	describe("--preset level60 on the fixture account #slow", function()
+	describe("--preset level60 on the fixture account (the presets table) #slow", function()
 		local made = make("level60")
 		local log = globalsOf(readFileOrNil(made.stage .. "/Pagle.lua")).PagleLog
 		local records, undecodable = decoded(log)
@@ -343,7 +347,7 @@ describe("scripts/make-test-log.lua", function()
 		end)
 	end)
 
-	describe("--preset catches1000 on the fixture account", function()
+	describe("--preset catches1000 on the fixture account (the presets table)", function()
 		local made = make("catches1000")
 		local log = globalsOf(readFileOrNil(made.stage .. "/Pagle.lua")).PagleLog
 
@@ -377,7 +381,7 @@ describe("scripts/make-test-log.lua", function()
 		return err, code
 	end
 
-	describe("--install, a game played, then --restore", function()
+	describe("--install, a game played, then --restore (the --install and --restore bullets)", function()
 		local made = make("level10")
 		local test = readFileOrNil(made.stage .. "/Pagle.lua")
 		local installErr, installCode = modeRun(made, "--install", NOW + 10)
@@ -395,17 +399,23 @@ describe("scripts/make-test-log.lua", function()
 		)
 		local restoreErr, restoreCode = modeRun(made, "--restore", NOW + 20)
 
-		it("--install puts the test log in as the account's Pagle.lua and keeps the one it replaced", function()
-			assert.are.equal("", installErr)
-			assert.are.equal(0, installCode)
-			local fixture = fixtureFiles()
-			assert.are.equal(test, installed["Pagle.lua"])
-			assert.are.equal(fixture["Pagle.lua.bak"], installed["Pagle.lua.bak"])
-			assert.are.equal(fixture["Pagle_Ledger.lua"], installed["Pagle_Ledger.lua"])
-			assert.is_nil(installed["Pagle_Ledger.lua.bak"])
-			assert.are.same({ "Pagle.lua", "original", "replaced-20261014-174650", "stage.txt" }, afterInstall)
-			assert.are.equal(fixture["Pagle.lua"], readFileOrNil(made.stage .. "/replaced-20261014-174650/Pagle.lua"))
-		end)
+		it(
+			"--install puts the test log in as the account's Pagle.lua and keeps the one it replaced in replaced-<time>/",
+			function()
+				assert.are.equal("", installErr)
+				assert.are.equal(0, installCode)
+				local fixture = fixtureFiles()
+				assert.are.equal(test, installed["Pagle.lua"])
+				assert.are.equal(fixture["Pagle.lua.bak"], installed["Pagle.lua.bak"])
+				assert.are.equal(fixture["Pagle_Ledger.lua"], installed["Pagle_Ledger.lua"])
+				assert.is_nil(installed["Pagle_Ledger.lua.bak"])
+				assert.are.same({ "Pagle.lua", "original", "replaced-20261014-174650", "stage.txt" }, afterInstall)
+				assert.are.equal(
+					fixture["Pagle.lua"],
+					readFileOrNil(made.stage .. "/replaced-20261014-174650/Pagle.lua")
+				)
+			end
+		)
 
 		it("--restore puts the original files back byte for byte and removes the one that wasn't there", function()
 			assert.are.equal("", restoreErr)
@@ -421,7 +431,7 @@ describe("scripts/make-test-log.lua", function()
 		end)
 	end)
 
-	describe("a second preset made while a test log is installed", function()
+	describe("a second preset made while a test log is installed (--preset: the backup from its stage)", function()
 		local made = make("level10")
 		local first = made.stage
 		modeRun(made, "--install", NOW + 1)
@@ -452,72 +462,75 @@ describe("scripts/make-test-log.lua", function()
 		end)
 	end)
 
-	describe("every Pagle addon's SavedVariables file, through --preset, a game played and --restore", function()
-		-- A SavedVariables file holding one table, as the client writes it.
-		local function svFile(name, key)
-			return "\r\n" .. name .. ' = {\r\n["' .. key .. '"] = true,\r\n}\r\n'
+	describe(
+		"every Pagle addon's SavedVariables file, through --preset, a game played and --restore (--preset, --restore)",
+		function()
+			-- A SavedVariables file holding one table, as the client writes it.
+			local function svFile(name, key)
+				return "\r\n" .. name .. ' = {\r\n["' .. key .. '"] = true,\r\n}\r\n'
+			end
+			-- An account that has Hunts, Stats and the Tackle Board too, and another addon's file beside them.
+			local made = make("level10", nil, {
+				["Pagle_Hunts.lua"] = svFile("PagleHuntsDB", "real"),
+				["Pagle_Hunts.lua.bak"] = svFile("PagleHuntsDB", "older"),
+				["Pagle_Stats.lua"] = svFile("PagleStatsDB", "real"),
+				["Pagle_TackleBoard.lua.bak"] = svFile("PagleTackleBoardDB", "older"),
+				["Angleur.lua"] = svFile("AngleurDB", "real"),
+			})
+			local before = savedFiles(made.account)
+			local backedUp = folders(made.stage .. "/original")
+			modeRun(made, "--install", NOW + 10)
+			-- The logout after the play rewrites every Pagle file but the test log, adding the ones that weren't there, and
+			-- Angleur's file too.
+			local played = {}
+			for _, name in ipairs(SV_FILES) do
+				if name ~= "Pagle.lua" then
+					played[name] = svFile("Played", name)
+					writeFile(made.account .. "/SavedVariables/" .. name, played[name])
+				end
+			end
+			writeFile(made.account .. "/SavedVariables/Angleur.lua", svFile("AngleurDB", "played"))
+			local restoreErr, restoreCode = modeRun(made, "--restore", NOW + 20)
+
+			it("--preset backs up each one there is, and no other addon's file", function()
+				assert.are.same({
+					"Pagle.lua",
+					"Pagle.lua.bak",
+					"Pagle_Hunts.lua",
+					"Pagle_Hunts.lua.bak",
+					"Pagle_Ledger.lua",
+					"Pagle_QoL.lua",
+					"Pagle_Stats.lua",
+					"Pagle_TackleBoard.lua.bak",
+				}, backedUp)
+				for _, name in ipairs(backedUp) do
+					assert.are.equal(before[name], readFileOrNil(made.stage .. "/original/" .. name))
+				end
+			end)
+
+			it("--restore puts each one back byte for byte and removes the ones the play added", function()
+				assert.are.equal("", restoreErr)
+				assert.are.equal(0, restoreCode)
+				assert.are.same(before, savedFiles(made.account))
+				assert.is_nil(readFileOrNil(made.account .. "/SavedVariables/Pagle_TackleBoard.lua"))
+				assert.is_nil(readFileOrNil(made.account .. "/SavedVariables/Pagle_QoL.lua.bak"))
+			end)
+
+			it("--restore keeps every file it replaced, and leaves another addon's file as the play left it", function()
+				local kept = made.stage .. "/replaced-20261014-174700/"
+				for name, text in pairs(played) do
+					assert.are.equal(text, readFileOrNil(kept .. name))
+				end
+				assert.is_nil(readFileOrNil(kept .. "Angleur.lua"))
+				assert.are.equal(
+					svFile("AngleurDB", "played"),
+					readFileOrNil(made.account .. "/SavedVariables/Angleur.lua")
+				)
+			end)
 		end
-		-- An account that has Hunts, Stats and the Tackle Board too, and another addon's file beside them.
-		local made = make("level10", nil, {
-			["Pagle_Hunts.lua"] = svFile("PagleHuntsDB", "real"),
-			["Pagle_Hunts.lua.bak"] = svFile("PagleHuntsDB", "older"),
-			["Pagle_Stats.lua"] = svFile("PagleStatsDB", "real"),
-			["Pagle_TackleBoard.lua.bak"] = svFile("PagleTackleBoardDB", "older"),
-			["Angleur.lua"] = svFile("AngleurDB", "real"),
-		})
-		local before = savedFiles(made.account)
-		local backedUp = folders(made.stage .. "/original")
-		modeRun(made, "--install", NOW + 10)
-		-- The logout after the play rewrites every Pagle file but the test log, adding the ones that weren't there, and
-		-- Angleur's file too.
-		local played = {}
-		for _, name in ipairs(SV_FILES) do
-			if name ~= "Pagle.lua" then
-				played[name] = svFile("Played", name)
-				writeFile(made.account .. "/SavedVariables/" .. name, played[name])
-			end
-		end
-		writeFile(made.account .. "/SavedVariables/Angleur.lua", svFile("AngleurDB", "played"))
-		local restoreErr, restoreCode = modeRun(made, "--restore", NOW + 20)
+	)
 
-		it("--preset backs up each one there is, and no other addon's file", function()
-			assert.are.same({
-				"Pagle.lua",
-				"Pagle.lua.bak",
-				"Pagle_Hunts.lua",
-				"Pagle_Hunts.lua.bak",
-				"Pagle_Ledger.lua",
-				"Pagle_QoL.lua",
-				"Pagle_Stats.lua",
-				"Pagle_TackleBoard.lua.bak",
-			}, backedUp)
-			for _, name in ipairs(backedUp) do
-				assert.are.equal(before[name], readFileOrNil(made.stage .. "/original/" .. name))
-			end
-		end)
-
-		it("--restore puts each one back byte for byte and removes the ones the play added", function()
-			assert.are.equal("", restoreErr)
-			assert.are.equal(0, restoreCode)
-			assert.are.same(before, savedFiles(made.account))
-			assert.is_nil(readFileOrNil(made.account .. "/SavedVariables/Pagle_TackleBoard.lua"))
-			assert.is_nil(readFileOrNil(made.account .. "/SavedVariables/Pagle_QoL.lua.bak"))
-		end)
-
-		it("--restore keeps every file it replaced, and leaves another addon's file as the play left it", function()
-			local kept = made.stage .. "/replaced-20261014-174700/"
-			for name, text in pairs(played) do
-				assert.are.equal(text, readFileOrNil(kept .. name))
-			end
-			assert.is_nil(readFileOrNil(kept .. "Angleur.lua"))
-			assert.are.equal(
-				svFile("AngleurDB", "played"),
-				readFileOrNil(made.account .. "/SavedVariables/Angleur.lua")
-			)
-		end)
-	end)
-
-	describe("refusing", function()
+	describe("refusing (every refusal exits 1 and changes nothing; usage errors exit 2)", function()
 		it("refuses without a Pagle.lua, writing nothing", function()
 			local account, out = newAccount()
 			os.remove(account .. "/SavedVariables/Pagle.lua")
@@ -527,7 +540,7 @@ describe("scripts/make-test-log.lua", function()
 			assert.are.same({}, folders(out))
 		end)
 
-		it("refuses to write when the Ledger's fold of the written log misses the preset", function()
+		it("refuses to write when the Ledger's fold of the written log misses the preset (LED-R3)", function()
 			-- A Ledger whose fold credits 1,000 XP more at a build entry at real times (the script plans with times
 			-- of its own, then folds the log it wrote at real times), so the written log folds past level 9.
 			local function loadLying(path)
@@ -561,18 +574,21 @@ describe("scripts/make-test-log.lua", function()
 			assert.are.same({}, folders(out))
 		end)
 
-		it("--install refuses when the account's Pagle.lua changed since the backup, changing nothing", function()
-			local made = make("level10")
-			local real = readFileOrNil(made.account .. "/SavedVariables/Pagle.lua") .. "\r\n"
-			writeFile(made.account .. "/SavedVariables/Pagle.lua", real)
-			local err, code = modeRun(made, "--install", NOW + 1)
-			assert.are.equal(1, code)
-			assert.matches("isn't the one backed up", err, 1, true)
-			assert.are.equal(real, readFileOrNil(made.account .. "/SavedVariables/Pagle.lua"))
-			assert.are.same({ "Pagle.lua", "original", "stage.txt" }, folders(made.stage))
-		end)
+		it(
+			"--install refuses when the account's Pagle.lua changed since the backup, changing nothing (--install)",
+			function()
+				local made = make("level10")
+				local real = readFileOrNil(made.account .. "/SavedVariables/Pagle.lua") .. "\r\n"
+				writeFile(made.account .. "/SavedVariables/Pagle.lua", real)
+				local err, code = modeRun(made, "--install", NOW + 1)
+				assert.are.equal(1, code)
+				assert.matches("isn't the one backed up", err, 1, true)
+				assert.are.equal(real, readFileOrNil(made.account .. "/SavedVariables/Pagle.lua"))
+				assert.are.same({ "Pagle.lua", "original", "stage.txt" }, folders(made.stage))
+			end
+		)
 
-		it("--restore refuses while the real log is in place, changing nothing", function()
+		it("--restore refuses while the real log is in place, changing nothing (--restore)", function()
 			local made = make("level10")
 			local err, code = modeRun(made, "--restore", NOW + 1)
 			assert.are.equal(1, code)
