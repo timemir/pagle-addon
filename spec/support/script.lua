@@ -21,12 +21,12 @@ local script = {}
 script.wtf = assert(loadfile("scripts/lib/wtf.lua"))(".")
 
 --- Runs the script at `path` as `lua <path> <args>` would, and returns its output lines, what it wrote to stderr,
---- and its exit code. With `options.now`, os.time() answers that server time; `options.globals` are set in its
---- environment over the standard ones (a spec's own loadfile, say).
+--- and its exit code (nil when it never called os.exit). With `options.now`, os.time() answers that server time;
+--- `options.globals` are set in its environment over the standard ones (a spec's own loadfile, say).
 ---@param path string
 ---@param args string[]
 ---@param options { now: integer?, globals: table<string, any>? }?
----@return string[] out, string err, integer code
+---@return string[] out, string err, integer? code
 function script.run(path, args, options)
 	options = options or {}
 	local out, err, code = {}, {}, nil
