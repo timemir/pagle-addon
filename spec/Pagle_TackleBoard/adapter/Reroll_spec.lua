@@ -2,7 +2,7 @@
 -- `reroll` record, on FakePagle over the fixture catalogue with a seeded random source. A started board's history is
 -- appended with fake.catchLog:Append, then login and the first PLAYER_ENTERING_WORLD build the projection; what the
 -- reroll appends is read back from the log, and its new goal from the projection. Progress is set on the projection's
--- goals by hand where a spec needs it (counting Catches is the completions' fold, #232).
+-- goals by hand where a spec needs it (counting Catches is logic/Completions.lua's fold).
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local board = dofile("spec/Pagle_TackleBoard/support.lua")
@@ -219,7 +219,7 @@ describe("taking a goal down", function()
 		it('appends nothing on "Take it down" when the goal completed while the popup was open (TKB-R55)', function()
 			local ns, loaded = at12()
 			ns.TakeDown(HAUL)
-			-- completing it as the fold does (#232): it is done, no longer open
+			-- completing it as the fold does (logic/Completions.lua): it is done, no longer open
 			local state = ns.State()
 			state.goals[HAUL].doneDay = state.day
 
@@ -295,7 +295,7 @@ describe("taking a goal down", function()
 
 			assert.is_nil(loaded.client.popup)
 			assert.are.equal(0, #rerolls(ns))
-			-- TKB-R108: the pins (#239) disable the shown button while ns.IsUpdating(); CanTakeDown doesn't hide it
+			-- TKB-R108: the pins (adapter/Pins.lua) disable the shown button while ns.IsUpdating(); CanTakeDown doesn't hide it
 			assert.are.same({ true, true }, { ns.CanTakeDown(HAUL), ns.CanTakeDown(EXPEDITION) })
 		end)
 

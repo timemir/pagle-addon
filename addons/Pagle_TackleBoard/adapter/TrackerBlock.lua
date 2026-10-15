@@ -7,13 +7,13 @@ local ns = select(2, ...)
 
 -- The tracker block maker (TKB-R122, TKB-R124, CORE-R73; tackle-board.md › UI, the tracker): a native
 -- objective-tracker-style block, 250 px wide, drawn from a list of line descriptions in a frame look. The Curio Shop's
--- previews draw a sample with it (TKB-R125, adapter/Goods.lua); the live tracker (#241) fills it with live lines,
--- gives its rows clicks and docks it. Look reference: prototypes/tackle-board/'s tracker mode K2 (`.tb`), whose CSS
--- gives the colours below.
+-- previews draw a sample with it (TKB-R125, adapter/Goods.lua); the live tracker (adapter/Tracker.lua) fills it with
+-- live lines, gives its rows clicks and docks it. Look reference: prototypes/tackle-board/'s tracker mode K2 (`.tb`),
+-- whose CSS gives the colours below.
 
 local tint = ns.BoardTint
 
---- The tracker's width in pixels, as the Stats tracker's, so the dock's blocks line up (CORE-R70).
+--- The tracker's width in pixels, so the dock's blocks line up (CORE-R70).
 ns.TRACKER_WIDTH = 250
 
 --- The words' colours by role, a frame's `ink`: the header's title, dim text (the header's right text), a Notice's

@@ -96,7 +96,7 @@ local function cast(zone, catches, options)
 end
 
 -- A runner over the loaded board's `ns` and catalogue calls `Pagle`: run(goal, casts, caught) runs `casts` through
--- the goal as the completions' ticket does (TKB-R41, TKB-R45, TKB-R46): EnterCast once per Cast, then CountCatch for
+-- the goal as logic/Completions.lua does (TKB-R41, TKB-R45, TKB-R46): EnterCast once per Cast, then CountCatch for
 -- each Catch in item order, adding each Catch's item to the ever-caught set after counting it. `caught` is the
 -- ever-caught set before the first Cast. It returns the goal's progress and, per Catch, whether it counted.
 ---@param ns table

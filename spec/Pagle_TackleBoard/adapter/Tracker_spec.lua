@@ -50,7 +50,7 @@ end
 
 -- Pagle_TackleBoard on a fake whose log holds `records` (none: an unstarted board), with fixture trackers at 10 and
 -- 20 docked, its client knowing the fixture's names, logged in and (unless `options.updating`) its projection built.
--- `options.saved` is an earlier session's PagleTackleBoardDB.
+-- `options.saved` is an earlier login's PagleTackleBoardDB.
 ---@param records table[]?
 ---@param options { updating: boolean?, saved: table?, fake: table? }?
 local function ready(records, options)

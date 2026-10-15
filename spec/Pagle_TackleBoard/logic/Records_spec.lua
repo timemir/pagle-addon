@@ -1,5 +1,5 @@
 -- The Tackle Board's Module record payloads (TKB-R80, tackle-board.md › Data › Module records): the four kinds'
--- payloads to and from the goal definition (M7 graph, shapes), and what is skipped.
+-- payloads to and from the goal definition (TackleGoalDef, logic/Seams.lua), and what is skipped.
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local board = dofile("spec/Pagle_TackleBoard/support.lua")

@@ -48,7 +48,7 @@ local function input(tracker)
 end
 
 -- Lets a Shift-drag that starts on `row` move the dock: a mouse-enabled row takes the drag, so it hands it to the
--- docked block, whose drag scripts Core hooked (CORE-R71; #177's hand-off).
+-- docked block, whose drag scripts Core hooked (CORE-R71).
 ---@param row TackleTrackerRow
 ---@param block Frame
 local function passDrags(row, block)

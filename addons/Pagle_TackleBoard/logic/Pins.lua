@@ -103,9 +103,6 @@ end
 
 -- The board's layout and its empty pins (TKB-R101, TKB-R105).
 
---- How many empty Notice pins promise a fresh Notice at the next reset (TKB-R105): a reset issues 3 (TKB-R20).
-local FRESH_NOTICE_PINS = 3
-
 --- One pin: the goal on it, or the empty pin's text.
 ---@class TacklePin
 ---@field goal TackleGoal?
@@ -169,7 +166,8 @@ function ns.PinLayout(state, api)
 	end
 	return {
 		expeditions = pinRow(state, state.pins.expeditions, expedition, 1, L.EMPTY_EXPEDITION_LATER),
-		notices = pinRow(state, state.pins.notices, notice, FRESH_NOTICE_PINS, L.EMPTY_NOTICE_LATER),
+		-- As many empty Notice pins promise a fresh Notice at the next reset as a reset issues (TKB-R105, TKB-R20).
+		notices = pinRow(state, state.pins.notices, notice, ns.NOTICES_PER_DAY, L.EMPTY_NOTICE_LATER),
 		overflow = overflow,
 	}
 end

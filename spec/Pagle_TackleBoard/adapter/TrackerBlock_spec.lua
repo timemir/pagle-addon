@@ -1,6 +1,6 @@
 -- The tracker block maker (TKB-R122, TKB-R124, CORE-R73; tackle-board.md › UI, the tracker): a native
 -- objective-tracker-style block drawn from line descriptions, in a frame look. The shop's previews draw it now
--- (TKB-R125); the live tracker (#241) fills it with live lines.
+-- (TKB-R125); the live tracker (adapter/Tracker.lua) fills it with live lines.
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local board = dofile("spec/Pagle_TackleBoard/support.lua")

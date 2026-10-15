@@ -1,4 +1,4 @@
--- The live generation context (M7 graph, shapes; TKB-R30–R33): ns.GenerationContext builds what ns.GenerateGoal
+-- The live generation context (TKB-R30–R33): ns.GenerationContext builds what ns.GenerateGoal
 -- reads from the projection's state, Core's catalogue calls and the Angler's best base skill.
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile

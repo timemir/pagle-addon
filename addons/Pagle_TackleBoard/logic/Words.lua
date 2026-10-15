@@ -36,7 +36,7 @@ local function pick(forms, n)
 	return n == 1 and forms.one or forms.other
 end
 
---- A count in words (M7 graph, conventions): `ns.L[key]`'s singular form for 1 and its plural otherwise, with `{n}`
+--- A count in words (CORE-R8): `ns.L[key]`'s singular form for 1 and its plural otherwise, with `{n}`
 --- filled by `n` and any other field by `fields`. `ns.Plural(1, "CATCHES")` is "1 Catch", `ns.Plural(30, "CATCHES")`
 --- "30 Catches".
 ---@param n integer
@@ -127,8 +127,8 @@ end
 
 -- The kind's label and icon (TKB-R102).
 
---- A goal kind's label, in small caps on a slip (TKB-R102): its ID capitalised, through ns.L (M7 graph, open
---- question 8).
+--- A goal kind's label, in small caps on a slip (TKB-R102): its ID capitalised, through ns.L
+--- (CORE-R8).
 ---@param kind TackleGoalKind
 ---@return string
 function ns.KindLabel(kind)
@@ -142,7 +142,7 @@ local function icon(name)
 	return "Interface\\Icons\\" .. name
 end
 
---- One in-client icon per goal kind, for the moments and the slips (M7 graph, open question 4; custom art comes after
+--- One in-client icon per goal kind, for the moments and the slips (TKB-R86, TKB-R102; custom art comes after
 --- 1.0). Any can be swapped freely: nothing but the views reads them.
 ---@type { [TackleGoalKind]: string }
 ns.KIND_ICONS = {
@@ -279,8 +279,8 @@ end
 
 -- Realm dates and times (TKB-R102, TKB-R105).
 
-local MINUTES_PER_DAY = 1440
-local SECONDS_PER_DAY = 86400
+local SECONDS_PER_DAY = ns.DAY_SECONDS
+local MINUTES_PER_DAY = SECONDS_PER_DAY / 60
 -- LOG-R49's offset: rounded to 15 minutes, in the range after −10 h up to and including +14 h.
 local OFFSET_STEP, MIN_OFFSET, MAX_OFFSET = 15, -600, 840
 
@@ -357,8 +357,7 @@ function ns.WeekdayName(serverTime)
 	return ns.L.WEEKDAYS[ns.RealmDate(serverTime).weekday]
 end
 
---- When a goal was posted, in realm time (TKB-R102): "Posted {weekday} {day} {month}, {hh:mm}", 24-hour (M7 graph,
---- open question 8).
+--- When a goal was posted, in realm time (TKB-R102): "Posted {weekday} {day} {month}, {hh:mm}", 24-hour.
 ---@param serverTime integer its record's `time`
 ---@return string
 function ns.PostedTime(serverTime)

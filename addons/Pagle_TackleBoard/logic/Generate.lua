@@ -15,7 +15,7 @@ local ns = select(2, ...)
 
 local RECENT_WEIGHT = 8 -- a candidate zone with a Cast in the recent window (TKB-R30)
 local OTHER_WEIGHT = 1 -- every other candidate zone (TKB-R30)
-local RECENT_WINDOW = 14 * 86400 -- seconds before now (TKB-R30)
+local RECENT_WINDOW = 14 * ns.DAY_SECONDS -- seconds before now (TKB-R30)
 
 -- The kinds in the table's order (TKB-R32), which is the order weighted draws walk them in.
 local KINDS = { "haul", "variety", "wanderer", "quality", "size", "collector", "lure", "species" }
@@ -58,7 +58,7 @@ local SIZE_TARGETS = { n = 3, e = 4 } -- Hefty for Notices, Whopper for Expediti
 -- The Sub-collection item categories (TKB-R46).
 local SUB_COLLECTION = { junk = true, container = true, treasure = true, trophy = true }
 
---- What generation reads (M7 graph, shapes). `ns.GenerationContext` (adapter/Generate.lua) builds it live.
+--- What generation reads (TKB-R30–R36). `ns.GenerationContext` (adapter/Generate.lua) builds it live.
 ---@class TackleCatalogueCalls       -- the Core calls generation reads (catch-log.md › Contracts)
 ---@field GetZones fun(): integer[]
 ---@field GetArea fun(areaID: integer): table?

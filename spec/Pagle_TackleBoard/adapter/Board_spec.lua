@@ -368,7 +368,7 @@ describe("the started board's parts (TKB-R101, TKB-R103, TKB-R106)", function()
 
 		assert.has_error(function()
 			tackle:RegisterPart("drawer", function() end)
-		end)
+		end, "the Tackle Board has no part drawer")
 	end)
 end)
 

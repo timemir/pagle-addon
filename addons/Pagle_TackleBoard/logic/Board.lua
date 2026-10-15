@@ -9,12 +9,12 @@ local ns = select(2, ...)
 -- in (CORE-R7). Whether it shows the empty slip, the Start button and "Updating…", and which of its parts it draws;
 -- adapter/Board.lua draws what it decides on the frame.
 --
--- The parts, and the tickets that register their renderers (`ns.board:RegisterPart(part, renderer)`):
+-- The parts, and the files that register their renderers (`ns.board:RegisterPart(part, renderer)`):
 --   "pins"      the Expedition row (2 pins) and the two Notice rows (3 pins each), TKB-R101, TKB-R102, TKB-R105,
---               TKB-R109 (#239)
---   "overflow"  the strip under the Notice rows for goals with no empty pin, TKB-R101 (#239)
---   "spike"     the nail on the right with today's done goals, TKB-R103 (#240)
---   "ledge"     the Campfire, the Fly Box, the tally plate and the shop link, TKB-R106 (#240)
+--               TKB-R109 (adapter/Pins.lua)
+--   "overflow"  the strip under the Notice rows for goals with no empty pin, TKB-R101 (adapter/Pins.lua)
+--   "spike"     the nail on the right with today's done goals, TKB-R103 (adapter/Ledge.lua)
+--   "ledge"     the Campfire, the Fly Box, the tally plate and the shop link, TKB-R106 (adapter/Ledge.lua)
 -- A part with no renderer is bare. Before Start no part is drawn: the cork and the ledge are bare (TKB-R107).
 
 ---@alias TackleBoardPart "pins"|"overflow"|"spike"|"ledge"

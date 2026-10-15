@@ -12,6 +12,7 @@ local READS_ONLY_CORE = "ADR 0001: the Tackle Board reads Catches only through i
 local NO_CORE_DB = "ADR 0001: the Tackle Board never reads Core's SavedVariables"
 local NO_MODULE = "ADR 0001: the Tackle Board names no other Module"
 local NO_MODULE_DB = "ADR 0001: the Tackle Board never reads another Module's DB"
+local ONLY_PAGLE_API = "ADR 0001: the Tackle Board reaches Core only through Pagle.*, never its AceAddon"
 local LIVE_RECORDS = "TKB-R80: only adapter/LiveStep.lua and adapter/Reroll.lua append records"
 local LOGIC_SEAMS = "CORE-R7: logic/ reaches Core and the client only through ns.api and the seams"
 
@@ -31,6 +32,9 @@ for _, name in ipairs(newFakePagle().ns.MODULE_ROSTER) do
 		FORBIDDEN[#FORBIDDEN + 1] = { "%f[%w_]Pagle" .. name .. "DB%f[^%w_]", NO_MODULE_DB }
 	end
 end
+-- Any addon's AceAddon object, Core's among them: Core's own is reached only through its API (CORE-R6 lets the board
+-- make its own with NewAddon).
+FORBIDDEN[#FORBIDDEN + 1] = { "%f[%w_]GetAddon%s*%(", ONLY_PAGLE_API }
 -- A Module record, however it's reached: M:AppendRecord, M.AppendRecord(M, …), M["AppendRecord"] or a local copy.
 local APPEND = { "%f[%w_]AppendRecord%f[^%w_]", LIVE_RECORDS }
 
@@ -83,6 +87,7 @@ describe("the Tackle Board's boundary (ADR 0001, TKB-R80)", function()
 			{ "logic/Words.lua", "local lease = PagleQoLDB.global.lease", NO_MODULE_DB },
 			{ "adapter/TackleBoard.lua", 'C_AddOns.IsAddOnLoaded("Pagle_Stats")', NO_MODULE },
 			{ "adapter/TackleBoard.lua", 'LibStub("AceAddon-3.0"):GetAddon("Pagle_Ledger")', NO_MODULE },
+			{ "adapter/Board.lua", 'local core = LibStub("AceAddon-3.0"):GetAddon("Pagle")', ONLY_PAGLE_API },
 			{ "logic/Completions.lua", 'local hunts = _G["Pagle_Hunts"]', NO_MODULE },
 			{ "adapter/Board.lua", "Pagle_QoL_Toggle()", NO_MODULE },
 			{ "logic/Generate.lua", 'ns.Module:AppendRecord("issue", payload)', LIVE_RECORDS },

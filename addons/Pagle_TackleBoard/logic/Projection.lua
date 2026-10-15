@@ -16,7 +16,9 @@ local ns = select(2, ...)
 ns.TKB_RULES_VERSION = 1
 
 -- Tunables (TKB-R20). The caps are the pin counts (ns.NOTICE_PINS, ns.EXPEDITION_PINS).
-local NOTICES_PER_DAY = 3 -- Notices owed at each daily reset, up to the cap
+--- Notices owed at each daily reset, up to the cap (TKB-R20, tackle-board.md › Tunables).
+ns.NOTICES_PER_DAY = 3
+local NOTICES_PER_DAY = ns.NOTICES_PER_DAY
 local EXPEDITIONS_PER_WEEK = 1 -- Expeditions owed at each weekly reset, up to the cap
 local START_NOTICES = 3 -- Goals owed at Start
 local START_EXPEDITIONS = 1
@@ -126,8 +128,8 @@ end
 --- Advances a started projection from its day to board day `q` (TKB-R14): closes each day from `state.day` to
 --- `q − 1` in order (the Campfire's close, TKB-R72; the daily accrual into the next day, TKB-R20; the week rising to
 --- the next day's week, TKB-R12, each rise one weekly accrual), then hands what it did to ns.outlets.Advanced with
---- `mode`. A `q` at or below the projection's day, or an unstarted board, changes nothing. The live step (#233)
---- calls it with "live", the only change made outside apply.
+--- `mode`. A `q` at or below the projection's day, or an unstarted board, changes nothing. The live step
+--- (adapter/LiveStep.lua) calls it with "live", the only change made outside apply.
 ---@param state TackleBoardState
 ---@param q integer
 ---@param mode TackleApplyMode
@@ -160,7 +162,7 @@ function ns.AdvanceTo(state, q, mode)
 end
 
 --- Frees a goal's pin (TKB-R101): the first goal of its type waiting in the overflow strip takes it, before any new
---- goal does. The completions (#232) call it once a goal is marked done; a goal in the strip has no pin to free.
+--- goal does. logic/Completions.lua calls it once a goal is marked done; a goal in the strip has no pin to free.
 ---@param state TackleBoardState
 ---@param goal TackleGoal
 function ns.FreePin(state, goal)
@@ -372,7 +374,7 @@ end
 
 --- The Tackle Board's projection def for `M:NewProjection` (TKB-R81) over `global.board` (made here if missing):
 --- rules version TKB_RULES_VERSION × 1000 + Core's Session rules version (SIZE_RULES_VERSION isn't folded). A live
---- apply that changes the state asks the views to redraw; `done` runs in graph.md's order: ns.outlets.Done,
+--- apply that changes the state asks the views to redraw; `done` runs in TKB-R84's order: ns.outlets.Done,
 --- ns.ReportCoins, ns.ScheduleLiveStep (TKB-R84), then a redraw.
 ---@param global table PagleTackleBoardDB's global section
 ---@param sessionRulesVersion integer Pagle.SESSION_RULES_VERSION

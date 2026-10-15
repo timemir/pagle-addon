@@ -114,7 +114,7 @@ describe("The Tackle Board's goods", function()
 		assert.are.equal("tackleboard.trackerframe.none", fake.Pagle.GetGood("tackleboard.trackerframe.none").name)
 	end)
 
-	it("show each good's own icon as its swatch in the shop's list (TKB-R125, SHOP-R26)", function()
+	it("show each good's own icon as its swatch in the Curio Shop's list (TKB-R125, SHOP-R26)", function()
 		local _, fake = loggedIn()
 
 		local icons = {}
@@ -154,7 +154,7 @@ local function textsOf(widget)
 	return texts
 end
 
--- Elwynn Forest's area ID (TKB-R125; M7 graph, open question 8: its name is read from the client).
+-- Elwynn Forest's area ID (TKB-R125; its name is read from the client, TKB-R36).
 local ELWYNN = 12
 
 -- The sample tracker TKB-R125 gives, in the enUS client: the header (the Campfire's days by the flame and the open

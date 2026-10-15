@@ -302,7 +302,7 @@ describe("the Tackle Board's projection", function()
 			local ns = built(withHistory(SEVEN))
 			local state = ns.State()
 			local done = state.goals[idAt(D0 + 3603)]
-			done.doneDay = 0 -- as a completion marks it (#232), before freeing its pin
+			done.doneDay = 0 -- as a completion marks it (logic/Completions.lua), before freeing its pin
 
 			ns.FreePin(state, done)
 

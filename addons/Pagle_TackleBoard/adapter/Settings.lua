@@ -18,13 +18,13 @@ function ns.AddSettings(M)
 		id = "tracker",
 		label = ns.L.SETTINGS_TRACKER,
 		tooltip = ns.L.SETTINGS_TRACKER_TOOLTIP,
-		default = true,
+		default = ns.DB_DEFAULTS.profile.tracker,
 		get = function()
 			return ns.db.profile.tracker
 		end,
 		set = function(value)
 			ns.db.profile.tracker = value
-			ns.Redraw("tracker") -- the live tracker shows or hides at once (TKB-R120, #241)
+			ns.Redraw("tracker") -- the live tracker shows or hides at once (TKB-R120)
 		end,
 		-- Greyed out until the board is started (TKB-R5); Core asks again each time the page shows (SET-R61). While the
 		-- projection updates it reads whether the board is started all the same (SET-R91).

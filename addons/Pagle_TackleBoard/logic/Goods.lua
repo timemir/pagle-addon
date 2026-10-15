@@ -39,8 +39,7 @@ ns.BOARD_GOODS = {
 	},
 }
 
---- A good's name (TKB-R130): its lore, `boardgood.<goodID>.name`, or its ID while the key has no text (M7 graph, open
---- question 7).
+--- A good's name (TKB-R130): its lore, `boardgood.<goodID>.name`, or its ID while the key has no text.
 ---@param goodID string
 ---@return string
 function ns.BoardGoodName(goodID)
@@ -77,7 +76,7 @@ end
 
 --- The sample tracker each preview draws (TKB-R125): a Campfire of 5 days, then TKB-R125's two fixed goal lines, a
 --- Haul Notice of 30 Catches in Elwynn Forest (area 12) at 12, and a Quality Notice of 5 uncommon-or-better Catches
---- at 2. Both are Notices; the zone's name is read from the client when drawn (M7 graph, open question 8).
+--- at 2. Both are Notices; the zone's name is read from the client when drawn (TKB-R36).
 ns.SAMPLE_TRACKER = {
 	fire = 5,
 	goals = {

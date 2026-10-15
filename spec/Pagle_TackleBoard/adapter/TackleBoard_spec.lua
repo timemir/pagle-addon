@@ -286,7 +286,7 @@ describe("Pagle_TackleBoard with Core", function()
 		assert.are.same({}, ns.db.global.board) -- before login: bound, nothing stored yet
 	end)
 
-	it("keeps what an earlier session saved (tackle-board.md › Data)", function()
+	it("keeps what an earlier login saved (tackle-board.md › Data)", function()
 		local saved = {
 			global = {
 				schemaVersion = 1,

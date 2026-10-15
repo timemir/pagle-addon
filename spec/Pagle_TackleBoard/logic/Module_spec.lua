@@ -64,7 +64,7 @@ describe("the Tackle Board's entries (TKB-R3)", function()
 			end
 		end
 
-		-- The Trackers page's rows (#236) are read here too.
+		-- The Trackers page's rows (adapter/Settings.lua) are read here too.
 		assert.are.same(
 			{ "board Open or close the Tackle Board", "board Tackle Board", "Open Tackle Board" },
 			{ unpack(texts, 1, 3) }

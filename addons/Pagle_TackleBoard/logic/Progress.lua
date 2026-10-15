@@ -7,11 +7,11 @@ local ns = select(2, ...)
 
 -- How a goal's progress moves, one Catch at a time (tackle-board.md › Progress, TKB-R40–R46, TKB-R104, TKB-R196).
 -- Pure logic over a TackleGoal (logic/Seams.lua) and Core's catalogue calls, handed in as `pagle` (CORE-R7). Of the
--- goal it writes only `progress`, `seen` and `session`. The completions' ticket (#232) runs it inside the fold: for
+-- goal it writes only `progress`, `seen` and `session`. logic/Completions.lua runs it inside the fold: for
 -- each caught Cast, ns.EnterCast on every open goal, then for each Catch in item order ns.CountCatch on the open goals
 -- in board order, completing a goal when ns.IsComplete turns true (TKB-R45).
 
---- What CountCatch reads besides the goal and the Cast (M7 graph, shapes).
+--- What CountCatch reads besides the goal and the Cast.
 ---@class TackleProgressContext
 ---@field pagle table Core's calls: GetItem, GetArea and GetZones (LOG-R55)
 ---@field caughtBefore fun(itemID: integer): boolean whether an earlier Catch in the whole log has the item (TKB-R46)
@@ -246,7 +246,7 @@ end
 
 --- The progress the board shows for a goal (TKB-R104): its progress, except that a session-bound goal (TKB-R41)
 --- shows 0 when there is no current Session or the current one isn't the Session its progress belongs to. The pins
---- (#239), the tracker (#241) and the reroll's confirm (#234) read it.
+--- (logic/Pins.lua), the tracker (logic/Tracker.lua) and the reroll's confirm (logic/Reroll.lua) read it.
 ---@param goal TackleGoal
 ---@param session { id: string }? the current Session: `Pagle.GetSession()`, nil when none is open (LOG-R64)
 ---@return integer

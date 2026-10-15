@@ -379,7 +379,7 @@ describe("completing a goal", function()
 
 	describe("the 28-day history (tackle-board.md › Data, TKB-R106)", function()
 		-- 25 Notices done by one Catch on day 0 (tally_25), an open filler, then a Cast in Barrens on board day `k`.
-		local function history(k)
+		local function twentyFiveDoneThenCastOn(k)
 			return join(
 				{ start(T) },
 				times(25, function(i)
@@ -390,14 +390,14 @@ describe("completing a goal", function()
 		end
 
 		it("keeps goals done on the last 28 board days, today included", function()
-			local state = built(withHistory(history(27))).State()
+			local state = built(withHistory(twentyFiveDoneThenCastOn(27))).State()
 
 			assert.are.equal(27, state.day)
 			assert.are.same({ 0, 0 }, { state.goals[idAt(T + 1)].doneDay, state.goals[idAt(T + 25)].doneDay })
 		end)
 
 		it("drops goals done 28 board days back, keeping the open ones, the tally, Coins, flies and titles", function()
-			local state = built(withHistory(history(28))).State()
+			local state = built(withHistory(twentyFiveDoneThenCastOn(28))).State()
 
 			local goals = {}
 			for id in pairs(state.goals) do
@@ -414,7 +414,7 @@ describe("completing a goal", function()
 		end)
 
 		it("drops them as the live step advances the day, too (TKB-R14)", function()
-			local ns = built(withHistory(history(27)))
+			local ns = built(withHistory(twentyFiveDoneThenCastOn(27)))
 			local state = ns.State()
 
 			ns.AdvanceTo(state, 28, "live")
@@ -424,7 +424,10 @@ describe("completing a goal", function()
 		end)
 
 		it("gives the same state rebuilt, and applied live with the live step's advance between (TKB-R82)", function()
-			local log = join(history(30), { issue(T + 30 * DAY + 1, ONE), cast(T + 30 * DAY + 2, DUROTAR, { 6291 }) })
+			local log = join(
+				twentyFiveDoneThenCastOn(30),
+				{ issue(T + 30 * DAY + 1, ONE), cast(T + 30 * DAY + 2, DUROTAR, { 6291 }) }
+			)
 			local ns = built(withHistory(log))
 			local rebuilt = copy(ns.State())
 			ns.projection:Rebuild()

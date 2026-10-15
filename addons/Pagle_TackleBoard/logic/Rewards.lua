@@ -7,8 +7,8 @@ local ns = select(2, ...)
 
 -- What a completion earns inside the Module and what keeps the Campfire burning (tackle-board.md › Completion and
 -- rewards, The Campfire): pure functions over the projection's `tally`, `flies` and `fire` tables (TackleBoardState,
--- logic/Seams.lua), with the titles, the Fly Box's patterns and the milestones as data. The completions' ticket (#232)
--- calls them in TKB-R60's order; the projection (#231) starts the fire and closes days with them.
+-- logic/Seams.lua), with the titles, the Fly Box's patterns and the milestones as data. logic/Completions.lua
+-- calls them in TKB-R60's order; logic/Projection.lua starts the fire and closes days with them.
 
 -- Titles (tackle-board.md › Data › Titles).
 
@@ -85,7 +85,7 @@ end
 
 --- The Fly Box's 30 patterns in pattern order (tackle-board.md › Data › Fly Box patterns): 24 common, then 6 rare.
 --- Each has its lore ID (its name is `ns.L`'s `fly.<id>.name`, TKB-R130), whether it is rare (tied only by
---- Expeditions), and an in-client icon texture (M7 graph, open question 4; custom fly art comes after 1.0). The drawer
+--- Expeditions), and an in-client icon texture (custom fly art comes after 1.0). The drawer
 --- fills its 6 × 5 compartments in this order (TKB-R106), and changing the order changes which goal ties which pattern
 --- (TKB-R81: it raises TKB_RULES_VERSION).
 ---@type { id: string, rare: boolean, icon: string }[]
@@ -122,8 +122,8 @@ ns.FLY_PATTERNS = {
 	{ id = "deepwater_duchess", rare = true, icon = icon("INV_Misc_Gem_Pearl_03") },
 }
 
---- The icons of the ledge and the moments that have no fly or goal kind (TKB-R86, TKB-R106; M7 graph, open question
---- 4): the Campfire's flame, the tally plate and the Fly Box.
+--- The icons of the ledge and the moments that have no fly or goal kind (TKB-R86, TKB-R106): the
+--- Campfire's flame, the tally plate and the Fly Box.
 ns.REWARD_ICONS = {
 	campfire = icon("Spell_Fire_Fire"),
 	tally = icon("INV_Misc_Note_01"),

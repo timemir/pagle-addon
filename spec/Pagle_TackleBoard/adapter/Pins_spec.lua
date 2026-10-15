@@ -173,7 +173,7 @@ describe("a session-bound goal's progress (TKB-R104)", function()
 	it('reads "1 of 2 this Session" during its Session and "0 of 2 this Session" after it ends', function()
 		local loaded, fake, frame = opened(startedLog(EXPEDITION, COLLECTOR))
 		fake.playCast("caught", { { itemID = MACKEREL, quantity = 1 } })
-		-- The completions' ticket counts the Catch (#232); here its outcome is set: 1, in this Session.
+		-- ns.CountCatch (logic/Progress.lua) counts the Catch; here its outcome is set: 1, in this Session.
 		local collector = loaded.ns.State().goals[idAt(T + 2)]
 		collector.progress, collector.session = 1, fake.Pagle.GetSession().id
 		loaded.ns.Redraw("projection")
@@ -296,7 +296,7 @@ describe("a pinned goal's hover (TKB-R102)", function()
 
 	it("lists a Variety Expedition's Species, caught ones ticked", function()
 		local loaded, _, frame = opened(startedLog(VARIETY, QUALITY))
-		-- The completions' ticket counts a Mightfish (#232), and the live apply redraws.
+		-- ns.CountCatch (logic/Progress.lua) counts a Mightfish, and the live apply redraws.
 		loaded.ns.State().goals[idAt(T + 1)].seen[MIGHTFISH] = true
 		loaded.ns.Redraw("projection")
 
