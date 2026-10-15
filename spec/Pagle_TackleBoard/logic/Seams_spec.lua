@@ -36,7 +36,7 @@ describe("the Tackle Board's seams", function()
 		end)
 	end)
 
-	describe("the projection's state (TKB-R81, until the projection's ticket)", function()
+	describe("the projection's state (TKB-R81, before its first build)", function()
 		it(
 			"is an empty TackleBoardState: not started, nothing owed, every pin empty, no fire (tackle-board.md › Data)",
 			function()
@@ -67,11 +67,16 @@ describe("the Tackle Board's seams", function()
 			assert.is_false(ns.State().pins.notices[1])
 		end)
 
-		it("is never updating and never started (LOG-R74, TKB-R6)", function()
-			local ns = board.load().ns
+		it("reads as updating and not started until the first build ends (LOG-R74, TKB-R6)", function()
+			local loaded, fake = board.load()
+			local ns = loaded.ns
+			local before = { ns.IsUpdating(), ns.IsStarted() }
 
-			assert.is_false(ns.IsUpdating())
-			assert.is_false(ns.IsStarted())
+			fake.login()
+			fake.enterWorld()
+
+			assert.are.same({ true, false }, before)
+			assert.are.same({ false, false }, { ns.IsUpdating(), ns.IsStarted() })
 		end)
 
 		it("is never in the login window (TKB-R86)", function()

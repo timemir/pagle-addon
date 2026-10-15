@@ -17,5 +17,6 @@ logic\Rewards.lua
 logic\Seams.lua
 logic\Generate.lua
 logic\Records.lua
+logic\Projection.lua
 adapter\TackleBoard.lua
 adapter\Generate.lua

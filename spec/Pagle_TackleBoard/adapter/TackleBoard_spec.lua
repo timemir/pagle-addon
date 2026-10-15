@@ -149,7 +149,7 @@ describe("Pagle_TackleBoard with Core", function()
 
 	it('starts the board, then opens it, from "Start my board" (TKB-R1, TKB-R5)', function()
 		local loaded = loadAddon("Pagle_TackleBoard", FOREVER_GLOBALS)
-		loaded.client.fire("PLAYER_LOGIN")
+		enterWorld(loaded, 1) -- the projection's first build has ended: not updating (LOG-R74)
 		local calls = countCalls(loaded)
 
 		local _, buttons = statusList(loaded)
@@ -224,8 +224,11 @@ describe("Pagle_TackleBoard with Core", function()
 		assert.are.same({ goals = {}, titles = {} }, db.global.celebrated) -- TKB-R83
 	end)
 
-	it("leaves the projection table to Core: no board default (LOG-R70)", function()
-		assert.is_nil(loadAddon("Pagle_TackleBoard", FOREVER_GLOBALS).ns.db.global.board)
+	it("leaves the projection table to Core: no board default, the projection binds it (LOG-R70, TKB-R81)", function()
+		local ns = loadAddon("Pagle_TackleBoard", FOREVER_GLOBALS).ns
+
+		assert.is_nil(ns.DB_DEFAULTS.global.board)
+		assert.are.same({}, ns.db.global.board) -- before login: bound, nothing stored yet
 	end)
 
 	it("keeps what an earlier session saved (tackle-board.md › Data)", function()

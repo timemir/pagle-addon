@@ -15,13 +15,14 @@ local ns = select(2, ...)
 --   ns.OpenBoard(goalID?)     Opens the board (never closes it); with a goal ID, highlights that goal's pin for 2 s
 --                             (TKB-R109; the pins' ticket #239 draws the highlight). The Settings status button calls
 --                             it, and the tracker's lines with their goal (#241). Stand-in: does nothing. #238 assigns it.
---   ns.State()                The projection's TackleBoardState (below), read-only for views. Stand-in: a new empty
---                             state each call. The projection's ticket (#231) binds it to `projection:GetState()` in
---                             OnInitialize.
+--   ns.State()                The projection's TackleBoardState (below), read-only for views but the live step's
+--                             AdvanceTo (TKB-R14). `ns.projection:GetState()` once the adapter's OnInitialize has made
+--                             the projection (#231); a new empty state before its first build, or with no projection.
 --   ns.IsUpdating()           Whether the projection is catching up or rebuilding (LOG-R74): Start and "take it down"
---                             are disabled and views draw "Updating…" (TKB-R108, TKB-R124). Stand-in: false. #231 binds it.
+--                             are disabled and views draw "Updating…" (TKB-R108, TKB-R124). `ns.projection:IsUpdating()`
+--                             (#231): true from load until the first build ends; false with no projection.
 --   ns.IsStarted()            Whether the board is started: the projection has applied a `start` record (TKB-R6).
---                             Registration's status button reads it (TKB-R1). Stand-in: false. #231 binds it.
+--                             Registration's status button reads it (TKB-R1). Follows ns.State() (#231).
 --   ns.Start()                Starts the board (TKB-R5): appends the `start` record and runs the live step. Called by
 --                             the "Start my board" status button (registration, only when not started and not updating)
 --                             and the empty board's Start button (#238). Stand-in: does nothing. The live step's
@@ -122,14 +123,6 @@ local ns = select(2, ...)
 ---@field milestone? integer          -- Campfire milestone reached, in days (TKB-R73)
 ---@field lit boolean                 -- this completion lit its day (TKB-R70)
 
---- What an advance did to the Campfire (TKB-R14, TKB-R72), handed to ns.outlets.Advanced. A first draft: the
---- projection's ticket (#231) owns it and may change it.
----@class TackleAdvance
----@field burned integer              -- Kindling burned
----@field wentOut boolean             -- the fire went out
----@field count integer               -- the Campfire count after it
----@field longest integer
-
 --- Opens or closes the board (TKB-R1). A stand-in until the board frame's ticket assigns the real one.
 function ns.ToggleBoard() end
 
@@ -138,43 +131,26 @@ function ns.ToggleBoard() end
 ---@param goalID string?
 function ns.OpenBoard(goalID) end -- luacheck: no unused args
 
---- The projection's state: a new empty TackleBoardState (nothing started, no goals, no fire) until the projection
---- binds it.
+--- The projection's state (`ns.projection:GetState()`, bound by the adapter's OnInitialize, #231): a new empty
+--- TackleBoardState (ns.NewBoardState) before its first build, or with no projection.
 ---@return TackleBoardState
 function ns.State()
-	local function unpinned(n)
-		local pins = {}
-		for i = 1, n do
-			pins[i] = false
-		end
-		return pins
-	end
-	return {
-		day = 0,
-		week = 0,
-		owed = { notices = 0, expeditions = 0 },
-		pins = { expeditions = unpinned(ns.EXPEDITION_PINS), notices = unpinned(ns.NOTICE_PINS) },
-		goals = {},
-		tally = { notices = 0, expeditions = 0 },
-		coins = 0,
-		flies = {},
-		titles = {},
-		fire = { count = 0, kindling = 0, longest = 0, milestones = {}, log = {} },
-		zones = {},
-		caught = {},
-	}
+	local projection = ns.projection
+	return projection and projection:GetState() or ns.NewBoardState()
 end
 
---- Whether the projection is catching up or rebuilding (LOG-R74): false until the projection binds it.
+--- Whether the projection is catching up or rebuilding, or waiting for login to start it (LOG-R74,
+--- `ns.projection:IsUpdating()`); false with no projection.
 ---@return boolean
 function ns.IsUpdating()
-	return false
+	local projection = ns.projection
+	return projection ~= nil and projection:IsUpdating()
 end
 
---- Whether the board is started (TKB-R6): false until the projection binds it.
+--- Whether the board is started (TKB-R6): the projection's state has applied a `start` record.
 ---@return boolean
 function ns.IsStarted()
-	return false
+	return ns.State().started ~= nil
 end
 
 --- Starts the board (TKB-R5). A stand-in until the live step's ticket assigns the real one.

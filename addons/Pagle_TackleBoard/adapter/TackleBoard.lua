@@ -34,4 +34,8 @@ function ns.TackleBoard.OnInitialize()
 	-- Account-wide, one shared profile, with the defaults in tackle-board.md › Data.
 	ns.db = LibStub("AceDB-3.0"):New("PagleTackleBoardDB", ns.DB_DEFAULTS, true)
 	ns.MigrateDB(ns.db.global)
+
+	--- The Tackle Board's one projection (TKB-R81): Core catches it up or rebuilds it after login and hands it each new
+	--- entry (LOG-R71–R73). ns.State, ns.IsUpdating and ns.IsStarted follow it from here on.
+	ns.projection = ns.Module:NewProjection(ns.ProjectionDef(ns.db.global, Pagle.SESSION_RULES_VERSION))
 end
