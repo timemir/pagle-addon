@@ -397,7 +397,7 @@ Stats adds one section to the **Trackers** page with `M:AddSetting("trackers", â
 
 Tooltips: "Show the live tracker": "Shows this Session and your watched Dry spells under the minimap. Watching a Dry spell turns it on." Watched Dry spells: "Watch or stop watching from any fish's page in the Stats book."
 
-The frame dropdown is added by Core after Stats' rows (CORE-R42) and also appears on Look and Feel. The watched list is never greyed out, since watches also show in the book; its custom initializer redraws, growing or shrinking, whenever a watch changes. The page's Defaults button turns the tracker off and leaves the watches alone. Watching from the book sets both the watches and the tracker (STA-R62).
+The frame dropdown is added by Core after Stats' rows (CORE-R42) and also appears on Look and Feel. The watched list is never greyed out, since watches also show in the book; its custom row redraws at once whenever a watch changes, within a fixed height for 3 watches (SET-R6: the row's frame is Stats' own, so it may redraw at once, keeping its size). The page's Defaults button turns the tracker off and leaves the watches alone. Watching from the book sets both the watches and the tracker (STA-R62).
 
 ## Tunables
 

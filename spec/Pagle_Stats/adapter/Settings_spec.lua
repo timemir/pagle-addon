@@ -186,16 +186,19 @@ describe("Stats' section on the Trackers page, in the panel", function()
 		assert.are.equal(2, #stopButtons(loaded, row))
 	end)
 
-	it("redraws at once, growing, when a watch is added while it shows (SET-R62, stats.md › Settings)", function()
-		local loaded = coreWithStats()
-		local row = rowNamed(showTrackers(loaded), "Watched Dry spells")
+	it(
+		"redraws at once, within its height, when a watch is added while it shows (SET-R6, SET-R62, stats.md › Settings)",
+		function()
+			local loaded = coreWithStats()
+			local row = rowNamed(showTrackers(loaded), "Watched Dry spells")
 
-		loaded.ns.Watch(FIREFIN, AUBERDINE)
+			loaded.ns.Watch(FIREFIN, AUBERDINE)
 
-		assert.are.same({ "Watched Dry spells", "1 of 3", "Firefin Snapper, Auberdine", STOP }, texts(loaded, row))
-	end)
+			assert.are.same({ "Watched Dry spells", "1 of 3", "Firefin Snapper, Auberdine", STOP }, texts(loaded, row))
+		end
+	)
 
-	it('"Stop watching" removes that watch and shrinks the row, leaving the tracker on (STA-R63)', function()
+	it('"Stop watching" removes that watch and its line, leaving the tracker on (STA-R63)', function()
 		local loaded = coreWithStats()
 		loaded.ns.Watch(NIGHTFIN, DARKSHORE)
 		loaded.ns.Watch(FIREFIN, AUBERDINE)
