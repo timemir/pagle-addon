@@ -26,7 +26,8 @@ end
 ns.TRACKER_WIDTH = 250
 
 --- The words' colours by role, a frame's `ink`: the header's title, dim text (the header's right text), a Notice's
---- text, an Expedition's text, a goal's count, its where line, and a plain line ("+N more", "All done").
+--- text, an Expedition's text, a goal's count, its where line, a plain line ("+N more", "All done"), and a goal
+--- completed live, flashing "Complete" (TKB-R123; nil in a look's inks keeps the native green).
 ---@class TackleTrackerInks
 ---@field header number[]
 ---@field dim number[]
@@ -35,9 +36,10 @@ ns.TRACKER_WIDTH = 250
 ---@field count number[]
 ---@field where number[]
 ---@field more number[]
+---@field complete number[]?
 
 --- The native block's colours (tracker K2's `.tb`): the gold header, grey small print, pale gold goals, amber
---- Expeditions, white counts.
+--- Expeditions, white counts, and `.ln.fin`'s green for a goal flashing "Complete".
 ---@type TackleTrackerInks
 ns.TRACKER_INKS = {
 	header = tint("ffd100"),
@@ -47,6 +49,7 @@ ns.TRACKER_INKS = {
 	count = tint("ffffff"),
 	where = tint("cfc8b8"),
 	more = tint("9a9284"),
+	complete = tint("7dff7d"),
 }
 
 --- A tracker frame's look (TKB-R124, TKB-R125): a solid base laid behind the block, a grain texture over it in a
@@ -65,6 +68,8 @@ ns.TRACKER_INKS = {
 --- - `header`: `text` ("Tackle Board") after the collapse mark (plus while `collapsed`), and `right` on the right
 ---   ("12 · 4 open"), with a small flame before it while `fire`, over a faint rule;
 --- - `goal`: `text` with its `count` right-aligned ("12/30"), then its `where` line; `expedition` inks it as one;
+---   `complete` (a goal completed live, TKB-R123) draws it as one green line, "Complete" in the count's place, with
+---   no where line;
 --- - `line`: a plain line in small grey print.
 ---@class TackleTrackerLine
 ---@field kind "header"|"goal"|"line"
@@ -75,7 +80,9 @@ ns.TRACKER_INKS = {
 ---@field count string?
 ---@field where string?
 ---@field expedition boolean?
+---@field complete boolean?
 ---@field goalID string?   -- a goal's ID, for the live tracker's click (TKB-R123)
+---@field board boolean?   -- a plain line whose click opens the board ("+N more", TKB-R123)
 
 -- Heights in pixels: the header, a goal's top padding, its text line and its where line, and a plain line.
 local HEADER_HEIGHT, GOAL_PAD, TEXT_HEIGHT, WHERE_HEIGHT, LINE_HEIGHT = 18, 3, 14, 13, 15
@@ -266,7 +273,7 @@ local function layOut(row, line)
 	row.mark:SetShown(kind == "header")
 	row.rule:SetShown(kind == "header")
 	row.flame:SetShown(kind == "header" and line.fire == true)
-	row.sub:SetShown(kind == "goal")
+	row.sub:SetShown(kind == "goal" and not line.complete)
 	text:SetText(line.text)
 	if kind == "header" then
 		row.mark:SetTexture(line.collapsed and COLLAPSED_MARK or EXPANDED_MARK)
@@ -285,6 +292,9 @@ local function layOut(row, line)
 		right:SetPoint("TOPRIGHT", 0, -GOAL_PAD)
 		right:SetText(line.count)
 		right:Show()
+		if line.complete then
+			return GOAL_PAD + TEXT_HEIGHT
+		end
 		row.sub:SetFontObject("GameFontHighlightSmall")
 		row.sub:SetText(line.where)
 		return GOAL_PAD + TEXT_HEIGHT + WHERE_HEIGHT
@@ -309,6 +319,10 @@ local function ink(row, inks)
 		paint(row.right, inks.dim)
 		row.mark:SetVertexColor(inks.dim[1], inks.dim[2], inks.dim[3])
 		row.rule:SetColorTexture(inks.header[1], inks.header[2], inks.header[3], 0.35)
+	elseif line.kind == "goal" and line.complete then
+		local green = inks.complete or ns.TRACKER_INKS.complete --[[@as number[] ]]
+		paint(row.text, green)
+		paint(row.right, green)
 	elseif line.kind == "goal" then
 		paint(row.text, line.expedition and inks.expedition or inks.goal)
 		paint(row.right, inks.count)

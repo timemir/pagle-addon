@@ -125,6 +125,31 @@ describe("A tracker block", function()
 		assert.are.same(inks.more, rgb(block.rows[4].text.textColor))
 	end)
 
+	it('draws a goal flashing "Complete" as one green line with no where line (TKB-R123)', function()
+		local block, ns = newBlock()
+		local flashing = { kind = "goal", text = "30 Catches in Durotar", count = "Complete", complete = true }
+
+		local pair = block:SetLines({ LINES[3] })
+		local single = block:SetLines({ flashing })
+
+		assert.is_true(single < pair)
+		assert.are.same({ "30 Catches in Durotar", "Complete" }, textsOf(block))
+		local green = ns.TRACKER_INKS.complete
+		assert.are.same({ 0x7d / 255, 1, 0x7d / 255 }, green) -- tracker K2's `.ln.fin`
+		assert.are.same(green, rgb(block.rows[1].text.textColor))
+		assert.are.same(green, rgb(block.rows[1].right.textColor))
+
+		-- A look's inks without a green of their own keep the native one; Corkboard has its own darker green.
+		local plain = { base = { 1, 1, 1 }, texture = "x", tint = { 1, 1, 1 }, alpha = 1, border = { 0, 0, 0 } }
+		plain.borderSize, plain.ink = 1, {}
+		block:SetFrame(plain)
+		assert.are.same(green, rgb(block.rows[1].right.textColor))
+		local cork = ns.TRACKER_FRAMES["tackleboard.trackerframe.corkboard"]
+		block:SetFrame(cork)
+		assert.are.same(cork.ink.complete, rgb(block.rows[1].right.textColor))
+		assert.are_not.same(green, cork.ink.complete)
+	end)
+
 	it("gives each row the line it shows, for the live tracker's clicks (TKB-R123)", function()
 		local block = newBlock()
 

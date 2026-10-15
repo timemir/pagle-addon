@@ -42,4 +42,6 @@ function ns.TackleBoard.OnInitialize()
 	--- The Tackle Board's one projection (TKB-R81): Core catches it up or rebuilds it after login and hands it each new
 	--- entry (LOG-R71–R73). ns.State, ns.IsUpdating and ns.IsStarted follow it from here on.
 	ns.projection = ns.Module:NewProjection(ns.ProjectionDef(ns.db.global, Pagle.SESSION_RULES_VERSION))
+	-- Its tracker, docked third (TKB-R120, CORE-R70).
+	ns.StartTracker(ns.Module)
 end

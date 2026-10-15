@@ -215,6 +215,13 @@ ns.L = {
 	TRACKER_FIRE_OPEN = "{fire} · {open}",
 	-- A goal line's count (TKB-R122): its displayed progress over its need.
 	TRACKER_COUNT = "{n}/{need}",
+	-- The live tracker's lines (TKB-R122, TKB-R123; logic/Tracker.lua): an Expedition's text, the line for the open
+	-- goals not workable here, the line with nothing open, and a goal completed live, flashing in its count's place.
+	-- While the projection is updating it reads UPDATING (TKB-R124).
+	TRACKER_EXPEDITION = "Expedition: {text}",
+	TRACKER_MORE = "+{n} more on the board (elsewhere)",
+	TRACKER_ALL_DONE = "All done. Fresh Notices at reset.",
+	TRACKER_COMPLETE = "Complete",
 
 	-- The Tackle Board's section on the Trackers page (SET-R43, tackle-board.md › Settings).
 	SETTINGS_TRACKER = "Show goals workable here",
