@@ -11,9 +11,18 @@ local ns = select(2, ...)
 -- Secret values reach here as unknowns (zone 0, a nil skill or realm minute), and Right now leaves out what it can't
 -- read rather than guess (STA-R93).
 
+--- A tile's words and the page it opens, as the book's tile grid draws it (adapter/BookWidgets.lua's
+--- ns.NewBookTileGrid): the home spread's zones and the item page's waters.
+---@class StatsTile
+---@field name string
+---@field line string
+---@field here string?
+---@field note string?
+---@field target StatsBookTarget
+
 --- One zone's tile on the left page: its name, its line, "I'm here" and "watching {N}" when they apply, and the place
 --- page it opens.
----@class StatsHomeTile
+---@class StatsHomeTile: StatsTile
 ---@field zone integer
 ---@field name string
 ---@field line string             -- "{Casts} Casts · {N} waters", or "not fished yet"

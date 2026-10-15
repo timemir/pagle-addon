@@ -912,12 +912,9 @@ end
 
 --- Tiles two a row (stats.md › UI: the home spread's zones, an item's waters), each opening its target: ns.NewBookTile
 --- with variant D's height and gap, made as the rows need them, the ones left over hidden.
----@class StatsBookTileTarget: StatsBookTileData
----@field target StatsBookTarget
-
 ---@class StatsBookTileGridView
 ---@field tiles StatsBookTileView[]
----@field SetTiles fun(self: StatsBookTileGridView, tiles: StatsBookTileTarget[], y: number): number
+---@field SetTiles fun(self: StatsBookTileGridView, tiles: StatsTile[], y: number): number
 
 -- A tile's height and the gap between tiles, across and down.
 local TILE_HEIGHT, TILE_GAP = 84, 9

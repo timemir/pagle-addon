@@ -94,16 +94,16 @@ ns.book = setmetatable({
 	pages = {},
 	leatherRenderers = {},
 	listening = false,
+	drawNextFrame = ns.OncePerFrame(function()
+		ns.book:Draw()
+	end),
+	requestItem = ns.NewItemLoader(OWNER, function()
+		ns.book:QueueDraw()
+	end),
 }, Book)
-ns.book.drawNextFrame = ns.OncePerFrame(function()
-	ns.book:Draw()
-end)
-ns.book.requestItem = ns.NewItemLoader(OWNER, function()
-	ns.book:QueueDraw()
-end)
 
 --- Registers `renderer` to draw side `side` of page `page` (logic/Book.lua lists the pages and who draws them); a
---- later registration replaces it. The page tickets call it when their files load (after this one in the TOC).
+--- later registration replaces it. The page files call it when they load (after this one in the TOC).
 ---@param page StatsBookPage
 ---@param side StatsBookSide
 ---@param renderer StatsBookRenderer

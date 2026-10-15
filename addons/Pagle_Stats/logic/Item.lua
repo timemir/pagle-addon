@@ -155,7 +155,7 @@ function ns.ItemFacts(state, item, conditions, now, places)
 end
 
 --- One tile on the right page: a water I've fished for the item, and its entry there.
----@class StatsItemTile
+---@class StatsItemTile: StatsTile
 ---@field area integer
 ---@field name string            -- the place's name
 ---@field line string            -- its short odds (STA-R43), after its zone's name on a subzone's tile
