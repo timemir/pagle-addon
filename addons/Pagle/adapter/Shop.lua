@@ -784,14 +784,13 @@ local function show(selection)
 	redraw(true)
 end
 
---- The Curio Shop's entry points as ns.shop (SHOP-R40, SHOP-R41) over this window, and ns.ShopModel.
-ns.WireShop(ns.host, {
-	isRestricted = function()
-		return Pagle.IsRestricted()
-	end,
-	print = function(line)
-		print(line)
-	end,
+--- Opens the Curio Shop (SHOP-R40): selecting `goodID` if the shop shows it (under "Put away" for an owned good of a
+--- Module off), nothing for any other ID, and keeping the selection with none. While restricted it prints "Pagle:
+--- the Curio Shop opens after combat." instead and opens nothing (SHOP-R41). Every entry point calls it: /pagle shop
+--- (a toggle), the compartment entry and Look and Feel's "Open the Curio Shop". The Curio Shop's entry points are
+--- ns.shop (SHOP-R40, SHOP-R41) over this window, with ns.ShopModel.
+---@type fun(goodID: string?)
+Pagle.OpenShop = ns.WireShop(ns.host, {
 	isShown = function()
 		return ns.shopFrame ~= nil and ns.shopFrame:IsShown()
 	end,
@@ -802,15 +801,6 @@ ns.WireShop(ns.host, {
 		end
 	end,
 })
-
---- Opens the Curio Shop (SHOP-R40): selecting `goodID` if the shop shows it (under "Put away" for an owned good of a
---- Module off), nothing for any other ID, and keeping the selection with none. While restricted it prints "Pagle:
---- the Curio Shop opens after combat." instead and opens nothing (SHOP-R41). Every entry point calls it: /pagle shop
---- (a toggle), the compartment entry and Look and Feel's "Open the Curio Shop".
----@param goodID string?
-function Pagle.OpenShop(goodID)
-	ns.shop.Open(goodID)
-end
 
 -- The window follows the balance, the looks and the Modules On while it is open, so Buy re-evaluates (wallet-and-shop.md
 -- › UI, SHOP-R13, SHOP-R33). Its own owner on the bus.

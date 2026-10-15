@@ -25,6 +25,7 @@ local ns = select(2, ...)
 ---@field report fun(message: string)            -- reports an error and carries on (geterrorhandler())
 ---@field region fun(): integer?                 -- GetCurrentRegion(), nil where the call doesn't exist (LOG-R69)
 ---@field print fun(line: string)                -- prints a chat line
+---@field isRestricted fun(): boolean            -- Pagle.IsRestricted() (CORE-R33)
 ---@field syncLimit? integer                     -- the projections' sync limit; default PROJECTION_SYNC_LIMIT
 
 ---@class PagleNS
@@ -144,6 +145,33 @@ function ns.WireLength(host)
 	return function(mm)
 		return ns.FormatLength(mm, ns.LengthUnit())
 	end
+end
+
+--- Publishes Simulated Size on `Pagle` (LOG-R67–R69): `Pagle.SIZE_BANDS`, the bands in order as `{ key, name }`, a
+--- copy of Core's own so a Module can't change Core's; `Pagle.SIZE_RULES_VERSION`; and `Pagle.FormatLength(mm)` on
+--- ns.WireLength. `wrap` turns the band list into what Modules get: Core's adapter passes none, FakePagle its
+--- read-only proxy (CORE-R18).
+---@param Pagle table
+---@param host PagleHost
+---@param wrap (fun(value: any): any)?
+function ns.PublishSize(Pagle, host, wrap)
+	---@class Pagle
+	local api = Pagle
+	local bands = {}
+	for band, entry in ipairs(ns.SIZE_BANDS) do
+		bands[band] = { key = entry.key, name = entry.name }
+	end
+	--- The Size bands in order, `{ key, name }`, Tiddler to Monster (LOG-R67). The names are drafts for the lore pass.
+	---@type { key: string, name: string }[]
+	api.SIZE_BANDS = wrap and wrap(bands) or bands
+	--- Changes whenever the size multipliers change; a Module that stores sizes folds it into its rules version
+	--- (LOG-R68).
+	api.SIZE_RULES_VERSION = ns.SIZE_RULES_VERSION
+	--- A length of `mm` millimetres in the Angler's length unit, to 0.1 of it: "34.2 cm" or "13.5 in" (LOG-R69). The
+	--- unit is PagleDB.profile.lengthUnit, or inches on region 1 and centimetres elsewhere. It changes only what a
+	--- length reads: compare lengths in millimetres.
+	---@type fun(mm: number): string
+	api.FormatLength = ns.WireLength(host)
 end
 
 --- Core's moment collector as ns.moments (ANN-R1–R4, ANN-R10–R12), and `M:RaiseMoment` on every Module handle. Each
@@ -421,13 +449,58 @@ function ns.WireGoods(host)
 	end
 end
 
+--- Publishes the goods registry's reads and its one write on `Pagle` (wallet-and-shop.md › Contracts):
+--- `Pagle.IsOwned`, `GetEquipped`, `SetEquipped` and `GetGood`, over ns.goods (ns.WireGoods). `wrap` turns what
+--- GetGood returns into what Modules get: Core's adapter passes none, FakePagle its read-only proxy (CORE-R18).
+---@param Pagle table
+---@param wrap (fun(value: any): any)?
+function ns.PublishGoods(Pagle, wrap)
+	---@class Pagle
+	local api = Pagle
+	wrap = wrap or function(value)
+		return value
+	end
+
+	--- Whether the Angler owns a good (SHOP-R30): a registered slot's default, a purchased good, or an earned good
+	--- whose cached isEarned() result is true. It reads the cache, whether or not the good's Module is enabled.
+	---@param goodID string
+	---@return boolean
+	function api.IsOwned(goodID)
+		return ns.goods:IsOwned(goodID)
+	end
+
+	--- The good equipped in a slot (SHOP-R32): the stored pick while it is owned and its Module enabled, else the
+	--- slot's default. Nil for a slot with no goods.
+	---@param slot string
+	---@return string? goodID
+	function api.GetEquipped(slot)
+		return ns.goods:GetEquipped(slot)
+	end
+
+	--- Equips an owned good of that slot (SHOP-R32), and returns true; returns false, changing nothing, for any
+	--- other. AppearanceChanged follows if the look changed (SHOP-R33).
+	---@param slot string
+	---@param goodID string
+	---@return boolean
+	function api.SetEquipped(slot, goodID)
+		return ns.goods:SetEquipped(slot, goodID)
+	end
+
+	--- A good's name, slot, icon, Module and description as cached (SHOP-R26), and whether it is its slot's default
+	--- (`isDefault`, SHOP-R22), whether or not its Module is enabled; nil for a good never registered. A fresh copy
+	--- each call.
+	---@param goodID string
+	---@return PagleGoodInfo?
+	function api.GetGood(goodID)
+		return wrap(ns.goods:GetGood(goodID))
+	end
+end
+
 --- Where the Curio Shop shows: the window (adapter/Shop.lua), or FakePagle's record of it.
 ---@class PagleShopSeams
----@field isRestricted fun(): boolean -- Pagle.IsRestricted()
----@field print fun(line: string)     -- prints a chat line
 ---@field isShown fun(): boolean      -- the shop is open
----@field show fun(selection: string|false|nil) -- opens it, or keeps it open: selecting that good, nothing (false), or
---- keeping the selection it has (nil)
+---@field show fun(selection: string|false|nil, asked: string?) -- opens it, or keeps it open: selecting that good,
+--- nothing (false), or keeping the selection it has (nil); `asked` is the good Pagle.OpenShop asked for, if any
 ---@field hide fun()                  -- closes it
 
 --- The Curio Shop's entry points (SHOP-R40, SHOP-R41), which Pagle.OpenShop, /pagle shop and the compartment entry call,
@@ -440,9 +513,11 @@ end
 --- The Curio Shop's entry points as ns.shop (SHOP-R40, SHOP-R41), its buying (ns.shop.Buy), and ns.ShopModel, the
 --- shop's data now: Core's goods, their cache, the Modules On, the balance and whether a projection is updating
 --- (logic/Shop.lua). Opening while restricted prints "Pagle: the Curio Shop opens after combat." and opens nothing; at
---- RestrictionChanged(true) an open shop closes, its Buy popup with it, and nothing is queued.
+--- RestrictionChanged(true) an open shop closes, its Buy popup with it, and nothing is queued. Returns
+--- Pagle.OpenShop.
 ---@param host PagleHost
 ---@param seams PagleShopSeams
+---@return fun(goodID: string?) openShop
 function ns.WireShop(host, seams)
 	--- The shop's model now; `format` writes a number of Coins (BreakUpLargeNumbers).
 	---@param format (fun(value: number): string)?
@@ -480,15 +555,15 @@ function ns.WireShop(host, seams)
 
 	---@param goodID string?
 	local function open(goodID)
-		if seams.isRestricted() then
-			seams.print(ns.L.SHOP_AFTER_COMBAT)
+		if host.isRestricted() then
+			host.print(ns.L.SHOP_AFTER_COMBAT)
 			return
 		end
 		local selection
 		if goodID ~= nil then
 			selection = ns.ShopModel():Select(goodID) or false
 		end
-		seams.show(selection)
+		seams.show(selection, goodID)
 	end
 	local function toggle()
 		if seams.isShown() then
@@ -504,6 +579,7 @@ function ns.WireShop(host, seams)
 			seams.hide()
 		end
 	end)
+	return open
 end
 
 --- The Field report's two readers (field-report.md › The projection).

@@ -70,3 +70,21 @@ function ns.CompartmentMenu(modules, shop, fieldReport, last, call)
 	entries[#entries + 1] = last
 	return entries
 end
+
+--- The compartment menu as Core opens it (CORE-R50, CORE-R52), read now: the Modules' entries, then the Curio Shop
+--- (Pagle.OpenShop, with Pagle.GetBalance()), "Help chart the waters" (Core's report subcommand, with
+--- Pagle.GetFieldReportCount()) and "Settings" (Core's settings subcommand). Each of these prints its CORE-R33 line
+--- instead while restricted. One function for Core's adapter and FakePagle.
+---@param Pagle Pagle
+---@param core PagleCoreSubcommands
+---@param modules PagleModule[] by def.order, as `registry:Modules()` lists them
+---@param breakUpLargeNumbers fun(value: number): string the client's BreakUpLargeNumbers
+---@param call fun(fn: function): any calls a function label; returns nil when it fails (securecallfunction)
+---@return PagleMenuEntry[]
+function ns.CoreCompartmentMenu(Pagle, core, modules, breakUpLargeNumbers, call)
+	local shop = ns.CurioShopMenuEntry(Pagle.GetBalance(), breakUpLargeNumbers, function()
+		Pagle.OpenShop()
+	end)
+	local fieldReport = ns.FieldReportMenuEntry(Pagle.GetFieldReportCount(), core.report)
+	return ns.CompartmentMenu(modules, shop, fieldReport, ns.SettingsMenuEntry(core.settings), call)
+end

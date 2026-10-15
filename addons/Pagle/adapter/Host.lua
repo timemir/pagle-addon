@@ -59,4 +59,7 @@ ns.host = {
 	print = function(line)
 		print(line)
 	end,
+	isRestricted = function()
+		return Pagle.IsRestricted()
+	end,
 }

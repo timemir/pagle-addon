@@ -1311,6 +1311,15 @@ describe("FakePagle", function()
 			assert.are.equal(Pagle.SIZE_RULES_VERSION, fake.Pagle.SIZE_RULES_VERSION)
 		end)
 
+		it("hands out Pagle.SIZE_BANDS read-only, leaving Core's own bands as they are (CORE-R18, LOG-R67)", function()
+			local fake = newFakePagle()
+
+			assert.has_error(function()
+				fake.Pagle.SIZE_BANDS[1].name = "Minnow"
+			end)
+			assert.are.equal("Tiddler", fake.ns.SIZE_BANDS[1].name)
+		end)
+
 		it(
 			"puts Core's size on the played Cast, its Catch event and the records IterateCatches yields, over the"
 				.. " catalogue served now (LOG-R43, LOG-R65, LOG-R96)",

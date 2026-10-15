@@ -471,16 +471,11 @@ part(function(fake, Pagle, ns, host)
 	fake.goods = fake.global.goods
 	fake.shopsOpened = {}
 	fake.shopOpen = false
-	local asked -- the good the Pagle.OpenShop running asked for
-	ns.WireShop(host, {
-		isRestricted = function()
-			return Pagle.IsRestricted()
-		end,
-		print = fake.print,
+	Pagle.OpenShop = ns.WireShop(host, {
 		isShown = function()
 			return fake.shopOpen
 		end,
-		show = function(selection)
+		show = function(selection, asked)
 			fake.shopOpen = true
 			fake.shopsOpened[#fake.shopsOpened + 1] = { goodID = asked, selected = selection or nil }
 		end,
@@ -488,28 +483,7 @@ part(function(fake, Pagle, ns, host)
 			fake.shopOpen = false
 		end,
 	})
-
-	function Pagle.IsOwned(goodID)
-		return ns.goods:IsOwned(goodID)
-	end
-
-	function Pagle.GetEquipped(slot)
-		return ns.goods:GetEquipped(slot)
-	end
-
-	function Pagle.SetEquipped(slot, goodID)
-		return ns.goods:SetEquipped(slot, goodID)
-	end
-
-	function Pagle.GetGood(goodID)
-		return readOnly(ns.goods:GetGood(goodID))
-	end
-
-	function Pagle.OpenShop(goodID)
-		asked = goodID
-		ns.shop.Open(goodID)
-		asked = nil
-	end
+	ns.PublishGoods(Pagle, readOnly)
 
 	function fake.setPurchased(purchased)
 		ns.goods:SetPurchased(purchased)
@@ -550,14 +524,8 @@ part(function(fake, Pagle, ns, host)
 	end)
 
 	local core = ns.CoreSubcommands(Pagle)
-	local settings = ns.SettingsMenuEntry(core.settings)
-	local function openShop()
-		Pagle.OpenShop()
-	end
 	function fake.menu()
-		local shop = ns.CurioShopMenuEntry(Pagle.GetBalance(), breakUpLargeNumbers, openShop)
-		local fieldReport = ns.FieldReportMenuEntry(Pagle.GetFieldReportCount(), core.report)
-		return ns.CompartmentMenu(fake.registry:Modules(), shop, fieldReport, settings, fake.securecall)
+		return ns.CoreCompartmentMenu(Pagle, core, fake.registry:Modules(), breakUpLargeNumbers, fake.securecall)
 	end
 
 	-- /pagle dev (#247), on Core's wiring: the same switch in fake.global, Sessions and fishing as Core's.
@@ -582,12 +550,9 @@ end)
 
 -- The Catch log (LOG-R10–R16, LOG-R42) on Core's real codec, over an empty in-memory PagleLog. A spec adds
 -- characters to fake.catchLog.data.characters and entries with fake.catchLog:Append(record). Every Cast it hands out
--- carries Core's Simulated Sizes over the catalogue served when it's read (LOG-R65), and the band list and size
--- rules version are Core's (LOG-R67, LOG-R68).
+-- carries Core's Simulated Sizes over the catalogue served when it's read (LOG-R65).
 part(function(fake, Pagle, ns)
 	fake.catchLog = ns.OpenCatchLog(nil, fake.global, SERVER_TIME, ns.CatalogueItem)
-	Pagle.SIZE_BANDS = ns.SIZE_BANDS
-	Pagle.SIZE_RULES_VERSION = ns.SIZE_RULES_VERSION
 	function Pagle.IterateCatches(afterSeq)
 		local iterate = fake.catchLog:Iterate(afterSeq)
 		return function()
@@ -596,10 +561,11 @@ part(function(fake, Pagle, ns)
 	end
 end)
 
--- The length unit (LOG-R69): Pagle.FormatLength on Core's wiring, in fake.profile.lengthUnit or fake.region's default.
+-- Simulated Size as Core publishes it (LOG-R67–R69): Pagle.SIZE_BANDS (read-only here, CORE-R18),
+-- Pagle.SIZE_RULES_VERSION and Pagle.FormatLength, in fake.profile.lengthUnit or fake.region's default.
 part(function(fake, Pagle, ns, host)
 	fake.region = 1
-	Pagle.FormatLength = ns.WireLength(host)
+	ns.PublishSize(Pagle, host, readOnly)
 end)
 
 -- Projections (LOG-R70–R77), on Core's wiring over fake.catchLog: M:NewProjection and M:IterateCatches on the
@@ -1050,6 +1016,9 @@ function newFakePagle()
 			return fake.region
 		end,
 		print = fake.print,
+		isRestricted = function()
+			return Pagle.IsRestricted()
+		end,
 		syncLimit = math.huge, -- every catch-up and rebuild runs at once
 		timers = timers,
 	}

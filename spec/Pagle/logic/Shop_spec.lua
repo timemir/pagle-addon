@@ -77,16 +77,10 @@ local function ledgerBindings(ledger)
 	ledger:RegisterGood({ id = "ledger.binding.lapis", slot = "ledger.binding", name = "Lapis", tier = 3 })
 end
 
--- The shop's model now, over the fake's goods, cache, Modules On, balance and projections.
+-- The shop's model now, as Core builds it (ns.ShopModel): over the fake's goods, cache, Modules On, balance and
+-- projections.
 local function model(fake)
-	return fake.ns.NewShopModel({
-		goods = fake.ns.goods,
-		cache = fake.goods,
-		modules = fake.registry:Modules(),
-		balance = fake.ns.wallet:Get(),
-		updating = fake.projections:IsUpdating(),
-		format = breakUpLargeNumbers,
-	})
+	return fake.ns.ShopModel(breakUpLargeNumbers)
 end
 
 describe("The shop's purse", function()
