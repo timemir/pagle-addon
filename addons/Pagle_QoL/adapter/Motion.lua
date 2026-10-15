@@ -180,16 +180,13 @@ function P.Cue(owner, t, fn)
 	if not P.motion then
 		return
 	end
-	P.Animate(
-		owner,
+	P.Animate(owner, {
 		{
-			{
-				dur = math.max(0.001, t),
-				ease = P.Ease.linear,
-				keys = { { 0, { 0 } }, { 1, { 1 } } },
-				apply = noop,
-				done = fn,
-			},
-		}
-	)
+			dur = math.max(0.001, t),
+			ease = P.Ease.linear,
+			keys = { { 0, { 0 } }, { 1, { 1 } } },
+			apply = noop,
+			done = fn,
+		},
+	})
 end
