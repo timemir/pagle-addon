@@ -122,7 +122,7 @@ describe("the spike (TKB-R103)", function()
 
 		local hover = ns.SpikeView(ns.State()).goals[1].hover
 
-		-- No lore batch is loaded: the fly's name falls back to its ID (M7 graph, open question 7).
+		-- The support leaves the shipped lore out: the fly's name falls back to its ID (M7 graph, open question 7).
 		assert.are.same({ "1 Catch in Durotar", "Paid 10 Coins", "Tied for your Fly Box: " .. fly }, hover)
 	end)
 

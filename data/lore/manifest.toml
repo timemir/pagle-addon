@@ -8,8 +8,8 @@
 # An ID entry may allow {zone}, the one placeholder (DATA-R108). Each kind belongs to one addon (DATA-R102); the
 # catalogue-keyed kinds (species, legend, sub, family, DATA-R103) and Hunts' hunt and set (DATA-R105) are never listed.
 # The Ledger's line IDs came with its first batch (#131), its title and binding IDs with the M4 batch (#161,
-# LED-R162), Core's good IDs with Core's lore check (#161), Hunts' good IDs with Hunts' lore check (#183), and Stats'
-# good IDs with Stats' lore check (#210).
+# LED-R162), Core's good IDs with Core's lore check (#161), Hunts' good IDs with Hunts' lore check (#183), Stats' good
+# IDs with Stats' lore check (#210), and the Tackle Board's pattern, title and good IDs with its lore check (#237).
 
 # The Ledger's shared lines (LED-R160), each shown in place of something not yet caught or charted: an uncaught
 # Legend's page (LED-R147), an empty Junk Museum plinth and an unopened Treasures row (LED-R144), and a zone with no
@@ -81,3 +81,51 @@ ids = [
 [stats.statsgood]
 fields = ["name", "description"]
 ids = ["stats.trackerframe.none", "stats.trackerframe.logbook", "stats.trackerframe.brass"]
+
+# The Tackle Board's lore (TKB-R130), from M7 with its lore check (DATA-R107). The Ledger owns title and Core owns good
+# (DATA-R102), so the board's kinds are fly, boardtitle and boardgood. The Fly Box's 30 patterns in pattern order
+# (TKB-R62: 24 common, then 6 rare), each with a name.
+[tackleboard.fly]
+fields = ["name"]
+ids = [
+	"murloc_nymph",
+	"westfall_wheatwing",
+	"goldshire_gnat",
+	"duskwood_shadow",
+	"redridge_ember",
+	"barrens_dun",
+	"mudsnout_woolly",
+	"gnomish_whirligig",
+	"tarnished_spoon",
+	"ashenvale_olive",
+	"kodo_hair_caddis",
+	"elwynn_royal",
+	"swamp_midge",
+	"raptor_quill",
+	"silverpine_spinner",
+	"lakeshire_coachman",
+	"bloodsail_streamer",
+	"booty_bay_bucktail",
+	"desolace_drifter",
+	"grimtotem_hackle",
+	"needles_ant",
+	"feralas_fern",
+	"tanaris_sandfly",
+	"darkshore_dun",
+	"nats_golden_doctor",
+	"kraken_ink_streamer",
+	"phoenix_hackle",
+	"moonwell_silverwing",
+	"thunderhead_tiger",
+	"deepwater_duchess",
+]
+
+# The board's 8 titles (TKB-R61, TKB-R73, TKB-R60's Fly Box title), each with a text.
+[tackleboard.boardtitle]
+fields = ["text"]
+ids = ["tally_25", "tally_100", "tally_500", "campfire_7", "campfire_30", "campfire_100", "campfire_365", "flybox"]
+
+# The board's goods (TKB-R125), its three tracker frames, each with a name and a description.
+[tackleboard.boardgood]
+fields = ["name", "description"]
+ids = ["tackleboard.trackerframe.none", "tackleboard.trackerframe.corkboard", "tackleboard.trackerframe.driftwood"]

@@ -132,12 +132,34 @@ function support.readSkill(fake)
 	fake.readSkill(support.SKILL, 225, 0)
 end
 
+-- The lore kinds the generated data/Lore.lua adds to ns.L (TKB-R130): `fly.`, `boardtitle.` and `boardgood.` keys.
+local LORE_KINDS = { "fly", "boardtitle", "boardgood" }
+
+-- Removes the shipped lore batch's keys from ns.L, so names fall back to their IDs (M7 graph, open question 7) and no
+-- spec depends on text the dev's review may change (#244).
+---@param L table ns.L
+local function withoutLore(L)
+	local keys = {}
+	for key in pairs(L) do
+		for _, kind in ipairs(LORE_KINDS) do
+			if type(key) == "string" and key:sub(1, #kind + 1) == kind .. "." then
+				keys[#keys + 1] = key
+			end
+		end
+	end
+	for _, key in ipairs(keys) do
+		L[key] = nil
+	end
+end
+
 --- Loads Pagle_TackleBoard on `fake` (a new FakePagle if nil), serving `options.catalogue` or else the fixture
 --- catalogue through fake.setCatalogue first, so the board reads it from OnInitialize on, and putting
 --- `options.api` (default support.resetAPI(fake)) and `options.random` (default support.random(1)) at ns.api and
---- ns.random before its ADDON_LOADED. `options.prepare(loaded)` runs after that, still before OnInitialize.
+--- ns.random before its ADDON_LOADED. The shipped lore batch (data/Lore.lua) is left out of ns.L, as the shipped
+--- catalogue is, unless `options.lore` is true; a spec sets the lore keys it needs itself. `options.prepare(loaded)`
+--- runs after that, still before OnInitialize.
 ---@param fake table? a FakePagle (newFakePagle()), for a spec that set it up first
----@param options { catalogue: table?, api: table?, random: function?, prepare: fun(loaded: LoadedAddon)? }?
+---@param options { catalogue: table?, api: table?, random: function?, lore: boolean?, prepare: fun(loaded: LoadedAddon)? }?
 ---@return LoadedAddon loaded
 ---@return table fake
 function support.load(fake, options)
@@ -149,6 +171,9 @@ function support.load(fake, options)
 	if loaded.ns.TackleBoard then
 		loaded.ns.api = options.api or support.resetAPI(fake)
 		loaded.ns.random = options.random or support.random(1)
+		if not options.lore then
+			withoutLore(loaded.ns.L)
+		end
 	end
 	if options.prepare then
 		options.prepare(loaded)

@@ -233,7 +233,7 @@ describe("the Tackle Board's moments", function()
 					rung = "banner",
 					order = 10,
 					title = "Campfire: 7 days",
-					text = "Title: campfire_7", -- the lore's name once the lore batch lands (TKB-R130)
+					text = "Title: campfire_7", -- the ID: the support leaves the shipped lore out (TKB-R130)
 					icon = loaded.ns.REWARD_ICONS.campfire,
 					cast = idAt(NOW + 10),
 					coins = 25,

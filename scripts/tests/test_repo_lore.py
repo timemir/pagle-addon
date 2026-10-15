@@ -1,7 +1,8 @@
 """The repo's own lore (DATA-R111): data/lore/ledger.toml, the Ledger's first batch and its M4 titles and bindings,
 data/lore/core.toml, Core's goods, Hunts' M5 batch, its goods in data/lore/hunts.toml and its Hunts' and sets' text in
-data/hunts/hunts.toml, and Stats' M6 batch, its tracker frames in data/lore/stats.toml, each with its lore check on
-(DATA-R66, LED-R162, HNT-R130, STA-R88)."""
+data/hunts/hunts.toml, Stats' M6 batch, its tracker frames in data/lore/stats.toml, and the Tackle Board's M7 batch,
+its fly patterns, titles and tracker frames in data/lore/tackleboard.toml, each with its lore check on (DATA-R66,
+LED-R162, HNT-R130, STA-R88, TKB-R130)."""
 
 import csv
 import re
@@ -47,8 +48,8 @@ TITLES = [
     "complete.treasure",
     "complete.trophy",
 ]
-# DATA-R107: every lore check built and on by M6.
-ALL_CHECKS = ["ledger", "core", "hunts", "stats"]
+# DATA-R107: every lore check, built and on by M7.
+ALL_CHECKS = ["ledger", "core", "hunts", "stats", "tackleboard"]
 BINDINGS = ["field", "level10", "level20", "level30", "level40", "level50", "level60", "birch", "buckram", "sharkskin"]
 
 
@@ -69,12 +70,12 @@ def _zone_names() -> list[str]:
         return sorted({row["AreaName_lang"] for row in csv.DictReader(handle) if row["ParentAreaID"] == "0"})
 
 
-def test_the_ledger_s_core_s_hunts_and_stats_lore_checks_are_on() -> None:
+def test_every_lore_check_is_on() -> None:
     # DATA-R66, LED-R162: the Ledger's lore check turns on in M3 with its first batch (DATA-R111); DATA-R107: Core's
     # in M4, with its goods; HNT-R130: Hunts' in M5, after Core's; DATA-R107, STA-R88: Stats' in M6, when it first
-    # registers its goods, after Hunts'.
+    # registers its goods, after Hunts'; TKB-R130: the Tackle Board's in M7, with its batch, after Stats'.
     with (REPO / "data" / "checks.toml").open("rb") as handle:
-        assert tomllib.load(handle)["lore"] == ["ledger", "core", "hunts", "stats"]
+        assert tomllib.load(handle)["lore"] == ["ledger", "core", "hunts", "stats", "tackleboard"]
 
 
 def _without(lore_id: str, key: str) -> list[str]:
@@ -451,4 +452,151 @@ def test_the_generator_fails_on_a_29_code_point_frame_name_and_names_the_key(
     out, err = capsys.readouterr()
     assert code == 1
     assert "data/lore/stats.toml: statsgood.stats.trackerframe.logbook.name: length: 29 code points" in out + err
+    assert not (tmp_path / "addons").exists()
+
+
+# tackle-board.md › Data: the Fly Box's 30 patterns in pattern order (TKB-R62: 24 common, then 6 rare), the 8 titles in
+# their table's order, and the three tracker frames (TKB-R125).
+FLY_PATTERNS = [
+    "murloc_nymph",
+    "westfall_wheatwing",
+    "goldshire_gnat",
+    "duskwood_shadow",
+    "redridge_ember",
+    "barrens_dun",
+    "mudsnout_woolly",
+    "gnomish_whirligig",
+    "tarnished_spoon",
+    "ashenvale_olive",
+    "kodo_hair_caddis",
+    "elwynn_royal",
+    "swamp_midge",
+    "raptor_quill",
+    "silverpine_spinner",
+    "lakeshire_coachman",
+    "bloodsail_streamer",
+    "booty_bay_bucktail",
+    "desolace_drifter",
+    "grimtotem_hackle",
+    "needles_ant",
+    "feralas_fern",
+    "tanaris_sandfly",
+    "darkshore_dun",
+    "nats_golden_doctor",
+    "kraken_ink_streamer",
+    "phoenix_hackle",
+    "moonwell_silverwing",
+    "thunderhead_tiger",
+    "deepwater_duchess",
+]
+BOARD_TITLES = [
+    "tally_25",
+    "tally_100",
+    "tally_500",
+    "campfire_7",
+    "campfire_30",
+    "campfire_100",
+    "campfire_365",
+    "flybox",
+]
+BOARD_GOODS = [
+    "tackleboard.trackerframe.none",
+    "tackleboard.trackerframe.corkboard",
+    "tackleboard.trackerframe.driftwood",
+]
+BOARD_KEYS = (
+    [f"fly.{pattern}.name" for pattern in FLY_PATTERNS]
+    + [f"boardtitle.{title}.text" for title in BOARD_TITLES]
+    + [f"boardgood.{good}.{field}" for good in BOARD_GOODS for field in ("name", "description")]
+)
+
+
+def _board_text() -> dict[str, str]:
+    """Every line of the Tackle Board's lore by key (data/lore/tackleboard.toml)."""
+    return {key: text.value for key, text in _layers().lore.files["tackleboard"].items()}
+
+
+def test_the_manifest_lists_the_tackle_board_s_patterns_titles_and_goods() -> None:
+    # TKB-R130, DATA-R106: [tackleboard.fly] (name), [tackleboard.boardtitle] (text) and [tackleboard.boardgood] (name
+    # and description), with tackle-board.md › Data's IDs in its order, none with a placeholder.
+    manifest = _layers().lore.manifest["tackleboard"]
+    assert sorted(manifest) == ["boardgood", "boardtitle", "fly"]
+    assert manifest["fly"].fields == ("name",)
+    assert manifest["boardtitle"].fields == ("text",)
+    assert manifest["boardgood"].fields == ("name", "description")
+    assert list(manifest["fly"].ids) == FLY_PATTERNS
+    assert list(manifest["boardtitle"].ids) == BOARD_TITLES
+    assert list(manifest["boardgood"].ids) == BOARD_GOODS
+    assert all(not allowed for kind in manifest.values() for allowed in kind.ids.values())
+
+
+def test_the_tackle_board_s_lore_is_its_44_lines_and_nothing_else() -> None:
+    # DATA-R107 passes (read_layers raises on any problem), and TKB-R130: every pattern's name, title's text and good's
+    # name and description, the M7 batch's 44 lines (DATA-R111).
+    text = _board_text()
+    assert len(BOARD_KEYS) == 44
+    assert set(text) == set(BOARD_KEYS)
+    assert all(text[key].strip() for key in BOARD_KEYS)
+
+
+def test_every_fly_name_and_every_title_is_its_own() -> None:
+    # TKB-R62: each pattern is tied once and named in its moment, and each title is earned once (TKB-R64), so no two
+    # share a name.
+    text = _board_text()
+    flies = [text[f"fly.{pattern}.name"] for pattern in FLY_PATTERNS]
+    titles = [text[f"boardtitle.{title}.text"] for title in BOARD_TITLES]
+    assert len(set(flies)) == len(flies)
+    assert len(set(titles)) == len(titles)
+
+
+@pytest.mark.parametrize("key", ["fly.murloc_nymph.name", "boardtitle.flybox.text", f"boardgood.{BOARD_GOODS[1]}.name"])
+def test_deleting_a_tackle_board_line_fails_its_lore_check_naming_its_key(key: str) -> None:
+    # DATA-R107's missing, for the tackleboard lore ID: the manifest lists every pattern, title and good (DATA-R106).
+    assert _without("tackleboard", key) == [
+        f"data/lore/tackleboard.toml: {key}: missing: manifest.toml lists it (DATA-R106, DATA-R107)"
+    ]
+
+
+@pytest.mark.parametrize("title", BOARD_TITLES)
+def test_every_board_title_is_a_bare_epithet(title: str) -> None:
+    # "Title: {title}" (TKB-R86) and the Campfire card read a title bare; VOICE.md choice 6 (approved): bare epithets,
+    # capitalised, with no "the" or "of" in front; never "Master Angler" or plain "Angler" (LED-R75).
+    text = _board_text()[f"boardtitle.{title}.text"]
+    assert text[0].isupper(), text
+    assert not re.match(r"(the|of)\b", text, re.IGNORECASE), text
+    assert "master angler" not in text.lower() and text.lower() != "angler"
+
+
+@pytest.mark.parametrize("key", BOARD_KEYS)
+def test_no_line_of_tackle_board_lore_names_the_addon_its_terms_or_shouts(key: str) -> None:
+    # #237: a frame's description says what it looks like, never "shop", "Tackle Board" or the addon. VOICE.md: "Not
+    # the addon talking" (choice 12): no Pagle and none of its capitalised terms (the board's own among them: Notice,
+    # Expedition, Campfire, Kindling, Fly Box), nor "board" or "ledger" in any case; no "I" (choice 3); no
+    # exclamation marks (choice 13); no | (WoW's escape codes); plain ASCII only (the client's fonts, #248).
+    text = _board_text()[key]
+    terms = (
+        r"\b(Pagle|Pagle's|Stats|Hunts?|Coins?|Sessions?|Notices?|Expeditions?|Campfire|Kindling|Catch(es)?|Casts?"
+        r"|Angler|XP|I)\b"
+    )
+    assert not re.search(terms, text), text
+    assert not re.search(r"\b(shop|curio|ledger|board|fly box|tracker)\b", text, re.IGNORECASE), text
+    assert "!" not in text and "|" not in text, text
+    assert text.isascii(), text
+
+
+def test_the_generator_fails_on_a_29_code_point_fly_name_and_names_the_key(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    # DATA-R107 for the tackleboard lore ID, through the generator itself (DATA-R63): a copy of data/ with the Murloc
+    # Nymph's name one code point over the 28 (Tunables › Lore limits) writes nothing.
+    shutil.copytree(REPO / "data", tmp_path / "data")
+    board = tmp_path / "data" / "lore" / "tackleboard.toml"
+    text = board.read_text(encoding="utf-8")
+    name = f'name = "{_board_text()["fly.murloc_nymph.name"]}"\n'
+    assert text.count(name) == 1
+    board.write_text(text.replace(name, f'name = "{"M" * 29}"\n'), encoding="utf-8")
+    code = main([], tmp_path)
+    out, err = capsys.readouterr()
+    assert code == 1
+    assert "data/lore/tackleboard.toml: fly.murloc_nymph.name: length: 29 code points" in out + err
     assert not (tmp_path / "addons").exists()

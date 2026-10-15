@@ -92,6 +92,18 @@ describe("the Tackle Board's spec support", function()
 		assert.are.same({ api, random }, { loaded.ns.api, loaded.ns.random })
 	end)
 
+	it("leaves the shipped lore out of ns.L unless asked for it, so names read as IDs (TKB-R130)", function()
+		-- M7 graph, open question 7: a name with no lore reads as its ID; the batch's text is the dev's to change (#244).
+		local without = board.load().ns.L
+		local with = board.load(nil, { lore = true }).ns.L
+
+		assert.is_nil(rawget(without, "fly.murloc_nymph.name"))
+		assert.is_nil(rawget(without, "boardtitle.flybox.text"))
+		assert.is_nil(rawget(without, "boardgood.tackleboard.trackerframe.none.name"))
+		assert.is_string(rawget(with, "fly.murloc_nymph.name"))
+		assert.are.equal("Tackle Board", without.TITLE)
+	end)
+
 	it("reads the fixture Angler's skill, 150, after login (LOG-R27)", function()
 		local _, fake = board.load()
 		fake.login()
