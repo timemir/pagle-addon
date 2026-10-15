@@ -472,6 +472,11 @@ describe("the board's art kit", function()
 			assert.are.same({ "TOPRIGHT" }, left.gutter.points[1])
 			assert.are.same({ "TOPLEFT" }, right.gutter.points[1])
 			assert.are.equal(40, left.gutter.width)
+			-- the outer corners rounded by Core's corner masks, the spine's square
+			assert.are.same({ "TOPLEFT", "BOTTOMLEFT" }, { left.corners[1].points[1][1], left.corners[2].points[1][1] })
+			assert.are.equal("Interface\\AddOns\\Pagle\\media\\books\\CornerTL", left.corners[1].texture)
+			assert.are.same({ left.corners[1], left.corners[2] }, left.paper.masks)
+			assert.are.equal("Interface\\AddOns\\Pagle\\media\\books\\CornerTR", right.corners[1].texture)
 		end)
 
 		it("set headings in small caps: capitals in the small kicker face", function()

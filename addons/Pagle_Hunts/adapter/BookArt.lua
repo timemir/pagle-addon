@@ -340,10 +340,10 @@ end
 -- The rounded corner's radius, in UI units, and the mask drawn on each corner: white, its alpha a quarter disc.
 local CORNER_RADIUS = 6
 local CORNER_MASKS = {
-	TOPLEFT = "InterfaceAddOnsPaglemedia\booksCornerTL",
-	TOPRIGHT = "InterfaceAddOnsPaglemedia\booksCornerTR",
-	BOTTOMLEFT = "InterfaceAddOnsPaglemedia\booksCornerBL",
-	BOTTOMRIGHT = "InterfaceAddOnsPaglemedia\booksCornerBR",
+	TOPLEFT = "Interface\\AddOns\\Pagle\\media\\books\\CornerTL",
+	TOPRIGHT = "Interface\\AddOns\\Pagle\\media\\books\\CornerTR",
+	BOTTOMLEFT = "Interface\\AddOns\\Pagle\\media\\books\\CornerBL",
+	BOTTOMRIGHT = "Interface\\AddOns\\Pagle\\media\\books\\CornerBR",
 }
 
 --- Rounds `texture`'s corners named in `corners` (e.g. { "TOPLEFT", "BOTTOMLEFT" }), a few units across: a small mask
