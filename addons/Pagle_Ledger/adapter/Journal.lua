@@ -90,10 +90,12 @@ function Journal:Context() -- luacheck: no self
 		canPrestige = ns.CanPrestige(),
 		askPrestige = ns.AskPrestige,
 		pickTitle = ns.PickActiveTitle,
-		isOwned = Pagle.IsOwned,
-		getEquipped = Pagle.GetEquipped,
-		setEquipped = Pagle.SetEquipped,
-		openShop = Pagle.OpenShop,
+		goods = {
+			isOwned = Pagle.IsOwned,
+			getEquipped = Pagle.GetEquipped,
+			setEquipped = Pagle.SetEquipped,
+			openShop = Pagle.OpenShop,
+		},
 	}
 end
 

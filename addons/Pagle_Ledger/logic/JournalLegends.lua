@@ -127,7 +127,7 @@ local function plate(context, itemID)
 	local entry = context.state.items[itemID]
 	local back = ns.JournalPlace.legends(itemID)
 	local lines = { firstCatch(context, entry) }
-	local size = context.sizeText and context.sizeText(entry.record)
+	local size = context.sizeText(entry.record)
 	if size then
 		lines[#lines + 1] = size
 	end

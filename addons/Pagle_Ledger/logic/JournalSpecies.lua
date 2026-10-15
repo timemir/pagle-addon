@@ -145,7 +145,7 @@ function ns.JournalSpeciesEntry(id, context, hint)
 	if found then
 		blocks[#blocks + 1] = { kind = "text", text = found }
 	end
-	local size = context.sizeText and context.sizeText(species.record)
+	local size = context.sizeText(species.record)
 	if size then
 		blocks[#blocks + 1] = { kind = "text", text = L.ENTRY_LARGEST:format(size) }
 	end
