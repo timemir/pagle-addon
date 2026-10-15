@@ -541,23 +541,16 @@ function ns.WireFieldReport(host)
 end
 
 --- Core's wallet projection (LOG-R78, SHOP-R11, SHOP-R34): `ns.StartWalletProjection()` binds it at login step 1,
---- after the Field report's and ahead of every Module's, to PagleDB.global.projections.wallet (created if missing),
+--- after the Field report's and ahead of every Module's, to PagleDB.global.projections.wallet (ns.PAGLEDB_DEFAULTS),
 --- over the log's records. It hands ns.wallet the Coins spent and ns.goods the purchased set: what it stored at
 --- once, its new totals in its done, and each live purchase as it counts.
 ---@param host PagleHost
 function ns.WireWalletProjection(host)
 	--- Login step 1, once PagleDB is open and ns.wallet and ns.goods are wired.
 	function ns.StartWalletProjection()
-		local global = host.db().global
-		if type(global.projections) ~= "table" then
-			global.projections = {}
-		end
-		if type(global.projections.wallet) ~= "table" then
-			global.projections.wallet = {}
-		end
 		ns.walletProjection = ns.AddWalletProjection({
 			projections = ns.projections,
-			db = global.projections.wallet,
+			db = host.db().global.projections.wallet,
 			iterate = host.iterate,
 			wallet = ns.wallet,
 			goods = ns.goods,

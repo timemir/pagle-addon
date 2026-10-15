@@ -64,6 +64,13 @@ describe("the wallet projection", function()
 		end
 	)
 
+	it("binds to a PagleDB saved before M4, which holds only the Field report's projection (LOG-R78)", function()
+		local saved = { global = { projections = { fieldReport = {} } } }
+		local loaded = enterWorld((huntsSession(purchases(2), saved)))
+
+		assert.are.same(BOTH, loaded.env.PagleDB.global.projections.wallet.projection)
+	end)
+
 	it(
 		"gives 550 spent and both goods owned after the catch-up, a second U1 for a good changing nothing (SHOP-R11)",
 		function()

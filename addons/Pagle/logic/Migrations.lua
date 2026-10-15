@@ -20,7 +20,7 @@ ns.PAGLEDB_DEFAULTS = {
 		cards = {},
 		writeUp = {},
 		-- catch-log.md › Data: Core's own projections (LOG-R78), and the diagnostics buffer (LOG-R81).
-		projections = { fieldReport = {} }, -- REP-R25
+		projections = { fieldReport = {}, wallet = {} }, -- REP-R25; wallet-and-shop.md › Data
 		diagnostics = {},
 	},
 	profile = {
