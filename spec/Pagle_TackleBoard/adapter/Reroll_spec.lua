@@ -97,11 +97,8 @@ describe("taking a goal down", function()
 		it("carries the goal ns.GenerateGoal draws for the old goal's type with its kind dropped (TKB-R55)", function()
 			local ns, _, fake = started()
 			-- the same draws the reroll will make: a source of the same seed, nothing drawn from it yet
-			local expected = ns.GenerateGoal(
-				ns.GenerationContext(ns.State(), fake.serverTime(), board.random(SEED)),
-				"e",
-				"size"
-			)
+			local expected =
+				ns.GenerateGoal(ns.GenerationContext(ns.State(), fake.serverTime(), board.random(SEED)), "e", "size")
 
 			ns.TakeDown(EXPEDITION)
 
@@ -261,16 +258,13 @@ describe("taking a goal down", function()
 		it("is allowed for every open goal from an issue record, and for no unknown goal", function()
 			local ns = started()
 
-			assert.are.same(
-				{ true, true, true, true, false },
-				{
-					ns.CanTakeDown(EXPEDITION),
-					ns.CanTakeDown(HAUL),
-					ns.CanTakeDown(QUALITY),
-					ns.CanTakeDown(WANDERER),
-					ns.CanTakeDown("Player-0-00000000-0-0"),
-				}
-			)
+			assert.are.same({ true, true, true, true, false }, {
+				ns.CanTakeDown(EXPEDITION),
+				ns.CanTakeDown(HAUL),
+				ns.CanTakeDown(QUALITY),
+				ns.CanTakeDown(WANDERER),
+				ns.CanTakeDown("Player-0-00000000-0-0"),
+			})
 		end)
 
 		it("isn't allowed for a completed goal", function()
