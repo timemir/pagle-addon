@@ -7,7 +7,7 @@ local hunts = dofile("spec/Pagle_Hunts/support.lua")
 
 local ns = hunts.load().ns
 local NOW = SERVER_TIME
-local HOUR = 3600
+local HOUR = hunts.HOUR
 local AURA, OTHER_AURA = 1280341, 1265220
 
 describe("Grouping one Hunt (HNT-R40)", function()
@@ -239,7 +239,9 @@ describe("The groups views read (HNT-R40–R44, HNT-R80, HNT-R82)", function()
 				return given.showCompleted == true
 			end,
 			state = function()
-				return { casts = 0, coins = 0, hunts = given.progress or {}, sets = {} }
+				local state = ns.NewHuntsState()
+				state.hunts = given.progress or {}
+				return state
 			end,
 			updating = function()
 				return given.updating == true

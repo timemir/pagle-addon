@@ -6,26 +6,13 @@
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local hunts = dofile("spec/Pagle_Hunts/support.lua")
----@diagnostic disable-next-line: undefined-global -- as above
-local catalogue = dofile("spec/Pagle_Hunts/fixtures/Catalogue.lua")
 
-local C = catalogue
+local C = hunts.catalogue
 local FRAME_SLOT = "hunts.trackerframe"
 local INKWASH = "hunts.trackerframe.inkwash"
-local REALM_START = 8 * 60 + 15 -- FakePagle's realm clock at SERVER_TIME: 08:15 on Sunday 11 October 2026
+local REALM_START, untilRealm, wait = hunts.REALM_START, hunts.untilRealm, hunts.wait
 
---- Seconds from FakePagle's start (realm 08:15) to realm `hour`:`minute` the same day.
----@param hour integer
----@param minute integer?
----@return integer
-local function untilRealm(hour, minute)
-	return (hour * 60 + (minute or 0) - REALM_START) * 60
-end
-
----@class TrackerRun
----@field loaded LoadedAddon
----@field fake table
----@field ns table
+---@class TrackerRun: HuntsRun
 
 --- Hunts on a FakePagle through its first PLAYER_ENTERING_WORLD, so the first grouping has run (HNT-R42): the fixture
 --- catalogue with the fixture items' names loaded, `options.saved` as PagleHuntsDB, `options.history(fake)` appended
@@ -37,45 +24,14 @@ end
 ---@return TrackerRun
 local function start(options)
 	options = options or {}
-	local fake = newFakePagle()
-	fake.setCatalogue(catalogue.base())
-	local clock
-	fake.globals.GetServerTime = function()
-		return SERVER_TIME + (options.from or 0) + math.floor(clock and clock() or 0)
-	end
-	fake.globals.PagleHuntsDB = options.saved
-	if options.history then
-		options.history(fake)
-	end
-	local loaded = hunts.load(fake)
-	clock = loaded.client.time
-	for itemID, name in pairs({
-		[C.NIGHTFIN] = "Raw Nightfin Snapper",
-		[C.BLACKMOUTH] = "Oily Blackmouth",
-		[C.DEVIATE] = "Deviate Fish",
-		[C.ODDITY_2] = "Odd Fish",
-		[13757] = "Lightning Eel",
-		[13756] = "Raw Summer Bass",
-		[13755] = "Winter Squid",
-	}) do
-		loaded.client.loadItem(itemID, name)
-	end
-	fake.login()
-	fake.readSkill(150, 300, 0)
-	if options.caughtUp ~= false then
-		fake.enterWorld()
-	end
-	if options.grouped ~= false then
-		fake.fireGameEvent("PLAYER_ENTERING_WORLD", true, false)
-	end
-	return { loaded = loaded, fake = fake, ns = loaded.ns }
-end
-
---- Moves the client's clock (and so the server time) on, running each C_Timer that comes due.
----@param run TrackerRun
----@param seconds integer
-local function wait(run, seconds)
-	run.loaded.client.advance(seconds)
+	return hunts.start({
+		saved = options.saved,
+		history = options.history,
+		from = options.from,
+		names = true,
+		caughtUp = options.caughtUp,
+		world = options.grouped,
+	}) --[[@as TrackerRun]]
 end
 
 --- The tracker as the player reads it: the header, then each shown Hunt's two lines with its dot's group, then the

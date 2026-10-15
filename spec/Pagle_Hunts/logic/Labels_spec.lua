@@ -4,7 +4,7 @@
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local hunts = dofile("spec/Pagle_Hunts/support.lua")
 
-local MINUTE, HOUR, DAY = 60, 3600, 86400
+local MINUTE, HOUR, DAY = 60, hunts.HOUR, 86400
 
 -- A live snapshot (LOG-R45) at server time `time`: realm `minute` of day on `date`; weekday 1 is Sunday.
 local function snapshotAt(time, minute, year, month, day, weekday)
@@ -12,8 +12,8 @@ local function snapshotAt(time, minute, year, month, day, weekday)
 end
 
 -- Sunday 11 October 2026 at realm 08:15 (FakePagle's clock).
-local NOW = 1791731700
-local SUNDAY = snapshotAt(NOW, 8 * 60 + 15, 2026, 10, 11, 1)
+local NOW = SERVER_TIME
+local SUNDAY = hunts.SUNDAY
 
 describe("Labels in realm time", function()
 	local ns = hunts.load().ns
@@ -44,8 +44,8 @@ describe("Labels in realm time", function()
 		end)
 
 		it("counts whole minutes from the snapshot: 59 seconds on is the same realm minute", function()
-			assert.are.equal(8 * 60 + 15, ns.RealmClockAt(NOW + 59, SUNDAY).minute)
-			assert.are.equal(8 * 60 + 16, ns.RealmClockAt(NOW + 60, SUNDAY).minute)
+			assert.are.equal(hunts.REALM_START, ns.RealmClockAt(NOW + 59, SUNDAY).minute)
+			assert.are.equal(hunts.REALM_START + 1, ns.RealmClockAt(NOW + 60, SUNDAY).minute)
 		end)
 
 		it("rounds durations down to the minute: 37m, 2h, 2h 10m, 1d, 1d 4h", function()

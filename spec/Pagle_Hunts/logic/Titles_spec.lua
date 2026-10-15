@@ -9,13 +9,7 @@ local hunts = dofile("spec/Pagle_Hunts/support.lua")
 -- Server times (DATA-R87): 00:00 UTC on the first of each month of 2026.
 local FEB_1, MAR_1, APR_1 = 1769904000, 1772323200, 1775001600
 local MAY_1, JUN_1, JUL_1 = 1777593600, 1780272000, 1782864000
-local HOUR = 3600
-
--- A new, empty projection state (hunts.md › Projection state).
----@return HuntsState
-local function newState()
-	return { casts = 0, coins = 0, hunts = {}, sets = {} }
-end
+local HOUR = hunts.HOUR
 
 -- Gives `huntID` in `state` one reached tier per entry of `tiers`, each `{ time, date }`: the Cast's server time and
 -- its realm date (HNT-R15).
@@ -40,7 +34,7 @@ describe("Set titles", function()
 
 	describe("from a Catch (HNT-R20, HNT-R23)", function()
 		it("are earned at the later of a two-Hunt set's tier-1 times, with that tier's realm date", function()
-			local state = newState()
+			local state = ns.NewHuntsState()
 			-- The realm's day still read 31 January three hours into 1 February UTC.
 			reach(state, "fixture_eel", { { FEB_1 + 3 * HOUR, day(2026, 1, 31) } })
 			reach(state, "fixture_bass", { { MAR_1 + 2 * HOUR, day(2026, 2, 28) } })
@@ -55,7 +49,7 @@ describe("Set titles", function()
 		end)
 
 		it("aren't earned while one of the set's Hunts isn't done, however late the check", function()
-			local state = newState()
+			local state = ns.NewHuntsState()
 			reach(state, "fixture_eel", { { FEB_1, day(2026, 2, 1) } })
 
 			assert.are.same({}, ns.CheckTitles(state, JUL_1, JUL_1))
@@ -64,7 +58,7 @@ describe("Set titles", function()
 		end)
 
 		it("are found by the check after the Cast that completes the set, as apply runs it, and not before", function()
-			local state = newState()
+			local state = ns.NewHuntsState()
 			reach(state, "fixture_eel", { { FEB_1, day(2026, 2, 1) } })
 			assert.are.same({}, ns.CheckTitles(state, FEB_1, FEB_1))
 
@@ -77,7 +71,7 @@ describe("Set titles", function()
 		end)
 
 		it("aren't found by a check before the earned time: candidates run only up to the time checked", function()
-			local state = newState()
+			local state = ns.NewHuntsState()
 			reach(state, "fixture_eel", { { FEB_1, day(2026, 2, 1) } })
 			reach(state, "fixture_bass", { { MAR_1, day(2026, 3, 1) } })
 
@@ -90,7 +84,7 @@ describe("Set titles", function()
 			function()
 				-- Never met when apply checks after every Cast; were it met, the title keeps its tier's time and date
 				-- but rides on no Cast, so it's raised as a retirement's is: summary-only, from done (HNT-R87).
-				local state = newState()
+				local state = ns.NewHuntsState()
 				reach(state, "fixture_eel", { { FEB_1, day(2026, 2, 1) } })
 				reach(state, "fixture_bass", { { MAR_1, day(2026, 3, 1) } })
 
@@ -103,7 +97,7 @@ describe("Set titles", function()
 		)
 
 		it("count a Retired Hunt done before it retired", function()
-			local state = newState()
+			local state = ns.NewHuntsState()
 			reach(state, "fixture_squid", { { FEB_1, day(2026, 2, 1) } })
 			reach(state, "fixture_tide_retired", { { MAR_1, day(2026, 3, 1) } })
 
@@ -115,7 +109,7 @@ describe("Set titles", function()
 		end)
 
 		it("are given in the list's set order when one check earns several", function()
-			local state = newState()
+			local state = ns.NewHuntsState()
 			reach(state, "fixture_squid", { { FEB_1, day(2026, 2, 1) } })
 			reach(state, "fixture_tide_retired", { { FEB_1, day(2026, 2, 1) } })
 			reach(state, "fixture_eel", { { FEB_1, day(2026, 2, 1) } })
@@ -127,7 +121,7 @@ describe("Set titles", function()
 
 	describe("tier 1 only (HNT-R21)", function()
 		it("need only tier 1 of each Hunt, and later tiers never move the earned time", function()
-			local state = newState()
+			local state = ns.NewHuntsState()
 			reach(state, "fixture_eel", { { FEB_1, day(2026, 2, 1) }, { APR_1, day(2026, 4, 1) } })
 			reach(state, "fixture_bass", { { MAR_1, day(2026, 3, 1) } }) -- 1 of its 3 tiers
 
@@ -138,7 +132,7 @@ describe("Set titles", function()
 
 	describe("from a retirement (HNT-R20, HNT-R23, HNT-R197)", function()
 		local function tideAllButRetired()
-			local state = newState()
+			local state = ns.NewHuntsState()
 			reach(state, "fixture_squid", { { FEB_1, day(2026, 2, 1) } })
 			reach(state, "fixture_tide_late", { { MAY_1, day(2026, 5, 1) } })
 			return state
@@ -183,13 +177,13 @@ describe("Set titles", function()
 				classes = {},
 			}, own.L)
 
-			assert.are.same({}, own.CheckTitles(newState(), JUL_1))
+			assert.are.same({}, own.CheckTitles(ns.NewHuntsState(), JUL_1))
 		end)
 	end)
 
 	describe("Hunts added to a set (HNT-R20, HNT-R197)", function()
 		it("never take away a title earned before they existed", function()
-			local state = newState()
+			local state = ns.NewHuntsState()
 			reach(state, "fixture_squid", { { FEB_1, day(2026, 2, 1) } })
 			reach(state, "fixture_tide_retired", { { MAR_1, day(2026, 3, 1) } })
 			ns.CheckTitles(state, MAR_1, MAR_1)
@@ -206,7 +200,7 @@ describe("Set titles", function()
 		end)
 
 		it("delay a title not yet earned until they're done too", function()
-			local state = newState()
+			local state = ns.NewHuntsState()
 			reach(state, "fixture_squid", { { FEB_1, day(2026, 2, 1) } })
 			-- fixture_tide_retired leaves on 2026-06-01 undone, but fixture_tide_late exists from 2026-04-01.
 			assert.are.same({}, ns.CheckTitles(state, JUN_1))
@@ -222,7 +216,7 @@ describe("Set titles", function()
 
 	describe("the state they write (hunts.md › Projection state)", function()
 		it("writes only the sets newly earned, and leaves the rest of the state alone", function()
-			local state = newState()
+			local state = ns.NewHuntsState()
 			reach(state, "fixture_eel", { { FEB_1, day(2026, 2, 1) } })
 			reach(state, "fixture_bass", { { MAR_1, day(2026, 3, 1) } })
 			state.casts, state.coins = 7, 3
@@ -239,7 +233,7 @@ describe("Set titles", function()
 		end)
 
 		it("dates a title with its own copy of the tier's date", function()
-			local state = newState()
+			local state = ns.NewHuntsState()
 			reach(state, "fixture_eel", { { FEB_1, day(2026, 2, 1) } })
 			reach(state, "fixture_bass", { { MAR_1, day(2026, 3, 1) } })
 

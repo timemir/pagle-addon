@@ -5,14 +5,13 @@
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local hunts = dofile("spec/Pagle_Hunts/support.lua")
 
-local HOUR = 3600
--- Sunday 11 October 2026 at realm 08:15 (FakePagle's clock).
-local NOW = 1791731700
-local SUNDAY =
-	{ time = NOW, minute = 8 * 60 + 15, date = { year = 2026, month = 10, day = 11, weekday = 1 }, zone = 148 }
+local HOUR = hunts.HOUR
+-- Sunday 11 October 2026 at realm 08:15 (FakePagle's clock), fished in Darkshore.
+local NOW = SERVER_TIME
+local SUNDAY = hunts.deepCopy(hunts.SUNDAY)
+SUNDAY.zone = hunts.catalogue.DARKSHORE
 
-local AREAS = { [148] = "Darkshore", [331] = "Ashenvale", [12] = "Elwynn Forest", [40] = "Westfall", [10] = "Duskwood" }
-local ITEMS = { [13759] = "Raw Nightfin Snapper", [6522] = "Deviate Fish", [251524] = "Whimsyfin" }
+local AREAS, ITEMS = hunts.catalogue.NAMES.areas, hunts.catalogue.NAMES.items
 
 ---@type HuntNameSources
 local SOURCES = {
@@ -76,7 +75,7 @@ describe("a Hunt's entry", function()
 			hunt = ns.hunts:Hunt(huntID),
 			list = ns.hunts,
 			where = where(),
-			state = { casts = 0, coins = 0, hunts = {}, sets = {} },
+			state = ns.NewHuntsState(),
 			updating = false,
 			pinned = false,
 			now = NOW,
@@ -92,7 +91,9 @@ describe("a Hunt's entry", function()
 
 	-- `state` with `huntProgress` for Hunt `huntID`.
 	local function stateWith(huntID, huntProgress)
-		return { casts = 0, coins = 0, hunts = { [huntID] = huntProgress }, sets = {} }
+		local state = ns.NewHuntsState()
+		state.hunts[huntID] = huntProgress
+		return state
 	end
 
 	describe("the seal, the ladder and the effort counter (HNT-R64, HNT-R17, HNT-R26)", function()

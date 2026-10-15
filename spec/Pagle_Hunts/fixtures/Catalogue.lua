@@ -22,9 +22,33 @@ local catalogue = {}
 catalogue.NIGHTFIN, catalogue.NIGHTFIN_FOREVER = 13759, 213759
 catalogue.BLACKMOUTH, catalogue.SUNSCALE, catalogue.GROUPER, catalogue.SMALLFISH = 6358, 13760, 12238, 6291
 catalogue.DEVIATE, catalogue.ODDITY_2 = 6522, 251524
+catalogue.UNCOMMON, catalogue.UNCOMMON_2 = 6643, 19803
 -- Area IDs.
 catalogue.DARKSHORE, catalogue.AUBERDINE, catalogue.PIER = 148, 442, 4000
 catalogue.ASHENVALE, catalogue.ELWYNN, catalogue.WESTFALL, catalogue.STORMWIND = 331, 12, 40, 1519
+-- The aura on the catalogue's list: Fishing Rack, fixture_rack's (LOG-R55).
+catalogue.RACK_AURA = 1280341
+
+-- The names the client gives the fixtures' items and areas, for specs that load them (spec/Pagle_Hunts/support.lua's
+-- loadNames) and for logic specs' name stand-ins.
+catalogue.NAMES = {
+	items = {
+		[catalogue.NIGHTFIN] = "Raw Nightfin Snapper",
+		[catalogue.BLACKMOUTH] = "Oily Blackmouth",
+		[catalogue.DEVIATE] = "Deviate Fish",
+		[catalogue.ODDITY_2] = "Whimsyfin",
+		[13757] = "Lightning Eel",
+		[13756] = "Raw Summer Bass",
+		[13755] = "Winter Squid",
+	},
+	areas = {
+		[catalogue.DARKSHORE] = "Darkshore",
+		[catalogue.ASHENVALE] = "Ashenvale",
+		[catalogue.ELWYNN] = "Elwynn Forest",
+		[catalogue.WESTFALL] = "Westfall",
+		[10] = "Duskwood",
+	},
+}
 
 local NIGHT = { time = { { 1200, 360 } } } -- 20:00 to 06:00 realm time
 local NIGHT_CORRECTED = { time = { { 1260, 300 } } } -- 21:00 to 05:00
@@ -72,8 +96,8 @@ function catalogue.base(corrected)
 			[c.SMALLFISH] = item("fish", { species = c.SMALLFISH }),
 			[c.DEVIATE] = item("fish", { species = c.DEVIATE }),
 			[c.ODDITY_2] = item("other", {}),
-			[6643] = item("other", { quality = 2 }),
-			[19803] = item("other", { quality = 2 }),
+			[c.UNCOMMON] = item("other", { quality = 2 }),
+			[c.UNCOMMON_2] = item("other", { quality = 2 }),
 		},
 		areas = {
 			[c.DARKSHORE] = area({
@@ -122,7 +146,7 @@ function catalogue.base(corrected)
 		-- The Extravaganza: Sundays 14:00 for 2 hours, an unconfirmed weekly rule (LOG-R56).
 		events = { [301] = { weekday = 1, start = 840, duration = 120, confirmed = false } },
 		fishingSpells = { 7731 },
-		auras = { 1280341 },
+		auras = { c.RACK_AURA },
 	}
 end
 

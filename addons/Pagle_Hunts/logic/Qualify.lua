@@ -17,6 +17,30 @@ local ns = select(2, ...)
 ---@field MatchesConditions fun(spec: table, snapshot: table): boolean
 ---@field Class fun(classID: string): table<integer, true>?
 
+--- Every read Hunts makes of Core's catalogue and rules, as one table (ADR 0001: through Pagle.* only): Where's
+--- (HuntsWaterLookups, HNT-R30–R34) and the rules' (HuntsLookups), the class members from the Hunt list.
+---@class HuntsCoreLookups: HuntsLookups, HuntsWaterLookups
+
+--- Hunts' lookups over `core` (Pagle) and `list`: adapter/Hunts.lua builds them once at OnInitialize, and the specs
+--- the same way.
+---@param core table Pagle
+---@param list HuntList
+---@return HuntsCoreLookups
+function ns.NewLookups(core, list)
+	return {
+		GetItem = core.GetItem,
+		GetZones = core.GetZones,
+		GetZoneCatches = core.GetZoneCatches,
+		GetZoneOf = core.GetZoneOf,
+		GetArea = core.GetArea,
+		GetWindowSpec = core.GetWindowSpec,
+		MatchesConditions = core.MatchesConditions,
+		Class = function(classID)
+			return list:Class(classID)
+		end,
+	}
+end
+
 -- Whether a Catch's item is the Hunt's target (HNT-R10 step 2): its Species for a `species` target (every item of
 -- the Species, DATA-R19), or a member of its class for a `class` target (HNT-R12). Item 0 and an Uncharted item
 -- match nothing (HNT-R196).

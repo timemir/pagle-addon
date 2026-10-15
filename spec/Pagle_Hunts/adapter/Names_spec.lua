@@ -37,20 +37,8 @@ local EVENT_LIST = {
 -- day's events, `{ eventID, title }`, by C_Calendar's month offset from the month shown (`shown`, October 2026 by
 -- default; FakePagle's client says today is 11 October 2026).
 local function loadWithCalendar(months, shown)
-	local loaded, fake = hunts.load()
+	local loaded, fake = hunts.load(nil, { list = EVENT_LIST })
 	local ns = loaded.ns
-	ns.hunts = ns.NewHuntList(EVENT_LIST, ns.L)
-	-- Where each Hunt bites, for this list as Hunts.lua builds it for the shipped one: the grouping (#189) reads
-	-- it at the first PLAYER_ENTERING_WORLD.
-	local Pagle = loaded.env.Pagle
-	ns.where = ns.NewWhere(ns.hunts, {
-		GetItem = Pagle.GetItem,
-		GetZones = Pagle.GetZones,
-		GetZoneCatches = Pagle.GetZoneCatches,
-		GetZoneOf = Pagle.GetZoneOf,
-		GetArea = Pagle.GetArea,
-		GetWindowSpec = Pagle.GetWindowSpec,
-	})
 	local calendar = { opened = 0, monthsRead = {} }
 	shown = shown or { year = 2026, month = 10 }
 	loaded.env.C_Calendar = {
@@ -72,7 +60,7 @@ local function loadWithCalendar(months, shown)
 	}
 	local redraws = {}
 	ns.OnRedraw(function(reason)
-		-- Only the names redraws: the grouping (#189) redraws "groups" too.
+		-- Only the names redraws: the grouping (adapter/Groups.lua) redraws "groups" too.
 		if reason == "names" then
 			redraws[#redraws + 1] = reason
 		end
@@ -98,7 +86,7 @@ describe("Hunts' names", function()
 			local ns, client = loaded.ns, loaded.client
 			local redraws = {}
 			ns.OnRedraw(function(reason)
-				-- Only the names redraws: the grouping (#189) redraws "groups" too.
+				-- Only the names redraws: the grouping (adapter/Groups.lua) redraws "groups" too.
 				if reason == "names" then
 					redraws[#redraws + 1] = reason
 				end
@@ -125,7 +113,7 @@ describe("Hunts' names", function()
 			local ns, client = loaded.ns, loaded.client
 			local redraws = {}
 			ns.OnRedraw(function(reason)
-				-- Only the names redraws: the grouping (#189) redraws "groups" too.
+				-- Only the names redraws: the grouping (adapter/Groups.lua) redraws "groups" too.
 				if reason == "names" then
 					redraws[#redraws + 1] = reason
 				end

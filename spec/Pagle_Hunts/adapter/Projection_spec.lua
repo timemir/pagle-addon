@@ -3,69 +3,19 @@
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local hunts = dofile("spec/Pagle_Hunts/support.lua")
----@diagnostic disable-next-line: undefined-global -- as above
-local catalogue = dofile("spec/Pagle_Hunts/fixtures/Catalogue.lua")
 
+local catalogue = hunts.catalogue
 local C = catalogue
-local MARCH_1 = 1772323200 -- 2026-03-01 00:00 UTC: every fixture Hunt but fixture_tide_late and fixture_grouper exists
-local JUNE_1 = 1780272000 -- 2026-06-01, the fixture's retired date
-local RACK_AURA = 1280341 -- fixture_rack's aura
-local UNCOMMON = 6643 -- a quality.uncommon member (fixture_rack's class)
-local NIGHT, DAY, DUSK = 1320, 600, 1140 -- realm minutes: 22:00 (night), 10:00 (day), 19:00 (fixture_oddity's hours)
-
--- The server time of realm minute `minute` on 2026-03-(1 + day), on a realm 7 hours behind UTC.
----@param day integer
----@param minute integer
----@return integer
-local function at(day, minute)
-	return MARCH_1 + day * 86400 + (minute + 420) * 60
-end
-
--- A Cast record for fake.catchLog:Append, by the player's character (char 1), at realm `minute` of `day`.
----@param day integer
----@param minute integer?
----@param where { zone: integer, subzone: integer? }
----@param itemIDs integer[]? nil for a got-away Cast
----@param auras integer[]?
-local function cast(day, minute, where, itemIDs, auras)
-	local items = {}
-	for i, itemID in ipairs(itemIDs or {}) do
-		items[i] = { itemID = itemID, quantity = 1 }
-	end
-	return {
-		kind = "cast",
-		char = 1,
-		time = at(day, minute or NIGHT),
-		outcome = itemIDs and "caught" or "gotAway",
-		conditions = {
-			minute = minute,
-			zone = where.zone,
-			subzone = where.subzone or 0,
-			events = {},
-			auras = auras or {},
-		},
-		items = items,
-	}
-end
+local JUNE_1 = hunts.JUN_1
+local RACK_AURA, UNCOMMON = C.RACK_AURA, C.UNCOMMON -- fixture_rack's aura, and a member of its class
+local NIGHT, DAY, DUSK = hunts.NIGHT, hunts.DAY, hunts.DUSK
+local at, cast, append, fishAt = hunts.at, hunts.cast, hunts.append, hunts.fishAt
+local login, nextLogin, copy = hunts.login, hunts.nextLogin, hunts.deepCopy
 
 local AUBERDINE = { zone = C.DARKSHORE, subzone = C.AUBERDINE }
 local DARKSHORE = { zone = C.DARKSHORE }
 local WESTFALL = { zone = C.WESTFALL }
 local ELWYNN = { zone = C.ELWYNN }
-
--- Appends `records` to fake.catchLog (the player's character first) and returns them as appended, Catch IDs and
--- realm dates filled in by Core's codec.
----@param fake table
----@param records table[]
----@return PagleCast[]
-local function append(fake, records)
-	fake.catchLog.data.characters[1] = { guid = PLAYER_GUID }
-	local appended = {}
-	for _, record in ipairs(records) do
-		appended[#appended + 1] = fake.catchLog:Append(record)
-	end
-	return appended
-end
 
 -- The history: a night Nightfin in its waters, a got-away Cast there, a day Nightfin, a night Cast outside its
 -- waters, a Deviate Fish in fixture_oddity's hours, then an uncommon item under the Rack's aura in those hours too.
@@ -82,49 +32,6 @@ local function withHistory(fake)
 	})
 end
 
--- Pagle_Hunts on a FakePagle serving the fixture catalogue (or `options.data`), with `history(fake)` appended before
--- login, then logged in and caught up. `options.prepare(loaded)` runs before Hunts' ADDON_LOADED; `options.fake` is a
--- FakePagle already set up (a next session's).
----@param history (fun(fake: table): any)?
----@param options { data: table?, prepare: fun(loaded: LoadedAddon)?, fake: table? }?
----@return LoadedAddon loaded
----@return table fake
----@return any appended what `history` returned
-local function session(history, options)
-	options = options or {}
-	local fake = options.fake or newFakePagle()
-	fake.setCatalogue(options.data or catalogue.base())
-	local appended = history and history(fake)
-	local loaded = hunts.load(fake, { prepare = options.prepare })
-	fake.login()
-	fake.enterWorld()
-	return loaded, fake, appended
-end
-
--- The next session on the same machine: a new FakePagle over the same Catch log and the PagleHuntsDB the last one
--- saved (its global section: the fake client has no strlenutf8 for AceDB's profile keys).
----@param last table the last session's FakePagle
----@param lastLoaded LoadedAddon
----@return table fake
-local function nextSession(last, lastLoaded)
-	local fake = newFakePagle()
-	fake.catchLog.data = last.catchLog.data
-	fake.globals.PagleHuntsDB = { global = lastLoaded.env.PagleHuntsDB.global }
-	return fake
-end
-
--- A deep copy of a table of plain values, to compare a state with a later one.
-local function copy(value)
-	if type(value) ~= "table" then
-		return value
-	end
-	local out = {}
-	for key, item in pairs(value) do
-		out[key] = copy(item)
-	end
-	return out
-end
-
 -- The HuntTier a Catch reached (HNT-R15): its Cast's time, Catch ID, item, zone and realm date (2026-03-(1 + day)).
 local function tier(record, day)
 	local catch = record.items[1]
@@ -137,7 +44,7 @@ local function tier(record, day)
 	}
 end
 
--- Notes each call of Hunts' outlets (#196's) in `calls`, from a load's prepare on.
+-- Notes each call of Hunts' outlets (ns.outlets, logic/Seams.lua) in `calls`, from a load's prepare on.
 ---@param calls table
 ---@return fun(loaded: LoadedAddon)
 local function noteOutlets(calls)
@@ -149,18 +56,6 @@ local function noteOutlets(calls)
 			calls[#calls + 1] = { "Done", copy(info) }
 		end
 	end
-end
-
--- Moves the live conditions to realm `minute` in `where`, with `auras` up (none by default).
----@param fake table
----@param minute integer
----@param where { zone: integer, subzone: integer? }
----@param auras integer[]?
-local function fishAt(fake, minute, where, auras)
-	local conditions = copy(fake.conditions)
-	conditions.minute, conditions.zone, conditions.subzone = minute, where.zone, where.subzone or 0
-	conditions.auras = auras or {}
-	fake.setConditions(conditions)
 end
 
 -- The Coins reports Core accepted from Hunts (SHOP-R2), in order.
@@ -176,7 +71,7 @@ end
 
 describe("Hunts' projection", function()
 	it("builds the HuntsState of a history: Casts, counts, tiers, effort and a set title (HNT-R137)", function()
-		local loaded, _, records = session(withHistory)
+		local loaded, _, records = login(withHistory)
 
 		assert.are.same({
 			casts = 6,
@@ -221,7 +116,7 @@ describe("Hunts' projection", function()
 	end)
 
 	it("reads only Casts: a Skill Reading and a build entry change nothing (HNT-R136)", function()
-		local loaded = session(function(fake)
+		local loaded = login(function(fake)
 			append(fake, { cast(0, NIGHT, AUBERDINE) })
 			fake.catchLog:Append({ kind = "skill", char = 1, time = at(0, NIGHT + 1), rank = 150, max = 225, mod = 0 })
 			fake.catchLog.data.entries[#fake.catchLog.data.entries + 1] = BUILD_ENTRY
@@ -234,7 +129,7 @@ describe("Hunts' projection", function()
 
 	describe("effort (HNT-R25–R27)", function()
 		it("counts a night Hunt's night Casts in its waters, caught or not, and no day Cast", function()
-			local loaded = session(function(fake)
+			local loaded = login(function(fake)
 				append(fake, {
 					cast(0, NIGHT, AUBERDINE), -- night, a subzone of its waters
 					cast(0, NIGHT + 1, { zone = C.ASHENVALE }, { C.SMALLFISH }), -- night, caught, its waters
@@ -248,7 +143,7 @@ describe("Hunts' projection", function()
 		end)
 
 		it("resets the Casts since the latest qualifying Catch on its Cast, after counting it (HNT-R26)", function()
-			local loaded = session(function(fake)
+			local loaded = login(function(fake)
 				append(fake, {
 					cast(0, NIGHT, AUBERDINE),
 					cast(0, NIGHT + 1, AUBERDINE),
@@ -262,7 +157,7 @@ describe("Hunts' projection", function()
 		end)
 
 		it("resets it on a qualifying Catch that isn't an effort Cast too (HNT-R26)", function()
-			local loaded = session(function(fake)
+			local loaded = login(function(fake)
 				append(fake, {
 					cast(0, NIGHT, AUBERDINE),
 					cast(1, DAY, { zone = C.ELWYNN }, { C.NIGHTFIN }), -- day, not its waters: still its Species
@@ -277,7 +172,7 @@ describe("Hunts' projection", function()
 			-- A release that dropped the night window's spec: fixture_snapper keeps its waters but has no board spec.
 			local data = catalogue.base()
 			data.windows.night = nil
-			local loaded = session(function(fake)
+			local loaded = login(function(fake)
 				append(fake, { cast(0, NIGHT, AUBERDINE), cast(0, NIGHT + 1, AUBERDINE, { C.NIGHTFIN }) })
 			end, { data = data })
 
@@ -286,7 +181,7 @@ describe("Hunts' projection", function()
 		end)
 
 		it("counts every Cast under an aura-only Hunt's aura, anywhere and at any hour (HNT-R25)", function()
-			local loaded = session(function(fake)
+			local loaded = login(function(fake)
 				append(fake, {
 					cast(0, DAY, WESTFALL, nil, { RACK_AURA }),
 					cast(0, NIGHT, ELWYNN, { C.SMALLFISH }, { RACK_AURA }),
@@ -300,7 +195,7 @@ describe("Hunts' projection", function()
 		end)
 
 		it("is plain counts: a Hunt's progress holds no odds or rates (HNT-R27)", function()
-			local loaded = session(withHistory)
+			local loaded = login(withHistory)
 
 			for _, progress in pairs(loaded.ns.State().hunts) do
 				local keys = {}
@@ -316,7 +211,7 @@ describe("Hunts' projection", function()
 	describe("Coins (HNT-R110)", function()
 		it("sums 30 per completion, 15 per further tier and 100 per title, and reports it from done", function()
 			-- fixture_rack's tiers are 1 and 5: five uncommon items under its aura reach both.
-			local loaded, fake = session(function(fake)
+			local loaded, fake = login(function(fake)
 				withHistory(fake)
 				append(fake, {
 					cast(3, DAY, WESTFALL, { UNCOMMON, UNCOMMON }, { RACK_AURA }),
@@ -333,7 +228,7 @@ describe("Hunts' projection", function()
 		it("counts a title a retirement completed, found in done at now (HNT-R23, HNT-R197)", function()
 			-- fixture_hefty_blackmouth retired with fixture_sunscale: from 2026-06-01 fixture_snapper, done in March,
 			-- is fixture_dusk's only Hunt.
-			local loaded, fake = session(withHistory, {
+			local loaded, fake = login(withHistory, {
 				prepare = function(loaded)
 					loaded.ns.huntList.hunts[4].retired = JUNE_1
 				end,
@@ -349,7 +244,7 @@ describe("Hunts' projection", function()
 		end)
 
 		it("reports after a live Catch that changes it, and not after one that doesn't (SHOP-R2)", function()
-			local _, fake = session(withHistory)
+			local _, fake = login(withHistory)
 			fishAt(fake, NIGHT, AUBERDINE)
 
 			fake.playCast("caught", { { itemID = C.SMALLFISH, quantity = 1 } })
@@ -364,7 +259,7 @@ describe("Hunts' projection", function()
 	describe("the outlets and redraws (HNT-R137, #196)", function()
 		it("hand a live Cast's newly reached tiers to Reached, and redraw after done and each live Cast", function()
 			local calls, redraws = {}, {}
-			local _, fake = session(withHistory, {
+			local _, fake = login(withHistory, {
 				prepare = function(loaded)
 					noteOutlets(calls)(loaded)
 					loaded.ns.OnRedraw(function(reason)
@@ -403,7 +298,7 @@ describe("Hunts' projection", function()
 
 		it("hand a live set title to Reached with the Cast that earned it (HNT-R87)", function()
 			local calls = {}
-			local _, fake = session(function(fake)
+			local _, fake = login(function(fake)
 				append(fake, { cast(2, DUSK, DARKSHORE, { C.DEVIATE }) })
 			end, { prepare = noteOutlets(calls) })
 			fishAt(fake, DAY, WESTFALL, { RACK_AURA })
@@ -420,12 +315,12 @@ describe("Hunts' projection", function()
 
 		it("hand nothing to Reached while rebuilding or catching up (HNT-R85, LOG-R75)", function()
 			local calls = {}
-			local loaded, fake = session(withHistory, { prepare = noteOutlets(calls) })
+			local loaded, fake = login(withHistory, { prepare = noteOutlets(calls) })
 			local replayed = append(fake, { cast(3, NIGHT, AUBERDINE, { C.NIGHTFIN }) })
 
-			local next = nextSession(fake, loaded)
+			local next = nextLogin(fake, loaded)
 			local again = {}
-			session(nil, { fake = next, prepare = noteOutlets(again) })
+			login(nil, { fake = next, prepare = noteOutlets(again) })
 
 			assert.are.same({ { "Done", { firstBuild = true, rebuilt = true, replayed = 0 } } }, calls)
 			assert.are.same({ { "Done", { firstBuild = false, rebuilt = false, replayed = #replayed } } }, again)
@@ -436,7 +331,7 @@ describe("Hunts' projection", function()
 		-- A first session over the history (with helpers.lua's history of three day Casts in Darkshore before it),
 		-- then the next one, `prepare`d: what its done was told, the state it holds, and the first one's.
 		local function rebuildOf(prepare)
-			local first, firstFake = session(function(fake)
+			local first, firstFake = login(function(fake)
 				for _, entry in ipairs(history(3)) do
 					fake.catchLog.data.entries[#fake.catchLog.data.entries + 1] = entry
 				end
@@ -444,8 +339,8 @@ describe("Hunts' projection", function()
 			end)
 			local before = copy(first.ns.State())
 			local calls = {}
-			local loaded = session(nil, {
-				fake = nextSession(firstFake, first),
+			local loaded = login(nil, {
+				fake = nextLogin(firstFake, first),
 				prepare = function(loaded)
 					noteOutlets(calls)(loaded)
 					if prepare then
@@ -485,7 +380,7 @@ describe("Hunts' projection", function()
 		end)
 
 		it("store the rules version 1 and the Hunt list's fingerprint after the content's (HNT-R136)", function()
-			local loaded, fake = session(withHistory)
+			local loaded, fake = login(withHistory)
 
 			local db = loaded.env.PagleHuntsDB.global.projection
 			assert.are.equal(1, loaded.ns.HUNTS_RULES_VERSION)
@@ -497,11 +392,11 @@ describe("Hunts' projection", function()
 		end)
 
 		it("count Casts recorded while Hunts was off, in the catch-up (HNT-R13, LOG-R90)", function()
-			local first, firstFake = session(withHistory)
+			local first, firstFake = login(withHistory)
 			-- While Hunts was off: two night Casts at Auberdine, one with a Nightfin.
 			append(firstFake, { cast(3, NIGHT, AUBERDINE), cast(3, NIGHT + 1, AUBERDINE, { C.NIGHTFIN }) })
 
-			local loaded = session(nil, { fake = nextSession(firstFake, first) })
+			local loaded = login(nil, { fake = nextLogin(firstFake, first) })
 
 			local snapper = loaded.ns.State().hunts.fixture_snapper
 			assert.are.same(
@@ -533,7 +428,7 @@ describe("Hunts' projection", function()
 		end)
 
 		it("ns.State() is the projection's state, live Casts included", function()
-			local loaded, fake = session(withHistory)
+			local loaded, fake = login(withHistory)
 			fishAt(fake, NIGHT, AUBERDINE)
 
 			fake.playCast("gotAway")
@@ -548,7 +443,7 @@ describe("Hunts' projection", function()
 	end)
 
 	it("counts a Catch whose Cast has no realm minute (a secret clock), dating its tier by the UTC day", function()
-		local loaded, _, records = session(function(fake)
+		local loaded, _, records = login(function(fake)
 			return append(fake, { cast(0, nil, { zone = C.ELWYNN }, { C.NIGHTFIN }) })
 		end)
 

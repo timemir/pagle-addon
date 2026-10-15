@@ -6,7 +6,8 @@
 local hunts = dofile("spec/Pagle_Hunts/support.lua")
 
 -- Pagle_Hunts on a fake that has logged in, and its board as the shell alone: a router with no page renderers and a
--- leather whose anchors draw nothing, so the board tickets' own renderers (#193–#195) stay out of these specs.
+-- leather whose anchors draw nothing, so the pages' own renderers (adapter/Timeline.lua, Entry.lua and Sets.lua) stay
+-- out of these specs.
 local function loggedIn()
 	local loaded, fake = hunts.load()
 	fake.login()
@@ -16,42 +17,6 @@ local function loggedIn()
 		board:RegisterLeather(part, function() end)
 	end
 	return loaded, fake, board
-end
-
--- Hides `frame` as the client does, running its OnHide (the fake's Hide runs no script).
-local function hide(frame)
-	if frame:IsShown() then
-		frame:Hide()
-		local onHide = frame:GetScript("OnHide")
-		if onHide then
-			onHide(frame)
-		end
-	end
-end
-
--- Presses Esc: CloseSpecialWindows hides every shown frame named in UISpecialFrames.
-local function escape(loaded)
-	for _, name in ipairs(loaded.env.UISpecialFrames) do
-		for _, frame in ipairs(loaded.client.frames) do
-			if frame.name == name then
-				hide(frame)
-			end
-		end
-	end
-end
-
--- The texts of every shown widget under `widget`, depth first.
-local function textsOf(widget, texts)
-	texts = texts or {}
-	for _, child in ipairs(widget.children) do
-		if child.shown then
-			if child.text ~= nil and child.text ~= "" then
-				texts[#texts + 1] = child.text
-			end
-			textsOf(child, texts)
-		end
-	end
-	return texts
 end
 
 -- A renderer that writes `label` and the place it was given on its page, once per page frame, and counts its draws.
@@ -90,7 +55,7 @@ describe("the Hunts board's frame (HNT-R60)", function()
 		board:Toggle()
 
 		assert.is_true(loaded.env.UISpecialFrames[#loaded.env.UISpecialFrames] == "PagleHuntsBoard")
-		escape(loaded)
+		loaded.client.pressEscape()
 		assert.is_false(board:IsShown())
 
 		board:Toggle()
@@ -152,7 +117,7 @@ describe("the Hunts board's pages (the page router)", function()
 
 		assert.are.same({ "timeline", "entry" }, { draws[1].label, draws[2].label })
 		assert.are_not.equal(draws[1].page, draws[2].page)
-		assert.are.same({ "timeline board - -", "entry board - -" }, textsOf(board.frame))
+		assert.are.same({ "timeline board - -", "entry board - -" }, shownTexts(board.frame))
 	end)
 
 	it("leaves a page blank in a mode with no renderer for it", function()
@@ -164,9 +129,9 @@ describe("the Hunts board's pages (the page router)", function()
 
 		board:Open({ mode = "set", set = "fixture_dusk" })
 
-		assert.are.same({ "set page set fixture_dusk -" }, textsOf(board.frame))
+		assert.are.same({ "set page set fixture_dusk -" }, shownTexts(board.frame))
 		board:Open({ mode = "retired", set = "fixture_dusk", hunt = "fixture_sunscale" })
-		assert.are.same({}, textsOf(board.frame))
+		assert.are.same({}, shownTexts(board.frame))
 	end)
 
 	it("gives a renderer registered on two modes a frame for each", function()
@@ -180,7 +145,7 @@ describe("the Hunts board's pages (the page router)", function()
 		board:Open({ mode = "set", set = "fixture_wagers" })
 
 		assert.are_not.equal(draws[1].page, draws[2].page)
-		assert.are.same({ "timeline set fixture_wagers -" }, textsOf(board.frame))
+		assert.are.same({ "timeline set fixture_wagers -" }, shownTexts(board.frame))
 	end)
 
 	it("opens on the Board mode each time, whatever mode it closed on (HNT-R67)", function()
@@ -332,7 +297,7 @@ describe("the Hunts board's redraws (HNT-R42)", function()
 		board.frame.close:Click()
 		loaded.ns.OpenBoard("fixture_snapper")
 		loaded.ns.OpenBoard("fixture_rack")
-		escape(loaded)
+		loaded.client.pressEscape()
 
 		assert.are.same({
 			"board true",

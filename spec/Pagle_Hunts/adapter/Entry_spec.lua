@@ -5,58 +5,37 @@
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local hunts = dofile("spec/Pagle_Hunts/support.lua")
----@diagnostic disable-next-line: undefined-global -- as above
-local catalogue = dofile("spec/Pagle_Hunts/fixtures/Catalogue.lua")
+local has = hunts.has
 
 local UPDATING = "Updating from your Catch log…"
 
--- A tier reached on realm date 12 October 2026 in Darkshore.
-local function tier()
-	return {
-		time = SERVER_TIME,
-		catchId = "c1",
-		itemID = 13759,
-		zone = 148,
-		date = { year = 2026, month = 10, day = 12 },
-	}
-end
-
--- Progress with `count` Catches, `effort` effort Casts and the first `tiers` tiers reached.
+-- Progress with `count` Catches, `effort` effort Casts and the first `tiers` tiers reached, each on realm date 12
+-- October 2026 in Darkshore.
 local function progress(count, effort, sinceLast, tiers)
-	local reached = {}
-	for k = 1, tiers do
-		reached[k] = tier()
-	end
-	return { count = count, effort = effort, sinceLast = sinceLast, caught = count > 0, reached = reached }
+	return hunts.progress({
+		count = count,
+		effort = effort,
+		sinceLast = sinceLast,
+		tiers = tiers,
+		time = SERVER_TIME,
+		date = { year = 2026, month = 10, day = 12 },
+	})
 end
 
----@class EntryRun
----@field loaded LoadedAddon
----@field fake table
----@field ns table
+---@class EntryRun: HuntsRun
 ---@field state HuntsState
 ---@field updating boolean
 
 --- Hunts on a FakePagle, logged in at Fishing `skill` (150 by default) and grouped, its projection a stand-in that
---- hands out `run.state` and `run.updating`; names for the fixture's areas and items. `prepare` runs before Hunts'
---- ADDON_LOADED, e.g. to change the fixture's Hunt list.
+--- hands out `run.state` and `run.updating` as they are at each read; names for the fixture's areas and items.
+--- `prepare` runs before Hunts' ADDON_LOADED, e.g. to change the fixture's Hunt list.
 ---@param skill integer?
 ---@param prepare fun(loaded: LoadedAddon)?
 ---@return EntryRun
 local function start(skill, prepare)
-	local fake = newFakePagle()
-	fake.setCatalogue(catalogue.base())
-	local loaded = hunts.load(fake, { prepare = prepare })
-	local client = loaded.client
-	client.areaNames[148], client.areaNames[331] = "Darkshore", "Ashenvale"
-	client.areaNames[12], client.areaNames[40], client.areaNames[10] = "Elwynn Forest", "Westfall", "Duskwood"
-	client.itemNames[13759] = "Raw Nightfin Snapper"
-	fake.login()
-	fake.readSkill(skill or 150, 300, 0)
-	fake.enterWorld()
-	fake.fireGameEvent("PLAYER_ENTERING_WORLD", true, false)
-	local run = { loaded = loaded, fake = fake, ns = loaded.ns, state = loaded.ns.NewHuntsState(), updating = false }
-	loaded.ns.projection = {
+	local run = hunts.start({ skill = skill, prepare = prepare, names = true }) --[[@as EntryRun]]
+	run.state, run.updating = run.ns.NewHuntsState(), false
+	run.ns.projection = {
 		GetState = function()
 			return run.state
 		end,
@@ -65,30 +44,6 @@ local function start(skill, prepare)
 		end,
 	}
 	return run
-end
-
--- The texts of every shown widget under `widget`, depth first.
-local function textsOf(widget, texts)
-	texts = texts or {}
-	for _, child in ipairs(widget.children) do
-		if child.shown then
-			if child.text ~= nil and child.text ~= "" then
-				texts[#texts + 1] = child.text
-			end
-			textsOf(child, texts)
-		end
-	end
-	return texts
-end
-
--- Whether `texts` holds `text`.
-local function has(texts, text)
-	for _, t in ipairs(texts) do
-		if t == text then
-			return true
-		end
-	end
-	return false
 end
 
 --- Opens the board at `place` and hands back the right page's frame and its entry view.
@@ -118,7 +73,7 @@ describe("a Hunt's entry on the board", function()
 			run.state.hunts.fixture_snapper = progress(1, 96, 11, 1)
 
 			local page, view = open(run, { mode = "board", hunt = "fixture_snapper" })
-			local texts = textsOf(page)
+			local texts = shownTexts(page)
 
 			assert.are.same({ "Hunted 12 Oct 2026", true }, { view.seal.label.text, view.seal.filled })
 			for _, text in ipairs({
@@ -141,7 +96,7 @@ describe("a Hunt's entry on the board", function()
 			local page, view = open(run, { mode = "board", hunt = "fixture_snapper" })
 
 			assert.are.same({ "not yet", false }, { view.seal.label.text, view.seal.filled })
-			assert.is_true(has(textsOf(page), "12 Casts under these conditions."))
+			assert.is_true(has(shownTexts(page), "12 Casts under these conditions."))
 		end)
 
 		it("reads a finished Hunt's count, and dresses each diamond in its tier's trim, filled (HNT-R18)", function()
@@ -176,7 +131,7 @@ describe("a Hunt's entry on the board", function()
 				local run = start()
 
 				local page = open(run, { mode = "board", hunt = "fixture_snapper" })
-				local texts = textsOf(page)
+				local texts = shownTexts(page)
 
 				-- Realm 08:15: the night window opens at 20:00 the same day.
 				for _, text in ipairs({
@@ -225,7 +180,7 @@ describe("a Hunt's entry on the board", function()
 
 			local page = open(run, { mode = "board", hunt = "fixture_rack" })
 
-			assert.is_true(has(textsOf(page), "Up now. Needs 400; my best is 150."))
+			assert.is_true(has(shownTexts(page), "Up now. Needs 400; my best is 150."))
 			-- Its row stays as short of skill draws it: Later, "need 400", no blue camp bar (HNT-R51, HNT-R63).
 			assert.are.equal("later", run.ns.groups:Row("fixture_rack").group)
 			local drawn
@@ -306,7 +261,7 @@ describe("a Hunt's entry on the board", function()
 			run.state.hunts.fixture_sunscale = progress(1, 40, 7, 1)
 
 			local page, view = open(run, { mode = "retired", set = "fixture_dusk", hunt = "fixture_sunscale" })
-			local texts = textsOf(page)
+			local texts = shownTexts(page)
 
 			assert.is_true(has(texts, "Old Sunscale"))
 			assert.is_true(has(texts, "Retired 1 Jun 2026"))
@@ -350,7 +305,7 @@ describe("a Hunt's entry on the board", function()
 			run.updating = true
 
 			local page, view = open(run, { mode = "board", hunt = "fixture_snapper" })
-			local texts = textsOf(page)
+			local texts = shownTexts(page)
 
 			assert.are.equal(UPDATING, view.seal.label.text)
 			assert.are.equal(UPDATING, view.ladderUpdating.text)
@@ -369,7 +324,7 @@ describe("a Hunt's entry on the board", function()
 
 			local page = open(run, { mode = "board" })
 
-			assert.are.same({ 'Every Hunt here is done. Tick "show completed" to see them again.' }, textsOf(page))
+			assert.are.same({ 'Every Hunt here is done. Tick "show completed" to see them again.' }, shownTexts(page))
 		end)
 
 		it("is empty with rows to pick from, and shows no Retired Hunt on the Board", function()
@@ -377,8 +332,8 @@ describe("a Hunt's entry on the board", function()
 			-- The entry alone: the timeline (#193) would pick a Hunt from the rows (HNT-R67) before the right page.
 			run.ns.board:RegisterPage("board", "left", function() end)
 
-			assert.are.same({}, textsOf((open(run, { mode = "board" }))))
-			assert.are.same({}, textsOf((open(run, { mode = "board", hunt = "fixture_sunscale" }))))
+			assert.are.same({}, shownTexts((open(run, { mode = "board" }))))
+			assert.are.same({}, shownTexts((open(run, { mode = "board", hunt = "fixture_sunscale" }))))
 		end)
 	end)
 

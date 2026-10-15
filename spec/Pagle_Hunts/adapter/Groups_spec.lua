@@ -5,42 +5,10 @@
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local hunts = dofile("spec/Pagle_Hunts/support.lua")
----@diagnostic disable-next-line: undefined-global -- as above
-local catalogue = dofile("spec/Pagle_Hunts/fixtures/Catalogue.lua")
-
-local C = catalogue
-local JAN_1 = 1767225600 -- 2026-01-01, the fixture Hunts' since
-local RACK_AURA = 1280341 -- fixture_rack's aura, on the catalogue's list
-local REALM_START = 8 * 60 + 15 -- FakePagle's realm clock at SERVER_TIME: 08:15 on Sunday 11 October 2026
-
---- Seconds from FakePagle's start (realm 08:15) to realm `hour`:`minute` the same day.
----@param hour integer
----@param minute integer?
----@return integer
-local function untilRealm(hour, minute)
-	return (hour * 60 + (minute or 0) - REALM_START) * 60
-end
-
---- The server time at realm `hour`:`minute` that day.
-local function realm(hour, minute)
-	return SERVER_TIME + untilRealm(hour, minute)
-end
-
---- Hunts the fixture list lacks, made over an imposed Hunt of set fixture_extra (DATA-R93), as one list with the
---- fixture's classes.
----@param huntFields table[]
----@return HuntListData
-local function extraList(huntFields)
-	local list = { fingerprint = "e", sets = { { id = "fixture_extra" } }, hunts = {}, classes = {} }
-	for i, fields in ipairs(huntFields) do
-		local hunt = { id = "extra_" .. i, set = "fixture_extra", kind = "imposed", since = JAN_1, tiers = { 1 } }
-		for key, value in pairs(fields) do
-			hunt[key] = value
-		end
-		list.hunts[i] = hunt
-	end
-	return list
-end
+local C = hunts.catalogue
+local RACK_AURA = C.RACK_AURA
+local untilRealm, realm, wait, ids = hunts.untilRealm, hunts.realm, hunts.wait, hunts.ids
+local extraList = hunts.extraList
 
 ---@class GroupsRun
 ---@field loaded LoadedAddon
@@ -56,52 +24,32 @@ end
 ---@return GroupsRun
 local function start(options)
 	options = options or {}
-	local fake = newFakePagle()
-	fake.setCatalogue(catalogue.base())
-	local clock
-	fake.globals.GetServerTime = function()
-		return SERVER_TIME + math.floor(clock and clock() or 0)
-	end
-	fake.globals.PagleHuntsDB = options.saved
-	local loaded = hunts.load(fake)
-	clock = loaded.client.time
-	local ns = loaded.ns
-	if options.list then
-		ns.hunts = ns.NewHuntList(options.list, ns.L)
-		ns.where = ns.NewWhere(ns.hunts, fake.globals.Pagle)
-	end
-	local run = { loaded = loaded, fake = fake, ns = ns, regroups = {}, redraws = {} }
-	ns.OnRegroup(function(previous, current)
-		run.regroups[#run.regroups + 1] = { previous = previous, current = current }
-	end)
-	ns.OnRedraw(function(reason)
-		run.redraws[#run.redraws + 1] = reason
-	end)
-	fake.login()
-	-- These specs count the grouping's own regroups: the tracker (#197), shown by default, would refresh them every
-	-- 60 s (HNT-R42), so it says it is hidden here, and each spec that wants a view shown says so itself.
-	ns.SetViewShown("tracker", false)
-	if options.skill ~= false then
-		fake.readSkill(options.skill or 150, 300, 0)
-	end
-	if options.restricted then
-		fake.setRestricted(true)
-	end
-	fake.enterWorld()
-	-- The projection's first build redraws at its done (#188, adapter/Projection_spec.lua); these specs count the
-	-- grouping's redraws from here.
-	run.redraws = {}
-	if options.world ~= false then
-		fake.fireGameEvent("PLAYER_ENTERING_WORLD", true, false)
-	end
-	return run
-end
-
---- Moves the client's clock (and so the server time) on, running each C_Timer that comes due.
----@param run GroupsRun
----@param seconds integer
-local function wait(run, seconds)
-	run.loaded.client.advance(seconds)
+	return hunts.start({
+		saved = options.saved,
+		list = options.list,
+		skill = options.skill,
+		restricted = options.restricted,
+		world = options.world,
+		beforeLogin = function(run)
+			run.regroups, run.redraws = {}, {}
+			run.ns.OnRegroup(function(previous, current)
+				run.regroups[#run.regroups + 1] = { previous = previous, current = current }
+			end)
+			run.ns.OnRedraw(function(reason)
+				run.redraws[#run.redraws + 1] = reason
+			end)
+		end,
+		-- These specs count the grouping's own regroups: the tracker, shown by default, would refresh them every 60 s
+		-- (HNT-R42), so it says it is hidden here, and each spec that wants a view shown says so itself.
+		afterLogin = function(run)
+			run.ns.SetViewShown("tracker", false)
+		end,
+		-- The projection's first build redraws at its done (adapter/Projection_spec.lua); these specs count the
+		-- grouping's redraws from here.
+		beforeGrouping = function(run)
+			run.redraws = {}
+		end,
+	}) --[[@as GroupsRun]]
 end
 
 --- A Hunt's row as the board reads it now.
@@ -125,14 +73,6 @@ local function regroupTimes(run, from)
 		times[#times + 1] = run.regroups[i].current.time
 	end
 	return times
-end
-
-local function ids(rows)
-	local out = {}
-	for i, r in ipairs(rows) do
-		out[i] = r.id
-	end
-	return out
 end
 
 -- The fixture list's first four Hunts, all current; later tickets append Hunts to the fixture, so specs over it

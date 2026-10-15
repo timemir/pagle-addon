@@ -29,6 +29,7 @@ local ns = select(2, ...)
 
 ---@class PagleHuntsNS
 ---@field where table<string, HuntWhere>   -- by Hunt ID, built at OnInitialize (HNT-R137)
+---@field lookups HuntsCoreLookups        -- ns.NewLookups(Pagle, ns.hunts), built at OnInitialize
 
 -- The areaIDs of a set, ascending.
 ---@param set table<integer, true>

@@ -54,13 +54,9 @@ describe("the Hunts tracker's lines", function()
 			return {
 				rows = rows,
 				time = SERVER_TIME,
-				snapshot = {
-					time = SERVER_TIME,
-					minute = 495,
-					date = { year = 2026, month = 10, day = 11, weekday = 1 },
-				},
+				snapshot = hunts.SUNDAY,
 				updating = false,
-				state = { casts = 0, coins = 0, hunts = {}, sets = {} },
+				state = ns.NewHuntsState(),
 				list = ns.hunts,
 				where = where,
 				sources = { ItemName = function() end, BandName = function() end },

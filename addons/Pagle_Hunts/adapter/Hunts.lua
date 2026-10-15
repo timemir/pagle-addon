@@ -28,26 +28,14 @@ function ns.Hunts.OnInitialize()
 
 	--- The Hunt list at runtime (HNT-R1): every file has loaded by now, data\HuntList.lua and the lore included.
 	ns.hunts = ns.NewHuntList(ns.huntList, ns.L)
+	--- Hunts' reads of Core's catalogue and rules (logic/Qualify.lua).
+	ns.lookups = ns.NewLookups(Pagle, ns.hunts)
 	--- Where each Hunt bites (HNT-R30–R34): worked out here, once per load, where the catalogue is ready (CORE-R10).
-	ns.where = ns.NewWhere(ns.hunts, {
-		GetItem = Pagle.GetItem,
-		GetZones = Pagle.GetZones,
-		GetZoneCatches = Pagle.GetZoneCatches,
-		GetZoneOf = Pagle.GetZoneOf,
-		GetArea = Pagle.GetArea,
-		GetWindowSpec = Pagle.GetWindowSpec,
-	})
+	ns.where = ns.NewWhere(ns.hunts, ns.lookups)
 
 	--- Hunts' projection (HNT-R136): Core catches it up or rebuilds it after login and hands it each new entry live
 	--- (LOG-R71–R74). The views read it through ns.State() and ns.IsUpdating() (logic/Seams.lua).
-	local lookups = {
-		GetItem = Pagle.GetItem,
-		MatchesConditions = Pagle.MatchesConditions,
-		Class = function(id)
-			return ns.hunts:Class(id)
-		end,
-	}
-	ns.projection = ns.Module:NewProjection(ns.ProjectionDef(ns.db.global, lookups, {
+	ns.projection = ns.Module:NewProjection(ns.ProjectionDef(ns.db.global, ns.lookups, {
 		ReportCoinsEarned = function(total)
 			ns.Module:ReportCoinsEarned(total)
 		end,

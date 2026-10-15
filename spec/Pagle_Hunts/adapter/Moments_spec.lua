@@ -4,14 +4,11 @@
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local hunts = dofile("spec/Pagle_Hunts/support.lua")
----@diagnostic disable-next-line: undefined-global -- as above
-local catalogue = dofile("spec/Pagle_Hunts/fixtures/Catalogue.lua")
 
-local C = catalogue
+local C = hunts.catalogue
 local cast, append, fishAt = hunts.cast, hunts.append, hunts.fishAt
 local NIGHT, DAY, DUSK = hunts.NIGHT, hunts.DAY, hunts.DUSK
-local RACK_AURA = 1280341 -- fixture_rack's aura
-local UNCOMMON = 6643 -- a quality.uncommon member (fixture_rack's class)
+local RACK_AURA, UNCOMMON = C.RACK_AURA, C.UNCOMMON -- fixture_rack's aura, and a member of its class
 local TRADE_FISHING = "Interface\\Icons\\Trade_Fishing"
 
 local ELWYNN = { zone = C.ELWYNN }
@@ -24,10 +21,9 @@ local WESTFALL = { zone = C.WESTFALL }
 ---@return LoadedAddon loaded
 ---@return table fake
 ---@return any appended
-local function session(history, options)
+local function login(history, options)
 	options = options or {}
-	return hunts.session(history, {
-		data = catalogue.base(),
+	return hunts.login(history, {
 		fake = options.fake,
 		prepare = function(loaded)
 			loaded.ns.L["hunt.fixture_tide_late.name"] = "Late Tide"
@@ -86,7 +82,7 @@ end
 describe("Hunts' moments", function()
 	describe("in a live apply (HNT-R85, HNT-R86, HNT-R91)", function()
 		it("raise a completion and a further tier for one Catch, on its Cast, and nothing for the next", function()
-			local loaded, fake = session(nineNightfin)
+			local loaded, fake = login(nineNightfin)
 			fishAt(fake, NIGHT, ELWYNN)
 
 			-- Today's Nightfin is fixture_snapper's 10th (tier 2) and Late Tide's first (its since is 2026-04-01).
@@ -132,7 +128,7 @@ describe("Hunts' moments", function()
 
 		it("raise a set title from a Catch as a banner on that Cast (HNT-R86, HNT-R87)", function()
 			-- fixture_oddity done; fixture_grouper doesn't exist yet, so fixture_rack completes fixture_wagers.
-			local loaded, fake = session(function(fake)
+			local loaded, fake = login(function(fake)
 				append(fake, { cast(2, DUSK, DARKSHORE, { C.DEVIATE }) })
 			end)
 			fishAt(fake, DAY, WESTFALL, { RACK_AURA })
@@ -167,7 +163,7 @@ describe("Hunts' moments", function()
 			function()
 				-- fixture_hefty_blackmouth retires a minute from now, fixture_sunscale retired in June: fixture_snapper,
 				-- done in March, is then fixture_dusk's only Hunt (HNT-R20, HNT-R197).
-				local _, fake = session(function(fake)
+				local _, fake = login(function(fake)
 					append(fake, { cast(0, NIGHT, ELWYNN, { C.NIGHTFIN }) })
 				end, {
 					prepare = function(loaded)
@@ -210,7 +206,7 @@ describe("Hunts' moments", function()
 		end
 
 		it("writes up what the history earned in one section, raises no moment and marks it all", function()
-			local loaded, fake = session(earning)
+			local loaded, fake = login(earning)
 
 			assert.are.same({
 				{
@@ -236,7 +232,7 @@ describe("Hunts' moments", function()
 		end)
 
 		it("writes the Casts and Coins as the client groups numbers, in the singular for one", function()
-			local _, fake = session(function(fake)
+			local _, fake = login(function(fake)
 				append(fake, { cast(0, NIGHT, ELWYNN, { C.NIGHTFIN }) })
 			end, {
 				prepare = function(loaded)
@@ -250,8 +246,8 @@ describe("Hunts' moments", function()
 		end)
 
 		it("raises nothing for a fresh install with no Casts, nor for Casts that earned nothing", function()
-			local loaded, fake = session(nil)
-			local _, quiet = session(function(other)
+			local loaded, fake = login(nil)
+			local _, quiet = login(function(other)
 				append(other, { cast(0, NIGHT, ELWYNN), cast(0, NIGHT + 1, WESTFALL, { C.SMALLFISH }) })
 			end)
 
@@ -261,26 +257,26 @@ describe("Hunts' moments", function()
 		end)
 	end)
 
-	-- The next session over the last one's log and PagleHuntsDB, with `between` appended first: Casts recorded while
+	-- The next login over the last one's log and PagleHuntsDB, with `between` appended first: Casts recorded while
 	-- Hunts was off (HNT-R190).
 	---@param last table
 	---@param lastLoaded LoadedAddon
 	---@param between table[]?
 	---@param prepare fun(loaded: LoadedAddon)?
-	local function nextSession(last, lastLoaded, between, prepare)
-		return session(function(fake)
+	local function nextLogin(last, lastLoaded, between, prepare)
+		return login(function(fake)
 			append(fake, between or {})
-		end, { fake = hunts.nextSession(last, lastLoaded), prepare = prepare })
+		end, { fake = hunts.nextLogin(last, lastLoaded), prepare = prepare })
 	end
 
 	describe("at a catch-up (HNT-R111, HNT-R112, HNT-R190)", function()
 		it("writes up what the Casts while Hunts was off earned, with no pop-up, and marks it", function()
-			local lastLoaded, last = session(function(fake)
+			local lastLoaded, last = login(function(fake)
 				append(fake, { cast(0, NIGHT, ELWYNN, { C.NIGHTFIN }) })
 			end)
 
 			-- fixture_oddity and fixture_rack complete fixture_wagers while Hunts is off.
-			local loaded, fake = nextSession(last, lastLoaded, {
+			local loaded, fake = nextLogin(last, lastLoaded, {
 				cast(2, DUSK, DARKSHORE, { C.DEVIATE }),
 				cast(3, DAY, WESTFALL, { UNCOMMON }, { RACK_AURA }),
 			})
@@ -296,18 +292,18 @@ describe("Hunts' moments", function()
 		end)
 
 		it("raises a title a retirement completed summary-only, never in the section (HNT-R87)", function()
-			local lastLoaded, last = session(function(fake)
+			local lastLoaded, last = login(function(fake)
 				append(fake, { cast(0, NIGHT, ELWYNN, { C.NIGHTFIN }) })
 			end)
 
 			-- fixture_hefty_blackmouth's retired date, 2026-06-01, has passed by the next login: with fixture_sunscale
 			-- retired then too, fixture_snapper alone completes fixture_dusk (HNT-R20, HNT-R197).
-			local loaded, fake = nextSession(
+			local loaded, fake = nextLogin(
 				last,
 				lastLoaded,
 				{ cast(2, DUSK, DARKSHORE, { C.DEVIATE }) },
 				function(loaded)
-					loaded.ns.huntList.hunts[4].retired = 1780272000
+					loaded.ns.huntList.hunts[4].retired = hunts.JUN_1
 				end
 			)
 
@@ -329,11 +325,11 @@ describe("Hunts' moments", function()
 		end)
 
 		it("raises nothing at a login with nothing new (LOG-R76)", function()
-			local lastLoaded, last = session(function(fake)
+			local lastLoaded, last = login(function(fake)
 				append(fake, { cast(0, NIGHT, ELWYNN, { C.NIGHTFIN }) })
 			end)
 
-			local _, fake = nextSession(last, lastLoaded)
+			local _, fake = nextLogin(last, lastLoaded)
 
 			assert.are.same({ {}, {} }, { writeUps(fake), kept(fake) })
 		end)
@@ -342,7 +338,7 @@ describe("Hunts' moments", function()
 	describe("at a rebuild (HNT-R112, HNT-R190, HNT-R191)", function()
 		it("raises what is newly earned as summary-only moments, never a section, and never lowers the set", function()
 			-- fixture_snapper done; four uncommon items and a Smallfish under the Rack's aura: fixture_rack done, at 4.
-			local lastLoaded, last = session(function(fake)
+			local lastLoaded, last = login(function(fake)
 				append(fake, {
 					cast(0, NIGHT, ELWYNN, { C.NIGHTFIN }),
 					cast(1, DAY, WESTFALL, { UNCOMMON, UNCOMMON, UNCOMMON, UNCOMMON }, { RACK_AURA }),
@@ -354,7 +350,7 @@ describe("Hunts' moments", function()
 			saved.tiers.fixture_snapper = 3
 
 			-- While Hunts was off: a Deviate Fish, and a release whose Hunt list makes the Smallfish uncommon.
-			local loaded, fake = nextSession(
+			local loaded, fake = nextLogin(
 				last,
 				lastLoaded,
 				{ cast(2, DUSK, DARKSHORE, { C.DEVIATE }) },
@@ -415,7 +411,7 @@ describe("Hunts' moments", function()
 		it("is set first from done, with lifetime numbers over the current Hunts", function()
 			-- fixture_snapper, fixture_oddity and fixture_rack done, fixture_wagers' title. Current now: every fixture
 			-- Hunt but the two retired and fixture_grouper, whose since is ahead (HNT-R2).
-			local _, fake = session(function(fake)
+			local _, fake = login(function(fake)
 				append(fake, {
 					cast(0, NIGHT, ELWYNN, { C.NIGHTFIN }),
 					cast(1, DUSK, DARKSHORE, { C.DEVIATE }),
@@ -428,7 +424,7 @@ describe("Hunts' moments", function()
 
 		it("is never set while the projection is updating, then at every redraw", function()
 			local fake = newFakePagle()
-			fake.setCatalogue(catalogue.base())
+			fake.setCatalogue(C.base())
 			local loaded = hunts.load(fake)
 			fake.login()
 			loaded.ns.Redraw("groups")
@@ -451,7 +447,7 @@ describe("Hunts' moments", function()
 		it("counts titles in the plural, Retired Hunts' completions not among the current", function()
 			-- fixture_sunscale (retired) done; fixture_wagers and, with fixture_hefty_blackmouth retired in June,
 			-- fixture_dusk earned.
-			local _, fake = session(function(fake)
+			local _, fake = login(function(fake)
 				append(fake, {
 					cast(0, NIGHT, ELWYNN, { C.NIGHTFIN }),
 					cast(0, DAY, ELWYNN, { C.SUNSCALE }),
@@ -460,7 +456,7 @@ describe("Hunts' moments", function()
 				})
 			end, {
 				prepare = function(loaded)
-					loaded.ns.huntList.hunts[4].retired = 1780272000
+					loaded.ns.huntList.hunts[4].retired = hunts.JUN_1
 				end,
 			})
 
@@ -470,20 +466,11 @@ describe("Hunts' moments", function()
 	end)
 
 	it("celebrates again a tier reached only by a Catch a crash lost, once reached for real (HNT-R194)", function()
-		local lastLoaded, last = session(function(fake)
+		local lastLoaded, last = login(function(fake)
 			append(fake, { cast(0, NIGHT, ELWYNN, { C.NIGHTFIN }) })
 		end)
 		-- What the last save held: the log and PagleHuntsDB before the next Cast.
-		local function copy(value)
-			if type(value) ~= "table" then
-				return value
-			end
-			local out = {}
-			for key, item in pairs(value) do
-				out[key] = copy(item)
-			end
-			return out
-		end
+		local copy = hunts.deepCopy
 		local savedLog, savedGlobal = copy(last.catchLog.data), copy(lastLoaded.env.PagleHuntsDB.global)
 		fishAt(last, NIGHT, ELWYNN)
 		last.playCast("caught", { { itemID = C.NIGHTFIN, quantity = 1 } })
@@ -493,7 +480,7 @@ describe("Hunts' moments", function()
 		local fake = newFakePagle()
 		fake.catchLog.data = savedLog
 		fake.globals.PagleHuntsDB = { global = savedGlobal }
-		local loaded = session(nil, { fake = fake })
+		local loaded = login(nil, { fake = fake })
 		assert.is_nil(loaded.ns.State().hunts.fixture_tide_late)
 		fishAt(fake, NIGHT, ELWYNN)
 		fake.playCast("caught", { { itemID = C.NIGHTFIN, quantity = 1 } })

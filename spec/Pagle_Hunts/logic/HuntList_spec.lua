@@ -4,7 +4,7 @@
 local hunts = dofile("spec/Pagle_Hunts/support.lua")
 
 -- Server times (DATA-R87): 00:00 UTC on 2026-01-01, 2026-06-01 and 2026-11-04, the fixture's since and retired dates.
-local JAN_1, JUN_1, NOV_4 = 1767225600, 1780272000, 1793750400
+local JAN_1, JUN_1, NOV_4 = hunts.JAN_1, hunts.JUN_1, hunts.NOV_4
 
 -- The IDs of a list of Hunts or sets, in order.
 local function ids(list)

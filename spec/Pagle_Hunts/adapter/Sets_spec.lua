@@ -4,30 +4,9 @@
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local hunts = dofile("spec/Pagle_Hunts/support.lua")
----@diagnostic disable-next-line: undefined-global -- as above
-local catalogue = dofile("spec/Pagle_Hunts/fixtures/Catalogue.lua")
 
-local JAN_1 = 1767225600 -- 2026-01-01, the fixture Hunts' since
-local JUN_1 = 1780272000 -- 2026-06-01, the fixture's retired date
-local NOV_4 = 1793750400 -- 2026-11-04, after FakePagle's clock
-
---- A copy of the fixture Hunt list with `sets` and `huntDefs` appended (DATA-R93).
-local function withExtra(fixture, sets, huntDefs)
-	local list = { fingerprint = fixture.fingerprint, sets = {}, hunts = {}, classes = fixture.classes }
-	for _, set in ipairs(fixture.sets) do
-		list.sets[#list.sets + 1] = set
-	end
-	for _, hunt in ipairs(fixture.hunts) do
-		list.hunts[#list.hunts + 1] = hunt
-	end
-	for _, set in ipairs(sets) do
-		list.sets[#list.sets + 1] = set
-	end
-	for _, hunt in ipairs(huntDefs) do
-		list.hunts[#list.hunts + 1] = hunt
-	end
-	return list
-end
+local JAN_1, JUN_1, NOV_4 = hunts.JAN_1, hunts.JUN_1, hunts.NOV_4
+local withExtra, useState = hunts.withExtra, hunts.useState
 
 --- Two sets the fixture lacks: fixture_bygone, whose one Hunt was retired on 2026-06-01, and fixture_ahead, whose one
 --- Hunt is shipped early (since 2026-11-04).
@@ -55,47 +34,16 @@ local function bygoneAndAhead(fixture)
 	})
 end
 
---- Serves `huntsProgress` (by Hunt ID) and `sets` (titles by set ID) as the projection's state, updating or not: the
---- hand-made state views read through ns.State() and ns.IsUpdating() (logic/Seams.lua).
-local function useState(run, huntsProgress, sets, updating)
-	run.ns.projection = {
-		GetState = function()
-			return { casts = 0, coins = 0, hunts = huntsProgress or {}, sets = sets or {} }
-		end,
-		IsUpdating = function()
-			return updating == true
-		end,
-	}
-end
-
 --- A Hunt's progress with its first `tiers` tiers reached on realm date `date` (2026-01-01 by default).
 local function reached(tiers, date)
-	date = date or { year = 2026, month = 1, day = 1 }
-	local progress = { count = tiers, effort = 0, sinceLast = 0, caught = tiers > 0, reached = {} }
-	for k = 1, tiers do
-		progress.reached[k] = { time = JAN_1, catchId = "c" .. k, itemID = 13759, zone = 0, date = date }
-	end
-	return progress
+	return hunts.progress({ tiers = tiers, date = date, zone = 0 })
 end
 
 --- Hunts on a FakePagle after the first PLAYER_ENTERING_WORLD (so the groups are grouped), with `options.list` as the
 --- Hunt list if given, and an empty projection state.
 local function start(options)
 	options = options or {}
-	local fake = newFakePagle()
-	fake.setCatalogue(catalogue.base())
-	local loaded = hunts.load(fake, {
-		prepare = function(l)
-			if options.list then
-				l.ns.huntList = options.list(l.ns.huntList)
-			end
-		end,
-	})
-	fake.login()
-	fake.readSkill(150, 300, 0)
-	fake.enterWorld()
-	fake.fireGameEvent("PLAYER_ENTERING_WORLD", true, false)
-	local run = { loaded = loaded, fake = fake, ns = loaded.ns }
+	local run = hunts.start({ list = options.list })
 	useState(run)
 	return run
 end
@@ -376,26 +324,12 @@ end)
 
 -- On the drawn board.
 
---- The texts of every shown widget under `widget`, depth first.
-local function textsOf(widget, texts)
-	texts = texts or {}
-	for _, child in ipairs(widget.children) do
-		if child.shown then
-			if child.text ~= nil and child.text ~= "" then
-				texts[#texts + 1] = child.text
-			end
-			textsOf(child, texts)
-		end
-	end
-	return texts
-end
-
 --- The first shown button under `widget` whose own texts include `text`, depth first.
 local function buttonWith(widget, text)
 	for _, child in ipairs(widget.children) do
 		if child.shown then
 			if child.kind == "Button" then
-				for _, own in ipairs(textsOf(child)) do
+				for _, own in ipairs(shownTexts(child)) do
 					if own == text then
 						return child
 					end
@@ -431,7 +365,7 @@ describe("the ribbons, crumbs and nameplate on the leather (HNT-R61)", function(
 
 		assert.are.same(
 			{ stacked("Board"), stacked("Dusk"), stacked("Wagers"), stacked("fixture_pair"), stacked("fixture_tide") },
-			textsOf(ribbons)
+			shownTexts(ribbons)
 		)
 		assert.is_true(buttonWith(ribbons, stacked("Board")).chosen)
 		assert.is_false(buttonWith(ribbons, stacked("Dusk")).chosen)
@@ -473,7 +407,7 @@ describe("the ribbons, crumbs and nameplate on the leather (HNT-R61)", function(
 		local run = start()
 		local crumbs = opened(run, { mode = "entry", set = "fixture_dusk", hunt = "fixture_snapper" }).anchors.crumbs
 
-		assert.are.same({ "Hunts", "Dusk", "Snapper Run" }, textsOf(crumbs))
+		assert.are.same({ "Hunts", "Dusk", "Snapper Run" }, shownTexts(crumbs))
 		local marks = 0
 		for _, child in ipairs(crumbs.children) do
 			if child.kind == "Texture" and child.shown and child.texture == run.ns.BOARD_TEXTURES.fleuron then
@@ -484,7 +418,7 @@ describe("the ribbons, crumbs and nameplate on the leather (HNT-R61)", function(
 
 		buttonWith(crumbs, "Dusk"):Click()
 		assert.are.same({ mode = "set", set = "fixture_dusk" }, run.ns.board.router:Place())
-		assert.are.same({ "Hunts", "Dusk" }, textsOf(crumbs))
+		assert.are.same({ "Hunts", "Dusk" }, shownTexts(crumbs))
 
 		buttonWith(crumbs, "Hunts"):Click()
 		-- the timeline then selects its Hunt on the Board (HNT-R67)
@@ -496,7 +430,7 @@ describe("the ribbons, crumbs and nameplate on the leather (HNT-R61)", function(
 		useState(run, { fixture_snapper = reached(1) }, { fixture_dusk = title(2026, 2, 14) })
 		local nameplate = opened(run).anchors.nameplate
 
-		assert.are.same({ "1 title · 1 Hunt done" }, textsOf(nameplate))
+		assert.are.same({ "1 title · 1 Hunt done" }, shownTexts(nameplate))
 		local plate = nameplate.children[1]
 		plate:GetScript("OnEnter")(plate)
 
@@ -513,12 +447,12 @@ describe("the ribbons, crumbs and nameplate on the leather (HNT-R61)", function(
 		local run = start()
 		useState(run, { fixture_snapper = reached(1) }, {}, true)
 		local nameplate = opened(run).anchors.nameplate
-		assert.are.same({ "Updating from your Catch log…" }, textsOf(nameplate))
+		assert.are.same({ "Updating from your Catch log…" }, shownTexts(nameplate))
 
 		useState(run, { fixture_snapper = reached(1) }, {}, false)
 		run.ns.Redraw("projection")
 
-		assert.are.same({ "0 titles · 1 Hunt done" }, textsOf(nameplate))
+		assert.are.same({ "0 titles · 1 Hunt done" }, shownTexts(nameplate))
 	end)
 end)
 
@@ -536,7 +470,7 @@ describe("a set's page on the board (HNT-R66)", function()
 		}, { fixture_dusk = title(2026, 3, 12) })
 		opened(run, { mode = "set", set = "fixture_dusk" })
 
-		local texts = textsOf(rightPage(run))
+		local texts = shownTexts(rightPage(run))
 		assert.are.same({
 			"Title earned 12 Mar 2026",
 			"Dusk",
@@ -545,9 +479,9 @@ describe("a set's page on the board (HNT-R66)", function()
 			"The first tier of every Hunt earns the title.",
 			"After the lamps are lit.",
 		}, { unpack(texts, 1, 6) })
-		assert.are.same({ "Snapper Run", "12 Mar" }, textsOf(buttonWith(rightPage(run), "Snapper Run")))
-		assert.are.same({ "Hefty Blackmouth", "22:00" }, textsOf(buttonWith(rightPage(run), "Hefty Blackmouth")))
-		assert.are.same({ "Old Sunscale", "3 Feb" }, textsOf(buttonWith(rightPage(run), "Old Sunscale")))
+		assert.are.same({ "Snapper Run", "12 Mar" }, shownTexts(buttonWith(rightPage(run), "Snapper Run")))
+		assert.are.same({ "Hefty Blackmouth", "22:00" }, shownTexts(buttonWith(rightPage(run), "Hefty Blackmouth")))
+		assert.are.same({ "Old Sunscale", "3 Feb" }, shownTexts(buttonWith(rightPage(run), "Old Sunscale")))
 		-- and the "Retired" heading, in small caps, below the current Hunts and above the Retired ones
 		assert.are.equal(13, #texts)
 		local heading
@@ -579,7 +513,7 @@ describe("a set's page on the board (HNT-R66)", function()
 		useState(run, { fixture_snapper = reached(1) })
 		opened(run, { mode = "set", set = "fixture_dusk" })
 
-		local texts = textsOf(rightPage(run))
+		local texts = shownTexts(rightPage(run))
 		assert.are.same({ "Dusk", "Earns the title the Duskwatcher", "1 / 2" }, { unpack(texts, 1, 3) })
 		local bar
 		for _, child in ipairs(rightPage(run).children) do
@@ -614,7 +548,7 @@ describe("a set's page on the board (HNT-R66)", function()
 		useState(run, { fixture_snapper = reached(1) }, {}, true)
 		opened(run, { mode = "set", set = "fixture_dusk" })
 
-		local texts = textsOf(rightPage(run))
+		local texts = shownTexts(rightPage(run))
 
 		assert.are.equal("Updating from your Catch log…", texts[3])
 	end)
