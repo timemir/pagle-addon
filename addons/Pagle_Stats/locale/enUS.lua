@@ -311,4 +311,8 @@ ns.L = {
 	TRACKER_COUNTS = "%s · %s · %s got away",
 	TRACKER_PER_HOUR = "%s per hour · skill +%s",
 	TRACKER_JOIN = " · ",
+	-- The header's right text with no Session open (STA-R82), and a watch's count while the projection updates
+	-- (STA-R85).
+	TRACKER_NO_SESSION = "no Session",
+	TRACKER_UPDATING = "updating",
 }
