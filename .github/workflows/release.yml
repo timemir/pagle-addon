@@ -1,7 +1,18 @@
-# Packages Pagle with the BigWigsMods packager when a tag is pushed, and only then.
-# No tags exist before 1.0. Uploads go to CurseForge and Wago, never WoWInterface; until M8 adds
-# the project IDs (X-Curse-Project-ID, X-Wago-ID) and the CF_API_TOKEN / WAGO_API_TOKEN secrets,
-# a run builds the zip and uploads nothing. Build the same zip locally with scripts/package.sh.
+# Packages Pagle with the BigWigsMods packager when a tag is pushed, and only then, and uploads it to CurseForge
+# and Wago, never WoWInterface. No tags exist before 1.0. Build the same zip locally with scripts/package.sh.
+#
+# The tag is the bare version, the same for the whole package: 1.0.0, then 1.0.1 (git tag 1.0.0 && git push origin
+# 1.0.0). The packager reads the build type from the tag: a tag with "alpha" or "beta" in it publishes as that, any
+# other tag as a release (Wago's "stable"), so a plain version tag publishes as a normal release.
+#
+# Uploads need both halves: the project IDs in Pagle.toc (## X-Curse-Project-ID, ## X-Wago-ID) and the
+# CF_API_TOKEN and WAGO_API_TOKEN repository secrets (Settings > Secrets and variables > Actions). A site missing
+# either is skipped, so the run still builds the zip. No GitHub Release is made: GITHUB_API_TOKEN isn't passed.
+#
+# The game version comes from the TOCs, so no -g is passed: the packager reads ## Interface: 16001 as game type
+# "forever", version 1.60.1 (it ignores ## AllowLoadGameType), and tags the upload with that version under
+# CurseForge's WoW Forever version type and Wago's supported_forever_patches. A site that doesn't list 1.60.1 gets
+# its nearest lower Forever version, with a warning in the log.
 name: Release
 
 on:
@@ -18,10 +29,14 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          fetch-depth: 0 # the packager needs the history and tags for the version and changelog
+          fetch-depth: 0 # the packager needs the history and tags for the version
 
       # PACKAGER_COMMIT in scripts/tools.env, which also names its version; scripts/check.sh fails while they differ.
       - uses: BigWigsMods/packager@e50a250f8705041e40f2fa1ddcb280a686d65aa0
         with:
           args: -w 0 # never upload to WoWInterface, whatever a TOC says
           pandoc: false # only WoWInterface uploads need it
+        env:
+          # The names the pinned release.sh reads (it also takes CF_API_KEY for CurseForge).
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          WAGO_API_TOKEN: ${{ secrets.WAGO_API_TOKEN }}

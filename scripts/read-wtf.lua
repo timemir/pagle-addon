@@ -9,7 +9,8 @@
 --     rulesVersion are current, its state (items, the Uncharted list, zone ranks) with what the Ledger's own logic/
 --     computes from it over the world index (the level, charted zones, shown ranks, Ledger completion), and the
 --     celebrated set; then, in a Ledger M4 section, the climb with Prestige, the Catch Milestones, the Legends, the
---     Simulated Size records, the earned and active titles and the celebrated set's M4 keys;
+--     Simulated Size records, the earned and active titles, the celebrated set's M4 keys, and the log's sized Catches
+--     by band and per Species (#267);
 --   - Hunts (PagleHuntsDB in Pagle_Hunts.lua): the projection Core stores and whether its logId, lastSeq,
 --     rulesVersion and fingerprint are current, its state (Casts, Coins, each Hunt's progress and tiers, the earned
 --     set titles) with the Session summary line Hunts' own logic/ computes from it over the Hunt list, the
@@ -807,6 +808,127 @@ local function printCelebratedM4(ledger, celebrated, getItem)
 	print("celebrated Legend items: " .. listed(legends))
 end
 
+-- The sizes part (#267): every Catch in PagleLog with a Simulated Size, sized by Core's own codec and logic/Size.lua
+-- over the catalogue (LOG-R65–R67), by band beside LOG-R67's shares and per Species, so the bands can be checked on
+-- a real log before the 1.0 freeze (ADR 0010).
+
+-- Each band's share of Catches, from LOG-R67's cut points (0, 0.15, 0.70, 0.93, 0.995, 1).
+local SIZE_SHARES = { 0.15, 0.55, 0.23, 0.065, 0.005 }
+
+-- The central 95% range of a binomial count of `n` draws at probability `p`: the lowest count whose cumulative
+-- probability passes 2.5% and the lowest that reaches 97.5%, each term summed in log space so none underflows.
+local function binomialRange(n, p)
+	local logPmf, logRatio = n * math.log(1 - p), math.log(p) - math.log(1 - p)
+	local cdf, low = 0, nil
+	for k = 0, n do
+		cdf = cdf + math.exp(logPmf)
+		low = low or (cdf > 0.025 and k or nil)
+		if cdf >= 0.975 then
+			return low, k
+		end
+		logPmf = logPmf + math.log((n - k) / (k + 1)) + logRatio
+	end
+	return low or n, n
+end
+
+-- Every Catch in `log` with a Simulated Size (LOG-R65), decoded by Core's codec with `getItem`: the Catches per
+-- band, and per Species its Catches, shortest and longest length and typical length (DATA-R20).
+local function tallySizes(core, log, getItem)
+	local tally = { total = 0, bands = { 0, 0, 0, 0, 0 }, species = {} }
+	for record in core.OpenCatchLog(log, { decodeErrors = 0 }, 0, getItem):Iterate() do
+		for _, item in ipairs(record.kind == "cast" and record.items or {}) do
+			local size, info = item.size, getItem(item.itemID)
+			if size then
+				tally.total = tally.total + 1
+				tally.bands[size.band] = tally.bands[size.band] + 1
+				local species = tally.species[info.species] or { n = 0, typical = info.typicalLength }
+				species.n = species.n + 1
+				species.legend = species.legend or info.legend
+				species.shortest = math.min(species.shortest or size.length, size.length)
+				species.longest = math.max(species.longest or size.length, size.length)
+				tally.species[info.species] = species
+			end
+		end
+	end
+	return tally
+end
+
+-- Prints the sizes part: `log` is PagleLog (nil when there's none), `catalogue` the --catalogue path or nil.
+local function printSizes(log, catalogue)
+	local label = catalogue or "the repo's addons/Pagle/data/Catalogue.lua"
+	if not log then
+		print("sizes: no PagleLog to read")
+		return
+	end
+	if not wtf.luaBitOp() then
+		print(
+			"sizes: no LuaBitOp to hash the Catch IDs with (LOG-R66): run scripts/setup.sh, then this through"
+				.. " scripts/read-wtf.sh"
+		)
+		return
+	end
+	local items, err = wtf.loadCatalogue(catalogue)
+	if not items then
+		print(("sizes: can't load %s: %s"):format(label, tostring(err)))
+		return
+	end
+	local core = wtf.loadCore({
+		"locale/enUS.lua",
+		"logic/Conditions.lua",
+		"logic/Sessions.lua",
+		"logic/Size.lua",
+		"logic/CatchLog.lua",
+	})
+	if log.format ~= core.LOG_FORMAT then
+		print(("sizes: PagleLog is format %s, the codec reads format %d"):format(tostring(log.format), core.LOG_FORMAT))
+		return
+	end
+	local tally = tallySizes(core, log, items.GetItem)
+	local species = sortedKeys(tally.species)
+	if tally.total == 0 then
+		print(("sizes: no Catch has a Simulated Size (LOG-R65), from PagleLog over %s"):format(label))
+		return
+	end
+	print(
+		("sizes: %s with a Simulated Size, of %s (LOG-R65), from PagleLog over %s"):format(
+			count(tally.total, "Catch", "Catches"),
+			count(#species, "Species", "Species"),
+			label
+		)
+	)
+	print("sizes by band: Catches (their share; LOG-R67's share, the 95% range of the Catches at it)")
+	for band, share in ipairs(SIZE_SHARES) do
+		local n, low, high = tally.bands[band], binomialRange(tally.total, share)
+		local outside = (n < low or n > high) and ", OUTSIDE its 95% range" or ""
+		print(
+			("  %d %s: %d (%.1f%%; %s%%, %d–%d)%s"):format(
+				band,
+				tostring(core.SIZE_BANDS[band].name),
+				n,
+				100 * n / tally.total,
+				("%g"):format(100 * share),
+				low,
+				high,
+				outside
+			)
+		)
+	end
+	print("sizes per Species: Catches, shortest–longest, typical length (DATA-R20)")
+	for _, id in ipairs(species) do
+		local entry = tally.species[id]
+		print(
+			("  %s%s: %s, %d–%d mm, typical %s mm"):format(
+				tostring(id),
+				entry.legend and " (Legend)" or "",
+				count(entry.n, "Catch", "Catches"),
+				entry.shortest,
+				entry.longest,
+				tostring(entry.typical)
+			)
+		)
+	end
+end
+
 -- Prints the Ledger M4 section (ledger.md › Data, #173): from the state (`state`, nil when none is stored) the climb
 -- (LED-R30, LED-R35), the Catch Milestones (LED-R42), the Legends (LED-R63) and the records (LED-R80); the earned
 -- and active titles (LED-R75–R77); and the celebrated set's M4 keys (LED-R90). `context` holds the Ledger section's
@@ -839,6 +961,7 @@ local function printLedgerM4(ledger, db, state, context)
 		activeTitle = tableOr(tableOr(db.profiles).Default).activeTitle,
 	})
 	printCelebratedM4(ledger, celebrated, context.getItem)
+	printSizes(context.log, context.catalogue)
 end
 
 -- Prints the Ledger section from SavedVariables/Pagle_Ledger.lua (ledger.md › Data): the projection Core stores
@@ -883,7 +1006,12 @@ local function printLedger(account, log, catalogue, items)
 		printLedgerState(ledger, state, world, getItem, tableOr(global.celebrated))
 	end
 	printCelebrated(tableOr(global.celebrated), ledger, getItem)
-	printLedgerM4(ledger, db, state, { world = world, getItem = getItem, items = items })
+	printLedgerM4(
+		ledger,
+		db,
+		state,
+		{ world = world, getItem = getItem, items = items, log = log, catalogue = catalogue }
+	)
 end
 
 -- The Hunts section's lines (#199): what PagleHuntsDB holds (hunts.md › Data), with what Hunts' own logic/ computes

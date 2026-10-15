@@ -161,3 +161,76 @@ describe("the Journal's search", function()
 		assert.is_nil(ns.JournalSearch("", context))
 	end)
 end)
+
+describe("the plain hint over the committed catalogue", function()
+	-- #263, the lore gate: no uncaught Species' page goes without its plain hint (DATA-R112, LED-R141), removed ones
+	-- included (LED-R12). The world index is the Ledger's own, built over Core's committed catalogue (LED-R10).
+	local loaded = loadAddon("Pagle_Ledger", FOREVER_GLOBALS)
+	local ns, core = loaded.ns, loaded.namespaces.Pagle
+	local L = ns.L
+
+	-- The Journal's words as the uncaught page reads them: its riddle from the committed lore, a stand-in name for
+	-- each zone (the client names them at runtime, LED-R126) and the real window labels (LED-R127).
+	local text = {
+		Lore = function(_, key)
+			return L[key]
+		end,
+		Zone = function(_, zone)
+			return "Zone " .. zone
+		end,
+		WindowLabel = function(_, window)
+			return ns.WindowLabel(window)
+		end,
+	}
+
+	-- The catalogue's lookups (LOG-R55), with `extra` items over the committed ones.
+	local function lookups(extra)
+		local catalogue = core.NewCatalogue(core.catalogue)
+		return {
+			GetItem = function(itemID)
+				return extra and extra[itemID] or catalogue.GetItem(itemID)
+			end,
+			GetZones = catalogue.GetZones,
+			GetArea = catalogue.GetArea,
+			GetZoneCatches = catalogue.GetZoneCatches,
+		}
+	end
+
+	-- The plain hint an uncaught Species' page shows once its link is opened (LED-R141), nil if the page has none.
+	local function hintOn(id, world)
+		local context = { state = { species = {} }, world = world, text = text }
+		local blocks = ns.JournalSpeciesEntry(id, context, { open = true, place = { id = "fish", args = {} } })
+		for _, block in ipairs(blocks) do
+			if block.kind == "text" and block.hand then
+				return block.text
+			end
+		end
+		return nil
+	end
+
+	it("gives every Species in the catalogue, removed ones included, a plain hint (DATA-R112, LED-R141)", function()
+		local world = ns.NewWorld(lookups())
+		local species = 0
+		for itemID, item in pairs(core.catalogue.items) do
+			if item.species == itemID and not item.legend then
+				species = species + 1
+				local hint = hintOn(itemID, world)
+				assert(type(hint) == "string" and hint:find("%S"), itemID .. " has no plain hint")
+				-- Every window it names has a label, and a listed Species names where it's found.
+				assert(not hint:find(L.NAME_UNKNOWN, 1, true), itemID .. ": " .. hint)
+				if world.species[itemID] and #world.species[itemID].zones > 0 then
+					assert(hint:find("Zone %d+"), itemID .. " names no zone: " .. hint)
+				end
+			end
+		end
+		assert.is_true(species > 30)
+	end)
+
+	it("gives a removed Species on no list a plain hint all the same (LED-R12, LED-R141)", function()
+		-- No Species is removed in today's catalogue, so one is added: removed, and on no zone's list.
+		local GONE = 999001
+		local world = ns.NewWorld(lookups({ [GONE] = fishRecord(GONE, { removed = true }) }))
+
+		assert.are.equal(L.HINT_ANY_TIME, hintOn(GONE, world))
+	end)
+end)

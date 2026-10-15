@@ -17,7 +17,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          fetch-depth: 0 # scripts/package.sh clones this checkout; the packager reads history for the changelog
+          fetch-depth: 0 # scripts/package.sh clones this checkout; the packager reads history and tags for the version
 
       # The apt prerequisites of scripts/setup.sh, SETUP_APT_PACKAGES in scripts/tools.env. ubuntu-latest ships
       # them, so this usually installs nothing.
