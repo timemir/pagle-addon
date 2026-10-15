@@ -14,7 +14,7 @@ from pathlib import Path
 
 import pytest
 
-from pagle_data.cli import main
+from cli_fixture import run
 from pagle_data.errors import Problems
 from pagle_data.generate import Layers, hunt_list_of, read_layers
 from pagle_data.hunts import hunt_hash
@@ -22,6 +22,22 @@ from pagle_data.lore import catalogue_ids, check_lore
 
 REPO = Path(__file__).resolve().parents[2]
 LEDGER_TOML = REPO / "data" / "lore" / "ledger.toml"
+
+
+def _generator_fails_with(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], path: str, old: str, new: str, expected: str
+) -> None:
+    """The generator itself (DATA-R63) on a copy of the repo's data/ with `old`, which data/`path` holds once,
+    replaced by `new`: it exits 1, prints `expected` and writes nothing."""
+    shutil.copytree(REPO / "data", tmp_path / "data")
+    edited = tmp_path / "data" / path
+    text = edited.read_text(encoding="utf-8")
+    assert text.count(old) == 1
+    edited.write_text(text.replace(old, new), encoding="utf-8")
+    code, output = run(tmp_path, capsys)
+    assert code == 1
+    assert expected in output
+    assert not (tmp_path / "addons").exists()
 
 # SHOP-R25: Core's nine goods at M4, by slot.
 CORE_GOODS = [
@@ -155,17 +171,12 @@ def test_the_generator_fails_on_a_deleted_riddle_and_names_the_key(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
     # DATA-R107 through the generator itself (DATA-R63): a copy of data/ with one riddle deleted writes nothing.
-    shutil.copytree(REPO / "data", tmp_path / "data")
-    ledger = tmp_path / "data" / "lore" / "ledger.toml"
-    text = ledger.read_text(encoding="utf-8")
+    text = LEDGER_TOML.read_text(encoding="utf-8")
     riddle = re.search(r"^\[species\.6289\].*\n(?:.*\n)*?(riddle = .*\n)", text, flags=re.MULTILINE)
     assert riddle is not None
-    ledger.write_text(text[: riddle.start(1)] + text[riddle.end(1) :], encoding="utf-8")
-    code = main([], tmp_path)
-    out, err = capsys.readouterr()
-    assert code == 1
-    assert "data/lore/ledger.toml: species.6289.riddle: missing" in out + err
-    assert not (tmp_path / "addons").exists()
+    _generator_fails_with(
+        tmp_path, capsys, "lore/ledger.toml", riddle.group(1), "", "data/lore/ledger.toml: species.6289.riddle: missing"
+    )
 
 
 @pytest.mark.parametrize("species", sorted(_riddles()))
@@ -182,17 +193,14 @@ def test_the_generator_fails_on_a_deleted_good_name_and_names_the_key(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
     # DATA-R107 for the core lore ID, through the generator itself (DATA-R63): nothing is written.
-    shutil.copytree(REPO / "data", tmp_path / "data")
-    core = tmp_path / "data" / "lore" / "core.toml"
-    text = core.read_text(encoding="utf-8")
-    name = 'name = "Ripple"\n'
-    assert name in text
-    core.write_text(text.replace(name, ""), encoding="utf-8")
-    code = main([], tmp_path)
-    out, err = capsys.readouterr()
-    assert code == 1
-    assert "data/lore/core.toml: good.core.toaststyle.ripple.name: missing" in out + err
-    assert not (tmp_path / "addons").exists()
+    _generator_fails_with(
+        tmp_path,
+        capsys,
+        "lore/core.toml",
+        'name = "Ripple"\n',
+        "",
+        "data/lore/core.toml: good.core.toaststyle.ripple.name: missing",
+    )
 
 
 def test_the_manifest_lists_the_ledger_s_titles_and_bindings() -> None:
@@ -361,16 +369,14 @@ def test_the_generator_fails_on_a_29_code_point_hunt_name_and_names_the_key(
 ) -> None:
     # DATA-R105, DATA-R107 through the generator itself (DATA-R63): a copy of data/ with Night Run's name one code
     # point over the 28 writes nothing.
-    shutil.copytree(REPO / "data", tmp_path / "data")
-    hunts = tmp_path / "data" / "hunts" / "hunts.toml"
-    text = hunts.read_text(encoding="utf-8")
-    assert text.count('name = "Night Run"\n') == 1
-    hunts.write_text(text.replace('name = "Night Run"\n', f'name = "{"N" * 29}"\n'), encoding="utf-8")
-    code = main([], tmp_path)
-    out, err = capsys.readouterr()
-    assert code == 1
-    assert "data/hunts/hunts.toml: hunt.night_run.name: length: 29 code points" in out + err
-    assert not (tmp_path / "addons").exists()
+    _generator_fails_with(
+        tmp_path,
+        capsys,
+        "hunts/hunts.toml",
+        'name = "Night Run"\n',
+        f'name = "{"N" * 29}"\n',
+        "data/hunts/hunts.toml: hunt.night_run.name: length: 29 code points",
+    )
 
 
 def test_renaming_a_hunt_changes_neither_its_hash_nor_the_hunt_list_fingerprint(tmp_path: Path) -> None:
@@ -442,17 +448,14 @@ def test_the_generator_fails_on_a_29_code_point_frame_name_and_names_the_key(
 ) -> None:
     # DATA-R107 for the stats lore ID, through the generator itself (DATA-R63): a copy of data/ with the Logbook's
     # name one code point over the 28 (Tunables › Lore limits) writes nothing.
-    shutil.copytree(REPO / "data", tmp_path / "data")
-    stats = tmp_path / "data" / "lore" / "stats.toml"
-    text = stats.read_text(encoding="utf-8")
-    name = f'name = "{_stats_text()["statsgood.stats.trackerframe.logbook.name"]}"\n'
-    assert text.count(name) == 1
-    stats.write_text(text.replace(name, f'name = "{"L" * 29}"\n'), encoding="utf-8")
-    code = main([], tmp_path)
-    out, err = capsys.readouterr()
-    assert code == 1
-    assert "data/lore/stats.toml: statsgood.stats.trackerframe.logbook.name: length: 29 code points" in out + err
-    assert not (tmp_path / "addons").exists()
+    _generator_fails_with(
+        tmp_path,
+        capsys,
+        "lore/stats.toml",
+        f'name = "{_stats_text()["statsgood.stats.trackerframe.logbook.name"]}"\n',
+        f'name = "{"L" * 29}"\n',
+        "data/lore/stats.toml: statsgood.stats.trackerframe.logbook.name: length: 29 code points",
+    )
 
 
 # tackle-board.md › Data: the Fly Box's 30 patterns in pattern order (TKB-R62: 24 common, then 6 rare), the 8 titles in
@@ -589,14 +592,11 @@ def test_the_generator_fails_on_a_29_code_point_fly_name_and_names_the_key(
 ) -> None:
     # DATA-R107 for the tackleboard lore ID, through the generator itself (DATA-R63): a copy of data/ with the Murloc
     # Nymph's name one code point over the 28 (Tunables › Lore limits) writes nothing.
-    shutil.copytree(REPO / "data", tmp_path / "data")
-    board = tmp_path / "data" / "lore" / "tackleboard.toml"
-    text = board.read_text(encoding="utf-8")
-    name = f'name = "{_board_text()["fly.murloc_nymph.name"]}"\n'
-    assert text.count(name) == 1
-    board.write_text(text.replace(name, f'name = "{"M" * 29}"\n'), encoding="utf-8")
-    code = main([], tmp_path)
-    out, err = capsys.readouterr()
-    assert code == 1
-    assert "data/lore/tackleboard.toml: fly.murloc_nymph.name: length: 29 code points" in out + err
-    assert not (tmp_path / "addons").exists()
+    _generator_fails_with(
+        tmp_path,
+        capsys,
+        "lore/tackleboard.toml",
+        f'name = "{_board_text()["fly.murloc_nymph.name"]}"\n',
+        f'name = "{"M" * 29}"\n',
+        "data/lore/tackleboard.toml: fly.murloc_nymph.name: length: 29 code points",
+    )
