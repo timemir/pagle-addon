@@ -1,5 +1,5 @@
--- The Announcements page: Core's rows for how Announcements behave, Cozy mode and the Interruption budget, then its
--- two slot rows, driven through the fake client's Settings panel (settings.md SET-R1, SET-R30, SET-R31, SET-R33,
+-- The Announcements page: Core's rows for how Announcements behave, Cozy mode, the Interruption budget and Show every
+-- catch, then its two slot rows, driven through the fake client's Settings panel (settings.md SET-R1, SET-R30, SET-R31, SET-R33,
 -- SET-R60, SET-R61; core/announcements.md › Settings, Data; CORE-R32, CORE-R40, CORE-R43). The slot rows themselves:
 -- spec/Pagle/adapter/LookAndFeel_spec.lua.
 
@@ -7,6 +7,7 @@ local COZY = "Cozy mode"
 local BUDGET = "Interruption budget"
 local COUNT = "Interruptions"
 local WINDOW = "Per"
+local EVERY_CATCH = "Show every catch"
 local TOAST_STYLE = "Toast style"
 local SOUND_SET = "Sound set"
 
@@ -73,7 +74,7 @@ describe("The Announcements page", function()
 	end)
 
 	it(
-		"holds Core's six rows in SET-R30's order, each found by its label, ending with the slot rows (SET-R30, SET-R5)",
+		"holds Core's seven rows in SET-R30's order, each found by its label, ending with the slot rows (SET-R30, SET-R5)",
 		function()
 			local loaded = login(core())
 
@@ -81,28 +82,37 @@ describe("The Announcements page", function()
 			for i, initializer in ipairs(page(loaded).layout.initializers) do
 				names[i] = initializer:GetName()
 			end
-			assert.are.same({ COZY, BUDGET, COUNT, WINDOW, TOAST_STYLE, SOUND_SET }, names)
+			assert.are.same({ COZY, BUDGET, COUNT, WINDOW, EVERY_CATCH, TOAST_STYLE, SOUND_SET }, names)
 		end
 	)
 
-	it("gives Cozy mode and Interruption budget SET-R30's tooltips, and the sliders none (SET-R30)", function()
-		local loaded = login(core())
+	it(
+		"gives Cozy mode, Interruption budget and Show every catch SET-R30's tooltips, the sliders none (SET-R30)",
+		function()
+			local loaded = login(core())
 
-		assert.are.equal(
-			"Nothing pops up or plays. Every moment waits in the Session summary. A Legend's splash still shows, silently.",
-			row(loaded, COZY):GetTooltip()
-		)
-		assert.are.equal(
-			"When toasts come close together, the smaller ones step down to a quiet Nod. Records always keep their "
-				.. "ruler. Greyed out in Cozy mode, which holds everything anyway.",
-			row(loaded, BUDGET):GetTooltip()
-		)
-		assert.is_nil(row(loaded, COUNT):GetTooltip())
-		assert.is_nil(row(loaded, WINDOW):GetTooltip())
-	end)
+			assert.are.equal(
+				"Nothing pops up or plays. Every moment waits in the Session summary. A Legend's splash still shows, silently.",
+				row(loaded, COZY):GetTooltip()
+			)
+			assert.are.equal(
+				"When toasts come close together, the smaller ones step down to a quiet Nod. Records always keep their "
+					.. "ruler. Greyed out in Cozy mode, which holds everything anyway.",
+				row(loaded, BUDGET):GetTooltip()
+			)
+			assert.are.equal(
+				"A quiet line for each catch: its name, size band and length. A toast or banner for the same catch shows "
+					.. "instead. Greyed out in Cozy mode, which shows nothing.",
+				row(loaded, EVERY_CATCH):GetTooltip()
+			)
+			assert.is_nil(row(loaded, COUNT):GetTooltip())
+			assert.is_nil(row(loaded, WINDOW):GetTooltip())
+		end
+	)
 
 	it(
-		"makes Cozy mode and the budget checkboxes and Interruptions and Per sliders under the budget (SET-R30, SET-R2)",
+		"makes Cozy mode, the budget and Show every catch checkboxes, and Interruptions and Per sliders under the budget"
+			.. " (SET-R30, SET-R2)",
 		function()
 			local loaded = login(core())
 			local budget = row(loaded, BUDGET)
@@ -112,12 +122,15 @@ describe("The Announcements page", function()
 				"SettingsCheckboxControlTemplate",
 				"SettingsSliderControlTemplate",
 				"SettingsSliderControlTemplate",
+				"SettingsCheckboxControlTemplate",
 			}, {
 				row(loaded, COZY).template,
 				budget.template,
 				row(loaded, COUNT).template,
 				row(loaded, WINDOW).template,
+				row(loaded, EVERY_CATCH).template,
 			})
+			assert.is_nil(row(loaded, EVERY_CATCH):GetParentInitializer())
 			assert.is_nil(row(loaded, COZY):GetParentInitializer())
 			assert.is_nil(budget:GetParentInitializer())
 			assert.are.equal(budget, row(loaded, COUNT):GetParentInitializer())
@@ -155,13 +168,14 @@ describe("The Announcements page", function()
 
 		setCombat(loaded, false)
 
-		assert.are.equal(6, #page(loaded).layout.initializers)
+		assert.are.equal(7, #page(loaded).layout.initializers)
 	end)
 end)
 
 describe("Core's Announcements rows", function()
 	it(
-		"start from the defaults: Cozy off, the budget on, 4 per 5 min, Timber and Driftwood (announcements.md Data)",
+		"start from the defaults: Cozy off, the budget on, 4 per 5 min, every catch shown, Timber and Driftwood"
+			.. " (announcements.md Data, ANN-R13)",
 		function()
 			local loaded = login(core())
 
@@ -175,8 +189,11 @@ describe("Core's Announcements rows", function()
 					end
 				end
 			end
-			assert.are.same({ false, true, 4, 5, "core.toaststyle.timber", "core.soundset.driftwood" }, values)
-			assert.are.same({ cozy = false, budget = { on = true, count = 4, window = 300 } }, stored(loaded))
+			assert.are.same({ false, true, 4, 5, true, "core.toaststyle.timber", "core.soundset.driftwood" }, values)
+			assert.are.same(
+				{ cozy = false, everyCatch = true, budget = { on = true, count = 4, window = 300 } },
+				stored(loaded)
+			)
 		end
 	)
 
@@ -187,18 +204,23 @@ describe("Core's Announcements rows", function()
 		row(loaded, BUDGET):GetSetting():SetValue(false)
 		row(loaded, COUNT):GetSetting():SetValue(7)
 		row(loaded, WINDOW):GetSetting():SetValue(12)
+		row(loaded, EVERY_CATCH):GetSetting():SetValue(false)
 
-		assert.are.same({ cozy = true, budget = { on = false, count = 7, window = 720 } }, stored(loaded))
+		assert.are.same(
+			{ cozy = true, everyCatch = false, budget = { on = false, count = 7, window = 720 } },
+			stored(loaded)
+		)
 	end)
 
 	it("read the stored values each time the page is shown, Per in minutes (SET-R62)", function()
 		local loaded = login(core())
 		stored(loaded).budget.count = 2
 		stored(loaded).budget.window = 600
+		stored(loaded).everyCatch = false
 
 		local shown = loaded.client.settings.show(page(loaded))
 
-		assert.are.same({ 2, 10 }, { shown[3].frame.value, shown[4].frame.value })
+		assert.are.same({ 2, 10, false }, { shown[3].frame.value, shown[4].frame.value, shown[5].frame.value })
 	end)
 
 	it("show Per's value as \"{n} min\", and Interruptions' as its number (SET-R30)", function()
@@ -211,74 +233,87 @@ describe("Core's Announcements rows", function()
 	end)
 end)
 
--- Whether each of the four greyable rows is live, as the page shown last draws it: Cozy mode, Interruption budget,
--- Interruptions, Per. The slot rows are never greyed out (SET-R51).
+-- Whether each of the five greyable rows is live, as the page shown last draws it: Cozy mode, Interruption budget,
+-- Interruptions, Per, Show every catch. The slot rows are never greyed out (SET-R51).
 local function live(shown)
 	local enabled = {}
-	for i = 1, 4 do
+	for i = 1, 5 do
 		enabled[i] = shown[i].frame.enabled
 	end
 	return enabled
 end
 
 describe("Greying on the Announcements page", function()
-	it("greys the other three rows when Cozy mode is turned on, keeping their values (SET-R31)", function()
+	it("greys the other four rows when Cozy mode is turned on, keeping their values (SET-R31)", function()
 		local loaded = login(core())
 		local shown = loaded.client.settings.show(page(loaded))
-		assert.are.same({ true, true, true, true }, live(shown))
+		assert.are.same({ true, true, true, true, true }, live(shown))
 
 		row(loaded, COZY):GetSetting():SetValue(true)
 
-		assert.are.same({ true, false, false, false }, live(shown))
-		assert.are.same({ true, 4, 5 }, { shown[2].frame.value, shown[3].frame.value, shown[4].frame.value })
+		assert.are.same({ true, false, false, false, false }, live(shown))
+		assert.are.same(
+			{ true, 4, 5, true },
+			{ shown[2].frame.value, shown[3].frame.value, shown[4].frame.value, shown[5].frame.value }
+		)
 		assert.are.same({ on = true, count = 4, window = 300 }, stored(loaded).budget)
 	end)
 
-	it("brings the budget and its sliders back when Cozy mode is turned off (SET-R31, SET-R61)", function()
-		local loaded = login(core())
-		row(loaded, COZY):GetSetting():SetValue(true)
-		local shown = loaded.client.settings.show(page(loaded))
-		assert.are.same({ true, false, false, false }, live(shown))
+	it(
+		"brings the budget, its sliders and Show every catch back when Cozy mode is turned off (SET-R31, SET-R61)",
+		function()
+			local loaded = login(core())
+			row(loaded, COZY):GetSetting():SetValue(true)
+			local shown = loaded.client.settings.show(page(loaded))
+			assert.are.same({ true, false, false, false, false }, live(shown))
 
-		row(loaded, COZY):GetSetting():SetValue(false)
+			row(loaded, COZY):GetSetting():SetValue(false)
 
-		assert.are.same({ true, true, true, true }, live(shown))
-	end)
+			assert.are.same({ true, true, true, true, true }, live(shown))
+		end
+	)
 
 	it("keeps the sliders greyed when Cozy mode is turned off while the budget is off (SET-R31, SET-R61)", function()
 		local loaded = login(core())
 		local shown = loaded.client.settings.show(page(loaded))
 		row(loaded, BUDGET):GetSetting():SetValue(false)
-		assert.are.same({ true, true, false, false }, live(shown))
+		assert.are.same({ true, true, false, false, true }, live(shown))
 		row(loaded, COZY):GetSetting():SetValue(true)
 
 		row(loaded, COZY):GetSetting():SetValue(false)
 
-		assert.are.same({ true, true, false, false }, live(shown))
+		assert.are.same({ true, true, false, false, true }, live(shown))
 		row(loaded, BUDGET):GetSetting():SetValue(true)
-		assert.are.same({ true, true, true, true }, live(shown))
+		assert.are.same({ true, true, true, true, true }, live(shown))
 	end)
 
 	it("is re-evaluated each time the page is shown (SET-R61)", function()
 		local loaded = login(core())
 		stored(loaded).cozy = true -- changed outside Settings
 
-		assert.are.same({ true, false, false, false }, live(loaded.client.settings.show(page(loaded))))
+		assert.are.same({ true, false, false, false, false }, live(loaded.client.settings.show(page(loaded))))
 	end)
 end)
 
 describe("The Announcements page's Defaults button", function()
-	it("restores Cozy off, the budget on, 4 and 5 min, greyed rows included (SET-R33, SET-R60)", function()
-		local loaded = login(core())
-		row(loaded, BUDGET):GetSetting():SetValue(false)
-		row(loaded, COUNT):GetSetting():SetValue(9)
-		row(loaded, WINDOW):GetSetting():SetValue(15)
-		row(loaded, COZY):GetSetting():SetValue(true)
+	it(
+		"restores Cozy off, the budget on, 4 and 5 min, every catch shown, greyed rows included (SET-R33, SET-R60)",
+		function()
+			local loaded = login(core())
+			row(loaded, EVERY_CATCH):GetSetting():SetValue(false)
+			row(loaded, BUDGET):GetSetting():SetValue(false)
+			row(loaded, COUNT):GetSetting():SetValue(9)
+			row(loaded, WINDOW):GetSetting():SetValue(15)
+			row(loaded, COZY):GetSetting():SetValue(true)
 
-		loaded.client.settings.defaults(page(loaded))
+			loaded.client.settings.defaults(page(loaded))
 
-		assert.are.same({ cozy = false, budget = { on = true, count = 4, window = 300 } }, stored(loaded))
-	end)
+			assert.are.same(
+				{ cozy = false, everyCatch = true, budget = { on = true, count = 4, window = 300 } },
+				stored(loaded)
+			)
+		end
+	)
 
 	it("leaves the root's reminder alone (SET-R60)", function()
 		local loaded = login(core())

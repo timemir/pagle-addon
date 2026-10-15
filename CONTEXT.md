@@ -157,7 +157,7 @@ Pagle telling the player, in the moment, about something they just earned. One C
 _Avoid_: notification, alert, popup
 
 **Nod**:
-The quietest Announcement: one silent line, for minor moments or toasts stepped down by the Interruption budget.
+The quietest Announcement: one silent line, for minor moments, toasts stepped down by the Interruption budget, and the **catch Nod** Core shows for an ordinary Catch ("Mud Snapper · Typical · 34.2 cm") when nothing bigger came of it.
 _Avoid_: mini toast, whisper
 
 **Interruption budget**:

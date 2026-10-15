@@ -407,3 +407,66 @@ describe("Announcement sounds on the client", function()
 		assert.are.same({}, loaded.client.sounds)
 	end)
 end)
+
+describe("The catch Nod on the client", function()
+	-- Core as loadCore makes it, with Oily Blackmouth's name cached and the Angler's unit in cm.
+	local function catching()
+		local loaded, M, summarized = loadCore()
+		loaded.client.itemNames[6358] = "Oily Blackmouth"
+		loaded.ns.db.profile.lengthUnit = "cm"
+		return loaded, M, summarized
+	end
+
+	it(
+		'draws an ordinary Catch as a silent Nod, "{item name} · {band} · {length}", for 3 s, never summarized'
+			.. " (ANN-R13, ANN-R20, ANN-R25)",
+		function()
+			local loaded, _, summarized = catching()
+
+			catchAndFlush(loaded)
+
+			assert.is_true(showing(loaded, "nod"))
+			local frame = frameOf(loaded, "nod") --[[@as table]]
+			assert.matches("^Oily Blackmouth · %a+ · %d+%.%d cm$", frame.title:GetText())
+			assert.are.same({}, stampsOf(frame))
+			assert.are.same({}, loaded.client.sounds)
+			assert.are.same({}, summarized)
+			loaded.client.advance(3)
+			assert.is_false(showing(loaded, "nod"))
+		end
+	)
+
+	it("never counts toward the Interruption budget (ANN-R13, ANN-R30, ANN-R31)", function()
+		local loaded, M = catching()
+		loaded.ns.db.profile.announcements.budget.count = 1
+
+		catchAndFlush(loaded)
+		loaded.client.advance(3)
+		raise(loaded, M, moment("toast.low", "Size record"))
+
+		assert.is_true(showing(loaded, "toast"))
+	end)
+
+	it("is dropped, not held, in combat and in Cozy mode (ANN-R13, ANN-R35, ANN-R36, ANN-R40)", function()
+		local loaded = catching()
+		setCombat(loaded, true)
+		catchAndFlush(loaded)
+		setCombat(loaded, false)
+		loaded.client.advance(2)
+		assert.is_nil(frameOf(loaded, "nod"))
+
+		loaded.ns.db.profile.announcements.cozy = true
+		catchAndFlush(loaded)
+
+		assert.is_nil(frameOf(loaded, "nod"))
+	end)
+
+	it('shows nothing for an ordinary Catch with "Show every catch" off (ANN-R13, SET-R30)', function()
+		local loaded = catching()
+		loaded.ns.db.profile.announcements.everyCatch = false
+
+		catchAndFlush(loaded)
+
+		assert.is_nil(frameOf(loaded, "nod"))
+	end)
+end)

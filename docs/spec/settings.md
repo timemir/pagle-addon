@@ -36,7 +36,7 @@ Fishing                                                    (QoL only)
   [While you fish]          Fishing audio mix  ↳ Keep sound when the game is in the background;
                             Auto-loot while fishing;  Show the next-action button  ↳ Button position
 Announcements
-                            Cozy mode;  Interruption budget  ↳ Interruptions  ↳ Per;  Toast style;  Sound set
+                            Cozy mode;  Interruption budget  ↳ Interruptions  ↳ Per;  Show every catch;  Toast style;  Sound set
   [Hunts]                   Tell me when a pinned Hunt's window opens
 Trackers
                             Tracker position  [Reset]
@@ -142,11 +142,12 @@ The rules below are authoritative; this sketch only summarises them.
   | Interruption budget | checkbox | on (ANN-R31, ANN-R32) | Cozy mode is on | "When toasts come close together, the smaller ones step down to a quiet Nod. Records always keep their ruler. Greyed out in Cozy mode, which holds everything anyway." |
   | ↳ Interruptions | slider | 1–10, step 1 · 4 | Cozy mode is on, or the budget is off | |
   | ↳ Per | slider, shown as "{n} min" | 1–15 min, step 1 min · 5 min (stored in seconds) | Cozy mode is on, or the budget is off | |
+  | Show every catch | checkbox | on (ANN-R13, `everyCatch`) | Cozy mode is on | "A quiet line for each catch: its name, size band and length. A toast or banner for the same catch shows instead. Greyed out in Cozy mode, which shows nothing." |
   | Toast style | slot dropdown, `core.toaststyle` (SET-R51) | owned styles · `core.toaststyle.timber` (ANN-R80) | | |
   | Sound set | slot dropdown, `core.soundset` (SET-R51) | owned sets · `core.soundset.driftwood` (ANN-R72) | | |
 
-  Values are stored in `PagleDB.profile.announcements` and the two looks in `PagleDB.profile.appearance` ([announcements.md](core/announcements.md#data)). The two slot rows exist from M4, when Core registers its slots (SHOP-R25); in M2 and M3 the page ends after Per.
-- **SET-R31** A greyed-out row keeps its value. Each row's greying is re-evaluated on its own condition (SET-R61): turning Cozy mode off makes Interruption budget live again, and Interruptions and Per too unless the budget is off.
+  Values are stored in `PagleDB.profile.announcements` and the two looks in `PagleDB.profile.appearance` ([announcements.md](core/announcements.md#data)). The two slot rows exist from M4, when Core registers its slots (SHOP-R25); in M2 and M3 the page ends after Per. Show every catch arrives with the catch Nod ([#256](https://github.com/timemir/wow-fish/issues/256)). Every row here is a native checkbox, slider or Core's own slot dropdown row (SET-R5, SET-R51), so nothing is written onto Blizzard's rows (SET-R6).
+- **SET-R31** A greyed-out row keeps its value. Each row's greying is re-evaluated on its own condition (SET-R61): turning Cozy mode off makes Interruption budget and Show every catch live again, and Interruptions and Per too unless the budget is off.
 - **SET-R32** Hunts adds one section (from M5):
 
   | Header | Row | Kind | Values · default | Tooltip |
@@ -238,7 +239,7 @@ This file adds no data. Each row's value lives with its owner:
 | Rows | Stored in |
 |---|---|
 | Saving, Units | `PagleDB.profile.reloadReminder`, `PagleDB.profile.lengthUnit` ([catch-log.md](core/catch-log.md#data)) |
-| Cozy mode, the budget | `PagleDB.profile.announcements` |
+| Cozy mode, the budget, Show every catch | `PagleDB.profile.announcements` |
 | Every slot dropdown | `PagleDB.profile.appearance[slot]` (SHOP-R32) |
 | Tracker position | `PagleDB.profile.dock.point` (Core README Data) |
 | Fishing | `PagleQoLDB` (qol.md Data), the fishing set per character in `global.gear[guid]` |

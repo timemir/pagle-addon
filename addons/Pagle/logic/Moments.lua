@@ -31,6 +31,7 @@ local ns = select(2, ...)
 ---@field moduleTitle string     -- its def.title
 ---@field moduleOrder integer    -- its def.order
 ---@field raised integer         -- 1 for the first moment Core accepted this login, and so on (ANN-R2's last tie-break)
+---@field catchNod? true         -- Core's own catch Nod (ANN-R13), never a Module's
 
 --- One Announcement (ANN-R11): what the display shows for one side of a Cast's moments (its banners and splash, or
 --- its toasts and Nods), or for one moment without a Cast.
@@ -147,20 +148,64 @@ end
 local BIG = { banner = true, splash = true }
 
 --- The Announcements a Cast's moments make (ANN-R11): a big one of its banner and splash moments, then a catch one of
---- its toast and Nod moments, each made by ns.MakeAnnouncement; one when every moment is on one side.
+--- its toast and Nod moments, each made by ns.MakeAnnouncement; one when every moment is on one side. Core's catch Nod
+--- is dropped when a Module raised any moment for the Cast, so it never headlines or rides as a stamp then (ANN-R13).
 ---@param moments PagleRaisedMoment[]
 ---@return PagleAnnouncement[]
 function ns.MakeCastAnnouncements(moments)
+	local bigger = false
+	for _, moment in ipairs(moments) do
+		bigger = bigger or not moment.catchNod
+	end
 	local big, catch = {}, {}
 	for _, moment in ipairs(moments) do
-		local side = BIG[moment.rung] and big or catch
-		side[#side + 1] = moment
+		if not (bigger and moment.catchNod) then
+			local side = BIG[moment.rung] and big or catch
+			side[#side + 1] = moment
+		end
 	end
 	local announcements = {}
 	for _, side in ipairs({ big, catch }) do
 		announcements[#announcements + 1] = ns.MakeAnnouncement(side)
 	end
 	return announcements
+end
+
+--- The catch Nod of a Cast (ANN-R13), or nil for a got-away Cast or one whose every item is item 0: a silent `nod` of
+--- the Cast naming its first Catch with a Simulated Size, else its first that isn't item 0, as "{item name} · {band} ·
+--- {length}" in `lengthUnit`, or by name alone for an item with no size. `itemName` is the client's name, nil until it
+--- has cached it ("Item {itemID}" then). `cast` may be a read-only proxy, so its items are read by index.
+---@param cast PagleCast
+---@param itemName fun(itemID: integer): string?
+---@param lengthUnit PagleLengthUnit
+---@return PagleMoment?
+function ns.CatchNodMoment(cast, itemName, lengthUnit)
+	if cast.outcome ~= "caught" then
+		return nil
+	end
+	local items, named = cast.items, nil
+	local n = 1
+	while items[n] do
+		local item = items[n]
+		if item.size then
+			named = item
+			break
+		end
+		if not named and item.itemID ~= 0 then
+			named = item
+		end
+		n = n + 1
+	end
+	if not named then
+		return nil
+	end
+	local L = ns.L
+	local itemID, size = named.itemID, named.size
+	local title = itemName(itemID) or L.CATCH_NOD_ITEM:format(itemID)
+	if size then
+		title = L.CATCH_NOD:format(title, ns.SIZE_BANDS[size.band].name, ns.FormatLength(size.length, lengthUnit))
+	end
+	return { rung = "nod", kind = "catch", title = title, icon = itemID, cast = cast.id, sound = false }
 end
 
 --- What the collector is fed. Every function is called when needed, never stored.
@@ -199,12 +244,12 @@ function ns.NewMoments(options)
 	}, Moments)
 end
 
--- Core's copy of a moment, with who raised it (PagleRaisedMoment).
----@param module PagleModule
+-- Core's copy of a moment, with who raised it (PagleRaisedMoment): the raiser's def, a Module's or Core's own.
+---@param def PagleModuleDef
 ---@param moment PagleMoment
 ---@param raised integer
 ---@return PagleRaisedMoment
-local function copyOf(module, moment, raised)
+local function copyOf(def, moment, raised)
 	local copy = {}
 	for key, value in pairs(moment) do
 		copy[key] = value
@@ -215,7 +260,7 @@ local function copyOf(module, moment, raised)
 			copy.ruler[key] = value
 		end
 	end
-	copy.module, copy.moduleTitle, copy.moduleOrder = module.def.name, module.def.title, module.def.order
+	copy.module, copy.moduleTitle, copy.moduleOrder = def.name, def.title, def.order
 	copy.raised = raised
 	return copy
 end
@@ -240,11 +285,33 @@ function Moments:Raise(module, moment)
 		return
 	end
 	self.raised = self.raised + 1
-	local copy = copyOf(module, moment, self.raised)
+	local copy = copyOf(module.def, moment, self.raised)
 	self.options.summarize(copy)
 	if copy.summaryOnly then
 		return
 	end
+	self:queue(copy)
+end
+
+-- Core itself, as the raiser of its catch Nod (ANN-R13): ahead of every Module, like "While you were fighting".
+---@type PagleModuleDef
+local CORE = { name = "Pagle", title = "Pagle", order = 0 }
+
+--- Takes Core's catch Nod for a live caught Cast (ANN-R13), made by ns.CatchNodMoment: it waits for the next frame's
+--- flush with the Cast's other moments, as theirs do (ANN-R10), never reaches the Session summary (ANN-R25), and is
+--- dropped there if a Module raised any moment for the Cast (ns.MakeCastAnnouncements).
+---@param moment PagleMoment
+function Moments:RaiseCatchNod(moment)
+	self.raised = self.raised + 1
+	local copy = copyOf(CORE, moment, self.raised)
+	copy.catchNod = true
+	self:queue(copy)
+end
+
+-- Queues a moment for the next frame's flush, held with every Cast's while a projection updates (ANN-R10).
+---@package
+---@param copy PagleRaisedMoment
+function Moments:queue(copy)
 	self.pending[#self.pending + 1] = copy
 	if copy.cast ~= nil and self.options.isUpdating() then
 		self:hold()
