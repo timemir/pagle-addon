@@ -13,7 +13,6 @@ from hunts_fixture import (
     FINGERPRINT,
     FINGERPRINT_JSON,
     HUNT_LIST,
-    HUNT_LIST_LUA,
     HUNTS,
     ITEMS,
     LISTS,
@@ -22,7 +21,7 @@ from hunts_fixture import (
     write_hunts,
 )
 from pagle_data.generate import CATALOGUE_LUA, hunt_list_of, read_layers
-from pagle_data.hunts import HuntList, hunt_hash
+from pagle_data.hunts import HUNT_LIST_LUA, HuntList, hunt_hash
 from test_item_records import write_tree as write_item_tree
 
 
@@ -88,7 +87,7 @@ def test_the_generated_classes_hold_every_non_noise_item_by_quality_and_species(
 
 
 def test_every_class_is_emitted_whether_a_hunt_targets_it_or_not(tmp_path: Path) -> None:
-    # DATA-R91 (graph.md's drafted default): a list with no Hunts still emits the three generated classes, and a
+    # DATA-R91: a list with no Hunts still emits the three generated classes, and a
     # fixed class no Hunt targets is emitted too.
     hunt_list = _hunt_list(write_tree(tmp_path, '[[class]]\nid = "fixed.spare"\nmembers = [6303]\n'))
     assert hunt_list["sets"] == [] and hunt_list["hunts"] == []
