@@ -19,10 +19,8 @@ local OWNER = "Pagle toast styles"
 --- Redraws every Announcement frame on screen in the style it shows now: a sample's own, else the equipped one
 --- (ANN-R80). It stays on screen, its ruler carrying on.
 function ns.RepaintToastFrames()
-	for _, frame in pairs(ns.announcementFrames) do
-		if frame.display then
-			ns.DrawAnnouncement(frame, frame.display)
-		end
+	for _, frame in ipairs(ns.AnnouncementFramesShowing()) do
+		ns.DrawAnnouncement(frame, frame.display --[[@as PagleDisplay]])
 	end
 end
 

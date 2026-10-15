@@ -111,7 +111,8 @@ describe("/pagle dev endsession", function()
 			moduleRaising(loaded)
 			enterWorld(loaded, 2)
 			catchAndFlush(loaded)
-			loaded.client.advance(loaded.ns.ANNOUNCEMENT_SECONDS.toast) -- the toast leaves the slot: the card may show
+			-- The toast settles, stays its hold and leaves the column: the card may show.
+			loaded.client.advance(loaded.ns.SETTLE_SECONDS.toast + loaded.ns.HOLD_SECONDS.toast)
 			local ended = {}
 			loaded.env.Pagle.RegisterCallback(ended, "SessionEnded", function(_, session)
 				ended[#ended + 1] = session.id

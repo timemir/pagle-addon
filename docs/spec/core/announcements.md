@@ -35,41 +35,40 @@ Part of [Core](README.md). Core presents every Announcement (ADR 0007): Modules 
 - **ANN-R13** An ordinary Catch gets a **catch Nod**: Core raises it for every live caught Cast (LOG-R9), while the "Show every catch" setting is on (the default). It is a `nod` moment of the Cast (`cast` = its entry ID), raised by Core itself at `CastEnded("caught", cast)`, so it merges with the Cast's other moments (ANN-R10):
   - **Its line** names one of the Cast's Catches: the first, in slot order, with a Simulated Size (LOG-R65), or else the first that isn't item `0`. It reads "{item name} · {band} · {length}": the band's name (`Pagle.SIZE_BANDS`) and the Simulated Size in the Angler's length unit (`Pagle.FormatLength`, LOG-R69), as "Mud Snapper · Typical · 34.2 cm". An item with no Simulated Size (junk, treasure, a trophy, an Uncharted item) shows its name alone. The item's icon is its icon. A name the client hasn't cached reads "Item {itemID}".
   - **A bigger moment replaces it.** If any Module raises a moment for the same Cast, on either side (ANN-R11), the catch Nod is dropped: it never headlines, never rides as a stamp and never adds to "+N".
-  - **It never interrupts.** It is a Nod (ANN-R30), so it never counts toward the Interruption budget and follows the Nod lane's rules (ANN-R20): it isn't shown while a toast, a splash or another Nod is up. It plays no sound (ANN-R70) and never goes to the Session summary (an exception to ANN-R25). In combat (ANN-R35) and in Cozy mode (ANN-R40) it is dropped, not held.
+  - **It never interrupts.** It is a Nod (ANN-R30), so it never counts toward the Interruption budget and takes its turn in the column as any Nod does (ANN-R20). It plays no sound (ANN-R70) and never goes to the Session summary (an exception to ANN-R25). In combat (ANN-R35) and in Cozy mode (ANN-R40) it is dropped, not held.
   - **Only live Catches.** A got-away Cast, and a Cast whose every item is item `0`, raise none; nor does a replay or rebuild, which fires no `CastEnded` (ANN-R4, LOG-R73).
 
   With "Show every catch" off, an ordinary Catch raises nothing and never pops up. Either way a Module may move its own bar or view, and a Module raises a moment only for what is worth one: an ordinary Catch is the catch Nod's.
 
 ### The display queue
 
-- **ANN-R20** Core shows Announcements through three lanes, each with its own place on screen: a banner or splash in the centre, a toast above the action bar, a Nod under it. A banner and a toast can be on screen together. A splash is full-screen, so it holds the toast and Nod lanes: it waits until no toast is on screen, and while it waits or shows, no toast starts and no Nod shows.
+- **ANN-R20** Core shows Announcements in two places: a banner or splash in the **centre**, one at a time, and toasts and Nods in one **column** at the bottom centre. A banner and the column show together. A splash is full-screen, so it holds the column back: it waits until no toast is in the column, and while it waits or shows, nothing new enters the column.
 
-  | Lane | Shows | Duration | Waiting | When another arrives |
-  |---|---|---|---|---|
-  | Toast | `toast.*` headlines | 6 s | up to 2, first in first out | waits while a toast is on screen, or a splash shows or waits; beyond 2 waiting: it isn't shown, and the overflow count grows; the next toast to appear shows "+N more" and the count resets |
-  | Big | `banner` and `splash` headlines | banner 4 s; splash until clicked or 8 s | unlimited, splashes before banners, otherwise in order raised | waits for the banner or splash on screen to end; a splash also waits for the toast on screen to end, then goes before any waiting toast |
-  | Nod | `nod` headlines | 3 s | none | if a toast, a splash or a Nod is showing, it isn't shown |
+  | Place | Shows | Stays | Waiting |
+  |---|---|---|---|
+  | Column | `toast.*` headlines as toasts, `nod` headlines (and toasts stepped down, ANN-R31) as Nods | until its motion settles (a toast 2.7 s, a Nod 0.3 s), then its hold: `toast.low` 4 s, a ruled `toast.low` 5 s, `toast` (ruled or not) 6 s, `toast.high` and "While you were fighting" 8 s, a Nod 3 s | first in first out, unlimited; the next enters when the column has room: at most 4 entries, 3 of them toasts, and 300 units tall, so it never reaches a banner |
+  | Centre | `banner` and `splash` headlines | a banner settles (1.4 s), then stays 4.5 s; a splash until clicked or 8 s | unlimited, splashes before banners, otherwise in order raised; the next starts once the last has left (a banner takes 0.5 s to leave) |
 
-  Whatever isn't shown still goes to the Session summary (ANN-R25), except a catch Nod (ANN-R13).
-- **ANN-R21** **Cards** (the Session summary and the Write-up) show only when the toast and big lanes are empty: nothing on screen in either and nothing waiting. They don't count as interruptions and play no sound. At login, held Announcements show first, then the Write-up, then "Your last session".
+  The newest entry enters at the column's foot and the older ones move up (0.3 s). With the pointer on a toast or Nod, its clock stands still, and clicking one sends it away at once. One leaving fades out drifting up, and the ones above drop into its place (UI › Motion).
+- **ANN-R21** **Cards** (the Session summary and the Write-up) show only when no toast, banner or splash is on screen or waits (Nods don't count). They don't count as interruptions and play no sound. At login, held Announcements show first, then the Write-up, then "Your last session".
 - **ANN-R22** A moment may carry a **record ruler** (`ruler = { old, new, unit, label }`). On a toast headline, the ruler fills past the old record's mark while the number counts up, shows the "+x" margin, then the "New record" stamp lands. On a Nod headline, a compact ruler with the margin shows instead. A ruler shows only for the headline; a record riding as a stamp shows only its stamp. `label` names the number in plain words ("length" for a Simulated Size, "weight" for a trophy weight), never where it comes from. For a Simulated Size, `unit` is `"length"` and `old` and `new` are millimetres: Core shows them and the margin with `Pagle.FormatLength` in the Angler's length unit ([catch-log.md](catch-log.md#simulated-size), LOG-R69), and a margin that rounds to zero in that unit shows as "+<0.1 cm" or "+<0.1 in". Any other `unit` is shown as given ("lb"). A Module never leaves the ruler off a size record.
 - **ANN-R23** A moment may carry `coins = N`. Core sums the `coins` of the moments in each Announcement into its own "+N" Pagle Coins stamp, always shown (outside the 4-stamp limit and the merging of identical stamps), Nods included. A Cast's two Announcements each sum only their own moments, so no Coins show twice. Coins never make an Announcement of their own, and a purchase makes none ([wallet-and-shop.md](wallet-and-shop.md)).
-- **ANN-R24** Ordinary display picks the headline's sound (ANN-R71) when the Announcement appears on screen, never when it is queued. When a toast appears in the same frame as a banner or splash that played its sound (a Cast's two Announcements, or the release after combat, ANN-R36), only the higher rung's sound plays: the toast is silent, and the next toast plays the variant this one would have.
+- **ANN-R24** Ordinary display picks the headline's sound (ANN-R71) when the Announcement appears on screen, never when it is queued. When a toast appears in the same frame as a banner or splash that played its sound (a Cast's two Announcements, or the release after combat, ANN-R36), only the higher rung's sound plays: the toast is silent, and the next toast plays the variant this one would have. A toast's beats follow its sound (ANN-R76).
 - **ANN-R25** Every moment also goes to the Session summary (ANN-R50), whether or not it popped up. The catch Nod is the one exception: it is Core's own, never a Module's moment, and never reaches the summary (ANN-R13).
 
 ### Interruption budget
 
 - **ANN-R30** An **interruption** is an Announcement shown as a toast, banner or splash. Each one shown counts on its own: a Cast's banner and its toast are 2. Nods and cards aren't interruptions.
-- **ANN-R31** With the budget on (the default), when an Announcement with a `toast.low` headline reaches the front of the toast lane, Core counts the interruptions shown in the last 5 minutes. If there are already 4, it steps down to a Nod (with a compact ruler if it has one) and follows the Nod lane's rules. Every other rung always gets through and always counts.
+- **ANN-R31** With the budget on (the default), when an Announcement with a `toast.low` headline reaches the front of the column's queue, Core counts the interruptions shown in the last 5 minutes. If there are already 4, it steps down to a Nod (with a compact ruler if it has one) and takes its turn as one. Every other rung always gets through and always counts.
 - **ANN-R32** With the budget off, nothing steps down. The count and window are player settings.
 
 ### Combat hold
 
-- **ANN-R35** While `Pagle.IsRestricted()` is true, Core hides whatever is on screen and holds it, together with everything waiting in the lanes and every new Announcement and card, sounds included. Announcements raised during the 2 s wait after combat (ANN-R36) are held too.
+- **ANN-R35** While `Pagle.IsRestricted()` is true, Core hides whatever is on screen and holds it, together with everything waiting and every new Announcement and card, sounds included; Nods on screen or waiting are dropped. Announcements raised during the 2 s wait after combat (ANN-R36) are held too.
 - **ANN-R36** 2 s after `RestrictionChanged(false)` (restarting the wait if a new restriction starts first), Core shows what it held, dropping expired moments (ANN-R45):
-  1. each held splash and banner, as itself, through the big lane (splashes first, then in the order raised)
-  2. one "While you were fighting" toast listing every held toast headline, if there is at least one, through the toast lane at the same time as the first held banner (a held splash still holds it back, ANN-R20), so a held Cast's big and catch Announcements show together, as they would have live. It plays the toast sound once unless it appears with a banner (ANN-R24), counts as one interruption, and never steps down.
-  3. held cards (ANN-R21), once both lanes are empty
+  1. each held splash and banner, as itself, in the centre (splashes first, then in the order raised)
+  2. the held toasts, in the column at the same time as the first held banner (a held splash still holds them back, ANN-R20), so a held Cast's big and catch Announcements show together, as they would have live: 1 or 2 as themselves, in order; 3 or more as one "While you were fighting" toast listing every held headline and their Coins. That toast plays the toast sound once unless it appears with a banner (ANN-R24), counts as one interruption, and never steps down.
+  3. held cards (ANN-R21), once no toast, banner or splash shows or waits
 
   Held Nods don't show again; they are already in the Session summary, except a catch Nod, which is simply dropped (ANN-R13).
 - **ANN-R37** Held Announcements count toward the budget only when they actually show.
@@ -122,6 +121,7 @@ Part of [Core](README.md). Core presents every Announcement (ADR 0007): Modules 
 - **ANN-R73** Sounds play on the SFX channel (`PlaySoundFile(path, "SFX")`), so they follow the player's SFX volume and mute. There is no Pagle volume setting; loudness is baked into the files.
 - **ANN-R74** Every sound file is Pagle's own: rendered by a script in the repo (wood and bell synthesis plus a small room, D major pentatonic), mono, 44.1 kHz, `.ogg`, loudness-matched. The script moves from `prototype/sounds` into the build tooling in M2 and renders both sets; its output is committed as `addons/Pagle/media/sounds/<set>/toast_<n>.ogg` and `banner.ogg` (`<set>` is `driftwood` or `gilded`), plus the shared `addons/Pagle/media/sounds/legend.ogg`.
 - **ANN-R75** QoL's recast cue (a quiet wooden double knock) is a QoL sound, not an Announcement; QoL ships and plays it.
+- **ANN-R76** A toast that plays its sound also plays its **beats**, the client's own sound kits on the SFX channel (`PlaySound(id, "SFX")`), landing on its motion (UI › Motion): the pen as its name starts writing (`IG_WRITE_QUEST`, 3093, at 0.98 s), a stamp as its stamps land (`PUT_DOWN_GEMS`, 1204, at 2.17 s, if any show), and a coin as its Coins turn in (`LOOT_WINDOW_COIN_SOUND`, 120, at 2.66 s, if any show). They are the same in every sound set. A silent toast has silent beats, and with Animations off there are none. Nods, banners, splashes and cards have none.
 
 ### Toast styles
 
@@ -209,24 +209,27 @@ The Module specs own their rows, and ANN-R13 owns Core's; this table is a cross-
 
 Every frame is drawn from the announcements art kit: a toast is a fresh entry in the Angler's ledger. The art ships as textures in `addons/Pagle/media/announce/` (BLP, DXT5; `scripts/encode-blp.py` encodes the kit's atlases), with their atlases in `data/AnnounceArt.lua`, and three bundled fonts in `addons/Pagle/media/fonts/`: IM Fell English for print, Caveat for the Angler's hand, Marcellus for gilt, stamps and labels. A headline with a text has its title printed in capitals over the text in the hand; a headline with no text has its title alone in the hand. Stamps, labels and printed words are in capitals (the client has no small caps), leaving texture and colour escapes as they are.
 
-- **Toast:** above the action bar, a torn page on a leather spine with the icon in a brass medallion, the stamps right to left from the page's top right corner, "+N more" when the lane overflows, and the Coins beside a brass coin at the bottom right. Its page follows its weight: `toast.low` in pencil on a bare page with a smaller medallion, `toast` on the spine, `toast.high` gilt with a halo, a silk bookmark, a bronze medallion and a wax seal. A headline with a record ruler is on a ruled page of its weight (`toast.high`'s on `toast`'s): the label, a ticked track filling up to the number, the old record's pencil mark with its number, the margin in red, then the "New record" stamp beside the others. Clicking does nothing.
-- **Nod:** one line under the toast position on a torn strip sized to it, with the icon in a small medallion, fading after 3 s: the words, a compact ruler (the track, the number and the margin), the stamps and the Coins. A catch Nod's line is its title alone (ANN-R13).
+- **Toast:** above the action bar, a torn page on a leather spine with the icon in a brass medallion, the stamps right to left from the page's top right corner, and the Coins beside a brass coin at the bottom right. Its page follows its weight: `toast.low` in pencil on a bare page with a smaller medallion, `toast` on the spine, `toast.high` gilt with a halo, a silk bookmark, a bronze medallion and a wax seal. A headline with a record ruler is on a ruled page of its weight (`toast.high`'s on `toast`'s): the label, a ticked track filling up to the number, the old record's pencil mark with its number, the margin in red, then the "New record" stamp beside the others. The pointer on it stops its clock, and a click sends it away (ANN-R20).
+- **Nod:** one line in the column on a torn strip sized to it, with the icon in a small medallion: the words, a compact ruler (the track, the number and the margin), the stamps and the Coins. A catch Nod's line is its title alone (ANN-R13).
 - **Banner:** centre screen over the world with no frame: a dark glow and faint gilt rays, the title in spaced gilt capitals, gilt tooling either side of a red wax seal (the headline's `seal`, under Contracts), the text in gilt handwriting, then the stamps as leather labels and the Coins.
 - **Splash:** full screen for a Legend, until clicked: the screen darkens behind slow rays, the item's icon sits in the Legend crest's window, and a torn page carries the title, the name in large handwriting, the labels and the Coins. "Click anywhere to continue" under it.
-- **"While you were fighting":** a toast on a taller page listing the held headlines, a row each with a small medallion, up to 4; with more, the last row reads "+N more".
+- **"While you were fighting":** a toast on a taller page listing the held headlines, a row each with a small medallion, up to 3, and "+N more" under them for the rest.
 - **Session summary and Write-up cards:** a page torn from the ledger centre-screen, the same in every toast style: a leather head with the gilt title and a close mark, Core's numbers in the hand, the sections in ANN-R53 and ANN-R61 on the page's ruled lines, scrolling past 12 rows, and a gilt close button at the page's foot. Closed with either button or Esc.
 
 Look reference: the announcements art kit (`pagle-announce-kit`, its previews and its probe addon). The text above wins where they differ.
 
 ### Motion
 
-The frames move as the art kit's motion has them (`pagle-announce-kit-with-animations`, its `MOTION.md`). Each plays once, when the Announcement appears, and holds where it settles; drawn again for a toast style change, it carries on. A sample on the Curio Shop's stage stands still, and a Nod and a card have none. With the **Animations** setting off, each appears as it settles. Times are from when it appears:
+The frames move as the art kit's motion has them (`pagle-announce-kit` v2, its `MOTION.md`). Each plays once, when the Announcement appears, and holds where it settles; drawn again for a toast style change, it carries on. A sample on the Curio Shop's stage stands still, and a card has none. With the **Animations** setting off, each appears as it settles. Times are from when it appears:
 
 | Frame | Motion | Settled |
 |---|---|---|
 | Toast | It rises 26 units and fades in (0.56–0.98 s, overshooting a little); its name is written out left to right in 16 steps (0.98–1.82 s); its stamps slam down from 2.6x (1.89–2.31 s, overshooting); its coin turns in edge-on (2.31–2.66 s). Its record ruler keeps its own count (ANN-R22), and its "New record" stamp slams down as it lands. | 2.66 s |
 | Banner | The seal or crest drops from 2.2x (0–0.63 s, overshooting); the gilt tooling draws out from the seal (0.35–1.12 s); the rays fade in, turning from −8° (0.35–1.4 s). | 1.4 s |
 | Splash | The rays turn clockwise once a minute for as long as it shows. | never |
+| Nod | It fades in. | 0.3 s |
+
+Each leaves as its time is up (ANN-R20): a toast or Nod fades out drifting up 12 units (a toast 0.4 s, a Nod 0.3 s), while the column closes up under it (0.3 s); a banner fades and shrinks to 96% about its top (0.5 s); a splash goes at once. With Animations off, each goes at once.
 
 One `OnUpdate` drives every animation (`adapter/Motion.lua`, with the keyframe maths in `logic/Motion.lua`), since `AnimationGroup` can't overshoot, step, ease each segment, or animate a width, a texture coordinate or a clip.
 
@@ -249,11 +252,12 @@ These sit on the Announcements page. Toast style and sound set also appear on Lo
 
 | Name | Value | Rules |
 |---|---|---|
-| Nod duration | 3 s | ANN-R20 |
-| Toast duration | 6 s | ANN-R20 |
-| Toasts waiting | 2 | ANN-R20 |
-| Banner duration | 4 s | ANN-R20 |
+| Settling: toast, Nod, banner | 2.7 s, 0.3 s, 1.4 s | ANN-R20 |
+| Hold: `toast.low`, ruled `toast.low`, `toast`, `toast.high` and "While you were fighting", Nod, banner | 4 s, 5 s, 6 s, 8 s, 3 s, 4.5 s | ANN-R20 |
 | Splash duration | 8 s or click | ANN-R20 |
+| Column: entries, toasts, height | 4, 3, 300 units | ANN-R20 |
+| Leaving: toast, Nod, banner | 0.4 s, 0.3 s, 0.5 s | ANN-R20 |
+| Held toasts that fold into one | 3 | ANN-R36 |
 | Stamps shown | 4 | ANN-R11 |
 | Ruler fill animation | 1.5 s | ANN-R22 |
 | Budget default | 4 per 5 min | ANN-R31 |

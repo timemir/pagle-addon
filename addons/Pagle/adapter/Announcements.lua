@@ -25,10 +25,12 @@ local textureOf = ns.TextureOf
 
 -- Stamp slots on a frame: the 4 stamps shown and the "+N" for the rest (ANN-R11).
 local STAMP_SLOTS = ns.MOMENT_STAMPS + 1
--- Held headlines "While you were fighting" lists, a row each; the last row says how many more when there are more.
-local DIGEST_ROWS = 4
+-- Held headlines "While you were fighting" lists, a row each; "+N more" under them counts the rest.
+local DIGEST_ROWS = 3
 -- Its icon: crossed blades.
 local FIGHTING_ICON = "Interface\\Icons\\Ability_DualWield"
+-- A banner's top below the screen's (ANN-R20).
+local BANNER_TOP = 120
 -- A Nod's line at most, and the track of its compact ruler, which the number and the margin follow.
 local NOD_WIDTH, COMPACT_TRACK = 640, 90
 -- The ticks on a full ruler's track, every fourth one long.
@@ -67,6 +69,10 @@ local TICKS = 20
 ---@field display PagleDisplay?
 ---@field drawnRuler PagleDisplay? the display whose ruler is animating
 ---@field moved PagleDisplay? the display whose motion has played
+---@field lanes boolean? one of the lanes' own frames, not a sample's: it moves
+---@field inUse boolean? showing a display, or still leaving
+---@field slot number? a column frame's place above the column's foot
+---@field ribbon number? how far a toast.high's bookmark hangs below its page
 ---@field body Frame? a toast's page and words, which slide in under the frame the lanes anchor
 ---@field nameClip Frame? the clip a toast's name is written out in
 ---@field pivots Frame[]? the points a toast's stamps grow about
@@ -429,8 +435,7 @@ local function digestRow(frame, i)
 	return row
 end
 
--- Lists the held headlines a row each under the title (ANN-R36), up to DIGEST_ROWS; with more, the last row says
--- how many more.
+-- Lists the held headlines a row each under the title (ANN-R36), up to DIGEST_ROWS.
 ---@param frame PagleAnnouncementFrame
 ---@param held PagleRaisedMoment[]
 ---@param style PagleToastStyle
@@ -440,21 +445,14 @@ local function drawDigest(frame, held, style, width)
 	for i = 1, shown do
 		local row = digestRow(frame, i)
 		local moment = held[i]
-		local rest = i == DIGEST_ROWS and #held - DIGEST_ROWS + 1 or 0
 		row:ClearAllPoints()
 		row:SetPoint("TOPLEFT", i == 1 and frame.title or frame.rows[i - 1], "BOTTOMLEFT", 0, i == 1 and -8 or -6)
 		ns.SetBezel(row.bezel, 22, style.trim, textureOf(moment.icon))
-		row.bezel:SetShown(rest <= 1)
 		ns.Ink(row.what, style.what)
 		ns.SetArtFont(row.name, "DigestName")
 		ns.Ink(row.name, style.name)
-		if rest > 1 then
-			row.what:SetText("")
-			row.name:SetText(L.ANNOUNCEMENT_MORE:format(rest))
-		else
-			row.what:SetText(ns.Capitals(moment.title))
-			row.name:SetText(moment.text or "")
-		end
+		row.what:SetText(ns.Capitals(moment.title))
+		row.name:SetText(moment.text or "")
 		ns.ShrinkToFit(row.name, "DigestName", width - 150)
 		row:Show()
 	end
@@ -547,8 +545,10 @@ local function drawToast(frame, display, style)
 	end
 
 	local more = frame.more --[[@as FontString]]
-	more:SetText(L.ANNOUNCEMENT_MORE:format(display.overflow))
-	more:SetShown(display.overflow > 0)
+	-- "While you were fighting" counts the held headlines past its rows (ANN-R36).
+	local beyond = announcement.fighting and #announcement.fighting - DIGEST_ROWS or 0
+	more:SetText(L.ANNOUNCEMENT_MORE:format(beyond))
+	more:SetShown(beyond > 0)
 	more:ClearAllPoints()
 	if page.ruled or announcement.fighting then
 		more:SetPoint("BOTTOMLEFT", body, "BOTTOMLEFT", page.tx, 6)
@@ -731,9 +731,6 @@ local BUILD = {
 	-- Above the action bar. On `parent` instead, for a sample toast.
 	toast = function(parent)
 		local frame = CreateFrame("Frame", nil, parent or UIParent) --[[@as PagleAnnouncementFrame]]
-		if not parent then
-			frame:SetPoint("BOTTOM", UIParent, "BOTTOM", 0, 190)
-		end
 		frame:SetSize(464, 92)
 		frame:SetFrameStrata("HIGH")
 		-- The page and its words slide in on a body under the frame the lanes anchor.
@@ -758,7 +755,6 @@ local BUILD = {
 	-- One line under the toast.
 	nod = function()
 		local frame = CreateFrame("Frame", nil, UIParent) --[[@as PagleAnnouncementFrame]]
-		frame:SetPoint("BOTTOM", UIParent, "BOTTOM", 0, 156)
 		frame:SetSize(NOD_WIDTH, 40)
 		frame:SetFrameStrata("HIGH")
 		frame.strip = CreateFrame("Frame", nil, frame) --[[@as PagleThreeSlice]]
@@ -773,7 +769,7 @@ local BUILD = {
 	-- either side of the red wax seal, the text, then the labels and Coins.
 	banner = function()
 		local frame = CreateFrame("Frame", nil, UIParent) --[[@as PagleAnnouncementFrame]]
-		frame:SetPoint("TOP", UIParent, "TOP", 0, -120)
+		frame:SetPoint("TOP", UIParent, "TOP", 0, -BANNER_TOP)
 		frame:SetSize(980, 330)
 		frame:SetFrameStrata("HIGH")
 		ns.PlaceSprite(ns.ArtSprite(frame, "Splash", "glow", "BACKGROUND", 0), frame, 0, 40)
@@ -907,6 +903,19 @@ local function reveal(tool, k)
 	end
 end
 
+-- A toast's beats (announcements.md › Sounds): the client's own sounds, by id, each with the second it plays at,
+-- landing on the motion: the name starting to write, the stamps landing, the coin turning in.
+local BEATS = { write = { id = 3093, at = 0.98 }, stamp = { id = 1204, at = 2.17 }, coin = { id = 120, at = 2.66 } }
+
+-- Plays beat `name` on the SFX channel (ANN-R73).
+---@param name string
+---@return fun()
+local function beat(name)
+	return function()
+		PlaySound(BEATS[name].id, "SFX")
+	end
+end
+
 -- The kit's motion for each form (announcements.md › Motion), on the canvas's 7 s timeline; each plays once.
 ---@type table<PagleAnnouncementForm, fun(frame: PagleAnnouncementFrame)>
 local MOTION = {
@@ -942,6 +951,21 @@ local MOTION = {
 				animations[#animations + 1] = slam(stamp, 0.27)
 			end
 		end
+		-- Its beats, each on its moment, for a toast that played its sound (announcements.md › Sounds).
+		if frame.display and frame.display.sound then
+			if clip:IsShown() then
+				ns.Cue(frame, BEATS.write.at, beat("write"))
+			end
+			for _, stamp in ipairs(frame.stamps) do
+				if stamp:IsShown() then
+					ns.Cue(frame, BEATS.stamp.at, beat("stamp"))
+					break
+				end
+			end
+			if frame.coins:IsShown() then
+				ns.Cue(frame, BEATS.coin.at, beat("coin"))
+			end
+		end
 		if frame.coins:IsShown() then
 			local coin = frame.coins.coin
 			animations[#animations + 1] = {
@@ -955,6 +979,19 @@ local MOTION = {
 			}
 		end
 		ns.Animate(frame, animations)
+	end,
+	-- It fades in (0.3 s).
+	nod = function(frame)
+		ns.Animate(frame, {
+			{
+				dur = ns.SETTLE_SECONDS.nod,
+				ease = ns.EASE.out,
+				keys = { { 0, { 0 } }, { 1, { 1 } } },
+				apply = function(v)
+					frame:SetAlpha(v[1])
+				end,
+			},
+		})
 	end,
 	-- The seal drops in, the gilt tooling draws out from it and the rays turn in: settled by 1.4 s.
 	banner = function(frame)
@@ -1019,7 +1056,7 @@ function ns.DrawAnnouncement(frame, display)
 	local style = ns.DisplayStyle(display)
 	DRAW[display.form](frame, display, style)
 	local motion = MOTION[display.form]
-	if motion and frame.moved ~= display and ns.announcementFrames[display.form] == frame then
+	if motion and frame.moved ~= display and frame.lanes then
 		frame.moved = display
 		ns.StopMotion(frame)
 		motion(frame)
@@ -1047,34 +1084,209 @@ function ns.NewToastFrame(parent)
 	return frame
 end
 
--- The lanes' show: the form's frame, made on first use, drawn and on screen.
+-- The column's foot above the screen's bottom, where the canvas's board puts its toast (ANN-R20).
+local COLUMN_FOOT = 156
+-- How a leaving toast or Nod eases: slow, then away.
+local EASE_IN = ns.Bezier(0.42, 0, 1, 1)
+
+-- Every frame made, by form, showing or free: the column shows as many toasts and Nods as fit at once.
+---@type table<PagleAnnouncementForm, PagleAnnouncementFrame[]>
+local made = { toast = {}, nod = {}, banner = {}, splash = {} }
+
+--- The toasts and Nods in the column, the newest first (ANN-R20).
+---@type PagleAnnouncementFrame[]
+ns.columnFrames = {}
+
+--- Every lanes frame showing an Announcement now, as an AppearanceChanged repaint needs them.
+---@return PagleAnnouncementFrame[]
+function ns.AnnouncementFramesShowing()
+	local showing = {}
+	for _, frames in pairs(made) do
+		for _, frame in ipairs(frames) do
+			if frame.display then
+				showing[#showing + 1] = frame
+			end
+		end
+	end
+	return showing
+end
+
+-- A frame of `form` not in use, made if none is. The column's take the pointer: on one, its clock stands still, and a
+-- click sends it away (ANN-R20).
+---@param form PagleAnnouncementForm
+---@return PagleAnnouncementFrame
+local function acquire(form)
+	for _, frame in ipairs(made[form]) do
+		if not frame.inUse then
+			return frame
+		end
+	end
+	local frame = BUILD[form]()
+	frame.lanes = true
+	if form == "toast" or form == "nod" then
+		frame:EnableMouse(true)
+		frame:SetScript("OnEnter", function(self)
+			if self.display then
+				ns.lanes:Pause(self.display)
+			end
+		end)
+		frame:SetScript("OnLeave", function(self)
+			if self.display then
+				ns.lanes:Resume(self.display)
+			end
+		end)
+		frame:SetScript("OnMouseUp", function(self)
+			if self.display then
+				ns.lanes:Dismiss(self.display)
+			end
+		end)
+	end
+	made[form][#made[form] + 1] = frame
+	return frame
+end
+
+-- Puts a column frame `y` above the column's foot; a toast.high hangs its bookmark below that.
+---@param frame PagleAnnouncementFrame
+---@param y number
+local function placeAt(frame, y)
+	frame.slot = y
+	frame:ClearAllPoints()
+	frame:SetPoint("BOTTOM", UIParent, "BOTTOM", 0, COLUMN_FOOT + y + (frame.ribbon or 0))
+end
+
+-- Stacks the column, the newest at its foot; one that moves glides to its place (0.3 s).
+local function restack()
+	local y = 0
+	for _, frame in ipairs(ns.columnFrames) do
+		local from, to = frame.slot, y
+		if from and from ~= to and ns.MotionOn() then
+			ns.Animate(frame, {
+				{
+					dur = 0.3,
+					ease = ns.EASE.out,
+					keys = { { 0, { from } }, { 1, { to } } },
+					apply = function(v)
+						placeAt(frame, v[1])
+					end,
+				},
+			})
+		else
+			placeAt(frame, to)
+		end
+		y = y + frame.display.height
+	end
+end
+
+-- How each form leaves (announcements.md › Motion): a toast or Nod fades out drifting up 12 units, a banner fades and
+-- shrinks to 96% about its top.
+---@type table<PagleAnnouncementForm, fun(frame: PagleAnnouncementFrame, seconds: number): PagleAnimation[]>
+local LEAVING = {
+	toast = function(frame, seconds)
+		local from, alpha = frame.slot or 0, frame:GetAlpha()
+		return {
+			{
+				dur = seconds,
+				ease = EASE_IN,
+				keys = { { 0, { 0, alpha } }, { 1, { 12, 0 } } },
+				apply = function(v)
+					placeAt(frame, from + v[1])
+					frame:SetAlpha(v[2])
+				end,
+			},
+		}
+	end,
+	banner = function(frame, seconds)
+		return {
+			{
+				dur = seconds,
+				ease = EASE_IN,
+				keys = { { 0, { 1, 1 } }, { 1, { 0, 0.96 } } },
+				apply = function(v)
+					frame:SetAlpha(v[1])
+					-- Its offset scales with it: dividing it out keeps its top where it was.
+					frame:SetScale(v[2])
+					frame:SetPoint("TOP", UIParent, "TOP", 0, -BANNER_TOP / v[2])
+				end,
+			},
+		}
+	end,
+}
+LEAVING.nod = LEAVING.toast
+
+-- The lanes' show: a frame of its form, drawn and on screen; a toast or Nod at the column's foot, the others moving up.
 ---@param display PagleDisplay
 local function show(display)
-	local frame = ns.announcementFrames[display.form]
-	if not frame then
-		frame = BUILD[display.form]()
-		ns.announcementFrames[display.form] = frame
+	local form = display.form
+	local frame = acquire(form)
+	frame.inUse, frame.display = true, display
+	ns.announcementFrames[form] = frame
+	frame:SetAlpha(1)
+	frame:SetScale(1)
+	if form == "banner" then
+		frame:SetPoint("TOP", UIParent, "TOP", 0, -BANNER_TOP)
 	end
-	frame.display = display
+	if form == "toast" or form == "nod" then
+		local page = form == "toast" and ns.ToastPage(display.announcement)
+		frame.ribbon = page and page.high and ns.RIBBON_HEIGHT or 0
+		frame.slot = nil
+		table.insert(ns.columnFrames, 1, frame)
+		restack()
+	end
 	ns.DrawAnnouncement(frame, display)
 	frame:Show()
 end
 
--- The lanes' hide: off screen, its ruler stopped, if the frame still shows this display.
+-- The frame a display shows in, if any does.
 ---@param display PagleDisplay
-local function hide(display)
-	local frame = ns.announcementFrames[display.form]
-	if frame and frame.display == display then
-		frame.display, frame.drawnRuler, frame.moved = nil, nil, nil
-		ns.StopMotion(frame)
-		if frame.ruler then
-			frame.ruler:SetScript("OnUpdate", nil)
+---@return PagleAnnouncementFrame?
+local function frameOf(display)
+	for _, frame in ipairs(made[display.form]) do
+		if frame.display == display then
+			return frame
 		end
-		frame:Hide()
 	end
+	return nil
 end
 
---- Core's three lanes (ANN-R20) on the client. Each form has its own frame, so a banner and a toast show together.
+-- The lanes' hide: the display's frame leaves, its ruler stopped, and the column closes up under it. It goes as its
+-- form leaves, then is free again; with Animations off, or off screen, at once.
+---@param display PagleDisplay
+local function hide(display)
+	local frame = frameOf(display)
+	if not frame then
+		return
+	end
+	frame.display, frame.drawnRuler, frame.moved = nil, nil, nil
+	ns.StopMotion(frame)
+	if frame.ruler then
+		frame.ruler:SetScript("OnUpdate", nil)
+	end
+	for i, entry in ipairs(ns.columnFrames) do
+		if entry == frame then
+			table.remove(ns.columnFrames, i)
+			restack()
+			break
+		end
+	end
+	local seconds, leaving = ns.LEAVE_SECONDS[display.form], LEAVING[display.form]
+	if not (seconds and leaving and ns.MotionOn() and frame:IsVisible()) then
+		frame:Hide()
+		frame.inUse = false
+		return
+	end
+	ns.Animate(frame, leaving(frame, seconds))
+	-- On the clock, so it goes even if nothing draws (a frame drawn again meanwhile stays).
+	C_Timer.After(seconds, function()
+		if not frame.display then
+			ns.StopMotion(frame)
+			frame:Hide()
+			frame.inUse = false
+		end
+	end)
+end
+
+--- Core's lanes (ANN-R20) on the client: the centre's banner or splash, and the column's toasts and Nods, each on
+--- frames of its own, so they show together.
 ns.lanes = ns.NewLanes({
 	-- GetTime() reads the same all frame, which is how the lanes tell a toast appears with a banner (ANN-R24).
 	now = function()

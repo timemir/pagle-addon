@@ -280,7 +280,7 @@ end
 ---@class PagleCardsView
 ---@field show fun(card: PagleCard)    -- puts the card on screen, until the player closes it
 ---@field hide fun(card: PagleCard)    -- takes it off screen without closing it (ANN-R35)
----@field lanesEmpty fun(): boolean    -- the toast and big lanes are empty (ANN-R21)
+---@field lanesEmpty fun(): boolean    -- no toast, banner or splash shows or waits (ANN-R21)
 ---@field held fun(): boolean          -- the lanes are held through combat (ANN-R35)
 
 --- Core's cards as ns.cards (ANN-R21, ANN-R54, ANN-R61), started: they wait for the projections' idle hook, then show

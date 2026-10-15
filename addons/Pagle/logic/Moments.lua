@@ -145,7 +145,7 @@ function ns.MakeAnnouncement(moments)
 	return announcement
 end
 
--- The big side of a Cast's moments (ANN-R11): the rungs the big lane shows (ANN-R20).
+-- The big side of a Cast's moments (ANN-R11): the rungs the centre shows (ANN-R20).
 local BIG = { banner = true, splash = true }
 
 --- The Announcements a Cast's moments make (ANN-R11): a big one of its banner and splash moments, then a catch one of

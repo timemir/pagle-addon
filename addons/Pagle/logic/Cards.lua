@@ -91,7 +91,7 @@ end
 ---@field mode fun(): PagleApplyMode|"done"|nil  -- the projection apply in progress (ns.projections:Mode())
 ---@field whenIdle fun(fn: fun())               -- runs fn once no projection is updating (ns.projections:WhenIdle)
 ---@field nextFrame fun(step: fun())            -- runs step on the next frame
----@field lanesEmpty fun(): boolean             -- the toast and big lanes are empty (ns.lanes:IsEmpty())
+---@field lanesEmpty fun(): boolean             -- no toast, banner or splash shows or waits (ns.lanes:IsEmpty())
 ---@field held fun(): boolean                   -- the lanes are held through combat (ns.lanes:IsHeld(), ANN-R35)
 ---@field cozy fun(): boolean                   -- Cozy mode is on (ANN-R62)
 ---@field show fun(card: PagleCard)             -- puts the card on screen, until the player closes it
@@ -132,7 +132,7 @@ function Cards:Start()
 end
 
 --- Shows the next card if one may show now (ANN-R21): login has settled, none is showing, the lanes aren't held
---- through combat (ANN-R55) and the toast and big lanes are empty. The Write-up comes first, unless Cozy mode is on
+--- through combat (ANN-R55) and no toast, banner or splash shows or waits. The Write-up comes first, unless Cozy mode is on
 --- (ANN-R61, ANN-R62); then the stored cards, oldest first (ANN-R54). Cards aren't interruptions and play no sound
 --- (ANN-R30): they never go through the lanes.
 function Cards:Next()
