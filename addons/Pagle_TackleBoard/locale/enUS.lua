@@ -112,8 +112,8 @@ ns.L = {
 	SPIKE_COINS = { one = "Paid {n} Coin", other = "Paid {n} Coins" },
 	SPIKE_FLY = "Tied for your Fly Box: {fly}",
 
-	-- The Campfire on the ledge (TKB-R106): its count, or a fire gone out, or none yet; and its longest.
-	CAMPFIRE_DAYS = { one = "{n} day", other = "{n} days" },
+	-- The Campfire on the ledge (TKB-R106): its count (DAYS, with the moments' below), or a fire gone out, or none
+	-- yet; and its longest.
 	CAMPFIRE_OUT = "Gone out",
 	CAMPFIRE_UNLIT = "Not lit yet",
 	CAMPFIRE_LONGEST = "longest {n}",
@@ -139,10 +139,9 @@ ns.L = {
 	FLY_TIED = "Tied {date}",
 	FLY_GOAL = "by: {goal}",
 	FLY_RARE = "tied only by Expeditions",
-	-- The brass tally plate (TKB-R106): the goals done for life, joined by a comma (plain ASCII, #248).
+	-- The brass tally plate (TKB-R106): the goals done for life (NOTICES, EXPEDITIONS, with the moments' below),
+	-- joined by a comma (plain ASCII, #248).
 	TALLY_PLATE = "{notices}, {expeditions}",
-	NOTICES = { one = "{n} Notice", other = "{n} Notices" },
-	EXPEDITIONS = { one = "{n} Expedition", other = "{n} Expeditions" },
 	-- The shop link (TKB-R106, SHOP-R41): a pointing hand is drawn after it, as a texture.
 	SHOP_LINK = "Coins go to the Curio Shop",
 	-- The Campfire card's and the Fly Box drawer's headings.
@@ -155,4 +154,47 @@ ns.L = {
 	CARD_TALLY = "The tally",
 	CARD_FLY_BOX = "The Fly Box",
 	DRAWER_TITLE = "The Fly Box: {label}",
+
+	-- The moments, the Write-up and the summary line (TKB-R85–R87; logic/Moments.lua). Plain ASCII only (#248): ", "
+	-- stands for the spec's middle dot. {fly} and {title} are lore names (TKB-R130).
+	DAYS = { one = "{n} day", other = "{n} days" },
+	-- A done goal's toast: its title, its text with the fly it tied, and its stamp when it rides on a banner.
+	NOTICE_COMPLETE = "Notice complete",
+	EXPEDITION_COMPLETE = "Expedition complete",
+	TIED_FOR_FLY_BOX = "{goal}. Tied for your Fly Box: {fly}",
+	NOTICE_DONE = "Notice done",
+	EXPEDITION_DONE = "Expedition done",
+	-- A title's banner: what earned it, then the title.
+	CAMPFIRE_MILESTONE = "Campfire: {n} days",
+	TALLY_TITLE = "{n} goals done",
+	FLY_BOX_COMPLETE = "Every pattern tied",
+	TITLE_LINE = "Title: {title}",
+	-- The Campfire nods: {k} Kindling used, {count} the Campfire's days, {longest} its longest; at login ("_AWAY") and
+	-- at any other time.
+	KINDLING_AWAY = "Your Campfire kept burning while you were away: {k} Kindling used, still {count}.",
+	KINDLING_BURNED = "A day went by without a goal: {k} Kindling used. Campfire still {count}.",
+	FIRE_OUT_AWAY = "Your Campfire went out while you were away. Your longest, {longest}, is kept for good. "
+		.. "Any goal lights a new one, with 2 fresh Kindling.",
+	FIRE_OUT = "Your Campfire went out. Your longest, {longest}, is kept for good. "
+		.. "Any goal lights a new one, with 2 fresh Kindling.",
+	-- The Write-up's headings ({n} formatted with BreakUpLargeNumbers) and lines.
+	WRITE_UP_FIRST = {
+		one = "Your Tackle Board was written up from {n} Cast",
+		other = "Your Tackle Board was written up from {n} Casts",
+	},
+	WRITE_UP_WHILE_OFF = "While Tackle Board was off",
+	NOTICES = { one = "{n} Notice", other = "{n} Notices" },
+	EXPEDITIONS = { one = "{n} Expedition", other = "{n} Expeditions" },
+	GOALS_AND = "{notices} and {expeditions}",
+	GOALS_DONE = "{goals} done",
+	COINS_LINE = "Pagle Coins +{coins}",
+	FLIES_TIED = { one = "{n} fly tied for your Fly Box", other = "{n} flies tied for your Fly Box" },
+	CAMPFIRE_DAYS = { one = "Campfire {n} day", other = "Campfire {n} days" },
+	CAMPFIRE_BURNED = "{campfire}, {k} Kindling burned",
+	CAMPFIRE_WENT_OUT = "Your Campfire went out; your longest, {longest}, is kept",
+	-- The summary line: {done} the goals done today, {campfire} the Campfire's days or CAMPFIRE_NOT_LIT.
+	SUMMARY_LINE = "Tackle Board: {done}, {campfire}",
+	SUMMARY_LINE_NOTHING_DONE = "Tackle Board: {campfire}",
+	DONE_TODAY = "{n} done today",
+	CAMPFIRE_NOT_LIT = "Campfire not lit",
 }

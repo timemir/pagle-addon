@@ -384,10 +384,15 @@ function ns.ProjectionDef(global, sessionRulesVersion)
 	return {
 		db = global.board,
 		rulesVersion = ns.TKB_RULES_VERSION * 1000 + sessionRulesVersion,
-		reset = ns.NewBoardState,
+		reset = function()
+			ns.ClearScratch() -- TKB-R84: the scratch tally starts over with the state (logic/Moments.lua)
+			return ns.NewBoardState()
+		end,
 		apply = function(state, record, mode)
 			local coins = state.coins
-			if ns.ApplyEntry(state, record, mode) and mode == "live" then
+			local changed = ns.ApplyEntry(state, record, mode)
+			ns.CountForWriteUp(state, record, mode) -- TKB-R84: a first build's Casts (logic/Moments.lua)
+			if changed and mode == "live" then
 				-- TKB-R63, SHOP-R2: after each live entry that changes the Coins, never mid-rebuild
 				if state.coins ~= coins then
 					ns.ReportCoins()

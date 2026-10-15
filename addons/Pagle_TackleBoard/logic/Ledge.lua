@@ -126,7 +126,7 @@ function ns.CampfireView(fire)
 		view.text = fire.longest > 0 and L.CAMPFIRE_OUT or L.CAMPFIRE_UNLIT
 		return view
 	end
-	view.state, view.text = "lit", ns.Plural(count, "CAMPFIRE_DAYS")
+	view.state, view.text = "lit", ns.Plural(count, "DAYS")
 	local reached, previous, nextDays = 0, 0, nil
 	for _, milestone in ipairs(ns.CAMPFIRE_MILESTONES) do
 		if count >= milestone.days then

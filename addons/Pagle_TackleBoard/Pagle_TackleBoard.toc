@@ -25,6 +25,7 @@ logic\Completions.lua
 logic\LiveStep.lua
 logic\Pins.lua
 logic\Ledge.lua
+logic\Moments.lua
 adapter\BoardWidgets.lua
 adapter\Board.lua
 adapter\Pins.lua
