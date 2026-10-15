@@ -80,7 +80,7 @@ local function qualityOf(item)
 	if record and record.quality ~= nil then
 		return record.quality
 	end
-	return (select(3, C_Item.GetItemInfo(item)))
+	return C_Item.GetItemQualityByID(item)
 end
 
 ---@class StatsPlaceLeftView

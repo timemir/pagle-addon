@@ -273,9 +273,15 @@ Sides in keys are `hi`, `lo` and `na` (STA-R13). Odds, ranges, the Cast threshol
 | `Pagle.MatchesConditions(spec, snapshot)` | STA-R23, STA-R24, the home spread's day or night |
 | `Pagle.GetWindowSpec(id)`, catch entries' `window` (LOG-R55) | STA-R14–R16, STA-R47 |
 | `Pagle.GetItem`, `GetArea`, `GetZoneOf`, `GetZoneCatches` | STA-R12–R18 |
+| `Pagle.CONTENT_FINGERPRINT` | the place tables built from the catalogue, dropped when it changes (DATA-R70, LOG-R72) |
 | `Pagle.GetAngler()` | character names (Lifetime, Session entries) |
 | event `CastEnded` | STA-R73 |
-| WoW: `C_Item.GetItemNameByID`, `C_Item.GetItemQualityByID`, `C_Item.RequestLoadItemDataByID`, event `ITEM_DATA_LOAD_RESULT` (through `Pagle.RegisterEvent`, CORE-R23); `C_Map.GetAreaInfo`; `UIErrorsFrame` | names, quality, search, STA-R61, STA-R73 |
+| event `ModulesChanged` | the tracker's first draw (CORE-R19, STA-R86) |
+| `Pagle.RegisterCallback(owner, event, fn)` | every event above (CORE-R20) |
+| WoW: `C_Item.GetItemNameByID`, `C_Item.GetItemIconByID`, `C_Item.GetItemQualityByID`, `C_Item.RequestLoadItemDataByID`, event `ITEM_DATA_LOAD_RESULT` (through `Pagle.RegisterEvent`, CORE-R23); `C_Map.GetAreaInfo`; `UIErrorsFrame` | names, icons, quality, search, STA-R61, STA-R73 |
+| WoW: `ITEM_QUALITY<n>_DESC`, `ITEM_QUALITY_COLORS` | STA-R59 |
+| WoW: `BreakUpLargeNumbers`, `date`, `GetServerTime` | STA-R44, STA-R59 (numbers, dates and times) |
+| WoW: `CreateFrame`, `CreateFont`, `GameTooltip`, `UISpecialFrames`, `C_Timer.After`, `Settings.CreateElementInitializer` | the book (STA-R70, STA-R73), the tracker's hover, the Watched Dry spells row ([Settings](#settings)) |
 
 ### Exposed
 
