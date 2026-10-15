@@ -1,6 +1,7 @@
 """The repo's own lore (DATA-R111): data/lore/ledger.toml, the Ledger's first batch and its M4 titles and bindings,
-data/lore/core.toml, Core's goods, and Hunts' M5 batch, its goods in data/lore/hunts.toml and its Hunts' and sets' text
-in data/hunts/hunts.toml, each with its lore check on (DATA-R66, LED-R162, HNT-R130)."""
+data/lore/core.toml, Core's goods, Hunts' M5 batch, its goods in data/lore/hunts.toml and its Hunts' and sets' text in
+data/hunts/hunts.toml, and Stats' M6 batch, its tracker frames in data/lore/stats.toml, each with its lore check on
+(DATA-R66, LED-R162, HNT-R130, STA-R88)."""
 
 import csv
 import re
@@ -46,8 +47,8 @@ TITLES = [
     "complete.treasure",
     "complete.trophy",
 ]
-# DATA-R107: every lore check built and on by M5.
-ALL_CHECKS = ["ledger", "core", "hunts"]
+# DATA-R107: every lore check built and on by M6.
+ALL_CHECKS = ["ledger", "core", "hunts", "stats"]
 BINDINGS = ["field", "level10", "level20", "level30", "level40", "level50", "level60", "birch", "buckram", "sharkskin"]
 
 
@@ -68,11 +69,12 @@ def _zone_names() -> list[str]:
         return sorted({row["AreaName_lang"] for row in csv.DictReader(handle) if row["ParentAreaID"] == "0"})
 
 
-def test_the_ledger_s_core_s_and_hunts_lore_checks_are_on() -> None:
+def test_the_ledger_s_core_s_hunts_and_stats_lore_checks_are_on() -> None:
     # DATA-R66, LED-R162: the Ledger's lore check turns on in M3 with its first batch (DATA-R111); DATA-R107: Core's
-    # in M4, with its goods; HNT-R130: Hunts' in M5, after Core's.
+    # in M4, with its goods; HNT-R130: Hunts' in M5, after Core's; DATA-R107, STA-R88: Stats' in M6, when it first
+    # registers its goods, after Hunts'.
     with (REPO / "data" / "checks.toml").open("rb") as handle:
-        assert tomllib.load(handle)["lore"] == ["ledger", "core", "hunts"]
+        assert tomllib.load(handle)["lore"] == ["ledger", "core", "hunts", "stats"]
 
 
 def _without(lore_id: str, key: str) -> list[str]:
@@ -382,3 +384,71 @@ def test_renaming_a_hunt_changes_neither_its_hash_nor_the_hunt_list_fingerprint(
     before, after = hunt_list_of(_layers()), hunt_list_of(renamed)
     assert after["fingerprint"] == before["fingerprint"]
     assert [hunt_hash(hunt) for hunt in after["hunts"]] == [hunt_hash(hunt) for hunt in before["hunts"]]
+
+
+# STA-R88: Stats' three goods, in its table's order: its tracker frames.
+STATS_GOODS = ["stats.trackerframe.none", "stats.trackerframe.logbook", "stats.trackerframe.brass"]
+
+
+def _stats_text() -> dict[str, str]:
+    """Every line of Stats' lore by key (data/lore/stats.toml)."""
+    return {key: text.value for key, text in _layers().lore.files["stats"].items()}
+
+
+def test_the_manifest_lists_stats_three_goods() -> None:
+    # STA-R88, DATA-R106: [stats.statsgood] with fields name and description and STA-R88's three good IDs, none with a
+    # placeholder; statsgood is Stats' own kind, as Core owns good (DATA-R102).
+    manifest = _layers().lore.manifest["stats"]
+    assert sorted(manifest) == ["statsgood"]
+    assert manifest["statsgood"].fields == ("name", "description")
+    assert list(manifest["statsgood"].ids) == STATS_GOODS
+    assert all(not allowed for allowed in manifest["statsgood"].ids.values())
+
+
+def test_stats_lore_is_a_name_and_a_description_for_every_good_and_nothing_else() -> None:
+    # DATA-R107 passes (read_layers raises on any problem), and STA-R88: every good's name and description is lore,
+    # the M6 batch's only lines (DATA-R111).
+    text = _stats_text()
+    keys = {f"statsgood.{good}.{field}" for good in STATS_GOODS for field in ("name", "description")}
+    assert set(text) == keys
+    assert all(text[key].strip() for key in keys)
+
+
+@pytest.mark.parametrize("good", STATS_GOODS)
+def test_deleting_any_one_good_s_description_fails_the_stats_lore_check_naming_its_key(good: str) -> None:
+    # DATA-R107's missing, for the stats lore ID: the manifest lists every good (DATA-R106, STA-R88).
+    key = f"statsgood.{good}.description"
+    assert _without("stats", key) == [
+        f"data/lore/stats.toml: {key}: missing: manifest.toml lists it (DATA-R106, DATA-R107)"
+    ]
+
+
+@pytest.mark.parametrize("key", sorted(_stats_text()))
+def test_no_line_of_stats_lore_names_the_shop_the_addon_its_terms_or_shouts(key: str) -> None:
+    # #210: a description says what the frame looks like, never "shop", "Stats" or the addon, since the shop prints
+    # the slot and the Module itself. VOICE.md: "Not the addon talking" (choice 12): no Pagle and none of its
+    # capitalised terms, nor "ledger" in any case (the Module's name); no "I" (choice 3); no exclamation marks
+    # (choice 13); no | (WoW's escape codes).
+    text = _stats_text()[key]
+    terms = r"\b(Pagle|Pagle's|Stats|Hunts?|Coins?|Sessions?|Notices?|Catch(es)?|Casts?|Angler|XP|I)\b"
+    assert not re.search(terms, text), text
+    assert not re.search(r"\b(shop|curio|ledger)\b", text, re.IGNORECASE), text
+    assert "!" not in text and "|" not in text, text
+
+
+def test_the_generator_fails_on_a_29_code_point_frame_name_and_names_the_key(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    # DATA-R107 for the stats lore ID, through the generator itself (DATA-R63): a copy of data/ with the Logbook's
+    # name one code point over the 28 (Tunables › Lore limits) writes nothing.
+    shutil.copytree(REPO / "data", tmp_path / "data")
+    stats = tmp_path / "data" / "lore" / "stats.toml"
+    text = stats.read_text(encoding="utf-8")
+    name = f'name = "{_stats_text()["statsgood.stats.trackerframe.logbook.name"]}"\n'
+    assert text.count(name) == 1
+    stats.write_text(text.replace(name, f'name = "{"L" * 29}"\n'), encoding="utf-8")
+    code = main([], tmp_path)
+    out, err = capsys.readouterr()
+    assert code == 1
+    assert "data/lore/stats.toml: statsgood.stats.trackerframe.logbook.name: length: 29 code points" in out + err
+    assert not (tmp_path / "addons").exists()
