@@ -189,6 +189,58 @@ describe("the live step (TKB-R13)", function()
 		assert.are.same({ notices = 0, expeditions = 0 }, state.owed)
 	end)
 
+	it(
+		"at a chunked login build with a costly done, still issues every goal owed: 10 records, 6 Notices and 2"
+			.. " Expeditions open, nothing owed (TKB-R13, TKB-R21, LOG-R74)",
+		function()
+			-- Every step costs 3 ms of the 4 ms budget, so Core reads back the records the step appends in later frames
+			-- than done's; the board's timers run first on each frame, as C_Timer.After(0) does after a done.
+			local loaded, fake = board.load(startedDaysAgo(3))
+			board.updating(fake, true, 3)
+			fake.login()
+			fake.enterWorld()
+			for _ = 1, 50 do
+				loaded.client.runTimers()
+				fake.nextFrame()
+			end
+
+			local records = boardRecords(fake)
+			assert.are.equal(10, #records)
+			assert.are.same({ "e", "n", "n", "n" }, issuedTypes({ unpack(records, 7) }))
+			assert.are.same({ n = 6, e = 2 }, openCounts(loaded.ns))
+			assert.are.same({ notices = 0, expeditions = 0 }, loaded.ns.State().owed)
+			assert.are.same({}, fake.reported)
+		end
+	)
+
+	it(
+		"does nothing at Start between a chunked build's done and the end of its live phase (TKB-R5, LOG-R74)",
+		function()
+			-- A Cast appended during the build, which Core reads back as live after done (LOG-R74).
+			local loaded, fake = board.load(board.withHistory({ board.skill(NOW - 3600) }))
+			board.updating(fake, true, 3)
+			fake.login()
+			fake.enterWorld()
+			board.live(fake, board.cast(NOW + 60, 14, { 6358 }))
+			local inLivePhase
+			for _ = 1, 50 do
+				fake.nextFrame()
+				-- done has run (finish wrote the rules version) and Core is still reading back the live entries
+				local stored = loaded.env.PagleTackleBoardDB.global.board
+				if stored and stored.rulesVersion and loaded.ns.IsUpdating() then
+					inLivePhase = true
+					break
+				end
+			end
+
+			loaded.ns.Start()
+
+			assert.is_true(inLivePhase)
+			assert.are.same({}, boardRecords(fake))
+			assert.is_false(loaded.ns.IsStarted())
+		end
+	)
+
 	it("runs on the frame after done, never in it: Core's append errors never fire (LOG-R40, TKB-R80)", function()
 		local loaded, fake = board.load(startedDaysAgo(3))
 		fake.login()

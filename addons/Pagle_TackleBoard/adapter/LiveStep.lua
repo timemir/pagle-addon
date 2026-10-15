@@ -99,15 +99,24 @@ end
 
 local scheduled = false -- a step is waiting for the next frame
 
---- Schedules the live step for the next frame (TKB-R13, TKB-R84): the projection's done calls it last. Calls made
---- before that frame share its one step.
+-- The scheduled step: on a frame where the projection is still updating (after a chunked build's done, Core applies
+-- the entries appended during it in later frames, LOG-R74), it waits another frame, so the step reads them back
+-- first and issues every goal owed (TKB-R13).
+local function scheduledStep()
+	if ns.IsUpdating() then
+		C_Timer.After(0, scheduledStep)
+		return
+	end
+	scheduled = false
+	ns.LiveStep()
+end
+
+--- Schedules the live step for the next frame on which the projection isn't updating (TKB-R13, TKB-R84): the
+--- projection's done calls it last. Calls made before it runs share its one step.
 function ns.ScheduleLiveStep()
 	if scheduled then
 		return
 	end
 	scheduled = true
-	C_Timer.After(0, function()
-		scheduled = false
-		ns.LiveStep()
-	end)
+	C_Timer.After(0, scheduledStep)
 end

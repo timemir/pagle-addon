@@ -375,6 +375,40 @@ describe("a catch-up or rebuild of many entries", function()
 		end
 	)
 
+	it(
+		"stays updating after done until the entries appended during the update are applied, reading false in done"
+			.. " (LOG-R74)",
+		function()
+			-- Done costs 3 ms, so the entries appended during the update are applied in a later frame than done's.
+			local world = machinery(casts(501))
+			local def, seen = recorder({})
+			local projection
+			local inDone = {}
+			local done = def.done
+			def.done = function(state, info)
+				world.now = world.now + 3
+				inDone[#inDone + 1] = projection:IsUpdating()
+				done(state, info)
+			end
+			projection = bind(world, costly(world, def))
+
+			world.projections:Start(501)
+			world.frame()
+			world.append(1)
+			world.append(2)
+			while #seen.done == 0 do
+				assert.is_true(world.frame())
+			end
+
+			assert.are.same({ false }, inDone)
+			assert.are.equal("501 rebuild", seen.applied[#seen.applied])
+			assert.is_true(projection:IsUpdating()) -- 502 and 503 aren't applied yet
+			world.runFrames()
+			assert.are.same({ "502 live", "503 live" }, { unpack(seen.applied, 502) })
+			assert.is_false(projection:IsUpdating())
+		end
+	)
+
 	it("applies 500 pending entries at once, done before Start returns (LOG-R71)", function()
 		local world = machinery(casts(500))
 		local def, seen = recorder({})

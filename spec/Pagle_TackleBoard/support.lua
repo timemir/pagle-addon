@@ -169,11 +169,21 @@ function support.live(fake, entry)
 end
 
 --- Makes `fake`'s projections catch up and rebuild over later frames while `on`, or at once again (LOG-R74), so a
---- spec can watch the projection updating (TKB-R108).
+--- spec can watch the projection updating (TKB-R108). With `stepMs`, each read of the projections' clock moves it on
+--- that many ms, so a step (a done among them) costs about that much of the 4 ms frame budget (LOG-R71).
 ---@param fake table
 ---@param on boolean
-function support.updating(fake, on)
-	fake.projections.options.syncLimit = on and 0 or math.huge
+---@param stepMs number?
+function support.updating(fake, on, stepMs)
+	local options = fake.projections.options
+	options.syncLimit = on and 0 or math.huge
+	if stepMs then
+		local now = 0
+		options.clock = function()
+			now = now + stepMs
+			return now
+		end
+	end
 end
 
 --- `seconds` pass on the server's clock (the fake's) and the addon's timers (`loaded`'s client).

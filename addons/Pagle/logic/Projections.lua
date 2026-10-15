@@ -65,6 +65,7 @@ Projection.__index = Projection
 ---@field phase "apply"|"finish"|"live" -- the step it is on
 ---@field live (fun(): PagleRecord?)?  -- after the finish: the entries appended since the target, once read
 ---@field liveTo integer               -- the log's length when `live` was made
+---@field inDone boolean?              -- while its done runs
 
 --- The machinery: every projection, in the order they were added.
 ---@class PagleProjections
@@ -305,9 +306,11 @@ function Projections:finish(projection, run)
 			rebuilt = run.mode == "rebuild",
 			replayed = run.replayed,
 		}
+		run.inDone = true
 		during(self, "done", function()
 			self.options.call(def.done, projection.state, info)
 		end)
+		run.inDone = nil
 	end
 end
 
@@ -494,10 +497,13 @@ function Projection:GetState()
 	return self.state
 end
 
---- Whether it is catching up or rebuilding, or waiting for login to start it (LOG-R74).
+--- Whether it is catching up or rebuilding, or waiting for login to start it (LOG-R74), counting the time after its
+--- done until the entries appended during the update have been applied as live: a Module that appends from a step
+--- scheduled at done sees its own records applied before it reads the state. Its own done reads false.
 ---@return boolean
 function Projection:IsUpdating()
-	return self.updating
+	local run = self.run
+	return self.updating or (run ~= nil and not run.inDone)
 end
 
 --- A manual full rebuild from seq 0 up to the log's length now (LOG-R72), for a debug command. Does nothing while
