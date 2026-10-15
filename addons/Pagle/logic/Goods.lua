@@ -112,6 +112,9 @@ function Goods:SlotProblem(module, slot)
 	return nil
 end
 
+--- Who registered Core's own slots and goods, where a Module's def.name goes (SHOP-R21, SHOP-R25).
+ns.CORE_OWNER = "Core"
+
 --- The slot categories (wallet-and-shop.md › Contracts), in the order the shop's chips and Look and Feel list them.
 ns.SLOT_CATEGORY_ORDER = { "Announcements", "Bookplate", "Fish Journal", "Hunts", "Trackers" }
 
@@ -281,7 +284,7 @@ end
 ---@private
 ---@return table<string, integer>
 function Goods:OrderOn()
-	local order = { Core = 0 }
+	local order = { [ns.CORE_OWNER] = 0 }
 	for i, module in ipairs(self.options.modules()) do
 		order[module.def.name] = i
 	end

@@ -118,14 +118,14 @@ end
 --- "core.toaststyle" (ANN-R80).
 ---@type table<string, PagleCorePreview>
 ns.CORE_PREVIEWS = {
-	["core.soundset"] = function(stage, good)
-		local panel = ns.CorePreviewPanel(stage, "core.soundset", buildSoundSet) --[[@as PagleSoundSetPanel]]
+	[ns.SOUND_SET_SLOT] = function(stage, good)
+		local panel = ns.CorePreviewPanel(stage, ns.SOUND_SET_SLOT, buildSoundSet) --[[@as PagleSoundSetPanel]]
 		panel.swatch:SetTexture(good.icon)
 		panel.set = ns.SoundSetOf(good.id)
 		panel.turn = 0
 	end,
-	["core.crest"] = function(stage, good)
-		local panel = ns.CorePreviewPanel(stage, "core.crest", buildCrest) --[[@as PagleCrestPanel]]
+	[ns.CREST_SLOT] = function(stage, good)
+		local panel = ns.CorePreviewPanel(stage, ns.CREST_SLOT, buildCrest) --[[@as PagleCrestPanel]]
 		panel.crest:SetTexture(good.icon)
 		panel.name:SetText((UnitName("player")))
 	end,

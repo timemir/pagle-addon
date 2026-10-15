@@ -377,7 +377,7 @@ end
 --- Core's goods registry as ns.goods (SHOP-R20–R26, SHOP-R30–R33) over PagleDB.global.goods and
 --- PagleDB.profile.appearance, firing AppearanceChanged on the bus from ModulesChanged on, and `M:RegisterSlot`,
 --- `M:RegisterGood` and `M:RefreshGoods` on every Module handle. Core registers its own goods with
---- ns.RegisterCoreSlot and ns.RegisterCoreGood, and refreshes them with ns.goods:Refresh("Core"). The wallet
+--- ns.RegisterCoreSlot and ns.RegisterCoreGood, and refreshes them with ns.goods:Refresh(ns.CORE_OWNER). The wallet
 --- projection hands it the purchased set with ns.goods:SetPurchased (SHOP-R11).
 ---@param host PagleHost
 function ns.WireGoods(host)
@@ -433,7 +433,7 @@ function ns.WireGoods(host)
 	--- registering nothing, for a SHOP-R23 mistake.
 	---@param slot PagleSlot
 	function ns.RegisterCoreSlot(slot)
-		local problem = goods:RegisterSlot("Core", slot)
+		local problem = goods:RegisterSlot(ns.CORE_OWNER, slot)
 		if problem then
 			error(problem, 2)
 		end
@@ -442,7 +442,7 @@ function ns.WireGoods(host)
 	--- registering nothing, for a SHOP-R23 mistake.
 	---@param good PagleGood
 	function ns.RegisterCoreGood(good)
-		local problem = goods:RegisterGood("Core", good)
+		local problem = goods:RegisterGood(ns.CORE_OWNER, good)
 		if problem then
 			error(problem, 2)
 		end
@@ -509,6 +509,7 @@ end
 ---@field Open fun(goodID: string?) -- Pagle.OpenShop
 ---@field Toggle fun()              -- /pagle shop
 ---@field Buy fun(goodID: string, useNow: boolean): boolean -- the Buy popup's Buy: true if it bought
+---@field Use fun(goodID: string): boolean -- the stage's Use: true if it equipped the good
 
 --- The Curio Shop's entry points as ns.shop (SHOP-R40, SHOP-R41), its buying (ns.shop.Buy), and ns.ShopModel, the
 --- shop's data now: Core's goods, their cache, the Modules On, the balance and whether a projection is updating
@@ -553,6 +554,15 @@ function ns.WireShop(host, seams)
 		return true
 	end
 
+	--- Equips `goodID` in its slot, if it is an owned good registered this session (SHOP-R32): the stage's Use.
+	--- Returns whether it did; AppearanceChanged follows if the look changed (SHOP-R33).
+	---@param goodID string
+	---@return boolean
+	local function use(goodID)
+		local good = ns.goods:Good(goodID)
+		return good ~= nil and ns.goods:SetEquipped(good.slot, good.id)
+	end
+
 	---@param goodID string?
 	local function open(goodID)
 		if host.isRestricted() then
@@ -572,7 +582,7 @@ function ns.WireShop(host, seams)
 			open()
 		end
 	end
-	ns.shop = { Open = open, Toggle = toggle, Buy = buy }
+	ns.shop = { Open = open, Toggle = toggle, Buy = buy, Use = use }
 	-- CORE-R33's row, SHOP-R41: an open shop closes as restriction starts. Its own owner on the bus.
 	host.listen("Pagle shop", "RestrictionChanged", function(_, isRestricted)
 		if isRestricted and seams.isShown() then

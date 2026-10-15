@@ -40,7 +40,7 @@ end
 function ns.CoreAnnouncementSlots(goods)
 	local list = {}
 	for _, slot in ipairs(goods:Slots()) do
-		if slot.module == "Core" and slot.category == "Announcements" and #slot.goods > 0 then
+		if slot.module == ns.CORE_OWNER and slot.category == "Announcements" and #slot.goods > 0 then
 			list[#list + 1] = slot
 		end
 	end

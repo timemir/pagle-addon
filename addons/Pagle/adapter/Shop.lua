@@ -594,9 +594,7 @@ local function buildStage(frame)
 	stage.use = button(inset, L.SHOP_USE, 120)
 	stage.use:SetPoint("TOPRIGHT", stage.tags, "BOTTOMRIGHT", 0, -6)
 	stage.use:SetScript("OnClick", function()
-		local good = selected and ns.goods:Good(selected)
-		if good then
-			Pagle.SetEquipped(good.slot, good.id)
+		if selected and ns.shop.Use(selected) then
 			redraw(false)
 		end
 	end)

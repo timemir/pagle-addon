@@ -740,6 +740,20 @@ describe("Buying", function()
 		assert.are.same({}, changed)
 	end)
 
+	it("equips an owned good with Use, and nothing for a good not owned or not known (SHOP-R32)", function()
+		local fake = ready(200)
+		local changed = looks(fake)
+		fake.ns.shop.Buy("core.toaststyle.ripple", false)
+
+		assert.are.same({ true, false, false }, {
+			fake.ns.shop.Use("core.toaststyle.ripple"),
+			fake.ns.shop.Use("core.toaststyle.lanternglow"),
+			fake.ns.shop.Use("core.toaststyle.none"),
+		})
+		assert.are.equal("core.toaststyle.ripple", fake.Pagle.GetEquipped("core.toaststyle"))
+		assert.are.same({ "core.toaststyle core.toaststyle.ripple" }, changed)
+	end)
+
 	it("raises no Announcement and no Session summary line (ANN-R23, SHOP-R5)", function()
 		local fake = ready(200)
 		local announced, summarized = #fake.announcements, #fake.summarized

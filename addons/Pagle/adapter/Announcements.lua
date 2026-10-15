@@ -434,7 +434,7 @@ ns.lanes = ns.NewLanes({
 	-- The equipped sound set (ANN-R70, ANN-R72), read as each sound is picked, so it follows AppearanceChanged
 	-- (SHOP-R33).
 	soundSet = function()
-		return ns.SoundSetOf(Pagle.GetEquipped("core.soundset"))
+		return ns.SoundSetOf(ns.goods:GetEquipped(ns.SOUND_SET_SLOT))
 	end,
 	show = show,
 	hide = hide,

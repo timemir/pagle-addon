@@ -27,7 +27,7 @@ Model.__index = Model
 ---@param sources PagleShopSources
 ---@return PagleShopModel
 function ns.NewShopModel(sources)
-	local on = { Core = true }
+	local on = { [ns.CORE_OWNER] = true }
 	for _, module in ipairs(sources.modules) do
 		on[module.def.name] = true
 	end
@@ -73,7 +73,7 @@ end
 ---@param module string def.name, or "Core"
 ---@return string
 local function ownerName(module)
-	if module == "Core" then
+	if module == ns.CORE_OWNER then
 		return ns.L.SHOP_CORE
 	end
 	return ns.L.MODULE_NAMES[module] or module

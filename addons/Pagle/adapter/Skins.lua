@@ -11,9 +11,6 @@ end
 -- from logic/ToastStyles.lua. A frame is built once and repainted whenever its style changes; a style changes only
 -- the look, never timing or rules.
 
---- Trade_Fishing, for a moment with no icon.
-ns.DEFAULT_ICON = 136245
-
 --- A texture or font string a skin paints: the colour role it takes, and a font string's own font object (a texture
 --- has none) and whether it is a title (a style's title face replaces its font).
 ---@class PaglePainted: Region
@@ -34,7 +31,7 @@ ns.DEFAULT_ICON = 136245
 --- The toast style equipped in Core's slot (SHOP-R32), or Timber when none is (ANN-R80).
 ---@return PagleToastStyle
 function ns.EquippedToastStyle()
-	return ns.ToastStyleOf(Pagle.GetEquipped(ns.TOAST_STYLE_SLOT))
+	return ns.ToastStyleOf(ns.goods:GetEquipped(ns.TOAST_STYLE_SLOT))
 end
 
 --- A new skin for a frame, in the equipped style, as `frame.skin`.

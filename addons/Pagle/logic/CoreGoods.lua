@@ -25,6 +25,15 @@ local ns = select(2, ...)
 
 local ICONS = "Interface\\Icons\\"
 
+--- Core's toast style slot (SHOP-R25, ANN-R80).
+ns.TOAST_STYLE_SLOT = "core.toaststyle"
+--- Timber's good ID: the toast style slot's default, and the style for any ID that isn't one.
+ns.TOAST_STYLE_DEFAULT = "core.toaststyle.timber"
+--- Core's sound set slot (SHOP-R25, ANN-R72).
+ns.SOUND_SET_SLOT = "core.soundset"
+--- Core's bookplate crest slot (SHOP-R25, LED-R112).
+ns.CREST_SLOT = "core.crest"
+
 --- Core's slots and goods at M4 (SHOP-R25), in the order they register and the shop lists them. A toast style's
 --- look is the toast styles' (ANN-R80); a sound set's sounds are ns.SOUND_SETS[soundSet]; a crest's look is its
 --- icon, which the Ledger draws on the Journal's bookplate through Pagle.GetGood (LED-R112). Every good has an icon,
@@ -33,17 +42,17 @@ local ICONS = "Interface\\Icons\\"
 ---@type PagleCoreSlot[]
 ns.CORE_GOODS = {
 	{
-		id = "core.toaststyle",
+		id = ns.TOAST_STYLE_SLOT,
 		label = ns.L.SLOT_TOAST_STYLE,
 		category = "Announcements",
 		goods = {
-			{ id = "core.toaststyle.timber", default = true, icon = ICONS .. "INV_Crate_01" },
+			{ id = ns.TOAST_STYLE_DEFAULT, default = true, icon = ICONS .. "INV_Crate_01" },
 			{ id = "core.toaststyle.ripple", tier = 1, icon = ICONS .. "Ability_Shaman_WaterShield" },
 			{ id = "core.toaststyle.lanternglow", tier = 2, icon = ICONS .. "INV_Misc_Lantern_01" },
 		},
 	},
 	{
-		id = "core.soundset",
+		id = ns.SOUND_SET_SLOT,
 		label = ns.L.SLOT_SOUND_SET,
 		category = "Announcements",
 		goods = {
@@ -57,7 +66,7 @@ ns.CORE_GOODS = {
 		},
 	},
 	{
-		id = "core.crest",
+		id = ns.CREST_SLOT,
 		label = ns.L.SLOT_CREST,
 		category = "Bookplate",
 		goods = {
