@@ -32,17 +32,9 @@
 ---@field AddSearchTags fun(self: SettingsInitializer, ...: string)
 --- A setting variable (despite the name, any registered setting's) whose change re-evaluates the shown row's state.
 ---@field AddEvaluateStateCVar fun(self: SettingsInitializer, variable: string)
----@field InitFrame fun(self: SettingsInitializer, frame: SettingsListElementFrame)
----@field Resetter fun(self: SettingsInitializer, frame: SettingsListElementFrame)
----@field GetExtent fun(self: SettingsInitializer): number?
 
+--- A registered setting. Pagle only hands it to the panel: it calls none of its methods (SET-R6).
 ---@class SettingsProxySetting
----@field GetName fun(self: SettingsProxySetting): string
----@field GetVariable fun(self: SettingsProxySetting): string
----@field GetValue fun(self: SettingsProxySetting): any
---- SettingMixin:NotifyUpdate (Blizzard_Setting.lua): the value changed elsewhere, so the shown controls read it again.
----@field NotifyUpdate fun(self: SettingsProxySetting)
----@field SetValue fun(self: SettingsProxySetting, value: any)
 
 --- SettingsSliderOptionsMixin.
 ---@class SettingsSliderOptions

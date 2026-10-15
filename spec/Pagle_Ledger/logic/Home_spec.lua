@@ -143,7 +143,7 @@ describe("Home's Notes to self (LED-R133)", function()
 
 			assert.are.same({
 				{ "Zone 40: 1 new to find", "zone", 40 },
-				{ "Fish 1: 49 to ★★★", "fish", 1 },
+				{ drawnSymbols("Fish 1: 49 to ★★★"), "fish", 1 },
 			}, notes(world, state, celebrated))
 		end
 	)
@@ -156,7 +156,7 @@ describe("Home's Notes to self (LED-R133)", function()
 			local state = stateOf({}, {}, { [1] = 12, [2] = 12, [3] = 40, [4] = 50 })
 			local items = { [3] = { category = "fish", species = 3, removed = true } }
 
-			assert.are.same({ { "Fish 1: 38 to ★★★", "fish", 1 } }, notes(world, state, nil, items))
+			assert.are.same({ { drawnSymbols("Fish 1: 38 to ★★★"), "fish", 1 } }, notes(world, state, nil, items))
 		end
 	)
 
@@ -166,7 +166,7 @@ describe("Home's Notes to self (LED-R133)", function()
 		local celebrated =
 			{ zones = {}, levels = {}, species = {}, speciesZones = {}, skill = {}, stars = { [1] = { [3] = true } } }
 
-		assert.are.same({ { "Fish 2: 45 to ★★★", "fish", 2 } }, notes(world, state, celebrated))
+		assert.are.same({ { drawnSymbols("Fish 2: 45 to ★★★"), "fish", 2 } }, notes(world, state, celebrated))
 	end)
 
 	it("gives at most the three notes, in order: next rank, new to find, next star (LED-R133)", function()
@@ -177,7 +177,43 @@ describe("Home's Notes to self (LED-R133)", function()
 		assert.are.same({
 			{ "Zone 12: Regular. Local: 1 more any-time Species", "zone", 12 },
 			{ "Zone 40: 1 new to find", "zone", 40 },
-			{ "Fish 5: 43 to ★★★", "fish", 5 },
+			{ drawnSymbols("Fish 5: 43 to ★★★"), "fish", 5 },
 		}, notes(world, state, celebrated))
+	end)
+end)
+
+describe("a zone tile (LED-R131)", function()
+	local ns = loadAddon("Pagle_Ledger", FOREVER_GLOBALS).ns
+
+	it("reads any skill for a charted, unfished zone whose skill base is 0 or below (LED-R131, DATA-R30)", function()
+		local charted = { list = {}, species = {}, families = {}, junk = false, treasure = false }
+		local context = {
+			updating = false,
+			now = SERVER_TIME,
+			formatNumber = breakUpLargeNumbers,
+			world = {
+				zones = { [1] = charted, [2] = charted, [3] = charted },
+				charted = { 1, 2, 3 },
+				legends = {},
+				species = {},
+				items = {},
+				families = {},
+				skillBase = { [1] = -70, [2] = 0, [3] = 1 },
+				getItem = function() end,
+			},
+			state = { zones = {} },
+			text = {
+				Zone = function(_, zone)
+					return "Zone " .. zone
+				end,
+			},
+		}
+
+		local lines = {}
+		for zone = 1, 3 do
+			lines[zone] = ns.JournalZoneTile(zone, context).line
+		end
+
+		assert.are.same({ "unfished · any skill", "unfished · any skill", "unfished · skill ~1" }, lines)
 	end)
 end)

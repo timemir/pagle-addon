@@ -198,7 +198,7 @@ describe("The Trackers page's Defaults", function()
 		enterWorld(loaded)
 		loaded.ns.goods:SetPurchased({ ["hunts.trackerframe.inkwash"] = true, ["core.crest.crest1"] = true })
 		loaded.env.Pagle.SetEquipped("core.crest", "core.crest.crest1")
-		loaded.client.shiftDown = true
+		loaded.client.keysDown.SHIFT = true
 		frame:GetScript("OnDragStart")(frame, "LeftButton")
 		loaded.ns.dockFrame.screenRight, loaded.ns.dockFrame.screenTop = 812, 640
 		frame:GetScript("OnDragStop")(frame)

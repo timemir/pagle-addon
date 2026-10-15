@@ -1,8 +1,8 @@
 ---@class PagleNS
 local ns = select(2, ...)
 
--- Moments, the rung ladder and one Announcement per Cast (announcements.md › Moments and the ladder, › One
--- Announcement per Cast; ADR 0007): pure logic, fed moments, the projection machinery's seams and a frame
+-- Moments, the rung ladder and a Cast's Announcements (announcements.md › Moments and the ladder, › A Cast's
+-- Announcements; ADR 0007): pure logic, fed moments, the projection machinery's seams and a frame
 -- scheduler (CORE-R7). adapter/Moments.lua puts M:RaiseMoment on the Module handle over it.
 
 --- What a Module passes to `M:RaiseMoment` (announcements.md › Contracts).
@@ -32,14 +32,15 @@ local ns = select(2, ...)
 ---@field moduleOrder integer    -- its def.order
 ---@field raised integer         -- 1 for the first moment Core accepted this login, and so on (ANN-R2's last tie-break)
 
---- One Announcement (ANN-R11): what the display shows for one Cast's moments, or for one moment without a Cast.
+--- One Announcement (ANN-R11): what the display shows for one side of a Cast's moments (its banners and splash, or
+--- its toasts and Nods), or for one moment without a Cast.
 ---@class PagleAnnouncement
 ---@field headline PagleRaisedMoment  -- the top-ranked moment
 ---@field rung PagleRung              -- its weight: the headline's rung
 ---@field cast string?                -- the Cast's entry ID, nil for a moment of its own (ANN-R12)
 ---@field stamps string[]             -- at most MOMENT_STAMPS texts, highest ranked first, identical ones merged
 ---@field more integer                -- distinct stamp texts beyond those, shown as "+N"; 0 for none
----@field coins integer               -- the sum of every moment's coins, kept apart from the stamps (ANN-R23)
+---@field coins integer               -- the sum of its moments' coins, kept apart from the stamps (ANN-R23)
 ---@field moments PagleRaisedMoment[] -- every moment in it, ranked (ANN-R2), the headline first
 ---@field fighting? PagleRaisedMoment[] -- the "While you were fighting" toast's held headlines, in order (ANN-R36)
 ---@field style? string                -- a sample's toast style, drawn in that, not the equipped one (ANN-R80)
@@ -138,6 +139,26 @@ function ns.MakeAnnouncement(moments)
 		end
 	end
 	return announcement
+end
+
+-- The big side of a Cast's moments (ANN-R11): the rungs the big lane shows (ANN-R20).
+local BIG = { banner = true, splash = true }
+
+--- The Announcements a Cast's moments make (ANN-R11): a big one of its banner and splash moments, then a catch one of
+--- its toast and Nod moments, each made by ns.MakeAnnouncement; one when every moment is on one side.
+---@param moments PagleRaisedMoment[]
+---@return PagleAnnouncement[]
+function ns.MakeCastAnnouncements(moments)
+	local big, catch = {}, {}
+	for _, moment in ipairs(moments) do
+		local side = BIG[moment.rung] and big or catch
+		side[#side + 1] = moment
+	end
+	local announcements = {}
+	for _, side in ipairs({ big, catch }) do
+		announcements[#announcements + 1] = ns.MakeAnnouncement(side)
+	end
+	return announcements
 end
 
 --- What the collector is fed. Every function is called when needed, never stored.
@@ -293,8 +314,9 @@ local function byCast(moments)
 	return groups
 end
 
--- One frame's flush (ANN-R10, ANN-R12): each moment without a Cast is its own Announcement; each Cast's moments make
--- one, in Cast order, unless a projection is updating, when they are held for the frame after the last one finishes.
+-- One frame's flush (ANN-R10–R12): each moment without a Cast is its own Announcement; each Cast's moments make its
+-- big and catch ones, in Cast order, unless a projection is updating, when they are held for the frame after the last
+-- one finishes.
 ---@package
 function Moments:flush()
 	local pending = self.pending
@@ -318,7 +340,9 @@ function Moments:flush()
 	local held = self.held
 	self.held = {}
 	for _, group in ipairs(byCast(held)) do
-		self.options.show(ns.MakeAnnouncement(group) --[[@as PagleAnnouncement]])
+		for _, announcement in ipairs(ns.MakeCastAnnouncements(group)) do
+			self.options.show(announcement)
+		end
 	end
 end
 

@@ -1,9 +1,10 @@
 """scripts/generate-data.py's command line (DATA-R60): with no flag it rewrites every generated file, and
-removes a Lore.lua whose lore file is gone; --check writes nothing and fails if any generated file would change. The read-only modes write nothing and print no warning:
---propose-aliases prints the alias candidates not yet committed (DATA-R32), --min-build <n> the facts that would lose
-confirmation if only builds >= n counted (DATA-R57), and --explain <id> every layer's value for an item or an area
-and which won. --lock rewrites data/hunts/released.lock from the Hunt list and writes nothing else (DATA-R95); it is run
-when a release is tagged, from 1.0 on, and never before (DATA-R73).
+removes a Lore.lua whose lore file is gone; --check writes nothing and fails if any generated file would change. The
+read-only modes write nothing and print no warning: --propose-aliases prints the alias candidates not yet committed
+(DATA-R32), --min-build <n> the facts that would lose confirmation if only builds >= n counted (DATA-R57), and
+--explain <id> every layer's value for an item or an area and which won. --lock rewrites data/hunts/released.lock
+from the Hunt list and writes nothing else (DATA-R95); it is run when a release is tagged, from 1.0 on, and never
+before (DATA-R73).
 """
 
 import argparse

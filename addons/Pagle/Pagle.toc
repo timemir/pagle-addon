@@ -40,6 +40,7 @@ logic\Diagnostics.lua
 logic\FieldReport.lua
 logic\Settings.lua
 logic\Slash.lua
+logic\Dev.lua
 logic\Wallet.lua
 logic\Goods.lua
 logic\Shop.lua
@@ -76,9 +77,11 @@ adapter\Diagnostics.lua
 adapter\FieldReport.lua
 adapter\Sessions.lua
 adapter\Settings.lua
+adapter\Settings.xml
 adapter\AnnouncementSettings.lua
 adapter\Dock.lua
 adapter\LookAndFeel.lua
+adapter\DevGlyphs.lua
 adapter\Slash.lua
 adapter\Wallet.lua
 adapter\Goods.lua

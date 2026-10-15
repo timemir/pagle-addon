@@ -16,34 +16,22 @@ local FAMILY, LOOSE_FAMILY = 2, 3
 local ELWYNN, WESTFALL, DUSKWOOD, REDRIDGE, STRANGLETHORN, DARKSHORE = 12, 40, 10, 44, 33, 148
 
 -- Window specs (DATA-R78): night 21:00–06:00, summer and winter by realm date.
-local NIGHT = { time = { { 1260, 360 } } }
+local NIGHT = NIGHT_WINDOW
 local SUMMER = { season = { { from = { 3, 20 }, to = { 9, 18 } } } }
 local WINTER = { season = { { from = { 9, 23 }, to = { 3, 24 } } } }
 
-local function fish(species)
-	return { category = "fish", species = species, legend = false, noise = false, removed = false, pool = false }
-end
-
 local function trophy(family, weight)
-	return {
-		category = "trophy",
-		family = family,
-		weight = weight,
-		legend = false,
-		noise = false,
-		removed = false,
-		pool = false,
-	}
+	return itemRecord("trophy", { family = family, weight = weight })
 end
 
 local ITEMS = {
-	[NIGHTFISH] = fish(NIGHTFISH),
-	[SEASONFISH] = fish(SEASONFISH),
-	[WIDEFISH] = fish(WIDEFISH),
-	[LONEFISH] = fish(LONEFISH),
-	[STRAY] = fish(STRAY),
-	[LEGEND] = { category = "fish", species = LEGEND, legend = true, noise = false, removed = false, pool = false },
-	[MIXED] = fish(MIXED),
+	[NIGHTFISH] = fishRecord(NIGHTFISH),
+	[SEASONFISH] = fishRecord(SEASONFISH),
+	[WIDEFISH] = fishRecord(WIDEFISH),
+	[LONEFISH] = fishRecord(LONEFISH),
+	[STRAY] = fishRecord(STRAY),
+	[LEGEND] = fishRecord(LEGEND, { legend = true }),
+	[MIXED] = fishRecord(MIXED),
 	[W40] = trophy(FAMILY, 40),
 	[W60] = trophy(FAMILY, 60),
 	[W50] = trophy(FAMILY, 50),
@@ -52,42 +40,34 @@ local ITEMS = {
 	[LOOSE] = trophy(LOOSE_FAMILY, 12),
 }
 
--- A catch entry (LOG-R55): ungated, or gated by `window` with its spec.
-local function entry(itemID, window, gate)
-	return { itemID = itemID, confirmed = true, window = window, gate = gate, gateConfirmed = window and true or nil }
-end
-
 -- Six charted zones. NIGHTFISH is gated by night wherever it is listed; SEASONFISH by summer in Elwynn and winter in
 -- Westfall; WIDEFISH is ungated in five zones, LONEFISH in one; MIXED is gated in Elwynn but not in Westfall; STRAY is
 -- on no list. The family's four listed weights spread over three zones.
 local CATCHES = {
 	[ELWYNN] = {
-		entry(NIGHTFISH, "night", NIGHT),
-		entry(SEASONFISH, "summer", SUMMER),
-		entry(WIDEFISH),
-		entry(MIXED, "night", NIGHT),
-		entry(W40),
-		entry(W60),
+		catchEntry(NIGHTFISH, "night", NIGHT),
+		catchEntry(SEASONFISH, "summer", SUMMER),
+		catchEntry(WIDEFISH),
+		catchEntry(MIXED, "night", NIGHT),
+		catchEntry(W40),
+		catchEntry(W60),
 	},
 	[WESTFALL] = {
-		entry(NIGHTFISH, "night", NIGHT),
-		entry(SEASONFISH, "winter", WINTER),
-		entry(WIDEFISH),
-		entry(MIXED),
-		entry(W50),
+		catchEntry(NIGHTFISH, "night", NIGHT),
+		catchEntry(SEASONFISH, "winter", WINTER),
+		catchEntry(WIDEFISH),
+		catchEntry(MIXED),
+		catchEntry(W50),
 	},
-	[DUSKWOOD] = { entry(WIDEFISH), entry(LONEFISH), entry(W45) },
-	[REDRIDGE] = { entry(WIDEFISH) },
-	[STRANGLETHORN] = { entry(WIDEFISH) },
-	[DARKSHORE] = { entry(W40) },
+	[DUSKWOOD] = { catchEntry(WIDEFISH), catchEntry(LONEFISH), catchEntry(W45) },
+	[REDRIDGE] = { catchEntry(WIDEFISH) },
+	[STRANGLETHORN] = { catchEntry(WIDEFISH) },
+	[DARKSHORE] = { catchEntry(W40) },
 }
 
-local function getItem(itemID)
-	assert(itemID ~= 0, "item 0 is never looked up (LED-R5)")
-	return ITEMS[itemID]
-end
+local getItem = itemLookup(ITEMS)
 
-local T0 = 1791731000
+local T0 = SERVER_TIME - 700
 local MIDNIGHT, NOON = 0, 720
 local OCTOBER, JULY = { 10, 14 }, { 7, 1 }
 
@@ -125,40 +105,21 @@ describe("Stars", function()
 	---@return PagleCast
 	local function cast(zone, itemIDs, minute, date)
 		seq = seq + 1
-		local id = "Player-4618-0A1B2C3D-" .. (T0 + seq) .. "-" .. seq
-		local items = {}
-		for n, itemID in ipairs(itemIDs) do
-			items[n] = { n = n, itemID = itemID, quantity = 1, catchId = id .. ":" .. n }
-		end
 		date = date or OCTOBER
-		return {
+		return castRecord({
 			seq = seq,
-			id = id,
-			kind = "cast",
-			char = 1,
 			time = T0 + seq * 60,
-			outcome = "caught",
-			session = "s",
-			conditions = {
-				time = T0 + seq * 60,
-				zone = zone,
-				subzone = 0,
-				minute = minute or NOON,
-				date = { year = 2026, month = date[1], day = date[2], weekday = 1 },
-				events = {},
-				auras = {},
-			},
-			items = items,
-		}
+			zone = zone,
+			minute = minute or NOON,
+			date = { year = 2026, month = date[1], day = date[2], weekday = 1 },
+			items = itemIDs,
+		})
 	end
 
 	-- Applies each record live to `state` (a fresh one by default); returns the state and the star achievements.
 	local function applyAll(records, state)
-		state = state or fold.reset()
-		local earned = {}
-		for _, record in ipairs(records) do
-			fold.apply(state, record, "live", earned)
-		end
+		local earned
+		state, earned = applyLive(fold, records, state)
 		local stars = {}
 		for _, achievement in ipairs(earned) do
 			local kind = achievement.kind
@@ -263,6 +224,29 @@ describe("Stars", function()
 		end)
 	end)
 
+	describe("progress towards ★★ (LED-R45, LED-R142)", function()
+		it(
+			"counts element windows met of all of them, else distinct zones of min(3, listed), stopping at the need (LED-R45, LED-R142)",
+			function()
+				local state = applyAll({
+					cast(WESTFALL, { SEASONFISH }, NOON, JULY),
+					cast(ELWYNN, { WIDEFISH }),
+					cast(ELWYNN, { WIDEFISH }),
+					cast(WESTFALL, { WIDEFISH }),
+					cast(ELWYNN, { LONEFISH }),
+					cast(WESTFALL, { LONEFISH }),
+				})
+
+				local function progress(id)
+					return { ns.ElementProgress(world.species[id], state.species[id]) }
+				end
+				assert.are.same({ 1, 2 }, progress(SEASONFISH))
+				assert.are.same({ 2, 3 }, progress(WIDEFISH))
+				assert.are.same({ 1, 1 }, progress(LONEFISH))
+			end
+		)
+	end)
+
 	describe("Regular (LED-R45)", function()
 		it(
 			"earns regularStar at the 50th Catch of a Species, once, and nothing at the 51st (LED-R45, Tunables)",
@@ -321,7 +305,7 @@ describe("Stars", function()
 			assert.are.same({
 				{ kind = "familyStar", cast = second.id, coins = 0, family = FAMILY, stars = { 2 } },
 			}, stars)
-			assert.are.same({ [1] = true, [2] = true }, ns.FamilyStars(world, state, FAMILY, getItem))
+			assert.are.same({ [1] = true, [2] = true }, ns.FamilyStars(world, state, FAMILY))
 		end)
 
 		it(
@@ -335,7 +319,7 @@ describe("Stars", function()
 				assert.are.same({
 					{ kind = "familyStar", cast = heaviest.id, coins = 0, family = FAMILY, stars = { 3 } },
 				}, stars)
-				assert.are.same({ [1] = true, [3] = true }, ns.FamilyStars(world, state, FAMILY, getItem))
+				assert.are.same({ [1] = true, [3] = true }, ns.FamilyStars(world, state, FAMILY))
 
 				local _, later = applyAll({ second }, state)
 				assert.are.same(
@@ -349,8 +333,8 @@ describe("Stars", function()
 			local state, stars = applyAll({ cast(ELWYNN, { W70 }), cast(ELWYNN, { LOOSE }) })
 
 			assert.are.same({}, stars)
-			assert.are.same({ [1] = true }, ns.FamilyStars(world, state, FAMILY, getItem))
-			assert.are.same({ [1] = true }, ns.FamilyStars(world, state, LOOSE_FAMILY, getItem))
+			assert.are.same({ [1] = true }, ns.FamilyStars(world, state, FAMILY))
+			assert.are.same({ [1] = true }, ns.FamilyStars(world, state, LOOSE_FAMILY))
 		end)
 
 		it(
@@ -369,7 +353,7 @@ describe("Stars", function()
 		)
 
 		it("has no stars before a weight is landed (LED-R47)", function()
-			assert.are.same({}, ns.FamilyStars(world, fold.reset(), FAMILY, getItem))
+			assert.are.same({}, ns.FamilyStars(world, fold.reset(), FAMILY))
 		end)
 	end)
 
@@ -387,14 +371,14 @@ describe("Stars", function()
 			local state = applyAll({ cast(ELWYNN, { W40 }) })
 			local celebrated = { familyStars = { [FAMILY] = { [2] = true } } }
 
-			assert.are.same({ [1] = true, [2] = true }, ns.ShownFamilyStars(world, state, celebrated, FAMILY, getItem))
+			assert.are.same({ [1] = true, [2] = true }, ns.ShownFamilyStars(world, state, celebrated, FAMILY))
 		end)
 
 		it("shows the computed stars alone while the celebrated set has no star keys (LED-R48)", function()
 			local state = applyAll({ cast(ELWYNN, { W40 }), cast(ELWYNN, { NIGHTFISH }, MIDNIGHT) })
 
 			assert.are.same({ [1] = true, [2] = true }, ns.ShownSpeciesStars(world, state, {}, NIGHTFISH))
-			assert.are.same({ [1] = true }, ns.ShownFamilyStars(world, state, {}, FAMILY, getItem))
+			assert.are.same({ [1] = true }, ns.ShownFamilyStars(world, state, {}, FAMILY))
 		end)
 	end)
 end)

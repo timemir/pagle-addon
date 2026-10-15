@@ -83,6 +83,7 @@ end
 ---@field lines? PagleCardLines[]
 ---@field moments? PagleCardMoments[]
 ---@field writeUp? PagleWriteUpStored[]
+---@field preview? true          -- a `/pagle dev preview card` sample (#247): stored nowhere, ends no waiting count
 
 --- What the cards are fed. Every function is called when needed, never stored.
 ---@class PagleCardsOptions
@@ -148,6 +149,23 @@ function Cards:Next()
 		self.showing = card
 		self.options.show(card)
 	end
+end
+
+--- `/pagle dev preview card` (#247): puts `card` on screen now, in place of the card showing (which shows again once
+--- it's closed, as it stays stored). Cards wait for the lanes and login only to keep their order; a preview doesn't,
+--- but it holds through combat like any card (ANN-R35). Returns false, showing nothing, while held.
+---@param card PagleCard
+---@return boolean shown
+function Cards:Preview(card)
+	if self.options.held() then
+		return false
+	end
+	if self.showing then
+		self.options.hide(self.showing)
+	end
+	self.showing = card
+	self.options.show(card)
+	return true
 end
 
 --- A restriction started (ANN-R35): the card on screen goes off it unclosed, so it stays in global.cards (or its

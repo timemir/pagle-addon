@@ -3,7 +3,7 @@
 
 describe("the ink XP bar", function()
 	local ns = loadAddon("Pagle_Ledger", FOREVER_GLOBALS).ns
-	local NOW = 1791731700
+	local NOW = SERVER_TIME
 
 	-- A state at `xp` with Fresh Water `fresh` as of now (no refill), at prestige rank 0.
 	---@param xp integer

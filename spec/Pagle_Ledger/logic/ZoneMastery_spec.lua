@@ -13,45 +13,26 @@ local GATED, STRAY = 13761, 6290
 
 local LAKE, COVE, FAR, MARSH, BLANK = 12, 40, 44, 10, 14
 
--- A fish item of Species `species` (DATA-R19).
-local function fish(species)
-	return { category = "fish", species = species, legend = false, noise = false, removed = false, pool = false }
-end
-
--- A non-fish item of `category`.
-local function thing(category, fields)
-	local item = { category = category, legend = false, noise = false, removed = false, pool = false }
-	for key, value in pairs(fields or {}) do
-		item[key] = value
-	end
-	return item
-end
-
 local ITEMS = {
-	[ANY_1] = fish(ANY_1),
-	[ANY_2] = fish(ANY_2),
-	[ANY_2B] = fish(ANY_2),
-	[ANY_3] = fish(ANY_3),
-	[NIGHT] = fish(NIGHT),
-	[EVENT] = fish(EVENT),
-	[GATED] = fish(GATED),
-	[STRAY] = fish(STRAY),
-	[JUNK] = thing("junk"),
-	[CHEST] = thing("container"),
-	[TREASURE] = thing("treasure"),
-	[OTHER] = thing("other"),
-	[TROPHY_1] = thing("trophy", { family = 1, weight = 19 }),
-	[TROPHY_1B] = thing("trophy", { family = 1, weight = 22 }),
-	[TROPHY_2] = thing("trophy", { family = 2, weight = 8 }),
+	[ANY_1] = fishRecord(ANY_1),
+	[ANY_2] = fishRecord(ANY_2),
+	[ANY_2B] = fishRecord(ANY_2),
+	[ANY_3] = fishRecord(ANY_3),
+	[NIGHT] = fishRecord(NIGHT),
+	[EVENT] = fishRecord(EVENT),
+	[GATED] = fishRecord(GATED),
+	[STRAY] = fishRecord(STRAY),
+	[JUNK] = itemRecord("junk"),
+	[CHEST] = itemRecord("container"),
+	[TREASURE] = itemRecord("treasure"),
+	[OTHER] = itemRecord("other"),
+	[TROPHY_1] = itemRecord("trophy", { family = 1, weight = 19 }),
+	[TROPHY_1B] = itemRecord("trophy", { family = 1, weight = 22 }),
+	[TROPHY_2] = itemRecord("trophy", { family = 2, weight = 8 }),
 }
 
-local NIGHT_SPEC = { time = { { 1260, 360 } } }
+local NIGHT_SPEC = NIGHT_WINDOW
 local EVENT_SPEC = { events = { 301 } }
-
--- A catch entry (LOG-R55): ungated, or gated by `window` with its spec.
-local function entry(itemID, window, gate)
-	return { itemID = itemID, confirmed = true, window = window, gate = gate, gateConfirmed = window and true or nil }
-end
 
 -- The fixture's zones, each a zone with no subzones: `hasData` and its catches (LOG-R55). Marsh has a list but no
 -- data, so it isn't charted (LED-R10); Blank has data but nothing the Ledger lists.
@@ -61,31 +42,26 @@ local function areas()
 			hasData = true,
 			skillBase = 25,
 			catches = {
-				entry(ANY_1),
-				entry(ANY_2),
-				entry(ANY_2B),
-				entry(ANY_3),
-				entry(NIGHT, "night", NIGHT_SPEC),
-				entry(EVENT, "event.301", EVENT_SPEC),
-				entry(JUNK),
-				entry(CHEST),
-				entry(TROPHY_1),
-				entry(TROPHY_2),
+				catchEntry(ANY_1),
+				catchEntry(ANY_2),
+				catchEntry(ANY_2B),
+				catchEntry(ANY_3),
+				catchEntry(NIGHT, "night", NIGHT_SPEC),
+				catchEntry(EVENT, "event.301", EVENT_SPEC),
+				catchEntry(JUNK),
+				catchEntry(CHEST),
+				catchEntry(TROPHY_1),
+				catchEntry(TROPHY_2),
 			},
 		},
-		[COVE] = { hasData = true, catches = { entry(GATED, "night", NIGHT_SPEC), entry(TROPHY_1B) } },
-		[FAR] = { hasData = true, catches = { entry(STRAY) } },
-		[MARSH] = { hasData = false, catches = { entry(ANY_1) } },
-		[BLANK] = { hasData = true, catches = { entry(OTHER) } },
+		[COVE] = { hasData = true, catches = { catchEntry(GATED, "night", NIGHT_SPEC), catchEntry(TROPHY_1B) } },
+		[FAR] = { hasData = true, catches = { catchEntry(STRAY) } },
+		[MARSH] = { hasData = false, catches = { catchEntry(ANY_1) } },
+		[BLANK] = { hasData = true, catches = { catchEntry(OTHER) } },
 	}
 end
 
----@param itemID integer
----@return PagleItem?
-local function getItem(itemID)
-	assert(itemID ~= 0, "item 0 is never looked up (LED-R5)")
-	return ITEMS[itemID]
-end
+local getItem = itemLookup(ITEMS)
 
 -- Core's lookups over `areaTable` (LOG-R55): zones ascending, each catch with its areaID.
 local function lookups(areaTable)
@@ -115,7 +91,7 @@ local function lookups(areaTable)
 	}
 end
 
-local T0 = 1791731000
+local T0 = SERVER_TIME - 700
 
 -- Records the way the Catch log hands them out (LOG-R42): one caught Cast per call, a minute apart.
 local function newLog()
@@ -125,23 +101,7 @@ local function newLog()
 	---@return PagleCast
 	return function(zone, itemIDs)
 		seq = seq + 1
-		local id = "Player-4618-0A1B2C3D-" .. seq
-		local items = {}
-		for n, itemID in ipairs(itemIDs) do
-			items[n] = { n = n, itemID = itemID, quantity = 1, catchId = id .. ":" .. n }
-		end
-		local time = T0 + 60 * seq
-		return {
-			seq = seq,
-			id = id,
-			kind = "cast",
-			char = 1,
-			time = time,
-			outcome = "caught",
-			session = "s",
-			conditions = { time = time, zone = zone, subzone = 0, minute = 0, events = {}, auras = {} },
-			items = items,
-		}
+		return castRecord({ seq = seq, time = T0 + 60 * seq, zone = zone, minute = 0, items = itemIDs })
 	end
 end
 
@@ -163,12 +123,7 @@ describe("Zone Mastery", function()
 
 	-- Applies each record live to `state` (a fresh one if nil); returns it and every achievement earned, in order.
 	local function applyAll(records, state)
-		state = state or fold.reset()
-		local earned = {}
-		for _, record in ipairs(records) do
-			fold.apply(state, record, "live", earned)
-		end
-		return state, earned
+		return applyLive(fold, records, state)
 	end
 
 	-- The `zoneRank` achievements among `earned`.
@@ -373,29 +328,32 @@ describe("Zone Mastery", function()
 	end
 
 	describe("zone completion (LED-R53)", function()
-		it("counts Lake's 5 listed Species, 2 families, junk and treasure: 9 parts, 100 only at Master", function()
-			local state = fold.reset()
-			assert.are.equal(0, ns.ZoneCompletion(world, state, LAKE))
+		it(
+			"counts Lake's 5 listed Species, 2 families, junk and treasure: 9 parts, 100 only at Master (LED-R53)",
+			function()
+				local state = fold.reset()
+				assert.are.equal(0, ns.ZoneCompletion(world, state, LAKE))
 
-			local seen = {}
-			for _, items in ipairs({
-				{ ANY_1 },
-				{ JUNK },
-				{ NIGHT },
-				{ ANY_2B },
-				{ EVENT },
-				{ ANY_3, CHEST },
-				{ TROPHY_1 },
-				{ TROPHY_2 },
-			}) do
-				applyAll({ cast(LAKE, items) }, state)
-				local completion = ns.ZoneCompletion(world, state, LAKE)
-				seen[#seen + 1] = completion
-				assert.are.equal(state.zones[LAKE].rank == 5, completion == 100)
+				local seen = {}
+				for _, items in ipairs({
+					{ ANY_1 },
+					{ JUNK },
+					{ NIGHT },
+					{ ANY_2B },
+					{ EVENT },
+					{ ANY_3, CHEST },
+					{ TROPHY_1 },
+					{ TROPHY_2 },
+				}) do
+					applyAll({ cast(LAKE, items) }, state)
+					local completion = ns.ZoneCompletion(world, state, LAKE)
+					seen[#seen + 1] = completion
+					assert.are.equal(state.zones[LAKE].rank == 5, completion == 100)
+				end
+
+				assert.are.same({ 11, 22, 33, 44, 55, 77, 88, 100 }, seen)
 			end
-
-			assert.are.same({ 11, 22, 33, 44, 55, 77, 88, 100 }, seen)
-		end)
+		)
 
 		it("is nil for a zone that isn't charted, fished or not (LED-R54)", function()
 			local state = applyAll({ cast(MARSH, { ANY_1 }) })
@@ -412,7 +370,7 @@ describe("Zone Mastery", function()
 		end
 
 		it(
-			"shows Expert for a celebrated 4 over a computed 3, with 2 gated Species and the treasure to find",
+			"shows Expert for a celebrated 4 over a computed 3, with 2 gated Species and the treasure to find (LED-R52)",
 			function()
 				local state = lakeAtLocal()
 				local celebrated = celebratedWith({ [LAKE] = 4 })
@@ -432,18 +390,21 @@ describe("Zone Mastery", function()
 			assert.are.equal(1 + 1 + 4 + 2, ns.NewToFind(world, state, celebrated, LAKE))
 		end)
 
-		it("shows the computed rank, with nothing new to find, when the celebrated one isn't higher", function()
-			local state = lakeAtLocal()
+		it(
+			"shows the computed rank, with nothing new to find, when the celebrated one isn't higher (LED-R52)",
+			function()
+				local state = lakeAtLocal()
 
-			for _, celebrated in ipairs({
-				celebratedWith(),
-				celebratedWith({ [LAKE] = 0 }),
-				celebratedWith({ [LAKE] = 3 }),
-			}) do
-				assert.are.equal(3, ns.ShownZoneRank(world, state, celebrated, LAKE))
-				assert.are.equal(0, ns.NewToFind(world, state, celebrated, LAKE))
+				for _, celebrated in ipairs({
+					celebratedWith(),
+					celebratedWith({ [LAKE] = 0 }),
+					celebratedWith({ [LAKE] = 3 }),
+				}) do
+					assert.are.equal(3, ns.ShownZoneRank(world, state, celebrated, LAKE))
+					assert.are.equal(0, ns.NewToFind(world, state, celebrated, LAKE))
+				end
 			end
-		end)
+		)
 
 		it("shows no rank for a zone that isn't charted, its celebrated rank kept but unused (LED-R54)", function()
 			local state = applyAll({ cast(MARSH, { ANY_1 }) })
@@ -465,7 +426,7 @@ describe("Zone Mastery", function()
 			return ns.NextRequirement(world, state, celebratedWith({ [LAKE] = rank }), LAKE)
 		end
 
-		it("reads from the shown rank, rank by rank up Lake's climb", function()
+		it("reads from the shown rank, rank by rank up Lake's climb (LED-R134)", function()
 			assert.are.equal("Catch anything here to become a Visitor", nextFor({}))
 			assert.are.equal("Regular: 2 more any-time Species", nextFor({ { JUNK } }))
 			assert.are.equal("Regular: 1 more any-time Species", nextFor({ { ANY_1 } }))
@@ -506,11 +467,11 @@ describe("Zone Mastery", function()
 			)
 		end)
 
-		it("puts new to find in place of Master of these waters at a celebrated Master", function()
+		it("puts new to find in place of Master of these waters at a celebrated Master (LED-R134)", function()
 			assert.are.equal("8 new to find: the data grew, and your seal stays", nextFor({ { ANY_1 } }, 5))
 		end)
 
-		it("is new to find alone when the rank above the shown one needs nothing more of its own", function()
+		it("is new to find alone when the rank above the shown one needs nothing more of its own (LED-R134)", function()
 			-- Shown Local over a computed Visitor, with Expert's own parts all met.
 			assert.are.equal(
 				"2 new to find: the data grew, and your seal stays",

@@ -1,5 +1,6 @@
 -- What QoL never does (QOL-R3, QOL-R6) and the edge cases where it has nothing to do (QOL-R91, QOL-R92, QOL-R95,
--- QOL-R96), checked over every file QoL ships: each name below fails the spec wherever QoL's code says it.
+-- QOL-R96), checked over every file QoL ships: each name below fails the spec wherever QoL's code says it. And what
+-- its logic/ never does (CORE-R7), checked over every file there.
 
 local DIR = "addons/Pagle_QoL/"
 
@@ -42,6 +43,12 @@ local FORBIDDEN = {
 	{ "&#[xX]0*[aAdD];", "QOL-R6: no line break, so no macro text with a second command" },
 }
 
+-- Each thing logic/ never does besides (CORE-R7), as above. luacheck's per-path std keeps WoW globals out of logic/,
+-- but PagleQoLDB is reached through the addon's own table, which no std can see.
+local FORBIDDEN_IN_LOGIC = {
+	{ "%f[%w_]ns%.db%f[^%w_]", "CORE-R7: logic/ is passed what it reads of PagleQoLDB, never ns.db" },
+}
+
 -- QOL-R6, QOL-R83: the one ReloadUI() QoL may call, the OnAccept of the Reload now popup in adapter/Conflict.lua,
 -- whose first button says "Reload now". It runs only when that button is clicked (StaticPopup_OnClick), never on
 -- load, an event or a timer. The pattern captures the code around the call, so that call alone can be taken out.
@@ -61,6 +68,13 @@ local function offences(text, path)
 	return forbiddenIn(code, FORBIDDEN)
 end
 
+-- Each thing logic/ never does that the code says, as "<why>: <match>" (CORE-R7).
+---@param text string
+---@return string[]
+local function logicOffences(text)
+	return forbiddenIn(withoutComments(text), FORBIDDEN_IN_LOGIC)
+end
+
 describe("QoL's boundary", function()
 	it("covers both the Lua and the XML QoL ships", function()
 		local files = shippedFiles(DIR)
@@ -73,6 +87,11 @@ describe("QoL's boundary", function()
 		it(path .. " does nothing QOL-R3 and QOL-R6 forbid (QOL-R91, QOL-R92, QOL-R95, QOL-R96)", function()
 			assert.are.same({}, offences(readFile(path), path))
 		end)
+		if path:find("/logic/", 1, true) then
+			it(path .. " never reads ns.db (CORE-R7)", function()
+				assert.are.same({}, logicOffences(readFile(path)))
+			end)
+		end
 	end
 
 	it("calls ReloadUI() from the Reload now button alone (QOL-R6, QOL-R83)", function()
@@ -116,6 +135,13 @@ describe("QoL's boundary", function()
 				assert.are.equal(case[2], found[1]:sub(1, #case[2]))
 			end)
 		end
+
+		it("ns.db in logic/, but not ns.dbx or a comment's ns.db (CORE-R7)", function()
+			local found = logicOffences("return ns.db.profile.input")
+
+			assert.are.same({ "CORE-R7: logic/ is passed what it reads of PagleQoLDB, never ns.db: ns.db" }, found)
+			assert.are.same({}, logicOffences("local x = ns.dbx -- ns.db"))
+		end)
 
 		-- QOL-R6: the one ReloadUI() QoL may make, from a click on the Reload now popup's button (QOL-R83).
 		local PLANTED_RELOAD = table.concat({

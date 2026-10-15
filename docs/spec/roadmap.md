@@ -128,6 +128,8 @@ Input isn't built yet, so the Fishing key is always armed (as under *Both*), and
 
 Each step's rows take their place in SET-R20's order.
 
+**Added after the M1 exit check (#114):** QOL-R20 step 2's "unless the reel didn't take" and QOL-R35, recasting when a reel didn't take. It has no settings row and is checked before the exit check. In-game check: cast so the bobber lands beyond interact range, and press once: nothing reels, and from half a second later the next-action button shows Cast; the next press casts a new bobber, and a press on it in range reels.
+
 **Exit check** (after step 6), on one character with a fishing set chosen, lures and exactly one clam in the bags, standing at water with no pole in hand, Input *Both*, using only the Fishing key: presses equip the set, apply the best lure and cast; a press reels; after the loot, a press opens a clam, the next casts. A double right-click casts. The music stays muted until the stretch ends; mounting ends it, restores every leased CVar and shows the swap-back Nudge, and Swap gear swaps back. Every rule of `qol.md` is now built except QOL-R100–R104 (M8).
 
 ## M2 Ledger core
@@ -188,9 +190,10 @@ Ledger slice 2: the Journal book (Species, Zone Mastery, Sub-collections, Trophy
 
 **Core rules:**
 - CORE-R40's "Help chart the waters" button, CORE-R50's "Help chart the waters" entry, CORE-R61's `report`
+- CORE-R9 (the characters the client's fonts have, #248), which every later milestone keeps
 - LOG-R78 for the Field report projection
 - LOG-R50 (`Pagle.NextWindow`), for LED-R127's window states
-- every rule in `field-report.md`: REP-R1–R5, REP-R10–R12, REP-R20–R23, REP-R25, REP-R26, REP-R30–R33, REP-R35–R37, REP-R40–R46, REP-R90–R96
+- every rule in `field-report.md`: REP-R1–R5, REP-R10–R12, REP-R20–R23, REP-R25, REP-R26, REP-R30–R33, REP-R35–R37, REP-R40–R47, REP-R90–R96
 
 **Content data rules:**
 - DATA-R8 for `data/observed/reports/`; DATA-R115–R123 (Field report intake: the issue form, the parser, the triage Action, the importer, `pooltext.toml`)
@@ -204,7 +207,7 @@ Ledger slice 2: the Journal book (Species, Zone Mastery, Sub-collections, Trophy
 - LED-R88 for curio items, trophy weights and Zone Mastery ranks
 - LED-R95's completion part
 - LED-R97 for `zoneMaster`, `trophyWeight`, `zoneRank`, `newCurio`, `elementStar`, `regularStar`, `familyStar` and `uncharted`
-- LED-R120–R128, LED-R130–R136, LED-R137 without its zonemaster line, LED-R138, LED-R140 without its size line, LED-R141–R145
+- LED-R120–R136, LED-R137 without its zonemaster line, LED-R138, LED-R140 without its size line, LED-R141–R145
 - LED-R146 for the bookplate without title, Prestige and the Catch Milestone part, and for "Hands on the Rod" and "Milestones"
 - LED-R148 for zones and Species, LED-R149 without the title
 - LED-R160 for the `species`, `legend`, `sub`, `family` and `line` keys (the M3 lore batch), LED-R161, LED-R162 (its M3 part)
@@ -306,7 +309,7 @@ Legends, titles, Simulated Size with the typical-length check on, Catch Mileston
 1. With a log from earlier milestones, enable Pagle_Stats and log in: no Write-up and nothing pops up. `/pagle stats` and the compartment entry toggle the book; the nameplate reads "{n} Casts · {m} Sessions · since {date}", and the home spread has a tile per fished zone.
 2. Open *Where I am*: rows are grouped Any time, Pools, In their window and Also caught here. An item with under 100 Casts in its scope reads "learning {n}/100"; a known one reads "about 1 in N" with its range and a scope line naming the Casts it rests on, on the right skill side.
 3. With the live tracker off, watch a Dry spell: the tracker turns on with one chat line and docks below the Hunts tracker. A 4th watch is refused with the UI error. Catch the watched item: its count reads "just now".
-4. Stop fishing for 15 minutes, then cast again: a new Session starts, and the Sessions page lists both. Nothing pops up at any point.
+4. Stop fishing for 5 minutes, then cast again: a new Session starts, and the Sessions page lists both. Nothing pops up at any point.
 5. Change a window or a catch list in content data and `/reload`: the book and tracker show their updating states, the numbers follow the new data, and nothing is announced.
 6. `scripts/check.sh` passes with `stats` in `data/checks.toml`'s `lore`, including the copy test that finds no "due" wording (STA-R58).
 

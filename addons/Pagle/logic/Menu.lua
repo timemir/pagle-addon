@@ -40,15 +40,15 @@ function ns.CurioShopMenuEntry(balance, breakUpLargeNumbers, open)
 end
 
 --- The compartment menu's entries, read now, as each opening reads them (CORE-R50, CORE-R52): for each registered
---- Module by `def.order`, its views, then its `menu` entries; then `shop` (the Curio Shop), `report` ("Help chart the
---- waters") and `last` ("Settings"). An entry whose label can't be read is left out.
+--- Module by `def.order`, its views, then its `menu` entries; then `shop` (the Curio Shop), `fieldReport` ("Help
+--- chart the waters") and `last` ("Settings"). An entry whose label can't be read is left out.
 ---@param modules PagleModule[] by def.order, as `registry:Modules()` lists them
 ---@param shop PagleMenuEntry
----@param report PagleMenuEntry
+---@param fieldReport PagleMenuEntry
 ---@param last PagleMenuEntry
 ---@param call fun(fn: function): any calls a function label; returns nil when it fails (securecallfunction)
 ---@return PagleMenuEntry[]
-function ns.CompartmentMenu(modules, shop, report, last, call)
+function ns.CompartmentMenu(modules, shop, fieldReport, last, call)
 	local entries = {}
 	local function add(label, onClick)
 		local text = ns.ReadLabel(label, call)
@@ -66,7 +66,7 @@ function ns.CompartmentMenu(modules, shop, report, last, call)
 		end
 	end
 	entries[#entries + 1] = shop
-	entries[#entries + 1] = report
+	entries[#entries + 1] = fieldReport
 	entries[#entries + 1] = last
 	return entries
 end

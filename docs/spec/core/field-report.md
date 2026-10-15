@@ -102,11 +102,12 @@ Part of [Core](README.md). A **Field report** is the text an Angler copies out o
   - Close (Esc closes it too)
   The text is built when the box opens and isn't refreshed while it stays open.
 - **REP-R41** If no row qualifies, the box says "Nothing to report. Thanks for checking!" and shows no text or URL.
-- **REP-R42** While the projection is updating, the box says "Updating… try again in a moment." and shows no text.
+- **REP-R42** While the projection is updating, the box says "Updating... try again in a moment." and shows no text.
 - **REP-R43** The box is also reached from the compartment menu entry "Help chart the waters" (with the row count when above 0, CORE-R50) and the button in Core's Settings root (CORE-R40). The Ledger's Journal calls `Pagle.OpenFieldReport()` from an Uncharted fish or a zone with no data.
 - **REP-R44** While `Pagle.IsRestricted()` is true, no entry point opens the box; each prints one chat line ("Pagle: the Field report opens after combat."). A box already open stays open.
 - **REP-R45** Nothing about the Field report ever pops up on its own: it isn't an Announcement (nothing was earned) and it isn't a Nudge.
 - **REP-R46** The issue-form URL is `https://github.com/timemir/wow-fish/issues/new?template=field-report.yml`. 1.0 accepts reports through GitHub only; players who won't use GitHub can post the text anywhere for the dev to paste in.
+- **REP-R47** The box has a fixed size, 520 × 360, centred on the screen, whatever the report's length: the report text scrolls inside it and never grows the box.
 
 ## Data
 
@@ -127,7 +128,7 @@ The format in REP-R30–R33 is a contract with the repo's parser (`docs/spec/con
 
 ## UI
 
-The report box (REP-R40–R42). Native dialog look.
+The report box (REP-R40–R42, REP-R47). Native dialog look.
 
 ## Settings
 
@@ -142,6 +143,7 @@ None of its own; the Settings root has its button (CORE-R40).
 | Reporter key | 8 hex, FNV-1a 32-bit of `logId` | REP-R36 |
 | Field report rules version | 2 | REP-R25 |
 | Format version | `PAGLE-REPORT 1` | REP-R30 |
+| Report box size | 520 × 360 | REP-R47 |
 
 ## Edge cases
 

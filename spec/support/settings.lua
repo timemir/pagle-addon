@@ -20,17 +20,15 @@
 ---@field variables table<string, table> Each Settings.RegisterProxySetting setting by its variable name, with its
 --- `category`: what a page's Defaults button restores (SET-R60).
 ---@field opened table[] The category each Settings.OpenToCategory call opened (nil for an unknown ID), in order.
----@field panel table SettingsPanel: shown by OpenToCategory and show, hidden by HideUIPanel. Showing it while hidden
---- runs its OnShow script, as the client does.
+---@field panel table SettingsPanel: shown by OpenToCategory, hidden by HideUIPanel. Showing it while hidden runs its
+--- OnShow script, as the client does.
 ---@field category fun(name: string): table? The registered category with that name, if its top-level category is
 --- registered under AddOns, as the panel lists it.
----@field show fun(category: table): { initializer: table, frame: table }[] Shows a page as the panel does: the panel
---- first, then the rows its layout's GetInitializers returns, a fresh frame per row, through its initializer's
---- InitFrame, so a row reads its value or label then. A value row's frame has `value`, a slider's `valueLabel` (its
---- Right label formatter's text, nil with none), a dropdown's `valueLabel` (the label of the option holding its value)
---- and `Control.Dropdown` (SettingsDropdownControlMixin:OnLoad), and every frame `enabled`.
---- Until the next show, a setting's SetValue or NotifyUpdate updates these frames as the panel's controls do
---- (valueChanged).
+---@field show fun(category: table): { initializer: table, frame: table }[] Shows a page as the panel does: the panel,
+--- then a fresh frame per row, through its initializer's InitFrame, so a row reads its value or label then. A value
+--- row's frame has `value`, a slider's `valueLabel` (its Right label formatter's text, nil with none), a dropdown's
+--- `valueLabel` (the label of the option holding its value), and every frame `enabled`. Until the next show, a
+--- setting's change through its own row updates these frames as the panel's controls do (valueChanged).
 ---@field defaults fun(category: table) The page's Defaults button (SettingsPanelMixin:
 --- SetCurrentCategorySettingsToDefaults): sets each setting registered on that page to its default value.
 ---@field shown { initializer: table, frame: table }[]? The rows show returned last.
@@ -114,35 +112,45 @@ local function newInitializer(template, data)
 		local formatter = formatters and formatters[2] -- MinimalSliderWithSteppersMixin.Label.Right
 		frame.valueLabel = formatter and formatter(frame.value) or nil
 	end
-	function initializer:InitFrame(frame)
+	-- The fields the Settings list reads in its own update (Blizzard_SettingsList.lua: Factory, InitFrame, Resetter,
+	-- GetExtent, GetTemplate), from ScrollBoxFactoryInitializerMixin (ScrollUtil.lua). They live in the metatable,
+	-- and writing one from outside raises an error: a field Pagle wrote there taints the list (SET-R6, #246).
+	local listReads = {}
+	-- As ScrollBoxFactoryInitializerMixin:InitFrame, a frame of a template with an Init (Core's own rows) draws
+	-- itself with frame:Init(initializer). A native control reads its value and greying instead.
+	function listReads:InitFrame(frame)
 		frame.initializer = self
-		if self.template == "SettingsDropdownControlTemplate" then
-			-- SettingsDropdownControlMixin:OnLoad's control, with its dropdown button.
-			frame.Control = newWidget("Frame", frame)
-			frame.Control.Dropdown = newWidget("DropdownButton", frame.Control)
-		end
-		if self.template == "SettingButtonControlTemplate" then
-			-- As SettingsButtonControlMixin:Init: the row's label, then a button whose caption is buttonText, called
-			-- now when it is a function (EvaluateName), and whose OnClick is buttonClick.
-			if self.data.name and self.data.name ~= "" then
-				newWidget("FontString", frame):SetText(self.data.name)
-			end
-			local button = newWidget("Button", frame)
-			local caption = self.data.buttonText
-			button:SetText(type(caption) == "function" and caption() or caption)
-			button:SetScript("OnClick", self.data.buttonClick)
-		end
 		if self.data.setting then
 			frame.value = self.data.setting:GetValue()
 			self:FormatValue(frame)
 		end
 		frame.enabled = self:EvaluateModifyPredicates()
+		if frame.Init then
+			frame:Init(self)
+		end
 	end
-	initializer.Resetter = function() end
-	initializer.GetExtent = function()
+	-- As ScrollBoxFactoryInitializerMixin:Resetter.
+	function listReads:Resetter(frame)
+		if frame.Release then
+			frame:Release(self)
+		end
+	end
+	function listReads.GetExtent()
 		return nil
 	end
-	return initializer
+	function listReads:GetTemplate()
+		return self.template
+	end
+	function listReads.Factory() end
+	return setmetatable(initializer, {
+		__index = listReads,
+		__newindex = function(self, key, value)
+			if listReads[key] then
+				error(("SET-R6: wrote %s onto an initializer, which the Settings list reads"):format(key), 2)
+			end
+			rawset(self, key, value)
+		end,
+	})
 end
 
 -- The Settings API and panel (Blizzard_Settings_Shared at the forever 1.60.1 commit, see .luacheckrc), recording
@@ -150,7 +158,7 @@ end
 ---@param client FakeClient
 ---@param stubs table<string, any> The fake client's stubs, which this adds to.
 return function(client, stubs)
-	local settings = { categories = {}, addOnCategories = {}, opened = {}, variables = {} }
+	local settings = { categories = {}, addOnCategories = {}, opened = {}, variables = {}, shown = {} }
 	client.settings = settings
 	settings.panel = newWidget("Frame")
 	settings.panel.shown = false
@@ -172,10 +180,6 @@ return function(client, stubs)
 			AddInitializer = function(self, initializer)
 				self.initializers[#self.initializers + 1] = initializer
 				return initializer
-			end,
-			-- What SettingsPanelMixin:DisplayLayout reads to show the page.
-			GetInitializers = function(self)
-				return self.initializers
 			end,
 		}
 		function category:GetID()
@@ -249,7 +253,7 @@ return function(client, stubs)
 				self.set(value)
 				settings.valueChanged(self)
 			end
-			-- As SettingMixin:NotifyUpdate: the value changed elsewhere, so the shown rows read it again.
+			-- As SettingMixin:NotifyUpdate: reads the value again and tells the shown rows it changed.
 			function setting:NotifyUpdate()
 				settings.valueChanged(self)
 			end
@@ -303,6 +307,21 @@ return function(client, stubs)
 		if addSearchTags then
 			initializer:AddSearchTags(name, buttonText)
 		end
+		-- As SettingButtonControlMixin:Init draws the row: its label (`name`, "" for none) in Text, through
+		-- SettingsListElementMixin:Init, and `buttonText` on a button that runs `buttonClick`; a function `buttonText`
+		-- is called each time the row is drawn (EvaluateName) (Blizzard_Settings_Shared/Blizzard_SettingControls.lua at
+		-- the forever 1.60.1 commit). Blizzard's own template does this, so the fake sets it raw, past the guard
+		-- against Pagle's writes.
+		local initFrame = initializer.InitFrame
+		rawset(initializer, "InitFrame", function(self, frame)
+			initFrame(self, frame)
+			frame.Text = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+			frame.Text:SetText(self.data.name)
+			frame.Button = newWidget("Button", frame)
+			local caption = self.data.buttonText
+			frame.Button:SetText(type(caption) == "function" and caption() or caption)
+			frame.Button:SetScript("OnClick", self.data.buttonClick)
+		end)
 		return initializer
 	end
 	stubs.CreateKeybindingEntryInitializer = function(bindingIndex, search)
@@ -342,11 +361,24 @@ return function(client, stubs)
 		return nil
 	end
 
+	-- A fresh list frame for `initializer`: one of a template a loaded addon's XML defines gets that template's mixin,
+	-- as the client's CreateFrame applies it.
+	local function newFrame(initializer)
+		local frame = newWidget("Frame")
+		local template = client.templates[initializer:GetTemplate()]
+		if template and template.mixin then
+			for key, value in pairs(assert(stubs[template.mixin], "no mixin " .. template.mixin)) do
+				frame[key] = value
+			end
+		end
+		return frame
+	end
+
 	function settings.show(category)
 		settings.panel:Show()
 		local rows = {}
-		for _, initializer in ipairs(category.layout:GetInitializers()) do
-			local frame = newWidget("Frame")
+		for _, initializer in ipairs(category.layout.initializers) do
+			local frame = newFrame(initializer)
 			initializer:InitFrame(frame)
 			rows[#rows + 1] = { initializer = initializer, frame = frame }
 		end
@@ -368,23 +400,26 @@ return function(client, stubs)
 		end
 	end
 
-	-- What a value change does to the rows shown last (Blizzard_SettingControls.lua): a control shows its own
-	-- setting's new value; a row re-evaluates its state when its parent's setting changes
-	-- (OnParentSettingValueChanged) or a variable it added with AddEvaluateStateCVar does.
+	-- What a value change does to the rows shown last (SettingMixin:TriggerValueChanged, Blizzard_SettingControls.lua
+	-- at the forever 1.60.1 commit): a control shows its own setting's new value and re-evaluates its state
+	-- (SettingsControlMixin:OnSettingValueChanged); a row re-evaluates its state when its parent's setting changes
+	-- (OnParentSettingValueChanged) or a variable it added with AddEvaluateStateCVar does. A keybinding row isn't a
+	-- SettingsListElementMixin (Blizzard_Keybindings.lua), so it hears none of these.
 	function settings.valueChanged(setting)
 		local variable = setting:GetVariable()
 		for _, shown in ipairs(settings.shown or {}) do
 			local initializer, frame = shown.initializer, shown.frame
-			if initializer:GetSetting() == setting then
-				frame.value = setting:GetValue()
-				initializer:FormatValue(frame)
-			end
 			local parent = initializer:GetParentInitializer()
 			local watched = parent and parent:GetSetting() == setting
 			for _, name in ipairs(initializer.evaluateStateVariables or {}) do
 				watched = watched or name == variable
 			end
-			if watched then
+			if initializer:GetSetting() == setting then
+				frame.value = setting:GetValue()
+				initializer:FormatValue(frame)
+				watched = true
+			end
+			if watched and initializer.template ~= "KeyBindingFrameBindingTemplate" then
 				frame.enabled = initializer:EvaluateModifyPredicates()
 			end
 		end

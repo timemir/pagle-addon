@@ -16,7 +16,7 @@ ns.FIELD_REPORT_URL = "https://github.com/timemir/wow-fish/issues/new?template=f
 ---@field url string?       -- the issue form (REP-R46); nil with a message
 
 --- What the box shows for `rows` (ns.FieldReportRows(): nil while the projection is updating):
---- "Updating… try again in a moment." while it updates (REP-R42), "Nothing to report. Thanks for checking!" with
+--- "Updating... try again in a moment." while it updates (REP-R42), "Nothing to report. Thanks for checking!" with
 --- no row (REP-R41), and otherwise the report's parts from `text` (ns.FieldReportText) with the issue form's URL. The
 --- URL goes with the text: with a message there's nothing to paste.
 ---@param rows PagleReportRow[]?
@@ -24,9 +24,9 @@ ns.FIELD_REPORT_URL = "https://github.com/timemir/wow-fish/issues/new?template=f
 ---@return PagleFieldReportView
 function ns.FieldReportView(rows, text)
 	if rows == nil then
-		return { message = ns.L.REPORT_UPDATING, parts = {} }
+		return { message = ns.L.FIELD_REPORT_UPDATING, parts = {} }
 	elseif #rows == 0 then
-		return { message = ns.L.REPORT_NOTHING, parts = {} }
+		return { message = ns.L.FIELD_REPORT_NOTHING, parts = {} }
 	end
 	return { parts = text(rows), url = ns.FIELD_REPORT_URL }
 end
@@ -39,7 +39,7 @@ function ns.FieldReportPartLabel(n, m)
 	if m <= 1 then
 		return nil
 	end
-	return ns.L.REPORT_PART:format(n, m)
+	return ns.L.FIELD_REPORT_PART:format(n, m)
 end
 
 --- `label`, or `labelWithCount` filled with `count` while it is above 0 (CORE-R50, SET-R10).
@@ -61,7 +61,7 @@ end
 ---@param open fun()
 ---@return PagleMenuEntry
 function ns.FieldReportMenuEntry(count, open)
-	return { label = counted(count, ns.L.MENU_FIELD_REPORT, ns.L.MENU_FIELD_REPORT_COUNT), onClick = open }
+	return { label = counted(count, ns.L.HELP_CHART, ns.L.HELP_CHART_COUNT), onClick = open }
 end
 
 --- The Settings root's button caption: "Open Field report", or "Open Field report (3)" while the Field report count
@@ -88,7 +88,7 @@ end
 function ns.OpenFieldReportFunction(seams)
 	return function()
 		if seams.isRestricted() then
-			seams.print(ns.L.REPORT_AFTER_COMBAT)
+			seams.print(ns.L.FIELD_REPORT_AFTER_COMBAT)
 			return
 		end
 		seams.show(ns.FieldReportView(seams.rows(), seams.text))

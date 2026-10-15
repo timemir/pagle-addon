@@ -26,7 +26,8 @@ local ns = select(2, ...)
 ---@field prestige integer                    -- prestige rank: 0 until the first Prestige (LED-R32)
 ---@field fresh number                        -- Fresh Water F after the last Catch (LED-R22)
 ---@field lastCatch? integer                  -- server time of the last Catch's Cast
----@field firstDate? LedgerDate               -- realm date of the first Catch of any class (LED-R146)
+---@field firstDate? LedgerDate               -- realm date of the first Catch of any class with one (LED-R146)
+---@field firstTime? integer                  -- server time of the first Catch of any class (LED-R146)
 ---@field coins integer                       -- lifetime Coins earned (LED-R88)
 ---@field skill { [integer]: integer }        -- Skill Milestone threshold -> time credited (LED-R40)
 ---@field milestones { [integer]: integer }   -- Catch Milestone -> time reached (LED-R42)
@@ -47,13 +48,9 @@ local ns = select(2, ...)
 ---@field record? LedgerRecord                -- Legend items only, from their first sized Catch (LED-R80)
 ---@field since? integer                      -- with `record`: Catches of the item after it
 
---- A Species' Catches (ledger.md › Data, LedgerSpecies) and its first Catch, as in LedgerFirst (LED-R140).
----@class LedgerSpecies
----@field n integer                           -- Catches of the Species
----@field time integer
----@field char integer
----@field zone integer
----@field date? LedgerDate
+--- A Species' Catches (ledger.md › Data, LedgerSpecies) and its first Catch, as in LedgerFirst (LED-R140). Its `zones`
+--- is a set, where an Uncharted item's counts.
+---@class LedgerSpecies: LedgerFirst
 ---@field zones { [integer]: true }           -- zones caught in (never 0)
 ---@field windowsMet? { [string]: true }     -- element windows met (LED-R45): made at its first Catch, logic/Stars.lua
 ---@field record? LedgerRecord                -- its longest Catch, from its first sized Catch (LED-R80)
@@ -107,7 +104,8 @@ local ns = select(2, ...)
 ns.LEDGER_RULES_VERSION = 3
 
 -- XP (LED-R20, Tunables), M2's rows and M3's curio items and trophy weights.
-local CATCH_XP = 10
+--- Catch XP, before Fresh Water (LED-R20); one Fresh Water doubles it (LED-R22), as the ink XP bar shows (LED-R145).
+ns.CATCH_XP = 10
 local NEW_SPECIES_XP = 500
 local SPECIES_IN_ZONE_XP = 100
 local FIRST_IN_ZONE_XP = 200
@@ -309,8 +307,9 @@ function ns.NewLedgerFold(lookups)
 			-- The base, for every class (LED-R5): lifetime Catches, Catch XP with Fresh Water, the zone fished.
 			state.catches = state.catches + 1
 			ns.CreditCatchMilestones(state, record, earned)
-			state.xp = state.xp + CATCH_XP * spendFreshWater(state, record.time)
+			state.xp = state.xp + ns.CATCH_XP * spendFreshWater(state, record.time)
 			state.firstDate = state.firstDate or copyDate(record.conditions.date)
+			state.firstTime = state.firstTime or record.time
 			local zoneState
 			if zone ~= 0 then
 				zoneState = state.zones[zone]
@@ -334,6 +333,7 @@ function ns.NewLedgerFold(lookups)
 				local species = state.species[id]
 				local new = not species
 				if not species then
+					-- A LedgerFirst until its zones set is added on the next line.
 					species = firstCatch(record) --[[@as LedgerSpecies]]
 					species.zones = {}
 					state.species[id] = species

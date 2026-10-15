@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 
 from baseline_fixture import write_baseline
+from cli_fixture import Canned, run
 from observed_fixture import i_row, report, write_observed
 from pagle_data.db2_update import main
 
@@ -83,30 +84,10 @@ def canned(**changes: bytes) -> dict[str, bytes]:
     return responses
 
 
-class Canned:
-    """A fetch that answers from a table of URLs and records what was asked."""
-
-    def __init__(self, responses: dict[str, bytes]) -> None:
-        self.responses = responses
-        self.asked: list[str] = []
-
-    def __call__(self, url: str) -> bytes:
-        self.asked.append(url)
-        if url not in self.responses:
-            raise OSError(f"no canned response for {url}")
-        return self.responses[url]
-
-
 def tree(root: Path) -> Path:
     write_baseline(root)
     write_observed(root)  # dev.toml with no facts; test_observed.py covers the layer
     return root
-
-
-def run(root: Path, capsys: pytest.CaptureFixture[str], fetch: Canned, *args: str) -> tuple[int, str]:
-    code = main(list(args), root, fetch)
-    out, err = capsys.readouterr()
-    return code, out + err
 
 
 def read(root: Path, name: str) -> str:
@@ -118,7 +99,7 @@ def test_writes_the_slice_and_a_matching_build_toml(tmp_path: Path, capsys: pyte
     # items.csv; DATA-R11: build.toml holds the build number, the version string and the products, seeded as
     # ["wow_classic_beta"] (DATA-R128).
     fetch = Canned(canned())
-    code, output = run(tree(tmp_path), capsys, fetch, "1.60.1.70338")
+    code, output = run(tree(tmp_path), capsys, "1.60.1.70338", main=main, fetch=fetch)
     assert code == 0, output
     assert sorted(fetch.asked) == sorted([AREA_URL, SPARSE_URL, ITEM_URL])
     assert read(tmp_path, "areas.csv") == AREAS
@@ -129,7 +110,7 @@ def test_writes_the_slice_and_a_matching_build_toml(tmp_path: Path, capsys: pyte
 def test_lists_the_universe_s_items_db2_lacks(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     # DATA-R23, DATA-R24 and #89: an item DB2 lacks isn't a failure (the client streams item records, and items.toml
     # may give its class and quality), but the run names it for the PR.
-    code, output = run(tree(tmp_path), capsys, Canned(canned()), "1.60.1.70338")
+    code, output = run(tree(tmp_path), capsys, "1.60.1.70338", main=main, fetch=Canned(canned()))
     assert code == 0, output
     assert "1 item(s) of the universe not in DB2 (DATA-R24): 13759" in output
 
@@ -139,7 +120,7 @@ def test_an_item_named_in_data_forever_gets_its_row(tmp_path: Path, capsys: pyte
     forever = tree(tmp_path) / "data" / "forever"
     forever.mkdir(parents=True)
     (forever / "items.toml").write_text('[item.99999]\ncategory = "other"\n', encoding="utf-8")
-    code, output = run(tmp_path, capsys, Canned(canned()), "1.60.1.70338")
+    code, output = run(tmp_path, capsys, "1.60.1.70338", main=main, fetch=Canned(canned()))
     assert code == 0, output
     assert read(tmp_path, "items.csv") == ITEMS + "99999,2,7,1,Copper Shortsword\n"
 
@@ -149,7 +130,7 @@ def test_an_item_seen_in_data_observed_gets_its_row(tmp_path: Path, capsys: pyte
     # items.csv row; a rejected row brings nothing (DATA-R50), so 13759 stays the one item DB2 lacks.
     rows = report(i_row(99999, 40), i_row(88888, 40, extra='rejected = "a client bug"\n'))
     write_observed(tree(tmp_path), reports={"bbbbbbbb": rows})
-    code, output = run(tmp_path, capsys, Canned(canned()), "1.60.1.70338")
+    code, output = run(tmp_path, capsys, "1.60.1.70338", main=main, fetch=Canned(canned()))
     assert code == 0, output
     assert read(tmp_path, "items.csv") == ITEMS + "99999,2,7,1,Copper Shortsword\n"
     assert "1 item(s) of the universe not in DB2 (DATA-R24): 13759" in output
@@ -167,7 +148,7 @@ def test_rewrites_the_slice_keeping_the_products_the_dev_listed(
     (db2 / "build.toml").write_text(
         'build = 1\nversion = "1.0.0"\nproducts = ["wow_classic_beta", "wow_classic"]\n', encoding="utf-8"
     )
-    code, output = run(tmp_path, capsys, Canned(canned()), "1.60.1.70338")
+    code, output = run(tmp_path, capsys, "1.60.1.70338", main=main, fetch=Canned(canned()))
     assert code == 0, output
     assert read(tmp_path, "areas.csv") == AREAS
     assert read(tmp_path, "items.csv") == ITEMS
@@ -180,7 +161,7 @@ def test_a_build_that_is_not_a_full_build_string_fails_before_downloading(
 ) -> None:
     # DATA-R11: build.toml needs both the build number and the version string, so the argument carries both.
     fetch = Canned({})
-    code, output = run(tree(tmp_path), capsys, fetch, build)
+    code, output = run(tree(tmp_path), capsys, build, main=main, fetch=fetch)
     assert code == 1
     assert "expected a build such as 1.60.1.70338" in output
     assert fetch.asked == []
@@ -191,7 +172,7 @@ def test_an_unknown_universe_fails_before_downloading(tmp_path: Path, capsys: py
     # DATA-R11: items.csv is cut to the item universe (DATA-R15), so without a readable baseline there is nothing
     # to cut it to.
     fetch = Canned(canned())
-    code, output = run(tmp_path, capsys, fetch, "1.60.1.70338")
+    code, output = run(tmp_path, capsys, "1.60.1.70338", main=main, fetch=fetch)
     assert code == 1
     assert "data/baseline/source.toml: missing" in output
     assert "wrote nothing" in output
@@ -233,7 +214,7 @@ def test_a_bad_response_fails_listing_the_problems_and_writes_nothing(
     db2.mkdir(parents=True)
     for name in ("areas.csv", "items.csv"):
         (db2 / name).write_text("kept\n", encoding="utf-8")
-    code, output = run(tmp_path, capsys, Canned(canned(**changes)), "1.60.1.70338")
+    code, output = run(tmp_path, capsys, "1.60.1.70338", main=main, fetch=Canned(canned(**changes)))
     assert code == 1
     assert problem in output
     assert "wrote nothing" in output
@@ -249,7 +230,7 @@ def test_a_failed_download_fails_and_writes_nothing(
     # DATA-R12, #89: the slice describes one build, so when any table can't be downloaded nothing is rewritten.
     responses = canned()
     del responses[url]
-    code, output = run(tree(tmp_path), capsys, Canned(responses), "1.60.1.70338")
+    code, output = run(tree(tmp_path), capsys, "1.60.1.70338", main=main, fetch=Canned(responses))
     assert code == 1
     # DATA-R63: every problem is reported where it sits, here the URL.
     assert f"update-db2: {url}: can't download" in output

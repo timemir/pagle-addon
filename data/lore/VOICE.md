@@ -42,14 +42,16 @@ The generator fails a batch that breaks these (DATA-R107; ticket #128 builds the
 Changed (M3 review): the `title` text row is added, and `name`'s 28 applies to every kind's `name`, as Tunables › Lore limits says.
 
 - **No line breaks** in any field.
+- **Only characters the game's fonts have:** ASCII, Latin-1 (é, ×, ·), the en and em dashes (– —), curly quotes (‘ ’ “ ”), the bullet (•) and the ellipsis (…). Arrows, stars, ticks and emoji draw as boxes, so the generator fails them in any lore file, whether or not its check is on (CORE-R9, DATA-R107).
+
+  Changed (#248, 2026-10-15): curly quotes and `…` are now allowed: `/pagle dev glyphs` showed every font Pagle uses drawing them. Straight ones (`'`, `"`, `...`) stay fine too.
 - **No `{` or `}`**, except `{zone}` in a key whose manifest entry allows it (DATA-R107, DATA-R108). In 1.0 that's only the `zonemaster` title, which isn't in the M3 batch.
 - **Never named until caught** (LED-R124): a riddle and a shared line show only for things not yet caught, so they never name the fish, Legend or item, nor use a word from its name.
 
 These aren't checked, but break the Journal or the game's text:
 
 - No quote marks around a riddle: the Journal adds them (LED-R141).
-- No `|`: WoW reads it as the start of an escape code. No emoji: the game's fonts lack them.
-- Straight apostrophes and quotes (`'`, `"`), as in the game's own names ("Keefer's Angelfish").
+- No `|`: WoW reads it as the start of an escape code.
 
 ## Each kind
 
@@ -68,7 +70,7 @@ text = "Something odd is still out there."
 
 ### Species riddle (`species.<id>.riddle`, 80)
 
-Shown on an uncaught Species' page, in quotes, above a "Read the plain hint ▸" link (LED-R141). The plain hint is generated from the catalogue and gives the facts (DATA-R112), so the riddle only sets the scene: a **kind** of place or time, never an exact zone, hour or skill.
+Shown on an uncaught Species' page, in quotes, above a "Read the plain hint »" link (LED-R141). The plain hint is generated from the catalogue and gives the facts (DATA-R112), so the riddle only sets the scene: a **kind** of place or time, never an exact zone, hour or skill.
 
 - Place: a kind of water and a kind of land. "lazy rivers", "cold, rocky coasts", "dwarf country", "the lands where heroes begin", "warm southern seas".
 - Time, matching the Species' windows: day "while the sun is up"; night "after the sun goes down"; summer "the warm half of the year"; winter "once the year turns cold"; the Extravaganza "while the jungle's great contest is on".
@@ -199,13 +201,14 @@ Choices this draft made that the specs don't settle. Ticket #130 confirms or cha
 9. **The prototype's riddle for Darkshore Grouper** ("Only off the shore it's named for.", P333) isn't used: it pins one zone through the fish's name. Allow word-play riddles like it, or not?
 10. **Edited prototype lines** (marked "changed" above): Bristle Whisker Catfish, Winter Squid and Deviate Fish riddles; Brilliant Smallfish and Deviate Fish blurbs; the Old Skull plaque; the `uncaughttreasure` line's capital and full stop. The M3 review adds the Loch Frenzy and Sunscale Salmon riddles, and marks P334 ("Looks bad, smells worse.") as trimmed.
 
-Added after the M3 review: rules this draft makes that DATA-R110 doesn't have (11–14), how close a riddle may get (15), and what the review changed here (16).
+Added after the M3 review: rules this draft makes that DATA-R110 doesn't have (11–14), how close a riddle may get (15), what the review changed here (16), and the day and night windows' overlap (17).
 
 11. **Nothing about patches, expansions or other versions of the game** ("In-world only"). DATA-R110 forbids only real-world references and memes.
 12. **Not the addon talking**: no Pagle, its systems or its capitalised terms in lore. DATA-R110 doesn't say it, and it clashes with LED-R75's working level titles "Ledgerkeeper" (level 50) and "Pagle's Peer" (level 60), which name the Ledger and Pagle, while this guide lets their batch (M4) keep the working names. Either titles are an exception, or the M4 batch renames those two.
 13. **No exclamation marks.** Not in DATA-R110.
 14. **Faction-neutral.** Not in DATA-R110.
-15. **How close a riddle may get** (with 9). "Never an exact zone" (DATA-R110) can't hold for a Species listed in one zone: Loch Frenzy lives only in Loch Modan, so any true riddle narrows to it. The review softened the two samples that pinned a zone through a landmark, Loch Frenzy's "a great dammed lake" (Loch Modan's dam) and Deviate Fish's "a cave of bad dreams" (the Wailing Caverns), to the lines the Ledger's batch (#131) ships. Allow a landmark, or only a kind of land and water?
+15. **How close a riddle may get** (with 9). "Never an exact zone" (DATA-R110) can't hold for a Species listed in one zone: Loch Frenzy lives only in Loch Modan, so any true riddle narrows to it. The review softened the two samples that pinned a zone through a landmark, Loch Frenzy's "a great dammed lake" (Loch Modan's dam) and Deviate Fish's "a cave of bad dreams" (the Wailing Caverns), to the lines the Ledger's batch (#131) ships. Allow a landmark, or only a kind of land and water? The second M3 review softened seven more of the batch's riddles that pinned a zone through a landmark or a zone's name in plain words (Spotted Sunfish's gnolls, Whimsyfin's "red hills", Feralas Ahi's giants, Sar'theris Striker's centaur clans, Misty Reed Mahi Mahi's tall grass, Zulian Mudskunk's troll ruins, Large Raw Mightfish's drowned ruins) to a kind of land and water, and `scripts/tests/test_repo_lore.py` now fails a riddle with any of those landmark words.
 16. **What the M3 review changed, and where these samples still differ from the Ledger's batch** (#131, drafted from this draft before #130).
     - Changed: Hard rules' `title` text row and `name` for every kind; the Sunscale Salmon, Loch Frenzy and Deviate Fish riddles, now the batch's lines (Loch Frenzy's in the TOML example too); the "changed: trimmed" mark on P334; choices 11–16.
     - Still different: the batch ships the new `uncaughtjunk` line (the TOML example above shows the prototype's) and the prototype's line for the other three (choice 2); its Sickly Looking Fish blurb is P334 in full; and it doesn't use P314's "Cold, rocky coasts of the middle lands." for Rockscale Cod (the Do example under Dos and don'ts, and "cold, rocky coasts" under the riddle's places), since the catalogue lists it on warm coasts too and "rocky" echoes its name.
+17. **"Day" and "night" wording under-describes the windows** (#175). The day window runs 06:00–24:00 and the night window 18:00–12:00, so they overlap from 18:00 to 24:00 and from 06:00 to 12:00: a day fish also bites after dark, and a night fish in the morning. The riddle phrases above ("while the sun is up", "after the sun goes down") stay as a kind of time, but no line may say a fish bites *only* by day or *only* at night; the second M3 review dropped "only" from the Lightning Eel riddle and the Sunscale Salmon blurb, and `scripts/tests/test_repo_lore.py` fails such a line. Keep the sun-and-dark phrases, or name the long windows ("from sunrise into the late evening")?

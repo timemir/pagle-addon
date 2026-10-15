@@ -13,12 +13,52 @@
 ---@field hover fun(text: any) Shows the tooltip of a world object whose first line is `text`, as the mouse going over
 --- it does: data.type is Object (4) and data.lines[1].leftText is `text`.
 ---@field showTooltip fun(type: integer, data: table) Runs the post-calls for a tooltip of `type` filled with `data`.
----@field gameTooltip { owner: table?, anchor: string?, lines: string[], shown: boolean } GameTooltip as the addon
---- filled it last: SetOwner's owner and anchor, the lines (SetText's, then each AddLine's), and Show or Hide.
+---@field tooltipLines fun(): string[] The texts an addon put on GameTooltip since its last SetOwner or ClearLines,
+--- each side of a double line on its own, while it is shown; none while it is hidden.
+
+-- GameTooltip, the game's own tooltip frame, as far as an addon fills it for its own frame: SetOwner, ClearLines,
+-- SetText, AddLine, AddDoubleLine, Show, Hide and IsOwned. It keeps what specs read back: `owner` (nil once hidden),
+-- `anchor`, `text` (SetText's line) and every line, which `client.tooltipLines()` reads.
+--
+--   loaded.env.GameTooltip.text        -- the line it shows, while `shown`
+--   loaded.client.tooltipLines()       -- every line it shows
+
+---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
+local newWidget = dofile("spec/support/widgets.lua").newWidget
 
 ---@param client FakeClient
 ---@param stubs table<string, any> The fake client's stubs, which this adds to.
 return function(client, stubs)
+	local gameTooltip = newWidget("GameTooltip", stubs.UIParent)
+	gameTooltip.shown = false
+	local lines = {} -- since its last SetOwner or ClearLines, each side of a double line on its own
+	function gameTooltip:SetOwner(owner, anchor)
+		self.owner, self.anchor, self.text = owner, anchor, nil
+		lines = {}
+	end
+	function gameTooltip:ClearLines()
+		self.text = nil
+		lines = {}
+	end
+	function gameTooltip:SetText(text)
+		self.text = text
+		lines = { text }
+	end
+	function gameTooltip.AddLine(_, text)
+		lines[#lines + 1] = text
+	end
+	function gameTooltip.AddDoubleLine(_, left, right)
+		lines[#lines + 1] = left
+		lines[#lines + 1] = right
+	end
+	function gameTooltip:Hide()
+		self.shown, self.owner = false, nil
+	end
+	function gameTooltip:IsOwned(frame)
+		return self.owner == frame
+	end
+	stubs.GameTooltip = gameTooltip
+
 	-- The forever dump's LuaEnum.lua at BIR_COMMIT (scripts/tools.env), as far as specs use it.
 	stubs.Enum.TooltipDataType = { Item = 0, Spell = 1, Unit = 2, Corpse = 3, Object = 4 }
 
@@ -33,6 +73,14 @@ return function(client, stubs)
 
 	local tooltip = {} -- GameTooltip, as far as a post-call sees it here: never read
 
+	function client.tooltipLines()
+		local copy = {}
+		for i, line in ipairs(gameTooltip.shown and lines or {}) do
+			copy[i] = tostring(line)
+		end
+		return copy
+	end
+
 	function client.showTooltip(tooltipType, data)
 		for _, key in ipairs({ "ALL", tooltipType }) do
 			for _, func in ipairs(postCalls[key] or {}) do
@@ -40,28 +88,6 @@ return function(client, stubs)
 			end
 		end
 	end
-
-	-- GameTooltip as an addon fills it: its owner, its lines (SetText starts them, AddLine adds one) and whether it is
-	-- shown, in client.gameTooltip.
-	client.gameTooltip = { lines = {}, shown = false }
-	local shown = client.gameTooltip
-	stubs.GameTooltip = {
-		SetOwner = function(_, owner, anchor)
-			shown.owner, shown.anchor, shown.lines = owner, anchor, {}
-		end,
-		SetText = function(_, text)
-			shown.lines = { text }
-		end,
-		AddLine = function(_, text)
-			shown.lines[#shown.lines + 1] = text
-		end,
-		Show = function()
-			shown.shown = true
-		end,
-		Hide = function()
-			shown.shown = false
-		end,
-	}
 
 	function client.hover(text)
 		local Object = stubs.Enum.TooltipDataType.Object

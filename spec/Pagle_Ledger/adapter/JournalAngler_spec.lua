@@ -6,38 +6,23 @@
 
 local MACKEREL, NIGHTFISH, BOOT, CHEST, TROPHY = 6303, 13759, 2, 3, 13901
 local ELWYNN, DUSKWOOD = 12, 10
-local T0 = 1791731000 -- Sunday 11 October 2026, 15:03 UTC; realm minute 494 makes it 11 Oct on the realm too
+local T0 = SERVER_TIME - 700 -- Sunday 11 October 2026, 15:03 UTC; realm minute 494 makes it 11 Oct on the realm too
 
 -- A catalogue in the shape of ns.catalogue (DATA-R76): Elwynn charted, listing two Species (one gated at night), a
 -- piece of junk, a chest and a trophy; Duskwood without data. So Ledger completion's world is 2 Species, 1 junk,
 -- 1 treasure, 1 trophy weight and 1 charted zone (LED-R70, LED-R71).
 local function catalogue()
-	local night = { time = { { 1260, 360 } } }
-	local function item(category, fields)
-		local record = { category = category, legend = false, noise = false, removed = false, pool = false }
-		for key, value in pairs(fields) do
-			record[key] = value
-		end
-		return record
-	end
-	local function area(fields)
-		local record = { parent = 0, continent = 0, hasData = true, skillBaseConfirmed = false, catches = {} }
-		for key, value in pairs(fields) do
-			record[key] = value
-		end
-		return record
-	end
-	return {
-		fingerprint = "0123456789abcdef",
+	local night = NIGHT_WINDOW
+	return catalogueWith({
 		items = {
-			[MACKEREL] = item("fish", { species = MACKEREL }),
-			[NIGHTFISH] = item("fish", { species = NIGHTFISH }),
-			[BOOT] = item("junk", {}),
-			[CHEST] = item("container", {}),
-			[TROPHY] = item("trophy", { family = 1, weight = 19 }),
+			[MACKEREL] = fishRecord(MACKEREL),
+			[NIGHTFISH] = fishRecord(NIGHTFISH),
+			[BOOT] = itemRecord("junk"),
+			[CHEST] = itemRecord("container"),
+			[TROPHY] = itemRecord("trophy", { family = 1, weight = 19 }),
 		},
 		areas = {
-			[ELWYNN] = area({
+			[ELWYNN] = areaRecord(0, {
 				skillBase = 25,
 				catches = {
 					{ itemID = MACKEREL, confirmed = false },
@@ -47,27 +32,15 @@ local function catalogue()
 					{ itemID = TROPHY, confirmed = false },
 				},
 			}),
-			[DUSKWOOD] = area({ hasData = false }),
+			[DUSKWOOD] = areaRecord(0, { hasData = false }),
 		},
-		aliases = {},
-		pools = {},
 		windows = { night = { spec = night, confirmed = false } },
-		events = {},
-		fishingSpells = {},
-		auras = {},
-	}
+	})
 end
 
 -- A caught Cast of `itemID` by character `char` in Elwynn at `time`.
 local function cast(char, time, itemID)
-	return {
-		kind = "cast",
-		char = char,
-		time = time,
-		outcome = "caught",
-		conditions = { minute = 494, zone = ELWYNN, subzone = 0, events = {}, auras = {} },
-		items = { { itemID = itemID, quantity = 1 } },
-	}
+	return castRecord({ char = char, time = time, zone = ELWYNN, items = { itemID } })
 end
 
 -- The fixture log's three characters: Angler (the fake client's, index 1), Bea and Cora. Cora has no Skill Reading.
@@ -101,33 +74,15 @@ local FIXTURE = {
 ---@return LoadedAddon loaded
 local function anglerPage(log, options)
 	options = options or {}
-	local fake = newFakePagle()
-	fake.setCatalogue(options.catalogue or catalogue())
-	fake.catchLog.data.characters = characters()
-	fake.catchLog.data.logId = "log"
-	for _, record in ipairs(log or FIXTURE) do
-		fake.catchLog:Append(record)
-	end
-	fake.globals.BreakUpLargeNumbers = breakUpLargeNumbers
-	fake.globals.PagleLedgerDB = options.saved
-	local loaded = fake.load("Pagle_Ledger")
-	fake.login()
-	if not options.updating then
-		fake.enterWorld()
-	end
-	assert.is_true(loaded.ns.journal:Open("angler"))
-	return fake, loaded
-end
-
--- The texts of a page's blocks, in order (a block without text, such as the XP bar, as its kind in brackets).
----@param blocks LedgerBlock[]
----@return string[]
-local function texts(blocks)
-	local list = {}
-	for i, block in ipairs(blocks) do
-		list[i] = block.text or ("[" .. block.kind .. "]")
-	end
-	return list
+	return openJournal({
+		catalogue = options.catalogue or catalogue(),
+		characters = characters(),
+		logId = "log",
+		log = log or FIXTURE,
+		globals = { PagleLedgerDB = options.saved },
+		building = options.updating,
+		place = { "angler" },
+	})
 end
 
 describe("the Journal's Angler page", function()
@@ -169,7 +124,7 @@ describe("the Journal's Angler page", function()
 				"Trophy Room weights 0 of 1",
 				"Zones mastered 0 of 1",
 				"3 Catches · next milestone 1,000",
-			}, texts(loaded.ns.journal.pages.left))
+			}, blockTexts(loaded.ns.journal.pages.left))
 			local left = loaded.ns.journal.pages.left
 			assert.are.equal("Interface\\Icons\\INV_Misc_Note_01", left[1].icon)
 			assert.is_true(left[6].hand)
@@ -179,13 +134,35 @@ describe("the Journal's Angler page", function()
 
 	it("leaves out the kept since line before the first Catch (LED-R146)", function()
 		local _, loaded = anglerPage({ FIXTURE[1], FIXTURE[2] })
-		local left = texts(loaded.ns.journal.pages.left)
+		local left = blockTexts(loaded.ns.journal.pages.left)
 
 		assert.are.same({ "Ex Libris", "The Angler's Ledger", "Angler Level 2" }, { left[2], left[3], left[4] })
 		assert.are.equal("0 Catches · next milestone 1,000", left[#left])
 		for _, text in ipairs(left) do
 			assert.is_nil(text:find("kept since", 1, true))
 		end
+	end)
+
+	-- A Cast logged while the realm clock was secret: no realm minute, so no realm date (LOG-R49).
+	local function secretCast(char, time, itemID)
+		local record = cast(char, time, itemID)
+		record.conditions.minute = nil
+		return record
+	end
+
+	it(
+		"keeps since the first Catch's server date at the realm's offset now when no Catch has a realm date (LED-R146, LED-R126)",
+		function()
+			local _, loaded = anglerPage({ secretCast(1, T0, MACKEREL), secretCast(1, T0 + 3 * 86400, BOOT) })
+
+			assert.are.equal("kept since 11 Oct", loaded.ns.journal.pages.left[4].text)
+		end
+	)
+
+	it("keeps since the first Catch with a realm date, past one without (LED-R146, ledger.md › Data)", function()
+		local _, loaded = anglerPage({ secretCast(1, T0, MACKEREL), cast(1, T0 + 3 * 86400, BOOT) })
+
+		assert.are.equal("kept since 14 Oct", loaded.ns.journal.pages.left[4].text)
 	end)
 
 	it(
@@ -216,7 +193,7 @@ describe("the Journal's Angler page", function()
 		local right = loaded.ns.journal.pages.right
 
 		-- Bea's 160 credits 75 and 150.
-		assert.are.equal("☑ 75   ☑ 150   ☐ 225   ☐ 300", right[5].text)
+		assert.are.equal(drawnSymbols("☑ 75   ☑ 150   ☐ 225   ☐ 300"), right[5].text)
 	end)
 
 	it("ticks a Skill Milestone the celebrated set holds, though the state doesn't (LED-R146, LED-R92)", function()
@@ -226,7 +203,7 @@ describe("the Journal's Angler page", function()
 		loaded.ns.journal:Draw()
 
 		local right = loaded.ns.journal.pages.right
-		assert.are.equal("☑ 75   ☑ 150   ☑ 225   ☐ 300", right[5].text)
+		assert.are.equal(drawnSymbols("☑ 75   ☑ 150   ☑ 225   ☐ 300"), right[5].text)
 	end)
 end)
 
@@ -351,7 +328,7 @@ describe("the Angler page's bookplate in M4", function()
 		local left = loaded.ns.journal.pages.left
 
 		assert.are.same({ { kind = "emblem", mark = { emblem = "II", stars = 0 } } }, ofKind(left, "emblem"))
-		for _, text in ipairs(texts(left)) do
+		for _, text in ipairs(blockTexts(left)) do
 			assert.are_not.equal("No Prestige seals yet", text)
 		end
 	end)
@@ -365,7 +342,7 @@ describe("the Angler page's bookplate in M4", function()
 			local buttons = ofKind(left, "button")
 			assert.are.equal(1, #buttons)
 			assert.are.equal("Begin a new Ledger (Prestige)", buttons[1].text)
-			local shown = texts(left)
+			local shown = blockTexts(left)
 			assert.are.same({ "No Prestige seals yet", "Begin a new Ledger (Prestige)" }, { shown[8], shown[9] })
 
 			click(loaded, "left", "Begin a new Ledger (Prestige)")
@@ -440,7 +417,7 @@ describe("the Angler page's Signed As", function()
 
 			assert.are.same(
 				{ "» Automatic", "· Minnow", "· Dabbler", "· Returning Tide", "· Collector of Boots" },
-				texts(section(loaded, "Signed As"))
+				blockTexts(section(loaded, "Signed As"))
 			)
 			for _, block in ipairs(section(loaded, "Signed As")) do
 				assert.are.equal("link", block.kind)
@@ -462,7 +439,7 @@ describe("the Angler page's Signed As", function()
 			assert.are.equal("Returning Tide", loaded.ns.journal.pages.left[6].text)
 			assert.are.same(
 				{ "· Automatic", "· Minnow", "· Dabbler", "» Returning Tide", "· Collector of Boots" },
-				texts(section(loaded, "Signed As"))
+				blockTexts(section(loaded, "Signed As"))
 			)
 
 			click(loaded, "right", "· Automatic")

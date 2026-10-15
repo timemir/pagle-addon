@@ -11,7 +11,7 @@ local UNKNOWN = 99001
 -- A trophy family no lore batch names (LED-R161): a spec gives it a name where it needs one.
 local FAMILY = 999
 local COVE = 9001
-local T0 = 1791731000
+local T0 = SERVER_TIME - 700
 -- The fake log's logId, which a saved celebrated set names to belong to it (LED-R90).
 local LOG_ID = "0123456789abcdef"
 -- Realm minutes of day (LOG-R48): 08:14, and 21:40, inside the night window.
@@ -28,31 +28,11 @@ local ITEM_NAMES = {
 	[HEAVY] = "60 Pound Snapper",
 }
 
--- A fish item of its own Species (DATA-R19).
-local function fish(id)
-	return { category = "fish", species = id, legend = false, noise = false, removed = false, pool = false }
-end
-
--- A non-fish item of `category`.
-local function thing(category, fields)
-	local item = { category = category, legend = false, noise = false, removed = false, pool = false }
-	for key, value in pairs(fields or {}) do
-		item[key] = value
-	end
-	return item
-end
-
-local NIGHT_SPEC = { time = { { 1260, 360 } } }
+local NIGHT_SPEC = NIGHT_WINDOW
 
 -- A catch entry (LOG-R55): ungated, or gated by the night window.
 local function entry(itemID, night)
-	return {
-		itemID = itemID,
-		confirmed = true,
-		window = night and "night" or nil,
-		gate = night and NIGHT_SPEC or nil,
-		gateConfirmed = night or nil,
-	}
+	return night and catchEntry(itemID, "night", NIGHT_SPEC) or catchEntry(itemID)
 end
 
 -- A catalogue in the shape of ns.catalogue (DATA-R76) charting Cove, with `extra` catch entries on its list. The
@@ -72,28 +52,21 @@ local function catalogue(extra, fingerprint)
 	for _, more in ipairs(extra or {}) do
 		catches[#catches + 1] = more
 	end
-	return {
-		fingerprint = fingerprint or "0123456789abcdef",
+	return catalogueWith({
+		fingerprint = fingerprint,
 		items = {
-			[ANY_1] = fish(ANY_1),
-			[ANY_2] = fish(ANY_2),
-			[ANY_3] = fish(ANY_3),
-			[NIGHTFISH] = fish(NIGHTFISH),
-			[JUNK] = thing("junk"),
-			[CHEST] = thing("container"),
-			[LIGHT] = thing("trophy", { family = FAMILY, weight = 40 }),
-			[HEAVY] = thing("trophy", { family = FAMILY, weight = 60 }),
+			[ANY_1] = fishRecord(ANY_1),
+			[ANY_2] = fishRecord(ANY_2),
+			[ANY_3] = fishRecord(ANY_3),
+			[NIGHTFISH] = fishRecord(NIGHTFISH),
+			[JUNK] = itemRecord("junk"),
+			[CHEST] = itemRecord("container"),
+			[LIGHT] = itemRecord("trophy", { family = FAMILY, weight = 40 }),
+			[HEAVY] = itemRecord("trophy", { family = FAMILY, weight = 60 }),
 		},
-		areas = {
-			[COVE] = { parent = 0, continent = 0, hasData = true, skillBaseConfirmed = false, catches = catches },
-		},
-		aliases = {},
-		pools = {},
+		areas = { [COVE] = areaRecord(0, { catches = catches }) },
 		windows = { night = { spec = NIGHT_SPEC, confirmed = false } },
-		events = {},
-		fishingSpells = {},
-		auras = {},
-	}
+	})
 end
 
 -- A caught Cast record in Cove (zone 0 with `zone` = 0) for fake.catchLog:Append, by the player's character.
@@ -102,24 +75,7 @@ end
 ---@param options { zone: integer?, minute: integer? }?
 local function cast(time, itemIDs, options)
 	options = options or {}
-	local items = {}
-	for i, itemID in ipairs(itemIDs) do
-		items[i] = { itemID = itemID, quantity = 1 }
-	end
-	return {
-		kind = "cast",
-		char = 1,
-		time = time,
-		outcome = "caught",
-		conditions = {
-			minute = options.minute or DAY,
-			zone = options.zone or COVE,
-			subzone = 0,
-			events = {},
-			auras = {},
-		},
-		items = items,
-	}
+	return castRecord({ time = time, zone = options.zone or COVE, minute = options.minute or DAY, items = itemIDs })
 end
 
 -- Loot of one item each, for fake.playCast.
@@ -166,7 +122,6 @@ local function session(options)
 			return areaID == COVE and "Cove" or nil
 		end,
 	}
-	fake.globals.BreakUpLargeNumbers = breakUpLargeNumbers
 	local loaded = fake.load("Pagle_Ledger")
 	for key, text in pairs(options.lore or {}) do
 		loaded.ns.L[key] = text
@@ -228,6 +183,20 @@ local function byKind(announcement)
 	return kinds
 end
 
+-- Each moment of a Cast's Announcements by its kind: its big one and its catch one (ANN-R11). M4's completion titles
+-- ride a banner of their own (LED-R97), so a curio or a weight that completes a collection comes second.
+---@param announcements PagleAnnouncement[]
+---@return table<string, PagleMoment>
+local function castKinds(announcements)
+	local kinds = {}
+	for _, announcement in ipairs(announcements) do
+		for kind, moment in pairs(byKind(announcement)) do
+			kinds[kind] = moment
+		end
+	end
+	return kinds
+end
+
 describe("the Ledger's M3 live moments", function()
 	it(
 		"raise New Species and Zone rank: Visitor in one Announcement for a first Catch in a new zone, 10 + 2 Coins (LED-R96, LED-R97)",
@@ -243,7 +212,7 @@ describe("the Ledger's M3 live moments", function()
 			assert.are.same({
 				"newSpecies New Species / Cove Perch New! 10",
 				"zoneRank Zone rank: Visitor / Cove Rank up 2",
-				"elementStar In its element / Cove Perch ★★ nil",
+				drawnSymbols("elementStar In its element / Cove Perch ★★ nil"),
 			}, momentsOf(announcement))
 			assert.are.equal(12, announcement.coins)
 			local rank = byKind(announcement).zoneRank
@@ -267,10 +236,12 @@ describe("the Ledger's M3 live moments", function()
 
 			local record = assert(fake.playCast("caught", loot(LIGHT)))
 
+			-- The banner, then the Cast's catch Announcement of its own (ANN-R11).
 			local announcements = shown(fake)
-			assert.are.equal(1, #announcements)
+			assert.are.equal(2, #announcements)
 			local moments = byKind(announcements[1])
 			assert.is_nil(moments.zoneRank)
+			assert.is_nil(byKind(announcements[2]).zoneRank)
 			local master = moments.zoneMaster
 			assert.are.same(
 				-- M4: the Zone Master's title rides in it (LED-R97).
@@ -292,7 +263,7 @@ describe("the Ledger's M3 live moments", function()
 
 			local record = assert(fake.playCast("caught", loot(HEAVY)))
 
-			local moments = byKind(shown(fake)[1])
+			local moments = castKinds(shown(fake))
 			local weight = moments.trophyWeight
 			assert.are.same({ "toast", 110, "Trophy weight", "60 Pound Snapper", "Trophy", 5, HEAVY, record.id }, {
 				weight.rung,
@@ -306,10 +277,14 @@ describe("the Ledger's M3 live moments", function()
 			})
 			assert.are.same({ old = 40, new = 60, unit = "lb", label = "weight" }, weight.ruler)
 			local family = moments.familyStar
-			assert.are.same(
-				{ "nod", 130, "Trophy family", "Snappers ★★★", "★★★", record.id },
-				{ family.rung, family.order, family.title, family.text, family.stamp, family.cast }
-			)
+			assert.are.same({
+				"nod",
+				130,
+				"Trophy family",
+				drawnSymbols("Snappers ★★★"),
+				drawnSymbols("★★★"),
+				record.id,
+			}, { family.rung, family.order, family.title, family.text, family.stamp, family.cast })
 			assert.are.equal("string", type(family.icon))
 			local celebrated = loaded.env.PagleLedgerDB.global.celebrated
 			assert.is_true(celebrated.items[HEAVY])
@@ -326,7 +301,10 @@ describe("the Ledger's M3 live moments", function()
 
 			local moments = byKind(shown(fake)[1])
 			assert.is_nil(moments.trophyWeight.ruler)
-			assert.are.same({ "★★", "★★" }, { moments.familyStar.text, moments.familyStar.stamp })
+			assert.are.same(
+				{ drawnSymbols("★★"), drawnSymbols("★★") },
+				{ moments.familyStar.text, moments.familyStar.stamp }
+			)
 		end
 	)
 
@@ -336,7 +314,7 @@ describe("the Ledger's M3 live moments", function()
 			local fake, loaded = session()
 			local record = assert(fake.playCast("caught", loot(JUNK)))
 
-			local curio = byKind(shown(fake)[1]).newCurio
+			local curio = castKinds(shown(fake)).newCurio
 			assert.are.same(
 				{ "toast.low", 110, "New curio", "Soggy Boot", "New!", 5, JUNK, record.id },
 				{ curio.rung, curio.order, curio.title, curio.text, curio.stamp, curio.coins, curio.icon, curio.cast }
@@ -384,7 +362,7 @@ describe("the Ledger's M3 live moments", function()
 
 		local regular = byKind(shown(fake)[1]).regularStar
 		assert.are.same(
-			{ "nod", 120, "Regular", "Cove Perch", "★★★", ANY_1, record.id },
+			{ "nod", 120, "Regular", "Cove Perch", drawnSymbols("★★★"), ANY_1, record.id },
 			{ regular.rung, regular.order, regular.title, regular.text, regular.stamp, regular.icon, regular.cast }
 		)
 	end)
@@ -508,7 +486,7 @@ describe("the Ledger's M3 done", function()
 			assert.are.same({
 				{
 					"While the Ledger was off",
-					"Angler Level 5 → 6",
+					"Angler Level 5 to 6",
 					"1 zone ranked · 1 mastered",
 					"1 trophy weight",
 					"1 curio",
@@ -531,7 +509,7 @@ describe("the Ledger's M3 done", function()
 		assert.are.same({
 			{
 				"While the Ledger was off",
-				"Angler Level 4 → 5",
+				"Angler Level 4 to 5",
 				"1 zone ranked",
 				"1 curio",
 				"Title: Collector of Boots", -- M4: the junk completes the Junk Museum (LED-R75, LED-R94)

@@ -46,8 +46,9 @@ end
 
 describe("the combat hold", function()
 	it(
-		"hides the toast and card on screen in combat, then shows the held banner, one While you were fighting toast"
-			.. " with both held toast headlines, and the card again (ANN-R35, ANN-R36, ANN-R55, ANN-R93)",
+		"hides the toast and card on screen in combat, then shows the held banner together with one While you were"
+			.. " fighting toast with both held toast headlines, only the banner's sound playing, and the card again"
+			.. " (ANN-R24, ANN-R35, ANN-R36, ANN-R55, ANN-R93)",
 		function()
 			local loaded, M = loggedIn({ global = { cards = { storedCard() } } })
 			assert.are.equal("Fishing session", card(loaded))
@@ -68,21 +69,19 @@ describe("the combat hold", function()
 			assert.is_nil(showing(loaded, "banner"))
 			loaded.client.advance(0.1)
 			assert.are.equal("Level 12", showing(loaded, "banner"))
-			assert.is_nil(card(loaded))
-			loaded.client.advance(4)
 			local toast = loaded.ns.announcementFrames.toast
 			assert.are.same(
 				{ "While you were fighting", "New Species: Nightfin Snapper\nSize record" },
 				{ showing(loaded, "toast"), toast.text:GetText() }
 			)
 			assert.is_nil(card(loaded))
-			loaded.client.advance(6)
+			loaded.client.advance(4)
+			assert.are.same({ nil, "While you were fighting" }, { showing(loaded, "banner"), showing(loaded, "toast") })
+			assert.is_nil(card(loaded))
+			loaded.client.advance(2)
 
 			assert.are.equal("Fishing session", card(loaded))
-			assert.are.same(
-				{ SOUNDS .. "driftwood\\banner.ogg SFX", SOUNDS .. "driftwood\\toast_2.ogg SFX" },
-				loaded.client.sounds
-			)
+			assert.are.same({ SOUNDS .. "driftwood\\banner.ogg SFX" }, loaded.client.sounds)
 		end
 	)
 
@@ -153,7 +152,7 @@ describe("Cozy mode", function()
 			loaded.client.advance(8)
 			loaded.ns.db.profile.announcements.cozy = false
 			assert.are.equal("Pagle · 3 waiting", loaded.client.compartment[1].text)
-			loaded.client.advance(900)
+			loaded.client.advance(300)
 
 			assert.are.equal("Fishing session", card(loaded))
 			assert.are.equal("Pagle", loaded.client.compartment[1].text)
@@ -184,7 +183,7 @@ describe("expiry", function()
 			assert.are.equal("New Species", showing(loaded, "toast"))
 			loaded.client.advance(6)
 			assert.is_nil(showing(loaded, "banner"))
-			loaded.client.advance(900)
+			loaded.client.advance(300)
 
 			local rows = {}
 			for _, row in ipairs(loaded.ns.cardFrame.rows) do

@@ -1,29 +1,11 @@
 -- ns.FieldReportText: the Field report's text on the client, logic/FieldReportText.lua over the client's lookups
 -- (REP-R30, REP-R35, REP-R36), through the real TOC.
 
-describe("ns.FieldReportText", function()
+describe("ns.FieldReportText (REP-R30, REP-R35, REP-R36)", function()
 	-- A fixture Angler: two characters on the fake client's realm, and REP-R36's logId (savedLog's).
 	local CHARACTERS = {
-		{
-			guid = "Player-4618-0A1B2C3D",
-			name = "Ada",
-			classID = 1,
-			raceID = 1,
-			faction = "Alliance",
-			realmID = 4618,
-			firstSeen = 1791700000,
-			lastSeen = 1791700000,
-		},
-		{
-			guid = "Player-4618-0B2C3D4E",
-			name = "Brindlewick",
-			classID = 8,
-			raceID = 7,
-			faction = "Alliance",
-			realmID = 4618,
-			firstSeen = 1791700000,
-			lastSeen = 1791700000,
-		},
+		characterRecord(),
+		characterRecord("Player-4618-0B2C3D4E", "Brindlewick", 8, 7),
 	}
 	local ITEM_NAMES = { [6362] = "Raw Spotted Yellowtail" }
 	local AREA_NAMES = { [33] = "Stranglethorn Vale", [1519] = "Stormwind City" }
@@ -112,23 +94,11 @@ describe("ns.FieldReportText", function()
 	end)
 end)
 
-describe("the Field report from a fixture Angler's log, rows to text", function()
+describe("the Field report from a fixture Angler's log, rows to text (REP-R20–R22, REP-R30, REP-R35)", function()
 	local ADA, BRINDLEWICK = "Player-4618-0A1B2C3D", "Player-4618-0B2C3D4E"
 	local FIRST = SERVER_TIME - 4000
 	-- A fixture Angler: two characters on the fake client's realm, and REP-R36's logId (savedLog's).
-	local function character(guid, name, classID, raceID)
-		return {
-			guid = guid,
-			name = name,
-			classID = classID,
-			raceID = raceID,
-			faction = "Alliance",
-			realmID = 4618,
-			firstSeen = 1791700000,
-			lastSeen = 1791700000,
-		}
-	end
-	local CHARACTERS = { character(ADA, "Ada", 1, 1), character(BRINDLEWICK, "Brindlewick", 8, 7) }
+	local CHARACTERS = { characterRecord(), characterRecord(BRINDLEWICK, "Brindlewick", 8, 7) }
 
 	-- Ada catches an Oily Blackmouth in The Long Wash (453), whose zone Darkshore (148) has an unconfirmed skill base;
 	-- Brindlewick catches an Uncharted item (9999) in Darkshore, hovering a school first.
@@ -136,7 +106,7 @@ describe("the Field report from a fixture Angler's log, rows to text", function(
 		local log = savedLog({
 			BUILD_ENTRY,
 			castEntry(FIRST + 1),
-			(castEntry(FIRST + 2, 9999, 0):gsub("^C1|1|", "C1|2|")),
+			castEntry(FIRST + 2, 9999, 0, 2),
 		}, 1, CHARACTERS)
 		local loaded = loadCore(log, {
 			global = {

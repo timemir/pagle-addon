@@ -220,7 +220,7 @@ describe("Moving the dock", function()
 		local _, stats = dockFixture(loaded, "Stats", 20, 60)
 		loaded.client.fire("PLAYER_LOGIN")
 		local dock = loaded.ns.dockFrame
-		loaded.client.shiftDown = true
+		loaded.client.keysDown.SHIFT = true
 
 		startDrag(stats)
 
@@ -239,7 +239,7 @@ describe("Moving the dock", function()
 		local first = session()
 		local _, stats = dockFixture(first, "Stats", 20, 60)
 		first.client.fire("PLAYER_LOGIN")
-		first.client.shiftDown = true
+		first.client.keysDown.SHIFT = true
 		startDrag(stats)
 		dropAt(first, stats, 812, 640)
 
@@ -267,7 +267,7 @@ describe("Moving the dock", function()
 		local _, hunts = dockFixture(loaded, "Hunts", 10, 40)
 		loaded.client.fire("PLAYER_LOGIN")
 		setCombat(loaded, true)
-		loaded.client.shiftDown = true
+		loaded.client.keysDown.SHIFT = true
 
 		startDrag(hunts)
 		dropAt(loaded, hunts, 812, 640)
@@ -281,7 +281,7 @@ describe("Moving the dock", function()
 		local loaded = session()
 		local _, hunts = dockFixture(loaded, "Hunts", 10, 40)
 		loaded.client.fire("PLAYER_LOGIN")
-		loaded.client.shiftDown = true
+		loaded.client.keysDown.SHIFT = true
 		startDrag(hunts)
 		local dock = loaded.ns.dockFrame
 		dock.screenRight, dock.screenTop = 700, 500
@@ -299,7 +299,7 @@ describe("Moving the dock", function()
 		local loaded = session()
 		local _, hunts = dockFixture(loaded, "Hunts", 10, 40)
 		loaded.client.fire("PLAYER_LOGIN")
-		loaded.client.shiftDown = true
+		loaded.client.keysDown.SHIFT = true
 		startDrag(hunts)
 		local dock = loaded.ns.dockFrame
 		dock.screenRight, dock.screenTop = 700, 500
@@ -378,7 +378,7 @@ describe("The Trackers page", function()
 		local hunts, frame = dockFixture(loaded, "Hunts", 10, 40)
 		hunts:AddSetting("trackers", { kind = "header", label = "Hunts" })
 		loaded.client.fire("PLAYER_LOGIN")
-		loaded.client.shiftDown = true
+		loaded.client.keysDown.SHIFT = true
 		startDrag(frame)
 		dropAt(loaded, frame, 812, 640)
 		return loaded, frame

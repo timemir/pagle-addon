@@ -3,27 +3,19 @@
 
 local NIGHTFISH = 13759
 local ELWYNN, GOLDSHIRE = 12, 87
-local T0 = 1791731000
+local T0 = SERVER_TIME - 700
 -- Realm minutes of day (LOG-R48): 08:14, and 21:40, inside the night window.
 local DAY_MINUTE, NIGHT_MINUTE = 494, 1300
 
 -- A catalogue in the shape of ns.catalogue (DATA-R76): NIGHTFISH listed in Goldshire under the night window only.
 local function fixture()
-	local night = { time = { { 1260, 360 } } }
+	local night = NIGHT_WINDOW
 	local function area(parent, catches)
-		return { parent = parent, continent = 0, hasData = true, skillBaseConfirmed = false, catches = catches }
+		return areaRecord(parent, { catches = catches })
 	end
-	return {
-		fingerprint = "0123456789abcdef",
+	return catalogueWith({
 		items = {
-			[NIGHTFISH] = {
-				category = "fish",
-				species = NIGHTFISH,
-				legend = false,
-				noise = false,
-				removed = false,
-				pool = false,
-			},
+			[NIGHTFISH] = fishRecord(NIGHTFISH),
 		},
 		areas = {
 			[ELWYNN] = area(0, {}),
@@ -31,27 +23,15 @@ local function fixture()
 				{ itemID = NIGHTFISH, confirmed = false, window = "night", gate = night, gateConfirmed = false },
 			}),
 		},
-		aliases = {},
-		pools = {},
 		windows = { night = { spec = night, confirmed = false } },
-		events = {},
-		fishingSpells = {},
-		auras = {},
-	}
+	})
 end
 
 -- A caught Cast of one NIGHTFISH in Elwynn at realm `minute`, for fake.catchLog:Append.
 ---@param time integer
 ---@param minute integer
 local function cast(time, minute)
-	return {
-		kind = "cast",
-		char = 1,
-		time = time,
-		outcome = "caught",
-		conditions = { minute = minute, zone = ELWYNN, subzone = 0, events = {}, auras = {} },
-		items = { { itemID = NIGHTFISH, quantity = 1 } },
-	}
+	return castRecord({ time = time, zone = ELWYNN, minute = minute, items = { NIGHTFISH } })
 end
 
 describe("Species stars in the Ledger's projection (LED-R45)", function()

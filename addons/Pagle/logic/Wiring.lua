@@ -24,6 +24,7 @@ local ns = select(2, ...)
 ---@field call fun(fn: function, ...: any): ...  -- calls fn; an error is reported, not raised (securecallfunction)
 ---@field report fun(message: string)            -- reports an error and carries on (geterrorhandler())
 ---@field region fun(): integer?                 -- GetCurrentRegion(), nil where the call doesn't exist (LOG-R69)
+---@field print fun(line: string)                -- prints a chat line
 ---@field syncLimit? integer                     -- the projections' sync limit; default PROJECTION_SYNC_LIMIT
 
 ---@class PagleNS
@@ -39,6 +40,8 @@ local ns = select(2, ...)
 ---@field fieldReport PagleFieldReportReaders? Core's Field report, from login step 1 on (ns.WireFieldReport).
 ---@field walletProjection PagleProjection? Core's wallet projection, from login step 1 (ns.WireWalletProjection).
 ---@field LengthUnit fun(): PagleLengthUnit The Angler's length unit now (ns.WireLength).
+---@field fishing PagleFishing Core's Cast state machine, which Core's adapter and FakePagle each build.
+---@field dev PagleDevCommands Core's `/pagle dev` commands (ns.WireDev).
 
 --- Core's projection machinery (LOG-R70–R78) as ns.projections, and `M:NewProjection` and `M:IterateCatches` on every
 --- Module handle. Until Module records (M7), a Module's records are the ones Pagle.IterateCatches yields.
@@ -61,7 +64,7 @@ function ns.WireProjections(host)
 end
 
 --- Sessions as Core runs them (LOG-R60–R64): the tracker over the Catch log and PagleDB.global, on the server time,
---- with a timer for the 900 s after each Cast.
+--- with a timer for the 300 s after each Cast.
 ---@class PagleSessions
 ---@field package host PagleHost
 ---@field package tracker PagleSessionTracker? -- from Open on
@@ -92,7 +95,7 @@ local function waitFor(sessions, seconds)
 end
 
 --- Login step 1 (LOG-R1), once the Catch log and PagleDB are open: notes the latest Session (LOG-R63). One still
---- open ends 900 s after its last Cast; one that ended while away gets its SessionEnded once no projection is
+--- open ends 300 s after its last Cast; one that ended while away gets its SessionEnded once no projection is
 --- updating, unless a Cast fires it first.
 function Sessions:Open()
 	local host = self.host
@@ -112,10 +115,22 @@ function Sessions:Cast()
 	end
 end
 
---- The Session open now, while its last Cast is under 900 s ago, else nil (LOG-R64). A fresh copy each call.
+--- The Session open now, while its last Cast is under 300 s ago, else nil (LOG-R64). A fresh copy each call.
 ---@return PagleSession?
 function Sessions:Get()
 	return self.tracker and self.tracker:Get(self.host.serverTime())
+end
+
+--- `/pagle dev endsession` (#247): ends the Session open now as if its gap had passed (LOG-R62), and stops its
+--- timer. Returns false when none is open.
+---@return boolean ended
+function Sessions:EndNow()
+	local tracker = self.tracker
+	if not tracker or not tracker:EndNow(self.host.serverTime()) then
+		return false
+	end
+	waitFor(self, nil)
+	return true
 end
 
 --- The Angler's length unit (LOG-R69) as ns.LengthUnit(): PagleDB.profile.lengthUnit, or with none stored (or before
@@ -239,7 +254,7 @@ function ns.WireCards(host, view)
 		end,
 		show = function(card)
 			view.show(card)
-			if card.numbers then
+			if card.numbers and not card.preview then
 				ns.summary:SummaryShown()
 			end
 		end,
@@ -678,4 +693,64 @@ function ns.WireWalletProjection(host)
 			goods = ns.goods,
 		})
 	end
+end
+
+--- What only the client knows for the Field report's text: the header's addon version and locale, and the names a
+--- row's comment shows (REP-R30). Core's adapter passes the client's lookups; FakePagle passes fixed ones.
+---@class PagleFieldReportClient
+---@field addon fun(): string    -- this addon's TOC version, or "unknown"
+---@field locale fun(): string   -- GetLocale()
+---@field names PagleReportNames -- a secret is never a name (CORE-R31)
+
+--- The Field report's text for its rows (ns.FieldReportRows(), any order), as its parts in order (REP-R30–R33),
+--- built when called, never stored: the header from `client`, the catalogue's fingerprint (host.fingerprint) and the
+--- Catch log's logId, which is written only as its reporter key (REP-R35, REP-R36).
+---@param host PagleHost
+---@param client PagleFieldReportClient
+---@return fun(rows: PagleReportRow[]): string[]
+function ns.FieldReportTextFunction(host, client)
+	return function(rows)
+		return ns.FieldReportParts(rows, {
+			addon = client.addon(),
+			fingerprint = assert(host.fingerprint(), "the catalogue is built first"),
+			locale = client.locale(),
+			logId = host.catchLog().data.logId or "",
+		}, client.names)
+	end
+end
+
+--- Core's `/pagle dev` commands as ns.dev (#247), over PagleDB.global's `dev` switch, Core's Sessions, the
+--- catalogue's areas and the Cast state machine (ns.fishing). `catch` runs only on a test log (`PagleLog.test`).
+--- `preview` hands its samples to `show`, the display (as ns.WireMoments' is), and its card to ns.cards; `glyphs`
+--- hands its probe line to `showGlyphs` (#248).
+---@param host PagleHost
+---@param show fun(announcement: PagleAnnouncement) hands an Announcement to the display (ANN-R20)
+---@param showGlyphs fun(fonts: PagleDevGlyphFont[], probe: string) shows the probe line in each font
+function ns.WireDev(host, show, showGlyphs)
+	ns.dev = ns.NewDevCommands({
+		global = function()
+			return host.db().global
+		end,
+		testLog = function()
+			return host.catchLog().data.test == true
+		end,
+		endSession = function()
+			return ns.sessions:EndNow()
+		end,
+		area = function(areaID)
+			return ns.DevArea(ns.Catalogue, areaID)
+		end,
+		catch = function(itemID, zone, subzone)
+			local area = zone and { zone = zone, subzone = subzone } or nil
+			return ns.fishing:RecordSynthetic({ { itemID = itemID, quantity = 1 } }, area)
+		end,
+		announce = function(announcement)
+			host.call(show, announcement)
+		end,
+		showCard = function(card)
+			return ns.cards:Preview(card)
+		end,
+		showGlyphs = showGlyphs,
+		print = host.print,
+	})
 end

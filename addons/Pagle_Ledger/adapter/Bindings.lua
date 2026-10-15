@@ -87,7 +87,7 @@ local function buildSwatch(stage)
 		line(swatch, "TOPRIGHT", -inset, -inset, "BOTTOMRIGHT", -inset, inset),
 	}
 	swatch.plateEdge = swatch:CreateTexture(nil, "ARTWORK")
-	swatch.plateEdge:SetColorTexture(LOOK.leatherEdge[1], LOOK.leatherEdge[2], LOOK.leatherEdge[3], 1)
+	ns.JournalPaint(swatch.plateEdge, LOOK.leatherEdge)
 	swatch.plateEdge:SetSize(PLATE_WIDTH, PLATE_HEIGHT)
 	swatch.plateEdge:SetPoint("BOTTOM", (RULE_SPINE_INSET - RULE_INSET) / 2, PLATE_FOOT)
 	swatch.plate = swatch:CreateTexture(nil, "OVERLAY")
@@ -107,12 +107,12 @@ function ns.DrawBindingSwatch(stage, look)
 		swatch = buildSwatch(stage)
 		swatches[stage] = swatch
 	end
-	swatch.leather:SetColorTexture(look.leather[1], look.leather[2], look.leather[3], 1)
-	swatch.grain:SetVertexColor(look.leather[1], look.leather[2], look.leather[3])
+	ns.JournalPaint(swatch.leather, look.leather)
+	swatch.grain:SetVertexColor(unpack(look.leather))
 	for _, rule in ipairs(swatch.rules) do
-		rule:SetColorTexture(look.gilt[1], look.gilt[2], look.gilt[3], 0.85)
+		ns.JournalPaint(rule, look.gilt, 0.85)
 	end
-	swatch.plate:SetColorTexture(look.plate[1], look.plate[2], look.plate[3], 1)
+	ns.JournalPaint(swatch.plate, look.plate)
 	swatch:Show()
 	return swatch
 end

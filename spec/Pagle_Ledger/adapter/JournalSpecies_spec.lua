@@ -2,6 +2,8 @@
 -- log, the Ledger's projection built at login, and the fish spread's pages and the search box's results as data.
 
 local MACKEREL, NIGHTFISH, SECRET, STRAY, GONE = 6303, 13759, 6522, 6291, 6299
+-- A junk item and a trophy weight, listed in Darkshore and never caught.
+local SKULL, CATFISH_17 = 6297, 6309
 local DUSKWOOD, ELWYNN, WESTFALL, DARKSHORE = 10, 12, 40, 148
 local NAMES = {
 	[MACKEREL] = "Raw Slitherskin Mackerel",
@@ -9,6 +11,8 @@ local NAMES = {
 	[SECRET] = "Deviate Fish",
 	[STRAY] = "Raw Brilliant Smallfish",
 	[GONE] = "Sickly Looking Fish",
+	[SKULL] = "Old Skull",
+	[CATFISH_17] = "17 Pound Catfish",
 }
 local ZONES =
 	{ [DUSKWOOD] = "Duskwood", [ELWYNN] = "Elwynn Forest", [WESTFALL] = "Westfall", [DARKSHORE] = "Darkshore" }
@@ -18,65 +22,41 @@ local MINUTE = 60
 local DAY_MINUTE, NIGHT_MINUTE = 494, 1300
 
 -- A catalogue in the shape of ns.catalogue (DATA-R76). MACKEREL any time in Duskwood, Elwynn and Westfall; NIGHTFISH
--- by night in Duskwood, from pools; SECRET by night in all three, from pools; STRAY in Darkshore; GONE
--- removed, on no list. Skill bases: Elwynn 25, Westfall 55, Duskwood 150; Darkshore none.
+-- by night in Duskwood, from pools; SECRET by night in all three, from pools; STRAY, a junk SKULL and a trophy
+-- CATFISH_17 (family 2) in Darkshore; GONE removed, on no list. Skill bases: Elwynn 25, Westfall 55, Duskwood 150;
+-- Darkshore none.
 local function fixture()
 	local night = { time = { { 1200, 360 } } }
-	local function fish(id, fields)
-		local record = { category = "fish", species = id, legend = false, noise = false, removed = false, pool = false }
-		for key, value in pairs(fields or {}) do
-			record[key] = value
-		end
-		return record
-	end
 	local function area(skillBase, catches)
-		return {
-			parent = 0,
-			continent = 0,
-			hasData = true,
-			skillBase = skillBase,
-			skillBaseConfirmed = false,
-			catches = catches,
-		}
+		return areaRecord(0, { skillBase = skillBase, catches = catches })
 	end
 	local function entry(itemID, window)
 		return { itemID = itemID, confirmed = false, window = window, gate = window and night, gateConfirmed = false }
 	end
-	return {
-		fingerprint = "0123456789abcdef",
+	return catalogueWith({
 		items = {
-			[MACKEREL] = fish(MACKEREL),
-			[NIGHTFISH] = fish(NIGHTFISH, { pool = true }),
-			[SECRET] = fish(SECRET, { pool = true }),
-			[STRAY] = fish(STRAY),
-			[GONE] = fish(GONE, { removed = true }),
+			[MACKEREL] = fishRecord(MACKEREL),
+			[NIGHTFISH] = fishRecord(NIGHTFISH, { pool = true }),
+			[SECRET] = fishRecord(SECRET, { pool = true }),
+			[STRAY] = fishRecord(STRAY),
+			[GONE] = fishRecord(GONE, { removed = true }),
+			[SKULL] = itemRecord("junk"),
+			[CATFISH_17] = itemRecord("trophy", { family = 2, weight = 17 }),
 		},
 		areas = {
 			[ELWYNN] = area(25, { entry(MACKEREL), entry(SECRET, "night") }),
 			[WESTFALL] = area(55, { entry(MACKEREL), entry(SECRET, "night") }),
 			[DUSKWOOD] = area(150, { entry(MACKEREL), entry(NIGHTFISH, "night"), entry(SECRET, "night") }),
-			[DARKSHORE] = area(nil, { entry(STRAY) }),
+			[DARKSHORE] = area(nil, { entry(STRAY), entry(SKULL), entry(CATFISH_17) }),
 		},
-		aliases = {},
-		pools = {},
 		windows = { night = { spec = night, confirmed = false } },
-		events = {},
-		fishingSpells = {},
-		auras = {},
-	}
+	})
 end
 
 -- A caught Cast of one `itemID` by character 1 in `zone` at realm `minute`. The log works its realm date out from the
 -- time and minute (LOG-R49): 3 Oct 2026 by day, 2 Oct by night.
 local function cast(time, itemID, zone, minute)
-	return {
-		kind = "cast",
-		char = 1,
-		time = time,
-		outcome = "caught",
-		conditions = { minute = minute, zone = zone, subzone = 0, events = {}, auras = {} },
-		items = { { itemID = itemID, quantity = 1 } },
-	}
+	return castRecord({ time = time, zone = zone, minute = minute, items = { itemID } })
 end
 
 -- The fixture's log: MACKEREL first in Westfall on 3 March, then in Elwynn; NIGHTFISH at night in Elwynn; STRAY in
@@ -91,46 +71,45 @@ local function log()
 	}
 end
 
--- A Ledger on a fake over the fixture and its log, logged in with the projection built, every name loaded, and lore
--- for MACKEREL and SECRET only. `typicalLength`, if given, is MACKEREL's typical length (mm), so Core sizes its Catches.
+-- A Ledger on a fake over the fixture and its log (with `extra` records after it), logged in with the projection
+-- built, every name loaded, and lore for MACKEREL and SECRET only. `typicalLength`, if given, is MACKEREL's typical
+-- length (mm), so Core sizes its Catches.
+---@param extra table[]?
 ---@param typicalLength integer?
-local function loggedIn(typicalLength)
-	local fake = newFakePagle()
+local function loggedIn(extra, typicalLength)
+	local records = log()
+	for _, record in ipairs(extra or {}) do
+		records[#records + 1] = record
+	end
 	local catalogue = fixture()
 	catalogue.items[MACKEREL].typicalLength = typicalLength
-	fake.setCatalogue(catalogue)
-	fake.catchLog.data.characters[1] = { guid = PLAYER_GUID }
-	for _, record in ipairs(log()) do
-		fake.catchLog:Append(record)
-	end
-	local loaded = fake.load("Pagle_Ledger")
-	for id, name in pairs(NAMES) do
-		loaded.client.itemNames[id] = name
-	end
-	for zone, name in pairs(ZONES) do
-		loaded.client.areaNames[zone] = name
-	end
-	local L = loaded.ns.L
-	for key in pairs(L) do
-		if type(key) == "string" and key:find("^species%.") then
-			L[key] = nil
-		end
-	end
-	L["species.6303.blurb"] = "Slippery enough to earn the name."
-	L["species.6522.riddle"] = "Strange schools out on the dry plains."
-	fake.login()
-	fake.enterWorld()
-	return fake, loaded
+	return openJournal({
+		catalogue = catalogue,
+		log = records,
+		itemNames = NAMES,
+		areaNames = ZONES,
+		before = function(loaded)
+			local L = loaded.ns.L
+			for key in pairs(L) do
+				if type(key) == "string" and key:find("^species%.") then
+					L[key] = nil
+				end
+			end
+			L["species.6303.blurb"] = "Slippery enough to earn the name."
+			L["species.6522.riddle"] = "Strange schools out on the dry plains."
+		end,
+		id = false,
+	})
 end
 
 -- Opens the fish spread on Species `id` (with the plain hint open when `hint`).
 local function openFish(loaded, id, hint)
-	assert.is_true(loaded.ns.journal:Open("fish", { species = id, hint = hint }))
+	assert.is_true(loaded.ns.journal:OpenPlace(loaded.ns.JournalPlace.fish(id, hint)))
 	return loaded.ns.journal.pages
 end
 
--- The texts of a page's text blocks, in order.
-local function textsOf(blocks)
+-- The texts of a page's `text` blocks alone, in order (blockTexts has every block's).
+local function textBlockTexts(blocks)
 	local texts = {}
 	for _, block in ipairs(blocks) do
 		if block.kind == "text" then
@@ -140,34 +119,24 @@ local function textsOf(blocks)
 	return texts
 end
 
--- A page's first block of `kind`.
-local function first(blocks, kind)
-	for _, block in ipairs(blocks) do
-		if block.kind == kind then
-			return block
-		end
-	end
-	return nil
-end
-
 describe("a caught Species' entry (LED-R140)", function()
 	it("shows its sepia icon, name, stamps, first Catch, blurb and listed zones (LED-R140)", function()
 		local _, loaded = loggedIn()
 
 		local left = openFish(loaded, MACKEREL).left
 
-		assert.are.same({ kind = "icon", icon = MACKEREL, look = "sepia", large = true }, first(left, "icon"))
-		assert.are.equal("Raw Slitherskin Mackerel", first(left, "title").text)
+		assert.are.same({ kind = "icon", icon = MACKEREL, look = "sepia", large = true }, blockOfKind(left, "icon"))
+		assert.are.equal("Raw Slitherskin Mackerel", blockOfKind(left, "title").text)
 		assert.are.same({
 			{ text = "Caught", inked = true },
 			{ text = "In its element", inked = false },
 			{ text = "Regular", inked = false },
-		}, first(left, "stamps").stamps)
+		}, blockOfKind(left, "stamps").stamps)
 		assert.are.same({
 			"First landed 3 Oct in Westfall, by Angler. 2 caught.",
 			"Slippery enough to earn the name.",
 			"Found in Duskwood, Elwynn Forest and Westfall.",
-		}, textsOf(left))
+		}, textBlockTexts(left))
 	end)
 
 	it('adds " Only by night." for a night-only fish, and leaves a missing blurb out (LED-R140, LED-R161)', function()
@@ -176,13 +145,13 @@ describe("a caught Species' entry (LED-R140)", function()
 		assert.are.same({
 			"First landed 2 Oct in Elwynn Forest, by Angler. 1 caught.",
 			"Found in Duskwood. Only by night.",
-		}, textsOf(openFish(loaded, NIGHTFISH).left))
+		}, textBlockTexts(openFish(loaded, NIGHTFISH).left))
 	end)
 
 	it("drops the zone part for a first Catch in zone 0 (LED-R140, LED-R6)", function()
 		local _, loaded = loggedIn()
 
-		assert.are.equal("First landed 3 Oct, by Angler. 1 caught.", textsOf(openFish(loaded, STRAY).left)[1])
+		assert.are.equal("First landed 3 Oct, by Angler. 1 caught.", textBlockTexts(openFish(loaded, STRAY).left)[1])
 	end)
 
 	it("shows the removed line, and no listed zones, for a removed one (LED-R140, LED-R12)", function()
@@ -191,7 +160,7 @@ describe("a caught Species' entry (LED-R140)", function()
 		assert.are.same({
 			"First landed 3 Oct in Elwynn Forest, by Angler. 1 caught.",
 			"No longer found in Forever's waters.",
-		}, textsOf(openFish(loaded, GONE).left))
+		}, textBlockTexts(openFish(loaded, GONE).left))
 	end)
 end)
 
@@ -216,14 +185,14 @@ describe("a caught Species' size line (LED-R140, LED-R80, LED-R85)", function()
 			"Slippery enough to earn the name.",
 			"Found in Duskwood, Elwynn Forest and Westfall.",
 			"Largest by my own measure: Hefty · 34.2 cm (Pagle's measure, not the game's)",
-		}, textsOf(openFish(loaded, MACKEREL).left))
+		}, textBlockTexts(openFish(loaded, MACKEREL).left))
 	end)
 
 	it("reads it in the Angler's unit, inches by default in the Americas (LED-R85, LOG-R69)", function()
 		local _, loaded = loggedIn()
 		seedRecord(loaded, MACKEREL, 342, 3)
 
-		local texts = textsOf(openFish(loaded, MACKEREL).left)
+		local texts = textBlockTexts(openFish(loaded, MACKEREL).left)
 		assert.are.equal("Largest by my own measure: Hefty · 13.5 in (Pagle's measure, not the game's)", texts[4])
 	end)
 
@@ -236,7 +205,7 @@ describe("a caught Species' size line (LED-R140, LED-R80, LED-R85)", function()
 			"First landed 3 Oct in Elwynn Forest, by Angler. 1 caught.",
 			"Largest by my own measure: Monster · 120.5 cm (Pagle's measure, not the game's)",
 			"No longer found in Forever's waters.",
-		}, textsOf(openFish(loaded, GONE).left))
+		}, textBlockTexts(openFish(loaded, GONE).left))
 	end)
 
 	it("shows none for a Species without a sized Catch (LED-R140, LED-R80)", function()
@@ -244,17 +213,17 @@ describe("a caught Species' size line (LED-R140, LED-R80, LED-R85)", function()
 		local _, loaded = loggedIn()
 
 		assert.is_nil(loaded.ns.projection:GetState().species[MACKEREL].record)
-		for _, text in ipairs(textsOf(openFish(loaded, MACKEREL).left)) do
+		for _, text in ipairs(textBlockTexts(openFish(loaded, MACKEREL).left)) do
 			assert.is_nil(text:find("Largest", 1, true))
 		end
 	end)
 
 	it("reads the record Core's sizes leave once the Species has a typical length (LED-R140, LOG-R65)", function()
-		local fake, loaded = loggedIn(300)
+		local fake, loaded = loggedIn(nil, 300)
 		fake.profile.lengthUnit = "cm"
 
 		assert.is_not_nil(loaded.ns.projection:GetState().species[MACKEREL].record)
-		assert.matches(SIZE_LINE, textsOf(openFish(loaded, MACKEREL).left)[4])
+		assert.matches(SIZE_LINE, textBlockTexts(openFish(loaded, MACKEREL).left)[4])
 	end)
 
 	it("is the same line on the zone spread's entry (LED-R140, LED-R136)", function()
@@ -262,8 +231,8 @@ describe("a caught Species' size line (LED-R140, LED-R80, LED-R85)", function()
 		fake.profile.lengthUnit = "cm"
 		seedRecord(loaded, MACKEREL, 342, 3)
 
-		assert.is_true(loaded.ns.journal:Open("zone", { zone = ELWYNN, species = MACKEREL }))
-		local texts = textsOf(loaded.ns.journal.pages.right)
+		assert.is_true(loaded.ns.journal:OpenPlace(loaded.ns.JournalPlace.zone(ELWYNN, MACKEREL)))
+		local texts = textBlockTexts(loaded.ns.journal.pages.right)
 		assert.are.equal("Largest by my own measure: Hefty · 34.2 cm (Pagle's measure, not the game's)", texts[#texts])
 	end)
 end)
@@ -277,10 +246,10 @@ describe("an uncaught Species' entry (LED-R141)", function()
 		assert.are.same({
 			{ kind = "icon", icon = SECRET, look = "silhouette", large = true },
 			{ kind = "title", text = "An unknown fish" },
-			{ kind = "text", text = "“Strange schools out on the dry plains.”" },
+			{ kind = "text", text = '"Strange schools out on the dry plains."' },
 			{
 				kind = "link",
-				text = "Read the plain hint ▸",
+				text = "Read the plain hint »",
 				place = { id = "fish", args = { species = SECRET, hint = true } },
 			},
 		}, left)
@@ -299,9 +268,22 @@ describe("an uncaught Species' entry (LED-R141)", function()
 		journal:Draw()
 		assert.are.same(hint, journal.pages.left[4])
 
-		journal:Open("home")
+		journal:OpenPlace(loaded.ns.JournalPlace.home())
 		openFish(loaded, SECRET)
 		assert.are.equal("link", journal.pages.left[4].kind)
+	end)
+
+	it("keeps both pages' scroll on the fish spread as its hint opens (LED-R129, LED-R141)", function()
+		local _, loaded = loggedIn()
+		local journal = loaded.ns.journal
+		openFish(loaded, SECRET)
+		scrollPage(loaded, "left", 120)
+		scrollPage(loaded, "right", 80)
+
+		journal.frame.left.drawn.link[1]:Click()
+
+		assert.are.equal("night · pools · Elwynn Forest · Westfall +1 · skill ~25", journal.pages.left[4].text)
+		assert.are.same({ 120, 80 }, { pageScroll(loaded, "left"), pageScroll(loaded, "right") })
 	end)
 end)
 
@@ -353,14 +335,14 @@ describe("the fish spread (LED-R142)", function()
 						{
 							name = "Elwynn Forest",
 							line = "Local · 50%",
-							line2 = "caught ✓",
+							line2 = drawnSymbols("caught ✓"),
 							bar = 0.5,
 							place = zonePlace(ELWYNN, MACKEREL),
 						},
 						{
 							name = "Westfall",
 							line = "Local · 50%",
-							line2 = "caught ✓",
+							line2 = drawnSymbols("caught ✓"),
 							bar = 0.5,
 							place = zonePlace(WESTFALL, MACKEREL),
 						},
@@ -372,8 +354,8 @@ describe("the fish spread (LED-R142)", function()
 						},
 					},
 				},
-				{ kind = "text", text = "☐ In its element (2/3)" },
-				{ kind = "text", text = "☐ Regular (2/50)" },
+				{ kind = "text", text = drawnSymbols("☐ In its element (2/3)") },
+				{ kind = "text", text = drawnSymbols("☐ Regular (2/50)") },
 			}, right)
 		end
 	)
@@ -386,8 +368,8 @@ describe("the fish spread (LED-R142)", function()
 			local right = openFish(loaded, NIGHTFISH).right
 
 			assert.are.same({ kind = "kicker", text = "When" }, right[4])
-			assert.are.same({ kind = "text", text = "☑ In its element (1/1)" }, right[6])
-			assert.are.same({ kind = "text", text = "☐ Regular (1/50)" }, right[7])
+			assert.are.same({ kind = "text", text = drawnSymbols("☑ In its element (1/1)") }, right[6])
+			assert.are.same({ kind = "text", text = drawnSymbols("☐ Regular (1/50)") }, right[7])
 		end
 	)
 
@@ -428,29 +410,29 @@ describe("the fish spread (LED-R142)", function()
 	end)
 end)
 
-describe("the Journal's search box (LED-R148)", function()
-	-- Types `query` into the open book's search box, as the player does: its text changes.
-	local function typeInto(loaded, query)
-		local search = loaded.ns.journal.frame.search
-		search:SetText(query)
-		search:GetScript("OnTextChanged")(search, true)
-	end
+-- Types `query` into the open book's search box, as the player does: its text changes.
+local function typeInto(loaded, query)
+	local search = loaded.ns.journal.frame.search
+	search:SetText(query)
+	search:GetScript("OnTextChanged")(search, true)
+end
 
-	-- The dropdown's shown lines, in order.
-	local function dropdown(loaded)
-		local frame = loaded.ns.journal.frame
-		local lines = {}
-		if not frame.searchDrop:IsShown() then
-			return lines
-		end
-		for _, row in ipairs(frame.searchDrop.rows) do
-			if row:IsShown() then
-				lines[#lines + 1] = row.label:GetText()
-			end
-		end
+-- The search dropdown's shown lines, in order.
+local function dropdown(loaded)
+	local frame = loaded.ns.journal.frame
+	local lines = {}
+	if not frame.searchDrop:IsShown() then
 		return lines
 	end
+	for _, row in ipairs(frame.searchDrop.rows) do
+		if row:IsShown() then
+			lines[#lines + 1] = row.label:GetText()
+		end
+	end
+	return lines
+end
 
+describe("the Journal's search box (LED-R148)", function()
 	it(
 		"finds a zone and caught Species from two letters, zones first, never an uncaught one (LED-R148, LED-R124)",
 		function()
@@ -494,48 +476,97 @@ end)
 
 -- Every spread registered stays under this spec: a spread that lands later is swept with the others.
 describe("never named until caught (LED-R124)", function()
-	-- The args every spread is drawn with: the uncaught Species chosen, its plain hint shut and open, in a zone that
-	-- lists it, on the first continent tab. A spread ignores the args it doesn't take.
-	local ARGS = {
-		{ species = SECRET, zone = DUSKWOOD, tab = 0 },
-		{ species = SECRET, zone = ELWYNN, tab = 0, hint = true },
+	-- An uncharted zone, fished: GetArea doesn't know it (LED-R138).
+	local NOWHERE = 9999
+	-- What is never caught, by its full name and the words of it that name it alone: an uncaught Species and curio
+	-- item (LED-R124). A trophy weight is swept by its full name only: its pounds are shown, and its family by its
+	-- lore name (LED-R143).
+	local SWEPT = {
+		{ name = NAMES[SECRET], words = { "Deviate" } },
+		{ name = NAMES[SKULL], words = { "Skull" } },
+		{ name = NAMES[CATFISH_17], words = {} },
 	}
 
-	-- Every text the open book shows, depth first: crumbs, both pages, the back link and the search box's dropdown.
-	local function drawnTexts(widget, texts)
-		texts = texts or {}
-		for _, child in ipairs(widget.children) do
-			if child.shown then
-				if type(child.text) == "string" and child.text ~= "" then
-					texts[#texts + 1] = child.text
-				end
-				drawnTexts(child, texts)
-			end
-		end
-		return texts
+	-- The args every spread is drawn with: the uncaught Species chosen (nil where `species` is false), its plain hint
+	-- shut and open, in zones that list it, an uncharted fished zone, the first continent tab and family 2. A spread
+	-- ignores the args it doesn't take.
+	local ARGS = {
+		{ species = SECRET, zone = DUSKWOOD, tab = 0, family = 2 },
+		{ species = SECRET, zone = ELWYNN, tab = 0, hint = true },
+		{ species = false, zone = DARKSHORE, tab = "other" },
+		{ species = false, zone = NOWHERE },
+		{ species = SECRET, zone = NOWHERE },
+	}
+
+	-- A Ledger whose log also fishes the uncharted zone: STRAY and an Uncharted item there.
+	local function swept()
+		local _, loaded = loggedIn({
+			cast(T0 + 300, STRAY, NOWHERE, DAY_MINUTE),
+			cast(T0 + 360, 99999, NOWHERE, DAY_MINUTE),
+		})
+		loaded.ns.journal:Toggle()
+		return loaded
 	end
 
-	-- The first text the book shows with `name` in it, as "{spread}: {text}", on any registered spread drawn with each
-	-- of ARGS and Species `species` chosen; nil if none.
-	local function anywhere(loaded, name, species)
+	-- `text` if it contains any of `names` (case-insensitive), else nil.
+	local function naming(text, names)
+		for _, name in ipairs(names) do
+			if text:lower():find(name:lower(), 1, true) then
+				return text
+			end
+		end
+		return nil
+	end
+
+	-- Each shown widget under `widget` with an OnEnter script, depth first.
+	local function hoverable(widget, found)
+		found = found or {}
+		for _, child in ipairs(widget.children) do
+			if child.shown then
+				if child.scripts.OnEnter then
+					found[#found + 1] = child
+				end
+				hoverable(child, found)
+			end
+		end
+		return found
+	end
+
+	-- The first text the book shows, or a tooltip on it holds, with any of `names` in it, as "{spread}: {text}", on
+	-- any registered spread drawn with each of ARGS and Species `species` chosen; nil if none.
+	local function anywhere(loaded, names, species)
 		local journal = loaded.ns.journal
 		local spreads = {}
 		for id in pairs(loaded.ns.journalSpreads) do
 			spreads[#spreads + 1] = id
 		end
 		table.sort(spreads)
-		assert.is_true(#spreads >= 2)
+		assert.is_true(#spreads >= 6)
 		for _, id in ipairs(spreads) do
 			for _, args in ipairs(ARGS) do
-				local copy = {}
-				for key, value in pairs(args) do
-					copy[key] = value
-				end
-				copy.species = species
-				journal:Open(id, copy)
-				for _, text in ipairs(drawnTexts(journal.frame)) do
-					if text:lower():find(name:lower(), 1, true) then
-						return id .. ": " .. text
+				-- The fish spread always has a Species: no place opens it without one.
+				if args.species ~= false or id ~= loaded.ns.JOURNAL_FISH then
+					local copy = {}
+					for key, value in pairs(args) do
+						copy[key] = value
+					end
+					copy.species = args.species ~= false and species or nil
+					journal:Open(id, copy)
+					for _, text in ipairs(shownTexts(journal.frame)) do
+						if naming(text, names) then
+							return id .. ": " .. text
+						end
+					end
+					for _, widget in ipairs(hoverable(journal.frame)) do
+						widget.scripts.OnEnter(widget)
+						for _, line in ipairs(loaded.client.tooltipLines()) do
+							if naming(line, names) then
+								return id .. " (tooltip): " .. line
+							end
+						end
+						if widget.scripts.OnLeave then
+							widget.scripts.OnLeave(widget)
+						end
 					end
 				end
 			end
@@ -543,15 +574,59 @@ describe("never named until caught (LED-R124)", function()
 		return nil
 	end
 
-	it("names an uncaught Species nowhere on any registered spread (LED-R124)", function()
-		local _, loaded = loggedIn()
+	-- The names and words of `swept`, flat.
+	local function namesOf(list)
+		local names = {}
+		for _, entry in ipairs(list) do
+			names[#names + 1] = entry.name
+			for _, word in ipairs(entry.words) do
+				names[#names + 1] = word
+			end
+		end
+		return names
+	end
 
-		assert.is_nil(anywhere(loaded, NAMES[SECRET], SECRET))
+	it(
+		"names an uncaught Species or curio item nowhere, in full or in part, on any spread or tooltip (LED-R124)",
+		function()
+			local loaded = swept()
+
+			assert.is_nil(anywhere(loaded, namesOf(SWEPT), SECRET))
+		end
+	)
+
+	it("finds none of them by search, in full or in part: only the no-match line (LED-R124, LED-R148)", function()
+		local loaded = swept()
+
+		for _, name in ipairs(namesOf(SWEPT)) do
+			typeInto(loaded, name)
+			assert.are.same({ "Nothing by that name in the Ledger yet." }, dropdown(loaded), name)
+		end
 	end)
 
 	it("would find a caught Species' name, so the sweep reads what is drawn (LED-R124)", function()
-		local _, loaded = loggedIn()
+		local loaded = swept()
 
-		assert.is_not_nil(anywhere(loaded, NAMES[MACKEREL], MACKEREL))
+		assert.is_not_nil(anywhere(loaded, { NAMES[MACKEREL] }, MACKEREL))
+	end)
+
+	it("would find a name a tooltip shows on hover, so the sweep reads tooltips (LED-R124)", function()
+		local loaded = swept()
+		local tooltip = loaded.env.GameTooltip
+		loaded.ns.journal.frame.close:SetScript("OnEnter", function(self)
+			tooltip:SetOwner(self, "ANCHOR_RIGHT")
+			tooltip:SetText(NAMES[SECRET])
+			tooltip:Show()
+		end)
+
+		assert.are.equal("angler (tooltip): Deviate Fish", anywhere(loaded, namesOf(SWEPT), SECRET))
+	end)
+
+	it("sweeps the uncharted zone's page: it shows what was caught there (LED-R138)", function()
+		local loaded = swept()
+
+		loaded.ns.journal:OpenPlace(loaded.ns.JournalPlace.zone(NOWHERE))
+
+		assert.is_not_nil(naming(table.concat(shownTexts(loaded.ns.journal.frame), " / "), { NAMES[STRAY] }))
 	end)
 end)

@@ -8,6 +8,7 @@ from pathlib import Path
 
 import pytest
 
+from cli_fixture import run
 from pagle_data.baseline import COLUMNS
 from pagle_data.extract_baseline import ExtractError, Snapshot, extract, main
 from vmangos_fixture import Row, build
@@ -229,12 +230,6 @@ def dump(tmp_path: Path) -> tuple[Path, Snapshot]:
     return archive, Snapshot("db_latest@1234567", date(2026, 9, 28), "https://example.invalid/db.zip", sha256)
 
 
-def run(argv: list[str], root: Path, snapshot: Snapshot, capsys: pytest.CaptureFixture[str]) -> tuple[int, str]:
-    code = main(argv, root, snapshot)
-    out, err = capsys.readouterr()
-    return code, out + err
-
-
 def test_the_command_writes_the_csvs_and_source_toml_from_the_dump(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
@@ -242,7 +237,7 @@ def test_the_command_writes_the_csvs_and_source_toml_from_the_dump(
     # snapshot's tag and date, the dump's URL and SHA-256 (the #57 spec edit), and each CSV's SHA-256.
     archive, snapshot = dump(tmp_path)
     root = tmp_path / "repo"
-    code, _ = run([str(archive)], root, snapshot, capsys)
+    code, _ = run(root, capsys, str(archive), main=main, snapshot=snapshot)
     assert code == 0
     baseline = root / "data" / "baseline"
     assert (baseline / "pools.csv").read_text(encoding="utf-8").startswith("entry,name,event\n1000,School of Fish,\n")
@@ -265,7 +260,8 @@ def test_a_dump_whose_hash_differs_from_the_snapshot_writes_nothing(
     # The #57 decision: verify the archived dump's SHA-256 before extracting anything.
     archive, snapshot = dump(tmp_path)
     root = tmp_path / "repo"
-    code, output = run([str(archive)], root, Snapshot(snapshot.tag, snapshot.date, snapshot.url, "0" * 64), capsys)
+    wrong = Snapshot(snapshot.tag, snapshot.date, snapshot.url, "0" * 64)
+    code, output = run(root, capsys, str(archive), main=main, snapshot=wrong)
     assert code == 1
     assert f"{archive}: SHA-256 is {snapshot.sha256}, not {'0' * 64}" in output
     assert not (root / "data").exists()
@@ -275,9 +271,9 @@ def test_the_baseline_is_extracted_once(tmp_path: Path, capsys: pytest.CaptureFi
     # DATA-R9: extracted once, frozen; a second run changes nothing.
     archive, snapshot = dump(tmp_path)
     root = tmp_path / "repo"
-    run([str(archive)], root, snapshot, capsys)
+    run(root, capsys, str(archive), main=main, snapshot=snapshot)
     (root / "data" / "baseline" / "skill.csv").write_text("kept\n", encoding="utf-8")
-    code, output = run([str(archive)], root, snapshot, capsys)
+    code, output = run(root, capsys, str(archive), main=main, snapshot=snapshot)
     assert code == 1
     assert "data/baseline/ exists" in output
     assert (root / "data" / "baseline" / "skill.csv").read_text(encoding="utf-8") == "kept\n"

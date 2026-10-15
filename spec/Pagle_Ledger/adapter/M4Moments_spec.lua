@@ -500,7 +500,7 @@ describe("the Ledger's M4 done", function()
 			assert.are.same({
 				{
 					"While the Ledger was off",
-					"Angler Level 1 → 16 · Prestige 1",
+					"Angler Level 1 to 16 · Prestige 1",
 					"21 Species",
 					"Title: Nat's Peer",
 					"Title: Returning Tide",

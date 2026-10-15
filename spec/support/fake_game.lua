@@ -1,6 +1,7 @@
 -- The fake client's game side for QoL: key bindings and override bindings, keys held down, the player's casts and
--- channel, the main hand, CVars, the mount, and the frame loop. spec/support/addon.lua adds these stubs to every
--- load, so they answer as a character standing idle and unmounted with no key bound, nothing held and nothing in hand.
+-- channel, the main hand and its lure, the bags, CVars, the mount, equipment sets, and the frame loop.
+-- spec/support/addon.lua adds these stubs to every load, so they answer as a character standing idle and unmounted
+-- with no key bound, nothing held, nothing in hand, nothing in the bags and no equipment set.
 --
 --   loaded.client.boundKeys.PAGLE_FISHING_KEY = { "F", "SHIFT-F" }  -- GetBindingKey's keys
 --   loaded.client.overrideAction("F")                               -- "SPELL Fishing", as GetBindingAction reads it
@@ -9,6 +10,17 @@
 --   loaded.client.update(0.5)                                       -- one frame, 0.5 s after the last
 --   loaded.client.cvars.SoftTargetInteract = "1"                    -- GetCVar's value; SetCVar changes it
 --   loaded.client.mounted = true                                    -- IsMounted()
+--   loaded.client.bags[6529] = 5                                    -- C_Item.GetItemCount(6529)
+--   loaded.client.mainHandEnchant = 263                             -- GetWeaponEnchantInfo(): a lure on
+--   loaded.client.equipmentSets[3] = { name = "Fishing", items = { [16] = 6256 } } -- a C_EquipmentSet set
+--   loaded.client.wearSet(3)                                        -- the set's items go on, as a swap ends
+--   loaded.client.click("RightButton", 0.1)                         -- a mouse click, held 0.1 s
+--   loaded.client.mouseFoci = { someButton }                        -- GetMouseFoci(): the mouse is over a UI frame
+--   loaded.client.nextFrame(0.016)                                   -- the clock moves on, then one frame runs
+--   loaded.client.keysDown.SHIFT = true                              -- IsShiftKeyDown()
+--   loaded.client.loadItem(6529, "Shiny Bauble")                     -- an uncached item's data arrives
+--   loaded.client.pressKey("F")                                      -- F's click override clicks its button
+--   loaded.client.itemUses                                           -- { "use 6529 on 16" }: what the presses used
 --
 -- Each override call fires UPDATE_BINDINGS at once, through client.fireGameEvent, as the client fires it after a
 -- binding change; under FakePagle, fake.load points that at fake.fireGameEvent. Each one raises an error while the
@@ -16,29 +28,71 @@
 
 ---@class FakeClient
 ---@field boundKeys table<string, string[]> The keys bound to each binding command, as `GetBindingKey` returns them.
----@field keysDown table<string, true> The keys held down, by name without modifiers, as `IsKeyDown` takes them.
+---@field keysDown table<string, true> The keys held down, by name without modifiers, as `IsKeyDown` takes them;
+--- `SHIFT` is what `IsShiftKeyDown()` reads.
 ---@field channel string? The spell the player is channeling, by name; `UnitChannelInfo("player")` returns it.
 ---@field casting string? The spell the player is casting with a cast time; `UnitCastingInfo("player")` returns it.
 ---@field mainHand integer? The item ID in the main hand (slot 16).
 ---@field items table<integer, integer[]> `{ classID, subclassID }` per item ID, for `C_Item.GetItemInfoInstant`.
----@field itemNames table<integer, string> Each item's name, for `C_Item.GetItemNameByID` and `C_Item.GetItemInfo`.
---- Default none: no item cached.
----@field itemRequests integer[] Each `C_Item.RequestLoadItemDataByID` call's item ID, in order. The client loads
---- nothing on its own: a spec sets `itemNames` and fires GET_ITEM_INFO_RECEIVED itself.
----@field itemIcons table<integer, integer|string> Each item's icon, for `C_Item.GetItemIconByID`. Default none.
 ---@field itemLoads table<integer, function[]> The `Item:CreateFromItemID(id):ContinueOnItemLoad` callbacks waiting
---- for each item not in `itemNames`, in order.
----@field loadItem fun(itemID: integer, name: string) The client loads an item: it goes into `itemNames`, and each
---- callback waiting for it runs, in order.
+--- for each item not in `itemNames`, in order, until `loadItem` runs them.
 ---@field bindingCalls string[] Each override call, in order: "set <key> <action>" or "clear".
 ---@field overrideAction fun(key: string): string? The priority override on `key`, as `GetBindingAction` reads it.
 ---@field fireGameEvent fun(event: string, ...) Fires a WoW event the game raises on its own. `client.fire` unless a
 --- spec or FakePagle replaces it.
 ---@field update fun(elapsed: number) Runs one frame: each frame's OnUpdate script, given `elapsed` seconds.
----@field cvars table<string, string> Each CVar's value as `GetCVar` reads it. `SetCVar` stores `tostring(value)`; a
---- CVar not listed is one the client doesn't know (`GetCVar` returns nil).
+---@field cvars table<string, string> Each CVar's value as `GetCVar` reads it. `SetCVar` stores `tostring(value)`
+--- and fires `CVAR_UPDATE(name, value)` through `fireGameEvent` before it returns; a CVar not listed is one the
+--- client doesn't know (`GetCVar` returns nil).
 ---@field cvarCalls string[] Each `SetCVar` call, in order: "set <name> <value>".
 ---@field mounted boolean? Whether the player is mounted, as `IsMounted()` reads it.
+---@field bags table<integer, integer> How many of each item ID are in the bags, as `C_Item.GetItemCount` reads it.
+---@field unusable table<integer, true> Item IDs `C_Item.IsUsableItem` says can't be used; every other can. The
+--- clam table's items are, as on Forever (#147).
+---@field targetsItem table<integer, true> Item IDs whose use targets an item, the lure table's: their use alone leaves
+--- the cursor targeting (`SpellIsTargeting()`), until the secure button's `target-slot` names the slot (#147).
+---@field targeting integer? The item whose use is waiting for a target, as the glowing hand; nil when none is.
+---@field itemUses string[] Each item use PagleQoLActionButton's press made, in order: "use <itemID>", or
+--- "use <itemID> on <slot>" for one applied to an equipped slot.
+---@field pressKey fun(key: string) A press of `key` reaching its override: for a click override ("CLICK name:…"),
+--- the named button's click, with the secure item action of FrameXML's SecureActionButtonTemplate for a secure one.
+--- No other override is faked.
+---@field mainHandEnchant integer? The enchant ID on the main hand (a lure), as `GetWeaponEnchantInfo()` reads it.
+---@field itemSpells table<integer, { [1]: string, [2]: integer }> The spell each item's use casts, by item ID, as
+--- `C_Item.GetItemSpell` returns it: name, spell ID.
+---@field itemNames table<integer, string> Each item's name, by item ID, as `C_Item.GetItemNameByID` and
+--- `C_Item.GetItemInfo` return it once the item is cached; an item not listed isn't cached. Default: the lure and
+--- clam tables' items only.
+---@field itemRequests integer[] Each `C_Item.RequestLoadItemDataByID` call's item ID, in order. The client loads
+--- nothing on its own: a spec sets `itemNames` and fires GET_ITEM_INFO_RECEIVED itself, or calls `loadItem`.
+---@field itemIcons table<integer, integer> Each item's icon file ID, by item ID, as `GetInventoryItemTexture` reads
+--- it for a worn item and `C_Item.GetItemIconByID` for any.
+---@field loadItem fun(itemID: integer, name: string) An item's data arrives: its name is cached as `name`, and each
+--- `Item:CreateFromItemID(itemID):ContinueOnItemLoad` callback waiting for it runs.
+---@field worn table<integer, integer> The item ID worn in each slot but the main hand, by slot; the main hand (16)
+--- is `mainHand`.
+---@field equipmentSets table<integer, FakeEquipmentSet> The character's equipment sets by set ID, as C_EquipmentSet
+--- reads them. Specs add sets; CreateEquipmentSet adds one at the lowest free ID, from 0.
+---@field equipmentSetCalls string[] Each C_EquipmentSet call that changes something, in order: "clear ignored",
+--- "create <name> <icon>", "save <setID>" or "use <setID>".
+---@field wearSet fun(setID: integer) Puts the set's items on (slot 16 into `mainHand`, the rest into `worn`), as
+--- the end of a swap does. It fires no event.
+---@field bindingTexts table<string, string> Short key texts `GetBindingText(key, true)` returns, by key; a key not
+--- listed reads as itself with SHIFT-, CTRL- and ALT- shortened to s-, c- and a-.
+---@field mouseFoci table[] The frames under the mouse, topmost first, as `GetMouseFoci()` returns them. Default
+--- `{ WorldFrame }`: the mouse is over the game world.
+---@field click fun(button: string, hold: number?) A mouse click: `GLOBAL_MOUSE_DOWN(button)`, the clock moving on
+--- `hold` seconds (default 0.1), then `GLOBAL_MOUSE_UP(button)`, each through `client.fireGameEvent`, as the
+--- client fires them for any click, on a frame or on the world.
+---@field nextFrame fun(seconds: number?) The next frame: the clock moves on `seconds` (default 1/60), running the
+--- timers due, then each frame's OnUpdate runs with that elapsed time, as GetTime() holds one value per frame.
+
+--- One equipment set: its name, icon, items by slot, and how many of them are missing (in the bank, say).
+---@class FakeEquipmentSet
+---@field name string
+---@field icon integer?
+---@field items table<integer, integer> item IDs by slot
+---@field lost integer? `GetEquipmentSetInfo`'s numLost. Default 0.
 
 -- The spells named Fishing: the generated catalogue's fishing-spell list (LOG-R2, data/forever/lists.toml), since
 -- every rank of Fishing has this name (probe B2).
@@ -58,14 +112,39 @@ end
 return function(client, stubs)
 	client.boundKeys, client.keysDown, client.bindingCalls = {}, {}, {}
 	-- The soft-interact CVars as probe B11 read them on the dev's client (build 70338), all at or above what QoL
-	-- leases (QOL-R62), so a stretch leases nothing until a spec sets the player's own values.
-	client.cvars = { SoftTargetInteract = "3", SoftTargetInteractRange = "60", SoftTargetInteractRangeIsHard = "0" }
+	-- leases (QOL-R62), so a stretch leases nothing until a spec sets the player's own values. ActionButtonUseKeyDown
+	-- too: probe B11 read it as 1.
+	client.cvars = {
+		SoftTargetInteract = "3",
+		SoftTargetInteractRange = "60",
+		SoftTargetInteractRangeIsHard = "0",
+		ActionButtonUseKeyDown = "1",
+	}
 	client.cvarCalls = {}
 	-- A Fishing Pole (6256, as probe B1 read it) and a Worn Shortsword (25).
 	client.items = { [6256] = { 2, 20 }, [25] = { 2, 7 } }
-	client.itemNames = {}
+	-- On Forever `C_Item.IsUsableItem` is false for a clam in the bags: the dev's `/dump` read 5523 so (build 70338,
+	-- #147). The other two clams are taken to be the same.
+	client.bags, client.unusable = {}, { [5523] = true, [5524] = true, [7973] = true }
+	-- The lure table's items: using one alone starts targeting on Forever (build 70338, #147).
+	client.targetsItem = { [6529] = true, [6530] = true, [6811] = true, [6532] = true, [7307] = true, [6533] = true }
+	client.itemUses = {}
+	-- Shiny Bauble's use casts 8087 (probe B4); the other lures' spells are a spec's to add.
+	client.itemSpells = { [6529] = { "Shiny Bauble", 8087 } }
+	-- The lure table's and the clam table's items by their enUS names, all cached.
+	client.itemNames = {
+		[6529] = "Shiny Bauble",
+		[6530] = "Nightcrawlers",
+		[6811] = "Aquadynamic Fish Lens",
+		[6532] = "Bright Baubles",
+		[7307] = "Flesh Eating Worm",
+		[6533] = "Aquadynamic Fish Attractor",
+		[5523] = "Small Barnacled Clam",
+		[5524] = "Thick-shelled Clam",
+		[7973] = "Big-mouth Clam",
+	}
 	client.itemRequests = {}
-	client.itemIcons, client.itemLoads = {}, {}
+	client.itemLoads = {}
 	client.fireGameEvent = client.fire
 
 	-- Override calls are protected: in combat lockdown the client blocks them (ADDON_ACTION_BLOCKED). Here they
@@ -104,6 +183,22 @@ return function(client, stubs)
 		end
 	end
 
+	-- The mouse, for QoL's double-click (QOL-R13). GLOBAL_MOUSE_DOWN and _UP carry the button's name ("RightButton").
+	client.mouseFoci = { stubs.WorldFrame }
+	function client.click(button, hold)
+		client.fireGameEvent("GLOBAL_MOUSE_DOWN", button)
+		client.advance(hold or 0.1)
+		client.fireGameEvent("GLOBAL_MOUSE_UP", button)
+	end
+	function client.nextFrame(seconds)
+		seconds = seconds or (1 / 60)
+		client.advance(seconds)
+		client.update(seconds)
+	end
+	stubs.GetMouseFoci = function()
+		return { unpack(client.mouseFoci) }
+	end
+
 	stubs.GetBindingKey = function(command)
 		return unpack(client.boundKeys[command] or {})
 	end
@@ -113,6 +208,10 @@ return function(client, stubs)
 	stubs.SetOverrideBindingSpell = function(owner, isPriority, key, spell)
 		setOverride(owner, isPriority, key, "SPELL " .. spell)
 	end
+	-- As GetBindingAction reads a click binding (probe B4): "CLICK PagleQoLProbeActionButton:LeftButton".
+	stubs.SetOverrideBindingClick = function(owner, isPriority, key, buttonName, mouseButton)
+		setOverride(owner, isPriority, key, ("CLICK %s:%s"):format(buttonName, mouseButton or "LeftButton"))
+	end
 	stubs.ClearOverrideBindings = function(owner)
 		unlessLockedDown("ClearOverrideBindings")
 		overrides[owner] = nil
@@ -121,6 +220,9 @@ return function(client, stubs)
 	end
 	stubs.IsKeyDown = function(key)
 		return client.keysDown[key] == true
+	end
+	stubs.IsShiftKeyDown = function()
+		return client.keysDown.SHIFT == true
 	end
 	stubs.UnitChannelInfo = function(unit)
 		if unit == "player" then
@@ -145,6 +247,19 @@ return function(client, stubs)
 			return itemID, "", "", "", 0, item[1], item[2]
 		end
 	end
+	stubs.C_Item.GetItemCount = function(itemID)
+		return client.bags[itemID] or 0
+	end
+	-- usable, noMana
+	stubs.C_Item.IsUsableItem = function(itemID)
+		return not client.unusable[itemID], false
+	end
+	stubs.C_Item.GetItemSpell = function(itemID)
+		local spell = client.itemSpells[itemID]
+		if spell then
+			return spell[1], spell[2]
+		end
+	end
 	-- The item's name once the client has it cached; nil for one it doesn't know (the Ledger falls back, LED-R97).
 	stubs.C_Item.GetItemNameByID = function(itemID)
 		return client.itemNames[itemID]
@@ -157,31 +272,32 @@ return function(client, stubs)
 	stubs.C_Item.GetItemInfo = function(itemID)
 		return client.itemNames[itemID]
 	end
-	-- The item's icon from client.itemIcons, cached or not, as the client answers from its item data (HNT-R55).
+	-- An item's icon by item ID, from client.itemIcons, whether or not its name is cached (HNT-R55, QOL-R71).
 	stubs.C_Item.GetItemIconByID = function(itemID)
 		return client.itemIcons[itemID]
 	end
-	-- ItemMixin's loader (Blizzard_ObjectAPI's Item.lua): ContinueOnItemLoad runs the callback at once for an item in
-	-- client.itemNames, else when client.loadItem loads it (HNT-R54).
+	-- FrameXML's Item (Blizzard_ObjectAPI/Mainline/Item.lua), as far as waiting for an item's data: ContinueOnItemLoad
+	-- runs its callback at once if the item's name is cached, else when client.loadItem loads it; the callbacks
+	-- waiting meanwhile are in client.itemLoads (HNT-R54).
 	stubs.Item = {
 		CreateFromItemID = function(_, itemID)
 			return {
 				ContinueOnItemLoad = function(_, callback)
 					if client.itemNames[itemID] then
 						callback()
-						return
+					else
+						client.itemLoads[itemID] = client.itemLoads[itemID] or {}
+						table.insert(client.itemLoads[itemID], callback)
 					end
-					client.itemLoads[itemID] = client.itemLoads[itemID] or {}
-					table.insert(client.itemLoads[itemID], callback)
 				end,
 			}
 		end,
 	}
 	function client.loadItem(itemID, name)
 		client.itemNames[itemID] = name
-		local waiting = client.itemLoads[itemID] or {}
+		local callbacks = client.itemLoads[itemID] or {}
 		client.itemLoads[itemID] = nil
-		for _, callback in ipairs(waiting) do
+		for _, callback in ipairs(callbacks) do
 			callback()
 		end
 	end
@@ -194,12 +310,23 @@ return function(client, stubs)
 		[4] = { r = 0.64, g = 0.21, b = 0.93 },
 		[5] = { r = 1, g = 0.5, b = 0 },
 	}
+	-- hasMainHandEnchant, mainHandExpiration, mainHandCharges, mainHandEnchantID, then the off hand's and the ranged
+	-- slot's, as probe B4 read them: true, 600000, 0, 263, false, nil, … with Shiny Bauble's lure on.
+	stubs.GetWeaponEnchantInfo = function()
+		local lure = client.mainHandEnchant
+		if lure then
+			return true, 600000, 0, lure, false, nil, nil, nil, false, nil, nil, nil
+		end
+		return false, nil, nil, nil, false, nil, nil, nil, false, nil, nil, nil
+	end
 	stubs.GetCVar = function(name)
 		return client.cvars[name]
 	end
+	-- Each call fires CVAR_UPDATE(name, value) at once, through client.fireGameEvent, before SetCVar returns.
 	stubs.SetCVar = function(name, value)
 		client.cvarCalls[#client.cvarCalls + 1] = ("set %s %s"):format(name, tostring(value))
 		client.cvars[name] = tostring(value)
+		client.fireGameEvent("CVAR_UPDATE", name, tostring(value))
 	end
 	stubs.IsMounted = function()
 		return client.mounted == true
@@ -207,5 +334,196 @@ return function(client, stubs)
 	stubs.C_Spell = stubs.C_Spell or {}
 	stubs.C_Spell.GetSpellName = function(spellID)
 		return FISHING_SPELLS[spellID] and "Fishing" or nil
+	end
+
+	-- Equipment sets (C_EquipmentSet), the icons a new set takes, and short key texts. The character has no set.
+	-- The Fishing Pole's and the Worn Shortsword's icons; the Fishing spell's is 136245.
+	client.itemIcons = { [6256] = 132932, [25] = 135274 }
+	client.worn, client.equipmentSets, client.equipmentSetCalls, client.bindingTexts = {}, {}, {}, {}
+
+	-- The item worn in a slot.
+	local function wornIn(slot)
+		if slot == 16 then
+			return client.mainHand
+		end
+		return client.worn[slot]
+	end
+
+	-- The gear worn now, by slot, as a new or saved set holds it.
+	local function wornNow()
+		local items = {}
+		for slot, itemID in pairs(client.worn) do
+			items[slot] = itemID
+		end
+		items[16] = client.mainHand
+		return items
+	end
+
+	local function record(call)
+		client.equipmentSetCalls[#client.equipmentSetCalls + 1] = call
+	end
+
+	-- A secure button's click, as SECURE_ACTIONS.item and OnActionButtonClick run it (Gethe/wow-ui-source branch
+	-- forever at 943764493e6b16d63ded3ab304150d1f05e58b57, "1.60.1 (70338)":
+	-- Interface/AddOns/Blizzard_FrameXML/SecureTemplates.lua, lines 418–439 and 759–785): the button's item is used;
+	-- then, if that use is targeting an item, `target-slot` with no `target-bag` applies it to that equipped slot
+	-- (UseInventoryItem). Only `type = "item"` with `item = "item:<id>"`, used from the bags, is faked. An applied
+	-- lure's use casts its spell at once (UNIT_SPELLCAST_START, _SUCCEEDED, _STOP); its enchant is a spec's to put on,
+	-- as the game shows it a moment later.
+	local function secureClick(button)
+		if button:GetAttribute("type") ~= "item" then
+			return
+		end
+		local itemID = tonumber((button:GetAttribute("item") or ""):match("^item:(%d+)$"))
+		if not itemID or (client.bags[itemID] or 0) == 0 then
+			return
+		end
+		if not client.targetsItem[itemID] then
+			client.itemUses[#client.itemUses + 1] = "use " .. itemID
+			return
+		end
+		client.targeting = itemID
+		local slot = tonumber(button:GetAttribute("target-slot"))
+		if not slot or button:GetAttribute("target-bag") or not wornIn(slot) then
+			return
+		end
+		client.targeting = nil
+		client.itemUses[#client.itemUses + 1] = ("use %d on %d"):format(itemID, slot)
+		local spell = client.itemSpells[itemID] or {}
+		client.casting = spell[1]
+		client.fireGameEvent("UNIT_SPELLCAST_START", "player", "Cast-Item", spell[2])
+		client.casting = nil
+		client.fireGameEvent("UNIT_SPELLCAST_SUCCEEDED", "player", "Cast-Item", spell[2])
+		client.fireGameEvent("UNIT_SPELLCAST_STOP", "player", "Cast-Item", spell[2])
+	end
+
+	function client.pressKey(key)
+		local action = client.overrideAction(key)
+		local name = action and action:match("^CLICK ([^:]+):")
+		assert(name, ("FakeClient: only a click override is pressed, not %s"):format(tostring(action)))
+		local button = assert(stubs[name], "FakeClient: no button named " .. name)
+		if button.template == "SecureActionButtonTemplate" then
+			secureClick(button)
+		else
+			button:Click()
+		end
+	end
+	stubs.SpellIsTargeting = function()
+		return client.targeting ~= nil
+	end
+
+	function client.wearSet(setID)
+		for slot, itemID in pairs(client.equipmentSets[setID].items) do
+			if slot == 16 then
+				client.mainHand = itemID
+			else
+				client.worn[slot] = itemID
+			end
+		end
+	end
+
+	-- FrameXML's limit: Gethe/wow-ui-source branch forever, Blizzard_FrameXMLBase/Constants.lua.
+	stubs.MAX_EQUIPMENT_SETS_PER_PLAYER = 10
+	stubs.C_EquipmentSet = {
+		GetEquipmentSetID = function(name)
+			for setID, set in pairs(client.equipmentSets) do
+				if set.name == name then
+					return setID
+				end
+			end
+			return nil
+		end,
+		GetEquipmentSetIDs = function()
+			local ids = {}
+			for setID in pairs(client.equipmentSets) do
+				ids[#ids + 1] = setID
+			end
+			table.sort(ids)
+			return ids
+		end,
+		GetNumEquipmentSets = function()
+			local count = 0
+			for _ in pairs(client.equipmentSets) do
+				count = count + 1
+			end
+			return count
+		end,
+		-- name, iconFileID, setID, isEquipped, numItems, numEquipped, numInInventory, numLost, numIgnored
+		GetEquipmentSetInfo = function(setID)
+			local set = client.equipmentSets[setID]
+			if not set then
+				return nil
+			end
+			local numItems, numEquipped = 0, 0
+			for slot, itemID in pairs(set.items) do
+				numItems = numItems + 1
+				if wornIn(slot) == itemID then
+					numEquipped = numEquipped + 1
+				end
+			end
+			local lost = set.lost or 0
+			return set.name,
+				set.icon,
+				setID,
+				numEquipped == numItems,
+				numItems,
+				numEquipped,
+				numItems - numEquipped - lost,
+				lost,
+				0
+		end,
+		GetItemIDs = function(setID)
+			local items = {}
+			for slot, itemID in pairs(client.equipmentSets[setID].items) do
+				items[slot] = itemID
+			end
+			return items
+		end,
+		ClearIgnoredSlotsForSave = function()
+			record("clear ignored")
+		end,
+		-- As probe B9 saw: no return value, and EQUIPMENT_SETS_CHANGED during the call. The client refuses a name in
+		-- use or a set past the limit; here that raises, so a spec fails on it.
+		CreateEquipmentSet = function(name, icon)
+			assert(not stubs.C_EquipmentSet.GetEquipmentSetID(name), "FakeClient: a set named " .. name .. " exists")
+			assert(
+				stubs.C_EquipmentSet.GetNumEquipmentSets() < stubs.MAX_EQUIPMENT_SETS_PER_PLAYER,
+				"FakeClient: no free set slot"
+			)
+			local setID = 0
+			while client.equipmentSets[setID] do
+				setID = setID + 1
+			end
+			client.equipmentSets[setID] = { name = name, icon = icon, items = wornNow() }
+			record(("create %s %s"):format(name, tostring(icon)))
+			client.fireGameEvent("EQUIPMENT_SETS_CHANGED")
+		end,
+		SaveEquipmentSet = function(setID, icon)
+			local set = assert(client.equipmentSets[setID], "FakeClient: no set " .. tostring(setID))
+			set.items, set.icon = wornNow(), icon or set.icon
+			record("save " .. setID)
+			client.fireGameEvent("EQUIPMENT_SETS_CHANGED")
+		end,
+		-- The swap itself ends later: a spec calls client.wearSet and fires EQUIPMENT_SWAP_FINISHED.
+		UseEquipmentSet = function(setID)
+			record("use " .. setID)
+			return client.equipmentSets[setID] ~= nil
+		end,
+	}
+	stubs.GetInventoryItemTexture = function(unit, slot)
+		local itemID = unit == "player" and wornIn(slot)
+		return itemID and client.itemIcons[itemID] or nil
+	end
+	stubs.C_Spell.GetSpellTexture = function(spellID)
+		if FISHING_SPELLS[spellID] then
+			return 136245, 136245
+		end
+	end
+	-- The key's text in Key Bindings, or with `abbreviate` its short form, as action bars show it.
+	stubs.GetBindingText = function(key, abbreviate)
+		if not abbreviate then
+			return key
+		end
+		return client.bindingTexts[key] or (key:gsub("SHIFT%-", "s-"):gsub("CTRL%-", "c-"):gsub("ALT%-", "a-"))
 	end
 end
