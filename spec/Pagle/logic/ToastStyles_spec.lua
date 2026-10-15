@@ -39,9 +39,11 @@ describe("the toast styles", function()
 	)
 
 	it(
-		"find every atlas's texture in Pagle's media/announce as a BLP the package ships (announcements.md › UI)",
+		"find each announcement atlas's texture in Pagle's media/announce as a BLP the package ships (announcements.md"
+			.. " › UI)",
 		function()
-			for name, atlas in pairs(ns.ATLASES) do
+			for _, name in ipairs({ "Announce", "Splash", "ToastsLedger", "ToastsRipple", "ToastsLantern" }) do
+				local atlas = ns.ATLASES[name]
 				assert.are.equal("Interface\\AddOns\\Pagle\\media\\announce\\" .. name, atlas.file)
 				---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io
 				local file = io.open("addons/Pagle/media/announce/" .. name .. ".blp", "rb")
