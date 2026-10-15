@@ -272,6 +272,19 @@ describe("an uncaught Species' entry (LED-R141)", function()
 		openFish(loaded, SECRET)
 		assert.are.equal("link", journal.pages.left[4].kind)
 	end)
+
+	it("keeps both pages' scroll on the fish spread as its hint opens (LED-R129, LED-R141)", function()
+		local _, loaded = loggedIn()
+		local journal = loaded.ns.journal
+		openFish(loaded, SECRET)
+		scrollPage(loaded, "left", 120)
+		scrollPage(loaded, "right", 80)
+
+		journal.frame.left.drawn.link[1]:Click()
+
+		assert.are.equal("night · pools · Elwynn Forest · Westfall +1 · skill ~25", journal.pages.left[4].text)
+		assert.are.same({ 120, 80 }, { pageScroll(loaded, "left"), pageScroll(loaded, "right") })
+	end)
 end)
 
 describe("the fish spread (LED-R142)", function()

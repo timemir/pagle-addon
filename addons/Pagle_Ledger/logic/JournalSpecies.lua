@@ -296,4 +296,6 @@ ns.RegisterJournalSpread(ns.JOURNAL_FISH, {
 		local hint = { open = args.hint, place = ns.JournalPlace.fish(id, true) }
 		return { left = ns.JournalSpeciesEntry(id, context, hint), right = waters(id, context) }
 	end,
+	-- Both pages are the Species': opening its hint keeps their scroll (LED-R129).
+	subjects = { left = { "species" }, right = { "species" } },
 })

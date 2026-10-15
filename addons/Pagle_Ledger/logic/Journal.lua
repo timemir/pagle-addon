@@ -126,17 +126,21 @@ local ns = select(2, ...)
 ---@field left LedgerBlock[]
 ---@field right LedgerBlock[]
 
---- A spread, registered by ID: its crumbs after Home's (none for Home itself) and its pages, both for its args.
+--- A spread, registered by ID: its crumbs after Home's (none for Home itself) and its pages, both for its args, and
+--- the args each page is about (LED-R129): a page keeps its scroll while those stay the same. Without `subjects`,
+--- every arg is both pages'.
 ---@class LedgerSpread
 ---@field crumbs fun(args: table, context: LedgerSpreadContext): LedgerCrumb[]
 ---@field draw fun(args: table, context: LedgerSpreadContext): LedgerSpreadPages
+---@field subjects? { left: string[], right: string[] }
 
---- What the open book shows (LED-R122, LED-R125): both pages, and while not updating, the crumbs (Home first) and
---- the back link's place (nil on Home). The search box shows whenever the crumbs do.
+--- What the open book shows (LED-R122, LED-R125): both pages, and while not updating, the crumbs (Home first), the
+--- back link's place (nil on Home) and each page's subject (LED-R129). The search box shows whenever the crumbs do.
 ---@class LedgerJournalPages
 ---@field updating boolean
 ---@field crumbs? LedgerCrumb[]
 ---@field back? LedgerJournalPlace
+---@field subjects? { left: string, right: string }
 ---@field left LedgerBlock[]
 ---@field right LedgerBlock[]
 
@@ -236,6 +240,32 @@ function ns.JournalHelpChartLink(context)
 	return { kind = "link", text = ns.L.JOURNAL_HELP_CHART, action = context.openFieldReport }
 end
 
+-- Every arg's name in `args`, sorted: a spread's subject when it names none (LED-R129).
+---@param args table
+---@return string[]
+local function allArgs(args)
+	local names = {}
+	for name in pairs(args) do
+		names[#names + 1] = name
+	end
+	table.sort(names)
+	return names
+end
+
+-- A page's subject (LED-R129) as a string, equal for two places exactly when the page is about the same thing: the
+-- spread's ID and the values of `names` in `args`.
+---@param id string
+---@param args table
+---@param names string[]
+---@return string
+local function subject(id, args, names)
+	local parts = { id }
+	for _, name in ipairs(names) do
+		parts[#parts + 1] = name .. "=" .. tostring(args[name])
+	end
+	return table.concat(parts, " ")
+end
+
 ---@class LedgerJournalRouter
 ---@field private spreads table<string, LedgerSpread>
 ---@field private place LedgerJournalPlace
@@ -269,8 +299,8 @@ function Router:Place()
 end
 
 --- What the book shows now (LED-R122, LED-R125): while updating, LED-R122's line on both pages and no crumbs;
---- else the open spread's pages, its crumbs after Home's, and the crumb above the last as the back link's place (Home's
---- for a spread other than Home that adds no crumb; none on Home).
+--- else the open spread's pages, its crumbs after Home's, the crumb above the last as the back link's place (Home's
+--- for a spread other than Home that adds no crumb; none on Home), and each page's subject (LED-R129).
 ---@param context LedgerJournalContext
 ---@return LedgerJournalPages
 function Router:Pages(context)
@@ -295,11 +325,14 @@ function Router:Pages(context)
 	if not back and self.place.id ~= ns.JOURNAL_HOME then
 		back = crumbs[1].place
 	end
+	local id = self.place.id
+	local names = spread.subjects or { left = allArgs(args), right = allArgs(args) }
 	return {
 		updating = false,
 		crumbs = crumbs,
 		back = back,
 		left = pages.left,
 		right = pages.right,
+		subjects = { left = subject(id, args, names.left), right = subject(id, args, names.right) },
 	}
 end

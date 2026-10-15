@@ -778,7 +778,7 @@ function ns.NewJournalPage(parent, width)
 end
 
 --- Draws `blocks` down `page`, top to bottom, reusing its widgets and hiding the ones left over. `open` opens a
---- place in the Journal; `resetScroll` scrolls back to the top (a new spread, not a redraw of the same one).
+--- place in the Journal; `resetScroll` scrolls back to the top (the page's subject changed, LED-R129).
 ---@param page LedgerJournalPage
 ---@param blocks LedgerBlock[]
 ---@param open fun(place: LedgerJournalPlace)

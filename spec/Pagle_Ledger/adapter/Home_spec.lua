@@ -249,6 +249,21 @@ describe("the Journal's Home, left page", function()
 		_, chosen = tabs(loaded)
 		assert.are.equal("Other waters", chosen)
 	end)
+
+	it(
+		"starts the left page at the top on another tab, keeping the right page's scroll (LED-R129, LED-R130)",
+		function()
+			local _, loaded = openHome({}, nil, fixture({ ELWYNN, WESTFALL, DUSKWOOD, REDRIDGE }))
+			scrollPage(loaded, "left", 120)
+			scrollPage(loaded, "right", 80)
+
+			-- The Other waters tab.
+			loaded.ns.journal.frame.left.drawn.tabs[1].children[2]:Click()
+
+			assert.are.same({ "Isle of Dread" }, tileNames(loaded))
+			assert.are.same({ 0, 80 }, { pageScroll(loaded, "left"), pageScroll(loaded, "right") })
+		end
+	)
 end)
 
 -- Seeds the celebrated set: level 12 celebrated in this climb, so the shown level is 12 (LED-R36).
