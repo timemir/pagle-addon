@@ -181,7 +181,7 @@
 
 --- FakePagle's tracker dock, read through Core's own stacking rules (logic/Dock.lua).
 ---@class FakeDock
----@field stack fun(): { id: string, module: string, frame: table, point: string, relativeTo: "dock", relativePoint: string, x: number, y: number }[]
+---@field stack fun(): { id: string, order: number, module: string, frame: table, point: string, relativeTo: "dock", relativePoint: string, x: number, y: number }[]
 --- The shown docked trackers now, top to bottom (by order, ties by Module name), each with its frame's anchor on the
 --- dock: its TOPRIGHT at the dock's TOPRIGHT, `y` below it, 8 px between frames. A hidden one takes no room; empty
 --- with none shown. Read from each frame's IsShown, GetWidth and GetHeight now, so a shown, hidden or resized frame
@@ -1031,6 +1031,7 @@ part(function(fake, _, ns, host)
 			local tracker = placement.tracker
 			list[i] = {
 				id = tracker.id,
+				order = tracker.order,
 				module = tracker.module,
 				frame = tracker.frame,
 				point = placement.point,

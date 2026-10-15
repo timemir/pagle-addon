@@ -73,9 +73,9 @@ describe("the Hunts tracker", function()
 			local run = start()
 
 			assert.are.same({ "hunts" }, docked(run))
-			local trackers = run.fake.ns.dock:Trackers()
-			assert.are.same({ { "hunts", 10, "Hunts" } }, { { trackers[1].id, trackers[1].order, trackers[1].module } })
-			assert.are.equal(run.ns.tracker.frame, run.fake.dock.stack()[1].frame)
+			local docked1 = run.fake.dock.stack()[1]
+			assert.are.same({ "hunts", 10, "Hunts" }, { docked1.id, docked1.order, docked1.module })
+			assert.are.equal(run.ns.tracker.frame, docked1.frame)
 			assert.are.same({ header = "Hunts", hunts = {}, empty = "Pin a Hunt to keep it here." }, read(run))
 		end)
 
