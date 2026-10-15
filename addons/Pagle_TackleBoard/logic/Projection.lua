@@ -313,6 +313,15 @@ local function start(state, record, decoded)
 	ns.Campfire.Start(state.fire)
 end
 
+-- The board day of a started board's entry at server time `t` (TKB-R12), from the latest boundary record before it;
+-- one lower than the projection's day (a clock step back) is the projection's day (TKB-R14).
+---@param state TackleBoardState
+---@param t integer
+---@return integer
+local function dayOf(state, t)
+	return math.max(state.day, ns.DayOf(state.boundary, t) or state.day)
+end
+
 --- Applies one entry (TKB-R81): one of the board's own Module records, or a Cast, Skill Reading or any other entry
 --- M:IterateCatches yields. Returns whether it changed the state.
 ---@param state TackleBoardState
@@ -337,17 +346,11 @@ function ns.ApplyEntry(state, record, mode)
 		if not state.started then
 			return false -- TKB-R2: before the start record, nothing else changes
 		end
-		return applyRecord(
-			state,
-			moduleRecord,
-			decoded,
-			math.max(state.day, ns.DayOf(state.boundary, record.time)),
-			mode
-		)
+		return applyRecord(state, moduleRecord, decoded, dayOf(state, record.time), mode)
 	end
 	if state.started then
 		-- TKB-R12, TKB-R14: every other entry advances to its day, never below the projection's day
-		changed = ns.AdvanceTo(state, ns.DayOf(state.boundary, record.time), mode) ~= nil
+		changed = ns.AdvanceTo(state, dayOf(state, record.time), mode) ~= nil
 	end
 	if record.kind == "cast" then
 		local cast = record --[[@as PagleCast]]

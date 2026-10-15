@@ -516,7 +516,7 @@ describe("the Tackle Board's projection", function()
 			for _, entry in ipairs(HISTORY) do
 				local state = live.State()
 				if state.started then
-					live.AdvanceTo(state, live.DayOf(state.boundary, entry.time), "live") -- the live step (TKB-R13)
+					live.AdvanceTo(state, live.DayOf(state.boundary, entry.time) or 0, "live") -- the live step (TKB-R13)
 				end
 				fake.live(fake.catchLog:Append(entry))
 			end

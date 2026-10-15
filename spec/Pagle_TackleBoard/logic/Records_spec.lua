@@ -59,8 +59,8 @@ describe("the board's records", function()
 
 				local issue, reroll = ns.EncodeIssue(def), ns.EncodeReroll(OLD_ID, def)
 
-				assert.is_true(#issue < 200, "issue: " .. #issue)
-				assert.is_true(#reroll < 200, "reroll: " .. #reroll)
+				assert.is_true(#issue < 200)
+				assert.is_true(#reroll < 200)
 			end
 		)
 	end)
@@ -125,7 +125,7 @@ describe("the board's records", function()
 				{ "reroll", "n;haul;2;15;30;33" }, -- no old goal
 				{ "reroll", ";n;haul;2;15;30;33" },
 			}) do
-				assert.is_nil(ns.DecodeRecord(case[1], case[2]), case[1] .. "|" .. case[2])
+				assert.is_nil(ns.DecodeRecord(case[1], case[2]))
 			end
 		end)
 
@@ -138,8 +138,8 @@ describe("the board's records", function()
 					"n;haul;4;15;30;33",
 					"n;haul;2;15;0;33",
 				}) do
-					assert.is_nil(ns.DecodeRecord("issue", payload), payload)
-					assert.is_nil(ns.DecodeRecord("reroll", OLD_ID .. ";" .. payload), payload)
+					assert.is_nil(ns.DecodeRecord("issue", payload))
+					assert.is_nil(ns.DecodeRecord("reroll", OLD_ID .. ";" .. payload))
 				end
 			end
 		)
