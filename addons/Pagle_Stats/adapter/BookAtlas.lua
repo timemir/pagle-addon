@@ -78,6 +78,20 @@ ns.ATLASES = {
 			["watch"] = { x = 218, y = 290, w = 220, h = 60, box = { 0, 0, 110, 30 } },
 		},
 	},
+	-- The kit v2's parts only the book draws, Stats' own: the home spread's zone tiles (plain, and the one I'm in), the
+	-- dark tooltip slip of Every fish, and the pen. Repacked from the kit's BookParts.tga, with mips.
+	Stats = {
+		file = OWN .. "StatsParts",
+		width = 512,
+		height = 512,
+		scale = 2,
+		sprites = {
+			["tile"] = { x = 0, y = 0, w = 412, h = 142, box = { 1, 1, 202, 66 } },
+			["tile-here"] = { x = 0, y = 148, w = 412, h = 142, box = { 1, 1, 202, 66 } },
+			["tip"] = { x = 0, y = 296, w = 472, h = 142, box = { 18, 12, 200, 33 } },
+			["pen"] = { x = 480, y = 0, w = 30, h = 30, box = { 0, 0, 15, 15 } },
+		},
+	},
 	-- The tracker frames for sale (STA-R88): the Logbook's ruled paper, the Brass plate with its rivets.
 	-- The search slip: the Curio Shop's paper slip with its magnifier, from Core's shop atlas (Pagle/media/shop/Shop,
 	-- data/ShopArt.lua's "find"), so the book's search and the shop's match. Stats reads Core's file, not Core's table
