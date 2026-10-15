@@ -22,7 +22,7 @@ function ns.RegisterTourStops(M)
 	for _, stop in ipairs(ns.JOURNAL_TOUR) do
 		---@type LedgerTourSaved?
 		local saved
-		M:RegisterTourStop(stop.id, stop.label, function()
+		M:RegisterTourStop(stop.id, ns.L[stop.label], function()
 			saved = { shown = journal:IsShown(), place = journal.router:Place() }
 			local context = journal:Context()
 			local ready = not context.updating and context --[[@as LedgerSpreadContext]]

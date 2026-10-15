@@ -13,7 +13,7 @@ local ns = select(2, ...)
 --- One of the Journal's tour stops: where the book opens, and with `search`, the text typed into its search box.
 ---@class LedgerTourStop
 ---@field id string     -- the stop's ID under "ledger.": "journal.home"
----@field label string
+---@field label string -- its label's key in ns.L, read when the stop registers (scripts load logic/ without locale)
 ---@field place fun(context: LedgerSpreadContext): LedgerJournalPlace
 ---@field search? fun(context: LedgerSpreadContext): string
 
@@ -132,24 +132,24 @@ end
 --- The Journal's tour stops, in tour order (CORE-R68).
 ---@type LedgerTourStop[]
 ns.JOURNAL_TOUR = {
-	{ id = "journal.home", label = ns.L.TOUR_HOME, place = home },
-	{ id = "journal.zone", label = ns.L.TOUR_ZONE, place = zonePlace },
-	{ id = "journal.fish", label = ns.L.TOUR_FISH, place = fishPlace },
+	{ id = "journal.home", label = "TOUR_HOME", place = home },
+	{ id = "journal.zone", label = "TOUR_ZONE", place = zonePlace },
+	{ id = "journal.fish", label = "TOUR_FISH", place = fishPlace },
 	{
 		id = "journal.trophy",
-		label = ns.L.TOUR_TROPHY,
+		label = "TOUR_TROPHY",
 		place = function(context)
 			return ns.JournalPlace.trophyRoom(landedFamily(context))
 		end,
 	},
-	{ id = "journal.curios", label = ns.L.TOUR_CURIOS, place = ns.JournalPlace.curios },
+	{ id = "journal.curios", label = "TOUR_CURIOS", place = ns.JournalPlace.curios },
 	{
 		id = "journal.legends",
-		label = ns.L.TOUR_LEGENDS,
+		label = "TOUR_LEGENDS",
 		place = function(context)
 			return ns.JournalPlace.legends(caughtLegend(context))
 		end,
 	},
-	{ id = "journal.angler", label = ns.L.TOUR_ANGLER, place = ns.JournalPlace.angler },
-	{ id = "journal.search", label = ns.L.TOUR_SEARCH, place = home, search = searchText },
+	{ id = "journal.angler", label = "TOUR_ANGLER", place = ns.JournalPlace.angler },
+	{ id = "journal.search", label = "TOUR_SEARCH", place = home, search = searchText },
 }
