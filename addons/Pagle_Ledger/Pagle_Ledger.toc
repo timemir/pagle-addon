@@ -38,6 +38,7 @@ logic\JournalAngler.lua
 logic\JournalCollections.lua
 logic\JournalLegends.lua
 logic\JournalZone.lua
+logic\Tour.lua
 adapter\JournalWidgets.lua
 adapter\JournalText.lua
 adapter\JournalCollections.lua
@@ -49,3 +50,4 @@ adapter\Prestige.lua
 adapter\Bindings.lua
 adapter\Titles.lua
 adapter\Ledger.lua
+adapter\Tour.lua

@@ -30,10 +30,29 @@ local function run(line)
 	commands:Run(line, ns.coreSubcommands, securecallfunction, print)
 end
 
---- `/pagle dev …` (#247): hidden dev commands, as ns.dev (logic/Wiring.lua).
-ns.WireDev(ns.host, function(announcement)
-	ns.lanes:Push(announcement)
-end, ns.ShowGlyphProbe)
+--- `/pagle dev …` (#247): hidden dev commands, as ns.dev (logic/Wiring.lua). `/pagle dev tour` (CORE-R66) shoots each
+--- stop with Screenshot(), which the client saves to its Screenshots folder, named by the local time.
+ns.WireDev(
+	ns.host,
+	function(announcement)
+		ns.lanes:Push(announcement)
+	end,
+	ns.ShowGlyphProbe,
+	{
+		isRestricted = function()
+			return Pagle.IsRestricted()
+		end,
+		canScreenshot = function()
+			return Screenshot ~= nil
+		end,
+		screenshot = function()
+			Screenshot()
+		end,
+		clock = function()
+			return date("%H:%M:%S")
+		end,
+	}
+)
 
 SLASH_PAGLE1 = "/pagle"
 SlashCmdList.PAGLE = run

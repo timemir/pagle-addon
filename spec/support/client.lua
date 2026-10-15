@@ -17,6 +17,7 @@
 ---@field areaNames table<integer, string> Each area's name, as `C_Map.GetAreaInfo` returns it. Default none.
 ---@field mapNames table<integer, string> Each uiMap's name, for `C_Map.GetMapInfo`. Default none.
 ---@field sounds string[] Each PlaySoundFile call, in order, as "<path> <channel>".
+---@field screenshots integer How many times Screenshot() was called. A spec may wrap the stub to see the screen then.
 ---@field errors string[] Each error the default geterrorhandler() got, in order. A spec that gets one must read
 --- this list (assert it), or it fails at its end (spec/support/errors.lua).
 ---@field addError fun(err: any) The default geterrorhandler(): adds the error to `errors`.
@@ -60,6 +61,7 @@ local function newClient()
 		bindings = {},
 		loot = { fishing = false, slots = {} },
 		sounds = {},
+		screenshots = 0,
 		templates = {},
 		areaNames = {},
 		mapNames = {},
@@ -314,6 +316,11 @@ local function clientStubs(client)
 		end,
 		-- LuaBitOp, the `bit` library the client ships (LOG-R66), from the luabitop rock scripts/tools.env pins.
 		bit = BIT,
+		Screenshot = function()
+			client.screenshots = client.screenshots + 1
+		end,
+		-- The client's date is Lua's os.date, in the local time.
+		date = os.date,
 	}
 
 	-- Presses Esc as the client does: the focused edit box takes it (OnEscapePressed); with none focused,

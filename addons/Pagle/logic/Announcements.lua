@@ -303,6 +303,29 @@ function Lanes:Dismiss(display)
 	self:done(display)
 end
 
+--- Takes `announcement` back (a `/pagle dev tour` stop's hide, CORE-R68): off screen if it shows, out of its lane or
+--- the hold if it waits, so what waits behind it comes next. Nothing for one the lanes don't have.
+---@param announcement PagleAnnouncement
+function Lanes:Withdraw(announcement)
+	for _, list in ipairs({ self.toasts, self.big, self.heldToasts, self.heldBig }) do
+		for i = #list, 1, -1 do
+			if list[i] == announcement then
+				table.remove(list, i)
+			end
+		end
+	end
+	local nod = self.nod
+	if nod and nod.announcement == announcement then
+		self.nod = nil
+		self.options.hide(nod)
+	end
+	for _, display in ipairs({ self.centre or false, self.toast or false }) do
+		if display and display.announcement == announcement then
+			self:done(display)
+		end
+	end
+end
+
 -- Whether a splash holds the toast lane back (ANN-R20): one on screen, or one at the front of the big lane, waiting.
 ---@package
 ---@return boolean

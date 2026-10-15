@@ -125,6 +125,15 @@ Terms are used as `CONTEXT.md` defines them. Numbers live in each file's Tunable
 - **CORE-R61** Core's own subcommands are `help`, `settings` (same as no argument), `shop` (toggle the Curio Shop) and `report` (open the Field report). They are reserved.
 - **CORE-R62** A Module's `slash = {{ name, fn, help }}` entries become `/pagle <name> <args>`; `fn` receives the rest of the line, trimmed. Subcommand names match case-insensitively. A name that collides with a reserved one or an earlier Module's is skipped and reported through `geterrorhandler()`; the rest of the Module's registration goes ahead. An unknown subcommand prints the help list.
 
+### Screenshot tour (dev)
+
+`/pagle dev tour` is one of the hidden dev commands ([in-game verification › Dev commands](../../agents/in-game-verification.md#dev-commands)): it shows every surface Pagle draws, one at a time, and takes a screenshot of each, so a redesign can be judged from a folder of pictures.
+
+- **CORE-R65** A Module adds a **tour stop** with `M:RegisterTourStop(id, label, show, hide)`: `show` puts one surface on screen in a representative state, and `hide` puts back everything `show` changed. The stop is named `<module>.<id>`, the Module's name lowercased (`ledger.journal.home`); Core's own stops are named `core.<id>`. `id` is `[%w_.]+` and unique among the Module's stops; `label` is a non-empty string, shown only by `/pagle dev tour list`. A mistake raises a Lua error at the Module's call and adds nothing. A Module calls it only `if M.RegisterTourStop then`, so the same code runs on a Core without it. Core's own surfaces register through the same registry.
+- **CORE-R66** `/pagle dev tour` runs every stop: Core's first, then each Module's by `def.order`, each Module's in the order registered. `/pagle dev tour <module>` runs one Module's (`core` for Core's), any case. For each stop it prints `tour <n>/<count>: <name>`, calls `show`, and 1.5 s later calls `Screenshot()`; 0.5 s after that it calls `hide`, and the next stop shows 0.3 s later. It prints the local time as it starts (the client names screenshot files by it) and as it ends. On a client without `Screenshot()` the start line asks the dev to press Print Screen as each stop's line appears, and each stop waits 4 s instead of 0.5 s before its `hide`. A `show` or `hide` that errors is reported through `geterrorhandler()` and the tour goes on.
+- **CORE-R67** The tour doesn't start while restricted (CORE-R30): it prints one line and opens nothing, since stops open Settings and the Curio Shop. A restriction that starts during a tour ends it: the stop on screen hides without its screenshot and no further stop shows. One tour runs at a time; `/pagle dev tour stop` ends the one running the same way.
+- **CORE-R68** Nothing is saved: every `hide` leaves the screen and the saved variables as they were before its `show` (a window open before its stop stays open). `/pagle dev tour list [module]` prints each stop's name and label, in tour order, and shows nothing. Core's own stops are each Announcement form (`/pagle dev preview`'s samples through the real lanes, taken back off screen at `hide`), a sample Session summary card and a sample Write-up, the Curio Shop, the Field report box, the glyph probe panel, and the Settings root and each registered page.
+
 ### Tracker dock
 
 - **CORE-R70** Core owns one HUD anchor, the **tracker dock**, by default under the minimap cluster at its right edge. Module trackers stack in it. A Module docks its tracker with `M:RegisterTracker{ id, order, frame }`; the dock stacks visible frames top to bottom by the tracker's `order` (Hunts 10, Stats 20, Tackle Board 30; ties by Module name), with fixed spacing, and reflows when one hides, resizes or its Module is disabled.
@@ -183,6 +192,7 @@ Grouped by topic; the rules live in the linked file.
 | `M:ReportCoinsEarned(total)`, `M:RegisterSlot(slot)`, `M:RegisterGood(good)`, `M:RefreshGoods()` | wallet-and-shop.md |
 | `M:RegisterTracker{ id, order, frame }` | here |
 | `M:AddSetting(topic, setting)` | here |
+| `M:RegisterTourStop(id, label, show, hide)`: a stop for the dev screenshot tour (CORE-R65) | here |
 
 ADR 0008 names the record call `Pagle.AppendRecord`; it lives on the handle so Core knows which Module wrote the record.
 
@@ -223,6 +233,17 @@ ADR 0008 names the record call `Pagle.AppendRecord`; it lives on the handle so C
 ```
 
 Rows map onto the native Settings initializers; `AddSetting` raises a Lua error for an unknown `topic` or `kind`.
+
+### `M:RegisterTourStop(id, label, show, hide)`
+
+```lua
+-- A stop for /pagle dev tour (CORE-R65): named "<module>.<id>", in the order registered.
+if M.RegisterTourStop then
+  M:RegisterTourStop("journal.home", "the Fish Journal: Home",
+    function() --[[ open the surface, in a representative state ]] end,
+    function() --[[ put back everything show changed ]] end)
+end
+```
 
 ### Events Core fires (owned here)
 

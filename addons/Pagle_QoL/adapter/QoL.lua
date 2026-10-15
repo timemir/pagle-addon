@@ -41,6 +41,10 @@ function ns.QoL.OnInitialize()
 	end
 	-- QoL's rows on the Fishing page, before ModulesChanged (CORE-R42, SET-R20).
 	ns.AddSettings(ns.Module, store)
+	-- QoL's stop for `/pagle dev tour` (CORE-R65), on a Core that has the call.
+	if ns.Module.RegisterTourStop then
+		ns.RegisterTourStops(ns.Module)
+	end
 
 	-- Account-wide, one shared profile (QOL-R1), with the defaults in qol.md › Data.
 	ns.db = LibStub("AceDB-3.0"):New("PagleQoLDB", ns.DB_DEFAULTS, true)

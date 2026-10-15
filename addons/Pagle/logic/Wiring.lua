@@ -42,6 +42,8 @@ local ns = select(2, ...)
 ---@field LengthUnit fun(): PagleLengthUnit The Angler's length unit now (ns.WireLength).
 ---@field fishing PagleFishing Core's Cast state machine, which Core's adapter and FakePagle each build.
 ---@field dev PagleDevCommands Core's `/pagle dev` commands (ns.WireDev).
+---@field tourStops PagleTourStops Core's one registry of tour stops (ns.WireDev, CORE-R65).
+---@field tour PagleTour Core's `/pagle dev tour` (ns.WireDev, CORE-R66).
 
 --- Core's projection machinery (LOG-R70–R78) as ns.projections, and `M:NewProjection` and `M:IterateCatches` on every
 --- Module handle. Until Module records (M7), a Module's records are the ones Pagle.IterateCatches yields.
@@ -683,11 +685,35 @@ end
 --- Core's `/pagle dev` commands as ns.dev (#247), over PagleDB.global's `dev` switch, Core's Sessions, the
 --- catalogue's areas and the Cast state machine (ns.fishing). `catch` runs only on a test log (`PagleLog.test`).
 --- `preview` hands its samples to `show`, the display (as ns.WireMoments' is), and its card to ns.cards; `glyphs`
---- hands its probe line to `showGlyphs` (#248).
+--- hands its probe line to `showGlyphs` (#248). `tour` runs ns.tour over ns.tourStops, Core's one registry of tour
+--- stops, which `M:RegisterTourStop` on every Module handle adds to (CORE-R65–R68).
 ---@param host PagleHost
 ---@param show fun(announcement: PagleAnnouncement) hands an Announcement to the display (ANN-R20)
 ---@param showGlyphs fun(fonts: PagleDevGlyphFont[], probe: string) shows the probe line in each font
-function ns.WireDev(host, show, showGlyphs)
+---@param tour PagleTourSeams what the tour reads from where Core runs
+function ns.WireDev(host, show, showGlyphs, tour)
+	ns.tourStops = ns.NewTourStops()
+	ns.tour = ns.NewTour({
+		stops = ns.tourStops,
+		modules = function()
+			return host.registry:Modules()
+		end,
+		isRestricted = tour.isRestricted,
+		canScreenshot = tour.canScreenshot,
+		screenshot = tour.screenshot,
+		after = host.after,
+		call = host.call,
+		clock = tour.clock,
+		print = host.print,
+	})
+	---@class PagleModuleHandle
+	local ModuleHandle = ns.ModuleHandle
+	--- Registers one of the Module's tour stops for `/pagle dev tour` (CORE-R65): `show` puts a surface on screen in a
+	--- representative state, `hide` puts back everything show changed. The stop is named `<module>.<id>`, the Module's
+	--- name lowercased ("ledger.journal.home"), and tours in the order registered. Raises an error at the Module's
+	--- call, adding nothing, for an ID that isn't [%w_.]+ or that the Module registered before, no label, or a show or
+	--- hide that isn't a function. A Module calls it only `if M.RegisterTourStop then`, so it runs on a Core without it.
+	ModuleHandle.RegisterTourStop = ns.RegisterTourStopMethod(host.registry, ns.tourStops)
 	ns.dev = ns.NewDevCommands({
 		global = function()
 			return host.db().global
@@ -712,6 +738,9 @@ function ns.WireDev(host, show, showGlyphs)
 			return ns.cards:Preview(card)
 		end,
 		showGlyphs = showGlyphs,
+		tour = function(args)
+			ns.tour:Run(args)
+		end,
 		print = host.print,
 	})
 end

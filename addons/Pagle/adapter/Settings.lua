@@ -385,6 +385,27 @@ local function buildPage(topic, page, layout, entries)
 	end
 end
 
+-- The root and each page registered, in the panel's order, as Core's tour stops (CORE-R68): each opens through
+-- Pagle.OpenSettings, and its hide closes the panel through Blizzard's own path (HideUIPanel, SET-R12).
+local function addTourStops()
+	local topics = { false }
+	for _, topic in ipairs(ns.SETTINGS_TOPICS) do
+		if pages[topic] then
+			topics[#topics + 1] = topic
+		end
+	end
+	topics[#topics + 1] = "look"
+	for _, topic in ipairs(topics) do
+		local id = topic and "settings." .. topic or "settings"
+		local label = L.DEV_TOUR_SETTINGS:format(topic and L.SETTINGS_PAGES[topic] or L.SETTINGS_CATEGORY)
+		ns.tourStops:Add(ns.TOUR_CORE, id, label, function()
+			Pagle.OpenSettings(topic or nil)
+		end, function()
+			HideUIPanel(SettingsPanel)
+		end)
+	end
+end
+
 -- Registers the root and every topic page that has rows, Core's or a Module's (CORE-R40, CORE-R42, SET-R1). Runs
 -- once, outside restriction (CORE-R32).
 local function register()
@@ -410,6 +431,7 @@ local function register()
 	pages.look = look
 	Settings.RegisterAddOnCategory(category)
 	root = category
+	addTourStops()
 end
 
 -- Every enabled Module has registered, so the rows are final: Core builds the tree, at once or, while restricted,

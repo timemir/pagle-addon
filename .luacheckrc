@@ -164,6 +164,12 @@ stds.wow = {
 		-- The Curio Shop's purse: each Module's segment shows its lifetime Coins, the total Core stores for it (SHOP-R3),
 		-- in the tooltip (wallet-and-shop.md › UI), GameTooltip above. The window is drawn on CreateFrame and UIParent above and hides with Esc through
 		-- UISpecialFrames (below).
+		-- `/pagle dev tour` (CORE-R66): Screenshot() saves each stop to the client's Screenshots folder, and date() gives
+		-- the local time the files are named by. Both are in the forever dump's GlobalAPI.lua at BIR_COMMIT ("Screenshot"
+		-- with the C API, "date" with the Lua extras); vscode-wow-api at WOW_API_COMMIT has
+		-- Blizzard_APIDocumentationGenerated/ClientDocumentation.lua's `function Screenshot() end`, with no arguments.
+		"Screenshot",
+		"date",
 	},
 }
 

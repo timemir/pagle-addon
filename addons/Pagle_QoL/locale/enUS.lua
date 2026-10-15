@@ -99,4 +99,6 @@ ns.L = {
 	SETTINGS_SHOW_BUTTON_TOOLTIP = "Shows what your next press will do. Shift-drag to move.",
 	SETTINGS_BUTTON_POSITION = "Button position",
 	SETTINGS_BUTTON_RESET = "Reset",
+	-- QoL's tour stop's label, for `/pagle dev tour list` (CORE-R68): dev-only, never shown to players.
+	TOUR_SETTINGS = "QoL's rows on the Fishing page",
 }
