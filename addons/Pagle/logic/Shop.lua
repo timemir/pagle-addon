@@ -93,7 +93,6 @@ end
 ---@field balance string             -- the balance, 0 while held (SHOP-R12)
 ---@field held boolean               -- SHOP-R12's held line shows: earned is below spent
 ---@field segments PagleShopSegment[] -- one per Module that has reported Coins, in roster order
----@field payNone string             -- "Stats and QoL pay none"
 
 --- The purse: the balance, then a segment per Module that has reported Coins (SHOP-R3), with its lifetime total. A
 --- Module that isn't On keeps its segment, faded, and its total counts. There's no "Spent" anywhere.
@@ -129,7 +128,6 @@ function Model:Purse()
 		balance = self.format(balance.balance),
 		held = balance.held,
 		segments = segments,
-		payNone = L.SHOP_PAY_NONE,
 	}
 end
 

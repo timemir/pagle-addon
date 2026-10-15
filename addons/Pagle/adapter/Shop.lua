@@ -69,7 +69,6 @@ local BILL_W, BILL_H, BILL_X, BILL_Y = 400, 420, 290, 56
 ---@field label PagleShopFontString   "PAGLE COINS"
 ---@field balance PagleShopFontString
 ---@field bar PagleThreeSlice
----@field payNone PagleShopFontString "Stats and QoL pay none"
 ---@field held PagleShopFontString    SHOP-R12's held line, shown while the balance is held at 0
 ---@field segments PagleShopSegmentFrame[] pooled: the shown ones are the purse's
 ---@field tip PagleShopTip            a segment's tooltip, in the book's voice
@@ -252,7 +251,7 @@ local function showTip(tip, owner, lines)
 end
 
 -- The purse (wallet-and-shop.md › UI) on the case's top band: the coin, "PAGLE COINS" over the balance, the income
--- bar with its legend, who pays none, and SHOP-R12's held line.
+-- bar with its legend, and SHOP-R12's held line.
 ---@param frame PagleShopFrame
 ---@return PagleShopPurseFrame
 local function buildPurse(frame)
@@ -264,7 +263,6 @@ local function buildPurse(frame)
 	purse.balance = ns.ShopText(frame, "Balance")
 	at(purse.balance, frame, PURSE_TEXT_X, 43)
 	purse.bar = CreateFrame("Frame", nil, frame) --[[@as PagleThreeSlice]]
-	purse.payNone = ns.ShopText(frame, "Note")
 	purse.held = ns.ShopText(frame, "Held")
 	ns.SetShopText(purse.held, L.SHOP_HELD)
 	purse.segments = {}
@@ -321,9 +319,6 @@ local function drawPurse(frame, purse)
 	local barY = purse.held and BAR_Y_HELD or BAR_Y
 	ns.SetThreeSlice(shown.bar, "Shop", "ibar", barWidth, 8, "ARTWORK")
 	at(shown.bar, frame, x0, barY)
-	ns.SetShopText(shown.payNone, purse.payNone)
-	shown.payNone:ClearAllPoints()
-	shown.payNone:SetPoint("TOPRIGHT", frame, "TOPLEFT", BAR_RIGHT, -(barY + 25))
 	at(shown.held, frame, x0, barY + 47)
 	shown.held:SetWidth(barWidth)
 	shown.held:SetShown(purse.held) -- SHOP-R12: the balance reads 0 meanwhile

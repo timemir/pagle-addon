@@ -156,7 +156,7 @@ ns.L = {
 	SETTINGS_FIELD_REPORT_TOOLTIP = "Copy what you've caught that Pagle's data doesn't know yet, and paste it into the issue form.",
 	-- The Curio Shop (wallet-and-shop.md › UI; its "Curio Shop" trade label is drawn in the case's art): the chat line
 	-- its entry points print while restricted (SHOP-R41); the purse (its label, a Module's legend entry with its total,
-	-- the segment's tooltip lines, who pays nothing); the list (the search slip's hint, the filters, the category
+	-- the segment's tooltip lines); the list (the search slip's hint, the filters, the category
 	-- chips, a slot's owned count, the Put away group and its note, a list with no row); a row's and the stage's tags;
 	-- the stage (the line under the name, with the slot and its owner, Core's owner name, Buy with the price, the Coins
 	-- still needed, an earned good's line, a Module off, the hint with nothing selected, Use).
@@ -165,7 +165,6 @@ ns.L = {
 	SHOP_LEGEND = "%s %s",
 	SHOP_ALL_TIME = "%s Coins all time",
 	SHOP_OFF_NOTE = "Off: pays nothing new, keeps what it paid.",
-	SHOP_PAY_NONE = "Stats and QoL pay none",
 	SHOP_SEARCH = "Find a look…",
 	SHOP_FILTERS = { all = "All", owned = "Owned", notOwned = "Not owned", canAfford = "Can afford" },
 	SHOP_ALL_CATEGORIES = "All",

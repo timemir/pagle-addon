@@ -83,8 +83,8 @@ end
 
 describe("The Curio Shop's purse", function()
 	it(
-		"shows the balance, a segment per Module that reported Coins in roster order with its share, and who pays"
-			.. " none (wallet-and-shop.md › UI)",
+		"shows the balance, and a segment per Module that reported Coins in roster order with its share"
+			.. " (wallet-and-shop.md › UI)",
 		function()
 			local fake, handles = coreWithModules()
 			handles.Hunts:ReportCoinsEarned(500)
@@ -95,7 +95,6 @@ describe("The Curio Shop's purse", function()
 
 			assert.are.equal("1,850", purse.balance)
 			assert.are.equal("Pagle Coins", purse.label)
-			assert.are.equal("Stats and QoL pay none", purse.payNone)
 			assert.are.same({
 				{
 					module = "Ledger",
@@ -147,7 +146,7 @@ describe("The Curio Shop's purse", function()
 		assert.are.same({}, purse.segments)
 		assert.are.equal("0", purse.balance)
 		assert.is_true(purse.held)
-		for _, text in pairs({ purse.label, purse.payNone, purse.balance }) do
+		for _, text in pairs({ purse.label, purse.balance }) do
 			assert.falsy(text:find("Spent", 1, true))
 		end
 	end)

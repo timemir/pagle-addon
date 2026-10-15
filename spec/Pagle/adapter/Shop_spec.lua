@@ -291,8 +291,8 @@ end)
 
 describe("The Curio Shop's purse", function()
 	it(
-		"shows the balance, one segment per Module that reported, its total in the legend and tooltip, and who pays"
-			.. " none (wallet-and-shop.md › UI)",
+		"shows the balance, and one segment per Module that reported, its total in the legend and tooltip"
+			.. " (wallet-and-shop.md › UI)",
 		function()
 			local loaded, handles = shopCore()
 			handles.Ledger:ReportCoinsEarned(1500)
@@ -302,7 +302,6 @@ describe("The Curio Shop's purse", function()
 			local purse = shopFrame(loaded).purse
 			assert.are.equal("2,000", purse.balance:GetText())
 			assert.are.equal("PAGLE COINS", purse.label:GetText())
-			assert.are.equal("Stats and QoL pay none", purse.payNone:GetText())
 			local shown = {}
 			for _, segment in ipairs(purse.segments) do
 				if segment:IsShown() then

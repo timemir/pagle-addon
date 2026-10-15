@@ -31,7 +31,6 @@ ns.SHOP_INKS = {
 	creamText = rgb("E6D8B8"), -- the stage's hint, the tooltip's lines
 	name = rgb("F3E6C4"), -- a good's name on the velvet, a tooltip's numbers
 	lab = rgb("CDB98E"), -- "PAGLE COINS"
-	dim = rgb("A89A7A"), -- who pays none
 	muted = rgb("BCAE8C"), -- a slot's owned count
 	pill = rgb("CFC0A0"), -- a filter that's off, "Owned"
 	pillOn = rgb("2A1806"), -- the filter that's on
@@ -80,7 +79,6 @@ local FONTS = {
 	Balance = { "gilt", 40, "gilt", shadow = true },
 	Legend = { "handSemi", 20, "cream", shadow = true },
 	LegendOff = { "handSemi", 20, "off", shadow = true },
-	Note = { "italic", 13.5, "dim", shadow = true },
 	Held = { "italic", 14, "held", shadow = true },
 	-- the tray, on velvet
 	Find = { "handSemi", 22, "ink" },
