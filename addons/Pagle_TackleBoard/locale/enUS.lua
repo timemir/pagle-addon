@@ -166,7 +166,8 @@ ns.L = {
 	-- The moments, the Write-up and the summary line (TKB-R85–R87; logic/Moments.lua). {fly} and {title} are lore
 	-- names (TKB-R130).
 	DAYS = { one = "{n} day", other = "{n} days" },
-	-- A done goal's toast: its title, its text with the fly it tied, and its stamp when it rides on a banner.
+	-- A done goal's toast: its title, its text with the fly it tied, and its stamp when it rides on another
+	-- Announcement (ANN-R11).
 	NOTICE_COMPLETE = "Notice complete",
 	EXPEDITION_COMPLETE = "Expedition complete",
 	TIED_FOR_FLY_BOX = "{goal}. Tied for your Fly Box: {fly}",
