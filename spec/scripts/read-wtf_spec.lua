@@ -98,13 +98,13 @@ describe("scripts/read-wtf.lua", function()
 		end)
 
 		it("prints the PagleLog and PagleDB facts the M1 exit check asks for, read with Core's codec (#75)", function()
-			-- A1 is a tag M1's codec doesn't read yet, so it counts as undecodable with the line that has no tag
-			-- (LOG-R16).
+			-- The A1 is a Module record Core's codec reads (LOG-R40): it counts by its tag, and only the line that has
+			-- no tag is undecodable (LOG-R16).
 			assert.are.same({
 				"== Catch log (PagleLog): format 1, logId 3f9a2c1e7b0d4a65, 1 character, 11 entries",
 				"PagleDB.global.decodeErrors: 0",
 				"entries by tag: (no tag) 1, A1 1, B1 1, C1 6, S1 2",
-				"entries Core's codec can't decode: 2",
+				"entries Core's codec can't decode: 1",
 				"repeated entry IDs: Player-4618-0A1B2C3D-1791731900-0",
 				"C1: 6 Casts, from 2026-10-11 15:15:47 UTC to 2026-10-11 15:45:47 UTC (30 min)",
 				"C1 outcomes: caught 5, got away 1",

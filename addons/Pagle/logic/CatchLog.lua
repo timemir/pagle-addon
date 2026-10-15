@@ -40,8 +40,41 @@ local ns = select(2, ...)
 ---@field good string            -- the good's ID, [%w_.]+
 ---@field price integer          -- a whole number of Coins
 
+--- A Module record (`A1`, LOG-R40, ADR 0008): opaque to Core, replayed only to the Module that wrote it (LOG-R41).
+---@class PagleModuleRecord : PagleRecord
+---@field module string          -- the writing Module's def.name
+---@field recordKind string      -- the Module's own kind, [%w_.]+
+---@field payload string         -- the Module's string, verbatim: no newline, at most 200 bytes when appended
+
 --- The PagleLog layout version (LOG-R18). Before 1.0 it changes with any entry format change.
 ns.LOG_FORMAT = 1
+
+--- The most bytes a Module record's payload may hold (LOG-R40, Tunables).
+ns.MODULE_RECORD_PAYLOAD_LIMIT = 200
+
+--- Why a Module record of `kind` with `payload` can't be appended, or nil if it can (LOG-R40): `kind` must match
+--- [%w_.]+ and `payload` be a string with no newline, at most MODULE_RECORD_PAYLOAD_LIMIT bytes.
+---@param kind any
+---@param payload any
+---@return string?
+function ns.ModuleRecordProblem(kind, payload)
+	if type(kind) ~= "string" or not string.find(kind, "^[%w_.]+$") then
+		return ("a Module record's kind must match [%%w_.]+, got %s"):format(tostring(kind))
+	end
+	if type(payload) ~= "string" then
+		return "a Module record's payload must be a string, got " .. type(payload)
+	end
+	if string.find(payload, "\n", 1, true) then
+		return "a Module record's payload can't hold a newline"
+	end
+	if #payload > ns.MODULE_RECORD_PAYLOAD_LIMIT then
+		return ("a Module record's payload is at most %d bytes, got %d"):format(
+			ns.MODULE_RECORD_PAYLOAD_LIMIT,
+			#payload
+		)
+	end
+	return nil
+end
 
 -- The fields of an entry string, split at every `|`. "a||b" is { "a", "", "b" }.
 ---@param entry string
@@ -143,10 +176,12 @@ local OUTCOMES = { c = "caught", g = "gotAway" }
 local OUTCOME_FIELDS = { caught = "c", gotAway = "g" }
 
 -- One codec per tag: the record kind it holds, how many fields follow the header, how to encode a record's fields
--- (`encode`) and how to decode them into a record (`decode`, false if they don't fit the kind).
+-- (`encode`) and how to decode them into a record (`decode`, false if they don't fit the kind). With `rest`, the last
+-- field is everything after the ones before it, `|` and all.
 ---@class PagleEntryCodec
 ---@field kind string
 ---@field count integer
+---@field rest? boolean
 ---@field encode fun(record: table): string[]
 ---@field decode fun(record: table, f: string[]): boolean
 
@@ -274,11 +309,31 @@ local kinds = {
 			return string.find(f[1], "^[%w_.]+$") ~= nil and record.price ~= nil
 		end,
 	},
+
+	A1 = {
+		kind = "module",
+		count = 3,
+		rest = true, -- the payload is everything after the 6th |, verbatim (Entry formats)
+		encode = function(record)
+			local problem = ns.ModuleRecordProblem(record.recordKind, record.payload)
+			if problem then
+				error(problem)
+			end
+			if type(record.module) ~= "string" or not string.find(record.module, "^[%w_.]+$") then
+				error("not a Module name: " .. tostring(record.module))
+			end
+			return { record.module, record.recordKind, record.payload }
+		end,
+		decode = function(record, f)
+			record.module, record.recordKind, record.payload = f[1], f[2], f[3]
+			return string.find(f[1], "^[%w_.]+$") ~= nil and string.find(f[2], "^[%w_.]+$") ~= nil
+		end,
+	},
 }
 
 -- The tag each record kind is written with: the newest one for that kind.
 ---@type table<string, string>
-local TAGS = { cast = "C1", skill = "S1", build = "B1", prestige = "P1", purchase = "U1" }
+local TAGS = { cast = "C1", skill = "S1", build = "B1", prestige = "P1", purchase = "U1", module = "A1" }
 
 -- Decodes one entry string into a typed record, or nil if the codec can't read it (LOG-R16). With `getItem`, each
 -- item of a Cast carries its Simulated Size, from its Catch ID and the catalogue now (LOG-R65); item 0 is never
@@ -295,7 +350,17 @@ local function decode(entry, seq, characters, getItem)
 	local f = splitFields(entry)
 	local codec = kinds[f[1]]
 	local char, time, tie = integer(f[2] or ""), integer(f[3] or ""), integer(f[4] or "")
-	if not codec or #f ~= 4 + codec.count or not char or not time or not tie then
+	if not codec or not char or not time or not tie then
+		return nil
+	end
+	local last = 4 + codec.count
+	if codec.rest and #f > last then
+		f[last] = table.concat(f, "|", last)
+		for i = #f, last + 1, -1 do
+			f[i] = nil
+		end
+	end
+	if #f ~= last then
 		return nil
 	end
 	local character = characters[char]
@@ -423,10 +488,13 @@ end
 --- Walks the entries with `seq > afterSeq`, up to the log's length now, in order, decoding each as it goes
 --- (LOG-R42). Casts and Skill Readings carry their Session's ID, the same whether the log is read whole or from a
 --- later `afterSeq` (LOG-R98). An entry the codec can't read is skipped and counted in `PagleDB.global.decodeErrors`,
---- once per entry for this login however many readers meet it (LOG-R16).
+--- once per entry for this login however many readers meet it (LOG-R16). Module records are yielded only to the
+--- Module named by `module`, its own (LOG-R41, LOG-R42): without one, as Pagle.IterateCatches reads, none is; another
+--- Module's are skipped, never counted as undecodable.
 ---@param afterSeq integer?
+---@param module string? the reading Module's def.name (M:IterateCatches)
 ---@return fun(): PagleRecord?
-function CatchLog:Iterate(afterSeq)
+function CatchLog:Iterate(afterSeq, module)
 	local entries, characters = self.data.entries, self.data.characters
 	local last = #entries
 	local seq = math.min(afterSeq or 0, last)
@@ -435,11 +503,15 @@ function CatchLog:Iterate(afterSeq)
 		while seq < last do
 			seq = seq + 1
 			local record = decode(entries[seq], seq, characters, self.getItem)
-			if record then
-				cutter:Add(record)
-				return record
+			if not record then
+				countUndecodable(self, seq)
+			else
+				local owner = record.kind == "module" and (record --[[@as PagleModuleRecord]]).module or nil
+				if owner == nil or owner == module then
+					cutter:Add(record)
+					return record
+				end
 			end
-			countUndecodable(self, seq)
 		end
 		-- Read to its end: a later read from there needs no look-back.
 		if not self.cutters[last] then
