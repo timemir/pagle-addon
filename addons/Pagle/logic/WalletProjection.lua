@@ -87,7 +87,12 @@ function ns.AddWalletProjection(options)
 		publish(stored)
 	end
 
-	return ns.AddCoreProjection(options.projections, ns.WalletProjectionDef(options.db, publish), options.iterate)
+	return ns.AddCoreProjection(
+		options.projections,
+		ns.WalletProjectionDef(options.db, publish),
+		options.iterate,
+		"wallet"
+	)
 end
 
 --- The wallet projection's def (LOG-R70) over `db`: each live purchase that counts, and each done, hands the state
