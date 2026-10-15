@@ -144,11 +144,11 @@ local function loadWithQoL(extra)
 	return loaded
 end
 
--- The names of a page's rows, as initializers carry them, in order; a keybinding row by its search label.
+-- The names of a page's rows, as initializers carry them, in order.
 local function rowNames(category)
 	local names = {}
 	for i, initializer in ipairs(category.layout.initializers) do
-		names[i] = initializer:GetName() or initializer.searchTags[1]
+		names[i] = initializer:GetName()
 	end
 	return names
 end
@@ -187,8 +187,8 @@ describe("A topic page", function()
 
 		local fishing = assert(loaded.client.settings.category("Fishing"))
 
-		assert.are.same({ "Casting", "FISHING KEY" }, rowNames(fishing))
-		assert.are.equal(2, fishing.layout.initializers[2].data.bindingIndex)
+		assert.are.same({ "Casting", "Fishing key" }, rowNames(fishing))
+		assert.are.equal("PAGLE_FISHING_KEY", fishing.layout.initializers[2]:GetData().binding)
 	end)
 
 	it("puts each Module's rows under a header with its title, in def.order (CORE-R42, SET-R3)", function()
@@ -334,7 +334,7 @@ describe("M:AddSetting", function()
 		local late = loaded.ns.L.SETTING_TOO_LATE:format("QoL")
 		assert.are.same({ late, late }, reported)
 		assert.are.equal("Pagle: QoL's AddSetting came after ModulesChanged, so the row is dropped", late)
-		assert.are.same({ "Casting", "FISHING KEY" }, rowNames(loaded.client.settings.category("Fishing")))
+		assert.are.same({ "Casting", "Fishing key" }, rowNames(loaded.client.settings.category("Fishing")))
 	end)
 end)
 
@@ -698,7 +698,7 @@ describe("A Module's value rows", function()
 		addFishingRows(M)
 		loaded.client.fire("PLAYER_LOGIN")
 
-		assert.are.same({ "QoL", "Casting", "FISHING KEY" }, rowNames(loaded.client.settings.category("Fishing")))
+		assert.are.same({ "QoL", "Casting", "Fishing key" }, rowNames(loaded.client.settings.category("Fishing")))
 		assert.are.equal(1, #reported)
 		assert.matches("no key binding PAGLE_SWAP_GEAR", reported[1])
 	end)
@@ -773,6 +773,276 @@ describe("Settings registration while restricted", function()
 		setCombat(loaded, false)
 
 		assert.is_table(loaded.client.settings.category("Pagle"))
-		assert.are.same({ "Casting", "FISHING KEY" }, rowNames(loaded.client.settings.category("Fishing")))
+		assert.are.same({ "Casting", "Fishing key" }, rowNames(loaded.client.settings.category("Fishing")))
+	end)
+end)
+
+describe("A Module's keybinding row", function()
+	-- Loads Core with QoL On and three Fishing rows: Cast with (a dropdown over `state.input`), the Fishing key under it,
+	-- greyed out under "click", and a button setting `state.input` to "click". Returns the loaded addon, the page and
+	-- `state`. F is bound to the Fishing key and W to MOVEFORWARD.
+	local function keyPage()
+		local state = { input = "key" }
+		local loaded = loadWithQoL()
+		loaded.client.boundKeys = { PAGLE_FISHING_KEY = { "F" }, MOVEFORWARD = { "W" } }
+		local M = registerQoL(loaded)
+		M:AddSetting("fishing", {
+			kind = "dropdown",
+			id = "input",
+			label = "Cast with",
+			default = "both",
+			options = function()
+				return { { value = "key", label = "Key" }, { value = "click", label = "Click" } }
+			end,
+			get = function()
+				return state.input
+			end,
+			set = function(value)
+				state.input = value
+			end,
+		})
+		M:AddSetting("fishing", {
+			kind = "keybinding",
+			parent = "input",
+			label = "Fishing key",
+			tooltip = "Casts, then loots.",
+			binding = "PAGLE_FISHING_KEY",
+			isEnabled = function()
+				return state.input ~= "click"
+			end,
+		})
+		M:AddSetting("fishing", {
+			kind = "button",
+			label = "Use Double right-click",
+			onClick = function()
+				state.input = "click"
+			end,
+		})
+		loaded.client.fire("PLAYER_LOGIN")
+		return loaded, assert(loaded.client.settings.category("Fishing")), state
+	end
+
+	-- Shows the page; returns its rows: the QoL header, Cast with, the key row and the button row.
+	local function show(loaded, page)
+		return unpack(loaded.client.settings.show(page))
+	end
+
+	-- The key row's two key buttons.
+	local function keys(loaded, row)
+		return unpack(loaded.client.settings.buttonsOf(row.frame))
+	end
+
+	it(
+		"is Core's own row on Core's template, found by its label, showing its keys (SET-R5, SET-R6, SET-R20)",
+		function()
+			local loaded, page = keyPage()
+
+			local _, castWith, key = show(loaded, page)
+
+			assert.are.equal("PagleSettingsKeyRowTemplate", key.initializer:GetTemplate())
+			assert.are.equal("PagleSettingsKeyRowMixin", loaded.client.templates.PagleSettingsKeyRowTemplate.mixin)
+			assert.are.equal("Fishing key", key.initializer:GetName())
+			assert.are.same({ "FISHING KEY" }, key.initializer.searchTags)
+			assert.are.equal(castWith.initializer, key.initializer:GetParentInitializer())
+			assert.is_nil(key.initializer:GetSetting()) -- no value, so Defaults leaves it alone (SET-R60)
+			assert.are.same(
+				{ texts = { "Fishing key", "F", "Not Bound" }, live = true },
+				keyRowDrawn(loaded, key.frame)
+			)
+			-- Indented one level under its parent, as a native row is (SET-R2): Blizzard's 37 plus its indent of 15.
+			local label = key.frame.children[1]
+			assert.are.same({ "LEFT", 52, 0 }, label.points[1])
+		end
+	)
+
+	it("shows its tooltip with its label over its keys (SET-R2)", function()
+		local loaded, page = keyPage()
+		local _, _, key = show(loaded, page)
+		local first = keys(loaded, key)
+
+		first.scripts.OnEnter(first)
+
+		assert.are.same({ "Fishing key", "Casts, then loots." }, loaded.client.tooltipLines())
+		first.scripts.OnLeave(first)
+		assert.is_false(loaded.env.GameTooltip.shown)
+	end)
+
+	it(
+		"is greyed out, label and keys, while its isEnabled is false when the page is shown (SET-R20, SET-R61)",
+		function()
+			local loaded, page, state = keyPage()
+			state.input = "click"
+
+			local _, _, key = show(loaded, page)
+
+			assert.is_false(keyRowDrawn(loaded, key.frame).live)
+			assert.are.equal("GameFontDisable", key.frame.children[1].fontObject)
+			state.input = "key"
+			_, _, key = show(loaded, page)
+			assert.is_true(keyRowDrawn(loaded, key.frame).live)
+			assert.are.equal("GameFontNormal", key.frame.children[1].fontObject)
+		end
+	)
+
+	it(
+		"redraws at once when its parent's value changes through its row, with no NotifyUpdate (SET-R61, SET-R6)",
+		function()
+			local loaded, page = keyPage()
+			local _, castWith, key = show(loaded, page)
+
+			castWith.initializer:GetSetting():SetValue("click")
+
+			assert.is_false(keyRowDrawn(loaded, key.frame).live)
+			castWith.initializer:GetSetting():SetValue("key")
+			assert.is_true(keyRowDrawn(loaded, key.frame).live)
+		end
+	)
+
+	it("redraws at once when a button row on its page is pressed (SET-R61)", function()
+		local loaded, page = keyPage()
+		local _, _, key, button = show(loaded, page)
+
+		loaded.client.settings.buttonsOf(button.frame)[1]:Click()
+
+		assert.is_false(keyRowDrawn(loaded, key.frame).live)
+	end)
+
+	it(
+		"binds the next key pressed, with its modifiers, to the slot clicked, and saves the bindings (SET-R20)",
+		function()
+			local loaded, page = keyPage()
+			local _, _, key = show(loaded, page)
+			local _, second = keys(loaded, key)
+
+			second:Click()
+			assert.are.same({ "Fishing key", "F", "Press a key" }, keyRowDrawn(loaded, key.frame).texts)
+			loaded.client.keysDown.SHIFT = true
+			loaded.client.pressKey("G")
+
+			assert.are.same({ "F", "SHIFT-G" }, loaded.client.boundKeys.PAGLE_FISHING_KEY)
+			assert.are.same({ 1 }, loaded.client.savedBindings)
+			assert.are.same({ "Fishing key", "F", "SHIFT-G" }, keyRowDrawn(loaded, key.frame).texts)
+			assert.is_false(second:IsKeyboardEnabled())
+		end
+	)
+
+	it("takes a key from the action that had it, as Blizzard's own key bindings do (SET-R20)", function()
+		local loaded, page = keyPage()
+		local _, _, key = show(loaded, page)
+
+		keys(loaded, key):Click()
+		loaded.client.pressKey("W")
+
+		assert.are.same({ "W" }, loaded.client.boundKeys.PAGLE_FISHING_KEY)
+		assert.are.same({}, loaded.client.boundKeys.MOVEFORWARD)
+	end)
+
+	it("keeps waiting through a modifier alone, and Escape stops it binding nothing (SET-R20)", function()
+		local loaded, page = keyPage()
+		local _, _, key = show(loaded, page)
+		local first = keys(loaded, key)
+
+		first:Click()
+		loaded.client.pressKey("LSHIFT")
+		assert.are.same({ "Fishing key", "Press a key", "Not Bound" }, keyRowDrawn(loaded, key.frame).texts)
+		loaded.client.pressKey("ESCAPE")
+
+		assert.are.same({ "F" }, loaded.client.boundKeys.PAGLE_FISHING_KEY)
+		assert.are.same({}, loaded.client.savedBindings)
+		assert.are.same({ "Fishing key", "F", "Not Bound" }, keyRowDrawn(loaded, key.frame).texts)
+		assert.is_false(first:IsKeyboardEnabled())
+	end)
+
+	it("stops waiting at a second click on its slot (SET-R20)", function()
+		local loaded, page = keyPage()
+		local _, _, key = show(loaded, page)
+		local first = keys(loaded, key)
+
+		first:Click()
+		first:Click()
+
+		assert.is_false(first:IsKeyboardEnabled())
+		assert.are.same({ "Fishing key", "F", "Not Bound" }, keyRowDrawn(loaded, key.frame).texts)
+	end)
+
+	it(
+		"binds a mouse button clicked on the waiting slot, and unbinds a slot's key at a right-click (SET-R20)",
+		function()
+			local loaded, page = keyPage()
+			local _, _, key = show(loaded, page)
+			local first, second = keys(loaded, key)
+
+			second:Click()
+			second:Click("Button4")
+			assert.are.same({ "F", "BUTTON4" }, loaded.client.boundKeys.PAGLE_FISHING_KEY)
+			first:Click("RightButton")
+
+			assert.are.same({ "BUTTON4" }, loaded.client.boundKeys.PAGLE_FISHING_KEY)
+			assert.are.same({ 1, 1 }, loaded.client.savedBindings)
+			assert.are.same({ "Fishing key", "BUTTON4", "Not Bound" }, keyRowDrawn(loaded, key.frame).texts)
+		end
+	)
+
+	it("takes no click while greyed out (SET-R20)", function()
+		local loaded, page, state = keyPage()
+		state.input = "click"
+		local _, _, key = show(loaded, page)
+		local first = keys(loaded, key)
+
+		first:Click()
+		first:Click("RightButton")
+
+		assert.is_false(first:IsKeyboardEnabled())
+		assert.are.same({ "F" }, loaded.client.boundKeys.PAGLE_FISHING_KEY)
+	end)
+
+	it("stops waiting when a change on its page greys it out (SET-R20, SET-R61)", function()
+		local loaded, page = keyPage()
+		local _, castWith, key = show(loaded, page)
+		local first = keys(loaded, key)
+		first:Click()
+
+		castWith.initializer:GetSetting():SetValue("click")
+
+		assert.is_false(first:IsKeyboardEnabled())
+		assert.are.same({ texts = { "Fishing key", "F", "Not Bound" }, live = false }, keyRowDrawn(loaded, key.frame))
+	end)
+
+	it("stops waiting and greys its keys while restricted, and is live again after (SET-R93, CORE-R32)", function()
+		local loaded, page = keyPage()
+		local _, _, key = show(loaded, page)
+		local first = keys(loaded, key)
+		first:Click()
+
+		setCombat(loaded, true)
+
+		assert.is_false(first:IsKeyboardEnabled())
+		assert.is_false(keyRowDrawn(loaded, key.frame).live)
+		setCombat(loaded, false)
+		assert.is_true(keyRowDrawn(loaded, key.frame).live)
+	end)
+
+	it("stops waiting when its row is released or hidden (SET-R20)", function()
+		local loaded, page = keyPage()
+		local _, _, key = show(loaded, page)
+		local first = keys(loaded, key)
+
+		first:Click()
+		key.frame.scripts.OnHide(key.frame)
+		assert.is_false(first:IsKeyboardEnabled())
+		first:Click()
+		key.initializer:Resetter(key.frame)
+
+		assert.is_false(first:IsKeyboardEnabled())
+	end)
+
+	it("shows a key bound elsewhere at once, at UPDATE_BINDINGS (SET-R20)", function()
+		local loaded, page = keyPage()
+		local _, _, key = show(loaded, page)
+
+		loaded.client.boundKeys.PAGLE_FISHING_KEY = { "F", "H" }
+		loaded.client.fire("UPDATE_BINDINGS")
+
+		assert.are.same({ "Fishing key", "F", "H" }, keyRowDrawn(loaded, key.frame).texts)
 	end)
 end)

@@ -317,9 +317,12 @@ describe("Settings", function()
 
 			assert.are.equal("Stats tracker frame", last.initializer:GetName())
 			assert.is_nil(last.initializer:GetParentInitializer())
-			assert.is_true(last.frame.enabled)
-			-- Core's slot row (SET-R6): its own dropdown, the fake's DropdownButton, holds the equipped frame.
+			-- Core's slot row (SET-R6): its own dropdown, the fake's DropdownButton, holds the equipped frame. Never
+			-- greyed out: nothing to grey it by, and its dropdown takes clicks (the fake panel greys only Blizzard's
+			-- native controls, as the client does, #120).
 			assert.are.equal("PagleSettingsSlotRowTemplate", last.initializer:GetTemplate())
+			assert.are.same({}, last.initializer.modifyPredicates)
+			assert.is_true(settings.dropdownOf(last):IsEnabled())
 			assert.are.equal("stats.trackerframe.none", settings.dropdownOf(last).selected)
 		end
 	)

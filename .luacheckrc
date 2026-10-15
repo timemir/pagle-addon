@@ -33,8 +33,16 @@ stds.wow = {
 		-- The Settings tree (CORE-R40–R44, settings.md); the Settings table itself is in stds.wow_variables.
 		"CreateSettingsListSectionHeaderInitializer",
 		"CreateSettingsButtonInitializer",
-		"CreateKeybindingEntryInitializer",
 		C_KeyBindings = { fields = { "GetBindingIndex" } },
+		-- A Module's keybinding row, Core's own (SET-R20, #120): it binds as Blizzard's KeybindListener does, through
+		-- the client's SetBinding, SaveBindings and GetCurrentBindingSet (GetBindingKey and GetBindingText are listed
+		-- under QoL below) and FrameXML's BindingUtil.lua helpers.
+		"SetBinding",
+		"SaveBindings",
+		"GetCurrentBindingSet",
+		"GetConvertedKeyOrButton",
+		"IsKeyPressIgnoredForBinding",
+		"CreateKeyChordStringUsingMetaKeyState",
 		"SettingsPanel",
 		"HideUIPanel",
 		-- The compartment menu (CORE-R50): a context menu, opened a frame after the compartment's click (C_Timer.After,
@@ -330,6 +338,7 @@ files["addons/Pagle_Stats/adapter/Settings.lua"] = { globals = { "PagleStatsWatc
 -- The mixin of Core's own Settings rows, which adapter/Settings.xml's template names (SET-R5, SET-R6).
 files["addons/Pagle/adapter/Settings.lua"] = { globals = { "Pagle", "PagleSettingsRowMixin" } }
 files["addons/Pagle/adapter/LookAndFeel.lua"] = { globals = { "Pagle", "PagleSettingsSlotRowMixin" } }
+files["addons/Pagle/adapter/KeyBindingRow.lua"] = { globals = { "Pagle", "PagleSettingsKeyRowMixin" } }
 -- A Module's adapter/ reads Pagle through stds.pagle above. Its logic/ and locale/ files read it only in their CORE-R11
 -- guard, `if not Pagle then -- luacheck: read globals Pagle …`, whose inline option reaches that line alone: any other
 -- use of Pagle there fails lint (CORE-R7).
@@ -356,6 +365,7 @@ local helperGlobals = {
 	-- spec/support/helpers.lua
 	"foreverWith",
 	"setCombat",
+	"keyRowDrawn",
 	"openedNames",
 	"characterRecord",
 	"savedLog",

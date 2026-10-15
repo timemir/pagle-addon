@@ -95,10 +95,13 @@ describe("The Trackers page's frame row", function()
 		local rows = showTrackers(loaded)
 		local row = loaded.client.settings.rowNamed(rows, "Hunts tracker frame")
 
-		assert.is_true(row.frame.enabled)
+		-- Never greyed out: nothing to grey it by, and its dropdown takes clicks. The fake panel greys only Blizzard's
+		-- native controls, as the client does (#120).
+		assert.are.same({}, row.initializer.modifyPredicates)
+		assert.is_true(loaded.client.settings.dropdownOf(row):IsEnabled())
 		assert.is_nil(row.initializer:GetParentInitializer())
 		loaded.client.settings.rowNamed(rows, "Show the Hunts tracker").initializer:GetSetting():SetValue(true)
-		assert.is_true(row.frame.enabled)
+		assert.is_true(loaded.client.settings.dropdownOf(row):IsEnabled())
 	end)
 
 	it(

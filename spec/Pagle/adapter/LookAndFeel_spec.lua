@@ -132,7 +132,10 @@ describe("A slot dropdown", function()
 			assert.are.equal("PagleSettingsSlotRowTemplate", row.initializer:GetTemplate())
 			assert.are.equal("PagleSettingsSlotRowMixin", loaded.client.templates.PagleSettingsSlotRowTemplate.mixin)
 			assert.are.same({ "JOURNAL BINDING" }, row.initializer.searchTags)
-			assert.is_true(row.frame.enabled)
+			-- Never greyed out: nothing to grey it by, and its dropdown takes clicks. The fake panel greys only Blizzard's
+			-- native controls, as the client does (#120).
+			assert.are.same({}, row.initializer.modifyPredicates)
+			assert.is_true(loaded.client.settings.dropdownOf(row):IsEnabled())
 			assert.is_nil(row.initializer:GetTooltip())
 			assert.are.equal("Journal binding", loaded.client.settings.textsOf(row.frame)[1])
 			-- Its Defaults setting (SET-R60): the slot's default good.

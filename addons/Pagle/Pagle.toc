@@ -79,6 +79,7 @@ adapter\FieldReport.lua
 adapter\Sessions.lua
 adapter\Settings.lua
 adapter\Settings.xml
+adapter\KeyBindingRow.lua
 adapter\AnnouncementSettings.lua
 adapter\Dock.lua
 adapter\LookAndFeel.lua

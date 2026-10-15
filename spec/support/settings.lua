@@ -30,7 +30,8 @@
 ---@field show fun(category: table): { initializer: table, frame: table }[] Shows a page as the panel does: the panel,
 --- then a fresh frame per row, through its initializer's InitFrame, so a row reads its value or label then. A value
 --- row's frame has `value`, a slider's `valueLabel` (its Right label formatter's text, nil with none), a dropdown's
---- `valueLabel` (the label of the option holding its value), and every frame `enabled`. Until the next show, a
+--- `valueLabel` (the label of the option holding its value), and a native control's frame `enabled` (a native
+--- keybinding row, a header or a custom row gets none: it never greys by its modify predicates). Until the next show, a
 --- setting's change through its own row updates these frames as the panel's controls do (valueChanged).
 ---@field defaults fun(category: table) The page's Defaults button (SettingsPanelMixin:
 --- SetCurrentCategorySettingsToDefaults): sets each setting registered on that page to its default value.
@@ -52,6 +53,18 @@
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local newWidget = dofile("spec/support/widgets.lua").newWidget
+
+-- The native templates whose frames grey out by their initializer's modify predicates: the controls built on
+-- SettingsControlMixin and the button row (Blizzard_Settings_Shared/Blizzard_SettingControls.lua at the forever
+-- 1.60.1 commit: SettingsControlMixin:IsEnabled and SettingsButtonControlMixin:EvaluateState read
+-- EvaluateModifyPredicates). KeyBindingFrameBindingTemplateMixin (Blizzard_Keybindings.lua) never reads them, nor
+-- does a section header, and a custom template's Init draws its own state, so none of those gets `enabled` (#120).
+local GREYING_TEMPLATES = {
+	SettingsCheckboxControlTemplate = true,
+	SettingsSliderControlTemplate = true,
+	SettingsDropdownControlTemplate = true,
+	SettingButtonControlTemplate = true,
+}
 
 -- A Settings list row initializer, as Blizzard_Settings_Shared's SettingsListElementInitializer behaves for what
 -- Core calls. Its default InitFrame reads the row's setting value, as a control does when shown.
@@ -131,14 +144,17 @@ local function newInitializer(template, data)
 	-- and writing one from outside raises an error: a field Pagle wrote there taints the list (SET-R6, #246).
 	local listReads = {}
 	-- As ScrollBoxFactoryInitializerMixin:InitFrame, a frame of a template with an Init (Core's own rows) draws
-	-- itself with frame:Init(initializer). A native control reads its value and greying instead.
+	-- itself with frame:Init(initializer). A native control reads its value and greying instead; a native keybinding
+	-- row or a section header never greys (see GREYING_TEMPLATES).
 	function listReads:InitFrame(frame)
 		frame.initializer = self
 		if self.data.setting then
 			frame.value = self.data.setting:GetValue()
 			self:FormatValue(frame)
 		end
-		frame.enabled = self:EvaluateModifyPredicates()
+		if GREYING_TEMPLATES[self.template] then
+			frame.enabled = self:EvaluateModifyPredicates()
+		end
 		if frame.Init then
 			frame:Init(self)
 		end
@@ -408,7 +424,8 @@ return function(client, stubs)
 	-- at the forever 1.60.1 commit): a control shows its own setting's new value and re-evaluates its state
 	-- (SettingsControlMixin:OnSettingValueChanged); a row re-evaluates its state when its parent's setting changes
 	-- (OnParentSettingValueChanged) or a variable it added with AddEvaluateStateCVar does. A keybinding row isn't a
-	-- SettingsListElementMixin (Blizzard_Keybindings.lua), so it hears none of these.
+	-- SettingsListElementMixin (Blizzard_Keybindings.lua), so it hears none of these, and a custom row's frame is its
+	-- owner's to redraw.
 	function settings.valueChanged(setting)
 		local variable = setting:GetVariable()
 		for _, shown in ipairs(settings.shown or {}) do
@@ -423,7 +440,7 @@ return function(client, stubs)
 				initializer:FormatValue(frame)
 				watched = true
 			end
-			if watched and initializer.template ~= "KeyBindingFrameBindingTemplate" then
+			if watched and GREYING_TEMPLATES[initializer.template] then
 				frame.enabled = initializer:EvaluateModifyPredicates()
 			end
 		end

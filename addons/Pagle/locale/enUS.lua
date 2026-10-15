@@ -107,6 +107,9 @@ ns.L = {
 	RELOAD_REMINDER = "Pagle: %d Casts not yet saved. /reload to keep them safe.",
 	-- CORE-R33: Settings opened while restricted.
 	SETTINGS_AFTER_COMBAT = "Pagle: settings open after combat.",
+	-- A Module's keybinding row (SET-R20): a key slot with no key, and the slot waiting for the next key press.
+	SETTINGS_KEY_NOT_BOUND = "Not Bound",
+	SETTINGS_KEY_WAITING = "Press a key",
 	-- The status list (CORE-R41): each roster Module's name, by def.name, and each state.
 	MODULE_NAMES = {
 		Ledger = "Ledger",

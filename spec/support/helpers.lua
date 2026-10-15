@@ -4,6 +4,7 @@
 --   local loaded = loadAddon("Pagle", foreverWith({ PagleLog = savedLog({ "S1|1|1791731000|0|80|150|0" }) }))
 --   setCombat(loaded, true)
 --   openedNames(loaded)                       -- { "Pagle", "Fishing" }
+--   keyRowDrawn(loaded, row.frame)            -- { texts = { "Fishing key", "F", "Not Bound" }, live = true }
 --   local loaded, errors = loadCollectingErrors()
 --   breakUpLargeNumbers(1950)                -- "1,950"
 --
@@ -36,6 +37,18 @@ function setCombat(loaded, inCombat)
 		return inCombat
 	end
 	loaded.client.fire(inCombat and "PLAYER_REGEN_DISABLED" or "PLAYER_REGEN_ENABLED")
+end
+
+--- How Core's keybinding row (SET-R20) is drawn on `frame` now: `texts`, its label and its two keys' captions, and
+--- `live`, whether both key buttons take clicks (false while it is greyed out).
+---@param loaded LoadedAddon
+---@param frame table a frame of PagleSettingsKeyRowTemplate, as the fake panel showed it
+---@return { texts: string[], live: boolean }
+function keyRowDrawn(loaded, frame)
+	local settings = loaded.client.settings
+	local buttons = settings.buttonsOf(frame)
+	assert(#buttons == 2, "a keybinding row has two key buttons")
+	return { texts = settings.textsOf(frame), live = buttons[1]:IsEnabled() and buttons[2]:IsEnabled() }
 end
 
 --- The names of the categories Settings.OpenToCategory opened, in order (false for an unknown ID).

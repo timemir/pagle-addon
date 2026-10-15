@@ -12,4 +12,10 @@
 	<Frame name="PagleSettingsSlotRowTemplate" mixin="PagleSettingsSlotRowMixin" virtual="true">
 		<Size x="280" y="46"/>
 	</Frame>
+	<!-- A Module's keybinding row (SET-R20, adapter/KeyBindingRow.lua, PagleSettingsKeyRowMixin): its label and its two
+	keys, greyed out by its isEnabled, which Blizzard's KeyBindingFrameBindingTemplate never reads (#120). Its own pool,
+	drawn through the stock InitFrame and Resetter as Core's other rows (SET-R6). 26 pixels, as Core's text rows. -->
+	<Frame name="PagleSettingsKeyRowTemplate" mixin="PagleSettingsKeyRowMixin" virtual="true">
+		<Size x="280" y="26"/>
+	</Frame>
 </Ui>

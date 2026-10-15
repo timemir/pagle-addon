@@ -209,9 +209,16 @@ describe("Stats' section on the Trackers page, in the panel", function()
 
 		checkbox.initializer:GetSetting():SetValue(false)
 
+		-- Nothing to grey it by, and its buttons take clicks, drawn now and again. The fake panel greys only Blizzard's
+		-- native controls, as the client does (#120).
 		local row = loaded.client.settings.rowNamed(rows, "Watched Dry spells")
-		assert.is_true(row.frame.enabled)
-		assert.is_true(loaded.client.settings.rowNamed(showTrackers(loaded), "Watched Dry spells").frame.enabled)
+		assert.are.same({}, row.initializer.modifyPredicates)
+		local redrawn = loaded.client.settings.rowNamed(showTrackers(loaded), "Watched Dry spells")
+		for _, drawn in ipairs({ row, redrawn }) do
+			local buttons = stopButtons(loaded, drawn)
+			assert.are.equal(1, #buttons)
+			assert.is_true(buttons[1]:IsEnabled())
+		end
 	end)
 
 	it("is found by Blizzard's settings search by its label (SET-R5)", function()

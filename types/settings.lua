@@ -3,7 +3,7 @@
 -- (WOW_API_COMMIT, scripts/tools.env) lack. Declarations for the types stage only: never loaded by the game, and
 -- excluded from luacheck. Source: Gethe/wow-ui-source branch forever at 943764493e6b16d63ded3ab304150d1f05e58b57
 -- ("1.60.1 (70338)"), Interface/AddOns/Blizzard_Settings_Shared/ (Blizzard_Settings.lua, Blizzard_SettingControls.lua,
--- Blizzard_Keybindings.lua, Blizzard_SettingsLayouts.lua).
+-- Blizzard_SettingsLayouts.lua).
 
 ---@class SettingsCategory
 ---@field GetID fun(self: SettingsCategory): any
@@ -129,11 +129,6 @@ function CreateSettingsListSectionHeaderInitializer(name, tooltip) end
 ---@param addSearchTags boolean
 ---@return SettingsInitializer
 function CreateSettingsButtonInitializer(name, buttonText, buttonClick, tooltip, addSearchTags) end
-
----@param bindingIndex number
----@param search boolean?
----@return SettingsInitializer
-function CreateKeybindingEntryInitializer(bindingIndex, search) end
 
 --- The Settings panel (Blizzard_SettingsPanel.xml).
 ---@type Frame

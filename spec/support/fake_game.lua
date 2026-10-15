@@ -56,9 +56,11 @@
 ---@field targeting integer? The item whose use is waiting for a target, as the glowing hand; nil when none is.
 ---@field itemUses string[] Each item use PagleQoLActionButton's press made, in order: "use <itemID>", or
 --- "use <itemID> on <slot>" for one applied to an equipped slot.
----@field pressKey fun(key: string) A press of `key` reaching its override: for a click override ("CLICK name:…"),
---- the named button's click, with the secure item action of FrameXML's SecureActionButtonTemplate for a secure one.
---- No other override is faked.
+---@field pressKey fun(key: string) A press of `key`: a shown keyboard-enabled frame takes it first (its OnKeyDown,
+--- the frame made last on top), and then no binding sees it. Otherwise it reaches its override: for a click override
+--- ("CLICK name:…"), the named button's click, with the secure item action of FrameXML's SecureActionButtonTemplate
+--- for a secure one. No other override is faked.
+---@field savedBindings integer[] Each SaveBindings call's binding set, in order. SetBinding changes `boundKeys`.
 ---@field mainHandEnchant integer? The enchant ID on the main hand (a lure), as `GetWeaponEnchantInfo()` reads it.
 ---@field itemSpells table<integer, { [1]: string, [2]: integer }> The spell each item's use casts, by item ID, as
 --- `C_Item.GetItemSpell` returns it: name, spell ID.
@@ -204,6 +206,62 @@ return function(client, stubs)
 
 	stubs.GetBindingKey = function(command)
 		return unpack(client.boundKeys[command] or {})
+	end
+	-- The player's own bindings (SET-R20): SetBinding(key, command) takes `key` from whatever command had it and, with
+	-- a command, adds it as that command's last key, as GetBindingKey then lists it; it fires UPDATE_BINDINGS, and is
+	-- blocked in lockdown (warcraft.wiki.gg API SetBinding: "nocombat"). SaveBindings(which) records `which` in
+	-- client.savedBindings; GetCurrentBindingSet() is 1, the account set.
+	client.savedBindings = {}
+	stubs.SetBinding = function(key, command)
+		unlessLockedDown("SetBinding")
+		for _, keys in pairs(client.boundKeys) do
+			for i = #keys, 1, -1 do
+				if keys[i] == key then
+					table.remove(keys, i)
+				end
+			end
+		end
+		if command then
+			client.boundKeys[command] = client.boundKeys[command] or {}
+			table.insert(client.boundKeys[command], key)
+		end
+		client.fireGameEvent("UPDATE_BINDINGS")
+		return true
+	end
+	stubs.SaveBindings = function(which)
+		client.savedBindings[#client.savedBindings + 1] = which
+	end
+	stubs.GetCurrentBindingSet = function()
+		return 1
+	end
+	-- FrameXML's binding helpers, as Gethe/wow-ui-source branch forever at 943764493e6b16d63ded3ab304150d1f05e58b57
+	-- ("1.60.1 (70338)"), Interface/AddOns/Blizzard_SharedXML/BindingUtil.lua defines them, for the mouse buttons and
+	-- modifiers Pagle's specs press.
+	local MOUSE_BUTTONS = { LeftButton = "BUTTON1", RightButton = "BUTTON2", MiddleButton = "BUTTON3" }
+	for i = 4, 31 do
+		MOUSE_BUTTONS["Button" .. i] = "BUTTON" .. i
+	end
+	local META_KEYS = { LALT = 1, RALT = 2, LCTRL = 3, RCTRL = 4, LSHIFT = 5, RSHIFT = 6, LMETA = 7, RMETA = 8 }
+	for i, key in ipairs({ "ALT", "CTRL", "SHIFT", "META" }) do
+		META_KEYS[key] = 8 + i
+	end
+	stubs.GetConvertedKeyOrButton = function(keyOrButton)
+		return MOUSE_BUTTONS[keyOrButton] or keyOrButton
+	end
+	stubs.IsKeyPressIgnoredForBinding = function(key)
+		return META_KEYS[key] ~= nil or key == "UNKNOWN" or key == "BUTTON1" or key == "BUTTON2"
+	end
+	stubs.CreateKeyChordStringUsingMetaKeyState = function(key)
+		local chord = {}
+		for _, meta in ipairs({ "ALT", "CTRL", "SHIFT", "META" }) do
+			if client.keysDown[meta] then
+				chord[#chord + 1] = meta
+			end
+		end
+		if not META_KEYS[key] then
+			chord[#chord + 1] = key
+		end
+		return table.concat(chord, "-")
 	end
 	stubs.SetOverrideBinding = function(owner, isPriority, key, command)
 		setOverride(owner, isPriority, key, command)
@@ -429,7 +487,30 @@ return function(client, stubs)
 		client.fireGameEvent("UNIT_SPELLCAST_STOP", "player", "Cast-Item", spell[2])
 	end
 
+	-- Whether `widget` and every frame it hangs from are shown.
+	local function visible(widget)
+		while widget do
+			if not widget.shown then
+				return false
+			end
+			widget = widget.parent
+		end
+		return true
+	end
+
 	function client.pressKey(key)
+		-- A shown keyboard-enabled frame takes the press first, the one made last on top, and keeps it from the
+		-- bindings (Frame:EnableKeyboard; Pagle never lets one propagate).
+		for i = #client.frames, 1, -1 do
+			local frame = client.frames[i]
+			if frame.keyboardEnabled and visible(frame) then
+				local onKeyDown = frame.scripts.OnKeyDown
+				if onKeyDown then
+					onKeyDown(frame, key)
+				end
+				return
+			end
+		end
 		local action = client.overrideAction(key)
 		local name = action and action:match("^CLICK ([^:]+):")
 		assert(name, ("FakeClient: only a click override is pressed, not %s"):format(tostring(action)))
