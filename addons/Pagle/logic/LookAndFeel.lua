@@ -11,13 +11,7 @@ local ns = select(2, ...)
 ---@param goods PagleGoods
 ---@return PagleSlotSection[]
 function ns.LookAndFeelSections(goods)
-	local withGoods = {}
-	for _, slot in ipairs(goods:Slots()) do
-		if #slot.goods > 0 then
-			withGoods[#withGoods + 1] = slot
-		end
-	end
-	return ns.SlotsByCategory(withGoods)
+	return ns.SlotsByCategory(goods:SlotsWithGoods())
 end
 
 --- Core's slots in the "Announcements" category that have goods, in registration order: the rows that end Core's
@@ -25,13 +19,9 @@ end
 ---@param goods PagleGoods
 ---@return PagleRegisteredSlot[]
 function ns.CoreAnnouncementSlots(goods)
-	local list = {}
-	for _, slot in ipairs(goods:Slots()) do
-		if slot.module == ns.CORE_OWNER and slot.category == "Announcements" and #slot.goods > 0 then
-			list[#list + 1] = slot
-		end
-	end
-	return list
+	return goods:SlotsWithGoods(function(slot)
+		return slot.module == ns.CORE_OWNER and slot.category == "Announcements"
+	end)
 end
 
 --- The slot dropdowns Core ends each Module's section with on the topic page `topic`, by Module name: on Trackers,
@@ -45,12 +35,13 @@ function ns.SectionSlots(goods, topic)
 	if topic ~= "trackers" then
 		return byModule
 	end
-	for _, slot in ipairs(goods:Slots()) do
-		if slot.module ~= "Core" and slot.category == "Trackers" and #slot.goods > 0 then
-			local list = byModule[slot.module] or {}
-			byModule[slot.module] = list
-			list[#list + 1] = slot
-		end
+	local trackers = goods:SlotsWithGoods(function(slot)
+		return slot.module ~= ns.CORE_OWNER and slot.category == "Trackers"
+	end)
+	for _, slot in ipairs(trackers) do
+		local list = byModule[slot.module] or {}
+		byModule[slot.module] = list
+		list[#list + 1] = slot
 	end
 	return byModule
 end

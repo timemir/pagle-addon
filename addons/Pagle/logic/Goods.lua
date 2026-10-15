@@ -338,6 +338,20 @@ function Goods:Slots()
 	return list
 end
 
+--- The slots, as Slots orders them, that have a good to pick (a slot with none has nothing to show, SET-R50), and
+--- that `keep` keeps when given.
+---@param keep (fun(slot: PagleRegisteredSlot): boolean)?
+---@return PagleRegisteredSlot[]
+function Goods:SlotsWithGoods(keep)
+	local list = {}
+	for _, slot in ipairs(self:Slots()) do
+		if #slot.goods > 0 and (keep == nil or keep(slot)) then
+			list[#list + 1] = slot
+		end
+	end
+	return list
+end
+
 --- The goods registered this session in a slot, in registration order (empty for a slot not registered). Core's
 --- own; nothing in them may be changed.
 ---@param slotID string
