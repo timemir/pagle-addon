@@ -78,6 +78,9 @@ local function start(options)
 		run.redraws[#run.redraws + 1] = reason
 	end)
 	fake.login()
+	-- These specs count the grouping's own regroups: the tracker (#197), shown by default, would refresh them every
+	-- 60 s (HNT-R42), so it says it is hidden here, and each spec that wants a view shown says so itself.
+	ns.SetViewShown("tracker", false)
 	if options.skill ~= false then
 		fake.readSkill(options.skill or 150, 300, 0)
 	end

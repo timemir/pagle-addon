@@ -1,0 +1,9 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/">
+	<!-- Stats' Watched Dry spells row on the Trackers page (stats.md › Settings, SET-R5): its frames come from their
+	own pool in the panel's list, and Blizzard's list draws one through the stock InitFrame and Resetter, which call the
+	frame's Init and Release (adapter/Settings.lua, PagleStatsWatchedRowMixin), so Stats writes no field onto an
+	initializer. Its height holds the "{n} of 3" line and 3 watches, 26 pixels each, as Blizzard's controls. -->
+	<Frame name="PagleStatsWatchedRowTemplate" mixin="PagleStatsWatchedRowMixin" virtual="true">
+		<Size x="280" y="104"/>
+	</Frame>
+</Ui>

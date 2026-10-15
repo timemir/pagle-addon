@@ -3,7 +3,7 @@
 --   - the latest !BugGrabber session's Lua errors, with their stacks;
 --   - the Catch log, decoded with Core's own codec (addons/Pagle/logic/CatchLog.lua): the logId, the entries by
 --     tag, the C1 Casts by outcome, per character and per zone areaID, those in zone areaID 0, their time span, the
---     B1 and S1 entries, each P1 (Prestige) and U1 (purchase) entry, and PagleDB.global.decodeErrors (0 when AceDB
+--     realm's UTC offset from the latest Cast's realm minute (LOG-R49), the B1 and S1 entries, each P1 (Prestige) and U1 (purchase) entry, and PagleDB.global.decodeErrors (0 when AceDB
 --     left that default out of the file);
 --   - the Ledger (PagleLedgerDB in Pagle_Ledger.lua): the projection Core stores and whether its logId, lastSeq and
 --     rulesVersion are current, its state (items, the Uncharted list, zone ranks) with what the Ledger's own logic/
@@ -14,6 +14,10 @@
 --     rulesVersion and fingerprint are current, its state (Casts, Coins, each Hunt's progress and tiers, the earned
 --     set titles) with the Session summary line Hunts' own logic/ computes from it over the Hunt list, the
 --     celebrated set, the pins and the profile settings; with --hunt, one Hunt in full;
+--   - Stats (PagleStatsDB in Pagle_Stats.lua): the projection Core stores and whether its logId, lastSeq,
+--     rulesVersion and fingerprint are current, its totals, places, scopes, hits, skill margins and characters, its
+--     last Sessions checked against the log's Session IDs, the live tracker setting, the watches with their readings
+--     and the book's position; with --stats-item and --area, one reading in full, from Stats' own logic/;
 --   - the wallet: each Module's reported Coins (PagleDB.global.coins.earned), the balance (held while negative) and
 --     the wallet projection (PagleDB.global.projections.wallet): spent and purchased;
 --   - the looks: each slot's equipped good (PagleDB.profile.appearance), the goods cache and the length unit;
@@ -25,17 +29,23 @@
 --
 --   lua scripts/read-wtf.lua <WTF/Account/<ACCT> folder> [--character <realm folder>/<Name-Surname>]
 --       [--cvar <name>]... [--addon <name>]... [--catalogue <Catalogue.lua>] [--item <id>]...
---       [--huntlist <HuntList.lua>] [--hunt <id>]... [--now T] [--expect-casts N] [--since T]
+--       [--huntlist <HuntList.lua>] [--hunt <id>]... [--stats-item <id> --area <areaID>] [--skill N] [--now T]
+--       [--expect-casts N] [--since T]
 --
--- --cvar defaults to SoftTargetInteract and --addon to Pagle, Pagle_Ledger, Pagle_QoL and Pagle_Hunts; naming one
--- replaces its defaults.
+-- --cvar defaults to SoftTargetInteract and --addon to Pagle, Pagle_Ledger, Pagle_QoL, Pagle_Hunts and Pagle_Stats;
+-- naming one replaces its defaults.
 -- The character's CVars and addons need --character, e.g. --character 70/Ada-Brook.
 -- --catalogue builds the Ledger's world from another Catalogue.lua than the repo's addons/Pagle/data/Catalogue.lua,
--- such as the installed addon's; Hunts' fingerprint check reads its content fingerprint too.
+-- such as the installed addon's; Hunts' and Stats' fingerprint checks read its content fingerprint too, and Stats'
+-- readings its lines and windows.
 -- --item <id> prints the Simulated Size record (LED-R80) the Ledger keeps for that Species or Legend item ID.
 -- --huntlist reads the Hunt list from another HuntList.lua than the repo's addons/Pagle_Hunts/data/HuntList.lua, such
 -- as a local-only build's. --hunt <id> prints that Hunt's full progress. --now T computes what depends on the time
--- (current and retired Hunts, the summary line, the pins Hunts drops) at server time T instead of the reader's clock.
+-- (current and retired Hunts, the summary line, the pins Hunts drops, how long ago a Dry spell's last Catch was) at
+-- server time T instead of the reader's clock.
+-- --stats-item <id> --area <areaID> prints Stats' reading of that item in that place (STA-R40–R54): its side, scope,
+-- Your odds and Dry spell. --skill N is the live effective skill (rank + modifier) it and the watches are read at;
+-- without it, each place's side with the most Casts (STA-R41).
 -- --expect-casts N checks the M1 exit check's steps 3 and 4 (#75): N C1 Casts, each there once, no zone areaID 0,
 -- a B1 and an S1 entry, decodeErrors 0, every entry decodes, and at least one Cast got away (`g`). --since T
 -- counts only the Casts at server time T (Unix seconds) or later; B1 and S1 are still looked for in the whole log.
@@ -46,9 +56,10 @@
 
 local USAGE = "usage: lua scripts/read-wtf.lua <WTF/Account/<ACCT> folder> [--character <realm>/<Name-Surname>]"
 	.. " [--cvar <name>]... [--addon <name>]... [--catalogue <Catalogue.lua>] [--item <id>]..."
-	.. " [--huntlist <HuntList.lua>] [--hunt <id>]... [--now T] [--expect-casts N] [--since T]\n"
+	.. " [--huntlist <HuntList.lua>] [--hunt <id>]... [--stats-item <id> --area <areaID>] [--skill N] [--now T]"
+	.. " [--expect-casts N] [--since T]\n"
 
--- The repo root, from this script's path: Core's and the Ledger's logic/ and the catalogue are read from addons/.
+-- The repo root, from this script's path: Core's and the Modules' logic/ and the catalogue are read from addons/.
 local ROOT = ((arg and arg[0] or ""):match("^(.*)[/\\]") or ".") .. "/.."
 
 -- The arguments as options, or nil and what's wrong with them.
@@ -56,6 +67,7 @@ local function parseArgs(args)
 	local options = { cvars = {}, addons = {}, items = {}, hunts = {} }
 	local lists = { ["--cvar"] = options.cvars, ["--addon"] = options.addons, ["--hunt"] = options.hunts }
 	local numbers = { ["--expect-casts"] = "expectCasts", ["--since"] = "since", ["--now"] = "now" }
+	numbers["--stats-item"], numbers["--area"], numbers["--skill"] = "statsItem", "area", "skill"
 	local i = 1
 	while args[i] do
 		local word, value = args[i], args[i + 1]
@@ -94,11 +106,14 @@ local function parseArgs(args)
 	if not options.account then
 		return nil, "no account folder"
 	end
+	if (options.statsItem == nil) ~= (options.area == nil) then
+		return nil, "--stats-item and --area go together"
+	end
 	if #options.cvars == 0 then
 		options.cvars = { "SoftTargetInteract" }
 	end
 	if #options.addons == 0 then
-		options.addons = { "Pagle", "Pagle_Ledger", "Pagle_QoL", "Pagle_Hunts" }
+		options.addons = { "Pagle", "Pagle_Ledger", "Pagle_QoL", "Pagle_Hunts", "Pagle_Stats" }
 	end
 	return options
 end
@@ -144,6 +159,12 @@ end
 
 local function utc(time)
 	return os.date("!%Y-%m-%d %H:%M:%S UTC", time)
+end
+
+-- A UTC offset in minutes as "UTC+02:00" or "UTC-07:30".
+local function utcOffset(minutes)
+	local size = math.abs(minutes)
+	return ("UTC%s%02d:%02d"):format(minutes < 0 and "-" or "+", math.floor(size / 60), size % 60)
 end
 
 -- "1 Cast", "2 Casts"; plural defaults to noun .. "s".
@@ -225,7 +246,8 @@ local function readLog(ns, log, since)
 	local global = { decodeErrors = 0 }
 	local catchLog = ns.OpenCatchLog(log, global, 0)
 	local facts = { tags = tags, casts = {}, allCasts = 0, builds = 0, skills = 0, repeated = {} }
-	facts.prestiges, facts.purchases = {}, {}
+	-- sessions: each Session ID the Casts carry (LOG-R98), with its Casts and its first Cast, for Stats' cross-check.
+	facts.prestiges, facts.purchases, facts.sessions = {}, {}, {}
 	local ids = {}
 	for record in catchLog:Iterate() do
 		if ids[record.id] then
@@ -234,6 +256,11 @@ local function readLog(ns, log, since)
 		ids[record.id] = true
 		if record.kind == "cast" then
 			facts.allCasts = facts.allCasts + 1
+			if record.session then
+				local session = facts.sessions[record.session] or { casts = 0, first = record }
+				session.casts = session.casts + 1
+				facts.sessions[record.session] = session
+			end
 			if record.time >= (since or 0) then
 				facts.casts[#facts.casts + 1] = record
 			end
@@ -247,6 +274,14 @@ local function readLog(ns, log, since)
 		end
 	end
 	facts.undecodable = global.decodeErrors
+	-- The realm's UTC offset (LOG-R49), from the latest Cast counted that read the realm minute; nil with none.
+	local latest
+	for _, cast in ipairs(facts.casts) do
+		if cast.conditions.minute and (not latest or cast.time >= latest.time) then
+			latest = cast
+		end
+	end
+	facts.realmOffset = latest and ns.RealmUtcOffset(latest.time, latest.conditions.minute)
 	return facts
 end
 
@@ -255,6 +290,8 @@ local function characterName(log, char)
 	local name = table.concat({ tostring(c.name or "?"), c.surname and tostring(c.surname) or nil }, " ")
 	return ("%d %s (%s)"):format(char, name, tostring(c.guid))
 end
+
+local NO_REALM_MINUTE = "unknown (no Cast read the realm minute)"
 
 local function printCasts(log, facts, since)
 	local casts = facts.casts
@@ -290,6 +327,8 @@ local function printCasts(log, facts, since)
 	end
 	local zero = #zeroZone > 0 and count(#zeroZone, "Cast") .. ", seq " .. table.concat(zeroZone, ", ")
 	print("zone areaID 0: " .. (zero or "none"))
+	local offset = facts.realmOffset
+	print("realm clock: " .. (offset and utcOffset(offset) .. " (from the latest Cast)" or NO_REALM_MINUTE))
 end
 
 -- The Prestige (P1, LOG-R38) and purchase (U1, LOG-R39) entries: a count each, then one line per entry, P1 with
@@ -409,7 +448,7 @@ local function printCatchLog(pagle, expectCasts, since)
 	end
 	local facts = readLog(ns, log, since)
 	printLog(log, facts, since)
-	return expectCasts and exitChecks(facts, decodeErrors, expectCasts) or {}
+	return expectCasts and exitChecks(facts, decodeErrors, expectCasts) or {}, facts
 end
 
 -- The Ledger's namespace with its logic: each logic/ file Pagle_Ledger.toc lists, in TOC order, called with
@@ -1267,6 +1306,350 @@ local function printHunts(account, log, options)
 	end
 end
 
+-- The Stats section's lines (#219): what PagleStatsDB holds (stats.md › Data), with the readings Stats' own logic/
+-- computes from its projection over the catalogue (the repo's or --catalogue's) at the live skill --skill gives.
+
+-- A whole number with thousands separators, as the client's BreakUpLargeNumbers writes it: 1234567 reads "1,234,567".
+local function thousands(n)
+	local digits = ("%d"):format(n)
+	local sign, rest = digits:match("^(-?)(%d+)$")
+	return sign .. rest:reverse():gsub("(%d%d%d)", "%1,"):reverse():gsub("^,", "")
+end
+
+-- Stats' namespace with its strings and its logic: each locale/, data/ and logic/ file Pagle_Stats.toc lists, in TOC
+-- order, called with ("Pagle_Stats", ns) as the client calls an addon's files (spec/Pagle_Stats/support.lua loads them
+-- the same way over FakePagle). Their CORE-R11 guard reads the Pagle global, so it's a table here; logic/ is plain Lua
+-- 5.1 (CORE-R7) and reads nothing of Core's at load. Its words (logic/Text.lua) get the reader's stand-ins for the
+-- client's reads: no item or area names (so "Item {id}", "Area {id}"), the log's characters and the clock at `now`.
+local function loadStatsLogic(log, now)
+	local ns = {}
+	local env = setmetatable({ Pagle = {} }, { __index = _G })
+	local dir = ROOT .. "/addons/Pagle_Stats/"
+	for _, line in ipairs(assert(readLines(dir .. "Pagle_Stats.toc"))) do
+		local file = line:match("^%s*(.-)%s*$"):gsub("\\", "/")
+		if file:match("^locale/[^/]+%.lua$") or file:match("^data/[^/]+%.lua$") or file:match("^logic/[^/]+%.lua$") then
+			local chunk = assert(loadfile(dir .. file))
+			setfenv(chunk, env)
+			chunk("Pagle_Stats", ns)
+		end
+	end
+	local none = function() end
+	ns.WireText({
+		BreakUpLargeNumbers = thousands,
+		Date = os.date,
+		ServerTime = function()
+			return now
+		end,
+		ItemName = none,
+		ItemIcon = none,
+		AreaName = none,
+		Characters = function()
+			return log and log.characters or {}
+		end,
+		QualityName = none,
+		QualityColor = none,
+	})
+	return ns
+end
+
+-- Stats' place tables (STA-R12–R17) over the catalogue at `path` (the repo's unless --catalogue names another), with
+-- Core's MatchesConditions (logic/Conditions.lua), as the adapter passes `Pagle` itself. Returns the tables and the
+-- catalogue's content fingerprint, or nil and why the catalogue can't be loaded.
+local function statsPlaces(stats, core, path)
+	local catalogue, err = loadCatalogue(path)
+	if not catalogue then
+		return nil, err
+	end
+	local lookups = { MatchesConditions = core.MatchesConditions }
+	for name, value in pairs(catalogue) do
+		lookups[name] = value
+	end
+	return stats.NewPlaceTables(lookups), catalogue.CONTENT_FINGERPRINT
+end
+
+-- The projection Core stores for Stats (LOG-R70), checked against PagleLog (LOG-R72), Stats' rules version (STA-R20:
+-- 100 × STATS_RULES_VERSION + Core's SESSION_RULES_VERSION, logic/Sessions.lua) and the catalogue's content
+-- fingerprint, Stats having no extra one. `context` holds the catalogue's label, its fingerprint or why it can't load.
+local function printStatsStored(stats, core, stored, log, context)
+	printStored(stored, log)
+	local rulesVersion = stats.RulesVersion(core.SESSION_RULES_VERSION)
+	if stored.rulesVersion == rulesVersion then
+		print(("rulesVersion: Stats', %d (STA-R20)"):format(rulesVersion))
+	else
+		local text = "rulesVersion: %s DIFFERS from Stats' %d (100 × %d + Core's SESSION_RULES_VERSION %d), so Core"
+			.. " rebuilds it at login (STA-R20, LOG-R72)"
+		print(
+			text:format(
+				tostring(stored.rulesVersion),
+				rulesVersion,
+				stats.STATS_RULES_VERSION,
+				core.SESSION_RULES_VERSION
+			)
+		)
+	end
+	if not context.places then
+		print(("fingerprint: can't be checked: %s can't load: %s"):format(context.label, tostring(context.err)))
+	elseif stored.fingerprint == context.fingerprint then
+		print(("fingerprint: the catalogue's, %s (LOG-R70)"):format(context.label))
+	else
+		local text = "fingerprint: DIFFERS from the catalogue's %s, %s, so Core rebuilds it at login (LOG-R70, LOG-R72)"
+		print(text:format(tostring(context.fingerprint), context.label))
+	end
+end
+
+-- "126 Casts, 112 Catches, 14 got away" (STA-R22).
+local function countsText(counts)
+	return ("%s, %s, %d got away"):format(
+		count(tonumber(counts.casts) or 0, "Cast"),
+		count(tonumber(counts.catches) or 0, "Catch", "Catches"),
+		tonumber(counts.gotAway) or 0
+	)
+end
+
+-- The state's counts (stats.md › Projection state): totals (STA-R22), the places, scopes and hits (STA-R22–R24), the
+-- skill margin buckets (STA-R26) and each character's counts with its last Skill Reading rank (STA-R27).
+local function printStatsCounts(state, log)
+	print("totals: " .. countsText(tableOr(state.totals)))
+	local zones, subzones = 0, 0
+	for area, place in pairs(tableOr(state.places)) do
+		local zone = tableOr(place).zone == area
+		zones, subzones = zones + (zone and 1 or 0), subzones + (zone and 0 or 1)
+	end
+	print(
+		("places: %d (%s, %s), %s, %s"):format(
+			zones + subzones,
+			count(zones, "zone"),
+			count(subzones, "subzone"),
+			count(#sortedKeys(tableOr(state.scopes)), "scope"),
+			count(#sortedKeys(tableOr(state.hits)), "hit")
+		)
+	)
+	local margins, buckets = tableOr(state.margins), {}
+	for i, bucket in ipairs({ "lo50", "lo1", "hi0", "hi25" }) do
+		local margin = tableOr(margins[bucket])
+		local gotAway = tonumber(margin.gotAway) or 0
+		local away = gotAway > 0 and (" (%d got away)"):format(gotAway) or ""
+		buckets[i] = ("%s %s%s"):format(bucket, count(tonumber(margin.casts) or 0, "Cast"), away)
+	end
+	print("margins: " .. table.concat(buckets, ", "))
+	local chars, lastRank = tableOr(state.chars), tableOr(state.lastRank)
+	local indices = sortedKeys(chars)
+	print("characters: " .. #indices)
+	for _, char in ipairs(indices) do
+		local who = log and characterName(log, char) or tostring(char)
+		local rank = lastRank[char] and ", last rank " .. tostring(lastRank[char]) or ""
+		print(("  %s: %s%s"):format(who, countsText(tableOr(chars[char])), rank))
+	end
+end
+
+-- How many Sessions the stored state shows (STA-R30).
+local STATS_SESSIONS_SHOWN = 5
+
+-- A Session's start and end in realm-local time, at the realm's UTC offset when its first Cast was made (LOG-R49,
+-- Core's own RealmUtcOffset), or nil without that Cast in the log.
+local function realmSpan(core, session, first)
+	if not first then
+		return nil
+	end
+	local offset = core.RealmUtcOffset(first.time, first.conditions.minute) * 60
+	local function realm(time)
+		return os.date("!%Y-%m-%d %H:%M", (tonumber(time) or 0) + offset)
+	end
+	return ("realm %s to %s"):format(realm(session.startTime), realm(session.endTime))
+end
+
+-- The last Sessions (STA-R30), oldest first, each with its start and end in realm and server time, its counts, zones
+-- and skill gained (STA-R27), and the log's Casts carrying its ID (LOG-R98), which it should count the same.
+local function printStatsSessions(core, sessions, facts)
+	local tagged = facts and facts.sessions or {}
+	local carried = facts and count(#sortedKeys(tagged), "Session ID") or "no PagleLog"
+	local first = math.max(1, #sessions - STATS_SESSIONS_SHOWN + 1)
+	if #sessions == 0 then
+		print(("Sessions: none stored, the log's Casts carry %s"):format(carried))
+		return
+	end
+	local shown = #sessions - first + 1
+	print(
+		("Sessions: %d stored, the log's Casts carry %s; the last %d, oldest first:"):format(#sessions, carried, shown)
+	)
+	for i = first, #sessions do
+		local session = tableOr(sessions[i])
+		local logged = tagged[session.id]
+		local span = realmSpan(core, session, logged and logged.first)
+			or "realm time unknown (no Cast of it in the log)"
+		print(
+			("  %d. %s: %s, server %s to %s"):format(
+				i,
+				tostring(session.id),
+				span,
+				utc(tonumber(session.startTime) or 0),
+				utc(tonumber(session.endTime) or 0)
+			)
+		)
+		local zones = {}
+		for j, zone in ipairs(sortedKeys(tableOr(session.zones))) do
+			zones[j] = zone .. " ×" .. tostring(session.zones[zone])
+		end
+		local inLog = logged and logged.casts or 0
+		local check = facts
+				and ("the log tags %s with it (%s)"):format(
+					count(inLog, "Cast"),
+					inLog == session.casts and "matches" or "DIFFERS"
+				)
+			or "no PagleLog to check against"
+		print(
+			("     %s, zones %s, skill +%s; %s"):format(
+				countsText(session),
+				#zones > 0 and table.concat(zones, ", ") or "none",
+				tostring(session.skill or 0),
+				check
+			)
+		)
+	end
+end
+
+-- The reading's side (STA-R41), and what decided it: --skill against the line, else the place's most Casts.
+local function sideText(reading, state, live, line)
+	if line == nil then
+		return ("side: %s, no no-junk line (STA-R41)"):format(reading.side)
+	elseif live then
+		return ("side: %s, --skill %d against the line %d (STA-R41)"):format(reading.side, live, line)
+	end
+	local casts = {}
+	for i, side in ipairs({ "hi", "lo", "na" }) do
+		casts[i] = side .. " " .. tostring(tableOr(state.scopes)[reading.area .. ":" .. side] or 0)
+	end
+	return ("side: %s, the most Casts here (%s), no --skill (STA-R41)"):format(reading.side, table.concat(casts, ", "))
+end
+
+-- Prints --stats-item's reading in --area (STA-R40–R54), computed with Stats' own Reading, Odds* and DrySpell* over
+-- the stored state, at the live skill --skill gives (STA-R41).
+local function printStatsItem(stats, state, places, options)
+	local heading = ("== Stats item %d in area %d (--stats-item, --area)"):format(options.statsItem, options.area)
+	if not state then
+		print(heading .. ": no projection stored to read")
+		return
+	elseif not places then
+		print(heading .. ": can't be read without the catalogue (see fingerprint: above)")
+		return
+	end
+	print(heading)
+	local reading = stats.Reading(state, options.statsItem, options.area, options.skill, places)
+	print(sideText(reading, state, options.skill, (places:NoJunkLine(reading.zone))))
+	local via = reading.viaZone
+			and (", its zone's: area %d has under %d there"):format(reading.area, stats.ODDS_THRESHOLD)
+		or ""
+	print(("scope: %s, %s, %d caught%s (STA-R42)"):format(reading.scope, count(reading.n, "Cast"), reading.k, via))
+	print(("state: %s (STA-R43)"):format(reading.state))
+	print(("Your odds: %s (short: %s)"):format(stats.OddsHeadline(reading), stats.OddsShort(reading)))
+	print("range: " .. (stats.OddsRange(reading) or "none until known (STA-R45)"))
+	print("sentence: " .. stats.OddsSentence(reading))
+	for _, note in ipairs(stats.OddsNotes(reading, places)) do
+		print("note: " .. note)
+	end
+	local dry = stats.DrySpell(reading)
+	if not dry.caught then
+		print(("Dry spell: %s, never caught in this scope (STA-R50)"):format(count(dry.since, "Cast")))
+	else
+		local hit = reading.hit
+		local text = ("Dry spell: %s since the last, at %d, last caught %s"):format(
+			count(dry.since, "Cast"),
+			hit.at,
+			utc(hit.last)
+		)
+		if dry.P then
+			text = text .. ("; P %.3g, band %s (STA-R50–R52)"):format(dry.P, dry.band)
+		else
+			text = text .. " (STA-R50)"
+		end
+		print(text)
+	end
+	local first, after = stats.DrySpellText(reading)
+	print("Dry spell text: " .. first .. (after and " " .. after or ""))
+	local short, band = stats.DrySpellShort(reading)
+	print("short: " .. stats.OddsShort(reading) .. (short and " · " .. short .. (band or "") or ""))
+end
+
+-- The profile (stats.md › PagleStatsDB, one shared "Default" profile): the live tracker setting (STA-R81), each watch
+-- (STA-R60) with its reading in short (STA-R43, STA-R82: its count and band, or no luck reading), and the book's
+-- position (STA-R71), each said to be the default when AceDB left it out of the file.
+local function printStatsProfile(stats, state, places, profile, live)
+	if profile.tracker == nil then
+		print("tracker: false (not saved: the default)")
+	else
+		print("tracker: " .. tostring(profile.tracker))
+	end
+	local watched = tableOr(profile.watched)
+	if #watched == 0 then
+		print("watched: none (not saved: the default)")
+	else
+		local side = live and "read at --skill " .. live
+			or "read on the side with the most Casts in each place (no --skill, STA-R41)"
+		print(("watched: %d, oldest first, %s"):format(#watched, side))
+	end
+	for i, watch in ipairs(watched) do
+		watch = tableOr(watch)
+		local what = ("  %d. item %s in area %s"):format(i, tostring(watch.item), tostring(watch.area))
+		if not (state and places) then
+			print(what .. " (no reading without a projection and the catalogue)")
+		else
+			local reading = stats.Reading(state, watch.item, watch.area, live, places)
+			local dry = stats.DrySpell(reading)
+			local band = dry.band and stats.BandWord(dry.band) or "no luck reading"
+			local text = "%s: %s, Dry spell %s, %s (%s)"
+			print(text:format(what, stats.OddsShort(reading), stats.DrySpellCount(reading), band, reading.scope))
+		end
+	end
+	local window = profile.window
+	if type(window) ~= "table" then
+		print("window: not saved, so centred (the default, STA-R71)")
+	else
+		local text = "window: %s of UIParent's %s, x %s, y %s (moved by the player, STA-R71)"
+		print(text:format(tostring(window[1]), tostring(window[2]), tostring(window[3]), tostring(window[4])))
+	end
+end
+
+-- Prints the Stats section from SavedVariables/Pagle_Stats.lua (stats.md › Data): the projection Core stores (LOG-R70)
+-- with its checks, the state's counts and last Sessions, cross-checked with the log's Session IDs (`facts`, the Catch
+-- log section's, nil without a log), and the profile; then --stats-item's reading in its own section.
+local function printStats(account, log, facts, options)
+	local path = account .. "/SavedVariables/Pagle_Stats.lua"
+	local saved, err = loadSavedVariables(path)
+	if not saved then
+		print("== Stats: can't read " .. path .. ": " .. err)
+		return
+	end
+	local db = saved.PagleStatsDB
+	if type(db) ~= "table" then
+		print("== Stats: Pagle_Stats.lua holds no PagleStatsDB")
+		return
+	end
+	print("== Stats (PagleStatsDB)")
+	local core = loadCodec()
+	local stats = loadStatsLogic(log, options.now or os.time())
+	local context = { label = options.catalogue or "the repo's addons/Pagle/data/Catalogue.lua" }
+	context.places, context.fingerprint =
+		statsPlaces(stats, core, options.catalogue or ROOT .. "/addons/Pagle/data/Catalogue.lua")
+	if not context.places then
+		context.err = context.fingerprint
+	end
+	local stored, state = tableOr(db.global).projection, nil
+	if type(stored) ~= "table" or type(stored.projection) ~= "table" then
+		print("projection: none stored (no build has finished, LOG-R72)")
+	else
+		printStatsStored(stats, core, stored, log, context)
+		state = stored.projection
+		-- An empty table AceDB or an older state left out reads as empty (stats.md › Projection state).
+		state.scopes, state.hits, state.places = tableOr(state.scopes), tableOr(state.hits), tableOr(state.places)
+		printStatsCounts(state, log)
+		printStatsSessions(core, tableOr(state.sessions), facts)
+	end
+	printStatsProfile(stats, state, context.places, tableOr(tableOr(db.profiles).Default), options.skill)
+	if options.statsItem then
+		printStatsItem(stats, state, context.places, options)
+	end
+end
+
 -- PagleDB.global from Pagle.lua's globals, or nil and why there's none.
 local function pagleGlobal(pagle)
 	if not pagle.saved then
@@ -1618,9 +2001,10 @@ local function main(args)
 	printErrors(options.account)
 	local pagle = { path = options.account .. "/SavedVariables/Pagle.lua" }
 	pagle.saved, pagle.err = loadSavedVariables(pagle.path)
-	local checks = printCatchLog(pagle, options.expectCasts, options.since)
+	local checks, facts = printCatchLog(pagle, options.expectCasts, options.since)
 	printLedger(options.account, pagleLog(pagle.saved), options.catalogue, options.items)
 	printHunts(options.account, pagleLog(pagle.saved), options)
+	printStats(options.account, pagleLog(pagle.saved), facts, options)
 	printWallet(pagle, pagleLog(pagle.saved))
 	printLooks(pagle)
 	printDock(pagle)

@@ -283,6 +283,24 @@ ns.L = {
 	-- Both pages with no Casts (STA-R97).
 	LIFETIME_NO_SESSIONS = "No Sessions yet.",
 
+	-- Watched Dry spells (STA-R61, STA-R62): the UI error for a 4th, by the cap (ns.MAX_WATCHES), and the chat line
+	-- when a watch turns the live tracker on.
+	WATCH_FULL = "You can watch up to %d Dry spells. Stop watching one first.",
+	WATCH_TRACKER_ON = "Pagle: live tracker turned on to show your watched Dry spells.",
+
+	-- Stats' section on the Trackers page (stats.md › Settings, SET-R42): the checkbox, the Watched Dry spells row and
+	-- their tooltips. The row reads "2 of 3" (the watches, the cap), then "Firefin, Auberdine" per watch (the item's
+	-- name, the watched area's own name) with its button, or the line with none.
+	SETTINGS_TRACKER = "Show the live tracker",
+	SETTINGS_TRACKER_TOOLTIP = "Shows this Session and your watched Dry spells under the minimap. Watching a Dry spell "
+		.. "turns it on.",
+	SETTINGS_WATCHED = "Watched Dry spells",
+	SETTINGS_WATCHED_TOOLTIP = "Watch or stop watching from any fish's page in the Stats book.",
+	SETTINGS_WATCHED_COUNT = "%d of %d",
+	SETTINGS_WATCHED_LINE = "%s, %s",
+	SETTINGS_WATCHED_NONE = "Watch a Dry spell from any fish's page in the Stats book.",
+	SETTINGS_STOP_WATCHING = "Stop watching",
+
 	-- Stats' Curio Shop slot (STA-R88). Its goods' names and descriptions are lore (`statsgood.<goodID>.*`).
 	SLOT_TRACKER_FRAME = "Stats tracker frame",
 

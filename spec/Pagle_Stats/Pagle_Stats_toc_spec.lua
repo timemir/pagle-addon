@@ -64,11 +64,11 @@ describe("Pagle_Stats.toc", function()
 		assert.is_nil(fields.SavedVariablesPerCharacter)
 	end)
 
-	it("lists every Lua file in the addon folder, so none is left out of the load (CORE-R2)", function()
+	it("lists every Lua and XML file in the addon folder, so none is left out of the load (CORE-R2)", function()
 		local listed = addonFiles("Pagle_Stats")
 		table.sort(listed)
 
-		assert.are.same(filesIn({ "lua" }), listed)
+		assert.are.same(filesIn({ "lua", "xml" }), listed)
 	end)
 
 	it("splits its code into logic/ and adapter/, its strings in locale/ and only generated files in data/", function()

@@ -22,7 +22,16 @@ describe("Grouping one Hunt (HNT-R40)", function()
 	it("puts a short-of-skill Hunt in Later, even while its window is open (HNT-R33)", function()
 		local open = { openNow = true, closesAt = NOW + HOUR, confirmed = true }
 		assert.are.same({ "later", false }, { ns.GroupOf(timed, open, true, {}, NOW) })
-		assert.are.same({ "later", false }, { ns.GroupOf(auraOnly, { onDemand = true }, true, { AURA }, NOW) })
+		assert.are.same({ "later", false }, { ns.GroupOf(auraOnly, { onDemand = true }, true, {}, NOW) })
+	end)
+
+	it("still says a short-of-skill Hunt's aura is up, for the window line that ignores skill (HNT-R52)", function()
+		local open = { openNow = true, closesAt = NOW + HOUR, confirmed = true }
+		assert.are.same({ "later", true }, { ns.GroupOf(auraOnly, { onDemand = true }, true, { AURA }, NOW) })
+		assert.are.same({ "later", true }, { ns.GroupOf(timedAura, open, true, { OTHER_AURA }, NOW) })
+		-- Up only while the window holds, as for a Hunt not short (HNT-R40).
+		local later = { opensAt = NOW + 5 * HOUR, closesAt = NOW + 6 * HOUR, confirmed = true }
+		assert.are.same({ "later", false }, { ns.GroupOf(timedAura, later, true, { AURA }, NOW) })
 	end)
 
 	it("puts an aura-only Hunt in On demand, and in Now with its aura up while one of its auras is live", function()
