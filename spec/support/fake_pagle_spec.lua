@@ -266,50 +266,6 @@ describe("FakePagle", function()
 		end)
 	end)
 
-	describe("M:RefreshSetting", function()
-		-- A fake with QoL's dropdown "set" and button "save" on Fishing; returns the fake and QoL's handle.
-		local function withRows()
-			local fake = newFakePagle()
-			local M = fake.Pagle.RegisterModule({ name = "QoL", title = "QoL", order = 50 })
-			M:AddSetting("fishing", {
-				kind = "dropdown",
-				id = "set",
-				label = "Fishing set",
-				get = function() end,
-				set = function() end,
-				options = function() end,
-			})
-			M:AddSetting("fishing", { kind = "button", id = "save", label = "Save", onClick = function() end })
-			return fake, M
-		end
-
-		it("records each refresh once the page is registered, and none before (CORE-R42)", function()
-			local fake, M = withRows()
-			M:RefreshSetting("set")
-			assert.are.same({}, fake.refreshed)
-
-			fake.login()
-			M:RefreshSetting("set")
-			M:RefreshSetting("set")
-
-			assert.are.same({ { module = "QoL", id = "set" }, { module = "QoL", id = "set" } }, fake.refreshed)
-		end)
-
-		it("raises an error at the caller for an id none of the Module's value rows has (CORE-R42)", function()
-			local fake, M = withRows()
-			fake.login()
-
-			for _, id in ipairs({ "gear", "save" }) do
-				local ok, err = pcall(function()
-					M:RefreshSetting(id)
-				end)
-				assert.is_false(ok)
-				assert.matches("fake_pagle_spec%.lua:%d+: QoL's RefreshSetting: no checkbox", tostring(err))
-			end
-			assert.are.same({}, fake.refreshed)
-		end)
-	end)
-
 	describe("OpenSettings", function()
 		it(
 			"opens the root, or a registered topic page; while restricted prints Core's line (CORE-R33, CORE-R43)",

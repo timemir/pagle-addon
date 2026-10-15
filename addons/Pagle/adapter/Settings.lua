@@ -10,12 +10,14 @@ local Pagle = Pagle
 
 -- Core's Settings category (CORE-R40–R44): the root with the Module status list, and the topic pages built from the
 -- rows Modules add with M:AddSetting. Layout and texts: docs/spec/settings.md. Its own owner on Core's bus.
+--
+-- Core only builds the tree through Blizzard's public Settings API and hands it data and callbacks; it never writes a
+-- field onto anything Blizzard's Settings code made or reads, and never calls into a setting, control, the list or the
+-- panel itself (SET-R6, #246). Blizzard's code runs the callbacks under securecallfunction, but a field Core wrote,
+-- or Blizzard's code run from Core's, taints the Settings list, and a Blizzard row drawn after it (Audio's Discord
+-- checkbox) then calls a protected function as Pagle's (ADDON_ACTION_FORBIDDEN).
 local OWNER = "Pagle settings"
 local L = ns.L
-
--- The status list's row height and Core's text rows' height, in pixels.
-local STATUS_ROW_HEIGHT = 26
-local TEXT_ROW_HEIGHT = 26
 
 -- The rows Modules add, until ModulesChanged (CORE-R42).
 local rows = ns.NewSettingsRows()
@@ -39,43 +41,26 @@ ModuleHandle.AddSetting = ns.AddSettingMethod(ns.Modules, rows, function(problem
 	geterrorhandler()(problem)
 end)
 
--- Each value row's native setting, by the Module's PagleSetting, once its page is built.
----@type table<PagleSetting, SettingsProxySetting>
-local nativeOf = {}
+-- The template of the rows Core draws itself (adapter/Settings.xml), 26 pixels high.
+local ROW_TEMPLATE = "PagleSettingsRowTemplate"
 
---- Makes a value row's native control re-read `get`, and the rows under it their greying (CORE-R42): see
---- ns.RefreshSettingMethod. Nothing before the page is built, which reads `get` when shown. NotifyUpdate re-reads
---- the value and fires the setting's value-changed callback: the shown control re-reads (SettingsControlMixin:
---- OnSettingValueChanged) and each row under it re-evaluates its modify predicates (SettingsListElementMixin:
---- OnParentSettingValueChanged). Gethe/wow-ui-source branch forever at 943764493e6b16d63ded3ab304150d1f05e58b57
---- ("1.60.1 (70338)"), Blizzard_Settings_Shared/Blizzard_Setting.lua (SettingMixin:NotifyUpdate) and
---- Blizzard_SettingControls.lua.
-ModuleHandle.RefreshSetting = ns.RefreshSettingMethod(ns.Modules, rows, function(_, setting)
-	local native = nativeOf[setting]
-	if native then
-		securecallfunction(native.NotifyUpdate, native)
-	end
-end)
-
--- Core's own widgets on a pooled list frame, by frame. Weak, as the panel owns the frames.
----@type table<Frame, { text: FontString, status: { name: FontString, version: FontString, state: FontString, button: Button }[] }>
+-- Core's widgets on one of its own row frames, by frame. Weak, as the panel owns the frames.
+---@type table<Frame, { text: FontString, name: FontString, version: FontString, state: FontString, button: Button }>
 local widgetsOf = setmetatable({}, { __mode = "k" })
 
--- Lays out a font string at `x` in the status row at `y`.
+-- Lays out a font string at `x` in a status row.
 ---@param frame Frame
 ---@param x number
----@param y number
 ---@return FontString
-local function fontString(frame, x, y)
+local function fontString(frame, x)
 	local text = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-	text:SetPoint("TOPLEFT", x, y)
+	text:SetPoint("TOPLEFT", x, 0)
 	text:SetJustifyH("LEFT")
 	return text
 end
 
--- Core's widgets on `frame`, all hidden, made the first time Core draws on it. The template's own label is hidden
--- until the frame is released (Resetter), since the panel reuses frames across rows.
----@param frame SettingsListElementFrame
+-- Core's widgets on `frame`, all hidden, made the first time Core draws on it.
+---@param frame Frame
 local function widgets(frame)
 	local own = widgetsOf[frame]
 	if not own then
@@ -84,56 +69,45 @@ local function widgets(frame)
 		text:SetPoint("RIGHT", -20, 0)
 		text:SetJustifyH("LEFT")
 		text:SetWordWrap(true)
-		own = { text = text, status = {} }
-		for i = 1, #ns.MODULE_ROSTER do
-			local y = -(i - 1) * STATUS_ROW_HEIGHT
-			local row = { name = fontString(frame, 37, y), version = fontString(frame, 180, y) }
-			row.state = fontString(frame, 250, y)
-			row.button = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-			row.button:SetPoint("TOPLEFT", 380, y + 3)
-			row.button:SetSize(160, 22)
-			own.status[i] = row
-		end
+		own = { text = text, name = fontString(frame, 37), version = fontString(frame, 180) }
+		own.state = fontString(frame, 250)
+		own.button = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate") --[[@as Button]]
+		own.button:SetPoint("TOPLEFT", 380, 3)
+		own.button:SetSize(160, 22)
 		widgetsOf[frame] = own
 	end
 	own.text:Hide()
-	for _, row in ipairs(own.status) do
-		row.name:Hide()
-		row.version:Hide()
-		row.state:Hide()
-		row.button:Hide()
-	end
-	if frame.Text then
-		frame.Text:Hide()
-	end
+	own.name:Hide()
+	own.version:Hide()
+	own.state:Hide()
+	own.button:Hide()
 	return own
 end
 
--- Gives a released frame back as the panel expects it: Core's widgets hidden, the template's label shown.
----@param frame SettingsListElementFrame
-local function release(frame)
-	widgets(frame)
-	if frame.Text then
-		frame.Text:Show()
-	end
+--- The mixin of Core's own row frames (adapter/Settings.xml, SET-R5, SET-R6). The panel's list draws such a row
+--- through Blizzard's stock InitFrame, which calls the frame's Init, and releases it through the stock Resetter,
+--- which calls its Release, each under securecallfunction. Its frames are Core's alone: their template has its own
+--- pool in the list.
+---@class PagleSettingsRowMixin : Frame
+PagleSettingsRowMixin = {}
+
+--- Draws the row with the `draw` Core put in its initializer's data.
+---@param initializer SettingsInitializer
+function PagleSettingsRowMixin:Init(initializer)
+	initializer:GetData().draw(self)
+end
+
+--- Hides Core's widgets, so the frame comes back empty for the next row.
+function PagleSettingsRowMixin:Release()
+	widgets(self)
 end
 
 -- A row Core draws itself (SET-R5): `draw` fills it each time the panel shows it.
----@param extent number its height
----@param draw fun(frame: SettingsListElementFrame)
+---@param draw fun(frame: Frame)
 ---@param searchLabel string? the label Blizzard's settings search finds it by; none for a paragraph or note
 ---@return SettingsInitializer
-local function customRow(extent, draw, searchLabel)
-	local initializer = Settings.CreateElementInitializer("SettingsListElementTemplate", {})
-	initializer.GetExtent = function()
-		return extent
-	end
-	initializer.InitFrame = function(_, frame)
-		draw(frame)
-	end
-	initializer.Resetter = function(_, frame)
-		release(frame)
-	end
+local function customRow(draw, searchLabel)
+	local initializer = Settings.CreateElementInitializer(ROW_TEMPLATE, { draw = draw })
 	if searchLabel then
 		initializer:AddSearchTags(searchLabel)
 	end
@@ -144,7 +118,7 @@ end
 ---@param text string
 ---@return SettingsInitializer
 local function textRow(text)
-	return customRow(TEXT_ROW_HEIGHT, function(frame)
+	return customRow(function(frame)
 		local own = widgets(frame)
 		own.text:SetText(text)
 		own.text:Show()
@@ -152,28 +126,28 @@ local function textRow(text)
 end
 ns.SettingsTextRow = textRow
 
---- Each roster Module's line in the status list, read now (CORE-R41, CORE-R44, SET-R11): its name, its TOC
---- version, its state and, while On, its button.
----@return { name: string, version: string, state: string, button: PagleStatusButton? }[]
-local function statusLines()
-	local registered = {}
-	for _, module in ipairs(ns.Modules:Modules()) do
-		registered[module.def.name] = module
+--- The status list's line for the roster Module at `index`, read now (CORE-R41, CORE-R44, SET-R11): its name, its
+--- TOC version, its state and, while On, its button.
+---@param index integer
+---@return { name: string, version: string, state: string, button: PagleStatusButton? }
+local function statusLine(index)
+	local entry = ns.ModuleStates()[index]
+	local module
+	for _, registered in ipairs(ns.Modules:Modules()) do
+		if registered.def.name == entry.name then
+			module = registered
+		end
 	end
-	local lines = {}
-	for i, entry in ipairs(ns.ModuleStates()) do
-		local module = registered[entry.name]
-		lines[i] = {
-			name = L.MODULE_NAMES[entry.name],
-			version = C_AddOns.GetAddOnMetadata(ns.ModuleAddOn(entry.name), "Version") or "",
-			state = L.MODULE_STATES[entry.state],
-			button = module and ns.StatusButton(module.def, securecallfunction),
-		}
-	end
-	return lines
+	return {
+		name = L.MODULE_NAMES[entry.name],
+		version = C_AddOns.GetAddOnMetadata(ns.ModuleAddOn(entry.name), "Version") or "",
+		state = L.MODULE_STATES[entry.state],
+		button = module and ns.StatusButton(module.def, securecallfunction),
+	}
 end
 
 -- Pressing a status button (SET-R12): a Module with a view closes the panel first; QoL's moves it to Fishing.
+-- HideUIPanel closes it through Blizzard's own secure path (UIParentPanelManager's forbidden delegate).
 ---@param button PagleStatusButton
 local function press(button)
 	if button.closesPanel then
@@ -182,29 +156,32 @@ local function press(button)
 	button.onClick()
 end
 
--- The status list (SET-R11). Its labels are read each time the root is shown (SET-R12).
----@return SettingsInitializer
+-- The status list (SET-R11): a row per roster Module, in roster order, each read each time it is shown (SET-R12)
+-- and found by the list's search label.
+---@return SettingsInitializer[]
 local function statusList()
-	return customRow(#ns.MODULE_ROSTER * STATUS_ROW_HEIGHT, function(frame)
-		local own = widgets(frame)
-		for i, line in ipairs(statusLines()) do
-			local row = own.status[i]
-			row.name:SetText(line.name)
-			row.version:SetText(line.version)
-			row.state:SetText(line.state)
-			row.name:Show()
-			row.version:Show()
-			row.state:Show()
+	local list = {}
+	for index = 1, #ns.MODULE_ROSTER do
+		list[index] = customRow(function(frame)
+			local own = widgets(frame)
+			local line = statusLine(index)
+			own.name:SetText(line.name)
+			own.version:SetText(line.version)
+			own.state:SetText(line.state)
+			own.name:Show()
+			own.version:Show()
+			own.state:Show()
 			local button = line.button
 			if button then
-				row.button:SetText(button.label)
-				row.button:SetScript("OnClick", function()
+				own.button:SetText(button.label)
+				own.button:SetScript("OnClick", function()
 					press(button)
 				end)
-				row.button:Show()
+				own.button:Show()
 			end
-		end
-	end, L.SETTINGS_MODULES)
+		end, L.SETTINGS_MODULES)
+	end
+	return list
 end
 
 -- The Field report row (CORE-R40, SET-R10 row 4): "Field report" with the button "Open Field report", "Open Field
@@ -263,7 +240,9 @@ local function buildRoot(category, layout, anyModuleOn)
 		layout:AddInitializer(textRow(L.SETTINGS_NO_MODULE))
 	end
 	layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L.SETTINGS_MODULES))
-	layout:AddInitializer(statusList())
+	for _, line in ipairs(statusList()) do
+		layout:AddInitializer(line)
+	end
 	layout:AddInitializer(textRow(L.SETTINGS_MODULES_NOTE))
 	layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L.HELP_CHART))
 	layout:AddInitializer(fieldReportRow())
@@ -299,17 +278,22 @@ local function dropdownOptions(setting)
 end
 
 -- A value row's native setting: Blizzard's Defaults button restores `default`, and the panel reads `get` each time
--- the page shows (SET-R60, SET-R62).
+-- the row is drawn and after each change through the row (SET-R60, SET-R62).
 ---@param page SettingsCategory
 ---@param variable string
 ---@param varType string
 ---@param setting PagleSetting
 ---@return SettingsProxySetting
 local function valueSetting(page, variable, varType, setting)
-	local native =
-		Settings.RegisterProxySetting(page, variable, varType, setting.label, setting.default, setting.get, setting.set)
-	nativeOf[setting] = native
-	return native
+	return Settings.RegisterProxySetting(
+		page,
+		variable,
+		varType,
+		setting.label,
+		setting.default,
+		setting.get,
+		setting.set
+	)
 end
 
 -- One Module row as a native initializer on `page` (SET-R5).
@@ -437,7 +421,8 @@ end)
 
 --- Opens Settings at the root, or at the topic page `topic`: `"fishing"`, `"announcements"`, `"trackers"` or
 --- `"look"` (CORE-R43). An unknown topic, or one whose page isn't registered, opens the root. While restricted it
---- prints "Pagle: settings open after combat." instead (CORE-R33).
+--- prints "Pagle: settings open after combat." instead (CORE-R33). Settings.OpenToCategory opens the panel through
+--- the client's SETTINGS_PANEL_OPEN event, Blizzard's own secure path (SET-R6).
 ---@param topic string?
 function Pagle.OpenSettings(topic)
 	if Pagle.IsRestricted() then

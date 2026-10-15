@@ -62,7 +62,7 @@ end
 -- Builds the rows on the Announcements page in SET-R30's order. Each reads the stored value each time the page is
 -- shown and writes it at once (SET-R62); `default` is what the page's Defaults button restores (SET-R33).
 ---@param page SettingsCategory
-ns.CoreSettingsRows.announcements = function(page)
+ns.CoreSettingsRows.announcements = function(page, layout)
 	local Boolean, Number = Settings.VarType.Boolean, Settings.VarType.Number
 
 	local cozy = Settings.RegisterProxySetting(page, COZY, Boolean, L.SETTINGS_COZY, false, function()
@@ -108,6 +108,6 @@ ns.CoreSettingsRows.announcements = function(page)
 	-- Toast style and Sound set: the same equipped looks as on Look and Feel, which this page's Defaults button
 	-- restores too (SET-R30, SET-R33, SET-R51).
 	for _, slot in ipairs(ns.CoreAnnouncementSlots(ns.goods)) do
-		ns.SlotDropdown(page, slot, "Pagle_Core_announcements_" .. slot.id)
+		ns.SlotDropdown(page, layout, slot, "Pagle_Core_announcements_" .. slot.id)
 	end
 end

@@ -165,9 +165,15 @@ describe("Core's Announcements rows", function()
 		function()
 			local loaded = login(core())
 
+			-- A native row's value, or a slot dropdown's selected good (Core's own row, SET-R51).
 			local values = {}
 			for i, shown in ipairs(loaded.client.settings.show(page(loaded))) do
 				values[i] = shown.frame.value
+				for _, child in ipairs(shown.frame.children) do
+					if child.kind == "DropdownButton" then
+						values[i] = child.selected
+					end
+				end
 			end
 			assert.are.same({ false, true, 4, 5, "core.toaststyle.timber", "core.soundset.driftwood" }, values)
 			assert.are.same({ cozy = false, budget = { on = true, count = 4, window = 300 } }, stored(loaded))

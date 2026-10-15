@@ -17,14 +17,12 @@ local widgets = {}
 
 -- Widget methods that only lay out or colour: nothing for a spec to read back.
 local LAYOUT_METHODS = {
-	"SetAllPoints",
 	"SetJustifyH",
 	"SetJustifyV",
 	"SetWordWrap",
 	"SetClampedToScreen",
 	"SetFrameStrata",
 	"SetUserPlaced",
-	"SetScrollChild",
 	"EnableMouseWheel",
 	"SetRotation",
 	"SetAutoFocus",
@@ -35,16 +33,62 @@ local LAYOUT_METHODS = {
 	"SetCursorPosition",
 }
 
+-- One anchor of `widget` as relativeTo, relativePoint, x, y: SetPoint(point, x, y) and SetPoint(point) are relative
+-- to the same point of its parent, as the client's.
+---@param widget table
+---@param anchor table SetPoint's arguments
+---@return table relativeTo
+---@return string relativePoint
+---@return number x
+---@return number y
+local function resolveAnchor(widget, anchor)
+	if type(anchor[2]) == "number" then
+		return widget.parent, anchor[1], anchor[2], anchor[3] or 0
+	end
+	return anchor[2] or widget.parent, anchor[3] or anchor[1], anchor[4] or 0, anchor[5] or 0
+end
+
+-- `widget`'s extent along one axis (`low` and `high` its edges: "LEFT" and "RIGHT", or "BOTTOM" and "TOP"), as the
+-- client lays it out: anchors on both edges stretch it between them, whatever its size; otherwise it is as wide or
+-- as tall as SetSize, SetWidth or SetHeight made it.
+---@param widget table
+---@param low string
+---@param high string
+---@return number?
+local function extent(widget, low, high)
+	local axis = low == "LEFT" and "width" or "height"
+	local lowAnchor, highAnchor
+	for _, anchor in ipairs(widget.points) do
+		if anchor[1]:find(low) then
+			lowAnchor = anchor
+		elseif anchor[1]:find(high) then
+			highAnchor = anchor
+		end
+	end
+	if not (lowAnchor and highAnchor) then
+		return widget[axis]
+	end
+	-- Where an anchor puts that edge along its relative frame: 0 at the frame's low edge, its extent at the high one.
+	local function edge(anchor)
+		local relativeTo, relativePoint, x, y = resolveAnchor(widget, anchor)
+		local size = assert(extent(relativeTo, low, high), "FakeClient: anchored to a frame with no size")
+		local at = relativePoint:find(high) and size or relativePoint:find(low) and 0 or size / 2
+		return at + (axis == "width" and x or y)
+	end
+	assert(resolveAnchor(widget, lowAnchor) == resolveAnchor(widget, highAnchor), "FakeClient: edges on two frames")
+	return edge(highAnchor) - edge(lowAnchor)
+end
+
 --- A widget (frame, button, font string or texture) that keeps what specs read back: its text, whether it's shown,
 --- its scripts and the widgets created on it, its parent, anchors (`points`, each SetPoint's arguments, emptied by
---- ClearAllPoints), size (`width`, `height`, as SetSize, SetWidth and SetHeight set them), alpha, text colour
---- (`textColor`, { r, g, b[, a] }), a font string's font object (`fontObject`, CreateFontString's template or
---- SetFontObject's) or SetFont's `font`, a texture's file (`texture`), whether it's desaturated (`desaturated`), its
---- tint (`vertexColor`, { r, g, b[, a] }), blend mode (`blendMode`) and coordinates (`texCoord`), a button's attributes
---- (`attributes`), click registration (`clicks`, RegisterForClicks's arguments) and locked highlight
---- (`highlightLocked`), and a frame's mouse and moving state: `mouseEnabled`, `movable`, `dragButtons`
---- (RegisterForDrag's arguments) and `moving`; also whether it takes clicks (`enabled`) and a scroll frame's
---- `verticalScroll`.
+--- ClearAllPoints, replaced by SetAllPoints), size (`width`, `height`, as SetSize, SetWidth and SetHeight set them;
+--- GetWidth, GetHeight and GetSize lay it out from its anchors as the client does), alpha, text colour (`textColor`,
+--- { r, g, b[, a] }), a font string's font object (`fontObject`, CreateFontString's template or SetFontObject's) or
+--- SetFont's `font`, a texture's file (`texture`), whether it's desaturated (`desaturated`), its tint (`vertexColor`,
+--- { r, g, b[, a] }), blend mode (`blendMode`) and coordinates (`texCoord`), a button's attributes (`attributes`),
+--- click registration (`clicks`, RegisterForClicks's arguments) and locked highlight (`highlightLocked`), and a
+--- frame's mouse and moving state: `mouseEnabled`, `movable`, `dragButtons` (RegisterForDrag's arguments) and
+--- `moving`; also whether it takes clicks (`enabled`), and a scroll frame's `verticalScroll` and `scrollChild`.
 ---@param kind string "Frame", "Button", "FontString", "Texture", …
 ---@param parent table?
 ---@return table
@@ -68,6 +112,31 @@ function widgets.newWidget(kind, parent)
 	end
 	function widget:ClearAllPoints()
 		self.points = {}
+	end
+	-- As the client's: anchored over all of `relativeTo` (its parent by default), in place of any earlier anchors.
+	function widget:SetAllPoints(relativeTo)
+		relativeTo = relativeTo or self.parent
+		self.points = { { "TOPLEFT", relativeTo, "TOPLEFT", 0, 0 }, { "BOTTOMRIGHT", relativeTo, "BOTTOMRIGHT", 0, 0 } }
+	end
+	function widget:SetWidth(width)
+		self.width = width
+	end
+	function widget:SetHeight(height)
+		self.height = height
+	end
+	-- Its laid-out size: stretched between anchors on opposite edges when it has them, else as set (see extent), 0
+	-- with neither, as the client's for a frame with no size.
+	function widget:GetWidth()
+		return extent(self, "LEFT", "RIGHT") or 0
+	end
+	function widget:GetHeight()
+		return extent(self, "BOTTOM", "TOP") or 0
+	end
+	function widget:GetSize()
+		return self:GetWidth(), self:GetHeight()
+	end
+	function widget:SetScrollChild(child)
+		self.scrollChild = child
 	end
 	-- point, relativeTo, relativePoint, x, y of the anchor at `index` (default 1).
 	function widget:GetPoint(index)
@@ -165,19 +234,6 @@ function widgets.newWidget(kind, parent)
 	-- A texture's tint, as { r, g, b[, a] }.
 	function widget:SetVertexColor(r, g, b, a)
 		self.vertexColor = { r, g, b, a }
-	end
-	-- Its size as set, for layout code that reads it back (SetSize above sets both).
-	function widget:SetWidth(width)
-		self.width = width
-	end
-	function widget:SetHeight(height)
-		self.height = height
-	end
-	function widget:GetWidth()
-		return self.width or 0
-	end
-	function widget:GetHeight()
-		return self.height or 0
 	end
 	-- A font string's font: `fontObject` (its template or SetFontObject's name), or `font` ({ file, size, flags })
 	-- after SetFont, until the next SetFontObject.
@@ -396,7 +452,11 @@ end
 --- its parent (UIPanelCloseButton_OnClick, HideUIPanel), the title (PortraitFrame.lua's TitledPanelMixin:SetTitle)
 --- and a portrait (PortraitFrameMixin:SetPortraitToAsset); SearchBoxTemplate (Shared/InputBox/InputBoxTemplates.xml)
 --- has its `Instructions` hint and its `clearButton`; UICheckButtonTemplate (Shared/Button/CheckButtonTemplates.xml)
---- has its label, `Text`. Other templates add nothing here.
+--- has its label, `Text`; WowStyle1DropdownTemplate (Blizzard_Menu/DropdownButton.lua, DropdownButtonMixin and
+--- DropdownSelectionTextMixin) builds its menu from SetupMenu's generator, at SetupMenu and GenerateMenu and each
+--- time it opens, and shows its selected radio's text (fake: `selected`, that radio's data; `choices()` opens it and
+--- returns its radios as "<data>=<text>"; `pick(choice)` opens it and clicks the radio with that text or data). Other templates add nothing
+--- here.
 ---@param client FakeClient
 ---@param frame table
 ---@param template string?
@@ -424,6 +484,52 @@ function widgets.applyTemplate(client, frame, template)
 		frame.clearButton = widgets.newFrame(client, "Button", frame)
 	elseif template == "UICheckButtonTemplate" then
 		frame.Text = widgets.newWidget("FontString", frame)
+	elseif template == "WowStyle1DropdownTemplate" then
+		widgets.dropdownButton(frame)
+	end
+end
+
+--- Makes `dropdown` a DropdownButton with a radio menu, as far as Pagle uses one (see applyTemplate).
+---@param dropdown table
+function widgets.dropdownButton(dropdown)
+	local radios = {}
+	function dropdown:GenerateMenu()
+		radios = {}
+		local root = {}
+		function root.CreateRadio(_, text, isSelected, setSelected, data)
+			radios[#radios + 1] = { text = text, isSelected = isSelected, setSelected = setSelected, data = data }
+		end
+		self.generator(self, root)
+		self.text, self.selected = nil, nil
+		for _, radio in ipairs(radios) do
+			if radio.isSelected(radio.data) then
+				self.text, self.selected = radio.text, radio.data
+			end
+		end
+	end
+	function dropdown:SetupMenu(generator)
+		self.generator = generator
+		self:GenerateMenu()
+	end
+	function dropdown:choices()
+		self:GenerateMenu()
+		local list = {}
+		for i, radio in ipairs(radios) do
+			list[i] = radio.data .. "=" .. radio.text
+		end
+		return list
+	end
+	-- As a click on a radio: its setSelected, then the menu closes and the button shows what is selected now.
+	function dropdown:pick(choice)
+		self:GenerateMenu()
+		for _, radio in ipairs(radios) do
+			if radio.text == choice or radio.data == choice then
+				radio.setSelected(radio.data)
+				self:GenerateMenu()
+				return
+			end
+		end
+		error("no choice " .. tostring(choice))
 	end
 end
 

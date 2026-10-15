@@ -69,8 +69,6 @@
 ---@field settingsPage fun(topic: string): { module: string, kind: string, label: string, caption: string?, indented: boolean, setting: PagleSetting }[]?
 --- The rows Core would put on a topic page, in order, its header rows included; nil before login or with no rows,
 --- when Core registers no page (CORE-R42). A button row's caption is nil when its label is on the button (SET-R2).
----@field refreshed { module: string, id: string }[] Each row M:RefreshSetting refreshed, in order: by Module name
---- and the row's id, one per value row with that id (CORE-R42). None before login, as no page is registered yet.
 ---@field reported string[] Each error Core reported through geterrorhandler(), e.g. a late M:AddSetting, a
 --- Module function that raised under securecallfunction, or a moment dropped in a replay or rebuild (ANN-R4). A
 --- spec that gets one must read this list (assert it), or it fails at its end (spec/support/errors.lua).
@@ -397,13 +395,6 @@ part(function(fake, Pagle, ns)
 	fake.openedSettings = {}
 
 	ns.ModuleHandle.AddSetting = ns.AddSettingMethod(fake.registry, rows, fake.report)
-
-	fake.refreshed = {}
-	ns.ModuleHandle.RefreshSetting = ns.RefreshSettingMethod(fake.registry, rows, function(name, setting)
-		if loggedIn then
-			fake.refreshed[#fake.refreshed + 1] = { module = name, id = setting.id }
-		end
-	end)
 
 	Pagle.RegisterCallback(fake, "ModulesChanged", function()
 		rows:Close()
