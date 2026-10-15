@@ -210,7 +210,7 @@ Every frame is drawn from the announcements art kit: a toast is a fresh entry in
 - **Banner:** centre screen over the world with no frame: a dark glow and faint gilt rays, the title in spaced gilt capitals, gilt tooling either side of a red wax seal (the headline's `seal`, under Contracts), the text in gilt handwriting, then the stamps as leather labels and the Coins.
 - **Splash:** full screen for a Legend, until clicked: the screen darkens behind slow rays, the item's icon sits in the Legend crest's window, and a torn page carries the title, the name in large handwriting, the labels and the Coins. "Click anywhere to continue" under it.
 - **"While you were fighting":** a toast on a taller page listing the held headlines, a row each with a small medallion, up to 4; with more, the last row reads "+N more".
-- **Session summary and Write-up cards:** a page torn from the ledger centre-screen, the same in every toast style: a leather head with the gilt title and a close mark, Core's numbers in the hand, the sections in ANN-R53 and ANN-R61 on the page's ruled lines, scrolling past 12 rows, and a gilt close button. Closed with either button or Esc.
+- **Session summary and Write-up cards:** a page torn from the ledger centre-screen, the same in every toast style: a leather head with the gilt title and a close mark, Core's numbers in the hand, the sections in ANN-R53 and ANN-R61 on the page's ruled lines, scrolling past 12 rows, and a gilt close button at the page's foot. Closed with either button or Esc.
 
 Look reference: the announcements art kit (`pagle-announce-kit`, its previews and its probe addon). The text above wins where they differ.
 

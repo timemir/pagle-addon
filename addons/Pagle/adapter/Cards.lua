@@ -24,6 +24,8 @@ local MARGIN, BODY_TILE = 62, 120
 local NUMBERS = { "casts", "catches", "gotAway", "seconds" }
 local NUMBER_LABELS = { L.CARD_CASTS, L.CARD_CATCHES, L.CARD_GOT_AWAY, L.CARD_TIME }
 local NUMBERS_HEIGHT = 90
+-- The close button's bottom, above the card's.
+local CLOSE_BOTTOM = 20
 -- Rows shown before the list scrolls with the mouse wheel.
 local ROWS_SHOWN = 12
 
@@ -217,7 +219,10 @@ local function build()
 		self:SetVerticalScroll(math.max(0, math.min(scroll, self:GetVerticalScrollRange())))
 	end)
 	frame.rows = {}
-	frame.close = giltButton(frame.body, close)
+	-- At the page's foot, whatever the rows: on the card itself, as the body clips what runs past it.
+	frame.close = giltButton(frame, close)
+	frame.close:SetPoint("BOTTOM", frame, "BOTTOM", 0, CLOSE_BOTTOM)
+	frame.close:SetFrameLevel(frame.foot:GetFrameLevel() + 2)
 
 	-- Esc hides it (CloseSpecialWindows). Hiding UIParent (Alt-Z, a cinematic) also runs OnHide but leaves it shown:
 	-- that isn't the player closing it.
@@ -295,10 +300,9 @@ local function show(card)
 	frame.scroll:ClearAllPoints()
 	frame.scroll:SetPoint("TOPLEFT", frame.body, "TOPLEFT", MARGIN, -listTop)
 	frame.scroll:SetHeight(math.max(1, listHeight))
-	frame.close:ClearAllPoints()
-	frame.close:SetPoint("TOP", frame.body, "TOPLEFT", WIDTH / 2, -(listTop + listHeight + 14))
-	local content = listTop + listHeight + 14 + 44 + 22
-	local body = math.ceil((content + FOOT) / LINE) * LINE - FOOT
+	-- The page, a whole number of lines, holds the rows, a gap, then the close button at its foot.
+	local page = math.ceil((listTop + listHeight + 14 + 44 + CLOSE_BOTTOM) / LINE) * LINE
+	local body = page - FOOT
 	layBody(frame, body)
 	frame:SetHeight(HEAD + body + FOOT)
 	frame:Show()
