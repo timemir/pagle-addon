@@ -283,7 +283,8 @@ describe("the Tackle Board's projection", function()
 				local ns = built(withHistory(STARTED))
 				local state = ns.State()
 				local advanced = {}
-				ns.outlets.Advanced = function(result, mode)
+				local outlets = ns.outlets --[[@as table]] -- replaced here, as logic/Moments.lua defines it
+				outlets.Advanced = function(result, mode)
 					advanced[#advanced + 1] = { result = copy(result), mode = mode }
 				end
 				state.fire.count, state.fire.longest, state.fire.log[0] = 5, 5, "lit"

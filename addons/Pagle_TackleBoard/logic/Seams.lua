@@ -48,7 +48,8 @@ local ns = select(2, ...)
 --                             when an item name arrives (#228, GET_ITEM_INFO_RECEIVED); "step" after each live step
 --                             (#233). A view that is hidden may ignore it.
 --   ns.outlets                What the Tackle Board celebrates, called from the projection and the live step and filled
---                             by the moments' ticket (#235). Each stand-in does nothing:
+--                             by the moments' ticket (#235) in logic/Moments.lua, not here (a stand-in here too would
+--                             be a duplicate field for LuaLS):
 --     .Completed(goal, cast, earned, mode)  a goal completed in apply (#232): the TackleGoal, the completing Cast, what
 --                             it earned (TackleEarned) and the apply's mode ("live", "replay" or "rebuild", LOG-R72)
 --     .Advanced(result, mode) the projection advanced across board days (#231): the Campfire's outcome
@@ -172,26 +173,10 @@ function ns.Redraw(reason, detail)
 	end
 end
 
---- What the Tackle Board celebrates (TKB-R83–R87): stand-ins that do nothing until the moments' ticket fills them.
+--- What the Tackle Board celebrates (TKB-R83–R87), defined in logic/Moments.lua (#235).
 ---@class TackleOutlets
+---@field Completed fun(goal: TackleGoal, cast: PagleCast, earned: TackleEarned, mode: TackleApplyMode)
+---@field Advanced fun(result: TackleAdvance, mode: TackleApplyMode)
+---@field Done fun(state: TackleBoardState, info: { firstBuild: boolean?, rebuilt: boolean?, replayed: integer? })
+---@field Stepped fun()
 ns.outlets = {}
-
---- A goal completed in apply (TKB-R60, TKB-R86).
----@param goal TackleGoal
----@param cast table the completing Cast record
----@param earned TackleEarned
----@param mode TackleApplyMode
-function ns.outlets.Completed(goal, cast, earned, mode) end -- luacheck: no unused args
-
---- The projection advanced across board days (TKB-R14, TKB-R86).
----@param result TackleAdvance
----@param mode TackleApplyMode
-function ns.outlets.Advanced(result, mode) end -- luacheck: no unused args
-
---- The projection's done (TKB-R84), before Coins are reported and the live step scheduled.
----@param state TackleBoardState
----@param info table Core's done info (LOG-R75: firstBuild, replayed, rebuilt)
-function ns.outlets.Done(state, info) end -- luacheck: no unused args
-
---- A live step finished (TKB-R87).
-function ns.outlets.Stepped() end

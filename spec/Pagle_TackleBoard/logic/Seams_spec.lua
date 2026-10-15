@@ -1,6 +1,7 @@
 -- The seams later Tackle Board tickets meet at (M7 graph, conventions): the board's entry points, the projection's
--- state and flags, taking down, the Coins hook, the redraw bus and the outlets, as they stand before those tickets
--- fill them in. Start, the live step and the login window are in adapter/LiveStep_spec.
+-- state and flags, taking down, the Coins hook and the redraw bus, as they stand before those tickets
+-- fill them in. Start, the live step and the login window are in adapter/LiveStep_spec, the outlets in
+-- adapter/Moments_spec.
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local board = dofile("spec/Pagle_TackleBoard/support.lua")
@@ -78,27 +79,6 @@ describe("the Tackle Board's seams", function()
 
 			assert.are.same({ true, false }, before)
 			assert.are.same({ false, false }, { ns.IsUpdating(), ns.IsStarted() })
-		end)
-	end)
-
-	describe("the outlets (TKB-R83–R87, until the moments' ticket)", function()
-		it("raise nothing and set no summary line, and raise no error", function()
-			local loaded, fake = board.load()
-			local outlets = loaded.ns.outlets
-			fake.login()
-			fake.enterWorld()
-
-			assert.has_no_error(function()
-				outlets.Completed({ id = GOAL }, {}, { coins = 15, titles = {}, lit = true }, "live")
-				outlets.Advanced({ burned = 1, wentOut = false, count = 3, longest = 3 }, "live")
-				outlets.Done(loaded.ns.State(), { firstBuild = true, replayed = 0, rebuilt = false })
-				outlets.Stepped()
-			end)
-			fake.nextFrame()
-			assert.are.same({}, fake.announcements)
-			assert.are.same({}, fake.summarized)
-			assert.are.same({}, fake.writeUps)
-			assert.are.same({}, fake.global.summary.lines)
 		end)
 	end)
 
