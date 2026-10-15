@@ -459,26 +459,30 @@ def test_a_placeholder_is_allowed_only_where_the_manifest_allows_it(
     )
 
 
-GLYPH = "outside CORE-R9's set: ASCII, Latin-1 and the em dash (CORE-R9, DATA-R107)"
+GLYPH = (
+    "outside CORE-R9's set: ASCII, Latin-1, the en and em dashes, curly quotes, the bullet and the ellipsis"
+    " (CORE-R9, DATA-R107)"
+)
 
 
 @pytest.mark.parametrize(
     ("old", "new", "key", "code_point"),
     [
-        # Each one build 1.60.1.70374 draws as a box (#248): curly quotes, an ellipsis, an arrow, a star, a tick.
-        ("Bites where the water runs lazy.", "“Bites” where the water runs lazy.", "species.13759.riddle", "U+201C"),
-        ("Slick, quick and gone", "Slick, quick and gone…", "species.6303.blurb", "U+2026"),
+        # Each one build 1.60.1.70374 draws as a box in a font Pagle uses (#248): an arrow, stars, a tick, and a low
+        # quote and a triangular bullet, the neighbours of the allowed punctuation.
         ("Greenhorn", "Green → horn", "title.level1.text", "U+2192"),
         ("Groupers", "Groupers ★", "family.1.name", "U+2605"),
+        ("Bites where the water runs lazy.", "Bites where the water runs lazy ☆", "species.13759.riddle", "U+2606"),
         ("Somebody's boot.", "Somebody's boot ✓", "sub.4000.plaque", "U+2713"),
-        ("The Tasty One", "The Tasty One – again", "legend.19807.title", "U+2013"),
+        ("The Tasty One", "The ‚Tasty‛ One", "legend.19807.title", "U+201A"),
+        ("Slick, quick and gone", "Slick ‣ quick and gone", "species.6303.blurb", "U+2023"),
     ],
 )
 def test_a_character_the_fonts_lack_fails_whether_or_not_the_check_is_on(
     tmp_path: Path, capsys: pytest.CaptureFixture[str], old: str, new: str, key: str, code_point: str
 ) -> None:
-    # CORE-R9, DATA-R107's glyph: a character outside ASCII, Latin-1 and the em dash fails naming the file, the key
-    # and its code point, with the lore check on and off, and nothing is written (DATA-R63).
+    # CORE-R9, DATA-R107's glyph: a character outside the set fails naming the file, the key and its code point, with
+    # the lore check on and off, and nothing is written (DATA-R63).
     ledger = LEDGER.replace(old, new)
     assert ledger != LEDGER
     problem = f"{FILE}: {key}: glyph: {code_point} {GLYPH}"
@@ -486,12 +490,21 @@ def test_a_character_the_fonts_lack_fails_whether_or_not_the_check_is_on(
     fails(write_lore_tree(tmp_path / "off", ledger), capsys, problem)
 
 
-def test_latin_1_and_the_em_dash_pass_the_glyph_check(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
-    # CORE-R9: the build draws the em dash and the middle dot; Latin-1 is the fonts' Western European set.
-    ledger = LEDGER.replace("Greenhorn", "Fresh — née · 2×")
-    assert 'L["title.level1.text"] = "Fresh — née · 2×"' in emitted(
-        write_lore_tree(tmp_path, ledger, checks=ON), capsys
-    )
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Fresh — née · 2×",
+        "“Green” ‘horn’…",
+        "Green – horn • again",
+    ],
+)
+def test_latin_1_and_the_allowed_punctuation_pass_the_glyph_check(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], text: str
+) -> None:
+    # CORE-R9: in game on 2026-10-15, every font Pagle uses drew the en and em dashes, curly quotes, the bullet, the
+    # ellipsis and the Latin-1 characters tried (· « » ×); Latin-1 is the fonts' Western European set.
+    ledger = LEDGER.replace("Greenhorn", text)
+    assert f'L["title.level1.text"] = "{text}"' in emitted(write_lore_tree(tmp_path, ledger, checks=ON), capsys)
 
 
 def test_the_glyph_check_covers_every_lore_file(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
