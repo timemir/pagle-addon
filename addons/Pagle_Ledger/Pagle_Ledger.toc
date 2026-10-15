@@ -11,6 +11,7 @@
 
 locale\enUS.lua
 data\Lore.lua
+data\JournalArt.lua
 logic\Data.lua
 logic\Module.lua
 logic\Progress.lua
@@ -40,6 +41,7 @@ logic\JournalCollections.lua
 logic\JournalLegends.lua
 logic\JournalZone.lua
 logic\Tour.lua
+adapter\Motion.lua
 adapter\JournalWidgets.lua
 adapter\JournalText.lua
 adapter\JournalCollections.lua

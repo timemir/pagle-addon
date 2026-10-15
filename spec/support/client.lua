@@ -137,6 +137,11 @@ local function clientStubs(client)
 			client.sounds[#client.sounds + 1] = ("%s %s"):format(path, tostring(channel))
 			return true, #client.sounds
 		end,
+		-- A sound kit by its numeric id (the art kits' UI foley): recorded in client.sounds as "kit:<id> <channel>".
+		PlaySound = function(id, channel)
+			client.sounds[#client.sounds + 1] = ("kit:%s %s"):format(tostring(id), tostring(channel))
+			return true, #client.sounds
+		end,
 		-- The screen's root frame, which every addon frame hangs from, and the game's error text under it (both in the
 		-- forever dump's Frames.lua), and the yellow FrameXML's GlobalColors defines (CreateColor(1, 1, 0, 1)). UIParent
 		-- is a plain widget, so it gets no events.
