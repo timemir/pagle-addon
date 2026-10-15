@@ -8,8 +8,8 @@ local board = dofile("spec/Pagle_TackleBoard/support.lua")
 local GOAL = "Player-4618-0A1B2C3D-1791731747-0"
 
 describe("the Tackle Board's seams", function()
-	describe("the board's entry points and actions (until the board's, live step's and reroll's tickets)", function()
-		it("toggle, open, start, take down, schedule and report nothing yet, and raise no error", function()
+	describe("the board's entry points and actions (until the live step's and reroll's tickets)", function()
+		it("toggle and open the board, and start, take down, schedule and report nothing yet, with no error", function()
 			local loaded, fake = board.load()
 			local ns = loaded.ns
 			fake.login()
