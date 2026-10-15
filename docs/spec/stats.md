@@ -359,7 +359,7 @@ Every string below is mechanical interface text in `ns.L` (STA-R58, STA-R59), no
 ### Item page
 
 - **Left page:** kicker "A fish", the icon and name.
-  - When it bites: the item's window (STA-R14) in the zone with the most of my Casts among the zones in `places` (plus the current zone) whose `GetZoneCatches` lists it. "Bites at any hour." with no window, or "Bites only {window name}." followed, when its spec (`Pagle.GetWindowSpec(id)`) has a `time` field, by " ({from}–{to} realm time)", several ranges joined by ", ". When no such zone lists it (Uncharted, Noise, or not listed where I've fished), this line is left out.
+  - When it bites: the item's window (STA-R14) in the zone with the most of my Casts among the zones in `places` (plus the current zone) whose `GetZoneCatches` lists it. "Bites at any hour." with no window, or "Bites only {window name}", with " ({from}–{to} realm time)" when its spec (`Pagle.GetWindowSpec(id)`) has a `time` field (several ranges joined by ", "), then the full stop. When no such zone lists it (Uncharted, Noise, or not listed where I've fished), this line is left out.
   - A pool-associated item adds "Also in pools; with no pool data, both are counted together."
   - "Caught", "First caught", "Last caught" (with time ago).
   - When the item is in the current place's rows: heading *Where I am* (small: the place's name), then "{short odds}; {since} since the last." when caught in that scope, "{short odds}; caught on my last Cast." for 0, or "{short odds}; none yet." when never caught there; then "Open its page here ☛".
