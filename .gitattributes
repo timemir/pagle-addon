@@ -10,3 +10,7 @@ addons/Pagle/libs/** -text
 
 # WTF fixtures: stored and checked out exactly as the WoW client writes them, CRLF line ends included.
 spec/scripts/fixtures/** -text
+
+# The announcements art (ANN-R80): textures and bundled fonts.
+*.blp binary
+*.ttf binary

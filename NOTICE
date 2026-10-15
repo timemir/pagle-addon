@@ -24,3 +24,10 @@ The Pagle addon's libs folder (Pagle/libs in the release, addons/Pagle/libs
 in the source) holds LibStub, CallbackHandler-1.0, AceAddon-3.0, AceEvent-3.0
 and AceDB-3.0 from Ace3, https://github.com/WoWUIDev/Ace3, under their own
 licence in LICENSE.txt in that libs folder.
+
+Fonts
+The announcement frames are set in fonts bundled in Pagle/media/fonts, each
+under the SIL Open Font License 1.1 in the OFL-*.txt file beside it: IM Fell
+English (Igino Marini), Caveat (The Caveat Project Authors; the Medium,
+SemiBold and Bold files are static cuts of its variable font) and Marcellus
+(Astigmatic).
