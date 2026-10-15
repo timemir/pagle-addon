@@ -47,6 +47,23 @@ local function realmMidnight(api, now)
 	return now - minute * 60 - now % 60
 end
 
+--- The realm's weekday today (1 = Sunday, TKB-R11): `C_DateAndTime.GetCurrentCalendarTime().weekday`, or, while the
+--- client lacks the call or it answers no weekday, the weekday of the realm date at `now` (the realm's UTC offset from
+--- its clock, LOG-R49; UTC's while that can't be read, TKB-R105).
+---@param api TackleResetAPI
+---@param now integer
+---@return integer
+local function realmWeekday(api, now)
+	local calendar = api.C_DateAndTime and api.C_DateAndTime.GetCurrentCalendarTime
+	local date = calendar and calendar()
+	if date and date.weekday then
+		return date.weekday
+	end
+	local minute = ns.RealmMinute(api)
+	local offset = minute and ns.RealmOffset(now, minute) or 0
+	return (math.floor((now + offset * 60) / ns.DAY_SECONDS) + 4) % 7 + 1 -- 1970-01-01 was a Thursday, 5
+end
+
 --- The week's fallback start (TKB-R11): realm midnight on the fallback reset weekday on or before the realm's today.
 ---@param api TackleResetAPI
 ---@param now integer
@@ -54,8 +71,7 @@ end
 local function fallbackWeekStart(api, now)
 	local region = api.GetCurrentRegion and api.GetCurrentRegion()
 	local resetWeekday = ns.FALLBACK_WEEKDAY[region] or ns.FALLBACK_WEEKDAY_OTHER
-	local today = api.C_DateAndTime.GetCurrentCalendarTime().weekday
-	return realmMidnight(api, now) - (today - resetWeekday) % 7 * ns.DAY_SECONDS
+	return realmMidnight(api, now) - (realmWeekday(api, now) - resetWeekday) % 7 * ns.DAY_SECONDS
 end
 
 --- The seconds until the next reset from the C_DateAndTime call `name`, or nil

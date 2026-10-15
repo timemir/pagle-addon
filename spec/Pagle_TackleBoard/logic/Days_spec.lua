@@ -184,6 +184,13 @@ describe("board days and weeks", function()
 				local monday = api(NOW + DAY, { weekly = false, region = 1 })
 				assert.are.equal(MIDNIGHT - 5 * DAY, select(2, ns.LiveBoundaries(monday)))
 			end)
+
+			it("reads the weekday from the realm date when the client has no C_DateAndTime (TKB-R11)", function()
+				-- Sunday 11 Oct 08:15 realm, region 1: realm midnight today, and Tuesday 6 Oct; no error.
+				local bare = api(NOW, { region = 1 })
+				bare.C_DateAndTime = nil
+				assert.are.same({ MIDNIGHT, MIDNIGHT - 5 * DAY }, { ns.LiveBoundaries(bare) })
+			end)
 		end)
 	end)
 
