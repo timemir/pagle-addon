@@ -5,6 +5,8 @@ local ns = select(2, ...)
 if not Pagle then
 	return
 end
+---@class Pagle
+local Pagle = Pagle
 
 -- The announcements' motion on the client (announcements.md › Motion): one OnUpdate runs every animation playing
 -- (logic/Motion.lua's), and hides itself when none is. Copied from the art kit's Motion.lua. With the Animations
@@ -50,6 +52,13 @@ end)
 ---@return boolean
 function ns.MotionOn()
 	return ns.db.profile.announcements.motion ~= false
+end
+
+--- The Animations setting, for a Module that moves its own frames (announcements.md › Contracts): true unless the
+--- player turned it off.
+---@return boolean
+function Pagle.IsAnimationsOn()
+	return ns.MotionOn()
 end
 
 --- Plays `animations` on `owner`, each at its first frame at once so nothing shows its settled state first; with

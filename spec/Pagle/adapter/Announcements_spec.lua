@@ -431,7 +431,9 @@ describe("the announcements art", function()
 
 	it("shows each settled at once with Animations off (SET-R30, announcements.md › Motion)", function()
 		local loaded, M = loadCore()
+		assert.is_true(loaded.env.Pagle.IsAnimationsOn())
 		loaded.ns.db.profile.announcements.motion = false
+		assert.is_false(loaded.env.Pagle.IsAnimationsOn()) -- what a Module reads (announcements.md › Contracts)
 
 		raise(
 			loaded,

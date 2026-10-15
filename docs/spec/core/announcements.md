@@ -167,6 +167,10 @@ A stored moment keeps: `module`, `moduleTitle`, `moduleOrder`, `kind`, `rung`, `
 
 `seal` is what a banner headline's wax seal shows: a number pressed into it (an Angler Level, a Catch Milestone's count), a pressed mark (`"waves"`, `"book"`, `"quill"`), or `"crest"` for the Prestige crest holding the Angler's portrait with the title on its ribbon. Any other value, or none, shows the waves. Only a banner headline's is read.
 
+### `Pagle.IsAnimationsOn()`
+
+True unless the player turned the Animations setting off (UI › Motion). A Module that moves its own frames follows it: off, they appear as they settle.
+
 ### `M:RaiseWriteUp(section)`
 
 ```lua

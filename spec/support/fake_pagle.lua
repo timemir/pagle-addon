@@ -121,7 +121,8 @@
 --- `projections.fieldReport` (REP-R25; bound at construction, so a spec fills that table, never replaces it). A spec
 --- may seed its keys before login, as a saved PagleDB.
 ---@field profile table PagleDB.profile, from Core's defaults: `announcements.cozy` is Cozy mode (ANN-R62), off, and
---- `announcements.everyCatch` is "Show every catch" (ANN-R13), on; a spec may set either. `appearance` holds each slot's pick, `{ [slot] = goodID }` (SHOP-R32), which Pagle.SetEquipped
+--- `announcements.everyCatch` is "Show every catch" (ANN-R13), on, and `announcements.motion` is Animations, on, which
+--- Pagle.IsAnimationsOn reads; a spec may set any of them. `appearance` holds each slot's pick, `{ [slot] = goodID }` (SHOP-R32), which Pagle.SetEquipped
 --- writes and a spec may seed. `lengthUnit` is the Angler's length unit Pagle.FormatLength reads in, "cm" or "in"
 --- (LOG-R69); nil, the default, follows `region`.
 ---@field region integer? GetCurrentRegion() as the fake's client answers it: 1 (Americas), so with no lengthUnit
@@ -368,6 +369,13 @@ part(function(fake, Pagle)
 				handler.fn(event, ...)
 			end
 		end
+	end
+end)
+
+-- The Animations setting (announcements.md › Contracts), as Core reads it from the profile.
+part(function(fake, Pagle)
+	function Pagle.IsAnimationsOn()
+		return fake.profile.announcements.motion ~= false
 	end
 end)
 
