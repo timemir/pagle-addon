@@ -21,10 +21,12 @@ ns.SIZE_MULTIPLIERS = { 0.55, 0.75, 1.10, 1.30, 1.55, 1.80 }
 local CUTS = { 0, 0.15, 0.70, 0.93, 0.995, 1 }
 
 --- The Size bands in order, as `{ key, name }` (LOG-R67). The names are interface text, drafts until the lore pass.
+--- logic/ also loads without locale/, in the backend's driver (#223), and then the bands have no names.
 ---@type { key: string, name: string }[]
 ns.SIZE_BANDS = {}
+local bandNames = ns.L and ns.L.SIZE_BANDS or {}
 for band, key in ipairs({ "tiddler", "typical", "hefty", "whopper", "monster" }) do
-	ns.SIZE_BANDS[band] = { key = key, name = ns.L.SIZE_BANDS[band] }
+	ns.SIZE_BANDS[band] = { key = key, name = bandNames[band] }
 end
 
 local TWO_32 = 4294967296

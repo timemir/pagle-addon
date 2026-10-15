@@ -236,14 +236,14 @@ describe("Announcement frames", function()
 		function()
 			local loaded, M = loadCore()
 			loaded.ns.db.profile.lengthUnit = "cm"
-			local size = { old = 300, new = 342, unit = "length", label = "Pagle size" }
+			local size = { old = 300, new = 342, unit = "length", label = "length" }
 
 			raise(loaded, M, moment("toast", "Size record", { ruler = size }))
 			loaded.client.update(1.5)
 
 			local view = frameOf(loaded, "toast").ruler
 			assert.are.same(
-				{ "30.0 cm", "34.2 cm", "+4.2 cm", "PAGLE SIZE" },
+				{ "30.0 cm", "34.2 cm", "+4.2 cm", "LENGTH" },
 				{ view.old:GetText(), view.value:GetText(), view.margin:GetText(), view.label:GetText() }
 			)
 		end
@@ -287,7 +287,7 @@ describe("Announcement frames", function()
 	it("show a size margin that rounds to zero in inches as +<0.1 in (ANN-R22)", function()
 		local loaded, M = loadCore()
 		loaded.ns.db.profile.lengthUnit = "in"
-		local size = { old = 300, new = 300.2, unit = "length", label = "Pagle size" }
+		local size = { old = 300, new = 300.2, unit = "length", label = "length" }
 
 		raise(loaded, M, moment("toast", "Size record", { ruler = size }))
 		loaded.client.update(1.5)
@@ -366,6 +366,88 @@ describe("the announcements art", function()
 			assert.are.same({ "PagleArtName", nil }, { text.fontObject, text.font })
 		end
 	)
+
+	-- A toast's body's drop below its place, and its alpha.
+	local function slid(toast)
+		return { -select(5, toast.body:GetPoint(1)), toast.alpha }
+	end
+
+	it(
+		"slides a toast in from 26 low and unseen, writes its name out, slams its stamps and turns its coin in, all"
+			.. " settled by 2.66 s (announcements.md › Motion)",
+		function()
+			local loaded, M = loadCore()
+			raise(
+				loaded,
+				M,
+				moment("toast", "New Species", { text = "Oily Blackmouth", cast = CAST, coins = 5 }),
+				moment("nod", "Rank up", { cast = CAST })
+			)
+			local toast = frameOf(loaded, "toast")
+			local stamp, coin, clip = toast.stamps[1], toast.coins.coin, toast.nameClip
+			local before = { slid(toast), stamp.scale, coin:GetWidth() < 1, clip:GetWidth() < 1 }
+
+			for _ = 1, 30 do
+				loaded.client.update(0.1)
+			end
+
+			assert.are.same({ { 26, 0 }, 2.6, true, true }, before)
+			assert.are.same({ { 0, 1 }, 1, 0.9, coin.w0 }, { slid(toast), stamp.scale, stamp.alpha, coin:GetWidth() })
+			assert.are.equal(toast.text:GetWidth() + 8, clip:GetWidth())
+		end
+	)
+
+	it(
+		"drops a banner's seal from 2.2x and draws its tooling out from it, settled by 1.4 s (announcements.md › Motion)",
+		function()
+			local loaded, M = loadCore()
+			raise(loaded, M, moment("banner", "Angler Level 12", { seal = 12 }))
+			local banner = frameOf(loaded, "banner")
+			local left, right = banner.tools[1].sprite, banner.tools[2].sprite
+			local before = { banner.sealFrame.scale, left:GetWidth() < 1, right:GetWidth() < 1, banner.rays.alpha }
+
+			for _ = 1, 15 do
+				loaded.client.update(0.1)
+			end
+
+			assert.are.same({ 2.2, true, true, 0 }, before)
+			assert.are.same(
+				{ 1, left.w0, right.w0, 1, 0 },
+				{ banner.sealFrame.scale, left:GetWidth(), right:GetWidth(), banner.rays.alpha, banner.rays.rotation }
+			)
+		end
+	)
+
+	it("turns the splash's rays a quarter turn in 15 s, clockwise (announcements.md › Motion)", function()
+		local loaded, M = loadCore()
+		raise(loaded, M, moment("splash", "Legend", { text = "Old Ironjaw" }))
+
+		for _ = 1, 150 do
+			loaded.client.update(0.1)
+		end
+
+		assert.are.equal(-90, math.floor(math.deg(frameOf(loaded, "splash").rays.rotation) + 0.5))
+	end)
+
+	it("shows each settled at once with Animations off (SET-R30, announcements.md › Motion)", function()
+		local loaded, M = loadCore()
+		assert.is_true(loaded.env.Pagle.IsAnimationsOn())
+		loaded.ns.db.profile.announcements.motion = false
+		assert.is_false(loaded.env.Pagle.IsAnimationsOn()) -- what a Module reads (announcements.md › Contracts)
+
+		raise(
+			loaded,
+			M,
+			moment("toast", "New Species", { text = "Oily Blackmouth", cast = CAST, coins = 5 }),
+			moment("banner", "Angler Level 12", { cast = CAST, seal = 12 })
+		)
+
+		local toast, banner = frameOf(loaded, "toast"), frameOf(loaded, "banner")
+		assert.are.same(
+			{ { 0, 1 }, toast.coins.coin.w0, 1, banner.tools[1].sprite.w0 },
+			{ slid(toast), toast.coins.coin:GetWidth(), banner.sealFrame.scale, banner.tools[1].sprite:GetWidth() }
+		)
+	end)
 
 	it("writes a headline with no text as its title alone in the Angler's hand, as a catch Nod's line", function()
 		local loaded, M = loadCore()

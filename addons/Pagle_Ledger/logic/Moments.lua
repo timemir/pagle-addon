@@ -382,6 +382,7 @@ function celebrate.levelUp(celebrated, state, earned)
 		icon = LEVEL_ICON,
 		cast = earned.cast,
 		coins = ns.LEVEL_UP_COINS * raised,
+		seal = top,
 	}
 end
 
@@ -416,6 +417,7 @@ function celebrate.zoneRank(celebrated, _, earned, outlets)
 			icon = ZONE_MASTER_ICON,
 			cast = earned.cast,
 			coins = coins,
+			seal = "waves",
 		}
 	end
 	return {
@@ -471,6 +473,7 @@ function celebrate.prestigeReady(celebrated, _, earned, _, before)
 		stamp = L.PRESTIGE_READY_STAMP,
 		icon = PRESTIGE_READY_ICON,
 		cast = earned.cast,
+		seal = "book",
 	}
 end
 
@@ -492,6 +495,7 @@ function celebrate.prestige(celebrated, _, earned)
 		title = mark.stars > 0 and L.MASTER_PRESTIGE_TITLE:format(mark.stars) or L.PRESTIGE_TITLE:format(mark.emblem),
 		icon = PRESTIGE_ICON,
 		coins = earned.coins,
+		seal = "crest",
 	}
 end
 
@@ -512,6 +516,7 @@ function celebrate.catchMilestone(celebrated, _, earned, outlets)
 		stamp = catches,
 		icon = CATCH_MILESTONE_ICON,
 		cast = earned.cast,
+		seal = n,
 	}
 end
 
@@ -528,7 +533,7 @@ function celebrate.sizeRecord(_, _, earned, outlets)
 		stamp = L.SIZE_RECORD_STAMP,
 		icon = earned.itemID,
 		cast = earned.cast,
-		ruler = { old = earned.old, new = earned.new, unit = "length", label = "Pagle size" },
+		ruler = { old = earned.old, new = earned.new, unit = "length", label = "length" },
 	}
 end
 
@@ -611,6 +616,7 @@ local function celebrateTitles(celebrated, state, moments, achievements, outlets
 				stamp = L.TITLE_LINE:format(name),
 				icon = TITLE_ICON,
 				cast = cast,
+				seal = "quill",
 			}
 			achievements[#achievements + 1] = { kind = "completeTitle", cast = cast, coins = 0 }
 		elseif name and kind then

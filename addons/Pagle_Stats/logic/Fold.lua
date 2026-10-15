@@ -280,6 +280,138 @@ function ns.Fold(state, record, places)
 	return false
 end
 
+--- Stats' projection for Pagle's backend (#223, #76 item 5), whose projection driver folds the Catch log through
+--- logic/ alone, without adapter/ or locale/ (CORE-R7). Makes the places rules (ns.places) and binds ns.ProjectionDef
+--- with `M:NewProjection` over a table of its own making, as the adapter's OnInitialize does. Stats pays no Coins, so
+--- it has no ns.CoinsEarned. The client's adapter never calls it.
+---@param M PagleModuleHandle
+---@return PagleProjection
+function ns.BindProjections(M)
+	-- The driver hands over only M, so Core comes from the Pagle API it hosts.
+	local pagle = Pagle -- luacheck: read globals Pagle (#223: the backend's driver passes no Core)
+	ns.places = ns.NewPlaceTables(pagle --[[@as StatsLookups]])
+	return M:NewProjection(ns.ProjectionDef({}, ns.places, pagle.SESSION_RULES_VERSION))
+end
+
+---@class StatsJournalSession
+---@field start integer       -- its first Cast's server time
+---@field length integer      -- endTime − startTime, in seconds
+---@field casts integer
+---@field catches integer
+---@field gotAway integer
+---@field zones integer[]     -- its zones' areaIDs by Casts, most first (ns.ZonesByCasts)
+
+--- Stats' Journal values for Pagle's backend (#223, the Angler page's Journal values), from a state alone:
+--- - `stats`: lifetime time at the water in seconds, the got-away rate (0 with no Casts), the longest Session's start
+---   and length and the best Catches per hour's Session start and rate, each nil with no such Session (STA-R33);
+--- - `sessions`: the latest Sessions, newest first, at most `sessionRows` of them (STA-R30, STA-R33);
+--- - `odds`: ns.JournalOdds.
+---@param state StatsState
+---@param sessionRows integer
+---@return { stats: table, sessions: StatsJournalSession[], odds: StatsJournalZoneOdds[] }
+function ns.JournalValues(state, sessionRows)
+	local sessions = state.sessions
+	local stats = { time = ns.TimeAtTheWater(sessions), gotAwayRate = ns.GotAwayRate(state.totals) or 0 }
+	local longest = ns.LongestSession(sessions)
+	if longest then
+		stats.longest = { start = longest.startTime, length = ns.TimeFished(longest) }
+	end
+	local best, rate = ns.BestCatchesPerHour(sessions)
+	if best then
+		stats.bestRate = { start = best.startTime, rate = rate }
+	end
+	local latest = {}
+	for i = #sessions, math.max(1, #sessions - sessionRows + 1), -1 do
+		local session = sessions[i]
+		local zones = {}
+		for n, zone in ipairs(ns.ZonesByCasts(session.zones)) do
+			zones[n] = zone.zone
+		end
+		latest[#latest + 1] = {
+			start = session.startTime,
+			length = ns.TimeFished(session),
+			casts = session.casts,
+			catches = session.catches,
+			gotAway = session.gotAway,
+			zones = zones,
+		}
+	end
+	return { stats = stats, sessions = latest, odds = ns.JournalOdds(state) }
+end
+
+--- The Journal's names for STA-R18's groups.
+local JOURNAL_GROUPS = { any = "anytime", pools = "pools", window = "window", added = "also" }
+--- The Journal's names for STA-R52's bands.
+local JOURNAL_BANDS = { normal = "normal", unlucky = "unlucky", veryUnlucky = "very_unlucky" }
+
+---@class StatsJournalOddsRow
+---@field item integer
+---@field group "anytime"|"pools"|"window"|"also"
+---@field state "learning"|"unseen"|"known"
+---@field n integer
+---@field k integer?          -- known only
+---@field threshold integer   -- the Cast threshold (STA-R43)
+---@field oneIn integer?      -- known: nice(n / k); unseen: the "rarer than" bound, nice(n / 3) (STA-R43, STA-R44)
+---@field lo integer?         -- known: the Wilson range's likelier end, nice(1 / hi) (STA-R45)
+---@field hi integer?         -- known: its rarer end, nice(1 / lo)
+---@field since integer?      -- the Dry spell, nil when never caught in the scope (STA-R50)
+---@field band string?        -- the luck reading's band, nil without one (STA-R51, STA-R52)
+
+---@class StatsJournalZoneOdds
+---@field zone integer
+---@field casts integer
+---@field rows StatsJournalOddsRow[]
+
+--- Your odds and Dry spells for the Journal values (STA-R40–R54): every zone fished, most Casts first (ties by areaID),
+--- with its Casts and each row of its place spread, in STA-R18's group and row order, read on the side STA-R41 picks
+--- with the live skill unknown. The numbers are rounded as nice() shows them (STA-R44). Reads ns.places.
+---@param state StatsState
+---@return StatsJournalZoneOdds[]
+function ns.JournalOdds(state)
+	local zones = {}
+	for area, place in pairs(state.places) do
+		if place.zone == area then
+			zones[#zones + 1] = { zone = area, casts = place.casts }
+		end
+	end
+	table.sort(zones, function(a, b)
+		if a.casts ~= b.casts then
+			return a.casts > b.casts
+		end
+		return a.zone < b.zone
+	end)
+	for _, entry in ipairs(zones) do
+		local rows = {}
+		for _, group in ipairs(ns.GroupReadings(state, entry.zone, nil, ns.places, ns.ReadingCounts)) do
+			for _, reading in ipairs(group.readings) do
+				local n, k = reading.n, reading.k
+				local row = {
+					item = reading.item,
+					group = JOURNAL_GROUPS[group.id],
+					state = reading.state,
+					n = n,
+					threshold = ns.ODDS_THRESHOLD,
+				}
+				if reading.state == "known" then
+					local lo, hi = ns.Wilson(k, n)
+					row.k, row.oneIn = k, ns.NiceValue(n / k)
+					row.lo, row.hi = ns.NiceValue(1 / hi), ns.NiceValue(1 / lo)
+				elseif reading.state == "unseen" then
+					row.oneIn = ns.NiceValue(n / ns.NEVER_CAUGHT_BOUND)
+				end
+				local dry = ns.DrySpell(reading)
+				if dry.caught then
+					row.since = dry.since
+				end
+				row.band = dry.band and JOURNAL_BANDS[dry.band]
+				rows[#rows + 1] = row
+			end
+		end
+		entry.rows = rows
+	end
+	return zones
+end
+
 --- Stats' projection def (STA-R20, LOG-R70), bound to `global.projection`, which it makes if missing: Core owns it
 --- from here on. No `extraFingerprint`: a content change rebuilds through Core's fingerprint alone. Nothing is raised
 --- in any mode (STA-R2): a live Cast or Skill Reading, and every done, only asks the views to redraw (ns.Redraw).

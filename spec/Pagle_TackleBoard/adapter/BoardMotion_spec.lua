@@ -1,6 +1,6 @@
 -- The board's motion (tackle-board.md › UI, the board art kit's MOTION.md): adapter/Motion.lua's driver, the
 -- Campfire's layers flickering, the glow breathing on the cork, the highlight's ring pulsing, and Core's Animations
--- setting, read through ns.AnimationsOn, leaving everything at rest. The fake client runs the driver's OnUpdate with
+-- setting, Pagle.IsAnimationsOn() read through ns.AnimationsOn, leaving everything at rest. The fake client runs the driver's OnUpdate with
 -- client.update.
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
@@ -98,13 +98,11 @@ describe("the motion driver (adapter/Motion.lua, the kit's)", function()
 end)
 
 describe("Core's Animations setting (ns.AnimationsOn)", function()
-	it("reads on while Core offers no such setting, and Core's answer once it does", function()
-		local loaded = board.load()
+	it("reads Pagle.IsAnimationsOn(): on by default, off once the player turns it off", function()
+		local loaded, fake = board.load()
 
 		assert.is_true(loaded.ns.AnimationsOn())
-		rawset(loaded.env.Pagle, "IsAnimationsOn", function()
-			return false
-		end)
+		fake.profile.announcements.motion = false
 		assert.is_false(loaded.ns.AnimationsOn())
 	end)
 end)

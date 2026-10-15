@@ -61,6 +61,8 @@ ns.L = {
 	SETTINGS_BUDGET_COUNT = "Interruptions",
 	SETTINGS_BUDGET_WINDOW = "Per",
 	SETTINGS_EVERY_CATCH = "Show every catch",
+	SETTINGS_MOTION = "Animations",
+	SETTINGS_MOTION_TOOLTIP = "Toasts slide in and stamp themselves, banners drop their seal, and the Legend's rays turn. Off, each appears as it settles.",
 	SETTINGS_EVERY_CATCH_TOOLTIP = "A quiet line for each catch: its name, size band and length. A toast or banner for the same catch shows instead. Greyed out in Cozy mode, which shows nothing.",
 	-- Look and Feel (SET-R50, SET-R51): the paragraph, a slot dropdown's note with N, and the Curio Shop section's
 	-- header, row label and button caption. Its category headers are SHOP_CATEGORIES.
@@ -138,12 +140,13 @@ ns.L = {
 	HELP_CHART_COUNT = HELP_CHART .. " (%d)",
 
 	-- The Field report box (field-report.md › The box and its entry points), titled HELP_CHART (REP-R40): the privacy
-	-- line above the text (REP-R37), the part line and its buttons, Close, the lines shown instead of the text
-	-- (REP-R41, REP-R42), and the chat line an entry point prints while restricted (REP-R44).
+	-- line above the text (REP-R37), the hint beside it and the label before the URL (the field art kit's chart), the
+	-- part line between its arrows, Close, the lines shown instead of the text (REP-R41, REP-R42), and the chat line an
+	-- entry point prints while restricted (REP-R44).
 	FIELD_REPORT_PRIVACY = "This will be posted publicly. It contains no character names.",
+	FIELD_REPORT_COPY_HINT = "Ctrl+C to copy",
+	FIELD_REPORT_POST_AT = "POST IT AT",
 	FIELD_REPORT_PART = "Part %d of %d",
-	FIELD_REPORT_PREVIOUS = "Previous",
-	FIELD_REPORT_NEXT = "Next",
 	FIELD_REPORT_CLOSE = "Close",
 	FIELD_REPORT_NOTHING = "Nothing to report. Thanks for checking!",
 	FIELD_REPORT_UPDATING = "Updating... try again in a moment.",

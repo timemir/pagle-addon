@@ -73,34 +73,48 @@ local function shown(loaded)
 	}
 end
 
+-- The button's lacquer tooltip's text while it shows, or nil.
+---@param loaded LoadedAddon
+---@return string?
+local function tooltipText(loaded)
+	local tooltip = theButton(loaded).Tooltip
+	return tooltip.shown and tooltip.Text.text or nil
+end
+
 -- Hovers the button and returns the tooltip's text, or nil while no tooltip shows for it.
 ---@param loaded LoadedAddon
 ---@return string?
 local function hover(loaded)
 	local button = theButton(loaded)
 	button.scripts.OnEnter(button)
-	local tooltip = loaded.env.GameTooltip
-	return tooltip.shown and tooltip.owner == button and tooltip.text or nil
+	return tooltipText(loaded)
 end
 
 describe("The next-action button", function()
 	describe("its look", function()
-		it("is a 36 px display-only frame on UIParent, not a secure button (QOL-R70, QOL-R73)", function()
-			local _, _, loaded = start()
+		it(
+			"is a display-only frame on UIParent, a 52 px bezel round a 36 px icon, not secure (QOL-R70, QOL-R73)",
+			function()
+				local _, _, loaded = start()
 
-			local button = theButton(loaded)
-			assert.are.equal("Frame", button.kind)
-			-- No template and no name: not secure, and no global (QOL-R5).
-			assert.is_nil(button.template)
-			assert.is_nil(button.name)
-			assert.are.equal(loaded.env.UIParent, button.parent)
-			assert.are.equal(36, button.width)
-			assert.are.equal(36, button.height)
-			-- Clicking does nothing.
-			assert.is_nil(button.scripts.OnClick)
-			assert.is_nil(button.scripts.OnMouseDown)
-			assert.is_nil(button.scripts.OnMouseUp)
-		end)
+				local button = theButton(loaded)
+				assert.are.equal("Frame", button.kind)
+				-- No template and no name: not secure, and no global (QOL-R5).
+				assert.is_nil(button.template)
+				assert.is_nil(button.name)
+				assert.are.equal(loaded.env.UIParent, button.parent)
+				assert.are.same({ 52, 52 }, { button.width, button.height })
+				assert.are.same({ 36, 36 }, { button.Icon.width, button.Icon.height })
+				-- Round: drawn through the portrait mask.
+				assert.are.equal("Interface\\CharacterFrame\\TempPortraitAlphaMask", button.Icon.masks[1].texture)
+				-- The brass is Core's field art.
+				assert.are.equal("Interface\\AddOns\\Pagle\\media\\field\\Field", button.Ring.texture)
+				-- Clicking does nothing.
+				assert.is_nil(button.scripts.OnClick)
+				assert.is_nil(button.scripts.OnMouseDown)
+				assert.is_nil(button.scripts.OnMouseUp)
+			end
+		)
 
 		it(
 			"shows the lure's icon, Lure and the key's short text with a pole in hand and no lure on (QOL-R70, QOL-R71)",
@@ -249,6 +263,28 @@ describe("The next-action button", function()
 			assert.are.same({ icon = BAUBLE_ICON, desaturated = false, label = "Lure", hotkey = "F" }, shown(loaded))
 		end)
 
+		it(
+			"greys the brass with the icon for nothing, with no paper label; the key cap goes with the key (QOL-R71)",
+			function()
+				local fake, client, loaded = start()
+				local button = theButton(loaded)
+				assert.is_false(button.Ring.desaturated)
+				assert.is_true(button.Paper.shown)
+				assert.is_true(button.KeyCap.shown)
+
+				fake.setRestricted(true)
+				assert.is_true(button.Ring.desaturated)
+				assert.are.same({ 0.75, 0.75, 0.75 }, button.Ring.vertexColor)
+				assert.is_false(button.Paper.shown)
+
+				fake.setRestricted(false)
+				client.boundKeys.PAGLE_FISHING_KEY = nil
+				fake.fireGameEvent("UPDATE_BINDINGS")
+				assert.is_false(button.Ring.desaturated)
+				assert.is_false(button.KeyCap.shown)
+			end
+		)
+
 		it("in combat keeps showing nothing with the gear step ready, and hides with neither (QOL-R72)", function()
 			local fake, _, loaded = start(withGearStep)
 
@@ -395,8 +431,7 @@ describe("The next-action button", function()
 
 			assert.is_nil(hover(loaded))
 			client.loadItem(THICK_SHELLED, "Thick-shelled Clam")
-			assert.is_true(loaded.env.GameTooltip.shown)
-			assert.are.equal("Open Thick-shelled Clam", loaded.env.GameTooltip.text)
+			assert.are.equal("Open Thick-shelled Clam", tooltipText(loaded))
 		end)
 
 		it("shows Reel with the bobber out, as a press reels then, and Clam again after (QOL-R20, QOL-R71)", function()
@@ -417,7 +452,9 @@ describe("The next-action button", function()
 			local _, _, loaded = start()
 
 			assert.are.equal("Apply Shiny Bauble", hover(loaded))
-			assert.are.equal("ANCHOR_RIGHT", loaded.env.GameTooltip.anchor)
+			-- The lacquer tooltip, to the button's right, over everything.
+			local button = theButton(loaded)
+			assert.are.same({ { "LEFT", button, "RIGHT", 12, 0 } }, button.Tooltip.points)
 		end)
 
 		it("names the fishing set (QOL-R74)", function()
@@ -444,13 +481,13 @@ describe("The next-action button", function()
 			assert.are.equal("Apply Shiny Bauble", hover(loaded))
 
 			fake.fire("CastStarted")
-			assert.are.equal("Reel in", loaded.env.GameTooltip.text)
+			assert.are.equal("Reel in", tooltipText(loaded))
 
 			local button = theButton(loaded)
 			button.scripts.OnLeave(button)
-			assert.is_false(loaded.env.GameTooltip.shown)
+			assert.is_nil(tooltipText(loaded))
 			fake.fireGameEvent("UNIT_SPELLCAST_CHANNEL_STOP", "player")
-			assert.is_false(loaded.env.GameTooltip.shown)
+			assert.is_nil(tooltipText(loaded))
 		end)
 
 		it("waits for an item that isn't cached to load, then names it (QOL-R74)", function()
@@ -460,8 +497,7 @@ describe("The next-action button", function()
 
 			assert.is_nil(hover(loaded))
 			client.loadItem(SHINY_BAUBLE, "Shiny Bauble")
-			assert.is_true(loaded.env.GameTooltip.shown)
-			assert.are.equal("Apply Shiny Bauble", loaded.env.GameTooltip.text)
+			assert.are.equal("Apply Shiny Bauble", tooltipText(loaded))
 		end)
 
 		it("shows nothing when the item loads after the mouse has left (QOL-R74)", function()
@@ -474,7 +510,7 @@ describe("The next-action button", function()
 
 			client.loadItem(SHINY_BAUBLE, "Shiny Bauble")
 
-			assert.is_false(loaded.env.GameTooltip.shown)
+			assert.is_nil(tooltipText(loaded))
 		end)
 	end)
 end)

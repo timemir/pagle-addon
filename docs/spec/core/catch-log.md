@@ -154,7 +154,7 @@ Part of [Core](README.md). This file covers what Core observes, how it is stored
 
 ### Sessions
 
-- **LOG-R60** A **Session** is a run of the Angler's Casts (caught and got away) in which no two consecutive Casts are 300 seconds (5 minutes) or more apart, by entry `time`. Character switches, zone changes, logouts and reloads don't split it; only the gap does.
+- **LOG-R60** A **Session** is a run of the Angler's Casts (caught and got away) in which no two consecutive Casts are 300 seconds (5 minutes) or more apart, by entry `time`. Character switches, zone changes, logouts and reloads don't split it; only the gap does, or in dev mode a Session break (LOG-R99).
 - **LOG-R61** Sessions are cut from the log by a pure function in Core `logic/`; they are never stored in `PagleLog`. `Pagle.SESSION_RULES_VERSION` changes whenever the rule changes (Tunables; it went from 1 to 2 when the gap went from 900 s to 300 s), and Modules that store Sessions fold it into their rules version. `Pagle.SESSION_GAP` is the Session gap in seconds (300, LOG-R60): a Module that needs the gap reads Core's, never a copy of its own.
 - **LOG-R62** Live: `SessionStarted(session)` fires right after the entry of a Cast that starts a new Session is appended (LOG-R9); its payload already counts that Cast. `SessionEnded(session)` fires when 300 seconds pass with no Cast while logged in. A Session's `endTime` is its last Cast's `time`.
 - **LOG-R63** At login, if the latest Session's last Cast is 300 seconds or more ago and its ID isn't `PagleDB.global.lastEndedSession`, Core fires `SessionEnded(session)` once, with `whileAway = true`, as soon as no projection is updating (catching up or rebuilding, LOG-R74), or earlier if a new Cast is recorded first (LOG-R9), so a `SessionEnded` always comes before the next `SessionStarted`. `lastEndedSession` is set whenever `SessionEnded` fires.
@@ -164,6 +164,7 @@ Part of [Core](README.md). This file covers what Core observes, how it is stored
   - a Skill Reading: the ID of the Session open when it was appended, meaning the latest earlier Cast is less than 300 seconds before it; otherwise `nil`. A Skill Reading appended before a new Session's first Cast belongs to no Session.
 
   The tag is computed by the same `logic/` function that cuts Sessions and is never stored in the entry. When an iteration starts after `seq` 0, Core looks back from `afterSeq` to the Casts that open the Session in progress, so the tags are the same whether the log is read whole or in parts.
+- **LOG-R99** A **Session break** ends a Session early, for testing. `/pagle dev endsession` (dev mode only, [in-game-verification.md](../../agents/in-game-verification.md#dev-commands)) ends the open Session as if its gap had passed: `SessionEnded` fires (LOG-R62), and the entry ID of the Session's last Cast goes into `PagleDB.global.sessionBreaks`. The next Cast then starts a new Session, however soon it comes: the cutter splits after a break as it splits at the gap, live and in every later read, so the projections that fold Sessions see two. A break splits Casts only. A Skill Reading still takes the Session whose last Cast is under 300 seconds before it (LOG-R98). The log is untouched. In real play no break is ever written, so the rule changes nothing there and `SESSION_RULES_VERSION` stays as it is.
 
 ### Simulated Size
 
@@ -205,6 +206,7 @@ Core runs every Module's stored projection the same way (ADR 0004).
   In `done`, a Module may only raise a Write-up and `summaryOnly` moments ([announcements.md](announcements.md#write-up)).
 - **LOG-R77** The Module's **celebrated set** (the high-water mark of what was already shown) lives in its DB outside `projection`, so a rebuild never clears it. Core never touches it. If the whole Module DB is lost, the celebrated set is lost with it, and the next build counts as a first build (LOG-R76).
 - **LOG-R78** Core runs its own projections (the Field report's, the wallet's spent total and owned goods) with the same machinery.
+- **LOG-R79** Pagle's backend folds the Catch log through `logic/` alone ([#223](https://github.com/timemir/wow-fish/issues/223), [#76](https://github.com/timemir/wow-fish/issues/76) item 5). Its projection driver loads each addon's `logic/` files, Core's `data/Catalogue.lua` and Hunts' `data/HuntList.lua`, never `adapter/` or `locale/`, and computes no value itself. So every `logic/` file loads without `ns.L`, each projection can be bound from `logic/`, and every value the backend shows is a function of projection state in `logic/`. The driver reads the log with Core's `ns.OpenCatchLog(log, global, now, getItem)`, `getItem` being the catalogue's `GetItem`: without that fourth argument no Catch has a Simulated Size (LOG-R65). The functions it calls are in [Contracts › The backend's hooks](#the-backends-hooks); a binding hook folds to the same state as the client's projection, with none of its moments, Coins reports or other effects.
 
 ### The diagnostics buffer
 
@@ -262,6 +264,7 @@ The ADR 0003 and ADR 0008 notes sketch `B1`, `U1` and `A1` without the shared he
 | `global.schemaVersion` | integer; ordered `if version < N` migration steps run on load. Migrations exist only here and in each `Pagle<Module>DB`, never for `PagleLog`. |
 | `global.lastBuild` | `{ logId, build }`, the last logged build number (LOG-R36) |
 | `global.lastEndedSession` | the ID of the last Session `SessionEnded` fired for (LOG-R63) |
+| `global.sessionBreaks` | `{ [castEntryID] = true }`, the Casts after which `/pagle dev endsession` ended a Session (LOG-R99); absent until it's first used |
 | `global.decodeErrors` | count of entries the codec couldn't decode (LOG-R16) |
 | `global.dev` | boolean, the `/pagle dev` switch (#247); default `false`. Never shown to players. |
 | `global.diagnostics` | ring buffer of up to 500 entries (LOG-R81) |
@@ -395,6 +398,24 @@ Each Module keeps one AceDB SavedVariable, `Pagle<Module>DB`, account-wide with 
 ```
 
 `M:NewProjection(def)` returns a projection with `:GetState()`, `:IsUpdating()` and `:Rebuild()` (a manual full rebuild, for a debug command).
+
+### The backend's hooks
+
+What the backend's projection driver calls in `logic/` (LOG-R79), by the names agreed on [#223](https://github.com/timemir/wow-fish/issues/223). The driver looks each one up and leaves out a value whose function is missing. Each `state` is that projection's state after `done`, except `Measures`, which the driver reads after every record the Ledger applies. Only Core's adapter and FakePagle reach a Module through `Pagle`, so a binding hook reads the `Pagle` API (and Hunts the server time) from the globals the driver hosts. The client never calls these hooks.
+
+| Where (`ns` of) | Function | Returns |
+|---|---|---|
+| `Pagle` | `BindCoreProjections(newProjection)` | nothing: calls `newProjection(name, def)` for each of Core's projections by its `PagleDB.global.projections` key: `"wallet"`, whose state has `spent` (SHOP-R11). The Field report's is left out, as its input never leaves the client (LOG-R82). |
+| `Pagle_Ledger`, `Pagle_Hunts`, `Pagle_Stats`, `Pagle_TackleBoard` | `BindProjections(M)` | the projection `M:NewProjection(def)` bound over a table of the hook's own making. QoL has no projection, so it has no hook. |
+| `Pagle_Ledger`, `Pagle_Hunts`, `Pagle_TackleBoard` | `CoinsEarned(state)` | the lifetime Coins earned, as the Module reports them (SHOP-R2) |
+| `Pagle_Ledger` | `Measures(state)` | `{ anglerLevel = { prestige, level, xp }, ledgerCompletion = { percent, done, total }, speciesCaught, legendsCaught }`: the climb's level and XP (LED-R30–R32), LED-R70's completion, and the Species and distinct Legends caught, removed ones left out (LED-R71, LED-R63) |
+| `Pagle_Ledger` | `EarnedTitles(state)` | the title keys the state earns, in LED-R75's order, without the celebrated set's (LED-R76, LOG-R77) |
+| `Pagle_Ledger` | `AutomaticTitle(state)` | the automatic title's key (LED-R77), or nil with none earned |
+| `Pagle_Ledger` | `ZonesMastered(state)` | the charted zones at computed rank Master (LED-R50, LED-R71) |
+| `Pagle_Ledger` | `LifetimeCatches(state)` | lifetime Catches (LED-R42) |
+| `Pagle_Ledger` | `LegendList()` | the release's Legends for Region firsts (PRJ-R15): the item IDs LED-R63's "x of N" counts for an Angler with no Catches, listed and not removed (LED-R11, LED-R12), ascending. The driver calls it after `BindProjections`. |
+| `Pagle_Ledger` | `PickedTitle(record)` | for a Ledger Module record: nil when it isn't the title record, false when it picks automatic, else the picked title key. The title record (#76 item 2) has kind `title` and the key as its payload, `""` for automatic (LED-R77); the Ledger doesn't append it yet. |
+| `Pagle_Ledger`, `Pagle_Stats`, `Pagle_Hunts`, `Pagle_TackleBoard` | `JournalValues(state, sessionRows)` | the Angler page's Journal values the Module holds, keyed as pagle-backend's angler-page.md › Journal values; no key comes from two Modules. The Ledger: `level`, `parts`, `titles`, `nextCatchMilestone`, `skillMilestones`, `characters` (from `Pagle.GetAngler().skill`), `zones`, `species`, `legends`, `trophies`. Stats: `stats`, `sessions` (newest first, at most `sessionRows` of them) and `odds` (every zone fished, most Casts first, its place spread's rows read on STA-R41's side with the live skill unknown, numbers as `nice()` rounds them, STA-R44). Hunts: `hunts` and `sets` at `GetServerTime()`, the fold's time. The Tackle Board: `flies`. A nullable field is nil. |
 
 ## UI
 

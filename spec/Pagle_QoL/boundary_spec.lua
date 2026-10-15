@@ -49,12 +49,13 @@ local FORBIDDEN_IN_LOGIC = {
 	{ "%f[%w_]ns%.db%f[^%w_]", "CORE-R7: logic/ is passed what it reads of PagleQoLDB, never ns.db" },
 }
 
--- QOL-R6, QOL-R83: the one ReloadUI() QoL may call, the OnAccept of the Reload now popup in adapter/Conflict.lua,
--- whose first button says "Reload now". It runs only when that button is clicked (StaticPopup_OnClick), never on
--- load, an event or a timer. The pattern captures the code around the call, so that call alone can be taken out.
+-- QOL-R6, QOL-R83: the one ReloadUI() QoL may call, the first choice of the Reload now note in adapter/Conflict.lua,
+-- whose first button says "Reload now": showNote(name, text, first, second, onFirst) runs onFirst only from a click
+-- on that button, never on load, an event or a timer. The pattern captures the code around the call, so that call
+-- alone can be taken out.
 local RELOAD_NOW_FILE = DIR .. "adapter/Conflict.lua"
-local RELOAD_NOW = "(StaticPopupDialogs%.PAGLE_QOL_RELOAD%s*=%s*{[^{}]-button1%s*=%s*ns%.L%.CONFLICT_RELOAD_NOW%s*,"
-	.. "[^{}]-OnAccept%s*=%s*function%s*%(%)%s*)ReloadUI%(%)(%s*end)"
+local RELOAD_NOW = "(showNote%(%s*RELOAD_NOTE%s*,%s*ns%.L%.CONFLICT_RELOAD_TEXT%s*,%s*ns%.L%.CONFLICT_RELOAD_NOW%s*,"
+	.. "%s*ns%.L%.CONFLICT_RELOAD_LATER%s*,%s*function%s*%(%)%s*)ReloadUI%(%)(%s*end)"
 
 -- Each forbidden thing the code says, as "<why>: <match>".
 ---@param text string
@@ -143,15 +144,11 @@ describe("QoL's boundary", function()
 			assert.are.same({}, logicOffences("local x = ns.dbx -- ns.db"))
 		end)
 
-		-- QOL-R6: the one ReloadUI() QoL may make, from a click on the Reload now popup's button (QOL-R83).
+		-- QOL-R6: the one ReloadUI() QoL may make, from a click on the Reload now note's button (QOL-R83).
 		local PLANTED_RELOAD = table.concat({
-			"StaticPopupDialogs.PAGLE_QOL_RELOAD = {",
-			"	text = ns.L.CONFLICT_RELOAD_TEXT,",
-			"	button1 = ns.L.CONFLICT_RELOAD_NOW,",
-			"	OnAccept = function()",
-			"		ReloadUI()",
-			"	end,",
-			"}",
+			"showNote(RELOAD_NOTE, ns.L.CONFLICT_RELOAD_TEXT, ns.L.CONFLICT_RELOAD_NOW, ns.L.CONFLICT_RELOAD_LATER, function()",
+			"	ReloadUI()",
+			"end)",
 		}, "\n")
 
 		it("but not ReloadUI() from a click on Reload now, in adapter/Conflict.lua", function()
@@ -162,8 +159,8 @@ describe("QoL's boundary", function()
 			{ "the Reload now handler in another file", PLANTED_RELOAD, DIR .. "adapter/QoL.lua" },
 			{ "a second ReloadUI()", PLANTED_RELOAD .. "\nReloadUI()", DIR .. "adapter/Conflict.lua" },
 			{
-				"ReloadUI() on another dialog's button",
-				(PLANTED_RELOAD:gsub("PAGLE_QOL_RELOAD", "PAGLE_QOL_CONFLICT")),
+				"ReloadUI() on another note's button",
+				(PLANTED_RELOAD:gsub("RELOAD_NOTE", "CONFLICT_NOTE")),
 				DIR .. "adapter/Conflict.lua",
 			},
 			{
@@ -172,8 +169,8 @@ describe("QoL's boundary", function()
 				DIR .. "adapter/Conflict.lua",
 			},
 			{
-				"ReloadUI() when the popup shows",
-				(PLANTED_RELOAD:gsub("OnAccept", "OnShow")),
+				"ReloadUI() when the note shows",
+				(PLANTED_RELOAD:gsub("showNote", 'note:SetScript("OnShow", '):gsub("RELOAD_NOTE, ", "")),
 				DIR .. "adapter/Conflict.lua",
 			},
 		}

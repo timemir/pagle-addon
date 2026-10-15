@@ -119,7 +119,7 @@ describe("the Session summary", function()
 			stamp = "Record!",
 			coins = 2,
 			cast = "Player-4618-0A1B2C3D-1791731000-0",
-			ruler = { old = 300, new = 320, unit = "length", label = "Pagle size" },
+			ruler = { old = 300, new = 320, unit = "length", label = "length" },
 			expiresAt = 1791740000,
 			pastText = "was a record",
 			summaryOnly = true,

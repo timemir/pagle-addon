@@ -174,6 +174,8 @@ end
 --- A texture showing a sprite. `texture.box` is where its drawn element sits in it.
 ---@class PagleSprite: Texture
 ---@field box number[]
+---@field tc number[] its texture coordinates: left, right, top, bottom
+---@field w0 number? its width before an animation squashes or cuts it
 
 --- Shows sprite `name` of atlas `atlasName` in `texture`, at its designed size.
 ---@param texture Texture
@@ -184,12 +186,13 @@ function ns.SetSprite(texture, atlasName, name)
 	local atlas, sprite = spriteOf(atlasName, name)
 	local shown = texture --[[@as PagleSprite]]
 	shown:SetTexture(atlas.file)
-	shown:SetTexCoord(
+	shown.tc = {
 		sprite.x / atlas.width,
 		(sprite.x + sprite.w) / atlas.width,
 		sprite.y / atlas.height,
-		(sprite.y + sprite.h) / atlas.height
-	)
+		(sprite.y + sprite.h) / atlas.height,
+	}
+	shown:SetTexCoord(shown.tc[1], shown.tc[2], shown.tc[3], shown.tc[4])
 	shown:SetSize(sprite.w / atlas.scale, sprite.h / atlas.scale)
 	shown.box = sprite.box
 	return shown
@@ -230,6 +233,40 @@ function ns.CenterSprite(sprite, relativeTo)
 		width / 2 - (box[1] + box[3] / 2),
 		-(height / 2 - (box[2] + box[4] / 2))
 	)
+end
+
+--- Anchors a sprite by its CENTER so its drawn element's centre is `x`, `y` from `relativeTo`'s top left (y grows
+--- downward), and keeps its width as `w0`: an animation can squash or grow it about that centre.
+---@param sprite PagleSprite
+---@param relativeTo Region
+---@param x number
+---@param y number
+function ns.CenterSpriteAt(sprite, relativeTo, x, y)
+	local box = sprite.box
+	local width, height = sprite:GetSize()
+	sprite.w0 = width
+	sprite:ClearAllPoints()
+	sprite:SetPoint(
+		"CENTER",
+		relativeTo,
+		"TOPLEFT",
+		x + width / 2 - (box[1] + box[3] / 2),
+		-(y + height / 2 - (box[2] + box[4] / 2))
+	)
+end
+
+--- A 1 x 1 frame on `parent` at `x`, `y` from `relativeTo`'s top left: a frame anchored by its CENTER to it, with no
+--- offset, grows about that point under SetScale (a scaled frame's own anchor offsets would scale too).
+---@param parent Frame
+---@param relativeTo Region
+---@param x number
+---@param y number
+---@return Frame
+function ns.Pivot(parent, relativeTo, x, y)
+	local pivot = CreateFrame("Frame", nil, parent)
+	pivot:SetSize(1, 1)
+	pivot:SetPoint("CENTER", relativeTo, "TOPLEFT", x, -y)
+	return pivot
 end
 
 --- A frame drawn as a sprite sliced in three across: its end caps keep their size, its middle stretches.

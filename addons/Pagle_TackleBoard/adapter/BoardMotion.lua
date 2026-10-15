@@ -13,15 +13,11 @@ local ns = select(2, ...)
 -- The board's loops run only while it shows: the driver drops an owner that no longer shows, and the board starts them
 -- again when it opens. With Core's Animations setting off, everything draws in its settled state.
 
---- Whether things move: Core's Animations setting (on by default). Core doesn't offer it yet (the announcements art
---- adds it), so until it does this reads on; the one seam the board's motion reads.
+--- Whether things move: Core's Animations setting, `Pagle.IsAnimationsOn()` (announcements.md › Contracts; on by
+--- default); the one seam the board's motion reads.
 ---@return boolean
 function ns.AnimationsOn()
-	local setting = rawget(Pagle, "IsAnimationsOn")
-	if type(setting) == "function" then
-		return setting() ~= false
-	end
-	return true
+	return Pagle.IsAnimationsOn() ~= false
 end
 
 -- The Campfire, in its moving layers (the kit's P.Fire): each stage is baked in layers that share the fire's 138 × 130

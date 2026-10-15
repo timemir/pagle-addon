@@ -16,6 +16,7 @@ libs\AceDB-3.0\AceDB-3.0.lua
 data\Catalogue.lua
 data\AnnounceArt.lua
 data\ShopArt.lua
+data\FieldArt.lua
 
 locale\enUS.lua
 data\Lore.lua
@@ -55,6 +56,7 @@ logic\Summary.lua
 logic\Cards.lua
 logic\Announcements.lua
 logic\ToastStyles.lua
+logic\Motion.lua
 logic\Menu.lua
 logic\ReloadReminder.lua
 logic\FieldReportText.lua
@@ -94,6 +96,7 @@ adapter\Moments.lua
 adapter\Summary.lua
 adapter\Skins.lua
 adapter\Art.lua
+adapter\Motion.lua
 adapter\Announcements.lua
 adapter\CoreGoods.lua
 adapter\Cards.lua

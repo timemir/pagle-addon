@@ -52,7 +52,7 @@ Part of [Core](README.md). Core presents every Announcement (ADR 0007): Modules 
 
   Whatever isn't shown still goes to the Session summary (ANN-R25), except a catch Nod (ANN-R13).
 - **ANN-R21** **Cards** (the Session summary and the Write-up) show only when the toast and big lanes are empty: nothing on screen in either and nothing waiting. They don't count as interruptions and play no sound. At login, held Announcements show first, then the Write-up, then "Your last session".
-- **ANN-R22** A moment may carry a **record ruler** (`ruler = { old, new, unit, label }`). On a toast headline, the ruler fills past the old record's mark while the number counts up, shows the "+x" margin, then the "New record" stamp lands. On a Nod headline, a compact ruler with the margin shows instead. A ruler shows only for the headline; a record riding as a stamp shows only its stamp. `label` says whose number it is ("Pagle size" for a Simulated Size, "weight" for a real trophy weight). For a Simulated Size, `unit` is `"length"` and `old` and `new` are millimetres: Core shows them and the margin with `Pagle.FormatLength` in the Angler's length unit ([catch-log.md](catch-log.md#simulated-size), LOG-R69), and a margin that rounds to zero in that unit shows as "+<0.1 cm" or "+<0.1 in". Any other `unit` is shown as given ("lb"). A Module never leaves the ruler off a size record.
+- **ANN-R22** A moment may carry a **record ruler** (`ruler = { old, new, unit, label }`). On a toast headline, the ruler fills past the old record's mark while the number counts up, shows the "+x" margin, then the "New record" stamp lands. On a Nod headline, a compact ruler with the margin shows instead. A ruler shows only for the headline; a record riding as a stamp shows only its stamp. `label` names the number in plain words ("length" for a Simulated Size, "weight" for a trophy weight), never where it comes from. For a Simulated Size, `unit` is `"length"` and `old` and `new` are millimetres: Core shows them and the margin with `Pagle.FormatLength` in the Angler's length unit ([catch-log.md](catch-log.md#simulated-size), LOG-R69), and a margin that rounds to zero in that unit shows as "+<0.1 cm" or "+<0.1 in". Any other `unit` is shown as given ("lb"). A Module never leaves the ruler off a size record.
 - **ANN-R23** A moment may carry `coins = N`. Core sums the `coins` of the moments in each Announcement into its own "+N" Pagle Coins stamp, always shown (outside the 4-stamp limit and the merging of identical stamps), Nods included. A Cast's two Announcements each sum only their own moments, so no Coins show twice. Coins never make an Announcement of their own, and a purchase makes none ([wallet-and-shop.md](wallet-and-shop.md)).
 - **ANN-R24** Ordinary display picks the headline's sound (ANN-R71) when the Announcement appears on screen, never when it is queued. When a toast appears in the same frame as a banner or splash that played its sound (a Cast's two Announcements, or the release after combat, ANN-R36), only the higher rung's sound plays: the toast is silent, and the next toast plays the variant this one would have.
 - **ANN-R25** Every moment also goes to the Session summary (ANN-R50), whether or not it popped up. The catch Nod is the one exception: it is Core's own, never a Module's moment, and never reaches the summary (ANN-R13).
@@ -137,7 +137,7 @@ Part of [Core](README.md). Core presents every Announcement (ADR 0007): Modules 
 | `global.pending` | moments raised with no Session open (ANN-R52) |
 | `global.cards` | up to 3 cards waiting to be seen: `{ title, numbers = { casts, catches, gotAway, seconds }, coins, lines, moments, writeUp }` |
 | `global.writeUp` | Write-up sections waiting: `{ { module, order, title, heading, lines } }` |
-| `profile.announcements` | `{ cozy = false, everyCatch = true, budget = { on = true, count = 4, window = 300 } }` (`everyCatch`: "Show every catch", ANN-R13) |
+| `profile.announcements` | `{ cozy = false, everyCatch = true, motion = true, budget = { on = true, count = 4, window = 300 } }` (`everyCatch`: "Show every catch", ANN-R13; `motion`: "Animations", UI › Motion) |
 | `profile.appearance` | equipped toast style and sound set, among other slots ([wallet-and-shop.md](wallet-and-shop.md#data)) |
 
 A stored moment keeps: `module`, `moduleTitle`, `moduleOrder`, `kind`, `rung`, `title`, `text`, `icon`, `stamp`, `coins`, `expiresAt`, `pastText`. The display lanes, the budget's recent interruptions and the hold live in memory only.
@@ -166,6 +166,10 @@ A stored moment keeps: `module`, `moduleTitle`, `moduleOrder`, `kind`, `rung`, `
 ```
 
 `seal` is what a banner headline's wax seal shows: a number pressed into it (an Angler Level, a Catch Milestone's count), a pressed mark (`"waves"`, `"book"`, `"quill"`), or `"crest"` for the Prestige crest holding the Angler's portrait with the title on its ribbon. Any other value, or none, shows the waves. Only a banner headline's is read.
+
+### `Pagle.IsAnimationsOn()`
+
+True unless the player turned the Animations setting off (UI › Motion). A Module that moves its own frames follows it: off, they appear as they settle.
 
 ### `M:RaiseWriteUp(section)`
 
@@ -214,12 +218,25 @@ Every frame is drawn from the announcements art kit: a toast is a fresh entry in
 
 Look reference: the announcements art kit (`pagle-announce-kit`, its previews and its probe addon). The text above wins where they differ.
 
+### Motion
+
+The frames move as the art kit's motion has them (`pagle-announce-kit-with-animations`, its `MOTION.md`). Each plays once, when the Announcement appears, and holds where it settles; drawn again for a toast style change, it carries on. A sample on the Curio Shop's stage stands still, and a Nod and a card have none. With the **Animations** setting off, each appears as it settles. Times are from when it appears:
+
+| Frame | Motion | Settled |
+|---|---|---|
+| Toast | It rises 26 units and fades in (0.56–0.98 s, overshooting a little); its name is written out left to right in 16 steps (0.98–1.82 s); its stamps slam down from 2.6x (1.89–2.31 s, overshooting); its coin turns in edge-on (2.31–2.66 s). Its record ruler keeps its own count (ANN-R22), and its "New record" stamp slams down as it lands. | 2.66 s |
+| Banner | The seal or crest drops from 2.2x (0–0.63 s, overshooting); the gilt tooling draws out from the seal (0.35–1.12 s); the rays fade in, turning from −8° (0.35–1.4 s). | 1.4 s |
+| Splash | The rays turn clockwise once a minute for as long as it shows. | never |
+
+One `OnUpdate` drives every animation (`adapter/Motion.lua`, with the keyframe maths in `logic/Motion.lua`), since `AnimationGroup` can't overshoot, step, ease each segment, or animate a width, a texture coordinate or a clip.
+
 ## Settings
 
 | Option | Values | Default |
 |---|---|---|
 | Cozy mode | on/off | off |
 | Show every catch | on/off | on (ANN-R13) |
+| Animations | on/off | on (UI › Motion) |
 | Interruption budget | on/off | on |
 | Budget: interruptions | 1–10 | 4 |
 | Budget: window | 1–15 min | 5 min |

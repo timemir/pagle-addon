@@ -166,6 +166,19 @@ describe("FakePagle", function()
 		assert.are.same({ true, false }, fired)
 	end)
 
+	it(
+		"answers Pagle.IsAnimationsOn from the profile's Animations setting, on by default (announcements.md"
+			.. " › Contracts)",
+		function()
+			local fake = newFakePagle()
+			local before = fake.Pagle.IsAnimationsOn()
+
+			fake.profile.announcements.motion = false
+
+			assert.are.same({ true, false }, { before, fake.Pagle.IsAnimationsOn() })
+		end
+	)
+
 	it("passes WoW events to the handlers Modules registered through Pagle (CORE-R23)", function()
 		local fake = newFakePagle()
 		local got = {}
@@ -1059,6 +1072,21 @@ describe("FakePagle", function()
 				"Pagle dev: dev commands are on.",
 				"Pagle dev: the Session ended, as if its gap had passed.",
 			}, fake.printed)
+		end)
+
+		it("has the next Cast after endsession start a new Session, as Core does (#258, LOG-R99)", function()
+			local fake = newFakePagle()
+			fake.login()
+			fake.enterWorld()
+			local first = assert(fake.playCast("caught", { { itemID = 6358, quantity = 1 } }))
+			fake.slash("dev on")
+			fake.slash("dev endsession")
+
+			fake.wait(10)
+			local second = assert(fake.playCast("caught", { { itemID = 6358, quantity = 1 } }))
+
+			assert.are.same({ first.id, second.id }, { first.session, second.session })
+			assert.are.equal(second.id, fake.Pagle.GetSession().id)
 		end)
 
 		it("hands the glyph probe and Core's fonts to fake.glyphProbes, as Core shows them (#248, CORE-R9)", function()

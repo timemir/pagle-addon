@@ -27,6 +27,7 @@ logic\CatchMilestones.lua
 logic\Moments.lua
 logic\Done.lua
 logic\Projection.lua
+logic\Derived.lua
 logic\InkBar.lua
 logic\JournalText.lua
 logic\Journal.lua

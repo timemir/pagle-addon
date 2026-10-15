@@ -56,16 +56,27 @@ end
 ---@param x number
 ---@return string
 function ns.Nice(x)
+	if x < 20 then
+		return tostring(ns.NiceValue(x))
+	end
+	return ns.Number(ns.NiceValue(x))
+end
+
+--- The number ns.Nice writes (STA-R44): below 1.5, 1; below 20, the nearest whole number; otherwise rounded to two
+--- significant figures. 39.6 is 40, 212 is 210, 1,447 is 1,400.
+---@param x number
+---@return integer
+function ns.NiceValue(x)
 	if x < 1.5 then
-		return "1"
+		return 1
 	elseif x < 20 then
-		return tostring(ns.Round(x))
+		return ns.Round(x)
 	end
 	local unit = 1 -- the second significant figure's place value
 	while x >= 100 * unit do
 		unit = unit * 10
 	end
-	return ns.Number(ns.Round(x / unit) * unit)
+	return ns.Round(x / unit) * unit
 end
 
 --- A count with its noun (STA-R59): "{n} Casts", with the singular when n is 1 ("1 Cast") and thousands separators

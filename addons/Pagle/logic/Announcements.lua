@@ -530,7 +530,7 @@ ns.RULER_STAMP_DELAY = 0.4
 ---@field done boolean    -- it has landed: the margin shows
 ---@field stamped boolean -- RULER_STAMP_DELAY after it landed: the "New record" stamp shows, and the animation ends
 ---@field margin string   -- "+x" with the unit ("+1.6 lb")
----@field label string    -- whose number it is ("weight")
+---@field label string    -- the number in plain words ("length", "weight")
 
 -- A ruler's number with its unit, to one decimal: millimetres in the Angler's length unit for "length" (LOG-R69),
 -- any other unit as given.

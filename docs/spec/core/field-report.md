@@ -94,12 +94,12 @@ Part of [Core](README.md). A **Field report** is the text an Angler copies out o
 
 ### The box and its entry points
 
-- **REP-R40** `/pagle report` and `Pagle.OpenFieldReport()` open the **report box**: a native dialog titled "Help chart the waters" with:
-  - the privacy line (REP-R37)
-  - the report text in a read-only, selected edit box (Ctrl+C to copy)
-  - "Part N of M" with Next / Previous, hidden when there is one part; the box always opens at part 1
-  - the issue-form URL in a second selectable edit box (addons can't open a browser)
-  - Close (Esc closes it too)
+- **REP-R40** `/pagle report` and `Pagle.OpenFieldReport()` open the **report box**: a sea chart titled "Help chart the waters" (see [UI](#ui)) with:
+  - the privacy line (REP-R37), and "Ctrl+C to copy" beside it
+  - the report text typed on a slip, in a read-only, selected edit box (Ctrl+C to copy) that scrolls
+  - "Part N of M" between a previous and a next arrow, hidden when there is one part; the box always opens at part 1
+  - the issue-form URL, after "POST IT AT", in a second selectable edit box (addons can't open a browser)
+  - Close, and a brass X (Esc closes it too)
   The text is built when the box opens and isn't refreshed while it stays open.
 - **REP-R41** If no row qualifies, the box says "Nothing to report. Thanks for checking!" and shows no text or URL.
 - **REP-R42** While the projection is updating, the box says "Updating... try again in a moment." and shows no text.
@@ -128,7 +128,7 @@ The format in REP-R30–R33 is a contract with the repo's parser (`docs/spec/con
 
 ## UI
 
-The report box (REP-R40–R42, REP-R47). Native dialog look.
+The report box (REP-R40–R42, REP-R47), in the QoL and Field report art kit's look (`PagleArtField`, post-1.0 art): a frame of Core's own, no template, drawn from `media/field/Chart.blp` (the chart with the slip, and the bare chart for REP-R41's and REP-R42's lines; 2 MB) and `media/field/Field.blp` (the compass, the brass arrows and X, the leather Close, the scroll thumb; 1 MB), both made only when the box first opens. Positions are the kit's, from the box's top left: the compass at 22, 16, the title in IM Fell English beside it; the privacy line in its italic at 22, 58; "Ctrl+C to copy" in Caveat at the right; the slip's text in Cutive Mono from 34, 92, 426 × 156, scrolled by the mouse wheel or the brass thumb down its right edge (shown only while the part is longer than the slip), and following the cursor; "POST IT AT" in red from 22 with the URL in Cutive Mono on the line 279 down, the label ending before the chart's URL field at 90 (set smaller, down to three quarters of its size, if the client draws it wider) and the URL box starting after it, at 98 or later, so the two never overlap; on the line 324 down, the arrows with "Part N of M" in Caveat on the left, and Close at the centre. A greyed arrow can't page further. A message (REP-R41, REP-R42) is in Caveat on the bare chart, with no slip, hint, URL or part controls.
 
 ## Settings
 

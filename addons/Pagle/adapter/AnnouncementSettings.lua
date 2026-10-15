@@ -7,7 +7,7 @@ if not Pagle then
 end
 
 -- Core's rows on the Announcements page (SET-R30): Cozy mode, Interruption budget, the budget's Interruptions and
--- Per, and Show every catch (the catch Nod, ANN-R13). Native controls on proxy settings over
+-- Per, Show every catch (the catch Nod, ANN-R13) and Animations (announcements.md › Motion). Native controls on proxy settings over
 -- `PagleDB.profile.announcements` (announcements.md › Data), built when adapter/Settings.lua registers the page. Core's slots in the "Announcements" category, Toast style and Sound
 -- set, end them as slot dropdowns (CORE-R42, adapter/LookAndFeel.lua).
 local L = ns.L
@@ -24,8 +24,9 @@ local BUDGET = "Pagle_Core_budget"
 local COUNT = "Pagle_Core_budgetCount"
 local WINDOW = "Pagle_Core_budgetWindow"
 local EVERY_CATCH = "Pagle_Core_everyCatch"
+local MOTION = "Pagle_Core_motion"
 
----@return { cozy: boolean, everyCatch: boolean, budget: { on: boolean, count: integer, window: integer } }
+---@return { cozy: boolean, everyCatch: boolean, motion: boolean, budget: { on: boolean, count: integer, window: integer } }
 local function stored()
 	return ns.db.profile.announcements
 end
@@ -122,6 +123,14 @@ ns.CoreSettingsRows.announcements = function(page, layout)
 		end
 	)
 	greys(Settings.CreateCheckbox(page, everyCatch, L.SETTINGS_EVERY_CATCH_TOOLTIP), notCozy)
+
+	-- The announcements' motion: off, each appears as it settles. Never greyed: Cozy mode still shows a splash.
+	local motion = Settings.RegisterProxySetting(page, MOTION, Boolean, L.SETTINGS_MOTION, true, function()
+		return stored().motion
+	end, function(value)
+		stored().motion = value
+	end)
+	Settings.CreateCheckbox(page, motion, L.SETTINGS_MOTION_TOOLTIP)
 
 	-- Toast style and Sound set: the same equipped looks as on Look and Feel, which this page's Defaults button
 	-- restores too (SET-R30, SET-R33, SET-R51).

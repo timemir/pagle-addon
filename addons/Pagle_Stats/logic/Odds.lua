@@ -17,7 +17,13 @@ ns.ODDS_THRESHOLD = 100
 ns.NEVER_CAUGHT_BOUND = 3
 
 --- One item's reading in one place (STA-R40): the reading shape every view and the Dry spell read.
----@class StatsReading
+---@class StatsReading : StatsReadingCounts
+---@field where string          -- "here", or "across {zone}" (STA-R46)
+---@field windowName string?    -- the window's name (STA-R47), nil for none
+---@field sideText string?      -- "at or above {line} skill" or "below {line} skill", nil for side `na` (STA-R46)
+
+--- A reading without its words (ns.ReadingCounts): what the backend reads (#223).
+---@class StatsReadingCounts
 ---@field item integer
 ---@field area integer          -- the reading's own place, a zone or subzone
 ---@field zone integer          -- its zone
@@ -29,9 +35,6 @@ ns.NEVER_CAUGHT_BOUND = 3
 ---@field k integer             -- the hit's n, 0 if none
 ---@field hit StatsHit?         -- the item's hit in the scope (STA-R24)
 ---@field state "learning"|"unseen"|"known"   -- STA-R43
----@field where string          -- "here", or "across {zone}" (STA-R46)
----@field windowName string?    -- the window's name (STA-R47), nil for none
----@field sideText string?      -- "at or above {line} skill" or "below {line} skill", nil for side `na` (STA-R46)
 
 -- The side scopes in STA-R41's tie order: the first of the largest wins.
 local SIDES = { "hi", "lo", "na" }
@@ -78,6 +81,29 @@ end
 ---@return StatsReading
 function ns.Reading(state, item, area, live, places)
 	places = places or ns.places
+	local reading = ns.ReadingCounts(state, item, area, live, places) --[[@as StatsReading]]
+	local line = places:NoJunkLine(reading.zone)
+	local L = ns.L
+	if reading.side == "hi" then
+		reading.sideText = L.ODDS_SIDE_HI:format(line)
+	elseif reading.side == "lo" then
+		reading.sideText = L.ODDS_SIDE_LO:format(line)
+	end
+	reading.where = reading.viaZone and L.ODDS_ACROSS:format(ns.AreaName(reading.zone)) or L.ODDS_HERE
+	reading.windowName = reading.window and ns.WindowName(reading.window)
+	return reading
+end
+
+--- An item's reading in a place without its words (STA-R40–R43): ns.Reading's side, scope, counts and state, with no
+--- `where`, `windowName` or `sideText`. It reads no ns.L, so Pagle's backend reads it from logic/ alone (#223).
+---@param state StatsState
+---@param item integer
+---@param area integer
+---@param live integer?
+---@param places StatsPlaceTables? `ns.places` if nil
+---@return StatsReadingCounts
+function ns.ReadingCounts(state, item, area, live, places)
+	places = places or ns.places
 	local zone = ns.ZoneOf(state, area, places.lookups)
 	local line = places:NoJunkLine(zone)
 	local side = readingSide(state, area, live, line)
@@ -92,13 +118,6 @@ function ns.Reading(state, item, area, live, places)
 	local hit = state.hits[ns.HitKey(scope, item)]
 	local k = hit and hit.n or 0
 	local odds = n < ns.ODDS_THRESHOLD and "learning" or k == 0 and "unseen" or "known"
-	local L = ns.L
-	local sideText
-	if side == "hi" then
-		sideText = L.ODDS_SIDE_HI:format(line)
-	elseif side == "lo" then
-		sideText = L.ODDS_SIDE_LO:format(line)
-	end
 	return {
 		item = item,
 		area = area,
@@ -111,9 +130,6 @@ function ns.Reading(state, item, area, live, places)
 		k = k,
 		hit = hit,
 		state = odds,
-		where = viaZone and L.ODDS_ACROSS:format(ns.AreaName(zone)) or L.ODDS_HERE,
-		windowName = window and ns.WindowName(window),
-		sideText = sideText,
 	}
 end
 

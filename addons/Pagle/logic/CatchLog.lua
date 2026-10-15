@@ -447,6 +447,7 @@ end
 ---@field global table PagleDB.global
 ---@field undecodable table<integer, true> the seqs counted in decodeErrors this login
 ---@field package cutters table<integer, PagleSessionCutter> a cutter fed up to each seq a read started or ended at
+---@field package breaks PagleSessionBreaks where Sessions ended early: PagleDB.global.sessionBreaks (LOG-R99)
 ---@field package tail PagleSessionCutter? fed every entry up to the log's end, once something needs it (Append)
 ---@field package prestiges integer? the Prestiges in the log, once something needs them (Prestiges)
 ---@field package getItem (fun(itemID: integer): PagleItem?)? the catalogue the Casts it hands out are sized by (LOG-R65)
@@ -474,8 +475,8 @@ local function cutterAt(catchLog, afterSeq)
 	if known then
 		return known:Copy()
 	end
-	local cutter = ns.NewSessionCutter()
-	local first = ns.SessionStartSeq(catchLog:Reverse("cast", afterSeq) --[[@as fun(): PagleCast?]])
+	local cutter = ns.NewSessionCutter(catchLog.breaks)
+	local first = ns.SessionStartSeq(catchLog:Reverse("cast", afterSeq) --[[@as fun(): PagleCast?]], catchLog.breaks)
 	if first then
 		local entries, characters = catchLog.data.entries, catchLog.data.characters
 		for seq = first, afterSeq do
@@ -617,6 +618,17 @@ function CatchLog:Session()
 	return self:tailCutter():Session()
 end
 
+--- `/pagle dev endsession` (#258): notes in PagleDB.global.sessionBreaks that the log's latest Session ended early
+--- after its last Cast (LOG-R99), so the next Cast opens a new Session, however soon, now and in every later read.
+function CatchLog:BreakSession()
+	local session = self:tailCutter():Session()
+	if session then
+		local breaks = self.global.sessionBreaks or {}
+		breaks[session.lastID] = true
+		self.global.sessionBreaks = breaks
+	end
+end
+
 --- Creates the log's logId if it has none yet and has a first character (LOG-R15). Core calls it once the
 --- logged-in character is in the table, so the logId exists before the first append.
 ---@param now integer server time
@@ -630,7 +642,7 @@ end
 --- (LOG-R15). Every Cast it hands out sizes its Species items through `getItem`, the catalogue's GetItem, asked at
 --- each decode, so a released catalogue sizes them from then on (LOG-R65, LOG-R96); without it, no item has a size.
 ---@param saved table?
----@param global table PagleDB.global, where undecodable entries are counted (LOG-R16)
+---@param global table PagleDB.global, where undecodable entries are counted (LOG-R16) and Session breaks kept (LOG-R99)
 ---@param now integer server time
 ---@param getItem (fun(itemID: integer): PagleItem?)?
 ---@return PagleCatchLog catchLog
@@ -650,5 +662,10 @@ function ns.OpenCatchLog(saved, global, now, getItem)
 	end
 	ensureLogId(data, now)
 	local catchLog = { data = data, global = global, undecodable = {}, cutters = {}, getItem = getItem }
+	-- Asked as each Cast is fed, so the cutters kept for the login see a break noted after they were made.
+	function catchLog.breaks(castID)
+		local breaks = global.sessionBreaks
+		return type(breaks) == "table" and breaks[castID] == true
+	end
 	return setmetatable(catchLog, CatchLog), started
 end
