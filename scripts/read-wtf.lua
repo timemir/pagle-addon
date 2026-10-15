@@ -942,8 +942,7 @@ local function printHuntsStored(hunts, listErr, stored, log, options)
 		return list
 	end
 	-- What Hunts hands Core (its def's extraFingerprint), after the content fingerprint as Core stores it (LOG-R70).
-	local def = hunts.ProjectionDef({}, {}, {})
-	local expected = tostring(catalogue.CONTENT_FINGERPRINT) .. "+" .. tostring(def.extraFingerprint)
+	local expected = tostring(catalogue.CONTENT_FINGERPRINT) .. "+" .. tostring(hunts.HuntsExtraFingerprint(list))
 	if stored.fingerprint == expected then
 		print("fingerprint: the catalogue's plus the Hunt list's (DATA-R72)")
 	else
@@ -984,22 +983,18 @@ local function printHuntProgress(hunts, id, hunt, progress, now)
 	end
 end
 
--- The state's lines (hunts.md › Projection state): the Session summary line Hunts would set at `now` (HNT-R89) from
--- its own Current and HuntDone, the state's counts, each Hunt with progress in Hunt-list order (then any the list
+-- The state's lines (hunts.md › Projection state): the Session summary line Hunts would set at `now` (HNT-R89), from
+-- its own ns.HuntsSummaryLine and wording, the state's counts, each Hunt with progress in Hunt-list order (then any the list
 -- doesn't have, by ID), and the earned set titles (HNT-R23).
 local function printHuntsState(hunts, list, state, now, options)
 	local progressOf, sets = tableOr(state.hunts), tableOr(state.sets)
 	local ids, titles = sortedKeys(progressOf), sortedKeys(sets)
 	if list then
-		local current, done = list:Current(now), 0
-		for _, hunt in ipairs(current) do
-			done = done + (hunts.HuntDone(progressOf[hunt.id]) and 1 or 0)
-		end
+		-- Hunts' own line and wording (logic/Moments.lua, locale/), numbers written plain.
+		local line = hunts.HuntsSummaryLine({ hunts = progressOf, sets = sets }, now, tostring)
 		print(
-			("summary line: Hunts: %d of %d done · %s, at %s (%s) (HNT-R89)"):format(
-				done,
-				#current,
-				count(#titles, "title"),
+			("summary line: %s, at %s (%s) (HNT-R89)"):format(
+				line,
 				utc(now),
 				options.now and "--now" or "the reader's clock"
 			)

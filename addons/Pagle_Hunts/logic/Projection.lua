@@ -107,6 +107,14 @@ function ns.ApplyCast(state, cast, lookups)
 	return reached
 end
 
+--- What Hunts hands Core as its projection's extraFingerprint (LOG-R70): the Hunt list's fingerprint, so a new Hunt
+--- list rebuilds (DATA-R72, LOG-R72). scripts/read-wtf.lua checks the stored one against it.
+---@param list HuntList
+---@return string?
+function ns.HuntsExtraFingerprint(list)
+	return list:Fingerprint()
+end
+
 --- Hunts' projection def (HNT-R136, LOG-R70), bound to `global.projection`, which it makes if missing: Core owns it
 --- from here on. `apply` reads only Casts (Hunts appends no records). A `"live"` Cast hands what it newly reached to
 --- `ns.outlets.Reached`, reports Coins if they changed (HNT-R110) and redraws the views (HNT-R42); a `"replay"` or
@@ -122,8 +130,7 @@ function ns.ProjectionDef(global, lookups, client)
 	return {
 		db = global.projection,
 		rulesVersion = ns.HUNTS_RULES_VERSION,
-		-- A new Hunt list rebuilds (DATA-R72, LOG-R72).
-		extraFingerprint = ns.hunts:Fingerprint(),
+		extraFingerprint = ns.HuntsExtraFingerprint(ns.hunts),
 		reset = ns.NewHuntsState,
 		---@param state HuntsState
 		---@param record PagleRecord
