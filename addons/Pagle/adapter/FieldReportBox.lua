@@ -55,6 +55,9 @@ local FONTS = {
 -- The font objects, made the first time the box is built: PagleField<key>.
 ---@type table<string, table>
 local fonts = {}
+-- The file each font object loaded: its bundled face, or the fallback.
+---@type table<string, string>
+local fontFiles = {}
 
 -- The font object for `key`, made the first time it is asked for.
 ---@param key string
@@ -63,7 +66,9 @@ local function font(key)
 	if not fonts[key] then
 		local def = FONTS[key]
 		local made = CreateFont("PagleField" .. key)
-		if made:SetFont(FONT_DIR .. def[1], def[2], "") == false then
+		fontFiles[key] = FONT_DIR .. def[1]
+		if made:SetFont(fontFiles[key], def[2], "") == false then
+			fontFiles[key] = FALLBACK
 			made:SetFont(FALLBACK, def[2], "")
 		end
 		local ink = INKS[def[3]]
@@ -331,8 +336,7 @@ local function build()
 	frame.postAt:SetPoint("LEFT", frame, "TOPLEFT", 22, -URL_Y)
 	frame.postAt:SetText(L.FIELD_REPORT_POST_AT)
 	frame.url = typedBox(frame, "Url")
-	frame.url:SetPoint("LEFT", frame, "TOPLEFT", 98, -URL_Y)
-	frame.url:SetSize(WIDTH - 44 - 76 - 20, 20)
+	frame.url:SetHeight(20)
 	keepText(frame, frame.url, function()
 		return ns.FIELD_REPORT_URL
 	end)
@@ -350,8 +354,9 @@ local function build()
 		showPart(frame, frame.part + 1)
 	end)
 
+	-- At the bottom centre, clear of the part controls on the left.
 	frame.close = leatherButton(frame)
-	frame.close:SetPoint("RIGHT", frame, "TOPRIGHT", -22, -FOOT_Y)
+	frame.close:SetPoint("CENTER", frame, "TOP", 0, -FOOT_Y)
 	frame.close:SetScript("OnClick", function()
 		close(frame)
 	end)
@@ -362,6 +367,22 @@ local function build()
 	table.insert(UISpecialFrames, FRAME_NAME)
 	frame:Hide()
 	return frame
+end
+
+-- Lays out the URL line (ns.FieldReportUrlLine): "POST IT AT" at its font's size, set smaller if the client draws it
+-- too wide to end before the chart's URL field, and the URL edit box after it, so the two never overlap.
+---@param frame PagleFieldReportBox
+local function layOutUrlLine(frame)
+	local label = frame.postAt
+	label:SetFontObject(font("PostAt"))
+	local scale, urlX = ns.FieldReportUrlLine(label:GetStringWidth())
+	if scale < 1 then
+		label:SetFont(fontFiles.PostAt, FONTS.PostAt[2] * scale, "")
+		label:SetTextColor(INKS.red[1] / 255, INKS.red[2] / 255, INKS.red[3] / 255)
+	end
+	frame.url:ClearAllPoints()
+	frame.url:SetPoint("LEFT", frame, "TOPLEFT", urlX, -URL_Y)
+	frame.url:SetWidth(WIDTH - 42 - urlX)
 end
 
 -- Opens the box with `view`, at part 1 (REP-R40), or with REP-R41's or REP-R42's line on the bare chart, and no text.
@@ -385,6 +406,7 @@ local function show(view)
 	frame.url:SetShown(view.url ~= nil)
 	frame.url:SetText(view.url or "")
 	frame:Show()
+	layOutUrlLine(frame)
 	if hasText then
 		showPart(frame, 1)
 	else

@@ -279,6 +279,34 @@ describe("The Field report box's look (field-report.md › UI)", function()
 		assert.is_true(frame.next.art.desaturated)
 	end)
 
+	it("never lets POST IT AT run under the URL: a wide label is set smaller, and the URL starts after it", function()
+		local ns = enterWorld(loadCore({ BUILD_ENTRY }), 2).ns
+
+		-- It fits before the chart's URL field (from 90, 4 short): as drawn, the URL at 98.
+		assert.are.same({ 1, 98 }, { ns.FieldReportUrlLine(60) })
+		assert.are.same({ 1, 98 }, { ns.FieldReportUrlLine(64) })
+		-- Too wide: smaller, to end at 86, the URL still at 98.
+		local scale, urlX = ns.FieldReportUrlLine(80)
+		assert.are.equal(0.8, scale)
+		assert.are.equal(98, urlX)
+		-- Wider than it can shrink: three quarters of its size, and the URL starts 6 after it.
+		assert.are.same({ 0.75, 22 + 150 * 0.75 + 6 }, { ns.FieldReportUrlLine(150) })
+	end)
+
+	it("puts the URL box after the label and Close at the bottom centre, with or without parts", function()
+		for _, history in ipairs({ unchartedHistory(4, FIRST), { BUILD_ENTRY } }) do
+			local loaded = enterWorld(loadCore(history), 2)
+			loaded.ns.FIELD_REPORT_PART_BYTES = 200
+
+			loaded.env.Pagle.OpenFieldReport()
+
+			local frame = assert(box(loaded))
+			assert.are.same({ { "CENTER", frame, "TOP", 0, -324 } }, frame.close.points)
+			assert.are.same({ { "LEFT", frame, "TOPLEFT", 98, -279 } }, frame.url.points)
+			assert.are.same({ { "LEFT", frame, "TOPLEFT", 22, -324 } }, frame.previous.points)
+		end
+	end)
+
 	it("closes with the brass X too, giving back the keyboard (REP-R40)", function()
 		local loaded = enterWorld(loadCore(unchartedHistory(2, FIRST)), 2)
 		loaded.env.Pagle.OpenFieldReport()
