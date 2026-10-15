@@ -131,39 +131,89 @@ describe("Pagle_Stats with Core", function()
 		end
 	)
 
-	it("adds no settings pages of its own (STA-R4, CORE-R42)", function()
-		local loaded = loadAddon("Pagle_Stats", FOREVER_GLOBALS)
-		local plain = loadAddon("Pagle", FOREVER_GLOBALS)
-		loaded.client.fire("PLAYER_LOGIN")
-		plain.client.fire("PLAYER_LOGIN")
-
-		local function categories(client)
-			local names = {}
-			for i, category in ipairs(client.settings.categories) do
-				names[i] = category.name
+	it(
+		"toggles PagleStatsBook from /pagle stats, /pagle stats with any text, the compartment and the status button",
+		function()
+			-- STA-R70, STA-R4, CORE-R44, CORE-R50, CORE-R62, SET-R12: each entry point toggles the book.
+			local loaded = loadAddon("Pagle_Stats", FOREVER_GLOBALS)
+			loaded.client.fire("PLAYER_LOGIN")
+			local function shown()
+				for _, frame in ipairs(loaded.client.frames) do
+					if frame.name == "PagleStatsBook" then
+						return frame:IsShown()
+					end
+				end
+				return false
 			end
-			return names
+
+			local seen = {}
+			loaded.env.SlashCmdList.PAGLE("stats")
+			seen[#seen + 1] = shown()
+			loaded.env.SlashCmdList.PAGLE("stats anything at all")
+			seen[#seen + 1] = shown()
+			compartmentMenu(loaded).click("Stats")
+			seen[#seen + 1] = shown()
+			local _, buttons = statusList(loaded)
+			buttons[1]:Click()
+			seen[#seen + 1] = shown()
+
+			assert.are.same({ true, false, true, false }, seen)
 		end
-		assert.are.same(categories(plain.client), categories(loaded.client))
+	)
+
+	it("opens and toggles the book in combat, while restricted (STA-R70, STA-R93)", function()
+		local loaded = loadAddon("Pagle_Stats", FOREVER_GLOBALS)
+		loaded.client.fire("PLAYER_LOGIN")
+		setCombat(loaded, true)
+
+		loaded.env.SlashCmdList.PAGLE("stats")
+
+		assert.is_true(loaded.ns.book:IsShown())
 	end)
 
-	it("sets no global but PagleStatsDB: its AceAddon is reached through LibStub alone (STA-R1)", function()
-		local loaded = loadAddon("Pagle_Stats", FOREVER_GLOBALS)
-		local plain = loadAddon("Pagle", FOREVER_GLOBALS)
-		loaded.client.fire("PLAYER_LOGIN")
-		plain.client.fire("PLAYER_LOGIN")
+	it(
+		"adds no settings pages of its own, only Core's Trackers page for its section (STA-R4, CORE-R42, SET-R44)",
+		function()
+			local loaded = loadAddon("Pagle_Stats", FOREVER_GLOBALS)
+			local plain = loadAddon("Pagle", FOREVER_GLOBALS)
+			loaded.client.fire("PLAYER_LOGIN")
+			plain.client.fire("PLAYER_LOGIN")
 
-		local added = {}
-		local before = globalNames(plain.env)
-		for name in pairs(globalNames(loaded.env)) do
-			if not before[name] then
-				added[#added + 1] = name
+			local function categories(client)
+				local names = {}
+				for i, category in ipairs(client.settings.categories) do
+					names[i] = category.name
+				end
+				return names
 			end
+			assert.are.same({ "Pagle", "Announcements", "Look and Feel" }, categories(plain.client))
+			-- Core's own pages, with its Trackers page for Stats' section: Core's frame dropdown at least (STA-R88).
+			assert.are.same({ "Pagle", "Announcements", "Trackers", "Look and Feel" }, categories(loaded.client))
 		end
+	)
 
-		assert.are.same({ "PagleStatsDB" }, added)
-		assert.are.equal(loaded.ns.Stats, loaded.env.LibStub("AceAddon-3.0"):GetAddon("Pagle_Stats"))
-	end)
+	it(
+		"sets no global but PagleStatsDB and its row's mixin: its AceAddon is reached through LibStub (STA-R1)",
+		function()
+			local loaded = loadAddon("Pagle_Stats", FOREVER_GLOBALS)
+			local plain = loadAddon("Pagle", FOREVER_GLOBALS)
+			loaded.client.fire("PLAYER_LOGIN")
+			plain.client.fire("PLAYER_LOGIN")
+
+			local added = {}
+			local before = globalNames(plain.env)
+			for name in pairs(globalNames(loaded.env)) do
+				if not before[name] then
+					added[#added + 1] = name
+				end
+			end
+
+			-- The Watched Dry spells row's mixin, which its XML template names (adapter/Settings.xml, SET-R5).
+			table.sort(added)
+			assert.are.same({ "PagleStatsDB", "PagleStatsWatchedRowMixin" }, added)
+			assert.are.equal(loaded.ns.Stats, loaded.env.LibStub("AceAddon-3.0"):GetAddon("Pagle_Stats"))
+		end
+	)
 
 	it("keeps PagleStatsDB account-wide in one shared profile, at schema 1 (stats.md › Data)", function()
 		local loaded = loadAddon("Pagle_Stats", FOREVER_GLOBALS)
@@ -299,8 +349,15 @@ describe("Pagle_Stats without Pagle", function()
 	end)
 
 	-- A broken install: no Pagle, and nothing else either. Each file must stop at its first line, so it reads no
-	-- global but Pagle and writes none.
+	-- global but Pagle and writes none. An XML file only defines templates, which the client builds without running
+	-- Lua (adapter/Settings.xml).
+	local luaFiles = {}
 	for _, file in ipairs(addonFiles("Pagle_Stats")) do
+		if file:match("%.lua$") then
+			luaFiles[#luaFiles + 1] = file
+		end
+	end
+	for _, file in ipairs(luaFiles) do
 		it(file .. " starts with the Core guard and does nothing without Pagle (CORE-R11)", function()
 			---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no loadfile
 			local chunk = assert(loadfile("addons/Pagle_Stats/" .. file))

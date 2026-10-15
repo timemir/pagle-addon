@@ -60,8 +60,9 @@ stds.wow = {
 		"UnitCastingInfo",
 		"GetInventoryItemID",
 		-- GetItemNameByID: the Ledger's item names (LED-R97, LED-R126), and RequestLoadItemDataByID for the Journal's
-		-- uncached ones (LED-R126). GetItemInfo: the Field report's item names (REP-R30). GetItemIconByID: Stats' item icons
-		-- (STA-R59).
+		-- uncached ones (LED-R126). GetItemInfo: the Field report's item names (REP-R30). GetItemIconByID: a Hunt's
+		-- icon (HNT-R55) and Stats' item icons (STA-R59).
+		-- GetItemQualityByID: Stats' Catches by quality for an item Core has no quality for (STA-R33).
 		C_Item = {
 			fields = {
 				"GetItemInfoInstant",
@@ -69,6 +70,7 @@ stds.wow = {
 				"RequestLoadItemDataByID",
 				"GetItemInfo",
 				"GetItemIconByID",
+				"GetItemQualityByID",
 			},
 		},
 		C_Spell = { fields = { "GetSpellName" } },
@@ -80,7 +82,8 @@ stds.wow = {
 		-- (QOL-R83): ReloadUI is unprotected on build 70338 (QOL-R102), and the QoL boundary spec allows that one call.
 		"StaticPopup_Show",
 		"ReloadUI",
-		-- The Ledger's Prestige confirm (LED-R33), hidden when the Fish Journal closes.
+		-- The Ledger's Prestige confirm (LED-R33), hidden when the Fish Journal closes; the Curio Shop's Buy popup,
+		-- shown with StaticPopup_Show above and hidden when the shop closes (SHOP-R41).
 		"StaticPopup_Hide",
 		-- The character table, Skill Readings and build entries (LOG-R26, LOG-R30, LOG-R36).
 		"UnitName",
@@ -137,6 +140,14 @@ stds.wow = {
 		"ITEM_QUALITY5_DESC",
 		"ITEM_QUALITY6_DESC",
 		"ITEM_QUALITY7_DESC",
+		-- The tracker dock (CORE-R70, CORE-R71): its anchor sits under the minimap cluster by default, and a drag of a
+		-- docked tracker moves it only with Shift held. Both are in the pinned forever dump: Frames.lua lists
+		-- MinimapCluster and GlobalAPI.lua lists IsShiftKeyDown.
+		"MinimapCluster",
+		"IsShiftKeyDown",
+		-- The game's red error text, where Stats refuses a 4th watched Dry spell (STA-R61). The pinned forever dump's
+		-- Frames.lua lists UIErrorsFrame.
+		"UIErrorsFrame",
 	},
 }
 
@@ -184,12 +195,14 @@ stds.wow_variables = {
 		-- does. Gethe/wow-ui-source branch forever at 943764493e6b16d63ded3ab304150d1f05e58b57 ("1.60.1 (70338)"),
 		-- Interface/AddOns/Blizzard_StaticPopup/StaticPopup.lua: `StaticPopupDialogs = {}; -- Definitions`. QoL adds
 		-- its two dialogs to it: the conflict popup and its Reload now popup (QOL-R81, QOL-R83); the Ledger adds its
-		-- Prestige confirm (LED-R33), and the Tackle Board its reroll confirm (TKB-R56).
+		-- Prestige confirm (LED-R33), Core adds the Curio Shop's Buy popup (wallet-and-shop.md › UI: Buy), and the
+		-- Tackle Board its reroll confirm (TKB-R56).
 		StaticPopupDialogs = {
 			fields = {
 				PAGLE_QOL_CONFLICT = { read_only = false },
 				PAGLE_QOL_RELOAD = { read_only = false },
 				PAGLE_LEDGER_PRESTIGE = { read_only = false },
+				PAGLE_CURIO_BUY = { read_only = false },
 				PAGLE_TACKLEBOARD_REROLL = { read_only = false },
 			},
 		},
@@ -218,12 +231,19 @@ stds.wow_variables = {
 		-- Interface/AddOns/Blizzard_UIParentPanelManager/Shared/UIParentPanelManager.lua: "UISpecialFrames = {", and
 		-- CloseSpecialWindows hides each frame named in it that is shown. Core adds its card frame's name.
 		"UISpecialFrames",
-		-- A FrameXML table the dump doesn't list (STA-R59: item qualities in the game's own colours). Gethe/wow-ui-source
-		-- branch forever at 943764493e6b16d63ded3ab304150d1f05e58b57 ("1.60.1 (70338)"),
-		-- Interface/AddOns/Blizzard_Colors/Mainline/ColorManager.lua: `ITEM_QUALITY_COLORS = {};` then, per quality,
-		-- `ITEM_QUALITY_COLORS[i] = { r = color.r, g = color.g, b = color.b, hex = color:GenerateHexColorMarkup(), color =
-		-- color };`. ColorManager.UpdateColorData makes a new table when the colour overrides change, so Stats reads it at
-		-- each draw.
+		-- A FrameXML table the dump doesn't list (HNT-R54: a Hunt's target item loads with Item:CreateFromItemID).
+		-- Gethe/wow-ui-source branch forever at 943764493e6b16d63ded3ab304150d1f05e58b57 ("1.60.1 (70338)"),
+		-- Interface/AddOns/Blizzard_ObjectAPI/Mainline/Item.lua: "Item = {};", "--[[static]] function
+		-- Item:CreateFromItemID(itemID)" and "function ItemMixin:ContinueOnItemLoad(callbackFunction)"; Item.lua is
+		-- listed for every game type in Blizzard_ObjectAPI.toc.
+		Item = { fields = { "CreateFromItemID" } },
+		-- A FrameXML table the dump doesn't list (HNT-R55: a quality class's icon tint; STA-R59: item qualities in the
+		-- game's own colours). Gethe/wow-ui-source branch forever at 943764493e6b16d63ded3ab304150d1f05e58b57 ("1.60.1
+		-- (70338)"), Interface/AddOns/Blizzard_Colors/Mainline/ColorConstants.lua: "ITEM_QUALITY_COLORS = { };", and
+		-- Mainline/ColorManager.lua: `ITEM_QUALITY_COLORS = {};` then, per quality, `ITEM_QUALITY_COLORS[i] = { r =
+		-- color.r, g = color.g, b = color.b, hex = color:GenerateHexColorMarkup(), color = color };`.
+		-- ColorManager.UpdateColorData makes a new table when the colour overrides change, so Hunts and Stats read it at
+		-- each call.
 		"ITEM_QUALITY_COLORS",
 	},
 }
@@ -253,6 +273,8 @@ files["addons/Pagle/logic/Size.lua"] = { read_globals = { bit = stds.wow.read_gl
 files["addons/Pagle/adapter/**"] = { globals = { "Pagle" } }
 -- /pagle's name (CORE-R60).
 files["addons/Pagle/adapter/Slash.lua"] = { globals = { "SLASH_PAGLE1" } }
+-- The mixin of Stats' Watched Dry spells row, which adapter/Settings.xml's template names (SET-R5, SET-R42).
+files["addons/Pagle_Stats/adapter/Settings.lua"] = { globals = { "PagleStatsWatchedRowMixin" } }
 -- A Module's adapter/ reads Pagle through stds.pagle above. Its logic/ and locale/ files read it only in their CORE-R11
 -- guard, `if not Pagle then -- luacheck: read globals Pagle …`, whose inline option reaches that line alone: any other
 -- use of Pagle there fails lint (CORE-R7).

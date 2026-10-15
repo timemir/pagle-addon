@@ -10,6 +10,7 @@
 ## SavedVariables: PagleStatsDB
 
 locale\enUS.lua
+data\Lore.lua
 logic\Data.lua
 logic\Module.lua
 logic\Seams.lua
@@ -17,8 +18,33 @@ logic\Places.lua
 logic\Rows.lua
 logic\Fold.lua
 logic\Sessions.lua
+logic\SessionPages.lua
 logic\Text.lua
 logic\Odds.lua
 logic\DrySpell.lua
+logic\Groups.lua
+logic\Book.lua
+logic\Home.lua
+logic\Lifetime.lua
+logic\Goods.lua
+logic\Item.lua
+logic\Search.lua
+logic\Watches.lua
+logic\Entry.lua
+logic\Tracker.lua
 adapter\Text.lua
+adapter\BookWidgets.lua
+adapter\TrackerBlock.lua
+adapter\Goods.lua
+adapter\Book.lua
+adapter\Place.lua
+adapter\Entry.lua
+adapter\Home.lua
+adapter\Lifetime.lua
+adapter\Sessions.lua
+adapter\Item.lua
+adapter\Search.lua
+adapter\Settings.lua
+adapter\Settings.xml
+adapter\Tracker.lua
 adapter\Stats.lua

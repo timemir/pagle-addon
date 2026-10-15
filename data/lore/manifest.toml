@@ -8,7 +8,8 @@
 # An ID entry may allow {zone}, the one placeholder (DATA-R108). Each kind belongs to one addon (DATA-R102); the
 # catalogue-keyed kinds (species, legend, sub, family, DATA-R103) and Hunts' hunt and set (DATA-R105) are never listed.
 # The Ledger's line IDs came with its first batch (#131), its title and binding IDs with the M4 batch (#161,
-# LED-R162), and Core's good IDs with Core's lore check (#161).
+# LED-R162), Core's good IDs with Core's lore check (#161), Hunts' good IDs with Hunts' lore check (#183), and Stats'
+# good IDs with Stats' lore check (#210).
 
 # The Ledger's shared lines (LED-R160), each shown in place of something not yet caught or charted: an uncaught
 # Legend's page (LED-R147), an empty Junk Museum plinth and an unopened Treasures row (LED-R144), and a zone with no
@@ -60,3 +61,23 @@ ids = [
 	"core.crest.crest2",
 	"core.crest.crest3",
 ]
+
+# Hunts' goods (HNT-R121), each with a name and a description, from M5 with Hunts' lore check (HNT-R130, DATA-R107).
+# Core owns the kind good, so Hunts' is huntgood (DATA-R102).
+[hunts.huntgood]
+fields = ["name", "description"]
+ids = [
+	"hunts.notebookcover.leather",
+	"hunts.notebookcover.oilcloth",
+	"hunts.notebookcover.tooled",
+	"hunts.notebookcover.verdigris",
+	"hunts.trackerframe.none",
+	"hunts.trackerframe.inkwash",
+	"hunts.trackerframe.waxseal",
+]
+
+# Stats' goods (STA-R88), its three tracker frames, each with a name and a description, from M6 with Stats' lore check
+# (DATA-R107). Core owns the kind good, so Stats' is statsgood (DATA-R102).
+[stats.statsgood]
+fields = ["name", "description"]
+ids = ["stats.trackerframe.none", "stats.trackerframe.logbook", "stats.trackerframe.brass"]

@@ -253,6 +253,28 @@ describe("scripts/read-wtf.lua's Catch log and exit check", function()
 		end)
 	end)
 
+	describe("the realm clock, for placing a window in realm time (#200 step 7)", function()
+		it("prints the realm's UTC offset from the latest Cast's realm minute (LOG-R49)", function()
+			-- The latest Cast, at 15:45:00 UTC (UTC minute 945), read realm minute 494: 451 minutes behind, which is
+			-- -07:30 to the nearest 15 minutes.
+			local out = run(savedVariables({ PagleLog = catchLog(STRETCH) }))
+			assert.are.equal("realm clock: UTC-07:30 (from the latest Cast)", line(out, "realm clock: "))
+		end)
+
+		it("says it's unknown when no Cast read the realm minute: a secret clock (CORE-R31)", function()
+			local log = ns.OpenCatchLog(nil, { decodeErrors = 0 }, T0)
+			log.data.characters = { ADA }
+			local secret = conditions(148)
+			secret.minute = nil
+			local items = { { itemID = 6358, quantity = 1 } }
+			log:Append({ kind = "cast", char = 1, time = T0, outcome = "caught", conditions = secret, items = items })
+
+			local out = run(savedVariables({ PagleLog = log.data }))
+
+			assert.are.equal("realm clock: unknown (no Cast read the realm minute)", line(out, "realm clock: "))
+		end)
+	end)
+
 	describe("when PagleDB.global has no decodeErrors", function()
 		-- AceDB leaves out of the file every value equal to its default, so decodeErrors 0 isn't saved (LOG-R16).
 		local folder = savedVariables({

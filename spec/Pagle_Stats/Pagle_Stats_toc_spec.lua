@@ -64,11 +64,11 @@ describe("Pagle_Stats.toc", function()
 		assert.is_nil(fields.SavedVariablesPerCharacter)
 	end)
 
-	it("lists every Lua file in the addon folder, so none is left out of the load (CORE-R2)", function()
+	it("lists every Lua and XML file in the addon folder, so none is left out of the load (CORE-R2)", function()
 		local listed = addonFiles("Pagle_Stats")
 		table.sort(listed)
 
-		assert.are.same(filesIn({ "lua" }), listed)
+		assert.are.same(filesIn({ "lua", "xml" }), listed)
 	end)
 
 	it("splits its code into logic/ and adapter/, its strings in locale/ and only generated files in data/", function()
@@ -90,5 +90,16 @@ describe("Pagle_Stats.toc", function()
 
 	it("loads locale/enUS.lua first, so every file after it has ns.L (CORE-R8)", function()
 		assert.are.equal("locale/enUS.lua", addonFiles("Pagle_Stats")[1])
+	end)
+
+	it("lists its generated Lore.lua right after locale/enUS.lua, the file that creates ns.L (DATA-R75)", function()
+		-- DATA-R104, STA-R88: the lore extends ns.L, so it loads after the locale and before any code reads a name.
+		local at = {}
+		for index, file in ipairs(addonFiles("Pagle_Stats")) do
+			at[file] = index
+		end
+
+		assert.is_number(at["data/Lore.lua"])
+		assert.are.equal(at["locale/enUS.lua"] + 1, at["data/Lore.lua"])
 	end)
 end)

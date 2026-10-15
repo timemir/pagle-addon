@@ -186,6 +186,49 @@ describe("ns.NextWindow", function()
 			assert.is_nil(forecast(noRule, realm(2026, 10, 14, 22, 0), { 999 }, RULES))
 		end)
 
+		describe("from a time other than now: the live calendar decides now alone (LOG-R46, LOG-R50)", function()
+			-- Sunday 15:00, with the Extravaganza live in its 14:00–16:00 occurrence.
+			local NOW = realm(2026, 10, 18, 15, 0)
+
+			-- Forecasts `spec` from `fromTime`, with the live calendar showing `active` at NOW.
+			local function forecastAtNow(spec, fromTime, active)
+				return ns.NextWindow(spec, fromTime, OFFSET, active, RULES, NOW)
+			end
+
+			it("gives the occurrence under way now its weekly span when forecast from before it (HNT-R63)", function()
+				-- The board's ruler starts 2 hours before now, at 13:00.
+				assert.are.same({
+					opensAt = realm(2026, 10, 18, 14, 0),
+					closesAt = realm(2026, 10, 18, 16, 0),
+					confirmed = true,
+				}, forecastAtNow(EXTRAVAGANZA, realm(2026, 10, 18, 13, 0), { 301 }))
+			end)
+
+			it("forecasts from the weekly rules alone after now, even at the occurrence's end (HNT-R53)", function()
+				assert.are.same({
+					opensAt = realm(2026, 10, 25, 14, 0),
+					closesAt = realm(2026, 10, 25, 16, 0),
+					confirmed = true,
+				}, forecastAtNow(EXTRAVAGANZA, realm(2026, 10, 18, 16, 0), { 301 }))
+			end)
+
+			it("opens at now, with no closesAt, an event active outside its weekly rule (HNT-R63)", function()
+				-- Saturday 10:00 now, forecast from 08:00: the calendar opens it at now, never before.
+				local saturday = realm(2026, 10, 17, 10, 0)
+				assert.are.same(
+					{ opensAt = saturday, confirmed = true },
+					ns.NextWindow(EXTRAVAGANZA, realm(2026, 10, 17, 8, 0), OFFSET, { 301 }, RULES, saturday)
+				)
+			end)
+
+			it("drops the occurrence under way now when the calendar doesn't show it, from before now", function()
+				assert.are.same(
+					realm(2026, 10, 25, 14, 0),
+					forecastAtNow(EXTRAVAGANZA, realm(2026, 10, 18, 13, 0), {}).opensAt
+				)
+			end)
+		end)
+
 		it("takes the first occurrence of any of its events (LOG-R48, LOG-R50)", function()
 			local rules = rulesOf({
 				[301] = sundayRule(),

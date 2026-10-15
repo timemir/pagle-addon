@@ -20,6 +20,8 @@ function ns.Stats.OnInitialize()
 	if not ns.Module then
 		return
 	end
+	-- Stats' tracker frame slot and its goods, right after registering (STA-R88).
+	ns.RegisterGoods(ns.Module)
 
 	-- Account-wide, one shared profile, with the defaults in stats.md › Data.
 	ns.db = LibStub("AceDB-3.0"):New("PagleStatsDB", ns.DB_DEFAULTS, true)
@@ -34,4 +36,11 @@ function ns.Stats.OnInitialize()
 	--- (LOG-R71–R73). ns.State and ns.IsUpdating follow it from here on: before its first build the state is an empty
 	--- one, and it reads as updating (LOG-R74).
 	ns.projection = ns.Module:NewProjection(ns.ProjectionDef(ns.db.global, ns.places, Pagle.SESSION_RULES_VERSION))
+
+	--- Stats' section on the Trackers page (SET-R42), before ModulesChanged (CORE-R42).
+	ns.AddSettings(ns.Module)
+
+	--- The live tracker, docked once at order 20 (STA-R80). An inert or disabled Stats never gets here, so it docks
+	--- nothing (STA-R90, CORE-R17).
+	ns.StartTracker(ns.Module)
 end

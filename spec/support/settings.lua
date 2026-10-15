@@ -4,6 +4,7 @@
 --   loaded.client.settings.category("Fishing")          -- a registered category, as the panel lists it
 --   loaded.client.settings.show(category)               -- its rows, drawn as the panel draws them
 --   loaded.client.settings.textsOf(row.frame)           -- the texts a drawn row shows
+--   loaded.client.settings.defaults(category)           -- presses the page's Defaults button
 
 ---@class FakeClient
 ---@field settings FakeSettings The Settings panel.
@@ -19,14 +20,20 @@
 ---@field variables table<string, table> Each Settings.RegisterProxySetting setting by its variable name, with its
 --- `category`: what a page's Defaults button restores (SET-R60).
 ---@field opened table[] The category each Settings.OpenToCategory call opened (nil for an unknown ID), in order.
----@field panel table SettingsPanel: shown by OpenToCategory, hidden by HideUIPanel.
+---@field panel table SettingsPanel: shown by OpenToCategory and show, hidden by HideUIPanel. Showing it while hidden
+--- runs its OnShow script, as the client does.
 ---@field category fun(name: string): table? The registered category with that name, if its top-level category is
 --- registered under AddOns, as the panel lists it.
----@field show fun(category: table): { initializer: table, frame: table }[] Shows a page as the panel does: a fresh
---- frame per row, through its initializer's InitFrame, so a row reads its value or label then. A value row's frame
---- has `value`, a slider's `valueLabel` (its Right label formatter's text, nil with none), a dropdown's `valueLabel`
---- (the label of the option holding its value), and every frame `enabled`.
---- Until the next show, a setting's SetValue updates these frames as the panel's controls do (valueChanged).
+---@field show fun(category: table): { initializer: table, frame: table }[] Shows a page as the panel does: the panel
+--- first, then the rows its layout's GetInitializers returns, a fresh frame per row, through its initializer's
+--- InitFrame, so a row reads its value or label then. A frame of a template an addon's XML defines gets its mixin, and
+--- draws itself through its Init (SET-R5). A value row's frame has `value`, a slider's `valueLabel` (its
+--- Right label formatter's text, nil with none), a dropdown's `valueLabel` (the label of the option holding its value)
+--- and `Control.Dropdown` (SettingsDropdownControlMixin:OnLoad), and every frame `enabled`.
+--- Until the next show, a setting's SetValue or NotifyUpdate updates these frames as the panel's controls do
+--- (valueChanged).
+---@field defaults fun(category: table) The page's Defaults button (SettingsPanelMixin:
+--- SetCurrentCategorySettingsToDefaults): sets each setting registered on that page to its default value.
 ---@field shown { initializer: table, frame: table }[]? The rows show returned last.
 ---@field valueChanged fun(setting: table) What the panel does when a setting's value changes.
 ---@field textsOf fun(frame: table): string[] The text of every shown widget in a row's frame, depth first.
@@ -52,6 +59,9 @@ local function newInitializer(template, data)
 	end
 	function initializer:GetSetting()
 		return self.data.setting
+	end
+	function initializer:GetOptions()
+		return self.data.options
 	end
 	function initializer:SetParentInitializer(parent, modifyPredicate)
 		assert(parent and parent ~= self, "SetParentInitializer needs another initializer")
@@ -107,6 +117,11 @@ local function newInitializer(template, data)
 	end
 	function initializer:InitFrame(frame)
 		frame.initializer = self
+		if self.template == "SettingsDropdownControlTemplate" then
+			-- SettingsDropdownControlMixin:OnLoad's control, with its dropdown button.
+			frame.Control = newWidget("Frame", frame)
+			frame.Control.Dropdown = newWidget("DropdownButton", frame.Control)
+		end
 		if self.template == "SettingButtonControlTemplate" then
 			-- As SettingsButtonControlMixin:Init: the row's label, then a button whose caption is buttonText, called
 			-- now when it is a function (EvaluateName), and whose OnClick is buttonClick.
@@ -123,8 +138,21 @@ local function newInitializer(template, data)
 			self:FormatValue(frame)
 		end
 		frame.enabled = self:EvaluateModifyPredicates()
+		-- As ScrollBoxFactoryInitializerMixin:InitFrame, a frame of a template with an Init (a Module's own row, made
+		-- on its XML template, SET-R5) draws itself with frame:Init(initializer).
+		if frame.Init then
+			frame:Init(self)
+		end
 	end
-	initializer.Resetter = function() end
+	-- As ScrollBoxFactoryInitializerMixin:Resetter: the panel gives the frame back, and its own Release clears it.
+	initializer.Resetter = function(_, frame)
+		if frame.Release then
+			frame:Release(initializer)
+		end
+	end
+	function initializer:GetTemplate()
+		return self.template
+	end
 	initializer.GetExtent = function()
 		return nil
 	end
@@ -140,6 +168,16 @@ return function(client, stubs)
 	client.settings = settings
 	settings.panel = newWidget("Frame")
 	settings.panel.shown = false
+	-- As the client's Show: OnShow runs when a hidden frame shows.
+	local showPanel = settings.panel.Show
+	function settings.panel:Show()
+		local wasShown = self.shown
+		showPanel(self)
+		local onShow = self.scripts.OnShow
+		if not wasShown and onShow then
+			onShow(self)
+		end
+	end
 
 	local function register(name, parent)
 		local category = { name = name, parent = parent, id = #settings.categories + 1 }
@@ -148,6 +186,10 @@ return function(client, stubs)
 			AddInitializer = function(self, initializer)
 				self.initializers[#self.initializers + 1] = initializer
 				return initializer
+			end,
+			-- What SettingsPanelMixin:DisplayLayout reads to show the page.
+			GetInitializers = function(self)
+				return self.initializers
 			end,
 		}
 		function category:GetID()
@@ -219,6 +261,10 @@ return function(client, stubs)
 			-- As SettingMixin:ApplyValue: sets it, then tells the shown rows (TriggerValueChanged).
 			function setting:SetValue(value)
 				self.set(value)
+				settings.valueChanged(self)
+			end
+			-- As SettingMixin:NotifyUpdate: the value changed elsewhere, so the shown rows read it again.
+			function setting:NotifyUpdate()
 				settings.valueChanged(self)
 			end
 			return setting
@@ -310,15 +356,43 @@ return function(client, stubs)
 		return nil
 	end
 
+	-- A fresh list frame for `initializer`: one of a template a loaded addon's XML defines gets that template's mixin,
+	-- as the client's CreateFrame applies it.
+	local function newFrame(initializer)
+		local frame = newWidget("Frame")
+		local template = client.templates[initializer:GetTemplate()]
+		if template and template.mixin then
+			for key, value in pairs(assert(stubs[template.mixin], "no mixin " .. template.mixin)) do
+				frame[key] = value
+			end
+		end
+		return frame
+	end
+
 	function settings.show(category)
+		settings.panel:Show()
 		local rows = {}
-		for _, initializer in ipairs(category.layout.initializers) do
-			local frame = newWidget("Frame")
+		for _, initializer in ipairs(category.layout:GetInitializers()) do
+			local frame = newFrame(initializer)
 			initializer:InitFrame(frame)
 			rows[#rows + 1] = { initializer = initializer, frame = frame }
 		end
 		settings.shown = rows
 		return rows
+	end
+
+	function settings.defaults(category)
+		local variables = {}
+		for variable, setting in pairs(settings.variables) do
+			if setting.category == category then
+				variables[#variables + 1] = variable
+			end
+		end
+		table.sort(variables)
+		for _, variable in ipairs(variables) do
+			local setting = settings.variables[variable]
+			setting:SetValue(setting:GetDefaultValue())
+		end
 	end
 
 	-- What a value change does to the rows shown last (Blizzard_SettingControls.lua): a control shows its own

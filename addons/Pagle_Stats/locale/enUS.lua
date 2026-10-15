@@ -15,6 +15,58 @@ ns.L = {
 	BOOK = "Stats",
 	BOOK_SLASH_HELP = "Open or close the Stats book.",
 
+	-- The book's leather (STA-R72, STA-R74, STA-R75; stats.md › UI › On the leather): the breadcrumbs' root, the ribbons
+	-- and the ribbon pages' kickers, the nameplate, the live line, and what the nameplate and every page body read while
+	-- the projection is updating.
+	BOOK_ROOT = "Stats",
+	BOOK_WHERE_I_AM = "Where I am",
+	BOOK_THIS_SESSION = "This Session",
+	BOOK_LAST_SESSION = "My last Session",
+	BOOK_LIFETIME = "Lifetime",
+	BOOK_SESSIONS = "Sessions",
+	-- "1,840 Casts · 31 Sessions · since 5 Oct 2026": the Casts and Sessions counts (ns.Count) and the first Cast's date.
+	BOOK_NAMEPLATE = "%s · %s · since %s",
+	-- The same without a date, should no Session record hold the Casts.
+	BOOK_NAMEPLATE_UNDATED = "%s · %s",
+	BOOK_NO_CASTS = "No Casts yet",
+	-- "Session: 51 Casts · 46 Catches · 21m", after the live line's gilt dot.
+	BOOK_LIVE_LINE = "Session: %s · %s · %s",
+	BOOK_UPDATING = "Updating my records…",
+
+	-- The Session pages (stats.md › UI › This Session, Sessions; STA-R97). A Session's entry: its kicker on the Sessions
+	-- page ("Session 12", numbered from the oldest), "21:04 to now, 25m at the water.", its figures and headings.
+	SESSION_NUMBERED = "Session %s",
+	SESSION_SPAN = "%s to %s, %s at the water.",
+	SESSION_NOW = "now",
+	SESSION_CASTS = "Casts",
+	SESSION_CATCHES = "Catches",
+	SESSION_GOT_AWAY = "Got away",
+	-- "7 (12%)": the got-away count and its rate.
+	SESSION_GOT_AWAY_VALUE = "%s (%d%%)",
+	SESSION_PER_HOUR = "Catches per hour",
+	SESSION_SKILL = "Skill gained",
+	SESSION_SKILL_VALUE = "+%s",
+	SESSION_BY_QUALITY = "By quality",
+	SESSION_WHERE_AND_WHO = "Where and who",
+	-- This Session's right page, and the ruled ledgers' columns: "Started" reads "5 Oct 2026 21:04" (date, time), and
+	-- "Where" the zones joined by ", ".
+	SESSIONS_BEFORE_THAT = "Before that",
+	SESSIONS_EARLIER = "Earlier Sessions",
+	SESSIONS_EVERY = "Every Session",
+	SESSIONS_STARTED = "Started",
+	SESSIONS_WHERE = "Where",
+	SESSIONS_LENGTH = "Length",
+	SESSIONS_CASTS = "Casts",
+	SESSIONS_CATCHES = "Catches",
+	SESSIONS_STARTED_AT = "%s %s",
+	SESSIONS_WHERE_JOIN = ", ",
+	-- The Sessions page's note, by Core's Session gap in minutes (LOG-R60), and its pager.
+	SESSIONS_NOTE = "A Session ends after %d minutes without a Cast.",
+	SESSIONS_LATER = "later",
+	SESSIONS_EARLIER_PAGE = "earlier",
+	SESSIONS_PAGE = "page %d of %d",
+	NO_SESSIONS = "No Sessions yet.",
+
 	-- STA-R58's one allowed line: no other Stats string says or implies a Catch is owed (spec/Pagle_Stats/copy_spec.lua).
 	NOTHING_IS_OWED = "Every Cast is its own roll; nothing is owed.",
 
@@ -108,4 +160,178 @@ ns.L = {
 	DRY_WATCH_SINCE = "%s since the last%s.",
 	DRY_WATCH_CAUGHT_LAST = "caught on my last Cast.",
 	DRY_WATCH_NONE_YET = "%s, none yet.",
+
+	-- A place's page (stats.md › UI › Place spread; adapter/Place.lua, logic/Groups.lua). The row groups (STA-R18), each
+	-- with its heading and small note.
+	GROUPS = {
+		any = { heading = "Any time", note = "Your odds · Dry spell" },
+		pools = { heading = "Pools", note = "open water and pools combined" },
+		window = { heading = "In their window", note = "only Casts in their window" },
+		added = { heading = "Also caught here", note = "not on Pagle's chart for these waters" },
+	},
+	-- The left page: the kicker of a zone's page (a subzone's is its zone's name), "I'm here", my Casts and the no-junk
+	-- sentence after them, the no-chart line, *Its waters* with "—" for none, and the line under a subzone's rows.
+	PLACE_ZONE_KICKER = "Waters",
+	PLACE_HERE = "I'm here",
+	PLACE_CASTS = "%s of my Casts here.",
+	PLACE_NO_JUNK = "No junk from %d.",
+	PLACE_NO_JUNK_PAST = "No junk from %d; at %d I'm past it, so only those Casts count.",
+	PLACE_NO_JUNK_BELOW = "No junk from %d; at %d I'm below it, so only my Casts below it count.",
+	PLACE_NO_CHART = "Pagle has no chart of these waters yet.",
+	PLACE_WATERS = "Its waters",
+	PLACE_WATERS_NOTE = "my Casts",
+	PLACE_NONE = "—",
+	PLACE_ACROSS_ZONE = "Fish with fewer than %d Casts in %s use all of %s until then.",
+	-- The right page with no item chosen: "Got away" as "{n} ({rate}%)".
+	PLACE_ABOUT = "About these waters",
+	PLACE_CASTS_LABEL = "Casts",
+	PLACE_CATCHES_LABEL = "Catches",
+	PLACE_GOT_AWAY_LABEL = "Got away",
+	PLACE_GOT_AWAY = "%s (%d%%)",
+	PLACE_PICK = "Pick a fish on the left for its odds and its Dry spell.",
+	-- The right page with an item chosen: its entry (adapter/Entry.lua, logic/Entry.lua). The kicker ("Your odds ·
+	-- Auberdine", then ", by night" from WINDOW_NAMES).
+	ENTRY_KICKER = "Your odds · %s",
+	ENTRY_KICKER_WINDOW = "%s, %s",
+	-- The watch toggle at the top right (STA-R61), after a star drawn as a texture.
+	ENTRY_WATCH = "watch",
+	ENTRY_WATCHING = "watching",
+	-- The Dry spell's heading and its small note; then the luck ruler's ticks, left to right (logic/Entry.lua's
+	-- ns.LUCK_RULER_TICKS), and its mark. Its bands are named by BANDS, and its fixed line is NOTHING_IS_OWED.
+	ENTRY_DRY = "Dry spell",
+	ENTRY_DRY_NOTE = "counted like the odds above",
+	RULER_TICKS = { "all", "1 in 10", "1 in 100", "1 in 1k", "1 in 10k", "1 in 100k", "1 in 1M" },
+	RULER_ME = "me",
+	-- *In my records* (its First caught and Last caught lines are ITEM_FIRST_CAUGHT, ITEM_LAST_CAUGHT and ITEM_NEVER),
+	-- then the link to the item page, before a pointing hand drawn as a texture.
+	ENTRY_RECORDS = "In my records",
+	ENTRY_CAUGHT_HERE = "Caught in this count",
+	ENTRY_CAUGHT_ANYWHERE = "Caught anywhere",
+	ENTRY_ITEM_PAGE = "Every water it bites in",
+	-- The home spread (stats.md › UI › Home spread). The left page: its kicker, title and line, a zone's tile ("1,840
+	-- Casts · 6 waters", the Casts and waters counts by ns.Count), and the line with no Casts (STA-R97).
+	HOME_KICKER = "The waters",
+	HOME_TITLE = "Where I've fished",
+	HOME_INTRO = "Your odds and Dry spells come only from my own Casts, never from game data.",
+	HOME_TILE_LINE = "%s · %s",
+	HOME_TILE_NOT_FISHED = "not fished yet",
+	HOME_HERE = "I'm here",
+	HOME_WATCHING = "watching %d",
+	HOME_NOT_FISHED = "Not fished anywhere yet.",
+	-- The right page, in handwriting: where I am ("Auberdine, Darkshore", then ", by night" from WINDOW_NAMES), my skill
+	-- against the zone's no-junk line, the Session (its Casts and Catches by ns.Count, the got away count, the time so
+	-- far; or the time ago the last one ended).
+	HOME_RIGHT_NOW = "Right now",
+	HOME_PLACE = "%s, %s",
+	HOME_FISHING = "Fishing %s.",
+	HOME_FISHING_WHEN = "Fishing %s, %s.",
+	HOME_NOWHERE = "I can't tell where I am.",
+	HOME_SKILL_HI = "Skill %d, past the no-junk line (%d).",
+	HOME_SKILL_LO = "Skill %d, below the no-junk line (%d).",
+	HOME_SESSION = "This Session: %s, %s, %s got away, %s so far.",
+	HOME_LAST_SESSION = "No Session right now. The last one ended %s.",
+	HOME_NO_SESSION = "No Session yet.",
+	-- The watched Dry spells (after the pencil mark: the item, the place, then DRY_WATCH_*), and In this book.
+	HOME_WATCHED = "Dry spells I'm watching",
+	HOME_WATCHED_NOTE = "also on the live tracker",
+	HOME_WATCH = "%s, %s: %s",
+	HOME_NO_WATCHES = "Nothing yet. Watch a Dry spell from any fish's page.",
+	HOME_CONTENTS = "In this book",
+	HOME_WHERE_I_AM = "Where I am: %s",
+	HOME_WHERE_UNKNOWN = "Where I am: unknown",
+	HOME_EVERY_SESSION = "Every Session",
+
+	-- The item page (stats.md › UI › Item page). The left page: its kicker, when it bites (the window's name from
+	-- WINDOW_NAMES; its realm-time ranges, "18:00–06:00", joined by ", "), the pool line, my records of it ("{date},
+	-- {time ago}", "—" for none), and *Where I am* (its short odds, then its Dry spell; ITEM_OPEN_HERE before a ☛).
+	ITEM_KICKER = "A fish",
+	ITEM_BITES_ANY = "Bites at any hour.",
+	ITEM_BITES_ONLY = "Bites only %s.",
+	ITEM_BITES_ONLY_TIMED = "Bites only %s (%s realm time).",
+	ITEM_RANGE = "%s–%s",
+	ITEM_RANGES_JOIN = ", ",
+	ITEM_POOL = "Also in pools; with no pool data, both are counted together.",
+	ITEM_CAUGHT = "Caught",
+	ITEM_FIRST_CAUGHT = "First caught",
+	ITEM_LAST_CAUGHT = "Last caught",
+	ITEM_LAST_VALUE = "%s, %s",
+	ITEM_NEVER = "—",
+	ITEM_HERE_SINCE = "%s; %s since the last.",
+	ITEM_HERE_CAUGHT_LAST = "%s; caught on my last Cast.",
+	ITEM_HERE_NONE_YET = "%s; none yet.",
+	ITEM_OPEN_HERE = "Open its page here",
+	-- The right page: its kicker and title, a subzone tile's line ("Darkshore · 1 in 40"), and the line with no tiles.
+	ITEM_WATERS_KICKER = "Its waters",
+	ITEM_WATERS_TITLE = "Where I've fished for it",
+	ITEM_TILE_LINE = "%s · %s",
+	ITEM_NO_WATERS = "I haven't fished anywhere it bites.",
+
+	-- Search on the leather (STA-R76): the box's hint, each result's small label (a subzone's is its zone's name), and
+	-- the line with no results.
+	SEARCH_HINT = "Find a fish or a water…",
+	SEARCH_FISH = "fish",
+	SEARCH_ZONE = "zone",
+	SEARCH_NONE = "Nothing by that name in my records.",
+
+	-- The Lifetime spread (stats.md › UI › Lifetime; its kicker is BOOK_LIFETIME). The left page's title and totals, the
+	-- got-away count with its rate ("2 (22%)").
+	LIFETIME_TITLE = "Every Cast I've made",
+	LIFETIME_CASTS = "Casts",
+	LIFETIME_CATCHES = "Catches",
+	LIFETIME_GOT_AWAY = "Got away",
+	LIFETIME_GOT_AWAY_VALUE = "%s (%d%%)",
+	LIFETIME_SESSIONS = "Sessions",
+	LIFETIME_TIME_AT_THE_WATER = "Time at the water",
+	-- The bests (STA-R33): each with its Session's date ("Longest Session, 5 Oct 2026").
+	LIFETIME_BESTS = "Bests",
+	LIFETIME_LONGEST = "Longest Session, %s",
+	LIFETIME_BEST_RATE = "Most Catches per hour, %s",
+	-- Got away by skill (STA-R26): each margin bucket's words, and its line's "25% of 4 Casts".
+	LIFETIME_BY_SKILL = "Got away, by skill",
+	LIFETIME_BY_SKILL_NOTE = "against each water's no-junk line",
+	LIFETIME_MARGIN_NAMES = { lo50 = "below by 50+", lo1 = "below by 1–49", hi0 = "0–24 over", hi25 = "25+ over" },
+	LIFETIME_MARGIN_VALUE = "%d%% of %s",
+	-- A character's line after its name: "1,840 Casts · 1,602 Catches · 238 got away".
+	LIFETIME_CHARACTERS = "Characters",
+	LIFETIME_CHARACTER_VALUE = "%s · %s · %s got away",
+	-- The right page: the index of every fish, and what hovering an item shows ("First 5 Oct 2026, last 12 Oct 2026").
+	LIFETIME_CATCH_KICKER = "The catch",
+	LIFETIME_EVERY_FISH = "Every fish",
+	LIFETIME_INDEX_NOTE = "How many I've caught. Hover for first and last; click for its waters.",
+	LIFETIME_FIRST_LAST = "First %s, last %s",
+	-- Both pages with no Casts (STA-R97).
+	LIFETIME_NO_SESSIONS = "No Sessions yet.",
+
+	-- Watched Dry spells (STA-R61, STA-R62): the UI error for a 4th, by the cap (ns.MAX_WATCHES), and the chat line
+	-- when a watch turns the live tracker on.
+	WATCH_FULL = "You can watch up to %d Dry spells. Stop watching one first.",
+	WATCH_TRACKER_ON = "Pagle: live tracker turned on to show your watched Dry spells.",
+
+	-- Stats' section on the Trackers page (stats.md › Settings, SET-R42): the checkbox, the Watched Dry spells row and
+	-- their tooltips. The row reads "2 of 3" (the watches, the cap), then "Firefin, Auberdine" per watch (the item's
+	-- name, the watched area's own name) with its button, or the line with none.
+	SETTINGS_TRACKER = "Show the live tracker",
+	SETTINGS_TRACKER_TOOLTIP = "Shows this Session and your watched Dry spells under the minimap. Watching a Dry spell "
+		.. "turns it on.",
+	SETTINGS_WATCHED = "Watched Dry spells",
+	SETTINGS_WATCHED_TOOLTIP = "Watch or stop watching from any fish's page in the Stats book.",
+	SETTINGS_WATCHED_COUNT = "%d of %d",
+	SETTINGS_WATCHED_LINE = "%s, %s",
+	SETTINGS_WATCHED_NONE = "Watch a Dry spell from any fish's page in the Stats book.",
+	SETTINGS_STOP_WATCHING = "Stop watching",
+
+	-- Stats' Curio Shop slot (STA-R88). Its goods' names and descriptions are lore (`statsgood.<goodID>.*`).
+	SLOT_TRACKER_FRAME = "Stats tracker frame",
+
+	-- The live tracker's words (STA-R82), as the shop's sample (STA-R88) and the tracker (#218) write them: the header's
+	-- right text ("Session · 21m"), the Session's lines ("38 Casts · 31 Catches · 7 got away", "62 per hour · skill
+	-- +3"), and what joins a watch's sub-line ("Feralas · by night · unlucky").
+	TRACKER_SESSION = "Session · %s",
+	TRACKER_COUNTS = "%s · %s · %s got away",
+	TRACKER_PER_HOUR = "%s per hour · skill +%s",
+	TRACKER_JOIN = " · ",
+	-- The header's right text with no Session open (STA-R82), and a watch's count while the projection updates
+	-- (STA-R85).
+	TRACKER_NO_SESSION = "no Session",
+	TRACKER_UPDATING = "updating",
 }

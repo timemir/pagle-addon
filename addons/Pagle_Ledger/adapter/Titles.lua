@@ -27,3 +27,12 @@ end
 function ns.SetActiveTitle(key)
 	return ns.StoreActiveTitle(ns.db.profile, titleView(), key)
 end
+
+--- "Signed As"'s pick (LED-R146, SET-R70): sets the active title, an earned key or nil for automatic, and redraws the
+--- open Journal in it (ns.SetActiveTitle draws nothing).
+---@param key string?
+function ns.PickActiveTitle(key)
+	if ns.SetActiveTitle(key) then
+		ns.journal:Draw()
+	end
+end

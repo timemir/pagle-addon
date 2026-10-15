@@ -115,21 +115,89 @@ describe("Pagle_Hunts with Core", function()
 		end
 	)
 
-	it("adds no settings pages of its own yet (HNT-R135, CORE-R42)", function()
+	it("toggles the same board from /pagle hunts, the compartment's Hunts and the status button (HNT-R68)", function()
 		local loaded = loadAddon("Pagle_Hunts", FOREVER_GLOBALS)
-		local plain = loadAddon("Pagle", FOREVER_GLOBALS)
 		loaded.client.fire("PLAYER_LOGIN")
-		plain.client.fire("PLAYER_LOGIN")
+		local board = loaded.ns.board
 
-		local function categories(client)
-			local names = {}
-			for i, category in ipairs(client.settings.categories) do
-				names[i] = category.name
-			end
-			return names
+		loaded.env.SlashCmdList.PAGLE("hunts")
+		local frame = board.frame
+		assert.is_true(board:IsShown())
+		compartmentMenu(loaded).click("Hunts")
+		assert.is_false(board:IsShown())
+		compartmentMenu(loaded).click("Hunts")
+		assert.is_true(board:IsShown())
+		loaded.env.SlashCmdList.PAGLE("Hunts anything at all")
+		assert.is_false(board:IsShown())
+
+		assert.are.equal(frame, board.frame)
+		local made = 0
+		for _, each in ipairs(loaded.client.frames) do
+			made = made + (each.name == "PagleHuntsBoard" and 1 or 0)
 		end
-		assert.are.same(categories(plain.client), categories(loaded.client))
+		assert.are.equal(1, made)
 	end)
+
+	it('toggles the board from "Open Hunts", closing Settings first (HNT-R68, SET-R12)', function()
+		local loaded = loadAddon("Pagle_Hunts", FOREVER_GLOBALS)
+		loaded.client.fire("PLAYER_LOGIN")
+		local panel = loaded.client.settings.panel
+		local board = loaded.ns.board
+		local toggle = board.Toggle
+		local panelShownAtToggle
+		board.Toggle = function(...)
+			panelShownAtToggle = panel:IsShown()
+			return toggle(...)
+		end
+		loaded.env.Pagle.OpenSettings()
+		assert.is_true(panel:IsShown())
+
+		local _, buttons = statusList(loaded)
+		buttons[1]:Click()
+
+		assert.is_false(panelShownAtToggle)
+		assert.is_true(board:IsShown())
+		loaded.env.Pagle.OpenSettings()
+		_, buttons = statusList(loaded)
+		buttons[1]:Click()
+		assert.is_false(board:IsShown())
+	end)
+
+	it("opens the board from each entry point while restricted (HNT-R68)", function()
+		local loaded = loadAddon("Pagle_Hunts", FOREVER_GLOBALS)
+		loaded.client.fire("PLAYER_LOGIN")
+		setCombat(loaded, true)
+		assert.is_true(loaded.env.Pagle.IsRestricted())
+
+		loaded.env.SlashCmdList.PAGLE("hunts")
+		assert.is_true(loaded.ns.board:IsShown())
+		compartmentMenu(loaded).click("Hunts")
+		assert.is_false(loaded.ns.board:IsShown())
+		compartmentMenu(loaded).click("Hunts")
+		assert.is_true(loaded.ns.board:IsShown())
+	end)
+
+	it(
+		"adds no settings page but Trackers, for its tracker frame's dropdown (HNT-R135, HNT-R120, CORE-R42, SET-R44)",
+		function()
+			local loaded = loadAddon("Pagle_Hunts", FOREVER_GLOBALS)
+			local plain = loadAddon("Pagle", FOREVER_GLOBALS)
+			loaded.client.fire("PLAYER_LOGIN")
+			plain.client.fire("PLAYER_LOGIN")
+
+			local function categories(client)
+				local names = {}
+				for i, category in ipairs(client.settings.categories) do
+					names[i] = category.name
+				end
+				return names
+			end
+			local expected = categories(plain.client)
+			assert.are.equal("Look and Feel", expected[#expected])
+			table.insert(expected, #expected, "Trackers") -- before Look and Feel, the last (SET-R1)
+			assert.are.same(expected, categories(loaded.client))
+		end
+	)
 
 	it("keeps PagleHuntsDB account-wide in one shared profile, at schema 1 (hunts.md › Data)", function()
 		local loaded = loadAddon("Pagle_Hunts", FOREVER_GLOBALS)
@@ -169,7 +237,8 @@ describe("Pagle_Hunts with Core", function()
 		assert.are.same({ shown = false, collapsed = true }, db.profile.tracker)
 		assert.is_true(db.profile.windowMoments)
 		assert.is_true(db.profile.showCompleted)
-		assert.are.same({ dawn_trout = true }, db.profile.pins)
+		-- dawn_trout isn't a current Hunt at SERVER_TIME, so its pin is dropped at load (HNT-R81, adapter/Groups_spec).
+		assert.are.same({}, db.profile.pins)
 	end)
 end)
 

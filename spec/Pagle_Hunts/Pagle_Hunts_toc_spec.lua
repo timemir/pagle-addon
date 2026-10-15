@@ -84,6 +84,17 @@ describe("Pagle_Hunts.toc", function()
 		assert.are.same({}, handWrittenData)
 	end)
 
+	it("lists its generated Lore.lua right after locale/enUS.lua, the file that creates ns.L (DATA-R75)", function()
+		-- DATA-R104, HNT-R130: the lore extends ns.L, so it loads after the locale and before any code reads a name.
+		local at = {}
+		for index, file in ipairs(addonFiles("Pagle_Hunts")) do
+			at[file] = index
+		end
+
+		assert.is_number(at["data/Lore.lua"])
+		assert.are.equal(at["locale/enUS.lua"] + 1, at["data/Lore.lua"])
+	end)
+
 	it("lists the generated HuntList.lua after locale/enUS.lua and before any code (DATA-R93)", function()
 		local listed = addonFiles("Pagle_Hunts")
 		local at = {}
