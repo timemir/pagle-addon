@@ -1,0 +1,140 @@
+issues = [253]
+
+[header]
+addon = "@project-version@"
+data = "c3d81863"
+locale = "enUS"
+
+[[i]]
+item = 6289
+area = 44
+build = 70374
+count = 1
+
+[[i]]
+item = 6289
+area = 68
+build = 70374
+count = 10
+
+[[i]]
+item = 6303
+area = 453
+build = 70338
+count = 2
+
+[[i]]
+item = 6307
+area = 150
+build = 70374
+count = 1
+
+[[i]]
+item = 6308
+area = 44
+build = 70374
+count = 1
+
+[[i]]
+item = 6308
+area = 68
+build = 70374
+count = 20
+
+[[i]]
+item = 6358
+area = 150
+build = 70338
+count = 1
+
+[[i]]
+item = 6358
+area = 150
+build = 70374
+count = 1
+
+[[i]]
+item = 6358
+area = 453
+build = 70338
+count = 2
+
+[[i]]
+item = 6359
+area = 150
+build = 70338
+count = 1
+
+[[i]]
+item = 6359
+area = 298
+build = 70338
+count = 1
+
+[[i]]
+item = 6361
+area = 150
+build = 70338
+count = 2
+
+[[i]]
+item = 6361
+area = 150
+build = 70374
+count = 10
+
+[[i]]
+item = 6361
+area = 453
+build = 70338
+count = 10
+
+[[i]]
+item = 12238
+area = 453
+build = 70338
+count = 6
+
+[[k]]
+area = 11
+build = 70338
+casts = 7
+away = 2
+land = 102
+lost = 104
+
+[[k]]
+area = 11
+build = 70374
+casts = 12
+away = 0
+land = 180
+
+[[k]]
+area = 44
+build = 70374
+casts = 34
+away = 2
+land = 115
+lost = 144
+
+[[k]]
+area = 148
+build = 70338
+casts = 20
+away = 0
+land = 91
+
+[[p]]
+area = 68
+locale = "enUS"
+text = "Fishing Bobber"
+casts = 19
+items = { 6289 = 6, 6308 = 11 }
+
+[[p]]
+area = 150
+locale = "enUS"
+text = "Fishing Bobber"
+casts = 10
+items = { 6307 = 1, 6358 = 2, 6361 = 6 }

@@ -130,11 +130,11 @@ ns.catalogue = {
 		[11] = {
 			catches = {
 				{ confirmed = false, itemID = 6289 },
-				{ confirmed = false, itemID = 6307 },
+				{ confirmed = true, itemID = 6307 },
 				{ confirmed = false, itemID = 6308 },
 				{ confirmed = false, itemID = 6352 },
 				{ confirmed = false, itemID = 6354 },
-				{ confirmed = false, itemID = 6358 },
+				{ confirmed = true, itemID = 6358 },
 				{ confirmed = false, itemID = 6359 },
 				{ confirmed = false, itemID = 6361 },
 				{ confirmed = false, itemID = 21113 },
@@ -143,7 +143,7 @@ ns.catalogue = {
 			hasData = true,
 			parent = 0,
 			skillBase = 55,
-			skillBaseConfirmed = false,
+			skillBaseConfirmed = true,
 		},
 		[12] = {
 			catches = {
@@ -445,8 +445,8 @@ ns.catalogue = {
 		[44] = {
 			catches = {
 				{ confirmed = false, itemID = 1467 },
-				{ confirmed = false, itemID = 6289 },
-				{ confirmed = false, itemID = 6308 },
+				{ confirmed = true, itemID = 6289 },
+				{ confirmed = true, itemID = 6308 },
 				{ confirmed = false, itemID = 6309 },
 				{ confirmed = false, itemID = 6310 },
 			},
@@ -454,7 +454,7 @@ ns.catalogue = {
 			hasData = true,
 			parent = 0,
 			skillBase = 55,
-			skillBaseConfirmed = false,
+			skillBaseConfirmed = true,
 		},
 		[45] = {
 			catches = {
@@ -610,8 +610,8 @@ ns.catalogue = {
 		[68] = {
 			catches = {
 				{ confirmed = false, itemID = 1467 },
-				{ confirmed = false, itemID = 6289 },
-				{ confirmed = false, itemID = 6308 },
+				{ confirmed = true, itemID = 6289 },
+				{ confirmed = true, itemID = 6308 },
 				{ confirmed = false, itemID = 6309 },
 				{ confirmed = false, itemID = 6310 },
 				{ confirmed = false, itemID = 6311 },
@@ -996,7 +996,7 @@ ns.catalogue = {
 				{ confirmed = false, itemID = 6308 },
 				{ confirmed = false, itemID = 6351 },
 				{ confirmed = false, itemID = 6353 },
-				{ confirmed = false, itemID = 6358 },
+				{ confirmed = true, itemID = 6358 },
 				{ confirmed = false, itemID = 6361 },
 				{ confirmed = false, itemID = 6717 },
 				{ confirmed = false, itemID = 6718 },
@@ -1007,13 +1007,13 @@ ns.catalogue = {
 			hasData = true,
 			parent = 0,
 			skillBase = -20,
-			skillBaseConfirmed = false,
+			skillBaseConfirmed = true,
 		},
 		[149] = { catches = {}, continent = 0, hasData = true, parent = 38, skillBaseConfirmed = false },
 		[150] = {
 			catches = {
-				{ confirmed = false, itemID = 6359 },
-				{ confirmed = false, itemID = 6361 },
+				{ confirmed = true, itemID = 6359 },
+				{ confirmed = true, itemID = 6361 },
 			},
 			continent = 0,
 			hasData = true,
@@ -1498,7 +1498,7 @@ ns.catalogue = {
 			catches = {
 				{ confirmed = false, itemID = 6289 },
 				{ confirmed = false, itemID = 6308 },
-				{ confirmed = false, itemID = 6359 },
+				{ confirmed = true, itemID = 6359 },
 				{ confirmed = false, itemID = 6361 },
 			},
 			continent = 0,
@@ -2427,10 +2427,10 @@ ns.catalogue = {
 		},
 		[453] = {
 			catches = {
-				{ confirmed = false, itemID = 6303 },
-				{ confirmed = false, itemID = 6361 },
+				{ confirmed = true, itemID = 6303 },
+				{ confirmed = true, itemID = 6361 },
 				{ confirmed = false, itemID = 6717 },
-				{ confirmed = false, itemID = 12238 },
+				{ confirmed = true, itemID = 12238 },
 				{ confirmed = false, itemID = 21162 },
 			},
 			continent = 1,
@@ -5980,7 +5980,7 @@ ns.catalogue = {
 	events = {
 		[301] = { confirmed = false, duration = 120, start = 840, weekday = 1 },
 	},
-	fingerprint = "c3d81863dd5c9c60",
+	fingerprint = "590d42c2ec86e5e7",
 	fishingSpells = { 7620, 7731, 7732, 18248, 1240948, 1240959, 1240970, 1240983 },
 	items = {
 		[118] = { category = "other", legend = false, noise = true, pool = false, quality = 1, removed = false },
