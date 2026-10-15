@@ -3,16 +3,22 @@ date, and the members of each class a released Hunt targets. scripts/generate-da
 release is tagged, from 1.0 on, and never before (DATA-R73): until the 1.0 tag the committed lock stays empty.
 """
 
-import calendar
 import re
 from collections.abc import Collection, Mapping
 from dataclasses import dataclass, field
-from datetime import UTC, date, datetime
 from pathlib import Path
 
 from pagle_data.errors import At, Problems
-from pagle_data.hunts import GENERATED_CLASSES, HuntLayer, HuntList, hunt_hash
-from pagle_data.toml_reader import check_keys, describe, expect_ids, expect_table, read_toml
+from pagle_data.hunts import FIXED_CLASS, GENERATED_CLASSES, HuntLayer, HuntList, class_key, hunt_hash
+from pagle_data.toml_reader import (
+    check_keys,
+    date_text,
+    describe,
+    expect_date,
+    expect_ids,
+    expect_table,
+    read_toml,
+)
 from pagle_data.universe import HUNTS_TOML
 
 LOCK = "data/hunts/released.lock"
@@ -25,7 +31,6 @@ LOCK_HEADER = """\
 # (DATA-R73). The generator fails when data/hunts/hunts.toml breaks it (DATA-R96).
 """
 _HASH = re.compile(r"[0-9a-f]{64}")
-_FIXED_CLASS = re.compile(r"fixed\.[A-Za-z0-9_]+")
 
 
 @dataclass(frozen=True)
@@ -64,14 +69,14 @@ def _locked_hunt(table: Mapping[str, object], at: At, problems: Problems) -> Loc
     value = table.get("hash")
     if "hash" in table and not (isinstance(value, str) and _HASH.fullmatch(value)):
         problems.add(at / "hash", f"expected 64 lowercase hex characters (DATA-R94), got {describe(value)}")
-    retired = table.get("retired")
-    if "retired" in table and (isinstance(retired, datetime) or not isinstance(retired, date)):
-        problems.add(at / "retired", f"expected a date (YYYY-MM-DD), got {describe(retired)}")
-        return None
+    retired = None
+    if "retired" in table:
+        retired = expect_date(table["retired"], at / "retired", problems)
+        if retired is None:
+            return None
     if not isinstance(value, str) or not _HASH.fullmatch(value):
         return None
-    server_time = calendar.timegm(retired.timetuple()) if isinstance(retired, date) else None
-    return LockedHunt(value, server_time, at)
+    return LockedHunt(value, retired, at)
 
 
 def read_lock(root: Path, problems: Problems) -> Lock:
@@ -89,8 +94,8 @@ def read_lock(root: Path, problems: Problems) -> Lock:
         if locked is not None:
             lock.hunts[hunt_id] = locked
     for class_id, table in _tables(document, "class", problems).items():
-        at = At(LOCK, f'class."{class_id}"')
-        if class_id not in GENERATED_CLASSES and not _FIXED_CLASS.fullmatch(class_id):
+        at = At(LOCK, class_key(class_id))
+        if class_id not in GENERATED_CLASSES and not FIXED_CLASS.fullmatch(class_id):
             problems.add(at, f"'{class_id}' is neither a fixed class ID nor a generated class (DATA-R90, DATA-R91)")
             continue
         check_keys(table, at, problems, required=("members",), optional=())
@@ -119,8 +124,8 @@ def check_lock(lock: Lock, layer: HuntLayer, problems: Problems) -> None:
             problems.add(hunt.at, f"{message} (DATA-R96, ADR 0005)")
         retired = hunt.get("retired")
         if locked.retired is not None and retired != locked.retired:
-            now = f"is {_date(retired)}" if isinstance(retired, int) else "is gone"
-            message = f"the released Hunt was retired on {_date(locked.retired)} in {LOCK}, and the date {now}"
+            now = f"is {date_text(retired)}" if isinstance(retired, int) else "is gone"
+            message = f"the released Hunt was retired on {date_text(locked.retired)} in {LOCK}, and the date {now}"
             problems.add(hunt.at / "retired", f"{message}; a locked retired date never changes (DATA-R96)")
     fixed = {entry.id: entry for entry in layer.classes}
     for class_id, members in lock.classes.items():
@@ -129,7 +134,7 @@ def check_lock(lock: Lock, layer: HuntLayer, problems: Problems) -> None:
         entry = fixed.get(class_id)
         if entry is None:
             message = f"the locked fixed class is gone from {HUNTS_TOML}; a class a released Hunt targets only grows"
-            problems.add(At(LOCK, f'class."{class_id}"'), f"{message} (DATA-R96, ADR 0005)")
+            problems.add(At(LOCK, class_key(class_id)), f"{message} (DATA-R96, ADR 0005)")
             continue
         lost = [member for member in members if member not in entry.members]
         if lost:
@@ -147,12 +152,7 @@ def check_locked_members(lock: Lock, items: Collection[int], problems: Problems)
         for member in members:
             if member not in items:
                 message = f"item {member} is a locked member but doesn't ship (it's uncharted or not in the catalogue)"
-                problems.add(At(LOCK, f'class."{class_id}"') / "members", f"{message}; keep it shipping (DATA-R91)")
-
-
-def _date(server_time: int) -> str:
-    """A server time at 00:00 UTC as the TOML date it was read from (DATA-R87)."""
-    return datetime.fromtimestamp(server_time, UTC).date().isoformat()
+                problems.add(At(LOCK, class_key(class_id)) / "members", f"{message}; keep it shipping (DATA-R91)")
 
 
 def lock_toml(hunt_list: HuntList) -> str:
@@ -165,12 +165,12 @@ def lock_toml(hunt_list: HuntList) -> str:
         lines = [f"[hunt.{record['id']}]", f'hash = "{hunt_hash(record)}"']
         retired = record.get("retired")
         if isinstance(retired, int):
-            lines.append(f"retired = {_date(retired)}")
+            lines.append(f"retired = {date_text(retired)}")
         tables.append("\n".join(lines) + "\n")
         target = record.get("class")
         if isinstance(target, str):
             targeted.add(target)
     for class_id in sorted(targeted):
         members = ", ".join(str(member) for member in sorted(hunt_list["classes"].get(class_id, {})))
-        tables.append(f'[class."{class_id}"]\nmembers = [{members}]\n')
+        tables.append(f"[{class_key(class_id)}]\nmembers = [{members}]\n")
     return LOCK_HEADER + "".join(f"\n{table}" for table in tables)
