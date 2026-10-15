@@ -49,7 +49,7 @@ ns.WireDev(
 			Screenshot()
 		end,
 		clock = function()
-			return date("%H:%M:%S")
+			return date("%H:%M:%S") --[[@as string]]
 		end,
 	}
 )

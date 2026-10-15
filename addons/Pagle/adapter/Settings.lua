@@ -388,7 +388,7 @@ end
 -- The root and each page registered, in the panel's order, as Core's tour stops (CORE-R68): each opens through
 -- Pagle.OpenSettings, and its hide closes the panel through Blizzard's own path (HideUIPanel, SET-R12).
 local function addTourStops()
-	local topics = { false }
+	local topics = { false } ---@type (string|false)[]
 	for _, topic in ipairs(ns.SETTINGS_TOPICS) do
 		if pages[topic] then
 			topics[#topics + 1] = topic

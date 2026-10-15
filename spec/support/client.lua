@@ -320,6 +320,7 @@ local function clientStubs(client)
 			client.screenshots = client.screenshots + 1
 		end,
 		-- The client's date is Lua's os.date, in the local time.
+		---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no os
 		date = os.date,
 	}
 

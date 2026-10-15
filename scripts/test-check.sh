@@ -109,9 +109,9 @@ uses_create_frame() {
 	printf 'local frame = CreateFrame("Frame")\nreturn frame\n' >"$1"
 }
 
-# Writes a Lua file that calls the WoW global Screenshot, which Pagle never inventories.
-uses_screenshot() {
-	printf 'Screenshot()\n' >"$1"
+# Writes a Lua file that calls the WoW global Logout, which Pagle never inventories (the dev tour took Screenshot).
+uses_logout() {
+	printf 'Logout()\n' >"$1"
 }
 
 # Drops a file from Pagle.toc, or from the TOC given second.
@@ -175,12 +175,12 @@ expect "a Module's locale/ reading Pagle beyond its CORE-R11 guard fails lint" l
 	"accessing undefined variable 'Pagle'"
 
 copy
-uses_screenshot "$addon/adapter/Global.lua"
-expect "a WoW global in adapter/ fails lint until inventoried" lint "accessing undefined variable 'Screenshot'"
+uses_logout "$addon/adapter/Global.lua"
+expect "a WoW global in adapter/ fails lint until inventoried" lint "accessing undefined variable 'Logout'"
 
 copy
-uses_screenshot "$addon/adapter/Global.lua"
-inventory_add Screenshot
+uses_logout "$addon/adapter/Global.lua"
+inventory_add Logout
 expect "a WoW global in adapter/ passes once inventoried" pass
 
 copy

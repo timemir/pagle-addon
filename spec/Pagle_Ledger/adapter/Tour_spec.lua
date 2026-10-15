@@ -93,7 +93,7 @@ describe("the Fish Journal's tour stops (CORE-R65, CORE-R68)", function()
 		fake.slash("dev tour ledger")
 		fake.wait(1.6)
 		for i = 1, 8 do
-			assert.is_true(journal:IsShown(), "stop " .. i .. " left the book closed")
+			assert(journal:IsShown(), "stop " .. i .. " left the book closed")
 			local search = journal.frame.search:GetText()
 			seen[i] = { place = journal.router:Place(), search = search ~= "" and search or nil }
 			fake.wait(STOP)

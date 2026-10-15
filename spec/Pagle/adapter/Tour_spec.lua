@@ -109,7 +109,7 @@ describe("Core's own tour stops (CORE-R65, CORE-R68)", function()
 
 		assert.are.equal(13, #shown)
 		for i, n in ipairs(shown) do
-			assert.is_true(n > 0, "stop " .. i .. " showed nothing")
+			assert(n > 0, "stop " .. i .. " showed nothing")
 		end
 	end)
 
