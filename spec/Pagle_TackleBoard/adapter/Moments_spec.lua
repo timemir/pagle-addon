@@ -124,6 +124,7 @@ local function shown(moment)
 		cast = moment.cast,
 		coins = moment.coins,
 		summaryOnly = moment.summaryOnly,
+		seal = moment.seal,
 	}
 end
 
@@ -209,12 +210,40 @@ describe("the Tackle Board's moments", function()
 					icon = loaded.ns.REWARD_ICONS.campfire,
 					cast = idAt(NOW + 10),
 					coins = 25,
+					seal = 7, -- the day count on the banner's seal (announcements.md › Contracts)
 				}, shown(banner.headline))
 				assert.are.same(
 					{ "noticeDone", "toast.low", idAt(NOW + 10), 10 },
 					{ toast.headline.kind, toast.rung, toast.headline.cast, toast.coins }
 				)
 				assert.is_true(loaded.env.PagleTackleBoardDB.global.celebrated.titles.campfire_7)
+			end
+		)
+
+		it(
+			"seals a tally title's banner with the quill and the Fly Box's with the book (announcements.md › Contracts)",
+			function()
+				-- 24 Notices tie the common flies and 6 Expeditions the rare ones (TKB-R62): one Catch does all 30, earning
+				-- tally_25 at the 25th and flybox at the 30th (TKB-R60).
+				local history = { board.skill(TODAY - 3540), record("start", TODAY + 60, TODAY .. ";" .. W0) }
+				for i = 1, 24 do
+					history[#history + 1] = record("issue", TODAY + 60 + i, ONE)
+				end
+				for i = 1, 6 do
+					history[#history + 1] = record("issue", TODAY + 90 + i, ONE_E)
+				end
+				local fake = withHistory(history)
+				ready(fake)
+
+				live(fake, catch(NOW + 10))
+
+				local seals = {}
+				for _, moment in ipairs(fake.summarized) do
+					if moment.rung == "banner" then
+						seals[moment.kind] = moment.seal
+					end
+				end
+				assert.are.same({ tallyTitle = "quill", flyBoxComplete = "book" }, seals)
 			end
 		)
 

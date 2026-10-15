@@ -21,7 +21,7 @@ The angler has fished everywhere, is impressed by little, and likes fish more th
 - **Not the addon talking.** Lore never mentions Pagle, its systems or its numbers: no XP, levels, stars, Coins, Ledger, Hunts, Notices or Sessions, and none of Pagle's capitalised terms (write "fish", "catch", "angler").
   - One exception (approved in #184): the wagers set's note (`set.pagles_wagers.note`) calls them "Pagle's own wagers", naming Nat Pagle the angler, not the addon, without quoting him.
 - **Short.** A riddle, name or title is one phrase; a blurb, plaque or line one to three short sentences. Fragments are fine. No exclamation marks.
-- **No "I".** The Journal's handwritten notes ("Largest by my own measure", LED-R140) are the player's own, so printed lore doesn't speak as "I". "You" for a fellow angler is fine, sparingly.
+- **No "I".** The Journal's handwritten notes ("Largest I've landed", LED-R140) are the player's own, so printed lore doesn't speak as "I". "You" for a fellow angler is fine, sparingly.
 - **British spelling** in invented words ("colours", "armourers"); the game's own names keep theirs ("Plated Armorfish").
 - **Faction-neutral.** Every line reads the same to an Alliance and a Horde angler.
 

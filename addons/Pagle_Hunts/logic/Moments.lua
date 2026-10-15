@@ -77,6 +77,7 @@ function ns.HuntSetTitleMoment(setID)
 		stamp = L.TITLE_EARNED_STAMP,
 		icon = ns.HuntMomentIcon(nil), -- no Catch: Trade_Fishing (HNT-R55)
 		coins = ns.COINS_TITLE,
+		seal = "quill", -- the banner's wax seal (announcements.md › Contracts)
 	}
 end
 

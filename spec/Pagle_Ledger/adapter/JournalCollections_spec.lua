@@ -106,7 +106,7 @@ describe("the Journal's Trophy Room", function()
 
 			assert.are.same({
 				"The Trophy Room",
-				"2 of 5 weights. Real weights, from the game's own trophy fish.",
+				"2 of 5 weights.",
 				drawnSymbols("Mud Snapper ☆☆☆"),
 				drawnSymbols("Catfish ★★☆"),
 			}, blockTexts(left))
@@ -125,7 +125,7 @@ describe("the Journal's Trophy Room", function()
 				"Catfish",
 				"[stamps]",
 				"[board]",
-				"pounds, as the game weighs them",
+				"pounds",
 				"Landed 2 of 4. Heaviest so far: 22 lb.",
 				"Found in Elwynn Forest.",
 			}, blockTexts(right))
@@ -153,7 +153,7 @@ describe("the Journal's Trophy Room", function()
 			"Mud Snapper",
 			"[stamps]",
 			"[board]",
-			"pounds, as the game weighs them",
+			"pounds",
 			"Not one of this family yet.",
 			"Found in Duskwood.",
 		}, blockTexts(right))
@@ -169,13 +169,13 @@ describe("the Journal's Trophy Room", function()
 
 		assert.are.same({
 			"The Trophy Room",
-			"2 of 5 weights. Real weights, from the game's own trophy fish.",
+			"2 of 5 weights.",
 			drawnSymbols("Catfish ★★☆"),
 		}, blockTexts(pages.left))
 		assert.are.same({
 			"[stamps]",
 			"[board]",
-			"pounds, as the game weighs them",
+			"pounds",
 			"Not one of this family yet.",
 			"Found in Duskwood.",
 		}, blockTexts(pages.right))
@@ -221,7 +221,7 @@ describe("the Journal's Trophy Room", function()
 			local _, loaded = spread({ "trophyRoom", 2 }, log)
 			local pages = loaded.ns.journal.pages
 
-			assert.are.equal("2 of 5 weights. Real weights, from the game's own trophy fish.", pages.left[2].text)
+			assert.are.equal("2 of 5 weights.", pages.left[2].text)
 			assert.are.equal("2 / 4", pages.left[4].value)
 			assert.are.equal(4, #pages.right[3].ticks)
 			assert.are.equal("Landed 2 of 4. Heaviest so far: 22 lb.", pages.right[5].text)

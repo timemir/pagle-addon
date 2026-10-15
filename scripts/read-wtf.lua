@@ -200,15 +200,16 @@ local function sortedKeys(t)
 end
 
 -- What the log holds, decoded with Core's codec: the Casts counted (those at `since` or later), the tags, the last
--- B1 and S1 entries, repeated entry IDs and the entries the codec can't decode.
-local function readLog(ns, log, since)
+-- B1 and S1 entries, repeated entry IDs and the entries the codec can't decode. `breaks` is the file's
+-- PagleDB.global.sessionBreaks, so the Casts carry the Session IDs Core gives them (LOG-R99).
+local function readLog(ns, log, since, breaks)
 	local tags = {}
 	for _, entry in ipairs(log.entries) do
 		local tag = type(entry) == "string" and entry:match("^(%u%d+)|") or "(no tag)"
 		tags[tag] = (tags[tag] or 0) + 1
 	end
 	-- The reader's own decodeErrors, so the file's count stays what Pagle counted in the game (LOG-R16).
-	local global = { decodeErrors = 0 }
+	local global = { decodeErrors = 0, sessionBreaks = breaks }
 	local catchLog = ns.OpenCatchLog(log, global, 0)
 	local facts = { tags = tags, casts = {}, allCasts = 0, builds = 0, skills = 0, repeated = {} }
 	-- sessions: each Session ID the Casts carry (LOG-R98), with its Casts and its first Cast, for Stats' cross-check.
@@ -412,7 +413,7 @@ local function printCatchLog(pagle, expectCasts, since)
 		print("PagleLog is " .. format .. ": Core starts a new log at login")
 		return { { ok = false, line = "PagleLog is " .. format } }
 	end
-	local facts = readLog(ns, log, since)
+	local facts = readLog(ns, log, since, global.sessionBreaks)
 	printLog(log, facts, since)
 	return expectCasts and exitChecks(facts, decodeErrors, expectCasts) or {}, facts
 end

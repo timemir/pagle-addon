@@ -87,8 +87,17 @@ function ns.AddWalletProjection(options)
 		publish(stored)
 	end
 
-	return ns.AddCoreProjection(options.projections, {
-		db = options.db,
+	return ns.AddCoreProjection(options.projections, ns.WalletProjectionDef(options.db, publish), options.iterate)
+end
+
+--- The wallet projection's def (LOG-R70) over `db`: each live purchase that counts, and each done, hands the state
+--- to `publish`.
+---@param db table PagleDB.global.projections.wallet, or a table of the caller's making
+---@param publish fun(state: PagleWalletState)
+---@return PagleProjectionDef
+function ns.WalletProjectionDef(db, publish)
+	return {
+		db = db,
 		rulesVersion = ns.WALLET_RULES_VERSION,
 		reset = reset,
 		apply = function(state, record, mode)
@@ -99,5 +108,15 @@ function ns.AddWalletProjection(options)
 		done = function(state)
 			publish(state)
 		end,
-	}, options.iterate)
+	}
+end
+
+--- Core's own projections for Pagle's backend (#223): its projection driver folds the Catch log through logic/ alone,
+--- without adapter/ (CORE-R7). Calls `newProjection(name, def)` for each of Core's projections (LOG-R78) the backend
+--- folds, named by its PagleDB.global.projections key, each over a table of its own making: the wallet's ("wallet"),
+--- whose state carries the Coins spent (SHOP-R11). The Field report's is left out: its input, the diagnostics buffer,
+--- never leaves the client (LOG-R82).
+---@param newProjection fun(name: string, def: PagleProjectionDef)
+function ns.BindCoreProjections(newProjection)
+	newProjection("wallet", ns.WalletProjectionDef({}, function() end))
 end

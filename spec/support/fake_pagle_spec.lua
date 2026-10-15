@@ -1061,6 +1061,21 @@ describe("FakePagle", function()
 			}, fake.printed)
 		end)
 
+		it("has the next Cast after endsession start a new Session, as Core does (#258, LOG-R99)", function()
+			local fake = newFakePagle()
+			fake.login()
+			fake.enterWorld()
+			local first = assert(fake.playCast("caught", { { itemID = 6358, quantity = 1 } }))
+			fake.slash("dev on")
+			fake.slash("dev endsession")
+
+			fake.wait(10)
+			local second = assert(fake.playCast("caught", { { itemID = 6358, quantity = 1 } }))
+
+			assert.are.same({ first.id, second.id }, { first.session, second.session })
+			assert.are.equal(second.id, fake.Pagle.GetSession().id)
+		end)
+
 		it("hands the glyph probe and Core's fonts to fake.glyphProbes, as Core shows them (#248, CORE-R9)", function()
 			local fake = newFakePagle()
 			fake.login()

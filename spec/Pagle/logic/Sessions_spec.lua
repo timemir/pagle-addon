@@ -103,6 +103,21 @@ describe("cutting Sessions", function()
 		assert.are.same({ idAt(0), false, idAt(1001) }, tags(catchLog, 0))
 	end)
 
+	it("splits after the Cast a Session was ended early at, read from seq 0 or any afterSeq (#258, LOG-R99)", function()
+		-- What `/pagle dev endsession` notes in PagleDB.global: the Session ended after the Cast at T + 100.
+		local global = { sessionBreaks = { [idAt(100)] = true } }
+		local catchLog = ns.OpenCatchLog(log({ cast(0), cast(100), skill(105), cast(110), cast(120) }), global)
+		local whole = tags(catchLog, 0)
+
+		assert.are.same({ idAt(0), idAt(0), idAt(0), idAt(110), idAt(110) }, whole)
+		for afterSeq = 1, 5 do
+			local part = tags(catchLog, afterSeq)
+			for seq = afterSeq + 1, 5 do
+				assert.are.equal(whole[seq], part[seq], ("seq %d read after %d"):format(seq, afterSeq))
+			end
+		end
+	end)
+
 	it("tags the same whether the log is read from seq 0 or from any later afterSeq (LOG-R98)", function()
 		local catchLog = ns.OpenCatchLog(
 			log({ cast(0), skill(5), cast(100), cast(290, 2), skill(600), cast(700), skill(750), cast(900) }),
@@ -248,8 +263,9 @@ describe("the Session events", function()
 	-- A tracker over a log holding `entries`, its events noted in `fired` ("<event> <id> [whileAway]") and their
 	-- payloads in `payloads`, with PagleDB.global `global`.
 	local function tracked(entries, global)
-		local catchLog = ns.OpenCatchLog(log(entries), {})
-		local seen = { fired = {}, payloads = {}, global = global or {}, catchLog = catchLog }
+		global = global or {}
+		local catchLog = ns.OpenCatchLog(log(entries), global)
+		local seen = { fired = {}, payloads = {}, global = global, catchLog = catchLog }
 		seen.tracker = ns.NewSessionTracker({
 			catchLog = catchLog,
 			global = seen.global,
@@ -367,34 +383,58 @@ describe("the Session events", function()
 			}, seen.fired)
 		end)
 
-		it("reopens it with SessionStarted when a Cast still joins it, and ends it again (#247, LOG-R60)", function()
+		it("has the next Cast open a new Session, whatever the gap, as a fresh read cuts it (#258)", function()
 			local seen = tracked({})
 			seen.tracker:Start(T)
 			castAt(seen, 0)
-			seen.tracker:EndNow(T + 10)
+			seen.tracker:EndNow(T + 5)
 
-			castAt(seen, 20)
-			assert.are.equal(idAt(0), seen.tracker:Get(T + 20).id)
-			seen.tracker:Tick(T + 20 + ns.SESSION_GAP)
+			castAt(seen, 10)
 
 			assert.are.same({
 				"SessionStarted " .. idAt(0),
 				"SessionEnded " .. idAt(0),
-				"SessionStarted " .. idAt(0),
-				"SessionEnded " .. idAt(0),
+				"SessionStarted " .. idAt(10),
 			}, seen.fired)
-			assert.are.equal(2, seen.payloads[3].casts)
+			assert.are.same({ idAt(10), 1 }, { seen.tracker:Get(T + 10).id, seen.payloads[3].casts })
+			assert.are.same({ idAt(0), idAt(10) }, tags(seen.catchLog, 0))
+			assert.are.same({ idAt(0), idAt(10) }, tags(ns.OpenCatchLog(seen.catchLog.data, seen.global), 0))
 		end)
 
-		it("stays ended after a reload within the gap: lastEndedSession names it (#247, LOG-R63)", function()
-			local seen = tracked({ cast(0) }, { lastEndedSession = idAt(0) })
+		it("leaves a Cast 10 s later in the same Session without it (#258, LOG-R60)", function()
+			local seen = tracked({})
+			seen.tracker:Start(T)
+			castAt(seen, 0)
+
+			castAt(seen, 10)
+
+			assert.are.same({ "SessionStarted " .. idAt(0) }, seen.fired)
+			assert.are.same({ idAt(0), idAt(0) }, tags(seen.catchLog, 0))
+		end)
+
+		it("stays ended after a reload within the gap, and the next Cast opens a new Session (#247, #258)", function()
+			local before = tracked({})
+			before.tracker:Start(T)
+			castAt(before, 0)
+			before.tracker:EndNow(T + 5)
+			-- A reload: a new login over the same PagleLog and PagleDB.global.
+			local seen = tracked({}, before.global)
+			seen.catchLog = ns.OpenCatchLog(before.catchLog.data, before.global)
+			seen.tracker = ns.NewSessionTracker({
+				catchLog = seen.catchLog,
+				global = seen.global,
+				fire = function(event, session)
+					seen.fired[#seen.fired + 1] = event .. " " .. session.id
+				end,
+			})
 
 			assert.is_nil(seen.tracker:Start(T + 10))
 			seen.tracker:Idle()
-			seen.tracker:Tick(T + ns.SESSION_GAP)
-
-			assert.are.same({}, seen.fired)
 			assert.is_nil(seen.tracker:Get(T + 10))
+			castAt(seen, 20)
+
+			assert.are.same({ "SessionStarted " .. idAt(20) }, seen.fired)
+			assert.are.same({ idAt(0), idAt(20) }, tags(seen.catchLog, 0))
 		end)
 	end)
 

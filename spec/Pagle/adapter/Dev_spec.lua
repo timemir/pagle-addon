@@ -132,6 +132,53 @@ describe("/pagle dev endsession", function()
 		end
 	)
 
+	it(
+		"has the next Cast, 10 s later, start a new Session that the projections and every later read see"
+			.. " (#258, LOG-R99)",
+		function()
+			local loaded = loadCore({ BUILD_ENTRY })
+			local M = loaded.env.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
+			local applied = {}
+			M:NewProjection({
+				db = {},
+				rulesVersion = 1,
+				reset = function()
+					return {}
+				end,
+				apply = function(_, record)
+					if record.kind == "cast" then
+						applied[#applied + 1] = record.session
+					end
+				end,
+			})
+			local started = {}
+			loaded.env.Pagle.RegisterCallback(started, "SessionStarted", function(_, session)
+				started[#started + 1] = session.id
+			end)
+			enterWorld(loaded, 2)
+			catchOne(loaded)
+			pagle(loaded, "dev on")
+			pagle(loaded, "dev endsession")
+
+			loaded.client.advance(10)
+			catchOne(loaded)
+
+			assert.are.equal(2, #started)
+			assert.are_not.equal(started[1], started[2])
+			assert.are.same(started, applied)
+			assert.are.equal(started[2], loaded.env.Pagle.GetSession().id)
+			-- After a /reload, Core cuts the same two Sessions from the saved log.
+			local reloaded = enterWorld(loadCore(loaded.env.PagleLog, loaded.env.PagleDB))
+			local tags = {}
+			for record in reloaded.env.Pagle.IterateCatches() do
+				if record.kind == "cast" then
+					tags[#tags + 1] = record.session
+				end
+			end
+			assert.are.same(started, tags)
+		end
+	)
+
 	it("says so, and fires nothing, with no Session open (#247, LOG-R64)", function()
 		local loaded = enterWorld(loadCore({ BUILD_ENTRY }), 2)
 		local ended = {}

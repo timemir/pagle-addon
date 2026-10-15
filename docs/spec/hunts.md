@@ -260,13 +260,13 @@ Hunts never cuts Sessions and doesn't read a record's `session` (LOG-R98).
 - **HNT-R85** Hunts raises moments only from a `"live"` apply (LOG-R73), from its regroup (HNT-R88), or as `summaryOnly` moments from `done` (HNT-R112). Each Hunt tier and each set title is raised at most once, guarded by the celebrated set (HNT-R90).
 - **HNT-R86** The moments:
 
-  | Moment | `rung` | `kind` | `title` | `text` | `stamp` | `icon` | `coins` |
-  |---|---|---|---|---|---|---|---|
-  | Hunt completed (tier 1) | `toast.high` | `huntCompleted` | "Hunt complete" | the Hunt's name | "Hunt" | the item ID of the Catch that reached it | 30 |
-  | further tier | `toast.high` | `huntTier` | "{Trim} tier" ("Silver tier") | "{Hunt name} · {threshold} caught" | the trim ("Silver") | the item ID of the Catch that reached it | 15 |
-  | set title | `banner` | `huntSetTitle` | "Title earned" | the title | "Title" | `Trade_Fishing` | 100 |
+  | Moment | `rung` | `kind` | `title` | `text` | `stamp` | `icon` | `coins` | `seal` |
+  |---|---|---|---|---|---|---|---|---|
+  | Hunt completed (tier 1) | `toast.high` | `huntCompleted` | "Hunt complete" | the Hunt's name | "Hunt" | the item ID of the Catch that reached it | 30 | |
+  | further tier | `toast.high` | `huntTier` | "{Trim} tier" ("Silver tier") | "{Hunt name} · {threshold} caught" | the trim ("Silver") | the item ID of the Catch that reached it | 15 | |
+  | set title | `banner` | `huntSetTitle` | "Title earned" | the title | "Title" | `Trade_Fishing` | 100 | `"quill"` |
 
-  A moment raised in a live apply for a Catch of the Cast being applied carries `cast` = that Cast's entry ID, so Core merges it with every other moment of that Cast (ANN-R10). A Catch that crosses several tiers or Hunts raises one moment for each. A `summaryOnly` moment carries no `cast`.
+  A moment raised in a live apply for a Catch of the Cast being applied carries `cast` = that Cast's entry ID, so Core merges it with every other moment of that Cast (ANN-R10). A Catch that crosses several tiers or Hunts raises one moment for each. A `summaryOnly` moment carries no `cast`. `seal` is what the banner's wax seal shows ([core/announcements.md › Contracts](core/announcements.md#contracts)).
 - **HNT-R87** A set title **from a Catch** (HNT-R23) rides on that Cast. A title **from a retirement** is stored with `fromRetirement = true` and is always raised with `summaryOnly = true`: right away when a live apply finds it, otherwise from the next `done` (HNT-R112). It never goes into a Write-up section, except at a first build, which marks everything celebrated (HNT-R111).
 - **HNT-R88** **Window moments** are opt-in (setting off by default) and for pinned Hunts only.
   - **Baseline:** every regroup records, in memory, whether each current Hunt's `NextWindow` result is `openNow`, pinned or not.

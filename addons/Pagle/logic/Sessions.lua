@@ -24,21 +24,35 @@ ns.SESSION_RULES_VERSION = 2
 ---@field zones integer[]       -- zone areaIDs (not subzones), without 0, in the order first fished (LOG-R64)
 ---@field whileAway? boolean    -- on the SessionEnded fired at login for a Session that ended while away (LOG-R63)
 
+--- Whether a Session ended early, by `/pagle dev endsession`, right after the Cast with this entry ID (LOG-R99).
+---@alias PagleSessionBreaks fun(castID: string): boolean
+
 --- The Session a cutter is in, as it builds it: a PagleSession plus the sets behind its lists.
 ---@class PagleSessionCut : PagleSession
+---@field lastID string -- the entry ID of its last Cast, where a break would end it (LOG-R99)
 ---@field package seenCharacters table<integer, true>
 ---@field package seenZones table<integer, true>
 
---- Cuts Sessions from records fed in seq order (LOG-R60) and tags each Cast and Skill Reading with its Session's ID
---- (LOG-R98).
+--- Cuts Sessions from records fed in seq order (LOG-R60, LOG-R99) and tags each Cast and Skill Reading with its
+--- Session's ID (LOG-R98).
 ---@class PagleSessionCutter
 ---@field package session PagleSessionCut? -- the latest Session fed so far, open or not
+---@field package breaks PagleSessionBreaks? -- where Sessions ended early, asked as each Cast is fed
 local Cutter = {}
 Cutter.__index = Cutter
 
+---@param breaks PagleSessionBreaks? where Sessions ended early (LOG-R99); none without it
 ---@return PagleSessionCutter
-function ns.NewSessionCutter()
-	return setmetatable({}, Cutter)
+function ns.NewSessionCutter(breaks)
+	return setmetatable({ breaks = breaks }, Cutter)
+end
+
+-- Whether `session` ended early after its last Cast (LOG-R99).
+---@param cutter PagleSessionCutter
+---@param session PagleSessionCut
+---@return boolean
+local function broken(cutter, session)
+	return cutter.breaks ~= nil and cutter.breaks(session.lastID)
 end
 
 -- A Session that `cast` opens.
@@ -51,6 +65,7 @@ local function open(cast)
 		endTime = cast.time,
 		firstSeq = cast.seq,
 		lastSeq = cast.seq,
+		lastID = cast.id,
 		casts = 0,
 		catches = 0,
 		gotAway = 0,
@@ -65,7 +80,7 @@ end
 ---@param session PagleSessionCut
 ---@param cast PagleCast
 local function count(session, cast)
-	session.endTime, session.lastSeq = cast.time, cast.seq
+	session.endTime, session.lastSeq, session.lastID = cast.time, cast.seq, cast.id
 	session.casts = session.casts + 1
 	session.catches = session.catches + #cast.items
 	if cast.outcome == "gotAway" then
@@ -82,15 +97,16 @@ local function count(session, cast)
 	end
 end
 
---- Feeds the next record (LOG-R60, LOG-R98). A Cast less than the gap after the previous Cast, by entry time, joins
---- its Session; otherwise it opens a new one. A Skill Reading belongs to the Session whose last Cast is less than
+--- Feeds the next record (LOG-R60, LOG-R98, LOG-R99). A Cast less than the gap after the previous Cast, by entry
+--- time, joins its Session, unless that Session ended early after the previous Cast; otherwise it opens a new one.
+--- The break splits Casts only: a Skill Reading belongs to the Session whose last Cast is less than
 --- the gap before it, else to none. Sets `record.session`; other kinds are passed over.
 ---@param record PagleRecord
 function Cutter:Add(record)
 	local session = self.session
 	if record.kind == "cast" then
 		---@cast record PagleCast
-		if not session or record.time - session.endTime >= ns.SESSION_GAP then
+		if not session or record.time - session.endTime >= ns.SESSION_GAP or broken(self, session) then
 			session = open(record)
 			self.session = session
 		end
@@ -105,7 +121,7 @@ end
 --- A cutter that goes on from where this one is, sharing nothing with it.
 ---@return PagleSessionCutter
 function Cutter:Copy()
-	local copy = ns.NewSessionCutter()
+	local copy = ns.NewSessionCutter(self.breaks)
 	local session = self.session
 	if session then
 		local cut = {}
@@ -132,16 +148,18 @@ end
 
 --- Where a Session in progress starts (LOG-R98): `reverseCasts` yields the log's Casts from some point back to the
 --- first, newest first. Returns the seq of the first Cast of the newest one's Session, or nil if it yields none.
---- Feeding a cutter from there gets every later record the same tag as reading the log from seq 0.
+--- Feeding a cutter, with the same `breaks`, from there gets every later record the same tag as reading the log
+--- from seq 0.
 ---@param reverseCasts fun(): PagleCast?
+---@param breaks PagleSessionBreaks? where Sessions ended early (LOG-R99)
 ---@return integer?
-function ns.SessionStartSeq(reverseCasts)
+function ns.SessionStartSeq(reverseCasts, breaks)
 	local first = reverseCasts()
 	if not first then
 		return nil
 	end
 	for cast in reverseCasts do
-		if first.time - cast.time >= ns.SESSION_GAP then
+		if first.time - cast.time >= ns.SESSION_GAP or (breaks ~= nil and breaks(cast.id)) then
 			break
 		end
 		first = cast
@@ -226,10 +244,6 @@ function Tracker:Cast()
 		end
 		self.session, self.ended, self.away = session, false, false
 		self.options.fire("SessionStarted", ns.SessionPayload(session))
-	elseif self.ended then
-		-- A Session ended early (EndNow) that this Cast still joins in the log (LOG-R60): it opens again.
-		self.session, self.ended = session, false
-		self.options.fire("SessionStarted", ns.SessionPayload(session))
 	end
 	return ns.SESSION_GAP
 end
@@ -250,10 +264,10 @@ function Tracker:Tick(now)
 	return nil
 end
 
---- `/pagle dev endsession` (#247): ends the Session open at `now` as if its gap had passed (LOG-R62), firing
---- SessionEnded and noting it in lastEndedSession. The log is untouched, so a later Cast that the gap still puts in
---- this Session opens it again (Cast), and a reload within the gap finds it ended (Start). Returns false, firing
---- nothing, when no Session is open.
+--- `/pagle dev endsession` (#247, #258): ends the Session open at `now` as if its gap had passed (LOG-R62), firing
+--- SessionEnded and noting it in lastEndedSession, and notes a break after its last Cast (LOG-R99), so the next
+--- Cast opens a new Session whatever the gap. The log is untouched; a reload within the gap finds it ended (Start).
+--- Returns false, firing nothing, when no Session is open.
 ---@param now integer server time
 ---@return boolean ended
 function Tracker:EndNow(now)
@@ -261,6 +275,7 @@ function Tracker:EndNow(now)
 	if not session or self.ended or self.away or remaining(session, now) <= 0 then
 		return false
 	end
+	self.options.catchLog:BreakSession()
 	fireEnded(self)
 	return true
 end

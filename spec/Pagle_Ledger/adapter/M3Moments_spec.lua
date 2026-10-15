@@ -249,6 +249,8 @@ describe("the Ledger's M3 live moments", function()
 				{ master.rung, master.order, master.title, master.text, master.stamp, master.coins, master.cast }
 			)
 			assert.are.equal("string", type(master.icon))
+			-- Its banner's seal is the plain waves mark (announcements.md › Contracts).
+			assert.are.equal("waves", master.seal)
 			assert.are.equal(5, loaded.env.PagleLedgerDB.global.celebrated.zones[COVE])
 		end
 	)
