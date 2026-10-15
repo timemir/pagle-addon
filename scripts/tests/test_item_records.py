@@ -11,6 +11,7 @@ from baseline_fixture import write_baseline
 from cli_fixture import run
 from item_fixture import CHECKS, write_item_layer
 from observed_fixture import write_observed
+from hunts_fixture import write_hunts
 from pools_fixture import write_pools
 from windows_fixture import write_windows
 
@@ -45,6 +46,7 @@ def write_tree(
     write_areas(root)  # test_catch_lists.py covers areas.toml
     write_observed(root)  # dev.toml with no facts; test_observed.py covers the layer
     write_pools(root)  # test_pools.py covers pool types
+    write_hunts(root)  # test_hunts.py covers the Hunt list
     return write_item_layer(root, items, species, families, checks)
 
 
@@ -409,10 +411,9 @@ def test_the_typical_length_check_runs_only_when_switched_on(
         # DATA-R63: an unknown key in any TOML file under data/ (#96's audit found checks.toml's untested).
         ("typicalLength = false\nlore = []\nhunts = true\n", "data/checks.toml: unknown key 'hunts'"),
         ('typicalLength = false\nlore = ["fishing"]\n', "data/checks.toml: lore[0]: expected a lore ID"),
-        # Only the Ledger's lore check is built in M3 (DATA-R107): switching another on fails instead of passing
-        # unchecked.
+        # A lore check not built yet (DATA-R107: Stats' in M6, the Tackle Board's in M7) switched on fails instead of
+        # passing unchecked.
         ('typicalLength = false\nlore = ["stats"]\n', "data/checks.toml: lore[0]: the stats lore check isn't built"),
-        ('typicalLength = false\nlore = ["hunts"]\n', "data/checks.toml: lore[0]: the hunts lore check isn't built"),
         (
             'typicalLength = false\nlore = ["tackleboard"]\n',
             "data/checks.toml: lore[0]: the tackleboard lore check isn't built",

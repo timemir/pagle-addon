@@ -22,7 +22,6 @@ local LAYOUT_METHODS = {
 	"SetWordWrap",
 	"SetClampedToScreen",
 	"SetFrameStrata",
-	"SetUserPlaced",
 	"EnableMouseWheel",
 	"SetRotation",
 	"SetAutoFocus",
@@ -88,7 +87,7 @@ end
 --- { r, g, b[, a] }), blend mode (`blendMode`) and coordinates (`texCoord`), a button's attributes (`attributes`),
 --- click registration (`clicks`, RegisterForClicks's arguments) and locked highlight (`highlightLocked`), and a
 --- frame's mouse and moving state: `mouseEnabled`, `movable`, `dragButtons` (RegisterForDrag's arguments) and
---- `moving`; also whether it takes clicks (`enabled`), and a scroll frame's `verticalScroll` and `scrollChild`.
+--- `moving`, and `userPlaced` (SetUserPlaced's, or true from StartMoving); also whether it takes clicks (`enabled`), and a scroll frame's `verticalScroll` and `scrollChild`.
 ---@param kind string "Frame", "Button", "FontString", "Texture", …
 ---@param parent table?
 ---@return table
@@ -104,8 +103,15 @@ function widgets.newWidget(kind, parent)
 		points = {},
 		attributes = {},
 	}
-	function widget:SetPoint(...)
-		self.points[#self.points + 1] = { ... }
+	-- As the client's: a second SetPoint of the same point replaces the first.
+	function widget:SetPoint(point, ...)
+		for i, anchor in ipairs(self.points) do
+			if anchor[1] == point then
+				table.remove(self.points, i)
+				break
+			end
+		end
+		self.points[#self.points + 1] = { point, ... }
 	end
 	function widget:SetSize(width, height)
 		self.width, self.height = width, height
@@ -167,6 +173,7 @@ function widgets.newWidget(kind, parent)
 	function widget:StartMoving()
 		assert(self.movable, "FakeClient: StartMoving on a frame that isn't movable")
 		self.moving = true
+		self.userPlaced = true -- as the client does
 	end
 	function widget:StopMovingOrSizing()
 		if self.moving and self.movedTo then
@@ -230,6 +237,25 @@ function widgets.newWidget(kind, parent)
 	-- Whether SetMovable(true) let the player drag it.
 	function widget:IsMovable()
 		return self.movable == true
+	end
+	-- Whether the client would save where the player moved it (SetUserPlaced; StartMoving sets it, as the client
+	-- does).
+	function widget:SetUserPlaced(userPlaced)
+		self.userPlaced = userPlaced
+	end
+	function widget:IsUserPlaced()
+		return self.userPlaced == true
+	end
+	function widget:GetNumPoints()
+		return #self.points
+	end
+	-- Its right and top edges on the screen: a spec plays the client moving it during a drag by setting
+	-- `screenRight` and `screenTop` (nil until set: the fake lays out no screen position).
+	function widget:GetRight()
+		return self.screenRight
+	end
+	function widget:GetTop()
+		return self.screenTop
 	end
 	-- A texture's tint, as { r, g, b[, a] }.
 	function widget:SetVertexColor(r, g, b, a)

@@ -16,6 +16,7 @@ from pagle_data.errors import Problems
 from pagle_data.generate import read_layers
 from pagle_data.observed import Observations, observations, read_observed
 from pagle_data.universe import item_universe
+from hunts_fixture import write_hunts
 from pools_fixture import write_pools
 from windows_fixture import write_windows
 
@@ -153,6 +154,7 @@ def write_tree(root: Path, dev: str = "keys = []\n", reports: dict[str, str] | N
     write_observed(root, dev, reports)
     write_item_layer(root)  # test_item_records.py covers the item layer
     write_pools(root)  # test_pools.py covers pool types
+    write_hunts(root)  # test_hunts.py covers the Hunt list
     return root
 
 

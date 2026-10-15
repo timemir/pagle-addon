@@ -104,6 +104,9 @@ local function clientStubs(client)
 			widgets.applyTemplate(client, frame, template)
 			return frame
 		end,
+		-- The minimap and what hangs around it (Blizzard_Minimap), which the tracker dock sits under (CORE-R70). Shift,
+		-- which a docked tracker's drag needs (CORE-R71), is client.keysDown.SHIFT (spec/support/fake_game.lua).
+		MinimapCluster = widgets.newWidget("Frame"),
 		-- A font object, keeping its name and what SetFont gave it (`font`: file, size, flags).
 		CreateFont = function(name)
 			local font = { name = name }

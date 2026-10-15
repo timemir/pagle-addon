@@ -282,7 +282,7 @@ Legends, titles, Simulated Size with the typical-length check on, Catch Mileston
 - Settings: "Show the Hunts tracker" on Trackers, "Tell me when a pinned Hunt's window opens" on Announcements; Core adds the two slots' dropdowns. That is SET-R32, SET-R40, SET-R41, SET-R44, SET-R45 for Hunts, and SET-R11's "Open Hunts"
 
 **Exit check:**
-1. `scripts/generate-data.py --check` passes with the v1 Hunt list. Breaking a Hunt on purpose (a natural Hunt without a gated catch entry, or a 1-hour weekly window) makes it fail with the admission or rarity-cap error.
+1. `scripts/generate-data.py --check` passes with the v1 Hunt list. Breaking a Hunt on purpose (a natural Hunt without a gated catch entry, or an imposed Hunt open one hour a year) makes it fail with the admission or rarity-cap error.
 2. With the full package enabled, `/pagle hunts` and the compartment entry toggle the board. It groups the 16 Hunts by realm time: Night Run is Now at night and not in the afternoon, Winter's Squid reads "back in September" in summer, and Rack Hour is On demand.
 3. Pin Night Run and Dawn Trout: the tracker docks under the minimap above any other tracker and lists both with live labels. Shift-drag moves the dock; Reset puts it back.
 4. Catch a Raw Nightfin Snapper (any time of day): Night Run completes with a "Hunt complete" toast whose Coins stamp includes its 30, its seal shows the date, and the tracker shows "1 / 10".

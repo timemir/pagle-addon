@@ -13,6 +13,7 @@ from pagle_data.errors import At, Problems
 from pagle_data.items import Record
 from pagle_data.lua import to_lua
 from pagle_data.toml_reader import check_keys, describe, expect_table, read_toml
+from pagle_data.universe import HUNTS_TOML
 
 LORE = "data/lore"
 MANIFEST = f"{LORE}/manifest.toml"
@@ -123,11 +124,13 @@ class ManifestKind:
 @dataclass
 class LoreLayer:
     """data/lore/ as read: each lore file present, by lore ID, with its texts by key, and the manifest's kinds by
-    lore ID and kind."""
+    lore ID and kind. hunts holds the Hunt and set text of data/hunts/hunts.toml by key (DATA-R105), Pagle_Hunts'
+    lore that stays beside its definitions; the generator sets it from the Hunt layer."""
 
     files: dict[str, dict[str, Text]] = field(default_factory=dict)
     manifest: dict[str, dict[str, ManifestKind]] = field(default_factory=dict)
     unreadable: set[str] = field(default_factory=set)  # lore IDs whose file isn't valid TOML
+    hunts: dict[str, Text] = field(default_factory=dict)
 
 
 def _read_texts(root: Path, lore_id: str, problems: Problems) -> dict[str, Text] | None:
@@ -345,6 +348,10 @@ def _check_text(lore_id: str, text: Text, layer: LoreLayer, ids: CatalogueIds, p
     if owner != lore_id:
         problems.add(at, f"orphan: the kind {text.kind} is {_possessive(owner)} (DATA-R102, DATA-R107)")
         return
+    if text.kind in HUNTS_KINDS:
+        stays = f"a Hunt's and a set's text stays in {HUNTS_TOML}"
+        problems.add(at, f"orphan: {stays} (DATA-R100, DATA-R105, DATA-R107)")
+        return
     entry = layer.manifest.get(lore_id, {}).get(text.kind)
     fields = CATALOGUE_KINDS[text.kind].fields if entry is None else entry.fields
     if text.field not in fields:
@@ -363,23 +370,41 @@ def _check_text(lore_id: str, text: Text, layer: LoreLayer, ids: CatalogueIds, p
         problems.add(at, f"orphan: {why}")
         return
 
-    value = text.value
-    if not has_text(value):
+    if not has_text(text.value):
         problems.add(at, "missing: empty (DATA-R107)")
         return
-    most = limit(text.kind, text.field)
-    if most is not None and len(value) > most:
-        over = f"over {_possessive(text.field)} limit of {most}"
-        problems.add(at, f"length: {len(value)} code points, {over} (DATA-R107)")
-    if value.splitlines() != [value]:
-        problems.add(at, "newline: a line break (DATA-R107)")
-    bare = value
+    _check_value(at, text, problems)
+    bare = text.value
     for name in allowed:
         bare = bare.replace("{" + name + "}", "")
     if "{" in bare or "}" in bare:
         shown = ", ".join("{" + name + "}" for name in sorted(allowed)) or "none here"
         outside = f"outside an allowed placeholder (manifest.toml allows {shown})"
         problems.add(at, f"placeholder: {{ or }} {outside} (DATA-R107, DATA-R108)")
+
+
+def _check_value(at: At, text: Text, problems: Problems) -> None:
+    """DATA-R107's length and newline checks on one text."""
+    value = text.value
+    most = limit(text.kind, text.field)
+    if most is not None and len(value) > most:
+        over = f"over {_possessive(text.field)} limit of {most}"
+        problems.add(at, f"length: {len(value)} code points, {over} (DATA-R107)")
+    if value.splitlines() != [value]:
+        problems.add(at, "newline: a line break (DATA-R107)")
+
+
+def _check_hunt_text(text: Text, problems: Problems) -> None:
+    """DATA-R105's checks on a Hunt's or a set's text in hunts.toml: empty, length (a name 28, a set's title 32, a
+    note none), newline, and any { or } at all, since the manifest allows these keys no placeholder. They aren't in
+    the manifest, so there is no orphan or missing key: the format already requires every name and title."""
+    at = At(HUNTS_TOML, text.key)
+    if not has_text(text.value):
+        problems.add(at, "missing: empty (DATA-R105, DATA-R107)")
+        return
+    _check_value(at, text, problems)
+    if "{" in text.value or "}" in text.value:
+        problems.add(at, "placeholder: { or } in a Hunt's or set's text, which allows none (DATA-R105, DATA-R107)")
 
 
 def _needed(lore_id: str, layer: LoreLayer, ids: CatalogueIds) -> list[tuple[str, str]]:
@@ -410,6 +435,9 @@ def check_lore(layer: LoreLayer, lore_ids: Collection[str], ids: CatalogueIds, p
         for key, why in _needed(lore_id, layer, ids):
             if key not in texts:
                 problems.add(At(file, key), f"missing: {why}")
+        if lore_id == HUNTS_OWNER:
+            for key in sorted(layer.hunts, key=lambda key: key.encode("utf-8")):
+                _check_hunt_text(layer.hunts[key], problems)
 
 
 # CORE-R9's punctuation outside Latin-1, which every font Pagle uses drew in game on 2026-10-15 (#248): the en and em
@@ -426,15 +454,18 @@ def drawable(char: str) -> bool:
 
 def check_glyphs(layer: LoreLayer, problems: Problems) -> None:
     """DATA-R107's glyph check over every lore file read, whether or not its check is on: each character outside
-    CORE-R9's set, named by its code point once per text, since the client's fonts draw it as a box."""
-    for lore_id, texts in sorted(layer.files.items()):
+    CORE-R9's set, named by its code point once per text, since the client's fonts draw it as a box. The Hunt and
+    set text of hunts.toml (DATA-R105) is Pagle_Hunts' lore, so it is checked too."""
+    sources = [(lore_file(lore_id), texts) for lore_id, texts in sorted(layer.files.items())]
+    sources.append((HUNTS_TOML, layer.hunts))
+    for file, texts in sources:
         for key in sorted(texts, key=lambda key: key.encode("utf-8")):
             seen: set[str] = set()
             for char in texts[key].value:
                 if not drawable(char) and char not in seen:
                     seen.add(char)
                     problems.add(
-                        At(lore_file(lore_id), key),
+                        At(file, key),
                         f"glyph: U+{ord(char):04X} outside CORE-R9's set: {GLYPHS} (CORE-R9, DATA-R107)",
                     )
 
@@ -473,10 +504,15 @@ def retired_lore(present: Callable[[str], bool], outputs: Collection[str]) -> di
 
 
 def lore_outputs(layer: LoreLayer, header_of: Callable[[str], str]) -> dict[str, str]:
-    """Each Lore.lua by path: one for every lore ID with a lore file, emitted whether or not its check is on
-    (DATA-R104). header_of gives DATA-R6's header for a file's sources."""
-    return {
-        lore_lua(lore_id): lore_lua_text(lore_id, texts, header_of(lore_file(lore_id)))
-        for lore_id, texts in layer.files.items()
-    }
-
+    """Each Lore.lua by path: one for every lore ID with a lore file, and Pagle_Hunts' too when hunts.toml has Hunt or
+    set text (DATA-R105), emitted whether or not its check is on (DATA-R104). Pagle_Hunts' one Lore.lua holds both of
+    its sources. header_of gives DATA-R6's header for a file's sources."""
+    outputs: dict[str, str] = {}
+    for lore_id in ADDONS:
+        texts = layer.files.get(lore_id)
+        hunts = layer.hunts if lore_id == HUNTS_OWNER else {}
+        if texts is None and not hunts:
+            continue
+        sources = ([HUNTS_TOML] if hunts else []) + ([lore_file(lore_id)] if texts is not None else [])
+        outputs[lore_lua(lore_id)] = lore_lua_text(lore_id, (texts or {}) | hunts, header_of(", ".join(sources)))
+    return outputs

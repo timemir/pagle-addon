@@ -76,6 +76,23 @@ describe("Pagle.NextWindow", function()
 		assert.are.same({ openNow = true, confirmed = true }, Pagle.NextWindow({ events = { 324 } }, SERVER_TIME))
 	end)
 
+	it("reads the live calendar as open at now only, not at another fromTime (LOG-R46, LOG-R50)", function()
+		local function at(hour)
+			return { year = 2026, month = 10, monthDay = 11, hour = hour, minute = 0 }
+		end
+		local Pagle = load({
+			C_Calendar = calendarWith({ { eventID = 324, sequenceType = "", startTime = at(8), endTime = at(10) } }),
+		})
+		-- From 2 hours before now it opens at now; an hour on, with no weekly rule, nothing is forecast.
+		assert.are.same(
+			{ opensAt = SERVER_TIME, confirmed = true },
+			Pagle.NextWindow({ events = { 324 } }, SERVER_TIME - 120 * MINUTE)
+		)
+		assert.is_nil(Pagle.NextWindow({ events = { 324 } }, SERVER_TIME + 60 * MINUTE))
+		-- A fromTime read a few seconds before the snapshot's is still now.
+		assert.are.same({ openNow = true, confirmed = true }, Pagle.NextWindow({ events = { 324 } }, SERVER_TIME - 5))
+	end)
+
 	describe("while the realm clock is secret (LOG-R49, CORE-R31)", function()
 		local function secretClock()
 			return load({

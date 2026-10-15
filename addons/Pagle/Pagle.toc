@@ -57,6 +57,7 @@ logic\Menu.lua
 logic\ReloadReminder.lua
 logic\FieldReportText.lua
 logic\FieldReportBox.lua
+logic\Dock.lua
 logic\Wiring.lua
 adapter\Core.lua
 adapter\Callbacks.lua
@@ -79,6 +80,7 @@ adapter\Sessions.lua
 adapter\Settings.lua
 adapter\Settings.xml
 adapter\AnnouncementSettings.lua
+adapter\Dock.lua
 adapter\LookAndFeel.lua
 adapter\DevGlyphs.lua
 adapter\Slash.lua

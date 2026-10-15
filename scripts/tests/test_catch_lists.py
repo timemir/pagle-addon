@@ -10,6 +10,7 @@ from baseline_fixture import CSVS, write_baseline
 from cli_fixture import run
 from item_fixture import write_item_layer
 from observed_fixture import NO_FACTS, write_observed
+from hunts_fixture import write_hunts
 from pools_fixture import write_pools
 from windows_fixture import write_windows
 
@@ -222,6 +223,7 @@ def write_tree(
     write_areas(root, areas)
     write_windows(root)  # test_windows.py covers windows
     write_pools(root)  # test_pools.py covers pool types
+    write_hunts(root)  # test_hunts.py covers the Hunt list
     write_baseline(
         root, {**CSVS, "area_loot.csv": area_loot, "reference_loot.csv": REFERENCE_LOOT, "skill.csv": SKILL}
     )

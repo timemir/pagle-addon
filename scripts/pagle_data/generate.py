@@ -1,7 +1,7 @@
 """From the source layers to the generated files' contents (DATA-R75), without writing anything."""
 
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 from pagle_data.aliases import Proposal, check_aliases, propose
@@ -13,7 +13,18 @@ from pagle_data.confirmed import Confirmation, UngatedPair, check_removed, confi
 from pagle_data.db2 import DB2, Db2Layer, read_db2
 from pagle_data.errors import At, DataError, Problems
 from pagle_data.forever import ForeverLayer, read_forever
+from pagle_data.hunts import (
+    HUNT_LIST_LUA,
+    HuntLayer,
+    HuntList,
+    build_hunt_list,
+    check_hunts,
+    hunt_list_lua,
+    read_hunts,
+)
+from pagle_data.hunt_windows import check_hunt_windows
 from pagle_data.items import ITEMS_TOML, ItemLayer, Record, item_records, read_item_layer
+from pagle_data.lock import Lock, check_lock, check_locked_members, read_lock
 from pagle_data.lore import LoreLayer, catalogue_ids, check_glyphs, check_lore, lore_outputs, read_lore
 from pagle_data.lua import to_lua
 from pagle_data.observed import (
@@ -26,7 +37,7 @@ from pagle_data.observed import (
     read_observed,
 )
 from pagle_data.pools import POOLS_TOML, PoolType, build_pools, pool_items, read_pools_toml, ungrouped, with_pool_flags
-from pagle_data.universe import AREAS_TOML, item_universe
+from pagle_data.universe import AREAS_TOML, HUNTS_TOML, item_universe
 from pagle_data.windows import Spec, build_windows, catalogue_windows, local_lua, read_windows_toml
 
 CATALOGUE_LUA = "addons/Pagle/data/Catalogue.lua"
@@ -113,6 +124,8 @@ class Layers:
     item_layer: ItemLayer  # items.toml, species.toml and families.toml as read (DATA-R10)
     area_layer: AreaLayer  # areas.toml as read (DATA-R10)
     lore: LoreLayer  # data/lore/ as read (DATA-R100); never part of the catalogue (DATA-R109)
+    hunts: HuntLayer  # data/hunts/hunts.toml as read and checked (DATA-R85-R92)
+    lock: Lock  # data/hunts/released.lock as read; the Hunt list is checked against it (DATA-R95, DATA-R96)
 
     def fishing_areas(self) -> set[int]:
         """The areas with a catch list (DATA-R32)."""
@@ -166,6 +179,12 @@ def read_layers(
     pool_types = read_pools_toml(root, problems)
     check_pooltext(observed.pooltext, pool_types.keys(), problems)  # DATA-R118: pools.toml's IDs, bobber or other
     lore = read_lore(root, problems)
+    before_hunts = len(problems.found)
+    hunts = read_hunts(root, problems)
+    lore = replace(lore, hunts=hunts.texts())  # DATA-R105: Pagle_Hunts' lore kept beside the Hunt definitions
+    lock = read_lock(root, problems)
+    if len(problems.found) == before_hunts:  # DATA-R96: the lock judges a Hunt list that read cleanly
+        check_lock(lock, hunts, problems)
     check_glyphs(lore, problems)  # CORE-R9, DATA-R107's glyph: every lore file, its check on or off
     items: dict[int, Record] = {}
     catch_lists = CatchLists()
@@ -173,12 +192,13 @@ def read_layers(
     confirmation = Confirmation()
     if baseline_read:  # without the whole baseline, every seeded window would look missing (DATA-R35, DATA-R36)
         windows = build_windows(baseline.events, window_overrides, forever.events, problems)
-        # DATA-R15: items.toml's, areas.toml's and pools.toml's IDs come from their strict readers, so a bad one is
-        # reported once.
+        # DATA-R15: items.toml's, areas.toml's and pools.toml's IDs and hunts.toml's fixed class members come from
+        # their strict readers, so a bad one is reported once.
         parsed = {
             ITEMS_TOML: item_layer.items.keys(),
             AREAS_TOML: area_layer.items(),
             POOLS_TOML: pool_items(pool_types),
+            HUNTS_TOML: hunts.members(),
         }
         universe = item_universe(root, baseline, problems, observed, parsed)
         items = item_records(universe, baseline, item_layer, db2, checks, problems)
@@ -187,6 +207,9 @@ def read_layers(
         items = with_pool_flags(items, pools)
         # DATA-R107: each lore check switched on reads the records; lore never feeds the catalogue (DATA-R109).
         check_lore(lore, checks.lore, catalogue_ids(items, item_layer.families), problems)
+        # DATA-R92: the Hunt checks that need the catalogue's items, windows, auras and events.
+        check_hunts(hunts, items, windows.keys(), forever.auras, forever.events.keys(), problems)
+        check_locked_members(lock, items.keys(), problems)  # DATA-R91: a locked generated class member still ships
         # DATA-R46: only observations on builds at or above the minimum confirming build count; DATA-R33: those in
         # areas missing from the slice stay out of the catalogue; DATA-R34: areas through the alias table.
         seen = observations(observed, {alias.source: alias.target for alias in forever.aliases})
@@ -196,6 +219,8 @@ def read_layers(
         catch_lists = build_catch_lists(
             baseline, area_layer, items, windows.keys(), db2.areas, counting, required, problems
         )
+        # DATA-R92: admission reads these catch lists' gates, and the rarity cap each Hunt's time.
+        check_hunt_windows(hunts, items, catch_lists, windows, forever.events, problems)
         # DATA-R32: an alias's target and source are judged by these catch lists.
         check_aliases(forever.aliases, catch_lists.fishing_areas(), problems)
         confirmation = confirm(
@@ -225,6 +250,8 @@ def read_layers(
         item_layer,
         area_layer,
         lore,
+        hunts,
+        lock,
     )
 
 
@@ -241,9 +268,20 @@ def catalogue_of(layers: Layers) -> Catalogue:
     )
 
 
+def hunt_list_of(layers: Layers) -> HuntList:
+    """The Hunt list the layers give (DATA-R93), its generated classes over the catalogue's items and holding every
+    member the release lock records for them (DATA-R91)."""
+    return build_hunt_list(layers.hunts, layers.items, layers.lock.classes)
+
+
 def outputs(layers: Layers) -> dict[str, str]:
     """Every generated file's path (relative to the repo root) and content."""
-    return {CATALOGUE_LUA: catalogue_lua(catalogue_of(layers))} | lore_outputs(layers.lore, header)
+    # HuntList.lua's generated classes come from the item records, so it names the layers too (DATA-R6).
+    hunt_sources = ", ".join((HUNTS_TOML, *LAYERS))
+    return {
+        CATALOGUE_LUA: catalogue_lua(catalogue_of(layers)),
+        HUNT_LIST_LUA: hunt_list_lua(hunt_list_of(layers), header(hunt_sources)),
+    } | lore_outputs(layers.lore, header)
 
 
 def generate(root: Path) -> dict[str, str]:

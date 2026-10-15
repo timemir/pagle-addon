@@ -16,6 +16,7 @@ local ns = select(2, ...)
 local SECONDS_PER_DAY = 86400
 local MINUTES_PER_DAY = 1440
 local HORIZON_DAYS = 400 -- Tunables: the NextWindow horizon (LOG-R50)
+local NOW_TOLERANCE = 60 -- seconds: a fromTime this close to the snapshot's time is now (LOG-R46)
 
 -- A span [from, to) of realm seconds: a server time plus the realm's UTC offset, so a realm day starts at a
 -- multiple of a day. `confirmed` is false for an occurrence of an unconfirmed weekly rule (LOG-R56). A merged span
@@ -113,6 +114,7 @@ end
 --- What one forecast walks over: realm days, their dates and the instant it starts from.
 ---@class PagleForecastRange
 ---@field from integer realm second of fromTime
+---@field now integer realm second of the instant the live calendar's active events hold at (LOG-R46)
 ---@field firstDay integer realm day of fromTime, in days since 1970-01-01
 ---@field lastDay integer realm day the horizon ends in
 ---@field dateOf fun(day: integer): { year: integer, month: integer, day: integer, weekday: integer }
@@ -152,9 +154,10 @@ local spansOf = {
 	end,
 
 	-- Each event's weekly occurrences (LOG-R56), never later calendar days (LOG-R50). The live calendar decides now
-	-- alone (LOG-R46): an occurrence under way while the event isn't active doesn't count, and an active event is
-	-- open from now, to the end of the occurrence under way or, with none, past the horizon. ns.NextWindow keeps
-	-- that last span only when the forecast is open now.
+	-- alone (LOG-R46), whatever the forecast starts from: an occurrence under way now while the event isn't active
+	-- doesn't count, and an active event is open from now, to the end of the occurrence under way or, with none,
+	-- past the horizon. That open-ended span is added only when the forecast starts at or before now, and
+	-- ns.NextWindow keeps it only when the opening holds at now.
 	events = function(events, range, context)
 		local spans = {}
 		for _, eventID in ipairs(events) do
@@ -168,7 +171,7 @@ local spansOf = {
 					if range.dateOf(day).weekday == rule.weekday then
 						local opens = day * SECONDS_PER_DAY + rule.start * 60
 						local closes = opens + rule.duration * 60
-						local isUnderWay = opens <= range.from and range.from < closes
+						local isUnderWay = opens <= range.now and range.now < closes
 						underWay = underWay or isUnderWay
 						if active or not isUnderWay then
 							spans[#spans + 1] = { opens, closes, confirmed = rule.confirmed }
@@ -176,8 +179,9 @@ local spansOf = {
 					end
 				end
 			end
-			if active and not underWay then
-				spans[#spans + 1] = { range.from, math.huge }
+			if active and not underWay and context.openEnded ~= false and range.now >= range.from then
+				spans[#spans + 1] = { range.now, math.huge }
+				context.openEndedAdded = true
 			end
 		end
 		return spans
@@ -209,8 +213,9 @@ end
 --- `{ openNow = true, closesAt? }` when they all hold at `fromTime`, else `{ opensAt, closesAt? }` for the next
 --- opening within 400 days, or nil with none. `closesAt` is left out when the opening doesn't stop within the
 --- horizon. A spec with none of them gives `{ onDemand = true }` when it has `auras`, else `{ always = true }`; its
---- `areas`, `auras`, `lure` and `skill` never constrain the forecast. The live calendar's active events can only
---- make it open now: every later opening comes from the weekly rules. Every result carries `confirmed`: false when
+--- `areas`, `auras`, `lure` and `skill` never constrain the forecast. The live calendar's active events hold at
+--- `nowTime` alone (LOG-R46), whatever `fromTime` is: they can only make the spec open at `nowTime`, and every other
+--- opening, before or after it, comes from the weekly rules. Every result carries `confirmed`: false when
 --- the spec's own `confirmed` (a window spec, LOG-R55) is false, or the weekly rule of an occurrence the opening
 --- used is unconfirmed.
 ---
@@ -222,8 +227,9 @@ end
 ---@param offset integer the realm's UTC offset in minutes (`ns.RealmUtcOffset`, LOG-R49)
 ---@param activeEvents integer[]? the events the live calendar shows active now (LOG-R46); nil while secret
 ---@param getEventRule fun(eventID: integer): PagleWeeklyRule? an event's weekly rule (LOG-R56)
+---@param nowTime integer? server time `activeEvents` were read at; `fromTime` when nil
 ---@return Window?
-function ns.NextWindow(spec, fromTime, offset, activeEvents, getEventRule)
+function ns.NextWindow(spec, fromTime, offset, activeEvents, getEventRule, nowTime)
 	check(spec)
 	local confirmed = spec.confirmed ~= false
 	if not isTimeBased(spec) then
@@ -240,6 +246,7 @@ function ns.NextWindow(spec, fromTime, offset, activeEvents, getEventRule)
 	---@type PagleForecastRange
 	local range = {
 		from = from,
+		now = (nowTime or fromTime) + shift,
 		firstDay = math.floor(from / SECONDS_PER_DAY),
 		lastDay = math.floor((horizon - 1) / SECONDS_PER_DAY),
 		-- Noon of a realm day, as a server time, with its realm minute: RealmDate reads that day back (LOG-R49).
@@ -257,10 +264,10 @@ function ns.NextWindow(spec, fromTime, offset, activeEvents, getEventRule)
 		end
 	end
 	local first = firstOpening(fields)
-	-- Not open now: the calendar's active events open nothing later, so the events field (last of TIME_FIELDS) is
-	-- read again from the weekly rules alone (LOG-R50).
-	if first and first[1] ~= from and spec.events ~= nil and activeEvents ~= nil and #activeEvents > 0 then
-		context.activeEvents = nil
+	-- An opening after now: the calendar's active events open nothing later, so the events field (last of
+	-- TIME_FIELDS) is read again without their open-ended span (LOG-R50).
+	if first and first[1] > range.now and context.openEndedAdded then
+		context.openEnded = false
 		fields[#fields] = normalize(spansOf.events(spec.events, range, context), from, horizon)
 		first = firstOpening(fields)
 	end
@@ -282,7 +289,8 @@ end
 
 --- `Pagle.NextWindow`'s body (LOG-R50), which Core's adapter and FakePagle both call: the forecast from `fromTime` at
 --- the realm's UTC offset, read from a conditions snapshot's server time and realm minute (LOG-R49), with the
---- snapshot's events as the ones the live calendar shows active (LOG-R46). While the realm clock is secret (no
+--- snapshot's events as the ones the live calendar shows active at the snapshot's time (LOG-R46). A `fromTime` within
+--- a minute of the snapshot's time is now itself, as a caller reads `GetServerTime()` a moment before. While the realm clock is secret (no
 --- realm minute, CORE-R31) a spec with `time`, `season` or `events` gives nil, as the offset can't be read; one
 --- without them needs no clock and still gets `{ onDemand = true }` or `{ always = true }`. A new table each call.
 ---@param spec PagleConditionSpec|PagleWindowSpec
@@ -298,5 +306,6 @@ function ns.ForecastWindow(spec, fromTime, now, getEventRule)
 		end
 		return ns.NextWindow(spec, fromTime, 0, now.events, getEventRule) -- no time-based field reads the offset
 	end
-	return ns.NextWindow(spec, fromTime, ns.RealmUtcOffset(now.time, now.minute), now.events, getEventRule)
+	local nowTime = math.abs(fromTime - now.time) < NOW_TOLERANCE and fromTime or now.time
+	return ns.NextWindow(spec, fromTime, ns.RealmUtcOffset(now.time, now.minute), now.events, getEventRule, nowTime)
 end

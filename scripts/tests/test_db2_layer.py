@@ -10,6 +10,7 @@ from baseline_fixture import write_baseline
 from cli_fixture import run
 from item_fixture import ITEMS_LUA, write_item_layer
 from observed_fixture import write_observed
+from hunts_fixture import write_hunts
 from pools_fixture import POOLS_LUA, write_pools
 from windows_fixture import W_LUA, WINDOWS_LUA, write_windows
 
@@ -81,6 +82,7 @@ def write_tree(root: Path, *, areas: str | None = AREAS, build: str | None = BUI
     write_observed(root)  # dev.toml with no facts; test_observed.py covers the layer
     write_item_layer(root)  # test_item_records.py covers the item layer
     write_pools(root)  # test_pools.py covers pool types
+    write_hunts(root)  # test_hunts.py covers the Hunt list
     db2 = root / "data" / "db2"
     db2.mkdir(parents=True, exist_ok=True)
     if areas is not None:

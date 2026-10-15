@@ -34,6 +34,27 @@ function ns.CoreAnnouncementSlots(goods)
 	return list
 end
 
+--- The slot dropdowns Core ends each Module's section with on the topic page `topic`, by Module name: on Trackers,
+--- each On Module's "Trackers"-category slots that have goods, in registration order (SET-R44, CORE-R42); on any
+--- other page, none.
+---@param goods PagleGoods
+---@param topic string
+---@return table<string, PagleRegisteredSlot[]>
+function ns.SectionSlots(goods, topic)
+	local byModule = {}
+	if topic ~= "trackers" then
+		return byModule
+	end
+	for _, slot in ipairs(goods:Slots()) do
+		if slot.module ~= "Core" and slot.category == "Trackers" and #slot.goods > 0 then
+			local list = byModule[slot.module] or {}
+			byModule[slot.module] = list
+			list[#list + 1] = slot
+		end
+	end
+	return byModule
+end
+
 --- A slot dropdown's options (SET-R51): the slot's owned goods (SHOP-R30), by name, in registration order.
 ---@param goods PagleGoods
 ---@param slotID string

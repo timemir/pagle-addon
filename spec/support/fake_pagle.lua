@@ -17,7 +17,7 @@
 --
 -- It is built on Core's real logic/: each FakePagle loads Pagle.toc's data/, locale/ and logic/ files (and the
 -- CallbackHandler bus) afresh, so what it validates, computes and refuses is what Core does. Core's projections,
--- Sessions, moments, Session summary, cards, wallet, goods and wallet projection are built and connected by logic/Wiring.lua, which Core's
+-- Sessions, moments, Session summary, cards, wallet, goods, wallet projection and tracker dock are built and connected by logic/Wiring.lua, which Core's
 -- adapter runs too: the fake hands it a host over its fakes where Core's adapter hands it the client (adapter/Host.lua).
 -- Only the client is faked.
 --
@@ -66,9 +66,11 @@
 --- ConditionsChanged({"skill"}) if either changed. Does nothing before login.
 ---@field readOnly fun(value: any): any The read-only proxy of a table (the same one each time); other values as is.
 ---@field moduleState fun(name: string): PagleModuleState A roster Module's state (CORE-R41).
----@field settingsPage fun(topic: string): { module: string, kind: string, label: string, caption: string?, indented: boolean, setting: PagleSetting }[]?
+---@field settingsPage fun(topic: string): { module: string, kind: string, label: string, caption: string?, indented: boolean, setting: PagleSetting, slot: string? }[]?
 --- The rows Core would put on a topic page, in order, its header rows included; nil before login or with no rows,
 --- when Core registers no page (CORE-R42). A button row's caption is nil when its label is on the button (SET-R2).
+--- On Trackers, each Module's section ends with Core's slot dropdown for each of its "Trackers"-category slots: kind
+--- "slot", labelled with the slot's label, `slot` its ID (SET-R44).
 ---@field reported string[] Each error Core reported through geterrorhandler(), e.g. a late M:AddSetting, a
 --- Module function that raised under securecallfunction, or a moment dropped in a replay or rebuild (ANN-R4). A
 --- spec that gets one must read this list (assert it), or it fails at its end (spec/support/errors.lua).
@@ -171,8 +173,25 @@
 ---@field wait fun(seconds: number) Moves the fake's clock on, running each grace timer that comes due, and ending
 --- the Session 300 s after its last Cast (LOG-R62).
 ---@field serverTime fun(): integer The fake's server time: SERVER_TIME plus its clock, in whole seconds.
+---@field dock FakeDock The tracker dock (CORE-R70–R72): what M:RegisterTracker docked, laid out when read. The
+--- saved point is fake.profile.dock.point (core/README.md › Data), nil until a drag; a spec may seed it.
 ---@field compartmentText fun(): string The compartment entry's label as it reads now (CORE-R51): "Pagle", or with
 --- moments kept while Cozy mode was on and no Session summary card shown since, "Pagle · 2 waiting" (ANN-R42).
+
+--- FakePagle's tracker dock, read through Core's own stacking rules (logic/Dock.lua).
+---@class FakeDock
+---@field stack fun(): { id: string, module: string, frame: table, point: string, relativeTo: "dock", relativePoint: string, x: number, y: number }[]
+--- The shown docked trackers now, top to bottom (by order, ties by Module name), each with its frame's anchor on the
+--- dock: its TOPRIGHT at the dock's TOPRIGHT, `y` below it, 8 px between frames. A hidden one takes no room; empty
+--- with none shown. Read from each frame's IsShown, GetWidth and GetHeight now, so a shown, hidden or resized frame
+--- reflows at once.
+---@field point fun(): PagleDockPoint Where the dock's anchor is: fake.profile.dock.point, or by default
+--- `{ point = "TOPRIGHT", relativeTo = "MinimapCluster", relativePoint = "BOTTOMRIGHT", x = 0, y = -10 }`.
+---@field drag fun(point: PagleDockPoint): boolean A whole Shift-drag of any docked tracker, dropped with the dock at
+--- `point`, which is saved to fake.profile.dock.point (relative to "UIParent"). While restricted it does nothing and
+--- returns false (CORE-R71).
+---@field reset fun(): boolean The Trackers page's Reset (SET-R40): clears the saved point, so the dock goes back under
+--- the minimap. While restricted it does nothing and returns false.
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local newSecureCall = dofile("spec/support/securecall.lua")
@@ -410,7 +429,7 @@ part(function(fake, Pagle, ns)
 	end)
 
 	function fake.settingsPage(topic)
-		local entries = loggedIn and rows:Page(topic, fake.registry:Modules()) or {}
+		local entries = loggedIn and rows:Page(topic, fake.registry:Modules(), ns.SectionSlots(ns.goods, topic)) or {}
 		if #entries == 0 then
 			return nil
 		end
@@ -424,6 +443,7 @@ part(function(fake, Pagle, ns)
 				caption = setting.caption,
 				indented = entry.parent ~= nil,
 				setting = setting,
+				slot = entry.slot and entry.slot.id,
 			}
 		end
 		return page
@@ -802,10 +822,24 @@ end)
 -- realm's UTC offset comes from fake.conditions' time and minute (a nil minute is a secret clock), and the events
 -- open now from fake.conditions.events, so setConditions moves the clock and the calendar. Each Window is read-only.
 -- A spec Pagle.GetWindowSpec handed out goes in as its record, as Core takes its own (`#` sees nothing in a proxy).
+-- Core reads its snapshot at the call, so "now" (the time the calendar's events hold at, LOG-R46) is the server time
+-- the Module reads: fake.globals.GetServerTime when a spec runs it on a clock, with the realm minute moved along.
 part(function(fake, Pagle, ns)
+	---@return ConditionsSnapshot
+	local function snapshotNow()
+		local conditions, getTime = fake.conditions, fake.globals.GetServerTime
+		if not getTime or conditions.time == nil or conditions.minute == nil or getTime() == conditions.time then
+			return conditions
+		end
+		local now = copyConditions(conditions)
+		now.time = getTime()
+		now.minute = (conditions.minute + math.floor((now.time - conditions.time) / 60)) % 1440
+		return now
+	end
+
 	function Pagle.NextWindow(spec, fromTime)
 		spec = originalOf[spec] or spec
-		return readOnly(ns.ForecastWindow(spec, fromTime, fake.conditions, ns.Catalogue.GetEventRule))
+		return readOnly(ns.ForecastWindow(spec, fromTime, snapshotNow(), ns.Catalogue.GetEventRule))
 	end
 end)
 
@@ -964,6 +998,65 @@ part(function(fake, _, ns, host)
 	function fake.compartmentText()
 		return ns.CompartmentText(summary:Waiting())
 	end
+end)
+
+-- The tracker dock (CORE-R70–R72), on Core's wiring over fake.profile.dock: M:RegisterTracker on the handle, which
+-- validates and orders as Core does, and fake.dock, which lays the stack out from each docked frame's IsShown,
+-- GetWidth and GetHeight at the time it's read, as Core's dock reflows on the client. A Shift-drag (fake.dock.drag)
+-- and Reset (fake.dock.reset) do nothing while restricted (CORE-R71, SET-R40).
+part(function(fake, Pagle, ns, host)
+	ns.WireDock(host, {
+		isRestricted = function()
+			return Pagle.IsRestricted()
+		end,
+		watch = function() end,
+		reflow = function() end,
+		place = function() end,
+		-- The fake's drags are whole: none is ever in progress when restriction starts.
+		stopMoving = function()
+			return nil
+		end,
+	})
+	local function isShown(frame)
+		return frame:IsShown()
+	end
+	local function sizeOf(frame)
+		return frame:GetWidth(), frame:GetHeight()
+	end
+
+	local function stack()
+		local list = {}
+		for i, placement in ipairs(ns.dock:Layout(isShown, sizeOf).placements) do
+			local tracker = placement.tracker
+			list[i] = {
+				id = tracker.id,
+				module = tracker.module,
+				frame = tracker.frame,
+				point = placement.point,
+				relativeTo = "dock",
+				relativePoint = placement.relativePoint,
+				x = placement.x,
+				y = placement.y,
+			}
+		end
+		return list
+	end
+	fake.dock = {
+		stack = stack,
+		point = function()
+			return ns.dock:Anchor()
+		end,
+		drag = function(point)
+			if not ns.dock:CanMove() then
+				return false
+			end
+			ns.dock:Moved(point)
+			return true
+		end,
+		reset = function()
+			return ns.dock:Reset()
+		end,
+	}
 end)
 
 --- A fresh FakePagle: no Module registered, not restricted, before PLAYER_LOGIN.

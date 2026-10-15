@@ -37,6 +37,10 @@ ns.L = {
 		trackers = "Trackers",
 		look = "Look and Feel",
 	},
+	-- The Trackers page's first row (SET-R40): its label, its button and the tooltip.
+	SETTINGS_TRACKER_POSITION = "Tracker position",
+	SETTINGS_TRACKER_RESET = "Reset",
+	SETTINGS_TRACKER_RESET_TOOLTIP = "Shift-drag any Pagle tracker to move them all. This puts them back under the minimap.",
 	SETTINGS_NO_MODULE = "Recording your Catches. Enable a Module to see them.",
 	SETTINGS_MODULES = "Modules",
 	SETTINGS_MODULES_NOTE = "Turn Modules on or off in the AddOns list.",

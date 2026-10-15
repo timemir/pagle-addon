@@ -14,8 +14,8 @@ local Pagle = Pagle
 -- writes ns.goods:SetEquipped, and "{N} more in the Curio Shop" under it. Its frames are Core's, so Core redraws them at
 -- once on AppearanceChanged; it writes nothing onto Blizzard's initializers or settings (SET-R6). A proxy setting
 -- per page carries the slot's default good, so the page's Defaults button restores it (SET-R60). adapter/Settings.lua
--- registers the page and calls ns.BuildLookAndFeel; adapter/AnnouncementSettings.lua ends Core's Announcements rows
--- with ns.SlotDropdown. Its own owner on Core's bus.
+-- registers the page and calls ns.BuildLookAndFeel, and ends each Module's section on Trackers with ns.SlotDropdown
+-- (SET-R44); adapter/AnnouncementSettings.lua ends Core's Announcements rows with it. Its own owner on Core's bus.
 local OWNER = "Pagle look and feel"
 local L = ns.L
 

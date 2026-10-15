@@ -10,6 +10,7 @@ from cli_fixture import run
 from item_fixture import write_item_layer
 from observed_fixture import write_observed
 from pagle_data.extract_baseline import source_toml
+from hunts_fixture import write_hunts
 from pools_fixture import write_pools
 from windows_fixture import write_windows
 
@@ -36,6 +37,7 @@ def write_tree(root: Path) -> Path:
     write_baseline(root)
     write_item_layer(root)  # test_item_records.py covers the item layer
     write_pools(root)  # test_pools.py covers pool types
+    write_hunts(root)  # test_hunts.py covers the Hunt list
     write_observed(root)  # dev.toml with no facts; test_observed.py covers the layer
     return root
 

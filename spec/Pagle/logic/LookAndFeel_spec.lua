@@ -134,6 +134,49 @@ describe("Look and Feel's logic", function()
 		)
 	end)
 
+	describe("ns.SectionSlots", function()
+		-- Each Module's slots, as "<module>: <slot>, <slot>" lines sorted by Module name.
+		local function slotLines(byModule)
+			local lines = {}
+			for module, slots in pairs(byModule) do
+				local ids = {}
+				for i, slot in ipairs(slots) do
+					ids[i] = slot.id
+				end
+				lines[#lines + 1] = module .. ": " .. table.concat(ids, ", ")
+			end
+			table.sort(lines)
+			return lines
+		end
+
+		it(
+			"gives each On Module its Trackers slots with goods on Trackers, and Core none (SET-R44, CORE-R42)",
+			function()
+				local env = newGoods()
+				slotWithDefault(env, "Hunts", "hunts.trackerframe", "Trackers")
+				slotWithDefault(env, "Hunts", "hunts.cover", "Hunts")
+				slotWithDefault(env, "Hunts", "hunts.second", "Trackers")
+				slotWithDefault(env, "Ledger", "ledger.binding", "Fish Journal")
+				slotWithDefault(env, "Core", "core.frame", "Trackers")
+				env.goods:RegisterSlot("Ledger", { id = "ledger.empty", label = "Empty", category = "Trackers" })
+
+				assert.are.same(
+					{ "Hunts: hunts.trackerframe, hunts.second" },
+					slotLines(ns.SectionSlots(env.goods, "trackers"))
+				)
+			end
+		)
+
+		it("gives none on another page, or for a Module that isn't On (SET-R44, SET-R4)", function()
+			local env = newGoods()
+			slotWithDefault(env, "Hunts", "hunts.trackerframe", "Trackers")
+
+			assert.are.same({}, ns.SectionSlots(env.goods, "announcements"))
+			env.on.Hunts = nil
+			assert.are.same({}, ns.SectionSlots(env.goods, "trackers"))
+		end)
+	end)
+
 	describe("ns.SlotChoices", function()
 		it("lists the slot's owned goods by name in registration order (SET-R51, SHOP-R30)", function()
 			local env = newGoods()

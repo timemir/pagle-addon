@@ -3,9 +3,9 @@ these items (DATA-R11), and every one either ships in the catalogue or is delibe
 
 So far its sources are the baseline's area, reference and pool loot, and the data/forever/ files that name items:
 items.toml's [item.<itemID>] tables, areas.toml's [[catch]] items and pools.toml's add and drop lists (the Data
-section's keys). Each forever file is read only when it exists, and only for its item IDs: the file's own reader
-checks the rest. data/observed/'s dev facts and non-rejected I rows join in item_universe; fixed Hunt classes
-(DATA-R90) join there too when their layer arrives.
+section's keys), and data/hunts/hunts.toml's fixed class members (DATA-R90). Each such file is read only when it
+exists, and only for its item IDs: the file's own reader checks the rest. data/observed/'s dev facts and non-rejected
+I rows join in item_universe.
 """
 
 from collections.abc import Callable, Collection, Mapping
@@ -19,6 +19,7 @@ from pagle_data.toml_reader import describe, expect_ids, expect_int, expect_tabl
 ITEMS_TOML = "data/forever/items.toml"
 AREAS_TOML = "data/forever/areas.toml"
 POOLS_TOML = "data/forever/pools.toml"
+HUNTS_TOML = "data/hunts/hunts.toml"
 
 
 def _items_toml(document: Mapping[str, object], at: At, problems: Problems) -> set[int]:
@@ -67,10 +68,26 @@ def _pools_toml(document: Mapping[str, object], at: At, problems: Problems) -> s
     return found
 
 
+def _hunts_toml(document: Mapping[str, object], at: At, problems: Problems) -> set[int]:
+    """hunts.toml's [[class]] members (DATA-R15, DATA-R90)."""
+    entries = document.get("class", [])
+    if not isinstance(entries, list):
+        problems.add(at / "class", f"expected an array of tables ([[class]]), got {describe(entries)}")
+        return set()
+    found: set[int] = set()
+    for index, entry in enumerate(entries):
+        entry_at = At(at.file, f"class[{index}]")
+        table = expect_table(entry, entry_at, problems)
+        if table is not None and "members" in table:
+            found.update(expect_ids(table["members"], entry_at / "members", problems) or [])
+    return found
+
+
 _FOREVER: dict[str, Callable[[Mapping[str, object], At, Problems], set[int]]] = {
     ITEMS_TOML: _items_toml,
     AREAS_TOML: _areas_toml,
     POOLS_TOML: _pools_toml,
+    HUNTS_TOML: _hunts_toml,
 }
 
 

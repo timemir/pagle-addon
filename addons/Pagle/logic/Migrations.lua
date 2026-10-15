@@ -29,6 +29,8 @@ ns.PAGLEDB_DEFAULTS = {
 		appearance = {}, -- SHOP-R32: each slot's pick, by slot ID
 		-- announcements.md › Data; everyCatch is "Show every catch" (ANN-R13).
 		announcements = { cozy = false, everyCatch = true, budget = { on = true, count = 4, window = 300 } },
+		-- core/README.md › Data: `dock.point`, the tracker dock's saved place, nil (no key) until the player moves it.
+		dock = { point = nil }, -- CORE-R70, CORE-R71
 	},
 }
 

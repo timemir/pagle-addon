@@ -34,6 +34,8 @@
 ---@field casting string? The spell the player is casting with a cast time; `UnitCastingInfo("player")` returns it.
 ---@field mainHand integer? The item ID in the main hand (slot 16).
 ---@field items table<integer, integer[]> `{ classID, subclassID }` per item ID, for `C_Item.GetItemInfoInstant`.
+---@field itemLoads table<integer, function[]> The `Item:CreateFromItemID(id):ContinueOnItemLoad` callbacks waiting
+--- for each item not in `itemNames`, in order, until `loadItem` runs them.
 ---@field bindingCalls string[] Each override call, in order: "set <key> <action>" or "clear".
 ---@field overrideAction fun(key: string): string? The priority override on `key`, as `GetBindingAction` reads it.
 ---@field fireGameEvent fun(event: string, ...) Fires a WoW event the game raises on its own. `client.fire` unless a
@@ -142,6 +144,7 @@ return function(client, stubs)
 		[7973] = "Big-mouth Clam",
 	}
 	client.itemRequests = {}
+	client.itemLoads = {}
 	client.fireGameEvent = client.fire
 
 	-- Override calls are protected: in combat lockdown the client blocks them (ADDON_ACTION_BLOCKED). Here they
@@ -269,13 +272,13 @@ return function(client, stubs)
 	stubs.C_Item.GetItemInfo = function(itemID)
 		return client.itemNames[itemID]
 	end
-	-- An item's icon by item ID, from client.itemIcons, whether or not its name is cached.
+	-- An item's icon by item ID, from client.itemIcons, whether or not its name is cached (HNT-R55, QOL-R71).
 	stubs.C_Item.GetItemIconByID = function(itemID)
 		return client.itemIcons[itemID]
 	end
 	-- FrameXML's Item (Blizzard_ObjectAPI/Mainline/Item.lua), as far as waiting for an item's data: ContinueOnItemLoad
-	-- runs its callback at once if the item's name is cached, else when client.loadItem loads it.
-	local waitingForItem = {} -- by item ID: callbacks
+	-- runs its callback at once if the item's name is cached, else when client.loadItem loads it; the callbacks
+	-- waiting meanwhile are in client.itemLoads (HNT-R54).
 	stubs.Item = {
 		CreateFromItemID = function(_, itemID)
 			return {
@@ -283,8 +286,8 @@ return function(client, stubs)
 					if client.itemNames[itemID] then
 						callback()
 					else
-						waitingForItem[itemID] = waitingForItem[itemID] or {}
-						table.insert(waitingForItem[itemID], callback)
+						client.itemLoads[itemID] = client.itemLoads[itemID] or {}
+						table.insert(client.itemLoads[itemID], callback)
 					end
 				end,
 			}
@@ -292,12 +295,21 @@ return function(client, stubs)
 	}
 	function client.loadItem(itemID, name)
 		client.itemNames[itemID] = name
-		local callbacks = waitingForItem[itemID] or {}
-		waitingForItem[itemID] = nil
+		local callbacks = client.itemLoads[itemID] or {}
+		client.itemLoads[itemID] = nil
 		for _, callback in ipairs(callbacks) do
 			callback()
 		end
 	end
+	-- Blizzard_Colors' quality colors, by Enum.ItemQuality, as the client's defaults (HNT-R55).
+	stubs.ITEM_QUALITY_COLORS = {
+		[0] = { r = 0.62, g = 0.62, b = 0.62 },
+		[1] = { r = 1, g = 1, b = 1 },
+		[2] = { r = 0.12, g = 1, b = 0 },
+		[3] = { r = 0, g = 0.44, b = 0.87 },
+		[4] = { r = 0.64, g = 0.21, b = 0.93 },
+		[5] = { r = 1, g = 0.5, b = 0 },
+	}
 	-- hasMainHandEnchant, mainHandExpiration, mainHandCharges, mainHandEnchantID, then the off hand's and the ranged
 	-- slot's, as probe B4 read them: true, 600000, 0, 263, false, nil, … with Shiny Bauble's lure on.
 	stubs.GetWeaponEnchantInfo = function()
