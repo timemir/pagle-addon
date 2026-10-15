@@ -289,11 +289,8 @@ end
 ---@param zone integer?
 ---@return string?
 function Text:Lore(key, zone)
-	local text = ns.L[key]
-	if type(text) ~= "string" or not key:find("%.") then
-		return nil
-	end
-	if not text:find("{zone}", 1, true) then
+	local text = ns.Lore(key)
+	if not text or not text:find("{zone}", 1, true) then
 		return text
 	end
 	local name = zone and self:Zone(zone) or ns.L.NAME_UNKNOWN

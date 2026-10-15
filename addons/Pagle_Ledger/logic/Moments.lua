@@ -40,7 +40,7 @@ local ns = select(2, ...)
 ---@field SizeText fun(size: PagleSize?): string?       -- ns.SizeText over Pagle.SIZE_BANDS and Pagle.FormatLength
 
 -- In-client textures for the moments that have no item (LED-R97): the level's ledger book and Fishing's own icon.
-local LEVEL_ICON = "Interface\\Icons\\INV_Misc_Book_09"
+local LEVEL_ICON = ns.BINDING_ICON
 local SKILL_ICON = "Interface\\Icons\\Trade_Fishing"
 -- A zone rank's map, Zone Master's spyglass and a trophy family's mounted fish.
 local ZONE_RANK_ICON = "Interface\\Icons\\INV_Misc_Map_01"
