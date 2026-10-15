@@ -11,27 +11,21 @@ local NIGHTFIN, BLACKMOUTH = I.NIGHTFIN, I.BLACKMOUTH
 
 -- Pagle_Stats on a fake that has logged in, its projection built (not updating), and its book. The areas have their
 -- names and the items don't; the player fishes Auberdine.
+---@return LoadedAddon loaded
+---@return table fake
+---@return table book the book as the fake client drew it: its frame and widgets carry the fake's fields (`name`,
+--- `points`, `shown`, `text`, …, spec/support/widgets.lua), which StatsBook's WoW widget types don't declare
 local function ready()
 	return stats.start({ items = {}, at = { zone = DARKSHORE, subzone = AUBERDINE } })
 end
 
--- Hides `frame` as the client does, running its OnHide (the fake's Hide runs no script).
-local function hide(frame)
-	if frame:IsShown() then
-		frame:Hide()
-		local onHide = frame:GetScript("OnHide")
-		if onHide then
-			onHide(frame)
-		end
-	end
-end
-
--- Presses Esc: CloseSpecialWindows hides every shown frame named in UISpecialFrames.
+-- Presses Esc: CloseSpecialWindows hides every shown frame named in UISpecialFrames (the fake's Hide runs its
+-- OnHide, as the client's does).
 local function escape(loaded)
 	for _, name in ipairs(loaded.env.UISpecialFrames) do
 		for _, frame in ipairs(loaded.client.frames) do
-			if frame.name == name then
-				hide(frame)
+			if frame.name == name and frame:IsShown() then
+				frame:Hide()
 			end
 		end
 	end
@@ -409,6 +403,9 @@ end)
 
 describe("the Stats book while the projection is updating (STA-R72)", function()
 	-- Logged in, but the projection waits for the first PLAYER_ENTERING_WORLD to build: it reads as updating.
+	---@return LoadedAddon loaded
+	---@return table fake
+	---@return table book as ready()'s: the fake's widget fields
 	local function updating()
 		return stats.start({ items = {}, updating = true })
 	end

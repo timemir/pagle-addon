@@ -147,9 +147,8 @@ describe("search on the leather (STA-R76)", function()
 		loaded.ns.ToggleBook()
 		search(book).box:Type("raw")
 
-		-- hidden as the client does (Esc, the close button), running its OnHide: the fake's Hide runs no script
+		-- hidden as Esc or the close button hides it; the fake's Hide runs its OnHide, as the client's does
 		book.frame:Hide()
-		book.frame:GetScript("OnHide")(book.frame)
 		loaded.ns.ToggleBook()
 
 		assert.are.equal("", search(book).box:GetText())
