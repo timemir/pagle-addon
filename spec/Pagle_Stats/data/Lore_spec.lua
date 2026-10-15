@@ -5,7 +5,7 @@
 local stats = dofile("spec/Pagle_Stats/support.lua")
 
 -- STA-R88: Stats' three goods.
-local GOODS = { "stats.trackerframe.none", "stats.trackerframe.logbook", "stats.trackerframe.brass" }
+local GOODS = stats.GOODS
 
 describe("Stats' committed lore (DATA-R111, its M6 batch)", function()
 	local ns

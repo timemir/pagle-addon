@@ -62,6 +62,9 @@ support.NAMES = {
 	},
 }
 
+--- Stats' goods (STA-R88), in its table's order: its tracker frames.
+support.GOODS = { "stats.trackerframe.none", "stats.trackerframe.logbook", "stats.trackerframe.brass" }
+
 --- Another character in a spec's Catch log, beside the player's (PLAYER_GUID).
 support.OTHER_GUID = "Player-4618-0B0B0B0B"
 --- Realm minutes in the fixture's day (06:00–18:00) and night (18:00–06:00): 10:00 and 20:00.

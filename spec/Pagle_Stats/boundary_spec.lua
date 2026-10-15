@@ -9,6 +9,7 @@ local READS_ONLY_CORE = "STA-R1: Stats reads Catches only through its projection
 local NO_CORE_DB = "STA-R1: Stats never reads Core's SavedVariables"
 local NO_MODULE = "STA-R1: Stats calls no other Module"
 local NO_MODULE_DB = "STA-R1: Stats never reads another Module's DB"
+local ONLY_PAGLE = "ADR 0001: Stats reaches Core only through Pagle.*"
 local CELEBRATES_NOTHING = "STA-R2: Stats celebrates nothing"
 
 -- Each forbidden thing: a Lua pattern over code with comments removed, and the rule it breaks.
@@ -32,6 +33,8 @@ for _, name in ipairs(newFakePagle().ns.MODULE_ROSTER) do
 		FORBIDDEN[#FORBIDDEN + 1] = { "%f[%w_]Pagle" .. name .. "DB%f[^%w_]", NO_MODULE_DB }
 	end
 end
+-- Any other AceAddon object, Core's included: Stats has its own and reaches Core through the Pagle global alone.
+FORBIDDEN[#FORBIDDEN + 1] = { "%f[%w_]GetAddon%s*%(", ONLY_PAGLE }
 
 -- Each forbidden thing the code says, as "<why>: <match>".
 ---@param text string
@@ -41,8 +44,14 @@ local function offences(text)
 end
 
 describe("Stats' boundary (ADR 0001, STA-R1, STA-R2)", function()
-	it("covers every file Stats ships", function()
-		assert.are.equal(#addonFiles("Pagle_Stats"), #shippedFiles(DIR))
+	it("covers every file Stats ships: the ones its TOC lists", function()
+		local listed = {}
+		for i, file in ipairs(addonFiles("Pagle_Stats")) do
+			listed[i] = DIR .. file
+		end
+		table.sort(listed)
+
+		assert.are.same(listed, shippedFiles(DIR))
 	end)
 
 	for _, path in ipairs(shippedFiles(DIR)) do
@@ -62,6 +71,8 @@ describe("Stats' boundary (ADR 0001, STA-R1, STA-R2)", function()
 			{ "local lease = PagleQoLDB.global.lease", NO_MODULE_DB },
 			{ "local board = PagleTackleBoardDB", NO_MODULE_DB },
 			{ 'LibStub("AceAddon-3.0"):GetAddon("Pagle_Hunts")', NO_MODULE },
+			{ 'local core = LibStub("AceAddon-3.0"):GetAddon("Pagle")', ONLY_PAGLE },
+			{ "local core = AceAddon:GetAddon (name)", ONLY_PAGLE },
 			{ 'C_AddOns.IsAddOnLoaded("Pagle_Ledger")', NO_MODULE },
 			{ 'local qol = _G["Pagle_QoL"]', NO_MODULE },
 			{ "Pagle_TackleBoard_Open()", NO_MODULE },

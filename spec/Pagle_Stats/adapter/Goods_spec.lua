@@ -7,11 +7,11 @@ local stats = dofile("spec/Pagle_Stats/support.lua")
 
 local SLOT = "stats.trackerframe"
 
--- STA-R88's goods, in its order, with their kinds.
+-- STA-R88's goods (stats.GOODS), in its order, with their kinds.
 local GOODS = {
-	{ "stats.trackerframe.none", "default" },
-	{ "stats.trackerframe.logbook", "tier 1" },
-	{ "stats.trackerframe.brass", "tier 2" },
+	{ stats.GOODS[1], "default" },
+	{ stats.GOODS[2], "tier 1" },
+	{ stats.GOODS[3], "tier 2" },
 }
 
 -- A good's kind as STA-R88's table writes it; "earned" for one with isEarned (Stats has none).
