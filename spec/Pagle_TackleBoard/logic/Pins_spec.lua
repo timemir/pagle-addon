@@ -411,3 +411,50 @@ describe("the highlight (TKB-R109)", function()
 		assert.is_nil(ns.HighlightedGoal(state, nil))
 	end)
 end)
+
+describe("where the pins hang (TKB-R101, tackle-board.md › UI)", function()
+	it("hangs them as the board art kit does, each paper leaning its own way", function()
+		local ns = board.load().ns
+
+		local places = ns.PinPlaces(false)
+
+		assert.are.same({ x = 26, y = 22, lean = -1.0 }, places.expeditions[1])
+		assert.are.same({ x = 412, y = 26, lean = 0.8 }, places.expeditions[2])
+		assert.are.same({ x = 26, y = 208, lean = -1.6 }, places.notices[1])
+		assert.are.same({ x = 544, y = 336, lean = 0.6 }, places.notices[6])
+		assert.is_nil(places.overflow)
+	end)
+
+	it("closes up the rows over the overflow strip while it shows, every pin above it and none overlapping", function()
+		local ns = board.load().ns
+		local NOTICE_HEIGHT, POSTER_HEIGHT = 116, 156
+
+		local places = ns.PinPlaces(true)
+
+		assert.are.same({ x = 24, y = 424 }, places.overflow)
+		for i, place in ipairs(places.notices) do
+			assert(place.y + NOTICE_HEIGHT <= places.overflow.y, "Notice pin " .. i)
+			assert.are.equal(ns.PinPlaces(false).notices[i].x, place.x)
+		end
+		for i = 1, 3 do
+			assert.is_true(places.expeditions[1].y + POSTER_HEIGHT <= places.notices[i].y)
+			assert.is_true(places.notices[i].y + NOTICE_HEIGHT <= places.notices[i + 3].y + 4)
+		end
+	end)
+end)
+
+describe("an empty pin's words (TKB-R105)", function()
+	it("set the time in brackets under the line, and a text with none all on the line", function()
+		local ns = board.load().ns
+
+		assert.are.same(
+			{ "A fresh Notice at reset", "(in 13h)" },
+			{ ns.EmptyPinWords("A fresh Notice at reset (in 13h)") }
+		)
+		assert.are.same(
+			{ "Next Expedition at the weekly reset", "(Tue)" },
+			{ ns.EmptyPinWords("Next Expedition at the weekly reset (Tue)") }
+		)
+		assert.are.same({ "More Notices at later resets" }, { ns.EmptyPinWords("More Notices at later resets") })
+	end)
+end)

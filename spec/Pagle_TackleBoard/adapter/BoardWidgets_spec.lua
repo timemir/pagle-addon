@@ -1,5 +1,6 @@
--- The Tackle Board's art kit (TKB-R100, TKB-R102, TKB-R107): what each widget maker draws on the fake client, in
--- variant C's tints, in-client textures and the two in-client faces.
+-- The board art kit on the client (TKB-R100, TKB-R102, TKB-R105, TKB-R107, TKB-R109; tackle-board.md › UI): the
+-- atlases and their BLP textures, the bundled fonts, the sprite helpers (adapter/BoardArt.lua), the papers' lean and its
+-- switch, the board's tooltip, and the pieces adapter/BoardWidgets.lua makes, on the fake client.
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local board = dofile("spec/Pagle_TackleBoard/support.lua")
@@ -10,324 +11,309 @@ local function kit()
 	return loaded.ns, loaded.env.CreateFrame("Frame"), loaded
 end
 
--- `color` as a texture keeps it: { r, g, b, alpha }.
-local function rgba(color, alpha)
-	return { color[1], color[2], color[3], alpha or 1 }
+-- Records a region's turns: the fake client's SetRotation keeps nothing.
+local function turning(region)
+	region.SetRotation = function(self, radians)
+		self.rotation = radians
+	end
+	return region
 end
 
--- The first three of a colour as a widget keeps it.
-local function rgb(kept)
-	return { kept[1], kept[2], kept[3] }
+-- Whether a file is in the addon folder (a texture path is the folder's, under Interface\AddOns\).
+local function shipped(path)
+	local file = path:gsub("^Interface\\AddOns\\", "addons/"):gsub("\\", "/")
+	---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io
+	local handle = io.open(file, "rb")
+	if handle then
+		handle:close()
+	end
+	return handle ~= nil
 end
 
-describe("the board's art kit", function()
-	it("uses only in-client textures, as listed for the dev to judge (TKB-R100)", function()
+describe("the board art kit's atlases (tackle-board.md › UI)", function()
+	it("ship each texture as a BLP in media/board, and the fonts in Core's media/fonts", function()
 		local ns = kit()
 
-		assert.are.same({
-			grain = "Interface\\FrameGeneral\\UI-Background-Rock",
-			fleck = "Interface\\FrameGeneral\\UI-Background-Marble",
-			paper = "Interface\\AchievementFrame\\UI-Achievement-Parchment-Horizontal",
-			disc = "Interface\\CharacterFrame\\TempPortraitAlphaMask",
-			hatch = "Interface\\RaidFrame\\Shield-Overlay",
-			tick = "Interface\\Buttons\\UI-CheckBox-Check",
-			box = "Interface\\Buttons\\UI-CheckBox-Up",
-			flame = "Interface\\Icons\\Spell_Fire_Fire",
-			pointer = "Interface\\CURSOR\\Point",
-		}, ns.BOARD_TEXTURES)
+		for name, atlas in pairs(ns.BOARD_ATLASES) do
+			assert(shipped(atlas.file .. ".blp"), name)
+		end
+		assert.is_true(shipped(ns.CORK_TEXTURE .. ".blp"))
+		for face, path in pairs(ns.BOARD_FONT_FACES) do
+			assert(shipped(path), face)
+		end
 	end)
 
+	it("keep every sprite inside its texture, its drawn element inside the sprite but the fire's shared box", function()
+		local ns = kit()
+
+		for name, atlas in pairs(ns.BOARD_ATLASES) do
+			for sprite, at in pairs(atlas.sprites) do
+				local where = name .. " " .. sprite
+				assert(at.x >= 0 and at.x + at.w <= atlas.width, where)
+				assert(at.y >= 0 and at.y + at.h <= atlas.height, where)
+				-- The fire's layers share the fire's 138 × 130 box, which reaches past each layer's own texels.
+				if at.box[1] >= 0 and at.box[2] >= 0 then
+					assert(at.box[1] + at.box[3] <= at.w / atlas.scale + 0.01, where)
+					assert(at.box[2] + at.box[4] <= at.h / atlas.scale + 0.01, where)
+				end
+			end
+		end
+	end)
+
+	it("give the tracker its own small Marks atlas: the header's flame and chevron and a slip's tack", function()
+		local ns = kit()
+
+		local marks = {}
+		for sprite in pairs(ns.BOARD_ATLASES.Marks.sprites) do
+			marks[#marks + 1] = sprite
+		end
+		table.sort(marks)
+
+		assert.are.same({ "chev", "fl", "tack-s" }, marks)
+		assert.are.same({ 64, 64 }, { ns.BOARD_ATLASES.Marks.width, ns.BOARD_ATLASES.Marks.height })
+	end)
+end)
+
+describe("the board's fonts", function()
+	it("are the kit's faces from Core's media/fonts, each made at its first use with its size and ink", function()
+		local ns, parent = kit()
+
+		local text = ns.ArtText(parent, "Goal")
+		local font = ns.ArtFont("Goal")
+
+		assert.are.equal("PagleTackleBoardGoal", font.name)
+		assert.are.same({ "Interface\\AddOns\\Pagle\\media\\fonts\\IMFeENrm28P.ttf", 15, "" }, font.font)
+		assert.are.equal(font, text.fontObject)
+		assert.are.same(ns.BoardHex("2A180A"), { text.textColor[1], text.textColor[2], text.textColor[3] })
+		assert.are.equal(font, ns.ArtFont("Goal"))
+	end)
+
+	it("name a face the kit bundles for every font", function()
+		local ns = kit()
+
+		for key, def in pairs(ns.BOARD_FONTS) do
+			assert(type(ns.BOARD_FONT_FACES[def[1]]) == "string", key)
+		end
+	end)
+
+	it("fall back to the client's FRIZQT__ when a face won't load", function()
+		local loaded = board.load()
+		local ns = loaded.ns
+		local create = loaded.env.CreateFont
+		loaded.env.CreateFont = function(name)
+			local font = create(name)
+			local set = font.SetFont
+			font.SetFont = function(self, file, size, flags)
+				set(self, file, size, flags)
+				return file == "Fonts\\FRIZQT__.TTF"
+			end
+			return font
+		end
+
+		assert.are.equal("Fonts\\FRIZQT__.TTF", ns.ArtFont("Kind").font[1])
+	end)
+
+	it("letter-space capitals as the kit sets its gilt titles", function()
+		local ns = kit()
+
+		assert.are.equal("T A C K L E   B O A R D", ns.Spaced("Tackle Board"))
+		assert.are.equal("F L Y   B O X", ns.Spaced("Fly box"))
+	end)
+end)
+
+describe("the sprite helpers", function()
+	it("show a sprite at its designed size, cut from its atlas, its drawn element's box kept", function()
+		local ns, parent = kit()
+
+		local tack = ns.ArtSprite(parent, "Board", "tack")
+		local atlas = ns.BOARD_ATLASES.Board
+
+		assert.are.equal(atlas.file, tack.texture)
+		assert.are.same({ 890 / 1024, 942 / 1024, 1346 / 2048, 1398 / 2048 }, tack.texCoord)
+		assert.are.same({ 26, 26 }, { tack.width, tack.height })
+		assert.are.same({ 3, 2, 15, 15 }, tack.box)
+	end)
+
+	it("place a sprite by its drawn element, not its margin", function()
+		local ns, parent = kit()
+
+		local tack = ns.ArtSprite(parent, "Board", "tack")
+		ns.PlaceSprite(tack, parent, 100, 20)
+
+		assert.are.same({ "TOPLEFT", parent, "TOPLEFT", 97, -18 }, tack.points[1])
+	end)
+
+	it("three-slice a strip to any width, its caps kept and its middle stretched", function()
+		local ns, parent, loaded = kit()
+		local strip = loaded.env.CreateFrame("Frame", nil, parent)
+
+		ns.SetThreeSlice(strip, "Board", "btn", 300, 12)
+
+		assert.are.same({ 300, 38 }, { strip.width, strip.height })
+		assert.are.equal(18, strip.left.width) -- its 6-unit margin and its 12-unit cap
+		assert.are.equal(18, strip.right.width)
+	end)
+
+	it("slice a tracker frame in three down to any height and squeeze it across to the width given", function()
+		local ns, parent, loaded = kit()
+		local frame = loaded.env.CreateFrame("Frame", nil, parent)
+
+		ns.SetVSlice(frame, "Tracker", "trk-cork", 288, 400, 30, 20)
+
+		assert.are.same({ 288, 400 }, { frame.width, frame.height })
+		assert.are.equal(36, frame.top.height) -- its 6-unit margin and its 30-unit cap
+		assert.are.equal(462 / 1.5 * 288 / 296, frame.top.width)
+	end)
+
+	it("cut a bar's fill to length rather than squeeze it", function()
+		local ns, parent = kit()
+
+		local fill = ns.SetCropSprite(parent:CreateTexture(), "Board", "bar-fill", 50)
+
+		assert.are.same({ 2 / 1024, 102 / 1024 }, { fill.texCoord[1], fill.texCoord[2] })
+		assert.are.equal(50, fill.width)
+	end)
+end)
+
+describe("the papers' lean (TKB-R102)", function()
+	it("leans a paper by its angle by default, and hangs it straight with profile.lean off", function()
+		local loaded, fake = board.load()
+		fake.login()
+		local ns = loaded.ns
+		local paper = turning(ns.ArtSprite(loaded.env.CreateFrame("Frame"), "Board", "notice"))
+
+		assert.is_true(ns.db.profile.lean)
+		assert.is_true(ns.Leans())
+		ns.LeanSprite(paper, paper:GetParent(), 0, 0, -1.6)
+		assert.are.equal(math.rad(1.6), paper.rotation)
+
+		ns.db.profile.lean = false
+		ns.LeanSprite(paper, paper:GetParent(), 0, 0, -1.6)
+
+		assert.is_false(ns.Leans())
+		assert.are.equal(0, paper.rotation)
+	end)
+
+	it("offers no command for it: /pagle board lean opens the board as any /pagle board does", function()
+		local loaded, fake = board.load()
+		fake.login()
+
+		fake.slash("board lean")
+
+		assert.is_true(loaded.ns.Leans())
+		assert.is_true(loaded.ns.board:IsShown())
+	end)
+
+	it("centres a leaning paper where it would hang straight", function()
+		local ns, parent = kit()
+		local paper = turning(ns.ArtSprite(parent, "Board", "notice"))
+
+		ns.LeanSprite(paper, parent, 10, 20, 0)
+
+		-- The drawn element (236 × 116) at 10, 20: its centre at 128, 78; the sprite's margins are 10 left, 4 top.
+		local width, height = paper.width, paper.height
+		assert.are.same(
+			{ "CENTER", parent, "TOPLEFT", 10 + 118 + width / 2 - 128, -(20 + 58 + height / 2 - 62) },
+			paper.points[1]
+		)
+	end)
+end)
+
+describe("the board's tooltip (TKB-R102, TKB-R103, TKB-R106)", function()
+	it("shows its first line as its title and the rest under it, by its owner, and hides", function()
+		local ns, parent = kit()
+
+		ns.BoardHover(parent, { "Posted Wed 7 Oct, 09:00", "Only my Catches since then count" })
+
+		assert.are.same({ "Posted Wed 7 Oct, 09:00", "Only my Catches since then count" }, ns.BoardHoverLines())
+		ns.BoardHoverHide()
+		assert.is_nil(ns.BoardHoverLines())
+	end)
+
+	it("ticks a Variety Expedition's caught Species, and draws a done goal's fly", function()
+		local ns, parent = kit()
+
+		ns.BoardHover(parent, { "Posted" }, {
+			species = { { name = "Mightfish", caught = true }, { name = "Oily Blackmouth", caught = false } },
+		})
+
+		assert.are.same({ "Posted", "Mightfish", "Oily Blackmouth" }, ns.BoardHoverLines())
+
+		ns.BoardHover(parent, { "1 Catch in Durotar", "Paid 10 Coins", "Tied for your Fly Box: x" }, {
+			fly = "needles_ant",
+		})
+		assert.are.same({ "1 Catch in Durotar", "Paid 10 Coins", "Tied for your Fly Box: x" }, ns.BoardHoverLines())
+	end)
+end)
+
+describe("the board's pieces", function()
 	it(
-		"draws the Campfire in textures: logs, a flame sized by its step, embers for a fire gone out (TKB-R106)",
+		"outline an empty pin in dashes with a lone tack, its words by hand and its time in brackets under (TKB-R105)",
 		function()
 			local ns, parent = kit()
 
-			local fire = ns.NewBoardFlame(parent, 100)
-			fire:SetFire({ state = "lit", step = 1, bright = 0.5 })
-			local small = fire.flame.width
-			fire:SetFire({ state = "lit", step = 2, bright = 0.5 })
+			local pin = ns.NewBoardEmptyPin(parent, 232, 108)
+			pin:SetEmpty("A fresh Notice at reset (in 13h)")
 
-			assert.are.equal(ns.BOARD_TEXTURES.flame, fire.flame.texture)
-			assert.are.equal("ADD", fire.flame.blendMode)
-			assert.are.same({ 50, 66 }, { small, fire.flame.width })
-			assert.is_false(fire.embers[1]:IsShown())
+			assert.are.same({ 232, 108 }, { pin.width, pin.height })
+			assert.is_true(#pin.dashes > 0)
+			assert.are.equal(ns.BOARD_ATLASES.Board.file, pin.tack.texture)
+			assert.are.same({ "A fresh Notice at reset", "(in 13h)" }, { pin.label:GetText(), pin.note:GetText() })
 
-			fire:SetFire({ state = "out", step = 0, bright = 0 })
+			pin:SetEmpty("More Notices at later resets")
 
-			assert.is_false(fire.flame:IsShown())
-			assert.is_true(fire.embers[1]:IsShown())
-			assert.is_true(fire.ash:IsShown())
-			assert.are.equal(2, #fire.logs)
+			assert.are.equal("More Notices at later resets", pin.label:GetText())
+			assert.is_false(pin.note:IsShown())
 		end
 	)
 
-	it("draws Kindling as sticks, the ones not held faint (TKB-R106)", function()
+	it("load the highlight's ring only when it first shows, sized round what it rings (TKB-R109)", function()
 		local ns, parent = kit()
+		parent:SetSize(236, 116)
 
-		local sticks = ns.NewBoardSticks(parent, 3)
-		sticks:SetSticks(1)
-
-		assert.are.equal(3, #sticks.sticks)
-		assert.are.same(rgba(ns.BOARD_LOOK.logLight), sticks.sticks[1].color)
-		assert.are.same(rgba(ns.BOARD_LOOK.stickOff), sticks.sticks[2].color)
-		assert.are.equal(0.45, sticks.sticks[3]:GetAlpha())
-	end)
-
-	it("edges a rare compartment of the drawer in gilt, and shows a tied pattern's icon (TKB-R106)", function()
-		local ns, parent = kit()
-
-		local cell = ns.NewBoardFeltCell(parent, 94, 70)
-		cell:SetCell({ id = "phoenix_hackle", rare = true, tied = true, icon = "Interface\\Icons\\X", text = "x" })
-
-		assert.are.same(rgba(ns.BOARD_LOOK.gilt), cell.edges[1].color)
-		assert.is_true(cell.icon:IsShown())
-		assert.are.equal("Interface\\Icons\\X", cell.icon.texture)
-
-		cell:SetCell({ id = "murloc_nymph", rare = false, tied = false, text = "not tied yet" })
-
-		assert.are.same(rgba(ns.BOARD_LOOK.feltEdge), cell.edges[1].color)
-		assert.is_false(cell.icon:IsShown())
-	end)
-
-	it("mirrors the pointing hand to point right (TKB-R106)", function()
-		local ns, parent = kit()
-
-		local hand = ns.NewBoardPointer(parent, 16)
-
-		assert.are.equal(ns.BOARD_TEXTURES.pointer, hand.texture)
-		assert.are.same({ 1, 0, 0, 1 }, hand.texCoord)
-	end)
-
-	it("outlines an empty pin in dashes with a lone tack and its words by hand (TKB-R105)", function()
-		local ns, parent = kit()
-
-		local pin = ns.NewBoardEmptyPin(parent, 150, 96)
-		pin:SetEmpty("A fresh Notice at reset (in 13h)")
-
-		assert.are.same({ 150, 96 }, { pin.width, pin.height })
-		-- 10-pixel steps (a 6-pixel dash and its gap): 15 along each long side, 9 along each short one.
-		assert.are.equal(48, #pin.dashes)
-		assert.are.same(rgba(ns.BOARD_LOOK.corkFleck, 0.35), pin.dashes[1].color)
-		assert.are.equal(pin, pin.tack:GetParent())
-		assert.are.equal("A fresh Notice at reset (in 13h)", pin.label:GetText())
-		assert.are.equal(ns.BoardFonts().hand, pin.label.fontObject)
-	end)
-
-	it("rings a highlighted pin in brass, hidden until shown (TKB-R109)", function()
-		local ns, parent = kit()
-
-		local ring = ns.NewBoardHighlight(parent)
+		local ring = ns.NewBoardHighlight(parent, false)
 
 		assert.is_false(ring:IsShown())
-		assert.are.equal(4, #ring.edges)
-		assert.are.same(rgba(ns.BOARD_LOOK.tackShine), ring.edges[1].color)
+		assert.is_nil(ring.ring)
+		ring:Show()
+		assert.are.equal(ns.BOARD_ATLASES.Tracker.file, ring.ring.texture)
+		assert.are.same({ 254, 134 }, { ring.ring.box[3], ring.ring.box[4] })
 	end)
 
-	it("sets printed text in the client's serif face and notes in its handwriting face (TKB-R100)", function()
-		local ns = kit()
-		local fonts = ns.BoardFonts()
-
-		assert.are.equal("Fonts\\FRIZQT__.TTF", fonts.text.font[1])
-		assert.are.equal("Fonts\\FRIZQT__.TTF", fonts.kicker.font[1])
-		assert.are.equal("Fonts\\MORPHEUS.TTF", fonts.hand.font[1])
-		assert.are.equal("Fonts\\MORPHEUS.TTF", fonts.updating.font[1])
-	end)
-
-	it("prints a line in ink, an Expedition's larger and darker (TKB-R102)", function()
-		local ns, parent = kit()
-		local fonts = ns.BoardFonts()
-
-		local line = ns.NewBoardPrinted(parent)
-		local large = ns.NewBoardPrinted(parent, true)
-
-		assert.are.same({ fonts.text, ns.BOARD_LOOK.ink }, { line.fontObject, rgb(line.textColor) })
-		assert.are.same({ fonts.title, ns.BOARD_LOOK.title }, { large.fontObject, rgb(large.textColor) })
-	end)
-
-	it('writes a line by hand in blue ink, or in the ink given (TKB-R102: the green "I\'m here")', function()
-		local ns, parent = kit()
-
-		local note = ns.NewBoardHand(parent)
-		local here = ns.NewBoardHand(parent, ns.BOARD_LOOK.here)
-
-		assert.are.equal(ns.BoardFonts().hand, note.fontObject)
-		assert.are.same(ns.BOARD_LOOK.hand, rgb(note.textColor))
-		assert.are.same(ns.BOARD_LOOK.here, rgb(here.textColor))
-	end)
-
-	it("sets a kicker in small caps: capitals in the kicker face (TKB-R102)", function()
-		local ns, parent = kit()
-		local kicker = ns.NewBoardKicker(parent)
-
-		kicker:SetKicker("Expedition · Variety")
-
-		assert.are.equal("EXPEDITION · VARIETY", kicker:GetText())
-		assert.are.equal(ns.BoardFonts().kicker, kicker.fontObject)
-	end)
-
-	it("fills an ink bar with tiled hatching from the left, empty at 0 (TKB-R102)", function()
-		local ns, parent = kit()
-		local bar = ns.NewBoardInkBar(parent, 162, 9)
-		assert.is_false(bar.fill:IsShown())
-
-		bar:SetBar(12 / 30)
-
-		assert.is_true(bar.hatch:IsShown())
-		assert.are.equal(ns.BOARD_TEXTURES.hatch, bar.hatch.texture)
-		assert.are.equal(64, bar.fill.width)
-		assert.are.same({ 0, 4, 0, 7 / 16 }, bar.hatch.texCoord)
-		bar:SetBar(2)
-		assert.are.equal(1, bar.value)
-	end)
-
-	it("stamps words in capitals in a red-ink outline (TKB-R102: RE-POSTED)", function()
-		local ns, parent = kit()
-		local stamp = ns.NewBoardStamp(parent)
-
-		stamp:SetStamp("Re-posted")
-
-		assert.are.equal("RE-POSTED", stamp.label:GetText())
-		assert.are.same(rgba(ns.BOARD_LOOK.red, 0.75), stamp.edges[1].color)
-		assert.are.equal(4, #stamp.edges)
-	end)
-
-	it("makes a brass tack of discs: a dark rim, a brass head and its shine (TKB-R102, TKB-R105)", function()
-		local ns, parent = kit()
-		local tack = ns.NewBoardTack(parent, 12)
-
-		for _, part in ipairs({ tack.rim, tack.head, tack.shine }) do
-			assert.are.equal(ns.BOARD_TEXTURES.disc, part.texture)
-		end
-		assert.are.same(ns.BOARD_LOOK.tack, rgb(tack.head.vertexColor))
-		assert.are.same(ns.BOARD_LOOK.tackShine, rgb(tack.shine.vertexColor))
-	end)
-
-	it("seals with red wax and its words (TKB-R102: an Expedition's pay)", function()
-		local ns, parent = kit()
-		local seal = ns.NewBoardSeal(parent, 40)
-
-		seal:SetSeal("60")
-
-		assert.are.equal(ns.BOARD_TEXTURES.disc, seal.wax.texture)
-		assert.are.same(ns.BOARD_LOOK.seal, rgb(seal.wax.vertexColor))
-		assert.are.equal("60", seal.label:GetText())
-	end)
-
-	it("pins a parchment slip with a brass tack, and a poster in darker paper with a red top (TKB-R102)", function()
-		local ns, parent = kit()
-
-		local slip = ns.NewBoardSlip(parent, 196, 118)
-		local poster = ns.NewBoardSlip(parent, 250, 150, true)
-
-		assert.are.same(rgba(ns.BOARD_LOOK.paper), slip.paper.color)
-		assert.are.equal(ns.BOARD_TEXTURES.paper, slip.grain.texture)
-		assert.is_nil(slip.top)
-		assert.are.equal(slip, slip.tack:GetParent())
-		assert.are.same(rgba(ns.BOARD_LOOK.poster), poster.paper.color)
-		assert.are.same(rgba(ns.BOARD_LOOK.posterTop), poster.top.color)
-	end)
-
-	it("makes a wooden button that calls back, and greys its words while disabled (TKB-R107)", function()
+	it("make a leather button that calls back, greyed while it can't be used (TKB-R107)", function()
 		local ns, parent = kit()
 		local clicks = 0
-		local button = ns.NewBoardButton(parent, "Start my board", function()
+
+		local button = ns.NewBoardButton(parent, "Start my board", 182, "Button", function()
 			clicks = clicks + 1
 		end)
-
 		button:Click()
 		button:SetUsable(false)
 		button:Click()
 
 		assert.are.equal(1, clicks)
 		assert.are.equal("Start my board", button.label:GetText())
-		assert.is_false(button:IsEnabled())
-		assert.are.same(ns.BOARD_LOOK.buttonOff, rgb(button.label.textColor))
-		button:SetUsable(true)
-		assert.are.same(ns.BOARD_LOOK.sealText, rgb(button.label.textColor))
+		assert.are.equal(182, button.width)
+		assert.are.equal(0.55, button:GetAlpha())
 	end)
 
-	it("frames a face by its edge, inset, for the wooden and brass pieces (TKB-R100)", function()
-		local ns, parent = kit()
-		local look = ns.BOARD_LOOK
-
-		local face, edge = ns.NewBoardFace(parent, look.brassEdge, look.brass, 1)
-		local button = ns.NewBoardButton(parent, "Start my board", function() end)
-
-		assert.are.same(rgba(look.brassEdge), edge.color)
-		assert.are.same(rgba(look.brass), face.color)
-		assert.are.same({ { "TOPLEFT", 1, -1 }, { "BOTTOMRIGHT", -1, 1 } }, face.points)
-		assert.are.same(rgba(look.woodInner), button.edge.color)
-		assert.are.same({ { "TOPLEFT", 2, -2 }, { "BOTTOMRIGHT", -2, 2 } }, button.face.points)
-	end)
-
-	it("lays a scrap of paper over its shadow, the shadow showing right and below (TKB-R101)", function()
+	it("stamp RE-POSTED in red ink in a double rule (TKB-R55)", function()
 		local ns, parent = kit()
 
-		local paper = ns.BoardScrap(parent)
+		local stamp = ns.NewBoardStamp(parent, "RE-POSTED")
 
-		assert.are.same(rgba(ns.BOARD_LOOK.paper), paper.color)
-		assert.are.same({ { "TOPLEFT", 0, 0 }, { "BOTTOMRIGHT", -1, 2 } }, paper.points)
+		assert.are.equal("RE-POSTED", stamp.label:GetText())
+		assert.are.equal(8, #stamp.rules)
 	end)
 
-	it("shows a hover's first line as its title and the rest under it, and hides it (TKB-R102)", function()
-		local ns, parent, loaded = kit()
-
-		ns.BoardHover(parent, { "Posted Sun 11 Oct, 08:15", "a note" })
-		local tooltip = loaded.env.GameTooltip
-		local shown = { tooltip.owner, tooltip.anchor, tooltip.shown }
-		local lines = loaded.client.tooltipLines()
-		ns.BoardHoverHide()
-
-		assert.are.same({ parent, "ANCHOR_RIGHT", true }, shown)
-		assert.are.same({ "Posted Sun 11 Oct, 08:15", "a note" }, lines)
-		assert.is_false(tooltip.shown)
-	end)
-
-	it("crops the fire icon to its flame, wherever a flame is drawn (TKB-R106, TKB-R122)", function()
+	it('write "take it down" in red pencil over a dotted line, greyed while it is not usable (TKB-R108)', function()
 		local ns, parent = kit()
 
-		local flame = ns.BoardFlameIcon(parent:CreateTexture())
+		local link = ns.NewTakeDownLink(parent, "take it down")
+		link:SetUsable(false)
 
-		assert.are.equal(ns.BOARD_TEXTURES.flame, flame.texture)
-		assert.are.same({ 0.08, 1 - 0.08, 0.08, 1 - 0.08 }, flame.texCoord)
+		assert.are.equal("take it down", link.label:GetText())
+		assert.is_true(#link.dots > 0)
+		assert.is_false(link:IsEnabled())
 	end)
-
-	it("brightens a wooden button's wood under the mouse, only while enabled (TKB-R107)", function()
-		local ns, parent = kit()
-		local button = ns.NewBoardButton(parent, "Start my board", function() end)
-		local wood = rgba(ns.BOARD_LOOK.button)
-
-		button:GetScript("OnEnter")(button)
-		assert.are_not.same(wood, button.face.color)
-		button:GetScript("OnLeave")(button)
-		assert.are.same(wood, button.face.color)
-
-		button:SetUsable(false)
-		button:GetScript("OnEnter")(button)
-		assert.are.same(wood, button.face.color)
-	end)
-
-	it(
-		"lays the shell's wood, cork and ledge in their tints and grain, and a brass plaque in capitals (TKB-R100)",
-		function()
-			local ns, parent = kit()
-			local look = ns.BOARD_LOOK
-
-			local wood = ns.NewBoardWood(parent, 1000, 660)
-			local cork = ns.NewBoardCork(parent, 948, 534)
-			parent:SetSize(1000, 86)
-			local ledge = ns.NewBoardLedge(parent)
-			local plaque = ns.NewBoardPlaque(parent)
-			plaque:SetPlaque("Tackle Board")
-
-			assert.are.same(rgba(look.wood), wood.wood.color)
-			assert.are.equal(ns.BOARD_TEXTURES.grain, wood.grain.texture)
-			assert.are.same(rgba(look.cork), cork.cork.color)
-			assert.are.equal(ns.BOARD_TEXTURES.fleck, cork.flecks.texture)
-			assert.are.same(rgba(look.ledgeLip), ledge.lip.color)
-			assert.are.equal(43, ledge.bottom.height)
-			assert.are.equal("TACKLE BOARD", plaque.label:GetText())
-			assert.are.same(rgba(look.brass), plaque.face.color)
-		end
-	)
 end)

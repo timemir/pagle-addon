@@ -28,16 +28,50 @@ function ns.TakeDownGoal(state, goalID, pagle)
 	return goal
 end
 
+--- What "take it down" says under the mouse (TKB-R55, TKB-R56, TKB-R44, TKB-R108): what it does for the goal's type,
+--- then the one rule that applies: while the projection is updating, that it waits; for a stranded goal, that it is no
+--- longer catchable (and so can come down though re-posted); otherwise, that the new goal can't be taken down in turn
+--- unless it stops being catchable.
+---@param goal TackleGoal
+---@param updating boolean ns.IsUpdating() (TKB-R108)
+---@param pagle table Core's catalogue calls (LOG-R55), for ns.IsStranded
+---@return string[] lines its title, what it does, the rule
+function ns.TakeDownTip(goal, updating, pagle)
+	local L = ns.L
+	local rule
+	if updating then
+		rule = L.TAKE_DOWN_TIP_UPDATING
+	elseif ns.IsStranded(goal, pagle) then
+		rule = goal.reposted and L.TAKE_DOWN_TIP_STRANDED or L.TAKE_DOWN_TIP_STRANDED_FIRST
+	else
+		rule = L.TAKE_DOWN_TIP_ONCE
+	end
+	return { L.TAKE_DOWN_TIP_TITLE, L.TAKE_DOWN_TIP[goal.type], rule }
+end
+
+--- The confirm's question (TKB-R56): its title, what is lost, and the progress inside that, which the confirm inks
+--- apart.
+---@class TackleTakeDownQuestion
+---@field title string      -- "Take down this Notice?"
+---@field text string       -- "Its progress (12/30) is lost, and the new one can't be taken down."
+---@field progress string   -- "12/30", as it reads in `text`
+
 --- The confirm's question before a goal comes down (TKB-R56), or nil when it comes down at once: it asks only for a
 --- goal whose displayed progress (TKB-R104) is above 0, showing that progress against its need (TKB-R44).
 ---@param goal TackleGoal
 ---@param today integer the board day now, the projection's day (TKB-R104)
 ---@param pagle table Core's catalogue calls (LOG-R55), for ns.GoalNeed
----@return string?
+---@return TackleTakeDownQuestion?
 function ns.TakeDownQuestion(goal, today, pagle)
+	local L = ns.L
 	local progress = ns.DisplayedProgress(goal, today)
 	if progress <= 0 then
 		return nil
 	end
-	return string.format(ns.L.TAKE_DOWN_CONFIRM[goal.type], progress, ns.GoalNeed(goal, pagle))
+	local shown = ns.Fill(L.TAKE_DOWN_PROGRESS, { n = progress, need = ns.GoalNeed(goal, pagle) })
+	return {
+		title = L.TAKE_DOWN_TITLE[goal.type],
+		text = ns.Fill(L.TAKE_DOWN_TEXT, { progress = shown }),
+		progress = shown,
+	}
 end

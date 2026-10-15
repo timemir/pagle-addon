@@ -1,4 +1,4 @@
--- Taking a goal down (TKB-R55, TKB-R56, TKB-R108, TKB-R193): ns.CanTakeDown, ns.TakeDown, the native confirm and the
+-- Taking a goal down (TKB-R55, TKB-R56, TKB-R108, TKB-R193): ns.CanTakeDown, ns.TakeDown, the board's confirm and the
 -- `reroll` record, on FakePagle over the fixture catalogue with a seeded random source. A started board's history is
 -- appended with fake.catchLog:Append, then login and the first PLAYER_ENTERING_WORLD build the projection; what the
 -- reroll appends is read back from the log, and its new goal from the projection. Progress is set on the projection's
@@ -55,14 +55,25 @@ local function rerolls(ns)
 	return found
 end
 
+-- What the confirm asks while it shows, its question and what is lost as one line, the progress's red ink left out;
+-- nil while it doesn't show.
+local function asked(ns)
+	local confirm = ns.TakeDownConfirm()
+	if not (confirm and confirm:IsShown()) then
+		return nil
+	end
+	local text = confirm.text:GetText():gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
+	return confirm.title:GetText() .. " " .. text
+end
+
 describe("taking a goal down", function()
 	describe("with no displayed progress (TKB-R55, TKB-R56)", function()
 		it("comes down at once: one reroll record whose new goal has another kind, on the same pin", function()
-			local ns, loaded = started()
+			local ns = started()
 
 			ns.TakeDown(HAUL)
 
-			assert.is_nil(loaded.client.popup)
+			assert.is_nil(asked(ns))
 			local appended = rerolls(ns)
 			assert.are.equal(1, #appended)
 			local decoded = assert(ns.DecodeRecord("reroll", appended[1].payload))
@@ -120,20 +131,20 @@ describe("taking a goal down", function()
 		it(
 			"comes down at once for a day-bound goal whose progress is an earlier board day's, displayed 0 (TKB-R104)",
 			function()
-				local ns, loaded = started()
+				local ns = started()
 				local wanderer = ns.State().goals[WANDERER]
 				wanderer.progress, wanderer.progressDay = 2, ns.State().day - 1
 
 				assert.are.equal(0, ns.DisplayedProgress(wanderer, ns.State().day))
 				ns.TakeDown(WANDERER)
 
-				assert.is_nil(loaded.client.popup)
+				assert.is_nil(asked(ns))
 				assert.are.equal(1, #rerolls(ns))
 			end
 		)
 
 		it("asks for a day-bound goal with progress today (TKB-R104)", function()
-			local ns, loaded = started()
+			local ns = started()
 			local wanderer = ns.State().goals[WANDERER]
 			wanderer.progress, wanderer.progressDay = 2, ns.State().day
 
@@ -141,7 +152,7 @@ describe("taking a goal down", function()
 
 			assert.are.equal(
 				"Take down this Notice? Its progress (2/3) is lost, and the new one can't be taken down.",
-				loaded.client.popup.text
+				asked(ns)
 			)
 			assert.are.equal(0, #rerolls(ns))
 		end)
@@ -157,15 +168,24 @@ describe("taking a goal down", function()
 			return ns, loaded, fake
 		end
 
-		it("asks first in a native popup with the exact text and buttons, appending nothing yet", function()
+		it("asks first on the board's confirm with the exact text and answers, appending nothing yet", function()
 			local ns, loaded = at12()
 
 			ns.TakeDown(HAUL)
 
-			assert.are.same({ NOTICE_TEXT, { "Take it down", "Keep it" } }, {
-				loaded.client.popup.text,
-				loaded.client.popup.buttons,
+			local confirm = assert(ns.TakeDownConfirm())
+			assert.are.same({ NOTICE_TEXT, "Take it down", "Keep it" }, {
+				asked(ns),
+				confirm.accept.label:GetText(),
+				confirm.keep.label:GetText(),
 			})
+			assert.are.equal(
+				"Its progress (|cff9A2A1A12/30|r) is lost, and the new one can't be taken down.",
+				confirm.text:GetText()
+			)
+			local drawn = confirm --[[@as table]] -- the fake client's frame keeps its name and its paper's texture
+			assert.are.equal("PagleTackleBoardConfirm", drawn.name)
+			assert.are.equal(loaded.ns.BOARD_ATLASES.Board.file, drawn.paper.texture)
 			assert.are.equal(0, #rerolls(ns))
 		end)
 
@@ -173,23 +193,23 @@ describe("taking a goal down", function()
 			local ns, loaded = at12()
 
 			ns.TakeDown(HAUL)
-			loaded.client.clickPopup(2)
+			ns.TakeDownConfirm().keep:Click()
 			ns.TakeDown(HAUL)
 			loaded.client.pressEscape()
 
-			assert.is_nil(loaded.client.popup)
+			assert.is_nil(asked(ns))
 			assert.are.equal(0, #rerolls(ns))
 			assert.are.equal(HAUL, ns.State().pins.notices[1])
 			assert.is_true(ns.CanTakeDown(HAUL))
 		end)
 
 		it('"Take it down" appends one reroll record for the goal', function()
-			local ns, loaded = at12()
+			local ns = at12()
 
 			ns.TakeDown(HAUL)
-			loaded.client.clickPopup(1)
+			ns.TakeDownConfirm().accept:Click()
 
-			assert.is_nil(loaded.client.popup)
+			assert.is_nil(asked(ns))
 			local appended = rerolls(ns)
 			assert.are.equal(1, #appended)
 			assert.are.equal(HAUL, ns.DecodeRecord("reroll", appended[1].payload).old)
@@ -197,47 +217,47 @@ describe("taking a goal down", function()
 		end)
 
 		it('says "Expedition" for an Expedition', function()
-			local ns, loaded = started()
+			local ns = started()
 			ns.State().goals[EXPEDITION].progress = 1 -- of 1: not yet completed in the fold
 
 			ns.TakeDown(EXPEDITION)
 
 			assert.are.equal(
 				"Take down this Expedition? Its progress (1/1) is lost, and the new one can't be taken down.",
-				loaded.client.popup.text
+				asked(ns)
 			)
 		end)
 
-		it("works while restricted: the popup is native and non-secure (TKB-R193)", function()
-			local ns, loaded, fake = at12()
+		it("works while restricted: the confirm is a plain frame, nothing secure (TKB-R193)", function()
+			local ns, _, fake = at12()
 			fake.setRestricted(true)
 
 			ns.TakeDown(HAUL)
-			loaded.client.clickPopup(1)
+			ns.TakeDownConfirm().accept:Click()
 
 			assert.are.equal(1, #rerolls(ns))
 		end)
 
 		it('appends nothing on "Take it down" when the goal completed while the popup was open (TKB-R55)', function()
-			local ns, loaded = at12()
+			local ns = at12()
 			ns.TakeDown(HAUL)
 			-- completing it as the fold does (logic/Completions.lua): it is done, no longer open
 			local state = ns.State()
 			state.goals[HAUL].doneDay = state.day
 
-			loaded.client.clickPopup(1)
+			ns.TakeDownConfirm().accept:Click()
 
 			assert.are.equal(0, #rerolls(ns))
 		end)
 
 		it('appends nothing on "Take it down" when an update started while the popup was open (TKB-R55)', function()
-			local ns, loaded = at12()
+			local ns = at12()
 			ns.TakeDown(HAUL)
 			ns.IsUpdating = function()
 				return true
 			end
 
-			loaded.client.clickPopup(1)
+			ns.TakeDownConfirm().accept:Click()
 
 			assert.are.equal(0, #rerolls(ns))
 		end)
@@ -287,7 +307,7 @@ describe("taking a goal down", function()
 		end)
 
 		it("takes nothing down while the projection is updating; the pins grey the button meanwhile", function()
-			local ns, loaded = started()
+			local ns = started()
 			ns.IsUpdating = function()
 				return true
 			end
@@ -295,14 +315,14 @@ describe("taking a goal down", function()
 			ns.TakeDown(HAUL)
 			ns.TakeDown(EXPEDITION)
 
-			assert.is_nil(loaded.client.popup)
+			assert.is_nil(asked(ns))
 			assert.are.equal(0, #rerolls(ns))
 			-- TKB-R108: the pins (adapter/Pins.lua) disable the shown button while ns.IsUpdating(); CanTakeDown doesn't hide it
 			assert.are.same({ true, true }, { ns.CanTakeDown(HAUL), ns.CanTakeDown(EXPEDITION) })
 		end)
 
 		it("asks nothing while the projection is updating, even for a goal with progress", function()
-			local ns, loaded = started()
+			local ns = started()
 			ns.State().goals[HAUL].progress = 12
 			ns.IsUpdating = function()
 				return true
@@ -310,7 +330,7 @@ describe("taking a goal down", function()
 
 			ns.TakeDown(HAUL)
 
-			assert.is_nil(loaded.client.popup)
+			assert.is_nil(asked(ns))
 			assert.are.equal(0, #rerolls(ns))
 		end)
 	end)

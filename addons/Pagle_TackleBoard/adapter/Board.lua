@@ -5,51 +5,61 @@ end
 ---@class PagleTackleBoardNS
 local ns = select(2, ...)
 
--- The Tackle Board on the client (TKB-R100, TKB-R107, TKB-R108, TKB-R193): a wooden frame with a brass plaque round a
--- cork board, with a ledge below, drawing what logic/Board.lua decides: the empty slip and its Start button before
--- Start, "Updating…" while the projection updates, and each part's renderer once started. The parts' contents are the
--- pins' and the ledge's (adapter/Pins.lua, adapter/Ledge.lua); this file draws only the board. It makes no secure
--- frames, so it opens and works while restricted (TKB-R193). The look follows prototypes/tackle-board/ variant C, in
--- adapter/BoardWidgets.lua's art.
+-- The Tackle Board on the client (TKB-R100, TKB-R107, TKB-R108, TKB-R193): a leather frame with a brass plaque reading
+-- "Tackle Board" round a cork board, with a ledge below, drawing what logic/Board.lua decides: the welcome slip and its
+-- Start button before Start, "Updating…" while the projection updates, and each part's renderer once started. The
+-- parts' contents are the pins' and the ledge's (adapter/Pins.lua, adapter/Ledge.lua); this file draws only the board.
+-- It makes no secure frames, so it opens and works while restricted (TKB-R193). The look is the board art kit's
+-- (PagleArtBoard's Board.lua and Overlays.lua), through adapter/BoardArt.lua; its textures load when the board first
+-- opens.
 
 -- The frame's global name: UISpecialFrames takes names, and Esc hides the frames it lists (TKB-R100).
 local FRAME_NAME = "PagleTackleBoard"
--- Variant C's board: 1000 × 660, the cork inside the wood's padding (34 top, 26 at the sides, 92 below for the ledge),
--- the ledge 86 high along the bottom.
+-- The kit's board: 1000 × 660, the cork 952 × 466 inside the frame's leather, the ledge under it from 500 down.
 local WIDTH, HEIGHT = 1000, 660
-local PAD_TOP, PAD_SIDE, PAD_BOTTOM, LEDGE_HEIGHT = 34, 26, 92, 86
-local CORK_WIDTH, CORK_HEIGHT = WIDTH - 2 * PAD_SIDE, HEIGHT - PAD_TOP - PAD_BOTTOM
+local CORK_X, CORK_Y, CORK_WIDTH, CORK_HEIGHT = 24, 34, 952, 466
+local LEDGE_Y = 500
+local LEDGE_HEIGHT = HEIGHT - LEDGE_Y
 
--- Each part's place, from the cork's top left (variant C's `renderC`): the pins over the left of the cork, the
+-- Each part's place on the cork (the kit's): the pins over the left of it (logic/Pins.lua places each pin), the
 -- overflow strip under the Notice rows, the spike down the right; the ledge part fills the ledge.
-local PINS_WIDTH, PINS_HEIGHT = 700, 494
-local OVERFLOW_X, OVERFLOW_Y, OVERFLOW_WIDTH, OVERFLOW_HEIGHT = 16, 496, 676, 34
-local SPIKE_RIGHT, SPIKE_TOP, SPIKE_WIDTH = 14, 26, 130
+local OVERFLOW_WIDTH, OVERFLOW_HEIGHT = 760, 42
+local SPIKE_X, SPIKE_Y, SPIKE_WIDTH, SPIKE_HEIGHT = 792, 14, 150, 440
+-- A Notice's paper and an Expedition's poster.
+local NOTICE_WIDTH, NOTICE_HEIGHT = 236, 116
+local POSTER_WIDTH, POSTER_HEIGHT = 360, 156
 
--- The pins, as variant C pins them: each pin's top left on the cork, and its size: an Expedition's poster, a Notice's
--- slip (TKB-R101: 2 Expedition pins on the top row, 3 Notice pins on each of the two rows below).
-local EXPEDITION_PINS = { { 16, 12 }, { 306, 8 } }
-local NOTICE_PINS = { { 16, 198 }, { 228, 192 }, { 440, 200 }, { 16, 368 }, { 228, 372 }, { 440, 366 } }
-local POSTER_WIDTH, POSTER_HEIGHT = 250, 150
-local SLIP_WIDTH, SLIP_HEIGHT = 196, 118
-
--- The empty board's slip (TKB-R107): 340 wide, centred across the cork 44% of the way down, its words above the
--- Start button.
-local EMPTY_WIDTH, EMPTY_HEIGHT, EMPTY_PAD = 340, 200, 24
-local EMPTY_Y = math.floor(CORK_HEIGHT * (0.5 - 0.44) + 0.5)
+-- The welcome slip (TKB-R107): 300 × 150 on the cork, leaning a little, Start my board under it.
+local WELCOME_X, WELCOME_Y, WELCOME_WIDTH, WELCOME_HEIGHT, WELCOME_LEAN = 326, 112, 300, 150, -1.2
+local START_X, START_Y, START_WIDTH = 385, 318, 182
+-- The "Updating…" note (TKB-R108), and how dark the cork goes under it.
+local NOTE_WIDTH, NOTE_HEIGHT, NOTE_LEAN, UPDATING_DIM = 340, 112, -1.5, 0.55
+-- The fire's glow over the cork: faint on the empty board, by the Campfire's brightness while it burns.
+local GLOW_EMPTY = 0.25
 
 ---@class TacklePinsFrame: Frame
 ---@field slots { expeditions: Frame[], notices: Frame[] }   -- one frame per pin, in board order (TKB-R101)
 
 ---@class TackleUpdatingFrame: Frame
+---@field note Frame          -- the pinned note
+---@field paper TackleSprite
+---@field label FontString
+---@field reason FontString
+
+---@class TackleWelcomeFrame: Frame
+---@field paper TackleSprite
+
+---@class TacklePlaque
 ---@field label FontString
 
 ---@class TackleBoardFrame: Frame
 ---@field close Button
----@field plaque TacklePlaqueView
+---@field art TackleSprite                         -- the frame: leather, brass corners, the plaque and the ledge
+---@field plaque TacklePlaque
 ---@field cork Frame
+---@field glow TackleSprite                        -- the Campfire's light over the cork
 ---@field ledge Frame
----@field empty TackleSlipView                     -- the empty board's slip (TKB-R107)
+---@field empty TackleWelcomeFrame                 -- the welcome slip (TKB-R107)
 ---@field slipText FontString
 ---@field start TackleButtonView                   -- Start my board (TKB-R5)
 ---@field updating TackleUpdatingFrame             -- "Updating…" over the cork (TKB-R108)
@@ -80,71 +90,103 @@ function Board.IsUpdating()
 	return ns.IsUpdating()
 end
 
--- A frame on `parent` of `width` × `height` at `x`, `y` from its `point`.
+-- A frame on `parent` of `width` × `height`, its top left `x`, `y` from `parent`'s (y down), at `layer`'s level above
+-- `board` (ns.BOARD_LAYERS) when given.
 ---@return Frame
-local function placed(parent, width, height, point, x, y)
+local function placed(parent, width, height, x, y, board, layer)
 	local frame = CreateFrame("Frame", nil, parent)
 	frame:SetSize(width, height)
-	frame:SetPoint(point, parent, point, x, y)
+	frame:SetPoint("TOPLEFT", parent, "TOPLEFT", x, -y)
+	if board then
+		frame:SetFrameLevel(board:GetFrameLevel() + ns.BoardLayer(layer))
+	end
 	return frame
 end
 
--- The parts' frames on the cork and the ledge, and the pins' slots.
+-- The parts' frames on the cork and the ledge, and the pins' slots (adapter/Pins.lua moves each to its place).
 ---@param frame TackleBoardFrame
 local function buildParts(frame)
 	local cork = frame.cork
-	local pins = placed(cork, PINS_WIDTH, PINS_HEIGHT, "TOPLEFT", 0, 0) --[[@as TacklePinsFrame]]
+	local pins = placed(cork, CORK_WIDTH, CORK_HEIGHT, 0, 0, frame, "pins") --[[@as TacklePinsFrame]]
 	pins.slots = { expeditions = {}, notices = {} }
-	for i, at in ipairs(EXPEDITION_PINS) do
-		pins.slots.expeditions[i] = placed(pins, POSTER_WIDTH, POSTER_HEIGHT, "TOPLEFT", at[1], -at[2])
+	local places = ns.PinPlaces(false)
+	for i, at in ipairs(places.expeditions) do
+		pins.slots.expeditions[i] = placed(pins, POSTER_WIDTH, POSTER_HEIGHT, at.x, at.y)
 	end
-	for i, at in ipairs(NOTICE_PINS) do
-		pins.slots.notices[i] = placed(pins, SLIP_WIDTH, SLIP_HEIGHT, "TOPLEFT", at[1], -at[2])
+	for i, at in ipairs(places.notices) do
+		pins.slots.notices[i] = placed(pins, NOTICE_WIDTH, NOTICE_HEIGHT, at.x, at.y)
 	end
+	local strip = ns.PinPlaces(true).overflow --[[@as { x: number, y: number }]]
 	frame.parts = {
 		pins = pins,
-		overflow = placed(cork, OVERFLOW_WIDTH, OVERFLOW_HEIGHT, "TOPLEFT", OVERFLOW_X, -OVERFLOW_Y),
-		spike = placed(cork, SPIKE_WIDTH, CORK_HEIGHT - SPIKE_TOP - 10, "TOPRIGHT", -SPIKE_RIGHT, -SPIKE_TOP),
-		ledge = placed(frame.ledge, WIDTH, LEDGE_HEIGHT, "TOPLEFT", 0, 0),
+		overflow = placed(cork, OVERFLOW_WIDTH, OVERFLOW_HEIGHT, strip.x, strip.y, frame, "overflow"),
+		spike = placed(cork, SPIKE_WIDTH, SPIKE_HEIGHT, SPIKE_X, SPIKE_Y, frame, "spike"),
+		ledge = placed(frame.ledge, WIDTH, LEDGE_HEIGHT, 0, 0, frame, "ledge"),
 	}
 end
 
--- The empty board's slip with its words and Start my board below them (TKB-R107, TKB-R5).
----@param board TackleBoard
+-- The cork (TKB-R100): one tile repeated across it, shaded at its edges, and the Campfire's glow added over it.
 ---@param frame TackleBoardFrame
-local function buildEmpty(board, frame)
-	local slip = ns.NewBoardSlip(frame.cork, EMPTY_WIDTH, EMPTY_HEIGHT)
-	slip:SetPoint("CENTER", frame.cork, "CENTER", 0, EMPTY_Y)
-	frame.empty = slip
-	frame.slipText = ns.NewBoardPrinted(slip)
-	frame.slipText:SetJustifyH("CENTER")
-	frame.slipText:SetWidth(EMPTY_WIDTH - 2 * EMPTY_PAD)
-	frame.slipText:SetPoint("TOP", 0, -28)
-	frame.slipText:SetText(ns.L.EMPTY_SLIP)
-	frame.start = ns.NewBoardButton(slip, ns.L.START_MY_BOARD, function()
-		board:Start()
-	end)
-	frame.start:SetPoint("BOTTOM", 0, 18)
+local function buildCork(frame)
+	local cork = placed(frame, CORK_WIDTH, CORK_HEIGHT, CORK_X, CORK_Y)
+	local tile = cork:CreateTexture(nil, "BACKGROUND", nil, -8)
+	tile:SetTexture(ns.CORK_TEXTURE, "REPEAT", "REPEAT")
+	tile:SetAllPoints()
+	tile:SetTexCoord(0, CORK_WIDTH / ns.CORK_TILE, 0, CORK_HEIGHT / ns.CORK_TILE)
+	local shade = ns.ArtSprite(cork, "Glow", "cork-shade", "BACKGROUND", -7)
+	shade:SetAllPoints()
+	frame.glow = ns.ArtSprite(cork, "Glow", "cork-glow", "BACKGROUND", -6)
+	frame.glow:SetAllPoints()
+	frame.glow:SetBlendMode("ADD")
+	frame.cork = cork
 end
 
--- "Updating…" over the cork (TKB-R108): a dark wash and the words, above the slip and the parts. It takes no mouse,
--- so the slips under it still show their tooltips.
+-- The welcome slip with its words, and Start my board under it (TKB-R107, TKB-R5).
+---@param board TackleBoard
+---@param frame TackleBoardFrame
+local function buildWelcome(board, frame)
+	local slip = placed(frame.cork, WELCOME_WIDTH, WELCOME_HEIGHT, WELCOME_X, WELCOME_Y, frame, "welcome") --[[@as TackleWelcomeFrame]]
+	slip:EnableMouse(true)
+	slip.paper = ns.ArtSprite(slip, "Board", "welcome", "BACKGROUND")
+	frame.slipText = ns.ArtWrap(slip, "Welcome", 256, 4.8)
+	frame.slipText:SetPoint("TOPLEFT", 22, -22)
+	frame.slipText:SetText(ns.L.EMPTY_SLIP)
+	ns.PlaceSprite(ns.NewBoardTack(slip), slip, 142.5, -5)
+	frame.empty = slip
+	frame.start = ns.NewBoardButton(slip, ns.L.START_MY_BOARD, START_WIDTH, "Button", function()
+		board:Start()
+	end)
+	frame.start:SetPoint("TOPLEFT", slip, "TOPLEFT", START_X - WELCOME_X, -(START_Y - WELCOME_Y))
+end
+
+-- "Updating…" over the cork (TKB-R108): the cork darkened, and a pinned note with the words and why, above the slip and
+-- the parts. It takes no mouse, so the papers under it still show their tooltips.
 ---@param frame TackleBoardFrame
 local function buildUpdating(frame)
 	local cover = CreateFrame("Frame", nil, frame.cork) --[[@as TackleUpdatingFrame]]
 	cover:SetAllPoints()
-	cover:SetFrameLevel(frame.cork:GetFrameLevel() + 20)
-	ns.BoardSolid(cover, ns.BOARD_LOOK.shade, "BACKGROUND", 0.3)
-	local label = ns.BoardText(cover, ns.BoardFonts().updating, ns.BOARD_LOOK.sealText)
-	label:SetPoint("CENTER")
-	label:SetText(ns.L.UPDATING)
-	cover.label = label
+	cover:SetFrameLevel(frame:GetFrameLevel() + ns.BoardLayer("updating"))
+	ns.BoardSolid(cover, "1C0E04", UPDATING_DIM, "BACKGROUND")
+	local note = CreateFrame("Frame", nil, cover)
+	note:SetSize(NOTE_WIDTH, NOTE_HEIGHT)
+	note:SetPoint("CENTER")
+	cover.note = note
+	cover.paper = ns.ArtSprite(note, "Board", "cover-note", "BORDER")
+	cover.label = ns.ArtText(note, "Updating")
+	cover.label:SetJustifyH("CENTER")
+	cover.label:SetPoint("TOP", 0, -22)
+	cover.label:SetText(ns.L.UPDATING)
+	cover.reason = ns.ArtWrap(note, "UpdatingNote", 300, 4)
+	cover.reason:SetJustifyH("CENTER")
+	cover.reason:SetPoint("TOP", 0, -58)
+	cover.reason:SetText(ns.L.UPDATING_NOTE)
+	ns.PlaceSprite(ns.NewBoardTack(note), note, 163, -5)
 	frame.updating = cover
 end
 
--- Builds the board, hidden: the wood, the plaque, the cork, the ledge, the parts' frames, the empty slip, the updating
--- cover and the close button. It drags by any part that takes no mouse of its own and the client saves no position,
--- so it opens centred each time (TKB-R100); Esc hides it through UISpecialFrames.
+-- Builds the board, hidden: the cork, the frame's art with its plaque and close mark, the ledge, the parts' frames, the
+-- welcome slip and the updating cover. It drags by any part that takes no mouse of its own and the client saves no
+-- position, so it opens centred each time (TKB-R100); Esc hides it through UISpecialFrames.
 ---@param board TackleBoard
 ---@return TackleBoardFrame
 local function build(board)
@@ -162,28 +204,28 @@ local function build(board)
 		-- FloatingChatFrame.xml does the same "So that we don't save the position".
 		self:SetUserPlaced(false)
 	end)
-	ns.NewBoardWood(frame, WIDTH, HEIGHT)
 
-	frame.ledge = CreateFrame("Frame", nil, frame)
-	frame.ledge:SetSize(WIDTH, LEDGE_HEIGHT)
-	frame.ledge:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 0, 0)
-	ns.NewBoardLedge(frame.ledge)
+	buildCork(frame)
+	frame.art = ns.ArtSprite(frame, "Frame", "frame", "BORDER")
+	ns.PlaceSprite(frame.art, frame, 0, 0)
+	local title = ns.ArtText(frame, "Title")
+	title:SetJustifyH("CENTER")
+	title:SetPoint("CENTER", frame, "TOP", 0, -2)
+	title:SetText(ns.Spaced(ns.L.TITLE))
+	frame.plaque = { label = title }
 
-	frame.cork = CreateFrame("Frame", nil, frame)
-	frame.cork:SetSize(CORK_WIDTH, CORK_HEIGHT)
-	frame.cork:SetPoint("TOPLEFT", frame, "TOPLEFT", PAD_SIDE, -PAD_TOP)
-	ns.NewBoardCork(frame.cork, CORK_WIDTH, CORK_HEIGHT)
-
-	frame.plaque = ns.NewBoardPlaque(frame)
-	frame.plaque:SetPoint("TOP", 0, -5)
-	frame.plaque:SetPlaque(ns.L.TITLE)
+	frame.ledge = placed(frame, WIDTH, LEDGE_HEIGHT, 0, LEDGE_Y)
+	frame.ledge:SetFrameLevel(frame:GetFrameLevel() + ns.BoardLayer("ledge"))
 
 	buildParts(frame)
-	buildEmpty(board, frame)
+	buildWelcome(board, frame)
 	buildUpdating(frame)
 
-	frame.close = CreateFrame("Button", nil, frame, "UIPanelCloseButton") --[[@as Button]]
-	frame.close:SetPoint("TOPRIGHT", 6, 6)
+	frame.close = CreateFrame("Button", nil, frame) --[[@as Button]]
+	frame.close:SetSize(26, 26)
+	frame.close:SetPoint("TOPLEFT", frame, "TOPLEFT", 958, -15)
+	frame.close:SetFrameLevel(frame:GetFrameLevel() + ns.BoardLayer("close"))
+	ns.ArtSprite(frame.close, "Board", "close", "ARTWORK"):SetAllPoints()
 	frame.close:SetScript("OnClick", function()
 		board:Hide()
 	end)
@@ -250,6 +292,16 @@ function Board:Draw(reason, detail, highlight)
 	frame.empty:SetShown(shows.empty)
 	frame.start:SetUsable(shows.startEnabled)
 	frame.updating:SetShown(shows.updating)
+	ns.LeanSprite(frame.empty.paper, frame.empty, 0, 0, WELCOME_LEAN)
+	ns.LeanSprite(frame.updating.paper, frame.updating.note, 0, 0, NOTE_LEAN)
+	-- The fire's glow over the cork: faint before Start, by the Campfire's brightness while it burns, none without one.
+	local glow = shows.empty and GLOW_EMPTY or nil
+	if #shows.parts > 0 then
+		local fire = ns.CampfireView(ns.State().fire)
+		glow = fire.state == "lit" and 0.75 + 0.25 * fire.bright or nil
+	end
+	frame.glow:SetShown(glow ~= nil)
+	frame.glow:SetAlpha(glow or 0)
 	local drawn = {}
 	for _, part in ipairs(shows.parts) do
 		drawn[part] = true
@@ -264,6 +316,10 @@ function Board:Draw(reason, detail, highlight)
 			renderer(partFrame, draw)
 		end
 	end
+	-- The Campfire's flames and its light on the cork move while the board shows (adapter/BoardMotion.lua).
+	local ledge = frame.parts.ledge --[[@as TackleLedgeFrame]]
+	local fire = drawn.ledge and ledge.fire and ledge.fire.burning or nil
+	ns.BoardMotion(frame, fire, glow, reason == "open")
 end
 
 -- The board's entry points (logic/Seams.lua lists them); every caller calls them through ns at call time.

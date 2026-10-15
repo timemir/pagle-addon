@@ -23,6 +23,7 @@ ns.L = {
 	EMPTY_SLIP = "Three Notices go up each day and an Expedition each week. Fish as you like: they fill in as you go. "
 		.. "Nothing is ever taken down for being late.",
 	UPDATING = "Updating…",
+	UPDATING_NOTE = "Reading back every Cast since the board went up. Taking goals down waits until it's done.",
 
 	-- The board's words (TKB-R36, TKB-R102, TKB-R105, TKB-R122; logic/Words.lua). Templates fill `{name}` fields; a
 	-- `{ one, other }` pair is a count's singular and plural (ns.Plural).
@@ -81,11 +82,11 @@ ns.L = {
 	-- A countdown to a reset (TKB-R105): whole hours from one hour up, whole minutes below.
 	HOURS_LEFT = "{n}h",
 	MINUTES_LEFT = "{n}m",
-	-- The reroll confirm (TKB-R56): a goal's displayed progress and its need, then the two buttons.
-	TAKE_DOWN_CONFIRM = {
-		n = "Take down this Notice? Its progress (%d/%d) is lost, and the new one can't be taken down.",
-		e = "Take down this Expedition? Its progress (%d/%d) is lost, and the new one can't be taken down.",
-	},
+	-- The reroll confirm (TKB-R56): its question by type, then what is lost ({progress}: the displayed progress over
+	-- the need, "12/30"), then the two buttons.
+	TAKE_DOWN_TITLE = { n = "Take down this Notice?", e = "Take down this Expedition?" },
+	TAKE_DOWN_TEXT = "Its progress ({progress}) is lost, and the new one can't be taken down.",
+	TAKE_DOWN_PROGRESS = "{n}/{need}",
 	TAKE_DOWN_YES = "Take it down",
 	TAKE_DOWN_NO = "Keep it",
 	-- Counts (ns.Plural).
@@ -98,9 +99,23 @@ ns.L = {
 	PROGRESS = "{n} of {need}",
 	PROGRESS_TODAY = "{n} of {need} today",
 	PAYS = { one = "pays {n} Coin", other = "pays {n} Coins" },
+	-- A Notice's pay, its Coins on the coin after it.
+	PAYS_WORD = "pays",
+	-- An Expedition poster's header, before its kind.
+	EXPEDITION = "Expedition",
 	IM_HERE = "I'm here",
 	NO_LONGER_CATCHABLE = "no longer catchable",
 	TAKE_IT_DOWN = "take it down",
+	-- Its tooltip (TKB-R55, TKB-R56, TKB-R44, TKB-R108): what it does, by type, then the one rule that applies.
+	TAKE_DOWN_TIP_TITLE = "Take it down",
+	TAKE_DOWN_TIP = {
+		n = "Pin a fresh Notice of another kind in its place. Any progress on this one is lost.",
+		e = "Pin a fresh Expedition of another kind in its place. Any progress on this one is lost.",
+	},
+	TAKE_DOWN_TIP_ONCE = "The new one can't be taken down in turn, unless it stops being catchable.",
+	TAKE_DOWN_TIP_STRANDED = "This one is no longer catchable, so it can come down even though it was re-posted.",
+	TAKE_DOWN_TIP_STRANDED_FIRST = "This one is no longer catchable: it can never be finished where it hangs.",
+	TAKE_DOWN_TIP_UPDATING = "Not while the board is updating. It can come down once that's done.",
 	REPOSTED = "RE-POSTED",
 	-- Its hover, under the posted time (POSTED).
 	ONLY_SINCE = "Only my Catches since then count",
@@ -117,6 +132,10 @@ ns.L = {
 	-- The spike (TKB-R103; logic/Ledge.lua).
 	SPIKE_DONE = "{n} done today. The fire's lit.",
 	SPIKE_EMPTY = "Done ones go on the spike.",
+	-- The spike's heading, and a done slip's hand note: the Coins it paid, and the fly it tied.
+	SPIKE_HEAD = "Done today",
+	SPIKE_NOTE = "+{coins} · {fly}",
+	SPIKE_NOTE_PLAIN = "+{coins}",
 	-- A done goal's hover: its Coins and the fly it tied.
 	SPIKE_COINS = { one = "Paid {n} Coin", other = "Paid {n} Coins" },
 	SPIKE_FLY = "Tied for your Fly Box: {fly}",
@@ -126,6 +145,8 @@ ns.L = {
 	CAMPFIRE_OUT = "Gone out",
 	CAMPFIRE_UNLIT = "Not lit yet",
 	CAMPFIRE_LONGEST = "longest {n}",
+	-- The word after the Campfire's count on the ledge ("13 days": the count in print, the word in italics).
+	DAYS_WORD = { one = "day", other = "days" },
 	-- The Campfire card (TKB-R106): each day of its four-week log, dated in realm time, and what it was.
 	CARD_DATE = "{weekday} {day} {month}",
 	CARD_DAYS = {
@@ -150,18 +171,29 @@ ns.L = {
 	FLY_RARE = "tied only by Expeditions",
 	-- The brass tally plate (TKB-R106): the goals done for life (NOTICES, EXPEDITIONS, with the moments' below).
 	TALLY_PLATE = "{notices} · {expeditions}",
+	TALLY_NO_TITLE = "no title yet",
 	-- The shop link (TKB-R106, SHOP-R41): a pointing hand is drawn after it, as a texture.
 	SHOP_LINK = "Coins go to the Curio Shop",
 	-- The Campfire card's and the Fly Box drawer's headings.
 	CARD_TITLE = "The Campfire",
-	CARD_FIRE = "{fire} · {longest}",
-	CARD_NEED_COINS = "{need}, {coins}",
+	CARD_FIRE = "{fire} · {longest} · {kindling}",
+	KINDLING = "{n} Kindling",
 	FLY_BOX = "Fly Box",
-	DRAWER_NOTE = "Gilt-edged patterns are tied only by Expeditions.",
+	-- The card's sections: the four-week log (its weeks headed by their first day's date, CARD_SHORT_DATE), the
+	-- milestones and the titles, each with a note; each title's threshold, and what is still to go.
+	CARD_WEEKS = "The last four weeks",
+	CARD_WEEKS_NOTE = "board days, realm time",
+	CARD_SHORT_DATE = "{day} {month}",
 	CARD_MILESTONES = "Milestones",
-	CARD_TALLY = "The tally",
-	CARD_FLY_BOX = "The Fly Box",
-	DRAWER_TITLE = "The Fly Box: {label}",
+	CARD_MILESTONES_NOTE = "each pays once",
+	CARD_TITLES = "Titles",
+	CARD_TITLES_NOTE = "shown on the board only",
+	CARD_LABELS = { campfire = "{n} days", tally = "{n} goals", flybox = "Fly Box" },
+	CARD_MORE_CAMPFIRE = { one = "{n} more day", other = "{n} more days" },
+	CARD_MORE_TALLY = { one = "{n} more goal", other = "{n} more goals" },
+	CARD_MORE_FLYBOX = { one = "{n} more pattern", other = "{n} more patterns" },
+	-- The card's and the drawer's close mark.
+	CLOSE_MARK = "×",
 
 	-- The moments, the Write-up and the summary line (TKB-R85–R87; logic/Moments.lua). {fly} and {title} are lore
 	-- names (TKB-R130).

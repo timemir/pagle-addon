@@ -190,3 +190,64 @@ function ns.HighlightedGoal(state, goalID)
 	end
 	return nil
 end
+
+-- Where the pins hang on the cork (TKB-R101, tackle-board.md › UI): the board art kit's places (PagleArtBoard's
+-- Board.lua, P.MAIN), each pin's top left on the cork and its paper's lean in degrees, clockwise. The kit leaves no room
+-- for the overflow strip, so while it shows the rows close up and the strip hangs under the second Notice row.
+
+--- One pin's place: its top left on the cork (y down) and its paper's lean.
+---@class TacklePinPlace
+---@field x number
+---@field y number
+---@field lean number
+
+--- The pins' places, and the overflow strip's top left while it shows.
+---@class TacklePinPlaces
+---@field expeditions TacklePinPlace[]
+---@field notices TacklePinPlace[]
+---@field overflow { x: number, y: number }?
+
+-- Each pin's x and lean, and its y spread out (the kit's) and closed up (with the strip).
+local EXPEDITION_PLACES = { { 26, 22, 8, -1.0 }, { 412, 26, 12, 0.8 } }
+local NOTICE_PLACES = {
+	{ 26, 208, 178, -1.6 },
+	{ 284, 212, 182, 1.2 },
+	{ 542, 206, 176, -0.7 },
+	{ 26, 334, 300, 0.9 },
+	{ 286, 338, 304, -1.1 },
+	{ 544, 336, 302, 0.6 },
+}
+--- The overflow strip's top left, under the closed-up Notice rows.
+local OVERFLOW_PLACE = { x = 24, y = 424 }
+
+--- Where the pins hang (TKB-R101): spread out as the kit pins them, or closed up over the overflow strip while it
+--- holds goals.
+---@param overflow boolean whether the overflow strip shows
+---@return TacklePinPlaces
+function ns.PinPlaces(overflow)
+	local function places(list)
+		local out = {}
+		for i, place in ipairs(list) do
+			out[i] = { x = place[1], y = overflow and place[3] or place[2], lean = place[4] }
+		end
+		return out
+	end
+	return {
+		expeditions = places(EXPEDITION_PLACES),
+		notices = places(NOTICE_PLACES),
+		overflow = overflow and { x = OVERFLOW_PLACE.x, y = OVERFLOW_PLACE.y } or nil,
+	}
+end
+
+--- An empty pin's words (TKB-R105) as the kit sets them: the line in handwriting and a time in brackets at its end
+--- under it in italics ("A fresh Notice at reset", "(in 13h)"); a text with no time in brackets is all line.
+---@param text string
+---@return string line
+---@return string? note
+function ns.EmptyPinWords(text)
+	local line, note = text:match("^(.-)%s*(%b())$")
+	if line and line ~= "" then
+		return line, note
+	end
+	return text, nil
+end

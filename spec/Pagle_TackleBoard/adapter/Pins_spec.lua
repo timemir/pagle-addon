@@ -100,31 +100,57 @@ local function hover(widget)
 end
 
 describe("a started board's pins (TKB-R101, TKB-R102)", function()
-	it('shows its Expedition on a poster with the "60" seal and its Notices on slips', function()
-		local _, _, frame = opened(startedLog(EXPEDITION, HAUL_HERE, QUALITY, LURE))
+	it('shows its Expedition on a poster with the "60" seal and its Notices on papers with their coins', function()
+		local loaded, _, frame = opened(startedLog(EXPEDITION, HAUL_HERE, QUALITY, LURE))
+		local atlas = loaded.ns.BOARD_ATLASES.Board
 
 		local poster = expedition(frame, 1).goal
 		assert.is_true(visible(poster, frame))
-		assert.is_not_nil(poster.top) -- the poster's red top edge
+		assert.are.equal(atlas.file, poster.paper.texture)
 		assert.are.equal("60", poster.seal.label:GetText())
 		assert.are.same(
-			{ "SIZE", "A Whopper-or-better Catch", "0 of 1", "anywhere", "pays 60 Coins" },
+			{ "E X P E D I T I O N   ·   S I Z E", "A Whopper-or-better Catch", "0 of 1", "anywhere", "pays 60 Coins" },
 			reads(expedition(frame, 1))
 		)
+		assert.are.same({ "HAUL", "30 Catches in Darkshore", "0 of 30", "I'm here", "pays" }, reads(notice(frame, 1)))
 		assert.are.same(
-			{ "HAUL", "30 Catches in Darkshore", "0 of 30", "I'm here", "pays 15 Coins" },
-			reads(notice(frame, 1))
-		)
-		assert.are.same(
-			{ "QUALITY", "3 uncommon-or-better Catches", "0 of 3", "anywhere", "pays 10 Coins" },
+			{ "QUALITY", "3 uncommon-or-better Catches", "0 of 3", "anywhere", "pays" },
 			reads(notice(frame, 2))
 		)
-		assert.are.same(
-			{ "LURE", "25 Catches with a lure on", "0 of 25", "anywhere", "pays 20 Coins" },
-			reads(notice(frame, 3))
-		)
+		assert.are.same({ "LURE", "25 Catches with a lure on", "0 of 25", "anywhere", "pays" }, reads(notice(frame, 3)))
+		assert.are.same({ "15", "10", "20" }, {
+			notice(frame, 1).goal.coin.label:GetText(),
+			notice(frame, 2).goal.coin.label:GetText(),
+			notice(frame, 3).goal.coin.label:GetText(),
+		})
 		assert.is_nil(notice(frame, 1).goal.seal)
 		assert.is_false(visible(notice(frame, 1).empty, frame))
+	end)
+
+	it("leans each paper on its pin, and straightens it under the mouse (TKB-R102)", function()
+		local loaded, _, frame = opened(startedLog(EXPEDITION, HAUL_HERE))
+		local paper = notice(frame, 1).goal.paper
+		paper.SetRotation = function(self, radians)
+			self.rotation = radians
+		end
+		loaded.ns.Redraw("projection")
+
+		assert.are.equal(math.rad(1.6), paper.rotation) -- the first Notice pin leans -1.6°
+		hover(notice(frame, 1).goal)
+		loaded.client.update(0.2) -- 0.18 s, eased out
+		assert.are.equal(0, paper.rotation)
+		assert.are.same({ "TOPLEFT", notice(frame, 1), "TOPLEFT", 0, 2 }, notice(frame, 1).goal.points[1]) -- lifted
+		notice(frame, 1).goal:GetScript("OnLeave")(notice(frame, 1).goal)
+		loaded.client.update(0.2)
+		assert.are.equal(math.rad(1.6), paper.rotation)
+		assert.are.same({ "TOPLEFT", notice(frame, 1), "TOPLEFT", 0, 0 }, notice(frame, 1).goal.points[1])
+	end)
+
+	it("closes up its Notice rows while the overflow strip shows (TKB-R101)", function()
+		local _, _, frame = opened(startedLog(EXPEDITION, QUALITY, QUALITY, QUALITY, QUALITY, QUALITY, QUALITY, LURE))
+
+		assert.are.same({ "TOPLEFT", frame.parts.pins, "TOPLEFT", 26, -300 }, notice(frame, 4).points[1])
+		assert.are.same({ "TOPLEFT", frame.parts.pins, "TOPLEFT", 26, -8 }, expedition(frame, 1).points[1])
 	end)
 
 	it("hangs a goal with no empty pin in the overflow strip", function()
@@ -132,7 +158,10 @@ describe("a started board's pins (TKB-R101, TKB-R102)", function()
 
 		local chips = frame.parts.overflow.chips
 		assert.is_true(visible(chips[1], frame))
-		assert.are.equal("Lure: 25 Catches with a lure on", chips[1].label:GetText())
+		assert.are.same(
+			{ "25 Catches with a lure on", "0 of 25" },
+			{ chips[1].label:GetText(), chips[1].count:GetText() }
+		)
 		assert.is_false(chips[2] ~= nil and chips[2]:IsShown())
 	end)
 
@@ -149,7 +178,7 @@ describe("a started board's pins (TKB-R101, TKB-R102)", function()
 			"pays 20 Coins",
 			"Posted Wed 7 Oct, 09:00",
 			"Only my Catches since then count",
-		}, loaded.client.tooltipLines())
+		}, loaded.ns.BoardHoverLines())
 	end)
 end)
 
@@ -264,20 +293,24 @@ describe("the empty pins (TKB-R105)", function()
 		assert.is_not_nil(empty.tack)
 		assert.is_true(#empty.dashes > 0)
 		-- Sunday 15:15 UTC: the daily reset at 15:00 UTC is 23 h 45 min away.
-		assert.are.equal("A fresh Notice at reset (in 23h)", empty.label:GetText())
-		assert.are.equal("A fresh Notice at reset (in 23h)", notice(frame, 4).empty.label:GetText())
+		assert.are.same({ "A fresh Notice at reset", "(in 23h)" }, { empty.label:GetText(), empty.note:GetText() })
+		assert.are.equal("(in 23h)", notice(frame, 4).empty.note:GetText())
 		assert.are.equal("More Notices at later resets", notice(frame, 5).empty.label:GetText())
-		assert.are.equal("Next Expedition at the weekly reset (Tue)", expedition(frame, 2).empty.label:GetText())
+		assert.is_false(notice(frame, 5).empty.note:IsShown())
+		assert.are.same(
+			{ "Next Expedition at the weekly reset", "(Tue)" },
+			{ expedition(frame, 2).empty.label:GetText(), expedition(frame, 2).empty.note:GetText() }
+		)
 	end)
 
 	it("refresh their countdown every 60 s while the board is open", function()
 		local loaded, fake, frame = opened(startedLog(EXPEDITION, QUALITY))
 
 		fake.wait(3600)
-		assert.are.equal("A fresh Notice at reset (in 23h)", notice(frame, 2).empty.label:GetText())
+		assert.are.equal("(in 23h)", notice(frame, 2).empty.note:GetText())
 		loaded.client.advance(60)
 
-		assert.are.equal("A fresh Notice at reset (in 22h)", notice(frame, 2).empty.label:GetText())
+		assert.are.equal("(in 22h)", notice(frame, 2).empty.note:GetText())
 	end)
 end)
 
@@ -288,10 +321,9 @@ describe("a pinned goal's hover (TKB-R102)", function()
 		hover(notice(frame, 1).goal)
 
 		-- Posted Wednesday 7 October 16:00:02 UTC: 09:00 on the UTC-7 realm.
-		assert.are.same({ "Posted Wed 7 Oct, 09:00", "Only my Catches since then count" }, loaded.client.tooltipLines())
-		assert.is_true(loaded.env.GameTooltip.shown)
+		assert.are.same({ "Posted Wed 7 Oct, 09:00", "Only my Catches since then count" }, loaded.ns.BoardHoverLines())
 		notice(frame, 1).goal:GetScript("OnLeave")(notice(frame, 1).goal)
-		assert.is_false(loaded.env.GameTooltip.shown)
+		assert.is_nil(loaded.ns.BoardHoverLines())
 	end)
 
 	it("lists a Variety Expedition's Species, caught ones ticked", function()
@@ -302,15 +334,13 @@ describe("a pinned goal's hover (TKB-R102)", function()
 
 		hover(expedition(frame, 1).goal)
 
-		local box = "|TInterface\\Buttons\\UI-CheckBox-Up:0|t "
-		local tick = "|TInterface\\Buttons\\UI-CheckBox-Check:0|t "
 		assert.are.same({
 			"Posted Wed 7 Oct, 09:00",
 			"Only my Catches since then count",
-			box .. "Raw Slitherskin Mackerel",
-			box .. "Oily Blackmouth",
-			tick .. "Mightfish",
-		}, loaded.client.tooltipLines())
+			"Raw Slitherskin Mackerel",
+			"Oily Blackmouth",
+			"Mightfish",
+		}, loaded.ns.BoardHoverLines())
 	end)
 end)
 
@@ -347,4 +377,121 @@ describe("the highlight (TKB-R109)", function()
 			assert.is_false(expedition(frame, i).highlight:IsShown())
 		end
 	end)
+end)
+
+describe('"take it down"\'s tooltip (TKB-R55, TKB-R44, TKB-R108)', function()
+	-- The tooltip's lines once the mouse is over a pin's "take it down".
+	local function tip(loaded, slot)
+		local button = slot.goal.takeDown
+		button:GetScript("OnEnter")(button)
+		return loaded.ns.BoardHoverLines()
+	end
+
+	it("says what it does, by type, and that the new one can't be taken down in turn, at the cursor", function()
+		local loaded, _, frame = opened(startedLog(EXPEDITION, QUALITY))
+		loaded.client.cursor = { 300, 200 }
+
+		assert.are.same({
+			"Take it down",
+			"Pin a fresh Notice of another kind in its place. Any progress on this one is lost.",
+			"The new one can't be taken down in turn, unless it stops being catchable.",
+		}, tip(loaded, notice(frame, 1)))
+		local shown = tip(loaded, expedition(frame, 1))
+		assert.are.equal(
+			"Pin a fresh Expedition of another kind in its place. Any progress on this one is lost.",
+			shown[2]
+		)
+	end)
+
+	it("says why it waits while the board is updating", function()
+		local loaded, _, frame = opened(startedLog(EXPEDITION, QUALITY))
+		loaded.ns.IsUpdating = function()
+			return true
+		end
+		loaded.ns.Redraw("projection")
+
+		assert.are.equal(
+			"Not while the board is updating. It can come down once that's done.",
+			tip(loaded, notice(frame, 1))[3]
+		)
+	end)
+
+	it("says a stranded goal is no longer catchable, re-posted or not", function()
+		local records = startedLog(EXPEDITION, QUALITY, STRANDED)
+		local loaded, _, frame = opened(records)
+
+		assert.are.equal(
+			"This one is no longer catchable: it can never be finished where it hangs.",
+			tip(loaded, notice(frame, 2))[3]
+		)
+	end)
+
+	it("keeps its words to the glyphs every font draws (CORE-R9)", function()
+		local ns = opened(startedLog(EXPEDITION)).ns
+		for _, line in ipairs({
+			ns.L.TAKE_DOWN_TIP_TITLE,
+			ns.L.TAKE_DOWN_TIP.n,
+			ns.L.TAKE_DOWN_TIP.e,
+			ns.L.TAKE_DOWN_TIP_ONCE,
+			ns.L.TAKE_DOWN_TIP_STRANDED,
+			ns.L.TAKE_DOWN_TIP_STRANDED_FIRST,
+			ns.L.TAKE_DOWN_TIP_UPDATING,
+		}) do
+			assert(line:find("[\128-\255]") == nil, line) -- plain ASCII
+			assert(line:lower():find("reroll", 1, true) == nil, line)
+		end
+	end)
+end)
+
+describe("a pinned goal's tacks (TKB-R102)", function()
+	-- A rect { left, top, right, bottom } from the paper's top left, y down.
+	local function rect(left, top, width, height)
+		return { left, top, left + width, top + height }
+	end
+	local function overlap(a, b)
+		return a[1] < b[3] and b[1] < a[3] and a[2] < b[4] and b[2] < a[4]
+	end
+	-- A tack's drawn element, from its TOPLEFT anchor on the paper (ns.PlaceSprite).
+	local function tackRect(tack)
+		local point = tack.points[1]
+		return rect(point[4] + tack.box[1], -point[5] + tack.box[2], tack.box[3], tack.box[4])
+	end
+	-- A font string anchored by its CENTER or TOPRIGHT to the paper's top left, at the fake's 6 units a character.
+	local function textRect(text)
+		local point = text.points[1]
+		local width, x, y = text:GetStringWidth(), point[4], -point[5]
+		if point[1] == "CENTER" then
+			return rect(x - width / 2, y - 7, width, 14)
+		end
+		return rect(x - width, y, width, 14) -- TOPRIGHT
+	end
+
+	for _, lean in ipairs({ true, false }) do
+		it(
+			"never sits on a pay: the posters' seals, the Notices' coins and their pay (lean " .. tostring(lean) .. ")",
+			function()
+				local loaded, _, frame = opened(startedLog(EXPEDITION, VARIETY, HAUL_HERE, QUALITY, LURE, COLLECTOR))
+				loaded.ns.db.profile.lean = lean
+				loaded.ns.Redraw("projection")
+
+				local checked = 0
+				for _, slot in ipairs(frame.parts.pins.slots.expeditions) do
+					local slip = slot.goal
+					for _, tack in ipairs(slip.tacks) do
+						assert.is_false(overlap(tackRect(tack), textRect(slip.seal.label)))
+						checked = checked + 1
+					end
+				end
+				for i = 1, 4 do
+					local slip = notice(frame, i).goal
+					for _, tack in ipairs(slip.tacks) do
+						assert.is_false(overlap(tackRect(tack), textRect(slip.coin.label)))
+						assert.is_false(overlap(tackRect(tack), textRect(slip.pay)))
+						checked = checked + 1
+					end
+				end
+				assert.are.equal(8, checked) -- two tacks on each of the two posters, one on each of four Notices
+			end
+		)
+	end
 end)

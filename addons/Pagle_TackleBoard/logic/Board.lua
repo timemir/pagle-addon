@@ -62,6 +62,27 @@ function ns.BoardShows(started, updating, drawable)
 	return { empty = not started, startEnabled = not started and not updating, updating = updating, parts = parts }
 end
 
+--- The board's layers, bottom to top (TKB-R100): each part, piece and overlay draws at its layer's frame level above
+--- the board's own, so the card, the drawer and the veil under them, the "Updating…" note and the welcome slip all
+--- draw over the spike's nail and its done slips, and the close mark over everything on the board. The confirm and the
+--- tooltip lie above the board's strata altogether (DIALOG and TOOLTIP).
+ns.BOARD_LAYERS = { "pins", "overflow", "ledge", "spike", "nail", "welcome", "updating", "veil", "overlay", "close" }
+
+-- Frame levels between layers: room for a layer's own children (a hovered pin rises 10, the spike's slips one each).
+local LAYER_STEP = 50
+
+--- A layer's frame level above the board frame's (ns.BOARD_LAYERS).
+---@param layer string
+---@return integer
+function ns.BoardLayer(layer)
+	for i, name in ipairs(ns.BOARD_LAYERS) do
+		if name == layer then
+			return i * LAYER_STEP
+		end
+	end
+	error("the Tackle Board has no layer " .. tostring(layer))
+end
+
 --- The renderers registered for the board's parts.
 ---@class TackleBoardParts
 ---@field private renderers table<TackleBoardPart, TackleBoardRenderer>

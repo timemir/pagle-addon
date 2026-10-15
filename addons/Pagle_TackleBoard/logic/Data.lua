@@ -22,6 +22,7 @@ ns.DB_DEFAULTS = {
 	profile = {
 		tracker = true, -- "Show goals workable here" (tackle-board.md › Settings, TKB-R120)
 		trackerCollapsed = false, -- the tracker block collapsed (TKB-R122)
+		lean = true, -- the board's papers lean; false (set in the saved variable) for a client that draws them wrong
 	},
 }
 

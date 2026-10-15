@@ -95,7 +95,8 @@ local function read(ns)
 				local right = row.right:IsShown() and row.right:GetText() or ""
 				out[#out + 1] = row.text:GetText() .. " | " .. (row.flame:IsShown() and "(flame) " or "") .. right
 			elseif row.sub:IsShown() then
-				out[#out + 1] = ("%s | %s | %s"):format(row.text:GetText(), row.right:GetText(), row.sub:GetText())
+				local where = row.sub:GetText() .. (row.here:IsShown() and row.here:GetText() or "")
+				out[#out + 1] = ("%s | %s | %s"):format(row.text:GetText(), row.right:GetText(), where)
 			elseif line.kind == "goal" then
 				out[#out + 1] = row.text:GetText() .. " | " .. row.right:GetText()
 			else
@@ -329,7 +330,7 @@ describe("its clicks and the flash (TKB-R123, TKB-R109, CORE-R71)", function()
 			"+1 more on the board (elsewhere)",
 		}, read(ns))
 		local flashing = rowReading(ns, "1 Catch in Darkshore")
-		assert.are.same(ns.TRACKER_INKS.complete, { unpack(flashing.right.textColor, 1, 3) })
+		assert.are.same(ns.BoardHex(ns.TRACKER_STYLES.none.complete), { unpack(flashing.right.textColor, 1, 3) })
 		assert.are.equal(idAt(T + 2), flashing.line.goalID)
 
 		loaded.client.advance(2.9)
@@ -378,17 +379,16 @@ end)
 describe("its frame and updating state (TKB-R124)", function()
 	it("is the plain native block, and redraws in Corkboard when it is equipped", function()
 		local _, fake, ns = ready(startedLog(unpack(FULL)))
-		local view = ns.tracker.block.frame
-		assert.is_false(view.backing:IsShown())
+		assert.is_nil(ns.tracker.block.frame)
 
 		fake.setPurchased({ [CORKBOARD] = true })
 		assert.is_true(fake.Pagle.SetEquipped(SLOT, CORKBOARD))
 
-		local cork = ns.TRACKER_FRAMES[CORKBOARD]
-		assert.is_true(view.backing:IsShown())
-		assert.are.same(cork.base, { unpack(view.backing.color, 1, 3) })
+		local view = ns.tracker.block.frame
+		assert.is_true(view:IsShown())
+		assert.are.equal(ns.BOARD_ATLASES.Tracker.file, view.top.texture)
 		local ink = rowReading(ns, "Tackle Board").text.textColor
-		assert.are.same(cork.ink.header, { ink[1], ink[2], ink[3] })
+		assert.are.same(ns.BoardHex("F8E6B4"), { ink[1], ink[2], ink[3] })
 	end)
 
 	it('shows only its header and "Updating…" while the projection rebuilds, then its lines again', function()
