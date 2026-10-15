@@ -155,7 +155,7 @@ describe("the toast's and Nod's toast style", function()
 			{ true, "ToastsLantern toast-toast", ink(loaded, "lanternWhat"), "NEW SPECIES" },
 			{ toast.shown, lookOf(loaded, toast).page, lookOf(loaded, toast).title, toast.title:GetText() }
 		)
-		loaded.client.advance(6)
+		loaded.client.advance(8.7 + 0.4) -- it settles, stays its 6 s and leaves
 		assert.is_false(toast.shown)
 	end)
 
@@ -187,7 +187,7 @@ describe("the toast's and Nod's toast style", function()
 			end
 			raise(loaded, M, "banner")
 			local banner = loaded.ns.announcementFrames.banner
-			loaded.client.advance(4)
+			loaded.client.advance(5.9 + 0.5) -- the banner's stay, and its leaving
 			raise(loaded, M, "splash")
 			local splash = loaded.ns.announcementFrames.splash
 			return {
@@ -219,12 +219,14 @@ describe("a toast style change", function()
 		loaded.client.advance(0)
 		local seen = {}
 		local function sample(step)
-			for _, form in ipairs({ "toast", "nod", "banner", "splash" }) do
-				local frame = loaded.ns.announcementFrames[form]
-				if frame and frame.shown then
-					local title = frame.display.announcement.headline.title
-					seen[#seen + 1] = ("%.1f %s: %s"):format(step / 2, form, title)
-				end
+			local lines = {}
+			for _, frame in ipairs(loaded.ns.AnnouncementFramesShowing()) do
+				local display = frame.display --[[@as table]]
+				lines[#lines + 1] = ("%.1f %s: %s"):format(step / 2, display.form, display.announcement.headline.title)
+			end
+			table.sort(lines)
+			for _, line in ipairs(lines) do
+				seen[#seen + 1] = line
 			end
 		end
 		for step = 1, 80 do
@@ -263,23 +265,40 @@ describe("a toast style change", function()
 			local DRIFTWOOD = "Interface\\AddOns\\Pagle\\media\\sounds\\driftwood\\"
 			assert.are.same({
 				DRIFTWOOD .. "toast_1.ogg SFX",
-				DRIFTWOOD .. "banner.ogg SFX",
 				DRIFTWOOD .. "toast_2.ogg SFX",
 				DRIFTWOOD .. "toast_3.ogg SFX",
+				DRIFTWOOD .. "banner.ogg SFX",
 				DRIFTWOOD .. "toast_1.ogg SFX",
 				DRIFTWOOD .. "toast_2.ogg SFX",
 				DRIFTWOOD .. "toast_3.ogg SFX",
+				DRIFTWOOD .. "toast_1.ogg SFX",
 				"Interface\\AddOns\\Pagle\\media\\sounds\\legend.ogg SFX",
 			}, timberSounds)
-			-- The banner shows beside the first toast; the Nod and the stepped-down toast.low come while a toast shows,
-			-- so neither is shown; the splash waits for the toast on screen to end (ANN-R20, #249).
-			assert.are.same(
-				{ "0.5 toast: Toast 1", "0.5 banner: Level 12", "37.0 toast: Toast 6", "37.5 splash: Legend" },
-				{ timberSeen[1], timberSeen[2], timberSeen[77], timberSeen[78] }
-			)
+			-- When each first shows: three toasts and the banner together; the Nod in the column; three more toasts,
+			-- the 7th once they leave; the toast.low stepped down to a Nod once the budget is spent; the splash once the
+			-- column's last toast has left (ANN-R20, ANN-R31, #249).
+			local first = {}
 			for _, line in ipairs(timberSeen) do
-				assert.is_nil(line:find(" nod: ", 1, true))
+				local what = line:match("^[%d.]+ (.+)$")
+				first[what] = first[what] or line
 			end
+			assert.are.same({
+				"0.5 toast: Toast 1",
+				"0.5 banner: Level 12",
+				"15.0 nod: New here",
+				"20.0 toast: Toast 6",
+				"28.5 toast: Toast 7",
+				"34.5 nod: Size record",
+				"37.0 splash: Legend",
+			}, {
+				first["toast: Toast 1"],
+				first["banner: Level 12"],
+				first["nod: New here"],
+				first["toast: Toast 6"],
+				first["toast: Toast 7"],
+				first["nod: Size record"],
+				first["splash: Legend"],
+			})
 		end
 	)
 end)
@@ -367,7 +386,7 @@ describe("the sample toast", function()
 			)
 			equip(loaded, RIPPLE)
 			assert.are.equal("ToastsLantern toast-toast", lookOf(loaded, toast).page)
-			loaded.client.advance(6)
+			loaded.client.advance(8.7 + 0.4)
 			assert.is_false(toast.shown)
 			raiseStamped(loaded, M)
 			assert.are.equal("ToastsRipple toast-toast", lookOf(loaded, toast).page)

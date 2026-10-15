@@ -407,7 +407,7 @@ describe("an item's entry (stats.md › UI › Place spread)", function()
 			local ns = loaded.ns
 			ns.OpenBook({ page = "place", area = DARKSHORE, item = SMALLFISH })
 			assert.is_true(ns.IsUpdating())
-			assert.is_false(ns.book.pages["place:right"] ~= nil and ns.book.pages["place:right"].scroll.shown)
+			assert.is_false(ns.book.pages["place:right"] ~= nil and ns.book.pages["place:right"].clip.shown)
 
 			fake.enterWorld()
 			loaded.client.runTimers()

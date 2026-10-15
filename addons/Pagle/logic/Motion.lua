@@ -7,7 +7,8 @@ local ns = select(2, ...)
 --
 -- An animation is { dur, keys, apply, ease?, delay?, iter?, dir? }: keys are { progress 0..1, { values } } as the
 -- CSS percentages, and a key's `ease` applies to the segment after it, as in CSS; `iter` is a count or "infinite",
--- `dir` "normal", "alternate" or "alternate-reverse", `delay` in seconds. `apply(values)` sets the property.
+-- `dir` "normal", "alternate" or "alternate-reverse", `delay` in seconds. `apply(values)` sets the property, and
+-- `done`, if given, runs once when it finishes.
 
 ---@alias PagleEase fun(t: number): number
 
@@ -20,6 +21,8 @@ local ns = select(2, ...)
 ---@field iter integer|"infinite"|nil default 1
 ---@field dir "normal"|"alternate"|"alternate-reverse"|nil
 ---@field startedAt number? when it joined its owner's clock, if it joined late
+---@field done fun()? runs once when it finishes
+---@field fired boolean? its `done` has run
 
 --- cubic-bezier(x1, y1, x2, y2), as CSS: the easing that solves x(s) = t and returns y(s).
 ---@param x1 number

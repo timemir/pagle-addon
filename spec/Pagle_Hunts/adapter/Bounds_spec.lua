@@ -64,7 +64,7 @@ end
 local function overflows(run, label)
 	local out, placed = {}, 0
 	for _, side in ipairs({ "left", "right" }) do
-		for _, overflow in ipairs(bounds.overflows(run.ns.board.frame.bodies[side])) do
+		for _, overflow in ipairs(bounds.overflows(run.ns.board:Page(run.ns.board.router:Place(), side))) do
 			out[#out + 1] = ("%s %s: %s"):format(label, side, overflow)
 		end
 		placed = placed + bounds.measured

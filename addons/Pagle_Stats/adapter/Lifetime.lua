@@ -7,7 +7,9 @@ local ns = select(2, ...)
 
 -- The Lifetime ribbon's spread on the Stats book (stats.md › UI › Lifetime), as logic/Lifetime.lua words it: on the
 -- left, the totals, the bests, got away by skill and the characters; on the right, the two-column index of every fish,
--- each item's first and last Catch on hover and its item page (adapter/Item.lua) on a click. With no Casts both pages
+-- each item's first and last Catch on hover and its item page (adapter/Item.lua) on a click. The index is the books kit
+-- v2's: each fish's medallion, its name, a dotted leader and its count in the hand, and on hover the kit's dark slip
+-- ruled in brass under it. With no Casts both pages
 -- read "No Sessions yet." (STA-R97). Each side draws on its own content frame (adapter/Book.lua), reusing the pieces it
 -- made at earlier draws; every piece sits by its top left on the page.
 
@@ -16,16 +18,26 @@ local LOOK = ns.BOOK_LOOK
 
 -- Heights: the kicker above the title, the title, a figure line, a heading, an index entry; and gaps: after the
 -- title, before a heading, after the right page's note, and between the index's columns.
-local KICKER, TITLE, LINE, HEADING, ENTRY = 16, 30, 18, 20, 18
+local KICKER, TITLE, LINE, HEADING, ENTRY = 16, 30, 18, 20, 23
 local AFTER_TITLE, BEFORE_HEADING, AFTER_NOTE, COLUMN_GAP = 8, 10, 6, 20
--- An index entry's room for its count.
-local COUNT_WIDTH = 44
+-- An index entry's room for its count, its medallion's size, and where its name starts.
+local COUNT_WIDTH, ENTRY_ICON, NAME_X = 44, 16, 25
+-- The dark slip: its height, its brass ends kept when it stretches, its words' inset, and where it hangs under the
+-- entry.
+local TIP_HEIGHT, TIP_CAP, TIP_PAD, TIP_X, TIP_Y = 33, 10, 12, 30, 2
 
 ---@class StatsLifetimeEntryView: Button
+---@field icon StatsBookIconView
 ---@field label FontString
 ---@field count FontString
+---@field dots StatsBookDotsView
 ---@field item integer
 ---@field hover string
+
+--- The kit's dark tooltip slip: its brass-ruled paper three-sliced to its words.
+---@class StatsLifetimeTipView: Frame
+---@field slip StatsThreeSlice
+---@field text FontString
 
 -- One side's pieces, made at its first draw and reused. `used*` count what the current draw has laid out.
 ---@class StatsLifetimePageView
@@ -36,10 +48,27 @@ local COUNT_WIDTH = 44
 ---@field figures StatsBookFigureView[]
 ---@field headings StatsBookHeadingView[]
 ---@field entries StatsLifetimeEntryView[]
+---@field tip StatsLifetimeTipView
 ---@field used { figures: integer, headings: integer, entries: integer }
 
 ---@type table<Frame, StatsLifetimePageView>
 local views = setmetatable({}, { __mode = "k" })
+
+-- The dark slip on `content`, made once, hidden until an entry is hovered; above the entries.
+---@param content Frame
+---@return StatsLifetimeTipView
+local function newTip(content)
+	local tip = CreateFrame("Frame", nil, content) --[[@as StatsLifetimeTipView]]
+	tip:SetFrameLevel(content:GetFrameLevel() + 20)
+	tip.slip = CreateFrame("Frame", nil, tip) --[[@as StatsThreeSlice]]
+	tip.slip:SetPoint("TOPLEFT")
+	-- on the slip's own frame, which draws over the tip's: the words over the paper
+	tip.text = ns.BookText(tip.slip, ns.BookFonts().tip, LOOK.tipText)
+	tip.text:SetWordWrap(false)
+	tip.text:SetPoint("LEFT", tip, "LEFT", TIP_PAD, 0)
+	tip:Hide()
+	return tip
+end
 
 -- The view on `content`, made at its first draw.
 ---@param content Frame
@@ -55,6 +84,7 @@ local function viewOf(content)
 			figures = {},
 			headings = {},
 			entries = {},
+			tip = newTip(content),
 			used = { figures = 0, headings = 0, entries = 0 },
 		}
 		view.kicker:SetPoint("TOPLEFT", 0, 0)
@@ -166,19 +196,36 @@ local function drawLeft(content)
 	return y
 end
 
--- Hovering an index entry: its first and last Catch in the tooltip, its name in red as variant D's hover.
+-- Hovering an index entry: its first and last Catch on the kit's dark slip under it, within the page's width, its name
+-- in red as the kit's hover.
 ---@param entry StatsLifetimeEntryView
 local function enter(entry)
 	entry.label:SetTextColor(LOOK.red[1], LOOK.red[2], LOOK.red[3])
-	GameTooltip:SetOwner(entry, "ANCHOR_RIGHT")
-	GameTooltip:SetText(entry.hover)
-	GameTooltip:Show()
+	local content = entry:GetParent() --[[@as Frame]]
+	local view = views[content]
+	if not view then
+		return
+	end
+	local tip = view.tip
+	tip.text:SetText(entry.hover)
+	local x = select(4, entry:GetPoint(1)) or 0
+	local room = content:GetWidth() - x - TIP_X
+	ns.BookBound(tip.text, room - 2 * TIP_PAD)
+	local width = math.ceil(tip.text:GetWidth()) + 2 * TIP_PAD
+	ns.SetThreeSlice(tip.slip, "Stats", "tip", width, TIP_CAP, "BACKGROUND")
+	tip:SetSize(width, TIP_HEIGHT)
+	tip:ClearAllPoints()
+	tip:SetPoint("TOPLEFT", entry, "BOTTOMLEFT", TIP_X, TIP_Y)
+	tip:Show()
 end
 
 ---@param entry StatsLifetimeEntryView
 local function leave(entry)
 	entry.label:SetTextColor(LOOK.ink[1], LOOK.ink[2], LOOK.ink[3])
-	GameTooltip:Hide()
+	local view = views[entry:GetParent()]
+	if view then
+		view.tip:Hide()
+	end
 end
 
 -- An index entry at `x`, `y`: the item's name (asked of the client until it loads, STA-R73) and its count.
@@ -193,14 +240,15 @@ local function drawEntry(content, view, data, x, y, width)
 		local entry = CreateFrame("Button", nil, content) --[[@as StatsLifetimeEntryView]]
 		entry:SetSize(width, ENTRY)
 		local faces = ns.BookFonts()
-		entry.label = ns.BookText(entry, faces.small, LOOK.ink)
-		entry.label:SetPoint("LEFT", 2, 0)
-		entry.label:SetWidth(width - COUNT_WIDTH - 4)
+		entry.icon = ns.NewBookIcon(entry, ENTRY_ICON)
+		entry.icon:SetPoint("LEFT", 1, 0)
+		entry.label = ns.BookText(entry, faces.text, LOOK.ink)
+		entry.label:SetPoint("LEFT", NAME_X, 0)
 		entry.label:SetWordWrap(false)
-		entry.count = ns.BookText(entry, faces.small, LOOK.note)
+		entry.count = ns.BookText(entry, faces.count, LOOK.small)
 		entry.count:SetPoint("RIGHT", -2, 0)
-		entry.count:SetWidth(COUNT_WIDTH)
 		entry.count:SetJustifyH("RIGHT")
+		entry.dots = ns.NewBookDots(entry, LOOK.indexDots, 1)
 		entry:SetScript("OnEnter", enter)
 		entry:SetScript("OnLeave", leave)
 		entry:SetScript("OnClick", function(self)
@@ -209,8 +257,15 @@ local function drawEntry(content, view, data, x, y, width)
 		return entry
 	end) --[[@as StatsLifetimeEntryView]]
 	entry.item, entry.hover = data.item, data.hover
-	entry.label:SetText((ns.book:Item(data.item)))
+	local name, icon = ns.book:Item(data.item)
+	entry.icon:SetIcon(icon)
 	entry.count:SetText(data.count)
+	ns.BookBound(entry.count, COUNT_WIDTH)
+	entry.label:SetText(name)
+	-- the name stops before its count, cut short with an ellipsis; the dots run between
+	local room = width - NAME_X - entry.count:GetWidth() - 2 - 14
+	ns.BookBound(entry.label, room)
+	entry.dots:SetDots(NAME_X + entry.label:GetWidth() + 7, width - entry.count:GetWidth() - 9, 6)
 	entry:SetPoint("TOPLEFT", x, -y)
 end
 

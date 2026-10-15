@@ -116,9 +116,13 @@ local function setTimer(name, at, now)
 	end
 end
 
--- Sets the refresh timer, 60 s from now, while a view is shown; cancels it otherwise (HNT-R42).
+-- Sets the refresh timer while a view is shown, on the next turn of the refresh interval in server time (with the
+-- interval's 60 s, the realm minute: the countdowns and the board's ruler move as the realm clock does, the books kit
+-- v2's live timeline); cancels it otherwise (HNT-R42).
 local function setRefresh()
-	setTimer("refresh", anyShown() and ns.REFRESH_INTERVAL or nil, 0)
+	local now = GetServerTime()
+	local interval = ns.REFRESH_INTERVAL
+	setTimer("refresh", anyShown() and now + interval - now % interval or nil, now)
 end
 
 -- Cancels every timer and sets each again from `grouping` (HNT-R42): the next window edge among current Hunts, the

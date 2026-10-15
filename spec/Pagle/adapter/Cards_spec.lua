@@ -119,7 +119,7 @@ describe("the Write-up card", function()
 			assert.is_false(loaded.ns.projections:IsUpdating())
 			assert.is_true(loaded.ns.announcementFrames.toast.shown)
 			assert.is_nil(shownCard(loaded))
-			loaded.client.advance(6)
+			loaded.client.advance(loaded.ns.SETTLE_SECONDS.toast + loaded.ns.HOLD_SECONDS.toast)
 
 			assert.are.same({
 				title = "Write-up",

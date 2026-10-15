@@ -82,13 +82,10 @@ ns.BOARD_LOOK = {
 }
 local LOOK = ns.BOARD_LOOK
 
---- In-client textures the board still draws: the old covers' grains and the white disc, and the pointing hand, which
---- the kit leaves out. Each is a file the forever client's FrameXML names (Gethe/wow-ui-source branch forever at
+--- In-client textures the board still draws: the white disc, and the pointing hand, which the kit leaves out. Each is a
+--- file the forever client's FrameXML names (Gethe/wow-ui-source branch forever at
 --- 943764493e6b16d63ded3ab304150d1f05e58b57).
 ns.BOARD_TEXTURES = {
-	-- The old covers' grain (FrameGeneral's rock backdrop) and the achievement parchment.
-	leather = "Interface\\FrameGeneral\\UI-Background-Rock",
-	paper = "Interface\\AchievementFrame\\UI-Achievement-Parchment-Horizontal",
 	-- A white disc (CharacterFrame's portrait mask): dots, and the round mask over an item's icon.
 	disc = "Interface\\CharacterFrame\\TempPortraitAlphaMask",
 	-- The pointing hand (the gauntlet cursor).
@@ -96,33 +93,21 @@ ns.BOARD_TEXTURES = {
 }
 local TEXTURES = ns.BOARD_TEXTURES
 
---- A cover's look (HNT-R70): the kit's leather (`kit`, the default cover's), or the old covers' tint, outline, gilt rule
---- and grain. A cover look (`ns.board:SetCover`) gives any of these fields; the rest come from ns.BOARD_COVER.
+--- A cover's look (HNT-R70, the books kit v2's Covers.lua): every cover keeps the kit's binding band and vignette; under
+--- them the kit's leather tiled (Leather, Tooled Leather) or a cloth drawn at the board's size (Oilcloth, Verdigris),
+--- with Tooled Leather's gilt double rule inside the band and Verdigris's gilt corner. A cover look
+--- (`ns.board:SetCover`) gives any of these fields; the rest come from ns.BOARD_COVER.
 ---@class BoardCoverLook
----@field kit boolean?        -- the books kit's leather and band (the default cover)
----@field leather number[]?   -- the leather's tint
----@field edge number[]?      -- the outline
----@field rule number[]?      -- the gilt rule inside the edge
----@field grain string?       -- the grain's texture
----@field grainAlpha number?
+---@field fill string?        -- a cloth drawn at the board's size (ns.COVER_FILES), in place of the tiled leather
+---@field foot number?        -- how dark the tiled leather turns toward its foot: 1 none, 0.8 the leather's
+---@field tooled boolean?     -- the gilt double rule inside the band
+---@field corner boolean?     -- the gilt corner at the top left
 
----@class BoardCover: BoardCoverLook -- a cover look with every field
----@field kit boolean
----@field leather number[]
----@field edge number[]
----@field rule number[]
----@field grain string
----@field grainAlpha number
+---@class BoardCover: BoardCoverLook -- a cover look with its leather's foot
+---@field foot number
 
 ---@type BoardCover
-ns.BOARD_COVER = {
-	kit = true,
-	leather = tint("4e2c16"),
-	edge = tint("120a04"),
-	rule = tint("8a5a2a"),
-	grain = TEXTURES.leather,
-	grainAlpha = 0.5,
-}
+ns.BOARD_COVER = { foot = 0.8 }
 
 --- The board's font objects (adapter/BookArt.lua's faces), made on first use.
 ---@class BoardFonts
@@ -404,20 +389,21 @@ end
 -- band's opaque lines), and one repeat of the grain (Leather.blp is 256 texels, 128 units).
 local BAND, FILL_INSET, LEATHER_TILE = 16, 7, 128
 
---- The leather on `frame`, filling it, in a cover (HNT-R70): the kit's (the grain tiled under a vignette, the binding
---- band round it on its own frame, above the ribbons so their tucked tops hide under it), or an old cover's (its
---- outline, tint, grain and gilt rule).
+--- The leather on `frame`, filling it, in a cover (HNT-R70): the kit's leather tiled, or a cloth drawn at the frame's
+--- size, under a vignette, with the binding band round it on its own frame, above the ribbons so their tucked tops
+--- hide under it; over the band, Tooled Leather's gilt double rule and Verdigris's gilt corner.
 ---@class BoardLeatherView
----@field edge Texture
----@field leather Texture
----@field grain Texture
----@field rules Texture[]
----@field fill Texture         -- the kit's tiled grain
+---@field fill Texture         -- the tiled leather, or the cloth
 ---@field vignette Texture
 ---@field band Frame           -- the kit's band, 6 levels over the frame
 ---@field bandPieces table<string, Texture>
----@field kit boolean          -- whether it wears the kit's leather
----@field SetCover fun(self: BoardLeatherView, look: BoardCover) -- every field given (adapter/Board.lua merges a look)
+---@field gilt Frame           -- over the band: the tooled rule and the corner
+---@field tooling BoardOutline[]
+---@field corner HuntsSpriteTexture
+---@field cover BoardCover?    -- the cover it wears
+---@field owner table          -- the cover change's crossfade runs on it
+---@field SetCover fun(self: BoardLeatherView, look: BoardCover, animate: boolean?) -- every field given (adapter/Board.lua
+--- merges a look); with `animate` while it shows and things move, the binding dips and the cover changes underneath
 
 -- The band's nine slices from the 96-texel binding sprite: 32-texel corners, the edges stretched from a 2-texel slice.
 ---@param bandFrame Frame
@@ -453,21 +439,16 @@ local function bandOf(bandFrame)
 	return pieces
 end
 
+-- The tooled cover's gilt double rule (the kit's canvas: 1.5-unit lines, 9 and 12 units in) and the gilt.
+local TOOLED_INSETS, TOOLED_LINE, TOOLED_GILT = { 9, 12 }, 1.5, tint("d8b660")
+
 ---@param frame Frame
+---@param cornerSize number? Verdigris's corner's size (the kit's 40 by default; smaller on the shop's notebook)
 ---@return BoardLeatherView
-function ns.NewBoardLeather(frame)
-	local leatherTexture = frame:CreateTexture(nil, "BACKGROUND", nil, 1)
-	leatherTexture:SetPoint("TOPLEFT", 2, -2)
-	leatherTexture:SetPoint("BOTTOMRIGHT", -2, 2)
-	local grain = frame:CreateTexture(nil, "BORDER")
-	grain:SetPoint("TOPLEFT", 2, -2)
-	grain:SetPoint("BOTTOMRIGHT", -2, 2)
+function ns.NewBoardLeather(frame, cornerSize)
 	local fill = ns.ArtCrisp(frame:CreateTexture(nil, "BACKGROUND", nil, 2))
-	fill:SetTexture(ns.BOOK_FILES.leather, "REPEAT", "REPEAT")
 	fill:SetPoint("TOPLEFT", FILL_INSET, -FILL_INSET)
 	fill:SetPoint("BOTTOMRIGHT", -FILL_INSET, FILL_INSET)
-	-- darker toward the foot, as the canvas shades it (the gradient's first colour is the bottom's)
-	fill:SetGradient("VERTICAL", CreateColor(0.8, 0.8, 0.8, 1), CreateColor(1, 1, 1, 1))
 	local vignette = ns.ArtCrisp(frame:CreateTexture(nil, "BACKGROUND", nil, 3))
 	local atlas, sprite = ns.ArtSpriteOf("Book", "vignette")
 	ns.ArtCut(vignette, atlas, sprite.x + 1, sprite.y + 1, sprite.w - 2, sprite.h - 2)
@@ -475,49 +456,82 @@ function ns.NewBoardLeather(frame)
 	local band = CreateFrame("Frame", nil, frame)
 	band:SetAllPoints()
 	band:SetFrameLevel(frame:GetFrameLevel() + 6)
+	local gilt = CreateFrame("Frame", nil, band)
+	gilt:SetAllPoints()
+	gilt:SetFrameLevel(band:GetFrameLevel() + 1)
+	local tooling = {}
+	for i, inset in ipairs(TOOLED_INSETS) do
+		tooling[i] = outline(gilt, inset, "ARTWORK")
+		tooling[i]:Solid(TOOLED_GILT, 1, TOOLED_LINE)
+	end
+	local corner = ns.ArtSprite(gilt, "Hunts", "verd-corner", "ARTWORK", 1, cornerSize)
+	ns.PlaceSprite(corner, gilt, 0, 0)
 	---@type BoardLeatherView
 	local view = {
-		edge = ns.BoardSolid(frame, ns.BOARD_COVER.edge, "BACKGROUND"),
-		leather = leatherTexture,
-		grain = grain,
-		rules = {},
 		fill = fill,
 		vignette = vignette,
 		band = band,
 		bandPieces = bandOf(band),
-		kit = true,
+		gilt = gilt,
+		tooling = tooling,
+		corner = corner,
+		owner = {},
 		SetCover = function() end, -- below
 	}
-	local rules = outline(frame, 5, "BORDER", 1)
-	view.rules = rules.edges
-	function view.SetCover(_, look)
-		local kit = look.kit
-		view.kit = kit
-		for _, texture in ipairs({ view.fill, view.vignette }) do
-			texture:SetShown(kit)
-		end
-		view.band:SetShown(kit)
-		for _, texture in ipairs({ view.edge, view.leather, view.grain }) do
-			texture:SetShown(not kit)
-		end
-		if kit then
-			rules:Hide()
+	-- Dresses the leather in `look` at once.
+	---@param look BoardCover
+	local function apply(look)
+		view.cover = look
+		if look.fill then
+			view.fill:SetTexture(look.fill)
+			view.fill:SetTexCoord(0, 1, 0, 1)
+			view.fill:SetGradient("VERTICAL", CreateColor(1, 1, 1, 1), CreateColor(1, 1, 1, 1))
+		else
+			view.fill:SetTexture(ns.BOOK_FILES.leather, "REPEAT", "REPEAT")
 			-- the grain tiles at its authored density
 			local width, height = frame:GetSize()
 			local across = math.max(1, width - 2 * FILL_INSET) / LEATHER_TILE
 			local down = math.max(1, height - 2 * FILL_INSET) / LEATHER_TILE
 			view.fill:SetTexCoord(0, across, 0, down)
+			-- darker toward the foot, as the canvas shades it (the gradient's first colour is the bottom's)
+			local foot = look.foot
+			view.fill:SetGradient("VERTICAL", CreateColor(foot, foot, foot, 1), CreateColor(1, 1, 1, 1))
+		end
+		for _, rule in ipairs(view.tooling) do
+			if look.tooled then
+				rule:Solid(TOOLED_GILT, 1, TOOLED_LINE)
+			else
+				rule:Hide()
+			end
+		end
+		view.corner:SetShown(look.corner == true)
+	end
+	function view.SetCover(_, look, animate)
+		ns.StopMotion(view.owner)
+		if not (animate and frame:IsVisible() and ns.SyncMotion()) then
+			view.fill:SetAlpha(1)
+			view.gilt:SetAlpha(1)
+			apply(look)
 			return
 		end
-		local leather, edge = look.leather, look.edge
-		view.edge:SetColorTexture(edge[1], edge[2], edge[3], 1)
-		view.leather:SetColorTexture(leather[1], leather[2], leather[3], 1)
-		view.grain:SetTexture(look.grain)
-		view.grain:SetVertexColor(leather[1], leather[2], leather[3])
-		view.grain:SetAlpha(look.grainAlpha)
-		rules:Solid(look.rule)
+		-- the binding dips to 25% and back (0.4 s) while the cover changes underneath, at the dip's deepest
+		ns.BoardSound("pageTurn")
+		ns.Animate(view.owner, {
+			{
+				dur = 0.4,
+				ease = ns.Ease.inOut,
+				keys = { { 0, { 1 } }, { 0.5, { 0.25 } }, { 1, { 1 } } },
+				apply = function(v)
+					view.fill:SetAlpha(v[1])
+					view.gilt:SetAlpha(v[1])
+				end,
+			},
+		})
+		ns.Cue(view.owner, 0.2, function()
+			apply(look)
+		end)
 	end
-	view.SetCover(view, ns.BOARD_COVER)
+	apply(ns.BOARD_COVER)
 	return view
 end
 
@@ -606,7 +620,9 @@ end
 ---@field hover boolean
 ---@field color number[]
 ---@field tooltip string[]?
----@field SetRibbon fun(self: BoardRibbonView, text: string, color: number[], chosen: boolean)
+---@field length number?        -- how long it hangs now
+---@field SetRibbon fun(self: BoardRibbonView, text: string, color: number[], chosen: boolean, animate: boolean?) -- with
+--- `animate`, a change of length eases (the kit's Ribbons.lua)
 
 --- The ribbons' measures (the kit's Hunts board, hanging a fifth shorter, as the dev asked): each one's width and the
 --- gap between, how long it hangs (longer chosen), how much of its top tucks under the leather's band, its words'
@@ -631,13 +647,19 @@ local function hang(texture, ribbon, name, length)
 	texture:SetPoint("TOPLEFT", ribbon, "TOPLEFT", -box[1] * k, 0)
 end
 
--- Paints a ribbon as it is now: its length, its tint (brighter chosen or under the mouse) and its words' ink.
+-- Hangs a ribbon `length` units below the leather.
 ---@param ribbon BoardRibbonView
-local function paintRibbon(ribbon)
-	local length = ribbon.chosen and RIBBON.lengthChosen or RIBBON.length
+---@param length number
+local function lengthen(ribbon, length)
+	ribbon.length = length
 	ribbon:SetSize(RIBBON.width, length)
 	hang(ribbon.body, ribbon, "ribbon", length)
 	hang(ribbon.stitch, ribbon, "ribbon-stitch", length)
+end
+
+-- Paints a ribbon's tint (brighter chosen or under the mouse) and its words' ink.
+---@param ribbon BoardRibbonView
+local function paintRibbon(ribbon)
 	local lift = (ribbon.chosen or ribbon.hover) and RIBBON.lift or 1
 	local color = ribbon.color
 	ribbon.body:SetVertexColor(math.min(1, color[1] * lift), math.min(1, color[2] * lift), math.min(1, color[3] * lift))
@@ -668,10 +690,27 @@ function ns.NewBoardRibbon(parent)
 		paintRibbon(self)
 		GameTooltip:Hide()
 	end)
-	function ribbon.SetRibbon(self, text, color, chosen)
+	function ribbon.SetRibbon(self, text, color, chosen, animate)
 		self.label:SetText(text)
 		self.color, self.chosen = color, chosen
 		paintRibbon(self)
+		local length = chosen and RIBBON.lengthChosen or RIBBON.length
+		ns.StopMotion(self)
+		if animate and self.length and self.length ~= length and ns.SyncMotion() then
+			-- the old one draws up as the new one drops (0.2 s, ease-out)
+			ns.Animate(self, {
+				{
+					dur = 0.2,
+					ease = ns.Ease.out,
+					keys = { { 0, { self.length } }, { 1, { length } } },
+					apply = function(v)
+						lengthen(self, v[1])
+					end,
+				},
+			})
+		else
+			lengthen(self, length)
+		end
 	end
 	return ribbon
 end
@@ -742,7 +781,8 @@ end
 ---@field fillFrame Frame        -- holds the cut stroke, over the empty one
 ---@field label FontString
 ---@field value number
----@field SetBar fun(self: BoardInkBarView, fill: number, label: string?)
+---@field SetBar fun(self: BoardInkBarView, fill: number, label: string?, animate: boolean?) -- with `animate`, a fill
+--- that grows runs on
 
 -- The bar's height, and the ink's end caps.
 local INK_HEIGHT, INK_CAP = 10, 6
@@ -769,21 +809,50 @@ function ns.NewBoardInkBar(parent, width)
 	bar.value = 0
 	local _, sprite = ns.ArtSpriteOf("Parts", "ink-full")
 	local spriteLength = sprite.box[3]
-	function bar.SetBar(self, fill, label)
-		fill = math.max(0, math.min(1, fill))
+	-- Inks the bar to `fill` of its width.
+	local function ink(fill)
 		local length = width * fill
 		local cut = length > 0 and length <= spriteLength
 		local slice = length > spriteLength
 		if cut then
-			local shown = ns.SetCrop(self.fill, "Parts", "ink-full", length)
-			ns.PlaceSprite(shown, self, 0, 0)
+			local shown = ns.SetCrop(bar.fill, "Parts", "ink-full", length)
+			ns.PlaceSprite(shown, bar, 0, 0)
 		elseif slice then
-			ns.SetThreeSlice(self.fillSlice, "Parts", "ink-full", length, INK_CAP, "ARTWORK", 0)
+			ns.SetThreeSlice(bar.fillSlice, "Parts", "ink-full", length, INK_CAP, "ARTWORK", 0)
 		end
-		self.fill:SetShown(cut)
-		self.fillSlice:SetShown(slice)
+		bar.fill:SetShown(cut)
+		bar.fillSlice:SetShown(slice)
+	end
+	function bar.SetBar(self, fill, label, animate)
+		fill = math.max(0, math.min(1, fill))
+		local from = self.value
 		self.label:SetText(label or "")
 		self.value = fill
+		ns.StopMotion(self)
+		if not (animate and fill > from and self:IsVisible() and ns.SyncMotion()) then
+			self.label:SetAlpha(1)
+			ink(fill)
+			return
+		end
+		-- a catch: the ink runs on (0.6 s, ease-out) and its words fade up from 30% (0.3 s)
+		ns.Animate(self, {
+			{
+				dur = 0.6,
+				ease = ns.Ease.out,
+				keys = { { 0, { from } }, { 1, { fill } } },
+				apply = function(v)
+					ink(v[1])
+				end,
+			},
+			{
+				dur = 0.3,
+				ease = ns.Ease.out,
+				keys = { { 0, { 0.3 } }, { 1, { 1 } } },
+				apply = function(v)
+					self.label:SetAlpha(v[1])
+				end,
+			},
+		})
 	end
 	return bar
 end
@@ -966,15 +1035,15 @@ function ns.NewBoardPlate(parent)
 	return plate
 end
 
---- The "show completed" box on the leather (HNT-R61, HNT-R82): a small gilt-edged box, filled with gilt when ticked,
---- and its words in italic. `Sync` shows the tick as the box's state.
+--- The "show completed" box on the leather (HNT-R61, HNT-R82): a small gilt-edged box, filled with the kit's gilt
+--- gradient when ticked, and its words in italic. `Sync` shows the fill as the box's state.
 ---@class BoardCheckButton: CheckButton
 ---@field Text FontString
 ---@field tick Texture
 ---@field Sync fun(self: BoardCheckButton)
 
--- The box's size, and the tick's inset.
-local CHECK_SIZE, TICK_INSET = 14, 3.5
+-- The box's size, and the fill's inset.
+local CHECK_SIZE, TICK_INSET = 14, 1.5
 
 ---@param parent Frame
 ---@return BoardCheckButton
@@ -985,9 +1054,11 @@ function ns.NewBoardCheck(parent)
 	local well = ns.BoardSolid(check, tint("1a1008"), "BORDER")
 	well:SetPoint("TOPLEFT", 1.5, -1.5)
 	well:SetPoint("BOTTOMRIGHT", -1.5, 1.5)
-	check.tick = ns.BoardSolid(check, LOOK.gilt, "ARTWORK")
+	check.tick = ns.BoardSolid(check, { 1, 1, 1 }, "ARTWORK")
 	check.tick:SetPoint("TOPLEFT", TICK_INSET, -TICK_INSET)
 	check.tick:SetPoint("BOTTOMRIGHT", -TICK_INSET, TICK_INSET)
+	-- the gilt gradient, darker at the foot (the gradient's first colour is the bottom's)
+	check.tick:SetGradient("VERTICAL", CreateColor(0.75, 0.57, 0.18, 1), CreateColor(0.96, 0.86, 0.54, 1))
 	check.Text = ns.BoardText(check, ns.BoardFonts().check, LOOK.checkLabel)
 	check.Text:SetPoint("LEFT", check, "RIGHT", 7, 0)
 	function check.Sync(self)

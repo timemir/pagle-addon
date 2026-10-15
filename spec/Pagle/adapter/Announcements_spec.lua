@@ -8,6 +8,9 @@ local DRIFTWOOD = SOUNDS .. "driftwood\\"
 local CAST = ("%s-%d-0"):format(PLAYER_GUID, SERVER_TIME)
 -- A banner's title, "Level 12", spaced as the art spaces it.
 local LEVEL_12 = "L E V E L    1 2"
+-- How long each stays from when it appears (its motion settles, then its hold), and how long each takes to leave.
+local TOAST, NOD, BANNER = 8.7, 3.3, 5.9
+local LEAVE_TOAST, LEAVE_NOD, LEAVE_BANNER = 0.4, 0.3, 0.5
 
 -- Core logged in on Forever with the Ledger registered. Each moment Core hands the summary is in `summarized`.
 local function loadCore()
@@ -46,10 +49,23 @@ local function frameOf(loaded, form)
 	return loaded.ns.announcementFrames[form]
 end
 
--- Whether a frame for `form` is on screen.
+-- Whether something of `form` is on screen, as the lanes have it: a frame leaving doesn't count.
 local function showing(loaded, form)
-	local frame = frameOf(loaded, form)
-	return frame ~= nil and frame.shown
+	for _, frame in ipairs(loaded.ns.AnnouncementFramesShowing()) do
+		if frame.display.form == form then
+			return true
+		end
+	end
+	return false
+end
+
+-- The column's headline titles on screen, the newest first.
+local function columnTitles(loaded)
+	local titles = {}
+	for _, frame in ipairs(loaded.ns.columnFrames) do
+		titles[#titles + 1] = frame.display.announcement.headline.title
+	end
+	return titles
 end
 
 -- The texts of a frame's stamps on show, in order, then its Coins stamp if it shows.
@@ -68,8 +84,8 @@ end
 
 describe("Announcement frames", function()
 	it(
-		"draw a toast with its icon, title, text, 4 stamps, a +N stamp and the Coins stamp, for 6 s"
-			.. " (ANN-R11, ANN-R20, ANN-R23, ANN-R80)",
+		"draw a toast with its icon, title, text, 4 stamps, a +N stamp and the Coins stamp; it settles, stays 6 s, then"
+			.. " leaves over 0.4 s (ANN-R11, ANN-R20, ANN-R23, ANN-R80)",
 		function()
 			local loaded, M = loadCore()
 			local moments =
@@ -88,15 +104,17 @@ describe("Announcement frames", function()
 			)
 			assert.are.same({ "NEW HERE", "★★", "RANK UP", "SKILL", "+1", "+25" }, stampsOf(toast))
 			assert.is_false(toast.more.shown)
-			loaded.client.advance(5.9)
-			assert.is_true(toast.shown)
+			loaded.client.advance(TOAST - 0.1)
+			assert.is_true(showing(loaded, "toast"))
 			loaded.client.advance(0.1)
+			assert.are.same({ false, true }, { showing(loaded, "toast"), toast.shown })
+			loaded.client.advance(LEAVE_TOAST)
 			assert.is_false(toast.shown)
 		end
 	)
 
 	it(
-		"show a banner in the centre for 4 s while the toasts keep their turn, the next reading +1 more (ANN-R20)",
+		"show a banner in the centre for 5.9 s beside the column's 3 toasts, the 4th coming in as they leave (ANN-R20)",
 		function()
 			local loaded, M = loadCore()
 			raise(
@@ -110,17 +128,16 @@ describe("Announcement frames", function()
 			loaded.client.advance(1)
 			raise(loaded, M, moment("banner", "Level 12", { text = "Angler Level" }))
 
-			local banner, toast = frameOf(loaded, "banner"), frameOf(loaded, "toast")
-			assert.are.same({ true, true }, { banner.shown, toast.shown })
+			local banner = frameOf(loaded, "banner")
+			assert.are.same({ "Toast 3", "Toast 2", "Toast 1" }, columnTitles(loaded))
 			assert.are.same({ LEVEL_12, "Angler Level" }, { banner.title:GetText(), banner.text:GetText() })
-			loaded.client.advance(4)
-			assert.are.same({ false, true }, { banner.shown, toast.shown })
-			loaded.client.advance(1)
+			loaded.client.advance(BANNER)
+			assert.are.same({ false, true }, { showing(loaded, "banner"), banner.shown })
+			loaded.client.advance(LEAVE_BANNER)
+			assert.is_false(banner.shown)
+			loaded.client.advance(TOAST - 1 - BANNER - LEAVE_BANNER)
 
-			assert.are.same(
-				{ "Toast 2", true, "+1 more" },
-				{ toast.title:GetText(), toast.more.shown, toast.more:GetText() }
-			)
+			assert.are.same({ "Toast 4" }, columnTitles(loaded))
 		end
 	)
 
@@ -163,14 +180,14 @@ describe("Announcement frames", function()
 	end)
 
 	it(
-		"leave a Nod raised while the slot is busy off screen; it still reaches the summary (ANN-R20, ANN-R25)",
+		"show a Nod raised while a toast shows under it in the column; both reach the summary (ANN-R20, ANN-R25)",
 		function()
 			local loaded, M, summarized = loadCore()
 			raise(loaded, M, moment("toast", "New Species"))
 
 			raise(loaded, M, moment("nod", "New here"))
 
-			assert.is_false(showing(loaded, "nod"))
+			assert.are.same({ "New here", "New Species" }, columnTitles(loaded))
 			assert.are.same({ "New Species", "New here" }, { summarized[1].title, summarized[2].title })
 		end
 	)
@@ -189,7 +206,7 @@ describe("Announcement frames", function()
 		assert.is_true(nod.shown)
 		assert.are.same({ "NEW HERE", "+10" }, stampsOf(nod))
 		assert.are.same({}, loaded.client.sounds)
-		loaded.client.advance(3)
+		loaded.client.advance(NOD + LEAVE_NOD)
 		assert.is_false(nod.shown)
 	end)
 
@@ -354,11 +371,11 @@ describe("the announcements art", function()
 			raise(loaded, M, moment("toast", "New Species", { text = ("x"):rep(49) }))
 			local text = frameOf(loaded, "toast").text
 			local shrunk = { text.font, text:GetWidth() }
-			loaded.client.advance(6)
+			loaded.client.advance(TOAST + LEAVE_TOAST)
 			-- 100 characters are 600: half the size would fit, but the line stops at 70% and ends in "...".
 			raise(loaded, M, moment("toast", "New Species", { text = ("x"):rep(100) }))
 			local floored = { text.font, text:GetWidth() }
-			loaded.client.advance(6)
+			loaded.client.advance(TOAST + LEAVE_TOAST)
 			raise(loaded, M, moment("toast", "New Species", { text = "Oily Blackmouth" }))
 
 			assert.are.same({ { hand, 30, "" }, 292 }, shrunk)
@@ -476,7 +493,7 @@ describe("the announcements art", function()
 					banner.crest.shown and banner.portrait.portrait or false,
 					banner.crestLabel.shown and banner.crestLabel:GetText() or false,
 				}
-				loaded.client.advance(4)
+				loaded.client.advance(BANNER + LEAVE_BANNER)
 			end
 
 			assert.are.same({
@@ -488,12 +505,138 @@ describe("the announcements art", function()
 	)
 end)
 
+describe("the column on the client", function()
+	-- A column frame's bottom above the screen's: its BOTTOM anchor's y.
+	local function bottomOf(frame)
+		return select(5, frame:GetPoint(1))
+	end
+
+	it(
+		"stacks toasts and Nods at the bottom centre, the newest at the foot, each a page and a gap above the last"
+			.. " (ANN-R20)",
+		function()
+			local loaded, M = loadCore()
+			loaded.ns.db.profile.announcements.motion = false
+			raise(loaded, M, moment("toast", "First"))
+			raise(loaded, M, moment("toast", "Second"))
+
+			raise(loaded, M, moment("nod", "Third"))
+
+			assert.are.same({ "Third", "Second", "First" }, columnTitles(loaded))
+			local column = loaded.ns.columnFrames
+			-- A Nod is 40 tall and a toast 92, each with a 12 gap.
+			assert.are.same({ 156, 156 + 52, 156 + 52 + 104 }, {
+				bottomOf(column[1]),
+				bottomOf(column[2]),
+				bottomOf(column[3]),
+			})
+		end
+	)
+
+	it(
+		"keeps a toast while the pointer is on it, then gives it the time it had left; a click sends one away (ANN-R20)",
+		function()
+			local loaded, M = loadCore()
+			raise(loaded, M, moment("toast", "Hovered"))
+			local frame = frameOf(loaded, "toast")
+			loaded.client.advance(5)
+
+			frame.scripts.OnEnter(frame)
+			loaded.client.advance(60)
+			assert.is_true(showing(loaded, "toast"))
+			frame.scripts.OnLeave(frame)
+			loaded.client.advance(TOAST - 5 - 0.01)
+			assert.is_true(showing(loaded, "toast"))
+			loaded.client.advance(0.01)
+			assert.is_false(showing(loaded, "toast"))
+
+			raise(loaded, M, moment("nod", "Clicked"))
+			local nod = frameOf(loaded, "nod")
+			nod.scripts.OnMouseUp(nod, "LeftButton")
+			assert.is_false(showing(loaded, "nod"))
+		end
+	)
+
+	it(
+		"lets a toast leave over 0.4 s, fading as it drifts up; with Animations off it goes at once"
+			.. " (announcements.md › Motion)",
+		function()
+			local loaded, M = loadCore()
+			raise(loaded, M, moment("toast", "Leaving"))
+			local frame = frameOf(loaded, "toast")
+			loaded.client.advance(TOAST)
+			loaded.client.update(0.2)
+			local leaving = { frame.shown, frame.alpha < 1, bottomOf(frame) > 156 }
+			loaded.client.advance(LEAVE_TOAST)
+			local gone = frame.shown
+
+			loaded.ns.db.profile.announcements.motion = false
+			raise(loaded, M, moment("toast", "At once"))
+			local other = frameOf(loaded, "toast")
+			loaded.client.advance(TOAST)
+
+			assert.are.same({ { true, true, true }, false, false }, { leaving, gone, other.shown })
+		end
+	)
+
+	it(
+		"plays a toast's beats on its motion: the pen at 0.98 s, a stamp at 2.17 s, the coin at 2.66 s; none for a silent"
+			.. " toast or with Animations off (announcements.md › Sounds)",
+		function()
+			-- The sounds a toast raised with `fields` plays over its first 3 s, with motion on or off.
+			local function beats(fields, motion)
+				local loaded, M = loadCore()
+				loaded.ns.db.profile.announcements.motion = motion
+				local headline = { text = "Oily Blackmouth", cast = CAST, coins = 5 }
+				for key, value in pairs(fields) do
+					headline[key] = value
+				end
+				raise(loaded, M, moment("toast", "New Species", headline), moment("nod", "Rank up", { cast = CAST }))
+				for _ = 1, 30 do
+					loaded.client.update(0.1)
+				end
+				return loaded.client.sounds
+			end
+
+			assert.are.same({ DRIFTWOOD .. "toast_1.ogg SFX", "3093 SFX", "1204 SFX", "120 SFX" }, beats({}, true))
+			assert.are.same({}, beats({ sound = false }, true))
+			assert.are.same({ DRIFTWOOD .. "toast_1.ogg SFX" }, beats({}, false))
+		end
+	)
+end)
+
+describe("the motion driver", function()
+	it("leaves what plays alone when told to stop an owner it isn't playing, even from inside an animation", function()
+		local loaded = loadCore()
+		local owner, stranger = loaded.env.CreateFrame("Frame"), loaded.env.CreateFrame("Frame")
+		local last
+		loaded.ns.Animate(owner, {
+			{
+				dur = 1,
+				ease = loaded.ns.EASE.linear,
+				keys = { { 0, { 0 } }, { 1, { 1 } } },
+				apply = function(v)
+					last = v[1]
+					loaded.ns.StopMotion(stranger)
+				end,
+			},
+		})
+
+		for _ = 1, 12 do
+			loaded.client.update(0.1)
+		end
+
+		-- It played to its end.
+		assert.are.equal(1, last)
+	end)
+end)
+
 describe("the Interruption budget on the client", function()
 	-- Raises `n` toasts, each shown in full before the next.
 	local function interrupt(loaded, M, n)
 		for i = 1, n do
 			raise(loaded, M, moment("toast", "Interruption " .. i))
-			loaded.client.advance(6)
+			loaded.client.advance(TOAST + LEAVE_TOAST)
 		end
 	end
 
@@ -510,7 +653,7 @@ describe("the Interruption budget on the client", function()
 			)
 
 			local nod = frameOf(loaded, "nod")
-			assert.are.same({ true, false }, { nod.shown, showing(loaded, "toast") })
+			assert.are.same({ true, false }, { showing(loaded, "nod"), showing(loaded, "toast") })
 			assert.are.same({ "Size record", true }, { nod.title:GetText(), nod.ruler.shown })
 			loaded.client.update(1.5)
 			-- A compact ruler: the margin, with no old record's number or stamp.
@@ -518,7 +661,7 @@ describe("the Interruption budget on the client", function()
 				{ true, false, false },
 				{ nod.ruler.margin.shown, nod.ruler.old.shown, nod.ruler.record.shown }
 			)
-			loaded.client.advance(3)
+			loaded.client.advance(NOD)
 			raise(loaded, M, moment("toast", "New Species"))
 			assert.is_true(showing(loaded, "toast"))
 		end
@@ -537,16 +680,20 @@ end)
 
 describe("Announcement sounds on the client", function()
 	it(
-		"play toast_1, toast_2 and toast_3 on SFX across back-to-back toasts, a waiting toast's only as it shows, and"
-			.. " never a Nod's (ANN-R24, ANN-R70–R73)",
+		"play toast_1, toast_2 and toast_3 on SFX across toasts, a waiting toast's only as it shows, and never a"
+			.. " Nod's (ANN-R24, ANN-R70–R73)",
 		function()
 			local loaded, M = loadCore()
-			raise(loaded, M, moment("toast", "Toast 1"), moment("toast", "Toast 2"))
-			assert.are.same({ DRIFTWOOD .. "toast_1.ogg SFX" }, loaded.client.sounds)
+			for i = 1, 4 do
+				raise(loaded, M, moment("toast", "Toast " .. i))
+			end
+			assert.are.same({
+				DRIFTWOOD .. "toast_1.ogg SFX",
+				DRIFTWOOD .. "toast_2.ogg SFX",
+				DRIFTWOOD .. "toast_3.ogg SFX",
+			}, loaded.client.sounds)
 
-			loaded.client.advance(6)
-			raise(loaded, M, moment("toast", "Toast 3"))
-			loaded.client.advance(12)
+			loaded.client.advance(TOAST)
 			raise(loaded, M, moment("nod", "New here"))
 			assert.is_true(showing(loaded, "nod"))
 			raise(loaded, M, moment("banner", "Level 12"))
@@ -555,6 +702,7 @@ describe("Announcement sounds on the client", function()
 				DRIFTWOOD .. "toast_1.ogg SFX",
 				DRIFTWOOD .. "toast_2.ogg SFX",
 				DRIFTWOOD .. "toast_3.ogg SFX",
+				DRIFTWOOD .. "toast_1.ogg SFX",
 				DRIFTWOOD .. "banner.ogg SFX",
 			}, loaded.client.sounds)
 		end
@@ -568,11 +716,13 @@ describe("Announcement sounds on the client", function()
 			local loaded, M = loadCore()
 			local Pagle = loaded.env.Pagle
 			raise(loaded, M, moment("toast", "Toast 1"))
-			loaded.client.advance(6)
+			loaded.client.advance(TOAST)
 			loaded.ns.RecordPurchase("core.soundset.gilded", 400) -- the Curio Shop's buy (SHOP-R10, SHOP-R11)
 			assert.is_true(Pagle.SetEquipped("core.soundset", "core.soundset.gilded"))
 
-			for _, step in ipairs({ { "toast", 6 }, { "toast", 6 }, { "banner", 4 }, { "splash", 8 } }) do
+			local steps =
+				{ { "toast", TOAST }, { "toast", TOAST }, { "banner", BANNER + LEAVE_BANNER }, { "splash", 8 } }
+			for _, step in ipairs(steps) do
 				raise(loaded, M, moment(step[1], step[1]))
 				loaded.client.advance(step[2])
 			end
@@ -623,7 +773,7 @@ describe("The catch Nod on the client", function()
 			assert.are.same({}, stampsOf(frame))
 			assert.are.same({}, loaded.client.sounds)
 			assert.are.same({}, summarized)
-			loaded.client.advance(3)
+			loaded.client.advance(NOD)
 			assert.is_false(showing(loaded, "nod"))
 		end
 	)

@@ -197,6 +197,7 @@ end
 ---@field rule Texture
 ---@field setLine FontString
 ---@field empty FontString
+---@field shown string?   -- the Hunt it last drew
 
 ---@param page Frame
 ---@return EntryView
@@ -328,8 +329,9 @@ end
 ---@param view EntryView
 ---@param ladder HuntEntryLadder
 ---@param y number
+---@param same boolean the same Hunt's bar as at the view's last draw: a count that grew runs its ink on
 ---@return number
-local function layLadder(view, ladder, y)
+local function layLadder(view, ladder, y, same)
 	if ladder.updating then
 		return line(view.ladderUpdating, ladder.updating, y)
 	end
@@ -363,7 +365,23 @@ local function layLadder(view, ladder, y)
 	end
 	local bar = ladder.bar
 	if bar then
-		view.bar:SetBar(bar.fill, bar.label)
+		local grew = same and bar.fill > view.bar.value
+		view.bar:SetBar(bar.fill, bar.label, grew)
+		if grew and view.bar:IsVisible() and ns.SyncMotion() then
+			-- a catch is written in: its Casts line fades up with the count (MOTION.md › Counts and readings)
+			ns.BoardSound("write")
+			ns.StopMotion(view.effort)
+			ns.Animate(view.effort, {
+				{
+					dur = 0.3,
+					ease = ns.Ease.out,
+					keys = { { 0, { 0.3 } }, { 1, { 1 } } },
+					apply = function(v)
+						view.effort:SetAlpha(v[1])
+					end,
+				},
+			})
+		end
 		view.bar:ClearAllPoints()
 		view.bar:SetPoint("TOPLEFT", 0, -(y + 6))
 		view.bar:Show()
@@ -377,6 +395,9 @@ end
 ---@param entry HuntEntry
 ---@param huntID string
 local function draw(view, entry, huntID)
+	-- the same Hunt's ink bar, drawn last time too, may run on
+	local same = view.shown == huntID and view.bar:IsShown()
+	view.shown = huntID
 	hideAll(view)
 	local width = view.page:GetWidth()
 	local top = 0
@@ -408,7 +429,7 @@ local function draw(view, entry, huntID)
 	y = line(view.window, entry.window, y, 4)
 	y = line(view.conditions, entry.conditions, y)
 	y = layChips(view, entry.chips, y + GAP, width) + 14
-	y = layLadder(view, entry.ladder, y) + GAP
+	y = layLadder(view, entry.ladder, y, same) + GAP
 	y = line(view.effort, entry.effort.text, y, 3)
 	y = line(view.odds, entry.effort.odds, y)
 	if entry.setLine then

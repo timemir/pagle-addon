@@ -160,13 +160,13 @@ describe("the Stats book's pages (STA-R70, STA-R74)", function()
 			book:RegisterPage("lifetime", "right", writer("every fish", draws))
 
 			loaded.ns.ToggleBook()
-			assert.are.same({ "waters home -" }, textsOf(book.frame.bodies.left))
-			assert.are.same({ "right now home -" }, textsOf(book.frame.bodies.right))
+			assert.are.same({ "waters home -" }, textsOf(book.frame.paperFrames.left))
+			assert.are.same({ "right now home -" }, textsOf(book.frame.paperFrames.right))
 			assert.are_not.equal(draws[1].content, draws[2].content)
 			loaded.ns.OpenBook({ page = "lifetime" })
 
-			assert.are.same({}, textsOf(book.frame.bodies.left))
-			assert.are.same({ "every fish lifetime -" }, textsOf(book.frame.bodies.right))
+			assert.are.same({}, textsOf(book.frame.paperFrames.left))
+			assert.are.same({ "every fish lifetime -" }, textsOf(book.frame.paperFrames.right))
 		end
 	)
 
@@ -425,8 +425,8 @@ describe("the Stats book while the projection is updating (STA-R72)", function()
 
 		assert.is_true(loaded.ns.IsUpdating())
 		assert.are.equal("Updating my records…", book.frame.plate.label.text)
-		assert.are.same({ "Updating my records…" }, textsOf(book.frame.bodies.left))
-		assert.are.same({ "Updating my records…" }, textsOf(book.frame.bodies.right))
+		assert.are.same({ "Updating my records…" }, textsOf(book.frame.paperFrames.left))
+		assert.are.same({ "Updating my records…" }, textsOf(book.frame.paperFrames.right))
 		assert.are.same({}, draws)
 	end)
 

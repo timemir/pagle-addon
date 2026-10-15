@@ -176,33 +176,53 @@ describe("Hunts' goods", function()
 	end)
 end)
 
+-- A leather view's look (adapter/BoardWidgets.lua's NewBoardLeather): its fill's file, then "tooled" and "corner" when
+-- Tooled Leather's gilt rule and Verdigris's corner show, joined by "+".
+---@param view table a BoardLeatherView on the fake client, read by the fields it keeps
+---@return string
+local function lookOf(view)
+	local parts = { tostring(view.fill.texture) }
+	if view.tooling[1].edges[1]:IsShown() then
+		parts[#parts + 1] = "tooled"
+	end
+	if view.corner:IsShown() then
+		parts[#parts + 1] = "corner"
+	end
+	return table.concat(parts, "+")
+end
+
+-- Each cover's look, as lookOf reads it: the books kit v2's covers (HNT-R121).
+local function coverLooks(ns)
+	local leather = ns.BOOK_FILES.leather
+	return {
+		["hunts.notebookcover.leather"] = leather,
+		["hunts.notebookcover.oilcloth"] = ns.COVER_FILES.oilcloth,
+		["hunts.notebookcover.tooled"] = leather .. "+tooled",
+		["hunts.notebookcover.verdigris"] = ns.COVER_FILES.verdigris .. "+corner",
+	}
+end
+
 describe("the board's cover", function()
-	-- The open board's leather: "kit" for the books kit's leather, else an old cover's tint, as { r, g, b }.
+	-- The open board's leather, as lookOf reads it.
 	local function leatherOf(board)
-		local cover = board.frame.cover
-		if cover.kit then
-			assert.is_true(cover.fill:IsShown())
-			return "kit"
-		end
-		local color = cover.leather.color
-		return { color[1], color[2], color[3] }
+		return lookOf(board.frame.cover)
 	end
 
 	it("redraws the open board's leather in Oilcloth's look when Oilcloth is equipped (HNT-R70, SHOP-R33)", function()
 		local loaded, fake = loggedIn()
 		local ns = loaded.ns
+		local looks = coverLooks(ns)
 		ns.ToggleBoard()
-		assert.are.equal("kit", leatherOf(ns.board)) -- the default cover is the books kit's leather
+		assert.are.equal(looks["hunts.notebookcover.leather"], leatherOf(ns.board)) -- the kit's leather by default
 
 		fake.setPurchased({ ["hunts.notebookcover.oilcloth"] = true }) -- bought (SHOP-R11)
 		assert.is_true(fake.Pagle.SetEquipped(COVER, "hunts.notebookcover.oilcloth"))
 
-		assert.are.same(ns.COVERS["hunts.notebookcover.oilcloth"].leather, leatherOf(ns.board))
-		local rule = ns.board.frame.cover.rules[1].color
-		assert.are.same(ns.COVERS["hunts.notebookcover.oilcloth"].rule, { rule[1], rule[2], rule[3] })
+		assert.are.equal(looks["hunts.notebookcover.oilcloth"], leatherOf(ns.board))
+		assert.is_true(ns.board.frame.cover.band:IsShown()) -- the kit's band on every cover
 
 		assert.is_true(fake.Pagle.SetEquipped(COVER, "hunts.notebookcover.leather"))
-		assert.are.equal("kit", leatherOf(ns.board)) -- the default cover is the books kit's leather
+		assert.are.equal(looks["hunts.notebookcover.leather"], leatherOf(ns.board))
 	end)
 
 	it("opens in the cover equipped at an earlier login, bought then (HNT-R70, SHOP-R32)", function()
@@ -215,7 +235,7 @@ describe("the board's cover", function()
 
 		ns.ToggleBoard()
 
-		assert.are.same(ns.COVERS["hunts.notebookcover.tooled"].leather, leatherOf(ns.board))
+		assert.are.equal(coverLooks(ns)["hunts.notebookcover.tooled"], leatherOf(ns.board))
 	end)
 
 	it(
@@ -245,7 +265,7 @@ describe("the board's cover", function()
 			loaded.ns.ToggleBoard()
 
 			assert.are.equal("hunts.notebookcover.oilcloth", on.Pagle.GetEquipped(COVER))
-			assert.are.same(loaded.ns.COVERS["hunts.notebookcover.oilcloth"].leather, leatherOf(loaded.ns.board))
+			assert.are.equal(coverLooks(loaded.ns)["hunts.notebookcover.oilcloth"], leatherOf(loaded.ns.board))
 		end
 	)
 end)
@@ -282,7 +302,7 @@ describe("a notebook cover's preview", function()
 	it("draws the closed notebook in that cover on the good's stage: its leather, no pages (HNT-R121)", function()
 		local loaded, fake = loggedIn()
 		local ns = loaded.ns
-		local paper = ns.BOARD_TEXTURES.paper
+		local looks = coverLooks(ns)
 
 		local leathers = {}
 		for _, row in ipairs(GOODS[COVER]) do
@@ -295,23 +315,14 @@ describe("a notebook cover's preview", function()
 			assert.are.equal(1, #stage.children, id) -- one notebook, drawn afresh
 			local notebook = stage.children[1]
 			assert.is_true(notebook:IsShown())
-			if ns.COVERS[id].kit then
-				-- the board's own: the books kit's leather and band
-				assert.is_true(notebook.cover.fill:IsShown())
-				assert.is_true(notebook.cover.band:IsShown())
-				leathers[#leathers + 1] = "kit"
-			else
-				local leather = notebook.cover.leather.color
-				assert.are.same(ns.COVERS[id].leather, { leather[1], leather[2], leather[3] }, id)
-				assert.is_false(notebook.cover.fill:IsShown())
-				leathers[#leathers + 1] = ("%.3f %.3f %.3f"):format(leather[1], leather[2], leather[3])
-			end
+			-- the board's own leather in that cover, in the kit's band
+			assert.are.equal(looks[id], lookOf(notebook.cover), id)
+			assert.is_true(notebook.cover.band:IsShown())
+			leathers[#leathers + 1] = lookOf(notebook.cover)
 			for _, widget in ipairs(descendants(notebook)) do
-				assert.are_not.equal(paper, widget.texture, id) -- closed: no parchment
-				assert.are_not.equal(ns.BOOK_FILES.parchment, widget.texture, id)
+				assert.are_not.equal(ns.BOOK_FILES.parchment, widget.texture, id) -- closed: no parchment
 			end
 		end
-		assert.is_true(ns.COVERS["hunts.notebookcover.leather"].kit) -- the board's own
 		table.sort(leathers)
 		for i = 2, #leathers do
 			assert.are_not.equal(leathers[i - 1], leathers[i]) -- four different leathers

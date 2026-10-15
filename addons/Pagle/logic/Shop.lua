@@ -257,6 +257,15 @@ function Model:RowOf(entry)
 	return row
 end
 
+--- `goodID`'s row as the list shows it, whatever narrows the list, or nil for a good the shop doesn't show: what a
+--- purchase's motion draws on its row before the list redraws.
+---@param goodID any
+---@return PagleShopRow?
+function Model:Row(goodID)
+	local entry = self:Entry(goodID)
+	return entry and self:RowOf(entry)
+end
+
 --- What narrows the list (wallet-and-shop.md › UI). Each is optional.
 ---@class PagleShopQuery
 ---@field search? string      -- matches names, ignoring case

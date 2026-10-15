@@ -14,6 +14,11 @@ local ns = select(2, ...)
 -- the now line, each group under its dot, name, note and count, the rows with their medallions, bars and margin
 -- labels, the scroll rail in the margin, and the legend drawn with the bars' own strokes.
 --
+-- It is live (the kit v2's MOTION.md): the grouping refreshes on every realm minute while the board shows (HNT-R42), so
+-- the now line stays put while the hours, the night wash and the bars drift left and the countdowns are rewritten. When
+-- a regroup moves a Hunt to another group, the groups restack and each row slides to its new place (0.4 s); a Hunt that
+-- has just opened flashes green under its row and the board plays its sound.
+--
 -- An aura's expiry is C_UnitAuras.GetPlayerAuraBySpellID's `expirationTime`, on GetTime's clock (HNT-R63).
 
 local LOOK = ns.BOARD_LOOK
@@ -29,6 +34,8 @@ local NOW_Y = 44
 -- right-aligned at the list's edge.
 local NAME_X, NAME_WIDTH, TRACK_X, TRACK_WIDTH, MARGIN_INSET = 31, 140, 178, 190, 3
 local ROW_HEIGHT, HEADING_GAP, HEADING_HEIGHT = 26, 10, 24
+-- A row's slide to its new place, and a Hunt just opened's flash under its row: up to 22% by 0.35 s, gone by 1.4 s.
+local SLIDE, FLASH, FLASH_PEAK = 0.4, 1.4, 0.22
 local ICON_SIZE, RING_SIZE = 19, 22
 -- The scroll rail, this far right of the list's edge, and how far a wheel notch scrolls.
 local RAIL_GAP, RAIL_WIDTH, WHEEL_STEP = 10, 4, 40
@@ -104,6 +111,8 @@ end
 
 ---@class TimelineRowView: Button
 ---@field shade Texture
+---@field flash Texture
+---@field y number?        -- where it sits down the list, as it slides
 ---@field dashes BoardOutline
 ---@field icon BoardIconView
 ---@field pin HuntsSpriteTexture
@@ -115,6 +124,7 @@ end
 ---@field huntID string
 
 ---@class TimelineHeadingView: Frame
+---@field y number?
 ---@field dot BoardDotView
 ---@field label FontString
 ---@field note FontString
@@ -132,8 +142,10 @@ end
 ---@field content Frame
 ---@field rail Texture
 ---@field thumb Texture
----@field rows TimelineRowView[]
----@field headings TimelineHeadingView[]
+---@field rows table<string, TimelineRowView>          -- by Hunt, so a row keeps its frame as it moves
+---@field headings table<HuntGroup, TimelineHeadingView>
+---@field groupOf table<string, HuntGroup>             -- each row's group at the last draw
+---@field serial integer?                               -- the board's draw it last drew at (ns.board:Serial())
 ---@field legend Frame
 ---@field legendBars BoardTimelineBarView[]
 ---@field legendTexts FontString[]
@@ -151,6 +163,8 @@ local function newRow(view)
 	local row = CreateFrame("Button", nil, view.content) --[[@as TimelineRowView]]
 	row:SetSize(view.width, ROW_HEIGHT)
 	row.shade = ns.BoardSolid(row, LOOK.shade, "BACKGROUND", LOOK.shadeAlpha)
+	row.flash = ns.BoardSolid(row, LOOK.paperGroups.now, "BACKGROUND")
+	row.flash:SetAlpha(0)
 	row.dashes = ns.BoardOutline(row, 0, "BORDER")
 	row.icon = ns.NewBoardIcon(row, ICON_SIZE, RING_SIZE)
 	row.icon:SetPoint("TOPLEFT", 1.5, -3.5)
@@ -298,6 +312,7 @@ local function build(page)
 		thumb = thumb,
 		rows = {},
 		headings = {},
+		groupOf = {},
 		legend = legend,
 		legendBars = {},
 		legendTexts = {},
@@ -383,15 +398,60 @@ end
 -- The margin label's ink by its case: red for Now, Soon and short of skill, faded for Later, blue for On demand.
 local MARGIN_INK = { now = LOOK.red, soon = LOOK.red, short = LOOK.red, later = LOOK.faded, onDemand = LOOK.hand }
 
--- Draws one Hunt's row (HNT-R63) at `y` down the list.
+-- Places a row or a heading `y` down the list: it slides there (0.4 s, ease-in-out) from where it showed with
+-- `slide`, else it is put there.
+---@param region TimelineRowView|TimelineHeadingView
+---@param y number
+---@param slide boolean
+local function moveTo(region, y, slide)
+	local was = region:IsShown() and region.y
+	region:Show()
+	ns.StopMotion(region)
+	if slide and was and was ~= y then
+		ns.Animate(region, {
+			{
+				dur = SLIDE,
+				ease = ns.Ease.inOut,
+				keys = { { 0, { was } }, { 1, { y } } },
+				apply = function(v)
+					region.y = v[1]
+					region:ClearAllPoints()
+					region:SetPoint("TOPLEFT", 0, -v[1])
+				end,
+			},
+		})
+		return
+	end
+	region.y = y
+	region:ClearAllPoints()
+	region:SetPoint("TOPLEFT", 0, -y)
+end
+
+-- Flashes a row green: the Hunt has just opened.
+---@param drawn TimelineRowView
+local function flash(drawn)
+	ns.StopMotion(drawn.flash)
+	ns.Animate(drawn.flash, {
+		{
+			dur = FLASH,
+			ease = ns.Ease.inOut,
+			keys = { { 0, { 0 } }, { 0.25, { FLASH_PEAK } }, { 1, { 0 } } },
+			apply = function(v)
+				drawn.flash:SetAlpha(v[1])
+			end,
+		},
+	})
+end
+
+-- Draws one Hunt's row (HNT-R63) at `y` down the list, sliding there with `slide`.
 ---@param view TimelinePageView
 ---@param drawn TimelineRowView
 ---@param row TimelineRow
 ---@param y number
-local function drawRow(view, drawn, row, y)
+---@param slide boolean
+local function drawRow(view, drawn, row, y, slide)
 	drawn.huntID = row.id
-	drawn:ClearAllPoints()
-	drawn:SetPoint("TOPLEFT", 0, -y)
+	moveTo(drawn, y, slide)
 	drawn.shade:SetShown(row.selected)
 	if row.selected then
 		drawn.dashes:Dashed(LOOK.kicker, view.width, ROW_HEIGHT)
@@ -416,20 +476,25 @@ local function drawRow(view, drawn, row, y)
 	drawn.margin:SetText(row.margin)
 	local ink = MARGIN_INK[row.tone]
 	drawn.margin:SetTextColor(ink[1], ink[2], ink[3])
-	drawn:Show()
 end
 
--- Draws the groups down the list: each heading with its count, then its rows; hides what is left over.
+-- Draws the groups down the list: each heading with its count, then its rows; hides what is left over. A list drawn at
+-- the board's draw before this one has been on show since: its rows and headings slide to their new places, and a Hunt
+-- that has moved into Now flashes, with the board's sound (MOTION.md › The live Hunts timeline).
 ---@param view TimelinePageView
 ---@param timeline HuntsTimeline
 local function drawList(view, timeline)
-	local y, rowsUsed = 0, 0
-	for i, group in ipairs(timeline.groups) do
-		local heading = ns.BoardPooled(view.headings, i, function()
-			return newHeading(view)
-		end)
-		heading:ClearAllPoints()
-		heading:SetPoint("TOPLEFT", 0, -y)
+	local serial = ns.board:Serial()
+	local live = view.serial == serial - 1
+	view.serial = serial
+	local slide = live and ns.motion == true
+	local y = 0
+	local groupOf, headingsUsed, opened = {}, {}, false
+	for _, group in ipairs(timeline.groups) do
+		local heading = view.headings[group.group] or newHeading(view)
+		view.headings[group.group] = heading
+		headingsUsed[group.group] = true
+		moveTo(heading, y, slide)
 		heading.dot:SetGroup(group.group, true)
 		heading.label:SetText(ns.BoardSmallCaps(group.name))
 		heading.note:SetText(group.note)
@@ -440,18 +505,37 @@ local function drawList(view, timeline)
 		heading.note:SetWidth(math.max(1, math.min(heading.note:GetStringWidth() + 1, room)))
 		y = y + HEADING_GAP + HEADING_HEIGHT
 		for _, row in ipairs(group.rows) do
-			rowsUsed = rowsUsed + 1
-			local drawn = ns.BoardPooled(view.rows, rowsUsed, function()
-				return newRow(view)
-			end)
-			drawRow(view, drawn, row, y)
+			local drawn = view.rows[row.id] or newRow(view)
+			view.rows[row.id] = drawn
+			local was = view.groupOf[row.id]
+			groupOf[row.id] = group.group
+			drawRow(view, drawn, row, y, slide)
+			if live and was and was ~= "now" and group.group == "now" then
+				opened = true
+				if ns.motion then
+					flash(drawn)
+				end
+			end
 			y = y + ROW_HEIGHT
 		end
 	end
-	ns.BoardHideFrom(view.headings, #timeline.groups)
-	ns.BoardHideFrom(view.rows, rowsUsed)
+	for key, heading in pairs(view.headings) do
+		if not headingsUsed[key] then
+			heading:Hide()
+		end
+	end
+	for huntID, drawn in pairs(view.rows) do
+		if not groupOf[huntID] then
+			ns.StopMotion(drawn)
+			drawn:Hide()
+		end
+	end
+	view.groupOf = groupOf
 	view.content:SetHeight(math.max(1, y))
 	view.placeThumb()
+	if opened then
+		ns.BoardSound("huntOpens")
+	end
 end
 
 -- Draws the legend at the page's foot (HNT-R62): each bar style's own stroke, then its words in italic.
@@ -498,6 +582,9 @@ local function drawPage(page, place)
 	end
 	local none = timeline.empty == "noHunts"
 	view.title:SetText(timeline.title)
+	view.kicker:SetText(
+		ns.BoardSmallCaps(place.mode ~= "board" and place.set and ns.L.SET_KICKER or ns.L.TIMELINE_KICKER)
+	)
 	for _, part in ipairs({ view.ruler, view.column, view.scroll, view.legend, view.nowLine }) do
 		part:SetShown(not none)
 	end
@@ -506,6 +593,8 @@ local function drawPage(page, place)
 	if none then
 		view.rail:Hide()
 		view.thumb:Hide()
+		view.serial = ns.board:Serial()
+		view.groupOf = {}
 		return
 	end
 	drawRuler(view, page, timeline.ruler)
@@ -546,7 +635,9 @@ ns.board:RegisterLeather("completed", function(anchor)
 		completed.Text:SetText(ns.L.SHOW_COMPLETED)
 		completed:SetScript("OnClick", function(self)
 			self:Sync()
-			ns.SetShowCompleted(self:GetChecked() == true)
+			local on = self:GetChecked() == true
+			ns.BoardSound(on and "check" or "uncheck")
+			ns.SetShowCompleted(on)
 		end)
 	end
 	completed:SetChecked(ns.db.profile.showCompleted)

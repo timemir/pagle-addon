@@ -17,7 +17,7 @@ local function spreadOf(pages)
 	}
 end
 
--- The sounds played since `from` (an index into client.sounds), as "kit:<id> SFX".
+-- The sounds played since `from` (an index into client.sounds), as "<id> SFX".
 ---@param loaded LoadedAddon
 ---@param from integer
 ---@return string[]
@@ -97,7 +97,7 @@ describe("the Fish Journal's sounds (ledger.md › UI)", function()
 		loaded.ns.journal:Toggle()
 		loaded.client.pressEscape()
 
-		assert.are.same({ "kit:829 SFX", "kit:830 SFX", "kit:829 SFX", "kit:830 SFX" }, soundsSince(loaded, from))
+		assert.are.same({ "829 SFX", "830 SFX", "829 SFX", "830 SFX" }, soundsSince(loaded, from))
 	end)
 
 	it("turns the page silently while things don't move: the page turn's sound is tied to its motion", function()
@@ -134,7 +134,7 @@ describe("the Fish Journal's motion (ledger.md › UI, the kit's MOTION.md)", fu
 
 		journal.frame.right.drawn.leader[1]:Click()
 
-		assert.are.same({ "kit:836 SFX" }, soundsSince(loaded, from))
+		assert.are.same({ "836 SFX" }, soundsSince(loaded, from))
 		assert.are_not.equal(home, journal.frame.left)
 		-- mid-turn, Home's left page still shows beside the lifting leaf
 		assert.is_true(has(shownTexts(journal.frame), "Where I've Fished"))
@@ -176,7 +176,7 @@ describe("the Fish Journal's motion (ledger.md › UI, the kit's MOTION.md)", fu
 		}
 		journal:Draw()
 
-		assert.are.same({ "kit:3093 SFX" }, soundsSince(loaded, from))
+		assert.are.same({ "3093 SFX" }, soundsSince(loaded, from))
 		local row = journal.frame.left.drawn.row[1]
 		loaded.client.update(0.4)
 		assert.is_true(row.glow.alpha > 0)
@@ -202,7 +202,7 @@ describe("the Fish Journal's motion (ledger.md › UI, the kit's MOTION.md)", fu
 		assert.are.equal("Regular", seal.label.text)
 		loaded.client.update(0.3)
 
-		assert.are.same({ "kit:1204 SFX" }, soundsSince(loaded, from))
+		assert.are.same({ "1204 SFX" }, soundsSince(loaded, from))
 		assert.are.same({ 64, 1 }, { seal.width, seal.alpha })
 	end)
 
@@ -253,7 +253,7 @@ describe("the Fish Journal's motion (ledger.md › UI, the kit's MOTION.md)", fu
 
 		assert.is_true(fake.Pagle.SetEquipped("ledger.binding", "ledger.binding.level10"))
 
-		assert.are.same({ "kit:836 SFX" }, soundsSince(loaded, from))
+		assert.are.same({ "836 SFX" }, soundsSince(loaded, from))
 		assert.are.same({ 1, 1, 1 }, journal.frame.leatherTint)
 		loaded.client.update(0.25)
 		assert.are.same(loaded.ns.BindingLook("ledger.binding.level10").tint, journal.frame.leatherTint)

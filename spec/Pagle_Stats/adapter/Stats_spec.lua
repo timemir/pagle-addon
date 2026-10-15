@@ -132,13 +132,17 @@ describe("Pagle_Stats with Core", function()
 
 			local seen = {}
 			loaded.env.SlashCmdList.PAGLE("stats")
+			loaded.client.advance(1) -- a close fades out first (books kit motion)
 			seen[#seen + 1] = shown()
 			loaded.env.SlashCmdList.PAGLE("stats anything at all")
+			loaded.client.advance(1) -- a close fades out first (books kit motion)
 			seen[#seen + 1] = shown()
 			loaded.client.openCompartmentMenu("Pagle").click("Stats")
+			loaded.client.advance(1) -- a close fades out first (books kit motion)
 			seen[#seen + 1] = shown()
 			local _, buttons = loaded.client.settings.statusList()
 			buttons[1]:Click()
+			loaded.client.advance(1) -- a close fades out first (books kit motion)
 			seen[#seen + 1] = shown()
 
 			assert.are.same({ true, false, true, false }, seen)

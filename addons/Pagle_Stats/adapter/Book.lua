@@ -40,6 +40,16 @@ local RIBBONS_LIFT = 40
 local PLATE_X, PLATE_Y, LIVE_RIGHT, LIVE_FOOT = 30, 605, 30, 9
 -- How far a mouse wheel notch scrolls a page body.
 local WHEEL_STEP = 40
+-- The book's whole extent in its own units, for fitting it to the screen (adapter/Fit.lua): the wax close button
+-- reaches past its top right, the chosen ribbon hangs 84 under its foot.
+local EXTENT_WIDTH, EXTENT_HEIGHT = WIDTH + 30, HEIGHT + 100
+-- The order of the spreads, for a page turn's direction: the ribbons' order, the home spread first, an item's page
+-- after a place's.
+local TURN_ORDER = { home = 0, place = 1, item = 1.5, session = 2, lifetime = 3, sessions = 4 }
+-- Opening fades in, closing fades out (the kit's MOTION.md), in seconds.
+local OPEN_FADE, CLOSE_FADE = 0.16, 0.12
+-- The live dot's glow breathes between these, each way in this long (the kit's StatsBreathe).
+local BREATHE_LOW, BREATHE_HIGH, BREATHE = 0.35, 0.8, 1.2
 
 -- The owner of the book's Core callbacks and WoW event registrations (CORE-R23).
 local OWNER = "Pagle_Stats book"
@@ -70,6 +80,8 @@ local LEATHER_PARTS = { "search" }
 ---@field leather StatsBookLeatherView
 ---@field corners Texture[]
 ---@field papers table<StatsBookSide, StatsBookParchmentView>
+---@field paperFrames table<StatsBookSide, Frame>     -- each page's paper, which a turn's wipes measure
+---@field turnFold Frame?                             -- the page turn's fold (adapter/BookMotion.lua)
 ---@field bodies table<StatsBookSide, Frame>          -- each page's body, inside its padding
 ---@field updating table<StatsBookSide, FontString>   -- "Updating my records…" on each body (STA-R72)
 ---@field crumbs Frame
@@ -79,10 +91,17 @@ local LEATHER_PARTS = { "search" }
 ---@field ribbons StatsBookRibbonButton[]
 ---@field anchors table<StatsBookLeatherPart, Frame>
 
---- One side of one page: its scroll frame on the side's body, and the content the renderer draws on.
----@class StatsBookPageView
+--- One side of one page: the clip frame on the side's paper that a page turn narrows (adapter/BookMotion.lua), its
+--- scroll frame over the side's body, and the content the renderer draws on.
+---@class StatsBookPageView: StatsTurnSide
 ---@field scroll ScrollFrame
 ---@field content Frame
+
+--- A page turn under way: the sides it turns from and to, and the owner its motion plays on.
+---@class StatsBookTurning
+---@field from table<StatsBookSide, StatsBookPageView>
+---@field to table<StatsBookSide, StatsBookPageView>
+---@field owner table?
 
 --- The Stats book: its router, its frame once made, and each page's sides.
 ---@class StatsBook
@@ -91,6 +110,12 @@ local LEATHER_PARTS = { "search" }
 ---@field pages table<string, StatsBookPageView>   -- by "page:side", made at their first draw
 ---@field private leatherRenderers table<StatsBookLeatherPart, StatsBookLeatherRenderer>
 ---@field private drawnKey string?                 -- the place last drawn, to keep its scroll on a redraw
+---@field private drawnPage StatsBookPage?          -- the page last drawn, which a turn turns from
+---@field drawnSides table<StatsBookSide, StatsBookPageView> -- its sides
+---@field turning StatsBookTurning?          -- the page turn under way
+---@field closing table?                             -- the close fading out now: its owner, which the fade runs on
+---@field private breathing boolean                  -- the live dot breathes
+---@field private liveCasts integer?                 -- the live line's Casts when last drawn
 ---@field private drawNextFrame fun()              -- QueueDraw's redraw, once per frame (ns.OncePerFrame)
 ---@field private ticker table?                    -- the live-line tick, while open
 ---@field listening boolean                        -- Core's events are subscribed
@@ -104,6 +129,8 @@ ns.book = setmetatable({
 	pages = {},
 	leatherRenderers = {},
 	listening = false,
+	drawnSides = {},
+	breathing = false,
 	drawNextFrame = ns.OncePerFrame(function()
 		ns.book:Draw()
 	end),
@@ -177,6 +204,7 @@ local function buildPage(frame, side)
 	paper:SetSize(PAGE_WIDTH, PAGE_HEIGHT)
 	paper:SetPoint("BOTTOMLEFT", side == "left" and SIDE or SIDE + PAGE_WIDTH, FOOT)
 	paper:EnableMouse(true)
+	frame.paperFrames[side] = paper
 	frame.papers[side] = ns.NewBookParchment(paper, side == "left" and "RIGHT" or "LEFT")
 	local body = CreateFrame("Frame", nil, paper)
 	body:SetPoint("TOPLEFT", PAD_X, -PAD_TOP)
@@ -276,7 +304,7 @@ local function build(book)
 	end)
 	frame.leather = ns.NewBookLeather(frame)
 	frame.corners = ns.NewBookCorners(frame)
-	frame.papers, frame.bodies, frame.updating = {}, {}, {}
+	frame.papers, frame.paperFrames, frame.bodies, frame.updating = {}, {}, {}, {}
 	buildPage(frame, "left")
 	buildPage(frame, "right")
 
@@ -301,11 +329,13 @@ local function build(book)
 	frame.close:SetScript("OnClick", function()
 		book:Hide()
 	end)
+	-- hidden before it hears its OnHide: the close sound is for a book that was open
+	frame:Hide()
 	frame:SetScript("OnHide", function()
 		book:Hidden()
+		ns.BookSound("close")
 	end)
 	table.insert(UISpecialFrames, FRAME_NAME)
-	frame:Hide()
 	return frame
 end
 
@@ -331,7 +361,7 @@ end
 --- Opens the book where it was left (the home spread at the first opening after a login or `/reload`), or closes it
 --- (STA-R70). Every entry point calls it.
 function Book:Toggle()
-	if self:IsShown() then
+	if self:IsShown() and not self.closing then
 		self:Hide()
 	else
 		self:Open()
@@ -347,27 +377,120 @@ function Book:Open(target)
 	end
 	local frame = self.frame or build(self)
 	self.frame = frame
+	local turnable = frame:IsShown() and not self.closing
+	if self.closing then
+		-- opened again while fading out: it stays, whole
+		ns.StopMotion(self.closing)
+		self.closing = nil
+		frame:SetAlpha(1)
+	end
 	if not frame:IsShown() then
 		listen(self)
 		position(frame)
+		ns.FitToScreen(frame, EXTENT_WIDTH, EXTENT_HEIGHT)
 		frame:Show()
+		ns.BookSound("open")
+		-- it fades in (0.16 s, ease-out), the kit's OpenBook
+		ns.SyncMotion()
+		ns.Animate(frame, {
+			{
+				dur = OPEN_FADE,
+				ease = ns.Ease.out,
+				keys = { { 0, { 0 } }, { 1, { 1 } } },
+				apply = function(v)
+					frame:SetAlpha(v[1])
+				end,
+			},
+		})
 		self.ticker = C_Timer.NewTicker(ns.LIVE_LINE_TICK, function()
 			self:Tick()
 		end)
 	end
-	self:Draw()
+	self:Draw(turnable)
 end
 
---- Closes the book.
+--- Closes the book: it fades out (0.12 s, easing in), the kit's CloseBook, then hides; at once with the motion off.
+--- The fade runs on an owner of its own, never the frame, which the driver would drop unfinished were the frame to stop
+--- showing mid-fade (UIParent hidden), stranding the close; and the close ends on the clock too, after the fade's
+--- time, so it ends whether or not frames are drawn.
 function Book:Hide()
-	if self.frame then
-		self.frame:Hide()
+	local frame = self.frame
+	if not frame or not frame:IsShown() then
+		self:Hidden()
+		return
 	end
-	self:Hidden()
+	if self.closing then
+		return
+	end
+	if not ns.SyncMotion() then
+		frame:Hide()
+		self:Hidden()
+		return
+	end
+	local closing = {}
+	self.closing = closing
+	ns.StopMotion(frame) -- an opening fade still running gives way
+	-- this close's end, once: a later open or close has its own
+	local function finish()
+		if self.closing == closing then
+			ns.StopMotion(closing)
+			self.closing = nil
+			frame:Hide()
+			frame:SetAlpha(1)
+		end
+	end
+	ns.Animate(closing, {
+		{
+			dur = CLOSE_FADE,
+			ease = ns.Bezier(0.42, 0, 1, 1),
+			keys = { { 0, { 1 } }, { 1, { 0 } } },
+			apply = function(v)
+				frame:SetAlpha(v[1])
+			end,
+		},
+	}, finish)
+	C_Timer.After(CLOSE_FADE, finish)
 end
 
---- The book has closed, however it closed (its close button, Esc, a toggle): the tick stops.
+-- Settles the page turn under way, if any, at once: its new spread whole, its old one gone.
+---@param book StatsBook
+local function settleTurn(book)
+	local turning = book.turning
+	if not turning then
+		return
+	end
+	book.turning = nil
+	if turning.owner then
+		ns.StopMotion(turning.owner)
+	end
+	for _, view in pairs(turning.from) do
+		view.clip:Hide()
+	end
+	for _, view in pairs(book.drawnSides) do
+		ns.RevealSide(view, 0, 1)
+	end
+	local fold = book.frame and book.frame.turnFold
+	if fold then
+		fold:Hide()
+	end
+end
+
+--- The book has closed, however it closed (its close button, Esc, a toggle): the tick stops, a turn under way
+--- settles, and the live dot rests.
 function Book:Hidden()
+	if self.closing then
+		ns.StopMotion(self.closing)
+		self.closing = nil
+	end
+	settleTurn(self)
+	local frame = self.frame
+	if frame then
+		frame:SetAlpha(1)
+		if self.breathing then
+			ns.StopMotion(frame.live.glow)
+		end
+	end
+	self.breathing = false
 	if self.ticker then
 		self.ticker:Cancel()
 		self.ticker = nil
@@ -394,8 +517,9 @@ function Book:Tick()
 	end
 end
 
--- Side `side` of page `page`: its scroll frame and content on the side's body, made at its first draw. The content
--- scrolls with the mouse wheel when the renderer draws more than the body holds (STA-R70).
+-- Side `side` of page `page`: its clip frame on the side's paper, and its scroll frame and content over the side's
+-- body, made at its first draw. The content scrolls with the mouse wheel when the renderer draws more than the body
+-- holds (STA-R70); the clip, the paper's whole width, is what a page turn narrows.
 ---@param book StatsBook
 ---@param page StatsBookPage
 ---@param side StatsBookSide
@@ -404,9 +528,13 @@ local function pageOf(book, page, side)
 	local key = page .. ":" .. side
 	local view = book.pages[key]
 	if not view then
-		local body = (book.frame --[[@as StatsBookFrame]]).bodies[side]
-		local scroll = CreateFrame("ScrollFrame", nil, body) --[[@as ScrollFrame]]
-		scroll:SetAllPoints()
+		local frame = book.frame --[[@as StatsBookFrame]]
+		local body, paper = frame.bodies[side], frame.paperFrames[side]
+		local clip = CreateFrame("Frame", nil, paper)
+		clip:SetClipsChildren(true)
+		clip:SetAllPoints()
+		local scroll = CreateFrame("ScrollFrame", nil, clip) --[[@as ScrollFrame]]
+		scroll:SetAllPoints(body)
 		local content = CreateFrame("Frame", nil, scroll)
 		content:SetSize(BODY_WIDTH, BODY_HEIGHT)
 		scroll:SetScrollChild(content)
@@ -415,7 +543,7 @@ local function pageOf(book, page, side)
 			local offset = self:GetVerticalScroll() - delta * WHEEL_STEP
 			self:SetVerticalScroll(math.max(0, math.min(offset, self:GetVerticalScrollRange())))
 		end)
-		view = { scroll = scroll, content = content }
+		view = { clip = clip, paper = paper, scroll = scroll, content = content }
 		book.pages[key] = view
 	end
 	return view
@@ -573,6 +701,11 @@ function Book:DrawLive()
 	local live = Pagle.GetSession()
 	if live == nil then
 		frame.live:Hide()
+		if self.breathing then
+			ns.StopMotion(frame.live.glow)
+			self.breathing = false
+		end
+		self.liveCasts = nil
 		return
 	end
 	local session = live ---@type StatsSession|PagleSession
@@ -591,12 +724,39 @@ function Book:DrawLive()
 	)
 	frame.live:SetWidth(frame.live.label:GetStringWidth() + 18)
 	frame.live:Show()
+	-- a Cast rewrites the line, its ink fading up (the kit's MOTION.md)
+	if self.liveCasts and self.liveCasts ~= session.casts then
+		ns.InkIn(frame.live.label)
+	end
+	self.liveCasts = session.casts
+	-- the dot breathes for as long as the book is open in a Session: its glow 35% to 80%, 1.2 s each way
+	if not self.breathing then
+		self.breathing = true
+		local glow = frame.live.glow
+		ns.SyncMotion()
+		ns.Animate(glow, {
+			{
+				dur = BREATHE,
+				ease = ns.Ease.inOut,
+				iter = "infinite",
+				dir = "alternate",
+				keys = { { 0, { BREATHE_LOW } }, { 1, { BREATHE_HIGH } } },
+				apply = function(v)
+					glow:SetAlpha(v[1])
+				end,
+			},
+		})
+	end
 end
 
 --- Draws the page shown, if the book is open: each side with its renderer, on its own scrolling frame, a side with
 --- none left blank, or "Updating my records…" on both while the projection updates (STA-R72); then the leather: the
---- breadcrumbs, the ribbons, the nameplate, the live line and the anchors, which so see what the pages chose.
-function Book:Draw()
+--- breadcrumbs, the ribbons, the nameplate, the live line and the anchors, which so see what the pages chose. With
+--- `turnable` (the book was open and is asked somewhere else), a new spread comes in by the page turn
+--- (adapter/BookMotion.lua): forward to a later ribbon, backward to an earlier one, the crumbs changing as the leaf
+--- passes the spine, the ribbons' lengths easing.
+---@param turnable boolean?
+function Book:Draw(turnable)
 	local frame = self.frame
 	if not frame or not frame:IsShown() then
 		return
@@ -606,26 +766,67 @@ function Book:Draw()
 	local key = keyOf(place)
 	local moved = key ~= self.drawnKey
 	self.drawnKey = key
-	for _, view in pairs(self.pages) do
-		view.scroll:Hide()
+	local fromPage, fromSides = self.drawnPage, self.drawnSides
+	local turn = turnable and not updating and fromPage ~= nil and fromPage ~= place.page
+	if turn then
+		settleTurn(self)
 	end
+	-- what a turn shows besides the page drawn: the spread it turns from
+	local keep = {}
+	local turning = self.turning
+	for _, sides in ipairs({ turning and turning.from or {}, turning and turning.to or {}, turn and fromSides or {} }) do
+		for _, view in pairs(sides) do
+			keep[view] = true
+		end
+	end
+	for _, view in pairs(self.pages) do
+		if not keep[view] then
+			view.clip:Hide()
+		end
+	end
+	local sides = {}
 	for _, side in ipairs(ns.BOOK_SIDES) do
 		frame.updating[side]:SetShown(updating)
 		local renderer = not updating and self.router:Renderer(place.page, side)
 		if renderer then
 			local view = pageOf(self, place.page, side)
-			view.scroll:Show()
+			if not keep[view] then
+				ns.RevealSide(view, 0, 1)
+			end
 			local height = renderer(view.content, self.router:Place())
 			view.content:SetHeight(math.max(1, height or BODY_HEIGHT))
 			if moved then
 				view.scroll:SetVerticalScroll(0)
 			end
+			sides[side] = view
 		end
 	end
-	drawCrumbs(self)
+	self.drawnPage = not updating and place.page or nil
+	self.drawnSides = sides
+	if turn then
+		---@type StatsBookTurning
+		local turnNow = { from = fromSides, to = sides }
+		self.turning = turnNow
+		turnNow.owner = ns.PlayTurn(frame, {
+			from = fromSides,
+			to = sides,
+			forward = (TURN_ORDER[place.page] or 0) > (TURN_ORDER[fromPage] or 0),
+			papers = frame.paperFrames,
+			midway = function()
+				drawCrumbs(self)
+			end,
+			done = function()
+				if self.turning == turnNow then
+					settleTurn(self)
+				end
+			end,
+		})
+	else
+		drawCrumbs(self)
+	end
 	local chosen = ns.ChosenRibbon(place, ns.CurrentPlace(Pagle.GetConditions()))
 	for _, ribbon in ipairs(frame.ribbons) do
-		ribbon:SetRibbon(ribbon.words, LOOK.ribbons[ribbon.id], ribbon.id == chosen)
+		ribbon:SetRibbon(ribbon.words, LOOK.ribbons[ribbon.id], ribbon.id == chosen, turnable)
 	end
 	drawPlate(frame, updating)
 	self:DrawLive()

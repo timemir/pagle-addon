@@ -272,7 +272,7 @@ describe("a set's page, right side (HNT-R66)", function()
 
 		local progress = run.ns.BoardSetPage("fixture_dusk").progress
 
-		assert.are.same({ 0.5, "1 / 2" }, { progress.fill, progress.label })
+		assert.are.same({ 0.5, "1 of 2 done" }, { progress.fill, progress.label })
 	end)
 
 	it("lists every current Hunt with its seal date or its tracker label, whatever the filter (HNT-R82)", function()
@@ -455,7 +455,7 @@ end)
 describe("a set's page on the board (HNT-R66)", function()
 	--- The set mode's right page.
 	local function rightPage(run)
-		return run.ns.board.pages["set:right"]
+		return run.ns.board:Page(run.ns.board.router:Place(), "right")
 	end
 
 	it("writes the name, the title earned with its seal, the progress, the line, the note and the checklist", function()
@@ -467,22 +467,24 @@ describe("a set's page on the board (HNT-R66)", function()
 		opened(run, { mode = "set", set = "fixture_dusk" })
 
 		local texts = shownTexts(rightPage(run))
-		-- the pressed seal stacks its word, the short date and the year
+		-- the kicker; the pressed seal stacks its word, the short date and the year; the checklist's heading
 		assert.are.same({
+			"HUNT SET",
 			"EARNED",
 			"12 Mar",
 			"2026",
 			"Dusk",
 			"Earned: the Duskwatcher",
-			"1 / 2",
+			"1 of 2 done",
 			"The first tier of every Hunt earns the title.",
 			"After the lamps are lit.",
-		}, { unpack(texts, 1, 8) })
+			"HUNTS IN THIS SET",
+		}, { unpack(texts, 1, 10) })
 		assert.are.same({ "Snapper Run", "12 Mar" }, shownTexts(buttonWith(rightPage(run), "Snapper Run")))
 		assert.are.same({ "Hefty Blackmouth", "22:00" }, shownTexts(buttonWith(rightPage(run), "Hefty Blackmouth")))
 		assert.are.same({ "Old Sunscale", "3 Feb" }, shownTexts(buttonWith(rightPage(run), "Old Sunscale")))
 		-- and the "Retired" heading, in small caps, below the current Hunts and above the Retired ones
-		assert.are.equal(15, #texts)
+		assert.are.equal(17, #texts)
 		local heading
 		for _, child in ipairs(rightPage(run).children) do
 			if child.text == "RETIRED" and child.shown then
@@ -507,13 +509,16 @@ describe("a set's page on the board (HNT-R66)", function()
 		assert.is_true(retired:GetAlpha() < current:GetAlpha())
 	end)
 
-	it("hides the seal until the title is earned, and fills the ink bar with the set's progress", function()
+	it('shows the dashed "not yet" seal until the title is earned, and fills the ink bar with the progress', function()
 		local run = start()
 		useState(run, { fixture_snapper = reached(1) })
 		opened(run, { mode = "set", set = "fixture_dusk" })
 
 		local texts = shownTexts(rightPage(run))
-		assert.are.same({ "Dusk", "Earns the title the Duskwatcher", "1 / 2" }, { unpack(texts, 1, 3) })
+		assert.are.same(
+			{ "HUNT SET", "not yet", "Dusk", "Earns the title the Duskwatcher", "1 of 2 done" },
+			{ unpack(texts, 1, 5) }
+		)
 		local bar
 		for _, child in ipairs(rightPage(run).children) do
 			if child.SetBar then
@@ -549,6 +554,6 @@ describe("a set's page on the board (HNT-R66)", function()
 
 		local texts = shownTexts(rightPage(run))
 
-		assert.are.equal("Updating from your Catch log…", texts[3])
+		assert.are.equal("Updating from your Catch log…", texts[5])
 	end)
 end)

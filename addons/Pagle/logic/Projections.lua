@@ -40,12 +40,25 @@ ns.PROJECTION_BUDGET = 4
 ---@field call fun(fn: function, ...: any): ... -- calls a Module's function; an error is reported, not raised (securecallfunction)
 ---@field budget? number                 -- ms per frame; default PROJECTION_BUDGET
 ---@field syncLimit? integer             -- default PROJECTION_SYNC_LIMIT
+---@field timings? fun(): PagleProjectionTiming[]? -- where a catch-up's or rebuild's timing goes once it finishes,
+--- while this login's load timings are kept (dev mode, #262); nil, and nothing is timed, otherwise
+
+--- How one catch-up or rebuild ran (#262, launch re-verification checks 2 and 10), in the clock's milliseconds.
+---@class PagleProjectionTiming
+---@field name string       -- the Module's name, or Core's own projection's ("fieldReport", "wallet")
+---@field mode "replay"|"rebuild"
+---@field started number    -- the clock when it started
+---@field finished number?  -- the clock when its finish (the stored values and done) returned
+---@field applied integer   -- the entries it applied
+---@field frames integer    -- the frames it took a step in, the one it started in included
+---@field longest number    -- the most time it took in one frame, against the per-frame budget (LOG-R71)
 
 --- A projection, as `M:NewProjection` returns it (LOG-R70).
 ---@class PagleProjection
 ---@field package def PagleProjectionDef
 ---@field package iterate fun(afterSeq: integer): fun(): PagleRecord?
 ---@field package module string?      -- the Module whose records it gets (LOG-R41); nil for Core's own
+---@field package name string         -- the Module's name, or Core's own projection's, for its timings
 ---@field package machinery PagleProjections
 ---@field package state table?         -- the state apply builds
 ---@field package updating boolean     -- not caught up: before Start, and while catching up or rebuilding
@@ -66,6 +79,10 @@ Projection.__index = Projection
 ---@field live (fun(): PagleRecord?)?  -- after the finish: the entries appended since the target, once read
 ---@field liveTo integer               -- the log's length when `live` was made
 ---@field inDone boolean?              -- while its done runs
+---@field timing PagleProjectionTiming? -- while it is timed (options.timings), until its finish has run
+---@field timings PagleProjectionTiming[]? -- where `timing` goes then
+---@field frame integer?               -- the machinery's frame its last timed step ran in
+---@field spent number?                -- the time its timed steps took in that frame
 
 --- The machinery: every projection, in the order they were added.
 ---@class PagleProjections
@@ -76,6 +93,7 @@ Projection.__index = Projection
 ---@field package deferred PagleRecord[] -- live entries handed over while an apply or done ran
 ---@field package chunked PagleProjection[] -- running in chunks across frames
 ---@field package stepping boolean     -- a frame step is scheduled
+---@field package frame integer        -- the frame steps run so far, for the timings
 ---@field package idle fun()[]         -- WhenIdle hooks waiting
 local Projections = {}
 Projections.__index = Projections
@@ -89,6 +107,7 @@ function ns.NewProjections(options)
 		deferred = {},
 		chunked = {},
 		stepping = false,
+		frame = 0,
 		idle = {},
 	}, Projections)
 end
@@ -124,9 +143,10 @@ end
 ---@param def PagleProjectionDef
 ---@param iterate fun(afterSeq: integer): fun(): PagleRecord? the Module's records after a seq (M:IterateCatches)
 ---@param module string? the Module's def.name; nil for Core's own projections, which get no Module records
+---@param name string? what its timings call it (#262): Core's own projection's name; a Module's is `module`
 ---@return PagleProjection? projection
 ---@return string? problem
-function Projections:Add(def, iterate, module)
+function Projections:Add(def, iterate, module, name)
 	local problem = problemWith(def)
 	if problem then
 		return nil, problem
@@ -136,6 +156,7 @@ function Projections:Add(def, iterate, module)
 		def = def,
 		iterate = iterate,
 		module = module,
+		name = name or module or "?",
 		machinery = self,
 		state = type(db.projection) == "table" and db.projection or nil,
 		updating = true,
@@ -193,6 +214,9 @@ local function applyOne(projection, record, mode, run)
 	during(machinery, mode, function()
 		machinery.options.call(projection.def.apply, projection.state, record, mode)
 	end)
+	if run and run.timing then
+		run.timing.applied = run.timing.applied + 1
+	end
 	if not run then
 		projection.def.db.lastSeq = record.seq
 	elseif mode == "replay" then
@@ -215,8 +239,11 @@ function Projections:begin(projection, target, force)
 	local db = def.db
 	local rebuild = force or mustRebuild(self, def)
 	local from = rebuild and 0 or db.lastSeq
+	local timings = self.options.timings and self.options.timings()
+	local started = timings and self.options.clock() or 0
 	projection.updating = true
-	projection.run = {
+	---@type PagleProjectionRun
+	local run = {
 		mode = rebuild and "rebuild" or "replay",
 		target = target,
 		-- Never built, or the Module's DB lost (LOG-R76, LOG-R77). A rebuild cut short leaves this as it was.
@@ -227,6 +254,18 @@ function Projections:begin(projection, target, force)
 		phase = "apply",
 		liveTo = 0,
 	}
+	projection.run = run
+	if timings then
+		run.timings = timings
+		run.timing = {
+			name = projection.name,
+			mode = run.mode,
+			started = started,
+			applied = 0,
+			frames = 0,
+			longest = 0,
+		}
+	end
 	if rebuild then
 		projection.state = self.options.call(def.reset) or {}
 	end
@@ -234,10 +273,38 @@ function Projections:begin(projection, target, force)
 		self.chunked[#self.chunked + 1] = projection
 		self:schedule()
 	else
-		local run = projection.run
-		while projection.run == run and self:advance(projection) do
+		while projection.run == run and self:timedAdvance(projection) do
 		end
 	end
+end
+
+-- Takes the next step of a projection's run as advance does, timing it while the run is timed (#262): the step's time
+-- counts toward the frame it ran in, and once the finish has run the timing is complete and goes in its list.
+---@package
+---@param projection PagleProjection
+---@return boolean
+function Projections:timedAdvance(projection)
+	local run = projection.run
+	local timing = run and run.timing
+	if not run or not timing then
+		return self:advance(projection)
+	end
+	local clock = self.options.clock
+	local before = clock()
+	local more = self:advance(projection)
+	local now = clock()
+	if run.frame ~= self.frame then
+		run.frame, run.spent = self.frame, 0
+		timing.frames = timing.frames + 1
+	end
+	run.spent = run.spent + (now - before)
+	timing.longest = math.max(timing.longest, run.spent)
+	if run.phase == "live" then
+		timing.finished = now
+		run.timing = nil
+		run.timings[#run.timings + 1] = timing
+	end
+	return more
 end
 
 -- Takes the next step of a projection's run (PagleProjectionRun). Returns false once the run is over.
@@ -333,6 +400,7 @@ end
 ---@package
 function Projections:step()
 	local clock, budget = self.options.clock, self.options.budget or ns.PROJECTION_BUDGET
+	self.frame = self.frame + 1
 	local started, costliest, stepped = clock(), 0, false
 	while #self.chunked > 0 do
 		local projection = self.chunked[1]
@@ -341,7 +409,7 @@ function Projections:step()
 		end
 		stepped = true
 		local before = clock()
-		if not self:advance(projection) then
+		if not self:timedAdvance(projection) then
 			table.remove(self.chunked, 1)
 		end
 		local now = clock()
@@ -481,9 +549,10 @@ end
 ---@param projections PagleProjections
 ---@param def PagleProjectionDef
 ---@param iterate fun(afterSeq: integer?): fun(): PagleRecord? the log's records after a seq (Pagle.IterateCatches)
+---@param name string what its load timings call it (#262), such as "fieldReport"
 ---@return PagleProjection
-function ns.AddCoreProjection(projections, def, iterate)
-	local projection, problem = projections:Add(def, iterate)
+function ns.AddCoreProjection(projections, def, iterate, name)
+	local projection, problem = projections:Add(def, iterate, nil, name)
 	if not projection then
 		error(problem, 2)
 	end

@@ -196,7 +196,7 @@ describe("the home spread's right page, Right now (stats.md › UI › Home spre
 			assert.is_true(view.noWatches.shown)
 		end)
 
-		it("writes each watch after a pencil mark, its band in red, each opening its entry", function()
+		it("writes each watch after the kit's pen, its band in red, each opening its entry", function()
 			local loaded, fake, book = ready()
 			-- 100 Casts on the lo side of Darkshore: 50 Blackmouth, then 50 got away. k/n = 0.5, since 50:
 			-- P = 0.5^50, very unlucky (STA-R52); Your odds is known at 100 Casts (STA-R43).
@@ -217,7 +217,9 @@ describe("the home spread's right page, Right now (stats.md › UI › Home spre
 				"Raw Mackerel, Auberdine: 100 Casts, none yet.",
 			}, watchLines(book))
 			local line = rightNow(book).watches[1]
-			assert.are.equal(loaded.ns.BOOK_TEXTURES.pencil, line.mark.texture)
+			assert.are.equal(loaded.ns.ATLASES.Stats.file, line.mark.texture)
+			local hand = loaded.ns.BOOK_LOOK.hand
+			assert.are.same(hand, { unpack(line.mark.vertexColor, 1, 3) })
 			assert.is_false(rightNow(book).noWatches.shown)
 			rightNow(book).watches[2]:Click()
 			assert.are.same({ page = "place", area = AUBERDINE, item = MACKEREL }, book.router:Place())

@@ -46,6 +46,7 @@ logic\Settings.lua
 logic\Slash.lua
 logic\Dev.lua
 logic\Probe.lua
+logic\LoadTimings.lua
 logic\Tour.lua
 logic\Wallet.lua
 logic\Goods.lua
@@ -108,6 +109,7 @@ adapter\ReloadReminder.lua
 adapter\FieldReportText.lua
 adapter\FieldReportBox.lua
 adapter\ShopArt.lua
+adapter\ShopMotion.lua
 adapter\Shop.lua
 adapter\Tour.lua
 adapter\Login.lua

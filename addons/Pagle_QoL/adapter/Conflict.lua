@@ -28,6 +28,104 @@ local CONFLICT_NOTE, RELOAD_NOTE = "PagleQoLConflictNote", "PagleQoLReloadNote"
 ---@field Title FontString
 ---@field primary PagleQoLNoteButton
 ---@field secondary PagleQoLNoteButton
+---@field wax PagleQoLWax
+---@field closing boolean? fading out after a choice, so a second click chooses nothing
+
+--- The wax, anchored by its centre so it can be pressed on from 1.8 times its size.
+---@class PagleQoLWax: PagleSprite
+---@field w0 number its size at rest
+---@field h0 number
+
+-- The notes' sounds (the field art kit's SOUND.md): the client's own sound kits, by id, on the SFX channel, so the
+-- player's SFX volume and mute rule them. UI foley, the same in every sound set: IG_MAINMENU_OPEN as a note appears,
+-- IG_MAINMENU_CLOSE as it goes, IG_MAINMENU_OPTION for a click on either choice.
+local SOUND_OPEN, SOUND_CLOSE, SOUND_CLICK = 850, 851, 852
+
+-- Whether the notes move: Core's Animations setting (announcements.md › Contracts), read each time one opens or
+-- closes. Off, a note shows and goes at once, its wax already on.
+local function syncMotion()
+	ns.motion = Pagle.IsAnimationsOn() ~= false
+end
+
+-- Puts the wax at rest: its own size, fully drawn.
+---@param note PagleQoLNote
+local function settleWax(note)
+	note.wax:SetSize(note.wax.w0, note.wax.h0)
+	note.wax:SetAlpha(1)
+end
+
+-- A note appearing (the kit's MOTION.md and P.OpenNote): the open sound, the note fading in over 0.2 s (ease-out), and
+-- its wax pressed on as it lands, 1.8 times its size to 0.95 by 0.29 s, settling at its own by 0.38 s
+-- (cubic-bezier(.3, 1.5, .5, 1)), fading in with it.
+---@param note PagleQoLNote
+local function openNote(note)
+	note.closing = false
+	PlaySound(SOUND_OPEN, "SFX")
+	syncMotion()
+	ns.StopMotion(note)
+	local wax = note.wax
+	ns.Animate(note, {
+		{
+			dur = 0.2,
+			ease = ns.Ease.out,
+			keys = { { 0, { 0 } }, { 1, { 1 } } },
+			apply = function(v)
+				note:SetAlpha(v[1])
+			end,
+		},
+		{
+			dur = 0.3,
+			delay = 0.08,
+			ease = ns.Bezier(0.3, 1.5, 0.5, 1),
+			keys = { { 0, { 1.8, 0 } }, { 0.7, { 0.95, 1 } }, { 1, { 1, 1 } } },
+			apply = function(v)
+				wax:SetSize(wax.w0 * v[1], wax.h0 * v[1])
+				wax:SetAlpha(v[2])
+			end,
+		},
+	})
+end
+
+-- A note going after a choice (the kit's P.CloseNote): the close sound, and the note fading out over 0.15 s
+-- (ease-in) from where it is, then hiding. Its wax settles at once.
+---@param note PagleQoLNote
+local function closeNote(note)
+	note.closing = true
+	PlaySound(SOUND_CLOSE, "SFX")
+	syncMotion()
+	ns.StopMotion(note)
+	settleWax(note)
+	ns.Animate(note, {
+		{
+			dur = 0.15,
+			ease = ns.Bezier(0.42, 0, 1, 1),
+			keys = { { 0, { note:GetAlpha() } }, { 1, { 0 } } },
+			apply = function(v)
+				note:SetAlpha(v[1])
+			end,
+		},
+	}, function()
+		note:Hide()
+	end)
+end
+
+-- A choice's button: the click sound, the note going, then the choice. While the note fades out a click chooses
+-- nothing.
+---@param note PagleQoLNote
+---@param button PagleQoLNoteButton
+---@param choose fun()?
+local function onChoice(note, button, choose)
+	button:SetScript("OnClick", function()
+		if note.closing then
+			return
+		end
+		PlaySound(SOUND_CLICK, "SFX")
+		closeNote(note)
+		if choose then
+			choose()
+		end
+	end)
+end
 
 -- Shows a pinned note named `name`, asking `title` with the choices `primary` and `secondary`: a click on one hides
 -- the note, then runs its `onPrimary` or `onSecondary` (none for a choice that only closes it). It is a dialog QoL
@@ -49,8 +147,11 @@ local function showNote(name, title, primary, secondary, onPrimary, onSecondary)
 	note:SetClampedToScreen(true)
 	note:EnableMouse(true)
 	ns.PlaceSprite(ns.ArtSprite(note, "Field", "pin", "BACKGROUND"), note, 0, 0)
-	-- The wax on the note's top edge, half above it.
-	ns.PlaceSprite(ns.ArtSprite(note, "Field", "wax"), note, 220 - 29, -28)
+	-- The wax on the note's top edge, half above it, anchored by its centre for the press.
+	local wax = ns.ArtSprite(note, "Field", "wax") --[[@as PagleQoLWax]]
+	wax.w0, wax.h0 = wax:GetSize()
+	wax:SetPoint("CENTER", note, "TOPLEFT", 220 - 29 - wax.box[1] + wax.w0 / 2, 28 + wax.box[2] - wax.h0 / 2)
+	note.wax = wax
 	note.Title = ns.ArtText(note, "NoteHead")
 	note.Title:SetWordWrap(true)
 	note.Title:SetJustifyH("CENTER")
@@ -69,18 +170,23 @@ local function showNote(name, title, primary, secondary, onPrimary, onSecondary)
 	end
 	note.primary:SetPoint("LEFT", row, "LEFT")
 	note.secondary:SetPoint("RIGHT", row, "RIGHT")
-	note.primary:SetScript("OnClick", function()
-		note:Hide()
-		onPrimary()
-	end)
-	note.secondary:SetScript("OnClick", function()
-		note:Hide()
-		if onSecondary then
-			onSecondary()
+	onChoice(note, note.primary, onPrimary)
+	onChoice(note, note.secondary, onSecondary)
+	-- Shown again (the tour's samples), it opens again. Hidden by Esc or the tour, it goes at once, with the close
+	-- sound unless a choice's fade already played it, and is left at rest for its next showing.
+	note:SetScript("OnShow", openNote)
+	note:SetScript("OnHide", function()
+		if not note.closing then
+			PlaySound(SOUND_CLOSE, "SFX")
 		end
+		note.closing = false
+		ns.StopMotion(note)
+		note:SetAlpha(1)
+		settleWax(note)
 	end)
 	table.insert(UISpecialFrames, name)
-	note:Show()
+	-- Made shown, so OnShow doesn't run this time.
+	openNote(note)
 	return note
 end
 

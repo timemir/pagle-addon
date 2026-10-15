@@ -14,6 +14,10 @@ local Pagle = Pagle
 -- daily or weekly reset (CORE-R84). Its own owner, so no other Core file's registration replaces these.
 local OWNER = "Pagle login"
 
+-- #262: the clock once Core's files have loaded (this is the TOC's last). The client reads the SavedVariables between
+-- this and ADDON_LOADED, so with a large PagleLog the gap is mostly that read. Kept only with dev mode on.
+local filesLoaded = debugprofilestop()
+
 --- The Catch log's length at load, before anything is appended this session (LOG-R1). Every entry after it is
 --- "live" to a projection (LOG-R74).
 ---@type integer?
@@ -26,8 +30,15 @@ Pagle.RegisterEvent(OWNER, "ADDON_LOADED", function(_, loadedName)
 		return
 	end
 	Pagle.UnregisterEvent(OWNER, "ADDON_LOADED")
+	local addonLoaded = debugprofilestop()
 	ns.OpenSavedVariables() -- checks PagleLog's format (LOG-R18)
 	ns.loginSeq = #ns.catchLog.data.entries
+	-- #262: with dev mode on, this login's load timings, before any projection starts.
+	ns.StartLoadTimings(ns.db.global, GetServerTime(), ns.loginSeq, {
+		filesLoaded = filesLoaded,
+		addonLoaded = addonLoaded,
+		logOpened = debugprofilestop(),
+	})
 	ns.Migrate(ns.db, ns.PAGLEDB_MIGRATIONS)
 	ns.OpenWallet() -- SHOP-R3
 	ns.RegisterCoreGoods(ns.CORE_PREVIEWS) -- SHOP-R25: before any Module registers its own
@@ -42,6 +53,7 @@ end)
 -- (CORE-R19).
 Pagle.RegisterEvent(OWNER, "PLAYER_LOGIN", function()
 	Pagle.UnregisterEvent(OWNER, "PLAYER_LOGIN")
+	ns.MarkLoadTiming("playerLogin", debugprofilestop()) -- #262
 	ns.SeeCharacter() -- LOG-R25
 	ns.BuildAreaIndex() -- LOG-R23
 	ns.StartConditions() -- LOG-R47: its baseline has real areas, and a Module meets a running service
@@ -52,7 +64,13 @@ end)
 -- The entries step 4 appends come after loginSeq, so projections get them live (LOG-R1).
 Pagle.RegisterEvent(OWNER, "PLAYER_ENTERING_WORLD", function()
 	Pagle.UnregisterEvent(OWNER, "PLAYER_ENTERING_WORLD")
+	ns.MarkLoadTiming("enteringWorld", debugprofilestop()) -- #262
 	ns.StartProjections() -- LOG-R71, LOG-R72
+	if ns.loadTimings then
+		ns.projections:WhenIdle(function()
+			ns.MarkLoadTiming("idle", debugprofilestop()) -- #262: every catch-up and rebuild has finished
+		end)
+	end
 	ns.LogBuild() -- LOG-R36
 	ns.ReadSkill() -- LOG-R31
 end)

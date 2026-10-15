@@ -73,7 +73,7 @@ ns.L = {
 	SETTINGS_SHOP_BUTTON = "Open the Curio Shop",
 	-- A number of minutes: the budget's window (SET-R10) and a card's time fished (ANN-R53).
 	MINUTES = "%d min",
-	-- The Announcement frames (announcements.md › UI): the toast lane's overflow (ANN-R20), stamps beyond the 4 shown
+	-- The Announcement frames (announcements.md › UI): "While you were fighting"'s headlines past its rows (ANN-R36), stamps beyond the 4 shown
 	-- (ANN-R11), the Coins beside the drawn coin with their sum (ANN-R23), the record ruler's stamp (ANN-R22) and the
 	-- splash's hint.
 	ANNOUNCEMENT_MORE = "+%d more",

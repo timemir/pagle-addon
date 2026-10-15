@@ -5,7 +5,7 @@
 -- with the game fully closed.
 --
 --   lua scripts/make-test-log.lua --account <WTF/Account/<ACCT> folder>
---       --preset <level10|level60|catches1000|boardday> [--out <folder>] [--catalogue <Catalogue.lua>]
+--       --preset <level10|level60|catches1000|boardday|big5|big20> [--out <folder>] [--catalogue <Catalogue.lua>]
 --   lua scripts/make-test-log.lua --account <folder> --install [--out <folder>]
 --   lua scripts/make-test-log.lua --account <folder> --restore [--out <folder>]
 --
@@ -28,6 +28,11 @@
 -- the log with the Tackle Board's own logic/ (listed in Pagle_TackleBoard.toc) and writes nothing unless day 0 is lit
 -- by that Notice alone and, advanced to today, day 1 burns a Kindling.
 --
+-- big5 and big20 (#262) write a large log for launch re-verification checks 2 and 10 (the load and rebuild times of
+-- a 5 MB and a 20 MB PagleLog): a Pagle.lua of about 5 or 20 MiB, its PagleLog real-looking Casts written by Core's
+-- codec, sessions of every character in turn, in each charted zone in turn, over several months up to an hour
+-- before the run, one Cast in BIG_AWAY got away. They're checked by decoding, not folded: no level to land.
+--
 -- --install copies the newest stage's Pagle.lua into the account's SavedVariables, only when the account's Pagle.lua
 -- is the one backed up or another test log made here (a boardday one only before its board day ends, as the next
 -- reset would close day 2 unlit too). --restore puts back the backup of the stage whose test log is
@@ -38,7 +43,8 @@
 -- precompiled chunks are refused. Exits 2 on a usage error, 1 when it refuses (nothing is changed then), else 0.
 
 local USAGE = "usage: lua scripts/make-test-log.lua --account <WTF/Account/<ACCT> folder>"
-	.. " (--preset <level10|level60|catches1000|boardday> [--catalogue <Catalogue.lua>] | --install | --restore)"
+	.. " (--preset <level10|level60|catches1000|boardday|big5|big20> [--catalogue <Catalogue.lua>] | --install"
+	.. " | --restore)"
 	.. " [--out <folder>]\n"
 
 -- The repo root, from this script's path: Core's, the Ledger's and the Tackle Board's logic/ and the catalogue are
@@ -71,8 +77,19 @@ local CAST_GAP, CASTS_PER_SESSION, SESSION_GAP, END_GAP = 30, 60, 12 * 3600, 360
 -- How many Catches short of the level a level preset may stop (the ticket's "within three Catches").
 local PROBE_CATCHES = 3
 
--- At most this many Casts in a test log, so a preset that can't land stops.
+-- At most this many Casts in a test log, so a preset that can't land stops. The big presets are sized by bytes, not
+-- landed, so this doesn't hold for them (BIG_MAX_CASTS does).
 local MAX_CASTS = 100000
+
+-- The big presets (#262): the Casts span about BIG_SPAN seconds (several months, longer if the sessions need it),
+-- one in BIG_AWAY got away, and at most BIG_MAX_CASTS. The size is MiB, as the client's file browser shows it, and
+-- the written Pagle.lua must be within BIG_TOLERANCE of it.
+local BIG_SPAN, BIG_AWAY, BIG_MAX_CASTS, BIG_TOLERANCE = 120 * 86400, 8, 1000000, 0.1
+local MIB = 1024 * 1024
+
+-- Lua 5.1 keeps at most this many distinct constants in one function: a SavedVariables file with more distinct
+-- strings than this can't be loaded in one piece ("constant table overflow").
+local LUA_CONSTANTS = 262143
 
 -- What a test Cast may catch, by the kind the Ledger's own ClassifyCatch gives it (a curio by its category): an
 -- ordinary Species, junk or trophy (LED-R5), never a Legend, Noise, an Uncharted item, a container or treasure.
@@ -88,8 +105,11 @@ local PRESETS = {
 	level60 = { level = 60, discovery = 0.3, check = "M4", step = "3" },
 	catches1000 = { catches = 995, milestone = "1,000", short = 5, discoveryXP = 8000, check = "M4", step = "5" },
 	boardday = { board = true, check = "M7", step = "5" },
+	-- #262: launch re-verification checks 2 and 10 (roadmap.md › Launch re-verification checklist).
+	big5 = { bytes = 5 * MIB, checks = "M8 launch re-verification checks 2 and 10" },
+	big20 = { bytes = 20 * MIB, checks = "M8 launch re-verification checks 2 and 10" },
 }
-local PRESET_NAMES = { "level10", "level60", "catches1000", "boardday" }
+local PRESET_NAMES = { "level10", "level60", "catches1000", "boardday", "big5", "big20" }
 
 -- boardday's board: day 0 is BOARD_DAYS board days before the dev's current one, and its `start` record is
 -- BOARD_START_OFFSET seconds into it, its goals' `issue` records at the same time and the Casts from a minute after.
@@ -386,12 +406,14 @@ local function catchable(game, facts)
 	return list
 end
 
--- A caught Cast of one item of `pair` at `time` (catch-log.md › Entry formats), as Core's Append takes it.
-local function castRecord(game, facts, pair, time)
+-- A caught Cast of one item of `pair` at `time` (catch-log.md › Entry formats), as Core's Append takes it, by the
+-- character `char` (by default the one of the dev's last Cast), at its last Skill Reading (else that one's).
+local function castRecord(game, facts, pair, time, char)
 	local area = game.catalogue.GetArea(pair.zone)
+	local skill = char and facts.skills[char] or facts.skill
 	return {
 		kind = "cast",
-		char = facts.char,
+		char = char or facts.char,
 		time = time,
 		outcome = "caught",
 		conditions = {
@@ -400,8 +422,8 @@ local function castRecord(game, facts, pair, time)
 			instance = area and area.continent,
 			zone = pair.zone,
 			subzone = pair.subzone,
-			skillRank = facts.skill.rank,
-			skillMod = facts.skill.mod,
+			skillRank = skill.rank,
+			skillMod = skill.mod,
 			events = {},
 			auras = {},
 		},
@@ -808,6 +830,186 @@ local function checkBoard(game, board, facts, data, layout, now)
 	return found
 end
 
+-- The big logs (big5, big20) ---------------------------------------------------------------------------------------
+
+-- A big preset's log (#262): the header, then `n` Casts in sessions of CASTS_PER_SESSION, CAST_GAP apart, each
+-- session by the next character (all of the dev's in turn) in one charted zone (the next once every character has
+-- fished it), catching the zone's ordinary items at random (`catchable`), one Cast in BIG_AWAY got away. The
+-- sessions start about BIG_SPAN / sessions apart, a little later at random, the last ending END_GAP before `now`.
+local function writeBig(game, facts, log, n, now)
+	local byZone, zones = {}, {}
+	for _, pair in ipairs(catchable(game, facts)) do
+		if not byZone[pair.zone] then
+			byZone[pair.zone] = {}
+			zones[#zones + 1] = pair.zone
+		end
+		local list = byZone[pair.zone]
+		list[#list + 1] = pair
+	end
+	if #zones == 0 then
+		refuse("no charted zone lists an ordinary Species, junk or trophy item to catch; nothing written")
+	end
+	local sessions = math.ceil(n / CASTS_PER_SESSION)
+	local length = CASTS_PER_SESSION * CAST_GAP
+	local gap = math.max(math.floor(BIG_SPAN / sessions), length + 120)
+	-- Session k starts in [first + k * gap, first + (k + 1) * gap - length - 120], so the last ends before now - END_GAP.
+	local first = now - END_GAP - sessions * gap
+	local data, catchLog = newLog(game, log, facts, first - 60)
+	local chars = #log.characters
+	local start
+	for i = 0, n - 1 do
+		local session, nth = math.floor(i / CASTS_PER_SESSION), i % CASTS_PER_SESSION
+		if nth == 0 then
+			start = first + session * gap + math.random(0, gap - length - 120)
+		end
+		local list = byZone[zones[math.floor(session / chars) % #zones + 1]]
+		local record = castRecord(game, facts, list[math.random(#list)], start + nth * CAST_GAP, session % chars + 1)
+		if math.random(BIG_AWAY) == 1 then
+			record.outcome, record.items = "gotAway", {}
+		end
+		catchLog:Append(record)
+	end
+	return data
+end
+
+-- How many Casts make the test Pagle.lua `bytes` long: the file with only the header (`base` bytes), plus each Cast's
+-- line as the client writes it (`"<entry>", -- [<seq>]` and the line end), its entry as long as the average of a
+-- sample of writeBig's.
+local function bigCasts(game, facts, log, original, bytes, now)
+	local header = newLog(game, log, facts, now)
+	local base = #replaceGlobal(original, "PagleLog", header)
+	local sample = writeBig(game, facts, log, 600, now)
+	local length = 0
+	for seq = #header.entries + 1, #sample.entries do
+		length = length + #sample.entries[seq]
+	end
+	local average = length / (#sample.entries - #header.entries)
+	local eol = original:find("\r\n", 1, true) and 2 or 1
+	local size, n = base, 0
+	while size < bytes and n < BIG_MAX_CASTS do
+		n = n + 1
+		size = size + average + #'"", -- []' + #tostring(#header.entries + n) + eol
+	end
+	return n
+end
+
+-- Checks a big log as the game will read it: decoded whole with Core's codec, each Cast by one of the dev's
+-- characters catching an ordinary item (or nothing, got away), and the written Pagle.lua within BIG_TOLERANCE of
+-- the preset's size. Returns what it found and the failures.
+local function checkBig(game, facts, preset, data, text, now)
+	local found = { tags = {}, failures = {}, chars = {}, zones = {}, casts = 0, away = 0, bytes = #text }
+	local function fail(line)
+		found.failures[#found.failures + 1] = line
+	end
+	for _, entry in ipairs(data.entries) do
+		local tag = entry:match("^(%u%d+)|") or "(no tag)"
+		found.tags[tag] = (found.tags[tag] or 0) + 1
+	end
+	local global, kept = { decodeErrors = 0 }, {}
+	for record in game.open(data, global, now):Iterate() do
+		if record.kind == "cast" then
+			found.casts = found.casts + 1
+			found.first, found.last = found.first or record.time, record.time
+			found.chars[record.char] = (found.chars[record.char] or 0) + 1
+			found.zones[record.conditions.zone] = true
+			found.away = found.away + (record.outcome == "gotAway" and 1 or 0)
+			for _, catch in ipairs(record.items) do
+				if not ordinary(game, catch.itemID) then
+					kept[#kept + 1] = catch.itemID
+				end
+			end
+			if not data.characters[record.char] then
+				fail("a Cast is on a character the log hasn't")
+			end
+		end
+	end
+	if global.decodeErrors > 0 then
+		fail(count(global.decodeErrors, "entry", "entries") .. " Core's codec can't decode")
+	end
+	if #kept > 0 then
+		fail("an item no test Cast may catch (LED-R5) is caught: " .. kept[1])
+	end
+	if found.away == 0 then
+		fail("no Cast got away")
+	end
+	local problem = logIdProblem(data, facts)
+	if problem then
+		fail(problem)
+	end
+	if data.test ~= true then
+		fail("PagleLog.test isn't true, so /pagle dev catch would refuse it")
+	end
+	if math.abs(found.bytes - preset.bytes) > BIG_TOLERANCE * preset.bytes then
+		fail(("Pagle.lua is %d bytes, not within 10%% of %d"):format(found.bytes, preset.bytes))
+	end
+	return found
+end
+
+-- A count with thousands separators: 1,234,567.
+local function thousands(n)
+	local text = tostring(math.floor(n))
+	repeat
+		local done
+		text, done = text:gsub("^(%d+)(%d%d%d)", "%1,%2")
+	until done == 0
+	return text
+end
+
+-- The big log's lines: its size, the Casts and where they are, and whether Lua 5.1 loads it in one piece.
+local function printBigFold(found, log, data, preset, game)
+	print(
+		("size: Pagle.lua %s bytes (%.2f MiB), %+.1f%% of the preset's %d MiB"):format(
+			thousands(found.bytes),
+			found.bytes / MIB,
+			(found.bytes - preset.bytes) / preset.bytes * 100,
+			preset.bytes / MIB
+		)
+	)
+	local zones = 0
+	for _ in pairs(found.zones) do
+		zones = zones + 1
+	end
+	print(
+		("C1: %s Casts, %s got away, from %s to %s (%d days), in %s (catalogue: %s)"):format(
+			thousands(found.casts),
+			thousands(found.away),
+			utc(found.first),
+			utc(found.last),
+			math.floor((found.last - found.first) / 86400),
+			count(zones, "zone"),
+			game.label
+		)
+	)
+	local chars = {}
+	for char = 1, #log.characters do
+		chars[#chars + 1] = ("%d %s: %s"):format(char, characterName(log, char), thousands(found.chars[char] or 0))
+	end
+	print("Casts by character: " .. table.concat(chars, ", "))
+	if #data.entries > LUA_CONSTANTS then
+		print(
+			(
+				'note: its %s entries are more distinct strings than Lua 5.1 loads in one piece (%s: "constant table'
+				.. " overflow\"); this script loads it in parts. If the client can't either, its login says so: that"
+				.. " is check 2's answer for this size (LOG-R14)."
+			):format(thousands(#data.entries), thousands(LUA_CONSTANTS))
+		)
+	end
+end
+
+-- What the dev should know before playing a big log: the login rebuilds every projection (check 10), timed only with
+-- dev mode on (#262), and how to time the loading screen (check 2).
+local function bigNote(devOn)
+	print("  Time the loading screen with a stopwatch, as with the real log (check 2). The new logId makes every")
+	print("  projection rebuild from seq 0 at that login (LOG-R72): the rebuild check 10 times.")
+	if devOn then
+		print("  Dev mode is on in this PagleDB, so that login keeps its load timings (PagleDB.global.probe.timings):")
+		print("  log out right after it, then read them with scripts/read-wtf.sh (the Re-verification section).")
+	else
+		print("  Dev mode is off in this PagleDB, so no load timings are kept: /pagle dev on and log out with the")
+		print("  real log first, then run --preset again.")
+	end
+end
+
 -- Stages ---------------------------------------------------------------------------------------------------------
 
 -- The test logs made for the account: each stage folder under `root` with its stage.txt, oldest first.
@@ -1003,6 +1205,10 @@ local function makeTestLog(options, now)
 		math.randomseed(now)
 		data = writeBoard(game, board, facts, log, boardPlan)
 		found = checkBoard(game, board, facts, data, boardPlan, now)
+	elseif preset.bytes then
+		local n = bigCasts(game, facts, log, originals["Pagle.lua"], preset.bytes, now)
+		math.randomseed(now)
+		data = writeBig(game, facts, log, n, now)
 	else
 		local casts, probePair = plan(game, facts, preset, catchable(game, facts))
 		-- The real log, at real times: the last Cast END_GAP before now.
@@ -1017,6 +1223,10 @@ local function makeTestLog(options, now)
 	end
 
 	local text = replaceGlobal(originals["Pagle.lua"], "PagleLog", data)
+	if preset.bytes then
+		found = checkBig(game, facts, preset, data, text, now)
+	end
+	-- A big log may load only in parts (wtf.loadSavedVariables).
 	local written = loadData(text, "Pagle.lua")
 	for name, value in pairs(source) do
 		if name ~= "PagleLog" and not deepEqual(value, written and written[name]) then
@@ -1063,9 +1273,11 @@ local function makeTestLog(options, now)
 	end
 	table.sort(tags)
 	local aim = preset.board and "a started board, day 0 lit and day 1 not, two board days old"
+		or preset.bytes and ("a Pagle.lua of about %d MiB of real-looking Casts"):format(preset.bytes / MIB)
 		or preset.level and ("within %d Catches of level %d"):format(PROBE_CATCHES, preset.level)
 		or ("%d Catches short of the %s-Catch Catch Milestone"):format(preset.short, preset.milestone)
-	print(("== Test log %s: %s (%s exit check step %s)"):format(options.preset, aim, preset.check, preset.step))
+	local purpose = preset.checks or ("%s exit check step %s"):format(preset.check, preset.step)
+	print(("== Test log %s: %s (%s)"):format(options.preset, aim, purpose))
 	print(
 		("real log: %s/Pagle.lua, logId %s, %s"):format(
 			sourceDir,
@@ -1073,18 +1285,21 @@ local function makeTestLog(options, now)
 			count(#log.entries, "entry", "entries")
 		)
 	)
+	local fishers = preset.bytes and "every character"
+		or ("character %d, %s"):format(facts.char, characterName(log, facts.char))
 	print(
-		("test log: logId %s, %s, %s (%s), the Casts on character %d, %s"):format(
+		("test log: logId %s, %s, %s (%s), the Casts on %s"):format(
 			data.logId,
 			count(#data.characters, "character"),
 			count(#data.entries, "entry", "entries"),
 			table.concat(tags, ", "),
-			facts.char,
-			characterName(log, facts.char)
+			fishers
 		)
 	)
 	if preset.board then
 		printBoardFold(found, boardPlan)
+	elseif preset.bytes then
+		printBigFold(found, log, data, preset, game)
 	else
 		printLedgerFold(found, preset, game)
 	end
@@ -1105,6 +1320,10 @@ local function makeTestLog(options, now)
 			)
 		)
 		boardNote(found)
+	elseif preset.bytes then
+		print("  then log in as any of its characters.")
+		local db = type(source.PagleDB) == "table" and source.PagleDB or {}
+		bigNote(type(db.global) == "table" and db.global.dev == true)
 	else
 		print("  then log in as " .. characterName(log, facts.char) .. ".")
 	end

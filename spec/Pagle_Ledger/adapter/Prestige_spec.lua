@@ -127,7 +127,7 @@ describe("Prestiging (LED-R33)", function()
 			loaded.client.update(0.5)
 
 			assert.are.equal(0.55, card.shade.alpha)
-			assert.are.same({ "kit:850 SFX", "kit:1204 SFX" }, { unpack(loaded.client.sounds, sounds + 1) })
+			assert.are.same({ "850 SFX", "1204 SFX" }, { unpack(loaded.client.sounds, sounds + 1) })
 		end
 	)
 

@@ -43,6 +43,7 @@ end
 ---@class TackleBarView: TackleThreeSlice
 ---@field fill TackleSprite
 ---@field value number
+---@field width number
 ---@field SetBar fun(self: TackleBarView, width: number, fill: number)
 
 ---@param parent Frame
@@ -50,14 +51,14 @@ end
 function ns.NewBoardBar(parent)
 	local bar = CreateFrame("Frame", nil, parent) --[[@as TackleBarView]]
 	bar.fill = ns.ArtSprite(bar, "Board", "bar-fill", "ARTWORK", 1)
-	bar.value = 0
+	bar.value, bar.width = 0, 0
 	function bar.SetBar(self, width, fill)
 		fill = math.max(0, math.min(1, fill))
 		ns.SetThreeSlice(self, "Board", "bar", width, 5, "ARTWORK")
 		ns.SetCropSprite(self.fill, "Board", "bar-fill", math.max(3, width * fill))
 		ns.PlaceSprite(self.fill, self, 0, 0)
 		self.fill:SetShown(fill > 0)
-		self.value = fill
+		self.value, self.width = fill, width
 	end
 	return bar
 end

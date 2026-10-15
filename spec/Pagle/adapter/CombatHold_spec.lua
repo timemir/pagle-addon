@@ -36,7 +36,7 @@ end
 -- the drawn words, which the art may set in capitals.
 local function showing(loaded, form)
 	local frame = loaded.ns.announcementFrames[form]
-	return frame and frame.shown and frame.display.announcement.headline.title or nil
+	return frame and frame.display and frame.display.announcement.headline.title or nil
 end
 
 -- What "While you were fighting" lists: each row's title and text, as "TITLE: text".
@@ -59,7 +59,7 @@ end
 describe("the combat hold", function()
 	it(
 		"hides the toast and card on screen in combat, then shows the held banner together with one While you were"
-			.. " fighting toast with both held toast headlines, only the banner's sound playing, and the card again"
+			.. " fighting toast with the three held toast headlines, only the banner's sound playing, and the card again"
 			.. " (ANN-R24, ANN-R35, ANN-R36, ANN-R55, ANN-R93)",
 		function()
 			local loaded, M = loggedIn({ global = { cards = { storedCard() } } })
@@ -73,6 +73,7 @@ describe("the combat hold", function()
 			loaded.client.sounds = {}
 			raise(loaded, M, { rung = "banner", kind = "spec", title = "Level 12" })
 			raise(loaded, M, { rung = "toast.low", kind = "spec", title = "Size record" })
+			raise(loaded, M, { rung = "toast.high", kind = "spec", title = "Hunt completed" })
 			loaded.client.advance(30)
 			assert.are.same({}, loaded.client.sounds)
 
@@ -82,15 +83,15 @@ describe("the combat hold", function()
 			loaded.client.advance(0.1)
 			assert.are.equal("Level 12", showing(loaded, "banner"))
 			local toast = loaded.ns.announcementFrames.toast
-			assert.are.same(
-				{ "While you were fighting", { "NEW SPECIES: Nightfin Snapper", "SIZE RECORD: " } },
-				{ showing(loaded, "toast"), fightingRows(toast) }
-			)
+			assert.are.same({
+				"While you were fighting",
+				{ "NEW SPECIES: Nightfin Snapper", "SIZE RECORD: ", "HUNT COMPLETED: " },
+			}, { showing(loaded, "toast"), fightingRows(toast) })
 			assert.is_nil(card(loaded))
-			loaded.client.advance(4)
+			loaded.client.advance(5.9) -- the banner's stay
 			assert.are.same({ nil, "While you were fighting" }, { showing(loaded, "banner"), showing(loaded, "toast") })
 			assert.is_nil(card(loaded))
-			loaded.client.advance(2)
+			loaded.client.advance(10.7 - 5.9 + 0.01) -- the rest of the digest's
 
 			assert.are.equal("Fishing session", card(loaded))
 			assert.are.same({ SOUNDS .. "driftwood\\banner.ogg SFX" }, loaded.client.sounds)
@@ -98,7 +99,8 @@ describe("the combat hold", function()
 	)
 
 	it(
-		"restarts the 2 s wait when a restriction starts inside it, and never shows a held Nod (ANN-R35, ANN-R36)",
+		"restarts the 2 s wait when a restriction starts inside it, shows a lone held toast as itself, and never shows a"
+			.. " held Nod (ANN-R35, ANN-R36)",
 		function()
 			local loaded, M = loggedIn()
 			raise(loaded, M, { rung = "nod", kind = "spec", title = "New here" })
@@ -114,7 +116,7 @@ describe("the combat hold", function()
 			assert.is_nil(showing(loaded, "toast"))
 			loaded.client.advance(0.1)
 
-			assert.are.equal("While you were fighting", showing(loaded, "toast"))
+			assert.are.equal("New Species", showing(loaded, "toast"))
 			loaded.client.advance(60)
 			assert.is_nil(showing(loaded, "nod"))
 		end
@@ -180,7 +182,10 @@ describe("expiry", function()
 		function()
 			local loaded, M = loggedIn()
 			catchAndFlush(loaded)
-			raise(loaded, M, { rung = "toast", kind = "spec", title = "Toast" })
+			-- Three toasts fill the column, so what comes next waits until they leave.
+			for i = 1, 3 do
+				raise(loaded, M, { rung = "toast", kind = "spec", title = "Toast " .. i })
+			end
 			local id = PLAYER_GUID .. "-" .. SERVER_TIME .. "-0"
 			raise(loaded, M, {
 				rung = "toast.high",
@@ -191,9 +196,9 @@ describe("expiry", function()
 				pastText = "Window opened 21:00–06:00",
 			}, { rung = "toast", kind = "spec", title = "New Species", cast = id })
 			raise(loaded, M, { rung = "banner", kind = "window", title = "Window banner", expiresAt = SERVER_TIME + 3 })
-			loaded.client.advance(6)
+			loaded.client.advance(8.7) -- the three settle, stay their 6 s and leave
 			assert.are.equal("New Species", showing(loaded, "toast"))
-			loaded.client.advance(6)
+			loaded.client.advance(9)
 			assert.is_nil(showing(loaded, "banner"))
 			loaded.client.advance(300)
 
@@ -203,7 +208,15 @@ describe("expiry", function()
 					rows[#rows + 1] = row.text:GetText()
 				end
 			end
-			assert.are.same({ "Ledger", "Window banner", "Window opened 21:00–06:00", "Toast", "New Species" }, rows)
+			assert.are.same({
+				"Ledger",
+				"Window banner",
+				"Window opened 21:00–06:00",
+				"Toast 1",
+				"Toast 2",
+				"Toast 3",
+				"New Species",
+			}, rows)
 		end
 	)
 end)
