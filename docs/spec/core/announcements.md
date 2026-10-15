@@ -137,7 +137,7 @@ Part of [Core](README.md). Core presents every Announcement (ADR 0007): Modules 
 | `global.pending` | moments raised with no Session open (ANN-R52) |
 | `global.cards` | up to 3 cards waiting to be seen: `{ title, numbers = { casts, catches, gotAway, seconds }, coins, lines, moments, writeUp }` |
 | `global.writeUp` | Write-up sections waiting: `{ { module, order, title, heading, lines } }` |
-| `profile.announcements` | `{ cozy = false, everyCatch = true, budget = { on = true, count = 4, window = 300 } }` (`everyCatch`: "Show every catch", ANN-R13) |
+| `profile.announcements` | `{ cozy = false, everyCatch = true, motion = true, budget = { on = true, count = 4, window = 300 } }` (`everyCatch`: "Show every catch", ANN-R13; `motion`: "Animations", UI › Motion) |
 | `profile.appearance` | equipped toast style and sound set, among other slots ([wallet-and-shop.md](wallet-and-shop.md#data)) |
 
 A stored moment keeps: `module`, `moduleTitle`, `moduleOrder`, `kind`, `rung`, `title`, `text`, `icon`, `stamp`, `coins`, `expiresAt`, `pastText`. The display lanes, the budget's recent interruptions and the hold live in memory only.
@@ -214,12 +214,25 @@ Every frame is drawn from the announcements art kit: a toast is a fresh entry in
 
 Look reference: the announcements art kit (`pagle-announce-kit`, its previews and its probe addon). The text above wins where they differ.
 
+### Motion
+
+The frames move as the art kit's motion has them (`pagle-announce-kit-with-animations`, its `MOTION.md`). Each plays once, when the Announcement appears, and holds where it settles; drawn again for a toast style change, it carries on. A sample on the Curio Shop's stage stands still, and a Nod and a card have none. With the **Animations** setting off, each appears as it settles. Times are from when it appears:
+
+| Frame | Motion | Settled |
+|---|---|---|
+| Toast | It rises 26 units and fades in (0.56–0.98 s, overshooting a little); its name is written out left to right in 16 steps (0.98–1.82 s); its stamps slam down from 2.6x (1.89–2.31 s, overshooting); its coin turns in edge-on (2.31–2.66 s). Its record ruler keeps its own count (ANN-R22), and its "New record" stamp slams down as it lands. | 2.66 s |
+| Banner | The seal or crest drops from 2.2x (0–0.63 s, overshooting); the gilt tooling draws out from the seal (0.35–1.12 s); the rays fade in, turning from −8° (0.35–1.4 s). | 1.4 s |
+| Splash | The rays turn clockwise once a minute for as long as it shows. | never |
+
+One `OnUpdate` drives every animation (`adapter/Motion.lua`, with the keyframe maths in `logic/Motion.lua`), since `AnimationGroup` can't overshoot, step, ease each segment, or animate a width, a texture coordinate or a clip.
+
 ## Settings
 
 | Option | Values | Default |
 |---|---|---|
 | Cozy mode | on/off | off |
 | Show every catch | on/off | on (ANN-R13) |
+| Animations | on/off | on (UI › Motion) |
 | Interruption budget | on/off | on |
 | Budget: interruptions | 1–10 | 4 |
 | Budget: window | 1–15 min | 5 min |

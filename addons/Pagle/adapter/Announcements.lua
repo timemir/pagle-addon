@@ -9,8 +9,9 @@ end
 -- Showing Announcements on the client (announcements.md › The display queue, › Interruption budget, › Sounds,
 -- › Toast styles, › UI; ADR 0007): logic/Announcements.lua's lanes on GetTime and C_Timer.After, reading the budget
 -- from PagleDB.profile.announcements, drawing the toast, Nod, banner and splash in the announcements art kit
--- (adapter/Art.lua), the toast and Nod in the equipped toast style (ANN-R80), and playing the sounds with
--- PlaySoundFile on the SFX channel (ANN-R73). A toast is a fresh entry in the Angler's ledger: a torn page on a
+-- (adapter/Art.lua), the toast and Nod in the equipped toast style (ANN-R80), moving as the kit's motion has them
+-- (announcements.md › Motion, adapter/Motion.lua), and playing the sounds with PlaySoundFile on the SFX channel
+-- (ANN-R73). A toast is a fresh entry in the Angler's ledger: a torn page on a
 -- leather spine with the catch's icon in a medallion, the title printed over the text in the Angler's hand, rubber
 -- stamps in the corner and the Coins beside a brass coin.
 local L = ns.L
@@ -50,6 +51,7 @@ local TICKS = 20
 ---@field margin FontString
 ---@field label FontString
 ---@field record PagleStamp
+---@field slammed boolean? its New record stamp has slammed down
 ---@field trackWidth number
 ---@field style PagleToastStyle
 ---@field ruler { old: number, new: number, unit: string, label: string }
@@ -64,6 +66,14 @@ local TICKS = 20
 ---@class PagleAnnouncementFrame: Frame
 ---@field display PagleDisplay?
 ---@field drawnRuler PagleDisplay? the display whose ruler is animating
+---@field moved PagleDisplay? the display whose motion has played
+---@field body Frame? a toast's page and words, which slide in under the frame the lanes anchor
+---@field nameClip Frame? the clip a toast's name is written out in
+---@field pivots Frame[]? the points a toast's stamps grow about
+---@field recordPivot Frame? the point the ruler's New record stamp grows about
+---@field rays PagleSprite? a banner's or the splash's
+---@field sealFrame Frame? a banner's seal or crest, which drops in
+---@field tools { sprite: PagleSprite, x: number, y: number, outward: boolean }[]? a banner's gilt tooling
 ---@field words Frame the frame its words, stamps and coins sit on, over the art
 ---@field icon Texture?
 ---@field title FontString
@@ -83,6 +93,34 @@ local TICKS = 20
 ---@field portrait Texture?
 ---@field crestLabel FontString?
 ---@field extras Frame? a banner's or the splash's row of labels and Coins
+
+-- The motion's timeline: the canvas loops each animation over 7 s; in game each plays once.
+local TIMELINE = 7
+local SLIDE = ns.Bezier(0.2, 1.2, 0.4, 1)
+local SLAM = ns.Bezier(0.3, 1.6, 0.5, 1)
+local DROP = ns.Bezier(0.3, 1.5, 0.5, 1)
+
+-- A stamp slamming down at `at` of the timeline: from 2.6x and unseen to a little under its size, then settled.
+---@param stamp Frame
+---@param at number
+---@return PagleAnimation
+local function slam(stamp, at)
+	return {
+		dur = TIMELINE,
+		ease = SLAM,
+		keys = {
+			{ 0, { 2.6, 0 } },
+			{ at, { 2.6, 0 } },
+			{ at + 0.04, { 0.95, 0.95 } },
+			{ at + 0.06, { 1, 0.9 } },
+			{ 1, { 1, 0.9 } },
+		},
+		apply = function(v)
+			stamp:SetScale(math.max(0.01, v[1]))
+			stamp:SetAlpha(math.max(0, v[2]))
+		end,
+	}
+end
 
 --- The frame each form is drawn in, made the first time one shows (ANN-R80).
 ---@type table<PagleAnnouncementForm, PagleAnnouncementFrame>
@@ -135,7 +173,7 @@ local function setCoins(coins, amount, size, coinFirst)
 	local coin = ns.SetCoin(coins.coin, size)
 	local width = size + 8 + coins.label:GetStringWidth()
 	coins:SetSize(width, size)
-	ns.PlaceSprite(coin, coins, coinFirst and 0 or width - size, 0)
+	ns.CenterSpriteAt(coin, coins, coinFirst and size / 2 or width - size / 2, size / 2)
 	coins.label:ClearAllPoints()
 	if coinFirst then
 		coins.label:SetPoint("LEFT", coins, "LEFT", size + 8, 0)
@@ -300,6 +338,10 @@ local function drawRuler(ruler, at)
 	ruler.margin:SetShown(at.done)
 	if at.stamped and not ruler.compact then
 		ns.SetStamp(ruler.record, L.ANNOUNCEMENT_NEW_RECORD, ruler.style)
+		if not ruler.slammed then
+			ruler.slammed = true
+			ns.Animate(ruler.record, { slam(ruler.record, 0) })
+		end
 	else
 		ruler.record:Hide()
 	end
@@ -316,7 +358,7 @@ local function startRuler(view, ruler)
 		return
 	end
 	-- A Simulated Size reads in the Angler's length unit as the ruler appears (LOG-R69).
-	view.ruler, view.elapsed, view.lengthUnit = ruler, 0, ns.LengthUnit()
+	view.ruler, view.elapsed, view.lengthUnit, view.slammed = ruler, 0, ns.LengthUnit(), false
 	drawRuler(view, ns.RulerAt(ruler, 0, view.lengthUnit))
 	view:Show()
 	view:SetScript("OnUpdate", function(self, elapsed)
@@ -422,14 +464,26 @@ local function drawDigest(frame, held, style, width)
 end
 
 -- The words, stamps and parts every toast and Nod has: the medallion, the title and text, the stamps and the Coins.
+-- They sit on `host`, the frame itself or a toast's body. With `clipName`, the name is in a clip that its motion
+-- widens to write it out.
 ---@param frame PagleAnnouncementFrame
 ---@param coinsFont string
-local function addWords(frame, coinsFont)
-	frame.bezel = ns.NewBezel(layer(frame, 2))
+---@param host Frame?
+---@param clipName boolean?
+local function addWords(frame, coinsFont, host, clipName)
+	host = host or frame
+	frame.bezel = ns.NewBezel(layer(host, 2))
 	frame.icon = frame.bezel.Icon
-	frame.words = layer(frame, 3)
+	frame.words = layer(host, 3)
 	frame.title = ns.ArtText(frame.words, "What")
-	frame.text = ns.ArtText(frame.words, "Name")
+	local nameParent = frame.words
+	if clipName then
+		frame.nameClip = CreateFrame("Frame", nil, frame.words)
+		frame.nameClip:SetClipsChildren(true)
+		nameParent = CreateFrame("Frame", nil, frame.nameClip)
+		nameParent:SetAllPoints(frame.words)
+	end
+	frame.text = ns.ArtText(nameParent, "Name")
 	frame.stamps = {}
 	for i = 1, STAMP_SLOTS do
 		frame.stamps[i] = ns.NewStamp(frame.words)
@@ -446,14 +500,16 @@ local function drawToast(frame, display, style)
 	local announcement = display.announcement
 	local headline = announcement.headline
 	local page = ns.ToastPage(announcement)
+	local body = frame.body --[[@as Frame]]
 	frame:SetSize(page.w, page.h)
+	body:SetSize(page.w, page.h)
 	ns.SetSprite(frame.page, style.atlas, "toast-" .. page.page)
-	ns.PlaceSprite(frame.page, frame, 0, 0)
+	ns.PlaceSprite(frame.page, body, 0, 0)
 	local bezel = frame.bezel --[[@as PagleBezel]]
 	local icon = announcement.fighting and FIGHTING_ICON or textureOf(headline.icon)
 	ns.SetBezel(bezel, page.bezel, page.high and style.highTrim or style.trim, icon)
 	bezel:ClearAllPoints()
-	bezel:SetPoint("TOPLEFT", frame, "TOPLEFT", page.bx, -(page.h - page.bezel) / 2)
+	bezel:SetPoint("TOPLEFT", body, "TOPLEFT", page.bx, -(page.h - page.bezel) / 2)
 
 	local width = page.w - page.tx - 34 - (announcement.coins > 0 and 34 or 0)
 	local inks = {
@@ -462,7 +518,7 @@ local function drawToast(frame, display, style)
 	}
 	local fonts = { what = "What", name = page.low and "NameLow" or page.high and "NameHigh" or "Name" }
 	frame.title:ClearAllPoints()
-	frame.title:SetPoint("TOPLEFT", frame, "TOPLEFT", page.tx, -page.ty)
+	frame.title:SetPoint("TOPLEFT", body, "TOPLEFT", page.tx, -page.ty)
 	frame.text:ClearAllPoints()
 	frame.text:SetPoint("TOPLEFT", frame.title, "BOTTOMLEFT", 0, -5)
 	if announcement.fighting then
@@ -473,6 +529,12 @@ local function drawToast(frame, display, style)
 		writeHeadline(frame, headline, fonts, inks, width)
 		drawDigest(frame, {}, style, 0)
 	end
+	-- The clip the name is written out in, round the name as written.
+	local clip = frame.nameClip --[[@as Frame]]
+	clip:ClearAllPoints()
+	clip:SetPoint("TOPLEFT", frame.text, "TOPLEFT", -4, 8)
+	clip:SetSize(frame.text:GetWidth() + 8, ns.ArtFontSize(fonts.name) + 22)
+	clip:SetShown(frame.text:IsShown())
 
 	local ruler = frame.ruler --[[@as PagleRulerView]]
 	ruler.style = style
@@ -480,7 +542,7 @@ local function drawToast(frame, display, style)
 	if page.ruled then
 		local nameSize = ns.ArtFontSize(fonts.name)
 		local top = page.ty + (frame.text:IsShown() and 18 or 0) + nameSize + 4
-		ruler:SetPoint("TOPLEFT", frame, "TOPLEFT", page.tx, -top)
+		ruler:SetPoint("TOPLEFT", body, "TOPLEFT", page.tx, -top)
 		layRuler(ruler, width - 6, headline.ruler.label)
 	end
 
@@ -489,7 +551,7 @@ local function drawToast(frame, display, style)
 	more:SetShown(display.overflow > 0)
 	more:ClearAllPoints()
 	if page.ruled or announcement.fighting then
-		more:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", page.tx, 6)
+		more:SetPoint("BOTTOMLEFT", body, "BOTTOMLEFT", page.tx, 6)
 	else
 		more:SetPoint("TOPLEFT", nameLine(frame), "BOTTOMLEFT", 2, 2)
 	end
@@ -500,16 +562,25 @@ local function drawToast(frame, display, style)
 	local stamps = fillStamps(frame, announcement, function(stamp, text)
 		ns.SetStamp(stamp, text, style)
 	end)
+	-- Each stamp hangs by its centre from a pivot, so it slams down about its middle (adapter/Art.lua's ns.Pivot).
+	local pivots = frame.pivots --[[@as Frame[] ]]
 	for i, stamp in ipairs(stamps) do
-		stamp:SetPoint("TOPRIGHT", frame, "TOPLEFT", x, -drops[i])
-		x = x - stamp:GetWidth() - 4
+		local stampWidth = stamp:GetWidth()
+		pivots[i]:SetPoint("CENTER", body, "TOPLEFT", x - stampWidth / 2, -(drops[i] + 13))
+		stamp:SetPoint("CENTER", pivots[i], "CENTER")
+		x = x - stampWidth - 4
 	end
+	-- The New record stamp lands to their left once the ruler fills: measured now to hang it by its centre.
+	ns.SetStamp(ruler.record, L.ANNOUNCEMENT_NEW_RECORD, style)
+	local record = ruler.record:GetWidth()
+	ruler.record:Hide()
+	frame.recordPivot:SetPoint("CENTER", body, "TOPLEFT", x - record / 2, -19)
 	ruler.record:ClearAllPoints()
-	ruler.record:SetPoint("TOPRIGHT", frame, "TOPLEFT", x, -6)
+	ruler.record:SetPoint("CENTER", frame.recordPivot, "CENTER")
 
 	frame.coins:ClearAllPoints()
 	if setCoins(frame.coins, announcement.coins, page.coin, false) > 0 then
-		frame.coins:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -2, page.low and 4 or -2)
+		frame.coins:SetPoint("BOTTOMRIGHT", body, "BOTTOMRIGHT", -2, page.low and 4 or -2)
 		ns.Ink(frame.coins.label, page.low and "amtLow" or "amt")
 	end
 end
@@ -665,13 +736,23 @@ local BUILD = {
 		end
 		frame:SetSize(464, 92)
 		frame:SetFrameStrata("HIGH")
-		frame.page = ns.ArtSprite(frame, "ToastsLedger", "toast-toast", "BACKGROUND")
-		addWords(frame, "Amt")
+		-- The page and its words slide in on a body under the frame the lanes anchor.
+		local body = CreateFrame("Frame", nil, frame)
+		body:SetPoint("TOPLEFT")
+		body:SetSize(464, 92)
+		frame.body = body
+		frame.page = ns.ArtSprite(body, "ToastsLedger", "toast-toast", "BACKGROUND")
+		addWords(frame, "Amt", body, true)
 		frame.more = ns.ArtText(frame.words, "More")
 		frame.wax = ns.ArtSprite(frame.words, "Announce", "wax-hunt", "OVERLAY", 2)
-		ns.PlaceSprite(frame.wax, frame, 524 - 26 - 58, -14)
+		ns.PlaceSprite(frame.wax, body, 524 - 26 - 58, -14)
 		frame.ruler = newRuler(frame.words, false)
 		frame.rows = {}
+		frame.pivots = {}
+		for i = 1, STAMP_SLOTS do
+			frame.pivots[i] = ns.Pivot(frame.words, body, 0, 0)
+		end
+		frame.recordPivot = ns.Pivot(frame.words, body, 0, 0)
 		return frame
 	end,
 	-- One line under the toast.
@@ -696,19 +777,28 @@ local BUILD = {
 		frame:SetSize(980, 330)
 		frame:SetFrameStrata("HIGH")
 		ns.PlaceSprite(ns.ArtSprite(frame, "Splash", "glow", "BACKGROUND", 0), frame, 0, 40)
-		local rays = ns.ArtSprite(frame, "Splash", "rays", "BACKGROUND", 1)
-		rays:ClearAllPoints()
-		rays:SetPoint("CENTER", frame, "TOP", 0, -128)
+		frame.rays = ns.ArtSprite(frame, "Splash", "rays", "BACKGROUND", 1)
+		frame.rays:ClearAllPoints()
+		frame.rays:SetPoint("CENTER", frame, "TOP", 0, -128)
 		frame.title = ns.ArtText(frame, "Kick")
 		frame.title:SetPoint("TOP")
 		local row = CreateFrame("Frame", nil, frame)
 		row:SetSize(802, 150)
 		row:SetPoint("TOP", 0, -29)
-		ns.PlaceSprite(ns.ArtSprite(row, "Announce", "tool-left", "ARTWORK"), row, 0, 45)
-		ns.PlaceSprite(ns.ArtSprite(row, "Announce", "tool-right", "ARTWORK"), row, 462, 45)
+		-- The tooling draws out from the seal: the left's seal end is its right, the right's its left.
+		frame.tools = {
+			{ sprite = ns.ArtSprite(row, "Announce", "tool-left", "ARTWORK"), x = 0, y = 45, outward = false },
+			{ sprite = ns.ArtSprite(row, "Announce", "tool-right", "ARTWORK"), x = 462, y = 45, outward = true },
+		}
+		for _, tool in ipairs(frame.tools) do
+			ns.PlaceSprite(tool.sprite, row, tool.x, tool.y)
+			tool.sprite.w0 = tool.sprite:GetWidth()
+		end
+		-- The seal hangs by its centre from the row's, so it drops in about its middle.
 		local centre = CreateFrame("Frame", nil, row)
 		centre:SetSize(150, 150)
-		centre:SetPoint("TOP")
+		centre:SetPoint("CENTER", ns.Pivot(row, row, 401, 75), "CENTER")
+		frame.sealFrame = centre
 		frame.seal = ns.ArtSprite(centre, "Announce", "seal", "ARTWORK", 1)
 		frame.sealNumber = ns.ArtText(centre, "SealNumber")
 		frame.sealNumber:SetPoint("CENTER", centre, "CENTER", 0, -2)
@@ -741,10 +831,10 @@ local BUILD = {
 		local dim = frame:CreateTexture(nil, "BACKGROUND", nil, 0)
 		dim:SetAllPoints()
 		dim:SetColorTexture(0.016, 0.012, 0.008, 0.82)
-		local rays = ns.ArtSprite(frame, "Splash", "rays", "BACKGROUND", 1)
-		rays:SetSize(1300, 1300)
-		rays:ClearAllPoints()
-		rays:SetPoint("CENTER", frame, "TOP", 0, -205)
+		frame.rays = ns.ArtSprite(frame, "Splash", "rays", "BACKGROUND", 1)
+		frame.rays:SetSize(1300, 1300)
+		frame.rays:ClearAllPoints()
+		frame.rays:SetPoint("CENTER", frame, "TOP", 0, -205)
 		local crest = layer(frame, 3)
 		crest:ClearAllPoints()
 		crest:SetSize(250, 275)
@@ -792,14 +882,148 @@ local BUILD = {
 
 local DRAW = { toast = drawToast, nod = drawNod, banner = drawBanner, splash = drawSplash }
 
+-- A share `k` of a placed gilt tooling: its seal end first, cut, not squashed (the canvas's clip-path).
+---@param tool { sprite: PagleSprite, x: number, y: number, outward: boolean }
+---@param k number
+local function reveal(tool, k)
+	local sprite, tc = tool.sprite, tool.sprite.tc
+	k = math.max(0.001, k)
+	local hidden = sprite.w0 * (1 - k)
+	sprite:SetWidth(sprite.w0 * k)
+	local box = sprite.box
+	sprite:ClearAllPoints()
+	if tool.outward then
+		sprite:SetTexCoord(tc[1], tc[1] + (tc[2] - tc[1]) * k, tc[3], tc[4])
+		sprite:SetPoint("TOPLEFT", sprite:GetParent() --[[@as Frame]], "TOPLEFT", tool.x - box[1], -(tool.y - box[2]))
+	else
+		sprite:SetTexCoord(tc[1] + (tc[2] - tc[1]) * (1 - k), tc[2], tc[3], tc[4])
+		sprite:SetPoint(
+			"TOPLEFT",
+			sprite:GetParent() --[[@as Frame]],
+			"TOPLEFT",
+			tool.x - box[1] + hidden,
+			-(tool.y - box[2])
+		)
+	end
+end
+
+-- The kit's motion for each form (announcements.md › Motion), on the canvas's 7 s timeline; each plays once.
+---@type table<PagleAnnouncementForm, fun(frame: PagleAnnouncementFrame)>
+local MOTION = {
+	-- It slides up and fades in, its name writes itself out, its stamps slam and its coin turns in edge-on: settled
+	-- by 2.66 s. The record ruler keeps its own count (ANN-R22), its stamp slamming as it lands.
+	toast = function(frame)
+		local body = frame.body --[[@as Frame]]
+		local animations = {
+			{
+				dur = TIMELINE,
+				ease = SLIDE,
+				keys = { { 0, { 26, 0 } }, { 0.08, { 26, 0 } }, { 0.14, { 0, 1 } }, { 1, { 0, 1 } } },
+				apply = function(v)
+					body:ClearAllPoints()
+					body:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, -v[1])
+					frame:SetAlpha(math.max(0, math.min(1, v[2])))
+				end,
+			},
+		}
+		local clip = frame.nameClip --[[@as Frame]]
+		if clip:IsShown() then
+			local width = clip:GetWidth()
+			animations[#animations + 1] = {
+				dur = TIMELINE,
+				keys = { { 0, { 0 } }, { 0.14, { 0 }, ease = ns.Steps(16) }, { 0.26, { 1 } }, { 1, { 1 } } },
+				apply = function(v)
+					clip:SetWidth(math.max(0.01, width * v[1]))
+				end,
+			}
+		end
+		for _, stamp in ipairs(frame.stamps) do
+			if stamp:IsShown() then
+				animations[#animations + 1] = slam(stamp, 0.27)
+			end
+		end
+		if frame.coins:IsShown() then
+			local coin = frame.coins.coin
+			animations[#animations + 1] = {
+				dur = TIMELINE,
+				ease = ns.EASE.out,
+				keys = { { 0, { 90, 0 } }, { 0.33, { 90, 0 } }, { 0.38, { 0, 1 } }, { 1, { 0, 1 } } },
+				apply = function(v)
+					coin:SetWidth(math.max(0.01, coin.w0 * math.cos(math.rad(v[1]))))
+					coin:SetAlpha(v[2])
+				end,
+			}
+		end
+		ns.Animate(frame, animations)
+	end,
+	-- The seal drops in, the gilt tooling draws out from it and the rays turn in: settled by 1.4 s.
+	banner = function(frame)
+		local seal = frame.sealFrame --[[@as Frame]]
+		local rays = frame.rays --[[@as PagleSprite]]
+		local animations = {
+			{
+				dur = TIMELINE,
+				ease = DROP,
+				keys = { { 0, { 2.2, 0 } }, { 0.06, { 0.94, 1 } }, { 0.09, { 1, 1 } }, { 1, { 1, 1 } } },
+				apply = function(v)
+					seal:SetScale(math.max(0.01, v[1]))
+					seal:SetAlpha(math.min(1, v[2]))
+				end,
+			},
+			{
+				dur = TIMELINE,
+				ease = ns.EASE.out,
+				keys = { { 0, { 0, -8 } }, { 0.05, { 0, -8 } }, { 0.2, { 1, 0 } }, { 1, { 1, 0 } } },
+				apply = function(v)
+					rays:SetAlpha(v[1])
+					rays:SetRotation(math.rad(-v[2]))
+				end,
+			},
+		}
+		for _, tool in ipairs(frame.tools) do
+			animations[#animations + 1] = {
+				dur = TIMELINE,
+				ease = ns.EASE.out,
+				keys = { { 0, { 0 } }, { 0.05, { 0 } }, { 0.16, { 1 } }, { 1, { 1 } } },
+				apply = function(v)
+					reveal(tool, v[1])
+				end,
+			}
+		end
+		ns.Animate(frame, animations)
+	end,
+	-- The rays turn clockwise once a minute for as long as it shows.
+	splash = function(frame)
+		local rays = frame.rays --[[@as PagleSprite]]
+		ns.Animate(frame, {
+			{
+				dur = 60,
+				ease = ns.EASE.linear,
+				iter = "infinite",
+				keys = { { 0, { 0 } }, { 1, { 360 } } },
+				apply = function(v)
+					rays:SetRotation(math.rad(-v[1]))
+				end,
+			},
+		})
+	end,
+}
+
 --- Draws a display in a frame of its form, the toast and Nod in the toast style it carries (a sample's) or else the
---- equipped one (ANN-R80). Drawn again with the same display, as when the style changes, its ruler carries on where it
---- was; a new display starts it.
+--- equipped one (ANN-R80), and plays its form's motion. Drawn again with the same display, as when the style changes,
+--- its motion and its ruler carry on where they were; a new display starts both. A sample on the Curio Shop's stage
+--- stands still: only what the lanes show moves.
 ---@param frame PagleAnnouncementFrame
 ---@param display PagleDisplay
 function ns.DrawAnnouncement(frame, display)
 	local style = ns.DisplayStyle(display)
 	DRAW[display.form](frame, display, style)
+	local motion = MOTION[display.form]
+	if motion and frame.moved ~= display and ns.announcementFrames[display.form] == frame then
+		frame.moved = display
+		ns.StopMotion(frame)
+		motion(frame)
+	end
 	local ruler = frame.ruler
 	if not ruler then
 		return
@@ -841,7 +1065,8 @@ end
 local function hide(display)
 	local frame = ns.announcementFrames[display.form]
 	if frame and frame.display == display then
-		frame.display, frame.drawnRuler = nil, nil
+		frame.display, frame.drawnRuler, frame.moved = nil, nil, nil
+		ns.StopMotion(frame)
 		if frame.ruler then
 			frame.ruler:SetScript("OnUpdate", nil)
 		end
