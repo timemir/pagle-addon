@@ -688,13 +688,17 @@ end
 ---@field after fun(seconds: number, fn: fun())
 ---@field print fun(line: string)      -- prints a chat line
 
---- Runs `/pagle dev probe`: reads and saves the probe at once (replacing the last one), then 2 s later reads check
+--- Runs `/pagle dev probe`: reads and saves the probe at once (replacing the last one, but keeping its load timings,
+--- #262), then 2 s later reads check
 --- 8's quest title again, saves that too, and prints one line per check and the saved line. The lines wait for the
 --- second read, so the saved line is the last word.
 ---@param options PagleProbeOptions
 function ns.RunProbe(options)
 	local L, globals = ns.L, options.globals()
 	local probe = ns.ReadProbe(globals, options.facts())
+	-- This login's load timings (#262, logic/LoadTimings.lua) stay: they aren't the probe's to replace.
+	local last = options.global().probe
+	probe.timings = type(last) == "table" and last.timings or nil
 	options.global().probe = probe
 	options.after(ns.PROBE_QUEST_SECONDS, function()
 		ns.ProbeQuestAgain(probe, globals)

@@ -32,6 +32,10 @@
 --   - the Field report projection (PagleDB.global.projections.fieldReport), its row count and the reporter key;
 --   - the probe `/pagle dev probe` saved (PagleDB.global.probe, #261): each launch re-verification check's facts and
 --     an ok or FAIL line, judged by Core's own logic/Probe.lua;
+--   - what launch re-verification checks 2, 4-7 and 10 read (#262): PagleLog's entry count and Pagle.lua's size, the
+--     load timings (PagleDB.global.probe.timings), the night Casts and the Casts with no realm minute, the
+--     diagnostics buffer's hovered texts (as the P rows group them) and unresolved texts, and the Casts per zone and
+--     subzone areaID with zone 0, alias sources and areas with no catch data flagged;
 --   - named CVars from Config.wtf and the account's and the character's config-cache.wtf;
 --   - named addons' enable state from the character's AddOns.txt.
 --
@@ -2480,7 +2484,8 @@ local function printProbe(pagle)
 		return
 	end
 	local probe = global.probe
-	if type(probe) ~= "table" then
+	-- The load timings alone (#262) are no probe: the Re-verification section reads them.
+	if type(probe) ~= "table" or type(probe.checks) ~= "table" then
 		print("== Probe (PagleDB.global.probe)")
 		print("probe: none stored (/pagle dev probe, then /reload)")
 		return
@@ -2529,6 +2534,344 @@ local function printProbe(pagle)
 		#failed == 0 and ("probe: every check of %d passes"):format(#ns.PROBE_CHECKS)
 			or ("probe: %d of %d checks FAIL: %s"):format(#failed, #ns.PROBE_CHECKS, table.concat(failed, ", "))
 	)
+end
+
+-- Re-verification (#262) ------------------------------------------------------------------------------------------
+
+local MIB = 1024 * 1024
+
+-- count, with thousands separators (the Stats section's thousands): "1 Cast", "116,540 Casts".
+local function many(n, noun, plural)
+	return thousands(n) .. " " .. (n == 1 and noun or plural or noun .. "s")
+end
+
+-- A realm minute of day as "21:03".
+local function minuteOfDay(minute)
+	return ("%02d:%02d"):format(math.floor(minute / 60), minute % 60)
+end
+
+-- Checks 2 and 10's timings (PagleDB.global.probe.timings, logic/LoadTimings.lua): each mark in ms after Core's files
+-- loaded, then each projection's catch-up or rebuild on a line of its own, its longest frame set against LOG-R71's
+-- budget (one that ran at once, in one frame, has none to meet).
+local function printTimings(timings, ns)
+	if type(timings) ~= "table" or type(timings.marks) ~= "table" then
+		print(
+			"check 2, 10: no load timings (PagleDB.global.probe.timings): /pagle dev on, then log in; that login's"
+				.. " are saved at the next /reload or logout"
+		)
+		return
+	end
+	local marks = timings.marks
+	local zero = tonumber(marks.filesLoaded) or tonumber(marks.addonLoaded) or 0
+	local function at(ms)
+		return ("%.1f ms"):format(ms - zero)
+	end
+	local budget = tonumber(timings.budget) or 0
+	print(
+		("check 2, 10: load timings of the login at %s (dev mode on), %s entries at load, after Core's files loaded:"):format(
+			type(timings.time) == "number" and utc(timings.time) or "an unknown time",
+			thousands(tonumber(timings.entries) or 0)
+		)
+	)
+	for _, mark in ipairs(ns.LOAD_MARKS) do
+		local ms = tonumber(marks[mark[1]])
+		local missing = mark[1] == "idle"
+				and "not reached (a catch-up or rebuild was still running at the /reload or logout)"
+			or "not reached"
+		print(("  %-22s %s"):format(mark[2], ms and at(ms) or missing))
+	end
+	for _, timing in ipairs(type(timings.projections) == "table" and timings.projections or {}) do
+		local started, finished = tonumber(timing.started) or 0, tonumber(timing.finished) or 0
+		local frames, longest = tonumber(timing.frames) or 0, tonumber(timing.longest) or 0
+		local frame = frames <= 1
+				and ("at once, longest %.2f ms (LOG-R71: %s pending entries or fewer)"):format(
+					longest,
+					tostring(timings.syncLimit)
+				)
+			or ("longest frame %.2f ms of the %g ms budget (LOG-R71)%s"):format(
+				longest,
+				budget,
+				longest > budget and ": OVER" or ""
+			)
+		print(
+			("  %s: %s of %s, %s to %s (%.1f ms), %s, %s"):format(
+				tostring(timing.name),
+				tostring(timing.mode),
+				many(tonumber(timing.applied) or 0, "entry", "entries"),
+				at(started),
+				at(finished),
+				finished - started,
+				many(frames, "frame"),
+				frame
+			)
+		)
+	end
+	local entering, idle = tonumber(marks.enteringWorld), tonumber(marks.idle)
+	if entering and idle then
+		print(("check 10: every projection caught up %.1f ms after PLAYER_ENTERING_WORLD"):format(idle - entering))
+	end
+end
+
+-- Whether a realm minute is in a window's ranges ({ from, to }, from inclusive, to exclusive, wrapping past midnight
+-- when to < from), and how far into its range it is.
+local function inRanges(ranges, minute)
+	for _, range in ipairs(ranges) do
+		local from, to = range[1], range[2]
+		local inside = from <= to and (minute >= from and minute < to)
+			or (from > to and (minute >= from or minute < to))
+		if inside then
+			return true, (minute - from) % 1440
+		end
+	end
+	return false
+end
+
+-- Check 4: the Casts whose realm minute lies in the catalogue's night window (DATA-R36), with their first and last
+-- realm minute through the night, the Casts with no realm minute, and the realm's UTC offset each Cast's realm minute
+-- gives (LOG-R49): more than one is a clock change or a wrong minute.
+local function printNight(casts, catalogue, ns)
+	local spec = catalogue and catalogue.GetWindowSpec("night")
+	local ranges = spec and spec.time
+	if type(ranges) ~= "table" or #ranges == 0 then
+		print("check 4: the catalogue has no night window with realm times (DATA-R36)")
+	else
+		local window = {}
+		for i, range in ipairs(ranges) do
+			window[i] = minuteOfDay(range[1]) .. " to " .. minuteOfDay(range[2])
+		end
+		local n, first, last = 0, nil, nil
+		for _, cast in ipairs(casts) do
+			local inside, into = false, 0
+			if cast.minute then
+				inside, into = inRanges(ranges, cast.minute)
+			end
+			if inside then
+				n = n + 1
+				if not first or into < first.into then
+					first = { into = into, minute = cast.minute }
+				end
+				if not last or into > last.into then
+					last = { into = into, minute = cast.minute }
+				end
+			end
+		end
+		local span = first and (", realm minutes %s to %s"):format(minuteOfDay(first.minute), minuteOfDay(last.minute))
+			or ""
+		print(
+			("check 4: %s at night (realm %s, the catalogue's night window, DATA-R36)%s"):format(
+				many(n, "Cast"),
+				table.concat(window, ", "),
+				span
+			)
+		)
+	end
+	local none, offsets = {}, {}
+	for _, cast in ipairs(casts) do
+		if cast.minute then
+			local offset = ns.RealmUtcOffset(cast.time, cast.minute)
+			offsets[offset] = (offsets[offset] or 0) + 1
+		else
+			none[#none + 1] = cast.seq
+		end
+	end
+	local seqs = #none > 0
+			and ", seq " .. table.concat(none, ", ", 1, math.min(#none, 10)) .. (#none > 10 and ", ..." or "")
+		or ""
+	print(("check 4: %s with no realm minute%s"):format(many(#none, "Cast"), seqs))
+	local keys, parts = sortedKeys(offsets), {}
+	for i, offset in ipairs(keys) do
+		parts[i] = ("%s: %s Casts"):format(utcOffset(offset), thousands(offsets[offset])):gsub(": 1 Casts$", ": 1 Cast")
+	end
+	local flag = #keys > 1 and ": more than one, so a clock change or a wrong realm minute" or ""
+	print(
+		("check 4: the realm's UTC offset, from each Cast's realm minute (LOG-R49): %s%s"):format(
+			#parts > 0 and table.concat(parts, ", ") or "none",
+			flag
+		)
+	)
+end
+
+-- Checks 5 and 7: the diagnostics buffer (LOG-R81): one line per hovered text and locale with its Casts, areas and
+-- catches, from the P rows REP-R22 builds (Core's own ns.FieldReportPRows), then each entry whose zone or subzone
+-- text didn't resolve (LOG-R22), with its locale.
+local function printDiagnostics(global, log, ns)
+	local buffer = type(global.diagnostics) == "table" and global.diagnostics or {}
+	local locales = {}
+	for _, entry in ipairs(buffer) do
+		local locale = type(entry) == "table" and tostring(entry.locale) or "?"
+		locales[locale] = (locales[locale] or 0) + 1
+	end
+	local byLocale = {}
+	for _, locale in ipairs(sortedKeys(locales)) do
+		byLocale[#byLocale + 1] = locale .. " " .. locales[locale]
+	end
+	print(
+		("check 5, 7: the diagnostics buffer (PagleDB.global.diagnostics, LOG-R81): %s%s"):format(
+			many(#buffer, "entry", "entries"),
+			#byLocale > 0 and ", " .. table.concat(byLocale, ", ") or ""
+		)
+	)
+	local groups, keys = {}, {}
+	for _, row in ipairs(pRows(ns, global, log)) do
+		local key = tostring(row.locale) .. "\0" .. tostring(row.text)
+		local group = groups[key]
+		if not group then
+			group = { locale = tostring(row.locale), text = tostring(row.text), casts = 0, areas = {}, items = {} }
+			groups[key] = group
+			keys[#keys + 1] = key
+		end
+		group.casts = group.casts + row.casts
+		group.areas[row.area] = (group.areas[row.area] or 0) + row.casts
+		for _, item in ipairs(row.items) do
+			group.items[item.item] = (group.items[item.item] or 0) + item.count
+		end
+	end
+	table.sort(keys)
+	print(("check 5: hovered texts, as the Field report's P rows group them (REP-R22): %d"):format(#keys))
+	for _, key in ipairs(keys) do
+		local group = groups[key]
+		local areas, items = {}, {}
+		for _, area in ipairs(sortedKeys(group.areas)) do
+			areas[#areas + 1] = ("%d (%d)"):format(area, group.areas[area])
+		end
+		for _, item in ipairs(sortedKeys(group.items)) do
+			items[#items + 1] = item .. "x" .. group.items[item]
+		end
+		print(
+			('  %s "%s": %s in area %s; %s'):format(
+				group.locale,
+				group.text,
+				many(group.casts, "Cast"),
+				table.concat(areas, ", "),
+				#items > 0 and table.concat(items, ", ") or "nothing caught"
+			)
+		)
+	end
+	local unresolved = {}
+	for _, entry in ipairs(buffer) do
+		if type(entry) == "table" and type(entry.unresolved) == "table" then
+			unresolved[#unresolved + 1] = entry
+		end
+	end
+	print(("check 7: entries whose zone or subzone text didn't resolve (LOG-R22): %d"):format(#unresolved))
+	for _, entry in ipairs(unresolved) do
+		print(
+			('  %s %s: zone "%s", subzone "%s", stored as %s/%s'):format(
+				tostring(entry.id),
+				tostring(entry.locale),
+				tostring(entry.unresolved.zone or ""),
+				tostring(entry.unresolved.subzone or ""),
+				tostring(entry.zone),
+				tostring(entry.subzone)
+			)
+		)
+	end
+end
+
+-- Why a stored zone or subzone areaID is flagged for check 6, or nil: zone 0 (unresolved, LOG-R22), an alias source
+-- (LOG-R22 maps it to its target, DATA-R32), outside the catalogue's areas, or with no catch data (DATA-R31).
+local function areaFlags(areaID, isZone, catalogue)
+	if areaID == 0 then
+		return isZone and { "zone 0, unresolved (LOG-R22)" } or nil
+	end
+	if not catalogue then
+		return nil
+	end
+	local flags = {}
+	local target = catalogue.Unalias(areaID)
+	if target ~= areaID then
+		flags[#flags + 1] = ("%d is an alias source of %d, never stored (LOG-R22, DATA-R32)"):format(areaID, target)
+	end
+	local area = catalogue.GetArea(areaID)
+	if not area then
+		flags[#flags + 1] = ("%d isn't in the catalogue's areas"):format(areaID)
+	elseif area.hasData == false then
+		flags[#flags + 1] = ("%d has no catch data (hasData = false, DATA-R31)"):format(areaID)
+	end
+	return #flags > 0 and flags or nil
+end
+
+-- Check 6: the Casts per zone and subzone areaID, each place flagged as areaFlags says.
+local function printPlaces(casts, catalogue, label, err)
+	local places, keys = {}, {}
+	for _, cast in ipairs(casts) do
+		local key = cast.zone .. "/" .. cast.subzone
+		if not places[key] then
+			places[key] = { zone = cast.zone, subzone = cast.subzone, casts = 0 }
+			keys[#keys + 1] = key
+		end
+		places[key].casts = places[key].casts + 1
+	end
+	table.sort(keys, function(a, b)
+		local pa, pb = places[a], places[b]
+		if pa.zone ~= pb.zone then
+			return pa.zone < pb.zone
+		end
+		return pa.subzone < pb.subzone
+	end)
+	local source = catalogue and "catalogue: " .. label or ("can't load %s: %s"):format(label, tostring(err))
+	print(("check 6: Casts per zone/subzone areaID (%s):"):format(source))
+	local flagged = 0
+	for _, key in ipairs(keys) do
+		local place = places[key]
+		local flags = areaFlags(place.zone, true, catalogue) or {}
+		for _, flag in ipairs(areaFlags(place.subzone, false, catalogue) or {}) do
+			flags[#flags + 1] = flag
+		end
+		flagged = flagged + (#flags > 0 and 1 or 0)
+		local note = #flags > 0 and "  FLAGGED: " .. table.concat(flags, "; ") or ""
+		print(("  %s: %s%s"):format(key, many(place.casts, "Cast"), note))
+	end
+	print(("check 6: %d of %s flagged"):format(flagged, many(#keys, "place")))
+end
+
+-- Prints the Re-verification section (#262): what launch re-verification checks 2, 4-7 and 10 read from the files
+-- (roadmap.md › Launch re-verification checklist): PagleLog's entry count and Pagle.lua's size, the load timings
+-- (PagleDB.global.probe.timings), the night Casts, the diagnostics buffer's hovered and unresolved texts, and the
+-- Casts per place with the flagged ones, over the catalogue (the repo's or --catalogue's).
+local function printReverify(pagle, options)
+	local global, why = pagleGlobal(pagle)
+	if why then
+		print("== Re-verification: " .. why)
+		return
+	end
+	print("== Re-verification (launch re-verification checks 2, 4-7 and 10)")
+	local log = pagleLog(pagle.saved)
+	local size = wtf.fileSize(pagle.path) or 0
+	print(
+		("check 2: PagleLog %s, Pagle.lua %s bytes (%.2f MiB)"):format(
+			log and many(#log.entries, "entry", "entries") or "missing",
+			thousands(size),
+			size / MIB
+		)
+	)
+	local ns = wtf.loadCore({
+		"logic/Conditions.lua",
+		"logic/Sessions.lua",
+		"logic/CatchLog.lua",
+		"logic/FieldReport.lua",
+		"logic/LoadTimings.lua",
+	})
+	printTimings(tableOr(global.probe).timings, ns)
+	if not log or log.format ~= ns.LOG_FORMAT then
+		print("checks 4-7: no PagleLog Core's codec reads")
+		return
+	end
+	-- Only what checks 4 and 6 read of each Cast, as a large log's records would take a lot of memory.
+	local casts = {}
+	local catchLog = ns.OpenCatchLog(log, { decodeErrors = 0, sessionBreaks = global.sessionBreaks }, 0)
+	for record in catchLog:Iterate() do
+		if record.kind == "cast" then
+			local c = record.conditions
+			casts[#casts + 1] =
+				{ seq = record.seq, time = record.time, minute = c.minute, zone = c.zone, subzone = c.subzone }
+		end
+	end
+	local label = options.catalogue or "the repo's addons/Pagle/data/Catalogue.lua"
+	local catalogue, err = wtf.loadCatalogue(options.catalogue)
+	printNight(casts, catalogue, ns)
+	printDiagnostics(global, log, ns)
+	printPlaces(casts, catalogue, label, err)
 end
 
 -- Prints the exit check's checks under one heading; true when every one passed.
@@ -2643,6 +2986,7 @@ local function main(args)
 	printCards(pagle)
 	printFieldReport(pagle, pagleLog(pagle.saved))
 	printProbe(pagle)
+	printReverify(pagle, options)
 	printCVars(options.account, options.character, options.cvars)
 	printAddons(options.account, options.character, options.addons)
 	-- Last, so the verdict is the output's last word.

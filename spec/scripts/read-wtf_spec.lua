@@ -6,7 +6,7 @@
 -- #146). M4#1 holds what the M4 exit check reads (#173, #174). M5#1 and M5-Stale#1 hold a Pagle_Hunts.lua, for what
 -- the M5 exit check reads (#199, #200). M6#1, M6-Stale#1 and M6-New#1 hold a Pagle_Stats.lua, for what the M6 exit
 -- check reads (#219, #221), and M6-Break#1 a Session break (#258). M7#1, M7-Stale#1 and M7-New#1 hold a Pagle_TackleBoard.lua, for what the M7 exit check
--- reads (#242, #245). M8#1 holds a test log for the Simulated Size gate (#267), and M8-Probe#1 a `/pagle dev probe` with a miss in most checks, for the Probe section (#261). The Ledger, Stats and Tackle Board runs read their catalogue from
+-- reads (#242, #245). M8#1 holds a test log for the Simulated Size gate (#267), and M8-Probe#1 a `/pagle dev probe` with a miss in most checks, for the Probe section (#261), and M8-Reverify#1 what the Re-verification section reads (#262). The Ledger, Stats and Tackle Board runs read their catalogue from
 -- spec/scripts/fixtures/Catalogue.lua (--catalogue) and the Hunts runs their Hunt list from
 -- spec/scripts/fixtures/HuntList.lua (--huntlist), so the lines the Modules' logic computes are counted by hand, and
 -- don't move with the generated data.
@@ -1530,6 +1530,159 @@ describe("scripts/read-wtf.lua", function()
 			section(run(ACCOUNTS .. "M1#1"), "== Probe")
 		)
 		assert.are.same({ "== Probe: can't read Pagle.lua: missing" }, section(run(ACCOUNTS .. "M0#1"), "== Probe"))
+	end)
+
+	-- M8-Reverify#1 holds what launch re-verification checks 2, 4-7 and 10 read (#262): Ada's Casts by day and night
+	-- (a realm 7 hours behind UTC; one Cast's realm minute reads 8 hours behind), one with no realm minute, one each in
+	-- zone 0, an alias source (16510) and a zone with no catch data (10); a diagnostics buffer with hovered pool texts
+	-- and two deDE entries whose texts didn't resolve; and hand-written load timings in PagleDB.global.probe.timings,
+	-- with no probe beside them. Its catalogue is spec/scripts/fixtures/ReverifyCatalogue.lua.
+	describe("on an account for launch re-verification checks 2, 4-7 and 10 (#262)", function()
+		local account = ACCOUNTS .. "M8-Reverify#1"
+		local out, err, code = run(account, "--catalogue", "spec/scripts/fixtures/ReverifyCatalogue.lua")
+		local reverify = section(out, "== Re-verification")
+
+		it("exits 0, and reads the timings alone as no probe", function()
+			assert.are.equal("", err)
+			assert.are.equal(0, code)
+			assert.are.same(
+				{ "== Probe (PagleDB.global.probe)", "probe: none stored (/pagle dev probe, then /reload)" },
+				section(out, "== Probe")
+			)
+		end)
+
+		it("prints PagleLog's entry count and Pagle.lua's size in bytes (check 2)", function()
+			local bytes = #readFile(account .. "/SavedVariables/Pagle.lua")
+			assert.are.same({
+				"== Re-verification (launch re-verification checks 2, 4-7 and 10)",
+				("check 2: PagleLog 14 entries, Pagle.lua %s bytes (0.00 MiB)"):format(
+					tostring(bytes):gsub("^(%d)(%d%d%d)$", "%1,%2")
+				),
+			}, { unpack(reverify, 1, 2) })
+		end)
+
+		it(
+			"prints the load timings after Core's files loaded, each projection on its own line, against the budget"
+				.. " (checks 2 and 10, LOG-R71)",
+			function()
+				assert.are.same({
+					"check 2, 10: load timings of the login at 2026-10-12 16:45:00 UTC (dev mode on), 14 entries at load,"
+						.. " after Core's files loaded:",
+					"  Core's files loaded    0.0 ms",
+					"  ADDON_LOADED           849.8 ms",
+					"  log opened             850.5 ms",
+					"  PLAYER_LOGIN           2099.5 ms",
+					"  PLAYER_ENTERING_WORLD  3200.2 ms",
+					"  projections idle       3950.0 ms",
+					"  fieldReport: rebuild of 14 entries, 3200.5 ms to 3204.0 ms (3.5 ms), 1 frame, at once, longest"
+						.. " 3.50 ms (LOG-R71: 500 pending entries or fewer)",
+					"  wallet: rebuild of 14 entries, 3204.1 ms to 3204.5 ms (0.4 ms), 1 frame, at once, longest 0.40 ms"
+						.. " (LOG-R71: 500 pending entries or fewer)",
+					"  Ledger: replay of 2 entries, 3204.6 ms to 3205.0 ms (0.4 ms), 1 frame, at once, longest 0.40 ms"
+						.. " (LOG-R71: 500 pending entries or fewer)",
+					"  Stats: rebuild of 14 entries, 3205.1 ms to 3949.5 ms (744.4 ms), 3 frames, longest frame 5.25 ms of"
+						.. " the 4 ms budget (LOG-R71): OVER",
+					"check 10: every projection caught up 749.8 ms after PLAYER_ENTERING_WORLD",
+				}, { unpack(reverify, 3, 14) })
+			end
+		)
+
+		it(
+			"prints the night Casts with their first and last realm minute, the Casts with no realm minute, and the"
+				.. " realm offsets (check 4, LOG-R49, DATA-R36)",
+			function()
+				assert.are.same({
+					"check 4: 3 Casts at night (realm 21:00 to 06:00, the catalogue's night window, DATA-R36), realm"
+						.. " minutes 21:03 to 05:58",
+					"check 4: 1 Cast with no realm minute, seq 8",
+					"check 4: the realm's UTC offset, from each Cast's realm minute (LOG-R49): UTC-08:00: 1 Cast,"
+						.. " UTC-07:00: 10 Casts: more than one, so a clock change or a wrong realm minute",
+				}, { unpack(reverify, 15, 17) })
+			end
+		)
+
+		it(
+			"prints each hovered text and locale as the P rows group them, and each unresolved text with its locale"
+				.. " (checks 5 and 7, LOG-R81, REP-R22)",
+			function()
+				assert.are.same({
+					"check 5, 7: the diagnostics buffer (PagleDB.global.diagnostics, LOG-R81): 6 entries, deDE 2, enUS 4",
+					"check 5: hovered texts, as the Field report's P rows group them (REP-R22): 3",
+					'  enUS "Floating Wreckage": 1 Cast in area 12 (1); 6303x1',
+					'  enUS "Oily Blackmouth School": 3 Casts in area 12 (2), 87 (1); 6291x1, 6303x2',
+					'  enUS "School of Whimsyfin": 1 Cast in area 40 (1); nothing caught',
+					"check 7: entries whose zone or subzone text didn't resolve (LOG-R22): 2",
+					'  Player-4618-0A1B2C3D-1791820000-0 deDE: zone "Dunkelküste", subzone "Die lange Bucht", stored as'
+						.. " 0/0",
+					'  Player-4618-0A1B2C3D-1791821200-0 deDE: zone "Dämmerwald", subzone "Rabenflucht", stored as 10/0',
+				}, { unpack(reverify, 18, 25) })
+			end
+		)
+
+		it(
+			"prints the Casts per zone and subzone, flagging zone 0, an alias source and no catch data (check 6,"
+				.. " LOG-R22, DATA-R31, DATA-R32)",
+			function()
+				assert.are.same({
+					"check 6: Casts per zone/subzone areaID (catalogue: spec/scripts/fixtures/ReverifyCatalogue.lua):",
+					"  0/0: 1 Cast  FLAGGED: zone 0, unresolved (LOG-R22)",
+					"  10/0: 1 Cast  FLAGGED: 10 has no catch data (hasData = false, DATA-R31)",
+					"  12/0: 6 Casts",
+					"  12/87: 1 Cast",
+					"  40/0: 2 Casts",
+					"  16510/0: 1 Cast  FLAGGED: 16510 is an alias source of 12, never stored (LOG-R22, DATA-R32); 16510"
+						.. " has no catch data (hasData = false, DATA-R31)",
+					"check 6: 3 of 6 places flagged",
+				}, { unpack(reverify, 26) })
+			end
+		)
+	end)
+
+	it("says when no load timings are stored, or Pagle.lua can't be read (#262)", function()
+		local reverify = section(run(ACCOUNTS .. "M1#1", "--catalogue", CATALOGUE), "== Re-verification")
+		assert.are.equal(
+			"check 2, 10: no load timings (PagleDB.global.probe.timings): /pagle dev on, then log in; that login's"
+				.. " are saved at the next /reload or logout",
+			reverify[3]
+		)
+		assert.are.same(
+			{ "== Re-verification: can't read Pagle.lua: missing" },
+			section(run(ACCOUNTS .. "M0#1"), "== Re-verification")
+		)
+	end)
+
+	describe("on a Pagle.lua too large for Lua 5.1 to load in one piece (#262)", function()
+		-- A PagleLog whose entries run past SPLIT_RUN (1,000) string items, in the client's layout.
+		local lines = { "", "PagleLog = {", '["entries"] = {' }
+		for i = 1, 1500 do
+			lines[#lines + 1] = ('"C1|1|%d|0|c|494|1439|1|12|0|86|25||||6303x1", -- [%d]'):format(1791731000 + i, i)
+		end
+		lines[#lines + 1] = "},"
+		lines[#lines + 1] = '["logId"] = "3f9a2c1e7b0d4a65",'
+		lines[#lines + 1] = "}"
+		lines[#lines + 1] = "PagleDB = {"
+		lines[#lines + 1] = '["global"] = {'
+		lines[#lines + 1] = '["texts"] = {'
+		lines[#lines + 1] = '"a", -- [1]'
+		lines[#lines + 1] = "},"
+		lines[#lines + 1] = "},"
+		lines[#lines + 1] = "}"
+		local text = table.concat(lines, "\r\n") .. "\r\n"
+
+		it("loads each long run of strings apart, to the same globals a load in one piece gives", function()
+			local whole = assert(script.wtf.loadSavedVariables(text, "Pagle.lua"))
+			local split, runs = script.wtf.loadSplit(text, "Pagle.lua")
+			assert.are.equal(1, runs)
+			assert.are.same(whole, split)
+			assert.are.equal(1500, #split.PagleLog.entries)
+		end)
+
+		it("still runs each part as data: a call in it fails instead of running", function()
+			local planted = text:gsub('"C1|1|1791731700|', '"x", print("ran"), "C1|1|1791731700|', 1)
+			local split, err = script.wtf.loadSplit(planted, "Pagle.lua")
+			assert.is_nil(split)
+			assert.matches("attempt to call global 'print'", err, 1, true)
+		end)
 	end)
 
 	describe("with only an account folder", function()

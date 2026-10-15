@@ -1,7 +1,7 @@
 -- The board's sounds, its fit to the screen and its moments of change (tackle-board.md › UI; the board art kit's
 -- SOUND.md and MOTION.md): adapter/BoardSound.lua, adapter/Fit.lua and adapter/BoardChanges.lua, over a board opened
 -- on the fake client, live Casts completing its goals while it shows. The fake client runs the motion driver's
--- OnUpdate with client.update, and records each PlaySound as "kit <id> <channel>" in client.sounds.
+-- OnUpdate with client.update, and records each PlaySound as "<id> <channel>" in client.sounds.
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local board = dofile("spec/Pagle_TackleBoard/support.lua")
@@ -34,12 +34,12 @@ local function opened(on)
 	})
 end
 
--- The sound kits played so far, as "kit <id> <channel>".
+-- The sound kits played so far, as "<id> <channel>".
 ---@return string[]
 local function kits(loaded)
 	local out = {}
 	for _, sound in ipairs(loaded.client.sounds) do
-		if sound:find("^kit ") then
+		if sound:find("^%d+ ") then
 			out[#out + 1] = sound
 		end
 	end
@@ -70,10 +70,10 @@ describe("the board's sounds (tackle-board.md › UI › Sound)", function()
 		local loaded, _, frame = opened()
 
 		loaded.ns.OpenBoard() -- the tracker opening it again, open
-		assert.are.same({ "kit 844 SFX" }, kits(loaded))
+		assert.are.same({ "844 SFX" }, kits(loaded))
 
 		frame.close:Click()
-		assert.are.same({ "kit 844 SFX", "kit 845 SFX" }, kits(loaded))
+		assert.are.same({ "844 SFX", "845 SFX" }, kits(loaded))
 	end)
 
 	it("sounds the Fly Box drawer's opening and closing", function()
@@ -83,7 +83,7 @@ describe("the board's sounds (tackle-board.md › UI › Sound)", function()
 		box:Click()
 		box:Click()
 
-		assert.are.same({ "kit 844 SFX", "kit 862 SFX", "kit 863 SFX" }, kits(loaded))
+		assert.are.same({ "844 SFX", "862 SFX", "863 SFX" }, kits(loaded))
 	end)
 end)
 
@@ -112,11 +112,11 @@ describe("a goal done while the board shows (MOTION.md › A Notice gets done)",
 		assert.is_true(slip:IsShown()) -- still on its way
 		assert.is_true(slot.busy)
 		-- the goal done, and the Campfire lit by the day's first goal
-		assert.are.same({ "kit 844 SFX", "kit 878 SFX", "kit 23287 SFX" }, kits(loaded))
+		assert.are.same({ "844 SFX", "878 SFX", "23287 SFX" }, kits(loaded))
 		frames(loaded, 0.4)
-		assert.are.equal("kit 1204 SFX", kits(loaded)[4]) -- the stamp lands
+		assert.are.equal("1204 SFX", kits(loaded)[4]) -- the stamp lands
 		frames(loaded, 1)
-		assert.are.equal("kit 1212 SFX", kits(loaded)[5]) -- its slip is pinned on the spike
+		assert.are.equal("1212 SFX", kits(loaded)[5]) -- its slip is pinned on the spike
 		frames(loaded, 1)
 
 		assert.is_false(slip:IsShown())
@@ -135,7 +135,7 @@ describe("a goal done while the board shows (MOTION.md › A Notice gets done)",
 
 		assert.are.equal(count, box.count:GetText())
 		frames(loaded, 1.8)
-		assert.are.equal("kit 73919 SFX", kits(loaded)[6])
+		assert.are.equal("73919 SFX", kits(loaded)[6])
 		frames(loaded, 0.5)
 		assert.are_not.equal(count, box.count:GetText())
 	end)
@@ -150,7 +150,7 @@ describe("a goal done while the board shows (MOTION.md › A Notice gets done)",
 		assert.is_true(slot.empty:IsShown())
 		frames(loaded, 2)
 		-- no stamp nor tack: those are beats of the motion
-		assert.are.same({ "kit 844 SFX", "kit 878 SFX", "kit 23287 SFX", "kit 73919 SFX" }, kits(loaded))
+		assert.are.same({ "844 SFX", "878 SFX", "23287 SFX", "73919 SFX" }, kits(loaded))
 	end)
 
 	it("settles when the board closes mid-flight", function()

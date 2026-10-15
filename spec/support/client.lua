@@ -16,8 +16,8 @@
 ---@field loot FakeLoot The loot window, as the loot API reads it.
 ---@field areaNames table<integer, string> Each area's name, as `C_Map.GetAreaInfo` returns it. Default none.
 ---@field mapNames table<integer, string> Each uiMap's name, for `C_Map.GetMapInfo`. Default none.
----@field sounds string[] Each PlaySoundFile call, in order, as "<path> <channel>", and each PlaySound call as
---- "kit <id> <channel>".
+---@field sounds string[] Each PlaySoundFile and PlaySound call, in order, as "<path> <channel>" or "<sound kit id>
+--- <channel>".
 ---@field screenshots integer How many times Screenshot() was called. A spec may wrap the stub to see the screen then.
 ---@field errors string[] Each error the default geterrorhandler() got, in order. A spec that gets one must read
 --- this list (assert it), or it fails at its end (spec/support/errors.lua).
@@ -138,9 +138,9 @@ local function clientStubs(client)
 			client.sounds[#client.sounds + 1] = ("%s %s"):format(path, tostring(channel))
 			return true, #client.sounds
 		end,
-		-- A sound kit by its id, recorded in client.sounds as "kit <id> <channel>", and reported played.
-		PlaySound = function(id, channel)
-			client.sounds[#client.sounds + 1] = ("kit %s %s"):format(tostring(id), tostring(channel))
+		-- Records the call in client.sounds, by the sound kit's id, and reports it played, as willPlay, soundHandle.
+		PlaySound = function(soundKitID, channel)
+			client.sounds[#client.sounds + 1] = ("%s %s"):format(tostring(soundKitID), tostring(channel))
 			return true, #client.sounds
 		end,
 		-- The screen's root frame, which every addon frame hangs from, and the game's error text under it (both in the
