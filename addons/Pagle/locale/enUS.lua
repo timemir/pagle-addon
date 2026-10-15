@@ -72,15 +72,15 @@ ns.L = {
 	-- A number of minutes: the budget's window (SET-R10) and a card's time fished (ANN-R53).
 	MINUTES = "%d min",
 	-- The Announcement frames (announcements.md › UI): the toast lane's overflow (ANN-R20), stamps beyond the 4 shown
-	-- (ANN-R11), the Coins stamp with its sum (ANN-R23), the record ruler's stamp (ANN-R22) and the splash's hint.
+	-- (ANN-R11), the Coins beside the drawn coin with their sum (ANN-R23), the record ruler's stamp (ANN-R22) and the
+	-- splash's hint.
 	ANNOUNCEMENT_MORE = "+%d more",
 	ANNOUNCEMENT_STAMPS_MORE = "+%d",
-	ANNOUNCEMENT_COINS = "+%s " .. COIN,
+	ANNOUNCEMENT_COINS = "+%s",
 	ANNOUNCEMENT_NEW_RECORD = "New record",
 	ANNOUNCEMENT_SPLASH_HINT = "Click anywhere to continue",
-	-- The toast listing the toast headlines held through combat (ANN-R36), and each line: a headline's title and text.
+	-- The toast listing the toast headlines held through combat (ANN-R36).
 	ANNOUNCEMENT_WHILE_FIGHTING = "While you were fighting",
-	ANNOUNCEMENT_FIGHTING_LINE = "%s: %s",
 	-- The catch Nod (ANN-R13): a Catch's name, its Size band and its length; an item the client hasn't named yet.
 	CATCH_NOD = "%s · %s · %s",
 	CATCH_NOD_ITEM = "Item %d",

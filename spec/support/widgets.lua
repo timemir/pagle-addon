@@ -30,6 +30,9 @@ local LAYOUT_METHODS = {
 	"SetMaxLetters",
 	"SetMultiLine",
 	"SetCursorPosition",
+	"SetClipsChildren",
+	"SetShadowColor",
+	"SetShadowOffset",
 }
 
 -- One anchor of `widget` as relativeTo, relativePoint, x, y: SetPoint(point, x, y) and SetPoint(point) are relative
@@ -165,6 +168,31 @@ function widgets.newWidget(kind, parent)
 	end
 	function widget:GetTexture()
 		return self.texture
+	end
+	-- A frame's level among its strata's frames, and its scale (1 until set).
+	function widget:SetFrameLevel(level)
+		self.frameLevel = level
+	end
+	function widget:GetFrameLevel()
+		return self.frameLevel or 0
+	end
+	function widget:SetScale(scale)
+		self.scale = scale
+	end
+	function widget:GetScale()
+		return self.scale or 1
+	end
+	-- A mask texture, and the masks a texture is drawn through (`masks`).
+	function widget:CreateMaskTexture()
+		local mask = widgets.newWidget("MaskTexture", self)
+		mask.SetTexture = function(region, file)
+			region.texture = file
+		end
+		return mask
+	end
+	function widget:AddMaskTexture(mask)
+		self.masks = self.masks or {}
+		self.masks[#self.masks + 1] = mask
 	end
 	function widget:SetDesaturated(desaturated)
 		self.desaturated = not not desaturated

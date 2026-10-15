@@ -1,5 +1,6 @@
--- The toast styles as data (announcements.md › Toast styles, ANN-R80; wallet-and-shop.md › SHOP-R25): Timber, Ripple
--- and Lantern Glow, keyed by Core's toast style good IDs, with Timber for any other ID.
+-- The toast styles and the announcement art's choices as data (announcements.md › Toast styles, › UI, ANN-R80;
+-- wallet-and-shop.md › SHOP-R25): Timber, Ripple and Lantern Glow, keyed by Core's toast style good IDs, with Timber
+-- for any other ID; the page a toast is drawn on; a banner's seal; and the art's capitals.
 
 local ns = loadAddon("Pagle", FOREVER_GLOBALS).ns
 
@@ -20,43 +21,58 @@ describe("the toast styles", function()
 	end)
 
 	it(
-		"keep Timber as M2 drew it: its colours, no backdrop texture, no glow and the frames' own fonts (ANN-R80)",
+		"each draw the toasts and Nods from an atlas of their own, which has every page and the strip (ANN-R80)",
 		function()
-			local timber = ns.ToastStyleOf(TIMBER)
+			local atlases = {}
+			for _, id in ipairs({ TIMBER, RIPPLE, LANTERN }) do
+				local style = ns.ToastStyleOf(id)
+				atlases[#atlases + 1] = style.atlas
+				local sprites = ns.ATLASES[style.atlas].sprites
+				for _, name in ipairs({ "low", "low-ruled", "toast", "toast-ruled", "high", "digest" }) do
+					assert.is_table(sprites["toast-" .. name])
+				end
+				assert.is_table(sprites["nod-strip"])
+			end
 
-			assert.are.same({ 0.16, 0.11, 0.07, 0.94 }, timber.colors.wood)
-			assert.are.same({ 0.54, 0.42, 0.25, 1 }, timber.colors.edge)
-			assert.are.same({ 1, 0.82, 0 }, timber.colors.title)
-			assert.are.same({ 0.70, 0.13, 0.10, 1 }, timber.colors.stamp)
-			assert.are.same({ 0.93, 0.87, 0.72, 1 }, timber.colors.parchment)
-			assert.are.same({ nil, nil, nil }, { timber.backdrop, timber.glow, timber.titleFace })
+			assert.are.same({ "ToastsLedger", "ToastsRipple", "ToastsLantern" }, atlases)
 		end
 	)
 
-	it("each name every colour role Timber does, so a frame finds each in any style (ANN-R80)", function()
-		local timber = ns.ToastStyleOf(TIMBER)
-		for _, id in ipairs({ RIPPLE, LANTERN }) do
+	it(
+		"find every atlas's texture in Pagle's media/announce as a BLP the package ships (announcements.md › UI)",
+		function()
+			for name, atlas in pairs(ns.ATLASES) do
+				assert.are.equal("Interface\\AddOns\\Pagle\\media\\announce\\" .. name, atlas.file)
+				---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io
+				local file = io.open("addons/Pagle/media/announce/" .. name .. ".blp", "rb")
+				assert.is_not_nil(file)
+				assert.are.equal("BLP2", file:read(4))
+				file:close()
+			end
+		end
+	)
+
+	it("name medallions, a stamp and inks the shared atlas and the palette have (ANN-R80)", function()
+		for _, id in ipairs({ TIMBER, RIPPLE, LANTERN }) do
 			local style = ns.ToastStyleOf(id)
-			assert.are.equal(id, style.id)
-			for role, color in pairs(timber.colors) do
-				assert.are.equal(#color, #style.colors[role], ("%s's %s"):format(id, role))
+			for _, trim in ipairs({ style.trim, style.highTrim }) do
+				assert.is_table(ns.ATLASES.Announce.sprites["bezel-" .. trim .. "-84"])
+			end
+			assert.is_table(ns.ATLASES.Announce.sprites[style.stamp])
+			for _, ink in ipairs({ style.stampInk, style.what, style.name }) do
+				assert.are.equal(3, #ns.ANNOUNCE_COLORS[ink], ("%s's %s"):format(id, ink))
 			end
 		end
 	end)
 
-	it("give Ripple and Lantern Glow a look of their own: in-client textures and their own edge (ANN-R80)", function()
-		local ripple, lantern = ns.ToastStyleOf(RIPPLE), ns.ToastStyleOf(LANTERN)
+	it("give Ripple silver medallions and blue stamps, and Timber and Lantern Glow brass and red (ANN-R80)", function()
+		local timber, ripple, lantern = ns.ToastStyleOf(TIMBER), ns.ToastStyleOf(RIPPLE), ns.ToastStyleOf(LANTERN)
 
 		assert.are.same(
-			{ "Interface\\FrameGeneral\\UI-Background-Marble", "Interface\\Cooldown\\ping4" },
-			{ ripple.backdrop.file, ripple.glow.file }
+			{ { "gold", "stamp" }, { "silver", "stamp-blue" }, { "gold", "stamp" } },
+			{ { timber.trim, timber.stamp }, { ripple.trim, ripple.stamp }, { lantern.trim, lantern.stamp } }
 		)
-		assert.are.same(
-			{ "Interface\\CharacterFrame\\TempPortraitAlphaMask", "Fonts\\MORPHEUS.TTF" },
-			{ lantern.glow.file, lantern.titleFace.file }
-		)
-		assert.are_not.same(ns.ToastStyleOf(TIMBER).colors.edge, ripple.colors.edge)
-		assert.are_not.same(ripple.colors.edge, lantern.colors.edge)
+		assert.are_not.same(timber.what, lantern.what)
 	end)
 
 	for _, id in ipairs({ "core.toaststyle.moonlit", "hunts.cover.velvet", "", 7 }) do
@@ -70,24 +86,94 @@ describe("the toast styles", function()
 	end)
 end)
 
-describe("a toast style's glow cropped to its frame (ANN-R80)", function()
-	it("is the whole square when it fits", function()
+describe("a toast's page", function()
+	-- An Announcement headlined by a moment on `rung`, with `fields`.
+	local function announcement(rung, fields)
+		local headline = { rung = rung, title = "T" }
+		for key, value in pairs(fields or {}) do
+			headline[key] = value
+		end
+		return { headline = headline }
+	end
+	local RULER = { old = 1, new = 2, unit = "lb", label = "w" }
+
+	it("is by rung: pencil for toast.low, the plain page for toast, gilt and wax for toast.high", function()
+		assert.are.same({ "low", "toast", "high" }, {
+			ns.ToastPage(announcement("toast.low")).page,
+			ns.ToastPage(announcement("toast")).page,
+			ns.ToastPage(announcement("toast.high")).page,
+		})
 		assert.are.same(
-			{ x = 10, y = 20, width = 40, height = 40, left = 0, right = 1, top = 0, bottom = 1 },
-			ns.CroppedSquare(30, 40, 40, 300, 100)
+			{ true, true },
+			{ ns.ToastPage(announcement("toast.low")).low, ns.ToastPage(announcement("toast.high")).high }
 		)
 	end)
 
-	it("keeps only the part inside the frame, with the texture coordinates of that part", function()
-		assert.are.same(
-			{ x = 0, y = 0, width = 60, height = 64, left = 0.25, right = 1, top = 0.2, bottom = 1 },
-			ns.CroppedSquare(20, 24, 80, 350, 64)
-		)
+	it("is ruled for a headline with a record ruler, toast.high's on the toast's ruled page (ANN-R22)", function()
+		assert.are.same({ "low-ruled", "toast-ruled", "toast-ruled" }, {
+			ns.ToastPage(announcement("toast.low", { ruler = RULER })).page,
+			ns.ToastPage(announcement("toast", { ruler = RULER })).page,
+			ns.ToastPage(announcement("toast.high", { ruler = RULER })).page,
+		})
 	end)
 
-	it("is nil when none of it is inside the frame", function()
-		assert.is_nil(ns.CroppedSquare(-50, 10, 20, 100, 100))
+	it('is the digest for "While you were fighting" (ANN-R36)', function()
+		local fighting = announcement("toast")
+		fighting.fighting = {}
+
+		assert.are.same({ "digest", true }, { ns.ToastPage(fighting).page, ns.ToastPage(fighting).digest })
 	end)
+end)
+
+describe("a banner's seal", function()
+	it(
+		"presses the headline's number, mark or the Prestige crest, and the waves for none or another (announcements.md › Contracts)",
+		function()
+			assert.are.same({
+				{ number = 12 },
+				{ crest = true },
+				{ mark = "book" },
+				{ mark = "quill" },
+				{ mark = "waves" },
+				{ mark = "waves" },
+			}, {
+				ns.BannerSeal({ seal = 12 }),
+				ns.BannerSeal({ seal = "crest" }),
+				ns.BannerSeal({ seal = "book" }),
+				ns.BannerSeal({ seal = "quill" }),
+				ns.BannerSeal({}),
+				ns.BannerSeal({ seal = "anchor" }),
+			})
+		end
+	)
+end)
+
+describe("the art's capitals", function()
+	it("put a text in capitals, a link's words too, leaving texture, colour and link escapes as they are", function()
+		local star = "|TInterface\\Common\\ReputationStar:12:12:0:0:32:32:0:16:0:16|t"
+
+		assert.are.same({
+			"NEW HERE",
+			star .. star .. " MASTERY",
+			"|cffff2020RED|r WORDS",
+			"A |Hitem:6358|h[OILY]|h FISH",
+		}, {
+			ns.Capitals("New here"),
+			ns.Capitals(star .. star .. " Mastery"),
+			ns.Capitals("|cffff2020red|r words"),
+			ns.Capitals("a |Hitem:6358|h[Oily]|h fish"),
+		})
+	end)
+
+	it(
+		"space a banner's title letter by letter, four spaces between words, a character of several bytes kept whole",
+		function()
+			assert.are.same(
+				{ "Z O N E    M A S T E R", "W E T L A N D S    ·    T I T L E" },
+				{ ns.SpacedCaps("Zone Master"), ns.SpacedCaps("Wetlands · Title") }
+			)
+		end
+	)
 end)
 
 describe("the sample toast", function()

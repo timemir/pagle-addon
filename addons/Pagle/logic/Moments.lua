@@ -21,6 +21,7 @@ local ns = select(2, ...)
 ---@field expiresAt? integer     -- server time (ANN-R45)
 ---@field pastText? string       -- shown in the summary if it expired
 ---@field summaryOnly? boolean   -- ANN-R63
+---@field seal? integer|"waves"|"book"|"quill"|"crest" -- a banner's wax seal: a number, a mark or the Prestige crest
 
 ---@alias PagleRung "nod"|"toast.low"|"toast"|"toast.high"|"banner"|"splash"
 

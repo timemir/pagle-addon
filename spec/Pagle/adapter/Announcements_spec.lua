@@ -1,12 +1,13 @@
 -- Showing Announcements on the client, through the real TOC (announcements.md › The display queue, › Interruption
 -- budget, › Sounds, › Toast styles, › UI): a Module raises moments, logic/Moments.lua merges them, and Core shows them
--- through the lanes in the Timber frames, playing their sounds with PlaySoundFile.
+-- through the lanes in the announcements art's frames, playing their sounds with PlaySoundFile. A headline with text
+-- prints its title in capitals over the text, one without shows its title as it is, and stamps are in capitals.
 
 local SOUNDS = "Interface\\AddOns\\Pagle\\media\\sounds\\"
 local DRIFTWOOD = SOUNDS .. "driftwood\\"
 local CAST = ("%s-%d-0"):format(PLAYER_GUID, SERVER_TIME)
--- The Pagle Coin icon the Coins stamp shows after its "+N" (ANN-R23).
-local COIN = "|TInterface\\MoneyFrame\\UI-GoldIcon:0|t"
+-- A banner's title, "Level 12", spaced as the art spaces it.
+local LEVEL_12 = "L E V E L    1 2"
 
 -- Core logged in on Forever with the Ledger registered. Each moment Core hands the summary is in `summarized`.
 local function loadCore()
@@ -82,10 +83,10 @@ describe("Announcement frames", function()
 			local toast = frameOf(loaded, "toast")
 			assert.is_true(toast.shown)
 			assert.are.same(
-				{ 136245, "New Species", "Nightfin Snapper" },
+				{ 136245, "NEW SPECIES", "Nightfin Snapper" },
 				{ toast.icon.texture, toast.title:GetText(), toast.text:GetText() }
 			)
-			assert.are.same({ "New here", "★★", "Rank up", "Skill", "+1", "+25 " .. COIN }, stampsOf(toast))
+			assert.are.same({ "NEW HERE", "★★", "RANK UP", "SKILL", "+1", "+25" }, stampsOf(toast))
 			assert.is_false(toast.more.shown)
 			loaded.client.advance(5.9)
 			assert.is_true(toast.shown)
@@ -111,7 +112,7 @@ describe("Announcement frames", function()
 
 			local banner, toast = frameOf(loaded, "banner"), frameOf(loaded, "toast")
 			assert.are.same({ true, true }, { banner.shown, toast.shown })
-			assert.are.same({ "Level 12", "Angler Level" }, { banner.title:GetText(), banner.text:GetText() })
+			assert.are.same({ LEVEL_12, "Angler Level" }, { banner.title:GetText(), banner.text:GetText() })
 			loaded.client.advance(4)
 			assert.are.same({ false, true }, { banner.shown, toast.shown })
 			loaded.client.advance(1)
@@ -139,9 +140,9 @@ describe("Announcement frames", function()
 
 			local banner, toast = frameOf(loaded, "banner"), frameOf(loaded, "toast")
 			assert.are.same({ true, true }, { banner.shown, toast.shown })
-			assert.are.same({ "Level 12", "New Species" }, { banner.title:GetText(), toast.title:GetText() })
-			assert.are.same({ "+20 " .. COIN }, stampsOf(banner))
-			assert.are.same({ "New in this zone", "+12 " .. COIN }, stampsOf(toast))
+			assert.are.same({ LEVEL_12, "NEW SPECIES" }, { banner.title:GetText(), toast.title:GetText() })
+			assert.are.same({ "+20" }, stampsOf(banner))
+			assert.are.same({ "NEW IN THIS ZONE", "+12" }, stampsOf(toast))
 			assert.are.same({ DRIFTWOOD .. "banner.ogg SFX" }, loaded.client.sounds)
 		end
 	)
@@ -153,7 +154,7 @@ describe("Announcement frames", function()
 
 		local splash = frameOf(loaded, "splash")
 		assert.are.same(
-			{ true, "Legend", "Old Ironjaw" },
+			{ true, "LEGEND", "Old Ironjaw" },
 			{ splash.shown, splash.title:GetText(), splash.text:GetText() }
 		)
 		assert.are.same({ SOUNDS .. "legend.ogg SFX" }, loaded.client.sounds)
@@ -186,7 +187,7 @@ describe("Announcement frames", function()
 
 		local nod = frameOf(loaded, "nod")
 		assert.is_true(nod.shown)
-		assert.are.same({ "New here", "+10 " .. COIN }, stampsOf(nod))
+		assert.are.same({ "NEW HERE", "+10" }, stampsOf(nod))
 		assert.are.same({}, loaded.client.sounds)
 		loaded.client.advance(3)
 		assert.is_false(nod.shown)
@@ -206,14 +207,14 @@ describe("Announcement frames", function()
 			loaded.client.update(0.75)
 			assert.is_false(view.margin.shown)
 			loaded.client.update(0.75)
-			assert.are.same({ "12.0 lb", "+2.0 lb", "weight" }, {
+			assert.are.same({ "12.0 lb", "+2.0 lb", "WEIGHT" }, {
 				view.value:GetText(),
 				view.margin:GetText(),
 				view.label:GetText(),
 			})
 			assert.are.same({ true, false }, { view.margin.shown, view.record.shown })
 			loaded.client.update(loaded.ns.RULER_STAMP_DELAY)
-			assert.are.same({ true, "New record" }, { view.record.shown, view.record.label:GetText() })
+			assert.are.same({ true, "NEW RECORD" }, { view.record.shown, view.record.label:GetText() })
 		end
 	)
 
@@ -242,7 +243,7 @@ describe("Announcement frames", function()
 
 			local view = frameOf(loaded, "toast").ruler
 			assert.are.same(
-				{ "30.0 cm", "34.2 cm", "+4.2 cm", "Pagle size" },
+				{ "30.0 cm", "34.2 cm", "+4.2 cm", "PAGLE SIZE" },
 				{ view.old:GetText(), view.value:GetText(), view.margin:GetText(), view.label:GetText() }
 			)
 		end
@@ -294,6 +295,91 @@ describe("Announcement frames", function()
 		local view = frameOf(loaded, "toast").ruler
 		assert.are.same({ "11.8 in", "+<0.1 in" }, { view.value:GetText(), view.margin:GetText() })
 	end)
+end)
+
+describe("the announcements art", function()
+	-- The sprite a texture shows, by its texture coordinates' top left in the atlas named by its file.
+	local function spriteOf(loaded, texture)
+		for _, atlas in pairs(loaded.ns.ATLASES) do
+			if texture.texture == atlas.file then
+				for name, sprite in pairs(atlas.sprites) do
+					if
+						math.abs(texture.texCoord[1] - sprite.x / atlas.width) < 1e-9
+						and math.abs(texture.texCoord[3] - sprite.y / atlas.height) < 1e-9
+					then
+						return name
+					end
+				end
+			end
+		end
+	end
+
+	it(
+		"draws each toast rung on its own page: pencil for toast.low, ruled for a record, gilt and wax for toast.high"
+			.. " (announcements.md › UI)",
+		function()
+			local loaded, M = loadCore()
+			loaded.ns.db.profile.announcements.budget.on = false
+			local pages = {}
+			local ruler = { old = 1, new = 2, unit = "lb", label = "weight" }
+			for _, step in ipairs({
+				{ "toast.low", {} },
+				{ "toast.low", { ruler = ruler } },
+				{ "toast", {} },
+				{ "toast.high", {} },
+			}) do
+				raise(loaded, M, moment(step[1], "Moment", step[2]))
+				local toast = frameOf(loaded, "toast")
+				pages[#pages + 1] = { spriteOf(loaded, toast.page), toast.wax.shown, toast.bezel.Ring:GetWidth() > 90 }
+				loaded.client.advance(6)
+			end
+
+			assert.are.same({
+				{ "toast-low", false, false },
+				{ "toast-low-ruled", false, false },
+				{ "toast-toast", false, true },
+				{ "toast-high", true, true },
+			}, pages)
+		end
+	)
+
+	it("writes a headline with no text as its title alone in the Angler's hand, as a catch Nod's line", function()
+		local loaded, M = loadCore()
+
+		raise(loaded, M, moment("nod", "Oily Blackmouth · Typical · 34.2 cm"))
+
+		local nod = frameOf(loaded, "nod")
+		assert.are.same(
+			{ "Oily Blackmouth · Typical · 34.2 cm", "PagleArtNodName", false },
+			{ nod.title:GetText(), nod.title.fontObject, nod.text.shown }
+		)
+	end)
+
+	it(
+		"presses a banner's seal with the headline's number or mark, or shows the Prestige crest with the Angler's"
+			.. " portrait (announcements.md › Contracts)",
+		function()
+			local loaded, M = loadCore()
+			local seals = {}
+			for _, seal in ipairs({ 1200, "quill", "crest" }) do
+				raise(loaded, M, moment("banner", "Prestige I", { seal = seal }))
+				local banner = frameOf(loaded, "banner")
+				seals[#seals + 1] = {
+					banner.seal.shown and spriteOf(loaded, banner.seal) or false,
+					banner.sealNumber.shown and banner.sealNumber:GetText() or false,
+					banner.crest.shown and banner.portrait.portrait or false,
+					banner.crestLabel.shown and banner.crestLabel:GetText() or false,
+				}
+				loaded.client.advance(4)
+			end
+
+			assert.are.same({
+				{ "seal", "1,200", false, false },
+				{ "seal-quill", false, false, false },
+				{ false, false, "player", "PRESTIGE I" },
+			}, seals)
+		end
+	)
 end)
 
 describe("the Interruption budget on the client", function()

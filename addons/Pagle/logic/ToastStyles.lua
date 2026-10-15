@@ -1,153 +1,99 @@
 ---@class PagleNS
 local ns = select(2, ...)
 
--- The toast styles (announcements.md › Toast styles, ANN-R80; wallet-and-shop.md › SHOP-R25): the looks the toast,
--- Nod, banner, splash and card frames are drawn in, as data keyed by Core's toast style good IDs. Timber is the free
--- default and M2's look; Ripple and Lantern Glow are Curio Shop goods, after prototypes/curio-shop/ (variant B)'s
--- .ts-ripple and .ts-lantern. A style changes only the look, never timing, lanes, the Interruption budget, sounds or
--- which moments show. adapter/Skins.lua paints the frames in one, and adapter/ToastStyles.lua follows the pick.
+-- The toast styles and the announcement art's choices (announcements.md › Toast styles, › UI, ANN-R80;
+-- wallet-and-shop.md › SHOP-R25), as data keyed by Core's toast style good IDs. The look is the announcements art
+-- kit's: a toast is a fresh entry in the Angler's ledger, a torn page on a leather spine, written in ink. Timber is
+-- the free default and the kit's Ledger style; Ripple and Lantern Glow are Curio Shop goods, the kit's Ripple and
+-- Lantern styles. A style picks the toast and Nod art (its own atlas, data/AnnounceArt.lua), the medallions' trim,
+-- the rubber stamps' ink and the page's inks; the banner, the splash and the cards look the same in every style. A
+-- style changes only the look, never timing, lanes, the Interruption budget, sounds or which moments show.
+-- adapter/Art.lua draws the art, and adapter/Announcements.lua and adapter/Cards.lua the frames.
 
---- A texture over a frame's background, tinted.
----@class PagleStyleBackdrop
----@field file string
----@field tint number[] { r, g, b, a }
+-- An { r, g, b } from a "RRGGBB" hex string.
+---@param hex string
+---@return number[]
+local function rgb(hex)
+	local out = {}
+	for i = 1, 5, 2 do
+		out[#out + 1] = tonumber(hex:sub(i, i + 1), 16) / 255
+	end
+	return out
+end
 
---- Rings drawn around an Announcement's icon, under it, each `scale` times the icon's size, cropped to the frame.
----@class PagleStyleGlow
----@field file string
----@field blend BlendMode
----@field tint number[] { r, g, b }
----@field rings { scale: number, alpha: number }[]
+--- The canvas's inks, each { r, g, b }, by role.
+---@type table<string, number[]>
+ns.ANNOUNCE_COLORS = {
+	ink = rgb("1E1408"), -- the handwriting
+	ink2 = rgb("5A3A1C"), -- a size after the name, a ruler's label
+	red = rgb("7A2A1A"), -- the printed kicker
+	stamp = rgb("B4281A"), -- the rubber stamps' ink, a ruler's gain
+	pencil = rgb("4A4844"), -- toast.low's kicker, the old record, "+N more"
+	pencilName = rgb("3E3C38"), -- toast.low's name
+	amt = rgb("7A5410"), -- the Coins beside a coin
+	amtLow = rgb("6A6458"), -- toast.low's Coins
+	gilt = rgb("F0CD6A"), -- over the world: banners, the card's head
+	giltDeep = rgb("B98A26"), -- toast.high's kicker
+	cream = rgb("EFE0BB"), -- a banner's handwritten line
+	creamText = rgb("E6D8B8"),
+	paperInk = rgb("3A2614"), -- a card's lines
+	whenText = rgb("D8C49A"), -- a card's time, on its leather head
+	dim = rgb("A89A7A"), -- the splash's "click anywhere"
+	rule = rgb("2A1A0A"), -- a ruler's ticks
+	fill = rgb("1C2846"), -- a ruler's new mark
+	rippleWhat = rgb("1F4A66"),
+	rippleInk = rgb("13243A"),
+	rippleStamp = rgb("1F5A7A"),
+	lanternWhat = rgb("8A3A08"),
+	lanternInk = rgb("2A1404"),
+}
 
---- A font file for the frames' titles, at a size for each font object a title is otherwise drawn in.
----@class PagleStyleFace
----@field file string
----@field sizes table<string, number>
-
---- A toast style: every colour role the frames paint, each { r, g, b[, a] }, and its textures and title face, if any.
+--- A toast style: its toast and Nod atlas, the medallions' trim (a toast.high's own), the rubber stamp sprite and its
+--- ink, and the page's kicker and name inks, each a role in ns.ANNOUNCE_COLORS.
 ---@class PagleToastStyle
 ---@field id string
----@field colors table<string, number[]>
----@field backdrop? PagleStyleBackdrop
----@field glow? PagleStyleGlow
----@field titleFace? PagleStyleFace
+---@field atlas string
+---@field trim "gold"|"silver"|"bronze"
+---@field highTrim "gold"|"silver"|"bronze"
+---@field stamp string
+---@field stampInk string
+---@field what string
+---@field name string
 
 ---@type table<string, PagleToastStyle>
 ns.TOAST_STYLES = {
-	-- M2's look (#84, #87, #88): dark planks with a worn brass edge, gold headings, and stamps coloured like
-	-- prototypes/catch-feedback/ (variant A)'s. The text roles are the colours of the font objects the frames use.
+	-- The ledger itself: tan parchment, a brown leather spine, brass medallions and red ink.
 	[ns.TOAST_STYLE_DEFAULT] = {
 		id = ns.TOAST_STYLE_DEFAULT,
-		colors = {
-			wood = { 0.16, 0.11, 0.07, 0.94 },
-			edge = { 0.54, 0.42, 0.25, 1 },
-			band = { 0, 0, 0, 0.6 }, -- the banner's band
-			titleBand = { 0.18, 0.15, 0.12, 1 }, -- a card's title band
-			well = { 0, 0, 0, 0.42 }, -- a card's numbers
-			title = { 1, 0.82, 0 }, -- GameFontNormal's gold: titles and a card's headings
-			text = { 1, 1, 1 }, -- GameFontHighlight's white
-			label = { 0.5, 0.5, 0.5 }, -- GameFontDisable's grey: the ruler's label
-			gold = { 1, 0.82, 0 }, -- the ruler's margin
-			dim = { 0.66, 0.62, 0.55 },
-			more = { 0.62, 0.82, 1 },
-			stamp = { 0.70, 0.13, 0.10, 1 },
-			stampText = { 1, 1, 1 },
-			stampsMore = { 0.33, 0.33, 0.33, 1 },
-			coins = { 0.63, 0.47, 0, 1 },
-			record = { 0.82, 0.46, 0.10, 1 },
-			track = { 0.10, 0.08, 0.05, 1 },
-			fill = { 1, 0.75, 0.30, 1 },
-			mark = { 0.81, 0.78, 0.70, 1 },
-			passed = { 1, 0.35, 0.23, 1 },
-			shade = { 0, 0, 0, 0.8 },
-			parchment = { 0.93, 0.87, 0.72, 1 }, -- the splash's card
-			parchmentEdge = { 0.54, 0.35, 0.10, 1 },
-			ink = { 0.23, 0.15, 0.06 }, -- the splash's text
-			legend = { 0.63, 0.29, 0 }, -- the splash's title
-		},
+		atlas = "ToastsLedger",
+		trim = "gold",
+		highTrim = "bronze",
+		stamp = "stamp",
+		stampInk = "stamp",
+		what = "red",
+		name = "ink",
 	},
-	-- Cool water, with rings spreading from the icon: .ts-ripple's #123544 to #06141c, its #5fb6d6 edge and its
-	-- rgba(140, 220, 255) rings at .25, .18 and .12.
+	-- Blue leather, faint rings on the page, silver medallions and blue stamps.
 	["core.toaststyle.ripple"] = {
 		id = "core.toaststyle.ripple",
-		colors = {
-			wood = { 0.05, 0.16, 0.21, 0.94 },
-			edge = { 0.37, 0.71, 0.84, 1 },
-			band = { 0.02, 0.08, 0.11, 0.7 },
-			titleBand = { 0.07, 0.21, 0.27, 1 },
-			well = { 0, 0.04, 0.07, 0.45 },
-			title = { 0.75, 0.92, 1 },
-			text = { 0.92, 0.97, 1 },
-			label = { 0.48, 0.62, 0.68 },
-			gold = { 0.55, 0.86, 1 },
-			dim = { 0.6, 0.72, 0.78 },
-			more = { 0.62, 0.86, 1 },
-			stamp = { 0.10, 0.43, 0.58, 1 },
-			stampText = { 1, 1, 1 },
-			stampsMore = { 0.2, 0.3, 0.35, 1 },
-			coins = { 0.70, 0.55, 0.10, 1 },
-			record = { 0.16, 0.58, 0.72, 1 },
-			track = { 0.02, 0.09, 0.12, 1 },
-			fill = { 0.55, 0.86, 1, 1 },
-			mark = { 0.82, 0.9, 0.93, 1 },
-			passed = { 1, 0.55, 0.4, 1 },
-			shade = { 0, 0.03, 0.06, 0.8 },
-			parchment = { 0.06, 0.19, 0.25, 1 },
-			parchmentEdge = { 0.37, 0.71, 0.84, 1 },
-			ink = { 0.85, 0.95, 1 },
-			legend = { 0.55, 0.86, 1 },
-		},
-		-- Marble's mottle, tinted blue, as light on water.
-		backdrop = { file = "Interface\\FrameGeneral\\UI-Background-Marble", tint = { 0.35, 0.75, 0.95, 0.16 } },
-		glow = {
-			file = "Interface\\Cooldown\\ping4",
-			blend = "ADD",
-			tint = { 0.55, 0.86, 1 },
-			rings = { { scale = 1.5, alpha = 0.25 }, { scale = 2.6, alpha = 0.18 }, { scale = 4.2, alpha = 0.12 } },
-		},
+		atlas = "ToastsRipple",
+		trim = "silver",
+		highTrim = "silver",
+		stamp = "stamp-blue",
+		stampInk = "rippleStamp",
+		what = "rippleWhat",
+		name = "rippleInk",
 	},
-	-- A warm lantern light behind the catch: .ts-lantern's #2a1608 to #0c0602, its #d8782a edge and its
-	-- rgba(255, 170, 60, .45) glow fading out from the icon, with titles in the client's Morpheus face.
+	-- A warm lamp glowing behind the medallion, and browner inks.
 	["core.toaststyle.lanternglow"] = {
 		id = "core.toaststyle.lanternglow",
-		colors = {
-			wood = { 0.11, 0.06, 0.02, 0.95 },
-			edge = { 0.85, 0.47, 0.16, 1 },
-			band = { 0.08, 0.04, 0.01, 0.7 },
-			titleBand = { 0.2, 0.1, 0.03, 1 },
-			well = { 0, 0, 0, 0.45 },
-			title = { 1, 0.78, 0.42 },
-			text = { 1, 0.93, 0.82 },
-			label = { 0.62, 0.5, 0.38 },
-			gold = { 1, 0.67, 0.24 },
-			dim = { 0.78, 0.66, 0.52 },
-			more = { 1, 0.75, 0.45 },
-			stamp = { 0.72, 0.25, 0.06, 1 },
-			stampText = { 1, 0.95, 0.85 },
-			stampsMore = { 0.35, 0.25, 0.18, 1 },
-			coins = { 0.75, 0.55, 0.05, 1 },
-			record = { 0.9, 0.45, 0.1, 1 },
-			track = { 0.12, 0.06, 0.02, 1 },
-			fill = { 1, 0.67, 0.24, 1 },
-			mark = { 0.9, 0.82, 0.7, 1 },
-			passed = { 1, 0.35, 0.23, 1 },
-			shade = { 0.04, 0.02, 0, 0.8 },
-			parchment = { 0.16, 0.08, 0.03, 1 },
-			parchmentEdge = { 0.85, 0.47, 0.16, 1 },
-			ink = { 1, 0.9, 0.75 },
-			legend = { 1, 0.72, 0.3 },
-		},
-		-- Discs of light, smallest brightest, adding up to a glow that fades out from the icon.
-		glow = {
-			file = "Interface\\CharacterFrame\\TempPortraitAlphaMask",
-			blend = "ADD",
-			tint = { 1, 0.6, 0.2 },
-			rings = { { scale = 1.6, alpha = 0.16 }, { scale = 2.8, alpha = 0.11 }, { scale = 4.5, alpha = 0.08 } },
-		},
-		titleFace = {
-			file = "Fonts\\MORPHEUS.TTF",
-			sizes = { GameFontNormal = 15, GameFontNormalLarge = 19, GameFontNormalHuge = 26 },
-		},
+		atlas = "ToastsLantern",
+		trim = "gold",
+		highTrim = "bronze",
+		stamp = "stamp",
+		stampInk = "stamp",
+		what = "lanternWhat",
+		name = "lanternInk",
 	},
 }
 
@@ -159,31 +105,131 @@ function ns.ToastStyleOf(goodID)
 	return ns.TOAST_STYLES[goodID] or ns.TOAST_STYLES[ns.TOAST_STYLE_DEFAULT]
 end
 
---- Where a square of `size` centred at (`cx`, `cy`) from a frame's top left shows inside a `width` by `height` frame:
---- the part inside as an offset and a size, with the texture coordinates of that part. Nil when none of it is inside.
----@param cx number
----@param cy number
----@param size number
----@param width number
----@param height number
----@return { x: number, y: number, width: number, height: number, left: number, right: number, top: number, bottom: number }?
-function ns.CroppedSquare(cx, cy, size, width, height)
-	local x0, y0 = cx - size / 2, cy - size / 2
-	local left, right = math.max(0, x0), math.min(width, x0 + size)
-	local top, bottom = math.max(0, y0), math.min(height, y0 + size)
-	if right <= left or bottom <= top then
-		return nil
+--- A toast's page: its art (the sprite "toast-<page>" in the style's atlas) and its layout, in UI units: its size, the
+--- medallion's size and left, the words' left and top, and the coin's size. `low` is pencil, `high` gilt and wax.
+---@class PagleToastPage
+---@field page string
+---@field w number
+---@field h number
+---@field bezel number
+---@field bx number
+---@field tx number
+---@field ty number
+---@field coin number
+---@field low boolean?
+---@field high boolean?
+---@field ruled boolean?
+---@field digest boolean?
+
+---@type table<string, PagleToastPage>
+local PAGES = {
+	["low"] = { page = "low", w = 404, h = 74, bezel = 64, bx = 6, tx = 86, ty = 10, coin = 30, low = true },
+	["low-ruled"] = {
+		page = "low-ruled",
+		w = 470,
+		h = 122,
+		bezel = 64,
+		bx = 6,
+		tx = 86,
+		ty = 10,
+		coin = 30,
+		low = true,
+		ruled = true,
+	},
+	["toast"] = { page = "toast", w = 464, h = 92, bezel = 84, bx = 4, tx = 138, ty = 12, coin = 42 },
+	["toast-ruled"] = {
+		page = "toast-ruled",
+		w = 464,
+		h = 122,
+		bezel = 84,
+		bx = 4,
+		tx = 138,
+		ty = 12,
+		coin = 42,
+		ruled = true,
+	},
+	["high"] = { page = "high", w = 524, h = 100, bezel = 84, bx = 4, tx = 138, ty = 12, coin = 42, high = true },
+	["digest"] = { page = "digest", w = 560, h = 176, bezel = 84, bx = 4, tx = 138, ty = 12, coin = 42, digest = true },
+}
+
+--- The page a toast is drawn on (announcements.md › UI): "While you were fighting" on the digest page; a headline with
+--- a record ruler on a ruled page (a toast.high's on toast's, the high page having no room for one); else by its
+--- rung, toast.low on the pencil page and toast.high on the gilt one.
+---@param announcement PagleAnnouncement
+---@return PagleToastPage
+function ns.ToastPage(announcement)
+	if announcement.fighting then
+		return PAGES.digest
 	end
-	return {
-		x = left,
-		y = top,
-		width = right - left,
-		height = bottom - top,
-		left = (left - x0) / size,
-		right = (right - x0) / size,
-		top = (top - y0) / size,
-		bottom = (bottom - y0) / size,
-	}
+	local rung, ruled = announcement.headline.rung, announcement.headline.ruler ~= nil
+	if rung == "toast.low" then
+		return ruled and PAGES["low-ruled"] or PAGES.low
+	elseif rung == "toast.high" and not ruled then
+		return PAGES.high
+	end
+	return ruled and PAGES["toast-ruled"] or PAGES.toast
+end
+
+--- What a banner's wax seal shows (announcements.md › Contracts, `seal`): a number pressed into it, the Prestige crest,
+--- or one of the pressed marks, the waves when the headline names none.
+---@param headline PagleMoment
+---@return { number: integer?, crest: boolean?, mark: string? }
+function ns.BannerSeal(headline)
+	local seal = headline.seal
+	if type(seal) == "number" then
+		return { number = seal }
+	elseif seal == "crest" then
+		return { crest = true }
+	elseif seal == "book" or seal == "quill" or seal == "waves" then
+		return { mark = seal }
+	end
+	return { mark = "waves" }
+end
+
+-- The client's escape sequences a text may hold, each copied as it is: a texture (|T…|t), an atlas (|A…|a) or a
+-- link's data (|H…|h) to its end, a colour's |c and 8 hex digits, and the two-character ones (|r, |n, ||).
+local ESCAPE_ENDS = { T = "|t", A = "|a", H = "|h" }
+
+--- `text` in capitals, as the art sets printed words and stamps (the client has no small caps), leaving its escape
+--- sequences as they are: a capital |t would no longer end a texture.
+---@param text string
+---@return string
+function ns.Capitals(text)
+	local out, i = {}, 1
+	while i <= #text do
+		local bar = text:find("|", i, true)
+		if not bar then
+			out[#out + 1] = text:sub(i):upper()
+			break
+		end
+		out[#out + 1] = text:sub(i, bar - 1):upper()
+		local kind = text:sub(bar + 1, bar + 1)
+		local last = bar + 1
+		if ESCAPE_ENDS[kind] then
+			local _, ends = text:find(ESCAPE_ENDS[kind], bar + 2, true)
+			last = ends or #text
+		elseif kind == "c" then
+			last = bar + 9
+		end
+		out[#out + 1] = text:sub(bar, last)
+		i = last + 1
+	end
+	return table.concat(out)
+end
+
+--- A banner's kicker: its letters in capitals, a space between each and four between words, as the canvas spaces it
+--- (the client has no letter-spacing). A text with escape sequences is only put in capitals.
+---@param text string
+---@return string
+function ns.SpacedCaps(text)
+	if text:find("|", 1, true) then
+		return ns.Capitals(text)
+	end
+	local out = {}
+	for char in text:upper():gmatch("[%z\1-\127\194-\244][\128-\191]*") do
+		out[#out + 1] = char == " " and "  " or char
+	end
+	return table.concat(out, " ")
 end
 
 --- A sample toast in a style (wallet-and-shop.md › UI, the preview stage): an Announcement raised by no Module and on

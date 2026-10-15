@@ -125,7 +125,7 @@ Part of [Core](README.md). Core presents every Announcement (ADR 0007): Modules 
 
 ### Toast styles
 
-- **ANN-R80** The toast, Nod, banner, splash and card frames follow the equipped **toast style**. **Timber** is the free default; other styles are Curio Shop goods Core registers ([wallet-and-shop.md](wallet-and-shop.md)). A style changes only the look, never timing or rules.
+- **ANN-R80** The toast and Nod follow the equipped **toast style**: its page and strip art, its medallion trim, its rubber stamps and its inks. **Timber** is the free default; other styles are Curio Shop goods Core registers ([wallet-and-shop.md](wallet-and-shop.md)). The banner, splash and cards look the same in every style. A style changes only the look, never timing or rules.
 
 ## Data
 
@@ -162,7 +162,10 @@ A stored moment keeps: `module`, `moduleTitle`, `moduleOrder`, `kind`, `rung`, `
 ---@field expiresAt? integer     -- server time (ANN-R45)
 ---@field pastText? string       -- shown in the summary if it expired
 ---@field summaryOnly? boolean   -- ANN-R63
+---@field seal? integer|"waves"|"book"|"quill"|"crest" -- a banner's wax seal (UI); default "waves"
 ```
+
+`seal` is what a banner headline's wax seal shows: a number pressed into it (an Angler Level, a Catch Milestone's count), a pressed mark (`"waves"`, `"book"`, `"quill"`), or `"crest"` for the Prestige crest holding the Angler's portrait with the title on its ribbon. Any other value, or none, shows the waves. Only a banner headline's is read.
 
 ### `M:RaiseWriteUp(section)`
 
@@ -200,14 +203,16 @@ The Module specs own their rows, and ANN-R13 owns Core's; this table is a cross-
 
 ## UI
 
-- **Toast:** Retail alert-style frame above the action bar: icon, title, text, up to 4 stamps in the corner, optional record ruler, "+N more" when the lane overflows. Clicking does nothing.
-- **Nod:** one line of text with an icon, under the toast position, fading after 3 s. A catch Nod's line is its title alone (ANN-R13).
-- **Banner:** centre-screen banner with title and text, like the level-up banner.
-- **Splash:** full-screen splash for a Legend: the item icon, its name and its title.
-- **"While you were fighting":** a toast listing the held headlines.
-- **Session summary and Write-up cards:** a card centre-screen with the sections in ANN-R53 and ANN-R61, closed with a button or Esc.
+Every frame is drawn from the announcements art kit: a toast is a fresh entry in the Angler's ledger. The art ships as textures in `addons/Pagle/media/announce/` (BLP, DXT5; `scripts/encode-blp.py` encodes the kit's atlases), with their atlases in `data/AnnounceArt.lua`, and three bundled fonts in `addons/Pagle/media/fonts/`: IM Fell English for print, Caveat for the Angler's hand, Marcellus for gilt, stamps and labels. A headline with a text has its title printed in capitals over the text in the hand; a headline with no text has its title alone in the hand. Stamps, labels and printed words are in capitals (the client has no small caps), leaving texture and colour escapes as they are.
 
-Look reference: `prototypes/catch-feedback/` (variant A). The text above wins where they differ.
+- **Toast:** above the action bar, a torn page on a leather spine with the icon in a brass medallion, the stamps right to left from the page's top right corner, "+N more" when the lane overflows, and the Coins beside a brass coin at the bottom right. Its page follows its weight: `toast.low` in pencil on a bare page with a smaller medallion, `toast` on the spine, `toast.high` gilt with a halo, a silk bookmark, a bronze medallion and a wax seal. A headline with a record ruler is on a ruled page of its weight (`toast.high`'s on `toast`'s): the label, a ticked track filling up to the number, the old record's pencil mark with its number, the margin in red, then the "New record" stamp beside the others. Clicking does nothing.
+- **Nod:** one line under the toast position on a torn strip sized to it, with the icon in a small medallion, fading after 3 s: the words, a compact ruler (the track, the number and the margin), the stamps and the Coins. A catch Nod's line is its title alone (ANN-R13).
+- **Banner:** centre screen over the world with no frame: a dark glow and faint gilt rays, the title in spaced gilt capitals, gilt tooling either side of a red wax seal (the headline's `seal`, under Contracts), the text in gilt handwriting, then the stamps as leather labels and the Coins.
+- **Splash:** full screen for a Legend, until clicked: the screen darkens behind slow rays, the item's icon sits in the Legend crest's window, and a torn page carries the title, the name in large handwriting, the labels and the Coins. "Click anywhere to continue" under it.
+- **"While you were fighting":** a toast on a taller page listing the held headlines, a row each with a small medallion, up to 4; with more, the last row reads "+N more".
+- **Session summary and Write-up cards:** a page torn from the ledger centre-screen, the same in every toast style: a leather head with the gilt title and a close mark, Core's numbers in the hand, the sections in ANN-R53 and ANN-R61 on the page's ruled lines, scrolling past 12 rows, and a gilt close button. Closed with either button or Esc.
+
+Look reference: the announcements art kit (`pagle-announce-kit`, its previews and its probe addon). The text above wins where they differ.
 
 ## Settings
 

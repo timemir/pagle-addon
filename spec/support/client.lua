@@ -121,6 +121,10 @@ local function clientStubs(client)
 		end,
 		-- The frame names Esc hides (CloseSpecialWindows), as FrameXML starts it.
 		UISpecialFrames = { "ItemRefTooltip", "ColorPickerFrame" },
+		-- A unit's portrait on a texture: the texture keeps the unit as `portrait`.
+		SetPortraitTexture = function(texture, unit)
+			texture.portrait = unit
+		end,
 		-- Records the call in client.sounds and reports it played, as willPlay, soundHandle.
 		PlaySoundFile = function(path, channel)
 			client.sounds[#client.sounds + 1] = ("%s %s"):format(path, tostring(channel))

@@ -85,25 +85,25 @@ end
 ---@field crest Texture
 ---@field name FontString
 
--- A crest's bookplate's size, as the prototype's; it is drawn in ns.TIMBER's parchment and ink.
+-- A crest's bookplate's size, as the prototype's, and its parchment, edge and ink, each { r, g, b[, a] }.
 local PLATE_WIDTH, PLATE_HEIGHT = 150, 170
+local PLATE = { parchment = { 0.93, 0.87, 0.72, 1 }, edge = { 0.54, 0.35, 0.10, 1 }, ink = { 0.23, 0.15, 0.06 } }
 
 -- A crest's panel: a small bookplate, "Ex Libris", the crest, the Angler's name, then where it shows (LED-R112).
 ---@param panel PagleCrestPanel
 local function buildCrest(panel)
-	local TIMBER = ns.TIMBER
 	local plate = CreateFrame("Frame", nil, panel)
 	plate:SetSize(PLATE_WIDTH, PLATE_HEIGHT)
 	plate:SetPoint("TOP", 0, -16)
-	ns.Framed(plate, TIMBER.parchment, TIMBER.parchmentEdge, 2)
-	local exLibris = ns.Text(plate, "GameFontNormalSmall", TIMBER.ink)
+	ns.Framed(plate, PLATE.parchment, PLATE.edge, 2)
+	local exLibris = ns.Text(plate, "GameFontNormalSmall", PLATE.ink)
 	exLibris:SetPoint("TOP", 0, -12)
 	exLibris:SetText(L.PREVIEW_EX_LIBRIS)
 	panel.crest = plate:CreateTexture(nil, "ARTWORK")
 	panel.crest:SetSize(70, 70)
 	panel.crest:SetPoint("TOP", exLibris, "BOTTOM", 0, -8)
 	panel.crest:SetTexCoord(0.08, 0.92, 0.08, 0.92) -- the icon's own border off
-	panel.name = ns.Text(plate, "GameFontNormalLarge", TIMBER.ink)
+	panel.name = ns.Text(plate, "GameFontNormalLarge", PLATE.ink)
 	panel.name:SetPoint("TOP", panel.crest, "BOTTOM", 0, -10)
 	local note = ns.Text(panel, "GameFontDisableSmall")
 	note:SetPoint("TOP", plate, "BOTTOM", 0, -10)

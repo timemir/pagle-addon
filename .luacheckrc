@@ -169,6 +169,8 @@ stds.wow = {
 		-- lanes run on GetTime and C_Timer.After, and an item icon comes from C_Item.GetItemInfoInstant (above).
 		"UIParent",
 		"PlaySoundFile",
+		-- The Prestige banner's crest shows the Angler's portrait (announcements.md › UI).
+		"SetPortraitTexture",
 		-- The Fish Journal's serif and handwriting font objects (ledger.md › UI); its frame is drawn on CreateFrame and
 		-- UIParent above and hides with Esc through UISpecialFrames (below).
 		"CreateFont",

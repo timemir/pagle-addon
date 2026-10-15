@@ -14,6 +14,7 @@ libs\AceEvent-3.0\AceEvent-3.0.lua
 libs\AceDB-3.0\AceDB-3.0.lua
 
 data\Catalogue.lua
+data\AnnounceArt.lua
 
 locale\enUS.lua
 data\Lore.lua
@@ -91,6 +92,7 @@ adapter\WalletProjection.lua
 adapter\Moments.lua
 adapter\Summary.lua
 adapter\Skins.lua
+adapter\Art.lua
 adapter\Announcements.lua
 adapter\CoreGoods.lua
 adapter\Cards.lua

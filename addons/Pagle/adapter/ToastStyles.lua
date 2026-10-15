@@ -9,21 +9,20 @@ end
 local Pagle = Pagle
 
 -- Following the equipped toast style (ANN-R80, SHOP-R33) and the sample toast for the Curio Shop's preview stage
--- (wallet-and-shop.md › UI). The frames read the style each time they show; AppearanceChanged repaints the ones
--- already built, a frame on screen included, at once.
+-- (wallet-and-shop.md › UI). The toast and Nod read the style each time they show; AppearanceChanged redraws the one
+-- on screen at once. The banner, the splash and the cards look the same in every style.
 local L = ns.L
 
 -- Its own owner on Core's bus, so no other Core file's registration replaces its AppearanceChanged listener.
 local OWNER = "Pagle toast styles"
 
---- Repaints every Announcement frame and the card frame built so far in the style each shows now: a sample's own,
---- else the equipped one (ANN-R80). One on screen stays there, repainted.
+--- Redraws every Announcement frame on screen in the style it shows now: a sample's own, else the equipped one
+--- (ANN-R80). It stays on screen, its ruler carrying on.
 function ns.RepaintToastFrames()
 	for _, frame in pairs(ns.announcementFrames) do
-		ns.PaintSkin(frame.skin, ns.DisplayStyle(frame.display))
-	end
-	if ns.cardFrame then
-		ns.PaintSkin(ns.cardFrame.skin, ns.EquippedToastStyle())
+		if frame.display then
+			ns.DrawAnnouncement(frame, frame.display)
+		end
 	end
 end
 
@@ -36,6 +35,9 @@ end)
 -- Each parent's sample toast, made the first time one draws on it. Weak, so a stage the shop drops goes.
 ---@type table<Frame, PagleAnnouncementFrame>
 local samples = setmetatable({}, { __mode = "k" })
+-- The sample toast's scale on the stage, which is narrower than the screen.
+local SAMPLE_SCALE = 0.8
+
 -- Each preview panel's Show on screen button.
 ---@type table<Frame, Button>
 local buttons = setmetatable({}, { __mode = "k" })
@@ -50,7 +52,8 @@ function ns.DrawSampleToast(parent, styleID)
 	local frame = samples[parent]
 	if not frame then
 		frame = ns.NewToastFrame(parent)
-		frame:SetPoint("TOP", parent, "TOP", 0, -24)
+		frame:SetScale(SAMPLE_SCALE)
+		frame:SetPoint("TOP", parent, "TOP", 0, -40 / SAMPLE_SCALE)
 		samples[parent] = frame
 	end
 	ns.DrawAnnouncement(frame, { announcement = ns.SampleAnnouncement(styleID), form = "toast", overflow = 0 })
@@ -74,7 +77,7 @@ function ns.ToastStylePreview(styleID)
 		local panel = ns.CorePreviewPanel(stage, ns.TOAST_STYLE_SLOT, function(panel)
 			local sample = ns.DrawSampleToast(panel, styleID)
 			local button = ns.PanelButton(panel, L.TOAST_SHOW_ON_SCREEN, 140)
-			button:SetPoint("TOP", sample, "BOTTOM", 0, -16)
+			button:SetPoint("TOP", sample, "BOTTOM", 0, -24)
 			buttons[panel] = button
 		end)
 		ns.DrawSampleToast(panel, styleID)

@@ -32,10 +32,22 @@ local function raise(loaded, M, ...)
 	loaded.client.advance(0)
 end
 
--- The title on the frame for `form` if it is on screen, else nil.
+-- The headline's title of what the frame for `form` shows, if it is on screen, else nil. Read from the display, not
+-- the drawn words, which the art may set in capitals.
 local function showing(loaded, form)
 	local frame = loaded.ns.announcementFrames[form]
-	return frame and frame.shown and frame.title:GetText() or nil
+	return frame and frame.shown and frame.display.announcement.headline.title or nil
+end
+
+-- What "While you were fighting" lists: each row's title and text, as "TITLE: text".
+local function fightingRows(toast)
+	local rows = {}
+	for _, row in ipairs(toast.rows) do
+		if row.shown then
+			rows[#rows + 1] = row.what:GetText() .. ": " .. row.name:GetText()
+		end
+	end
+	return rows
 end
 
 -- The title of the card on screen, or nil.
@@ -71,8 +83,8 @@ describe("the combat hold", function()
 			assert.are.equal("Level 12", showing(loaded, "banner"))
 			local toast = loaded.ns.announcementFrames.toast
 			assert.are.same(
-				{ "While you were fighting", "New Species: Nightfin Snapper\nSize record" },
-				{ showing(loaded, "toast"), toast.text:GetText() }
+				{ "While you were fighting", { "NEW SPECIES: Nightfin Snapper", "SIZE RECORD: " } },
+				{ showing(loaded, "toast"), fightingRows(toast) }
 			)
 			assert.is_nil(card(loaded))
 			loaded.client.advance(4)

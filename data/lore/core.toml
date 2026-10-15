@@ -11,15 +11,15 @@
 
 [good."core.toaststyle.timber"] # Toast style, the default
 name = "Timber"
-description = "Dark, weathered planks and plain trim, like the end of a good dock."
+description = "A fresh page torn from the logbook and pinned to a leather spine. Brass trim, red ink."
 
 [good."core.toaststyle.ripple"] # Toast style, tier 1
 name = "Ripple"
-description = "Cool blue water, with rings spreading out as if something just bit."
+description = "Blue leather and silver trim, with faint rings spreading across the page as if something just bit."
 
 [good."core.toaststyle.lanternglow"] # Toast style, tier 2
 name = "Lantern Glow"
-description = "A warm lamp behind each catch, for anglers who stay out past dark."
+description = "A warm lamp glowing behind each catch, for anglers who stay out past dark."
 
 [good."core.soundset.driftwood"] # Sound set, the default
 name = "Driftwood"

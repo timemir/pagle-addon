@@ -7,22 +7,25 @@ if not Pagle then
 end
 
 -- The cards on the client (announcements.md › Session summary, › Write-up, › UI): logic/Cards.lua over
--- PagleDB.global, the projection machinery's idle hook and the lanes' empty state, drawing each card centre-screen
--- in the equipped toast style (ANN-R80), closed with its button or Esc. The look follows prototypes/catch-feedback/
--- (variant A)'s session summary.
+-- PagleDB.global, the projection machinery's idle hook and the lanes' empty state, drawing each card centre-screen,
+-- closed with its button, its corner's close mark or Esc. The look is the announcements art kit's session card
+-- (adapter/Art.lua), the same in every toast style: a page torn from the ledger under a leather head with the gilt
+-- title, Core's numbers in the Angler's hand, then the rows on the page's ruled lines.
 local L = ns.L
 
 -- The card frame's global name: UISpecialFrames takes names, and Esc hides the frames it lists.
 local FRAME_NAME = "PagleCard"
--- Painted in the equipped toast style (ANN-R80), as the toast is: adapter/Skins.lua.
-local solid, framed, text, textureOf = ns.SkinSolid, ns.SkinFramed, ns.SkinText, ns.TextureOf
-local WIDTH = 520
+local textureOf = ns.TextureOf
+-- The card's width, its leather head's and torn foot's heights, and its ruled lines' spacing, as the art draws them.
+local WIDTH, HEAD, FOOT, LINE = 580, 62, 40, 30
+-- The page's left margin, where the rows start; the body art repeats every 120 units.
+local MARGIN, BODY_TILE = 62, 120
 -- The numbers grid (ANN-R53): Casts, Catches, got away, time fished.
 local NUMBERS = { "casts", "catches", "gotAway", "seconds" }
 local NUMBER_LABELS = { L.CARD_CASTS, L.CARD_CATCHES, L.CARD_GOT_AWAY, L.CARD_TIME }
-local ROW_HEIGHT = 22
+local NUMBERS_HEIGHT = 90
 -- Rows shown before the list scrolls with the mouse wheel.
-local ROWS_SHOWN = 14
+local ROWS_SHOWN = 12
 
 ---@class PagleCardRowView: Frame
 ---@field kind "heading"|"line"|"moment"
@@ -39,17 +42,19 @@ local ROWS_SHOWN = 14
 ---@field title FontString
 ---@field numbers PagleCardNumber[]
 ---@field numbersBox Frame
+---@field body Frame the ruled page, its art tiled down it
+---@field tiles PagleSprite[]
+---@field foot Frame
 ---@field scroll ScrollFrame
 ---@field content Frame
 ---@field rows PagleCardRowView[]
 ---@field close Button
----@field skin PagleSkin
 
 --- The card frame, made the first time a card shows.
 ---@type PagleCardFrame?
 ns.cardFrame = nil
 
--- The player closed the card on screen, with the button or Esc: logic/Cards.lua removes it and shows the next.
+-- The player closed the card on screen, with a button or Esc: logic/Cards.lua removes it and shows the next.
 ---@param frame PagleCardFrame
 local function closed(frame)
 	local card = frame.card
@@ -69,7 +74,8 @@ function ns.CloseCardOnScreen(card)
 	end
 end
 
--- Row `i` of the list, made on first use: an icon, the text and, on the right, a moment's own text.
+-- Row `i` of the list, made on first use, on a ruled line: an icon, the text and, on the right, a moment's own text
+-- in the Angler's hand.
 ---@param frame PagleCardFrame
 ---@param i integer
 ---@return PagleCardRowView
@@ -77,48 +83,75 @@ local function rowAt(frame, i)
 	local row = frame.rows[i]
 	if not row then
 		row = CreateFrame("Frame", nil, frame.content) --[[@as PagleCardRowView]]
-		row:SetSize(WIDTH - 40, ROW_HEIGHT)
-		row:SetPoint("TOPLEFT", 0, -(i - 1) * ROW_HEIGHT)
+		row:SetSize(WIDTH - MARGIN - 30, LINE)
+		row:SetPoint("TOPLEFT", 0, -(i - 1) * LINE)
 		row.icon = row:CreateTexture(nil, "ARTWORK")
-		row.icon:SetSize(18, 18)
-		row.icon:SetPoint("LEFT")
-		row.text = text(frame.skin, row, "GameFontHighlight", "text")
-		row.detail = text(frame.skin, row, "GameFontHighlightSmall", "dim")
-		row.detail:SetPoint("RIGHT")
+		row.icon:SetSize(20, 20)
+		row.icon:SetPoint("BOTTOMLEFT", 0, 5)
+		row.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92) -- the icon's own border off
+		row.text = ns.ArtText(row, "CardLine")
+		row.detail = ns.ArtText(row, "CardDetail")
+		row.detail:SetPoint("BOTTOMRIGHT", 0, 4)
 		row.detail:SetJustifyH("RIGHT")
 		frame.rows[i] = row
 	end
 	return row
 end
 
--- Fills row `row` from a card row: a heading in the title colour, a line, or a moment with its icon and its own text.
----@param skin PagleSkin
+-- Fills row `row` from a card row: a heading printed in red, a line, or a moment with its icon and its own text. Each
+-- sits on its line.
 ---@param row PagleCardRowView
 ---@param data PagleCardRow
-local function fillRow(skin, row, data)
+local function fillRow(row, data)
 	row.kind = data.kind
 	row.text:ClearAllPoints()
 	row.text:SetText(data.text)
 	row.detail:SetText(data.detail or "")
 	if data.kind == "heading" then
-		ns.PaintAs(skin, row.text, "title", "GameFontNormal")
-		row.text:SetPoint("BOTTOMLEFT", 0, 3)
+		ns.SetArtFont(row.text, "CardGroup")
+		row.text:SetPoint("BOTTOMLEFT", 0, 4)
 		row.icon:Hide()
 	elseif data.kind == "moment" then
-		ns.PaintAs(skin, row.text, "text", "GameFontHighlight")
-		row.text:SetPoint("LEFT", row.icon, "RIGHT", 6, 0)
+		ns.SetArtFont(row.text, "CardLine")
+		row.text:SetPoint("BOTTOMLEFT", row.icon, "BOTTOMRIGHT", 8, 2)
 		row.icon:SetTexture(textureOf(data.icon))
 		row.icon:Show()
 	else
-		ns.PaintAs(skin, row.text, "text", "GameFontHighlight")
-		row.text:SetPoint("LEFT", 4, 0)
+		ns.SetArtFont(row.text, "CardLine")
+		row.text:SetPoint("BOTTOMLEFT", 0, 7)
 		row.icon:Hide()
 	end
 	row:Show()
 end
 
--- The card frame: a title band, the numbers grid, the rows in a list that scrolls with the mouse wheel, and the
--- close button. Esc hides it through UISpecialFrames.
+-- The gilt close button on `parent`: the art's three-sliced button with its words, brighter under the mouse.
+---@param parent Frame
+---@param onClick fun()
+---@return Button
+local function giltButton(parent, onClick)
+	local button = CreateFrame("Button", nil, parent) --[[@as Button]]
+	local face = CreateFrame("Frame", nil, button)
+	face:SetPoint("TOPLEFT")
+	-- On the face's own frame, which draws over the button's.
+	local label = ns.ArtText(face, "Button")
+	label:SetText(L.CARD_CLOSE)
+	label:SetPoint("CENTER", button, "CENTER")
+	local width = label:GetStringWidth() + 68
+	ns.SetThreeSlice(face, "Announce", "button", width, 12, "ARTWORK")
+	button:SetSize(width, 44)
+	button:SetScript("OnEnter", function()
+		label:SetTextColor(1, 0.96, 0.78)
+	end)
+	button:SetScript("OnLeave", function()
+		ns.Ink(label, "gilt")
+	end)
+	button:SetScript("OnClick", onClick)
+	return button
+end
+
+-- The card frame: the leather head with the title and a close mark, the ruled body with the numbers grid and the
+-- rows in a list that scrolls with the mouse wheel, the gilt close button, and the torn foot. Esc hides it through
+-- UISpecialFrames.
 ---@return PagleCardFrame
 local function build()
 	local frame = CreateFrame("Frame", FRAME_NAME, UIParent) --[[@as PagleCardFrame]]
@@ -126,55 +159,66 @@ local function build()
 	frame:SetWidth(WIDTH)
 	frame:SetFrameStrata("MEDIUM")
 	frame:EnableMouse(true)
-	local skin = ns.NewSkin(frame)
-	framed(skin, frame, "wood", "edge", 2, { "top", "bottom" })
-	local band = CreateFrame("Frame", nil, frame)
-	band:SetPoint("TOPLEFT", 2, -2)
-	band:SetPoint("TOPRIGHT", -2, -2)
-	band:SetHeight(28)
-	solid(skin, band, "titleBand", "ARTWORK")
-	frame.title = text(skin, band, "GameFontNormalLarge", "title", true)
-	frame.title:SetPoint("CENTER")
+	local function close()
+		closed(frame)
+	end
+	local head = CreateFrame("Frame", nil, frame)
+	head:SetSize(WIDTH, HEAD)
+	head:SetPoint("TOPLEFT")
+	ns.PlaceSprite(ns.ArtSprite(head, "Announce", "card-head", "BACKGROUND", 1), head, 0, 0)
+	frame.title = ns.ArtText(head, "CardTitle")
+	frame.title:SetPoint("LEFT", head, "LEFT", 26, 0)
+	local corner = CreateFrame("Button", nil, head)
+	corner:SetSize(44, 44)
+	corner:SetPoint("RIGHT", head, "RIGHT", -10, 0)
+	ns.PlaceSprite(ns.ArtSprite(corner, "Announce", "close", "ARTWORK"), corner, 0, 0)
+	corner:SetScript("OnClick", close)
 
-	frame.numbersBox = CreateFrame("Frame", nil, frame)
-	frame.numbersBox:SetPoint("TOPLEFT", 16, -40)
-	frame.numbersBox:SetPoint("TOPRIGHT", -16, -40)
-	frame.numbersBox:SetHeight(44)
+	frame.body = CreateFrame("Frame", nil, frame)
+	frame.body:SetWidth(WIDTH)
+	frame.body:SetPoint("TOPLEFT", head, "BOTTOMLEFT")
+	frame.body:SetClipsChildren(true)
+	frame.tiles = {}
+	frame.foot = CreateFrame("Frame", nil, frame)
+	frame.foot:SetSize(WIDTH, FOOT)
+	frame.foot:SetPoint("TOPLEFT", frame.body, "BOTTOMLEFT")
+	ns.PlaceSprite(ns.ArtSprite(frame.foot, "Announce", "card-foot", "BACKGROUND"), frame.foot, 0, 0)
+
+	frame.numbersBox = CreateFrame("Frame", nil, frame.body)
+	frame.numbersBox:SetPoint("TOPLEFT", 0, -14)
+	frame.numbersBox:SetSize(WIDTH, NUMBERS_HEIGHT)
 	frame.numbers = {}
-	local cellWidth = (WIDTH - 32 - 3 * 6) / 4
+	local column = (WIDTH - MARGIN - 10) / #NUMBERS
 	for i in ipairs(NUMBERS) do
-		local cell = CreateFrame("Frame", nil, frame.numbersBox)
-		cell:SetSize(cellWidth, 44)
-		cell:SetPoint("TOPLEFT", (i - 1) * (cellWidth + 6), 0)
-		solid(skin, cell, "well", "ARTWORK")
-		local value = text(skin, cell, "GameFontHighlightLarge", "text")
-		value:SetPoint("TOP", 0, -6)
-		local label = text(skin, cell, "GameFontHighlightSmall", "dim")
-		label:SetPoint("BOTTOM", 0, 6)
-		label:SetText(NUMBER_LABELS[i])
+		local value = ns.ArtText(frame.numbersBox, "CardNum")
+		value:SetPoint("CENTER", frame.numbersBox, "TOPLEFT", MARGIN - 20 + column * (i - 0.5), -38)
+		local label = ns.ArtText(frame.numbersBox, "CardNumLabel")
+		label:SetPoint("TOP", value, "BOTTOM", 0, -2)
+		label:SetText(ns.Capitals(NUMBER_LABELS[i]))
+		if i > 1 then
+			-- A red rule between the numbers, as the margin line is ruled.
+			local rule = frame.numbersBox:CreateTexture(nil, "ARTWORK")
+			rule:SetColorTexture(0.706, 0.157, 0.102, 0.45)
+			rule:SetSize(1, 70)
+			rule:SetPoint("CENTER", frame.numbersBox, "TOPLEFT", MARGIN - 20 + column * (i - 1), -45)
+		end
 		frame.numbers[i] = { value = value, label = label }
 	end
 
-	frame.scroll = CreateFrame("ScrollFrame", nil, frame)
-	frame.scroll:SetPoint("BOTTOMLEFT", 20, 48)
-	frame.scroll:SetPoint("BOTTOMRIGHT", -20, 48)
+	frame.scroll = CreateFrame("ScrollFrame", nil, frame.body)
+	frame.scroll:SetWidth(WIDTH - MARGIN - 30)
 	frame.content = CreateFrame("Frame", nil, frame.scroll)
-	frame.content:SetWidth(WIDTH - 40)
+	frame.content:SetWidth(WIDTH - MARGIN - 30)
 	frame.scroll:SetScrollChild(frame.content)
 	frame.scroll:EnableMouseWheel(true)
+	-- By whole lines, so the rows stay on the page's rules.
 	frame.scroll:SetScript("OnMouseWheel", function(self, delta)
-		local scroll = self:GetVerticalScroll() - delta * ROW_HEIGHT * 3
+		local scroll = self:GetVerticalScroll() - delta * LINE * 3
 		self:SetVerticalScroll(math.max(0, math.min(scroll, self:GetVerticalScrollRange())))
 	end)
 	frame.rows = {}
+	frame.close = giltButton(frame.body, close)
 
-	frame.close = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate") --[[@as Button]]
-	frame.close:SetSize(100, 22)
-	frame.close:SetPoint("BOTTOM", 0, 14)
-	frame.close:SetText(L.CARD_CLOSE)
-	frame.close:SetScript("OnClick", function()
-		closed(frame)
-	end)
 	-- Esc hides it (CloseSpecialWindows). Hiding UIParent (Alt-Z, a cinematic) also runs OnHide but leaves it shown:
 	-- that isn't the player closing it.
 	frame:SetScript("OnHide", function(self)
@@ -187,7 +231,39 @@ local function build()
 	return frame
 end
 
--- logic/Cards.lua's show: the card drawn in the frame, made on first use, and on screen (announcements.md › UI).
+-- Sizes the body to `height` and tiles the ruled page down it.
+---@param frame PagleCardFrame
+---@param height number
+local function layBody(frame, height)
+	frame.body:SetHeight(height)
+	local tiles = math.ceil(height / BODY_TILE)
+	for i = 1, tiles do
+		local tile = frame.tiles[i]
+		if not tile then
+			tile = ns.ArtSprite(frame.body, "Announce", "card-body", "BACKGROUND")
+			ns.PlaceSprite(tile, frame.body, 0, (i - 1) * BODY_TILE)
+			frame.tiles[i] = tile
+		end
+		-- The last tile cut to the body's foot, so it doesn't run over the torn edge.
+		local shown = math.min(BODY_TILE, height - (i - 1) * BODY_TILE)
+		local atlas = ns.ATLASES.Announce
+		local sprite = atlas.sprites["card-body"]
+		tile:SetTexCoord(
+			sprite.x / atlas.width,
+			(sprite.x + sprite.w) / atlas.width,
+			sprite.y / atlas.height,
+			(sprite.y + sprite.h * shown / BODY_TILE) / atlas.height
+		)
+		tile:SetHeight(shown)
+		tile:Show()
+	end
+	for i = tiles + 1, #frame.tiles do
+		frame.tiles[i]:Hide()
+	end
+end
+
+-- logic/Cards.lua's show: the card drawn in the frame, made on first use, and on screen (announcements.md › UI). The
+-- body is a whole number of ruled lines, so the torn foot meets them in step.
 ---@param card PagleCard
 local function show(card)
 	local frame = ns.cardFrame
@@ -207,17 +283,24 @@ local function show(card)
 	end
 	local rows = ns.CardRows(card, BreakUpLargeNumbers)
 	for i, data in ipairs(rows) do
-		fillRow(frame.skin, rowAt(frame, i), data)
+		fillRow(rowAt(frame, i), data)
 	end
 	for i = #rows + 1, #frame.rows do
 		frame.rows[i]:Hide()
 	end
-	frame.content:SetHeight(math.max(1, #rows) * ROW_HEIGHT)
+	frame.content:SetHeight(math.max(1, #rows) * LINE)
 	frame.scroll:SetVerticalScroll(0)
-	local listHeight = math.min(#rows, ROWS_SHOWN) * ROW_HEIGHT
+	local listTop = 14 + (numbers and NUMBERS_HEIGHT or 0)
+	local listHeight = math.min(#rows, ROWS_SHOWN) * LINE
+	frame.scroll:ClearAllPoints()
+	frame.scroll:SetPoint("TOPLEFT", frame.body, "TOPLEFT", MARGIN, -listTop)
 	frame.scroll:SetHeight(math.max(1, listHeight))
-	frame:SetHeight(40 + (numbers and 54 or 0) + listHeight + 56)
-	ns.PaintSkin(frame.skin, ns.EquippedToastStyle())
+	frame.close:ClearAllPoints()
+	frame.close:SetPoint("TOP", frame.body, "TOPLEFT", WIDTH / 2, -(listTop + listHeight + 14))
+	local content = listTop + listHeight + 14 + 44 + 22
+	local body = math.ceil((content + FOOT) / LINE) * LINE - FOOT
+	layBody(frame, body)
+	frame:SetHeight(HEAD + body + FOOT)
 	frame:Show()
 end
 

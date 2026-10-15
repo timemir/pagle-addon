@@ -334,6 +334,8 @@ describe("/pagle dev glyphs", function()
 	-- The probe line (#248, CORE-R9): each candidate character after its code point, so a box can be told apart.
 	local PROBE = "2013 –  2014 —  2026 …  2018 ‘  2019 ’  201C “  201D ”  2022 •  00B7 ·  00AB «  00BB »  "
 		.. "00D7 ×  2192 →  2605 ★  2713 ✓"
+	-- Where Core's bundled fonts are.
+	local ART = "Interface\\AddOns\\Pagle\\media\\fonts\\"
 
 	it("prints the probe line in the chat font, and shows it in each font Pagle uses (#248, CORE-R9)", function()
 		local loaded = enterWorld(loadCore({ BUILD_ENTRY }), 2)
@@ -357,6 +359,12 @@ describe("/pagle dev glyphs", function()
 			{ "ChatFontNormal (chat, the Field report's text): " .. PROBE, "ChatFontNormal" },
 			{ "NumberFontNormalSmallGray (QoL's key label): " .. PROBE, "NumberFontNormalSmallGray" },
 			{ "Fonts\\MORPHEUS.TTF (the Journal's hand): " .. PROBE, "PagleDevGlyphsFont4" },
+			{ ART .. "IMFeENrm28P.ttf (the announcements' print): " .. PROBE, "PagleDevGlyphsFont5" },
+			{ ART .. "Caveat-SemiBold.ttf (the announcements' hand): " .. PROBE, "PagleDevGlyphsFont6" },
+			{
+				ART .. "Marcellus-Regular.ttf (the announcements' gilt and stamps): " .. PROBE,
+				"PagleDevGlyphsFont7",
+			},
 		}, rows)
 
 		frame:Click()
@@ -375,7 +383,7 @@ describe("/pagle dev glyphs", function()
 
 		assert.are.equal(frame, loaded.ns.glyphProbeFrame)
 		assert.is_true(frame:IsShown())
-		assert.are.equal(4, #frame.rows)
+		assert.are.equal(7, #frame.rows)
 		assert.are.same(saved, copy(loaded.env.PagleDB.global))
 	end)
 end)
