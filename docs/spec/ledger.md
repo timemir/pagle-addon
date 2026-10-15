@@ -433,11 +433,11 @@ Pagle.RegisterModule{
 | `Pagle.GetAngler` | LED-R41, LED-R126 |
 | `M:RaiseMoment`, `M:RaiseWriteUp`, `M:SetSummaryLine` | LED-R93–R97 |
 | `M:ReportCoinsEarned` | LED-R89 |
-| `M:RegisterSlot`, `M:RegisterGood`, `M:RefreshGoods`, `Pagle.GetEquipped`, `Pagle.SetEquipped`, `Pagle.OpenShop`, event `AppearanceChanged` | LED-R110–R112, LED-R146 |
+| `M:RegisterSlot`, `M:RegisterGood`, `M:RefreshGoods`, `Pagle.GetEquipped`, `Pagle.SetEquipped`, `Pagle.IsOwned`, `Pagle.GetGood` (the crest's icon), `Pagle.OpenShop`, event `AppearanceChanged` | LED-R110–R112, LED-R146 |
 | `Pagle.OpenFieldReport` | LED-R135, LED-R138, LED-R144 (REP-R43) |
 | `Pagle.RegisterEvent` (for `GET_ITEM_INFO_RECEIVED`) | LED-R126 |
 
-WoW APIs for its own presentation: `C_Item.GetItemNameByID`, `C_Item.RequestLoadItemDataByID`, `C_Map.GetAreaInfo`, `C_Map.GetMapInfo`, `GetServerTime`, `GetGameTime`, `issecretvalue` (to leave out a secret realm clock, CORE-R31), `StaticPopup_Show`, `BreakUpLargeNumbers`.
+WoW APIs for its own presentation: `C_Item.GetItemNameByID`, `C_Item.RequestLoadItemDataByID`, `C_Item.GetItemInfoInstant` (item icons), `C_Map.GetAreaInfo`, `C_Map.GetMapInfo`, `GetServerTime`, `GetGameTime`, `issecretvalue` (to leave out a secret realm clock, CORE-R31), `StaticPopupDialogs`, `StaticPopup_Show`, `StaticPopup_Hide` (the Prestige confirm, LED-R33), `UISpecialFrames` (Esc, LED-R120), `C_Timer.After`, `BreakUpLargeNumbers`.
 
 ### Coins paid
 
