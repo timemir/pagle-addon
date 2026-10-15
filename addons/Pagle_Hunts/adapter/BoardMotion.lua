@@ -84,7 +84,10 @@ function ns.FadeIn(frame)
 	})
 end
 
---- Fades `frame` out (0.12 s, ease-in), then runs `done`; at once with the motion off.
+--- How long the closing fade takes (MOTION.md › Opening and closing).
+ns.CLOSE_FADE = 0.12
+
+--- Fades `frame` out (ns.CLOSE_FADE, ease-in), then runs `done`; at once with the motion off.
 ---@param frame Frame
 ---@param owner table the fade's owner: not the frame, whose own fade-in it would cut
 ---@param done fun()
@@ -92,7 +95,7 @@ function ns.FadeOut(frame, owner, done)
 	ns.SyncMotion()
 	ns.Animate(owner, {
 		{
-			dur = 0.12,
+			dur = ns.CLOSE_FADE,
 			ease = ns.Bezier(0.42, 0, 1, 1),
 			keys = { { 0, { 1 } }, { 1, { 0 } } },
 			apply = function(v)

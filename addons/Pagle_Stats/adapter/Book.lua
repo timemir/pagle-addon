@@ -113,7 +113,7 @@ local LEATHER_PARTS = { "search" }
 ---@field private drawnPage StatsBookPage?          -- the page last drawn, which a turn turns from
 ---@field drawnSides table<StatsBookSide, StatsBookPageView> -- its sides
 ---@field turning StatsBookTurning?          -- the page turn under way
----@field closing boolean                            -- the book is fading out to close
+---@field closing table?                             -- the close fading out now: its owner, which the fade runs on
 ---@field private breathing boolean                  -- the live dot breathes
 ---@field private liveCasts integer?                 -- the live line's Casts when last drawn
 ---@field private drawNextFrame fun()              -- QueueDraw's redraw, once per frame (ns.OncePerFrame)
@@ -130,7 +130,6 @@ ns.book = setmetatable({
 	leatherRenderers = {},
 	listening = false,
 	drawnSides = {},
-	closing = false,
 	breathing = false,
 	drawNextFrame = ns.OncePerFrame(function()
 		ns.book:Draw()
@@ -381,8 +380,8 @@ function Book:Open(target)
 	local turnable = frame:IsShown() and not self.closing
 	if self.closing then
 		-- opened again while fading out: it stays, whole
-		self.closing = false
-		ns.StopMotion(frame)
+		ns.StopMotion(self.closing)
+		self.closing = nil
 		frame:SetAlpha(1)
 	end
 	if not frame:IsShown() then
@@ -411,6 +410,9 @@ function Book:Open(target)
 end
 
 --- Closes the book: it fades out (0.12 s, easing in), the kit's CloseBook, then hides; at once with the motion off.
+--- The fade runs on an owner of its own, never the frame, which the driver would drop unfinished were the frame to stop
+--- showing mid-fade (UIParent hidden), stranding the close; and the close ends on the clock too, after the fade's
+--- time, so it ends whether or not frames are drawn.
 function Book:Hide()
 	local frame = self.frame
 	if not frame or not frame:IsShown() then
@@ -425,9 +427,19 @@ function Book:Hide()
 		self:Hidden()
 		return
 	end
-	self.closing = true
+	local closing = {}
+	self.closing = closing
 	ns.StopMotion(frame) -- an opening fade still running gives way
-	ns.Animate(frame, {
+	-- this close's end, once: a later open or close has its own
+	local function finish()
+		if self.closing == closing then
+			ns.StopMotion(closing)
+			self.closing = nil
+			frame:Hide()
+			frame:SetAlpha(1)
+		end
+	end
+	ns.Animate(closing, {
 		{
 			dur = CLOSE_FADE,
 			ease = ns.Bezier(0.42, 0, 1, 1),
@@ -436,13 +448,8 @@ function Book:Hide()
 				frame:SetAlpha(v[1])
 			end,
 		},
-	}, function()
-		if self.closing then
-			self.closing = false
-			frame:Hide()
-			frame:SetAlpha(1)
-		end
-	end)
+	}, finish)
+	C_Timer.After(CLOSE_FADE, finish)
 end
 
 -- Settles the page turn under way, if any, at once: its new spread whole, its old one gone.
@@ -471,7 +478,10 @@ end
 --- The book has closed, however it closed (its close button, Esc, a toggle): the tick stops, a turn under way
 --- settles, and the live dot rests.
 function Book:Hidden()
-	self.closing = false
+	if self.closing then
+		ns.StopMotion(self.closing)
+		self.closing = nil
+	end
 	settleTurn(self)
 	local frame = self.frame
 	if frame then

@@ -334,11 +334,20 @@ function Board:Hide()
 		ns.BoardSound("bookClose")
 		if ns.SyncMotion() then
 			self.closing = true
-			ns.FadeOut(frame, self.closeOwner, function()
-				self.closing = false
-				frame:Hide()
-				frame:SetAlpha(1)
-			end)
+			-- this close's end, once, by the fade or by the clock after the fade's time, whichever comes first, so it
+			-- ends whether or not frames are drawn; a later open or close has its own
+			local owner = {}
+			self.closeOwner = owner
+			local function finish()
+				if self.closing and self.closeOwner == owner then
+					ns.StopMotion(owner)
+					self.closing = false
+					frame:Hide()
+					frame:SetAlpha(1)
+				end
+			end
+			ns.FadeOut(frame, owner, finish)
+			C_Timer.After(ns.CLOSE_FADE, finish)
 		else
 			frame:Hide()
 		end
