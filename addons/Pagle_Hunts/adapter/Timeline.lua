@@ -42,25 +42,13 @@ local function auraExpiry(spellID)
 	return GetServerTime() + math.floor(expires - GetTime())
 end
 
---- The time the timeline, the clock, the entry, a set's page and the tracker draw at: now, or while the grouping is
---- paused the grouping's time, so they freeze with it (HNT-R43). Between regroups a grouping's windows stand (it regroups at every edge, HNT-R42), so
---- now's countdowns and ruler read right from it however long ago it was made.
----@return integer
-function ns.TimelineNow()
-	local grouped = ns.groups:Time()
-	if grouped and ns.groups:IsPaused() then
-		return grouped
-	end
-	return GetServerTime()
-end
-
 --- The timeline the left page of `place` draws (logic/Timeline.lua): the Board's, or a set's when the place has one
---- and isn't the Board (HNT-R66), at ns.TimelineNow() (frozen while the grouping is paused, HNT-R43), with the saved
+--- and isn't the Board (HNT-R66), at ns.ViewNow() (frozen while the grouping is paused, HNT-R43), with the saved
 --- "show completed" filter (HNT-R82; while updating it hides nothing, HNT-R69).
 ---@param place BoardPlace
 ---@return HuntsTimeline
 function ns.BoardTimeline(place)
-	local now = ns.TimelineNow()
+	local now = ns.ViewNow()
 	local setID = place.mode ~= "board" and place.set or nil
 	local updating = ns.IsUpdating()
 	local state = ns.State()
@@ -456,7 +444,7 @@ ns.board:RegisterLeather("clock", function(anchor)
 	end
 	local snapshot = Pagle.GetConditions()
 	local season = ns.SeasonNow(snapshot, Pagle.GetWindowSpec, Pagle.MatchesConditions)
-	clockText:SetText(ns.TimelineClock(ns.TimelineNow(), snapshot, season, ns.groups:IsPaused()))
+	clockText:SetText(ns.TimelineClock(ns.ViewNow(), snapshot, season, ns.groups:IsPaused()))
 end)
 
 -- The leather's "show completed" checkbox (HNT-R61, HNT-R82): the saved filter, which a click saves and redraws.

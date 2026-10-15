@@ -38,7 +38,7 @@ local function draw(view)
 	local lines = ns.TrackerLines({
 		rows = ns.groups:Grouping() and ns.groups:Rows({ pinnedOnly = true }) or nil,
 		anyPinned = next(ns.db.profile.pins) ~= nil,
-		time = ns.TimelineNow(),
+		time = ns.ViewNow(),
 		snapshot = conditions,
 		zone = conditions.zone,
 		updating = ns.IsUpdating(),

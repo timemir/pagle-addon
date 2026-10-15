@@ -14,7 +14,7 @@ local ns = select(2, ...)
 -- is paused, so they freeze with it (HNT-R43).
 ---@return integer
 local function viewTime()
-	return ns.TimelineNow()
+	return ns.ViewNow()
 end
 
 -- logic/Sets.lua's inputs, read now.

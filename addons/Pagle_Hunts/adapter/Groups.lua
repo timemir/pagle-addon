@@ -11,6 +11,7 @@ local ns = select(2, ...)
 --
 --   ns.groups                     The groups views draw (HuntsGroups): :Rows(filter?), :Row(huntID), :IsPaused(),
 --                                 :Time(), :Grouping(). Empty before the first grouping.
+--   ns.ViewNow()                  The time views draw at: now, or the grouping's while it is paused (HNT-R43).
 --   ns.OnRegroup(fn)              fn(previous, current) after every regroup, before its redraw; previous is nil at
 --                                 the first. Both are HuntsGroupings (window moments, HNT-R88).
 --   ns.SetPinned(huntID, on)      Pins or unpins a current Hunt (HNT-R80, HNT-R81); false when refused.
@@ -42,6 +43,19 @@ ns.groups = ns.NewGroups({
 local regrouped = {} -- ns.OnRegroup's listeners, in order
 local shown = {} -- the views shown now, by name
 local timers = {} -- the one-shot timers ahead: edge, list and refresh (HNT-R42)
+
+--- The time every view draws at (the timeline, the clock, the entry, a set's page and the tracker): now, or while the
+--- grouping is paused the grouping's time, so they freeze with it (HNT-R43). Between regroups a grouping's windows
+--- stand (it regroups at every edge, HNT-R42), so now's countdowns and ruler read right from it however long ago it
+--- was made.
+---@return integer
+function ns.ViewNow()
+	local grouped = ns.groups:Time()
+	if grouped and ns.groups:IsPaused() then
+		return grouped
+	end
+	return GetServerTime()
+end
 
 --- Subscribes to regroups: `fn(previous, current)` after each one, `previous` nil at the first (HNT-R42, HNT-R88).
 ---@param fn fun(previous: HuntsGrouping?, current: HuntsGrouping)

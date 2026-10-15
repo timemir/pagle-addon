@@ -16,7 +16,7 @@ ns.TRACKER_SHOWN = 6
 ---@field rows HuntRow[]?      -- the pinned rows, sorted as on the board (ns.groups:Rows{ pinnedOnly = true }); nil
 --- before the first grouping
 ---@field anyPinned boolean    -- whether profile.pins holds any Hunt, for the empty line before the first grouping
----@field time integer         -- ns.TimelineNow(): labels count down from now, or from the grouping's time while it is
+---@field time integer         -- ns.ViewNow(): labels count down from now, or from the grouping's time while it is
 --- paused, so they freeze with it while restricted (HNT-R43, HNT-R78)
 ---@field snapshot table       -- one live `Pagle.GetConditions()` (HNT-R50)
 ---@field zone integer?        -- the live zone's areaID (the snapshot's `zone`)
