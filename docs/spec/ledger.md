@@ -251,7 +251,7 @@ The Ledger is the `Pagle_Ledger` Module: the Angler's identity as an angler. It 
 
   A binding is a look only: a tint for the leather, one for the gilt (breadcrumbs, plate, rules) and one for the page paper, applied to in-client textures. The tint values are picked in the M4 build ticket against the prototype's swatches. Each good's `preview` draws a closed-book swatch: the leather rectangle in its tint with the gilt rules and brass plate (no pages).
 - **LED-R111** A level binding's `isEarned()` is true when the higher of the peak level (LED-R35) and the highest level in the celebrated set is at least its level. The Ledger calls `M:RefreshGoods()` after a live entry that raises the peak level past a multiple of 10, and from `done` (SHOP-R31).
-- **LED-R112** The Journal is drawn in `Pagle.GetEquipped("ledger.binding")`, and its bookplate shows `Pagle.GetEquipped("core.crest")` (SHOP-R25). It redraws on `AppearanceChanged` for either slot.
+- **LED-R112** The Journal is drawn in `Pagle.GetEquipped("ledger.binding")`, and its bookplate shows `Pagle.GetEquipped("core.crest")`'s icon (SHOP-R25), or no emblem while that is the slot's default, Plain ("No emblem, only the owner's name"). It redraws on `AppearanceChanged` for either slot.
 
 ### The Fish Journal
 

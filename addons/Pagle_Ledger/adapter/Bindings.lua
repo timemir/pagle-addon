@@ -16,6 +16,9 @@ local OWNER = "Pagle_Ledger Journal look"
 
 -- Core's crest slot (SHOP-R25): the Angler's emblem, drawn on the bookplate (LED-R112).
 local CREST_SLOT = "core.crest"
+-- Its default, Plain, which draws no emblem (SHOP-R25). Pagle's API doesn't say which good is a slot's default, so
+-- the Ledger names it, as it names the slot.
+local DEFAULT_CREST = "core.crest.plain"
 
 -- The closed book on the stage, as the prototype's swatch: its size, the spine's shadow, the gilt rules' inset from
 -- the edges (more at the spine), and the brass plate's size and place up from its foot.
@@ -118,10 +121,14 @@ function ns.DrawBindingSwatch(stage, look)
 end
 
 --- The equipped crest's icon (LED-R112, SHOP-R25), to draw on the Angler page's bookplate: the icon Core cached for
---- `Pagle.GetEquipped("core.crest")` (Pagle.GetGood), or nil while the slot or its icon is missing.
+--- `Pagle.GetEquipped("core.crest")` (Pagle.GetGood); nil for the slot's default, Plain ("No emblem, only the owner's
+--- name"), and while the slot or its icon is missing.
 ---@return (integer|string)?
 function ns.CrestIcon()
 	local crest = Pagle.GetEquipped(CREST_SLOT)
+	if crest == DEFAULT_CREST then
+		return nil
+	end
 	local good = crest and Pagle.GetGood(crest)
 	return good and good.icon
 end

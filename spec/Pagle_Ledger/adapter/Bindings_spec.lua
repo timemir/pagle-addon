@@ -229,7 +229,7 @@ describe("the Ledger's Journal bindings", function()
 			ns.ToggleJournal()
 			local journal = ns.journal
 			assert.are.same(lookOf(ns, "ledger.binding.field"), bookTints(journal.frame))
-			assert.are.equal("Interface\\Icons\\INV_Misc_Note_01", ns.CrestIcon()) -- Plain's
+			assert.is_nil(ns.CrestIcon()) -- Plain, the default: no emblem (LED-R112, SHOP-R25)
 
 			assert.is_true(fake.Pagle.SetEquipped("ledger.binding", "ledger.binding.level10"))
 
