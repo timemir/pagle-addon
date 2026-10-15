@@ -41,7 +41,9 @@ The generator fails a batch that breaks these (DATA-R107; ticket #128 builds the
 Changed (M3 review): the `title` text row is added, and `name`'s 28 applies to every kind's `name`, as Tunables › Lore limits says.
 
 - **No line breaks** in any field.
-- **Only characters the game's fonts have:** ASCII, Latin-1 (é, ×, ·) and the em dash (—). Curly quotes, `…`, arrows, stars and emoji draw as boxes, so the generator fails them in any lore file, whether or not its check is on (CORE-R9, DATA-R107). Use straight apostrophes and quotes (`'`, `"`), as in the game's own names ("Keefer's Angelfish"), and `...` for an ellipsis.
+- **Only characters the game's fonts have:** ASCII, Latin-1 (é, ×, ·), the en and em dashes (– —), curly quotes (‘ ’ “ ”), the bullet (•) and the ellipsis (…). Arrows, stars, ticks and emoji draw as boxes, so the generator fails them in any lore file, whether or not its check is on (CORE-R9, DATA-R107).
+
+  Changed (#248, 2026-10-15): curly quotes and `…` are now allowed: `/pagle dev glyphs` showed every font Pagle uses drawing them. Straight ones (`'`, `"`, `...`) stay fine too.
 - **No `{` or `}`**, except `{zone}` in a key whose manifest entry allows it (DATA-R107, DATA-R108). In 1.0 that's only the `zonemaster` title, which isn't in the M3 batch.
 - **Never named until caught** (LED-R124): a riddle and a shared line show only for things not yet caught, so they never name the fish, Legend or item, nor use a word from its name.
 
