@@ -168,6 +168,9 @@ stds.wow = {
 		-- lanes run on GetTime and C_Timer.After, and an item icon comes from C_Item.GetItemInfoInstant (above).
 		"UIParent",
 		"PlaySoundFile",
+		-- The art kits' UI foley (a window opening, Buy, a stamp landing): the client's own sound kits by numeric id, on
+		-- the SFX channel too.
+		"PlaySound",
 		-- The Prestige banner's crest shows the Angler's portrait (announcements.md › UI).
 		"SetPortraitTexture",
 		-- The Tackle Board's "take it down" tooltip shows at the cursor (tackle-board.md › UI).

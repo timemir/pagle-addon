@@ -108,6 +108,7 @@ adapter\ReloadReminder.lua
 adapter\FieldReportText.lua
 adapter\FieldReportBox.lua
 adapter\ShopArt.lua
+adapter\ShopMotion.lua
 adapter\Shop.lua
 adapter\Tour.lua
 adapter\Login.lua

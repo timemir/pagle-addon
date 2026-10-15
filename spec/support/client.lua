@@ -16,7 +16,7 @@
 ---@field loot FakeLoot The loot window, as the loot API reads it.
 ---@field areaNames table<integer, string> Each area's name, as `C_Map.GetAreaInfo` returns it. Default none.
 ---@field mapNames table<integer, string> Each uiMap's name, for `C_Map.GetMapInfo`. Default none.
----@field sounds string[] Each PlaySoundFile call, in order, as "<path> <channel>".
+---@field sounds string[] Each PlaySoundFile and PlaySound call, in order, as "<path> <channel>" or "<id> <channel>".
 ---@field screenshots integer How many times Screenshot() was called. A spec may wrap the stub to see the screen then.
 ---@field errors string[] Each error the default geterrorhandler() got, in order. A spec that gets one must read
 --- this list (assert it), or it fails at its end (spec/support/errors.lua).
@@ -137,10 +137,21 @@ local function clientStubs(client)
 			client.sounds[#client.sounds + 1] = ("%s %s"):format(path, tostring(channel))
 			return true, #client.sounds
 		end,
+		-- A client sound kit by its numeric id: recorded in client.sounds as "<id> <channel>".
+		PlaySound = function(soundKitID, channel)
+			assert(type(soundKitID) == "number", "FakeClient: PlaySound takes a sound kit's numeric id")
+			client.sounds[#client.sounds + 1] = ("%d %s"):format(soundKitID, tostring(channel))
+			return true, #client.sounds
+		end,
 		-- The screen's root frame, which every addon frame hangs from, and the game's error text under it (both in the
 		-- forever dump's Frames.lua), and the yellow FrameXML's GlobalColors defines (CreateColor(1, 1, 0, 1)). UIParent
-		-- is a plain widget, so it gets no events.
-		UIParent = widgets.newWidget("Frame"),
+		-- is a plain widget, so it gets no events. It is 1366 x 768 units, a 16:9 screen at UI scale 1; a spec may resize it
+		-- (the smallest the client gives is 1188 x 668, at UI scale 1.15).
+		UIParent = (function()
+			local screen = widgets.newWidget("Frame")
+			screen:SetSize(1366, 768)
+			return screen
+		end)(),
 		-- FrameXML's colour (ColorMixin), as a texture's gradient takes it: its channels.
 		CreateColor = function(r, g, b, a)
 			return { r = r, g = g, b = b, a = a }

@@ -13,7 +13,7 @@ local Pagle = Pagle
 -- chips and the goods, and the quilted lid on the right with the showcase card (the preview stage) and the
 -- description card. Buy asks with a bill of sale over the dimmed case. What it shows is logic/Shop.lua's model, read
 -- afresh at each redraw; this file only draws it, from the atlases in data/ShopArt.lua and the pieces in
--- adapter/ShopArt.lua. It opens only through ns.shop (logic/Wiring.lua's ns.WireShop): Pagle.OpenShop, /pagle shop and
+-- adapter/ShopArt.lua, and moves it with adapter/ShopMotion.lua's motion and sounds. It opens only through ns.shop (logic/Wiring.lua's ns.WireShop): Pagle.OpenShop, /pagle shop and
 -- the compartment entry, never on its own. Every position is the canvas's, in UI units from the case's top left, y
 -- growing downward.
 local L = ns.L
@@ -48,8 +48,16 @@ local OTHER_SEGMENT = { "seg-board", { 0.6, 0.6, 0.6 } }
 local OFF_ALPHA, GREYED_ALPHA = 0.45, 0.55
 -- What separates tags on the stage.
 local TAG_SEPARATOR = " · "
--- The bill of sale: its paper's size and top left on the case.
+-- The bill of sale: its paper's size and top left on the case; where its wax seal lands, from the paper's top left.
 local BILL_W, BILL_H, BILL_X, BILL_Y = 400, 420, 290, 56
+local SEAL_X, SEAL_Y = 342, 300
+-- The bill's medallion's top left on the case, and a row's medallion's size and inset.
+local BILL_BEZEL_X, BILL_BEZEL_Y, ROW_BEZEL, ROW_BEZEL_X = BILL_X + (BILL_W - 64) / 2, BILL_Y + 111, 34, 8
+-- The purse's coin's centre on the case: it turns about it as the purse pays out.
+local PURSE_COIN_X, PURSE_COIN_Y = 56, 51
+-- Fitting the screen: the case's whole extent with its handle above it, how far its centre sits below the screen's,
+-- and the room kept round it.
+local EXTENT_W, EXTENT_H, CENTRE_DY, FIT_MARGIN = 1000, 680, -20, 24
 
 ---@class PagleShopSegmentFrame: Frame
 ---@field bar PagleSprite             the segment's colour on the bar
@@ -90,6 +98,9 @@ local BILL_W, BILL_H, BILL_X, BILL_Y = 400, 420, 290, 56
 ---@field price PagleShopPriceTag     a row's price tag, for a good for sale
 ---@field selectedMark PagleThreeSlice the gilt band under the selected good's row
 ---@field hover Texture
+---@field listY number                where it sits in the list, from the scroll child's top
+---@field glow Texture?               the warm glow a row gives once as a purchase is delivered to it
+---@field stepDown PagleShopFontString? the slot's old good's new tag, fading in as a purchase takes its place
 
 ---@class PagleShopStageFrame
 ---@field card PagleSprite            the showcase card, its dark well at the top
@@ -106,6 +117,7 @@ local BILL_W, BILL_H, BILL_X, BILL_Y = 400, 420, 290, 56
 ---@field buy PagleShopPill           "Buy for N" and the coin
 ---@field needed PagleShopFontString  "N more Coins"
 ---@field use PagleShopPill
+---@field short Button                over Buy while the balance doesn't cover it: a click shakes "N more Coins"
 
 ---@class PagleShopCheck: CheckButton
 ---@field box PagleSprite
@@ -115,6 +127,8 @@ local BILL_W, BILL_H, BILL_X, BILL_Y = 400, 420, 290, 56
 --- The bill of sale (wallet-and-shop.md › UI: Buy): over the dimmed case, it asks "Buy {name}?".
 ---@class PagleShopBill: Frame
 ---@field slip Frame
+---@field shade Texture                the case's dimming
+---@field seal PagleSprite             the wax seal a purchase presses on
 ---@field head PagleShopFontString     "CURIO SHOP"
 ---@field question PagleShopFontString "Buy Ripple?"
 ---@field bezel PagleShopBezel
@@ -151,6 +165,8 @@ local BILL_W, BILL_H, BILL_X, BILL_Y = 400, 420, 290, 56
 ---@field empty PagleShopFontString   "No looks match."
 ---@field stage PagleShopStageFrame
 ---@field bill PagleShopBill
+---@field flyer PagleShopBezel        the medallion a purchase flies from the bill to its row
+---@field listTop number              the list's top, from the case's
 
 --- The window, made the first time it opens.
 ---@type PagleShopFrame?
@@ -161,8 +177,12 @@ ns.shopFrame = nil
 local query = { filter = "all" }
 ---@type string?
 local selected
+-- A purchase whose motion is playing (adapter/ShopMotion.lua): the window redraws once it settles. `committing` while
+-- ns.shop.Buy runs, whose events would draw the settled state at once; any other redraw meanwhile settles it early.
+---@type { committing: true? }?
+local playing
 
-local redraw, askToBuy
+local redraw, askToBuy, buy
 
 -- Anchors `region` with its top left `x`, `y` from `relativeTo`'s top left (y grows downward).
 ---@param region Region
@@ -189,11 +209,42 @@ local function solid(frame, r, g, b, a, layer, sublevel)
 	return texture
 end
 
--- Hides the bill of sale if it is up, buying nothing.
+-- Hides the bill of sale if it is up, buying nothing: at once, or lifting it away (Cancel and Esc) while it still asks.
 ---@param frame PagleShopFrame
-local function closeBill(frame)
-	frame.bill.goodID = nil
-	frame.bill:Hide()
+---@param lift boolean?
+local function closeBill(frame, lift)
+	local bill = frame.bill
+	if lift then
+		if bill.goodID and bill:IsShown() then
+			bill.goodID = nil
+			ns.CloseShopBill(bill, BILL_X, BILL_Y)
+		end
+		return
+	end
+	bill.goodID = nil
+	ns.StopMotion(bill)
+	bill:Hide()
+end
+
+-- Settles a purchase's motion where it stopped (adapter/ShopMotion.lua): what only the motion showed goes, and the
+-- next redraw draws the rest.
+---@param frame PagleShopFrame
+local function settlePurchase(frame)
+	if not playing then
+		return
+	end
+	playing = nil
+	ns.StopMotion(frame)
+	local bill = frame.bill
+	bill.seal:Hide()
+	bill.bezel:Show()
+	bill.buy:SetAlpha(1)
+	frame.flyer:Hide()
+	if not bill.goodID then
+		closeBill(frame)
+	end
+	local coin = frame.purse.coin
+	coin:SetWidth(coin.w0 or coin:GetWidth())
 end
 
 -- Closes the window and its bill of sale, giving back the keyboard: a hidden edit box would keep it.
@@ -257,7 +308,7 @@ end
 local function buildPurse(frame)
 	local purse = {}
 	purse.coin = ns.SetShopCoin(ns.ArtSprite(frame, "Shop", "coin", "ARTWORK", 1), 52)
-	ns.PlaceSprite(purse.coin, frame, 30, 25)
+	ns.CenterSpriteAt(purse.coin, frame, PURSE_COIN_X, PURSE_COIN_Y)
 	purse.label = ns.ShopText(frame, "PurseLab")
 	at(purse.label, frame, PURSE_TEXT_X, 27)
 	purse.balance = ns.ShopText(frame, "Balance")
@@ -542,12 +593,32 @@ local function shapeLine(line, header)
 	end
 end
 
+-- Sets a row's tag from `data`: "IN USE" after the wax dot, or the good's other state.
+---@param line PagleShopLine
+---@param data PagleShopRow
+local function drawRowTag(line, data)
+	local inUse = data.state == "equipped"
+	ns.SetShopFont(line.tag, inUse and "InUse" or "Owned")
+	ns.SetShopText(line.tag, data.tag)
+	line.tag:Show()
+	line.wax:SetShown(inUse)
+end
+
 -- Draws a row's right end from `data`: the price tag for a good for sale, in red when the balance doesn't cover it;
--- otherwise its tag, "IN USE" after the wax dot.
+-- otherwise its tag. What a purchase's motion faded or added goes back to rest.
 ---@param line PagleShopLine
 ---@param data PagleShopRow
 local function drawRowEnd(line, data)
 	local price = line.price
+	for _, region in ipairs({ price, line.tag, line.wax }) do
+		region:SetAlpha(1)
+	end
+	if line.glow then
+		line.glow:SetAlpha(0)
+	end
+	if line.stepDown then
+		line.stepDown:Hide()
+	end
 	if data.price then
 		ns.SetShopFont(price.amount, data.short and "PriceShort" or "Price")
 		ns.SetShopText(price.amount, data.price)
@@ -560,11 +631,7 @@ local function drawRowEnd(line, data)
 		return
 	end
 	price:Hide()
-	local inUse = data.state == "equipped"
-	ns.SetShopFont(line.tag, inUse and "InUse" or "Owned")
-	ns.SetShopText(line.tag, data.tag)
-	line.tag:Show()
-	line.wax:SetShown(inUse)
+	drawRowTag(line, data)
 end
 
 -- Draws the list from `groups`: each group's header, then its rows, top to bottom in the scroll child.
@@ -589,6 +656,7 @@ local function drawList(frame, groups)
 			local row = lineAt(frame, i)
 			shapeLine(row, false)
 			row.goodID = data.id
+			row.listY = y
 			row:SetHeight(ROW_H)
 			at(row, frame.content, LIST_X, y)
 			ns.SetShopText(row.label, data.name)
@@ -670,6 +738,7 @@ end
 ---@param frame PagleShopFrame
 ---@param top number
 local function placeList(frame, top)
+	frame.listTop = top
 	frame.scroll:ClearAllPoints()
 	frame.scroll:SetPoint("TOPLEFT", frame, "TOPLEFT", TRAY_X, -top)
 	frame.scroll:SetPoint("BOTTOMRIGHT", frame, "TOPLEFT", TRAY_X + TRAY_W - 14, -(TRAY_Y + TRAY_H - 4))
@@ -726,7 +795,17 @@ local function buildStage(frame)
 	end)
 	at(stage.buy, frame, x, footY)
 	stage.needed = ns.ShopText(frame, "Need")
-	stage.needed:SetPoint("LEFT", stage.buy, "RIGHT", 14, 0)
+	-- Buy is disabled while the balance doesn't cover the price (SHOP-R13): a click on it then shakes "N more Coins".
+	stage.short = CreateFrame("Button", nil, frame)
+	stage.short:SetAllPoints(stage.buy)
+	stage.short:SetFrameLevel(stage.buy:GetFrameLevel() + 2)
+	stage.short:SetScript("OnClick", function(self)
+		ns.ShakeShopNote(self, function(dx)
+			stage.needed:ClearAllPoints()
+			stage.needed:SetPoint("LEFT", stage.buy, "RIGHT", 14 + dx, 0)
+		end)
+	end)
+	stage.short:Hide()
 	stage.use = ns.NewShopButton(frame, function()
 		if selected and ns.shop.Use(selected) then
 			redraw(false)
@@ -749,6 +828,7 @@ local function clearStage(stage)
 		stage.tags,
 		stage.buy,
 		stage.needed,
+		stage.short,
 		stage.use,
 	}) do
 		region:Hide()
@@ -784,6 +864,39 @@ local function drawLook(stage, data, fresh)
 	end
 end
 
+-- Draws the description card's foot from `data`: Buy, "N more Coins" or Use, and the tags beside them, each at rest.
+---@param stage PagleShopStageFrame
+---@param data PagleShopStage
+local function drawFoot(stage, data)
+	for _, region in ipairs({ stage.buy, stage.needed, stage.short, stage.use }) do
+		region:Hide()
+	end
+	if data.buy then
+		ns.SetShopButton(stage.buy, data.buy, true, data.canBuy == true) -- SHOP-R13
+		stage.buy:Show()
+	end
+	if data.needed then
+		ns.SetShopText(stage.needed, data.needed)
+		stage.needed:ClearAllPoints()
+		stage.needed:SetPoint("LEFT", stage.buy, "RIGHT", 14, 0)
+		stage.needed:Show()
+		stage.short:SetShown(data.buy ~= nil)
+	end
+	if data.use then
+		ns.SetShopButton(stage.use, L.SHOP_USE, false, true)
+		stage.use:Show()
+	end
+	ns.SetShopText(stage.tags, table.concat(data.tags, TAG_SEPARATOR))
+	stage.tags:ClearAllPoints()
+	if data.use then
+		stage.tags:SetPoint("LEFT", stage.use, "RIGHT", 14, 0)
+	else
+		stage.tags:SetPoint("LEFT", stage.use, "LEFT", 0, 0)
+	end
+	stage.tags:SetAlpha(1)
+	stage.tags:SetShown(#data.tags > 0)
+end
+
 -- Draws the stage from `data`, or the hint with nothing selected.
 ---@param frame PagleShopFrame
 ---@param data PagleShopStage?
@@ -800,29 +913,10 @@ local function drawStage(frame, data, fresh)
 	ns.SetShopText(stage.slotLine, data.slotLine)
 	ns.SetShopText(stage.description, data.description)
 	ns.SetShopText(stage.notes, table.concat(data.notes, "\n"))
-	ns.SetShopText(stage.tags, table.concat(data.tags, TAG_SEPARATOR))
 	for _, region in ipairs({ stage.name, stage.slotLine, stage.description, stage.notes }) do
 		region:Show()
 	end
-	if data.buy then
-		ns.SetShopButton(stage.buy, data.buy, true, data.canBuy == true) -- SHOP-R13
-		stage.buy:Show()
-	end
-	if data.needed then
-		ns.SetShopText(stage.needed, data.needed)
-		stage.needed:Show()
-	end
-	if data.use then
-		ns.SetShopButton(stage.use, L.SHOP_USE, false, true)
-		stage.use:Show()
-	end
-	stage.tags:ClearAllPoints()
-	if data.use then
-		stage.tags:SetPoint("LEFT", stage.use, "RIGHT", 14, 0)
-	else
-		stage.tags:SetPoint("LEFT", stage.use, "LEFT", 0, 0)
-	end
-	stage.tags:SetShown(#data.tags > 0)
+	drawFoot(stage, data)
 end
 
 -- A check box on the bill: the box, the tick while it is checked, and its words.
@@ -890,12 +984,15 @@ local function buildBill(frame)
 	-- Over the stage's previews too, whatever frame levels they take.
 	bill:SetFrameStrata("DIALOG")
 	bill:EnableMouse(true) -- the case under it takes no clicks
-	solid(bill, 0.024, 0.016, 0.008, 0.6, "BACKGROUND"):SetAllPoints()
+	bill.shade = solid(bill, 0.024, 0.016, 0.008, 0.6, "BACKGROUND")
+	bill.shade:SetAllPoints()
 	local slip = CreateFrame("Frame", nil, bill)
 	bill.slip = slip
 	slip:SetSize(BILL_W, BILL_H)
 	at(slip, bill, BILL_X, BILL_Y)
 	ns.PlaceSprite(ns.ArtSprite(slip, "Papers", "slip", "BACKGROUND"), slip, 0, 0)
+	bill.seal = ns.ArtSprite(slip, "Shop", "seal", "OVERLAY", 6)
+	bill.seal:Hide()
 	bill.head = ns.ShopText(slip, "SlipHead")
 	bill.head:SetPoint("TOP", 0, -30)
 	ns.SetShopText(bill.head, L.SHOP_BILL_HEAD)
@@ -923,12 +1020,8 @@ local function buildBill(frame)
 
 	local buttonsY = y + 58 + 21 + 6 + 44 + 18
 	bill.buy = ns.NewShopButton(slip, function()
-		local goodID, useNow = bill.goodID, bill.useNow:GetChecked() == true
-		closeBill(frame)
-		-- ns.shop.Buy checks SHOP-R13 again, and buys nothing if it no longer holds.
-		if goodID and ns.shop.Buy(goodID, useNow) then
-			-- BalanceChanged redrew before the good was owned: "Owned" or "In use" shows at once.
-			redraw(false)
+		if bill.goodID then
+			buy(frame, bill.goodID, bill.useNow:GetChecked() == true)
 		end
 	end)
 	ns.SetShopButton(bill.buy, L.SHOP_BUY_ACCEPT, false, true)
@@ -944,7 +1037,7 @@ local function buildBill(frame)
 	underline:SetPoint("TOPLEFT", bill.cancelLabel, "BOTTOMLEFT", 0, -4)
 	underline:SetPoint("TOPRIGHT", bill.cancelLabel, "BOTTOMRIGHT", 0, -4)
 	bill.cancel:SetScript("OnClick", function()
-		closeBill(frame)
+		closeBill(frame, true)
 	end)
 
 	bill:EnableKeyboard(true)
@@ -954,7 +1047,7 @@ local function buildBill(frame)
 			self:SetPropagateKeyboardInput(key ~= "ESCAPE")
 		end
 		if key == "ESCAPE" then
-			closeBill(frame)
+			closeBill(frame, true)
 		end
 	end)
 	bill:Hide()
@@ -980,15 +1073,220 @@ function askToBuy(frame, goodID)
 	ns.SetShopText(bill.left, purchase.left)
 	setChecked(bill.useNow, true)
 	bill:Show()
+	ns.OpenShopBill(bill, BILL_X, BILL_Y)
+end
+
+-- The shown row for `goodID`, if the list shows it.
+---@param frame PagleShopFrame
+---@param goodID string?
+---@return PagleShopLine?
+local function shownRow(frame, goodID)
+	for _, line in ipairs(frame.lines) do
+		if goodID and line:IsShown() and line.goodID == goodID then
+			return line
+		end
+	end
+	return nil
+end
+
+-- The good in use in `goodID`'s slot, as `groups` list it, if it isn't `goodID`.
+---@param groups PagleShopGroup[]
+---@param goodID string
+---@return string?
+local function inUseBeside(groups, goodID)
+	for _, group in ipairs(groups) do
+		local inUse, here
+		for _, row in ipairs(group.rows) do
+			here = here or row.id == goodID
+			if row.state == "equipped" and row.id ~= goodID then
+				inUse = row.id
+			end
+		end
+		if here then
+			return inUse
+		end
+	end
+	return nil
+end
+
+-- Where `line`'s medallion's top left is on the case, kept inside the tray when the list is scrolled away from it.
+---@param frame PagleShopFrame
+---@param line PagleShopLine
+---@return number[]
+local function rowBezelAt(frame, line)
+	local y = frame.listTop + line.listY + (ROW_H - ROW_BEZEL) / 2 - frame.scroll:GetVerticalScroll()
+	local bottom = TRAY_Y + TRAY_H - 4 - ROW_BEZEL
+	return { TRAY_X + LIST_X + ROW_BEZEL_X, math.max(frame.listTop, math.min(bottom, y)) }
+end
+
+-- Draws `line`'s new tag from `data` faded out, for a purchase delivered to it: what fades out and in, and its glow.
+---@param line PagleShopLine
+---@param data PagleShopRow
+---@return Region[] out
+---@return Region[] into
+---@return Texture glow
+local function deliverTo(line, data)
+	drawRowTag(line, data)
+	local into = { line.tag }
+	if line.wax:IsShown() then
+		into[2] = line.wax
+	end
+	for _, region in ipairs(into) do
+		region:SetAlpha(0)
+	end
+	if not line.glow then
+		line.glow = line:CreateTexture(nil, "BORDER")
+		line.glow:SetAllPoints()
+		line.glow:SetColorTexture(1, 0.85, 0.45, 1)
+		line.glow:SetBlendMode("ADD")
+	end
+	line.glow:SetAlpha(0)
+	return { line.price }, into, line.glow
+end
+
+-- Draws the slot's old good's new tag from `data` on `line`, faded out, over its "IN USE": what fades out and in.
+---@param line PagleShopLine
+---@param data PagleShopRow
+---@return Region[] out
+---@return Region[] into
+local function stepDown(line, data)
+	if not line.stepDown then
+		line.stepDown = ns.ShopText(line, "Owned")
+		line.stepDown:SetPoint("RIGHT", -8, 0)
+	end
+	local shown = line.stepDown --[[@as PagleShopFontString]]
+	ns.SetShopFont(shown, data.state == "equipped" and "InUse" or "Owned")
+	ns.SetShopText(shown, data.tag)
+	shown:SetAlpha(0)
+	shown:Show()
+	return { line.tag, line.wax }, { shown }
+end
+
+-- Plays a purchase of `goodID` just made (adapter/ShopMotion.lua), from the window as it was drawn before it: `was`
+-- holds the balance then and the good then in use in its slot. The window redraws once it settles.
+---@param frame PagleShopFrame
+---@param goodID string
+---@param was { balance: integer, inUse: string? }
+local function playPurchase(frame, goodID, was)
+	local bill, purse = frame.bill, frame.purse
+	local line = shownRow(frame, goodID)
+	local seal = ns.SetSprite(bill.seal, "Shop", "seal")
+	ns.CenterSpriteAt(seal, bill.slip, SEAL_X, SEAL_Y)
+	seal:SetAlpha(0)
+	ns.SetShopBezel(frame.flyer, bill.bezel.Icon:GetTexture())
+	frame.flyer:Hide()
+	ns.PlayShopPurchase(frame, {
+		press = bill.buy,
+		seal = seal,
+		bezel = bill.bezel,
+		flyer = frame.flyer,
+		from = { BILL_BEZEL_X, BILL_BEZEL_Y },
+		to = line and rowBezelAt(frame, line),
+		closeBill = function(owner)
+			ns.CloseShopBill(bill, BILL_X, BILL_Y, owner)
+		end,
+		balance = function(coins)
+			ns.SetShopText(purse.balance, BreakUpLargeNumbers(coins))
+		end,
+		balanceFrom = was.balance,
+		balanceTo = Pagle.GetBalance().balance,
+		coin = purse.coin,
+		row = function()
+			local model = ns.ShopModel(BreakUpLargeNumbers)
+			local data = model:Row(goodID)
+			if not (line and data and line.goodID == goodID) then
+				return nil
+			end
+			local out, into, glow = deliverTo(line, data)
+			local motion = { out = out, into = into, glow = glow }
+			local old = shownRow(frame, was.inUse)
+			local oldData = was.inUse and model:Row(was.inUse)
+			if old and oldData and oldData.state ~= "equipped" then
+				motion.stepOut, motion.stepIn = stepDown(old, oldData)
+			end
+			return motion
+		end,
+		lid = function()
+			local stage = frame.stage
+			local data = ns.ShopModel(BreakUpLargeNumbers):Stage(goodID)
+			if not data then
+				return {}, {}
+			end
+			drawFoot(stage, data)
+			stage.buy:Show() -- it fades as what follows the purchase comes in
+			local into = {}
+			for _, region in ipairs({ stage.tags, stage.use }) do
+				if region:IsShown() then
+					region:SetAlpha(0)
+					into[#into + 1] = region
+				end
+			end
+			return { stage.buy }, into
+		end,
+	}, function()
+		settlePurchase(frame)
+		redraw(false)
+	end)
+end
+
+-- Buy on the bill of sale (wallet-and-shop.md › UI: Buy): buys `goodID` through ns.shop.Buy, which checks SHOP-R13
+-- again and buys nothing if it no longer holds. Bought, the window shows it at once with the Animations setting off;
+-- with it on, the purchase plays first (playPurchase).
+---@param frame PagleShopFrame
+---@param goodID string
+---@param useNow boolean
+function buy(frame, goodID, useNow)
+	settlePurchase(frame)
+	local was = {
+		balance = Pagle.GetBalance().balance,
+		inUse = inUseBeside(ns.ShopModel(BreakUpLargeNumbers):List(query), goodID),
+	}
+	local moving = ns.MotionOn()
+	frame.bill.goodID = nil
+	playing = moving and { committing = true } or nil
+	local bought = ns.shop.Buy(goodID, useNow)
+	if not bought or not moving then
+		playing = nil
+		closeBill(frame)
+		if bought then
+			ns.ShopSound("buy")
+			-- BalanceChanged redrew before the good was owned: "Owned" or "In use" shows at once.
+			redraw(false)
+		end
+		return
+	end
+	ns.ShopSound("buy")
+	playing = {}
+	playPurchase(frame, goodID, was)
+end
+
+-- Centres the window, shrunk to fit the screen with its handle when the screen is too small for it, never grown (the
+-- kit's Fit.lua): at a large UI scale UIParent is only 668 units tall. Its offset is in its own, scaled, units.
+---@param frame PagleShopFrame
+local function fit(frame)
+	local scale = math.min(
+		1,
+		(UIParent:GetHeight() - 2 * FIT_MARGIN) / EXTENT_H,
+		(UIParent:GetWidth() - 2 * FIT_MARGIN) / EXTENT_W
+	)
+	frame:SetScale(scale)
+	frame:ClearAllPoints()
+	frame:SetPoint("CENTER", UIParent, "CENTER", 0, CENTRE_DY)
 end
 
 -- The window: the sample case, centred and movable by its leather, with its close button at the top right, the purse,
--- the tray's controls and list, the lid's cards, and the bill of sale over them. Esc closes it.
+-- the tray's controls and list, the lid's cards, and the bill of sale over them, fitted to the screen again when the
+-- UI scale or the window's size changes. Esc closes it.
 ---@return PagleShopFrame
 local function build()
 	local frame = CreateFrame("Frame", FRAME_NAME, UIParent) --[[@as PagleShopFrame]]
 	frame:SetSize(WIDTH, HEIGHT)
-	frame:SetPoint("CENTER", 0, -20)
+	fit(frame)
+	frame:RegisterEvent("UI_SCALE_CHANGED")
+	frame:RegisterEvent("DISPLAY_SIZE_CHANGED")
+	frame:SetScript("OnEvent", function()
+		fit(frame)
+	end)
 	frame:SetFrameStrata("HIGH")
 	frame:EnableMouse(true)
 	frame:SetMovable(true)
@@ -1011,15 +1309,23 @@ local function build()
 	buildList(frame)
 	frame.stage = buildStage(frame)
 	frame.bill = buildBill(frame)
+	-- Over the bill, whose strata it shares.
+	frame.flyer = ns.NewShopBezel(frame, 64)
+	frame.flyer:SetFrameStrata("DIALOG")
+	frame.flyer:SetFrameLevel(frame.bill:GetFrameLevel() + 50)
+	frame.flyer:Hide()
 
-	-- Esc with the search box unfocused hides it through UISpecialFrames (CloseSpecialWindows); its bill goes too.
+	frame:Hide()
+	-- Esc with the search box unfocused hides it through UISpecialFrames (CloseSpecialWindows); its bill goes too, and a
+	-- purchase still playing settles.
 	frame:SetScript("OnHide", function()
+		settlePurchase(frame)
 		closeBill(frame)
 		frame.search:ClearFocus()
 		frame.purse.tip:Hide()
+		ns.ShopSound("close")
 	end)
 	table.insert(UISpecialFrames, FRAME_NAME)
-	frame:Hide()
 	return frame
 end
 
@@ -1034,6 +1340,12 @@ function redraw(fresh)
 	local frame = ns.shopFrame
 	if not frame or not frame:IsShown() then
 		return
+	end
+	if playing then
+		if playing.committing then
+			return
+		end
+		settlePurchase(frame)
 	end
 	if not waitingForIdle and ns.projections:IsUpdating() then
 		waitingForIdle = true
@@ -1068,7 +1380,10 @@ local function show(selection)
 			frame.search:SetText("")
 		end
 	end
-	frame:Show()
+	if not frame:IsShown() then
+		frame:Show()
+		ns.ShopSound("open")
+	end
 	redraw(true)
 end
 

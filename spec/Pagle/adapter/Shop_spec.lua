@@ -670,6 +670,14 @@ local function settle(loaded)
 	end
 end
 
+-- Runs `seconds` of frames (default 3, past every motion's end) at 20 a second, so the shop's motion plays
+-- (adapter/ShopMotion.lua, on Core's driver).
+local function play(loaded, seconds)
+	for _ = 1, math.floor((seconds or 3) * 20 + 0.5) do
+		loaded.client.update(0.05)
+	end
+end
+
 -- Opens the shop on `goodID` and clicks Buy; returns the bill of sale.
 local function askToBuy(loaded, goodID)
 	loaded.env.Pagle.OpenShop(goodID)
@@ -776,6 +784,7 @@ describe("The bill of sale", function()
 			local bill = askToBuy(loaded, "core.toaststyle.ripple")
 
 			bill.buy:Click()
+			play(loaded)
 
 			assert.are.equal(before + 1, #entries)
 			-- The logged-in character is the saved log's second (LOG-R25).
@@ -798,6 +807,7 @@ describe("The bill of sale", function()
 		bill.useNow:Click()
 		assert.is_false(bill.useNow.tick:IsShown())
 		bill.buy:Click()
+		play(loaded)
 
 		assert.is_true(loaded.env.Pagle.IsOwned("core.toaststyle.ripple"))
 		assert.are.equal("core.toaststyle.timber", loaded.env.Pagle.GetEquipped("core.toaststyle"))
@@ -816,12 +826,14 @@ describe("The bill of sale", function()
 
 		local bill = askToBuy(loaded, "core.toaststyle.ripple")
 		bill.cancel:Click()
+		play(loaded) -- it lifts away
 		assert.is_false(bill:IsShown())
 		askToBuy(loaded, "core.toaststyle.ripple")
 		bill:GetScript("OnKeyDown")(bill, "W")
 		assert.is_true(bill.propagatesKeys)
 		assert.is_true(bill:IsShown())
 		loaded.client.pressKey("ESCAPE")
+		play(loaded)
 
 		assert.is_false(bill:IsShown())
 		assert.is_false(bill.propagatesKeys)
@@ -916,6 +928,176 @@ describe("The purse's held line", function()
 		local purse = shopFrame(loaded).purse
 		assert.are.equal("100", purse.balance:GetText())
 		assert.is_false(purse.held:IsShown())
+	end)
+end)
+
+-- The sounds the shop played, each as "<sound kit id> <channel>".
+local function shopSounds(loaded)
+	local sounds = {}
+	for _, sound in ipairs(loaded.client.sounds) do
+		if sound:match("^%d+ ") then
+			sounds[#sounds + 1] = sound
+		end
+	end
+	return sounds
+end
+
+-- Where `region`'s first anchor puts it: its x and y offsets.
+local function offset(region)
+	local _, _, _, x, y = region:GetPoint(1)
+	return { x, y }
+end
+
+describe("The Curio Shop's motion and sounds (wallet-and-shop.md › UI: Motion and sound)", function()
+	it("plays the case opening and closing on the SFX channel, once each", function()
+		local loaded = shopCore()
+
+		loaded.env.Pagle.OpenShop()
+		loaded.env.Pagle.OpenShop("core.toaststyle.ripple") -- already open: no sound
+		shopFrame(loaded).CloseButton:Click()
+
+		assert.are.same({ "5274 SFX", "5275 SFX" }, shopSounds(loaded))
+	end)
+
+	it("drops the bill of sale in over the dimming case, and lifts it away on Cancel", function()
+		local loaded, handles = shopCore()
+		handles.Ledger:ReportCoinsEarned(200)
+
+		local bill = askToBuy(loaded, "core.toaststyle.ripple")
+
+		assert.are.same({ 0, 0 }, { bill.shade:GetAlpha(), bill.slip:GetAlpha() })
+		assert.are.same({ 290, -32 }, offset(bill.slip)) -- 24 units up
+		play(loaded, 0.3)
+		assert.are.same({ 1, 1 }, { bill.shade:GetAlpha(), bill.slip:GetAlpha() })
+		assert.are.same({ 290, -56 }, offset(bill.slip))
+
+		bill.cancel:Click()
+		play(loaded, 0.1)
+		assert.is_true(bill:IsShown())
+		assert.is_true(bill.slip:GetAlpha() < 1)
+		bill.buy:Click() -- it no longer asks
+		play(loaded, 0.2)
+		assert.is_false(bill:IsShown())
+		assert.is_false(loaded.env.Pagle.IsOwned("core.toaststyle.ripple"))
+	end)
+
+	it(
+		"plays a purchase: the press, the seal and its stamp, the medallion flying to the row, the purse counting"
+			.. " down with the coin, then IN USE in the row and on the lid, the slot's old good stepping down",
+		function()
+			local loaded, handles = shopCore()
+			handles.Ledger:ReportCoinsEarned(200)
+			local bill = askToBuy(loaded, "core.toaststyle.ripple")
+			play(loaded, 0.5)
+			local frame = shopFrame(loaded)
+			local purse, stage, row = frame.purse, frame.stage, rowOf(loaded, "core.toaststyle.ripple")
+
+			bill.buy:Click()
+
+			assert.is_true(loaded.env.Pagle.IsOwned("core.toaststyle.ripple")) -- bought at once (SHOP-R10)
+			assert.are.same({ "5274 SFX", "865 SFX" }, shopSounds(loaded))
+			assert.are.equal("200", purse.balance:GetText()) -- the window shows it as the motion has it
+			assert.is_true(stage.buy:IsShown())
+			play(loaded, 0.45)
+			assert.are.same({ "5274 SFX", "865 SFX", "1204 SFX" }, shopSounds(loaded))
+			assert.is_true(bill.seal:IsShown())
+			assert.are.equal(1, bill.seal:GetAlpha())
+			play(loaded, 0.5) -- 0.95 s: the medallion flies, the bill lifts away
+			assert.is_true(frame.flyer:IsShown())
+			assert.is_false(bill.bezel:IsShown())
+			assert.are.same({ "5274 SFX", "865 SFX", "1204 SFX", "120 SFX" }, shopSounds(loaded))
+			play(loaded, 0.3) -- 1.25 s: the purse counts down
+			local counting = tonumber(purse.balance:GetText())
+			assert.is_true(counting > 50 and counting < 200)
+			assert.is_false(bill:IsShown())
+			play(loaded, 0.4) -- 1.65 s: delivered
+			assert.are.equal("IN USE", row.tag:GetText())
+			assert.is_true(row.price:GetAlpha() < 1)
+			assert.are.equal("default", rowOf(loaded, "core.toaststyle.timber").stepDown:GetText())
+
+			play(loaded)
+
+			assert.are.equal("50", purse.balance:GetText())
+			assert.are.same(
+				{ "TOAST STYLE 2 of 3", "Timber | default", "Ripple | IN USE" },
+				{ listed(loaded)[1], listed(loaded)[2], listed(loaded)[3] }
+			)
+			assert.is_false(rowOf(loaded, "core.toaststyle.timber").stepDown:IsShown())
+			assert.are.equal(0, row.glow:GetAlpha())
+			assert.are.equal("IN USE", stage.tags:GetText())
+			assert.are.equal(1, stage.tags:GetAlpha())
+			assert.is_false(stage.buy:IsShown())
+			assert.is_false(frame.flyer:IsShown())
+			assert.is_false(bill.seal:IsShown())
+			assert.are.equal(purse.coin.w0, purse.coin:GetWidth())
+		end
+	)
+
+	it("with Animations off, shows a purchase at once, with only Buy's sound (SET-R30)", function()
+		local loaded, handles = shopCore()
+		loaded.ns.db.profile.announcements.motion = false
+		handles.Ledger:ReportCoinsEarned(200)
+		local bill = askToBuy(loaded, "core.toaststyle.ripple")
+		assert.are.same({ 1, 1 }, { bill.shade:GetAlpha(), bill.slip:GetAlpha() })
+
+		bill.buy:Click()
+
+		local frame = shopFrame(loaded)
+		assert.is_false(bill:IsShown())
+		assert.are.equal("50", frame.purse.balance:GetText())
+		assert.are.equal("IN USE", frame.stage.tags:GetText())
+		assert.are.same({ "5274 SFX", "865 SFX" }, shopSounds(loaded))
+	end)
+
+	it("settles a purchase the shop closes on: it opens again as bought", function()
+		local loaded, handles = shopCore()
+		handles.Ledger:ReportCoinsEarned(200)
+		local bill = askToBuy(loaded, "core.toaststyle.ripple")
+		bill.buy:Click()
+		play(loaded, 0.9)
+
+		shopFrame(loaded).CloseButton:Click()
+		loaded.env.Pagle.OpenShop()
+
+		local frame = shopFrame(loaded)
+		assert.is_false(bill:IsShown())
+		assert.is_false(frame.flyer:IsShown())
+		assert.are.equal("50", frame.purse.balance:GetText())
+		assert.are.equal("Ripple | IN USE", listed(loaded)[3])
+		play(loaded)
+		assert.are.equal("50", frame.purse.balance:GetText())
+	end)
+
+	it("shakes N more Coins with a soft no when Buy is clicked without enough Coins", function()
+		local loaded, handles = shopCore()
+		handles.Ledger:ReportCoinsEarned(100)
+		loaded.env.Pagle.OpenShop("hunts.cover.velvet")
+		local stage = shopFrame(loaded).stage
+		assert.is_true(stage.short:IsShown())
+
+		stage.short:Click()
+		play(loaded, 0.05)
+
+		assert.is_true(offset(stage.needed)[1] < 14) -- on its way 6 units left, by 0.06 s
+		assert.are.same({ "5274 SFX", "857 SFX" }, shopSounds(loaded))
+		play(loaded)
+		assert.are.same({ 14, 0 }, offset(stage.needed))
+		assert.is_false(shopFrame(loaded).bill:IsShown())
+		handles.Ledger:ReportCoinsEarned(400)
+		assert.is_false(stage.short:IsShown())
+	end)
+
+	it("shrinks to fit a screen too small for it, never grows, and fits again when the UI scale changes", function()
+		local loaded = shopCore()
+		loaded.env.Pagle.OpenShop()
+		local frame = shopFrame(loaded)
+		assert.are.equal(1, frame:GetScale())
+
+		loaded.env.UIParent:SetSize(1188, 668) -- UI scale 1.15 on a 1366 x 768 screen
+		loaded.client.fire("UI_SCALE_CHANGED")
+
+		assert.are.equal((668 - 48) / 680, frame:GetScale())
+		assert.are.same({ "CENTER", loaded.env.UIParent, "CENTER", 0, -20 }, { frame:GetPoint(1) })
 	end)
 end)
 
