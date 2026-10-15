@@ -22,8 +22,10 @@ logic\Board.lua
 logic\Records.lua
 logic\Projection.lua
 logic\Completions.lua
+logic\LiveStep.lua
 adapter\BoardWidgets.lua
 adapter\Board.lua
 adapter\TackleBoard.lua
 adapter\Generate.lua
 adapter\Words.lua
+adapter\LiveStep.lua
