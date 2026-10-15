@@ -221,6 +221,20 @@ function ns.JournalPlace.legends(legend, plate)
 	return { id = ns.JOURNAL_LEGENDS, args = legend and { legend = legend, plate = plate } or nil }
 end
 
+--- Adds the removed line to a caught item's entry `blocks` (LED-R12): "No longer found in Forever's waters." while
+--- the catalogue marks item `itemID` removed, else nothing. Returns `blocks`.
+---@param blocks LedgerBlock[]
+---@param context LedgerSpreadContext
+---@param itemID integer
+---@return LedgerBlock[]
+function ns.AddJournalRemovedLine(blocks, context, itemID)
+	local item = context.getItem(itemID)
+	if item and item.removed then
+		blocks[#blocks + 1] = { kind = "text", text = ns.L.ENTRY_REMOVED }
+	end
+	return blocks
+end
+
 --- The spreads, by ID. Each spread's ticket registers it with ns.RegisterJournalSpread when its file loads.
 ---@type table<string, LedgerSpread>
 ns.journalSpreads = {}

@@ -39,12 +39,7 @@ end
 ---@param entry LedgerFirst
 ---@return string
 local function firstCatch(context, entry)
-	local L, text = ns.L, context.text
-	local date, who = text:Date(entry.date), text:Character(entry.char)
-	if entry.zone ~= 0 then
-		return L.LEGENDS_FIRST:format(date, text:Zone(entry.zone), who)
-	end
-	return L.LEGENDS_FIRST_NO_ZONE:format(date, who)
+	return context.text:FirstCatch(entry, ns.L.LEGENDS_FIRST, ns.L.LEGENDS_FIRST_NO_ZONE)
 end
 
 -- The left page (LED-R147): its title, the Legends caught of the world's (removed ones out of both sides, LED-R12),
@@ -119,11 +114,7 @@ local function legendPage(context, itemID)
 		text = L.LEGENDS_OPEN_PLATE,
 		place = ns.JournalPlace.legends(itemID, true),
 	}
-	local item = context.getItem(itemID)
-	if item and item.removed then
-		blocks[#blocks + 1] = { kind = "text", text = L.ENTRY_REMOVED }
-	end
-	return blocks
+	return ns.AddJournalRemovedLine(blocks, context, itemID)
 end
 
 -- A caught Legend's plate (LED-R147), filling both pages: on the left its icon and name, on the right its first

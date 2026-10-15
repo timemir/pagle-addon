@@ -233,6 +233,21 @@ function Text:Date(date)
 	return ns.FormatJournalDate(date, ns.RealmDateAt(now, offsetAt(self.client, now)).year)
 end
 
+--- A first Catch's line (LED-R140, LED-R147): `withZone` filled with its date, zone and character, then `...`; at
+--- zone 0, `withoutZone` with the zone left out (LED-R6).
+---@param entry LedgerFirst
+---@param withZone string
+---@param withoutZone string
+---@param ... any
+---@return string
+function Text:FirstCatch(entry, withZone, withoutZone, ...)
+	local date, who = self:Date(entry.date), self:Character(entry.char)
+	if entry.zone ~= 0 then
+		return withZone:format(date, self:Zone(entry.zone), who, ...)
+	end
+	return withoutZone:format(date, who, ...)
+end
+
 --- A server time's realm date as the Journal prints it (LED-R126), at the realm's offset now: for a Cast stored
 --- without a realm date (the bookplate's "kept since", LED-R146).
 ---@param serverTime integer

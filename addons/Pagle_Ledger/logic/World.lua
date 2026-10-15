@@ -63,9 +63,6 @@ local ns = select(2, ...)
 ---@param item PagleItem?
 ---@return boolean
 local function onList(itemID, item)
-	if itemID == 0 or item == nil or item.legend then
-		return false
-	end
 	local class = ns.ClassifyCatch(itemID, item)
 	return class == "species" or class == "trophy" or class == "curio"
 end
