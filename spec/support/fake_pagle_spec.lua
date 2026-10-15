@@ -1077,7 +1077,7 @@ describe("FakePagle", function()
 					fake.Pagle.OpenFieldReport()
 
 					assert.are.same({
-						{ message = "Updating… try again in a moment.", parts = {} },
+						{ message = "Updating... try again in a moment.", parts = {} },
 						{ message = "Nothing to report. Thanks for checking!", parts = {} },
 					}, fake.fieldReportsOpened)
 				end

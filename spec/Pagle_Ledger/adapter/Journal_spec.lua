@@ -236,7 +236,7 @@ describe("the Fish Journal's navigation (LED-R125)", function()
 		journal:Open("deep", { fish = MACKEREL })
 
 		local texts = shownTexts(journal.frame.crumbs)
-		assert.are.same({ "Home", "❧", "Waters", "❧", "Zone", "❧", "Fish 6303" }, texts)
+		assert.are.same({ "Home", "»", "Waters", "»", "Zone", "»", "Fish 6303" }, texts)
 		assert.is_true(journal.frame.back:IsShown())
 
 		journal.frame.back:Click()

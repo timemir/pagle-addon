@@ -41,6 +41,7 @@ Terms are used as `CONTEXT.md` defines them. Numbers live in each file's Tunable
 - **CORE-R6** Core embeds LibStub, CallbackHandler-1.0, AceAddon-3.0, AceEvent-3.0 and AceDB-3.0, vendored at a recorded commit. Modules reach them through LibStub and embed nothing themselves.
 - **CORE-R7** Every addon splits its code into `logic/` (pure Lua: no WoW globals, everything passed in as arguments, unit-tested with busted) and `adapter/` (events, frames, SavedVariables, Ace). luacheck enforces it with a per-path `std`.
 - **CORE-R8** Every user-facing string goes through the addon's string table (`ns.L`), enUS only in 1.0.
+- **CORE-R9** Every string the package draws uses only characters the client's fonts have: ASCII, Latin-1 (U+00A0–U+00FF) and the em dash (U+2014). Build 1.60.1.70374 draws a box for anything else it was tried with (→, ★, ☆, ☑, ☐, ✓, ❧, ☚, ▸ and curly quotes, #248). A symbol outside the set is drawn as an in-client texture (`|T…|t`, its path in the build's ManifestInterfaceData) or written in words; each one the Ledger draws is one shared constant in its string table. A busted spec (`spec/glyphs_spec.lua`) checks every Lua string literal, XML and TOC line the package ships outside `libs/`, generated files included; the generator checks lore on the way in (DATA-R107). `/pagle dev glyphs` shows a probe line in each font Pagle uses, to settle in game whether a character renders.
 
 ### Attaching a Module
 

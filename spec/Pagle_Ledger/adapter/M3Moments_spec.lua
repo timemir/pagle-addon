@@ -198,7 +198,7 @@ describe("the Ledger's M3 live moments", function()
 			assert.are.same({
 				"newSpecies New Species / Cove Perch New! 10",
 				"zoneRank Zone rank: Visitor / Cove Rank up 2",
-				"elementStar In its element / Cove Perch ★★ nil",
+				drawnSymbols("elementStar In its element / Cove Perch ★★ nil"),
 			}, momentsOf(announcement))
 			assert.are.equal(12, announcement.coins)
 			local rank = byKind(announcement).zoneRank
@@ -262,10 +262,14 @@ describe("the Ledger's M3 live moments", function()
 			})
 			assert.are.same({ old = 40, new = 60, unit = "lb", label = "weight" }, weight.ruler)
 			local family = moments.familyStar
-			assert.are.same(
-				{ "nod", 130, "Trophy family", "Snappers ★★★", "★★★", record.id },
-				{ family.rung, family.order, family.title, family.text, family.stamp, family.cast }
-			)
+			assert.are.same({
+				"nod",
+				130,
+				"Trophy family",
+				drawnSymbols("Snappers ★★★"),
+				drawnSymbols("★★★"),
+				record.id,
+			}, { family.rung, family.order, family.title, family.text, family.stamp, family.cast })
 			assert.are.equal("string", type(family.icon))
 			local celebrated = loaded.env.PagleLedgerDB.global.celebrated
 			assert.is_true(celebrated.items[HEAVY])
@@ -282,7 +286,10 @@ describe("the Ledger's M3 live moments", function()
 
 			local moments = byKind(shown(fake)[1])
 			assert.is_nil(moments.trophyWeight.ruler)
-			assert.are.same({ "★★", "★★" }, { moments.familyStar.text, moments.familyStar.stamp })
+			assert.are.same(
+				{ drawnSymbols("★★"), drawnSymbols("★★") },
+				{ moments.familyStar.text, moments.familyStar.stamp }
+			)
 		end
 	)
 
@@ -340,7 +347,7 @@ describe("the Ledger's M3 live moments", function()
 
 		local regular = byKind(shown(fake)[1]).regularStar
 		assert.are.same(
-			{ "nod", 120, "Regular", "Cove Perch", "★★★", ANY_1, record.id },
+			{ "nod", 120, "Regular", "Cove Perch", drawnSymbols("★★★"), ANY_1, record.id },
 			{ regular.rung, regular.order, regular.title, regular.text, regular.stamp, regular.icon, regular.cast }
 		)
 	end)
@@ -460,7 +467,7 @@ describe("the Ledger's M3 done", function()
 			assert.are.same({
 				{
 					"While the Ledger was off",
-					"Angler Level 5 → 6",
+					"Angler Level 5 to 6",
 					"1 zone ranked · 1 mastered",
 					"1 trophy weight",
 					"1 curio",
@@ -479,7 +486,7 @@ describe("the Ledger's M3 done", function()
 
 		-- Expert and the junk: 1,000 + 170 XP, from 4,180 past level 5 (4,800); Coins 8 + 5 + 20.
 		assert.are.same({
-			{ "While the Ledger was off", "Angler Level 4 → 5", "1 zone ranked", "1 curio", "Pagle Coins +33" },
+			{ "While the Ledger was off", "Angler Level 4 to 5", "1 zone ranked", "1 curio", "Pagle Coins +33" },
 		}, writeUps(fake))
 	end)
 

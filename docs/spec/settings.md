@@ -101,12 +101,12 @@ The rules below are authoritative; this sketch only summarises them.
   | Hunts | "Open Hunts" | HNT-R68, HNT-R135 |
   | Stats | "Open Stats" | STA-R4 |
   | Tackle Board | "Start my board" until the board is started, then "Open Tackle Board" | TKB-R1, TKB-R5 |
-  | QoL | "Fishing settings ›" | QOL-R2 (its `settingsAction` opens Fishing) |
+  | QoL | "Fishing settings »" | QOL-R2 (its `settingsAction` opens Fishing) |
 
   A Module in any other state shows no button. The list always shows all five roster names, so before a Module is built its row reads Not installed (CORE-R41). Each button arrives with its Module's milestone: QoL's in M1, the Ledger's in M3, Hunts' in M5, Stats' in M6, the Tackle Board's in M7. The list's search label is "Modules".
 
   Every root row without a "From" note (the paragraph, the status list, the note) is there from M1.
-- **SET-R12** Core reads each status button's label (a string, or the function's result) every time the root is shown. Pressing a button runs its action (`def.settingsAction.onClick`, or the first view's `open`). For a Module that has a view (every Module but QoL), and for "Open Field report" and "Open the Curio Shop" (SET-R50), Core first closes the Settings panel (`HideUIPanel(SettingsPanel)`), since what opens would sit behind it. QoL's "Fishing settings ›" doesn't close the panel: it moves it to Fishing. While restricted, each action behaves as its own spec says, after the panel has closed: a Module view follows its Module's rules, the Field report prints REP-R44's line and the Curio Shop SHOP-R41's. QoL's button then prints CORE-R33's line, and the panel stays on the root.
+- **SET-R12** Core reads each status button's label (a string, or the function's result) every time the root is shown. Pressing a button runs its action (`def.settingsAction.onClick`, or the first view's `open`). For a Module that has a view (every Module but QoL), and for "Open Field report" and "Open the Curio Shop" (SET-R50), Core first closes the Settings panel (`HideUIPanel(SettingsPanel)`), since what opens would sit behind it. QoL's "Fishing settings »" doesn't close the panel: it moves it to Fishing. While restricted, each action behaves as its own spec says, after the panel has closed: a Module view follows its Module's rules, the Field report prints REP-R44's line and the Curio Shop SHOP-R41's. QoL's button then prints CORE-R33's line, and the panel stays on the root.
 - **SET-R13** The root's Defaults button restores the two value rows: the reminder to off and the length unit to its region default (LOG-R69).
 
 ### Fishing
@@ -226,7 +226,7 @@ The rules below are authoritative; this sketch only summarises them.
   | Options › AddOns › Pagle | the root | CORE-R40 |
   | the compartment menu's "Settings" | the root | CORE-R50 |
   | `/pagle`, `/pagle settings` | the root | CORE-R60, CORE-R61 |
-  | QoL's "Fishing settings ›" on the root, and `/pagle qol` with no argument | Fishing | QOL-R2, QOL-R17 |
+  | QoL's "Fishing settings »" on the root, and `/pagle qol` with no argument | Fishing | QOL-R2, QOL-R17 |
   | `Pagle.OpenSettings(topic)` from any other caller | that page, or the root if it isn't registered | CORE-R43 |
 
   While restricted, every one of these except Blizzard's own menu prints "Pagle: settings open after combat." (CORE-R33).

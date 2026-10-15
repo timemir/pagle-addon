@@ -9,7 +9,14 @@ local ns = select(2, ...)
 
 -- Words more than one key reads: Species Mastery's ★★ and ★★★ (LED-R45), a check box (LED-R40, LED-R135, LED-R142).
 local IN_ITS_ELEMENT, REGULAR = "In its element", "Regular"
-local CHECK_ON, CHECK_OFF = "☑", "☐"
+-- The symbols the Ledger draws, as in-client textures sized to the line's text: the client's fonts have no ★, ☆, ✓,
+-- ☑ or ☐ (CORE-R9, #248). A star is the raid-target star; a blank one is the same star dimmed by its vertex colour. A
+-- tick is the check box's check, so a ticked box is a tick and an empty one the empty check box.
+local STAR_TEXTURE = "Interface\\TargetingFrame\\UI-RaidTargetingIcon_1"
+local STAR = "|T" .. STAR_TEXTURE .. ":0|t"
+local STAR_OFF = "|T" .. STAR_TEXTURE .. ":0:0:0:0:64:64:0:64:0:64:110:100:85|t"
+local TICK = "|TInterface\\Buttons\\UI-CheckBox-Check:0|t"
+local CHECK_ON, CHECK_OFF = TICK, "|TInterface\\Buttons\\UI-CheckBox-Up:0|t"
 
 ---@class PagleLedgerStrings
 ns.L = {
@@ -30,7 +37,7 @@ ns.L = {
 
 	-- Names the client doesn't have (LED-R97, LED-R126).
 	ITEM_FALLBACK = "Item %d",
-	NAME_UNKNOWN = "…",
+	NAME_UNKNOWN = "...",
 	-- The tab of every continent but the Eastern Kingdoms and Kalimdor (LED-R126, LED-R130).
 	OTHER_WATERS = "Other waters",
 
@@ -62,7 +69,7 @@ ns.L = {
 	-- The family's name (lore, LED-R160) and its stars.
 	FAMILY_STAR_TEXT = "%s %s",
 	-- One star: a moment's stars repeat it (LED-R97), and the Journal prints a shown one with it (LED-R48).
-	STAR = "★",
+	STAR = STAR,
 
 	-- Zone Mastery's ranks, Visitor to Master (LED-R50).
 	ZONE_RANKS = { "Visitor", "Regular", "Local", "Expert", "Master" },
@@ -91,7 +98,7 @@ ns.L = {
 	WRITE_UP_FIRST_BUILD_OTHER = "Your Ledger was written up from %s Casts",
 	WRITE_UP_WHILE_OFF = "While the Ledger was off",
 	WRITE_UP_LEVEL = "Angler Level %d",
-	WRITE_UP_LEVEL_ROSE = "Angler Level %d → %d",
+	WRITE_UP_LEVEL_ROSE = "Angler Level %d to %d",
 	WRITE_UP_SPECIES_ONE = "%d Species",
 	WRITE_UP_SPECIES_OTHER = "%d Species",
 	WRITE_UP_ZONES_ONE = "%d zone ranked",
@@ -114,8 +121,8 @@ ns.L = {
 	JOURNAL_UPDATING = "The Ledger is being written up from your Catch log.",
 	-- Navigation (LED-R125): the first crumb, the separator between crumbs and the back link.
 	JOURNAL_HOME = "Home",
-	JOURNAL_CRUMB_SEPARATOR = "❧",
-	JOURNAL_BACK = "☚ back",
+	JOURNAL_CRUMB_SEPARATOR = "»",
+	JOURNAL_BACK = "« back",
 	-- The link to the Field report box on uncharted waters and Curios' loose pages (LED-R138, LED-R144, REP-R43).
 	JOURNAL_HELP_CHART = "Help chart the waters",
 	-- Home (LED-R130–R133, LED-R149). Its left page's kicker and title; its tiles are TILE_*'s.
@@ -125,7 +132,7 @@ ns.L = {
 	HOME_NOTES = "Notes to self",
 	HOME_NOTE_RANK = "%s: %s. %s",
 	HOME_NOTE_NEW = "%s: %d new to find",
-	HOME_NOTE_STAR = "%s: %d to ★★★",
+	HOME_NOTE_STAR = "%s: %d to " .. STAR:rep(3),
 	HOME_NOTE_NONE = "Go fishing!",
 	-- Its bookplate summary and contents (LED-R132), and the brass plate (LED-R149, without the title in M3).
 	HOME_LEVEL = "Angler Level",
@@ -205,12 +212,12 @@ ns.L = {
 	ENTRY_ONLY_BY = " Only by %s.",
 	ENTRY_REMOVED = "No longer found in Forever's waters.",
 	ENTRY_UNKNOWN = "An unknown fish",
-	ENTRY_RIDDLE = "“%s”",
-	ENTRY_HINT_LINK = "Read the plain hint ▸",
+	ENTRY_RIDDLE = '"%s"',
+	ENTRY_HINT_LINK = "Read the plain hint »",
 	-- The fish spread's right page (LED-R142): "☑ In its element (1/1)", "☐ Regular (12/50)".
 	FISH_KICKER = "Where to find it",
 	FISH_TITLE = "Its waters",
-	FISH_CAUGHT_HERE = "caught ✓",
+	FISH_CAUGHT_HERE = "caught " .. TICK,
 	FISH_WHEN = "When",
 	FISH_ELEMENT = "%s " .. IN_ITS_ELEMENT .. " (%d/%d)",
 	FISH_REGULAR = "%s " .. REGULAR .. " (%d/%d)",
@@ -288,7 +295,7 @@ ns.L = {
 	ZONE_NOTHING_YET = "Nothing caught here yet.",
 
 	-- A blank star as the Journal prints it (LED-R48); a shown one is STAR.
-	STAR_OFF = "☆",
+	STAR_OFF = STAR_OFF,
 	-- The Trophy Room (LED-R143, LED-R62), titled TROPHY_TITLE. Numbers in %s are BreakUpLargeNumbers'.
 	TROPHY_WEIGHTS = "%s of %s weights. Real weights, from the game's own trophy fish.",
 	TROPHY_INDEX_LINE = "%s %s",
@@ -296,7 +303,7 @@ ns.L = {
 	TROPHY_POUNDS = "pounds, as the game weighs them",
 	TROPHY_LANDED = "Landed %s of %s. Heaviest so far: %s lb.",
 	TROPHY_NONE_LANDED = "Not one of this family yet.",
-	TROPHY_TICK_MARK = "✓",
+	TROPHY_TICK_MARK = TICK,
 	-- Curios (LED-R144): the Junk Museum, Treasures and the loose pages. "{item}: {n}× at {zones}, first {date}. …"
 	CURIOS_CRUMB = "Curios",
 	CURIOS_JUNK_TITLE = "The Junk Museum",

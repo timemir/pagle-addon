@@ -110,7 +110,7 @@ ns.L = {
 	FIELD_REPORT_NEXT = "Next",
 	FIELD_REPORT_CLOSE = "Close",
 	FIELD_REPORT_NOTHING = "Nothing to report. Thanks for checking!",
-	FIELD_REPORT_UPDATING = "Updating… try again in a moment.",
+	FIELD_REPORT_UPDATING = "Updating... try again in a moment.",
 	FIELD_REPORT_AFTER_COMBAT = "Pagle: the Field report opens after combat.",
 	-- The Settings root's HELP_CHART section (SET-R10 row 4): the row's label, the button's caption, with the count
 	-- while it is above 0, and the tooltip.

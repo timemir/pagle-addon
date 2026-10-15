@@ -111,7 +111,7 @@ These hold everywhere and come from the map's settled Notes:
 | `Pagle_Hunts` | `Hunts` · Hunts · 20 | Data-defined target Catches under conditions that open and close | the Hunts board: compartment "Hunts", `/pagle hunts`, "Open Hunts" | pinned Hunts (10) | M5 |
 | `Pagle_Stats` | `Stats` · Stats · 30 | The Angler's own numbers: Sessions, Your odds, Dry spells | the Stats book: compartment "Stats", `/pagle stats`, "Open Stats" | Session and watched Dry spells (20) | M6 |
 | `Pagle_TackleBoard` | `TackleBoard` · Tackle Board · 40 | Opt-in goals that never expire, with a Campfire and a Fly Box | the cork board: compartment "Tackle Board", `/pagle board`, "Start my board" / "Open Tackle Board" | goals workable here (30) | M7 |
-| `Pagle_QoL` | `QoL` · QoL · 50 | One game action per keypress: cast, reel, gear, lures, clams | no view: compartment "Input: …", `/pagle qol`, "Fishing settings ›", the Fishing key and Swap gear bindings | none (its own next-action button) | M1, Track Q, M8 |
+| `Pagle_QoL` | `QoL` · QoL · 50 | One game action per keypress: cast, reel, gear, lures, clams | no view: compartment "Input: …", `/pagle qol`, "Fishing settings »", the Fishing key and Swap gear bindings | none (its own next-action button) | M1, Track Q, M8 |
 
 ### What each Module gives and takes
 

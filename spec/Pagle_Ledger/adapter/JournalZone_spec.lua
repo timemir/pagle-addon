@@ -154,11 +154,11 @@ describe("the Journal's zone spread", function()
 					"Events · 0 / 1",
 					"— unknown —",
 					"Trophies · 1 / 2",
-					"☑ a Catfish trophy, any weight",
-					"☐ a Redgill trophy, any weight",
+					drawnSymbols("☑ a Catfish trophy, any weight"),
+					drawnSymbols("☐ a Redgill trophy, any weight"),
 					"Curios · 1 / 2",
-					"☑ a piece of junk",
-					"☐ a treasure",
+					drawnSymbols("☑ a piece of junk"),
+					drawnSymbols("☐ a treasure"),
 					"Also caught here · 1",
 					"Raw Brilliant Smallfish",
 					"Not in Pagle's list for these waters yet.",
@@ -299,7 +299,7 @@ describe("the Journal's zone spread", function()
 				"— unknown —",
 				"— unknown —",
 				"Trophies · 0 / 1",
-				"☐ a Catfish trophy, any weight",
+				drawnSymbols("☐ a Catfish trophy, any weight"),
 			}, blockTexts(left))
 			for _, rung in ipairs(left[4].rungs) do
 				assert.is_false(rung.inked or rung.circled)
@@ -316,7 +316,7 @@ describe("the Journal's zone spread", function()
 
 				-- Blackmouth: pools, ★★ of three.
 				assert.are.same(
-					{ "Oily Blackmouth", "pools", "★★☆" },
+					{ "Oily Blackmouth", "pools", drawnSymbols("★★☆") },
 					{ rows[2].name.text, rows[2].margin.text, rows[2].stars.text }
 				)
 				assert.are.same({ "night, back in 12 h · pools", false }, { rows[3].margin.text, rows[3].stars.shown })
@@ -484,7 +484,7 @@ describe("the Journal's zone spread", function()
 
 				local pages = loaded.ns.journal.pages
 				assert.are.equal("An unknown fish", pages.crumbs[4].label)
-				local link = blockWithText(pages.right, "Read the plain hint ▸")
+				local link = blockWithText(pages.right, "Read the plain hint »")
 				assert.are.same(
 					{ id = "zone", args = { zone = DARKSHORE, species = FIREFIN, hint = true } },
 					link.place
@@ -617,7 +617,7 @@ describe("the Journal's zone spread", function()
 						trophies[#trophies + 1] = text
 					end
 				end
-				assert.are.same({ "☑ a Catfish trophy, any weight" }, trophies)
+				assert.are.same({ drawnSymbols("☑ a Catfish trophy, any weight") }, trophies)
 				assert.are.same({ "Trophies landed here", "Catfish", "Reward for mastery: each new seal earns XP." }, {
 					pages.right[4].text,
 					pages.right[5].text,

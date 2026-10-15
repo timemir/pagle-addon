@@ -43,7 +43,7 @@ describe("the Journal's words on the client", function()
 				return text:Item(SPRINGSCALE)
 			end)
 
-			assert.are.equal("…", shown(loaded))
+			assert.are.equal("...", shown(loaded))
 			assert.are.same({ SPRINGSCALE }, loaded.client.itemRequests)
 		end)
 
@@ -108,7 +108,7 @@ describe("the Journal's words on the client", function()
 		local text = loaded.ns.journalText
 
 		assert.are.equal("Darkshore", text:Zone(148))
-		assert.are.equal("…", text:Zone(1519))
+		assert.are.equal("...", text:Zone(1519))
 		assert.are.equal("Master of Darkshore", text:Lore("title.zonemaster.text", 148))
 	end)
 
@@ -133,7 +133,7 @@ describe("the Journal's words on the client", function()
 		local _, loaded = loggedIn()
 
 		assert.are.equal("Angler", loaded.ns.journalText:Character(1))
-		assert.are.equal("…", loaded.ns.journalText:Character(2))
+		assert.are.equal("...", loaded.ns.journalText:Character(2))
 	end)
 
 	it("print dates against the realm year read from GetGameTime and GetServerTime (LED-R126)", function()

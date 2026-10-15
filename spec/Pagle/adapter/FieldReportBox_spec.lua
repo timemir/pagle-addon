@@ -182,7 +182,7 @@ describe("The Field report box (REP-R40–R42)", function()
 
 		local frame = assert(box(loaded))
 		assert.is_true(frame.message:IsShown())
-		assert.are.equal("Updating… try again in a moment.", frame.message:GetText())
+		assert.are.equal("Updating... try again in a moment.", frame.message:GetText())
 		assert.is_false(frame.text:IsShown())
 		assert.is_false(frame.url:IsShown())
 	end)

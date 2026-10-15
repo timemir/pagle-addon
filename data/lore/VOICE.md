@@ -41,14 +41,14 @@ The generator fails a batch that breaks these (DATA-R107; ticket #128 builds the
 Changed (M3 review): the `title` text row is added, and `name`'s 28 applies to every kind's `name`, as Tunables › Lore limits says.
 
 - **No line breaks** in any field.
+- **Only characters the game's fonts have:** ASCII, Latin-1 (é, ×, ·) and the em dash (—). Curly quotes, `…`, arrows, stars and emoji draw as boxes, so the generator fails them in any lore file, whether or not its check is on (CORE-R9, DATA-R107). Use straight apostrophes and quotes (`'`, `"`), as in the game's own names ("Keefer's Angelfish"), and `...` for an ellipsis.
 - **No `{` or `}`**, except `{zone}` in a key whose manifest entry allows it (DATA-R107, DATA-R108). In 1.0 that's only the `zonemaster` title, which isn't in the M3 batch.
 - **Never named until caught** (LED-R124): a riddle and a shared line show only for things not yet caught, so they never name the fish, Legend or item, nor use a word from its name.
 
 These aren't checked, but break the Journal or the game's text:
 
 - No quote marks around a riddle: the Journal adds them (LED-R141).
-- No `|`: WoW reads it as the start of an escape code. No emoji: the game's fonts lack them.
-- Straight apostrophes and quotes (`'`, `"`), as in the game's own names ("Keefer's Angelfish").
+- No `|`: WoW reads it as the start of an escape code.
 
 ## Each kind
 
@@ -67,7 +67,7 @@ text = "Something odd is still out there."
 
 ### Species riddle (`species.<id>.riddle`, 80)
 
-Shown on an uncaught Species' page, in quotes, above a "Read the plain hint ▸" link (LED-R141). The plain hint is generated from the catalogue and gives the facts (DATA-R112), so the riddle only sets the scene: a **kind** of place or time, never an exact zone, hour or skill.
+Shown on an uncaught Species' page, in quotes, above a "Read the plain hint »" link (LED-R141). The plain hint is generated from the catalogue and gives the facts (DATA-R112), so the riddle only sets the scene: a **kind** of place or time, never an exact zone, hour or skill.
 
 - Place: a kind of water and a kind of land. "lazy rivers", "cold, rocky coasts", "dwarf country", "the lands where heroes begin", "warm southern seas".
 - Time, matching the Species' windows: day "while the sun is up"; night "after the sun goes down"; summer "the warm half of the year"; winter "once the year turns cold"; the Extravaganza "while the jungle's great contest is on".
