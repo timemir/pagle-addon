@@ -28,9 +28,9 @@ local ns = select(2, ...)
 --                             and the empty board's Start button (adapter/Board.lua). Stand-in: does nothing. The live step's
 --                             ticket (#233) assigns it.
 --   ns.TakeDown(goalID)       Takes a goal down (TKB-R55, TKB-R56): its confirm, then the `reroll` record. The pins
---                             (#239) call it. Stand-in: does nothing. The reroll's ticket (#234) assigns it.
---   ns.CanTakeDown(goalID)    Whether a goal's "take it down" shows and works now (TKB-R55). Stand-in: false. #234
---                             assigns it.
+--                             (#239) call it. Defined in adapter/Reroll.lua (#234), not here.
+--   ns.CanTakeDown(goalID)    Whether a goal's "take it down" shows and works now (TKB-R55). Defined in
+--                             adapter/Reroll.lua (#234), not here.
 --   ns.ScheduleLiveStep()     Schedules the live step for the next frame (TKB-R13, TKB-R84). The projection's `done`
 --                             calls it last (#231). Stand-in: does nothing. #233 assigns it.
 --   ns.ReportCoins()          Reports lifetime Coins with M:ReportCoinsEarned (TKB-R63). `done` calls it before
@@ -147,17 +147,6 @@ end
 
 --- Starts the board (TKB-R5). A stand-in until the live step's ticket assigns the real one.
 function ns.Start() end
-
---- Takes a goal down (TKB-R55). A stand-in until the reroll's ticket assigns the real one.
----@param goalID string
-function ns.TakeDown(goalID) end -- luacheck: no unused args
-
---- Whether a goal can be taken down now (TKB-R55): false until the reroll's ticket assigns the real one.
----@param goalID string
----@return boolean
-function ns.CanTakeDown(goalID) -- luacheck: no unused args
-	return false
-end
 
 --- Schedules the live step for the next frame (TKB-R13). A stand-in until the live step's ticket assigns it.
 function ns.ScheduleLiveStep() end

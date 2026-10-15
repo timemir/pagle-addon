@@ -31,7 +31,7 @@ describe("the Tackle Board's seams", function()
 			assert.are.same({}, fake.coinReports)
 		end)
 
-		it("let no goal be taken down (TKB-R55)", function()
+		it("let no goal the board doesn't know be taken down (TKB-R55)", function()
 			assert.is_false(board.load().ns.CanTakeDown(GOAL))
 		end)
 	end)
