@@ -147,9 +147,33 @@ function unchartedHistory(n, first, item)
 	return entries
 end
 
+--- Sets every `confirmed`, `gateConfirmed` and `skillBaseConfirmed` in a generated catalogue table to false, as
+--- DATA-R56 has it before any observation.
+---@param data table
+local function unconfirmed(data)
+	local seen = {}
+	local function walk(node)
+		if seen[node] then
+			return
+		end
+		seen[node] = true
+		for key, value in pairs(node) do
+			if key == "confirmed" or key == "gateConfirmed" or key == "skillBaseConfirmed" then
+				node[key] = false
+			elseif type(value) == "table" then
+				walk(value)
+			end
+		end
+	end
+	walk(data)
+end
+
 --- Core on Forever over a saved log holding `entries` (or the PagleLog `entries` itself, when it has `format`) and
 --- PagleDB `saved`, if given, with the Ledger and Hunts installed. Its server time is SERVER_TIME plus the client's
 --- clock, so loaded.client.advance moves both.
+--- Its catalogue is the shipped one with nothing confirmed (DATA-R56), so an imported Field report confirming the
+--- fixture spot (Darkshore, The Long Wash, Oily Blackmouth) changes no spec. ADDON_LOADED, where Core builds its
+--- catalogue (LOG-R1), fires once that's done.
 ---@param entries table?
 ---@param saved table?
 ---@return LoadedAddon
@@ -163,9 +187,12 @@ function loadCore(entries, saved)
 			GetServerTime = function()
 				return SERVER_TIME + math.floor(clock and clock() or 0)
 			end,
-		})
+		}),
+		{ holdAddonLoaded = true }
 	)
 	clock = loaded.client.time
+	unconfirmed(loaded.ns.catalogue)
+	loaded.client.fire("ADDON_LOADED", "Pagle")
 	for _, name in ipairs({ "Ledger", "Hunts" }) do
 		loaded.client.addons["Pagle_" .. name] = { metadata = { ["X-Pagle-API"] = "1" } }
 	end
