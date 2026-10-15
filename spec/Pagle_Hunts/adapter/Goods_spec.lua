@@ -8,19 +8,7 @@ local hunts = dofile("spec/Pagle_Hunts/support.lua")
 local COVER, FRAME = "hunts.notebookcover", "hunts.trackerframe"
 
 -- HNT-R121's goods, in its order, with their kinds.
-local GOODS = {
-	[COVER] = {
-		{ "hunts.notebookcover.leather", "default" },
-		{ "hunts.notebookcover.oilcloth", "tier 1" },
-		{ "hunts.notebookcover.tooled", "tier 2" },
-		{ "hunts.notebookcover.verdigris", "tier 3" },
-	},
-	[FRAME] = {
-		{ "hunts.trackerframe.none", "default" },
-		{ "hunts.trackerframe.inkwash", "tier 1" },
-		{ "hunts.trackerframe.waxseal", "tier 2" },
-	},
-}
+local GOODS = hunts.GOODS
 
 -- A good's kind as HNT-R121's table writes it; "earned" for one with isEarned (Hunts has none, HNT-R122).
 ---@param good PagleRegisteredGood

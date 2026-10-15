@@ -98,6 +98,22 @@ function support.realm(hour, minute)
 	return SERVER_TIME + support.untilRealm(hour, minute)
 end
 
+--- HNT-R121's goods by slot, in its order, each with its kind as the table writes it: the specs' oracle, kept apart
+--- from the addon's own list (logic/Goods.lua).
+support.GOODS = {
+	["hunts.notebookcover"] = {
+		{ "hunts.notebookcover.leather", "default" },
+		{ "hunts.notebookcover.oilcloth", "tier 1" },
+		{ "hunts.notebookcover.tooled", "tier 2" },
+		{ "hunts.notebookcover.verdigris", "tier 3" },
+	},
+	["hunts.trackerframe"] = {
+		{ "hunts.trackerframe.none", "default" },
+		{ "hunts.trackerframe.inkwash", "tier 1" },
+		{ "hunts.trackerframe.waxseal", "tier 2" },
+	},
+}
+
 --- A Hunts run on FakePagle: what support.start returns.
 ---@class HuntsRun
 ---@field loaded LoadedAddon
