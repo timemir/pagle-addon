@@ -108,14 +108,20 @@ local function titleMoment(titleID, castID)
 	}
 end
 
--- Raises `moment` for the Tackle Board, as a summary-only one if asked (ANN-R63).
+-- Raises `moment` for the Tackle Board, as a summary-only one if asked (ANN-R63). `remake` builds it again: a goal's
+-- moment, whose Species name may not have reached the client yet (TKB-R36), which ns.RaiseMoment then holds.
 ---@param moment PagleMoment
 ---@param summaryOnly boolean?
-local function raise(moment, summaryOnly)
+---@param remake (fun(): PagleMoment)?
+local function raise(moment, summaryOnly, remake)
 	if summaryOnly then
 		moment.summaryOnly = true
 	end
-	ns.RaiseMoment(moment)
+	ns.RaiseMoment(moment, remake and function()
+		local again = remake()
+		again.summaryOnly = moment.summaryOnly
+		return again
+	end)
 end
 
 -- Raises a Write-up section (ANN-R60).
@@ -273,7 +279,9 @@ function ns.outlets.Completed(goal, cast, earned, mode)
 	end
 	if not set.goals[goal.id] then
 		set.goals[goal.id] = true
-		raise(goalMoment(goal, cast.id))
+		raise(goalMoment(goal, cast.id), false, function()
+			return goalMoment(goal, cast.id)
+		end)
 	end
 	for _, titleID in ipairs(earned.titles) do
 		if not set.titles[titleID] then
@@ -352,7 +360,9 @@ function ns.outlets.Done(state, info)
 		end)
 		for _, goal in ipairs(done) do
 			set.goals[goal.id] = true
-			raise(goalMoment(goal, goal.doneCast), true)
+			raise(goalMoment(goal, goal.doneCast), true, function()
+				return goalMoment(goal, goal.doneCast)
+			end)
 		end
 		-- In the Titles table's order (TKB-R106's tie-break).
 		for _, title in ipairs(ns.TITLES) do
@@ -364,9 +374,11 @@ function ns.outlets.Done(state, info)
 		end
 	end
 	scratch = newScratch()
+	ns.RequestGoalNames(state)
 end
 
---- A live step finished (TKB-R13): the summary line (TKB-R87).
+--- A live step finished (TKB-R13): the summary line (TKB-R87), and the open Species goals' names asked for.
 function ns.outlets.Stepped()
 	setSummaryLine()
+	ns.RequestGoalNames(ns.State())
 end

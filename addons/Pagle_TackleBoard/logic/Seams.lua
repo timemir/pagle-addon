@@ -44,9 +44,10 @@ local ns = select(2, ...)
 --   ns.ReportCoins()          Reports lifetime Coins with M:ReportCoinsEarned (TKB-R63). `done` calls it before
 --                             ns.ScheduleLiveStep, and the projection's apply after a live entry that changes the Coins.
 --                             Reports ns.State().coins, 0 before Start (SHOP-R2). Defined in adapter/Moments.lua.
---   ns.RaiseMoment(moment), ns.RaiseWriteUp(section), ns.SetSummaryLine(line)
+--   ns.RaiseMoment(moment, remake?), ns.RaiseWriteUp(section), ns.SetSummaryLine(line)
 --                             What logic/Moments.lua tells Core (TKB-R84–R87), through the Module handle; nothing while
---                             the Module is inert (CORE-R13). Defined in adapter/Moments.lua.
+--                             the Module is inert (CORE-R13). A goal's moment still reading "…" for a Species name
+--                             waits up to 1 s for it, made again by `remake` (TKB-R36). Defined in adapter/Moments.lua.
 --   ns.Celebrated()           The celebrated set in PagleTackleBoardDB (TKB-R83), nil while the Module is inert.
 --                             logic/Moments.lua marks it; adapter/Ledge.lua reads it. Defined in adapter/Moments.lua.
 --   ns.ClearScratch(), ns.CountForWriteUp(state, record, mode)

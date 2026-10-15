@@ -492,6 +492,56 @@ describe("the Tackle Board's moments", function()
 		end)
 	end)
 
+	describe("a goal whose Species name the client hasn't loaded (TKB-R36, TKB-R86)", function()
+		local SPECIES = "n;species;1;10;1;" .. BLACKMOUTH -- 1 Oily Blackmouth, anywhere
+
+		-- A rebuild (not a first build) that completes the Species Notice on a Catch made while the board was off.
+		local function rebuiltWithSpecies()
+			local first = withHistory(started(TODAY, TODAY + 60))
+			local _, loaded = ready(first)
+			return secondLogin(
+				first,
+				loaded,
+				{ record("issue", NOW + 100, SPECIES), catch(NOW + 110) },
+				200,
+				function(saved)
+					saved.global.board.rulesVersion = 0 -- LOG-R72: rebuilt from seq 0
+				end
+			)
+		end
+
+		it("raises its summary-only moment with the name once the client has it", function()
+			local fake, ns, loaded = rebuiltWithSpecies()
+			local held = #fake.summarized
+
+			loaded.client.itemNames[BLACKMOUTH] = "Oily Blackmouth"
+			fake.fireGameEvent("GET_ITEM_INFO_RECEIVED", BLACKMOUTH, true)
+			loaded.client.runTimers() -- the "names" redraw, on the next frame
+
+			assert.are.equal(0, held)
+			assert.are.equal(1, #fake.summarized)
+			local fly = ns.State().goals[idAt(NOW + 100)].fly
+			assert.are.equal("1 Oily Blackmouth. Tied for your Fly Box: " .. fly, fake.summarized[1].text)
+			assert.is_true(fake.summarized[1].summaryOnly)
+		end)
+
+		it('raises it as it stands, "…", when no name has arrived a second later', function()
+			local fake, _, loaded = rebuiltWithSpecies()
+
+			loaded.client.advance(1)
+
+			assert.are.equal(1, #fake.summarized)
+			assert.matches("^1 …%. Tied for your Fly Box: ", fake.summarized[1].text)
+		end)
+
+		it("asks the client for each open Species goal's name after done and each live step", function()
+			local fake = withHistory(join(started(TODAY, TODAY + 60), { record("issue", TODAY + 120, SPECIES) }))
+			local _, loaded = ready(fake)
+
+			assert.are.same({ BLACKMOUTH }, loaded.client.itemRequests)
+		end)
+	end)
+
 	describe("the summary line (TKB-R87, TKB-R2)", function()
 		-- The board's line on the Session summary.
 		local function line(fake)
