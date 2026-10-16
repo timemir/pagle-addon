@@ -37,6 +37,8 @@
 ---@field Pagle table The Pagle API Core publishes. Specs may stub on it; Modules see it read-only via `globals`.
 ---@field globals table<string, any> Globals for `loadAddon` when it loads a Module: `Pagle` (read-only) and the
 --- proxy-aware `pairs`, `ipairs`, `next` and `unpack`.
+---@field clientEnv table? The globals of the first client `load` gave a Module: Pagle.Animate's driver is a frame of
+--- it, so that client's update steps every animation, and Pagle.FitToScreen fits to its UIParent.
 ---@field ns table Core's logic/ (with `ns.L` and `ns.catalogue`), loaded for this fake alone.
 ---@field registry PagleModuleRegistry Core's real Module registry; `registry:ModuleOf(handle)` finds a Module.
 ---@field addons table<string, FakeAddOn> The roster Modules' addons by folder name, as the client reports them.
@@ -372,11 +374,57 @@ part(function(fake, Pagle)
 	end
 end)
 
--- The Animations setting (announcements.md › Contracts), as Core reads it from the profile.
-part(function(fake, Pagle)
+-- The Animations setting and the motion driver (announcements.md › Contracts), as Core reads it from the profile and
+-- plays on Core's real motion player (logic/Motion.lua). Its driver is a frame of the client fake.load gave the
+-- Module, made at the first animation, so that client's update (or nextFrame) steps it as the client's OnUpdate does.
+part(function(fake, Pagle, ns)
 	function Pagle.IsAnimationsOn()
 		return fake.profile.announcements.motion ~= false
 	end
+	local driver
+	local player
+	local function step(_, elapsed)
+		player:Step(elapsed)
+	end
+	player = ns.NewMotionPlayer({
+		isOn = Pagle.IsAnimationsOn,
+		wake = function()
+			driver = driver or (fake.clientEnv and fake.clientEnv.CreateFrame("Frame"))
+			if driver then
+				driver:SetScript("OnUpdate", step)
+				driver:Show()
+			end
+		end,
+		sleep = function()
+			if driver then
+				driver:Hide()
+				driver:SetScript("OnUpdate", nil)
+			end
+		end,
+	})
+	function Pagle.Animate(owner, animations, onDone)
+		player:Animate(owner, animations, onDone)
+	end
+	function Pagle.StopMotion(owner)
+		player:Stop(owner)
+	end
+	function Pagle.Cue(owner, seconds, fn)
+		player:Cue(owner, seconds, fn)
+	end
+	Pagle.Bezier = ns.Bezier
+	Pagle.EASE = ns.EASE
+end)
+
+-- Fitting a big window to the screen (core/README.md › Contracts), on Core's real logic/Fit.lua and the UIParent of
+-- the client fake.load gave the Module. It fits again on UI_SCALE_CHANGED and DISPLAY_SIZE_CHANGED, registered
+-- through Pagle.RegisterEvent at the first fit as Core's are, so the Module's client.fireGameEvent reaches them.
+part(function(fake, Pagle, ns)
+	Pagle.FitToScreen = ns.NewFitter(function()
+		return fake.clientEnv.UIParent
+	end, function(refit)
+		Pagle.RegisterEvent("Pagle fit", "UI_SCALE_CHANGED", refit)
+		Pagle.RegisterEvent("Pagle fit", "DISPLAY_SIZE_CHANGED", refit)
+	end)
 end)
 
 -- Restriction state (CORE-R30), on Core's real Restriction logic. setRestricted works as combat would.
@@ -1183,6 +1231,8 @@ function newFakePagle()
 		local loaded = loadAddon(name, fake.globals, loadOptions)
 		-- WoW events the game raises on its own (UPDATE_BINDINGS) reach the Module through Pagle.RegisterEvent.
 		loaded.client.fireGameEvent = fake.fireGameEvent
+		-- Pagle.Animate's driver and Pagle.FitToScreen's UIParent are this client's.
+		fake.clientEnv = fake.clientEnv or loaded.env
 		return loaded
 	end
 	return fake

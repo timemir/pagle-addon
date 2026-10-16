@@ -629,6 +629,22 @@ describe("the motion driver", function()
 		-- It played to its end.
 		assert.are.equal(1, last)
 	end)
+
+	it("settles a toast that arrives while the UI is hidden, so it never stays unseen yet takes the mouse", function()
+		local loaded, M = loadCore()
+		loaded.env.UIParent:Hide() -- Alt-Z
+		raise(loaded, M, moment("toast", "New Species", { text = "Oily Blackmouth", cast = CAST, coins = 5 }))
+		local toast = frameOf(loaded, "toast")
+
+		loaded.client.update(0.1)
+		loaded.env.UIParent:Show()
+
+		assert.are.same({ 0, 1, toast.coins.coin.w0 }, {
+			-select(5, toast.body:GetPoint(1)),
+			toast.alpha,
+			toast.coins.coin:GetWidth(),
+		})
+	end)
 end)
 
 describe("the Interruption budget on the client", function()

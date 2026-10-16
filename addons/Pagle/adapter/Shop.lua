@@ -55,9 +55,8 @@ local SEAL_X, SEAL_Y = 342, 300
 local BILL_BEZEL_X, BILL_BEZEL_Y, ROW_BEZEL, ROW_BEZEL_X = BILL_X + (BILL_W - 64) / 2, BILL_Y + 111, 34, 8
 -- The purse's coin's centre on the case: it turns about it as the purse pays out.
 local PURSE_COIN_X, PURSE_COIN_Y = 56, 51
--- Fitting the screen: the case's whole extent with its handle above it, how far its centre sits below the screen's,
--- and the room kept round it.
-local EXTENT_W, EXTENT_H, CENTRE_DY, FIT_MARGIN = 1000, 680, -20, 24
+-- Fitting the screen: the case's whole extent with its handle above it, and how far its centre sits from the screen's.
+local EXTENT_W, EXTENT_H, CENTRE_DY = 1000, 680, -20
 
 ---@class PagleShopSegmentFrame: Frame
 ---@field bar PagleSprite             the segment's colour on the bar
@@ -1264,33 +1263,14 @@ function buy(frame, goodID, useNow)
 	playPurchase(frame, goodID, was)
 end
 
--- Centres the window, shrunk to fit the screen with its handle when the screen is too small for it, never grown (the
--- kit's Fit.lua): at a large UI scale UIParent is only 668 units tall. Its offset is in its own, scaled, units.
----@param frame PagleShopFrame
-local function fit(frame)
-	local scale = math.min(
-		1,
-		(UIParent:GetHeight() - 2 * FIT_MARGIN) / EXTENT_H,
-		(UIParent:GetWidth() - 2 * FIT_MARGIN) / EXTENT_W
-	)
-	frame:SetScale(scale)
-	frame:ClearAllPoints()
-	frame:SetPoint("CENTER", UIParent, "CENTER", 0, CENTRE_DY)
-end
-
 -- The window: the sample case, centred and movable by its leather, with its close button at the top right, the purse,
--- the tray's controls and list, the lid's cards, and the bill of sale over them, fitted to the screen again when the
--- UI scale or the window's size changes. Esc closes it.
+-- the tray's controls and list, the lid's cards, and the bill of sale over them, fitted to the screen with its handle
+-- (adapter/Fit.lua), again when the UI scale or the window's size changes. Esc closes it.
 ---@return PagleShopFrame
 local function build()
 	local frame = CreateFrame("Frame", FRAME_NAME, UIParent) --[[@as PagleShopFrame]]
 	frame:SetSize(WIDTH, HEIGHT)
-	fit(frame)
-	frame:RegisterEvent("UI_SCALE_CHANGED")
-	frame:RegisterEvent("DISPLAY_SIZE_CHANGED")
-	frame:SetScript("OnEvent", function()
-		fit(frame)
-	end)
+	ns.FitToScreen(frame, { width = EXTENT_W, height = EXTENT_H, lift = CENTRE_DY })
 	frame:SetFrameStrata("HIGH")
 	frame:EnableMouse(true)
 	frame:SetMovable(true)

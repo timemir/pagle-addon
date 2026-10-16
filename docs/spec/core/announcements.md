@@ -171,6 +171,23 @@ A stored moment keeps: `module`, `moduleTitle`, `moduleOrder`, `kind`, `rung`, `
 
 True unless the player turned the Animations setting off (UI › Motion). A Module that moves its own frames follows it: off, they appear as they settle.
 
+### `Pagle.Animate(owner, animations, onDone?)`, `Pagle.Cue(owner, seconds, fn)`, `Pagle.StopMotion(owner)`
+
+Core's one motion driver (UI › Motion), which Modules move their frames with instead of a copy of their own:
+
+```lua
+Pagle.Animate(frame, {
+  { dur = 0.16, ease = Pagle.EASE.out, keys = { { 0, { 0 } }, { 1, { 1 } } }, apply = function(v) frame:SetAlpha(v[1]) end },
+  { dur = 1.4, ease = Pagle.Bezier(0.3, 1.5, 0.5, 1), iter = "infinite", dir = "alternate", keys = …, apply = … },
+}, onDone)
+```
+
+- An animation is the art kits' keyframes: `keys` are `{ progress 0..1, { values } }` as the CSS percentages, a key's `ease` easing the segment after it; `iter` is a count or `"infinite"`, `dir` `"normal"`, `"alternate"` or `"alternate-reverse"`, `delay` in seconds; `apply(values)` sets the property. `Pagle.EASE` holds `linear`, `ease`, `out` and `inOut`; `Pagle.Bezier` makes a CSS cubic-bezier.
+- Each starts at its first frame at once, so nothing shows its settled state first; animations started on an owner already playing play beside what it plays. `onDone` runs once all have finished. `Pagle.Cue` runs `fn` that many seconds on, on the owner's clock (a sound on a beat). `Pagle.StopMotion` stops what the owner plays, where it is, with no `onDone`.
+- The driver reads the Animations setting itself: off, each animation jumps to where it settles and `onDone` runs at once, and a cue never runs.
+- An owner that is no longer visible while it moves (closed, or the whole UI hidden) settles there: each animation jumps to where it settles (a loop to where it starts), each cue still to come runs, then `onDone`. Nothing it ends with, such as hiding a card or closing a note, is lost. A loop starts again only when its Module starts it, as its frame shows.
+- The driver ticks only while something moves (QOL-R25).
+
 ### `M:RaiseWriteUp(section)`
 
 ```lua
@@ -231,7 +248,7 @@ The frames move as the art kit's motion has them (`pagle-announce-kit` v2, its `
 
 Each leaves as its time is up (ANN-R20): a toast or Nod fades out drifting up 12 units (a toast 0.4 s, a Nod 0.3 s), while the column closes up under it (0.3 s); a banner fades and shrinks to 96% about its top (0.5 s); a splash goes at once. With Animations off, each goes at once.
 
-One `OnUpdate` drives every animation (`adapter/Motion.lua`, with the keyframe maths in `logic/Motion.lua`), since `AnimationGroup` can't overshoot, step, ease each segment, or animate a width, a texture coordinate or a clip.
+One `OnUpdate` drives every animation, Core's and each Module's (`adapter/Motion.lua`, with the keyframe maths and the player in `logic/Motion.lua`; Contracts), since `AnimationGroup` can't overshoot, step, ease each segment, or animate a width, a texture coordinate or a clip.
 
 ## Settings
 

@@ -60,6 +60,7 @@ logic\Cards.lua
 logic\Announcements.lua
 logic\ToastStyles.lua
 logic\Motion.lua
+logic\Fit.lua
 logic\Menu.lua
 logic\ReloadReminder.lua
 logic\FieldReportText.lua
@@ -100,6 +101,7 @@ adapter\Summary.lua
 adapter\Skins.lua
 adapter\Art.lua
 adapter\Motion.lua
+adapter\Fit.lua
 adapter\Announcements.lua
 adapter\CoreGoods.lua
 adapter\Cards.lua

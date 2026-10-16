@@ -116,3 +116,155 @@ function ns.MotionSettled(animation)
 	local keys = animation.keys
 	return animation.iter == "infinite" and keys[1][2] or keys[#keys][2]
 end
+
+-- An owner is anything with IsVisible (a frame).
+---@class PagleMotionOwner
+---@field IsVisible fun(self): boolean
+
+--- What a motion player needs from its client: the Animations setting, and its ticks asked for (`wake`, at the first
+--- animation) and given up (`sleep`, once nothing plays).
+---@class PagleMotionHost
+---@field isOn fun(): boolean
+---@field wake fun()
+---@field sleep fun()
+
+---@class PagleMotionSet
+---@field t number seconds since its owner's first animation started
+---@field animations PagleAnimation[]
+---@field onDone fun()?
+
+--- Every animation playing, by owner, stepped a frame at a time (adapter/Motion.lua's one OnUpdate).
+---@class PagleMotionPlayer
+---@field host PagleMotionHost
+---@field running table<PagleMotionOwner, PagleMotionSet>
+local MotionPlayer = {}
+MotionPlayer.__index = MotionPlayer
+
+---@param host PagleMotionHost
+---@return PagleMotionPlayer
+function ns.NewMotionPlayer(host)
+	return setmetatable({ host = host, running = {} }, MotionPlayer)
+end
+
+--- Plays `animations` on `owner`, each at its first frame at once so nothing shows its settled state first; with
+--- motion off, each jumps to its settled state. `onDone` runs when all have finished (at once with motion off). An
+--- owner already playing keeps what it plays and starts these beside it.
+---@param owner PagleMotionOwner
+---@param animations PagleAnimation[]
+---@param onDone fun()?
+function MotionPlayer:Animate(owner, animations, onDone)
+	if not self.host.isOn() then
+		for _, animation in ipairs(animations) do
+			animation.apply(ns.MotionSettled(animation))
+		end
+		if onDone then
+			onDone()
+		end
+		return
+	end
+	local set = self.running[owner]
+	if set then
+		for _, animation in ipairs(animations) do
+			animation.startedAt = set.t
+			set.animations[#set.animations + 1] = animation
+		end
+	else
+		self.running[owner] = { t = 0, animations = animations, onDone = onDone }
+	end
+	for _, animation in ipairs(animations) do
+		animation.apply((ns.MotionSample(animation, 0)))
+	end
+	self.host.wake()
+end
+
+-- Gives up the ticks once nothing plays.
+---@param player PagleMotionPlayer
+local function rest(player)
+	if next(player.running) == nil then
+		player.host.sleep()
+	end
+end
+
+--- Stops what `owner` plays, where it is.
+---@param owner PagleMotionOwner
+function MotionPlayer:Stop(owner)
+	-- One not playing changes nothing: Step may be walking what plays.
+	if self.running[owner] == nil then
+		return
+	end
+	self.running[owner] = nil
+	rest(self)
+end
+
+-- An animation's apply that sets nothing: a cue only waits.
+local function still() end
+
+--- Runs `fn` `seconds` from now on `owner`'s clock (a sound on a beat), unless its motion is stopped first; with
+--- motion off, never.
+---@param owner PagleMotionOwner
+---@param seconds number
+---@param fn fun()
+function MotionPlayer:Cue(owner, seconds, fn)
+	if not self.host.isOn() then
+		return
+	end
+	self:Animate(owner, {
+		{
+			dur = math.max(0.001, seconds),
+			ease = ns.EASE.linear,
+			keys = { { 0, { 0 } }, { 1, { 1 } } },
+			apply = still,
+			done = fn,
+		},
+	})
+end
+
+-- Runs an animation's `done` once.
+---@param animation PagleAnimation
+local function fire(animation)
+	if animation.done and not animation.fired then
+		animation.fired = true
+		animation.done()
+	end
+end
+
+--- One frame, `elapsed` seconds after the last: every owner's animations move on, and an owner that has finished
+--- leaves, with its onDone. An owner no longer visible (closed, or the UI hidden) settles there instead: each of its
+--- animations jumps to where it settles (a loop to its rest), each cue still to come runs, and then its onDone, so what
+--- its end does (hiding a card, closing a note) is never lost. Its next showing starts anything it loops again.
+---@param elapsed number
+function MotionPlayer:Step(elapsed)
+	-- A callback may start or stop animations, so this walks the owners as they were.
+	local owners = {}
+	for owner in pairs(self.running) do
+		owners[#owners + 1] = owner
+	end
+	for _, owner in ipairs(owners) do
+		local set = self.running[owner]
+		if set then
+			set.t = set.t + elapsed
+			local hidden = not owner:IsVisible()
+			local done = true
+			for _, animation in ipairs(set.animations) do
+				if hidden then
+					animation.apply(ns.MotionSettled(animation))
+					fire(animation)
+				else
+					local values, finished = ns.MotionSample(animation, set.t - (animation.startedAt or 0))
+					animation.apply(values)
+					if finished then
+						fire(animation)
+					end
+					done = done and finished
+				end
+			end
+			if self.running[owner] == set and (done or hidden) then
+				self.running[owner] = nil
+				if set.onDone then
+					set.onDone()
+				end
+			end
+		end
+	end
+	rest(self)
+end
