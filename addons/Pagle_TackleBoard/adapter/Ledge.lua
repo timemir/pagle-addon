@@ -188,10 +188,11 @@ local function hang(spike, slip, y, swing)
 	slip:SetPoint("TOPLEFT", spike, "TOPLEFT", SLIP_X, -y)
 	local box = slip.paper.box
 	local width, height = slip.paper:GetSize()
-	ns.Swing(slip.paper, spike, SLIP_X - box[1], y - box[2], width, height, swing, px, py)
+	local pivot = { px, py }
+	ns.Swing(slip.paper, spike, { SLIP_X - box[1], y - box[2], width, height }, swing, pivot)
 	for _, line in ipairs({ { slip.kicker, 22 }, { slip.label, 36 }, { slip.note, 68 } }) do
 		local fontString, down = line[1], line[2]
-		ns.Swing(fontString, spike, SLIP_X + 11, y + down, 114, fontString:GetStringHeight(), swing, px, py)
+		ns.Swing(fontString, spike, { SLIP_X + 11, y + down, 114, fontString:GetStringHeight() }, swing, pivot)
 	end
 end
 

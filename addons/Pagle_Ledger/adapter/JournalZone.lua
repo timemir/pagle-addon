@@ -78,7 +78,7 @@ ns.RegisterJournalWidget("ladder", function(parent)
 				ns.JournalSetSprite(rung.ring, "Parts", ringName)
 				rung.ring:SetSize(sprite.w / atlas.scale, sprite.h / atlas.scale)
 				rung.ring.box = sprite.box
-				ns.JournalPut(rung.ring, self, x, 0)
+				ns.JournalBoxAt(rung.ring, self, x, 0)
 				rung.ring:Show()
 				rung.text:SetTextColor(rgb(INK.red))
 				rung.text:SetWidth(sprite.box[3])

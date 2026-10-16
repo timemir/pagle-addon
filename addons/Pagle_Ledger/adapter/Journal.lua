@@ -224,7 +224,7 @@ local function buildUpdating(frame)
 	view:SetFrameLevel(frame.pagesFrame:GetFrameLevel() + 20)
 	local left = frame.papers.left
 	view.quill = ns.JournalSprite(view, "Parts", "quill", "ARTWORK")
-	ns.JournalPut(view.quill, left, 189, 192.2)
+	ns.JournalBoxAt(view.quill, left, 189, 192.2)
 	local words = ns.JournalLabel(view, "print", 18, INK.body, L.JOURNAL_UPDATING, {
 		justify = "CENTER",
 		wrap = true,

@@ -217,7 +217,7 @@ function ns.NewBoardEmptyPin(parent, width, height)
 	local pin = CreateFrame("Frame", nil, parent) --[[@as TackleEmptyPinView]]
 	pin:SetSize(width, height)
 	ns.BoardSolid(pin, "281204", 0.12, "BACKGROUND")
-	pin.dashes = ns.DashBox(pin, width, height, "2C1404", 0.62, 2, 6, 3)
+	pin.dashes = ns.DashBox(pin, width, height, { hex = "2C1404", alpha = 0.62, thickness = 2, dash = 6, gap = 3 })
 	pin.tack = ns.NewBoardTack(pin)
 	ns.PlaceSprite(pin.tack, pin, width / 2 - 7.5, -5)
 	pin.label = ns.ArtWrap(pin, "Empty", width - 32, 1)
