@@ -550,8 +550,21 @@ function Lanes:showCentre(announcement, form)
 	self:schedule(display, seconds)
 end
 
--- Puts a toast or a Nod at the foot of the column until its time is up: it settles, then stays its hold, its toast
--- page's or a Nod's. A toast counts as an interruption and plays its sound (ANN-R30, ANN-R70); a Nod does neither.
+-- How long a toast holds once settled (ANN-R20): "While you were fighting" and a toast.high 8 s, whatever page it is
+-- drawn on (a ruled toast.high is on the ruled toast page); any other toast its page's hold.
+---@param announcement PagleAnnouncement
+---@return number
+local function toastHold(announcement)
+	if announcement.fighting then
+		return ns.HOLD_SECONDS.digest
+	elseif announcement.headline.rung == "toast.high" then
+		return ns.HOLD_SECONDS.high
+	end
+	return ns.HOLD_SECONDS[ns.ToastPage(announcement).page]
+end
+
+-- Puts a toast or a Nod at the foot of the column until its time is up: it settles, then stays its hold, a toast's
+-- (toastHold) or a Nod's. A toast counts as an interruption and plays its sound (ANN-R30, ANN-R70); a Nod does neither.
 ---@package
 ---@param announcement PagleAnnouncement
 ---@param form "toast"|"nod"
@@ -563,7 +576,7 @@ function Lanes:showInColumn(announcement, form)
 		local now = self.options.now()
 		self:interrupt(now)
 		display.sound = self:sound(announcement, form, now)
-		hold = ns.HOLD_SECONDS[announcement.fighting and "digest" or ns.ToastPage(announcement).page]
+		hold = toastHold(announcement)
 	end
 	self.options.show(display)
 	if display.sound then

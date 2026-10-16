@@ -142,11 +142,18 @@ describe("the display queue", function()
 	end)
 
 	it(
-		"holds a toast.low 4 s, a ruled one 5 s and a toast.high 8 s once each has settled at 2.7 s (ANN-R20)",
+		"holds a toast.low 4 s, a ruled one 5 s and a toast.high 8 s, ruled or not, once each has settled at 2.7 s"
+			.. " (ANN-R20)",
 		function()
 			local RULER = { old = 1, new = 2, unit = "lb", label = "weight" }
 			local stays = {}
-			for _, case in ipairs({ { "toast.low", LOW }, { "toast.low", LOW + 1, RULER }, { "toast.high", HIGH } }) do
+			local cases = {
+				{ "toast.low", LOW },
+				{ "toast.low", LOW + 1, RULER },
+				{ "toast.high", HIGH },
+				{ "toast.high", HIGH, RULER }, -- drawn on the ruled toast page, held as its rung
+			}
+			for _, case in ipairs(cases) do
 				local world = newWorld()
 				world.lanes:Push(announcement(case[1], "Toast", { ruler = case[3] }))
 				world.advance(case[2] - 0.01)
@@ -155,7 +162,7 @@ describe("the display queue", function()
 				stays[#stays + 1] = { before, #column(world) }
 			end
 
-			assert.are.same({ { 1, 0 }, { 1, 0 }, { 1, 0 } }, stays)
+			assert.are.same({ { 1, 0 }, { 1, 0 }, { 1, 0 }, { 1, 0 } }, stays)
 		end
 	)
 
