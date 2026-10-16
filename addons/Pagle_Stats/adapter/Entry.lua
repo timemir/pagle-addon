@@ -14,9 +14,10 @@ local ns = select(2, ...)
 -- and the records two to a line. Every line is anchored by its top left at its depth down the page.
 --
 -- Its readings move as the books kit v2's MOTION.md has them, when a Cast changes the entry shown (the same item on the
--- same place, the book open since it last drew): each rewritten line's ink fades up from 30% (0.3 s); the "me" mark slides along the luck ruler to the
--- new reading (0.6 s, ease-out); a catch that resets the Dry spell fades the ruler out (0.3 s, easing in), keeping
--- its room until the next Cast brings it back, fading in, and writes itself in with the "write" sound.
+-- same place, the book open since it last drew): each rewritten line's ink fades up from 30% (0.3 s); the "me" mark
+-- slides along the luck ruler to the new reading (0.6 s, ease-out); a catch that resets the Dry spell fades the ruler
+-- out (0.3 s, easing in), keeping its room until the next Cast brings it back, fading in, and writes itself in with the
+-- "write" sound.
 
 local L = ns.L
 local LOOK = ns.BOOK_LOOK

@@ -79,7 +79,8 @@ ns.LEGEND_STING = SOUNDS .. "legend.ogg"
 ---@field serverTime fun(): number              -- server time, which a moment's expiresAt is in (ANN-R45)
 ---@field soundSet fun(): PagleSoundSet         -- the equipped sound set (ANN-R70)
 ---@field show fun(display: PagleDisplay)       -- puts it on screen; a toast or Nod at the foot of the column
----@field hide fun(display: PagleDisplay)       -- takes it off screen
+---@field hide fun(display: PagleDisplay, atOnce: boolean?) -- takes it off screen: as its form leaves, or at once
+--                                                 (the combat hold, ANN-R35)
 ---@field play fun(path: string)                -- plays a sound file on the SFX channel (ANN-R73)
 ---@field empty? fun()                         -- the column's toasts and the centre just freed with nothing waiting:
 --                                                 cards may show (ANN-R21)
@@ -209,9 +210,9 @@ function Lanes:IsHeld()
 	return self.holding
 end
 
---- A restriction started (ANN-R35): the banner or splash and the toasts on screen go off it and are held, with the
---- toasts, banners and splashes that wait, and every Announcement pushed from now; the Nods on screen or waiting go
---- and never show (ANN-R36). Inside the wait after a restriction, the wait starts over at the next Release.
+--- A restriction started (ANN-R35): the banner or splash and the toasts on screen go off it at once and are held,
+--- with the toasts, banners and splashes that wait, and every Announcement pushed from now; the Nods on screen or
+--- waiting go and never show (ANN-R36). Inside the wait after a restriction, the wait starts over at the next Release.
 function Lanes:Hold()
 	self.releases = self.releases + 1
 	if self.holding then
@@ -221,14 +222,14 @@ function Lanes:Hold()
 	local centre, column = self.centre, self.column
 	self.centre, self.column = nil, {}
 	if centre then
-		self.options.hide(centre)
+		self.options.hide(centre, true)
 		wait(self.heldBig, centre.announcement)
 	end
 	-- Oldest first, so they show again in the order they came.
 	for i = #column, 1, -1 do
 		local display = column[i]
 		display.token = (display.token or 0) + 1
-		self.options.hide(display)
+		self.options.hide(display, true)
 		if display.form == "toast" then
 			self.heldToasts[#self.heldToasts + 1] = display.announcement
 		end
