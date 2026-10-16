@@ -740,6 +740,7 @@ function Journal:Draw()
 		frame.leaves.left[frame.shownLeaf.left].clip:Hide()
 		frame.leaves.right[frame.shownLeaf.right].clip:Hide()
 		plate:Hide()
+		self.drawnPlate = false -- a Legend's plate opens again when the update finishes
 		swayQuill(frame.updatingView)
 		return
 	end
@@ -756,9 +757,14 @@ function Journal:Draw()
 		ns.FillLegendPlate(plate, plateBlock, open)
 		if not self.drawnPlate then
 			ns.OpenLegendPlate(plate)
-			-- it covers both pages: under it, each starts again at the top (LED-R129)
+			-- it covers both pages: under it, each starts again at the top (LED-R129), and stands again where an update
+			-- hid it (LED-R122)
 			for _, side in ipairs({ "left", "right" }) do
 				frame[side].scroll:SetVerticalScroll(0)
+				local leaf = frame.leaves[side][frame.shownLeaf[side]]
+				if not leaf.clip:IsShown() then
+					reveal(leaf, frame.papers[side], 0, 1)
+				end
 			end
 		end
 		self.drawnPlate = true
