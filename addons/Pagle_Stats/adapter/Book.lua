@@ -119,6 +119,7 @@ local LEATHER_PARTS = { "search" }
 ---@field private drawNextFrame fun()              -- QueueDraw's redraw, once per frame (ns.OncePerFrame)
 ---@field private ticker table?                    -- the live-line tick, while open
 ---@field listening boolean                        -- Core's events are subscribed
+---@field private showing integer                  -- how many times it has closed: which showing this is
 ---@field private requestItem fun(itemID: integer) -- the book's item loader (ns.NewItemLoader)
 local Book = {}
 Book.__index = Book
@@ -129,6 +130,7 @@ ns.book = setmetatable({
 	pages = {},
 	leatherRenderers = {},
 	listening = false,
+	showing = 0,
 	drawnSides = {},
 	breathing = false,
 	drawNextFrame = ns.OncePerFrame(function()
@@ -475,9 +477,18 @@ local function settleTurn(book)
 	end
 end
 
+--- Which showing of the book this is: it changes each time the book closes. A page drawn earlier in the same showing
+--- has been on show since, so what changed on it may move into place; one drawn before the book last closed draws
+--- settled, as what changed while it was closed was never seen (adapter/Entry.lua's readings).
+---@return integer
+function Book:Showing()
+	return self.showing
+end
+
 --- The book has closed, however it closed (its close button, Esc, a toggle): the tick stops, a turn under way
---- settles, and the live dot rests.
+--- settles, the live dot rests, and the next showing begins.
 function Book:Hidden()
+	self.showing = self.showing + 1
 	if self.closing then
 		ns.StopMotion(self.closing)
 		self.closing = nil
@@ -491,6 +502,7 @@ function Book:Hidden()
 		end
 	end
 	self.breathing = false
+	self.liveCasts = nil -- the Casts made while it was closed were never seen: the line draws settled on opening
 	if self.ticker then
 		self.ticker:Cancel()
 		self.ticker = nil

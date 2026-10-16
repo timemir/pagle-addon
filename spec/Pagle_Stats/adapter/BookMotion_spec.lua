@@ -307,6 +307,29 @@ describe("the Stats book's readings moving (the kit's MOTION.md)", function()
 		assert.are.equal(1, view.ruler:GetAlpha())
 	end)
 
+	it("draws settled on reopening after a catch while it was closed: no write sound, no ink fading up", function()
+		local loaded, fake, book, view = onSmallfish()
+		stats.fish(fake, 1) -- a Session is live, its line drawn
+		loaded.client.runTimers()
+		run(loaded, 0.7)
+		book:Hide()
+		run(loaded, 0.2)
+		assert.is_false(book.frame.shown)
+
+		stats.fish(fake, 1, SMALLFISH)
+		loaded.client.runTimers()
+		local heard = #loaded.client.sounds
+		loaded.ns.OpenBook({ page = "place", area = DARKSHORE, item = SMALLFISH })
+		loaded.client.runTimers()
+
+		for i = heard + 1, #loaded.client.sounds do
+			assert.are_not.equal("3093 SFX", loaded.client.sounds[i])
+		end
+		assert.are.equal(1, view.dryFirst:GetAlpha())
+		assert.are.equal(1, view.ruler:GetAlpha())
+		assert.are.equal(1, book.frame.live.label:GetAlpha())
+	end)
+
 	it("fades a row's rewritten Dry spell up after a Cast", function()
 		local loaded, fake, book = onSmallfish()
 		local margin

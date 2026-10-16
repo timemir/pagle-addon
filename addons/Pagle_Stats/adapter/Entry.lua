@@ -14,7 +14,7 @@ local ns = select(2, ...)
 -- and the records two to a line. Every line is anchored by its top left at its depth down the page.
 --
 -- Its readings move as the books kit v2's MOTION.md has them, when a Cast changes the entry shown (the same item on the
--- same place): each rewritten line's ink fades up from 30% (0.3 s); the "me" mark slides along the luck ruler to the
+-- same place, the book open since it last drew): each rewritten line's ink fades up from 30% (0.3 s); the "me" mark slides along the luck ruler to the
 -- new reading (0.6 s, ease-out); a catch that resets the Dry spell fades the ruler out (0.3 s, easing in), keeping
 -- its room until the next Cast brings it back, fading in, and writes itself in with the "write" sound.
 
@@ -69,6 +69,7 @@ local MARK_SLIDE, RULER_FADE = 0.6, 0.3
 --- What an entry showed at its last draw: its item and place, its lines' words, its Dry spell and its luck reading.
 ---@class StatsEntryShown
 ---@field key string
+---@field showing integer -- the book's showing it was drawn in (ns.book:Showing())
 ---@field texts table<FontString, string>
 ---@field since integer
 ---@field luck number?
@@ -313,7 +314,9 @@ local function drawEntry(frame, place)
 	local width = frame:GetWidth()
 	local key = item .. ":" .. area
 	local last = view.last
-	local same = last ~= nil and last.key == key
+	-- the same entry, drawn earlier while the book stayed open: what changed while it was closed draws settled
+	local showing = ns.book:Showing()
+	local same = last ~= nil and last.key == key and last.showing == showing
 	local before = same and last or nil -- the same entry's last draw
 	local since = ns.DrySpell(data.reading).since
 	-- a catch of it here: the Dry spell resets
@@ -389,7 +392,7 @@ local function drawEntry(frame, place)
 	if caught then
 		ns.BookSound("write")
 	end
-	view.last = { key = key, texts = texts, since = since, luck = luck }
+	view.last = { key = key, showing = showing, texts = texts, since = since, luck = luck }
 	return y + view.link:GetHeight() + PARA_GAP
 end
 
