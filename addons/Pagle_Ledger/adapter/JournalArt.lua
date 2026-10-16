@@ -837,7 +837,10 @@ end
 local SOUNDS = {
 	bookOpen = 829, -- IG_SPELLBOOK_OPEN
 	bookClose = 830, -- IG_SPELLBOOK_CLOSE
-	pageTurn = 836, -- IG_ABILITY_PAGE_TURN
+	pageTurn = 836, -- IG_ABILITY_PAGE_TURN: the page turn
+	pick = 836, -- the same kit: a fish picked, the right page crossfading
+	plateOpen = 836, -- the same kit: a Legend's plate opening
+	rebind = 836, -- the same kit: a binding change
 	write = 3093, -- IG_WRITE_QUEST
 	stamp = 1204, -- PUT_DOWN_GEMS
 	popupOpen = 850, -- IG_MAINMENU_OPEN
@@ -846,7 +849,8 @@ local SOUNDS = {
 	banner = 33338, -- UI_CHALLENGES_NEW_RECORD
 }
 -- The beats tied to a motion (a page turning, a name written in, a stamp landing, the Prestige's banner): they play
--- only while things move. Opening, closing and clicks always sound.
+-- only while things move. Opening, closing, clicks, a fish picked, the plate opening and a binding change always sound
+-- (ledger.md › UI › Sounds), though the last three share the page turn's kit.
 local TIED = { pageTurn = true, write = true, stamp = true, banner = true }
 
 --- The sound kit id of each of the Journal's sounds, for a spec to read.

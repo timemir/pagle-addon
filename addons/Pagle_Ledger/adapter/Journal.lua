@@ -540,11 +540,13 @@ function Journal:Rebind(look, changing)
 	ns.StopMotion(owner)
 	frame.leatherFill:SetAlpha(1)
 	frame.bandFrame:SetAlpha(1)
+	if changing then
+		ns.JournalSound("rebind") -- whether or not things move
+	end
 	if not (changing and ns.Moving()) then
 		ns.TintJournalShell(frame, look)
 		return
 	end
-	ns.JournalSound("pageTurn")
 	ns.Animate(owner, {
 		{
 			dur = 0.4,
@@ -683,11 +685,11 @@ local function crossfade(journal, from, to)
 		to.content:SetAllPoints(paper)
 	end
 	journal.finishTurn = finish
+	ns.JournalSound("pick") -- a fish picked sounds whether or not things move
 	if not ns.Moving() then
 		finish()
 		return
 	end
-	ns.JournalSound("pageTurn")
 	ns.Animate(owner, {
 		{
 			dur = CROSSFADE,

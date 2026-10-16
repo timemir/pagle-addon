@@ -131,7 +131,7 @@ end
 ---@param plate LedgerLegendPlate
 function ns.OpenLegendPlate(plate)
 	plate:Show()
-	ns.JournalSound("pageTurn")
+	ns.JournalSound("plateOpen")
 	ns.Moving()
 	ns.StopMotion(plate)
 	local seal, crest = plate.seal, plate.crest
