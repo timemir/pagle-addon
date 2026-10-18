@@ -46,7 +46,7 @@ function ns.FitFrame(frame, screen, options)
 		local point, relativeTo, relativePoint, x, y = frame:GetPoint(1)
 		if point then
 			frame:ClearAllPoints()
-			frame:SetPoint(point, relativeTo, relativePoint, x * before / scale, y * before / scale)
+			frame:SetPoint(point, relativeTo, relativePoint, (x or 0) * before / scale, (y or 0) * before / scale)
 		end
 	else
 		frame:ClearAllPoints()

@@ -233,20 +233,19 @@ end
 ---@return number
 local function drawRuler(view, luck, last, caught, since, y)
 	local ruler = view.ruler
-	ns.SyncMotion()
 	if luck then
 		local resting = view.rulerResting
 		view.rulerResting = false
 		put(ruler, y, RULER_INSET)
-		ns.StopMotion(ruler)
+		Pagle.StopMotion(ruler)
 		local to = ns.RulerPosition(luck)
 		if last and last.luck then
 			local from = ruler.position
 			ruler:SetAlpha(1)
-			ns.Animate(ruler, {
+			Pagle.Animate(ruler, {
 				{
 					dur = MARK_SLIDE,
-					ease = ns.Ease.out,
+					ease = Pagle.EASE.out,
 					keys = { { 0, { from } }, { 1, { to } } },
 					apply = function(v)
 						ruler:SetMark(v[1])
@@ -256,10 +255,10 @@ local function drawRuler(view, luck, last, caught, since, y)
 		else
 			ruler:SetMark(to)
 			if last and resting then
-				ns.Animate(ruler, {
+				Pagle.Animate(ruler, {
 					{
 						dur = RULER_FADE,
-						ease = ns.Ease.out,
+						ease = Pagle.EASE.out,
 						keys = { { 0, { 0 } }, { 1, { 1 } } },
 						apply = function(v)
 							ruler:SetAlpha(v[1])
@@ -272,15 +271,15 @@ local function drawRuler(view, luck, last, caught, since, y)
 		end
 		return y + ruler:GetHeight() + PARA_GAP
 	end
-	if caught and last and last.luck and ns.motion then
+	if caught and last and last.luck and ns.MotionOn() then
 		-- it fades out where it was, keeping its room
 		view.rulerResting = true
-		ns.StopMotion(ruler)
+		Pagle.StopMotion(ruler)
 		put(ruler, y, RULER_INSET)
-		ns.Animate(ruler, {
+		Pagle.Animate(ruler, {
 			{
 				dur = RULER_FADE,
-				ease = ns.Bezier(0.42, 0, 1, 1),
+				ease = Pagle.Bezier(0.42, 0, 1, 1),
 				keys = { { 0, { 1 } }, { 1, { 0 } } },
 				apply = function(v)
 					ruler:SetAlpha(v[1])
@@ -297,7 +296,7 @@ local function drawRuler(view, luck, last, caught, since, y)
 		return y + ruler:GetHeight() + PARA_GAP
 	end
 	view.rulerResting = false
-	ns.StopMotion(ruler)
+	Pagle.StopMotion(ruler)
 	ruler:Hide()
 	ruler:SetAlpha(1)
 	return y

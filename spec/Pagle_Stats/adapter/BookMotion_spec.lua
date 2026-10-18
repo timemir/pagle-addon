@@ -1,7 +1,7 @@
 -- The Stats book's motion and sounds (stats.md › UI › Motion and sound; the books art kit v2's MOTION.md and
--- SOUND.md): adapter/Motion.lua's driver (the kit's), the open and close fades and their sounds, the page turn between
--- spreads with its crumbs, ribbons and sound, the fit to a small screen, and the readings moving when a Cast changes
--- the entry shown: the ink fading up, the "me" mark sliding, the ruler fading at a catch with its "write" sound, the
+-- SOUND.md): its moves on Core's one driver (Pagle.Animate), the open and close fades and their sounds, the page turn
+-- between spreads with its crumbs, ribbons and sound, the fit to a small screen, and the readings moving when a Cast
+-- changes the entry shown: the ink fading up, the "me" mark sliding, the ruler fading at a catch with its "write" sound, the
 -- live line and its breathing dot. Core's Animations setting (Pagle.IsAnimationsOn) is on here; with it off, all of it
 -- draws settled at once. The fake client runs the driver's OnUpdate with client.update.
 
@@ -51,23 +51,33 @@ local function run(loaded, seconds)
 	end
 end
 
-describe("the motion driver (adapter/Motion.lua, the books kit v2's)", function()
-	it("plays keyframes over their duration, eased, calling each one's done and the set's onDone", function()
-		local loaded = stats.load(nil, { motion = true })
+describe("the book's motion seam (ns.MotionOn, on Core's Pagle.Animate)", function()
+	it("reads Core's Animations setting each time, never a copy of its own", function()
+		local loaded, fake = stats.load(nil, { motion = true })
 		local ns = loaded.ns
-		ns.SyncMotion()
-		local seen, done, finished = {}, false, false
 
-		ns.Animate(loaded.env.CreateFrame("Frame"), {
+		local on = ns.MotionOn()
+		stats.animations(fake, false)
+		local off = ns.MotionOn()
+		stats.animations(fake, true)
+
+		assert.are.same({ true, false, true }, { on, off, ns.MotionOn() })
+		assert.is_nil(rawget(ns, "Animate"))
+		assert.is_nil(rawget(ns, "motion"))
+	end)
+
+	it("moves on Core's driver, stepped by the client's frames", function()
+		local loaded = stats.load(nil, { motion = true })
+		local Pagle = loaded.env.Pagle
+		local seen, done = {}, false
+
+		Pagle.Animate(loaded.env.CreateFrame("Frame"), {
 			{
 				dur = 1,
-				ease = ns.Ease.linear,
+				ease = Pagle.EASE.linear,
 				keys = { { 0, { 0 } }, { 1, { 10 } } },
 				apply = function(v)
 					seen[#seen + 1] = v[1]
-				end,
-				done = function()
-					finished = true
 				end,
 			},
 		}, function()
@@ -77,30 +87,7 @@ describe("the motion driver (adapter/Motion.lua, the books kit v2's)", function(
 		loaded.client.update(0.6)
 
 		assert.are.same({ 0, 5, 10 }, seen)
-		assert.is_true(finished)
 		assert.is_true(done)
-	end)
-
-	it("jumps to the end with Core's Animations setting off (ns.SyncMotion)", function()
-		local loaded, fake = stats.load(nil, { motion = true })
-		local ns = loaded.ns
-		stats.animations(fake, false)
-		assert.is_false(ns.SyncMotion())
-		local value
-
-		ns.Animate(loaded.env.CreateFrame("Frame"), {
-			{
-				dur = 1,
-				keys = { { 0, { 0 } }, { 1, { 10 } } },
-				apply = function(v)
-					value = v[1]
-				end,
-			},
-		})
-
-		assert.are.equal(10, value)
-		stats.animations(fake, true)
-		assert.is_true(ns.SyncMotion())
 	end)
 end)
 

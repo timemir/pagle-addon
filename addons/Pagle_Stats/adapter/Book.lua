@@ -40,7 +40,7 @@ local RIBBONS_LIFT = 40
 local PLATE_X, PLATE_Y, LIVE_RIGHT, LIVE_FOOT = 30, 605, 30, 9
 -- How far a mouse wheel notch scrolls a page body.
 local WHEEL_STEP = 40
--- The book's whole extent in its own units, for fitting it to the screen (adapter/Fit.lua): the wax close button
+-- The book's whole extent in its own units, for fitting it to the screen (Pagle.FitToScreen): the wax close button
 -- reaches past its top right, the chosen ribbon hangs 84 under its foot.
 local EXTENT_WIDTH, EXTENT_HEIGHT = WIDTH + 30, HEIGHT + 100
 -- The order of the spreads, for a page turn's direction: the ribbons' order, the home spread first, an item's page
@@ -185,15 +185,18 @@ function Book:Item(itemID)
 	return name, icon
 end
 
--- Places the frame where profile.window says, or centred while it is nil (STA-R71).
+-- Places the frame, at the scale it was fitted to, where profile.window says, or centred while it is nil (STA-R71).
+-- The saved offsets are in UIParent's units, and a scaled frame reads its offsets in its own, so they are divided by
+-- its scale: a change of UI scale or of the fit never moves the book.
 ---@param frame StatsBookFrame
 local function position(frame)
 	local window = ns.db and ns.db.profile.window
 	frame:ClearAllPoints()
 	if window then
-		frame:SetPoint(window[1], UIParent, window[2], window[3], window[4])
+		local scale = frame:GetScale()
+		frame:SetPoint(window[1], UIParent, window[2], window[3] / scale, window[4] / scale)
 	else
-		frame:SetPoint("CENTER", 0, RIBBONS_LIFT) -- up a little, so the ribbons hanging under it stay on screen
+		frame:SetPoint("CENTER", UIParent, "CENTER", 0, RIBBONS_LIFT) -- up a little, so the ribbons hanging under it stay on screen
 	end
 end
 
@@ -299,9 +302,11 @@ local function build(book)
 		self:StopMovingOrSizing()
 		-- The book keeps its own position; a user-placed frame would also be saved by the client in its layout cache.
 		self:SetUserPlaced(false)
+		-- in UIParent's units, so it holds at any scale (position)
 		local point, _, relativePoint, x, y = self:GetPoint(1)
 		if point and ns.db then
-			ns.db.profile.window = { point, relativePoint, x, y }
+			local scale = self:GetScale()
+			ns.db.profile.window = { point, relativePoint, x * scale, y * scale }
 		end
 	end)
 	frame.leather = ns.NewBookLeather(frame)
@@ -382,22 +387,22 @@ function Book:Open(target)
 	local turnable = frame:IsShown() and not self.closing
 	if self.closing then
 		-- opened again while fading out: it stays, whole
-		ns.StopMotion(self.closing)
+		Pagle.StopMotion(self.closing)
 		self.closing = nil
 		frame:SetAlpha(1)
 	end
 	if not frame:IsShown() then
 		listen(self)
+		-- fitted to the screen first (Core's Pagle.FitToScreen, keeping its place as the fit changes), then placed
+		Pagle.FitToScreen(frame, { width = EXTENT_WIDTH, height = EXTENT_HEIGHT, keepPlace = true })
 		position(frame)
-		ns.FitToScreen(frame, EXTENT_WIDTH, EXTENT_HEIGHT)
 		frame:Show()
 		ns.BookSound("open")
 		-- it fades in (0.16 s, ease-out), the kit's OpenBook
-		ns.SyncMotion()
-		ns.Animate(frame, {
+		Pagle.Animate(frame, {
 			{
 				dur = OPEN_FADE,
-				ease = ns.Ease.out,
+				ease = Pagle.EASE.out,
 				keys = { { 0, { 0 } }, { 1, { 1 } } },
 				apply = function(v)
 					frame:SetAlpha(v[1])
@@ -412,9 +417,9 @@ function Book:Open(target)
 end
 
 --- Closes the book: it fades out (0.12 s, easing in), the kit's CloseBook, then hides; at once with the motion off.
---- The fade runs on an owner of its own, never the frame, which the driver would drop unfinished were the frame to stop
---- showing mid-fade (UIParent hidden), stranding the close; and the close ends on the clock too, after the fade's
---- time, so it ends whether or not frames are drawn.
+--- The fade runs on an owner of its own, never the frame, so it keeps its own clock whether or not the frame shows
+--- (UIParent hidden) and an opening fade stopped on the frame never cuts it; and the close ends on the clock too, after
+--- the fade's time, so it ends whether or not frames are drawn.
 function Book:Hide()
 	local frame = self.frame
 	if not frame or not frame:IsShown() then
@@ -424,27 +429,27 @@ function Book:Hide()
 	if self.closing then
 		return
 	end
-	if not ns.SyncMotion() then
+	if not ns.MotionOn() then
 		frame:Hide()
 		self:Hidden()
 		return
 	end
 	local closing = {}
 	self.closing = closing
-	ns.StopMotion(frame) -- an opening fade still running gives way
+	Pagle.StopMotion(frame) -- an opening fade still running gives way
 	-- this close's end, once: a later open or close has its own
 	local function finish()
 		if self.closing == closing then
-			ns.StopMotion(closing)
+			Pagle.StopMotion(closing)
 			self.closing = nil
 			frame:Hide()
 			frame:SetAlpha(1)
 		end
 	end
-	ns.Animate(closing, {
+	Pagle.Animate(closing, {
 		{
 			dur = CLOSE_FADE,
-			ease = ns.Bezier(0.42, 0, 1, 1),
+			ease = Pagle.Bezier(0.42, 0, 1, 1),
 			keys = { { 0, { 1 } }, { 1, { 0 } } },
 			apply = function(v)
 				frame:SetAlpha(v[1])
@@ -463,7 +468,7 @@ local function settleTurn(book)
 	end
 	book.turning = nil
 	if turning.owner then
-		ns.StopMotion(turning.owner)
+		Pagle.StopMotion(turning.owner)
 	end
 	for _, view in pairs(turning.from) do
 		view.clip:Hide()
@@ -490,7 +495,7 @@ end
 function Book:Hidden()
 	self.showing = self.showing + 1
 	if self.closing then
-		ns.StopMotion(self.closing)
+		Pagle.StopMotion(self.closing)
 		self.closing = nil
 	end
 	settleTurn(self)
@@ -498,7 +503,7 @@ function Book:Hidden()
 	if frame then
 		frame:SetAlpha(1)
 		if self.breathing then
-			ns.StopMotion(frame.live.glow)
+			Pagle.StopMotion(frame.live.glow)
 		end
 	end
 	self.breathing = false
@@ -714,7 +719,7 @@ function Book:DrawLive()
 	if live == nil then
 		frame.live:Hide()
 		if self.breathing then
-			ns.StopMotion(frame.live.glow)
+			Pagle.StopMotion(frame.live.glow)
 			self.breathing = false
 		end
 		self.liveCasts = nil
@@ -745,11 +750,10 @@ function Book:DrawLive()
 	if not self.breathing then
 		self.breathing = true
 		local glow = frame.live.glow
-		ns.SyncMotion()
-		ns.Animate(glow, {
+		Pagle.Animate(glow, {
 			{
 				dur = BREATHE,
-				ease = ns.Ease.inOut,
+				ease = Pagle.EASE.inOut,
 				iter = "infinite",
 				dir = "alternate",
 				keys = { { 0, { BREATHE_LOW } }, { 1, { BREATHE_HIGH } } },

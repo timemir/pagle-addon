@@ -1426,12 +1426,12 @@ function ns.NewBookRibbon(parent)
 		-- the kit's Ribbons.lua: a change of choice runs the lengths over 0.2 s (ease-out), so the old one draws up as
 		-- the new one drops; settled at once with the motion off
 		local to = chosen and RIBBON.lengthChosen or RIBBON.length
-		ns.StopMotion(self)
-		if animate and to ~= self.length and ns.SyncMotion() then
-			ns.Animate(self, {
+		Pagle.StopMotion(self)
+		if animate and to ~= self.length and ns.MotionOn() then
+			Pagle.Animate(self, {
 				{
 					dur = RIBBON.ease,
-					ease = ns.Ease.out,
+					ease = Pagle.EASE.out,
 					keys = { { 0, { self.length } }, { 1, { to } } },
 					apply = function(v)
 						hangRibbon(self, v[1])
