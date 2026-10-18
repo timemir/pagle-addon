@@ -119,22 +119,22 @@ ns.RegisterJournalWidget("board", function(parent)
 			view.label:SetText(tick.text)
 			view.label:SetTextColor(rgb(tick.inked and INK.title or "a89070"))
 			local cx = cxOf(i)
-			ns.StopMotion(view.line)
-			local landed = same and before and tick.inked and not before.inked[i] and ns.Moving()
+			Pagle.StopMotion(view.line)
+			local landed = same and before and tick.inked and not before.inked[i] and ns.MotionOn()
 			if landed then
 				-- the grey mark inks red and grows from 22 to 36 units (0.4 s); its number darkens at 0.2 s
 				view.label:SetTextColor(rgb("a89070"))
-				ns.Animate(view.line, {
+				Pagle.Animate(view.line, {
 					{
 						dur = 0.4,
-						ease = ns.Ease.out,
+						ease = Pagle.EASE.out,
 						keys = { { 0, { MARK_H, 0 } }, { 1, { MARK_H_INKED, 1 } } },
 						apply = function(v)
 							placeMark(self, view, cx, v[1], v[2])
 						end,
 					},
 				})
-				ns.Cue(view.line, 0.2, function()
+				Pagle.Cue(view.line, 0.2, function()
 					view.label:SetTextColor(rgb(INK.title))
 				end)
 			else
@@ -149,7 +149,7 @@ ns.RegisterJournalWidget("board", function(parent)
 		end
 		local mark = self.heaviest
 		mark:SetShown(heaviest ~= nil)
-		ns.StopMotion(mark)
+		Pagle.StopMotion(mark)
 		if heaviest then
 			local to = cxOf(heaviest)
 			local from = same
@@ -162,13 +162,13 @@ ns.RegisterJournalWidget("board", function(parent)
 				mark:ClearAllPoints()
 				mark:SetPoint("TOP", self.box, "TOPLEFT", x, -1.3)
 			end
-			if from and ns.Moving() then
+			if from and ns.MotionOn() then
 				-- "heaviest" moves over to it in the hand (0.5 s from 0.3 s)
-				ns.Animate(mark, {
+				Pagle.Animate(mark, {
 					{
 						dur = 0.5,
 						delay = 0.3,
-						ease = ns.Ease.inOut,
+						ease = Pagle.EASE.inOut,
 						keys = { { 0, { from } }, { 1, { to } } },
 						apply = function(v)
 							at(v[1])
@@ -210,11 +210,11 @@ ns.RegisterJournalWidget("plinth", function(parent)
 		local caught = block.look ~= "silhouette"
 		local cx = width / 2
 		ns.JournalSetMedal(self.medal, block.icon, block.look)
-		ns.StopMotion(self)
+		Pagle.StopMotion(self)
 		self:SetAlpha(1)
 		ns.JournalAt(self.medal, self, cx - 22, 8)
 		ns.JournalSetSprite(self.base, "Parts", caught and "plinth" or "plinth-empty")
-		ns.JournalPut(self.base, self, cx - 36, 55)
+		ns.JournalBoxAt(self.base, self, cx - 36, 55)
 		ns.JournalRestyle(self.name, "print", 15, caught and INK.title or INK.noteLight)
 		self.name:SetText(block.text)
 		ns.JournalBound(self.name, width)
@@ -226,14 +226,14 @@ ns.RegisterJournalWidget("plinth", function(parent)
 		self.plaque:ClearAllPoints()
 		self.plaque:SetPoint("TOP", self, "TOPLEFT", cx, -93)
 		local same, wasEmpty = ns.JournalRemember(self, draw, "plinth:" .. tostring(block.icon), not caught)
-		if same and wasEmpty and caught and ns.Moving() then
+		if same and wasEmpty and caught and ns.MotionOn() then
 			-- the exhibit fades in as the empty plinth goes (0.2 s) and drops onto it from 16 units up (0.35 s)
 			ns.JournalSound("write")
 			local medal = self.medal
-			ns.Animate(self, {
+			Pagle.Animate(self, {
 				{
 					dur = 0.2,
-					ease = ns.Ease.out,
+					ease = Pagle.EASE.out,
 					keys = { { 0, { 0 } }, { 1, { 1 } } },
 					apply = function(v)
 						self:SetAlpha(v[1])
@@ -242,7 +242,7 @@ ns.RegisterJournalWidget("plinth", function(parent)
 				{
 					dur = 0.35,
 					delay = 0.05,
-					ease = ns.Bezier(0.3, 1.4, 0.5, 1),
+					ease = Pagle.Bezier(0.3, 1.4, 0.5, 1),
 					keys = { { 0, { -16 } }, { 1, { 0 } } },
 					apply = function(v)
 						ns.JournalAt(medal, self, cx - 22, 8 + v[1])

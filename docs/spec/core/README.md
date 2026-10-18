@@ -182,6 +182,8 @@ Grouped by topic; the rules live in the linked file.
 | `Pagle.IsAnimationsOn()` | boolean, the Animations setting | [announcements.md](announcements.md#contracts) |
 | `Pagle.GetActivityXP()` | `ActivityXP` | [activity-xp.md](activity-xp.md#contracts) |
 | `Pagle.GetCompanionState()`, `Pagle.GetPushedContent(kind)` | state string, items | [pushed-content.md](pushed-content.md#contracts) |
+| `Pagle.Animate(owner, animations, onDone?)`, `Cue(owner, seconds, fn)`, `StopMotion(owner)`, `EASE`, `Bezier(x1, y1, x2, y2)` | Core's one motion driver | announcements.md |
+| `Pagle.FitToScreen(frame, options)` | number, the scale used | [here](#paglefittoscreenframe-options) |
 
 ### Module handle (returned by `RegisterModule`)
 
@@ -248,6 +250,18 @@ if M.RegisterTourStop then
     function() --[[ put back everything show changed ]] end)
 end
 ```
+
+### `Pagle.FitToScreen(frame, options)`
+
+```lua
+---@class PagleFitOptions
+---@field width number        -- the window's whole extent in its own units, with what hangs outside its frame
+---@field height number       --   (ribbons, a plate, the wax close button)
+---@field lift? number        -- how far its centre sits above that extent's centre (default 0)
+---@field keepPlace? boolean  -- keep it where it is on the screen instead of centring it
+```
+
+The big windows (the Curio Shop, the books, the Hunts and Tackle boards) are drawn at 1 UI unit per canvas px, and at a large UI scale UIParent is only 668 units tall, so each fits itself to the screen with this one call. Its scale is the largest that leaves 24 units clear round the extent, never above 1, and 1 while the screen has no size yet. It then centres the window on UIParent, `lift` up; a window that keeps its place instead keeps its first anchor where it is on the screen, its offsets rescaled for the new scale, as a scaled frame reads them in its own units. Every window fitted is fitted again when the UI scale or the window's size changes (`UI_SCALE_CHANGED`, `DISPLAY_SIZE_CHANGED`), through Core's one pair of registrations (CORE-R23), made at the first fit, so nothing listens before a window is fitted (CORE-R13).
 
 ### Events Core fires (owned here)
 

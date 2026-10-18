@@ -5,18 +5,20 @@ end
 ---@class PagleTackleBoardNS
 local ns = select(2, ...)
 
--- The board's motion (tackle-board.md › UI, the board art kit's MOTION.md), played by adapter/Motion.lua's driver: the
--- Campfire in its layers (three flames flickering out of step about the fire's foot, the 365-day rays turning, a dead
--- fire's embers breathing), the fire's light breathing on the cork, the ring of a pin opened from the tracker pulsing
--- twice, and a pin straightening and lifting under the mouse. The functions are the kit's (PagleArtBoard's Board.lua:
+-- The board's motion (tackle-board.md › UI, the board art kit's MOTION.md), played by Core's motion driver
+-- (Pagle.Animate, announcements.md › Contracts), which reads Core's Animations setting itself: the Campfire in its
+-- layers (three flames flickering out of step about the fire's foot, the 365-day rays turning, a dead fire's embers
+-- breathing), the fire's light breathing on the cork, the ring of a pin opened from the tracker pulsing twice, and a pin
+-- straightening and lifting under the mouse. The functions are the kit's (PagleArtBoard's Board.lua:
 -- P.Fire, transform, P.FireMotion, P.RingMotion, the pin hover and board.StartMotion), copied over the board's frames.
--- The board's loops run only while it shows: the driver drops an owner that no longer shows, and the board starts them
--- again when it opens. With Core's Animations setting off, everything draws in its settled state.
+-- The board's loops run only while it shows: the driver settles an owner that no longer shows (a loop to its first
+-- key), and the board starts them again when it shows again (adapter/Board.lua). With Core's Animations setting off,
+-- everything draws in its settled state.
 
 --- Whether things move: Core's Animations setting, `Pagle.IsAnimationsOn()` (announcements.md › Contracts; on by
---- default); the one seam the board's motion reads.
+--- default); the one seam the board reads it through, for what it decides beside the driver (a moment, a beat's sound).
 ---@return boolean
-function ns.AnimationsOn()
+function ns.MotionOn()
 	return Pagle.IsAnimationsOn() ~= false
 end
 
@@ -119,7 +121,7 @@ function ns.FireMotion(owner, fire)
 		if t then
 			anims[#anims + 1] = {
 				dur = spec[1],
-				ease = ns.Ease.inOut,
+				ease = Pagle.EASE.inOut,
 				iter = "infinite",
 				dir = spec[2],
 				keys = { { 0, { 1, 1, -2 } }, { 1, { 0.94, 1.06, 2.5 } } },
@@ -134,7 +136,7 @@ function ns.FireMotion(owner, fire)
 	if rays then
 		anims[#anims + 1] = {
 			dur = 40,
-			ease = ns.Ease.linear,
+			ease = Pagle.EASE.linear,
 			iter = "infinite",
 			keys = { { 0, { 0 } }, { 1, { -360 } } },
 			apply = function(v)
@@ -146,7 +148,7 @@ function ns.FireMotion(owner, fire)
 	if emb then
 		anims[#anims + 1] = {
 			dur = 2.4,
-			ease = ns.Ease.inOut,
+			ease = Pagle.EASE.inOut,
 			iter = "infinite",
 			dir = "alternate",
 			keys = { { 0, { 0.55 } }, { 1, { 1 } } },
@@ -155,7 +157,7 @@ function ns.FireMotion(owner, fire)
 			end,
 		}
 	end
-	ns.Animate(owner, anims)
+	Pagle.Animate(owner, anims)
 end
 
 --- The ring round a pin opened from the tracker (canvas t-ring: opacity .4 to 1, 1 s ease-in-out, twice, alternate;
@@ -163,11 +165,10 @@ end
 ---@param owner Frame
 ---@param r Texture
 function ns.RingMotion(owner, r)
-	ns.motion = ns.AnimationsOn()
-	ns.Animate(owner, {
+	Pagle.Animate(owner, {
 		{
 			dur = 1,
-			ease = ns.Ease.inOut,
+			ease = Pagle.EASE.inOut,
 			iter = 2,
 			dir = "alternate",
 			keys = { { 0, { 0.4 } }, { 1, { 1 } } },
@@ -196,12 +197,11 @@ function ns.PinHover(slip, paper, lean, lift)
 		slip:SetPoint("TOPLEFT", slot, "TOPLEFT", 0, v[2])
 		slip:SetPoint("BOTTOMRIGHT", slot, "BOTTOMRIGHT", 0, v[2])
 	end
-	ns.StopMotion(slip)
-	ns.motion = ns.AnimationsOn()
-	ns.Animate(slip, {
+	Pagle.StopMotion(slip)
+	Pagle.Animate(slip, {
 		{
 			dur = 0.18,
-			ease = ns.Ease.out,
+			ease = Pagle.EASE.out,
 			keys = { { 0, { pin.leanNow or lean, pin.lift or 0 } }, { 1, { lean, lift } } },
 			apply = set,
 		},
@@ -220,7 +220,7 @@ local GLOW_KEYS = { { 0, { 0.9 } }, { 0.3, { 1 } }, { 0.55, { 0.78 } }, { 0.75, 
 ---@param base number?
 ---@param restart boolean?
 function ns.BoardMotion(frame, fire, base, restart)
-	local on = ns.AnimationsOn()
+	local on = ns.MotionOn()
 	local key = table.concat({
 		tostring(on),
 		tostring(ns.Leans()),
@@ -232,16 +232,15 @@ function ns.BoardMotion(frame, fire, base, restart)
 		return
 	end
 	board.motionKey = key
-	ns.motion = on
-	ns.StopMotion(frame)
+	Pagle.StopMotion(frame)
 	if fire then
 		ns.FireMotion(frame, fire)
 	end
 	if base then
-		ns.Animate(frame, {
+		Pagle.Animate(frame, {
 			{
 				dur = 3.2,
-				ease = ns.Ease.inOut,
+				ease = Pagle.EASE.inOut,
 				iter = "infinite",
 				keys = GLOW_KEYS,
 				apply = function(v)

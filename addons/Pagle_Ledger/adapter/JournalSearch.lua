@@ -98,11 +98,10 @@ function ns.AttachJournalSearch(journal, box, frame)
 
 	-- It falls open: 6 units down while fading in (0.14 s, ease-out).
 	local function fallOpen()
-		ns.Moving()
-		ns.Animate(drop, {
+		Pagle.Animate(drop, {
 			{
 				dur = 0.14,
-				ease = ns.Ease.out,
+				ease = Pagle.EASE.out,
 				keys = { { 0, { -6, 0 } }, { 1, { 0, 1 } } },
 				apply = function(v)
 					ns.JournalAt(drop, frame, DROP_X, DROP_Y + v[1])

@@ -88,3 +88,116 @@ describe("an animation's values over time", function()
 		assert.are.same({ { 20 }, { 0 } }, { ns.MotionSettled(animation), ns.MotionSettled(spin) })
 	end)
 end)
+
+describe("the motion player", function()
+	-- A player over a fake host: whether the setting is on, and whether it asked for ticks (awake) or not.
+	local function newPlayer(on)
+		local host = { on = on ~= false, awake = false }
+		host.player = ns.NewMotionPlayer({
+			isOn = function()
+				return host.on
+			end,
+			wake = function()
+				host.awake = true
+			end,
+			sleep = function()
+				host.awake = false
+			end,
+		})
+		return host
+	end
+
+	-- An owner frame, visible until a spec hides it.
+	local function newOwner()
+		local owner = { visible = true }
+		function owner:IsVisible()
+			return self.visible
+		end
+		return owner
+	end
+
+	-- A 1 s fade from 0 to 1 that writes each value it sets into `seen`.
+	local function fade(seen)
+		return {
+			dur = 1,
+			ease = ns.EASE.linear,
+			keys = { { 0, { 0 } }, { 1, { 1 } } },
+			apply = function(v)
+				seen[#seen + 1] = v[1]
+			end,
+		}
+	end
+
+	it("plays from its first frame to its end, runs onDone there, and asks for no tick at rest (QOL-R25)", function()
+		local host, seen, done = newPlayer(), {}, 0
+		local asleepBefore = not host.awake
+
+		host.player:Animate(newOwner(), { fade(seen) }, function()
+			done = done + 1
+		end)
+		local awake = host.awake
+		host.player:Step(0.5)
+		host.player:Step(0.6)
+
+		assert.are.same({ true, true }, { asleepBefore, awake })
+		assert.are.same({ 0, 0.5, 1 }, seen)
+		assert.are.same({ 1, false }, { done, host.awake })
+	end)
+
+	it("settles a hidden owner's animations at their end, its cues and onDone run, never dropping them", function()
+		local host, owner, seen, spun, events = newPlayer(), newOwner(), {}, {}, {}
+		host.player:Animate(owner, {
+			fade(seen),
+			{
+				dur = 2,
+				ease = ns.EASE.linear,
+				iter = "infinite",
+				keys = { { 0, { 0 } }, { 1, { 360 } } },
+				apply = function(v)
+					spun[#spun + 1] = v[1]
+				end,
+			},
+		}, function()
+			events[#events + 1] = "done"
+		end)
+		host.player:Cue(owner, 0.8, function()
+			events[#events + 1] = "cue"
+		end)
+		host.player:Step(0.25)
+
+		owner.visible = false
+		host.player:Step(0.25)
+		host.player:Step(0.25)
+
+		assert.are.same({ 0, 0.25, 1 }, seen)
+		assert.are.same({ 0, 45, 0 }, spun) -- a loop rests where it starts
+		assert.are.same({ "cue", "done" }, events)
+		assert.is_false(host.awake)
+	end)
+
+	it("with the Animations setting off, settles at once, runs onDone and never a cue, without a tick", function()
+		local host, owner, seen, events = newPlayer(false), newOwner(), {}, {}
+
+		host.player:Animate(owner, { fade(seen) }, function()
+			events[#events + 1] = "done"
+		end)
+		host.player:Cue(owner, 0.1, function()
+			events[#events + 1] = "cue"
+		end)
+
+		assert.are.same({ { 1 }, { "done" }, false }, { seen, events, host.awake })
+	end)
+
+	it("stops an owner where it is, without its onDone, and rests once nothing plays", function()
+		local host, owner, seen, done = newPlayer(), newOwner(), {}, false
+		host.player:Animate(owner, { fade(seen) }, function()
+			done = true
+		end)
+		host.player:Step(0.5)
+
+		host.player:Stop(owner)
+		host.player:Step(0.5)
+
+		assert.are.same({ { 0, 0.5 }, false, false }, { seen, done, host.awake })
+	end)
+end)

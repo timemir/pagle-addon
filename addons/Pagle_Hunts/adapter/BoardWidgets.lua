@@ -507,8 +507,8 @@ function ns.NewBoardLeather(frame, cornerSize)
 		view.corner:SetShown(look.corner == true)
 	end
 	function view.SetCover(_, look, animate)
-		ns.StopMotion(view.owner)
-		if not (animate and frame:IsVisible() and ns.SyncMotion()) then
+		Pagle.StopMotion(view.owner)
+		if not (animate and frame:IsVisible() and ns.MotionOn()) then
 			view.fill:SetAlpha(1)
 			view.gilt:SetAlpha(1)
 			apply(look)
@@ -516,10 +516,10 @@ function ns.NewBoardLeather(frame, cornerSize)
 		end
 		-- the binding dips to 25% and back (0.4 s) while the cover changes underneath, at the dip's deepest
 		ns.BoardSound("pageTurn")
-		ns.Animate(view.owner, {
+		Pagle.Animate(view.owner, {
 			{
 				dur = 0.4,
-				ease = ns.Ease.inOut,
+				ease = Pagle.EASE.inOut,
 				keys = { { 0, { 1 } }, { 0.5, { 0.25 } }, { 1, { 1 } } },
 				apply = function(v)
 					view.fill:SetAlpha(v[1])
@@ -527,7 +527,7 @@ function ns.NewBoardLeather(frame, cornerSize)
 				end,
 			},
 		})
-		ns.Cue(view.owner, 0.2, function()
+		Pagle.Cue(view.owner, 0.2, function()
 			apply(look)
 		end)
 	end
@@ -695,13 +695,13 @@ function ns.NewBoardRibbon(parent)
 		self.color, self.chosen = color, chosen
 		paintRibbon(self)
 		local length = chosen and RIBBON.lengthChosen or RIBBON.length
-		ns.StopMotion(self)
-		if animate and self.length and self.length ~= length and ns.SyncMotion() then
+		Pagle.StopMotion(self)
+		if animate and self.length and self.length ~= length and ns.MotionOn() then
 			-- the old one draws up as the new one drops (0.2 s, ease-out)
-			ns.Animate(self, {
+			Pagle.Animate(self, {
 				{
 					dur = 0.2,
-					ease = ns.Ease.out,
+					ease = Pagle.EASE.out,
 					keys = { { 0, { self.length } }, { 1, { length } } },
 					apply = function(v)
 						lengthen(self, v[1])
@@ -828,17 +828,17 @@ function ns.NewBoardInkBar(parent, width)
 		local from = self.value
 		self.label:SetText(label or "")
 		self.value = fill
-		ns.StopMotion(self)
-		if not (animate and fill > from and self:IsVisible() and ns.SyncMotion()) then
+		Pagle.StopMotion(self)
+		if not (animate and fill > from and self:IsVisible() and ns.MotionOn()) then
 			self.label:SetAlpha(1)
 			ink(fill)
 			return
 		end
 		-- a catch: the ink runs on (0.6 s, ease-out) and its words fade up from 30% (0.3 s)
-		ns.Animate(self, {
+		Pagle.Animate(self, {
 			{
 				dur = 0.6,
-				ease = ns.Ease.out,
+				ease = Pagle.EASE.out,
 				keys = { { 0, { from } }, { 1, { fill } } },
 				apply = function(v)
 					ink(v[1])
@@ -846,7 +846,7 @@ function ns.NewBoardInkBar(parent, width)
 			},
 			{
 				dur = 0.3,
-				ease = ns.Ease.out,
+				ease = Pagle.EASE.out,
 				keys = { { 0, { 0.3 } }, { 1, { 1 } } },
 				apply = function(v)
 					self.label:SetAlpha(v[1])

@@ -5,19 +5,19 @@ end
 ---@class PagleStatsNS
 local ns = select(2, ...)
 
--- The Stats book's motion and sounds (stats.md › UI; the books art kit v2's MOTION.md and SOUND.md), played by
--- adapter/Motion.lua's driver: the page turn between spreads (the kit's Views.lua, copied over the book's page views),
--- the ink of a rewritten figure fading up, and the book's UI foley. With Core's Animations setting off, everything
--- draws settled at once (ns.SyncMotion); the turn's sound and the catch's "write" go with the motion, the open and
--- close sounds don't. The sounds are the client's own sound kits, by number, on the SFX channel: the client's sound
--- volume and mute are the only switch (no Pagle setting), and they belong to no sound set.
+-- The Stats book's motion and sounds (stats.md › UI; the books art kit v2's MOTION.md and SOUND.md), played by Core's
+-- one motion driver (`Pagle.Animate`, announcements.md › Contracts): the page turn between spreads (the kit's
+-- Views.lua, copied over the book's page views), the ink of a rewritten figure fading up, and the book's UI foley. The
+-- driver follows Core's Animations setting itself: off, everything draws settled at once; the turn's sound and the
+-- catch's "write" go with the motion (ns.MotionOn), the open and close sounds don't. The sounds are the client's own
+-- sound kits, by number, on the SFX channel: the client's sound volume and mute are the only switch (no Pagle
+-- setting), and they belong to no sound set.
 
---- Reads Core's Animations setting (`Pagle.IsAnimationsOn()`, announcements.md › Contracts) into ns.motion, which
---- adapter/Motion.lua's driver obeys; every move calls it first. Returns whether things move.
+--- Whether things move: Core's Animations setting (`Pagle.IsAnimationsOn()`, announcements.md › Contracts), which
+--- Core's driver follows on its own; the book asks it only to choose what it does besides moving (a sound, a turn).
 ---@return boolean
-function ns.SyncMotion()
-	ns.motion = Pagle.IsAnimationsOn() ~= false
-	return ns.motion
+function ns.MotionOn()
+	return Pagle.IsAnimationsOn() ~= false
 end
 
 --- The book's sounds (the kit's SOUND.md, Books): sound kit ids, and whether each goes with the motion.
@@ -33,7 +33,7 @@ ns.BOOK_SOUNDS = {
 ---@param name string
 function ns.BookSound(name)
 	local sound = assert(ns.BOOK_SOUNDS[name], "the Stats book has no sound " .. tostring(name))
-	if sound.motion and not ns.SyncMotion() then
+	if sound.motion and not ns.MotionOn() then
 		return
 	end
 	PlaySound(sound.id, "SFX")
@@ -43,11 +43,10 @@ end
 --- off.
 ---@param region Region
 function ns.InkIn(region)
-	ns.SyncMotion()
-	ns.Animate(region, {
+	Pagle.Animate(region, {
 		{
 			dur = 0.3,
-			ease = ns.Ease.out,
+			ease = Pagle.EASE.out,
 			keys = { { 0, { 0.3 } }, { 1, { 1 } } },
 			apply = function(v)
 				region:SetAlpha(v[1])
@@ -166,7 +165,7 @@ end
 ---@field done fun()      -- when it has landed, or is cut short
 
 --- Plays `turn` on `book` (the book's frame), the kit's two halves; settled at once with the motion off. Returns the
---- owner it plays on, which ns.StopMotion cuts short (the caller then settles it with turn.done).
+--- owner it plays on, which Pagle.StopMotion cuts short (the caller then settles it with turn.done).
 ---@param book StatsBookFrame
 ---@param turn StatsTurn
 ---@return table owner
@@ -179,7 +178,7 @@ function ns.PlayTurn(book, turn)
 		fold:Hide()
 		turn.done()
 	end
-	if not ns.SyncMotion() then
+	if not ns.MotionOn() then
 		turn.midway()
 		settle()
 		return owner
@@ -194,11 +193,11 @@ function ns.PlayTurn(book, turn)
 		ns.RevealSide(to.right, 0, 0)
 		ns.RevealSide(from.right, 0, 1)
 	end
-	ns.Animate(owner, {
+	Pagle.Animate(owner, {
 		-- first half: the page lifts toward the spine
 		{
 			dur = ns.TURN_LIFT,
-			ease = ns.Bezier(0.5, 0, 0.9, 0.6),
+			ease = Pagle.Bezier(0.5, 0, 0.9, 0.6),
 			keys = { { 0, { 0 } }, { 1, { 1 } } },
 			apply = function(v)
 				local k = v[1]
@@ -218,7 +217,7 @@ function ns.PlayTurn(book, turn)
 		{
 			dur = ns.TURN_LAND,
 			delay = ns.TURN_LIFT,
-			ease = ns.Bezier(0.1, 0.4, 0.4, 1),
+			ease = Pagle.Bezier(0.1, 0.4, 0.4, 1),
 			keys = { { 0, { 0 } }, { 1, { 1 } } },
 			apply = function(v)
 				local k = v[1]

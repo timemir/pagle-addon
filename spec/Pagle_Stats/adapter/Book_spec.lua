@@ -111,7 +111,7 @@ describe("the Stats book's frame (STA-R70, STA-R71)", function()
 		loaded.ns.ToggleBook()
 
 		assert.is_nil(loaded.ns.db.profile.window)
-		assert.are.same({ { "CENTER", 0, 40 } }, book.frame.points)
+		assert.are.same({ { "CENTER", loaded.env.UIParent, "CENTER", 0, 40 } }, book.frame.points)
 	end)
 
 	it("moves by dragging the leather, saves where it was left in profile.window, and opens there next", function()
@@ -145,6 +145,59 @@ describe("the Stats book's frame (STA-R70, STA-R71)", function()
 		loaded.ns.ToggleBook()
 
 		assert.are.same({ { "TOPLEFT", loaded.env.UIParent, "BOTTOMLEFT", 40, 600 } }, loaded.ns.book.frame.points)
+	end)
+
+	-- The book's first anchor, in UIParent's units: its offsets times its scale.
+	local function onScreen(frame)
+		local point = frame.points[1]
+		local scale = frame:GetScale()
+		return { point[1], point[3], math.floor(point[4] * scale + 0.5), math.floor(point[5] * scale + 0.5) }
+	end
+
+	it("saves its place in UIParent's units, so it opens there after the UI scale changes (STA-R71)", function()
+		local loaded, _, book = ready()
+		local screen = loaded.env.UIParent
+		screen:SetSize(2560, 1440)
+		loaded.ns.ToggleBook()
+		local frame = book.frame
+		frame:GetScript("OnDragStart")(frame)
+		frame:ClearAllPoints()
+		frame:SetPoint("TOPLEFT", screen, "BOTTOMLEFT", 120, 700)
+		frame:GetScript("OnDragStop")(frame)
+		loaded.ns.ToggleBook()
+
+		screen:SetSize(1188, 668) -- a 1366 × 768 screen at UI scale 1.15
+		loaded.client.fireGameEvent("UI_SCALE_CHANGED")
+		loaded.ns.ToggleBook()
+
+		assert.is_true(frame:GetScale() < 1)
+		assert.are.same({ "TOPLEFT", "BOTTOMLEFT", 120, 700 }, onScreen(frame))
+		frame:GetScript("OnDragStart")(frame)
+		frame:GetScript("OnDragStop")(frame) -- left where it is: saved as it was
+		local window = loaded.ns.db.profile.window
+		assert.are.same(
+			{ "TOPLEFT", "BOTTOMLEFT", 120, 700 },
+			{ window[1], window[2], math.floor(window[3] + 0.5), math.floor(window[4] + 0.5) }
+		)
+	end)
+
+	it("keeps its place on the screen when it is fitted again while open (STA-R71)", function()
+		local loaded, _, book = ready()
+		local screen = loaded.env.UIParent
+		screen:SetSize(2560, 1440)
+		loaded.ns.ToggleBook()
+		local frame = book.frame
+		frame:GetScript("OnDragStart")(frame)
+		frame:ClearAllPoints()
+		frame:SetPoint("TOPLEFT", screen, "BOTTOMLEFT", 120, 700)
+		frame:GetScript("OnDragStop")(frame)
+
+		screen:SetSize(1188, 668)
+		loaded.client.fireGameEvent("DISPLAY_SIZE_CHANGED")
+
+		assert.is_true(frame:GetScale() < 1)
+		assert.are.same({ "TOPLEFT", "BOTTOMLEFT", 120, 700 }, onScreen(frame))
+		assert.are.same({ "TOPLEFT", "BOTTOMLEFT", 120, 700 }, loaded.ns.db.profile.window)
 	end)
 end)
 

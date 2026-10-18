@@ -70,7 +70,7 @@ function ns.BuildLegendPlate(pagesFrame)
 	plate.crest = CreateFrame("Frame", nil, plate)
 	plate.crest:SetSize(CREST_W, CREST_W * 194 / 176)
 	local frameArt = ns.JournalSprite(plate.crest, "Crests", "crest-legend", "ARTWORK", 1, CREST_W)
-	ns.JournalPut(frameArt, plate.crest, 0, 0)
+	ns.JournalBoxAt(frameArt, plate.crest, 0, 0)
 	plate.crestIcon = ns.JournalCrisp(plate.crest:CreateTexture(nil, "ARTWORK", nil, 2))
 	plate.crestIcon:SetSize(108, 108)
 	plate.crestIcon:SetPoint("CENTER", plate.crest, "TOPLEFT", CREST_W / 2, -87)
@@ -131,14 +131,13 @@ end
 ---@param plate LedgerLegendPlate
 function ns.OpenLegendPlate(plate)
 	plate:Show()
-	ns.JournalSound("pageTurn")
-	ns.Moving()
-	ns.StopMotion(plate)
+	ns.JournalSound("plateOpen")
+	Pagle.StopMotion(plate)
 	local seal, crest = plate.seal, plate.crest
-	ns.Animate(plate, {
+	Pagle.Animate(plate, {
 		{
 			dur = 0.3,
-			ease = ns.Ease.out,
+			ease = Pagle.EASE.out,
 			keys = { { 0, { 0, 8 } }, { 1, { 1, 0 } } },
 			apply = function(v)
 				plate:SetAlpha(v[1])
@@ -148,7 +147,7 @@ function ns.OpenLegendPlate(plate)
 		{
 			dur = 0.3,
 			delay = 0.25,
-			ease = ns.Bezier(0.3, 1.5, 0.5, 1),
+			ease = Pagle.Bezier(0.3, 1.5, 0.5, 1),
 			keys = { { 0, { 1.7, 0 } }, { 0.7, { 0.95, 1 } }, { 1, { 1, 1 } } },
 			apply = function(v)
 				seal:SetSize(70 * v[1], 70 * v[1])
@@ -156,7 +155,7 @@ function ns.OpenLegendPlate(plate)
 			end,
 		},
 	})
-	ns.Cue(plate, 0.42, function()
+	Pagle.Cue(plate, 0.42, function()
 		ns.JournalSound("stamp")
 	end)
 end
@@ -165,12 +164,11 @@ end
 ---@param plate LedgerLegendPlate
 ---@param after fun()?
 function ns.CloseLegendPlate(plate, after)
-	ns.Moving()
-	ns.StopMotion(plate)
-	ns.Animate(plate, {
+	Pagle.StopMotion(plate)
+	Pagle.Animate(plate, {
 		{
 			dur = 0.18,
-			ease = ns.Bezier(0.42, 0, 1, 1),
+			ease = Pagle.Bezier(0.42, 0, 1, 1),
 			keys = { { 0, { 1 } }, { 1, { 0 } } },
 			apply = function(v)
 				plate:SetAlpha(v[1])

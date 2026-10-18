@@ -1,7 +1,7 @@
 -- The board's motion and sounds (hunts.md › UI, HNT-R60, HNT-R62, HNT-R70; the books art kit v2's MOTION.md and
--- SOUND.md): adapter/Motion.lua's driver run by the fake client's frames, the book fading in and out with its sounds,
--- the page turn between spreads with the ribbons' lengths easing, the live timeline's rows sliding and a Hunt just
--- opened flashing with its sound, the cover's dip, the ink running on, fitting the screen, and the realm-minute
+-- SOUND.md): Core's motion driver (Pagle.Animate) run by the fake client's frames, the book fading in and out with its
+-- sounds, the page turn between spreads with the ribbons' lengths easing, the live timeline's rows sliding and a Hunt
+-- just opened flashing with its sound, the cover's dip, the ink running on, fitting the screen, and the realm-minute
 -- refresh; and Core's Animations setting, off, drawing everything settled and silencing the motion's beats.
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
@@ -253,6 +253,26 @@ describe("the live timeline (MOTION.md › The live Hunts timeline)", function()
 		play(run, 1.1)
 
 		assert.are_not.equal(was, row.y)
+		assert.are.equal(0, row.flash:GetAlpha())
+	end)
+
+	it("draws settled on reopening when a Hunt opened while it was closed: no slide, flash or sound", function()
+		local run = start({ from = hunts.untilRealm(9, 58), list = LIST })
+		run.ns.ToggleBoard()
+		play(run, 0.3)
+		local was = rowOf(run, "extra_1").y
+		run.ns.ToggleBoard()
+		play(run, 0.2)
+		heard(run)
+
+		hunts.wait(run, 120) -- realm 10:00, the board closed: its window opens
+		run.ns.ToggleBoard()
+
+		assert.are.same({ "829 SFX" }, heard(run)) -- the opening's sound alone
+		local row = rowOf(run, "extra_1")
+		assert.are_not.equal(was, row.y) -- at its new place at once
+		assert.are.equal(0, row.flash:GetAlpha())
+		play(run, 0.35)
 		assert.are.equal(0, row.flash:GetAlpha())
 	end)
 

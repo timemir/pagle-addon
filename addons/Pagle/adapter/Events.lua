@@ -32,7 +32,10 @@ local function ownerEntry(owner)
 	local entry = owners[owner]
 	if not entry then
 		local handlers = {}
+		-- hidden, as a frame needn't show to hear its events: a listener made late (the fit's, at the first window
+		-- fitted) puts nothing on screen
 		local frame = CreateFrame("Frame")
+		frame:Hide()
 		frame:SetScript("OnEvent", function(_, event, ...)
 			local handler = handlers[event]
 			if handler then

@@ -273,6 +273,21 @@ describe("/pagle dev probe", function()
 		end
 	)
 
+	it("records the Cast first and keeps it when C_Spell.GetSpellName errors (LOG-R9, LOG-R2)", function()
+		local loaded = probing()
+		local ended = {}
+		loaded.env.Pagle.RegisterCallback("Spec", "CastEnded", function(_, outcome)
+			ended[#ended + 1] = outcome
+		end)
+		loaded.env.C_Spell.GetSpellName = function()
+			error("no such spell")
+		end
+
+		catchOne(loaded)
+
+		assert.are.same({ "caught" }, ended)
+	end)
+
 	it("keeps no channel while dev mode is off (LOG-R2)", function()
 		local loaded = liveClient(enterWorld(loadCore({ BUILD_ENTRY })))
 		catchOne(loaded)

@@ -1,7 +1,7 @@
--- The board's motion (tackle-board.md › UI, the board art kit's MOTION.md): adapter/Motion.lua's driver, the
--- Campfire's layers flickering, the glow breathing on the cork, the highlight's ring pulsing, and Core's Animations
--- setting, Pagle.IsAnimationsOn() read through ns.AnimationsOn, leaving everything at rest. The fake client runs the driver's OnUpdate with
--- client.update.
+-- The board's motion (tackle-board.md › UI, the board art kit's MOTION.md): on Core's motion driver (Pagle.Animate),
+-- the Campfire's layers flickering, the glow breathing on the cork, the highlight's ring pulsing, and Core's Animations
+-- setting, Pagle.IsAnimationsOn() read through ns.MotionOn, leaving everything at rest. The fake client runs the
+-- driver's OnUpdate with client.update.
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local board = dofile("spec/Pagle_TackleBoard/support.lua")
@@ -20,90 +20,26 @@ local LIT = {
 	board.cast(S + 10, DUROTAR, { BLACKMOUTH }),
 }
 
--- The board open on LIT, its login's live step run, with ns.AnimationsOn answering `on` when given.
+-- The board open on LIT, its login's live step run, with Core's Animations setting off when `on` is false.
 local function opened(on)
-	return board.opened(LIT, {
-		step = true,
-		load = on ~= nil and {
-			prepare = function(loaded)
-				loaded.ns.AnimationsOn = function()
-					return on
-				end
-			end,
-		} or nil,
-	})
+	return board.opened(LIT, { step = true, motion = on })
 end
 
-describe("the motion driver (adapter/Motion.lua, the kit's)", function()
-	it("plays keyframes over their duration, eased, and calls back when a finite one ends", function()
-		local loaded = board.load()
-		local ns = loaded.ns
-		ns.motion = true
-		local seen, done = {}, false
-		local owner = loaded.env.CreateFrame("Frame")
-
-		ns.Animate(owner, {
-			{
-				dur = 1,
-				ease = ns.Ease.linear,
-				keys = { { 0, { 0 } }, { 1, { 10 } } },
-				apply = function(v)
-					seen[#seen + 1] = v[1]
-				end,
-			},
-		}, function()
-			done = true
-		end)
-		loaded.client.update(0.5)
-		loaded.client.update(0.6)
-
-		assert.are.same({ 0, 5, 10 }, seen)
-		assert.is_true(done)
-	end)
-
-	it("jumps to the end, or to an endless one's first key, with the motion off", function()
-		local loaded = board.load()
-		local ns = loaded.ns
-		ns.motion = false
-		local values = {}
-
-		ns.Animate(loaded.env.CreateFrame("Frame"), {
-			{
-				dur = 1,
-				keys = { { 0, { 0 } }, { 1, { 10 } } },
-				apply = function(v)
-					values.once = v[1]
-				end,
-			},
-			{
-				dur = 1,
-				iter = "infinite",
-				keys = { { 0, { 3 } }, { 1, { 9 } } },
-				apply = function(v)
-					values.loop = v[1]
-				end,
-			},
-		})
-
-		assert.are.same({ once = 10, loop = 3 }, values)
-	end)
-
-	it("eases as CSS's cubic-bezier", function()
-		local ns = board.load().ns
-
-		assert.is_true(math.abs(ns.Ease.inOut(0.5) - 0.5) < 1e-4)
-		assert.is_true(ns.Ease.out(0.25) > 0.25)
-		assert.are.same({ 0, 1 }, { ns.Ease.ease(0), ns.Ease.ease(1) })
-	end)
-end)
-
-describe("Core's Animations setting (ns.AnimationsOn)", function()
+describe("Core's Animations setting (ns.MotionOn)", function()
 	it("reads Pagle.IsAnimationsOn(): on by default, off once the player turns it off", function()
 		local loaded, fake = board.load()
 
-		assert.is_true(loaded.ns.AnimationsOn())
+		assert.is_true(loaded.ns.MotionOn())
 		fake.profile.announcements.motion = false
-		assert.is_false(loaded.ns.AnimationsOn())
+		assert.is_false(loaded.ns.MotionOn())
+	end)
+
+	it("leaves the motion copy and the fit copy to Core: the board moves on Pagle.Animate", function()
+		local ns = board.load().ns
+
+		assert.is_nil(rawget(ns, "Animate"))
+		assert.is_nil(rawget(ns, "FitToScreen"))
+		assert.is_nil(rawget(ns, "motion"))
 	end)
 end)
 
@@ -150,6 +86,28 @@ describe("the Campfire's motion (tackle-board.md › UI)", function()
 		loaded.ns.Redraw("minute")
 
 		assert.are.equal(width, flame:GetWidth())
+	end)
+
+	it("flickers again once the whole UI shows again after hiding it (Alt-Z)", function()
+		local loaded, _, frame = opened()
+		local flame = frame.parts.ledge.fire.burning.layers["-fl1"]
+		local UIParent = loaded.env.UIParent
+		frame.IsVisible = function(self)
+			return self:IsShown() and UIParent:IsShown()
+		end
+
+		-- The client runs the OnHide of each shown frame under UIParent, then its OnShow as UIParent shows again.
+		UIParent:Hide()
+		frame:GetScript("OnHide")(frame)
+		loaded.client.update(0.1)
+		local hidden = flame:GetWidth()
+		loaded.client.update(0.5)
+		assert.are.equal(hidden, flame:GetWidth()) -- settled while hidden
+		UIParent:Show()
+		frame:GetScript("OnShow")(frame)
+		loaded.client.update(0.7)
+
+		assert.are_not.equal(hidden, flame:GetWidth())
 	end)
 
 	it("stops once the board no longer shows", function()

@@ -10,16 +10,18 @@ local ns = select(2, ...)
 -- style changes only the look, never timing, lanes, the Interruption budget, sounds or which moments show.
 -- adapter/Art.lua draws the art, and adapter/Announcements.lua and adapter/Cards.lua the frames.
 
--- An { r, g, b } from a "RRGGBB" hex string.
+--- An { r, g, b } from a "RRGGBB" hex string: Core's one, for the announcements' inks and the Curio Shop's
+--- (adapter/ShopArt.lua).
 ---@param hex string
 ---@return number[]
-local function rgb(hex)
+function ns.Rgb(hex)
 	local out = {}
 	for i = 1, 5, 2 do
 		out[#out + 1] = tonumber(hex:sub(i, i + 1), 16) / 255
 	end
 	return out
 end
+local rgb = ns.Rgb
 
 --- The canvas's inks, each { r, g, b }, by role.
 ---@type table<string, number[]>

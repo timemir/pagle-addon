@@ -116,12 +116,11 @@ function ns.AskPrestige()
 	card:SetAlpha(1)
 	shown = card
 	ns.JournalSound("popupOpen")
-	ns.Moving()
-	ns.StopMotion(card)
-	ns.Animate(card, {
+	Pagle.StopMotion(card)
+	Pagle.Animate(card, {
 		{
 			dur = 0.2,
-			ease = ns.Ease.out,
+			ease = Pagle.EASE.out,
 			keys = { { 0, { 0 } }, { 1, { 1 } } },
 			apply = function(v)
 				card.shade:SetAlpha(0.55 * v[1])
@@ -129,7 +128,7 @@ function ns.AskPrestige()
 		},
 		{
 			dur = 0.3,
-			ease = ns.Bezier(0.3, 1.3, 0.5, 1),
+			ease = Pagle.Bezier(0.3, 1.3, 0.5, 1),
 			keys = { { 0, { -20, 0 } }, { 1, { 0, 1 } } },
 			apply = function(v)
 				ns.JournalAt(card.card, card, CARD_X, CARD_Y + v[1])
@@ -139,7 +138,7 @@ function ns.AskPrestige()
 		{
 			dur = 0.3,
 			delay = 0.2,
-			ease = ns.Bezier(0.3, 1.5, 0.5, 1),
+			ease = Pagle.Bezier(0.3, 1.5, 0.5, 1),
 			keys = { { 0, { 1.8, 0 } }, { 0.7, { 0.95, 1 } }, { 1, { 1, 1 } } },
 			apply = function(v)
 				card.seal:SetSize(68 * v[1], 68 * v[1])
@@ -147,7 +146,7 @@ function ns.AskPrestige()
 			end,
 		},
 	})
-	ns.Cue(card, 0.36, function()
+	Pagle.Cue(card, 0.36, function()
 		ns.JournalSound("stamp")
 	end)
 end
@@ -173,12 +172,11 @@ function ns.HidePrestigeConfirm(after)
 		return
 	end
 	ns.JournalSound("popupClose")
-	ns.Moving()
-	ns.StopMotion(card)
-	ns.Animate(card, {
+	Pagle.StopMotion(card)
+	Pagle.Animate(card, {
 		{
 			dur = 0.18,
-			ease = ns.Bezier(0.42, 0, 1, 1),
+			ease = Pagle.Bezier(0.42, 0, 1, 1),
 			keys = { { 0, { 1 } }, { 1, { 0 } } },
 			apply = function(v)
 				card:SetAlpha(v[1])

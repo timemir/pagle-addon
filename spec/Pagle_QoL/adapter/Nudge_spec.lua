@@ -115,6 +115,22 @@ describe("A Nudge", function()
 		assert.is_nil(frame.scripts.OnUpdate)
 	end)
 
+	it("goes at once after its 3 s with Core's Animations setting off, without a fade (QOL-R75)", function()
+		local fake, loaded = start()
+		local client = loaded.client
+		fake.profile.announcements.motion = false
+		loaded.ns.ShowNudge("A Nudge")
+		local frame = theNudge(client)
+
+		client.update(3)
+		local held = { frame.shown, frame.alpha }
+		client.update(0.05)
+
+		assert.are.same({ true, 1 }, held)
+		assert.is_false(frame.shown)
+		assert.is_nil(frame.scripts.OnUpdate)
+	end)
+
 	it("replaces the one showing, and shows its full 3 s (QOL-R75)", function()
 		local _, loaded = start()
 		local client = loaded.client
@@ -133,7 +149,7 @@ describe("A Nudge", function()
 		assert.are.equal(frames, #client.frames)
 	end)
 
-	it("is silent and goes through no Core call: no Announcement (QOL-R76)", function()
+	it("is silent and goes through no Core call but the Animations setting's: no Announcement (QOL-R76)", function()
 		local fake, loaded = start()
 		local sounds = {}
 		for _, name in ipairs({ "PlaySound", "PlaySoundFile" }) do
@@ -181,7 +197,10 @@ describe("A Nudge", function()
 		end
 
 		assert.is_false(frame.shown)
-		assert.are.same({}, coreCalls)
+		-- Its fade reads the Animations setting (QOL-R75), and nothing else of Core's.
+		for _, call in ipairs(coreCalls) do
+			assert.are.equal("Pagle.IsAnimationsOn", call)
+		end
 		assert.are.same({}, sounds)
 		assert.are.same({}, fake.printed)
 		assert.are.same({}, loaded.printed)

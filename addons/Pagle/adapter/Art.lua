@@ -331,19 +331,32 @@ end
 -- The icon's width inside each medallion size.
 local INNER = { [84] = 62, [64] = 46, [34] = 26, [22] = 17 }
 
---- A medallion on `parent`, set with ns.SetBezel.
+--- A medallion's parts on `parent`, from `atlas` (the announcements' or the Curio Shop's): sprite `ring` under an icon
+--- masked round, centred, and sprite `gloss` over it. The announcements' medallion and the shop's share it.
 ---@param parent Frame
+---@param atlas string
+---@param ring string
+---@param gloss string
 ---@return PagleBezel
-function ns.NewBezel(parent)
+function ns.NewArtBezel(parent, atlas, ring, gloss)
 	local bezel = CreateFrame("Frame", nil, parent) --[[@as PagleBezel]]
-	bezel.Ring = ns.ArtSprite(bezel, "Announce", "bezel-gold-84", "ARTWORK", 0)
-	bezel.Icon = crisp(bezel:CreateTexture(nil, "ARTWORK", nil, 1))
+	bezel.Ring = ns.ArtSprite(bezel, atlas, ring, "ARTWORK", 0)
+	bezel.Icon = bezel:CreateTexture(nil, "ARTWORK", nil, 1)
 	bezel.Icon:SetPoint("CENTER")
 	local mask = bezel:CreateMaskTexture()
 	mask:SetTexture("Interface\\CharacterFrame\\TempPortraitAlphaMask", "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
 	mask:SetAllPoints(bezel.Icon)
 	bezel.Icon:AddMaskTexture(mask)
-	bezel.Gloss = ns.ArtSprite(bezel, "Announce", "gloss-84", "ARTWORK", 2)
+	bezel.Gloss = ns.ArtSprite(bezel, atlas, gloss, "ARTWORK", 2)
+	return bezel
+end
+
+--- A medallion on `parent`, set with ns.SetBezel.
+---@param parent Frame
+---@return PagleBezel
+function ns.NewBezel(parent)
+	local bezel = ns.NewArtBezel(parent, "Announce", "bezel-gold-84", "gloss-84")
+	crisp(bezel.Icon)
 	return bezel
 end
 
@@ -368,8 +381,20 @@ end
 ---@return PagleSprite
 function ns.SetCoin(texture, size)
 	local small = size <= 30
-	local coin = ns.SetSprite(texture, "Announce", small and "coin-small" or "coin")
-	local k = size / (small and 26 or 42)
+	return ns.SetArtCoin(texture, "Announce", small and "coin-small" or "coin", small and 26 or 42, size)
+end
+
+--- Shows coin sprite `sprite` of `atlas` in `texture`, scaled from its `base` across to `size`, its box with it. The
+--- announcements' coin and the shop's share it.
+---@param texture Texture
+---@param atlas string
+---@param sprite string
+---@param base number
+---@param size number
+---@return PagleSprite
+function ns.SetArtCoin(texture, atlas, sprite, base, size)
+	local coin = ns.SetSprite(texture, atlas, sprite)
+	local k = size / base
 	coin:SetSize(coin:GetWidth() * k, coin:GetHeight() * k)
 	coin.box = { coin.box[1] * k, coin.box[2] * k, size, size }
 	return coin

@@ -179,6 +179,56 @@ describe("FakePagle", function()
 		end
 	)
 
+	it(
+		"plays Pagle.Animate on the loaded Module's client, settling a hidden owner and resting after, as Core's"
+			.. " driver (announcements.md › Contracts)",
+		function()
+			local fake = newFakePagle()
+			local loaded = fake.load("Pagle_QoL")
+			local frame = loaded.env.CreateFrame("Frame", nil, loaded.env.UIParent)
+			local hidden = loaded.env.CreateFrame("Frame", nil, loaded.env.UIParent)
+			local function fade(target)
+				return {
+					dur = 1,
+					ease = fake.Pagle.EASE.linear,
+					keys = { { 0, { 0 } }, { 1, { 1 } } },
+					apply = function(v)
+						target:SetAlpha(v[1])
+					end,
+				}
+			end
+			local done = {}
+			fake.Pagle.Animate(frame, { fade(frame) })
+			fake.Pagle.Animate(hidden, { fade(hidden) }, function()
+				done[#done + 1] = "hidden"
+			end)
+
+			loaded.client.update(0.5)
+			local half = frame.alpha
+			hidden:Hide()
+			loaded.client.update(0.1)
+			fake.Pagle.StopMotion(frame)
+			fake.profile.announcements.motion = false
+			local off = loaded.env.CreateFrame("Frame")
+			fake.Pagle.Animate(off, { fade(off) })
+
+			assert.are.same({ 0.5, 0.6, 1, { "hidden" }, 1 }, { half, frame.alpha, hidden.alpha, done, off.alpha })
+		end
+	)
+
+	it("fits a window to the loaded Module's screen with Pagle.FitToScreen, again on a UI scale change", function()
+		local fake = newFakePagle()
+		local loaded = fake.load("Pagle_QoL")
+		local frame = loaded.env.CreateFrame("Frame")
+
+		local scale = fake.Pagle.FitToScreen(frame, { width = 800, height = 2064, lift = 10 })
+		loaded.env.UIParent:SetSize(1920, 2112)
+		loaded.client.fireGameEvent("UI_SCALE_CHANGED")
+		local _, relativeTo, _, x, y = frame:GetPoint(1)
+
+		assert.are.same({ 0.5, 1, loaded.env.UIParent, 0, 10 }, { scale, frame:GetScale(), relativeTo, x, y })
+	end)
+
 	it("passes WoW events to the handlers Modules registered through Pagle (CORE-R23)", function()
 		local fake = newFakePagle()
 		local got = {}

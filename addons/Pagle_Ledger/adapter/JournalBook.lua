@@ -78,7 +78,7 @@ local function buildLeather(frame)
 	fill:SetPoint("TOPLEFT", FILL_INSET, -FILL_INSET)
 	fill:SetPoint("BOTTOMRIGHT", -FILL_INSET, FILL_INSET)
 	frame.leatherFill = fill
-	frame.vignette = ns.JournalPiece(frame, "Book", "vignette", "BACKGROUND", 1, 1, 1, 126, 126)
+	frame.vignette = ns.JournalPiece(frame, "Book", "vignette", "BACKGROUND", 1, { 1, 1, 126, 126 })
 	frame.vignette:SetAllPoints(fill)
 	local bandFrame = CreateFrame("Frame", nil, frame)
 	bandFrame:SetAllPoints()
@@ -86,7 +86,7 @@ local function buildLeather(frame)
 	frame.bandFrame = bandFrame
 	-- the nine slices of the 96-texel binding sprite: 32-texel corners, the edges stretched from a 2-texel slice
 	local function piece(sx, sy, sw, sh)
-		return ns.JournalPiece(bandFrame, "Book", "binding", "BORDER", 0, sx, sy, sw, sh)
+		return ns.JournalPiece(bandFrame, "Book", "binding", "BORDER", 0, { sx, sy, sw, sh })
 	end
 	local tl, tr, bl, br = piece(0, 0, 32, 32), piece(64, 0, 32, 32), piece(0, 64, 32, 32), piece(64, 64, 32, 32)
 	local top, bottom = piece(47, 0, 2, 32), piece(47, 64, 2, 32)
@@ -133,13 +133,13 @@ local function buildPaper(frame, side)
 		parchment:AddMaskTexture(mask)
 	end
 	paper.parchment = parchment
-	local gutter = ns.JournalPiece(paper, "Book", "gutter", "BORDER", 0, 1, 1, 62, 6)
+	local gutter = ns.JournalPiece(paper, "Book", "gutter", "BORDER", 0, { 1, 1, 62, 6 })
 	gutter:SetWidth(GUTTER_W)
 	if side == "left" then
 		gutter:SetPoint("TOPRIGHT")
 		gutter:SetPoint("BOTTOMRIGHT")
 	else
-		local l, r, t, b = ns.JournalCoords("Book", "gutter", 1, 1, 62, 6)
+		local l, r, t, b = ns.JournalCoords("Book", "gutter", { 1, 1, 62, 6 })
 		gutter:SetTexCoord(r, l, t, b)
 		gutter:SetPoint("TOPLEFT")
 		gutter:SetPoint("BOTTOMLEFT")
@@ -183,9 +183,9 @@ end
 local function buildPlate(frame)
 	local plate = CreateFrame("Frame", nil, frame) --[[@as LedgerJournalPlateView]]
 	plate:SetHeight(32)
-	local left = ns.JournalPiece(plate, "Book", "plate", "ARTWORK", 0, 0, 0, 16, 64)
-	local middle = ns.JournalPiece(plate, "Book", "plate", "ARTWORK", 0, 63, 0, 2, 64)
-	local right = ns.JournalPiece(plate, "Book", "plate", "ARTWORK", 0, 112, 0, 16, 64)
+	local left = ns.JournalPiece(plate, "Book", "plate", "ARTWORK", 0, { 0, 0, 16, 64 })
+	local middle = ns.JournalPiece(plate, "Book", "plate", "ARTWORK", 0, { 63, 0, 2, 64 })
+	local right = ns.JournalPiece(plate, "Book", "plate", "ARTWORK", 0, { 112, 0, 16, 64 })
 	left:SetPoint("TOPLEFT")
 	left:SetPoint("BOTTOMLEFT")
 	left:SetWidth(8)

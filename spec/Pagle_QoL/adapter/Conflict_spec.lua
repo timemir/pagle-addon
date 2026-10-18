@@ -272,6 +272,29 @@ describe("The notes' motion and sounds (qol.md › UI)", function()
 		end
 	)
 
+	it(
+		"stays closed when the whole UI hides as it fades after a choice, never open for a second one (QOL-R83)",
+		function()
+			local _, client, loaded = start({ Angleur = ANGLEUR })
+			client.update(0.4)
+			local conflictNote = loaded.env.PagleQoLConflictNote
+			conflictNote.secondary:Click()
+			client.update(0.05)
+
+			-- Alt-Z: the client runs the OnHide of each shown frame under UIParent, then its OnShow as UIParent shows again.
+			loaded.env.UIParent:Hide()
+			conflictNote.scripts.OnHide(conflictNote)
+			client.update(0.05)
+			loaded.env.UIParent:Show()
+			if conflictNote.shown then
+				conflictNote.scripts.OnShow(conflictNote)
+			end
+
+			assert.is_false(conflictNote.shown)
+			assert.are.same({ { name = "Pagle_QoL" } }, client.disabledAddOns)
+		end
+	)
+
 	it("hides at once on Esc, with IG_MAINMENU_CLOSE", function()
 		local _, client, loaded = start({ Angleur = ANGLEUR })
 

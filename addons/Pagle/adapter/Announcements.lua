@@ -353,7 +353,8 @@ local function drawRuler(ruler, at)
 	end
 end
 
--- Shows a headline's ruler and starts its animation, or hides the ruler when it has none (ANN-R22).
+-- Shows a headline's ruler and starts its animation, or hides the ruler when it has none (ANN-R22). With Animations
+-- off it appears as it settles: the number counted up, the margin in and the stamp down.
 ---@param view PagleRulerView
 ---@param ruler { old: number, new: number, unit: string, label: string }?
 local function startRuler(view, ruler)
@@ -365,6 +366,11 @@ local function startRuler(view, ruler)
 	end
 	-- A Simulated Size reads in the Angler's length unit as the ruler appears (LOG-R69).
 	view.ruler, view.elapsed, view.lengthUnit, view.slammed = ruler, 0, ns.LengthUnit(), false
+	if not ns.MotionOn() then
+		drawRuler(view, ns.RulerAt(ruler, ns.RULER_SECONDS + ns.RULER_STAMP_DELAY, view.lengthUnit))
+		view:Show()
+		return
+	end
 	drawRuler(view, ns.RulerAt(ruler, 0, view.lengthUnit))
 	view:Show()
 	view:SetScript("OnUpdate", function(self, elapsed)
@@ -1249,9 +1255,11 @@ local function frameOf(display)
 end
 
 -- The lanes' hide: the display's frame leaves, its ruler stopped, and the column closes up under it. It goes as its
--- form leaves, then is free again; with Animations off, or off screen, at once.
+-- form leaves, then is free again; at once `atOnce` (the combat hold hides what is on screen, ANN-R35), with
+-- Animations off, or off screen.
 ---@param display PagleDisplay
-local function hide(display)
+---@param atOnce boolean?
+local function hide(display, atOnce)
 	local frame = frameOf(display)
 	if not frame then
 		return
@@ -1269,7 +1277,7 @@ local function hide(display)
 		end
 	end
 	local seconds, leaving = ns.LEAVE_SECONDS[display.form], LEAVING[display.form]
-	if not (seconds and leaving and ns.MotionOn() and frame:IsVisible()) then
+	if atOnce or not (seconds and leaving and ns.MotionOn() and frame:IsVisible()) then
 		frame:Hide()
 		frame.inUse = false
 		return

@@ -14,9 +14,10 @@ local ns = select(2, ...)
 -- and the records two to a line. Every line is anchored by its top left at its depth down the page.
 --
 -- Its readings move as the books kit v2's MOTION.md has them, when a Cast changes the entry shown (the same item on the
--- same place): each rewritten line's ink fades up from 30% (0.3 s); the "me" mark slides along the luck ruler to the
--- new reading (0.6 s, ease-out); a catch that resets the Dry spell fades the ruler out (0.3 s, easing in), keeping
--- its room until the next Cast brings it back, fading in, and writes itself in with the "write" sound.
+-- same place, the book open since it last drew): each rewritten line's ink fades up from 30% (0.3 s); the "me" mark
+-- slides along the luck ruler to the new reading (0.6 s, ease-out); a catch that resets the Dry spell fades the ruler
+-- out (0.3 s, easing in), keeping its room until the next Cast brings it back, fading in, and writes itself in with the
+-- "write" sound.
 
 local L = ns.L
 local LOOK = ns.BOOK_LOOK
@@ -69,6 +70,7 @@ local MARK_SLIDE, RULER_FADE = 0.6, 0.3
 --- What an entry showed at its last draw: its item and place, its lines' words, its Dry spell and its luck reading.
 ---@class StatsEntryShown
 ---@field key string
+---@field showing integer -- the book's showing it was drawn in (ns.book:Showing())
 ---@field texts table<FontString, string>
 ---@field since integer
 ---@field luck number?
@@ -231,20 +233,19 @@ end
 ---@return number
 local function drawRuler(view, luck, last, caught, since, y)
 	local ruler = view.ruler
-	ns.SyncMotion()
 	if luck then
 		local resting = view.rulerResting
 		view.rulerResting = false
 		put(ruler, y, RULER_INSET)
-		ns.StopMotion(ruler)
+		Pagle.StopMotion(ruler)
 		local to = ns.RulerPosition(luck)
 		if last and last.luck then
 			local from = ruler.position
 			ruler:SetAlpha(1)
-			ns.Animate(ruler, {
+			Pagle.Animate(ruler, {
 				{
 					dur = MARK_SLIDE,
-					ease = ns.Ease.out,
+					ease = Pagle.EASE.out,
 					keys = { { 0, { from } }, { 1, { to } } },
 					apply = function(v)
 						ruler:SetMark(v[1])
@@ -254,10 +255,10 @@ local function drawRuler(view, luck, last, caught, since, y)
 		else
 			ruler:SetMark(to)
 			if last and resting then
-				ns.Animate(ruler, {
+				Pagle.Animate(ruler, {
 					{
 						dur = RULER_FADE,
-						ease = ns.Ease.out,
+						ease = Pagle.EASE.out,
 						keys = { { 0, { 0 } }, { 1, { 1 } } },
 						apply = function(v)
 							ruler:SetAlpha(v[1])
@@ -270,15 +271,15 @@ local function drawRuler(view, luck, last, caught, since, y)
 		end
 		return y + ruler:GetHeight() + PARA_GAP
 	end
-	if caught and last and last.luck and ns.motion then
+	if caught and last and last.luck and ns.MotionOn() then
 		-- it fades out where it was, keeping its room
 		view.rulerResting = true
-		ns.StopMotion(ruler)
+		Pagle.StopMotion(ruler)
 		put(ruler, y, RULER_INSET)
-		ns.Animate(ruler, {
+		Pagle.Animate(ruler, {
 			{
 				dur = RULER_FADE,
-				ease = ns.Bezier(0.42, 0, 1, 1),
+				ease = Pagle.Bezier(0.42, 0, 1, 1),
 				keys = { { 0, { 1 } }, { 1, { 0 } } },
 				apply = function(v)
 					ruler:SetAlpha(v[1])
@@ -295,7 +296,7 @@ local function drawRuler(view, luck, last, caught, since, y)
 		return y + ruler:GetHeight() + PARA_GAP
 	end
 	view.rulerResting = false
-	ns.StopMotion(ruler)
+	Pagle.StopMotion(ruler)
 	ruler:Hide()
 	ruler:SetAlpha(1)
 	return y
@@ -313,7 +314,9 @@ local function drawEntry(frame, place)
 	local width = frame:GetWidth()
 	local key = item .. ":" .. area
 	local last = view.last
-	local same = last ~= nil and last.key == key
+	-- the same entry, drawn earlier while the book stayed open: what changed while it was closed draws settled
+	local showing = ns.book:Showing()
+	local same = last ~= nil and last.key == key and last.showing == showing
 	local before = same and last or nil -- the same entry's last draw
 	local since = ns.DrySpell(data.reading).since
 	-- a catch of it here: the Dry spell resets
@@ -389,7 +392,7 @@ local function drawEntry(frame, place)
 	if caught then
 		ns.BookSound("write")
 	end
-	view.last = { key = key, texts = texts, since = since, luck = luck }
+	view.last = { key = key, showing = showing, texts = texts, since = since, luck = luck }
 	return y + view.link:GetHeight() + PARA_GAP
 end
 

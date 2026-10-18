@@ -72,6 +72,7 @@ local LEATHER_PARTS = { "crumbs", "clock", "completed", "nameplate", "ribbons" }
 ---@field closing boolean                     -- the closing fade runs: the board counts as closed
 ---@field closeSounded boolean                -- this close's sound has played
 ---@field serial integer                      -- how many times it has drawn
+---@field showing integer                     -- how many times it has closed: which showing this is
 ---@field leather table<BoardLeatherPart, BoardLeatherRenderer>
 ---@field private told boolean               -- whether the grouping was last told it shows
 local Board = {}
@@ -89,6 +90,7 @@ ns.board = setmetatable({
 	closing = false,
 	closeSounded = false,
 	serial = 0,
+	showing = 0,
 }, Board)
 
 --- Registers `renderer` to draw page `side` of mode `mode` (logic/Board.lua lists the modes and who draws what); a later
@@ -271,6 +273,14 @@ function Board:Serial()
 	return self.serial
 end
 
+--- Which showing of the board this is: it changes each time the board closes. A page drawn earlier in the same showing
+--- has been on show since; one drawn before the board last closed draws settled, as what changed while it was closed
+--- was never seen (HNT-R62: the timeline is live "while it shows"; adapter/Entry.lua's ink bar).
+---@return integer
+function Board:Showing()
+	return self.showing
+end
+
 --- Opens the board on the Board mode (HNT-R67), or closes it: every entry point calls it (HNT-R68).
 function Board:Toggle()
 	if self:IsShown() then
@@ -295,7 +305,7 @@ function Board:Open(place)
 	if self.closing then
 		-- opened again while it fades out: it stays
 		self.closing = false
-		ns.StopMotion(self.closeOwner)
+		Pagle.StopMotion(self.closeOwner)
 		frame:SetAlpha(1)
 	end
 	if not frame:IsShown() then
@@ -319,7 +329,7 @@ function Board:SettleTurn()
 		return
 	end
 	self.turning = false
-	ns.StopMotion(self.turnOwner)
+	Pagle.StopMotion(self.turnOwner)
 	if self.shown then
 		self:ShowOnly(self.shown)
 	end
@@ -332,7 +342,7 @@ function Board:Hide()
 		self:SettleTurn()
 		self.closeSounded = true
 		ns.BoardSound("bookClose")
-		if ns.SyncMotion() then
+		if ns.MotionOn() then
 			self.closing = true
 			-- this close's end, once, by the fade or by the clock after the fade's time, whichever comes first, so it
 			-- ends whether or not frames are drawn; a later open or close has its own
@@ -340,7 +350,7 @@ function Board:Hide()
 			self.closeOwner = owner
 			local function finish()
 				if self.closing and self.closeOwner == owner then
-					ns.StopMotion(owner)
+					Pagle.StopMotion(owner)
 					self.closing = false
 					frame:Hide()
 					frame:SetAlpha(1)
@@ -355,11 +365,12 @@ function Board:Hide()
 	self:Hidden()
 end
 
---- The board has closed, however it closed (its close button, Esc, a toggle): tells the grouping, once, and plays the
---- book's closing sound if its close didn't (Esc hides it at once).
+--- The board has closed, however it closed (its close button, Esc, a toggle): tells the grouping, once, plays the
+--- book's closing sound if its close didn't (Esc hides it at once), and the next showing begins.
 function Board:Hidden()
 	local frame = self.frame
 	if frame and not frame:IsShown() then
+		self.showing = self.showing + 1
 		self:SettleTurn()
 		self.closing = false
 		if not self.closeSounded then
@@ -474,7 +485,6 @@ function Board:Draw()
 	if not self:IsShown() then
 		return
 	end
-	ns.SyncMotion()
 	self.serial = self.serial + 1
 	local place = self.router:Place()
 	local spread = spreadOf(place)
@@ -489,7 +499,7 @@ function Board:Draw()
 		end
 	end
 	self.shown = spread
-	if not (from and from ~= spread and self.pages[from .. ":left"] and ns.motion) then
+	if not (from and from ~= spread and self.pages[from .. ":left"] and ns.MotionOn()) then
 		self:ShowOnly(spread)
 		drawLeather(self, self.router:Place())
 		return

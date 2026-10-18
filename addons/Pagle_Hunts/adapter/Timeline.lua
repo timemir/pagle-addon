@@ -146,6 +146,7 @@ end
 ---@field headings table<HuntGroup, TimelineHeadingView>
 ---@field groupOf table<string, HuntGroup>             -- each row's group at the last draw
 ---@field serial integer?                               -- the board's draw it last drew at (ns.board:Serial())
+---@field showing integer?                              -- the board's showing it last drew in (ns.board:Showing())
 ---@field legend Frame
 ---@field legendBars BoardTimelineBarView[]
 ---@field legendTexts FontString[]
@@ -406,12 +407,12 @@ local MARGIN_INK = { now = LOOK.red, soon = LOOK.red, short = LOOK.red, later = 
 local function moveTo(region, y, slide)
 	local was = region:IsShown() and region.y
 	region:Show()
-	ns.StopMotion(region)
+	Pagle.StopMotion(region)
 	if slide and was and was ~= y then
-		ns.Animate(region, {
+		Pagle.Animate(region, {
 			{
 				dur = SLIDE,
-				ease = ns.Ease.inOut,
+				ease = Pagle.EASE.inOut,
 				keys = { { 0, { was } }, { 1, { y } } },
 				apply = function(v)
 					region.y = v[1]
@@ -430,11 +431,11 @@ end
 -- Flashes a row green: the Hunt has just opened.
 ---@param drawn TimelineRowView
 local function flash(drawn)
-	ns.StopMotion(drawn.flash)
-	ns.Animate(drawn.flash, {
+	Pagle.StopMotion(drawn.flash)
+	Pagle.Animate(drawn.flash, {
 		{
 			dur = FLASH,
-			ease = ns.Ease.inOut,
+			ease = Pagle.EASE.inOut,
 			keys = { { 0, { 0 } }, { 0.25, { FLASH_PEAK } }, { 1, { 0 } } },
 			apply = function(v)
 				drawn.flash:SetAlpha(v[1])
@@ -484,10 +485,11 @@ end
 ---@param view TimelinePageView
 ---@param timeline HuntsTimeline
 local function drawList(view, timeline)
-	local serial = ns.board:Serial()
-	local live = view.serial == serial - 1
-	view.serial = serial
-	local slide = live and ns.motion == true
+	local serial, showing = ns.board:Serial(), ns.board:Showing()
+	-- on show since the draw before, the board open all the while: what moved while it was closed draws settled
+	local live = view.serial == serial - 1 and view.showing == showing
+	view.serial, view.showing = serial, showing
+	local slide = live and ns.MotionOn()
 	local y = 0
 	local groupOf, headingsUsed, opened = {}, {}, false
 	for _, group in ipairs(timeline.groups) do
@@ -512,7 +514,7 @@ local function drawList(view, timeline)
 			drawRow(view, drawn, row, y, slide)
 			if live and was and was ~= "now" and group.group == "now" then
 				opened = true
-				if ns.motion then
+				if ns.MotionOn() then
 					flash(drawn)
 				end
 			end
@@ -526,7 +528,7 @@ local function drawList(view, timeline)
 	end
 	for huntID, drawn in pairs(view.rows) do
 		if not groupOf[huntID] then
-			ns.StopMotion(drawn)
+			Pagle.StopMotion(drawn)
 			drawn:Hide()
 		end
 	end
@@ -593,7 +595,7 @@ local function drawPage(page, place)
 	if none then
 		view.rail:Hide()
 		view.thumb:Hide()
-		view.serial = ns.board:Serial()
+		view.serial, view.showing = ns.board:Serial(), ns.board:Showing()
 		view.groupOf = {}
 		return
 	end
