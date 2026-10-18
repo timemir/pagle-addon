@@ -1294,6 +1294,8 @@ local function build()
 	frame:SetFrameStrata("HIGH")
 	frame:EnableMouse(true)
 	frame:SetMovable(true)
+	-- Over the other windows in its strata (show raises it) and brought back over them when clicked.
+	frame:SetToplevel(true)
 	frame:SetClampedToScreen(true)
 	frame:RegisterForDrag("LeftButton")
 	frame:SetScript("OnDragStart", frame.StartMoving)
@@ -1388,6 +1390,8 @@ local function show(selection)
 		frame:Show()
 		ns.ShopSound("open")
 	end
+	-- It opens over every window already open: the Pagle windows share its strata, at frame levels of their own.
+	frame:Raise()
 	redraw(true)
 end
 

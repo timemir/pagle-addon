@@ -121,6 +121,21 @@ describe("The Curio Shop's entry points", function()
 		assert.are.same({}, loaded.printed)
 	end)
 
+	it("opens over the windows already open, its bill and medallion over it (wallet-and-shop.md › UI)", function()
+		local loaded = shopCore()
+		local Pagle = loaded.env.Pagle
+
+		Pagle.OpenShop()
+		local frame = shopFrame(loaded)
+		assert.are.same({ "HIGH", true, 1 }, { frame:GetFrameStrata(), frame.toplevel, frame.raised })
+		assert.are.same({ "DIALOG", "DIALOG" }, { frame.bill:GetFrameStrata(), frame.flyer:GetFrameStrata() })
+		Pagle.OpenShop("hunts.cover.velvet") -- asked to open again while open, from Look and Feel or a book
+		assert.are.equal(2, frame.raised)
+		frame:Hide()
+		Pagle.OpenShop()
+		assert.are.equal(3, frame.raised)
+	end)
+
 	it("toggles with /pagle shop, matched case-insensitively (CORE-R61, SHOP-R40)", function()
 		local loaded = shopCore()
 		local slash = loaded.env.SlashCmdList.PAGLE

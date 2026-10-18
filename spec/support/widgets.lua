@@ -21,7 +21,6 @@ local LAYOUT_METHODS = {
 	"SetWordWrap",
 	"SetClampedToScreen",
 	"SetClampRectInsets",
-	"SetFrameStrata",
 	"EnableMouseWheel",
 	"SetAutoFocus",
 	"ClearFocus",
@@ -92,10 +91,10 @@ end
 --- { r, g, b[, a] }), blend mode (`blendMode`) and coordinates (`texCoord`), a button's attributes (`attributes`),
 --- click registration (`clicks`, RegisterForClicks's arguments) and locked highlight (`highlightLocked`), and a
 --- frame's mouse and moving state: `mouseEnabled`, `movable`, `dragButtons` (RegisterForDrag's arguments) and
---- `moving`, and `userPlaced` (SetUserPlaced's, or true from StartMoving); also whether it takes clicks (`enabled`)
---- and key presses (`keyboardEnabled`), and a scroll frame's `verticalScroll` and `scrollChild`. As the client's,
---- Show, Hide and SetShown run OnShow or OnHide when the shown state changes, and SetSize, SetWidth and SetHeight run
---- OnSizeChanged when the size does.
+--- `moving`, `userPlaced` (SetUserPlaced's, or true from StartMoving), its strata, whether it's `toplevel` and how
+--- often it was `raised`; also whether it takes clicks (`enabled`) and key presses (`keyboardEnabled`), and a scroll
+--- frame's `verticalScroll` and `scrollChild`. As the client's, Show, Hide and SetShown run OnShow or OnHide when the
+--- shown state changes, and SetSize, SetWidth and SetHeight run OnSizeChanged when the size does.
 ---@param kind string "Frame", "Button", "FontString", "Texture", …
 ---@param parent table?
 ---@return table
@@ -329,6 +328,20 @@ function widgets.newWidget(kind, parent)
 	end
 	function widget:GetFrameLevel()
 		return self.frameLevel or (parent and parent:GetFrameLevel() + 1 or 0)
+	end
+	-- Its strata: its parent's (MEDIUM for a frame with none) until SetFrameStrata sets it, as the client's.
+	function widget:SetFrameStrata(strata)
+		self.strata = strata
+	end
+	function widget:GetFrameStrata()
+		return self.strata or (parent and parent:GetFrameStrata() or "MEDIUM")
+	end
+	-- Whether a click brings it to the front (`toplevel`), and how often Raise brought it there (`raised`).
+	function widget:SetToplevel(toplevel)
+		self.toplevel = toplevel
+	end
+	function widget:Raise()
+		self.raised = (self.raised or 0) + 1
 	end
 	-- A button's text width, 6 pixels a character as GetStringWidth; and whether its highlight is locked on.
 	function widget:GetTextWidth()
