@@ -367,7 +367,7 @@ Legends, titles, Simulated Size with the typical-length check on, Catch Mileston
 - DATA-R97–R99; DATA-R94–R96 for event Hunts' hashes
 - DATA-R107 for the `event` and `ladder` lore keys, with the event pool's lore batch (DATA-R111)
 
-**Ledger rules:** LED-R2 and LED-R4 for `LEDGER_RULES_VERSION` 5; LED-R30–R33 for the full Prestige cost, the climb's Activity XP and the confirm card's text; LED-R37–R39; LED-R145 for its tooltip; LED-R147; LED-R199
+**Ledger rules:** LED-R2 and LED-R4 for `LEDGER_RULES_VERSION` 5; LED-R30–R33 for the full Prestige cost, the climb's Activity XP and the confirm card's text; LED-R37–R39; LED-R145 for its tooltip; LED-R150; LED-R199
 
 **Tackle Board rules:** TKB-R60 and TKB-R65 (Activity XP), TKB-R84 and TKB-R85 for its Write-up line, `TKB_RULES_VERSION` 2
 
