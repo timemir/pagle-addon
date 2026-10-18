@@ -17,14 +17,14 @@ This directory is Pagle's product spec. It describes the current state only, and
 | [core/activity-xp.md](core/activity-xp.md) | `AXP` | Activity XP: the lifetime totals Modules other than the Ledger report toward the Angler Level, their snapshot in each Prestige entry, and the overview of what pays | M8 Hunt Events |
 | [core/pushed-content.md](core/pushed-content.md) | `PUSH` | The companion's `Pagle_Content` data addon: the signature check, the companion state, content by kind | M8 Hunt Events |
 | [core/field-report.md](core/field-report.md) | `REP` | The Field report: what goes in, the `PAGLE-REPORT 1` format, privacy, the report box | M3 |
-| [content-data.md](content-data.md) | `DATA` | The `data/` layers, the generator and its checks, the catalogue's Lua shape, `confirmed` and the two-reporter rule, the content fingerprint, the Hunt list format and `released.lock`, lore, Field report intake, the DB2 watch | M0–M8 |
-| [qol.md](qol.md) | `QOL` | `Pagle_QoL`: the Fishing key, the double-click, gear, lures, clams, CVar leases for a Fishing stretch, the next-action button, Nudges, the Angleur and Fishing Buddy popup | M1, Track Q, M8 |
+| [content-data.md](content-data.md) | `DATA` | The `data/` layers, the generator and its checks, the catalogue's Lua shape, `confirmed` and the two-reporter rule, the content fingerprint, the Hunt list and event pool formats, the tag list and `released.lock`, lore, Field report intake, the DB2 watch | M0–M9 |
+| [qol.md](qol.md) | `QOL` | `Pagle_QoL`: the Fishing key, the double-click, gear, lures, clams, CVar leases for a Fishing stretch, the next-action button, Nudges, the Angleur and Fishing Buddy popup | M1, Track Q, M9 |
 | [ledger.md](ledger.md) | `LED` | `Pagle_Ledger`: XP, Fresh Water, Angler Level and Prestige, milestones, Species and Zone Mastery, collections, Legends, Ledger completion, titles, size records, and the Fish Journal | M2, M3, M4 |
-| [hunts.md](hunts.md) | `HNT` | `Pagle_Hunts`: which Catches qualify, tiers and set titles, effort, grouping into Now / Soon / Later / On demand, the Hunts board and tracker, and the v1 Hunt list | M5 |
+| [hunts.md](hunts.md) | `HNT` | `Pagle_Hunts`: which Catches qualify, tiers and set titles, effort, grouping into Now / Soon / Later / On demand, Hunt Events (Pagle Wagers) and their runs, the fallback rotation, the companion hint, the Hunts board and tracker, the Standing Hunt list and the event pool | M5, M8 Hunt Events |
 | [stats.md](stats.md) | `STA` | `Pagle_Stats`: counts per place, skill side and window, Session records, Your odds, Dry spells and luck readings, the Stats book and the live tracker | M6 |
 | [tackle-board.md](tackle-board.md) | `TKB` | `Pagle_TackleBoard`: board days, Notices and Expeditions as Module records, goal kinds, rerolls, the Campfire and Kindling, the Fly Box, the cork board and its tracker | M7 |
 | [settings.md](settings.md) | `SET` | Where every option sits in the Settings tree: rows, order, headers, greying, Defaults, entry points, and each row's milestone | M1–M7 |
-| [roadmap.md](roadmap.md) | none | The milestones M0–M8 and Track Q: goal, the rules each one builds, and its in-game exit check; the toolchain (M0); the launch re-verification checklist (M8) | M0–M8 |
+| [roadmap.md](roadmap.md) | none | The milestones M0–M9 and Track Q: goal, the rules each one builds, and its in-game exit check; the toolchain (M0); the launch re-verification checklist (M9) | M0–M9 |
 | README.md (this file) | none | The index, the architecture overview, the Module map, and how to read the spec | |
 
 Beside the spec:
@@ -113,7 +113,7 @@ These hold everywhere and come from the map's settled Notes:
 | `Pagle_Hunts` | `Hunts` · Hunts · 20 | Data-defined target Catches under conditions that open and close | the Hunts board: compartment "Hunts", `/pagle hunts`, "Open Hunts" | pinned Hunts (10) | M5 |
 | `Pagle_Stats` | `Stats` · Stats · 30 | The Angler's own numbers: Sessions, Your odds, Dry spells | the Stats book: compartment "Stats", `/pagle stats`, "Open Stats" | Session and watched Dry spells (20) | M6 |
 | `Pagle_TackleBoard` | `TackleBoard` · Tackle Board · 40 | Opt-in goals that never expire, with a Campfire and a Fly Box | the cork board: compartment "Tackle Board", `/pagle board`, "Start my board" / "Open Tackle Board" | goals workable here (30) | M7 |
-| `Pagle_QoL` | `QoL` · QoL · 50 | One game action per keypress: cast, reel, gear, lures, clams | no view: compartment "Input: …", `/pagle qol`, "Fishing settings »", the Fishing key and Swap gear bindings | none (its own next-action button) | M1, Track Q, M8 |
+| `Pagle_QoL` | `QoL` · QoL · 50 | One game action per keypress: cast, reel, gear, lures, clams | no view: compartment "Input: …", `/pagle qol`, "Fishing settings »", the Fishing key and Swap gear bindings | none (its own next-action button) | M1, Track Q, M9 |
 
 ### What each Module gives and takes
 
@@ -207,7 +207,7 @@ Every Core and Module file answers each of these with rules: a Module disabled a
 
 ### From the spec to build tickets
 
-[roadmap.md](roadmap.md) assigns every rule ID to a milestone (M0–M8) or to Track Q, and each milestone has an in-game exit check. A build ticket belongs to one milestone and cites the rules it builds; a test cites the rule it checks. Rules that name a later feature take effect when that feature lands (roadmap.md, How the roadmap works). Nothing is published before 1.0, and nothing needs backward compatibility until then.
+[roadmap.md](roadmap.md) assigns every rule ID to a milestone (M0–M9) or to Track Q, and each milestone has an in-game exit check. A build ticket belongs to one milestone and cites the rules it builds; a test cites the rule it checks. Rules that name a later feature take effect when that feature lands (roadmap.md, How the roadmap works). Nothing is published before 1.0, and nothing needs backward compatibility until then.
 
 ### Changing the spec
 

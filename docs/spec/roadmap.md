@@ -1,12 +1,12 @@
 # Roadmap
 
-> Status: Done · Milestones: M0–M8, Track Q · Sources: [Cut the MVP slice and roadmap](https://github.com/timemir/wow-fish/issues/18#issuecomment-6113973068), [Decide how the spec is assembled](https://github.com/timemir/wow-fish/issues/31#issuecomment-6128960652) (its body holds the launch re-verification list), [Choose the toolchain and libraries](https://github.com/timemir/wow-fish/issues/8#issuecomment-6112249259), [Write the QoL spec](https://github.com/timemir/wow-fish/issues/37#issuecomment-6130705093), [Beta probe: which fishing signals can the Forever client see?](https://github.com/timemir/wow-fish/issues/7#issuecomment-6110508010), [Define the Core data model](https://github.com/timemir/wow-fish/issues/10#issuecomment-6112707372), [Define the QoL feature set](https://github.com/timemir/wow-fish/issues/16#issuecomment-6113508077), [Design the Tackle Board](https://github.com/timemir/wow-fish/issues/25#issuecomment-6124911363), [Write the Tackle Board spec](https://github.com/timemir/wow-fish/issues/43), [Write the Stats spec](https://github.com/timemir/wow-fish/issues/42), [Design the Simulated Size bands](https://github.com/timemir/wow-fish/issues/33#issuecomment-6129722545), [Move the prototypes to main](https://github.com/timemir/wow-fish/issues/36#issuecomment-6129511014), [Write the Settings spec](https://github.com/timemir/wow-fish/issues/44); ADR 0003, 0005 (notes: compatibility starts at 1.0)
+> Status: Done · Milestones: M0–M9, Track Q · Sources: [Cut the MVP slice and roadmap](https://github.com/timemir/wow-fish/issues/18#issuecomment-6113973068), [Decide how the spec is assembled](https://github.com/timemir/wow-fish/issues/31#issuecomment-6128960652) (its body holds the launch re-verification list), [Choose the toolchain and libraries](https://github.com/timemir/wow-fish/issues/8#issuecomment-6112249259), [Write the QoL spec](https://github.com/timemir/wow-fish/issues/37#issuecomment-6130705093), [Beta probe: which fishing signals can the Forever client see?](https://github.com/timemir/wow-fish/issues/7#issuecomment-6110508010), [Define the Core data model](https://github.com/timemir/wow-fish/issues/10#issuecomment-6112707372), [Define the QoL feature set](https://github.com/timemir/wow-fish/issues/16#issuecomment-6113508077), [Design the Tackle Board](https://github.com/timemir/wow-fish/issues/25#issuecomment-6124911363), [Write the Tackle Board spec](https://github.com/timemir/wow-fish/issues/43), [Write the Stats spec](https://github.com/timemir/wow-fish/issues/42), [Design the Simulated Size bands](https://github.com/timemir/wow-fish/issues/33#issuecomment-6129722545), [Move the prototypes to main](https://github.com/timemir/wow-fish/issues/36#issuecomment-6129511014), [Write the Settings spec](https://github.com/timemir/wow-fish/issues/44); ADR 0003, 0005 (notes: compatibility starts at 1.0)
 
 This file sets the order in which Pagle is built. It assigns spec rules to milestones; the rules themselves live in the other spec files. Terms are used as `CONTEXT.md` defines them.
 
 ## How the roadmap works
 
-- **Nothing is published before 1.0.** 1.0 means every Module is implemented (Core, QoL, Ledger, Hunts, Stats, Tackle Board) and M8 is done. There are no target dates: work continues straight through, and scope is cut rather than quality.
+- **Nothing is published before 1.0.** 1.0 means every Module is implemented (Core, QoL, Ledger, Hunts, Stats, Tackle Board) and M9 is done. There are no target dates: work continues straight through, and scope is cut rather than quality.
 - **No backward compatibility before 1.0.** The log format, every `PagleDB` / `Pagle<Module>DB` shape, Module state and Hunt definitions change freely; a dev log whose format is outdated is replaced by a new one (LOG-R18). The freezes start at 1.0: LOG-R17, CORE-R15, DATA-R73, DATA-R95.
 - **One version for the whole package, and no git tags before 1.0.** The packager publishes only on a tag push, so nothing reaches CurseForge or Wago by accident.
 - **Milestones.** Each milestone below is one GitHub Milestone with the same name. Every build ticket belongs to exactly one. Milestones set the order of work, not dates: the riskiest and most shared Core pieces come first, and leaf work runs in parallel. **Track Q** runs in parallel from the end of M1.
@@ -31,14 +31,14 @@ This file sets the order in which Pagle is built. It assigns spec rules to miles
 - The vendored libraries of CORE-R6, at a recorded Ace3 commit, updated only by a script.
 - `scripts/check.sh`, which runs, in this order:
   1. format: `stylua --check`, StyLua defaults (tabs, 120 columns), Lua 5.1 syntax
-  2. lint: luacheck with `std = "lua51"`, the per-path `std` of CORE-R7, and a hand-kept `read_globals` list in which each WoW API is added on purpose. That list is the inventory of WoW APIs Pagle uses, and M8 re-checks it.
+  2. lint: luacheck with `std = "lua51"`, the per-path `std` of CORE-R7, and a hand-kept `read_globals` list in which each WoW API is added on purpose. That list is the inventory of WoW APIs Pagle uses, and M9 re-checks it.
   3. API presence: a script fails if any `read_globals` entry is missing from the pinned Ketho BlizzardInterfaceResources `forever` dump
   4. types: `lua-language-server --check` with zero warnings, against Ketho's `vscode-wow-api` annotations at a pinned commit. Each suppression is an inline `---@diagnostic disable-next-line: <code>` with a reason.
   5. tests: busted on real Lua 5.1 (not LuaJIT). The busted helper loads each addon's files from its real `.toc`, in order, with a shared `ns`, so TOC and load-order mistakes fail tests. luacov reports coverage and doesn't gate.
   6. from M1, the generator's check and tests (DATA-R61)
 - Tool versions are pinned in one place and installed by a setup script. `check.sh` runs locally in WSL.
 - GitHub Actions (Ubuntu, Lua 5.1) runs `check.sh` on every push and pull request.
-- A release workflow runs `BigWigsMods/packager@v2` on a tag push, uploading to CurseForge and Wago (never WoWInterface). `.pkgmeta` has `package-as: Pagle`. The project IDs and upload secrets are added in M8.
+- A release workflow runs `BigWigsMods/packager@v2` on a tag push, uploading to CurseForge and Wago (never WoWInterface). `.pkgmeta` has `package-as: Pagle`. The project IDs and upload secrets are added in M9.
 - A PowerShell dev-loop script junctions (`mklink /J`) each `addons/*` folder into the beta's `Interface/AddOns/`, so edits go live after `/reload`.
 
 **Exit check:**
@@ -130,7 +130,7 @@ Each step's rows take their place in SET-R20's order.
 
 **Added after the M1 exit check (#114):** QOL-R20 step 2's "unless the reel didn't take" and QOL-R35, recasting when a reel didn't take. It has no settings row and is checked before the exit check. In-game check: cast so the bobber lands beyond interact range, and press once: nothing reels, and from half a second later the next-action button shows Cast; the next press casts a new bobber, and a press on it in range reels.
 
-**Exit check** (after step 6), on one character with a fishing set chosen, lures and exactly one clam in the bags, standing at water with no pole in hand, Input *Both*, using only the Fishing key: presses equip the set, apply the best lure and cast; a press reels; after the loot, a press opens a clam, the next casts. A double right-click casts. The music stays muted until the stretch ends; mounting ends it, restores every leased CVar and shows the swap-back Nudge, and Swap gear swaps back. Every rule of `qol.md` is now built except QOL-R100–R104 (M8).
+**Exit check** (after step 6), on one character with a fishing set chosen, lures and exactly one clam in the bags, standing at water with no pole in hand, Input *Both*, using only the Fishing key: presses equip the set, apply the best lure and cast; a press reels; after the loot, a press opens a clam, the next casts. A double right-click casts. The music stays muted until the stretch ends; mounting ends it, restores every leased CVar and shows the swap-back Nudge, and Swap gear swaps back. Every rule of `qol.md` is now built except QOL-R100–R104 (M9).
 
 ## M2 Ledger core
 
@@ -341,9 +341,57 @@ Legends, titles, Simulated Size with the typical-length check on, Catch Mileston
 6. Disable Pagle_TackleBoard, complete an open goal's need, re-enable: a "While Tackle Board was off" Write-up section lists it, and nothing pops up.
 7. `scripts/check.sh` passes with `tackleboard` in `data/checks.toml`'s `lore`.
 
-## M8 Release
+## M8 Hunt Events
 
-Launch re-verification on the live build, the 1.0 gates (lore, Settings UX, Simulated Size), the CurseForge and Wago projects, then the 1.0 tag.
+**Goal:** Hunts redesigned around **Hunt Events** (shown as Pagle Wagers), with **Activity XP** from any Module and Core's **pushed-content** reader, as the map [Hunts redesigned around Hunt Events](https://github.com/timemir/wow-fish/issues/277) decided (ADR 0011–0013). 1.0 waits for it, with no hard date, and ships with the fallback rotation only: the companion hint stays switched off until `Pagle_Content` works end to end (pagle-backend #2, pagle-companion #36) ([#288](https://github.com/timemir/wow-fish/issues/288)).
+
+**Before it starts:** finish review fix A (one Core motion and fit API, `fix/review-a-motion-api`); land fixes A, B and C and the 1.0 changelog through `integ/review-fixes` onto `main` with one full gate; land the CI fix (test-check in its own job). The redesign rewrites the Hunts board, which A and B both touch.
+
+**Build order,** each step one or more build tickets:
+1. Core: Activity XP and the Prestige snapshot; the pushed-content reader with its RSA check.
+2. Ledger: the full Prestige cost, Activity XP in the climb, XP by source.
+3. Tackle Board: Activity XP.
+4. Content data: `data/hunts/events/`, `tags.toml`, `EventList.lua`, the event checks, `propose-events.py`, `check-event.py`.
+5. The Hunts fold: runs and their records, the banded rotation, Coins and XP for events, the ladder.
+6. The board: the wager strip and the WAGERS group on the Board, the Pagle Wagers ribbon and spread, the run entry.
+7. The tracker's Pagle Wagers block, the companion hint and its Nod (behind the off switch).
+8. The 24-event pool and its lore batch (with the ladder titles at 50 and 100).
+9. The exit check.
+
+**Core rules:**
+- AXP-R1–R8, AXP-R90–R92 ([core/activity-xp.md](core/activity-xp.md))
+- PUSH-R1, PUSH-R2, PUSH-R10–R16, PUSH-R20–R23, PUSH-R90–R93 ([core/pushed-content.md](core/pushed-content.md))
+- LOG-R38 for the `activityXP` field of `P1`; SHOP-R3 for the totals' `logId`
+
+**Content data rules:**
+- DATA-R97–R99; DATA-R94–R96 for event Hunts' hashes
+- DATA-R107 for the `event` and `ladder` lore keys, with the event pool's lore batch (DATA-R111)
+
+**Ledger rules:** LED-R2 and LED-R4 for `LEDGER_RULES_VERSION` 5; LED-R30–R33 for the full Prestige cost, the climb's Activity XP and the confirm card's text; LED-R37–R39; LED-R145 for its tooltip; LED-R147; LED-R199
+
+**Tackle Board rules:** TKB-R60 and TKB-R65 (Activity XP), TKB-R84 and TKB-R85 for its Write-up line, `TKB_RULES_VERSION` 2
+
+**Hunts rules:**
+- HNT-R1, HNT-R2 and HNT-R16 for event Hunts; HNT-R40 and HNT-R42 for runs; HNT-R61 and HNT-R67 for the Pagle Wagers ribbon and breadcrumbs
+- HNT-R86's wager rows, HNT-R89's settled count, HNT-R90 and HNT-R92, HNT-R110 for events, HNT-R111's new lines, HNT-R113–R115
+- HNT-R130 for the `event` and `ladder` keys, HNT-R136–R138 for runs and the rules version 2
+- HNT-R140–R156, HNT-R160–R165, HNT-R170–R172, HNT-R175–R177
+- HNT-R199–R204
+- Settings: "Remind me about the Pagle companion" on Hunts, only once the hint switch is on (HNT-R172)
+
+**Exit check:**
+1. With the rotation's starting point in the past: `/pagle hunts` shows the wager strip above "What's biting", a WAGERS row whose bar spans the ruler with ▸ at its end, and the Pagle Wagers ribbon reading "1 on". The ribbon's spread lists the slip with its countdown and the ladder at 0 of 25.
+2. Fish in the run's zone until one Hunt reaches tier 1: a "Pagle Wagers · first mark" toast with its Coins stamp; the pip inks in; the Angler page's "Where your XP came from" shows Hunts +150. `/reload`: `PagleLog` holds one `run` record for that slot (read-wtf).
+3. Reach every Hunt's tier 1: a "Wager settled" toast; the slip and the entry's seal read settled; the ladder reads 1 of 25.
+4. Complete a Tackle Board Notice: its XP shows under Tackle Board on the Angler page, and a level it brings raises the Ledger's level-up with the Notice's toast.
+5. Prestige with a test log at level 60 (#262's tooling): the confirm card reads "climbs again from 1"; after `/reload` the `P1` entry carries `activityXP`.
+6. Without `Pagle_Content`: no hint, no Nod and no Settings row (the switch is off). With a hand-made, unsigned `Pagle_Content`: `/pagle dev content` reports it absent and why.
+7. Wait past the run's end (or use a test log): the run leaves the board and tracker, the next slot's event is on, and nothing lists the old one.
+8. `scripts/check.sh` passes with the pool's 24 events and the `hunts` lore check on.
+
+## M9 Release
+
+Launch re-verification on the live build, the 1.0 gates (lore, Settings UX, Simulated Size), the CurseForge and Wago projects, then the 1.0 tag. Named M8 Release until the Hunts redesign took M8 ([#288](https://github.com/timemir/wow-fish/issues/288)). The Settings UX pass (#266), the store screenshots (#270), the tag's preparation (#275) and the exit check (#276) wait for M8 Hunt Events; launch re-verification (#272–#274) and the store projects (#271) don't.
 
 **Rules:** QOL-R100–R104 (QoL's launch re-verification), DATA-R57 for check 24, and DATA-R73, DATA-R87 and DATA-R95 at the tag (Before the tag). Every other check below names the rules it may change.
 
@@ -380,9 +428,9 @@ Run on the live Forever build before tagging 1.0. Beta facts may change at launc
 
 ### Before the tag
 
-1. Set every v1 Hunt's `since` to the release day (DATA-R87).
+1. Set every Standing Hunt's `since` to the release day (DATA-R87), and the fallback rotation's starting point to the release day at 15:00 UTC (HNT-R152). The companion hint switch stays off (HNT-R172).
 2. Run `scripts/generate-data.py --lock` for the first `released.lock`, in the release commit (DATA-R73, DATA-R95).
-3. From the tag on, the entry formats (LOG-R17), the `Pagle` API (CORE-R15) and each DB's first `schemaVersion` are frozen.
+3. From the tag on, the entry formats (LOG-R17), the `Pagle` API (CORE-R15: Activity XP, pushed content and fix A's motion API included) and each DB's first `schemaVersion` are frozen.
 
 ## After 1.0
 
