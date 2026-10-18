@@ -27,8 +27,8 @@ As designed so far; each Module's spec is authoritative. Changing what pays is o
 
 | Source | Activity XP |
 |---|---|
-| Tackle Board: Notice, tier 1 / 2 / 3 | 100 / 150 / 200 (TKB-R64) |
-| Tackle Board: Expedition | 600 (TKB-R64) |
+| Tackle Board: Notice, tier 1 / 2 / 3 | 100 / 150 / 200 (TKB-R65) |
+| Tackle Board: Expedition | 600 (TKB-R65) |
 | Hunts: a Hunt Event Hunt's tier 1 / each later tier | 150 / 100, paid again in every run (HNT-R114) |
 | Hunts: a completed run (every Hunt of the run at tier 1) | 250 (HNT-R114) |
 | Hunts: a Standing Hunt's tier 1 / each later tier | 500 / 250, once each (HNT-R113) |
