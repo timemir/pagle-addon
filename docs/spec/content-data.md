@@ -1,6 +1,6 @@
 # Content data
 
-> Status: Done · Milestones: M0 (licence and `NOTICE`), M1 (generator skeleton, the baseline extraction, the AreaTable slice, aliases, spell, aura and event lists), M2 (pipeline v1: every layer, items, catch lists, windows, `confirmed`, the content fingerprint, the DB2 watch), M3 (Field report intake, the Ledger's lore check, `VOICE.md`), M4 (typical lengths, Core's and the Ledger's title lore), M5 (the Hunt list, its lock, Hunts lore), M6 (Stats lore), M7 (Tackle Board lore), M8 (the first lock at 1.0, build re-verification) · Sources: [Define the content data pipeline](https://github.com/timemir/wow-fish/issues/19#issuecomment-6113646946), [Where can Forever fishing content data come from?](https://github.com/timemir/wow-fish/issues/5#issuecomment-6109765263), [How can Pagle identify items and places independent of client language?](https://github.com/timemir/wow-fish/issues/20#issuecomment-6110081122), [Design the /pagle report format and issue form](https://github.com/timemir/wow-fish/issues/26#issuecomment-6124884698), [Decide the lore pipeline](https://github.com/timemir/wow-fish/issues/34#issuecomment-6129762441), [Design the Simulated Size bands](https://github.com/timemir/wow-fish/issues/33#issuecomment-6129722545), [Design Hunts and the Now/Soon board](https://github.com/timemir/wow-fish/issues/14#issuecomment-6113353568), [Design the Ledger progression model](https://github.com/timemir/wow-fish/issues/11#issuecomment-6112531009), [Design Stats: session stats, honest odds and dry spells](https://github.com/timemir/wow-fish/issues/21#issuecomment-6113657288), [Define the Core data model](https://github.com/timemir/wow-fish/issues/10#issuecomment-6112707372), [Beta probe: which fishing signals can the Forever client see?](https://github.com/timemir/wow-fish/issues/7#issuecomment-6110508010), [Decide how the spec is assembled](https://github.com/timemir/wow-fish/issues/31#issuecomment-6128960652); ADR 0001, 0003, 0004, 0005, 0006. Research: `docs/research/forever-content-data.md`, `docs/research/localized-identity.md`
+> Status: Done · Milestones: M0 (licence and `NOTICE`), M1 (generator skeleton, the baseline extraction, the AreaTable slice, aliases, spell, aura and event lists), M2 (pipeline v1: every layer, items, catch lists, windows, `confirmed`, the content fingerprint, the DB2 watch), M3 (Field report intake, the Ledger's lore check, `VOICE.md`), M4 (typical lengths, Core's and the Ledger's title lore), M5 (the Hunt list, its lock, Hunts lore), M6 (Stats lore), M7 (Tackle Board lore), M9 (the first lock at 1.0, build re-verification) · Sources: [Define the content data pipeline](https://github.com/timemir/wow-fish/issues/19#issuecomment-6113646946), [Where can Forever fishing content data come from?](https://github.com/timemir/wow-fish/issues/5#issuecomment-6109765263), [How can Pagle identify items and places independent of client language?](https://github.com/timemir/wow-fish/issues/20#issuecomment-6110081122), [Design the /pagle report format and issue form](https://github.com/timemir/wow-fish/issues/26#issuecomment-6124884698), [Decide the lore pipeline](https://github.com/timemir/wow-fish/issues/34#issuecomment-6129762441), [Design the Simulated Size bands](https://github.com/timemir/wow-fish/issues/33#issuecomment-6129722545), [Design Hunts and the Now/Soon board](https://github.com/timemir/wow-fish/issues/14#issuecomment-6113353568), [Design the Ledger progression model](https://github.com/timemir/wow-fish/issues/11#issuecomment-6112531009), [Design Stats: session stats, honest odds and dry spells](https://github.com/timemir/wow-fish/issues/21#issuecomment-6113657288), [Define the Core data model](https://github.com/timemir/wow-fish/issues/10#issuecomment-6112707372), [Beta probe: which fishing signals can the Forever client see?](https://github.com/timemir/wow-fish/issues/7#issuecomment-6110508010), [Decide how the spec is assembled](https://github.com/timemir/wow-fish/issues/31#issuecomment-6128960652); ADR 0001, 0003, 0004, 0005, 0006. Research: `docs/research/forever-content-data.md`, `docs/research/localized-identity.md`
 
 This file covers how Pagle's **content data** is sourced, checked, generated and kept current: the source layers in `data/`, the Python generator, the Lua it emits into Core (the catalogue), Pagle_Hunts (the Hunt list) and every addon (lore), the `confirmed` rules, the content fingerprint, and the path from a pasted **Field report** to `data/observed/`. How Core reads the catalogue at runtime is in [core/catch-log.md](core/catch-log.md#the-content-catalogue) (LOG-R55–R57); the in-game side of the Field report is in [core/field-report.md](core/field-report.md).
 
@@ -142,7 +142,7 @@ Terms are used as `CONTEXT.md` defines them. "The catalogue" is what the generat
 - **DATA-R54** A **weekly rule** is confirmed when a dev fact confirms it (Field reports carry no weekday), and is contradicted, so unconfirmed, by any catch row with that event in its `event=` list whose bucket lies wholly outside the rule's daily span `[start, start + duration)`. A row without `t` can't contradict it.
 - **DATA-R55** A skill row's area is the area whose skill base the reporter's Core used (REP-R21), and the row is judged against that area's skill base only. A **skill base** is **contradicted** when a skill row for that area has `land` below it, and otherwise **confirmed** when a skill row from at least one reporter has a `land` value, or a dev fact confirms it. A contradicted skill base ships unconfirmed until it is lowered to the evidence or the row is rejected. `casts`, `away` and `lost` are kept for the dev's review and play no part in confirmation.
 - **DATA-R56** Nothing is confirmed by default: before any observation every `confirmed`, `gateConfirmed` and `skillBaseConfirmed` is false.
-- **DATA-R57** `scripts/generate-data.py --min-build <n>` reports, without writing anything, which facts would lose confirmation if only builds ≥ `n` counted. Launch re-verification (M8) uses it to see which facts rest on beta builds only, and may then raise the minimum confirming build.
+- **DATA-R57** `scripts/generate-data.py --min-build <n>` reports, without writing anything, which facts would lose confirmation if only builds ≥ `n` counted. Launch re-verification (M9) uses it to see which facts rest on beta builds only, and may then raise the minimum confirming build.
 
 ### The generator
 
@@ -193,7 +193,7 @@ Terms are used as `CONTEXT.md` defines them. "The catalogue" is what the generat
 
 - **DATA-R85** Hunt definitions live in `data/hunts/hunts.toml`: `[[set]]`, `[[class]]` and `[[hunt]]` tables, keys under [Data](#data). What each field means is `hunts.md`'s; this file fixes the format, the checks and the emitted shape. A Hunt's and a set's text (`name`, `title`, `note`) is lore that stays in this file (DATA-R105).
 - **DATA-R86** A Hunt is **natural** or **imposed** (`kind`). A natural Hunt has a `species` target and a `window` (one window ID, DATA-R35), read from the catalogue at runtime, so correcting a window never changes the Hunt. An imposed Hunt has a `species` or `class` target and its own `conditions`: a condition spec (LOG-R48) written in the definition, never naming a window.
-- **DATA-R87** `since` and the optional `retired` are dates (TOML `YYYY-MM-DD`), meaning 00:00 UTC on that day, emitted as server times. Before 1.0 every v1 Hunt's `since` is the pre-1.0 placeholder (Tunables), so dogfooding Casts count; the M8 checklist sets it to the real release day.
+- **DATA-R87** `since` and the optional `retired` are dates (TOML `YYYY-MM-DD`), meaning 00:00 UTC on that day, emitted as server times. Before 1.0 every v1 Hunt's `since` is the pre-1.0 placeholder (Tunables), so dogfooding Casts count; the M9 checklist sets it to the real release day.
 - **DATA-R88** `tiers` is a list of strictly ascending positive integers; the first is completion.
 - **DATA-R89** `minBand` (optional, species targets only) is the lowest Simulated Size band (LOG-R67) that counts, 2 to 4. Monster (5) is never a target.
 - **DATA-R90** A `[[class]]` defines a **fixed class**: `id = "fixed.<name>"` with `<name>` matching `[%w_]+`, and `members`, a list of item IDs that must all ship (e.g. `fixed.oddity` = Deviate Fish and Whimsyfin).
@@ -210,6 +210,18 @@ Terms are used as `CONTEXT.md` defines them. "The catalogue" is what the generat
 - **DATA-R94** A Hunt's **hash** is the lowercase hex SHA-256 of the canonical JSON (DATA-R70) of its emitted record (DATA-R93: `since` as a server time) without `retired`; absent optional fields are left out. Lore is never in the record.
 - **DATA-R95** `data/hunts/released.lock` (TOML) records `[hunt.<id>]` with `hash` and, if retired, `retired` (a date) for each released Hunt, and `[class."<classID>"]` with `members` (ascending item IDs) for each class targeted by a released Hunt. `scripts/generate-data.py --lock` rewrites it from the current data; it is run when a release is tagged, from 1.0 on, and never before (ADR 0005).
 - **DATA-R96** The generator fails (ADR 0005) when, against the lock: a locked Hunt is missing (deleted instead of retired); its hash differs; a locked `retired` date changed or was removed; a locked fixed class lost a member (generated classes can't, DATA-R91). A fix ships as a new Hunt plus a `retired` date on the old one.
+
+- **DATA-R97** **Hunt Events** (ADR 0012) live in `data/hunts/events/`, one file per event, `<event-id>.toml`, holding one `[event]` table and its `[[hunt]]` tables (keys under [Data](#data)). An event's `id` matches its file name and `[%w_]+`, never starting `p_` (kept for pushed events). Its `zones` are 1–2 zone areaIDs; its `skill` is `[low, high]`, the lowest and highest skill base among its zones (LOG-R55), worked out by the generator when left out; its **band** follows from `low` (`low` up to 150, `mid` 151–275, `high` above 275, Tunables) and is added to its tags as `low`, `mid` or `high`. `tags` come from `data/hunts/tags.toml`, a closed list: holidays (`hallows_end`, `winter_veil`, `lunar_festival`, `noblegarden`, `midsummer`, `harvest_festival`, `stv_extravaganza`), time (`night`, `day`, `dusk`), water (`coast`, `lake`, `river`, `pool`) and band (`low`, `mid`, `high`). `rotation` (default `true`) says whether the fallback rotation may pick it. An event's `name` and `note`, and each Hunt's `name`, are lore that stays in the file, as DATA-R105 does for `hunts.toml`, emitted as `event.<id>.name`, `event.<id>.note` and `hunt.<id>.name`.
+- **DATA-R98** `addons/Pagle_Hunts/data/EventList.lua` sets `ns.eventList` to `{ fingerprint, events }`: events in event-ID order, each with `id`, `zones`, `tags`, `skill`, `band`, `rotation` and `hunts`, each Hunt with `id`, `species?` or `class?`, `minBand?`, `conditions?` (its own, without the event's `areas`) and `tiers`. Its classes are `ns.huntList.classes` (DATA-R93), so `[[class]]` tables stay in `hunts.toml`. The fingerprint is computed as DATA-R72's over the event list without lore; Pagle_Hunts joins it with the Hunt list's for `extraFingerprint` (HNT-R136). An event Hunt's hash (DATA-R94) is over its emitted record plus its event's `id` and `zones`, and goes into `released.lock` under `[hunt.<id>]` like any Hunt; a locked event that is missing, or one of whose Hunts' hashes differs, fails the generator (DATA-R96). Removing an event from the pool is done by setting `rotation = false` and `retired = <date>` on its `[event]` (it then never runs again), never by deleting the file. *Decided while writing the spec (#289): how an event leaves the pool after 1.0.*
+- **DATA-R99** **The event checks.** The generator fails on an event that:
+  - breaks DATA-R97 (IDs, file name, zone count, an unknown tag, a `p_` prefix) or has fewer than 3 or more than 5 Hunts;
+  - has a Hunt breaking DATA-R92's Hunt checks (targets, `minBand`, `tiers`, IDs), or with an `areas` condition of its own (the event's zones supply it);
+  - has a Hunt that can't complete in its zones: a `species` target or every member of a `fixed.*` target not listed in any of the event's zones and their subzones, a `species.any` or quality class with no qualifying item listed there, or a `time` condition that keeps it closed for more than half of a 72-hour run;
+  - has lore over DATA-R107's limits (`name` limit for event and Hunt names, no limit for the note), or missing names once the `hunts` lore check is on (DATA-R66);
+  
+  and the pool fails when a band has fewer rotating events than the minimum per band (Tunables, 8 at 1.0).
+  
+  `scripts/propose-events.py --zone <areaID> [--zone <areaID>] [--out <dir>]` drafts candidate event files from a zone (or two zones of one band) × its listed Species × the five Hunt shapes (Haul, Named fish, Big ones, Quality, Timed, HNT Data), with tiers suggested from the zones' loot shares so that, at the catch rate Tunable, tier 1 takes about 45 minutes, tier 2 about 2 hours and tier 3 about 4; it writes drafts outside `data/` and never commits. `scripts/check-event.py <file>` runs these checks on one event file or one pushed `huntEvent` item (as JSON) against the committed catalogue, so pagle-backend can check a `p_` definition before it pushes it (pagle-backend #2); it exits 0 when the event passes and prints each failure otherwise.
 
 ### Lore
 
@@ -298,6 +310,15 @@ Terms are used as `CONTEXT.md` defines them. "The catalogue" is what the generat
 | `[[class]]` | `id` (`fixed.<name>`), `members` |
 | `[[hunt]]` | `id`, `set`, `kind` (`natural` / `imposed`), `since`, `retired?`, `species?` or `class?`, `minBand?`, `window?` (natural) or `conditions?` (imposed), `tiers`, `name`, `note?` |
 
+### `data/hunts/events/<event-id>.toml` keys
+
+| Table | Keys |
+|---|---|
+| `[event]` | `id`, `zones` (1–2 zone areaIDs), `tags` (DATA-R97), `skill?` (`[low, high]`), `rotation?` (default `true`), `retired?` (a date, DATA-R98), `name`, `note` |
+| `[[hunt]]` | `id`, `species?` or `class?`, `minBand?`, `conditions?` (LOG-R48 fields except `areas`), `tiers`, `name` |
+
+`data/hunts/tags.toml` holds one `[[tag]]` per tag: `id` and `kind` (`holiday`, `time`, `water`, `band`).
+
 An imposed Hunt's `conditions` is an inline table with any of the LOG-R48 fields: `areas = [areaID, …]`, `time = [[from, to], …]` (realm minutes), `season = [{ from = [month, day], to = [month, day] }, …]`, `events = [eventID, …]`, `auras = [spellID, …]`, `lure = true` or `lure = [enchantID, …]`, `skill = { min = n }`. It is emitted as the same Lua condition spec.
 
 ### `data/observed/`
@@ -315,7 +336,8 @@ An imposed Hunt's `conditions` is an inline table with any of the LOG-R48 fields
 | `data/baseline/source.toml` | `tag` (the VMaNGOS snapshot tag, e.g. `"db_latest@4641790"`), `date` (`YYYY-MM-DD`), `url` (the dump's release asset URL), `dumpSha256` (the dump's SHA-256, lowercase hex), `[sha256]` with one `"<file>.csv" = "<lowercase hex>"` per CSV (DATA-R9) |
 | `data/db2/build.toml` | `build` (integer), `version` (e.g. `"1.60.1"`), `products` (list of wago.tools product names, e.g. `["wow_classic_beta"]`) (DATA-R11, DATA-R128) |
 | `data/checks.toml` | `typicalLength` (boolean), `lore` (list of lore IDs: `core`, `ledger`, `hunts`, `stats`, `tackleboard`) (DATA-R66) |
-| `data/hunts/released.lock` | DATA-R95 |
+| `data/hunts/released.lock` | DATA-R95, DATA-R98 (event Hunts' hashes) |
+| `data/hunts/tags.toml` | DATA-R97 |
 | `data/lore/*.toml`, `manifest.toml`, `VOICE.md` | DATA-R100–R111 |
 
 Nothing here is a SavedVariable: the shipped data is read-only Lua (DATA-R80).
@@ -351,7 +373,11 @@ ns.catalogue = {
 
 ### The Hunt list (`ns.huntList`, Pagle_Hunts only)
 
-DATA-R93. Its `fingerprint` goes to `def.extraFingerprint` (LOG-R70).
+DATA-R93. Its `fingerprint` goes to `def.extraFingerprint` (LOG-R70), joined with the event list's.
+
+### The event list (`ns.eventList`, Pagle_Hunts only)
+
+DATA-R98.
 
 ### Lore (`ns.L`)
 
@@ -371,6 +397,8 @@ The parser accepts exactly the `PAGLE-REPORT 1` format (REP-R30–R33). Core and
 | `scripts/update-db2.py <build>` | DATA-R12 |
 | `scripts/db2-watch.py --out <dir> [--issues <file>]` | DATA-R128–R130 |
 | `scripts/extract-baseline.py <dump>` | DATA-R9 (run once) |
+| `scripts/propose-events.py --zone <areaID> [--zone <areaID>] [--out <dir>]` | DATA-R99 |
+| `scripts/check-event.py <file>` | DATA-R99 (also pagle-backend's check before a push) |
 
 ## UI
 
@@ -395,6 +423,12 @@ None.
 | Rarity cap: open share / longest closed run / step | ≥ 1/7 / ≤ 7 days / 15 min | DATA-R92 |
 | Rarity cap span | 2026-01-01 00:00 to 2027-12-31 23:45, realm time | DATA-R92 |
 | `minBand` range | 2–4 | DATA-R89 |
+| Event skill bands: low / mid / high | up to 150 / 151–275 / above 275 | DATA-R97 |
+| Rotating events per band, minimum | 8 (1.0) | DATA-R99 |
+| Event Hunts per event | 3–5 | DATA-R99 |
+| Draft tier times: tier 1 / 2 / 3 | about 45 min / 2 h / 4 h fishing in the zones | DATA-R99 |
+| Draft catch rate | 180 Catches an hour (#279's baseline) | DATA-R99 |
+| An event Hunt's longest closed share of a run | half of 72 h | DATA-R99 |
 | Pre-1.0 `since` placeholder | 2026-11-04 (Forever's launch day) | DATA-R87 |
 | Fingerprint length | 16 hex characters of SHA-256 | DATA-R70, DATA-R72 |
 | Lore limits | `riddle` 80, `blurb` 200, `plaque` 100, `name` 28, `title` and the `text` of a title 32; other fields unlimited | DATA-R107 |

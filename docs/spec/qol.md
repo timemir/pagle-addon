@@ -1,6 +1,6 @@
 # QoL
 
-> Status: Done · Milestones: M1 (Fishing key: cast, reel, loot guard; the soft-interact lease; the conflict popup), Track Q (the rest of v1), M8 (launch re-verification) · Sources: [Define the QoL feature set](https://github.com/timemir/wow-fish/issues/16#issuecomment-6113508077), [Beta probe: which QoL mechanisms work on Forever?](https://github.com/timemir/wow-fish/issues/15#issuecomment-6110400978), [What does Angleur do, and which of it is allowed on Forever?](https://github.com/timemir/wow-fish/issues/4#issuecomment-6109739552), [Prototype Pagle's sounds](https://github.com/timemir/wow-fish/issues/23#issuecomment-6113915981), [Cut the MVP slice and roadmap](https://github.com/timemir/wow-fish/issues/18#issuecomment-6113973068), [Prototype the Settings tree](https://github.com/timemir/wow-fish/issues/32#issuecomment-6129969765), [Define the Core/Module contract](https://github.com/timemir/wow-fish/issues/9#issuecomment-6112445901); ADR 0001. Evidence: [`docs/research/angleur-qol-feasibility.md`](../research/angleur-qol-feasibility.md), [`probes/qol/results/2026-10-11-build70338-report.md`](../../probes/qol/results/2026-10-11-build70338-report.md)
+> Status: Done · Milestones: M1 (Fishing key: cast, reel, loot guard; the soft-interact lease; the conflict popup), Track Q (the rest of v1), M9 (launch re-verification) · Sources: [Define the QoL feature set](https://github.com/timemir/wow-fish/issues/16#issuecomment-6113508077), [Beta probe: which QoL mechanisms work on Forever?](https://github.com/timemir/wow-fish/issues/15#issuecomment-6110400978), [What does Angleur do, and which of it is allowed on Forever?](https://github.com/timemir/wow-fish/issues/4#issuecomment-6109739552), [Prototype Pagle's sounds](https://github.com/timemir/wow-fish/issues/23#issuecomment-6113915981), [Cut the MVP slice and roadmap](https://github.com/timemir/wow-fish/issues/18#issuecomment-6113973068), [Prototype the Settings tree](https://github.com/timemir/wow-fish/issues/32#issuecomment-6129969765), [Define the Core/Module contract](https://github.com/timemir/wow-fish/issues/9#issuecomment-6112445901); ADR 0001. Evidence: [`docs/research/angleur-qol-feasibility.md`](../research/angleur-qol-feasibility.md), [`probes/qol/results/2026-10-11-build70338-report.md`](../../probes/qol/results/2026-10-11-build70338-report.md)
 
 QoL is the `Pagle_QoL` addon: the Fishing key, the double-click cast, gear, lures and clams on a keypress, the client settings leased for a Fishing stretch, the next-action button and Nudges. Its one fixed rule: **each player keypress or click does at most one game action, and QoL never does a game action on its own.**
 
@@ -26,7 +26,7 @@ Terms are used as `CONTEXT.md` defines them. A **game action** is the character 
 
 **Not in 1.0:**
 - **Recast reminder** (after 1.0): opt-in, a quiet wooden double knock on the SFX channel when no new fishing channel starts within 2 s of one ending. It's a QoL sound, not an Announcement (ANN-R75), and gets its own spec rules when it is scheduled.
-- **Combat weapon-swap button:** dropped because it failed on build 70338 (probe B10). It is re-tested in M8 (QOL-R101); a pass opens a new ticket, not a rule here.
+- **Combat weapon-swap button:** dropped because it failed on build 70338 (probe B10). It is re-tested in M9 (QOL-R101); a pass opens a new ticket, not a rule here.
 - **Never:** a camera sweep or any bobber finding (Angleur's Bobber Scanner), gear swaps triggered by events, timer-driven pet summons, item slots with free macro text, generic extra-item slots, toys, rafts and pets (none on Forever), a gamepad cursor and a separate recast key.
 
 ## Rules
@@ -90,7 +90,7 @@ Terms are used as `CONTEXT.md` defines them. A **game action** is the character 
   | reel | `SetOverrideBinding(owner, true, key, "INTERACTTARGET")` (soft-interact, QOL-R62) | `INTERACTTARGET` on `BUTTON2` at `ActionButtonUseKeyDown` 1; at 0, no target, and the game's right-click on the bobber reels | key: probe B1. `BUTTON2`: QOL-R105 |
   | equip the fishing set | `SetOverrideBindingClick(owner, true, key, "PagleQoLGearButton")` | never | B9 proved `UseEquipmentSet` from addon code on a keypress |
   | apply a lure | `SetOverrideBindingClick(owner, true, key, "PagleQoLActionButton")`, the button set to `type = "item"`, `item = "item:<lureID>"`, `target-slot = 16` (QOL-R52) | the same on `BUTTON2` | probe B4; `target-slot`: the exit check (#147) |
-  | open a clam | the same button, `item = "item:<clamID>"`, no `target-slot` | the same on `BUTTON2` | same mechanism as B4; re-verified in M8 (QOL-R100) |
+  | open a clam | the same button, `item = "item:<clamID>"`, no `target-slot` | the same on `BUTTON2` | same mechanism as B4; re-verified in M9 (QOL-R100) |
   | nothing | no override (disarmed) | no override | |
 
   `PagleQoLActionButton` is one `SecureActionButtonTemplate` button. `PagleQoLGearButton` is a plain `Button` whose `OnClick` runs QOL-R44. Neither is ever shown.
@@ -152,13 +152,13 @@ Terms are used as `CONTEXT.md` defines them. A **game action** is the character 
   | Flesh Eating Worm | 7307 | 265 | 75 |
   | Aquadynamic Fish Attractor | 6533 | 266 | 100 |
 
-  Only 6529 → 263 is proven on Forever (probe B4). The table, and any lure Forever adds (such as the Fishing Rack's), is re-verified in M8 (QOL-R100). Names come from `C_Item` at runtime.
+  Only 6529 → 263 is proven on Forever (probe B4). The table, and any lure Forever adds (such as the Fishing Rack's), is re-verified in M9 (QOL-R100). Names come from `C_Item` at runtime.
 
 ### Clams
 
 - **QOL-R55** A clam is **available** when one of the clam table's items is in the bags (`C_Item.GetItemCount > 0`). `C_Item.IsUsableItem` isn't read: on Forever it is `false` for a clam in the bags (beta 1.60.1.70338, 2026-10-13, #147). The lowest item ID in the bags opens first.
 - **QOL-R56** *Open clams between Casts* is on by default. A clam opens only between Casts (QOL-R20 puts *reel* above it) and one per press.
-- **QOL-R57** The **clam table** is QoL's own, in `addons/Pagle_QoL/data/clams.lua`: Small Barnacled Clam (5523), Thick-shelled Clam (5524), Big-mouth Clam (7973). It holds only containers that open with a plain item use; locked boxes and other treasure aren't clams. Forever additions are found in M8 (QOL-R100).
+- **QOL-R57** The **clam table** is QoL's own, in `addons/Pagle_QoL/data/clams.lua`: Small Barnacled Clam (5523), Thick-shelled Clam (5524), Big-mouth Clam (7973). It holds only containers that open with a plain item use; locked boxes and other treasure aren't clams. Forever additions are found in M9 (QOL-R100).
 
 ### The Fishing stretch and leased client settings
 
@@ -214,7 +214,7 @@ Terms are used as `CONTEXT.md` defines them. A **game action** is the character 
 
 ### Launch re-verification
 
-Checked on the live build in M8 (each failure retires or changes only the rule it names):
+Checked on the live build in M9 (each failure retires or changes only the rule it names):
 
 - **QOL-R100** Clam opening through the secure button (QOL-R24, R55–R57); the lure table's items and enchant IDs and any Forever lures (QOL-R54); any Forever clams (QOL-R57). If clams can't open by item use, clam opening is cut: QOL-R55, R56, R57 are retired and QOL-R20 step 5 removed.
 - **QOL-R101** In-combat weapon swap through a secure button (dropped; a pass opens a new ticket).

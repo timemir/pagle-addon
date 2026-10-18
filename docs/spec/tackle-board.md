@@ -13,7 +13,7 @@ The Tackle Board is the `Pagle_TackleBoard` Module: an opt-in cork board of **No
 - the cork board view, the HUD tracker, its tracker-frame goods, and its moments and summary line
 
 **Doesn't own:**
-- anything about *when* a fish bites: a goal never uses a time of day, season or calendar event (that is Hunts' ground). A goal never references a Hunt, and the Tackle Board pays no Ledger XP (ADR 0001).
+- anything about *when* a fish bites: a goal never uses a time of day, season or calendar event (that is Hunts' ground). A goal never references a Hunt. The Tackle Board pays **Activity XP** toward the Angler Level only through Core (TKB-R65, ADR 0011), never into the Ledger or Hunts directly (ADR 0001).
 - the balance, the shop or how a tracker frame is bought (Core, ADR 0009)
 - how moments are shown (Core, ADR 0007), or the tracker dock (CORE-R70)
 - Simulated Sizes (Core computes them, LOG-R65); the Tackle Board only reads the band
@@ -125,10 +125,11 @@ Generation runs live only, so it may use `math.random`; tests inject the random 
 
 ### Completion and rewards
 
-- **TKB-R60** When a goal completes (TKB-R45), the Module, in this order: marks it done on the Cast's board day, frees its pin (TKB-R101); adds 1 to the tally; adds its pay to lifetime Coins; ties a fly (TKB-R62); grants any tally title reached (TKB-R61); lights the day (TKB-R70), which may reach a Campfire milestone (TKB-R73); grants the Fly Box title if the box just filled. Completions earn no Ledger XP and nothing in Hunts (ADR 0001).
+- **TKB-R60** When a goal completes (TKB-R45), the Module, in this order: marks it done on the Cast's board day, frees its pin (TKB-R101); adds 1 to the tally; adds its pay to lifetime Coins and its XP to lifetime Activity XP (TKB-R65); ties a fly (TKB-R62); grants any tally title reached (TKB-R61); lights the day (TKB-R70), which may reach a Campfire milestone (TKB-R73); grants the Fly Box title if the box just filled. Completions earn nothing in Hunts (ADR 0001).
 - **TKB-R61** The **tally** counts completed Notices and Expeditions separately, for life. Titles are earned when the combined count reaches 25, 100 and 500.
 - **TKB-R62** **Tying a fly.** The Fly Box holds 30 patterns in a fixed order (Data): 24 common, then 6 rare. A Notice ties an untied common pattern; an Expedition ties an untied rare one, or an untied common one when every rare one is tied. When nothing in its pool is untied, the goal ties no fly. The pattern is `pool[(h mod #pool) + 1]`, with `pool` the untied candidates in pattern order and `h` the FNV-1a 32-bit hash (LOG-R66 step 1) of the goal's ID. A pattern is tied once and never again; every completion therefore ties a new one until its pool is empty. A rebuild that changes the order of completions (a content update reopening or completing a goal) can change which goal tied which pattern, and which days were lit; that is accepted (ADR 0004), and titles already shown stay (TKB-R64).
 - **TKB-R63** Lifetime Coins earned = Σ pay of completed goals + Σ Coins of Campfire milestones reached. The Module reports it with `M:ReportCoinsEarned` from its projection's `done` and after each live entry that changes it (SHOP-R2), 0 from a `done` before Start, so after a new log (TKB-R197) the old log's total leaves the wallet. Nothing shows it (TKB-R2).
+- **TKB-R65** Lifetime **Activity XP** earned (ADR 0011, [core/activity-xp.md](core/activity-xp.md)) = Σ XP of completed goals: a Notice pays 100, 150 or 200 XP by tier (TKB-R34), an Expedition 600 (Tunables). Campfire milestones, titles and the Fly Box pay none. The Module reports it with `M:ReportXPEarned` on TKB-R63's timing, 0 from a `done` before Start. No moment shows the XP; a level-up it brings is the Ledger's (LED-R39). *Decided while writing the spec (#289): no XP stamp on the Notice toast, since Announcements stamp only Coins (ANN-R23).*
 - **TKB-R64** Titles are display-only and shown only on the board (TKB-R106). A title earned once stays shown even if a later rebuild counts it unearned (the celebrated set, TKB-R83). They are never Curio Shop goods (SHOP-R20) and never reach another Module's title list (ADR 0001).
 
 ### The Campfire
@@ -154,12 +155,12 @@ Generation runs live only, so it may use `math.random`; tests inject the random 
 - **TKB-R81** The Module keeps one projection (LOG-R70) over every entry `M:IterateCatches` yields: its own records, and every Cast from the first `seq` (for zone recency and the ever-caught set), whether or not the board was started then. Its `rulesVersion` is `TKB_RULES_VERSION × 1000 + Pagle.SESSION_RULES_VERSION` (Tunables). The Size band is frozen (LOG-R68) and the Module never reads a length, so `SIZE_RULES_VERSION` isn't folded. `TKB_RULES_VERSION` rises whenever a progress, Campfire, Fly Box or pattern-order rule changes; generation changes don't need it (TKB-R22).
 - **TKB-R82** The projection's state at any moment is a pure function of the log entries applied, the catalogue, and the day it has been advanced to (TKB-R14). Advancing to today outside an apply (the live step) gives the same state a later rebuild reaches when it applies the next entry, because no completion happens without an entry.
 - **TKB-R83** The **celebrated set** (LOG-R77), in `PagleTackleBoardDB.global.celebrated`, holds the IDs of completed goals and titles already shown. A goal or title is added when its live moment is raised, and in `done` as TKB-R84 says. A live completion of a goal, or a live earning of a title, already in it raises no moment; the goal still pays and ties its fly, and a milestone still pays its Coins, which then show only in the Coins total, not as a stamp. The set only grows (a few IDs a day).
-- **TKB-R84** While applying entries in `"replay"` or `"rebuild"` mode, the Module tallies what they earned in a scratch field outside the stored state (cleared by `reset` and after `done`): goals completed by type, Coins, flies tied, titles earned, Kindling burned, and whether the fire went out. After a catch-up or rebuild, in `done`:
+- **TKB-R84** While applying entries in `"replay"` or `"rebuild"` mode, the Module tallies what they earned in a scratch field outside the stored state (cleared by `reset` and after `done`): goals completed by type, Coins, Activity XP, flies tied, titles earned, Kindling burned, and whether the fire went out. After a catch-up or rebuild, in `done`:
   - `info.firstBuild`: mark every completed goal and earned title as celebrated. If at least one goal is completed, raise a Write-up section, heading "Your Tackle Board was written up from {N} Casts" (N = caught and got-away Casts since the `start` record, formatted with `BreakUpLargeNumbers`), lines as TKB-R85.
   - `info.replayed > 0`: if the replayed entries completed a goal, earned a title or changed the Campfire, raise a Write-up section headed "While Tackle Board was off", lines as TKB-R85, and mark what they earned as celebrated.
   - any other rebuild (`info.rebuilt`, for example after a content update): for each completed goal and earned title not in the celebrated set, raise its moment as TKB-R86 would (same `cast` and `coins`) with `summaryOnly = true`, then mark it celebrated. This holds even when the rebuild also covers entries recorded while the Module was disabled. A goal a rebuild completes more than 28 board days back is pruned (Data) before `done` sees it, so it pays but raises no moment; that is accepted.
-  - always: report Coins (TKB-R63), then schedule the live step (TKB-R13) for the next frame.
-- **TKB-R85** Write-up lines, from the scratch tally, each only if non-zero: "{n} Notices and {m} Expeditions done" (a part that is 0 is left out: "2 Notices done"), "Pagle Coins +{c}", "{f} flies tied for your Fly Box", "Title: {title}" (one line each), then one Campfire line from the state after the last entry applied: "Campfire {d} days" (adding "· {k} Kindling burned" if any burned), or "Your Campfire went out; your longest, {L} days, is kept" if it is out after having gone out in these entries, and no Campfire line when the count is 0 and the fire didn't go out in them. Every count has singular and plural forms in `ns.L` ("1 fly tied", "2 flies tied").
+  - always: report Coins (TKB-R63) and Activity XP (TKB-R65), then schedule the live step (TKB-R13) for the next frame.
+- **TKB-R85** Write-up lines, from the scratch tally, each only if non-zero: "{n} Notices and {m} Expeditions done" (a part that is 0 is left out: "2 Notices done"), "Pagle Coins +{c}", "Angler XP +{x}" (TKB-R65), "{f} flies tied for your Fly Box", "Title: {title}" (one line each), then one Campfire line from the state after the last entry applied: "Campfire {d} days" (adding "· {k} Kindling burned" if any burned), or "Your Campfire went out; your longest, {L} days, is kept" if it is out after having gone out in these entries, and no Campfire line when the count is 0 and the fire didn't go out in them. Every count has singular and plural forms in `ns.L` ("1 fly tied", "2 flies tied").
 
 ### Announcements
 
@@ -244,6 +245,7 @@ Examples: `A1|1|1791731747|0|TackleBoard|issue|n;haul;2;15;30;33` (30 Catches in
 ---@field goals { [string]: TackleGoal }   -- open goals, and goals completed in the last 28 board days
 ---@field tally { notices: integer, expeditions: integer }
 ---@field coins integer               -- lifetime Coins earned (TKB-R63)
+---@field xp integer                  -- lifetime Activity XP earned (TKB-R65)
 ---@field flies { [string]: { day: integer, time: integer, goal: TackleGoal } }  -- tied patterns, with a copy of the goal that tied it (for the hover text)
 ---@field titles { [string]: { day: integer, cast: string } }  -- titleID -> board day and Cast entry ID it was earned on
 ---@field fire { count: integer, kindling: integer, longest: integer, milestones: { [integer]: { day: integer, cast: string } }, log: { [integer]: "lit"|"burned"|"out"|"unlit" } }  -- log keeps the last 28 days
@@ -356,6 +358,7 @@ Pagle.RegisterModule{
 | `Pagle.GetConditions`, event `ConditionsChanged` | TKB-R121 |
 | `M:RaiseMoment`, `M:SetSummaryLine`, `M:RaiseWriteUp` | TKB-R84–R87 |
 | `M:ReportCoinsEarned` | TKB-R63 |
+| `M:ReportXPEarned` | TKB-R65 |
 | `M:RegisterSlot`, `M:RegisterGood`, `Pagle.GetEquipped`, event `AppearanceChanged`, `Pagle.OpenShop` | TKB-R106, TKB-R124, TKB-R125 |
 | `M:RegisterTracker` | TKB-R120 |
 | `M:AddSetting` | [Settings](#settings) |
@@ -370,6 +373,13 @@ WoW APIs for its own logic and presentation: `C_DateAndTime.GetSecondsUntilDaily
 | Notice, tier 1 / 2 / 3 | 10 / 15 / 20 |
 | Expedition | 60 |
 | Campfire milestone 7 / 30 / 100 / 365 | 25 / 75 / 200 / 500 |
+
+### Activity XP paid
+
+| Source | Activity XP |
+|---|---|
+| Notice, tier 1 / 2 / 3 | 100 / 150 / 200 |
+| Expedition | 600 |
 
 ### Exposed
 
@@ -406,6 +416,7 @@ Before the board is started, the checkbox is greyed out (`isEnabled` returns fal
 | Goals owed at Start | 3 Notices, 1 Expedition | TKB-R20 |
 | Notice pay by tier | 10 / 15 / 20 | TKB-R34 |
 | Expedition pay | 60 | TKB-R34 |
+| Activity XP: Notice by tier / Expedition | 100 / 150 / 200 / 600 | TKB-R65 |
 | Kind weights | as TKB-R32 | TKB-R32 |
 | Needs by kind and tier | as TKB-R34 | TKB-R34 |
 | Variety Notice: Species in the zone at least | 3 | TKB-R32 |
@@ -431,7 +442,7 @@ Before the board is started, the checkbox is greyed out (`isEnabled` returns fal
 | "Complete" flash on the tracker | 3 s | TKB-R123 |
 | Continent name maps (continent ID → uiMapID) | 0 → 1415 (Eastern Kingdoms), 1 → 1414 (Kalimdor) | TKB-R36 |
 | Week slack | 43,200 s | TKB-R12 |
-| `TKB_RULES_VERSION` before 1.0 | 1 | TKB-R81 |
+| `TKB_RULES_VERSION` before 1.0 | 2 (1 before Activity XP, TKB-R65) | TKB-R81 |
 
 ## Edge cases
 
