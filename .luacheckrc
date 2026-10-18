@@ -117,9 +117,8 @@ stds.wow = {
 		"GetCVar",
 		"SetCVar",
 		"IsMounted",
-		-- QoL's conflict popup (QOL-R81); StaticPopupDialogs itself is in stds.wow_variables. Its Reload now button
-		-- (QOL-R83): ReloadUI is unprotected on build 70338 (QOL-R102), and the QoL boundary spec allows that one call.
-		"StaticPopup_Show",
+		-- QoL's Reload now note (QOL-R83): ReloadUI is unprotected on build 70338 (QOL-R102), and the QoL boundary spec
+		-- allows that one call.
 		"ReloadUI",
 		-- QoL's Nudges: a frame on the screen (UIParent, below), below the game's error text (QOL-R75); its colour is in
 		-- stds.wow_variables. Stats refuses a 4th watched Dry spell in that red error text (STA-R61).
@@ -249,18 +248,6 @@ stds.wow_variables = {
 		-- EnumUtil.MakeEnum("Left", "Right", "Top", "Min", "Max");`, the label types SettingsSliderOptionsMixin's
 		-- SetLabelFormatter takes (Blizzard_Settings_Shared/Blizzard_Settings.lua).
 		MinimalSliderWithSteppersMixin = { fields = { Label = { fields = { "Right" } } } },
-		-- A FrameXML table the dump doesn't list (QOL-R81). No probe has shown a popup yet; the M1 exit check (step 7)
-		-- does. Gethe/wow-ui-source branch forever at 943764493e6b16d63ded3ab304150d1f05e58b57 ("1.60.1 (70338)"),
-		-- Interface/AddOns/Blizzard_StaticPopup/StaticPopup.lua: `StaticPopupDialogs = {}; -- Definitions`. QoL adds
-		-- its two dialogs to it: the conflict popup and its Reload now popup (QOL-R81, QOL-R83); and the Tackle Board adds
-		-- its reroll confirm (TKB-R56).
-		StaticPopupDialogs = {
-			fields = {
-				PAGLE_QOL_CONFLICT = { read_only = false },
-				PAGLE_QOL_RELOAD = { read_only = false },
-				PAGLE_TACKLEBOARD_REROLL = { read_only = false },
-			},
-		},
 		-- A FrameXML colour the dump doesn't list (QOL-R75: a Nudge's colour). No probe has drawn a Nudge yet; Track Q's
 		-- exit check (step 1) does. Gethe/wow-ui-source branch forever at 943764493e6b16d63ded3ab304150d1f05e58b57
 		-- ("1.60.1 (70338)"), Interface/AddOns/Blizzard_SharedXMLBase/Color.lua makes each of the client's UI colours a

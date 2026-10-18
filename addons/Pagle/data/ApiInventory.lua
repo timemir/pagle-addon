@@ -154,8 +154,6 @@ ns.API_INVENTORY = {
 	"Settings.VarType",
 	"SettingsPanel",
 	"SlashCmdList",
-	"StaticPopupDialogs",
-	"StaticPopup_Show",
 	"TooltipDataProcessor",
 	"TooltipDataProcessor.AddTooltipPostCall",
 	"UIErrorsFrame",

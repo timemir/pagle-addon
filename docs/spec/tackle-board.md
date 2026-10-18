@@ -364,7 +364,7 @@ Pagle.RegisterModule{
 | `M:AddSetting` | [Settings](#settings) |
 | `Pagle.IsAnimationsOn` | the board's motion ([UI](#ui)) |
 
-WoW APIs for its own logic and presentation: `C_DateAndTime.GetSecondsUntilDailyReset`, `GetSecondsUntilWeeklyReset`, `GetCurrentCalendarTime`, `GetGameTime`, `GetServerTime`, `issecretvalue` (the realm clock while it is secret), `C_Timer.After`, `C_Timer.NewTicker`, `C_Map.GetAreaInfo`, `C_Map.GetMapInfo`, `C_Item.GetItemNameByID`, `C_Item.RequestLoadItemDataByID`, `GetCurrentRegion`, `bit.bxor` (the Fly Box's hash, TKB-R62), `CreateFrame` (with the `UIPanelCloseButton` template), `CreateFont`, `UIParent`, `UISpecialFrames`, `GameTooltip`, `StaticPopupDialogs`, `StaticPopup_Show`, `BreakUpLargeNumbers`.
+WoW APIs for its own logic and presentation: `C_DateAndTime.GetSecondsUntilDailyReset`, `GetSecondsUntilWeeklyReset`, `GetCurrentCalendarTime`, `GetGameTime`, `GetServerTime`, `issecretvalue` (the realm clock while it is secret), `C_Timer.After`, `C_Timer.NewTicker`, `C_Map.GetAreaInfo`, `C_Map.GetMapInfo`, `C_Item.GetItemNameByID`, `C_Item.RequestLoadItemDataByID`, `GetCurrentRegion`, `bit.bxor` (the Fly Box's hash, TKB-R62), `CreateFrame` (with the `UIPanelCloseButton` template), `CreateFont`, `UIParent`, `UISpecialFrames`, `GameTooltip`, `BreakUpLargeNumbers`.
 
 ### Coins paid
 
