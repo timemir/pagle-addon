@@ -21,7 +21,7 @@ description = "Stiff oiled canvas that sheds the rain, and most of the fish slim
 
 [huntgood."hunts.notebookcover.tooled"] # Notebook cover, tier 2
 name = "Tooled Leather"
-description = "Dark leather tooled with reeds and leaping fish, by someone with a steady hand and a long winter."
+description = "Dark leather tooled with reeds and leaping fish, by someone with a sharp knife and a long winter."
 
 [huntgood."hunts.notebookcover.verdigris"] # Notebook cover, tier 3
 name = "Verdigris"
@@ -33,8 +33,8 @@ description = "Only the lines themselves, with nothing drawn around them."
 
 [huntgood."hunts.trackerframe.inkwash"] # Tracker frame, tier 1
 name = "Ink Wash"
-description = "A thin grey wash of ink behind the lines, like a page that caught the spray."
+description = "A sheet of paper written in blue ink, the wash run a little, like a page that caught the spray."
 
 [huntgood."hunts.trackerframe.waxseal"] # Tracker frame, tier 2
 name = "Wax Seal"
-description = "Parchment edged in brown, with a red seal pressed in the corner, as if the list were official."
+description = "Parchment with a red rule down its margin and a wax seal pressed in the corner, as if the list were official."

@@ -18,7 +18,7 @@ local ns = select(2, ...)
 --
 -- adapter/BoardArt.lua draws from them; a texture loads the first time something shows one of its sprites, so the
 -- Campfire card's and the Fly Box drawer's (Card, Flies) wait for their first opening, and the tracker's frames
--- (Tracker) for a Corkboard or Driftwood Plank tracker or its Curio Shop preview.
+-- (Tracker) for a Corkboard or Tideworn Plank tracker or its Curio Shop preview.
 
 local MEDIA = "Interface\\AddOns\\Pagle_TackleBoard\\media\\board\\"
 

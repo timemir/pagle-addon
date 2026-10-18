@@ -41,7 +41,7 @@ local SAMPLE_SCALE = 0.8
 local buttons = setmetatable({}, { __mode = "k" })
 
 --- Draws a sample toast in a toast style on `parent` (wallet-and-shop.md › UI, the preview stage; ANN-R80): a toast
---- frame of its own there, made on the first call and redrawn on each, Timber for an ID that isn't a style. Nothing
+--- frame of its own there, made on the first call and redrawn on each, Torn Page for an ID that isn't a style. Nothing
 --- reaches the lanes, the sounds or the Session summary.
 ---@param parent Frame
 ---@param styleID string

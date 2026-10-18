@@ -41,11 +41,11 @@ Part of [Core](README.md). Core holds the Angler's **Pagle Coins** and runs the 
 
   | Slot | Goods |
   |---|---|
-  | Toast style (`core.toaststyle`) | `core.toaststyle.timber` (default), `core.toaststyle.ripple` (tier 1), `core.toaststyle.lanternglow` (tier 2) |
+  | Toast style (`core.toaststyle`) | `core.toaststyle.page` (default), `core.toaststyle.ripple` (tier 1), `core.toaststyle.lanternglow` (tier 2) |
   | Sound set (`core.soundset`) | `core.soundset.driftwood` (default), `core.soundset.gilded` (tier 2) |
   | Bookplate crest (`core.crest`) | `core.crest.plain` (default), `core.crest.crest1` (tier 1), `core.crest.crest2` (tier 2), `core.crest.crest3` (tier 3) |
 
-  Every good's name and description is lore, read from `data/lore/core.toml` through `ns.L`; the working names (Timber, Ripple, Lantern Glow, Driftwood, Gilded, Plain) are its first drafts. IDs may still be renamed before 1.0.
+  Every good's name and description is lore, read from `data/lore/core.toml` through `ns.L`; the working names (Timber, Ripple, Lantern Glow, Driftwood, Gilded, Plain) were its first drafts, and the 1.0 sign-off ([#264](https://github.com/timemir/wow-fish/issues/264)) renamed Timber to Torn Page and its ID from `core.toaststyle.timber` to `core.toaststyle.page`.
   The crest is the Angler's emblem; the Ledger draws it on the Journal bookplate. Its slot is shown whatever Modules are enabled.
 - **SHOP-R26** Core caches every registered good in `PagleDB.global.goods`: name, slot, slot label and category, Module, icon, `default`, tier, description and, for earned goods, the `isEarned()` result as of the last registration or `RefreshGoods` (SHOP-R31). The cache is never pruned for a good that is owned.
 

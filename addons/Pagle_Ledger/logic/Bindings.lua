@@ -86,7 +86,7 @@ ns.BINDINGS = {
 	},
 	{ name = "birch", tier = 1, texture = "bark", gilt = "6a4a20", band = "b8a888", swatch = "binding-birch-bark" },
 	{
-		name = "buckram", -- Sea-green Buckram
+		name = "buckram", -- Sea-Green Buckram
 		tier = 2,
 		texture = "cloth",
 		gilt = "efe0bb",

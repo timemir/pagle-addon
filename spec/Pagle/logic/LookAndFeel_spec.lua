@@ -36,7 +36,7 @@ describe("Look and Feel's logic", function()
 		goods:RegisterSlot("Core", { id = "core.toaststyle", label = "Toast style", category = "Announcements" })
 		goods:RegisterGood(
 			"Core",
-			{ id = "core.toaststyle.timber", slot = "core.toaststyle", name = "Timber", default = true }
+			{ id = "core.toaststyle.page", slot = "core.toaststyle", name = "Torn Page", default = true }
 		)
 		goods:RegisterGood(
 			"Core",
@@ -183,7 +183,7 @@ describe("Look and Feel's logic", function()
 			env.goods:SetPurchased({ ["core.toaststyle.lantern"] = true })
 
 			assert.are.same({
-				{ value = "core.toaststyle.timber", label = "Timber" },
+				{ value = "core.toaststyle.page", label = "Torn Page" },
 				{ value = "core.toaststyle.lantern", label = "Lantern" },
 			}, ns.SlotChoices(env.goods, "core.toaststyle"))
 		end)

@@ -33,7 +33,7 @@ Part of [Core](README.md). Core presents every Announcement (ADR 0007): Modules 
   - `nod`: one silent line
 - **ANN-R12** A moment without a `cast` (a Skill Milestone from a Skill Reading, a Hunt window opening, a login Nod) is an Announcement of its own, flushed on the next frame.
 - **ANN-R13** An ordinary Catch gets a **catch Nod**: Core raises it for every live caught Cast (LOG-R9), while the "Show every catch" setting is on (the default). It is a `nod` moment of the Cast (`cast` = its entry ID), raised by Core itself at `CastEnded("caught", cast)`, so it merges with the Cast's other moments (ANN-R10):
-  - **Its line** names one of the Cast's Catches: the first, in slot order, with a Simulated Size (LOG-R65), or else the first that isn't item `0`. It reads "{item name} · {band} · {length}": the band's name (`Pagle.SIZE_BANDS`) and the Simulated Size in the Angler's length unit (`Pagle.FormatLength`, LOG-R69), as "Mud Snapper · Typical · 34.2 cm". An item with no Simulated Size (junk, treasure, a trophy, an Uncharted item) shows its name alone. The item's icon is its icon. A name the client hasn't cached reads "Item {itemID}".
+  - **Its line** names one of the Cast's Catches: the first, in slot order, with a Simulated Size (LOG-R65), or else the first that isn't item `0`. It reads "{item name} · {band} · {length}": the band's name (`Pagle.SIZE_BANDS`) and the Simulated Size in the Angler's length unit (`Pagle.FormatLength`, LOG-R69), as "Mud Snapper · Decent · 34.2 cm". An item with no Simulated Size (junk, treasure, a trophy, an Uncharted item) shows its name alone. The item's icon is its icon. A name the client hasn't cached reads "Item {itemID}".
   - **A bigger moment replaces it.** If any Module raises a moment for the same Cast, on either side (ANN-R11), the catch Nod is dropped: it never headlines, never rides as a stamp and never adds to "+N".
   - **It never interrupts.** It is a Nod (ANN-R30), so it never counts toward the Interruption budget and takes its turn in the column as any Nod does (ANN-R20). It plays no sound (ANN-R70) and never goes to the Session summary (an exception to ANN-R25). In combat (ANN-R35) and in Cozy mode (ANN-R40) it is dropped, not held.
   - **Only live Catches.** A got-away Cast, and a Cast whose every item is item `0`, raise none; nor does a replay or rebuild, which fires no `CastEnded` (ANN-R4, LOG-R73).
@@ -125,7 +125,7 @@ Part of [Core](README.md). Core presents every Announcement (ADR 0007): Modules 
 
 ### Toast styles
 
-- **ANN-R80** The toast and Nod follow the equipped **toast style**: its page and strip art, its medallion trim, its rubber stamps and its inks. **Timber** is the free default; other styles are Curio Shop goods Core registers ([wallet-and-shop.md](wallet-and-shop.md)). The banner, splash and cards look the same in every style. A style changes only the look, never timing or rules.
+- **ANN-R80** The toast and Nod follow the equipped **toast style**: its page and strip art, its medallion trim, its rubber stamps and its inks. **Torn Page** is the free default; other styles are Curio Shop goods Core registers ([wallet-and-shop.md](wallet-and-shop.md)). The banner, splash and cards look the same in every style. A style changes only the look, never timing or rules.
 
 ## Data
 
@@ -243,7 +243,7 @@ One `OnUpdate` drives every animation (`adapter/Motion.lua`, with the keyframe m
 | Interruption budget | on/off | on |
 | Budget: interruptions | 1–10 | 4 |
 | Budget: window | 1–15 min | 5 min |
-| Toast style | owned styles | Timber |
+| Toast style | owned styles | Torn Page |
 | Sound set | owned sets | Driftwood |
 
 These sit on the Announcements page. Toast style and sound set also appear on Look and Feel; both edit the same equipped setting (CORE-R42, SHOP-R32).

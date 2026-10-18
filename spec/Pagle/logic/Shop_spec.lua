@@ -19,7 +19,7 @@ end
 -- 150: each default in use, everything else priced in red.
 local CORE_UNBOUGHT = {
 	"Toast style (1 of 3)",
-	"  core.toaststyle.timber In use",
+	"  core.toaststyle.page In use",
 	"  core.toaststyle.ripple 150" .. " [red]",
 	"  core.toaststyle.lanternglow 400" .. " [red]",
 	"Sound set (1 of 2)",
@@ -187,7 +187,7 @@ describe("The Curio Shop's list", function()
 
 			assert.are.same({
 				"Toast style (2 of 3)",
-				"  core.toaststyle.timber default",
+				"  core.toaststyle.page default",
 				"  core.toaststyle.ripple In use",
 				"  core.toaststyle.lanternglow 400" .. " [red]",
 				"Sound set (1 of 2)",
@@ -256,7 +256,7 @@ describe("The Curio Shop's list", function()
 
 		assert.are.equal(14, #ids("all"))
 		assert.are.same({
-			"core.toaststyle.timber",
+			"core.toaststyle.page",
 			"core.toaststyle.ripple",
 			"core.soundset.driftwood",
 			"core.crest.plain",
@@ -407,7 +407,7 @@ describe("Selecting a good", function()
 		local shop = model(fake)
 
 		assert.are.equal("ledger.binding.lapis", shop:Select("ledger.binding.lapis"))
-		assert.are.equal("core.toaststyle.timber", shop:Select("core.toaststyle.timber"))
+		assert.are.equal("core.toaststyle.page", shop:Select("core.toaststyle.page"))
 		assert.are.equal("hunts.cover.velvet", shop:Select("hunts.cover.velvet"))
 		assert.is_nil(shop:Select("hunts.cover.tide")) -- for sale, of a Module off
 		assert.is_nil(shop:Select("hunts.cover.plain")) -- a default of a Module off
@@ -422,8 +422,8 @@ describe("One good's row", function()
 		local fake = huntsOff()
 		local shop = model(fake)
 
-		local timber = assert(shop:Row("core.toaststyle.timber"))
-		assert.are.same({ "equipped", "In use" }, { timber.state, timber.tag })
+		local tornPage = assert(shop:Row("core.toaststyle.page"))
+		assert.are.same({ "equipped", "In use" }, { tornPage.state, tornPage.tag })
 		assert.are.same(
 			{ id = "ledger.binding.lapis", name = "Lapis", state = "short", price = "900", short = true },
 			shop:Row("ledger.binding.lapis")
@@ -485,24 +485,24 @@ describe("The Curio Shop's stage", function()
 			local fake = stageReady(0)
 			local shop = model(fake)
 
-			local timber, plain = assert(shop:Stage("core.toaststyle.timber")), assert(shop:Stage("hunts.cover.plain"))
+			local tornPage, plain = assert(shop:Stage("core.toaststyle.page")), assert(shop:Stage("hunts.cover.plain"))
 
 			assert.are.same(
 				{ "equipped", { "In use", "default" }, "Toast style · Pagle" },
-				{ timber.state, timber.tags, timber.slotLine }
+				{ tornPage.state, tornPage.tags, tornPage.slotLine }
 			)
-			assert.is_nil(timber.use)
-			assert.is_nil(timber.buy)
+			assert.is_nil(tornPage.use)
+			assert.is_nil(tornPage.buy)
 			assert.are.equal("Notebook cover · Hunts", plain.slotLine)
 
 			fake.setPurchased({ ["core.toaststyle.ripple"] = true })
 			fake.Pagle.SetEquipped("core.toaststyle", "core.toaststyle.ripple")
 			shop = model(fake)
 			local ripple = assert(shop:Stage("core.toaststyle.ripple"))
-			timber = assert(shop:Stage("core.toaststyle.timber"))
+			tornPage = assert(shop:Stage("core.toaststyle.page"))
 
 			assert.are.same({ "equipped", { "In use" } }, { ripple.state, ripple.tags })
-			assert.are.same({ "owned", { "default" }, true }, { timber.state, timber.tags, timber.use })
+			assert.are.same({ "owned", { "default" }, true }, { tornPage.state, tornPage.tags, tornPage.use })
 			fake.setPurchased({ ["core.toaststyle.ripple"] = true, ["core.toaststyle.lanternglow"] = true })
 			local lantern = assert(model(fake):Stage("core.toaststyle.lanternglow"))
 			assert.are.same({ "owned", { "Owned" }, true }, { lantern.state, lantern.tags, lantern.use })
@@ -748,7 +748,7 @@ describe("Buying", function()
 		assert.is_true(fake.ns.shop.Buy("core.toaststyle.ripple", false))
 
 		assert.is_true(fake.Pagle.IsOwned("core.toaststyle.ripple"))
-		assert.are.equal("core.toaststyle.timber", fake.Pagle.GetEquipped("core.toaststyle"))
+		assert.are.equal("core.toaststyle.page", fake.Pagle.GetEquipped("core.toaststyle"))
 		assert.are.same({}, changed)
 	end)
 

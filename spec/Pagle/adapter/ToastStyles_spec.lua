@@ -3,7 +3,7 @@
 -- medallions, stamps and inks, follow AppearanceChanged, and a sample toast draws in any style; the banner, splash and
 -- card look the same in every style. Each frame's sprites and inks are asserted, not pixels.
 
-local TIMBER = "core.toaststyle.timber"
+local TORN_PAGE = "core.toaststyle.page"
 local RIPPLE = "core.toaststyle.ripple"
 local LANTERN = "core.toaststyle.lanternglow"
 
@@ -92,21 +92,24 @@ local function ink(loaded, role)
 end
 
 describe("the toast's and Nod's toast style", function()
-	it("is Timber, the ledger page with brass and red ink, at login: the slot's default (ANN-R80, SHOP-R25)", function()
-		local loaded, M = styledCore()
+	it(
+		"is Torn Page, the ledger page with brass and red ink, at login: the slot's default (ANN-R80, SHOP-R25)",
+		function()
+			local loaded, M = styledCore()
 
-		raiseStamped(loaded, M)
+			raiseStamped(loaded, M)
 
-		assert.are.same({
-			page = "ToastsLedger toast-toast",
-			trim = "Announce bezel-gold-84",
-			stamp = "Announce stamp",
-			title = ink(loaded, "red"),
-			text = ink(loaded, "ink"),
-		}, lookOf(loaded, loaded.ns.announcementFrames.toast))
-	end)
+			assert.are.same({
+				page = "ToastsLedger toast-toast",
+				trim = "Announce bezel-gold-84",
+				stamp = "Announce stamp",
+				title = ink(loaded, "red"),
+				text = ink(loaded, "ink"),
+			}, lookOf(loaded, loaded.ns.announcementFrames.toast))
+		end
+	)
 
-	it("is Timber for a stored pick that is no toast style (ANN-R80, SHOP-R32)", function()
+	it("is Torn Page for a stored pick that is no toast style (ANN-R80, SHOP-R32)", function()
 		local loaded, M = styledCore({ picked = "core.toaststyle.moonlit" })
 
 		raiseStamped(loaded, M)
@@ -179,7 +182,7 @@ describe("the toast's and Nod's toast style", function()
 		assert.are.equal("Announce stamp-blue", spriteOf(loaded, view.record.border.left))
 	end)
 
-	it("leaves the banner, the splash and the card as they look in Timber (announcements.md › UI)", function()
+	it("leaves the banner, the splash and the card as they look in Torn Page (announcements.md › UI)", function()
 		local function looks(style)
 			local loaded, M = styledCore({ card = true })
 			if style then
@@ -255,12 +258,12 @@ describe("a toast style change", function()
 		"leaves the lanes, the timing, the Interruption budget and the sounds as they were: the same Announcements show"
 			.. " in the same order with the same sounds (ANN-R80, ANN-R20, ANN-R31, ANN-R72)",
 		function()
-			local timberSeen, timberSounds = timeline()
+			local tornPageSeen, tornPageSounds = timeline()
 
 			for _, style in ipairs({ RIPPLE, LANTERN }) do
 				local seen, sounds = timeline(style)
-				assert.are.same(timberSeen, seen)
-				assert.are.same(timberSounds, sounds)
+				assert.are.same(tornPageSeen, seen)
+				assert.are.same(tornPageSounds, sounds)
 			end
 			local DRIFTWOOD = "Interface\\AddOns\\Pagle\\media\\sounds\\driftwood\\"
 			assert.are.same({
@@ -273,12 +276,12 @@ describe("a toast style change", function()
 				DRIFTWOOD .. "toast_3.ogg SFX",
 				DRIFTWOOD .. "toast_1.ogg SFX",
 				"Interface\\AddOns\\Pagle\\media\\sounds\\legend.ogg SFX",
-			}, timberSounds)
+			}, tornPageSounds)
 			-- When each first shows: three toasts and the banner together; the Nod in the column; three more toasts,
 			-- the 7th once they leave; the toast.low stepped down to a Nod once the budget is spent; the splash once the
 			-- column's last toast has left (ANN-R20, ANN-R31, #249).
 			local first = {}
-			for _, line in ipairs(timberSeen) do
+			for _, line in ipairs(tornPageSeen) do
 				local what = line:match("^[%d.]+ (.+)$")
 				first[what] = first[what] or line
 			end
@@ -327,7 +330,7 @@ describe("the sample toast", function()
 	end
 
 	it(
-		"draws on a given frame in a given style, Timber still equipped, with nothing shown, played or summarized"
+		"draws on a given frame in a given style, Torn Page still equipped, with nothing shown, played or summarized"
 			.. " (ANN-R80, wallet-and-shop.md › UI)",
 		function()
 			local loaded = styledCore()
@@ -346,14 +349,14 @@ describe("the sample toast", function()
 				{ lookOf(loaded, sample).page, lookOf(loaded, sample).trim }
 			)
 			assert.are.same({ {}, {}, nil }, { summarized, loaded.client.sounds, loaded.ns.announcementFrames.toast })
-			assert.are.equal(TIMBER, loaded.env.Pagle.GetEquipped("core.toaststyle"))
+			assert.are.equal(TORN_PAGE, loaded.env.Pagle.GetEquipped("core.toaststyle"))
 			-- It stands still on the stage: no slide, no fade (announcements.md › Motion).
 			assert.are.same({ 1, 1 }, { sample.alpha, #sample.body.points[1] })
 		end
 	)
 
 	it(
-		"redraws the same frame on the same stage in the next style asked for, Timber for an unknown one (ANN-R80)",
+		"redraws the same frame on the same stage in the next style asked for, Torn Page for an unknown one (ANN-R80)",
 		function()
 			local loaded = styledCore()
 			local stage = stageOf(loaded)
@@ -426,7 +429,7 @@ describe("the sample toast", function()
 		function()
 			local loaded = styledCore()
 			local stage = stageOf(loaded)
-			loaded.ns.goods:Good(TIMBER).preview(stage)
+			loaded.ns.goods:Good(TORN_PAGE).preview(stage)
 			local panel = stage.children[1]
 
 			loaded.ns.goods:Good("core.crest.crest1").preview(stage)

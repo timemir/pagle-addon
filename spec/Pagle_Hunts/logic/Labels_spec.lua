@@ -412,7 +412,7 @@ describe("Labels in realm time", function()
 				return 100000 + itemID
 			end,
 			BandName = function(band)
-				return ({ "Tiddler", "Typical", "Hefty", "Whopper", "Monster" })[band]
+				return ({ "Tiddler", "Decent", "Hefty", "Whopper", "Monster" })[band]
 			end,
 			QualityColor = function(quality)
 				return ({ [2] = GREEN, [3] = BLUE })[quality]

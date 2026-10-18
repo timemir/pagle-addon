@@ -62,7 +62,7 @@ riddle = "Sea coasts from the misty north to the hot south, where the bottom dro
 
 [species.6458] # Oil Covered Fish
 blurb = "Less a fish than a warning about the water. Wash it twice, then think again."
-riddle = "Fouled water where goblins drill the dry hills and plains."
+riddle = "Fouled water where goblins drill the parched hills and plains."
 
 [species.6522] # Deviate Fish
 blurb = "Eat one at your own risk. No two anglers who did tell the same story about the hour after."
@@ -142,14 +142,14 @@ riddle = "A bleak, grey shore on a dry and empty western coast."
 
 [species.16969] # Savage Coast Blue Sailfin
 blurb = "That sail is for show, and it knows it. Fights like it has an audience."
-riddle = "Warm jungle shallows along a wild and dangerous shore."
+riddle = "Warm jungle shallows, where the sea runs right up to the trees."
 
 [species.16970] # Misty Reed Mahi Mahi
 blurb = "Bright as a jungle bird and twice as much trouble on the line."
 riddle = "Warm, murky shallows where a swamp meets the sea."
 
 [species.19807] # Speckled Tastyfish
-blurb = "Tournament fish. Tastes like winning, or at least like trying."
+blurb = "Tournament fish. Tastes of victory, or at least of a long afternoon trying."
 riddle = "Only while the jungle's great contest is on."
 
 [species.19975] # Zulian Mudskunk
@@ -396,7 +396,7 @@ name = "Birch Bark"
 description = "Pale and papery, with dark flecks. Likely the only book here that would float."
 
 [binding.buckram] # Curio Shop, tier 2
-name = "Sea-green Buckram"
+name = "Sea-Green Buckram"
 description = "Stiff sea-green cloth with cream rules. Spray beads up and rolls straight off."
 
 [binding.sharkskin] # Curio Shop, tier 3

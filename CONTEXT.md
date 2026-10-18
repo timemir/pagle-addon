@@ -143,7 +143,7 @@ Pagle's own length for a Species Catch, decided by the Catch alone and never by 
 _Avoid_: weight (which is the real number on trophy fish), size roll
 
 **Size band**:
-The word that places a Simulated Size within its Species' range: Tiddler, Typical, Hefty, Whopper or Monster. It stands in for heft; Pagle never shows a simulated weight.
+The word that places a Simulated Size within its Species' range: Tiddler, Decent, Hefty, Whopper or Monster. It stands in for heft; Pagle never shows a simulated weight.
 _Avoid_: weight, bracket, size class, trophy (which is a real pound fish)
 
 **Catch Milestone**:
@@ -157,7 +157,7 @@ Pagle telling the player, in the moment, about something they just earned. One C
 _Avoid_: notification, alert, popup
 
 **Nod**:
-The quietest Announcement: one silent line, for minor moments, toasts stepped down by the Interruption budget, and the **catch Nod** Core shows for an ordinary Catch ("Mud Snapper · Typical · 34.2 cm") when nothing bigger came of it.
+The quietest Announcement: one silent line, for minor moments, toasts stepped down by the Interruption budget, and the **catch Nod** Core shows for an ordinary Catch ("Mud Snapper · Decent · 34.2 cm") when nothing bigger came of it.
 _Avoid_: mini toast, whisper
 
 **Interruption budget**:

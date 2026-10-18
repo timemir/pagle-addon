@@ -1,30 +1,33 @@
 -- The toast styles and the announcement art's choices as data (announcements.md › Toast styles, › UI, ANN-R80;
--- wallet-and-shop.md › SHOP-R25): Timber, Ripple and Lantern Glow, keyed by Core's toast style good IDs, with Timber
--- for any other ID; the page a toast is drawn on; a banner's seal; and the art's capitals.
+-- wallet-and-shop.md › SHOP-R25): Torn Page, Ripple and Lantern Glow, keyed by Core's toast style good IDs, with
+-- Torn Page for any other ID; the page a toast is drawn on; a banner's seal; and the art's capitals.
 
 local ns = loadAddon("Pagle", FOREVER_GLOBALS).ns
 
-local TIMBER = "core.toaststyle.timber"
+local TORN_PAGE = "core.toaststyle.page"
 local RIPPLE = "core.toaststyle.ripple"
 local LANTERN = "core.toaststyle.lanternglow"
 
 describe("the toast styles", function()
-	it("are Timber, Ripple and Lantern Glow, by SHOP-R25's good IDs in the core.toaststyle slot (ANN-R80)", function()
-		local ids = {}
-		for id in pairs(ns.TOAST_STYLES) do
-			ids[#ids + 1] = id
-		end
-		table.sort(ids)
+	it(
+		"are Torn Page, Ripple and Lantern Glow, by SHOP-R25's good IDs in the core.toaststyle slot (ANN-R80)",
+		function()
+			local ids = {}
+			for id in pairs(ns.TOAST_STYLES) do
+				ids[#ids + 1] = id
+			end
+			table.sort(ids)
 
-		assert.are.same({ LANTERN, RIPPLE, TIMBER }, ids)
-		assert.are.same({ "core.toaststyle", TIMBER }, { ns.TOAST_STYLE_SLOT, ns.TOAST_STYLE_DEFAULT })
-	end)
+			assert.are.same({ LANTERN, TORN_PAGE, RIPPLE }, ids)
+			assert.are.same({ "core.toaststyle", TORN_PAGE }, { ns.TOAST_STYLE_SLOT, ns.TOAST_STYLE_DEFAULT })
+		end
+	)
 
 	it(
 		"each draw the toasts and Nods from an atlas of their own, which has every page and the strip (ANN-R80)",
 		function()
 			local atlases = {}
-			for _, id in ipairs({ TIMBER, RIPPLE, LANTERN }) do
+			for _, id in ipairs({ TORN_PAGE, RIPPLE, LANTERN }) do
 				local style = ns.ToastStyleOf(id)
 				atlases[#atlases + 1] = style.atlas
 				local sprites = ns.ATLASES[style.atlas].sprites
@@ -55,7 +58,7 @@ describe("the toast styles", function()
 	)
 
 	it("name medallions, a stamp and inks the shared atlas and the palette have (ANN-R80)", function()
-		for _, id in ipairs({ TIMBER, RIPPLE, LANTERN }) do
+		for _, id in ipairs({ TORN_PAGE, RIPPLE, LANTERN }) do
 			local style = ns.ToastStyleOf(id)
 			for _, trim in ipairs({ style.trim, style.highTrim }) do
 				assert.is_table(ns.ATLASES.Announce.sprites["bezel-" .. trim .. "-84"])
@@ -67,24 +70,28 @@ describe("the toast styles", function()
 		end
 	end)
 
-	it("give Ripple silver medallions and blue stamps, and Timber and Lantern Glow brass and red (ANN-R80)", function()
-		local timber, ripple, lantern = ns.ToastStyleOf(TIMBER), ns.ToastStyleOf(RIPPLE), ns.ToastStyleOf(LANTERN)
+	it(
+		"give Ripple silver medallions and blue stamps, and Torn Page and Lantern Glow brass and red (ANN-R80)",
+		function()
+			local tornPage, ripple, lantern =
+				ns.ToastStyleOf(TORN_PAGE), ns.ToastStyleOf(RIPPLE), ns.ToastStyleOf(LANTERN)
 
-		assert.are.same(
-			{ { "gold", "stamp" }, { "silver", "stamp-blue" }, { "gold", "stamp" } },
-			{ { timber.trim, timber.stamp }, { ripple.trim, ripple.stamp }, { lantern.trim, lantern.stamp } }
-		)
-		assert.are_not.same(timber.what, lantern.what)
-	end)
+			assert.are.same(
+				{ { "gold", "stamp" }, { "silver", "stamp-blue" }, { "gold", "stamp" } },
+				{ { tornPage.trim, tornPage.stamp }, { ripple.trim, ripple.stamp }, { lantern.trim, lantern.stamp } }
+			)
+			assert.are_not.same(tornPage.what, lantern.what)
+		end
+	)
 
 	for _, id in ipairs({ "core.toaststyle.moonlit", "hunts.cover.velvet", "", 7 }) do
-		it(("draw %s, which is no toast style, as Timber (ANN-R80)"):format(tostring(id)), function()
-			assert.are.equal(ns.TOAST_STYLES[TIMBER], ns.ToastStyleOf(id))
+		it(("draw %s, which is no toast style, as Torn Page (ANN-R80)"):format(tostring(id)), function()
+			assert.are.equal(ns.TOAST_STYLES[TORN_PAGE], ns.ToastStyleOf(id))
 		end)
 	end
 
-	it("draw Timber before Core's slot is registered, when GetEquipped has no good for it (ANN-R80)", function()
-		assert.are.equal(ns.TOAST_STYLES[TIMBER], ns.ToastStyleOf(nil))
+	it("draw Torn Page before Core's slot is registered, when GetEquipped has no good for it (ANN-R80)", function()
+		assert.are.equal(ns.TOAST_STYLES[TORN_PAGE], ns.ToastStyleOf(nil))
 	end)
 end)
 

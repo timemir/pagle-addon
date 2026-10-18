@@ -176,7 +176,7 @@ describe("A tracker block's frame", function()
 		end
 	)
 
-	it("rules the Driftwood Plank's lines apart, and hides a frame's slips back in No frame (TKB-R124)", function()
+	it("rules the Tideworn Plank's lines apart, and hides a frame's slips back in No frame (TKB-R124)", function()
 		local block, ns = newBlock()
 		block:SetLines(LINES)
 

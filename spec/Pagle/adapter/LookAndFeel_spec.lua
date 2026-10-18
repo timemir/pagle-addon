@@ -81,7 +81,7 @@ describe("The Look and Feel page", function()
 			assert.are.same({
 				PARAGRAPH,
 				"# Announcements",
-				"Toast style = core.toaststyle.timber",
+				"Toast style = core.toaststyle.page",
 				"  2 more in the Curio Shop",
 				"Sound set = core.soundset.driftwood",
 				"  1 more in the Curio Shop",
@@ -267,7 +267,7 @@ describe("Defaults", function()
 			loaded.client.settings.defaults(loaded.client.settings.page("Look and Feel"))
 
 			assert.are.same({
-				"core.toaststyle.timber",
+				"core.toaststyle.page",
 				"core.soundset.driftwood",
 				"core.crest.plain",
 				"ledger.binding.oak",
@@ -299,7 +299,7 @@ describe("Defaults", function()
 		loaded.client.settings.defaults(loaded.client.settings.page("Announcements"))
 
 		assert.are.same({
-			"core.toaststyle.timber",
+			"core.toaststyle.page",
 			"core.soundset.driftwood",
 			"core.crest.crest1",
 			"ledger.binding.lapis",

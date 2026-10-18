@@ -188,7 +188,7 @@ end)
 
 describe("Core's Announcements rows", function()
 	it(
-		"start from the defaults: Cozy off, the budget on, 4 per 5 min, every catch shown, animations on, Timber and"
+		"start from the defaults: Cozy off, the budget on, 4 per 5 min, every catch shown, animations on, Torn Page and"
 			.. " Driftwood"
 			.. " (announcements.md Data, ANN-R13)",
 		function()
@@ -205,7 +205,7 @@ describe("Core's Announcements rows", function()
 				end
 			end
 			assert.are.same(
-				{ false, true, 4, 5, true, true, "core.toaststyle.timber", "core.soundset.driftwood" },
+				{ false, true, 4, 5, true, true, "core.toaststyle.page", "core.soundset.driftwood" },
 				values
 			)
 			assert.are.same(

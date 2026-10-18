@@ -46,7 +46,7 @@ describe("Simulated Size on the client", function()
 
 		assert.are.same({
 			{ key = "tiddler", name = "Tiddler" },
-			{ key = "typical", name = "Typical" },
+			{ key = "typical", name = "Decent" },
 			{ key = "hefty", name = "Hefty" },
 			{ key = "whopper", name = "Whopper" },
 			{ key = "monster", name = "Monster" },

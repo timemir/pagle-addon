@@ -413,12 +413,12 @@ def test_text_for_something_that_isn_t_there_is_an_orphan(
 
 def test_a_kind_another_addon_owns_is_an_orphan(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     # DATA-R102: each kind belongs to one addon, and a lore file holds only its own addon's kinds.
-    manifest = MANIFEST + '\n[core.good]\nfields = ["name"]\nids = ["core.toaststyle.timber"]\n'
-    ledger = LEDGER + '\n[good."core.toaststyle.timber"]\nname = "Timber"\n'
+    manifest = MANIFEST + '\n[core.good]\nfields = ["name"]\nids = ["core.toaststyle.page"]\n'
+    ledger = LEDGER + '\n[good."core.toaststyle.page"]\nname = "Torn Page"\n'
     fails(
         write_lore_tree(tmp_path / "ledger", ledger, manifest, checks=ON),
         capsys,
-        f"{FILE}: good.core.toaststyle.timber.name: orphan: the kind good is core's (DATA-R102, DATA-R107)",
+        f"{FILE}: good.core.toaststyle.page.name: orphan: the kind good is core's (DATA-R102, DATA-R107)",
     )
 
 

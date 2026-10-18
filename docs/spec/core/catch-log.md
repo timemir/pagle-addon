@@ -178,15 +178,15 @@ Part of [Core](README.md). This file covers what Core observes, how it is stored
 
   | Catch ID | `h` | `u` | Band | Length at typical 300 mm |
   |---|---|---|---|---|
-  | `Player-4395-0A1B2C3D-1791731747-0:1` | 2657620567 | 0.618776 | 2 Typical | 314 |
+  | `Player-4395-0A1B2C3D-1791731747-0:1` | 2657620567 | 0.618776 | 2 Decent | 314 |
   | `Player-4395-0A1B2C3D-1791731747-0:2` | 4227872046 | 0.984378 | 4 Whopper | 453 |
-  | `Player-4395-0A1B2C3D-1791731762-1:1` | 1190098033 | 0.277091 | 2 Typical | 249 |
+  | `Player-4395-0A1B2C3D-1791731762-1:1` | 1190098033 | 0.277091 | 2 Decent | 249 |
   | `Player-1-00000001-1700000000-0:1` | 3063819173 | 0.713351 | 3 Hefty | 333 |
 
   A test also draws 300,000 synthetic Catch IDs (sequential times, 1–3 items per Cast) and checks every band's share is within 0.5 percentage points of LOG-R67's, and that the percentiles of items 1 and 2 of the same Cast are uncorrelated.
 
   The **1.0 freeze spec** (`spec/Pagle/logic/Size_spec.lua`, [#267](https://github.com/timemir/wow-fish/issues/267)) pins this table and, for each of LOG-R67's cut points, the two synthetic Catch IDs whose percentiles lie closest below and at or above it (within 0.00000005), with their `h` and band. Changing any constant of the hash or any cut point fails it, with a message naming ADR 0010. The table's lengths follow the multipliers, which stay tunable (LOG-R68): a retune updates that column with `SIZE_RULES_VERSION`, never a band.
-- **LOG-R67** The **Size band** is the band whose cut points hold `u`: 1 Tiddler [0, 0.15), 2 Typical [0.15, 0.70), 3 Hefty [0.70, 0.93), 4 Whopper [0.93, 0.995), 5 Monster [0.995, 1). Within band `i`, the length is linear between that band's two multipliers (Tunables) of the Species' typical length: `length = floor(typical * (m[i] + (m[i+1] - m[i]) * (u - cut[i]) / (cut[i+1] - cut[i])) + 0.5)`. Length therefore rises with `u` within a Species. `Pagle.SIZE_BANDS` lists the bands in order as `{ key, name }`; the names are drafts for the lore pass.
+- **LOG-R67** The **Size band** is the band whose cut points hold `u`: 1 Tiddler [0, 0.15), 2 Decent [0.15, 0.70), 3 Hefty [0.70, 0.93), 4 Whopper [0.93, 0.995), 5 Monster [0.995, 1). Within band `i`, the length is linear between that band's two multipliers (Tunables) of the Species' typical length: `length = floor(typical * (m[i] + (m[i+1] - m[i]) * (u - cut[i]) / (cut[i+1] - cut[i])) + 0.5)`. Length therefore rises with `u` within a Species. `Pagle.SIZE_BANDS` lists the bands in order as `{ key, name }`; the names are signed off for 1.0 ([#264](https://github.com/timemir/wow-fish/issues/264)), and band 2's key stays `typical`.
 - **LOG-R68** The hash and the cut points are frozen once shipped (ADR 0010): a Catch's band never changes, so Hunts and Notices that target a minimum band are never revoked by a rebuild. The typical lengths (in the catalogue, LOG-R55) and the multipliers can be retuned; a change to a typical length changes `CONTENT_FINGERPRINT`, and a change to the multipliers changes `Pagle.SIZE_RULES_VERSION`, which Modules that store sizes fold into their rules version. Neither moves a Catch between bands or changes which Catch is a Species' longest.
 - **LOG-R69** Lengths show in the Angler's **length unit** (Core setting): `Pagle.FormatLength(mm)` returns "34.2 cm" or "13.5 in", to 0.1 of the unit. The default is inches when `GetCurrentRegion()` returns 1 (Americas and Oceania) and cm otherwise, including when the call doesn't exist; `GetCurrentRegion` is on the launch re-verification list. Changing the unit changes only the display, never a comparison: Modules compare `length` in millimetres.
 

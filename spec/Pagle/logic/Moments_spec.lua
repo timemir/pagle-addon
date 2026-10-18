@@ -365,7 +365,7 @@ describe("ns.CatchNodMoment", function()
 		local nod = ns.CatchNodMoment(cast, itemName, "cm") --[[@as PagleMoment]]
 
 		assert.are.same(
-			{ rung = "nod", kind = "catch", title = "Raw Longjaw Mud Snapper · Typical · 34.2 cm", icon = 6289 },
+			{ rung = "nod", kind = "catch", title = "Raw Longjaw Mud Snapper · Decent · 34.2 cm", icon = 6289 },
 			{ rung = nod.rung, kind = nod.kind, title = nod.title, icon = nod.icon }
 		)
 		assert.are.same({ CAST, false }, { nod.cast, nod.sound })

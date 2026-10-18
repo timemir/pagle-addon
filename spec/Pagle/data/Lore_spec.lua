@@ -3,7 +3,7 @@
 
 -- SHOP-R25: Core's nine goods at M4.
 local GOODS = {
-	"core.toaststyle.timber",
+	"core.toaststyle.page",
 	"core.toaststyle.ripple",
 	"core.toaststyle.lanternglow",
 	"core.soundset.driftwood",

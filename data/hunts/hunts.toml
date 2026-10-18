@@ -46,7 +46,7 @@ title = "Hut Keeper"
 id = "pagles_wagers"
 name = "House Wagers"
 title = "Bookmaker's Bane"
-note = "Pagle's own wagers: a fish, an hour, and sometimes a place."
+note = "The house's own wagers: a fish, an hour, and sometimes a place."
 
 # One member for each faction's waters: 6522 Deviate Fish, 251524 Whimsyfin.
 [[class]]

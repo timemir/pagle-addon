@@ -1,6 +1,6 @@
 # Pagle's lore voice
 
-> Status: approved by the dev in ticket #130 (2026-10-14). The 1.0 lore gate audited every batch against it (#263), and the dev signs the lore off in #264.
+> Status: approved by the dev in ticket #130 (2026-10-14). The 1.0 lore gate audited every batch against it (#263), and the dev signed the lore off for 1.0 in #264 (2026-10-18).
 
 This is the guide every lore batch is written from (DATA-R110, DATA-R111). Lore is every name and line of flavour Pagle invents (CONTEXT.md › Lore): it never changes what anything counts for (DATA-R109), and interface text and the game's own names are not lore. It is written for the agent drafting a batch as much as for the dev reviewing it.
 
@@ -19,7 +19,7 @@ The angler has fished everywhere, is impressed by little, and likes fish more th
 - **In-world only.** No real-world references, brands, memes, slang or internet speech, and nothing about patches, expansions or other versions of the game.
 - **No words in Nat Pagle's mouth.** Never quote him, paraphrase him or claim his opinion. Pagle is named after him; it doesn't speak for him.
 - **Not the addon talking.** Lore never mentions Pagle, its systems or its numbers: no XP, levels, stars, Coins, Ledger, Hunts, Notices or Sessions, and none of Pagle's capitalised terms (write "fish", "catch", "angler").
-  - One exception (approved in #184): the wagers set's note (`set.pagles_wagers.note`) calls them "Pagle's own wagers", naming Nat Pagle the angler, not the addon, without quoting him.
+  - The one exception, approved in #184, is gone: the wagers set's note (`set.pagles_wagers.note`) called them "Pagle's own wagers" until the 1.0 sign-off (#264) made them "The house's own wagers".
 - **No size is Pagle's own.** No line says or hints that a length is Pagle's own measure rather than the game's (the dev, 15 Oct 2026). A fish is as big as it is; lore never explains how a size was worked out.
 - **Short.** A riddle, name or title is one phrase; a blurb, plaque or line one to three short sentences. Fragments are fine. No exclamation marks.
 - **No "I".** The Journal's handwritten notes ("Largest I've landed", LED-R140) are the player's own, so printed lore doesn't speak as "I". "You" for a fellow angler is fine, sparingly.
@@ -185,7 +185,7 @@ One line each, shown in place of anything not yet caught (LED-R138, LED-R144, LE
 3. **Review.** The dev reads the batch as a PR diff, for voice: tone, the riddles' hints, anything that breaks the rules above. Edits land in the same PR.
 4. **Afterwards.** Any later PR that adds a Species or item, for example from a Field report, carries its lore in the same PR, drafted from this file (DATA-R111).
 
-Today's working names in the specs (Timber, Ripple, Lantern Glow, Driftwood and the rest) are first drafts: their batch may keep or replace them.
+The specs' working names (Timber, Ripple, Lantern Glow, Driftwood and the rest) were first drafts: each batch kept or replaced them, and the 1.0 sign-off (#264) renamed Timber to Torn Page.
 
 ## Open choices
 

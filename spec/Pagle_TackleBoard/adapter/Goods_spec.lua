@@ -36,7 +36,7 @@ end
 
 describe("The Tackle Board's goods", function()
 	it(
-		'register the slot tackleboard.trackerframe ("Tackle Board tracker frame", Trackers) with No frame the default, Corkboard tier 1 and Driftwood Plank tier 2, none earned (TKB-R125, SHOP-R21, SHOP-R22)',
+		'register the slot tackleboard.trackerframe ("Tackle Board tracker frame", Trackers) with No frame the default, Corkboard tier 1 and Tideworn Plank tier 2, none earned (TKB-R125, SHOP-R21, SHOP-R22)',
 		function()
 			local _, fake = loggedIn()
 			local goods = fake.ns.goods
@@ -103,14 +103,14 @@ describe("The Tackle Board's goods", function()
 			prepare = function(loaded)
 				loaded.ns.L["boardgood.tackleboard.trackerframe.corkboard.name"] = "Corkboard"
 				loaded.ns.L["boardgood.tackleboard.trackerframe.corkboard.description"] = "Pinned up like a Notice."
-				loaded.ns.L["boardgood.tackleboard.trackerframe.driftwood.name"] = "Driftwood Plank"
+				loaded.ns.L["boardgood.tackleboard.trackerframe.driftwood.name"] = "Tideworn Plank"
 			end,
 		})
 
 		local cork = fake.Pagle.GetGood("tackleboard.trackerframe.corkboard")
 		local plank = fake.Pagle.GetGood("tackleboard.trackerframe.driftwood")
 		assert.are.same({ "Corkboard", "Pinned up like a Notice." }, { cork.name, cork.description })
-		assert.are.same({ "Driftwood Plank" }, { plank.name, plank.description })
+		assert.are.same({ "Tideworn Plank" }, { plank.name, plank.description })
 		assert.are.equal("tackleboard.trackerframe.none", fake.Pagle.GetGood("tackleboard.trackerframe.none").name)
 	end)
 
@@ -260,7 +260,7 @@ describe("A tracker frame's preview", function()
 	end)
 
 	it(
-		"dresses Corkboard as the kit's cork panel with its goals on slips, and Driftwood Plank as its ruled grey plank (TKB-R125)",
+		"dresses Corkboard as the kit's cork panel with its goals on slips, and Tideworn Plank as its ruled grey plank (TKB-R125)",
 		function()
 			local loaded = loggedIn()
 			local ns = loaded.ns

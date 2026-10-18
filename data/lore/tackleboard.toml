@@ -21,16 +21,16 @@ name = "Murloc Nymph"
 name = "Harvest Wheatwing"
 
 [fly.goldshire_gnat] # common 3, was "Goldshire Gnat"
-name = "Tirisfal Gnat"
+name = "Gravemoss Gnat"
 
 [fly.duskwood_shadow] # common 4, was "Duskwood Shadow"
 name = "Gloaming Shadow"
 
-[fly.redridge_ember] # common 5
-name = "Redridge Ember"
+[fly.redridge_ember] # common 5, was "Redridge Ember"
+name = "Red Rock Ember"
 
-[fly.barrens_dun] # common 6
-name = "Barrens Dun"
+[fly.barrens_dun] # common 6, was "Barrens Dun"
+name = "Savanna Dun"
 
 [fly.mudsnout_woolly] # common 7
 name = "Mudsnout Woolly"
@@ -47,8 +47,8 @@ name = "Old-Growth Olive"
 [fly.kodo_hair_caddis] # common 11, was "Kodo-hair Caddis"
 name = "Kodo-Hair Caddis"
 
-[fly.elwynn_royal] # common 12
-name = "Elwynn Royal"
+[fly.elwynn_royal] # common 12, was "Elwynn Royal"
+name = "Greenwood Royal"
 
 [fly.swamp_midge] # common 13
 name = "Swamp Midge"
@@ -56,8 +56,8 @@ name = "Swamp Midge"
 [fly.raptor_quill] # common 14
 name = "Raptor Quill"
 
-[fly.silverpine_spinner] # common 15
-name = "Silverpine Spinner"
+[fly.silverpine_spinner] # common 15, was "Silverpine Spinner"
+name = "Grey Pine Spinner"
 
 [fly.lakeshire_coachman] # common 16, was "Lakeshire Coachman"
 name = "Caravan Coachman"
@@ -74,8 +74,8 @@ name = "Bone-Dry Drifter"
 [fly.grimtotem_hackle] # common 20
 name = "Grimtotem Hackle"
 
-[fly.needles_ant] # common 21
-name = "Needles Ant"
+[fly.needles_ant] # common 21, was "Needles Ant"
+name = "Mesa Ant"
 
 [fly.feralas_fern] # common 22, was "Feralas Fern"
 name = "Thicket Fern"
@@ -142,6 +142,6 @@ description = "The list on its own, with nothing pinned behind it. It never warp
 name = "Corkboard"
 description = "A slab of cork, pocked with pinholes from jobs long finished. There is always room for one more."
 
-[boardgood."tackleboard.trackerframe.driftwood"] # Tracker frame, tier 2
-name = "Driftwood Plank"
+[boardgood."tackleboard.trackerframe.driftwood"] # Tracker frame, tier 2, was "Driftwood Plank"
+name = "Tideworn Plank"
 description = "A sea-grey plank, worn smooth by the tide and nailed up by the dock. It has travelled further than most boats."

@@ -169,7 +169,7 @@ function ns.PublishSize(Pagle, host, wrap)
 	for band, entry in ipairs(ns.SIZE_BANDS) do
 		bands[band] = { key = entry.key, name = entry.name }
 	end
-	--- The Size bands in order, `{ key, name }`, Tiddler to Monster (LOG-R67). The names are drafts for the lore pass.
+	--- The Size bands in order, `{ key, name }`, Tiddler to Monster (LOG-R67). Names signed off for 1.0 (#264).
 	---@type { key: string, name: string }[]
 	api.SIZE_BANDS = wrap and wrap(bands) or bands
 	--- Changes whenever the size multipliers change; a Module that stores sizes folds it into its rules version

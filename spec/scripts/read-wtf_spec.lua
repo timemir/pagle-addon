@@ -554,7 +554,7 @@ describe("scripts/read-wtf.lua", function()
 					.. TEST_CATALOGUE,
 				"sizes by band: Catches (their share; LOG-R67's share, the 95% range of the Catches at it)",
 				"  1 Tiddler: 75 (13.2%; 15%, 69–102)",
-				"  2 Typical: 295 (51.8%; 55%, 290–336)",
+				"  2 Decent: 295 (51.8%; 55%, 290–336)",
 				"  3 Hefty: 155 (27.2%; 23%, 111–151), OUTSIDE its 95% range",
 				"  4 Whopper: 35 (6.2%; 6.5%, 26–49)",
 				"  5 Monster: 9 (1.6%; 0.5%, 0–7), OUTSIDE its 95% range",

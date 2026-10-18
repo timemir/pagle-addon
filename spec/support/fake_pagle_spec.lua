@@ -777,7 +777,7 @@ describe("FakePagle", function()
 			fake.login()
 			local Pagle = fake.Pagle
 
-			assert.are.same({ "core.toaststyle.timber", "core.soundset.driftwood", "core.crest.plain" }, {
+			assert.are.same({ "core.toaststyle.page", "core.soundset.driftwood", "core.crest.plain" }, {
 				Pagle.GetEquipped("core.toaststyle"),
 				Pagle.GetEquipped("core.soundset"),
 				Pagle.GetEquipped("core.crest"),

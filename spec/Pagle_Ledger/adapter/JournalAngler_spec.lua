@@ -507,7 +507,7 @@ describe("the Angler page's Bindings", function()
 				{ "Storm Grey", "Angler Level 50" },
 				{ "Nat's Own", "Angler Level 60" },
 				{ "Birch Bark", "In the Curio Shop" },
-				{ "Sea-green Buckram", "In the Curio Shop" },
+				{ "Sea-Green Buckram", "In the Curio Shop" },
 				{ "Sharkskin", "In the Curio Shop" },
 			}, lines(loaded))
 		end
@@ -527,7 +527,7 @@ describe("the Angler page's Bindings", function()
 	it("opens the Curio Shop at a binding for sale (LED-R146, SHOP-R40)", function()
 		local fake, loaded = anglerPage()
 
-		-- The second of the three lines reading so: Sea-green Buckram's.
+		-- The second of the three lines reading so: Sea-Green Buckram's.
 		local widgets = {}
 		for _, widget in ipairs(loaded.ns.journal.frame.right.drawn.leader) do
 			if widget.value.text == "In the Curio Shop" then

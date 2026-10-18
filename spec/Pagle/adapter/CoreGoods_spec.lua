@@ -13,18 +13,18 @@ local function loadCoreWithLore()
 end
 
 describe("Core's slots and goods", function()
-	it("equip and own Timber, Driftwood and Plain after login (SHOP-R22, SHOP-R25, SHOP-R30, SHOP-R32)", function()
+	it("equip and own Torn Page, Driftwood and Plain after login (SHOP-R22, SHOP-R25, SHOP-R30, SHOP-R32)", function()
 		local loaded = loadCore()
 		loaded.client.fire("PLAYER_LOGIN")
 		local Pagle = loaded.env.Pagle
 
-		assert.are.same({ "core.toaststyle.timber", "core.soundset.driftwood", "core.crest.plain" }, {
+		assert.are.same({ "core.toaststyle.page", "core.soundset.driftwood", "core.crest.plain" }, {
 			Pagle.GetEquipped("core.toaststyle"),
 			Pagle.GetEquipped("core.soundset"),
 			Pagle.GetEquipped("core.crest"),
 		})
 		assert.are.same({ true, true, true }, {
-			Pagle.IsOwned("core.toaststyle.timber"),
+			Pagle.IsOwned("core.toaststyle.page"),
 			Pagle.IsOwned("core.soundset.driftwood"),
 			Pagle.IsOwned("core.crest.plain"),
 		})
@@ -52,7 +52,7 @@ describe("Core's slots and goods", function()
 				"Announcements",
 				"Core",
 				{
-					"core.toaststyle.timber default",
+					"core.toaststyle.page default",
 					"core.toaststyle.ripple tier 1",
 					"core.toaststyle.lanternglow tier 2",
 				},

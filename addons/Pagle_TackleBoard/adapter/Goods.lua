@@ -9,7 +9,7 @@ local ns = select(2, ...)
 -- stage as a sample tracker drawn by the tracker block maker (adapter/TrackerBlock.lua), and the frame looks the live
 -- tracker wears.
 
---- Each tracker frame's style, by good ID (TKB-R125, TKB-R124): the board art kit's Corkboard and Driftwood Plank
+--- Each tracker frame's style, by good ID (TKB-R125, TKB-R124): the board art kit's Corkboard and Tideworn Plank
 --- (adapter/TrackerBlock.lua's ns.TRACKER_STYLES). No frame (`tackleboard.trackerframe.none`) has none: the block's
 --- native look.
 ---@type table<string, TackleTrackerStyle>

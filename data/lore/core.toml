@@ -9,8 +9,8 @@
 # (wallet-and-shop.md › UI), so a description is about the look or the sound itself, never the shop or the addon.
 # A crest's name follows the in-client icon that stands in for it until Pagle has its own art (#155).
 
-[good."core.toaststyle.timber"] # Toast style, the default
-name = "Timber"
+[good."core.toaststyle.page"] # Toast style, the default, was "Timber"
+name = "Torn Page"
 description = "A fresh page torn from the logbook and pinned to a leather spine. Brass trim, red ink."
 
 [good."core.toaststyle.ripple"] # Toast style, tier 1

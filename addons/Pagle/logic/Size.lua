@@ -21,7 +21,7 @@ ns.SIZE_MULTIPLIERS = { 0.55, 0.75, 1.10, 1.30, 1.55, 1.80 }
 -- spec/Pagle/logic/Size_spec.lua pins them and every constant of ns.SizeHash below as the 1.0 freeze (#267).
 local CUTS = { 0, 0.15, 0.70, 0.93, 0.995, 1 }
 
---- The Size bands in order, as `{ key, name }` (LOG-R67). The names are interface text, drafts until the lore pass.
+--- The Size bands in order, as `{ key, name }` (LOG-R67). The names are interface text, signed off for 1.0 (#264).
 --- logic/ also loads without locale/, in the backend's driver (#223), and then the bands have no names.
 ---@type { key: string, name: string }[]
 ns.SIZE_BANDS = {}

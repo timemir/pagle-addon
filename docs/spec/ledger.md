@@ -246,10 +246,10 @@ The Ledger is the `Pagle_Ledger` Module: the Angler's identity as an angler. It 
   | `ledger.binding.field` | default | Field Leather |
   | `ledger.binding.level10` … `ledger.binding.level60` (6 goods, one per 10 levels) | earned, `earnedText` "Angler Level {L}" | Tanned Hide, Tidewater Blue, Reed Green, Oxblood, Storm Grey, Nat's Own |
   | `ledger.binding.birch` | tier 1 | Birch Bark |
-  | `ledger.binding.buckram` | tier 2 | Sea-green Buckram |
+  | `ledger.binding.buckram` | tier 2 | Sea-Green Buckram |
   | `ledger.binding.sharkskin` | tier 3 | Sharkskin |
 
-  A binding is a look only, the Ledger art kit's (its Bindings board, one to one with these goods): the leather (Core's leather for Field Leather; a grey leather under a vertex tint measured from the kit's swatches for the level bindings and Sharkskin; Birch Bark's bark and Sea-green Buckram's cloth their own textures), the band toned to it, the gilt of the breadcrumbs and fleurons (a silver gilt turns the brass plate silver), and the page paper taking a tenth of its hue. Each good's `preview` draws the kit's closed-book swatch of it (no pages).
+  A binding is a look only, the Ledger art kit's (its Bindings board, one to one with these goods): the leather (Core's leather for Field Leather; a grey leather under a vertex tint measured from the kit's swatches for the level bindings and Sharkskin; Birch Bark's bark and Sea-Green Buckram's cloth their own textures), the band toned to it, the gilt of the breadcrumbs and fleurons (a silver gilt turns the brass plate silver), and the page paper taking a tenth of its hue. Each good's `preview` draws the kit's closed-book swatch of it (no pages).
 - **LED-R111** A level binding's `isEarned()` is true when the higher of the peak level (LED-R35) and the highest level in the celebrated set is at least its level. The Ledger calls `M:RefreshGoods()` after a live entry that raises the peak level past a multiple of 10, and from `done` (SHOP-R31).
 - **LED-R112** The Journal is drawn in `Pagle.GetEquipped("ledger.binding")`, and its bookplate shows `Pagle.GetEquipped("core.crest")`'s icon (SHOP-R25), or no emblem while that is the slot's default, Plain ("No emblem, only the owner's name"). It redraws on `AppearanceChanged` for either slot.
 
@@ -490,7 +490,7 @@ The Ledger adds no rows to any Settings page.
 | Level titles | levels 1, 10, 20, 30, 40, 50, 60 | LED-R75 |
 | Prestige titles | ranks 1, 5, 10 | LED-R75 |
 | Level bindings | levels 10, 20, 30, 40, 50, 60 | LED-R110 |
-| Binding tiers | Birch Bark 1, Sea-green Buckram 2, Sharkskin 3 | LED-R110 |
+| Binding tiers | Birch Bark 1, Sea-Green Buckram 2, Sharkskin 3 | LED-R110 |
 | Notes to self | at most 3 | LED-R133 |
 | Search results | 4 zones, 6 fish | LED-R148 |
 | Plain hint zones | 2 | LED-R141 |

@@ -3,7 +3,7 @@ local ns = select(2, ...)
 
 -- The cards (announcements.md › Session summary, › Write-up, › UI): pure logic over PagleDB.global (CORE-R7). Which
 -- card shows when, the Write-up sections Modules raise from a projection's done, and the rows a card shows.
--- adapter/Cards.lua draws them in the Timber card frame.
+-- adapter/Cards.lua draws them in the Torn Page card frame.
 
 --- Session summary cards kept at most (ANN-R54; Tunables). The Write-up is outside the limit (ANN-R61).
 ns.CARDS_KEPT = 3

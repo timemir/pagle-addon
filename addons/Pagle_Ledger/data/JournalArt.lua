@@ -18,7 +18,7 @@ local OWN = "Interface\\AddOns\\Pagle_Ledger\\media\\journal\\"
 
 --- The book's whole textures: the leather's grain (tiled, 128 UI units a repeat; Bark and Cloth 256), the page paper,
 --- and the binding leathers (LED-R110): Field Leather is Core's own leather, a leather binding a vertex tint over the
---- grey leather, Birch Bark and Sea-green Buckram their own grain.
+--- grey leather, Birch Bark and Sea-Green Buckram their own grain.
 ns.JOURNAL_FILES = {
 	leather = CORE .. "Leather",
 	parchment = CORE .. "Parchment",

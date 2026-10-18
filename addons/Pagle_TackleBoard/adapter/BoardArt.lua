@@ -106,7 +106,7 @@ ns.BOARD_FONTS = {
 	ConfirmKeep = { "handSemi", 20, "5A3A14" },
 	-- the RE-POSTED stamp
 	Stamp = { "gilt", 14, "9A2A1A" },
-	-- the tracker: No frame (the native look), Corkboard and Driftwood Plank
+	-- the tracker: No frame (the native look), Corkboard and Tideworn Plank
 	TrackerTitle = { "gilt", 14, "FFD100", true },
 	TrackerHeadRight = { "italic", 12.5, "E8D8A8", true },
 	TrackerGoal = { "print", 13, "FFFFFF", true },

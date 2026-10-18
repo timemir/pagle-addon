@@ -51,7 +51,7 @@ ids = ["field", "level10", "level20", "level30", "level40", "level50", "level60"
 [core.good]
 fields = ["name", "description"]
 ids = [
-	"core.toaststyle.timber",
+	"core.toaststyle.page",
 	"core.toaststyle.ripple",
 	"core.toaststyle.lanternglow",
 	"core.soundset.driftwood",

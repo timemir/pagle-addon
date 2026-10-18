@@ -343,7 +343,7 @@ Hunts never cuts Sessions and doesn't read a record's `session` (LOG-R98).
 | | `riggles_racer` | Riggle's Racer | natural | species 19803 (Brownell's Blue Striped Racer) | `event.301` | 1 |
 | `camp_hours` · the Hut Keeper | `rack_hour` | Rack Hour | imposed | class `quality.uncommon` | `auras = { 1280341 }` | 1 / 10 / 25 |
 | | `hut_hour` | Hut Hour | imposed | class `species.any` | `auras = { 1280342 }` | 1 / 5 / 15 |
-| `pagles_wagers` · Pagle's Apprentice; set note says these are Pagle's own wagers | `grouper_by_moonlight` | Grouper by Moonlight | imposed | species 12238 (Darkshore Grouper) | `areas = { 148 }`, `time = { { 1320, 240 } }` (Darkshore, 22:00–04:00) | 1 / 5 / 20 |
+| `pagles_wagers` · Pagle's Apprentice; set note says these are the house's own wagers | `grouper_by_moonlight` | Grouper by Moonlight | imposed | species 12238 (Darkshore Grouper) | `areas = { 148 }`, `time = { { 1320, 240 } }` (Darkshore, 22:00–04:00) | 1 / 5 / 20 |
 | | `oddity_at_dusk` | Oddity at Dusk | imposed | class `fixed.oddity` | `time = { { 1080, 1260 } }` (18:00–21:00) | 1 / 10 / 25 |
 | | `witching_hour` | Witching Hour | imposed | class `species.any` | `areas = { 10 }`, `time = { { 0, 180 } }` (Duskwood, 00:00–03:00) | 1 / 10 / 30 |
 | | `dawn_trout` | Dawn Trout | imposed | species 8365 (Mithril Head Trout) | `time = { { 300, 480 } }` (05:00–08:00) | 1 / 10 / 25 |

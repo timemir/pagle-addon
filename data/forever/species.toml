@@ -3,7 +3,7 @@
 # one, removed ones and the Legends included.
 #
 # No game source gives a length: a Simulated Size is never game data (LOG-R65). Drafted in #160 from each Species'
-# name, kind and a real-world counterpart's common adult length, so a Typical Catch reads plausibly; Species of one
+# name, kind and a real-world counterpart's common adult length, so a Decent Catch reads plausibly; Species of one
 # kind stay consistent, and the Legends are longer than every ordinary fish. The dev reviews them in #162. The comment
 # above each entry is its enUS DB2 name and the reason, kept for review only (DATA-R3).
 

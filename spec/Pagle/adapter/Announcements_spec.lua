@@ -469,11 +469,11 @@ describe("the announcements art", function()
 	it("writes a headline with no text as its title alone in the Angler's hand, as a catch Nod's line", function()
 		local loaded, M = loadCore()
 
-		raise(loaded, M, moment("nod", "Oily Blackmouth · Typical · 34.2 cm"))
+		raise(loaded, M, moment("nod", "Oily Blackmouth · Decent · 34.2 cm"))
 
 		local nod = frameOf(loaded, "nod")
 		assert.are.same(
-			{ "Oily Blackmouth · Typical · 34.2 cm", "PagleArtNodName", false },
+			{ "Oily Blackmouth · Decent · 34.2 cm", "PagleArtNodName", false },
 			{ nod.title:GetText(), nod.title.fontObject, nod.text.shown }
 		)
 	end)

@@ -783,7 +783,7 @@ describe("Each page's Defaults button", function()
 		}, valuesOn(loaded, "Announcements"))
 		assert.are.equal(300, loaded.namespaces.Pagle.db.profile.announcements.budget.window) -- stored in seconds
 		assert.are.same({
-			["core.toaststyle"] = "core.toaststyle.timber",
+			["core.toaststyle"] = "core.toaststyle.page",
 			["core.soundset"] = "core.soundset.driftwood",
 			["core.crest"] = "core.crest.crest1",
 			["ledger.binding"] = "ledger.binding.birch",
@@ -836,7 +836,7 @@ describe("Each page's Defaults button", function()
 		loaded.client.settings.defaults(loaded.client.settings.page("Look and Feel"))
 
 		assert.are.same({
-			["core.toaststyle"] = "core.toaststyle.timber",
+			["core.toaststyle"] = "core.toaststyle.page",
 			["core.soundset"] = "core.soundset.driftwood",
 			["core.crest"] = "core.crest.plain",
 			["ledger.binding"] = "ledger.binding.field",

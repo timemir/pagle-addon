@@ -228,7 +228,7 @@ describe("Which Catches qualify, and a Hunt's count and tiers", function()
 		-- fixture_hefty_blackmouth: Oily Blackmouth, minBand 3, 22:00–04:00 realm time.
 		local NIGHT = MAR_10 + 3600
 
-		it("counts a Hefty and a Monster Catch, and not a Typical one or one without a size", function()
+		it("counts a Hefty and a Monster Catch, and not a Decent one or one without a size", function()
 			local hefty = hunt("fixture_hefty_blackmouth")
 			local TYPICAL, HEFTY, MONSTER = 2, 3, 5
 

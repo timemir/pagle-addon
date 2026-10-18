@@ -29,8 +29,8 @@ local L = ns.L or {}
 
 --- Core's toast style slot (SHOP-R25, ANN-R80).
 ns.TOAST_STYLE_SLOT = "core.toaststyle"
---- Timber's good ID: the toast style slot's default, and the style for any ID that isn't one.
-ns.TOAST_STYLE_DEFAULT = "core.toaststyle.timber"
+--- Torn Page's good ID: the toast style slot's default, and the style for any ID that isn't one.
+ns.TOAST_STYLE_DEFAULT = "core.toaststyle.page"
 --- Core's sound set slot (SHOP-R25, ANN-R72).
 ns.SOUND_SET_SLOT = "core.soundset"
 --- Core's bookplate crest slot (SHOP-R25, LED-R112).

@@ -8,11 +8,11 @@ local ns = select(2, ...)
 -- The tracker block maker (TKB-R122, TKB-R124, CORE-R73; tackle-board.md › UI, the tracker): the Tackle Board's block in
 -- Core's dock, drawn from a list of line descriptions in one of its three frames, as the board art kit draws them
 -- (PagleArtBoard's Tracker.lua): No frame (the default, native look: each line on a fading shade), Corkboard (a cork
--- panel in a brass rim, each goal a paper slip on a tack) and Driftwood Plank (a grey plank, its lines ruled apart).
+-- panel in a brass rim, each goal a paper slip on a tack) and Tideworn Plank (a grey plank, its lines ruled apart).
 -- The frames are sliced in three down, so they fit any number of lines. The Curio Shop's previews draw a sample with it
 -- (TKB-R125, adapter/Goods.lua); the live tracker (adapter/Tracker.lua) fills it with live lines, gives its rows
 -- clicks and docks it. The header's flame and chevron and a slip's tack come from the small Marks atlas, so the tracker
--- loads the frames' atlas (Tracker) only with a Corkboard or Driftwood Plank.
+-- loads the frames' atlas (Tracker) only with a Corkboard or Tideworn Plank.
 
 --- The tracker's width in UI units, its words' width, so the dock's blocks line up (CORE-R70). A frame reaches out
 --- round it.
@@ -46,7 +46,7 @@ ns.TRACKER_WIDTH = 250
 ---@field complete string      -- a goal flashing "Complete" (TKB-R123)
 ---@field shade boolean?       -- each line on a fading shade (No frame)
 ---@field slips boolean?       -- each goal on a paper slip with a tack (Corkboard)
----@field rules boolean?       -- a faint rule between lines (Driftwood Plank)
+---@field rules boolean?       -- a faint rule between lines (Tideworn Plank)
 
 ---@type table<string, TackleTrackerStyle>
 ns.TRACKER_STYLES = {
@@ -159,7 +159,7 @@ local SLIP_LEANS = { -0.6, 0.5, -0.3, 0.7, -0.5 }
 ---@field shade Texture        -- No frame: the line's shade
 ---@field slip TackleSprite?   -- Corkboard: the goal's slip
 ---@field tack TackleSprite?
----@field rule Texture         -- Driftwood Plank: the rule above it
+---@field rule Texture         -- Tideworn Plank: the rule above it
 
 --- A tracker block (TKB-R122): `SetLines` draws its lines and returns its height; `SetFrame` dresses it in one of the
 --- frames (nil: No frame). Either may come first.

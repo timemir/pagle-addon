@@ -10,7 +10,7 @@ end
 -- frames are drawn from: solid textures, edges, font strings and native buttons. The announcement frames' own art is
 -- adapter/Art.lua's.
 
---- The toast style equipped in Core's slot (SHOP-R32), or Timber when none is (ANN-R80).
+--- The toast style equipped in Core's slot (SHOP-R32), or Torn Page when none is (ANN-R80).
 ---@return PagleToastStyle
 function ns.EquippedToastStyle()
 	return ns.ToastStyleOf(ns.goods:GetEquipped(ns.TOAST_STYLE_SLOT))

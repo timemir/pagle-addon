@@ -3,7 +3,7 @@ local ns = select(2, ...)
 
 -- The toast styles and the announcement art's choices (announcements.md › Toast styles, › UI, ANN-R80;
 -- wallet-and-shop.md › SHOP-R25), as data keyed by Core's toast style good IDs. The look is the announcements art
--- kit's: a toast is a fresh entry in the Angler's ledger, a torn page on a leather spine, written in ink. Timber is
+-- kit's: a toast is a fresh entry in the Angler's ledger, a torn page on a leather spine, written in ink. Torn Page is
 -- the free default and the kit's Ledger style; Ripple and Lantern Glow are Curio Shop goods, the kit's Ripple and
 -- Lantern styles. A style picks the toast and Nod art (its own atlas, data/AnnounceArt.lua), the medallions' trim,
 -- the rubber stamps' ink and the page's inks; the banner, the splash and the cards look the same in every style. A
@@ -97,7 +97,7 @@ ns.TOAST_STYLES = {
 	},
 }
 
---- The style a toast style good ID draws in: its own, or Timber for any other ID, or none (ANN-R80): before Core's
+--- The style a toast style good ID draws in: its own, or Torn Page for any other ID, or none (ANN-R80): before Core's
 --- slot is registered, GetEquipped has no good for it.
 ---@param goodID any
 ---@return PagleToastStyle

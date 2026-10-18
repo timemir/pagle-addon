@@ -11,7 +11,7 @@ local SHOP_ART = "Interface\\AddOns\\Pagle\\media\\shop\\"
 -- each good named by its ID until its lore lands.
 local CORE_UNBOUGHT = {
 	"TOAST STYLE 1 of 3",
-	"Timber | IN USE",
+	"Torn Page | IN USE",
 	"Ripple | 150",
 	"Lantern Glow | 400",
 	"SOUND SET 1 of 2",
@@ -415,9 +415,9 @@ describe("The Curio Shop's list", function()
 				"a price the balance can't cover is in the stamp's red"
 			)
 			assert.is_true(velvet.price.coin:IsShown())
-			local timber = rowOf(loaded, "core.toaststyle.timber")
-			assert.is_true(timber.wax:IsShown()) -- In use has its wax dot
-			assert.is_false(timber.price:IsShown())
+			local tornPage = rowOf(loaded, "core.toaststyle.page")
+			assert.is_true(tornPage.wax:IsShown()) -- In use has its wax dot
+			assert.is_false(tornPage.price:IsShown())
 		end
 	)
 
@@ -467,7 +467,7 @@ describe("The Curio Shop's list", function()
 		filters.owned:Click()
 		assert.are.same({
 			"TOAST STYLE 1 of 3",
-			"Timber | IN USE",
+			"Torn Page | IN USE",
 			"SOUND SET 1 of 2",
 			"Driftwood | IN USE",
 			"BOOKPLATE CREST 1 of 4",
@@ -591,7 +591,7 @@ describe("The Curio Shop's stage", function()
 			assert.are.equal("IN USE", stage.tags:GetText())
 			assert.is_false(stage.use:IsShown())
 			assert.are.same(
-				{ "TOAST STYLE 2 of 3", "Timber | default", "Ripple | IN USE" },
+				{ "TOAST STYLE 2 of 3", "Torn Page | default", "Ripple | IN USE" },
 				{ listed(loaded)[1], listed(loaded)[2], listed(loaded)[3] }
 			)
 		end
@@ -601,7 +601,7 @@ describe("The Curio Shop's stage", function()
 		local loaded = shopCore()
 		local Pagle = loaded.env.Pagle
 		loaded.ns.goods:SetPurchased({ ["core.toaststyle.ripple"] = true })
-		Pagle.OpenShop("core.toaststyle.timber")
+		Pagle.OpenShop("core.toaststyle.page")
 		assert.are.equal("IN USE · DEFAULT", shopFrame(loaded).stage.tags:GetText())
 
 		Pagle.SetEquipped("core.toaststyle", "core.toaststyle.ripple")
@@ -825,7 +825,7 @@ describe("The bill of sale", function()
 		play(loaded)
 
 		assert.is_true(loaded.env.Pagle.IsOwned("core.toaststyle.ripple"))
-		assert.are.equal("core.toaststyle.timber", loaded.env.Pagle.GetEquipped("core.toaststyle"))
+		assert.are.equal("core.toaststyle.page", loaded.env.Pagle.GetEquipped("core.toaststyle"))
 		local stage = shopFrame(loaded).stage
 		assert.are.equal("OWNED", stage.tags:GetText())
 		assert.is_true(stage.use:IsShown())
@@ -1028,16 +1028,16 @@ describe("The Curio Shop's motion and sounds (wallet-and-shop.md › UI: Motion 
 			play(loaded, 0.4) -- 1.65 s: delivered
 			assert.are.equal("IN USE", row.tag:GetText())
 			assert.is_true(row.price:GetAlpha() < 1)
-			assert.are.equal("default", rowOf(loaded, "core.toaststyle.timber").stepDown:GetText())
+			assert.are.equal("default", rowOf(loaded, "core.toaststyle.page").stepDown:GetText())
 
 			play(loaded)
 
 			assert.are.equal("50", purse.balance:GetText())
 			assert.are.same(
-				{ "TOAST STYLE 2 of 3", "Timber | default", "Ripple | IN USE" },
+				{ "TOAST STYLE 2 of 3", "Torn Page | default", "Ripple | IN USE" },
 				{ listed(loaded)[1], listed(loaded)[2], listed(loaded)[3] }
 			)
-			assert.is_false(rowOf(loaded, "core.toaststyle.timber").stepDown:IsShown())
+			assert.is_false(rowOf(loaded, "core.toaststyle.page").stepDown:IsShown())
 			assert.are.equal(0, row.glow:GetAlpha())
 			assert.are.equal("IN USE", stage.tags:GetText())
 			assert.are.equal(1, stage.tags:GetAlpha())

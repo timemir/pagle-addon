@@ -27,7 +27,7 @@ LEDGER_TOML = REPO / "data" / "lore" / "ledger.toml"
 
 # SHOP-R25: Core's nine goods at M4, by slot.
 CORE_GOODS = [
-    "core.toaststyle.timber",
+    "core.toaststyle.page",
     "core.toaststyle.ripple",
     "core.toaststyle.lanternglow",
     "core.soundset.driftwood",
@@ -343,22 +343,21 @@ def test_sunday_showdown_s_note_says_it_is_the_extravaganza_and_needs_level_60()
     assert re.search(r"\blevel 60\b", note), note
 
 
-def test_the_wagers_set_s_note_calls_them_pagle_s_own_without_quoting_him() -> None:
-    # hunts.md › Data: the set note says these are Pagle's own wagers (#183, restored in #184: Nat Pagle the angler,
-    # VOICE.md's one exception to choice 12). DATA-R110: no words in Nat Pagle's mouth, so nothing is quoted.
+def test_the_wagers_set_s_note_calls_them_the_house_s_own_without_quoting_anyone() -> None:
+    # hunts.md › Data: the set note says these are the house's own wagers, the set being House Wagers (#264, which
+    # retired VOICE.md's one exception to choice 12, "Pagle's own wagers" from #184). Nothing is quoted (DATA-R110).
     note = _hunts_text()["set.pagles_wagers.note"]
-    assert "Pagle's own wagers" in note
+    assert note.startswith("The house's own wagers"), note
     assert '"' not in note, note
 
 
 @pytest.mark.parametrize("key", sorted(_hunts_text()))
 def test_no_line_of_hunts_lore_names_the_addon_its_terms_or_shouts(key: str) -> None:
     # VOICE.md: "Not the addon talking" (choice 12): no Pagle and none of its capitalised terms; no "I" (choice 3);
-    # no exclamation marks (choice 13); no | (WoW's escape codes). VOICE.md's one exception (#184): the wagers set's
-    # note names Nat Pagle the angler, so Pagle is allowed there and nowhere else.
+    # no exclamation marks (choice 13); no | (WoW's escape codes). The wagers set's note, once the one exception
+    # (#184), holds to it too since #264.
     text = _hunts_text()[key]
-    pagle = "" if key == "set.pagles_wagers.note" else "Pagle|Pagle's|"
-    terms = rf"\b({pagle}Hunts?|Ledger|Coins?|Sessions?|Notices?|Catch(es)?|Casts?|Angler|XP|I)\b"
+    terms = r"\b(Pagle|Pagle's|Hunts?|Ledger|Coins?|Sessions?|Notices?|Catch(es)?|Casts?|Angler|XP|I)\b"
     assert not re.search(terms, text), text
     assert "!" not in text and "|" not in text, text
 
