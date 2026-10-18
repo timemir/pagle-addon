@@ -368,14 +368,14 @@ local function layLadder(view, ladder, y, same)
 	if bar then
 		local grew = same and bar.fill > view.bar.value
 		view.bar:SetBar(bar.fill, bar.label, grew)
-		if grew and view.bar:IsVisible() and ns.SyncMotion() then
+		if grew and view.bar:IsVisible() and ns.MotionOn() then
 			-- a catch is written in: its Casts line fades up with the count (MOTION.md › Counts and readings)
 			ns.BoardSound("write")
-			ns.StopMotion(view.effort)
-			ns.Animate(view.effort, {
+			Pagle.StopMotion(view.effort)
+			Pagle.Animate(view.effort, {
 				{
 					dur = 0.3,
-					ease = ns.Ease.out,
+					ease = Pagle.EASE.out,
 					keys = { { 0, { 0.3 } }, { 1, { 1 } } },
 					apply = function(v)
 						view.effort:SetAlpha(v[1])

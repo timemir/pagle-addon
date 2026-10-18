@@ -305,7 +305,7 @@ function Board:Open(place)
 	if self.closing then
 		-- opened again while it fades out: it stays
 		self.closing = false
-		ns.StopMotion(self.closeOwner)
+		Pagle.StopMotion(self.closeOwner)
 		frame:SetAlpha(1)
 	end
 	if not frame:IsShown() then
@@ -329,7 +329,7 @@ function Board:SettleTurn()
 		return
 	end
 	self.turning = false
-	ns.StopMotion(self.turnOwner)
+	Pagle.StopMotion(self.turnOwner)
 	if self.shown then
 		self:ShowOnly(self.shown)
 	end
@@ -342,7 +342,7 @@ function Board:Hide()
 		self:SettleTurn()
 		self.closeSounded = true
 		ns.BoardSound("bookClose")
-		if ns.SyncMotion() then
+		if ns.MotionOn() then
 			self.closing = true
 			-- this close's end, once, by the fade or by the clock after the fade's time, whichever comes first, so it
 			-- ends whether or not frames are drawn; a later open or close has its own
@@ -350,7 +350,7 @@ function Board:Hide()
 			self.closeOwner = owner
 			local function finish()
 				if self.closing and self.closeOwner == owner then
-					ns.StopMotion(owner)
+					Pagle.StopMotion(owner)
 					self.closing = false
 					frame:Hide()
 					frame:SetAlpha(1)
@@ -485,7 +485,6 @@ function Board:Draw()
 	if not self:IsShown() then
 		return
 	end
-	ns.SyncMotion()
 	self.serial = self.serial + 1
 	local place = self.router:Place()
 	local spread = spreadOf(place)
@@ -500,7 +499,7 @@ function Board:Draw()
 		end
 	end
 	self.shown = spread
-	if not (from and from ~= spread and self.pages[from .. ":left"] and ns.motion) then
+	if not (from and from ~= spread and self.pages[from .. ":left"] and ns.MotionOn()) then
 		self:ShowOnly(spread)
 		drawLeather(self, self.router:Place())
 		return

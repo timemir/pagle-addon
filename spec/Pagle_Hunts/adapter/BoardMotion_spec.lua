@@ -1,7 +1,7 @@
 -- The board's motion and sounds (hunts.md › UI, HNT-R60, HNT-R62, HNT-R70; the books art kit v2's MOTION.md and
--- SOUND.md): adapter/Motion.lua's driver run by the fake client's frames, the book fading in and out with its sounds,
--- the page turn between spreads with the ribbons' lengths easing, the live timeline's rows sliding and a Hunt just
--- opened flashing with its sound, the cover's dip, the ink running on, fitting the screen, and the realm-minute
+-- SOUND.md): Core's motion driver (Pagle.Animate) run by the fake client's frames, the book fading in and out with its
+-- sounds, the page turn between spreads with the ribbons' lengths easing, the live timeline's rows sliding and a Hunt
+-- just opened flashing with its sound, the cover's dip, the ink running on, fitting the screen, and the realm-minute
 -- refresh; and Core's Animations setting, off, drawing everything settled and silencing the motion's beats.
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile

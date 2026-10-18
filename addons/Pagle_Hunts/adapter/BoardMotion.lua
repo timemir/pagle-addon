@@ -5,25 +5,18 @@ end
 ---@class PagleHuntsNS
 local ns = select(2, ...)
 
--- The board's motion and sounds (hunts.md › UI, the books art kit v2's MOTION.md and SOUND.md), played by
--- adapter/Motion.lua's driver: the book fading in and out, the page turn between spreads (the kit's Views.lua: each
--- spread's page in a clip frame, two complementary wipes with a fold shade, a cast shadow and a light edge), and the
--- seam the rest of the board reads: whether things move, the kit's sounds, and fitting the board to the screen
--- (adapter/Fit.lua). With Core's Animations setting off, everything draws settled.
+-- The board's motion and sounds (hunts.md › UI, the books art kit v2's MOTION.md and SOUND.md), played by Core's one
+-- motion driver (Pagle.Animate, announcements.md › Contracts): the book fading in and out, the page turn between
+-- spreads (the kit's Views.lua: each spread's page in a clip frame, two complementary wipes with a fold shade, a cast
+-- shadow and a light edge), and the seam the rest of the board reads: whether things move, the kit's sounds, and
+-- fitting the board to the screen (Pagle.FitToScreen, core/README.md › Contracts). Core's driver reads the Animations
+-- setting itself: off, everything draws settled.
 
 --- Whether things move: Core's Animations setting, `Pagle.IsAnimationsOn()` (announcements.md › Contracts; on by
---- default).
+--- default). Core's driver reads it too, so the board asks only to choose what it draws.
 ---@return boolean
-function ns.AnimationsOn()
+function ns.MotionOn()
 	return Pagle.IsAnimationsOn() ~= false
-end
-
---- Sets the kit's driver to Core's Animations setting (adapter/Motion.lua reads ns.motion) and returns it: the board
---- calls it before it starts anything that moves.
----@return boolean
-function ns.SyncMotion()
-	ns.motion = ns.AnimationsOn()
-	return ns.motion
 end
 
 -- The books kit's sounds (SOUND.md), by the client's sound kit ids, on the SFX channel: UI foley, never part of a
@@ -45,37 +38,32 @@ local MOTION_TIED = { pageTurn = true, write = true }
 ---@param name string
 function ns.BoardSound(name)
 	local id = assert(ns.BOARD_SOUNDS[name], "the board has no sound " .. tostring(name))
-	if MOTION_TIED[name] and not ns.AnimationsOn() then
+	if MOTION_TIED[name] and not ns.MotionOn() then
 		return
 	end
 	PlaySound(id, "SFX")
 end
 
---- Fits `frame` to the screen (adapter/Fit.lua's P.FitToScreen): `width` × `height` is its whole extent with what
---- hangs outside it, `lift` how far its centre sits above that extent's centre. Never larger than 1; centred, `lift`
---- up. Before the client has a screen size (UIParent measures nothing), it is centred at its own size.
+--- Fits `frame` to the screen with Core's fit (Pagle.FitToScreen, core/README.md › Contracts), again whenever the UI
+--- scale or the window's size changes: `width` × `height` is its whole extent with what hangs outside it, `lift` how
+--- far its centre sits above that extent's centre. Never larger than 1; centred, `lift` up. Before the client has a
+--- screen size (UIParent measures nothing), it is centred at its own size.
 ---@param frame Frame
 ---@param width number
 ---@param height number
 ---@param lift number
 function ns.FitBoard(frame, width, height, lift)
-	if (UIParent:GetHeight() or 0) > 0 and (UIParent:GetWidth() or 0) > 0 then
-		ns.FitToScreen(frame, width, height, lift)
-		return
-	end
-	frame:ClearAllPoints()
-	frame:SetPoint("CENTER", 0, lift)
+	Pagle.FitToScreen(frame, { width = width, height = height, lift = lift })
 end
 
 --- Fades `frame` in (0.16 s, ease-out), as the kit's book opens.
 ---@param frame Frame
 function ns.FadeIn(frame)
-	ns.SyncMotion()
-	ns.StopMotion(frame)
-	ns.Animate(frame, {
+	Pagle.StopMotion(frame)
+	Pagle.Animate(frame, {
 		{
 			dur = 0.16,
-			ease = ns.Ease.out,
+			ease = Pagle.EASE.out,
 			keys = { { 0, { 0 } }, { 1, { 1 } } },
 			apply = function(v)
 				frame:SetAlpha(v[1])
@@ -92,11 +80,10 @@ ns.CLOSE_FADE = 0.12
 ---@param owner table the fade's owner: not the frame, whose own fade-in it would cut
 ---@param done fun()
 function ns.FadeOut(frame, owner, done)
-	ns.SyncMotion()
-	ns.Animate(owner, {
+	Pagle.Animate(owner, {
 		{
 			dur = ns.CLOSE_FADE,
-			ease = ns.Bezier(0.42, 0, 1, 1),
+			ease = Pagle.Bezier(0.42, 0, 1, 1),
 			keys = { { 0, { 1 } }, { 1, { 0 } } },
 			apply = function(v)
 				frame:SetAlpha(v[1])
@@ -241,11 +228,11 @@ function ns.TurnPages(owner, fold, from, to, forward, leftWidth, rightWidth, hal
 		reveal(from.right, rightWidth, 0, 1)
 	end
 	local landed = false
-	ns.Animate(owner, {
+	Pagle.Animate(owner, {
 		-- the page lifts toward the spine, speeding up
 		{
 			dur = ns.TURN_LIFT,
-			ease = ns.Bezier(0.5, 0, 0.9, 0.6),
+			ease = Pagle.Bezier(0.5, 0, 0.9, 0.6),
 			keys = { { 0, { 0 } }, { 1, { 1 } } },
 			apply = function(v)
 				local k = v[1]
@@ -268,7 +255,7 @@ function ns.TurnPages(owner, fold, from, to, forward, leftWidth, rightWidth, hal
 		{
 			dur = ns.TURN_LAND,
 			delay = ns.TURN_LIFT,
-			ease = ns.Bezier(0.1, 0.4, 0.4, 1),
+			ease = Pagle.Bezier(0.1, 0.4, 0.4, 1),
 			keys = { { 0, { 0 } }, { 1, { 1 } } },
 			apply = function(v)
 				local k = v[1]
