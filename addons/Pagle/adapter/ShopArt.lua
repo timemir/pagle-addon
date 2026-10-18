@@ -11,16 +11,8 @@ end
 -- buttons. Sprites come from the atlases in data/ShopArt.lua, through ns.SetSprite and ns.SetThreeSlice. Every size is
 -- the canvas's CSS pixel, a UI unit.
 
--- An ink from its hex, as { r, g, b }.
----@param hex string
----@return number[]
-local function rgb(hex)
-	return {
-		tonumber(hex:sub(1, 2), 16) / 255,
-		tonumber(hex:sub(3, 4), 16) / 255,
-		tonumber(hex:sub(5, 6), 16) / 255,
-	}
-end
+-- An ink from its hex, as { r, g, b } (logic/ToastStyles.lua's).
+local rgb = ns.Rgb
 
 --- The shop's inks, by role, from the canvas's shop.css.
 ---@type table<string, number[]>
@@ -183,11 +175,7 @@ end
 ---@return PagleSprite
 function ns.SetShopCoin(texture, size)
 	local large = size > 30
-	local coin = ns.SetSprite(texture, "Shop", large and "coin" or "coin-small")
-	local k = size / (large and 52 or 20)
-	coin:SetSize(coin:GetWidth() * k, coin:GetHeight() * k)
-	coin.box = { coin.box[1] * k, coin.box[2] * k, size, size }
-	return coin
+	return ns.SetArtCoin(texture, "Shop", large and "coin" or "coin-small", large and 52 or 20, size)
 end
 
 --- A medallion: the brass ring with a good's icon round inside it and the gloss over it.
@@ -204,18 +192,10 @@ local INNER = { [64] = 46, [34] = 26 }
 ---@param size integer
 ---@return PagleShopBezel
 function ns.NewShopBezel(parent, size)
-	local bezel = CreateFrame("Frame", nil, parent) --[[@as PagleShopBezel]]
+	local bezel = ns.NewArtBezel(parent, "Shop", "bezel-" .. size, "gloss-" .. size) --[[@as PagleShopBezel]]
 	bezel:SetSize(size, size)
-	bezel.Ring = ns.ArtSprite(bezel, "Shop", "bezel-" .. size, "ARTWORK", 0)
 	ns.CenterSprite(bezel.Ring, bezel)
-	bezel.Icon = bezel:CreateTexture(nil, "ARTWORK", nil, 1)
 	bezel.Icon:SetSize(INNER[size] - 2, INNER[size] - 2)
-	bezel.Icon:SetPoint("CENTER")
-	local mask = bezel:CreateMaskTexture()
-	mask:SetTexture("Interface\\CharacterFrame\\TempPortraitAlphaMask", "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
-	mask:SetAllPoints(bezel.Icon)
-	bezel.Icon:AddMaskTexture(mask)
-	bezel.Gloss = ns.ArtSprite(bezel, "Shop", "gloss-" .. size, "ARTWORK", 2)
 	ns.CenterSprite(bezel.Gloss, bezel)
 	return bezel
 end

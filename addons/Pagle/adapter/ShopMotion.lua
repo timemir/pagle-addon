@@ -144,27 +144,21 @@ end
 ---@field stepOut Region[]?
 ---@field stepIn Region[]?
 
--- Runs each step of `steps` ({ seconds, fn }, in order) once its time comes, on `owner`'s clock; `onDone` runs once
--- everything `owner` plays has finished.
+-- Runs each step of `steps` ({ seconds, fn }, in order) once its time comes, on `owner`'s clock (ns.Cue; a step at 0
+-- at once); `onDone` runs once everything `owner` plays has finished, the steps and all they start.
 ---@param owner Frame
 ---@param steps { [1]: number, [2]: fun() }[]
 ---@param onDone fun()
 local function timeline(owner, steps, onDone)
-	local nextStep, last = 1, steps[#steps][1]
-	ns.Animate(owner, {
-		{
-			dur = last,
-			ease = ns.EASE.linear,
-			keys = { { 0, { 0 } }, { 1, { last } } },
-			apply = function(v)
-				while steps[nextStep] and steps[nextStep][1] <= v[1] + 1e-6 do
-					local step = steps[nextStep][2]
-					nextStep = nextStep + 1
-					step()
-				end
-			end,
-		},
-	}, onDone)
+	-- onDone goes on the owner's clock first, so every step's cue and animation joins it
+	ns.Animate(owner, {}, onDone)
+	for _, step in ipairs(steps) do
+		if step[1] <= 0 then
+			step[2]()
+		else
+			ns.Cue(owner, step[1], step[2])
+		end
+	end
 end
 
 --- Plays a purchase on `owner` (the case), whose clock every part joins, as the kit's MOTION.md times it; `onDone`
