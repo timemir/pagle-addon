@@ -353,7 +353,8 @@ local function drawRuler(ruler, at)
 	end
 end
 
--- Shows a headline's ruler and starts its animation, or hides the ruler when it has none (ANN-R22).
+-- Shows a headline's ruler and starts its animation, or hides the ruler when it has none (ANN-R22). With Animations
+-- off it appears as it settles: the number counted up, the margin in and the stamp down.
 ---@param view PagleRulerView
 ---@param ruler { old: number, new: number, unit: string, label: string }?
 local function startRuler(view, ruler)
@@ -365,6 +366,11 @@ local function startRuler(view, ruler)
 	end
 	-- A Simulated Size reads in the Angler's length unit as the ruler appears (LOG-R69).
 	view.ruler, view.elapsed, view.lengthUnit, view.slammed = ruler, 0, ns.LengthUnit(), false
+	if not ns.MotionOn() then
+		drawRuler(view, ns.RulerAt(ruler, ns.RULER_SECONDS + ns.RULER_STAMP_DELAY, view.lengthUnit))
+		view:Show()
+		return
+	end
 	drawRuler(view, ns.RulerAt(ruler, 0, view.lengthUnit))
 	view:Show()
 	view:SetScript("OnUpdate", function(self, elapsed)

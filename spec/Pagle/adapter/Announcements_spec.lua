@@ -235,6 +235,31 @@ describe("Announcement frames", function()
 		end
 	)
 
+	it(
+		"show a toast's record ruler settled at once with Animations off: counted up, the margin in, New record down (ANN-R22)",
+		function()
+			local loaded, M = loadCore()
+			loaded.ns.db.profile.announcements.motion = false
+
+			raise(
+				loaded,
+				M,
+				moment("toast", "Trophy weight", { ruler = { old = 10, new = 12, unit = "lb", label = "weight" } })
+			)
+
+			local view = frameOf(loaded, "toast").ruler
+			assert.are.same({ true, "12.0 lb", true, "+2.0 lb", true, "NEW RECORD" }, {
+				view.shown,
+				view.value:GetText(),
+				view.margin.shown,
+				view.margin:GetText(),
+				view.record.shown,
+				view.record.label:GetText(),
+			})
+			assert.is_nil(view.scripts.OnUpdate)
+		end
+	)
+
 	it("show a weight ruler's old record by its mark, as given (ANN-R22)", function()
 		local loaded, M = loadCore()
 
@@ -533,18 +558,21 @@ describe("the column on the client", function()
 		end
 	)
 
-	it("hides the banner and the toasts on screen at once as combat starts, with no leaving motion (ANN-R35)", function()
-		local loaded, M = loadCore()
-		raise(loaded, M, moment("banner", "Level 12"), moment("toast", "First"))
-		loaded.client.advance(3)
-		local banner, toast = frameOf(loaded, "banner"), frameOf(loaded, "toast")
-		assert.is_true(banner:IsShown() and toast:IsShown())
+	it(
+		"hides the banner and the toasts on screen at once as combat starts, with no leaving motion (ANN-R35)",
+		function()
+			local loaded, M = loadCore()
+			raise(loaded, M, moment("banner", "Level 12"), moment("toast", "First"))
+			loaded.client.advance(3)
+			local banner, toast = frameOf(loaded, "banner"), frameOf(loaded, "toast")
+			assert.is_true(banner:IsShown() and toast:IsShown())
 
-		setCombat(loaded, true)
+			setCombat(loaded, true)
 
-		assert.is_false(banner:IsShown())
-		assert.is_false(toast:IsShown())
-	end)
+			assert.is_false(banner:IsShown())
+			assert.is_false(toast:IsShown())
+		end
+	)
 
 	it(
 		"keeps a toast while the pointer is on it, then gives it the time it had left; a click sends one away (ANN-R20)",
