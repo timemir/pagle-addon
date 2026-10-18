@@ -98,7 +98,7 @@ Part of [Core](README.md). A **Field report** is the text an Angler copies out o
   - the privacy line (REP-R37), and "Ctrl+C to copy" beside it
   - the report text typed on a slip, in a read-only, selected edit box (Ctrl+C to copy) that scrolls
   - "Part N of M" between a previous and a next arrow, hidden when there is one part; the box always opens at part 1
-  - the issue-form URL, after "POST IT AT", in a second selectable edit box (addons can't open a browser)
+  - the issue-form URL, after "POST IT AT", in a second selectable edit box (addons can't open a browser), shown from its start ("https://…") whenever the box opens, the URL is put back or that edit box loses the focus
   - Close, and a brass X (Esc closes it too)
   The text is built when the box opens and isn't refreshed while it stays open.
 - **REP-R41** If no row qualifies, the box says "Nothing to report. Thanks for checking!" and shows no text or URL.

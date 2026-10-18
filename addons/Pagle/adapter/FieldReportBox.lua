@@ -184,21 +184,32 @@ end
 
 -- Keeps `box` showing `read()`: whatever the player types is put back, selected again, so the report stays as
 -- built and Ctrl+C still copies all of it. It is selected whenever it gets the focus, and Esc in it closes the box,
--- since a focused edit box takes Esc before UISpecialFrames does.
+-- since a focused edit box takes Esc before UISpecialFrames does. With `fromStart`, its cursor goes back to the start
+-- whenever its text is put back and when it loses the focus, so a line too long for it reads from its beginning:
+-- SetText leaves the cursor at the end, and the box scrolled there.
 ---@param frame PagleFieldReportBox
 ---@param box EditBox
 ---@param read fun(): string
-local function keepText(frame, box, read)
+---@param fromStart boolean?
+local function keepText(frame, box, read, fromStart)
 	box:SetAutoFocus(false)
 	box:SetScript("OnTextChanged", function(self, userInput)
 		if userInput then
 			self:SetText(read())
+			if fromStart then
+				self:SetCursorPosition(0)
+			end
 			self:HighlightText()
 		end
 	end)
 	box:SetScript("OnEditFocusGained", function(self)
 		self:HighlightText()
 	end)
+	if fromStart then
+		box:SetScript("OnEditFocusLost", function(self)
+			self:SetCursorPosition(0)
+		end)
+	end
 	box:SetScript("OnEscapePressed", function()
 		close(frame)
 	end)
@@ -394,7 +405,7 @@ local function build()
 	frame.url:SetHeight(20)
 	keepText(frame, frame.url, function()
 		return ns.FIELD_REPORT_URL
-	end)
+	end, true)
 
 	frame.previous = brassButton(frame, "arrow-prev")
 	frame.previous:SetPoint("LEFT", frame, "TOPLEFT", 22, -FOOT_Y)
@@ -473,6 +484,7 @@ local function show(view)
 	frame.postAt:SetShown(view.url ~= nil)
 	frame.url:SetShown(view.url ~= nil)
 	frame.url:SetText(view.url or "")
+	frame.url:SetCursorPosition(0) -- from "https://", not scrolled to its end
 	-- Opening, or opened again while it fades out: it fades in. Already open, it stays as it is.
 	local from ---@type number?
 	if frame.closing then

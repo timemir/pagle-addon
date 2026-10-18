@@ -70,6 +70,25 @@ describe("The Field report box (REP-R40–R42)", function()
 		frame.url:Type("https://example.com")
 
 		assert.are.equal(URL, frame.url:GetText())
+		assert.are.same({ 0, -1 }, frame.url.highlight, "selected again, for Ctrl+C")
+		assert.are.equal(0, frame.url:GetCursorPosition())
+	end)
+
+	it("shows the URL from its start, not scrolled to its end (REP-R40, field-report.md › UI)", function()
+		local loaded = enterWorld(loadCore(unchartedHistory(2, FIRST)), 2)
+		loaded.env.Pagle.OpenFieldReport()
+		local frame = assert(box(loaded))
+		assert.are.equal(0, frame.url:GetCursorPosition())
+
+		frame.url:SetFocus()
+		frame.url:SetCursorPosition(#URL) -- the player clicked its end, or pressed End
+		frame.url:GetScript("OnEditFocusLost")(frame.url)
+		assert.are.equal(0, frame.url:GetCursorPosition())
+
+		frame.close:Click()
+		loaded.client.update(FADE_OUT)
+		loaded.env.Pagle.OpenFieldReport()
+		assert.are.equal(0, frame.url:GetCursorPosition())
 	end)
 
 	it("closes with Esc, from the focused text box or with no box focused, and with Close (REP-R40)", function()

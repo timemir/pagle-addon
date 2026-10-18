@@ -27,7 +27,6 @@ local LAYOUT_METHODS = {
 	"SetTextInsets",
 	"SetMaxLetters",
 	"SetMultiLine",
-	"SetCursorPosition",
 	"SetClipsChildren",
 	"SetShadowColor",
 	"SetShadowOffset",
@@ -528,10 +527,11 @@ function widgets.newFrame(client, kind, parent)
 end
 
 --- Makes `box` an edit box, as the client's EditBox behaves for what Pagle calls: SetText runs OnTextChanged with
---- userInput false and drops the selection; HighlightText keeps the selection in `highlight` ({ start, stop }, the
---- client's defaults 0 and -1 for all of it); SetFocus and ClearFocus move `client.focus`, SetFocus running
---- OnEditFocusGained. A spec plays the player with `box:Type(text)`: what the box holds after typing replaces its text
---- and selection, and OnTextChanged runs with userInput true.
+--- userInput false, drops the selection and puts the cursor (`cursor`, as SetCursorPosition and GetCursorPosition
+--- keep it) at the text's end; HighlightText keeps the selection in `highlight` ({ start, stop }, the client's defaults
+--- 0 and -1 for all of it); SetFocus and ClearFocus move `client.focus`, SetFocus running OnEditFocusGained. A spec
+--- plays the player with `box:Type(text)`: what the box holds after typing replaces its text and selection, the cursor
+--- at its end, and OnTextChanged runs with userInput true.
 ---@param client FakeClient
 ---@param box table
 function widgets.editBox(client, box)
@@ -544,7 +544,14 @@ function widgets.editBox(client, box)
 	function box:SetText(text)
 		self.text = text
 		self.highlight = nil
+		self.cursor = #text
 		run("OnTextChanged", false)
+	end
+	function box:SetCursorPosition(position)
+		self.cursor = position
+	end
+	function box:GetCursorPosition()
+		return self.cursor or 0
 	end
 	function box:HighlightText(start, stop)
 		self.highlight = { start or 0, stop or -1 }
@@ -566,6 +573,7 @@ function widgets.editBox(client, box)
 	function box:Type(text)
 		self.text = text
 		self.highlight = nil
+		self.cursor = #text
 		run("OnTextChanged", true)
 	end
 end
