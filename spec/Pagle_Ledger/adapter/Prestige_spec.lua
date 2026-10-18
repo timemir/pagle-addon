@@ -203,6 +203,25 @@ describe("Prestiging (LED-R33)", function()
 		assert.are.same({}, prestiges(fake))
 	end)
 
+	it(
+		"hides the card for good when the Journal closes as Not yet's fade plays, never faint and live (LED-R33)",
+		function()
+			local fake, loaded = ledger({ motion = true })
+			loaded.ns.AskPrestige()
+			loaded.client.update(0.5)
+			local card = loaded.ns.journal.prestigeCard
+
+			clickCard(loaded, 2)
+			loaded.client.update(0.05)
+			closeJournal(loaded)
+			loaded.client.update(0.05)
+
+			assert.are.same({ false, 1 }, { card:IsShown(), card.alpha })
+			assert.is_false(loaded.ns.IsPrestigeConfirmShown())
+			assert.are.same({}, prestiges(fake))
+		end
+	)
+
 	it("is allowed again after a crash that lost the P1: the climb is still at 60 (LED-R194)", function()
 		local before = ledger()
 		local saved = {}

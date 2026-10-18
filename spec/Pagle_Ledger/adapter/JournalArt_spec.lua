@@ -95,6 +95,26 @@ describe("the Fish Journal's art (ledger.md › UI)", function()
 		journal:Toggle()
 		assert.are.equal(1, journal.frame:GetScale())
 	end)
+
+	it(
+		"fits the screen again, centred, when the UI scale changes, through Core's fit (core/README.md › Contracts)",
+		function()
+			local _, loaded = openJournal({ id = false })
+			local journal = loaded.ns.journal
+			journal:Toggle()
+			assert.are.equal(1, journal.frame:GetScale())
+
+			loaded.env.UIParent:SetSize(800, 600)
+			loaded.client.fireGameEvent("UI_SCALE_CHANGED")
+
+			assert.are.equal(math.min((600 - 48) / 640, (800 - 48) / 950), journal.frame:GetScale())
+			local point, relativeTo, relativePoint, x, y = journal.frame:GetPoint(1)
+			assert.are.same(
+				{ "CENTER", loaded.env.UIParent, "CENTER", 0, 0 },
+				{ point, relativeTo, relativePoint, x, y }
+			)
+		end
+	)
 end)
 
 describe("the Fish Journal's sounds (ledger.md › UI)", function()

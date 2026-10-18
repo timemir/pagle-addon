@@ -41,7 +41,6 @@ logic\JournalCollections.lua
 logic\JournalLegends.lua
 logic\JournalZone.lua
 logic\Tour.lua
-adapter\Motion.lua
 adapter\JournalArt.lua
 adapter\JournalBook.lua
 adapter\JournalWidgets.lua

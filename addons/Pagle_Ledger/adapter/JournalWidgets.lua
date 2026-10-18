@@ -91,12 +91,11 @@ local bound = ns.JournalBound
 ---@param region Region
 ---@param delay number?
 function ns.JournalInk(region, delay)
-	ns.Moving()
-	ns.Animate(region, {
+	Pagle.Animate(region, {
 		{
 			dur = 0.3,
 			delay = delay or 0,
-			ease = ns.Ease.out,
+			ease = Pagle.EASE.out,
 			keys = { { 0, { 0.3 } }, { 1, { 1 } } },
 			apply = function(v)
 				region:SetAlpha(v[1])
@@ -525,16 +524,16 @@ makers.xpBar = function(parent)
 		ns.JournalInkBarWidth(self.bar, width)
 		local fresh = data.fresh and (data.fresh.to - data.fresh.from) or 0
 		local same, before = remember(self, draw, "xp", { data.fill, fresh })
-		ns.StopMotion(self.bar)
-		if same and before and (before[1] ~= data.fill or before[2] ~= fresh) and ns.Moving() then
+		Pagle.StopMotion(self.bar)
+		if same and before and (before[1] ~= data.fill or before[2] ~= fresh) and ns.MotionOn() then
 			local p0, f0 = before[1], before[2]
 			if data.fill < p0 then
 				p0 = 0 -- a level gained: the ink runs on from the bar's start
 			end
-			ns.Animate(self.bar, {
+			Pagle.Animate(self.bar, {
 				{
 					dur = 0.6,
-					ease = ns.Ease.out,
+					ease = Pagle.EASE.out,
 					keys = { { 0, { p0, f0 } }, { 1, { data.fill, fresh } } },
 					apply = function(v)
 						self.bar:Set(v[1], v[2])
@@ -570,16 +569,16 @@ makers.seal = function(parent)
 		seal:ClearAllPoints()
 		seal:SetPoint("CENTER", self:GetParent(), "TOPLEFT", width - 28, -26)
 		local same, before = remember(self, draw, "seal", block.text)
-		ns.StopMotion(seal)
+		Pagle.StopMotion(seal)
 		seal:SetSize(64, 64)
 		seal:SetAlpha(1)
-		if same and before and before ~= block.text and block.inked and ns.Moving() then
+		if same and before and before ~= block.text and block.inked and ns.MotionOn() then
 			-- the old seal lifts away (grows to 115% and fades, 0.15 s), then the new one is pressed on: 1.8x to 0.94x,
 			-- settling at 1x (0.3 s), the stamp sounding as it lands
-			ns.Animate(seal, {
+			Pagle.Animate(seal, {
 				{
 					dur = 0.15,
-					ease = ns.Bezier(0.42, 0, 1, 1),
+					ease = Pagle.Bezier(0.42, 0, 1, 1),
 					keys = { { 0, { 1, 1 } }, { 1, { 1.15, 0 } } },
 					apply = function(v)
 						seal:SetSize(64 * v[1], 64 * v[1])
@@ -589,7 +588,7 @@ makers.seal = function(parent)
 				{
 					dur = 0.3,
 					delay = 0.15,
-					ease = ns.Bezier(0.3, 1.5, 0.5, 1),
+					ease = Pagle.Bezier(0.3, 1.5, 0.5, 1),
 					keys = { { 0, { 1.8, 0 } }, { 0.7, { 0.94, 1 } }, { 1, { 1, 1 } } },
 					apply = function(v)
 						seal:SetSize(64 * v[1], 64 * v[1])
@@ -598,10 +597,10 @@ makers.seal = function(parent)
 				},
 			})
 			ns.JournalSetSeal(seal, before, true)
-			ns.Cue(seal, 0.15, function()
+			Pagle.Cue(seal, 0.15, function()
 				ns.JournalSetSeal(seal, block.text, true)
 			end)
-			ns.Cue(seal, 0.38, function()
+			Pagle.Cue(seal, 0.38, function()
 				ns.JournalSound("stamp")
 			end)
 		else
@@ -651,16 +650,16 @@ makers.stamps = function(parent)
 				stamp.box = sprite.box
 				ns.JournalBoxAt(stamp, self, x, 0)
 				w = sprite.box[3]
-				ns.StopMotion(stamp)
+				Pagle.StopMotion(stamp)
 				stamp:SetAlpha(1)
-				if same and before and data.inked and not before[i] and ns.Moving() then
+				if same and before and data.inked and not before[i] and ns.MotionOn() then
 					local w0, h0 = stamp:GetSize()
 					local cx, cy = x + sprite.box[3] / 2, sprite.box[4] / 2
-					ns.Animate(stamp, {
+					Pagle.Animate(stamp, {
 						{
 							dur = 0.35,
 							delay = 0.2,
-							ease = ns.Bezier(0.3, 1.6, 0.5, 1),
+							ease = Pagle.Bezier(0.3, 1.6, 0.5, 1),
 							keys = { { 0, { 1.6, 0 } }, { 0.7, { 0.95, 1 } }, { 1, { 1, 1 } } },
 							apply = function(v)
 								stamp:SetSize(w0 * v[1], h0 * v[1])
@@ -672,7 +671,7 @@ makers.stamps = function(parent)
 					}, function()
 						ns.JournalBoxAt(stamp, self, cx - sprite.box[3] / 2, 0)
 					end)
-					ns.Cue(stamp, 0.45, function()
+					Pagle.Cue(stamp, 0.45, function()
 						ns.JournalSound("stamp")
 					end)
 				end
@@ -1113,12 +1112,11 @@ function ns.NewJournalPage(parent, width, height)
 		local range = math.max(0, (page.contentH or 0) - page.height)
 		local from = self:GetVerticalScroll() or 0
 		local to = math.max(0, math.min(range, from - delta * 26))
-		ns.StopMotion(page.content)
-		ns.Moving()
-		ns.Animate(page.content, {
+		Pagle.StopMotion(page.content)
+		Pagle.Animate(page.content, {
 			{
 				dur = 0.12,
-				ease = ns.Ease.out,
+				ease = Pagle.EASE.out,
 				keys = { { 0, { from } }, { 1, { to } } },
 				apply = function(v)
 					self:SetVerticalScroll(v[1])
@@ -1233,7 +1231,7 @@ function ns.DrawJournalPage(page, blocks, open, resetScroll)
 	page.contentH = y + 8
 	page.content:SetHeight(math.max(1, page.contentH))
 	if resetScroll then
-		ns.StopMotion(page.content)
+		Pagle.StopMotion(page.content)
 		page.scroll:SetVerticalScroll(0)
 	end
 	placeThumb(page)

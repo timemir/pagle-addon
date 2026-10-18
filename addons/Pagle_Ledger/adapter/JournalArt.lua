@@ -5,10 +5,11 @@ end
 ---@class PagleLedgerNS
 local ns = select(2, ...)
 
--- The Ledger art kit on the client (ledger.md › UI): its inks and fonts, its sounds, the fit to the screen, and the
--- sprite helpers and small pieces every page draws with, over data/JournalArt.lua's atlases. They are the kit's
--- Kit.lua, LedgerKit.lua, Sound.lua and Fit.lua (PagleArtLedger), copied over the Ledger's namespace: every size is the
--- canvas's CSS pixel, a UI unit, and a sprite's `box` is where its drawn element sits in it. The fonts are Core's
+-- The Ledger art kit on the client (ledger.md › UI): its inks and fonts, its sounds, and the sprite helpers and small
+-- pieces every page draws with, over data/JournalArt.lua's atlases. They are the kit's Kit.lua, LedgerKit.lua and
+-- Sound.lua (PagleArtLedger), copied over the Ledger's namespace: every size is the canvas's CSS pixel, a UI unit, and
+-- a sprite's `box` is where its drawn element sits in it. Its motion and its fit to the screen are Core's
+-- (`Pagle.Animate`, `Pagle.FitToScreen`). The fonts are Core's
 -- (Pagle/media/fonts; Core is a required dependency, so they are always there).
 
 --- The kit's inks, by name, as the canvas's CSS writes them.
@@ -823,12 +824,12 @@ end
 
 -- ---------------------------------------------------------------- motion and sound
 
---- Whether things move: Core's Animations setting (`Pagle.IsAnimationsOn()`, on by default). It sets the motion
---- driver's switch (adapter/Motion.lua) as it reads it, so every animation started after it plays or settles at once.
+--- Whether things move: Core's Animations setting (`Pagle.IsAnimationsOn()`, on by default). The Journal moves on
+--- Core's one motion driver (`Pagle.Animate`, announcements.md › Contracts), which reads the setting itself; this is
+--- for what the Journal decides by it, such as whether a change animates or a beat sounds.
 ---@return boolean
-function ns.Moving()
-	ns.motion = Pagle.IsAnimationsOn() ~= false
-	return ns.motion
+function ns.MotionOn()
+	return Pagle.IsAnimationsOn() ~= false
 end
 
 -- The Journal's sounds (the kit's SOUND.md): the client's own sound kits by numeric id, on the SFX channel, so the
@@ -859,31 +860,8 @@ ns.JOURNAL_SOUNDS = SOUNDS
 ---@param event string
 function ns.JournalSound(event)
 	local id = SOUNDS[event]
-	if not id or (TIED[event] and not ns.Moving()) then
+	if not id or (TIED[event] and not ns.MotionOn()) then
 		return
 	end
 	PlaySound(id, "SFX")
-end
-
--- ---------------------------------------------------------------- fit to the screen
-
--- The room kept free round the book at the screen's edges.
-local FIT_MARGIN = 24
-
---- Shrinks `frame` to fit the screen, never growing it (the kit's Fit.lua): `w` and `h` its whole extent in its own
---- units, what hangs outside its frame included (the wax close, the brass plate). Centred. Returns the scale used.
----@param frame Frame
----@param w number
----@param h number
----@return number
-function ns.FitJournal(frame, w, h)
-	local screenW, screenH = UIParent:GetWidth(), UIParent:GetHeight()
-	local scale = 1
-	if screenW and screenH and screenW > 0 and screenH > 0 then
-		scale = math.min(1, (screenH - 2 * FIT_MARGIN) / h, (screenW - 2 * FIT_MARGIN) / w)
-	end
-	frame:SetScale(scale)
-	frame:ClearAllPoints()
-	frame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
-	return scale
 end

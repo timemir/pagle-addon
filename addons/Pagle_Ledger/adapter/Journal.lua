@@ -27,8 +27,9 @@ local BODY_H = { left = ns.JOURNAL_PAGE_H - BODY_Y - 46, right = ns.JOURNAL_PAGE
 -- The page turn's two halves (MOTION.md: the page lifts toward the spine, then lands from the spine outward), and the
 -- right page's crossfade when a fish is picked.
 local LIFT, LAND, CROSSFADE = 0.22, 0.28, 0.2
--- The owner of the book's WoW event registrations (CORE-R23): the screen's size, which it fits.
-local OWNER = "Pagle_Ledger Journal"
+-- How the book fits the screen (Pagle.FitToScreen, core/README.md › Contracts): its whole extent, what hangs outside
+-- its frame included (the wax close, the brass plate), centred.
+local FIT = { width = BOOK.extentW, height = BOOK.extentH }
 
 ---@class LedgerJournalCrumbView: LedgerJournalClickable
 ---@field label FontString
@@ -246,12 +247,11 @@ end
 ---@param view LedgerJournalUpdatingView
 local function swayQuill(view)
 	local quill = view.quill
-	ns.Moving()
-	ns.StopMotion(quill)
-	ns.Animate(quill, {
+	Pagle.StopMotion(quill)
+	Pagle.Animate(quill, {
 		{
 			dur = 0.8,
-			ease = ns.Ease.inOut,
+			ease = Pagle.EASE.inOut,
 			iter = "infinite",
 			dir = "alternate",
 			keys = { { 0, { -4 } }, { 1, { 4 } } },
@@ -325,12 +325,11 @@ local function build(journal)
 	-- it already.
 	frame:SetScript("OnShow", function(self)
 		ns.JournalSound("bookOpen")
-		ns.Moving()
-		ns.StopMotion(self)
-		ns.Animate(self, {
+		Pagle.StopMotion(self)
+		Pagle.Animate(self, {
 			{
 				dur = 0.16,
-				ease = ns.Ease.out,
+				ease = Pagle.EASE.out,
 				keys = { { 0, { 0 } }, { 1, { 1 } } },
 				apply = function(v)
 					self:SetAlpha(v[1])
@@ -339,6 +338,11 @@ local function build(journal)
 		})
 	end)
 	frame:SetScript("OnHide", function(self)
+		-- Hidden with the whole UI as it fades out, it still ends closed: Core's driver settles the fade, whose end
+		-- hides it (Journal:Close).
+		if self.closing and self:IsShown() then
+			return
+		end
 		if not self.closing then
 			ns.JournalSound("bookClose")
 		end
@@ -346,14 +350,6 @@ local function build(journal)
 		self:SetAlpha(1)
 		ns.HidePrestigeConfirm()
 	end)
-	-- The screen's size or the UI scale changed: the open book fits it again.
-	local function refit()
-		if frame:IsShown() then
-			ns.FitJournal(frame, BOOK.extentW, BOOK.extentH)
-		end
-	end
-	Pagle.RegisterEvent(OWNER, "UI_SCALE_CHANGED", refit)
-	Pagle.RegisterEvent(OWNER, "DISPLAY_SIZE_CHANGED", refit)
 	return frame
 end
 
@@ -449,9 +445,10 @@ function Journal:Show()
 	local frame = self.frame or build(self)
 	self.frame = frame
 	if not frame:IsShown() or frame.closing then
-		ns.StopMotion(frame)
+		Pagle.StopMotion(frame)
 		frame.closing = false
-		ns.FitJournal(frame, BOOK.extentW, BOOK.extentH)
+		-- fitted again by Core as the UI scale or the screen's size changes
+		Pagle.FitToScreen(frame, FIT)
 		-- a book opened anew draws its spread in place, never turning to it
 		self.justOpened = true
 		frame:Show()
@@ -462,7 +459,8 @@ function Journal:Show()
 	self:Draw()
 end
 
---- Closes the book with its sound: it fades out (0.12 s), then hides.
+--- Closes the book with its sound: it fades out (0.12 s), then hides, left at rest for its next showing. Hidden with
+--- the whole UI as it fades, it still ends closed: Core's driver settles the fade.
 function Journal:Close()
 	local frame = self.frame
 	if not frame or not frame:IsShown() or frame.closing then
@@ -470,12 +468,11 @@ function Journal:Close()
 	end
 	ns.JournalSound("bookClose")
 	frame.closing = true
-	ns.Moving()
-	ns.StopMotion(frame)
-	ns.Animate(frame, {
+	Pagle.StopMotion(frame)
+	Pagle.Animate(frame, {
 		{
 			dur = 0.12,
-			ease = ns.Bezier(0.42, 0, 1, 1),
+			ease = Pagle.Bezier(0.42, 0, 1, 1),
 			keys = { { 0, { 1 } }, { 1, { 0 } } },
 			apply = function(v)
 				frame:SetAlpha(v[1])
@@ -484,6 +481,10 @@ function Journal:Close()
 	}, function()
 		if frame.closing then
 			frame:Hide()
+			-- its OnHide already did this, unless the whole UI hid it first
+			frame.closing = false
+			frame:SetAlpha(1)
+			ns.HidePrestigeConfirm()
 		end
 	end)
 end
@@ -524,7 +525,7 @@ function Journal:Settle()
 	if self.finishTurn then
 		self.finishTurn()
 	end
-	ns.StopMotion(frame)
+	Pagle.StopMotion(frame)
 	frame:SetAlpha(1)
 end
 
@@ -537,20 +538,20 @@ function Journal:Rebind(look, changing)
 	local frame = self.frame --[[@as LedgerJournalFrame]]
 	local owner = self.bindOwner or {}
 	self.bindOwner = owner
-	ns.StopMotion(owner)
+	Pagle.StopMotion(owner)
 	frame.leatherFill:SetAlpha(1)
 	frame.bandFrame:SetAlpha(1)
 	if changing then
 		ns.JournalSound("rebind") -- whether or not things move
 	end
-	if not (changing and ns.Moving()) then
+	if not (changing and ns.MotionOn()) then
 		ns.TintJournalShell(frame, look)
 		return
 	end
-	ns.Animate(owner, {
+	Pagle.Animate(owner, {
 		{
 			dur = 0.4,
-			ease = ns.Ease.inOut,
+			ease = Pagle.EASE.inOut,
 			keys = { { 0, { 1 } }, { 0.5, { 0.25 } }, { 1, { 1 } } },
 			apply = function(v)
 				frame.leatherFill:SetAlpha(v[1])
@@ -558,7 +559,7 @@ function Journal:Rebind(look, changing)
 			end,
 		},
 	})
-	ns.Cue(owner, 0.2, function()
+	Pagle.Cue(owner, 0.2, function()
 		ns.TintJournalShell(frame, look)
 	end)
 end
@@ -590,10 +591,10 @@ local function turn(journal, from, to, forward, crumbs)
 	local papers = frame.papers
 	local lw, rw = ns.JOURNAL_PAGE_W, ns.JOURNAL_PAGE_W
 	local owner = journal.turnOwner
-	ns.StopMotion(owner)
+	Pagle.StopMotion(owner)
 	local function finish()
 		journal.finishTurn = nil
-		ns.StopMotion(owner)
+		Pagle.StopMotion(owner)
 		from.left.clip:Hide()
 		from.right.clip:Hide()
 		reveal(to.left, papers.left, 0, 1)
@@ -602,7 +603,7 @@ local function turn(journal, from, to, forward, crumbs)
 		crumbs()
 	end
 	journal.finishTurn = finish
-	if not ns.Moving() then
+	if not ns.MotionOn() then
 		finish()
 		return
 	end
@@ -616,11 +617,11 @@ local function turn(journal, from, to, forward, crumbs)
 		reveal(to.right, papers.right, 0, 0)
 		reveal(from.right, papers.right, 0, 1)
 	end
-	ns.Animate(owner, {
+	Pagle.Animate(owner, {
 		-- the page lifts toward the spine
 		{
 			dur = LIFT,
-			ease = ns.Bezier(0.5, 0, 0.9, 0.6),
+			ease = Pagle.Bezier(0.5, 0, 0.9, 0.6),
 			keys = { { 0, { 0 } }, { 1, { 1 } } },
 			apply = function(v)
 				local k = v[1]
@@ -639,7 +640,7 @@ local function turn(journal, from, to, forward, crumbs)
 		{
 			dur = LAND,
 			delay = LIFT,
-			ease = ns.Bezier(0.1, 0.4, 0.4, 1),
+			ease = Pagle.Bezier(0.1, 0.4, 0.4, 1),
 			keys = { { 0, { 0 } }, { 1, { 1 } } },
 			apply = function(v)
 				local k = v[1]
@@ -662,7 +663,7 @@ local function turn(journal, from, to, forward, crumbs)
 			end,
 		},
 	}, finish)
-	ns.Cue(owner, LIFT, crumbs)
+	Pagle.Cue(owner, LIFT, crumbs)
 end
 
 -- Crossfades the right page from leaf `from` to leaf `to` (MOTION.md › Picking a fish on a zone page): the old one
@@ -674,7 +675,7 @@ local function crossfade(journal, from, to)
 	local frame = journal.frame --[[@as LedgerJournalFrame]]
 	local paper = frame.papers.right
 	local owner = journal.turnOwner
-	ns.StopMotion(owner)
+	Pagle.StopMotion(owner)
 	reveal(to, paper, 0, 1)
 	local function finish()
 		journal.finishTurn = nil
@@ -686,14 +687,14 @@ local function crossfade(journal, from, to)
 	end
 	journal.finishTurn = finish
 	ns.JournalSound("pick") -- a fish picked sounds whether or not things move
-	if not ns.Moving() then
+	if not ns.MotionOn() then
 		finish()
 		return
 	end
-	ns.Animate(owner, {
+	Pagle.Animate(owner, {
 		{
 			dur = CROSSFADE,
-			ease = ns.Ease.inOut,
+			ease = Pagle.EASE.inOut,
 			keys = { { 0, { 0 } }, { 1, { 1 } } },
 			apply = function(v)
 				from.clip:SetAlpha(1 - v[1])

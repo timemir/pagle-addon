@@ -80,6 +80,27 @@ describe("the Fish Journal's frame (LED-R120, LED-R121)", function()
 		assert.is_false(journal:IsShown())
 	end)
 
+	it("still ends closed when the whole UI hides as it fades out, and opens whole again (LED-R120)", function()
+		local _, loaded = openJournal({ id = false, motion = true })
+		local journal = loaded.ns.journal
+		journal:Toggle()
+		loaded.client.update(0.5)
+		local frame = journal.frame
+
+		journal:Close()
+		loaded.client.update(0.05)
+		-- Alt-Z: the client runs the OnHide of each shown frame under UIParent.
+		loaded.env.UIParent:Hide()
+		frame.scripts.OnHide(frame)
+		loaded.client.update(0.05)
+		loaded.env.UIParent:Show()
+
+		assert.are.same({ false, false, 1 }, { frame:IsShown(), journal:IsShown(), frame.alpha })
+		journal:Toggle()
+		loaded.client.update(0.5)
+		assert.are.same({ true, 1 }, { journal:IsShown(), frame.alpha })
+	end)
+
 	it("shows Home at its first opening, and the spread it was left on when reopened (LED-R120)", function()
 		local _, loaded = loggedIn()
 		local journal = loaded.ns.journal

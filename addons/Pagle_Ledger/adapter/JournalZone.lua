@@ -85,16 +85,16 @@ ns.RegisterJournalWidget("ladder", function(parent)
 				rung.text:ClearAllPoints()
 				rung.text:SetPoint("TOPLEFT", x, -2)
 				local ring = rung.ring --[[@as LedgerSpriteTexture]]
-				ns.StopMotion(ring)
-				if same and before ~= nil and before ~= i and ns.Moving() then
+				Pagle.StopMotion(ring)
+				if same and before ~= nil and before ~= i and ns.MotionOn() then
 					-- the new circle settles from 130% (0.35 s from 0.2 s)
 					local w0, h0 = ring:GetSize()
 					local cx, cy = x + sprite.box[3] / 2, sprite.box[4] / 2
-					ns.Animate(ring, {
+					Pagle.Animate(ring, {
 						{
 							dur = 0.35,
 							delay = 0.2,
-							ease = ns.Bezier(0.3, 1.4, 0.5, 1),
+							ease = Pagle.Bezier(0.3, 1.4, 0.5, 1),
 							keys = { { 0, { 1.3, 0 } }, { 0.3, { 1.15, 1 } }, { 1, { 1, 1 } } },
 							apply = function(v)
 								ring:SetSize(w0 * v[1], h0 * v[1])
@@ -241,17 +241,17 @@ ns.RegisterJournalWidget("row", function(parent)
 			or block.text
 			or ""
 		local same, wasUnknown = ns.JournalRemember(self, draw, key, unknown)
-		ns.StopMotion(self)
+		Pagle.StopMotion(self)
 		self.glow:SetAlpha(0)
 		self.name:SetAlpha(1)
-		if same and wasUnknown and not unknown and icon and ns.Moving() then
+		if same and wasUnknown and not unknown and icon and ns.MotionOn() then
 			ns.JournalSound("write")
 			local medal = self.medal
-			ns.Animate(self, {
+			Pagle.Animate(self, {
 				{
 					dur = 0.35,
 					delay = 0.1,
-					ease = ns.Bezier(0.3, 1.5, 0.5, 1),
+					ease = Pagle.Bezier(0.3, 1.5, 0.5, 1),
 					keys = { { 0, { 1.4, 0 } }, { 0.6, { 0.95, 1 } }, { 1, { 1, 1 } } },
 					apply = function(v)
 						medal:SetAlpha(v[2])
@@ -263,7 +263,7 @@ ns.RegisterJournalWidget("row", function(parent)
 				{
 					dur = 1.2,
 					delay = 0.1,
-					ease = ns.Ease.inOut,
+					ease = Pagle.EASE.inOut,
 					keys = { { 0, { 0 } }, { 0.3, { 0.16 } }, { 1, { 0 } } },
 					apply = function(v)
 						self.glow:SetAlpha(v[1])
