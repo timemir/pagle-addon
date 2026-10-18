@@ -22,3 +22,12 @@ Natural Hunts complete on the Catch alone, so correcting content-data windows (e
 ## Note: "shipped" means released at 1.0 or later
 
 Pagle publishes nothing before 1.0 ([Cut the MVP slice and roadmap](https://github.com/timemir/wow-fish/issues/18)), so Hunt definitions change freely until then and there are no Retired Hunts in the first release. Every v1 Hunt has `since` set to the 1.0 release date.
+
+## Note: Hunt Events (18 Oct)
+
+[ADR 0012](0012-hunt-events-are-dateless-definitions-scheduled-as-runs.md) makes this ADR's "a future backend may push new Hunts" concrete. A Hunt Event's definition, shipped in the pool or pushed by the backend, falls under this ADR as soon as it has shipped or been pushed:
+- its zones, Hunts, targets and tiers never change;
+- its Hunts' hashes go into `released.lock`;
+- a fix is a new event ID.
+
+Its runs are immutable once they start, and a run past its end has **ended**, not **retired**: it leaves the board with nothing kept.
