@@ -123,7 +123,8 @@ local function newToFindNote(context, zones)
 end
 
 -- Note 3, the next star (LED-R133): the caught, not removed Species without a shown ★★★ with the most Catches (ties:
--- lower Species ID). Only a caught Species is ever named (LED-R124).
+-- lower Species ID), counting down to its ★ while that isn't shown, else to its ★★★. Only a caught Species is ever
+-- named (LED-R124).
 ---@param context LedgerSpreadContext
 ---@return LedgerBlock?
 local function nextStarNote(context)
@@ -141,7 +142,13 @@ local function nextStarNote(context)
 	if not best then
 		return nil
 	end
-	local line = ns.L.HOME_NOTE_STAR:format(context.text:Item(best), ns.REGULAR_CATCHES - bestN)
+	local name = context.text:Item(best)
+	local line
+	if ns.ShownSpeciesStars(world, state, celebrated, best)[1] then
+		line = ns.L.HOME_NOTE_STAR:format(name, ns.REGULAR_CATCHES - bestN)
+	else
+		line = ns.L.HOME_NOTE_CAUGHT_STAR:format(name, ns.CAUGHT_STAR_CATCHES - bestN)
+	end
 	return { kind = "link", text = line, hand = true, place = ns.JournalPlace.fish(best) }
 end
 

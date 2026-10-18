@@ -13,15 +13,19 @@ local ns = select(2, ...)
 --- Which of a Species' or family's three stars are inked: `{ [1|2|3] = true }`, the celebrated set's shape (LED-R90).
 ---@alias LedgerStars { [integer]: true }
 
--- ★★ zones needed, and ★★★ Catches (LED-R45, Tunables).
+-- ★ Catches, ★★ zones needed, and ★★★ Catches (LED-R45, Tunables).
+--- A Species' ★ Catches (LED-R45, Tunables); Home's next-star note counts down to it (LED-R133), and the fish spread's
+--- checklist counts up to it (LED-R142).
+ns.CAUGHT_STAR_CATCHES = 5
+local CAUGHT_STAR_CATCHES = ns.CAUGHT_STAR_CATCHES
 local ZONES_NEEDED = 3
 --- A Species' ★★★ Catches (LED-R45, Tunables); Home's next-star note counts down to it (LED-R133), and the fish
 --- spread's checklist counts up to it (LED-R142).
 ns.REGULAR_CATCHES = 50
 local REGULAR_CATCHES = ns.REGULAR_CATCHES
 
--- The achievement a Species' ★★ and ★★★ earn (LED-R97).
-local SPECIES_STAR_KINDS = { [2] = "elementStar", [3] = "regularStar" }
+-- The achievement each of a Species' stars earns (LED-R97).
+local SPECIES_STAR_KINDS = { [1] = "caughtStar", [2] = "elementStar", [3] = "regularStar" }
 
 --- How far a caught Species is towards ★★, in its element (LED-R45, LED-R142): with element windows, those met of all
 --- of them; otherwise its distinct zones caught in (`zones` never holds 0, LED-R6) of `min(3, max(1, listed zones))`.
@@ -56,7 +60,7 @@ local function inElement(listing, species)
 	return have >= need
 end
 
---- A Species' computed stars (LED-R45): ★ caught, ★★ in its element, ★★★ 50 Catches.
+--- A Species' computed stars (LED-R45): ★ 5 Catches, ★★ in its element, ★★★ 50 Catches.
 ---@param world LedgerWorld
 ---@param state LedgerState
 ---@param id integer the Species ID
@@ -65,7 +69,7 @@ function ns.SpeciesStars(world, state, id)
 	local stars = {}
 	local species = state.species[id]
 	if species then
-		stars[1] = true
+		stars[1] = species.n >= CAUGHT_STAR_CATCHES or nil
 		stars[2] = inElement(world.species[id], species) or nil
 		stars[3] = species.n >= REGULAR_CATCHES or nil
 	end
@@ -207,8 +211,7 @@ function ns.NewStarsFold(lookups)
 		if id then
 			meetWindows(state.species[id], id, record)
 			local after = ns.SpeciesStars(world, state, id)
-			-- ★ has no achievement of its own: the New Species moment covers it (LED-R97).
-			for star = 2, 3 do
+			for star = 1, 3 do
 				if after[star] and not before[star] then
 					earned[#earned + 1] = {
 						kind = SPECIES_STAR_KINDS[star],

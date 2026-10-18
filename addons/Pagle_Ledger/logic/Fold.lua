@@ -69,12 +69,12 @@ local ns = select(2, ...)
 --- Coins (LED-R88; 0 when it pays none). Tickets #101 and #102 turn M2's kinds into moments and Write-up lines, ticket
 --- #137 M3's; the fold never reads the celebrated set (LED-R3).
 ---@class LedgerAchievement
----@field kind "levelUp"|"newSpecies"|"newInZone"|"skillMilestone"|"newCurio"|"trophyWeight"|"uncharted"|"elementStar"|"regularStar"|"familyStar"|"zoneRank"|"prestigeReady"|"prestige"|"legend"|"catchMilestone"|"sizeRecord"|"completeTitle"
+---@field kind "levelUp"|"newSpecies"|"newInZone"|"skillMilestone"|"newCurio"|"trophyWeight"|"uncharted"|"caughtStar"|"elementStar"|"regularStar"|"familyStar"|"zoneRank"|"prestigeReady"|"prestige"|"legend"|"catchMilestone"|"sizeRecord"|"completeTitle"
 ---@field cast? string
 ---@field coins integer
 ---@field levels? integer[]                   -- levelUp: the levels it raised, ascending
 ---@field n? integer                          -- catchMilestone: the lifetime Catches it marks (LED-R42)
----@field species? integer                    -- newSpecies, newInZone, elementStar, regularStar: the Species ID
+---@field species? integer                    -- newSpecies, newInZone, caughtStar, elementStar, regularStar: the Species ID
 ---@field itemID? integer                     -- the item caught, for every Catch's kind but familyStar and catchMilestone
 ---@field zone? integer                       -- newSpecies, newInZone, zoneRank: the Cast's zone
 ---@field ranks? integer[]                    -- zoneRank: the Zone Mastery ranks it passed, ascending (LED-R51)
@@ -100,8 +100,9 @@ local ns = select(2, ...)
 ---@field reset fun(): LedgerState
 ---@field apply fun(state: LedgerState, record: PagleRecord, mode: PagleApplyMode, earned: LedgerAchievement[]?): LedgerAchievement[]
 
---- The Ledger's rules version (LED-R2, LED-R4, Tunables): 1 in M2, 2 in M3, 3 in M4, then +1 per change.
-ns.LEDGER_RULES_VERSION = 3
+--- The Ledger's rules version (LED-R2, LED-R4, Tunables): 1 in M2, 2 in M3, 3 in M4, then +1 per change: 4 when ★
+--- moved to a Species' 5th Catch (LED-R45).
+ns.LEDGER_RULES_VERSION = 4
 
 -- XP (LED-R20, Tunables), M2's rows and M3's curio items and trophy weights.
 --- Catch XP, before Fresh Water (LED-R20); one Fresh Water doubles it (LED-R22), as the ink XP bar shows (LED-R145).

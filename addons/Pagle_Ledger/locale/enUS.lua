@@ -7,8 +7,8 @@ end
 ---@class PagleLedgerNS
 local ns = select(2, ...)
 
--- Words more than one key reads: Species Mastery's ★★ and ★★★ (LED-R45), a check box (LED-R40, LED-R135, LED-R142).
-local IN_ITS_ELEMENT, REGULAR = "In its element", "Regular"
+-- Words more than one key reads: Species Mastery's three stars (LED-R45), a check box (LED-R40, LED-R135, LED-R142).
+local CAUGHT, IN_ITS_ELEMENT, REGULAR = "Caught", "In its element", "Regular"
 -- The symbols the Ledger draws, as textures sized to the line's text: the client's fonts have no ★, ☆, ✓, ☑ or ☐
 -- (CORE-R9, #248). Each is the Ledger art kit's sprite in its parts atlas (data/JournalArt.lua): the inked star and
 -- the blank one, the tick, and the ticked and empty check boxes.
@@ -99,6 +99,7 @@ ns.L = {
 	TITLE_LINE = "Title: %s",
 	TEXT_WITH_TITLE = "%s. %s",
 	TITLE_EARNED = "Title earned",
+	CAUGHT_STAR_TITLE = CAUGHT,
 	ELEMENT_STAR_TITLE = IN_ITS_ELEMENT,
 	REGULAR_STAR_TITLE = REGULAR,
 	FAMILY_STAR_TITLE = "Trophy family",
@@ -174,10 +175,12 @@ ns.L = {
 	-- Home (LED-R130–R133, LED-R149). Its left page's kicker and title; its tiles are TILE_*'s.
 	HOME_KICKER = "The Waters",
 	HOME_TITLE = "Where I've Fished",
-	-- Notes to self (LED-R133): the next rank ("{zone}: {rank}. {next requirement}"), new to find, the next star.
+	-- Notes to self (LED-R133): the next rank ("{zone}: {rank}. {next requirement}"), new to find, the next star (★ or
+	-- ★★★).
 	HOME_NOTES = "Notes to self",
 	HOME_NOTE_RANK = "%s: %s. %s",
 	HOME_NOTE_NEW = "%s: %d new to find",
+	HOME_NOTE_CAUGHT_STAR = "%s: %d to " .. STAR,
 	HOME_NOTE_STAR = "%s: %d to " .. STAR:rep(3),
 	HOME_NOTE_NONE = "Go fishing!",
 	-- Its bookplate summary and contents (LED-R132), and the brass plate (LED-R149): "Lv {L} · {title} · Ledger {p}%",
@@ -257,7 +260,7 @@ ns.L = {
 	LIST_SEPARATOR = ", ",
 	LIST_LAST = " and ",
 	-- A Species' entry (LED-R140, LED-R141). "First landed {date} in {zone}, by {character}. {n} caught."
-	ENTRY_STAMPS = { "Caught", IN_ITS_ELEMENT, REGULAR },
+	ENTRY_STAMPS = { CAUGHT, IN_ITS_ELEMENT, REGULAR },
 	ENTRY_FIRST = "First landed %s in %s, by %s. %s caught.",
 	ENTRY_FIRST_NO_ZONE = "First landed %s, by %s. %s caught.",
 	ENTRY_FOUND_IN = "Found in %s.",
@@ -268,11 +271,12 @@ ns.L = {
 	ENTRY_UNKNOWN = "An unknown fish",
 	ENTRY_RIDDLE = '"%s"',
 	ENTRY_HINT_LINK = "Read the plain hint »",
-	-- The fish spread's right page (LED-R142): "☑ In its element (1/1)", "☐ Regular (12/50)".
+	-- The fish spread's right page (LED-R142): "☑ Caught (5/5)", "☑ In its element (1/1)", "☐ Regular (12/50)".
 	FISH_KICKER = "Where to find it",
 	FISH_TITLE = "Its waters",
 	FISH_CAUGHT_HERE = "caught " .. TICK,
 	FISH_WHEN = "When",
+	FISH_CAUGHT = "%s " .. CAUGHT .. " (%d/%d)",
 	FISH_ELEMENT = "%s " .. IN_ITS_ELEMENT .. " (%d/%d)",
 	FISH_REGULAR = "%s " .. REGULAR .. " (%d/%d)",
 	CHECK_ON = CHECK_ON,

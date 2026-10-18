@@ -235,7 +235,7 @@ end
 
 -- The fish spread's right page (LED-R142): "Where to find it", "Its waters", its listed zones as tiles in tile order
 -- (LED-R131) with "caught ✓" where caught, each opening the zone's spread with the fish selected; "When" with each
--- element window's line, its state forecast now (LED-R127); and for a caught Species its ★★ and ★★★ checklist.
+-- element window's line, its state forecast now (LED-R127); and for a caught Species its ★, ★★ and ★★★ checklist.
 ---@param id integer
 ---@param context LedgerSpreadContext
 ---@return LedgerBlock[]
@@ -269,6 +269,11 @@ local function waters(id, context)
 		local function box(star)
 			return stars[star] and L.CHECK_ON or L.CHECK_OFF
 		end
+		local caught = ns.CAUGHT_STAR_CATCHES
+		blocks[#blocks + 1] = {
+			kind = "text",
+			text = L.FISH_CAUGHT:format(box(1), math.min(species.n, caught), caught),
+		}
 		local have, need = ns.ElementProgress(listing, species)
 		blocks[#blocks + 1] = { kind = "text", text = L.FISH_ELEMENT:format(box(2), have, need) }
 		blocks[#blocks + 1] = {

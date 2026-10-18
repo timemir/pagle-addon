@@ -116,19 +116,70 @@ describe("Stars", function()
 		})
 	end
 
-	-- Applies each record live to `state` (a fresh one by default); returns the state and the star achievements.
-	local function applyAll(records, state)
+	-- The star achievements applyAll keeps by default: every one but ★'s, which "Caught" keeps alone.
+	local LATER_STARS = { elementStar = true, regularStar = true, familyStar = true }
+
+	-- Applies each record live to `state` (a fresh one by default); returns the state and the star achievements of
+	-- the kinds in `kinds` (LATER_STARS by default).
+	local function applyAll(records, state, kinds)
 		local earned
 		state, earned = applyLive(fold, records, state)
 		local stars = {}
 		for _, achievement in ipairs(earned) do
-			local kind = achievement.kind
-			if kind == "elementStar" or kind == "regularStar" or kind == "familyStar" then
+			if (kinds or LATER_STARS)[achievement.kind] then
 				stars[#stars + 1] = achievement
 			end
 		end
 		return state, stars
 	end
+
+	describe("Caught (LED-R45)", function()
+		local CAUGHT_STAR = { caughtStar = true }
+
+		it(
+			"earns caughtStar at a Species' 5th Catch, any zone counting, zone 0 too, and nothing after (LED-R45, Tunables)",
+			function()
+				-- Two Catches in one Cast count two (LED-R5); the 5th is the third Cast's first Catch.
+				local records = {
+					cast(ELWYNN, { WIDEFISH }),
+					cast(0, { WIDEFISH, WIDEFISH }),
+					cast(DARKSHORE, { WIDEFISH, WIDEFISH }),
+					cast(WESTFALL, { WIDEFISH }),
+				}
+				local state, stars = applyAll({ records[1], records[2] }, nil, CAUGHT_STAR)
+				assert.are.same({}, stars)
+				assert.is_nil(ns.SpeciesStars(world, state, WIDEFISH)[1])
+
+				local _, later = applyAll({ records[3], records[4] }, state, CAUGHT_STAR)
+				assert.are.same({
+					{ kind = "caughtStar", cast = records[3].id, coins = 0, species = WIDEFISH, itemID = WIDEFISH },
+				}, later)
+				assert.are.equal(5, ns.CAUGHT_STAR_CATCHES)
+				assert.is_true(ns.SpeciesStars(world, state, WIDEFISH)[1])
+			end
+		)
+
+		it("leaves the first Catch a New Species with no star: ★ waits for the 5th (LED-R45, LED-R97)", function()
+			local earned = fold.apply(fold.reset(), cast(ELWYNN, { LONEFISH }), "live")
+			local kinds = {}
+			for _, achievement in ipairs(earned) do
+				kinds[achievement.kind] = true
+			end
+
+			assert.is_true(kinds.newSpecies)
+			assert.is_nil(kinds.caughtStar)
+		end)
+
+		it("gives a Legend no ★, however often it is caught (LED-R63, LED-R5)", function()
+			local records = {}
+			for i = 1, 5 do
+				records[i] = cast(WESTFALL, { LEGEND })
+			end
+			local _, stars = applyAll(records, nil, CAUGHT_STAR)
+
+			assert.are.same({}, stars)
+		end)
+	end)
 
 	describe("In its element, with element windows (LED-R45)", function()
 		it("gives a night-only Species ★★ and an elementStar at its first night Catch (LED-R45)", function()
@@ -141,7 +192,8 @@ describe("Stars", function()
 				{ kind = "elementStar", cast = night.id, coins = 0, species = NIGHTFISH, itemID = NIGHTFISH },
 			}, stars)
 			assert.are.same({ night = true }, state.species[NIGHTFISH].windowsMet)
-			assert.are.same({ [1] = true, [2] = true }, ns.SpeciesStars(world, state, NIGHTFISH))
+			-- Two Catches are short of ★'s five (LED-R45).
+			assert.are.same({ [2] = true }, ns.SpeciesStars(world, state, NIGHTFISH))
 		end)
 
 		it("needs a Catch under each of summer and winter, in any zone (LED-R45)", function()
@@ -362,7 +414,8 @@ describe("Stars", function()
 			local state = applyAll({ cast(ELWYNN, { NIGHTFISH }, NOON) })
 			local celebrated = { stars = { [NIGHTFISH] = { [3] = true }, [STRAY] = { [2] = true } } }
 
-			assert.are.same({ [1] = true, [3] = true }, ns.ShownSpeciesStars(world, state, celebrated, NIGHTFISH))
+			-- One Catch computes no star, so ★★★ is the celebrated one's alone (LED-R45).
+			assert.are.same({ [3] = true }, ns.ShownSpeciesStars(world, state, celebrated, NIGHTFISH))
 			assert.are.same({ [2] = true }, ns.ShownSpeciesStars(world, state, celebrated, STRAY))
 			assert.are.same({}, ns.ShownSpeciesStars(world, state, celebrated, LONEFISH))
 		end)
@@ -377,7 +430,7 @@ describe("Stars", function()
 		it("shows the computed stars alone while the celebrated set has no star keys (LED-R48)", function()
 			local state = applyAll({ cast(ELWYNN, { W40 }), cast(ELWYNN, { NIGHTFISH }, MIDNIGHT) })
 
-			assert.are.same({ [1] = true, [2] = true }, ns.ShownSpeciesStars(world, state, {}, NIGHTFISH))
+			assert.are.same({ [2] = true }, ns.ShownSpeciesStars(world, state, {}, NIGHTFISH))
 			assert.are.same({ [1] = true }, ns.ShownFamilyStars(world, state, {}, FAMILY))
 		end)
 	end)

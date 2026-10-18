@@ -127,8 +127,9 @@ describe("a caught Species' entry (LED-R140)", function()
 
 		assert.are.same({ kind = "icon", icon = MACKEREL, look = "sepia", large = true }, blockOfKind(left, "icon"))
 		assert.are.equal("Raw Slitherskin Mackerel", blockOfKind(left, "title").text)
+		-- Two Catches: caught, but short of ★'s five (LED-R45).
 		assert.are.same({
-			{ text = "Caught", inked = true },
+			{ text = "Caught", inked = false },
 			{ text = "In its element", inked = false },
 			{ text = "Regular", inked = false },
 		}, blockOfKind(left, "stamps").stamps)
@@ -355,9 +356,30 @@ describe("the fish spread (LED-R142)", function()
 						},
 					},
 				},
+				{ kind = "text", text = drawnSymbols("☐ Caught (2/5)") },
 				{ kind = "text", text = drawnSymbols("☐ In its element (2/3)") },
 				{ kind = "text", text = drawnSymbols("☐ Regular (2/50)") },
 			}, right)
+		end
+	)
+
+	it(
+		"ticks Caught at the 5th Catch, counting no further, and inks its stamp (LED-R142, LED-R140, LED-R45)",
+		function()
+			local extra = {}
+			for i = 1, 4 do
+				extra[i] = cast(T0 + 300 + i * MINUTE, MACKEREL, WESTFALL, DAY_MINUTE)
+			end
+			local _, loaded = loggedIn(extra)
+
+			local pages = openFish(loaded, MACKEREL)
+
+			assert.are.same({ text = "Caught", inked = true }, blockOfKind(pages.left, "stamps").stamps[1])
+			assert.are.same({
+				drawnSymbols("☑ Caught (5/5)"),
+				drawnSymbols("☐ In its element (2/3)"),
+				drawnSymbols("☐ Regular (6/50)"),
+			}, textBlockTexts(pages.right))
 		end
 	)
 
@@ -369,8 +391,9 @@ describe("the fish spread (LED-R142)", function()
 			local right = openFish(loaded, NIGHTFISH).right
 
 			assert.are.same({ kind = "kicker", text = "When" }, right[4])
-			assert.are.same({ kind = "text", text = drawnSymbols("☑ In its element (1/1)") }, right[6])
-			assert.are.same({ kind = "text", text = drawnSymbols("☐ Regular (1/50)") }, right[7])
+			assert.are.same({ kind = "text", text = drawnSymbols("☐ Caught (1/5)") }, right[6])
+			assert.are.same({ kind = "text", text = drawnSymbols("☑ In its element (1/1)") }, right[7])
+			assert.are.same({ kind = "text", text = drawnSymbols("☐ Regular (1/50)") }, right[8])
 		end
 	)
 

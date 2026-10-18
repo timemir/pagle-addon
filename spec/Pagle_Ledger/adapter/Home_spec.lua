@@ -291,7 +291,7 @@ describe("the Journal's Home, right page", function()
 		assert.are.same({ kind = "kicker", text = "Notes to self" }, right[4])
 		assert.are.same({
 			kind = "link",
-			text = drawnSymbols("Raw Slitherskin Mackerel: 49 to ★★★"),
+			text = drawnSymbols("Raw Slitherskin Mackerel: 4 to ★"),
 			hand = true,
 			place = { id = "fish", args = { species = MACKEREL } },
 		}, right[5])

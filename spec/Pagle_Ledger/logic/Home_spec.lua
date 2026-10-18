@@ -143,7 +143,7 @@ describe("Home's Notes to self (LED-R133)", function()
 
 			assert.are.same({
 				{ "Zone 40: 1 new to find", "zone", 40 },
-				{ drawnSymbols("Fish 1: 49 to ★★★"), "fish", 1 },
+				{ drawnSymbols("Fish 1: 4 to ★"), "fish", 1 },
 			}, notes(world, state, celebrated))
 		end
 	)
@@ -157,6 +157,28 @@ describe("Home's Notes to self (LED-R133)", function()
 			local items = { [3] = { category = "fish", species = 3, removed = true } }
 
 			assert.are.same({ { drawnSymbols("Fish 1: 38 to ★★★"), "fish", 1 } }, notes(world, state, nil, items))
+		end
+	)
+
+	it(
+		"counts down to ★ while it isn't shown, then to ★★★, a celebrated ★ counting as shown (LED-R133, LED-R45, LED-R48)",
+		function()
+			local world = worldOf({ [12] = listed({ 1 }) })
+			local function note(n, celebrated)
+				return notes(world, stateOf({}, {}, { [1] = n }), celebrated)[1][1]
+			end
+			local celebrated = {
+				zones = {},
+				levels = {},
+				species = {},
+				speciesZones = {},
+				skill = {},
+				stars = { [1] = { [1] = true } },
+			}
+
+			assert.are.equal(drawnSymbols("Fish 1: 2 to ★"), note(3))
+			assert.are.equal(drawnSymbols("Fish 1: 45 to ★★★"), note(5))
+			assert.are.equal(drawnSymbols("Fish 1: 47 to ★★★"), note(3, celebrated))
 		end
 	)
 

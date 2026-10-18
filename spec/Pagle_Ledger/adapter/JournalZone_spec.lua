@@ -215,8 +215,8 @@ describe("the Journal's zone spread", function()
 			local _, loaded = zoneSpread(DARKSHORE)
 			local mackerel = blockWithText(loaded.ns.journal.pages.left, "Raw Slitherskin Mackerel")
 
-			-- Listed in Darkshore alone, so caught in one zone is ★★ (LED-R45).
-			assert.are.same({ [1] = true, [2] = true }, mackerel.stars)
+			-- Listed in Darkshore alone, so caught in one zone is ★★; two Catches are short of ★'s five (LED-R45).
+			assert.are.same({ [2] = true }, mackerel.stars)
 			assert.is_nil(mackerel.margin)
 		end)
 
@@ -333,7 +333,8 @@ describe("the Journal's zone spread", function()
 				local _, loaded = zoneSpread(DARKSHORE)
 				local rows = loaded.ns.journal.frame.left.drawn.row
 
-				-- Blackmouth: pools, ★★ of three, as the kit's stars inked and in ghost ink.
+				-- Blackmouth: pools, ★★ alone of three (one Catch is short of ★'s five), as the kit's stars inked
+				-- and in ghost ink.
 				local parts = loaded.ns.JOURNAL_ATLASES.Parts
 				local function sprite(texture)
 					for name in pairs(parts.sprites) do
@@ -344,7 +345,7 @@ describe("the Journal's zone spread", function()
 					end
 				end
 				assert.are.same({ "Oily Blackmouth", "pools" }, { rows[2].name.text, rows[2].margin.text })
-				assert.are.same({ "star", "star", "star-off" }, {
+				assert.are.same({ "star-off", "star", "star-off" }, {
 					sprite(rows[2].stars.stars[1]),
 					sprite(rows[2].stars.stars[2]),
 					sprite(rows[2].stars.stars[3]),
@@ -407,7 +408,7 @@ describe("the Journal's zone spread", function()
 
 			assert.are.same({ "row", "sepia" }, { mackerel.kind, mackerel.look })
 			assert.is_nil(mackerel.margin)
-			assert.are.same({ [1] = true, [2] = true }, mackerel.stars)
+			assert.are.same({ [2] = true }, mackerel.stars)
 		end)
 
 		it('reads "Nothing caught here yet." with nothing caught there (LED-R138)', function()

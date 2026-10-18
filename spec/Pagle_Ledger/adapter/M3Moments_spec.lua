@@ -353,6 +353,24 @@ describe("the Ledger's M3 live moments", function()
 		end
 	)
 
+	it("raise Caught (★) at a Species' 5th Catch, not its first (LED-R45, LED-R97)", function()
+		local history = {}
+		for i = 1, 4 do
+			history[i] = cast(T0 + i, { ANY_1 })
+		end
+		local fake, loaded = session({ history = history })
+		assert.is_nil(loaded.env.PagleLedgerDB.global.celebrated.stars[ANY_1][1])
+
+		local record = assert(fake.playCast("caught", loot(ANY_1)))
+
+		local caught = byKind(shown(fake)[1]).caughtStar
+		assert.are.same(
+			{ "nod", 105, "Caught", "Cove Perch", drawnSymbols("★"), ANY_1, record.id },
+			{ caught.rung, caught.order, caught.title, caught.text, caught.stamp, caught.icon, caught.cast }
+		)
+		assert.is_true(loaded.env.PagleLedgerDB.global.celebrated.stars[ANY_1][1])
+	end)
+
 	it("raise Regular (★★★) at a Species' 50th Catch (LED-R45, LED-R97)", function()
 		local history = {}
 		for i = 1, 49 do
@@ -378,7 +396,7 @@ describe("the Ledger's M3 live moments", function()
 		assert.is_nil(byKind(shown(fake)[1]).elementStar)
 		local ns = loaded.ns
 		local stars = ns.ShownSpeciesStars(ns.world, ns.projection:GetState(), ns.CelebratedSet(ns.db.global), ANY_1)
-		assert.are.same({ [1] = true, [2] = true }, stars)
+		assert.are.same({ [2] = true }, stars)
 	end)
 
 	it(
@@ -467,7 +485,8 @@ describe("the Ledger's M3 done", function()
 			local celebrated = loaded.env.PagleLedgerDB.global.celebrated
 			assert.are.same({ [COVE] = 5 }, celebrated.zones)
 			assert.are.same({ [JUNK] = true, [LIGHT] = true, [CHEST] = true }, celebrated.items)
-			assert.are.same({ [1] = true, [2] = true }, celebrated.stars[NIGHTFISH])
+			-- One Catch: in its element, short of ★'s five (LED-R45).
+			assert.are.same({ [2] = true }, celebrated.stars[NIGHTFISH])
 			assert.are.same({ [FAMILY] = { [1] = true, [2] = true } }, celebrated.familyStars)
 			-- Completion: 4 of 4 Species, the junk, the chest, 1 of 2 weights and the zone: 8 of 9 (LED-R70).
 			assert.are.same(
@@ -569,6 +588,36 @@ describe("the Ledger's M3 done", function()
 			local celebrated = loaded.env.PagleLedgerDB.global.celebrated
 			assert.are.same({ [COVE] = 5 }, celebrated.zones)
 			assert.are.same({ [0] = 6 }, celebrated.levels)
+		end
+	)
+
+	it(
+		"rebuilds at a new rules version: ★ arrives summary-only at the 5th Catch, and a ★ celebrated at a first Catch stays shown (LED-R2, LED-R45, LED-R48, LED-R93)",
+		function()
+			local history = { cast(T0, { ANY_2 }) }
+			for i = 1, 5 do
+				history[#history + 1] = cast(T0 + 60 * i, { ANY_1 })
+			end
+			local last, lastLoaded = session({ history = history })
+			-- What the earlier rule stored: its rules version (LED-R4), and ANY_2's ★ from its first Catch alone.
+			local saved = lastLoaded.env.PagleLedgerDB
+			saved.global.projection.rulesVersion = 301
+			saved.global.celebrated.stars = { [ANY_2] = { [1] = true, [2] = true } }
+
+			local fake, loaded = nextSession(last, lastLoaded)
+
+			local caught = {}
+			for _, moment in ipairs(fake.summarized) do
+				assert.is_true(moment.summaryOnly)
+				if moment.kind == "caughtStar" then
+					caught[#caught + 1] = moment.text
+				end
+			end
+			assert.are.same({ "Cove Perch" }, caught)
+			local ns = loaded.ns
+			local state = ns.projection:GetState()
+			assert.are.equal(1, state.species[ANY_2].n)
+			assert.is_true(ns.ShownSpeciesStars(ns.world, state, ns.CelebratedSet(ns.db.global), ANY_2)[1])
 		end
 	)
 end)

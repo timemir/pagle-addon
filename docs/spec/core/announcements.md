@@ -190,7 +190,7 @@ ANN-R51.
 | Core | catch Nod, every live caught Cast with no other moment (ANN-R13) | `nod`, silent, never summarized |
 | Ledger | new Species, trophy weight, zone rank, Skill Milestone | `toast` |
 | Ledger | size record, new junk or treasure | `toast.low`; a record beating one that stood 50+ Catches of that Species is raised at `toast` |
-| Ledger | Species new to a zone, ★★, ★★★, trophy family ★★ or ★★★, Uncharted | `nod` |
+| Ledger | Species new to a zone, ★, ★★, ★★★, trophy family ★★ or ★★★, Uncharted | `nod` |
 | Ledger | level-up, Zone Master, Prestige ready, Catch Milestone, completion title | `banner` |
 | Ledger | Prestige (no `cast`: its own Announcement) | `banner` |
 | Ledger | Legend | `splash` |

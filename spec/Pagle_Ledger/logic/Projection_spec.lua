@@ -45,11 +45,11 @@ describe("the Ledger's projection def", function()
 	it(
 		"has rulesVersion LEDGER_RULES_VERSION × 100 + SIZE_RULES_VERSION, a missing one counting as 0 (LED-R2)",
 		function()
-			-- M4's LEDGER_RULES_VERSION 3 (LED-R4).
-			assert.are.equal(300, ns.RulesVersion(nil))
-			assert.are.equal(301, ns.RulesVersion(1))
-			assert.are.equal(300, ns.ProjectionDef({}, lookups, outlets, nil).rulesVersion)
-			assert.are.equal(301, ns.ProjectionDef({}, lookups, outlets, 1).rulesVersion)
+			-- LEDGER_RULES_VERSION 4: M4's 3, raised when ★ moved to the 5th Catch (LED-R4, LED-R45).
+			assert.are.equal(400, ns.RulesVersion(nil))
+			assert.are.equal(401, ns.RulesVersion(1))
+			assert.are.equal(400, ns.ProjectionDef({}, lookups, outlets, nil).rulesVersion)
+			assert.are.equal(401, ns.ProjectionDef({}, lookups, outlets, 1).rulesVersion)
 		end
 	)
 

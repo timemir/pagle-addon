@@ -287,8 +287,9 @@ describe("the Ledger's values for the backend (#223)", function()
 
 		it("gives every Species of the world by ID, caught or not, with its computed stars (LED-R45)", function()
 			assert.are.same({
-				{ id = SMALLFISH, caught = true, stars = { true, true, false }, removed = false },
-				{ id = MACKEREL, caught = true, stars = { true, true, false }, removed = false },
+				-- In their element, each short of ★'s five Catches (LED-R45).
+				{ id = SMALLFISH, caught = true, stars = { false, true, false }, removed = false },
+				{ id = MACKEREL, caught = true, stars = { false, true, false }, removed = false },
 				{ id = NIGHTFISH, caught = false, stars = { false, false, false }, removed = false },
 			}, journal.species)
 		end)

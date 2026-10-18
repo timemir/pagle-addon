@@ -91,8 +91,8 @@ describe("the Ledger's done", function()
 			assert.are.same({
 				levels = { [0] = 2 },
 				species = { [MACKEREL] = true, [SMALLFISH] = true },
-				-- Each Species' ★; neither is in its element yet (LED-R45, LED-R90).
-				stars = { [MACKEREL] = { [1] = true }, [SMALLFISH] = { [1] = true } },
+				-- No star yet: neither has the 5 Catches of ★ nor is in its element (LED-R45, LED-R90).
+				stars = {},
 				familyStars = {},
 				speciesZones = { ["6303:3"] = true, ["6291:3"] = true, ["6303:4"] = true },
 				zones = { [BADLANDS] = 0, [BLASTED_LANDS] = 0 },

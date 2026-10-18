@@ -898,9 +898,12 @@ describe("The Ledger's fold", function()
 			}, a)
 		end)
 
-		it("is LEDGER_RULES_VERSION 3 in M4 (LED-R4, Tunables)", function()
-			assert.are.equal(3, ns.LEDGER_RULES_VERSION)
-		end)
+		it(
+			"is LEDGER_RULES_VERSION 4: M4's 3, raised when ★ moved to the 5th Catch (LED-R4, LED-R45, Tunables)",
+			function()
+				assert.are.equal(4, ns.LEDGER_RULES_VERSION)
+			end
+		)
 	end)
 
 	describe("Casts (LED-R7, LED-R2)", function()

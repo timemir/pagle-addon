@@ -35,7 +35,7 @@ The Ledger is the `Pagle_Ledger` Module: the Angler's identity as an angler. It 
   - **M3:** the world index, stars, Zone Mastery, the collections and the Uncharted list, completion, their XP, Coins and moments, and the Journal. The Journal leaves out every M4 element: Legends (contents line and spread), titles (the bookplate and brass plate show no title; "Lv {L} · Ledger {p}%"; the `zoneMaster` moment's text is just "{zone}"; no `completeTitle` moment), the zonemaster line of LED-R137, the Prestige emblems and button, "Signed As", "Bindings", the Catch Milestone part of LED-R146 (it reads "{lifetime} Catches"), and size text. It is drawn in the Field Leather look, whose tints the M3 Journal ticket picks, while no binding slot exists.
   - **M4:** Legends, titles, Simulated Size records (and size text), Catch Milestones, Prestige (with `prestigeReady`), the bindings, and every element M3 left out.
 
-  `LEDGER_RULES_VERSION` is 1 in M2, 2 in M3 and 3 in M4. In M2 the Settings root has no "Open Fish Journal" button, since the Ledger has no view yet (CORE-R44).
+  `LEDGER_RULES_VERSION` is 1 in M2, 2 in M3 and 3 in M4, then rises by 1 per change: 4 when ★ moved from a Species' first Catch to its 5th (LED-R45). In M2 the Settings root has no "Open Fish Journal" button, since the Ledger has no view yet (CORE-R44).
 
 ### Classifying a Catch
 
@@ -110,7 +110,7 @@ The Ledger is the `Pagle_Ledger` Module: the Angler's identity as an angler. It 
 ### Species Mastery
 
 - **LED-R45** Each Species (not Legends) has three stars, earned independently:
-  - ★ **Caught**: its first Catch.
+  - ★ **Caught**: 5 Catches of it, counted as ★★★'s. Its first Catch still makes it caught (named, counted, its New Species XP, Coins and moment); only the ★ waits for the 5th.
   - ★★ **In its element**: if it has element windows (LED-R10), a Catch of it under each of them, in any zone, judged with `Pagle.MatchesConditions(gate, cast.conditions)` with that window's spec; otherwise Catches of it in `min(3, max(1, listed zones))` distinct zones, any zone other than `0` counting (LED-R6).
   - ★★★ **Regular**: 50 Catches of it.
 - **LED-R46** Stars are counted from Catches only. A Simulated Size never counts.
@@ -200,7 +200,7 @@ The Ledger is the `Pagle_Ledger` Module: the Angler's identity as an angler. It 
 
 ### Celebrating
 
-- **LED-R90** The **celebrated set** (LOG-R77) in `PagleLedgerDB.global.celebrated` records what has already been shown or written up: the highest level per climb (by prestige rank; a climb's level 60 also stands for its `prestigeReady`), the highest prestige rank, Species (★), which stars per Species and per family, Species × zone pairs, zones fished, shown ranks per zone, curio, trophy and Legend items, Uncharted item IDs, Skill and Catch Milestones, earned title keys, and `coins`, the lifetime Coins total, set after every live entry and every `done`. It also stores `logId`, the `PagleLog.logId` it belongs to. It only grows, except `coins`, which follows the total. In `done`, if its `logId` isn't `Pagle.GetAngler().logId` (a new log, LOG-R18), the set is emptied, given the new `logId`, and that `done` is handled as a first build.
+- **LED-R90** The **celebrated set** (LOG-R77) in `PagleLedgerDB.global.celebrated` records what has already been shown or written up: the highest level per climb (by prestige rank; a climb's level 60 also stands for its `prestigeReady`), the highest prestige rank, Species caught (New Species), which stars per Species and per family, Species × zone pairs, zones fished, shown ranks per zone, curio, trophy and Legend items, Uncharted item IDs, Skill and Catch Milestones, earned title keys, and `coins`, the lifetime Coins total, set after every live entry and every `done`. It also stores `logId`, the `PagleLog.logId` it belongs to. It only grows, except `coins`, which follows the total. In `done`, if its `logId` isn't `Pagle.GetAngler().logId` (a new log, LOG-R18), the set is emptied, given the new `logId`, and that `done` is handled as a first build.
 - **LED-R91** While applying a `"live"` entry, every **achievement** (a row of the moments table, LED-R97) it earns that isn't in the celebrated set raises its moment and is added to the set. An achievement already celebrated raises nothing, even when a rebuild had dropped it and this entry earns it again.
 - **LED-R92** Shown values never fall below the celebrated ones: the level in the current climb (LED-R36), Species and family stars, zone ranks (LED-R52), titles (LED-R76) and level bindings (LED-R111).
 - **LED-R98** While applying entries in `"replay"` or `"rebuild"` mode, the fold also appends each achievement it earns, with the entry ID of the Cast that earned it (none for Skill Reading and Prestige entries) and its Coins, to a **scratch list** kept in memory outside the stored state, cleared by `reset` and after `done`. A rebuild cut short by a logout or `/reload` starts again from `seq` 0 (LOG-R72), so the list is rebuilt with it. `done` reads achievements from this list; the list never decides what the state holds.
@@ -230,12 +230,13 @@ The Ledger is the `Pagle_Ledger` Module: the Angler's identity as an angler. It 
   | Size record (`sizeRecord`) | `toast.low`, 100 (`toast` with the rare-record flair) | "Size record" / "{item} · {size text}" | "Record" | | ruler `{ old, new, unit = "length", label = "length" }`, always (ANN-R22) |
   | New curio (`newCurio`) | `toast.low`, 110 | "New curio" / "{item}" | "New!" | 5 | |
   | Species new to a zone (`newInZone`), not on the Species' first Catch ever | `nod`, 100 | "New here" / "{item} in {zone}" | "New here" | | |
+  | ★ (`caughtStar`) | `nod`, 105 | "Caught" / "{item}" | "★" | | |
   | ★★ (`elementStar`) | `nod`, 110 | "In its element" / "{item}" | "★★" | | |
   | ★★★ (`regularStar`) | `nod`, 120 | "Regular" / "{item}" | "★★★" | | |
   | Family ★★ or ★★★ (`familyStar`) | `nod`, 130 | "Trophy family" / "{family} {stars}" | the stars | | |
   | Uncharted (`uncharted`), first Catch of each item ID | `nod`, 140 | "Unknown catch, logged" / "{item}" | "Logged" | | |
 
-  `{item}` is the item's name, or "Item {id}" when the client doesn't have it yet. `{size text}` is LED-R81's, left out (with its separator) when the Catch has no size. `icon` is the item for every Catch moment; every other moment (level, Prestige, rank, Skill and Catch Milestone, completion title, family star) uses an in-client texture picked in the build ticket. Coins a live entry earns with no moment raised (an achievement already celebrated) count only in the total. A first Catch in a zone and a ★ have no moment of their own: the New Species and Zone rank moments cover them. A title earned with a level-up, Prestige, Zone Master or Legend rides in that moment, never on its own. `seal` is what a banner's wax seal shows ([core/announcements.md › Contracts](core/announcements.md#contracts)): a number pressed into it, a pressed mark or the Prestige crest. Only the banners set one.
+  `{item}` is the item's name, or "Item {id}" when the client doesn't have it yet. `{size text}` is LED-R81's, left out (with its separator) when the Catch has no size. `icon` is the item for every Catch moment; every other moment (level, Prestige, rank, Skill and Catch Milestone, completion title, family star) uses an in-client texture picked in the build ticket. Coins a live entry earns with no moment raised (an achievement already celebrated) count only in the total. A first Catch in a zone has no moment of its own: the New Species and Zone rank moments cover it. A title earned with a level-up, Prestige, Zone Master or Legend rides in that moment, never on its own. `seal` is what a banner's wax seal shows ([core/announcements.md › Contracts](core/announcements.md#contracts)): a number pressed into it, a pressed mark or the Prestige crest. Only the banners set one.
 
 ### Journal bindings
 
@@ -281,7 +282,7 @@ The Journal is a two-page book (UI). These rules say what it shows; [UI](#ui) sa
 - **LED-R133** **Notes to self** are generated progress nudges, at most 3, in this order, each only if it applies. Each opens the spread it names.
   1. **Next rank:** of the fished charted zones with shown rank Visitor to Expert and no new to find, the one with the highest completion (ties: higher rank, then lower `skillBase`, then lower areaID): "{zone}: {rank}. {next requirement}" (LED-R134).
   2. **New to find:** the first zone in tile order with new to find: "{zone}: {N} new to find".
-  3. **Next star:** the caught, not removed Species without a shown ★★★ (LED-R48) that has the most Catches (ties: lower Species ID): "{name}: {50 − n} to ★★★".
+  3. **Next star:** the caught, not removed Species without a shown ★★★ (LED-R48) that has the most Catches (ties: lower Species ID): "{name}: {5 − n} to ★" while its ★ isn't shown, else "{name}: {50 − n} to ★★★".
   
   With none, one note reads "Go fishing!". Notes never say what is catchable now (that is Hunts').
 - **LED-R134** The **next requirement** for a zone, from its shown rank: unfished "Catch anything here to become a Visitor"; Visitor "Regular: {k} more any-time Species"; Regular "Local: {k} more any-time Species"; Local "Expert: " then, joined with ", ", "{k} more day, night, seasonal or event catches", "a piece of junk", "a treasure" for each part still unmet; Expert "Master: a trophy from {k} more families"; Master "Master of these waters". `k` counts what the rank above the shown rank still needs beyond the shown rank's own requirements. With new to find, " · {N} new to find: the data grew, and your seal stays" is appended (for Master it replaces "Master of these waters").
@@ -307,7 +308,7 @@ The Journal is a two-page book (UI). These rules say what it shows; [UI](#ui) sa
 
 - **LED-R140** **A caught Species' entry:** its icon drawn in sepia, large; its name; three stamps, Caught / In its element / Regular, inked when earned (LED-R92); "First landed {date} in {zone}, by {character}. {n} caught." (the zone part left out for zone `0`); its blurb (lore); "Found in {listed zones, joined with ', ' and ' and '}." (left out with none) plus " Only by {element window labels}." when it has element windows; "Largest I've landed: {band} · {length}" when it has a record; and "No longer found in Forever's waters." when removed.
 - **LED-R141** **An uncaught Species' entry:** its icon as a silhouette; "An unknown fish"; its riddle (lore) in quotes; and a "Read the plain hint »" link that replaces itself with the **plain hint** (DATA-R112), generated here: its element window labels joined with ", " (or "Any time"), then " · pools" when any of its items is pool-associated, then " · " and its first two listed zones by skill base (" +{n}" for the rest), then " · skill ~{lowest skill base among those two}" when either has one (" · any skill" when that is 0 or below, DATA-R30). With no listed zones, the hint is the window part alone. The hint stays open until the spread changes.
-- **LED-R142** **The fish spread** (from search or a note; both only ever name caught Species): the left page is the entry; the right page has kicker "Where to find it", title "Its waters", its listed zones as tiles (as LED-R131, plus "caught ✓" where caught, at the right of the tile's rank line, so a long zone name never runs under it), "When" with each element window's "{label}, {state}", and for a caught Species, "☐/☑ In its element ({have}/{need})" and "☐/☑ Regular ({min(n, 50)}/50)". For ★★ by windows, `have`/`need` count windows; by zones, distinct zones. A tile opens that zone's spread with the fish selected.
+- **LED-R142** **The fish spread** (from search or a note; both only ever name caught Species): the left page is the entry; the right page has kicker "Where to find it", title "Its waters", its listed zones as tiles (as LED-R131, plus "caught ✓" where caught, at the right of the tile's rank line, so a long zone name never runs under it), "When" with each element window's "{label}, {state}", and for a caught Species, "☐/☑ Caught ({min(n, 5)}/5)", "☐/☑ In its element ({have}/{need})" and "☐/☑ Regular ({min(n, 50)}/50)". For ★★ by windows, `have`/`need` count windows; by zones, distinct zones. A tile opens that zone's spread with the fish selected.
 
 #### Collections
 
@@ -482,6 +483,7 @@ The Ledger adds no rows to any Settings page.
 | Prestiges with an emblem | 10 | LED-R34 |
 | Skill Milestones | 75 / 150 / 225 / 300 | LED-R40 |
 | Catch Milestones | 1,000 / 5,000 / 10,000 / 25,000 / 50,000 | LED-R42 |
+| ★ Catches (`CAUGHT_STAR_CATCHES`) | 5 | LED-R45, LED-R133, LED-R142 |
 | ★★ zones needed | 3 | LED-R45 |
 | ★★★ Catches | 50 | LED-R45 |
 | Regular share of ungated Species | half, rounded up | LED-R50 |
@@ -497,12 +499,12 @@ The Ledger adds no rows to any Settings page.
 | Forecast in hours up to | 48 h | LED-R127 |
 | Write-up title lines | 3 | LED-R94 |
 | Continent name map (continent ID → uiMapID) | 0 → 1415 (Eastern Kingdoms), 1 → 1414 (Kalimdor); every other ContinentID is "Other waters" | LED-R126, LED-R130 |
-| `LEDGER_RULES_VERSION` | 1 in M2, 2 in M3, 3 in M4, then +1 per change | LED-R2, LED-R4 |
+| `LEDGER_RULES_VERSION` | 4 (1 in M2, 2 in M3, 3 in M4, then +1 per change) | LED-R2, LED-R4 |
 
 ## Edge cases
 
 - **LED-R190 Module disabled, then enabled again.** While disabled it raises and pays nothing; Core keeps recording. On re-enable the projection catches up (LOG-R71) without moments; `done` raises one "While the Ledger was off" Write-up section for what that history earned, then reports Coins (LED-R93). If a release arrived meanwhile, Core rebuilds instead and the new achievements arrive as summary-only moments.
-- **LED-R191 Projection rebuild.** A new content fingerprint, `LEDGER_RULES_VERSION` or `SIZE_RULES_VERSION` rebuilds from `seq` 0 (LOG-R72). Numbers may shift; shown levels, ranks, stars and titles never fall below the celebrated ones (LED-R92), Coins follow the new total (SHOP-R4), and anything newly earned arrives as summary-only moments (LED-R93). Size records never raise a moment on a rebuild (LED-R84).
+- **LED-R191 Projection rebuild.** A new content fingerprint, `LEDGER_RULES_VERSION` or `SIZE_RULES_VERSION` rebuilds from `seq` 0 (LOG-R72). Numbers may shift; shown levels, ranks, stars and titles never fall below the celebrated ones (LED-R92), Coins follow the new total (SHOP-R4), and anything newly earned arrives as summary-only moments (LED-R93). Size records never raise a moment on a rebuild (LED-R84). A ★ celebrated at a first Catch, before `LEDGER_RULES_VERSION` 4, stays shown on a Species with fewer than 5 Catches (LED-R45, LED-R48).
 - **LED-R192 First build over existing history.** Everything earned is marked celebrated and one Write-up section lists it (LED-R93, LED-R94); nothing pops up. A lost `PagleLedgerDB` is a first build too (LOG-R77).
 - **LED-R193 In combat.** The projection keeps applying entries and raising moments, which Core holds (ANN-R35). The Journal stays usable (LED-R121).
 - **LED-R194 Crash mid-Session.** Casts since the last save are lost, and so is the celebrated set's growth with them (both are written at the same save, LOG-R85), so whatever those Casts earned is earned and celebrated again when it next happens. A Prestige appended after the last save is lost; the climb is still at 60 and the button is back.

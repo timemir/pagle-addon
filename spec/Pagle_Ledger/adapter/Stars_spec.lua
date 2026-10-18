@@ -45,10 +45,8 @@ describe("Species stars in the Ledger's projection (LED-R45)", function()
 		fake.enterWorld()
 		local ns = loaded.ns
 		local state = ns.projection:GetState()
-		assert.are.same(
-			{ [1] = true },
-			ns.ShownSpeciesStars(ns.world, state, ns.CelebratedSet(ns.db.global), NIGHTFISH)
-		)
+		-- One Catch is caught, but short of ★'s five (LED-R45).
+		assert.are.same({}, ns.ShownSpeciesStars(ns.world, state, ns.CelebratedSet(ns.db.global), NIGHTFISH))
 
 		-- A live Cast at night, in Elwynn though only Goldshire lists it: the window counts in any zone.
 		local night = {}
@@ -62,7 +60,7 @@ describe("Species stars in the Ledger's projection (LED-R45)", function()
 		assert.are.equal(2, state.species[NIGHTFISH].n)
 		assert.are.same({ night = true }, state.species[NIGHTFISH].windowsMet)
 		assert.are.same(
-			{ [1] = true, [2] = true },
+			{ [2] = true },
 			ns.ShownSpeciesStars(ns.world, state, ns.CelebratedSet(ns.db.global), NIGHTFISH)
 		)
 	end)

@@ -138,12 +138,15 @@ local function itemWithSize(outlets, earned)
 end
 
 --- Adds `stars` to the celebrated stars of `key` (a Species or a trophy family, LED-R90), returning those that weren't
---- celebrated yet, ascending.
+--- celebrated yet, ascending. With no stars (a Species short of ★, LED-R45) it adds no entry for `key`.
 ---@param set { [integer]: LedgerStars } celebrated.stars or celebrated.familyStars
 ---@param key integer
 ---@param stars integer[] ascending
 ---@return integer[]
 function ns.CelebrateStars(set, key, stars)
+	if #stars == 0 then
+		return {}
+	end
 	local celebrated = set[key]
 	if not celebrated then
 		celebrated = {}
@@ -187,8 +190,6 @@ function celebrate.newSpecies(celebrated, _, earned, outlets)
 	if zone ~= 0 then
 		celebrated.speciesZones[speciesZone(species, zone)] = true
 	end
-	-- Its ★ rides on the New Species moment (LED-R97).
-	ns.CelebrateStars(celebrated.stars, species, { 1 })
 	if celebrated.species[species] then
 		return nil
 	end
@@ -294,7 +295,7 @@ function celebrate.uncharted(celebrated, _, earned, outlets)
 	return itemMoment("uncharted", "nod", 140, L.UNCHARTED_TITLE, L.UNCHARTED_STAMP, earned, outlets)
 end
 
--- A Species' ★★ (`elementStar`) or ★★★ (`regularStar`), each once (LED-R45, LED-R48).
+-- A Species' ★ (`caughtStar`), ★★ (`elementStar`) or ★★★ (`regularStar`), each once (LED-R45, LED-R48).
 ---@param star integer
 ---@param kind string
 ---@param order integer
@@ -309,6 +310,7 @@ local function speciesStar(star, kind, order, title)
 		return itemMoment(kind, "nod", order, ns.L[title], starsText(star), earned, outlets)
 	end
 end
+speciesStar(1, "caughtStar", 105, "CAUGHT_STAR_TITLE")
 speciesStar(2, "elementStar", 110, "ELEMENT_STAR_TITLE")
 speciesStar(3, "regularStar", 120, "REGULAR_STAR_TITLE")
 
