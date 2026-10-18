@@ -23,7 +23,7 @@ The Ledger's book, where the Angler reads their progress: the waters they have f
 _Avoid_: Ledger (which is the Module), codex, encyclopedia
 
 **Hunt**:
-A target catch (one Species, or a class of Catch such as "rare or better") that is only possible, or only counts, under detectable conditions that open and close: a time of day, a season, a calendar event, or an aura the player starts. A fish tied only to a zone is not a Hunt; the Ledger covers it. A Hunt completes once, and may have further tiers after that.
+A target catch (one Species, or a class of Catch such as "rare or better") that is only possible, or only counts, under detectable conditions that open and close: a time of day, a season, a calendar event, an aura the player starts, or the dates of the Hunt Event it belongs to. A fish tied only to a zone is not a Standing Hunt (the Ledger covers it), but it can be a Hunt within a Hunt Event, whose dates are its condition. A Hunt completes once, and may have further tiers after that.
 _Avoid_: quest, challenge, bounty
 
 **Hunts**:
@@ -217,6 +217,14 @@ _Avoid_: collection (which is the Ledger's), achievement, category
 **Retired Hunt**:
 A Hunt that no longer appears on the board because it was replaced or proved wrong. Completions already earned are kept.
 _Avoid_: removed hunt, deleted hunt, expired hunt
+
+**Standing Hunt**:
+A Hunt that is always there and comes round with its conditions (night, a season, a weekly game event, an aura), never expiring. Standing Hunts are grouped in Hunt sets.
+_Avoid_: permanent hunt, normal hunt
+
+**Hunt Event**:
+A dated group of Hunts, themed on one or two zones and shared by every Angler, open for about three days and then gone. It comes from the calendar the addon ships, or is pushed by the backend through the companion. Progress in an unfinished Hunt Event is simply lost when it ends; completed Hunt Events add up towards titles.
+_Avoid_: event (which is a game calendar event, such as the Fishing Extravaganza), season, challenge, limited hunt
 
 ### Tackle Board
 

@@ -20,3 +20,9 @@ A Pagle Module never depends on another Module: no calls between Modules, no rea
 ## Note: a Module may read live game state for its own actions
 
 Decided while writing the QoL spec ([Write the QoL spec](https://github.com/timemir/wow-fish/issues/37)): a Module may read live game state it needs for its own actions (QoL watches the player's channel ending, its pole, bags and lure to re-point the Fishing key), but never to record, count or derive anything. Everything recorded or derived still comes from Core.
+
+## Note: this ADR is about clean dependencies, not about what Pagle may do
+
+Clarified by the dev while redesigning Hunts (18 Oct): this ADR exists to keep the code clean, with every Module depending only on Core. It was never meant to rule out features. When a feature needs one Module's result to reach another, the answer is a Core contract that the source Module feeds and the other reads, never a call or event between Modules. Two such contracts follow:
+- **XP income.** Like the Coins wallet (ADR 0009), a Module may report the XP it has earned to Core, and the Ledger adds it to the Angler Level. This replaces the line under Consequences that a cross-Module reward "cannot exist". What it costs to disable a Module stays visible, because income is shown by source.
+- **Pushed content.** Pagle_Companion hands Core what the companion app delivered, such as Hunt Events, and Hunts reads those from Core. Neither Module knows the other exists.
