@@ -180,6 +180,8 @@ Grouped by topic; the rules live in the linked file.
 | `Pagle.IsOwned(goodID)`, `GetEquipped(slotID)`, `SetEquipped(slotID, goodID)`, `GetGood(goodID)`, `OpenShop(goodID?)` | | wallet-and-shop.md |
 | `Pagle.OpenFieldReport()`, `GetFieldReportCount()` | | [field-report.md](field-report.md#contracts) |
 | `Pagle.IsAnimationsOn()` | boolean, the Animations setting | [announcements.md](announcements.md#contracts) |
+| `Pagle.GetActivityXP()` | `ActivityXP` | [activity-xp.md](activity-xp.md#contracts) |
+| `Pagle.GetCompanionState()`, `Pagle.GetPushedContent(kind)` | state string, items | [pushed-content.md](pushed-content.md#contracts) |
 
 ### Module handle (returned by `RegisterModule`)
 
@@ -191,6 +193,7 @@ Grouped by topic; the rules live in the linked file.
 | `M:NewProjection(def)` | catch-log.md |
 | `M:RaiseMoment(moment)`, `M:SetSummaryLine(key, text)`, `M:RaiseWriteUp(section)` | [announcements.md](announcements.md#contracts) |
 | `M:ReportCoinsEarned(total)`, `M:RegisterSlot(slot)`, `M:RegisterGood(good)`, `M:RefreshGoods()` | wallet-and-shop.md |
+| `M:ReportXPEarned(total)` | activity-xp.md |
 | `M:RegisterTracker{ id, order, frame }` | here |
 | `M:AddSetting(topic, setting)` | here |
 | `M:RegisterTourStop(id, label, show, hide)`: a stop for the dev screenshot tour (CORE-R65) | here |
@@ -253,7 +256,7 @@ end
 | `RestrictionChanged` | `isRestricted: boolean` |
 | `ModulesChanged` | none (CORE-R19) |
 
-Fishing, Session and wallet events are listed in their topic files.
+Fishing, Session, wallet, Activity XP (`ActivityXPChanged`) and pushed-content (`PushedContentReady`) events are listed in their topic files.
 
 ## UI
 

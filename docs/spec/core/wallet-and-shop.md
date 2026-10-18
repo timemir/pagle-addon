@@ -16,7 +16,7 @@ Part of [Core](README.md). Core holds the Angler's **Pagle Coins** and runs the 
 
 - **SHOP-R1** Coins reward achievements only, never raw volume. Core itself pays nothing: no Coins for Casts or Catches. Stats and QoL pay nothing.
 - **SHOP-R2** A paying Module keeps its own **lifetime Coins earned** in its projection (ADR 0004) and reports it with `M:ReportCoinsEarned(total)`: from its projection's `done` after every catch-up or rebuild (even when unchanged, so a lost `PagleDB` refills), and after each live entry that changes it. It never reports mid-rebuild.
-- **SHOP-R3** Core stores the last total each Module reported in `PagleDB.global.coins.earned[<def.name>]`. A Module that is disabled or uninstalled keeps its last total, so nothing it paid is lost. If `PagleDB` itself is lost, a disabled Module's total is gone until it is enabled and reports again.
+- **SHOP-R3** Core stores the last total each Module reported in `PagleDB.global.coins.earned[<def.name>]`. A Module that is disabled or uninstalled keeps its last total, so nothing it paid is lost. If `PagleDB` itself is lost, a disabled Module's total is gone until it is enabled and reports again. The totals belong to the log's `logId` (`PagleDB.global.coins.logId`): when `PagleLog.logId` differs from it (a new log, LOG-R18), Core empties them at `ADDON_LOADED` and takes the new `logId`, so a new log never inherits the old one's totals; each Module's report after its rebuild fills them in again (as AXP-R3 does for Activity XP, [#278](https://github.com/timemir/wow-fish/issues/278)).
 - **SHOP-R4** Disabling a Module never lowers what it paid. Only a rebalance or data fix can recount a Module's total lower; then `earned` follows the new report, but the balance never goes below 0 (SHOP-R12) and nothing bought is taken back.
 - **SHOP-R5** Coins show as a "+N" stamp on the Announcement the moment already earns (`coins` on the moment, ANN-R23) and as one Session summary line ("Pagle Coins +45"). Earning Coins never makes an Announcement of its own. Coins earned in history a Module catches up on or first builds from appear only as a line in its Write-up section, written by the Module (ANN-R60).
 
@@ -68,6 +68,7 @@ Part of [Core](README.md). Core holds the Angler's **Pagle Coins** and runs the 
 | Key | Contents |
 |---|---|
 | `PagleDB.global.coins.earned` | `{ [def.name] = lifetimeTotal }`, the last report per Module (SHOP-R3) |
+| `PagleDB.global.coins.logId` | the `PagleLog.logId` the totals belong to (SHOP-R3) |
 | `PagleDB.global.goods` | `{ [goodID] = { name, slot, slotLabel, category, module, icon, default, tier, description, earned } }` (SHOP-R26) |
 | `PagleDB.global.projections.wallet` | the wallet projection: `spent`, `purchased = { [goodID] = true }` (SHOP-R11) |
 | `PagleDB.profile.appearance` | `{ [slot] = goodID }`, equipped looks (SHOP-R32) |
@@ -121,7 +122,8 @@ What each Module pays and registers, as designed so far (each Module's spec is a
 | Ledger: new Species / new Sub-collection item | 10 / 5 |
 | Ledger: Zone Mastery rank | 2 × rank (Visitor 2 … Master 10) |
 | Ledger: Legend | 100 |
-| Hunts: completed / each further tier / set finished | 30 / 15 / 100 |
+| Hunts: a Standing Hunt completed / each further tier / set finished | 30 / 15 / 100 |
+| Hunts: a Hunt Event Hunt's tier 1 / each later tier / a completed run (paid again in every run) | 15 / 10 / 50 |
 
 Goods by Module: Ledger registers extra Journal bindings (for sale) and the six level bindings (earned); Hunts registers notebook covers; Hunts, Stats and the Tackle Board each register frames for their own tracker.
 

@@ -91,7 +91,7 @@ Part of [Core](README.md). This file covers what Core observes, how it is stored
 
 ### Prestige
 
-- **LOG-R38** `M:RecordPrestige()` appends a **Prestige** entry (`P1`) for the current character, with the new prestige rank: one more than the number of `P1` entries already in the log. Any Module may call it; only the Ledger does, and the Ledger decides when Prestige is allowed. `Prestige(record)` fires after it is appended.
+- **LOG-R38** `M:RecordPrestige()` appends a **Prestige** entry (`P1`) for the current character, with the new prestige rank: one more than the number of `P1` entries already in the log, and Core's Activity XP total at that moment ([activity-xp.md](activity-xp.md), AXP-R5). Any Module may call it; only the Ledger does, and the Ledger decides when Prestige is allowed. `Prestige(record)` fires after it is appended.
 
 ### Purchases
 
@@ -250,7 +250,7 @@ Every entry starts with the header `<tag>|<char>|<time>|<tie>` (LOG-R11). Number
 |---|---|---|
 | `C1` | Cast | `outcome` (`c` caught, `g` got away) · `minute` (realm minute of day) · `uiMap` (empty if unknown) · `instance` (empty if unknown) · `zone` (`0` if unresolved or secret) · `subzone` (`0` if none, unresolved or secret) · `rank` · `mod` · `lure` (empty if none) · `events` · `auras` · `items` (`<itemID>x<qty>` per item, in slot order; empty when got away) |
 | `S1` | Skill Reading | `rank` · `max` · `mod` |
-| `P1` | Prestige | `rank` (the new prestige rank) |
+| `P1` | Prestige | `rank` (the new prestige rank), `activityXP` (Core's Activity XP total when it was recorded, AXP-R5; read as 0 when absent, as in pre-1.0 dev logs) |
 | `B1` | Build | `build` (the `GetBuildInfo()` build number) · `version` (e.g. `1.60.1`) |
 | `U1` | Purchase | `good` (good ID, `[%w_.]+`) · `price` |
 | `A1` | Module record | `module` (`def.name`) · `kind` (`[%w_.]+`) · `payload` (everything after the 6th `\|`, verbatim) |
