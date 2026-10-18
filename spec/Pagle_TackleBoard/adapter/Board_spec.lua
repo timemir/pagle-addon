@@ -360,7 +360,8 @@ describe("a started board while its projection rebuilds in chunks (TKB-R6, TKB-R
 		assert.is_false(visible(frame.updating, frame))
 		assert.is_false(visible(frame.empty, frame))
 		for _, part in ipairs(ns.BOARD_PARTS) do
-			assert.is_true(frame.parts[part]:IsShown())
+			-- the overflow strip shows only while a goal hangs in it, and none does here (TKB-R101)
+			assert.are.equal(part ~= "overflow", frame.parts[part]:IsShown(), part)
 		end
 	end)
 
