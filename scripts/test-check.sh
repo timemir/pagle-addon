@@ -9,7 +9,10 @@
 #
 # A case is `copy`, its planted mistake under "$scratch/tree", then `expect`. Each case gets its own copy in
 # native tmp and runs the whole gate in the background, TEST_CHECK_JOBS at a time (default: the CPU count, at
-# most 8). Verdicts print in the order the cases are written.
+# most 8, and no more than the memory available holds; see case_memory_kb), without coverage but for the cases about
+# it. Verdicts print in the order the cases are written.
+#
+# CI runs this in its own job, only when the gate's own machinery changes (.github/workflows/check.yml).
 set -euo pipefail
 
 root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
@@ -19,14 +22,24 @@ trap 'wait; rm -rf "$scratch"' EXIT
 failures=0
 cases=0
 reported=0
-# The cases expect check.sh's coverage report, so a PAGLE_NO_COVERAGE from the caller (the agents' gate limiter
-# sets it) must not reach them; the one case that wants it sets its own.
-unset PAGLE_NO_COVERAGE
+# The cases run the gate without coverage, in a fraction of the time and memory: where the gate stops doesn't depend
+# on it. The cases about coverage itself (luacov's report, a coverage run killed by a signal) set PAGLE_NO_COVERAGE=0.
+export PAGLE_NO_COVERAGE=1
 # Cases run at once, so each gate runs its busted shards one at a time (#254); the case that wants more sets its own.
 export GATE_JOBS=1
 
+# What one case's gate can take at its peak: its stages run at once, and a busted shard has reached 4.5 GB with
+# lua-language-server at 2.3 GB beside it. Cases past what MemAvailable holds get their busted OOM-killed, and fail;
+# in CI, the runner likely shuts down mid-run instead.
+case_memory_kb=$((7 * 1024 * 1024))
 max_jobs=${TEST_CHECK_JOBS:-$(nproc)}
-[[ -n ${TEST_CHECK_JOBS:-} ]] || ((max_jobs <= 8)) || max_jobs=8
+if [[ -z ${TEST_CHECK_JOBS:-} ]]; then
+	((max_jobs <= 8)) || max_jobs=8
+	available_kb=$(awk '/^MemAvailable:/ { print $2 }' /proc/meminfo 2>/dev/null || true)
+	if [[ $available_kb =~ ^[0-9]+$ ]] && ((max_jobs > available_kb / case_memory_kb)); then
+		max_jobs=$((available_kb / case_memory_kb))
+	fi
+fi
 ((max_jobs >= 1)) || max_jobs=1
 echo "test-check: $max_jobs cases at a time"
 
@@ -55,7 +68,18 @@ copy() {
 
 # expect <case> <stage|pass> [text...]: runs the gate on the copy and checks where it stopped, and that its
 # output names each text given. The case starts in the background once a job slot is free.
+# Two kinds of case run fewer specs, as what they test doesn't need the suite; fixtures and spec/support/ stay:
+# - one that expects generator, the stage after tests, has tests pass on one planted spec: the verdict still waits
+#   for tests to pass, and gets it in seconds instead of minutes;
+# - one with coverage (PAGLE_NO_COVERAGE=0) runs spec/Pagle/ and the specs at the top of spec/, its own planted
+#   ones included: the whole suite in one busted with luacov peaks near 16 GB, this in under 1 GB.
 expect() {
+	if [[ $2 == generator ]]; then
+		find "$case_tree/spec" -name '*_spec*.lua' -delete
+		printf 'it("passes", function()\n\tassert.is_true(true)\nend)\n' >"$case_tree/spec/passes_spec.lua"
+	elif [[ ${PAGLE_NO_COVERAGE:-} == 0 ]]; then
+		find "$case_tree/spec" -mindepth 2 -name '*_spec*.lua' -not -path "$case_tree/spec/Pagle/*" -delete
+	fi
 	while (($(jobs -pr | wc -l) >= max_jobs)); do
 		wait -n || true
 		report
@@ -96,9 +120,17 @@ report() {
 	done
 }
 
-# Adds a name to the WoW API inventory (stds.wow in .luacheckrc).
+# Writes the inventory the addon ships (addons/Pagle/data/ApiInventory.lua) from the copy's .luacheckrc, as a commit
+# that changes the inventory does (#261): the api stage fails while it's stale.
+inventory_write() {
+	"$root/.tools/bin/lua" "$root/scripts/api-inventory.lua" "$scratch/tree/.luacheckrc" \
+		"$scratch/tree/addons/Pagle/data/ApiInventory.lua" >/dev/null
+}
+
+# Adds a name to the WoW API inventory (stds.wow in .luacheckrc), and writes the inventory the addon ships.
 inventory_add() {
 	printf 'table.insert(stds.wow.read_globals, "%s")\n' "$1" >>"$scratch/tree/.luacheckrc"
+	inventory_write
 }
 
 addon="$scratch/tree/addons/Pagle"
@@ -198,6 +230,7 @@ for name in CreateFrame hooksecurefunc ChatFrame1 LE_EXPANSION_CLASSIC Enum.Item
 	inventory_add "$name"
 done
 echo 'stds.wow.read_globals.C_Weather = { fields = { "GetCurrentWeather" } }' >>"$scratch/tree/.luacheckrc"
+inventory_write
 expect "real names from each part of the dump pass api" pass "api: $((${inventoried%% *} + 8)) inventoried names"
 
 copy
@@ -238,21 +271,25 @@ expect "a vendored lib listed after the lib that needs it fails tests" tests \
 	"CallbackHandler-1.0.lua failed while loading"
 
 copy
-expect "the tests stage reports coverage of addon code" pass "addons/Pagle/logic/Forever.lua"
+PAGLE_NO_COVERAGE=0 expect "the tests stage reports coverage of addon code" pass "addons/Pagle/logic/Forever.lua"
 
 copy
 printf 'local ns = select(2, ...)\n\nfunction ns.Untested()\n\treturn 1\nend\n' >"$addon/logic/Untested.lua"
 echo 'logic\Untested.lua' >>"$toc"
-expect "code no spec runs passes; coverage doesn't gate" pass "addons/Pagle/logic/Untested.lua"
+PAGLE_NO_COVERAGE=0 expect "code no spec runs passes; coverage doesn't gate" pass "addons/Pagle/logic/Untested.lua"
 
 copy
 rm "$scratch/tree/.luacov"
-expect "a coverage report that can't be made doesn't gate" pass "no coverage report"
+PAGLE_NO_COVERAGE=0 expect "a coverage report that can't be made doesn't gate" pass "no coverage report"
 
 copy
 # GATE_JOBS=1, as every case here has it: the shards run one after another (#254).
 PAGLE_NO_COVERAGE=1 expect "PAGLE_NO_COVERAGE=1 runs the specs without coverage, in shards one at a time, and passes" \
 	pass "PAGLE_NO_COVERAGE=1, so the specs run without coverage" "1 at a time" "tests: spec/Pagle passed"
+
+copy
+printf 'it("fails", function()\n\tassert.is_true(false)\nend)\n' >"$scratch/tree/spec/fails_spec.lua"
+PAGLE_NO_COVERAGE=0 expect "a failing spec fails tests with coverage, as the gate runs by default" tests "fails_spec.lua"
 
 copy
 printf 'it("fails", function()\n\tassert.is_true(false)\nend)\n' >"$scratch/tree/spec/fails_spec.lua"
@@ -286,12 +323,12 @@ EOF
 
 copy
 kills_busted coverage
-expect "a coverage run killed by a signal doesn't gate; the specs run again without coverage" pass \
+PAGLE_NO_COVERAGE=0 expect "a coverage run killed by a signal doesn't gate; the specs run again without coverage" pass \
 	"killed by signal 11; running the specs again without coverage"
 
 copy
 kills_busted
-expect "specs that kill busted without coverage too fail tests" tests "killed by signal 11"
+PAGLE_NO_COVERAGE=0 expect "specs that kill busted without coverage too fail tests" tests "killed by signal 11"
 
 copy
 printf 'Pagle.API_VERSION = "2"\n' >>"$addon/adapter/Core.lua"
