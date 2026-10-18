@@ -52,6 +52,16 @@ describe("the Fish Journal's art (ledger.md › UI)", function()
 		end
 	end)
 
+	it("wraps a seal's words, so Home's seal shows both \"Ledger\" and the completion under it", function()
+		local _, loaded = openJournal()
+		local seal = loaded.ns.JournalSeal(loaded.ns.journal.frame, 76, 13)
+
+		loaded.ns.JournalSetSeal(seal, loaded.ns.L.HOME_SEAL_WORD .. "\n62%", true)
+
+		assert.is_true(seal.label.wordWrap)
+		assert.are.equal("Ledger\n62%", seal.label.text)
+	end)
+
 	it("draws its book shell from Core's media/books, which the Hunts board and the Stats book share", function()
 		local _, loaded = openJournal()
 

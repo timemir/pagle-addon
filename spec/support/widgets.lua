@@ -18,7 +18,6 @@ local widgets = {}
 -- Widget methods that only lay out or colour: nothing for a spec to read back.
 local LAYOUT_METHODS = {
 	"SetJustifyV",
-	"SetWordWrap",
 	"SetClampedToScreen",
 	"SetClampRectInsets",
 	"EnableMouseWheel",
@@ -341,6 +340,13 @@ function widgets.newWidget(kind, parent)
 	end
 	function widget:Raise()
 		self.raised = (self.raised or 0) + 1
+	end
+	-- Whether a font string wraps its text (`wordWrap`): off, it is cut to one line, as the client's.
+	function widget:SetWordWrap(wrap)
+		self.wordWrap = wrap
+	end
+	function widget:CanWordWrap()
+		return self.wordWrap ~= false
 	end
 	-- A button's text width, 6 pixels a character as GetStringWidth; and whether its highlight is locked on.
 	function widget:GetTextWidth()

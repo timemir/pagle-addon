@@ -745,7 +745,9 @@ function ns.JournalSeal(parent, size, textSize)
 	seal.wax:SetAllPoints()
 	seal.empty = ns.JournalPiece(seal, "Book", "seal-empty", "ARTWORK", 0)
 	seal.empty:SetAllPoints()
-	seal.label = ns.JournalLabel(seal, "gilt", textSize or 12, INK.wax, "", { justify = "CENTER" })
+	-- it wraps, so Home's two lines ("Ledger", then the completion) both show rather than being cut to "Ledger…"
+	seal.label =
+		ns.JournalLabel(seal, "gilt", textSize or 12, INK.wax, "", { justify = "CENTER", wrap = true, spacing = 1 })
 	seal.label:SetPoint("CENTER", 0, 1)
 	seal.label:SetWidth(size - 10)
 	local tilt = math.rad(-8)
