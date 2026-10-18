@@ -117,9 +117,10 @@ function ns.MotionSettled(animation)
 	return animation.iter == "infinite" and keys[1][2] or keys[#keys][2]
 end
 
--- An owner is anything with IsVisible (a frame).
+-- An owner is a frame or region (with IsVisible), or any table a caller keys its motion by, which never counts as
+-- hidden.
 ---@class PagleMotionOwner
----@field IsVisible fun(self): boolean
+---@field IsVisible (fun(self): boolean)?
 
 --- What a motion player needs from its client: the Animations setting, and its ticks asked for (`wake`, at the first
 --- animation) and given up (`sleep`, once nothing plays).
@@ -243,7 +244,7 @@ function MotionPlayer:Step(elapsed)
 		local set = self.running[owner]
 		if set then
 			set.t = set.t + elapsed
-			local hidden = not owner:IsVisible()
+			local hidden = owner.IsVisible ~= nil and not owner:IsVisible()
 			local done = true
 			for _, animation in ipairs(set.animations) do
 				if hidden then

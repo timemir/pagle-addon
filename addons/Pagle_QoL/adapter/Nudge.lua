@@ -6,10 +6,11 @@ end
 local ns = select(2, ...)
 
 -- Nudges (QOL-R75–R78): one line QoL draws on its own strip of paper, below the game's error text. A Nudge is silent
--- and isn't an Announcement: it goes through no Core call, so Cozy mode, the Interruption budget and the Session
--- summary never see it, and it shows in combat too (QOL-R76). QoL has two (QOL-R78): the out-of-lures Nudge
--- (adapter/Lures.lua) and the swap-back Nudge (adapter/Gear.lua). The strip is the field art kit's (adapter/
--- FieldArt.lua): the words in the Angler's hand, a key on a brass cap, a binding's name in printed red.
+-- and isn't an Announcement: it goes through no Core call but a read of the Animations setting, so Cozy mode, the
+-- Interruption budget and the Session summary never see it, and it shows in combat too (QOL-R76). QoL has two
+-- (QOL-R78): the out-of-lures Nudge (adapter/Lures.lua) and the swap-back Nudge (adapter/Gear.lua). The strip is the
+-- field art kit's (adapter/FieldArt.lua): the words in the Angler's hand, a key on a brass cap, a binding's name in
+-- printed red.
 
 --- The Nudge's frame: the strip, three-sliced on it, and what it says now as plain text (`message`).
 ---@class PagleQoLNudge: PagleThreeSlice
@@ -20,13 +21,14 @@ local frame ---@type PagleQoLNudge? made at the first Nudge; a plain frame, so c
 local pools = { words = {}, em = {}, key = {} } ---@type table<string, table[]>
 local elapsed = 0 -- seconds since the Nudge showing now showed
 
--- Holds the Nudge for NUDGE_SHOW, fades it over NUDGE_FADE, then hides it and stops (QOL-R75).
+-- Holds the Nudge for NUDGE_SHOW, fades it over NUDGE_FADE, then hides it and stops (QOL-R75). With Core's Animations
+-- setting off (announcements.md › Contracts) it goes at once when its hold is up, without the fade.
 ---@param self Frame
 ---@param seconds number
 local function onUpdate(self, seconds)
 	elapsed = elapsed + seconds
 	local alpha = ns.NudgeAlpha(elapsed)
-	if alpha then
+	if alpha and (elapsed <= ns.NUDGE_SHOW or Pagle.IsAnimationsOn()) then
 		self:SetAlpha(alpha)
 	else
 		self:Hide()

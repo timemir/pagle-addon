@@ -41,12 +41,6 @@ local CONFLICT_NOTE, RELOAD_NOTE = "PagleQoLConflictNote", "PagleQoLReloadNote"
 -- IG_MAINMENU_CLOSE as it goes, IG_MAINMENU_OPTION for a click on either choice.
 local SOUND_OPEN, SOUND_CLOSE, SOUND_CLICK = 850, 851, 852
 
--- Whether the notes move: Core's Animations setting (announcements.md › Contracts), read each time one opens or
--- closes. Off, a note shows and goes at once, its wax already on.
-local function syncMotion()
-	ns.motion = Pagle.IsAnimationsOn() ~= false
-end
-
 -- Puts the wax at rest: its own size, fully drawn.
 ---@param note PagleQoLNote
 local function settleWax(note)
@@ -56,18 +50,18 @@ end
 
 -- A note appearing (the kit's MOTION.md and P.OpenNote): the open sound, the note fading in over 0.2 s (ease-out), and
 -- its wax pressed on as it lands, 1.8 times its size to 0.95 by 0.29 s, settling at its own by 0.38 s
--- (cubic-bezier(.3, 1.5, .5, 1)), fading in with it.
+-- (cubic-bezier(.3, 1.5, .5, 1)), fading in with it. It moves on Core's driver, which follows the Animations setting
+-- (announcements.md › Contracts): off, a note shows and goes at once, its wax already on.
 ---@param note PagleQoLNote
 local function openNote(note)
 	note.closing = false
 	PlaySound(SOUND_OPEN, "SFX")
-	syncMotion()
-	ns.StopMotion(note)
+	Pagle.StopMotion(note)
 	local wax = note.wax
-	ns.Animate(note, {
+	Pagle.Animate(note, {
 		{
 			dur = 0.2,
-			ease = ns.Ease.out,
+			ease = Pagle.EASE.out,
 			keys = { { 0, { 0 } }, { 1, { 1 } } },
 			apply = function(v)
 				note:SetAlpha(v[1])
@@ -76,7 +70,7 @@ local function openNote(note)
 		{
 			dur = 0.3,
 			delay = 0.08,
-			ease = ns.Bezier(0.3, 1.5, 0.5, 1),
+			ease = Pagle.Bezier(0.3, 1.5, 0.5, 1),
 			keys = { { 0, { 1.8, 0 } }, { 0.7, { 0.95, 1 } }, { 1, { 1, 1 } } },
 			apply = function(v)
 				wax:SetSize(wax.w0 * v[1], wax.h0 * v[1])
@@ -87,18 +81,18 @@ local function openNote(note)
 end
 
 -- A note going after a choice (the kit's P.CloseNote): the close sound, and the note fading out over 0.15 s
--- (ease-in) from where it is, then hiding. Its wax settles at once.
+-- (ease-in) from where it is, then hiding, left at rest for its next showing. Its wax settles at once. Hidden with
+-- the whole UI as it fades, it still ends closed: Core's driver settles the fade, which hides it.
 ---@param note PagleQoLNote
 local function closeNote(note)
 	note.closing = true
 	PlaySound(SOUND_CLOSE, "SFX")
-	syncMotion()
-	ns.StopMotion(note)
+	Pagle.StopMotion(note)
 	settleWax(note)
-	ns.Animate(note, {
+	Pagle.Animate(note, {
 		{
 			dur = 0.15,
-			ease = ns.Bezier(0.42, 0, 1, 1),
+			ease = Pagle.Bezier(0.42, 0, 1, 1),
 			keys = { { 0, { note:GetAlpha() } }, { 1, { 0 } } },
 			apply = function(v)
 				note:SetAlpha(v[1])
@@ -106,6 +100,8 @@ local function closeNote(note)
 		},
 	}, function()
 		note:Hide()
+		note.closing = false
+		note:SetAlpha(1)
 	end)
 end
 
@@ -173,14 +169,15 @@ local function showNote(name, title, primary, secondary, onPrimary, onSecondary)
 	onChoice(note, note.primary, onPrimary)
 	onChoice(note, note.secondary, onSecondary)
 	-- Shown again (the tour's samples), it opens again. Hidden by Esc or the tour, it goes at once, with the close
-	-- sound unless a choice's fade already played it, and is left at rest for its next showing.
+	-- sound, and is left at rest for its next showing. Hidden as a choice's fade plays (the fade's own end, or the
+	-- whole UI hidden), the fade ends it (closeNote).
 	note:SetScript("OnShow", openNote)
 	note:SetScript("OnHide", function()
-		if not note.closing then
-			PlaySound(SOUND_CLOSE, "SFX")
+		if note.closing then
+			return
 		end
-		note.closing = false
-		ns.StopMotion(note)
+		PlaySound(SOUND_CLOSE, "SFX")
+		Pagle.StopMotion(note)
 		note:SetAlpha(1)
 		settleWax(note)
 	end)

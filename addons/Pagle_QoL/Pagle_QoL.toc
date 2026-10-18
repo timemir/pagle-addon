@@ -27,7 +27,6 @@ logic\Input.lua
 logic\DoubleClick.lua
 logic\NextActionButton.lua
 adapter\FieldArt.lua
-adapter\Motion.lua
 adapter\Bindings.lua
 adapter\Items.lua
 adapter\Input.lua
