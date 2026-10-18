@@ -103,8 +103,12 @@ _Avoid_: junk (which is a Sub-collection), Uncharted (which the data doesn't kno
 ### Progression
 
 **Angler Level**:
-The Angler's effort-based level. It rises from XP earned on every Catch and on discoveries, and always keeps moving.
+The Angler's effort-based level. It rises from XP earned on every Catch and on discoveries, and from Activity XP, and always keeps moving.
 _Avoid_: fishing level, rank, skill (which is the game's own fishing skill)
+
+**Activity XP**:
+XP that a Module other than the Ledger pays toward the Angler Level for something achieved there, such as a Hunt's tier. It is shown by source, so what disabling a Module costs stays visible.
+_Avoid_: external XP, bonus XP, XP income
 
 **Prestige**:
 Starting the Angler Level over from 1, after reaching its cap, in exchange for a permanent prestige rank.
