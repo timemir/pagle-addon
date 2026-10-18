@@ -26,3 +26,12 @@ Decided in [The Hunt Event definition and the shipped calendar](https://github.c
 - **Ended, not retired:** a run past its end has **ended**. It leaves the board with nothing kept, so there is no list of past events. **Retired** still means a Hunt replaced because it was wrong (ADR 0005).
 - **Who wins:** a connected companion's schedule replaces the rotation. Runs already started always play out, and the rotation only fills time no run covers.
 - **Immutable definitions:** a definition never changes once it has shipped or been pushed (ADR 0005's note). Its Hunts' hashes go into `released.lock`.
+
+## Note: the rotation is banded
+
+Decided in [Authoring enough Hunt Events: templates, generator and volume](https://github.com/timemir/wow-fish/issues/281). The fallback rotation's seeded shuffle is **banded**, so an Angler of any skill has an event in reach at least every 9 days:
+- the rotating pool is split into low, mid and high bands, by each event's skill range;
+- the runs cycle low → mid → high, shuffled within each band by the same seeded rule;
+- the rotation is still the same for every Angler.
+
+1.0 ships 24 rotating events, 8 per band.
