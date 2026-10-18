@@ -256,6 +256,26 @@ describe("the live timeline (MOTION.md › The live Hunts timeline)", function()
 		assert.are.equal(0, row.flash:GetAlpha())
 	end)
 
+	it("draws settled on reopening when a Hunt opened while it was closed: no slide, flash or sound", function()
+		local run = start({ from = hunts.untilRealm(9, 58), list = LIST })
+		run.ns.ToggleBoard()
+		play(run, 0.3)
+		local was = rowOf(run, "extra_1").y
+		run.ns.ToggleBoard()
+		play(run, 0.2)
+		heard(run)
+
+		hunts.wait(run, 120) -- realm 10:00, the board closed: its window opens
+		run.ns.ToggleBoard()
+
+		assert.are.same({ "829 SFX" }, heard(run)) -- the opening's sound alone
+		local row = rowOf(run, "extra_1")
+		assert.are_not.equal(was, row.y) -- at its new place at once
+		assert.are.equal(0, row.flash:GetAlpha())
+		play(run, 0.35)
+		assert.are.equal(0, row.flash:GetAlpha())
+	end)
+
 	it("moves it into place at once, with the sound but no flash, with Animations off", function()
 		local run = start({ motion = false, from = hunts.untilRealm(9, 58), list = LIST })
 		run.ns.ToggleBoard()

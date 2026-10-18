@@ -70,7 +70,7 @@ function ns.BuildLegendPlate(pagesFrame)
 	plate.crest = CreateFrame("Frame", nil, plate)
 	plate.crest:SetSize(CREST_W, CREST_W * 194 / 176)
 	local frameArt = ns.JournalSprite(plate.crest, "Crests", "crest-legend", "ARTWORK", 1, CREST_W)
-	ns.JournalPut(frameArt, plate.crest, 0, 0)
+	ns.JournalBoxAt(frameArt, plate.crest, 0, 0)
 	plate.crestIcon = ns.JournalCrisp(plate.crest:CreateTexture(nil, "ARTWORK", nil, 2))
 	plate.crestIcon:SetSize(108, 108)
 	plate.crestIcon:SetPoint("CENTER", plate.crest, "TOPLEFT", CREST_W / 2, -87)
@@ -131,7 +131,7 @@ end
 ---@param plate LedgerLegendPlate
 function ns.OpenLegendPlate(plate)
 	plate:Show()
-	ns.JournalSound("pageTurn")
+	ns.JournalSound("plateOpen")
 	ns.Moving()
 	ns.StopMotion(plate)
 	local seal, crest = plate.seal, plate.crest

@@ -311,6 +311,27 @@ describe("a Legend's plate (LED-R147)", function()
 		assert.are.same({ "11 Oct, Angler" }, loaded.ns.journal.pages.left[1].lines)
 	end)
 
+	it("opens again over the pages when an update finishes while it shows (LED-R122, LED-R147)", function()
+		local _, loaded = spread("legends", { legend = ANGELFISH, plate = true })
+		local journal, projection = loaded.ns.journal, loaded.ns.projection
+		local frame = journal.frame
+		local leftClip = frame.leaves.left[frame.shownLeaf.left].clip
+		local leftShown = leftClip:IsShown()
+		local isUpdating = projection.IsUpdating
+		projection.IsUpdating = function()
+			return true
+		end
+		journal:Draw()
+		assert.is_false(frame.legendPlate:IsShown())
+
+		projection.IsUpdating = isUpdating
+		journal:Draw()
+
+		assert.is_true(frame.legendPlate:IsShown())
+		assert.is_truthy(table.concat(shownTexts(frame.legendPlate), "\n"):find("Keefer's Angelfish", 1, true))
+		assert.are.equal(leftShown, leftClip:IsShown()) -- the pages under it stand as they did
+	end)
+
 	it("returns to the Legend's page at a click anywhere on it (LED-R147)", function()
 		local _, loaded = spread("legends", { legend = ANGELFISH, plate = true })
 		local journal = loaded.ns.journal

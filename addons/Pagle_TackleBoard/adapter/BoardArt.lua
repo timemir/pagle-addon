@@ -516,20 +516,17 @@ function ns.LeanSprite(sprite, relativeTo, x, y, degrees)
 	sprite:SetPoint("CENTER", relativeTo, "TOPLEFT", x + box[3] / 2 + ox, -(y + box[4] / 2 + oy))
 end
 
---- Swings a region by `degrees` about the pivot `px`, `py`, its unturned box `x`, `y`, `width`, `height`, all from
+--- Swings a region by `degrees` about `pivot` ({ x, y }), its unturned `box` ({ x, y, width, height }), both from
 --- `relativeTo`'s top left (y down): a done slip and its words on the spike's nail. Straight while the papers don't
 --- lean.
 ---@param region Region
 ---@param relativeTo Region
----@param x number
----@param y number
----@param width number
----@param height number
+---@param box number[]
 ---@param degrees number
----@param px number
----@param py number
-function ns.Swing(region, relativeTo, x, y, width, height, degrees, px, py)
-	local cx, cy = x + width / 2, y + height / 2
+---@param pivot number[]
+function ns.Swing(region, relativeTo, box, degrees, pivot)
+	local cx, cy = box[1] + box[3] / 2, box[2] + box[4] / 2
+	local px, py = pivot[1], pivot[2]
 	local angle = turn(region, degrees)
 	if angle ~= 0 then
 		local dx, dy = cx - px, cy - py
@@ -540,19 +537,23 @@ function ns.Swing(region, relativeTo, x, y, width, height, degrees, px, py)
 	region:SetPoint("CENTER", relativeTo, "TOPLEFT", cx, -cy)
 end
 
---- A dashed outline `thickness` thick round `width` × `height` from `frame`'s top left: `dash` units of ink, then
---- `gap` of nothing, in `hex` at `alpha`. Returns the dashes.
+--- How a dashed outline is inked: in `hex` at `alpha`, `thickness` thick, `dash` units of ink then `gap` of nothing.
+---@class TackleDashStyle
+---@field hex string
+---@field alpha number
+---@field thickness number
+---@field dash number
+---@field gap number
+
+--- A dashed outline round `width` × `height` from `frame`'s top left, inked as `style` says. Returns the dashes.
 ---@param frame Frame
 ---@param width number
 ---@param height number
----@param hex string
----@param alpha number
----@param thickness number
----@param dash number
----@param gap number
+---@param style TackleDashStyle
 ---@return Texture[]
-function ns.DashBox(frame, width, height, hex, alpha, thickness, dash, gap)
-	local color, dashes = ns.BoardHex(hex), {}
+function ns.DashBox(frame, width, height, style)
+	local alpha, thickness, dash, gap = style.alpha, style.thickness, style.dash, style.gap
+	local color, dashes = ns.BoardHex(style.hex), {}
 	local function add(x, y, w, h)
 		local texture = frame:CreateTexture(nil, "BORDER")
 		texture:SetColorTexture(color[1], color[2], color[3], alpha)

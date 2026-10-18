@@ -12,8 +12,9 @@ local ns = select(2, ...)
 -- red), a leather "Take it down" and a pencilled "Keep it". It is a plain frame, not secure, so it works in combat
 -- (TKB-R193), and Esc keeps the goal (UISpecialFrames).
 
--- The confirm's global name, for UISpecialFrames; its paper, 360 × 166, leaning a little; its red ink.
-local CONFIRM_NAME = "PagleTackleBoardConfirm"
+-- The confirm's global name, for UISpecialFrames, and the board's (adapter/Board.lua's FRAME_NAME); its paper,
+-- 360 × 166, leaning a little; its red ink.
+local CONFIRM_NAME, BOARD_NAME = "PagleTackleBoardConfirm", "PagleTackleBoard"
 local CONFIRM_WIDTH, CONFIRM_HEIGHT, CONFIRM_LEAN, RED = 360, 166, -0.8, "9A2A1A"
 
 ---@class TackleConfirmKeep: Button
@@ -29,6 +30,42 @@ local CONFIRM_WIDTH, CONFIRM_HEIGHT, CONFIRM_LEAN, RED = 360, 166, -0.8, "9A2A1A
 
 ---@type TackleConfirmFrame?
 local confirm
+-- Whether the confirm holds the board's place in UISpecialFrames now, and whether it was ever listed on its own.
+local holdsBoardEsc, listedAlone = false, false
+
+-- Renames the first `from` in UISpecialFrames to `to`; whether one was there.
+---@param from string
+---@param to string
+---@return boolean
+local function renameSpecial(from, to)
+	for index, name in ipairs(UISpecialFrames) do
+		if name == from then
+			UISpecialFrames[index] = to
+			return true
+		end
+	end
+	return false
+end
+
+-- One Esc closes the confirm and leaves the board open (TKB-R56): CloseSpecialWindows hides every shown frame
+-- UISpecialFrames lists, so while it shows, the confirm takes the board's place there, and gives it back as it hides.
+-- The place is renamed, never added or removed, since the client walks the table with pairs, and the confirm's OnHide
+-- runs during that walk (Lua allows a walk's existing fields to change). With no board listed, the confirm is listed
+-- on its own, once. Renaming the client's table is no secure call, so it works in combat (TKB-R193).
+local function takeBoardEsc()
+	holdsBoardEsc = renameSpecial(BOARD_NAME, CONFIRM_NAME)
+	if not holdsBoardEsc and not listedAlone then
+		table.insert(UISpecialFrames, CONFIRM_NAME)
+		listedAlone = true
+	end
+end
+
+local function giveBoardEsc()
+	if holdsBoardEsc then
+		renameSpecial(CONFIRM_NAME, BOARD_NAME)
+		holdsBoardEsc = false
+	end
+end
 
 --- The goal `goalID` names if it can be taken down now (TKB-R55, TKB-R108): one ns.CanTakeDown allows, while the
 --- projection isn't updating.
@@ -103,11 +140,12 @@ local function confirmFrame()
 	frame.keep:SetScript("OnClick", function()
 		frame:Hide()
 	end)
+	frame:Hide()
+	frame:SetScript("OnShow", takeBoardEsc)
 	frame:SetScript("OnHide", function(self)
 		self.goalID = nil
+		giveBoardEsc()
 	end)
-	table.insert(UISpecialFrames, CONFIRM_NAME)
-	frame:Hide()
 	confirm = frame
 	return frame
 end

@@ -39,7 +39,7 @@ local function buildSwatch(stage)
 	swatch:SetSize(sprite.box[3], sprite.box[4])
 	swatch:SetPoint("TOP", 0, -SWATCH_TOP)
 	swatch.book = ns.JournalSprite(swatch, "Bindings", "binding-field-leather", "ARTWORK")
-	ns.JournalPut(swatch.book, swatch, 0, 0)
+	ns.JournalBoxAt(swatch.book, swatch, 0, 0)
 	return swatch
 end
 

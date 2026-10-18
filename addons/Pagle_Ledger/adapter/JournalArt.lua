@@ -183,43 +183,37 @@ local function spriteOf(atlas, name)
 	return found, sprite
 end
 
---- Texture coordinates for a texel rectangle inside sprite `name` of `atlas`, relative to the sprite's origin (the
---- whole sprite without them).
+--- A texel rectangle inside a sprite, from the sprite's origin: { x, y, width, height }.
+---@alias LedgerCut number[]
+
+--- Texture coordinates for the texel rectangle `cut` inside sprite `name` of `atlas` (the whole sprite without one).
 ---@param atlas string
 ---@param name string
----@param sx number?
----@param sy number?
----@param sw number?
----@param sh number?
+---@param cut LedgerCut?
 ---@return number left
 ---@return number right
 ---@return number top
 ---@return number bottom
-function ns.JournalCoords(atlas, name, sx, sy, sw, sh)
+function ns.JournalCoords(atlas, name, cut)
 	local found, sprite = spriteOf(atlas, name)
-	local x0, y0 = sprite.x + (sx or 0), sprite.y + (sy or 0)
-	return x0 / found.width,
-		(x0 + (sw or sprite.w)) / found.width,
-		y0 / found.height,
-		(y0 + (sh or sprite.h)) / found.height
+	cut = cut or { 0, 0, sprite.w, sprite.h }
+	local x0, y0 = sprite.x + cut[1], sprite.y + cut[2]
+	return x0 / found.width, (x0 + cut[3]) / found.width, y0 / found.height, (y0 + cut[4]) / found.height
 end
 
---- A texture of part of sprite `name` (a texel rectangle, the whole sprite without one), unsized.
+--- A texture of part of sprite `name` (the texel rectangle `cut`, the whole sprite without one), unsized.
 ---@param parent Frame
 ---@param atlas string
 ---@param name string
 ---@param layer DrawLayer?
 ---@param sub integer?
----@param sx number?
----@param sy number?
----@param sw number?
----@param sh number?
+---@param cut LedgerCut?
 ---@return Texture
-function ns.JournalPiece(parent, atlas, name, layer, sub, sx, sy, sw, sh)
+function ns.JournalPiece(parent, atlas, name, layer, sub, cut)
 	local found = spriteOf(atlas, name)
 	local texture = crisp(parent:CreateTexture(nil, layer or "ARTWORK", nil, sub or 0))
 	texture:SetTexture(found.file)
-	texture:SetTexCoord(ns.JournalCoords(atlas, name, sx, sy, sw, sh))
+	texture:SetTexCoord(ns.JournalCoords(atlas, name, cut))
 	return texture
 end
 
@@ -252,7 +246,8 @@ function ns.JournalSetSprite(texture, atlas, name)
 	texture:SetTexCoord(ns.JournalCoords(atlas, name))
 end
 
---- Places a region's top left at (x, y) from `rel`'s top left, y down.
+--- Places a region's own top left at (x, y) from `rel`'s top left, y down: the frame's corner, whatever it draws.
+--- ns.JournalBoxAt places a sprite by its drawn box instead.
 ---@param region Region
 ---@param rel Region
 ---@param x number
@@ -264,12 +259,14 @@ function ns.JournalAt(region, rel, x, y)
 	return region
 end
 
---- Places a sprite so its box's top left lands at (x, y) from `rel`'s top left (y down).
+--- Places a sprite so its drawn box's top left lands at (x, y) from `rel`'s top left (y down): the art, not the
+--- texture's corner, which sits out by the transparent margin round it (ns.JournalSprite's `box`). ns.JournalAt
+--- places a region by its own corner instead.
 ---@param texture LedgerSpriteTexture
 ---@param rel Region
 ---@param x number
 ---@param y number
-function ns.JournalPut(texture, rel, x, y)
+function ns.JournalBoxAt(texture, rel, x, y)
 	texture:ClearAllPoints()
 	texture:SetPoint("TOPLEFT", rel, "TOPLEFT", x - texture.box[1], -(y - texture.box[2]))
 end
@@ -325,7 +322,7 @@ function ns.JournalThreeSlice(parent, atlas, name, width, cap, layer)
 	local leftW, rightW = marginL + cap, cap + marginR
 	local function piece(u0, uw)
 		local texture =
-			ns.JournalPiece(frame, atlas, name, layer or "BACKGROUND", 0, u0 * scale, 0, uw * scale, sprite.h)
+			ns.JournalPiece(frame, atlas, name, layer or "BACKGROUND", 0, { u0 * scale, 0, uw * scale, sprite.h })
 		texture:SetHeight(sprite.h / scale)
 		return texture
 	end
@@ -371,7 +368,7 @@ function ns.JournalVSlice(parent, atlas, name, height, capT, capB, layer)
 	local topH, bottomH = marginT + capT, capB + marginB
 	local function piece(v0, vh)
 		local texture =
-			ns.JournalPiece(frame, atlas, name, layer or "BACKGROUND", 0, 0, v0 * scale, sprite.w, vh * scale)
+			ns.JournalPiece(frame, atlas, name, layer or "BACKGROUND", 0, { 0, v0 * scale, sprite.w, vh * scale })
 		texture:SetWidth(sprite.w / scale)
 		return texture
 	end
@@ -533,7 +530,7 @@ function ns.JournalRule(parent, x, y, w)
 	local cx = w / 2
 	local fleuron = ns.JournalSprite(frame, "Book", "fleuron", "ARTWORK", 0, 14)
 	fleuron:SetAlpha(0.8)
-	ns.JournalPut(fleuron, frame, cx - 7, 0)
+	ns.JournalBoxAt(fleuron, frame, cx - 7, 0)
 	local clear, solid = CreateColor(0.77, 0.66, 0.45, 0), CreateColor(0.77, 0.66, 0.45, 1)
 	local left = ns.JournalTint(frame, "ffffff")
 	left:SetSize(math.max(1, cx - 17), 1)
@@ -602,9 +599,9 @@ function ns.JournalMedal(parent, size)
 	mask:SetAllPoints(medal.icon)
 	medal.icon:AddMaskTexture(mask)
 	medal.ring = ns.JournalSprite(medal, "Parts", RINGS[size] or "medal-lg", "ARTWORK", 1, size)
-	ns.JournalPut(medal.ring, medal, 0, 0)
+	ns.JournalBoxAt(medal.ring, medal, 0, 0)
 	medal.unknown = ns.JournalSprite(medal, "Parts", UNKNOWN[size] or "medal-unk", "ARTWORK", 0, size)
-	ns.JournalPut(medal.unknown, medal, 0, 0)
+	ns.JournalBoxAt(medal.unknown, medal, 0, 0)
 	return medal
 end
 
@@ -839,7 +836,10 @@ end
 local SOUNDS = {
 	bookOpen = 829, -- IG_SPELLBOOK_OPEN
 	bookClose = 830, -- IG_SPELLBOOK_CLOSE
-	pageTurn = 836, -- IG_ABILITY_PAGE_TURN
+	pageTurn = 836, -- IG_ABILITY_PAGE_TURN: the page turn
+	pick = 836, -- the same kit: a fish picked, the right page crossfading
+	plateOpen = 836, -- the same kit: a Legend's plate opening
+	rebind = 836, -- the same kit: a binding change
 	write = 3093, -- IG_WRITE_QUEST
 	stamp = 1204, -- PUT_DOWN_GEMS
 	popupOpen = 850, -- IG_MAINMENU_OPEN
@@ -848,7 +848,8 @@ local SOUNDS = {
 	banner = 33338, -- UI_CHALLENGES_NEW_RECORD
 }
 -- The beats tied to a motion (a page turning, a name written in, a stamp landing, the Prestige's banner): they play
--- only while things move. Opening, closing and clicks always sound.
+-- only while things move. Opening, closing, clicks, a fish picked, the plate opening and a binding change always sound
+-- (ledger.md › UI › Sounds), though the last three share the page turn's kit.
 local TIED = { pageTurn = true, write = true, stamp = true, banner = true }
 
 --- The sound kit id of each of the Journal's sounds, for a spec to read.

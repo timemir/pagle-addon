@@ -146,6 +146,7 @@ end
 ---@field headings table<HuntGroup, TimelineHeadingView>
 ---@field groupOf table<string, HuntGroup>             -- each row's group at the last draw
 ---@field serial integer?                               -- the board's draw it last drew at (ns.board:Serial())
+---@field showing integer?                              -- the board's showing it last drew in (ns.board:Showing())
 ---@field legend Frame
 ---@field legendBars BoardTimelineBarView[]
 ---@field legendTexts FontString[]
@@ -484,9 +485,10 @@ end
 ---@param view TimelinePageView
 ---@param timeline HuntsTimeline
 local function drawList(view, timeline)
-	local serial = ns.board:Serial()
-	local live = view.serial == serial - 1
-	view.serial = serial
+	local serial, showing = ns.board:Serial(), ns.board:Showing()
+	-- on show since the draw before, the board open all the while: what moved while it was closed draws settled
+	local live = view.serial == serial - 1 and view.showing == showing
+	view.serial, view.showing = serial, showing
 	local slide = live and ns.motion == true
 	local y = 0
 	local groupOf, headingsUsed, opened = {}, {}, false
@@ -593,7 +595,7 @@ local function drawPage(page, place)
 	if none then
 		view.rail:Hide()
 		view.thumb:Hide()
-		view.serial = ns.board:Serial()
+		view.serial, view.showing = ns.board:Serial(), ns.board:Showing()
 		view.groupOf = {}
 		return
 	end

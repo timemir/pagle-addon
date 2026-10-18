@@ -122,6 +122,45 @@ describe("the Fish Journal's sounds (ledger.md › UI)", function()
 			loaded.ns.journal.pages.crumbs[2].label,
 		})
 	end)
+
+	it("sounds a fish picked while things don't move: only the page turn's beat is tied to its motion", function()
+		local _, loaded = openJournal()
+		local journal = loaded.ns.journal
+		local spread = spreadOf({ left = { { kind = "text", text = "the fish" } } })
+		spread.subjects = { left = {}, right = { "fish" } } -- picking a fish changes the right page alone
+		loaded.ns.RegisterJournalSpread("test", spread)
+		journal:Open("test", { fish = 1 })
+		local from = #loaded.client.sounds
+
+		journal:Open("test", { fish = 2 })
+
+		assert.are.same({ "836 SFX" }, soundsSince(loaded, from))
+	end)
+
+	it("sounds a Legend's plate opening while things don't move", function()
+		local _, loaded = openJournal()
+		local from = #loaded.client.sounds
+
+		loaded.ns.OpenLegendPlate(loaded.ns.journal.frame.legendPlate)
+
+		assert.are.same({ "836 SFX" }, soundsSince(loaded, from))
+	end)
+
+	it("sounds a binding change while things don't move, the binding changing at once (LED-R112)", function()
+		local fake, loaded = openJournal({
+			globals = {
+				PagleLedgerDB = { global = { celebrated = { coins = 0, levels = { [0] = 10 }, logId = "log" } } },
+			},
+			logId = "log",
+		})
+		local journal = loaded.ns.journal
+		local from = #loaded.client.sounds
+
+		assert.is_true(fake.Pagle.SetEquipped("ledger.binding", "ledger.binding.level10"))
+
+		assert.are.same({ "836 SFX" }, soundsSince(loaded, from))
+		assert.are.same(loaded.ns.BindingLook("ledger.binding.level10").tint, journal.frame.leatherTint)
+	end)
 end)
 
 describe("the Fish Journal's motion (ledger.md › UI, the kit's MOTION.md)", function()

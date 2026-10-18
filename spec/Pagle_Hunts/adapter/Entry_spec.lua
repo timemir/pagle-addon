@@ -31,9 +31,10 @@ end
 --- `prepare` runs before Hunts' ADDON_LOADED, e.g. to change the fixture's Hunt list.
 ---@param skill integer?
 ---@param prepare fun(loaded: LoadedAddon)?
+---@param motion boolean? Core's Animations setting on (off by default)
 ---@return EntryRun
-local function start(skill, prepare)
-	local run = hunts.start({ skill = skill, prepare = prepare, names = true }) --[[@as EntryRun]]
+local function start(skill, prepare, motion)
+	local run = hunts.start({ skill = skill, prepare = prepare, names = true, motion = motion }) --[[@as EntryRun]]
 	run.state, run.updating = run.ns.NewHuntsState(), false
 	run.ns.projection = {
 		GetState = function()
@@ -352,5 +353,28 @@ describe("a Hunt's entry on the board", function()
 		run.ns.Redraw("projection")
 
 		assert.are.equal("Hunted 12 Oct 2026", view.seal.label.text)
+	end)
+
+	it("draws settled on reopening after a Catch while it was closed: no ink running on, no write sound", function()
+		local run = start(nil, nil, true)
+		local place = { mode = "board", hunt = "fixture_snapper" }
+		run.state.hunts.fixture_snapper = progress(1, 96, 11, 1)
+		open(run, place)
+		run.ns.board:Hide()
+		for _ = 1, 30 do
+			run.loaded.client.nextFrame(1 / 60) -- the closing fade ends
+		end
+		assert.is_false(run.ns.board.frame:IsShown())
+
+		run.state.hunts.fixture_snapper = progress(2, 97, 0, 1)
+		run.ns.Redraw("projection")
+		local heard = #run.loaded.client.sounds
+		local _, view = open(run, place)
+
+		for i = heard + 1, #run.loaded.client.sounds do
+			assert.are_not.equal("3093 SFX", run.loaded.client.sounds[i])
+		end
+		assert.are.equal(1, view.bar.label:GetAlpha())
+		assert.are.equal(1, view.effort:GetAlpha())
 	end)
 end)

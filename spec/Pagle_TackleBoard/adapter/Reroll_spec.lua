@@ -203,6 +203,20 @@ describe("taking a goal down", function()
 			assert.is_true(ns.CanTakeDown(HAUL))
 		end)
 
+		it("closes on one Esc with the board left open, and the next Esc closes the board", function()
+			local ns, loaded = at12()
+			ns.ToggleBoard()
+
+			ns.TakeDown(HAUL)
+			loaded.client.pressEscape()
+
+			assert.is_nil(asked(ns))
+			assert.is_true(ns.board:IsShown())
+			assert.are.equal(0, #rerolls(ns))
+			loaded.client.pressEscape()
+			assert.is_false(ns.board:IsShown())
+		end)
+
 		it('"Take it down" appends one reroll record for the goal', function()
 			local ns = at12()
 

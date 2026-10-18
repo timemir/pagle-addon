@@ -533,6 +533,19 @@ describe("the column on the client", function()
 		end
 	)
 
+	it("hides the banner and the toasts on screen at once as combat starts, with no leaving motion (ANN-R35)", function()
+		local loaded, M = loadCore()
+		raise(loaded, M, moment("banner", "Level 12"), moment("toast", "First"))
+		loaded.client.advance(3)
+		local banner, toast = frameOf(loaded, "banner"), frameOf(loaded, "toast")
+		assert.is_true(banner:IsShown() and toast:IsShown())
+
+		setCombat(loaded, true)
+
+		assert.is_false(banner:IsShown())
+		assert.is_false(toast:IsShown())
+	end)
+
 	it(
 		"keeps a toast while the pointer is on it, then gives it the time it had left; a click sends one away (ANN-R20)",
 		function()

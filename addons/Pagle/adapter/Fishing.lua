@@ -93,17 +93,20 @@ local FISHING = 7620
 
 Pagle.RegisterUnitEvent(OWNER, "UNIT_SPELLCAST_CHANNEL_START", "player", function(_, _, _, spellID)
 	spellID = ns.UnlessSecret(issecretvalue, spellID)
-	-- `/pagle dev probe`'s check 21 (#261, LOG-R2): while dev mode is on, each channel named as Fishing is, listed or
-	-- not.
-	if spellID and ns.probeChannels and ns.db and ns.db.global.dev then
-		local name, fishingName = C_Spell.GetSpellName(spellID), C_Spell.GetSpellName(FISHING)
-		ns.probeChannels:Note(
-			spellID,
-			ns.UnlessSecret(issecretvalue, name),
-			ns.UnlessSecret(issecretvalue, fishingName)
-		)
-	end
 	fishing:ChannelStarted(spellID, GetTime())
+	-- `/pagle dev probe`'s check 21 (#261, LOG-R2): while dev mode is on, each channel named as Fishing is, listed or
+	-- not. After the Cast has its start, and guarded, so a client whose GetSpellName errors never loses it (LOG-R9).
+	if spellID and ns.probeChannels and ns.db and ns.db.global.dev then
+		local named, name = pcall(C_Spell.GetSpellName, spellID)
+		local fishingNamed, fishingName = pcall(C_Spell.GetSpellName, FISHING)
+		if named and fishingNamed then
+			ns.probeChannels:Note(
+				spellID,
+				ns.UnlessSecret(issecretvalue, name),
+				ns.UnlessSecret(issecretvalue, fishingName)
+			)
+		end
+	end
 end)
 
 Pagle.RegisterUnitEvent(OWNER, "UNIT_SPELLCAST_CHANNEL_STOP", "player", function(_, _, _, spellID)

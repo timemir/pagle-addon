@@ -224,7 +224,7 @@ local function buildUpdating(frame)
 	view:SetFrameLevel(frame.pagesFrame:GetFrameLevel() + 20)
 	local left = frame.papers.left
 	view.quill = ns.JournalSprite(view, "Parts", "quill", "ARTWORK")
-	ns.JournalPut(view.quill, left, 189, 192.2)
+	ns.JournalBoxAt(view.quill, left, 189, 192.2)
 	local words = ns.JournalLabel(view, "print", 18, INK.body, L.JOURNAL_UPDATING, {
 		justify = "CENTER",
 		wrap = true,
@@ -540,11 +540,13 @@ function Journal:Rebind(look, changing)
 	ns.StopMotion(owner)
 	frame.leatherFill:SetAlpha(1)
 	frame.bandFrame:SetAlpha(1)
+	if changing then
+		ns.JournalSound("rebind") -- whether or not things move
+	end
 	if not (changing and ns.Moving()) then
 		ns.TintJournalShell(frame, look)
 		return
 	end
-	ns.JournalSound("pageTurn")
 	ns.Animate(owner, {
 		{
 			dur = 0.4,
@@ -683,11 +685,11 @@ local function crossfade(journal, from, to)
 		to.content:SetAllPoints(paper)
 	end
 	journal.finishTurn = finish
+	ns.JournalSound("pick") -- a fish picked sounds whether or not things move
 	if not ns.Moving() then
 		finish()
 		return
 	end
-	ns.JournalSound("pageTurn")
 	ns.Animate(owner, {
 		{
 			dur = CROSSFADE,
@@ -740,6 +742,7 @@ function Journal:Draw()
 		frame.leaves.left[frame.shownLeaf.left].clip:Hide()
 		frame.leaves.right[frame.shownLeaf.right].clip:Hide()
 		plate:Hide()
+		self.drawnPlate = false -- a Legend's plate opens again when the update finishes
 		swayQuill(frame.updatingView)
 		return
 	end
@@ -756,9 +759,14 @@ function Journal:Draw()
 		ns.FillLegendPlate(plate, plateBlock, open)
 		if not self.drawnPlate then
 			ns.OpenLegendPlate(plate)
-			-- it covers both pages: under it, each starts again at the top (LED-R129)
+			-- it covers both pages: under it, each starts again at the top (LED-R129), and stands again where an update
+			-- hid it (LED-R122)
 			for _, side in ipairs({ "left", "right" }) do
 				frame[side].scroll:SetVerticalScroll(0)
+				local leaf = frame.leaves[side][frame.shownLeaf[side]]
+				if not leaf.clip:IsShown() then
+					reveal(leaf, frame.papers[side], 0, 1)
+				end
 			end
 		end
 		self.drawnPlate = true

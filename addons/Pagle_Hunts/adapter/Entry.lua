@@ -198,6 +198,7 @@ end
 ---@field setLine FontString
 ---@field empty FontString
 ---@field shown string?   -- the Hunt it last drew
+---@field showing integer? -- the board's showing it last drew in (ns.board:Showing())
 
 ---@param page Frame
 ---@return EntryView
@@ -395,9 +396,11 @@ end
 ---@param entry HuntEntry
 ---@param huntID string
 local function draw(view, entry, huntID)
-	-- the same Hunt's ink bar, drawn last time too, may run on
-	local same = view.shown == huntID and view.bar:IsShown()
-	view.shown = huntID
+	-- the same Hunt's ink bar, drawn last time too with the board open since, may run on; a Catch made while the board
+	-- was closed draws settled
+	local showing = ns.board:Showing()
+	local same = view.shown == huntID and view.showing == showing and view.bar:IsShown()
+	view.shown, view.showing = huntID, showing
 	hideAll(view)
 	local width = view.page:GetWidth()
 	local top = 0
