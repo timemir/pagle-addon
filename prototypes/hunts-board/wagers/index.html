@@ -1,0 +1,655 @@
+<!doctype html>
+<!--
+  PROTOTYPE, throwaway (wayfinder #284 on map #277). Never merged; it lives on branch prototype/hunts-wagers.
+  Plan: three structurally different ways for Pagle Wagers (Hunt Events, ADR 0012) to live in the Hunts notebook,
+  switchable via ?variant=A|B|C and the bottom bar; a state panel drives the companion state, the runs on now,
+  progress, settled count, skill and a run just ended. Drawn with the books kit's real textures and fonts.
+  A = its own ribbon and spread · B = woven into the Board's timeline · C = bookmaker's tickets at the fore-edge.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pagle Wagers — prototype</title>
+<style>
+@font-face { font-family: "Fell"; src: url("assets/IMFeENrm28P.ttf"); }
+@font-face { font-family: "FellIt"; src: url("assets/IMFeENit28P.ttf"); }
+@font-face { font-family: "Hand"; src: url("assets/Caveat-SemiBold.ttf"); }
+@font-face { font-family: "HandBold"; src: url("assets/Caveat-Bold.ttf"); }
+@font-face { font-family: "Gilt"; src: url("assets/Marcellus-Regular.ttf"); }
+
+:root {
+  --ink: #3a2614;      /* body ink */
+  --title: #3e220c;    /* titles */
+  --kicker: #8a5a2a;   /* kickers, rules */
+  --faint: #8a6a40;    /* faded notes */
+  --blue: #23407a;     /* the angler's hand */
+  --wax: #9a2a1a;      /* wax, red ink */
+  --green: #3a7a3a;    /* open now */
+  --gilt: #f4dfa8;     /* gilt on leather */
+  --oxblood: #8a2a1a;  /* the Wagers ribbon */
+  --pumpkin: #b8641c;  /* Hallow's End, pushed */
+  --print: "Fell", "IM Fell English", Georgia, serif;
+  --italic: "FellIt", "IM Fell English", Georgia, serif;
+  --hand: "Hand", "Caveat", "Segoe Print", cursive;
+  --gilt-face: "Gilt", "Marcellus", Georgia, serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  background:
+    radial-gradient(ellipse at 30% 20%, #3b5f6a 0%, transparent 55%),
+    radial-gradient(ellipse at 70% 80%, #6a5a24 0%, transparent 60%),
+    linear-gradient(160deg, #24414c, #3e4a26 60%, #5a4a1c);
+  overflow: hidden; font-family: var(--print); color: var(--ink);
+}
+#stage { position: absolute; left: 50%; top: 50%; width: 1500px; height: 900px; transform-origin: center center; }
+.u { position: absolute; }
+
+/* ---------- the book shell (920 x 600) ---------- */
+.book { position: absolute; left: 292px; top: 110px; width: 920px; height: 600px; z-index: 1; }
+.leather { position: absolute; inset: 0; border-radius: 10px; background: url(assets/Leather.png) 0 0 / 128px 128px;
+  box-shadow: 0 16px 40px rgba(0,0,0,.55), inset 0 0 0 2px #2a170a, inset 0 0 18px rgba(0,0,0,.6); }
+.leather::after { content: ""; position: absolute; inset: 0; border-radius: 10px; background: linear-gradient(rgba(60,30,10,.25), rgba(20,8,2,.35)); }
+.crumbs { position: absolute; left: 22px; top: 7px; height: 22px; display: flex; gap: 8px; align-items: center;
+  font-family: var(--gilt-face); font-size: 13.5px; color: var(--gilt); z-index: 3; text-shadow: 0 1px 0 #000; }
+.crumbs .fl { width: 16px; height: 16px; background: url(assets/BookAtlas.png) -203px -68px / 256px 128px; opacity: .9; }
+.clock { position: absolute; right: 70px; top: 8px; font-family: var(--gilt-face); font-size: 13.5px; color: var(--gilt); z-index: 3; text-shadow: 0 1px 0 #000; }
+.close { position: absolute; right: -10px; top: -10px; width: 32px; height: 32px; background: url(assets/BookAtlas.png) -1px -68px / 256px 128px; z-index: 5; cursor: pointer; }
+.pages { position: absolute; left: 14px; top: 32px; right: 14px; bottom: 16px; display: flex; z-index: 2; }
+.page { position: relative; background: url(assets/Parchment.png) 0 0 / 512px 512px; overflow: hidden;
+  box-shadow: inset 0 0 26px rgba(120,80,30,.35); }
+.page.left { flex: 1.45; border-radius: 4px 0 0 4px; }
+.page.right { flex: 1; border-radius: 0 4px 4px 0; }
+.page.left::after { content: ""; position: absolute; top: 0; bottom: 0; right: 0; width: 26px; background: linear-gradient(90deg, transparent, rgba(80,50,20,.28)); }
+.page.right::before { content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 22px; background: linear-gradient(270deg, transparent, rgba(80,50,20,.3)); z-index: 1; }
+.pad { position: absolute; inset: 16px 22px 16px 22px; }
+
+/* type */
+.kicker { font-family: var(--print); font-size: 11px; letter-spacing: .08em; color: var(--kicker); font-variant: small-caps; text-transform: lowercase; }
+.kicker b { font-weight: normal; }
+.h1 { font-family: var(--print); font-size: 25px; color: var(--title); line-height: 1.05; margin: 2px 0 2px; }
+.h2 { font-family: var(--print); font-size: 18px; color: var(--title); line-height: 1.1; }
+.sub { font-family: var(--print); font-size: 12.5px; color: #5a4028; }
+.it { font-family: var(--italic); }
+.hand { font-family: var(--hand); color: var(--blue); }
+.note { font-family: var(--italic); font-size: 11.5px; color: var(--faint); }
+.red { color: var(--wax); }
+.grn { color: var(--green); }
+.rule { height: 1px; background: linear-gradient(90deg, rgba(138,90,42,.55), rgba(138,90,42,.15)); margin: 8px 0; }
+
+/* sprites from BookParts.png (1024x2048 at 2 texels/unit, shown at 512x1024) */
+.sp { display: inline-block; background-image: url(assets/BookParts.png); background-size: 512px 1024px; background-repeat: no-repeat; vertical-align: middle; }
+
+/* chips */
+.chips { display: flex; flex-wrap: wrap; gap: 4px 5px; margin: 6px 0; }
+.chip { font-family: var(--print); font-size: 11.5px; padding: 1px 9px 2px; border-radius: 11px; color: #4a3018;
+  background: #fbf3dc; box-shadow: inset 0 0 0 1px #8a6a40, 0 1px 0 rgba(255,255,255,.4); white-space: nowrap; }
+.chip.here { box-shadow: inset 0 0 0 1.5px #3a7a3a; color: #2a5a2a; }
+.chip.red { box-shadow: inset 0 0 0 1px var(--wax); color: var(--wax); }
+.chip.pump { background: #fbe7cf; box-shadow: inset 0 0 0 1px var(--pumpkin); color: #7a3a0c; }
+.chip.dash { background: transparent; box-shadow: none; outline: 1px dashed #8a6a40; outline-offset: -1px; color: #8a6a40; font-family: var(--italic); }
+
+/* tier diamonds + ink bar */
+.tier { width: 12px; height: 12px; transform: rotate(45deg); display: inline-block; border: 1.4px solid #a07a48; background: transparent; margin: 0 6px 0 2px; vertical-align: -1px; }
+.tier.on { background: linear-gradient(135deg, #e7b16a, #b0783a); border-color: #8a5a2a; }
+.tier.silver.on { background: linear-gradient(135deg, #e6ebf0, #9aa6b2); border-color: #6a7682; }
+.tier.gold.on { background: linear-gradient(135deg, #f6dd8a, #c89030); border-color: #8a6a1a; }
+.ink { position: relative; height: 7px; border-radius: 4px; box-shadow: inset 0 0 0 1px #8a6a40; background: rgba(255,250,235,.5); overflow: hidden; }
+.ink i { position: absolute; left: 1px; top: 1px; bottom: 1px; border-radius: 3px; background: linear-gradient(#6a4a28, #3a2614); transition: width .9s cubic-bezier(.3,.7,.2,1); }
+
+/* wax seal */
+.seal { position: absolute; width: 74px; height: 74px; background: url(assets/BookAtlas.png) -117px -1px / 256px 128px; background-size: 296px 148px; background-position: -135px -1px;
+  display: grid; place-items: center; text-align: center; font-family: var(--gilt-face); color: #f6e3c0; font-size: 10px; line-height: 1.05; text-shadow: 0 1px 0 rgba(0,0,0,.5); transform: rotate(-8deg); }
+.seal.empty { background-position: -212px -1px; color: #a8865a; text-shadow: none; }
+
+/* ribbons below the book */
+.ribbons { position: absolute; left: 160px; top: 584px; display: flex; gap: 6px; z-index: 1; }
+.ribbon { position: relative; width: 100px; height: 96px; cursor: pointer; filter: drop-shadow(0 3px 3px rgba(0,0,0,.4)); transition: height .2s; }
+.ribbon .silk { position: absolute; inset: 0; -webkit-mask: url(assets/BookParts.png) -269px -756px / 512px 1024px; mask: url(assets/BookParts.png) -269px -756px / 512px 1024px;
+  -webkit-mask-size: 512px 1024px; mask-size: 512px 1024px; }
+.ribbon .silk { clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 86%, 0 100%); -webkit-mask: none; mask: none; }
+.ribbon .silk::before { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(0,0,0,.18), rgba(255,255,255,.12) 30%, rgba(0,0,0,.05) 60%, rgba(0,0,0,.22)); }
+.ribbon .silk::after { content: ""; position: absolute; left: 6px; right: 6px; top: 0; bottom: 14%; border-left: 1px dashed rgba(240,210,134,.7); border-right: 1px dashed rgba(240,210,134,.7); }
+.ribbon span { position: absolute; left: 4px; right: 4px; top: 34px; text-align: center; font-family: var(--print); font-size: 12px; line-height: 1.1; color: #f6ead0; text-shadow: 0 1px 1px rgba(0,0,0,.5); }
+.ribbon.on { height: 116px; }
+.ribbon.on .silk { filter: brightness(1.13); }
+.ribbon.wagers span { font-family: var(--gilt-face); letter-spacing: .02em; }
+.ribbon .count { position: absolute; left: 50%; top: 64px; transform: translateX(-50%); font-family: var(--hand); font-size: 15px; color: var(--gilt); }
+
+/* ---------- shared: tracker + nod ---------- */
+.tracker { position: absolute; left: 1326px; top: 120px; width: 168px; font-size: 12px; font-family: var(--print); color: #f1d98c; text-shadow: 0 1px 1px #000; }
+.tracker .hd { display: flex; align-items: center; gap: 6px; font-family: var(--gilt-face); font-size: 14px; color: #ffd36a; }
+.tracker .hd::before { content: "▾"; font-size: 11px; color: #c9a84a; }
+.tracker .row { margin: 6px 0 0 10px; font-size: 12.5px; color: #ffe9a8; }
+.tracker .row .r { display: block; font-size: 11.5px; color: #f0c060; }
+.tracker .row .s { display: block; font-size: 11.5px; color: #d8c79a; }
+.tracker .row .s.done { color: #9adf7a; }
+.tracker .sec { margin-top: 14px; }
+.tracker .hint { margin: 6px 0 0 14px; font-size: 12px; color: #e8b866; font-style: italic; font-family: var(--italic); }
+
+.nod { position: absolute; left: 50%; top: 764px; transform: translateX(-50%); width: 430px; min-height: 62px; display: flex; align-items: stretch; filter: drop-shadow(0 6px 10px rgba(0,0,0,.5)); }
+.nod .spine { width: 14px; background: url(assets/Leather.png) 0 0 / 64px 64px; border-radius: 4px 0 0 4px; box-shadow: inset -2px 0 0 #2a170a; }
+.nod .paper { flex: 1; background: url(assets/Parchment.png) 0 0 / 300px 300px; padding: 9px 14px 9px 14px; border-radius: 0 4px 4px 0; position: relative; }
+.nod .t { font-family: var(--print); font-size: 15px; color: var(--title); }
+.nod .x { font-family: var(--italic); font-size: 12.5px; color: #5a4028; margin-top: 1px; }
+.nod .acts { margin-top: 6px; display: flex; gap: 14px; }
+.nod .acts a { font-family: var(--hand); font-size: 17px; color: var(--blue); text-decoration: none; border-bottom: 1px solid rgba(35,64,122,.4); cursor: pointer; }
+.nod .acts a.quiet { color: #8a6a40; border-color: rgba(138,106,64,.4); }
+.nod .when { position: absolute; right: 10px; top: 8px; font-family: var(--italic); font-size: 11px; color: #a08060; }
+.nod.in { animation: nodIn .5s cubic-bezier(.2,.8,.2,1); }
+@keyframes nodIn { from { transform: translate(-50%, 18px); opacity: 0; } }
+
+/* ---------- the wager slip (A, B) ---------- */
+.slip { position: relative; background: #fbf4df; padding: 9px 12px 10px 14px; margin: 0 0 10px; cursor: pointer;
+  box-shadow: 0 1px 2px rgba(60,30,10,.35), 0 0 0 1px rgba(138,106,64,.35);
+  clip-path: polygon(0 3px, 4% 0, 9% 3px, 14% 0, 19% 3px, 24% 0, 29% 3px, 34% 0, 39% 3px, 44% 0, 49% 3px, 54% 0, 59% 3px, 64% 0, 69% 3px, 74% 0, 79% 3px, 84% 0, 89% 3px, 94% 0, 100% 3px, 100% 100%, 0 100%); }
+.slip::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--slipc, var(--oxblood)); }
+.slip.sel { box-shadow: 0 2px 6px rgba(60,30,10,.45), 0 0 0 1.5px var(--slipc, var(--oxblood)); }
+.slip .top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.slip .nm { font-family: var(--print); font-size: 16.5px; color: var(--title); }
+.slip .cd { font-family: var(--hand); font-size: 17px; color: var(--wax); white-space: nowrap; }
+.slip .where { font-family: var(--italic); font-size: 12px; color: #5a4028; }
+.slip .marks { display: flex; gap: 10px; margin-top: 6px; align-items: center; font-family: var(--italic); font-size: 11.5px; color: #6a4a28; }
+.slip .pip { width: 10px; height: 10px; border-radius: 50%; box-shadow: inset 0 0 0 1.3px #8a6a40; display: inline-block; vertical-align: -1px; margin-right: 2px; }
+.slip .pip.on { background: var(--green); box-shadow: inset 0 0 0 1.3px #2a5a2a; }
+.slip .from { position: absolute; right: 10px; bottom: 8px; font-family: var(--italic); font-size: 11px; color: var(--pumpkin); }
+.slip.ended { filter: grayscale(.7); opacity: .6; }
+.slip.ghost { background: transparent; box-shadow: none; clip-path: none; outline: 1.5px dashed rgba(138,106,64,.7); outline-offset: -2px; cursor: default; }
+.slip.ghost::before { display: none; }
+.slip.ghost .nm { color: #8a6a40; font-family: var(--italic); }
+.paylegend { font-family: var(--italic); font-size: 11px; color: #7a5a30; margin-top: 6px; line-height: 1.35; }
+.slip.ended .cd { color: #8a6a40; }
+.slip.reach .nm { color: #8a7a60; }
+.stamp { position: absolute; right: 16px; top: 10px; padding: 2px 10px; font-family: var(--gilt-face); font-size: 15px; letter-spacing: .12em; color: var(--wax);
+  border: 2px solid var(--wax); border-radius: 3px; transform: rotate(-9deg); opacity: .85; mix-blend-mode: multiply; }
+.stamp.big { font-size: 26px; padding: 4px 16px; border-width: 3px; }
+.stamp.thump { animation: thump .45s cubic-bezier(.2,1.6,.4,1) both; }
+@keyframes thump { 0% { transform: rotate(-9deg) scale(2.2); opacity: 0; } 100% { transform: rotate(-9deg) scale(1); opacity: .85; } }
+
+/* hunt rows (entry) */
+.hrow { display: grid; grid-template-columns: 1fr auto; gap: 1px 10px; padding: 6px 0 7px; border-bottom: 1px dotted rgba(138,90,42,.45); }
+.hrow .hn { font-family: var(--print); font-size: 14px; color: var(--title); }
+.hrow .ht { font-family: var(--italic); font-size: 11.5px; color: #5a4028; grid-column: 1; }
+.hrow .hc { font-family: var(--hand); font-size: 16px; color: var(--blue); text-align: right; grid-row: 1 / span 2; grid-column: 2; align-self: center; }
+.hrow .tiers { grid-column: 1 / span 2; display: flex; align-items: center; gap: 2px; font-family: var(--italic); font-size: 11px; color: #7a5a30; margin-top: 3px; }
+.hrow .tiers .tg { margin-right: 10px; white-space: nowrap; }
+.hrow .ink { grid-column: 1 / span 2; margin-top: 4px; }
+
+.ladder { display: flex; align-items: center; gap: 0; margin-top: 4px; }
+.ladder .step { flex: 1; text-align: center; position: relative; font-family: var(--italic); font-size: 11px; color: #7a5a30; }
+.ladder .step b { display: block; font-family: var(--print); font-weight: normal; font-size: 15px; color: var(--title); }
+.ladder .step.got b { color: var(--wax); }
+.ladder .track { height: 3px; background: rgba(138,106,64,.3); position: relative; margin: 6px 0 4px; border-radius: 2px; }
+.ladder .track i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--wax); border-radius: 2px; }
+
+/* the hint (pinned note) */
+.hintnote { position: relative; padding: 10px 14px 10px 30px; background: #f8ecc8; box-shadow: 0 2px 4px rgba(60,30,10,.35); transform: rotate(-.8deg); }
+.hintnote .pin { position: absolute; left: 10px; top: 10px; width: 14px; height: 14px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #e06a4a, #8a1a0a); box-shadow: 0 1px 1px rgba(0,0,0,.5); }
+.hintnote .t { font-family: var(--print); font-size: 14.5px; color: var(--title); }
+.hintnote .x { font-family: var(--italic); font-size: 12px; color: #5a4028; margin-top: 2px; }
+.hintnote .acts { margin-top: 5px; display: flex; gap: 16px; }
+.hintnote .acts a { font-family: var(--hand); font-size: 17px; color: var(--blue); border-bottom: 1px solid rgba(35,64,122,.4); cursor: pointer; }
+.hintnote .acts a.quiet { color: #8a6a40; border-color: rgba(138,106,64,.4); }
+.copied { font-family: var(--italic); font-size: 11.5px; color: var(--green); margin-left: 6px; }
+.connected { font-family: var(--italic); font-size: 11.5px; color: #4a6a3a; }
+.connected::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #3a8a3a; margin-right: 6px; vertical-align: 1px; box-shadow: 0 0 0 2px rgba(58,138,58,.2); }
+
+/* ---------- B: timeline ---------- */
+.tl { position: relative; margin-top: 8px; }
+.tl .axis { display: grid; grid-template-columns: 170px 1fr 70px; font-family: var(--print); font-size: 10.5px; color: var(--kicker); border-bottom: 1px solid rgba(138,90,42,.5); padding-bottom: 3px; }
+.tl .ticks { position: relative; height: 14px; }
+.tl .ticks span { position: absolute; transform: translateX(-50%); }
+.tl .grp { margin-top: 8px; font-family: var(--print); font-size: 11px; letter-spacing: .08em; font-variant: small-caps; color: #5a4028; display: flex; gap: 8px; align-items: center; }
+.tl .grp .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--oxblood); }
+.tl .grp em { font-family: var(--italic); font-variant: normal; letter-spacing: 0; color: var(--faint); font-size: 11px; }
+.tl .row { display: grid; grid-template-columns: 170px 1fr 70px; align-items: center; height: 24px; cursor: pointer; position: relative; }
+.tl .row.sel::before { content: ""; position: absolute; inset: 1px -4px; border: 1px dashed #8a6a40; background: rgba(255,240,200,.35); }
+.tl .row .n { font-family: var(--print); font-size: 13.5px; color: var(--title); display: flex; align-items: center; gap: 6px; white-space: nowrap; overflow: hidden; position: relative; padding-right: 8px; }
+.tl .row .n span.t { overflow: hidden; text-overflow: ellipsis; }
+.tl .row .ring { width: 18px; height: 18px; border-radius: 50%; flex: none; box-shadow: inset 0 0 0 2px #8a5a2a; background: radial-gradient(circle at 40% 40%, #6a7a6a, #2a3a2a); }
+.tl .row .ring.wg { background: radial-gradient(circle at 40% 40%, #c0583a, #5a1a0a); }
+.tl .row .ring.pump { background: radial-gradient(circle at 40% 40%, #f0a040, #7a3a0c); }
+.tl .row .trk { position: relative; height: 12px; }
+.tl .row .bar { position: absolute; top: 1px; height: 10px; border-radius: 2px; }
+.bar.hatch { background: repeating-linear-gradient(-45deg, #6a4a28 0 2px, transparent 2px 5px); box-shadow: inset 0 0 0 1px #6a4a28; }
+.bar.run { background: rgba(138,42,26,.12); box-shadow: inset 0 0 0 1px rgba(138,42,26,.6); }
+.bar.run.pump { background: rgba(184,100,28,.15); box-shadow: inset 0 0 0 1px rgba(184,100,28,.7); }
+.bar.win { background: repeating-linear-gradient(-45deg, #8a2a1a 0 2px, transparent 2px 5px); box-shadow: inset 0 0 0 1px #8a2a1a; }
+.bar.pencil { box-shadow: inset 0 0 0 1px #9a8a70; background: none; }
+.tl .row .w { font-family: var(--hand); font-size: 15px; color: var(--wax); text-align: right; white-space: nowrap; }
+.tl .row .w.f { color: #8a6a40; font-family: var(--italic); font-size: 11px; }
+.tl .now { position: absolute; top: 0; bottom: 0; width: 2px; background: #b4281a; opacity: .8; pointer-events: none; }
+.tl .night { position: absolute; top: 16px; bottom: 0; background: rgba(60,70,110,.08); pointer-events: none; }
+.wedge { position: absolute; right: -4px; top: 1px; width: 0; height: 0; border-left: 7px solid #8a2a1a; border-top: 5px solid transparent; border-bottom: 5px solid transparent; }
+.pinslip { position: relative; margin: 6px 0 2px; padding: 7px 12px 7px 14px; background: #fbf4df; box-shadow: 0 1px 3px rgba(60,30,10,.4); display: flex; gap: 12px; align-items: center; transform: rotate(-.4deg); }
+.pinslip::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--oxblood); }
+.pinslip .nm { font-family: var(--print); font-size: 14px; color: var(--title); }
+.pinslip .cd { font-family: var(--hand); font-size: 16px; color: var(--wax); margin-left: auto; white-space: nowrap; }
+.pinslip .pips { display: flex; gap: 3px; }
+
+/* ---------- C: tickets at the fore-edge ---------- */
+.tickets { position: absolute; left: 1196px; top: 150px; z-index: 0; }
+.ticket { position: absolute; left: 0; width: 104px; height: 120px; cursor: pointer; transition: left .25s, transform .25s; transform-origin: left center; }
+.ticket:hover { left: 10px; }
+.ticket.out { left: 18px; }
+.ticket .face { position: absolute; inset: 0; background: #f6ead0; border-radius: 0 4px 4px 0; box-shadow: 2px 3px 6px rgba(0,0,0,.45);
+  -webkit-mask: radial-gradient(circle at 0 50%, transparent 7px, #000 7.5px); mask: radial-gradient(circle at 0 50%, transparent 7px, #000 7.5px); }
+.ticket .face::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 26px; background: var(--tc, var(--oxblood)); }
+.ticket .face::after { content: ""; position: absolute; top: 26px; bottom: 0; left: 76px; border-left: 2px dotted rgba(138,90,42,.5); }
+.ticket .lab { position: absolute; left: 22px; top: 5px; font-family: var(--gilt-face); font-size: 11.5px; color: #f6e3c0; letter-spacing: .06em; }
+.ticket .vn { position: absolute; left: 22px; top: 32px; width: 52px; font-family: var(--print); font-size: 12.5px; line-height: 1.1; color: var(--title); }
+.ticket .vc { position: absolute; left: 22px; bottom: 7px; font-family: var(--hand); font-size: 14px; color: var(--wax); }
+.ticket .stub { position: absolute; left: 80px; top: 32px; width: 20px; text-align: center; font-family: var(--hand); font-size: 18px; color: var(--blue); }
+.ticket.ghost .face { background: transparent; box-shadow: none; outline: 2px dashed rgba(246,234,208,.65); outline-offset: -2px; -webkit-mask: none; mask: none; }
+.ticket.ghost .face::before, .ticket.ghost .face::after { display: none; }
+.ticket.ghost .vn { color: #f6ead0; text-shadow: 0 1px 1px #000; font-family: var(--italic); }
+.ticket.ghost .vc { color: #f1c86a; text-shadow: 0 1px 1px #000; }
+.bigticket { position: absolute; inset: 14px 16px 14px 18px; background: #f7ecd2; box-shadow: 0 4px 14px rgba(40,20,5,.55); border-radius: 3px; z-index: 4; overflow: hidden;
+  animation: pull .45s cubic-bezier(.2,.8,.2,1); }
+@keyframes pull { from { transform: translateX(120px) rotate(3deg); opacity: 0; } }
+.bigticket .band { height: 44px; background: var(--tc, var(--oxblood)); display: flex; align-items: center; justify-content: space-between; padding: 0 16px; }
+.bigticket .band .l { font-family: var(--gilt-face); color: #f6e3c0; font-size: 13px; letter-spacing: .14em; }
+.bigticket .band .r { font-family: var(--hand); color: #ffe6b0; font-size: 18px; }
+.bigticket .body { padding: 10px 16px 0; }
+.bigticket .perf { position: absolute; left: 0; right: 0; bottom: 64px; border-top: 2px dotted rgba(138,90,42,.55); }
+.bigticket .perf::before, .bigticket .perf::after { content: ""; position: absolute; top: -9px; width: 16px; height: 16px; border-radius: 50%; background: #3a2614; }
+.bigticket .perf::before { left: -9px; } .bigticket .perf::after { right: -9px; }
+.bigticket .stubrow { position: absolute; left: 16px; right: 16px; bottom: 10px; height: 46px; display: flex; align-items: center; justify-content: space-between; }
+.bigticket .stubrow .pay { font-family: var(--print); font-size: 12.5px; white-space: nowrap; color: var(--title); }
+.bigticket .stubrow .pay i { font-family: var(--italic); color: #6a4a28; font-style: normal; }
+.bigticket .hrow .hc .tick { color: var(--green); font-family: var(--handbold, var(--hand)); font-size: 20px; }
+.spike { position: absolute; left: 22px; bottom: 6px; display: flex; align-items: flex-end; gap: 30px; }
+.spike .nail { width: 6px; height: 54px; background: linear-gradient(90deg, #6a6a6a, #cfcfcf, #6a6a6a); border-radius: 2px 2px 0 0; position: relative; }
+.spike .stack { position: absolute; left: -16px; bottom: 6px; width: 38px; }
+.spike .stack i { display: block; height: 4px; margin-top: 1px; background: #f0e2c0; box-shadow: 0 1px 0 rgba(0,0,0,.25); border-left: 3px solid var(--oxblood); }
+
+/* ---------- prototype chrome (deliberately not part of the design) ---------- */
+#switcher { position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%); z-index: 100; display: flex; align-items: center; gap: 10px;
+  background: #111c; color: #fff; font: 600 13px/1 system-ui, sans-serif; padding: 8px 10px; border-radius: 999px; box-shadow: 0 4px 14px #0008; border: 1px solid #fff3; }
+#switcher button { all: unset; cursor: pointer; width: 26px; height: 26px; display: grid; place-items: center; border-radius: 50%; background: #fff2; }
+#switcher button:hover { background: #fff4; }
+#switcher button:focus-visible { outline: 2px solid #8cf; }
+#switcher .lbl { min-width: 280px; text-align: center; }
+#panel { position: fixed; left: 12px; top: 12px; z-index: 100; width: 270px; background: #101418ee; color: #e8eef4; font: 12px/1.35 system-ui, sans-serif; border-radius: 10px; border: 1px solid #fff2; box-shadow: 0 4px 14px #0008; }
+#panel summary { cursor: pointer; padding: 9px 12px; font-weight: 700; letter-spacing: .02em; }
+#panel .in { padding: 0 12px 12px; }
+#panel fieldset { border: 0; padding: 0; margin: 8px 0 0; }
+#panel legend { color: #9fb3c8; font-weight: 600; margin-bottom: 3px; }
+#panel label { display: inline-flex; gap: 4px; align-items: center; margin: 0 10px 2px 0; cursor: pointer; }
+#panel pre { background: #0008; padding: 8px; border-radius: 6px; max-height: 190px; overflow: auto; font: 11px/1.3 ui-monospace, Consolas, monospace; color: #b8f0c0; margin: 10px 0 0; white-space: pre-wrap; }
+#panel .tag { display: inline-block; background: #c33; color: #fff; font-size: 10px; padding: 1px 6px; border-radius: 4px; margin-left: 6px; vertical-align: 1px; }
+
+body.still *, body.still *::before, body.still *::after { animation: none !important; transition: none !important; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+
+<details id="panel" open>
+  <summary>State <span class="tag">PROTOTYPE</span></summary>
+  <div class="in">
+    <fieldset><legend>Companion</legend>
+      <label><input type="radio" name="companion" value="missing">missing</label>
+      <label><input type="radio" name="companion" value="notRunning">not running</label>
+      <label><input type="radio" name="companion" value="firstInstall">first install</label>
+      <label><input type="radio" name="companion" value="connected">connected</label>
+    </fieldset>
+    <fieldset><legend>Runs on now</legend>
+      <label><input type="radio" name="runs" value="1">1 (rotation)</label>
+      <label><input type="radio" name="runs" value="2">2</label>
+      <label><input type="radio" name="runs" value="3">3 (+ Hallow's End)</label>
+    </fieldset>
+    <fieldset><legend>Progress on the chosen run</legend>
+      <label><input type="radio" name="progress" value="none">none</label>
+      <label><input type="radio" name="progress" value="some">some</label>
+      <label><input type="radio" name="progress" value="complete">run complete</label>
+      <label><input type="radio" name="progress" value="all">all tiers</label>
+    </fieldset>
+    <fieldset><legend>Settled runs (completed)</legend>
+      <label><input type="radio" name="settled" value="3">3</label>
+      <label><input type="radio" name="settled" value="24">24</label>
+      <label><input type="radio" name="settled" value="51">51</label>
+    </fieldset>
+    <fieldset><legend>Other</legend>
+      <label><input type="checkbox" name="lowskill">low-skill Angler (skill 60)</label>
+      <label><input type="checkbox" name="ended">a run just ended</label>
+      <label><input type="checkbox" name="nod">show the weekly Nod</label>
+    </fieldset>
+    <pre id="dump"></pre>
+  </div>
+</details>
+
+<div id="switcher" role="toolbar" aria-label="Prototype variant switcher">
+  <button id="prev" aria-label="Previous variant">◀</button>
+  <span class="lbl" id="vlabel"></span>
+  <button id="next" aria-label="Next variant">▶</button>
+</div>
+
+<script>
+/* ======================= sample data (Forever zones and fish from the catalogue) ======================= */
+const NOW = { label: "18:40 · Thu 16 Oct · Autumn", min: 18 * 60 + 40 };
+const RUNS = [
+  { id: "darkshore_moonlight", name: "Moonlight over Darkshore", zones: ["Darkshore"], band: "low", skill: [0, 75], color: "#8a2a1a",
+    source: "rotation", closes: "Sat 15:00", left: "1d 20h", note: "The grouper come up with the moon. So do the people waiting for them.",
+    win: [[22 * 60, 24 * 60 + 4 * 60]], casts: 212,
+    hunts: [
+      { shape: "Timed", name: "Grouper by Moonlight", t: "Darkshore Grouper, 22:00–04:00", tiers: [3, 8, 15] },
+      { shape: "Haul", name: "Full Creel", t: "any fish in Darkshore", tiers: [40, 100, 200] },
+      { shape: "Named fish", name: "Whiskers in the Shallows", t: "Raw Bristle Whisker Catfish", tiers: [10, 25, 50] },
+      { shape: "Big ones", name: "Something Heavier", t: "Hefty or better, in Darkshore", tiers: [5, 12, 25] },
+    ] },
+  { id: "duskwood_witching", name: "The Witching Hour", zones: ["Duskwood"], band: "mid", skill: [130, 205], color: "#4a2a5a",
+    source: "rotation", closes: "Sun 15:00", left: "2d 20h", note: "Nothing in Duskwood bites at midnight. Except everything.",
+    win: [[0, 180], [24 * 60, 24 * 60 + 180]], casts: 0,
+    hunts: [
+      { shape: "Timed", name: "Midnight to Three", t: "any fish in Duskwood, 00:00–03:00", tiers: [10, 30, 60] },
+      { shape: "Quality", name: "Something Worth Keeping", t: "uncommon or better, in Duskwood", tiers: [3, 8, 15] },
+      { shape: "Haul", name: "Lantern Light", t: "any fish in Duskwood", tiers: [40, 100, 200] },
+    ] },
+  { id: "p_hallows_hollow_tide", name: "The Hollow Tide", zones: ["Tirisfal Glades", "Duskwood"], band: "low", skill: [0, 205], color: "#b8641c",
+    source: "pushed", season: "Hallow's End", closes: "Fri 15:00", left: "20h", note: "Every lake goes quiet on Hallow's End. That's when you listen hardest.",
+    win: [[18 * 60, 24 * 60 + 6 * 60]], casts: 64,
+    hunts: [
+      { shape: "Timed", name: "After the Bonfires", t: "any fish after dark, in either zone", tiers: [15, 40, 80] },
+      { shape: "Named fish", name: "Brightfin by Torchlight", t: "Raw Rainbow Fin Albacore", tiers: [5, 15, 30] },
+      { shape: "Big ones", name: "One for the Cauldron", t: "Hefty or better, in either zone", tiers: [4, 10, 20] },
+    ] },
+];
+const ENDED = { name: "Oddities at Dusk", zones: ["The Barrens"], note: "Closed at 15:00. Whatever wasn't caught stays in the water." };
+const PAY = { xp1: 150, xpN: 100, xpRun: 250, c1: 15, cN: 10, cRun: 50 };
+const LADDER = [{ n: 25, t: "Bookmaker's Bane" }, { n: 50, t: "(name in the lore pass)" }, { n: 100, t: "(name in the lore pass)" }];
+const STANDING = [
+  { n: "Night Run", state: "until 23:58", bars: [[0, 26], [62, 100]], open: true },
+  { n: "First Light", state: "opens 06:00", bars: [[45, 92]], open: false },
+  { n: "Armoured After Dark", state: "need 130", bars: [], open: false, pencil: true },
+];
+const STANDING_RIBBONS = [["Board", "#2e4a3a"], ["Round the Clock", "#2f5a8a"], ["Turn of the Year", "#2f7a4a"], ["Sunday Showdown", "#8a5a1a"], ["Camp Hours", "#6a3a7a"]];
+
+/* ======================= state ======================= */
+const P = new URLSearchParams(location.search);
+const S = {
+  variant: (P.get("variant") || "A").toUpperCase(),
+  companion: P.get("companion") || "missing",
+  runs: +(P.get("runs") || 1),
+  progress: P.get("progress") || "some",
+  settled: +(P.get("settled") || 24),
+  lowskill: P.get("lowskill") === "1",
+  ended: P.get("ended") === "1",
+  nod: P.get("nod") === "1",
+  sel: 0, pulled: P.get("pulled") === "1", copied: false, dismissed: false,
+};
+if (S.companion === "connected" && S.runs < 2) S.runs = 2;
+const VARIANTS = { A: "Its own ribbon and spread", B: "Woven into the Board", C: "Bookmaker's tickets" };
+
+function runsOn() {
+  let r = [RUNS[0]];
+  if (S.runs >= 2) r.push(RUNS[1]);
+  if (S.runs >= 3) r.push(RUNS[2]);
+  // without a connected companion, only the rotation's run (pushed ones need the companion)
+  if (S.companion !== "connected") r = r.filter(x => x.source === "rotation").slice(0, 1);
+  return r;
+}
+function counts(run, i) {
+  // progress applies to the chosen run; others get a light sample
+  const p = i === S.sel ? S.progress : "some";
+  return run.hunts.map((h, k) => {
+    if (p === "none") return 0;
+    if (p === "some") return [Math.round(h.tiers[0] * .66), h.tiers[0] + 2, Math.round(h.tiers[0] * .4), h.tiers[0]][k % 4];
+    if (p === "complete") return h.tiers[0] + [3, 1, 0, 2][k % 4];
+    return h.tiers[h.tiers.length - 1] + 3;
+  });
+}
+const tiersReached = (h, c) => h.tiers.filter(t => c >= t).length;
+const runDone = (run, cs) => run.hunts.every((h, k) => cs[k] >= h.tiers[0]);
+const outOfReach = run => S.lowskill && run.skill[0] > 60;
+function earned(run, cs) {
+  let xp = 0, co = 0;
+  run.hunts.forEach((h, k) => { const n = tiersReached(h, cs[k]); if (n) { xp += PAY.xp1 + (n - 1) * PAY.xpN; co += PAY.c1 + (n - 1) * PAY.cN; } });
+  if (runDone(run, cs)) { xp += PAY.xpRun; co += PAY.cRun; }
+  return { xp, co };
+}
+const fmt = n => n.toLocaleString("en-GB");
+const esc = s => String(s).replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+
+/* ======================= shared pieces ======================= */
+function hintHTML(compact) {
+  if (S.dismissed || S.companion === "connected") {
+    return S.companion === "connected" ? `<div class="connected">The companion is connected · updated 2h ago</div>` : "";
+  }
+  const m = {
+    missing: ["Some wagers only come by companion.", "The Pagle companion brings new wagers every few days, seasonal ones too, each with its XP and Coins."],
+    notRunning: ["The Pagle companion isn't running.", "Start it, then /reload, to see the other wagers on the table this week."],
+    firstInstall: ["The Pagle companion is installed.", "Log out to character select once, so its wagers can come in."],
+  }[S.companion];
+  const acts = S.companion === "missing"
+    ? `<a data-act="get">Get it</a><a class="quiet" data-act="dismiss">Dismiss</a>${S.copied ? `<span class="copied">pagle.app/companion copied</span>` : ""}`
+    : S.companion === "notRunning" ? `<a class="quiet" data-act="dismiss">Dismiss</a>` : `<a class="quiet" data-act="dismiss">Got it</a>`;
+  return `<div class="hintnote"${compact ? ' style="transform:rotate(.6deg)"' : ""}><span class="pin"></span><div class="t">${m[0]}</div><div class="x">${m[1]}</div><div class="acts">${acts}</div></div>`;
+}
+function tierHTML(h, c) {
+  const cls = ["", "silver", "gold"];
+  return h.tiers.map((t, k) => {
+    const on = c >= t;
+    return `<span class="tg"><span class="tier ${cls[k]} ${on ? "on" : ""}"></span>${t}</span>`;
+  }).join("");
+}
+function huntRows(run, cs, ticked) {
+  return run.hunts.map((h, k) => {
+    const c = cs[k], last = h.tiers[h.tiers.length - 1], next = h.tiers.find(t => c < t) || last;
+    const cnt = ticked && c >= h.tiers[0] ? `<span class="tick">✓</span> ${c}` : `${c} / ${next}`;
+    return `<div class="hrow"><div class="hn">${esc(h.name)}</div><div class="hc">${cnt}</div><div class="ht">${esc(h.shape)} · ${esc(h.t)}</div>
+      <div class="tiers">${tierHTML(h, c)}</div><div class="ink"><i style="width:calc(${Math.min(1, c / last) * 100}% - 2px)"></i></div></div>`;
+  }).join("");
+}
+function ladderHTML() {
+  const pct = Math.min(1, S.settled / 100) * 100;
+  return `<div class="ladder">${LADDER.map(l => `<div class="step ${S.settled >= l.n ? "got" : ""}"><b>${l.n}</b>${esc(l.t)}</div>`).join("")}</div>
+    <div class="ladder" style="display:block"><div class="track"><i style="width:${pct}%"></i></div></div>
+    <div class="note">${S.settled} wagers settled${S.settled < 25 ? ` · ${25 - S.settled} more for Bookmaker's Bane` : S.settled < 50 ? ` · ${50 - S.settled} more for the next title` : S.settled < 100 ? ` · ${100 - S.settled} more for the last title` : ""}</div>`;
+}
+const payLegend = () => `<div class="paylegend">Each Hunt's first mark pays +${PAY.xp1} XP and ${PAY.c1} Coins, each mark after it +${PAY.xpN} XP and ${PAY.cN}. Every first mark landed settles the wager: +${PAY.xpRun} XP and ${PAY.cRun} Coins more.</div>`;
+function ghostSlip() {
+  if (S.companion === "connected") return "";
+  return `<div class="slip ghost"><div class="top"><span class="nm">${S.companion === "notRunning" ? "The companion's wagers wait here while it's asleep" : S.companion === "firstInstall" ? "The companion's wagers arrive after one log-out" : "Wagers from the companion would sit here"}</span></div><div class="where">Seasonal and fresh ones, besides the rotation's.</div></div>`;
+}
+function bookShell(crumbs, left, right, ribbonsHTML) {
+  return `<div class="book">
+    <div class="leather"></div>
+    <div class="crumbs">${crumbs.map((c, i) => (i ? '<span class="fl"></span>' : "") + `<span>${esc(c)}</span>`).join("")}</div>
+    <div class="clock">${NOW.label}</div>
+    <div class="close" title="Close"></div>
+    <div class="pages"><div class="page left"><div class="pad">${left}</div></div><div class="page right"><div class="pad">${right}</div></div></div>
+    ${ribbonsHTML || ""}
+  </div>`;
+}
+function ribbonsHTML(active, withWagers) {
+  const list = STANDING_RIBBONS.map(([l, c]) => ({ l, c }));
+  if (withWagers) list.splice(1, 0, { l: "Pagle Wagers", c: "#8a2a1a", w: true });
+  return `<div class="ribbons">${list.map(r => `<div class="ribbon ${r.w ? "wagers" : ""} ${r.l === active ? "on" : ""}"><div class="silk" style="background:${r.c}"></div><span>${esc(r.l)}</span>${r.w && runsOn().length > 1 ? `<span class="count">${runsOn().length} on</span>` : ""}</div>`).join("")}</div>`;
+}
+function trackerHTML() {
+  const rs = runsOn();
+  const run = rs[Math.min(S.sel, rs.length - 1)], cs = counts(run, S.sel);
+  const lines = run.hunts.slice(0, 3).map((h, k) => {
+    const c = cs[k], nxt = h.tiers.find(t => c < t);
+    return `<div class="row">${esc(h.name)}<span class="s ${c >= h.tiers[0] ? "done" : ""}">${esc(h.t.split(",")[0])} · ${nxt ? `${c}/${nxt}` : "all tiers"}</span></div>`;
+  }).join("");
+  const more = rs.length > 1 ? `<div class="hint">+${rs.length - 1} more wager${rs.length > 2 ? "s" : ""} on the table</div>` : "";
+  const hint = S.companion !== "connected" && !S.dismissed ? `<div class="hint">${S.companion === "notRunning" ? "Companion not running" : S.companion === "firstInstall" ? "Companion: log out once" : "More wagers come by companion"}</div>` : "";
+  return `<div class="tracker">
+    <div class="hd">Pagle Wagers</div>
+    <div class="row">${esc(run.name)}<span class="r">${runDone(run, cs) ? "settled" : "closes in " + run.left}</span><span class="s">${run.zones.join(" & ")}</span></div>
+    ${lines}${more}${hint}
+    <div class="sec hd">Hunts</div>
+    <div class="row">Night Run<span class="r">ends in 5h 18m</span><span class="s">Raw Nightfin Snapper · 25/40</span></div>
+  </div>`;
+}
+function nodHTML() {
+  if (!S.nod) return "";
+  const t = S.companion === "notRunning" ? "The Pagle companion isn't running" : "New wagers are on the table";
+  const x = S.companion === "notRunning" ? "Start it and /reload to bring this week's wagers in." : "The Pagle companion brings them in: more XP, more Coins, Hallow's End this week.";
+  return `<div class="nod in"><div class="spine"></div><div class="paper"><span class="when">once a week</span><div class="t">${t}</div><div class="x">${x}</div>
+    <div class="acts">${S.companion === "missing" ? `<a data-act="get">Get it</a>` : ""}<a class="quiet" data-act="nodoff">Don't remind me</a></div></div></div>`;
+}
+
+/* ======================= Variant A: its own ribbon and spread ======================= */
+function variantA() {
+  const rs = runsOn(); S.sel = Math.min(S.sel, rs.length - 1);
+  const slips = rs.map((r, i) => {
+    const cs = counts(r, i), done = runDone(r, cs);
+    const pips = r.hunts.map((h, k) => `<span class="pip ${cs[k] >= h.tiers[0] ? "on" : ""}"></span>`).join("");
+    return `<div class="slip ${i === S.sel ? "sel" : ""} ${outOfReach(r) ? "reach" : ""}" data-sel="${i}" style="--slipc:${r.color}">
+      <div class="top"><span class="nm">${esc(r.name)}</span><span class="cd">${done ? "" : "closes in " + r.left}</span></div>
+      <div class="where">${r.zones.join(" & ")} · until ${r.closes}${outOfReach(r) ? ` · <span class="red">needs skill ${r.skill[0]}</span>` : ""}</div>
+      <div class="marks"><span>${pips}</span><span>${cs.filter((c, k) => c >= r.hunts[k].tiers[0]).length} of ${r.hunts.length} first marks</span></div>
+      ${r.source === "pushed" ? `<span class="from">${esc(r.season)} · sent by the companion</span>` : ""}
+      ${done ? `<span class="stamp ${i === S.sel ? "thump" : ""}">SETTLED</span>` : ""}
+    </div>`;
+  }).join("");
+  const ended = S.ended ? `<div class="slip ended" style="--slipc:#6a5a4a"><div class="top"><span class="nm">${ENDED.name}</span><span class="cd">closed</span></div><div class="where">${ENDED.note}</div></div>` : "";
+  const hinted = !(S.companion === "connected" || S.dismissed);
+  const left = `<div class="kicker">Pagle Wagers</div><div class="h1">On the table</div>
+    <div class="sub it" style="margin-bottom:10px">Three days each. Land every Hunt's first mark before it closes.</div>
+    ${slips}${ended}${ghostSlip()}
+    <div style="position:absolute;left:0;right:0;bottom:${hinted ? 96 : 20}px"><div class="rule"></div>${ladderHTML()}</div>
+    <div style="position:absolute;left:0;right:0;bottom:0">${hintHTML()}</div>`;
+  const r = rs[S.sel], cs = counts(r, S.sel), done = runDone(r, cs), e = earned(r, cs), reach = outOfReach(r);
+  const right = `<div class="kicker">${r.source === "pushed" ? esc(r.season) + " wager" : "From the rotation"} · ${r.band} waters</div>
+    <div class="h1" style="max-width:240px">${esc(r.name)}</div>
+    <div class="seal ${done ? "" : "empty"}" style="right:2px;top:-2px">${done ? "SETTLED<br>16 Oct" : "not yet"}</div>
+    <div class="chips">${r.zones.map(z => `<span class="chip">${z}</span>`).join("")}<span class="chip ${r.source === "pushed" ? "pump" : ""}">until ${r.closes}</span>${reach ? `<span class="chip red">skill ${r.skill[0]}+</span>` : ""}</div>
+    <div class="hand" style="font-size:18px;margin:2px 0 2px">${done ? "Settled. The house pays out." : reach ? "Out of reach for now. A lure won't get me there." : "Closes in " + r.left + "."}</div>
+    <div class="note" style="margin-bottom:2px">${esc(r.note)}</div>
+    ${huntRows(r, cs)}
+    <div style="display:flex;justify-content:space-between;margin-top:7px"><span class="note">${r.casts} Casts in these waters this run.</span>
+      <span class="sub">So far <span class="red">+${fmt(e.xp)} XP · ${e.co} Coins</span></span></div>
+    ${payLegend()}`;
+  return bookShell(["Hunts", "Pagle Wagers", r.name], left, right, ribbonsHTML("Pagle Wagers", true));
+}
+
+/* ======================= the Board's timeline (B, and C as today) ======================= */
+function boardTimeline(rs, withWagers) {
+  const X = m => ((((m - (NOW.min - 120)) % 1440) + 1440) % 1440) / 1440 * 100; // 24h track from 2h ago
+  const seg = (a, b) => { const x1 = X(a), x2 = x1 + (b - a) / 1440 * 100; return [x1, Math.min(100, x2)]; };
+  const hours = [21, 0, 3, 6, 9, 12, 15, 18].map(h => `<span style="left:${X(h * 60)}%">${String(h).padStart(2, "0")}</span>`).join("");
+  const wrows = !withWagers ? "" : rs.map((r, i) => {
+    const cs = counts(r, i), done = runDone(r, cs), wins = r.win.map(([a, b]) => seg(a, b)).filter(([a]) => a < 100);
+    const fri = r.closes.startsWith("Fri"), endX = X(15 * 60 + 1440);
+    return `<div class="row ${i === S.sel ? "sel" : ""}" data-sel="${i}"><div class="n"><span class="ring ${r.source === "pushed" ? "pump" : "wg"}"></span><span class="t">${esc(r.name)}</span></div>
+      <div class="trk"><div class="bar run ${r.source === "pushed" ? "pump" : ""}" style="left:0;width:${fri ? endX : 100}%"></div>
+      ${wins.map(([a, b]) => `<div class="bar win" style="left:${a}%;width:${b - a}%"></div>`).join("")}${fri ? "" : `<span class="wedge"></span>`}</div>
+      <div class="w ${done ? "f" : ""}">${done ? "settled" : "till " + r.closes}</div></div>`;
+  }).join("");
+  const srow = s => `<div class="row"><div class="n"><span class="ring"></span><span class="t">${s.n}</span></div><div class="trk">${s.bars.map(([a, b]) => `<div class="bar hatch" style="left:${a}%;width:${b - a}%"></div>`).join("")}${s.pencil ? `<div class="bar pencil" style="left:10%;width:40%"></div>` : ""}</div><div class="w ${s.open ? "" : "f"}">${s.state}</div></div>`;
+  const extra = [{ n: "Rack Hour", state: "camp is down", bars: [], open: false }, { n: "Summer's Bass", state: "out of season", bars: [], open: false }, { n: "Tastyfish Haul", state: "Sun 14:00", bars: [], open: false }];
+  const nowRows = STANDING.filter(s => s.open).map(srow).join("");
+  const laterRows = STANDING.filter(s => !s.open).concat(withWagers ? [] : extra).map(srow).join("");
+  return `<div class="tl"><div class="axis"><span>REALM TIME</span><div class="ticks">${hours}</div><span style="text-align:right;font-family:var(--hand);color:var(--wax);font-size:13px">next 22h</span></div>
+      <div class="night" style="left:calc(170px + (100% - 240px) * ${X(21 * 60) / 100});width:calc((100% - 240px) * ${9 / 24})"></div>
+      ${withWagers ? `<div class="grp"><span class="dot"></span>WAGERS <em>three days each, the same for everyone</em></div>${wrows}` : ""}
+      ${withWagers && S.ended ? `<div class="row" style="opacity:.55"><div class="n"><span class="ring"></span><span class="t">${ENDED.name}</span></div><div class="trk"></div><div class="w f">closed 15:00</div></div>` : ""}
+      <div class="grp"><span class="dot" style="background:var(--green)"></span>NOW <em>open right now</em></div>${nowRows}
+      <div class="grp"><span class="dot" style="background:#8a8070"></span>LATER <em>opens after that, or needs more skill</em></div>${laterRows}
+      <div class="now" style="left:calc(170px + (100% - 240px) * ${X(NOW.min) / 100})"></div></div>`;
+}
+
+/* ======================= Variant B: woven into the Board ======================= */
+function variantB() {
+  const rs = runsOn(); S.sel = Math.min(S.sel, rs.length - 1);
+  const r = rs[S.sel], cs = counts(r, S.sel), done = runDone(r, cs), e = earned(r, cs);
+  const toBane = S.settled < 25 ? ` · ${25 - S.settled} to Bookmaker's Bane` : "";
+  const pinned = `<div class="pinslip"><div><div class="kicker" style="margin:0">Pagle Wagers · ${S.settled} settled${toBane}</div><div class="nm">${esc(r.name)} · ${r.zones.join(" & ")}</div></div>
+     <div class="pips">${r.hunts.map((h, k) => `<span class="tier ${cs[k] >= h.tiers[0] ? "on" : ""}" style="width:9px;height:9px"></span>`).join("")}</div><div class="cd">${done ? "settled" : r.left + " left"}</div></div>`;
+  const left = `<div class="kicker">The board</div><div class="h1">What's biting, and when</div>${pinned}${boardTimeline(rs, true)}
+    <div style="position:absolute;left:0;right:0;bottom:0">${hintHTML(true)}</div>`;
+  const right = `<div class="kicker">Pagle Wagers · ${r.source === "pushed" ? esc(r.season) : r.band + " waters"}</div><div class="h1" style="max-width:240px">${esc(r.name)}</div>
+    <div class="seal ${done ? "" : "empty"}" style="right:0;top:-4px">${done ? "SETTLED<br>16 Oct" : "not yet"}</div>
+    <div class="hand" style="font-size:18px;margin:6px 0 2px">${done ? "Settled. Paid out in full." : "Open now. Closes " + r.closes + ", in " + r.left + "."}</div>
+    <div class="chips">${r.zones.map(z => `<span class="chip">${z}</span>`).join("")}${outOfReach(r) ? `<span class="chip red">needs skill ${r.skill[0]}</span>` : ""}</div>
+    ${huntRows(r, cs)}
+    <div class="note" style="margin-top:6px">${r.casts} Casts in these waters this run. Odds live in Stats.</div>
+    <div class="sub" style="margin-top:3px">So far <span class="red">+${fmt(e.xp)} XP · ${e.co} Coins</span></div>
+    ${payLegend()}`;
+  return bookShell(["Hunts", "The Board"], left, right, ribbonsHTML("Board", false));
+}
+
+/* ======================= Variant C: bookmaker's tickets at the fore-edge ======================= */
+function variantC() {
+  const rs = runsOn(); S.sel = Math.min(S.sel, rs.length - 1);
+  const tix = rs.map((r, i) => {
+    const cs = counts(r, i), n = cs.filter((c, k) => c >= r.hunts[k].tiers[0]).length;
+    return `<div class="ticket ${S.pulled === true && S.sel === i ? "out" : ""}" data-pull="${i}" style="top:${i * 128}px;--tc:${r.color};transform:rotate(${[-2, 1.5, -1][i]}deg)">
+      <div class="face"></div><div class="lab">${r.source === "pushed" ? "SEASON" : "WAGER"}</div>
+      <div class="vn">${esc(r.name)}</div><div class="vc">${runDone(r, cs) ? "settled" : r.left}</div><div class="stub">${n}<br><span style="font-size:13px">of ${r.hunts.length}</span></div></div>`;
+  }).join("");
+  const ghost = S.companion !== "connected" && !S.dismissed
+    ? `<div class="ticket ghost" data-pull="ghost" style="top:${rs.length * 128}px;transform:rotate(2deg)"><div class="face"></div><div class="vn">${S.companion === "notRunning" ? "Companion asleep" : S.companion === "firstInstall" ? "Log out once" : "More come by companion"}</div><div class="vc">${S.companion === "missing" ? "get it" : "why?"}</div></div>` : "";
+  const left = `<div class="kicker">The board</div><div class="h1">What's biting, and when</div>
+    <div class="note" style="margin:3px 0 0">The standing Hunts, as today. Wagers ride at the book's edge.</div>
+    ${boardTimeline(rs, false)}
+    <div class="spike"><div class="nail"><div class="stack">${Array.from({ length: Math.min(12, Math.ceil(S.settled / 4)) }, () => "<i></i>").join("")}</div></div>
+      <div><div class="h2" style="font-size:15px">${S.settled} tickets on the spike</div><div class="note">${S.settled < 25 ? `${25 - S.settled} more for Bookmaker's Bane` : S.settled < 50 ? `Bookmaker's Bane earned · ${50 - S.settled} more for the next title` : `${100 - S.settled} more for the last title`}</div></div></div>`;
+  let right;
+  if (S.pulled === "ghost") {
+    right = `<div class="bigticket" style="--tc:#5a4a3a"><div class="band"><span class="l">A TICKET'S MISSING</span><span class="r"></span></div><div class="body">${hintHTML()}<div class="note" style="margin-top:12px">The rotation's wagers still come without it. The companion adds the rest: seasonal ones, and fresh ones between updates.</div></div></div>`;
+  } else if (S.pulled) {
+    const r = rs[S.sel], cs = counts(r, S.sel), done = runDone(r, cs), e = earned(r, cs);
+    right = `<div class="bigticket" style="--tc:${r.color}"><div class="band"><span class="l">${r.source === "pushed" ? esc(r.season).toUpperCase() : "PAGLE WAGERS"}</span><span class="r">${done ? "settled" : "closes " + r.closes}</span></div>
+      <div class="body"><div class="h1" style="font-size:22px">${esc(r.name)}</div><div class="sub">${r.zones.join(" & ")} · ${r.band} waters${outOfReach(r) ? ` · <span class="red">needs skill ${r.skill[0]}</span>` : ""}</div>
+      <div class="note" style="margin:3px 0 2px">${esc(r.note)}</div>${huntRows(r, cs, true)}</div>
+      ${done ? `<span class="stamp big thump" style="right:22px;top:58px">SETTLED</span>` : ""}
+      <div class="perf"></div>
+      <div class="stubrow"><div class="pay">Pays <i>+${fmt(e.xp)} XP · ${e.co} Coins so far</i></div><div class="hand" style="font-size:16px">${done ? "tear off the stub" : "settles: +" + PAY.xpRun + " XP"}</div></div></div>`;
+  } else {
+    right = `<div class="kicker">Round the Clock · natural</div><div class="h1">Night Run</div><div class="sub">Raw Nightfin Snapper</div>
+      <div class="hand" style="font-size:18px;margin:10px 0">Open now. Closes in 5h 18m, at 23:58.</div>
+      <div class="note">The Standing Hunt's entry, as today. Pull a ticket from the book's edge to read a wager.</div>`;
+  }
+  return bookShell(["Hunts", S.pulled && S.pulled !== "ghost" ? rs[S.sel].name : "The Board"], left, right, ribbonsHTML("Board", false)) + `<div class="tickets">${tix}${ghost}</div>`;
+}
+
+/* ======================= render + wiring ======================= */
+const stage = document.getElementById("stage");
+if (P.get("still") === "1") document.body.classList.add("still");
+function render() {
+  if (!VARIANTS[S.variant]) S.variant = "A";
+  const body = { A: variantA, B: variantB, C: variantC }[S.variant]();
+  stage.innerHTML = body + trackerHTML() + nodHTML();
+  document.getElementById("vlabel").textContent = `${S.variant} (${VARIANTS[S.variant]})`;
+  const dump = { variant: S.variant, companion: S.companion, runsOn: runsOn().map(r => r.id + (r.source === "pushed" ? " [pushed]" : "")),
+    chosen: runsOn()[S.sel]?.id, progress: S.progress, counts: counts(runsOn()[S.sel], S.sel), runComplete: runDone(runsOn()[S.sel], counts(runsOn()[S.sel], S.sel)),
+    earned: earned(runsOn()[S.sel], counts(runsOn()[S.sel], S.sel)), settled: S.settled, lowSkill: S.lowskill, ended: S.ended, hintDismissed: S.dismissed, nod: S.nod };
+  document.getElementById("dump").textContent = JSON.stringify(dump, null, 1);
+  for (const el of document.querySelectorAll("#panel input")) {
+    if (el.type === "radio") el.checked = String(S[el.name]) === el.value; else el.checked = !!S[el.name];
+  }
+  fit();
+}
+function fit() { const k = Math.min(innerWidth / 1500, innerHeight / 900); stage.style.transform = `translate(-50%, -50%) scale(${k})`; }
+addEventListener("resize", fit);
+function setURL() { const q = new URLSearchParams(location.search); q.set("variant", S.variant); history.replaceState(null, "", "?" + q); }
+function step(d) { const k = Object.keys(VARIANTS); S.variant = k[(k.indexOf(S.variant) + d + k.length) % k.length]; setURL(); render(); }
+document.getElementById("prev").onclick = () => step(-1);
+document.getElementById("next").onclick = () => step(1);
+addEventListener("keydown", e => {
+  if (e.target.closest("input, textarea, [contenteditable]")) return;
+  if (e.key === "ArrowLeft") step(-1); if (e.key === "ArrowRight") step(1);
+});
+document.getElementById("panel").addEventListener("change", e => {
+  const el = e.target; S[el.name] = el.type === "checkbox" ? el.checked : (isNaN(+el.value) ? el.value : +el.value);
+  if (el.name === "companion") { S.dismissed = false; S.copied = false; }
+  S.sel = 0; render();
+});
+stage.addEventListener("click", e => {
+  const a = e.target.closest("[data-act]");
+  if (a) { if (a.dataset.act === "get") S.copied = true; if (a.dataset.act === "dismiss") S.dismissed = true; if (a.dataset.act === "nodoff") S.nod = false; render(); return; }
+  const s = e.target.closest("[data-sel]"); if (s) { S.sel = +s.dataset.sel; render(); return; }
+  const t = e.target.closest("[data-pull]");
+  if (t) { if (t.dataset.pull === "ghost") S.pulled = "ghost"; else { const i = +t.dataset.pull; S.pulled = (S.pulled === true && S.sel === i) ? false : true; S.sel = i; } render(); return; }
+});
+render();
+</script>
+</body>
+</html>
