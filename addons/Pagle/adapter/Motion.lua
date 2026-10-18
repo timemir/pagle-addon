@@ -41,7 +41,7 @@ player = ns.NewMotionPlayer({
 })
 
 --- Plays `animations` on `owner` (logic/Motion.lua's PagleMotionPlayer:Animate).
----@param owner Frame
+---@param owner PagleMotionOwner
 ---@param animations PagleAnimation[]
 ---@param onDone fun()?
 function ns.Animate(owner, animations, onDone)
@@ -49,13 +49,13 @@ function ns.Animate(owner, animations, onDone)
 end
 
 --- Stops what `owner` plays, where it is.
----@param owner Frame
+---@param owner PagleMotionOwner
 function ns.StopMotion(owner)
 	player:Stop(owner)
 end
 
 --- Runs `fn` `seconds` from now on `owner`'s clock (a sound on a beat); with motion off, never.
----@param owner Frame
+---@param owner PagleMotionOwner
 ---@param seconds number
 ---@param fn fun()
 function ns.Cue(owner, seconds, fn)

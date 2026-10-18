@@ -167,7 +167,7 @@ function ns.BoardSnapshot(frame)
 	for _, slip in ipairs(spike.slips or {}) do
 		local id = slip:IsShown() and slip.view and slip.view.id
 		local goal = id and goals[id]
-		if goal and goal.doneDay ~= nil then
+		if id and goal and goal.doneDay ~= nil then
 			shot.hung[id] = true
 		end
 	end
