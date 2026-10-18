@@ -1,7 +1,7 @@
 -- The board's sounds, its fit to the screen and its moments of change (tackle-board.md › UI; the board art kit's
--- SOUND.md and MOTION.md): adapter/BoardSound.lua, adapter/Fit.lua and adapter/BoardChanges.lua, over a board opened
--- on the fake client, live Casts completing its goals while it shows. The fake client runs the motion driver's
--- OnUpdate with client.update, and records each PlaySound as "<id> <channel>" in client.sounds.
+-- SOUND.md and MOTION.md): adapter/BoardSound.lua, Core's Pagle.FitToScreen and adapter/BoardChanges.lua, over a board
+-- opened on the fake client, live Casts completing its goals while it shows. The fake client runs Core's motion
+-- driver's OnUpdate with client.update, and records each PlaySound as "<id> <channel>" in client.sounds.
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local board = dofile("spec/Pagle_TackleBoard/support.lua")
@@ -20,18 +20,9 @@ local POSTED = {
 	record("issue", S + 3, "n;haul;1;10;2;14"),
 }
 
--- The board open on POSTED, its login's live step run, with ns.AnimationsOn answering `on` when given.
+-- The board open on POSTED, its login's live step run, with Core's Animations setting off when `on` is false.
 local function opened(on)
-	return board.opened(POSTED, {
-		step = true,
-		load = on ~= nil and {
-			prepare = function(loaded)
-				loaded.ns.AnimationsOn = function()
-					return on
-				end
-			end,
-		} or nil,
-	})
+	return board.opened(POSTED, { step = true, motion = on })
 end
 
 -- The sound kits played so far, as "<id> <channel>".
@@ -88,7 +79,7 @@ describe("the board's sounds (tackle-board.md › UI › Sound)", function()
 	end)
 end)
 
-describe("the board's fit to the screen (adapter/Fit.lua)", function()
+describe("the board's fit to the screen (Pagle.FitToScreen)", function()
 	it("shrinks to fit a small screen as it opens, and never grows past 1", function()
 		local loaded, _, frame = opened()
 		assert.are.equal(1, frame:GetScale())

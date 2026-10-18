@@ -12,8 +12,10 @@ local ns = select(2, ...)
 -- up (or is lit), burns a Kindling stick or goes out; the Fly Box hops as a fly is tied, and an open drawer settles the
 -- fly into its compartment. The functions are the kit's (PagleArtBoard's Transitions.lua), played over the board's own
 -- frames after a draw has drawn the new state: adapter/Board.lua hands over what the board showed before the draw.
+-- Which moments play is logic/BoardChanges.lua's ns.BoardChanges, over two snapshots of the board (ns.BoardSnapshot).
 -- Nothing plays at the board's opening or while the projection updates, and with Core's Animations setting off the
--- board simply shows the new state, each moment marked by its sound alone (adapter/BoardSound.lua's).
+-- board simply shows the new state, each moment marked by its sound alone (adapter/BoardSound.lua's). The moments move
+-- on Core's motion driver (Pagle.Animate, announcements.md › Contracts), which reads that setting itself.
 
 local lerp = function(a, b, k)
 	return a + (b - a) * k
@@ -32,17 +34,6 @@ local HOP_AFTER_DONE = 1.5
 -- The moments playing: each one's settle (which puts its frames back at rest) by the frames it moves.
 ---@type table<fun(), Frame[]>
 local playing = {}
-
---- What the board showed at a draw, to tell what changed by the next (ns.BoardSnapshot).
----@class TackleBoardShot
----@field pins table<TacklePinSlot, { id: string?, fill: number?, progress: string? }>
----@field glow number?                -- the cork's light, nil while it is hidden
----@field fire { stage: string?, state: string?, kindling: integer?, glow: number? }?
----@field tied integer?
----@field box string?                 -- the Fly Box's "{n} of 30 tied"
----@field tally string?
----@field spike string?               -- the spike's label
----@field cells boolean[]?            -- an open drawer's compartments, tied or not
 
 ---@class TackleGrownSprite: TackleSprite
 ---@field w0 number?   -- its size at rest
@@ -80,16 +71,16 @@ local function ungrow(sprite)
 end
 
 -- Plays one moment: `anims` on `owner` from now, `settle` once `length` seconds have passed (or sooner, when the board
--- hides or opens again), then the board drawn again, so whatever the moment held back shows as the board has it.
+-- hides or opens again), then the board drawn again, so whatever the moment held back shows as the board has it. Only
+-- ns.PlayBoardChanges plays one, and only with Core's Animations setting on.
 ---@param owner Frame
 ---@param length number
 ---@param anims table[]
 ---@param settle fun()
 local function play(owner, length, anims, settle)
 	playing[settle] = { owner }
-	ns.motion = true
-	ns.Animate(owner, anims)
-	ns.Cue(owner, length, function()
+	Pagle.Animate(owner, anims)
+	Pagle.Cue(owner, length, function()
 		if playing[settle] then
 			playing[settle] = nil
 			settle()
@@ -108,7 +99,7 @@ local function at(settle, owner, t, fn)
 	if frames and frames[#frames] ~= owner then
 		frames[#frames + 1] = owner
 	end
-	ns.Cue(owner, t, fn)
+	Pagle.Cue(owner, t, fn)
 end
 
 --- Stops every moment playing and puts its frames at rest: the board hides, or opens again.
@@ -116,7 +107,7 @@ function ns.SettleBoardChanges()
 	local settles = {}
 	for settle, frames in pairs(playing) do
 		for _, frame in ipairs(frames) do
-			ns.StopMotion(frame)
+			Pagle.StopMotion(frame)
 		end
 		settles[#settles + 1] = settle
 	end
@@ -131,16 +122,18 @@ end
 ---@return TackleBoardShot
 function ns.BoardSnapshot(frame)
 	---@type TackleBoardShot
-	local shot = { pins = {}, glow = frame.glow:IsShown() and frame.glowBase or nil }
+	local shot = { pins = {}, hung = {}, glow = frame.glow:IsShown() and frame.glowBase or nil }
 	local pins = frame.parts.pins --[[@as TacklePinsFrame]]
 	for _, row in ipairs({ pins.slots.expeditions, pins.slots.notices }) do
 		for _, slot in ipairs(row) do
 			---@cast slot TacklePinSlot
 			local slip = slot.goal
-			shot.pins[slot] = {
+			shot.pins[#shot.pins + 1] = {
+				slot = slot,
 				id = slot.goalID,
 				fill = slip and slip.bar.value,
 				progress = slip and slip.progress:GetText(),
+				busy = slot.busy,
 			}
 		end
 	end
@@ -153,6 +146,7 @@ function ns.BoardSnapshot(frame)
 			state = view and view.state,
 			kindling = view and view.kindling,
 			glow = fire.glow:IsShown() and fire.glow:GetAlpha() or nil,
+			sticks = #fire.sticks,
 		}
 		shot.tied, shot.box = ledge.box.tied, ledge.box.count:GetText()
 		shot.tally = ledge.plate.counts:GetText()
@@ -167,6 +161,15 @@ function ns.BoardSnapshot(frame)
 	local spike = frame.parts.spike --[[@as TackleSpikeFrame]]
 	if spike.label then
 		shot.spike = spike.label:GetText()
+	end
+	-- the done goals whose slip hangs on the spike
+	local goals = ns.State().goals
+	for _, slip in ipairs(spike.slips or {}) do
+		local id = slip:IsShown() and slip.view and slip.view.id
+		local goal = id and goals[id]
+		if goal and goal.doneDay ~= nil then
+			shot.hung[id] = true
+		end
 	end
 	return shot
 end
@@ -243,7 +246,7 @@ local function goalDone(frame, slot, hung, before, after)
 		-- The DONE stamp lands (0 to 0.32 s), cubic-bezier(.3, 1.6, .5, 1).
 		{
 			dur = 0.32,
-			ease = ns.Bezier(0.3, 1.6, 0.5, 1),
+			ease = Pagle.Bezier(0.3, 1.6, 0.5, 1),
 			keys = { { 0, { 2.4, 0 } }, { 0.8, { 0.95, 0.95 } }, { 1, { 1, 0.9 } } },
 			apply = function(v)
 				growAt(stamp, slip, stampAt[1], stampAt[2], v[1])
@@ -253,7 +256,7 @@ local function goalDone(frame, slot, hung, before, after)
 		-- Unpinned: its tacks lift off (0.55 to 0.7 s).
 		{
 			dur = 0.7,
-			ease = ns.Ease.out,
+			ease = Pagle.EASE.out,
 			keys = { { 0, { 0, 1 } }, { 0.78, { 0, 1 } }, { 1, { -8, 0 } } },
 			apply = function(v)
 				for i, tack in ipairs(slip.tacks) do
@@ -265,7 +268,7 @@ local function goalDone(frame, slot, hung, before, after)
 		-- It flies to the spike (0.65 to 1.3 s), shrinking to the done slip's size and turning to hang, ease-in-out.
 		{
 			dur = 1.4,
-			ease = ns.Ease.inOut,
+			ease = Pagle.EASE.inOut,
 			keys = {
 				{ 0, { 0, 0, 1, lean, 1 } },
 				{ 0.46, { 0, -6, 1.03, lean, 1 } },
@@ -287,10 +290,10 @@ local function goalDone(frame, slot, hung, before, after)
 	end)
 	-- It lands: its slip shows on the spike over the others, under the nail (1.3 s).
 	at(settle, hung, LANDS, function()
-		ns.Animate(hung, {
+		Pagle.Animate(hung, {
 			{
 				dur = 0.2,
-				ease = ns.Ease.out,
+				ease = Pagle.EASE.out,
 				keys = { { 0, { 0 } }, { 1, { 1 } } },
 				apply = function(v)
 					hung:SetAlpha(v[1])
@@ -302,10 +305,10 @@ local function goalDone(frame, slot, hung, before, after)
 	end)
 	-- The empty pin fades in where it hung (1.5 to 1.9 s).
 	at(settle, slot.empty, EMPTY_FADES, function()
-		ns.Animate(slot.empty, {
+		Pagle.Animate(slot.empty, {
 			{
 				dur = 0.4,
-				ease = ns.Ease.out,
+				ease = Pagle.EASE.out,
 				keys = { { 0, { 0 } }, { 1, { 1 } } },
 				apply = function(v)
 					slot.empty:SetAlpha(v[1])
@@ -344,7 +347,7 @@ local function freshGoal(slot, sound)
 	play(slot, FRESH_ENDS, {
 		{
 			dur = 0.25,
-			ease = ns.Ease.out,
+			ease = Pagle.EASE.out,
 			keys = { { 0, { 1 } }, { 1, { 0 } } },
 			apply = function(v)
 				empty:SetAlpha(v[1])
@@ -353,7 +356,7 @@ local function freshGoal(slot, sound)
 		-- It drops onto the cork (0.1 to 0.45 s), cubic-bezier(.3, 1.4, .5, 1).
 		{
 			dur = 0.45,
-			ease = ns.Bezier(0.3, 1.4, 0.5, 1),
+			ease = Pagle.Bezier(0.3, 1.4, 0.5, 1),
 			keys = { { 0, { -30, 1.08, 0, 0 } }, { 0.22, { -30, 1.08, 0, 0 } }, { 1, { 0, 1, 1, slip.lean } } },
 			apply = function(v)
 				local s = v[2]
@@ -367,7 +370,7 @@ local function freshGoal(slot, sound)
 		-- And its tacks are pressed in (0.45 to 0.6 s).
 		{
 			dur = 0.6,
-			ease = ns.Ease.out,
+			ease = Pagle.EASE.out,
 			keys = { { 0, { 2, 0 } }, { 0.75, { 2, 0 } }, { 1, { 1, 1 } } },
 			apply = function(v)
 				for i, tack in ipairs(slip.tacks) do
@@ -397,7 +400,7 @@ local function inked(slot, from, to)
 	play(slot, 0.6, {
 		{
 			dur = 0.3,
-			ease = ns.Ease.out,
+			ease = Pagle.EASE.out,
 			keys = { { 0, { 0.3 } }, { 1, { 1 } } },
 			apply = function(v)
 				slip.progress:SetAlpha(v[1])
@@ -405,7 +408,7 @@ local function inked(slot, from, to)
 		},
 		{
 			dur = 0.6,
-			ease = ns.Ease.out,
+			ease = Pagle.EASE.out,
 			keys = { { 0, { from } }, { 1, { to } } },
 			apply = function(v)
 				bar:SetBar(width, v[1])
@@ -459,7 +462,7 @@ local function fireUp(frame, fire, from)
 	play(fire, 1.2, {
 		{
 			dur = 0.45,
-			ease = ns.Ease.inOut,
+			ease = Pagle.EASE.inOut,
 			keys = { { 0, { 1 } }, { 0.22, { 1 } }, { 1, { 0 } } },
 			apply = function(v)
 				for _, layer in pairs(ghost.layers) do
@@ -469,7 +472,7 @@ local function fireUp(frame, fire, from)
 		},
 		{
 			dur = 0.4,
-			ease = ns.Ease.out,
+			ease = Pagle.EASE.out,
 			keys = { { 0, { 0 } }, { 1, { 1 } } },
 			apply = function(v)
 				for _, layer in pairs(burning.layers) do
@@ -479,7 +482,7 @@ local function fireUp(frame, fire, from)
 		},
 		{
 			dur = 0.9,
-			ease = ns.Bezier(0.3, 1.5, 0.5, 1),
+			ease = Pagle.Bezier(0.3, 1.5, 0.5, 1),
 			keys = { { 0, { 0.6 } }, { 1, { 1 } } },
 			apply = function(v)
 				burning.pop = v[1]
@@ -487,7 +490,7 @@ local function fireUp(frame, fire, from)
 		},
 		{
 			dur = 1.2,
-			ease = ns.Ease.inOut,
+			ease = Pagle.EASE.inOut,
 			keys = { { 0, { 1, 1 } }, { 0.35, { 1.5, 1.6 } }, { 1, { 1, 1 } } },
 			apply = function(v)
 				local box = fire.glow.box
@@ -525,7 +528,7 @@ local function fireOut(frame, fire, from, before)
 	fire.ghostMotion = flicker
 	local function settle()
 		goneOut()
-		ns.StopMotion(flicker)
+		Pagle.StopMotion(flicker)
 		bury(ghost)
 		for _, layer in pairs(burning.layers) do
 			layer:SetAlpha(1)
@@ -533,12 +536,11 @@ local function fireOut(frame, fire, from, before)
 		fire.glow:Hide()
 		frame.glow:Hide()
 	end
-	ns.motion = true
 	ns.FireMotion(flicker, ghost)
 	play(fire, 1.6, {
 		{
 			dur = 1.2,
-			ease = ns.Bezier(0.42, 0, 1, 1),
+			ease = Pagle.Bezier(0.42, 0, 1, 1),
 			keys = { { 0, { 1, 1 } }, { 1, { 0.15, 0 } } },
 			apply = function(v)
 				ghost.pop = v[1]
@@ -551,7 +553,7 @@ local function fireOut(frame, fire, from, before)
 		},
 		{
 			dur = 1.6,
-			ease = ns.Ease.inOut,
+			ease = Pagle.EASE.inOut,
 			keys = { { 0, { 1, 0 } }, { 0.4, { 1, 0 } }, { 1, { 0, 1 } } },
 			apply = function(v)
 				for suffix, layer in pairs(ghost.layers) do
@@ -580,7 +582,7 @@ local function kindlingBurns(fire, stick)
 	play(fire, 0.9, {
 		{
 			dur = 0.9,
-			ease = ns.Ease.inOut,
+			ease = Pagle.EASE.inOut,
 			keys = {
 				{ 0, { 1, 1, 1, 1 } },
 				{ 0.25, { 1, 0.62, 0.3, 1 } },
@@ -626,17 +628,17 @@ local function boxHops(ledge, from, delay, sound)
 		if sound then
 			ns.BoardSound("flyTied")
 		end
-		ns.Animate(box, {
+		Pagle.Animate(box, {
 			{
 				dur = 0.5,
-				ease = ns.Ease.out,
+				ease = Pagle.EASE.out,
 				keys = { { 0, { 0 } }, { 0.2, { -4 } }, { 0.4, { 0 } }, { 0.6, { -2 } }, { 0.8, { 0 } }, { 1, { 0 } } },
 				apply = function(v)
 					place(v[1])
 				end,
 			},
 		})
-		ns.Cue(box, 0.15, tick)
+		Pagle.Cue(box, 0.15, tick)
 	end)
 end
 
@@ -659,7 +661,7 @@ local function flySettles(cell)
 	play(cell, 1.2, {
 		{
 			dur = 0.6,
-			ease = ns.Bezier(0.3, 1.5, 0.5, 1),
+			ease = Pagle.Bezier(0.3, 1.5, 0.5, 1),
 			keys = { { 0, { 1.5, 0.22 } }, { 1, { 1, 1 } } },
 			apply = function(v)
 				growAt(fly, cell, cx, cy, v[1])
@@ -668,7 +670,7 @@ local function flySettles(cell)
 		},
 		{
 			dur = 0.6,
-			ease = ns.Ease.inOut,
+			ease = Pagle.EASE.inOut,
 			iter = 2,
 			dir = "alternate",
 			keys = { { 0, { 0 } }, { 1, { 1 } } },
@@ -678,7 +680,7 @@ local function flySettles(cell)
 		},
 		{
 			dur = 0.4,
-			ease = ns.Ease.out,
+			ease = Pagle.EASE.out,
 			keys = { { 0, { 0 } }, { 1, { 1 } } },
 			apply = function(v)
 				cell.label:SetAlpha(v[1])
@@ -707,79 +709,37 @@ local function hungSlip(spike, goalID)
 end
 
 --- Plays what changed on the board since `before` (ns.BoardSnapshot), over what the draw just drew: adapter/Board.lua
---- calls it after each draw of an open, started board that isn't updating, but the one that opens it. With Core's
---- Animations setting off no moment plays, but each one's sound marks it all the same (the beats of the motion aside).
+--- calls it after each draw of an open, started board that isn't updating, but the one that opens it. Which moments and
+--- sounds play is ns.BoardChanges's (logic/BoardChanges.lua): with Core's Animations setting off no moment plays, but
+--- each one's sound marks it all the same (the beats of the motion aside).
 ---@param frame TackleBoardFrame
 ---@param before TackleBoardShot
 function ns.PlayBoardChanges(frame, before)
-	local moving = ns.AnimationsOn()
-	local after = ns.BoardSnapshot(frame)
-	local state = ns.State()
 	local spike = frame.parts.spike --[[@as TackleSpikeFrame]]
-	local landed, pinned = false, false
-	for slot, was in pairs(before.pins) do
-		local now = after.pins[slot]
-		if was.id and now.id == nil and not slot.busy then
-			local goal = state.goals[was.id]
-			local hung = goal and goal.doneDay ~= nil and hungSlip(spike, was.id)
-			if hung then
-				if not landed then
-					ns.BoardSound("noticeDone")
-				end
-				landed = true
-				if moving then
-					goalDone(frame, slot, hung, before, after)
-				end
-			end
-		elseif moving and now.id and now.id ~= was.id then
-			freshGoal(slot, not pinned)
-			pinned = true
-		elseif moving and now.id and was.fill and now.fill ~= was.fill then
-			inked(slot, was.fill, now.fill --[[@as number]])
-		end
-	end
-
 	local ledge = frame.parts.ledge --[[@as TackleLedgeFrame]]
-	local fire, was = ledge.fire, before.fire
-	if not (fire and was and fire.view) then
-		return
-	end
-	local view = fire.view --[[@as TackleCampfireView]]
-	if view.state == "lit" and was.stage and was.stage ~= fire.burning.stage then
-		ns.BoardSound("fireUp")
-		if moving then
-			fireUp(frame, fire, was.stage)
+	local fire = ledge.fire
+	local after = ns.BoardSnapshot(frame)
+	for _, moment in ipairs(ns.BoardChanges(before, after, ns.MotionOn())) do
+		if moment.sound then
+			ns.BoardSound(moment.sound)
 		end
-	elseif view.state == "out" and was.state == "lit" and was.stage then
-		ns.BoardSound("fireOut")
-		if moving then
-			fireOut(frame, fire, was.stage, before)
-		end
-	elseif view.state == "lit" and was.kindling and view.kindling < was.kindling then
-		ns.BoardSound("kindling")
-		for i = view.kindling + 1, math.min(was.kindling, #fire.sticks) do
-			if moving then
-				kindlingBurns(fire, fire.sticks[i])
-			end
-		end
-	end
-	local tied = ledge.box.tied
-	if before.tied and tied and tied > before.tied then
-		local drawer = ledge.drawer
-		local inDrawer = before.cells ~= nil and drawer ~= nil and drawer:IsShown()
-		if inDrawer or not moving then
-			ns.BoardSound("flyTied")
-		end
-		local cells = before.cells
-		if moving and inDrawer and drawer and cells then
-			for i, cell in ipairs(drawer.cells) do
-				if cell.cell and cell.cell.tied and not cells[i] then
-					flySettles(cell)
-				end
-			end
-		end
-		if moving then
-			boxHops(ledge, before.box or "", landed and HOP_AFTER_DONE or 0, not inDrawer)
+		local kind = moment.kind
+		if kind == "goalDone" then
+			goalDone(frame, moment.slot, hungSlip(spike, moment.goalID) --[[@as TackleSpikedSlip]], before, after)
+		elseif kind == "freshGoal" then
+			freshGoal(moment.slot, moment.tack == true)
+		elseif kind == "inked" then
+			inked(moment.slot, moment.from, moment.to --[[@as number]])
+		elseif kind == "fireUp" and fire then
+			fireUp(frame, fire, moment.from)
+		elseif kind == "fireOut" and fire then
+			fireOut(frame, fire, moment.from, before)
+		elseif kind == "kindlingBurns" and fire then
+			kindlingBurns(fire, fire.sticks[moment.stick])
+		elseif kind == "flySettles" and ledge.drawer then
+			flySettles(ledge.drawer.cells[moment.cell])
+		elseif kind == "boxHops" then
+			boxHops(ledge, moment.from, moment.afterDone and HOP_AFTER_DONE or 0, moment.flyTied == true)
 		end
 	end
 end

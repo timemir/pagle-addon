@@ -367,15 +367,18 @@ end
 
 --- Pagle_TackleBoard on a fake whose log holds `records`, its client knowing `options.names` (`areas` and `items`, by
 --- ID), logged in, its projection built and, with `options.step`, the login's live step run; then its board open.
---- `options.load` goes to support.load.
+--- `options.load` goes to support.load; `options.motion` false turns Core's Animations setting off from the start.
 ---@param records table[]
----@param options { names: { areas: table<integer, string>?, items: table<integer, string>? }?, step: boolean?, load: table? }?
+---@param options { names: { areas: table<integer, string>?, items: table<integer, string>? }?, step: boolean?, load: table?, motion: boolean? }?
 ---@return LoadedAddon loaded
 ---@return table fake
 ---@return table frame the board's frame (ns.board.frame)
 function support.opened(records, options)
 	options = options or {}
 	local fake = support.withHistory(records)
+	if options.motion == false then
+		fake.profile.announcements.motion = false
+	end
 	local loaded = support.load(fake, options.load)
 	local names = options.names or {}
 	for id, name in pairs(names.areas or {}) do

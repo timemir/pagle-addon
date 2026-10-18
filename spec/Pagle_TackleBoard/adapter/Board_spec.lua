@@ -172,7 +172,7 @@ describe("the Tackle Board's frame (TKB-R100)", function()
 		local loaded, _, tackle = loggedIn()
 		tackle:Toggle()
 		local frame = tackle.frame
-		-- The kit's fit (adapter/Fit.lua): its centre 10 under the screen's, with the plaque over its top edge.
+		-- Core's fit (Pagle.FitToScreen): its centre 10 under the screen's, with the plaque over its top edge.
 		local centred = { { "CENTER", loaded.env.UIParent, "CENTER", 0, -10 } }
 		assert.are.same(centred, frame.points)
 

@@ -18,8 +18,8 @@ local FRAME_NAME = "PagleTackleBoard"
 -- The kit's board: 1000 × 660, the cork 952 × 466 inside the frame's leather, the ledge under it from 500 down.
 local WIDTH, HEIGHT = 1000, 660
 -- What the board fits to the screen (the kit's): its whole extent with the plaque over its top edge, and how far its
--- centre sits under the screen's.
-local FIT_WIDTH, FIT_HEIGHT, FIT_DOWN = 1010, 690, -10
+-- centre sits above the screen's (under it, 10).
+local FIT_WIDTH, FIT_HEIGHT, FIT_LIFT = 1010, 690, -10
 local CORK_X, CORK_Y, CORK_WIDTH, CORK_HEIGHT = 24, 34, 952, 466
 local LEDGE_Y = 500
 local LEDGE_HEIGHT = HEIGHT - LEDGE_Y
@@ -75,6 +75,7 @@ local GLOW_EMPTY = 0.25
 ---@class TackleBoard
 ---@field parts TackleBoardParts
 ---@field frame TackleBoardFrame?
+---@field opening boolean?                        -- Open is showing the board, and draws it itself
 local Board = {}
 Board.__index = Board
 
@@ -249,6 +250,13 @@ local function build(board)
 			ns.BoardSound("boardClose")
 		end
 	end)
+	-- Shown again with the whole UI, it draws as it does at its opening, silently, so its loops start again (Core's
+	-- driver settled them as it hid) and no moment plays for what changed while it was hidden.
+	frame:SetScript("OnShow", function()
+		if not board.opening then
+			board:Draw("open")
+		end
+	end)
 	return frame
 end
 
@@ -275,10 +283,12 @@ function Board:Open(goalID)
 	local frame = self.frame or build(self)
 	self.frame = frame
 	if not frame:IsShown() then
-		-- The kit's fit (adapter/Fit.lua): the board and the plaque over its top edge, its centre 10 under the screen's;
-		-- it fits again when the UI scale or the window changes.
-		ns.FitToScreen(frame, FIT_WIDTH, FIT_HEIGHT, FIT_DOWN)
+		-- Core's fit (core/README.md › Pagle.FitToScreen): the board and the plaque over its top edge, its centre 10
+		-- under the screen's; it fits again when the UI scale or the window changes.
+		Pagle.FitToScreen(frame, { width = FIT_WIDTH, height = FIT_HEIGHT, lift = FIT_LIFT })
+		self.opening = true
 		frame:Show()
+		self.opening = false
 		-- Sounded here, once per opening: the kit's probe sounded it at every start of the motion, so twice.
 		ns.BoardSound("boardOpen")
 	end

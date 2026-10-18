@@ -30,7 +30,7 @@ ns.BOARD_SOUNDS = {
 ---@param event string a key of ns.BOARD_SOUNDS
 ---@param beat boolean?
 function ns.BoardSound(event, beat)
-	if beat and not ns.AnimationsOn() then
+	if beat and not ns.MotionOn() then
 		return
 	end
 	PlaySound(ns.BOARD_SOUNDS[event], "SFX")

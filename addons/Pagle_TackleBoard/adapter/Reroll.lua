@@ -40,7 +40,7 @@ local holdsBoardEsc, listedAlone = false, false
 local function renameSpecial(from, to)
 	for index, name in ipairs(UISpecialFrames) do
 		if name == from then
-			UISpecialFrames[index] = to
+			UISpecialFrames[index] = to -- luacheck: ignore 122 (the client's own table, renamed in place)
 			return true
 		end
 	end

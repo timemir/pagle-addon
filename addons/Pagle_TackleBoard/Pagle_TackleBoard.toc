@@ -27,12 +27,11 @@ logic\Completions.lua
 logic\Pins.lua
 logic\Reroll.lua
 logic\Ledge.lua
+logic\BoardChanges.lua
 logic\Moments.lua
 logic\Goods.lua
 logic\Tracker.lua
 adapter\Client.lua
-adapter\Motion.lua
-adapter\Fit.lua
 adapter\BoardArt.lua
 adapter\BoardMotion.lua
 adapter\BoardSound.lua
