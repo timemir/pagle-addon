@@ -462,7 +462,7 @@ local function layChip(chip, kind)
 end
 
 -- The "overflow" part (TKB-R101): the open goals with no pin, by seq, clipped to a twine under the Notice rows; past
--- 4, the last chip counts the rest.
+-- 4, the last chip counts the rest. With none, the strip and its twine don't show: the rows spread out over its place.
 ---@param frame TackleOverflowFrame
 ---@param draw TackleBoardDraw
 local function drawOverflow(frame, draw)
@@ -471,6 +471,7 @@ local function drawOverflow(frame, draw)
 		twine(frame)
 	end
 	local goals = ns.PinLayout(ns.State(), ns.api).overflow
+	frame:SetShown(#goals > 0)
 	local view = viewer(draw)
 	local shown = #goals > CHIPS and CHIPS - 1 or #goals
 	local x = 20

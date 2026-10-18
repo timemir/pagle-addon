@@ -153,6 +153,14 @@ describe("a started board's pins (TKB-R101, TKB-R102)", function()
 		assert.are.same({ "TOPLEFT", frame.parts.pins, "TOPLEFT", 26, -8 }, expedition(frame, 1).points[1])
 	end)
 
+	it("draws no overflow strip, nor its twine over the bottom row, while every goal has a pin (TKB-R101)", function()
+		local loaded, _, frame = opened(startedLog(EXPEDITION, QUALITY, QUALITY, QUALITY, QUALITY, QUALITY, QUALITY))
+
+		assert.is_false(frame.parts.overflow:IsShown())
+		loaded.ns.Redraw("projection")
+		assert.is_false(frame.parts.overflow:IsShown())
+	end)
+
 	it("hangs a goal with no empty pin in the overflow strip", function()
 		local _, _, frame = opened(startedLog(EXPEDITION, QUALITY, QUALITY, QUALITY, QUALITY, QUALITY, QUALITY, LURE))
 
