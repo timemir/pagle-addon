@@ -1,11 +1,13 @@
 # Runs the check gate, scripts/check.sh, and the release zip check, scripts/package.sh, on every push and pull
 # request: the same scripts, setup and pins as local WSL. Tool versions come only from scripts/tools.env; this
-# file names none. Every stage check.sh grows runs here without touching this file.
+# file names none. Every stage check.sh grows runs here without touching this file. The gate's own regression test,
+# scripts/test-check.sh, runs in a job of its own, test-check, when the gate's machinery changes, or on a manual run.
 name: Check
 
 on:
   push:
   pull_request:
+  workflow_dispatch: # runs test-check whatever changed
 
 permissions:
   contents: read
@@ -70,6 +72,76 @@ jobs:
           fi
           bash scripts/package.sh
 
-      # The gate's own regression test: each planted mistake must fail at the stage meant to catch it.
+  # The gate's own regression test, scripts/test-check.sh: each planted mistake must fail at the stage meant to catch
+  # it. It runs the gate some fifty times, so only when what it tests changes: the gate's scripts, this workflow, the
+  # tool configs, the type stubs and spec/support/. The job runs and passes either way, so a required check never
+  # waits on it; with none of those changed it stops after its first step.
+  test-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # the changed files are a diff against the push's or the pull request's base
+
+      # Any doubt (a new branch with no main to diff against, a force push whose old head is gone) runs it.
+      - name: Find whether the gate's machinery changed
+        id: changes
+        env:
+          EVENT: ${{ github.event_name }}
+          BEFORE: ${{ github.event.before }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          machinery='^(scripts/|\.github/|spec/support/|types/|\.luacheckrc$|\.luarc\.json$|\.stylua\.toml$|\.styluaignore$|\.luacov$|\.busted$)'
+          base=
+          case $EVENT in
+          pull_request) base=$PR_BASE ;;
+          push)
+            if [[ -n $BEFORE && ! $BEFORE =~ ^0+$ ]] && git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+              base=$BEFORE
+            else
+              base=$(git merge-base HEAD origin/main 2>/dev/null) || base=
+            fi
+            ;;
+          esac
+          if [[ -z $base ]] || ! changed=$(git diff --name-only "$base" HEAD); then
+            echo "test-check: a $EVENT run with no base to diff against; running it"
+            run=true
+          elif matched=$(grep -E "$machinery" <<<"$changed"); then
+            echo "test-check: the gate's machinery changed since ${base:0:12}; running it:"
+            echo "$matched"
+            run=true
+          else
+            echo "test-check: nothing of the gate's machinery changed since ${base:0:12}; skipping it"
+            run=false
+          fi
+          echo "run=$run" >>"$GITHUB_OUTPUT"
+
+      - name: Install setup prerequisites
+        if: steps.changes.outputs.run == 'true'
+        run: |
+          source scripts/tools.env
+          missing=()
+          for pkg in $SETUP_APT_PACKAGES; do
+            dpkg -s "$pkg" >/dev/null 2>&1 || missing+=("$pkg")
+          done
+          if ((${#missing[@]})); then
+            sudo apt-get update
+            sudo apt-get install -y --no-install-recommends "${missing[@]}"
+          fi
+
+      # The check job saves .tools/ under the same key.
+      - uses: actions/cache/restore@v6
+        if: steps.changes.outputs.run == 'true'
+        with:
+          path: .tools
+          key: tools-${{ runner.os }}-${{ hashFiles('scripts/setup.sh') }}-${{ hashFiles('scripts/tools.env') }}
+          restore-keys: tools-${{ runner.os }}-${{ hashFiles('scripts/setup.sh') }}-
+
+      - name: Set up the pinned tools
+        if: steps.changes.outputs.run == 'true'
+        run: bash scripts/setup.sh
+
       - name: Test the check gate
+        if: steps.changes.outputs.run == 'true'
         run: bash scripts/test-check.sh
