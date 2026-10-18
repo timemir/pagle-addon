@@ -5,7 +5,8 @@
 -- with the game fully closed.
 --
 --   lua scripts/make-test-log.lua --account <WTF/Account/<ACCT> folder>
---       --preset <level10|level60|catches1000|boardday|big5|big20> [--out <folder>] [--catalogue <Catalogue.lua>]
+--       --preset <level10|level60|catches1000|boardday|big5|big20|showcase> [--out <folder>]
+--       [--catalogue <Catalogue.lua>]
 --   lua scripts/make-test-log.lua --account <folder> --install [--out <folder>]
 --   lua scripts/make-test-log.lua --account <folder> --restore [--out <folder>]
 --
@@ -33,6 +34,15 @@
 -- codec, sessions of every character in turn, in each charted zone in turn, over several months up to an hour
 -- before the run, one Cast in BIG_AWAY got away. They're checked by decoding, not folded: no level to land.
 --
+-- showcase writes as much as the books can show at once, for an in-game look-and-feel check: a Tackle Board started
+-- SHOWCASE_LIT + #SHOWCASE_UNLIT - 1 board days before its last lit day (today's, or yesterday's when today's began
+-- too late), on the dev's reset time as boardday takes it. Each lit day the live step's records come first (`start`
+-- or `day`, the goals owed, each drawn by the board's own logic/Generate.lua until it is one Casts can complete), then
+-- the Casts that complete its Notices and work its Expedition, and a session in the next zone in turn; the unlit days
+-- hold nothing, so each burns a Kindling. A Prestige entry follows the day the climb reaches 60. Folded with the
+-- Ledger's and the Tackle Board's own logic/, it is written only when the Campfire is at least SHOWCASE_FIRE days, the
+-- last lit day is the board's day, Kindling is held and SHOWCASE_COINS Coins are earned in all.
+--
 -- --install copies the newest stage's Pagle.lua into the account's SavedVariables, only when the account's Pagle.lua
 -- is the one backed up or another test log made here (a boardday one only before its board day ends, as the next
 -- reset would close day 2 unlit too). --restore puts back the backup of the stage whose test log is
@@ -43,7 +53,7 @@
 -- precompiled chunks are refused. Exits 2 on a usage error, 1 when it refuses (nothing is changed then), else 0.
 
 local USAGE = "usage: lua scripts/make-test-log.lua --account <WTF/Account/<ACCT> folder>"
-	.. " (--preset <level10|level60|catches1000|boardday|big5|big20> [--catalogue <Catalogue.lua>] | --install"
+	.. " (--preset <level10|level60|catches1000|boardday|big5|big20|showcase> [--catalogue <Catalogue.lua>] | --install"
 	.. " | --restore)"
 	.. " [--out <folder>]\n"
 
@@ -108,8 +118,10 @@ local PRESETS = {
 	-- #262: launch re-verification checks 2 and 10 (roadmap.md › Launch re-verification checklist).
 	big5 = { bytes = 5 * MIB, checks = "M8 launch re-verification checks 2 and 10" },
 	big20 = { bytes = 20 * MIB, checks = "M8 launch re-verification checks 2 and 10" },
+	-- The in-game look-and-feel check: a lit Campfire of SHOWCASE_FIRE days or more and Coins to spend.
+	showcase = { showcase = true, checks = "the in-game look-and-feel check" },
 }
-local PRESET_NAMES = { "level10", "level60", "catches1000", "boardday", "big5", "big20" }
+local PRESET_NAMES = { "level10", "level60", "catches1000", "boardday", "big5", "big20", "showcase" }
 
 -- boardday's board: day 0 is BOARD_DAYS board days before the dev's current one, and its `start` record is
 -- BOARD_START_OFFSET seconds into it, its goals' `issue` records at the same time and the Casts from a minute after.
@@ -117,6 +129,29 @@ local BOARD_DAYS, BOARD_START_OFFSET = 2, 3600
 
 -- How old the dev's latest `start` or `day` record may be: its reset time of day is taken as the realm's now.
 local BOARD_BOUNDARY_MAX_AGE = 7 * 86400
+
+-- showcase's board: SHOWCASE_LIT lit days, the last today's (or yesterday's, when today's board day began less than
+-- SHOWCASE_TODAY before the run), and an unlit day each SHOWCASE_UNLIT board days before it, so day 0 is
+-- SHOWCASE_LIT + #SHOWCASE_UNLIT - 1 days before the last lit one. Each unlit day burns a Kindling (TKB-R72): they're at
+-- least 7 lit days apart, so a Kindling earned between them (TKB-R70) keeps the fire from going out, and three fall
+-- in the four weeks the Campfire card shows (TKB-R106). The 100-day milestone falls in those weeks too (TKB-R73).
+local SHOWCASE_LIT, SHOWCASE_UNLIT, SHOWCASE_TODAY = 104, { 5, 13, 22, 47, 81 }, 3600
+-- What the fold must reach: a Campfire of SHOWCASE_FIRE days or more (its 100-day step) and SHOWCASE_COINS Coins in
+-- all, several tier-3 goods (900 each, SHOP-R22).
+local SHOWCASE_FIRE, SHOWCASE_COINS = 100, 5000
+-- A lit day's play: at most SHOWCASE_NOTICES Notices completed and SHOWCASE_EXPEDITION_CASTS Casts toward each open
+-- Expedition, a goal given up for the day after SHOWCASE_GOAL_CASTS Casts (a Size goal waits on its bands), then a
+-- session of SHOWCASE_EXPLORE Casts in the next charted zone in turn, so every zone's list is fished in time. Today
+-- completes one Notice only, its Casts ending SHOWCASE_TODAY_END before the run.
+local SHOWCASE_NOTICES, SHOWCASE_EXPEDITION_CASTS, SHOWCASE_GOAL_CASTS = 3, 60, 300
+local SHOWCASE_EXPLORE, SHOWCASE_TODAY_END = 30, 600
+-- The generator is drawn again, at most SHOWCASE_DRAWS times, until it hands out a goal the test Casts can complete:
+-- they catch no container (a Collector Notice's half) and only Species, junk and trophies on the lists. When every
+-- kind they can complete is open already, the generator offers only the others (TKB-R32), and the last draw is
+-- issued: it stays open, as a goal no Catch moves on does in play, until the dev takes it down.
+local SHOWCASE_DRAWS = 50
+-- The lure a Lure Notice's Casts carry (their snapshot's `lure`, LOG-R47) when the dev's own Casts never had one.
+local SHOWCASE_LURE = 263
 
 -- boardday's goals, in issuing order (TKB-R21: the Expedition, then the Notices), as generation would stamp them
 -- (TKB-R34's needs and pays, read from the board's own logic/Generate.lua and logic/Rewards.lua): `zone` is the Haul
@@ -342,7 +377,7 @@ end
 
 -- What the test log takes from the dev's PagleLog, read with Core's codec: the character of the last Cast and
 -- its Skill Reading, the last build, each character's last Skill Reading, the charted zones fished (the latest
--- first), the uiMapID seen in each zone and the realm's UTC offset (LOG-R49).
+-- first), the uiMapID seen in each zone, the latest lure on and the realm's UTC offset (LOG-R49).
 local function readRealLog(game, log)
 	local global = { decodeErrors = 0 }
 	local facts = { skills = {}, uiMaps = {}, fished = {}, offset = 0 }
@@ -373,6 +408,9 @@ local function readRealLog(game, log)
 			facts.fished[#facts.fished + 1] = c.zone
 		end
 		facts.uiMaps[c.zone] = facts.uiMaps[c.zone] or c.uiMap
+		if c.lure and c.lure ~= 0 then
+			facts.lure = facts.lure or c.lure
+		end
 		if c.minute and not facts.offsetSet then
 			facts.offset, facts.offsetSet = game.ledger.RealmOffset(casts[i].time, c.minute), true
 		end
@@ -1010,6 +1048,574 @@ local function bigNote(devOn)
 	end
 end
 
+-- The showcase -----------------------------------------------------------------------------------------------------
+
+-- What a showcase's Casts can catch: the `catchable` pairs, by zone and in all, and the zones in their order.
+local function showcasePairs(game, facts)
+	local byZone, zones, all = {}, {}, catchable(game, facts)
+	for _, pair in ipairs(all) do
+		if not byZone[pair.zone] then
+			byZone[pair.zone] = {}
+			zones[#zones + 1] = pair.zone
+		end
+		local list = byZone[pair.zone]
+		list[#list + 1] = pair
+	end
+	if #zones == 0 then
+		refuse("no charted zone lists an ordinary Species, junk or trophy item to catch; nothing written")
+	end
+	return { byZone = byZone, zones = zones, all = all }
+end
+
+-- The `pairs` whose item passes `test(item, pair)`.
+local function pairsWhere(game, pairs, test)
+	local found = {}
+	for _, pair in ipairs(pairs) do
+		if test(game.catalogue.GetItem(pair.itemID), pair) then
+			found[#found + 1] = pair
+		end
+	end
+	return found
+end
+
+-- The Species IDs a Variety Expedition stores: its representative items' (TKB-R31, TKB-R44).
+local function storedSpecies(game, def)
+	local stored = {}
+	for _, itemID in ipairs(def.items or {}) do
+		local item = game.catalogue.GetItem(itemID)
+		if item and item.species then
+			stored[item.species] = true
+		end
+	end
+	return stored
+end
+
+-- The pairs that move goal `goal` on (TKB-R42), counting only what it hasn't seen yet for a distinct-count kind; an
+-- empty list when no test Cast can. `caught` is the board's ever-caught set (TKB-R46).
+local function goalPairs(sim, goal, caught)
+	local game, kind, target, seen = sim.game, goal.kind, goal.target, goal.seen or {}
+	local catalogue = game.catalogue
+	if kind == "haul" then
+		return sim.pairs.byZone[target] or {}
+	elseif kind == "variety" then
+		local stored = goal.type == "e" and storedSpecies(game, goal)
+		return pairsWhere(game, sim.pairs.byZone[target] or {}, function(item)
+			return item.species ~= nil
+				and not item.noise
+				and not seen[item.species]
+				and (not stored or stored[item.species] == true)
+		end)
+	elseif kind == "wanderer" then
+		return pairsWhere(game, sim.pairs.all, function(_, pair)
+			local area = catalogue.GetArea(pair.zone)
+			return not seen[pair.zone] and (goal.type == "n" or (area and area.continent == target))
+		end)
+	elseif kind == "species" then
+		local representative = catalogue.GetItem(target)
+		return pairsWhere(game, sim.pairs.all, function(item)
+			return representative ~= nil and item.species ~= nil and item.species == representative.species
+		end)
+	elseif kind == "quality" then
+		return pairsWhere(game, sim.pairs.all, function(item)
+			return not item.noise and item.quality ~= nil and item.quality >= target
+		end)
+	elseif kind == "size" then
+		return pairsWhere(game, sim.pairs.all, function(item)
+			return item.species ~= nil and item.typicalLength ~= nil
+		end)
+	elseif kind == "lure" then
+		return sim.pairs.all
+	elseif kind == "collector" and goal.type == "e" then
+		local SUB = { junk = true, container = true, treasure = true, trophy = true }
+		local distinct, list = {}, {}
+		for _, pair in
+			ipairs(pairsWhere(game, sim.pairs.all, function(item, pair)
+				return SUB[item.category] == true and not item.noise and not item.removed and not caught[pair.itemID]
+			end))
+		do
+			if not distinct[pair.itemID] then
+				distinct[pair.itemID], list[#list + 1] = true, pair
+			end
+		end
+		return list
+	end
+	return {} -- a Collector Notice needs a container, which no test Cast catches
+end
+
+-- Whether the test Casts can complete a goal definition from nothing: enough distinct Species, zones or items for a
+-- distinct-count kind, and some pair for the others (a Size goal's bands come as the Catches are sized, LOG-R65).
+local function completable(sim, def)
+	local list = goalPairs(sim, def, sim.board.caught)
+	if def.kind == "lure" and not sim.lure then
+		return false
+	end
+	local distinct, n = {}, 0
+	for _, pair in ipairs(list) do
+		local item = sim.game.catalogue.GetItem(pair.itemID)
+		local key = def.kind == "variety" and item.species or def.kind == "wanderer" and pair.zone or pair.itemID
+		if not distinct[key] then
+			distinct[key], n = true, n + 1
+		end
+	end
+	local counted = def.kind == "variety" or def.kind == "wanderer" or def.kind == "collector"
+	return n > 0 and (not counted or n >= def.need)
+end
+
+-- The open goals in seq order, as generation reads them (TKB-R32, TKB-R33).
+local function openGoals(state)
+	local open = {}
+	for _, goal in pairs(state.goals) do
+		if goal.doneDay == nil then
+			open[#open + 1] = goal
+		end
+	end
+	table.sort(open, function(a, b)
+		return a.seq < b.seq
+	end)
+	return open
+end
+
+-- A goal of `goalType` the board's own generator draws at `time` (TKB-R30–R36), drawn again until the test Casts can
+-- complete it.
+local function drawGoal(sim, goalType, time)
+	local board, state = sim.boardNs, sim.board
+	local ctx = {
+		pagle = sim.game.catalogue,
+		bestBaseSkill = sim.bestSkill,
+		now = time,
+		zones = state.zones,
+		caught = state.caught,
+		open = openGoals(state),
+		random = math.random,
+	}
+	local def
+	for _ = 1, SHOWCASE_DRAWS do
+		def = board.GenerateGoal(ctx, goalType)
+		if completable(sim, def) then
+			return def
+		end
+	end
+	sim.stuck = sim.stuck + 1
+	return def
+end
+
+-- Appends a record and folds it into the showcase's running Ledger and Tackle Board states as the game folds the log:
+-- the Ledger every entry but Module records (LOG-R42), the board every entry and its own records (TKB-R81).
+local function showcaseAppend(sim, record)
+	local appended = sim.catchLog:Append(record)
+	sim.boardNs.ApplyEntry(sim.board, appended, "rebuild")
+	if appended.kind ~= "module" then
+		sim.fold.apply(sim.ledger, appended, "rebuild")
+	end
+	return appended
+end
+
+-- One Cast of `pair` at the showcase's clock, caught unless `away`, with the lure on for a Lure Notice; the clock
+-- moves a CAST_GAP.
+local function showcaseCast(sim, pair, lure, away)
+	local record = castRecord(sim.game, sim.facts, pair, sim.t)
+	if lure then
+		record.conditions.lure = sim.lure
+	end
+	if away then
+		record.outcome, record.items = "gotAway", {}
+	end
+	showcaseAppend(sim, record)
+	sim.casts, sim.t = sim.casts + 1, sim.t + CAST_GAP
+end
+
+-- Casts toward `goal` until it is done (or its progress reaches `upTo`, if given), `limit` Casts are made, no pair
+-- moves it on, or the clock reaches `before`.
+local function work(sim, goal, limit, before, upTo)
+	local n = 0
+	while goal.doneDay == nil and n < limit and sim.t < before and (not upTo or goal.progress < upTo) do
+		local list = goalPairs(sim, goal, sim.board.caught)
+		if #list == 0 then
+			break
+		end
+		sim.turn = sim.turn + 1
+		showcaseCast(sim, list[sim.turn % #list + 1], goal.kind == "lure")
+		n = n + 1
+	end
+	return goal.doneDay ~= nil
+end
+
+-- What a goal still needs on board day `day`: its need less its progress, which a day-bound goal starts again from 0
+-- on a new day (TKB-R41).
+local function remaining(board, goal, day)
+	local progress = board.IsDayBound(goal) and goal.progressDay ~= day and 0 or goal.progress
+	return goal.need - progress
+end
+
+-- One lit board day of the showcase, its abs-th by the real latest boundary `from`: the live step's records at login
+-- (TKB-R13: `start` on day 0, else `day`, then every goal owed, TKB-R21), the Prestige the climb has been ready for
+-- (LED-R33), then the Casts. Today completes the one open Notice nearest done; any other day up to
+-- SHOWCASE_NOTICES Notices, then each open Expedition's share, then a session in the day's zone.
+local function showcaseDay(sim, layout, k, isToday, now)
+	local board, game = sim.boardNs, sim.game
+	local abs = layout.first + k
+	local dayStart = board.DayStartOf(layout.from, abs)
+	local weekStart = layout.latest.weekStart + board.WeekOfDay(layout.from, abs) * board.WEEK_SECONDS
+	local login = isToday and math.max(dayStart + 120, now - SHOWCASE_TODAY + 600)
+		or dayStart + math.random(3600, 5 * 3600)
+	local before = isToday and now - SHOWCASE_TODAY_END or dayStart + board.DAY_SECONDS - 600
+	local boundary = board.EncodeBoundary(dayStart, weekStart)
+	showcaseAppend(sim, boardRecord(board, sim.facts, login, k == 0 and "start" or "day", boundary))
+	local owed = sim.board.owed
+	while owed.expeditions > 0 do
+		showcaseAppend(sim, boardRecord(board, sim.facts, login, "issue", board.EncodeIssue(drawGoal(sim, "e", login))))
+	end
+	while owed.notices > 0 do
+		showcaseAppend(sim, boardRecord(board, sim.facts, login, "issue", board.EncodeIssue(drawGoal(sim, "n", login))))
+	end
+	if sim.ledger.prestige == 0 and climb(game, sim.ledger) >= game.ledger.LEVEL_CAP then
+		showcaseAppend(sim, { kind = "prestige", char = sim.facts.char, time = login, rank = 1 })
+		sim.prestigeDay = k
+	end
+	sim.t = login + 60
+	local notices = {}
+	for _, goal in ipairs(board.BoardOrder(sim.board)) do
+		if goal.type == "n" and #goalPairs(sim, goal, sim.board.caught) > 0 then
+			notices[#notices + 1] = goal
+		end
+	end
+	if isToday then
+		-- The Notice nearest done, a Size Notice last: its Catches move it on only in their bands (TKB-R42).
+		local day = sim.board.day
+		table.sort(notices, function(a, b)
+			local left = remaining(board, a, day) + (a.kind == "size" and SHOWCASE_GOAL_CASTS or 0)
+			local right = remaining(board, b, day) + (b.kind == "size" and SHOWCASE_GOAL_CASTS or 0)
+			return left < right or left == right and a.seq < b.seq
+		end)
+		work(sim, notices[1] or {}, SHOWCASE_GOAL_CASTS, before)
+		return
+	end
+	local done = 0
+	for _, goal in ipairs(notices) do
+		if done < SHOWCASE_NOTICES and work(sim, goal, SHOWCASE_GOAL_CASTS, before) then
+			done = done + 1
+		end
+	end
+	-- The last lit day's week leaves its Expeditions half done, so the board shows one under way.
+	local lastWeek = board.WeekOfDay(layout.from, layout.first + layout.last)
+	local halfway = board.WeekOfDay(layout.from, abs) == lastWeek
+	for _, goal in ipairs(board.BoardOrder(sim.board)) do
+		if goal.type == "e" then
+			work(sim, goal, SHOWCASE_EXPEDITION_CASTS, before, halfway and math.floor(goal.need / 2) or nil)
+		end
+	end
+	-- The day's zone, its list fished on from where its last turn stopped; one Cast in BIG_AWAY got away.
+	sim.t = sim.t + math.random(1800, 5400)
+	local list = sim.pairs.byZone[sim.pairs.zones[k % #sim.pairs.zones + 1]]
+	for i = 1, SHOWCASE_EXPLORE do
+		if sim.t >= before then
+			break
+		end
+		local pair = list[(math.floor(k / #sim.pairs.zones) * SHOWCASE_EXPLORE + i - 1) % #list + 1]
+		showcaseCast(sim, pair, false, math.random(BIG_AWAY) == 1)
+	end
+end
+
+-- Plans showcase's board at server time `now` from the dev's latest boundary, as planBoard does (TKB-R10–R12): today
+-- by its reset time of day, the last lit day today's or, when today's board day began less than SHOWCASE_TODAY ago,
+-- yesterday's, and day 0 SHOWCASE_LIT + #SHOWCASE_UNLIT - 1 days before it.
+local function planShowcase(game, board, log, now)
+	local latest = latestBoundary(game, board, log)
+	if not latest then
+		refuse(
+			"PagleLog has no Tackle Board start or day record, so there's no reset time to take: start the board,"
+				.. " quit, then run this again; nothing written"
+		)
+	end
+	if now - latest.dayStart > BOARD_BOUNDARY_MAX_AGE then
+		refuse(
+			("the board's latest boundary, the %s record at seq %d (day began %s), is older than a week: log in once"):format(
+				latest.kind,
+				latest.seq,
+				utc(latest.dayStart)
+			) .. " with the board started, so its live step writes a day record, then quit; nothing written"
+		)
+	end
+	local from = { day = 0, week = 0, dayStart = latest.dayStart, weekStart = latest.weekStart }
+	local today = board.DayOf(from, now) --[[@as integer]]
+	local todayLit = now - board.DayStartOf(from, today) >= SHOWCASE_TODAY
+	local last = SHOWCASE_LIT + #SHOWCASE_UNLIT - 1
+	local lastAbs = todayLit and today or today - 1
+	local unlit = {}
+	for _, before in ipairs(SHOWCASE_UNLIT) do
+		unlit[last - before] = true
+	end
+	return {
+		latest = latest,
+		from = from,
+		today = today,
+		todayLit = todayLit,
+		first = lastAbs - last,
+		last = last,
+		unlit = unlit,
+		dayStart = board.DayStartOf(from, lastAbs - last),
+		nextReset = board.DayStartOf(from, today + 1),
+		-- The last lit day closes lit at the next reset and unlit at the one after (TKB-R72): play before that one.
+		deadline = board.DayStartOf(from, lastAbs + 2),
+	}
+end
+
+-- Writes showcase's log: the header just before day 0, then each board day 0 … layout.last, lit or left empty,
+-- folding as it goes. Returns the log and the running states.
+local function writeShowcase(game, board, facts, log, layout, now)
+	local start = layout.dayStart + 60
+	local data, catchLog, header = newLog(game, log, facts, start - 60)
+	local fold = game.ledger.NewLedgerFold(game.lookups)
+	local sim = {
+		game = game,
+		boardNs = board,
+		facts = facts,
+		catchLog = catchLog,
+		fold = fold,
+		ledger = fold.reset(),
+		board = board.NewBoardState(),
+		pairs = showcasePairs(game, facts),
+		lure = facts.lure or SHOWCASE_LURE,
+		casts = 0,
+		turn = 0,
+		stuck = 0,
+		t = start,
+	}
+	local best = 0
+	for _, skill in pairs(facts.skills) do
+		best = math.max(best, skill.rank or 0)
+	end
+	sim.bestSkill = best
+	for _, record in ipairs(header) do
+		board.ApplyEntry(sim.board, record, "rebuild")
+		fold.apply(sim.ledger, record, "rebuild")
+	end
+	for k = 0, layout.last do
+		if not layout.unlit[k] then
+			showcaseDay(sim, layout, k, layout.todayLit and k == layout.last, now)
+		end
+	end
+	return data, sim
+end
+
+-- The board's last 28 days by outcome (TKB-R106).
+local function fireLog(fire)
+	local outcomes = {}
+	for _, outcome in pairs(fire.log) do
+		outcomes[outcome] = (outcomes[outcome] or 0) + 1
+	end
+	return outcomes
+end
+
+-- Checks showcase's log as the game will read it: decoded whole with Core's codec, each Species Catch sized (LOG-R65),
+-- and folded from nothing with the Ledger's own logic/ (LED-R3) and, apart, the Tackle Board's (TKB-R81), which must
+-- agree with the states folded while writing. The board must be on its last lit day, lit, with a Campfire of
+-- SHOWCASE_FIRE days or more, Kindling held and nothing owed (the live step issued it all, TKB-R21); advanced a day, as
+-- a login after the next reset does, that day closes lit (TKB-R14, TKB-R72). The Coins in all must reach
+-- SHOWCASE_COINS. Returns what it found and the failures.
+local function checkShowcase(game, board, facts, data, layout, sim, now)
+	local found = { tags = {}, failures = {}, sessions = {}, zones = {}, kept = {}, casts = 0, catches = 0, away = 0 }
+	local function fail(line)
+		found.failures[#found.failures + 1] = line
+	end
+	for _, entry in ipairs(data.entries) do
+		local tag = entry:match("^(%u%d+)|") or "(no tag)"
+		found.tags[tag] = (found.tags[tag] or 0) + 1
+	end
+	local global = { decodeErrors = 0 }
+	local fold = game.ledger.NewLedgerFold(game.lookups)
+	local ledger = fold.reset()
+	for record in game.open(deepCopy(data), global, now):Iterate() do
+		fold.apply(ledger, record, "rebuild")
+		if record.kind == "cast" then
+			found.casts = found.casts + 1
+			found.first, found.last = found.first or record.time, record.time
+			found.sessions[record.session] = true
+			found.zones[record.conditions.zone] = true
+			found.away = found.away + (record.outcome == "gotAway" and 1 or 0)
+			if record.char ~= facts.char then
+				fail("a Cast is on another character")
+			end
+			for _, catch in ipairs(record.items) do
+				found.catches = found.catches + 1
+				if not ordinary(game, catch.itemID) then
+					found.kept[#found.kept + 1] = catch.itemID
+				end
+			end
+		end
+	end
+	local state = board.NewBoardState()
+	for record in game.open(deepCopy(data), global, now):Iterate(0, board.ModuleDef().name) do
+		board.ApplyEntry(state, record, "rebuild")
+	end
+	if global.decodeErrors > 0 then
+		fail(count(global.decodeErrors, "entry", "entries") .. " Core's codec can't decode")
+	end
+	if #found.kept > 0 then
+		fail("an item no test Cast may catch (LED-R5) is caught: " .. found.kept[1])
+	end
+	local problem = logIdProblem(data, facts)
+	if problem then
+		fail(problem)
+	end
+	if data.test ~= true then
+		fail("PagleLog.test isn't true, so /pagle dev catch would refuse it")
+	end
+	if not deepEqual(ledger, sim.ledger) then
+		fail("the Ledger's fold of the written log isn't the one made while writing it")
+	end
+	if not deepEqual(state, sim.board) then
+		fail("the Tackle Board's fold of the written log isn't the one made while writing it")
+	end
+	found.ledger, found.board = ledger, state
+	found.level = climb(game, ledger)
+	local lastAbs = layout.first + layout.last
+	local fire = state.fire
+	found.outcomes = fireLog(fire)
+	if not state.started or state.day ~= layout.last or fire.log[layout.last] ~= "lit" then
+		fail(
+			("the board's last day is %s, %s, not day %d lit"):format(
+				tostring(state.day),
+				tostring(fire.log[state.day]),
+				layout.last
+			)
+		)
+	end
+	if fire.count < SHOWCASE_FIRE or fire.kindling < 1 or not found.outcomes.burned then
+		fail(
+			("the Campfire is %s with %d Kindling, not %d days or more with Kindling held and a burned day in its last"):format(
+				count(fire.count, "day"),
+				fire.kindling,
+				SHOWCASE_FIRE
+			) .. " four weeks"
+		)
+	end
+	if state.owed.notices ~= 0 or state.owed.expeditions ~= 0 then
+		fail("the board still owes goals the live step would have issued (TKB-R21)")
+	end
+	-- Today, live, is the number a `day` record written now would get (TKB-R12).
+	found.today = board.DayOf(state.boundary, now)
+	if found.today ~= layout.today - layout.first then
+		fail(("the board's today is day %s, not the run's"):format(tostring(found.today)))
+	end
+	local advanced = deepCopy(state)
+	local result = board.AdvanceTo(advanced, layout.last + 1, "rebuild")
+	local closed = result and result.closed[#result.closed]
+	if
+		not closed
+		or closed.log ~= "lit"
+		or advanced.fire.count ~= fire.count
+		or advanced.fire.kindling ~= fire.kindling
+	then
+		fail(("advanced past day %d, as the login after the next reset does, it doesn't close lit"):format(layout.last))
+	end
+	found.coins = { Ledger = ledger.coins, TackleBoard = state.coins, Hunts = 0 }
+	found.total = ledger.coins + state.coins
+	if found.total < SHOWCASE_COINS then
+		fail(("the Modules earn %d Coins in all, not %d or more"):format(found.total, SHOWCASE_COINS))
+	end
+	found.lastAbs = lastAbs
+	return found
+end
+
+-- The showcase's lines: where the board sits, the board and the Ledger folded, and the Coins each Module reports.
+local function printShowcase(found, layout, sim, game)
+	local state, ledger, fire = found.board, found.ledger, found.board.fire
+	print(
+		("board: day 0 began %s, %d board days before today, on the reset time of the %s record at seq %d"):format(
+			utc(layout.dayStart),
+			layout.today - layout.first,
+			layout.latest.kind,
+			layout.latest.seq
+		)
+	)
+	local outcomes = found.outcomes
+	print(
+		("Campfire: %s (longest %d), %d Kindling, the last lit day %s; its last four weeks %d lit, %d burned"):format(
+			count(fire.count, "day"),
+			fire.longest,
+			fire.kindling,
+			layout.todayLit and "today" or "yesterday",
+			outcomes.lit or 0,
+			outcomes.burned or 0
+		)
+	)
+	local titles = {}
+	for id in pairs(state.titles) do
+		titles[#titles + 1] = id
+	end
+	table.sort(titles)
+	local open = openGoals(state)
+	local openN = 0
+	for _, goal in ipairs(open) do
+		openN = openN + (goal.type == "n" and 1 or 0)
+	end
+	local stuck = sim.stuck > 0 and (", %d of the goals issued no test Cast moves on"):format(sim.stuck) or ""
+	print(
+		("goals: %s and %s done, %d Notices and %d Expeditions open%s; %s of 30 tied; titles %s"):format(
+			count(state.tally.notices, "Notice"),
+			count(state.tally.expeditions, "Expedition"),
+			openN,
+			#open - openN,
+			stuck,
+			count(countOf(state.flies), "fly", "flies"),
+			#titles > 0 and table.concat(titles, ", ") or "none"
+		)
+	)
+	-- Zone Mastery ranks (LED-R50): how many fished zones are at each, 1 Visitor to 5 Master.
+	local ranks, zones = {}, 0
+	for _, zone in pairs(ledger.zones) do
+		zones = zones + 1
+		ranks[zone.rank or 0] = (ranks[zone.rank or 0] or 0) + 1
+	end
+	local spread = {}
+	for rank = 5, 0, -1 do
+		if ranks[rank] then
+			spread[#spread + 1] = ("%d at rank %d"):format(ranks[rank], rank)
+		end
+	end
+	local level, toNext = climb(game, ledger)
+	local prestige = ledger.prestige > 0
+			and (" at Prestige %d (its entry on board day %d)"):format(ledger.prestige, sim.prestigeDay)
+		or ""
+	print(
+		("Ledger: Angler Level %d%s, %s XP%s; %s Species; %s fished, %s"):format(
+			level,
+			prestige,
+			thousands(ledger.xp),
+			toNext and (", %s to the next"):format(thousands(toNext)) or " (carried: Prestige ready again)",
+			thousands(countOf(ledger.species)),
+			count(zones, "zone"),
+			table.concat(spread, ", ")
+		)
+	)
+	print(
+		("Casts: %s (%s Catches, %s got away) in %s Sessions on %d board days, %s to %s (catalogue: %s)"):format(
+			thousands(found.casts),
+			thousands(found.catches),
+			thousands(found.away),
+			thousands(countOf(found.sessions)),
+			layout.last + 1 - #SHOWCASE_UNLIT,
+			utc(found.first),
+			utc(found.last),
+			game.label
+		)
+	)
+	print(
+		("Coins: Ledger %s, Tackle Board %s, Hunts 0 (no Hunt is open yet): %s in all, and nothing spent in this log"):format(
+			thousands(found.coins.Ledger),
+			thousands(found.coins.TackleBoard),
+			thousands(found.total)
+		)
+	)
+end
+
+-- What the dev should see at a showcase test log's login (TKB-R84, LED-R93, SHOP-R92).
+local function showcaseNote()
+	print("  The Ledger and the Tackle Board write themselves up from the test log (LED-R93, TKB-R84), with no moment,")
+	print("  and each reports its whole Coins total (SHOP-R92): the Curio Shop's purse holds their sum.")
+end
+
 -- Stages ---------------------------------------------------------------------------------------------------------
 
 -- The test logs made for the account: each stage folder under `root` with its stage.txt, oldest first.
@@ -1198,8 +1804,14 @@ local function makeTestLog(options, now)
 	local facts = readRealLog(game, log)
 	facts.log, facts.characters = log, deepCopy(log.characters)
 
-	local data, found, boardPlan
-	if preset.board then
+	local data, found, boardPlan, showcase, sim
+	if preset.showcase then
+		local board = loadBoard(game)
+		showcase = planShowcase(game, board, log, now)
+		math.randomseed(now)
+		data, sim = writeShowcase(game, board, facts, log, showcase, now)
+		found = checkShowcase(game, board, facts, data, showcase, sim, now)
+	elseif preset.board then
 		local board = loadBoard(game)
 		boardPlan = planBoard(game, board, facts, log, now)
 		math.randomseed(now)
@@ -1254,8 +1866,10 @@ local function makeTestLog(options, now)
 		end
 	end
 	writeFile(stage .. "/Pagle.lua", text)
-	-- A boardday test log is played only before its board day ends (install refuses after).
-	local nextReset = boardPlan and ("nextReset %d\n"):format(boardPlan.nextReset) or ""
+	-- A boardday test log is played only before its board day ends, a showcase one before its last lit day closes
+	-- unlit (install refuses after).
+	local until_ = boardPlan and boardPlan.nextReset or showcase and showcase.deadline
+	local nextReset = until_ and ("nextReset %d\n"):format(until_) or ""
 	writeFile(
 		stage .. "/stage.txt",
 		("preset %s\ntestLogId %s\noriginalLogId %s\ncharacter %s\n%s"):format(
@@ -1272,7 +1886,12 @@ local function makeTestLog(options, now)
 		tags[#tags + 1] = tag .. " " .. n
 	end
 	table.sort(tags)
-	local aim = preset.board and "a started board, day 0 lit and day 1 not, two board days old"
+	local aim = preset.showcase
+			and ("a Campfire of %d days or more lit on the board's day, and %s Coins or more to spend"):format(
+				SHOWCASE_FIRE,
+				thousands(SHOWCASE_COINS)
+			)
+		or preset.board and "a started board, day 0 lit and day 1 not, two board days old"
 		or preset.bytes and ("a Pagle.lua of about %d MiB of real-looking Casts"):format(preset.bytes / MIB)
 		or preset.level and ("within %d Catches of level %d"):format(PROBE_CATCHES, preset.level)
 		or ("%d Catches short of the %s-Catch Catch Milestone"):format(preset.short, preset.milestone)
@@ -1296,7 +1915,9 @@ local function makeTestLog(options, now)
 			fishers
 		)
 	)
-	if preset.board then
+	if preset.showcase then
+		printShowcase(found, showcase, sim, game)
+	elseif preset.board then
 		printBoardFold(found, boardPlan)
 	elseif preset.bytes then
 		printBigFold(found, log, data, preset, game)
@@ -1312,7 +1933,23 @@ local function makeTestLog(options, now)
 	print(("test log: %s/Pagle.lua, PagleDB and the rest of Pagle.lua as they were"):format(stage))
 	print("Nothing under " .. options.account .. " was changed. To play it, with the game fully closed:")
 	print("  " .. command(options, "--install"))
-	if preset.board then
+	if preset.showcase then
+		local lit = showcase.todayLit and "today" or "yesterday"
+		print(
+			("  then log in as %s. Before the next daily reset, %s, the Campfire shows %s lit; log in before the"):format(
+				characterName(log, facts.char),
+				utc(showcase.nextReset),
+				lit
+			)
+		)
+		print(
+			("  reset after that, %s, at the latest: a login after it closes the day after the last lit one unlit,"):format(
+				utc(showcase.deadline)
+			)
+		)
+		print("  which burns a Kindling (TKB-R72). --install refuses after it.")
+		showcaseNote()
+	elseif preset.board then
 		print(
 			("  then log in as %s before the next daily reset, %s: after it, day 2 closes unlit too."):format(
 				characterName(log, facts.char),
@@ -1348,12 +1985,11 @@ local function install(options, now)
 	if not test then
 		refuse(stage.dir .. " holds no Pagle.lua; run --preset again")
 	elseif nextReset and now >= nextReset then
+		local why = stage.preset == "showcase"
+				and "its last lit day's next day ended at %s, so it would burn a Kindling;"
+			or "its board day ended at %s, so day 2 would close unlit too;"
 		refuse(
-			("%s is a %s test log and its board day ended at %s, so day 2 would close unlit too;"):format(
-				stage.dir,
-				stage.preset,
-				utc(nextReset)
-			)
+			("%s is a %s test log and " .. why):format(stage.dir, stage.preset, utc(nextReset))
 				.. " run --preset "
 				.. stage.preset
 				.. " again. Nothing changed"
@@ -1372,7 +2008,9 @@ local function install(options, now)
 	print(("== Installed test log %s (logId %s) from %s"):format(stage.preset, stage.testLogId, stage.dir))
 	local was = real and "the real log, as backed up" or ("test log %s (logId %s)"):format(other.preset, currentLogId)
 	print(("the Pagle.lua it replaced, %s, is kept in %s/"):format(was, kept))
-	local before = nextReset and (" before the next daily reset, %s"):format(utc(nextReset)) or ""
+	local by = stage.preset == "showcase" and " before %s, when its Campfire's last lit day is followed by an unlit one"
+		or " before the next daily reset, %s"
+	local before = nextReset and by:format(utc(nextReset)) or ""
 	print("Log in as " .. tostring(stage.character) .. before .. ".")
 	firstBuildNote()
 	restoreNote(options)

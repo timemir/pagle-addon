@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # Runs scripts/make-test-log.lua on the pinned Lua 5.1 from scripts/setup.sh, from any directory: makes, installs
-# and restores the M4 and M7 exit checks' test logs and launch re-verification's big ones
-# (docs/agents/in-game-verification.md).
+# and restores the M4 and M7 exit checks' test logs, launch re-verification's big ones and the look-and-feel
+# check's showcase (docs/agents/in-game-verification.md).
 #
 #   scripts/make-test-log.sh --account <WTF/Account/<ACCT> folder>
-#       --preset <level10|level60|catches1000|boardday|big5|big20>
+#       --preset <level10|level60|catches1000|boardday|big5|big20|showcase>
 #       [--out <folder>] [--catalogue <Catalogue.lua>]
 #   scripts/make-test-log.sh --account <folder> --install [--out <folder>]
 #   scripts/make-test-log.sh --account <folder> --restore [--out <folder>]

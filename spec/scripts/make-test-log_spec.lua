@@ -713,6 +713,226 @@ describe("scripts/make-test-log.lua (#172, in-game-verification.md › Test logs
 		end)
 	end)
 
+	-- showcase over the board fixture: its latest boundary (Tuesday 13 October 15:00 UTC) gives the reset time. At NOW
+	-- today's board day began at 15:00, 2 h 46 min before, so today is the last lit day: day 108 of a board whose day 0
+	-- is Sunday 28 June 15:00 UTC (1782658800), in the week of Tuesday 23 June's reset (1782226800). Days 27, 61, 86, 95
+	-- and 103 are left unlit; the other 104 are lit.
+	local SHOWCASE_DAY0, SHOWCASE_UNLIT =
+		1782658800, { [27] = true, [61] = true, [86] = true, [95] = true, [103] = true }
+
+	-- The board days a PagleLog's Tackle Board records and caught Casts fall on, numbered from its `start` record.
+	local function boardDays(log)
+		local days = { records = {}, casts = {} }
+		for _, record in ipairs((decoded(log))) do
+			local day = math.floor((record.time - SHOWCASE_DAY0) / 86400)
+			if record.kind == "cast" and record.outcome == "caught" then
+				days.casts[day] = true
+			end
+		end
+		for record in core.OpenCatchLog(log, { decodeErrors = 0 }, NOW):Iterate(0, "TackleBoard") do
+			if record.kind == "module" then
+				local day = math.floor((record.time - SHOWCASE_DAY0) / 86400)
+				days.records[day] = days.records[day] or {}
+				table.insert(days.records[day], record.recordKind)
+			end
+		end
+		return days
+	end
+
+	describe("--preset showcase on an account with a started board (in-game-verification.md › Test logs)", function()
+		local made = make("showcase", NOW, BOARD_FIXTURE)
+		local text = made.stage and readFile(made.stage .. "/Pagle.lua")
+		local log = text and globalsOf(text).PagleLog
+		local state = boardFolded(log)
+		local ledgerState = folded((decoded(log)))
+
+		it("exits 0 and makes one dated test log for the account", function()
+			assert.are.equal("", made.err)
+			assert.are.equal(0, made.code)
+			assert.are.same({ "20261014-174640-showcase" }, made.stages)
+		end)
+
+		it(
+			"writes a test log Core's codec decodes whole, with a new logId, its Casts by the fixture's last fisher (LOG-R15, LOG-R16)",
+			function()
+				local records, undecodable = decoded(log)
+				assert.are.equal(0, undecodable)
+				assert.is_true(log.test)
+				assert.are.equal(16, #log.logId)
+				assert.are_not.equal(ORIGINAL_LOG_ID, log.logId)
+				local away = 0
+				for _, record in ipairs(records) do
+					if record.kind == "cast" then
+						assert.are.equal(2, record.char)
+						away = away + (record.outcome == "gotAway" and 1 or 0)
+					end
+				end
+				assert.is_true(away > 0)
+			end
+		)
+
+		it(
+			"starts the board 108 board days back on the fixture's reset time, and writes the live step's records on each lit day only (TKB-R12, TKB-R13, TKB-R80)",
+			function()
+				assert.are.equal("start 1782658800;1782226800", boardRecords(log)[1])
+				local days = boardDays(log)
+				for day = 0, 108 do
+					local kinds = days.records[day]
+					if SHOWCASE_UNLIT[day] then
+						assert.is_nil(kinds, "day " .. day)
+						assert.is_nil(days.casts[day], "day " .. day)
+					else
+						assert.are.equal(day == 0 and "start" or "day", kinds[1], "day " .. day)
+						assert.is_true(days.casts[day], "day " .. day)
+					end
+				end
+				assert.is_nil(days.records[109])
+			end
+		)
+
+		it("issues only the goals owed, so the board owes none at the end (TKB-R20, TKB-R21)", function()
+			assert.are.same({ notices = 0, expeditions = 0 }, state.owed)
+			assert.are.equal(108, state.day)
+		end)
+
+		it(
+			"folds to a Campfire of 104 days lit today, with 2 Kindling, its 100-day milestone and 3 burned days in its four weeks (TKB-R70–R73, TKB-R106)",
+			function()
+				local fire = state.fire
+				assert.are.same({ 104, 104, 2, "lit" }, { fire.count, fire.longest, fire.kindling, fire.log[108] })
+				assert.are.same(
+					{ 7, 30, 100 },
+					(function()
+						local reached = {}
+						for days in pairs(fire.milestones) do
+							reached[#reached + 1] = days
+						end
+						table.sort(reached)
+						return reached
+					end)()
+				)
+				local outcomes = {}
+				for _, outcome in pairs(fire.log) do
+					outcomes[outcome] = (outcomes[outcome] or 0) + 1
+				end
+				assert.are.same({ lit = 25, burned = 3 }, outcomes)
+			end
+		)
+
+		it(
+			"closes today lit at the next reset, and burns a Kindling only at the one after it (TKB-R14, TKB-R72)",
+			function()
+				local next = boardFolded(log)
+				local result = boardNs.AdvanceTo(next, 109, "rebuild")
+				assert.are.same({ { day = 108, log = "lit" } }, result.closed)
+				assert.are.same({ 104, 2 }, { next.fire.count, next.fire.kindling })
+				result = boardNs.AdvanceTo(next, 110, "rebuild")
+				assert.are.same({ { day = 109, log = "burned" } }, result.closed)
+				assert.are.same({ 104, 1 }, { next.fire.count, next.fire.kindling })
+			end
+		)
+
+		it(
+			"earns 5,000 Coins or more between the Ledger and the Tackle Board, as it prints (TKB-R63, LED-R88, SHOP-R2)",
+			function()
+				assert.is_true(ledgerState.coins + state.coins >= 5000)
+				assert.is_true(state.tally.notices > 0 and state.tally.expeditions > 0)
+				local function thousands(n)
+					local s = tostring(n)
+					repeat
+						local done
+						s, done = s:gsub("^(%d+)(%d%d%d)", "%1,%2")
+					until done == 0
+					return s
+				end
+				local printed = table.concat(made.lines, "\n")
+				assert.matches(
+					("Coins: Ledger %s, Tackle Board %s, Hunts 0 (no Hunt is open yet): %s in all"):format(
+						thousands(ledgerState.coins),
+						thousands(state.coins),
+						thousands(ledgerState.coins + state.coins)
+					),
+					printed,
+					1,
+					true
+				)
+				assert.matches("Campfire: 104 days (longest 104), 2 Kindling, the last lit day today", printed, 1, true)
+			end
+		)
+
+		it("prints by when to log in, and keeps it in stage.txt for --install (TKB-R13)", function()
+			local printed = table.concat(made.lines, "\n")
+			assert.matches(
+				"Before the next daily reset, 2026-10-15 15:00 UTC, the Campfire shows today lit",
+				printed,
+				1,
+				true
+			)
+			assert.matches("reset after that, 2026-10-16 15:00 UTC, at the latest", printed, 1, true)
+			assert.matches("\nnextReset 1792162800\n$", readFile(made.stage .. "/stage.txt"))
+		end)
+	end)
+
+	-- The showcase test log logged into on FakePagle at NOW, as the boardday one is: the first build, then the live step.
+	describe("a showcase test log at its login", function()
+		---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
+		local board = dofile("spec/Pagle_TackleBoard/support.lua")
+		local made = make("showcase", NOW, BOARD_FIXTURE)
+		local fake = newFakePagle()
+		fake.catchLog.data = globalsOf(readFile(made.stage .. "/Pagle.lua")).PagleLog
+		fake.wait(NOW - SERVER_TIME)
+		local catalogueNs = {}
+		local chunk = assert(loadfile(CATALOGUE))
+		setfenv(chunk, setmetatable({}, { __index = _G }))
+		chunk("Pagle", catalogueNs)
+		local live = {}
+		local loaded = board.load(fake, {
+			catalogue = catalogueNs.catalogue,
+			prepare = function(loading)
+				loading.ns.outlets.Advanced = function(result, mode)
+					if mode == "live" then
+						live[#live + 1] = result
+					end
+				end
+			end,
+		})
+		local written = #boardRecords(fake.catchLog.data)
+		fake.login()
+		fake.enterWorld()
+		loaded.client.runTimers()
+
+		it(
+			"closes no day, burns no Kindling and appends no record at login: today is the board's day, lit (TKB-R13, TKB-R72)",
+			function()
+				assert.are.same({}, live)
+				local state = loaded.ns.State()
+				assert.are.same(
+					{ 108, 104, 2, "lit" },
+					{ state.day, state.fire.count, state.fire.kindling, state.fire.log[108] }
+				)
+				assert.are.equal(written, #boardRecords(fake.catchLog.data))
+			end
+		)
+	end)
+
+	describe("--preset showcase less than an hour after the daily reset", function()
+		-- Wednesday 14 October 15:30: today's board day began half an hour ago, so yesterday is the last lit day.
+		local early = 1791991800
+		local made = make("showcase", early, BOARD_FIXTURE)
+		local log = globalsOf(readFile(made.stage .. "/Pagle.lua")).PagleLog
+
+		it("lights yesterday last, and must be played before the reset after today's (TKB-R12, TKB-R72)", function()
+			assert.are.equal(0, made.code)
+			-- Day 0 is a day earlier: Saturday 27 June 15:00.
+			assert.are.equal("start 1782572400;1782226800", boardRecords(log)[1])
+			local state = boardFolded(log)
+			assert.are.same({ 108, 104, "lit" }, { state.day, state.fire.count, state.fire.log[108] })
+			assert.are.equal(109, boardNs.DayOf(state.boundary, early))
+			assert.matches("the last lit day yesterday", table.concat(made.lines, "\n"), 1, true)
+			assert.matches("\nnextReset 1792076400\n$", readFile(made.stage .. "/stage.txt"))
+		end)
+	end)
+
 	describe("--preset boardday when no weekly reset falls in the two days", function()
 		-- Friday 16 October 17:46: day 0 is Wednesday 14 October 15:00, in the week of Tuesday 13 October's reset.
 		local later = NOW + 2 * 86400
@@ -1054,11 +1274,27 @@ describe("scripts/make-test-log.lua (#172, in-game-verification.md › Test logs
 			end
 		)
 
+		it(
+			"--install refuses a showcase test log once the day after its last lit one has ended, changing nothing (TKB-R72)",
+			function()
+				local made = make("showcase", NOW, BOARD_FIXTURE)
+				local err, code = modeRun(made, "--install", 1792162800)
+				assert.are.equal(1, code)
+				assert.matches("its last lit day's next day ended at 2026-10-16 15:00 UTC", err, 1, true)
+				assert.are.same(savedFiles(BOARD_FIXTURE), savedFiles(made.account))
+			end
+		)
+
 		it("exits 2 on a usage error", function()
 			local _, err, code = run({ "--account", "x", "--preset", "level99" })
 			assert.are.equal(2, code)
 			assert.matches("no preset level99", err, 1, true)
-			assert.matches("the presets are level10, level60, catches1000, boardday, big5, big20", err, 1, true)
+			assert.matches(
+				"the presets are level10, level60, catches1000, boardday, big5, big20, showcase",
+				err,
+				1,
+				true
+			)
 			_, err, code = run({ "--account", "x", "--install", "--restore" })
 			assert.are.equal(2, code)
 			assert.matches("name one of --preset, --install and --restore", err, 1, true)
