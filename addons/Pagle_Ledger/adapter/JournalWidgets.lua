@@ -801,8 +801,9 @@ local function newTile(parent, width)
 	tile.name = ns.JournalLabel(tile, "print", 15.5, INK.title, "", { wrap = true, spacing = 0.8 })
 	tile.name:SetPoint("TOPLEFT", 10, -8)
 	tile.line = ns.JournalLabel(tile, "italic", 13, INK.tileInk)
+	-- "caught ✓" sits at the right of the line's row, over the bar, so a long zone name never runs under it
 	tile.line2 = ns.JournalLabel(tile, "hand", 17, INK.green, "", { justify = "RIGHT" })
-	tile.line2:SetPoint("TOPRIGHT", -8, -4)
+	tile.line2:SetPoint("TOPRIGHT", -8, -37)
 	tile.barCase = ns.JournalThreeSlice(tile, "Parts", "tbar", width - 20, 3, "ARTWORK")
 	ns.JournalAt(tile.barCase, tile, 10, 62)
 	tile.barFill = ns.JournalTint(tile, "5a3a14", 1, "ARTWORK", 1)
@@ -844,7 +845,8 @@ local function fillTile(tile, data, open)
 	elseif dashed then
 		tile.dashes = ns.JournalDashes(tile, 0, 0, w, TILE_H, INK.tileInk, 0.45, "BACKGROUND")
 	end
-	local mark = data.seal or data.note or data.line2
+	local mark = data.seal or data.note
+	local line2 = data.line2 ~= nil and mark == nil
 	ns.JournalRestyle(tile.name, "print", 15.5, dashed and INK.tileInk or INK.title)
 	tile.name:SetWidth(w - 20 - (mark and 30 or 0))
 	tile.name:SetText(data.name)
@@ -852,7 +854,7 @@ local function fillTile(tile, data, open)
 	tile.line:ClearAllPoints()
 	tile.line:SetPoint("TOPLEFT", 10, -(dashed and 49 or 42))
 	tile.line:SetText(data.line or "")
-	bound(tile.line, w - 20)
+	bound(tile.line, w - 20 - (line2 and 80 or 0))
 	tile.barCase:SetShown(not dashed)
 	tile.barFill:SetShown(not dashed and (data.bar or 0) > 0)
 	tile.barFill:SetWidth(math.max(0.01, (w - 22) * (data.bar or 0)))
@@ -862,7 +864,7 @@ local function fillTile(tile, data, open)
 	tile.note:ClearAllPoints()
 	tile.note:SetPoint("TOPRIGHT", -7, data.seal and -36 or -4)
 	tile.note:SetText(data.note or "")
-	tile.line2:SetShown(data.line2 ~= nil and data.seal == nil and data.note == nil)
+	tile.line2:SetShown(line2)
 	tile.line2:SetText(data.line2 or "")
 	tile:SetAlpha(data.faded and 0.85 or 1)
 	tile.place, tile.open = data.place, open
