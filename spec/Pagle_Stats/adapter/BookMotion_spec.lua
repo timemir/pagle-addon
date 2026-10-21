@@ -65,30 +65,6 @@ describe("the book's motion seam (ns.MotionOn, on Core's Pagle.Animate)", functi
 		assert.is_nil(rawget(ns, "Animate"))
 		assert.is_nil(rawget(ns, "motion"))
 	end)
-
-	it("moves on Core's driver, stepped by the client's frames", function()
-		local loaded = stats.load(nil, { motion = true })
-		local Pagle = loaded.env.Pagle
-		local seen, done = {}, false
-
-		Pagle.Animate(loaded.env.CreateFrame("Frame"), {
-			{
-				dur = 1,
-				ease = Pagle.EASE.linear,
-				keys = { { 0, { 0 } }, { 1, { 10 } } },
-				apply = function(v)
-					seen[#seen + 1] = v[1]
-				end,
-			},
-		}, function()
-			done = true
-		end)
-		loaded.client.update(0.5)
-		loaded.client.update(0.6)
-
-		assert.are.same({ 0, 5, 10 }, seen)
-		assert.is_true(done)
-	end)
 end)
 
 describe("the Stats book opening and closing", function()

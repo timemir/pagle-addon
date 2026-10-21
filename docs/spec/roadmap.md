@@ -37,7 +37,7 @@ This file sets the order in which Pagle is built. It assigns spec rules to miles
   5. tests: busted on real Lua 5.1 (not LuaJIT). The busted helper loads each addon's files from its real `.toc`, in order, with a shared `ns`, so TOC and load-order mistakes fail tests. luacov reports coverage and doesn't gate.
   6. from M1, the generator's check and tests (DATA-R61)
 - Tool versions are pinned in one place and installed by a setup script. `check.sh` runs locally in WSL.
-- GitHub Actions (Ubuntu, Lua 5.1) runs `check.sh` on pushes to `main` and on pull requests. Required checks run every spec without coverage, in two concurrent shards. A manual Check run with `coverage` enabled also runs a separate, non-blocking coverage report. Gate-regression cases run when gate machinery changes, with the full suite once and focused integration specs for each planted mistake.
+- GitHub Actions (Ubuntu, Lua 5.1) runs `check.sh` on pushes to `main` and on pull requests. Required checks run every spec without coverage, in two concurrent shards. A manual Check run with `coverage` enabled also runs a separate, non-blocking coverage report. Gate-regression cases run when gate machinery changes, with focused integration specs for the passing baseline and each planted mistake. Generator data rules run through the real CLI in the Python suite; gate cases retain generator exit propagation and stale-output checks.
 - A release workflow runs `BigWigsMods/packager@v2` on a tag push, uploading to CurseForge and Wago (never WoWInterface). `.pkgmeta` has `package-as: Pagle`. The project IDs and upload secrets are added in M9.
 - A PowerShell dev-loop script junctions (`mklink /J`) each `addons/*` folder into the beta's `Interface/AddOns/`, so edits go live after `/reload`.
 

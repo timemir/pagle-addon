@@ -3,12 +3,15 @@ slice, as the committed Catalogue.lua ships them."""
 
 import re
 import tomllib
+from collections.abc import Mapping
+from functools import cache
 from pathlib import Path
+from types import MappingProxyType
 
 from pagle_data.baseline import read_baseline
 from pagle_data.db2 import read_db2
 from pagle_data.errors import Problems
-from pagle_data.generate import CATALOGUE_LUA, generate
+from pagle_data.generate import CATALOGUE_LUA
 from pagle_data.universe import item_universe
 
 REPO = Path(__file__).resolve().parents[2]
@@ -18,13 +21,15 @@ REPO = Path(__file__).resolve().parents[2]
 EXTRAVAGANZA_RARES = {19803, 19805, 19806}
 
 
-def _committed_items() -> dict[int, str]:
+@cache
+def _committed_items() -> Mapping[int, str]:
     """Each item record's Lua in the committed Catalogue.lua, by item ID."""
     text = (REPO / CATALOGUE_LUA).read_text(encoding="utf-8")
-    assert text == generate(REPO)[CATALOGUE_LUA]  # DATA-R61: the committed file is what data/ gives
     block = re.search(r"^\titems = \{\n(.*?)^\t\},$", text, flags=re.MULTILINE | re.DOTALL)
     assert block is not None
-    return {int(i): record for i, record in re.findall(r"^\t\t\[(\d+)\] = (\{.*\}),$", block.group(1), re.M)}
+    return MappingProxyType(
+        {int(i): record for i, record in re.findall(r"^\t\t\[(\d+)\] = (\{.*\}),$", block.group(1), re.M)}
+    )
 
 
 def _items_toml() -> dict[int, dict[str, object]]:

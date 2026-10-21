@@ -90,3 +90,35 @@ def test_new_push_uses_available_main_base(detector: str, history: tuple[Path, s
     repo, base = history
     git(repo, "update-ref", "refs/remotes/origin/main", base)
     assert not run_detector(detector, repo, "push", before="0" * 40)
+
+
+def commit_file(repo: Path, path: str) -> str:
+    changed = repo / path
+    changed.parent.mkdir(parents=True, exist_ok=True)
+    changed.write_text("changed\n")
+    git(repo, "add", path)
+    git(repo, "commit", "-qm", path)
+    return git(repo, "rev-parse", "HEAD")
+
+
+def test_push_checks_every_commit_since_before(detector: str, history: tuple[Path, str]) -> None:
+    repo, base = history
+    commit_file(repo, "scripts/check.sh")
+    commit_file(repo, "docs/guide.md")
+    assert run_detector(detector, repo, "push", before=base)
+
+
+@pytest.mark.parametrize("before_is_head", [False, True])
+def test_pull_request_uses_its_base_without_a_push_before(
+    detector: str, history: tuple[Path, str], before_is_head: bool,
+) -> None:
+    repo, base = history
+    head = commit_file(repo, "scripts/check.sh")
+    assert run_detector(detector, repo, "pull_request", before=head if before_is_head else "", pr_base=base)
+
+
+def test_pull_request_excludes_machinery_already_in_its_base(detector: str, history: tuple[Path, str]) -> None:
+    repo, before = history
+    base = commit_file(repo, "scripts/check.sh")
+    commit_file(repo, "docs/guide.md")
+    assert not run_detector(detector, repo, "pull_request", before=before, pr_base=base)

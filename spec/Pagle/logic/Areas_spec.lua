@@ -111,7 +111,7 @@ describe("ns.ResolveAreas", function()
 		return ns.ResolveAreas(index, catalogue, zoneText, subzoneText, continent)
 	end
 
-	it("resolves a zone name with one ID in the slice on the current continent (LOG-R22)", function()
+	it("resolves a zone on the current continent with an empty subzone resolved to 0 (LOG-R22)", function()
 		assert.are.same({ 148, 0 }, { resolve("Darkshore", "", KALIMDOR) })
 	end)
 
@@ -133,10 +133,6 @@ describe("ns.ResolveAreas", function()
 			{ 0, 0, { zone = "Duskwood Glade", subzone = "" } },
 			{ resolve("Duskwood Glade", "", KALIMDOR) }
 		)
-	end)
-
-	it("gives subzone 0 for an empty subzone text, which isn't unresolved (LOG-R22)", function()
-		assert.are.same({ 148, 0 }, { resolve("Darkshore", "", KALIMDOR) })
 	end)
 
 	it("gives subzone 0 for a subzone text equal to the zone's, which isn't unresolved (LOG-R22)", function()

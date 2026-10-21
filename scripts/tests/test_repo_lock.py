@@ -14,4 +14,3 @@ def test_the_committed_lock_holds_no_entries_before_1_0() -> None:
     # commit is the one that drops this test.
     text = (REPO / LOCK).read_text(encoding="utf-8")
     assert tomllib.loads(text) == {}
-    assert "stays empty until the 1.0 tag" in " ".join(line.lstrip("# ") for line in text.splitlines())

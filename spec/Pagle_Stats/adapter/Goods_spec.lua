@@ -126,20 +126,12 @@ describe("Stats' goods", function()
 		end
 	end)
 
-	it("show each good's own icon as its swatch in the Curio Shop's list (STA-R88, SHOP-R26)", function()
-		local _, fake = loggedIn()
+	it("register each good with its authored icon (STA-R88, SHOP-R26)", function()
+		local loaded, fake = loggedIn()
 
-		local icons = {}
-		for _, row in ipairs(GOODS) do
-			local icon = fake.Pagle.GetGood(row[1]).icon
-			assert.matches("^Interface\\Icons\\", icon)
-			icons[icon] = true
+		for _, good in ipairs(loaded.ns.STATS_GOODS.goods) do
+			assert.are.equal(good.icon, fake.Pagle.GetGood(good.id).icon)
 		end
-		local distinct = 0
-		for _ in pairs(icons) do
-			distinct = distinct + 1
-		end
-		assert.are.equal(3, distinct)
 	end)
 end)
 

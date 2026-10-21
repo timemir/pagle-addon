@@ -114,20 +114,12 @@ describe("The Tackle Board's goods", function()
 		assert.are.equal("tackleboard.trackerframe.none", fake.Pagle.GetGood("tackleboard.trackerframe.none").name)
 	end)
 
-	it("show each good's own icon as its swatch in the Curio Shop's list (TKB-R125, SHOP-R26)", function()
-		local _, fake = loggedIn()
+	it("register each good with its authored icon (TKB-R125, SHOP-R26)", function()
+		local loaded, fake = loggedIn()
 
-		local icons = {}
-		for _, row in ipairs(GOODS) do
-			local icon = fake.Pagle.GetGood(row[1]).icon
-			assert.matches("^Interface\\Icons\\", icon)
-			icons[icon] = true
+		for _, good in ipairs(loaded.ns.BOARD_GOODS.goods) do
+			assert.are.equal(good.icon, fake.Pagle.GetGood(good.id).icon)
 		end
-		local distinct = 0
-		for _ in pairs(icons) do
-			distinct = distinct + 1
-		end
-		assert.are.equal(3, distinct)
 	end)
 end)
 

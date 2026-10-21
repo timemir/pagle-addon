@@ -69,15 +69,13 @@ copy() {
 	cases=$((cases + 1))
 	case_tree="$scratch/cases/$cases"
 	cp -a "$base" "$case_tree"
-	if [[ ${1:-} != full ]]; then
-		for spec in "${retained[@]}"; do
-			[[ -f $case_tree/$spec ]] || { echo "test-check: missing retained spec $spec" >&2; exit 1; }
-		done
-		find "$case_tree/spec" -name '*_spec*.lua' \
-			! -path "$case_tree/${retained[0]}" \
-			! -path "$case_tree/${retained[1]}" \
-			! -path "$case_tree/${retained[2]}" -delete
-	fi
+	for spec in "${retained[@]}"; do
+		[[ -f $case_tree/$spec ]] || { echo "test-check: missing retained spec $spec" >&2; exit 1; }
+	done
+	find "$case_tree/spec" -name '*_spec*.lua' \
+		! -path "$case_tree/${retained[0]}" \
+		! -path "$case_tree/${retained[1]}" \
+		! -path "$case_tree/${retained[2]}" -delete
 	ln -sfn "$case_tree" "$scratch/tree"
 }
 
@@ -169,7 +167,7 @@ toc_move_after() {
 	mv "$toc.new" "$toc"
 }
 
-copy full
+copy
 # Each stage's wall time prints before the verdict (#254).
 expect "the tree as it is passes" pass "check: times: libs "
 
@@ -378,89 +376,8 @@ expect "a data/ change committed without its regenerated file fails generator" g
 	"addons/Pagle/data/Catalogue.lua is out of date with data/"
 
 copy
-printf 'x1,0,0,Planted\n' >>"$scratch/tree/data/db2/areas.csv"
-expect "an areas.csv row with a non-integer ID fails generator" generator "ID: expected a positive integer, got 'x1'"
-
-copy
-sed -i '2s/^1,/2,/' "$scratch/tree/data/baseline/skill.csv"
-expect "a hand-edited baseline CSV fails generator" generator \
-	"data/baseline/skill.csv: its SHA-256 differs from data/baseline/source.toml"
-
-copy
-printf '\n[[alias]]\nfrom = 16562\nto = 267\n' >>"$scratch/tree/data/forever/aliases.toml"
-expect "an alias without a why fails generator" generator "data/forever/aliases.toml: alias[10]: missing key 'why'"
-
-copy
-# Drops Raw Nightfin Snapper's category, the line after its table header.
-sed -i '/^\[item\.13759\]$/{n;d;}' "$scratch/tree/data/forever/items.toml"
-expect "an item with no category fails generator" generator "data/forever/items.toml: item.13759: no category"
-
-copy
-# Drops spring's why, the second line after its table header.
-sed -i '/^\[window\.spring\]$/{n;n;d;}' "$scratch/tree/data/forever/windows.toml"
-expect "a window without a why fails generator" generator "data/forever/windows.toml: window.spring: missing key 'why'"
-
-copy
-printf '\n[[catch]]\narea = 33\nitem = 6303\nop = "add"\ngate = "dusk"\nwhy = "planted"\n' \
-	>>"$scratch/tree/data/forever/areas.toml"
-expect "a catch gated by an unknown window fails generator" generator "gate: 'dusk' isn't a window ID (DATA-R35)"
-
-copy
-printf '\n[pool.planted]\nentries = [999999]\n' >>"$scratch/tree/data/forever/pools.toml"
-expect "a pool type without a why fails generator" generator "data/forever/pools.toml: pool.planted: missing key 'why'"
-
-copy
 sed -i '1i colour = "red"' "$scratch/tree/data/observed/dev.toml"
 expect "an unknown key in dev.toml fails generator" generator "data/observed/dev.toml: unknown key 'colour'"
-
-copy
-# With the Ledger's lore check on since #131 (DATA-R66), replaces Raw Nightfin Snapper's riddle, inside its table,
-# with an 81-character one (DATA-R107).
-sed -i "/^\[species\.13759\]/,/^\$/ s/^riddle = .*/riddle = \"$(head -c 81 /dev/zero | tr '\0' x)\"/" \
-	"$scratch/tree/data/lore/ledger.toml"
-expect "with the ledger lore check on, a riddle over 80 code points fails generator" generator \
-	"data/lore/ledger.toml: species.13759.riddle: length: 81 code points, over riddle's limit of 80"
-
-copy
-# With the typicalLength check on since #160 (DATA-R66), drops Raw Nightfin Snapper's species.toml entry: its table
-# header and the typicalLength line after it (DATA-R20).
-sed -i '/^\[species\.13759\]$/{N;d;}' "$scratch/tree/data/forever/species.toml"
-expect "with the typicalLength check on, a Species with no typical length fails generator" generator \
-	"data/forever/species.toml: Species 13759 has no typicalLength, and the check is on (DATA-R20, DATA-R66)"
-
-# Appends a set and a Hunt on Raw Nightfin Snapper (Species 13759) to hunts.toml, with the kind and the window or
-# conditions given (DATA-R85, DATA-R86).
-plant_hunt() {
-	cat >>"$scratch/tree/data/hunts/hunts.toml" <<EOF
-
-[[set]]
-id = "planted"
-name = "Planted"
-title = "the Planter"
-
-[[hunt]]
-id = "planted"
-set = "planted"
-since = 2026-11-04
-tiers = [1]
-name = "Planted"
-species = 13759
-$1
-EOF
-}
-
-copy
-# The M5 exit check's step 1: Raw Nightfin Snapper is gated by night, never by day (DATA-R92).
-plant_hunt $'kind = "natural"\nwindow = "day"'
-expect "a natural Hunt whose window gates none of its Species' catch entries fails generator" generator \
-	"hunt.planted: admission: no catch entry of Species 13759's items, in any area, has the gate 'day'"
-
-copy
-# The M5 exit check's step 1: open one hour a year, a two-day season with half an hour a day (a one-day season can't
-# be written, LOG-R48). A one-hour weekly window passes the cap as DATA-R92 words it.
-plant_hunt $'kind = "imposed"\nconditions = { season = [{ from = [6, 1], to = [6, 2] }], time = [[720, 750]] }'
-expect "an imposed Hunt open one hour a year fails generator" generator \
-	"hunt.planted: rarity cap: open at 8 of 70080 steps"
 
 wait
 report
