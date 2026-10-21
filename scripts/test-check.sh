@@ -60,26 +60,30 @@ fi
 
 # Fresh copy of the tree for the next case. "$scratch/tree" points at it until the next copy.
 copy() {
+	local spec
+	local retained=(
+		spec/Pagle/adapter/Core_spec.lua
+		spec/Pagle/Pagle_toc_spec.lua
+		spec/Pagle_QoL/Pagle_QoL_toc_spec.lua
+	)
 	cases=$((cases + 1))
 	case_tree="$scratch/cases/$cases"
 	cp -a "$base" "$case_tree"
+	if [[ ${1:-} != full ]]; then
+		for spec in "${retained[@]}"; do
+			[[ -f $case_tree/$spec ]] || { echo "test-check: missing retained spec $spec" >&2; exit 1; }
+		done
+		find "$case_tree/spec" -name '*_spec*.lua' \
+			! -path "$case_tree/${retained[0]}" \
+			! -path "$case_tree/${retained[1]}" \
+			! -path "$case_tree/${retained[2]}" -delete
+	fi
 	ln -sfn "$case_tree" "$scratch/tree"
 }
 
 # expect <case> <stage|pass> [text...]: runs the gate on the copy and checks where it stopped, and that its
 # output names each text given. The case starts in the background once a job slot is free.
-# Two kinds of case run fewer specs, as what they test doesn't need the suite; fixtures and spec/support/ stay:
-# - one that expects generator, the stage after tests, has tests pass on one planted spec: the verdict still waits
-#   for tests to pass, and gets it in seconds instead of minutes;
-# - one with coverage (PAGLE_NO_COVERAGE=0) runs spec/Pagle/ and the specs at the top of spec/, its own planted
-#   ones included: the whole suite in one busted with luacov peaks near 16 GB, this in under 1 GB.
 expect() {
-	if [[ $2 == generator ]]; then
-		find "$case_tree/spec" -name '*_spec*.lua' -delete
-		printf 'it("passes", function()\n\tassert.is_true(true)\nend)\n' >"$case_tree/spec/passes_spec.lua"
-	elif [[ ${PAGLE_NO_COVERAGE:-} == 0 ]]; then
-		find "$case_tree/spec" -mindepth 2 -name '*_spec*.lua' -not -path "$case_tree/spec/Pagle/*" -delete
-	fi
 	while (($(jobs -pr | wc -l) >= max_jobs)); do
 		wait -n || true
 		report
@@ -89,7 +93,7 @@ expect() {
 
 # run_case <tree> <verdict file> <case> <stage|pass> [text...]: the gate on one copy, as expect describes.
 run_case() {
-	local tree=$1 verdict=$2 output status=0 ok=no text
+	local tree=$1 verdict=$2 output status=0 ok=no text from=$SECONDS
 	shift 2
 	output=$(bash "$tree/scripts/check.sh" 2>&1) || status=$?
 	if [[ $2 == pass && $status -eq 0 ]] || [[ $2 != pass && $status -ne 0 && $output == *"FAILED at $2"* ]]; then
@@ -99,7 +103,12 @@ run_case() {
 		done
 	fi
 	if [[ $ok == yes ]]; then
-		echo "ok   $1" >"$verdict.part"
+		{
+			echo "ok   $1 ($((SECONDS - from))s)"
+			while IFS= read -r text; do
+				[[ $text != "check: times:"* ]] || echo "     $text"
+			done <<<"$output"
+		} >"$verdict.part"
 	else
 		{
 			echo "FAIL $1: expected $2${3:+ naming$(printf ' "%s"' "${@:3}")}, got exit $status"
@@ -160,7 +169,7 @@ toc_move_after() {
 	mv "$toc.new" "$toc"
 }
 
-copy
+copy full
 # Each stage's wall time prints before the verdict (#254).
 expect "the tree as it is passes" pass "check: times: libs "
 

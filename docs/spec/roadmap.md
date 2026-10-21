@@ -29,7 +29,7 @@ This file sets the order in which Pagle is built. It assigns spec rules to miles
 - The repo layout: `addons/<Addon>/` for code, `spec/` for busted tests mirroring it.
 - `.luarc.json` (Lua 5.1 runtime, library paths for the vendored Ace3 and `types/`), and `types/` with `---@meta` stubs for Forever-only APIs that Ketho's annotations lack. No editor-specific files.
 - The vendored libraries of CORE-R6, at a recorded Ace3 commit, updated only by a script.
-- `scripts/check.sh`, which runs, in this order:
+- `scripts/check.sh`, which reports the first failing stage in this order:
   1. format: `stylua --check`, StyLua defaults (tabs, 120 columns), Lua 5.1 syntax
   2. lint: luacheck with `std = "lua51"`, the per-path `std` of CORE-R7, and a hand-kept `read_globals` list in which each WoW API is added on purpose. That list is the inventory of WoW APIs Pagle uses, and M9 re-checks it.
   3. API presence: a script fails if any `read_globals` entry is missing from the pinned Ketho BlizzardInterfaceResources `forever` dump
@@ -37,7 +37,7 @@ This file sets the order in which Pagle is built. It assigns spec rules to miles
   5. tests: busted on real Lua 5.1 (not LuaJIT). The busted helper loads each addon's files from its real `.toc`, in order, with a shared `ns`, so TOC and load-order mistakes fail tests. luacov reports coverage and doesn't gate.
   6. from M1, the generator's check and tests (DATA-R61)
 - Tool versions are pinned in one place and installed by a setup script. `check.sh` runs locally in WSL.
-- GitHub Actions (Ubuntu, Lua 5.1) runs `check.sh` on every push and pull request.
+- GitHub Actions (Ubuntu, Lua 5.1) runs `check.sh` on pushes to `main` and on pull requests. Required checks run every spec without coverage, in two concurrent shards. A manual Check run with `coverage` enabled also runs a separate, non-blocking coverage report. Gate-regression cases run when gate machinery changes, with the full suite once and focused integration specs for each planted mistake.
 - A release workflow runs `BigWigsMods/packager@v2` on a tag push, uploading to CurseForge and Wago (never WoWInterface). `.pkgmeta` has `package-as: Pagle`. The project IDs and upload secrets are added in M9.
 - A PowerShell dev-loop script junctions (`mklink /J`) each `addons/*` folder into the beta's `Interface/AddOns/`, so edits go live after `/reload`.
 

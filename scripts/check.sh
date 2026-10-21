@@ -236,7 +236,9 @@ stages=(format lint api types tests generator)
 run_stage() {
 	local status=0 from=$SECONDS
 	"stage_$1" >"$logs/$1.log" 2>&1 </dev/null || status=$?
-	echo "$status $((SECONDS - from))" >"$logs/$1.result"
+	echo "$status $((SECONDS - from))" >"$logs/$1.result.part"
+	mv "$logs/$1.result.part" "$logs/$1.result"
+	echo "check: $1 completed in $((SECONDS - from))s (exit $status)"
 }
 
 # verdict: prints the first stage that failed, or pass, once every stage before that one has passed; fails while
