@@ -6,7 +6,7 @@
 -- #146). M4#1 holds what the M4 exit check reads (#173, #174). M5#1 and M5-Stale#1 hold a Pagle_Hunts.lua, for what
 -- the M5 exit check reads (#199, #200). M6#1, M6-Stale#1 and M6-New#1 hold a Pagle_Stats.lua, for what the M6 exit
 -- check reads (#219, #221), and M6-Break#1 a Session break (#258). M7#1, M7-Stale#1 and M7-New#1 hold a Pagle_TackleBoard.lua, for what the M7 exit check
--- reads (#242, #245). M8#1 holds a test log for the Simulated Size gate (#267), and M8-Probe#1 a `/pagle dev probe` with a miss in most checks, for the Probe section (#261), and M8-Reverify#1 what the Re-verification section reads (#262). The Ledger, Stats and Tackle Board runs read their catalogue from
+-- reads (#242, #245). M8#1 holds a test log for the Simulated Size gate (#267), and M8-Probe#1 a `/pagle dev probe` with a miss in most checks, for the Probe section (#261), and M8-Reverify#1 what the Re-verification section reads (#262), and M8.5#1 an onboarding state for the Onboarding section (#320). The Ledger, Stats and Tackle Board runs read their catalogue from
 -- spec/scripts/fixtures/Catalogue.lua (--catalogue) and the Hunts runs their Hunt list from
 -- spec/scripts/fixtures/HuntList.lua (--huntlist), so the lines the Modules' logic computes are counted by hand, and
 -- don't move with the generated data.
@@ -1530,6 +1530,45 @@ describe("scripts/read-wtf.lua", function()
 			section(run(ACCOUNTS .. "M1#1"), "== Probe")
 		)
 		assert.are.same({ "== Probe: can't read Pagle.lua: missing" }, section(run(ACCOUNTS .. "M0#1"), "== Probe"))
+	end)
+
+	-- M8.5#1 holds an onboarding state partway through (core/onboarding.md › Data): the Letter put off once, the guide
+	-- left at Moments with a restriction to reopen it after, two notes and one First look seen, two First evening items
+	-- done before the list docked, and three characters, one of them not in PagleLog's (#320).
+	describe("on an account partway through onboarding (#320, core/onboarding.md › Data)", function()
+		it("prints the Onboarding section from PagleDB.global.onboarding (ONB-R1–R3, Data)", function()
+			local out, _, code = run(ACCOUNTS .. "M8.5#1")
+
+			assert.are.equal(0, code)
+			assert.are.same({
+				"== Onboarding (PagleDB.global.onboarding)",
+				"schemaVersion: 2",
+				"letter: later (Later pressed once: the Letter shows once more, ONB-R12)",
+				"guideStep: moments",
+				"stepsSeen: 3 (box, moments, welcome)",
+				"guideDone: false, skipped: false, reopen: true",
+				"notesOn: true",
+				"notesSeen: 2 (core.nod, core.toast)",
+				"looksSeen: 1 (ledger.journal)",
+				"evening: shown false, closed false, done 2 (cast, catch)",
+				"characters: 3",
+				"  Player-4618-0A1B2C3D: Ada Brook",
+				"  Player-4618-0B2C3D4E: Bram Reed",
+				"  Player-4618-0C3D4E5F: not in PagleLog's characters",
+			}, section(out, "== Onboarding"))
+		end)
+
+		it("says so when no state is stored yet, or Pagle.lua can't be read (ONB-R1)", function()
+			assert.are.same({
+				"== Onboarding (PagleDB.global.onboarding)",
+				"schemaVersion: 1",
+				"onboarding: none stored, so the next login adds it (ONB-R1)",
+			}, section(run(ACCOUNTS .. "M1#1"), "== Onboarding"))
+			assert.are.same(
+				{ "== Onboarding: can't read Pagle.lua: missing" },
+				section(run(ACCOUNTS .. "M0#1"), "== Onboarding")
+			)
+		end)
 	end)
 
 	-- M8-Reverify#1 holds what launch re-verification checks 2, 4-7 and 10 read (#262): Ada's Casts by day and night

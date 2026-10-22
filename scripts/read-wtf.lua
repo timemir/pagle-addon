@@ -29,6 +29,8 @@
 --   - the looks: each slot's equipped good (PagleDB.profile.appearance), the goods cache and the length unit;
 --   - the tracker dock's saved place (PagleDB.profile.dock.point);
 --   - the cards: the Write-up waiting, the Session summary cards, the open summary and the pending moments;
+--   - the onboarding state (PagleDB.global.onboarding): the Letter, the guide's step, the Margin notes and First looks
+--     seen, the First evening list and the characters, with PagleDB.global.schemaVersion;
 --   - the Field report projection (PagleDB.global.projections.fieldReport), its row count and the reporter key;
 --   - the probe `/pagle dev probe` saved (PagleDB.global.probe, #261): each launch re-verification check's facts and
 --     an ok or FAIL line, judged by Core's own logic/Probe.lua;
@@ -2410,6 +2412,83 @@ local function printCards(pagle)
 	print("pending: " .. count(#tableOr(global.pending), "moment"))
 end
 
+-- What each Letter state means for the next login (ONB-R2, ONB-R10, ONB-R12).
+local LETTER_MEANINGS = {
+	waiting = "a new Angler's: the Letter shows at the next login, ONB-R10",
+	later = "Later pressed once: the Letter shows once more, ONB-R12",
+	declined = "Later pressed twice: the Letter never shows again, ONB-R12",
+	opened = "the Letter was opened, and never shows again, ONB-R12",
+	returning = "the Catch log held a Cast when this was made: no Letter and no First evening list, ONB-R2",
+}
+
+-- A set of ids (`{ [id] = true }`) as "2 (box, welcome)", or "none"; a value other than true is shown beside its id.
+local function idSet(set)
+	return listed(tableOr(set), function(key, value)
+		return value == true and tostring(key) or ("%s = %s"):format(tostring(key), tostring(value))
+	end)
+end
+
+-- A boolean key of the onboarding state, or that it is missing.
+local function stateFlag(value)
+	return value == nil and "missing" or tostring(value)
+end
+
+-- Prints the Onboarding section (core/onboarding.md › Data): PagleDB.global.schemaVersion, whose step 2 adds the state
+-- (ONB-R1), then PagleDB.global.onboarding key by key: the Letter's state and what it means (ONB-R2, ONB-R12), the
+-- guide's step and the steps seen (ONB-R22), done, skipped and reopen (ONB-R25, ONB-R26), the Margin notes setting
+-- and the notes and First looks seen (ONB-R50, ONB-R55, ONB-R81), the First evening list (ONB-R60–R63) and the
+-- characters' GUIDs (ONB-R3), each named from PagleLog's characters. The state isn't in AceDB's defaults, so it is
+-- saved whole: a key the file lacks is said to be missing.
+local function printOnboarding(pagle, log)
+	local global, why = pagleGlobal(pagle)
+	if not global then
+		print("== Onboarding: " .. why)
+		return
+	end
+	print("== Onboarding (PagleDB.global.onboarding)")
+	print("schemaVersion: " .. tostring(global.schemaVersion or "none saved, so no migration has run"))
+	local state = global.onboarding
+	if type(state) ~= "table" then
+		print("onboarding: none stored, so the next login adds it (ONB-R1)")
+		return
+	end
+	local letter = state.letter
+	local meaning = LETTER_MEANINGS[letter] or "not a state Core knows, ONB-R12"
+	print(("letter: %s (%s)"):format(tostring(letter), meaning))
+	print("guideStep: " .. (state.guideStep == nil and "none" or tostring(state.guideStep)))
+	print("stepsSeen: " .. idSet(state.stepsSeen))
+	print(
+		("guideDone: %s, skipped: %s, reopen: %s"):format(
+			stateFlag(state.guideDone),
+			stateFlag(state.skipped),
+			stateFlag(state.reopen)
+		)
+	)
+	print("notesOn: " .. stateFlag(state.notesOn))
+	print("notesSeen: " .. idSet(state.notesSeen))
+	print("looksSeen: " .. idSet(state.looksSeen))
+	local evening = tableOr(state.evening)
+	print(
+		("evening: shown %s, closed %s, done %s"):format(
+			stateFlag(evening.shown),
+			stateFlag(evening.closed),
+			idSet(evening.done)
+		)
+	)
+	-- Each GUID's name, from PagleLog's characters.
+	local names = {}
+	for char, character in ipairs(log and log.characters or {}) do
+		if type(character) == "table" and character.guid then
+			names[character.guid] = wtf.characterName(log, char)
+		end
+	end
+	local guids = sortedKeys(tableOr(state.characters))
+	print("characters: " .. (#guids > 0 and #guids or "none"))
+	for _, guid in ipairs(guids) do
+		print(("  %s: %s"):format(tostring(guid), names[guid] or "not in PagleLog's characters"))
+	end
+end
+
 -- The P rows (REP-R22) Core builds in the game from the diagnostics buffer (LOG-R81) and the log's Casts, with its
 -- own ns.FieldReportPRows; none without a log the codec reads.
 local function pRows(ns, global, log)
@@ -2984,6 +3063,7 @@ local function main(args)
 	printLooks(pagle)
 	printDock(pagle)
 	printCards(pagle)
+	printOnboarding(pagle, pagleLog(pagle.saved))
 	printFieldReport(pagle, pagleLog(pagle.saved))
 	printProbe(pagle)
 	printReverify(pagle, options)
