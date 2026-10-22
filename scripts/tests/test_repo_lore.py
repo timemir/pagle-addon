@@ -307,10 +307,21 @@ def test_the_manifest_lists_hunts_seven_goods() -> None:
     # HNT-R130, DATA-R106: [hunts.huntgood] with fields name and description and HNT-R121's seven good IDs, none with
     # a placeholder; huntgood is Hunts' own kind, as Core owns good (DATA-R102).
     manifest = _layers().lore.manifest["hunts"]
-    assert sorted(manifest) == ["huntgood"]
+    assert sorted(manifest) == ["huntgood", "ladder"]
     assert manifest["huntgood"].fields == ("name", "description")
     assert list(manifest["huntgood"].ids) == HUNT_GOODS
     assert all(not allowed for allowed in manifest["huntgood"].ids.values())
+
+
+def test_the_manifest_lists_the_ladder_title_at_25_and_bookmakers_bane_is_its_text() -> None:
+    # HNT-R130, HNT-R148, DATA-R106: [hunts.ladder] with fields title, ID 25 so far (50 and 100 come with the pool's
+    # lore batch, #307), and 25's title is "Bookmaker's Bane"; deleting it fails the hunts lore check (DATA-R107).
+    ladder = _layers().lore.manifest["hunts"]["ladder"]
+    assert ladder.fields == ("title",) and list(ladder.ids) == ["25"]
+    assert _hunts_text()["ladder.25.title"] == "Bookmaker's Bane"
+    assert _without("hunts", "ladder.25.title") == [
+        "data/lore/hunts.toml: ladder.25.title: missing: manifest.toml lists it (DATA-R106, DATA-R107)"
+    ]
 
 
 def test_hunts_lore_has_a_name_and_a_description_for_every_good() -> None:

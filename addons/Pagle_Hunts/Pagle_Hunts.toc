@@ -12,6 +12,7 @@
 locale\enUS.lua
 data\Lore.lua
 data\HuntList.lua
+data\EventList.lua
 logic\Data.lua
 logic\Module.lua
 logic\HuntList.lua

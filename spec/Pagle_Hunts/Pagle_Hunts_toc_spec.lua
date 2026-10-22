@@ -70,8 +70,8 @@ describe("Pagle_Hunts.toc", function()
 	it(
 		"splits its code into logic/ and adapter/, its strings in locale/, generated files in data/ (CORE-R7, CORE-R8, DATA-R75)",
 		function()
-			-- The generator writes data/HuntList.lua (and, from the lore batch, data/Lore.lua).
-			local generated = { ["data/HuntList.lua"] = true, ["data/Lore.lua"] = true }
+			-- The generator writes data/HuntList.lua, data/EventList.lua (DATA-R98) and, from the lore batch, data/Lore.lua.
+			local generated = { ["data/HuntList.lua"] = true, ["data/EventList.lua"] = true, ["data/Lore.lua"] = true }
 			local folders, handWrittenData = {}, {}
 			for _, file in ipairs(filesIn({ "lua" })) do
 				local folder = file:match("^([^/]+)/")
@@ -115,5 +115,24 @@ describe("Pagle_Hunts.toc", function()
 			end
 		end
 		assert.are.same({}, codeBefore)
+	end)
+
+	it("lists the generated EventList.lua right after HuntList.lua, before any code (DATA-R98)", function()
+		local at = {}
+		for index, file in ipairs(addonFiles("Pagle_Hunts")) do
+			at[file] = index
+		end
+
+		assert.is_number(at["data/EventList.lua"])
+		assert.are.equal(at["data/HuntList.lua"] + 1, at["data/EventList.lua"])
+	end)
+
+	it("loads the event pool as ns.eventList, { fingerprint, events } (DATA-R98)", function()
+		local eventList = loaded.ns.eventList
+
+		assert.is_table(eventList)
+		assert.matches("^%x+$", eventList.fingerprint)
+		assert.are.equal(16, #eventList.fingerprint)
+		assert.is_table(eventList.events)
 	end)
 end)
