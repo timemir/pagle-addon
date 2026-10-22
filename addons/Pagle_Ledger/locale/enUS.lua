@@ -74,6 +74,8 @@ ns.L = {
 	ZONE_RANK_STAMP = "Rank up",
 	ZONE_MASTER_TITLE = "Zone Master",
 	ZONE_MASTER_STAMP = "Master",
+	-- The zone's crest's "Earned" line (LED-R97), riding in the Zone Master's text as its title does (TEXT_WITH_TITLE).
+	CREST_EARNED = "Earned: %s",
 	TROPHY_WEIGHT_TITLE = "Trophy weight",
 	TROPHY_WEIGHT_STAMP = "Trophy",
 	NEW_CURIO_TITLE = "New curio",

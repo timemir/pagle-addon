@@ -223,7 +223,7 @@ The Ledger is the `Pagle_Ledger` Module: the Angler's identity as an angler. It 
   | Level-up (`levelUp`), one per entry however many levels, for levels above the celebrated one | `banner`, 100 | "Angler Level {L}" / "Title: {title}" for each title earned with it, else "+{n} levels" when more than one, else empty | "Level {L}" | 20 × levels raised by the moment | `seal` {L} |
   | Prestige ready (`prestigeReady`), when a climb reaches 60 | `banner`, 110 | "Prestige ready" / "Open the Fish Journal to begin a new Ledger." | "Prestige ready" | | `seal` `"book"` |
   | Prestige (`prestige`) | `banner`, 90 | "Prestige {I…X}" or "Master Prestige {rank − 10}" / "Title: {title}" when one is earned | | 100 | no `cast`; `seal` `"crest"` |
-  | Zone Master (`zoneMaster`) | `banner`, 120 | "Zone Master" / "{zone}. Title: {zonemaster title}" | "Master" | 2 × each rank passed above the celebrated rank | replaces the zone's `zoneRank` moment; `seal` `"waves"` |
+  | Zone Master (`zoneMaster`) | `banner`, 120 | "Zone Master" / "{zone}. Title: {zonemaster title}. Earned: {crest}", the Earned part only when the zone has a crest (its earned good `ledger.crest.<key>` in Core's crest slot, named as registered) | "Master" | 2 × each rank passed above the celebrated rank | replaces the zone's `zoneRank` moment; `seal` `"waves"` |
   | Catch Milestone (`catchMilestone`) | `banner`, 130 | "{N} Catches" / "" | "{N} Catches" | | `seal` {N} |
   | Completion title (`completeTitle`) | `banner`, 140 | "Title earned" / "{title}" | "Title: {title}" | | one per `complete.*` title; `seal` `"quill"` |
   | New Species (`newSpecies`) | `toast`, 100 | "New Species" / "{item} · {size text}" | "New!" | 10 | `icon` the item |
