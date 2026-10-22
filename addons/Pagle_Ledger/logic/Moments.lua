@@ -502,7 +502,7 @@ function celebrate.prestigeReady(celebrated, _, earned, _, before)
 end
 
 -- A Prestige (LED-R32, LED-R34): "Prestige {I…X}", or "Master Prestige {rank − 10}" from rank 11, with its 100 Coins
--- and no `cast` (LED-R96). Its title rides in its text (celebrateTitles); the new climb's levels ride on their own
+-- and no `cast` (LED-R96), sealed with the new rank's Prestige frame (ANN-R83). Its title rides in its text (celebrateTitles); the new climb's levels ride on their own
 -- cast-less levelUp beside it.
 function celebrate.prestige(celebrated, _, earned)
 	local rank = earned.rank --[[@as integer]]
@@ -519,7 +519,8 @@ function celebrate.prestige(celebrated, _, earned)
 		title = mark.stars > 0 and L.MASTER_PRESTIGE_TITLE:format(mark.stars) or L.PRESTIGE_TITLE:format(mark.emblem),
 		icon = PRESTIGE_ICON,
 		coins = earned.coins,
-		seal = "crest",
+		seal = "frame",
+		frameRank = rank,
 	}
 end
 

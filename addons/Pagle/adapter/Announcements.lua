@@ -94,7 +94,7 @@ local TICKS = 20
 ---@field pivots Frame[]? the points a toast's stamps grow about
 ---@field recordPivot Frame? the point the ruler's New record stamp grows about
 ---@field rays PagleSprite? a banner's or the splash's
----@field sealFrame Frame? a banner's seal or crest, which drops in
+---@field sealFrame Frame? a banner's seal, Prestige frame or crest, which drops in
 ---@field tools { sprite: PagleSprite, x: number, y: number, outward: boolean }[]? a banner's gilt tooling
 ---@field words Frame the frame its words, stamps and coins sit on, over the art
 ---@field icon Texture?
@@ -117,10 +117,8 @@ local TICKS = 20
 ---@field rows PagleDigestRow[]? "While you were fighting"'s
 ---@field seal PagleSprite? a banner's
 ---@field sealNumber FontString?
----@field crest PagleSprite?
----@field portrait Texture?
----@field crestLabel FontString?
----@field crestIcon Texture? a banner's crest good's icon, in the Prestige crest's place (VAR-R25)
+---@field prestige PaglePrestigeFrame? a banner's Prestige frame, in the seal's place (ANN-R83)
+---@field crestIcon Texture? a banner's crest good's icon, in the seal's place (VAR-R25)
 ---@field ribbonArt Texture? a banner's headline art on its seal's ribbon (VAR-R25)
 ---@field extras Frame? a banner's or the splash's row of labels and Coins
 ---@field composed boolean? drawn last in a composed toast style (ANN-R82)
@@ -132,6 +130,10 @@ local TIMELINE = 7
 local SLIDE = ns.Bezier(0.2, 1.2, 0.4, 1)
 local SLAM = ns.Bezier(0.3, 1.6, 0.5, 1)
 local DROP = ns.Bezier(0.3, 1.5, 0.5, 1)
+-- A banner's Prestige frame (ANN-R83): drawn at this share of the kit's box (156 × 168 units), its own motion playing
+-- once the seal has dropped in (0.09 of the timeline, 0.63 s).
+local BANNER_FRAME_SCALE = 0.6
+local SEAL_LANDED = 0.09 * TIMELINE
 
 -- A stamp slamming down at `at` of the timeline: from 2.6x and unseen to a little under its size, then settled.
 ---@param stamp Frame
@@ -1063,9 +1065,9 @@ local function drawExtras(frame, announcement, coinSize)
 	extras:SetShown(width > 0)
 end
 
--- Draws a banner: the spaced gilt title, the seal (a number, a mark, the Prestige crest with the Angler's portrait, or a
--- crest good's icon in its place, VAR-R25) with the headline's art on its ribbon when it has one, the text in gilt
--- handwriting, then the labels and Coins.
+-- Draws a banner: the spaced gilt title, the seal (a number, a mark, the Prestige frame of its rank with the Angler's
+-- portrait, ANN-R83, or a crest good's icon in its place, VAR-R25) with the headline's art on its ribbon when it has
+-- one, the text in gilt handwriting, then the labels and Coins.
 ---@param frame PagleAnnouncementFrame
 ---@param display PagleDisplay
 local function drawBanner(frame, display)
@@ -1075,18 +1077,17 @@ local function drawBanner(frame, display)
 	local seal = ns.BannerSeal(headline)
 	local wax = frame.seal --[[@as PagleSprite]]
 	local number = frame.sealNumber --[[@as FontString]]
-	local prestige = seal.crest == true and seal.icon == nil
-	wax:SetShown(not seal.crest)
-	frame.crest:SetShown(prestige)
-	frame.portrait:SetShown(prestige)
-	frame.crestLabel:SetShown(prestige)
+	local prestige = frame.prestige --[[@as PaglePrestigeFrame]]
+	local pressed = seal.frame == nil and seal.icon == nil
+	wax:SetShown(pressed)
+	prestige:SetShown(seal.frame ~= nil)
 	frame.crestIcon:SetShown(seal.icon ~= nil)
 	number:SetShown(seal.number ~= nil)
 	if seal.icon then
 		frame.crestIcon:SetTexture(seal.icon)
-	elseif seal.crest then
-		SetPortraitTexture(frame.portrait, "player")
-		frame.crestLabel:SetText(ns.Capitals(headline.title))
+	elseif seal.frame then
+		prestige:SetRank(seal.frame, BANNER_FRAME_SCALE)
+		SetPortraitTexture(prestige:GetWell(), "player")
 	else
 		ns.SetSprite(wax, "Announce", seal.mark and "seal-" .. seal.mark or "seal")
 		ns.PlaceSprite(wax, wax:GetParent() --[[@as Frame]], 0, 0)
@@ -1103,7 +1104,7 @@ local function drawBanner(frame, display)
 		ribbon:SetTexture(art.texture)
 		ribbon:SetTexCoord(art.left, art.right, art.top, art.bottom)
 	end
-	local y = -29 - 150 - ((seal.crest or art) and 26 or 4)
+	local y = -29 - 150 - ((seal.frame or seal.icon or art) and 26 or 4)
 	local text = frame.text
 	text:ClearAllPoints()
 	text:SetPoint("TOP", frame, "TOP", 0, y)
@@ -1248,15 +1249,15 @@ local BUILD = {
 		frame.sealNumber:SetPoint("CENTER", centre, "CENTER", 0, -2)
 		frame.sealNumber:SetShadowColor(1, 0.67, 0.59, 0.45)
 		frame.sealNumber:SetShadowOffset(0, -1.5)
-		-- The crest's sprite carries 16 units of shadow above it, and the crest rises 44 above the row.
-		frame.crest = ns.ArtSprite(centre, "Announce", "crest-prestige", "ARTWORK", 1)
-		ns.PlaceSprite(frame.crest, centre, 0, -44)
-		frame.portrait = centre:CreateTexture(nil, "ARTWORK", nil, 2)
-		frame.portrait:SetSize(84, 84)
-		frame.portrait:SetPoint("TOP", centre, "TOP", 0, -10)
-		frame.crestLabel = ns.ArtText(centre, "Crest")
-		frame.crestLabel:SetPoint("CENTER", centre, "TOP", 0, -117)
-		-- A crest good's icon in the Prestige crest's place (VAR-R25: a fish crest), a shield as the zone crests are.
+		-- The Prestige frame in the seal's place (ANN-R83), its likeness's centre on the seal's, so it drops in with
+		-- the seal and about its middle.
+		local prestige = ns.NewPrestigeFrame(centre)
+		prestige:SetRank(1, BANNER_FRAME_SCALE)
+		local well = ns.PRESTIGE_WELL
+		prestige:SetPoint("TOPLEFT", centre, "CENTER", -well.cx * BANNER_FRAME_SCALE, well.cy * BANNER_FRAME_SCALE)
+		prestige:Hide()
+		frame.prestige = prestige
+		-- A crest good's icon in the seal's place (VAR-R25: a fish crest), a shield as the zone crests are.
 		frame.crestIcon = centre:CreateTexture(nil, "ARTWORK", nil, 1)
 		frame.crestIcon:SetSize(150, 150)
 		frame.crestIcon:SetPoint("TOP", centre, "TOP", 0, 20)
@@ -1536,6 +1537,11 @@ function ns.DrawAnnouncement(frame, display)
 		local page = form == "toast" and ns.ToastPage(display.announcement) or nil
 		ns.PlayToastLayers(frame, display, style, page, form)
 	end
+	-- A banner's Prestige frame's own motion, once its seal has dropped in, while the banner holds (ANN-R83).
+	local prestige = frame.prestige
+	if prestige and prestige:IsShown() and frame.lanes then
+		prestige:Play(SEAL_LANDED)
+	end
 	local ruler = frame.ruler
 	if not ruler then
 		return
@@ -1806,10 +1812,14 @@ local function hide(display, atOnce)
 	end
 	frame.display, frame.drawnRuler, frame.moved = nil, nil, nil
 	ns.StopMotion(frame)
-	-- A composed style's layers stop looping as their toast goes (ANN-R82), and the splash's crest as it goes (LED-R153).
+	-- A composed style's layers stop looping as their toast goes (ANN-R82), the splash's crest as it goes (LED-R153),
+	-- and a Prestige frame as its banner goes (ANN-R83).
 	ns.StopToastLayers(frame)
 	if frame.legendCrest then
 		frame.legendCrest:Stop()
+	end
+	if frame.prestige then
+		frame.prestige:Stop()
 	end
 	if frame.ruler then
 		frame.ruler:SetScript("OnUpdate", nil)

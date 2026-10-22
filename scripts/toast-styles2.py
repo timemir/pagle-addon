@@ -29,7 +29,14 @@ FACES = {
     ("Cutive Mono", "normal"): "mono",
 }
 CAVEAT = {"400": "hand", "500": "hand", "600": "handSemi", "700": "handBold"}
-EASINGS = {"linear": "linear", "ease-in-out": "inOut", "ease-out": "out", "ease": "ease", "steps(1)": "steps1"}
+EASINGS = {
+    "linear": "linear",
+    "ease-in-out": "inOut",
+    "ease-out": "out",
+    "ease-in": "in",
+    "ease": "ease",
+    "steps(1)": "steps1",
+}
 INKS = ("what", "name", "small", "amt", "stamp")
 
 

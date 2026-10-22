@@ -325,20 +325,28 @@ end)
 
 describe("a banner's seal", function()
 	it(
-		"presses the headline's number, mark or the Prestige crest, and the waves for none or another (announcements.md › Contracts)",
+		"presses the headline's number or mark, shows the Prestige frame of its frameRank or a crest's icon, and the"
+			.. " waves for none or another (announcements.md › Contracts, ANN-R83, VAR-R25)",
 		function()
 			assert.are.same({
 				{ number = 12 },
-				{ crest = true },
-				{ crest = true, icon = "crests\\fish\\6359" },
+				{ frame = 7 },
+				{ frame = 14 },
+				{ mark = "waves" },
+				{ icon = "crests\\fish\\6359" },
+				{ mark = "waves" },
 				{ mark = "book" },
 				{ mark = "quill" },
 				{ mark = "waves" },
 				{ mark = "waves" },
 			}, {
 				ns.BannerSeal({ seal = 12 }),
-				ns.BannerSeal({ seal = "crest" }),
+				ns.BannerSeal({ seal = "frame", frameRank = 7 }),
+				ns.BannerSeal({ seal = "frame", frameRank = 14 }),
+				ns.BannerSeal({ seal = "frame" }),
 				ns.BannerSeal({ seal = "crest", crest = "crests\\fish\\6359" }),
+				-- The Prestige crest is gone: "crest" names only a crest good's icon now.
+				ns.BannerSeal({ seal = "crest" }),
 				ns.BannerSeal({ seal = "book" }),
 				ns.BannerSeal({ seal = "quill" }),
 				ns.BannerSeal({}),
@@ -594,20 +602,20 @@ describe("the round two's composed toast styles", function()
 				return { r(placed.cx), r(placed.cy), r(placed.w), r(placed.h), r(placed.rotation), placed.mirrored }
 			end
 
-			assert.are.same({ 10, 5, 20, 10, 0, false }, round(ns.TransformToastBox(box, { x = 10, y = 5 })))
+			assert.are.same({ 10, 5, 20, 10, 0, false }, round(ns.TransformLayerBox(box, { x = 10, y = 5 })))
 			assert.are.same(
 				{ 13, 9, 20, 10, 0, false },
-				round(ns.TransformToastBox(box, { x = 10, y = 5 }, { 3, 4, 0, 1, 1 }))
+				round(ns.TransformLayerBox(box, { x = 10, y = 5 }, { 3, 4, 0, 1, 1 }))
 			)
 			-- 90° clockwise about the box's top left: its centre swings down and left, y growing downward; the client
 			-- turns anticlockwise.
 			assert.are.same(
 				{ -5, 10, 20, 10, -1.571, false },
-				round(ns.TransformToastBox(box, { x = 0, y = 0 }, { 0, 0, 90, 1, 1 }))
+				round(ns.TransformLayerBox(box, { x = 0, y = 0 }, { 0, 0, 90, 1, 1 }))
 			)
 			assert.are.same(
 				{ 10, 5, 40, 5, 0, true },
-				round(ns.TransformToastBox(box, { x = 10, y = 5 }, { 0, 0, 0, -2, 0.5 }))
+				round(ns.TransformLayerBox(box, { x = 10, y = 5 }, { 0, 0, 0, -2, 0.5 }))
 			)
 		end
 	)
@@ -632,20 +640,18 @@ describe("the round two's composed toast styles", function()
 				end
 			end
 			local applied = {}
-			local animations = ns.ToastLayerAnimations(
-				motionOf("ledger.toaststyle.deep", "deep-bob"),
-				0.98,
-				function(kind, values)
-					applied[#applied + 1] = { kind, values }
-				end
-			)
+			local bob = motionOf("ledger.toaststyle.deep", "deep-bob")
+			local animations = ns.LayerAnimations(bob, 0.98, function(kind, values)
+				applied[#applied + 1] = { kind, values }
+			end, ns.TOAST_MOTION_ONCE[bob.keyframes])
 
 			assert.are.equal(1, #animations)
 			assert.are.same({ 2.6, 0.98, "infinite" }, { animations[1].dur, animations[1].delay, animations[1].iter })
 			assert.are.same({ 0.5, { 0, 3, 0, 1, 1 } }, animations[1].keys[2])
 			animations[1].apply({ 0, 3, 0, 1, 1 })
 			assert.are.same({ { "transform", { 0, 3, 0, 1, 1 } } }, applied)
-			local flag = ns.ToastLayerAnimations(motionOf("ledger.toaststyle.ice", "ice-flag"), 0, function() end)
+			local ice = motionOf("ledger.toaststyle.ice", "ice-flag")
+			local flag = ns.LayerAnimations(ice, 0, function() end, ns.TOAST_MOTION_ONCE[ice.keyframes])
 			assert.are.same({ 1, { 80 } }, { flag[1].iter, { flag[1].keys[1][2][3] } })
 		end
 	)
@@ -654,7 +660,7 @@ describe("the round two's composed toast styles", function()
 		local function rests(id)
 			local out = {}
 			for _, layer in ipairs(ns.ToastStyleOf(id).art.rungs.toast.layers) do
-				out[layer.name] = ns.ToastLayerRests(layer)
+				out[layer.name] = ns.LayerRests(layer)
 			end
 			return out
 		end

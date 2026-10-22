@@ -17,6 +17,7 @@ data\Catalogue.lua
 data\AnnounceArt.lua
 data\ToastStyleArt.lua
 data\ToastStyleArt2.lua
+data\PrestigeArt.lua
 data\ShopArt.lua
 data\BindingArt.lua
 data\GuideArt.lua
@@ -83,6 +84,8 @@ logic\Announcements.lua
 logic\ToastStyles.lua
 logic\Motion.lua
 logic\BookBinding.lua
+logic\LayeredArt.lua
+logic\PrestigeFrames.lua
 logic\LegendCrests.lua
 logic\Fit.lua
 logic\Menu.lua
@@ -143,6 +146,7 @@ adapter\Motion.lua
 adapter\Fit.lua
 adapter\BookBinding.lua
 adapter\ToastLayers.lua
+adapter\PrestigeFrames.lua
 adapter\Announcements.lua
 adapter\CoreGoods.lua
 adapter\Cards.lua

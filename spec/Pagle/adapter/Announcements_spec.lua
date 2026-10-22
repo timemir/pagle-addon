@@ -516,28 +516,117 @@ describe("the announcements art", function()
 	end)
 
 	it(
-		"presses a banner's seal with the headline's number or mark, or shows the Prestige crest with the Angler's"
-			.. " portrait (announcements.md › Contracts)",
+		"presses a banner's seal with the headline's number or mark, or shows the Prestige frame of its frameRank with"
+			.. " the Angler's portrait (announcements.md › Contracts, ANN-R83)",
 		function()
 			local loaded, M = loadCore()
 			local seals = {}
-			for _, seal in ipairs({ 1200, "quill", "crest" }) do
-				raise(loaded, M, moment("banner", "Prestige I", { seal = seal }))
+			for _, fields in ipairs({
+				{ seal = 1200 },
+				{ seal = "quill" },
+				{ seal = "frame", frameRank = 7 },
+				{ seal = "frame", frameRank = 13 },
+			}) do
+				raise(loaded, M, moment("banner", "Prestige", fields))
 				local banner = frameOf(loaded, "banner")
+				local prestige = banner.prestige
 				seals[#seals + 1] = {
 					banner.seal.shown and spriteOf(loaded, banner.seal) or false,
 					banner.sealNumber.shown and banner.sealNumber:GetText() or false,
-					banner.crest.shown and banner.portrait.portrait or false,
-					banner.crestLabel.shown and banner.crestLabel:GetText() or false,
+					prestige.shown and prestige.key or false,
+					prestige.shown and prestige:GetWell().portrait or false,
+					prestige.shown and prestige.label:GetText() or false,
 				}
 				loaded.client.advance(BANNER + LEAVE_BANNER)
 			end
 
 			assert.are.same({
-				{ "seal", "1,200", false, false },
-				{ "seal-quill", false, false, false },
-				{ false, false, "player", "PRESTIGE I" },
+				{ "seal", "1,200", false, false, false },
+				{ "seal-quill", false, false, false, false },
+				{ false, false, "coral", "player", "VII" },
+				{ false, false, "constellation", "player", "MASTER" },
 			}, seals)
+		end
+	)
+
+	it(
+		"draws the Prestige frame at 0.6 of its box, its likeness's centre on the seal's, dropping in with the seal"
+			.. " (ANN-R83)",
+		function()
+			local loaded, M = loadCore()
+			raise(loaded, M, moment("banner", "Prestige V", { seal = "frame", frameRank = 5 }))
+			local banner = frameOf(loaded, "banner")
+			local prestige = banner.prestige
+			local well = loaded.ns.PRESTIGE_WELL
+
+			assert.are.same({ 156, 168 }, { prestige.width, prestige.height })
+			assert.are.same(
+				{ "TOPLEFT", banner.sealFrame, "CENTER", -well.cx * 0.6, well.cy * 0.6 },
+				{ prestige:GetPoint() }
+			)
+			assert.are.equal(banner.sealFrame, prestige:GetParent())
+			-- Its sprites are the Storm's, each at its box at 0.6.
+			local art = loaded.ns.PrestigeFrameArt(5)
+			local atlas = loaded.ns.ATLASES[art.atlas]
+			for i, layer in ipairs(art.layers) do
+				local texture = prestige.art.active[i].texture
+				assert.are.equal(atlas.file, texture.texture)
+				assert.are.same({ layer.w * 0.6, layer.h * 0.6 }, { texture.width, texture.height })
+			end
+		end
+	)
+
+	it(
+		"plays the Prestige frame's own motion once the seal has dropped in, while the banner holds, and stops it as"
+			.. " the banner goes (ANN-R83)",
+		function()
+			local loaded, M = loadCore()
+			raise(loaded, M, moment("banner", "Prestige V", { seal = "frame", frameRank = 5 }))
+			local prestige = frameOf(loaded, "banner").prestige
+			local wheel
+			for _, slot in ipairs(prestige.art.active) do
+				if slot.layer.name == "body" then
+					wheel = slot.texture
+				end
+			end
+
+			local function near(a, b)
+				return math.abs(a - b) < 1e-6
+			end
+			assert.are.equal(prestige, prestige.art.playing)
+			-- Still dropping in: the wheel waits at its first frame, 7° anticlockwise (the client turns anticlockwise).
+			loaded.client.nextFrame(0.5)
+			assert.is_true(near(math.rad(7), wheel.rotation))
+			loaded.client.nextFrame(0.13 + 4.6 / 4) -- a quarter of its rock on, from -7° to 7°: upright
+			assert.is_true(near(0, wheel.rotation))
+			loaded.client.nextFrame(4.6 / 4) -- and at 7° clockwise
+			assert.is_true(near(-math.rad(7), wheel.rotation))
+
+			loaded.client.advance(BANNER + LEAVE_BANNER)
+			assert.is_nil(prestige.art.playing)
+		end
+	)
+
+	it(
+		"stands the Prestige frame still with Animations off: resting, the lightning unseen (ANN-R83, SET-R30)",
+		function()
+			local loaded, M = loadCore()
+			loaded.ns.db.profile.announcements.motion = false
+			raise(loaded, M, moment("banner", "Prestige V", { seal = "frame", frameRank = 5 }))
+			local prestige = frameOf(loaded, "banner").prestige
+			local shown = {}
+			for _, slot in ipairs(prestige.art.active) do
+				shown[slot.layer.name] = { slot.texture.shown, slot.texture.rotation }
+			end
+
+			assert.is_nil(prestige.art.playing)
+			assert.are.same({
+				back = { true, 0 },
+				fx1 = { false, 0 },
+				fx2 = { false, 0 },
+				body = { true, 0 },
+				lab = { true, 0 },
+			}, shown)
 		end
 	)
 end)
@@ -582,7 +671,7 @@ describe("a variety's art and a fish crest on the client (VAR-R25)", function()
 		end
 	)
 
-	it("draws a banner's art on its seal's ribbon, and a crest good's icon in the Prestige crest's place", function()
+	it("draws a banner's art on its seal's ribbon, and a crest good's icon in the seal's place", function()
 		local loaded, M = loadCore()
 		raise(loaded, M, moment("banner", "Epic variety", { text = "Phoenix-fin", art = ART }))
 		local banner = frameOf(loaded, "banner")
@@ -596,11 +685,9 @@ describe("a variety's art and a fish crest on the client (VAR-R25)", function()
 		loaded.client.advance(BANNER + LEAVE_BANNER)
 
 		raise(loaded, M, moment("banner", "Every colour of Firefin Snapper", { seal = "crest", crest = "fish6359" }))
-		assert.are.same({ false, false, false, false, true, "fish6359", false }, {
+		assert.are.same({ false, false, true, "fish6359", false }, {
 			banner.seal.shown,
-			banner.crest.shown,
-			banner.portrait.shown,
-			banner.crestLabel.shown,
+			banner.prestige.shown,
 			banner.crestIcon.shown,
 			banner.crestIcon.texture,
 			banner.ribbonArt.shown,

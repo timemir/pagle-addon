@@ -380,31 +380,12 @@ end
 ---@field caps? true                  -- set in capitals
 ---@field shadow? { color: string, alpha: number, x: number, y: number }
 
----@class PagleToastBox
----@field x number
----@field y number
----@field w number
----@field h number
+---@alias PagleToastBox PagleArtBox
 
----@class PagleToastLayerMotion
----@field keyframes string            -- the canvas's keyframes' name
----@field dur number
----@field ease string
----@field delay? number
----@field loop boolean                -- the canvas's; ns.TOAST_MOTION_ONCE plays some once in game
----@field origin { x: number, y: number }
----@field window? PagleToastBox       -- a sweep's: the part of the rung its strip scrolls through
----@field alpha? number[][]           -- { at, alpha }
----@field transform? number[][]       -- { at, x, y, rotate (degrees, clockwise), sx, sy }
----@field scroll? number[][]          -- { at, u, v }: the strip's place in its window, as CSS's background-position
-
----@class PagleToastLayer: PagleToastBox
----@field name string
----@field sprite string
----@field host "under"|"front"|"over" -- under the medallion's icon, over it, or over the words
----@field blend? "ADD"|"MOD"
----@field mask? PagleToastBox|{ sprite: string }
----@field motion? PagleToastLayerMotion
+--- A composed rung's layer (logic/LayeredArt.lua's), on the host it draws on: under the medallion's icon, over it,
+--- or over the words. A layer's motion that loops on the canvas loops in game, but ns.TOAST_MOTION_ONCE's.
+---@class PagleToastLayer: PagleArtLayer
+---@field host "under"|"front"|"over"
 ---@field slice? { left: number, right: number } -- a stamp's caps
 ---@field tilt? number                -- a stamp's, degrees clockwise
 
@@ -547,101 +528,6 @@ function ns.FitToastBox(box, rung, w, h, centred)
 	return { x = x, y = y, w = width, h = height }
 end
 
---- Where a layer's box is drawn under one moment of its transform (CSS's: translate, then rotate and scale about its
---- origin, in UI units with y down): its centre, size, rotation for the client (radians, anticlockwise) and whether
---- it is mirrored across.
----@param box PagleToastBox
----@param origin { x: number, y: number }
----@param t number[]? { x, y, rotate (degrees clockwise), sx, sy }, none for none
----@return { cx: number, cy: number, w: number, h: number, rotation: number, mirrored: boolean }
-function ns.TransformToastBox(box, origin, t)
-	local tx, ty, degrees, sx, sy = 0, 0, 0, 1, 1
-	if t then
-		tx, ty, degrees, sx, sy = t[1], t[2], t[3], t[4], t[5]
-	end
-	local dx, dy = (box.x + box.w / 2 - origin.x) * sx, (box.y + box.h / 2 - origin.y) * sy
-	local r = math.rad(degrees)
-	local c, s = math.cos(r), math.sin(r)
-	return {
-		cx = origin.x + tx + c * dx - s * dy,
-		cy = origin.y + ty + s * dx + c * dy,
-		w = box.w * math.abs(sx),
-		h = box.h * math.abs(sy),
-		rotation = -r,
-		mirrored = sx < 0,
-	}
-end
-
---- The share of a sweep's strip seen through its window at a scroll (CSS's background-position: 0 shows the strip's
---- start, 1 its end), as left, right, top and bottom from 0 to 1 across the strip: the window is `ku` of its width and
---- `kv` of its height.
----@param ku number
----@param kv number
----@param u number
----@param v number
----@return number left
----@return number right
----@return number top
----@return number bottom
-function ns.ScrollWindow(ku, kv, u, v)
-	local left, top = u * (1 - ku), v * (1 - kv)
-	return left, left + ku, top, top + kv
-end
-
--- The kit's easings by name (data/ToastStyleArt2.lua), looked up as a motion is built: logic/Motion.lua's.
-local function easing(name)
-	if name == "steps1" then
-		return ns.Steps(1)
-	end
-	return ns.EASE[name] or ns.EASE.ease
-end
-
---- Whether a layer shows in its resting frame (ANN-R82: Animations off, or a preview standing still): as the kit
---- drew it, unmoved and opaque, unless it only flashes (its motion starts unseen: lightning, a ripple, a puff) or is a
---- sweep's band of light.
----@param layer PagleToastLayer
----@return boolean
-function ns.ToastLayerRests(layer)
-	local motion = layer.motion
-	if not motion then
-		return true
-	end
-	return motion.scroll == nil and not (motion.alpha and motion.alpha[1][2] == 0)
-end
-
---- A layer's motion as animations for the motion player (logic/Motion.lua), one per property it moves, as CSS
---- animates each on its own keyframes: "alpha" ({ alpha }), "transform" ({ x, y, rotate, sx, sy }) and "scroll"
---- ({ u, v }), each `apply(kind, values)`. Each starts `landing` seconds in, once its toast has landed (ANN-R82),
---- holding its first frame till then, and loops for as long as its owner plays, but one ns.TOAST_MOTION_ONCE names
---- plays once and holds its end.
----@param motion PagleToastLayerMotion
----@param landing number
----@param apply fun(kind: string, values: number[])
----@return PagleAnimation[]
-function ns.ToastLayerAnimations(motion, landing, apply)
-	local animations = {}
-	for _, kind in ipairs({ "alpha", "transform", "scroll" }) do
-		local track = motion[kind]
-		if track then
-			local keys = {}
-			for i, key in ipairs(track) do
-				keys[i] = { key[1], { unpack(key, 2) } }
-			end
-			animations[#animations + 1] = {
-				dur = motion.dur,
-				delay = landing + (motion.delay or 0),
-				ease = easing(motion.ease),
-				iter = (motion.loop and not ns.TOAST_MOTION_ONCE[motion.keyframes]) and "infinite" or 1,
-				keys = keys,
-				apply = function(values)
-					apply(kind, values)
-				end,
-			}
-		end
-	end
-	return animations
-end
-
 --- The style a toast style good ID draws in: its own, or Torn Page for any other ID, or none (ANN-R80): before Core's
 --- slot is registered, GetEquipped has no good for it.
 ---@param goodID any
@@ -774,17 +660,20 @@ function ns.ToastPage(announcement)
 	return ruled and PAGES["toast-ruled"] or PAGES.toast
 end
 
---- What a banner's wax seal shows (announcements.md › Contracts, `seal`): a number pressed into it, the Prestige crest,
---- or one of the pressed marks, the waves when the headline names none. With `crest`, a crest good's icon (a fish
---- crest, VAR-R25) shows in the Prestige crest's place, without the Angler's portrait: `icon`.
+--- What a banner's wax seal shows (announcements.md › Contracts, `seal`): a number pressed into it, the Prestige frame
+--- of the headline's `frameRank` holding the Angler's portrait (`frame`, ANN-R83), a crest good's icon in the seal's
+--- place (`icon`: "crest" with `crest`, a fish crest, VAR-R25), or one of the pressed marks; the waves when the
+--- headline names none, a "frame" with no rank or a "crest" with no icon.
 ---@param headline PagleMoment
----@return { number: integer?, crest: boolean?, icon: (integer|string)?, mark: string? }
+---@return { number: integer?, frame: integer?, icon: (integer|string)?, mark: string? }
 function ns.BannerSeal(headline)
 	local seal = headline.seal
 	if type(seal) == "number" then
 		return { number = seal }
-	elseif seal == "crest" then
-		return { crest = true, icon = headline.crest }
+	elseif seal == "frame" and type(headline.frameRank) == "number" then
+		return { frame = math.max(0, math.floor(headline.frameRank)) }
+	elseif seal == "crest" and headline.crest ~= nil then
+		return { icon = headline.crest }
 	elseif seal == "book" or seal == "quill" or seal == "waves" then
 		return { mark = seal }
 	end

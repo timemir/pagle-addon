@@ -292,6 +292,40 @@ describe("FakePagle", function()
 		end
 	)
 
+	it(
+		"makes Prestige frames and emblems on the loaded Module's client from Core's art, the frame moving on"
+			.. " Pagle.Animate's player while Animations are on (LED-R152, LED-R153)",
+		function()
+			local fake = newFakePagle()
+			local loaded = fake.load("Pagle_QoL")
+			local frame = fake.Pagle.NewPrestigeFrame(loaded.env.UIParent)
+			local emblem = loaded.env.UIParent:CreateTexture()
+
+			frame:SetRank(5, 0.65)
+			frame:Play()
+			local playing = frame.art.playing
+			frame:Stop()
+			fake.profile.announcements.motion = false
+			frame:Play()
+
+			assert.are.same({ "storm", 169, 182, "V", frame, true, "emblem-v" }, {
+				frame.key,
+				frame.width,
+				frame.height,
+				frame.label:GetText(),
+				playing,
+				fake.Pagle.SetPrestigeEmblem(emblem, 5, 34),
+				fake.ns.PrestigeEmblemSprite(5),
+			})
+			assert.is_nil(frame.art.playing)
+			assert.are.same({ "storm", true }, {
+				fake.Pagle.GetPrestigeFrame(5).key,
+				fake.Pagle.GetPrestigeFrame(5).moving,
+			})
+			assert.matches("^|T.*Emblems:22:22:", fake.Pagle.PrestigeEmblemMarkup(5, 22))
+		end
+	)
+
 	it("passes WoW events to the handlers Modules registered through Pagle (CORE-R23)", function()
 		local fake = newFakePagle()
 		local got = {}

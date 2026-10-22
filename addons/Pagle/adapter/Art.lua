@@ -59,7 +59,6 @@ local FONTS = {
 	Say = { "handSemi", 28, "cream", true },
 	BanAmt = { "handBold", 26, "gilt", true },
 	Label = { "gilt", 13, "gilt", true },
-	Crest = { "print", 11, "ink" },
 	-- the splash
 	SplashWhat = { "print", 16, "red" },
 	SplashName = { "handBold", 58, "ink" },
@@ -222,17 +221,8 @@ function ns.ShrinkToFit(fontString, key, width)
 	fontString:SetWidth(math.min(fontString:GetStringWidth(), width))
 end
 
--- Draws texels as they are, unsnapped, so a sprite scaled by the UI doesn't shimmer.
----@param texture Texture
----@return Texture
-local function crisp(texture)
-	if texture.SetSnapToPixelGrid then
-		texture:SetSnapToPixelGrid(false)
-		texture:SetTexelSnappingBias(0)
-	end
-	return texture
-end
-ns.ArtCrisp = crisp
+-- Draws texels as they are, unsnapped, so a sprite scaled by the UI doesn't shimmer (logic/LayeredArt.lua's).
+local crisp = ns.ArtCrisp
 
 ---@param atlasName string
 ---@param name string

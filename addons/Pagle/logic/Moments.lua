@@ -22,8 +22,9 @@ local ns = select(2, ...)
 ---@field pastText? string       -- shown in the summary if it expired
 ---@field summaryOnly? boolean   -- ANN-R63
 ---@field firstNote? string      -- the Margin note shown the first time a moment of this Module and kind shows (ONB-R53)
----@field seal? integer|"waves"|"book"|"quill"|"crest" -- a banner's wax seal: a number, a mark or the Prestige crest
----@field crest? integer|string  -- with seal "crest": a crest good's icon shown in the Prestige crest's place (VAR-R25)
+---@field seal? integer|"waves"|"book"|"quill"|"frame"|"crest" -- a banner's wax seal: a number, a mark, the Prestige frame or a crest
+---@field frameRank? integer     -- with seal "frame": the prestige rank whose Prestige frame shows (ANN-R83)
+---@field crest? integer|string  -- with seal "crest": a crest good's icon shown in the seal's place (VAR-R25)
 ---@field art? PagleMomentArt    -- a texture rectangle drawn instead of `icon` where the headline shows (VAR-R25)
 ---@field variety? PagleNodVariety -- Core's catch Nod only: the variety its line names (VAR-R26)
 ---@field onClick? fun()         -- what clicking its toast or Nod does as it sends it away (ANN-R20); never stored

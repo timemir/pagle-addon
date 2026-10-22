@@ -434,6 +434,8 @@ ns.L = {
 	ANGLER_TIP_PRESTIGE = "%d · Prestige %s",
 	ANGLER_TIP_MASTER_PRESTIGE = "%d · Master Prestige %d",
 	PRESTIGE_NUMERALS = { "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X" },
+	-- The Master's Prestige frame's label, before its star stamps (LED-R152); the others read their numeral.
+	PRESTIGE_FRAME_MASTER = "Master",
 	ANGLER_TIP_LEDGER = "Ledger",
 	ANGLER_TIP_LEDGER_VALUE = "%d%%",
 	ANGLER_TIP_LEGENDS = "Legends",

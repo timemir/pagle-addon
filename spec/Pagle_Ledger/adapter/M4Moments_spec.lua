@@ -400,7 +400,8 @@ describe("the Ledger's M4 live moments", function()
 	end)
 
 	it(
-		"seal each banner: the level, the Catches, the book for Prestige ready, the crest and the quill (announcements.md › Contracts)",
+		"seal each banner: the level, the Catches, the book for Prestige ready, the new rank's Prestige frame and the"
+			.. " quill (announcements.md › Contracts, ANN-R83)",
 		function()
 			local climb = session({ history = { cast(T0, fishes(1, TO_60 - 1)) } })
 			climb.playCast("caught", loot(fishes(TO_60, 1)))
@@ -416,10 +417,11 @@ describe("the Ledger's M4 live moments", function()
 			titled.conditions.zone = COVE
 			titled.playCast("caught", loot({ JUNK }))
 
-			assert.are.same({ 60, "book", "crest", 1000, "quill" }, {
+			assert.are.same({ 60, "book", "frame", 1, 1000, "quill" }, {
 				reached.levelUp.seal,
 				reached.prestigeReady.seal,
 				prestiged.prestige.seal,
+				prestiged.prestige.frameRank,
 				byKind(shown(catches)).catchMilestone.seal,
 				byKind(shown(titled)).completeTitle.seal,
 			})

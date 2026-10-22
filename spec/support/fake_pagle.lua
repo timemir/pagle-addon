@@ -584,6 +584,37 @@ part(function(fake, Pagle, ns)
 	end)
 end)
 
+-- The Prestige frames and emblems (announcements.md › Contracts; ledger.md › LED-R152, LED-R153), on Core's real
+-- logic/LayeredArt.lua and logic/PrestigeFrames.lua over the client fake.load gave the Module: its frames, and
+-- Pagle.Animate's player. Only a label's face is the client's own font: Core's art fonts are its adapter's.
+part(function(fake, Pagle, ns)
+	local makeWellArt = ns.WellArtMaker({
+		createFrame = function(parent)
+			return fake.clientEnv.CreateFrame("Frame", nil, parent)
+		end,
+		setInk = function(fontString, ink, size)
+			fontString:SetFont("Fonts\\FRIZQT__.TTF", size, "")
+			local color = ns.Rgb(ink.color)
+			fontString:SetTextColor(color[1], color[2], color[3])
+		end,
+		motion = {
+			animate = function(owner, animations, onDone)
+				Pagle.Animate(owner, animations, onDone)
+			end,
+			stop = function(owner)
+				Pagle.StopMotion(owner)
+			end,
+			isOn = function()
+				return Pagle.IsAnimationsOn()
+			end,
+		},
+	})
+	Pagle.NewPrestigeFrame = ns.PrestigeFrameMaker(makeWellArt)
+	Pagle.GetPrestigeFrame = ns.PrestigeFrameInfo
+	Pagle.SetPrestigeEmblem = ns.SetPrestigeEmblem
+	Pagle.PrestigeEmblemMarkup = ns.PrestigeEmblemMarkup
+end)
+
 -- Restriction state (CORE-R30), on Core's real Restriction logic. setRestricted works as combat would.
 part(function(fake, Pagle, ns)
 	local restriction = ns.NewRestriction(false, {})
