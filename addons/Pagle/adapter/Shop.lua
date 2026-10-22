@@ -40,9 +40,9 @@ local DOT, DOT_GAP, DOT_PAD = 10, 8, 8
 local CARD_X, CARD_Y = 534, 159
 local STAGE_X, STAGE_Y, STAGE_W, STAGE_H, WELL_H = 6, 16, 390, 190, 132
 local INFO_Y, INFO_H, INFO_PAD = 385, 220, 20
--- The purse: the coin, then the label over the balance; the bar's right end, and its top with and without the held
--- line under it.
-local PURSE_TEXT_X, BAR_RIGHT, BAR_Y, BAR_Y_HELD = 94, WIDTH - 74, 31, 24
+-- The purse: the coin, then the label over the balance; the bar's right end, 10 short of the "?" left of the close
+-- button (its 18 inset, 44 wide, the 6 between and the "?"'s 34), and its top with and without the held line under it.
+local PURSE_TEXT_X, BAR_RIGHT, BAR_Y, BAR_Y_HELD = 94, WIDTH - (18 + 44 + 6 + 34 + 10), 31, 24
 -- Each paying Module's segment sprite and legend dot (shop.css's --board, --ledger, --hunts); any other Module's.
 local SEGMENTS = {
 	TackleBoard = { "seg-board", { 0.847, 0.604, 0.29 } },
@@ -1533,20 +1533,36 @@ local function show(selection)
 	end
 end
 
--- The row the shop's First look's second note points at: the selected good's medallion, else the first good's.
+-- Whether `region` lies within the list's tray as scrolled now: a row scrolled out is clipped, yet still shown. One
+-- not laid out yet counts as in it.
+---@param region Region
+---@param scroll ScrollFrame
+---@return boolean
+local function inTray(region, scroll)
+	local top, bottom = region:GetTop(), region:GetBottom()
+	local trayTop, trayBottom = scroll:GetTop(), scroll:GetBottom()
+	if not (top and bottom and trayTop and trayBottom) then
+		return true
+	end
+	return top <= trayTop + 0.5 and bottom >= trayBottom - 0.5
+end
+
+-- The row the shop's First look's second note points at, read each frame as the list scrolls: the selected good's
+-- medallion while it is in the tray, else the first good's in it, else the tray itself, so the arrow never follows a
+-- row out of the window.
 ---@param frame PagleShopFrame
 ---@return Region?
 local function lookRow(frame)
 	local first
 	for _, line in ipairs(frame.lines) do
-		if line:IsShown() and not line.header then
+		if line:IsShown() and not line.header and inTray(line.bezel, frame.scroll) then
 			if line.goodID == selected then
 				return line.bezel
 			end
 			first = first or line.bezel
 		end
 	end
-	return first
+	return first or frame.scroll
 end
 
 --- The Curio Shop's First look (ONB-R57; board "First look · the Curio Shop", its places from the canvas's case at
