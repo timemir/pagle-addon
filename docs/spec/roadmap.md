@@ -9,7 +9,7 @@ This file sets the order in which Pagle is built. It assigns spec rules to miles
 - **Nothing is published before 1.0.** 1.0 means every Module is implemented (Core, QoL, Ledger, Hunts, Stats, Tackle Board) and M9 is done. There are no target dates: work continues straight through, and scope is cut rather than quality.
 - **No backward compatibility before 1.0.** The log format, every `PagleDB` / `Pagle<Module>DB` shape, Module state and Hunt definitions change freely; a dev log whose format is outdated is replaced by a new one (LOG-R18). The freezes start at 1.0: LOG-R17, CORE-R15, DATA-R73, DATA-R95.
 - **One version for the whole package, and no git tags before 1.0.** The packager publishes only on a tag push, so nothing reaches CurseForge or Wago by accident.
-- **Milestones.** Each milestone below is one GitHub Milestone with the same name. Every build ticket belongs to exactly one. Milestones set the order of work, not dates: the riskiest and most shared Core pieces come first, and leaf work runs in parallel. **Track Q** runs in parallel from the end of M1.
+- **Milestones.** Each milestone below is one GitHub Milestone with the same name. Every build ticket belongs to exactly one. Milestones set the order of work, not dates: the riskiest and most shared Core pieces come first, and leaf work runs in parallel. **Track Q** runs in parallel from the end of M1, and **Track V** alongside M8 onward; 1.0 doesn't wait for Track V.
 - **Rules per milestone.** A rule listed under a milestone is built in it. A rule listed "for" or "without" something is built only in that part; the rest of it is listed where it lands. Every milestone and Track Q lists its rules file by file, and every rule ID in the spec is listed somewhere below. The Milestones line in each spec file's header summarises the same split; where the two differ, this file wins and the header is fixed.
 - **Rules that name later features.** A rule listed in full is built for what exists in its milestone; the parts that name a later feature (a Curio Shop row in CORE-R33, the next-action button in QOL-R93, a rebuild in LOG-R18) take effect when that feature lands, without being listed again. Edge-case rules (the "Edge cases" block of each file) are listed where their main feature lands and hold from then on.
 - **Exit checks.** A milestone is done when its tickets are closed and its exit check passes in the game. Exit checks run on the Forever beta until it launches (Nov 4, 2026), and on the live build after that.
@@ -418,6 +418,27 @@ Legends, titles, Simulated Size with the typical-length check on, Catch Mileston
 **Exit check:** [core/onboarding.md › In-game exit check](core/onboarding.md#in-game-exit-check), steps 1–14, then:
 15. The minimap icon shows the favicon; dragging moves it round the minimap and the place survives `/reload`; a left click opens the Pagle menu; its tooltip and the compartment entry's read "A letter for you" while the Letter shows; Show the minimap icon hides and shows it.
 16. `scripts/check.sh` passes.
+
+## Track V: In-game views
+
+**Goal:** Published Anglers in game, from the two data addons the Companion writes ([#76](https://github.com/timemir/wow-fish/issues/76) items 9–11, pagle-backend's [in-game-views.md](https://github.com/timemir/pagle-backend/blob/main/docs/spec/in-game-views.md)): Core reads `Pagle_Following` and `Pagle_Anglers`, adds the Pagle block to player tooltips, and the Ledger draws the Following spread. Without the Companion's files nothing shows, so it ships in 1.0 if it is merged by the tag and in a patch otherwise; M9 doesn't wait for it. pagle-backend's B4 exit check and pagle-companion #34 wait for it.
+
+**Build order:** 1. Core's reads (VIEW-R1–R4, VIEW-R10–R12). 2. The tooltip block and its Settings row, and the Following spread, in parallel.
+
+**Core rules:** VIEW-R1–R4, VIEW-R10–R12, VIEW-R20–R22, VIEW-R30; edge cases VIEW-R90–R95 ([core/anglers-in-game.md](core/anglers-in-game.md))
+
+**Module rules:** Ledger: LED-R132 for its "Following" line, LED-R151
+
+**Settings rules:** SET-R10 row 11 (Show other Anglers on player tooltips)
+
+**Exit check,** with the Pagle Companion linked and running, following one Published Angler whose character is nearby:
+1. Before the Companion's folders exist: no block on any player tooltip; Home's "Following" greys out as "no Companion"; the spread shows the absent state; `/pagle dev views` reports both files absent.
+2. After logging out to character select and back in: hovering the followed character shows the block with "Following", its title, Angler Level, Ledger % and Legends, and no region; hovering another Published Angler's character shows the block without "Following"; hovering a player who isn't Published adds nothing.
+3. The first hover in combat finds only the Followed Angler; out of combat the next hover loads `Pagle_Anglers` (`/pagle dev views` says it loaded).
+4. Turning "Show other Anglers on player tooltips" off removes the block; on again, it comes back.
+5. The Following spread lists the Followed Angler with its card; with the Ledger turned off the tooltip still shows.
+6. With the Companion closed for 24 h, the block goes and the spread shows the expired state.
+7. `scripts/check.sh` passes.
 
 ## M9 Release
 
