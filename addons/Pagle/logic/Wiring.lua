@@ -47,6 +47,8 @@ local ns = select(2, ...)
 ---@field tourStops PagleTourStops Core's one registry of tour stops (ns.WireDev, CORE-R65).
 ---@field tour PagleTour Core's `/pagle dev tour` (ns.WireDev, CORE-R66).
 ---@field onboarding PagleOnboarding Core's onboarding state and its hooks (ns.WireOnboarding, core/onboarding.md).
+---@field guideSteps PagleGuideSteps The Field guide's step registry (ns.WireGuide, ONB-R21).
+---@field guide PagleGuide The Field guide (ns.WireGuide, ONB-R20–R27).
 
 --- Core's projection machinery (LOG-R70–R78) as ns.projections, and `M:NewProjection` and `M:IterateCatches` on every
 --- Module handle. A Module's records are the ones Pagle.IterateCatches yields plus its own Module records (LOG-R42).
@@ -1000,5 +1002,118 @@ function ns.WireOnboarding(host)
 		end
 		onboarding:Reset(current)
 		host.print(ns.L.DEV_ONBOARDING_RESET)
+	end)
+end
+
+--- What the Field guide's wiring needs from where Core runs, beyond the host: Core's adapter passes the book and the
+--- Announcement lanes' hold (adapter/Guide.lua), FakePagle its records.
+---@class PagleGuideWiringView: PagleGuideView
+---@field hold fun(reason: string)    -- ns.HoldAnnouncements (ANN-R38)
+---@field release fun(reason: string) -- ns.ReleaseAnnouncements
+---@field coreSteps table<string, PagleCoreGuideStepDrawing> -- what draws each of Core's own steps, by id (ONB-R21)
+
+--- The Field guide (core/onboarding.md › The Field guide) as ns.guide over ns.guideSteps, with `M:RegisterGuideStep`
+--- on every Module handle and ns.RegisterCoreGuideStep, which registers Core's own four steps here, drawn by
+--- `view.coreSteps` (ONB-R21, ONB-R90). At ModulesChanged the
+--- registry closes; ns.AddGuideTourStops gives each step its tour stop (ONB-R84); RestrictionChanged closes
+--- and reopens the guide (ONB-R25); `/pagle guide` opens it (ONB-R80), and `/pagle dev onboarding step <id>` opens it
+--- at a step (ONB-R83). Call it after ns.WireOnboarding and ns.WireDev.
+---@param host PagleHost
+---@param view PagleGuideWiringView
+function ns.WireGuide(host, view)
+	local steps = ns.NewGuideSteps()
+	ns.guideSteps = steps
+	local guide = ns.NewGuide({
+		steps = steps,
+		onboarding = function()
+			return ns.onboarding
+		end,
+		isRestricted = host.isRestricted,
+		view = view,
+		hold = view.hold,
+		release = view.release,
+		fire = host.fire,
+		call = host.call,
+		print = host.print,
+	})
+	ns.guide = guide
+
+	---@class PagleModuleHandle
+	local ModuleHandle = ns.ModuleHandle
+	--- Adds one of the Module's steps to the Field guide (ONB-R21): call it in OnInitialize, before ModulesChanged, and
+	--- only `if M.RegisterGuideStep then`, so it runs on a Core without it (ONB-R90). Raises an error at the Module's
+	--- call, adding nothing, for a missing or mistyped field or an id registered before (ns.GuideStepProblem); a call
+	--- after ModulesChanged goes to geterrorhandler() and is dropped.
+	---@param step PagleGuideStep
+	function ModuleHandle:RegisterGuideStep(step)
+		local module = host.registry:ModuleCalling(self, "RegisterGuideStep", "step")
+		local problem, late = steps:Add(module.def.name, step)
+		if problem and late then
+			host.report(problem)
+		elseif problem then
+			error(problem, 2)
+		end
+	end
+
+	--- Adds one of Core's own steps (ONB-R21), which may use Core's own fields (PagleGuideStep). Raises an error at
+	--- Core's call, adding nothing, for a mistake.
+	---@param step PagleGuideStep
+	function ns.RegisterCoreGuideStep(step)
+		local problem = steps:Add(ns.CORE_OWNER, step)
+		if problem then
+			error(problem, 2)
+		end
+	end
+
+	for _, step in ipairs(ns.CoreGuideSteps(view.coreSteps)) do
+		ns.RegisterCoreGuideStep(step)
+	end
+
+	-- CORE-R19: every enabled Module has registered its steps, or failed to. Its own owner on the bus.
+	host.listen("Pagle guide", "ModulesChanged", function()
+		steps:Close()
+	end)
+
+	--- Adds a tour stop per registered step to ns.tourStops (ONB-R84, CORE-R65): `core.onboarding.step.<id>`, which
+	--- shows the guide at that step without writing guideStep or stepsSeen, and whose hide puts the guide back as it was
+	--- (CORE-R68). Core's adapter calls it at ModulesChanged, once every step is in; FakePagle doesn't, so a Module's
+	--- tour spec sees only its own stops.
+	function ns.AddGuideTourStops()
+		for _, entry in ipairs(steps:List()) do
+			local id = entry.step.id
+			local problem = ns.tourStops:Add(
+				ns.TOUR_CORE,
+				"onboarding.step." .. id,
+				ns.L.DEV_TOUR_GUIDE_STEP:format(id),
+				function()
+					guide:TourShow(id)
+				end,
+				function()
+					guide:TourHide()
+				end
+			)
+			if problem then
+				host.report(problem)
+			end
+		end
+	end
+	host.listen("Pagle guide", "RestrictionChanged", function(_, isRestricted)
+		guide:RestrictionChanged(isRestricted)
+	end)
+
+	ns.onboarding:SetGuideOpener(function()
+		guide:Open()
+	end)
+	ns.onboarding:AddDevCommand("step", "step <id>", function(args)
+		local id = args:match("^%s*(%S*)")
+		if steps:Index(id) then
+			guide:Open(id)
+			return
+		end
+		local ids = {}
+		for i, entry in ipairs(steps:List()) do
+			ids[i] = entry.step.id
+		end
+		host.print(ns.L.DEV_GUIDE_NO_STEP:format(id ~= "" and id or "<id>", table.concat(ids, ", ")))
 	end)
 end

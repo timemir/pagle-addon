@@ -308,6 +308,47 @@ ns.L = {
 	},
 	-- /pagle guide notes (ONB-R80): every Margin note and First look shows again, once each.
 	GUIDE_NOTES_AGAIN = "Pagle: margin notes will show again, once each.",
+	-- The Field guide's book (ONB-R20): its strip's crumbs and its count, "{n} of {m}" with n in brighter gilt.
+	GUIDE_CRUMB_PAGLE = "Pagle",
+	GUIDE_CRUMB_GUIDE = "A field guide",
+	GUIDE_COUNT = "|cfff6e3a8%d|r of %d",
+	-- Each step's foot (ONB-R23): the skip link's default label, Next, « back, and Off to the water (ONB-R38). » and «
+	-- are Latin-1; the client's fonts have no › (CORE-R9).
+	GUIDE_SKIP = "Skip the rest",
+	GUIDE_NEXT = "Next »",
+	GUIDE_BACK = "« back",
+	GUIDE_OFF = "Off to the water",
+	-- /pagle guide, the Letter or a Write-up's link while restricted (ONB-R25): the guide opens when it ends.
+	GUIDE_AFTER_COMBAT = "Pagle: the Field guide opens after combat.",
+	-- A Write-up section's link, from a Module with a guide step (ANN-R64, ONB-R82).
+	GUIDE_SHOW_ME_AROUND = "Show me around »",
+	-- /pagle dev onboarding step <id> (ONB-R83): a step that isn't registered, and the registered ones' ids.
+	DEV_GUIDE_NO_STEP = "Pagle dev: no guide step %s; the steps are %s.",
+	-- A tour stop per guide step (ONB-R84): its label for /pagle dev tour list.
+	DEV_TOUR_GUIDE_STEP = "the Field guide at its %s step",
+	-- Core's own steps (ONB-R30, ONB-R31, ONB-R34, ONB-R38): their ribbons, and the Welcome step's foot (ONB-R26).
+	-- Their pages are #323's; until then each shows its kicker and title, verbatim from the probe.
+	GUIDE_RIBBON_WELCOME = "Welcome",
+	GUIDE_RIBBON_BOX = "What’s in the box",
+	GUIDE_RIBBON_MOMENTS = "Moments",
+	GUIDE_RIBBON_OFF = "Off you go",
+	GUIDE_WELCOME_SKIP = "I’ll find my own way",
+	GUIDE_WELCOME_NEXT = "Show me around »",
+	GUIDE_WELCOME_KICKER = "A letter, left on the dock",
+	GUIDE_WELCOME_TITLE = "Dear Angler,",
+	GUIDE_WELCOME_RIGHT_KICKER = "Before anything else",
+	GUIDE_WELCOME_RIGHT_TITLE = "Three promises",
+	GUIDE_BOX_KICKER = "The kit",
+	GUIDE_BOX_TITLE = "What came in the box",
+	GUIDE_MOMENTS_KICKER = "Moments",
+	GUIDE_MOMENTS_TITLE = "When something good happens",
+	GUIDE_MOMENTS_RIGHT_KICKER = "Your choice",
+	GUIDE_MOMENTS_RIGHT_TITLE = "How chatty should Pagle be?",
+	GUIDE_OFF_KICKER = "That’s all for now",
+	GUIDE_OFF_TITLE = "The rest you learn by fishing",
+	GUIDE_OFF_RIGHT_KICKER = "Your first evening",
+	GUIDE_OFF_RIGHT_TITLE = "A short list, if you like",
+	GUIDE_OFF_AGAIN = "|cff3e220c/pagle guide|r opens this guide again.",
 
 	-- Core's own slots (SHOP-R25): their labels. Their goods' names and descriptions are lore (DATA-R101), in
 	-- data\Lore.lua as `good.<goodID>.name` and `good.<goodID>.description`.

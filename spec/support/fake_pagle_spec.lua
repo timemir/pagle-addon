@@ -2867,4 +2867,184 @@ describe("FakePagle", function()
 			}, fake.printed)
 		end)
 	end)
+
+	describe("the Field guide", function()
+		-- The fixture Modules' steps at their orders (ONB-R21), each Module but `without` registered: QoL's two, the
+		-- Ledger's and the Tackle Board's, with Core's four at 10, 20, 50 and 90. Returns the handles by name.
+		local function withSteps(fake, without)
+			local handles = {}
+			for _, fixture in ipairs({
+				{ "QoL", 50, { { "casting", 30 }, { "clothes", 40 } } },
+				{ "Ledger", 10, { { "ledger", 60 } } },
+				{ "TackleBoard", 40, { { "board", 70 } } },
+			}) do
+				if fixture[1] ~= without then
+					local M = fake.Pagle.RegisterModule({ name = fixture[1], title = fixture[1], order = fixture[2] })
+					for _, step in ipairs(fixture[3]) do
+						M:RegisterGuideStep({ id = step[1], order = step[2], ribbon = step[1], build = function() end })
+					end
+					handles[fixture[1]] = M
+				end
+			end
+			return handles
+		end
+
+		-- The guide opened at its first step, then Next to the end: each page shown's id and its "n of m".
+		local function walk(fake)
+			fake.guide:Open()
+			for _ = 1, fake.guideSteps:Count() do
+				fake.guide:Next()
+			end
+			local walked = {}
+			for i, page in ipairs(fake.guideShown) do
+				walked[i] = ("%s %d of %d"):format(page.id, page.index, page.count)
+			end
+			return walked
+		end
+
+		it("shows Core's steps and the fixture Modules' in order, n of 8 (ONB-R20, ONB-R21)", function()
+			local fake = newFakePagle()
+			withSteps(fake)
+			fake.login()
+
+			assert.are.same({
+				"welcome 1 of 8",
+				"box 2 of 8",
+				"casting 3 of 8",
+				"clothes 4 of 8",
+				"moments 5 of 8",
+				"ledger 6 of 8",
+				"board 7 of 8",
+				"off 8 of 8",
+			}, walk(fake))
+			assert.is_true(fake.guideHeld)
+		end)
+
+		it("drops a Module's steps when it never registered, so the count drops: n of 7 (ONB-R21)", function()
+			local fake = newFakePagle()
+			withSteps(fake, "TackleBoard")
+			fake.login()
+
+			local walked = walk(fake)
+
+			assert.are.equal(7, #walked)
+			assert.are.equal("ledger 6 of 7", walked[6])
+			assert.are.equal("off 7 of 7", walked[7])
+		end)
+
+		it("raises an error at the Module's call for a step with no build, adding nothing (ONB-R90)", function()
+			local fake = newFakePagle()
+			local M = fake.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
+
+			local ok, problem = pcall(function()
+				M:RegisterGuideStep({ id = "ledger", order = 60, ribbon = "Your Ledger" })
+			end)
+
+			assert.is_false(ok)
+			assert.matches("fake_pagle_spec%.lua:%d+: RegisterGuideStep: step ledger needs build", tostring(problem))
+			assert.are.equal(4, fake.guideSteps:Count())
+		end)
+
+		it("reports a step registered after ModulesChanged through geterrorhandler(), dropping it (ONB-R21)", function()
+			local fake = newFakePagle()
+			local M = fake.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
+			fake.login()
+
+			M:RegisterGuideStep({ id = "ledger", order = 60, ribbon = "Your Ledger", build = function() end })
+
+			assert.are.equal(1, #fake.reported)
+			assert.matches("after ModulesChanged", tostring(fake.reported[1]))
+			assert.is_nil(fake.guideSteps:Index("ledger"))
+		end)
+
+		it(
+			"opens with /pagle guide and resumes at guideStep, holding Announcements while open (ONB-R22, ONB-R80)",
+			function()
+				local fake = newFakePagle()
+				withSteps(fake)
+				fake.login()
+				fake.slash("guide")
+				fake.guide:GoTo("ledger")
+				fake.guide:Close()
+				assert.is_false(fake.guideHeld)
+
+				fake.slash("guide")
+
+				assert.are.equal("ledger", fake.global.onboarding.guideStep)
+				assert.are.same({ id = "ledger", how = "open", index = 6, count = 8 }, fake.guideShown[3])
+				assert.is_true(fake.guideHeld)
+			end
+		)
+
+		it("closes for a restriction and reopens after at the same step (ONB-R25)", function()
+			local fake = newFakePagle()
+			withSteps(fake)
+			fake.login()
+			fake.guide:Open("clothes")
+
+			fake.setRestricted(true)
+			assert.is_false(fake.guide:IsOpen())
+			assert.is_true(fake.global.onboarding.reopen)
+			fake.setRestricted(false)
+
+			assert.is_true(fake.guide:IsOpen())
+			assert.are.equal("clothes", fake.guide:Current().step.id)
+			assert.is_false(fake.global.onboarding.reopen)
+		end)
+
+		it(
+			"runs a step's build once, at its first showing, on the Module's client with Core's nav (Contracts)",
+			function()
+				local fake = newFakePagle()
+				fake.load("Pagle_Stats")
+				local M = fake.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
+				local built = {}
+				M:RegisterGuideStep({
+					id = "ledger",
+					order = 60,
+					ribbon = "Your Ledger",
+					build = function(left, right, nav)
+						built[#built + 1] = { left:GetWidth(), right:GetHeight() }
+						nav.ChoiceCard(right, "Lively", "Every Catch gets its Nod.", "as it comes")
+						nav.Next()
+					end,
+				})
+				fake.login()
+
+				fake.guide:Open("ledger")
+				fake.guide:Back()
+				fake.guide:Next()
+
+				assert.are.same({ { 442, 546 } }, built)
+				assert.are.equal("Lively", fake.guidePages.ledger.right.children[1].title)
+				assert.are.equal("off", fake.guideShown[2].id)
+			end
+		)
+
+		it(
+			"gives each step a tour stop with Core's ns.AddGuideTourStops, leaving the state as it was (ONB-R84)",
+			function()
+				local fake = newFakePagle()
+				withSteps(fake)
+				fake.login()
+				assert.are.same({}, fake.ns.tourStops:List(fake.registry:Modules(), "core"))
+				fake.ns.AddGuideTourStops()
+				local stop
+				for _, listed in ipairs(fake.ns.tourStops:List(fake.registry:Modules(), "core")) do
+					if listed.name == "core.onboarding.step.board" then
+						stop = listed
+					end
+				end
+
+				stop.show()
+				assert.is_true(fake.guide:IsOpen())
+				stop.hide()
+
+				assert.is_false(fake.guide:IsOpen())
+				assert.is_nil(fake.global.onboarding.guideStep)
+				assert.are.same({}, fake.global.onboarding.stepsSeen)
+				assert.is_false(fake.guideHeld)
+			end
+		)
+	end)
 end)

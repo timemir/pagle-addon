@@ -388,6 +388,33 @@ describe("a card's rows", function()
 		end
 	)
 
+	it(
+		"end a Write-up section from a Module with a guide step with Show me around », and no other (ANN-R64)",
+		function()
+			local rows = ns.CardRows(
+				{
+					title = "Write-up",
+					writeUp = {
+						{ module = "Ledger", heading = "Your Ledger was written up", lines = { "12 Species" } },
+						{ module = "Hunts", heading = "While Hunts was off", lines = { "2 Hunts" } },
+					},
+				},
+				format,
+				function(module)
+					return module == "Ledger"
+				end
+			)
+
+			assert.are.same({
+				{ kind = "heading", text = "Your Ledger was written up" },
+				{ kind = "line", text = "12 Species" },
+				{ kind = "link", text = "Show me around »", module = "Ledger" },
+				{ kind = "heading", text = "While Hunts was off" },
+				{ kind = "line", text = "2 Hunts" },
+			}, rows)
+		end
+	)
+
 	it("leave out the Coins line at 0 (ANN-R53)", function()
 		assert.are.same({}, ns.CardRows({ title = "Fishing session", coins = 0, lines = {}, moments = {} }, format))
 	end)
