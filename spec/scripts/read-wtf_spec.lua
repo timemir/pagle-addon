@@ -14,6 +14,7 @@
 local ACCOUNTS = "spec/scripts/fixtures/WTF/Account/"
 local CATALOGUE = "spec/scripts/fixtures/Catalogue.lua"
 local HUNTLIST = "spec/scripts/fixtures/HuntList.lua"
+local EVENTLIST = "spec/scripts/fixtures/EventList.lua"
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local script = dofile("spec/support/script.lua")
@@ -606,6 +607,8 @@ describe("scripts/read-wtf.lua", function()
 			CATALOGUE,
 			"--huntlist",
 			HUNTLIST,
+			"--eventlist",
+			EVENTLIST,
 			"--now",
 			NOW,
 			"--hunt",
@@ -620,8 +623,9 @@ describe("scripts/read-wtf.lua", function()
 		it(
 			"prints the projection, state, titles, celebrated set, pins and profile (LOG-R70, HNT-R89, HNT-R136, DATA-R72)",
 			function()
-				-- LOG-R70's stored values; HNT-R136: Hunts' rules version is 1 in M5 (Tunables); DATA-R72: the stored
-				-- fingerprint is the catalogue's plus the Hunt list's. hunts.md › Projection state for the state.
+				-- LOG-R70's stored values; HNT-R136: Hunts' rules version is 2 with Hunt Events (Tunables); DATA-R72,
+				-- DATA-R98: the stored fingerprint is the catalogue's plus the Hunt list's and the event pool's (the
+				-- --eventlist fixture's). hunts.md › Projection state for the state.
 				-- HNT-R2, HNT-R3: at --now night_run, first_light, rack_hour and dawn_trout are current, grouper_by_moonlight
 				-- is retired, witching_hour isn't out (so it has no line). HNT-R89: 3 of the 4 current Hunts are done
 				-- (HNT-R17), 2 titles earned. HNT-R18: tier 1 bronze, tier 2 silver. HNT-R23: camp_hours came from a Catch,
@@ -630,13 +634,13 @@ describe("scripts/read-wtf.lua", function()
 				-- PagleHuntsDB: tracker.shown and showCompleted are left out at their defaults (AceDB).
 				assert.are.same({
 					"== Hunts (PagleHuntsDB)",
-					"projection: lastSeq 6, logId 6c2f9e0a1b3d5e77, fingerprint 0123456789abcdef+5eed5eed5eed5eed,"
-						.. " rulesVersion 1",
+					"projection: lastSeq 6, logId 6c2f9e0a1b3d5e77, fingerprint"
+						.. " 0123456789abcdef+5eed5eed5eed5eed+e7e7e7e7e7e7e7e7, rulesVersion 2",
 					"logId: matches PagleLog's",
 					"lastSeq: equals PagleLog's length (6 entries)",
-					"rulesVersion: Hunts', 1 (HNT-R136)",
+					"rulesVersion: Hunts', 2 (HNT-R136)",
 					"Hunt list: " .. HUNTLIST .. ", fingerprint 5eed5eed5eed5eed, 6 Hunts in 3 sets",
-					"fingerprint: the catalogue's plus the Hunt list's (DATA-R72)",
+					"fingerprint: the catalogue's plus the Hunt list's and the event pool's (DATA-R72, DATA-R98)",
 					"summary line: Hunts: 3 of 4 done · 2 titles, at 2026-10-14 17:46:40 UTC (--now) (HNT-R89)",
 					"state: 120 Casts, 305 Coins, 5 Hunts with progress, 2 titles",
 					"  night_run: current, count 12, effort 80, sinceLast 3, tiers 2 of 3 (1 / 10 / 40)",
@@ -725,15 +729,19 @@ describe("scripts/read-wtf.lua", function()
 		it(
 			"reads the repo's Hunt list by default, and flags a fingerprint that isn't the expected one (DATA-R72, LOG-R72)",
 			function()
-				-- DATA-R72: the generated list carries its own fingerprint; LOG-R72: a different one rebuilds Hunts.
+				-- DATA-R72, DATA-R98: the generated list and pool carry their own fingerprints; LOG-R72: a different one
+				-- rebuilds Hunts.
 				local fingerprint = repoFingerprint("addons/Pagle_Hunts/data/HuntList.lua")
+				local pool = repoFingerprint("addons/Pagle_Hunts/data/EventList.lua")
 				local lines = section(run(ACCOUNTS .. "M5#1", "--catalogue", CATALOGUE, "--now", NOW), "== Hunts")
 				local prefix = "Hunt list: the repo's addons/Pagle_Hunts/data/HuntList.lua, fingerprint " .. fingerprint
 				assert.are.equal(prefix, lines[6]:sub(1, #prefix))
 				assert.are.equal(
-					"fingerprint: DIFFERS from the catalogue's plus the Hunt list's, 0123456789abcdef+"
+					"fingerprint: DIFFERS from the catalogue's plus the Hunt list's and the event pool's, 0123456789abcdef+"
 						.. fingerprint
-						.. ", so Core rebuilds it at login (DATA-R72, LOG-R72)",
+						.. "+"
+						.. pool
+						.. ", so Core rebuilds it at login (DATA-R72, DATA-R98, LOG-R72)",
 					lines[7]
 				)
 			end
@@ -811,8 +819,17 @@ describe("scripts/read-wtf.lua", function()
 	-- M5-Stale#1: a Hunts projection built under another rules version and Hunt list, and AceDB left every default out
 	-- (no celebrated set, no profile settings); the dock point saved isn't one Core can read.
 	describe("on an account whose Hunts projection is stale (#199, in-game-verification.md › Hunts)", function()
-		local out, _, code =
-			run(ACCOUNTS .. "M5-Stale#1", "--catalogue", CATALOGUE, "--huntlist", HUNTLIST, "--now", "1792000000")
+		local out, _, code = run(
+			ACCOUNTS .. "M5-Stale#1",
+			"--catalogue",
+			CATALOGUE,
+			"--huntlist",
+			HUNTLIST,
+			"--eventlist",
+			EVENTLIST,
+			"--now",
+			"1792000000"
+		)
 
 		it(
 			"flags the rulesVersion and the fingerprint, and reads the left-out defaults (HNT-R136, DATA-R72)",
@@ -821,13 +838,14 @@ describe("scripts/read-wtf.lua", function()
 				assert.are.same({
 					"== Hunts (PagleHuntsDB)",
 					"projection: lastSeq 6, logId 6c2f9e0a1b3d5e77, fingerprint 0123456789abcdef+0000000000000000,"
-						.. " rulesVersion 2",
+						.. " rulesVersion 3",
 					"logId: matches PagleLog's",
 					"lastSeq: equals PagleLog's length (6 entries)",
-					"rulesVersion: 2 DIFFERS from Hunts' 1, so Core rebuilds it at login (HNT-R138, LOG-R72)",
+					"rulesVersion: 3 DIFFERS from Hunts' 2, so Core rebuilds it at login (HNT-R138, LOG-R72)",
 					"Hunt list: " .. HUNTLIST .. ", fingerprint 5eed5eed5eed5eed, 6 Hunts in 3 sets",
-					"fingerprint: DIFFERS from the catalogue's plus the Hunt list's, 0123456789abcdef+5eed5eed5eed5eed,"
-						.. " so Core rebuilds it at login (DATA-R72, LOG-R72)",
+					"fingerprint: DIFFERS from the catalogue's plus the Hunt list's and the event pool's,"
+						.. " 0123456789abcdef+5eed5eed5eed5eed+e7e7e7e7e7e7e7e7, so Core rebuilds it at login"
+						.. " (DATA-R72, DATA-R98, LOG-R72)",
 					"summary line: Hunts: 0 of 4 done · 0 titles, at 2026-10-14 17:46:40 UTC (--now) (HNT-R89)",
 					"state: 0 Casts, 0 Coins, 0 Hunts with progress, 0 titles",
 					"titles earned: none",

@@ -32,8 +32,8 @@ Run it in WSL, with the Lua 5.1 from `scripts/setup.sh`. `scripts/read-wtf.sh` r
 ```sh
 scripts/read-wtf.sh "/mnt/g/World of Warcraft/_classic_beta_/WTF/Account/<ACCT>" \
     --character 70/<Name-Surname> [--cvar <name>]... [--addon <name>]... [--catalogue <Catalogue.lua>] \
-    [--item <id>]... [--huntlist <HuntList.lua>] [--hunt <id>]... [--stats-item <id> --area <areaID>] [--skill N] \
-    [--now T] [--expect-casts N] [--since T]
+    [--item <id>]... [--huntlist <HuntList.lua>] [--eventlist <EventList.lua>] [--hunt <id>]... \
+    [--stats-item <id> --area <areaID>] [--skill N] [--now T] [--expect-casts N] [--since T]
 ```
 
 It prints eighteen sections, one more per `--hunt` and one more with `--stats-item`, and the exit check last with `--expect-casts`:
@@ -72,7 +72,7 @@ It prints eighteen sections, one more per `--hunt` and one more with `--stats-it
   - `pins:` the pinned Hunt IDs, and those Hunts drops at its next load because they aren't current (HNT-R81).
   - `tracker.shown:`, `tracker.collapsed:`, `windowMoments:` and `showCompleted:`, each marked `(not saved: the default)` when AceDB left it out.
 
-  Everything computed (where a Hunt stands, done, the summary line, the stale pins, the trims, the fingerprint Hunts hands Core) comes from Hunts' own `locale/`, `data/` and `logic/` files, loaded in `Pagle_Hunts.toc`'s order over the repo's `addons/Pagle_Hunts/data/HuntList.lua`. `--huntlist <file>` reads another, such as a local-only build's or the installed addon's `Interface/AddOns/Pagle_Hunts/data/HuntList.lua`; `--catalogue` gives the content fingerprint. `--now T` (server time, Unix seconds) reads everything that depends on the time at T.
+  Everything computed (where a Hunt stands, done, the summary line, the stale pins, the trims, the fingerprint Hunts hands Core) comes from Hunts' own `locale/`, `data/` and `logic/` files, loaded in `Pagle_Hunts.toc`'s order over the repo's `addons/Pagle_Hunts/data/HuntList.lua`. `--huntlist <file>` reads another, such as a local-only build's or the installed addon's `Interface/AddOns/Pagle_Hunts/data/HuntList.lua`, and `--eventlist <file>` another event pool than `data/EventList.lua` (its fingerprint joins the Hunt list's, HNT-R136); `--catalogue` gives the content fingerprint. `--now T` (server time, Unix seconds) reads everything that depends on the time at T.
 - **Hunt <id>:** one section per `--hunt <id>` (repeatable), right after Hunts: the Hunt's set, kind, target, window or the keys of its conditions, tiers, `since` and `retired`; whether it is current, retired or not out yet, pinned, and its celebrated tier; `progress:` its `count`, `effort`, `sinceLast`, `caught`, done and finished (HNT-R17); each reached tier with its threshold, trim, Catch ID, item ID, zone, realm date and time; and `next:` the next threshold and how many Catches it is away. One line when the ID is neither in the Hunt list nor in the state.
 - **Stats:** `PagleStatsDB` from `Pagle_Stats.lua`. One line when the file or `PagleStatsDB` is missing. Otherwise, in order:
   - `projection:` the stored `lastSeq`, `logId`, `fingerprint` and `rulesVersion`, with the same `logId:` and `lastSeq:` checks as the Ledger's. `rulesVersion:` whether it is Stats' own (100 × `STATS_RULES_VERSION` + Core's `SESSION_RULES_VERSION`, so 102 in M6; any other is flagged `DIFFERS`: Core rebuilds at login). `fingerprint:` whether it is the content fingerprint of the catalogue read (the repo's `addons/Pagle/data/Catalogue.lua` or `--catalogue`'s; any other is flagged `DIFFERS`: Core rebuilds at login). `projection: none stored` instead before the first build, and then no state lines.
