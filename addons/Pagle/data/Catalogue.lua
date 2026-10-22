@@ -5980,7 +5980,7 @@ ns.catalogue = {
 	events = {
 		[301] = { confirmed = false, duration = 120, start = 840, weekday = 1 },
 	},
-	fingerprint = "c9c3866ee3866693",
+	fingerprint = "068655585d8d7ea3",
 	fishingSpells = { 7620, 7731, 7732, 18248, 1240948, 1240959, 1240970, 1240983 },
 	items = {
 		[118] = { category = "other", legend = false, noise = true, pool = false, quality = 1, removed = false },
@@ -6112,8 +6112,8 @@ ns.catalogue = {
 		[6645] = { category = "container", legend = false, noise = false, pool = false, quality = 2, removed = false },
 		[6647] = { category = "container", legend = false, noise = false, pool = false, quality = 2, removed = false },
 		[6651] = { category = "other", legend = false, noise = true, pool = false, quality = 1, removed = false },
-		[6717] = { category = "questFish", legend = false, noise = false, pool = false, quality = 1, removed = false, species = 6717, typicalLength = 600 },
-		[6718] = { category = "questFish", legend = false, noise = false, pool = false, quality = 1, removed = false, species = 6718, typicalLength = 450 },
+		[6717] = { category = "junk", legend = false, noise = false, pool = false, quality = 1, removed = false },
+		[6718] = { category = "junk", legend = false, noise = false, pool = false, quality = 1, removed = false },
 		[6887] = { category = "fish", legend = false, noise = false, pool = false, quality = 1, removed = false, species = 4603, typicalLength = 600 },
 		[7070] = { category = "other", legend = false, noise = true, pool = false, quality = 1, removed = false },
 		[7078] = { category = "other", legend = false, noise = true, pool = false, quality = 2, removed = false },

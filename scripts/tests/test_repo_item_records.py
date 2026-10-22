@@ -63,6 +63,20 @@ def test_the_extravaganza_fish_and_whimsyfin_are_categorised() -> None:
         assert "noise = false" in items[item]
 
 
+def test_the_two_lost_gadgets_are_junk_with_no_species_or_length() -> None:
+    # varieties.md › Data: Gaffer Jack (6717) and Electropeller (6718) are a lost gadget's parts fished up for a quest,
+    # not fish, so they ship as junk: no Species, no typical length (so no Simulated Size, LOG-R65) and no varieties.
+    items = _committed_items()
+    for item in (6717, 6718):
+        assert 'category = "junk"' in items[item], items[item]
+        assert "species =" not in items[item] and "typicalLength" not in items[item] and "varieties" not in items[item]
+    with (REPO / "data" / "lore" / "ledger.toml").open("rb") as handle:
+        ledger = tomllib.load(handle)
+    # LED-R144: each has a Junk Museum plaque, and neither keeps a Species' blurb or riddle (DATA-R107's orphan).
+    assert {"6717", "6718"} <= ledger["sub"].keys()
+    assert not {"6717", "6718"} & ledger["species"].keys()
+
+
 def test_items_db2_lacks_take_their_class_from_items_toml_and_ship_without_a_quality() -> None:
     # DATA-R24: for an item items.csv lacks, items.toml gives its class (the #89 hand-off: all 90 are in Item.db2 but
     # not ItemSparse, so no DB2 table gives a quality). DATA-R77: quality ships only when known.
@@ -99,7 +113,8 @@ def test_every_species_item_ships_a_typical_length_with_the_check_on() -> None:
     with (REPO / "data" / "checks.toml").open("rb") as handle:
         assert tomllib.load(handle)["typicalLength"] is True
     lengths = _species_lengths()
-    assert len(lengths) == 43  # 42 Species IDs, plus Spotted Yellowtail (6887) folded into 4603 (DATA-R19)
+    # 40 Species IDs, plus Spotted Yellowtail (6887) folded into 4603 (DATA-R19); Gaffer Jack and Electropeller are junk.
+    assert len(lengths) == 41
     assert EXTRAVAGANZA_RARES <= lengths.keys()
     for item, (_, length) in lengths.items():
         assert length is not None and length >= 1, item

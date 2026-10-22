@@ -68,14 +68,6 @@ riddle = "Fouled water where goblins drill the parched hills and plains."
 blurb = "Eat one at your own risk. No two anglers who did tell the same story about the hour after."
 riddle = "Strange schools out on the dry plains, where the water itself seems unwell."
 
-[species.6717] # Gaffer Jack
-blurb = "Gruff, bony and hard to unhook, like most old hands on a dock."
-riddle = "An old hand's catch, off a misty northern coast or in the desert far south."
-
-[species.6718] # Electropeller
-blurb = "Hums faintly in the hand, and the hairs on your arm stand up to listen."
-riddle = "A hum under the water, from the dim northern shores to the hot southern sands."
-
 [species.8365] # Raw Mithril Head Trout
 blurb = "The head really does shine. No, it isn't mithril. Stop asking the smith."
 riddle = "Lakes and rivers in rougher country, from deep forest to bare desert."
@@ -224,6 +216,12 @@ plaque = "Please do not touch the exhibit."
 
 [sub.6457] # Rusted Engineering Parts
 plaque = "A gnome would call this 'nearly working'."
+
+[sub.6717] # Gaffer Jack
+plaque = "A tinker's spare parts, dropped over the side mid-job. He insists the boat leaked first."
+
+[sub.6718] # Electropeller
+plaque = "Parts for a clockwork duck decoy, the kind that explodes. Kept well away from the real ducks."
 
 [sub.6643] # Bloated Brilliant Smallfish
 plaque = "A small fish with a large appetite and no sense of what counts as food."
