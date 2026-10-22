@@ -18,6 +18,7 @@ data\AnnounceArt.lua
 data\ShopArt.lua
 data\GuideArt.lua
 data\FieldArt.lua
+data\VarietyArt.lua
 data\ApiInventory.lua
 
 locale\enUS.lua

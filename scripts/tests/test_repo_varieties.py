@@ -1,6 +1,8 @@
 """The repo's own fish varieties (VAR-R2, VAR-R4, VAR-R11, VAR-R12, DATA-R131-R135): data/forever/varieties.toml, its
-lock, and the varieties' and fish crests' lore in data/lore/core.toml, as the committed Catalogue.lua ships them."""
+lock, the varieties' and fish crests' lore in data/lore/core.toml, and the art table addons/Pagle/data/VarietyArt.lua,
+as the committed Catalogue.lua ships them."""
 
+import re
 import tomllib
 from functools import cache
 from pathlib import Path
@@ -9,6 +11,7 @@ from pagle_data.generate import Layers, read_layers
 from pagle_data.varieties import VARIETY_COUNT, variety_species
 
 REPO = Path(__file__).resolve().parents[2]
+VARIETY_ART = REPO / "addons" / "Pagle" / "data" / "VarietyArt.lua"
 
 
 @cache
@@ -93,6 +96,26 @@ def test_no_variety_keeps_a_name_from_a_game_place_or_fish() -> None:
     names = " ".join(text.value for text in _layers().lore.files["core"].values() if text.kind == "variety")
     for word in ("Lakeshire", "Everstill", "Thunderbrew", "Mithril", "Truesilver", "Darkshore", "Dreamgrove"):
         assert word.lower() not in names.lower(), word
+
+
+def test_the_variety_art_has_ten_rectangles_for_each_species_inside_its_atlas() -> None:
+    # varieties.md › Data, UI: VarietyArt.lua's [speciesID] = { { atlas, x, y } x 10 }, 192 x 96 texels each, inside
+    # one of the two 2048 x 2048 atlases, no two overlapping.
+    text = VARIETY_ART.read_text(encoding="utf-8")
+    assert "ns.VARIETY_ART_SIZE = { w = 192, h = 96, atlas = 2048 }" in text
+    art = {
+        int(species): [tuple(int(n) for n in cell) for cell in re.findall(r"\{ (\d+), (\d+), (\d+) \}", body)]
+        for species, body in re.findall(r"^\t\[(\d+)\] = \{\n(.*?)^\t\},$", text, re.MULTILINE | re.DOTALL)
+    }
+    assert set(art) == set(_varieties())
+    seen: set[tuple[int, int, int]] = set()
+    for species, cells in art.items():
+        assert len(cells) == VARIETY_COUNT, species
+        for atlas, x, y in cells:
+            assert atlas in (1, 2) and x % 192 == 0 and y % 96 == 0, species
+            assert x + 192 <= 2048 and y + 96 <= 2048, species
+            assert (atlas, x, y) not in seen, species
+            seen.add((atlas, x, y))
 
 
 def test_the_rarest_title_is_keeper_of_every_colour() -> None:
