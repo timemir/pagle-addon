@@ -20,6 +20,8 @@ import sys
 LIMB_BITS = 24
 LIMBS = 86
 MODULUS_BYTES = 256
+# keyId's form (PUSH-R2), the backend's: no "|", so the canonical header (PUSH-R11) reads one way.
+KEY_ID = re.compile(r"[A-Za-z0-9_-]{1,32}")
 
 
 def public_numbers(pem_path: str) -> tuple[int, int]:
@@ -69,8 +71,8 @@ def main(argv: list[str]) -> int:
         print(__doc__.strip().splitlines()[2].strip(), file=sys.stderr)
         return 2
     pem_path, key_id = argv[1], argv[2]
-    if not re.fullmatch(r"[A-Za-z0-9_.-]+", key_id):
-        print(f"keyId {key_id!r}: use letters, digits, '_', '.' and '-'", file=sys.stderr)
+    if not KEY_ID.fullmatch(key_id):
+        print(f"keyId {key_id!r}: use 1 to 32 letters A-Z or a-z, digits, '_' and '-' (PUSH-R2)", file=sys.stderr)
         return 2
     n, e = public_numbers(pem_path)
     if e != 65537:
