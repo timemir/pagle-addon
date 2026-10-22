@@ -42,6 +42,7 @@ local ns = select(2, ...)
 ---@field dock PagleDockWiring Core's tracker dock (ns.WireDock).
 ---@field fieldReport PagleFieldReportReaders? Core's Field report, from login step 1 on (ns.WireFieldReport).
 ---@field walletProjection PagleProjection? Core's wallet projection, from login step 1 (ns.WireWalletProjection).
+---@field varietyProjection PagleProjection? Core's variety projection, from login step 1 (ns.WireVarietyProjection).
 ---@field LengthUnit fun(): PagleLengthUnit The Angler's length unit now (ns.WireLength).
 ---@field fishing PagleFishing Core's Cast state machine, which Core's adapter and FakePagle each build.
 ---@field dev PagleDevCommands Core's `/pagle dev` commands (ns.WireDev).
@@ -913,6 +914,52 @@ function ns.WireWalletProjection(host)
 			wallet = ns.wallet,
 			goods = ns.goods,
 		})
+	end
+end
+
+--- Core's variety projection (VAR-R10, VAR-R13, LOG-R78): `ns.StartVarietyProjection()` binds it at login step 1,
+--- after the wallet's and ahead of every Module's, to PagleDB.global.projections.varieties (ns.PAGLEDB_DEFAULTS), over
+--- the log's records. `Pagle.GetVarietiesCaught(speciesID)` reads what it stored (VAR-R11). `ns.OnVarietiesCaught(fn)`
+--- adds a hook of Core's own earned goods (the fish crests, VAR-R12): each hook runs, in the order added, after the
+--- projection's done and after each live Catch that adds a variety, never mid-catch-up or mid-rebuild (VAR-R13), so
+--- a hook that refreshes Core's goods asks their isEarned() only then (SHOP-R31). An error in one is reported, and the
+--- next still runs.
+---@param host PagleHost
+---@param Pagle table where `GetVarietiesCaught` is published
+function ns.WireVarietyProjection(host, Pagle)
+	---@type fun()[]
+	local hooks = {}
+
+	--- Adds a hook run whenever Core's varieties caught may have changed (VAR-R13).
+	---@param fn fun()
+	function ns.OnVarietiesCaught(fn)
+		hooks[#hooks + 1] = fn
+	end
+
+	--- Login step 1, once PagleDB is open.
+	function ns.StartVarietyProjection()
+		ns.varietyProjection = ns.AddVarietyProjection({
+			projections = ns.projections,
+			db = host.db().global.projections.varieties,
+			iterate = host.iterate,
+			changed = function()
+				for _, fn in ipairs(hooks) do
+					host.call(fn)
+				end
+			end,
+		})
+	end
+
+	---@class Pagle
+	local api = Pagle
+	--- The positions of a Species' ten caught, as a fresh set `{ [index] = true }` (VAR-R11): Core's own record
+	--- (VAR-R10), empty for a Species with none caught or without varieties, and before the first build has finished.
+	--- While the projection rebuilds it answers from the last stored state (LOG-R72).
+	---@param speciesID integer
+	---@return table<integer, true>
+	function api.GetVarietiesCaught(speciesID)
+		local db = host.db()
+		return ns.VarietiesCaughtIn(db and db.global.projections.varieties, speciesID)
 	end
 end
 

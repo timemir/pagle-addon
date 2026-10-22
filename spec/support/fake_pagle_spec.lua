@@ -2054,6 +2054,54 @@ describe("FakePagle", function()
 				assert.are.same(expected.id, catches[1].variety.id)
 			end
 		)
+
+		it(
+			"serves Pagle.GetVarietiesCaught from Core's variety projection over the history, a fresh set each call,"
+				.. " and counts the earned-goods refresh its done runs (VAR-R10, VAR-R11, VAR-R13)",
+			function()
+				local fake = newFakePagle()
+				fake.ns.catalogue.items[6358].varieties = KEYS
+				fake.setCatalogue(fake.ns.catalogue)
+				local species = fake.ns.catalogue.items[6358].species
+				fake.catchLog.data.characters[1] = { guid = PLAYER_GUID }
+				for i = 1, 8 do
+					fake.catchLog:Append(castRecord({ time = SERVER_TIME - 9000 + i, items = { 6358 } }))
+				end
+				fake.login()
+				fake.enterWorld()
+
+				local expected = {}
+				for record in fake.Pagle.IterateCatches(0) do
+					expected[record.items[1].variety.index] = true
+				end
+				local caught = fake.Pagle.GetVarietiesCaught(species)
+				assert.are.same(expected, caught)
+				caught[11] = true
+				assert.are.same(expected, fake.Pagle.GetVarietiesCaught(species))
+				assert.are.same({}, fake.Pagle.GetVarietiesCaught(6303))
+				assert.are.equal(1, fake.varietyRefreshes)
+			end
+		)
+
+		it("refreshes the earned goods after a played Cast only when it adds a variety (VAR-R13)", function()
+			local fake = newFakePagle()
+			fake.ns.catalogue.items[6358].varieties = KEYS
+			fake.setCatalogue(fake.ns.catalogue)
+			local species = fake.ns.catalogue.items[6358].species
+			fake.login()
+			fake.enterWorld()
+
+			local refreshes = fake.varietyRefreshes
+			for _ = 1, 6 do
+				local before = fake.Pagle.GetVarietiesCaught(species)
+				local cast = assert(fake.playCast("caught", { { itemID = 6358, quantity = 1 } }))
+				local index = cast.items[1].variety.index
+				refreshes = refreshes + (before[index] and 0 or 1)
+
+				assert.is_true(fake.Pagle.GetVarietiesCaught(species)[index])
+				assert.are.equal(refreshes, fake.varietyRefreshes)
+			end
+		end)
 	end)
 
 	describe("the length unit", function()
