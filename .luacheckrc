@@ -43,6 +43,13 @@ stds.wow = {
 		"GetConvertedKeyOrButton",
 		"IsKeyPressIgnoredForBinding",
 		"CreateKeyChordStringUsingMetaKeyState",
+		-- The Field guide's binding field, on the same key capture (ONB-R41–R43): what a key does now, the client's
+		-- GetBindingAction(key [, checkOverride]) (warcraft.wiki.gg, API GetBindingAction), and that action's name in
+		-- Key Bindings, FrameXML's GetBindingName (its BINDING_NAME_ global, else the action itself: Gethe/wow-ui-source
+		-- branch forever at 943764493e6b16d63ded3ab304150d1f05e58b57, Blizzard_SharedXML/BindingUtil.lua), read before
+		-- it takes a used key.
+		"GetBindingAction",
+		"GetBindingName",
 		"SettingsPanel",
 		"HideUIPanel",
 		-- The compartment menu (CORE-R50): a context menu, opened a frame after the compartment's click (C_Timer.After,

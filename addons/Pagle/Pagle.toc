@@ -92,6 +92,7 @@ adapter\Sessions.lua
 adapter\Onboarding.lua
 adapter\Settings.lua
 adapter\Settings.xml
+adapter\KeyCapture.lua
 adapter\KeyBindingRow.lua
 adapter\AnnouncementSettings.lua
 adapter\Dock.lua
@@ -120,6 +121,7 @@ adapter\ShopArt.lua
 adapter\ShopMotion.lua
 adapter\Shop.lua
 adapter\GuideKit.lua
+adapter\GuideBindingField.lua
 adapter\GuideBook.lua
 adapter\Guide.lua
 adapter\Tour.lua

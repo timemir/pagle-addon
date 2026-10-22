@@ -3021,6 +3021,31 @@ describe("FakePagle", function()
 			end
 		)
 
+		it("hands a build a binding field that keeps SetGreyed and counts Refresh (ONB-R32, ONB-R44)", function()
+			local fake = newFakePagle()
+			fake.load("Pagle_Stats")
+			local M = fake.Pagle.RegisterModule({ name = "QoL", title = "QoL", order = 50 })
+			M:RegisterGuideStep({
+				id = "casting",
+				order = 30,
+				ribbon = "Casting",
+				build = function(_, right, nav)
+					local field = nav.BindingField(right, "PAGLE_FISHING_KEY", "Fishing key")
+					field:SetGreyed(true)
+					field:Refresh()
+				end,
+			})
+			fake.login()
+
+			fake.guide:Open("casting")
+
+			local field = fake.guidePages.casting.right.children[1]
+			assert.are.same(
+				{ "PAGLE_FISHING_KEY", "Fishing key", true, 1 },
+				{ field.action, field.label, field.greyed, field.refreshed }
+			)
+		end)
+
 		it(
 			"gives each step a tour stop with Core's ns.AddGuideTourStops, leaving the state as it was (ONB-R84)",
 			function()
