@@ -887,6 +887,7 @@ local function printSizes(log, catalogue)
 		"logic/Conditions.lua",
 		"logic/Sessions.lua",
 		"logic/Size.lua",
+		"logic/Variety.lua",
 		"logic/CatchLog.lua",
 	})
 	if log.format ~= core.LOG_FORMAT then

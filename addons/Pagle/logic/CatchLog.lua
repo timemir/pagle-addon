@@ -16,12 +16,13 @@ ns.GOOD_ID_PATTERN = "^[%w_.]+$"
 ---@field char integer           -- index into Angler.characters
 ---@field time integer           -- server time
 
---- A Cast (`C1`). A Species item carries its Simulated Size as `size` (LOG-R65).
+--- A Cast (`C1`). A Species item carries its Simulated Size as `size` (LOG-R65), and its variety as `variety`
+--- (VAR-R4).
 ---@class PagleCast : PagleRecord
 ---@field outcome "caught"|"gotAway"
 ---@field session string         -- its Session's ID (LOG-R98)
 ---@field conditions ConditionsSnapshot
----@field items { n: integer, itemID: integer, quantity: integer, catchId: string, size: PagleSize? }[]
+---@field items { n: integer, itemID: integer, quantity: integer, catchId: string, size: PagleSize?, variety: PagleVariety? }[]
 
 --- A Skill Reading (`S1`, LOG-R31).
 ---@class PagleSkillReading : PagleRecord
@@ -345,8 +346,8 @@ local kinds = {
 local TAGS = { cast = "C1", skill = "S1", build = "B1", prestige = "P1", purchase = "U1", module = "A1" }
 
 -- Decodes one entry string into a typed record, or nil if the codec can't read it (LOG-R16). With `getItem`, each
--- item of a Cast carries its Simulated Size, from its Catch ID and the catalogue now (LOG-R65); item 0 is never
--- looked up.
+-- item of a Cast carries its Simulated Size and its variety, from its Catch ID and the catalogue now (LOG-R65,
+-- VAR-R4); item 0 is never looked up.
 ---@param entry any
 ---@param seq integer
 ---@param characters table[]
@@ -389,7 +390,9 @@ local function decode(entry, seq, characters, getItem)
 	if getItem and record.kind == "cast" then
 		for _, item in ipairs(record.items) do
 			if item.itemID ~= 0 then
-				item.size = ns.SizeOf(item.catchId, getItem(item.itemID))
+				local known = getItem(item.itemID)
+				item.size = ns.SizeOf(item.catchId, known)
+				item.variety = ns.VarietyOf(item.catchId, known)
 			end
 		end
 	end
@@ -645,8 +648,9 @@ end
 --- Opens the Catch log stored in `saved`, the PagleLog SavedVariable (LOG-R10). A fresh install (`saved` nil)
 --- starts an empty log. A log in another format than the codec's starts a new one, keeping its characters
 --- (LOG-R18); `started` says so, for the chat line. The logId is created once the log has a first character
---- (LOG-R15). Every Cast it hands out sizes its Species items through `getItem`, the catalogue's GetItem, asked at
---- each decode, so a released catalogue sizes them from then on (LOG-R65, LOG-R96); without it, no item has a size.
+--- (LOG-R15). Every Cast it hands out sizes its Species items, and gives them their varieties, through `getItem`, the
+--- catalogue's GetItem, asked at each decode, so a released catalogue sizes them from then on (LOG-R65, LOG-R96,
+--- VAR-R4); without it, no item has a size or a variety.
 ---@param saved table?
 ---@param global table PagleDB.global, where undecodable entries are counted (LOG-R16) and Session breaks kept (LOG-R99)
 ---@param now integer server time

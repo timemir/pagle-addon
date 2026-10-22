@@ -168,7 +168,7 @@ Part of [Core](README.md). This file covers what Core observes, how it is stored
 
 ### Simulated Size
 
-- **LOG-R65** A Catch has a **Simulated Size** when `Pagle.GetItem(itemID)` has category `fish` or `questFish` and is not Noise; Legends included. Trophy fish (they have a real weight), Sub-collection items, Noise, Uncharted items and item `0` have none. Each Catch (one loot slot) has one size, whatever its quantity. Core computes it whenever it decodes a record, from the Catch ID and the current catalogue; it is never stored, and records carry it as `size = { length, band }` (`length` in whole millimetres, `band` 1–5). An Uncharted Catch gains its size when a release classifies it as a Species (LOG-R96).
+- **LOG-R65** A Catch has a **Simulated Size** when `Pagle.GetItem(itemID)` has category `fish` or `questFish` and is not Noise; Legends included. Trophy fish (they have a real weight), Sub-collection items, Noise, Uncharted items and item `0` have none. Each Catch (one loot slot) has one size, whatever its quantity. Core computes it whenever it decodes a record, from the Catch ID and the current catalogue; it is never stored, and records carry it as `size = { length, band }` (`length` in whole millimetres, `band` 1–5). An Uncharted Catch gains its size when a release classifies it as a Species (LOG-R96). Beside `size`, a decoded item of a Species with varieties carries its `variety` (VAR-R4).
 - **LOG-R66** The **percentile** `u` of a Catch is a frozen hash of its Catch ID string (LOG-R13), computed in Core `logic/` with the `bit` library (LuaBitOp, which WoW ships; tests install the same library) and all arithmetic kept exact below 2^53:
   1. FNV-1a 32-bit over the ID's bytes: `h = 2166136261`; for each byte `c`, `h = bxor(h, c) % 2^32`, then `h = ((h % 256) * 16777216 + h * 403) % 2^32` (that is, `h * 16777619 mod 2^32`).
   2. Murmur3's `fmix32` finaliser: `h = h xor (h >> 16)`, `h = mul32(h, 0x85ebca6b)`, `h = h xor (h >> 13)`, `h = mul32(h, 0xc2b2ae35)`, `h = h xor (h >> 16)`, with `mul32(a, b) = (a * (b % 65536) + ((a * floor(b / 65536)) % 65536) * 65536) % 2^32` and every `bit` result taken `% 2^32`.
@@ -301,7 +301,7 @@ Each Module keeps one AceDB SavedVariable, `Pagle<Module>DB`, account-wide with 
 ---@field outcome "caught"|"gotAway"
 ---@field session string        -- its Session's ID (LOG-R98)
 ---@field conditions ConditionsSnapshot
----@field items { n: integer, itemID: integer, quantity: integer, catchId: string, size?: PagleSize }[]
+---@field items { n: integer, itemID: integer, quantity: integer, catchId: string, size?: PagleSize, variety?: PagleVariety }[]
 
 ---@class PagleCatch            -- payload of the Catch event, one per item
 ---@field catchId string
@@ -309,11 +309,17 @@ Each Module keeps one AceDB SavedVariable, `Pagle<Module>DB`, account-wide with 
 ---@field quantity integer
 ---@field n integer              -- position in the Cast's items
 ---@field size? PagleSize        -- LOG-R65
+---@field variety? PagleVariety  -- VAR-R4
 ---@field cast PagleCast
 
 ---@class PagleSize             -- a Simulated Size (LOG-R65–R67)
 ---@field length integer         -- millimetres
 ---@field band integer           -- 1 Tiddler … 5 Monster
+
+---@class PagleVariety          -- a Catch's variety (VAR-R4, varieties.md)
+---@field id string              -- "<speciesID>.<key>"
+---@field index integer          -- position 1–10
+---@field rarity "common"|"uncommon"|"rare"|"epic"
 
 ---@class ConditionsSnapshot
 ---@field time integer           -- server time

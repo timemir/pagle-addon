@@ -19,6 +19,7 @@ ns.FISHING_GRACE = 2
 ---@field quantity integer
 ---@field n integer              -- position in the Cast's items
 ---@field size PagleSize?        -- its Simulated Size, as the Cast's item carries it (LOG-R65)
+---@field variety PagleVariety?  -- its variety, as the Cast's item carries it (VAR-R4)
 ---@field cast PagleCast
 
 --- One offered item, as the Cast entry stores it (LOG-R8).
@@ -101,6 +102,7 @@ local function tell(self, outcome, cast)
 			quantity = item.quantity,
 			n = item.n,
 			size = item.size,
+			variety = item.variety,
 			cast = cast,
 		})
 	end
