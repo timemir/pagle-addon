@@ -61,9 +61,13 @@ describe("the board's page router (HNT-R61, HNT-R66)", function()
 		end, "a Hunts board page's renderer is a function")
 	end)
 
-	it("opens each of the four modes: the Board, a set's page, a Hunt's entry and a retired entry", function()
+	it("opens each of the five modes: the Board, a set's page, an entry, a retired entry and Pagle Wagers", function()
 		local router = newRouter()
 
+		router:Open({ mode = "wagers" })
+		assert.are.same({ mode = "wagers" }, router:Place())
+		router:Open({ mode = "wagers", run = "fixture_shore@100" }) -- HNT-R162: a slip chosen
+		assert.are.same({ mode = "wagers", run = "fixture_shore@100" }, router:Place())
 		router:Open({ mode = "set", set = "fixture_dusk" })
 		assert.are.same({ mode = "set", set = "fixture_dusk" }, router:Place())
 		router:Open({ mode = "entry", set = "fixture_dusk", hunt = "fixture_snapper" })
@@ -127,10 +131,37 @@ describe("the board's page router (HNT-R61, HNT-R66)", function()
 
 			router:Open({ mode = "board", run = "fixture_shore@100" })
 
+			-- "Pagle Wagers" turns to its spread on that run (HNT-R162).
 			assert.are.same({
 				{ kind = "hunts", place = { mode = "board" } },
-				{ kind = "wagers", id = "fixture_shore@100" },
+				{ kind = "wagers", id = "fixture_shore@100", place = { mode = "wagers", run = "fixture_shore@100" } },
 				{ kind = "run", id = "fixture_shore@100", place = { mode = "board", run = "fixture_shore@100" } },
+			}, router:Trail())
+		end)
+
+		it(
+			'is "Hunts", "Pagle Wagers", then the slip chosen on the spread, "Pagle Wagers" back to the slips',
+			function()
+				local router = newRouter()
+
+				router:Open({ mode = "wagers", run = "fixture_shore@100" })
+
+				assert.are.same({
+					{ kind = "hunts", place = { mode = "board" } },
+					{ kind = "wagers", id = "fixture_shore@100", place = { mode = "wagers" } },
+					{ kind = "run", id = "fixture_shore@100", place = { mode = "wagers", run = "fixture_shore@100" } },
+				}, router:Trail())
+			end
+		)
+
+		it('stops at "Pagle Wagers" on the spread with no slip chosen (HNT-R164)', function()
+			local router = newRouter()
+
+			router:Open({ mode = "wagers" })
+
+			assert.are.same({
+				{ kind = "hunts", place = { mode = "board" } },
+				{ kind = "wagers", place = { mode = "wagers" } },
 			}, router:Trail())
 		end)
 

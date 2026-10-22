@@ -25,11 +25,14 @@ local function inputs()
 	return { list = ns.hunts, state = ns.State(), updating = ns.IsUpdating(), now = viewTime() }
 end
 
---- The set ribbons at `place` (HNT-R61), as data.
+--- The set ribbons at `place` (HNT-R61), as data, the Pagle Wagers ribbon counting the runs on (HNT-R162,
+--- adapter/WagersSpread.lua).
 ---@param place BoardPlace
 ---@return BoardRibbon[]
 function ns.BoardRibbons(place)
-	return ns.BuildRibbons(inputs(), place)
+	local input = inputs()
+	input.runsOn = ns.BoardRunsOn()
+	return ns.BuildRibbons(input, place)
 end
 
 --- The breadcrumbs where the board is (HNT-R61), as data.
@@ -77,21 +80,30 @@ end
 
 ---@class SetsRibbonsAnchor: Frame
 ---@field ribbons BoardRibbonView[]
+---@field wagersRibbon BoardRibbonView?  -- the Pagle Wagers ribbon (HNT-R162), once drawn
+---@field rowWidth number                -- how wide the row of ribbons hangs, for fitting the board (HNT-R60)
 
--- The set ribbons hanging from under the leather's foot (HNT-R61): Board, then each set's with its full name, in its
--- colour, the one of the mode shown hanging longer. Clicking one opens its place; each shows its full name on hover.
+-- The set ribbons hanging from under the leather's foot (HNT-R61): Board, then Pagle Wagers in oxblood with "{n} on"
+-- under its name (HNT-R162), then each set's with its full name, in its colour, the one of the mode shown hanging
+-- longer. Clicking one opens its place; each shows its full name on hover.
 ---@param anchor SetsRibbonsAnchor
 ---@param place BoardPlace
 local function drawRibbons(anchor, place)
 	anchor.ribbons = anchor.ribbons or {}
 	local sizes = ns.BOARD_RIBBON
 	local ribbons = ns.BoardRibbons(place)
+	anchor.wagersRibbon = nil
 	for i, data in ipairs(ribbons) do
 		local ribbon = ns.BoardPooled(anchor.ribbons, i, function()
 			return ns.NewBoardRibbon(anchor)
 		end)
-		local color = data.set and ns.BoardRibbonColor(data.index) or LOOK.boardRibbon
+		local color = data.set and ns.BoardRibbonColor(data.index) or data.wagers and LOOK.oxblood or LOOK.boardRibbon
 		ribbon:SetRibbon(data.name or data.text, color, data.chosen, true)
+		ribbon:SetCount(data.count)
+		ribbon.wagers = data.wagers == true
+		if data.wagers then
+			anchor.wagersRibbon = ribbon
+		end
 		ribbon.tooltip = { data.name or data.text }
 		ribbon:ClearAllPoints()
 		ribbon:SetPoint("TOPLEFT", (i - 1) * (sizes.width + sizes.gap), 0)
@@ -100,6 +112,16 @@ local function drawRibbons(anchor, place)
 		end)
 	end
 	ns.BoardHideFrom(anchor.ribbons, #ribbons)
+	anchor.rowWidth = #ribbons * (sizes.width + sizes.gap) - sizes.gap
+end
+
+--- The Pagle Wagers ribbon's frame (HNT-R162) hanging under the board, a Button; nil before the board first draws.
+--- The onboarding's Hunts First look (#333) points its note at it.
+---@return BoardRibbonView?
+function ns.BoardWagersRibbon()
+	local frame = ns.board.frame
+	local anchor = frame and frame.anchors.ribbons --[[@as SetsRibbonsAnchor?]]
+	return anchor and anchor.wagersRibbon
 end
 
 ---@class SetsCrumb: Button
@@ -150,8 +172,6 @@ local function drawCrumbs(anchor)
 		crumb:SetScript("OnClick", function()
 			if data.place then
 				ns.board:Open(data.place)
-			else
-				ns.OpenWagers(data.run) -- "Pagle Wagers" goes to its spread (HNT-R164, #303)
 			end
 		end)
 	end

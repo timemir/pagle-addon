@@ -616,6 +616,31 @@ end
 ---@type table<Frame, TimelinePageView>
 local views = {}
 
+--- The timeline drawn on left page `page`, nil before its first draw: the First look's notes point at its parts
+--- (adapter/Look.lua).
+---@param page Frame?
+---@return TimelinePageView?
+function ns.TimelinePageView(page)
+	return page and views[page]
+end
+
+--- Group `group`'s heading's name on `view`, while it shows within the list's view (not scrolled out of it); nil
+--- otherwise. Wherever the wager strip pushes the list (HNT-R161), the heading moves with it.
+---@param view TimelinePageView
+---@param group HuntGroup
+---@return FontString?
+function ns.TimelineHeadingLabel(view, group)
+	local heading = view.headings[group]
+	if not (heading and heading:IsVisible() and heading.y) then
+		return nil
+	end
+	local top = heading.y + HEADING_GAP - view.scroll:GetVerticalScroll()
+	if top < 0 or top + HEADING_HEIGHT > view.listHeight then
+		return nil
+	end
+	return heading.label
+end
+
 --- Draws the timeline of `place` on `page` (a left page's renderer, ns.board:RegisterPage): on the Board it selects
 --- the Hunt the timeline picks (HNT-R67) before the right page draws.
 ---@param page Frame

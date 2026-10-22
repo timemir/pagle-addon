@@ -263,7 +263,7 @@ See the kit's `SOUND.md`. New events: `letter` (TUTORIAL_POPUP), `noteIn` (IG_CH
 - **ONB-R106 UI scale and small screens.** ONB-R27; the Letter and notes are unscaled frames in UIParent; First-look notes that don't fit beside a window overlap its edge (ONB-R58).
 - **ONB-R107 Another addon moved the tracker dock or Blizzard's objective tracker.** The First evening list follows the dock (CORE-R71).
 - **ONB-R108 The minimap icon hidden.** Notes meant for Pagle's menu button point at the Addon Compartment's button instead (ONB-R52); hiding or showing the icon while such a note shows moves its arrow (ONB-R56).
-- **ONB-R109 Hunts before M8's board.** The Hunts First look's last note has no Pagle Wagers ribbon to point at and drops (ONB-R56); the set shows its four other notes.
+- **ONB-R109 Hunts before M8's board.** The Hunts First look's last note has no Pagle Wagers ribbon to point at and drops (ONB-R56); the set shows its four other notes. Since M8's ribbon (#303) the note points at it and shows (#333).
 
 ## In-game exit check
 

@@ -7,12 +7,14 @@ local ns = select(2, ...)
 
 -- The Hunts board on the client (HNT-R60, HNT-R61, HNT-R67, HNT-R68, HNT-R70): a two-page notebook in leather, with the
 -- leather's anchors above and beside the pages, drawing on each page what logic/Board.lua's router says the mode shown
--- puts there. The pages' contents are the renderers adapter/Timeline.lua, Entry.lua and Sets.lua register; this file
+-- puts there. The pages' contents are the renderers adapter/Timeline.lua, Entry.lua, Sets.lua and WagersSpread.lua
+-- register; this file
 -- draws only the notebook. It makes no secure frames, so it opens and stays open while restricted (HNT-R68). The look
 -- is the books art kit's Hunts board (adapter/BoardWidgets.lua): its sizes, the pages' margins, the wax close button
 -- on the corner and the set ribbons hanging from under the leather's foot. Its motion is the kit v2's
 -- (adapter/BoardMotion.lua): it fades in and out with the book's sounds, shrinks to fit the screen, and turns the page
--- between spreads (the Board, each set's page, an entry opened from a set), each spread on its own page frames.
+-- between spreads (the Board, the Pagle Wagers spread, each set's page, an entry opened from a set), each spread on
+-- its own page frames.
 
 -- The frame's global name: UISpecialFrames takes names, and Esc hides the frames it lists (HNT-R60).
 local FRAME_NAME = "PagleHuntsBoard"
@@ -51,6 +53,7 @@ local LEATHER_PARTS = { "crumbs", "clock", "completed", "nameplate", "ribbons" }
 
 ---@class BoardFrame: Frame
 ---@field close BoardCloseButton
+---@field help BoardHelpButton                 -- the "?" beside it (ONB-R59)
 ---@field cover BoardLeatherView               -- the leather, in the cover it wears (HNT-R70)
 ---@field papers table<BoardSide, BoardParchmentView>
 ---@field paperFrames table<BoardSide, Frame>  -- each page's paper: the spreads' clip frames sit on it
@@ -254,6 +257,15 @@ local function build(board)
 	frame.close:SetScript("OnClick", function()
 		board:Hide()
 	end)
+	-- the "?" beside it, in the same wax: the First look's notes again (ONB-R59, adapter/Look.lua); hidden on a Core
+	-- without First looks (ONB-R90)
+	frame.help = ns.NewBoardHelp(frame, ns.L.LOOK_AGAIN)
+	frame.help:SetPoint("RIGHT", frame.close, "LEFT", -4, 0)
+	frame.help:SetFrameLevel(frame:GetFrameLevel() + 10)
+	frame.help:SetScript("OnClick", function()
+		ns.ShowBoardLookAgain()
+	end)
+	frame.help:SetShown(ns.HasBoardLook())
 	frame:SetScript("OnHide", function()
 		board:Hidden()
 	end)
@@ -310,9 +322,8 @@ function Board:Open(place)
 		Pagle.StopMotion(self.closeOwner)
 		frame:SetAlpha(1)
 	end
-	if not frame:IsShown() then
-		-- up a little, so the ribbons hanging under it stay on screen, and no larger than the screen
-		ns.FitBoard(frame, EXTENT_WIDTH, EXTENT_HEIGHT, RIBBONS_LIFT)
+	local opening = not frame:IsShown()
+	if opening then
 		self.closeSounded = false
 		frame:Show()
 		ns.BoardSound("bookOpen")
@@ -323,6 +334,15 @@ function Board:Open(place)
 		ns.SetViewShown("board", true)
 	end
 	self:Draw()
+	if opening then
+		-- up a little, so the ribbons hanging under it stay on screen, and no larger than the screen, the row of
+		-- ribbons included once drawn: centred, its extent reaches as far past each side as they hang past the right
+		local ribbons = frame.anchors.ribbons --[[@as { rowWidth: number? }]]
+		local width = math.max(EXTENT_WIDTH, 2 * (RIBBONS_LEFT + (ribbons.rowWidth or 0)) - WIDTH)
+		ns.FitBoard(frame, width, EXTENT_HEIGHT, RIBBONS_LIFT)
+		-- drawn and fitted: the First evening list's item and, the first time, the First look (adapter/Look.lua)
+		ns.BoardOpened()
+	end
 end
 
 --- Ends a page turn under way at once, on the spread it turns to.
@@ -393,13 +413,15 @@ local function spreadOf(place)
 	return place.mode .. ":" .. (place.mode ~= "board" and place.set or "")
 end
 
--- Where a spread stands among the ribbons, for which way the page turns: the Board first, then each set in Hunt list
--- order, an entry opened from a set just after its set's page.
+-- Where a spread stands among the ribbons, for which way the page turns: the Board first, then Pagle Wagers, then each
+-- set in Hunt list order, an entry opened from a set just after its set's page.
 ---@param spread string
 ---@return number
 local function orderOf(spread)
 	local mode, set = spread:match("^([^:]*):(.*)$")
-	if mode == "board" or set == "" then
+	if mode == "wagers" then
+		return 0.5 -- its ribbon hangs between the Board's and the sets' (HNT-R162)
+	elseif mode == "board" or set == "" then
 		return 0
 	end
 	for i, data in ipairs(ns.hunts:Sets()) do
