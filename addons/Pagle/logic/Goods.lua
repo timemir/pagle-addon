@@ -10,6 +10,17 @@ local ns = select(2, ...)
 ---@field id string              -- "core.toaststyle", "hunts.notebookcover", "stats.trackerframe"
 ---@field label string           -- "Toast style"
 ---@field category "Announcements"|"Bookplate"|"Fish Journal"|"Hunts"|"Trackers" -- ns.SLOT_CATEGORY_ORDER
+---@field groups? PagleSlotGroup[] -- the slot's groups, in the order the shop lists them (SHOP-R27)
+
+--- One group of a slot's goods (SHOP-R27): the shop lists its goods together under its name.
+---@class PagleSlotGroup
+---@field key string             -- what a good names in its `group`, matching [%w_]+
+---@field name string            -- its header on the shop's list, interface text ("Zone crests")
+
+--- One dot of an earned good's progress (SHOP-R22), on the shop's stage: filled in its colour, or ringed in it.
+---@class PagleProgressDot
+---@field color number[]         -- { r, g, b }, each 0 to 1
+---@field filled boolean
 
 --- A good a Module or Core registers (wallet-and-shop.md › Contracts): exactly one of default, for sale (tier) or
 --- earned (isEarned).
@@ -22,7 +33,9 @@ local ns = select(2, ...)
 ---@field default? boolean        -- SHOP-R22
 ---@field tier? 1|2|3             -- for sale
 ---@field isEarned? fun(): boolean -- earned
----@field earnedText? string      -- earned: "Angler Level 30"
+---@field earnedText? string|fun(): string?, string? -- earned: "Angler Level 30", or the row's tag and the stage's note
+---@field progress? fun(): PagleProgressDot[] -- earned: the dots the stage shows while it isn't owned (SHOP-R22)
+---@field group? string           -- the key of one of its slot's groups (SHOP-R27)
 ---@field preview? fun(stage: Frame)   -- draws the look on the shop's preview stage
 
 --- A registered slot, with who registered it.
@@ -87,6 +100,32 @@ local function idProblem(call, module, id)
 	return nil
 end
 
+-- Why `slot`'s groups can't be (SHOP-R23, SHOP-R27), or nil if they can: none, or a list of { key, name }, each key
+-- matching [%w_]+ and given once, each name a string that isn't empty.
+---@param slot table
+---@return string?
+local function groupsProblem(slot)
+	local groups = slot.groups
+	if groups == nil then
+		return nil
+	elseif type(groups) ~= "table" then
+		return ("M:RegisterSlot: %s's groups must be a list of { key, name }"):format(slot.id)
+	end
+	local seen = {}
+	for i, group in ipairs(groups) do
+		local key = type(group) == "table" and group.key
+		if type(key) ~= "string" or not key:match("^[%w_]+$") then
+			return ("M:RegisterSlot: %s's group %d needs a key of letters, digits and _"):format(slot.id, i)
+		elseif seen[key] then
+			return ("M:RegisterSlot: %s has the group %s twice"):format(slot.id, key)
+		elseif type(group.name) ~= "string" or group.name == "" then
+			return ("M:RegisterSlot: %s's group %s has no name"):format(slot.id, key)
+		end
+		seen[key] = true
+	end
+	return nil
+end
+
 -- Why a slot can't register for `module`, or nil if it can (SHOP-R23).
 ---@private
 ---@param module string
@@ -110,7 +149,7 @@ function Goods:SlotProblem(module, slot)
 			tostring(slot.category)
 		)
 	end
-	return nil
+	return groupsProblem(slot)
 end
 
 --- Who registered Core's own slots and goods, where a Module's def.name goes (SHOP-R21, SHOP-R25).
@@ -164,10 +203,16 @@ function Goods:RegisterSlot(module, slot)
 		return problem
 	end
 	self.registered = self.registered + 1
+	local groups
+	for i, group in ipairs(slot.groups or {}) do
+		groups = groups or {}
+		groups[i] = { key = group.key, name = group.name }
+	end
 	self.slots[slot.id] = {
 		id = slot.id,
 		label = slot.label,
 		category = slot.category,
+		groups = groups,
 		module = module,
 		goods = {},
 		seq = self.registered,
@@ -176,7 +221,20 @@ function Goods:RegisterSlot(module, slot)
 	return nil
 end
 
--- Why a good can't register for `module`, or nil if it can (SHOP-R22, SHOP-R23).
+-- The group of `slot` whose key is `key` (SHOP-R27), or nil.
+---@param slot PagleRegisteredSlot
+---@param key any
+---@return PagleSlotGroup?
+local function groupOf(slot, key)
+	for _, group in ipairs(slot.groups or {}) do
+		if group.key == key then
+			return group
+		end
+	end
+	return nil
+end
+
+-- Why a good can't register for `module`, or nil if it can (SHOP-R22, SHOP-R23, SHOP-R27).
 ---@private
 ---@param module string
 ---@param good any
@@ -217,10 +275,14 @@ function Goods:GoodProblem(module, good)
 			end
 		end
 	end
-	for _, field in ipairs({ "description", "earnedText" }) do
-		if good[field] ~= nil and type(good[field]) ~= "string" then
-			return ("M:RegisterGood: %s's %s must be a string"):format(id, field)
-		end
+	if good.description ~= nil and type(good.description) ~= "string" then
+		return ("M:RegisterGood: %s's description must be a string"):format(id)
+	elseif good.earnedText ~= nil and type(good.earnedText) ~= "string" and type(good.earnedText) ~= "function" then
+		return ("M:RegisterGood: %s's earnedText must be a string or a function"):format(id)
+	elseif good.progress ~= nil and (type(good.progress) ~= "function" or good.isEarned == nil) then
+		return ("M:RegisterGood: %s's progress must be a function, on an earned good"):format(id)
+	elseif good.group ~= nil and not groupOf(slot, good.group) then
+		return ("M:RegisterGood: %s's slot %s has no group %s"):format(id, slot.id, tostring(good.group))
 	end
 	if good.icon ~= nil and type(good.icon) ~= "string" and type(good.icon) ~= "number" then
 		return ("M:RegisterGood: %s's icon must be a texture path or file ID"):format(id)

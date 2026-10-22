@@ -623,6 +623,7 @@ function ns.WireShop(host, seams)
 			balance = ns.wallet:Get(),
 			updating = ns.projections:IsUpdating(),
 			format = format,
+			call = host.call,
 		})
 	end
 

@@ -131,6 +131,53 @@ describe("ns.NewGoods", function()
 			{ "a good without a name", "Hunts", { good = cover({ name = "" }) } },
 			{ "a preview that isn't a function", "Hunts", { good = cover({ preview = "stage" }) } },
 			{ "a default that isn't true or false", "Hunts", { good = cover({ tier = false, default = "yes" }) } },
+			{ "an earnedText that is neither text nor a function", "Hunts", { good = cover({ earnedText = 3 }) } },
+			{
+				"a progress that isn't a function",
+				"Hunts",
+				{ good = cover({ tier = false, isEarned = isEarned, progress = {} }) },
+			},
+			{ "a progress on a good that isn't earned", "Hunts", { good = cover({ progress = function() end }) } },
+			{ "a group its slot doesn't have", "Hunts", { good = cover({ group = "gilt" }) } },
+			{
+				"groups that aren't a list",
+				"Hunts",
+				{ slot = { id = "hunts.frame", label = "Frame", category = "Hunts", groups = "gilt" } },
+			},
+			{
+				"a group without a key",
+				"Hunts",
+				{ slot = { id = "hunts.frame", label = "Frame", category = "Hunts", groups = { { name = "Gilt" } } } },
+			},
+			{
+				"a group key with a dot",
+				"Hunts",
+				{
+					slot = {
+						id = "hunts.frame",
+						label = "Frame",
+						category = "Hunts",
+						groups = { { key = "gilt.old", name = "Gilt" } },
+					},
+				},
+			},
+			{
+				"a group without a name",
+				"Hunts",
+				{ slot = { id = "hunts.frame", label = "Frame", category = "Hunts", groups = { { key = "gilt" } } } },
+			},
+			{
+				"a group key twice",
+				"Hunts",
+				{
+					slot = {
+						id = "hunts.frame",
+						label = "Frame",
+						category = "Hunts",
+						groups = { { key = "gilt", name = "Gilt" }, { key = "gilt", name = "Gold" } },
+					},
+				},
+			},
 		}
 		for _, case in ipairs(cases) do
 			it("refuses " .. case[1] .. ", registering and caching nothing (SHOP-R21, SHOP-R23)", function()
@@ -186,6 +233,57 @@ describe("ns.NewGoods", function()
 				"M:RegisterSlot: ledger.cover doesn't start with hunts.",
 				env.goods:RegisterSlot("Hunts", { id = "ledger.cover", label = "Cover", category = "Hunts" })
 			)
+		end)
+
+		it("keeps a slot's groups in order, as a copy, and each good's group (SHOP-R27)", function()
+			local env = newGoods()
+			local groups = { { key = "gilt", name = "Gilt frames" }, { key = "wood", name = "Wooden frames" } }
+			local progress = function()
+				return {}
+			end
+			assert.is_nil(
+				env.goods:RegisterSlot(
+					"Hunts",
+					{ id = "hunts.frame", label = "Frame", category = "Hunts", groups = groups }
+				)
+			)
+			groups[1].name = "Changed"
+			assert.is_nil(env.goods:RegisterGood("Hunts", {
+				id = "hunts.frame.oak",
+				slot = "hunts.frame",
+				name = "Oak",
+				tier = 1,
+				group = "wood",
+			}))
+			assert.is_nil(env.goods:RegisterGood("Hunts", {
+				id = "hunts.frame.leaf",
+				slot = "hunts.frame",
+				name = "Gold leaf",
+				group = "gilt",
+				isEarned = function()
+					return false
+				end,
+				earnedText = function()
+					return "1 of 3", "One of three gilded."
+				end,
+				progress = progress,
+			}))
+
+			local slot = env.goods:Slots()[1]
+			assert.are.same(
+				{ { key = "gilt", name = "Gilt frames" }, { key = "wood", name = "Wooden frames" } },
+				slot.groups
+			)
+			assert.are.same({ "wood", "gilt" }, { slot.goods[1].group, slot.goods[2].group })
+			assert.are.equal(progress, assert(env.goods:Good("hunts.frame.leaf")).progress)
+			assert.is_nil(env.goods:Slots()[1].groups[3])
+		end)
+
+		it("leaves a slot registered without groups without any (SHOP-R27)", function()
+			local env = newGoods()
+			huntsCovers(env, { value = false })
+
+			assert.is_nil(env.goods:Slots()[1].groups)
 		end)
 
 		it("lists the slots of Core first, then by Module order, each with its goods in order (SHOP-R21)", function()

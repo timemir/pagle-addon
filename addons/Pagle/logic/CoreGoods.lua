@@ -21,6 +21,7 @@ local ns = select(2, ...)
 ---@field id string
 ---@field label string
 ---@field category "Announcements"|"Bookplate"
+---@field groups? PagleSlotGroup[]  -- its groups on the shop's list (SHOP-R27)
 ---@field goods PagleCoreGood[]
 
 local ICONS = "Interface\\Icons\\"
@@ -73,6 +74,11 @@ ns.CORE_GOODS = {
 		id = ns.CREST_SLOT,
 		label = L.SLOT_CREST,
 		category = "Bookplate",
+		-- The Ledger's zone crests and Core's fish crests name these; Plain names none, so it lists first (SHOP-R27).
+		groups = {
+			{ key = "zone", name = L.SLOT_CREST_ZONES },
+			{ key = "fish", name = L.SLOT_CREST_FISH },
+		},
 		goods = {
 			{ id = "core.crest.plain", default = true, icon = CRESTS .. "plain" },
 			{ id = "core.crest.elwynn", tier = 1, icon = CRESTS .. "elwynn" },
@@ -126,7 +132,7 @@ end
 ---@param previews table<string, PagleCorePreview>?
 function ns.RegisterCoreGoods(previews)
 	for _, slot in ipairs(ns.CORE_GOODS) do
-		ns.RegisterCoreSlot({ id = slot.id, label = slot.label, category = slot.category })
+		ns.RegisterCoreSlot({ id = slot.id, label = slot.label, category = slot.category, groups = slot.groups })
 		for _, good in ipairs(slot.goods) do
 			ns.RegisterCoreGood({
 				id = good.id,
