@@ -1,6 +1,7 @@
 """The release lock (DATA-R95, ADR 0005): data/hunts/released.lock records each released Hunt's hash and retired
-date, and the members of each class a released Hunt targets. scripts/generate-data.py --lock rewrites it when a
-release is tagged, from 1.0 on, and never before (DATA-R73): until the 1.0 tag the committed lock stays empty.
+date, Standing Hunts' and event Hunts' alike (DATA-R98), and the members of each class a released Hunt targets.
+scripts/generate-data.py --lock rewrites it when a release is tagged, from 1.0 on, and never before (DATA-R73): until
+the 1.0 tag the committed lock stays empty.
 """
 
 import re
@@ -9,6 +10,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from pagle_data.errors import At, Problems
+from pagle_data.events import EventLayer, EventList, event_hunt_hash, event_hunt_hashes
 from pagle_data.hunts import FIXED_CLASS, GENERATED_CLASSES, HuntLayer, HuntList, class_key, hunt_hash
 from pagle_data.toml_reader import (
     check_keys,
@@ -19,7 +21,7 @@ from pagle_data.toml_reader import (
     expect_table,
     read_toml,
 )
-from pagle_data.universe import HUNTS_TOML
+from pagle_data.universe import EVENTS_DIR, HUNTS_TOML
 
 LOCK = "data/hunts/released.lock"
 
@@ -105,16 +107,31 @@ def read_lock(root: Path, problems: Problems) -> Lock:
     return lock
 
 
-def check_lock(lock: Lock, layer: HuntLayer, problems: Problems) -> None:
+def check_lock(lock: Lock, layer: HuntLayer, events: EventLayer, problems: Problems) -> None:
     """DATA-R96 (ADR 0005): against the lock, a locked Hunt is missing (deleted instead of retired), its hash differs,
     its locked retired date changed or was removed, or a locked fixed class lost a member. Generated classes can't
-    lose one (DATA-R91, build_hunt_list). An empty lock checks nothing."""
+    lose one (DATA-R91, build_hunt_list). An event Hunt's hash is over its record and its event's id and zones, and
+    a locked one missing or differing fails the same way (DATA-R98). An empty lock checks nothing."""
     hunts = {hunt.id: hunt for hunt in layer.hunts}
+    event_hunts = {hunt.id: (event, hunt) for event in events.events for hunt in event.hunts}
     for hunt_id, locked in lock.hunts.items():
+        if hunt_id in event_hunts and hunt_id not in hunts:
+            event, event_hunt = event_hunts[hunt_id]
+            if event_hunt_hash(event_hunt.record, event.id, event.zones) != locked.hash:
+                message = (
+                    "differs from the released Hunt (its hash, over its record and its event's id and zones, isn't the"
+                    f" one in {LOCK}); a released event never changes: ship the fix as a new event and retire this one"
+                )
+                problems.add(event_hunt.at, f"{message} (DATA-R96, DATA-R98, ADR 0005)")
+            continue
         hunt = hunts.get(hunt_id)
         if hunt is None:
-            message = f"the released Hunt is gone from {HUNTS_TOML}; retire it with a retired date instead"
-            problems.add(locked.at, f"{message} (DATA-R96, ADR 0005)")
+            message = (
+                f"the released Hunt is gone from {HUNTS_TOML} and {EVENTS_DIR}/; retire a Standing Hunt with a retired"
+                " date instead, and an event leaves the pool by rotation = false and a retired date, never by"
+                " deleting it"
+            )
+            problems.add(locked.at, f"{message} (DATA-R96, DATA-R98, ADR 0005)")
             continue
         if hunt_hash(hunt.record) != locked.hash:
             message = (
@@ -155,14 +172,23 @@ def check_locked_members(lock: Lock, items: Collection[int], problems: Problems)
                 problems.add(At(LOCK, class_key(class_id)) / "members", f"{message}; keep it shipping (DATA-R91)")
 
 
-def lock_toml(hunt_list: HuntList) -> str:
-    """released.lock for the Hunt list, every Hunt in it counting as released (DATA-R95): [hunt.<id>] with its hash
-    (DATA-R94) and its retired date if it has one, then [class."<classID>"] with the members (ascending) of each class
-    a Hunt targets, fixed or generated, as emitted. Hunts and classes by ascending ID (DATA-R62)."""
+def lock_toml(hunt_list: HuntList, event_list: EventList) -> str:
+    """released.lock for the Hunt list and the event list, every Hunt in them counting as released (DATA-R95,
+    DATA-R98): [hunt.<id>] with its hash (DATA-R94; an event Hunt's over its event's id and zones too) and a Standing
+    Hunt's retired date if it has one, then [class."<classID>"] with the members (ascending) of each class a Hunt
+    targets, fixed or generated, as emitted. Hunts and classes by ascending ID (DATA-R62)."""
+    released = {str(record["id"]): (hunt_hash(record), record) for record in hunt_list["hunts"]}
+    event_hashes = event_hunt_hashes(event_list)
+    for event in event_list["events"]:
+        hunts = event["hunts"]
+        assert isinstance(hunts, list)
+        for hunt in hunts:
+            assert isinstance(hunt, dict)
+            released[str(hunt["id"])] = (event_hashes[str(hunt["id"])], hunt)
     tables: list[str] = []
     targeted: set[str] = set()
-    for record in sorted(hunt_list["hunts"], key=lambda record: str(record["id"])):
-        lines = [f"[hunt.{record['id']}]", f'hash = "{hunt_hash(record)}"']
+    for hunt_id, (hunt_hash_, record) in sorted(released.items()):
+        lines = [f"[hunt.{hunt_id}]", f'hash = "{hunt_hash_}"']
         retired = record.get("retired")
         if isinstance(retired, int):
             lines.append(f"retired = {date_text(retired)}")

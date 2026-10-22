@@ -159,11 +159,11 @@ Terms are used as `CONTEXT.md` defines them. "The catalogue" is what the generat
   - a bad alias (DATA-R32)
   - an observation of a removed item (DATA-R23)
   - an unknown key or a wrong type in any TOML file under `data/`
-  - any Hunt check (DATA-R92, DATA-R96)
+  - any Hunt check (DATA-R92, DATA-R96), or any event check (DATA-R97, DATA-R99)
   - any lore check of a Module whose check is on (DATA-R107)
 - **DATA-R64** Warnings (printed, not failing): baseline rows with a condition that isn't a single event (DATA-R9), observed areas missing from the slice (DATA-R33), observed pairs without a consistent gate (DATA-R47), and alias proposals not yet committed. Those proposals are one summary line with their count, "<n> uncommitted alias proposals; run scripts/generate-data.py --propose-aliases to list them", and nothing when there are none; `--propose-aliases` lists each in full (DATA-R32).
 - **DATA-R65** The generator emits only items that ship (DATA-R15, DATA-R18), only gates by window, and nothing from `data/observed/` but the catalogue facts it implies.
-- **DATA-R66** `data/checks.toml` switches milestone-gated checks on: `typicalLength = true` from M4 (with Simulated Size), and `lore = [<lore ID>, …]`, listing the addons whose lore check is on (DATA-R100, DATA-R107). Before a switch is on, its check is skipped and the data is still emitted.
+- **DATA-R66** `data/checks.toml` switches milestone-gated checks on: `typicalLength = true` from M4 (with Simulated Size), and `lore = [<lore ID>, …]`, listing the addons whose lore check is on (DATA-R100, DATA-R107), and `eventPool = true` from the 1.0 event pool ([#306](https://github.com/timemir/wow-fish/issues/306)), the pool minimum (DATA-R99); left out, `eventPool` is off. Before a switch is on, its check is skipped and the data is still emitted.
 
 ### The content fingerprint and releases
 
@@ -180,6 +180,7 @@ Terms are used as `CONTEXT.md` defines them. "The catalogue" is what the generat
   |---|---|---|
   | `addons/Pagle/data/Catalogue.lua` | Core | the catalogue (DATA-R76) |
   | `addons/Pagle_Hunts/data/HuntList.lua` | Pagle_Hunts | the Hunt list (DATA-R93) |
+  | `addons/Pagle_Hunts/data/EventList.lua` | Pagle_Hunts | the event list (DATA-R98) |
   | `addons/<Addon>/data/Lore.lua` | each addon with lore | its lore as `ns.L` entries (DATA-R104) |
 
   Each addon's TOC lists its generated files; `Lore.lua` comes after the file that creates `ns.L`.
@@ -212,11 +213,11 @@ Terms are used as `CONTEXT.md` defines them. "The catalogue" is what the generat
 - **DATA-R96** The generator fails (ADR 0005) when, against the lock: a locked Hunt is missing (deleted instead of retired); its hash differs; a locked `retired` date changed or was removed; a locked fixed class lost a member (generated classes can't, DATA-R91). A fix ships as a new Hunt plus a `retired` date on the old one.
 
 - **DATA-R97** **Hunt Events** (ADR 0012) live in `data/hunts/events/`, one file per event, `<event-id>.toml`, holding one `[event]` table and its `[[hunt]]` tables (keys under [Data](#data)). An event's `id` matches its file name and `[%w_]+`, never starting `p_` (kept for pushed events). Its `zones` are 1–2 zone areaIDs; its `skill` is `[low, high]`, the lowest and highest skill base among its zones (LOG-R55), worked out by the generator when left out; its **band** follows from `low` (`low` up to 150, `mid` 151–275, `high` above 275, Tunables) and is added to its tags as `low`, `mid` or `high`. `tags` come from `data/hunts/tags.toml`, a closed list: holidays (`hallows_end`, `winter_veil`, `lunar_festival`, `noblegarden`, `midsummer`, `harvest_festival`, `stv_extravaganza`), time (`night`, `day`, `dusk`), water (`coast`, `lake`, `river`, `pool`) and band (`low`, `mid`, `high`). `rotation` (default `true`) says whether the fallback rotation may pick it. An event's `name` and `note`, and each Hunt's `name`, are lore that stays in the file, as DATA-R105 does for `hunts.toml`, emitted as `event.<id>.name`, `event.<id>.note` and `hunt.<id>.name`.
-- **DATA-R98** `addons/Pagle_Hunts/data/EventList.lua` sets `ns.eventList` to `{ fingerprint, events }`: events in event-ID order, each with `id`, `zones`, `tags`, `skill`, `band`, `rotation` and `hunts`, each Hunt with `id`, `species?` or `class?`, `minBand?`, `conditions?` (its own, without the event's `areas`) and `tiers`. Its classes are `ns.huntList.classes` (DATA-R93), so `[[class]]` tables stay in `hunts.toml`. The fingerprint is computed as DATA-R72's over the event list without lore; Pagle_Hunts joins it with the Hunt list's for `extraFingerprint` (HNT-R136). An event Hunt's hash (DATA-R94) is over its emitted record plus its event's `id` and `zones`, and goes into `released.lock` under `[hunt.<id>]` like any Hunt; a locked event that is missing, or one of whose Hunts' hashes differs, fails the generator (DATA-R96). Removing an event from the pool is done by setting `rotation = false` and `retired = <date>` on its `[event]` (it then never runs again), never by deleting the file. *Decided while writing the spec (#289): how an event leaves the pool after 1.0.*
+- **DATA-R98** `addons/Pagle_Hunts/data/EventList.lua` sets `ns.eventList` to `{ fingerprint, events }`: events in event-ID order, each with `id`, `zones`, `tags` (as given, then the band unless given), `skill`, `band`, `rotation`, `retired?` (a server time, as DATA-R87's) and `hunts`, each Hunt in file order with `id`, `species?` or `class?`, `minBand?`, `conditions?` (its own, without the event's `areas`) and `tiers`. Its classes are `ns.huntList.classes` (DATA-R93), so `[[class]]` tables stay in `hunts.toml`. The fingerprint is computed as DATA-R72's over the event list without lore; Pagle_Hunts joins it with the Hunt list's for `extraFingerprint` (HNT-R136). Pagle_Hunts' TOC lists `EventList.lua` right after `HuntList.lua`. An event Hunt's hash (DATA-R94) is over its emitted record plus its event's `id` and `zones`, the canonical JSON of the record with `event` (the event's `id`) and `zones` added, and goes into `released.lock` under `[hunt.<id>]` like any Hunt; a locked event that is missing, or one of whose Hunts' hashes differs, fails the generator (DATA-R96). Removing an event from the pool is done by setting `rotation = false` and `retired = <date>` on its `[event]` (it then never runs again), never by deleting the file. *Decided while writing the spec (#289): how an event leaves the pool after 1.0.*
 - **DATA-R99** **The event checks.** The generator fails on an event that:
-  - breaks DATA-R97 (IDs, file name, zone count, an unknown tag, a `p_` prefix) or has fewer than 3 or more than 5 Hunts;
+  - breaks DATA-R97 (IDs, file name, zone count, an area that isn't a zone, a zone without a skill base when `skill` is left out, an unknown tag or a band tag other than its band, a `p_` prefix) or has fewer than 3 or more than 5 Hunts;
   - has a Hunt breaking DATA-R92's Hunt checks (targets, `minBand`, `tiers`, IDs), or with an `areas` condition of its own (the event's zones supply it);
-  - has a Hunt that can't complete in its zones: a `species` target or every member of a `fixed.*` target not listed in any of the event's zones and their subzones, a `species.any` or quality class with no qualifying item listed there, or a `time` condition that keeps it closed for more than half of a 72-hour run;
+  - has a Hunt that can't complete in its zones: a `species` target or every member of a `fixed.*` target not listed in any of the event's zones and their subzones, a `species.any` or quality class with no qualifying item listed there, or a time-based condition that keeps it closed for more than half of a 72-hour run (Tunables). That last is its longest closed stretch over a week of 15-minute steps, read as `MatchesConditions` reads them, wrapping across realm midnight and the week's end: its `time`, and its `events` forecast from their weekly rules (DATA-R38), an event without one never open; a run's dates aren't known, so `season` isn't read. DATA-R92's rarity cap doesn't apply to event Hunts. A retired event never runs again and never changes (ADR 0005), so, as a retired Hunt needs no admission, it is held to the other checks but not to completing in its zones;
   - has lore over DATA-R107's limits (`name` limit for event and Hunt names, no limit for the note), or missing names once the `hunts` lore check is on (DATA-R66);
   
   and the pool fails when a band has fewer rotating events than the minimum per band (Tunables, 8 at 1.0).
@@ -317,7 +318,7 @@ Terms are used as `CONTEXT.md` defines them. "The catalogue" is what the generat
 | `[event]` | `id`, `zones` (1–2 zone areaIDs), `tags` (DATA-R97), `skill?` (`[low, high]`), `rotation?` (default `true`), `retired?` (a date, DATA-R98), `name`, `note` |
 | `[[hunt]]` | `id`, `species?` or `class?`, `minBand?`, `conditions?` (LOG-R48 fields except `areas`), `tiers`, `name` |
 
-`data/hunts/tags.toml` holds one `[[tag]]` per tag: `id` and `kind` (`holiday`, `time`, `water`, `band`).
+`data/hunts/tags.toml` holds one `[[tag]]` per tag: `id` and `kind` (`holiday`, `time`, `water`, `band`). A repeated ID, an unknown kind, or band tags other than exactly `low`, `mid` and `high` fail the generator (DATA-R97, DATA-R63). The generator reads every `*.toml` in `data/hunts/events/` and ignores anything else there (its README).
 
 An imposed Hunt's `conditions` is an inline table with any of the LOG-R48 fields: `areas = [areaID, …]`, `time = [[from, to], …]` (realm minutes), `season = [{ from = [month, day], to = [month, day] }, …]`, `events = [eventID, …]`, `auras = [spellID, …]`, `lure = true` or `lure = [enchantID, …]`, `skill = { min = n }`. It is emitted as the same Lua condition spec.
 
@@ -335,7 +336,7 @@ An imposed Hunt's `conditions` is an inline table with any of the LOG-R48 fields
 |---|---|
 | `data/baseline/source.toml` | `tag` (the VMaNGOS snapshot tag, e.g. `"db_latest@4641790"`), `date` (`YYYY-MM-DD`), `url` (the dump's release asset URL), `dumpSha256` (the dump's SHA-256, lowercase hex), `[sha256]` with one `"<file>.csv" = "<lowercase hex>"` per CSV (DATA-R9) |
 | `data/db2/build.toml` | `build` (integer), `version` (e.g. `"1.60.1"`), `products` (list of wago.tools product names, e.g. `["wow_classic_beta"]`) (DATA-R11, DATA-R128) |
-| `data/checks.toml` | `typicalLength` (boolean), `lore` (list of lore IDs: `core`, `ledger`, `hunts`, `stats`, `tackleboard`) (DATA-R66) |
+| `data/checks.toml` | `typicalLength` (boolean), `lore` (list of lore IDs: `core`, `ledger`, `hunts`, `stats`, `tackleboard`), `eventPool?` (boolean, off when left out) (DATA-R66) |
 | `data/hunts/released.lock` | DATA-R95, DATA-R98 (event Hunts' hashes) |
 | `data/hunts/tags.toml` | DATA-R97 |
 | `data/lore/*.toml`, `manifest.toml`, `VOICE.md` | DATA-R100–R111 |
@@ -428,7 +429,7 @@ None.
 | Event Hunts per event | 3–5 | DATA-R99 |
 | Draft tier times: tier 1 / 2 / 3 | about 45 min / 2 h / 4 h fishing in the zones | DATA-R99 |
 | Draft catch rate | 180 Catches an hour (#279's baseline) | DATA-R99 |
-| An event Hunt's longest closed share of a run | half of 72 h | DATA-R99 |
+| An event Hunt's longest closed share of a run | half of 72 h (36 h), over a week of 15-minute steps | DATA-R99 |
 | Pre-1.0 `since` placeholder | 2026-11-04 (Forever's launch day) | DATA-R87 |
 | Fingerprint length | 16 hex characters of SHA-256 | DATA-R70, DATA-R72 |
 | Lore limits | `riddle` 80, `blurb` 200, `plaque` 100, `name` 28, `title` and the `text` of a title 32; other fields unlimited | DATA-R107 |
