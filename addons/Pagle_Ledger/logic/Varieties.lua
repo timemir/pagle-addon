@@ -27,14 +27,18 @@ local ns = select(2, ...)
 ---@field char integer
 
 --- The number of varieties of a Species (VAR-R2): its catalogue item's `varieties` keys, ten for a Species with
---- varieties and 0 for one without (a Legend, a Species not sized, VAR-R1).
+--- varieties and 0 for one without (a Legend, a Species not sized, VAR-R1). Counted with ipairs, not `#`: Core's
+--- records are shared, and in specs FakePagle's read-only proxies, which `#` sees as empty (CORE-R18).
 ---@param getItem fun(itemID: integer): PagleItem?
 ---@param speciesID integer
 ---@return integer
 function ns.VarietyCount(getItem, speciesID)
 	local item = getItem(speciesID)
-	local keys = item and item.varieties
-	return type(keys) == "table" and #keys or 0
+	local n = 0
+	for _ in ipairs(item and item.varieties or {}) do
+		n = n + 1
+	end
+	return n
 end
 
 --- The varieties of a Species caught in a state (VAR-R20).
