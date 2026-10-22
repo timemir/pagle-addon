@@ -161,6 +161,12 @@ ns.L = {
 	TRACKER_PROGRESS = "%d / %d",
 	TRACKER_ALL_TIERS = "all tiers",
 	TRACKER_UPDATING = "updating…",
+	-- The tracker's Pagle Wagers block (HNT-R175), under its header WAGERS_KICKER: a run's tracker label is "settled"
+	-- or TRACKER_ENDS_IN's; its second line its first marks and its closest Hunt, joined by TRACKER_JOIN.
+	TRACKER_SETTLED = "settled",
+	TRACKER_FIRST_MARKS = "%d of %d first marks",
+	TRACKER_CLOSEST = "%s: %d / %d", -- "Shore Snapper: 1 / 2": the closest Hunt, its count and its next threshold
+	TRACKER_WAGERS_MORE = "+%d more wagers on the table",
 	SETTING_SHOW_TRACKER = "Show the Hunts tracker",
 	SETTING_SHOW_TRACKER_TOOLTIP = "A small tracker under the minimap with the Hunts you've pinned on the board.",
 
@@ -276,7 +282,8 @@ ns.L = {
 
 	-- Pagle Wagers on the Board (HNT-R161, HNT-R163, HNT-R164): logic/Wagers.lua. Hunt Events are only ever
 	-- "Pagle Wagers" to players (CONTEXT.md), and nothing here claims odds, a due fish or a chance (HNT-R27).
-	WAGERS_KICKER = "Pagle Wagers", -- the strip's kicker, and the breadcrumb between "Hunts" and the run
+	WAGERS_KICKER = "Pagle Wagers", -- the strip's kicker, the breadcrumb between "Hunts" and the run, and the
+	-- tracker's Pagle Wagers header (HNT-R175)
 	STRIP_NAME = "%s · %s", -- "Shore Wager · Darkshore": the run's event and its zones
 	JOIN_ZONES = " & ",
 	STRIP_CLOSES = "closes in %s", -- a server-time duration (HNT-R203)
