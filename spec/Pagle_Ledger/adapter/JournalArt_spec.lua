@@ -71,6 +71,18 @@ describe("the Fish Journal's art (ledger.md › UI)", function()
 		assert.are.equal("Ledger\n62%", seal.label.text)
 	end)
 
+	it(
+		"crops a medallion's icon to inside its square border, so the round mask shows no flat edge in the ring",
+		function()
+			local _, loaded = openJournal()
+			local medal = loaded.ns.JournalMedal(loaded.ns.journal.frame, 60)
+
+			loaded.ns.JournalSetMedal(medal, MACKEREL, "sepia")
+
+			assert.are.same({ 0.08, 0.92, 0.08, 0.92 }, medal.icon.texCoord)
+		end
+	)
+
 	it("draws its book shell from Core's media/books, which the Hunts board and the Stats book share", function()
 		local _, loaded = openJournal()
 
